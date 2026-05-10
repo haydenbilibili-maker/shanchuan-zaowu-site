@@ -50,6 +50,8 @@ const fullTitle = title === '山川造物'
 
     <script>
       // 极克制的进入动效（IntersectionObserver）
+      // threshold:0 + rootMargin:"0px 0px -10% 0px" → 元素任意像素进视口即触发，
+      // 不依赖元素高度（避免超长正文区因 ratio < 0.15 而永久隐形的陷阱）。
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -59,10 +61,24 @@ const fullTitle = title === '山川造物'
             }
           });
         },
-        { threshold: 0.15 }
+        { threshold: 0, rootMargin: '0px 0px -10% 0px' }
       );
 
-      document.querySelectorAll('.fade-in').forEach((el) => observer.observe(el));
+      const els = document.querySelectorAll('.fade-in');
+      els.forEach((el) => observer.observe(el));
+
+      // 兜底：如果 JS 在视口已滚到位之后才执行，或 IO 异常，
+      // 100ms 后强制把已经在视口内的 fade-in 标为 visible，
+      // 永远不要让用户看到长时间的空白页。
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          els.forEach((el) => {
+            const rect = (el as HTMLElement).getBoundingClientRect();
+            const inView = rect.top < window.innerHeight && rect.bottom > 0;
+            if (inView) el.classList.add('is-visible');
+          });
+        }, 100);
+      });
     </script>
   </body>
 </html>
