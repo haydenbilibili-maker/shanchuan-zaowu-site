@@ -4,7 +4,17 @@ import PageHero from '../components/PageHero.astro';
 import PullQuote from '../components/PullQuote.astro';
 
 // 当 v0.3 接入 Astro content collections 后，这里改为 await getCollection('notes')
-const notes: { slug: string; title: string; excerpt: string; date: string; tags: string[] }[] = [];
+// 顺序：最新在最上
+const notes: { slug: string; title: string; excerpt: string; date: string; tags: string[] }[] = [
+  {
+    slug: 'founders-letter',
+    title: '写在工作室开门之前',
+    excerpt:
+      '关于山川造物，几件想先说清楚的事——不是品牌介绍，不是开业广告，是一封信。如果你以后跟我们打交道，这封信里说的话，是我们对你的基础承诺，也是我们对自己的基础约束。',
+    date: '2026.04',
+    tags: ['创始人信', '品牌叙事', '长期主义'],
+  },
+];
 ---
 
 <Layout

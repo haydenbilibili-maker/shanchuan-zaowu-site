@@ -78,7 +78,9 @@ shanchuanzaowu/
         ├── operations.astro       # 运营方法论
         ├── plan.astro             # 路线图
         ├── tech.astro             # 技术观
-        └── notes.astro            # 公众号文章入口
+        ├── notes.astro            # 公众号文章列表
+        └── notes/
+            └── founders-letter.astro  # 公众号 001 · 写在工作室开门之前
 ```
 
 ---
@@ -113,7 +115,7 @@ shanchuanzaowu/
 - [ ] `public/audio/ambient-30s.mp3` 30 秒环境音录制
 - [ ] `public/images/hero/home-hero.jpg` 首页主视觉 / OG 分享图
 - [ ] 自托管思源宋体（如系统宋体回退不理想）
-- [ ] `/notes/founders-letter` —— 创始人信（v0.2 内容到位后建子路由）
+- [x] `/notes/founders-letter` —— 创始人信《写在工作室开门之前》（v0.1 已上线 · 公众号 001）
 - [ ] 把 `mailto:hello@shanchuanzaowu.com` 替换为真实邮箱（v0.1 内测期）或等域名 + Email Routing 配好（v0.2）
 
 素材到位后只需把文件放进对应目录、并在 `src/pages/senses.astro` 里取消注释 `image=` / `audio=` 属性即可。
