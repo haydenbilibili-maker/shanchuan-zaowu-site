@@ -1,0 +1,69 @@
+---
+interface Props {
+  /** 块标题（如"和我们对话"）*/
+  title?: string;
+  /** 标题下的引子 */
+  intro?: string;
+  /** 邮件主题建议（如"物业邀请 · 城市 · 物业名"） */
+  subjectHint?: string;
+  /** 邮箱（默认 hello@shanchuanzaowu.com） */
+  email?: string;
+  /** 是否显示"申请详细数据"二级入口 */
+  requestDetails?: boolean;
+  /** 详细数据二级入口的描述 */
+  detailsHint?: string;
+}
+
+const {
+  title = '联系入口',
+  intro,
+  subjectHint,
+  email = 'hello@shanchuanzaowu.com',
+  requestDetails = false,
+  detailsHint,
+} = Astro.props;
+
+// 自动构造 mailto 链接（含主题建议）
+const mailtoHref = subjectHint
+  ? `mailto:${email}?subject=${encodeURIComponent(subjectHint)}`
+  : `mailto:${email}`;
+---
+
+<section class="editorial-section">
+  <hr class="brass-divider !mt-0" />
+
+  <h2 class="section-title text-cream mb-paragraph">{title}</h2>
+
+  {intro && (
+    <p class="prose-cn mb-paragraph">{intro}</p>
+  )}
+
+  <div class="space-y-3 text-sm">
+    <div>
+      <span class="text-text-soft tracking-cn">邮箱：</span>
+      <a href={mailtoHref} class="font-serif-en text-brass-mid hover:text-brass-bright transition-colors">
+        {email}
+      </a>
+    </div>
+
+    {subjectHint && (
+      <div>
+        <span class="text-text-soft tracking-cn">主题建议：</span>
+        <span class="text-cream font-serif tracking-cn">「{subjectHint}」</span>
+      </div>
+    )}
+  </div>
+
+  {requestDetails && (
+    <div class="mt-paragraph p-6 border border-brass-mid/20 bg-ink-elevated/40">
+      <p class="font-serif text-sm text-brass-mid mb-2 tracking-cn">申请详细数据</p>
+      <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+        {detailsHint || '我们准备了脱敏的详细数据 PDF。在邮件中说明背景和需求，我们会在 5 个工作日内回复。'}
+      </p>
+    </div>
+  )}
+
+  <p class="mt-paragraph text-xs text-text-dim tracking-cn">
+    我们承诺：每一封正式来信都会被回复——即使我们最终没有选择合作。
+  </p>
+</section>

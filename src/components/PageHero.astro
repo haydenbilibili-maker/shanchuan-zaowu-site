@@ -1,0 +1,32 @@
+---
+interface Props {
+  /** 英文小字（eyebrow），通常是栏目英文名 */
+  eyebrow?: string;
+  /** 主标题（中文） */
+  title: string;
+  /** 副标题 / 引子段（可选） */
+  lead?: string;
+  /** 是否居中 */
+  center?: boolean;
+}
+
+const { eyebrow, title, lead, center = true } = Astro.props;
+---
+
+<section class="editorial-section pt-section">
+  <div class:list={[center && 'text-center']}>
+    {eyebrow && (
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-4">
+        {eyebrow}
+      </p>
+    )}
+    <h1 class="display-title mb-paragraph">
+      <Fragment set:html={title} />
+    </h1>
+    {lead && (
+      <div class="prose-cn mt-section max-w-editorial mx-auto">
+        <p set:html={lead}></p>
+      </div>
+    )}
+  </div>
+</section>

@@ -1,0 +1,28 @@
+---
+interface Props {
+  /** 引文中文 */
+  quote: string;
+  /** 来源（可选）*/
+  cite?: string;
+  /** 英文（可选）*/
+  quoteEn?: string;
+}
+
+const { quote, cite, quoteEn } = Astro.props;
+---
+
+<blockquote class="editorial-section">
+  <p class="pullquote font-serif text-cream">
+    {quote}
+  </p>
+  {quoteEn && (
+    <p class="pullquote font-serif-en italic text-text-soft mt-3">
+      {quoteEn}
+    </p>
+  )}
+  {cite && (
+    <cite class="block mt-4 text-sm text-text-soft not-italic">
+      —— {cite}
+    </cite>
+  )}
+</blockquote>

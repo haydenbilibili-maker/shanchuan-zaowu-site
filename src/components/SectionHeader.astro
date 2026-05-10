@@ -1,0 +1,36 @@
+---
+interface Props {
+  /** 英文 italic 上标（如"Properties · 物业合作"） */
+  eyebrow?: string;
+  /** 主标题（支持换行 用 \n 自动转 <br>） */
+  title: string;
+  /** 副引子 */
+  intro?: string;
+  /** 是否居中 */
+  center?: boolean;
+}
+
+const { eyebrow, title, intro, center = false } = Astro.props;
+---
+
+<section class:list={[
+  'editorial-section pt-section',
+  center && 'text-center',
+]}>
+  {eyebrow && (
+    <p class="font-serif-en italic text-text-soft text-sm tracking-widest uppercase mb-4">
+      {eyebrow}
+    </p>
+  )}
+
+  <h1 class="display-title text-cream mb-paragraph" set:html={title.replace(/\n/g, '<br>')}></h1>
+
+  {intro && (
+    <div class:list={[
+      'prose-cn max-w-editorial mt-section',
+      center && 'mx-auto',
+    ]}>
+      <p>{intro}</p>
+    </div>
+  )}
+</section>

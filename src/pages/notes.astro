@@ -1,0 +1,84 @@
+---
+import Layout from '../components/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+// 当 v0.3 接入 Astro content collections 后，这里改为 await getCollection('notes')
+const notes: { slug: string; title: string; excerpt: string; date: string; tags: string[] }[] = [];
+---
+
+<Layout
+  title="笔记"
+  description="关于自然、博物学、零售空间、品牌经营——长期写、慢慢写"
+>
+  <PageHero
+    eyebrow="Notes &amp; Essays · 笔记"
+    title="我们最近<br />在想的事"
+    lead="关于自然、博物学、零售空间、品牌经营——长期写、慢慢写、不追热点。这里是我们公众号文章的整理与延伸。"
+  />
+
+  <hr class="brass-divider" />
+
+  {/* ============== 笔记列表 / 空状态 ============== */}
+  <section class="editorial-section py-section fade-in">
+    {notes.length === 0 ? (
+      <div class="border border-brass-mid/30 px-8 py-16 bg-ink-elevated/40 text-center">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4">
+          Empty for now
+        </p>
+        <p class="font-serif text-cream text-2xl mb-4 tracking-cn">第一篇还在打磨</p>
+        <p class="text-sm text-text-soft max-w-editorial mx-auto leading-relaxed mb-8 tracking-cn">
+          我们不会为了"有内容"而写——只在真正想清楚一件事的时候才发出来。
+          首批文章预计 v0.3 上线（含 6–8 篇已在公众号发表过的精选）。
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center text-sm">
+          <a
+            href="https://mp.weixin.qq.com"
+            class="border border-brass-mid/60 px-6 py-3 text-brass-mid hover:bg-brass-mid hover:text-ink transition-colors tracking-cn"
+            target="_blank"
+            rel="noopener"
+          >
+            前往公众号 →
+          </a>
+          <a
+            href="/"
+            class="border border-text-soft/30 px-6 py-3 text-text-soft hover:text-cream hover:border-cream/40 transition-colors tracking-cn"
+          >
+            回到首页
+          </a>
+        </div>
+      </div>
+    ) : (
+      <ul class="border-t border-brass-mid/15">
+        {notes.map((note) => (
+          <li class="border-b border-brass-mid/15">
+            <a href={`/notes/${note.slug}`} class="block py-8 group">
+              <div class="grid md:grid-cols-[120px_1fr] gap-4 md:gap-8">
+                <time class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase">
+                  {note.date}
+                </time>
+                <div>
+                  <h3 class="font-serif text-2xl text-cream mb-3 tracking-cn group-hover:text-brass-bright transition-colors">
+                    {note.title}
+                  </h3>
+                  <p class="text-sm text-text-soft leading-relaxed mb-3 tracking-cn">
+                    {note.excerpt}
+                  </p>
+                  <ul class="flex gap-2 text-xs">
+                    {note.tags.map((tag) => (
+                      <li class="text-text-dim font-serif-en italic">#{tag}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+
+  <PullQuote
+    quote="写一篇文章的最低标准：自己愿意打印出来贴在工作室墙上。"
+  />
+</Layout>

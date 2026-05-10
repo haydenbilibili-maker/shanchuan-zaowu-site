@@ -1,0 +1,146 @@
+---
+import Layout from '../components/Layout.astro';
+import SenseSpread from '../components/SenseSpread.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+// 注：v0.1 暂不传入 image 路径 → SenseSpread 会显示黄铜色占位块（参考文档 §6.1 方案 B）
+// 真实照片到位后，给每个 SenseSpread 加上 image="/images/senses/xxx.jpg" 即可
+---
+
+<Layout
+  title="五感"
+  description="进店之前你已经在感受我们了——视、听、嗅、触、味的店内体验设计"
+>
+  <!-- ============== Hero 引子 ============== -->
+  <section class="editorial-section pt-section">
+    <div class="text-center">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-4">
+        Five Senses · 五感
+      </p>
+      <h1 class="display-title mb-paragraph">
+        进店之前<br />你已经在感受我们了
+      </h1>
+    </div>
+
+    <div class="prose-cn mt-section max-w-editorial mx-auto">
+      <p>
+        我们设计的不是一家店——是一组叠加的感官。视觉是入口，听觉是停留的理由，气味是离开后还在记忆里的东西。
+      </p>
+      <p>
+        把它们拆开来说一说，是因为这些细节通常不被说，但它们决定了一家店是否真正活着。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== 视 · Sight ============== -->
+  <SenseSpread
+    sense="视"
+    senseEn="Sight"
+    number="I"
+    title="我们想被怎样看见"
+    imageAlt="维多利亚博物馆灯光下的标本展柜"
+    align="left"
+    bodyHtml={`
+      <p>光线偏暗，但不晦涩。我们用的是博物馆的灯——窄束、高显色、在每一件标本上落出一圈安静的轮廓。展柜的骨架是黄铜，背板是深褐木，玻璃六面无遮挡。</p>
+      <p>你不会看到商场常见的那种均匀照明。一进店，眼睛会有一两秒的调整时间——这个动作本身就是仪式。</p>
+      <p>我们也不做明亮饱和的品牌色。山川造物全部的视觉系统建立在<strong>黄铜 + 黑铅 + 米白</strong>这三个色之间——它们是 19 世纪英国博物学家的工作室色，是穿越时间的色，不是当下流行色。</p>
+      <p>如果有一天你忘了我们卖什么，请记住你看到过这种光。</p>
+    `}
+  />
+
+  <hr class="brass-divider" />
+
+  <!-- ============== 听 · Sound ============== -->
+  <SenseSpread
+    sense="听"
+    senseEn="Sound"
+    number="II"
+    title="我们想被怎样听见"
+    imageAlt="工坊里的工具与日常声音"
+    align="right"
+    bodyHtml={`
+      <p>如果你站在工坊门口听 30 秒——你会听到这些：</p>
+      <p>钢笔在纸上写字的沙沙、玻璃柜被金属指节轻轻关上的低响、咖啡机蒸汽的咝咝、远处一对母女讨论一只蝴蝶颜色的低语、偶尔从楼下传来一声柜门的开合。</p>
+      <p>我们不放快歌、不放电子节拍。背景音乐选的是 17-19 世纪的室内乐和现代极简钢琴——它们的共同点是<strong>不夺人耳朵</strong>。</p>
+      <p>把声音设计写进 SOP 是反直觉的——大多数零售店懒得做。但<strong>店里的声音是你离开后大脑会自动回放的东西</strong>。我们想让那段回放是平静的。</p>
+    `}
+  />
+
+  <hr class="brass-divider" />
+
+  <!-- ============== 嗅 · Smell ============== -->
+  <SenseSpread
+    sense="嗅"
+    senseEn="Smell"
+    number="III"
+    title="我们想被怎样记住"
+    imageAlt="老纸、木材、咖啡豆叠加的气味"
+    align="left"
+    bodyHtml={`
+      <p>气味是五感里最长寿的——人记住气味的时间远长于记住面孔。</p>
+      <p>走进我们店的第一秒，你会闻到几样叠在一起的东西：<strong>老纸的味道</strong>（来自档案卡和日记本的纸纤维）、<strong>木材的味道</strong>（来自展柜骨架和地板的樟木气）、<strong>咖啡豆烘焙后的味道</strong>（来自吧台后面，但很轻）、还有一种<strong>若有若无的微涩</strong>（来自标本保存的化学边界，浓度很低，但博物学的同行人会立刻识别出来）。</p>
+      <p>这套气味是设计过的，但它不是香薰——是物质本身的气味。</p>
+      <p>我们也不喷劣质香氛去掩盖什么。如果哪天你在我们店里闻到某种"商场标准甜香"——请告诉我们，那是失败。</p>
+    `}
+  />
+
+  <hr class="brass-divider" />
+
+  <!-- ============== 触 · Touch ============== -->
+  <SenseSpread
+    sense="触"
+    senseEn="Touch"
+    number="IV"
+    title="你把山川带回家时手感觉到的"
+    imageAlt="黄铜、玻璃、纸、果壳的触感"
+    align="right"
+    bodyHtml={`
+      <p>你来店里会触碰几样东西：</p>
+      <p><strong>黄铜</strong>——我们的展柜骨架、收银台边角、装饰构件都用黄铜。它在指尖上是凉的，比你预期的更重。它不会光鲜永远——会留下指印、会随时间变出斑驳的旧。</p>
+      <p><strong>玻璃</strong>——展柜六面玻璃，硬而薄。你贴近看一只蝴蝶时，玻璃会传给你一种"近又远"的距离感。</p>
+      <p><strong>纸</strong>——我们所有的档案卡、故事卡、包装纸、日记本，用的都是有纤维感的厚纸。不是热敏小票那种纸，是博物馆出版物的纸。</p>
+      <p><strong>果壳与矿物</strong>——如果你买的是自然小匣，回家拆开盒子时，第一感觉是粗粝。一颗松果在掌心的重量，一块矿石的棱角刺到指腹——这是自然本来的触感，不是工业品的触感。</p>
+      <p><strong>把山川带回家</strong>——这句话的物理含义就是这些。</p>
+    `}
+  />
+
+  <hr class="brass-divider" />
+
+  <!-- ============== 味 · Taste ============== -->
+  <SenseSpread
+    sense="味"
+    senseEn="Taste"
+    number="V"
+    title="博物学家的下午茶"
+    imageAlt="咖啡区的茶、咖啡与简餐"
+    align="left"
+    bodyHtml={`
+      <p>我们的咖啡区不是为了"加咖啡"开的。它是 19 世纪欧洲博物学家工作之余的那张桌子——你坐下来翻一会儿书、写一两句笔记、喝一杯黑咖啡或一壶中国茶。</p>
+      <p>具体我们提供：</p>
+      <p><strong>茶</strong>——以中国传统绿茶 / 红茶 / 乌龙为主，配几款日本煎茶和欧式红茶。不做奶茶。</p>
+      <p><strong>咖啡</strong>——基础款（手冲、美式、拿铁），用的是季节限定的中等烘焙豆。不做花式饮品。</p>
+      <p><strong>简餐</strong>——少量，跟博物学叙事相关：北欧黑麦面包、一两款欧式糕点、季节性水果切片。</p>
+      <p>我们想让"喝一杯"成为你停留 30 分钟以上的理由——不是 5 分钟带走的理由。</p>
+    `}
+  />
+
+  <hr class="brass-divider" />
+
+  <!-- ============== Closing ============== -->
+  <section class="editorial-section pt-section pb-section">
+    <PullQuote
+      quote="离开时，你身上会带一点我们的味道——这就是把山川带回家。"
+    />
+
+    <div class="prose-cn mt-section max-w-editorial mx-auto text-center">
+      <p>
+        这五感不是营销话术。它们是我们设计每一家店时<strong>真正在意的事</strong>——光线偏几度、声音几分贝、纸的克重、咖啡豆的烘焙度。
+      </p>
+      <p>
+        如果有一天我们的店开到了你的城市，希望你来坐 30 分钟。
+      </p>
+    </div>
+  </section>
+</Layout>

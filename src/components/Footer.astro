@@ -1,0 +1,96 @@
+---
+const navColumns = [
+  {
+    title: '了解',
+    items: [
+      { href: '/about', label: '我们是谁' },
+      { href: '/products', label: '我们做什么' },
+      { href: '/senses', label: '五感' },
+      { href: '/space', label: '空间体系' },
+      { href: '/operations', label: '经营模式' },
+      { href: '/plan', label: '三年规划' },
+    ],
+  },
+  {
+    title: '价值观',
+    items: [
+      { href: '/values', label: '六观体系' },
+      { href: '/commitment', label: '1% 承诺' },
+      { href: '/tech', label: '科技观' },
+    ],
+  },
+  {
+    title: '合作',
+    items: [
+      { href: '/properties', label: '物业合作' },
+      { href: '/investors', label: '投资合作' },
+      { href: '/franchise', label: '加盟咨询' },
+    ],
+  },
+  {
+    title: '加入',
+    items: [
+      { href: '/talent', label: '人才与店长培训' },
+      { href: '/notes', label: '公众号文章' },
+    ],
+  },
+];
+
+const year = new Date().getFullYear();
+---
+
+{/*
+  Footer · 米白纸张版（v0.3）
+  深色奇珍柜 → 米白画册底页：模拟翻到出版物末页的物理体验
+  色彩遵循 VI v2.0：paper 底色 / nature-green 主色 / earth-brown 拉丁名 / ink-text 正文
+*/}
+<footer class="mt-section">
+  <!-- 过渡区：12px 黄铜→纸张渐变，做"书脊"暗示 -->
+  <div class="relative h-3" aria-hidden="true">
+    <div class="absolute inset-0 bg-gradient-to-b from-ink to-paper"></div>
+    <div class="absolute inset-x-0 top-0 h-px bg-brass-mid/60"></div>
+  </div>
+
+  <!-- 主体：米白纸张 + 极轻纤维噪点 -->
+  <div class="bg-paper paper-texture text-ink-text">
+    <div class="max-w-7xl mx-auto px-6 py-section">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-10">
+        <!-- Brand block -->
+        <div class="col-span-2 md:col-span-1">
+          <h3 class="font-serif text-2xl text-nature-green mb-3 tracking-cn">山川造物</h3>
+          <p class="font-serif-en italic text-sm text-earth-brown">Nature&rsquo;s Creations</p>
+          <p class="text-xs text-ink-text/65 mt-4 leading-relaxed">
+            把山川带回家<br />
+            让自然博物美学进入日常生活
+          </p>
+        </div>
+
+        {navColumns.map((col) => (
+          <div>
+            <h4 class="font-serif text-sm text-nature-green mb-4 tracking-cn font-medium">{col.title}</h4>
+            <ul class="space-y-2 text-sm">
+              {col.items.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    class="text-ink-text/75 hover:text-nature-green transition-colors duration-200"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <!-- 内部分隔线：墨绿黑极淡，配合纸面 -->
+      <hr class="border-0 h-px bg-ink-text/15 my-section" />
+
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs text-ink-text/55">
+        <p>&copy; {year} 山川造物 · NATURE&rsquo;S CREATIONS</p>
+        <p class="font-serif-en italic">SINCE 2024 · CHANGCHUN</p>
+      </div>
+    </div>
+  </div>
+</footer>

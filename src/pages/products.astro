@@ -1,0 +1,183 @@
+---
+import Layout from '../components/Layout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import NoListItem from '../components/NoListItem.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+const noList = [
+  '不做盲盒',
+  '不做概率消费',
+  '不做隐藏款',
+  '不做限量发售制造抢购',
+  '不做卖萌化的自然 IP',
+  '不做与"自然博物美学"无关的跨品类延伸',
+];
+---
+
+<Layout
+  title="我们做什么"
+  description="山川造物 · 自然小匣 / 衍生品 / 主题展柜 / 双 IP"
+>
+  <SectionHeader
+    eyebrow="What We Make · 我们做什么"
+    title={`我们做的不是\n标本店`}
+    intro={`如果只是"卖标本"，这件事其实早就有人在做。我们做的是别的——把一种叫自然博物美学的东西，让它进入日常生活。`}
+  />
+
+  <hr class="brass-divider" />
+
+  <!-- ============ I. 自然小匣 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+      <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center">
+        <span class="font-serif-en italic text-brass-mid/40 text-2xl">Nature Boxes</span>
+      </figure>
+
+      <div>
+        <p class="section-number mb-4">I</p>
+        <h2 class="section-title text-cream">自然小匣</h2>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Nature Boxes · 核心商品</p>
+
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            一个小盒子，里面是按主题搭配的若干件自然物——蝴蝶、果实、矿石、贝壳——和一张<strong class="text-brass-bright">博物档案卡</strong>。
+          </p>
+          <p>
+            它不是手工艺品，也不是奢侈品。是一件可以放在桌上、家里、孩子房间里的<strong class="text-cream">"可以被翻看的小博物馆"</strong>。
+          </p>
+          <p class="text-text-soft text-sm">
+            每一只蝴蝶、每一颗矿石都有自己的来路、品相、合规边界。我们的工艺不能自动化到底——保留一定比例的手工，是这件事的一部分。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ II. 衍生品 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+      <div class="md:order-2">
+        <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center">
+          <span class="font-serif-en italic text-brass-mid/40 text-2xl">Derivatives</span>
+        </figure>
+      </div>
+
+      <div class="md:order-1">
+        <p class="section-number mb-4">II</p>
+        <h2 class="section-title text-cream">衍生品</h2>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Derivatives · 渗透日常</p>
+
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            围绕自然主题做的日常物——印章本、明信片、装饰画、文具。
+          </p>
+          <p>
+            它们的存在是让自然博物美学渗透到<strong class="text-cream">更普通的生活场景</strong>。
+          </p>
+          <p class="text-text-soft text-sm">
+            不做与自然博物美学无关的跨品类延伸。我们的边界是清晰的——衍生品必须服务于品牌叙事，不为延伸而延伸。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ III. 主题展柜 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+      <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center">
+        <span class="font-serif-en italic text-brass-mid/40 text-2xl">Cabinets</span>
+      </figure>
+
+      <div>
+        <p class="section-number mb-4">III</p>
+        <h2 class="section-title text-cream">主题展柜</h2>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Cabinets · 用来看的</p>
+
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            每家店都会有维多利亚风格的<strong class="text-brass-bright">奇珍柜</strong>，里面陈列我们认为值得被凝视的标本。
+          </p>
+          <p>
+            <strong class="text-cream">这些不是用来卖的，是用来看的</strong>。
+          </p>
+          <p class="text-text-soft text-sm">
+            每一件标本都配博物档案卡（中文名、学名、产地、采集背景、保护级别）——是博物馆级标准，不是商场标价签。每月做一次主题展柜轮换。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ IV. 双 IP ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">IV</p>
+    <h2 class="section-title text-cream">两个 IP · 马上有 与 小黄</h2>
+    <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Two IPs · 情感线索</p>
+
+    <p class="prose-cn mb-section">
+      <strong class="text-cream">马上有</strong>和<strong class="text-cream">小黄</strong>——这是山川造物的两个 IP。它们是这家店的两条情感线索。
+    </p>
+
+    <div class="grid md:grid-cols-2 gap-10">
+      <article class="p-8 border border-brass-mid/20 bg-ink-elevated/40">
+        <figure class="aspect-square mb-6 bg-gradient-to-br from-ink-deep to-ink-elevated border border-brass-mid/15 flex items-center justify-center">
+          <span class="font-serif-en italic text-brass-mid/40 text-xl">IP 01</span>
+        </figure>
+        <h3 class="font-serif text-2xl text-cream mb-2 tracking-cn">马上有</h3>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-4">Mashangyou</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          山川造物的主 IP 之一。详细人格档案与故事系统将在专门的内容中展开。
+        </p>
+      </article>
+
+      <article class="p-8 border border-brass-mid/20 bg-ink-elevated/40">
+        <figure class="aspect-square mb-6 bg-gradient-to-br from-ink-deep to-ink-elevated border border-brass-mid/15 flex items-center justify-center">
+          <span class="font-serif-en italic text-brass-mid/40 text-xl">IP 02</span>
+        </figure>
+        <h3 class="font-serif text-2xl text-cream mb-2 tracking-cn">小黄</h3>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-4">Xiao Huang</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          山川造物的主 IP 之二。详细人格档案与故事系统将在专门的内容中展开。
+        </p>
+      </article>
+    </div>
+
+    <p class="prose-cn mt-paragraph text-sm text-text-soft">
+      关于双 IP 的诞生故事 → <a href="/notes" class="text-brass-mid hover:text-brass-bright">/notes</a>
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ V. 我们不做什么 ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">V</p>
+    <h2 class="section-title text-cream">我们不做的事</h2>
+
+    <p class="prose-cn mb-paragraph">
+      这些不是我们做不了。是我们<strong class="text-brass-bright">选择不做</strong>。
+    </p>
+
+    <ul class="border-l-2 border-brass-deep/40 pl-6 mt-paragraph">
+      {noList.map((item) => (
+        <NoListItem text={item} />
+      ))}
+    </ul>
+
+    <p class="prose-cn mt-paragraph text-sm text-text-soft">
+      完整的「不做」清单在战略原则文档中——共七类（内容 / 商品 / 经营 / 加盟 / 空间 / 文化 / 公共承诺）。
+      <br />详见 → <a href="/about" class="text-brass-mid hover:text-brass-bright">/about</a>
+    </p>
+  </section>
+
+  <PullQuote
+    quote="自然小匣、衍生品、主题展柜、双 IP——这些是我们的产品语言。维多利亚博物学家奇珍柜的视觉、黄铜与暗调、博物馆级的灯光与档案——这些是我们的空间语言。"
+  />
+</Layout>

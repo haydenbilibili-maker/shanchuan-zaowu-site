@@ -1,0 +1,23 @@
+---
+import Layout from '../components/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import WIPNotice from '../components/WIPNotice.astro';
+---
+
+<Layout
+  title="科技观"
+  description="技术是隐形的——只在让体验更安静的时候出现"
+>
+  <PageHero
+    eyebrow="On Technology · 科技观"
+    title="技术是隐形的"
+    lead="AI、AR、小程序、内容监控——这些工具我们都用，但都在幕后。客人不应该感受到我们在用 AI；他们应该感受到的是「这家店懂我」。"
+  />
+
+  <hr class="brass-divider" />
+
+  <WIPNotice
+    topic="科技观 · AI 在零售空间中的克制使用 / 隐形增强 / SOP 化"
+    expectedVersion="v0.3"
+  />
+</Layout>

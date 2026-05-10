@@ -1,0 +1,323 @@
+---
+import Layout from '../components/Layout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import ContactBlock from '../components/ContactBlock.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+const benchmarks = [
+  {
+    name: '中川政七商店',
+    role: '灵魂模板',
+    detail: 'Vision 第一原则、不做清单、慢与稳、300 年长期主义',
+    nameEn: 'Nakagawa Masashichi',
+  },
+  {
+    name: '蔦屋書店',
+    role: '形态模板',
+    detail: '多 format / 居心地 / Concierge / 失败的容许 / 公共合作',
+    nameEn: 'Tsutaya Books',
+  },
+  {
+    name: '泡泡玛特',
+    role: '警示模板',
+    detail: '可学：多 IP 矩阵 / DTC / 出海节奏。必避：盲盒 / 饥饿营销 / 快速迭代',
+    nameEn: 'Pop Mart',
+  },
+];
+---
+
+<Layout
+  title="投资合作"
+  description="山川造物 · 我们寻找耐心资本"
+>
+  <SectionHeader
+    eyebrow="Investors · 投资合作"
+    title={`你在找一个\n不追风口的标的`}
+    intro="未来 12-18 个月，山川造物将启动正式融资。我们的态度是——找钱很重要，找对的钱更重要。这页文档不是路演 deck 的简版，目的是双向筛选。"
+  />
+
+  <hr class="brass-divider" />
+
+  {/* ============ I. 我们寻找什么样的资本 ============ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">I</p>
+    <h2 class="section-title text-cream">我们寻找什么样的资本</h2>
+
+    <ul class="space-y-paragraph">
+      <li class="prose-cn">
+        <strong class="text-brass-bright">耐心资本</strong>——能接受 5-10 年回报周期、理解长期主义品牌的逻辑、不会在每个季度问"为什么不够快"的资本。
+      </li>
+      <li class="prose-cn">
+        <strong class="text-brass-bright">理解新消费但不照搬新消费打法</strong>——山川造物属于第三代新消费品牌（内容 + 文化 + 长期），与第二代（流量 + 营销 + 爆款）的逻辑不同。
+      </li>
+      <li class="prose-cn">
+        <strong class="text-brass-bright">与品牌价值观相通</strong>——我们做的是 30 年的事业。如果你的基金 LP 要求 5 年退出，可能我们的节奏会让你为难。
+      </li>
+      <li class="prose-cn">
+        <strong class="text-brass-bright">有产业资源更好</strong>——与文化、自然博物、博物馆、文创、内容、教育领域有产业积累的资本，对我们的价值远高于纯财务投资。
+      </li>
+    </ul>
+  </section>
+
+  {/* ============ II. 我们不要什么样的资本 ============ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">II</p>
+    <h2 class="section-title text-cream">我们不要什么样的资本</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        <strong class="text-brass-bright">对赌资本</strong>——任何要求"3 年内必须做到 X 倍营收"或"5 年内必须上市"的对赌条款，我们不接受。
+      </p>
+      <p>
+        <strong class="text-brass-bright">push 我们做盲盒 / 限量 / 饥饿营销的资本</strong>——这些与「不装的规模化」哲学根本对立，是我们「不做」清单上的永久红线。
+      </p>
+      <p>
+        <strong class="text-brass-bright">push 跨品类快速扩张的资本</strong>——我们不做与"自然博物美学"无关的延伸。
+      </p>
+      <p>
+        <strong class="text-brass-bright">短期套利型资本</strong>——我们的 IRR 不是 3 年内能爆发的那种。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============ III. 当前阶段 ============ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">III</p>
+    <h2 class="section-title text-cream">当前阶段</h2>
+
+    <div class="prose-cn">
+      <h3 class="font-serif text-xl text-brass-bright mb-3 tracking-cn">业务现状</h3>
+      <ul class="space-y-2 list-none pl-0 mb-paragraph">
+        <li class="pl-6 relative">
+          <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+          长春这有山首店运营中
+        </li>
+        <li class="pl-6 relative">
+          <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+          标本工作室 + 咖啡店（Max 版原型）2026 年 6-7 月开业
+        </li>
+        <li class="pl-6 relative">
+          <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+          第二家直营店选址中（2026 H2）
+        </li>
+      </ul>
+
+      <h3 class="font-serif text-xl text-brass-bright mb-3 tracking-cn">商业基本盘（脱敏区间）</h3>
+      <ul class="space-y-2 list-none pl-0 mb-paragraph">
+        <li class="pl-6 relative">
+          <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+          客单价中位数：三位数（与对标品牌中位数相当）
+        </li>
+        <li class="pl-6 relative">
+          <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+          月均营收：6 位数（首店稳定后）
+        </li>
+        <li class="pl-6 relative">
+          <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+          毛利率：高于零售业行业中位数
+        </li>
+        <li class="pl-6 relative">
+          <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+          复购率：高于零售业行业中位数
+        </li>
+        <li class="pl-6 relative">
+          <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+          当前盈亏：接近盈亏平衡
+        </li>
+      </ul>
+
+      <p class="text-sm text-text-soft">
+        详细财务模型通过正式邮件沟通后线下同步——我们认真看每一封投资人邮件。
+      </p>
+    </div>
+  </section>
+
+  {/* ============ IV. 商业模式与三条增长曲线 ============ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">IV</p>
+    <h2 class="section-title text-cream">商业模式与三条增长曲线</h2>
+
+    <p class="prose-cn mb-paragraph">
+      我们的增长不依赖单一路径，是三条曲线叠加：
+    </p>
+
+    <div class="space-y-paragraph">
+      <div class="p-6 border-l-2 border-brass-mid pl-6">
+        <h3 class="font-serif text-xl text-brass-bright mb-2 tracking-cn">曲线 1 · 直营连锁</h3>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          按 Lite / Pro / Max 三档场景化拓店，2028 年目标 6-10 家直营店。
+        </p>
+      </div>
+
+      <div class="p-6 border-l-2 border-brass-mid pl-6">
+        <h3 class="font-serif text-xl text-brass-bright mb-2 tracking-cn">曲线 2 · 加盟体系</h3>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          2027 H2 开放。基于我们正在搭建的空间 toolkit + 人才认证 toolkit，每年有限放开 5-8 家加盟店。<strong class="text-cream">不追求加盟数量，追求加盟质量</strong>。
+        </p>
+      </div>
+
+      <div class="p-6 border-l-2 border-brass-mid pl-6">
+        <h3 class="font-serif text-xl text-brass-bright mb-2 tracking-cn">曲线 3 · 公共合作</h3>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          探索中。参考蔦屋書店 × 武雄市图書館 PFI 模式，与中国自然博物馆 / 国家公园 / 自然教育机构合作。这是新消费品牌很少触及的领域，但<strong class="text-cream">它是 30 年品牌的隐性护城河</strong>。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============ V. 对标定位 · 三对标合并坐标系 ============ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">V</p>
+    <h2 class="section-title text-cream">对标定位 · 三对标合并坐标系</h2>
+
+    <p class="prose-cn mb-paragraph">
+      我们花了大量时间研究三个对标品牌——不是为了模仿，是为了知道<strong class="text-brass-bright">自己的位置</strong>：
+    </p>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      {benchmarks.map((b) => (
+        <div class="p-6 border border-brass-mid/20 bg-ink-elevated/40 fade-in flex flex-col">
+          <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+            {b.role}
+          </p>
+          <h3 class="font-serif text-lg text-cream mb-1 tracking-cn">{b.name}</h3>
+          <p class="font-serif-en italic text-text-dim text-xs mb-3">{b.nameEn}</p>
+          <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{b.detail}</p>
+        </div>
+      ))}
+    </div>
+
+    <PullQuote
+      quote="用中川政七的灵魂、运营蔦屋的形态、把泡泡玛特当反面镜子。"
+    />
+  </section>
+
+  {/* ============ VI. 1% 承诺与品牌护城河 ============ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VI</p>
+    <h2 class="section-title text-cream">1% 承诺与品牌护城河</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        我们承诺将每年营业收入的 1%——<strong class="text-brass-bright">不是利润</strong>——无条件捐赠给环保 / 自然博物 / 野生动植物保护方向。这件事写进每一份直营店与加盟店的财务模型。
+      </p>
+      <p>为什么这件事对投资人重要？</p>
+    </div>
+
+    <ul class="prose-cn list-none pl-0 mt-paragraph space-y-3">
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        这是 0.5-1% 量级的"硬成本"——会出现在损益表上，不是 marketing budget
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        但它换来的是<strong class="text-cream">无法被竞争对手快速复制的品牌护城河</strong>——竞争品牌如果想跟进，要么承担同样的成本，要么选择不跟进
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        它强化了山川造物的"长期主义品牌"定位
+      </li>
+    </ul>
+
+    <p class="prose-cn mt-paragraph">
+      我们对 1% 承诺的态度是：<strong class="text-brass-bright">这不是讨论项</strong>。这是品牌身份的一部分，与"做不做盲盒""开不开 1000㎡ 的店"是同一性质的红线。
+    </p>
+
+    <p class="text-sm text-text-soft mt-paragraph">
+      详细机制 → <a href="/commitment" class="text-brass-mid hover:text-brass-bright">/commitment</a>
+    </p>
+  </section>
+
+  {/* ============ VII. 一人一口的利益分配 ============ */}
+  <section class="editorial-section fade-in" id="one-bowl">
+    <p class="section-number mb-4">VII</p>
+    <h2 class="section-title text-cream">一人一口的利益分配</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        山川造物的人才观核心是"一人一口的利益分配"——<strong class="text-brass-bright">创始人少赚一点，多一点给员工、给社会、给顾客</strong>。
+      </p>
+      <p>具体表现：</p>
+    </div>
+
+    <ul class="prose-cn list-none pl-0 mt-paragraph space-y-3">
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        创始人薪资水平明显低于一般创业公司同等阶段标准
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        创始人在公司亏损年度主动降薪
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        创始人不享受特殊福利（专车 / 高额报销 / 个人秘书等）
+      </li>
+    </ul>
+
+    <p class="prose-cn mt-paragraph">
+      这条原则会让一些投资人犹豫——他们习惯的是"创始人重金激励 = 高速增长"的模型。我们的回应是：<strong class="text-cream">山川造物想做的是 30 年的事业，不是 5 年退出的标的</strong>。在 30 年的尺度上，创始人能保持长期投入的真正保险是<strong class="text-brass-bright">对事业本身的信仰</strong>——而不是短期重金激励。
+    </p>
+    <p class="prose-cn">
+      如果你不能接受这条——我们不是你理想的投资标的。
+    </p>
+  </section>
+
+  {/* ============ VIII. 团队 ============ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VIII</p>
+    <h2 class="section-title text-cream">团队</h2>
+
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="p-6 border border-brass-mid/20 bg-ink-elevated/40">
+        <h3 class="font-serif text-xl text-cream mb-2 tracking-cn">李贺</h3>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-3">Co-founder · 联合创始人</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          1992 年生 / 互联网行业背景（优酷 / 支付宝 / B 站）/ 主导品牌叙事、IP 体系、空间规划、内容输出、资本结构。
+        </p>
+      </div>
+
+      <div class="p-6 border border-brass-mid/20 bg-ink-elevated/40">
+        <h3 class="font-serif text-xl text-cream mb-2 tracking-cn">廉澍</h3>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-3">Co-founder · 联合创始人</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          标本工艺与工坊运营主导 / 主导生产体系、品控、本地交付、加盟落地。
+        </p>
+      </div>
+    </div>
+
+    <p class="prose-cn mt-paragraph text-sm text-text-soft">
+      当前团队体量：核心团队 &lt; 10 人，2026 H2 起会按 toolkit 节奏适度扩充。
+    </p>
+  </section>
+
+  {/* ============ IX. 为什么是现在 ============ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">IX</p>
+    <h2 class="section-title text-cream">为什么是现在</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        中国"自然博物美学"赛道还没有标杆品牌——这意味着<strong class="text-brass-bright">定义机会大、参考样本少</strong>。我们已经在长春这有山验证了首店模型，现在进入<strong class="text-cream">从 1 到 N 的 toolkit 化阶段</strong>。
+      </p>
+      <p>
+        未来 12-18 个月是关键窗口：toolkit 封板、第二店开业、工作室商业化、公共合作首例落地。这些动作如果都按时跑通，山川造物会在 2027-2028 年进入加速期。
+      </p>
+      <p>
+        我们想在加速期之前找到对的资本——不是为了"准备加速"，是为了<strong class="text-brass-bright">加速时不被资本反向定义</strong>。
+      </p>
+    </div>
+  </section>
+
+  <ContactBlock
+    title="申请投资人路演 deck"
+    intro="我们准备了完整投资人路演 deck（含详细财务模型、单店模型、估值锚点、历史融资情况、退出路径分析）。这份 deck 通过邮件沟通后发送——我们想确认你是真的想认真看，再花你和我们的时间。"
+    subjectHint="投资意向 · 基金名 · 合伙人"
+    requestDetails={true}
+    detailsHint="请在邮件中说明基金背景、关注阶段、过往投资案例。我们会在 7 个工作日内回复。"
+  />
+</Layout>

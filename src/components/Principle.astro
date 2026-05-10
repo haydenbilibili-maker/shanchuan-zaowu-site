@@ -1,0 +1,40 @@
+---
+interface Props {
+  /** 罗马数字编号（I / II / III ...） */
+  number: string;
+  /** 原则名 */
+  title: string;
+  /** 原则描述 */
+  description: string;
+  /** 实操表现（可选）*/
+  practices?: string[];
+}
+
+const { number, title, description, practices } = Astro.props;
+---
+
+<article class="grid md:grid-cols-[auto_1fr] gap-6 md:gap-10 py-8 border-b border-brass-mid/10 last:border-b-0">
+  <div class="font-serif-en italic text-brass-mid text-3xl md:text-4xl leading-none pt-1">
+    {number}
+  </div>
+
+  <div>
+    <h3 class="font-serif text-xl md:text-2xl text-cream mb-3 tracking-cn">
+      {title}
+    </h3>
+    <p class="prose-cn mb-4">
+      {description}
+    </p>
+
+    {practices && practices.length > 0 && (
+      <ul class="text-text-soft text-sm leading-[1.85] tracking-cn space-y-1">
+        {practices.map((p) => (
+          <li class="pl-6 relative">
+            <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+            {p}
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</article>

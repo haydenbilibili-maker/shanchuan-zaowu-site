@@ -1,0 +1,12 @@
+---
+interface Props {
+  /** 不做的事 · 一行文字 */
+  text: string;
+}
+const { text } = Astro.props;
+---
+
+<li class="flex items-start gap-3 py-2">
+  <span class="font-serif-en italic text-brass-deep text-lg leading-tight pt-0.5">×</span>
+  <span class="text-text-soft text-sm leading-[1.85] tracking-cn">{text}</span>
+</li>

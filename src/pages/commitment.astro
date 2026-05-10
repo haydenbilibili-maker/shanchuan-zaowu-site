@@ -1,0 +1,321 @@
+---
+import Layout from '../components/Layout.astro';
+import PledgeBlock from '../components/PledgeBlock.astro';
+import ContactBlock from '../components/ContactBlock.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+const recipients = [
+  {
+    name: '国家公园建设',
+    detail:
+      '通过中国国家公园基金会等合规渠道，支持东北虎豹国家公园、大熊猫国家公园等的基础建设与保护。',
+  },
+  {
+    name: '自然博物馆',
+    detail:
+      '支持国家自然博物馆、重庆自然博物馆、浙江自然博物院、沈阳古生物博物馆等的科普 / 收藏 / 文创工作。',
+  },
+  {
+    name: '野生动植物保护 NGO',
+    detail:
+      '山水自然保护中心、桃花源生态保护基金会、猫盟 CFCA、自然之友等合规公益组织。',
+  },
+  {
+    name: '护林员 / 巡护员群体',
+    detail:
+      '通过上述 NGO 定向支持一线巡护工作者——他们是真实生态的守门人，但收入与工作强度严重不匹配。',
+  },
+];
+
+const nonRecipients = [
+  {
+    name: '不捐给"明星公益"项目',
+    detail: '单个艺人 / 名人发起的项目，受益对象不明确、可信度低。',
+  },
+  {
+    name: '不捐给受益对象不明的"环保概念基金"',
+    detail: '只有概念没有具体落地动作的项目，不在我们的捐赠范围。',
+  },
+  {
+    name: '不捐给与山川造物自有 IP 关联的洗白型项目',
+    detail: '绝对不会有"为马上有 IP 设立的环保基金"——这是利益输送，不是公益。',
+  },
+  {
+    name: '不捐给政治敏感方向',
+    detail: '保持公益的纯粹性。',
+  },
+];
+---
+
+<Layout
+  title="1% 承诺"
+  description="山川造物 · 每年营业收入的 1% 捐赠给自然保护"
+>
+  <!-- ============ Hero · 大字 1% ============ -->
+  <section class="editorial-section pt-section text-center">
+    <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-6 fade-in">
+      Our Pledge · 1% 承诺
+    </p>
+
+    <div
+      class="font-serif-en text-brass-bright fade-in"
+      style="font-size: clamp(8rem, 20vw, 16rem); line-height: 0.9; letter-spacing: -0.04em;"
+    >
+      1<span class="text-brass-mid">%</span>
+    </div>
+
+    <p class="display-title text-cream mt-section fade-in">
+      让自然博物美学进入日常生活，<br />
+      这件事不能只发生在我们的店里。
+    </p>
+
+    <div class="prose-cn max-w-editorial mx-auto mt-section text-text-soft fade-in">
+      <p>
+        如果我们做的事情没有让真实的山川更好——那么我们的店里再美的标本，也只是标本而已。
+      </p>
+      <p>所以从第一家店开始，我们做了一个具体承诺。</p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ I. 1% 营收 不是 1% 利润 ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">I</p>
+    <h2 class="section-title text-cream">1% 营收 · 不是 1% 利润</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        每一家山川造物直营店与加盟店，每年<strong class="text-brass-bright">营业收入</strong>的 <strong class="text-brass-bright">1%</strong>，无条件捐赠给环保 / 自然博物 / 野生动植物保护 / 护林员相关公益方向。
+      </p>
+      <p>
+        我们承诺的是 1% <strong class="text-cream">营收</strong>——不是 1% 利润。
+      </p>
+      <p>为什么这个区别重要？</p>
+      <p>
+        利润可以通过会计技术调整，营收不可以。<strong class="text-brass-bright">营收承诺意味着——无论盈亏，履行都不变</strong>。
+      </p>
+      <p class="text-text-soft text-sm">
+        这个标准来自 1% for the Planet（Patagonia 创始人 Yvon Chouinard 2002 年发起的全球承诺组织）。我们采用同样的标准。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ II. 捐给谁 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <p class="section-number mb-4">II</p>
+    <h2 class="section-title text-cream">捐给谁</h2>
+
+    <p class="prose-cn mb-section max-w-editorial">
+      每年从以下四个方向中选择 2-4 个分配捐赠：
+    </p>
+
+    <PledgeBlock
+      title="四个捐赠方向"
+      subtitle="Recipients"
+      items={recipients}
+    />
+  </section>
+
+  <!-- ============ III. 不捐给谁 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <p class="section-number mb-4">III</p>
+    <h2 class="section-title text-cream">绝不捐给谁</h2>
+
+    <p class="prose-cn mb-section max-w-editorial">
+      我们对这件事有同样清晰的红线：
+    </p>
+
+    <PledgeBlock
+      title="四条红线"
+      subtitle="Non-recipients"
+      items={nonRecipients}
+      variant="negative"
+    />
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ IV. 这笔钱有多大 · 它能做什么 ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">IV</p>
+    <h2 class="section-title text-cream">这笔钱有多大 · 它能做什么</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        我们做了一个保守估算：到 2028 年 6 家直营 + 加盟店，年总营收约 <strong class="text-brass-bright">6000 万</strong>。
+      </p>
+      <p>
+        1% = <strong class="text-brass-bright">60 万 / 年</strong>。这个数字不大——但在自然保护一线，它意味着具体的事：
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 mt-paragraph">
+      <article class="p-6 border border-brass-mid/20 bg-ink-elevated/40">
+        <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-2">
+          Equivalent · 等同于
+        </p>
+        <p class="text-cream font-serif text-lg tracking-cn mb-2">
+          <strong class="text-brass-bright">8 – 10 名</strong>全职护林员一年的工资
+        </p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          按一线护林员年薪 6 – 8 万计算。他们是真实生态的守门人，但收入与工作强度严重不匹配。
+        </p>
+      </article>
+
+      <article class="p-6 border border-brass-mid/20 bg-ink-elevated/40">
+        <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-2">
+          Equivalent · 等同于
+        </p>
+        <p class="text-cream font-serif text-lg tracking-cn mb-2">
+          一次<strong class="text-brass-bright">小型自然博物馆特展</strong>的预算
+        </p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          可以让一个城市的孩子第一次近距离看到来自国家公园的标本与影像。
+        </p>
+      </article>
+
+      <article class="p-6 border border-brass-mid/20 bg-ink-elevated/40">
+        <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-2">
+          Equivalent · 等同于
+        </p>
+        <p class="text-cream font-serif text-lg tracking-cn mb-2">
+          一个 NGO <strong class="text-brass-bright">一线项目</strong>的年度核心支持
+        </p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          山水自然保护中心 / 桃花源 / 猫盟级别的合规公益组织，一个完整年度的项目预算。
+        </p>
+      </article>
+
+      <article class="p-6 border border-brass-deep/30 bg-ink-deep/30">
+        <p class="font-serif-en italic text-brass-deep text-xs tracking-widest uppercase mb-2">
+          Hard Cost · 不是营销
+        </p>
+        <p class="text-cream font-serif text-lg tracking-cn mb-2">
+          这不是营销预算，是<strong class="text-brass-deep">品牌承诺的硬成本</strong>
+        </p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          它必须写进损益表的"公益捐赠"栏，<strong class="text-cream">被审计、被披露、被铭记</strong>。
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ V. 透明 ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">V</p>
+    <h2 class="section-title text-cream">透明</h2>
+
+    <p class="prose-cn">
+      每年 4 月（环保月），我们公开发布<strong class="text-brass-bright">《山川造物 · 1% 承诺年度透明报告》</strong>，包含：
+    </p>
+
+    <ul class="prose-cn list-none pl-0 mt-paragraph space-y-2">
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        上一年度全部直营 + 加盟店营业总收入
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        1% 捐赠总金额
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        具体受益机构 / 项目
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        第三方审计意见
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        加盟方汇缴情况
+      </li>
+    </ul>
+
+    <p class="prose-cn mt-paragraph">
+      报告同时发布于公众号、本网站、加盟方内部。任何人都可以申请查看捐赠流水的脱敏版本。
+    </p>
+
+    <div class="mt-section p-6 border-l-2 border-brass-mid bg-ink-elevated/40">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+        First Report · 首份报告
+      </p>
+      <p class="font-serif text-xl text-cream tracking-cn">
+        2027 年 4 月发布——覆盖 2026 全年。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ VI. 加盟方一并执行 ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VI</p>
+    <h2 class="section-title text-cream">加盟方一并执行</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        我们的加盟合同明确写入 1% 承诺条款。<strong class="text-brass-bright">加盟方不能选择"我家店不参与"</strong>——这件事的成本已经写进加盟方的财务模型预期。
+      </p>
+      <p>
+        如果你是加盟方，我们希望你理解：你不只是在买一个品牌的使用权，是在加入一个对真实自然有承诺的社区。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ VII. 为什么这件事重要 ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VII</p>
+    <h2 class="section-title text-cream">为什么这件事重要</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        让自然博物美学进入日常生活——这是我们的 Vision。
+      </p>
+      <p>
+        但如果我们做的事情没有让真实的山川更好——那么我们的店里再美的标本，也只是标本而已。<strong class="text-brass-bright">美学和保护必须是同一件事</strong>。
+      </p>
+      <p>
+        1% 承诺，是让美学和保护成为同一件事的最小代价。
+      </p>
+    </div>
+
+    <PullQuote
+      quote="如果有一天山川造物不再做这件事，意味着我们的美学和真实生态彻底脱钩——那时候我们也不再是山川造物。"
+    />
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ VIII. 给未来的备忘 ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VIII</p>
+    <h2 class="section-title text-cream">给未来的备忘</h2>
+
+    <div class="p-6 md:p-8 border-l-2 border-brass-deep bg-ink-deep/30">
+      <p class="font-serif-en italic text-brass-deep text-xs tracking-widest uppercase mb-3">
+        Memo · 给李贺与廉澍
+      </p>
+      <p class="prose-cn">
+        当未来某个时刻，有人——投资人 / 加盟商 / 财务顾问 / 内部团队——建议<strong class="text-cream">"暂时砍掉 1% 承诺"</strong> "暂时简化公共服务" "把博物馆功能外包"——
+      </p>
+      <p class="prose-cn mt-paragraph">
+        请回到这一页。
+      </p>
+      <p class="prose-cn mt-paragraph">
+        这件事一旦松动，山川造物就<strong class="text-brass-bright">不再是山川造物</strong>。它的成本看似高，但它换来的是<strong class="text-cream">"无法被快速复制的身份"</strong>——这是 30 年品牌的真正护城河。
+      </p>
+    </div>
+  </section>
+
+  <ContactBlock
+    title="关于这个承诺"
+    intro="如果你有问题、建议、或者想推荐我们认识某个值得支持的环保组织——欢迎写信。"
+    subjectHint="1% 承诺"
+  />
+</Layout>

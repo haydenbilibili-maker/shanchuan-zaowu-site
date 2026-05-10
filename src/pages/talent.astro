@@ -1,0 +1,402 @@
+---
+import Layout from '../components/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import Principle from '../components/Principle.astro';
+import PullQuote from '../components/PullQuote.astro';
+import ContactBlock from '../components/ContactBlock.astro';
+
+// ============================================================
+// I. 三段式课程结构（B.1.2）
+// ============================================================
+const courseStages = [
+  {
+    number: 'I',
+    title: '基础知识速成',
+    description:
+      '约 2 周。把候选人已有背景对齐到山川造物的品牌语言体系——品牌底色、自然博物基础、标本工艺、产品体系、内容红线、空间体验逻辑、博物学讲解、公共服务培训。',
+    practices: [
+      'D1-2 品牌底色（起源 / 维多利亚精神 / Vision / 双 IP）',
+      'D3-4 自然博物基础（生物分类 / 物种识别 / 矿物岩石 / 保护级别）',
+      'D5-6 标本工艺（类型 / 养护 / UV 防护 / 温湿度）',
+      'D7-8 产品体系（五大品类 / 20:80 结构 / 自给率梯度）',
+      'D9-10 内容红线（五点宪法 / 不可使用主动动词）',
+      'D11-12 空间体验逻辑 + 《交往与空间》5 原则',
+      'D11.5 非拍照价值 + 七件套（含西安蔦屋案例）',
+      'D12.5 博物学讲解（小孩 / 中产 / 学者三档话术）',
+      'D12.7 公共客厅服务（AED + CPR 基础 + 应急 SOP）',
+      'D13-14 阶段考核（笔试 + 物种识别 + 案例 + 实操）',
+    ],
+  },
+  {
+    number: 'II',
+    title: '门店管培',
+    description:
+      '约 3-4 周。在标本工作室咖啡店进行实操轮换——四周分别覆盖客户接待 / 互动咖啡 / 工作室生产 / 综合对接，每周都有可量化的任务清单。',
+    practices: [
+      'Week 1 客户接待 + 商品陈列：≥ 50 顾客 + ≥ 3 次主题中岛 + 独立完成开 / 闭店',
+      'Week 2 互动 + 咖啡 + 公共服务区：主持 ≥ 5 场 DIY + ≥ 2 次公共服务实际处理',
+      'Week 3 工作室生产 + 收银仪式 + 档案撰写：观察 ≥ 3 个 SKU 制作 + ≥ 30 次仪式包装 + ≥ 5 张博物档案卡',
+      'Week 4 综合：商场对接 + 线上 CRM + 协助策划 1 次月度主题展',
+    ],
+  },
+  {
+    number: 'III',
+    title: '考核认证',
+    description:
+      '约 1 周。通过严格考核获得「山川造物认证店长」资格——笔试 + 实操 + 博物学讲解 + 应急服务模拟 + 情景模拟 + 创始人终面。',
+    practices: [
+      '笔试 80 分以上（基础 + 红线 + 七件套 + 应急 SOP）',
+      '实操：现场接待 1 组真实顾客（通过五点沟通宪法）',
+      '博物学讲解：3 件标本 / 不同观众适配',
+      '应急服务模拟（晕倒 / 打架 / 老人迷路 / 雨天求助）',
+      '情景模拟：商场对接 / 投诉处理 / 媒体采访（三选二）',
+      '终面：李贺 + 廉澍 主观评估能否独立运营一店',
+    ],
+  },
+];
+
+// ============================================================
+// II. 候选人画像优先级（B.3.1）
+// ============================================================
+const candidateProfiles = [
+  {
+    tier: 'A',
+    title: '生物 / 自然教育专业背景',
+    detail: '生物 / 动植物 / 自然教育专业出身，有零售或服务业兴趣。',
+  },
+  {
+    tier: 'B',
+    title: '文创 / 独立书店 / 美术馆从业',
+    detail: '已在文创 / 独立书店 / 美术馆体系工作过，对自然博物有强烈个人兴趣。',
+  },
+  {
+    tier: 'C',
+    title: '自由职业标本师 / 博物爱好者',
+    detail: '独立标本师 / 博物爱好者 / 手作艺人，有团队协作意愿。',
+  },
+  {
+    tier: 'D',
+    title: '设计学院 / 传媒学院 + 自然主题创作',
+    detail: '设计 / 传媒学院毕业，有过自然主题的创作经验。',
+  },
+  {
+    tier: 'E',
+    title: '所有候选人的最终面共考',
+    detail:
+      '是否愿意承担公共服务责任——比如愿不愿意主动帮陌生路人借伞，是否能在紧急情况下保持冷静。这一项不达标，前面再优秀也不要。',
+  },
+];
+
+// ============================================================
+// III. 价值七件套对店长的能力要求（B.2 中的能力维度）
+// ============================================================
+const certCriteria = [
+  { item: '基础知识 + 内容红线', threshold: '笔试 80 分以上' },
+  { item: '客户接待 / 五点宪法', threshold: '现场接待 1 组真实顾客 · 全程通过' },
+  { item: '博物学讲解能力', threshold: '现场讲解 3 件标本 · 准确性 + 不同观众适配合格' },
+  { item: '应急服务边界感', threshold: '4 个模拟场景 · 处理顺序 + 边界感合格' },
+  { item: '高难度场景应对', threshold: '商场 / 投诉 / 媒体三场景 · 至少两个通过' },
+  { item: '创始人终面', threshold: '李贺 + 廉澍 主观评估能否独立运营一店' },
+];
+
+// ============================================================
+// IV. 招聘漏斗指标（B.3.3）
+// ============================================================
+const funnelStages = [
+  { stage: '触达', target: '5000+ / 月', conv: '—' },
+  { stage: '投递', target: '30 – 50', conv: '0.6 – 1%' },
+  { stage: '一面', target: '8 – 12', conv: '25%' },
+  { stage: '二面', target: '3 – 5', conv: '40%' },
+  { stage: '录用', target: '1 – 2', conv: '30 – 50%' },
+];
+---
+
+<Layout
+  title="人才与店长培训"
+  description="人才 toolkit · 三段式速成课程 + 认证店长体系 + 中等偏上薪酬 + 期权激励——把'选择 > 培训'作为基础公理"
+>
+  <PageHero
+    eyebrow="Talent · 人才与店长培训"
+    title="1-2 个月只能压缩'操作化',<br />压缩不了'基本功'"
+    lead="博物学知识、标本修复手艺、自然史审美、内容叙事——这些都不是几周能从 0 建起来的。所以训练周期之所以能 work，前提是<strong>候选人本身已具备某种基本背景</strong>。<br />「选择 > 培训」是这套人才 toolkit 的基础公理。"
+  />
+
+  <hr class="brass-divider" />
+
+  {/* ============================================================
+      § I. 课程哲学
+      ============================================================ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">I</p>
+    <h2 class="section-title text-cream">课程哲学</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        山川造物的店长不是销售员，是<strong class="text-brass-bright">博物学概念的本地讲解员 + 公共空间的主持人 + 工艺成品的交付者</strong>。一个普通零售店店长的训练框架不适用。
+      </p>
+      <p>
+        我们用一套<strong class="text-cream">三段式压缩训练</strong>把这件事做出来——前提是候选人本身有底子。具体见下一节。
+      </p>
+    </div>
+
+    <PullQuote
+      quote="把一件值得做的事交给一个相信它的年轻人，比把一件不值得做的事交给一个有经验的成年人，结果好得多。"
+    />
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============================================================
+      § II. 三段式课程
+      ============================================================ */}
+  <section class="editorial-section-wide fade-in">
+    <p class="section-number mb-4">II</p>
+    <h2 class="section-title text-cream">三段式课程结构</h2>
+
+    <p class="prose-cn max-w-editorial mb-section">
+      整体压缩在 1-2 个月内。每一段都有可量化的任务与考核——不靠主观评估，靠可执行清单。
+    </p>
+
+    <div class="border-t border-brass-mid/15">
+      {courseStages.map((s) => (
+        <Principle
+          number={s.number}
+          title={s.title}
+          description={s.description}
+          practices={s.practices}
+        />
+      ))}
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============================================================
+      § III. 认证店长
+      ============================================================ */}
+  <section class="editorial-section-wide fade-in" id="cert">
+    <p class="section-number mb-4">III</p>
+    <h2 class="section-title text-cream">「山川造物认证店长」</h2>
+
+    <div class="prose-cn space-y-paragraph mb-section">
+      <p>
+        通过认证的店长获得：品牌官方颁发的认证证书 · 内部 CRM 系统中的认证标识 · <strong class="text-brass-bright">期权激励的解锁</strong> · 未来加盟模式启动后，<strong class="text-cream">优先成为加盟方店长候选人</strong>。
+      </p>
+      <p>
+        初次认证有效期 12 个月，每年续证。续证条件：年度业绩 + 客户反馈 + 内容产出 + 七件套执行评估 + 博物学讲解能力测试 + 公共服务执行复审 六项达标。
+      </p>
+    </div>
+
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Certification Criteria · 认证 6 项考核
+    </p>
+
+    <div class="overflow-x-auto -mx-2 md:mx-0">
+      <table class="w-full text-sm border-collapse min-w-[480px]">
+        <thead>
+          <tr>
+            <th class="font-serif-en italic text-brass-mid font-normal py-3 pr-4 text-left border-b border-brass-mid/30">考核项</th>
+            <th class="font-serif-en italic text-brass-mid font-normal py-3 pr-2 text-left border-b border-brass-mid/30">通过标准</th>
+          </tr>
+        </thead>
+        <tbody>
+          {certCriteria.map((c) => (
+            <tr class="align-top">
+              <td class="py-3 pr-4 border-b border-brass-mid/10 text-cream font-serif tracking-cn">{c.item}</td>
+              <td class="py-3 pr-2 border-b border-brass-mid/10 text-text-soft tracking-cn">{c.threshold}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-section p-6 border-l-2 border-brass-mid bg-ink-elevated/40">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+        Brand Asset · 长期品牌资产
+      </p>
+      <ul class="text-cream/85 text-sm leading-[1.85] tracking-cn space-y-1">
+        <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">对外</strong>——是加盟方挑选店长的官方背书</li>
+        <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">对内</strong>——是员工成长路径的清晰目标</li>
+        <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">对品牌</strong>——「山川造物 = 高水准博物店运营」的可信凭证</li>
+        <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">长期</strong>——可能演化为行业标准</li>
+      </ul>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============================================================
+      § IV. 招聘画像
+      ============================================================ */}
+  <section class="editorial-section fade-in" id="hiring">
+    <p class="section-number mb-4">IV</p>
+    <h2 class="section-title text-cream">候选人画像</h2>
+
+    <p class="prose-cn mb-section">
+      精准触达，不是大规模筛选——A → D 是优先级，<strong class="text-brass-bright">E 是所有候选人的最终面共考</strong>。
+    </p>
+
+    <div class="border-t border-brass-mid/15">
+      {candidateProfiles.map((p) => (
+        <article class="grid md:grid-cols-[auto_1fr] gap-4 md:gap-8 py-6 border-b border-brass-mid/10 last:border-b-0">
+          <div class="flex items-baseline gap-3">
+            <span class="font-serif-en italic text-brass-mid text-3xl leading-none">{p.tier}</span>
+            <span class="font-serif-en italic text-text-soft text-xs tracking-widest uppercase">Tier</span>
+          </div>
+          <div>
+            <h3 class="font-serif text-lg text-cream mb-2 tracking-cn">{p.title}</h3>
+            <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{p.detail}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mt-section mb-3">
+      Channels · 招聘渠道
+    </p>
+    <ul class="prose-cn list-none pl-0 space-y-2">
+      <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>自然博物馆 / 高校生物学院的合作</li>
+      <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>豆瓣 / 即刻 / 小红书的精准内容投放</li>
+      <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>已有的自然艺术家 / 独立标本师社群</li>
+      <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>品牌内容输出本身（公众号 / 小红书）作为「自来水招聘」入口</li>
+    </ul>
+
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mt-section mb-3">
+      Funnel Targets · 漏斗指标参考
+    </p>
+
+    <div class="overflow-x-auto -mx-2 md:mx-0">
+      <table class="w-full text-sm border-collapse min-w-[400px]">
+        <thead>
+          <tr>
+            <th class="font-serif-en italic text-brass-mid font-normal py-3 pr-4 text-left border-b border-brass-mid/30">阶段</th>
+            <th class="font-serif-en italic text-brass-mid font-normal py-3 pr-4 text-left border-b border-brass-mid/30">月度目标</th>
+            <th class="font-serif-en italic text-brass-mid font-normal py-3 pr-2 text-left border-b border-brass-mid/30">转化率</th>
+          </tr>
+        </thead>
+        <tbody>
+          {funnelStages.map((s) => (
+            <tr>
+              <td class="py-3 pr-4 border-b border-brass-mid/10 text-cream font-serif tracking-cn">{s.stage}</td>
+              <td class="py-3 pr-4 border-b border-brass-mid/10 text-text-soft font-serif-en italic">{s.target}</td>
+              <td class="py-3 pr-2 border-b border-brass-mid/10 text-text-soft font-serif-en italic">{s.conv}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============================================================
+      § V. 薪酬框架
+      ============================================================ */}
+  <section class="editorial-section fade-in" id="compensation">
+    <p class="section-number mb-4">V</p>
+    <h2 class="section-title text-cream">薪酬框架 · 中等偏上</h2>
+
+    <div class="prose-cn space-y-paragraph mb-section">
+      <p>
+        我们不追顶尖人才——我们让店长有<strong class="text-brass-bright">体面感和稳定感</strong>。底薪 + 提成要达到当地平均收入的<strong class="text-cream">中等偏上水平</strong>。
+      </p>
+      <p>
+        这一条与<a href="/values#talent" class="text-brass-mid hover:text-brass-bright">人才观「一人一口」</a>呼应——创始人少赚一点，多一点给员工。
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mt-paragraph">
+      <article class="p-6 border border-brass-mid/20 bg-ink-elevated/40">
+        <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
+          Compensation Structure · 结构
+        </p>
+        <h3 class="font-serif text-xl text-cream mb-4 tracking-cn">底薪 70% + 提成 30%</h3>
+        <ul class="text-text-soft text-sm leading-[1.85] tracking-cn space-y-2">
+          <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">底薪</strong>——当地中等偏上水平的 70%</li>
+          <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">提成</strong>——综合销售 + 客户复购 + 内容产出 + <strong class="text-brass-bright">七件套执行</strong> 四项加权</li>
+          <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">季度奖金</strong>——达到季度目标的额外奖金（约一个月底薪）</li>
+          <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">年度分红</strong>——直营店店长可参与年度利润分红（建议 2-5%）</li>
+        </ul>
+      </article>
+
+      <article class="p-6 border border-brass-mid/20 bg-ink-elevated/40">
+        <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
+          Equity · 期权激励
+        </p>
+        <h3 class="font-serif text-xl text-cream mb-4 tracking-cn">从员工期权池中分配</h3>
+        <ul class="text-text-soft text-sm leading-[1.85] tracking-cn space-y-2">
+          <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">认证店长基础包</strong>——通过认证后获得基础期权（按职级）</li>
+          <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">任期奖励</strong>——每完成 12 个月任期，期权增加</li>
+          <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">里程碑奖励</strong>——单店销售 / 内容矩阵关键指标达成时发放专项</li>
+          <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span><strong class="text-cream">vesting</strong>——4 年 vesting + 1 年 cliff（标准结构）</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============================================================
+      § VI. 与空间 toolkit 的协同
+      ============================================================ */}
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VI</p>
+    <h2 class="section-title text-cream">与空间 toolkit 的协同</h2>
+
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        最容易被忽略的事实：<strong class="text-brass-bright">空间 toolkit 与人才 toolkit 通过标本工作室相互嵌套</strong>。
+      </p>
+      <ul class="prose-cn list-none pl-0 mt-paragraph space-y-2">
+        <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>工作室是空间的样板间——「楼上工作室、楼下标本店 + 咖啡店」本身就是 8 模块的落地原型</li>
+        <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>工作室是人才的训练道场——管培阶段的店长候选人在这里同时接触生产、销售、咖啡、线上履约</li>
+        <li class="pl-6 relative"><span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>工作室是空间设计的实战检验场——24 套设计文档中很多模块在工作室咖啡店模式中先被验证</li>
+      </ul>
+      <p class="text-text-soft text-sm">
+        所以工作室带咖啡店模式不是"省钱方案"，是<strong class="text-cream">商业设计 + 人才培训 + 品牌内容三件事的物理压缩</strong>。
+      </p>
+    </div>
+
+    <PullQuote
+      quote="店员不是销售员——是博物学概念的本地讲解员 + 公共空间的主持人 + 工艺成品的交付者。这是我们对店长的定义。"
+    />
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============================================================
+      § VII. 跨页关联
+      ============================================================ */}
+  <section class="editorial-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Related
+    </p>
+    <h2 class="font-serif text-2xl text-cream mb-paragraph tracking-cn">
+      与人才相关的其他章节
+    </h2>
+    <ul class="prose-cn list-none pl-0 space-y-3">
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        <strong class="text-cream">人才观「一人一口」</strong>的根本理念 → <a href="/values#talent" class="text-brass-mid hover:text-brass-bright">/values#talent</a>
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        店长承担的<strong class="text-cream">空间七件套</strong> → <a href="/space" class="text-brass-mid hover:text-brass-bright">/space</a>
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        加盟方与店长选拔的关系 → <a href="/franchise" class="text-brass-mid hover:text-brass-bright">/franchise</a>
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        投资人对薪酬结构的关切 → <a href="/investors#one-bowl" class="text-brass-mid hover:text-brass-bright">/investors#one-bowl</a>
+      </li>
+    </ul>
+  </section>
+
+  <ContactBlock
+    title="想加入山川造物"
+    intro="如果你在 A / B / C / D 任何一档画像里——博物 / 文创 / 标本 / 设计背景，对自然博物美学有真实好奇——欢迎写信。请在邮件里说明你的背景与做这件事的动机，简历附上即可。我们承诺：每一封正式来信都会被回复。"
+    subjectHint="加入山川造物 · 候选 [A/B/C/D] · 你的城市"
+  />
+</Layout>

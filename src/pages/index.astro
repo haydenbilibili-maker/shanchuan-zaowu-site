@@ -1,0 +1,196 @@
+---
+import Layout from '../components/Layout.astro';
+import AudienceCard from '../components/AudienceCard.astro';
+import CommitmentBar from '../components/CommitmentBar.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+const audiences = [
+  {
+    number: 'I',
+    title: '物业招商',
+    subtitle: '你想把铺位给一个长期主义的品牌',
+    body: '我们正在寻找有美学底蕴的文创街区与文化综合体。从长春这有山起步，正在为 2026-2028 年的 6-10 家直营店选址。',
+    cta: '了解我们对物业的要求',
+    href: '/properties',
+  },
+  {
+    number: 'II',
+    title: '投资合作',
+    subtitle: '你在找一个不追风口的标的',
+    body: '未来 12-18 个月将启动正式融资。我们寻找接受 5-10 年回报周期的耐心资本——不接受要求短期爆发的对赌资本。',
+    cta: '了解我们的资本观',
+    href: '/investors',
+  },
+  {
+    number: 'III',
+    title: '加盟咨询',
+    subtitle: '你想做一件 30 年的事',
+    body: '加盟 toolkit 仍在搭建中，预计 2027 年下半年开放有限加盟。我们会拒绝大多数加盟意向，留下少数真正长期同行的人。',
+    cta: '留下邮箱接收开放通知',
+    href: '/franchise',
+  },
+  {
+    number: 'IV',
+    title: '品牌合作',
+    subtitle: '你想和我们一起把山川美学带回家',
+    body: '我们对自然博物馆 / 国家公园 / 自然教育机构 / 同业内容品牌的合作保持开放——前提是双方价值观相通。',
+    cta: '写信给我们',
+    href: 'mailto:hello@shanchuanzaowu.com?subject=' + encodeURIComponent('品牌合作意向'),
+  },
+];
+---
+
+<Layout
+  title="山川造物"
+  description="把山川带回家——让自然博物美学进入日常生活"
+>
+  {/* ============ Hero · 全屏 Vision ============ */}
+  <section class="relative min-h-[80vh] md:min-h-[90vh] flex items-center justify-center overflow-hidden">
+    {/* 主视觉背景（深色渐变占位；实拍素材到位后替换为 <img>）*/}
+    <div class="absolute inset-0">
+      <div class="absolute inset-0 bg-gradient-to-br from-ink-deep via-ink to-ink-elevated"></div>
+      {/*
+      真实素材到位后取消注释：
+      <img src="/images/hero/home-hero.jpg" alt="山川造物 · 自然博物美学"
+           class="w-full h-full object-cover opacity-50" />
+      <div class="absolute inset-0 bg-gradient-to-b from-ink/40 via-ink/30 to-ink"></div>
+      */}
+    </div>
+
+    {/* Hero 文字 */}
+    <div class="relative z-10 max-w-editorial-wide mx-auto px-6 text-center">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-6 fade-in">
+        Nature&rsquo;s Creations · Since 2024
+      </p>
+
+      <h1 class="display-title text-cream mb-paragraph fade-in" style="line-height: 1.05;">
+        让自然博物美学<br />进入日常生活
+      </h1>
+
+      <p class="font-serif-en italic text-brass-mid text-base md:text-lg mt-6 fade-in">
+        Bring Nature Home.
+      </p>
+
+      <p class="prose-cn max-w-editorial mx-auto mt-section text-text-soft fade-in">
+        山川造物是一个自然博物美学品牌。<br class="hidden md:inline" />
+        我们做标本、自然小匣、衍生品，开城市里"让人留得比必要的久"的店。
+      </p>
+
+      {/* 滚动提示 */}
+      <div class="mt-section flex flex-col items-center gap-2 text-text-dim fade-in">
+        <span class="font-serif-en italic text-xs tracking-widest uppercase">Scroll</span>
+        <svg width="16" height="24" viewBox="0 0 16 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="8" y1="2" x2="8" y2="20" />
+          <polyline points="3,15 8,20 13,15" />
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ 4 Audience Cards ============ */}
+  <section class="editorial-section-wide pt-section">
+    <div class="text-center mb-section fade-in">
+      <p class="font-serif-en italic text-text-soft text-sm tracking-widest uppercase mb-4">
+        For Whom · 写给读到这里的你
+      </p>
+      <h2 class="display-title text-cream">
+        你为何而来
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-brass-mid/10 fade-in">
+      {audiences.map((a) => (
+        <AudienceCard
+          number={a.number}
+          title={a.title}
+          subtitle={a.subtitle}
+          body={a.body}
+          cta={a.cta}
+          href={a.href}
+        />
+      ))}
+    </div>
+  </section>
+
+  {/* ============ 承诺导航条 ============ */}
+  <CommitmentBar />
+
+  {/* ============ 我们做什么（简介 + 入口）============ */}
+  <section class="editorial-section pt-section">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+      <div class="fade-in">
+        <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-4">
+          What We Make · 我们做什么
+        </p>
+        <h2 class="section-title text-cream">
+          不是标本店
+        </h2>
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            如果只是"卖标本"，这件事其实早就有人在做。我们做的是别的——把一种叫<strong class="text-brass-bright">自然博物美学</strong>的东西，让它进入日常生活。
+          </p>
+          <p>
+            自然小匣、衍生品、主题展柜、双 IP（马上有 + 小黄）——这些是我们的产品语言。
+          </p>
+          <p>
+            维多利亚博物学家奇珍柜的视觉系统、黄铜与暗调的色彩根基、博物馆级的灯光与档案——这些是我们的空间语言。
+          </p>
+        </div>
+        <a href="/products" class="inline-flex items-center gap-2 mt-paragraph text-cream hover:text-brass-mid transition-colors group">
+          <span>我们做什么</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+               class="group-hover:translate-x-1 transition-transform">
+            <line x1="3" y1="8" x2="13" y2="8" />
+            <polyline points="9,4 13,8 9,12" />
+          </svg>
+        </a>
+      </div>
+
+      <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center fade-in">
+        <span class="font-serif-en italic text-brass-mid/40 text-3xl">Specimens</span>
+        {/* 真实素材：<img src="/images/home/products.jpg" alt="自然小匣 · 标本展柜" class="w-full h-full object-cover" /> */}
+      </figure>
+    </div>
+  </section>
+
+  {/* ============ 五感入口 ============ */}
+  <section class="editorial-section-wide pt-section">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+      <figure class="aspect-[4/5] bg-gradient-to-br from-ink-deep to-ink-elevated border border-brass-mid/20 flex items-center justify-center order-2 md:order-1 fade-in">
+        <span class="font-serif-en italic text-brass-mid/40 text-3xl">Five Senses</span>
+      </figure>
+
+      <div class="order-1 md:order-2 fade-in">
+        <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-4">
+          Five Senses · 五感
+        </p>
+        <h2 class="section-title text-cream">
+          进店之前<br />你已经在感受我们了
+        </h2>
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            视、听、嗅、触、味——我们设计的不是一家店，是一组叠加的感官。
+          </p>
+          <p>
+            光线偏暗但不晦涩、声音不夺人耳朵、气味是物质本身、黄铜在指尖上是凉的。
+          </p>
+        </div>
+        <a href="/senses" class="inline-flex items-center gap-2 mt-paragraph text-cream hover:text-brass-mid transition-colors group">
+          <span>感受五感</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+               class="group-hover:translate-x-1 transition-transform">
+            <line x1="3" y1="8" x2="13" y2="8" />
+            <polyline points="9,4 13,8 9,12" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ 收尾 PullQuote ============ */}
+  <PullQuote
+    quote="把山川带回家。"
+    quoteEn="Bring Nature Home."
+    cite="山川造物 · 自 2024"
+  />
+</Layout>

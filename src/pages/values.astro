@@ -1,0 +1,234 @@
+---
+import Layout from '../components/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+// 6 观体系：3 个有独立页面（外联），3 个在本页内联（anchor 锚点）
+const sixViews = [
+  {
+    num: 'I',
+    cn: '空间观',
+    en: 'Space',
+    summary: '门店即博物馆 · 门店即城市公共客厅。',
+    href: '/space',
+    anchor: null,
+  },
+  {
+    num: 'II',
+    cn: '承诺观',
+    en: 'Commitment',
+    summary: '1% 营收用于自然保护——常量，不是活动。',
+    href: '/commitment',
+    anchor: null,
+  },
+  {
+    num: 'III',
+    cn: '青年观',
+    en: 'Youth',
+    summary: '给年轻人真问题，不给年轻人假任务。',
+    href: '#youth',
+    anchor: 'youth',
+  },
+  {
+    num: 'IV',
+    cn: '科技观',
+    en: 'Technology',
+    summary: '技术是隐形的——只在让体验更安静的时候出现。',
+    href: '/tech',
+    anchor: null,
+  },
+  {
+    num: 'V',
+    cn: '内容观',
+    en: 'Content',
+    summary: '内容是空间的延伸，不是空间的广告。',
+    href: '#content',
+    anchor: 'content',
+  },
+  {
+    num: 'VI',
+    cn: '人才观',
+    en: 'Talent',
+    summary: '一人一口的利益分配——创始人少赚一点，多一点给员工。',
+    href: '#talent',
+    anchor: 'talent',
+  },
+];
+---
+
+<Layout
+  title="价值观"
+  description="六观体系——我们做每一个决定背后的六个判断准则"
+>
+  <PageHero
+    eyebrow="Values · 六观体系"
+    title="我们做每一个决定，<br />都用这六个尺度"
+    lead="价值观不是挂在墙上的——它是落在每一次选品、每一次招人、每一次拒绝合作里的。这一页是我们的内部裁定标准，公开放在这里供同行 / 顾客 / 合伙人对照。"
+  />
+
+  <hr class="brass-divider" />
+
+  {/* ============== 六观速览 · 卡片导航 ============== */}
+  <section class="editorial-section-wide py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">
+      Six Views · 速览
+    </p>
+    <h2 class="font-serif text-display text-cream text-center mb-section tracking-cn">
+      六个观察角度
+    </h2>
+
+    <ol class="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-brass-mid/20 max-w-5xl mx-auto">
+      {sixViews.map((v) => (
+        <li class="bg-ink">
+          <a
+            href={v.href}
+            class="group block p-8 h-full hover:bg-ink-elevated/60 transition-colors duration-300"
+          >
+            <div class="flex items-baseline gap-3 mb-4">
+              <span class="font-serif-en italic text-brass-mid/60 text-2xl">{v.num}</span>
+              <h3 class="font-serif text-2xl text-brass-bright tracking-cn group-hover:text-cream transition-colors">
+                {v.cn}
+              </h3>
+              <span class="font-serif-en italic text-text-soft text-xs">· {v.en}</span>
+            </div>
+            <p class="text-sm text-cream/85 tracking-cn leading-relaxed mb-6 italic">
+              {v.summary}
+            </p>
+            <span class="inline-flex items-center gap-2 text-xs text-brass-mid font-serif-en italic tracking-widest uppercase">
+              {v.anchor ? `Read below ↓` : `Open page →`}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== III. 青年观 · 内联 ============== */}
+  <section class="editorial-section py-section fade-in" id="youth">
+    <p class="section-number mb-4">III</p>
+    <div class="flex items-baseline gap-3 mb-paragraph">
+      <h2 class="font-serif text-display text-cream tracking-cn">青年观</h2>
+      <span class="font-serif-en italic text-text-soft text-base">· On Youth</span>
+    </div>
+    <p class="font-serif text-xl text-brass-bright italic mb-paragraph tracking-cn">
+      给年轻人真问题，不给年轻人假任务。
+    </p>
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        我们用大量的年轻人——不是因为他们便宜，是因为<strong class="text-cream">他们没被旧零售业的"假任务"驯化过</strong>。
+      </p>
+      <p>
+        在我们的店里，店员不背销售指标——他们的考核是"今天有几位客人在店里停留超过了 30 分钟"。在我们的工坊，新人第一个月不做任何成品——他们被要求"<strong class="text-brass-bright">看老师傅工作 100 小时</strong>"。
+      </p>
+      <p>
+        我们相信：<strong class="text-cream">把一件值得做的事交给一个相信它的年轻人，比把一件不值得做的事交给一个有经验的成年人，结果好得多</strong>。
+      </p>
+      <p>
+        所以我们招人的优先级不是经验——是<strong class="text-brass-bright">他/她对自然博物 / 美学 / 慢生活有没有真实的好奇心</strong>。这一条没有也不强求，但我们会给那些有的人最好的成长环境。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== V. 内容观 · 内联 ============== */}
+  <section class="editorial-section py-section fade-in" id="content">
+    <p class="section-number mb-4">V</p>
+    <div class="flex items-baseline gap-3 mb-paragraph">
+      <h2 class="font-serif text-display text-cream tracking-cn">内容观</h2>
+      <span class="font-serif-en italic text-text-soft text-base">· On Content</span>
+    </div>
+    <p class="font-serif text-xl text-brass-bright italic mb-paragraph tracking-cn">
+      内容是空间的延伸，不是空间的广告。
+    </p>
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        我们写公众号、做小红书、出品牌片——但这些都不是"营销内容"。它们是<strong class="text-brass-bright">我们工作日常的副产品</strong>：今天工坊收到一只新蝶、今天店里有客人讲了一个故事、今天我们读到一篇博物学旧文。
+      </p>
+      <p>
+        我们不写"5 个理由让你必须拥有这只蝴蝶"那种文章——那不是我们的语言。我们写的是：
+      </p>
+      <p class="pl-6 border-l-2 border-brass-mid/50 italic text-cream">
+        "这只蝶羽翼上的蓝，不是颜料。是光线穿过纳米级鳞片结构产生的衍射——所以每一个角度看，蓝都不一样。"
+      </p>
+      <p>
+        以一个具体的事实或画面开头。<strong class="text-cream">禁止以 emoji 开头</strong>、<strong class="text-cream">禁止以叹号问号开头</strong>、<strong class="text-cream">禁止"亲们""宝子们"</strong>。
+      </p>
+      <p>
+        门店是内容的源头，公众号 / 小红书 / 抖音是内容的扩散——但<strong class="text-brass-bright">如果一段内容没法在我们的店里被讲出来，它就不该被发出来</strong>。
+      </p>
+      <p class="text-sm text-text-soft">
+        相关：完整的<a href="/notes" class="border-b border-brass-mid/40 hover:text-brass-bright">笔记</a>会逐步整理到本站。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== VI. 人才观 · 内联 ============== */}
+  <section class="editorial-section py-section fade-in" id="talent">
+    <p class="section-number mb-4">VI</p>
+    <div class="flex items-baseline gap-3 mb-paragraph">
+      <h2 class="font-serif text-display text-cream tracking-cn">人才观</h2>
+      <span class="font-serif-en italic text-text-soft text-base">· On Talent</span>
+    </div>
+    <p class="font-serif text-xl text-brass-bright italic mb-paragraph tracking-cn">
+      一人一口的利益分配——创始人少赚一点，多一点给员工。
+    </p>
+    <div class="prose-cn space-y-paragraph">
+      <p>
+        山川造物的人才观核心是<strong class="text-brass-bright">"一人一口"</strong>——
+        创始人少赚一点，多一点给员工、给社会、给顾客。具体表现：
+      </p>
+    </div>
+
+    <ul class="prose-cn list-none pl-0 mt-paragraph space-y-3">
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        创始人薪资水平明显低于一般创业公司同等阶段标准
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        创始人在公司亏损年度主动降薪
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        创始人不享受特殊福利（专车 / 高额报销 / 个人秘书等）
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
+        每年「妈妈的饺子 A 套餐」——核心团队家庭可享一次完整的工作室招待
+      </li>
+    </ul>
+
+    <div class="prose-cn mt-paragraph space-y-paragraph">
+      <p>
+        这条原则会让一些投资人犹豫——他们习惯的是"创始人重金激励 = 高速增长"的模型。我们的回应是：<strong class="text-cream">山川造物想做的是 30 年的事业，不是 5 年退出的标的</strong>。在 30 年的尺度上，创始人能保持长期投入的真正保险是<strong class="text-brass-bright">对事业本身的信仰</strong>——而不是短期重金激励。
+      </p>
+    </div>
+
+    <div class="mt-section p-6 border-l-2 border-brass-mid bg-ink-elevated/40">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+        Talent Toolkit · 把理念落到执行
+      </p>
+      <p class="text-cream/85 text-sm leading-[1.85] tracking-cn mb-3">
+        「一人一口」是<strong class="text-cream">理念层</strong>。具体到三段式速成课程、认证店长体系、招聘画像、薪酬结构与期权激励——这些是<strong class="text-cream">执行层</strong>。
+      </p>
+      <p class="text-sm">
+        <a href="/talent" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">
+          人才与店长培训 toolkit · /talent →
+        </a>
+      </p>
+    </div>
+
+    <p class="prose-cn mt-paragraph text-sm text-text-soft">
+      相关：投资合作页对此有更长的说明 → <a href="/investors#one-bowl" class="border-b border-brass-mid/40 hover:text-brass-bright">/investors#one-bowl</a>
+    </p>
+  </section>
+
+  <PullQuote
+    quote="所有的设计、选品、合作决策，都问一个问题：这个东西十年之后还成立吗？"
+  />
+</Layout>

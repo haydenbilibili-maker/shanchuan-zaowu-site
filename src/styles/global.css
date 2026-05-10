@@ -1,0 +1,175 @@
+/* ================================================
+   山川造物 · 官网设计系统 v0.1
+   黄铜 + 暗调 + 米白 + 宋体 + Cormorant
+   ================================================ */
+
+@import '@fontsource/cormorant-garamond/400.css';
+@import '@fontsource/cormorant-garamond/500.css';
+@import '@fontsource/cormorant-garamond/600.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Base reset ===== */
+@layer base {
+  :root {
+    --brass-deep: #8A7530;
+    --brass-mid: #C4A76C;
+    --brass-light: #E8DDC2;
+    --brass-bright: #DDC890;
+    --ink: #1A1814;
+    --ink-elevated: #232020;
+    --ink-deep: #0F0D0B;
+    --cream: #F2EDE4;
+    --text: #F2EDE4;
+    --text-soft: #B8B0A4;
+    --text-dim: #6B6560;
+  }
+
+  html {
+    /* 平滑滚动让章节切换更舒缓 */
+    scroll-behavior: smooth;
+    background: var(--ink);
+    color: var(--cream);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-serif antialiased;
+    font-feature-settings: 'kern', 'liga', 'calt';
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 中文段落字间距与行高 */
+  p {
+    @apply leading-[1.85] tracking-cn;
+  }
+
+  /* 标题去掉默认粗体（serif 标题在中等字重最优雅） */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-medium;
+    letter-spacing: -0.01em;
+  }
+
+  /* 链接默认无下划线，hover 时浮现 */
+  a {
+    @apply text-cream underline-offset-4 transition-colors duration-200;
+    text-decoration: none;
+  }
+
+  a:hover {
+    @apply text-brass-mid;
+  }
+
+  /* ===== 选中色 ===== */
+  ::selection {
+    background: var(--brass-mid);
+    color: var(--ink);
+  }
+}
+
+/* ===== Editorial 排版工具类 ===== */
+@layer components {
+  /* 章节包裹 */
+  .editorial-section {
+    @apply max-w-editorial mx-auto px-6;
+    padding-block: clamp(3rem, 8vw, 6rem);
+  }
+
+  .editorial-section-wide {
+    @apply max-w-editorial-wide mx-auto px-6;
+    padding-block: clamp(3rem, 8vw, 6rem);
+  }
+
+  /* 大标题（display） */
+  .display-title {
+    @apply font-serif text-display-lg text-cream;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  .display-title-en {
+    @apply font-serif-en text-display-lg text-brass-bright italic;
+    letter-spacing: -0.01em;
+  }
+
+  /* 章节标题 */
+  .section-title {
+    @apply font-serif text-display text-cream mb-paragraph;
+  }
+
+  /* 引文 */
+  .pullquote {
+    @apply border-l-2 border-brass-mid pl-6 italic text-cream;
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    line-height: 1.5;
+  }
+
+  /* 正文 prose */
+  .prose-cn {
+    @apply text-cream leading-[1.85] tracking-cn;
+    font-size: clamp(1rem, 1.05vw, 1.0625rem);
+  }
+
+  .prose-cn p + p {
+    @apply mt-paragraph;
+  }
+
+  /* 黄铜色细线分隔 · 深底上需要稍微提亮 */
+  .brass-divider {
+    @apply border-0 h-px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--brass-mid) 30%,
+      var(--brass-mid) 70%,
+      transparent
+    );
+    margin-block: clamp(2rem, 4vw, 4rem);
+  }
+
+  /* 章节编号大字 */
+  .section-number {
+    @apply font-serif-en text-brass-mid;
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ===== 组件级动效（极克制） ===== */
+@layer utilities {
+  /* 章节进入淡入（IntersectionObserver 触发） */
+  .fade-in {
+    @apply opacity-0 translate-y-2 transition-all duration-700 ease-out;
+  }
+
+  .fade-in.is-visible {
+    @apply opacity-100 translate-y-0;
+  }
+
+  /* ===== 纸张纤维感（极轻 SVG 噪点叠加在 paper 底色上）===== */
+  /* 用法：<div class="bg-paper paper-texture">  */
+  .paper-texture {
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.045 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-size: 240px 240px;
+    background-repeat: repeat;
+  }
+}
+
+/* ===== Print（编辑型 + 文档可打印；强制反色避免油墨） ===== */
+@media print {
+  html, body {
+    background: white !important;
+    color: #1A1814 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
