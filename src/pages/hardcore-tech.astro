@@ -1,0 +1,816 @@
+---
+import Layout from '../components/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import PullQuote from '../components/PullQuote.astro';
+import ContactBlock from '../components/ContactBlock.astro';
+
+// ============== 首屏宏观数字 ==============
+const heroMetrics = [
+  { num: '11', label: '推荐技术', en: 'Recommended' },
+  { num: '3', label: '明确不做', en: 'Excluded' },
+  { num: '4', label: '层级结构', en: 'Layers' },
+  { num: '3', label: '年路线图', en: 'Years' },
+];
+
+// ============== § 一 · 19 世纪博物学家四个未竟梦想 ==============
+const dreams = [
+  { want: '精准记录标本每一个细节', blocked: '受限于摄影技术', today: '微距摄影 + 焦点堆栈' },
+  { want: '长期保存标本免于时间侵蚀', blocked: '无温湿度控制', today: '物联网监测 + UV 玻璃' },
+  { want: '让世界看到他的奇珍', blocked: '受限于交通与印刷', today: '3D 扫描 + AR + 数字孪生' },
+  { want: '为每只标本定制陈列', blocked: '纯手工，效率低', today: '3D 打印 + 激光雕刻 + CNC' },
+];
+
+// 达尔文测试 · 二元对照
+const darwinTest = {
+  yes: [
+    '会用 3D 扫描记录稀有标本',
+    '会用微距摄影做物种图谱',
+    '会用温湿度监测保护采集品',
+    '会用焦点堆栈拼接超清细节',
+  ],
+  no: [
+    '不会做 NFT 数字藏品',
+    '不会用机械臂批量生产标本',
+    '不会做元宇宙虚拟博物馆',
+    '不会拿区块链当噱头做溯源',
+  ],
+};
+
+// ============== § 二 · 4 层技术结构 ==============
+const layers = [
+  {
+    key: 'I',
+    en: 'Visual Digitization',
+    name: '视觉数字化层',
+    count: '3 项',
+    desc: '把每只标本完整、精准、永久地记录下来——所有上层应用的前置数据基础。',
+  },
+  {
+    key: 'II',
+    en: 'Manufacturing',
+    name: '生产与制造层',
+    count: '4 项',
+    desc: '让重复性工艺自动化，把工艺师的双手释放给真正需要手作的部分。',
+  },
+  {
+    key: 'III',
+    en: 'AI & Software',
+    name: 'AI 与软件层',
+    count: '3 项',
+    desc: '让 AI 承担「快速试错」，把团队的人时释放给真正的创造性工作。',
+  },
+  {
+    key: 'IV',
+    en: 'Preservation',
+    name: '保存与监测层',
+    count: '2 项',
+    desc: '让标本真正实现「被时间定格」——「做时间的朋友」精神在物理层的承担者。',
+  },
+];
+
+// ============== § 三–§ 六 · 12 张技术卡（11 项推荐 + 1 项交叉引用） ==============
+// tier: green=强烈推荐 / yellow=谨慎评估
+type Tech = {
+  layer: string;
+  no: string;
+  tier: 'green' | 'yellow';
+  name: string;
+  sub: string;
+  capability: string;
+  application: string;
+  strategic?: string;
+  redline?: string;
+  timing: string;
+};
+
+const tech: Tech[] = [
+  // === 视觉数字化层 ===
+  {
+    layer: 'I', no: '01', tier: 'green',
+    name: '桌面级 3D 扫描仪',
+    sub: '把每只标本变成「数字双胞胎」',
+    capability: '把物理标本完整数字化——形态 / 色彩 / 纹理 / 细节全部保留，形成可永久存档的数字资产。',
+    application: '每只标本进店即扫描归档；下游为 3D 打印底座、教育复刻件、衍生品 IP 设计、AR 展示提供数据源。',
+    strategic: '这是品牌的「长期数字资产」——10 年后回看，这一代标本的完整数字档案是最难复制的护城河。',
+    redline: '扫描数据不可商品化卖给「3D 打印爱好者」做翻刻——破坏品牌稀缺性。',
+    timing: '第一年必上',
+  },
+  {
+    layer: 'I', no: '02', tier: 'green',
+    name: '高分辨率微距摄影 + 焦点堆栈',
+    sub: '被严重低估的「基础硬核科技」',
+    capability: '用现代焦点堆栈技术拍摄博物馆级别的标本档案照——蝴蝶翅膀的鳞片、矿石晶体的几何、贝壳纹理的肌理。',
+    application: '为每只标本建立摄影档案；公众号长文 / 出版物 / 教育内容的视觉素材库。',
+    strategic: '现代焦点堆栈能把上百张照片合成一张所有焦平面都清晰的图——这是 19 世纪博物学家做不到的事。完全契合品牌精神。',
+    timing: '视觉资产基础',
+  },
+  {
+    layer: 'I', no: '03', tier: 'yellow',
+    name: 'CT 扫描 / X 光成像',
+    sub: '看见标本的内部世界',
+    capability: '标本内部结构的非破坏性成像——一只完整甲虫的内部骨骼、肌肉残留，CT 看得到。',
+    application: '与博物馆 / 大学合作付费扫描；重要标本的「内部档案」；做「剖切教育内容」展示动物内部结构而不破坏标本。',
+    strategic: '19 世纪博物学家用解剖刀打开生物——我们用 CT 实现同样的求知，但不破坏标本。',
+    timing: '仅用于核心标本 · 外部合作模式',
+  },
+  // === 生产与制造层 ===
+  {
+    layer: 'II', no: '04', tier: 'green',
+    name: '消费级桌面 3D 打印',
+    sub: '已有专门方案文档 · 本卡片仅作交叉引用',
+    capability: '塑料结构件的快速制造与原型迭代。',
+    application: '标本陈列底座 / 衍生品原型打样 / 教育复刻模型。',
+    strategic: '与激光雕刻互补——一台 3D 打印 + 一台激光雕刻覆盖 90% 的内部工具需求。',
+    timing: '已立项 · 详见姊妹方案',
+  },
+  {
+    layer: 'II', no: '05', tier: 'green',
+    name: '桌面级激光雕刻机',
+    sub: '3D 打印之后第二项要考虑的工具',
+    capability: '在木头、皮革、亚克力、布料上做高精度雕刻或切割。',
+    application: '手绘风格标签的批量精准化（保留手写感但实现一致性）；木质标本框 / 皮革包装 / 复古物种铭牌的批量定制。',
+    strategic: '木材皮革是品牌的核心材料语言——激光雕刻直接服务于「博物学奇珍柜」视觉系统。',
+    timing: '第二年加入',
+  },
+  {
+    layer: 'II', no: '06', tier: 'green',
+    name: '桌面级 UV 打印机',
+    sub: '2025-2026 年最值得关注的新兴品类',
+    capability: '在任何材料表面（玻璃 / 皮革 / 亚克力 / 金属 / 木盒）直接打印彩色图像，单件可定制。',
+    application: '玻璃罩侧面定制图案与编号 / 玻璃瓶的标签打印（替代手贴）/ 木盒侧面图案。',
+    strategic: '以前需要丝印工厂大批量起订（动辄 500 件起），现在桌面级可单件定制、成本可控。',
+    redline: '不能用 UV 打印冒充手绘——必须明确这是数字打印的产品。',
+    timing: '第二年观望后加入',
+  },
+  {
+    layer: 'II', no: '07', tier: 'yellow',
+    name: '桌面级 CNC 数控机床',
+    sub: '可能不是最优先的，但值得了解',
+    capability: '用切削刀具在金属、硬木、亚克力上做高精度加工。',
+    application: '黄铜配件直接加工 / 硬木家具级别的标本陈列架 / 金属铭牌印章。',
+    strategic: '学习曲线比 3D 打印陡峭很多，安全风险更高（飞屑、噪音）；多数应用场景 3D 打印 + 后期涂装已够用。',
+    timing: '第三年再议 · 视黄铜需求增长再上',
+  },
+  // === AI 与软件层 ===
+  {
+    layer: 'III', no: '08', tier: 'green',
+    name: 'AI 辅助 3D 建模',
+    sub: '3D 扫描和 3D 打印的中间环节',
+    capability: '上传几张产品照片或一句文字描述，AI 自动生成可打印的 3D 模型，让团队不需要学习专业建模软件就能产出原型。',
+    application: '衍生品概念阶段的快速原型；IP 形象从 2D 草图转 3D 用于打印；教育模型的快速建模。',
+    redline: 'AI 生成的模型只能作为起点，最终用于商品的模型必须经过人工修改——否则会产生廉价 AI 感，破坏品牌调性。',
+    timing: '第一年开始用',
+  },
+  {
+    layer: 'III', no: '09', tier: 'green',
+    name: 'AI 文案 / 图像 / 视频生成',
+    sub: '已经在用 · 本卡片做正式定位',
+    capability: '文案 / 图像 / 视频 / 中文短视频 / 虚拟讲解人，主流工具均已成熟。',
+    application: '快速试错品牌叙事方向；产品视觉概念图；店内主题海报；短视频与品牌片初稿。',
+    strategic: 'AI 工具用在「快速试错」，最终对外发布的内容必须有人工严格筛选——这条边界即「AI 是副驾不是司机」科技观的执行落地。',
+    timing: '持续投入',
+  },
+  {
+    layer: 'III', no: '10', tier: 'yellow',
+    name: '数字孪生 / AR 展示',
+    sub: '当下不优先 · 未来会变得很关键',
+    capability: '顾客手机扫一扫店里的标本，看到 3D 旋转模型 + 完整科普；网上虚拟逛店；展会用 AR 替代实体运输。',
+    application: '先做数据积累（通过 3D 扫描已经在做），但不急于上线 AR 应用——等下一代消费级 AR 设备真正普及再做。',
+    strategic: '现在做 AR 应用 ROI 不清晰，但底层数据积累不能等。这是「数据先行 · 应用待时」的典型案例。',
+    timing: '数据先行 · 应用待时',
+  },
+  // === 保存与监测层 ===
+  {
+    layer: 'IV', no: '11', tier: 'green',
+    name: '物联网温湿度监测',
+    sub: '标本最大的敌人不是顾客，是温湿度变化',
+    capability: '工业级温湿度传感器 + 自动除湿 / 加湿 / 空调联动，形成自动调节系统。每只标本拥有自己的「生命档案」——记录从入店到现在每一天的环境数据。',
+    application: '东北的冬季干燥（湿度不足 20%）会让标本皮毛开裂，夏季潮湿会发霉——这是长春标本工作室的真实挑战。',
+    strategic: '这是「做时间的朋友」精神在物理层的真正落地——承诺标本「被时间定格」，温湿度控制是这个承诺的物理保障。',
+    timing: '第一年必上',
+  },
+  {
+    layer: 'IV', no: '12', tier: 'green',
+    name: 'UV 防护玻璃 + 抗紫外灯具',
+    sub: '不是新技术，但严重被低估',
+    capability: '博物馆级 UV 阻隔玻璃可阻挡 99% 紫外线 + 50% 红外线；专业博物馆 LED（无 UV、显色指数 95+）。',
+    application: '展位玻璃罩升级 / 灯具升级；玻璃罩类、瓶身类衍生品同步升级。',
+    strategic: '紫外线会让标本褪色、毛皮发黄。所有专业博物馆都用 UV 过滤玻璃——这种「看不见的科技」恰恰是「博物学奇珍柜级别」的差异化。',
+    timing: '第一年必上',
+  },
+];
+
+// 按层分组
+const techByLayer = layers.map((l) => ({
+  ...l,
+  items: tech.filter((t) => t.layer === l.key),
+}));
+
+// ============== § 七 · 不做的 3 项 ==============
+const noGo = [
+  {
+    name: 'NFT 数字藏品 / 区块链溯源',
+    reasons: [
+      '标本溯源已经有合规凭证 + 物理标签解决',
+      'NFT 在 2026 年已退烧，且与品牌「实物在场」精神冲突',
+      '成本远高于价值',
+      '不通过达尔文测试',
+    ],
+  },
+  {
+    name: '大型工业自动化（机械臂 / 流水线）',
+    reasons: [
+      '与品牌「手作感」精神根本冲突',
+      '未来扩店时，每一家店仍然应该保留手作工艺师',
+      '规模化的应该是「方法论」，不是「机器」',
+      '与品牌「不装的规模化」直接相关',
+    ],
+  },
+  {
+    name: '元宇宙 / 虚拟店铺 / 全 VR 沉浸式体验',
+    reasons: [
+      '山川造物的核心体验是顾客走进实体店、触摸真实标本',
+      '这件事不能虚拟化——虚拟化之后情感价值瞬间归零',
+      '局部 AR 增强可以（见第 10 项），全 VR 沉浸是不必要的',
+      '达尔文不会做元宇宙博物馆',
+    ],
+  },
+];
+
+// ============== § 八 · 网络效应（IP 名匿名化为品类） ==============
+const network = [
+  { tech: '微距摄影 + 焦点堆栈', uses: ['IP 形象系标本档案', '昆虫 / 蝴蝶系细节呈现', '矿石系晶体几何', '贝壳系纹理肌理', '科普内容素材库'] },
+  { tech: '3D 扫描', uses: ['全标本数字双胞胎归档', '插件化商品的设计基础', '教育复刻件的数据源', 'AR 展示底层数据', '与博物馆 / 大学合作的数据资产'] },
+  { tech: '物联网温湿度', uses: ['工作室环境', '门店展位环境', '加盟店统一标准', '每只标本的生命档案'] },
+  { tech: 'UV 玻璃 + 抗紫外灯具', uses: ['门店展位', '玻璃罩类衍生品', '瓶身类衍生品', '陈列家具级别的延伸'] },
+  { tech: '激光雕刻', uses: ['手绘风格标签批量精准化', '木质标本框', '皮革包装', '物种铭牌'] },
+  { tech: '3D 打印', uses: ['标本陈列底座', '衍生品原型打样', '教育复刻模型', 'IP 形象 3D 化'] },
+];
+
+// ============== § 九 · 三年路线图 ==============
+const roadmap = [
+  {
+    year: '第一年 · 2026',
+    eyebrow: 'Foundation',
+    theme: '基础数字化',
+    mission: '建立品牌的硬核基础设施。所有未来应用的底层数据全部在这一年开始积累。',
+    techs: ['消费级 3D 打印', '桌面 3D 扫描仪', '微距摄影系统升级', '物联网温湿度监测', 'UV 玻璃和灯具升级', 'AI 工具订阅'],
+    metrics: [
+      '店内所有标本完成 3D 扫描数字归档',
+      '至少 30 只标本完成微距摄影档案',
+      '工作室和店面温湿度数据持续监测',
+      '至少 1 个衍生品 SKU 通过 3D 打印走通',
+    ],
+  },
+  {
+    year: '第二年 · 2027',
+    eyebrow: 'Production',
+    theme: '生产能力扩展',
+    mission: '把内部工艺生产能力建立起来，减少外包依赖，提升单 SKU 的定制化程度。',
+    techs: ['桌面激光雕刻机', '桌面 UV 打印机（观望后决定）', '3D 打印产能扩充', 'AI 建模工具升级', 'CT 扫描外部合作（按需）'],
+    metrics: [
+      '至少 3 个衍生品 IP 全流程内部化（设计 → 打样 → 小批量生产）',
+      '店内每只标本配套激光雕刻定制木标牌',
+      '教育复刻模型形成 1-2 套完整教学产品',
+    ],
+  },
+  {
+    year: '第三年 · 2028',
+    eyebrow: 'Long-term',
+    theme: '长期战略层',
+    mission: '把前两年积累的数据资产转化为品牌护城河——AR 应用、与博物馆合作、出版数字标本图鉴。',
+    techs: ['数字孪生 + AR 应用开发', 'CT 扫描重要标本（与博物馆 / 大学合作）', '桌面 CNC（如黄铜需求增长）', '数字标本图鉴出版'],
+    metrics: [
+      '店内 AR 应用上线，顾客可扫描标本看完整科普',
+      '数字标本图鉴出版（实体书或数字版）',
+      '与至少 1 家博物馆 / 大学建立长期数据合作关系',
+    ],
+  },
+];
+
+// ============== § 十 · 战略价值（5 项隐性收益） ==============
+const strategicValue = [
+  {
+    title: '品牌差异化',
+    body: '在同质化文创市场，「拥有完整数字标本档案的品牌」是稀缺定位。',
+  },
+  {
+    title: '投资人故事',
+    body: '硬核基础设施是融资时的关键叙事——从「文创品牌」升级为「自然博物科技品牌」。',
+  },
+  {
+    title: '团队效率',
+    body: '工艺师每周省下的 10-15 小时，可以投入到更高价值的创造性工作。',
+  },
+  {
+    title: '标本生命延长',
+    body: 'UV 玻璃 + 物联网监测让标本寿命从 10 年延长到 50 年——「做时间的朋友」的物理回报。',
+  },
+  {
+    title: '教育与科研合作',
+    body: '完整数字档案让品牌有资格与博物馆、大学建立长期合作关系。这是普通文创品牌没有的对话权限。',
+  },
+];
+
+// 颜色 / 标记小工具
+const tierLabel = (t: 'green' | 'yellow') => (t === 'green' ? '强烈推荐' : '谨慎评估');
+const tierEn = (t: 'green' | 'yellow') => (t === 'green' ? 'Recommended' : 'Cautious');
+---
+
+<Layout
+  title="硬核科技应用蓝图"
+  description="用未来的技术，做过去的事——11 项推荐技术 / 3 项明确不做 / 三年路线图。这不是一份让山川造物「现代化」的方案，是一份让我们「真正成为博物学奇珍柜」的方案。"
+>
+  <PageHero
+    eyebrow="Hardcore Tech Application Blueprint · 硬核科技应用蓝图"
+    title="用未来的技术，<br />做过去的事"
+    lead="11 项推荐技术 · 3 项明确不做 · 三年路线图。这不是一份让山川造物「现代化」的方案，是一份让我们「真正成为博物学奇珍柜」的方案——19 世纪博物学家想做但做不到的事，今天可以了。"
+  />
+
+  <hr class="brass-divider" />
+
+  {/* ============== 关键数字 ============== */}
+  <section class="editorial-section-wide py-section fade-in">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-brass-mid/10">
+      {heroMetrics.map((m) => (
+        <div class="bg-ink p-8 md:p-10 text-center">
+          <p class="font-serif-en italic text-brass-bright mb-2"
+             style="font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1;">
+            {m.num}
+          </p>
+          <p class="font-serif text-cream text-sm md:text-base tracking-cn mb-1">{m.label}</p>
+          <p class="font-serif-en italic text-text-dim text-xs tracking-widest uppercase">{m.en}</p>
+        </div>
+      ))}
+    </div>
+    <p class="text-center text-text-dim text-xs font-serif-en italic tracking-widest uppercase mt-6">
+      v0.1 · 2026.05 · Internal blueprint, externally framed
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== § 一 · 底层判断 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Chapter I · 底层判断
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      所有判断都建立在<br class="md:hidden" />一个核心命题之上
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      整份蓝图的所有判断都来自同一句话——所有这些科技的真正价值，<strong class="text-cream">不是让山川造物「更现代」</strong>，而是让我们能做到 19 世纪博物学家想做但做不到的事。
+    </p>
+
+    {/* 19 世纪四个未竟梦想 */}
+    <div class="mb-section">
+      <h3 class="font-serif text-xl md:text-2xl text-brass-mid tracking-cn mb-4 pb-3 border-b border-brass-mid/20">
+        1.1 19 世纪博物学家的四个未竟梦想
+      </h3>
+      <p class="prose-cn text-text-soft mb-paragraph max-w-editorial">
+        维多利亚时代的博物学家——达尔文、洪堡、华莱士——他们做的事情和山川造物本质上一样：收集自然之物、记录、分类、展示、研究。但有四件事，他们想做却做不到。
+      </p>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm md:text-base">
+          <thead>
+            <tr class="border-b border-brass-mid/30">
+              <th class="text-left py-3 pr-4 font-serif text-brass-mid tracking-cn font-normal">他们想做的</th>
+              <th class="text-left py-3 px-4 font-serif text-brass-mid tracking-cn font-normal">当时做不到</th>
+              <th class="text-left py-3 pl-4 font-serif text-brass-bright tracking-cn font-normal">今天可以了</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dreams.map((d) => (
+              <tr class="border-b border-brass-mid/10 last:border-b-0">
+                <td class="py-4 pr-4 text-cream tracking-cn">{d.want}</td>
+                <td class="py-4 px-4 text-text-soft tracking-cn">{d.blocked}</td>
+                <td class="py-4 pl-4 text-brass-bright tracking-cn">{d.today}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <PullQuote
+    quote="不是用科技替代手作。是用科技实现手作做不到的事。"
+    quoteEn="Not technology replacing craft. Technology achieving what craft alone cannot."
+  />
+
+  {/* 达尔文测试 */}
+  <section class="editorial-section py-section fade-in">
+    <div class="p-8 md:p-12 border border-brass-bright/40 bg-ink-deep/40">
+      <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
+        The Darwin Test · 一个简单但有效的判断框架
+      </p>
+      <h3 class="font-serif text-2xl md:text-3xl text-cream tracking-cn mb-4">
+        达尔文如果有这个工具，<br class="md:hidden" />他会用吗？
+      </h3>
+      <p class="prose-cn text-text-soft mb-section max-w-editorial">
+        达尔文如果活在 2026 年，他不会拒绝使用 3D 扫描和微距摄影。他会用这些工具继续做他一直在做的事——把自然世界的细节、奇迹、美，更精准地记录下来传递给后人。这个判断标准简单但有效：它把所有「听起来很硬核但其实是噱头」的技术过滤掉，只留下真正服务于品牌精神的硬核基础设施。
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-px bg-brass-mid/10">
+        <div class="bg-ink-deep/60 p-6">
+          <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-4">
+            He would · 他会用
+          </p>
+          <ul class="space-y-3">
+            {darwinTest.yes.map((y) => (
+              <li class="flex items-start gap-3 text-text-soft text-sm leading-[1.85] tracking-cn">
+                <span class="text-brass-bright mt-0.5">●</span>
+                <span>{y}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="bg-ink-deep/60 p-6">
+          <p class="font-serif-en italic text-text-dim text-xs tracking-widest uppercase mb-4">
+            He wouldn&rsquo;t · 他不会做
+          </p>
+          <ul class="space-y-3">
+            {darwinTest.no.map((n) => (
+              <li class="flex items-start gap-3 text-text-soft text-sm leading-[1.85] tracking-cn">
+                <span class="text-text-dim mt-0.5">○</span>
+                <span>{n}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== § 二 · 4 层结构 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Chapter II · 业务全链路与硬核科技匹配
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      四层技术结构<br class="md:hidden" />覆盖业务全链路
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      11 项推荐技术不是平行罗列，而是按业务全链路分为四个层级——视觉数字化是基础数据，生产制造是工艺自动化，AI 与软件是创造性效率，保存与监测是物理承诺。
+    </p>
+
+    <div class="grid md:grid-cols-2 gap-px bg-brass-mid/10">
+      {layers.map((l) => (
+        <div class="bg-ink-elevated/50 p-6 md:p-8 relative">
+          <p class="font-serif-en italic text-brass-mid/40 absolute top-4 right-5"
+             style="font-size: 2.5rem; line-height: 1;">
+            {l.key}
+          </p>
+          <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+            {l.en}
+          </p>
+          <h3 class="font-serif text-xl md:text-2xl text-cream tracking-cn mb-1">{l.name}</h3>
+          <p class="font-serif text-sm text-brass-mid tracking-cn mb-4">{l.count}</p>
+          <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{l.desc}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== § 三–§ 六 · 12 张技术卡（按层分组） ============== */}
+  {techByLayer.map((layer, layerIdx) => (
+    <>
+      <section class="editorial-section py-section fade-in">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+          Chapter {['III', 'IV', 'V', 'VI'][layerIdx]} · {layer.en}
+        </p>
+        <h2 class="display-title text-cream tracking-cn mb-paragraph">
+          {layer.name}<span class="text-brass-mid text-base md:text-lg ml-3 font-serif-en italic">· {layer.count}</span>
+        </h2>
+        <p class="prose-cn max-w-editorial mb-section text-text-soft">{layer.desc}</p>
+
+        <div class="space-y-6">
+          {layer.items.map((t) => (
+            <article class={`p-6 md:p-8 border bg-ink-elevated/40 ${t.tier === 'green' ? 'border-brass-mid/30' : 'border-brass-deep/30'}`}>
+              <div class="grid md:grid-cols-[100px_1fr_180px] gap-4 md:gap-8 items-start">
+                {/* 左：编号 */}
+                <div>
+                  <p class="font-serif-en italic text-brass-bright"
+                     style="font-size: 2.5rem; line-height: 1;">
+                    {t.no}
+                  </p>
+                </div>
+                {/* 中：标题 + 详细 */}
+                <div>
+                  <h3 class="font-serif text-xl md:text-2xl text-cream tracking-cn mb-1">{t.name}</h3>
+                  <p class="font-serif-en italic text-brass-mid text-sm tracking-cn mb-4">{t.sub}</p>
+
+                  <dl class="space-y-3 text-sm leading-[1.85] tracking-cn">
+                    <div>
+                      <dt class="text-brass-mid font-serif inline">核心能力　</dt>
+                      <dd class="text-text-soft inline">{t.capability}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-brass-mid font-serif inline">在山川造物的应用　</dt>
+                      <dd class="text-text-soft inline">{t.application}</dd>
+                    </div>
+                    {t.strategic && (
+                      <div>
+                        <dt class="text-brass-mid font-serif inline">战略意义　</dt>
+                        <dd class="text-text-soft inline">{t.strategic}</dd>
+                      </div>
+                    )}
+                    {t.redline && (
+                      <div class="pt-2 mt-2 border-t border-brass-deep/20">
+                        <dt class="text-brass-deep font-serif inline">红线　</dt>
+                        <dd class="text-text-soft inline italic">{t.redline}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+                {/* 右：分级标签 + 时机 */}
+                <div class="md:text-right">
+                  <p class={`font-serif-en italic text-xs tracking-widest uppercase mb-2 ${t.tier === 'green' ? 'text-brass-bright' : 'text-brass-deep'}`}>
+                    {t.tier === 'green' ? '🟢' : '🟡'}　{tierEn(t.tier)}
+                  </p>
+                  <p class={`font-serif tracking-cn mb-3 ${t.tier === 'green' ? 'text-brass-bright' : 'text-brass-deep'}`}>
+                    {tierLabel(t.tier)}
+                  </p>
+                  <p class="font-serif-en italic text-text-dim text-xs tracking-widest uppercase mb-1">
+                    Timing
+                  </p>
+                  <p class="text-cream text-sm tracking-cn">{t.timing}</p>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+      {layerIdx < techByLayer.length - 1 && <hr class="brass-divider" />}
+    </>
+  ))}
+
+  <hr class="brass-divider" />
+
+  {/* ============== § 七 · 不做的 3 项 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Chapter VII · 不推荐的科技
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      明确不做的 3 项<span class="text-brass-deep text-base md:text-lg ml-3 font-serif-en italic">· Excluded</span>
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      市面上还有一批听起来很硬核但其实不适合山川造物的技术。把它们清楚标记为「不做」——避免团队未来被各路推销话术误导。
+    </p>
+
+    <div class="space-y-6">
+      {noGo.map((n, i) => (
+        <article class="p-6 md:p-8 border border-brass-deep/30 bg-ink-deep/30">
+          <div class="grid md:grid-cols-[60px_1fr] gap-4 md:gap-8 items-start">
+            <div>
+              <p class="font-serif-en italic text-brass-deep" style="font-size: 2rem; line-height: 1;">
+                🔴
+              </p>
+            </div>
+            <div>
+              <p class="font-serif-en italic text-brass-deep text-xs tracking-widest uppercase mb-2">
+                Not Recommended · No.{i + 1}
+              </p>
+              <h3 class="font-serif text-xl text-cream tracking-cn mb-4">{n.name}</h3>
+              <ul class="space-y-2">
+                {n.reasons.map((r) => (
+                  <li class="text-text-soft text-sm leading-[1.85] tracking-cn pl-5 relative">
+                    <span class="absolute left-0 top-2 w-2 h-px bg-brass-deep/60"></span>
+                    {r}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    {/* 重申达尔文测试 */}
+    <div class="mt-section p-6 md:p-8 border-l-2 border-brass-bright bg-ink-deep/40">
+      <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
+        Reminder · 重申一个判断标准
+      </p>
+      <p class="font-serif text-lg md:text-xl text-cream tracking-cn leading-[1.7]">
+        未来如果有任何新技术出现——回到这个简单问题——<br />
+        <strong class="text-brass-bright">「达尔文如果有这个工具，他会用吗？」</strong>
+      </p>
+      <p class="prose-cn text-text-soft mt-4">
+        他会用 → 可以认真评估。<br />
+        他不会用 → 直接不做。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== § 八 · 网络效应（匿名化） ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Chapter VIII · 网络效应
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      没有任何一项技术<br class="md:hidden" />「只服务一个产品线」
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      这是这份蓝图最关键的判断——每一项硬核科技同时服务于多个产品线、多个 IP、多个业务环节。投入 ROI 远超单点应用想象，技术之间还会形成网络效应。这是品牌真正建立「硬核基础设施」的逻辑，不是单点购买玩具。
+    </p>
+
+    <div class="border border-brass-mid/20">
+      {network.map((n, i) => (
+        <div class={`grid md:grid-cols-[260px_1fr] gap-4 md:gap-8 p-5 md:p-6 ${i < network.length - 1 ? 'border-b border-brass-mid/10' : ''}`}>
+          <div>
+            <p class="font-serif text-cream tracking-cn">
+              <span class="text-brass-bright mr-2">▸</span>{n.tech}
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {n.uses.map((u) => (
+              <span class="inline-block px-3 py-1 bg-ink-deep/60 border border-brass-mid/15 text-text-soft text-xs tracking-cn rounded-sm">
+                {u}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-section p-6 border-l-2 border-brass-mid/40 bg-ink-deep/40">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+        Note · 关于具体 IP 名
+      </p>
+      <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+        本表使用<strong class="text-cream">品类化描述</strong>（昆虫 / 蝴蝶系、矿石系、IP 形象系、玻璃罩类、瓶身类等）。完整的 IP 矩阵图谱将在 IP 矩阵专栏正式发布——届时本表可对应升级到具体 IP 名。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== § 九 · 三年路线图 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Chapter IX · Three-Year Roadmap
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      三年分阶段路线图
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      11 项推荐技术按三年分阶段引入。每年的核心任务、启动技术、关键成功指标——只展示阶段方向与可验证的产出，不展示具体预算与品牌型号（详细投入测算见内部版）。
+    </p>
+
+    <div class="space-y-section">
+      {roadmap.map((r, i) => (
+        <article class="grid md:grid-cols-[200px_1fr] gap-6 md:gap-10">
+          <div>
+            <p class="font-serif-en italic text-brass-mid/40 mb-2"
+               style="font-size: 2.5rem; line-height: 1;">
+              {String(i + 1).padStart(2, '0')}
+            </p>
+            <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-1">
+              {r.eyebrow}
+            </p>
+            <h3 class="font-serif text-2xl text-cream tracking-cn">{r.year}</h3>
+            <p class="font-serif text-sm text-brass-bright tracking-cn mt-1">{r.theme}</p>
+          </div>
+          <div>
+            <p class="prose-cn text-text-soft mb-paragraph">{r.mission}</p>
+
+            <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+              Technologies · 启动技术
+            </p>
+            <ul class="grid md:grid-cols-2 gap-x-6 gap-y-2 mb-paragraph">
+              {r.techs.map((t) => (
+                <li class="text-text-soft text-sm leading-[1.85] tracking-cn pl-4 relative">
+                  <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid/60"></span>{t}
+                </li>
+              ))}
+            </ul>
+
+            <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-2">
+              Success Metrics · 关键成功指标
+            </p>
+            <ul class="space-y-2">
+              {r.metrics.map((m) => (
+                <li class="text-cream text-sm leading-[1.85] tracking-cn pl-4 relative">
+                  <span class="absolute left-0 top-2 w-2 h-px bg-brass-bright"></span>{m}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== § 十 · 战略价值（隐性收益） ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Chapter X · Strategic Value
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      硬核基础设施的战略价值<br class="md:hidden" />（不在直接 ROI 表里）
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      除了直接的产品销售收益，硬核基础设施还会带来一系列隐性收益——这些收益不出现在三年 ROI 测算表里，但它们是品牌真正的长期资产。
+    </p>
+
+    <div class="grid md:grid-cols-2 gap-px bg-brass-mid/10">
+      {strategicValue.map((v, i) => (
+        <div class={`bg-ink-elevated/50 p-6 md:p-8 ${i === strategicValue.length - 1 ? 'md:col-span-2' : ''}`}>
+          <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+            Value · 0{i + 1}
+          </p>
+          <h3 class="font-serif text-xl text-cream tracking-cn mb-3">{v.title}</h3>
+          <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{v.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== Closing Manifesto ============== */}
+  <section class="editorial-section py-section fade-in">
+    <div class="my-section py-12 border-y border-brass-mid/20 text-center">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-6">
+        Closing Statement
+      </p>
+      <p class="font-serif text-cream tracking-cn leading-[1.5] mb-6"
+         style="font-size: clamp(1.5rem, 3.5vw, 2.5rem);">
+        一个品牌真正的护城河，<br />
+        是它在<span class="text-brass-bright">「不性感的基础设施」</span>上<br />
+        花的时间。
+      </p>
+      <p class="font-serif-en italic text-text-dim text-sm tracking-widest mb-8">
+        A brand&rsquo;s true moat is the time it spends<br />
+        on the <em>unsexy</em> infrastructure.
+      </p>
+      <div class="inline-block px-8 py-4 border-y border-brass-bright/40">
+        <p class="font-serif text-brass-bright tracking-cn"
+           style="font-size: clamp(1.25rem, 2.5vw, 1.75rem);">
+          用未来的技术，做过去的事。
+        </p>
+        <p class="font-serif-en italic text-text-soft text-sm tracking-widest mt-2">
+          Future tech. Ancient pursuits.
+        </p>
+      </div>
+    </div>
+
+    <p class="text-center font-serif-en italic text-text-dim text-xs tracking-widest uppercase">
+      v0.1 · 2026.05 · Hardcore Tech Application Blueprint · 公开版
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== 跨页关联 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">
+      Related · 跨页关联
+    </p>
+    <p class="text-center text-text-soft text-sm leading-[1.85] tracking-cn mb-section max-w-editorial mx-auto">
+      硬件硬核科技（本页）与软件数字化能力（/digital-ops）是<strong class="text-cream">品牌科技基础设施的两个轮子</strong>——共同构成《科技观》在执行层的实证。
+    </p>
+    <div class="grid md:grid-cols-3 gap-6">
+      <a href="/tech" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          On Technology
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          科技观 · 技术哲学层 →
+        </p>
+      </a>
+      <a href="/digital-ops" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          Digital Ops
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          数字化能力 · 软件实证 →
+        </p>
+      </a>
+      <a href="/commitment" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          Pledge
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          1% 承诺 · 软护城河 →
+        </p>
+      </a>
+    </div>
+  </section>
+
+  <ContactBlock
+    title="想看完整版蓝图？"
+    intro="如果你是潜在投资人、加盟方、博物馆 / 大学合作伙伴或硬件厂商——欢迎联系我们获取内部完整版（含具体设备型号、预算测算、ROI 模型、招聘计划）。我们会先约一次 30 分钟通话，确认方向匹配后再发送。"
+    subjectHint="硬核科技蓝图完整版申请 · 你的姓名 · 机构 · 角色"
+  />
+</Layout>

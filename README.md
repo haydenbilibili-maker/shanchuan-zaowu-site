@@ -27,7 +27,7 @@ npm run dev    # http://localhost:4321/
 ## 构建与预览
 
 ```bash
-npm run build      # 输出到 dist/（15 个 HTML 页面）
+npm run build      # 输出到 dist/（18 个 HTML 页面）
 npm run preview    # 本地预览构建产物
 ```
 
@@ -63,22 +63,23 @@ shanchuanzaowu/
     │   ├── NoListItem.astro       # × 不做项（红线清单用）
     │   ├── PledgeBlock.astro      # 承诺方框（positive / negative 两种 variant）
     │   └── WIPNotice.astro        # 占位通知（v0.2 升级前的 dignified 占位）
-    └── pages/                 # 15 个页面
+    └── pages/                 # 18 个页面
         ├── index.astro            # 首页（vision hero + 4 audience + 1% 承诺）
         ├── about.astro            # 我们是谁（创始团队 + 6 战略原则 + 30 年）
         ├── products.astro         # 产品线（自然小匣 / 衍生品 / 主题展柜 / 双 IP）
         ├── space.astro            # 空间体系（叙事根 + toolkit 框架 + 8 模块）
         ├── senses.astro           # 五感页（视觉基线）
-        ├── commitment.astro       # 1% 承诺（含财务对照 + 备忘）
+        ├── commitment.astro       # 1% 承诺（含物理层落地 → /hardcore-tech）
         ├── values.astro           # 6 观（空间 / 承诺 / 青年 / 科技 / 内容 / 人才）
         ├── talent.astro           # 人才与店长培训 toolkit
         ├── properties.astro       # 给物业方
-        ├── investors.astro        # 给投资人
+        ├── investors.astro        # 给投资人（含三道护城河 callout）
         ├── franchise.astro        # 加盟说明
         ├── operations.astro       # 运营方法论
         ├── plan.astro             # 路线图
-        ├── tech.astro             # 科技观（4 原则 + 引导到 /digital-ops）
-        ├── digital-ops.astro      # 数字化运营能力专栏（30+ 页 / 27 模块 / 17 AI 场景实证）
+        ├── tech.astro             # 科技观（4 原则 → 软 / 硬双实证）
+        ├── digital-ops.astro      # 数字化能力（软实证 · 30+ 页 / 27 模块 / 17 AI 场景）
+        ├── hardcore-tech.astro    # 硬核科技应用蓝图（硬实证 · 11 项 + 不做 3 项 + 三年路线）
         ├── notes.astro            # 公众号文章列表
         └── notes/
             └── founders-letter.astro  # 公众号 001 · 写在工作室开门之前
@@ -127,7 +128,7 @@ shanchuanzaowu/
 
 **最小 7 步**（完整 SOP 见《山川造物·官网 v0.1·上线与域名布置方案 v0.1》）：
 
-1. 本地 `npm run build` 通过（生成 dist/ + 15 页）
+1. 本地 `npm run build` 通过（生成 dist/ + 18 页）
 2. GitHub 创建私有仓库 `shanchuan-zaowu-site`
 3. `git push -u origin main`
 4. Cloudflare Dashboard → Workers & Pages → Create → Connect to Git
@@ -167,6 +168,27 @@ shanchuanzaowu/
 
 宏观数字（30+ 页面 / 27 模块 / 25+ 云函数）保留不变是 OK 的——那是"已开发"
 层面的实证；只在功能描述层避免提及与红线冲突的模块即可。
+
+### 内部蓝图落地公开页时：硬数据脱敏 + IP 名匿名化
+
+`/hardcore-tech` 的源文档是内部讨论稿（"硬核科技应用蓝图 v0.1"）。
+公开版做了三处统一脱敏，未来同类内部资料落地时请保持同样的尺度：
+
+1. **设备品牌 / 型号全部隐去** —— 不写 Revopoint / Sony A7R / Bambu Lab /
+   xTool / Anker / Tripo / Midjourney / Yuji LED 这类具体名。改为
+   "桌面级 3D 扫描仪 / 高分辨率微距摄影系统 / AI 文案生成工具" 这类品类描述。
+   理由：避免被读成"设备厂商背书"；保留"做了认真研究"的实证感即可。
+2. **预算 / ROI / 招聘薪资全部隐去** —— 不写 ¥55000 / ¥80000 / ¥165000-330000 /
+   月薪 8000-15000 这类金额。改为"第一年必上 / 第二年加入 / 第三年再议"
+   这类节奏。完整版通过 ContactBlock 引导"邮件申请内部完整版"。
+3. **未公开 IP 名匿名化** —— 蒲公英之星 / 海的回信 / 一朵山川 / 蝴蝶宇宙 /
+   矿石系列 / 小黄家族 / 蓝先生 / 翠衣 等 IP 名在 IP 矩阵专栏正式发布前
+   **不落地任何公开页**。改为"IP 形象系 / 玻璃罩类 / 瓶身类 / 昆虫蝴蝶系 /
+   矿石系 / 贝壳系 / 插件化商品"等品类化描述。落地公开页时配上
+   "本表使用品类化描述，IP 矩阵正式发布后可对应升级到具体 IP 名" 的脚注。
+
+判断闸：每一份新内部资料公开化前，搜一遍 dist 里有没有"具体设备型号 /
+具体金额 / 未公开 IP 名"——三处都为零命中，再 push。
 
 ---
 

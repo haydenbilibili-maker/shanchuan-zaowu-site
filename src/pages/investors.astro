@@ -231,43 +231,94 @@ const benchmarks = [
       详细机制 → <a href="/commitment" class="text-brass-mid hover:text-brass-bright">/commitment</a>
     </p>
 
-    {/* === 软护城河 + 硬护城河 配对：数字化能力 callout === */}
+    {/* === 三道护城河：软（价值观）+ 硬-软件 + 硬-硬件 === */}
     <div class="mt-section p-6 md:p-8 border border-brass-bright/40 bg-ink-deep/40">
       <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
-        Hard Moat · 另一道护城河 · 数字化能力
+        Three Moats · 三道护城河
       </p>
-      <p class="font-serif text-lg md:text-xl text-cream tracking-cn mb-4 leading-[1.7]">
+      <p class="font-serif text-lg md:text-xl text-cream tracking-cn mb-section leading-[1.7]">
         1% 承诺是<strong class="text-brass-mid">软护城河</strong>——价值观层；<br />
-        自研数字化能力是<strong class="text-brass-bright">硬护城河</strong>——执行层。
+        自研数字化能力 + 硬核科技基础设施是<strong class="text-brass-bright">两道硬护城河</strong>——执行层。
       </p>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div class="text-center p-3 bg-ink/60">
-          <p class="font-serif-en italic text-brass-bright text-xl">30+</p>
-          <p class="text-xs text-text-soft tracking-cn mt-1">小程序页面</p>
+
+      {/* 软护城河 + 硬护城河：软件 / 硬件 三栏并列 */}
+      <div class="grid md:grid-cols-2 gap-px bg-brass-mid/15 mb-section">
+        {/* 硬护城河 I · 软件 */}
+        <div class="bg-ink-deep/70 p-6">
+          <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
+            Hard Moat I · 数字化能力
+          </p>
+          <h3 class="font-serif text-lg text-cream tracking-cn mb-4">软件层 · 一人构建的完整体系</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+            <div class="text-center p-2 bg-ink/60">
+              <p class="font-serif-en italic text-brass-bright text-lg">30+</p>
+              <p class="text-xs text-text-soft tracking-cn mt-1">小程序页</p>
+            </div>
+            <div class="text-center p-2 bg-ink/60">
+              <p class="font-serif-en italic text-brass-bright text-lg">27</p>
+              <p class="text-xs text-text-soft tracking-cn mt-1">ERP 模块</p>
+            </div>
+            <div class="text-center p-2 bg-ink/60">
+              <p class="font-serif-en italic text-brass-bright text-lg">17</p>
+              <p class="text-xs text-text-soft tracking-cn mt-1">AI 场景</p>
+            </div>
+            <div class="text-center p-2 bg-ink/60">
+              <p class="font-serif-en italic text-brass-bright text-lg">1</p>
+              <p class="text-xs text-text-soft tracking-cn mt-1">人构建</p>
+            </div>
+          </div>
+          <p class="text-text-soft text-sm leading-[1.85] tracking-cn mb-3">
+            李贺一人开发完整数字化体系，<strong class="text-cream">无外部技术团队、无 SaaS 订阅</strong>——同类初创品牌中极为罕见的资本效率。
+          </p>
+          <a
+            href="/digital-ops"
+            class="inline-flex items-center gap-2 text-sm text-brass-mid hover:text-brass-bright border-b border-brass-mid/40 hover:border-brass-bright/60 transition-colors"
+          >
+            <span>查看完整能力清单</span>
+            <span class="font-serif-en italic">/digital-ops →</span>
+          </a>
         </div>
-        <div class="text-center p-3 bg-ink/60">
-          <p class="font-serif-en italic text-brass-bright text-xl">27</p>
-          <p class="text-xs text-text-soft tracking-cn mt-1">ERP 模块</p>
-        </div>
-        <div class="text-center p-3 bg-ink/60">
-          <p class="font-serif-en italic text-brass-bright text-xl">17</p>
-          <p class="text-xs text-text-soft tracking-cn mt-1">AI 场景</p>
-        </div>
-        <div class="text-center p-3 bg-ink/60">
-          <p class="font-serif-en italic text-brass-bright text-xl">1</p>
-          <p class="text-xs text-text-soft tracking-cn mt-1">人构建</p>
+
+        {/* 硬护城河 II · 硬件 */}
+        <div class="bg-ink-deep/70 p-6">
+          <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
+            Hard Moat II · 硬核基础设施
+          </p>
+          <h3 class="font-serif text-lg text-cream tracking-cn mb-4">硬件层 · 用未来技术做过去的事</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+            <div class="text-center p-2 bg-ink/60">
+              <p class="font-serif-en italic text-brass-bright text-lg">11</p>
+              <p class="text-xs text-text-soft tracking-cn mt-1">推荐技术</p>
+            </div>
+            <div class="text-center p-2 bg-ink/60">
+              <p class="font-serif-en italic text-brass-bright text-lg">3</p>
+              <p class="text-xs text-text-soft tracking-cn mt-1">明确不做</p>
+            </div>
+            <div class="text-center p-2 bg-ink/60">
+              <p class="font-serif-en italic text-brass-bright text-lg">4</p>
+              <p class="text-xs text-text-soft tracking-cn mt-1">层级结构</p>
+            </div>
+            <div class="text-center p-2 bg-ink/60">
+              <p class="font-serif-en italic text-brass-bright text-lg">3</p>
+              <p class="text-xs text-text-soft tracking-cn mt-1">年路线</p>
+            </div>
+          </div>
+          <p class="text-text-soft text-sm leading-[1.85] tracking-cn mb-3">
+            3D 扫描 / 微距摄影 / 物联网 / UV 玻璃 / 激光雕刻——<strong class="text-cream">每只标本完整数字归档 + 物理生命延长 50 年</strong>。这是从「文创品牌」升级为「自然博物科技品牌」的关键叙事。
+          </p>
+          <a
+            href="/hardcore-tech"
+            class="inline-flex items-center gap-2 text-sm text-brass-mid hover:text-brass-bright border-b border-brass-mid/40 hover:border-brass-bright/60 transition-colors"
+          >
+            <span>查看完整科技蓝图</span>
+            <span class="font-serif-en italic">/hardcore-tech →</span>
+          </a>
         </div>
       </div>
-      <p class="text-text-soft text-sm leading-[1.85] tracking-cn mb-4">
-        李贺一人独立开发完整数字化体系，等效 3-5 人技术团队的产出——<strong class="text-cream">无外部技术团队、无 SaaS 订阅</strong>。AI 驱动超级个体不是概念，是已落地的能力。这是同类初创品牌中极为罕见的资本效率。
+
+      <p class="text-text-soft text-sm leading-[1.85] tracking-cn italic">
+        软 + 硬两道护城河同时存在——这是普通文创品牌没有的对话权限，也是 30 年品牌真正的执行壁垒。
       </p>
-      <a
-        href="/digital-ops"
-        class="inline-flex items-center gap-2 text-sm text-brass-mid hover:text-brass-bright border-b border-brass-mid/40 hover:border-brass-bright/60 transition-colors"
-      >
-        <span>查看完整能力清单与战略价值</span>
-        <span class="font-serif-en italic">/digital-ops →</span>
-      </a>
     </div>
   </section>
 
