@@ -1,12 +1,39 @@
 ---
 import Layout from '../components/Layout.astro';
 import PageHero from '../components/PageHero.astro';
-import WIPNotice from '../components/WIPNotice.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+const principles = [
+  {
+    num: 'I',
+    title: '技术是隐形的',
+    body:
+      '客人不应该感受到我们在用 AI / AR / 数据。他们应该感受到的是「这家店懂我」、「这件标本被认真对待」。技术若被看见，就已经过头了。',
+  },
+  {
+    num: 'II',
+    title: '自研，但不为自研而自研',
+    body:
+      '能买的不自建，能用 SaaS 的不自建——除非自建能让我们对长期方向更有掌控。我们自建小程序、ERP、AI 智能中心，是因为这三件事会决定品牌 30 年的护城河。',
+  },
+  {
+    num: 'III',
+    title: 'AI 是副驾，不是司机',
+    body:
+      'AI 嵌入店长 / 运营 / 财务的日常工作流，随叫随用。但所有最终决策仍由人做出——AI 提供建议、推演、复盘，不替人按按钮。',
+  },
+  {
+    num: 'IV',
+    title: '数据沉淀比功能堆叠更重要',
+    body:
+      '我们不追逐每一个新框架、每一个新模型。我们关心：用户的收藏行为、复购节奏、动线停留——这些数据 5 年后还在，今年的某个炫技功能 5 年后已经被淘汰。',
+  },
+];
 ---
 
 <Layout
   title="科技观"
-  description="技术是隐形的——只在让体验更安静的时候出现"
+  description="技术是隐形的——只在让体验更安静的时候出现。AI 是副驾不是司机。"
 >
   <PageHero
     eyebrow="On Technology · 科技观"
@@ -16,8 +43,88 @@ import WIPNotice from '../components/WIPNotice.astro';
 
   <hr class="brass-divider" />
 
-  <WIPNotice
-    topic="科技观 · AI 在零售空间中的克制使用 / 隐形增强 / SOP 化"
-    expectedVersion="v0.3"
+  {/* ============== 四原则 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Principles · 科技观四原则
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-section">
+      技术不是为了显示<br class="md:hidden" />「我们很懂」
+    </h2>
+
+    <div class="space-y-2">
+      {principles.map((p) => (
+        <article class="grid md:grid-cols-[auto_1fr] gap-6 md:gap-10 py-8 border-b border-brass-mid/10 last:border-b-0">
+          <div class="font-serif-en italic text-brass-mid text-3xl md:text-4xl leading-none pt-1">
+            {p.num}
+          </div>
+          <div>
+            <h3 class="font-serif text-xl md:text-2xl text-cream mb-3 tracking-cn">
+              {p.title}
+            </h3>
+            <p class="prose-cn">{p.body}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <PullQuote
+    quote="客人不应该感受到我们在用 AI；他们应该感受到的是「这家店懂我」。"
   />
+
+  {/* ============== 引导到 /digital-ops ============== */}
+  <section class="editorial-section py-section fade-in">
+    <div class="p-8 md:p-12 border border-brass-mid/30 bg-ink-elevated/50">
+      <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
+        From Philosophy to Proof · 从哲学到实证
+      </p>
+      <h2 class="font-serif text-2xl md:text-3xl text-cream tracking-cn mb-4">
+        说&ldquo;技术隐形&rdquo;容易，<br class="md:hidden" />做出来证明给你看才难
+      </h2>
+      <p class="prose-cn text-text-soft mb-6">
+        以上四条原则是<strong class="text-cream">哲学层</strong>。要看真实落地的能力——一人独立开发的小程序（30+ 页面）+ ERP 中台（27 模块）+ AI 智能中心（17 场景）+ 25+ 云函数 + 完整云数据库——请去看&ldquo;数字化运营能力&rdquo;专栏。
+      </p>
+      <a
+        href="/digital-ops"
+        class="inline-flex items-center gap-3 border border-brass-mid/60 px-6 py-3 text-brass-mid hover:bg-brass-mid hover:text-ink transition-colors tracking-cn"
+      >
+        <span>查看数字化能力实证</span>
+        <span class="font-serif-en italic">/digital-ops →</span>
+      </a>
+    </div>
+  </section>
+
+  {/* ============== 跨页关联 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-6 text-center">
+      Related · 跨页关联
+    </p>
+    <div class="grid md:grid-cols-3 gap-6">
+      <a href="/digital-ops" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          Capabilities
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          数字化运营能力 · 实证 →
+        </p>
+      </a>
+      <a href="/space" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          Space
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          空间体系 · 技术嵌入门店 →
+        </p>
+      </a>
+      <a href="/values" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          Values
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          六观体系 · 科技观全文 →
+        </p>
+      </a>
+    </div>
+  </section>
 </Layout>

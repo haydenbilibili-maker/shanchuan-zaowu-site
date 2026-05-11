@@ -1,0 +1,829 @@
+---
+import Layout from '../components/Layout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import ContactBlock from '../components/ContactBlock.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+// 关键宏观数字（首屏 metrics 行）
+const metrics = [
+  { num: '30+', label: '小程序页面', en: 'Mini Program Pages' },
+  { num: '27', label: 'ERP 模块', en: 'Backend Modules' },
+  { num: '17', label: 'AI 场景', en: 'AI Scenarios' },
+  { num: '25+', label: '云函数', en: 'Cloud Functions' },
+];
+
+// 三大平台
+const platforms = [
+  {
+    role: 'I',
+    en: 'Consumer',
+    name: '官方小程序',
+    side: '消费者端',
+    detail:
+      '博物标本电商 + 内容社区 + AI 鉴定 + 预约 + 会员体系。微信小程序原生开发，覆盖从触达到留存的全链路。',
+  },
+  {
+    role: 'II',
+    en: 'Operations',
+    name: '数智化中台',
+    side: '管理端',
+    detail:
+      '藏品管理 + 财务核算 + 会员 CRM + 活动营销 + AI 决策。Vue 3 SPA，与小程序共享同一云数据库，数据实时互通。',
+  },
+  {
+    role: 'III',
+    en: 'Store',
+    name: '店长后台',
+    side: '门店运营端',
+    detail:
+      '嵌入小程序内的轻量管理界面，账本 / 订单 / 核销 / 藏品 / 活动 / 权益 / 人员 / 装修 / 内容 九大功能，手机即可日常运营。',
+  },
+];
+
+// 17 AI 场景按领域分组
+const aiDomains = [
+  {
+    domain: '门店经营',
+    en: 'Store Operations',
+    items: [
+      { code: 'StoreAI', desc: '门店经营全场景 AI 助手' },
+      { code: 'InventoryAI', desc: '库存周转分析、缺货预测、自动补货建议' },
+      { code: 'PricingAI', desc: '市场 / 库存 / 竞品综合定价策略' },
+      { code: 'SalesAI', desc: '历史 + 季节 + 活动因素预测销售趋势' },
+    ],
+  },
+  {
+    domain: '营销与内容',
+    en: 'Marketing & Content',
+    items: [
+      { code: 'MarketingAI', desc: '营销活动策划与优化' },
+      { code: 'ContentAI', desc: '内容创作辅助' },
+    ],
+  },
+  {
+    domain: '客户与客服',
+    en: 'Customer',
+    items: [
+      { code: 'CustomerAI', desc: '客户画像分析、精准营销' },
+      { code: 'CustomerServiceAI', desc: '智能客服应答' },
+    ],
+  },
+  {
+    domain: '供应链与规划',
+    en: 'Supply & Planning',
+    items: [
+      { code: 'SupplyChainAI', desc: '供应链优化建议' },
+      { code: 'BusinessPlanAI', desc: '商业计划生成与分析' },
+    ],
+  },
+  {
+    domain: '人力与财务',
+    en: 'HR & Finance',
+    items: [
+      { code: 'StaffOptimizeAI', desc: '人员排班与效率优化' },
+      { code: 'FinanceAI', desc: '财务分析与建议' },
+      { code: 'DataReportAI', desc: '数据报表自动生成' },
+    ],
+  },
+  {
+    domain: '竞争与战略',
+    en: 'Strategy',
+    items: [
+      { code: 'CompetitorAnalysisAI', desc: '竞品监测与分析' },
+      { code: 'StrategyResearchAI', desc: '战略调研与洞察' },
+    ],
+  },
+  {
+    domain: '法务',
+    en: 'Legal',
+    items: [{ code: 'ContractReviewAI', desc: '合同审查辅助' }],
+  },
+  {
+    domain: '协作',
+    en: 'Collaboration',
+    items: [{ code: 'VirtualBoard', desc: '虚拟董事会——多角色 AI 辩论决策' }],
+  },
+];
+
+// 战略价值（三受众并重）
+const valueForAudience = [
+  {
+    role: 'I',
+    label: '对投资人',
+    en: 'For Investors',
+    pillars: [
+      {
+        title: 'AI 驱动超级个体不是概念，是已落地的能力',
+        body: '一人构建小程序（30+ 页面）+ ERP 中台（27 模块）+ AI 智能中心（17 场景）+ 25+ 云函数 + 完整云数据库——这在同类初创品牌中极为罕见。',
+      },
+      {
+        title: '极低技术成本',
+        body: '无外部技术团队、无 SaaS 订阅费用。微信云开发按量计费，初创期成本极低。',
+      },
+      {
+        title: '技术壁垒随时间加深',
+        body: '数据积累、算法优化、用户行为数据沉淀——这些资产无法被竞争对手短期复制。',
+      },
+    ],
+  },
+  {
+    role: 'II',
+    label: '对加盟商',
+    en: 'For Franchise Partners',
+    pillars: [
+      {
+        title: '开箱即用',
+        body: '加盟商不需自建任何数字化系统。小程序商城 / 会员体系 / 库存管理 / 数据报表 / AI 助手全部由公司统一提供。店长后台手机即可完成日常运营。',
+      },
+      {
+        title: '数据驱动决策',
+        body: 'AI 智能中心为每家门店提供定价建议、补货预警、销售预测，大幅降低加盟商的经营决策门槛。',
+      },
+      {
+        title: '零边际成本复制',
+        body: '新开一家加盟店时，数字化系统开店即上线，所有数据自动汇入中央 ERP。',
+      },
+    ],
+  },
+  {
+    role: 'III',
+    label: '对消费者',
+    en: 'For Customers',
+    pillars: [
+      {
+        title: '从一次性购买到持续收藏、探索、互动',
+        body: '收藏家协会会员体系 + AI 标本鉴定 + 自然图鉴 + 成就系统 + 预约系统 + 拼团与秒杀 + 社区互动，构成完整的数字化体验闭环。',
+      },
+    ],
+  },
+];
+
+// 技术路线图
+const roadmap = [
+  {
+    period: 'Now',
+    label: '已完成',
+    items: [
+      '小程序全功能上线（30+ 页面）',
+      'ERP 中台 27 模块全部实现',
+      'AI 智能中心 17 场景部署',
+      '25+ 云函数运行中',
+      '云数据库 30+ 集合建立',
+      '客户端工具库（监控 / 性能 / 缓存 / 图片）',
+    ],
+  },
+  {
+    period: 'Near',
+    label: '近期优化',
+    items: [
+      '门店 POS 与 ERP 数据打通',
+      '库存系统与实际库存对齐',
+      'AI 标本鉴定从 Mock 切换到正式模型',
+      '多门店数据隔离与汇总',
+      '加盟商专属数据看板',
+      '小程序 LBS 就近门店推荐',
+    ],
+  },
+  {
+    period: 'Mid',
+    label: '中期规划',
+    items: [
+      'AR 标本体验进一步完善',
+      '多语言支持（日文 / 英文）',
+      '微信支付全链路打通',
+      '开放平台 API 供第三方接入',
+    ],
+  },
+];
+---
+
+<Layout
+  title="数字化运营能力"
+  description="基于已交付代码库的真实能力映射——30+ 小程序页面 / 27 个 ERP 模块 / 17 个 AI 场景 / 25+ 云函数。一人构建，等效 3-5 人技术团队的产出。"
+>
+  <SectionHeader
+    eyebrow="Digital Operations · 品牌数字化运营能力"
+    title={`已交付的能力\n不是概念规划`}
+    intro="山川造物已建成一套完整的自研数字化运营体系，覆盖从消费者触达到经营决策的全链路。这套体系由创始人李贺一人独立开发，等效于 3-5 人技术团队的产出。本文所有列出的功能均已实现并可运行——基于真实代码库的能力映射，不是 PPT 上的设想。"
+  />
+
+  <hr class="brass-divider" />
+
+  {/* ============== 关键数字 ============== */}
+  <section class="editorial-section-wide py-section fade-in">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-brass-mid/10">
+      {metrics.map((m) => (
+        <div class="bg-ink p-8 md:p-10 text-center">
+          <p class="font-serif-en italic text-brass-bright mb-2"
+             style="font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1;">
+            {m.num}
+          </p>
+          <p class="font-serif text-cream text-sm md:text-base tracking-cn mb-1">{m.label}</p>
+          <p class="font-serif-en italic text-text-dim text-xs tracking-widest uppercase">
+            {m.en}
+          </p>
+        </div>
+      ))}
+    </div>
+    <p class="text-center text-text-dim text-xs font-serif-en italic tracking-widest uppercase mt-6">
+      Hand-built by founder · 一人构建 · Updated 2026.04
+    </p>
+  </section>
+
+  {/* ============== 三大平台架构 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <div class="text-center mb-section">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+        Architecture · 三大平台架构
+      </p>
+      <h2 class="display-title text-cream tracking-cn">
+        三个客户端<br class="md:hidden" />共享同一云环境
+      </h2>
+      <p class="prose-cn max-w-editorial mx-auto text-text-soft mt-paragraph">
+        消费者端、管理端、门店运营端三个平台共享同一微信云开发环境，数据实时互通——一次写入，多端可见。
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-px bg-brass-mid/10">
+      {platforms.map((p) => (
+        <article class="bg-ink-elevated/50 p-6 md:p-8 relative">
+          <p class="font-serif-en italic text-brass-mid/40 absolute top-4 right-5"
+             style="font-size: 2rem; line-height: 1;">
+            {p.role}
+          </p>
+          <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+            {p.en}
+          </p>
+          <h3 class="font-serif text-2xl text-cream tracking-cn mb-1">{p.name}</h3>
+          <p class="font-serif text-sm text-brass-mid tracking-cn mb-4">{p.side}</p>
+          <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{p.detail}</p>
+        </article>
+      ))}
+    </div>
+
+    <div class="mt-paragraph p-6 border-l-2 border-brass-mid/40 bg-ink-deep/40">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+        Tech Stack · 技术栈
+      </p>
+      <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+        微信小程序原生（WXML / WXSS / JS）· Vue 3 + Vite + Element Plus · Chart.js · 微信云开发（云函数 Node.js + 云数据库 + 云存储）· 阿里云 DashScope（通义千问多模态）
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== Part I · 官方小程序 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Part I · Consumer-facing Mini Program
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      官方小程序 · 消费者端
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      微信小程序是消费者触达山川造物的主要数字界面。以下所有功能均已实现并可运行。
+    </p>
+
+    {/* 2.1 核心商业闭环 */}
+    <div class="mb-section">
+      <h3 class="font-serif text-xl md:text-2xl text-brass-mid tracking-cn mb-4 pb-3 border-b border-brass-mid/20">
+        2.1 核心商业闭环
+      </h3>
+      <dl class="divide-y divide-brass-mid/10">
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>商品浏览与下单
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            博物标本室四大品类入口（神奇昆虫 / 群山回响 / 植物探微 / 无尽海洋）、商品详情页、评论体系（发布 / 点赞）、搜索（热词 + 推荐算法）、收藏箱与结算的完整链路。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>拼团与秒杀
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            拼团创建与参团、秒杀下单——已具备社交裂变和限时营销能力。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>优惠券体系
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            领取、转赠、最优券自动匹配，支持多种券类型和使用规则。
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    {/* 2.2 预约与到店体验 */}
+    <div class="mb-section">
+      <h3 class="font-serif text-xl md:text-2xl text-brass-mid tracking-cn mb-4 pb-3 border-b border-brass-mid/20">
+        2.2 预约与到店体验
+      </h3>
+      <dl class="divide-y divide-brass-mid/10">
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>预约系统
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            三类预约：入店参观（免费，生成电子通行证）/ 手作课程 / 特别活动。日期 + 时段选择、人数控制、候补队列、预约提醒。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>票务与核销
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            电子票证设计（&ldquo;山川造物标本艺术馆&rdquo;票面）、店长端扫码核销。
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    {/* 2.3 会员与留存 */}
+    <div class="mb-section">
+      <h3 class="font-serif text-xl md:text-2xl text-brass-mid tracking-cn mb-4 pb-3 border-b border-brass-mid/20">
+        2.3 会员与留存体系
+      </h3>
+      <dl class="divide-y divide-brass-mid/10">
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>收藏家协会
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            多等级会员体系（如&ldquo;曜石·策展人&rdquo;）、成长值积累、等级权益（折扣 / 专属活动）、每日签到、积分余额、优惠券。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>自然图鉴
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            用户个人收藏数字化——购买的每件标本自动归入个人图鉴，支持创建文件夹、移动分类、推荐。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>成就系统
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            游戏化解锁条件驱动复购和互动，后台可配置成就规则。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>行为埋点
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            全链路用户行为追踪，后台可配置追踪规则。
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    {/* 2.4 AI 标本鉴定 */}
+    <div class="mb-section p-6 md:p-8 border border-brass-mid/30 bg-ink-elevated/40">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+        Featured · 招牌能力
+      </p>
+      <h3 class="font-serif text-xl md:text-2xl text-cream tracking-cn mb-3">
+        2.4 AI 标本鉴定
+      </h3>
+      <p class="font-serif text-base md:text-lg text-brass-bright tracking-cn mb-4 italic">
+        &ldquo;拍一张照片，读懂自然&rdquo;
+      </p>
+      <p class="prose-cn text-text-soft">
+        用户拍照或从相册选择图片，AI 识别物种并输出科普信息。技术实现：调用阿里云 DashScope 多模态接口（通义千问），鉴定结果落库保存，支持生成分享海报。
+      </p>
+      <p class="prose-cn text-text-soft mt-3">
+        这个功能在<strong class="text-cream">门店场景</strong>和<strong class="text-cream">线上场景</strong>均可使用，强化&ldquo;科学 + 美学&rdquo;的品牌认知。
+      </p>
+    </div>
+
+    {/* 2.5 内容与社区 */}
+    <div>
+      <h3 class="font-serif text-xl md:text-2xl text-brass-mid tracking-cn mb-4 pb-3 border-b border-brass-mid/20">
+        2.5 内容与社区
+      </h3>
+      <p class="prose-cn text-text-soft">
+        文章栏目、视频内容、百科档案、社区互动、站内消息系统。底部导航五 Tab：探索 / 百科 / 社区 / 收藏箱 / 我的。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== Part II · 数智化中台 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Part II · Backend Operations Platform
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      数智化中台 · 管理端
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      基于 Vue 3 + Element Plus 的单页应用，与小程序共享同一云环境，数据实时互通。<strong class="text-cream">27 个功能模块</strong>，覆盖经营全链路。
+    </p>
+
+    {/* 3.1 全局概览 */}
+    <div class="mb-section">
+      <h3 class="font-serif text-xl md:text-2xl text-brass-mid tracking-cn mb-4 pb-3 border-b border-brass-mid/20">
+        3.1 全局概览 <span class="text-text-dim text-base">· 5 个模块</span>
+      </h3>
+      <dl class="divide-y divide-brass-mid/10">
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>经营驾驶舱
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            今日营收 / 月度 GMV / 订单数 / 会员数 / 库存预警 / 待办清单 / 资金视图 / 近 7 日趋势图。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>实时监控大屏
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            全局数据可视化大屏，适用于门店展示和管理层远程监控。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>运营决策中心
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            基于实时商品 / 订单 / 财务数据的运营决策支持。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>战略调研看板
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            行业总览 / 产业链地图 / 产品金字塔 / 爆品生成器 / 流量漏斗 / 竞品分析 / 盈利模拟 / 门店设计 / 3 年规划 / AI 用研结论<strong class="text-cream">十大模块</strong>。数据持久化，可作为正式融资 / 加盟谈判的支撑材料。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>AI 智能中心
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            <strong class="text-cream">17 个 AI 场景</strong>模块懒加载——详见下面 Part III。
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    {/* 3.2 业务管理 */}
+    <div class="mb-section">
+      <h3 class="font-serif text-xl md:text-2xl text-brass-mid tracking-cn mb-4 pb-3 border-b border-brass-mid/20">
+        3.2 业务管理 <span class="text-text-dim text-base">· 6 个模块</span>
+      </h3>
+      <dl class="divide-y divide-brass-mid/10">
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>藏品档案库
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            商品 CRUD、批量调价、批量库存调整，内嵌 AI 商品助手与库存助手。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>全渠道订单
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            线上 + 线下统一订单管理，内嵌订单 AI 助手。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>财务核算系统
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            收支记录、利润核算、多端同步。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>会员 CRM
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            客户全生命周期管理。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>活动与排期
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            门店活动 / 手作课程 / 特别活动的排期管理。
+          </dd>
+        </div>
+        <div class="grid md:grid-cols-[200px_1fr] gap-3 md:gap-8 py-5">
+          <dt class="font-serif text-cream tracking-cn">
+            <span class="text-brass-mid mr-2">▸</span>权益与营销
+          </dt>
+          <dd class="text-text-soft text-sm leading-[1.85] tracking-cn">
+            优惠券配置、积分活动、会员权益管理。
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    {/* 3.3 + 3.4 合并简述 */}
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="p-6 border border-brass-mid/15 bg-ink-elevated/40">
+        <h3 class="font-serif text-lg text-brass-mid tracking-cn mb-3">
+          3.3 运营配置 + 系统配置 <span class="text-text-dim text-sm">· 14 项</span>
+        </h3>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          <strong class="text-cream">运营配置 3 项</strong>：首页轮播管理、首页配置、内容管理（内嵌内容创作 AI 助手）。
+        </p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn mt-3">
+          <strong class="text-cream">系统配置 11 项</strong>：会员等级体系、积分规则、预约规则、权限管理（角色 / 用户 / 操作日志 / 登录日志）、搜索关键词管理、推荐算法配置、活动营销规则、数据报表增强、成就系统配置、用户行为追踪、通知消息配置。
+        </p>
+      </div>
+      <div class="p-6 border border-brass-mid/15 bg-ink-elevated/40">
+        <h3 class="font-serif text-lg text-brass-mid tracking-cn mb-3">
+          3.4 组织与人员
+        </h3>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          团队与标本师管理——员工、实习生、标本师档案。
+        </p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn mt-3">
+          全局浮层经营助理<strong class="text-brass-bright">&ldquo;小川&rdquo;</strong>在登录后跨模块可用——它是一个常驻的 AI 副驾，无论你在哪个模块都能召唤它问问题、要分析、做决策推演。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== Part III · AI 智能中心（17 场景）============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Part III · AI Intelligence Center
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      AI 智能中心 · 17 个场景模块
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      AI 智能中心是山川造物最独特的数字化能力。所有 AI 场景模块通过异步懒加载，统一调用层支持<strong class="text-cream">多模型、多 Key 轮询、故障转移</strong>，可选本地 Ollama 作为兜底。
+    </p>
+
+    {/* 三种交互模式 */}
+    <div class="grid md:grid-cols-3 gap-px bg-brass-mid/10 mb-section">
+      <div class="bg-ink-elevated/50 p-6">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          Mode I
+        </p>
+        <p class="font-serif text-cream tracking-cn mb-2">工具模式</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          直接执行任务——给出结果。
+        </p>
+      </div>
+      <div class="bg-ink-elevated/50 p-6">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          Mode II
+        </p>
+        <p class="font-serif text-cream tracking-cn mb-2">智能咨询</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          对话式分析建议——给出推理。
+        </p>
+      </div>
+      <div class="bg-ink-elevated/50 p-6">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          Mode III
+        </p>
+        <p class="font-serif text-cream tracking-cn mb-2">博弈辩论</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          多角度决策推演——给出复盘。
+        </p>
+      </div>
+    </div>
+
+    {/* 17 场景按领域分组 */}
+    <div class="space-y-8">
+      {aiDomains.map((d) => (
+        <div class="grid md:grid-cols-[180px_1fr] gap-4 md:gap-6 pb-6 border-b border-brass-mid/10 last:border-b-0">
+          <div>
+            <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-1">
+              {d.en}
+            </p>
+            <h3 class="font-serif text-lg text-cream tracking-cn">{d.domain}</h3>
+          </div>
+          <ul class="space-y-3">
+            {d.items.map((item) => (
+              <li class="grid grid-cols-[160px_1fr] gap-3 md:gap-6 items-baseline">
+                <code class="font-mono text-xs text-brass-bright bg-ink-deep/60 px-2 py-1 rounded inline-block w-fit">
+                  {item.code}
+                </code>
+                <span class="text-text-soft text-sm leading-[1.85] tracking-cn">
+                  {item.desc}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    {/* 嵌入业务页面的 AI 组件 */}
+    <div class="mt-section p-6 md:p-8 border-l-2 border-brass-bright/60 bg-ink-deep/40">
+      <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
+        Embedded · 嵌入工作流的 AI 副驾
+      </p>
+      <p class="font-serif text-lg text-cream tracking-cn mb-3">
+        AI 不是独立的&ldquo;工具箱&rdquo;，是融入日常工作流的&ldquo;副驾&rdquo;
+      </p>
+      <p class="prose-cn text-text-soft">
+        除 AI 智能中心集中管理外，还有 <strong class="text-cream">4 个 AI 组件直接嵌入业务页面</strong>：商品助手（弹窗于藏品档案库）、库存助手（弹窗于库存管理）、订单助手（内嵌于订单列表）、内容助手（内嵌于内容管理）。这意味着店长 / 运营在做日常工作时，AI 始终在他们手边，随叫随用。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== Part IV · 数据层与云基础设施 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Part IV · Data &amp; Infrastructure
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      数据层与云基础设施
+    </h2>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-paragraph">
+      <div class="p-6 border border-brass-mid/15 bg-ink-elevated/40">
+        <h3 class="font-serif text-lg text-brass-mid tracking-cn mb-4">
+          云数据库 · 30+ 集合覆盖业务全域
+        </h3>
+        <ul class="space-y-2 text-text-soft text-sm leading-[1.85] tracking-cn">
+          <li><span class="text-brass-mid mr-2">·</span>商品与内容（商品 / 品类 / 百科 / 文章 / 精选 / 标本师 / 轮播）</li>
+          <li><span class="text-brass-mid mr-2">·</span>交易与用户（订单 / 用户 / 预约 / 优惠券）</li>
+          <li><span class="text-brass-mid mr-2">·</span>财务（收支记录 / 财务设置）</li>
+          <li><span class="text-brass-mid mr-2">·</span>会员与营销（等级 / 积分规则 / 营销规则 / 成就配置）</li>
+          <li><span class="text-brass-mid mr-2">·</span>预约与活动（预约规则 / 活动）</li>
+          <li><span class="text-brass-mid mr-2">·</span>搜索与推荐（热词 / 黑名单 / 推荐算法配置）</li>
+          <li><span class="text-brass-mid mr-2">·</span>行为与通知（行为配置 / 行为日志 / 通知模板）</li>
+          <li><span class="text-brass-mid mr-2">·</span>权限与审计（角色 / 管理员 / 操作日志 / 登录日志）</li>
+          <li><span class="text-brass-mid mr-2">·</span>报表与战略（报表模板 / 战略调研）</li>
+        </ul>
+      </div>
+      <div class="p-6 border border-brass-mid/15 bg-ink-elevated/40">
+        <h3 class="font-serif text-lg text-brass-mid tracking-cn mb-4">
+          客户端工具库 · 6 个基础设施模块
+        </h3>
+        <ul class="space-y-3 text-text-soft text-sm leading-[1.85] tracking-cn">
+          <li><strong class="text-cream">错误监控</strong>　全链路异常捕捉与上报</li>
+          <li><strong class="text-cream">性能计时</strong>　关键路径耗时埋点</li>
+          <li><strong class="text-cream">缓存策略</strong>　多层缓存与失效控制</li>
+          <li><strong class="text-cream">图片加载优化</strong>　懒加载 + 占位 + WebP</li>
+          <li><strong class="text-cream">财务数据同步</strong>　多端实时同步</li>
+          <li><strong class="text-cream">物种品类映射</strong>　博物分类树</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== Part V · 战略价值（三受众）============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Part V · Strategic Value
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      数字化能力的战略价值
+    </h2>
+    <p class="prose-cn max-w-editorial mb-section text-text-soft">
+      技术不是为了显示&ldquo;我们很懂&rdquo;。技术是降低三类人——投资人 / 加盟商 / 消费者——与山川造物建立长期关系的成本。
+    </p>
+
+    <div class="space-y-section">
+      {valueForAudience.map((aud) => (
+        <article class="grid md:grid-cols-[200px_1fr] gap-6 md:gap-10">
+          <div>
+            <p class="font-serif-en italic text-brass-mid/40 mb-2"
+               style="font-size: 2.5rem; line-height: 1;">
+              {aud.role}
+            </p>
+            <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-1">
+              {aud.en}
+            </p>
+            <h3 class="font-serif text-2xl text-cream tracking-cn">{aud.label}</h3>
+          </div>
+          <div class="space-y-5">
+            {aud.pillars.map((p) => (
+              <div class="border-l-2 border-brass-mid/40 pl-5">
+                <p class="font-serif text-cream tracking-cn mb-2">
+                  {p.title}
+                </p>
+                <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+                  {p.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== Part VI · 路线图 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Part VI · Roadmap
+    </p>
+    <h2 class="display-title text-cream tracking-cn mb-paragraph">
+      技术路线图
+    </h2>
+
+    <div class="grid md:grid-cols-3 gap-px bg-brass-mid/10">
+      {roadmap.map((r, i) => (
+        <div class="bg-ink-elevated/50 p-6 md:p-8">
+          <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+            {r.period}
+          </p>
+          <h3 class="font-serif text-xl text-cream tracking-cn mb-4">{r.label}</h3>
+          <ul class="space-y-2 text-text-soft text-sm leading-[1.85] tracking-cn">
+            {r.items.map((item) => (
+              <li class="pl-4 relative">
+                <span class={`absolute left-0 top-2 w-2 h-px ${i === 0 ? 'bg-brass-bright' : 'bg-brass-mid/60'}`}></span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {/* ============== Closing Manifesto ============== */}
+  <section class="editorial-section py-section fade-in">
+    <div class="my-section py-12 border-y border-brass-mid/20 text-center">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-6">
+        Closing Statement
+      </p>
+      <p class="font-serif text-cream tracking-cn leading-[1.5] mb-6"
+         style="font-size: clamp(1.5rem, 3.5vw, 2.5rem);">
+        让<span class="text-brass-bright">每一座城市</span>，<br />
+        都有一座山川的博物馆
+      </p>
+      <p class="font-serif-en italic text-text-dim text-sm tracking-widest">
+        A natural-history museum in every city.
+      </p>
+    </div>
+    <p class="text-center font-serif-en italic text-text-dim text-xs tracking-widest uppercase">
+      All capabilities listed above are deployed and operational ·
+      所有列出功能均已实现并可运行
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== 跨页关联 ============== */}
+  <section class="editorial-section py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">
+      Related · 跨页关联
+    </p>
+    <div class="grid md:grid-cols-3 gap-6 mt-8">
+      <a href="/investors" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          For Investors
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          投资合作 · 我们的资本观 →
+        </p>
+      </a>
+      <a href="/franchise" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          For Franchise
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          城市合伙人 · 开箱即用的数字化 →
+        </p>
+      </a>
+      <a href="/tech" class="group block p-6 border border-brass-mid/15 hover:border-brass-mid/40 hover:bg-ink-elevated/40 transition-all">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+          On Technology
+        </p>
+        <p class="font-serif text-cream group-hover:text-brass-mid transition-colors tracking-cn">
+          科技观 · 技术哲学层 →
+        </p>
+      </a>
+    </div>
+  </section>
+
+  <ContactBlock
+    title="想看更深的能力实证？"
+    intro="如果你是潜在投资人、加盟方、或战略合作伙伴，欢迎联系我们安排一次系统演示——含小程序、ERP 中台、AI 智能中心三端 live demo（约 60 分钟）。"
+    subjectHint="数字化能力演示申请 · 你的姓名 · 机构 · 角色"
+  />
+</Layout>

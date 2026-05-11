@@ -77,7 +77,8 @@ shanchuanzaowu/
         ├── franchise.astro        # 加盟说明
         ├── operations.astro       # 运营方法论
         ├── plan.astro             # 路线图
-        ├── tech.astro             # 技术观
+        ├── tech.astro             # 科技观（4 原则 + 引导到 /digital-ops）
+        ├── digital-ops.astro      # 数字化运营能力专栏（30+ 页 / 27 模块 / 17 AI 场景实证）
         ├── notes.astro            # 公众号文章列表
         └── notes/
             └── founders-letter.astro  # 公众号 001 · 写在工作室开门之前
