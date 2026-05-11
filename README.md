@@ -33,7 +33,7 @@ npm run dev    # http://localhost:4321/
 ## 构建与预览
 
 ```bash
-npm run build      # 输出到 dist/（18 个 HTML 页面）
+npm run build      # 输出到 dist/（19 个 HTML 页面）
 npm run preview    # 本地预览构建产物
 ```
 
@@ -69,12 +69,12 @@ shanchuanzaowu/
     │   ├── NoListItem.astro       # × 不做项（红线清单用）
     │   ├── PledgeBlock.astro      # 承诺方框（positive / negative 两种 variant）
     │   └── WIPNotice.astro        # 占位通知（v0.2 升级前的 dignified 占位）
-    └── pages/                 # 18 个页面
+    └── pages/                 # 19 个页面
         ├── index.astro            # 首页（vision hero + 4 audience + 1% 承诺）
         ├── about.astro            # 我们是谁（创始团队 + 6 战略原则 + 30 年）
         ├── products.astro         # 产品线（自然小匣 / 衍生品 / 主题展柜 / 双 IP）
-        ├── space.astro            # 空间体系（叙事根 + toolkit 框架 + 8 模块）
-        ├── senses.astro           # 五感页（视觉基线）
+        ├── space.astro            # 空间体系（叙事根 + toolkit 框架 + 8 模块 + → /sound-manual）
+        ├── senses.astro           # 五感页（视觉基线 + 「听」深度入口 → /sound-manual）
         ├── commitment.astro       # 1% 承诺（含物理层落地 → /hardcore-tech）
         ├── values.astro           # 6 观（空间 / 承诺 / 青年 / 科技 / 内容 / 人才）
         ├── talent.astro           # 人才与店长培训 toolkit
@@ -86,6 +86,7 @@ shanchuanzaowu/
         ├── tech.astro             # 科技观（4 原则 → 软 / 硬双实证）
         ├── digital-ops.astro      # 数字化能力（软实证 · 30+ 页 / 27 模块 / 17 AI 场景）
         ├── hardcore-tech.astro    # 硬核科技应用蓝图（硬实证 · 11 项 + 不做 3 项 + 三年路线）
+        ├── sound-manual.astro     # 店内音乐手册 v2（5 主题日 × 240 首 × 12 小时全覆盖）
         ├── notes.astro            # 公众号文章列表
         └── notes/
             └── founders-letter.astro  # 公众号 001 · 写在工作室开门之前
@@ -166,7 +167,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 **最小 7 步**（完整 SOP 见《山川造物·官网 v0.1·上线与域名布置方案 v0.1》）：
 
-1. 本地 `npm run build` 通过（生成 dist/ + 18 页）
+1. 本地 `npm run build` 通过（生成 dist/ + 19 页）
 2. GitHub 创建私有仓库 `shanchuan-zaowu-site`
 3. `git push -u origin main`
 4. Cloudflare Dashboard → Workers & Pages → Create → Connect to Git
@@ -216,6 +217,7 @@ v0.2 双主题改造时踩过的三个坑，未来扩展色族 / 加新 opacity 
    迁移前先 `rg "(bg|border|text|from|to)-[\w-]+/\d+"` 把所有 opacity 修饰扫一遍，
    命中的 token 必须配 `--rgb-xxx` tuple 变量。当前已配的是
    `ink` / `ink-elevated` / `ink-deep` / `cream` / 全部 `brass-*`。
+   `green` / `cabinet` / `coral` / `purple` **目前是单色 var**，所以只能用全色（`text-coral-mid`、`bg-cabinet-mid`），不能套 `/30` opacity。`/sound-manual` 的 5 主题日色识别因此被设计成"主题色仅承担 text + tape 色带"，外框边统一 `brass-mid/20`——这反而让多色页面更克制。如果未来要给这 4 色族加 opacity 能力，按 brass 的模式再加一套 `--rgb-coral-mid` 等 tuple 变量。
 2. **Footer 米白纸张色族（paper / nature-green / earth-brown / ink-text）刻意不参与双主题** ——
    这是 VI 印刷物料色族，承担"翻到出版物末页"的物理体验。如果让它跟随主题，
    浅色模式下 Footer 跟 main（都用 #FAFAF5）会同色合并丢失边界。
@@ -225,9 +227,21 @@ v0.2 双主题改造时踩过的三个坑，未来扩展色族 / 加新 opacity 
    没冲突但容易跟其他第三方库撞车。v0.2 起统一加 `--color-` 前缀（`--color-ink`），
    RGB tuple 用 `--rgb-` 前缀（`--rgb-brass-mid`）。
 
+### 长清单页（240 首 / 27 模块）用 `<details>` 折叠避免"歌单堆砌感"
+
+`/sound-manual` 完整列出 240 首曲目（5 主题日 × 4 段 × 12 首），但 5 个主题日的 48 首完整清单**默认折叠**——只展示概念故事 + 4 段标题 + meta。每个 article 卡片内嵌一个 `<details>`，summary 文案随状态切换（"展开 / 收起"）。
+
+理由：
+
+1. 完全公开 240 首是品牌"颗粒度"实证（"我们做到了这种程度"）
+2. 默认全展开会让页面变成歌单聚合站，反而稀释品牌主导叙事
+3. 折叠让真正想看的客人能看到，扫读的访客不被信息淹没
+
+实现关键：原生 `<details>` 不要 JS，CSS 用 `details[open]` / `details:not([open])` 切换两个 label span 显隐。`details summary::-webkit-details-marker { display: none }` 去掉浏览器默认三角箭头。
+
 ### 内部蓝图落地公开页时：硬数据脱敏 + IP 名匿名化
 
-`/hardcore-tech` 的源文档是内部讨论稿（"硬核科技应用蓝图 v0.1"）。
+`/hardcore-tech` 和 `/sound-manual` 的源文档都是内部讨论稿（"硬核科技应用蓝图 v0.1" / "店内音乐手册 v2 完整版 · 内部资料"）。
 公开版做了三处统一脱敏，未来同类内部资料落地时请保持同样的尺度：
 
 1. **设备品牌 / 型号全部隐去** —— 不写 Revopoint / Sony A7R / Bambu Lab /
