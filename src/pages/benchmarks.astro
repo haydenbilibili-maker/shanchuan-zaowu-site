@@ -13,10 +13,10 @@ import ContactBlock from '../components/ContactBlock.astro';
 // ============================================================
 
 const heroMetrics = [
-  { num: '7', label: '全球对标', en: 'Benchmarks' },
+  { num: '5', label: '已完成深度研究', en: 'Completed' },
   { num: '3', label: '研究群组', en: 'Groups' },
-  { num: '6', label: '正面学习', en: 'Lessons' },
-  { num: '5', label: '反面警示', en: 'Warnings' },
+  { num: '12', label: '正面学习', en: 'Lessons' },
+  { num: '10', label: '应对场景', en: 'Scenarios' },
 ];
 
 // ============== § II · 世界观三轴 ==============
@@ -77,8 +77,8 @@ const groups: Group[] = [
     motto: '决定我们怎么生存',
     color: 'coral',
     brands: [
-      { name: '泡泡玛特', role: 'IP 化 + 盲盒消费机制', status: '已研究' },
-      { name: 'Felissimo', role: '自然主题邮购 + 主题部门制', status: '排队中' },
+      { name: '泡泡玛特', role: 'IP 化 + 盲盒消费机制（反向参照）', status: '已研究' },
+      { name: 'Felissimo', role: '部活制度 + 用户共创 + 基金付き', status: '已研究' },
     ],
   },
   {
@@ -91,37 +91,61 @@ const groups: Group[] = [
     color: 'cabinet',
     brands: [
       { name: '蔦屋書店', role: '提案型零售空间', status: '已研究' },
-      { name: 'Victoria and Albert', role: '博物馆 × 零售 × IP 授权成熟体', status: '研究中' },
+      { name: 'Victoria and Albert', role: '博物馆 × 零售 × IP 授权成熟体', status: '已研究' },
       { name: 'Skansen', role: '在地文化的活态博物馆', status: '排队中' },
     ],
   },
 ];
 
-// ============== § IV · 已完成 4 份研究的互证关系 ==============
+// ============== § IV · 已完成 5 份研究的互证关系 ==============
 const mutualEvidence = [
   {
     type: '强印证',
     sign: '✓',
-    title: 'Vision 第一性 · 长周期主义',
-    body: '三份独立研究都指向同一判断——长期主义和愿景的优先级高于短期利润。中川政七的「ビジョン 51% : 利益 49%」、蔦屋的「居心地」、V&A 的「机构使命作为商业化护栏」在精神上同构。',
+    title: 'Vision / 严肃性 / 长情作为商业化的硬约束',
+    body: '5 份研究都指向同一判断——中川政七的「ビジョン 51% : 利益 49%」、蔦屋的「居心地」、V&A 的「机构使命作为护栏」、Felissimo 的「事业性 × 独创性 × 社会性」三重过滤，加上泡泡玛特（反例）缺乏严肃性约束导致的"半年周期律"风险——构成 5/5 强共识。',
+  },
+  {
+    type: '强印证',
+    sign: '✓',
+    title: '一个核心 IP 长期深耕，胜过多个短期 IP',
+    body: 'V&A William Morris 87 年长尾、Felissimo 猫部 14 年长尾经营、中川政七日本工艺品类作为"超长尾 IP"、蔦屋的"書"作为持续 IP——泡泡玛特（反例）多 IP 矩阵导致每个 IP 生命周期被切短。这是 5/5 强共识。',
   },
   {
     type: '中印证',
     sign: '✓',
-    title: '反广告 · 反流量 · 内在吸引力',
-    body: '中川政七的"接心好感"与蔦屋的"居心地"都强调：靠空间与服务积累内在吸引力，而非靠投放和打卡 KOL。V&A 同样依赖机构身份和 word-of-mouth。',
+    title: '公益深度内嵌而非一次性高调宣传',
+    body: 'Felissimo 基金付き 14 年累计捐款 6.3 亿日元（约 RMB 3000 万）、V&A 殖民藏品归还的伦理姿态、中川政七与日本工艺产地的长期支持关系——构成 5/5 强共识。这是 Felissimo 报告新识别的共同建议，前 4 份对标未单独凸显。',
+  },
+  {
+    type: '中印证',
+    sign: '✓',
+    title: '反广告 · 反流量 · 靠内容/社群积累内在吸引力',
+    body: '中川政七几乎不投放广告、蔦屋"居心地"反流量、V&A 依赖机构身份与口碑、Felissimo SNS 共创不参与购物节——泡泡玛特（反例）高度依赖渠道与 KOL 流量。这是 4/5 强共识。',
   },
   {
     type: '强冲突',
     sign: '╳',
-    title: '快 vs 慢的哲学对立',
-    body: '泡泡玛特的"快"（年化 +200%）与中川政七的"慢"（22 年 20 倍）哲学层面对立。山川造物必须在两者之间找到自己的"中速节奏"——这是冲突点带来的战略空间。',
+    title: '快 vs 慢 vs 衰退的哲学张力',
+    body: '泡泡玛特的"快"（年化 +200% 已显疲态）vs 中川政七的"慢"（22 年 20 倍）vs Felissimo 的"衰退中"（11 年 -32%）——三种节奏构成立体张力。山川造物必须在三角之间找到自己的"中速节奏"——这是冲突点带来的战略空间。',
+  },
+  {
+    type: '强冲突',
+    sign: '╳',
+    title: '"事件化"vs "订阅式"vs "渠道化"的商品化路径对立',
+    body: 'V&A 的大展事件化（藏品研究 → 主题策展 → 商品衍生 → IP 长尾）、Felissimo 的订阅式 Collection（每月配送 + 惊喜感）、泡泡玛特的渠道盲盒——三条路径在数字时代各遇结构性挑战。我们改写为"季度小展 + 主动选择 + 内容驱动"的混合路径。',
   },
   {
     type: '中冲突',
     sign: '╳',
     title: '大店 vs 模块化的形态对立',
-    body: '蔦屋的"多 format 大店"与中川政七的"小而精模块化矩阵"形态层面对立。山川造物的 Lite / Pro / Max 三档框架应更靠近后者。',
+    body: '蔦屋的"多 format 大店"与中川政七的"小而精模块化矩阵"形态层面对立。我们的 Lite / Pro / Max 三档框架更靠近后者，且 Max 上限钉死 600㎡（参考蔦屋西安撤店的"面积病"教训）。',
+  },
+  {
+    type: '中印证',
+    sign: '✓',
+    title: '"克制"作为品牌品质的关键守护',
+    body: 'Felissimo 猫部"店内没有真猫"、销售只捐 1%、创始人不自我吹嘘；V&A 不参与价格战、不进双 11；中川政七几乎不投放广告——这种"克制"不是被动的，是主动的品牌设计。我们的回应是 § Discipline 中的「不做清单 17 条 + 克制守则 9 条」。',
   },
 ];
 
@@ -318,15 +342,27 @@ const benchmarks: BenchmarkRow[] = [
     groupColor: 'cabinet',
     risk: 'V&A Dundee 持续亏损 · 殖民藏品争议 · 疫情暴击 · 快时尚授权廉价化',
   },
+  {
+    brand: 'Felissimo',
+    type: '邮购订阅 + 主题部门生活方式品牌',
+    founded: '1965',
+    scale: '年营收 296 亿日元（约 RMB 14 亿，下滑中）',
+    speed: '负增长 · 11 年 -32%',
+    speedColor: 'coral',
+    methodology: '部活制度 · 用户共创 · 基金付き · 三重过滤',
+    role: '群 B · 商业机制正向参照',
+    groupColor: 'coral',
+    risk: '核心订阅业务持续下滑 · 数字时代订阅模式挑战 · 业务多元化品牌模糊 · 用户老化',
+  },
 ];
 
-// ============== § X · 共同建议(4 对标都指向的判断) ==============
+// ============== § X · 共同建议(5 对标都指向的判断) ==============
 const consensus = [
-  { strength: '4/4 强', title: 'vision / 严肃性 / 长情作为商业化的硬约束', body: '中川政七的「ビジョン 51%」/ 蔦屋的「居心地」/ V&A 的「机构使命护栏」/ 泡泡玛特（反例）缺乏严肃性约束导致"半年周期律"风险。我们的动作：把"不装的规模化"作为所有商业决策的硬约束。' },
-  { strength: '4/4 强', title: '一个核心 IP 长期深耕，胜过多个短期 IP', body: '中川政七：日本工艺品类作为"超长尾 IP"/ 蔦屋：書 / V&A：William Morris 87 年长尾 / 泡泡玛特（反例）：多 IP 矩阵导致每个 IP 生命周期被切短。我们的动作：把核心 IP 经营 30 年，拒绝扩张诱惑。' },
-  { strength: '4/4 中', title: '反广告、反流量，靠空间 + 商品 + 服务积累内在吸引力', body: '中川政七：几乎不投广告 / 蔦屋：居心地 / V&A：依赖机构身份和 word-of-mouth / 泡泡玛特（反例）：高度依赖渠道与 KOL 流量。我们的动作：首店开业不做付费投放、不请打卡 KOL、不参与流量节庆。' },
-  { strength: '3/4 强', title: '慢节奏 + 长期主义', body: '中川政七：22 年 20 倍 / 蔦屋：43 年扩张持续 / V&A：170 年机构存续 / 泡泡玛特（反例）：年化 200% 的"快"已疲态。我们的动作：首店前 3 年累计亏损纳入预算（参考 V&A Dundee 教训），不追求快速回本。' },
-  { strength: '3/4 强', title: '空间是策展空间，不是卖货空间', body: '中川政七：店铺即工艺现场 / 蔦屋：提案型空间 / V&A：博物馆 + 礼品店内容互文 / 泡泡玛特（反例）：店铺主要功能是 SKU 陈列与转化。我们的动作：首店设计必须把"自然博物现场"作为主功能，"商品销售"作为现场体验延伸。' },
+  { strength: '5/5 强', title: 'Vision / 严肃性 / 长情 / 社会性作为商业化的硬约束', body: '中川政七的「ビジョン 51% : 利益 49%」/ 蔦屋的「居心地」/ V&A 的「机构使命护栏」/ Felissimo 的「事业性 × 独创性 × 社会性」三重过滤 / 泡泡玛特（反例）缺乏严肃性约束导致"半年周期律"。我们的动作：把"不装的规模化"分解为"真实性 × 可规模化 × 山川性"三重过滤器，作为所有 SKU / 店 / 合作的硬约束。' },
+  { strength: '5/5 强', title: '一个核心 IP / 主题长期深耕', body: '中川政七：日本工艺品类作为"超长尾 IP"/ 蔦屋：書 / V&A：William Morris 87 年长尾经营 / Felissimo：猫部 14 年长尾经营 + 其他主题部门 / 泡泡玛特（反例）：多 IP 矩阵导致每个 IP 生命周期被切短。我们的动作：把核心 IP 经营 30 年，明确拒绝快速扩张多个新 IP。' },
+  { strength: '4/5 强', title: '反广告、反流量、靠空间/内容/社群积累内在吸引力', body: '中川政七：几乎不投放广告 / 蔦屋：居心地 / 不靠流量靠停留 / V&A：依赖机构身份和口碑 / Felissimo：SNS 共创 + 用户参与 / 不参与购物节 / 泡泡玛特（反例）：高度依赖渠道与 KOL 流量。我们的动作：首店开业不做付费投放、不请打卡 KOL、不参与流量节庆；用户共创机制（小红书 / 微信群征集）代替广告投放。' },
+  { strength: '4/5 强', title: '慢节奏 + 长期主义 + 主动避免快速扩张', body: '中川政七：22 年 20 倍 / 年化 15% / 蔦屋：43 年扩张 / V&A：170 年机构存续 / Felissimo：60 年（含 14 年部活 + 11 年下滑挣扎）/ 泡泡玛特（反例）：年化 200% 已显疲态。我们的动作：首店运营前 3 年累计亏损纳入预算（参考 V&A Dundee 教训）；不接受任何"3 年估值翻 5 倍"式的扩张诱惑。' },
+  { strength: '5/5 强', title: '公益深度内嵌 + 透明 + 不被高调宣传', body: 'Felissimo：基金付き 14 年累计 6.3 亿日元（约 RMB 3000 万） / V&A：殖民藏品归还的伦理姿态 / 中川政七：与日本工艺产地的长期支持关系 / 蔦屋：在地文化的策展支持 / 泡泡玛特（弱）。这是 Felissimo 报告新识别的共同建议。我们的动作：从首店开业起每个 SKU 销售的 1-3% 自动捐赠给具体自然保护机构，每月公开累计金额 + 使用情况；不参与一次性大型公益活动。' },
 ];
 
 // ============== § XI · 5 场景应对话术 ==============
@@ -361,6 +397,218 @@ const scenarios = [
     temptation: '你们的店铺本身已经具备博物馆功能。地方文化局其实有一些专项资金支持"民营博物馆"，每年可以申请几十万到几百万。要不要走一下这个流程？',
     response: '感谢提议。我们认真考虑过这件事，但当前阶段决定不申请。理由有三：第一，我们不是博物馆——身份的清晰比补贴更重要。第二，接受公共资金会改变我们的决策结构。V&A 是 DCMS 资助 45% 的公立机构，所有重大决策必须考虑 DCMS 立场。我们如果接受地方文化资金，就要面对类似的"机构羁绊"——这不是钱的问题，是决策自由度的问题。第三，我们的财务模型必须 100% 自给。任何依赖外部稳定输血的模型在中国民营市场都不可持续。',
   },
+];
+
+// ============== Felissimo Spotlight 数据(并列于 V&A) ==============
+// Felissimo · 群 B 商业机制与商品化路径(慢 / 主题部门 / 订阅长情 / 社群驱动)
+const felissimoPhases = [
+  {
+    era: '1965–1994',
+    title: '创业期',
+    eraEn: 'Mail-Order Origin',
+    body: '于大阪创立，前身「カイタイ通信販売」。早期基于杂志 / 目录的邮购服务，目标客户是日本家庭女性。1980s 业务规模扩张，目录从"卖货目录"逐步转向"生活方式提案目录"——邮购模式的本质是"无门店的内容驱动消费"，先有内容、再有商品、最后有空间。',
+  },
+  {
+    era: '1995–2009',
+    title: '神户转折期',
+    eraEn: 'Kobe Pivot',
+    body: '1995 年 1 月 17 日阪神淡路大地震发生时 Felissimo 总部在大阪。地震后公司收到大量来自顾客的"救援金"——为了透明使用，矢崎和彦启动"More, Always, Surely"长期支援活动，6 年从 400 万顾客收到 4 亿日元（约 RMB 1900 万）。品牌精神不是来自创业宣言，是来自外部危机的回应方式。',
+  },
+  {
+    era: '2010–2014',
+    title: '部活萌芽期',
+    eraEn: 'Bukatsu Emerges',
+    body: '2010 年 9 月 6 名喜欢猫的员工自发组织成立猫部。所有商品都"基金付き"——销售部分捐流浪猫救助，不是后期营销话术，是部活最初创立的目标。"猫便签"用 1 周收到用户 2400 张照片——SNS 共创作为零成本研发引擎的极致案例。',
+  },
+  {
+    era: '2014–2019',
+    title: '部活规模化期',
+    eraEn: 'Bukatsu Scales',
+    body: '2015 年涩谷 Hikarie 首个期间限定店；2016 年 10 月阪急西宫花园第一家常设旗舰店开设——27 坪、100+ 件原创商品、销售额 1% 用于流浪猫救助、店内没有真猫（不利用真实动物作为引流）。猫部从内部兴趣走到第一家旗舰店用了 6 年。',
+  },
+  {
+    era: '2014–2024',
+    title: '数字时代下滑期',
+    eraEn: 'Subscription Decline',
+    body: '与部活规模化并行的是核心订阅业务持续下滑——2013 年 432 亿日元 → 2024 年 296 亿日元（11 年累计 -32%）；2024 财年首次出现 9.31 亿日元营业亏损。Collection 系统的"惊喜配送"在 Instagram 时代被结构性消解——所有 SKU 到货前已被剧透。Felissimo 不是"全面成功"的样本，是"局部突破 + 整体挣扎"的样本。',
+  },
+  {
+    era: '2020–至今',
+    title: '新业务补位期',
+    eraEn: 'Pivot to New Pillars',
+    body: 'YOU+MORE!（杂货品牌）实体化逆势增长；felissimo chocolate museum 年付费访客超 6 万——证明"内容场景可以独立创收"；2024 年 4 月起获得神户港塔 15 年运营权作为"第二收益支柱"；FELISSIMO PARTNERS B2B 平台业务持续增长。代价：等了 10+ 年才被迫探索新支柱。',
+  },
+];
+
+const felissimoLessons = [
+  {
+    num: '07',
+    title: '部活制度作为"低成本品类延伸引擎"',
+    body: '每周三上午固定时间 + 员工自由结成 + 兼职性质 + 目标事业化但允许长周期亏损 + 基金付き从第一天起——5 项铁律解决了"如何在不增加正式编制、不需要大量预算的前提下，让员工兴趣转化为新品类机会"。我们的迁移：员工规模达 10 人以上时启动"内部部活试点"——昆虫部 / 矿石部 / 鸟类部等，每个部活 18-24 个月孵化 1-2 款 SKU 或一次主题事件。',
+  },
+  {
+    num: '08',
+    title: '用户共创作为"零成本研发引擎"',
+    body: '"猫便签"用 1 周征集 2400 张用户照片的案例，展示了"SNS 共创"的极致效率——几乎零成本、用户参与感强、产品上市即有铁粉。更巧的是这款的创意来自一位新员工。我们的迁移：建立"用户共创群"机制——每个季度主题事件前，通过小红书 / 微信群 / 即刻向用户征集相关内容（昆虫照片、博物笔记、家中收藏的自然物等），筛选后纳入衍生品设计。',
+  },
+  {
+    num: '09',
+    title: '公益深度内嵌（"基金付き"机制）',
+    body: 'Felissimo 累计向动物保护团体捐款 6.30 亿日元（约 RMB 3000 万）——不是"做大了之后的回馈"，是"每件商品都自带捐款"的基因级机制。所有用户购买行为都自动转化为公益行动——用户买东西时不需要"额外"做公益，公益就在购买中发生。我们的迁移：从首店开业起，明确每个 SKU 销售的 1-3% 固定捐赠给具体自然保护机构。用"基金付き"代替"年度捐赠仪式"——前者的传播力和品牌精神积累远胜后者。',
+  },
+  {
+    num: '10',
+    title: '创始哲学的三重过滤器（事业性 × 独创性 × 社会性）',
+    body: 'Felissimo 官方陈述："我们将事业性、独创性、社会性这三者重叠的地方作为事业领域。"这不是口号——是具体的项目过滤器。任何新项目必须三重都成立才能立项。我们的迁移：把"不装的规模化"分解为类似的三重过滤器——真实性（不装）× 可规模化（规模化）× 山川性，任何新 SKU / 新店 / 新合作必须三重通过。',
+  },
+  {
+    num: '11',
+    title: '主题部门到独立品牌的"5 阶段成长阶梯"',
+    body: '内部兴趣部门（0-2 年）→ 稳定商品矩阵（2-4 年）→ 独立子品牌（4-6 年）→ 跨业务延伸（6-8 年）→ 跨业务生态（8+ 年）。猫部用 14 年走完了 4-5 个阶段。我们的迁移：把这阶梯改写为"品类成长阶梯"作为未来 10 年品类延伸的判定标准。每个新主题每 24-36 个月做一次阶段评估。',
+  },
+  {
+    num: '12',
+    title: '"克制"作为品牌品质的关键守护',
+    body: '猫部旗舰店"店内没有真猫"——不利用真实动物作为引流；销售只捐 1%——不夸大公益比例；部活商品定价 1000-3000 日元（约 RMB 50-150）——不走高端化以保持普惠；创始人在公开演讲中很少自我吹嘘；不参与日本主流的双 11 / 黑五式购物节。这种"克制"不是被动的，是主动的品牌设计——让 Felissimo 在所有商业行为中保留了"温度"。我们的回应：见 § Discipline 的「不做清单 + 克制守则」。',
+  },
+];
+
+const felissimoWarnings = [
+  {
+    num: '06',
+    title: '订阅式 Collection 在数字时代的结构性挑战',
+    body: 'Collection 系统的核心吸引力是"惊喜配送"——你订阅了"每月不同颜色的袜子"，每月开箱时不知道是什么颜色。但在 Instagram / 小红书 / TikTok 的时代，所有 SKU 都会被用户拍照晒图，到货前就已经被剧透。订阅式 Collection 的根本前提被数字传播结构性消解。我们的警示：如果未来引入"季度标本盒"订阅模式，不要走完全 Felissimo 式的"我们决定，你接收"路径。应改写为"用户拥有 60-70% 主动选择权 + 30-40% 惊喜权"。',
+  },
+  {
+    num: '07',
+    title: '部活机制的"可见样本偏差"',
+    body: '研究 Felissimo 部活时必须注意——公开报道集中在成功的部活（猫部、おてらぶ、YOU+MORE!），失败或已停的几乎不可见。这造成"部活成功率高"的错觉。诚实估算：Felissimo 内部可能启动过 30+ 个部活，但只有 5-7 个走到了"独立品牌"阶段，真实成功率可能在 20-30%。我们的警示：启动"内部部活试点"时，必须提前预算 70-80% 的部活会在 1-2 年内停下来——这不是失败，是机制的正常运作。',
+  },
+  {
+    num: '08',
+    title: '多业务延伸中的"品牌张力问题"',
+    body: 'Felissimo 业务从"邮购订阅"延伸到"巧克力博物馆"、"神户港塔运营"、"B2B 平台"——业务广度极大，但作为"品牌"出现了认知模糊：一个普通用户很难一句话说清"Felissimo 到底是什么"。Felissimo 用"ともにしあわせになるしあわせ"这把抽象哲学伞统一所有业务，但伞抽象到几乎无法证伪，意味着品牌形象在用户认知中是模糊而非清晰的。我们的警示：保持单一清晰的核心定位（"把山川带回家"）比"多元化延伸"更重要。',
+  },
+  {
+    num: '09',
+    title: '数字原生用户的代际隔阂',
+    body: 'Felissimo 核心订阅客户群（推断 35-55 岁女性）正在自然老化，年轻用户增长不足。Felissimo 公司高层公开承认"次世代顾客开发"被列为重点战略，但执行进展缓慢（"新たな領域の開発が遅延"）。我们的警示：山川造物当下用户群偏向 25-40 岁城市用户——是相对窄的群体。如果不从首店开始就有意识地用内容形式触达更年轻的 18-25 岁用户（B站、抖音、即刻等），未来 5-10 年同样会遇到 Felissimo 式的代际隔阂。',
+  },
+  {
+    num: '10',
+    title: '核心业务下滑后才反应的代价',
+    body: 'Felissimo 等了 10+ 年（2013-2024）才被迫探索新支柱（YOU+MORE! / 神户港塔 / 巧克力博物馆 / FELISSIMO PARTNERS），代价是连续亏损。我们的警示：第二支柱必须显式设计——不要等核心业务下滑才反应。首店稳定后立即开始第二支柱设计（建议"自然博物体验空间"门票化方向，参考 felissimo chocolate museum 6 万年付费访客模型）。',
+  },
+];
+
+const felissimoScenarios = [
+  {
+    num: '06',
+    title: '投资人:"做成中国版猫部——围绕一个动物 IP 做全品类"',
+    temptation: '猫部模式很清晰——围绕一个动物 IP 做杂货 / 服饰 / 食品 / 餐饮全品类，做出一个垂直精品品牌，估值倍数会很高。建议你们围绕核心 IP 做全品类延伸，3 年内估值翻 5 倍。',
+    response: '感谢建议。我们研究过 Felissimo 猫部——它确实是值得学习的样本，但请注意：第一，猫部用了 6 年才从内部兴趣走到第一家旗舰店。它的成功来自社群积累的厚度，不是商业冲刺——如果用"3 年估值翻 5 倍"的节奏，会切断社群积累的过程。第二，Felissimo 自身正在经历核心业务下滑（2013-2024 营收 -32%）——猫部的成功不能掩盖 Felissimo 整体的挣扎。我们要学的是机制，不是节奏。第三，我们核心 IP 的精神底色是"对自然的敬意"而非"宠物 IP"——它不应被定位为"喜爱动物的人聚集地"，而应是"对自然有敬意的人聚集地"。我们会按自己的节奏经营核心 IP 30 年。',
+  },
+  {
+    num: '07',
+    title: '团队内部:"做山川造物订阅盒——每月配送一盒自然标本"',
+    temptation: '我看到很多订阅盒模式做得很好——咖啡、酒、零食订阅。我们可以做"每月一盒自然标本"，订阅制，会员稳定收入。Felissimo 的 Collection 系统就是这个模式，已经验证可行。',
+    response: '订阅盒方向我们也考虑过。但 Felissimo 的 Collection 系统在数字时代正面临结构性挑战——Collection 系统的核心吸引力是"惊喜"，但在小红书 / 抖音的时代，所有 SKU 都会被用户提前晒图，惊喜感被结构性消解。Felissimo 自己披露 2024 财年亏损 9 亿日元，部分原因就是这个。我们如果做订阅盒，必须改写——用户拥有 60-70% 主动选择权 + 30-40% 惊喜权。订阅时用户先选 3 类感兴趣的主题（昆虫 / 矿石 / 植物 / 鸟类），每月在选定主题内由我们配送，但具体物品保留惊喜。而且这个项目不应在首店稳定前启动——先把店内体验和复购做好，再扩展到非店内订阅。',
+  },
+  {
+    num: '08',
+    title: '媒体:"你们的标本会不会成为下一个泡泡玛特那样的爆款 IP？"',
+    temptation: '你们的核心 IP 设计很可爱，很有 IP 潜质。会不会做成下一个泡泡玛特那样的爆款，年增 200% 那种？',
+    response: '您拿泡泡玛特做参照，我能理解——它在 IP 商业化上确实是中国最成功的样本。但我们的 IP 路径和它不同。我们更接近 Felissimo 的猫部——一个从内容社群孵化、慢节奏积累的 IP。猫部用了 14 年才有第一家旗舰店，而泡泡玛特 5 年就成了上市公司。这两条路径不分高下，只是不同。我们选择 Felissimo 路径的核心原因——核心 IP 的精神底色是"对自然的敬意"，这种精神不可能用盲盒式的快速生灭来表达，它需要慢慢长大。所以答案是：我们不会成为下一个泡泡玛特，因为我们正在尝试成为有中国基因的 Felissimo 猫部，且要走得比它快但比它更克制。',
+  },
+  {
+    num: '09',
+    title: '合作方:"和某动物保护基金会做大型联合公益活动"',
+    temptation: '我们和某全国知名动物保护基金会有合作。建议你们一起做一个大型公益活动——你们捐 100 万，基金会给你们做品牌曝光，央视、人民网都能出稿，对你们的品牌建设非常有利。',
+    response: '感谢邀请。但我们的公益策略与一次性大型活动不同。我们参考了 Felissimo 猫部的模式——每件商品销售的 1-3% 自动捐赠给具体保护机构，累计 14 年捐了 6.3 亿日元（约 RMB 3000 万）。这不是来自一次性大额捐款，是来自每个用户每次购买的微小行动。这种模式有三个好处：可持续性（只要业务还在，公益就在）、用户参与感（每个买家都觉得自己是公益的一部分）、抗争议性（透明 / 稳定 / 不被高调宣传）。而一次性大型活动有反向风险——如果被识别为"花钱买曝光"，会反噬品牌信任。所以回答是——长期合作可以谈，一次性大型联合活动我们不参加。',
+  },
+  {
+    num: '10',
+    title: '政府/官方:"认定你们为自然博物文创试点单位"',
+    temptation: '我们文化部门正在评选"自然博物文创试点单位"，被认定后会有政策支持、品牌背书、媒体宣传。建议你们申报，对企业很有好处。',
+    response: '感谢推荐。这件事我们需要稍微想一想——"试点单位"这个身份会带来两件事：一方面是品牌背书和资源支持，确实有利；另一方面是某种程度的"机构关系绑定"——我们的部分决策需要考虑这个身份的期待。我们的策略偏向保持决策独立性——这是从 V&A 研究中学到的（V&A 接受 DCMS 45% 资助带来的决策束缚），也是 Felissimo 60 年坚持私营的原因。我们可以这样回答：试点单位身份可以申报，但需要先确认两点——（1）不附加任何特定的产品或经营要求；（2）我们保留随时退出的权利。如果这两点都成立，我们愿意申报。',
+  },
+];
+
+// ============== § Discipline · 不做清单 + 克制守则(从 5 份对标合并提炼) ==============
+// 来源:《首店运营实战清单 v0.1》§ 1.1.B 不做清单初稿 + § 1.1.D 克制守则初稿
+// 内部稿含责任接口 / 截止时点 / 优先级矩阵——公开版只保留"不做"与"克制"两份纯叙事
+type DisciplineGroup = {
+  cat: string;
+  catEn: string;
+  items: { text: string; source: string }[];
+};
+
+const noList: DisciplineGroup[] = [
+  {
+    cat: '经营层面',
+    catEn: 'Operations',
+    items: [
+      { text: '绝不依赖政府资助 / 文化资金作为常规收入', source: 'V&A' },
+      { text: '绝不在核心业务下滑后才反应——必须主动设计第二支柱', source: 'Felissimo' },
+      { text: '绝不让品牌定位在业务延伸中模糊——任何新业务必须能用"把山川带回家"一句话证明合理性', source: 'Felissimo' },
+    ],
+  },
+  {
+    cat: '商品层面',
+    catEn: 'Product',
+    items: [
+      { text: '绝不做盲盒 / 概率 / 抽奖 / 限量饥饿营销', source: '泡泡玛特（反向）' },
+      { text: '绝不接受非合规标本来源（CITES 灰色地带、争议野生动物部位、私人非法收藏）', source: 'V&A' },
+      { text: '绝不与快时尚做 IP 联名（H&M / Shein / 拼多多专项联名等）', source: 'V&A + Felissimo' },
+      { text: '绝不走"传统邮购的中间环节成本结构"', source: 'Felissimo' },
+    ],
+  },
+  {
+    cat: '品牌层面',
+    catEn: 'Brand',
+    items: [
+      { text: '绝不假装机构身份——不是博物馆，不用"博物馆""中国版 V&A"等姿态营销', source: 'V&A' },
+      { text: '绝不做"过度学术化"姿态——保持严肃但不学究', source: 'V&A' },
+      { text: '绝不利用真实动物作为引流', source: 'Felissimo 猫部铁律' },
+      { text: '绝不依赖"打卡型"大展引流', source: 'V&A + 蔦屋' },
+    ],
+  },
+  {
+    cat: '空间层面',
+    catEn: 'Space',
+    items: [
+      { text: '永远不做超过 1000㎡ 的店——Max 上限钉死 600㎡', source: '蔦屋西安教训' },
+    ],
+  },
+  {
+    cat: '公益层面',
+    catEn: 'Philanthropy',
+    items: [
+      { text: '绝不把"公益"作为营销话术——一旦公益被识别为"卖点"而非"动机"会反噬品牌信任', source: 'Felissimo' },
+      { text: '绝不做一次性大型联合公益活动——只做长期"基金付き"', source: 'Felissimo' },
+    ],
+  },
+  {
+    cat: '组织层面',
+    catEn: 'Organization',
+    items: [
+      { text: '绝不让加盟商占比超过 70%', source: '蔦屋' },
+      { text: '绝不做"100% 惊喜配送"订阅模式——必须保留 60-70% 用户主动选择权', source: 'Felissimo' },
+    ],
+  },
+];
+
+// 克制守则 9 条 · 与"不做清单"的区别:不做清单是 hard rule 红线,克制守则是品味性 soft rule
+const restraintRules = [
+  '不在标本店内展示活体动物',
+  '不参与电商大促（双11 / 618 / 黑五等）',
+  '不利用极端价格博取流量',
+  '不做夸张的公益数字宣传',
+  'CEO 不做个人 IP 营销（不卖"创始人故事"）',
+  '不接受会带来"决策束缚"的资助、补贴、合作',
+  '不参加"标本零售行业排行榜"式的标签化曝光',
+  '不在没有内容深度的前提下做任何主题事件',
+  '不让"网红打卡"成为主动追求的目标——它如果发生是结果，不是手段',
 ];
 
 // ============== § XII · 研究治理 ==============
@@ -399,7 +647,7 @@ const colorMap = {
   <PageHero
     eyebrow="Benchmarks · 对标研究"
     title={`我们站在哪里，<br/><span class="text-brass-bright">我们不去哪里。</span>`}
-    lead={`一个品牌的成熟，不在于「我能借鉴谁」，而在于「我能拒绝谁」。我们用 7 家全球品牌作为参照——3 群（哲学 / 商品化 / 空间机构）、4 家已完成深度研究、3 家在排队。这份模块是这套研究的软公开版，展示我们的差异性定位和路径选择的正反两面。`}
+    lead={`一个品牌的成熟，不在于「我能借鉴谁」，而在于「我能拒绝谁」。我们用 7 家全球品牌作为参照——3 群（哲学 / 商品化 / 空间机构）、5 家已完成深度研究、2 家在排队。这份模块是这套研究的软公开版，展示我们的差异性定位和路径选择的正反两面。`}
   />
 
   <!-- Hero Metrics -->
@@ -560,11 +808,11 @@ const colorMap = {
       <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
         <span class="text-brass-deep">IV.</span> Mutual Evidence
       </p>
-      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">已完成 4 份研究的互证关系</h2>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">已完成 5 份研究的互证关系</h2>
 
       <div class="prose-cn mb-paragraph">
         <p>
-          4 份已完成的研究（中川政七 / 蔦屋 / 泡泡玛特 / V&A）之间已经形成第一层互证关系——
+          5 份已完成的研究（中川政七 / 蔦屋 / 泡泡玛特 / V&A / Felissimo）之间已经形成立体的互证关系网——
           <strong>同时印证同一判断的对标越多，山川造物战略的最大公约数就越清晰</strong>。
           冲突点也是战略空间所在，我们不强行调和。
         </p>
@@ -606,86 +854,193 @@ const colorMap = {
 
   <hr class="brass-divider" />
 
-  <!-- ============== § V · V&A Spotlight · 6 阶段 ============== -->
+  <!-- ============== § V · Deep-Dive Spotlights · V&A + Felissimo 双案例 ============== -->
   <section id="v" class="editorial-section">
     <div class="max-w-editorial-wide mx-auto">
-      <p class="font-serif-en italic text-cabinet-mid text-sm tracking-widest uppercase mb-3">
-        <span class="text-brass-deep">V.</span> Spotlight · Victoria and Albert Museum
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">V.</span> Deep-Dive Spotlights · 双案例
       </p>
-      <h2 class="text-3xl font-serif text-cream mb-3 tracking-cn">V&A 深度案例 · 170 年的样本</h2>
-      <p class="text-text-soft text-base leading-[1.85] tracking-cn mb-paragraph max-w-editorial">
-        我们选 V&A 作为深度案例，因为它是<strong class="text-cream">全世界把"机构严肃性"与"零售商业化"在同一屋檐下做得最久、最完整的样本</strong>——170 年机构存续、270 万件藏品、年总收入约 RMB 11 亿、95+ 个国际授权许可。
-        它也已经在路上踩过我们正在遇到和将要遇到的几乎所有坑。
+      <h2 class="text-3xl font-serif text-cream mb-3 tracking-cn">两个我们做了深度展开的案例</h2>
+      <p class="text-text-soft text-base leading-[1.85] tracking-cn mb-section max-w-editorial">
+        在 5 家已研究的对标中，我们对其中 2 家做了完整的"6 阶段历史 + 6 经验 + 5 风险"深度展开——
+        <strong class="text-cabinet-mid">V&A</strong> 给我们机构形态的参照（群 C），
+        <strong class="text-coral-mid">Felissimo</strong> 给我们商业机制的参照（群 B）。
+        两条路径都不是我们要复制的对象，但都已经在路上踩过我们将要遇到的坑。
       </p>
 
-      <div class="space-y-4">
-        {vaPhases.map((p) => (
-          <div class="grid md:grid-cols-[180px_1fr] gap-4 md:gap-8 p-6 border border-brass-mid/20 bg-ink-elevated/30">
-            <div>
-              <p class="font-mono text-xs text-cabinet-mid mb-1">{p.era}</p>
-              <h3 class="font-serif text-lg text-cream tracking-cn mb-1">{p.title}</h3>
-              <p class="font-serif-en italic text-xs text-text-soft">{p.eraEn}</p>
-            </div>
-            <div class="text-text-soft text-sm leading-[1.85] tracking-cn md:border-l md:border-brass-mid/15 md:pl-8">
-              <p>{p.body}</p>
-            </div>
+      <!-- ============ V.A · V&A Spotlight ============ -->
+      <div class="mb-section">
+        <div class="flex items-baseline gap-3 mb-3 pb-3 border-b border-cabinet-mid">
+          <span class="font-serif-en italic text-2xl text-cabinet-mid leading-none">V.A</span>
+          <div>
+            <h3 class="font-serif text-2xl text-cream tracking-cn">Victoria and Albert · 170 年的样本</h3>
+            <p class="font-serif-en italic text-xs text-cabinet-mid mt-1 tracking-widest uppercase">
+              Group C · Museum × Retail × IP Licensing
+            </p>
           </div>
-        ))}
+        </div>
+        <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn mb-paragraph max-w-editorial">
+          <strong class="text-cream">全世界把"机构严肃性"与"零售商业化"在同一屋檐下做得最久、最完整的样本</strong>——170 年机构存续、270 万件藏品、年总收入约 RMB 11 亿、95+ 个国际授权许可。
+          它已经在路上踩过我们正在遇到和将要遇到的几乎所有坑。
+        </p>
+
+        <div class="space-y-4">
+          {vaPhases.map((p) => (
+            <div class="grid md:grid-cols-[180px_1fr] gap-4 md:gap-8 p-6 border border-brass-mid/20 bg-ink-elevated/30">
+              <div>
+                <p class="font-mono text-xs text-cabinet-mid mb-1">{p.era}</p>
+                <h3 class="font-serif text-lg text-cream tracking-cn mb-1">{p.title}</h3>
+                <p class="font-serif-en italic text-xs text-text-soft">{p.eraEn}</p>
+              </div>
+              <div class="text-text-soft text-sm leading-[1.85] tracking-cn md:border-l md:border-brass-mid/15 md:pl-8">
+                <p>{p.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- ============ V.B · Felissimo Spotlight ============ -->
+      <div>
+        <div class="flex items-baseline gap-3 mb-3 pb-3 border-b border-coral-mid">
+          <span class="font-serif-en italic text-2xl text-coral-mid leading-none">V.B</span>
+          <div>
+            <h3 class="font-serif text-2xl text-cream tracking-cn">Felissimo · 60 年的"局部突破 + 整体挣扎"</h3>
+            <p class="font-serif-en italic text-xs text-coral-mid mt-1 tracking-widest uppercase">
+              Group B · Bukatsu × Co-creation × Fund-attached
+            </p>
+          </div>
+        </div>
+        <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn mb-paragraph max-w-editorial">
+          <strong class="text-cream">Felissimo 不只是成功者的样本，它同时是当下挣扎者的样本</strong>——2013-2024 年 11 年间年营收从 432 亿日元下降到 296 亿日元（-32%），2024 财年首次出现 9.31 亿日元营业亏损。
+          这种"曾经成功 + 当下挣扎"的复杂状态比单纯研究 V&A 的稳定老牌更有教益——它让我们看清"订阅制慢生活"模式在数字时代的天然挑战与突破方向。
+        </p>
+
+        <div class="space-y-4">
+          {felissimoPhases.map((p) => (
+            <div class="grid md:grid-cols-[180px_1fr] gap-4 md:gap-8 p-6 border border-brass-mid/20 bg-ink-elevated/30">
+              <div>
+                <p class="font-mono text-xs text-coral-mid mb-1">{p.era}</p>
+                <h3 class="font-serif text-lg text-cream tracking-cn mb-1">{p.title}</h3>
+                <p class="font-serif-en italic text-xs text-text-soft">{p.eraEn}</p>
+              </div>
+              <div class="text-text-soft text-sm leading-[1.85] tracking-cn md:border-l md:border-brass-mid/15 md:pl-8">
+                <p>{p.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   </section>
 
   <hr class="brass-divider" />
 
-  <!-- ============== § VI · 正面 6 经验 ============== -->
+  <!-- ============== § VI · 正面 12 经验(V&A 6 + Felissimo 6) ============== -->
   <section id="vi" class="editorial-section">
     <div class="max-w-editorial-wide mx-auto">
       <p class="font-serif-en italic text-green-mid text-sm tracking-widest uppercase mb-3">
-        <span class="text-brass-deep">VI.</span> What V&A Got Right · 正面 6 经验
+        <span class="text-brass-deep">VI.</span> What They Got Right · 正面 12 经验
       </p>
-      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">正面 · V&A 做对的 6 件事</h2>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">正面 · 两家做对的 12 件事</h2>
 
-      <div class="space-y-0 border-t border-brass-mid/20 mt-paragraph">
-        {lessons.map((l) => (
-          <article class="grid grid-cols-[56px_1fr] md:grid-cols-[72px_1fr] gap-4 md:gap-6 py-6 border-b border-brass-mid/15">
-            <span class="font-serif-en italic text-3xl md:text-4xl text-green-mid leading-none">{l.num}</span>
-            <div>
-              <h3 class="font-serif text-lg md:text-xl text-cream mb-2 tracking-cn">{l.title}</h3>
-              <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{l.body}</p>
-            </div>
-          </article>
-        ))}
+      <div class="prose-cn mb-paragraph">
+        <p>
+          每条经验下面给出我们的具体迁移路径——不是抽象总结，是<strong>到具体动作的可执行版本</strong>。
+          经验编号 <span class="text-cabinet-mid">01–06</span> 来自 V&A，<span class="text-coral-mid">07–12</span> 来自 Felissimo。
+        </p>
+      </div>
+
+      <!-- V&A 6 经验 -->
+      <div class="mb-section">
+        <div class="flex items-baseline gap-3 mb-4 pb-2 border-b border-cabinet-mid">
+          <span class="font-serif-en italic text-xs text-cabinet-mid tracking-widest uppercase">V&A · Group C · 6 Lessons</span>
+        </div>
+        <div class="space-y-0 border-t border-brass-mid/20">
+          {lessons.map((l) => (
+            <article class="grid grid-cols-[56px_1fr] md:grid-cols-[72px_1fr] gap-4 md:gap-6 py-6 border-b border-brass-mid/15">
+              <span class="font-serif-en italic text-3xl md:text-4xl text-cabinet-mid leading-none">{l.num}</span>
+              <div>
+                <h3 class="font-serif text-lg md:text-xl text-cream mb-2 tracking-cn">{l.title}</h3>
+                <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{l.body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <!-- Felissimo 6 经验 -->
+      <div>
+        <div class="flex items-baseline gap-3 mb-4 pb-2 border-b border-coral-mid">
+          <span class="font-serif-en italic text-xs text-coral-mid tracking-widest uppercase">Felissimo · Group B · 6 Lessons</span>
+        </div>
+        <div class="space-y-0 border-t border-brass-mid/20">
+          {felissimoLessons.map((l) => (
+            <article class="grid grid-cols-[56px_1fr] md:grid-cols-[72px_1fr] gap-4 md:gap-6 py-6 border-b border-brass-mid/15">
+              <span class="font-serif-en italic text-3xl md:text-4xl text-coral-mid leading-none">{l.num}</span>
+              <div>
+                <h3 class="font-serif text-lg md:text-xl text-cream mb-2 tracking-cn">{l.title}</h3>
+                <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{l.body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   </section>
 
   <hr class="brass-divider" />
 
-  <!-- ============== § VII · 反面 5 风险 ============== -->
+  <!-- ============== § VII · 反面 10 警示(V&A 5 + Felissimo 5) ============== -->
   <section id="vii" class="editorial-section">
     <div class="max-w-editorial-wide mx-auto">
       <p class="font-serif-en italic text-coral-mid text-sm tracking-widest uppercase mb-3">
-        <span class="text-brass-deep">VII.</span> What V&A Got Wrong · 反面 5 警示
+        <span class="text-brass-deep">VII.</span> What They Got Wrong · 反面 10 警示
       </p>
-      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">反面 · V&A 踩过的 5 个坑</h2>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">反面 · 两家踩过的 10 个坑</h2>
 
       <div class="prose-cn mb-paragraph">
         <p>
           一份合格的对标研究，<strong>必须正反并举</strong>。"全是优点、没有暗角"的研究在结构上不能成立——
           它会变成对品牌的官方叙事的复述，而不是研究。
+          警示编号 <span class="text-cabinet-mid">01–05</span> 来自 V&A，<span class="text-coral-mid">06–10</span> 来自 Felissimo。
         </p>
       </div>
 
-      <div class="space-y-0 border-t border-brass-mid/20 mt-paragraph">
-        {warnings.map((w) => (
-          <article class="grid grid-cols-[56px_1fr] md:grid-cols-[72px_1fr] gap-4 md:gap-6 py-6 border-b border-brass-mid/15">
-            <span class="font-serif-en italic text-3xl md:text-4xl text-coral-mid leading-none">{w.num}</span>
-            <div>
-              <h3 class="font-serif text-lg md:text-xl text-cream mb-2 tracking-cn">{w.title}</h3>
-              <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{w.body}</p>
-            </div>
-          </article>
-        ))}
+      <!-- V&A 5 警示 -->
+      <div class="mb-section">
+        <div class="flex items-baseline gap-3 mb-4 pb-2 border-b border-cabinet-mid">
+          <span class="font-serif-en italic text-xs text-cabinet-mid tracking-widest uppercase">V&A · Group C · 5 Warnings</span>
+        </div>
+        <div class="space-y-0 border-t border-brass-mid/20">
+          {warnings.map((w) => (
+            <article class="grid grid-cols-[56px_1fr] md:grid-cols-[72px_1fr] gap-4 md:gap-6 py-6 border-b border-brass-mid/15">
+              <span class="font-serif-en italic text-3xl md:text-4xl text-cabinet-mid leading-none">{w.num}</span>
+              <div>
+                <h3 class="font-serif text-lg md:text-xl text-cream mb-2 tracking-cn">{w.title}</h3>
+                <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{w.body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <!-- Felissimo 5 警示 -->
+      <div>
+        <div class="flex items-baseline gap-3 mb-4 pb-2 border-b border-coral-mid">
+          <span class="font-serif-en italic text-xs text-coral-mid tracking-widest uppercase">Felissimo · Group B · 5 Warnings</span>
+        </div>
+        <div class="space-y-0 border-t border-brass-mid/20">
+          {felissimoWarnings.map((w) => (
+            <article class="grid grid-cols-[56px_1fr] md:grid-cols-[72px_1fr] gap-4 md:gap-6 py-6 border-b border-brass-mid/15">
+              <span class="font-serif-en italic text-3xl md:text-4xl text-coral-mid leading-none">{w.num}</span>
+              <div>
+                <h3 class="font-serif text-lg md:text-xl text-cream mb-2 tracking-cn">{w.title}</h3>
+                <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{w.body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   </section>
@@ -776,31 +1131,32 @@ const colorMap = {
 
   <hr class="brass-divider" />
 
-  <!-- ============== § IX · 四对标合并坐标系 ============== -->
+  <!-- ============== § IX · 五对标合并坐标系 ============== -->
   <section id="ix" class="editorial-section">
     <div class="max-w-editorial-wide mx-auto">
       <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
-        <span class="text-brass-deep">IX.</span> Four-Benchmark Synthesis
+        <span class="text-brass-deep">IX.</span> Five-Benchmark Synthesis
       </p>
-      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">四对标合并坐标系</h2>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">五对标合并坐标系</h2>
 
       <div class="prose-cn mb-paragraph">
         <p>
-          中川政七、蔦屋、泡泡玛特、V&A——四家分别代表"传统工艺现代化 / 提案型空间 / IP 商业化 / 机构+商业双轨"四条路径。
-          把它们放在同一张表上看，山川造物的位置就清晰了。
+          中川政七、蔦屋、泡泡玛特、V&A、Felissimo——5 家分别代表
+          "传统工艺现代化 / 提案型空间 / IP 商业化（反向参照） / 机构+商业双轨 / 主题部门订阅"
+          5 条路径。把它们放在同一张表上看，山川造物的位置就清晰了。
         </p>
       </div>
 
       <!-- 桌面端：表格视图 -->
       <div class="hidden md:block overflow-x-auto mt-paragraph">
-        <table class="w-full border border-brass-mid/20 bg-ink-elevated/30 text-sm">
+        <table class="w-full border border-brass-mid/20 bg-ink-elevated/30 text-xs lg:text-sm">
           <thead>
             <tr class="border-b border-brass-mid/30">
-              <th class="text-left p-4 font-serif-en italic text-brass-deep text-xs tracking-widest uppercase">维度</th>
+              <th class="text-left p-3 lg:p-4 font-serif-en italic text-brass-deep text-xs tracking-widest uppercase">维度</th>
               {benchmarks.map((b) => (
                 <th class:list={[
-                  'text-left p-4 font-serif text-cream tracking-cn border-l border-brass-mid/15',
-                  b.brand === 'Victoria and Albert' && 'bg-brass-mid/8',
+                  'text-left p-3 lg:p-4 font-serif text-cream tracking-cn border-l border-brass-mid/15',
+                  (b.brand === 'Victoria and Albert' || b.brand === 'Felissimo') && 'bg-brass-mid/8',
                 ]}>
                   {b.brand}
                 </th>
@@ -808,25 +1164,25 @@ const colorMap = {
             </tr>
           </thead>
           <tbody class="text-text-soft">
-            <tr class="border-b border-brass-mid/15"><td class="p-4 text-cream tracking-cn">品牌类型</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 leading-[1.7]">{b.type}</td>)}</tr>
-            <tr class="border-b border-brass-mid/15"><td class="p-4 text-cream tracking-cn">创立年代</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 font-mono text-xs">{b.founded}</td>)}</tr>
-            <tr class="border-b border-brass-mid/15"><td class="p-4 text-cream tracking-cn">当前规模</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 leading-[1.7]">{b.scale}</td>)}</tr>
+            <tr class="border-b border-brass-mid/15"><td class="p-3 lg:p-4 text-cream tracking-cn">品牌类型</td>{benchmarks.map((b) => <td class="p-3 lg:p-4 border-l border-brass-mid/15 leading-[1.7]">{b.type}</td>)}</tr>
+            <tr class="border-b border-brass-mid/15"><td class="p-3 lg:p-4 text-cream tracking-cn">创立年代</td>{benchmarks.map((b) => <td class="p-3 lg:p-4 border-l border-brass-mid/15 font-mono text-xs">{b.founded}</td>)}</tr>
+            <tr class="border-b border-brass-mid/15"><td class="p-3 lg:p-4 text-cream tracking-cn">当前规模</td>{benchmarks.map((b) => <td class="p-3 lg:p-4 border-l border-brass-mid/15 leading-[1.7]">{b.scale}</td>)}</tr>
             <tr class="border-b border-brass-mid/15">
-              <td class="p-4 text-cream tracking-cn">增长速度</td>
+              <td class="p-3 lg:p-4 text-cream tracking-cn">增长速度</td>
               {benchmarks.map((b) => {
                 const c = colorMap[b.speedColor as keyof typeof colorMap];
-                return <td class:list={['p-4 border-l border-brass-mid/15', c.text]}>{b.speed}</td>;
+                return <td class:list={['p-3 lg:p-4 border-l border-brass-mid/15', c.text]}>{b.speed}</td>;
               })}
             </tr>
-            <tr class="border-b border-brass-mid/15"><td class="p-4 text-cream tracking-cn">核心方法论</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 leading-[1.7]">{b.methodology}</td>)}</tr>
+            <tr class="border-b border-brass-mid/15"><td class="p-3 lg:p-4 text-cream tracking-cn">核心方法论</td>{benchmarks.map((b) => <td class="p-3 lg:p-4 border-l border-brass-mid/15 leading-[1.7]">{b.methodology}</td>)}</tr>
             <tr class="border-b border-brass-mid/15">
-              <td class="p-4 text-cream tracking-cn">对我们的角色</td>
+              <td class="p-3 lg:p-4 text-cream tracking-cn">对我们的角色</td>
               {benchmarks.map((b) => {
                 const c = colorMap[b.groupColor as keyof typeof colorMap];
-                return <td class:list={['p-4 border-l border-brass-mid/15 italic', c.text]}>{b.role}</td>;
+                return <td class:list={['p-3 lg:p-4 border-l border-brass-mid/15 italic', c.text]}>{b.role}</td>;
               })}
             </tr>
-            <tr><td class="p-4 text-cream tracking-cn">风险信号</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 text-coral-mid leading-[1.7]">{b.risk}</td>)}</tr>
+            <tr><td class="p-3 lg:p-4 text-cream tracking-cn">风险信号</td>{benchmarks.map((b) => <td class="p-3 lg:p-4 border-l border-brass-mid/15 text-coral-mid leading-[1.7]">{b.risk}</td>)}</tr>
           </tbody>
         </table>
       </div>
@@ -858,11 +1214,12 @@ const colorMap = {
       <!-- 共同建议 -->
       <div class="mt-section">
         <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
-          Consensus Across Four Benchmarks
+          Consensus Across Five Benchmarks
         </p>
-        <h3 class="font-serif text-2xl text-cream mb-paragraph tracking-cn">四对标都给出相同建议的核心动作</h3>
+        <h3 class="font-serif text-2xl text-cream mb-paragraph tracking-cn">五对标都给出相同建议的核心动作</h3>
         <p class="text-text-soft text-sm leading-[1.85] tracking-cn mb-paragraph">
-          <strong class="text-cream">四对标都指向的判断，是山川造物战略的最大公约数</strong>——资源分配应优先向此倾斜。
+          <strong class="text-cream">五对标都指向的判断，是山川造物战略的最大公约数</strong>——资源分配应优先向此倾斜。
+          其中两条 <span class="text-brass-mid">5/5 强共识</span>——Vision/严肃性 与 公益深度内嵌——是最高优先级。
         </p>
 
         <div class="space-y-3">
@@ -884,64 +1241,193 @@ const colorMap = {
 
   <hr class="brass-divider" />
 
-  <!-- ============== § X · 5 场景应对话术 ============== -->
+  <!-- ============== § X · 10 场景应对话术(V&A 5 + Felissimo 5) ============== -->
   <section id="x" class="editorial-section">
     <div class="max-w-editorial-wide mx-auto">
       <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
-        <span class="text-brass-deep">X.</span> Five Scenarios · 我们已经预演过的拒绝
+        <span class="text-brass-deep">X.</span> Ten Scenarios · 我们已经预演过的拒绝
       </p>
-      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">5 个我们已经写好答案的诱惑场景</h2>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">10 个我们已经写好答案的诱惑场景</h2>
 
       <div class="prose-cn mb-paragraph">
         <p>
           一个品牌真正成熟的标志，<strong>不是它能做什么</strong>，而是<strong class="text-brass-bright">在被诱惑做某件事时，能不能拿出已经想清楚的拒绝理由</strong>。
-          以下 5 个场景是我们预判未来 1-3 年最可能遇到的"V&A 路径诱惑"——
-          我们提前把诱惑话术和应对话术都写好了。
+          以下 10 个场景是我们预判未来 1-3 年最可能遇到的诱惑——
+          前 5 个来自"V&A 路径诱惑"，后 5 个来自"Felissimo 路径诱惑"。
+          诱惑话术和应对话术都已提前写好。
         </p>
       </div>
 
-      <div class="space-y-4 mt-paragraph">
-        {scenarios.map((s) => (
-          <details class="border border-brass-mid/20 bg-ink-elevated/30 overflow-hidden group">
-            <summary class="cursor-pointer list-none px-6 py-5 flex items-baseline justify-between gap-4 hover:bg-ink-elevated/60 transition-colors select-none">
-              <div class="flex items-baseline gap-4 flex-1">
-                <span class="font-serif-en italic text-2xl text-brass-mid leading-none">{s.num}</span>
-                <h3 class="font-serif text-cream tracking-cn">{s.title}</h3>
-              </div>
-              <span class="font-serif-en italic text-xs text-text-soft shrink-0 opacity-70">
-                <span class="summary-label-closed">▼ 展开应对</span>
-                <span class="summary-label-open">▲ 收起</span>
-              </span>
-            </summary>
+      <!-- V&A 5 场景 -->
+      <div class="mb-section">
+        <div class="flex items-baseline gap-3 mb-4 pb-2 border-b border-cabinet-mid">
+          <span class="font-serif-en italic text-xs text-cabinet-mid tracking-widest uppercase">V&A · Group C · 5 Scenarios</span>
+        </div>
+        <div class="space-y-4">
+          {scenarios.map((s) => (
+            <details class="border border-brass-mid/20 bg-ink-elevated/30 overflow-hidden group">
+              <summary class="cursor-pointer list-none px-6 py-5 flex items-baseline justify-between gap-4 hover:bg-ink-elevated/60 transition-colors select-none">
+                <div class="flex items-baseline gap-4 flex-1">
+                  <span class="font-serif-en italic text-2xl text-cabinet-mid leading-none">{s.num}</span>
+                  <h3 class="font-serif text-cream tracking-cn">{s.title}</h3>
+                </div>
+                <span class="font-serif-en italic text-xs text-text-soft shrink-0 opacity-70">
+                  <span class="summary-label-closed">▼ 展开应对</span>
+                  <span class="summary-label-open">▲ 收起</span>
+                </span>
+              </summary>
 
-            <div class="border-t border-brass-mid/15 grid md:grid-cols-2">
-              <div class="p-6 md:p-8 bg-ink/40 md:border-r border-brass-mid/15">
-                <p class="font-serif-en italic text-coral-mid text-xs tracking-widest uppercase mb-3">
-                  诱惑话术
-                </p>
-                <p class="text-text-soft text-sm leading-[1.85] tracking-cn italic">"{s.temptation}"</p>
-              </div>
+              <div class="border-t border-brass-mid/15 grid md:grid-cols-2">
+                <div class="p-6 md:p-8 bg-ink/40 md:border-r border-brass-mid/15">
+                  <p class="font-serif-en italic text-coral-mid text-xs tracking-widest uppercase mb-3">
+                    诱惑话术
+                  </p>
+                  <p class="text-text-soft text-sm leading-[1.85] tracking-cn italic">"{s.temptation}"</p>
+                </div>
 
-              <div class="p-6 md:p-8 border-t md:border-t-0 border-brass-mid/15">
-                <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
-                  我们的应对
-                </p>
-                <p class="text-cream text-sm leading-[1.85] tracking-cn">{s.response}</p>
+                <div class="p-6 md:p-8 border-t md:border-t-0 border-brass-mid/15">
+                  <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+                    我们的应对
+                  </p>
+                  <p class="text-cream text-sm leading-[1.85] tracking-cn">{s.response}</p>
+                </div>
               </div>
-            </div>
-          </details>
-        ))}
+            </details>
+          ))}
+        </div>
+      </div>
+
+      <!-- Felissimo 5 场景 -->
+      <div>
+        <div class="flex items-baseline gap-3 mb-4 pb-2 border-b border-coral-mid">
+          <span class="font-serif-en italic text-xs text-coral-mid tracking-widest uppercase">Felissimo · Group B · 5 Scenarios</span>
+        </div>
+        <div class="space-y-4">
+          {felissimoScenarios.map((s) => (
+            <details class="border border-brass-mid/20 bg-ink-elevated/30 overflow-hidden group">
+              <summary class="cursor-pointer list-none px-6 py-5 flex items-baseline justify-between gap-4 hover:bg-ink-elevated/60 transition-colors select-none">
+                <div class="flex items-baseline gap-4 flex-1">
+                  <span class="font-serif-en italic text-2xl text-coral-mid leading-none">{s.num}</span>
+                  <h3 class="font-serif text-cream tracking-cn">{s.title}</h3>
+                </div>
+                <span class="font-serif-en italic text-xs text-text-soft shrink-0 opacity-70">
+                  <span class="summary-label-closed">▼ 展开应对</span>
+                  <span class="summary-label-open">▲ 收起</span>
+                </span>
+              </summary>
+
+              <div class="border-t border-brass-mid/15 grid md:grid-cols-2">
+                <div class="p-6 md:p-8 bg-ink/40 md:border-r border-brass-mid/15">
+                  <p class="font-serif-en italic text-coral-mid text-xs tracking-widest uppercase mb-3">
+                    诱惑话术
+                  </p>
+                  <p class="text-text-soft text-sm leading-[1.85] tracking-cn italic">"{s.temptation}"</p>
+                </div>
+
+                <div class="p-6 md:p-8 border-t md:border-t-0 border-brass-mid/15">
+                  <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+                    我们的应对
+                  </p>
+                  <p class="text-cream text-sm leading-[1.85] tracking-cn">{s.response}</p>
+                </div>
+              </div>
+            </details>
+          ))}
+        </div>
       </div>
     </div>
   </section>
 
   <hr class="brass-divider" />
 
-  <!-- ============== § XI · 研究治理 ============== -->
+  <!-- ============== § XI · Discipline · 不做清单 + 克制守则 ============== -->
   <section id="xi" class="editorial-section">
     <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-coral-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">XI.</span> Discipline · The Power of Saying No
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">不做清单与克制守则 · 5 份研究合并提炼</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          5 份对标研究反复指向同一个判断——<strong>一个品牌的成熟度，由它"不做的事"定义，而不是由它"做的事"定义</strong>。
+          泡泡玛特的 IP 衰退、V&A Dundee 的持续亏损、Felissimo 的订阅式溃败、蔦屋的西安撤店——
+          每一个反面教材的根源，都可以追溯到"在某个时点没有拒绝某件事"。
+        </p>
+        <p>
+          我们把 5 份研究里的所有"绝不做"判断合并去重，形成下面这份
+          <strong class="text-coral-mid">不做清单 17 条</strong>（hard rule · 红线）
+          和 <strong class="text-brass-mid">克制守则 9 条</strong>（soft rule · 品味）。
+          这份文件不是营销话术——它在每一次面对"机会"诱惑时，是我们的拒绝依据。
+        </p>
+      </div>
+
+      <!-- 不做清单 17 条 -->
+      <div class="mb-section">
+        <div class="flex items-baseline gap-3 mb-4 pb-2 border-b border-coral-mid">
+          <span class="font-serif-en italic text-xs text-coral-mid tracking-widest uppercase">No-List · 17 Hard Rules · 6 Categories</span>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+          {noList.map((g) => (
+            <div class="p-5 border border-coral-mid bg-ink-elevated/30">
+              <div class="flex items-baseline gap-3 mb-3 pb-2 border-b border-coral-mid/30">
+                <span class="font-serif text-cream tracking-cn">{g.cat}</span>
+                <span class="font-serif-en italic text-xs text-coral-mid tracking-widest uppercase">{g.catEn}</span>
+              </div>
+              <ul class="space-y-3 text-sm">
+                {g.items.map((item) => (
+                  <li class="leading-[1.85] tracking-cn">
+                    <span class="text-cream">{item.text}</span>
+                    <span class="block font-serif-en italic text-xs text-text-dim mt-1">— {item.source}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- 克制守则 9 条 -->
+      <div>
+        <div class="flex items-baseline gap-3 mb-4 pb-2 border-b border-brass-mid">
+          <span class="font-serif-en italic text-xs text-brass-mid tracking-widest uppercase">Restraint Rules · 9 Soft Rules · 品味性约束</span>
+        </div>
+
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn mb-paragraph max-w-editorial">
+          克制守则与不做清单的区别——<strong class="text-cream">不做清单是红线 hard rule（违反即破坏品牌精神）</strong>，
+          <strong class="text-cream">克制守则是品味性 soft rule（违反不会立刻翻车，但日积月累让品牌变庸俗）</strong>。
+          来源以 Felissimo「店内没有真猫 / 创始人不自我吹嘘 / 不参与购物节」为核心案例，结合 5 份对标的克制信号。
+        </p>
+
+        <div class="grid md:grid-cols-3 gap-3">
+          {restraintRules.map((rule, i) => (
+            <div class="p-4 border border-brass-mid/20 bg-ink-elevated/30 flex items-start gap-3">
+              <span class="font-serif-en italic text-xl text-brass-mid leading-none shrink-0">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <p class="text-text-soft text-sm leading-[1.7] tracking-cn">{rule}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="mt-section">
+        <PullQuote
+          quote={`清单不是路标，是指南针——它不告诉我们去哪儿，它告诉我们偏离方向时该怎么知道。`}
+          cite="山川造物 · 首店运营实战清单 v0.1"
+        />
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § XII · 研究治理 ============== -->
+  <section id="xii" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
       <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
-        <span class="text-brass-deep">XI.</span> Research Governance · 我们如何避免自我感动
+        <span class="text-brass-deep">XII.</span> Research Governance · 我们如何避免自我感动
       </p>
       <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">研究治理 · 不让研究变成自我感动</h2>
 
