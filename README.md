@@ -153,8 +153,9 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 - [ ] `public/images/hero/home-hero.jpg` 首页主视觉 / OG 分享图
 - [ ] 自托管思源宋体（如系统宋体回退不理想）
 - [x] `/notes/founders-letter` —— 创始人信《写在工作室开门之前》（v0.1 已上线 · 公众号 001）
-- [x] `public/images/founders/lianshu.png` —— 廉澍肖像（已上线 `/about` · 4:5 比例 · 116KB）
-- [ ] `public/images/founders/lihe.png` —— 李贺肖像（占位仍是 "Hayden Li" 字样，等真实素材到位后取消注释 about.astro line 99）
+- [x] `public/images/founders/lianshu.png` —— 廉澍肖像（已上线 · 4:5 · 116KB · 蓝底正装棚拍）
+- [x] `public/images/founders/lihe.png` —— 李贺肖像（已上线 · 4:5 · 169KB · 草原远眺户外照）
+- 创始人肖像同时出现在 `/about` 创始团队 I（4:5 上下双列）+ `/investors` 团队 VIII（图文卡片双列）
 - [ ] 把 `mailto:hello@shanchuanzaowu.com` 替换为真实邮箱（v0.1 内测期）或等域名 + Email Routing 配好（v0.2）
 
 素材到位后只需把文件放进对应目录、并在 `src/pages/senses.astro` 里取消注释 `image=` / `audio=` 属性即可。
