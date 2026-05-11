@@ -1,0 +1,994 @@
+---
+import Layout from '../components/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import PullQuote from '../components/PullQuote.astro';
+import ContactBlock from '../components/ContactBlock.astro';
+
+// ============================================================
+// 对标研究模块 · 软公开版 v1
+// 完整内部版含：宪章 / 方法论 / 启动卡 / 单家研究报告 / 自我感动检查
+// 此公开版保留：世界观三轴 + 对标系谱 + V&A 深度案例（正反并举）
+//        + 三区判断 + 四对标合并坐标系 + 5 场景应对话术 + 研究治理一节
+//        脱敏：自我感动检查 ⚠/✓、内部 IP 名、内部财务预期、研究助理角色定位
+// ============================================================
+
+const heroMetrics = [
+  { num: '7', label: '全球对标', en: 'Benchmarks' },
+  { num: '3', label: '研究群组', en: 'Groups' },
+  { num: '6', label: '正面学习', en: 'Lessons' },
+  { num: '5', label: '反面警示', en: 'Warnings' },
+];
+
+// ============== § II · 世界观三轴 ==============
+const axes = [
+  {
+    key: '哲学',
+    en: 'Philosophy',
+    desc: '我们是谁、我们的精神坐标、为什么不能"装"',
+    color: 'brass',
+  },
+  {
+    key: '商品化',
+    en: 'Commerce',
+    desc: '我们卖什么、怎么卖、IP 怎么衍生、价格带怎么布',
+    color: 'coral',
+  },
+  {
+    key: '空间机构',
+    en: 'Space & Institution',
+    desc: '我们的实体形态是什么、与博物馆的距离应该有多远、单店与连锁的边界在哪',
+    color: 'cabinet',
+  },
+];
+
+// ============== § III · 对标系谱地图 ==============
+// 3 群 × 7 家
+type Group = {
+  key: string;
+  letter: string;
+  name: string;
+  nameEn: string;
+  axis: string;
+  motto: string;
+  color: 'brass' | 'coral' | 'cabinet';
+  brands: { name: string; role: string; status: '已研究' | '研究中' | '排队中' }[];
+};
+
+const groups: Group[] = [
+  {
+    key: 'a',
+    letter: 'A',
+    name: '品牌哲学与精神祖谱',
+    nameEn: 'Soul · Philosophy & Lineage',
+    axis: '哲学轴',
+    motto: '决定我们是谁',
+    color: 'brass',
+    brands: [
+      { name: '中川政七商店', role: '工艺品类的现代化重组者', status: '已研究' },
+      { name: 'MUJI 无印良品', role: '反品牌的品牌', status: '排队中' },
+    ],
+  },
+  {
+    key: 'b',
+    letter: 'B',
+    name: '商业机制与商品化路径',
+    nameEn: 'Flesh · Mechanism & Commerce',
+    axis: '商品化轴',
+    motto: '决定我们怎么生存',
+    color: 'coral',
+    brands: [
+      { name: '泡泡玛特', role: 'IP 化 + 盲盒消费机制', status: '已研究' },
+      { name: 'Felissimo', role: '自然主题邮购 + 主题部门制', status: '排队中' },
+    ],
+  },
+  {
+    key: 'c',
+    letter: 'C',
+    name: '空间与机构形态',
+    nameEn: 'Skeleton · Space & Institution',
+    axis: '空间机构轴',
+    motto: '决定我们的形态与边界',
+    color: 'cabinet',
+    brands: [
+      { name: '蔦屋書店', role: '提案型零售空间', status: '已研究' },
+      { name: 'Victoria and Albert', role: '博物馆 × 零售 × IP 授权成熟体', status: '研究中' },
+      { name: 'Skansen', role: '在地文化的活态博物馆', status: '排队中' },
+    ],
+  },
+];
+
+// ============== § IV · 已完成 4 份研究的互证关系 ==============
+const mutualEvidence = [
+  {
+    type: '强印证',
+    sign: '✓',
+    title: 'Vision 第一性 · 长周期主义',
+    body: '三份独立研究都指向同一判断——长期主义和愿景的优先级高于短期利润。中川政七的「ビジョン 51% : 利益 49%」、蔦屋的「居心地」、V&A 的「机构使命作为商业化护栏」在精神上同构。',
+  },
+  {
+    type: '中印证',
+    sign: '✓',
+    title: '反广告 · 反流量 · 内在吸引力',
+    body: '中川政七的"接心好感"与蔦屋的"居心地"都强调：靠空间与服务积累内在吸引力，而非靠投放和打卡 KOL。V&A 同样依赖机构身份和 word-of-mouth。',
+  },
+  {
+    type: '强冲突',
+    sign: '╳',
+    title: '快 vs 慢的哲学对立',
+    body: '泡泡玛特的"快"（年化 +200%）与中川政七的"慢"（22 年 20 倍）哲学层面对立。山川造物必须在两者之间找到自己的"中速节奏"——这是冲突点带来的战略空间。',
+  },
+  {
+    type: '中冲突',
+    sign: '╳',
+    title: '大店 vs 模块化的形态对立',
+    body: '蔦屋的"多 format 大店"与中川政七的"小而精模块化矩阵"形态层面对立。山川造物的 Lite / Pro / Max 三档框架应更靠近后者。',
+  },
+];
+
+// ============== § V · V&A 六阶段精简 ==============
+const vaPhases = [
+  {
+    era: '1851–1899',
+    title: '奠基期',
+    eraEn: 'Foundation',
+    body: '源自 1851 年伦敦世博会盈余的"制造业博物馆"，从第一天起就不是"卖货空间"，而是"教育与品味提升的机构"——这种"使命先于商业"的奠基姿态是 V&A 后来一切商业化都不被认为"廉价"的根本。',
+  },
+  {
+    era: '1899–1957',
+    title: '国家化期',
+    eraEn: 'Nationalization',
+    body: '1938 年 May Morris 遗赠 V&A 大量 William Morris 作品，决定了 V&A 后来 80+ 年最强商业 IP 的来源。关键洞察：长期 IP 不是被设计出来的，是被等出来的。',
+  },
+  {
+    era: '1957–1995',
+    title: '商业化雏形期',
+    eraEn: 'Commercial Emergence',
+    body: '1957 年推出第一份系统化 Catalogue 系列。1985 年 V&A Enterprises Ltd. 正式注册——这是法律意义上的"双轨制"诞生年。法律实体的分离让"机构严肃性"与"商业灵活性"可以同时进化而不互相妨碍。',
+  },
+  {
+    era: '1995–2010s',
+    title: '企业化爆发期',
+    eraEn: 'Enterprise Expansion',
+    body: '2013 年 David Bowie Is 大展确立"大展 + 衍生品 + 后续 IP 长尾"完整链路。同一档案 12 年后变成 V&A East 永久展厅"David Bowie Centre"——证明一个大展可以变成永久 IP 资产。',
+  },
+  {
+    era: '2010s–2020s',
+    title: '多址扩张期',
+    eraEn: 'Multi-Site Expansion',
+    body: 'V&A Dundee 2018 年开馆，王室级 PR、TIME 封面、首年访客超预期 67%——但 6 年仍未盈亏平衡，依赖苏格兰政府 £3.8M / 年（占总营收 50%）。没有政府背书，分馆模型在财务上不可独立。',
+  },
+  {
+    era: '2020–至今',
+    title: '后疫情重构期',
+    eraEn: 'Post-Pandemic Reconstruction',
+    body: 'V&A East Storehouse 2025 年开放，"Order an Object"模式可在线预约任何藏品近距离观看。10 个月内近 30,000 件物品被预约——把"标本仓库"做成可参观、可预约、可深度互动的空间。',
+  },
+];
+
+// ============== § VI · 正面 6 经验 ==============
+const lessons = [
+  {
+    num: '01',
+    title: '机构使命作为商业化"上限护栏"',
+    body: 'V&A 1857 年起的核心使命 170 年没变。所有商业化决策必须先回答"它如何延伸了藏品的教育价值"。这是 V&A 商业化最大的"反廉价"机制。我们的迁移：任何 SKU、任何 IP 联名、任何快闪决策，都必须先通过"它如何延伸自然博物的教育和审美价值"的内部论证。',
+  },
+  {
+    num: '02',
+    title: '大展 + 衍生品的"事件化"模型',
+    body: 'V&A 大展的真正价值不是单次门票收入，而是它创造了"一段时间内的文化事件"——衍生品在这段时间销售更顺畅、媒体覆盖更深、IP 在大众认知中沉淀。我们的迁移：用"季度小展"代替"大展"，3 个月一主题，配套限定衍生品。用"小而频繁"代替"大而稀少"。',
+  },
+  {
+    num: '03',
+    title: 'William Morris：长尾 IP 经营 87 年',
+    body: 'William Morris 不是一夜成名的 IP——1862 年合作 → 1893 年捐织机 → 1938 年女儿遗赠 → 才有了今天的商业化基础。每代人重新解读、每 5-10 年推出新设计组合。我们的迁移：把核心 IP 作为山川造物版的 William Morris 经营 30 年，建立档案库，拒绝"快速增加新 IP"的诱惑。',
+  },
+  {
+    num: '04',
+    title: '零售与策展的"内容互文"',
+    body: 'V&A 主馆 shop 不是"展览出口的纪念品店"，而是"展览的延伸内容"。Christian Dior 大展期间的衍生品是策展团队参与设计的延伸品——策展人的署名出现在衍生品上。我们的迁移：每件衍生品附"策展人卡片"，让商品脱离"卖货"语境，进入"内容"语境。',
+  },
+  {
+    num: '05',
+    title: '"严肃性资本"作为商业化抗体',
+    body: 'V&A 商品客单价偏高但销售稳健，因为消费者购买的不是"性价比"，是"V&A 背书的严肃性"。严肃性资本的来源：时间 + 规模 + 知识 + 关系 + 道德。山川造物没有时间和规模资本，但可以从一开始积累其他三种——标本学术档案、与博物机构的深度合作、100% CITES 合规公开承诺。',
+  },
+  {
+    num: '06',
+    title: '"反向博物馆"对仓储展示化的启示',
+    body: 'V&A East Storehouse 的"Order an Object"——可预约近距离观看 50 万+ 馆藏物品。本质是把博物馆体验从"自上而下的独白"转译为"双向对话"。我们的迁移：首店开业 6 个月后试点"预约式标本观察"——用户可预约看仓库标本，店员陪同深度展示。几乎不需要额外成本，但能极大区别于"标本零售店"的常规定位。',
+  },
+];
+
+// ============== § VII · 反面 5 风险 ==============
+const warnings = [
+  {
+    num: '01',
+    title: '公立机构身份的"严肃性资本"在中国不可复制',
+    body: 'V&A 的根本身份是英国 DCMS 资助的公立慈善机构——这身份在英国语境中天然带"国家公共机构"的严肃性。山川造物作为私营品牌无论怎么努力都得不到。风险信号：模仿 V&A 的"机构姿态"过度，会被识别为"装"——这恰恰违反"不装的规模化"。',
+  },
+  {
+    num: '02',
+    title: 'V&A Dundee 的持续亏损：分馆模型的财务陷阱',
+    body: 'V&A Dundee 是英国王室级 PR 项目（开馆有威廉王子和凯特王妃，登 TIME 封面），仍然依靠 50% 政府资助持续 6 年才接近盈亏平衡。关键洞察：连这种级别的项目都需要 6 年，那么任何"博物馆形态分馆模型"在中国市场都将面临更严峻的财务考验。我们的应对：第二、第三店主动假设前 3-5 年累计亏损，把"亏损额"作为"学习成本"预算化。',
+  },
+  {
+    num: '03',
+    title: '殖民藏品归还争议：严肃性资本被消耗的实例',
+    body: 'V&A 持有大量来自前殖民地的争议藏品，过去 50 年持续引发归还要求。Tristram Hunt 推动以"长期借展"形式归还，但非洲学者批评仍维持"殖民权力结构"，埃塞俄比亚明确拒绝。关键洞察：严肃性资本不仅可以被"商业化过度"消耗，还可以被"历史遗产"消耗。我们的警示：标本来源必须从首店开始 100% 合规，不能"等做大了再规范"——为时已晚。',
+  },
+  {
+    num: '04',
+    title: 'IP 授权过度的廉价化批评',
+    body: 'V&A 95+ 国际授权许可中，每隔几年就会出现"博物馆 IP 廉价化"的批评——William Morris 图案出现在快时尚低价产品上时引发抗议。我们的警示：未来如果开放 IP 授权，必须从一开始建立明确的"绝不授权"清单——快时尚、博彩、低价批发、无品牌 OEM。这清单的实际作用是"在团队遇到诱惑时有现成的拒绝依据"。',
+  },
+  {
+    num: '05',
+    title: '疫情对单一收入结构的暴击',
+    body: 'V&A 2022-23 年总收入比 2021-22 下降，访客量仅恢复到疫情前 75%——暴露了过度依赖"现场访客 → 礼品店购买"链路的脆弱性。我们的警示：山川造物初期会高度依赖首店现场访客这条链路，与 V&A 疫情前的脆弱结构同构。必须在开业 6 个月内开始建设"非现场依赖"的收入支柱：在线商城、订阅式内容服务、企业定制、衍生品批发。',
+  },
+];
+
+// ============== § VIII · 三区判断 ==============
+type Tier = { num: string; title: string; body: string };
+const greenZone: Tier[] = [
+  { num: '绿1', title: '机构使命作为"上限护栏"制度化', body: '所有 SKU 上架前必须通过"它如何延伸自然博物的教育价值"内部评审，未通过不上架。' },
+  { num: '绿2', title: '季度主题事件 + 衍生品矩阵', body: '借鉴大展模型的结构（非规模），每季度一主题事件，配套 3-5 款限定衍生品。' },
+  { num: '绿3', title: '核心 IP 作为 30 年长尾经营', body: '建立档案库（设计草稿 / 阶段变体 / 内部讨论存档），拒绝"快速增加新 IP"的诱惑。' },
+  { num: '绿4', title: '零售与策展的"内容互文"', body: '每件衍生品附"策展人卡片"，把商品脱离卖货语境进入内容语境。' },
+  { num: '绿5', title: '严肃性资本的密度积累', body: '标本档案学术化 + 与博物机构深度合作 + 100% CITES 合规公开承诺——三件套同步推进。' },
+  { num: '绿6', title: '预约式标本观察试点', body: '借鉴 V&A East "Order an Object" 模式，首店运行 6 个月后试点，用户可预约看仓库标本。' },
+];
+
+const yellowZone = [
+  { num: '黄1', va: '大展模型（百万级访客 / 全球巡展）', us: '"季度小展"——3 个月一主题、首店为主场', why: '我们没有大展所需的藏品规模、机构身份、全球渠道；用密度换规模' },
+  { num: '黄2', va: '多址扩张（V&A Dundee 政府资助 50%）', us: '"轻资产快闪 + 重资产首店"——快闪覆盖城市认知，重资产慢扩张', why: '中国无政府资助，分馆模型必须 100% 自给；学习 V&A Dundee 的失败而非模仿其规模' },
+  { num: '黄3', va: '国际授权（95+ licensees 全球网络）', us: '"小众设计师合作 + 区域授权"——优先在中文圈和东亚做精', why: '国际授权需要规模和品牌成熟度，我们初期都不具备' },
+  { num: '黄4', va: '收入结构（DCMS 资助 45%）', us: '"100% 自营盈利 + 多元化非现场收入"——绝不依赖外部稳定输血', why: '私营品牌没有政府资助选项；建立从一开始就独立的财务模型' },
+  { num: '黄5', va: '殖民藏品的"长期借展"政治叙事', us: '"标本来源 100% 合规 + 主动透明"——不需要"归还"叙事', why: '把 V&A 现在头疼的历史问题，我们用"前置合规"完全规避' },
+];
+
+const redZone: Tier[] = [
+  { num: '红1', title: '绝不假装机构身份', body: '我们不是博物馆，不能用"中国版 V&A""自然博物馆"等姿态做营销宣传——这违反"不装的规模化"，且会被识别为虚张声势。' },
+  { num: '红2', title: '绝不依赖"打卡型"大展引流', body: '这是泡泡玛特路径与 V&A 大展模型的扭曲混合——把博物馆姿态用于打卡流量。会破坏严肃性资本积累。' },
+  { num: '红3', title: '绝不接受非合规标本来源', body: '包括 CITES 灰色地带、争议野生动物部位、私人非法收藏。任何"先做大再规范"的妥协都会在 5-10 年后引发不可逆品牌损害。' },
+  { num: '红4', title: '绝不与快时尚做 IP 联名', body: '即便短期收入可观，会消耗严肃性资本 5-10 年。参考 V&A William Morris 在快时尚廉价化的批评。' },
+  { num: '红5', title: '绝不做"过度学术化"姿态', body: 'V&A 有真正的学术资本（出版 / 研究 / 大学合作），我们没有。假装学术会被博物学界识破，且让普通用户疏远——保持"严肃但不学究"是关键。' },
+];
+
+// ============== § IX · 四对标合并坐标系 ==============
+type BenchmarkRow = {
+  brand: string;
+  type: string;
+  founded: string;
+  scale: string;
+  speed: string;
+  speedColor: 'green' | 'brass' | 'coral';
+  methodology: string;
+  role: string;
+  groupColor: 'brass' | 'coral' | 'cabinet';
+  risk: string;
+};
+
+const benchmarks: BenchmarkRow[] = [
+  {
+    brand: '中川政七商店',
+    type: '工艺生活雑货',
+    founded: '1716 / 现代化 2002',
+    scale: '年营收约 RMB 4.6 亿',
+    speed: '慢 · 年化约 15%',
+    speedColor: 'green',
+    methodology: '以工艺为本 · SPA · 「ビジョン 51% : 利益 49%」',
+    role: '群 A · 品牌哲学祖谱',
+    groupColor: 'brass',
+    risk: '反向出海日本陷阱 · 中国市场水土不服',
+  },
+  {
+    brand: '蔦屋書店',
+    type: '提案型零售空间',
+    founded: '1983',
+    scale: '年营收 2000+ 亿日元（含 CCC）',
+    speed: '中速 · 持续扩张',
+    speedColor: 'brass',
+    methodology: '提案型策展 · 居心地 · 多 format 大店',
+    role: '群 C · 空间形态参照',
+    groupColor: 'cabinet',
+    risk: '西安关店 · 网红化陷阱 · 大店面积病',
+  },
+  {
+    brand: '泡泡玛特',
+    type: 'IP 玩具 + 盲盒',
+    founded: '2010',
+    scale: '年营收 RMB 100+ 亿',
+    speed: '快 · 年化 +200% 已显疲态',
+    speedColor: 'coral',
+    methodology: 'IP 矩阵 · 盲盒机制 · 渠道数字化',
+    role: '群 B · 商业机制反向参照',
+    groupColor: 'coral',
+    risk: '半年周期律 · IP 衰退 · 渠道单一',
+  },
+  {
+    brand: 'Victoria and Albert',
+    type: '公立博物馆 + 商业子公司',
+    founded: '1852',
+    scale: '年总收入 £121.4M（约 RMB 11 亿）',
+    speed: '慢 · 机构型低位个位数',
+    speedColor: 'green',
+    methodology: '双轨制 · 严肃性资本 · 大展模型 · 长尾 IP',
+    role: '群 C · 机构形态参照',
+    groupColor: 'cabinet',
+    risk: 'V&A Dundee 持续亏损 · 殖民藏品争议 · 疫情暴击 · 快时尚授权廉价化',
+  },
+];
+
+// ============== § X · 共同建议(4 对标都指向的判断) ==============
+const consensus = [
+  { strength: '4/4 强', title: 'vision / 严肃性 / 长情作为商业化的硬约束', body: '中川政七的「ビジョン 51%」/ 蔦屋的「居心地」/ V&A 的「机构使命护栏」/ 泡泡玛特（反例）缺乏严肃性约束导致"半年周期律"风险。我们的动作：把"不装的规模化"作为所有商业决策的硬约束。' },
+  { strength: '4/4 强', title: '一个核心 IP 长期深耕，胜过多个短期 IP', body: '中川政七：日本工艺品类作为"超长尾 IP"/ 蔦屋：書 / V&A：William Morris 87 年长尾 / 泡泡玛特（反例）：多 IP 矩阵导致每个 IP 生命周期被切短。我们的动作：把核心 IP 经营 30 年，拒绝扩张诱惑。' },
+  { strength: '4/4 中', title: '反广告、反流量，靠空间 + 商品 + 服务积累内在吸引力', body: '中川政七：几乎不投广告 / 蔦屋：居心地 / V&A：依赖机构身份和 word-of-mouth / 泡泡玛特（反例）：高度依赖渠道与 KOL 流量。我们的动作：首店开业不做付费投放、不请打卡 KOL、不参与流量节庆。' },
+  { strength: '3/4 强', title: '慢节奏 + 长期主义', body: '中川政七：22 年 20 倍 / 蔦屋：43 年扩张持续 / V&A：170 年机构存续 / 泡泡玛特（反例）：年化 200% 的"快"已疲态。我们的动作：首店前 3 年累计亏损纳入预算（参考 V&A Dundee 教训），不追求快速回本。' },
+  { strength: '3/4 强', title: '空间是策展空间，不是卖货空间', body: '中川政七：店铺即工艺现场 / 蔦屋：提案型空间 / V&A：博物馆 + 礼品店内容互文 / 泡泡玛特（反例）：店铺主要功能是 SKU 陈列与转化。我们的动作：首店设计必须把"自然博物现场"作为主功能，"商品销售"作为现场体验延伸。' },
+];
+
+// ============== § XI · 5 场景应对话术 ==============
+const scenarios = [
+  {
+    num: '01',
+    title: '投资人:"做成中国版 V&A，迅速铺 10 家博物馆形态店"',
+    temptation: '你们的标本品类天然带博物馆基因。我建议你们抓住这个窗口期，迅速复制 10 家"山川博物馆"式的店，每家 800-1200 平米，三年内成为中国第一自然博物零售连锁。',
+    response: '我们参考过全球最成熟的样本——V&A Dundee。它是英国王室级 PR 项目（开馆有威廉王子和凯特王妃），开馆即超预期、登 TIME 封面。即便如此，它运营 6 年依靠苏格兰政府每年 £3.8M（占总营收 50%）的资助才接近盈亏平衡。我们没有政府资助，任何分馆模型必须 100% 自给。我们的策略是"轻资产快闪 + 重资产首店慢扩张"，前 3 年累计亏损视为学习成本。我们做的不是中国版 V&A，是中国版山川造物。V&A 是参照系，不是模板。',
+  },
+  {
+    num: '02',
+    title: '媒体:"山川造物算不算私人博物馆？"',
+    temptation: '你们这里像一座迷你博物馆，标本陈列、专业讲解都有。能不能定位"中国第一家私人自然博物馆"？这样故事性更强，传播也更有抓手。',
+    response: '感谢您这么看重我们。但我们不是博物馆，也不应该自称博物馆。博物馆是公共文化机构，承担的是社会责任；山川造物是一个私营品牌，承担的是商业责任。这两件事的伦理基础不同。我们如果挪用"博物馆"这个身份，会模糊一个重要的边界。我们更准确的定位是——"带着博物气质的自然标本生活方式品牌"。我们尊敬博物馆，但不冒用它的身份。这种克制本身是我们品牌哲学的一部分。',
+  },
+  {
+    num: '03',
+    title: '合作方:"和某快时尚做一次自然主题胶囊系列？年销 500 万级别"',
+    temptation: '我们想做一个核心 IP × 某快时尚的春夏胶囊系列，全国 200 家门店上架，预计销售 500-800 万。这对你们的品牌曝光和商业化都是双赢。',
+    response: '我们参考过全球最成熟的博物馆 IP 授权样本——V&A 的 William Morris。这个 IP 经营了 87 年，授权对象都是有品牌调性匹配的合作方（Wedgwood、Liberty 等）。当 V&A 偶尔与快时尚有过合作时，会消耗 5-10 年的严肃性资本来修复争议。山川造物刚刚起步，严肃性资本积累不到 1 年。一次快时尚联名会让我们提前 5 年消耗掉所有积累。当下，这不是双赢，是单赢——您们赢，我们输。',
+  },
+  {
+    num: '04',
+    title: '内部团队:"做一个山川大展吸引网红打卡？"',
+    temptation: '我看泡泡玛特最近做的"乐园"活动一周入园 10 万人。我们能不能也策划一个"山川大展"，请几个自然摄影 KOL 来拍，做一个朋友圈打卡级别的流量事件？这样很快能把山川造物的知名度做出来。',
+    response: '我理解这个诉求——我们都希望被看见。但"打卡型流量"不是我们的路径。我们的对标里只有一家走过这条路——泡泡玛特。它的成功来自 IP 速度、SKU 矩阵、年化 +200% 的增长。这与山川造物的所有设计前提都冲突。我们要的是 V&A 大展模型的结构（藏品研究 → 主题策展 → 商品衍生 → IP 长尾），不是形式（打卡乐园）。泡泡玛特的快是它的强项；我们的慢是我们的强项。互相不可替代。',
+  },
+  {
+    num: '05',
+    title: '政府/官方:"被认定为博物馆机构、争取地方文化资金？"',
+    temptation: '你们的店铺本身已经具备博物馆功能。地方文化局其实有一些专项资金支持"民营博物馆"，每年可以申请几十万到几百万。要不要走一下这个流程？',
+    response: '感谢提议。我们认真考虑过这件事，但当前阶段决定不申请。理由有三：第一，我们不是博物馆——身份的清晰比补贴更重要。第二，接受公共资金会改变我们的决策结构。V&A 是 DCMS 资助 45% 的公立机构，所有重大决策必须考虑 DCMS 立场。我们如果接受地方文化资金，就要面对类似的"机构羁绊"——这不是钱的问题，是决策自由度的问题。第三，我们的财务模型必须 100% 自给。任何依赖外部稳定输血的模型在中国民营市场都不可持续。',
+  },
+];
+
+// ============== § XII · 研究治理 ==============
+const governance = [
+  {
+    title: '公开资料三层抽样',
+    body: '每份对标研究必须覆盖三层：硬资料（财报 / 上市文件 / 学术论文）、深度访谈（创始人讲话 / 长篇报道）、用户与舆情（点评 / 失败案例报道）。只用一二层的报告会变成对官方叙事的复述。',
+  },
+  {
+    title: '正反案例并举',
+    body: '每份报告必须包含失败案例 / 风险信号 / 跨文化差异 / 暗角研究。"全是优点、没有暗角"的对标报告在结构上无法成立。',
+  },
+  {
+    title: '三区可执行',
+    body: '绿区每条回答：在哪个项目、哪个时点、由谁开始借鉴；黄区每条回答：原版是什么 / 改写为什么 / 改写理由；红区每条回答：什么诱惑场景会让我们想做 / 我们的应对话术。',
+  },
+  {
+    title: '互证关系图',
+    body: '每新增一份对标研究，更新已有对标之间的"印证 / 冲突 / 未对话"关系网。冲突点不强行调和——冲突恰是战略空间所在。',
+  },
+];
+
+const colorMap = {
+  brass: { text: 'text-brass-mid', tape: 'bg-brass-mid' },
+  coral: { text: 'text-coral-mid', tape: 'bg-coral-mid' },
+  cabinet: { text: 'text-cabinet-mid', tape: 'bg-cabinet-mid' },
+  green: { text: 'text-green-mid', tape: 'bg-green-mid' },
+};
+---
+
+<Layout
+  title="对标研究 · Benchmarks"
+  description="7 家全球品牌作为参照，3 个研究群组，6 条正面学习，5 项反面警示。我们用 V&A 做深度案例，回答一个问题：我们站在哪里，我们不去哪里。"
+>
+  <!-- ============== Hero ============== -->
+  <PageHero
+    eyebrow="Benchmarks · 对标研究"
+    title={`我们站在哪里，<br/><span class="text-brass-bright">我们不去哪里。</span>`}
+    lead={`一个品牌的成熟，不在于「我能借鉴谁」，而在于「我能拒绝谁」。我们用 7 家全球品牌作为参照——3 群（哲学 / 商品化 / 空间机构）、4 家已完成深度研究、3 家在排队。这份模块是这套研究的软公开版，展示我们的差异性定位和路径选择的正反两面。`}
+  />
+
+  <!-- Hero Metrics -->
+  <section class="editorial-section">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-editorial-wide mx-auto">
+      {heroMetrics.map((m) => (
+        <div class="p-5 border border-brass-mid/20 bg-ink-elevated/40 text-center">
+          <div class="font-serif-en italic text-5xl text-brass-mid mb-1">{m.num}</div>
+          <div class="text-cream text-sm tracking-cn mb-1">{m.label}</div>
+          <div class="font-serif-en italic text-xs text-text-soft">{m.en}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § I · 为什么做对标研究 ============== -->
+  <section id="i" class="editorial-section">
+    <div class="max-w-editorial mx-auto">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">I.</span> Why Benchmark
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">为什么我们做对标研究</h2>
+
+      <div class="prose-cn space-y-4 p-8 border-l-2 border-brass-mid bg-ink-elevated/30">
+        <p>
+          做品牌最容易犯的错，是"一上来就以为自己很特别"。我们不愿意。
+        </p>
+        <p>
+          在山川造物开门之前，我们花了一年时间研究 7 家全球品牌——每一家都在它的赛道上做对了某些事，也做错了某些事。
+          这些研究的目的<strong>不是抄作业</strong>——是先把"哪些路别人已经走过"画清楚，再回答"我们的路在哪里"。
+        </p>
+        <p>
+          我们不希望成为<em>中国版 V&A</em>、<em>中国版中川政七</em>、<em>自然博物界的泡泡玛特</em>。
+          我们希望成为<strong class="text-brass-bright">我们自己</strong>——但前提是知道自己究竟"不是"哪些已经存在的样本。
+        </p>
+        <p class="text-right font-serif-en italic text-brass-mid text-sm">
+          —— 研究的目的不是写漂亮的报告，是让下一次决策比上一次更不容易后悔
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § II · 世界观三轴 ============== -->
+  <section id="ii" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">II.</span> The Three Axes
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">世界观三轴 · 我们看世界的坐标系</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          山川造物作为一个文化型消费品牌，最终站在三轴的交叉点上。任何对标、任何市场、任何用户群，我们都在这三轴上定位。
+          <strong>任何只能在两轴或一轴上回应的研究，都是不完整的。</strong>
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4 mt-paragraph">
+        {axes.map((a, i) => {
+          const c = colorMap[a.color as keyof typeof colorMap];
+          return (
+            <article class="border border-brass-mid/20 bg-ink-elevated/30 overflow-hidden">
+              <div class:list={['h-1.5 w-full', c.tape]}></div>
+              <div class="p-6">
+                <p class:list={['font-serif-en italic text-xs tracking-widest uppercase mb-2', c.text]}>
+                  Axis {String(i + 1).padStart(2, '0')} · {a.en}
+                </p>
+                <h3 class="font-serif text-xl text-cream mb-3 tracking-cn">{a.key}轴</h3>
+                <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{a.desc}</p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <p class="mt-paragraph text-sm text-text-soft tracking-cn">
+        三轴的交叉点 = 山川造物。这三轴对应下面对标研究的三个群组（A 群 → 哲学轴 / B 群 → 商品化轴 / C 群 → 空间机构轴）。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § III · 对标系谱地图 ============== -->
+  <section id="iii" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">III.</span> The Benchmark Map · 7 Brands × 3 Groups
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">对标系谱地图 · 3 群 7 家</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          7 家对标按"对山川造物的哪条战略轴有参照价值"分成三群。每群对应世界观三轴中的一条。
+          <strong>群间关系铁律</strong>：群 A 是"魂"——决定我们是谁；群 B 是"血肉"——决定我们怎么生存；群 C 是"骨架"——决定我们的形态与边界。
+        </p>
+      </div>
+
+      <div class="space-y-6 mt-paragraph">
+        {groups.map((g) => {
+          const c = colorMap[g.color];
+          return (
+            <article class="border border-brass-mid/20 bg-ink-elevated/30 overflow-hidden">
+              <div class:list={['h-1.5 w-full', c.tape]}></div>
+              <div class="p-6 md:p-8 grid md:grid-cols-[200px_1fr] gap-6 md:gap-8">
+                <div class="relative">
+                  <div
+                    class:list={['font-serif-en italic leading-none mb-3', c.text]}
+                    style="font-size: 84px; letter-spacing: -0.04em; opacity: 0.85;"
+                  >
+                    {g.letter}
+                  </div>
+                  <p class:list={['font-serif-en italic text-xs tracking-widest uppercase mb-2', c.text]}>
+                    Group {g.letter} · {g.axis}
+                  </p>
+                  <h3 class="font-serif text-lg text-cream mb-1 tracking-cn">{g.name}</h3>
+                  <p class="font-serif-en italic text-xs text-text-soft mb-3">{g.nameEn}</p>
+                  <p class:list={['text-xs italic tracking-cn', c.text]}>{g.motto}</p>
+                </div>
+
+                <div class="space-y-3 md:border-l md:border-brass-mid/15 md:pl-8">
+                  {g.brands.map((b) => (
+                    <div class="flex items-baseline justify-between gap-3 py-3 border-b border-brass-mid/15 last:border-b-0">
+                      <div class="flex-1">
+                        <h4 class="font-serif text-cream tracking-cn mb-1">{b.name}</h4>
+                        <p class="text-text-soft text-sm leading-[1.7] tracking-cn">{b.role}</p>
+                      </div>
+                      <span
+                        class:list={[
+                          'shrink-0 px-2 py-0.5 text-[10px] font-mono tracking-wider border',
+                          b.status === '已研究' && 'border-green-mid text-green-mid',
+                          b.status === '研究中' && 'border-brass-mid/40 text-brass-mid',
+                          b.status === '排队中' && 'border-brass-mid/20 text-text-soft',
+                        ]}
+                      >
+                        {b.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § IV · 已完成研究的互证关系 ============== -->
+  <section id="iv" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">IV.</span> Mutual Evidence
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">已完成 4 份研究的互证关系</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          4 份已完成的研究（中川政七 / 蔦屋 / 泡泡玛特 / V&A）之间已经形成第一层互证关系——
+          <strong>同时印证同一判断的对标越多，山川造物战略的最大公约数就越清晰</strong>。
+          冲突点也是战略空间所在，我们不强行调和。
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4 mt-paragraph">
+        {mutualEvidence.map((m) => (
+          <div
+            class:list={[
+              'p-6 border bg-ink-elevated/30',
+              m.sign === '✓' ? 'border-green-mid' : 'border-coral-mid',
+            ]}
+          >
+            <div class="flex items-baseline gap-3 mb-3">
+              <span
+                class:list={[
+                  'font-serif-en italic text-3xl leading-none',
+                  m.sign === '✓' ? 'text-green-mid' : 'text-coral-mid',
+                ]}
+              >
+                {m.sign}
+              </span>
+              <p
+                class:list={[
+                  'font-serif-en italic text-xs tracking-widest uppercase',
+                  m.sign === '✓' ? 'text-green-mid' : 'text-coral-mid',
+                ]}
+              >
+                {m.type}
+              </p>
+            </div>
+            <h3 class="font-serif text-lg text-cream mb-2 tracking-cn">{m.title}</h3>
+            <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{m.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § V · V&A Spotlight · 6 阶段 ============== -->
+  <section id="v" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-cabinet-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">V.</span> Spotlight · Victoria and Albert Museum
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-3 tracking-cn">V&A 深度案例 · 170 年的样本</h2>
+      <p class="text-text-soft text-base leading-[1.85] tracking-cn mb-paragraph max-w-editorial">
+        我们选 V&A 作为深度案例，因为它是<strong class="text-cream">全世界把"机构严肃性"与"零售商业化"在同一屋檐下做得最久、最完整的样本</strong>——170 年机构存续、270 万件藏品、年总收入约 RMB 11 亿、95+ 个国际授权许可。
+        它也已经在路上踩过我们正在遇到和将要遇到的几乎所有坑。
+      </p>
+
+      <div class="space-y-4">
+        {vaPhases.map((p) => (
+          <div class="grid md:grid-cols-[180px_1fr] gap-4 md:gap-8 p-6 border border-brass-mid/20 bg-ink-elevated/30">
+            <div>
+              <p class="font-mono text-xs text-cabinet-mid mb-1">{p.era}</p>
+              <h3 class="font-serif text-lg text-cream tracking-cn mb-1">{p.title}</h3>
+              <p class="font-serif-en italic text-xs text-text-soft">{p.eraEn}</p>
+            </div>
+            <div class="text-text-soft text-sm leading-[1.85] tracking-cn md:border-l md:border-brass-mid/15 md:pl-8">
+              <p>{p.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § VI · 正面 6 经验 ============== -->
+  <section id="vi" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-green-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">VI.</span> What V&A Got Right · 正面 6 经验
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">正面 · V&A 做对的 6 件事</h2>
+
+      <div class="space-y-0 border-t border-brass-mid/20 mt-paragraph">
+        {lessons.map((l) => (
+          <article class="grid grid-cols-[56px_1fr] md:grid-cols-[72px_1fr] gap-4 md:gap-6 py-6 border-b border-brass-mid/15">
+            <span class="font-serif-en italic text-3xl md:text-4xl text-green-mid leading-none">{l.num}</span>
+            <div>
+              <h3 class="font-serif text-lg md:text-xl text-cream mb-2 tracking-cn">{l.title}</h3>
+              <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{l.body}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § VII · 反面 5 风险 ============== -->
+  <section id="vii" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-coral-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">VII.</span> What V&A Got Wrong · 反面 5 警示
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">反面 · V&A 踩过的 5 个坑</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          一份合格的对标研究，<strong>必须正反并举</strong>。"全是优点、没有暗角"的研究在结构上不能成立——
+          它会变成对品牌的官方叙事的复述，而不是研究。
+        </p>
+      </div>
+
+      <div class="space-y-0 border-t border-brass-mid/20 mt-paragraph">
+        {warnings.map((w) => (
+          <article class="grid grid-cols-[56px_1fr] md:grid-cols-[72px_1fr] gap-4 md:gap-6 py-6 border-b border-brass-mid/15">
+            <span class="font-serif-en italic text-3xl md:text-4xl text-coral-mid leading-none">{w.num}</span>
+            <div>
+              <h3 class="font-serif text-lg md:text-xl text-cream mb-2 tracking-cn">{w.title}</h3>
+              <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{w.body}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § VIII · 三区判断 ============== -->
+  <section id="viii" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">VIII.</span> Green / Yellow / Red — Our Differentiated Position
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">三区判断 · 我们的差异性定位</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          每份对标研究的核心可研产出物是三区判断：<strong class="text-green-mid">绿区</strong>（可以直接学习）/
+          <strong class="text-brass-mid">黄区</strong>（必须改写）/ <strong class="text-coral-mid">红区</strong>（绝不模仿）。
+          这是我们和参照对象之间最清晰的"差异度尺"。
+        </p>
+      </div>
+
+      <!-- 绿区 -->
+      <div class="mt-paragraph">
+        <div class="flex items-baseline gap-3 mb-4">
+          <span class="font-serif-en italic text-2xl text-green-mid">●</span>
+          <h3 class="font-serif text-2xl text-cream tracking-cn">绿区 · 直接学习的 6 项</h3>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+          {greenZone.map((g) => (
+            <div class="p-5 border border-green-mid bg-ink-elevated/30">
+              <div class="flex items-baseline gap-3 mb-2">
+                <span class="font-mono text-xs text-green-mid">{g.num}</span>
+                <h4 class="font-serif text-cream tracking-cn flex-1">{g.title}</h4>
+              </div>
+              <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{g.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- 黄区 -->
+      <div class="mt-section">
+        <div class="flex items-baseline gap-3 mb-4">
+          <span class="font-serif-en italic text-2xl text-brass-mid">▲</span>
+          <h3 class="font-serif text-2xl text-cream tracking-cn">黄区 · 必须改写的 5 项</h3>
+        </div>
+        <div class="space-y-3">
+          {yellowZone.map((y) => (
+            <div class="p-5 border border-brass-mid/40 bg-ink-elevated/30 grid md:grid-cols-[80px_1fr] gap-4">
+              <span class="font-mono text-sm text-brass-mid">{y.num}</span>
+              <div class="grid md:grid-cols-2 gap-4 md:gap-6">
+                <div class="md:pr-4 md:border-r md:border-brass-mid/15">
+                  <p class="font-serif-en italic text-xs text-brass-deep tracking-widest uppercase mb-1">V&A 原版</p>
+                  <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{y.va}</p>
+                </div>
+                <div>
+                  <p class="font-serif-en italic text-xs text-brass-mid tracking-widest uppercase mb-1">山川造物改写</p>
+                  <p class="text-cream text-sm leading-[1.85] tracking-cn mb-2">{y.us}</p>
+                  <p class="text-text-soft text-xs italic leading-[1.7] tracking-cn">→ {y.why}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- 红区 -->
+      <div class="mt-section">
+        <div class="flex items-baseline gap-3 mb-4">
+          <span class="font-serif-en italic text-2xl text-coral-mid">×</span>
+          <h3 class="font-serif text-2xl text-cream tracking-cn">红区 · 绝不模仿的 5 项</h3>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+          {redZone.map((r) => (
+            <div class="p-5 border border-coral-mid bg-ink-elevated/30">
+              <div class="flex items-baseline gap-3 mb-2">
+                <span class="font-mono text-xs text-coral-mid">{r.num}</span>
+                <h4 class="font-serif text-cream tracking-cn flex-1">{r.title}</h4>
+              </div>
+              <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{r.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § IX · 四对标合并坐标系 ============== -->
+  <section id="ix" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">IX.</span> Four-Benchmark Synthesis
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">四对标合并坐标系</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          中川政七、蔦屋、泡泡玛特、V&A——四家分别代表"传统工艺现代化 / 提案型空间 / IP 商业化 / 机构+商业双轨"四条路径。
+          把它们放在同一张表上看，山川造物的位置就清晰了。
+        </p>
+      </div>
+
+      <!-- 桌面端：表格视图 -->
+      <div class="hidden md:block overflow-x-auto mt-paragraph">
+        <table class="w-full border border-brass-mid/20 bg-ink-elevated/30 text-sm">
+          <thead>
+            <tr class="border-b border-brass-mid/30">
+              <th class="text-left p-4 font-serif-en italic text-brass-deep text-xs tracking-widest uppercase">维度</th>
+              {benchmarks.map((b) => (
+                <th class:list={[
+                  'text-left p-4 font-serif text-cream tracking-cn border-l border-brass-mid/15',
+                  b.brand === 'Victoria and Albert' && 'bg-brass-mid/8',
+                ]}>
+                  {b.brand}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody class="text-text-soft">
+            <tr class="border-b border-brass-mid/15"><td class="p-4 text-cream tracking-cn">品牌类型</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 leading-[1.7]">{b.type}</td>)}</tr>
+            <tr class="border-b border-brass-mid/15"><td class="p-4 text-cream tracking-cn">创立年代</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 font-mono text-xs">{b.founded}</td>)}</tr>
+            <tr class="border-b border-brass-mid/15"><td class="p-4 text-cream tracking-cn">当前规模</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 leading-[1.7]">{b.scale}</td>)}</tr>
+            <tr class="border-b border-brass-mid/15">
+              <td class="p-4 text-cream tracking-cn">增长速度</td>
+              {benchmarks.map((b) => {
+                const c = colorMap[b.speedColor as keyof typeof colorMap];
+                return <td class:list={['p-4 border-l border-brass-mid/15', c.text]}>{b.speed}</td>;
+              })}
+            </tr>
+            <tr class="border-b border-brass-mid/15"><td class="p-4 text-cream tracking-cn">核心方法论</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 leading-[1.7]">{b.methodology}</td>)}</tr>
+            <tr class="border-b border-brass-mid/15">
+              <td class="p-4 text-cream tracking-cn">对我们的角色</td>
+              {benchmarks.map((b) => {
+                const c = colorMap[b.groupColor as keyof typeof colorMap];
+                return <td class:list={['p-4 border-l border-brass-mid/15 italic', c.text]}>{b.role}</td>;
+              })}
+            </tr>
+            <tr><td class="p-4 text-cream tracking-cn">风险信号</td>{benchmarks.map((b) => <td class="p-4 border-l border-brass-mid/15 text-coral-mid leading-[1.7]">{b.risk}</td>)}</tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 移动端：卡片视图 -->
+      <div class="md:hidden space-y-4 mt-paragraph">
+        {benchmarks.map((b) => {
+          const c = colorMap[b.groupColor as keyof typeof colorMap];
+          return (
+            <article class="border border-brass-mid/20 bg-ink-elevated/30 overflow-hidden">
+              <div class:list={['h-1 w-full', c.tape]}></div>
+              <div class="p-5 space-y-3">
+                <h3 class="font-serif text-lg text-cream tracking-cn">{b.brand}</h3>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                  <div><p class="text-text-dim italic mb-1">品牌类型</p><p class="text-text-soft leading-[1.7]">{b.type}</p></div>
+                  <div><p class="text-text-dim italic mb-1">创立</p><p class="text-text-soft font-mono">{b.founded}</p></div>
+                  <div class="col-span-2"><p class="text-text-dim italic mb-1">当前规模</p><p class="text-text-soft leading-[1.7]">{b.scale}</p></div>
+                  <div class="col-span-2"><p class="text-text-dim italic mb-1">增长速度</p><p class:list={[colorMap[b.speedColor].text]}>{b.speed}</p></div>
+                  <div class="col-span-2"><p class="text-text-dim italic mb-1">核心方法论</p><p class="text-text-soft leading-[1.7]">{b.methodology}</p></div>
+                  <div class="col-span-2"><p class="text-text-dim italic mb-1">对我们的角色</p><p class:list={['italic', c.text]}>{b.role}</p></div>
+                  <div class="col-span-2"><p class="text-text-dim italic mb-1">风险信号</p><p class="text-coral-mid leading-[1.7]">{b.risk}</p></div>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <!-- 共同建议 -->
+      <div class="mt-section">
+        <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+          Consensus Across Four Benchmarks
+        </p>
+        <h3 class="font-serif text-2xl text-cream mb-paragraph tracking-cn">四对标都给出相同建议的核心动作</h3>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn mb-paragraph">
+          <strong class="text-cream">四对标都指向的判断，是山川造物战略的最大公约数</strong>——资源分配应优先向此倾斜。
+        </p>
+
+        <div class="space-y-3">
+          {consensus.map((c, i) => (
+            <article class="p-6 border border-brass-mid/20 bg-ink-elevated/30 grid md:grid-cols-[100px_1fr] gap-4">
+              <div>
+                <span class="font-mono text-xs px-2 py-1 border border-brass-mid/40 text-brass-mid tracking-wider">{c.strength}</span>
+              </div>
+              <div>
+                <h4 class="font-serif text-cream tracking-cn mb-2">{String(i + 1).padStart(2, '0')} · {c.title}</h4>
+                <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{c.body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § X · 5 场景应对话术 ============== -->
+  <section id="x" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">X.</span> Five Scenarios · 我们已经预演过的拒绝
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">5 个我们已经写好答案的诱惑场景</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          一个品牌真正成熟的标志，<strong>不是它能做什么</strong>，而是<strong class="text-brass-bright">在被诱惑做某件事时，能不能拿出已经想清楚的拒绝理由</strong>。
+          以下 5 个场景是我们预判未来 1-3 年最可能遇到的"V&A 路径诱惑"——
+          我们提前把诱惑话术和应对话术都写好了。
+        </p>
+      </div>
+
+      <div class="space-y-4 mt-paragraph">
+        {scenarios.map((s) => (
+          <details class="border border-brass-mid/20 bg-ink-elevated/30 overflow-hidden group">
+            <summary class="cursor-pointer list-none px-6 py-5 flex items-baseline justify-between gap-4 hover:bg-ink-elevated/60 transition-colors select-none">
+              <div class="flex items-baseline gap-4 flex-1">
+                <span class="font-serif-en italic text-2xl text-brass-mid leading-none">{s.num}</span>
+                <h3 class="font-serif text-cream tracking-cn">{s.title}</h3>
+              </div>
+              <span class="font-serif-en italic text-xs text-text-soft shrink-0 opacity-70">
+                <span class="summary-label-closed">▼ 展开应对</span>
+                <span class="summary-label-open">▲ 收起</span>
+              </span>
+            </summary>
+
+            <div class="border-t border-brass-mid/15 grid md:grid-cols-2">
+              <div class="p-6 md:p-8 bg-ink/40 md:border-r border-brass-mid/15">
+                <p class="font-serif-en italic text-coral-mid text-xs tracking-widest uppercase mb-3">
+                  诱惑话术
+                </p>
+                <p class="text-text-soft text-sm leading-[1.85] tracking-cn italic">"{s.temptation}"</p>
+              </div>
+
+              <div class="p-6 md:p-8 border-t md:border-t-0 border-brass-mid/15">
+                <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+                  我们的应对
+                </p>
+                <p class="text-cream text-sm leading-[1.85] tracking-cn">{s.response}</p>
+              </div>
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== § XI · 研究治理 ============== -->
+  <section id="xi" class="editorial-section">
+    <div class="max-w-editorial-wide mx-auto">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        <span class="text-brass-deep">XI.</span> Research Governance · 我们如何避免自我感动
+      </p>
+      <h2 class="text-3xl font-serif text-cream mb-paragraph tracking-cn">研究治理 · 不让研究变成自我感动</h2>
+
+      <div class="prose-cn mb-paragraph">
+        <p>
+          做对标研究最容易犯的错，是"挖到哪里算哪里，最后报告写完才发现不知道在回答什么问题"——
+          这种失败模式的特征是：报告很长、信息很多、但读完无法形成行动判断。
+          为了避免这件事发生在我们身上，每份对标研究都必须经过以下四道闸：
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4 mt-paragraph">
+        {governance.map((g, i) => (
+          <article class="p-6 border border-brass-mid/20 bg-ink-elevated/30">
+            <div class="flex items-baseline gap-3 mb-3">
+              <span class="font-serif-en italic text-2xl text-brass-mid leading-none">{String(i + 1).padStart(2, '0')}</span>
+              <h3 class="font-serif text-cream tracking-cn flex-1">{g.title}</h3>
+            </div>
+            <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{g.body}</p>
+          </article>
+        ))}
+      </div>
+
+      <p class="mt-paragraph text-sm text-text-soft tracking-cn italic">
+        每一份对标研究产出后，我们还会做一次"自我感动检查"——把报告里所有判断性结论标记为"已验证 / 待验证"，
+        待验证项的占比是我们衡量研究成熟度的核心指标。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============== 收束 ============== -->
+  <PullQuote
+    quote="研究的目的不是写漂亮的报告——是让山川造物的下一次决策比上一次更不容易后悔。"
+    cite="《对标研究宪章》· 写给团队的一句话"
+  />
+
+  <ContactBlock />
+</Layout>
+
+<style>
+  /* details summary 折叠/展开切换 */
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+  details summary {
+    outline: none;
+  }
+  details:not([open]) .summary-label-open { display: none; }
+  details[open] .summary-label-closed { display: none; }
+</style>

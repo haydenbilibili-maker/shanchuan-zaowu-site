@@ -33,7 +33,7 @@ npm run dev    # http://localhost:4321/
 ## 构建与预览
 
 ```bash
-npm run build      # 输出到 dist/（19 个 HTML 页面）
+npm run build      # 输出到 dist/（20 个 HTML 页面）
 npm run preview    # 本地预览构建产物
 ```
 
@@ -69,9 +69,9 @@ shanchuanzaowu/
     │   ├── NoListItem.astro       # × 不做项（红线清单用）
     │   ├── PledgeBlock.astro      # 承诺方框（positive / negative 两种 variant）
     │   └── WIPNotice.astro        # 占位通知（v0.2 升级前的 dignified 占位）
-    └── pages/                 # 19 个页面
+    └── pages/                 # 20 个页面
         ├── index.astro            # 首页（vision hero + 4 audience + 1% 承诺）
-        ├── about.astro            # 我们是谁（创始团队 + 6 战略原则 + 30 年）
+        ├── about.astro            # 我们是谁（创始团队 + 6 战略原则 + 30 年 + → /benchmarks）
         ├── products.astro         # 产品线（自然小匣 / 衍生品 / 主题展柜 / 双 IP）
         ├── space.astro            # 空间体系（叙事根 + toolkit 框架 + 8 模块 + → /sound-manual）
         ├── senses.astro           # 五感页（视觉基线 + 「听」深度入口 → /sound-manual）
@@ -79,7 +79,7 @@ shanchuanzaowu/
         ├── values.astro           # 6 观（空间 / 承诺 / 青年 / 科技 / 内容 / 人才）
         ├── talent.astro           # 人才与店长培训 toolkit
         ├── properties.astro       # 给物业方
-        ├── investors.astro        # 给投资人（含三道护城河 callout）
+        ├── investors.astro        # 给投资人（三道护城河 + → /benchmarks · For Investors callout）
         ├── franchise.astro        # 加盟说明
         ├── operations.astro       # 运营方法论
         ├── plan.astro             # 路线图
@@ -87,6 +87,7 @@ shanchuanzaowu/
         ├── digital-ops.astro      # 数字化能力（软实证 · 30+ 页 / 27 模块 / 17 AI 场景）
         ├── hardcore-tech.astro    # 硬核科技应用蓝图（硬实证 · 11 项 + 不做 3 项 + 三年路线）
         ├── sound-manual.astro     # 店内音乐手册 v2（5 主题日 × 240 首 × 12 小时全覆盖）
+        ├── benchmarks.astro       # 对标研究（7 家 × 3 群 + V&A 深度 + 三区 + 4 对标合并 + 5 场景）
         ├── notes.astro            # 公众号文章列表
         └── notes/
             └── founders-letter.astro  # 公众号 001 · 写在工作室开门之前
@@ -167,7 +168,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 **最小 7 步**（完整 SOP 见《山川造物·官网 v0.1·上线与域名布置方案 v0.1》）：
 
-1. 本地 `npm run build` 通过（生成 dist/ + 19 页）
+1. 本地 `npm run build` 通过（生成 dist/ + 20 页）
 2. GitHub 创建私有仓库 `shanchuan-zaowu-site`
 3. `git push -u origin main`
 4. Cloudflare Dashboard → Workers & Pages → Create → Connect to Git
@@ -259,6 +260,52 @@ v0.2 双主题改造时踩过的三个坑，未来扩展色族 / 加新 opacity 
 
 判断闸：每一份新内部资料公开化前，搜一遍 dist 里有没有"具体设备型号 /
 具体金额 / 未公开 IP 名"——三处都为零命中，再 push。
+
+### 对标研究模块的"软公开"边界（`/benchmarks`）
+
+`/benchmarks` 的源文档是 4 份内部治理稿——《对标研究宪章 v0.1》/ 《方法论 v0.1》/
+《V&A 启动卡 v0.1》/ 《V&A 研究报告 v0.1》。这 4 份是给"研究助理"这个内部
+角色用的治理文档，外部读者不该看到全部。公开化时做了 5 处脱敏，未来加新对标
+研究（Felissimo / MUJI / Skansen 等）时请保持同样的尺度：
+
+1. **「研究助理」角色定位完全不公开** —— 宪章里"首席用户研究与战略研究助理"
+   /「服务对象 / 边界 / 5 类 say no 请求」/「启动卡 → 进行 → 收尾三阶段 SOP」
+   等都属内部治理工具，外部读者不关心也读不懂。公开版改用"我们/山川造物
+   研究团队"叙事。
+2. **「自我感动检查 ⚠/✓ 状态表」全部移除** —— 每份内部研究末尾的"金句 ·
+   待验证 / 已验证"清单是内部治理工具，公开会让"判断"显得不自信。公开版
+   只在治理章节里**说明这套机制存在**，不展开具体 ⚠ 标记。
+3. **未公开 IP 名继续匿名化** —— V&A 报告里反复提到"马上有"作为山川造物
+   版 William Morris；公开版统一改为"核心 IP"。这跟 `/hardcore-tech` 的
+   规则保持一致。
+4. **内部财务模型 / 估值倍数 / 增长率假设隐去** —— 比如"我们的中速节奏
+   = 年化 30-50%"、"投资人估值 8-10 倍 PS"这类**对外不能流出**的财务工
+   作假设全部删除。V&A 自身的公开财报数据（£121.4M / DCMS 45% / Dundee
+   £3.8M 等）保留，因为是外部可查事实。
+5. **「绿黄红区」/「不装的规模化」/「轻资产快闪 + 重资产首店」等品牌黑话
+   保留** —— 这些是品牌已经在用的对外语言，保留反而强化"我们说话有自
+   己的方式"的品牌识别。
+
+公开版核心保留 7 块内容：① 世界观三轴 ② 7 家 × 3 群对标地图 ③ 4 家已研究
+的互证关系 ④ V&A 6 阶段精简 ⑤ 正面 6 经验 + 反面 5 警示 ⑥ 三区判断
+（绿 6 / 黄 5 / 红 5）⑦ 5 个关键场景应对话术（`<details>` 折叠，跟
+`/sound-manual` 一致）+ 四对标合并坐标系（桌面表格 + 移动卡片自适应）。
+
+判断闸：每加一份新对标研究公开版前，对照宪章 § 1.2「服务对象与服务边界」
+铁律——**研究产出物默认不对外公开。如果某份研究将来要对外，必须先做外部
+化改写——这是另一种产出物，不是同一份。** 直接 push 内部稿是越界。
+
+### `lead="..."` 属性里禁用 ASCII 直引号
+
+Astro 的 attribute 解析器把 `"` 视为属性值结束符。如果在 `lead="…"内容…"`
+中混入 ASCII 直引号 `"`（U+0022），属性会被提前截断，build 报错
+`Expected ":" but found "，"`（esbuild 在错位的下游代码里报错，定位非常误导）。
+
+修复有两条路：
+1. 把内部双引号改成中文引号 `「」` 或 `"" ""`（U+201C/U+201D）；
+2. 改用反引号表达式 `lead={`…内容…`}`，反引号字符串内 ASCII `"` 不会被截断。
+
+`/benchmarks` 的 PageHero lead 走的是第 2 种。
 
 ---
 
