@@ -15,25 +15,127 @@
 
 /* ===== Base reset ===== */
 @layer base {
-  :root {
-    --brass-deep: #8A7530;
-    --brass-mid: #C4A76C;
-    --brass-light: #E8DDC2;
-    --brass-bright: #DDC890;
-    --ink: #1A1814;
-    --ink-elevated: #232020;
-    --ink-deep: #0F0D0B;
-    --cream: #F2EDE4;
-    --text: #F2EDE4;
-    --text-soft: #B8B0A4;
-    --text-dim: #6B6560;
+  /* ============================================================
+     深色模式 · Dark Mode（默认）
+     —— 夜里点灯翻档案 · 暗黄铜博物馆调性
+     ============================================================ */
+  :root,
+  :root[data-theme='dark'] {
+    /* Backgrounds（hex 用于无 opacity 场景） */
+    --color-ink: #1A1814;
+    --color-ink-elevated: #232020;
+    --color-ink-deep: #0F0D0B;
+    /* Backgrounds（RGB tuple 用于 bg-ink/40 这种 opacity 修饰） */
+    --rgb-ink: 26, 24, 20;
+    --rgb-ink-elevated: 35, 32, 32;
+    --rgb-ink-deep: 15, 13, 11;
+
+    /* Text */
+    --color-cream: #F2EDE4;
+    --color-text: #F2EDE4;
+    --color-text-soft: #B8B0A4;
+    --color-text-dim: #6B6560;
+    --rgb-cream: 242, 237, 228;
+
+    /* Brass（hex） */
+    --color-brass-deep: #8A7530;
+    --color-brass-mid: #C4A76C;
+    --color-brass-light: #E8DDC2;
+    --color-brass-bright: #DDC890;
+    /* Brass（RGB tuple，给 border-brass-mid/15 用） */
+    --rgb-brass-deep: 138, 117, 48;
+    --rgb-brass-mid: 196, 167, 108;
+    --rgb-brass-light: 232, 221, 194;
+    --rgb-brass-bright: 221, 200, 144;
+
+    /* Green（v0.2 双主题预定义 · 当前未使用，未来直接调用） */
+    --color-green-deep: #1F4A38;
+    --color-green-mid: #2D6A4F;
+    --color-green-light: #5A8C73;
+    --color-green-bright: #7DAB94;
+
+    /* Cabinet（v0.2 预定义 · 博物蓝） */
+    --color-cabinet-deep: #2D4356;
+    --color-cabinet-mid: #4A6B7D;
+    --color-cabinet-light: #7A98AB;
+
+    /* Coral（v0.2 预定义 · 标本红 · 用于"不做"× 符号） */
+    --color-coral-deep: #A85842;
+    --color-coral-mid: #C97A5E;
+
+    /* Purple（v0.2 预定义 · 矿物紫） */
+    --color-purple-deep: #5C4D87;
+    --color-purple-mid: #7B68AE;
+    --color-purple-light: #A395C7;
+
+    /* Glow effect RGB（rgba 用） */
+    --glow-brass: 196, 167, 108;
+    --glow-green: 45, 106, 79;
+  }
+
+  /* ============================================================
+     浅色模式 · Light Mode
+     —— 白天在工坊整理标本 · 微暖白 + 深色文字的"日间博物馆"
+     色板向深处平移一档 · 全部满足 WCAG AA 对比度
+     ============================================================ */
+  :root[data-theme='light'] {
+    /* Backgrounds */
+    --color-ink: #FAFAF5;             /* VI 微暖白 */
+    --color-ink-elevated: #F2EDE4;
+    --color-ink-deep: #EBE5D7;
+    --rgb-ink: 250, 250, 245;
+    --rgb-ink-elevated: 242, 237, 228;
+    --rgb-ink-deep: 235, 229, 215;
+
+    /* Text */
+    --color-cream: #2C2C2C;           /* VI 墨绿黑作为浅底主文字 */
+    --color-text: #2C2C2C;
+    --color-text-soft: #6B5F4F;
+    --color-text-dim: #998B73;
+    --rgb-cream: 44, 44, 44;
+
+    /* Brass（向深平移一档） */
+    --color-brass-deep: #4A3A14;
+    --color-brass-mid: #6B5524;
+    --color-brass-light: #8A7530;
+    --color-brass-bright: #A88B40;
+    --rgb-brass-deep: 74, 58, 20;
+    --rgb-brass-mid: 107, 85, 36;
+    --rgb-brass-light: 138, 117, 48;
+    --rgb-brass-bright: 168, 139, 64;
+
+    /* Green */
+    --color-green-deep: #0D2E1F;
+    --color-green-mid: #1F4A38;
+    --color-green-light: #2D6A4F;     /* VI 自然绿在浅模式下成为 light 位强调 */
+    --color-green-bright: #5A8C73;
+
+    /* Cabinet */
+    --color-cabinet-deep: #1A2D3C;
+    --color-cabinet-mid: #2D4356;
+    --color-cabinet-light: #4A6B7D;
+
+    /* Coral */
+    --color-coral-deep: #6B2F22;
+    --color-coral-mid: #A85842;
+
+    /* Purple */
+    --color-purple-deep: #3D3260;
+    --color-purple-mid: #5C4D87;
+    --color-purple-light: #7B68AE;    /* VI 矿物紫 */
+
+    /* Glow effect RGB */
+    --glow-brass: 107, 85, 36;
+    --glow-green: 31, 74, 56;
   }
 
   html {
     /* 平滑滚动让章节切换更舒缓 */
     scroll-behavior: smooth;
-    background: var(--ink);
-    color: var(--cream);
+    background: var(--color-ink);
+    color: var(--color-cream);
+    /* 主题切换平滑过渡（400ms · 美感关键） */
+    transition: background-color 400ms ease-out, color 400ms ease-out;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -65,10 +167,10 @@
     @apply text-brass-mid;
   }
 
-  /* ===== 选中色 ===== */
+  /* ===== 选中色（自动响应主题） ===== */
   ::selection {
-    background: var(--brass-mid);
-    color: var(--ink);
+    background: var(--color-brass-mid);
+    color: var(--color-ink);
   }
 }
 
@@ -119,14 +221,14 @@
     @apply mt-paragraph;
   }
 
-  /* 黄铜色细线分隔 · 深底上需要稍微提亮 */
+  /* 黄铜色细线分隔 · 自动响应主题（深色下米黄渐变 / 浅色下深棕渐变） */
   .brass-divider {
     @apply border-0 h-px;
     background: linear-gradient(
       to right,
       transparent,
-      var(--brass-mid) 30%,
-      var(--brass-mid) 70%,
+      var(--color-brass-mid) 30%,
+      var(--color-brass-mid) 70%,
       transparent
     );
     margin-block: clamp(2rem, 4vw, 4rem);

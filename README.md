@@ -4,7 +4,13 @@
 
 技术栈：**Astro 5 + Tailwind v3.4 + TypeScript**，部署目标 **Cloudflare Pages**。
 
-视觉基线：`/senses` 页（五感）。视觉主题：**深色 · Cabinet of Curiosities**（v0.2 升级，从 cream 底升级为 ink 底，奇珍柜调性）。
+视觉基线：`/senses` 页（五感）。视觉主题：**双主题自适应 · Cabinet of Curiosities × Day-Night**
+
+- **深色模式**（默认）—— 夜里点灯翻档案 · 暗黄铜博物馆
+- **浅色模式** —— 白天在工坊整理标本 · 微暖白 + 深色文字的"日间博物馆"
+
+不是"两种风格选其一"——是同一品牌的**两种时刻**。
+切换逻辑：系统偏好 → localStorage 记忆 → Header 月亮 / 太阳手动覆写。
 
 ---
 
@@ -87,27 +93,56 @@ shanchuanzaowu/
 
 ---
 
-## 设计 Token 速查（v0.2 · 深色主题）
+## 设计 Token 速查（v0.2 · 双主题自适应）
 
-| 类别 | Token | 值 | 用途 |
+所有 token 通过 `:root` / `:root[data-theme='light']` CSS 变量切换。组件代码**不需要写 `dark:` 前缀**——`bg-ink text-cream` 等既有写法在两种模式下都自动响应。
+
+### 色板对照（深色 ↔ 浅色 · 浅色全部满足 WCAG AA 对比度）
+
+| Token | 深色模式 | 浅色模式 | 用途 |
 |---|---|---|---|
-| 黄铜 · 深 | `brass-deep` | `#8A7530` | 深处分隔 / 暗强调 |
-| 黄铜 · 中 | `brass-mid` | `#C4A76C` | 链接 / 主要强调 / 分隔线 |
-| 黄铜 · 浅 | `brass-light` | `#E8DDC2` | 微妙高光 |
-| 黄铜 · 亮 | `brass-bright` | `#DDC890` | 深底上的点缀（感官标签 / vision 字） |
-| 底色 · 主 | `ink` | `#1A1814` | html / main / Header / Footer |
-| 底色 · 次 | `ink-elevated` | `#232020` | 卡片 / 浮起面板 / 移动菜单抽屉 |
-| 底色 · 极深 | `ink-deep` | `#0F0D0B` | 戏剧化时刻（偶用） |
-| 文字 · 主 | `cream` / `text` | `#F2EDE4` | 正文 / 标题（深底上的米白） |
-| 文字 · 次 | `text-soft` | `#B8B0A4` | 副标题 / 引文 / 导航默认 |
-| 文字 · 弱 | `text-dim` | `#6B6560` | 注释 / 小字 |
-| 字体 · 中文衬线 | `font-serif` | Source Han Serif SC → Songti SC → 宋体 | |
-| 字体 · 英文衬线 | `font-serif-en` | Cormorant Garamond → Lyon Text → Georgia | |
-| 字号 · 大标题 | `text-display-lg` | clamp(3rem, 6vw, 5rem) | |
-| 间距 · 章节 | `section` | clamp(4rem, 10vw, 8rem) | |
-| 宽度 · 长读 | `max-w-editorial` | 38rem | |
+| `brass-deep` | `#8A7530` | `#4A3A14` | 深处分隔 / 暗强调 |
+| `brass-mid` | `#C4A76C` | `#6B5524` | 链接 / 主要强调 / 分隔线 |
+| `brass-light` | `#E8DDC2` | `#8A7530` | 微妙高光 |
+| `brass-bright` | `#DDC890` | `#A88B40` | 深底点缀（感官标签 / vision 字） |
+| `ink` (DEFAULT) | `#1A1814` | `#FAFAF5` ← VI 微暖白 | html / main / Header |
+| `ink-elevated` | `#232020` | `#F2EDE4` | 卡片 / 浮起面板 / 抽屉 |
+| `ink-deep` | `#0F0D0B` | `#EBE5D7` | 戏剧化时刻 |
+| `cream` / `text` | `#F2EDE4` | `#2C2C2C` ← VI 墨绿黑 | 正文 / 标题主色 |
+| `text-soft` | `#B8B0A4` | `#6B5F4F` | 副标题 / 引文 |
+| `text-dim` | `#6B6560` | `#998B73` | 注释 / 小字 |
 
-**注**：v0.2 起整站只有一个色（深色），不做亮 / 暗模式切换。
+**v0.2 双主题预定义色族**（当前未广泛使用，等真实页面调用）：
+`green` · `cabinet`（博物蓝）· `coral`（标本红 · 不做×符号）· `purple`（矿物紫）—— 浅色下都向深处平移一档。
+
+### Footer 独立色族（**不参与双主题切换**）
+
+Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张感。这一组色在两种主题下都保持不变：
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `paper` | `#F2EDE4` | Footer 底色（比浅色 main 深一档保留边界） |
+| `nature-green` | `#2D6A4F` | Footer 标题 / hover |
+| `earth-brown` | `#8B6F47` | Footer 拉丁学名 |
+| `mineral-purple` | `#7B68AE` | 备用（VI 矿物紫） |
+| `ink-text` | `#2C2C2C` | Footer 正文（VI 墨绿黑） |
+
+### 字体 / 间距
+
+| 类别 | Token | 值 |
+|---|---|---|
+| 中文衬线 | `font-serif` | Source Han Serif SC → Songti SC → 宋体 |
+| 英文衬线 | `font-serif-en` | Cormorant Garamond → Lyon Text → Georgia |
+| 大标题 | `text-display-lg` | clamp(3rem, 6vw, 5rem) |
+| 章节间距 | `section` | clamp(4rem, 10vw, 8rem) |
+| 长读宽度 | `max-w-editorial` | 38rem |
+
+### 双主题运作原理（一句话）
+
+1. `src/styles/global.css` 定义 `:root` 深色变量 + `:root[data-theme='light']` 浅色变量
+2. `tailwind.config.mjs` 所有 colors 通过 `var(--color-xxx)` 或 `rgb(var(--rgb-xxx) / <alpha-value>)` 引用
+3. `Layout.astro` head 内联 `is:inline` 脚本初始化 `data-theme`（防 FOUC）
+4. `Header.astro` 太阳 / 月亮按钮切换 + `localStorage` 记忆
 
 ---
 
@@ -169,6 +204,24 @@ shanchuanzaowu/
 宏观数字（30+ 页面 / 27 模块 / 25+ 云函数）保留不变是 OK 的——那是"已开发"
 层面的实证；只在功能描述层避免提及与红线冲突的模块即可。
 
+### 双主题 token 迁移的三个雷区
+
+v0.2 双主题改造时踩过的三个坑，未来扩展色族 / 加新 opacity 修饰时留意：
+
+1. **被 `/数字` opacity 修饰的 token 必须用 `rgb(var(--rgb-xxx) / <alpha-value>)` 格式** ——
+   不能直接用 `var(--color-xxx)`。Tailwind 无法把 var 自动转 rgba。
+   迁移前先 `rg "(bg|border|text|from|to)-[\w-]+/\d+"` 把所有 opacity 修饰扫一遍，
+   命中的 token 必须配 `--rgb-xxx` tuple 变量。当前已配的是
+   `ink` / `ink-elevated` / `ink-deep` / `cream` / 全部 `brass-*`。
+2. **Footer 米白纸张色族（paper / nature-green / earth-brown / ink-text）刻意不参与双主题** ——
+   这是 VI 印刷物料色族，承担"翻到出版物末页"的物理体验。如果让它跟随主题，
+   浅色模式下 Footer 跟 main（都用 #FAFAF5）会同色合并丢失边界。
+   解决方案：`paper` 设为 `#F2EDE4`（比浅色主底深一档），保证两种模式都有 Footer 边界。
+3. **变量名加 `--color-` 前缀避免命名冲突** ——
+   旧的 `:root` 用 `--ink` / `--brass-mid` 这种短名，跟 Tailwind 内置 `--tw-` 系列
+   没冲突但容易跟其他第三方库撞车。v0.2 起统一加 `--color-` 前缀（`--color-ink`），
+   RGB tuple 用 `--rgb-` 前缀（`--rgb-brass-mid`）。
+
 ### 内部蓝图落地公开页时：硬数据脱敏 + IP 名匿名化
 
 `/hardcore-tech` 的源文档是内部讨论稿（"硬核科技应用蓝图 v0.1"）。
@@ -192,18 +245,29 @@ shanchuanzaowu/
 
 ---
 
-## 视觉决策检验点（v0.2 深色主题）
+## 视觉决策检验点（v0.2 双主题）
 
-跑起来 `/senses` 后，请检查：
+### 深色模式（默认）
 
 1. 黄铜在深底（ink）上是否"贵重感"——不应该是"暗淡"或"金属灰"，应有温暖金光
-2. 中文字体（思源宋体 / 系统宋体）在 cream 字色（#F2EDE4）下能否舒服阅读 30 秒以上
+2. 中文字体在 cream 字色（#F2EDE4）下能否舒服阅读 30 秒以上
 3. Cormorant Garamond italic 在深底上是否优雅，不模糊
-4. `brass-divider`（mid 色 30%-70% 渐变）在 ink 底上是否"有，但不抢"
-5. 五感页 5 个章节滚动节奏是否舒缓，没有暗-暗切换的疲劳感
-6. 移动端（< 768px）深色阅读在弱光环境下是否过亮
-7. Footer 顶部黄铜细线是否做出主区与页脚的"温和过渡"，而非"硬切"
+4. `brass-divider` 在 ink 底上是否"有，但不抢"
+5. 五感页 5 个章节滚动节奏舒缓，没有暗-暗切换的疲劳感
+6. Footer 顶部黄铜细线做出主区与页脚的"温和过渡"，而非"硬切"
+
+### 浅色模式
+
+跑 `npm run dev` → DevTools 改 `<html data-theme="light">`：
+
+1. **首次访问跟随系统偏好**（macOS / Windows 调系统深浅看是否对应）
+2. **Header 切换按钮点击立即切换 + 刷新页面后状态保持**
+3. **浅色模式下，所有文字对比度足够**（深黄铜 #6B5524 / 文字深灰 #2C2C2C 都能轻松看清）
+4. **浅色模式下，黄铜分隔线 brass-divider 不过弱也不过强**
+5. **浅色模式下，commitment "1%" 巨字若有渐变是否依然有戏剧性**
+6. **主题切换过渡平滑（400ms 过渡有舒缓感而不突兀）**
+7. **浅色模式下 Footer 与 main 有边界**（paper #F2EDE4 vs main #FAFAF5 一档之差）
 
 ---
 
-`v0.2 · 2026.05 · Astro Scaffold + Dark Theme (Cabinet of Curiosities)`
+`v0.2 · 2026.05 · Astro Scaffold + Dual Theme (Day & Night for the Naturalist)`

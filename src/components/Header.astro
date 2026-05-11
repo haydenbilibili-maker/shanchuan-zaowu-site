@@ -40,17 +40,65 @@ const currentPath = Astro.url.pathname;
       ))}
     </ul>
 
-    <!-- Mobile menu button -->
-    <button
-      id="mobile-menu-btn"
-      class="md:hidden p-2 text-cream"
-      aria-label="打开菜单"
-    >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <line x1="4" y1="8" x2="20" y2="8" />
-        <line x1="4" y1="16" x2="20" y2="16" />
-      </svg>
-    </button>
+    <div class="flex items-center gap-2">
+      <!-- 主题切换按钮（v0.2 · 双主题自适应） -->
+      <button
+        id="theme-toggle"
+        type="button"
+        aria-label="切换深浅模式"
+        class="p-2 text-text-soft hover:text-brass-mid transition-colors"
+      >
+        <!-- 深色模式时显示太阳（提示切到浅色） -->
+        <svg
+          class="theme-icon-sun"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="4" />
+          <line x1="12" y1="2" x2="12" y2="5" />
+          <line x1="12" y1="19" x2="12" y2="22" />
+          <line x1="2" y1="12" x2="5" y2="12" />
+          <line x1="19" y1="12" x2="22" y2="12" />
+          <line x1="4.5" y1="4.5" x2="6.5" y2="6.5" />
+          <line x1="17.5" y1="17.5" x2="19.5" y2="19.5" />
+          <line x1="4.5" y1="19.5" x2="6.5" y2="17.5" />
+          <line x1="17.5" y1="6.5" x2="19.5" y2="4.5" />
+        </svg>
+
+        <!-- 浅色模式时显示月亮（提示切到深色） -->
+        <svg
+          class="theme-icon-moon"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      </button>
+
+      <!-- Mobile menu button -->
+      <button
+        id="mobile-menu-btn"
+        class="md:hidden p-2 text-cream"
+        aria-label="打开菜单"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="4" y1="8" x2="20" y2="8" />
+          <line x1="4" y1="16" x2="20" y2="16" />
+        </svg>
+      </button>
+    </div>
   </nav>
 
   <!-- Mobile menu drawer -->
@@ -74,9 +122,37 @@ const currentPath = Astro.url.pathname;
 </header>
 
 <script>
+  // 主题切换（v0.2 · 双主题自适应）
+  const themeBtn = document.getElementById('theme-toggle');
+  themeBtn?.addEventListener('click', () => {
+    const current = document.documentElement.dataset.theme;
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem('theme', next);
+    } catch (e) {
+      // localStorage 不可用时静默失败
+    }
+  });
+
+  // Mobile menu
   const btn = document.getElementById('mobile-menu-btn');
   const menu = document.getElementById('mobile-menu');
   btn?.addEventListener('click', () => {
     menu?.classList.toggle('hidden');
   });
 </script>
+
+<style>
+  /* 根据当前主题显示对应图标 · 默认隐藏，由 data-theme 选中显示 */
+  .theme-icon-sun,
+  .theme-icon-moon {
+    display: none;
+  }
+  :root[data-theme='dark'] .theme-icon-sun {
+    display: block;
+  }
+  :root[data-theme='light'] .theme-icon-moon {
+    display: block;
+  }
+</style>
