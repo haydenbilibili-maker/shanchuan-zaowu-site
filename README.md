@@ -56,7 +56,7 @@ shanhaizaowu/
 │   └── audio/             # 30s 环境音（待录制）
 └── src/
     ├── styles/global.css      # 设计系统 + token + paper-texture
-    ├── components/            # 14 个组件
+    ├── components/            # 15 个组件
     │   ├── Layout.astro           # 全站骨架（含 IntersectionObserver 淡入）
     │   ├── Header.astro           # 极简导航（含移动端抽屉）
     │   ├── Footer.astro           # paper 米白 + VI 色页脚（4 列）
@@ -64,33 +64,21 @@ shanhaizaowu/
     │   ├── SectionHeader.astro    # 段落头（左/居中可选）
     │   ├── SenseSpread.astro      # 五感单元（图/文左右切换）
     │   ├── AudienceCard.astro     # 受众入口卡（首页 4 张）
-    │   ├── CommitmentBar.astro    # 承诺导航条（中心句 + 6 观 + → /foundation#one-percent）
+    │   ├── CommitmentBar.astro    # 承诺导航条（中心句 + 五观 + 科技观链 + → /foundation#one-percent）
     │   ├── ContactBlock.astro     # 通用联系块（mailto）
     │   ├── PullQuote.astro        # 大字引文
     │   ├── Principle.astro        # 罗马数字 + 标题 + 实践清单（战略原则用）
     │   ├── NoListItem.astro       # × 不做项（红线清单用）
     │   ├── PledgeBlock.astro      # 承诺方框（positive / negative 两种 variant）
+    │   ├── FoundationFiveViews.astro  # /foundation 五观正文（v0.3 五观文案）
     │   └── WIPNotice.astro        # 占位通知（v0.2 升级前的 dignified 占位）
-    └── pages/                 # 21 个页面（含 /notes/*）
+    └── pages/                 # 静态路由见上文「主要 routes」
         ├── index.astro            # 首页（Hero + What/Who/Why/How 四卡 + 角色四卡 + Foundation/五感/笔记入口）
-        ├── about.astro            # 我们是谁（创始团队 + 6 战略原则 + 30 年 + → /benchmarks）
-        ├── products.astro         # 产品线（自然小匣 / 衍生品 / 主题展柜 / 双 IP）
-        ├── space.astro            # 空间体系（叙事根 + toolkit 框架 + 8 模块 + → /sound-manual）
-        ├── senses.astro           # 五感页（视觉基线 + 「听」深度入口 → /sound-manual）
-        ├── commitment.astro       # 1% 承诺（含物理层落地 → /hardcore-tech）
-        ├── values.astro           # 6 观（空间 / 承诺 / 青年 / 科技 / 内容 / 人才）
-        ├── talent.astro           # 人才与店长培训 toolkit
-        ├── properties.astro       # 给物业方
-        ├── investors.astro        # 给投资人（三道护城河 + → /benchmarks · For Investors callout）
-        ├── franchise.astro        # 加盟说明
-        ├── operations.astro       # 运营方法论
-        ├── plan.astro             # 路线图
-        ├── tech.astro             # 科技观（4 原则 → 软 / 硬双实证）
-        ├── digital-ops.astro      # 数字化能力（软实证 · 30+ 页 / 27 模块 / 17 AI 场景）
-        ├── hardcore-tech.astro    # 硬核科技应用蓝图（硬实证 · 11 项 + 不做 3 项 + 三年路线）
-        ├── sound-manual.astro     # 店内音乐手册 v2（5 主题日 × 240 首 × 12 小时全覆盖）
-        ├── benchmarks.astro       # 对标研究（7 家 × 3 群 + V&A + Felissimo 双 Spotlight + 12 经验 + 10 警示 + 5 对标合并 + 10 场景 + 不做清单 17 + 克制 9）
-        ├── notes.astro            # 公众号文章列表
+        ├── what.astro / who.astro / why.astro / foundation.astro
+        ├── for-properties|for-investors|for-franchise.astro
+        ├── how/（index + senses + space + operations + tech）
+        ├── talent / digital-ops / hardcore-tech / benchmarks / sound-manual
+        ├── notes.astro + notes/*
         └── notes/
             ├── founders-letter.astro           # 公众号 001 · 写在工作室开门之前
             └── rename-notice-insiders.astro    # 改名通告 · 给少数知情人（内部同步）

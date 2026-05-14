@@ -4,6 +4,7 @@ import PageHero from '../components/PageHero.astro';
 import PledgeBlock from '../components/PledgeBlock.astro';
 import ContactBlock from '../components/ContactBlock.astro';
 import PullQuote from '../components/PullQuote.astro';
+import FoundationFiveViews from '../components/FoundationFiveViews.astro';
 
 const recipients = [
   {
@@ -47,82 +48,89 @@ const nonRecipients = [
   },
 ];
 
-// 6 观体系：3 个有独立页面（外联），3 个在本页内联（anchor 锚点）
-const sixViews = [
+// 五观：自然 → 空间 → 内容 → 人才 → 承诺（与 v0.3 五观文案一致）
+const fiveViews = [
   {
     num: 'I',
-    cn: '空间观',
-    en: 'Space',
-    summary: '门店即博物馆 · 门店即城市公共客厅。',
-    href: '/how/space',
-    anchor: null,
+    cn: '自然观',
+    en: 'Nature',
+    summary: '我们不教育自然，我们向自然学习。',
+    href: '#nature',
+    anchor: 'nature',
   },
   {
     num: 'II',
-    cn: '承诺观',
-    en: 'Commitment',
-    summary: '1% 营收用于自然保护——常量，不是活动。',
-    href: '#one-percent',
-    anchor: null,
+    cn: '空间观',
+    en: 'Space',
+    summary: '店是博物馆，不是商店。',
+    href: '#view-space',
+    anchor: 'view-space',
   },
   {
     num: 'III',
-    cn: '青年观',
-    en: 'Youth',
-    summary: '给年轻人真问题，不给年轻人假任务。',
-    href: '#youth',
-    anchor: 'youth',
-  },
-  {
-    num: 'IV',
-    cn: '科技观',
-    en: 'Technology',
-    summary: '技术是隐形的——只在让体验更安静的时候出现。',
-    href: '/how/tech',
-    anchor: null,
-  },
-  {
-    num: 'V',
     cn: '内容观',
     en: 'Content',
-    summary: '内容是空间的延伸，不是空间的广告。',
+    summary: '我们诚实地走过问题，不假装有答案。',
     href: '#content',
     anchor: 'content',
   },
   {
-    num: 'VI',
+    num: 'IV',
     cn: '人才观',
     en: 'Talent',
-    summary: '一人一口的利益分配——创始人少赚一点，多一点给员工。',
+    summary: '我们优先招青年——青年不是年龄，是状态。',
     href: '#talent',
     anchor: 'talent',
+  },
+  {
+    num: 'V',
+    cn: '承诺观',
+    en: 'Commitment',
+    summary: '我们对外的承诺，是会被违反时主动赔偿的事。',
+    href: '#pledge-view',
+    anchor: 'pledge-view',
   },
 ];
 ---
 
 <Layout
   title="价值底座 · Foundation"
-  description="六观体系与 1% 承诺——山海造物做每一个决定背后的尺度与硬成本"
+  description="五观体系与 1% 承诺——山海造物做这件事时不会改变的事"
 >
   <PageHero
     eyebrow="Foundation · 价值底座"
-    title="价值观与承诺，<br />写进同一条底线"
-    lead="这一页把「我们怎么判断对错」与「我们把钱放回哪里」放在一起：前者是六观裁定标准，后者是 1% 营收承诺。它们不是两套叙事，而是同一件事的两面。"
+    title="五观，<br />是我们的底色"
+    lead="「观」是我们对世界的看法。五观，是我们做这件事时<strong class='text-cream'>不会改变的五件事</strong>。它们不是宣传话术，而是<strong class='text-brass-bright'>会被违反时拒绝的事</strong>。"
   />
 
   <hr class="brass-divider" />
 
-  {/* ============== 六观速览 · 卡片导航 ============== */}
+  <section class="editorial-section py-section fade-in max-w-editorial mx-auto">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4">About the Five Views · 关于五观</p>
+    <div class="prose-cn space-y-paragraph text-text-soft">
+      <p>
+        如果某天我们写不出这五观的具体动作，那一刻就是品牌死亡的时刻。
+      </p>
+      <p class="text-sm">
+        每一观由<strong class="text-cream">一句话标题</strong>、<strong class="text-cream">三段展开</strong>、<strong class="text-cream">「我们不做什么」</strong>、<strong class="text-cream">具体动作</strong>与<strong class="text-cream">一句话作结</strong>构成。科技选型不在五观之内，见
+        <a href="/how/tech" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">/how/tech</a>。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  {/* ============== 五观速览 · 卡片导航 ============== */}
   <section class="editorial-section-wide py-section fade-in">
     <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">
-      Six Views · 速览
+      Five Views · 速览
     </p>
     <h2 class="font-serif text-display text-cream text-center mb-section tracking-cn">
-      六个观察角度
+      五个观察角度
     </h2>
 
-    <ol class="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-brass-mid/20 max-w-5xl mx-auto">
-      {sixViews.map((v) => (
+    <ol class="grid sm:grid-cols-2 lg:grid-cols-5 gap-px bg-brass-mid/20 max-w-6xl mx-auto">
+      {fiveViews.map((v) => (
         <li class="bg-ink">
           <a
             href={v.href}
@@ -139,7 +147,7 @@ const sixViews = [
               {v.summary}
             </p>
             <span class="inline-flex items-center gap-2 text-xs text-brass-mid font-serif-en italic tracking-widest uppercase">
-              {v.anchor ? `Read below ↓` : `Open page →`}
+              Read below ↓
             </span>
           </a>
         </li>
@@ -149,146 +157,7 @@ const sixViews = [
 
   <hr class="brass-divider" />
 
-  {/* ============== III. 青年观 · 内联 ============== */}
-  <section class="editorial-section py-section fade-in" id="youth">
-    <p class="section-number mb-4">III</p>
-    <div class="flex items-baseline gap-3 mb-paragraph">
-      <h2 class="font-serif text-display text-cream tracking-cn">青年观</h2>
-      <span class="font-serif-en italic text-text-soft text-base">· On Youth</span>
-    </div>
-    <p class="font-serif text-xl text-brass-bright italic mb-paragraph tracking-cn">
-      给年轻人真问题，不给年轻人假任务。
-    </p>
-    <div class="prose-cn space-y-paragraph">
-      <p>
-        我们用大量的年轻人——不是因为他们便宜，是因为<strong class="text-cream">他们没被旧零售业的"假任务"驯化过</strong>。
-      </p>
-      <p>
-        在我们的店里，店员不背销售指标——他们的考核是"今天有几位客人在店里停留超过了 30 分钟"。在我们的工坊，新人第一个月不做任何成品——他们被要求"<strong class="text-brass-bright">看老师傅工作 100 小时</strong>"。
-      </p>
-      <p>
-        我们相信：<strong class="text-cream">把一件值得做的事交给一个相信它的年轻人，比把一件不值得做的事交给一个有经验的成年人，结果好得多</strong>。
-      </p>
-      <p>
-        所以我们招人的优先级不是经验——是<strong class="text-brass-bright">他/她对自然博物 / 美学 / 慢生活有没有真实的好奇心</strong>。这一条没有也不强求，但我们会给那些有的人最好的成长环境。
-      </p>
-    </div>
-  </section>
-
-  <hr class="brass-divider" />
-
-  {/* ============== V. 内容观 · 内联 ============== */}
-  <section class="editorial-section py-section fade-in" id="content">
-    <p class="section-number mb-4">V</p>
-    <div class="flex items-baseline gap-3 mb-paragraph">
-      <h2 class="font-serif text-display text-cream tracking-cn">内容观</h2>
-      <span class="font-serif-en italic text-text-soft text-base">· On Content</span>
-    </div>
-    <p class="font-serif text-xl text-brass-bright italic mb-paragraph tracking-cn">
-      内容是空间的延伸，不是空间的广告。
-    </p>
-    <div class="prose-cn space-y-paragraph">
-      <p>
-        我们写公众号、做小红书、出品牌片——但这些都不是"营销内容"。它们是<strong class="text-brass-bright">我们工作日常的副产品</strong>：今天工坊收到一只新蝶、今天店里有客人讲了一个故事、今天我们读到一篇博物学旧文。
-      </p>
-      <p>
-        我们不写"5 个理由让你必须拥有这只蝴蝶"那种文章——那不是我们的语言。我们写的是：
-      </p>
-      <p class="pl-6 border-l-2 border-brass-mid/50 italic text-cream">
-        "这只蝶羽翼上的蓝，不是颜料。是光线穿过纳米级鳞片结构产生的衍射——所以每一个角度看，蓝都不一样。"
-      </p>
-      <p>
-        以一个具体的事实或画面开头。<strong class="text-cream">禁止以 emoji 开头</strong>、<strong class="text-cream">禁止以叹号问号开头</strong>、<strong class="text-cream">禁止"亲们""宝子们"</strong>。
-      </p>
-      <p>
-        门店是内容的源头，公众号 / 小红书 / 抖音是内容的扩散——但<strong class="text-brass-bright">如果一段内容没法在我们的店里被讲出来，它就不该被发出来</strong>。
-      </p>
-      <p class="text-sm text-text-soft">
-        相关：完整的<a href="/notes" class="border-b border-brass-mid/40 hover:text-brass-bright">笔记</a>会逐步整理到本站。
-      </p>
-    </div>
-  </section>
-
-  <hr class="brass-divider" />
-
-  {/* ============== VI. 人才观 · 内联 ============== */}
-  <section class="editorial-section py-section fade-in" id="talent">
-    <p class="section-number mb-4">VI</p>
-    <div class="flex items-baseline gap-3 mb-paragraph">
-      <h2 class="font-serif text-display text-cream tracking-cn">人才观</h2>
-      <span class="font-serif-en italic text-text-soft text-base">· On Talent</span>
-    </div>
-    <p class="font-serif text-xl text-brass-bright italic mb-paragraph tracking-cn">
-      一人一口的利益分配——创始人少赚一点，多一点给员工。
-    </p>
-    <div class="prose-cn space-y-paragraph">
-      <p>
-        山海造物的人才观核心是<strong class="text-brass-bright">"一人一口"</strong>——
-        创始人少赚一点，多一点给员工、给社会、给顾客。具体表现：
-      </p>
-    </div>
-
-    <ul class="prose-cn list-none pl-0 mt-paragraph space-y-3">
-      <li class="pl-6 relative">
-        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
-        创始人薪资水平明显低于一般创业公司同等阶段标准
-      </li>
-      <li class="pl-6 relative">
-        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
-        创始人在公司亏损年度主动降薪
-      </li>
-      <li class="pl-6 relative">
-        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
-        创始人不享受特殊福利（专车 / 高额报销 / 个人秘书等）
-      </li>
-      <li class="pl-6 relative">
-        <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid"></span>
-        每年「妈妈的饺子 A 套餐」——核心团队家庭可享一次完整的工作室招待
-      </li>
-    </ul>
-
-    <div class="prose-cn mt-paragraph space-y-paragraph">
-      <p>
-        这条原则会让一些投资人犹豫——他们习惯的是"创始人重金激励 = 高速增长"的模型。我们的回应是：<strong class="text-cream">山海造物想做的是 30 年的事业，不是 5 年退出的标的</strong>。在 30 年的尺度上，创始人能保持长期投入的真正保险是<strong class="text-brass-bright">对事业本身的信仰</strong>——而不是短期重金激励。
-      </p>
-    </div>
-
-    <div class="mt-section p-6 border-l-2 border-brass-mid bg-ink-elevated/40">
-      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
-        Talent Toolkit · 把理念落到执行
-      </p>
-      <p class="text-cream/85 text-sm leading-[1.85] tracking-cn mb-3">
-        「一人一口」是<strong class="text-cream">理念层</strong>。具体到三段式速成课程、认证店长体系、招聘画像、薪酬结构与期权激励——这些是<strong class="text-cream">执行层</strong>。
-      </p>
-      <p class="text-sm">
-        <a href="/talent" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">
-          人才与店长培训 toolkit · /talent →
-        </a>
-      </p>
-    </div>
-
-    <p class="prose-cn mt-paragraph text-sm text-text-soft">
-      相关：投资合作页对此有更长的说明 → <a href="/for-investors#one-bowl" class="border-b border-brass-mid/40 hover:text-brass-bright">/for-investors#one-bowl</a>
-    </p>
-  </section>
-
-
-  <hr class="brass-divider" />
-
-  <section class="editorial-section py-section fade-in" id="compliance">
-    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
-      Compliance · 合规与披露
-    </p>
-    <h2 class="font-serif text-display text-cream tracking-cn mb-paragraph">公益捐赠与披露</h2>
-    <div class="prose-cn space-y-paragraph text-text-soft">
-      <p>
-        1% 承诺以<strong class="text-cream">可审计、可披露</strong>的方式执行：捐赠进入合规公益渠道，年度透明报告同步发布于本站与公众号；加盟方汇缴情况一并纳入披露范围。
-      </p>
-      <p class="text-sm">
-        具体受益机构与红线原则见下文「1% 承诺」章节；若你对流程或合作边界有疑问，可通过页尾联系入口与我们沟通。
-      </p>
-    </div>
-  </section>
+  <FoundationFiveViews />
 
   <hr class="brass-divider" />
 
@@ -323,9 +192,8 @@ const sixViews = [
 
   <hr class="brass-divider" />
 
-  <!-- ============ I. 1% 营收 不是 1% 利润 ============ -->
+  <!-- ============ 1% 营收 不是 1% 利润 ============ -->
   <section class="editorial-section fade-in">
-    <p class="section-number mb-4">I</p>
     <h2 class="section-title text-cream">1% 营收 · 不是 1% 利润</h2>
 
     <div class="prose-cn space-y-paragraph">
@@ -347,9 +215,8 @@ const sixViews = [
 
   <hr class="brass-divider" />
 
-  <!-- ============ II. 捐给谁 ============ -->
+  <!-- ============ 捐给谁 ============ -->
   <section class="editorial-section-wide fade-in">
-    <p class="section-number mb-4">II</p>
     <h2 class="section-title text-cream">捐给谁</h2>
 
     <p class="prose-cn mb-section max-w-editorial">
@@ -363,9 +230,8 @@ const sixViews = [
     />
   </section>
 
-  <!-- ============ III. 不捐给谁 ============ -->
+  <!-- ============ 不捐给谁 ============ -->
   <section class="editorial-section-wide fade-in">
-    <p class="section-number mb-4">III</p>
     <h2 class="section-title text-cream">绝不捐给谁</h2>
 
     <p class="prose-cn mb-section max-w-editorial">
@@ -382,9 +248,8 @@ const sixViews = [
 
   <hr class="brass-divider" />
 
-  <!-- ============ IV. 这笔钱有多大 · 它能做什么 ============ -->
+  <!-- ============ 这笔钱有多大 · 它能做什么 ============ -->
   <section class="editorial-section fade-in">
-    <p class="section-number mb-4">IV</p>
     <h2 class="section-title text-cream">这笔钱有多大 · 它能做什么</h2>
 
     <div class="prose-cn space-y-paragraph">
@@ -449,9 +314,8 @@ const sixViews = [
 
   <hr class="brass-divider" />
 
-  <!-- ============ V. 透明 ============ -->
+  <!-- ============ 透明 ============ -->
   <section class="editorial-section fade-in">
-    <p class="section-number mb-4">V</p>
     <h2 class="section-title text-cream">透明</h2>
 
     <p class="prose-cn">
@@ -495,9 +359,8 @@ const sixViews = [
     </div>
   </section>
 
-  <!-- ============ VI. 加盟方一并执行 ============ -->
+  <!-- ============ 加盟方一并执行 ============ -->
   <section class="editorial-section fade-in">
-    <p class="section-number mb-4">VI</p>
     <h2 class="section-title text-cream">加盟方一并执行</h2>
 
     <div class="prose-cn space-y-paragraph">
@@ -512,9 +375,8 @@ const sixViews = [
 
   <hr class="brass-divider" />
 
-  <!-- ============ VII. 为什么这件事重要 ============ -->
+  <!-- ============ 为什么这件事重要 ============ -->
   <section class="editorial-section fade-in">
-    <p class="section-number mb-4">VII</p>
     <h2 class="section-title text-cream">为什么这件事重要</h2>
 
     <div class="prose-cn space-y-paragraph">
@@ -562,9 +424,8 @@ const sixViews = [
     </div>
   </section>
 
-  <!-- ============ VIII. 给未来的备忘 ============ -->
+  <!-- ============ 给未来的备忘 ============ -->
   <section class="editorial-section fade-in">
-    <p class="section-number mb-4">VIII</p>
     <h2 class="section-title text-cream">给未来的备忘</h2>
 
     <div class="p-6 md:p-8 border-l-2 border-brass-deep bg-ink-deep/30">
@@ -583,13 +444,43 @@ const sixViews = [
     </div>
   </section>
 
+  <hr class="brass-divider" />
+
+  <section class="editorial-section py-section fade-in" id="compliance">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+      Compliance · 合规与披露
+    </p>
+    <h2 class="font-serif text-display text-cream tracking-cn mb-paragraph">公益捐赠与披露</h2>
+    <div class="prose-cn space-y-paragraph text-text-soft">
+      <p>
+        1% 承诺以<strong class="text-cream">可审计、可披露</strong>的方式执行：捐赠进入合规公益渠道，年度透明报告同步发布于本站与公众号；加盟方汇缴情况一并纳入披露范围。
+      </p>
+      <p class="text-sm">
+        具体受益机构与红线原则见上文「1% 承诺」各节；若你对流程或合作边界有疑问，可通过下方联系入口与我们沟通。
+      </p>
+    </div>
+  </section>
+
   <ContactBlock
     title="关于这个承诺"
     intro="如果你有问题、建议、或者想推荐我们认识某个值得支持的环保组织——欢迎写信。"
     subjectHint="1% 承诺"
   />
 
-  <PullQuote
-    quote="所有的设计、选品、合作决策，都问一个问题：这个东西十年之后还成立吗？"
-  />
+  <section class="editorial-section py-section fade-in max-w-editorial mx-auto" id="reader-note">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4 text-center">
+      To the reader · 给读者的一段话
+    </p>
+    <div class="prose-cn space-y-paragraph text-text-soft leading-relaxed">
+      <p class="font-serif text-lg text-cream tracking-cn not-italic">
+        读完五观，你可能会觉得有些苛刻——「为什么要把自己限制得这么死？」
+      </p>
+      <p>
+        因为我们做的不是一时的生意，是一辈子的事。一时的生意，可以灵活、可以变通、可以妥协。一辈子的事，需要一些「不会变的事」作为底色。这五观，就是我们的底色。
+      </p>
+      <p>
+        它们会被违反吗？会。但我们会公开说出来，会赔偿，会改进。这就是承诺的真正意义。
+      </p>
+    </div>
+  </section>
 </Layout>
