@@ -1,6 +1,6 @@
-# 山川造物 · 官网 v0.2
+# 山海造物 · 官网 v0.2
 
-> 把山川带回家 · *Bring Nature Home*
+> 把山海带回家 · *Bring Nature Home*
 
 技术栈：**Astro 5 + Tailwind v3.4 + TypeScript**，部署目标 **Cloudflare Pages**。
 
@@ -42,7 +42,7 @@ npm run preview    # 本地预览构建产物
 ## 项目结构
 
 ```
-shanchuanzaowu/
+shanhaizaowu/
 ├── astro.config.mjs       # Astro 配置（Tailwind 集成）
 ├── tailwind.config.mjs    # 设计 token：黄铜 + ink 暗调 + paper 米白 + VI 色
 ├── tsconfig.json          # TS strict
@@ -158,7 +158,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 - [x] `public/images/founders/lianshu.png` —— 廉澍肖像（已上线 · 4:5 · 116KB · 蓝底正装棚拍）
 - [x] `public/images/founders/lihe.png` —— 李贺肖像（已上线 · 4:5 · 169KB · 草原远眺户外照）
 - 创始人肖像同时出现在 `/about` 创始团队 I（4:5 上下双列）+ `/investors` 团队 VIII（图文卡片双列）
-- [ ] 把 `mailto:hello@shanchuanzaowu.com` 替换为真实邮箱（v0.1 内测期）或等域名 + Email Routing 配好（v0.2）
+- [ ] 把 `mailto:hello@shanhaizaowu.com` 替换为真实邮箱（v0.1 内测期）或等域名 + Email Routing 配好（v0.2）
 
 素材到位后只需把文件放进对应目录、并在 `src/pages/senses.astro` 里取消注释 `image=` / `audio=` 属性即可。
 
@@ -166,10 +166,10 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 ## 部署 · Cloudflare Pages
 
-**最小 7 步**（完整 SOP 见《山川造物·官网 v0.1·上线与域名布置方案 v0.1》）：
+**最小 7 步**（完整 SOP 见《山海造物·官网 v0.1·上线与域名布置方案 v0.1》）：
 
 1. 本地 `npm run build` 通过（生成 dist/ + 20 页）
-2. GitHub 创建私有仓库 `shanchuan-zaowu-site`
+2. GitHub 创建私有仓库 `shanhai-zaowu-site`
 3. `git push -u origin main`
 4. Cloudflare Dashboard → Workers & Pages → Create → Connect to Git
 5. 配置：
@@ -177,15 +177,27 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
    - Build command: `npm run build`
    - Build output directory: `dist`
    - Environment variable: `NODE_VERSION = 20`
-6. 首次部署 → 临时域名 `shanchuan-zaowu.pages.dev`
+6. 首次部署 → 临时域名 `shanhai-zaowu.pages.dev`
 7. 上线后逐项检查 15 routes / 移动端 / 链接 / PageSpeed
 
-> 域名（`shanchuanzaowu.com`）+ 邮箱（Cloudflare Email Routing）在 v0.2 阶段再买。
+> 域名（`shanhaizaowu.com`）+ 邮箱（Cloudflare Email Routing）在 v0.2 阶段再买。
 > v0.1 用 `*.pages.dev` 临时域名 + `mailto:` 链接（域名买之前邮件会退信，仅小范围内测）。
 
 ---
 
 ## 已知坑位 · 避免重犯
+
+### 中文品牌改名（山川造物 → 山海造物 · 2026.05）
+
+官网与 `package.json` 已按《山海造物 · 品牌改名执行包 v0.1》切换：**中文名山海造物**、
+**英文 Nature's Creations 不变**、**slogan 把山海带回家**、**默认联系邮箱
+`hello@shanhaizaowu.com`**、`astro.config.mjs` 的 **site** 指向计划中的
+**`https://shanhaizaowu.pages.dev`**。**例外**：文中指真实自然生态的措辞保留
+「**真实的山川**更好」（`/commitment`），不作品牌名替换。
+
+**须人工完成（代码外）**：商标局三层核查通过后，再正式上线 `shanhaizaowu.com`；
+GitHub 仓库 `shanchuan-zaowu-site` → `shanhai-zaowu-site` **改名**、`git remote` 同步；
+Cloudflare Pages **新建项目**接新仓库（Pages 不支持项目改名）。
 
 ### `.fade-in` 不要包超长容器
 全局 IO 用 `threshold: 0`（v0.1 修复），但**仍建议**给每个独立段落加 `.fade-in`，
@@ -252,7 +264,7 @@ v0.2 双主题改造时踩过的三个坑，未来扩展色族 / 加新 opacity 
 2. **预算 / ROI / 招聘薪资全部隐去** —— 不写 ¥55000 / ¥80000 / ¥165000-330000 /
    月薪 8000-15000 这类金额。改为"第一年必上 / 第二年加入 / 第三年再议"
    这类节奏。完整版通过 ContactBlock 引导"邮件申请内部完整版"。
-3. **未公开 IP 名匿名化** —— 蒲公英之星 / 海的回信 / 一朵山川 / 蝴蝶宇宙 /
+3. **未公开 IP 名匿名化** —— 蒲公英之星 / 海的回信 / 一朵山海 / 蝴蝶宇宙 /
    矿石系列 / 小黄家族 / 蓝先生 / 翠衣 等 IP 名在 IP 矩阵专栏正式发布前
    **不落地任何公开页**。改为"IP 形象系 / 玻璃罩类 / 瓶身类 / 昆虫蝴蝶系 /
    矿石系 / 贝壳系 / 插件化商品"等品类化描述。落地公开页时配上
@@ -271,13 +283,13 @@ v0.2 双主题改造时踩过的三个坑，未来扩展色族 / 加新 opacity 
 
 1. **「研究助理」角色定位完全不公开** —— 宪章里"首席用户研究与战略研究助理"
    /「服务对象 / 边界 / 5 类 say no 请求」/「启动卡 → 进行 → 收尾三阶段 SOP」
-   等都属内部治理工具，外部读者不关心也读不懂。公开版改用"我们/山川造物
+   等都属内部治理工具，外部读者不关心也读不懂。公开版改用"我们/山海造物
    研究团队"叙事。
 2. **「自我感动检查 ⚠/✓ 状态表」全部移除** —— 每份内部研究末尾的"金句 ·
    待验证 / 已验证"清单是内部治理工具，公开会让"判断"显得不自信。公开版
    只在治理章节里**说明这套机制存在**，不展开具体 ⚠ 标记。
 3. **未公开 IP 名继续匿名化** —— V&A / Felissimo 报告里反复提到"马上有"作为
-   山川造物版 William Morris / 猫部；公开版统一改为"核心 IP"。这跟
+   山海造物版 William Morris / 猫部；公开版统一改为"核心 IP"。这跟
    `/hardcore-tech` 的规则保持一致。
 4. **内部财务模型 / 估值倍数 / 增长率假设隐去** —— 比如"我们的中速节奏
    = 年化 30-50%"、"投资人估值 8-10 倍 PS"这类**对外不能流出**的财务工
@@ -287,7 +299,7 @@ v0.2 双主题改造时踩过的三个坑，未来扩展色族 / 加新 opacity 
 5. **「绿黄红区」/「不装的规模化」/「基金付き」/「部活」/「轻资产快闪 +
    重资产首店」等品牌黑话保留** —— 这些是品牌已经在用的对外语言，保留反而
    强化"我们说话有自己的方式"的品牌识别。Felissimo 引入的"事业性 × 独创性
-   × 社会性 → 真实性 × 可规模化 × 山川性"三重过滤器同样保留。
+   × 社会性 → 真实性 × 可规模化 × 山海性"三重过滤器同样保留。
 
 #### `《首店运营实战清单 v0.1》`的特殊脱敏(只取两个外宣块,不公开本体)
 
