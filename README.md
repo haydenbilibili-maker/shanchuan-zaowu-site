@@ -33,7 +33,7 @@ npm run dev    # http://localhost:4321/
 ## 构建与预览
 
 ```bash
-npm run build      # 输出到 dist/（20 个 HTML 页面）
+npm run build      # 输出到 dist/（21 个 HTML 页面）
 npm run preview    # 本地预览构建产物
 ```
 
@@ -69,7 +69,7 @@ shanhaizaowu/
     │   ├── NoListItem.astro       # × 不做项（红线清单用）
     │   ├── PledgeBlock.astro      # 承诺方框（positive / negative 两种 variant）
     │   └── WIPNotice.astro        # 占位通知（v0.2 升级前的 dignified 占位）
-    └── pages/                 # 20 个页面
+    └── pages/                 # 21 个页面（含 /notes/*）
         ├── index.astro            # 首页（vision hero + 4 audience + 1% 承诺）
         ├── about.astro            # 我们是谁（创始团队 + 6 战略原则 + 30 年 + → /benchmarks）
         ├── products.astro         # 产品线（自然小匣 / 衍生品 / 主题展柜 / 双 IP）
@@ -160,7 +160,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 - [x] `public/images/founders/lianshu.png` —— 廉澍肖像（已上线 · 4:5 · 116KB · 蓝底正装棚拍）
 - [x] `public/images/founders/lihe.png` —— 李贺肖像（已上线 · 4:5 · 169KB · 草原远眺户外照）
 - 创始人肖像同时出现在 `/about` 创始团队 I（4:5 上下双列）+ `/investors` 团队 VIII（图文卡片双列）
-- [ ] 把 `mailto:hello@shanhaizaowu.com` 替换为真实邮箱（v0.1 内测期）或等域名 + Email Routing 配好（v0.2）
+- [ ] Cloudflare Dashboard 为 `shanhaizaowu.com` 开启 **Email Routing**，再把 `mailto:hello@shanhaizaowu.com` 从「占位」标记为可用（或直接保留 GitHub Issues / 表单备用）
 
 素材到位后只需把文件放进对应目录、并在 `src/pages/senses.astro` 里取消注释 `image=` / `audio=` 属性即可。
 
@@ -168,22 +168,41 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 ## 部署 · Cloudflare Pages
 
-**最小 7 步**（完整 SOP 见《山海造物·官网 v0.1·上线与域名布置方案 v0.1》）：
+**最小流程**（完整 SOP 见《山海造物·官网 v0.1·上线与域名布置方案 v0.1》）：
 
 1. 本地 `npm run build` 通过（生成 dist/ + 21 页）
-2. GitHub 创建私有仓库 `shanhai-zaowu-site`
-3. `git push -u origin main`
-4. Cloudflare Dashboard → Workers & Pages → Create → Connect to Git
-5. 配置：
-   - Framework preset: **Astro**
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-   - Environment variable: `NODE_VERSION = 20`
-6. 首次部署 → 临时域名 `shanhaizaowu.pages.dev`（与 `astro.config.mjs` 中 `site` 一致；具体子域以 Cloudflare Pages 项目名为准）
-7. 上线后逐项检查核心页面 / 移动端 / 链接 / PageSpeed
+2. GitHub 仓库接入 Cloudflare Pages（Build：`npm run build`，Output：`dist`，`NODE_VERSION=20`）
+3. **`astro.config.mjs` 已设 `site: 'https://shanhaizaowu.com'`** —— canonical / OG 绝对地址以此为准（`*.pages.dev` 仅作兜底预览时可保留不重绑）
 
-> 域名（`shanhaizaowu.com`）+ 邮箱（Cloudflare Email Routing）在 v0.2 阶段再买。
-> v0.1 用 `*.pages.dev` 临时域名 + `mailto:` 链接（域名买之前邮件会退信，仅小范围内测）。
+### 阿里云已购域名 · 映射到本站
+
+域名在**阿里云（万网）注册**时，把流量指到 Pages 的常见两条路：
+
+**方案 A（推荐）DNS 全权交给 Cloudflare**
+
+1. Cloudflare Dashboard → **Add a Site** → 输入 `shanhaizaowu.com`（可免费套餐）
+2. Cloudflare 给出一组 **NS（名称服务器）**；在阿里云 **域名控制台** → 对应域名 → **DNS 修改 / 域名DNS** → 改为使用自定义 DNS，填 Cloudflare 的 NS（通常 48 小时内生效）
+3. Cloudflare DNS 面板里：**Workers & Pages** → 你的 Pages 项目 → **Custom domains** → 依次添加 **`shanhaizaowu.com`**、**`www.shanhaizaowu.com`**（若要用 www）、以及 **`shanhaizaowu.cn`**（同上可加 `www`）
+4. 等待签发证书（Proxied / 橙色云由 CF 接管）；浏览器访问 `https://shanhaizaowu.com` 验证
+
+**.cn 策略**：常与 **.com 同站点**——两个都在 Pages「Custom domains」里绑定到同一项目；若只希望 **`.cn` 跳转到 `.com`**，可在 Cloudflare **Rules → Redirect Rules**（或 **Bulk Redirects**）里配置 301：`https://shanhaizaowu.cn/*` → `https://shanhaizaowu.com/:splat`（按需调整）。
+
+**方案 B（DNS 仍在阿里云解析）**
+
+1. Pages 项目 → Custom domains → 添加域名，界面会提示要加的 **TXT 校验**（若有）以及 **CNAME 目标**（形如 `xxxx.pages.dev`）
+2. 阿里云 **云解析 DNS** → 为该域名添加记录：  
+   - **`www`**：记录类型 **CNAME**，值填 Cloudflare 给出的目标（常为 `*.pages.dev`）  
+   - **根域名 `@`**：若控制台支持 **CNAME 平摊 / 显性 URL**，按阿里云文档指向同一目标；**不支持根 CNAME** 时，可先用 **`www`** 作主站，再在 CF 侧对 apex 配置转发，或改用方案 A
+
+> 控制台文案以 Cloudflare Pages 当期向导为准；**同一域名不要同时在阿里云与 Cloudflare 各管一套解析**，避免冲突。
+
+**上线自检**（接续上文步骤 3）：
+
+- ~~Custom domains 证书状态为 Active~~
+- ~~根域名 / www / `.cn` 访问与跳转符合预期~~
+- 移动端与 PageSpeed / 控制台无 Mixed Content
+
+> **邮箱**：域名已在阿里云购买后，`hello@shanhaizaowu.com` 仍可走 **Cloudflare Email Routing**（域名 NS 若在 CF 最易配置）；未配好前 `mailto:` 可能仍不可达——见上文待办勾选。
 
 ---
 
@@ -193,13 +212,11 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 官网与 `package.json` 已按《山海造物 · 品牌改名执行包 v0.1》切换：**中文名山海造物**、
 **英文 Nature's Creations 不变**、**slogan 把山海带回家**、**默认联系邮箱
-`hello@shanhaizaowu.com`**、`astro.config.mjs` 的 **site** 指向计划中的
-**`https://shanhaizaowu.pages.dev`**。**例外**：文中指真实自然生态的措辞保留
+`hello@shanhaizaowu.com`**、`astro.config.mjs` 的 **site** 为生产主域
+**`https://shanhaizaowu.com`**（全站 canonical / OG 绝对地址）。`*.pages.dev` 可作预览，不必与 site 一致。**例外**：文中指真实自然生态的措辞保留
 「**真实的山川**更好」（`/commitment`），不作品牌名替换。
 
-**须人工完成（代码外）**：商标局三层核查通过后，再正式上线 `shanhaizaowu.com`；
-GitHub 仓库 `shanchuan-zaowu-site` → `shanhai-zaowu-site` **改名**、`git remote` 同步；
-Cloudflare Pages **新建项目**接新仓库（Pages 不支持项目改名）。
+**仍可在控制台微调**：**.cn ↔ .com** 跳转、`www`、**Email Routing**；GitHub 仓库改名与 `git remote`。域名解析步骤见上文「阿里云已购域名 · 映射到本站」。
 
 ### `.fade-in` 不要包超长容器
 全局 IO 用 `threshold: 0`（v0.1 修复），但**仍建议**给每个独立段落加 `.fade-in`，
