@@ -90,7 +90,8 @@ shanhaizaowu/
         ├── benchmarks.astro       # 对标研究（7 家 × 3 群 + V&A + Felissimo 双 Spotlight + 12 经验 + 10 警示 + 5 对标合并 + 10 场景 + 不做清单 17 + 克制 9）
         ├── notes.astro            # 公众号文章列表
         └── notes/
-            └── founders-letter.astro  # 公众号 001 · 写在工作室开门之前
+            ├── founders-letter.astro           # 公众号 001 · 写在工作室开门之前
+            └── rename-notice-insiders.astro    # 改名通告 · 给少数知情人（内部同步）
 ```
 
 ---
@@ -154,6 +155,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 - [ ] `public/audio/ambient-30s.mp3` 30 秒环境音录制
 - [ ] `public/images/hero/home-hero.jpg` 首页主视觉 / OG 分享图
 - [ ] 自托管思源宋体（如系统宋体回退不理想）
+- [x] `/notes/rename-notice-insiders` —— 《改名通告 · 给少数知情人》（2026.05）
 - [x] `/notes/founders-letter` —— 创始人信《写在工作室开门之前》（v0.1 已上线 · 公众号 001）
 - [x] `public/images/founders/lianshu.png` —— 廉澍肖像（已上线 · 4:5 · 116KB · 蓝底正装棚拍）
 - [x] `public/images/founders/lihe.png` —— 李贺肖像（已上线 · 4:5 · 169KB · 草原远眺户外照）
@@ -168,7 +170,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 **最小 7 步**（完整 SOP 见《山海造物·官网 v0.1·上线与域名布置方案 v0.1》）：
 
-1. 本地 `npm run build` 通过（生成 dist/ + 20 页）
+1. 本地 `npm run build` 通过（生成 dist/ + 21 页）
 2. GitHub 创建私有仓库 `shanhai-zaowu-site`
 3. `git push -u origin main`
 4. Cloudflare Dashboard → Workers & Pages → Create → Connect to Git
@@ -178,7 +180,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
    - Build output directory: `dist`
    - Environment variable: `NODE_VERSION = 20`
 6. 首次部署 → 临时域名 `shanhaizaowu.pages.dev`（与 `astro.config.mjs` 中 `site` 一致；具体子域以 Cloudflare Pages 项目名为准）
-7. 上线后逐项检查 15 routes / 移动端 / 链接 / PageSpeed
+7. 上线后逐项检查核心页面 / 移动端 / 链接 / PageSpeed
 
 > 域名（`shanhaizaowu.com`）+ 邮箱（Cloudflare Email Routing）在 v0.2 阶段再买。
 > v0.1 用 `*.pages.dev` 临时域名 + `mailto:` 链接（域名买之前邮件会退信，仅小范围内测）。
