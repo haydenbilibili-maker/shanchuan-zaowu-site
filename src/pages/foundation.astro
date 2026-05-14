@@ -48,15 +48,14 @@ const nonRecipients = [
   },
 ];
 
-// 五观：自然 → 空间 → 内容 → 人才 → 承诺（与 v0.3 五观文案一致）
-const fiveViews = [
+// 六观：自然 → 空间 → 内容 → 人才 → 承诺 → 合规（v0.4）
+const sixViews = [
   {
     num: 'I',
     cn: '自然观',
     en: 'Nature',
     summary: '我们不教育自然，我们向自然学习。',
     href: '#nature',
-    anchor: 'nature',
   },
   {
     num: 'II',
@@ -64,7 +63,6 @@ const fiveViews = [
     en: 'Space',
     summary: '店是博物馆，不是商店。',
     href: '#view-space',
-    anchor: 'view-space',
   },
   {
     num: 'III',
@@ -72,7 +70,6 @@ const fiveViews = [
     en: 'Content',
     summary: '我们诚实地走过问题，不假装有答案。',
     href: '#content',
-    anchor: 'content',
   },
   {
     num: 'IV',
@@ -80,7 +77,6 @@ const fiveViews = [
     en: 'Talent',
     summary: '我们优先招青年——青年不是年龄，是状态。',
     href: '#talent',
-    anchor: 'talent',
   },
   {
     num: 'V',
@@ -88,31 +84,40 @@ const fiveViews = [
     en: 'Commitment',
     summary: '我们对外的承诺，是会被违反时主动赔偿的事。',
     href: '#pledge-view',
-    anchor: 'pledge-view',
+  },
+  {
+    num: 'VI',
+    cn: '合规观',
+    en: 'Compliance',
+    summary: '红线之内，才有资格谈承诺。',
+    href: '#view-compliance',
   },
 ];
 ---
 
 <Layout
   title="价值底座 · Foundation"
-  description="五观体系与 1% 承诺——山海造物做这件事时不会改变的事"
+  description="六观体系与 1% 承诺——山海造物做这件事的根本立场与不可触碰的边界"
 >
   <PageHero
     eyebrow="Foundation · 价值底座"
-    title="五观，<br />是我们的底色"
-    lead="「观」是我们对世界的看法。五观，是我们做这件事时<strong class='text-cream'>不会改变的五件事</strong>。它们不是宣传话术，而是<strong class='text-brass-bright'>会被违反时拒绝的事</strong>。"
+    title="价值底座"
+    lead="我们做这件事的根本立场。<br /><br />六观，是我们做这件事时<strong class='text-cream'>不会改变的六件事</strong>。<br />它们不是宣传话术，而是<strong class='text-brass-bright'>会被违反时拒绝的事</strong>。"
   />
 
   <hr class="brass-divider" />
 
   <section class="editorial-section py-section fade-in max-w-editorial mx-auto">
-    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4">About the Five Views · 关于五观</p>
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4">About the Six Views · 关于六观</p>
     <div class="prose-cn space-y-paragraph text-text-soft">
       <p>
-        如果某天我们写不出这五观的具体动作，那一刻就是品牌死亡的时刻。
+        如果某天我们写不出这六观的具体动作，那一刻就是品牌死亡的时刻。
+      </p>
+      <p class="text-sm text-cream/90 leading-relaxed">
+        <strong class="text-brass-bright">一句话速览：</strong>自然观——向自然学习；空间观——店是博物馆；内容观——诚实走过问题；人才观——青年优先；承诺观——可赔偿的硬承诺；合规观——不可触碰的红线。
       </p>
       <p class="text-sm">
-        每一观由<strong class="text-cream">一句话标题</strong>、<strong class="text-cream">三段展开</strong>、<strong class="text-cream">「我们不做什么」</strong>、<strong class="text-cream">具体动作</strong>与<strong class="text-cream">一句话作结</strong>构成。科技选型不在五观之内，见
+        每一观由<strong class="text-cream">一句话标题</strong>、<strong class="text-cream">三段展开</strong>、<strong class="text-cream">「我们不做什么」</strong>、<strong class="text-cream">具体动作</strong>与<strong class="text-cream">一句话作结</strong>构成。科技如何落地见
         <a href="/how/tech" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">/how/tech</a>。
       </p>
     </div>
@@ -120,25 +125,25 @@ const fiveViews = [
 
   <hr class="brass-divider" />
 
-  {/* ============== 五观速览 · 卡片导航 ============== */}
+  {/* ============== 六观速览 · 卡片导航 ============== */}
   <section class="editorial-section-wide py-section fade-in">
     <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">
-      Five Views · 速览
+      Six Views · 六观速览
     </p>
     <h2 class="font-serif text-display text-cream text-center mb-section tracking-cn">
-      五个观察角度
+      六个观察角度
     </h2>
 
-    <ol class="grid sm:grid-cols-2 lg:grid-cols-5 gap-px bg-brass-mid/20 max-w-6xl mx-auto">
-      {fiveViews.map((v) => (
+    <ol class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-px bg-brass-mid/20 max-w-7xl mx-auto">
+      {sixViews.map((v) => (
         <li class="bg-ink">
           <a
             href={v.href}
-            class="group block p-8 h-full hover:bg-ink-elevated/60 transition-colors duration-300"
+            class="group block p-5 md:p-6 xl:p-7 h-full hover:bg-ink-elevated/60 transition-colors duration-300"
           >
             <div class="flex items-baseline gap-3 mb-4">
               <span class="font-serif-en italic text-brass-mid/60 text-2xl">{v.num}</span>
-              <h3 class="font-serif text-2xl text-brass-bright tracking-cn group-hover:text-cream transition-colors">
+              <h3 class="font-serif text-lg md:text-xl text-brass-bright tracking-cn group-hover:text-cream transition-colors">
                 {v.cn}
               </h3>
               <span class="font-serif-en italic text-text-soft text-xs">· {v.en}</span>
@@ -446,7 +451,7 @@ const fiveViews = [
 
   <hr class="brass-divider" />
 
-  <section class="editorial-section py-section fade-in" id="compliance">
+  <section class="editorial-section py-section fade-in" id="pledge-disclosure">
     <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
       Compliance · 合规与披露
     </p>
@@ -469,18 +474,23 @@ const fiveViews = [
 
   <section class="editorial-section py-section fade-in max-w-editorial mx-auto" id="reader-note">
     <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4 text-center">
-      To the reader · 给读者的一段话
+      To the reader · 收尾
     </p>
     <div class="prose-cn space-y-paragraph text-text-soft leading-relaxed">
       <p class="font-serif text-lg text-cream tracking-cn not-italic">
-        读完五观，你可能会觉得有些苛刻——「为什么要把自己限制得这么死？」
+        读完六观，你可能会觉得有些苛刻——「为什么要把自己限制得这么死？」
       </p>
       <p>
-        因为我们做的不是一时的生意，是一辈子的事。一时的生意，可以灵活、可以变通、可以妥协。一辈子的事，需要一些「不会变的事」作为底色。这五观，就是我们的底色。
+        因为我们做的不是一时的生意，是一辈子的事。一时的生意，可以灵活、可以变通、可以妥协。一辈子的事，需要一些「不会变的事」作为底色。这六观，就是我们的底色。
       </p>
       <p>
-        它们会被违反吗？会。但我们会公开说出来，会赔偿，会改进。这就是承诺的真正意义。
+        它们会被违反吗？<strong class="text-brass-bright">承诺观会</strong>——这是真实的人和真实的组织都会发生的事。但我们会公开说出来，会赔偿，会改进。
+      </p>
+      <p>
+        <strong class="text-coral-mid">合规观不会</strong>——这是品牌的生命线。触碰红线那一刻，品牌就死亡了。
       </p>
     </div>
   </section>
+
+  <PullQuote quote="这就是底色的真正意义。" cite="Foundation · v0.4" />
 </Layout>

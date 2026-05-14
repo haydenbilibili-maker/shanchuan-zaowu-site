@@ -1,4 +1,4 @@
-# 山海造物 · 官网 v0.3
+# 山海造物 · 官网 v0.4
 
 > 把山海带回家 · *Bring Nature Home*
 
@@ -23,7 +23,7 @@ npm install
 # 2. 启动开发服务器
 npm run dev    # http://localhost:4321/
 
-# 3. 主要 routes（v0.3 信息架构 · Why / How / What / Who + Foundation）
+# 3. 主要 routes（v0.4 信息架构 · 价值底座为「六观」：含合规观）
 #    /what /who /why /how /foundation
 #    /how/senses /how/space /how/operations /how/tech
 #    /for-properties /for-franchise /for-investors
