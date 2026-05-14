@@ -1,10 +1,14 @@
 ---
 import Layout from '../components/Layout.astro';
-import PageHero from '../components/PageHero.astro';
 import PledgeBlock from '../components/PledgeBlock.astro';
 import ContactBlock from '../components/ContactBlock.astro';
 import PullQuote from '../components/PullQuote.astro';
-import FoundationFiveViews from '../components/FoundationFiveViews.astro';
+import ViewBlock from '../components/ViewBlock.astro';
+import ViewListItem from '../components/ViewListItem.astro';
+import ViewTransition from '../components/ViewTransition.astro';
+import SixViewsPyramid from '../components/SixViewsPyramid.astro';
+import PledgeComplianceCompare from '../components/PledgeComplianceCompare.astro';
+import { foundationViews, foundationViewTransitions } from '../data/foundationSixViews';
 
 const recipients = [
   {
@@ -48,126 +52,141 @@ const nonRecipients = [
   },
 ];
 
-// 六观：自然 → 空间 → 内容 → 人才 → 承诺 → 合规（v0.4）
-const sixViews = [
-  {
-    num: 'I',
-    cn: '自然观',
-    en: 'Nature',
-    summary: '我们不教育自然，我们向自然学习。',
-    href: '#nature',
-  },
-  {
-    num: 'II',
-    cn: '空间观',
-    en: 'Space',
-    summary: '店是博物馆，不是商店。',
-    href: '#view-space',
-  },
-  {
-    num: 'III',
-    cn: '内容观',
-    en: 'Content',
-    summary: '我们诚实地走过问题，不假装有答案。',
-    href: '#content',
-  },
-  {
-    num: 'IV',
-    cn: '人才观',
-    en: 'Talent',
-    summary: '我们优先招青年——青年不是年龄，是状态。',
-    href: '#talent',
-  },
-  {
-    num: 'V',
-    cn: '承诺观',
-    en: 'Commitment',
-    summary: '我们对外的承诺，是会被违反时主动赔偿的事。',
-    href: '#pledge-view',
-  },
-  {
-    num: 'VI',
-    cn: '合规观',
-    en: 'Compliance',
-    summary: '红线之内，才有资格谈承诺。',
-    href: '#view-compliance',
-  },
-];
 ---
 
 <Layout
   title="价值底座 · Foundation"
   description="六观体系与 1% 承诺——山海造物做这件事的根本立场与不可触碰的边界"
 >
-  <PageHero
-    eyebrow="Foundation · 价值底座"
-    title="价值底座"
-    lead="我们做这件事的根本立场。<br /><br />六观，是我们做这件事时<strong class='text-cream'>不会改变的六件事</strong>。<br />它们不是宣传话术，而是<strong class='text-brass-bright'>会被违反时拒绝的事</strong>。"
-  />
+  <!-- §1 · Hero -->
+  <section class="editorial-section py-section md:py-24 px-6 text-center fade-in max-w-editorial mx-auto">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Foundation · 价值底座</p>
+    <h1 class="font-serif text-display text-cream tracking-cn mb-4">价值底座</h1>
+    <p class="text-base md:text-lg text-text-soft mb-12 tracking-cn">我们做这件事的根本立场</p>
+    <div class="max-w-2xl mx-auto text-base md:text-lg leading-relaxed text-cream tracking-cn space-y-2">
+      <p>六观，是我们做这件事时不会改变的六件事。</p>
+      <p>它们不是宣传话术——</p>
+      <p>而是会被违反时拒绝的事。</p>
+    </div>
+  </section>
 
   <hr class="brass-divider" />
 
-  <section class="editorial-section py-section fade-in max-w-editorial mx-auto">
+  <!-- §2 · 关于六观 + 六观一览 -->
+  <section class="editorial-section py-section fade-in max-w-editorial mx-auto px-6">
     <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4">About the Six Views · 关于六观</p>
-    <div class="prose-cn space-y-paragraph text-text-soft">
+    <div class="prose-cn space-y-paragraph text-text-soft mb-10">
       <p>
-        如果某天我们写不出这六观的具体动作，那一刻就是品牌死亡的时刻。
+        「观」是我们对世界的看法。六观，是我们做这件事时<strong class="text-cream">不会改变的六件事</strong>。它们不是宣传话术，而是<strong class="text-brass-bright">会被违反时拒绝的事</strong>。如果某天我们写不出这六观的具体动作，那一刻就是品牌死亡的时刻。
       </p>
       <p class="text-sm text-cream/90 leading-relaxed">
-        <strong class="text-brass-bright">一句话速览：</strong>自然观——向自然学习；空间观——店是博物馆；内容观——诚实走过问题；人才观——青年优先；承诺观——可赔偿的硬承诺；合规观——不可触碰的红线。
-      </p>
-      <p class="text-sm">
         每一观由<strong class="text-cream">一句话标题</strong>、<strong class="text-cream">三段展开</strong>、<strong class="text-cream">「我们不做什么」</strong>、<strong class="text-cream">具体动作</strong>与<strong class="text-cream">一句话作结</strong>构成。科技如何落地见
         <a href="/how/tech" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">/how/tech</a>。
+      </p>
+    </div>
+
+    <h2 class="font-serif text-2xl md:text-3xl text-cream tracking-cn mb-6">六观一览</h2>
+    <div class="mb-10">
+      <ViewListItem number="1" title="自然观" subtitle="我们如何看待自然" href="#nature" />
+      <ViewListItem number="2" title="空间观" subtitle="我们如何理解空间" href="#view-space" />
+      <ViewListItem number="3" title="内容观" subtitle="我们如何表达" href="#content" />
+      <ViewListItem number="4" title="人才观" subtitle="我们如何对待人" href="#talent" />
+      <ViewListItem number="5" title="承诺观" subtitle="我们对外承担什么" href="#pledge-view" />
+      <ViewListItem number="6" title="合规观" subtitle="我们不能做什么" highlight="coral" href="#view-compliance" />
+    </div>
+    <p class="text-base text-text-soft leading-relaxed tracking-cn">
+      六观由下至上构建——<br />
+      自然观是根本立场，合规观是品牌边界。<br />
+      请逐观阅读，每一观都有 5 个段落，覆盖立场、反例、具体动作。
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- §3 · 六观主体 -->
+  {
+    foundationViews.map((view, i) => {
+      const { afterBlock, ...blockProps } = view;
+      return (
+        <>
+          <ViewBlock {...blockProps} />
+          {afterBlock ? <div class="editorial-section max-w-editorial mx-auto px-6" set:html={afterBlock} /> : null}
+          {i < foundationViews.length - 1 ? <ViewTransition {...foundationViewTransitions[i]} /> : null}
+        </>
+      );
+    })
+  }
+
+  <hr class="brass-divider" />
+
+  <!-- §4 · 六观关系金字塔 -->
+  <section class="editorial-section py-section fade-in px-6" id="six-views-pyramid">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">Structure · 六观之间的关系</p>
+    <h2 class="font-serif text-display text-cream text-center mb-4 tracking-cn">六观之间的关系</h2>
+    <p class="text-text-soft text-center max-w-xl mx-auto mb-12 leading-relaxed tracking-cn">
+      六观不是并列的——<br />
+      它们之间有层级，构成一个完整的结构。
+    </p>
+    <SixViewsPyramid />
+    <div class="prose-cn max-w-editorial mx-auto mt-section space-y-paragraph text-text-soft text-sm leading-relaxed">
+      <p class="font-serif text-cream text-base tracking-cn">金字塔的结构含义：</p>
+      <ul class="list-disc pl-5 space-y-2">
+        <li><strong class="text-cream">自然观</strong>是根 —— 一切从这里出发</li>
+        <li><strong class="text-cream">空间观与内容观</strong>是表达层 —— 一对内、一对外</li>
+        <li><strong class="text-cream">人才观</strong>是组织层 —— 决定谁来做这件事</li>
+        <li><strong class="text-cream">承诺观</strong>是责任层 —— 决定我们额外承担什么</li>
+        <li><strong class="text-coral-mid">合规观</strong>是边界层 —— 决定我们不能做什么</li>
+      </ul>
+      <p>
+        合规观放在金字塔的最顶端不是因为最重要 —— 重要性上六观平等。是因为它是边界。其他观可以「做得更好或更差」，合规观只能「做到或没做到」。没有中间地带。触碰红线 → 其他五观全部失效。
       </p>
     </div>
   </section>
 
   <hr class="brass-divider" />
 
-  {/* ============== 六观速览 · 卡片导航 ============== */}
-  <section class="editorial-section-wide py-section fade-in">
-    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">
-      Six Views · 六观速览
-    </p>
-    <h2 class="font-serif text-display text-cream text-center mb-section tracking-cn">
-      六个观察角度
-    </h2>
-
-    <ol class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-px bg-brass-mid/20 max-w-7xl mx-auto">
-      {sixViews.map((v) => (
-        <li class="bg-ink">
-          <a
-            href={v.href}
-            class="group block p-5 md:p-6 xl:p-7 h-full hover:bg-ink-elevated/60 transition-colors duration-300"
-          >
-            <div class="flex items-baseline gap-3 mb-4">
-              <span class="font-serif-en italic text-brass-mid/60 text-2xl">{v.num}</span>
-              <h3 class="font-serif text-lg md:text-xl text-brass-bright tracking-cn group-hover:text-cream transition-colors">
-                {v.cn}
-              </h3>
-              <span class="font-serif-en italic text-text-soft text-xs">· {v.en}</span>
-            </div>
-            <p class="text-sm text-cream/85 tracking-cn leading-relaxed mb-6 italic">
-              {v.summary}
-            </p>
-            <span class="inline-flex items-center gap-2 text-xs text-brass-mid font-serif-en italic tracking-widest uppercase">
-              Read below ↓
-            </span>
-          </a>
-        </li>
-      ))}
-    </ol>
+  <!-- §5 · 承诺观 vs 合规观 -->
+  <section class="editorial-section py-section fade-in px-6">
+    <div class="max-w-3xl mx-auto text-center mb-8">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Boundary · 边界对照</p>
+      <h2 class="font-serif text-display text-cream tracking-cn mb-4">承诺观与合规观 · 边界对照</h2>
+      <p class="text-text-soft leading-relaxed tracking-cn">这两观看似相近 · 本质不同 · 两者都不能少。</p>
+    </div>
+    <PledgeComplianceCompare />
   </section>
 
   <hr class="brass-divider" />
 
-  <FoundationFiveViews />
+  <!-- §6 · 1% 承诺独立强调 -->
+  <section
+    id="pledge-1pct-spotlight"
+    class="editorial-section py-section md:py-24 px-6 text-center fade-in border-y border-brass-mid/15 bg-brass-mid/[0.06]"
+  >
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">Our pledge · 1% · 我们的承诺</p>
+    <div class="my-8">
+      <span class="font-serif-en text-brass-bright block mb-2" style="font-size: clamp(4.5rem, 14vw, 7.5rem); line-height: 0.95; letter-spacing: -0.03em;">1%</span>
+      <p class="text-sm text-text-soft italic tracking-cn">每家城市门店年营收</p>
+    </div>
+    <div class="text-lg md:text-xl text-cream leading-relaxed mb-8 max-w-2xl mx-auto tracking-cn space-y-2">
+      <p>捐赠给本地动物园或动植物保护基金</p>
+      <p>用于动物权益保护</p>
+    </div>
+    <hr class="border-brass-mid/25 my-8 max-w-md mx-auto" />
+    <p class="text-sm text-text-soft leading-relaxed mb-2 tracking-cn">不是营销手段。</p>
+    <p class="text-sm text-text-soft leading-relaxed mb-6 tracking-cn">是写进所有对外文件的底线。</p>
+    <p class="text-xs font-serif-en text-brass-mid tracking-wide mb-8">第一份《1% 承诺年度透明报告》将于 2027 年 4 月发布。</p>
+    <a
+      href="#one-percent"
+      class="inline-block text-sm text-brass-mid hover:text-brass-bright border border-brass-mid/40 px-5 py-2 rounded-sm tracking-cn transition-colors"
+    >
+      查看承诺细则
+    </a>
+  </section>
 
   <hr class="brass-divider" />
 
   <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase text-center mb-6">
-    Pledge · 1% 承诺（全文）
+    Pledge · 1% 承诺（执行全文）
   </p>
   <!-- ============ Hero · 大字 1% ============ -->
   <section id="one-percent" class="editorial-section pt-section text-center">
@@ -466,31 +485,40 @@ const sixViews = [
     </div>
   </section>
 
+  <section class="editorial-section py-section fade-in max-w-2xl mx-auto px-6" id="reader-note">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-6 text-center">To the reader · 收尾</p>
+    <div class="prose-cn space-y-6 text-text-soft leading-relaxed tracking-cn">
+      <p class="font-serif text-lg text-cream not-italic">
+        读完六观，你可能会觉得有些苛刻——<br />
+        <span class="text-text-soft italic">「为什么要把自己限制得这么死？」</span>
+      </p>
+      <p>
+        因为我们做的不是一时的生意，<br />
+        是一辈子的事。
+      </p>
+      <p>
+        一时的生意，可以灵活、可以变通、可以妥协。<br />
+        一辈子的事，需要一些「不会变的事」作为底色。
+      </p>
+      <p class="text-brass-bright font-serif tracking-cn">这六观，就是我们的底色。</p>
+      <hr class="brass-divider !my-6" />
+      <p>它们会被违反吗？</p>
+      <p>
+        <span class="text-brass-bright font-medium">承诺观会</span>——这是真实的人和真实的组织都会发生的事。<br />
+        但我们会公开说出来，会赔偿，会改进。
+      </p>
+      <p>
+        <span class="text-coral-mid font-medium">合规观不会</span>——这是品牌的生命线。<br />
+        触碰红线那一刻，品牌就死亡了。
+      </p>
+      <hr class="brass-divider !my-8" />
+      <p class="text-center font-serif text-xl md:text-2xl text-brass-bright tracking-cn">这就是底色的真正意义。</p>
+    </div>
+  </section>
+
   <ContactBlock
     title="关于这个承诺"
     intro="如果你有问题、建议、或者想推荐我们认识某个值得支持的环保组织——欢迎写信。"
     subjectHint="1% 承诺"
   />
-
-  <section class="editorial-section py-section fade-in max-w-editorial mx-auto" id="reader-note">
-    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4 text-center">
-      To the reader · 收尾
-    </p>
-    <div class="prose-cn space-y-paragraph text-text-soft leading-relaxed">
-      <p class="font-serif text-lg text-cream tracking-cn not-italic">
-        读完六观，你可能会觉得有些苛刻——「为什么要把自己限制得这么死？」
-      </p>
-      <p>
-        因为我们做的不是一时的生意，是一辈子的事。一时的生意，可以灵活、可以变通、可以妥协。一辈子的事，需要一些「不会变的事」作为底色。这六观，就是我们的底色。
-      </p>
-      <p>
-        它们会被违反吗？<strong class="text-brass-bright">承诺观会</strong>——这是真实的人和真实的组织都会发生的事。但我们会公开说出来，会赔偿，会改进。
-      </p>
-      <p>
-        <strong class="text-coral-mid">合规观不会</strong>——这是品牌的生命线。触碰红线那一刻，品牌就死亡了。
-      </p>
-    </div>
-  </section>
-
-  <PullQuote quote="这就是底色的真正意义。" cite="Foundation · v0.4" />
 </Layout>

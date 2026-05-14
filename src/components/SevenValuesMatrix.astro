@@ -1,0 +1,28 @@
+---
+import { operationsSevenValuesRows } from '../data/operationsPage';
+---
+
+<div class="overflow-x-auto rounded-sm border border-brass-mid/20 bg-ink-elevated/30">
+  <table class="w-full min-w-[640px] text-sm text-left border-collapse">
+    <thead>
+      <tr class="border-b border-brass-mid/25">
+        <th class="py-4 px-4 font-serif text-cream tracking-cn font-normal w-[10rem] md:w-44">七件套 \ 店型</th>
+        <th class="py-4 px-4 font-serif text-brass-bright tracking-cn font-normal">Lite</th>
+        <th class="py-4 px-4 font-serif text-brass-bright tracking-cn font-normal bg-brass-mid/10 border-x border-brass-mid/20">Pro</th>
+        <th class="py-4 px-4 font-serif text-brass-bright tracking-cn font-normal">Max</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        operationsSevenValuesRows.map((row, i) => (
+          <tr class:list={['border-b border-brass-mid/10 last:border-0', i % 2 === 1 ? 'bg-ink-deep/20' : '']}>
+            <th class="py-3 px-4 text-text-soft font-normal tracking-cn align-top">{row.label}</th>
+            <td class="py-3 px-4 text-cream/90 tracking-cn align-top">{row.lite}</td>
+            <td class="py-3 px-4 text-cream/90 tracking-cn align-top bg-brass-mid/5 border-x border-brass-mid/15">{row.pro}</td>
+            <td class="py-3 px-4 text-cream/90 tracking-cn align-top">{row.max}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>

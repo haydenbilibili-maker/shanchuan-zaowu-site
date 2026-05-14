@@ -1,0 +1,46 @@
+---
+interface Props {
+  number: string;
+  title: string;
+  subtitle: string;
+  highlight?: 'coral';
+  href?: string;
+}
+
+const { number, title, subtitle, highlight, href } = Astro.props;
+const isCoral = highlight === 'coral';
+---
+
+<div
+  class:list={[
+    'flex flex-wrap items-baseline gap-3 md:gap-4 py-3 border-b border-brass-mid/15',
+    isCoral && 'border-l-2 border-l-coral-mid pl-4 -ml-1',
+  ]}
+>
+  <span class:list={['text-sm font-serif-en tabular-nums', isCoral ? 'text-coral-mid' : 'text-brass-mid']}>
+    {number}
+  </span>
+  {
+    href ? (
+      <a
+        href={href}
+        class:list={[
+          'text-base md:text-lg font-serif tracking-cn hover:text-brass-bright transition-colors',
+          isCoral ? 'text-coral-mid font-medium' : 'text-cream',
+        ]}
+      >
+        {title}
+      </a>
+    ) : (
+      <span
+        class:list={[
+          'text-base md:text-lg font-serif tracking-cn',
+          isCoral ? 'text-coral-mid font-medium' : 'text-cream',
+        ]}
+      >
+        {title}
+      </span>
+    )
+  }
+  <span class="text-sm text-text-soft ml-auto italic tracking-cn">{subtitle}</span>
+</div>

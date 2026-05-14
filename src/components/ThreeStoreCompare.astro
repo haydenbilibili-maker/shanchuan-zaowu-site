@@ -1,0 +1,41 @@
+---
+import { operationsCompareRows, operationsStoreDetails } from '../data/operationsPage';
+
+const order = ['lite', 'pro', 'max'] as const;
+const byId = Object.fromEntries(operationsStoreDetails.map((s) => [s.id, s]));
+---
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-12 max-w-6xl mx-auto">
+  {
+    order.map((id) => {
+      const s = byId[id];
+      const highlight = id === 'pro';
+      return (
+        <div
+          class:list={[
+            'rounded-sm p-6 md:p-7 border flex flex-col',
+            highlight
+              ? 'border-brass-mid border-2 bg-brass-mid/15 shadow-[0_0_0_1px_rgba(196,167,108,0.12)]'
+              : 'border-brass-mid/20 bg-ink-elevated/40',
+          ]}
+        >
+          <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-1">{s.name}</p>
+          <h3 class="font-serif text-2xl text-cream tracking-cn mb-1">{s.tagline}</h3>
+          <p class="text-sm text-text-soft italic mb-6 leading-relaxed border-b border-brass-mid/15 pb-4">
+            {id === 'lite' && '让自然博物美学在小空间里发光'}
+            {id === 'pro' && '一个完整的自然博物美学体验'}
+            {id === 'max' && '一个城市的自然博物美学地标'}
+          </p>
+          <dl class="space-y-2.5 text-sm flex-1">
+            {operationsCompareRows.map((row) => (
+              <div class="flex flex-wrap justify-between gap-x-2 gap-y-1 border-b border-brass-mid/10 pb-2 last:border-0 last:pb-0">
+                <dt class="text-text-soft shrink-0">{row.label}</dt>
+                <dd class="text-cream font-medium text-right tracking-cn">{id === 'lite' ? row.lite : id === 'pro' ? row.pro : row.max}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      );
+    })
+  }
+</div>

@@ -1,0 +1,118 @@
+---
+interface Props {
+  id: string;
+  number: string;
+  titleCn: string;
+  titleEn: string;
+  tagline: string;
+  paragraphs: string[];
+  negative: string | string[];
+  positive: string | string[];
+  closing: string;
+  highlight?: 'coral';
+}
+
+const { id, number, titleCn, titleEn, tagline, paragraphs, negative, positive, closing, highlight } = Astro.props;
+const isCoral = highlight === 'coral';
+const negList = Array.isArray(negative) ? negative : [negative];
+const posList = Array.isArray(positive) ? positive : [positive];
+
+function isBlockHtml(s: string) {
+  const t = s.trimStart();
+  return ['<div', '<ul', '<ol', '<pre', '<p'].some((x) => t.startsWith(x));
+}
+---
+
+<section
+  class:list={[
+    'editorial-section py-section fade-in scroll-mt-28',
+    isCoral && 'rounded-sm border border-coral-mid/35 bg-coral-deep/10 px-4 md:px-8 py-10 md:py-12',
+  ]}
+  id={id}
+>
+  <p class:list={['section-number mb-4', isCoral && 'text-coral-mid']}>{number}</p>
+  <div class="flex flex-wrap items-baseline gap-3 mb-paragraph">
+    <h2 class="font-serif text-display text-cream tracking-cn">{titleCn}</h2>
+    <span class:list={['font-serif-en italic text-base', isCoral ? 'text-coral-mid' : 'text-text-soft']}>
+      · {titleEn}
+    </span>
+  </div>
+  <p
+    class:list={[
+      'font-serif text-xl italic mb-paragraph tracking-cn leading-relaxed',
+      isCoral ? 'text-coral-mid' : 'text-brass-bright',
+    ]}
+    set:html={tagline}
+  />
+
+  <div class="prose-cn space-y-paragraph">
+    {
+      paragraphs.map((p) =>
+        isBlockHtml(p) ? (
+          <div class="text-text-soft leading-relaxed tracking-cn" set:html={p} />
+        ) : (
+          <p class="text-text-soft leading-relaxed tracking-cn" set:html={p} />
+        ),
+      )
+    }
+  </div>
+
+  <div
+    class:list={[
+      'mt-section p-6 border-l-2',
+      isCoral ? 'border-coral-mid bg-ink-deep/50' : 'border-brass-deep/50 bg-ink-deep/30',
+    ]}
+  >
+    <p class:list={['font-serif-en italic text-xs tracking-widest uppercase mb-2', isCoral ? 'text-coral-mid' : 'text-brass-deep']}>
+      我们不做什么
+    </p>
+    {
+      negList.length > 1 ? (
+        <ol
+          class:list={[
+            'list-decimal pl-5 space-y-2 text-sm leading-relaxed tracking-cn',
+            isCoral ? 'text-text-soft [&>li::marker]:text-coral-mid [&>li::marker]:font-semibold' : 'text-text-soft [&>li::marker]:text-brass-mid',
+          ]}
+        >
+          {negList.map((line) => (
+            <li set:html={line} />
+          ))}
+        </ol>
+      ) : isBlockHtml(negList[0]) ? (
+        <div class="text-sm text-text-soft leading-relaxed tracking-cn" set:html={negList[0]} />
+      ) : (
+        <p class="text-sm text-text-soft leading-relaxed tracking-cn" set:html={negList[0]} />
+      )
+    }
+  </div>
+
+  <div
+    class:list={[
+      'mt-section p-6 border',
+      isCoral ? 'border-coral-mid/25 bg-ink-elevated/50' : 'border-brass-mid/25 bg-ink-elevated/40',
+    ]}
+  >
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">具体动作</p>
+    {
+      posList.length > 1 ? (
+        <ol class="list-decimal pl-5 space-y-2 text-sm text-text-soft leading-relaxed tracking-cn [&>li::marker]:text-brass-bright [&>li::marker]:font-semibold">
+          {posList.map((line) => (
+            <li set:html={line} />
+          ))}
+        </ol>
+      ) : isBlockHtml(posList[0]) ? (
+        <div class="text-sm text-text-soft leading-relaxed tracking-cn" set:html={posList[0]} />
+      ) : (
+        <p class="text-sm text-text-soft leading-relaxed tracking-cn" set:html={posList[0]} />
+      )
+    }
+  </div>
+
+  <p
+    class:list={[
+      'font-serif text-lg italic mt-section tracking-cn leading-relaxed',
+      isCoral ? 'text-coral-mid' : 'text-brass-bright',
+    ]}
+    set:html={closing}
+  />
+</section>

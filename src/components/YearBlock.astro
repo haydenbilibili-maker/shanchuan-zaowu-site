@@ -1,0 +1,65 @@
+---
+import type { YearPlanDetail } from '../data/operationsPage';
+
+interface Props {
+  plan: YearPlanDetail;
+}
+
+const { plan } = Astro.props;
+---
+
+<section class="editorial-section py-section fade-in px-6 max-w-editorial mx-auto" id={`year-${plan.year}`}>
+  <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Year plan · {plan.year}</p>
+  <h2 class="font-serif text-display text-cream tracking-cn mb-2">
+    {plan.year} · {plan.theme}
+  </h2>
+  <p class="font-serif text-xl text-brass-bright italic mb-section tracking-cn leading-relaxed">{plan.thesis}</p>
+
+  <div class="space-y-section">
+    {
+      plan.quarters.map((q) => (
+        <div class="border border-brass-mid/15 rounded-sm p-6 bg-ink-elevated/25">
+          <p class="font-serif text-cream tracking-cn mb-4">{q.title}</p>
+          <ul class="list-none pl-0 space-y-2.5 text-sm text-text-soft">
+            {q.items.map((it) => (
+              <li class="pl-7 relative tracking-cn leading-relaxed">
+                {it.done ? (
+                  <span class="absolute left-0 top-0.5 text-brass-bright font-serif-en text-base" aria-hidden="true">
+                    ☑
+                  </span>
+                ) : (
+                  <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid" aria-hidden="true" />
+                )}
+                {it.text}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="mt-section p-6 border-l-2 border-brass-mid bg-ink-deep/30 rounded-sm">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Targets · 全年关键数字（目标）</p>
+    <dl class="grid gap-3 sm:grid-cols-2 text-sm">
+      {plan.metrics.map((m) => (
+        <div>
+          <dt class="text-text-soft mb-1 tracking-cn">{m.label}</dt>
+          <dd class="text-cream font-medium tracking-cn">{m.value}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+
+  <div class="mt-section p-6 border border-brass-deep/25 bg-ink-deep/20 rounded-sm">
+    <p class="font-serif-en italic text-brass-deep text-xs tracking-widest uppercase mb-3">Avoid · 这一年要避免的事</p>
+    <ul class="list-none pl-0 space-y-2 text-sm text-text-soft">
+      {plan.avoid.map((line) => (
+        <li class="pl-6 relative tracking-cn leading-relaxed">
+          <span class="absolute left-0 top-2 text-brass-deep">✗</span>
+          {line}
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

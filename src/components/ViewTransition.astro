@@ -1,0 +1,16 @@
+---
+interface Props {
+  number: string;
+  text: string;
+}
+const { number, text } = Astro.props;
+---
+
+<div class="editorial-section py-12 md:py-16 px-6 max-w-editorial mx-auto text-center fade-in">
+  <p class="font-serif-en italic text-xs text-brass-mid tracking-widest mb-3">
+    —————— {number} ——————
+  </p>
+  <p class="text-sm text-text-soft italic tracking-cn">{text}</p>
+</div>
+
+<hr class="brass-divider" />

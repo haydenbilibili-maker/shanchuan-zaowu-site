@@ -1,0 +1,134 @@
+---
+import type { StoreDetail } from '../data/operationsPage';
+
+interface Props {
+  store: StoreDetail;
+}
+
+const { store } = Astro.props;
+---
+
+<section class="editorial-section py-section fade-in px-6 max-w-editorial mx-auto" id={store.id}>
+  <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">{store.sectionEyebrow}</p>
+  <h2 class="font-serif text-display text-cream tracking-cn leading-tight mb-paragraph">{store.headline}</h2>
+
+  <div class="mb-section p-6 border border-brass-mid/20 bg-ink-elevated/35 rounded-sm">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4">Key parameters · 关键参数</p>
+    <dl class="grid gap-3 text-sm text-text-soft sm:grid-cols-2">
+      <div>
+        <dt class="text-brass-mid font-serif-en italic text-xs uppercase tracking-wider mb-1">面积范围</dt>
+        <dd class="text-cream tracking-cn">{store.params.area}</dd>
+      </div>
+      <div>
+        <dt class="text-brass-mid font-serif-en italic text-xs uppercase tracking-wider mb-1">适用场所</dt>
+        <dd class="text-cream tracking-cn">{store.params.venueType}</dd>
+      </div>
+      <div>
+        <dt class="text-brass-mid font-serif-en italic text-xs uppercase tracking-wider mb-1">投资估算</dt>
+        <dd class="text-cream tracking-cn">{store.params.investment}</dd>
+      </div>
+      <div>
+        <dt class="text-brass-mid font-serif-en italic text-xs uppercase tracking-wider mb-1">人员配置</dt>
+        <dd class="text-cream tracking-cn">{store.params.staff}</dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="text-brass-mid font-serif-en italic text-xs uppercase tracking-wider mb-1">主营内容</dt>
+        <dd class="text-cream tracking-cn">{store.params.mainContent}</dd>
+      </div>
+      <div>
+        <dt class="text-brass-mid font-serif-en italic text-xs uppercase tracking-wider mb-1">月营收预估</dt>
+        <dd class="text-cream tracking-cn">{store.params.monthlyRevenue}</dd>
+      </div>
+      <div>
+        <dt class="text-brass-mid font-serif-en italic text-xs uppercase tracking-wider mb-1">回本周期</dt>
+        <dd class="text-cream tracking-cn">{store.params.payback}</dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="text-brass-mid font-serif-en italic text-xs uppercase tracking-wider mb-1">品牌角色</dt>
+        <dd class="text-cream tracking-cn">{store.params.role}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="prose-cn space-y-section">
+    <div>
+      <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">In store · 店里有什么</p>
+      <ul class="list-none pl-0 space-y-2 text-sm text-text-soft">
+        {store.has.map((line) => (
+          <li class="pl-6 relative tracking-cn leading-relaxed">
+            <span class="absolute left-0 top-2 text-brass-mid">☑</span>
+            {line}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    {
+      store.notHas.length > 0 && (
+        <div>
+          <p class="font-serif-en italic text-brass-deep text-xs tracking-widest uppercase mb-3">Not in store · 店里没有什么</p>
+          <ul class="list-none pl-0 space-y-2 text-sm text-text-soft">
+            {store.notHas.map((line) => (
+              <li class="pl-6 relative tracking-cn leading-relaxed">
+                <span class="absolute left-0 top-2 text-brass-deep">✗</span>
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    <div>
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Venues · 适合开店的场所</p>
+      <ul class="list-none pl-0 space-y-2 text-sm text-text-soft">
+        {store.venues.map((line) => (
+          <li class="pl-6 relative tracking-cn leading-relaxed">
+            <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid" />
+            {line}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Content rhythm · 内容生产节奏</p>
+      <ul class="list-none pl-0 space-y-2 text-sm text-text-soft">
+        {store.contentRhythm.map((line) => (
+          <li class="pl-6 relative tracking-cn leading-relaxed">
+            <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid" />
+            {line}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    {
+      store.diffBullets && store.diffBullets.length > 0 && (
+        <div class="p-6 border-l-2 border-brass-bright bg-ink-deep/30 rounded-sm">
+          <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">Differentiation · 核心差异化</p>
+          <ol class="list-decimal pl-5 space-y-2 text-sm text-text-soft tracking-cn leading-relaxed [&>li::marker]:text-brass-bright">
+            {store.diffBullets.map((b) => (
+              <li>{b}</li>
+            ))}
+          </ol>
+        </div>
+      )
+    }
+
+    {
+      store.extraBlocks?.map((block) => (
+        <div class="p-6 border border-brass-mid/25 bg-ink-elevated/30 rounded-sm">
+          <p class="font-serif text-lg text-cream tracking-cn mb-3">{block.title}</p>
+          <div class="space-y-paragraph text-sm text-text-soft tracking-cn leading-relaxed">
+            {block.body.map((p) => (
+              <p>{p}</p>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<hr class="brass-divider" />

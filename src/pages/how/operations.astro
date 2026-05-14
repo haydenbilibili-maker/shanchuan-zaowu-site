@@ -1,30 +1,235 @@
 ---
 import Layout from '../../components/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
-import WIPNotice from '../../components/WIPNotice.astro';
+import PullQuote from '../../components/PullQuote.astro';
+import NoListItem from '../../components/NoListItem.astro';
+import ThreeStoreCompare from '../../components/ThreeStoreCompare.astro';
+import StoreDetailBlock from '../../components/StoreDetailBlock.astro';
+import SevenValuesMatrix from '../../components/SevenValuesMatrix.astro';
+import ThreeYearTimeline from '../../components/ThreeYearTimeline.astro';
+import YearBlock from '../../components/YearBlock.astro';
+import {
+  operationsStoreDetails,
+  operationsYearPlans,
+  operationsNotDoing,
+} from '../../data/operationsPage';
 ---
 
 <Layout
-  title="经营模式与三年规划"
-  description="单店模型、复利路径与 2026–2028 路线图——山海造物 How · 运营"
+  title="经营模式 · 怎么做 · 山海造物"
+  description="不装的规模化 · 三档店型 · 三年规划——单店模型与 2026–2028 路线图"
 >
   <PageHero
-    eyebrow="How · 运营与规划"
-    title="一家店如何长期活下去，<br />三年要走到哪儿"
-    lead="经营模式与三年规划合并在此：前者回答单店如何成立，后者回答城市数、店型与组织节奏——都用我们敢负责任的尺度写清楚。"
+    eyebrow="How · 03 · 经营模式"
+    title="不装的规模化"
+    lead="我们以小博物馆的密度，走 30 年的耐心。三档店型 + 三年节奏 = 一辈子的事——急的事不做，重要的事慢慢做。"
   />
 
   <hr class="brass-divider" />
 
-  <WIPNotice
-    topic="经营模式 · 单店模型与三年复利路径"
-    expectedVersion="v0.3"
-  />
+  <!-- §1 · 经营哲学 -->
+  <section class="editorial-section py-section fade-in max-w-editorial mx-auto px-6">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4">Philosophy · 经营哲学</p>
+    <h2 class="font-serif text-display text-cream tracking-cn mb-paragraph">不装的规模化</h2>
+    <div class="prose-cn space-y-paragraph text-text-soft">
+      <p><strong class="text-cream">规模化不是终点，是底色</strong></p>
+      <p>
+        很多品牌做规模化是为了「做大」——融资、上市、做估值、做出场。<br />
+        我们做规模化不是为了这些。
+      </p>
+      <p>我们做规模化是因为：</p>
+      <ul class="list-disc pl-5 space-y-2 text-sm">
+        <li>
+          <strong class="text-brass-bright">要让「自然博物美学」成为日常</strong>——一个城市只有一家店不够，至少要让住在这个城市的人<strong class="text-cream">走路 30 分钟内能到一家</strong>
+        </li>
+        <li><strong class="text-brass-bright">要让团队能持续做事</strong>——单店收入支撑不了一支愿意做 30 年的团队</li>
+        <li>
+          <strong class="text-brass-bright">要让加盟方有标准可循</strong>——加盟不是收钱，是<strong class="text-cream">给愿意做同样事的人一套体系</strong>
+        </li>
+      </ul>
+      <p>所以规模化是手段，不是目的。</p>
+
+      <p class="pt-paragraph"><strong class="text-cream">我们的对标不是泡泡玛特，是中川政七商店</strong></p>
+      <div class="p-6 border border-brass-mid/20 bg-ink-elevated/30 rounded-sm text-sm leading-relaxed tracking-cn">
+        <p class="text-cream font-medium mb-2">中川政七商店：日本 · 1716 年创办 · 309 年历史 · 60+ 家店 · 年营收 60 亿日元</p>
+        <p class="mb-2">它的核心：</p>
+        <ul class="list-disc pl-5 space-y-1 text-text-soft">
+          <li>不快速扩张 · 不靠资本驱动 · 不放弃工艺立场 · 不脱离地方文化</li>
+          <li>但用商业 + 设计 + 内容把传统重新包装</li>
+          <li>让「看似过时的事」重新成为「年轻人想买的事」</li>
+        </ul>
+      </div>
+      <p>我们羡慕中川政七商店的 309 年。<br />我们不羡慕泡泡玛特的 5 年百倍增长。</p>
+
+      <p class="pt-paragraph"><strong class="text-cream">三档店型 + 三年节奏 = 一辈子的事</strong></p>
+      <p>我们的扩张设计是：</p>
+      <ul class="list-disc pl-5 space-y-2 text-sm">
+        <li><strong class="text-cream">三档店型</strong> —→ 灵活适配不同城市/物业/合作方</li>
+        <li><strong class="text-cream">三年节奏</strong> —→ 避免揠苗助长</li>
+        <li><strong class="text-cream">每店深耕</strong> —→ 不做「开了再说」的扩张</li>
+        <li><strong class="text-cream">每年 1-2 店</strong> —→ 与团队成长速度匹配</li>
+      </ul>
+      <p>这意味着——</p>
+      <ul class="list-disc pl-5 space-y-2 text-sm">
+        <li>第 3 年我们可能只有 4-6 家店（而不是 60 家）</li>
+        <li>但每一家都活得好</li>
+        <li>每一个店长都是能独立运营的「小山头」</li>
+        <li>整个品牌的根基扎得稳</li>
+      </ul>
+      <p class="text-cream font-serif tracking-cn">
+        <strong class="text-brass-bright">急的事不做，重要的事慢慢做</strong>——这是我们的规模化逻辑。
+      </p>
+    </div>
+
+    <PullQuote quote="慢，不是因为我们做不快，是因为我们想做得久。" cite="经营模式 · v0.4" />
+  </section>
 
   <hr class="brass-divider" />
 
-  <WIPNotice
-    topic="三年规划 · 2026–2028 路线图（含季度里程碑）"
-    expectedVersion="v0.3"
-  />
+  <!-- §5 · 三档对照表 -->
+  <section class="editorial-section py-section fade-in px-6">
+    <div class="max-w-6xl mx-auto text-center mb-10">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Compare · 三档对照</p>
+      <h2 class="font-serif text-display text-cream tracking-cn mb-4">三档店型 · 一目了然</h2>
+      <p class="text-text-soft max-w-xl mx-auto leading-relaxed tracking-cn">从轻盈的入口到城市的灯塔。Pro 列为<strong class="text-brass-bright">主力模型</strong>，视觉权重最高。</p>
+    </div>
+    <ThreeStoreCompare />
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- §2-4 · 三档详解 -->
+  {operationsStoreDetails.map((store) => <StoreDetailBlock store={store} />)}
+
+  <!-- §6 · 非拍照价值七件套 -->
+  <section class="editorial-section py-section fade-in px-6 max-w-5xl mx-auto">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">Values matrix · 七件套 × 三档</p>
+    <h2 class="font-serif text-display text-cream text-center tracking-cn mb-4">非拍照价值七件套 · 三档应用矩阵</h2>
+    <p class="text-text-soft text-center max-w-2xl mx-auto mb-6 leading-relaxed tracking-cn">
+      非拍照价值是品牌的灵魂——但在三档店型中<strong class="text-cream">部署方式不同</strong>。
+    </p>
+    <div class="prose-cn max-w-editorial mx-auto mb-10 text-sm text-text-soft space-y-2">
+      <p class="text-cream font-medium tracking-cn">七件套：</p>
+      <ol class="list-decimal pl-5 space-y-1">
+        <li>教育 —— 标本知识传递</li>
+        <li>本地客社群 —— 常客 / 复购 / 关系</li>
+        <li>复购机制 —— 季节主题 / 会员</li>
+        <li>内容生产 —— 公众号 / 小红书 / 视频</li>
+        <li>Concierge —— 白手套服务</li>
+        <li>博物馆功能 —— 公共开放 / 学术合作</li>
+        <li>公共客厅服务 —— 妈妈饺子 / AED / 应急</li>
+      </ol>
+    </div>
+    <SevenValuesMatrix />
+    <div class="prose-cn max-w-editorial mx-auto mt-section space-y-paragraph text-text-soft text-sm leading-relaxed">
+      <p><strong class="text-cream">为什么不「一刀切」</strong></p>
+      <p>
+        不同店型的「重量」不同——小空间硬要塞所有功能 = 不专业；大空间不做完整功能 = 浪费空间。七件套是品牌价值观，但每个店要找到自己的呈现方式。
+      </p>
+      <p class="text-cream font-serif tracking-cn">
+        这是「克制」的真正含义：<strong class="text-brass-bright">不是少做，而是做对的那些。</strong>
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- §7 · 妈妈的饺子 -->
+  <section class="editorial-section py-section fade-in px-6 max-w-editorial mx-auto text-center">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Pro / Max 强制项</p>
+    <h2 class="font-serif text-display text-cream tracking-cn mb-4">妈妈的饺子 · A 套餐</h2>
+    <p class="text-lg text-brass-bright italic mb-10 tracking-cn">不评判 · 不打扰 · 不要钱</p>
+    <div class="text-left prose-cn max-w-2xl mx-auto space-y-paragraph text-text-soft">
+      <div class="p-6 border border-brass-mid/20 bg-ink-elevated/30 rounded-sm text-sm leading-relaxed tracking-cn">
+        <p><strong class="text-cream">供应内容</strong>：猪肉酸菜饺子（10 个）+ 一杯热茶</p>
+        <p><strong class="text-cream">触发条件</strong>：顾客明确说「今天没吃饭」或类似表达</p>
+        <p><strong class="text-cream">供应价格</strong>：免费</p>
+        <p><strong class="text-cream">供应频率</strong>：每店每天最多 5 份（防止系统性滥用）</p>
+        <p><strong class="text-cream">供应时段</strong>：营业时间内全时段</p>
+        <p class="pt-2 text-cream">适用店型：<strong class="text-brass-bright">Pro / Max 强制</strong> · Lite 不做（场地与人员限制）</p>
+      </div>
+      <p><strong class="text-cream">为什么是「妈妈的饺子」</strong></p>
+      <p>不是为了营销 · 不是为了拍照 · 不是为了引流。</p>
+      <p>
+        是因为：我们做这件事，会接触到城市里各种各样的人——有富裕的、有刚来打工的、有失业的、有刚分手的、有刚下夜班的。我们的店是「自然博物美学」——这听起来很高雅。但我们不希望它<strong class="text-cream">高雅到让人不敢进来</strong>。
+      </p>
+      <p>一份饺子 · 不要钱 · 不评判 · 不打扰。我们是这个城市的一个「小客厅」——不是只对消费得起的人开放。这就是「妈妈的饺子」的本质。</p>
+      <p><strong class="text-cream">当前阶段的「未完成」</strong></p>
+      <p class="text-sm">
+        2026 年初：山海造物长春首店开业时，妈妈饺子模块尚未完整 SOP。待 1-2 个月现场测试后形成完整 v0.2 SOP（谁做、怎么判断、如何记录、异常情境）。每家 Pro / Max 店开业前必须完成本地化 SOP 确认。
+      </p>
+      <p class="font-serif text-lg text-brass-bright italic text-center pt-4 tracking-cn">
+        「不评判 · 不打扰 · 不要钱」——这是「妈妈的饺子」三件不做的事。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- §11 · 三年路线图（视觉） -->
+  <section class="editorial-section py-section fade-in px-6">
+    <div class="max-w-6xl mx-auto text-center mb-10">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Roadmap · 三年节奏</p>
+      <h2 class="font-serif text-display text-cream tracking-cn mb-4">关键里程碑路线图</h2>
+      <p class="text-text-soft max-w-xl mx-auto leading-relaxed tracking-cn">2026 首店奠基 · 2027 扩张校准 · 2028 规模化成形</p>
+    </div>
+    <ThreeYearTimeline />
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- §8-10 · 三年详细 -->
+  {operationsYearPlans.map((plan) => <YearBlock plan={plan} />)}
+
+  <!-- §12 · 我们不做的事 -->
+  <section class="editorial-section py-section fade-in px-6 max-w-editorial mx-auto">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">Boundaries · 边界</p>
+    <h2 class="font-serif text-display text-cream text-center tracking-cn mb-4">我们不做的事</h2>
+    <p class="text-text-soft text-center mb-section max-w-xl mx-auto leading-relaxed tracking-cn">
+      比「我们要做什么」更重要的，是「我们不做什么」。经营模式的边界，是品牌长期健康的护栏。
+    </p>
+    <ul class="list-none pl-0 space-y-1 max-w-2xl mx-auto">
+      {operationsNotDoing.map((text) => <NoListItem text={text} />)}
+    </ul>
+    <p class="text-center mt-12 text-base md:text-lg text-text-soft italic leading-relaxed tracking-cn">
+      当我们做不到这 10 条时，<br />
+      <span class="text-cream not-italic font-serif">山海造物就不再是山海造物了。</span>
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- §13 · 收尾 -->
+  <section class="editorial-section py-section fade-in px-6 max-w-2xl mx-auto">
+    <div class="prose-cn space-y-6 text-text-soft text-base md:text-lg leading-relaxed tracking-cn">
+      <p class="text-cream">读完这一页，你看到的不是一个「商业计划」。</p>
+      <p>
+        而是：<br />
+        一个工坊<br />
+        两位主理人<br />
+        一座城市的第一家店<br />
+        三年之后可能 8-10 家的小品牌<br />
+        30 年之后或许还在的「自然博物美学」
+      </p>
+      <div class="text-brass-bright font-serif space-y-2 py-4 text-cream">
+        <p>我们走得慢，但我们走得准。</p>
+        <p>我们不大，但我们扎得深。</p>
+        <p>我们不快，但我们走得久。</p>
+      </div>
+      <p>
+        把山海带回家——这件事不是 3 年的事，<br />
+        是一辈子的事。
+      </p>
+      <hr class="brass-divider !my-8" />
+      <p class="text-center">
+        如果你愿意陪我们走一段——<br />
+        不论你是访客 / 合作方 / 投资人 / 加盟方——<br />
+        请通过
+        <a href="mailto:hello@shanhaizaowu.com" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">
+          hello@shanhaizaowu.com
+        </a>
+        联系我们。
+      </p>
+    </div>
+  </section>
 </Layout>

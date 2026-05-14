@@ -1,0 +1,38 @@
+---
+import { operationsTimelineColumns } from '../data/operationsPage';
+---
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-12 max-w-6xl mx-auto">
+  {
+    operationsTimelineColumns.map((col) => (
+      <div class="rounded-sm border border-brass-mid/20 bg-ink-elevated/40 p-6 md:p-7 flex flex-col">
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">Year · {col.year}</p>
+        <h3 class="font-serif text-3xl text-cream tracking-cn mb-2">{col.year}</h3>
+        <p class="text-base text-brass-bright font-serif italic mb-6 tracking-cn border-b border-brass-mid/15 pb-4">{col.theme}</p>
+        <ul class="space-y-3 text-sm text-text-soft mb-6 flex-1">
+          {col.milestones.map((m, i) => (
+            <li class="flex gap-2 tracking-cn leading-relaxed">
+              <span class="text-brass-mid font-serif-en tabular-nums shrink-0">{i + 1}.</span>
+              <span class="text-cream/90">{m}</span>
+            </li>
+          ))}
+        </ul>
+        <hr class="border-brass-mid/20 my-2" />
+        <dl class="space-y-2 text-xs text-text-soft">
+          <div class="flex justify-between gap-2">
+            <dt class="text-brass-mid font-serif-en italic uppercase tracking-wider">店数</dt>
+            <dd class="text-cream font-medium">{col.stores}</dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-brass-mid font-serif-en italic uppercase tracking-wider">营收</dt>
+            <dd class="text-cream font-medium">{col.revenue}</dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-brass-mid font-serif-en italic uppercase tracking-wider">人数</dt>
+            <dd class="text-cream font-medium">{col.staff}</dd>
+          </div>
+        </dl>
+      </div>
+    ))
+  }
+</div>
