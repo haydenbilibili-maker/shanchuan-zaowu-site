@@ -1,0 +1,80 @@
+---
+import Layout from '../../components/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
+
+const pillars = [
+  {
+    num: 'I',
+    title: '五感',
+    en: 'Senses',
+    lead: '进店之前，你已经在感受我们。',
+    href: '/how/senses',
+  },
+  {
+    num: 'II',
+    title: '空间',
+    en: 'Space',
+    lead: '门店即博物馆 · 门店即城市公共客厅。',
+    href: '/how/space',
+  },
+  {
+    num: 'III',
+    title: '运营与规划',
+    en: 'Operations',
+    lead: '单店模型、复利路径与三年路线图。',
+    href: '/how/operations',
+  },
+  {
+    num: 'IV',
+    title: '科技',
+    en: 'Technology',
+    lead: '技术是隐形的——只在让体验更安静的时候出现。',
+    href: '/how/tech',
+  },
+];
+---
+
+<Layout
+  title="如何实现 · How"
+  description="五感、空间、运营与规划、科技——山海造物把理念落到日常的方法论"
+>
+  <PageHero
+    eyebrow="How · 如何实现"
+    title="理念要落在<br />可被感受的日常里"
+    lead="这一层回答「怎么做」：不是口号清单，而是五感、空间、经营节奏与科技选择——四块彼此咬合，缺一块就不是山海造物。"
+  />
+
+  <hr class="brass-divider" />
+
+  <section class="editorial-section-wide py-section fade-in">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3 text-center">
+      Four Pillars · 四个支点
+    </p>
+    <h2 class="font-serif text-display text-cream text-center mb-section tracking-cn">
+      从四个入口深入
+    </h2>
+
+    <ol class="grid sm:grid-cols-2 gap-px bg-brass-mid/20 max-w-5xl mx-auto">
+      {pillars.map((p) => (
+        <li class="bg-ink">
+          <a
+            href={p.href}
+            class="group block p-8 h-full hover:bg-ink-elevated/60 transition-colors duration-300"
+          >
+            <div class="flex items-baseline gap-3 mb-4">
+              <span class="font-serif-en italic text-brass-mid/60 text-2xl">{p.num}</span>
+              <h3 class="font-serif text-2xl text-brass-bright tracking-cn group-hover:text-cream transition-colors">
+                {p.title}
+              </h3>
+              <span class="font-serif-en italic text-text-soft text-xs">· {p.en}</span>
+            </div>
+            <p class="text-sm text-cream/85 tracking-cn leading-relaxed mb-6 italic">{p.lead}</p>
+            <span class="inline-flex items-center gap-2 text-xs text-brass-mid font-serif-en italic tracking-widest uppercase">
+              Open page →
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+</Layout>

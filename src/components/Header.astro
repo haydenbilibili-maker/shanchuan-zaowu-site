@@ -1,16 +1,20 @@
 ---
 const navItems = [
-  { href: '/', label: '首页' },
-  { href: '/products', label: '我们做什么' },
-  { href: '/about', label: '我们是谁' },
-  { href: '/senses', label: '五感' },
-  { href: '/space', label: '空间' },
-  { href: '/values', label: '价值观' },
-  { href: '/commitment', label: '承诺' },
-  { href: '/notes', label: '笔记' },
+  { href: '/what', label: '我们做什么' },
+  { href: '/who', label: '我们是谁' },
+  { href: '/why', label: '何以如此' },
+  { href: '/how', label: '如何实现' },
+  { href: '/foundation', label: '价值底座' },
 ];
 
 const currentPath = Astro.url.pathname;
+
+function isNavActive(href: string): boolean {
+  if (href === '/how') {
+    return currentPath === '/how' || currentPath.startsWith('/how/');
+  }
+  return currentPath === href || currentPath.startsWith(`${href}/`);
+}
 ---
 
 <header class="sticky top-0 z-50 bg-ink/85 backdrop-blur-md border-b border-brass-mid/15">
@@ -31,7 +35,7 @@ const currentPath = Astro.url.pathname;
             href={item.href}
             class:list={[
               'text-text-soft hover:text-brass-mid transition-colors duration-200',
-              currentPath === item.href && 'text-brass-mid',
+              isNavActive(item.href) && 'text-brass-mid',
             ]}
           >
             {item.label}
@@ -110,7 +114,7 @@ const currentPath = Astro.url.pathname;
             href={item.href}
             class:list={[
               'block py-2 text-text-soft',
-              currentPath === item.href && 'text-brass-mid',
+              isNavActive(item.href) && 'text-brass-mid',
             ]}
           >
             {item.label}

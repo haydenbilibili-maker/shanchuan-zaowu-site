@@ -10,4 +10,4 @@
 
 **v0.1 状态**：尚未放置真实素材，`SenseSpread` 组件会自动渲染黄铜色占位块（参考文档 §6.1 方案 B）。
 
-**替换方法**：拍摄到位后，把 5 张 JPG 放在本目录，然后在 `src/pages/senses.astro` 里给每个 `SenseSpread` 加上 `image="/images/senses/xxx.jpg"` 即可。
+**替换方法**：拍摄到位后，把 5 张 JPG 放在本目录，然后在 `src/pages/how/senses.astro` 里给每个 `SenseSpread` 加上 `image="/images/senses/xxx.jpg"` 即可。

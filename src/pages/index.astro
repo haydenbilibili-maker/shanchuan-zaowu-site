@@ -4,6 +4,41 @@ import AudienceCard from '../components/AudienceCard.astro';
 import CommitmentBar from '../components/CommitmentBar.astro';
 import PullQuote from '../components/PullQuote.astro';
 
+const pillars = [
+  {
+    number: 'What',
+    title: '我们做什么',
+    subtitle: '产品、展陈与「不做」清单',
+    body: '标本、自然小匣、衍生品与主题展柜——以及我们拒绝成为的那种店。',
+    cta: '阅读 What',
+    href: '/what',
+  },
+  {
+    number: 'Who',
+    title: '我们是谁',
+    subtitle: '团队、起源与长期坐标',
+    body: '从长春出发的品牌与一群人——把博物学当作日常方法，而不是营销皮肤。',
+    cta: '阅读 Who',
+    href: '/who',
+  },
+  {
+    number: 'Why',
+    title: '何以如此',
+    subtitle: '三个判断与坐标',
+    body: '若这些判断在你看来不成立，我们大概率不是同路人——省彼此时间。',
+    cta: '阅读 Why',
+    href: '/why',
+  },
+  {
+    number: 'How',
+    title: '如何实现',
+    subtitle: '五感、空间、运营、科技',
+    body: '理念落在可被感受的日常里——四个支点彼此咬合。',
+    cta: '进入 How',
+    href: '/how',
+  },
+];
+
 const audiences = [
   {
     number: 'I',
@@ -11,7 +46,7 @@ const audiences = [
     subtitle: '你想把铺位给一个长期主义的品牌',
     body: '我们正在寻找有美学底蕴的文创街区与文化综合体。从长春这有山起步，正在为 2026-2028 年的 6-10 家直营店选址。',
     cta: '了解我们对物业的要求',
-    href: '/properties',
+    href: '/for-properties',
   },
   {
     number: 'II',
@@ -19,7 +54,7 @@ const audiences = [
     subtitle: '你在找一个不追风口的标的',
     body: '未来 12-18 个月将启动正式融资。我们寻找接受 5-10 年回报周期的耐心资本——不接受要求短期爆发的对赌资本。',
     cta: '了解我们的资本观',
-    href: '/investors',
+    href: '/for-investors',
   },
   {
     number: 'III',
@@ -27,7 +62,7 @@ const audiences = [
     subtitle: '你想做一件 30 年的事',
     body: '加盟 toolkit 仍在搭建中，预计 2027 年下半年开放有限加盟。我们会拒绝大多数加盟意向，留下少数真正长期同行的人。',
     cta: '留下邮箱接收开放通知',
-    href: '/franchise',
+    href: '/for-franchise',
   },
   {
     number: 'IV',
@@ -87,6 +122,31 @@ const audiences = [
     </div>
   </section>
 
+  {/* ============ What / Who / Why / How · 叙事四卡 ============ */}
+  <section class="editorial-section-wide pt-section">
+    <div class="text-center mb-section fade-in">
+      <p class="font-serif-en italic text-text-soft text-sm tracking-widest uppercase mb-4">
+        Narrative · 从四个问题读我们
+      </p>
+      <h2 class="display-title text-cream">
+        What · Who · Why · How
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-brass-mid/10 fade-in">
+      {pillars.map((p) => (
+        <AudienceCard
+          number={p.number}
+          title={p.title}
+          subtitle={p.subtitle}
+          body={p.body}
+          cta={p.cta}
+          href={p.href}
+        />
+      ))}
+    </div>
+  </section>
+
   {/* ============ 4 Audience Cards ============ */}
   <section class="editorial-section-wide pt-section">
     <div class="text-center mb-section fade-in">
@@ -115,75 +175,45 @@ const audiences = [
   {/* ============ 承诺导航条 ============ */}
   <CommitmentBar />
 
-  {/* ============ 我们做什么（简介 + 入口）============ */}
-  <section class="editorial-section pt-section">
-    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <div class="fade-in">
-        <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-4">
-          What We Make · 我们做什么
+  {/* ============ 价值底座 + How 入口 ============ */}
+  <section class="editorial-section-wide pt-section pb-section">
+    <div class="grid md:grid-cols-3 gap-px bg-brass-mid/15 fade-in">
+      <a
+        href="/foundation"
+        class="group block p-8 bg-ink hover:bg-ink-elevated/60 transition-colors"
+      >
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Foundation</p>
+        <h3 class="font-serif text-xl text-cream tracking-cn mb-3 group-hover:text-brass-bright transition-colors">
+          价值底座
+        </h3>
+        <p class="text-sm text-text-soft leading-relaxed tracking-cn">
+          六观裁定标准与 1% 营收承诺——同一条底线上的两面。
         </p>
-        <h2 class="section-title text-cream">
-          不是标本店
-        </h2>
-        <div class="prose-cn space-y-paragraph">
-          <p>
-            如果只是"卖标本"，这件事其实早就有人在做。我们做的是别的——把一种叫<strong class="text-brass-bright">自然博物美学</strong>的东西，让它进入日常生活。
-          </p>
-          <p>
-            自然小匣、衍生品、主题展柜、双 IP（马上有 + 小黄）——这些是我们的产品语言。
-          </p>
-          <p>
-            维多利亚博物学家奇珍柜的视觉系统、黄铜与暗调的色彩根基、博物馆级的灯光与档案——这些是我们的空间语言。
-          </p>
-        </div>
-        <a href="/products" class="inline-flex items-center gap-2 mt-paragraph text-cream hover:text-brass-mid transition-colors group">
-          <span>我们做什么</span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
-               class="group-hover:translate-x-1 transition-transform">
-            <line x1="3" y1="8" x2="13" y2="8" />
-            <polyline points="9,4 13,8 9,12" />
-          </svg>
-        </a>
-      </div>
-
-      <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center fade-in">
-        <span class="font-serif-en italic text-brass-mid/40 text-3xl">Specimens</span>
-        {/* 真实素材：<img src="/images/home/products.jpg" alt="自然小匣 · 标本展柜" class="w-full h-full object-cover" /> */}
-      </figure>
-    </div>
-  </section>
-
-  {/* ============ 五感入口 ============ */}
-  <section class="editorial-section-wide pt-section">
-    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <figure class="aspect-[4/5] bg-gradient-to-br from-ink-deep to-ink-elevated border border-brass-mid/20 flex items-center justify-center order-2 md:order-1 fade-in">
-        <span class="font-serif-en italic text-brass-mid/40 text-3xl">Five Senses</span>
-      </figure>
-
-      <div class="order-1 md:order-2 fade-in">
-        <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-4">
-          Five Senses · 五感
+      </a>
+      <a
+        href="/how/senses"
+        class="group block p-8 bg-ink hover:bg-ink-elevated/60 transition-colors"
+      >
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Senses</p>
+        <h3 class="font-serif text-xl text-cream tracking-cn mb-3 group-hover:text-brass-bright transition-colors">
+          五感视觉基线
+        </h3>
+        <p class="text-sm text-text-soft leading-relaxed tracking-cn">
+          进店之前，你已经在感受我们。
         </p>
-        <h2 class="section-title text-cream">
-          进店之前<br />你已经在感受我们了
-        </h2>
-        <div class="prose-cn space-y-paragraph">
-          <p>
-            视、听、嗅、触、味——我们设计的不是一家店，是一组叠加的感官。
-          </p>
-          <p>
-            光线偏暗但不晦涩、声音不夺人耳朵、气味是物质本身、黄铜在指尖上是凉的。
-          </p>
-        </div>
-        <a href="/senses" class="inline-flex items-center gap-2 mt-paragraph text-cream hover:text-brass-mid transition-colors group">
-          <span>感受五感</span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
-               class="group-hover:translate-x-1 transition-transform">
-            <line x1="3" y1="8" x2="13" y2="8" />
-            <polyline points="9,4 13,8 9,12" />
-          </svg>
-        </a>
-      </div>
+      </a>
+      <a
+        href="/notes"
+        class="group block p-8 bg-ink hover:bg-ink-elevated/60 transition-colors"
+      >
+        <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">Notes</p>
+        <h3 class="font-serif text-xl text-cream tracking-cn mb-3 group-hover:text-brass-bright transition-colors">
+          最新笔记
+        </h3>
+        <p class="text-sm text-text-soft leading-relaxed tracking-cn">
+          公众号长文与内部备忘的公开整理。
+        </p>
+      </a>
     </div>
   </section>
 

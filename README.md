@@ -1,10 +1,10 @@
-# 山海造物 · 官网 v0.2
+# 山海造物 · 官网 v0.3
 
 > 把山海带回家 · *Bring Nature Home*
 
 技术栈：**Astro 5 + Tailwind v3.4 + TypeScript**，部署目标 **Cloudflare Pages**。
 
-视觉基线：`/senses` 页（五感）。视觉主题：**双主题自适应 · Cabinet of Curiosities × Day-Night**
+视觉基线：`/how/senses` 页（五感）。视觉主题：**双主题自适应 · Cabinet of Curiosities × Day-Night**
 
 - **深色模式**（默认）—— 夜里点灯翻档案 · 暗黄铜博物馆
 - **浅色模式** —— 白天在工坊整理标本 · 微暖白 + 深色文字的"日间博物馆"
@@ -23,11 +23,12 @@ npm install
 # 2. 启动开发服务器
 npm run dev    # http://localhost:4321/
 
-# 3. 主要 routes
-#    /            首页（vision hero + 4 audience + 1% 承诺导航）
-#    /senses      五感视觉基线页
-#    /about /products /space /commitment /values /talent
-#    /properties /investors /franchise /operations /plan /tech /notes
+# 3. 主要 routes（v0.3 信息架构 · Why / How / What / Who + Foundation）
+#    /what /who /why /how /foundation
+#    /how/senses /how/space /how/operations /how/tech
+#    /for-properties /for-franchise /for-investors
+#    /talent /notes /benchmarks /digital-ops /hardcore-tech /sound-manual
+#    旧 URL → 新 URL：见 public/_redirects（301，Cloudflare Pages）
 ```
 
 ## 构建与预览
@@ -48,6 +49,7 @@ shanhaizaowu/
 ├── tsconfig.json          # TS strict
 ├── public/
 │   ├── favicon.svg        # 山字 + 黄铜 logo
+│   ├── _redirects         # Cloudflare Pages：旧 URL 301 → v0.3 新路径
 │   ├── images/
 │   │   ├── senses/        # 五感页占位图（待补充真实素材）
 │   │   └── hero/          # 首页 / OG 图（待补充）
@@ -62,7 +64,7 @@ shanhaizaowu/
     │   ├── SectionHeader.astro    # 段落头（左/居中可选）
     │   ├── SenseSpread.astro      # 五感单元（图/文左右切换）
     │   ├── AudienceCard.astro     # 受众入口卡（首页 4 张）
-    │   ├── CommitmentBar.astro    # 承诺导航条（中心句 + 6 观 + → /commitment）
+    │   ├── CommitmentBar.astro    # 承诺导航条（中心句 + 6 观 + → /foundation#one-percent）
     │   ├── ContactBlock.astro     # 通用联系块（mailto）
     │   ├── PullQuote.astro        # 大字引文
     │   ├── Principle.astro        # 罗马数字 + 标题 + 实践清单（战略原则用）
@@ -70,7 +72,7 @@ shanhaizaowu/
     │   ├── PledgeBlock.astro      # 承诺方框（positive / negative 两种 variant）
     │   └── WIPNotice.astro        # 占位通知（v0.2 升级前的 dignified 占位）
     └── pages/                 # 21 个页面（含 /notes/*）
-        ├── index.astro            # 首页（vision hero + 4 audience + 1% 承诺）
+        ├── index.astro            # 首页（Hero + What/Who/Why/How 四卡 + 角色四卡 + Foundation/五感/笔记入口）
         ├── about.astro            # 我们是谁（创始团队 + 6 战略原则 + 30 年 + → /benchmarks）
         ├── products.astro         # 产品线（自然小匣 / 衍生品 / 主题展柜 / 双 IP）
         ├── space.astro            # 空间体系（叙事根 + toolkit 框架 + 8 模块 + → /sound-manual）
@@ -159,10 +161,10 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 - [x] `/notes/founders-letter` —— 创始人信《写在工作室开门之前》（v0.1 已上线 · 公众号 001）
 - [x] `public/images/founders/lianshu.png` —— 廉澍肖像（已上线 · 4:5 · 116KB · 蓝底正装棚拍）
 - [x] `public/images/founders/lihe.png` —— 李贺肖像（已上线 · 4:5 · 169KB · 草原远眺户外照）
-- 创始人肖像同时出现在 `/about` 创始团队 I（4:5 上下双列）+ `/investors` 团队 VIII（图文卡片双列）
+- 创始人肖像同时出现在 `/who` 创始团队 I（4:5 上下双列）+ `/for-investors` 团队 VIII（图文卡片双列）
 - [ ] Cloudflare Dashboard 为 `shanhaizaowu.com` 开启 **Email Routing**，再把 `mailto:hello@shanhaizaowu.com` 从「占位」标记为可用（或直接保留 GitHub Issues / 表单备用）
 
-素材到位后只需把文件放进对应目录、并在 `src/pages/senses.astro` 里取消注释 `image=` / `audio=` 属性即可。
+素材到位后只需把文件放进对应目录、并在 `src/pages/how/senses.astro` 里取消注释 `image=` / `audio=` 属性即可。
 
 ---
 
@@ -214,7 +216,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 **英文 Nature's Creations 不变**、**slogan 把山海带回家**、**默认联系邮箱
 `hello@shanhaizaowu.com`**、`astro.config.mjs` 的 **site** 为生产主域
 **`https://shanhaizaowu.com`**（全站 canonical / OG 绝对地址）。`*.pages.dev` 可作预览，不必与 site 一致。**例外**：文中指真实自然生态的措辞保留
-「**真实的山川**更好」（`/commitment`），不作品牌名替换。
+「**真实的山川**更好」（`/foundation#one-percent`），不作品牌名替换。
 
 **仍可在控制台微调**：**.cn ↔ .com** 跳转、`www`、**Email Routing**；GitHub 仓库改名与 `git remote`。域名解析步骤见上文「阿里云已购域名 · 映射到本站」。
 
@@ -224,15 +226,15 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 - 长读体验更好（章节渐次出现而非一次性扫过）
 - 容错更高（即使未来再调 IO 阈值，每个 fade-in 块都不会太大）
 
-参考 `/about` 的写法（4 个独立 fade-in 段），不要参考 `/notes/founders-letter`
+参考 `/who` 的写法（4 个独立 fade-in 段），不要参考 `/notes/founders-letter`
 的早期写法（一个 fade-in 包整篇 4500 字 → 触发 bug）。
 
 ### 写"能力清单"前先过品牌一致性这道闸
 小程序 / ERP 代码里可能有**已开发但永远不会启用**的功能（拼团 / 秒杀 / 盲盒 /
 限量饥饿营销 / 隐藏款……）——这些是底层电商平台自带的常规模块，技术债
 意义上的"过度开发"。落到官网展示时**绝对不要列出来**，否则会跟品牌反复
-强调的红线（见 `/notes/founders-letter` §I "不做" 清单 + `/products` 不做清单
-+ `/investors` "我们不要的资本"）直接对撞。
+强调的红线（见 `/notes/founders-letter` §I "不做" 清单 + `/what` 不做清单
++ `/for-investors` "我们不要的资本"）直接对撞。
 
 判断闸：每写一条"已实现能力"，问一句——"这件事品牌愿意在朋友圈转发吗？"
 不愿意，就不写。代码里有，是另一回事。

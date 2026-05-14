@@ -1,39 +1,41 @@
 ---
 const navColumns = [
   {
-    title: '了解',
+    title: '主线',
     items: [
-      { href: '/about', label: '我们是谁' },
-      { href: '/products', label: '我们做什么' },
-      { href: '/senses', label: '五感' },
-      { href: '/space', label: '空间体系' },
-      { href: '/operations', label: '经营模式' },
-      { href: '/plan', label: '三年规划' },
+      { href: '/what', label: '我们做什么' },
+      { href: '/who', label: '我们是谁' },
+      { href: '/why', label: '何以如此' },
+      { href: '/how', label: '如何实现' },
+      { href: '/foundation', label: '价值底座' },
     ],
   },
   {
-    title: '价值观',
+    title: 'How 子页',
     items: [
-      { href: '/values', label: '六观体系' },
-      { href: '/commitment', label: '1% 承诺' },
-      { href: '/tech', label: '科技观' },
+      { href: '/how/senses', label: '五感' },
+      { href: '/how/space', label: '空间体系' },
+      { href: '/how/operations', label: '运营与规划' },
+      { href: '/how/tech', label: '科技观' },
+    ],
+  },
+  {
+    title: '合作入口',
+    items: [
+      { href: '/for-properties', label: '物业合作' },
+      { href: '/for-investors', label: '投资合作' },
+      { href: '/for-franchise', label: '加盟咨询' },
+    ],
+  },
+  {
+    title: '深度与工具',
+    items: [
+      { href: '/notes', label: '笔记' },
+      { href: '/talent', label: '人才与店长培训' },
+      { href: '/benchmarks', label: '对标研究' },
       { href: '/digital-ops', label: '数字化能力' },
       { href: '/hardcore-tech', label: '硬核科技' },
-    ],
-  },
-  {
-    title: '合作',
-    items: [
-      { href: '/properties', label: '物业合作' },
-      { href: '/investors', label: '投资合作' },
-      { href: '/franchise', label: '加盟咨询' },
-    ],
-  },
-  {
-    title: '加入',
-    items: [
-      { href: '/talent', label: '人才与店长培训' },
-      { href: '/notes', label: '公众号文章' },
+      { href: '/sound-manual', label: '声学手册' },
     ],
   },
 ];
@@ -56,7 +58,7 @@ const year = new Date().getFullYear();
   <!-- 主体：米白纸张 + 极轻纤维噪点 -->
   <div class="bg-paper paper-texture text-ink-text">
     <div class="max-w-7xl mx-auto px-6 py-section">
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-10">
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-10">
         <!-- Brand block -->
         <div class="col-span-2 md:col-span-1">
           <h3 class="font-serif text-2xl text-nature-green mb-3 tracking-cn">山海造物</h3>
