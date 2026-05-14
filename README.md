@@ -177,7 +177,7 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
    - Build command: `npm run build`
    - Build output directory: `dist`
    - Environment variable: `NODE_VERSION = 20`
-6. 首次部署 → 临时域名 `shanhai-zaowu.pages.dev`
+6. 首次部署 → 临时域名 `shanhaizaowu.pages.dev`（与 `astro.config.mjs` 中 `site` 一致；具体子域以 Cloudflare Pages 项目名为准）
 7. 上线后逐项检查 15 routes / 移动端 / 链接 / PageSpeed
 
 > 域名（`shanhaizaowu.com`）+ 邮箱（Cloudflare Email Routing）在 v0.2 阶段再买。
