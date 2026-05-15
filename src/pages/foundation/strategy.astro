@@ -1,0 +1,89 @@
+---
+import Layout from '../../components/Layout.astro';
+import Principle from '../../components/Principle.astro';
+import {
+  foundationStrategicPrinciples,
+  foundationThirtyYearVisionIntro,
+  foundationThirtyYearVisionMilestones,
+  foundationThirtyYearVisionQuote,
+} from '../../data/foundationStrategy';
+---
+
+<Layout
+  title="战略与愿景 · 价值底座"
+  description="6 战略原则与 30 年量化愿景——与六观配套的经营尺度与时间表。"
+>
+  <section class="editorial-section pt-section fade-in">
+    <p class="font-serif-en italic text-text-soft text-sm tracking-widest uppercase mb-4">
+      Foundation <span class="text-brass-mid">·</span> 战略与愿景
+    </p>
+    <h1 class="display-title text-cream mb-paragraph">战略与愿景</h1>
+    <div class="prose-cn max-w-editorial space-y-paragraph">
+      <p>
+        <a href="/foundation" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">价值底座的六观</a>回答「我们不会变什么」。
+        本页的两个部分回答另外两件事——
+        <strong class="text-brass-bright">经营决策先过什么筛</strong>（6 战略原则），以及
+        <strong class="text-brass-bright">我们把时间表拉多长</strong>（30 年量化愿景）。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <section id="principles" class="editorial-section-wide fade-in scroll-mt-28">
+    <p class="section-number mb-4">I</p>
+    <h2 class="section-title text-cream">我们的 6 战略原则</h2>
+
+    <p class="prose-cn mb-section max-w-editorial">
+      这 6 条不是营销 slogan，是<strong class="text-brass-bright">经营决策的第一原则</strong>。任何具体动作过这 6 条滤镜——是否贡献
+      Vision、是否触及不做清单、是否带来合理回报。
+    </p>
+
+    <div class="border-t border-brass-mid/15 max-w-editorial-wide mx-auto">
+      {foundationStrategicPrinciples.map((p) => (
+        <Principle
+          number={p.number}
+          title={p.title}
+          description={p.description}
+          practices={p.practices}
+        />
+      ))}
+    </div>
+
+    <p class="prose-cn mt-section max-w-editorial text-text-soft text-sm">
+      六观全文见各子页；
+      <a href="/how/tech" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">怎么做 · 技术底座</a>
+      写门店与标本侧的硬支撑。
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <section id="vision" class="editorial-section fade-in scroll-mt-28">
+    <p class="section-number mb-4">II</p>
+    <h2 class="section-title text-cream">30 年愿景</h2>
+
+    <div class="prose-cn space-y-paragraph max-w-editorial">
+      <p>{foundationThirtyYearVisionIntro}</p>
+      {foundationThirtyYearVisionMilestones.map((m) => (
+        <div>
+          <p class="font-serif text-lg text-brass-bright tracking-cn mb-2">{m.title}</p>
+          <p>{m.body}</p>
+        </div>
+      ))}
+    </div>
+
+    <blockquote class="mt-section pullquote max-w-editorial">
+      <p>{foundationThirtyYearVisionQuote}</p>
+      <cite class="block mt-4 text-sm text-text-soft not-italic">—— 创始人手记 · 节选</cite>
+    </blockquote>
+  </section>
+
+  <section class="editorial-section pb-section fade-in">
+    <p class="text-center">
+      <a href="/foundation" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40 text-sm tracking-cn">
+        ← 返回价值底座索引
+      </a>
+    </p>
+  </section>
+</Layout>

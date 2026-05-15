@@ -1,0 +1,148 @@
+---
+const milestones = [
+  { year: '2024', label: '共同创办', note: '李贺 × 廉澍' },
+  { year: '2024–2025', label: '同城双店', note: '长春「这有山」· Pro ×2' },
+  { year: '2026 夏', label: '标本工作室', note: '长春 · Max 版原型', isNext: true },
+  { year: '2036', label: '第一个十年', note: '十年内回看节点' },
+  { year: '2056', label: '第一个三十年', note: '百年老铺早期阶段' },
+];
+---
+
+<section class="who-timeline editorial-section py-section fade-in" aria-label="时间锚">
+  <div class="who-timeline__frame">
+    <div class="who-timeline__track" aria-hidden="true"></div>
+
+    <ol class="who-timeline__list">
+      {milestones.map((m) => (
+        <li class:list={['who-timeline__milestone', m.isNext && 'who-timeline__milestone--next']}>
+          <span class="who-timeline__dot" aria-hidden="true"></span>
+          <div class="who-timeline__year">{m.year}</div>
+          <div class="who-timeline__label">{m.label}</div>
+          <div class="who-timeline__note">{m.note}</div>
+        </li>
+      ))}
+    </ol>
+
+    <p class="who-timeline__caption">
+      <span class="text-brass-mid" aria-hidden="true">↳</span>
+      我们做这件事的时间表是 30 年，不是 5 年。量化愿景与 6 战略原则见
+      <a href="/foundation/strategy#vision" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">价值底座 · 战略与愿景</a>
+      。
+    </p>
+  </div>
+</section>
+
+<style>
+  .who-timeline__frame {
+    position: relative;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .who-timeline__track {
+    position: absolute;
+    top: 0.65rem;
+    left: 4%;
+    right: 4%;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgb(var(--rgb-brass-mid) / 0.45) 12%,
+      rgb(var(--rgb-brass-mid) / 0.45) 88%,
+      transparent 100%
+    );
+  }
+
+  .who-timeline__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.75rem;
+    position: relative;
+  }
+
+  .who-timeline__milestone {
+    text-align: center;
+    position: relative;
+    padding-top: 1.25rem;
+  }
+
+  .who-timeline__dot {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-ink-deep);
+    border: 1px solid var(--color-brass-mid);
+  }
+
+  .who-timeline__milestone--next .who-timeline__dot {
+    background: var(--color-brass-mid);
+    box-shadow: 0 0 0 4px rgb(var(--rgb-brass-mid) / 0.2);
+  }
+
+  .who-timeline__year {
+    font-family: ui-serif, Georgia, 'Times New Roman', serif;
+    font-size: 0.95rem;
+    color: var(--color-cream);
+    letter-spacing: 0.04em;
+    margin-top: 0.6rem;
+  }
+
+  .who-timeline__milestone--next .who-timeline__year {
+    color: var(--color-brass-bright);
+  }
+
+  .who-timeline__label {
+    font-size: 0.82rem;
+    color: var(--color-text-soft);
+    margin-top: 0.2rem;
+  }
+
+  .who-timeline__note {
+    margin-top: 0.35rem;
+    font-family: ui-serif, Georgia, serif;
+    font-style: italic;
+    font-size: 0.74rem;
+    color: var(--color-text-dim);
+    line-height: 1.45;
+  }
+
+  .who-timeline__caption {
+    margin-top: 2.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--color-text-soft);
+    line-height: 1.75;
+  }
+
+  @media (max-width: 56rem) {
+    .who-timeline__track {
+      display: none;
+    }
+
+    .who-timeline__list {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    .who-timeline__milestone {
+      text-align: left;
+      padding-top: 0;
+      padding-left: 1.25rem;
+      border-left: 1px solid rgb(var(--rgb-brass-mid) / 0.35);
+    }
+
+    .who-timeline__dot {
+      top: 0.35rem;
+      left: -5px;
+      transform: none;
+    }
+  }
+</style>

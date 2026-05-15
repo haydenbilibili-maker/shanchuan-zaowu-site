@@ -1,0 +1,60 @@
+---
+const pointers = [
+  {
+    eyebrow: 'Foundation',
+    title: '价值底座',
+    description:
+      '六观（自然观 / 空间观 / 内容观 / 人才观 / 承诺观 / 合规观）、6 战略原则、30 年量化愿景，以及它们如何成为每一笔经营决策的滤镜。完整索引见价值底座首页。',
+    href: '/foundation',
+    cta: '阅读完整体系',
+  },
+  {
+    eyebrow: 'Benchmarks',
+    title: '对标研究',
+    description:
+      '我们已经研究过 7 家全球品牌——中川政七、蔦屋、泡泡玛特、V&A 等 4 家已完成深度研究，3 家在排队。研究的目的不是抄作业，是把别人已经走过的路画清楚。',
+    href: '/benchmarks',
+    cta: '看正反深度比较',
+  },
+  {
+    eyebrow: 'How',
+    title: '怎么做',
+    description:
+      '门店与标本如何被数字化与硬核科技支撑——从材质工艺、声学手册、内容输出标准，到加盟落地的可复制结构。',
+    href: '/how',
+    cta: '看运营底层',
+  },
+];
+---
+
+<section class="editorial-section py-section fade-in">
+  <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">Now · 现在进行时</p>
+  <p class="section-number mb-4">III</p>
+  <h2 class="section-title text-cream">我们正在做的事</h2>
+
+  <p class="prose-cn max-w-[56ch] mb-10">
+    「山海造物」已在长春「这有山」运营两家 Pro 门店，同时筹备独立物业的标本工作室（Max 版原型，计划
+    2026 年夏开业）。下面三条路径，是这件事被组织起来的方式——点进去，你会看到比这一页更完整、也更可核对的东西。
+  </p>
+
+  <div class="grid md:grid-cols-3 gap-4">
+    {pointers.map((p) => (
+      <a
+        href={p.href}
+        class="group flex flex-col p-5 md:p-6 border-t border-brass-mid/30 bg-ink-elevated/30 hover:bg-ink-elevated/55 hover:border-brass-mid/60 transition-all"
+      >
+        <p class="font-serif-en italic text-brass-mid text-[0.72rem] tracking-[0.18em] uppercase mb-3">
+          {p.eyebrow}
+        </p>
+        <h3 class="font-serif text-xl text-cream mb-3 tracking-cn">{p.title}</h3>
+        <p class="text-text-soft text-sm leading-relaxed flex-1">{p.description}</p>
+        <span
+          class="mt-6 inline-flex items-center gap-1 text-sm text-cream border-b border-brass-mid/40 pb-0.5 self-start group-hover:text-brass-bright group-hover:border-brass-bright transition-colors"
+        >
+          {p.cta}
+          <span aria-hidden="true" class="transition-transform group-hover:translate-x-0.5">→</span>
+        </span>
+      </a>
+    ))}
+  </div>
+</section>
