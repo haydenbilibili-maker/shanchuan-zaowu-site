@@ -239,7 +239,7 @@ export const operationsTimelineColumns: TimelineColumn[] = [
     milestones: [
       '这有山双店在营（Pro）',
       '双店模型验证与 SOP 闭环 Q3-Q4',
-      '公司化升级 Q4',
+      '公司化挂牌（约 8 月）',
       '第三店选址 + 年度复盘 Q4',
     ],
     revenue: '80-150 万',
@@ -310,6 +310,7 @@ export const operationsYearPlans: YearPlanDetail[] = [
           { text: '山海造物商标核查（委托代理）+ 7-8 类目注册推进' },
           { text: 'shanhaizaowu.com 上线与迭代 + 公众号持续运营' },
           { text: '双店日常运营稳定（人货场、峰谷客流与排班）' },
+          { text: '公司化改制筹备（个体工商户 → 有限责任公司 · 材料 / 股权 / 章程）' },
           { text: '合规自查表完成 + 缺口处理' },
           { text: '双店员工梯队招聘、培训与轮岗' },
         ],
@@ -317,6 +318,7 @@ export const operationsYearPlans: YearPlanDetail[] = [
       {
         title: 'Q3（2026.07-09）',
         items: [
+          { text: '公司化升级完成 · 山海造物文化创意有限公司挂牌（约 2026 年 8 月）' },
           { text: '双店协同运营 + 模型验证（数据与复购结构）' },
           { text: '妈妈饺子 SOP 落地测试（这有山 Pro 双店）' },
           { text: '非拍照价值七件套在双店的部署完整化' },
@@ -330,13 +332,14 @@ export const operationsYearPlans: YearPlanDetail[] = [
           { text: '双店运营数据全面复盘' },
           { text: '2026 全年数据 + 模型校准' },
           { text: '第三家店选址（Pro 试水 · 长春同城第二点位或沈阳 / 大连等）' },
-          { text: '公司化升级启动（个体工商户 → 有限责任公司）' },
+          { text: '有限责任公司挂牌后的治理、财税与合同主体对齐复盘' },
           { text: '2026 年度报告（含 1% 承诺执行）' },
         ],
       },
     ],
     metrics: [
       { label: '在营直营（长春这有山）', value: '2 家（Pro）' },
+      { label: '公司主体', value: '山海造物文化创意有限公司挂牌（约 2026 年 8 月）' },
       { label: '全年营收目标（双店合计）', value: '80 - 150 万人民币' },
       { label: '全年到访人次（双店合计）', value: '6000 - 16000 人次' },
       { label: '妈妈饺子供应', value: '实际数据采集（无数字目标）' },
@@ -359,10 +362,10 @@ export const operationsYearPlans: YearPlanDetail[] = [
       {
         title: 'Q1（2027.01-03）',
         items: [
-          { text: '公司化升级完成 · 山海造物文化创意有限公司挂牌' },
           { text: '第三家店开业（Pro · 长春同城第二点位或沈阳 / 大连等）' },
           { text: '加盟体系 v1.0 文档化（不公开发布 · 内部使用）' },
           { text: '投资人初步接触（不正式 pitch · 信号传递）' },
+          { text: '挂牌主体下第三店资产、劳动与采购合同口径统一复核' },
         ],
       },
       {
