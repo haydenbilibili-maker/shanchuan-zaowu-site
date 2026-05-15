@@ -136,6 +136,30 @@ const marineSchematics = [
     alt: '海洋贝壳线示意：珍珠螺柄餐具与亚克力盒装蟹标本、大型海螺衬景',
   },
 ];
+
+/** 门店主题标本示意图（约 20% 轮换区） */
+const themeSpecimenSchematics = [
+  {
+    src: '/images/what/theme-specimens/theme-specimen-01.png',
+    alt: '门店主题标本示意：孔雀与火烈鸟剥制标本与周边小件、首饰架同台陈列',
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-02.png',
+    alt: '门店主题标本示意：着衣土拨鼠、浸液巨等足虫、鳄与蜈蚣等奇珍柜组合',
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-03.png',
+    alt: '门店主题标本示意：三只文鸟栖木、闪蝶墙饰、小鸭戴眼镜与蜻蜓装框',
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-04.png',
+    alt: '门店主题标本示意：维多利亚风白鸽剥制、蕾丝礼帽与坠饰项链',
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-05.png',
+    alt: '门店主题标本示意：玻罩内小型兽类与绿植景，旁侧鸟翼蝶装框标本',
+  },
+];
 ---
 
 <Layout
@@ -386,9 +410,29 @@ const marineSchematics = [
 
   <!-- ============ VI. 门店主题标本（约 20%） ============ -->
   <section class="editorial-section-wide fade-in">
-    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center">
-        <span class="font-serif-en italic text-brass-mid/40 text-2xl">Theme Specimens</span>
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
+      <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 max-w-lg mx-auto md:mx-0 w-full">
+        <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-left">
+          Theme Specimens
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
+          {themeSpecimenSchematics.map((item) => (
+            <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
+              <img
+                src={item.src}
+                alt={item.alt}
+                class="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+                width="500"
+                height="500"
+              />
+            </div>
+          ))}
+        </div>
+        <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-left">
+          门店主题标本示意图：围绕当期策展的大型剥制、玻罩与装框组合；含可售与非卖品陈列风格，以门店实际轮换为准。
+        </figcaption>
       </figure>
 
       <div>
