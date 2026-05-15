@@ -180,6 +180,22 @@ const marineSchematics = [
   },
 ];
 
+/** 群山回响 · 化石矿石线示意（门店实拍） */
+const echoesMountainsSchematics = [
+  {
+    src: '/images/what/echoes-mountains/echoes-lycoptera-01.png',
+    alt: '群山回响线示意：中国北方白垩纪狼鳍鱼化石板，浅灰围岩与骨骼印痕清晰，陈列于木质台面',
+  },
+  {
+    src: '/images/what/echoes-mountains/echoes-trilobite-01.png',
+    alt: '群山回响线示意：深灰围岩上的三叶虫化石，外骨骼分节与头甲可见，亚克力标本架展示',
+  },
+  {
+    src: '/images/what/echoes-mountains/echoes-ammonite-01.png',
+    alt: '群山回响线示意：抛光横切的菊石化石，晶洞充填与螺旋缝合线，置于木质标本座',
+  },
+];
+
 /** 门店主题标本 · 大图与轮播下统一说明 */
 const themeSpecimenCaption =
   '每一个都是标本师用心制作的世界上独一无二的孤品';
@@ -399,20 +415,29 @@ const themeSpecimenSchematics = [
       </figure>
     </article>
 
-    {/* V · 群山回响 · 保留 · text only */}
-    <article class="line-block text-only" id="take-home-v">
-      <div class="line-frame-decoration">
-        <p class="frame-text"><em>Echoes of Mountains</em></p>
+    {/* V · 群山回响 · carousel */}
+    <article class="line-block line-with-image image-left" id="take-home-v">
+      <div class="line-figure-slot">
+        <SpecimenMarqueeCarousel
+          eyebrow="Paleontology"
+          items={echoesMountainsSchematics}
+          align="left"
+        />
       </div>
-      <p class="roman-numeral">V</p>
-      <h3 class="line-title">群山回响</h3>
-      <p class="line-subtitle"><em>化石矿石及其衍生品</em></p>
-      <p class="line-verse" lang="zh-Hans">会当凌绝顶，一览众山小</p>
-      <p class="line-body">
-        这一线带来地球的时间感与地质叙事——
-        回答「很久很久以前，世界是什么样」。
-        来源合规、可追溯；不夸大稀缺，不把保护物种当卖点。
-      </p>
+      <div class="line-text">
+        <div class="line-frame-decoration">
+          <p class="frame-text"><em>Echoes of Mountains</em></p>
+        </div>
+        <p class="roman-numeral">V</p>
+        <h3 class="line-title">群山回响</h3>
+        <p class="line-subtitle"><em>化石矿石及其衍生品</em></p>
+        <p class="line-verse" lang="zh-Hans">会当凌绝顶，一览众山小</p>
+        <p class="line-body">
+          这一线带来地球的时间感与地质叙事——
+          回答「很久很久以前，世界是什么样」。
+          来源合规、可追溯；不夸大稀缺，不把保护物种当卖点。
+        </p>
+      </div>
     </article>
 
     {/* VI · 镇店之宝 · 保留 + image */}
