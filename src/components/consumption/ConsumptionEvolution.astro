@@ -1,0 +1,83 @@
+---
+import ConsumptionTimeline from './ConsumptionTimeline.astro';
+import ConsumptionComparisonTable from './ConsumptionComparisonTable.astro';
+import ConsumptionPivot from './ConsumptionPivot.astro';
+import ConsumptionSixDimensions from './ConsumptionSixDimensions.astro';
+
+interface Props {
+  mode?: 'full' | 'compact' | 'minimal';
+}
+
+const { mode = 'full' } = Astro.props;
+const showTable = mode === 'full';
+const showPivot = mode === 'full';
+const showDimensions = mode === 'full' || mode === 'compact';
+const showTimeline = mode === 'full' || mode === 'compact' || mode === 'minimal';
+---
+
+<section class="consumption-evolution editorial-section py-section fade-in" aria-labelledby="consumption-evolution-title">
+  <div class="max-w-editorial mx-auto">
+    <header class="mb-12">
+      <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-3">
+        Consumption generations
+      </p>
+      <h2 id="consumption-evolution-title" class="font-serif text-display text-cream tracking-cn mb-paragraph">
+        消费时代的代际演进
+      </h2>
+      <div class="prose-cn max-w-2xl">
+        <p>
+          从远古的物物代换 · 到当下的文化精神消费——消费的每一次升级 · 都重新定义了「我们为什么买」。
+        </p>
+        <p class="mt-paragraph">
+          山海造物在第六代消费的最前排 · 给「算法疲劳的人」 · 一个值得停下来的物。
+        </p>
+      </div>
+    </header>
+
+    {showTimeline && (
+      <div class="my-12">
+        <ConsumptionTimeline />
+      </div>
+    )}
+
+    {showTable && (
+      <div class="my-16">
+        <h3 class="font-serif text-xl text-cream tracking-cn mb-4">六代消费 · 五维度对比</h3>
+        <p class="prose-cn text-text-soft mb-8 max-w-2xl">
+          每一代消费的失效点 · 正是下一代消费诞生的土壤。
+        </p>
+        <ConsumptionComparisonTable />
+      </div>
+    )}
+
+    {showPivot && (
+      <div class="my-16">
+        <h3 class="font-serif text-xl text-cream tracking-cn mb-4">关键转折 · 算法疲劳</h3>
+        <p class="prose-cn text-text-soft mb-8 max-w-2xl">
+          第五代到第六代的转折 · 不是品牌升级 · 是消费者本身的觉醒。
+        </p>
+        <ConsumptionPivot />
+      </div>
+    )}
+
+    {showDimensions && (
+      <div class="my-16">
+        <h3 class="font-serif text-xl text-cream tracking-cn mb-4">山海造物 · 如何具体体现第六代</h3>
+        <p class="prose-cn text-text-soft mb-8 max-w-2xl">
+          六个维度 · 从抽象的「价值观」落到具体的动作。
+        </p>
+        <ConsumptionSixDimensions />
+      </div>
+    )}
+
+    <footer class="mt-16 p-8 bg-ink-elevated/60 rounded-sm border-l-2 border-coral-deep">
+      <p class="font-serif-en italic text-coral-mid text-xs tracking-widest uppercase mb-3">Our position</p>
+      <p class="font-serif text-xl md:text-2xl text-coral-deep mb-4 leading-relaxed tracking-cn">
+        山海造物 · 第六代消费的物质载体
+      </p>
+      <p class="prose-cn text-cream">
+        在算法疲劳的时代 · 给主动选择的人 · 一个可以触摸的物。
+      </p>
+    </footer>
+  </div>
+</section>

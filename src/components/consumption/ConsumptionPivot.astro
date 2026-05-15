@@ -1,0 +1,101 @@
+---
+import { gen5Symptoms, gen6Choices } from '../../data/consumptionEvolution';
+---
+
+<div class="pivot grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-0 items-stretch">
+  <div class="pivot-panel pivot-panel--brass md:rounded-l-sm">
+    <p class="text-xs text-brass-mid uppercase tracking-widest mb-1">Generation 5</p>
+    <h4 class="text-brass-bright font-medium mb-1">第五代 · 算法疲劳</h4>
+    <p class="text-xs text-brass-mid italic mb-4">2010s – 2020s</p>
+
+    <ul class="space-y-1.5">
+      {gen5Symptoms.map((s) => (
+        <li class="text-cream/90 text-xs leading-relaxed pl-4 relative">
+          <span class="absolute left-0 text-brass-mid">·</span>{s}
+        </li>
+      ))}
+    </ul>
+
+    <hr class="border-t border-brass-mid/30 my-4" />
+
+    <p class="text-brass-mid text-xs italic leading-relaxed">
+      状态：被算法塑造的「消费者」<br />
+      内心：感受到累、空、想逃
+    </p>
+  </div>
+
+  <div class="pivot-bridge flex flex-col items-center justify-center px-3 py-6 md:py-0">
+    <span class="pivot-bridge__label text-text-soft tracking-widest uppercase text-[10px] md:[writing-mode:vertical-rl] md:rotate-180">算法疲劳</span>
+    <svg width="32" height="32" viewBox="0 0 32 32" class="my-2 shrink-0" aria-hidden="true">
+      <path d="M6 16 L26 16" stroke="var(--color-coral-mid)" stroke-width="1.5" stroke-linecap="round" />
+      <path
+        d="M20 10 L26 16 L20 22"
+        stroke="var(--color-coral-mid)"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"
+      />
+    </svg>
+    <span class="pivot-bridge__label text-coral-mid tracking-widest uppercase text-[10px] font-medium md:[writing-mode:vertical-rl]">主动选择</span>
+  </div>
+
+  <div class="pivot-panel pivot-panel--coral md:rounded-r-sm border-l-2 border-coral-deep/60">
+    <p class="text-xs text-coral-mid uppercase tracking-widest mb-1">Generation 6</p>
+    <h4 class="text-coral-deep font-medium mb-1">第六代 · 主动选择</h4>
+    <p class="text-xs text-coral-mid italic mb-4">2020s – 未来</p>
+
+    <ul class="space-y-1.5">
+      {gen6Choices.map((c) => (
+        <li class="text-cream/90 text-xs leading-relaxed pl-4 relative">
+          <span class="absolute left-0 text-coral-mid">·</span>{c}
+        </li>
+      ))}
+    </ul>
+
+    <hr class="border-t border-coral-mid/30 my-4" />
+
+    <p class="text-coral-mid text-xs italic leading-relaxed">
+      状态：拒绝被推送的「主动选择者」<br />
+      内心：感受到稳、清、想留下来
+    </p>
+  </div>
+</div>
+
+<div class="mt-6 p-4 bg-ink-elevated/70 rounded-sm border border-brass-mid/20">
+  <p class="text-xs text-text-soft uppercase tracking-widest mb-2">Key insight</p>
+  <p class="text-sm text-cream leading-relaxed mb-1">
+    <span class="text-coral-deep font-medium">算法疲劳 · 不是趋势 · 是已经发生的现实</span>
+  </p>
+  <p class="text-xs text-text-soft leading-relaxed">
+    2024 年微信指数：「数字极简」「卸载抖音」「关闭推送」「取关大 V」类关键词搜索量同比上涨显著。<br />
+    当大量用户开始主动逃离算法，第六代消费品牌的窗口期就打开了。<br />
+    <span class="text-cream font-medium">山海造物的位置 · 就在这个窗口期的最前排。</span>
+  </p>
+</div>
+
+<style>
+  .pivot-panel {
+    padding: 1.25rem;
+  }
+
+  .pivot-panel--brass {
+    background: rgb(var(--rgb-brass-mid) / 0.06);
+  }
+
+  .pivot-panel--coral {
+    background: rgb(var(--rgb-ink-deep) / 0.4);
+  }
+
+  @media (max-width: 767px) {
+    .pivot-bridge {
+      flex-direction: row;
+      gap: 0.75rem;
+    }
+
+    .pivot-bridge__label {
+      writing-mode: horizontal-tb;
+      rotate: none;
+    }
+  }
+</style>

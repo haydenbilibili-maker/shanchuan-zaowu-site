@@ -1,0 +1,133 @@
+---
+import { timelineNodes, timelineDrivers } from '../../data/consumptionEvolution';
+---
+
+<svg
+  width="100%"
+  viewBox="0 0 680 340"
+  role="img"
+  aria-label="消费时代代际演进时间轴"
+  class="consumption-timeline"
+>
+  <title>消费时代代际演进</title>
+  <desc>从远古的物物代换到当下的文化精神消费，山海造物位于第六代消费的「物质载体」位置</desc>
+
+  <line x1="55" y1="190" x2="605" y2="190" class="timeline-axis" />
+  <line x1="69" y1="190" x2="151" y2="190" class="timeline-link" />
+  <line x1="179" y1="190" x2="261" y2="190" class="timeline-link" />
+  <line x1="289" y1="190" x2="371" y2="190" class="timeline-link" />
+  <line x1="399" y1="190" x2="481" y2="190" class="timeline-link" />
+  <line x1="509" y1="190" x2="589" y2="190" class="timeline-link timeline-link--gen6" />
+
+  {timelineDrivers.map((d) => (
+    <text x={d.x} y="155" text-anchor="middle" class="timeline-driver">
+      {d.label}
+    </text>
+  ))}
+
+  {timelineNodes.map((node) => (
+    <g class="node-brass">
+      <circle cx={node.x} cy="190" r="14" class="node-brass__circle" />
+      <text x={node.x} y="50" text-anchor="middle" class="node-brass__title">{node.gen}</text>
+      <text x={node.x} y="72" text-anchor="middle" class="node-brass__text">{node.main}</text>
+      <text x={node.x} y="92" text-anchor="middle" class="node-brass__text">{node.period}</text>
+      <text x={node.x} y="112" text-anchor="middle" class="node-brass__text">{node.core}</text>
+      <text x={node.x} y="240" text-anchor="middle" class="node-brass__text">{node.example}</text>
+    </g>
+  ))}
+
+  <g class="node-coral">
+    <circle cx="605" cy="190" r="16" class="node-coral__circle" />
+    <text x="605" y="50" text-anchor="middle" class="node-coral__title">第六代</text>
+    <text x="605" y="72" text-anchor="middle" class="node-coral__text">文化精神</text>
+    <text x="605" y="92" text-anchor="middle" class="node-coral__text">2020s-未来</text>
+    <text x="605" y="112" text-anchor="middle" class="node-coral__text">价值观共鸣</text>
+    <text x="605" y="240" text-anchor="middle" class="node-coral__title">山海造物</text>
+    <text x="605" y="262" text-anchor="middle" class="node-coral__text">在这里</text>
+  </g>
+
+  <text x="340" y="310" text-anchor="middle" class="timeline-footnote">
+    山海造物 · 第六代消费的「物质载体」 · 给精神消费的人一个可以触摸的物
+  </text>
+</svg>
+
+<style>
+  .consumption-timeline {
+    --timeline-brass: rgb(var(--rgb-brass-mid));
+    --timeline-coral: var(--color-coral-mid);
+    --node-brass-fill: rgb(var(--rgb-ink-elevated));
+    --node-brass-stroke: rgb(var(--rgb-brass-mid));
+    --node-brass-title: rgb(var(--rgb-brass-bright));
+    --node-brass-text: rgb(var(--rgb-brass-mid));
+    --node-coral-fill: rgb(var(--rgb-ink-deep));
+    --node-coral-stroke: var(--color-coral-mid);
+    --node-coral-title: var(--color-coral-deep);
+    --node-coral-text: var(--color-coral-mid);
+    --timeline-caption: var(--color-text-soft);
+  }
+
+  .timeline-axis {
+    stroke: var(--timeline-brass);
+    stroke-width: 0.5;
+    opacity: 0.25;
+  }
+
+  .timeline-link {
+    stroke: var(--timeline-brass);
+    stroke-width: 0.5;
+    opacity: 0.5;
+  }
+
+  .timeline-link--gen6 {
+    stroke: var(--timeline-coral);
+    stroke-width: 0.8;
+    stroke-dasharray: 4 2;
+    opacity: 0.75;
+  }
+
+  .timeline-driver {
+    fill: var(--timeline-caption);
+    font-size: 11px;
+    font-style: italic;
+  }
+
+  .node-brass__circle {
+    fill: var(--node-brass-fill);
+    stroke: var(--node-brass-stroke);
+    stroke-width: 0.5;
+  }
+
+  .node-brass__title {
+    fill: var(--node-brass-title);
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  .node-brass__text {
+    fill: var(--node-brass-text);
+    font-size: 11px;
+  }
+
+  .node-coral__circle {
+    fill: var(--node-coral-fill);
+    stroke: var(--node-coral-stroke);
+    stroke-width: 1.5;
+  }
+
+  .node-coral__title {
+    fill: var(--node-coral-title);
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  .node-coral__text {
+    fill: var(--node-coral-text);
+    font-size: 11px;
+  }
+
+  .timeline-footnote {
+    fill: var(--timeline-caption);
+    font-size: 11px;
+    font-style: italic;
+  }
+</style>

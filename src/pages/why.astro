@@ -2,72 +2,107 @@
 import Layout from '../components/Layout.astro';
 import PageHero from '../components/PageHero.astro';
 import PullQuote from '../components/PullQuote.astro';
+import ConsumptionEvolution from '../components/consumption/ConsumptionEvolution.astro';
+import BenchmarkCard from '../components/BenchmarkCard.astro';
+import { consumptionBenchmarks } from '../data/consumptionEvolution';
 ---
 
 <Layout
   title="为什么 · Why"
-  description="山海造物为何存在——三个判断、三个对标与反面坐标（v0.4）"
+  description="消费时代的代际演进 · 山海造物在第六代消费的精准位置"
 >
   <PageHero
     eyebrow="Why · 为什么"
-    title="我们为什么<br />要做这件事"
-    lead="这一页不是愿景口号墙，而是三个「不得不」的判断：若这些判断在你看来不成立，我们大概率不是同路人——这很好，省彼此时间。"
+    title="为什么是这件事"
+    lead="消费时代的代际推演与山海造物的精准位置——若这些判断在你看来不成立，我们大概率不是同路人；这很好，省彼此时间。"
   />
 
   <hr class="brass-divider" />
 
+  <section class="editorial-section py-section fade-in text-center">
+    <p class="font-serif text-xl md:text-2xl text-cream max-w-3xl mx-auto leading-relaxed tracking-cn">
+      中国的自然博物美学市场 · 缺一个真正用心做的品牌。
+      <br />
+      但更深的判断是 ——
+      <br />
+      <span class="text-brass-bright">整个消费时代 · 都在等待第六代品牌的诞生。</span>
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <ConsumptionEvolution mode="full" />
+
+  <hr class="brass-divider" />
+
   <section class="editorial-section py-section fade-in">
-    <p class="section-number mb-4">I</p>
-    <h2 class="font-serif text-display text-cream tracking-cn mb-paragraph">三个判断</h2>
-    <div class="prose-cn space-y-paragraph">
+    <p class="section-number mb-4">IV</p>
+    <h2 class="font-serif text-display text-cream tracking-cn mb-paragraph">三个核心判断</h2>
+    <div class="prose-cn space-y-paragraph max-w-editorial">
       <p>
-        <strong class="text-brass-bright">判断一：日常需要博物学，而不只是橱窗里的标本。</strong>
-        城市人在屏幕里消耗了太多「二手自然」。我们相信，把可触摸、可凝视、可讲述的物与光带回日常，是对抗麻木的最小剂量——不是奢侈品，是<strong class="text-cream">公共生活的再野生化</strong>。
+        <strong class="text-brass-bright">判断一：第六代消费的窗口期已经打开。</strong>
+        算法疲劳不是小众情绪——当大量用户主动卸载、取关、慢决策，「价值观共鸣 + 物质载体」的品牌有了真实土壤。山海造物要做的，是给这批人一个可以触摸的物。
       </p>
       <p>
-        <strong class="text-brass-bright">判断二：美学与保护必须是同一件事。</strong>
-        若门店再美，山川没有因此更好一点，那美学只是消费主义的糖衣。我们用 1% 营收承诺把「好看」与「有用」焊在同一根轴上——详见
+        <strong class="text-brass-bright">判断二：中国 + AI = 第六代物质载体的最佳土壤。</strong>
+        超级个体与小团队，第一次能用极低成本做出博物馆级的叙事与空间——详见
+        <a href="/how" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">怎么做</a>。
+        自然博物美学在中国仍缺真心做的品牌；我们刚好站在代际切换的接口上。
+      </p>
+      <p>
+        <strong class="text-brass-bright">判断三：超级个体 + 慢增长是品牌护城河。</strong>
+        我们拒绝用「三个月打爆」「GMV 神话」绑架组织。山海造物选择<strong class="text-cream">可被审计的长期主义</strong>：空间、标本、人与社区关系，都以十年为尺度提问——详见
         <a href="/foundation/conservation" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">价值底座 · 1% 承诺</a>。
       </p>
-      <p>
-        <strong class="text-brass-bright">判断三：慢不是反商业，是对时间诚实。</strong>
-        我们拒绝用「三个月打爆」「GMV 神话」来绑架组织与伙伴。山海造物选择<strong class="text-cream">可被审计的长期主义</strong>：空间、标本、人与社区关系，都以十年为尺度提问。
-      </p>
     </div>
   </section>
 
   <hr class="brass-divider" />
 
   <section class="editorial-section py-section fade-in">
-    <p class="section-number mb-4">II</p>
-    <h2 class="font-serif text-display text-cream tracking-cn mb-paragraph">三个对标与反面</h2>
-    <div class="prose-cn space-y-paragraph">
-      <p>
-        我们向<strong class="text-cream">博物馆与国家公园级的叙事与光环境</strong>看齐——不向快消货架的噪音看齐；向<strong class="text-cream">奇珍柜式的策展密度与尊重</strong>看齐——不向廉价打卡点看齐；向<strong class="text-cream">护林员与一线 NGO 的真实成本</strong>看齐——不向「洗绿」公关看齐。
+    <div class="max-w-editorial mx-auto">
+      <p class="section-number mb-4 text-center">V</p>
+      <h2 class="font-serif text-display text-cream tracking-cn mb-4 text-center">我们的坐标系</h2>
+      <p class="prose-cn text-text-soft text-center mb-12 max-w-2xl mx-auto">
+        谁在第六代物质载体位 · 谁是反面镜子
       </p>
-      <p class="text-text-soft text-sm">
-        反面坐标：用自然当背景板、用公益当活动、用加盟当割韭菜、用「科技感」掩盖空洞体验——这些山海造物<strong class="text-cream">一律不做</strong>（完整清单见
-        <a href="/notes/founders-letter" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">创始人手记</a>
-        与
-        <a href="/what" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">我们做什么</a>）。
-      </p>
+
+      <div class="space-y-6">
+        {consumptionBenchmarks.map((b) => (
+          <BenchmarkCard
+            name={b.name}
+            role={b.role}
+            gen={b.gen}
+            learn={b.learn}
+            notlearn={b.notlearn}
+            highlight={b.highlight}
+          />
+        ))}
+      </div>
     </div>
   </section>
 
   <hr class="brass-divider" />
 
-  <section class="editorial-section py-section fade-in">
-    <p class="section-number mb-4">III</p>
-    <h2 class="font-serif text-display text-cream tracking-cn mb-paragraph">坐标</h2>
-    <div class="prose-cn space-y-paragraph">
+  <section class="editorial-section py-section fade-in text-center">
+    <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-4">The answer</p>
+    <h2 class="font-serif text-display text-cream tracking-cn mb-paragraph">为什么是我们</h2>
+    <div class="prose-cn max-w-2xl mx-auto space-y-paragraph">
       <p>
-        若用一句话描述我们在产业地图上的位置：<strong class="text-brass-bright">自然博物美学的日常化基础设施</strong>——介于零售、公共文化与小博物馆之间；比文创店更重知识诚实与空间承诺，比传统博物馆更轻、更近生活。
+        因为消费时代演进到第六代 ——<br />
+        中国市场缺一个「自然博物美学的物质载体」品牌；<br />
+        AI + 超级个体让小品牌能做大事；<br />
+        我们刚好在那个最早醒来的位置。
       </p>
-      <p>
-        若你认同这个坐标，下一步请读
+      <p class="font-serif text-xl text-brass-bright leading-relaxed">
+        这不是赌运气——<br />
+        是历史的窗口刚好打开。
+      </p>
+      <p class="text-text-soft text-sm mt-8">
+        下一步请读
         <a href="/what" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">我们做什么</a>、
-        <a href="/who" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">我们是谁</a>，或直接进入
-        <a href="/how" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">怎么做</a>。
+        <a href="/who" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">我们是谁</a>，或进入
+        <a href="/foundation" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/40">价值底座</a>。
       </p>
     </div>
   </section>
