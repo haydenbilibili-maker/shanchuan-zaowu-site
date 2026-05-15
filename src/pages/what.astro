@@ -80,6 +80,42 @@ const butterflySchematics = [
     alt: '蝴蝶线示意：手持装框 Morpho 标本与城市灯光氛围陈列',
   },
 ];
+
+/** 植物果实与自然小物示意图 */
+const botanicalSchematics = [
+  {
+    src: '/images/what/botanical/botanical-01.png',
+    alt: '植物果实线示意：木作分格陈列、干种子与果实小格、香氛与玻罩植物小景',
+  },
+  {
+    src: '/images/what/botanical/botanical-02.png',
+    alt: '植物果实线示意：球形玻罩内完整蒲公英绒球与木质底座',
+  },
+  {
+    src: '/images/what/botanical/botanical-03.png',
+    alt: '植物果实线示意：猪笼草主题装框与多格种子果实标本矩阵装裱',
+  },
+  {
+    src: '/images/what/botanical/botanical-04.png',
+    alt: '植物果实线示意：长排木格收纳盒内分装干果荚、种球与挂饰材料',
+  },
+  {
+    src: '/images/what/botanical/botanical-05.png',
+    alt: '植物果实线示意：玻罩小格陈列松果、橡实与单格装裱球果标本',
+  },
+  {
+    src: '/images/what/botanical/botanical-06.png',
+    alt: '植物果实线示意：植物押花树脂耳饰与桌面贝壳、矿石小陈列垫',
+  },
+  {
+    src: '/images/what/botanical/botanical-07.png',
+    alt: '植物果实线示意：多格标本盒俯视、顶层花艺与家居风陈列',
+  },
+  {
+    src: '/images/what/botanical/botanical-08.png',
+    alt: '植物果实线示意：果壳铃与种子串珠挂饰、木珠与棉绳手工组合',
+  },
+];
 ---
 
 <Layout
@@ -218,9 +254,29 @@ const butterflySchematics = [
 
   <!-- ============ III. 植物果实与自然小物 ============ -->
   <section class="editorial-section-wide fade-in">
-    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center">
-        <span class="font-serif-en italic text-brass-mid/40 text-2xl">Botanical</span>
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
+      <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 max-w-lg mx-auto md:mx-0 w-full">
+        <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-left">
+          Botanical
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
+          {botanicalSchematics.map((item) => (
+            <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
+              <img
+                src={item.src}
+                alt={item.alt}
+                class="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+                width="400"
+                height="400"
+              />
+            </div>
+          ))}
+        </div>
+        <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-left">
+          植物果实与自然小物示意图：分格收纳、玻罩小景、果壳铃与押花首饰等；画面为门店陈列风格示意，具体 SKU 以店内为准。
+        </figcaption>
       </figure>
 
       <div>
