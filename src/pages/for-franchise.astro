@@ -1,32 +1,348 @@
 ---
 import Layout from '../components/Layout.astro';
 import PageHero from '../components/PageHero.astro';
-import WIPNotice from '../components/WIPNotice.astro';
+import ContactBlock from '../components/ContactBlock.astro';
+import PullQuote from '../components/PullQuote.astro';
+
+const brandFacts = [
+  { label: '品牌名', value: '山海造物 · Nature’s Creations' },
+  { label: '一句话定位', value: '以标本为介质的自然美学生活方式品牌' },
+  { label: 'Slogan', value: '把山海带回家' },
+  { label: '首店', value: '长春 · 「这有山」商业体' },
+  {
+    label: '核心 IP',
+    value: '马上有 · 黑马标本 · 「摸一下它的鼻子，你马上就有」',
+  },
+  {
+    label: '品牌调性',
+    value: '维多利亚博物学家的奇珍柜 · 克制 · 博物馆感',
+  },
+];
+
+const whyNotReady = [
+  {
+    title: '一、标本工作室的建立',
+    body: '供应链的根。现阶段仍在初期建设。只有工作室跑通后，我们才能同时为两家以上门店稳定供货——加盟商最不能容忍的是「店开了但拿不到货」。',
+  },
+  {
+    title: '二、产品设计与出品品质提升',
+    body: '今天门店的 SKU 能支撑一家店，但多门店体系需要更丰富的品类、更稳定的品质控制、更专业的包装体系。产品不提升到可复制的标准，交到合作伙伴手里的就是半成品。',
+  },
+  {
+    title: '三、品牌线上化体系的成熟',
+    body: '今天的零售本质上是「线上品牌势能 + 线下成交场景」的组合。如果品牌的线上表达还不够专业、不够有吸引力，门店侧的自然流量就会不足。',
+  },
+];
+
+const intentYes = [
+  '优先通知——试点与正式开放启动时，优先通知名单上的伙伴',
+  '信息同步——季度品牌进展、工作室状况、路线图动态',
+  '优先参观——可预约参观长春首店及未来的标本工作室',
+  '双向保留——名单随时可退出；我们评估不合同样会诚实告知',
+];
+
+const intentNo = [
+  '不是加盟合同，没有任何法律约束',
+  '不是位置预留，不接受「预留位置」请求',
+  '不是任何形式的预付款，现阶段不接受任何加盟付款',
+  '不是保证名单——2027 年正式开放时仍需重新评估',
+];
+
+const seedRows = [
+  {
+    layer: '动机',
+    fit: '你喜欢山海造物这件事本身。真的对自然、标本、美学这些问题感兴趣。',
+    unfit: '你只是在寻找「可以赚钱的项目」，山海造物只是选项之一。',
+  },
+  {
+    layer: '资源',
+    fit: '你在当地拥有至少一项：优质商场关系、本地手艺人/工匠网络、本地内容平台资源、本地高端饮食/零售背景。',
+    unfit: '你在当地没有任何资源，所有东西需要从零部署。',
+  },
+  {
+    layer: '财务',
+    fit: '你拥有充裕的可动用资金（不依赖贷款/应急资金），能够支撑门店运营中需要的现金流。',
+    unfit: '你需要门店开业 6 个月内就必须保证现金回流，否则资金链会出现问题。',
+  },
+  {
+    layer: '价值观',
+    fit: '你认同「环保与动物保护承诺」，尤其能接受「门店营收的 1% 捐赠」的设定。',
+    unfit: '你觉得「拿营收去捐东西是亏本买卖」。',
+  },
+];
+
+const empowerYes = [
+  '品牌使用授权 · 供货体系 · 门店 VI 设计',
+  '跨门店 IP 创作（按《跨门店命名方法论》生成）',
+  '运营 SOP · 人员培训 · 数字化工具',
+  '内容运营赋能 · 合规与资质咨询 · 巡店与优化',
+];
+
+const empowerNo = [
+  '不会保证门店营收或回本期',
+  '不会提供启动资金、贷款担保等看似贴心、实则反品牌的东西',
+  '不会为了「取悦加盟商」而调整品牌调性、价格体系、合规红线',
+];
 ---
 
 <Layout
   title="加盟咨询"
-  description="一座城一位合伙人 · 不是连锁，是城邦"
+  description="山海造物 · 当前尚未开放加盟招商——加盟说明书（简洁版）与意向名单、路线图说明"
 >
   <PageHero
-    eyebrow="City Partners · 城市合伙人"
-    title="一座城<br />一位合伙人"
-    lead="我们不做加盟连锁——我们做城市合伙人。每座城只有一位，他/她是这座城里「山海造物」的代言人，与我们共同经营一家属于这座城的店。"
+    eyebrow="Franchise Brief · 加盟说明（简洁版）"
+    title="当前尚未开放<br />加盟招商"
+    lead="你好。谢谢你愿意了解我们。<br />这不是饥饿营销，是我们对自己的诚实判断——一个品牌要能被复制，需要<strong class='text-cream'>产品供应、品牌调性、运营体系</strong>三件事同时成熟。这三件事我们还在打磨。如果今天就接受你的加盟，我们能交付的只能是一个半成品。这对你不公平，对品牌也是损耗。"
+  />
+
+  <section class="editorial-section fade-in">
+    <h2 class="section-title text-cream mb-paragraph">这份页面要做的事</h2>
+    <ul class="space-y-3 text-text-soft text-sm md:text-base leading-[1.85] tracking-cn max-w-editorial-wide">
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2.5 w-1.5 h-1.5 rounded-full bg-brass-mid/80"></span>
+        让你看见今天的山海造物是什么；
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2.5 w-1.5 h-1.5 rounded-full bg-brass-mid/80"></span>
+        告诉你我们未来 2 年的路线图；
+      </li>
+      <li class="pl-6 relative">
+        <span class="absolute left-0 top-2.5 w-1.5 h-1.5 rounded-full bg-brass-mid/80"></span>
+        如果你愿意等，告诉你怎么进入我们的<strong class="text-cream">意向名单</strong>。
+      </li>
+    </ul>
+    <p class="prose-cn mt-paragraph text-text-soft">
+      读完后，你可能会选择等，也可能不等。两个选择都是成熟的。
+    </p>
+    <p class="mt-8 text-text-dim text-sm tracking-cn">山海造物 创始团队 · 2026 年 4 月（与纸质《加盟说明书·简洁版》v1.0 同步）</p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- 山海造物是谁 -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">I</p>
+    <h2 class="section-title text-cream mb-paragraph">山海造物是谁</h2>
+    <dl class="grid gap-0 border border-brass-mid/25 bg-ink-elevated/30 max-w-editorial-wide">
+      {
+        brandFacts.map((row, i) => (
+          <div
+            class:list={[
+              'grid sm:grid-cols-[minmax(8rem,10rem)_1fr] gap-2 sm:gap-4 px-4 py-3 md:px-5 md:py-4',
+              i > 0 && 'border-t border-brass-mid/15',
+            ]}
+          >
+            <dt class="text-brass-mid text-xs md:text-sm font-serif tracking-cn shrink-0">{row.label}</dt>
+            <dd class="text-cream text-sm md:text-base leading-relaxed tracking-cn">{row.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <div class="prose-cn mt-paragraph max-w-editorial-wide space-y-paragraph text-text-soft">
+      <p>
+        <strong class="text-cream">创始团队。</strong>山海造物是一个小团队。我们不是资本驱动的创业公司，是一群相信自然之美可以进入生活的人。<strong class="text-cream">李贺与廉澍</strong>为联合创始人，兼具头部互联网公司与标本艺术品牌背景。
+      </p>
+      <p>
+        <strong class="text-cream">品牌价值观。</strong>真实、尊重、手艺、责任。每家门店营业收入的 <strong class="text-brass-bright">1%</strong> 捐赠给本地动物园或动植物保护基金等方向，用于动物权益保护（与
+        <a href="/foundation" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/30">价值底座</a>
+        一致）。
+      </p>
+      <p>
+        <strong class="text-cream">合规红线。</strong>品牌竭力避免触碰三有动物与野生保护类动物；所有涉及的标本均需合法来源与资质证明——这是未来所有加盟门店必须遵守的原则。
+      </p>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- 为什么现在不开放 -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">II</p>
+    <h2 class="section-title text-cream mb-paragraph">为什么现在不开放加盟</h2>
+    <p class="prose-cn mb-paragraph max-w-editorial-wide text-text-soft">
+      一个品牌要能被复制，需要同时跑通三件事。这三件事现在都在进行中，但都还没完成：
+    </p>
+    <ul class="space-y-6 max-w-editorial-wide">
+      {
+        whyNotReady.map((item) => (
+          <li class="border-l-2 border-brass-mid/40 pl-5">
+            <h3 class="font-serif text-lg text-cream tracking-cn mb-2">{item.title}</h3>
+            <p class="text-text-soft text-sm md:text-base leading-[1.85] tracking-cn">{item.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="prose-cn mt-paragraph max-w-editorial-wide text-cream">
+      这不是「谨慎」，是「保护」。不少品牌会在首店运营一年后就开加盟——这些品牌中的大部分不会走到第五年。我们不愿意走这条路。<strong class="text-brass-bright">我们愿意多等一年。</strong>
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- 路线图 -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">III</p>
+    <h2 class="section-title text-cream mb-paragraph">我们的路线图</h2>
+    <p class="prose-cn mb-paragraph max-w-editorial-wide text-text-soft">
+      以下是山海造物未来 2 年的真实节奏，作为你判断是否要等的依据。
+    </p>
+    <ol class="space-y-6 max-w-editorial-wide list-none pl-0">
+      <li class="relative pl-8 md:pl-10">
+        <span class="absolute left-0 top-1 font-serif-en text-brass-mid text-sm">2026</span>
+        <p class="text-cream tracking-cn leading-relaxed">
+          专注三件事：<strong class="text-brass-bright">工作室建设</strong> · <strong class="text-brass-bright">产品设计与品质提升</strong> · <strong class="text-brass-bright">品牌线上化体系</strong>。
+        </p>
+      </li>
+      <li class="relative pl-8 md:pl-10">
+        <span class="absolute left-0 top-1 font-serif-en text-brass-mid text-sm">2026 Q4</span>
+        <p class="text-cream tracking-cn leading-relaxed">
+          <strong class="text-brass-bright">可能</strong>启动小范围试点，邀请 1–2 位「种子加盟商」画像的伙伴，从意向名单中优先选拔。<strong class="text-cream">合作运营模式优先。</strong>
+        </p>
+      </li>
+      <li class="relative pl-8 md:pl-10">
+        <span class="absolute left-0 top-1 font-serif-en text-brass-mid text-sm">2027</span>
+        <p class="text-cream tracking-cn leading-relaxed">
+          试点项目运营 6 个月以上且达到预期后，决定是否正式开放。开放后采取<strong class="text-brass-bright">邀请制</strong>。
+        </p>
+      </li>
+    </ol>
+    <div
+      class="mt-paragraph max-w-editorial-wide border border-coral-mid/30 bg-coral-deep/10 px-5 py-4 text-sm text-text-soft tracking-cn leading-relaxed"
+      role="note"
+    >
+      <strong class="text-coral-mid">重要提醒：</strong>试点是「可能」而不是「一定」。如果三件事中的任一件未达成预期，或者试点表现不佳，我们会选择推迟或不开放。<span class="text-cream">不佳的加盟体系不如没有。</span>
+    </div>
+    <p class="prose-cn mt-paragraph max-w-editorial-wide text-text-soft">
+      长期方向上，我们更认同<strong class="text-cream">「一座城、深度合伙」</strong>而非粗放连锁——但这一切都必须建立在上述三件事真正跑通之后。
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- 加盟意向名单 -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">IV</p>
+    <h2 class="section-title text-cream mb-paragraph">加盟意向名单</h2>
+    <p class="prose-cn mb-paragraph max-w-editorial-wide text-text-soft">
+      意向名单是我们为所有主动联系我们的伙伴保留的一份名单。
+    </p>
+    <div class="grid md:grid-cols-2 gap-6 max-w-editorial-wide mb-paragraph">
+      <div>
+        <h3 class="font-serif text-brass-bright mb-3 tracking-cn">名单上的伙伴会享受</h3>
+        <ul class="space-y-2 text-sm text-text-soft leading-relaxed tracking-cn">
+          {intentYes.map((t) => (
+            <li class="pl-4 relative">
+              <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid/60"></span>
+              {t}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-serif text-text-dim mb-3 tracking-cn">意向名单不是什么</h3>
+        <ul class="space-y-2 text-sm text-text-dim leading-relaxed tracking-cn">
+          {intentNo.map((t) => (
+            <li class="pl-4 relative">
+              <span class="absolute left-0 top-2 w-2 h-px bg-brass-mid/30"></span>
+              {t}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <ContactBlock
+    title="如何进入意向名单"
+    intro="发送邮件至下方地址，邮件标题注明「加盟意向登记 · 姓名 · 城市」。正文建议包含：姓名与联系方式 · 意向城市 · 个人/公司背景简介 · 预计可动用资金 · 本地可联动资源 · 对品牌的理解与期待。（纸质版另附登记表字段，与上述信息等价。）"
+    subjectHint="加盟意向登记 · 姓名 · 城市"
+    footnote="我们会在约 4 个工作日内发出个性化回信。本登记对填表人不产生任何法律约束；信息仅用于加盟意向名单管理。现阶段不接受任何形式的加盟预付款。"
   />
 
   <hr class="brass-divider" />
 
-  {/* ============== 数字化能力亮点（v0.1 即可对外的承诺）============== */}
+  <!-- 种子加盟商画像 -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">V</p>
+    <h2 class="section-title text-cream mb-paragraph">种子加盟商画像</h2>
+    <p class="prose-cn mb-paragraph max-w-editorial-wide text-text-soft">
+      画像不是门槛，是参考。试点阶段我们会优先联系符合画像的伙伴。
+    </p>
+    <div class="overflow-x-auto max-w-editorial-wide">
+      <table class="w-full text-left text-sm border-collapse border border-brass-mid/25">
+        <thead>
+          <tr class="bg-ink-elevated/50 border-b border-brass-mid/25">
+            <th class="p-3 md:p-4 font-serif text-cream tracking-cn w-[5rem] md:w-24">层面</th>
+            <th class="p-3 md:p-4 font-serif text-brass-bright tracking-cn border-l border-brass-mid/15">适合</th>
+            <th class="p-3 md:p-4 font-serif text-text-dim tracking-cn border-l border-brass-mid/15">不适合</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            seedRows.map((row, i) => (
+              <tr class:list={[i > 0 && 'border-t border-brass-mid/15']}>
+                <td class="p-3 md:p-4 text-brass-mid font-serif align-top whitespace-nowrap">{row.layer}</td>
+                <td class="p-3 md:p-4 text-text-soft leading-relaxed tracking-cn border-l border-brass-mid/15 align-top">
+                  {row.fit}
+                </td>
+                <td class="p-3 md:p-4 text-text-dim leading-relaxed tracking-cn border-l border-brass-mid/15 align-top">
+                  {row.unfit}
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- 品牌赋能 -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VI</p>
+    <h2 class="section-title text-cream mb-paragraph">品牌赋能</h2>
+    <p class="prose-cn mb-paragraph max-w-editorial-wide text-text-soft">
+      不论未来采用哪种合作模式，我们都会提供的能力输出：
+    </p>
+    <ul class="space-y-2 mb-paragraph max-w-editorial-wide">
+      {
+        empowerYes.map((t) => (
+          <li class="pl-6 relative text-text-soft text-sm md:text-base tracking-cn leading-relaxed">
+            <span class="absolute left-0 top-2.5 w-1.5 h-1.5 rounded-full bg-brass-mid/70"></span>
+            {t}
+          </li>
+        ))
+      }
+    </ul>
+    <h3 class="font-serif text-lg text-text-dim mb-3 tracking-cn">不会提供的东西</h3>
+    <ul class="space-y-2 max-w-editorial-wide">
+      {
+        empowerNo.map((t) => (
+          <li class="pl-6 relative text-text-dim text-sm md:text-base tracking-cn leading-relaxed">
+            <span class="absolute left-0 top-2.5 w-1.5 h-1.5 rounded-full bg-brass-mid/35"></span>
+            {t}
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- 数字化底座（与说明书「数字化工具」呼应） -->
   <section class="editorial-section py-section fade-in">
     <div class="p-8 md:p-12 border border-brass-mid/30 bg-ink-elevated/50">
       <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-3">
-        Plug-and-Play · 你不需要自建任何数字化系统
+        Digital · 已在建设的门店数字化底座
       </p>
       <h2 class="font-serif text-2xl md:text-3xl text-cream tracking-cn mb-4">
-        开箱即用的数字化能力<br class="md:hidden" />已为你准备好
+        体系成熟后，门店侧将可复用的能力
       </h2>
-      <p class="prose-cn text-text-soft mb-6">
-        城市合伙人最大的负担——小程序、会员体系、库存管理、数据报表、AI 助手——我们已经全部建好。新店开业当天，所有数字化能力<strong class="text-cream">开店即上线</strong>，所有数据自动汇入中央 ERP。AI 智能中心为每家门店提供定价建议、补货预警、销售预测，<strong class="text-cream">大幅降低经营决策门槛</strong>。
+      <p class="prose-cn text-text-soft mb-6 max-w-editorial-wide">
+        加盟说明书中的「数字化工具」不是概念——小程序、会员、库存、报表与 AI 助手等已在中央系统持续迭代。未来试点与正式开放时，新店侧目标是<strong class="text-cream">开店即接入</strong>，数据汇入统一经营中台，降低日常决策门槛（详见
+        <a href="/digital-ops" class="text-brass-mid hover:text-brass-bright border-b border-brass-mid/30">数字化能力清单</a>
+        ）。
       </p>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="text-center p-4 bg-ink-deep/40">
@@ -43,7 +359,7 @@ import WIPNotice from '../components/WIPNotice.astro';
         </div>
         <div class="text-center p-4 bg-ink-deep/40">
           <p class="font-serif-en italic text-brass-bright text-2xl">¥0</p>
-          <p class="text-xs text-text-soft tracking-cn mt-1">技术建设成本</p>
+          <p class="text-xs text-text-soft tracking-cn mt-1">门店侧技术自建成本</p>
         </div>
       </div>
       <a
@@ -56,8 +372,21 @@ import WIPNotice from '../components/WIPNotice.astro';
     </div>
   </section>
 
-  <WIPNotice
-    topic="城市合伙人 · 选拔机制 / 利益结构 / 共同决策范围 / 申请入口"
-    expectedVersion="v0.3"
-  />
+  <hr class="brass-divider" />
+
+  <section class="editorial-section pb-section fade-in">
+    <PullQuote
+      quote="我们不会试图说服你「一定要加盟山海造物」。我们只会告诉你我们是谁、我们要去哪里、你可以怎么跟我们走一段。"
+    />
+    <div class="prose-cn mt-section max-w-editorial mx-auto text-text-soft space-y-paragraph">
+      <p>谢谢你看到这里。不论你选择什么，我们都尊重。</p>
+      <p>
+        如果你选择暂不跟进、不进入意向名单，这说明你今天需要的不是山海造物——我们能做的就是让自己变得更值得被选择。
+      </p>
+      <p>
+        如果你选择进入意向名单、愿意等一年，谢谢你的信任。请你要做好：准备期待落空的可能 · 准备持续观察品牌 · 准备从「对品牌的信心」出发而不是「对赚钱能力的信心」。
+      </p>
+    </div>
+    <p class="mt-10 text-center text-text-dim text-sm tracking-cn">有任何问题，欢迎通过上文邮箱与我们联系。</p>
+  </section>
 </Layout>

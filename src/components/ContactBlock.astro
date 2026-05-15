@@ -12,6 +12,8 @@ interface Props {
   requestDetails?: boolean;
   /** 详细数据二级入口的描述 */
   detailsHint?: string;
+  /** 底部说明（不传则使用默认「每一封正式来信…」） */
+  footnote?: string;
 }
 
 const {
@@ -21,6 +23,7 @@ const {
   email = 'hello@shanhaizaowu.com',
   requestDetails = false,
   detailsHint,
+  footnote,
 } = Astro.props;
 
 // 自动构造 mailto 链接（含主题建议）
@@ -64,6 +67,9 @@ const mailtoHref = subjectHint
   )}
 
   <p class="mt-paragraph text-xs text-text-dim tracking-cn">
-    我们承诺：每一封正式来信都会被回复——即使我们最终没有选择合作。
+    {
+      footnote ??
+        '我们承诺：每一封正式来信都会被回复——即使我们最终没有选择合作。'
+    }
   </p>
 </section>
