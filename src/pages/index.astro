@@ -8,6 +8,7 @@ import Layout from '../components/Layout.astro';
   title="山海造物"
   description="做自然博物美学的标本与衍生品 · 开「让人留得比必要的久」的店 · 山海造物 Nature's Creations · 自 2024。"
   image="/specimens/hero-specimen.jpg"
+  preloadImage="/specimens/hero-specimen.jpg"
 >
   <div class="home">
     {/* 节拍 1 · Hero · Direction B · 全幅背景 + 文字叠加 */}
@@ -89,9 +90,14 @@ import Layout from '../components/Layout.astro';
       <p class="foundation-body">
         六观裁定 · 1% 营收承诺<br />——同一条底线上的两面
       </p>
-      <a href="/foundation" class="cta-button">
-        进入价值底座 &nbsp;→
-      </a>
+      <div class="foundation-cta-row">
+        <a href="/foundation" class="cta-button">
+          进入价值底座 &nbsp;→
+        </a>
+        <a href="/foundation/strategy" class="cta-button cta-button--quiet">
+          战略与 30 年愿景 &nbsp;→
+        </a>
+      </div>
     </section>
 
     {/* 节拍 4 · 我们的承诺 · 2x2 */}
@@ -351,6 +357,16 @@ import Layout from '../components/Layout.astro';
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-arrow {
+      animation: none;
+    }
+
+    .entry-card:hover .card-cta {
+      transform: none;
+    }
+  }
+
   .entry-grid {
     padding: 120px 6vw;
     max-width: 1320px;
@@ -480,6 +496,28 @@ import Layout from '../components/Layout.astro';
   .cta-button:hover {
     background: var(--brass-mid);
     color: var(--ink-deep);
+  }
+
+  .foundation-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .cta-button--quiet {
+    border-color: rgba(184, 152, 103, 0.35);
+    color: var(--text-secondary);
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    padding: 12px 22px;
+  }
+
+  .cta-button--quiet:hover {
+    background: transparent;
+    color: var(--brass-light);
+    border-color: var(--brass-mid);
   }
 
   .commitments {

@@ -94,7 +94,10 @@ function isNavActive(href: string): boolean {
       <!-- Mobile menu button -->
       <button
         id="mobile-menu-btn"
+        type="button"
         class="md:hidden p-2 text-cream"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
         aria-label="打开菜单"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -113,7 +116,7 @@ function isNavActive(href: string): boolean {
           <a
             href={item.href}
             class:list={[
-              'block py-2 text-text-soft',
+              'mobile-nav-link block py-2 text-text-soft transition-colors',
               isNavActive(item.href) && 'text-brass-mid',
             ]}
           >
@@ -126,12 +129,18 @@ function isNavActive(href: string): boolean {
 </header>
 
 <script>
-  // 主题切换（v0.2 · 双主题自适应）
+  // @ts-nocheck
+  function syncThemeColor(theme) {
+    const tc = document.getElementById('theme-color-dynamic');
+    if (tc) tc.setAttribute('content', theme === 'dark' ? '#1A1814' : '#FAFAF5');
+  }
+
   const themeBtn = document.getElementById('theme-toggle');
   themeBtn?.addEventListener('click', () => {
     const current = document.documentElement.dataset.theme;
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
+    syncThemeColor(next);
     try {
       localStorage.setItem('theme', next);
     } catch (e) {
@@ -139,11 +148,19 @@ function isNavActive(href: string): boolean {
     }
   });
 
-  // Mobile menu
   const btn = document.getElementById('mobile-menu-btn');
   const menu = document.getElementById('mobile-menu');
+  function setMenuOpen(open) {
+    menu?.classList.toggle('hidden', !open);
+    btn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn?.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+  }
   btn?.addEventListener('click', () => {
-    menu?.classList.toggle('hidden');
+    const open = menu?.classList.contains('hidden') ?? false;
+    setMenuOpen(open);
+  });
+  menu?.querySelectorAll('.mobile-nav-link').forEach((link) => {
+    link.addEventListener('click', () => setMenuOpen(false));
   });
 </script>
 

@@ -72,6 +72,7 @@ const capClass =
               alt={item.alt}
               class="pointer-events-none h-full w-full object-cover select-none"
               loading={i === 0 ? 'eager' : 'lazy'}
+              fetchpriority={i === 0 ? 'high' : 'low'}
               decoding="async"
               width="800"
               height="1000"
@@ -159,6 +160,7 @@ const capClass =
 </style>
 
 <script>
+  // @ts-nocheck — 轮播增强脚本，保持零依赖
   function initSpecimenCarousel(root) {
     const raw = root.getAttribute('data-items');
     let items = [];
