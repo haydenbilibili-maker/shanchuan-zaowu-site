@@ -39,11 +39,9 @@ import Layout from '../components/Layout.astro';
       </div>
     </section>
 
-    {/* 节拍 2 · What · Who · Why · How */}
+    {/* 节拍 2 · 品牌画像 · 四入口 */}
     <section class="entry-grid" aria-labelledby="entry-title">
-      <h2 id="entry-title" class="section-major-title">
-        What <span class="dot">·</span> Who <span class="dot">·</span> Why <span class="dot">·</span> How
-      </h2>
+      <h2 id="entry-title" class="section-major-title">品牌画像</h2>
 
       <div class="entry-cards">
         <a href="/what" class="entry-card">
@@ -370,19 +368,14 @@ import Layout from '../components/Layout.astro';
     margin: 0 auto;
   }
   .section-major-title {
-    font-family: var(--font-en-serif);
+    font-family: var(--font-cn-serif);
     font-size: clamp(48px, 7vw, 84px);
     font-weight: 400;
     color: var(--cream-100);
     text-align: center;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.08em;
     margin: 0 0 80px;
     line-height: 1.2;
-  }
-  .section-major-title .dot {
-    color: var(--brass-mid);
-    margin: 0 0.3em;
-    font-style: italic;
   }
   .entry-cards {
     display: grid;
