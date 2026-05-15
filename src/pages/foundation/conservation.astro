@@ -1,0 +1,67 @@
+---
+import Layout from '../../components/Layout.astro';
+---
+
+<Layout
+  title="1% 承诺执行细则"
+  description="山海造物 1% 营收承诺的捐赠方向、红线、影响测算与透明披露——即将上线。"
+>
+  <div class="conservation-placeholder">
+    <p class="caps-tag">CONSERVATION &nbsp;·&nbsp; 1% 承诺执行细则</p>
+    <h1 class="placeholder-title">即将上线</h1>
+    <p class="placeholder-body">
+      1% 承诺的完整执行细则——捐赠方向 / 红线 / 影响测算 / 透明披露——正在设计中。
+    </p>
+    <p class="placeholder-back">
+      <a href="/foundation">← 返回价值底座</a>
+    </p>
+  </div>
+</Layout>
+
+<style>
+  .conservation-placeholder {
+    --ink: #0e0e0e;
+    --cream-100: #f5f0e1;
+    --text-secondary: #a89f87;
+    --brass-mid: #b89867;
+    --font-cn-serif: 'Source Han Serif SC', 'Noto Serif SC', '思源宋体', serif;
+    --font-en-serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+    min-height: 60vh;
+    padding: 200px 6vw;
+    text-align: center;
+    background: var(--ink);
+    color: var(--cream-100);
+    font-family: var(--font-cn-serif);
+  }
+  .caps-tag {
+    font-family: var(--font-en-serif);
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--brass-mid);
+    text-transform: uppercase;
+    margin: 0 0 32px;
+  }
+  .placeholder-title {
+    font-size: clamp(22px, 2.5vw, 28px);
+    font-weight: 400;
+    margin: 0 0 24px;
+    letter-spacing: 0.06em;
+  }
+  .placeholder-body {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.9;
+    max-width: 480px;
+    margin: 0 auto 48px;
+  }
+  .placeholder-back a {
+    font-size: 14px;
+    color: var(--brass-mid);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--brass-mid);
+    padding-bottom: 2px;
+  }
+  .placeholder-back a:hover {
+    color: #c9a876;
+  }
+</style>

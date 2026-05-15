@@ -1,0 +1,246 @@
+---
+// 山海造物 · 六观子页 · 一观一屏
+import Layout from '../../components/Layout.astro';
+import { foundationViewPages, foundationViewSlugs } from '../../data/foundationViewPages';
+
+export function getStaticPaths() {
+  return foundationViewSlugs.map((slug) => ({
+    params: { view: slug },
+    props: { data: foundationViewPages[slug] },
+  }));
+}
+
+const { data } = Astro.props;
+const statementLines = data.statement.split('\n');
+---
+
+<Layout title={`${data.name} · ${data.en}`} description={statementLines[0]}>
+  <div class="view-page">
+    <section class="view-hero">
+      <p class="caps-tag-num">{data.num} &nbsp;/&nbsp; {data.en.toUpperCase()}</p>
+      <h1 class="view-title">{data.name}</h1>
+      <p class="view-subtitle">{data.subtitle}</p>
+    </section>
+
+    <section class="view-statement">
+      <p class="statement-main">
+        {statementLines.map((line, i) => (
+          <>
+            {line}
+            {i < statementLines.length - 1 && <br />}
+          </>
+        ))}
+      </p>
+    </section>
+
+    <section class="view-boundary">
+      <p class="caps-tag">BOUNDARY &nbsp;·&nbsp; 边界</p>
+      <ul class="cross-list">
+        {data.boundary.map((item) => (
+          <li>
+            <span class="x-mark">×</span> {item}
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="view-action">
+      <p class="caps-tag">ACTION &nbsp;·&nbsp; 动作</p>
+      <ul class="dot-list">
+        {data.action.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+      {data.related && (
+        <p class="related-link">
+          <a href={data.related.href}>{data.related.label}</a>
+        </p>
+      )}
+    </section>
+
+    <nav class="view-nav">
+      <a href="/foundation" class="nav-back">← 返回价值底座</a>
+      <div class="nav-side">
+        {data.prev && <a href={`/foundation/${data.prev.slug}`} class="nav-prev">{data.prev.label}</a>}
+        {data.next && <a href={`/foundation/${data.next.slug}`} class="nav-next">{data.next.label} →</a>}
+      </div>
+    </nav>
+  </div>
+</Layout>
+
+<style>
+  .view-page {
+    --ink: #0e0e0e;
+    --cream-100: #f5f0e1;
+    --text-primary: #f5f0e1;
+    --text-secondary: #a89f87;
+    --brass-mid: #b89867;
+    --brass-light: #c9a876;
+    --border-quiet: rgba(184, 152, 103, 0.15);
+    --font-cn-serif: 'Source Han Serif SC', 'Noto Serif SC', '思源宋体', serif;
+    --font-en-serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+    background: var(--ink);
+    color: var(--text-primary);
+    font-family: var(--font-cn-serif);
+  }
+
+  .caps-tag,
+  .caps-tag-num {
+    font-family: var(--font-en-serif);
+    text-transform: uppercase;
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0.25em;
+    color: var(--brass-mid);
+    margin: 0 0 20px;
+  }
+  .caps-tag-num {
+    letter-spacing: 0.3em;
+    font-size: 13px;
+  }
+
+  .view-hero {
+    padding: 140px 6vw 60px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .view-title {
+    font-size: clamp(56px, 8vw, 88px);
+    font-weight: 400;
+    color: var(--cream-100);
+    margin: 0 0 14px;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+  }
+  .view-subtitle {
+    font-size: clamp(20px, 2.4vw, 28px);
+    color: var(--brass-mid);
+    margin: 0;
+    letter-spacing: 0.1em;
+  }
+
+  .view-statement {
+    padding: 60px 6vw 80px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .statement-main {
+    font-size: clamp(18px, 2vw, 24px);
+    color: var(--cream-100);
+    line-height: 2;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+
+  .view-boundary,
+  .view-action {
+    padding: 56px 6vw;
+    max-width: 820px;
+    margin: 0 auto;
+    border-top: 0.5px solid var(--border-quiet);
+  }
+  .cross-list,
+  .dot-list {
+    list-style: none;
+    padding: 0;
+    margin: 24px 0 0;
+  }
+  .cross-list li {
+    font-size: 16px;
+    line-height: 2.4;
+    color: var(--cream-100);
+    padding-left: 28px;
+    position: relative;
+  }
+  .x-mark {
+    position: absolute;
+    left: 0;
+    color: var(--brass-mid);
+    font-style: italic;
+  }
+  .dot-list li {
+    font-size: 15px;
+    line-height: 2;
+    color: var(--text-secondary);
+    padding-left: 20px;
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .dot-list li::before {
+    content: '·';
+    position: absolute;
+    left: 6px;
+    color: var(--brass-mid);
+  }
+
+  .related-link {
+    margin: 36px 0 0;
+    padding-left: 20px;
+  }
+  .related-link a {
+    font-size: 14px;
+    color: var(--brass-mid);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--brass-mid);
+    padding-bottom: 2px;
+    letter-spacing: 0.06em;
+  }
+  .related-link a:hover {
+    color: var(--brass-light);
+  }
+
+  .view-nav {
+    padding: 100px 6vw 140px;
+    max-width: 820px;
+    margin: 60px auto 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 0.5px solid var(--border-quiet);
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  .nav-side {
+    display: flex;
+    gap: 32px;
+  }
+  .nav-back,
+  .nav-prev,
+  .nav-next {
+    font-size: 14px;
+    color: var(--brass-mid);
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    transition: color 0.3s ease;
+  }
+  .nav-back:hover,
+  .nav-prev:hover,
+  .nav-next:hover {
+    color: var(--brass-light);
+  }
+  .nav-back {
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 768px) {
+    .view-hero {
+      padding: 100px 5vw 40px;
+    }
+    .view-statement,
+    .view-boundary,
+    .view-action {
+      padding: 40px 5vw;
+    }
+    .view-nav {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 60px 5vw 100px;
+    }
+    .nav-side {
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+  }
+</style>

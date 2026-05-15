@@ -54,7 +54,7 @@ export const operationsStoreDetails: StoreDetail[] = [
     ],
     notHas: [
       '没有标本工坊（不做现场制作）',
-      '没有妈妈饺子（场地限制 + 团队规模不够）',
+      '没有餐饮模块（场地限制 + 团队规模不够）',
       '没有讲解员（店员兼任轻讲解）',
       '没有完整教育模块（仅做「小型主题展」）',
       '没有大型工作坊空间（仅周末偶尔小活动）',
@@ -82,7 +82,7 @@ export const operationsStoreDetails: StoreDetail[] = [
       venueType: '商场文化空间 / 城市核心商圈 / 文化综合体',
       investment: '80 - 180 万人民币',
       staff: '6 - 8 人（店长 1 + 店员 3-4 + 标本师 1-2）',
-      mainContent: '完整商品线 + 工坊体验 + 教育 + 妈妈饺子 + 应急服务',
+      mainContent: '完整商品线 + 工坊体验 + 教育 + 应急服务',
       monthlyRevenue: '30 - 60 万人民币',
       payback: '18 - 30 个月',
       role: '主要营收来源 / 加盟标准模板 / 城市旗舰',
@@ -92,7 +92,6 @@ export const operationsStoreDetails: StoreDetail[] = [
       '自然小匣 + 标本零售（150-200 个 SKU）',
       '工坊体验区（小型 · 5-8 人 · 可预约）',
       '教育模块（季节性主题课 · 门槛收费）',
-      '妈妈饺子工位（A 套餐 · 猪肉酸菜 · 触发供应）',
       '应急服务（避雨/避雪/休息/借电话/AED）',
       '茶水座位区（10-20 个座位 · 不强制消费）',
       '公共博物馆功能（部分时段免费参观）',
@@ -196,7 +195,6 @@ export const operationsCompareRows: CompareRow[] = [
   { label: '商品', lite: '基础零售', pro: '完整商品线', max: '全品类' },
   { label: '工坊体验', lite: '✗', pro: '☑ 小型', max: '☑ 工坊学院' },
   { label: '教育模块', lite: '✗', pro: '☑ 月度', max: '☑ 季度课程' },
-  { label: '妈妈饺子', lite: '✗', pro: '☑ 强制', max: '☑ 强制' },
   { label: '讲解员', lite: '✗', pro: '兼职', max: '全职' },
   { label: 'Concierge', lite: '✗', pro: '✗', max: '☑ 高端定制' },
   { label: '公共博物馆', lite: '✗', pro: '部分开放', max: '周开放' },
@@ -220,7 +218,7 @@ export const operationsSevenValuesRows: MatrixRow[] = [
   { label: '内容生产', lite: '总部统一', pro: '店长产出', max: '全维度产出' },
   { label: 'Concierge', lite: '✗', pro: '轻量', max: '完整白手套' },
   { label: '博物馆功能', lite: '✗', pro: '部分时段', max: '每周固定开放' },
-  { label: '公共客厅', lite: '基础避雨', pro: '完整（含饺子）', max: '完整（含医疗）' },
+  { label: '公共客厅', lite: '基础避雨', pro: '完整（含应急）', max: '完整（含医疗）' },
 ];
 
 export interface TimelineColumn {
@@ -320,7 +318,7 @@ export const operationsYearPlans: YearPlanDetail[] = [
         items: [
           { text: '公司化升级完成 · 山海造物文化创意有限公司挂牌（约 2026 年 8 月）' },
           { text: '双店协同运营 + 模型验证（数据与复购结构）' },
-          { text: '妈妈饺子 SOP 落地测试（这有山 Pro 双店）' },
+          { text: '公共客厅服务 SOP 落地测试（这有山 Pro 双店）' },
           { text: '非拍照价值七件套在双店的部署完整化' },
           { text: '1% 承诺与首批合作机构对话（山水自然保护中心等）' },
           { text: '内部 SOP 文档化（店长手册 v0.1 · 店员手册 v0.1）' },
@@ -342,7 +340,6 @@ export const operationsYearPlans: YearPlanDetail[] = [
       { label: '公司主体', value: '山海造物文化创意有限公司挂牌（约 2026 年 8 月）' },
       { label: '全年营收目标（双店合计）', value: '80 - 150 万人民币' },
       { label: '全年到访人次（双店合计）', value: '6000 - 16000 人次' },
-      { label: '妈妈饺子供应', value: '实际数据采集（无数字目标）' },
       { label: '内容产出', value: '公众号 4-6 篇 / 小红书 50-80 条' },
       { label: '1% 承诺金额', value: '8000 - 15000 元（首年捐赠 · 双店口径）' },
     ],
@@ -351,7 +348,7 @@ export const operationsYearPlans: YearPlanDetail[] = [
       '不在数据未稳定前盲目找投资',
       '不在文档未完整前启动加盟',
       '不为流量牺牲品牌调性',
-      '不在「妈妈饺子」模块成熟前推广这件事',
+      '不在公共客厅服务模块成熟前过度宣传',
     ],
   },
   {
@@ -464,7 +461,7 @@ export const operationsNotDoing: string[] = [
   '不在团队没准备好前开新城市',
   '不为了流量做「快速营销」',
   '不放弃 1% 承诺（即使财务压力大）',
-  '不让「妈妈饺子」成为营销手段',
+  '不让公共客厅服务成为营销手段',
   '不为了估值「美化」经营数据',
   '不做与品牌定位不符的联名 / 代言 / 合作',
   '不让任何一家加盟店成为「赚短期钱」的工具',

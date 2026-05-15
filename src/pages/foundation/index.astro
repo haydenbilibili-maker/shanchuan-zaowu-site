@@ -1,0 +1,399 @@
+---
+// src/pages/foundation/index.astro
+// 山海造物 · 价值底座 · v0.2
+// 从单页 30+ 屏「宣言式」改为 4 屏「索引式」
+// 详情进入子页 /foundation/{nature|space|content|talent|pledge|compliance}
+// 1% 详情独立子页 /foundation/conservation（下一轮处理）
+import Layout from '../../components/Layout.astro';
+
+const sixViews = [
+  { num: '01', name: '自然观', en: 'On Nature',     tagline: '向自然学习',                slug: 'nature' },
+  { num: '02', name: '空间观', en: 'On Space',      tagline: '店即博物馆',                slug: 'space' },
+  { num: '03', name: '内容观', en: 'On Content',    tagline: '走过问题',                  slug: 'content' },
+  { num: '04', name: '人才观', en: 'On Talent',     tagline: '青年优先',                  slug: 'talent' },
+  { num: '05', name: '承诺观', en: 'On Commitment', tagline: '会被违反时主动赔偿',         slug: 'pledge' },
+  { num: '06', name: '合规观', en: 'On Compliance', tagline: '30 年的护身符 · 触碰即下架', slug: 'compliance' },
+];
+---
+
+<Layout
+  title="价值底座"
+  description="六观——我们做这件事时不会改变的六件事。一切的底色。"
+>
+  <div class="foundation-page">
+
+    {/* ━━━━━━━━━━━ HERO · 一屏 ━━━━━━━━━━━ */}
+    <section class="found-hero">
+      <p class="caps-tag-deep">FOUNDATION</p>
+      <h1 class="hero-title">价值底座</h1>
+      <p class="hero-subtitle"><em>The Bottom Color</em></p>
+      <div class="hr-thin" aria-hidden="true"></div>
+      <p class="hero-statement">一切的底色</p>
+      <p class="hero-statement-secondary">六件事 · 不会变。</p>
+    </section>
+
+    {/* ━━━━━━━━━━━ 六观一览 · 一屏 ━━━━━━━━━━━ */}
+    <section class="six-views" aria-labelledby="views-title">
+      <p class="caps-tag">SIX VIEWS &nbsp;·&nbsp; 六观一览</p>
+      <h2 id="views-title" class="section-title">六观一览</h2>
+      <ul class="views-list">
+        {sixViews.map(v => (
+          <li>
+            <a href={`/foundation/${v.slug}`} class="view-row">
+              <span class="view-num">{v.num}</span>
+              <span class="view-name">{v.name}</span>
+              <span class="view-en"><em>{v.en}</em></span>
+              <span class="view-tagline">{v.tagline}</span>
+              <span class="view-arrow">→</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    {/* ━━━━━━━━━━━ 结构 · 一屏 ━━━━━━━━━━━ */}
+    <section class="pyramid-section" aria-labelledby="pyramid-title">
+      <p class="caps-tag">STRUCTURE &nbsp;·&nbsp; 六观之间的关系</p>
+      <h2 id="pyramid-title" class="section-title">六观之间的关系</h2>
+
+      <div class="pyramid">
+        <div class="layer layer-top">
+          <span class="layer-name">合规观</span>
+          <span class="layer-role"><em>— 边界</em></span>
+        </div>
+        <div class="layer">
+          <span class="layer-name">承诺观</span>
+        </div>
+        <div class="layer">
+          <span class="layer-name">人才观</span>
+        </div>
+        <div class="layer">
+          <span class="layer-name">内容观</span>
+        </div>
+        <div class="layer">
+          <span class="layer-name">空间观</span>
+        </div>
+        <div class="layer layer-bottom">
+          <span class="layer-name">自然观</span>
+          <span class="layer-role"><em>— 根</em></span>
+        </div>
+      </div>
+
+      <p class="pyramid-caption">
+        自然观是根 · 合规观是边界。<br />
+        触碰红线 · 其他五观全部失效。
+      </p>
+    </section>
+
+    {/* ━━━━━━━━━━━ 收尾 · 一屏 ━━━━━━━━━━━ */}
+    <section class="found-closer">
+      <p class="closer-main">
+        一时的生意 · 可以变通。<br />
+        一辈子的事 · 需要「不会变的事」作为底色。
+      </p>
+      <p class="closer-conclusion">这六观 · 就是底色。</p>
+
+      <div class="closer-divider" aria-hidden="true"></div>
+
+      <div class="closer-qa">
+        <p class="qa-question">它们会被违反吗？</p>
+
+        <p class="qa-answer">
+          <strong>承诺观会</strong>——这是真实的人和真实的组织都会发生的事。<br />
+          我们会公开说出来 · 会赔偿 · 会改进。
+        </p>
+
+        <p class="qa-answer">
+          <strong>合规观不会</strong>——这是品牌的生命线。<br />
+          触碰红线那一刻 · 品牌就死亡了。
+        </p>
+
+        <p class="qa-coda">这就是底色的真正意义。</p>
+      </div>
+    </section>
+
+  </div>
+</Layout>
+
+<style>
+  .foundation-page {
+    --ink: #0E0E0E;
+    --ink-deep: #1A140B;
+    --cream-100: #F5F0E1;
+    --cream-200: #E8E2D0;
+    --text-primary: #F5F0E1;
+    --text-secondary: #A89F87;
+    --text-tertiary: #6B6353;
+    --brass-deep: #5F4C2B;
+    --brass-mid: #B89867;
+    --brass-light: #C9A876;
+    --border-quiet: rgba(184, 152, 103, 0.15);
+    --border-mid: rgba(184, 152, 103, 0.3);
+    --font-cn-serif: 'Source Han Serif SC', 'Noto Serif SC', '思源宋体', serif;
+    --font-en-serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+    background: var(--ink);
+    color: var(--text-primary);
+    font-family: var(--font-cn-serif);
+  }
+
+  .caps-tag, .caps-tag-deep {
+    font-family: var(--font-en-serif);
+    text-transform: uppercase;
+    font-weight: 400;
+    margin: 0;
+  }
+  .caps-tag      { font-size: 12px; letter-spacing: 0.25em; color: var(--brass-mid); }
+  .caps-tag-deep { font-size: 12px; letter-spacing: 0.3em;  color: var(--brass-mid); }
+
+  /* HERO · 一屏 · 居中 · 大留白 */
+  .found-hero {
+    min-height: 85vh;
+    padding: 140px 6vw 100px;
+    max-width: 1180px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .found-hero .caps-tag-deep { margin-bottom: 32px; }
+  .hero-title {
+    font-family: var(--font-cn-serif);
+    font-size: clamp(56px, 8vw, 96px);
+    font-weight: 400;
+    color: var(--cream-100);
+    letter-spacing: 0.06em;
+    margin: 0 0 14px;
+    line-height: 1.2;
+  }
+  .hero-subtitle {
+    font-family: var(--font-en-serif);
+    font-size: clamp(20px, 2.2vw, 28px);
+    color: var(--brass-mid);
+    margin: 0 0 36px;
+    font-style: italic;
+  }
+  .hr-thin {
+    width: 40px;
+    height: 0.5px;
+    background: var(--brass-mid);
+    margin: 0 auto 36px;
+  }
+  .hero-statement {
+    font-family: var(--font-cn-serif);
+    font-size: clamp(18px, 2vw, 24px);
+    color: var(--cream-100);
+    margin: 0 0 12px;
+    letter-spacing: 0.1em;
+  }
+  .hero-statement-secondary {
+    font-family: var(--font-cn-serif);
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+    letter-spacing: 0.08em;
+  }
+
+  /* 六观一览 · 一屏 · 表格式索引 */
+  .six-views {
+    padding: 140px 6vw 100px;
+    max-width: 1100px;
+    margin: 0 auto;
+    border-top: 0.5px solid var(--border-quiet);
+  }
+  .six-views .caps-tag { margin-bottom: 16px; }
+  .section-title {
+    font-family: var(--font-cn-serif);
+    font-size: clamp(36px, 4.5vw, 56px);
+    font-weight: 400;
+    color: var(--cream-100);
+    margin: 0 0 60px;
+    letter-spacing: 0.05em;
+  }
+  .views-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: 0.5px solid var(--border-mid);
+  }
+  .views-list li { border-bottom: 0.5px solid var(--border-mid); }
+  .view-row {
+    display: grid;
+    grid-template-columns: 60px 110px 160px 1fr 40px;
+    align-items: baseline;
+    gap: 24px;
+    padding: 22px 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.4s ease;
+  }
+  .view-row:hover { background: rgba(184, 152, 103, 0.04); }
+  .view-num {
+    font-family: var(--font-en-serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--brass-mid);
+  }
+  .view-name {
+    font-family: var(--font-cn-serif);
+    font-size: 22px;
+    color: var(--cream-100);
+    letter-spacing: 0.06em;
+  }
+  .view-en {
+    font-family: var(--font-en-serif);
+    font-size: 14px;
+    color: var(--brass-mid);
+    font-style: italic;
+  }
+  .view-tagline {
+    font-family: var(--font-cn-serif);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .view-arrow {
+    font-family: var(--font-cn-serif);
+    font-size: 18px;
+    color: var(--brass-mid);
+    text-align: right;
+    transition: transform 0.4s ease;
+  }
+  .view-row:hover .view-arrow { transform: translateX(4px); }
+
+  /* 金字塔 · 一屏 · 极简层叠 */
+  .pyramid-section {
+    padding: 120px 6vw 100px;
+    max-width: 880px;
+    margin: 0 auto;
+    text-align: center;
+    border-top: 0.5px solid var(--border-quiet);
+  }
+  .pyramid-section .caps-tag { margin-bottom: 16px; }
+  .pyramid-section .section-title { text-align: center; margin-bottom: 56px; }
+  .pyramid {
+    max-width: 520px;
+    margin: 0 auto 40px;
+    border: 0.5px solid var(--border-mid);
+  }
+  .layer {
+    padding: 16px 28px;
+    border-bottom: 0.5px solid var(--border-quiet);
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 16px;
+    font-family: var(--font-cn-serif);
+  }
+  .layer:last-child { border-bottom: none; }
+  .layer-name {
+    font-size: 18px;
+    color: var(--cream-100);
+    letter-spacing: 0.08em;
+  }
+  .layer-role {
+    font-family: var(--font-en-serif);
+    font-size: 13px;
+    color: var(--brass-mid);
+  }
+  .layer-top {
+    background: rgba(184, 152, 103, 0.05);
+    border-top: 1.5px solid var(--brass-mid);
+  }
+  .layer-bottom {
+    background: rgba(184, 152, 103, 0.03);
+    border-bottom: 1.5px solid var(--brass-mid) !important;
+  }
+  .pyramid-caption {
+    font-family: var(--font-cn-serif);
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.95;
+    font-style: italic;
+  }
+
+  /* 收尾 · 一屏 · 居中 · Q&A 是品牌底色的真正定义 */
+  .found-closer {
+    padding: 140px 6vw 160px;
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+    border-top: 0.5px solid var(--border-quiet);
+  }
+  .closer-main {
+    font-family: var(--font-cn-serif);
+    font-size: clamp(18px, 2vw, 24px);
+    color: var(--cream-100);
+    line-height: 1.95;
+    letter-spacing: 0.06em;
+    margin: 0 0 40px;
+  }
+  .closer-conclusion {
+    font-family: var(--font-cn-serif);
+    font-size: clamp(22px, 2.4vw, 28px);
+    color: var(--brass-light);
+    margin: 0 0 80px;
+    letter-spacing: 0.1em;
+  }
+  .closer-divider {
+    width: 60px;
+    height: 0.5px;
+    background: var(--brass-mid);
+    margin: 0 auto 56px;
+  }
+  .closer-qa {
+    text-align: left;
+    max-width: 580px;
+    margin: 0 auto;
+  }
+  .qa-question {
+    font-family: var(--font-cn-serif);
+    font-size: 18px;
+    color: var(--cream-100);
+    margin: 0 0 32px;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+  .qa-answer {
+    font-family: var(--font-cn-serif);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 2.0;
+    margin: 0 0 24px;
+  }
+  .qa-answer strong { color: var(--cream-100); font-weight: 400; }
+  .qa-coda {
+    font-family: var(--font-cn-serif);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--brass-light);
+    margin: 32px 0 0;
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+
+  /* 移动端 */
+  @media (max-width: 768px) {
+    .found-hero { padding: 100px 5vw 80px; min-height: auto; }
+    .six-views { padding: 100px 5vw 80px; }
+    .view-row {
+      grid-template-columns: 40px 1fr 30px;
+      grid-template-areas:
+        "num name arrow"
+        "num en arrow"
+        ".   tagline arrow";
+      row-gap: 4px;
+      gap: 16px;
+    }
+    .view-num { grid-area: num; }
+    .view-name { grid-area: name; }
+    .view-en { grid-area: en; }
+    .view-tagline { grid-area: tagline; margin-top: 8px; }
+    .view-arrow { grid-area: arrow; align-self: center; }
+    .pyramid-section { padding: 80px 5vw; }
+    .pyramid { max-width: 100%; }
+    .found-closer { padding: 100px 5vw 120px; }
+  }
+</style>
