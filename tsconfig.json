@@ -1,13 +1,26 @@
 {
-  "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "src/pages/foundation/_old-monolith.bak.astro"],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@layouts/*": ["src/layouts/*"]
-    }
-  }
+	"extends": "astro/tsconfigs/strict",
+	"include": [
+		".astro/types.d.ts",
+		"**/*",
+		"./worker-configuration.d.ts"
+	],
+	"exclude": [
+		"dist",
+		"src/pages/foundation/_old-monolith.bak.astro"
+	],
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@/*": [
+				"src/*"
+			],
+			"@components/*": [
+				"src/components/*"
+			],
+			"@layouts/*": [
+				"src/layouts/*"
+			]
+		}
+	}
 }
