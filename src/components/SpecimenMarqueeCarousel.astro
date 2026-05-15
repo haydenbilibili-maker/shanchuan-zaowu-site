@@ -8,15 +8,15 @@ export interface SpecimenSlide {
 
 interface Props {
   eyebrow: string;
-  /** 图下一句短提示 */
-  hint: string;
+  /** 图下一句短说明；留空则不展示 */
+  hint?: string;
   items: SpecimenSlide[];
   align?: 'left' | 'right';
   /** Tailwind max-width class，默认 max-w-lg */
   maxWidth?: string;
 }
 
-const { eyebrow, hint, items, align = 'left', maxWidth = 'max-w-lg' } = Astro.props;
+const { eyebrow, hint = '', items, align = 'left', maxWidth = 'max-w-lg' } = Astro.props;
 const itemsJson = JSON.stringify(items);
 const headClass =
   align === 'right'
@@ -127,9 +127,13 @@ const capClass =
     }
   </div>
 
-  <figcaption class:list={['mt-2 text-xs leading-relaxed text-text-soft tracking-cn', capClass]}>
-    {hint}
-  </figcaption>
+  {
+    hint ? (
+      <figcaption class:list={['mt-2 text-xs leading-relaxed text-text-soft tracking-cn', capClass]}>
+        {hint}
+      </figcaption>
+    ) : null
+  }
 
   <dialog
     data-car-dialog
