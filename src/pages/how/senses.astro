@@ -3,29 +3,62 @@ import Layout from '../../components/Layout.astro';
 import SenseSpread from '../../components/SenseSpread.astro';
 import PullQuote from '../../components/PullQuote.astro';
 
-// 注：v0.1 暂不传入 image 路径 → SenseSpread 会显示黄铜色占位块（参考文档 §6.1 方案 B）
-// 真实照片到位后，给每个 SenseSpread 加上 image="/images/senses/xxx.jpg" 即可
+const principles = [
+  {
+    n: 'i',
+    title: '在场而不喧哗',
+    body: '五感是背景，不是主角。它们让客人安心停留，而不是被感官轰炸。',
+  },
+  {
+    n: 'ii',
+    title: '不装真实',
+    body: '气味来自纸与木本身，触感来自材料本身——不用廉价香氛与塑料仿木去演戏。',
+  },
+  {
+    n: 'iii',
+    title: '与自然 + 博物相关',
+    body: '每一感都指向标本、档案、田野与工作室，而不是商场模板。',
+  },
+  {
+    n: 'iv',
+    title: '跨感官联动',
+    body: '光、声、味、触彼此印证：同一套叙事在多个通道里重复出现。',
+  },
+  {
+    n: 'v',
+    title: '北方属地化',
+    body: '干燥、冬季长、室内停留久——湿度、温度与材料选择都按北方日常来调。',
+  },
+];
+
+const senseNav = [
+  { id: 'sense-sight', sense: '视', senseEn: 'Sight', accent: 'border-brass-mid/40 text-brass-bright' },
+  { id: 'sense-sound', sense: '听', senseEn: 'Sound', accent: 'border-cabinet-mid/35 text-cabinet-light' },
+  { id: 'sense-smell', sense: '嗅', senseEn: 'Smell', accent: 'border-green-mid/35 text-green-light' },
+  { id: 'sense-touch', sense: '触', senseEn: 'Touch', accent: 'border-purple-mid/35 text-purple-light' },
+  { id: 'sense-taste', sense: '味', senseEn: 'Taste', accent: 'border-coral-mid/35 text-coral-mid' },
+];
 ---
 
 <Layout
   title="五感"
   description="进店之前你已经在感受我们了——视、听、嗅、触、味的店内体验设计"
 >
-  <!-- ============== Hero 引子 ============== -->
+  <!-- ============== Hero 引子（v1：八秒 + 叠加感官） ============== -->
   <section class="editorial-section pt-section">
     <div class="text-center">
       <p class="font-serif-en italic text-brass-mid text-sm tracking-widest uppercase mb-4">
         Five Senses · 五感
       </p>
       <h1 class="display-title mb-paragraph">
-        进店之前<br />你已经在感受我们了
+        客人推门进来的<br />那 8 秒
       </h1>
+      <p class="font-serif text-text-soft text-lg md:text-xl max-w-editorial-wide mx-auto tracking-cn leading-relaxed">
+        我们设计的不是一家店——是一组<strong class="text-cream font-normal">叠加的感官</strong>。视觉是入口，听觉是停留的理由，气味是离开后还在记忆里的东西。
+      </p>
     </div>
 
     <div class="prose-cn mt-section max-w-editorial mx-auto">
-      <p>
-        我们设计的不是一家店——是一组叠加的感官。视觉是入口，听觉是停留的理由，气味是离开后还在记忆里的东西。
-      </p>
       <p>
         把它们拆开来说一说，是因为这些细节通常不被说，但它们决定了一家店是否真正活着。
       </p>
@@ -34,8 +67,65 @@ import PullQuote from '../../components/PullQuote.astro';
 
   <hr class="brass-divider" />
 
+  <!-- ============== 五条原则（v1 principles） ============== -->
+  <section class="editorial-section-wide fade-in" aria-labelledby="senses-principles-heading">
+    <div class="max-w-editorial-wide mx-auto">
+      <h2 id="senses-principles-heading" class="font-serif text-title text-cream mb-2 tracking-cn">
+        五条原则
+      </h2>
+      <p class="text-text-soft text-sm tracking-cn mb-8 border-l-2 border-brass-mid/40 pl-4">
+        五感页不是陈列口号——下面是我们在店里做感官设计时，真正会拿来对照的五条。
+      </p>
+      <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          principles.map((p) => (
+            <li class="border border-brass-mid/20 bg-ink-elevated/30 p-5 md:p-6 flex flex-col gap-2">
+              <span class="font-serif-en text-brass-mid/80 text-xs tracking-widest uppercase">{p.n}</span>
+              <h3 class="font-serif text-lg text-cream tracking-cn">{p.title}</h3>
+              <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{p.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============== 五感导航卡（v1 anchor cards） ============== -->
+  <section class="editorial-section-wide fade-in" aria-labelledby="senses-overview-heading">
+    <div class="max-w-editorial-wide mx-auto">
+      <h2 id="senses-overview-heading" class="font-serif text-title text-cream mb-6 tracking-cn">
+        五感总览
+      </h2>
+      <ul class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+        {
+          senseNav.map((s) => (
+            <li>
+              <a
+                href={`#${s.id}`}
+                class:list={[
+                  'block h-full border bg-ink-elevated/25 hover:bg-ink-elevated/50 transition-colors p-4 md:p-5 text-center group',
+                  s.accent.split(' ')[0],
+                ]}
+              >
+                <span class="font-serif text-2xl md:text-3xl text-cream block mb-1">{s.sense}</span>
+                <span class:list={['font-serif-en italic text-xs tracking-widest', s.accent.split(' ').slice(1).join(' ')]}>
+                  {s.senseEn}
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
   <!-- ============== 视 · Sight ============== -->
   <SenseSpread
+    sectionId="sense-sight"
     sense="视"
     senseEn="Sight"
     number="I"
@@ -48,12 +138,38 @@ import PullQuote from '../../components/PullQuote.astro';
       <p>我们也不做明亮饱和的品牌色。山海造物全部的视觉系统建立在<strong>黄铜 + 黑铅 + 米白</strong>这三个色之间——它们是 19 世纪英国博物学家的工作室色，是穿越时间的色，不是当下流行色。</p>
       <p>如果有一天你忘了我们卖什么，请记住你看到过这种光。</p>
     `}
-  />
+  >
+    <div slot="figure" class="flex flex-col h-full gap-4">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase shrink-0">Palette · 店内四色</p>
+      <div class="grid grid-cols-2 gap-2 flex-1 min-h-0">
+        <div class="flex flex-col justify-end p-3 bg-brass-mid border border-brass-mid/50 min-h-[5.5rem]">
+          <span class="text-ink text-xs font-mono tracking-wide">#C4A76C</span>
+          <span class="text-ink text-sm font-serif tracking-cn mt-1">黄铜</span>
+        </div>
+        <div class="flex flex-col justify-end p-3 bg-paper border border-brass-mid/25 min-h-[5.5rem]">
+          <span class="text-ink-text text-xs font-mono tracking-wide">#F2EDE4</span>
+          <span class="text-ink-text text-sm font-serif tracking-cn mt-1">米白</span>
+        </div>
+        <div class="flex flex-col justify-end p-3 bg-ink-deep border border-brass-mid/20 min-h-[5.5rem]">
+          <span class="text-cream/90 text-xs font-mono tracking-wide">#1A1814</span>
+          <span class="text-cream text-sm font-serif tracking-cn mt-1">墨色</span>
+        </div>
+        <div class="flex flex-col justify-end p-3 bg-coral-deep/90 border border-coral-mid/40 min-h-[5.5rem]">
+          <span class="text-cream/90 text-xs font-mono tracking-wide">#C97A5E</span>
+          <span class="text-cream text-sm font-serif tracking-cn mt-1">铁锈</span>
+        </div>
+      </div>
+      <blockquote class="border-l-2 border-brass-mid/50 pl-3 text-text-soft text-sm italic leading-relaxed tracking-cn shrink-0">
+        「光不是照亮商品，是让标本在暗处自己说话。」
+      </blockquote>
+    </div>
+  </SenseSpread>
 
   <hr class="brass-divider" />
 
   <!-- ============== 听 · Sound ============== -->
   <SenseSpread
+    sectionId="sense-sound"
     sense="听"
     senseEn="Sound"
     number="II"
@@ -66,7 +182,25 @@ import PullQuote from '../../components/PullQuote.astro';
       <p>我们不放快歌、不放电子节拍。背景音乐选的是 17-19 世纪的室内乐和现代极简钢琴——它们的共同点是<strong>不夺人耳朵</strong>。</p>
       <p>把声音设计写进 SOP 是反直觉的——大多数零售店懒得做。但<strong>店里的声音是你离开后大脑会自动回放的东西</strong>。我们想让那段回放是平静的。</p>
     `}
-  />
+  >
+    <div slot="figure" class="flex flex-col h-full gap-4">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase shrink-0">Broadcast · 口播样本</p>
+      <figure class="border border-brass-mid/25 bg-ink-deep/60 p-4 md:p-5 flex-1 flex flex-col">
+        <figcaption class="text-xs text-text-dim tracking-cn mb-3">
+          <span class="text-brass-mid font-medium">场景</span> · 展柜前 · 母女 · 蝴蝶标本
+        </figcaption>
+        <blockquote class="font-serif text-cream text-base md:text-lg leading-relaxed tracking-cn flex-1 border-l-2 border-brass-mid/40 pl-4">
+          「妈妈你看，这只翅膀上的蓝色会跟着光变——像海。」
+        </blockquote>
+        <p class="mt-4 pt-3 border-t border-brass-mid/15 text-xs text-text-soft font-mono">
+          meta: 室内乐底 + 人声近拾 · 约 42 dB
+        </p>
+      </figure>
+      <p class="text-text-dim text-xs tracking-cn leading-relaxed shrink-0">
+        十二小时店内声音按「主题日」编排；完整曲目与守则见下方手册入口。
+      </p>
+    </div>
+  </SenseSpread>
 
   <!-- 「听 · Sound」深度入口：店内音乐手册 v2 -->
   <section class="editorial-section">
@@ -101,6 +235,7 @@ import PullQuote from '../../components/PullQuote.astro';
 
   <!-- ============== 嗅 · Smell ============== -->
   <SenseSpread
+    sectionId="sense-smell"
     sense="嗅"
     senseEn="Smell"
     number="III"
@@ -113,12 +248,41 @@ import PullQuote from '../../components/PullQuote.astro';
       <p>这套气味是设计过的，但它不是香薰——是物质本身的气味。</p>
       <p>我们也不喷劣质香氛去掩盖什么。如果哪天你在我们店里闻到某种"商场标准甜香"——请告诉我们，那是失败。</p>
     `}
-  />
+  >
+    <div slot="figure" class="flex flex-col h-full gap-4">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase shrink-0">Pyramid · 气味结构</p>
+      <div class="flex flex-col md:flex-row gap-4 flex-1 min-h-0 items-stretch">
+        <div class="flex justify-center md:w-[42%] shrink-0" aria-hidden="true">
+          <svg viewBox="0 0 120 140" class="w-28 h-32 md:w-32 md:h-36 text-brass-mid/80" role="img">
+            <title>气味金字塔示意</title>
+            <polygon points="60,8 112,132 8,132" fill="none" stroke="currentColor" stroke-width="1.2" />
+            <line x1="28" y1="88" x2="92" y2="88" stroke="currentColor" stroke-width="0.8" opacity="0.5" />
+            <line x1="38" y1="58" x2="82" y2="58" stroke="currentColor" stroke-width="0.8" opacity="0.5" />
+          </svg>
+        </div>
+        <ol class="flex-1 flex flex-col gap-2 text-sm min-w-0">
+          <li class="border border-green-mid/25 bg-ink-deep/40 p-3">
+            <span class="font-serif-en text-green-light text-xs tracking-widest uppercase block mb-1">Top · 前调</span>
+            <span class="text-cream tracking-cn">咖啡烘焙的轻烟、开门时的一瞬冷空气</span>
+          </li>
+          <li class="border border-brass-mid/25 bg-ink-deep/40 p-3">
+            <span class="font-serif-en text-brass-mid text-xs tracking-widest uppercase block mb-1">Mid · 中调</span>
+            <span class="text-cream tracking-cn">老纸纤维、樟木与展柜骨架</span>
+          </li>
+          <li class="border border-purple-mid/25 bg-ink-deep/40 p-3">
+            <span class="font-serif-en text-purple-light text-xs tracking-widest uppercase block mb-1">Base · 底调</span>
+            <span class="text-cream tracking-cn">标本保存的微涩（极低浓度）、灰尘与时间的安静尾韵</span>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </SenseSpread>
 
   <hr class="brass-divider" />
 
   <!-- ============== 触 · Touch ============== -->
   <SenseSpread
+    sectionId="sense-touch"
     sense="触"
     senseEn="Touch"
     number="IV"
@@ -133,12 +297,42 @@ import PullQuote from '../../components/PullQuote.astro';
       <p><strong>果壳与矿物</strong>——如果你买的是自然小匣，回家拆开盒子时，第一感觉是粗粝。一颗松果在掌心的重量，一块矿石的棱角刺到指腹——这是自然本来的触感，不是工业品的触感。</p>
       <p><strong>把山海带回家</strong>——这句话的物理含义就是这些。</p>
     `}
-  />
+  >
+    <div slot="figure" class="flex flex-col h-full gap-4">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase shrink-0">Materials · 店内手感</p>
+      <div class="grid grid-cols-2 gap-2 flex-1 min-h-0">
+        <div class="border border-brass-mid/30 p-3 flex flex-col justify-between min-h-[6rem] bg-brass-deep/20">
+          <span class="font-serif text-cream tracking-cn">木</span>
+          <span class="text-text-soft text-xs tracking-cn leading-relaxed">背板与地板：暖、略涩、有年轮方向</span>
+        </div>
+        <div class="border border-brass-mid/30 p-3 flex flex-col justify-between min-h-[6rem] bg-brass-mid/15">
+          <span class="font-serif text-cream tracking-cn">黄铜</span>
+          <span class="text-text-soft text-xs tracking-cn leading-relaxed">凉、重、会旧、会留指印</span>
+        </div>
+        <div class="border border-cabinet-mid/25 p-3 flex flex-col justify-between min-h-[6rem] bg-cabinet-deep/25">
+          <span class="font-serif text-cream tracking-cn">玻璃</span>
+          <span class="text-text-soft text-xs tracking-cn leading-relaxed">硬、薄、距离被放大</span>
+        </div>
+        <div class="border border-purple-mid/25 p-3 flex flex-col justify-between min-h-[6rem] bg-purple-deep/20">
+          <span class="font-serif text-cream tracking-cn">纤维纸</span>
+          <span class="text-text-soft text-xs tracking-cn leading-relaxed">厚、糙、像出版物而非小票</span>
+        </div>
+      </div>
+      <ul class="text-text-dim text-xs tracking-cn space-y-1.5 border-t border-brass-mid/15 pt-3 shrink-0">
+        <li>· 可摸的才给摸；易损标本以观看为主。</li>
+        <li>· 边角做圆；重物有「请协助」提示。</li>
+        <li>· 包装纸克重与折痕方向按「带回家」场景设计。</li>
+        <li>· 儿童高度有第二套触达路径（低柜、大卡）。</li>
+        <li>· 冬季金属把手不冰手（结构或材质补偿）。</li>
+      </ul>
+    </div>
+  </SenseSpread>
 
   <hr class="brass-divider" />
 
   <!-- ============== 味 · Taste ============== -->
   <SenseSpread
+    sectionId="sense-taste"
     sense="味"
     senseEn="Taste"
     number="V"
@@ -153,7 +347,26 @@ import PullQuote from '../../components/PullQuote.astro';
       <p><strong>简餐</strong>——少量，跟博物学叙事相关：北欧黑麦面包、一两款欧式糕点、季节性水果切片。</p>
       <p>我们想让"喝一杯"成为你停留 30 分钟以上的理由——不是 5 分钟带走的理由。</p>
     `}
-  />
+  >
+    <div slot="figure" class="flex flex-col h-full gap-4 justify-center">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase shrink-0">Menu · 味之三柱</p>
+      <div class="grid gap-2 flex-1 content-center">
+        <div class="flex items-center justify-between gap-3 border border-brass-mid/20 bg-ink-deep/50 px-4 py-3">
+          <span class="font-serif text-cream tracking-cn">茶</span>
+          <span class="text-text-soft text-xs text-right tracking-cn">绿 / 红 / 乌龙 · 无奶茶</span>
+        </div>
+        <div class="flex items-center justify-between gap-3 border border-brass-mid/20 bg-ink-deep/50 px-4 py-3">
+          <span class="font-serif text-cream tracking-cn">咖啡</span>
+          <span class="text-text-soft text-xs text-right tracking-cn">手冲 / 美式 / 拿铁 · 季节豆</span>
+        </div>
+        <div class="flex items-center justify-between gap-3 border border-brass-mid/20 bg-ink-deep/50 px-4 py-3">
+          <span class="font-serif text-cream tracking-cn">简餐</span>
+          <span class="text-text-soft text-xs text-right tracking-cn">黑麦 / 糕点 / 时令果切</span>
+        </div>
+      </div>
+      <p class="text-text-dim text-xs italic text-center tracking-cn shrink-0">停留 30 分钟，而不是 5 分钟带走。</p>
+    </div>
+  </SenseSpread>
 
   <hr class="brass-divider" />
 

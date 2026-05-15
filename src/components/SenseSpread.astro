@@ -8,7 +8,7 @@ interface Props {
   title: string;
   /** 段落正文（支持 HTML） */
   bodyHtml: string;
-  /** 图片路径（可选；未提供时显示黄铜色占位块）*/
+  /** 图片路径（可选；未提供且无 figure 插槽时显示黄铜色占位块）*/
   image?: string;
   /** 图片说明 */
   imageAlt: string;
@@ -18,67 +18,70 @@ interface Props {
   audio?: string;
   /** 章节序号（罗马数字 / 中文一二三）*/
   number?: string;
+  /** 页内锚点，供五感导航卡跳转 */
+  sectionId?: string;
 }
 
-const { sense, senseEn, title, bodyHtml, image, imageAlt, align = 'left', audio, number } = Astro.props;
+const { sense, senseEn, title, bodyHtml, image, imageAlt, align = 'left', audio, number, sectionId } = Astro.props;
+const hasFigureSlot = Astro.slots.has('figure');
 ---
 
-<section class="editorial-section-wide fade-in">
-  <div class:list={[
-    'grid md:grid-cols-2 gap-10 md:gap-16 items-center',
-    align === 'right' && 'md:[&>*:first-child]:order-2',
-  ]}>
-    <!-- Image / Placeholder · 深底家族渐变 -->
-    <figure class="relative aspect-[4/5] bg-gradient-to-br from-brass-deep/25 to-brass-mid/10 border border-brass-mid/30 flex items-center justify-center overflow-hidden">
-      {image ? (
-        <img
-          src={image}
-          alt={imageAlt}
-          loading="lazy"
-          class="w-full h-full object-cover"
-        />
-      ) : (
-        <span class="font-serif-en text-brass-mid/50 italic text-2xl">{senseEn}</span>
-      )}
-      {/* 图片左上角的章节编号（向外溢出，桌面端可见） */}
-      {number && (
-        <span class="absolute -left-4 -top-4 section-number opacity-50 hidden md:block">
-          {number}
-        </span>
-      )}
+<section class="editorial-section-wide fade-in scroll-mt-28" id={sectionId}>
+  <div
+    class:list={[
+      'grid md:grid-cols-2 gap-10 md:gap-16 items-start',
+      align === 'right' && 'md:[&>*:first-child]:order-2',
+    ]}
+  >
+    <!-- 图区：占位图 / 照片 / 或 figure 插槽（v1 式信息侧栏） -->
+    <figure
+      class:list={[
+        'relative bg-gradient-to-br from-brass-deep/25 to-brass-mid/10 border border-brass-mid/30 overflow-hidden flex flex-col',
+        hasFigureSlot ? 'min-h-[24rem] md:min-h-[28rem]' : 'aspect-[4/5] items-center justify-center',
+      ]}
+    >
+      {
+        hasFigureSlot ? (
+          <div class="h-full w-full flex-1 overflow-y-auto overscroll-contain p-3 md:p-4">
+            <slot name="figure" />
+          </div>
+        ) : image ? (
+          <img src={image} alt={imageAlt} loading="lazy" class="h-full w-full object-cover" />
+        ) : (
+          <span class="font-serif-en text-brass-mid/50 italic text-2xl">{senseEn}</span>
+        )
+      }
+      {
+        number && (
+          <span class="absolute -left-4 -top-4 section-number opacity-50 hidden md:block pointer-events-none">
+            {number}
+          </span>
+        )
+      }
     </figure>
 
-    <!-- Text -->
+    <!-- 文区 -->
     <div>
-      <!-- 感官标签（深底上用 brass-bright 更跳跃） -->
       <div class="flex items-baseline gap-3 mb-6">
         <span class="font-serif text-display text-brass-bright">{sense}</span>
         <span class="font-serif-en italic text-text-soft text-lg">· {senseEn}</span>
       </div>
 
-      <!-- 标题 -->
       <h2 class="section-title text-cream mb-paragraph">{title}</h2>
 
-      <!-- 正文 -->
       <div class="prose-cn" set:html={bodyHtml}></div>
 
-      <!-- 音频（仅"听"段落使用；反色让原生播放器在深底上不刺眼） -->
-      {audio && (
-        <div class="mt-paragraph border-l-2 border-brass-mid pl-5 py-2">
-          <p class="text-xs text-text-soft mb-2 tracking-cn">
-            一段 30 秒的店内环境音
-          </p>
-          <audio
-            controls
-            preload="metadata"
-            class="w-full max-w-sm"
-            style="filter: invert(1) hue-rotate(180deg);"
-          >
-            <source src={audio} type="audio/mpeg" />
-            您的浏览器不支持音频播放
-          </audio>
-        </div>
-      )}
+      {
+        audio && (
+          <div class="mt-paragraph border-l-2 border-brass-mid pl-5 py-2">
+            <p class="text-xs text-text-soft mb-2 tracking-cn">一段 30 秒的店内环境音</p>
+            <audio controls preload="metadata" class="w-full max-w-sm" style="filter: invert(1) hue-rotate(180deg);">
+              <source src={audio} type="audio/mpeg" />
+              您的浏览器不支持音频播放
+            </audio>
+          </div>
+        )
+      }
     </div>
   </div>
 </section>

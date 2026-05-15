@@ -93,7 +93,45 @@ const ogImageURL = Astro.site ? new URL(image, Astro.site) : new URL(image, Astr
       );
 
       const els = document.querySelectorAll('.fade-in');
+
+      /**
+       * 带 hash 进入（如 /how/senses#sense-touch）时，浏览器直接滚到锚点，
+       * 上方区块从未经过视口 → IO 不会触发 → 会长期保持 opacity:0。
+       * 对「目标元素之前」的 .fade-in 以及「包住目标 id」的容器一次性标为已展示。
+       */
+      function revealFadeInsForHash() {
+        const raw = location.hash?.slice(1);
+        if (!raw) return;
+        let id;
+        try {
+          id = decodeURIComponent(raw);
+        } catch {
+          id = raw;
+        }
+        const target = document.getElementById(id);
+        if (!target) return;
+
+        const FOLLOWING = Node.DOCUMENT_POSITION_FOLLOWING;
+
+        els.forEach((el) => {
+          const same = el === target;
+          const wraps = el.contains(target);
+          const strictlyBefore = !same && !wraps && (el.compareDocumentPosition(target) & FOLLOWING);
+          if (same || wraps || strictlyBefore) {
+            el.classList.add('is-visible');
+            observer.unobserve(el);
+          }
+        });
+      }
+
       els.forEach((el) => observer.observe(el));
+
+      // 锚点滚动往往在布局之后；双 rAF 尽量排在浏览器完成 hash scroll 之后
+      requestAnimationFrame(() => {
+        requestAnimationFrame(revealFadeInsForHash);
+      });
+
+      window.addEventListener('hashchange', revealFadeInsForHash);
 
       // 兜底：如果 JS 在视口已滚到位之后才执行，或 IO 异常，
       // 100ms 后强制把已经在视口内的 fade-in 标为 visible，
@@ -105,6 +143,7 @@ const ogImageURL = Astro.site ? new URL(image, Astro.site) : new URL(image, Astr
             const inView = rect.top < window.innerHeight && rect.bottom > 0;
             if (inView) el.classList.add('is-visible');
           });
+          revealFadeInsForHash();
         }, 100);
       });
     </script>

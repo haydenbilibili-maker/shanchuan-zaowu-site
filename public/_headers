@@ -1,0 +1,7 @@
+# Cloudflare Pages · 减少 HTML 长期边缘缓存导致「已部署仍像旧版」
+# 文档：https://developers.cloudflare.com/pages/configuration/headers/
+/how/senses
+  Cache-Control: public, max-age=0, must-revalidate
+
+/how/senses/
+  Cache-Control: public, max-age=0, must-revalidate
