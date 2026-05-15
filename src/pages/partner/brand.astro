@@ -1,0 +1,24 @@
+---
+import Layout from '../../components/Layout.astro';
+
+const mail = `mailto:hello@shanhaizaowu.com?subject=${encodeURIComponent('品牌合作意向')}`;
+---
+
+<Layout title="品牌合作" description="山海造物 · 品牌与合作意向入口">
+  <section class="editorial-section py-section max-w-editorial mx-auto px-6 text-center">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-4">Partner · 品牌合作</p>
+    <h1 class="display-title text-cream mb-paragraph tracking-cn">品牌与合作</h1>
+    <p class="prose-cn text-text-soft mb-paragraph">
+      我们对自然博物馆、国家公园、自然教育机构与价值观相通的同业品牌保持开放。请直接发信说明背景与诉求。
+    </p>
+    <a
+      href={mail}
+      class="inline-flex border border-brass-mid/60 px-6 py-3 text-brass-mid hover:bg-brass-mid hover:text-ink transition-colors tracking-cn"
+    >
+      hello@shanhaizaowu.com
+    </a>
+    <p class="mt-8 text-sm text-text-dim tracking-cn">
+      <a href="/" class="text-brass-mid hover:text-brass-bright">← 返回首页</a>
+    </p>
+  </section>
+</Layout>

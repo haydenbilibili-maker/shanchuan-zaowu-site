@@ -10,3 +10,7 @@
 /properties /for-properties 301
 /investors /for-investors 301
 /franchise /for-franchise 301
+/partner/property /for-properties 301
+/partner/investor /for-investors 301
+/partner/franchise /for-franchise 301
+/notes/001 /notes/founders-letter 301
