@@ -3,6 +3,7 @@ import Layout from '../components/Layout.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import NoListItem from '../components/NoListItem.astro';
 import PullQuote from '../components/PullQuote.astro';
+import SpecimenMarqueeCarousel from '../components/SpecimenMarqueeCarousel.astro';
 
 const noList = [
   '不做盲盒',
@@ -71,14 +72,6 @@ const butterflySchematics = [
     src: '/images/what/butterfly/butterfly-09.png',
     alt: '蝴蝶线示意：双 Morpho 装框与城市夜景背衬的教化说明卡',
   },
-  {
-    src: '/images/what/butterfly/butterfly-10.png',
-    alt: '蝴蝶线示意：竖向装框的双 Morpho 与城市夜景主题背板',
-  },
-  {
-    src: '/images/what/butterfly/butterfly-11.png',
-    alt: '蝴蝶线示意：手持装框 Morpho 标本与城市灯光氛围陈列',
-  },
 ];
 
 /** 植物果实与自然小物示意图 */
@@ -137,27 +130,47 @@ const marineSchematics = [
   },
 ];
 
-/** 门店主题标本示意图（约 20% 轮换区） */
+/** 门店主题标本（跑马灯 + 大图） */
 const themeSpecimenSchematics = [
   {
     src: '/images/what/theme-specimens/theme-specimen-01.png',
-    alt: '门店主题标本示意：孔雀与火烈鸟剥制标本与周边小件、首饰架同台陈列',
+    alt: '孔雀与火烈鸟剥制，台面与首饰小件',
+    caption: '大型剥制与台面陈列',
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-02.png',
-    alt: '门店主题标本示意：着衣土拨鼠、浸液巨等足虫、鳄与蜈蚣等奇珍柜组合',
+    alt: '土拨鼠、等足虫、鳄与蜈蚣等奇珍组合',
+    caption: '主题奇珍柜一角',
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-03.png',
-    alt: '门店主题标本示意：三只文鸟栖木、闪蝶墙饰、小鸭戴眼镜与蜻蜓装框',
+    alt: '文鸟栖木、闪蝶墙饰与装框蜻蜓',
+    caption: '鸟类与昆虫混搭',
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-04.png',
-    alt: '门店主题标本示意：维多利亚风白鸽剥制、蕾丝礼帽与坠饰项链',
+    alt: '维多利亚风白鸽剥制与蕾丝配饰',
+    caption: '装饰型剥制',
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-05.png',
-    alt: '门店主题标本示意：玻罩内小型兽类与绿植景，旁侧鸟翼蝶装框标本',
+    alt: '玻罩小兽与鸟翼蝶装框',
+    caption: '玻罩 + 装框组合',
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-06.png',
+    alt: '店面中景：孔雀主景与蝴蝶装框墙',
+    caption: '门店中庭一览',
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-07.png',
+    alt: '黑天鹅剥制标本侧影',
+    caption: '黑天鹅',
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-08.png',
+    alt: '着装小羊剥制，透明展柜',
+    caption: '小羊剥制 · 展柜',
   },
 ];
 ---
@@ -181,8 +194,7 @@ const themeSpecimenSchematics = [
     <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">SKU mix · 核心约束</p>
     <div class="prose-cn space-y-paragraph text-text-soft">
       <p>
-        店内结构可以粗分为两块：<strong class="text-cream">约 20% 门店主题标本</strong>（随门店叙事轮换、部分可售、部分为非卖品）+
-        <strong class="text-cream">约 80% 其余商品与自持衍生品</strong>。其中<strong class="text-brass-bright">自然小匣是主推</strong>——主体式的标本集合创作；蝴蝶与贝壳、植物果实、化石矿石等构成围绕它的材料线与流量入口。
+        店内约 <strong class="text-cream">两成门店主题标本</strong>（可售与非卖品兼有、随叙事轮换），其余为自持商品与衍生品。<strong class="text-brass-bright">自然小匣主推</strong>；蝴蝶、植物果实、贝壳、化石矿石等为材料线与入口。
       </p>
       <div class="p-6 border border-brass-mid/20 bg-ink-elevated/35 rounded-sm text-sm leading-relaxed tracking-cn">
         <p class="text-cream font-serif mb-3">五条主线（与店内陈列一致）</p>
@@ -191,7 +203,7 @@ const themeSpecimenSchematics = [
           <li><strong class="text-cream">蝴蝶及衍生品</strong>——如首饰、钟表等，承担流量入口与设计实验。</li>
           <li><strong class="text-cream">植物果实与自然小物</strong>——如果壳吊坠、铃与果实 DIY 等，偏自有工艺壁垒。</li>
           <li><strong class="text-cream">海洋贝壳</strong>——如餐具等，设计向日常餐桌延伸。</li>
-          <li><strong class="text-cream">化石矿石</strong>——以合规采购为主，做稀缺性与知识深度的补充（不纳入「衍生品高自给率」的分子口径时，其余自持类目仍整体守住高自给目标）。</li>
+          <li><strong class="text-cream">化石矿石</strong>——合规采购为主，补时间与地质叙事；自给率口径另计。</li>
         </ol>
       </div>
     </div>
@@ -222,7 +234,7 @@ const themeSpecimenSchematics = [
           ))}
         </div>
         <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-left">
-          自然小匣示意图：主体式标本集合创作（植物 / 昆虫等 + 档案标签同匣）；主题为示意，以门店在售与策展为准。
+          示意陈列，以门店为准。
         </figcaption>
       </figure>
 
@@ -256,7 +268,7 @@ const themeSpecimenSchematics = [
           <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-right">
             Lepidoptera
           </p>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
             {butterflySchematics.map((item) => (
               <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
                 <img
@@ -272,7 +284,7 @@ const themeSpecimenSchematics = [
             ))}
           </div>
           <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-right">
-            蝴蝶及衍生品示意图：装框标本、玻璃罩座钟 / 怀表氛围、首饰与墙面装置等；画面为门店陈列风格示意，具体 SKU 以店内为准。
+            示意陈列，以门店为准。
           </figcaption>
         </figure>
       </div>
@@ -319,7 +331,7 @@ const themeSpecimenSchematics = [
           ))}
         </div>
         <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-left">
-          植物果实与自然小物示意图：分格收纳、玻罩小景、果壳铃与押花首饰等；画面为门店陈列风格示意，具体 SKU 以店内为准。
+          示意陈列，以门店为准。
         </figcaption>
       </figure>
 
@@ -366,7 +378,7 @@ const themeSpecimenSchematics = [
             ))}
           </div>
           <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-right">
-            海洋贝壳类示意图：装裱贝壳、玻罩标本与螺钿 / 贝壳柄餐具等；画面为门店陈列风格示意，具体 SKU 以店内为准。
+            示意陈列，以门店为准。
           </figcaption>
         </figure>
       </div>
@@ -411,29 +423,12 @@ const themeSpecimenSchematics = [
   <!-- ============ VI. 门店主题标本（约 20%） ============ -->
   <section class="editorial-section-wide fade-in">
     <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
-      <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 max-w-lg mx-auto md:mx-0 w-full">
-        <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-left">
-          Theme Specimens
-        </p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
-          {themeSpecimenSchematics.map((item) => (
-            <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
-              <img
-                src={item.src}
-                alt={item.alt}
-                class="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-                width="500"
-                height="500"
-              />
-            </div>
-          ))}
-        </div>
-        <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-left">
-          门店主题标本示意图：围绕当期策展的大型剥制、玻罩与装框组合；含可售与非卖品陈列风格，以门店实际轮换为准。
-        </figcaption>
-      </figure>
+      <SpecimenMarqueeCarousel
+        eyebrow="Theme Specimens"
+        hint="自动轮播，悬停暂停；点画面看大图。以门店轮换为准。"
+        items={themeSpecimenSchematics}
+        align="left"
+      />
 
       <div>
         <p class="section-number mb-4">VI</p>
@@ -442,13 +437,10 @@ const themeSpecimenSchematics = [
 
         <div class="prose-cn space-y-paragraph">
           <p>
-            严格说，店里<strong class="text-cream">不是「主题展柜」四个字能概括</strong>——更准确的是：<strong class="text-brass-bright">围绕当期门店主题配置的一批主题标本</strong>，大约占店内相关陈列与库存结构的 <strong class="text-cream">20% 左右</strong>，随季节与策展轮换。
-          </p>
-          <p>
-            其中<strong class="text-cream">多数可以出售</strong>，但也会保留<strong class="text-brass-bright">非卖品</strong>：用来定调、用来讲清楚一条科学叙事，或单纯因为这件东西不适合进入流通。维多利亚式奇珍柜的气质还在——只是我们把「卖与不卖」说在前面，而不是用「展柜」一笔带过。
+            更准确的说法是<strong class="text-brass-bright">围绕当期门店主题配置的一批标本</strong>，约占相关陈列与库存的 <strong class="text-cream">两成</strong>，随策展轮换——不是「主题展柜」四个字能概括。
           </p>
           <p class="text-text-soft text-sm">
-            每一件可售或展示用的标本都配博物档案卡（中文名、学名、产地、采集背景、保护级别）——博物馆级标准，不是商场标价签。轮换节奏与讲座、工坊在 /how/space 里与空间动线一并说明。
+            <strong class="text-cream">多数可售</strong>，亦设<strong class="text-brass-bright">非卖品</strong>用于定调与叙事。档案卡与轮换节奏见 <a href="/how/space" class="text-brass-mid hover:text-brass-bright">/how/space</a>。
           </p>
         </div>
       </div>
@@ -520,6 +512,6 @@ const themeSpecimenSchematics = [
   </section>
 
   <PullQuote
-    quote="自然小匣是主推，蝴蝶、贝壳、化石矿石与门店主题标本——这些是我们的产品语言。维多利亚博物学家奇珍柜的视觉、黄铜与暗调、博物馆级的灯光与档案——这些是我们的空间语言。"
+    quote="自然小匣是主推；蝴蝶、贝壳、化石矿石与门店主题标本——产品语言。奇珍柜视觉、黄铜暗调、博物馆级灯光与档案——空间语言。"
   />
 </Layout>

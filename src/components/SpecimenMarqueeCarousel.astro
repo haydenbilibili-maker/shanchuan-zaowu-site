@@ -1,0 +1,287 @@
+---
+export interface SpecimenSlide {
+  src: string;
+  alt: string;
+  /** 大图下方一行短说明，默认同 alt */
+  caption?: string;
+}
+
+interface Props {
+  eyebrow: string;
+  /** 图下一句短提示 */
+  hint: string;
+  items: SpecimenSlide[];
+  align?: 'left' | 'right';
+}
+
+const { eyebrow, hint, items, align = 'left' } = Astro.props;
+const itemsJson = JSON.stringify(items);
+const headClass =
+  align === 'right'
+    ? 'text-center md:text-right'
+    : 'text-center md:text-left';
+const capClass =
+  align === 'right'
+    ? 'text-center md:text-right'
+    : 'text-center md:text-left';
+---
+
+<figure
+  class:list={[
+    'border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 w-full max-w-lg spec-car-root',
+    align === 'right' ? 'mx-auto md:ml-auto md:mr-0' : 'mx-auto md:mx-0',
+  ]}
+  data-specimen-carousel
+  data-items={itemsJson}
+>
+  <p
+    class:list={[
+      'font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3',
+      headClass,
+    ]}
+  >
+    {eyebrow}
+  </p>
+
+  <div class="relative">
+    <div
+      class="relative aspect-[4/5] w-full overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15"
+      data-car-viewport
+    >
+      {
+        items.map((item, i) => (
+          <div
+            class:list={[
+              'spec-car-slide absolute inset-0 transition-opacity duration-500 ease-out',
+              i === 0 ? 'opacity-100 z-[1]' : 'opacity-0 z-0 pointer-events-none',
+            ]}
+            data-slide-index={i}
+            aria-hidden={i !== 0 ? 'true' : 'false'}
+          >
+            <button
+              type="button"
+              class="spec-car-open absolute inset-0 z-[2] cursor-zoom-in bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brass-bright/70"
+              data-open-dialog
+              aria-label={`查看大图：${item.alt}`}
+            />
+            <img
+              src={item.src}
+              alt={item.alt}
+              class="pointer-events-none h-full w-full object-cover select-none"
+              loading={i === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              width="800"
+              height="1000"
+              draggable="false"
+            />
+          </div>
+        ))
+      }
+    </div>
+
+    <div
+      class="pointer-events-none absolute inset-0 z-[3] flex items-center justify-between px-0.5"
+      aria-hidden="true"
+    >
+      <button
+        type="button"
+        data-car-prev
+        class="pointer-events-auto rounded-sm border border-brass-mid/35 bg-ink-deep/85 px-2.5 py-2 text-lg leading-none text-cream shadow-sm hover:border-brass-mid/60 hover:bg-ink-elevated/90"
+        aria-label="上一张"
+      >
+        ‹
+      </button>
+      <button
+        type="button"
+        data-car-next
+        class="pointer-events-auto rounded-sm border border-brass-mid/35 bg-ink-deep/85 px-2.5 py-2 text-lg leading-none text-cream shadow-sm hover:border-brass-mid/60 hover:bg-ink-elevated/90"
+        aria-label="下一张"
+      >
+        ›
+      </button>
+    </div>
+  </div>
+
+  <div
+    class="mt-3 flex flex-wrap justify-center gap-1.5"
+    data-car-dots
+    role="tablist"
+    aria-label="选择图片"
+  >
+    {
+      items.map((_, i) => (
+        <button
+          type="button"
+          data-dot={i}
+          class:list={[
+            'h-1.5 rounded-full transition-all duration-300',
+            i === 0 ? 'w-5 bg-brass-bright' : 'w-1.5 bg-brass-mid/35 hover:bg-brass-mid/55',
+          ]}
+          aria-label={`第 ${i + 1} 张`}
+          aria-current={i === 0 ? 'true' : undefined}
+        />
+      ))
+    }
+  </div>
+
+  <figcaption class:list={['mt-2 text-xs leading-relaxed text-text-soft tracking-cn', capClass]}>
+    {hint}
+  </figcaption>
+
+  <dialog
+    data-car-dialog
+    class="spec-car-dialog w-[min(96vw,48rem)] max-w-full border border-brass-mid/40 bg-ink-deep p-4 text-cream open:flex open:max-h-[90vh] open:flex-col open:gap-3"
+  >
+    <img data-dialog-img src="" alt="" class="mx-auto max-h-[min(76vh,880px)] w-full object-contain" />
+    <p data-dialog-cap class="text-center text-sm text-text-soft tracking-cn" />
+    <form method="dialog" class="flex justify-end border-t border-brass-mid/20 pt-2">
+      <button
+        type="submit"
+        class="text-sm text-brass-mid tracking-cn hover:text-brass-bright"
+      >
+        关闭
+      </button>
+    </form>
+  </dialog>
+</figure>
+
+<style>
+  .spec-car-dialog::backdrop {
+    background: rgb(0 0 0 / 0.72);
+  }
+</style>
+
+<script>
+  function initSpecimenCarousel(root) {
+    const raw = root.getAttribute('data-items');
+    let items = [];
+    try {
+      items = raw ? JSON.parse(raw) : [];
+    } catch {
+      return;
+    }
+    if (!items.length) return;
+
+    const slides = root.querySelectorAll('[data-slide-index]');
+    const dots = root.querySelectorAll('[data-dot]');
+    const prevBtn = root.querySelector('[data-car-prev]');
+    const nextBtn = root.querySelector('[data-car-next]');
+    const dialog = root.querySelector('[data-car-dialog]');
+    const dialogImg = root.querySelector('[data-dialog-img]');
+    const dialogCap = root.querySelector('[data-dialog-cap]');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const intervalMs = reduceMotion ? 0 : 5200;
+
+    let idx = 0;
+    let timer = null;
+
+    function show(i) {
+      const n = items.length;
+      idx = ((i % n) + n) % n;
+      slides.forEach((el, j) => {
+        const on = j === idx;
+        el.classList.toggle('opacity-100', on);
+        el.classList.toggle('z-[1]', on);
+        el.classList.toggle('opacity-0', !on);
+        el.classList.toggle('z-0', !on);
+        el.classList.toggle('pointer-events-none', !on);
+        el.setAttribute('aria-hidden', on ? 'false' : 'true');
+      });
+      dots.forEach((d, j) => {
+        const on = j === idx;
+        d.classList.toggle('w-5', on);
+        d.classList.toggle('w-1.5', !on);
+        d.classList.toggle('bg-brass-bright', on);
+        d.classList.toggle('bg-brass-mid/35', !on);
+        if (on) d.setAttribute('aria-current', 'true');
+        else d.removeAttribute('aria-current');
+      });
+    }
+
+    function openDialog() {
+      if (!dialog || !dialogImg || !dialogCap) return;
+      const cur = items[idx];
+      dialogImg.src = cur.src;
+      dialogImg.alt = cur.alt;
+      dialogCap.textContent = cur.caption || cur.alt;
+      dialog.showModal();
+      stopTimer();
+    }
+
+    function stopTimer() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function startTimer() {
+      stopTimer();
+      if (!intervalMs || dialog?.open) return;
+      timer = window.setInterval(() => show(idx + 1), intervalMs);
+    }
+
+    function next() {
+      show(idx + 1);
+    }
+    function prev() {
+      show(idx - 1);
+    }
+
+    prevBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      prev();
+      stopTimer();
+      startTimer();
+    });
+    nextBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      next();
+      stopTimer();
+      startTimer();
+    });
+
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const j = Number(dot.getAttribute('data-dot'));
+        if (!Number.isNaN(j)) {
+          show(j);
+          stopTimer();
+          startTimer();
+        }
+      });
+    });
+
+    root.querySelectorAll('[data-open-dialog]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openDialog();
+      });
+    });
+
+    dialog?.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        dialog.close();
+        startTimer();
+      }
+    });
+    dialog?.addEventListener('close', () => startTimer());
+
+    root.addEventListener('mouseenter', stopTimer);
+    root.addEventListener('mouseleave', () => {
+      if (!dialog?.open) startTimer();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopTimer();
+      else if (!dialog?.open) startTimer();
+    });
+
+    show(0);
+    startTimer();
+  }
+
+  document.querySelectorAll('[data-specimen-carousel]').forEach((el) => {
+    initSpecimenCarousel(el);
+  });
+</script>
