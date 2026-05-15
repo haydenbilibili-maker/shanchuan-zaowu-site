@@ -32,6 +32,54 @@ const natureBoxSchematics = [
     alt: '自然小匣示意：开窗卡纸格内嵌植物与蝶类标本的集合陈列',
   },
 ];
+
+/** 蝴蝶及衍生品示意图（装框、玻罩、钟表首饰等陈列风格） */
+const butterflySchematics = [
+  {
+    src: '/images/what/butterfly/butterfly-01.png',
+    alt: '蝴蝶线示意：装框闪蝶、玻璃罩组合与双语博物说明的门店陈列',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-02.png',
+    alt: '蝴蝶线示意：墙面黑色画框装裱的闪蝶、斑蝶与蜻蜓等标本',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-03.png',
+    alt: '蝴蝶线示意：玻罩矩阵、蝴蝶主题钟表与项链等衍生品综合墙',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-04.png',
+    alt: '蝴蝶线示意：球形玻罩内单只大型闪蝶，置于工坊切割垫与工具旁',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-05.png',
+    alt: '蝴蝶线示意：球形玻罩内白翅闪蝶标本与金属支架、圆形底座',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-06.png',
+    alt: '蝴蝶线示意：黑框白卡多层衬线装裱的大型绿色鸟翼蝶类标本',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-07.png',
+    alt: '蝴蝶线示意：多只彩色蝴蝶分置独立玻璃罩的桌面陈列矩阵',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-08.png',
+    alt: '蝴蝶线示意：凤蝶标本与 Papilionoidea 说明卡置于木作台面',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-09.png',
+    alt: '蝴蝶线示意：双 Morpho 装框与城市夜景背衬的教化说明卡',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-10.png',
+    alt: '蝴蝶线示意：竖向装框的双 Morpho 与城市夜景主题背板',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-11.png',
+    alt: '蝴蝶线示意：手持装框 Morpho 标本与城市灯光氛围陈列',
+  },
+];
 ---
 
 <Layout
@@ -122,10 +170,30 @@ const natureBoxSchematics = [
 
   <!-- ============ II. 蝴蝶及衍生品 ============ -->
   <section class="editorial-section-wide fade-in">
-    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <div class="md:order-2">
-        <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center">
-          <span class="font-serif-en italic text-brass-mid/40 text-2xl">Lepidoptera</span>
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
+      <div class="md:order-2 w-full min-w-0">
+        <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 w-full max-w-3xl mx-auto md:ml-auto md:mr-0">
+          <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-right">
+            Lepidoptera
+          </p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
+            {butterflySchematics.map((item) => (
+              <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
+                <img
+                  src={item.src}
+                  alt={item.alt}
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  width="400"
+                  height="400"
+                />
+              </div>
+            ))}
+          </div>
+          <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-right">
+            蝴蝶及衍生品示意图：装框标本、玻璃罩座钟 / 怀表氛围、首饰与墙面装置等；画面为门店陈列风格示意，具体 SKU 以店内为准。
+          </figcaption>
         </figure>
       </div>
 
