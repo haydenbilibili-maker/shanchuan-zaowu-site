@@ -116,6 +116,26 @@ const botanicalSchematics = [
     alt: '植物果实线示意：果壳铃与种子串珠挂饰、木珠与棉绳手工组合',
   },
 ];
+
+/** 海洋贝壳类示意图 */
+const marineSchematics = [
+  {
+    src: '/images/what/marine/marine-01.png',
+    alt: '海洋贝壳线示意：木格药柜式陈列，每格装裱单枚或成组贝壳与格纹衬底',
+  },
+  {
+    src: '/images/what/marine/marine-02.png',
+    alt: '海洋贝壳线示意：玻罩、浸液管与海星、蟹类等奇珍柜风格标本与复古标签',
+  },
+  {
+    src: '/images/what/marine/marine-03.png',
+    alt: '海洋贝壳线示意：馒头蟹等标本分置玻璃罩与主题腰封陈列',
+  },
+  {
+    src: '/images/what/marine/marine-04.png',
+    alt: '海洋贝壳线示意：珍珠螺柄餐具与亚克力盒装蟹标本、大型海螺衬景',
+  },
+];
 ---
 
 <Layout
@@ -300,10 +320,30 @@ const botanicalSchematics = [
 
   <!-- ============ IV. 海洋贝壳 ============ -->
   <section class="editorial-section-wide fade-in">
-    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <div class="md:order-2">
-        <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center">
-          <span class="font-serif-en italic text-brass-mid/40 text-2xl">Marine</span>
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
+      <div class="md:order-2 w-full min-w-0">
+        <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 w-full max-w-lg mx-auto md:ml-auto md:mr-0">
+          <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-right">
+            Marine
+          </p>
+          <div class="grid grid-cols-2 gap-2 md:gap-3">
+            {marineSchematics.map((item) => (
+              <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
+                <img
+                  src={item.src}
+                  alt={item.alt}
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  width="500"
+                  height="500"
+                />
+              </div>
+            ))}
+          </div>
+          <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-right">
+            海洋贝壳类示意图：装裱贝壳、玻罩标本与螺钿 / 贝壳柄餐具等；画面为门店陈列风格示意，具体 SKU 以店内为准。
+          </figcaption>
         </figure>
       </div>
 
