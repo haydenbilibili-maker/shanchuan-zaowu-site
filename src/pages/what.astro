@@ -130,47 +130,86 @@ const marineSchematics = [
   },
 ];
 
+/** 门店主题标本 · 大图与轮播下统一说明 */
+const themeSpecimenCaption =
+  '每一个都是标本师用心制作的世界上独一无二的孤品';
+
 /** 门店主题标本（跑马灯 + 大图） */
 const themeSpecimenSchematics = [
   {
     src: '/images/what/theme-specimens/theme-specimen-01.png',
     alt: '孔雀与火烈鸟剥制，台面与首饰小件',
-    caption: '大型剥制与台面陈列',
+    caption: themeSpecimenCaption,
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-02.png',
     alt: '土拨鼠、等足虫、鳄与蜈蚣等奇珍组合',
-    caption: '主题奇珍柜一角',
+    caption: themeSpecimenCaption,
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-03.png',
     alt: '文鸟栖木、闪蝶墙饰与装框蜻蜓',
-    caption: '鸟类与昆虫混搭',
+    caption: themeSpecimenCaption,
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-04.png',
     alt: '维多利亚风白鸽剥制与蕾丝配饰',
-    caption: '装饰型剥制',
+    caption: themeSpecimenCaption,
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-05.png',
     alt: '玻罩小兽与鸟翼蝶装框',
-    caption: '玻罩 + 装框组合',
+    caption: themeSpecimenCaption,
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-06.png',
     alt: '店面中景：孔雀主景与蝴蝶装框墙',
-    caption: '门店中庭一览',
+    caption: themeSpecimenCaption,
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-07.png',
     alt: '黑天鹅剥制标本侧影',
-    caption: '黑天鹅',
+    caption: themeSpecimenCaption,
   },
   {
     src: '/images/what/theme-specimens/theme-specimen-08.png',
     alt: '着装小羊剥制，透明展柜',
-    caption: '小羊剥制 · 展柜',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-09.png',
+    alt: '黑蝎装框与玻璃罩等足虫标本并列',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-10.png',
+    alt: '巨型等足虫玻罩与装框蝴蝶、绿植衬景',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-11.png',
+    alt: '暹罗鳄剥制、鳄头骨、鱼骨与甲虫装框组合',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-12.png',
+    alt: '小型鳄剥制侧面，口微张',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-13.png',
+    alt: '刺豚剥制手持与展柜陈设',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-14.png',
+    alt: '伞蜥与张牙马陆等组合装裱板',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-15.png',
+    alt: '长戟大兜展翅标本托于掌心',
+    caption: themeSpecimenCaption,
   },
 ];
 ---
@@ -392,7 +431,7 @@ const themeSpecimenSchematics = [
     <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
       <SpecimenMarqueeCarousel
         eyebrow="Theme Specimens"
-        hint="自动轮播，悬停暂停；点画面看大图。以门店轮换为准。"
+        hint={`${themeSpecimenCaption} 自动轮播，悬停暂停；点画面看大图。`}
         items={themeSpecimenSchematics}
         align="left"
       />
