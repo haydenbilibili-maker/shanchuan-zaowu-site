@@ -12,9 +12,11 @@ interface Props {
   hint: string;
   items: SpecimenSlide[];
   align?: 'left' | 'right';
+  /** Tailwind max-width class，默认 max-w-lg */
+  maxWidth?: string;
 }
 
-const { eyebrow, hint, items, align = 'left' } = Astro.props;
+const { eyebrow, hint, items, align = 'left', maxWidth = 'max-w-lg' } = Astro.props;
 const itemsJson = JSON.stringify(items);
 const headClass =
   align === 'right'
@@ -28,7 +30,8 @@ const capClass =
 
 <figure
   class:list={[
-    'border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 w-full max-w-lg spec-car-root',
+    'border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 w-full spec-car-root',
+    maxWidth,
     align === 'right' ? 'mx-auto md:ml-auto md:mr-0' : 'mx-auto md:mx-0',
   ]}
   data-specimen-carousel

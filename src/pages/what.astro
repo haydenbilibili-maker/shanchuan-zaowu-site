@@ -264,29 +264,13 @@ const themeSpecimenSchematics = [
   <section class="editorial-section-wide fade-in">
     <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
       <div class="md:order-2 w-full min-w-0">
-        <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 w-full max-w-3xl mx-auto md:ml-auto md:mr-0">
-          <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-right">
-            Lepidoptera
-          </p>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
-            {butterflySchematics.map((item) => (
-              <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
-                <img
-                  src={item.src}
-                  alt={item.alt}
-                  class="h-full w-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  width="400"
-                  height="400"
-                />
-              </div>
-            ))}
-          </div>
-          <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-right">
-            示意陈列，以门店为准。
-          </figcaption>
-        </figure>
+        <SpecimenMarqueeCarousel
+          eyebrow="Lepidoptera"
+          hint="自动轮播，悬停暂停；点画面看大图。以门店为准。"
+          items={butterflySchematics}
+          align="right"
+          maxWidth="max-w-xl"
+        />
       </div>
 
       <div class="md:order-1">
@@ -311,29 +295,12 @@ const themeSpecimenSchematics = [
   <!-- ============ III. 植物果实与自然小物 ============ -->
   <section class="editorial-section-wide fade-in">
     <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
-      <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 max-w-lg mx-auto md:mx-0 w-full">
-        <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-left">
-          Botanical
-        </p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
-          {botanicalSchematics.map((item) => (
-            <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
-              <img
-                src={item.src}
-                alt={item.alt}
-                class="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-                width="400"
-                height="400"
-              />
-            </div>
-          ))}
-        </div>
-        <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-left">
-          示意陈列，以门店为准。
-        </figcaption>
-      </figure>
+      <SpecimenMarqueeCarousel
+        eyebrow="Botanical"
+        hint="自动轮播，悬停暂停；点画面看大图。以门店为准。"
+        items={botanicalSchematics}
+        align="left"
+      />
 
       <div>
         <p class="section-number mb-4">III</p>
