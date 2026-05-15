@@ -101,7 +101,7 @@ export const operationsStoreDetails: StoreDetail[] = [
     venues: [
       '城市核心商场：万象城 / IFS / 太古里 / SKP / 来福士',
       '文化综合体：北京三里屯 / 上海新天地 / 成都远洋太古里',
-      '长春这有山（首店实际位置 · Pro 标准形态）',
+      '长春这有山（已在营 2 家 Pro 门店 · 同城双店模型）',
       '二线核心商圈：杭州湖滨 / 武汉江汉路 / 西安大唐西市',
     ],
     contentRhythm: [
@@ -235,22 +235,22 @@ export interface TimelineColumn {
 export const operationsTimelineColumns: TimelineColumn[] = [
   {
     year: 2026,
-    theme: '首店奠基',
+    theme: '双店扎根',
     milestones: [
-      '首店开业 Q2',
+      '这有山双店在营（Pro）',
+      '双店模型验证与 SOP 闭环 Q3-Q4',
       '公司化升级 Q4',
-      '首批 SOP 完成 Q3',
-      '模型验证 Q4',
+      '第三店选址 + 年度复盘 Q4',
     ],
     revenue: '80-150 万',
-    staff: '7-10 人',
-    stores: '1',
+    staff: '10-18 人',
+    stores: '2',
   },
   {
     year: 2027,
     theme: '扩张校准',
     milestones: [
-      '第二店开业 Q1',
+      '第三店开业 Q1',
       '1% 报告首发 Q2',
       'Max 旗舰开业 Q4',
       '首批加盟启动 Q4',
@@ -291,35 +291,35 @@ export interface YearPlanDetail {
 export const operationsYearPlans: YearPlanDetail[] = [
   {
     year: 2026,
-    theme: '首店奠基',
-    thesis: '让「山海造物」从一个想法变成一家真实的店。',
+    theme: '双店扎根',
+    thesis: '让「山海造物」在长春这有山扎稳根——双店跑通、数据清楚，再谈下一步扩张。',
     quarters: [
       {
         title: 'Q1（2026.01-03）· 已完成',
         items: [
-          { text: '品牌核心文档体系建立（vision / 五观 / 治理）', done: true },
+          { text: '品牌核心文档体系建立（vision / 六观 / 治理）', done: true },
           { text: '廉澍 + 李贺合伙关系确认', done: true },
-          { text: '长春这有山首店签约', done: true },
-          { text: '首店空间设计完成', done: true },
-          { text: '标本工坊采购清单', done: true },
+          { text: '长春这有山首家 Pro 门店签约并完成开业', done: true },
+          { text: '长春这有山第二家 Pro 门店开业 · 这有山双店布局完成', done: true },
+          { text: '双店空间方案与工坊动线落地', done: true },
         ],
       },
       {
         title: 'Q2（2026.04-06）· 进行中',
         items: [
-          { text: '山海造物商标核查（委托代理）+ 7-8 类目注册启动' },
-          { text: 'shanhaizaowu.com 上线 + 公众号 001 首发' },
-          { text: '长春首店装修完成 + 6 月开业' },
+          { text: '山海造物商标核查（委托代理）+ 7-8 类目注册推进' },
+          { text: 'shanhaizaowu.com 上线与迭代 + 公众号持续运营' },
+          { text: '双店日常运营稳定（人货场、峰谷客流与排班）' },
           { text: '合规自查表完成 + 缺口处理' },
-          { text: '第一批员工招聘 + 培训' },
+          { text: '双店员工梯队招聘、培训与轮岗' },
         ],
       },
       {
         title: 'Q3（2026.07-09）',
         items: [
-          { text: '首店正式运营 + 模型验证（前 3 个月数据收集）' },
-          { text: '妈妈饺子 SOP 落地测试' },
-          { text: '非拍照价值七件套部署完整化' },
+          { text: '双店协同运营 + 模型验证（数据与复购结构）' },
+          { text: '妈妈饺子 SOP 落地测试（这有山 Pro 双店）' },
+          { text: '非拍照价值七件套在双店的部署完整化' },
           { text: '1% 承诺与首批合作机构对话（山水自然保护中心等）' },
           { text: '内部 SOP 文档化（店长手册 v0.1 · 店员手册 v0.1）' },
         ],
@@ -327,24 +327,24 @@ export const operationsYearPlans: YearPlanDetail[] = [
       {
         title: 'Q4（2026.10-12）',
         items: [
-          { text: '首店运营数据全面复盘' },
+          { text: '双店运营数据全面复盘' },
           { text: '2026 全年数据 + 模型校准' },
-          { text: '第二家店选址（Pro 试水 · 长春或周边）' },
+          { text: '第三家店选址（Pro 试水 · 长春同城第二点位或沈阳 / 大连等）' },
           { text: '公司化升级启动（个体工商户 → 有限责任公司）' },
           { text: '2026 年度报告（含 1% 承诺执行）' },
         ],
       },
     ],
     metrics: [
-      { label: '首店开业时间', value: '2026 年 6 月' },
-      { label: '全年营收目标', value: '80 - 150 万人民币' },
-      { label: '全年到访人次', value: '3000 - 8000 人次' },
+      { label: '在营直营（长春这有山）', value: '2 家（Pro）' },
+      { label: '全年营收目标（双店合计）', value: '80 - 150 万人民币' },
+      { label: '全年到访人次（双店合计）', value: '6000 - 16000 人次' },
       { label: '妈妈饺子供应', value: '实际数据采集（无数字目标）' },
       { label: '内容产出', value: '公众号 4-6 篇 / 小红书 50-80 条' },
-      { label: '1% 承诺金额', value: '8000 - 15000 元（首年捐赠）' },
+      { label: '1% 承诺金额', value: '8000 - 15000 元（首年捐赠 · 双店口径）' },
     ],
     avoid: [
-      '不在首店未跑通前开第二家',
+      '不在双店模型未跑通前开第三家',
       '不在数据未稳定前盲目找投资',
       '不在文档未完整前启动加盟',
       '不为流量牺牲品牌调性',
@@ -354,13 +354,13 @@ export const operationsYearPlans: YearPlanDetail[] = [
   {
     year: 2027,
     theme: '扩张校准',
-    thesis: '让「山海造物」从一家店变成一个体系。',
+    thesis: '让「山海造物」从同城双店走向区域化与加盟体系化。',
     quarters: [
       {
         title: 'Q1（2027.01-03）',
         items: [
           { text: '公司化升级完成 · 山海造物文化创意有限公司挂牌' },
-          { text: '第二家店开业（Pro · 长春或沈阳 / 大连等）' },
+          { text: '第三家店开业（Pro · 长春同城第二点位或沈阳 / 大连等）' },
           { text: '加盟体系 v1.0 文档化（不公开发布 · 内部使用）' },
           { text: '投资人初步接触（不正式 pitch · 信号传递）' },
         ],
@@ -369,15 +369,15 @@ export const operationsYearPlans: YearPlanDetail[] = [
         title: 'Q2（2027.04-06）',
         items: [
           { text: '首份《1% 承诺年度透明报告》发布' },
-          { text: '第二家店运营 3 个月数据校准' },
-          { text: '加盟体系 v1.1 修订（基于第二店实战）' },
+          { text: '第三家店运营满 3 个月数据校准' },
+          { text: '加盟体系 v1.1 修订（基于第三店与双店复盘）' },
           { text: '首批种子加盟意向方筛选（2-3 家 · 不签约 · 只锁定）' },
         ],
       },
       {
         title: 'Q3（2027.07-09）',
         items: [
-          { text: '第三家店选址（可能为 Max 旗舰 · 北上深一线）' },
+          { text: 'Max 旗舰或第四店选址（北上深一线 · 视第三店数据而定）' },
           { text: '投资人正式 Pitch 启动（Pre-A / Series A）' },
           { text: '加盟体系 v1.5 finalize · 准备小范围加盟启动' },
           { text: '教育模块从店内延伸到城市内（与本地学校 / 博物馆合作）' },
@@ -386,7 +386,7 @@ export const operationsYearPlans: YearPlanDetail[] = [
       {
         title: 'Q4（2027.10-12）',
         items: [
-          { text: '第三家店开业（Max 旗舰）' },
+          { text: 'Max 旗舰开业（或第四店 Pro 落地 · 以选址结果为准）' },
           { text: '投资人轮次 finalize（Series A 落地或延后）' },
           { text: '首批 2 家种子加盟店启动（不超过 2 家）' },
           { text: '2027 年度报告 + 三年规划 mid-term 复盘' },
@@ -394,9 +394,9 @@ export const operationsYearPlans: YearPlanDetail[] = [
       },
     ],
     metrics: [
-      { label: '店铺数量', value: '1 → 3 家（含 1 Max 旗舰）' },
+      { label: '店铺数量', value: '2 → 3 家（含 1 Max 旗舰）' },
       { label: '全年营收目标', value: '300 - 600 万人民币' },
-      { label: '员工人数', value: '7 → 25-30 人' },
+      { label: '员工人数', value: '约 15-25 人 → 25-30 人（随第三店与 Max 落地）' },
       { label: '投资人接触', value: '5-10 家深度沟通 → 2-3 家 termsheet' },
       { label: '1% 承诺金额', value: '30000 - 60000 元' },
       { label: '首份年度报告', value: '2027 年 4 月' },
