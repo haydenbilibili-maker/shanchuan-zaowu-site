@@ -291,26 +291,6 @@ const themeSpecimenSchematics = [
       </div>
     </section>
 
-    {/* ━━━━━━━━━━━━━━━ 产品矩阵 · 保留 ━━━━━━━━━━━━━━━ */}
-    <section class="product-matrix-overview">
-      <p class="dot-prefix">·</p>
-      <h2 class="overview-title">产品矩阵 &nbsp;·&nbsp; 结构一眼</h2>
-      <p class="overview-subtitle"><em>产品与门类</em></p>
-      <p class="overview-body">
-        自然小匣是主推；多彩蝴蝶、植物探微、无尽海洋、群山回响，与镇店之宝大型标本，共同构成店里的产品语言。
-      </p>
-      <div class="five-mainlines-box">
-        <p class="box-title">五条主线</p>
-        <ol class="box-list">
-          <li><strong>自然小匣</strong>——围绕冬天、东北、爱情等主题，做集合式标本创作。</li>
-          <li><strong>多彩蝴蝶</strong>——蝴蝶标本，以及可穿戴、可陈设的衍生品。</li>
-          <li><strong>植物探微</strong>——果实标本与相关衍生品。</li>
-          <li><strong>无尽海洋</strong>——海洋标本与贝壳器物，延伸到日常餐桌。</li>
-          <li><strong>群山回响</strong>——化石矿石与衍生品，带来地质与时间叙事。</li>
-        </ol>
-      </div>
-    </section>
-
     {/* ════════ BUCKET 01 · 拿走 ════════ */}
     <section class="bucket-divider" id="take-home">
       <div class="bucket-marker">
@@ -874,59 +854,6 @@ const themeSpecimenSchematics = [
     font-style: italic;
   }
 
-  /* 产品矩阵 */
-  .product-matrix-overview {
-    padding: 80px 6vw 60px;
-    max-width: 980px;
-    margin: 0 auto;
-    border-top: 0.5px solid var(--border-quiet);
-  }
-  .dot-prefix { color: var(--brass-mid); font-size: 14px; margin: 0 0 12px; }
-  .overview-title {
-    font-family: var(--font-cn-serif);
-    font-size: clamp(36px, 4.5vw, 54px);
-    font-weight: 400;
-    color: var(--cream-100);
-    margin: 0 0 8px;
-    letter-spacing: 0.05em;
-  }
-  .overview-subtitle {
-    font-family: var(--font-en-serif);
-    font-size: 16px;
-    color: var(--brass-mid);
-    margin: 0 0 32px;
-    font-style: italic;
-  }
-  .overview-body {
-    font-family: var(--font-cn-serif);
-    font-size: 15px;
-    line-height: 1.9;
-    color: var(--text-secondary);
-    margin: 0 0 40px;
-    max-width: 760px;
-  }
-  .overview-body strong { color: var(--cream-100); font-weight: 400; }
-  .five-mainlines-box {
-    border: 0.5px solid var(--border-mid);
-    padding: 32px 36px;
-  }
-  .box-title {
-    font-family: var(--font-cn-serif);
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin: 0 0 20px;
-    letter-spacing: 0.05em;
-  }
-  .box-list { list-style: decimal; padding-left: 20px; margin: 0; }
-  .box-list li {
-    font-family: var(--font-cn-serif);
-    font-size: 14px;
-    line-height: 2.0;
-    color: var(--text-secondary);
-    margin: 0;
-  }
-  .box-list li strong { color: var(--cream-100); font-weight: 400; }
-
   /* BUCKET DIVIDER · 4 处 */
   .bucket-divider {
     padding: 160px 6vw 60px;
@@ -1321,8 +1248,6 @@ const themeSpecimenSchematics = [
   /* 移动端 */
   @media (max-width: 768px) {
     .what-hero { padding: 100px 5vw 60px; }
-    .product-matrix-overview { padding: 60px 5vw; }
-    .five-mainlines-box { padding: 24px 22px; }
     .bucket-divider { padding: 100px 5vw 40px; }
     .bucket-marker { gap: 16px; }
     .bucket-rule { max-width: 120px; }
