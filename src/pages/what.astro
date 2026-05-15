@@ -12,6 +12,26 @@ const noList = [
   '不做卖萌化的自然 IP',
   '不做与"自然博物美学"无关的跨品类延伸',
 ];
+
+/** 自然小匣示意图（public 静态资源） */
+const natureBoxSchematics = [
+  {
+    src: '/images/what/nature-box/nature-box-01.png',
+    alt: '自然小匣示意：深框标本匣，蝴蝶、干果荚与手绘博物标签同匣陈列',
+  },
+  {
+    src: '/images/what/nature-box/nature-box-02.png',
+    alt: '自然小匣示意：白底深框，闪蝶与多种干果、甲虫等集合',
+  },
+  {
+    src: '/images/what/nature-box/nature-box-03.png',
+    alt: '自然小匣示意：黑底网格与手写学名标签，闪蝶与果实、种荚组合',
+  },
+  {
+    src: '/images/what/nature-box/nature-box-04.png',
+    alt: '自然小匣示意：开窗卡纸格内嵌植物与蝶类标本的集合陈列',
+  },
+];
 ---
 
 <Layout
@@ -54,8 +74,28 @@ const noList = [
   <!-- ============ I. 自然小匣（主推） ============ -->
   <section class="editorial-section-wide fade-in">
     <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <figure class="aspect-[4/5] bg-gradient-to-br from-brass-deep/20 to-brass-mid/5 border border-brass-mid/20 flex items-center justify-center">
-        <span class="font-serif-en italic text-brass-mid/40 text-2xl">Nature Boxes</span>
+      <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 max-w-lg mx-auto md:mx-0 w-full">
+        <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-left">
+          Nature Boxes
+        </p>
+        <div class="grid grid-cols-2 gap-2 md:gap-3">
+          {natureBoxSchematics.map((item) => (
+            <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
+              <img
+                src={item.src}
+                alt={item.alt}
+                class="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+                width="600"
+                height="600"
+              />
+            </div>
+          ))}
+        </div>
+        <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-left">
+          自然小匣示意图：主体式标本集合创作（植物 / 昆虫等 + 档案标签同匣）；主题为示意，以门店在售与策展为准。
+        </figcaption>
       </figure>
 
       <div>
