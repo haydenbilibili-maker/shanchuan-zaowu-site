@@ -18,7 +18,14 @@ import Layout from '../components/Layout.astro';
       <div class="hero-content">
         <p class="caps-tag hero-caps">NATURE'S CREATIONS &nbsp;·&nbsp; SINCE 2024</p>
         <h1 id="hero-title" class="hero-title">
-          让自然博物美学<br />进入日常生活
+          <span class="hero-title-line">
+            <span class="hero-phrase">让自然</span><wbr />
+            <span class="hero-phrase">博物美学</span>
+          </span>
+          <br aria-hidden="true" />
+          <span class="hero-title-line">
+            <span class="hero-phrase">进入日常生活</span>
+          </span>
         </h1>
         <p class="hero-tagline-en">Bring Nature Home.</p>
         <p class="hero-blurb">
@@ -287,6 +294,21 @@ import Layout from '../components/Layout.astro';
     margin: 0 0 22px;
     color: var(--cream-100);
     text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
+    word-break: normal;
+    overflow-wrap: break-word;
+    line-break: strict;
+    text-wrap: balance;
+  }
+
+  /* 语义短块不拆行；首行仅在极窄时于 <wbr> 处分为「让自然 | 博物美学」 */
+  .hero-title-line {
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .hero-phrase {
+    display: inline-block;
+    white-space: nowrap;
   }
 
   .hero-tagline-en {
@@ -307,6 +329,10 @@ import Layout from '../components/Layout.astro';
     max-width: 360px;
     margin: 0;
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+    word-break: normal;
+    overflow-wrap: break-word;
+    line-break: strict;
+    text-wrap: pretty;
   }
 
   .scroll-indicator {
