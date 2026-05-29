@@ -6,8 +6,9 @@
 
 1. 在 `shanchuan-admin` 项目中执行 `npm run build`
 2. 将 `dist/` 内容覆盖到本目录（保留 `README.md`）
-3. 确认 `index.html` 含 `<meta name="robots" content="noindex, nofollow" />`（演示站不收录）
-4. 提交并推送主站仓库
+3. **勿部署** `dist/governance-assets/`（内部治理文档，仅本地 / 私有环境保留）
+4. 确认 `index.html` 含 `<meta name="robots" content="noindex, nofollow" />`（演示站不收录）
+5. 提交并推送主站仓库
 
 ## 路由
 
