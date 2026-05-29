@@ -193,16 +193,43 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 | `NODE_VERSION` | `20` | Node 版本 |
 | `CLOUDFLARE_ACCOUNT_ID` | `8b43e663e4cae28d2befc630081840b9` | 与构建日志中 Account ID 一致（`wrangler pages deploy` 需要） |
 
-6. **API 令牌**（构建页「API 令牌」→ 重新创建，否则 `pages:deploy` 报 `Authentication error 10000`）：
+6. **API 令牌**（⚠️ 当前失败根因：`Authentication error [code: 10000]`）
 
-   - 登录 [Cloudflare → 我的个人资料 → API 令牌](https://dash.cloudflare.com/profile/api-tokens)
-   - **创建令牌** → 使用模板 **「编辑 Cloudflare Workers」**（含 Pages 写入），或自定义权限：
-     - 账户 → **Cloudflare Pages** → **编辑**
-     - 账户 → **Account Settings** → **读取**
-   - 账户资源：选择你的账户
-   - 创建后复制令牌 → 回到项目 **设置 → 构建 → API 令牌** → **更新/替换** 为上述令牌
+   构建日志里 **构建已成功**，失败在 `npm run pages:deploy` → 说明 **「构建 → API 令牌」** 权限不足，不是代码问题。
 
-7. 保存构建配置 → **「部署」** → **「重试部署」**
+   **操作步骤（中文控制台）**：
+
+   1. 打开 [我的个人资料 → API 令牌](https://dash.cloudflare.com/profile/api-tokens) → **创建令牌**
+   2. 选 **「创建自定义令牌」**（不要只用极简的 Builds 专用令牌）
+   3. **权限** 至少勾选：
+
+      | 权限组 | 级别 |
+      |--------|------|
+      | Cloudflare Pages | **编辑** |
+      | Workers 脚本 | **编辑** |
+      | 帐户设置 | **读取** |
+      | 用户 → 用户详细信息 | **读取** |
+
+   4. **帐户资源**：包括 → 选择 `Hayden.bilibili@gmail.com's Account`
+   5. **区域资源**：可设为「所有区域」或跳过（静态 Pages 通常不需要 Zone 权限）
+   6. 创建 → **复制令牌**（只显示一次）
+   7. 回到项目 **Workers 和 Pages → shanchuan-zaowu-site → 设置 → 构建**
+   8. 找到 **「API 令牌」** 一行 → **编辑 / 更新** → 粘贴刚创建的令牌并保存
+
+   > ⚠️ **不要**在「变量和机密」里另建名为 `CLOUDFLARE_API_TOKEN` 的变量——构建系统会自动注入构建令牌；重复或错误配置会导致鉴权混乱。
+
+7. 保存后 → **「部署」** → **「重试部署」**
+
+**关于截图底部 `API Request Failed: GET .../builds/latest`**：
+
+- 多为 **Cloudflare 控制台轮询构建状态** 时的界面报错（与 deploy 并行出现）
+- **以构建日志为准**：若日志末尾仍是 `Authentication error [code: 10000]`，优先按上文 **重建 API 令牌**；令牌修好后此 UI 报错通常会一并消失
+
+**若仍无法给令牌 Pages 编辑权限**（企业策略限制）：
+
+- 在 **Workers 和 Pages → 创建** 中选 **Pages**（经典 Pages，不是 Worker）
+- 连接同一 GitHub 仓库，仅配置 **构建命令** + **输出目录 `dist`**，**无部署命令/版本命令**
+- 自定义域从旧项目迁到新 Pages 项目
 
 **构建成功但发布失败时**：
 
