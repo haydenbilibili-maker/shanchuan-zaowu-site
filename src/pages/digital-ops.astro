@@ -28,6 +28,8 @@ const platforms = [
     side: '管理端',
     detail:
       '藏品管理 + 财务核算 + 会员 CRM + 活动营销 + AI 决策。Vue 3 SPA，与小程序共享同一云数据库，数据实时互通。',
+    demoHref: '/admin/',
+    demoLabel: '打开管理后台演示 →',
   },
   {
     role: 'III',
@@ -228,6 +230,24 @@ const roadmap = [
       Hand-built by founder · 一人构建 · Updated 2026.04
     </p>
 
+    <div class="mt-section max-w-editorial mx-auto p-6 md:p-8 border border-brass-mid/25 bg-ink-elevated/40 text-center">
+      <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
+        Live Demo · 管理后台演示
+      </p>
+      <h3 class="font-serif text-xl md:text-2xl text-cream tracking-cn mb-3">
+        数智化中台 · 可交互演示
+      </h3>
+      <p class="text-text-soft text-sm leading-[1.85] tracking-cn mb-6">
+        Vue 3 管理端已部署于本站 <code class="text-brass-light">/admin/</code> 路径。演示环境供投资人、加盟方与合作伙伴自助浏览模块结构与交互；数据为样例，非生产库。
+      </p>
+      <a
+        href="/admin/"
+        class="inline-block px-8 py-3 border border-brass-mid/50 text-brass-light hover:bg-brass-mid/10 hover:border-brass-mid transition-colors tracking-cn text-sm"
+      >
+        进入管理后台演示 →
+      </a>
+    </div>
+
     {/* 配对实证：硬核科技应用蓝图 */}
     <div class="mt-section p-5 md:p-6 border-l-2 border-brass-bright/60 bg-ink-deep/40 max-w-editorial mx-auto">
       <p class="font-serif-en italic text-brass-bright text-xs tracking-widest uppercase mb-2">
@@ -266,6 +286,14 @@ const roadmap = [
           <h3 class="font-serif text-2xl text-cream tracking-cn mb-1">{p.name}</h3>
           <p class="font-serif text-sm text-brass-mid tracking-cn mb-4">{p.side}</p>
           <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{p.detail}</p>
+          {'demoHref' in p && p.demoHref && (
+            <a
+              href={p.demoHref}
+              class="inline-block mt-5 text-sm text-brass-bright border-b border-brass-bright/40 hover:border-brass-bright transition-colors tracking-cn"
+            >
+              {p.demoLabel ?? '查看演示 →'}
+            </a>
+          )}
         </article>
       ))}
     </div>

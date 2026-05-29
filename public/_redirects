@@ -14,3 +14,7 @@
 /partner/investor /for-investors 301
 /partner/franchise /for-franchise 301
 /notes/001 /notes/founders-letter 301
+
+# 管理后台 SPA（Vue Router history 模式回退）
+/admin /admin/ 301
+/admin/* /admin/index.html 200

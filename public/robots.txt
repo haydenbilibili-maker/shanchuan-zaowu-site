@@ -1,5 +1,6 @@
 # https://shanhaizaowu.com
 User-agent: *
 Allow: /
+Disallow: /admin/
 
 Sitemap: https://shanhaizaowu.com/sitemap-index.xml
