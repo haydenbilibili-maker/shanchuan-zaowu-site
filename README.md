@@ -208,13 +208,11 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 | 日志特征 | 原因 | 处理 |
 |---------|------|------|
-| `Missing entry-point to Worker script` | 部署命令误填 `npx wrangler deploy` | **部署命令留空** |
-| `Authentication error [code: 10000]` + `pages/projects/shanchuan-zaowu-site` | 部署命令填了 `npm run pages:deploy`，构建环境里的 **API 令牌无 Pages 写入权限** | **部署命令留空**（推荐）；勿在 CF 构建里二次 `wrangler pages deploy` |
-| 构建日志已有 `✓ dist/admin 已就绪` 但线上 `/admin/` 404 | 发布步骤未成功 | 修正上表后 **重试部署** |
+| `Missing entry-point to Worker script` | 部署命令误填 `npx wrangler deploy` | 改为 `npm run pages:deploy` |
+| `Authentication error [code: 10000]` | 构建用 API 令牌**无 Pages 编辑权限** | 重建令牌 + 设 `CLOUDFLARE_ACCOUNT_ID` |
+| `Invalid request body`（保存构建配置时） | **版本命令**被删空 | 改为 `npm run pages:version`，勿留空 |
+| 构建已有 `✓ dist/admin 已就绪` 但线上 404 | 发布步骤失败 | 修正令牌与命令后 **重试部署** |
 
-> `npm run pages:deploy` 仅用于**本地终端**手动发布（需本机配置 `CLOUDFLARE_API_TOKEN` 且含 **Cloudflare Pages · 编辑** 权限）。**不要**填进 Cloudflare 控制台的「部署命令」。
-
-保存后 → 顶部 **「部署」** → **「重试部署」**。
 
 **发布后自检**：
 
