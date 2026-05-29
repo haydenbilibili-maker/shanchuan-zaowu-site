@@ -17,7 +17,7 @@
 Cloudflare Pages 通过 `public/_redirects` 配置 SPA 回退：
 
 - `/admin` → `/admin/`（301）
-- `/admin/*` → `/admin/index.html`（200，供 Vue Router 客户端路由）
+- `/admin/*` → `/admin/`（200，Vue Router 客户端路由；**勿** rewrite 到 `index.html`，Cloudflare 会忽略该规则）
 
 ## 源码
 
