@@ -8,6 +8,7 @@
     "start": "astro dev",
     "build": "astro build && node scripts/verify-admin-dist.mjs",
     "pages:deploy": "npx wrangler pages deploy dist --project-name=shanchuan-zaowu-site --branch=main",
+    "pages:version": "true",
     "preview": "astro preview",
     "astro": "astro"
   },

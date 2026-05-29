@@ -161,19 +161,66 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 **最小流程**（完整 SOP 见《山海造物·官网 v0.1·上线与域名布置方案 v0.1》）：
 
 1. 本地 `npm run build` 通过（生成 `dist/` + 30 页 + `dist/admin/` 管理端）
-2. GitHub 仓库接入 Cloudflare Pages，**Build 配置务必如下**：
-
-| 项 | 正确值 | 说明 |
-|----|--------|------|
-| Build command | `npm run build` | Astro 静态站 + admin 校验 |
-| Build output directory | `dist` | 含 `/admin/` 静态资源 |
-| **Deploy command** | **留空**（推荐） | Pages 构建完成后自动发布 `dist` |
-| Deploy command（备选） | `npm run pages:deploy` | 仅当控制台强制要求填写 deploy 时使用 |
-| `NODE_VERSION` | `20` | 环境变量 |
-
-> **常见构建失败**：若 Deploy command 填了 `npx wrangler deploy`，会报 `Missing entry-point to Worker script`——那是 **Workers** 命令，不是 Pages。`npm run build` 本身往往已成功，失败发生在 deploy 阶段。请 **清空 Deploy command** 或改为 `npm run pages:deploy`。
-
+2. GitHub 仓库接入 Cloudflare Pages，按下方 **「控制台操作（中文界面）」** 核对配置
 3. **`astro.config.mjs` 已设 `site: 'https://shanhaizaowu.com'`** —— canonical / OG 绝对地址以此为准（`*.pages.dev` 仅作兜底预览时可保留不重绑）
+
+### 控制台操作（中文界面）
+
+1. 登录 [Cloudflare 控制台](https://dash.cloudflare.com/) → 左侧 **「Workers 和 Pages」**
+2. 点击项目 **`shanchuan-zaowu-site`**（或你的 Pages 项目名）
+3. 顶部标签页 → **「设置」**
+4. 左侧或页面内找到 **「构建和部署」**（或 **「构建」**）→ **「构建配置」** → **「编辑配置」**
+
+填写或核对下表（字段名以控制台中文为准）：
+
+| 控制台中文项 | 应填写的值 | 说明 |
+|-------------|-----------|------|
+| **Git 存储库** | `haydenbilibili-maker/shanchuan-zaowu-site` | 已连接即可 |
+| **生产分支** | `main` | 与 GitHub 默认分支一致 |
+| **构建命令** | `npm run build` | 在**仓库根目录**执行（含 `package.json`） |
+| **根目录 / 路径** | **留空** | ⚠️ **不要填 `dist`** |
+| **部署命令** | `npm run pages:deploy` | 控制台**必填**时使用（见下方令牌权限） |
+| **版本命令** | `npm run pages:version` | ⚠️ **不能删空**（删空会报 `Invalid request body`）；用无操作占位 |
+| **非生产分支部署命令** | `true` 或留空 | 编辑侧栏若必填则填 `true` |
+| **非生产分支构建** | 已启用 / 关闭均可 | 与预览需求有关 |
+
+> **Workers 构建 UI 限制**：部署命令、版本命令往往**不能留空**。删空版本命令点「更新」会出现 **Invalid request body / 无法提交表单**——请改为上表占位命令，不要留空提交。
+
+5. **变量和机密**（除 `NODE_VERSION` 外建议增加）：
+
+| 名称 | 值 | 说明 |
+|------|-----|------|
+| `NODE_VERSION` | `20` | Node 版本 |
+| `CLOUDFLARE_ACCOUNT_ID` | `8b43e663e4cae28d2befc630081840b9` | 与构建日志中 Account ID 一致（`wrangler pages deploy` 需要） |
+
+6. **API 令牌**（构建页「API 令牌」→ 重新创建，否则 `pages:deploy` 报 `Authentication error 10000`）：
+
+   - 登录 [Cloudflare → 我的个人资料 → API 令牌](https://dash.cloudflare.com/profile/api-tokens)
+   - **创建令牌** → 使用模板 **「编辑 Cloudflare Workers」**（含 Pages 写入），或自定义权限：
+     - 账户 → **Cloudflare Pages** → **编辑**
+     - 账户 → **Account Settings** → **读取**
+   - 账户资源：选择你的账户
+   - 创建后复制令牌 → 回到项目 **设置 → 构建 → API 令牌** → **更新/替换** 为上述令牌
+
+7. 保存构建配置 → **「部署」** → **「重试部署」**
+
+**构建成功但发布失败时**：
+
+| 日志特征 | 原因 | 处理 |
+|---------|------|------|
+| `Missing entry-point to Worker script` | 部署命令误填 `npx wrangler deploy` | **部署命令留空** |
+| `Authentication error [code: 10000]` + `pages/projects/shanchuan-zaowu-site` | 部署命令填了 `npm run pages:deploy`，构建环境里的 **API 令牌无 Pages 写入权限** | **部署命令留空**（推荐）；勿在 CF 构建里二次 `wrangler pages deploy` |
+| 构建日志已有 `✓ dist/admin 已就绪` 但线上 `/admin/` 404 | 发布步骤未成功 | 修正上表后 **重试部署** |
+
+> `npm run pages:deploy` 仅用于**本地终端**手动发布（需本机配置 `CLOUDFLARE_API_TOKEN` 且含 **Cloudflare Pages · 编辑** 权限）。**不要**填进 Cloudflare 控制台的「部署命令」。
+
+保存后 → 顶部 **「部署」** → **「重试部署」**。
+
+**发布后自检**：
+
+- https://shanhaizaowu.com/ 可访问
+- https://shanhaizaowu.com/admin/ 可打开数智化中台
+- **设置 → 域和路由 → 自定义域** 中 `shanhaizaowu.com` 证书状态为有效
 
 ### 阿里云已购域名 · 映射到本站
 
@@ -181,16 +228,16 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 **方案 A（推荐）DNS 全权交给 Cloudflare**
 
-1. Cloudflare Dashboard → **Add a Site** → 输入 `shanhaizaowu.com`（可免费套餐）
+1. Cloudflare 控制台 → **「添加站点」** → 输入 `shanhaizaowu.com`（可免费套餐）
 2. Cloudflare 给出一组 **NS（名称服务器）**；在阿里云 **域名控制台** → 对应域名 → **DNS 修改 / 域名DNS** → 改为使用自定义 DNS，填 Cloudflare 的 NS（通常 48 小时内生效）
-3. Cloudflare DNS 面板里：**Workers & Pages** → 你的 Pages 项目 → **Custom domains** → 依次添加 **`shanhaizaowu.com`**、**`www.shanhaizaowu.com`**（若要用 www）、以及 **`shanhaizaowu.cn`**（同上可加 `www`）
-4. 等待签发证书（Proxied / 橙色云由 CF 接管）；浏览器访问 `https://shanhaizaowu.com` 验证
+3. Cloudflare：**Workers 和 Pages** → 你的 Pages 项目 → **设置 → 域和路由 → 自定义域** → 依次添加 **`shanhaizaowu.com`**、**`www.shanhaizaowu.com`**（若要用 www）、以及 **`shanhaizaowu.cn`**（同上可加 `www`）
+4. 等待签发证书（**已代理** / 橙色云由 CF 接管）；浏览器访问 `https://shanhaizaowu.com` 验证
 
-**.cn 策略**：常与 **.com 同站点**——两个都在 Pages「Custom domains」里绑定到同一项目；若只希望 **`.cn` 跳转到 `.com`**，可在 Cloudflare **Rules → Redirect Rules**（或 **Bulk Redirects**）里配置 301：`https://shanhaizaowu.cn/*` → `https://shanhaizaowu.com/:splat`（按需调整）。
+**.cn 策略**：常与 **.com 同站点**——两个都在 **自定义域** 里绑定到同一项目；若只希望 **`.cn` 跳转到 `.com`**，可在 Cloudflare **规则 → 重定向规则**（或 **批量重定向**）里配置 301：`https://shanhaizaowu.cn/*` → `https://shanhaizaowu.com/:splat`（按需调整）。
 
 **方案 B（DNS 仍在阿里云解析）**
 
-1. Pages 项目 → Custom domains → 添加域名，界面会提示要加的 **TXT 校验**（若有）以及 **CNAME 目标**（形如 `xxxx.pages.dev`）
+1. Pages 项目 → **设置 → 域和路由 → 自定义域** → 添加域名，界面会提示要加的 **TXT 校验**（若有）以及 **CNAME 目标**（形如 `xxxx.pages.dev`）
 2. 阿里云 **云解析 DNS** → 为该域名添加记录：  
    - **`www`**：记录类型 **CNAME**，值填 Cloudflare 给出的目标（常为 `*.pages.dev`）  
    - **根域名 `@`**：若控制台支持 **CNAME 平摊 / 显性 URL**，按阿里云文档指向同一目标；**不支持根 CNAME** 时，可先用 **`www`** 作主站，再在 CF 侧对 apex 配置转发，或改用方案 A
@@ -209,9 +256,13 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 ## 已知坑位 · 避免重犯
 
-### Cloudflare Pages：`wrangler deploy` ≠ Pages 发布
+### Cloudflare Pages：三项易错配置
 
-静态 Astro 站 **不要** 在 Deploy command 里写 `npx wrangler deploy`。构建日志里若出现 `Success: Build command completed` 后紧跟 `Missing entry-point to Worker script`，说明 **build 已通过、deploy 命令配错**。处理：Deploy command **留空**，或改为 `npm run pages:deploy`。
+1. **根目录 / 路径** 填了 `dist` → 应 **留空**。
+2. **版本命令** 删空保存 → 报 `Invalid request body` → 填 **`npm run pages:version`**（无操作占位）。
+3. **部署命令** 用 `npm run pages:deploy` 但报 `Authentication error 10000` → 重建 **含 Pages 编辑** 的 API 令牌，并设 **`CLOUDFLARE_ACCOUNT_ID`**。
+
+构建日志里若已有 **「构建命令已完成」** 后仍失败，或线上 `/admin/` 仍 404，优先核对以上三项，再到 **「部署」** 页 **重试部署**。
 
 ### 中文品牌改名（统一为山海造物 · 2026.05）
 
