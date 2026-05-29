@@ -160,8 +160,19 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 **最小流程**（完整 SOP 见《山海造物·官网 v0.1·上线与域名布置方案 v0.1》）：
 
-1. 本地 `npm run build` 通过（生成 dist/ + 21 页）
-2. GitHub 仓库接入 Cloudflare Pages（Build：`npm run build`，Output：`dist`，`NODE_VERSION=20`）
+1. 本地 `npm run build` 通过（生成 `dist/` + 30 页 + `dist/admin/` 管理端）
+2. GitHub 仓库接入 Cloudflare Pages，**Build 配置务必如下**：
+
+| 项 | 正确值 | 说明 |
+|----|--------|------|
+| Build command | `npm run build` | Astro 静态站 + admin 校验 |
+| Build output directory | `dist` | 含 `/admin/` 静态资源 |
+| **Deploy command** | **留空**（推荐） | Pages 构建完成后自动发布 `dist` |
+| Deploy command（备选） | `npm run pages:deploy` | 仅当控制台强制要求填写 deploy 时使用 |
+| `NODE_VERSION` | `20` | 环境变量 |
+
+> **常见构建失败**：若 Deploy command 填了 `npx wrangler deploy`，会报 `Missing entry-point to Worker script`——那是 **Workers** 命令，不是 Pages。`npm run build` 本身往往已成功，失败发生在 deploy 阶段。请 **清空 Deploy command** 或改为 `npm run pages:deploy`。
+
 3. **`astro.config.mjs` 已设 `site: 'https://shanhaizaowu.com'`** —— canonical / OG 绝对地址以此为准（`*.pages.dev` 仅作兜底预览时可保留不重绑）
 
 ### 阿里云已购域名 · 映射到本站
@@ -197,6 +208,10 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 ---
 
 ## 已知坑位 · 避免重犯
+
+### Cloudflare Pages：`wrangler deploy` ≠ Pages 发布
+
+静态 Astro 站 **不要** 在 Deploy command 里写 `npx wrangler deploy`。构建日志里若出现 `Success: Build command completed` 后紧跟 `Missing entry-point to Worker script`，说明 **build 已通过、deploy 命令配错**。处理：Deploy command **留空**，或改为 `npm run pages:deploy`。
 
 ### 中文品牌改名（统一为山海造物 · 2026.05）
 
