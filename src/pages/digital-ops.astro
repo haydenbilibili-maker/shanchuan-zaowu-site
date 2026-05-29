@@ -27,9 +27,9 @@ const platforms = [
     name: '数智化中台',
     side: '管理端',
     detail:
-      '藏品管理 + 财务核算 + 会员 CRM + 活动营销 + AI 决策。Vue 3 SPA，与小程序共享同一云数据库，数据实时互通。',
-    demoHref: '/admin/',
-    demoLabel: '打开管理后台演示 →',
+      '藏品管理 + 财务核算 + 会员 CRM + 活动营销 + AI 决策。Vue 3 SPA，与小程序共享同一云数据库，数据实时互通。公司管理层与授权门店人员通过 Web 端日常登录使用。',
+    entryHref: '/admin/',
+    entryLabel: '进入管理后台 →',
   },
   {
     role: 'III',
@@ -232,19 +232,19 @@ const roadmap = [
 
     <div class="mt-section max-w-editorial mx-auto p-6 md:p-8 border border-brass-mid/25 bg-ink-elevated/40 text-center">
       <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-3">
-        Live Demo · 管理后台演示
+        Operations Portal · 管理端 Web 入口
       </p>
       <h3 class="font-serif text-xl md:text-2xl text-cream tracking-cn mb-3">
-        数智化中台 · 可交互演示
+        数智化中台 · 管理人员与店长日常使用
       </h3>
       <p class="text-text-soft text-sm leading-[1.85] tracking-cn mb-6">
-        Vue 3 管理端已部署于本站 <code class="text-brass-light">/admin/</code> 路径。演示环境供投资人、加盟方与合作伙伴自助浏览模块结构与交互；数据为样例，非生产库。
+        Vue 3 管理端挂载于本站 <code class="text-brass-light">/admin/</code> 路径——公司管理层、门店店长与授权员工通过浏览器登录，使用经营驾驶舱、藏品档案、财务核算、会员 CRM、活动营销与 AI 决策等模块。与小程序、店长后台共享同一云环境，数据实时互通。
       </p>
       <a
         href="/admin/"
         class="inline-block px-8 py-3 border border-brass-mid/50 text-brass-light hover:bg-brass-mid/10 hover:border-brass-mid transition-colors tracking-cn text-sm"
       >
-        进入管理后台演示 →
+        进入管理后台 →
       </a>
     </div>
 
@@ -286,12 +286,12 @@ const roadmap = [
           <h3 class="font-serif text-2xl text-cream tracking-cn mb-1">{p.name}</h3>
           <p class="font-serif text-sm text-brass-mid tracking-cn mb-4">{p.side}</p>
           <p class="text-text-soft text-sm leading-[1.85] tracking-cn">{p.detail}</p>
-          {'demoHref' in p && p.demoHref && (
+          {'entryHref' in p && p.entryHref && (
             <a
-              href={p.demoHref}
+              href={p.entryHref}
               class="inline-block mt-5 text-sm text-brass-bright border-b border-brass-bright/40 hover:border-brass-bright transition-colors tracking-cn"
             >
-              {p.demoLabel ?? '查看演示 →'}
+              {p.entryLabel ?? '进入 →'}
             </a>
           )}
         </article>

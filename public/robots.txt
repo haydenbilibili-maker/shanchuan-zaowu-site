@@ -1,6 +1,7 @@
 # https://shanhaizaowu.com
 User-agent: *
 Allow: /
+# 管理后台为登录系统，不对搜索引擎开放；员工通过站内入口 /admin/ 访问
 Disallow: /admin/
 
 Sitemap: https://shanhaizaowu.com/sitemap-index.xml
