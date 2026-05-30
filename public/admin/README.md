@@ -17,7 +17,7 @@
 Cloudflare Pages 通过 `public/_redirects` 配置 SPA 回退：
 
 - `/admin` → `/admin/`（301）
-- `/admin/*` → `/admin/`（200，Vue Router 客户端路由；**勿** rewrite 到 `index.html`，Cloudflare 会忽略该规则）
+- **勿** 在 `_redirects` 里写 `/admin/* → /admin/` 的 200 回退，否则 `/admin/assets/*.js` 会返回 HTML（白屏）
 
 ## 源码
 

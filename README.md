@@ -164,7 +164,51 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 2. GitHub 仓库接入 Cloudflare Pages，按下方 **「控制台操作（中文界面）」** 核对配置
 3. **`astro.config.mjs` 已设 `site: 'https://shanhaizaowu.com'`** —— canonical / OG 绝对地址以此为准（`*.pages.dev` 仅作兜底预览时可保留不重绑）
 
-### 控制台操作（中文界面）
+### 无法开通构建令牌？→ 用「经典 Pages + GitHub Actions」（推荐）
+
+当前项目是 **Workers 构建**（有部署命令/版本命令），发布依赖构建机里的 API 令牌。若无法在 **设置 → 构建 → API 令牌** 获得 Pages 编辑权限，请改用下面组合，**不必**在 Cloudflare 构建里跑 `pages:deploy`：
+
+#### 方案 A · 经典 Cloudflare Pages（零令牌，一次配置）
+
+1. **Workers 和 Pages** → **创建** → 选 **Pages**（不要选 Worker）
+2. **连接到 Git** → 选 `haydenbilibili-maker/shanchuan-zaowu-site`、分支 `main`
+3. 仅填：
+   - **构建命令**：`npm run build`
+   - **构建输出目录**：`dist`
+   - **无**部署命令、**无**版本命令（经典 Pages 界面没有这两项）
+4. **设置 → 域和路由 → 自定义域** 绑定 `shanhaizaowu.com`
+5. 旧 Worker 项目可暂停 Git 构建，避免重复部署
+
+此路径用 **GitHub ↔ Cloudflare OAuth**，不需要你创建 `CLOUDFLARE_API_TOKEN`。
+
+#### 方案 B · GitHub Actions 自动部署（配合 Cursor 自动 push）
+
+仓库已含 `.github/workflows/deploy-pages.yml`：**push 到 `main` 后由 GitHub 构建并发布**，令牌存在 **GitHub 仓库 Secrets**，不经过 Cloudflare 构建页。
+
+**一次性配置（你在浏览器完成，不要把令牌发给 AI）：**
+
+1. [Cloudflare → API 令牌](https://dash.cloudflare.com/profile/api-tokens) → **创建自定义令牌**  
+   权限：**Cloudflare Pages · 编辑** + **帐户设置 · 读取**（若仍无法创建，只能用方案 A）
+2. GitHub 仓库 → **Settings → Secrets and variables → Actions → New repository secret**
+   - `CLOUDFLARE_API_TOKEN` = 上一步令牌
+   - `CLOUDFLARE_ACCOUNT_ID` = `8b43e663e4cae28d2befc630081840b9`
+3. 确保 `.github/workflows/deploy-pages.yml` 已在 `main` 分支（可让我 `push`，或你本地 push）
+4. **Actions** 标签页查看 **Deploy to Cloudflare Pages** 是否绿勾
+
+**Cloudflare 侧**：旧 Worker 项目的 **部署命令** 可改为 `true`（仅占位），或断开 Git，避免与 GitHub Actions 重复发布。
+
+#### 如何「授权 Cursor / AI」自动 push 与更新
+
+| 能力 | 做法 | 说明 |
+|------|------|------|
+| **Git push 代码** | 对话里说「push / 提交并推送」 | 使用你本机/Cursor 已配置的 GitHub 凭据；**无需**额外授权给我账号密码 |
+| **触发线上部署** | 方案 A：Cloudflare Pages Git 直连 | push 后 Cloudflare 自动构建，**不需要**给我任何 Cloudflare 权限 |
+| **触发线上部署** | 方案 B：配好 GitHub Secrets + Actions | push 后 GitHub Actions 自动 `pages deploy` |
+| **禁止做法** | 在聊天里粘贴 API 令牌、密码 | 只通过 GitHub Secrets / CF 控制台配置 |
+
+我**不能**登录你的 Cloudflare 或 GitHub 网页替你点按钮；我能做的是：改代码 → `git commit` → `git push` →（若已配 A 或 B）部署自动发生。
+
+### 控制台操作（中文界面 · Workers 构建 · 旧路径）
 
 1. 登录 [Cloudflare 控制台](https://dash.cloudflare.com/) → 左侧 **「Workers 和 Pages」**
 2. 点击项目 **`shanchuan-zaowu-site`**（或你的 Pages 项目名）

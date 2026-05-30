@@ -1,7 +1,5 @@
-# 管理后台 SPA · 勿 rewrite 到 index.html（CF 会判无限循环并忽略整条规则）
-# 静态资源优先于 _redirects；/admin/* 回退到目录根以加载 index.html
+# 管理后台：仅补全尾斜杠；勿对 /admin/* 做 200 回退（会把 /admin/assets/*.js 也重写成 HTML，导致白屏）
 /admin /admin/ 301
-/admin/* /admin/ 200
 /products /what 301
 /about /who 301
 /senses /how/senses 301
