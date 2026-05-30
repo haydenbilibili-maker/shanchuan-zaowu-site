@@ -86,6 +86,9 @@ A1 使用匿名登录 + 管理端口令（前端）。云库侧建议：
 3. 进入 `/admin/` → 财务 → 解锁 → 录入一条测试数据 → **同步到云端**
 4. 换浏览器或清 localStorage 后 → **从云端下载**，数据应恢复
 
+> **Web SDK 注意**：财务同步**不要**依赖云库 `orderBy` / 逐条 `where`（无索引时会报 `Cannot set properties of undefined (setting 'promise')`）。  
+> 当前 `financeSync` 已改为 `limit` + 客户端排序/按 `date` 合并；若仍失败，硬刷新（Cmd+Shift+R）清掉旧 JS 缓存。
+
 ---
 
 ## 日常使用
@@ -113,6 +116,7 @@ A1 使用匿名登录 + 管理端口令（前端）。云库侧建议：
 | `permission` / `-502004` | 集合权限过严 | 放宽规则或确认已匿名登录 |
 | `collection not found` | 集合未建 | 新建 `finance_records` 等 |
 | 同步成功但换设备无数据 | 只写了 localStorage 未点上传 | 点「同步到云端」 |
+| `setting 'promise'` / 记录同步失败 | 旧版 financeSync 用了 orderBy/where | 更新至最新构建并硬刷新 |
 | 小程序有数据 Web 没有 | 集合名或 envId 不一致 | 核对 envId 与集合名 |
 
 ---
