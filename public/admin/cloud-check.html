@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>CloudBase 连接检测 · 山海造物</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #141210;
+        --panel: #1e1b17;
+        --text: #f2ede4;
+        --muted: #9a9084;
+        --ok: #2d6a4f;
+        --fail: #c45c4a;
+        --warn: #c4a76c;
+        --line: #3a342c;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "DM Sans", "PingFang SC", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 2rem 1rem;
+      }
+      .wrap { max-width: 42rem; margin: 0 auto; }
+      h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.25rem; }
+      .sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+      }
+      .meta { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+      .meta code { color: var(--warn); font-size: 0.78rem; }
+      button {
+        appearance: none;
+        border: none;
+        border-radius: 8px;
+        padding: 0.65rem 1.2rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: linear-gradient(90deg, #2d6a4f, #c4a76c);
+        color: #141210;
+      }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      ul { list-style: none; padding: 0; margin: 1rem 0 0; }
+      li {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        padding: 0.65rem 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.875rem;
+      }
+      li:last-child { border-bottom: none; }
+      .badge {
+        flex-shrink: 0;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+      }
+      .badge.pending { background: #3a342c; color: var(--muted); }
+      .badge.ok { background: var(--ok); color: #fff; }
+      .badge.fail { background: var(--fail); color: #fff; }
+      .detail { color: var(--muted); margin-top: 0.2rem; font-size: 0.8rem; word-break: break-all; }
+      a { color: var(--warn); }
+      .foot { margin-top: 1.5rem; font-size: 0.8rem; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>CloudBase 连接检测</h1>
+      <p class="sub">A1 财务云端持久化 · 验收用（不对搜索引擎收录）</p>
+
+      <div class="card">
+        <div class="meta">
+          环境 <code id="env-id">cloud1-8gnkty5bfff9f0bf</code><br />
+          区域 <code>ap-shanghai</code><br />
+          当前页 <code id="origin"></code>
+        </div>
+        <p style="margin: 1rem 0 0.75rem; font-size: 0.875rem;">
+          请在云开发控制台完成 Web 安全域名、匿名登录、集合与权限配置后再检测。
+          完整步骤见仓库 <code>docs/admin-a1-cloudbase.md</code>。
+        </p>
+        <button id="run" type="button">开始检测</button>
+      </div>
+
+      <div class="card">
+        <ul id="checks">
+          <li data-step="init"><span class="badge pending">待测</span><div><strong>SDK 初始化</strong><div class="detail"></div></div></li>
+          <li data-step="anon"><span class="badge pending">待测</span><div><strong>匿名登录</strong><div class="detail"></div></div></li>
+          <li data-step="records"><span class="badge pending">待测</span><div><strong>读取 finance_records</strong><div class="detail"></div></div></li>
+          <li data-step="settings"><span class="badge pending">待测</span><div><strong>读取 finance_settings</strong><div class="detail"></div></div></li>
+        </ul>
+      </div>
+
+      <p class="foot">
+        全部通过后，进入 <a href="/admin/">/admin/</a> → 财务模块 → 「同步到云端」/「从云端下载」。
+      </p>
+    </div>
+
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/2.11.0/cloudbase.full.js"></script>
+    <script>
+      const ENV_ID = 'cloud1-8gnkty5bfff9f0bf';
+      const REGION = 'ap-shanghai';
+
+      document.getElementById('origin').textContent = location.origin;
+
+      function setStep(step, status, detail) {
+        const li = document.querySelector('[data-step="' + step + '"]');
+        if (!li) return;
+        const badge = li.querySelector('.badge');
+        badge.className = 'badge ' + status;
+        badge.textContent = status === 'ok' ? '通过' : status === 'fail' ? '失败' : '待测';
+        li.querySelector('.detail').textContent = detail || '';
+      }
+
+      async function runChecks() {
+        const btn = document.getElementById('run');
+        btn.disabled = true;
+        ['init', 'anon', 'records', 'settings'].forEach((s) => setStep(s, 'pending', ''));
+
+        let app, auth, db;
+
+        try {
+          if (!window.cloudbase) throw new Error('CloudBase SDK 未加载');
+          app = window.cloudbase.init({ env: ENV_ID, region: REGION, persistence: 'local' });
+          auth = app.auth();
+          db = app.database();
+          setStep('init', 'ok', 'env=' + ENV_ID);
+        } catch (e) {
+          setStep('init', 'fail', e.message || String(e));
+          btn.disabled = false;
+          return;
+        }
+
+        try {
+          const state = await auth.getLoginState();
+          if (!state && typeof auth.signInAnonymously === 'function') {
+            await auth.signInAnonymously();
+          }
+          const uid = auth.currentUser && auth.currentUser.uid ? auth.currentUser.uid : '(anonymous)';
+          setStep('anon', 'ok', 'uid=' + uid);
+        } catch (e) {
+          setStep('anon', 'fail', (e.message || String(e)) + ' → 请在控制台开启「匿名登录」');
+          btn.disabled = false;
+          return;
+        }
+
+        for (const [step, coll] of [['records', 'finance_records'], ['settings', 'finance_settings']]) {
+          try {
+            const res = await db.collection(coll).limit(1).get();
+            const n = (res.data && res.data.length) || 0;
+            setStep(step, 'ok', '集合可访问，抽样 ' + n + ' 条');
+          } catch (e) {
+            const msg = e.message || String(e);
+            const code = e.code != null ? ' code=' + e.code : '';
+            let hint = '';
+            if (msg.includes('domain') || msg.includes('域名') || String(e.code) === '-502003') {
+              hint = ' → 添加 Web 安全域名：' + location.hostname;
+            } else if (msg.includes('permission') || msg.includes('权限') || String(e.code) === '-502004') {
+              hint = ' → 检查集合权限（需 auth != null）';
+            } else if (msg.includes('not exist') || msg.includes('不存在')) {
+              hint = ' → 请在控制台创建集合 ' + coll;
+            }
+            setStep(step, 'fail', msg + code + hint);
+          }
+        }
+
+        btn.disabled = false;
+      }
+
+      document.getElementById('run').addEventListener('click', runChecks);
+    </script>
+  </body>
+</html>

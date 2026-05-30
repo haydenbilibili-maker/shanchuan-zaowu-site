@@ -289,7 +289,10 @@ Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张�
 
 - https://shanhaizaowu.com/ 可访问
 - https://shanhaizaowu.com/admin/ 可打开数智化中台
+- https://shanhaizaowu.com/admin/cloud-check.html 四项 CloudBase 检测通过（财务云端 A1）
 - **设置 → 域和路由 → 自定义域** 中 `shanhaizaowu.com` 证书状态为有效
+
+> 管理端财务数据持久化：见 **`docs/admin-a1-cloudbase.md`**（云开发 Web 安全域名 + 匿名登录 + `finance_records` 集合）。
 
 ### 阿里云已购域名 · 映射到本站
 
