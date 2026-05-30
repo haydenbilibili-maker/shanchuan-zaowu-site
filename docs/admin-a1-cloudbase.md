@@ -116,7 +116,7 @@ A1 使用匿名登录 + 管理端口令（前端）。云库侧建议：
 | `permission` / `-502004` | 集合权限过严 | 放宽规则或确认已匿名登录 |
 | `collection not found` | 集合未建 | 新建 `finance_records` 等 |
 | 同步成功但换设备无数据 | 只写了 localStorage 未点上传 | 点「同步到云端」 |
-| `setting 'promise'` / 记录同步失败 | 旧版 financeSync 用了 orderBy/where | 更新至最新构建并硬刷新 |
+| `setting 'promise'` / 记录同步失败 | 内置 bundle 的 CloudBase SDK 数据库 `.get()` 异常 | 已改用 CDN SDK（`index.html` + `financeSync`）；硬刷新 |
 | 小程序有数据 Web 没有 | 集合名或 envId 不一致 | 核对 envId 与集合名 |
 
 ---

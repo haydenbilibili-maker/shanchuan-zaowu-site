@@ -19,6 +19,12 @@
     <script>
       window.global = window;
     </script>
+
+    <!-- CloudBase CDN：financeSync 使用；须在 bundle 覆盖 window.cloudbase 前保留引用 -->
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/2.11.0/cloudbase.full.js"></script>
+    <script>
+      window.__cloudbaseCDN = window.cloudbase;
+    </script>
     
     <script type="module" crossorigin src="/admin/assets/index-nwDdqFlp.js"></script>
     <link rel="modulepreload" crossorigin href="/admin/assets/rolldown-runtime-Bmd_1KMr.js">
