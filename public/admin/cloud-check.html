@@ -100,6 +100,7 @@
           <li data-step="anon"><span class="badge pending">待测</span><div><strong>匿名登录</strong><div class="detail"></div></div></li>
           <li data-step="records"><span class="badge pending">待测</span><div><strong>读取 finance_records</strong><div class="detail"></div></div></li>
           <li data-step="settings"><span class="badge pending">待测</span><div><strong>读取 finance_settings</strong><div class="detail"></div></div></li>
+          <li data-step="store"><span class="badge pending">待测</span><div><strong>读取 store_ledger（店长账本）</strong><div class="detail"></div></div></li>
         </ul>
       </div>
 
@@ -156,7 +157,7 @@
           return;
         }
 
-        for (const [step, coll] of [['records', 'finance_records'], ['settings', 'finance_settings']]) {
+        for (const [step, coll] of [['records', 'finance_records'], ['settings', 'finance_settings'], ['store', 'store_ledger']]) {
           try {
             const res = await db.collection(coll).limit(1).get();
             const n = (res.data && res.data.length) || 0;

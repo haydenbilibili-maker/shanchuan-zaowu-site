@@ -60,6 +60,7 @@ Web 管理端使用 `signInAnonymously()`，不依赖微信扫码。
 
 - `finance_records`
 - `finance_settings`
+- **`store_ledger`**（店长小程序账本，与 `finance_records` 双向同步）
 
 索引建议（可选，数据量大时再加）：
 
@@ -98,9 +99,9 @@ A1 使用匿名登录 + 管理端口令（前端）。云库侧建议：
     ↓
 自动：解锁财务页时 autoSync（合并本地 + 云端）
     ↓
-手动：点「同步到云端」强制上传
+手动：点「同步到云端」强制上传（同时镜像至 `store_ledger` 供店长小程序）
     ↓
-换设备：点「从云端下载」拉取最新
+换设备：点「从云端下载」拉取最新（合并 `finance_records` + `store_ledger`）
 ```
 
 冲突策略（已实现）：同 `date` 记录取 `_updateTime` 较新者。
