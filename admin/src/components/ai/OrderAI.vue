@@ -52,7 +52,7 @@
               <el-option
                 v-for="order in pendingOrders"
                 :key="order._id"
-                :label="`${order._id.substring(0, 8)}... - ¥${order.totalPrice} - ${order.address?.name || '未知'}`"
+                :label="`${order._id.substring(0, 8)}... - ¥${formatPrice(order.totalPrice ?? order.price)} - ${order.address?.name || '未知'}`"
                 :value="order._id"
               />
             </el-select>
@@ -104,6 +104,16 @@ const anomaliesResult = ref('')
 const serviceAdvice = ref('')
 const selectedOrderId = ref('')
 
+/** CDN/CloudBase 订单金额可能是 string，统一转为 number */
+function toPriceNum(val, fallback = 0) {
+  const n = parseFloat(String(val ?? '').replace(/,/g, ''))
+  return Number.isFinite(n) ? n : fallback
+}
+
+function formatPrice(val) {
+  return toPriceNum(val).toFixed(2)
+}
+
 // 智能发货分析
 const analyzeShipping = async () => {
   analyzingShipping.value = true
@@ -118,10 +128,11 @@ const analyzeShipping = async () => {
     // 统计订单信息
     const ordersInfo = paidOrders.slice(0, 20).map(order => {
       const totalQty = order.products?.reduce((sum, p) => sum + (p.quantity || 1), 0) || 1
-      const avgPrice = order.totalPrice / totalQty
+      const totalPrice = toPriceNum(order.totalPrice ?? order.price)
+      const avgPrice = totalPrice / totalQty
       return {
         id: order._id.substring(0, 8),
-        totalPrice: order.totalPrice,
+        totalPrice,
         quantity: totalQty,
         avgPrice: avgPrice,
         province: order.address?.province || '未知',
@@ -135,9 +146,9 @@ const analyzeShipping = async () => {
 待发货订单信息（共${paidOrders.length}单）：
 ${ordersInfo.map(o => `
 订单${o.id}：
-- 金额：¥${o.totalPrice.toFixed(2)}
+- 金额：¥${formatPrice(o.totalPrice)}
 - 商品数量：${o.quantity}件
-- 平均单价：¥${o.avgPrice.toFixed(2)}
+- 平均单价：¥${formatPrice(o.avgPrice)}
 - 收货地址：${o.province}${o.city}
 - 商品：${o.products}
 `).join('\n')}
@@ -184,7 +195,7 @@ const detectAnomalies = async () => {
       return {
         id: order._id.substring(0, 8),
         status: order.status,
-        totalPrice: order.totalPrice,
+        totalPrice: toPriceNum(order.totalPrice ?? order.price),
         createTime: new Date(order.createTime).toLocaleString(),
         hoursSinceCreated,
         phone: order.address?.phone || '',
@@ -208,7 +219,7 @@ const detectAnomalies = async () => {
 ${ordersData.map(o => `
 订单${o.id}：
 - 状态：${o.status}
-- 金额：¥${o.totalPrice.toFixed(2)}
+- 金额：¥${formatPrice(o.totalPrice)}
 - 下单时间：${o.createTime}（${o.hoursSinceCreated}小时前）
 - 收货人：${o.name}
 - 手机号：${o.phone}
@@ -266,7 +277,7 @@ const getServiceAdvice = async () => {
 订单信息：
 - 订单号：${order._id}
 - 订单状态：${order.status}
-- 订单金额：¥${order.totalPrice.toFixed(2)}
+- 订单金额：¥${formatPrice(order.totalPrice ?? order.price)}
 - 下单时间：${new Date(order.createTime).toLocaleString()}
 - 收货人：${order.address?.name || '未知'}
 - 手机号：${order.address?.phone || '未知'}

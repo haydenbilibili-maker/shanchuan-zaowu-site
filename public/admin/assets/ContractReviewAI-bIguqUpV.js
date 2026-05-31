@@ -1,4 +1,4 @@
-import{$t as e,Jt as t,Xt as n,Zt as r,en as i,gn as a,ln as o,pn as s,r as c,sn as l}from"./element-plus-pOJ5hHBv.js";import{g as u,h as d,v as f}from"./index-DdGOKV8i.js";var p={class:`contract-review-ai`},m={class:`ai-sections`},h={class:`section-card`},g=[`innerHTML`],_=d({__name:`ContractReviewAI`,props:{feature:Object},setup(d){let _=a(``),v=a(!1),y=a(``),b=async()=>{if(!_.value.trim()){c.warning(`请输入合同内容`);return}v.value=!0;try{let e=await f(`审查以下合同内容，识别风险点并提供修改建议：
+import{$t as e,Jt as t,Xt as n,Zt as r,en as i,gn as a,ln as o,pn as s,r as c,sn as l}from"./element-plus-pOJ5hHBv.js";import{g as u,h as d,v as f}from"./index-C-5t_1MF.js";var p={class:`contract-review-ai`},m={class:`ai-sections`},h={class:`section-card`},g=[`innerHTML`],_=d({__name:`ContractReviewAI`,props:{feature:Object},setup(d){let _=a(``),v=a(!1),y=a(``),b=async()=>{if(!_.value.trim()){c.warning(`请输入合同内容`);return}v.value=!0;try{let e=await f(`审查以下合同内容，识别风险点并提供修改建议：
 
 合同内容：
 ${_.value}
