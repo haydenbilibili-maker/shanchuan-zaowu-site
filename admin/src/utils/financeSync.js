@@ -52,6 +52,13 @@ function saveSyncMetadata(metadata) {
   }
 }
 
+/** 本地账本刚写入时立即标记，避免异步同步误判云端较新而覆盖 */
+export function touchLocalFinanceUpdateTime() {
+  const metadata = getSyncMetadata()
+  metadata.lastLocalUpdateTime = Date.now()
+  saveSyncMetadata(metadata)
+}
+
 export async function fetchFinanceRecordsFromCloud() {
   try {
     const rows = await fetchAllFromCollection(COLLECTIONS.FINANCE_RECORDS, {
@@ -243,6 +250,12 @@ export async function syncFinanceRecords(options = {}) {
     }
 
     mergedRecords = dedupeFinanceRecords(mergedRecords)
+
+    // 安全兜底：本地有数据时禁止被合并结果清空
+    if (localRecords.length > 0 && mergedRecords.length === 0) {
+      console.warn('[financeSync] 合并结果为空，保留本地账本')
+      mergedRecords = dedupeFinanceRecords(localRecords)
+    }
 
     localStorage.setItem(FINANCE_RECORDS_KEY, JSON.stringify(mergedRecords))
     metadata.lastLocalUpdateTime = Date.now()

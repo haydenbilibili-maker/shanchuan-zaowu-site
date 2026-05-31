@@ -77,7 +77,19 @@ export function mergeRecords(localRecords, cloudRecords) {
     const key = ledgerKey(rec, rec.date)
     const existing = map.get(key)
     const ts = rec._updateTime || 0
-    if (!existing || ts > (existing.updateTime || 0)) {
+    const existingTs = existing?.updateTime || 0
+    const existingRev = Number(existing?.revenue) || 0
+    const cloudRev = Number(rec.revenue) || 0
+    // 云端空营收不应覆盖本地有效数据（常见于本地未打时间戳时被旧云数据覆盖）
+    if (
+      existing &&
+      ts > existingTs &&
+      cloudRev === 0 &&
+      existingRev > 0
+    ) {
+      return
+    }
+    if (!existing || ts > existingTs) {
       map.set(key, { ...rec, updateTime: ts })
     }
   })

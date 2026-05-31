@@ -850,8 +850,9 @@ import * as XLSX from 'xlsx'
 import { ElMessage, ElMessageBox, ElDropdown, ElDropdownMenu, ElDropdownItem, ElDatePicker, ElSelect, ElOption } from 'element-plus'
 import { MagicStick } from '@element-plus/icons-vue'
 import FinanceAI from './ai/FinanceAI.vue'
-import { autoSyncFinanceData, manualSyncFinanceData } from '../utils/financeSync'
+import { autoSyncFinanceData, manualSyncFinanceData, touchLocalFinanceUpdateTime } from '../utils/financeSync'
 import { ledgerKey, dedupeFinanceRecords } from '../utils/storeLedgerSync'
+import { FINANCE_RECORDS_KEY } from '../utils/financeLocalStorageKey'
 import { db, loginToCloud, COLLECTIONS } from '../cloud'
 import {
   loadStoreBundle,
@@ -1183,11 +1184,10 @@ const handleDownload = async () => {
       syncStatus.value = '✅ 下载成功！已从云端同步最新数据'
       ElMessage.success('已从云端同步最新数据')
       // 重新加载数据
-      app.loadData()
-      setTimeout(() => {
-        app.renderAll()
-        syncStatus.value = ''
-      }, 1000)
+      await app.loadData()
+      await nextTick()
+      app.renderAll()
+      syncStatus.value = ''
     } else {
       syncStatus.value = '⚠️ 下载失败，请检查网络连接'
       ElMessage.warning('下载失败')
@@ -1224,8 +1224,8 @@ const handleUnlock = () => {
         ensureDefaultFinanceStoreInLocalBundle()
         financeRecordStoreId.value = findDefaultFinanceStoreId(loadStoreBundle()) || ''
         // 关键：解锁后，DOM才会被渲染，此时再初始化图表和数据
-        nextTick(() => {
-            app.init()
+        nextTick(async () => {
+            await app.init()
         })
         ElMessage.success('身份验证通过')
     } else {
@@ -1270,12 +1270,12 @@ const app = reactive({
         return el;
     },
 
-    init() {
-        this.loadData();
-        // 🟢 先回填用户上次的设置参数，再绑定事件，再渲染
+    async init() {
+        await this.loadData();
+        // 先回填用户上次的设置参数，再绑定事件，再渲染
         this.restoreSettings();
         this.bindEvents();
-        // 确保 DOM 渲染后再计算
+        await nextTick();
         setTimeout(() => this.renderAll(), 100);
     },
 
@@ -1310,9 +1310,20 @@ const app = reactive({
         const defId = findDefaultFinanceStoreId(bundle)
         const defStore = defId ? findStoreById(bundle, defId) : null
 
-        const str = localStorage.getItem('shanhai_v12');
+        const str = localStorage.getItem(FINANCE_RECORDS_KEY);
         if(str) this.data = JSON.parse(str);
         else this.data = [];
+
+        const now = Date.now()
+        let stamped = false
+        this.data = this.data.map((r) => {
+            if (r && !r._updateTime) {
+                stamped = true
+                return { ...r, _updateTime: now }
+            }
+            return r
+        })
+        if (stamped) this.saveData({ skipCloudSync: true })
 
         if (defId && defStore && Array.isArray(this.data) && this.data.length) {
             let patched = false
@@ -1350,13 +1361,22 @@ const app = reactive({
 
         financeRecordStoreId.value = findDefaultFinanceStoreId(loadStoreBundle()) || ''
     },
-    saveData() {
-        this.data = dedupeFinanceRecords(this.data);
-        localStorage.setItem('shanhai_v12', JSON.stringify(this.data));
-        // 自动同步到云端（异步，不阻塞保存）
-        autoSyncFinanceData().catch(err => {
-            console.warn('自动同步失败:', err);
-        });
+    saveData(options = {}) {
+        const { skipCloudSync = false } = options
+        const now = Date.now()
+        this.data = dedupeFinanceRecords(
+            this.data.map((r) => ({
+                ...r,
+                _updateTime: r._updateTime || now,
+            })),
+        );
+        localStorage.setItem(FINANCE_RECORDS_KEY, JSON.stringify(this.data));
+        touchLocalFinanceUpdateTime()
+        if (!skipCloudSync) {
+            autoSyncFinanceData().catch(err => {
+                console.warn('自动同步失败:', err);
+            });
+        }
     },
 
     getSettings() {
@@ -3525,6 +3545,7 @@ const app = reactive({
             
             const recordKey = ledgerKey(this.tempRecord, this.tempRecord.date)
             const idx = this.data.findIndex(r => ledgerKey(r, r.date) === recordKey);
+            this.tempRecord._updateTime = Date.now()
             if(idx >= 0) {
                 this.data[idx] = this.tempRecord;
                 ElMessage.success('记录已更新');
@@ -5511,8 +5532,8 @@ onMounted(() => {
     if (restoreFinanceSession()) {
         ensureDefaultFinanceStoreInLocalBundle()
         financeRecordStoreId.value = findDefaultFinanceStoreId(loadStoreBundle()) || ''
-        nextTick(() => {
-            try { app.init() } catch (e) { console.warn('app.init 失败', e) }
+        nextTick(async () => {
+            try { await app.init() } catch (e) { console.warn('app.init 失败', e) }
         })
     }
 })
