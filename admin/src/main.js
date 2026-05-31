@@ -14,6 +14,7 @@ import './styles/global-refinement.css'
 import './styles/mobile-responsive.css'
 import './styles/mobile-app-redesign.css'
 import './styles/mobile-app-redesign-fix.css'
+import './styles/mobile-comprehensive.css'
 
 const app = createApp(App)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {

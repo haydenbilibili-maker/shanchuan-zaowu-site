@@ -11,6 +11,18 @@ function readEnvList(...names) {
     .filter(Boolean)
 }
 
+/** Vite base 为 /admin/ 时，开发代理路径须为 /admin/api/... */
+function resolveLocalApiProxyUrl(apiPath) {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
+  const segment = String(apiPath || '').replace(/^\/+/, '')
+  const joined = base ? `${base}/${segment}` : `/${segment}`
+  return joined.replace(/([^:]\/)\/+/g, '$1')
+}
+
+function shouldUseLocalAiProxy() {
+  return Boolean(import.meta.env.DEV)
+}
+
 // API Key 仅从 Vite 环境变量读取，避免在前端源码中继续扩散明文密钥。
 const GEMINI_API_KEYS = readEnvList('VITE_GEMINI_API_KEYS', 'VITE_GEMINI_API_KEY')
 const OPENAI_API_KEYS = readEnvList('VITE_OPENAI_API_KEYS', 'VITE_OPENAI_API_KEY')
@@ -170,7 +182,9 @@ function getBailianURL(model = BAILIAN_MODEL_DEFAULT) {
   const key = selectAvailableKey('bailian')
   const baseUrl = (import.meta.env.VITE_BAILIAN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1').replace(/\/$/, '')
   return {
-    url: import.meta.env.DEV ? '/api/bailian/chat/completions' : `${baseUrl}/chat/completions`,
+    url: shouldUseLocalAiProxy()
+      ? resolveLocalApiProxyUrl('api/bailian/chat/completions')
+      : `${baseUrl}/chat/completions`,
     key,
     model,
   }
@@ -665,21 +679,23 @@ export async function callGeminiAPI(prompt, options = {}) {
     url = bailianConfig.url
     currentKey = bailianConfig.key
     activeModel = bailianConfig.model
-    useProxy = import.meta.env.DEV
+    useProxy = shouldUseLocalAiProxy()
   } else if (apiType === 'openai') {
     const openaiConfig = getOpenAIURL(openaiModel)
-    // 开发环境使用代理，生产环境直接调用
-    url = import.meta.env.DEV ? '/api/openai/chat/completions' : openaiConfig.url
+    url = shouldUseLocalAiProxy()
+      ? resolveLocalApiProxyUrl('api/openai/chat/completions')
+      : openaiConfig.url
     currentKey = openaiConfig.key
     activeModel = openaiModel
-    useProxy = import.meta.env.DEV
+    useProxy = shouldUseLocalAiProxy()
   } else if (apiType === 'deepseek') {
     const deepseekConfig = getDeepSeekURL(deepseekModel)
-    // 开发环境使用代理，生产环境直接调用
-    url = import.meta.env.DEV ? '/api/deepseek/chat/completions' : deepseekConfig.url
+    url = shouldUseLocalAiProxy()
+      ? resolveLocalApiProxyUrl('api/deepseek/chat/completions')
+      : deepseekConfig.url
     currentKey = deepseekConfig.key
     activeModel = deepseekModel
-    useProxy = import.meta.env.DEV
+    useProxy = shouldUseLocalAiProxy()
   } else {
     currentKey = selectAvailableKey('gemini')
     url = getGeminiURL(usePro ? 'pro' : 'flash', currentKey)

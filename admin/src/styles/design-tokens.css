@@ -221,4 +221,10 @@
   --el-color-primary-light-8: #d1ebe0;
   --el-color-primary-light-9: #e8f5f0;
   --el-color-primary-dark-2: #245a42;
+
+  /* 响应式断点（与 JS matchMedia 一致） */
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 1024px;
+  --breakpoint-lg: 1200px;
 }

@@ -80,7 +80,7 @@
     </div>
 
     <el-row :gutter="20" class="middle-section">
-      <el-col :span="16" class="middle-left">
+      <el-col :xs="24" :sm="24" :md="16" :lg="16" class="middle-left">
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
@@ -161,7 +161,7 @@
         </div>
       </el-col>
 
-      <el-col :span="8" class="middle-right">
+      <el-col :xs="24" :sm="24" :md="8" :lg="8" class="middle-right">
         <el-card shadow="never" class="todo-card">
           <template #header>
             <div class="card-header">
@@ -1260,5 +1260,56 @@ onMounted(() => {
 
 .suggestion-action {
   flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-container { padding: 0; }
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .header-section h2 { font-size: 20px; }
+  .header-right {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .time-badge { font-size: 12px; padding: 6px 12px; }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    height: auto;
+    min-height: 96px;
+    padding: 14px;
+  }
+  .kpi-value { font-size: 22px; }
+  .chart-box { height: 210px; }
+  .card-header { flex-wrap: wrap; gap: 8px; }
+  .todo-item { padding: 10px; }
+  .todo-num { font-size: 15px; }
+  .insights-preview { margin-top: 12px; padding-top: 12px; }
+  .quick-actions h3 { font-size: 15px; margin-bottom: 14px; }
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .action-grid .el-button {
+    width: 100%;
+    margin: 0;
+    min-height: 44px;
+  }
+  .mp-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+  .mp-grid { grid-template-columns: 1fr; }
+  .action-grid { grid-template-columns: 1fr; }
 }
 </style>

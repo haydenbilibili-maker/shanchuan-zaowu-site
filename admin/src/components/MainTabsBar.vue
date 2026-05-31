@@ -1,14 +1,14 @@
 <template>
   <div class="tbar">
-    <!-- 面包屑 -->
+    <!-- 面包屑：移动端仅显示当前模块 -->
     <div class="breadcrumb">
       <el-icon class="brand-mark"><HomeFilled /></el-icon>
-      <span class="bc-item brand">山海造物</span>
-      <span class="bc-sep">›</span>
+      <span class="bc-item brand bc-desktop">山海造物</span>
       <template v-if="activeBreadcrumb">
-        <span class="bc-item">{{ activeBreadcrumb.group }}</span>
-        <span v-if="activeBreadcrumb.subgroup" class="bc-sep">›</span>
-        <span v-if="activeBreadcrumb.subgroup" class="bc-item">{{ activeBreadcrumb.subgroup }}</span>
+        <span class="bc-sep bc-desktop">›</span>
+        <span class="bc-item bc-desktop">{{ activeBreadcrumb.group }}</span>
+        <span v-if="activeBreadcrumb.subgroup" class="bc-sep bc-desktop">›</span>
+        <span v-if="activeBreadcrumb.subgroup" class="bc-item bc-desktop">{{ activeBreadcrumb.subgroup }}</span>
         <span class="bc-sep">›</span>
         <span class="bc-item current">{{ activeBreadcrumb.name }}</span>
       </template>
@@ -333,4 +333,41 @@ watch(activeTabId, () => {
 .ctx-item.disabled { color: #ccc; cursor: not-allowed; }
 .ctx-item.disabled:hover { background: transparent; }
 .ctx-divider { height: 1px; background: #f0f0f0; margin: 4px 0; }
+
+@media (max-width: 768px) {
+  .breadcrumb {
+    padding: 6px 12px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .bc-desktop { display: none; }
+  .bc-item.current {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100vw - 80px);
+  }
+  .tabs-strip {
+    height: auto;
+    min-height: 44px;
+    padding: 4px 6px;
+  }
+  .tab-chip {
+    padding: 8px 12px;
+    min-height: 40px;
+    max-width: 160px;
+    margin-top: 0;
+  }
+  .tab-name { max-width: 120px; }
+  .tab-action-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .tabs-actions {
+    padding-left: 6px;
+    flex-shrink: 0;
+  }
+}
 </style>

@@ -209,7 +209,7 @@
           <!-- 🟢 多标签条 + 面包屑 -->
           <MainTabsBar @open-palette="openCommandPalette" @reload="forceReloadCurrent" />
 
-          <div class="content-scroll-wrap" :class="{ 'is-embed-page': currentTab === '36' }">
+          <div class="content-scroll-wrap" :class="{ 'is-embed-page': currentTab === '36', 'is-mobile-scroll': isMobile }">
           <transition name="fade-slide" mode="out-in">
             <keep-alive :max="10">
             <div :key="currentTab + '-' + reloadKey" class="tab-page-root" :class="{ 'is-embed-root': currentTab === '36' }">
@@ -1083,21 +1083,35 @@ const handleMenuSelect = (index) => {
     }
 }
 
-// 检测是否为移动端
-const isMobile = ref(false)
+// 检测是否为移动端（与 CSS @media 768px 对齐）
+const MOBILE_MQ = typeof window !== 'undefined'
+  ? window.matchMedia('(max-width: 768px)')
+  : null
+const isMobile = ref(MOBILE_MQ?.matches ?? false)
+
+const applyMobileClass = (mobile) => {
+  if (typeof document === 'undefined') return
+  document.documentElement.classList.toggle('is-mobile', mobile)
+}
+
 const checkMobile = () => {
-    if (typeof window === 'undefined') return
-    const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth
-    isMobile.value = width <= 768
-    // 调试信息
-    if (process.env.NODE_ENV === 'development') {
-        console.log('移动端检测:', { width, isMobile: isMobile.value })
-    }
+  if (!MOBILE_MQ) return
+  isMobile.value = MOBILE_MQ.matches
+  applyMobileClass(MOBILE_MQ.matches)
+  if (import.meta.env.DEV) {
+    console.log('移动端检测:', { width: window.innerWidth, isMobile: isMobile.value })
+  }
+}
+
+const onMobileMqChange = (e) => {
+  isMobile.value = e.matches
+  applyMobileClass(e.matches)
+  if (!e.matches) mobileMenuVisible.value = false
 }
 
 // 初始化时立即检测
 if (typeof window !== 'undefined') {
-    checkMobile()
+  checkMobile()
 }
 
 
@@ -1808,7 +1822,12 @@ const saveProduct = async () => {
 // 初始化移动端检测
 const initMobileDetection = () => {
     checkMobile()
-    window.addEventListener('resize', checkMobile)
+    MOBILE_MQ?.addEventListener('change', onMobileMqChange)
+}
+
+const cleanupMobileDetection = () => {
+    MOBILE_MQ?.removeEventListener('change', onMobileMqChange)
+    applyMobileClass(false)
 }
 
 function onHashLegacyCleanup() {
@@ -1839,6 +1858,7 @@ onUnmounted(() => {
     window.removeEventListener('storage', onStorage)
     window.removeEventListener('keydown', onSidebarKey)
     cleanupActionListeners()
+    cleanupMobileDetection()
 })
 </script>
 

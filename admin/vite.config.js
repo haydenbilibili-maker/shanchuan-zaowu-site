@@ -2,8 +2,62 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { viteAliyunNlsPlugin } from './scripts/viteAliyunNlsPlugin.mjs'
 
+function buildDevProxies() {
+  const withAuthHeader = (proxy) => {
+    proxy.on('proxyReq', (proxyReq, req) => {
+      if (req.headers['x-api-key']) {
+        proxyReq.setHeader('Authorization', `Bearer ${req.headers['x-api-key']}`)
+        proxyReq.removeHeader('x-api-key')
+      }
+    })
+  }
+
+  const bailian = {
+    target: 'https://dashscope.aliyuncs.com',
+    changeOrigin: true,
+    secure: true,
+    configure: withAuthHeader,
+    rewrite: (path) => path.replace(/^\/(?:admin\/)?api\/bailian/, '/compatible-mode/v1'),
+  }
+
+  const gemini = {
+    target: 'https://generativelanguage.googleapis.com',
+    changeOrigin: true,
+    secure: true,
+    rewrite: (path) => path.replace(/^\/(?:admin\/)?api\/gemini/, '/v1beta'),
+  }
+
+  const deepseek = {
+    target: 'https://api.deepseek.com',
+    changeOrigin: true,
+    secure: true,
+    configure: withAuthHeader,
+    rewrite: (path) => path.replace(/^\/(?:admin\/)?api\/deepseek/, '/v1'),
+  }
+
+  const openai = {
+    target: 'https://api.openai.com',
+    changeOrigin: true,
+    secure: true,
+    configure: withAuthHeader,
+    rewrite: (path) => path.replace(/^\/(?:admin\/)?api\/openai/, '/v1'),
+  }
+
+  return {
+    '/api/bailian': bailian,
+    '/admin/api/bailian': bailian,
+    '/api/gemini': gemini,
+    '/admin/api/gemini': gemini,
+    '/api/deepseek': deepseek,
+    '/admin/api/deepseek': deepseek,
+    '/api/openai': openai,
+    '/admin/api/openai': openai,
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const devProxy = buildDevProxies()
   return {
     plugins: [vue(), viteAliyunNlsPlugin(env)],
     /** 挂载于 shanhaizaowu.com/admin/；构建输出到 public/admin/ */
@@ -27,61 +81,13 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      host: '0.0.0.0', // 🔧 允许局域网访问
-      port: 5178, // 开发服务器端口（5173–5177 已被占用时使用）
-      strictPort: false, // 如果端口被占用，自动尝试下一个可用端口
-      proxy: {
-        '/api/bailian': {
-          target: 'https://dashscope.aliyuncs.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/bailian/, '/compatible-mode/v1'),
-          secure: true,
-          configure: (proxy, _options) => {
-            proxy.on('proxyReq', (proxyReq, req, _res) => {
-              if (req.headers['x-api-key']) {
-                proxyReq.setHeader('Authorization', `Bearer ${req.headers['x-api-key']}`)
-                proxyReq.removeHeader('x-api-key')
-              }
-            })
-          }
-        },
-        '/api/gemini': {
-          target: 'https://generativelanguage.googleapis.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/gemini/, '/v1beta'),
-          secure: true
-        },
-        '/api/deepseek': {
-          target: 'https://api.deepseek.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/deepseek/, '/v1'),
-          secure: true,
-          configure: (proxy, _options) => {
-            proxy.on('proxyReq', (proxyReq, req, _res) => {
-              // 将 X-API-Key header 转换为 Authorization header
-              if (req.headers['x-api-key']) {
-                proxyReq.setHeader('Authorization', `Bearer ${req.headers['x-api-key']}`)
-                proxyReq.removeHeader('x-api-key')
-              }
-            })
-          }
-        },
-        '/api/openai': {
-          target: 'https://api.openai.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/openai/, '/v1'),
-          secure: true,
-          configure: (proxy, _options) => {
-            proxy.on('proxyReq', (proxyReq, req, _res) => {
-              // 将 X-API-Key header 转换为 Authorization header
-              if (req.headers['x-api-key']) {
-                proxyReq.setHeader('Authorization', `Bearer ${req.headers['x-api-key']}`)
-                proxyReq.removeHeader('x-api-key')
-              }
-            })
-          }
-        }
-      }
-    }
+      host: '0.0.0.0',
+      port: 5178,
+      strictPort: false,
+      proxy: devProxy,
+    },
+    preview: {
+      proxy: devProxy,
+    },
   }
 })

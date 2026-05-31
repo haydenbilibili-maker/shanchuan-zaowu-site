@@ -66,14 +66,15 @@
     flex: 1 !important;
   }
   
-  /* main-content类 - 为顶部导航留空间 */
+  /* main-content类 - 为顶部导航留空间（滚动交给 content-scroll-wrap） */
   .admin-container .el-container .el-main.main-content {
     margin-top: 56px !important;
-    padding: 16px !important;
+    padding: 0 !important;
     height: calc(100vh - 56px) !important;
-    height: calc(-webkit-fill-available - 56px) !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+    height: calc(100dvh - 56px) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
     background: var(--bg-light) !important;
   }
 }
