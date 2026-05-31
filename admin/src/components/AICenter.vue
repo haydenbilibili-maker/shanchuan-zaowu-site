@@ -821,10 +821,11 @@ const successRate = ref(98.5)
 const aiProviderConfigStatus = computed(() => getAIProviderConfigStatus())
 const aiProviderConfigHint = computed(() => {
   const s = aiProviderConfigStatus.value
-  const cloudKeys = s.gemini + s.openai + s.deepseek
-  if (cloudKeys > 0) return `已检测到云端 API Key：Gemini ${s.gemini} / OpenAI ${s.openai} / DeepSeek ${s.deepseek}`
+  const cloudKeys = s.bailian + s.gemini + s.openai + s.deepseek
+  if (s.bailian > 0) return `AI 已接入阿里云百炼（${s.bailian} 个 Key，默认模型 qwen-plus）`
+  if (cloudKeys > 0) return `已检测到云端 API Key：百炼 ${s.bailian} / Gemini ${s.gemini} / OpenAI ${s.openai} / DeepSeek ${s.deepseek}`
   if (s.local > 0) return '未检测到云端 API Key，将优先依赖本地模型兜底。'
-  return '未检测到云端 API Key 或本地模型，请在 .env 配置 VITE_GEMINI_API_KEY 等变量。'
+  return '未检测到云端 API Key 或本地模型，请在 .env 配置 VITE_BAILIAN_API_KEY。'
 })
 
 // 后台配置弹窗

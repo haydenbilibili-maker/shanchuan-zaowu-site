@@ -80,7 +80,7 @@
     </div>
 
     <el-row :gutter="20" class="middle-section">
-      <el-col :span="16">
+      <el-col :span="16" class="middle-left">
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
@@ -99,9 +99,69 @@
             </transition>
           </div>
         </el-card>
+
+        <!-- C 端小程序脉搏：置于营收趋势下方，填满左栏空白 -->
+        <div class="miniapp-pulse compact">
+          <div class="mp-header">
+            <h3>📱 C 端小程序脉搏 <span class="mp-sub">MINI-PROGRAM PULSE</span></h3>
+            <el-button link type="primary" @click="$emit('switch-tab', '44')">
+              行为看板 <el-icon><ArrowUp style="transform: rotate(45deg)" /></el-icon>
+            </el-button>
+          </div>
+          <div class="mp-grid">
+            <div class="mp-card" @click="$emit('switch-tab', '44')">
+              <div class="mp-ico" style="background: #00BCD420; color: #00BCD4;">🔍</div>
+              <div class="mp-info">
+                <div class="mp-lbl">AI 鉴定（今日）</div>
+                <div class="mp-val">{{ miniapp.identifyToday }}</div>
+                <div class="mp-trend">成功率 {{ miniapp.identifySuccessRate }}%</div>
+              </div>
+            </div>
+            <div class="mp-card" @click="$emit('switch-tab', '38')">
+              <div class="mp-ico" style="background: #d4af3720; color: #d4af37;">🎨</div>
+              <div class="mp-info">
+                <div class="mp-lbl">定制询单（今日）</div>
+                <div class="mp-val">{{ miniapp.customSubmitsToday }}</div>
+                <div class="mp-trend">伴宠 {{ miniapp.petSubmitsToday }}</div>
+              </div>
+            </div>
+            <div class="mp-card" @click="$emit('switch-tab', '40')">
+              <div class="mp-ico" style="background: #FF572220; color: #FF5722;">💬</div>
+              <div class="mp-info">
+                <div class="mp-lbl">客服工单（今日）</div>
+                <div class="mp-val">{{ miniapp.supportToday }}</div>
+                <div class="mp-trend">主动求助</div>
+              </div>
+            </div>
+            <div class="mp-card" @click="$emit('switch-tab', '37')">
+              <div class="mp-ico" style="background: #67C23A20; color: #67C23A;">🏪</div>
+              <div class="mp-info">
+                <div class="mp-lbl">到店签到（今日）</div>
+                <div class="mp-val">{{ miniapp.storeCheckinToday }}</div>
+                <div class="mp-trend">线下转化</div>
+              </div>
+            </div>
+            <div class="mp-card" @click="$emit('switch-tab', '44')">
+              <div class="mp-ico" style="background: #E6A23C20; color: #E6A23C;">📈</div>
+              <div class="mp-info">
+                <div class="mp-lbl">总事件（今日）</div>
+                <div class="mp-val">{{ miniapp.eventsToday }}</div>
+                <div class="mp-trend">埋点上报</div>
+              </div>
+            </div>
+            <div class="mp-card" @click="$emit('switch-tab', '44')">
+              <div class="mp-ico" style="background: #9C27B020; color: #9C27B0;">👥</div>
+              <div class="mp-info">
+                <div class="mp-lbl">活跃 UV</div>
+                <div class="mp-val">{{ miniapp.uvToday }}</div>
+                <div class="mp-trend">独立 openid</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </el-col>
 
-      <el-col :span="8">
+      <el-col :span="8" class="middle-right">
         <el-card shadow="never" class="todo-card">
           <template #header>
             <div class="card-header">
@@ -297,66 +357,6 @@
       </template>
     </el-dialog>
 
-    <!-- 🟢 C 端小程序脉搏 -->
-    <div class="miniapp-pulse">
-      <div class="mp-header">
-        <h3>📱 C 端小程序脉搏 <span class="mp-sub">MINI-PROGRAM PULSE</span></h3>
-        <el-button link type="primary" @click="$emit('switch-tab', '44')">
-          打开行为看板 <el-icon><ArrowUp style="transform: rotate(45deg)" /></el-icon>
-        </el-button>
-      </div>
-      <div class="mp-grid">
-        <div class="mp-card" @click="$emit('switch-tab', '44')">
-          <div class="mp-ico" style="background: #00BCD420; color: #00BCD4;">🔍</div>
-          <div class="mp-info">
-            <div class="mp-lbl">AI 鉴定（今日触发）</div>
-            <div class="mp-val">{{ miniapp.identifyToday }}</div>
-            <div class="mp-trend">成功率 {{ miniapp.identifySuccessRate }}%</div>
-          </div>
-        </div>
-        <div class="mp-card" @click="$emit('switch-tab', '38')">
-          <div class="mp-ico" style="background: #d4af3720; color: #d4af37;">🎨</div>
-          <div class="mp-info">
-            <div class="mp-lbl">定制询单（今日）</div>
-            <div class="mp-val">{{ miniapp.customSubmitsToday }}</div>
-            <div class="mp-trend">伴宠 {{ miniapp.petSubmitsToday }}</div>
-          </div>
-        </div>
-        <div class="mp-card" @click="$emit('switch-tab', '40')">
-          <div class="mp-ico" style="background: #FF572220; color: #FF5722;">💬</div>
-          <div class="mp-info">
-            <div class="mp-lbl">客服工单（今日）</div>
-            <div class="mp-val">{{ miniapp.supportToday }}</div>
-            <div class="mp-trend">主动求助</div>
-          </div>
-        </div>
-        <div class="mp-card" @click="$emit('switch-tab', '37')">
-          <div class="mp-ico" style="background: #67C23A20; color: #67C23A;">🏪</div>
-          <div class="mp-info">
-            <div class="mp-lbl">到店签到（今日）</div>
-            <div class="mp-val">{{ miniapp.storeCheckinToday }}</div>
-            <div class="mp-trend">线下转化</div>
-          </div>
-        </div>
-        <div class="mp-card" @click="$emit('switch-tab', '44')">
-          <div class="mp-ico" style="background: #E6A23C20; color: #E6A23C;">📈</div>
-          <div class="mp-info">
-            <div class="mp-lbl">总事件数（今日）</div>
-            <div class="mp-val">{{ miniapp.eventsToday }}</div>
-            <div class="mp-trend">埋点上报量</div>
-          </div>
-        </div>
-        <div class="mp-card" @click="$emit('switch-tab', '44')">
-          <div class="mp-ico" style="background: #9C27B020; color: #9C27B0;">👥</div>
-          <div class="mp-info">
-            <div class="mp-lbl">活跃用户 UV</div>
-            <div class="mp-val">{{ miniapp.uvToday }}</div>
-            <div class="mp-trend">独立 openid</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="quick-actions">
       <h3>⚡️ 快捷功能</h3>
       <div class="action-grid">
@@ -374,7 +374,7 @@
 <script setup>
 import { reactive, ref, onMounted, computed, nextTick, watch } from 'vue'
 import { Clock, Trophy, Bell, Box, Service, Warning, EditPen, Plus, Ticket, User, DataAnalysis, DataBoard, WarningFilled, InfoFilled, ArrowUp, ArrowDown, Star, Refresh, Calendar } from '@element-plus/icons-vue'
-import { db, loginToCloud } from '../cloud'
+import { loginToCloud, cdnCount, fetchCollectionLimit, fetchCollectionWhere, getCdnDatabase } from '../cloud'
 import Chart from 'chart.js/auto'
 import CompanionRobot from './CompanionRobot.vue'
 import { ElMessage } from 'element-plus'
@@ -516,13 +516,8 @@ const refreshAll = async () => {
       return
     }
     
-    // 确保 db 和 db.command 可用
-    if (!db || !db.command) {
-      console.error('数据库对象未正确初始化', { db: !!db, command: !!(db && db.command) })
-      loading.value = false
-      return
-    }
-    
+    // 确保 CDN 数据库可用
+    await getCdnDatabase()
     const now = new Date()
     const todayStr = now.toISOString().split('T')[0] 
     const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
@@ -551,136 +546,56 @@ const refreshAll = async () => {
     const costRate = (financeSettings?.costRate || 25) / 100
     const estProfit = Math.round(ledgerMonthSales * (1 - costRate))
 
-    // 2. 读取【云数据库】实时数据
-    // 确保 db.command 在使用前已初始化
-    const _ = db.command
-    if (!_ || typeof _.gt !== 'function') {
-      console.error('db.command 未正确初始化', { command: _, hasGt: typeof _?.gt })
-      loading.value = false
-      return
-    }
-    
-    const startOfDay = new Date(now.setHours(0,0,0,0)).getTime()
-    
-    // 安全地构建查询条件
-    const gtCondition = _.gt(startOfDay)
-    const ltCondition = _.lt(3)
-    
-    if (!gtCondition || !ltCondition) {
-      console.error('查询条件构建失败', { gtCondition, ltCondition })
-      loading.value = false
-      return
-    }
-    
-    // 安全地执行数据库查询，确保每个查询都是独立的
-    const queryUsers = () => {
+    // 2. 读取【云数据库】实时数据（CDN SDK，避免 bundle db.count 静默失败）
+    const startOfDay = new Date(now)
+    startOfDay.setHours(0, 0, 0, 0)
+    const startMs = startOfDay.getTime()
+
+    const cdnDb = await getCdnDatabase()
+    const _ = cdnDb.command
+
+    const safeCdnCount = async (coll, where = null) => {
       try {
-        const collection = db.collection('users')
-        if (!collection || typeof collection.count !== 'function') {
-          return Promise.resolve({total:0})
-        }
-        return collection.count().catch(()=>({total:0}))
-      } catch(e) {
-        return Promise.resolve({total:0})
-      }
-    }
-    
-    const queryNewUsers = () => {
-      try {
-        const collection = db.collection('users')
-        if (!collection || typeof collection.where !== 'function') {
-          return Promise.resolve({total:0})
-        }
-        return collection.where({ createTime: gtCondition }).count().catch(()=>({total:0}))
-      } catch(e) {
-        return Promise.resolve({total:0})
-      }
-    }
-    
-    const queryPending = () => {
-      try {
-        const collection = db.collection('orders')
-        if (!collection || typeof collection.where !== 'function') {
-          return Promise.resolve({total:0})
-        }
-        return collection.where({ status: 'paid' }).count().catch(()=>({total:0}))
-      } catch(e) {
-        return Promise.resolve({total:0})
-      }
-    }
-    
-    const queryRefunding = () => {
-      try {
-        const collection = db.collection('orders')
-        if (!collection || typeof collection.where !== 'function') {
-          return Promise.resolve({total:0})
-        }
-        return collection.where({ status: 'refunding' }).count().catch(()=>({total:0}))
-      } catch(e) {
-        return Promise.resolve({total:0})
-      }
-    }
-    
-    const queryStock = () => {
-      try {
-        const collection = db.collection('products')
-        if (!collection || typeof collection.where !== 'function') {
-          return Promise.resolve({total:0})
-        }
-        return collection.where({ stock: ltCondition }).count().catch(()=>({total:0}))
-      } catch(e) {
-        return Promise.resolve({total:0})
-      }
-    }
-    
-    // 🟢 小程序对齐：新增 5 个待办计数
-    const safeCount = (coll, where) => {
-      try {
-        const c = db.collection(coll)
-        if (!c || typeof c.where !== 'function') return Promise.resolve({ total: 0 })
-        return c.where(where).count().catch(() => ({ total: 0 }))
+        return await cdnCount(coll, where)
       } catch (e) {
-        return Promise.resolve({ total: 0 })
+        console.warn(`[Dashboard] count ${coll} failed:`, e?.message)
+        return 0
       }
     }
 
     const [
-      usersRes, newUsersRes, pendingRes, refundingRes, stockRes,
-      bookingRes, customRes, petRes, ticketRes, commentRes
+      usersTotal, newUsersTotal, pendingTotal, refundingOrders, pendingRefunds, stockTotal,
+      bookingTotal, customTotal, petTotal, ticketTotal, commentTotal
     ] = await Promise.all([
-      queryUsers(),
-      queryNewUsers(),
-      queryPending(),
-      queryRefunding(),
-      queryStock(),
-      safeCount('bookings', { status: 'confirmed' }),
-      safeCount('custom_inquiries', { status: 'pending' }),
-      safeCount('pet_memorial_orders', { status: 'pending_review' }),
-      safeCount('support_tickets', { status: 'pending' }),
-      safeCount('comments', { status: 'pending' })
+      safeCdnCount('users'),
+      safeCdnCount('users', { createTime: _.gt(startMs) }),
+      safeCdnCount('orders', { status: 'paid' }),
+      safeCdnCount('orders', { status: 'refunding' }),
+      safeCdnCount('refunds', { status: 'pending' }),
+      safeCdnCount('products', { stock: _.lt(3) }),
+      safeCdnCount('bookings', { status: 'confirmed' }),
+      safeCdnCount('custom_inquiries', { status: 'pending' }),
+      safeCdnCount('pet_memorial_orders', { status: 'pending_review' }),
+      safeCdnCount('support_tickets', { status: 'pending' }),
+      safeCdnCount('comments', { status: 'pending' }),
     ])
+    const refundingTotal = refundingOrders + pendingRefunds
 
-    // 3. 实时订单兜底
+    // 3. 实时订单兜底（今日营收）
     let realtimeTodaySales = 0
     let realtimeOrderCount = 0
     try {
-        // 安全地构建查询
-        const ordersCollection = db.collection('orders')
-        if (ordersCollection && typeof ordersCollection.where === 'function') {
-            const gtCond = _.gt(startOfDay)
-            if (gtCond) {
-                const todayOrders = await ordersCollection.where({ createTime: gtCond }).get()
-                if (todayOrders && todayOrders.data) {
-                    todayOrders.data.forEach(o => {
-                        if(['paid','shipped','received'].includes(o.status)) {
-                            realtimeTodaySales += (parseFloat(o.totalPrice) || 0)
-                            realtimeOrderCount++
-                        }
-                    })
-                }
-            }
+      const todayOrderRows = await fetchCollectionLimit('orders', { limit: 500 })
+      todayOrderRows.forEach(o => {
+        const ts = o.createTime || o._createTime || 0
+        if (ts >= startMs && ['paid', 'shipped', 'received'].includes(o.status)) {
+          realtimeTodaySales += (parseFloat(o.totalPrice) || 0)
+          realtimeOrderCount++
         }
-    } catch(e) {}
+      })
+    } catch (e) {
+      console.warn('[Dashboard] 今日订单兜底失败', e?.message)
+    }
 
     // 4. 合并数据（优先使用财务账本数据，保证数据一致性）
     if (todayRecord) {
@@ -698,20 +613,19 @@ const refreshAll = async () => {
     stats.monthProfit = estProfit
     stats.totalMonthOrders = totalMonthOrders // 从财务账本读取本月总订单数
     // 会员数据与数据库保持一致
-    stats.totalUsers = usersRes?.total || 0
-    stats.newUsers = newUsersRes?.total || 0
-    stats.pendingOrders = pendingRes?.total || 0
-    stats.refunding = refundingRes?.total || 0
-    stats.lowStock = stockRes?.total || 0
-    // 🟢 小程序对齐待办
-    stats.pendingBookings = bookingRes?.total || 0
-    stats.pendingCustom = customRes?.total || 0
-    stats.pendingPet = petRes?.total || 0
-    stats.pendingTickets = ticketRes?.total || 0
-    stats.pendingComments = commentRes?.total || 0
-    stats.totalTodos = (pendingRes?.total || 0) + (refundingRes?.total || 0) + (stockRes?.total || 0)
-                     + stats.pendingBookings + stats.pendingCustom + stats.pendingPet
-                     + stats.pendingTickets + stats.pendingComments
+    stats.totalUsers = usersTotal
+    stats.newUsers = newUsersTotal
+    stats.pendingOrders = pendingTotal
+    stats.refunding = refundingTotal
+    stats.lowStock = stockTotal
+    stats.pendingBookings = bookingTotal
+    stats.pendingCustom = customTotal
+    stats.pendingPet = petTotal
+    stats.pendingTickets = ticketTotal
+    stats.pendingComments = commentTotal
+    stats.totalTodos = pendingTotal + refundingTotal + stockTotal
+                     + bookingTotal + customTotal + petTotal
+                     + ticketTotal + commentTotal
 
     // 🟢 加载 C 端小程序脉搏数据（来自 analytics_daily / user_behaviors）
     loadMiniappPulse(todayStr).catch(e => console.warn('miniapp pulse skip', e))
@@ -733,47 +647,46 @@ const refreshAll = async () => {
 // 根据账本与 stats 计算数据洞察（填充 insights.trend / insights.alert）
 // 🟢 加载 C 端小程序脉搏数据（基于埋点）
 const loadMiniappPulse = async (todayStr) => {
-  const _ = db.command
-  // 优先用 analytics_daily 聚合表（trackUserBehavior 自动维护）
+  const startMs = new Date(todayStr + 'T00:00:00').getTime()
+  const cdnDb = await getCdnDatabase()
+  const _ = cdnDb.command
+
+  const applyPulseFromRows = (rows) => {
+    const sum = (action) => rows
+      .filter(r => r.action === action)
+      .reduce((s, r) => s + (r.count || 0), 0)
+    const allUv = new Set()
+    let total = 0
+    rows.forEach(r => {
+      total += (r.count || 0)
+      ;(r.uv || []).forEach(u => allUv.add(u))
+    })
+    const idStart = sum('identify_start')
+    const idSuccess = sum('identify_success')
+    miniapp.eventsToday = total
+    miniapp.uvToday = allUv.size
+    miniapp.identifyToday = idStart
+    miniapp.identifySuccessRate = idStart > 0 ? Math.round((idSuccess / idStart) * 100) : 0
+    miniapp.customSubmitsToday = sum('custom_order_submit') + sum('custom_inquiry_submit')
+    miniapp.petSubmitsToday = sum('pet_memorial_submit')
+    miniapp.supportToday = sum('support_ticket_submit') + sum('support_call') + sum('support_wechat_contact')
+    miniapp.storeCheckinToday = sum('store_checkin')
+  }
+
+  // 优先用 analytics_daily 聚合表
   try {
-    const res = await db.collection('analytics_daily')
-      .where({ dateKey: todayStr })
-      .limit(200)
-      .get()
-    const rows = res.data || []
+    const rows = await fetchCollectionWhere('analytics_daily', { dateKey: todayStr }, 200)
     if (rows.length) {
-      const sum = (action) => rows
-        .filter(r => r.action === action)
-        .reduce((s, r) => s + (r.count || 0), 0)
-      const allUv = new Set()
-      let total = 0
-      rows.forEach(r => {
-        total += (r.count || 0)
-        ;(r.uv || []).forEach(u => allUv.add(u))
-      })
-      const idStart = sum('identify_start')
-      const idSuccess = sum('identify_success')
-      miniapp.eventsToday = total
-      miniapp.uvToday = allUv.size
-      miniapp.identifyToday = idStart
-      miniapp.identifySuccessRate = idStart > 0 ? Math.round((idSuccess / idStart) * 100) : 0
-      miniapp.customSubmitsToday = sum('custom_order_submit') + sum('custom_inquiry_submit')
-      miniapp.petSubmitsToday = sum('pet_memorial_submit')
-      miniapp.supportToday = sum('support_ticket_submit') + sum('support_call') + sum('support_wechat_contact')
-      miniapp.storeCheckinToday = sum('store_checkin')
+      applyPulseFromRows(rows)
       return
     }
   } catch (e) {
     console.warn('analytics_daily 不可读', e?.message)
   }
+
   // 兜底：从 user_behaviors 实时统计今日
   try {
-    const startMs = new Date(todayStr + 'T00:00:00').getTime()
-    const res = await db.collection('user_behaviors')
-      .where({ timestamp: _.gte(startMs) })
-      .limit(500)
-      .get()
-    const events = res.data || []
+    const events = await fetchCollectionWhere('user_behaviors', { timestamp: _.gte(startMs) }, 500)
     const cnt = (action) => events.filter(e => e.action === action).length
     miniapp.eventsToday = events.length
     miniapp.uvToday = new Set(events.map(e => e.userId).filter(Boolean)).size
@@ -786,7 +699,7 @@ const loadMiniappPulse = async (todayStr) => {
     miniapp.supportToday = cnt('support_ticket_submit') + cnt('support_call') + cnt('support_wechat_contact')
     miniapp.storeCheckinToday = cnt('store_checkin')
   } catch (e) {
-    // 集合不存在或无权限：保持 0 值（卡片仍显示，让运营知道未上线/未上报）
+    console.warn('user_behaviors 不可读', e?.message)
   }
 }
 
@@ -976,7 +889,10 @@ onMounted(() => {
 .kpi-sub { font-size: 12px; opacity: 0.6; }
 
 /* 图表与待办 */
-.middle-section { margin-bottom: 30px; }
+.middle-section { margin-bottom: 30px; align-items: stretch; }
+.middle-left,
+.middle-right { display: flex; flex-direction: column; gap: 16px; }
+.middle-right .todo-card { flex: 1; }
 .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 .chart-box { height: 250px; position: relative; width: 100%; } /* 确保有宽度 */
 
@@ -1000,21 +916,23 @@ onMounted(() => {
 .quick-actions h3 { border-left: 4px solid var(--brand-green-500); padding-left: 12px; margin-bottom: 20px; font-size: 16px; }
 .action-grid { display: flex; gap: 15px; flex-wrap: wrap; }
 
-/* 🟢 C 端小程序脉搏 */
-.miniapp-pulse { background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
-.mp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.mp-header h3 { margin: 0; font-size: 16px; color: #333; border-left: 4px solid #d4af37; padding-left: 12px; }
-.mp-sub { color: #999; font-size: 11px; letter-spacing: 2px; font-weight: normal; margin-left: 6px; }
-.mp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+/* C 端小程序脉搏 */
+.miniapp-pulse { background: #fff; border-radius: 12px; padding: 16px 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+.miniapp-pulse.compact { flex: 1; margin-bottom: 0; min-height: 0; }
+.mp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.mp-header h3 { margin: 0; font-size: 15px; color: #333; border-left: 4px solid #d4af37; padding-left: 10px; }
+.mp-sub { color: #999; font-size: 10px; letter-spacing: 1px; font-weight: normal; margin-left: 4px; }
+.mp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.miniapp-pulse.compact .mp-card { padding: 10px; }
+.miniapp-pulse.compact .mp-val { font-size: 18px; }
 .mp-card { display: flex; gap: 10px; align-items: center; padding: 12px; background: #fafafa; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: 0.2s; }
 .mp-card:hover { background: #fff; border-color: #d4af37; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15); transform: translateY(-2px); }
-.mp-ico { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.mp-ico { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 .mp-info { flex: 1; min-width: 0; }
 .mp-lbl { font-size: 11px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mp-val { font-size: 20px; font-weight: 800; color: #333; line-height: 1.2; margin-top: 2px; }
 .mp-trend { font-size: 11px; color: #d4af37; margin-top: 2px; }
-@media (max-width: 1200px) { .mp-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 768px) { .mp-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1200px) { .mp-grid { grid-template-columns: repeat(2, 1fr); } }
 
 /* 图表祝福消息 */
 .chart-blessing {

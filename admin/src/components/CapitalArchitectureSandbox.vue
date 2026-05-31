@@ -1,86 +1,197 @@
 <template>
-  <div class="capital-architecture-sandbox">
-    <div class="module-header">
-      <div class="title-box">
-        <h2>资本架构沙盘</h2>
-        <span class="subtitle">CAPITAL STRUCTURE SANDBOX</span>
+  <div class="capital-sandbox-embed">
+    <div class="embed-toolbar">
+      <div class="embed-title-group">
+        <span class="embed-kicker">财务资本</span>
+        <h2 class="embed-title">资本架构沙盘</h2>
       </div>
-      <div class="actions">
-        <el-button size="small" @click="reload" :loading="loading">刷新</el-button>
-        <el-button size="small" type="primary" @click="openInNewTab">新窗口打开</el-button>
+      <div class="embed-actions">
+        <el-tag v-if="financeSynced" size="small" type="success" effect="plain" class="sync-tag">
+          已同步财务账本
+        </el-tag>
+        <el-button size="small" @click="goFinance">财务核算</el-button>
+        <el-tooltip content="重新加载沙盘" placement="bottom">
+          <el-button size="small" circle :loading="loading" @click="reload">
+            <el-icon><Refresh /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-button size="small" @click="openInNewTab">独立窗口</el-button>
       </div>
     </div>
 
-    <div class="content-card">
+    <div class="embed-frame-wrap">
+      <div v-if="loading" class="embed-loading">
+        <el-icon class="spin"><Loading /></el-icon>
+        <span>加载沙盘中…</span>
+      </div>
       <iframe
         ref="iframeRef"
-        class="sandbox-iframe"
+        class="embed-frame"
         :src="src"
-        title="山海造物 · 资本架构沙盘"
-        loading="lazy"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-downloads"
+        title="资本架构沙盘"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-downloads allow-popups"
+        @load="onIframeLoad"
       />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { Refresh, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { embeddedPageUrl, standalonePageUrl } from '../utils/embeddedPageUrl'
+import { pushFinanceSnapshotToIframe, readFinanceSnapshot } from '../utils/financeSandboxBridge'
+
+const emit = defineEmits(['switch-tab'])
+
+const PAGE = 'shanhai-capital-architecture-sandbox.html'
 
 const iframeRef = ref(null)
-const loading = ref(false)
+const loading = ref(true)
+const financeSynced = ref(false)
 const cacheBuster = ref(Date.now())
 
-const src = computed(() => `/shanhai-capital-architecture-sandbox.html?v=${cacheBuster.value}`)
+const src = computed(() => embeddedPageUrl(PAGE, { cacheBuster: cacheBuster.value }))
+
+const syncFinanceToIframe = () => {
+  if (!iframeRef.value) return
+  financeSynced.value = pushFinanceSnapshotToIframe(iframeRef.value)
+}
+
+const onIframeLoad = () => {
+  loading.value = false
+  syncFinanceToIframe()
+}
+
+const goFinance = () => emit('switch-tab', '2')
 
 const reload = () => {
   loading.value = true
   cacheBuster.value = Date.now()
-  setTimeout(() => {
-    try {
-      iframeRef.value?.contentWindow?.location?.reload?.()
-    } catch (_) {
-      /* 跨域或沙箱限制时仅靠 query 也已更新 src */
-    }
-    loading.value = false
-  }, 200)
 }
 
 const openInNewTab = () => {
   try {
-    window.open(`/shanhai-capital-architecture-sandbox.html?v=${Date.now()}`, '_blank', 'noopener,noreferrer')
-  } catch (_) {
+    window.open(standalonePageUrl(PAGE), '_blank', 'noopener,noreferrer')
+  } catch {
     ElMessage.warning('无法打开新窗口，请检查浏览器拦截设置')
   }
 }
+
+const onMessage = (event) => {
+  if (event?.data?.type === 'capital-sandbox-ready') {
+    loading.value = false
+    syncFinanceToIframe()
+  }
+  if (event?.data?.type === 'capital-sandbox-request-finance') {
+    syncFinanceToIframe()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('message', onMessage)
+  financeSynced.value = !!readFinanceSnapshot()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('message', onMessage)
+})
 </script>
 
 <style scoped>
-.capital-architecture-sandbox {
-  min-height: 100%;
+.capital-sandbox-embed {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: calc(100vh - 72px);
+  margin: 0;
+  background: #f4ede0;
 }
 
-.actions {
-  display: inline-flex;
-  gap: var(--space-3);
+.embed-toolbar {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+  background: linear-gradient(180deg, #f8f2e8 0%, #f4ede0 100%);
+  border-bottom: 1px solid rgba(28, 24, 20, 0.1);
+  flex-shrink: 0;
 }
 
-.content-card {
-  margin-top: var(--space-4);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--light-border-subtle);
-  overflow: hidden;
-  background: var(--light-bg-elevated);
-  height: calc(100vh - 200px);
-  min-height: 520px;
+.embed-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.sandbox-iframe {
+.embed-kicker {
+  font-size: 11px;
+  color: #9a7b4f;
+  letter-spacing: 0.12em;
+}
+
+.embed-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1c1814;
+  letter-spacing: 0.04em;
+}
+
+.embed-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sync-tag {
+  border-color: rgba(45, 106, 79, 0.35) !important;
+  color: #2d6a4f !important;
+  background: rgba(45, 106, 79, 0.08) !important;
+}
+
+.embed-frame-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 480px;
+  background: #f4ede0;
+}
+
+.embed-frame {
   width: 100%;
   height: 100%;
+  min-height: 480px;
   border: 0;
   display: block;
+  background: #f4ede0;
+}
+
+.embed-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(244, 237, 224, 0.92);
+  color: #6b6258;
+  font-size: 13px;
+}
+
+.embed-loading .spin {
+  font-size: 28px;
+  color: #9a7b4f;
+  animation: sandbox-spin 0.9s linear infinite;
+}
+
+@keyframes sandbox-spin {
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -1049,6 +1049,73 @@ ol.styled li::before {
   .flow-arrow { transform: rotate(90deg); }
   .tab { padding: 10px 14px; font-size: 13px; }
 }
+
+/* === ERP 内嵌模式（iframe embed=1）=== */
+html.embed-mode,
+html.embed-mode body {
+  min-height: 100%;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+html.embed-mode body {
+  background-attachment: scroll;
+}
+html.embed-mode body::before {
+  opacity: 0.25;
+}
+html.embed-mode .app {
+  max-width: none;
+  margin: 0;
+  padding: 8px 16px 48px;
+  min-height: 100%;
+}
+html.embed-mode main.content {
+  min-height: calc(100vh - 140px);
+}
+html.embed-mode .header,
+html.embed-mode .footer {
+  display: none !important;
+}
+html.embed-mode .tab-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--paper);
+  margin: 0 -4px 16px;
+  padding: 6px 4px 10px;
+  box-shadow: 0 1px 0 var(--line-fine);
+}
+html.embed-mode .tab-nav::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--brass-light), transparent);
+  opacity: 0.5;
+}
+.erp-sync-banner {
+  display: none;
+  margin: 0 0 16px;
+  padding: 8px 14px;
+  border: 1px solid rgba(74, 93, 58, 0.35);
+  background: rgba(74, 93, 58, 0.08);
+  color: var(--moss);
+  font-size: 12px;
+  border-radius: 4px;
+}
+.erp-sync-banner.visible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.erp-sync-banner strong {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
 </style>
 </head>
 <body>
@@ -1083,6 +1150,11 @@ ol.styled li::before {
     <button class="tab" data-tab="actions"><span class="tab-num">VII</span>决策清单</button>
   </nav>
 
+  <div id="erpSyncBanner" class="erp-sync-banner">
+    <span><strong>ERP 财务已同步</strong> · 总览区指标来自财务核算账本</span>
+    <span id="erpSyncMeta" style="font-family: var(--mono); font-size: 11px; opacity: 0.75;"></span>
+  </div>
+
   <!-- CONTENT -->
   <main class="content">
 
@@ -1099,27 +1171,27 @@ ol.styled li::before {
         <div class="grid grid-4">
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
-            <div class="card-label">Total Revenue</div>
-            <div class="card-value">¥126.5<span class="card-value-unit">万</span></div>
-            <div class="card-sub">6 个月 · 仅 POS 口径</div>
+            <div class="card-label">累计营收</div>
+            <div class="card-value">¥<span data-erp="total-revenue">126.5</span><span class="card-value-unit">万</span></div>
+            <div class="card-sub" data-erp="date-range">6 个月 · 仅 POS 口径</div>
           </div>
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
-            <div class="card-label">Monthly Avg</div>
-            <div class="card-value">¥17.5<span class="card-value-unit">万</span></div>
-            <div class="card-sub">2026 Q1-Q2 稳态</div>
+            <div class="card-label">月均营收</div>
+            <div class="card-value">¥<span data-erp="monthly-avg">17.5</span><span class="card-value-unit">万</span></div>
+            <div class="card-sub" data-erp="monthly-sub">2026 Q1-Q2 稳态</div>
           </div>
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
-            <div class="card-label">Spring Festival Peak</div>
-            <div class="card-value">¥29.9<span class="card-value-unit">万</span></div>
-            <div class="card-sub">2026-02 · 节庆爆发力</div>
+            <div class="card-label">单月峰值</div>
+            <div class="card-value">¥<span data-erp="peak-month">29.9</span><span class="card-value-unit">万</span></div>
+            <div class="card-sub" data-erp="peak-sub">2026-02 · 节庆爆发力</div>
           </div>
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
-            <div class="card-label">Avg Ticket</div>
-            <div class="card-value">¥79.93</div>
-            <div class="card-sub">15,827 订单加权</div>
+            <div class="card-label">客单价</div>
+            <div class="card-value">¥<span data-erp="avg-ticket">79.93</span></div>
+            <div class="card-sub" data-erp="order-sub">15,827 订单加权</div>
           </div>
         </div>
       </div>
@@ -1974,6 +2046,62 @@ ol.styled li::before {
 </div>
 
 <script>
+// ERP 内嵌检测
+const IS_EMBED = new URLSearchParams(location.search).get('embed') === '1' || window.self !== window.top;
+if (IS_EMBED) {
+  document.documentElement.classList.add('embed-mode');
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      window.parent.postMessage({ type: 'capital-sandbox-ready', source: 'shanhai-capital-sandbox' }, '*');
+      window.parent.postMessage({ type: 'capital-sandbox-request-finance', source: 'shanhai-capital-sandbox' }, '*');
+    } catch (_) { /* ignore */ }
+  });
+}
+
+function fmtWan(n) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toFixed(1);
+}
+
+function applyErpFinanceSync(payload) {
+  if (!payload || payload.source !== 'erp-finance') return;
+  const setText = (sel, val) => {
+    const el = document.querySelector(`[data-erp="${sel}"]`);
+    if (el) el.textContent = val;
+  };
+  setText('total-revenue', fmtWan(payload.totalRevenueWan));
+  setText('monthly-avg', fmtWan(payload.monthlyAvgWan));
+  setText('peak-month', fmtWan(payload.peakMonthWan));
+  if (payload.avgTicket != null) setText('avg-ticket', Number(payload.avgTicket).toFixed(2));
+
+  const rangeEl = document.querySelector('[data-erp="date-range"]');
+  if (rangeEl && payload.dateFrom && payload.dateTo) {
+    rangeEl.textContent = `${payload.dateFrom} – ${payload.dateTo} · ERP 账本 ${payload.recordCount} 条`;
+  }
+  const monthSub = document.querySelector('[data-erp="monthly-sub"]');
+  if (monthSub && payload.monthCount) {
+    monthSub.textContent = `覆盖 ${payload.monthCount} 个自然月 · ERP 同步`;
+  }
+  const peakSub = document.querySelector('[data-erp="peak-sub"]');
+  if (peakSub) peakSub.textContent = `近 ${payload.monthCount || '—'} 月最高单月`;
+  if (payload.orderCount && document.querySelector('[data-erp="order-sub"]')) {
+    setText('order-sub', `${payload.orderCount.toLocaleString()} 笔订单（账本汇总）`);
+  }
+
+  const banner = document.getElementById('erpSyncBanner');
+  const meta = document.getElementById('erpSyncMeta');
+  if (banner) banner.classList.add('visible');
+  if (meta && payload.syncedAt) {
+    meta.textContent = new Date(payload.syncedAt).toLocaleString('zh-CN');
+  }
+}
+
+window.addEventListener('message', (event) => {
+  if (event?.data?.type === 'erp-finance-sync') {
+    applyErpFinanceSync(event.data.payload);
+  }
+});
+
 // ============ 全局状态 ============
 const STORAGE_KEY = 'shanhai_capital_v02';
 const TODO_KEY = 'shanhai_todo_v02';
@@ -1986,14 +2114,31 @@ const NET_MARGIN = {
 };
 
 // ============ Tab 切换 ============
+const TAB_REFRESHERS = {
+  valuation: updateValuation,
+  captable: updateCapTable,
+  profitshare: updateProfitShare,
+  conversion: updateConversion,
+  archive: renderSnapshots,
+  actions: renderTodos,
+};
+
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     const target = tab.dataset.tab;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
-    document.getElementById(target).classList.add('active');
-    if (target === 'archive') renderSnapshots();
+    const panel = document.getElementById(target);
+    if (panel) panel.classList.add('active');
+    try {
+      TAB_REFRESHERS[target]?.();
+    } catch (err) {
+      console.error('[capital-sandbox] tab refresh failed:', target, err);
+    }
+    if (IS_EMBED) {
+      window.scrollTo(0, 0);
+    }
   });
 });
 
@@ -2652,12 +2797,24 @@ function renderTodos() {
 }
 
 // ============ 初始化 ============
-updateValuation();
-updateCapTable();
-updateProfitShare();
-updateConversion();
-renderTodos();
-renderSnapshots();
+function bootSandbox() {
+  try {
+    updateValuation();
+    updateCapTable();
+    updateProfitShare();
+    updateConversion();
+    renderTodos();
+    renderSnapshots();
+  } catch (err) {
+    console.error('[capital-sandbox] boot failed', err);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootSandbox);
+} else {
+  bootSandbox();
+}
 </script>
 </body>
 </html>

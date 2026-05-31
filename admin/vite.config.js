@@ -31,6 +31,20 @@ export default defineConfig(({ mode }) => {
       port: 5178, // 开发服务器端口（5173–5177 已被占用时使用）
       strictPort: false, // 如果端口被占用，自动尝试下一个可用端口
       proxy: {
+        '/api/bailian': {
+          target: 'https://dashscope.aliyuncs.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/bailian/, '/compatible-mode/v1'),
+          secure: true,
+          configure: (proxy, _options) => {
+            proxy.on('proxyReq', (proxyReq, req, _res) => {
+              if (req.headers['x-api-key']) {
+                proxyReq.setHeader('Authorization', `Bearer ${req.headers['x-api-key']}`)
+                proxyReq.removeHeader('x-api-key')
+              }
+            })
+          }
+        },
         '/api/gemini': {
           target: 'https://generativelanguage.googleapis.com',
           changeOrigin: true,

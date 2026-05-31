@@ -15,6 +15,25 @@ function readEnvList(...names) {
 const GEMINI_API_KEYS = readEnvList('VITE_GEMINI_API_KEYS', 'VITE_GEMINI_API_KEY')
 const OPENAI_API_KEYS = readEnvList('VITE_OPENAI_API_KEYS', 'VITE_OPENAI_API_KEY')
 const DEEPSEEK_API_KEYS = readEnvList('VITE_DEEPSEEK_API_KEYS', 'VITE_DEEPSEEK_API_KEY')
+const BAILIAN_API_KEYS = readEnvList('VITE_BAILIAN_API_KEYS', 'VITE_BAILIAN_API_KEY', 'VITE_DASHSCOPE_API_KEY')
+const BAILIAN_MODEL_DEFAULT = import.meta.env.VITE_BAILIAN_MODEL || 'qwen-plus'
+const BAILIAN_MODEL_PRO = import.meta.env.VITE_BAILIAN_MODEL_PRO || 'qwen-max'
+const DEFAULT_AI_PROVIDER = import.meta.env.VITE_AI_DEFAULT_PROVIDER
+  || (BAILIAN_API_KEYS.length ? 'bailian' : 'gemini')
+
+function getFallbackProvider(excludeProvider) {
+  for (const p of ['bailian', 'gemini', 'deepseek', 'openai']) {
+    if (p === excludeProvider) continue
+    const counts = {
+      bailian: BAILIAN_API_KEYS.length,
+      gemini: GEMINI_API_KEYS.length,
+      deepseek: DEEPSEEK_API_KEYS.length,
+      openai: OPENAI_API_KEYS.length,
+    }
+    if (counts[p] > 0) return p
+  }
+  return null
+}
 
 // 本地模型配置（Ollama）- 已部署多个模型
 const LOCAL_MODEL_CONFIG = {
@@ -29,6 +48,7 @@ const LOCAL_MODEL_CONFIG = {
 
 // API Key状态追踪
 const keyStatus = {
+  bailian: BAILIAN_API_KEYS.map(key => ({ key, failures: 0, lastFailure: 0, successCount: 0 })),
   gemini: GEMINI_API_KEYS.map(key => ({ key, failures: 0, lastFailure: 0, successCount: 0 })),
   openai: OPENAI_API_KEYS.map(key => ({ key, failures: 0, lastFailure: 0, successCount: 0 })),
   deepseek: DEEPSEEK_API_KEYS.map(key => ({ key, failures: 0, lastFailure: 0, successCount: 0 })),
@@ -37,10 +57,12 @@ const keyStatus = {
 
 export function getAIProviderConfigStatus() {
   return {
+    bailian: BAILIAN_API_KEYS.length,
     gemini: GEMINI_API_KEYS.length,
     openai: OPENAI_API_KEYS.length,
     deepseek: DEEPSEEK_API_KEYS.length,
     local: LOCAL_MODEL_CONFIG.enabled ? 1 : 0,
+    defaultProvider: DEFAULT_AI_PROVIDER,
   }
 }
 
@@ -138,6 +160,19 @@ function getDeepSeekURL(model = 'deepseek-chat') {
   return {
     url: 'https://api.deepseek.com/v1/chat/completions',
     key: key
+  }
+}
+
+/**
+ * 阿里云百炼（DashScope OpenAI 兼容模式）
+ */
+function getBailianURL(model = BAILIAN_MODEL_DEFAULT) {
+  const key = selectAvailableKey('bailian')
+  const baseUrl = (import.meta.env.VITE_BAILIAN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1').replace(/\/$/, '')
+  return {
+    url: import.meta.env.DEV ? '/api/bailian/chat/completions' : `${baseUrl}/chat/completions`,
+    key,
+    model,
   }
 }
 
@@ -562,8 +597,8 @@ async function callLocalModel(prompt, options = {}) {
  * 统一的AI API调用函数（增强版，支持多Key和故障转移）
  * @param {string} prompt - 用户提示词
  * @param {object} options - 配置选项
- * @param {string} options.provider - 'gemini' | 'openai' | 'deepseek' | 'local'，默认'gemini'
- * @param {boolean} options.usePro - 是否使用Pro模型（仅Gemini）
+ * @param {string} options.provider - 'bailian' | 'gemini' | 'openai' | 'deepseek' | 'local'，默认百炼（有 Key 时）
+ * @param {boolean} options.usePro - 是否使用 Pro 模型（百炼 qwen-max / Gemini Pro）
  * @param {number} options.temperature - 温度参数
  * @param {number} options.maxOutputTokens - 最大输出token数
  * @param {boolean} options.useCache - 是否使用缓存
@@ -571,11 +606,12 @@ async function callLocalModel(prompt, options = {}) {
  * @param {array} options.conversationHistory - 对话历史
  * @param {string} options.openaiModel - OpenAI模型名称，默认'gpt-4o-mini'
  * @param {string} options.deepseekModel - DeepSeek模型名称，默认'deepseek-chat'
+ * @param {string} options.bailianModel - 百炼模型名称，默认 qwen-plus
  * @returns {Promise<string>} AI响应文本
  */
 export async function callGeminiAPI(prompt, options = {}) {
   const {
-    provider = 'gemini',
+    provider = DEFAULT_AI_PROVIDER,
     usePro = false,
     temperature = 0.9,
     topP = 0.95,
@@ -586,6 +622,7 @@ export async function callGeminiAPI(prompt, options = {}) {
     conversationHistory = [],
     openaiModel = 'gpt-4o-mini',
     deepseekModel = 'deepseek-chat',
+    bailianModel = BAILIAN_MODEL_DEFAULT,
     retryCount = 0,
     maxRetries = 3
   } = options
@@ -610,6 +647,7 @@ export async function callGeminiAPI(prompt, options = {}) {
   let url = null
   let apiType = provider
   let useProxy = false // 是否使用代理（解决CORS问题）
+  let activeModel = null // OpenAI 兼容接口使用的模型名
   
   // 如果所有云端API都失败，尝试使用本地模型作为兜底
   if (retryCount >= maxRetries && LOCAL_MODEL_CONFIG.fallbackEnabled && LOCAL_MODEL_CONFIG.enabled && apiType !== 'local') {
@@ -622,17 +660,25 @@ export async function callGeminiAPI(prompt, options = {}) {
     }
   }
   
-  if (apiType === 'openai') {
+  if (apiType === 'bailian') {
+    const bailianConfig = getBailianURL(usePro ? BAILIAN_MODEL_PRO : bailianModel)
+    url = bailianConfig.url
+    currentKey = bailianConfig.key
+    activeModel = bailianConfig.model
+    useProxy = import.meta.env.DEV
+  } else if (apiType === 'openai') {
     const openaiConfig = getOpenAIURL(openaiModel)
     // 开发环境使用代理，生产环境直接调用
     url = import.meta.env.DEV ? '/api/openai/chat/completions' : openaiConfig.url
     currentKey = openaiConfig.key
+    activeModel = openaiModel
     useProxy = import.meta.env.DEV
   } else if (apiType === 'deepseek') {
     const deepseekConfig = getDeepSeekURL(deepseekModel)
     // 开发环境使用代理，生产环境直接调用
     url = import.meta.env.DEV ? '/api/deepseek/chat/completions' : deepseekConfig.url
     currentKey = deepseekConfig.key
+    activeModel = deepseekModel
     useProxy = import.meta.env.DEV
   } else {
     currentKey = selectAvailableKey('gemini')
@@ -646,7 +692,7 @@ export async function callGeminiAPI(prompt, options = {}) {
       return await callLocalModel(prompt, options)
     }
     throw new Error(
-      `未配置 ${apiType} API Key。请在 .env 中配置 VITE_GEMINI_API_KEY / VITE_OPENAI_API_KEY / VITE_DEEPSEEK_API_KEY，或启用本地模型。`,
+      `未配置 ${apiType} API Key。请在 .env 中配置 VITE_BAILIAN_API_KEY 等变量，或启用本地模型。`,
     )
   }
 
@@ -655,8 +701,8 @@ export async function callGeminiAPI(prompt, options = {}) {
     let payload = {}
     let headers = {}
     
-    if (apiType === 'openai' || apiType === 'deepseek') {
-      // OpenAI/DeepSeek格式（兼容OpenAI API）
+    if (apiType === 'openai' || apiType === 'deepseek' || apiType === 'bailian') {
+      // OpenAI 兼容格式（百炼 / OpenAI / DeepSeek）
       headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${currentKey}`
@@ -683,7 +729,7 @@ export async function callGeminiAPI(prompt, options = {}) {
         messages.unshift({ role: 'system', content: systemInstruction })
       }
       
-      const model = apiType === 'deepseek' ? deepseekModel : openaiModel
+      const model = activeModel || (apiType === 'deepseek' ? deepseekModel : openaiModel)
       payload = {
         model: model,
         messages: messages,
@@ -780,22 +826,15 @@ export async function callGeminiAPI(prompt, options = {}) {
         errorData = { error: { message: errorText.substring(0, 200) } }
       }
 
-      // 402错误：Payment Required（DeepSeek/OpenAI需要付费）
-      if (response.status === 402 && retryCount === 0 && apiType !== 'gemini') {
+      // 402错误：Payment Required，切换到其他可用 provider
+      if (response.status === 402 && retryCount === 0) {
         recordKeyFailure(apiType, currentKey)
-        console.warn(`[AI] ${apiType} 402错误，API Key可能需要付费，切换到Gemini`)
-        // 切换到Gemini重试
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        return callGeminiAPI(prompt, { ...options, provider: 'gemini', retryCount: retryCount + 1 })
-      }
-
-      // 402错误：Payment Required（DeepSeek/OpenAI需要付费）
-      if (response.status === 402 && retryCount === 0 && apiType !== 'gemini') {
-        recordKeyFailure(apiType, currentKey)
-        console.warn(`[AI] ${apiType} 402错误，API Key可能需要付费，切换到Gemini`)
-        // 切换到Gemini重试
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        return callGeminiAPI(prompt, { ...options, provider: 'gemini', retryCount: retryCount + 1 })
+        const fallback = getFallbackProvider(apiType)
+        if (fallback) {
+          console.warn(`[AI] ${apiType} 402错误，切换到 ${fallback}`)
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          return callGeminiAPI(prompt, { ...options, provider: fallback, retryCount: retryCount + 1 })
+        }
       }
 
       // 401/403错误：API Key无效，切换到下一个key
@@ -804,7 +843,13 @@ export async function callGeminiAPI(prompt, options = {}) {
         console.warn(`[AI] ${response.status}错误，API Key可能无效，切换到下一个key (${retryCount + 1}/${maxRetries})`)
         
         // 尝试使用下一个key
-        if (apiType === 'gemini') {
+        if (apiType === 'bailian') {
+          const nextKey = selectAvailableKey('bailian')
+          if (nextKey && nextKey !== currentKey) {
+            await new Promise(resolve => setTimeout(resolve, 500))
+            return callGeminiAPI(prompt, { ...options, retryCount: retryCount + 1 })
+          }
+        } else if (apiType === 'gemini') {
           const nextKey = selectAvailableKey('gemini')
           if (nextKey && nextKey !== currentKey) {
             await new Promise(resolve => setTimeout(resolve, 500))
@@ -825,8 +870,8 @@ export async function callGeminiAPI(prompt, options = {}) {
         }
       }
 
-      // 503错误：模型过载，切换到Pro模型或重试
-      if (response.status === 503 && apiType === 'gemini' && !usePro && retryCount < maxRetries) {
+      // 503错误：模型过载，切换到 Pro 模型或重试
+      if (response.status === 503 && (apiType === 'gemini' || apiType === 'bailian') && !usePro && retryCount < maxRetries) {
         console.warn(`[AI] 503错误，切换到Pro模型重试 (${retryCount + 1}/${maxRetries})`)
         await new Promise(resolve => setTimeout(resolve, 1500 * (retryCount + 1)))
         return callGeminiAPI(prompt, { ...options, usePro: true, retryCount: retryCount + 1 })
@@ -834,33 +879,26 @@ export async function callGeminiAPI(prompt, options = {}) {
 
       // 429错误：请求过于频繁，尝试切换key、切换provider或指数退避
       if (response.status === 429 && retryCount < maxRetries) {
-        // 如果是Gemini 429错误，优先尝试切换到DeepSeek（但只在第一次重试时）
-        if (apiType === 'gemini' && retryCount === 0) {
-          console.warn(`[AI] Gemini 429错误，尝试切换到DeepSeek`)
+        const fallback = getFallbackProvider(apiType)
+        if (fallback && retryCount === 0) {
+          console.warn(`[AI] ${apiType} 429错误，尝试切换到 ${fallback}`)
           try {
-            const deepseekResult = await callGeminiAPI(prompt, { ...options, provider: 'deepseek', retryCount: retryCount + 1 })
-            return deepseekResult
-          } catch (deepseekError) {
-            // 如果DeepSeek也失败（402或其他错误），继续Gemini重试
-            console.warn(`[AI] DeepSeek也失败:`, deepseekError.message)
-            // 继续执行下面的Gemini重试逻辑
-          }
-        }
-        
-        // 如果是DeepSeek 429错误，尝试切换到Gemini
-        if (apiType === 'deepseek' && retryCount === 0) {
-          console.warn(`[AI] DeepSeek 429错误，尝试切换到Gemini`)
-          try {
-            const geminiResult = await callGeminiAPI(prompt, { ...options, provider: 'gemini', retryCount: retryCount + 1 })
-            return geminiResult
-          } catch (geminiError) {
-            console.warn(`[AI] Gemini也失败:`, geminiError.message)
-            // 继续执行下面的重试逻辑
+            const fallbackResult = await callGeminiAPI(prompt, { ...options, provider: fallback, retryCount: retryCount + 1 })
+            return fallbackResult
+          } catch (fallbackError) {
+            console.warn(`[AI] ${fallback} 也失败:`, fallbackError.message)
           }
         }
         
         // 先尝试切换key
-        if (apiType === 'gemini') {
+        if (apiType === 'bailian') {
+          const nextKey = selectAvailableKey('bailian')
+          if (nextKey && nextKey !== currentKey) {
+            console.warn(`[AI] 429错误，切换到下一个key重试 (${retryCount + 1}/${maxRetries})`)
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            return callGeminiAPI(prompt, { ...options, retryCount: retryCount + 1 })
+          }
+        } else if (apiType === 'gemini') {
           const nextKey = selectAvailableKey('gemini')
           if (nextKey && nextKey !== currentKey) {
             console.warn(`[AI] 429错误，切换到下一个key重试 (${retryCount + 1}/${maxRetries})`)
@@ -891,11 +929,14 @@ export async function callGeminiAPI(prompt, options = {}) {
       }
       
       // 402错误：Payment Required（如果之前没有处理）
-      if (response.status === 402 && retryCount < maxRetries && apiType !== 'gemini') {
+      if (response.status === 402 && retryCount < maxRetries) {
         recordKeyFailure(apiType, currentKey)
-        console.warn(`[AI] 402错误，API Key可能需要付费，切换到Gemini (${retryCount + 1}/${maxRetries})`)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        return callGeminiAPI(prompt, { ...options, provider: 'gemini', retryCount: retryCount + 1 })
+        const fallback = getFallbackProvider(apiType)
+        if (fallback) {
+          console.warn(`[AI] 402错误，切换到 ${fallback} (${retryCount + 1}/${maxRetries})`)
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          return callGeminiAPI(prompt, { ...options, provider: fallback, retryCount: retryCount + 1 })
+        }
       }
 
       // 如果所有API都失败，尝试使用本地模型作为兜底
@@ -917,11 +958,14 @@ export async function callGeminiAPI(prompt, options = {}) {
 
     if (data.error) {
       // 402错误：Payment Required
-      if (data.error.code === 402 && retryCount < maxRetries && apiType !== 'gemini') {
+      if (data.error.code === 402 && retryCount < maxRetries) {
         recordKeyFailure(apiType, currentKey)
-        console.warn(`[AI] 402错误，API Key可能需要付费，切换到Gemini (${retryCount + 1}/${maxRetries})`)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        return callGeminiAPI(prompt, { ...options, provider: 'gemini', retryCount: retryCount + 1 })
+        const fallback = getFallbackProvider(apiType)
+        if (fallback) {
+          console.warn(`[AI] 402错误，切换到 ${fallback} (${retryCount + 1}/${maxRetries})`)
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          return callGeminiAPI(prompt, { ...options, provider: fallback, retryCount: retryCount + 1 })
+        }
       }
       
       // 401/403错误：API Key无效
@@ -933,7 +977,7 @@ export async function callGeminiAPI(prompt, options = {}) {
       }
       
       // 503错误：模型过载
-      if (data.error.code === 503 && apiType === 'gemini' && !usePro && retryCount < maxRetries) {
+      if (data.error.code === 503 && (apiType === 'gemini' || apiType === 'bailian') && !usePro && retryCount < maxRetries) {
         console.warn(`[AI] 503错误，切换到Pro模型重试 (${retryCount + 1}/${maxRetries})`)
         await new Promise(resolve => setTimeout(resolve, 1500 * (retryCount + 1)))
         return callGeminiAPI(prompt, { ...options, usePro: true, retryCount: retryCount + 1 })
@@ -957,14 +1001,15 @@ export async function callGeminiAPI(prompt, options = {}) {
     console.log('[AI] 解析响应数据...')
     console.log('[AI] 完整响应数据（前1500字符）:', JSON.stringify(data, null, 2).substring(0, 1500))
     let text = null
-    if (apiType === 'openai' || apiType === 'deepseek') {
-      // OpenAI和DeepSeek使用相同的响应格式
+    if (apiType === 'openai' || apiType === 'deepseek' || apiType === 'bailian') {
+      // OpenAI 兼容格式
       if (data.choices && Array.isArray(data.choices) && data.choices.length > 0 && data.choices[0] && data.choices[0].message) {
         text = data.choices[0].message.content
       } else {
-        console.error(`[AI] ${apiType === 'deepseek' ? 'DeepSeek' : 'OpenAI'}响应格式错误:`, JSON.stringify(data))
+        const providerLabel = apiType === 'bailian' ? '百炼' : (apiType === 'deepseek' ? 'DeepSeek' : 'OpenAI')
+        console.error(`[AI] ${providerLabel}响应格式错误:`, JSON.stringify(data))
         recordKeyFailure(apiType, currentKey)
-        throw new Error(`${apiType === 'deepseek' ? 'DeepSeek' : 'OpenAI'} API返回数据格式错误`)
+        throw new Error(`${providerLabel} API返回数据格式错误`)
       }
     } else {
       // Gemini API响应格式处理
@@ -1316,21 +1361,18 @@ export function getCacheStats() {
  * 获取API Key状态统计
  */
 export function getKeyStats() {
+  const mapKeys = (list) => list.map(k => ({
+    key: k.key.substring(0, 20) + '...',
+    failures: k.failures,
+    successCount: k.successCount,
+    lastFailure: k.lastFailure ? new Date(k.lastFailure).toISOString() : null,
+    isAvailable: k.failures <= 5 && (k.lastFailure === 0 || Date.now() - k.lastFailure > KEY_RECOVERY_TIME)
+  }))
   return {
-    gemini: keyStatus.gemini.map(k => ({
-      key: k.key.substring(0, 20) + '...',
-      failures: k.failures,
-      successCount: k.successCount,
-      lastFailure: k.lastFailure ? new Date(k.lastFailure).toISOString() : null,
-      isAvailable: k.failures <= 5 && (k.lastFailure === 0 || Date.now() - k.lastFailure > KEY_RECOVERY_TIME)
-    })),
-    openai: keyStatus.openai.map(k => ({
-      key: k.key.substring(0, 20) + '...',
-      failures: k.failures,
-      successCount: k.successCount,
-      lastFailure: k.lastFailure ? new Date(k.lastFailure).toISOString() : null,
-      isAvailable: k.failures <= 5 && (k.lastFailure === 0 || Date.now() - k.lastFailure > KEY_RECOVERY_TIME)
-    }))
+    bailian: mapKeys(keyStatus.bailian),
+    gemini: mapKeys(keyStatus.gemini),
+    openai: mapKeys(keyStatus.openai),
+    deepseek: mapKeys(keyStatus.deepseek),
   }
 }
 
@@ -1338,6 +1380,13 @@ export function getKeyStats() {
  * 重置API Key状态
  */
 export function resetKeyStatus(type = null) {
+  if (type === 'bailian' || type === null) {
+    keyStatus.bailian.forEach(k => {
+      k.failures = 0
+      k.lastFailure = 0
+      k.successCount = 0
+    })
+  }
   if (type === 'gemini' || type === null) {
     keyStatus.gemini.forEach(k => {
       k.failures = 0
@@ -1358,8 +1407,14 @@ export function resetKeyStatus(type = null) {
 /**
  * 添加新的API Key
  */
-export function addAPIKey(key, type = 'gemini') {
-  if (type === 'gemini') {
+export function addAPIKey(key, type = 'bailian') {
+  if (type === 'bailian') {
+    if (!BAILIAN_API_KEYS.includes(key)) {
+      BAILIAN_API_KEYS.push(key)
+      keyStatus.bailian.push({ key, failures: 0, lastFailure: 0, successCount: 0 })
+      console.log('[AI] 已添加新的百炼 API Key')
+    }
+  } else if (type === 'gemini') {
     if (!GEMINI_API_KEYS.includes(key)) {
       GEMINI_API_KEYS.push(key)
       keyStatus.gemini.push({ key, failures: 0, lastFailure: 0, successCount: 0 })

@@ -199,71 +199,10 @@ const startMeeting = async () => {
 保持专业、务实、有建设性。`
 
     try {
-      // 优先尝试使用Gemini，如果失败则自动切换provider
-      let response = null
-      let lastError = null
-      
-      // 尝试Gemini
-      try {
-        response = await callGeminiAPI(prompt, {
-          systemInstruction: member.prompt,
-          temperature: 0.8,
-          provider: 'gemini'
-        })
-      } catch (error) {
-        lastError = error
-        console.log('[VirtualBoard] Gemini失败:', error.message)
-        
-        // 如果是429或402错误，尝试切换到DeepSeek
-        if (error.message && (error.message.includes('429') || error.message.includes('402'))) {
-          try {
-            console.log('[VirtualBoard] 切换到DeepSeek重试')
-            ElMessage.warning('Gemini不可用，切换到DeepSeek')
-            response = await callGeminiAPI(prompt, {
-              systemInstruction: member.prompt,
-              temperature: 0.8,
-              provider: 'deepseek'
-            })
-          } catch (deepseekError) {
-            // 如果DeepSeek也失败（402需要付费），尝试使用Gemini Pro
-            console.log('[VirtualBoard] DeepSeek也失败:', deepseekError.message)
-            if (deepseekError.message && deepseekError.message.includes('402')) {
-              ElMessage.warning('DeepSeek需要付费，尝试使用Gemini Pro')
-              try {
-                response = await callGeminiAPI(prompt, {
-                  systemInstruction: member.prompt,
-                  temperature: 0.8,
-                  provider: 'gemini',
-                  usePro: true
-                })
-              } catch (proError) {
-                // 如果Pro也失败，显示友好错误
-                console.error('[VirtualBoard] 所有API都失败:', proError)
-                ElMessage.error('AI服务暂时不可用，请稍后重试或检查API配置')
-                throw new Error('所有AI服务都不可用，请稍后重试')
-              }
-            } else if (deepseekError.message && deepseekError.message.includes('429')) {
-              // DeepSeek也429，等待后重试Gemini
-              ElMessage.warning('请求过于频繁，等待后重试...')
-              await new Promise(resolve => setTimeout(resolve, 5000))
-              try {
-                response = await callGeminiAPI(prompt, {
-                  systemInstruction: member.prompt,
-                  temperature: 0.8,
-                  provider: 'gemini',
-                  usePro: true
-                })
-              } catch (retryError) {
-                throw new Error('AI服务暂时不可用，请稍后重试')
-              }
-            } else {
-              throw deepseekError
-            }
-          }
-        } else {
-          throw error
-        }
-      }
+      const response = await callGeminiAPI(prompt, {
+        systemInstruction: member.prompt,
+        temperature: 0.8,
+      })
 
       const record = {
         role: memberId,

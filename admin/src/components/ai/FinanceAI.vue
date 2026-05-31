@@ -185,7 +185,6 @@ ${analysisForm.value.dateRange ? `时间范围：${analysisForm.value.dateRange[
     const response = await callGeminiAPI(prompt, {
       systemInstruction: '你是一位资深的财务分析专家，擅长财务数据分析和解读',
       temperature: 0.7,
-      provider: 'deepseek' // 优先使用DeepSeek避免429
     })
     analysisResult.value = marked.parse(response)
   } catch (error) {
@@ -237,7 +236,6 @@ const forecastFinance = async () => {
     const response = await callGeminiAPI(prompt, {
       systemInstruction: '你是一位财务预测专家，擅长基于历史数据进行财务预测',
       temperature: 0.7,
-      provider: 'deepseek'
     })
     forecastResult.value = marked.parse(response)
   } catch (error) {
@@ -276,7 +274,6 @@ const checkRisks = async () => {
     const response = await callGeminiAPI(prompt, {
       systemInstruction: '你是一位财务风险专家，擅长识别和分析财务风险',
       temperature: 0.7,
-      provider: 'deepseek'
     })
     riskResult.value = marked.parse(response)
   } catch (error) {
@@ -323,7 +320,6 @@ const optimizeFinance = async () => {
     const response = await callGeminiAPI(prompt, {
       systemInstruction: '你是一位财务优化专家，擅长提供财务优化方案',
       temperature: 0.8,
-      provider: 'deepseek'
     })
     optimizationResult.value = marked.parse(response)
   } catch (error) {

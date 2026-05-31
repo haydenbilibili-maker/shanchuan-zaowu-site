@@ -70,7 +70,7 @@
       <el-container>
         
         <el-aside
-          :width="isMobile ? '0px' : (sidebarCollapsed ? '64px' : '240px')"
+          :width="isMobile ? '0px' : (sidebarCollapsed ? '64px' : '256px')"
           class="aside"
           :class="{ 'mobile-menu-open': isMobile ? mobileMenuVisible : true, 'is-collapsed': sidebarCollapsed && !isMobile }"
           ref="sidebarRef"
@@ -80,7 +80,7 @@
             <div class="brand-logo">山</div>
             <div class="brand-text" v-show="!sidebarCollapsed">
               <div class="cn">山海造物</div>
-              <div class="en">ERP SYSTEM</div>
+              <div class="en">经营管理系统</div>
             </div>
             <el-button class="collapse-btn" link @click="toggleSidebar" :title="sidebarCollapsed ? '展开侧栏 ⌘B' : '收起侧栏 ⌘B'">
               <el-icon><component :is="sidebarCollapsed ? Expand : Fold" /></el-icon>
@@ -92,18 +92,18 @@
             <div class="brand-logo">山</div>
             <div class="brand-text">
               <div class="cn">山海造物</div>
-              <div class="en">ERP SYSTEM</div>
+              <div class="en">经营管理系统</div>
             </div>
           </div>
 
           <!-- 🟢 快捷搜索栏（折叠时变成按钮） -->
           <div class="sidebar-search" :class="{ collapsed: sidebarCollapsed }" @click="openCommandPalette">
-            <el-tooltip v-if="sidebarCollapsed" content="搜索模块 ⌘K" placement="right">
+            <el-tooltip v-if="sidebarCollapsed" content="搜索功能" placement="right">
               <el-icon><Search /></el-icon>
             </el-tooltip>
             <template v-else>
               <el-icon><Search /></el-icon>
-              <span>搜索模块...</span>
+              <span>搜索功能</span>
               <kbd class="kbd-hint">⌘K</kbd>
             </template>
           </div>
@@ -123,11 +123,13 @@
             </div>
           </div>
 
+          <div class="sidebar-nav-scroll">
           <el-menu
             :collapse="sidebarCollapsed && !isMobile"
             ref="sideMenuRef"
             :default-active="currentTab"
             :default-openeds="defaultOpeneds"
+            unique-opened
             active-text-color="#ffffff"
             background-color="transparent"
             text-color="rgba(245, 242, 236, 0.72)"
@@ -136,117 +138,55 @@
             @open="handleSubMenuOpen"
             @close="handleSubMenuClose">
 
-            <!-- ============ 1. 总览决策 / OVERVIEW ============ -->
-            <el-menu-item-group title="🎯 总览决策 / OVERVIEW">
-                <el-menu-item index="0"><el-icon><Odometer /></el-icon><span>经营驾驶舱</span></el-menu-item>
-                <el-menu-item index="26"><el-icon><Monitor /></el-icon><span>实时监控大屏</span></el-menu-item>
-                <el-menu-item index="25"><el-icon><Trophy /></el-icon><span>运营决策中心</span></el-menu-item>
+            <el-menu-item-group :title="SIDEBAR_NAV.overview.title">
+              <el-menu-item
+                v-for="item in SIDEBAR_NAV.overview.items"
+                :key="item.id"
+                :index="item.id"
+              >
+                <el-icon><component :is="navIcons[item.icon]" /></el-icon>
+                <span>{{ item.label }}</span>
+              </el-menu-item>
             </el-menu-item-group>
 
-            <!-- ============ 2. 业务运营 / BUSINESS ============ -->
-            <el-sub-menu index="grp-business">
+            <el-sub-menu
+              v-for="section in sidebarSubmenus"
+              :key="section.key"
+              :index="section.key"
+            >
               <template #title>
-                <el-icon><Shop /></el-icon>
-                <span>🏪 业务运营 / BUSINESS</span>
+                <el-icon><component :is="navIcons[section.icon]" /></el-icon>
+                <span>{{ section.title }}</span>
               </template>
-              <el-menu-item-group title="货 · 资产">
-                <el-menu-item index="1"><el-icon><Box /></el-icon><span>藏品档案库</span></el-menu-item>
-                <el-menu-item index="43"><el-icon><Menu /></el-icon><span>分类管理</span></el-menu-item>
-                <el-menu-item index="3"><el-icon><List /></el-icon><span>全渠道订单</span></el-menu-item>
-                <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="场 · 体验">
-                <el-menu-item index="37"><el-icon><Stamp /></el-icon><span>预约与核销</span></el-menu-item>
-                <el-menu-item index="5"><el-icon><Calendar /></el-icon><span>活动与排期</span></el-menu-item>
-                <el-menu-item index="6"><el-icon><Ticket /></el-icon><span>权益与营销</span></el-menu-item>
-                <el-menu-item index="30"><el-icon><Shop /></el-icon><span>店铺管理</span></el-menu-item>
-                <el-menu-item index="34"><el-icon><Brush /></el-icon><span>门店设计中心</span></el-menu-item>
-                <el-menu-item index="35"><el-icon><Promotion /></el-icon><span>加盟商管理</span></el-menu-item>
-                <el-menu-item index="48"><el-icon><House /></el-icon><span>物业合作测算</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="定制工坊">
-                <el-menu-item index="38"><el-icon><Brush /></el-icon><span>标本定制工单</span></el-menu-item>
-                <el-menu-item index="39"><el-icon><Avatar /></el-icon><span>伴宠记忆订单</span></el-menu-item>
+              <el-menu-item-group
+                v-for="group in section.groups"
+                :key="group.title"
+                :title="group.title"
+              >
+                <el-menu-item
+                  v-for="item in group.items"
+                  :key="item.id"
+                  :index="item.id"
+                >
+                  <el-icon><component :is="navIcons[item.icon]" /></el-icon>
+                  <span>{{ item.label }}</span>
+                </el-menu-item>
               </el-menu-item-group>
             </el-sub-menu>
 
-            <!-- ============ 3. 客户经营 / CUSTOMER ============ -->
-            <el-sub-menu index="grp-customer">
-              <template #title>
-                <el-icon><UserFilled /></el-icon>
-                <span>👥 客户经营 / CUSTOMER</span>
-              </template>
-              <el-menu-item-group title="会员资产">
-                <el-menu-item index="4"><el-icon><UserFilled /></el-icon><span>会员 CRM</span></el-menu-item>
-                <el-menu-item index="45"><el-icon><MagicStick /></el-icon><span>用户画像</span></el-menu-item>
-                <el-menu-item index="46"><el-icon><Promotion /></el-icon><span>人群包</span></el-menu-item>
-                <el-menu-item index="47"><el-icon><DataBoard /></el-icon><span>人群对比</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="行为与互动">
-                <el-menu-item index="44"><el-icon><DataAnalysis /></el-icon><span>C 端行为看板</span></el-menu-item>
-                <el-menu-item index="40"><el-icon><Message /></el-icon><span>山海有信工单</span></el-menu-item>
-                <el-menu-item index="41"><el-icon><ChatDotRound /></el-icon><span>评论审核</span></el-menu-item>
-              </el-menu-item-group>
-            </el-sub-menu>
-
-            <!-- ============ 4. 小程序配置 / MINI-PROGRAM ============ -->
-            <el-sub-menu index="grp-miniapp">
-              <template #title>
-                <el-icon><Iphone /></el-icon>
-                <span>📱 小程序配置 / MINI-APP</span>
-              </template>
-              <el-menu-item-group title="内容运营">
-                <el-menu-item index="8"><el-icon><Picture /></el-icon><span>首页轮播</span></el-menu-item>
-                <el-menu-item index="13"><el-icon><Setting /></el-icon><span>首页配置</span></el-menu-item>
-                <el-menu-item index="9"><el-icon><Collection /></el-icon><span>内容管理</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="会员/营销规则">
-                <el-menu-item index="14"><el-icon><UserFilled /></el-icon><span>会员等级体系</span></el-menu-item>
-                <el-menu-item index="15"><el-icon><Ticket /></el-icon><span>积分规则配置</span></el-menu-item>
-                <el-menu-item index="22"><el-icon><Trophy /></el-icon><span>成就系统配置</span></el-menu-item>
-                <el-menu-item index="20"><el-icon><Ticket /></el-icon><span>活动营销规则</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="系统/算法/通知">
-                <el-menu-item index="16"><el-icon><Calendar /></el-icon><span>预约规则配置</span></el-menu-item>
-                <el-menu-item index="19"><el-icon><MagicStick /></el-icon><span>推荐算法配置</span></el-menu-item>
-                <el-menu-item index="18"><el-icon><Search /></el-icon><span>搜索关键词管理</span></el-menu-item>
-                <el-menu-item index="24"><el-icon><ChatDotRound /></el-icon><span>通知消息配置</span></el-menu-item>
-                <el-menu-item index="23"><el-icon><DataAnalysis /></el-icon><span>用户行为追踪</span></el-menu-item>
-                <el-menu-item index="21"><el-icon><DataAnalysis /></el-icon><span>数据报表增强</span></el-menu-item>
-                <el-menu-item index="17"><el-icon><Lock /></el-icon><span>权限管理系统</span></el-menu-item>
-              </el-menu-item-group>
-            </el-sub-menu>
-
-            <!-- ============ 5. 组织治理 / GOVERNANCE ============ -->
-            <el-sub-menu index="grp-governance">
-              <template #title>
-                <el-icon><OfficeBuilding /></el-icon>
-                <span>🏛️ 组织治理 / GOVERNANCE</span>
-              </template>
-              <el-menu-item-group title="人才组织">
-                <el-menu-item index="7"><el-icon><Brush /></el-icon><span>标本师管理</span></el-menu-item>
-                <el-menu-item index="32"><el-icon><User /></el-icon><span>员工花名册</span></el-menu-item>
-                <el-menu-item index="31"><el-icon><Wallet /></el-icon><span>员工薪酬管理</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="财务资本">
-                <el-menu-item index="2"><el-icon><Money /></el-icon><span>财务核算系统</span></el-menu-item>
-                <el-menu-item index="36"><el-icon><DataBoard /></el-icon><span>资本架构沙盘</span></el-menu-item>
-                <el-menu-item index="27"><el-icon><DocumentCopy /></el-icon><span>合伙人命理中心</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="治理与合规">
-                <el-menu-item index="33"><el-icon><OfficeBuilding /></el-icon><span>公司治理</span></el-menu-item>
-                <el-menu-item index="28"><el-icon><Lock /></el-icon><span>合规专栏</span></el-menu-item>
-              </el-menu-item-group>
-            </el-sub-menu>
-
-            <!-- ============ 6. 战略与知识 / INTELLIGENCE ============ -->
-            <el-menu-item-group title="🧠 战略与知识 / INTELLIGENCE">
-                <el-menu-item index="12"><el-icon><MagicStick /></el-icon><span>AI 智能中心</span></el-menu-item>
-                <el-menu-item index="10"><el-icon><DataAnalysis /></el-icon><span>战略调研看板</span></el-menu-item>
-                <el-menu-item index="29"><el-icon><Notebook /></el-icon><span>经营手册</span></el-menu-item>
+            <el-menu-item-group :title="SIDEBAR_NAV.intelligence.title">
+              <el-menu-item
+                v-for="item in SIDEBAR_NAV.intelligence.items"
+                :key="item.id"
+                :index="item.id"
+              >
+                <el-icon><component :is="navIcons[item.icon]" /></el-icon>
+                <span>{{ item.label }}</span>
+              </el-menu-item>
             </el-menu-item-group>
 
           </el-menu>
+          </div>
           
           <div class="sidebar-footer">
              <div class="user-badge">
@@ -269,10 +209,10 @@
           <!-- 🟢 多标签条 + 面包屑 -->
           <MainTabsBar @open-palette="openCommandPalette" @reload="forceReloadCurrent" />
 
-          <div class="content-scroll-wrap">
+          <div class="content-scroll-wrap" :class="{ 'is-embed-page': currentTab === '36' }">
           <transition name="fade-slide" mode="out-in">
             <keep-alive :max="10">
-            <div :key="currentTab + '-' + reloadKey">
+            <div :key="currentTab + '-' + reloadKey" class="tab-page-root" :class="{ 'is-embed-root': currentTab === '36' }">
               <component :is="Dashboard" v-if="currentTab === '0'" @switch-tab="handleMenuSelect" />
 
               <div v-if="currentTab === '1'" class="module-wrapper">
@@ -469,7 +409,7 @@
                </el-dialog>
             </div>
 
-              <component :is="FinanceDashboard" v-else-if="currentTab === '2'" />
+              <component :is="FinanceDashboard" v-else-if="currentTab === '2'" @switch-tab="handleMenuSelect" />
               <PayrollManagement v-else-if="currentTab === '31'" />
               <component :is="OrderCenter" v-else-if="currentTab === '3'" />
               <component :is="CRMSystem" v-else-if="currentTab === '4'" />
@@ -486,7 +426,7 @@
               <component :is="OperationsDecisionCenter" v-else-if="currentTab === '25'" :products="products" :orders="[]" />
               <AICenter v-else-if="currentTab === '12'" />
               <PartnerDestinyCenter v-else-if="currentTab === '27'" />
-              <CapitalArchitectureSandbox v-else-if="currentTab === '36'" />
+              <CapitalArchitectureSandbox v-else-if="currentTab === '36'" @switch-tab="handleMenuSelect" />
               <ComplianceCenter v-else-if="currentTab === '28'" />
               <StoreManagement v-else-if="currentTab === '30'" />
               <FranchiseManagement v-else-if="currentTab === '35'" @switch-tab="handleMenuSelect" />
@@ -869,7 +809,22 @@ import PropertyEval from './components/PropertyEval.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import MainTabsBar from './components/MainTabsBar.vue'
 import { MODULES_BY_ID, getSubmenuKey } from './utils/modulesRegistry'
+import { SIDEBAR_NAV } from './config/sidebarNav'
 import { useTabsManager } from './composables/useTabsManager'
+
+const navIcons = {
+  Odometer, Monitor, Trophy, Shop, UserFilled, Iphone, OfficeBuilding,
+  Box, Menu, List, Refresh, Stamp, Calendar, Ticket, Brush, Promotion, House, Avatar,
+  MagicStick, DataBoard, DataAnalysis, Message, ChatDotRound,
+  Picture, Setting, Collection, Search, Lock, Money, DocumentCopy, User, Wallet, Notebook,
+}
+
+const sidebarSubmenus = [
+  SIDEBAR_NAV.business,
+  SIDEBAR_NAV.customer,
+  SIDEBAR_NAV.miniapp,
+  SIDEBAR_NAV.governance,
+]
 
 const { openTab: openTabAPI, activeTabId, closeOthers: closeOthersAPI, closeAll: closeAllAPI } = useTabsManager()
 
@@ -989,18 +944,16 @@ const loadOpeneds = () => {
       if (Array.isArray(parsed)) return parsed.filter(k => ALL_SUBMENUS.includes(k))
     }
   } catch (e) { /* ignore */ }
-  // 默认展开"业务运营"和"客户经营"
-  return ['grp-business', 'grp-customer']
+  // 默认展开「业务运营」
+  return ['grp-business']
 }
 const defaultOpeneds = ref(loadOpeneds())
 const persistOpeneds = () => {
   try { localStorage.setItem(SIDEBAR_OPENED_KEY, JSON.stringify(defaultOpeneds.value)) } catch (e) {}
 }
 const handleSubMenuOpen = (key) => {
-  if (!defaultOpeneds.value.includes(key)) {
-    defaultOpeneds.value.push(key)
-    persistOpeneds()
-  }
+  defaultOpeneds.value = [key]
+  persistOpeneds()
 }
 const handleSubMenuClose = (key) => {
   defaultOpeneds.value = defaultOpeneds.value.filter(k => k !== key)
@@ -1997,48 +1950,77 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     letter-spacing: 1px; 
 }
 .brand-text .en { 
-    color: var(--text-dark-muted); 
-    font-size: 10px; 
-    letter-spacing: 2px; 
+    color: rgba(212, 175, 55, 0.55); 
+    font-size: 11px; 
+    letter-spacing: 0.5px; 
+    margin-top: 2px;
+}
+
+/* 侧栏菜单滚动区 */
+.sidebar-nav-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 4px;
+}
+.sidebar-nav-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-nav-scroll::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.22);
+    border-radius: 2px;
+}
+.sidebar-nav-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.38);
 }
 
 /* 菜单调整 - 黑金效果 */
 .el-menu { 
     border-right: none !important; 
-    margin-top: 10px; 
+    margin-top: 4px; 
     background: transparent !important;
 }
 .el-menu-item-group__title { 
-    padding: 16px 0 10px 24px !important; 
-    font-size: 12px; 
-    color: var(--text-dark-muted) !important; 
-    letter-spacing: 1px; 
-    font-weight: 600; 
-    text-transform: uppercase;
-    margin-top: 8px;
+    padding: 14px 0 6px 28px !important; 
+    font-size: 11px; 
+    color: rgba(212, 175, 55, 0.45) !important; 
+    letter-spacing: 0.5px; 
+    font-weight: 500; 
+    text-transform: none;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+.el-menu-item-group:first-child .el-menu-item-group__title {
+    padding-top: 8px !important;
+    color: rgba(245, 242, 236, 0.55) !important;
+    font-size: 12px;
+    font-weight: 600;
+}
+.el-menu-item-group:not(:first-child) .el-menu-item-group__title {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    margin-top: 6px;
+    padding-top: 12px !important;
 }
 .el-menu-item { 
-    height: 48px; 
-    line-height: 48px; 
-    margin: 2px 12px; 
+    height: 44px; 
+    line-height: 44px; 
+    margin: 1px 10px; 
     border-radius: 8px; 
-    color: var(--text-dark-secondary) !important;
-    transition: all 0.3s ease;
-    padding: 0 12px !important;
-    font-size: 14px;
+    color: rgba(245, 242, 236, 0.78) !important;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    padding: 0 14px !important;
+    font-size: 13px;
     display: flex;
     align-items: center;
 }
 .el-menu-item:hover { 
-    background: rgba(255, 255, 255, 0.06) !important; 
-    color: var(--text-dark) !important; 
+    background: rgba(255, 255, 255, 0.07) !important; 
+    color: rgba(245, 242, 236, 0.95) !important; 
     transform: translateX(2px);
 }
 .el-menu-item.is-active { 
-    background: var(--brand-green-500) !important; 
+    background: linear-gradient(90deg, var(--brand-green-500) 0%, rgba(45, 106, 79, 0.85) 100%) !important; 
     color: var(--light-bg-elevated) !important; 
     font-weight: 600; 
-    box-shadow: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
     position: relative;
 }
 .el-menu-item.is-active .el-icon {
@@ -2111,9 +2093,10 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 }
 .pinned-title {
     padding: 6px 14px 4px;
-    font-size: 10px;
-    letter-spacing: 1px;
-    color: rgba(212, 175, 55, 0.5);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: rgba(212, 175, 55, 0.55);
+    font-weight: 500;
 }
 .pinned-item {
     display: flex;
@@ -2148,27 +2131,36 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 .pin-remove:hover { color: #f56c6c; }
 
 .el-menu-vertical .el-sub-menu__title {
-    height: 48px;
-    line-height: 48px;
-    margin: 2px 12px;
+    height: 46px;
+    line-height: 46px;
+    margin: 4px 10px 2px;
     border-radius: 8px;
-    padding: 0 12px !important;
-    font-size: 14px;
-    color: rgba(245, 242, 236, 0.72) !important;
+    padding: 0 14px !important;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(245, 242, 236, 0.88) !important;
+    letter-spacing: 0.3px;
 }
 .el-menu-vertical .el-sub-menu__title:hover {
-    background: rgba(255, 255, 255, 0.06) !important;
-    color: var(--text-dark) !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #fff !important;
 }
 .el-menu-vertical .el-sub-menu.is-opened > .el-sub-menu__title {
-    color: rgba(245, 242, 236, 0.92) !important;
+    color: rgba(212, 175, 55, 0.95) !important;
+    background: rgba(212, 175, 55, 0.08) !important;
 }
 .el-menu-vertical .el-menu--inline {
-    background: transparent !important;
+    background: rgba(0, 0, 0, 0.12) !important;
+    margin: 0 10px 6px;
+    border-radius: 8px;
+    padding: 4px 0 6px;
 }
 .el-menu-vertical .el-menu--inline .el-menu-item {
-    padding-left: 36px !important;
+    padding-left: 40px !important;
     min-width: auto;
+    height: 42px;
+    line-height: 42px;
+    margin: 1px 6px;
 }
 
 /* 侧边栏底部 - 黑金效果 */
@@ -2225,6 +2217,27 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     flex: 1;
     overflow-y: auto;
     padding: 24px 30px;
+}
+.content-scroll-wrap.is-embed-page {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.tab-page-root.is-embed-root {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.content-scroll-wrap.is-embed-page :deep(.fade-slide-enter-active),
+.content-scroll-wrap.is-embed-page :deep(.fade-slide-leave-active) {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 .main-content::before {
     content: '';

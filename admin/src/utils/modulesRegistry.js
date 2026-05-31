@@ -26,50 +26,52 @@ export const MODULES = [
   { id: '26', name: '实时监控大屏', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'monitor realtime sslg dashboard' },
   { id: '25', name: '运营决策中心', group: 'OVERVIEW', subgroup: null, icon: 'Trophy', keywords: 'decision center yyjzzx ops' },
 
-  // 业务运营 — 货
-  { id: '1',  name: '藏品档案库', group: 'BUSINESS', subgroup: '货', icon: 'Box', keywords: 'product collection archive cpdak sku 商品' },
-  { id: '43', name: '分类管理', group: 'BUSINESS', subgroup: '货', icon: 'Menu', keywords: 'category flgl tag' },
-  { id: '3',  name: '全渠道订单', group: 'BUSINESS', subgroup: '货', icon: 'List', keywords: 'order qqdd 订单' },
-  { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '货', icon: 'Refresh', keywords: 'refund tksh 退款' },
-  // 业务运营 — 场
-  { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
-  { id: '5',  name: '活动与排期', group: 'BUSINESS', subgroup: '场', icon: 'Calendar', keywords: 'activity event hdpc 活动' },
-  { id: '6',  name: '权益与营销', group: 'BUSINESS', subgroup: '场', icon: 'Ticket', keywords: 'marketing benefit qyyx coupon 营销' },
-  { id: '30', name: '店铺管理', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store dpgl shop' },
-  { id: '34', name: '门店设计中心', group: 'BUSINESS', subgroup: '场', icon: 'Brush', keywords: 'store design mdsjzx 装修' },
-  { id: '35', name: '加盟商管理', group: 'BUSINESS', subgroup: '场', icon: 'Promotion', keywords: 'franchise jmsgl 加盟' },
-  { id: '48', name: '物业合作测算', group: 'BUSINESS', subgroup: '场', icon: 'House', keywords: 'property eval rent revenue wyhz 物业 测算 房租 分润' },
+  // 业务运营 — 交易履约
+  { id: '3',  name: '全渠道订单', group: 'BUSINESS', subgroup: '交易履约', icon: 'List', keywords: 'order qqdd 订单' },
+  { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '交易履约', icon: 'Refresh', keywords: 'refund tksh 退款' },
+  // 业务运营 — 商品资产
+  { id: '1',  name: '藏品档案库', group: 'BUSINESS', subgroup: '商品资产', icon: 'Box', keywords: 'product collection archive cpdak sku 商品' },
+  { id: '43', name: '分类管理', group: 'BUSINESS', subgroup: '商品资产', icon: 'Menu', keywords: 'category flgl tag' },
+  // 业务运营 — 体验营销
+  { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '体验营销', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
+  { id: '5',  name: '活动与排期', group: 'BUSINESS', subgroup: '体验营销', icon: 'Calendar', keywords: 'activity event hdpc 活动' },
+  { id: '6',  name: '权益与营销', group: 'BUSINESS', subgroup: '体验营销', icon: 'Ticket', keywords: 'marketing benefit qyyx coupon 营销' },
+  // 业务运营 — 门店场域
+  { id: '30', name: '店铺管理', group: 'BUSINESS', subgroup: '门店场域', icon: 'Shop', keywords: 'store dpgl shop' },
+  { id: '34', name: '门店设计中心', group: 'BUSINESS', subgroup: '门店场域', icon: 'Brush', keywords: 'store design mdsjzx 装修' },
+  { id: '35', name: '加盟商管理', group: 'BUSINESS', subgroup: '门店场域', icon: 'Promotion', keywords: 'franchise jmsgl 加盟' },
+  { id: '48', name: '物业合作测算', group: 'BUSINESS', subgroup: '门店场域', icon: 'House', keywords: 'property eval rent revenue wyhz 物业 测算 房租 分润' },
   // 业务运营 — 定制工坊
   { id: '38', name: '标本定制工单', group: 'BUSINESS', subgroup: '定制工坊', icon: 'Brush', keywords: 'custom workshop bbdzgd 定制' },
   { id: '39', name: '伴宠记忆订单', group: 'BUSINESS', subgroup: '定制工坊', icon: 'Avatar', keywords: 'pet memorial bcjy 宠物' },
 
-  // 客户经营 — 会员资产
-  { id: '4',  name: '会员 CRM', group: 'CUSTOMER', subgroup: '会员资产', icon: 'UserFilled', keywords: 'crm member hycrm 会员' },
-  { id: '45', name: '用户画像', group: 'CUSTOMER', subgroup: '会员资产', icon: 'MagicStick', keywords: 'profile rfm yhhx 画像' },
-  { id: '46', name: '人群包', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Promotion', keywords: 'audience rqb cohort' },
-  { id: '47', name: '人群对比', group: 'CUSTOMER', subgroup: '会员资产', icon: 'DataBoard', keywords: 'cohort compare rqdb' },
-  // 客户经营 — 行为与互动
-  { id: '44', name: 'C 端行为看板', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'DataAnalysis', keywords: 'behavior analytics cdxwkb event' },
-  { id: '40', name: '山海有信工单', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'Message', keywords: 'support ticket shyxgd 客服 工单' },
-  { id: '41', name: '评论审核', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'ChatDotRound', keywords: 'comment plsh moderation 评论' },
+  // 客户经营 — 会员洞察
+  { id: '4',  name: '会员管理', group: 'CUSTOMER', subgroup: '会员洞察', icon: 'UserFilled', keywords: 'crm member hycrm 会员 会员管理' },
+  { id: '45', name: '用户画像', group: 'CUSTOMER', subgroup: '会员洞察', icon: 'MagicStick', keywords: 'profile rfm yhhx 画像' },
+  { id: '46', name: '人群包', group: 'CUSTOMER', subgroup: '会员洞察', icon: 'Promotion', keywords: 'audience rqb cohort' },
+  { id: '47', name: '人群对比', group: 'CUSTOMER', subgroup: '会员洞察', icon: 'DataBoard', keywords: 'cohort compare rqdb' },
+  // 客户经营 — 互动服务
+  { id: '44', name: '用户行为看板', group: 'CUSTOMER', subgroup: '互动服务', icon: 'DataAnalysis', keywords: 'behavior analytics cdxwkb event 行为看板' },
+  { id: '40', name: '山海有信', group: 'CUSTOMER', subgroup: '互动服务', icon: 'Message', keywords: 'support ticket shyxgd 客服 工单 山海有信' },
+  { id: '41', name: '评论审核', group: 'CUSTOMER', subgroup: '互动服务', icon: 'ChatDotRound', keywords: 'comment plsh moderation 评论' },
 
-  // 小程序配置 — 内容运营
-  { id: '8',  name: '首页轮播', group: 'MINIAPP', subgroup: '内容运营', icon: 'Picture', keywords: 'banner sylb carousel' },
-  { id: '13', name: '首页配置', group: 'MINIAPP', subgroup: '内容运营', icon: 'Setting', keywords: 'home config sypz layout' },
-  { id: '9',  name: '内容管理', group: 'MINIAPP', subgroup: '内容运营', icon: 'Collection', keywords: 'content cms nrgl article' },
-  // 小程序配置 — 会员/营销规则
-  { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'UserFilled', keywords: 'member level hydjtx vip' },
-  { id: '15', name: '积分规则配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz' },
-  { id: '22', name: '成就系统配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'achievement cjxt badge' },
-  { id: '20', name: '活动营销规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'marketing rule hdyx coupon' },
-  // 小程序配置 — 系统/算法/通知
-  { id: '16', name: '预约规则配置', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'Calendar', keywords: 'booking rule yygz slot' },
-  { id: '19', name: '推荐算法配置', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'MagicStick', keywords: 'recommend algorithm tjsf rec' },
-  { id: '18', name: '搜索关键词管理', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'Search', keywords: 'search keyword sshjc' },
-  { id: '24', name: '通知消息配置', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'ChatDotRound', keywords: 'notification message tzxx push' },
-  { id: '23', name: '用户行为追踪', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'DataAnalysis', keywords: 'behavior track yhxw event' },
-  { id: '21', name: '数据报表增强', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'DataAnalysis', keywords: 'report sjbb' },
-  { id: '17', name: '权限管理系统', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'Lock', keywords: 'permission rbac qxgl' },
+  // 小程序配置 — 内容与首页
+  { id: '8',  name: '首页轮播', group: 'MINIAPP', subgroup: '内容与首页', icon: 'Picture', keywords: 'banner sylb carousel' },
+  { id: '13', name: '首页配置', group: 'MINIAPP', subgroup: '内容与首页', icon: 'Setting', keywords: 'home config sypz layout' },
+  { id: '9',  name: '内容管理', group: 'MINIAPP', subgroup: '内容与首页', icon: 'Collection', keywords: 'content cms nrgl article' },
+  // 小程序配置 — 会员与营销
+  { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员与营销', icon: 'UserFilled', keywords: 'member level hydjtx vip' },
+  { id: '15', name: '积分规则配置', group: 'MINIAPP', subgroup: '会员与营销', icon: 'Ticket', keywords: 'point rule jfgz' },
+  { id: '22', name: '成就系统配置', group: 'MINIAPP', subgroup: '会员与营销', icon: 'Trophy', keywords: 'achievement cjxt badge' },
+  { id: '20', name: '活动营销规则', group: 'MINIAPP', subgroup: '会员与营销', icon: 'Ticket', keywords: 'marketing rule hdyx coupon' },
+  // 小程序配置 — 系统与权限
+  { id: '16', name: '预约规则配置', group: 'MINIAPP', subgroup: '系统与权限', icon: 'Calendar', keywords: 'booking rule yygz slot' },
+  { id: '19', name: '推荐算法配置', group: 'MINIAPP', subgroup: '系统与权限', icon: 'MagicStick', keywords: 'recommend algorithm tjsf rec' },
+  { id: '18', name: '搜索关键词管理', group: 'MINIAPP', subgroup: '系统与权限', icon: 'Search', keywords: 'search keyword sshjc' },
+  { id: '24', name: '通知消息配置', group: 'MINIAPP', subgroup: '系统与权限', icon: 'ChatDotRound', keywords: 'notification message tzxx push' },
+  { id: '23', name: '用户行为追踪', group: 'MINIAPP', subgroup: '系统与权限', icon: 'DataAnalysis', keywords: 'behavior track yhxw event' },
+  { id: '21', name: '数据报表增强', group: 'MINIAPP', subgroup: '系统与权限', icon: 'DataAnalysis', keywords: 'report sjbb' },
+  { id: '17', name: '权限管理系统', group: 'MINIAPP', subgroup: '系统与权限', icon: 'Lock', keywords: 'permission rbac qxgl' },
 
   // 组织治理 — 人才
   { id: '7',  name: '标本师管理', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Brush', keywords: 'framer staff bbsgl artisan' },
@@ -79,12 +81,12 @@ export const MODULES = [
   { id: '2',  name: '财务核算系统', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'Money', keywords: 'finance accounting cwhs ledger' },
   { id: '36', name: '资本架构沙盘', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'DataBoard', keywords: 'capital sandbox zbjg' },
   { id: '27', name: '合伙人命理中心', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'DocumentCopy', keywords: 'partner destiny hhrm' },
-  // 组织治理 — 治理与合规
-  { id: '33', name: '公司治理', group: 'GOVERNANCE', subgroup: '治理与合规', icon: 'OfficeBuilding', keywords: 'governance gszl board' },
-  { id: '28', name: '合规专栏', group: 'GOVERNANCE', subgroup: '治理与合规', icon: 'Lock', keywords: 'compliance hgzl regulation' },
+  // 组织治理 — 治理合规
+  { id: '33', name: '公司治理', group: 'GOVERNANCE', subgroup: '治理合规', icon: 'OfficeBuilding', keywords: 'governance gszl board' },
+  { id: '28', name: '合规专栏', group: 'GOVERNANCE', subgroup: '治理合规', icon: 'Lock', keywords: 'compliance hgzl regulation' },
 
   // 战略与知识
-  { id: '12', name: 'AI 智能中心', group: 'INTELLIGENCE', subgroup: null, icon: 'MagicStick', keywords: 'ai aiznzx assistant llm' },
+  { id: '12', name: '智能中心', group: 'INTELLIGENCE', subgroup: null, icon: 'MagicStick', keywords: 'ai aiznzx assistant llm 智能中心' },
   { id: '10', name: '战略调研看板', group: 'INTELLIGENCE', subgroup: null, icon: 'DataAnalysis', keywords: 'strategy research zldykb' },
   { id: '29', name: '经营手册', group: 'INTELLIGENCE', subgroup: null, icon: 'Notebook', keywords: 'manual ops jysc sop' }
 ]

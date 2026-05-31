@@ -802,7 +802,6 @@ const callAIForSuggestion = async (type = 'general', userInput = '') => {
     
     const response = await callGeminiAPI(prompt, {
       temperature: 0.8, // 提高温度，让回复更自然
-      provider: 'gemini',
       systemInstruction: systemInstruction,
       conversationHistory: conversationHistory.value.slice(-10) // 使用最近5轮对话
     })
@@ -991,7 +990,6 @@ const callAIForChat = async (userInput) => {
 
     const response = await callGeminiAPI(userInput, {
       temperature: 0.8,
-      provider: 'gemini',
       systemInstruction: systemInstruction,
       conversationHistory: conversationHistory.value.slice(-10)
     })

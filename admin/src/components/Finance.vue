@@ -44,6 +44,9 @@
                 <p>双阶段分红 · 投资回报追踪 · 终极运营版</p>
             </div>
             <div class="header-actions">
+                <el-button class="finance-header-sandbox-btn" @click="goCapitalSandbox">
+                    <i class="fas fa-chess-board" style="margin-right: 6px;"></i> 资本架构沙盘
+                </el-button>
                 <el-button type="primary" class="finance-header-ai-btn" @click="showFinanceAI = true">
                     <el-icon><MagicStick /></el-icon> AI 财务助手
                 </el-button>
@@ -858,6 +861,9 @@ import {
   ensureDefaultFinanceStoreInLocalBundle,
   DEFAULT_FINANCE_STORE_NAME,
 } from '../utils/storeStorage'
+
+const emit = defineEmits(['switch-tab'])
+const goCapitalSandbox = () => emit('switch-tab', '36')
 
 /** 海报用：从账本行解析门店主文案 */
 function buildPosterStoreContext(mData) {
@@ -5739,6 +5745,15 @@ onMounted(() => {
     margin: 0;
     color: rgba(255, 255, 255, 0.82);
     letter-spacing: 0.02em;
+}
+.finance-header-sandbox-btn {
+    background: rgba(244, 237, 224, 0.12) !important;
+    border: 1px solid rgba(154, 123, 79, 0.45) !important;
+    color: #f5f2ec !important;
+}
+.finance-header-sandbox-btn:hover {
+    border-color: rgba(212, 175, 55, 0.7) !important;
+    color: #d4af37 !important;
 }
 .finance-header-ai-btn {
     background: linear-gradient(135deg, #d4af37, #b7950b) !important;
