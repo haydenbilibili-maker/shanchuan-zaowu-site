@@ -1,0 +1,10 @@
+{
+  "name": "getHotSearchKeywords",
+  "desc": "获取热门搜索关键词",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

@@ -1,0 +1,21 @@
+<view class="page">
+  <view class="toolbar">
+    <text class="hint">长按下方海报可保存图片；也可使用右上角转发鉴定结果页。</text>
+  </view>
+
+  <view class="canvas-wrap">
+    <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
+  </view>
+
+  <view class="loading-inline" wx:if="{{generating}}">
+    <view class="spinner small"></view>
+    <text>{{genText}}</text>
+  </view>
+
+  <view class="actions">
+    <button class="btn" bindtap="onRedraw" disabled="{{generating || !hasAssets}}">重新绘制</button>
+    <button class="btn primary" bindtap="onSaveAlbum" disabled="{{generating || !posterReady}}">保存到相册</button>
+    <button class="btn ghost" bindtap="onPreview" disabled="{{!posterPath}}">全屏预览</button>
+    <button class="btn ghost" bindtap="onBack">返回结果</button>
+  </view>
+</view>

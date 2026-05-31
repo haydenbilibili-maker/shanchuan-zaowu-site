@@ -1,0 +1,95 @@
+<!--pages/comment/index.wxml-->
+<view class="page-wrapper">
+  <!-- 自定义导航栏 - 固定定位 -->
+  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="back-btn" bindtap="goBack">✕</view>
+    <text class="nav-title">发表评价</text>
+  </view>
+  
+  <!-- 可滚动内容区 -->
+  <scroll-view 
+    scroll-y 
+    class="scroll-container" 
+    enable-flex="true"
+    style="padding-top: calc(88rpx + {{statusBarHeight}}px + env(safe-area-inset-top));">
+    
+    <view class="content-wrapper">
+      <!-- 顶部信息 -->
+      <view class="header-section">
+        <view class="target-info" wx:if="{{targetInfo}}">
+          <image class="target-image" src="{{targetInfo.images && targetInfo.images[0] ? targetInfo.images[0] : targetInfo.image}}" mode="aspectFill"></image>
+          <view class="target-details">
+            <text class="target-title">{{targetInfo.title || targetInfo.name}}</text>
+            <text class="target-subtitle" wx:if="{{targetInfo.latinName}}">{{targetInfo.latinName}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 评分 -->
+      <view class="rating-section">
+        <text class="section-label">评分</text>
+        <view class="rating-stars">
+          <block wx:for="{{[1,2,3,4,5]}}" wx:key="*this" wx:for-item="star">
+            <text 
+              class="star {{rating >= star ? 'active' : ''}}" 
+              bindtap="selectRating"
+              data-rating="{{star}}">★</text>
+          </block>
+        </view>
+        <text class="rating-hint" wx:if="{{rating > 0}}">
+          {{rating === 5 ? '非常满意' : rating === 4 ? '满意' : rating === 3 ? '一般' : rating === 2 ? '不满意' : '非常不满意'}}
+        </text>
+      </view>
+
+      <!-- 评价内容 -->
+      <view class="content-section">
+        <text class="section-label">评价内容</text>
+        <textarea 
+          class="content-input"
+          placeholder="分享您的真实感受，帮助其他用户更好地了解这个商品..."
+          placeholder-class="input-placeholder"
+          value="{{content}}"
+          bindinput="onContentInput"
+          maxlength="500"
+          show-confirm-bar="{{false}}"></textarea>
+        <text class="char-count">{{content.length}}/500</text>
+      </view>
+
+      <!-- 上传图片 -->
+      <view class="image-section">
+        <text class="section-label">上传图片（最多3张）</text>
+        <view class="image-upload">
+          <view class="image-list">
+            <block wx:for="{{images}}" wx:key="*this" wx:for-index="index">
+              <view class="image-item">
+                <image class="uploaded-image" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}"></image>
+                <view class="delete-btn" catchtap="deleteImage" data-index="{{index}}">×</view>
+              </view>
+            </block>
+            <view 
+              class="upload-btn" 
+              wx:if="{{images.length < 3}}"
+              bindtap="chooseImage">
+              <text class="upload-icon">+</text>
+              <text class="upload-text">添加图片</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部间距，避免内容被按钮遮挡 -->
+      <view class="bottom-spacer"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 提交按钮 - 固定在底部 -->
+  <view class="submit-section safe-area">
+    <button 
+      class="submit-btn {{submitting ? 'submitting' : ''}}"
+      bindtap="submitComment"
+      disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '提交评价'}}
+    </button>
+  </view>
+</view>
+

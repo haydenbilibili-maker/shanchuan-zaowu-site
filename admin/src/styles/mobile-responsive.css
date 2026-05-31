@@ -1,0 +1,464 @@
+/**
+ * 移动端响应式适配样式
+ * 优化手机访问体验
+ */
+
+/* ================================================= */
+/* 📱 移动端基础适配 */
+/* ================================================= */
+
+/* 移动端容器适配 */
+@media (max-width: 768px) {
+  /* 禁用横向滚动 */
+  html, body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 主容器 - 移动端样式由mobile-app-redesign.css覆盖 */
+  .admin-container {
+    /* 移动端样式在mobile-app-redesign.css中 */
+  }
+
+  /* 侧边栏 - 移动端使用抽屉式（样式在mobile-app-redesign.css中） */
+  /* 基础样式保留，详细样式在mobile-app-redesign.css中覆盖 */
+  .aside {
+    /* 移动端样式已移至mobile-app-redesign.css */
+  }
+
+  /* 品牌头部 - 移动端简化 */
+  .brand-header {
+    height: 56px;
+    padding: 0 16px;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .brand-text .cn {
+    font-size: 18px;
+  }
+
+  .brand-text .en {
+    font-size: 10px;
+  }
+
+  /* 菜单 - 移动端改为横向滚动 */
+  .el-menu-vertical {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 8px;
+    border-bottom: none;
+  }
+
+  .el-menu-vertical::-webkit-scrollbar {
+    display: none;
+  }
+
+  .el-menu-item-group {
+    display: none; /* 移动端隐藏分组标题 */
+  }
+
+  .el-menu-item {
+    min-width: 80px;
+    padding: 0 12px !important;
+    margin: 0 4px;
+    white-space: nowrap;
+    border-radius: 8px;
+  }
+
+  .el-menu-item span {
+    font-size: 13px;
+  }
+
+  .el-menu-item .el-icon {
+    font-size: 18px;
+    margin-right: 4px;
+  }
+
+  /* 侧边栏底部 - 移动端隐藏或简化 */
+  .sidebar-footer {
+    display: none; /* 移动端隐藏底部用户信息 */
+  }
+
+
+  /* 主内容区 - 移动端适配（基础样式，详细样式在mobile-app-polish.css） */
+  .main-content {
+    margin-top: 0;
+    padding: 16px !important;
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 76px; /* 为菜单切换按钮留出空间 */
+  }
+
+  /* 模块头部 */
+  .module-header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+
+  .title-box h2 {
+    font-size: 20px !important;
+    padding-left: 12px;
+    border-left-width: 3px;
+  }
+
+  .title-box .subtitle {
+    font-size: 10px !important;
+    padding-left: 15px;
+  }
+
+  /* 卡片适配 */
+  .el-card {
+    margin-bottom: 16px;
+  }
+
+  .el-card__header {
+    padding: 16px !important;
+    font-size: 14px;
+  }
+
+  .el-card__body {
+    padding: 16px !important;
+  }
+
+  /* 表格适配 - 移动端改为卡片式 */
+  .el-table {
+    font-size: 12px;
+  }
+
+  .el-table th,
+  .el-table td {
+    padding: 8px 4px !important;
+  }
+
+  .el-table .cell {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* 按钮适配 */
+  .el-button {
+    padding: 8px 16px;
+    font-size: 14px;
+    min-height: 36px;
+  }
+
+  .el-button--large {
+    padding: 10px 20px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  /* 输入框适配 */
+  .el-input {
+    font-size: 16px; /* 防止iOS自动缩放 */
+  }
+
+  .el-input__inner {
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .el-textarea__inner {
+    font-size: 16px;
+  }
+
+  /* 对话框适配 */
+  .el-dialog {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 5vh auto !important;
+  }
+
+  .el-dialog__header {
+    padding: 16px !important;
+  }
+
+  .el-dialog__title {
+    font-size: 18px;
+  }
+
+  .el-dialog__body {
+    padding: 16px !important;
+    max-height: calc(90vh - 120px);
+    overflow-y: auto;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 16px !important;
+  }
+
+  /* 表单适配 */
+  .el-form-item {
+    margin-bottom: 16px;
+  }
+
+  .el-form-item__label {
+    font-size: 14px;
+    margin-bottom: 8px;
+    padding: 0 !important;
+  }
+
+  .el-form-item__content {
+    margin-left: 0 !important;
+  }
+
+  /* 标签页适配 */
+  .el-tabs__header {
+    margin: 0 0 16px 0;
+  }
+
+  .el-tabs__item {
+    padding: 0 16px;
+    font-size: 14px;
+  }
+
+  /* 分页适配 */
+  .el-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .el-pagination .el-pager li {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 12px;
+  }
+
+  /* 登录卡片适配 */
+  .login-card {
+    width: 90% !important;
+    max-width: 400px;
+    padding: 30px 20px !important;
+  }
+
+  .logo-area h2 {
+    font-size: 24px;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+  }
+}
+
+/* ================================================= */
+/* 📱 小屏手机适配 (最大宽度 480px) */
+/* ================================================= */
+
+@media (max-width: 480px) {
+  /* 进一步缩小字体和间距 */
+  .main-content {
+    padding: 12px !important;
+  }
+
+  .title-box h2 {
+    font-size: 18px !important;
+  }
+
+  .el-card__body {
+    padding: 12px !important;
+  }
+
+  .el-button {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 32px;
+  }
+
+  .el-dialog {
+    width: 98% !important;
+    margin: 2vh auto !important;
+  }
+
+  /* 表格在小屏上使用更紧凑的布局 */
+  .el-table th,
+  .el-table td {
+    padding: 6px 2px !important;
+  }
+
+  .el-table .cell {
+    font-size: 11px;
+  }
+}
+
+/* ================================================= */
+/* 📱 触摸优化 */
+/* ================================================= */
+
+/* 增加触摸目标大小 */
+@media (hover: none) and (pointer: coarse) {
+  .el-button,
+  .el-menu-item,
+  .el-tabs__item,
+  .el-pagination .el-pager li {
+    min-height: 44px; /* iOS推荐的最小触摸目标 */
+    min-width: 44px;
+  }
+
+  /* 禁用hover效果 */
+  .el-button:hover,
+  .el-menu-item:hover {
+    transform: none;
+  }
+
+  /* 增加点击反馈 */
+  .el-button:active,
+  .el-menu-item:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+/* ================================================= */
+/* 📱 横屏适配 */
+/* ================================================= */
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .aside {
+    height: 60px;
+  }
+
+  .brand-header {
+    height: 50px;
+  }
+
+  .main-content {
+    margin-top: 100px;
+    height: calc(100vh - 100px);
+  }
+
+  .el-menu-vertical {
+    height: 50px;
+    align-items: center;
+  }
+}
+
+/* ================================================= */
+/* 📱 iOS Safari 特殊优化 */
+/* ================================================= */
+
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari viewport fix */
+  .main-content {
+    min-height: -webkit-fill-available;
+  }
+
+  /* 修复iOS输入框缩放问题 */
+  .el-input__inner,
+  .el-textarea__inner,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* 修复iOS滚动问题 */
+  .el-dialog__body {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ================================================= */
+/* 📱 移动端工具类 */
+/* ================================================= */
+
+/* 移动端隐藏 */
+.mobile-hide {
+  display: none !important;
+}
+
+@media (min-width: 769px) {
+  .mobile-hide {
+    display: block !important;
+  }
+}
+
+/* 移动端显示 */
+.mobile-show {
+  display: block !important;
+}
+
+@media (min-width: 769px) {
+  .mobile-show {
+    display: none !important;
+  }
+}
+
+/* 移动端全宽 */
+.mobile-full-width {
+  width: 100% !important;
+}
+
+/* 移动端无间距 */
+.mobile-no-margin {
+  margin: 0 !important;
+}
+
+.mobile-no-padding {
+  padding: 0 !important;
+}
+
+/* ================================================= */
+/* 📱 移动端菜单切换按钮 */
+/* ================================================= */
+
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1001;
+  width: 40px;
+  height: 40px;
+  background: rgba(212, 175, 55, 0.9);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ================================================= */
+/* 📱 移动端底部导航（可选） */
+/* ================================================= */
+
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border-dark);
+  z-index: 999;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px;
+  }
+}
+

@@ -1,0 +1,55 @@
+<view class="page">
+  <view class="stats" wx:if="{{!loading}}">
+    <view class="stat-box">
+      <text class="stat-num">{{stats.total}}</text>
+      <text class="stat-lbl">收藏物种</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-box">
+      <text class="stat-num">{{stats.categories}}</text>
+      <text class="stat-lbl">覆盖馆类</text>
+    </view>
+  </view>
+
+  <scroll-view scroll-x class="tabs" enable-flex>
+    <view class="tab-inner">
+      <view
+        class="tab {{currentTab === item ? 'on' : ''}}"
+        wx:for="{{tabList}}"
+        wx:key="*this"
+        bindtap="onTab"
+        data-tab="{{item}}"
+      >{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <view class="loading" wx:if="{{loading}}">
+    <view class="spinner"></view>
+    <text>加载图鉴…</text>
+  </view>
+
+  <view class="empty" wx:elif="{{!filtered.length}}">
+    <text class="empty-t">暂无收藏</text>
+    <text class="empty-s">去「AI 标本鉴定」拍一张，保存到图鉴吧</text>
+    <button class="go" bindtap="goIdentify">去鉴定</button>
+  </view>
+
+  <view class="waterfall" wx:else>
+    <view class="col">
+      <block wx:for="{{leftCol}}" wx:key="_id">
+        <view class="wc-card" bindtap="onOpen" data-record="{{item.record_id}}">
+          <image class="wc-img" src="{{item.thumb}}" mode="aspectFill" />
+          <text class="wc-name">{{item.name}}</text>
+        </view>
+      </block>
+    </view>
+    <view class="col">
+      <block wx:for="{{rightCol}}" wx:key="_id">
+        <view class="wc-card" bindtap="onOpen" data-record="{{item.record_id}}">
+          <image class="wc-img" src="{{item.thumb}}" mode="aspectFill" />
+          <text class="wc-name">{{item.name}}</text>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,1455 @@
+<!--pages/manager/index.wxml-->
+<view class="container">
+
+<!-- ==================== 1. 全局导航栏 (Custom Navbar) ==================== -->
+<!-- 状态栏占位，防止内容被刘海遮挡 -->
+<view class="status-bar-placeholder" style="height: {{navTop}}px;"></view>
+
+<!-- 导航栏本体 -->
+<view class="custom-navbar" style="top: {{navTop}}px;">
+  <!-- 左侧区域：在子页面显示返回，在主页显示 App Name -->
+  <view class="nav-left" wx:if="{{curTab !== 0 && !showCommentReplyModal}}" bindtap="backToDashboard">
+    <text class="back-icon">←</text>
+    <text class="back-text">看板</text>
+  </view>
+  <view class="nav-left" wx:else>
+    <text class="app-name">ADMIN DASHBOARD</text>
+  </view>
+  
+  <!-- 中间区域：页面标题 -->
+  <view class="nav-title">{{pageTitle || '经营概况'}}</view>
+</view>
+
+<!-- 导航栏下方占位，防止内容顶上去 -->
+<view class="nav-spacer" style="height: calc({{navTop}}px + 88rpx);"></view>
+
+
+<!-- ==================== 2. 主视图：经营看板 (Dashboard) ==================== -->
+<view class="content-area dashboard-view" wx:if="{{curTab === 0}}">
+  
+  <!-- 头部问候与日期 -->
+  <view class="dashboard-header">
+    <view class="header-left">
+      <text class="welcome">{{greeting}}，小帅哥！</text>
+      <text class="sub-welcome">今日概况</text>
+    </view>
+    <view class="header-right">
+       <text class="date-badge">{{todayDate}}</text>
+    </view>
+  </view>
+
+  <!-- 核心指标卡片 (金卡) -->
+  <view class="kpi-card gold-card">
+     <view class="card-row top">
+       <text class="card-label">GMV 本月营收</text>
+       <text class="card-icon">🏆</text>
+     </view>
+     <text class="card-value-lg">¥{{stats.displayGrand || '0'}}</text>
+     <view class="card-row bottom">
+        <view class="sub-metric"><text class="lbl">在线营收｜ONLINE</text><text class="val">¥{{stats.onlineTotal}}</text></view>
+        <view class="v-line"></view>
+        <view class="sub-metric"><text class="lbl">门店营收｜STORE</text><text class="val">¥{{stats.offlineTotal}}</text></view>
+     </view>
+  </view>
+
+  <!-- 瀑布流布局容器 -->
+  <view class="dashboard-grid">
+    
+    <!-- 快捷菜单 (占据整行) -->
+    <view class="grid-item full-width menu-panel">
+      <view class="panel-title">功能导航 / MENU</view>
+      <view class="menu-grid">
+         <!-- 核心业务 -->
+         <view class="menu-btn" bindtap="switchTab" data-idx="8" data-title="营收账本"><view class="icon-box">💰</view><text>账本</text></view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="2" data-title="订单管理">
+            <view class="icon-box">📦<view class="badge" wx:if="{{orders.length>0}}">{{orders.length}}</view></view>
+            <text>订单</text>
+         </view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="3" data-title="核销验票">
+            <view class="icon-box">📷<view class="badge" wx:if="{{bookings.length>0}}">{{bookings.length}}</view></view>
+            <text>核销</text>
+         </view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="1" data-title="藏品库"><view class="icon-box">🦕</view><text>藏品</text></view>
+         
+         <!-- 运营配置 -->
+         <view class="menu-btn" bindtap="switchTab" data-idx="7" data-title="活动课程"><view class="icon-box">🎫</view><text>活动</text></view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="6" data-title="权益会员"><view class="icon-box">👑</view><text>权益</text></view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="5" data-title="标本师"><view class="icon-box">👨‍🎨</view><text>人员</text></view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="4" data-title="店铺装修"><view class="icon-box">🎨</view><text>装修</text></view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="9" data-title="内容管理"><view class="icon-box">📝</view><text>内容</text></view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="10" data-title="标本定制">
+            <view class="icon-box">🎁<view class="badge" wx:if="{{customOrders.length>0}}">{{customOrders.length}}</view></view>
+            <text>定制</text>
+         </view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="11" data-title="山海有信">
+            <view class="icon-box">✉️<view class="badge" wx:if="{{supportTickets.length>0}}">{{supportTickets.length}}</view></view>
+            <text>有信</text>
+         </view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="12" data-title="门店管理"><view class="icon-box">🏪</view><text>门店</text></view>
+         <view class="menu-btn" bindtap="switchTab" data-idx="13" data-title="数据看板"><view class="icon-box">📊</view><text>数据</text></view>
+      </view>
+    </view>
+
+    <!-- 数据图表：渠道占比 -->
+    <view class="grid-item">
+       <view class="panel-title">渠道 / RATIO</view>
+       <view class="chart-box">
+          <view class="donut" style="{{stats.donutStyle}}"></view>
+          <view class="legend">
+             <view class="legend-row"><view class="dot gold"></view><text>线上 {{stats.onlineRatio}}%</text></view>
+             <view class="legend-row"><view class="dot green"></view><text>线下 {{stats.offlineRatio}}%</text></view>
+          </view>
+       </view>
+    </view>
+
+    <!-- 数据图表：库存资产 -->
+    <view class="grid-item">
+      <view class="panel-title">库存 / ASSETS</view>
+      <text class="asset-val">¥{{stats.totalCost}}</text>
+      <view class="progress-bar"><view class="fill" style="width: 65%"></view></view>
+      <text class="asset-desc">总量: {{stats.totalStockNum}} 件</text>
+    </view>
+
+    <!-- 数据图表：7日趋势 (通栏) -->
+    <view class="grid-item full-width">
+       <view class="panel-title">营收趋势 / TREND</view>
+       <view class="trend-bars">
+          <block wx:for="{{trendData}}" wx:key="day">
+             <view class="bar-col">
+                <view class="bar-track">
+                   <view class="bar-fill gold" style="{{item.styleOnline}}"></view>
+                   <view class="bar-fill green" style="{{item.styleOffline}}"></view>
+                </view>
+                <text class="bar-lbl">{{item.day}}</text>
+             </view>
+          </block>
+       </view>
+    </view>
+
+  </view>
+  
+  <view class="footer-logo">- NATURE'S ADMIN -</view>
+</view>
+
+
+<!-- ==================== 3. 子视图：功能模块 ==================== -->
+<view class="content-area sub-view" wx:if="{{curTab !== 0}}">
+  
+  <!-- 🟢 [Tab 8] 营收录入 (仅此处微调类名以适配新CSS) -->
+  <block wx:if="{{curTab===8}}">
+    <view class="ledger-header">
+       <view class="lh-left"><text class="lh-en">FINANCIAL</text><text class="lh-cn">财务月报</text></view>
+       <view class="add-btn-gold" bindtap="openRevenueModal"><text class="plus">+</text> <text>记一笔</text></view>
+    </view>
+    <view class="revenue-list">
+       <block wx:for="{{revenues}}" wx:key="_id">
+          <view class="bill-card">
+             <view class="bill-edge top"></view>
+             <view class="bill-body">
+                <view class="bill-main">
+                   <view class="bm-left"><text class="bm-day">{{item.day}}</text><text class="bm-date">{{item.date}}</text></view>
+                   <view class="bm-right"><text class="bm-lbl">NET</text><text class="bm-val">¥{{item.totalFmt}}</text></view>
+                </view>
+                <view class="bill-detail">
+                   <view class="bd-item"><text>POS</text><text>¥{{item.pos||0}}</text></view>
+                   <view class="bd-item"><text>CASH</text><text>¥{{item.cash||0}}</text></view>
+                   <view class="bd-item"><text>ONLINE</text><text>¥{{item.online||0}}</text></view>
+                   <!-- 这里加上了 warn 类 -->
+                   <view class="bd-item warn"><text>REFUND</text><text>-¥{{item.refund||0}}</text></view>
+                </view>
+                <view class="bill-del" bindtap="deleteRevenue" data-id="{{item._id}}">🗑</view>
+             </view>
+             <view class="bill-edge bottom"></view>
+          </view>
+       </block>
+       <view class="empty-ledger" wx:if="{{revenues.length===0}}">
+          <view class="book-icon">📖</view><text>暂无入账记录</text>
+       </view>
+    </view>
+  </block>
+
+  <!-- [Tab 1] 藏品管理 -->
+  <block wx:if="{{curTab===1}}">
+    <view class="product-toolbar">
+      <view class="cat-manage-btn" bindtap="openCatModal">分类管理</view>
+    </view>
+    <view class="search-box">
+      <input placeholder="🔍 搜索藏品..." placeholder-class="ph" bindinput="onSearchInput" value="{{searchVal}}"/>
+    </view>
+    <block wx:for="{{products}}" wx:key="_id">
+      <view class="product-row {{item.isOffShelf ? 'disabled' : ''}}">
+        <image class="p-img" src="{{item.images[0]}}" mode="aspectFill"></image>
+        <view class="p-info">
+          <view class="p-top"><text class="p-name">{{item.title}}</text><view class="p-edit" bindtap="openProductModal" data-item="{{item}}">✎</view></view>
+          <view class="p-mid"><text class="tag">进:{{item.costPrice||0}}</text><text class="tag profit">毛利:{{item.profitRate}}%</text></view>
+          <view class="p-bot"><text class="p-price">¥{{item.price}}</text><switch checked="{{!item.isOffShelf}}" color="#C4A76C" bindchange="toggleShelf" data-id="{{item._id}}" style="transform:scale(0.6)"/></view>
+        </view>
+      </view>
+    </block>
+    <view class="fab-add" bindtap="openProductModal">+</view>
+  </block>
+
+  <!-- [Tab 2] 订单管理 -->
+  <block wx:if="{{curTab===2}}">
+    <view class="sub-tab-row">
+      <view class="sub-tab {{subTab===0?'active':''}}" bindtap="switchSubTab" data-idx="0">待发货 ({{orders.length}})</view>
+      <view class="sub-tab {{subTab===1?'active':''}}" bindtap="switchSubTab" data-idx="1">售后 ({{refunds.length}})</view>
+    </view>
+    <block wx:if="{{subTab===0}}" wx:for="{{orders}}" wx:key="_id">
+      <view class="card">
+        <view class="card-top"><text class="no">NO. {{item.orderNo}}</text><text class="time">已支付</text></view>
+        <view class="products"><text class="p-name">{{item.products[0].title}} 等{{item.count}}件</text></view>
+        <view class="address-box"><text>📍 {{item.address.name}} {{item.address.phone}}</text><text class="addr-detail">{{item.address.region[0]}}{{item.address.region[1]}}{{item.address.detail}}</text></view>
+        <view class="btn-row"><view class="btn ship" bindtap="openShipModal" data-id="{{item._id}}" data-orderno="{{item.orderNo}}">确认发货</view></view>
+      </view>
+    </block>
+    <block wx:if="{{subTab===1}}" wx:for="{{refunds}}" wx:key="_id">
+      <view class="card">
+        <view class="card-top"><text class="no">NO. {{item.orderNo}}</text><text class="status used">申请退款</text></view>
+        <view class="products"><text class="p-name">{{item.products[0].title}} 等{{item.count}}件</text></view>
+        <view class="address-box"><text>退款金额：¥ {{item.totalPrice}}</text></view>
+        <view class="btn-row"><view class="btn verify" style="background:#ff4d4f;" bindtap="handleRefund" data-id="{{item._id}}">同意退款</view></view>
+      </view>
+    </block>
+    <view class="empty-tip" wx:if="{{(subTab===0 && orders.length===0) || (subTab===1 && refunds.length===0)}}">暂无数据</view>
+  </block>
+
+  <!-- [Tab 3] 核销验票 -->
+  <block wx:if="{{curTab===3}}">
+    <view class="section-header">今日预约 ({{bookings.length}})</view>
+    <block wx:for="{{bookings}}" wx:key="_id">
+      <view class="verify-card">
+        <view class="vc-left"><text class="vc-time">{{item.time}}</text><text class="vc-status">待核销</text></view>
+        <view class="vc-mid"><text class="vc-name">{{item.title}}</text><text class="vc-desc">{{item.people}}人 · {{item.name}}<text wx:if="{{item.storeName}}"> · {{item.storeName}}</text><text wx:if="{{item.customMeta}}"> · 含定制方案</text></text></view>
+        <view class="vc-btn" bindtap="verifyBooking" data-id="{{item._id}}">确认</view>
+      </view>
+    </block>
+    <view class="fab-add scan" bindtap="handleScan">📷</view>
+  </block>
+
+  <!-- [Tab 4] 店铺装修 -->
+  <block wx:if="{{curTab===4}}">
+    <view class="section-title">预约页头图</view>
+    <view class="manage-card hero-edit-card">
+      <image src="{{bookingHero || 'https://images.unsplash.com/photo-1582560475093-ba66accbc424?q=80&w=1000'}}" mode="aspectFill" class="hero-preview"></image>
+      <view class="card-actions right">
+        <view class="btn-small gold" bindtap="changeBookingHero">更换图片</view>
+      </view>
+    </view>
+    <view class="section-title">轮播图配置</view>
+    <view class="banner-list">
+      <block wx:for="{{banners}}" wx:key="_id">
+        <view class="banner-item">
+          <image class="b-thumb" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="b-info">
+            <text class="b-title">{{item.title}}</text>
+            <text class="b-sub">{{item.subtitle || '无副标题'}}</text>
+            <view class="b-tag">跳转: {{item.type}}</view>
+          </view>
+          <view class="b-actions">
+             <view class="action-btn edit" bindtap="openBannerModal" data-item="{{item}}">✎</view>
+             <view class="action-btn del" bindtap="deleteBanner" data-id="{{item._id}}">✕</view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <view class="fab-add" bindtap="openBannerModal">+</view>
+  </block>
+
+  <!-- [Tab 5] 标本师 -->
+  <block wx:if="{{curTab===5}}">
+    <block wx:for="{{framers}}" wx:key="_id">
+      <view class="framer-card">
+        <image class="f-avatar" src="{{item.avatar}}" mode="aspectFill"></image>
+        <view class="f-info"><text class="f-name">{{item.name}}</text><text class="f-type">{{item.type === 'partner' ? '特邀' : '门店'}}</text></view>
+        <view class="icon-btn" bindtap="openFramerModal" data-item="{{item}}">✎</view>
+      </view>
+    </block>
+    <view class="fab-add" bindtap="openFramerModal">＋</view>
+  </block>
+
+  <!-- [Tab 6] 权益会员 -->
+  <block wx:if="{{curTab===6}}">
+    <view class="sub-tab-row">
+      <view class="sub-tab {{subTabReward===0?'active':''}}" bindtap="switchSubTabReward" data-idx="0">积分商品</view>
+      <view class="sub-tab {{subTabReward===1?'active':''}}" bindtap="switchSubTabReward" data-idx="1">会员等级</view>
+    </view>
+    <block wx:if="{{subTabReward===0}}">
+      <block wx:for="{{rewards}}" wx:key="_id">
+        <view class="manage-card">
+          <image class="m-img" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="m-info">
+            <view class="m-row top"><text class="m-title">{{item.title}}</text><view class="icon-btn" bindtap="openRewardModal" data-item="{{item}}">✎</view></view>
+            <view class="m-row middle"><text class="tag-f">{{item.type==='virtual'?'虚拟':'实物'}}</text><text class="tag-f profit">库存:{{item.stock}}</text></view>
+            <view class="m-row bottom"><text class="m-price" style="font-size:26rpx;">{{item.cost}} 积分</text><view class="del-btn" bindtap="deleteReward" data-id="{{item._id}}">🗑️</view></view>
+          </view>
+        </view>
+      </block>
+      <view class="add-btn-block" bindtap="openRewardModal">+ 新增商品</view>
+    </block>
+    <block wx:if="{{subTabReward===1}}">
+      <block wx:for="{{vipLevels}}" wx:key="_id">
+        <view class="card">
+          <view class="card-top"><text class="no">Lv.{{item.level}}</text><text class="status confirmed">{{item.discount * 10}} 折</text></view>
+          <view class="products"><text class="p-name">{{item.name}}</text></view>
+          <view class="m-row" style="flex-wrap:wrap; gap:10rpx; margin-bottom:20rpx;">
+             <block wx:for="{{item.privileges}}" wx:for-item="p" wx:key="*this">
+               <text class="finance-tag">{{p}}</text>
+             </block>
+          </view>
+          <view class="btn-row"><view class="icon-btn" bindtap="openVipModal" data-item="{{item}}">✎ 配置</view></view>
+        </view>
+      </block>
+      <view class="add-btn-block" bindtap="openVipModal">+ 新增等级</view>
+    </block>
+  </block>
+
+  <!-- [Tab 7] 活动课程 -->
+  <block wx:if="{{curTab===7}}">
+    <view class="section-header">活动排期</view>
+    <block wx:for="{{activities}}" wx:key="_id">
+      <view class="manage-card">
+        <image class="m-img" src="{{item.image}}" mode="aspectFill"></image>
+        <view class="m-info">
+          <view class="m-row top"><text class="m-title">{{item.title}}</text><view class="icon-btn" bindtap="openActivityModal" data-item="{{item}}">✎</view></view>
+          <view class="m-row middle"><text class="tag-f">{{item.type==='course'?'手作':'活动'}}</text><text class="tag-f">{{item.date}} {{item.time}}</text></view>
+          <view class="m-row bottom"><text class="m-price">¥ {{item.price}}</text><view class="del-btn" bindtap="deleteActivity" data-id="{{item._id}}">删除</view></view>
+        </view>
+      </view>
+    </block>
+    <view class="fab-add" bindtap="openActivityModal">＋</view>
+  </block>
+
+  <!-- [Tab 9] 内容管理 -->
+  <block wx:if="{{curTab===9}}">
+    <view class="sub-tab-row">
+      <view class="sub-tab {{contentType==='exhibition'?'active':''}}" bindtap="switchContentType" data-type="exhibition">专题策展</view>
+      <view class="sub-tab {{contentType==='article'?'active':''}}" bindtap="switchContentType" data-type="article">知识文章</view>
+      <view class="sub-tab {{contentType==='comment'?'active':''}}" bindtap="switchContentType" data-type="comment">用户评价</view>
+      <view class="sub-tab {{contentType==='care'?'active':''}}" bindtap="switchContentType" data-type="care">标本养护</view>
+    </view>
+    <view class="content-seed-bar" wx:if="{{contentType!=='care' && contentType!=='comment'}}">
+      <text class="seed-hint">社区内容种子</text>
+      <view class="seed-actions">
+        <view class="seed-btn" bindtap="seedCommunityTestData">导入种子</view>
+        <view class="seed-btn outline" bindtap="clearCommunityTestData">清除种子</view>
+      </view>
+    </view>
+    
+    <!-- 专题列表 -->
+    <block wx:if="{{contentType==='exhibition'}}">
+      <block wx:for="{{exhibitions}}" wx:key="_id">
+        <view class="manage-card">
+          <image class="m-img" src="{{item.coverImage || item.cover}}" mode="aspectFill"></image>
+          <view class="m-info">
+            <view class="m-row top">
+              <text class="m-title">{{item.title}}</text>
+              <view class="icon-btn" bindtap="openContentModal" data-item="{{item}}" data-type="exhibition">✎</view>
+            </view>
+            <view class="m-row middle">
+              <text class="tag-f">{{item.latinName || '专题'}}</text>
+            </view>
+            <view class="m-row bottom">
+              <text class="m-price" style="font-size:24rpx; color:#999;">{{item.brief || '暂无摘要'}}</text>
+              <view class="del-btn" bindtap="deleteContent" data-id="{{item._id}}" data-type="exhibition">删除</view>
+            </view>
+          </view>
+        </view>
+      </block>
+      <view class="fab-add" catchtap="openContentModal" data-type="exhibition">＋</view>
+    </block>
+    
+    <!-- 文章列表 -->
+    <block wx:if="{{contentType==='article'}}">
+      <block wx:for="{{articles}}" wx:key="_id">
+        <view class="manage-card">
+          <image class="m-img" src="{{item.coverImage}}" mode="aspectFill"></image>
+          <view class="m-info">
+            <view class="m-row top">
+              <text class="m-title">{{item.title}}</text>
+              <view class="icon-btn" bindtap="openContentModal" data-item="{{item}}" data-type="article">✎</view>
+            </view>
+            <view class="m-row middle">
+              <text class="tag-f">{{item.category==='knowledge'?'📚 标本知识':item.category==='art'?'🎨 艺术鉴赏':item.category==='craft'?'🔧 制作工艺':'📖 藏品故事'}}</text>
+              <text class="tag-f">{{item.status==='published'?'已发布':'草稿'}}</text>
+            </view>
+            <view class="m-row bottom">
+              <text class="m-price" style="font-size:24rpx; color:#999;">👁 {{item.stats && item.stats.views ? item.stats.views : 0}} | ❤️ {{item.stats && item.stats.likes ? item.stats.likes : 0}}</text>
+              <view class="del-btn" bindtap="deleteContent" data-id="{{item._id}}" data-type="article">删除</view>
+            </view>
+          </view>
+        </view>
+      </block>
+      <view class="fab-add" catchtap="openContentModal" data-type="article">＋</view>
+    </block>
+
+    <!-- 标本养护 CMS -->
+    <block wx:if="{{contentType==='care'}}">
+      <view class="content-seed-bar">
+        <text class="seed-hint">养护指南 CMS · care_guides</text>
+        <view class="seed-actions">
+          <view class="seed-btn" bindtap="seedCareGuidesFromDefaults">同步默认内容</view>
+          <view class="seed-btn outline" bindtap="processCareRemindersNow">发送到期提醒</view>
+        </view>
+      </view>
+      <block wx:for="{{careGuides}}" wx:key="_id">
+        <view class="manage-card care-guide-card">
+          <view class="m-info full">
+            <view class="m-row top">
+              <text class="m-title">{{item.title}}</text>
+              <view class="icon-btn" bindtap="openCareGuideModal" data-item="{{item}}">✎</view>
+            </view>
+            <view class="m-row middle">
+              <text class="tag-f">{{item.category}}</text>
+              <text class="tag-f">{{item.status === 'active' ? '已启用' : '草稿'}}</text>
+              <text class="tag-f">v{{item.version || 1}}</text>
+            </view>
+            <view class="m-row bottom">
+              <text class="m-price care-summary-line">{{item.summary || '暂无摘要'}}</text>
+              <view class="care-guide-actions">
+                <view class="preview-btn" bindtap="previewCareGuide" data-category="{{item.category}}">预览</view>
+                <view class="del-btn" bindtap="deleteCareGuide" data-id="{{item._id}}">删除</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+      <view class="empty-hint" wx:if="{{!careGuides.length}}">暂无 CMS 数据，可点击「同步默认内容」导入 6 篇品类指南</view>
+      <view class="fab-add" catchtap="openCareGuideModal">＋</view>
+    </block>
+
+    <!-- 评价审核 -->
+    <block wx:if="{{contentType==='comment'}}">
+      <view class="sub-tab-row inner-filter">
+        <view class="sub-tab sm {{commentFilter==='pending'?'active':''}}" bindtap="switchCommentFilter" data-filter="pending">待审核</view>
+        <view class="sub-tab sm {{commentFilter==='approved'?'active':''}}" bindtap="switchCommentFilter" data-filter="approved">已通过</view>
+        <view class="sub-tab sm {{commentFilter==='hidden'?'active':''}}" bindtap="switchCommentFilter" data-filter="hidden">已隐藏</view>
+        <view class="sub-tab sm {{commentFilter==='all'?'active':''}}" bindtap="switchCommentFilter" data-filter="all">全部</view>
+      </view>
+      <block wx:for="{{commentList}}" wx:key="_id">
+        <view class="comment-admin-card">
+          <view class="c-head">
+            <text class="c-rating">{{item.rating}} ★</text>
+            <text class="c-status">{{item.statusLabel}}</text>
+            <text class="c-pin" wx:if="{{item.isPinned}}">置顶</text>
+          </view>
+          <text class="c-content">{{item.content}}</text>
+          <text class="c-meta">{{item.timeText}} · {{item.targetType}} · {{item.targetId}}</text>
+          <view class="c-reply" wx:if="{{item.merchantReply}}">
+            <text class="c-reply-label">商家回复：</text>
+            <text>{{item.merchantReply}}</text>
+          </view>
+          <view class="c-actions">
+            <text class="c-act" wx:if="{{item.status==='pending'}}" bindtap="moderateComment" data-id="{{item._id}}" data-action="approve">通过</text>
+            <text class="c-act" bindtap="moderateComment" data-id="{{item._id}}" data-action="pin">{{item.isPinned ? '取消置顶' : '置顶'}}</text>
+            <text class="c-act" bindtap="moderateComment" data-id="{{item._id}}" data-action="reply">回复</text>
+            <text class="c-act" wx:if="{{item.status!=='hidden'}}" bindtap="moderateComment" data-id="{{item._id}}" data-action="hide">隐藏</text>
+            <text class="c-act danger" bindtap="moderateComment" data-id="{{item._id}}" data-action="delete">删除</text>
+          </view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{commentList.length===0}}">暂无评价</view>
+    </block>
+  </block>
+
+  <!-- [Tab 10] 标本定制 -->
+  <block wx:if="{{curTab===10}}">
+    <view class="sub-tab-row">
+      <view class="sub-tab {{subTabCustom===0?'active':''}}" bindtap="switchSubTabCustom" data-idx="0">制作工单 ({{customOrders.length}})</view>
+      <view class="sub-tab {{subTabCustom===1?'active':''}}" bindtap="switchSubTabCustom" data-idx="1">选项配置</view>
+      <view class="sub-tab {{subTabCustom===2?'active':''}}" bindtap="switchSubTabCustom" data-idx="2">意向单 ({{customInquiries.length}})</view>
+      <view class="sub-tab {{subTabCustom===3?'active':''}}" bindtap="switchSubTabCustom" data-idx="3">伴宠 ({{petMemorialOrders.length}})</view>
+    </view>
+
+    <block wx:if="{{subTabCustom===0}}">
+      <block wx:for="{{customOrders}}" wx:key="_id">
+        <view class="card">
+          <view class="card-top">
+            <text class="no">NO. {{item.orderNo}}</text>
+            <text class="status used">{{item.productionLabel}}</text>
+          </view>
+          <view class="products">
+            <text class="p-name">{{item.specimenTitle}}</text>
+            <text class="p-name" wx:if="{{item.customMeta.frame}}">装裱：{{item.customMeta.frame.name}}</text>
+            <text class="p-name" wx:if="{{item.customMeta.framer}}">标本师：{{item.customMeta.framer.name}}</text>
+            <text class="p-name" wx:if="{{item.customMeta.packaging}}">包装：{{item.customMeta.packaging.name}}</text>
+            <text class="p-name" wx:if="{{item.customMeta.cards.greetingEnabled}}">祝福：{{item.customMeta.cards.greeting}}</text>
+          </view>
+          <view class="address-box">
+            <text>{{item.address.name}} {{item.address.phone}}</text>
+            <text class="addr-detail">{{item.formatTime}}</text>
+          </view>
+          <view class="btn-row">
+            <view class="btn verify" bindtap="copyWorkOrder" data-item="{{item}}">复制工单</view>
+            <view class="btn ship" wx:if="{{item.productionStatus==='pending_make' || !item.productionStatus}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="framing">开始装裱</view>
+            <view class="btn ship" wx:if="{{item.productionStatus==='framing'}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="packing">进入包装</view>
+            <view class="btn ship" wx:if="{{item.productionStatus==='packing'}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="shipped">确认发出</view>
+          </view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{customOrders.length===0}}">暂无定制工单</view>
+    </block>
+
+    <block wx:if="{{subTabCustom===1}}">
+      <block wx:for="{{customConfigs}}" wx:key="_id">
+        <view class="manage-card">
+          <view class="m-info" style="padding-left:0;">
+            <view class="m-row top">
+              <text class="m-title">{{item.name}}</text>
+              <view class="icon-btn" bindtap="openCustomConfigModal" data-item="{{item}}">✎</view>
+            </view>
+            <view class="m-row middle">
+              <text class="tag-f">{{item.type}}</text>
+              <text class="tag-f">+¥{{item.priceDelta || 0}}</text>
+              <text class="tag-f">{{item.status === 'active' ? '启用' : '停用'}}</text>
+            </view>
+            <view class="m-row bottom">
+              <text class="m-price" style="font-size:24rpx; color:#999;">{{item.desc || '无描述'}}</text>
+              <view class="del-btn" bindtap="deleteCustomConfig" data-id="{{item._id}}">删除</view>
+            </view>
+          </view>
+        </view>
+      </block>
+      <view class="fab-add" bindtap="openCustomConfigModal">+</view>
+    </block>
+
+    <block wx:if="{{subTabCustom===2}}">
+      <block wx:for="{{customInquiries}}" wx:key="_id">
+        <view class="card">
+          <view class="card-top">
+            <text class="no">{{item.typeLabel}}</text>
+            <text class="status used">{{item.statusLabel}}</text>
+          </view>
+          <view class="products">
+            <text class="p-name" wx:if="{{item.summary}}">{{item.summary}}</text>
+            <text class="p-name">{{item.contactName}} · {{item.contactPhone}}</text>
+            <text class="p-name" wx:if="{{item.companyName}}">{{item.companyName}}</text>
+            <text class="p-name" wx:if="{{item.quantity}}">数量：{{item.quantity}} 件</text>
+            <text class="p-name" wx:if="{{item.message}}">补充：{{item.message}}</text>
+          </view>
+          <view class="address-box"><text class="addr-detail">{{item.formatTime}}</text></view>
+          <view class="btn-row">
+            <view class="btn verify" bindtap="copyInquiryText" data-item="{{item}}">复制详情</view>
+            <view class="btn ship" wx:if="{{item.status==='pending'}}" bindtap="updateInquiryStatus" data-id="{{item._id}}" data-status="contacted">标记已联系</view>
+            <view class="btn ship" wx:if="{{item.status!=='closed'}}" bindtap="updateInquiryStatus" data-id="{{item._id}}" data-status="closed">关闭</view>
+          </view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{customInquiries.length===0}}">暂无意向单</view>
+    </block>
+
+    <block wx:if="{{subTabCustom===3}}">
+      <block wx:for="{{petMemorialOrders}}" wx:key="_id">
+        <view class="card">
+          <view class="card-top">
+            <text class="no">{{item.orderNo}}</text>
+            <text class="status used">{{item.statusLabel}}</text>
+          </view>
+          <view class="products">
+            <text class="p-name">{{item.petTitle}}</text>
+            <text class="p-name" wx:if="{{item.craft}}">工艺：{{item.craft.craftName}}</text>
+            <text class="p-name" wx:if="{{item.intake}}">交接：{{item.intake.methodLabel}}</text>
+            <text class="p-name">{{item.contact.name}} · {{item.contact.phone}}</text>
+            <text class="p-name" wx:if="{{item.contact.note}}">补充：{{item.contact.note}}</text>
+            <text class="p-name gold" wx:if="{{item.quoteText}}">报价：{{item.quoteText}}</text>
+          </view>
+          <view class="address-box"><text class="addr-detail">{{item.formatTime}}</text></view>
+          <view class="btn-row">
+            <view class="btn verify" bindtap="copyPetMemorialText" data-item="{{item}}">复制工单</view>
+            <view class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="need_info">需补充</view>
+            <view class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="openPetQuoteModal" data-id="{{item._id}}">填写报价</view>
+            <view class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="accepted">直接承接</view>
+            <view class="btn ship" wx:if="{{item.status==='accepted'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="awaiting_intake">待交接</view>
+            <view class="btn ship" wx:if="{{item.status==='awaiting_intake'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="intake_done">已交接</view>
+            <view class="btn ship" wx:if="{{item.status==='intake_done' || item.status==='awaiting_intake'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="in_production">开始制作</view>
+            <view class="btn ship" wx:if="{{item.status==='in_production'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="completed">已完成</view>
+          </view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{petMemorialOrders.length===0}}">暂无伴宠工单</view>
+    </block>
+  </block>
+
+  <!-- [Tab 11] 山海有信 -->
+  <block wx:if="{{curTab===11}}">
+    <view class="sub-tab-row">
+      <view class="sub-tab {{subTabMessage===0?'active':''}}" bindtap="switchSubTabMessage" data-idx="0">发送通知</view>
+      <view class="sub-tab {{subTabMessage===1?'active':''}}" bindtap="switchSubTabMessage" data-idx="1">发送记录</view>
+      <view class="sub-tab {{subTabMessage===2?'active':''}}" bindtap="switchSubTabMessage" data-idx="2">留言回复 ({{supportTickets.length}})</view>
+    </view>
+
+    <block wx:if="{{subTabMessage===0}}">
+      <view class="card msg-compose-card">
+        <view class="panel-title">运营推送</view>
+
+        <view class="push-field-block">
+          <text class="push-label">标题</text>
+          <input
+            class="push-title-input"
+            maxlength="30"
+            value="{{pushForm.title}}"
+            bindinput="bindPushInput"
+            data-field="title"
+            placeholder="不超过 30 字"
+            placeholder-class="input-placeholder"
+            hold-keyboard="{{true}}"
+          />
+        </view>
+
+        <view class="push-field-block">
+          <text class="push-label">正文</text>
+          <textarea
+            class="push-content-input"
+            maxlength="200"
+            value="{{pushForm.content}}"
+            bindinput="bindPushInput"
+            data-field="content"
+            placeholder="活动/公告说明，不超过 200 字"
+            placeholder-class="input-placeholder"
+            hold-keyboard="{{true}}"
+            show-confirm-bar="{{true}}"
+            adjust-position="{{true}}"
+            cursor-spacing="80"
+            fixed="{{false}}"
+          />
+        </view>
+
+        <view class="form-row ship-form-row">
+          <text>分类</text>
+          <picker mode="selector" range="{{['活动','系统']}}" bindchange="onPushCategoryChange">
+            <view class="picker-s">{{pushForm.category==='activity'?'活动':'系统'}}</view>
+          </picker>
+        </view>
+        <view class="form-row ship-form-row">
+          <text>跳转</text>
+          <input
+            class="push-title-input"
+            value="{{pushForm.actionUrl}}"
+            bindinput="bindPushInput"
+            data-field="actionUrl"
+            placeholder="小程序路径，可留空"
+            placeholder-class="input-placeholder"
+            hold-keyboard="{{true}}"
+          />
+        </view>
+        <view class="form-row ship-form-row">
+          <text>范围</text>
+          <radio-group class="radio-row push-radio-row" bindchange="onPushScopeChange">
+            <label class="radio-label"><radio value="single" checked="{{pushForm.scope==='single'}}" color="#C4A76C"/>指定用户</label>
+            <label class="radio-label"><radio value="all" checked="{{pushForm.scope==='all'}}" color="#C4A76C"/>全局推送</label>
+          </radio-group>
+        </view>
+        <view class="form-row ship-form-row" wx:if="{{pushForm.scope==='single'}}">
+          <text>openid</text>
+          <input
+            class="push-title-input"
+            value="{{pushForm.targetOpenid}}"
+            bindinput="bindPushInput"
+            data-field="targetOpenid"
+            placeholder="用户 openid"
+            placeholder-class="input-placeholder"
+            hold-keyboard="{{true}}"
+          />
+        </view>
+        <view class="msg-estimate" wx:if="{{pushForm.scope==='all'}}">预估触达约 {{pushEstimate}} 人 · 24h 内限 20 次全局推送</view>
+        <view class="btn-row">
+          <view class="btn verify" bindtap="seedMessageTemplates">初始化模板</view>
+          <view class="btn ship" bindtap="openPushConfirm">预览并发送</view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:if="{{subTabMessage===1}}">
+      <view class="panel-title" style="padding: 0 8rpx 16rpx; color:#888; font-size:24rpx;">运营推送记录</view>
+      <block wx:for="{{pushCampaigns}}" wx:key="_id">
+        <view class="card">
+          <view class="card-top">
+            <text class="no">{{item.title}}</text>
+            <text class="status used">{{item.scopeLabel}}</text>
+          </view>
+          <text class="p-name">{{item.content}}</text>
+          <text class="addr-detail">{{item.formatTime}} · {{item.statsText}} · {{item.status}}</text>
+        </view>
+      </block>
+      <view class="panel-title" wx:if="{{autoMessageLogs.length}}" style="padding: 24rpx 8rpx 16rpx; color:#888; font-size:24rpx;">系统自动通知（近期）</view>
+      <block wx:for="{{autoMessageLogs}}" wx:key="_id">
+        <view class="card card-dim">
+          <view class="card-top">
+            <text class="no">{{item.title}}</text>
+            <text class="status">{{item.typeLabel}}</text>
+          </view>
+          <text class="p-name">{{item.content}}</text>
+          <text class="addr-detail">{{item.formatTime}} · {{item.recipientMask}}</text>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{pushCampaigns.length===0 && autoMessageLogs.length===0}}">暂无发送记录</view>
+    </block>
+
+    <block wx:if="{{subTabMessage===2}}">
+      <block wx:for="{{supportTickets}}" wx:key="_id">
+        <view class="card">
+          <view class="card-top">
+            <text class="no">{{item.topicLabel}}</text>
+            <text class="status">{{item.openidMask}}</text>
+          </view>
+          <text class="p-name">{{item.message}}</text>
+          <text class="addr-detail">{{item.formatTime}}</text>
+          <view class="btn-row">
+            <view class="btn ship" bindtap="openTicketReplyModal" data-item="{{item}}">回复并通知</view>
+          </view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{supportTickets.length===0}}">暂无待回复留言</view>
+    </block>
+  </block>
+
+  <!-- [Tab 12] 门店管理 -->
+  <block wx:if="{{curTab===12}}">
+    <view class="panel-title" style="padding: 8rpx 8rpx 24rpx;">这有店 · 门店与展陈配置</view>
+    <view class="card visit-stats-card">
+      <view class="card-top">
+        <text class="no">今日到店签到</text>
+        <text class="status gold">{{storeVisitStats.total || 0}} 人次</text>
+      </view>
+      <view class="visit-stats-row" wx:for="{{adminStores}}" wx:key="storeId">
+        <text class="visit-stats-name">{{item.name}}</text>
+        <text class="visit-stats-count">{{storeVisitStats.byStore[item.storeId] || 0}}</text>
+      </view>
+    </view>
+    <block wx:for="{{adminStores}}" wx:key="storeId">
+      <view class="card">
+        <view class="card-top">
+          <text class="no">{{item.name}}</text>
+          <text class="status">{{item.locationLabel || item.floor}}</text>
+        </view>
+        <text class="p-name">{{item.intro}}</text>
+        <text class="addr-detail">电话 {{item.phone}} · {{item.hours.open}}–{{item.hours.close}}</text>
+        <view class="btn-row">
+          <view class="btn ship" bindtap="openStoreEditModal" data-item="{{item}}">编辑</view>
+        </view>
+      </view>
+    </block>
+    <view class="empty-tip" wx:if="{{adminStores.length===0}}">暂无门店数据</view>
+  </block>
+
+  <!-- [Tab 13] 数据看板 -->
+  <block wx:if="{{curTab===13}}">
+    <view class="panel-title" style="padding: 8rpx 8rpx 24rpx;">行为数据 · Analytics</view>
+    <view class="card">
+      <view class="card-top">
+        <text class="no">统计周期</text>
+        <view class="btn-row" style="margin:0;">
+          <view class="btn ship {{analyticsDays===1?'active':''}}" bindtap="setAnalyticsDays" data-days="1">今日</view>
+          <view class="btn ship {{analyticsDays===7?'active':''}}" bindtap="setAnalyticsDays" data-days="7">7日</view>
+          <view class="btn ship {{analyticsDays===30?'active':''}}" bindtap="setAnalyticsDays" data-days="30">30日</view>
+        </view>
+      </view>
+      <text class="addr-detail" wx:if="{{analytics.note}}">{{analytics.note}}</text>
+    </view>
+
+    <view class="card visit-stats-card" wx:if="{{!analyticsLoading}}">
+      <view class="card-top">
+        <text class="no">核心指标</text>
+        <text class="status gold">{{analytics.summary.totalEvents || 0}} 事件</text>
+      </view>
+      <view class="visit-stats-row">
+        <text class="visit-stats-name">页面浏览 PV</text>
+        <text class="visit-stats-count">{{analytics.summary.pageViews || 0}}</text>
+      </view>
+      <view class="visit-stats-row">
+        <text class="visit-stats-name">独立用户 UV（采样）</text>
+        <text class="visit-stats-count">{{analytics.summary.uniqueUsers || 0}}</text>
+      </view>
+    </view>
+    <view class="empty-tip" wx:if="{{analyticsLoading}}">加载中…</view>
+
+    <view class="card" wx:if="{{analytics.funnel.identify}}">
+      <view class="card-top"><text class="no">AI 鉴定漏斗</text></view>
+      <view class="visit-stats-row"><text class="visit-stats-name">入口点击</text><text class="visit-stats-count">{{analytics.funnel.identify.entry || 0}}</text></view>
+      <view class="visit-stats-row"><text class="visit-stats-name">开始识别</text><text class="visit-stats-count">{{analytics.funnel.identify.start || 0}}</text></view>
+      <view class="visit-stats-row"><text class="visit-stats-name">识别成功</text><text class="visit-stats-count">{{analytics.funnel.identify.success || 0}}</text></view>
+      <view class="visit-stats-row"><text class="visit-stats-name">保存图鉴</text><text class="visit-stats-count">{{analytics.funnel.identify.saveAtlas || 0}}</text></view>
+    </view>
+
+    <view class="card" wx:if="{{analytics.funnel.store}}">
+      <view class="card-top"><text class="no">门店漏斗</text></view>
+      <view class="visit-stats-row"><text class="visit-stats-name">Tab 进入</text><text class="visit-stats-count">{{analytics.funnel.store.tabEnter || 0}}</text></view>
+      <view class="visit-stats-row"><text class="visit-stats-name">展陈详情</text><text class="visit-stats-count">{{analytics.funnel.store.zoneDetail || 0}}</text></view>
+      <view class="visit-stats-row"><text class="visit-stats-name">发起预约</text><text class="visit-stats-count">{{analytics.funnel.store.bookingClick || 0}}</text></view>
+      <view class="visit-stats-row"><text class="visit-stats-name">到店签到</text><text class="visit-stats-count">{{analytics.funnel.store.checkin || 0}}</text></view>
+    </view>
+
+    <view class="card" wx:if="{{analytics.byModule.length}}">
+      <view class="card-top"><text class="no">模块分布</text></view>
+      <view class="visit-stats-row" wx:for="{{analytics.byModule}}" wx:key="key">
+        <text class="visit-stats-name">{{item.key}}</text>
+        <text class="visit-stats-count">{{item.count}}</text>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{analytics.byAction.length}}">
+      <view class="card-top"><text class="no">Top 事件</text></view>
+      <view class="visit-stats-row" wx:for="{{analytics.byAction}}" wx:key="key">
+        <text class="visit-stats-name">{{item.key}}</text>
+        <text class="visit-stats-count">{{item.count}}</text>
+      </view>
+    </view>
+  </block>
+
+</view>
+
+
+<!-- ==================== 4. 弹窗与反馈系统 ==================== -->
+
+<!-- 核销成功全屏动画 -->
+<view class="verify-success-modal {{showVerifySuccess ? 'active' : ''}}">
+  <view class="vs-content">
+    <view class="vs-stamp-anim"><text>已核销</text></view>
+    <text class="vs-tip">欢迎入馆参观</text>
+    <view class="btn-small gold" bindtap="closeVerifyModal">完成</view>
+  </view>
+</view>
+
+<!-- 伴宠报价弹窗 -->
+<view class="modal-mask" wx:if="{{showPetQuoteModal}}">
+  <view class="modal-panel">
+    <view class="modal-head"><text>伴宠报价</text><view class="close-btn" bindtap="closePetQuoteModal">✕</view></view>
+    <scroll-view scroll-y class="modal-body">
+      <view class="form-group">
+        <view class="form-row"><text>金额(元)</text><input type="digit" value="{{tempPetQuote.amount}}" bindinput="bindPetQuoteInput" data-field="amount" placeholder="如 5800"/></view>
+        <view class="form-row"><text>有效期</text><picker mode="date" bindchange="onPetQuoteDateChange"><view class="picker">{{tempPetQuote.validUntil || '选填'}}</view></picker></view>
+        <view class="form-row"><text>说明</text><textarea class="textarea" value="{{tempPetQuote.note}}" bindinput="bindPetQuoteInput" data-field="note" placeholder="工艺说明、周期等" style="height:120rpx"/></view>
+      </view>
+    </scroll-view>
+    <view class="modal-foot"><view class="btn-full" bindtap="submitPetQuote">发送报价</view></view>
+  </view>
+</view>
+
+<!-- 营收录入弹窗 -->
+<view class="modal-mask" wx:if="{{showRevenueModal}}">
+  <view class="modal-panel">
+    <view class="modal-head"><text>录入营收</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+    <scroll-view scroll-y class="modal-body">
+      <view class="smart-box"><textarea placeholder="粘贴营收信息自动解析..." bindinput="parseRevenueText" value="{{tempRevenue.rawText}}"></textarea></view>
+      <view class="form-group">
+         <view class="form-row"><text>日期</text><picker mode="date" bindchange="bindRevInput" data-field="date"><view class="picker">{{tempRevenue.date}}</view></picker></view>
+         <view class="form-row"><text>POS</text><input type="digit" value="{{tempRevenue.pos}}" bindinput="bindRevInput" data-field="pos"/></view>
+         <view class="form-row"><text>线上</text><input type="digit" value="{{tempRevenue.online}}" bindinput="bindRevInput" data-field="online"/></view>
+         <view class="form-row"><text>现金</text><input type="digit" value="{{tempRevenue.cash}}" bindinput="bindRevInput" data-field="cash"/></view>
+         <view class="form-row"><text>退款</text><input type="digit" value="{{tempRevenue.refund}}" bindinput="bindRevInput" data-field="refund" style="color:#ff4d4f"/></view>
+      </view>
+    </scroll-view>
+    <view class="modal-foot"><view class="btn-full" bindtap="submitRevenue">确认小钱钱入账</view></view>
+  </view>
+</view>
+
+<!-- 轮播图编辑弹窗 -->
+<view class="modal-mask" wx:if="{{showBannerModal}}">
+  <view class="modal-panel">
+    <view class="modal-head"><text>编辑海报</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+    <scroll-view scroll-y class="modal-body">
+      <view class="upload-area" bindtap="chooseBannerImage">
+         <image wx:if="{{tempBanner.image}}" src="{{tempBanner.image}}" mode="aspectFill"></image>
+         <view wx:else class="placeholder">📷 上传图片</view>
+      </view>
+      <view class="form-group">
+         <view class="form-row"><text>标题</text><input value="{{tempBanner.title}}" bindinput="bindBInput" data-field="title"/></view>
+         <view class="form-row"><text>副标题</text><input value="{{tempBanner.subtitle}}" bindinput="bindBInput" data-field="subtitle"/></view>
+         <view class="form-row"><text>按钮文案</text><input value="{{tempBanner.btnText}}" bindinput="bindBInput" data-field="btnText"/></view>
+         <view class="form-row"><text>排序</text><input type="number" value="{{tempBanner.sort}}" bindinput="bindBInput" data-field="sort"/></view>
+         <view class="form-label">跳转类型</view>
+         <radio-group class="radio-row" bindchange="bindBTypeChange">
+           <radio color="#C4A76C" value="product" checked="{{tempBanner.type==='product'}}"/>商品
+           <radio color="#C4A76C" value="category" checked="{{tempBanner.type==='category'}}"/>分类
+           <radio color="#C4A76C" value="booking" checked="{{tempBanner.type==='booking'}}"/>预约
+         </radio-group>
+      </view>
+    </scroll-view>
+    <view class="modal-foot"><view class="btn-full" bindtap="submitBanner">保存配置</view></view>
+  </view>
+</view>
+
+<!-- 藏品录入弹窗 (优化版) -->
+<view class="modal-mask" wx:if="{{showProductModal}}">
+    <view class="modal-panel">
+      <view class="modal-head"><text>{{isEditing?'编辑':'录入'}}藏品</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <scroll-view scroll-y class="modal-body">
+        
+        <!-- 🟢 优化后的上传区域 -->
+        <view class="upload-area" bindtap="chooseProductImage">
+          <image wx:if="{{tempProduct.tempImg}}" src="{{tempProduct.tempImg}}" mode="aspectFill"></image>
+          <view wx:else class="placeholder"><text>点击上传封面</text></view>
+        </view>
+
+        <view class="form-group">
+          <view class="form-row"><text>名称</text><input value="{{tempProduct.title}}" bindinput="bindPInput" data-field="title" placeholder="请输入藏品名称"/></view>
+          
+          <!-- 级联分类（categories 集合） -->
+          <view class="form-row">
+             <text>分类</text>
+             <view class="picker-group">
+               <picker mode="selector" range="{{rootNames}}" value="{{tempProduct.rootCategoryIndex >= 0 ? tempProduct.rootCategoryIndex : 0}}" bindchange="bindRootCatChange">
+                 <view class="picker-s">{{tempProduct.rootCategoryName || '所属馆'}}</view>
+               </picker>
+               <text style="color:#666;">›</text>
+               <picker mode="selector" range="{{subNames}}" value="{{tempProduct.subCategoryIndex >= 0 ? tempProduct.subCategoryIndex : 0}}" bindchange="bindSubCatChange" disabled="{{subNames.length===0}}">
+                 <view class="picker-s {{subNames.length===0?'disabled':''}}">{{tempProduct.category || '具体分类'}}</view>
+               </picker>
+             </view>
+          </view>
+
+          <view class="form-row"><text>进货价</text><input type="digit" value="{{tempProduct.costPrice}}" bindinput="bindPInput" data-field="costPrice" placeholder="0.00"/></view>
+          <view class="form-row"><text>销售价</text><input type="digit" value="{{tempProduct.price}}" bindinput="bindPInput" data-field="price" placeholder="0.00"/></view>
+          <view class="form-row"><text>库存</text><input type="number" value="{{tempProduct.stock}}" bindinput="bindPInput" data-field="stock" placeholder="1" disabled="{{tempProduct.hasSku}}"/></view>
+
+          <view class="form-row"><text>多规格</text><switch checked="{{tempProduct.hasSku}}" color="#C4A76C" bindchange="bindPHasSku" style="transform:scale(0.7)"/></view>
+          <block wx:if="{{tempProduct.hasSku}}">
+            <view class="form-row"><text>规格维度</text><input value="{{tempProduct.skuDimensionsStr}}" bindinput="bindPInput" data-field="skuDimensionsStr" placeholder="如：尺寸,装裱（用逗号分隔）"/></view>
+            <view class="sku-editor" wx:for="{{tempProduct.skus}}" wx:key="id">
+              <input class="sku-input" placeholder="规格（多维用 / 分隔，如 30cm / 金框）" value="{{item.specLabel}}" bindinput="bindSkuInput" data-index="{{index}}" data-field="specLabel"/>
+              <input class="sku-input sm" type="digit" placeholder="价格" value="{{item.price}}" bindinput="bindSkuInput" data-index="{{index}}" data-field="price"/>
+              <input class="sku-input sm" type="number" placeholder="库存" value="{{item.stock}}" bindinput="bindSkuInput" data-index="{{index}}" data-field="stock"/>
+              <text class="sku-del" bindtap="removeSkuRow" data-index="{{index}}">删</text>
+            </view>
+            <view class="btn-add-sku" bindtap="addSkuRow">+ 添加规格</view>
+          </block>
+          
+          <view class="form-row"><text>镇店之宝</text><switch checked="{{tempProduct.isTreasure}}" color="#C4A76C" bindchange="bindPTreasure" style="transform:scale(0.7)"/></view>
+          <view class="form-row"><text>支持定制</text><switch checked="{{tempProduct.supportsCustom !== false}}" color="#C4A76C" bindchange="bindPSupportsCustom" style="transform:scale(0.7)"/></view>
+
+          <view class="form-section-label">合规标识</view>
+          <view class="form-row">
+            <text>三有 / 保护物种</text>
+            <picker mode="selector" range="{{protectionTypeOptions}}" value="{{protectionTypeIndex}}" bindchange="bindProtectionTypeChange">
+              <view class="picker-s">{{protectionTypeOptions[protectionTypeIndex] || '否'}}</view>
+            </picker>
+          </view>
+          <block wx:if="{{tempProduct.protectionType && tempProduct.protectionType !== 'none'}}">
+            <view class="form-label cert-required">收藏证书 *（必填）</view>
+            <view class="cert-upload-area" bindtap="chooseCertificateImage">
+              <image
+                wx:if="{{tempProduct.tempCertificate || tempProduct.collectionCertificate}}"
+                class="cert-preview"
+                src="{{tempProduct.tempCertificate || tempProduct.collectionCertificate}}"
+                mode="aspectFit"
+              />
+              <view wx:else class="cert-placeholder">
+                <text class="cert-plus">+</text>
+                <text>上传合法收藏证书</text>
+              </view>
+            </view>
+            <view class="cert-actions" wx:if="{{tempProduct.tempCertificate || tempProduct.collectionCertificate}}">
+              <text class="cert-reupload" bindtap="chooseCertificateImage">重新上传</text>
+              <text class="cert-remove" bindtap="removeCertificateImage">删除</text>
+            </view>
+            <text class="cert-hint">三有或保护类标本须上传主管部门颁发的收藏/许可证明文件</text>
+          </block>
+
+          <view class="form-section-label">标本档案</view>
+          <view class="form-row"><text>采集地</text><input value="{{tempProduct.origin}}" bindinput="bindPInput" data-field="origin" placeholder="如：云南西双版纳"/></view>
+          <view class="form-row"><text>采集时间</text>
+            <picker mode="date" value="{{tempProduct.collectDate}}" bindchange="bindPDateChange">
+              <view class="picker-s">{{tempProduct.collectDate || '选择日期'}}</view>
+            </picker>
+          </view>
+          <view class="form-row"><text>装裱师</text>
+            <picker mode="selector" range="{{framerNames}}" bindchange="bindPFramerChange">
+              <view class="picker-s">{{tempProduct.framerName || '选择装裱师'}}</view>
+            </picker>
+          </view>
+          
+          <view class="form-row"><text>尺寸 (cm)</text><view style="display:flex; gap:10rpx; flex:1; justify-content:flex-end;"><input class="input" style="text-align:center; border-bottom:1px solid #444; border-radius:0;" placeholder="长" value="{{tempProduct.sizeL}}" bindinput="bindPInput" data-field="sizeL"/><input class="input" style="text-align:center; border-bottom:1px solid #444; border-radius:0;" placeholder="宽" value="{{tempProduct.sizeW}}" bindinput="bindPInput" data-field="sizeW"/><input class="input" style="text-align:center; border-bottom:1px solid #444; border-radius:0;" placeholder="高" value="{{tempProduct.sizeH}}" bindinput="bindPInput" data-field="sizeH"/></view></view>
+          
+          <view class="form-row ai-row">
+            <text class="{{productLatinRequired ? 'label-required' : ''}}">拉丁学名{{productLatinRequired ? ' *' : ''}}</text>
+            <view class="ai-field-wrap">
+              <input value="{{tempProduct.latinName}}" bindinput="bindPInput" data-field="latinName" placeholder="{{productLatinRequired ? '必填 · 建议使用 AI 补全' : '文创类可选'}}"/>
+              <view class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistProductWithAi">AI 补全</view>
+            </view>
+          </view>
+          <text class="latin-hint" wx:if="{{productLatinRequired}}">标本类藏品须填写标准拉丁学名，可点击 AI 补全</text>
+
+          <view class="form-section-label">科学分类</view>
+          <view class="form-row"><text>界</text><input value="{{tempProduct.taxonomy.kingdom}}" bindinput="bindTaxonomyInput" data-field="kingdom" placeholder="如：动物界"/></view>
+          <view class="form-row"><text>门</text><input value="{{tempProduct.taxonomy.phylum}}" bindinput="bindTaxonomyInput" data-field="phylum" placeholder="如：节肢动物门"/></view>
+          <view class="form-row"><text>纲</text><input value="{{tempProduct.taxonomy.class}}" bindinput="bindTaxonomyInput" data-field="class" placeholder="如：昆虫纲"/></view>
+          <view class="form-row"><text>目</text><input value="{{tempProduct.taxonomy.order}}" bindinput="bindTaxonomyInput" data-field="order" placeholder="可选"/></view>
+          <view class="form-row"><text>科</text><input value="{{tempProduct.taxonomy.family}}" bindinput="bindTaxonomyInput" data-field="family" placeholder="可选"/></view>
+          <view class="form-row"><text>属</text><input value="{{tempProduct.taxonomy.genus}}" bindinput="bindTaxonomyInput" data-field="genus" placeholder="可选"/></view>
+          
+          <textarea class="textarea" placeholder="请输入藏品描述..." value="{{tempProduct.description}}" bindinput="bindPInput" data-field="description"></textarea>
+
+          <view class="form-label">详情长图（图文详情区展示，最多 9 张）</view>
+          <view class="detail-images-grid">
+            <view class="detail-img-item" wx:for="{{tempProduct.detailImages}}" wx:key="*this">
+              <image src="{{item}}" mode="aspectFill"></image>
+              <text class="img-del" catchtap="removeDetailImage" data-index="{{index}}">×</text>
+            </view>
+            <view class="detail-img-add" bindtap="chooseDetailImages" wx:if="{{!tempProduct.detailImages || tempProduct.detailImages.length < 9}}">
+              <text>+ 添加</text>
+            </view>
+          </view>
+
+          <view class="form-label">详情 HTML（可选，支持富文本）</view>
+          <textarea class="textarea" placeholder="可粘贴 HTML 片段..." value="{{tempProduct.detailHtml}}" bindinput="bindPInput" data-field="detailHtml" style="height:200rpx; font-family:monospace; font-size:22rpx;"></textarea>
+        </view>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitProduct">确认保存</view></view>
+    </view>
+  </view>
+
+  <!-- 🟢 标本师弹窗 (UI统一优化) -->
+  <view class="modal-mask" wx:if="{{showFramerModal}}">
+    <view class="modal-panel sm">
+      <view class="modal-head"><text>标本师</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <scroll-view scroll-y class="modal-body">
+        <view class="upload-area round" bindtap="chooseFramerImage" style="width:200rpx; height:200rpx; border-radius:50%; margin:0 auto 30rpx;">
+           <image wx:if="{{tempFramer.avatar}}" src="{{tempFramer.avatar}}" mode="aspectFill"></image>
+           <view wx:else class="placeholder">👤</view>
+        </view>
+        <view class="form-group">
+          <view class="form-row"><text>姓名</text><input value="{{tempFramer.name}}" bindinput="bindFInput" data-field="name" /></view>
+          <view class="form-label">类型</view>
+          <radio-group class="radio-row" bindchange="bindFTypeChange">
+             <radio color="#C4A76C" value="store" checked="{{tempFramer.type==='store'}}"/>门店 
+             <radio color="#C4A76C" value="partner" checked="{{tempFramer.type==='partner'}}"/>合作
+          </radio-group>
+          <view class="form-label">简介</view>
+          <textarea class="textarea" value="{{tempFramer.bio}}" bindinput="bindFInput" data-field="bio" style="height:160rpx"/>
+          <view class="form-row"><text>定制加价</text><input type="digit" value="{{tempFramer.priceDelta}}" bindinput="bindFInput" data-field="priceDelta" placeholder="0"/></view>
+          <view class="form-row"><text>额外交期(天)</text><input type="number" value="{{tempFramer.extraDays}}" bindinput="bindFInput" data-field="extraDays" placeholder="0"/></view>
+        </view>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitFramer">保存</view></view>
+    </view>
+  </view>
+
+  <!-- 定制选项配置弹窗 -->
+  <view class="modal-mask" wx:if="{{showCustomConfigModal}}">
+    <view class="modal-panel sm">
+      <view class="modal-head"><text>定制选项</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <scroll-view scroll-y class="modal-body">
+        <view class="form-group">
+          <view class="form-row"><text>名称</text><input value="{{tempCustomConfig.name}}" bindinput="bindCCInput" data-field="name"/></view>
+          <view class="form-row"><text>配置ID</text><input value="{{tempCustomConfig.configId}}" bindinput="bindCCInput" data-field="configId" placeholder="如 frame_metal_slim"/></view>
+          <view class="form-label">类型</view>
+          <radio-group class="radio-row" bindchange="bindCCTypeChange">
+            <radio color="#C4A76C" value="frame" checked="{{tempCustomConfig.type==='frame'}}"/>装裱
+            <radio color="#C4A76C" value="packaging" checked="{{tempCustomConfig.type==='packaging'}}"/>包装
+          </radio-group>
+          <view class="form-row"><text>加价</text><input type="digit" value="{{tempCustomConfig.priceDelta}}" bindinput="bindCCInput" data-field="priceDelta"/></view>
+          <view class="form-row"><text>排序</text><input type="number" value="{{tempCustomConfig.sort}}" bindinput="bindCCInput" data-field="sort"/></view>
+          <view class="form-label">描述</view>
+          <textarea class="textarea" value="{{tempCustomConfig.desc}}" bindinput="bindCCInput" data-field="desc" style="height:120rpx"/>
+        </view>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitCustomConfig">保存</view></view>
+    </view>
+  </view>
+
+  <!-- 🟢 活动弹窗 (UI统一优化) -->
+  <view class="modal-mask" wx:if="{{showActivityModal}}">
+    <view class="modal-panel">
+      <view class="modal-head"><text>活动发布</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <scroll-view scroll-y class="modal-body">
+        <view class="upload-area" bindtap="chooseActivityImage">
+           <image wx:if="{{tempActivity.image}}" src="{{tempActivity.image}}" mode="aspectFill"></image>
+           <view wx:else class="placeholder">📷 封面图</view>
+        </view>
+        <view class="form-group">
+           <view class="form-row"><text>标题</text><input value="{{tempActivity.title}}" bindinput="bindAInput" data-field="title"/></view>
+           <view class="form-label">类型</view>
+           <radio-group class="radio-row" bindchange="bindATypeChange">
+              <radio color="#C4A76C" value="course" checked="{{tempActivity.type==='course'}}"/>手作 
+              <radio color="#C4A76C" value="special_activity" checked="{{tempActivity.type==='special_activity'}}"/>活动
+           </radio-group>
+           <view class="form-row"><text>日期</text><picker mode="date" bindchange="bindADateChange"><view class="picker">{{tempActivity.date||'选择'}}</view></picker></view>
+           <view class="form-row"><text>时间</text><input value="{{tempActivity.time}}" bindinput="bindAInput" data-field="time" placeholder="14:00"/></view>
+           <view class="form-row"><text>价格</text><input type="digit" value="{{tempActivity.price}}" bindinput="bindAInput" data-field="price"/></view>
+           <view class="form-row"><text>名额</text><input type="number" value="{{tempActivity.maxPeople}}" bindinput="bindAInput" data-field="maxPeople"/></view>
+           <view class="form-row"><text>地点</text><input value="{{tempActivity.location}}" bindinput="bindAInput" data-field="location" placeholder="如：本店"/></view>
+        </view>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitActivity">发布</view></view>
+    </view>
+  </view>
+
+<!-- 分类弹窗（categories 集合 · 一二级树） -->
+<view class="modal-mask" wx:if="{{showCatModal}}">
+  <view class="modal-panel cat-manage-panel">
+    <view class="modal-head"><text>分类管理</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+    <scroll-view scroll-y class="modal-body cat-manage-scroll">
+      <view class="cat-manage-actions">
+        <view class="cat-sync-btn" bindtap="syncCategoriesFromSeed">同步标准分类</view>
+      </view>
+      <view class="cat-manage-tip">一级仅保留昆虫馆/植物馆/海洋馆/矿石馆/动物馆/衍生品；「同步标准分类」将合并旧名（如神奇昆虫）并迁移二级分类</view>
+      <view class="cat-tree" wx:if="{{categoryManageTree.length}}">
+        <block wx:for="{{categoryManageTree}}" wx:key="_id">
+          <view class="cat-root-row">
+            <view class="cat-root-main">
+              <text class="cat-l1">{{item.name}}</text>
+              <text class="cat-en">{{item.enName}}</text>
+            </view>
+            <view class="cat-del" bindtap="deleteCategory" data-id="{{item._id}}" data-level="1">删除</view>
+          </view>
+          <view class="cat-sub-row" wx:for="{{item.children}}" wx:for-item="sub" wx:key="_id">
+            <view class="cat-sub-main">
+              <text class="cat-sub-name">└ {{sub.name}}</text>
+              <text class="cat-tax" wx:if="{{sub.taxonomy.kingdom}}">{{sub.taxonomy.kingdom}}{{sub.taxonomy.phylum ? ' · ' + sub.taxonomy.phylum : ''}}{{sub.taxonomy.class ? ' · ' + sub.taxonomy.class : ''}}{{sub.taxonomy.order ? ' · ' + sub.taxonomy.order : ''}}</text>
+            </view>
+            <text class="cat-en">{{sub.enName}}</text>
+            <view class="cat-del" bindtap="deleteCategory" data-id="{{sub._id}}" data-level="2">删除</view>
+          </view>
+        </block>
+      </view>
+      <view class="empty-tip" wx:else>暂无分类，可在下方添加</view>
+
+      <view class="cat-add-section">
+        <view class="form-section-label">新增分类</view>
+        <view class="form-row">
+          <text>层级</text>
+          <radio-group class="radio-row" bindchange="bindCatLevelChange">
+            <label class="radio-label"><radio color="#C4A76C" value="1" checked="{{newCatLevel === 1}}"/>一级</label>
+            <label class="radio-label"><radio color="#C4A76C" value="2" checked="{{newCatLevel === 2}}"/>二级</label>
+          </radio-group>
+        </view>
+        <view class="form-row" wx:if="{{newCatLevel === 2}}">
+          <text>所属馆</text>
+          <picker range="{{catManageRootNames}}" bindchange="bindCatParentChange">
+            <view class="picker-s">{{catManageRootNames[newCatParentIndex] || '选择一级分类'}}</view>
+          </picker>
+        </view>
+        <view class="form-row"><text>名称</text><input placeholder="中文名，如：蝴蝶" value="{{newCatName}}" bindinput="bindCatInput" data-field="name"/></view>
+        <view class="form-row"><text>英文</text><input placeholder="如：BUTTERFLY" value="{{newCatEn}}" bindinput="bindCatInput" data-field="en"/></view>
+      </view>
+    </scroll-view>
+    <view class="modal-foot"><view class="btn-full" bindtap="submitCategory">添加分类</view></view>
+  </view>
+</view>
+
+  <!-- 🟢 权益弹窗 (UI统一优化) -->
+  <view class="modal-mask" wx:if="{{showRewardModal}}">
+    <view class="modal-panel">
+      <view class="modal-head"><text>权益编辑</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <scroll-view scroll-y class="modal-body">
+        <view class="upload-area" bindtap="chooseRewardImage">
+           <image wx:if="{{tempReward.image}}" src="{{tempReward.image}}" mode="aspectFill"></image>
+           <view wx:else class="placeholder">🎁 上传</view>
+        </view>
+        <view class="form-group">
+           <view class="form-row"><text>名称</text><input value="{{tempReward.title}}" bindinput="bindRInput" data-field="title" /></view>
+           <view class="form-row"><text>积分</text><input type="number" value="{{tempReward.cost}}" bindinput="bindRInput" data-field="cost" /></view>
+           <view class="form-row"><text>库存</text><input type="number" value="{{tempReward.stock}}" bindinput="bindRInput" data-field="stock" /></view>
+           <view class="form-label">类型</view>
+           <radio-group class="radio-row" bindchange="bindRTypeChange">
+              <radio color="#C4A76C" value="virtual" checked="{{tempReward.type==='virtual'}}"/>虚拟 
+              <radio color="#C4A76C" value="goods" checked="{{tempReward.type==='goods'}}"/>实物 
+              <radio color="#C4A76C" value="coupon" checked="{{tempReward.type==='coupon'}}"/>券
+           </radio-group>
+           <view class="form-row" wx:if="{{tempReward.type==='coupon'}}"><text>面值</text><input type="number" value="{{tempReward.value}}" bindinput="bindRInput" data-field="value" /></view>
+           <view class="form-row" wx:if="{{tempReward.type==='coupon'}}"><text>门槛</text><input type="number" value="{{tempReward.minSpend}}" bindinput="bindRInput" data-field="minSpend" /></view>
+           <view class="form-label">描述</view>
+           <textarea class="textarea" value="{{tempReward.description}}" bindinput="bindRInput" data-field="description" style="height:120rpx"/>
+        </view>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitReward">保存</view></view>
+    </view>
+  </view>
+
+  <!-- 等级弹窗 (UI统一优化) -->
+  <view class="modal-mask" wx:if="{{showVipModal}}">
+    <view class="modal-panel sm">
+      <view class="modal-head"><text>等级设置</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <view class="modal-body">
+         <view class="form-group">
+            <view class="form-row"><text>等级(Lv)</text><input type="number" value="{{tempVip.level}}" bindinput="bindVInput" data-field="level" /></view>
+            <view class="form-row"><text>折扣</text><input type="digit" value="{{tempVip.discount}}" bindinput="bindVInput" data-field="discount" placeholder="0.95"/></view>
+            <view class="form-row"><text>名称</text><input value="{{tempVip.name}}" bindinput="bindVInput" data-field="name" /></view>
+            <view class="form-row"><text>特权</text><textarea value="{{tempVip.privilegesStr}}" bindinput="bindVInput" data-field="privilegesStr" style="height:160rpx" placeholder="用逗号分隔"/></view>
+         </view>
+      </view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitVipLevel">保存</view></view>
+    </view>
+  </view>
+  
+  <view class="verify-success-modal {{showVerifySuccess ? 'active' : ''}}">
+    <view class="vs-content">
+      <view class="vs-stamp-anim"><text>已核销</text></view>
+      <text class="vs-tip">欢迎入馆参观</text>
+      <view class="btn-small gold" bindtap="closeVerifyModal">完成</view>
+    </view>
+  </view>
+  <view class="modal-mask" wx:if="{{showShipModal}}" catchtap="closeModal">
+    <view class="modal-panel sm ship-modal-panel" catchtap="noop">
+    <view class="modal-head">
+      <text>发货信息录入</text>
+      <view class="close-btn" catchtap="closeModal">✕</view>
+    </view>
+
+    <view class="modal-body">
+      <view class="form-group">
+        <view class="ship-order-hint">
+          当前操作订单：<text class="ship-order-no">{{tempShip.orderNo}}</text>
+        </view>
+        
+        <view class="form-row ship-form-row">
+          <text>快递公司</text>
+          <input 
+            class="input ship-field-input"
+            value="{{tempShip.carrier}}" 
+            bindinput="bindShipInput" 
+            data-field="carrier" 
+            placeholder="例如: 顺丰速运"
+            placeholder-class="input-placeholder"
+            hold-keyboard="{{true}}"
+          />
+        </view>
+
+        <view class="form-row ship-form-row ship-form-row-tracking">
+          <text>物流单号</text>
+          <view class="ship-input-wrap">
+            <input 
+              class="input ship-tracking-input"
+              value="{{tempShip.trackingNumber}}" 
+              bindinput="bindShipInput" 
+              data-field="trackingNumber" 
+              placeholder="输入或点击右侧扫码"
+              placeholder-class="input-placeholder"
+              confirm-type="done"
+              hold-keyboard="{{true}}"
+            />
+            <view class="icon-btn-scan" catchtap="scanTrackingNumber">
+              <text class="scan-icon">📷</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="modal-foot">
+      <view class="btn-full" catchtap="submitShip">确认发出并通知</view>
+    </view>
+    </view>
+  </view>
+
+  <!-- 🟢 内容管理弹窗（统一专题+文章） -->
+  <view class="modal-mask" wx:if="{{showContentModal}}" catchtap="closeModal">
+    <view class="modal-panel" catchtap="">
+      <view class="modal-head">
+        <text>{{isEditing ? '编辑' : '新建'}}{{contentType === 'exhibition' ? '专题' : '文章'}}</text>
+        <view class="close-btn" bindtap="closeModal">✕</view>
+      </view>
+      <scroll-view scroll-y class="modal-body">
+        <view class="upload-area" bindtap="chooseContentImage">
+          <image wx:if="{{tempContent.coverImage}}" src="{{tempContent.coverImage}}" mode="aspectFill"></image>
+          <view wx:else class="placeholder"><text>点击上传封面</text></view>
+        </view>
+        <view class="form-group">
+          <view class="form-row"><text>标题</text><input value="{{tempContent.title || ''}}" bindinput="bindContentInput" data-field="title" placeholder="请输入标题"/></view>
+
+          <!-- 专题：AI 辅助创作 -->
+          <block wx:if="{{contentType==='exhibition'}}">
+            <view class="form-row">
+              <text>创作方向</text>
+              <input value="{{tempContent.themeHint || ''}}" bindinput="bindContentInput" data-field="themeHint" placeholder="可选：白垩纪、昆虫结构色、门店探店"/>
+            </view>
+            <view class="exhibition-ai-bar">
+              <text class="exhibition-ai-tip">填写标题后，可一键生成英文副标、摘要与 HTML 正文</text>
+              <view class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistExhibitionWithAi">AI 创作</view>
+            </view>
+          </block>
+          
+          <!-- 专题特有 -->
+          <view class="form-row" wx:if="{{contentType==='exhibition'}}">
+            <text>副标/拉丁</text><input value="{{tempContent.latinName || ''}}" bindinput="bindContentInput" data-field="latinName" placeholder="如：THE GOLDEN AGE"/>
+          </view>
+          
+          <!-- 文章特有 -->
+          <view class="form-row" wx:if="{{contentType==='article'}}">
+            <text>分类</text>
+            <picker mode="selector" range="{{['📚 标本知识','🎨 艺术鉴赏','🔧 制作工艺','📖 藏品故事']}}" bindchange="bindContentCategoryChange">
+              <view class="picker-s">{{tempContent.category==='knowledge'?'📚 标本知识':tempContent.category==='art'?'🎨 艺术鉴赏':tempContent.category==='craft'?'🔧 制作工艺':'📖 藏品故事'}}</view>
+            </picker>
+          </view>
+          
+          <view class="form-row" wx:if="{{contentType==='article'}}">
+            <text>作者</text><input value="{{tempContent.author || ''}}" bindinput="bindContentInput" data-field="author" placeholder="默认：山海造物"/>
+          </view>
+          
+          <view class="form-row" wx:if="{{contentType==='article'}}">
+            <text>状态</text>
+            <radio-group class="radio-row" bindchange="bindContentStatusChange">
+              <radio color="#C4A76C" value="published" checked="{{tempContent.status==='published'}}"/>已发布
+              <radio color="#C4A76C" value="draft" checked="{{tempContent.status==='draft'}}"/>草稿
+            </radio-group>
+          </view>
+          
+          <view class="form-row"><text>摘要</text><textarea class="textarea" value="{{tempContent.brief || ''}}" bindinput="bindContentInput" data-field="brief" placeholder="简短介绍" style="height:120rpx"/></view>
+          <view class="form-row"><text>标签</text><input value="{{tempContent.tagsStr || ''}}" bindinput="bindContentInput" data-field="tagsStr" placeholder="用逗号分隔，如：昆虫,历史"/></view>
+          <view class="form-row form-row-col" wx:if="{{contentType==='exhibition'}}">
+            <text>关联藏品</text>
+            <view class="related-products-field">
+              <view class="related-list" wx:if="{{relatedProductPreview.length}}">
+                <view class="related-item" wx:for="{{relatedProductPreview}}" wx:key="_id">
+                  <image class="related-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+                  <view class="related-meta">
+                    <text class="related-title">{{item.title}}</text>
+                    <text class="related-price" wx:if="{{!item.missing}}">¥{{item.price}}</text>
+                    <text class="related-missing" wx:else>商品不存在</text>
+                  </view>
+                  <view class="related-remove" bindtap="removeRelatedProduct" data-id="{{item._id}}">移除</view>
+                </view>
+              </view>
+              <view class="related-empty" wx:else>未关联商品，馆藏 A 区转化条不会显示</view>
+              <view class="btn-pick-product" bindtap="openProductPicker">选择关联商品</view>
+            </view>
+          </view>
+          <view class="form-row" wx:if="{{contentType==='article'}}"><text>视频链接</text><input value="{{tempContent.videoUrl || ''}}" bindinput="bindContentInput" data-field="videoUrl" placeholder="可选：文章视频链接"/></view>
+          <view class="form-label">内容 (HTML)</view>
+          <textarea class="textarea" value="{{tempContent.content || ''}}" bindinput="bindContentInput" data-field="content" placeholder="在此输入 HTML 内容..." style="height:400rpx; font-family:monospace; font-size:24rpx;"/>
+        </view>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitContent">保存</view></view>
+    </view>
+  </view>
+
+  <!-- 关联商品选择器 -->
+  <view class="modal-mask picker-mask" wx:if="{{showProductPicker}}" catchtap="closeProductPicker">
+    <view class="modal-panel picker-panel" catchtap="">
+      <view class="modal-head">
+        <text>选择关联藏品</text>
+        <view class="close-btn" bindtap="closeProductPicker">✕</view>
+      </view>
+      <view class="picker-search">
+        <input
+          value="{{productPickerKeyword}}"
+          bindinput="onProductPickerSearch"
+          placeholder="搜索商品名称"
+          placeholder-class="input-placeholder"
+        />
+      </view>
+      <scroll-view scroll-y class="picker-scroll">
+        <view
+          class="picker-row {{item.selected ? 'selected' : ''}}"
+          wx:for="{{productPickerList}}"
+          wx:key="_id"
+          bindtap="togglePickerProduct"
+          data-id="{{item._id}}"
+        >
+          <image class="picker-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+          <view class="picker-info">
+            <text class="picker-title">{{item.title}}</text>
+            <text class="picker-sub">{{item.category}} · ¥{{item.price}}</text>
+          </view>
+          <view class="picker-check">{{item.selected ? '已选' : '选择'}}</view>
+        </view>
+        <view class="picker-empty" wx:if="{{!productPickerList.length}}">暂无商品</view>
+      </scroll-view>
+      <view class="modal-foot">
+        <view class="btn-full" bindtap="confirmProductPicker">完成（{{tempContent.relatedProductIds.length || 0}}）</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 养护指南 CMS 弹窗 -->
+  <view class="modal-mask" wx:if="{{showCareGuideModal}}" catchtap="closeCareGuideModal">
+    <view class="modal-panel" catchtap="">
+      <view class="modal-head">
+        <text>{{isEditing ? '编辑' : '新建'}}养护指南</text>
+        <view class="close-btn" bindtap="closeCareGuideModal">✕</view>
+      </view>
+      <scroll-view scroll-y class="modal-body">
+        <view class="form-group">
+          <view class="form-row">
+            <text>品类</text>
+            <picker mode="selector" range="{{careCategoryOptions}}" bindchange="bindCareGuideCategoryChange">
+              <view class="picker-s">{{tempCareGuide.category || 'GENERAL'}}</view>
+            </picker>
+          </view>
+          <view class="form-row"><text>标题</text><input value="{{tempCareGuide.title || ''}}" bindinput="bindCareGuideInput" data-field="title" placeholder="如：神奇昆虫 · 框画与展柜标本"/></view>
+          <view class="form-row"><text>英文副标</text><input value="{{tempCareGuide.overline || ''}}" bindinput="bindCareGuideInput" data-field="overline" placeholder="INSECTA"/></view>
+          <view class="form-row"><text>guideId</text><input value="{{tempCareGuide.guideId || ''}}" bindinput="bindCareGuideInput" data-field="guideId" placeholder="留空自动生成"/></view>
+          <view class="form-row form-row-col"><text>养护摘要</text><textarea class="textarea" value="{{tempCareGuide.summary || ''}}" bindinput="bindCareGuideInput" data-field="summary" placeholder="一句话摘要" style="height:120rpx"/></view>
+          <view class="form-row form-row-col"><text>免责声明</text><textarea class="textarea" value="{{tempCareGuide.disclaimer || ''}}" bindinput="bindCareGuideInput" data-field="disclaimer" placeholder="可选" style="height:100rpx"/></view>
+          <view class="form-row">
+            <text>状态</text>
+            <radio-group class="radio-row" bindchange="bindCareGuideStatusChange">
+              <radio color="#C4A76C" value="active" checked="{{tempCareGuide.status==='active'}}"/>启用
+              <radio color="#C4A76C" value="draft" checked="{{tempCareGuide.status==='draft'}}"/>草稿
+            </radio-group>
+          </view>
+          <view class="form-label">内容板块 JSON</view>
+          <text class="form-hint">数组格式：[{"key":"environment","title":"适宜环境","body":"…","tips":["…"]}]</text>
+          <textarea class="textarea mono" value="{{tempCareGuide.sectionsJson || ''}}" bindinput="bindCareGuideInput" data-field="sectionsJson" placeholder="[]" style="height:360rpx; font-family:monospace; font-size:22rpx;"/>
+        </view>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitCareGuide">保存</view></view>
+    </view>
+  </view>
+
+  <!-- 评价回复弹窗（居中对话框，避免键盘顶起误触顶部返回） -->
+  <view
+    class="modal-mask comment-reply-mask"
+    wx:if="{{showCommentReplyModal}}"
+    catchtap="closeCommentReplyModal"
+    catchtouchmove="noop"
+  >
+    <view class="comment-reply-panel" catchtap="noop">
+      <view class="modal-head"><text>回复评价</text><view class="close-btn" catchtap="closeCommentReplyModal">✕</view></view>
+      <view class="modal-body">
+        <textarea
+          class="textarea comment-reply-input"
+          placeholder="输入商家回复..."
+          value="{{tempCommentReply.content}}"
+          bindinput="bindCommentReplyInput"
+          adjust-position="{{false}}"
+          hold-keyboard="{{true}}"
+          confirm-type="done"
+          maxlength="500"
+          show-confirm-bar="{{true}}"
+        ></textarea>
+      </view>
+      <view class="modal-foot"><view class="btn-full" catchtap="submitCommentReply">提交回复</view></view>
+    </view>
+  </view>
+
+  <!-- 山海有信：推送确认 -->
+  <view class="modal-mask" wx:if="{{showPushConfirm}}" catchtap="closePushConfirm">
+    <view class="modal-panel" catchtap="noop">
+      <view class="modal-head"><text>确认发送</text><view class="close-btn" catchtap="closePushConfirm">✕</view></view>
+      <view class="modal-body">
+        <text class="p-name">将向约 {{pushEstimate}} 位藏家发送公告</text>
+        <text class="addr-detail" style="margin-top:16rpx;display:block;">{{pushForm.title}}</text>
+        <text class="addr-detail">{{pushForm.content}}</text>
+      </view>
+      <view class="modal-foot"><view class="btn-full" catchtap="submitPush">确认发送</view></view>
+    </view>
+  </view>
+
+  <!-- 门店编辑 -->
+  <view class="modal-mask" wx:if="{{showStoreEditModal}}" catchtap="closeStoreEditModal">
+    <view class="modal-panel" catchtap="noop">
+      <view class="modal-head"><text>编辑门店 · {{tempStoreEdit.name}}</text><view class="close-btn" catchtap="closeStoreEditModal">✕</view></view>
+      <scroll-view scroll-y class="modal-body">
+        <view class="form-row"><text>名称</text><input value="{{tempStoreEdit.name}}" bindinput="bindStoreEditInput" data-field="name"/></view>
+        <view class="form-row"><text>电话</text><input value="{{tempStoreEdit.phone}}" bindinput="bindStoreEditInput" data-field="phone"/></view>
+        <view class="form-row"><text>营业开始</text><input value="{{tempStoreEdit.hoursOpen}}" bindinput="bindStoreEditInput" data-field="hoursOpen"/></view>
+        <view class="form-row"><text>营业结束</text><input value="{{tempStoreEdit.hoursClose}}" bindinput="bindStoreEditInput" data-field="hoursClose"/></view>
+        <view class="form-row"><text>简介</text><textarea class="textarea" value="{{tempStoreEdit.intro}}" bindinput="bindStoreEditInput" data-field="intro" style="height:120rpx"/></view>
+        <view class="form-row"><text>到店提示</text><textarea class="textarea" value="{{tempStoreEdit.visitTipsText}}" bindinput="bindStoreEditInput" data-field="visitTipsText" placeholder="每行一条" style="height:160rpx"/></view>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="saveStoreEdit">保存</view></view>
+    </view>
+  </view>
+
+  <!-- 山海有信：留言回复 -->
+  <view class="modal-mask" wx:if="{{showTicketReplyModal}}" catchtap="closeTicketReplyModal">
+    <view class="modal-panel" catchtap="noop">
+      <view class="modal-head"><text>回复 · {{tempTicketReply.topicLabel}}</text><view class="close-btn" catchtap="closeTicketReplyModal">✕</view></view>
+      <scroll-view scroll-y class="modal-body">
+        <textarea class="textarea" maxlength="500" value="{{tempTicketReply.content}}" bindinput="bindTicketReplyInput" placeholder="回复内容将推送到用户山海有信" style="height:200rpx"/>
+      </scroll-view>
+      <view class="modal-foot"><view class="btn-full" bindtap="submitTicketReply">发送回复</view></view>
+    </view>
+  </view>
+</view>

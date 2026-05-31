@@ -1,0 +1,66 @@
+<!--pages/custom/pet/status/index.wxml-->
+<view class="page-status">
+  <view class="grain-overlay"></view>
+
+  <view class="header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="back-btn" bindtap="goBack">←</view>
+    <text class="title">伴宠记忆</text>
+  </view>
+
+  <view class="loading-wrap" wx:if="{{loading}}"><text>加载工单...</text></view>
+
+  <block wx:elif="{{order}}">
+    <view class="status-card">
+      <text class="overline">PET MEMORIAL</text>
+      <text class="order-no">工单号 {{order.orderNo}}</text>
+      <text class="status-badge">{{statusLabel}}</text>
+      <text class="status-hint" wx:if="{{order.status === 'pending_review' || order.status === 'need_info'}}">专员将主动与您联系，请留意山海有信通知与电话。</text>
+      <text class="status-hint" wx:elif="{{order.status === 'quoted'}}">请确认下方报价；确认后我们将安排遗体交接。</text>
+      <text class="status-hint" wx:elif="{{canBookIntake}}">请预约到店交接时间，标本师将当面确认。</text>
+      <text class="status-hint" wx:elif="{{hasBooking}}">交接已预约：{{bookingText}}</text>
+    </view>
+
+    <view class="quote-card" wx:if="{{quoteLines.length}}">
+      <text class="plate-label dark">工坊报价</text>
+      <view class="preview-row dark" wx:for="{{quoteLines}}" wx:key="label">
+        <text class="preview-label dark">{{item.label}}</text>
+        <text class="preview-value dark {{item.label === '报价金额' ? 'amount' : ''}}">{{item.value}}</text>
+      </view>
+      <button
+        class="btn-primary"
+        wx:if="{{canConfirmQuote}}"
+        bindtap="confirmQuote"
+        loading="{{confirming}}"
+        disabled="{{confirming}}"
+      >确认报价</button>
+    </view>
+
+    <view class="preview-plate">
+      <text class="plate-label">档案摘要</text>
+      <view class="preview-row" wx:for="{{summaryLines}}" wx:key="label">
+        <text class="preview-label">{{item.label}}</text>
+        <text class="preview-value">{{item.value}}</text>
+      </view>
+    </view>
+
+    <view class="booking-plate" wx:if="{{hasBooking}}">
+      <text class="plate-label">交接预约</text>
+      <text class="booking-info">{{bookingText}}</text>
+    </view>
+
+    <view class="log-section" wx:if="{{history.length}}">
+      <text class="plate-label log">进度记录</text>
+      <view class="log-item" wx:for="{{history}}" wx:key="time">
+        <text class="log-time">{{item.time}}</text>
+        <text class="log-note">{{item.note}}</text>
+      </view>
+    </view>
+
+    <view class="actions">
+      <button class="btn-primary" wx:if="{{canBookIntake}}" bindtap="goBookIntake">预约到店交接</button>
+      <button class="btn-ghost" bindtap="goSupport">联系专员</button>
+      <button class="btn-ghost" bindtap="goMyOrders">全部工单</button>
+      <button class="btn-ghost" bindtap="goHub">返回工坊</button>
+    </view>
+  </block>
+</view>

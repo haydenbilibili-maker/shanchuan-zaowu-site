@@ -1,0 +1,67 @@
+@import '../user-account.wxss';
+
+page {
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.legal-meta {
+  border-color: var(--brass-800);
+}
+
+.legal-brand {
+  display: block;
+  font-family: var(--font-brand);
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+  margin-bottom: 10rpx;
+}
+
+.legal-updated {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brass-400);
+  margin-bottom: 16rpx;
+}
+
+.legal-intro {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+
+.legal-section {
+  margin-bottom: var(--space-3);
+}
+
+.legal-heading {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+  font-family: var(--font-heading);
+}
+
+.legal-para {
+  display: block;
+  font-size: 26rpx;
+  color: var(--color-text-body);
+  line-height: 1.75;
+  margin-bottom: var(--space-3);
+  text-align: justify;
+}
+
+.legal-para:last-child {
+  margin-bottom: 0;
+}
+
+.legal-footer-note {
+  padding: var(--space-4) 0;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}

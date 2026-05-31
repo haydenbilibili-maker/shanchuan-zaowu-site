@@ -1,0 +1,152 @@
+<!--pages/points/index.wxml-->
+<view class="container">
+  
+  <!-- 1. 顶部资产卡 (尊贵黑金版) -->
+  <view class="asset-card">
+    <!-- 动态光效背景 -->
+    <view class="card-shine"></view>
+    <view class="card-texture"></view>
+    
+    <view class="card-inner">
+      <view class="card-top">
+        <view class="brand-group">
+          <text class="en">NATURE'S POINTS</text>
+          <text class="cn">探索积分 · 资产账户</text>
+        </view>
+        <view class="level-badge">
+          <text class="crown">♛</text>
+          <text>{{levelName}}</text>
+        </view>
+      </view>
+      
+      <view class="card-main">
+        <text class="symbol">PTS.</text>
+        <text class="num">{{points}}</text>
+      </view>
+
+      <view class="card-bottom">
+        <text class="tips">积分用于兑换限量藏品与特权</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 2. 极简 Tab 导航 (解决拥挤) -->
+  <view class="tab-navbar">
+    <view class="tab-item {{curTab===0?'active':''}}" bindtap="switchTab" data-idx="0">
+      <text>兑换大厅</text>
+      <view class="indicator" wx:if="{{curTab===0}}"></view>
+    </view>
+    <view class="tab-divider"></view>
+    <view class="tab-item {{curTab===1?'active':''}}" bindtap="switchTab" data-idx="1">
+      <text>我的兑换</text>
+      <view class="indicator" wx:if="{{curTab===1}}"></view>
+    </view>
+  </view>
+
+  <!-- 3. 内容区域 -->
+  <view class="content-area">
+    
+    <!-- Tab 0: 兑换大厅 -->
+    <block wx:if="{{curTab===0}}">
+      
+      <!-- 🟢 保留并优化的经典标题 -->
+      <view class="section-header">
+         <view class="line-l"></view>
+         <view class="title-group">
+           <text class="en">TREASURY ARCHIVES</text>
+           <text class="cn">山海造物 · 品牌礼遇</text>
+         </view>
+         <view class="line-r"></view>
+      </view>
+      
+      <view class="reward-grid">
+        <block wx:for="{{rewards}}" wx:key="_id">
+          <view class="reward-card" bindtap="redeem" 
+                data-id="{{item._id}}" data-cost="{{item.cost}}" 
+                data-type="{{item.type}}" data-title="{{item.title}}" data-image="{{item.image}}">
+            
+            <view class="img-box">
+              <image src="{{item.image}}" mode="aspectFill" lazy-load></image>
+              <!-- 标签优化：更小的衬线体标签 -->
+              <view class="type-badge">{{item.type === 'virtual' ? 'DIGITAL' : 'PHYSICAL'}}</view>
+              <view class="sold-out-mask" wx:if="{{item.stock <= 0}}">SOLD OUT</view>
+            </view>
+
+            <view class="info-box">
+              <text class="r-title">{{item.title}}</text>
+              <text class="r-desc">{{item.description}}</text>
+              
+              <view class="r-footer">
+                <view class="cost-group">
+                  <text class="val">{{item.cost}}</text>
+                  <text class="unit">PTS</text>
+                </view>
+                <!-- 按钮改为更精致的空心按钮 -->
+                <view class="btn-outline {{points < item.cost || item.stock <= 0 ? 'disabled' : ''}}">
+                  兑换
+                </view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+      
+      <view class="empty-tip" wx:if="{{rewards.length === 0 && !loading}}">- 暂无权益上架 -</view>
+    </block>
+
+<!-- Tab 1: 我的兑换 -->
+<block wx:if="{{curTab===1}}">
+      <view class="my-list">
+        <block wx:for="{{myRewards}}" wx:key="_id">
+          <view class="my-card">
+            <image class="my-thumb" src="{{item.products[0].image}}" mode="aspectFill"></image>
+            <view class="my-info">
+              <view class="my-top">
+                <text class="my-title">{{item.products[0].title}}</text>
+              </view>
+              <text class="my-meta">{{item.formatTime}} · 消耗 {{item.costPoints}} 积分</text>
+              
+              <view class="my-action-row">
+                <text class="status-txt gray">兑换成功</text>
+                
+                <!-- 🟢 差异化按钮 -->
+                
+                <!-- A. 优惠券：去钱包 -->
+                <view class="btn-small" 
+                      wx:if="{{item.products[0].latin === 'COUPON'}}"
+                      catchtap="goToWallet">
+                  查看钱包
+                </view>
+
+                <!-- B. 虚拟商品：核销码 -->
+                <view class="btn-small" 
+                      wx:elif="{{item.products[0].latin === 'VIRTUAL' && item.status === 'unverified'}}"
+                      catchtap="showCode" data-id="{{item._id}}" data-title="{{item.products[0].title}}">
+                  核销码
+                </view>
+
+                <!-- C. 实物商品：看物流 -->
+                <view class="btn-track" 
+                      wx:elif="{{item.products[0].latin === 'GOODS'}}"
+                      catchtap="goToOrder" data-id="{{item._id}}">
+                  进度
+                </view>
+              </view>
+            </view>
+          </view>
+        </block>
+        <view class="empty-tip" wx:if="{{myRewards.length === 0}}">- 暂无兑换记录 -</view>
+      </view>
+    </block>
+
+  </view>
+
+  <view class="copyright">
+    <text class="cr-cn">山海造物</text>
+    <text class="cr-en">NATURE'S CREATIONS</text>
+  </view>
+
+  <!-- 弹窗保持不变 (省略以精简，请保留原有的 qr-mask 部分) -->
+  <view class="qr-mask" wx:if="{{showQrModal}}" bindtap="closeCode"> <view class="qr-content pop-in" catchtap="true"> <view class="qr-header"><text>REDEEM CODE</text><text class="sub">{{currentTitle}}</text></view> <view class="qr-box"><image class="qr-code-img" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=REDEEM:{{currentCode}}" mode="widthFix"></image></view> <view class="qr-footer"><text class="hint">请向店员出示此码核销权益</text></view> </view> </view>
+
+</view>

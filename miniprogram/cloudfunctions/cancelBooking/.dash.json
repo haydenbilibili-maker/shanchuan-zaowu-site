@@ -1,0 +1,10 @@
+{
+  "name": "cancelBooking",
+  "desc": "取消预约",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

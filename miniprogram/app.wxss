@@ -1,0 +1,859 @@
+/** app.wxss **/
+
+/* ==================== 1. 设计系统 Museum Mode（山海造物 VI） ==================== */
+page {
+  /* 兼容旧变量名 */
+  --primary: #C4A76C;
+  --gold: #C4A76C;
+  --primary-dark: #A8903C;
+  --primary-light: rgba(196, 167, 108, 0.12);
+  --bg-root: #1A1814;
+  --bg-card: #1F1D1A;
+  --bg-float: #262320;
+  --text-main: #FFFFFF;
+  --text-sub: #A09A90;
+  --text-body: #D5D1C8;
+  --text-muted: #6B6560;
+  --text-gold: #C4A76C;
+  --border-light: rgba(38, 35, 32, 0.4);
+  --border-gold: rgba(77, 64, 26, 0.55);
+  --radius-sm: 8rpx;
+  --radius-md: 16rpx;
+  --radius-lg: 24rpx;
+  --radius-xl: 32rpx;
+
+  /* 设计系统完整令牌（Museum Mode） */
+  --color-primary: #C4A76C;
+  --color-bg: #1A1814;
+  --color-bg-card: #1F1D1A;
+  --color-bg-elevated: #262320;
+  --color-border: rgba(38, 35, 32, 0.4);
+  --color-border-highlight: #4D401A;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A09A90;
+  --color-text-body: #D5D1C8;
+  --color-text-muted: #6B6560;
+  --color-text-latin: #C4A76C;
+  --color-wood: #8B6F47;
+  --color-forest: #2D5A3F;
+  --brass-50: #FAF6ED;
+  --brass-100: #F0E6CC;
+  --brass-200: #E0CFA3;
+  --brass-300: #D4BC85;
+  --brass-400: #C4A76C;
+  --brass-500: #A8903C;
+  --brass-600: #8A7530;
+  --brass-700: #6B5A24;
+  --brass-800: #4D401A;
+  --brass-900: #302810;
+  --dark-700: #262320;
+  --dark-800: #1F1D1A;
+  --color-insecta: #52B788;
+  --color-minerals: #7B68AE;
+  --color-plantae: #6DA34D;
+  --color-marine: #5B8FB9;
+  --color-success: #52B788;
+  --color-warning: #E9A23B;
+  --color-error: #D64045;
+  --color-info: #5B8FB9;
+  --font-brand: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --font-heading: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", sans-serif;
+  --font-body: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", sans-serif;
+  --font-mono: "JetBrains Mono", "DIN", "DIN Alternate", monospace;
+  --space-1: 8rpx;
+  --space-2: 16rpx;
+  --space-3: 24rpx;
+  --space-4: 32rpx;
+  --shadow-museum-warm: 0 8rpx 24rpx rgba(26, 24, 20, 0.45);
+
+  background-color: var(--color-bg);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 28rpx;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  box-sizing: border-box;
+}
+
+/* ==================== 2. 排版工具类 ==================== */
+view, text, image, navigator, button { box-sizing: border-box; }
+
+/* 英文装饰字 (衬线体) */
+.font-serif {
+  font-family: 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: bold;
+}
+
+/* 数字/价格 (DIN风格) */
+.font-num {
+  font-family: 'DIN', 'Oswald', sans-serif;
+  font-weight: bold;
+}
+
+/* 标题组合通用样式 */
+.section-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 60rpx 0 40rpx;
+  text-align: center;
+  position: relative;
+}
+.section-header .title-cn {
+  font-size: 34rpx;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  color: var(--color-text-primary);
+  letter-spacing: 0.08em;
+  margin-bottom: 6rpx;
+}
+.section-header .title-en {
+  font-size: 18rpx;
+  color: var(--brass-400);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-family: Georgia, 'Times New Roman', serif;
+  opacity: 0.88;
+}
+
+/* 博物馆卡片 / 铜牌信息（页面可组合使用） */
+.card-museum {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+.card-museum-highlight {
+  background: var(--color-bg-card);
+  border: 1px solid rgba(77, 64, 26, 0.55);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+.text-latin {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  color: var(--color-text-latin);
+}
+.overline {
+  font-size: 20rpx;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+/* 文本截断 */
+.text-cut { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.text-cut-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* 安全区适配 */
+.safe-bottom { padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
+
+/* ==================== 3. 详情页富文本增强 (mp-html) ==================== */
+/* 引用块 */
+.rich-blockquote {
+  background: rgba(250, 246, 237, 0.04);
+  border-left: 6rpx solid var(--brass-500);
+  padding: 20rpx 30rpx;
+  margin: 30rpx 0;
+  color: var(--text-body);
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* 富文本内联图片：轻微压暗与暖调，贴近柜内打光 */
+img {
+  filter: brightness(0.93) contrast(1.04) saturate(0.96);
+}
+
+/* 首字下沉 */
+.rich-dropcap {
+  float: left;
+  font-size: 80rpx;
+  line-height: 60rpx;
+  padding-top: 4rpx;
+  padding-right: 12rpx;
+  color: var(--primary);
+  font-family: 'Times New Roman', serif;
+  font-weight: bold;
+}
+
+/* ==================== 4. 全局 Button 样式系统 ==================== */
+/* 重置微信小程序默认button样式 */
+button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: 28rpx;
+  line-height: 1.6;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button::after {
+  border: none;
+}
+
+/* 主要按钮 — Museum：黄铜实心，无深色发光/扫光 */
+button.btn-primary,
+.btn-primary {
+  background: var(--brass-400);
+  color: var(--color-bg);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 24rpx 40rpx;
+  border-radius: var(--radius-md);
+  border: none;
+  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+}
+
+button.btn-primary:active,
+.btn-primary:active {
+  background: var(--brass-500);
+  transform: scale(0.98);
+}
+
+/* 次要按钮 — 透明底 + 黄铜描边 */
+button.btn-secondary,
+.btn-secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 22rpx 40rpx;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+button.btn-secondary:active,
+.btn-secondary:active {
+  background: rgba(196, 167, 108, 0.08);
+  transform: scale(0.98);
+}
+
+/* 文本按钮 */
+button.btn-text,
+.btn-text {
+  background: transparent;
+  color: var(--primary);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 14rpx 28rpx;
+  border-radius: var(--radius-md);
+  transition: opacity 0.2s;
+}
+
+button.btn-text:active,
+.btn-text:active {
+  opacity: 0.85;
+}
+
+/* 幽灵按钮 — 弱对比底 + 细边框 */
+button.btn-ghost,
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  border: 1px solid var(--color-border-highlight);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 22rpx 40rpx;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+button.btn-ghost:active,
+.btn-ghost:active {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(77, 64, 26, 0.7);
+  transform: scale(0.98);
+}
+
+/* 按钮尺寸变体 */
+button.btn-small,
+.btn-small {
+  padding: 12rpx 24rpx;
+  font-size: 24rpx;
+  border-radius: 24rpx;
+}
+
+button.btn-large,
+.btn-large {
+  padding: 24rpx 48rpx;
+  font-size: 32rpx;
+  border-radius: 48rpx;
+}
+
+/* 按钮禁用 — Dark-700 底 + Dark-400 字 */
+button[disabled],
+button[disabled]:active,
+.btn-disabled {
+  opacity: 1;
+  background: #262320 !important;
+  color: #6B6560 !important;
+  border: 1px solid rgba(38, 35, 32, 0.6) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  pointer-events: none;
+}
+
+/* ==================== 5. 页面切换动画优化 ==================== */
+/* 页面进入动画 */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateX(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 页面退出动画 */
+@keyframes page-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30rpx);
+  }
+}
+
+/* 淡入动画 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 上滑动画 */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(40rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 缩放进入动画 */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 通用动画类 */
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== 6. 加载状态优化 ==================== */
+/* 骨架屏基础样式 */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(196, 167, 108, 0.04) 0%,
+    rgba(196, 167, 108, 0.09) 50%,
+    rgba(196, 167, 108, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8rpx;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* 加载动画 */
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid rgba(196, 167, 108, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 加载提示 */
+.loading-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+  color: var(--color-text-secondary);
+  font-size: 26rpx;
+}
+
+/* ==================== 7. 空状态优化 ==================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 40rpx;
+  min-height: 400rpx;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  opacity: 0.3;
+  margin-bottom: 30rpx;
+  filter: grayscale(0.5);
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: 20rpx;
+  letter-spacing: 0.04em;
+}
+
+.empty-action {
+  margin-top: 30rpx;
+}
+
+/* ==================== 8. 错误状态优化 ==================== */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 40rpx;
+  min-height: 400rpx;
+}
+
+.error-icon {
+  font-size: 100rpx;
+  opacity: 0.45;
+  margin-bottom: 30rpx;
+  color: var(--color-error);
+}
+
+.error-text {
+  font-size: 28rpx;
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: 20rpx;
+  letter-spacing: 0.04em;
+}
+
+.error-detail {
+  font-size: 24rpx;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+/* ==================== 9. 图片优化 ==================== */
+/* 图片懒加载占位 */
+image[lazy-load] {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.02)
+  );
+  border-radius: 8rpx;
+}
+
+/* 图片加载失败占位 */
+image[error] {
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==================== 10. 滚动优化 ==================== */
+/* 自定义滚动条（仅Web端） */
+::-webkit-scrollbar {
+  width: 8rpx;
+  height: 8rpx;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(26, 24, 20, 0.65);
+  border-radius: 4rpx;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(196, 167, 108, 0.4);
+  border-radius: 4rpx;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 167, 108, 0.6);
+}
+
+/* ==================== 11. 性能优化 ==================== */
+/* 硬件加速 */
+.optimize-gpu {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* 减少重绘 */
+.no-repaint {
+  contain: layout style paint;
+}
+
+/* 平滑滚动 */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==================== 12. 品类标签（VI 品类色） ==================== */
+.tag-category {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 22rpx;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+.tag-insecta { background: rgba(82, 183, 136, 0.12); color: var(--color-insecta); }
+.tag-minerals { background: rgba(123, 104, 174, 0.12); color: var(--color-minerals); }
+.tag-plantae { background: rgba(109, 163, 77, 0.12); color: var(--color-plantae); }
+.tag-marine { background: rgba(91, 143, 185, 0.12); color: var(--color-marine); }
+
+/* ==================== 12b. CSS图标兜底方案 ==================== */
+/* 当assets中没有对应图标文件时，使用CSS绘制 */
+
+/* 折扣图标 - 百分比符号 */
+.icon-discount {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-discount::before {
+  content: '%';
+  font-size: 24rpx;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1;
+}
+
+/* 饮品图标 - 杯子 */
+.icon-drink {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-drink::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 20%;
+  width: 60%;
+  height: 50%;
+  border: 2px solid var(--primary);
+  border-bottom: none;
+  border-radius: 4rpx 4rpx 0 0;
+}
+.icon-drink::after {
+  content: '';
+  position: absolute;
+  bottom: 10%;
+  left: 30%;
+  width: 40%;
+  height: 8%;
+  background: var(--primary);
+  border-radius: 0 0 2rpx 2rpx;
+}
+
+/* 礼物图标 - 盒子+蝴蝶结 */
+.icon-gift {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-gift::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 20%;
+  width: 60%;
+  height: 40%;
+  border: 2px solid var(--primary);
+  border-radius: 2rpx;
+}
+.icon-gift::after {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  width: 2px;
+  height: 40%;
+  background: var(--primary);
+  transform: translateX(-50%);
+}
+
+/* 手机图标 - 矩形+圆角 */
+.icon-phone {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-phone::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 25%;
+  width: 50%;
+  height: 70%;
+  border: 2px solid var(--primary);
+  border-radius: 6rpx;
+}
+.icon-phone::after {
+  content: '';
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  width: 30%;
+  height: 4%;
+  background: var(--primary);
+  border-radius: 2rpx;
+  transform: translateX(-50%);
+}
+
+/* 眼睛图标 - 椭圆+圆点 */
+.icon-eye {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-eye::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 15%;
+  width: 70%;
+  height: 50%;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+}
+.icon-eye::after {
+  content: '';
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  width: 20%;
+  height: 20%;
+  background: var(--primary);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+/* 搜索图标 - 圆形+放大镜 */
+.icon-search {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-search::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 50%;
+  height: 50%;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+}
+.icon-search::after {
+  content: '';
+  position: absolute;
+  bottom: 15%;
+  right: 15%;
+  width: 30%;
+  height: 2px;
+  background: var(--primary);
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+
+/* 编辑图标 - 铅笔 */
+.icon-edit {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-edit::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 30%;
+  width: 40%;
+  height: 2px;
+  background: var(--primary);
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+.icon-edit::after {
+  content: '';
+  position: absolute;
+  bottom: 20%;
+  right: 20%;
+  width: 30%;
+  height: 2px;
+  background: var(--primary);
+  transform: rotate(-45deg);
+  transform-origin: right center;
+}
+
+/* 时钟图标 - 圆形+指针 */
+.icon-clock {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-clock::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  height: 80%;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+}
+.icon-clock::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 30%;
+  background: var(--primary);
+  transform: translate(-50%, -100%) rotate(45deg);
+  transform-origin: bottom center;
+}
+
+/* 相机图标 - 矩形+镜头 */
+.icon-camera {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-camera::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 20%;
+  width: 60%;
+  height: 50%;
+  border: 2px solid var(--primary);
+  border-radius: 4rpx;
+}
+.icon-camera::after {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  width: 30%;
+  height: 30%;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+/* 皇冠图标 - 三角形+装饰 */
+.icon-crown {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon-crown::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 20%;
+  width: 60%;
+  height: 40%;
+  border-left: 2px solid var(--primary);
+  border-right: 2px solid var(--primary);
+  border-top: 2px solid var(--primary);
+  border-bottom: none;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+.icon-crown::after {
+  content: '';
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  width: 20%;
+  height: 20%;
+  background: var(--primary);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+/* ==================== 13. 图标颜色统一 ==================== */
+/* 单色图标统一为黄铜金 #C4A76C（近似） */
+.icon-gold {
+  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+}
+
+.icon-gold image {
+  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+}

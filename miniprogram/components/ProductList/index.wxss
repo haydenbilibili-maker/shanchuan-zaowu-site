@@ -1,0 +1,33 @@
+.product-list { width: 100%; }
+.sort-bar {
+  display: flex;
+  gap: 16rpx;
+  padding: 0 0 20rpx;
+}
+.sort-item {
+  font-size: 24rpx;
+  color: #6B6560;
+  padding: 8rpx 20rpx;
+  border: 1px solid rgba(38, 35, 32, 0.6);
+  border-radius: 9999px;
+}
+.sort-item.active {
+  color: #C4A76C;
+  border-color: rgba(196, 167, 108, 0.5);
+  background: rgba(196, 167, 108, 0.08);
+}
+.grid-waterfall { display: flex; gap: 20rpx; }
+.col { flex: 1; min-width: 0; }
+.list-footer { padding: 24rpx 0 40rpx; text-align: center; }
+.load-more {
+  display: inline-block;
+  padding: 16rpx 48rpx;
+  border: 1px solid #C4A76C;
+  color: #C4A76C;
+  border-radius: 9999px;
+  font-size: 26rpx;
+}
+.loading-tip, .end-tip, .empty-tip {
+  font-size: 24rpx;
+  color: #6B6560;
+}

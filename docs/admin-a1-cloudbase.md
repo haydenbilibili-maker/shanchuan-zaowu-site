@@ -41,12 +41,13 @@
 
 ```
 localhost:5173
+localhost:5178
 localhost:4321
 shanhaizaowu.com
 www.shanhaizaowu.com
 ```
 
-> 本地开发端口按实际 Vite/Astro dev 端口调整。未加 `shanhaizaowu.com` 时浏览器控制台会出现域名 / CORS 类错误（code 常见 `-502003`）。
+> 本地开发端口按实际 Vite/Astro dev 端口调整（当前 monorepo ERP 默认 **5178**）。未加入对应端口时浏览器控制台会出现域名 / CORS 类错误（code 常见 `-502003`）。
 
 ### 2. 匿名登录（必做）
 
@@ -75,6 +76,8 @@ A1 使用匿名登录 + 管理端口令（前端）。云库侧建议：
 两个集合权限均设为：**所有用户可读，仅创建者可读写**
 
 或自定义安全规则（见 `cloudbase/rules/`）。
+
+> **完整集合清单与权限模板**：见 [cloudbase-collections.md](./cloudbase-collections.md)（含 ERP 小程序配置 P0 集合、批量验收清单）。
 
 **方案 B · 后续升级（A2+）**
 
@@ -117,7 +120,7 @@ A1 使用匿名登录 + 管理端口令（前端）。云库侧建议：
 | `permission` / `-502004` | 集合权限过严 | 放宽规则或确认已匿名登录 |
 | `collection not found` | 集合未建 | 新建 `finance_records` 等 |
 | 同步成功但换设备无数据 | 只写了 localStorage 未点上传 | 点「同步到云端」 |
-| `setting 'promise'` / 记录同步失败 | 内置 bundle 的 CloudBase SDK 数据库 `.get()` 异常 | 已改用 CDN SDK（`index.html` + `financeSync`）；硬刷新 |
+| `setting 'promise'` / 配置页加载失败 | bundle 内 CloudBase SDK 的 `.get()` bug | 已改用 CDN SDK（`index.html` 预加载）；**硬刷新** `Cmd+Shift+R` |
 | 小程序有数据 Web 没有 | 集合名或 envId 不一致 | 核对 envId 与集合名 |
 
 ---

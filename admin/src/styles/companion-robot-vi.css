@@ -1,0 +1,1017 @@
+/**
+ * 山海造物 ERP — 经营助理「马上有」
+ * 自然、扁平、暖中性色 + 品牌绿主色（浅色工作台语境）
+ * 所有选择器挂在 .companion-robot 下，避免污染全局
+ */
+
+.companion-robot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 60px;
+  z-index: 100;
+  padding: 0 4px;
+  font-family: var(--font-cn-body), -apple-system, sans-serif;
+}
+
+/* ---------- 顶部入口条 ---------- */
+.companion-robot .robot-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--light-bg-elevated);
+  border: 1px solid var(--light-border-default);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.companion-robot .robot-container:hover {
+  border-color: var(--brand-green-300);
+  box-shadow: var(--shadow-md);
+}
+
+/* ---------- 头像 ---------- */
+.companion-robot .robot-icon-wrapper {
+  position: relative;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+}
+
+.companion-robot .robot-icon-3d {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.companion-robot .robot-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--brand-green-400);
+  background: var(--light-bg-secondary);
+  box-shadow: none;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.companion-robot .robot-icon-wrapper:hover .robot-image {
+  transform: scale(1.04);
+  border-color: var(--brand-green-500);
+}
+
+.companion-robot .robot-image.bounce {
+  animation: cr-bounce 0.65s ease;
+}
+
+.companion-robot .robot-image.listening {
+  border-color: var(--semantic-success-icon);
+}
+
+.companion-robot .robot-image.thinking {
+  opacity: 0.92;
+}
+
+@keyframes cr-bounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
+  70% { transform: translateY(-2px); }
+}
+
+/* ---------- 心情角标 ---------- */
+.companion-robot .mood-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand-green-50);
+  border: 1px solid var(--light-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  z-index: 4;
+}
+
+.companion-robot .mood-icon {
+  line-height: 1;
+}
+
+/* ---------- 聆听动效（简化） ---------- */
+.companion-robot .listening-indicator-enhanced {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.companion-robot .listening-ring {
+  position: absolute;
+  border: 1px solid rgba(45, 106, 79, 0.35);
+  border-radius: 50%;
+  animation: cr-ring 2s ease-out infinite;
+}
+
+.companion-robot .ring-1 { width: 56px; height: 56px; animation-delay: 0s; }
+.companion-robot .ring-2 { width: 68px; height: 68px; animation-delay: 0.4s; }
+
+@keyframes cr-ring {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+.companion-robot .listening-waves {
+  position: absolute;
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 22px;
+}
+
+.companion-robot .listening-wave {
+  width: 3px;
+  border-radius: 1px;
+  background: var(--brand-green-500);
+  opacity: 0.85;
+  animation: cr-wave 1s ease-in-out infinite;
+}
+
+.companion-robot .wave-1 { height: 10px; animation-delay: 0s; }
+.companion-robot .wave-2 { height: 16px; animation-delay: 0.12s; }
+.companion-robot .wave-3 { height: 12px; animation-delay: 0.24s; }
+
+@keyframes cr-wave {
+  0%, 100% { transform: scaleY(0.55); opacity: 0.5; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+/* ---------- 思考 ---------- */
+.companion-robot .thinking-indicator-enhanced {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  margin-left: 4px;
+  background: var(--brand-green-50);
+  border: 1px solid var(--light-border-subtle);
+  border-radius: var(--radius-full);
+}
+
+.companion-robot .thinking-orb {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-green-500);
+  animation: cr-dot 1.2s ease-in-out infinite;
+}
+
+.companion-robot .orb-2 { animation-delay: 0.2s; }
+.companion-robot .orb-3 { animation-delay: 0.4s; }
+
+@keyframes cr-dot {
+  0%, 100% { opacity: 0.35; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
+.companion-robot .thinking-text {
+  font-size: 12px;
+  color: var(--brand-green-700);
+  font-weight: 500;
+}
+
+/* ---------- 圆形控制钮 ---------- */
+.companion-robot .voice-controls-enhanced {
+  display: flex;
+  gap: 8px;
+  margin-left: 4px;
+  align-items: center;
+}
+
+.companion-robot .voice-btn-enhanced {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--light-border-default) !important;
+  background: var(--light-bg-elevated) !important;
+  color: var(--light-text-secondary) !important;
+  box-shadow: none !important;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.companion-robot .voice-btn-enhanced:hover {
+  border-color: var(--brand-green-400) !important;
+  color: var(--brand-green-600) !important;
+  background: var(--brand-green-50) !important;
+}
+
+.companion-robot .voice-btn-enhanced.active {
+  border-color: var(--gold-400) !important;
+  background: var(--gold-50) !important;
+  color: var(--earth-700) !important;
+}
+
+.companion-robot .voice-btn-enhanced.pulsing {
+  animation: cr-pulse-mic 1.2s ease-in-out infinite;
+}
+
+@keyframes cr-pulse-mic {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(214, 84, 80, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(214, 84, 80, 0); }
+}
+
+/* ---------- 技能面板 ---------- */
+.companion-robot .skills-panel {
+  position: fixed;
+  top: 72px;
+  right: 12px;
+  width: 320px;
+  max-height: min(72vh, 560px);
+  background: var(--light-bg-elevated);
+  border: 1px solid var(--light-border-default);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  z-index: 3000;
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+}
+
+.companion-robot .skills-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--light-border-subtle);
+}
+
+.companion-robot .skills-header h3 {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--light-text-primary);
+}
+
+.companion-robot .skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.companion-robot .skill-card {
+  background: var(--light-bg-secondary);
+  border: 1px solid var(--light-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.companion-robot .skill-card:hover {
+  border-color: var(--brand-green-400);
+  background: var(--brand-green-50);
+}
+
+.companion-robot .skill-card.active {
+  border-color: var(--brand-green-500);
+  background: var(--brand-green-50);
+}
+
+.companion-robot .skill-icon {
+  font-size: 22px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.companion-robot .skill-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--light-text-primary);
+  margin-bottom: 2px;
+}
+
+.companion-robot .skill-desc {
+  font-size: 11px;
+  color: var(--light-text-secondary);
+  line-height: 1.35;
+}
+
+.companion-robot .skill-shortcut {
+  font-size: 10px;
+  color: var(--light-text-tertiary);
+  margin-top: 4px;
+}
+
+.companion-robot .skill-card.category-business .skill-icon { opacity: 1; }
+.companion-robot .skill-card.category-productivity .skill-icon { opacity: 1; }
+.companion-robot .skill-card.category-ai .skill-icon { opacity: 1; }
+
+/* ---------- 浮动气泡 ---------- */
+.companion-robot .message-bubble-enhanced {
+  position: fixed;
+  left: 50%;
+  top: 88px;
+  transform: translateX(-50%);
+  z-index: 2000;
+  max-width: min(520px, calc(100vw - 32px));
+  min-width: 300px;
+  filter: drop-shadow(var(--shadow-md));
+}
+
+.companion-robot .bubble-content-enhanced {
+  background: var(--light-bg-elevated);
+  border: 1px solid var(--light-border-default);
+  color: var(--light-text-primary);
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  position: relative;
+}
+
+.companion-robot .bubble-content-enhanced::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--brand-green-500);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.companion-robot .bubble-header-enhanced {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--light-border-subtle);
+}
+
+.companion-robot .bubble-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--light-border-default);
+  flex-shrink: 0;
+}
+
+.companion-robot .bubble-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.companion-robot .ai-label-enhanced {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--brand-green-700);
+  font-weight: 600;
+}
+
+.companion-robot .label-icon {
+  color: var(--brand-green-500);
+  font-size: 12px;
+}
+
+.companion-robot .mood-badge {
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--light-bg-secondary);
+  color: var(--light-text-secondary);
+  border: 1px solid var(--light-border-subtle);
+}
+
+.companion-robot .bubble-time {
+  font-size: 11px;
+  color: var(--light-text-tertiary);
+}
+
+.companion-robot .bubble-close-btn-enhanced {
+  color: var(--light-text-tertiary);
+}
+
+.companion-robot .bubble-close-btn-enhanced:hover {
+  color: var(--brand-green-600);
+}
+
+.companion-robot .message-text-enhanced {
+  line-height: var(--leading-loose);
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  color: var(--light-text-primary);
+}
+
+.companion-robot .message-text-enhanced strong {
+  color: var(--brand-green-700);
+  font-weight: 600;
+}
+
+.companion-robot .message-text-enhanced code {
+  background: var(--brand-green-50);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.9em;
+  border: 1px solid var(--light-border-subtle);
+}
+
+.companion-robot .message-bubble-enhanced.is-ai-response .bubble-content-enhanced {
+  background: var(--light-bg-secondary);
+}
+
+.companion-robot .bubble-actions-enhanced {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.companion-robot .bubble-arrow-enhanced {
+  display: none;
+}
+
+.companion-robot .emotion-feedback {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--light-border-subtle);
+}
+
+.companion-robot .emotion-bar {
+  height: 4px;
+  background: var(--light-bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.companion-robot .emotion-fill {
+  height: 100%;
+  background: var(--brand-green-500);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.companion-robot .emotion-fill.emotion-positive { background: var(--semantic-success-icon); }
+.companion-robot .emotion-fill.emotion-excited { background: var(--semantic-warning-icon); }
+.companion-robot .emotion-fill.emotion-focused { background: var(--semantic-info-icon); }
+
+.companion-robot .emotion-label {
+  font-size: 11px;
+  color: var(--light-text-tertiary);
+  margin-top: 4px;
+}
+
+/* ---------- 成就 toast ---------- */
+.companion-robot .achievement-notification {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background: var(--light-bg-elevated);
+  border: 1px solid var(--light-border-default);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  z-index: 1999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow-md);
+  max-width: 320px;
+}
+
+.companion-robot .achievement-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-green-700);
+  margin-bottom: 2px;
+}
+
+.companion-robot .achievement-desc {
+  font-size: 12px;
+  color: var(--light-text-secondary);
+  line-height: 1.45;
+}
+
+/* ---------- 摄像头浮窗 ---------- */
+.companion-robot .camera-preview {
+  position: fixed;
+  bottom: 96px;
+  right: 20px;
+  width: 280px;
+  background: var(--light-bg-elevated);
+  border: 1px solid var(--light-border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  z-index: 2500;
+  box-shadow: var(--shadow-lg);
+}
+
+.companion-robot .camera-analyzing {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.companion-robot .camera-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--light-bg-secondary);
+  border-bottom: 1px solid var(--light-border-subtle);
+}
+
+.companion-robot .camera-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--light-text-primary);
+}
+
+.companion-robot .camera-close:hover {
+  color: var(--brand-green-600);
+}
+
+.companion-robot .camera-video {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: var(--dark-bg-primary);
+}
+
+.companion-robot .analyzing-overlay {
+  background: rgba(250, 250, 245, 0.75);
+}
+
+.companion-robot .analyzing-text {
+  color: var(--brand-green-700);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ---------- 对话抽屉（浅色、扁平） ---------- */
+.companion-robot .ai-chat-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 24, 21, 0.35);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0;
+  pointer-events: none;
+}
+
+.companion-robot .ai-chat-dialog > * {
+  pointer-events: all;
+}
+
+.companion-robot .chat-dialog-container {
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  height: min(700px, calc(100vh - 96px));
+  margin: 16px;
+  margin-bottom: 72px;
+  background: var(--light-bg-primary);
+  border: 1px solid var(--light-border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.companion-robot .chat-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--light-border-subtle);
+  background: var(--light-bg-elevated);
+  flex-shrink: 0;
+}
+
+.companion-robot .chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.companion-robot .ai-avatar-large {
+  width: 44px;
+  height: 44px;
+}
+
+.companion-robot .ai-avatar-large img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--brand-green-400);
+  object-fit: cover;
+}
+
+.companion-robot .ai-name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--light-text-primary);
+}
+
+.companion-robot .ai-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--light-text-secondary);
+}
+
+.companion-robot .status-dot.online {
+  background: var(--semantic-success-icon);
+}
+
+.companion-robot .chat-header-right .el-button {
+  color: var(--light-text-tertiary);
+}
+
+.companion-robot .chat-header-right .el-button:hover {
+  color: var(--brand-green-600);
+}
+
+/* 快捷指令 */
+.companion-robot .quick-commands {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--light-border-subtle);
+  background: var(--light-bg-secondary);
+}
+
+.companion-robot .command-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: var(--light-bg-elevated);
+  border: 1px solid var(--light-border-default);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  color: var(--light-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.companion-robot .command-chip:hover {
+  border-color: var(--brand-green-400);
+  background: var(--brand-green-50);
+  color: var(--brand-green-700);
+}
+
+/* 消息区 */
+.companion-robot .chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--light-bg-primary);
+}
+
+.companion-robot .chat-welcome {
+  padding: 24px 12px;
+  text-align: center;
+}
+
+.companion-robot .welcome-avatar img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--brand-green-300);
+  object-fit: cover;
+}
+
+.companion-robot .welcome-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--light-text-primary);
+  margin: 12px 0 6px;
+}
+
+.companion-robot .welcome-subtitle {
+  font-size: var(--text-sm);
+  color: var(--light-text-secondary);
+  line-height: var(--leading-normal);
+  margin-bottom: 20px;
+}
+
+.companion-robot .welcome-suggestions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-width: 100%;
+}
+
+.companion-robot .suggestion-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--light-bg-elevated);
+  border: 1px solid var(--light-border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.companion-robot .suggestion-card:hover {
+  border-color: var(--brand-green-400);
+  background: var(--brand-green-50);
+}
+
+.companion-robot .suggestion-text {
+  font-size: 13px;
+  color: var(--light-text-primary);
+}
+
+/* 气泡消息 */
+.companion-robot .chat-message {
+  display: flex;
+  gap: 10px;
+  max-width: 92%;
+}
+
+.companion-robot .chat-message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.companion-robot .chat-message.ai {
+  align-self: flex-start;
+}
+
+.companion-robot .message-avatar img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--light-border-default);
+  object-fit: cover;
+}
+
+.companion-robot .user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--earth-200);
+  color: var(--earth-800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.companion-robot .chat-message.ai .message-text {
+  background: var(--brand-green-50);
+  border: 1px solid var(--light-border-subtle);
+  color: var(--light-text-primary);
+  border-top-left-radius: 4px;
+}
+
+.companion-robot .chat-message.user .message-text {
+  background: var(--brand-green-500);
+  color: #fff;
+  border: none;
+  border-top-right-radius: 4px;
+}
+
+.companion-robot .message-text {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.companion-robot .message-time {
+  font-size: 11px;
+  color: var(--light-text-tertiary);
+  padding: 2px 4px 0;
+}
+
+.companion-robot .chat-message.user .message-time {
+  text-align: right;
+}
+
+.companion-robot .typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--light-bg-secondary);
+  border: 1px solid var(--light-border-subtle);
+  border-radius: var(--radius-md);
+  border-top-left-radius: 4px;
+}
+
+.companion-robot .typing-indicator span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-green-500);
+  animation: cr-typing 1.2s ease-in-out infinite;
+}
+
+.companion-robot .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+.companion-robot .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes cr-typing {
+  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-4px); }
+}
+
+/* 输入区 */
+.companion-robot .chat-input-area {
+  padding: 12px 14px;
+  border-top: 1px solid var(--light-border-subtle);
+  background: var(--light-bg-elevated);
+}
+
+.companion-robot .input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.companion-robot .chat-input .el-input__wrapper {
+  background: var(--light-bg-primary);
+  border: 1px solid var(--light-border-default);
+  border-radius: var(--radius-full);
+  box-shadow: none;
+}
+
+.companion-robot .chat-input .el-input__wrapper.is-focus {
+  border-color: var(--brand-green-500);
+  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.12);
+}
+
+.companion-robot .chat-input .el-input__inner {
+  color: var(--light-text-primary);
+  font-size: 14px;
+}
+
+.companion-robot .chat-input .el-input__inner::placeholder {
+  color: var(--light-text-tertiary);
+}
+
+.companion-robot .input-icon {
+  color: var(--light-text-tertiary);
+}
+
+.companion-robot .send-btn {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.companion-robot .send-btn .el-icon {
+  font-size: 18px;
+}
+
+.companion-robot .voice-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--light-border-default);
+  background: var(--light-bg-primary);
+  color: var(--light-text-secondary);
+}
+
+.companion-robot .voice-btn:hover {
+  border-color: var(--brand-green-400);
+  color: var(--brand-green-600);
+}
+
+.companion-robot .voice-btn.listening {
+  border-color: var(--semantic-error-icon);
+  background: var(--semantic-error-bg);
+  color: var(--semantic-error-text);
+}
+
+/* 过渡 */
+.companion-robot .fade-enter-active,
+.companion-robot .fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.companion-robot .fade-enter-from,
+.companion-robot .fade-leave-to {
+  opacity: 0;
+}
+
+.companion-robot .slide-fade-enter-active,
+.companion-robot .slide-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.companion-robot .slide-fade-enter-from,
+.companion-robot .slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(8px);
+}
+
+.companion-robot .bubble-enhanced-enter-active,
+.companion-robot .bubble-enhanced-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.companion-robot .bubble-enhanced-enter-from,
+.companion-robot .bubble-enhanced-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+.companion-robot .achievement-enter-active,
+.companion-robot .achievement-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.companion-robot .achievement-enter-from,
+.companion-robot .achievement-leave-to {
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+.companion-robot .dialog-fade-enter-active,
+.companion-robot .dialog-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.companion-robot .dialog-fade-enter-from,
+.companion-robot .dialog-fade-leave-to {
+  opacity: 0;
+}
+
+.companion-robot .camera-fade-enter-active,
+.companion-robot .camera-fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.companion-robot .camera-fade-enter-from,
+.companion-robot .camera-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .companion-robot .message-bubble-enhanced {
+    left: 16px;
+    right: 16px;
+    transform: none;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .companion-robot .welcome-suggestions {
+    grid-template-columns: 1fr;
+  }
+
+  .companion-robot .chat-dialog-container {
+    width: 100vw;
+    max-width: 100vw;
+    height: calc(100vh - 56px);
+    margin: 0;
+    margin-bottom: 56px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .companion-robot .skills-panel {
+    width: min(100vw - 24px, 320px);
+    right: 8px;
+  }
+}
+
+/* 心境对头像滤镜：极轻 */
+.companion-robot.mood-happy .robot-image {
+  border-color: var(--semantic-success-icon);
+}
+
+.companion-robot.mood-excited .robot-image {
+  border-color: var(--gold-500);
+}
+
+.companion-robot.mood-calm .robot-image {
+  border-color: var(--brand-green-400);
+}

@@ -1,0 +1,10 @@
+{
+  "name": "getRecommendations",
+  "desc": "智能推荐云函数",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

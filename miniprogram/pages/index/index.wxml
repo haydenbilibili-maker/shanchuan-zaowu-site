@@ -1,0 +1,371 @@
+<view class="container">
+  
+  <!-- 🔧 重写：状态栏占位，防止内容被遮挡 -->
+  <view class="status-bar-placeholder" style="height: {{navTop}}px;"></view>
+  
+  <view class="nav-fixed-wrapper" style="top: {{navTop}}px;">
+    <view class="nav-bar">
+      <view class="header-capsule {{isScrolled ? 'hidden' : ''}}" bindtap="handleSearch">
+        <view class="brand-part">
+          <view class="brand-en-wrap">
+            <text class="brand-en">NATURE'S</text>
+            <text class="brand-en brand-en-second">CREATIONS</text>
+          </view>
+          <text class="brand-cn">山海造物</text>
+        </view>
+        <view class="v-divider"></view>
+        <view class="search-part">
+          <icon type="search" size="12" color="rgba(255,255,255,0.6)"></icon>
+          <text>搜索藏品...</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 🔧 重写：内容顶部占位，避免内容被导航栏遮挡 -->
+  <view class="content-spacer" style="height: {{navTop + 44}}px;"></view>
+
+  <scroll-view scroll-y class="main-scroll" bindscroll="onPageScroll" enable-back-to-top>
+    
+    <!-- 轮播图模块 -->
+    <view class="hero-section" wx:if="{{showBanners}}">
+      <!-- 骨架屏 -->
+      <view class="skeleton-banner" wx:if="{{loadingBanners}}">
+        <view class="sk-banner-item"></view>
+      </view>
+      <!-- 实际内容 -->
+      <swiper wx:else class="hero-swiper" autoplay circular interval="6000" duration="800" indicator-dots="{{false}}" bindchange="onSwiperChange">
+        <block wx:for="{{banners}}" wx:key="id">
+          <swiper-item>
+            <view class="hero-item" bindtap="onBannerTap" data-item="{{item}}">
+              <image class="hero-img" src="{{item.image}}" mode="aspectFill" />
+              <view class="hero-mask-vignette"></view> 
+              <view class="hero-content slide-up-anim">
+                <view class="hero-badge"><text>精选</text></view>
+                <text class="h-title">{{item.title}}</text>
+                <text class="h-sub">{{item.subtitle || '探索未知'}}</text>
+              </view>
+            </view>
+          </swiper-item>
+        </block>
+      </swiper>
+      <view class="dots-row">
+        <block wx:for="{{banners}}" wx:key="id">
+           <view class="dot-line {{currentBannerIndex === index ? 'active' : ''}}">
+             <view class="progress" wx:if="{{currentBannerIndex === index}}"></view>
+           </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 灵动球（博物标本室） -->
+    <view class="section-box orbs-section orbs-first" wx:if="{{showCategories}}">
+      <view class="section-header-row section-header-compact">
+        <view class="title-group">
+          <text class="t-cn">博物标本室</text>
+          <text class="t-en">SPECIMEN ARCHIVES</text>
+        </view>
+      </view>
+      
+      <view class="orb-matrix">
+        <block wx:for="{{categories}}" wx:key="_id">
+          <view class="orb-wrapper {{currentOrbId === item._id ? 'active' : (currentOrbId ? 'dimmed' : '')}}" 
+                bindtap="onOrbClick" 
+                data-id="{{item._id}}"
+                data-type="category">
+            <view class="orb-sphere floating" style="animation-delay: {{index * 0.4}}s;">
+               <view class="orb-inner-light"></view>
+               <view class="orb-texture"></view>
+               <view class="orb-ring"></view>
+               <view class="orb-highlight"></view>
+               <text class="orb-icon">{{item.icon}}</text>
+            </view>
+            <view class="orb-active-ring" wx:if="{{currentOrbId === item._id}}"></view>
+            <view class="orb-shadow floating-shadow" style="animation-delay: {{index * 0.4}}s;"></view>
+            <view class="orb-meta">
+              <text class="cn">{{item.displayName}}</text>
+              <text class="en">{{item.enName}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+
+      <view class="orb-matrix orb-matrix-services">
+        <block wx:for="{{serviceOrbs}}" wx:key="_id">
+          <view class="orb-wrapper orb-wrapper-service"
+                bindtap="onOrbClick"
+                data-id="{{item._id}}"
+                data-type="service"
+                data-action="{{item.action}}">
+            <view class="orb-sphere floating" style="animation-delay: {{item.animDelay}}s;">
+               <view class="orb-inner-light"></view>
+               <view class="orb-texture"></view>
+               <view class="orb-ring"></view>
+               <view class="orb-highlight"></view>
+               <text class="orb-icon">{{item.icon}}</text>
+            </view>
+            <view class="orb-shadow floating-shadow" style="animation-delay: {{item.animDelay}}s;"></view>
+            <view class="orb-meta">
+              <text class="cn">{{item.displayName}}</text>
+              <text class="en">{{item.enName}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+
+      <view class="orb-expansion-panel {{orbExpanded ? 'expanded' : ''}}">
+         <view class="panel-line-top"></view>
+         <scroll-view scroll-x class="orb-product-scroll" enable-flex bindscrolltolower="loadMoreOrbData">
+            <view class="orb-loader" wx:if="{{orbLoading}}">
+               <view class="sk-card"></view><view class="sk-card"></view><view class="sk-card"></view>
+            </view>
+            <block wx:else>
+              <block wx:for="{{orbProducts}}" wx:key="uniqueId">
+                <view class="op-card" catchtap="goToDetail" data-id="{{item._id}}">
+                   <view class="op-img-box">
+                      <image class="op-img" src="{{item.image}}" mode="aspectFill"></image>
+                      <view class="op-rare-tag" wx:if="{{index % 3 === 0}}">珍稀</view>
+                   </view>
+                   <view class="op-info">
+                      <text class="op-title text-cut">{{item.title}}</text>
+                      <text class="op-latin text-cut">{{item.latinName}}</text>
+                      <view class="op-bot">
+                        <text class="op-price">¥{{item.price}}</text>
+                        <view class="op-btn">+</view>
+                      </view>
+                   </view>
+                </view>
+              </block>
+              <view class="op-more-card" catchtap="goToCategory" data-id="{{currentOrbId}}">
+                 <text class="txt">查看全部</text><text class="arr">→</text>
+              </view>
+              <view style="width: 30rpx; flex-shrink: 0;"></view>
+            </block>
+         </scroll-view>
+      </view>
+    </view>
+
+    <!-- 为你推荐 -->
+    <view class="section-box" wx:if="{{showRecommendations && (recommendations.length > 0 || loadingRecommendations)}}">
+      <view class="section-header-row">
+        <view class="title-group">
+          <text class="t-cn">为你推荐</text>
+          <text class="t-en">FOR YOU</text>
+        </view>
+        <view class="recommend-badge">
+          <text class="badge-text">智能推荐</text>
+        </view>
+      </view>
+      
+      <view class="skeleton-recommendations" wx:if="{{loadingRecommendations}}">
+        <view class="sk-rec-card" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
+      </view>
+      
+      <scroll-view wx:elif="{{recommendations.length > 0}}" scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
+        <block wx:for="{{recommendations}}" wx:key="_id">
+          <view class="recommend-card" bindtap="goToDetail" data-id="{{item._id}}">
+            <view class="rec-image-wrapper">
+              <image class="rec-image" src="{{item.image || item.httpImage}}" mode="aspectFill" lazy-load></image>
+              <view class="rec-overlay"></view>
+              <view class="rec-reason">{{item.reason}}</view>
+            </view>
+            <view class="rec-info">
+              <text class="rec-title text-cut">{{item.title}}</text>
+              <view class="rec-meta">
+                <text class="rec-latin text-cut" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+                <text class="rec-price" wx:if="{{item.price}}">¥{{item.price}}</text>
+              </view>
+            </view>
+            <view class="rec-shine"></view>
+          </view>
+        </block>
+        <view style="width: 30rpx; flex-shrink: 0;"></view>
+      </scroll-view>
+    </view>
+
+    <!-- 最新入库 -->
+    <view class="section-box section-compact" wx:if="{{showNewArrivals}}">
+      <view class="section-header-row section-header-compact">
+        <view class="title-group">
+          <text class="t-cn">最新入库</text>
+          <text class="t-en">NEW ARRIVALS</text>
+        </view>
+      </view>
+      <product-list id="newArrivalsList" page-size="{{10}}" bind:itemtap="goToDetail" />
+    </view>
+
+    <!-- 标本工坊 -->
+    <view class="section-box atelier-section">
+      <view class="section-header-row atelier-header-row">
+        <view class="title-group">
+          <text class="t-cn">标本工坊</text>
+          <text class="t-en">NATURE'S ATELIER</text>
+        </view>
+      </view>
+      <view class="atelier-card-pro" bindtap="goToCustom">
+        <image class="atelier-hero-img" src="{{atelierHeroImage}}" mode="aspectFill" lazy-load />
+        <view class="atelier-hero-mask"></view>
+        <view class="atelier-brass-frame"></view>
+        <view class="atelier-content">
+          <view class="atelier-badge">星宸标本工作室</view>
+          <text class="atelier-tagline">把山海带回家</text>
+          <text class="atelier-desc">装裱定制与伴宠记忆，在同一盏暖光下完成</text>
+          <view class="atelier-paths">
+            <view class="atelier-path-chip">标本定制</view>
+            <view class="atelier-path-chip soft">伴宠记忆</view>
+          </view>
+          <view class="atelier-cta-row">
+            <text class="atelier-cta">进入工坊</text>
+            <text class="atelier-cta-arrow">→</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 走进这有店 -->
+    <view class="section-box explore-store-section" wx:if="{{showExploreStore && (exploreStore || loadingExploreStore)}}">
+      <view class="section-header-row">
+        <view class="title-group">
+          <text class="t-cn">走进这有店</text>
+          <text class="t-en">ZHEIYUSHAN</text>
+        </view>
+      </view>
+      <view class="skeleton-explore-store" wx:if="{{loadingExploreStore}}"></view>
+      <view class="explore-store-card" wx:elif="{{exploreStore}}" bindtap="goToExploreStore" hover-class="explore-store-card-hover">
+        <image class="explore-store-img" src="{{exploreStore.coverImage}}" mode="aspectFill" lazy-load />
+        <view class="explore-store-mask"></view>
+        <view class="explore-store-frame"></view>
+        <view class="explore-store-content">
+          <text class="explore-store-overline">走进这有店 · 这有山</text>
+          <text class="explore-store-name">{{exploreStore.name}}</text>
+          <view class="explore-store-meta">
+            <text class="explore-store-status {{exploreStore.openStatus.statusClass}}">{{exploreStore.openStatus.label}}</text>
+            <text class="explore-store-dot" wx:if="{{exploreStore.distanceText}}">·</text>
+            <text class="explore-store-distance" wx:if="{{exploreStore.distanceText}}">{{exploreStore.distanceText}}</text>
+          </view>
+          <view class="explore-store-cta-row">
+            <text class="explore-store-cta">查看门店</text>
+            <text class="explore-store-arrow">→</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 专题展览 -->
+    <view class="section-box" wx:if="{{showCollections}}">
+      <view class="section-header-row">
+        <view class="title-group">
+          <text class="t-cn">专题展览</text>
+          <text class="t-en">EXHIBITIONS</text>
+        </view>
+        <view class="more-link" bindtap="goToCategory" wx:if="{{!loadingCollections}}">查看全部 →</view>
+      </view>
+      <!-- 骨架屏 -->
+      <view class="skeleton-exhibitions" wx:if="{{loadingCollections}}">
+        <view class="sk-exhibit-card" wx:for="{{[1,2,3]}}" wx:key="*this"></view>
+      </view>
+      <!-- 实际内容 -->
+      <scroll-view wx:elif="{{collections.length > 0}}" scroll-x class="exhibit-scroll" enable-flex show-scrollbar="{{false}}">
+        <block wx:for="{{collections}}" wx:key="_id">
+          <view class="exhibit-card-pro" bindtap="goToCollectionDetail" data-id="{{item._id}}">
+            <image class="ec-img" src="{{item.cover}}" mode="aspectFill" lazy-load />
+            <view class="ec-overlay"></view>
+            <view class="ec-shine"></view>
+            <view class="ec-info">
+               <view class="ec-tag">专题</view>
+               <text class="ec-title">{{item.title}}</text>
+               <text class="ec-brief text-cut">{{item.brief || '点击查看详情'}}</text>
+            </view>
+            <view class="ec-hover-mask"></view>
+          </view>
+        </block>
+        <view style="width: 30rpx; flex-shrink: 0;"></view>
+      </scroll-view>
+    </view>
+
+    <!-- 名师手作模块 -->
+    <view class="section-box" wx:if="{{showFramers}}">
+      <view class="section-header-row"><view class="title-group"><text class="t-cn">名师手作</text><text class="t-en">ARTIST SPOTLIGHT</text></view></view>
+      <!-- 骨架屏 -->
+      <view class="skeleton-artists" wx:if="{{loadingFramers}}">
+        <view class="sk-artist-card" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
+      </view>
+      <!-- 实际内容 -->
+      <scroll-view wx:elif="{{framers.length > 0}}" scroll-x class="artist-scroll" enable-flex>
+        <block wx:for="{{framers}}" wx:key="_id">
+          <view class="artist-card-v3" bindtap="goToFramer" data-id="{{item._id}}">
+             <!-- 图片容器 -->
+             <view class="ac-image-wrapper">
+               <image class="ac-bg" src="{{item.avatar}}" mode="aspectFill" lazy-load></image>
+               <!-- 图片渐变遮罩 -->
+               <view class="ac-image-overlay"></view>
+             </view>
+             <!-- 底部信息栏（独立于图片） -->
+             <view class="ac-info-bar">
+               <view class="ac-info-content">
+                 <text class="ac-name">{{item.name}}</text>
+                 <text class="ac-title">{{item.title}}</text>
+               </view>
+               <view class="ac-info-decoration"></view>
+             </view>
+          </view>
+        </block>
+      </scroll-view>
+    </view>
+
+    <!-- 近期活动模块 -->
+    <view class="section-box" wx:if="{{showActivities && activities.length > 0}}">
+      <view class="section-header-row">
+        <view class="title-group">
+          <text class="t-cn">近期活动</text>
+          <text class="t-en">UPCOMING EVENTS</text>
+        </view>
+      </view>
+      
+      <scroll-view scroll-x class="ticket-scroll-view" enable-flex>
+        <block wx:for="{{activities}}" wx:key="_id">
+          <view class="rich-ticket" bindtap="goToBooking">
+             <view class="ticket-stub">
+                <view class="stub-header"><text class="stub-label">ADMIT ONE</text></view>
+                <view class="stub-date"><text class="sd-day">{{item.day}}</text><text class="sd-month">{{item.month}}</text></view>
+                <view class="stub-footer"><view class="barcode">||| |||| ||</view></view>
+                <view class="rip-line"></view>
+             </view>
+             <view class="ticket-main">
+                <image class="tm-bg" src="{{item.cover}}" mode="aspectFill"></image>
+                <view class="tm-mask"></view>
+                <view class="tm-content">
+                   <view class="tm-top">
+                     <text class="tm-type">EVENT</text>
+                     <view class="tm-status {{item.status === 'open' ? 'active' : ''}}">{{item.status === 'open' ? '报名中' : '已结束'}}</view>
+                   </view>
+                   <view class="tm-mid">
+                     <text class="tm-title text-cut-2">{{item.title}}</text>
+                     <view class="tm-loc-row"><icon type="location" size="10" color="#999"></icon><text class="tm-loc">{{item.location}}</text></view>
+                   </view>
+                   <view class="tm-bot">
+                      <text class="tm-price" wx:if="{{item.price > 0}}">¥{{item.price}}</text>
+                      <text class="tm-price free" wx:else>免费</text>
+                      <view class="tm-btn">→</view>
+                   </view>
+                </view>
+                <view class="notch top"></view><view class="notch bottom"></view>
+             </view>
+          </view>
+        </block>
+        <view style="width: 30rpx; flex-shrink:0;"></view>
+      </scroll-view>
+    </view>
+
+    <view class="footer-slogan">
+      <view class="f-line"></view>
+      <view class="f-text-wrap">
+        <text class="f-tagline">把山海带回家</text>
+        <text class="f-text">NATURE'S CREATIONS · EST. 2026</text>
+      </view>
+      <view class="f-line"></view>
+    </view>
+    
+    <view style="height: 120rpx;"></view>
+  </scroll-view>
+</view>

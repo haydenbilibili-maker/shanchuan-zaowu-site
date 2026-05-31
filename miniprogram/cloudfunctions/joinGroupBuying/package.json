@@ -1,0 +1,14 @@
+{
+  "name": "joinGroupBuying",
+  "version": "1.0.0",
+  "description": "参与拼团",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
+
+
+
+
+

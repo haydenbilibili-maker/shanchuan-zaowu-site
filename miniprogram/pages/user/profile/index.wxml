@@ -1,0 +1,177 @@
+<!--pages/user/profile/index.wxml-->
+<view class="account-page page-profile">
+  <view class="grain-overlay"></view>
+
+  <view
+    class="account-nav profile-nav"
+    style="padding-top: {{statusBarHeight}}px; padding-right: {{navPaddingRight}}px;"
+  >
+    <view class="account-nav-row">
+      <view class="account-nav-back" hover-class="care-back-hover" bindtap="goBack">
+        <text class="account-nav-back-icon">←</text>
+      </view>
+      <view class="account-nav-brand">
+        <text class="account-nav-title">藏家档案</text>
+        <text class="account-nav-sub">COLLECTOR PROFILE</text>
+      </view>
+      <text class="account-nav-badge">{{profileScore}}%</text>
+    </view>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="account-scroll profile-scroll"
+    show-scrollbar="{{false}}"
+    style="top: {{headerBlockPx}}px; height: {{scrollHeightPx}}px;"
+  >
+    <view class="profile-summary account-section-card">
+      <view class="profile-hero">
+        <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="avatar-picker-press">
+          <view class="avatar-ring" style="{{avatarRingStyle}}">
+            <view class="avatar-ring-inner">
+              <image class="avatar-img" src="{{avatarUrl || '/assets/icons/user.png'}}" mode="aspectFill"></image>
+            </view>
+          </view>
+          <view class="avatar-badge">
+            <image class="avatar-badge-icon" src="/assets/icons/camera.png" mode="aspectFit"></image>
+          </view>
+        </button>
+        <text class="avatar-hint">点击更换头像</text>
+      </view>
+
+      <view class="profile-identity">
+        <text class="identity-overline">藏家代号</text>
+        <view class="nick-field">
+          <input
+            class="nick-input"
+            type="nickname"
+            value="{{nickName}}"
+            bindinput="onNickInput"
+            placeholder="输入你的藏家代号"
+            placeholder-class="nick-placeholder"
+          />
+          <image class="nick-edit-icon" src="/assets/icons/edit.png" mode="aspectFit"></image>
+        </view>
+        <view class="member-plate">
+          <text class="member-plate-label">MEMBER</text>
+          <text class="member-plate-code">{{memberNo}}</text>
+        </view>
+      </view>
+
+      <view class="score-divider"></view>
+
+      <view class="score-bar">
+        <view class="score-bar-head">
+          <text class="score-bar-label">档案完成度</text>
+          <text class="score-bar-val">{{profileScore}}%</text>
+        </view>
+        <view class="score-bar-track">
+          <view class="score-bar-fill" style="width: {{profileScore}}%;"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="account-section-card">
+      <view class="account-section-label">基础信息</view>
+      <view class="profile-row" wx:if="{{phoneBound}}">
+        <text class="profile-row-key">手机号</text>
+        <text class="profile-row-val">{{phoneMasked}}</text>
+      </view>
+      <button wx:else class="profile-bind-phone" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">绑定手机号</button>
+
+      <view class="account-field">
+        <text class="account-field-label">性别</text>
+        <view class="account-chip-row">
+          <view class="account-chip {{gender === item.key ? 'active' : ''}}" wx:for="{{genderOptions}}" wx:key="key" bindtap="selectGender" data-key="{{item.key}}">{{item.label}}</view>
+        </view>
+      </view>
+
+      <view class="account-field">
+        <text class="account-field-label">生日</text>
+        <picker mode="date" value="{{birthday}}" end="2026-12-31" bindchange="onBirthdayChange">
+          <view class="account-picker-val">{{birthday || '选择日期'}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="account-section-card">
+      <view class="account-section-label">兴趣偏好<text class="interest-count" wx:if="{{interests.length}}"> · 已选 {{interests.length}}/5</text></view>
+      <view class="account-chip-row">
+        <view
+          class="account-chip interest-chip {{item.selected ? 'active' : ''}}"
+          wx:for="{{interestChips}}"
+          wx:key="key"
+          bindtap="toggleInterest"
+          data-key="{{item.key}}"
+          hover-class="interest-chip-press"
+          style="{{item.activeStyle}}"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="account-section-card">
+      <view class="account-section-label">自我标签</view>
+      <view class="account-field">
+        <text class="account-field-label">MBTI</text>
+        <scroll-view scroll-x class="mbti-scroll" enable-flex show-scrollbar="{{false}}">
+          <view class="mbti-inner">
+            <view class="account-chip mbti-chip {{mbti === item ? 'active' : ''}}" wx:for="{{mbtiOptions}}" wx:key="*this" bindtap="selectMbti" data-key="{{item}}">{{item}}</view>
+          </view>
+        </scroll-view>
+      </view>
+      <view class="account-field">
+        <text class="account-field-label">星座</text>
+        <view class="account-chip-row">
+          <view class="account-chip {{zodiac === item.key ? 'active' : ''}}" wx:for="{{zodiacOptions}}" wx:key="key" bindtap="selectZodiac" data-key="{{item.key}}">{{item.label}}</view>
+        </view>
+      </view>
+      <view class="account-field">
+        <text class="account-field-label">一句话</text>
+        <input class="account-field-input bio-input" maxlength="40" value="{{bio}}" bindinput="onBioInput" placeholder="可选，最多 40 字" />
+      </view>
+    </view>
+
+    <view class="account-section-card">
+      <view class="account-section-label">账户与帮助</view>
+      <view class="profile-link-row" bindtap="goFeedback">
+        <text class="profile-link-label">反馈与建议</text>
+        <text class="profile-link-arrow">→</text>
+      </view>
+      <view class="profile-link-row last" bindtap="goSupport">
+        <text class="profile-link-label">联系专员</text>
+        <text class="profile-link-arrow">→</text>
+      </view>
+    </view>
+
+    <view class="account-section-card">
+      <view class="account-section-label">隐私设置</view>
+      <view class="privacy-row" bindtap="togglePrivacy" data-key="showMbti">
+        <view class="privacy-meta">
+          <text class="privacy-label">公开 MBTI</text>
+          <text class="privacy-desc">社区与个人主页展示</text>
+        </view>
+        <view class="privacy-switch {{privacy.showMbti ? 'on' : ''}}"></view>
+      </view>
+      <view class="privacy-row" bindtap="togglePrivacy" data-key="showZodiac">
+        <view class="privacy-meta">
+          <text class="privacy-label">公开星座</text>
+          <text class="privacy-desc">社区与个人主页展示</text>
+        </view>
+        <view class="privacy-switch {{privacy.showZodiac ? 'on' : ''}}"></view>
+      </view>
+      <view class="privacy-row last" bindtap="togglePrivacy" data-key="showBirthday">
+        <view class="privacy-meta">
+          <text class="privacy-label">公开生日月日</text>
+          <text class="privacy-desc">仅展示月日，不含年份</text>
+        </view>
+        <view class="privacy-switch {{privacy.showBirthday ? 'on' : ''}}"></view>
+      </view>
+    </view>
+
+    <view class="account-scroll-pad"></view>
+  </scroll-view>
+
+  <view class="account-footer account-footer-safe profile-footer">
+    <view class="account-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveProfile">{{saving ? '保存中…' : '保存资料'}}</view>
+  </view>
+</view>

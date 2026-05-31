@@ -1,0 +1,18 @@
+<!--custom-tab-bar/index.wxml-->
+<cover-view class="tab-bar">
+  <cover-view 
+    wx:for="{{list}}" 
+    wx:key="index" 
+    class="tab-bar-item {{selected === index ? 'active' : ''}}" 
+    data-path="{{item.pagePath}}" 
+    data-index="{{index}}" 
+    bindtap="switchTab"
+    hover-class="tab-bar-item-hover"
+    hover-stay-time="100">
+    
+    <cover-image src="{{selected === index ? item.selectedIconPath : item.iconPath}}" class="tab-icon"></cover-image>
+    <cover-view wx:if="{{index === 3 && showCartBadge}}" class="tab-badge">{{cartBadge}}</cover-view>
+    <cover-view class="tab-text" style="color: {{selected === index ? selectedColor : color}}">{{item.text}}</cover-view>
+    
+  </cover-view>
+</cover-view>

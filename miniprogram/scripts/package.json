@@ -1,0 +1,11 @@
+{
+  "name": "shanchuanspecimens-scripts",
+  "private": true,
+  "description": "WeChat DevTools automation scripts",
+  "scripts": {
+    "test:pet-memorial": "node test-pet-memorial-flow.js"
+  },
+  "devDependencies": {
+    "miniprogram-automator": "^0.12.1"
+  }
+}

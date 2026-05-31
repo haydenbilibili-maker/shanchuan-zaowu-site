@@ -1,0 +1,6 @@
+{
+  "name": "generateSharePoster",
+  "desc": "分享海报素材与小程序码",
+  "tags": ["Node.js"],
+  "status": "开发中"
+}

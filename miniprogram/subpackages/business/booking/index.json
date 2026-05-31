@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "预约参观",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "calendar": "/components/Calendar/index"
+  }
+}

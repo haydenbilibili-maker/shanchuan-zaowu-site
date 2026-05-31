@@ -1,0 +1,165 @@
+<!--pages/community/index.wxml-->
+<view class="page-community">
+  <view class="page-header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="header-left">
+      <view class="back-btn" wx:if="{{showBack}}" bindtap="goBack">←</view>
+    </view>
+    <view class="header-brand">
+      <text class="brand-cn">山海社区</text>
+      <text class="brand-en">SHANHAI COMMUNITY</text>
+    </view>
+    <view class="header-right">
+      <view class="nav-search" bindtap="goToSearch">
+        <image class="nav-search-icon" src="/assets/icons/search.png" mode="aspectFit"></image>
+      </view>
+    </view>
+  </view>
+
+  <view class="tab-bar">
+    <block wx:for="{{tabs}}" wx:key="value" wx:for-index="idx">
+      <view class="tab-item {{currentTab === idx ? 'active' : ''}}" bindtap="switchTab" data-index="{{idx}}">
+        <text class="tab-cn">{{item.name}}</text>
+        <text class="tab-en">{{item.en}}</text>
+        <view class="tab-indicator" wx:if="{{currentTab === idx}}"></view>
+      </view>
+    </block>
+  </view>
+
+  <view class="main-body">
+    <!-- 笔记 · 双流瀑布（小红书式） -->
+    <view class="content-panel" wx:if="{{currentTab === 0}}">
+      <view class="waterfall" wx:if="{{leftCol.length || rightCol.length}}">
+        <view class="waterfall-col">
+          <view class="note-card" wx:for="{{leftCol}}" wx:key="_id" bindtap="goToArticle" data-id="{{item._id}}">
+            <view class="note-cover {{item.cardRatio}}">
+              <image class="note-img" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+              <text class="note-badge" wx:if="{{item.isUGC}}">笔记</text>
+            </view>
+            <text class="note-title">{{item.title}}</text>
+            <view class="note-foot">
+              <view class="note-author">
+                <view class="note-avatar">{{item.authorInitial}}</view>
+                <text class="note-name">{{item.author || '山海造物'}}</text>
+              </view>
+              <view class="note-like">
+                <image class="like-icon" src="/assets/icons/heart.png" mode="aspectFit"></image>
+                <text>{{item.stats.likes || 0}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="waterfall-col">
+          <view class="note-card" wx:for="{{rightCol}}" wx:key="_id" bindtap="goToArticle" data-id="{{item._id}}">
+            <view class="note-cover {{item.cardRatio}}">
+              <image class="note-img" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+              <text class="note-badge" wx:if="{{item.isUGC}}">笔记</text>
+            </view>
+            <text class="note-title">{{item.title}}</text>
+            <view class="note-foot">
+              <view class="note-author">
+                <view class="note-avatar">{{item.authorInitial}}</view>
+                <text class="note-name">{{item.author || '山海造物'}}</text>
+              </view>
+              <view class="note-like">
+                <image class="like-icon" src="/assets/icons/heart.png" mode="aspectFit"></image>
+                <text>{{item.stats.likes || 0}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="state-box" wx:if="{{!leftCol.length && !rightCol.length && !loadingArticles}}">
+        <text class="state-title">还没有笔记</text>
+        <text class="state-desc">点击底部按钮，发布你的第一条标本故事</text>
+      </view>
+      <view class="state-box loading" wx:if="{{loadingArticles}}">
+        <text class="state-desc">加载中…</text>
+      </view>
+    </view>
+
+    <!-- 影像 · 双流 -->
+    <view class="content-panel" wx:if="{{currentTab === 1}}">
+      <view class="waterfall" wx:if="{{videoLeftCol.length || videoRightCol.length}}">
+        <view class="waterfall-col">
+          <view class="note-card" wx:for="{{videoLeftCol}}" wx:key="_id" bindtap="goToVideo" data-id="{{item._id}}">
+            <view class="note-cover {{item.cardRatio}}">
+              <image class="note-img" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+              <view class="note-play"><view class="play-btn">▶</view></view>
+            </view>
+            <text class="note-title">{{item.title}}</text>
+            <view class="note-foot">
+              <view class="note-author">
+                <view class="note-avatar">{{item.authorInitial}}</view>
+                <text class="note-name">{{item.author || '山海造物'}}</text>
+              </view>
+              <view class="note-like">
+                <image class="like-icon" src="/assets/icons/eye.png" mode="aspectFit"></image>
+                <text>{{item.stats.views || 0}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="waterfall-col">
+          <view class="note-card" wx:for="{{videoRightCol}}" wx:key="_id" bindtap="goToVideo" data-id="{{item._id}}">
+            <view class="note-cover {{item.cardRatio}}">
+              <image class="note-img" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+              <view class="note-play"><view class="play-btn">▶</view></view>
+            </view>
+            <text class="note-title">{{item.title}}</text>
+            <view class="note-foot">
+              <view class="note-author">
+                <view class="note-avatar">{{item.authorInitial}}</view>
+                <text class="note-name">{{item.author || '山海造物'}}</text>
+              </view>
+              <view class="note-like">
+                <image class="like-icon" src="/assets/icons/eye.png" mode="aspectFit"></image>
+                <text>{{item.stats.views || 0}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="state-box" wx:if="{{!videoLeftCol.length && !videoRightCol.length && !loadingVideos}}">
+        <text class="state-title">暂无影像</text>
+        <text class="state-desc">发布视频笔记，分享制作过程与标本细节</text>
+      </view>
+      <view class="state-box loading" wx:if="{{loadingVideos}}">
+        <text class="state-desc">加载中…</text>
+      </view>
+    </view>
+
+    <!-- 专题 -->
+    <view class="content-panel" wx:if="{{currentTab === 2}}">
+      <view class="exhibition-list">
+        <block wx:for="{{exhibitions}}" wx:key="_id">
+          <view class="exhibition-card" bindtap="goToExhibition" data-id="{{item._id}}">
+            <image class="exhibition-cover" src="{{item.coverImage || item.cover}}" mode="aspectFill" lazy-load></image>
+            <view class="exhibition-body">
+              <text class="exhibition-title">{{item.title}}</text>
+              <text class="exhibition-latin text-latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+              <text class="exhibition-brief" wx:if="{{item.brief}}">{{item.brief}}</text>
+              <text class="exhibition-more">进入专题 →</text>
+            </view>
+          </view>
+        </block>
+        <view class="state-box" wx:if="{{exhibitions.length === 0 && !loadingExhibitions}}">
+          <text class="state-title">暂无专题</text>
+          <text class="state-desc">品牌策展内容筹备中</text>
+        </view>
+        <view class="state-box loading" wx:if="{{loadingExhibitions}}">
+          <text class="state-desc">加载中…</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="scroll-foot"></view>
+  </view>
+
+  <!-- 发布器入口（小红书式 FAB） -->
+  <view class="fab-publish" wx:if="{{currentTab < 2}}" bindtap="openPublishEntry">
+    <view class="fab-inner">
+      <image class="fab-icon" src="/assets/icons/add.png" mode="aspectFit"></image>
+    </view>
+    <text class="fab-label">发布</text>
+  </view>
+</view>

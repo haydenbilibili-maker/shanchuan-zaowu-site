@@ -1,0 +1,31 @@
+<view class="product-list">
+  <view class="sort-bar">
+    <view
+      class="sort-item {{currentSort === item.key || (item.isPrice && (currentSort === 'price_asc' || currentSort === 'price_desc')) ? 'active' : ''}}"
+      wx:for="{{sortOptions}}"
+      wx:key="key"
+      bindtap="onSortTap"
+      data-key="{{item.key}}"
+    >{{item.isPrice ? priceSortLabel : item.label}}</view>
+  </view>
+
+  <view class="grid-waterfall">
+    <view class="col">
+      <block wx:for="{{list}}" wx:key="_id" wx:if="{{index % 2 === 0}}">
+        <product-card info="{{item}}" bind:click="onProductTap" />
+      </block>
+    </view>
+    <view class="col">
+      <block wx:for="{{list}}" wx:key="_id" wx:if="{{index % 2 !== 0}}">
+        <product-card info="{{item}}" bind:click="onProductTap" />
+      </block>
+    </view>
+  </view>
+
+  <view class="list-footer">
+    <view class="load-more" wx:if="{{hasMore && !loading}}" bindtap="loadMore">加载更多</view>
+    <view class="loading-tip" wx:if="{{loading}}">加载中...</view>
+    <view class="end-tip" wx:if="{{!hasMore && list.length > 0}}">— 已展示全部 —</view>
+    <view class="empty-tip" wx:if="{{!loading && list.length === 0}}">暂无商品</view>
+  </view>
+</view>

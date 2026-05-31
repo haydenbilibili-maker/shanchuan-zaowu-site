@@ -1,0 +1,100 @@
+<!--pages/articles/index.wxml-->
+<view class="page-articles">
+  <view class="page-header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="header-left">
+      <view class="back-btn" bindtap="goBack">←</view>
+    </view>
+    <view class="header-brand">
+      <text class="brand-cn">知识文章</text>
+      <text class="brand-en">SHANHAI COMMUNITY · ARTICLES</text>
+    </view>
+    <view class="header-right"></view>
+  </view>
+
+  <view class="filter-bar">
+    <scroll-view scroll-x class="category-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="category-chip {{currentCategory === 'all' ? 'active' : ''}}" bindtap="switchCategory" data-category="all">
+        <text>全部</text>
+      </view>
+      <view
+        class="category-chip {{currentCategory === item.id ? 'active' : ''}}"
+        wx:for="{{categories}}"
+        wx:key="id"
+        bindtap="switchCategory"
+        data-category="{{item.id}}"
+      >
+        <text>{{item.name}}</text>
+      </view>
+    </scroll-view>
+
+    <view class="search-row">
+      <view class="search-box">
+        <image class="search-icon" src="/assets/icons/search.png" mode="aspectFit"></image>
+        <input
+          class="search-input"
+          placeholder="搜索文章…"
+          placeholder-class="ph"
+          value="{{keyword}}"
+          bindinput="onSearchInput"
+          bindconfirm="onSearch"
+        />
+      </view>
+    </view>
+
+    <view class="toolbar">
+      <view class="sort-group">
+        <view class="sort-chip {{sortBy === 'createTime' ? 'active' : ''}}" bindtap="switchSort" data-sort="createTime">最新</view>
+        <view class="sort-chip {{sortBy === 'views' ? 'active' : ''}}" bindtap="switchSort" data-sort="views">热门</view>
+        <view class="sort-chip {{sortBy === 'likes' ? 'active' : ''}}" bindtap="switchSort" data-sort="likes">点赞</view>
+      </view>
+      <view class="link-chip" bindtap="goToVideos">
+        <image class="link-icon" src="/assets/icons/video-tab.png" mode="aspectFit"></image>
+        <text>影像</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="articles-list">
+    <block wx:for="{{articles}}" wx:key="_id">
+      <view class="article-card" bindtap="goToDetail" data-id="{{item._id}}">
+        <image class="article-cover" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+        <view class="article-body">
+          <view class="article-top">
+            <text class="tag-category">{{item.categoryLabel}}</text>
+            <text class="tag-ugc" wx:if="{{item.isUGC}}">藏家投稿</text>
+          </view>
+          <text class="article-title">{{item.title}}</text>
+          <text class="article-brief" wx:if="{{item.brief}}">{{item.brief}}</text>
+          <view class="article-foot">
+            <view class="article-stats">
+              <view class="stat-item">
+                <image class="stat-icon" src="/assets/icons/eye.png" mode="aspectFit"></image>
+                <text>{{item.stats.views || 0}}</text>
+              </view>
+              <view class="stat-item">
+                <image class="stat-icon" src="/assets/icons/heart.png" mode="aspectFit"></image>
+                <text>{{item.stats.likes || 0}}</text>
+              </view>
+              <view class="stat-item">
+                <image class="stat-icon" src="/assets/icons/message.png" mode="aspectFit"></image>
+                <text>{{item.stats.comments || 0}}</text>
+              </view>
+            </view>
+            <text class="article-author">{{item.author}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <view class="state-box" wx:if="{{loading}}">
+      <text class="state-desc">加载中…</text>
+    </view>
+    <view class="state-box" wx:if="{{!hasMore && articles.length > 0}}">
+      <text class="state-desc">— 已浏览全部 —</text>
+    </view>
+    <view class="state-box" wx:if="{{!loading && articles.length === 0}}">
+      <text class="state-title">暂无文章</text>
+      <text class="state-desc">换个分类或关键词试试</text>
+    </view>
+  </view>
+</view>

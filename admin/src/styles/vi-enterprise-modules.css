@@ -1,0 +1,30 @@
+/**
+ * 山海造物 ERP — 经营类大屏/看板/AI 中心模块壳层
+ * 与 design-tokens.css 一致：浅色工作台、品牌绿主色、暖中性边框
+ * 各组件根节点需保留：.realtime-monitor / .ai-center / .strategy-research-container / .operations-decision-center
+ */
+
+/* ---------- 实时监控 ---------- */
+.realtime-monitor {
+  background: var(--light-bg-primary);
+  color: var(--light-text-primary);
+}
+
+/* ---------- AI 智能中心 ---------- */
+.ai-center {
+  background: var(--light-bg-tertiary);
+  color: var(--light-text-primary);
+  min-height: 100%;
+}
+
+/* ---------- 战略调研 ---------- */
+.strategy-research-container {
+  background: var(--light-bg-primary);
+  color: var(--light-text-primary);
+}
+
+/* ---------- 运营决策中心 ---------- */
+.operations-decision-center {
+  background: var(--light-bg-primary);
+  color: var(--light-text-primary);
+}

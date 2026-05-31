@@ -1,0 +1,119 @@
+<!--pages/community/publish/index.wxml-->
+<view class="page-publish">
+  <view class="pub-nav" style="padding-top: {{statusBarHeight}}px; padding-right: {{navPaddingRight}}px;">
+    <view class="pub-nav-inner" style="height: {{navBarHeight}}px;">
+      <view class="nav-side nav-back" bindtap="goBack">取消</view>
+      <text class="nav-title">{{type === 'video' ? '发视频' : '发图文'}}</text>
+      <view class="nav-side nav-side-right"></view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="pub-scroll" enhanced show-scrollbar="{{false}}" style="height: {{scrollHeight}}px;">
+    <!-- 图文：多图网格（小红书式） -->
+    <view class="media-section" wx:if="{{type === 'note'}}">
+      <view class="media-grid">
+        <block wx:for="{{images}}" wx:key="*this">
+          <view class="media-cell">
+            <image class="media-img" src="{{item}}" mode="aspectFill"></image>
+            <view class="media-del" bindtap="removeImage" data-index="{{index}}">×</view>
+            <view class="media-cover-tag" wx:if="{{index === 0}}">封面</view>
+          </view>
+        </block>
+        <view class="media-add" wx:if="{{images.length < 9}}" bindtap="chooseImages">
+          <image class="add-icon" src="/assets/icons/add.png" mode="aspectFit"></image>
+          <text>{{images.length ? '添加' : '添加图片'}}</text>
+        </view>
+      </view>
+      <text class="media-hint">最多 9 张，首张为封面</text>
+    </view>
+
+    <!-- 视频：封面 + 链接 -->
+    <view class="media-section" wx:if="{{type === 'video'}}">
+      <view class="video-cover-box" bindtap="chooseVideoCover">
+        <image wx:if="{{coverImage}}" class="video-cover-img" src="{{coverImage}}" mode="aspectFill"></image>
+        <view wx:else class="video-cover-empty">
+          <image class="add-icon" src="/assets/icons/add.png" mode="aspectFit"></image>
+          <text>添加封面</text>
+        </view>
+        <view class="video-cover-badge">封面</view>
+      </view>
+      <view class="form-row">
+        <text class="form-label">视频链接</text>
+        <input
+          class="form-input"
+          placeholder="粘贴视频地址或云存储链接"
+          placeholder-class="ph"
+          value="{{videoUrl}}"
+          bindinput="onInput"
+          data-field="videoUrl"
+        />
+      </view>
+    </view>
+
+    <!-- 标题 + 正文 -->
+    <view class="editor-section">
+      <input
+        class="title-input"
+        placeholder="填写标题，更容易被看见"
+        placeholder-class="ph"
+        maxlength="40"
+        value="{{title}}"
+        bindinput="onInput"
+        data-field="title"
+      />
+      <textarea
+        class="body-input"
+        placeholder="分享你的标本故事、养护心得或探店见闻…"
+        placeholder-class="ph"
+        maxlength="2000"
+        value="{{content}}"
+        bindinput="onInput"
+        data-field="content"
+        auto-height
+      ></textarea>
+      <text class="char-count">{{content.length}}/2000</text>
+    </view>
+
+    <!-- 话题标签 -->
+    <view class="tags-section">
+      <text class="section-label">添加话题</text>
+      <view class="tag-chips">
+        <view
+          class="tag-chip {{activeTags.indexOf(item) >= 0 ? 'on' : ''}}"
+          wx:for="{{topicPresets}}"
+          wx:key="*this"
+          bindtap="toggleTag"
+          data-tag="{{item}}"
+        ># {{item}}</view>
+      </view>
+      <input
+        class="tag-input"
+        placeholder="自定义话题，逗号分隔"
+        placeholder-class="ph"
+        value="{{tagsStr}}"
+        bindinput="onInput"
+        data-field="tagsStr"
+      />
+    </view>
+
+    <!-- 分类 -->
+    <view class="category-section">
+      <text class="section-label">内容分类</text>
+      <view class="cat-row">
+        <view
+          class="cat-chip {{category === item.value ? 'on' : ''}}"
+          wx:for="{{categories}}"
+          wx:key="value"
+          bindtap="selectCategory"
+          data-value="{{item.value}}"
+        >{{item.name}}</view>
+      </view>
+    </view>
+
+    <view class="scroll-pad"></view>
+  </scroll-view>
+
+  <view class="pub-footer">
+    <view class="footer-submit {{canSubmit ? 'ready' : ''}}" bindtap="submit">发布笔记</view>
+  </view>
+</view>

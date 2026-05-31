@@ -1,0 +1,9 @@
+{
+  "name": "getProductCoupons",
+  "version": "1.0.0",
+  "description": "商品详情页优惠券信息",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

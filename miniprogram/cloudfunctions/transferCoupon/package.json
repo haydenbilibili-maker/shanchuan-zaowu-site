@@ -1,0 +1,14 @@
+{
+  "name": "transferCoupon",
+  "version": "1.0.0",
+  "description": "优惠券转赠功能",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
+
+
+
+
+

@@ -1,0 +1,9 @@
+{
+  "name": "dispatchMessage",
+  "version": "1.0.0",
+  "description": "山海有信统一消息分发",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

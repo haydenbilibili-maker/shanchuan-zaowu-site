@@ -1,0 +1,223 @@
+/* pages/videos/index.wxss */
+page {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.page-videos {
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 32rpx 20rpx;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.header-left,
+.header-right {
+  width: 72rpx;
+  flex-shrink: 0;
+}
+
+.header-brand {
+  flex: 1;
+  text-align: center;
+}
+
+.brand-cn {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  color: var(--color-text-primary);
+}
+
+.brand-en {
+  display: block;
+  font-size: 16rpx;
+  color: var(--brass-600);
+  letter-spacing: 0.1em;
+  margin-top: 6rpx;
+}
+
+.back-btn {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: var(--color-text-secondary);
+}
+
+.filter-bar {
+  background: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
+  padding: 20rpx 32rpx;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.category-scroll {
+  white-space: nowrap;
+}
+
+.category-chip {
+  display: inline-block;
+  padding: 10rpx 24rpx;
+  margin-right: 12rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.category-chip.active {
+  background: rgba(196, 167, 108, 0.1);
+  border-color: var(--color-border-highlight);
+  color: var(--brass-400);
+  font-weight: 500;
+}
+
+.video-grid {
+  padding: 24rpx 32rpx;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.video-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.video-card:active {
+  border-color: var(--color-border-highlight);
+}
+
+.video-cover-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  background: var(--color-bg-elevated);
+}
+
+.video-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.video-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 24, 20, 0.28);
+}
+
+.play-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--brass-400);
+  color: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  padding-left: 4rpx;
+  opacity: 0.95;
+}
+
+.video-badge {
+  position: absolute;
+  top: 12rpx;
+  left: 12rpx;
+  padding: 4rpx 12rpx;
+  background: rgba(26, 24, 20, 0.72);
+  border: 1px solid var(--color-border-highlight);
+  color: var(--brass-300);
+  font-size: 18rpx;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.04em;
+}
+
+.video-duration {
+  position: absolute;
+  bottom: 12rpx;
+  right: 12rpx;
+  padding: 4rpx 10rpx;
+  background: rgba(26, 24, 20, 0.78);
+  color: var(--color-text-body);
+  font-size: 18rpx;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+
+.video-body {
+  padding: 16rpx 18rpx 20rpx;
+}
+
+.video-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-bottom: 10rpx;
+}
+
+.video-foot {
+  display: flex;
+  gap: 16rpx;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}
+
+.stat-icon {
+  width: 22rpx;
+  height: 22rpx;
+  opacity: 0.55;
+}
+
+.state-box {
+  text-align: center;
+  padding: 60rpx 32rpx;
+}
+
+.state-box.grid-full {
+  grid-column: 1 / -1;
+}
+
+.state-title {
+  display: block;
+  font-size: 28rpx;
+  color: var(--color-text-secondary);
+  margin-bottom: 8rpx;
+}
+
+.state-desc {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-muted);
+}

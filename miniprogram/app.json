@@ -1,0 +1,146 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/category/index",
+    "pages/community/index",
+    "pages/community/publish/index",
+    "pages/store/index",
+    "pages/cart/index",
+    "pages/user/index",
+    "pages/user/onboarding/index",
+    "pages/user/onboarding/done",
+    "pages/user/profile/index",
+    "pages/user/achievements/index",
+    "pages/user/messages/index",
+    "pages/user/support/index",
+    "pages/user/legal/index",
+    "pages/user/feedback/index",
+    "pages/user/certificates/index",
+    "pages/custom/index",
+    "pages/custom/hub/index",
+    "pages/custom/pet/index",
+    "pages/custom/pet/status/index",
+    "pages/custom/pet/list/index",
+    "pages/custom/orders/index",
+    "pages/custom/share/index",
+    "pages/custom/inquiry/index",
+    "pages/care/index",
+    "pages/care/guide/index",
+    "pages/care/my/index",
+    "pages/detail/index",
+    "pages/detail/wiki-detail/index",
+    "pages/comment/index",
+    "pages/search/index",
+    "pages/identify/index",
+    "pages/identify/result/index",
+    "pages/identify/share/index",
+    "pages/collection/index",
+    "pages/collection/detail/index",
+    "pages/collection-detail/index",
+    "pages/articles/index",
+    "pages/articles/detail/index",
+    "pages/videos/index",
+    "custom-tab-bar/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#1A1814",
+    "navigationBarTitleText": "山海造物",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#1A1814"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#6B6560",
+    "selectedColor": "#C4A76C",
+    "backgroundColor": "#1A1814",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "探索",
+        "iconPath": "assets/icons/home.png",
+        "selectedIconPath": "assets/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/category/index",
+        "text": "馆藏",
+        "iconPath": "assets/icons/knowledge.png",
+        "selectedIconPath": "assets/icons/knowledge-active.png"
+      },
+      {
+        "pagePath": "pages/store/index",
+        "text": "这有店",
+        "iconPath": "assets/icons/store-tab.png",
+        "selectedIconPath": "assets/icons/store-tab-active.png"
+      },
+      {
+        "pagePath": "pages/cart/index",
+        "text": "购物车",
+        "iconPath": "assets/icons/cart.png",
+        "selectedIconPath": "assets/icons/cart-active.png"
+      },
+      {
+        "pagePath": "pages/user/index",
+        "text": "我的",
+        "iconPath": "assets/icons/user.png",
+        "selectedIconPath": "assets/icons/user-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "subpackages": [
+    {
+      "root": "subpackages/business",
+      "name": "business",
+      "pages": [
+        "my-bookings/index",
+        "ticket/index",
+        "orders/index",
+        "order-detail/index",
+        "confirm-order/index",
+        "address/index",
+        "points/index",
+        "coupons/index",
+        "certificate/index",
+        "manager/index",
+        "framer/index",
+        "about/index",
+        "ar/index",
+        "booking/index",
+        "store-zone/index"
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/index/index": {
+      "network": "all",
+      "packages": ["business"]
+    },
+    "pages/custom/index": {
+      "network": "all",
+      "packages": ["business"]
+    },
+    "pages/store/index": {
+      "network": "all",
+      "packages": ["business"]
+    },
+    "pages/user/index": {
+      "network": "all",
+      "packages": ["business"]
+    }
+  },
+  "requiredPrivateInfos": [
+    "chooseAddress"
+  ],
+  "permission": {
+    "scope.camera": {
+      "desc": "用于 AR 试摆与 AI 标本鉴定拍照，将藏品或标本清晰摄入画面"
+    },
+    "scope.writePhotosAlbum": {
+      "desc": "用于保存AR合成照片"
+    }
+  }
+}

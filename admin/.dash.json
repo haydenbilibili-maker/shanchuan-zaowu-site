@@ -1,0 +1,11 @@
+{
+  "name": "山海造物战略指挥台",
+  "desc": "山海造物相关业务系统",
+  "tags": [
+    "Vue3",
+    "Vite"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

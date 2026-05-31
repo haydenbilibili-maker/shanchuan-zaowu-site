@@ -1,0 +1,749 @@
+/**
+ * 移动端APP质感优化（已废弃，使用mobile-app-redesign.css）
+ * 保留作为参考，实际样式在mobile-app-redesign.css中
+ */
+
+/* ================================================= */
+/* 📱 移动端APP基础质感 - 已废弃 */
+/* ================================================= */
+
+@media (max-width: 768px) and (max-width: 0px) {
+  /* 此样式已废弃，实际样式在mobile-app-redesign.css中 */
+  /* ================================================= */
+  /* 🎨 全局质感提升 */
+  /* ================================================= */
+  
+  /* 平滑滚动优化 */
+  * {
+    -webkit-tap-highlight-color: rgba(212, 175, 55, 0.1);
+    -webkit-touch-callout: none;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* 主容器 - APP化 */
+  .admin-container {
+    flex-direction: column;
+    height: 100vh;
+    height: -webkit-fill-available; /* iOS Safari */
+    overflow: hidden;
+    background: var(--bg-light);
+    position: relative;
+  }
+
+  /* ================================================= */
+  /* 🎯 顶部导航栏 - APP风格 */
+  /* ================================================= */
+  
+  .aside {
+    width: 100% !important;
+    height: auto !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    border-right: none;
+    background: linear-gradient(180deg, rgba(10, 10, 10, 0.98) 0%, rgba(5, 5, 5, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.15), 0 0 1px rgba(212, 175, 55, 0.2);
+    transform: translateY(-100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .aside.mobile-menu-open {
+    transform: translateY(0);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25), 0 0 2px rgba(212, 175, 55, 0.3);
+  }
+
+  /* 品牌头部 - 精致化 */
+  .brand-header {
+    height: 60px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+    background: transparent;
+    position: relative;
+  }
+
+  .brand-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+  }
+
+  .brand-logo {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    background: linear-gradient(135deg, #d4af37 0%, #f4d882 100%);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4), 0 0 20px rgba(212, 175, 55, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .brand-logo:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+  }
+
+  .brand-text .cn {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-text .en {
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.7;
+  }
+
+  /* 菜单 - 横向滚动，APP风格 */
+  .el-menu-vertical {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 16px;
+    border-bottom: none;
+    background: transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .el-menu-vertical::-webkit-scrollbar {
+    display: none;
+  }
+
+  .el-menu-item-group {
+    display: none;
+  }
+
+  .el-menu-item {
+    min-width: 72px;
+    padding: 10px 16px !important;
+    margin: 0 6px;
+    white-space: nowrap;
+    border-radius: 12px;
+    height: auto;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .el-menu-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(244, 216, 130, 0.1));
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .el-menu-item.is-active {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(244, 216, 130, 0.15));
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .el-menu-item.is-active::before {
+    opacity: 1;
+  }
+
+  .el-menu-item:active {
+    transform: scale(0.95);
+    background: rgba(212, 175, 55, 0.25);
+  }
+
+  .el-menu-item span {
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 4px;
+    letter-spacing: 0.3px;
+  }
+
+  .el-menu-item .el-icon {
+    font-size: 22px;
+    margin: 0;
+    transition: transform 0.25s ease;
+  }
+
+  .el-menu-item.is-active .el-icon {
+    transform: scale(1.1);
+    filter: drop-shadow(0 2px 4px rgba(212, 175, 55, 0.4));
+  }
+
+  /* 菜单切换按钮 - 精致化 */
+  .mobile-menu-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1001;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.95), rgba(244, 216, 130, 0.95));
+    border: none;
+    border-radius: 14px;
+    color: #000;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4), 0 0 20px rgba(212, 175, 55, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .mobile-menu-toggle:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+  }
+
+  .mobile-menu-toggle.active {
+    background: linear-gradient(135deg, rgba(183, 149, 11, 0.95), rgba(212, 175, 55, 0.95));
+    transform: rotate(90deg);
+  }
+
+  /* ================================================= */
+  /* 📄 主内容区 - APP质感 */
+  /* ================================================= */
+  
+  .main-content {
+    margin-top: 0;
+    padding: 20px 16px !important;
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 76px; /* 为菜单切换按钮留出空间 */
+    background: var(--bg-light);
+    scroll-behavior: smooth;
+  }
+
+  /* 模块头部 - 精致化 */
+  .module-header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+
+  .title-box {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .title-box h2 {
+    font-size: 28px !important;
+    font-weight: 700;
+    padding-left: 16px;
+    border-left: 4px solid var(--primary);
+    line-height: 1.3;
+    background: linear-gradient(135deg, var(--text-light) 0%, var(--text-light-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .title-box .subtitle {
+    font-size: 11px !important;
+    padding-left: 20px;
+    letter-spacing: 2px;
+    opacity: 0.6;
+    font-weight: 500;
+  }
+
+  /* ================================================= */
+  /* 🎴 卡片 - APP质感 */
+  /* ================================================= */
+  
+  .el-card {
+    margin-bottom: 20px;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.08);
+    background: var(--bg-light-card);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .el-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .el-card:hover::before {
+    opacity: 0.6;
+  }
+
+  .el-card__header {
+    padding: 20px !important;
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(180deg, rgba(250, 251, 252, 1) 0%, rgba(245, 247, 250, 1) 100%);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+    color: var(--text-light);
+    letter-spacing: 0.3px;
+  }
+
+  .el-card__body {
+    padding: 20px !important;
+    background: var(--bg-light-card);
+  }
+
+  /* ================================================= */
+  /* 📊 表格 - 移动端优化 */
+  /* ================================================= */
+  
+  .el-table {
+    font-size: 13px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .el-table th {
+    padding: 12px 8px !important;
+    font-size: 12px;
+    font-weight: 600;
+    background: linear-gradient(180deg, rgba(245, 247, 250, 1) 0%, rgba(250, 251, 252, 1) 100%);
+    color: var(--text-light);
+    letter-spacing: 0.3px;
+  }
+
+  .el-table td {
+    padding: 14px 8px !important;
+    font-size: 13px;
+    color: var(--text-light-secondary);
+  }
+
+  .el-table .cell {
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .el-table--enable-row-hover .el-table__body tr:hover > td {
+    background: rgba(212, 175, 55, 0.08);
+  }
+
+  /* ================================================= */
+  /* 🔘 按钮 - APP质感 */
+  /* ================================================= */
+  
+  .el-button {
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    min-height: 44px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .el-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+  }
+
+  .el-button:active::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .el-button--primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #e8d47a 100%);
+    border: none;
+    color: #000;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3), 0 0 20px rgba(212, 175, 55, 0.1);
+  }
+
+  .el-button--primary:active {
+    transform: scale(0.96);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+  }
+
+  .el-button--large {
+    padding: 14px 28px;
+    font-size: 16px;
+    min-height: 50px;
+    border-radius: 14px;
+  }
+
+  /* ================================================= */
+  /* 📝 表单元素 - APP质感 */
+  /* ================================================= */
+  
+  .el-input {
+    font-size: 16px; /* 防止iOS自动缩放 */
+  }
+
+  .el-input__inner {
+    height: 48px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.15);
+    transition: all 0.25s ease;
+    background: var(--bg-light-card);
+    padding: 0 16px;
+  }
+
+  .el-input__inner:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+    background: #fff;
+  }
+
+  .el-textarea__inner {
+    font-size: 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.15);
+    padding: 12px 16px;
+    transition: all 0.25s ease;
+  }
+
+  .el-textarea__inner:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+  }
+
+  .el-form-item {
+    margin-bottom: 20px;
+  }
+
+  .el-form-item__label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding: 0 !important;
+    color: var(--text-light);
+    letter-spacing: 0.2px;
+  }
+
+  .el-form-item__content {
+    margin-left: 0 !important;
+  }
+
+  /* ================================================= */
+  /* 💬 对话框 - APP质感 */
+  /* ================================================= */
+  
+  .el-dialog {
+    width: 92% !important;
+    max-width: 92% !important;
+    margin: 4vh auto !important;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.1);
+    border: none;
+  }
+
+  .el-dialog__header {
+    padding: 24px 24px 20px !important;
+    background: linear-gradient(180deg, rgba(250, 251, 252, 1) 0%, rgba(245, 247, 250, 1) 100%);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  }
+
+  .el-dialog__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 0.3px;
+  }
+
+  .el-dialog__body {
+    padding: 24px !important;
+    max-height: calc(92vh - 140px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg-light-card);
+  }
+
+  .el-dialog__footer {
+    padding: 20px 24px !important;
+    background: rgba(245, 247, 250, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(212, 175, 55, 0.1);
+  }
+
+  /* ================================================= */
+  /* 🏷️ 标签页 - APP质感 */
+  /* ================================================= */
+  
+  .el-tabs__header {
+    margin: 0 0 20px 0;
+  }
+
+  .el-tabs__item {
+    padding: 0 20px;
+    font-size: 15px;
+    font-weight: 500;
+    height: 48px;
+    line-height: 48px;
+    transition: all 0.25s ease;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .el-tabs__item.is-active {
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  /* ================================================= */
+  /* 📄 分页 - APP质感 */
+  /* ================================================= */
+  
+  .el-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 16px 0;
+  }
+
+  .el-pagination .el-pager li {
+    min-width: 36px;
+    height: 36px;
+    line-height: 36px;
+    font-size: 14px;
+    border-radius: 8px;
+    margin: 0 4px;
+    transition: all 0.25s ease;
+  }
+
+  .el-pagination .el-pager li.is-active {
+    background: linear-gradient(135deg, var(--primary) 0%, #e8d47a 100%);
+    color: #000;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+    font-weight: 600;
+  }
+
+  /* ================================================= */
+  /* 🔍 登录页 - APP质感 */
+  /* ================================================= */
+  
+  .login-card {
+    width: 90% !important;
+    max-width: 420px;
+    padding: 40px 30px !important;
+    border-radius: 24px;
+    background: rgba(30, 30, 30, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 1px rgba(212, 175, 55, 0.3);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+  }
+
+  .logo-circle {
+    width: 80px;
+    height: 80px;
+    font-size: 40px;
+    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.2);
+  }
+
+  .login-card h2 {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    letter-spacing: 4px;
+  }
+
+  .login-btn {
+    height: 52px;
+    font-size: 17px;
+    border-radius: 14px;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--primary) 0%, #e8d47a 100%);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4), 0 0 24px rgba(212, 175, 55, 0.2);
+  }
+
+  .login-btn:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ================================================= */
+/* 📱 小屏手机优化 (≤480px) */
+/* ================================================= */
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 16px 12px !important;
+  }
+
+  .title-box h2 {
+    font-size: 24px !important;
+  }
+
+  .el-card__body {
+    padding: 16px !important;
+  }
+
+  .el-button {
+    padding: 10px 20px;
+    font-size: 14px;
+    min-height: 40px;
+  }
+
+  .el-dialog {
+    width: 96% !important;
+    margin: 2vh auto !important;
+  }
+
+  .el-table th,
+  .el-table td {
+    padding: 10px 6px !important;
+  }
+
+  .el-table .cell {
+    font-size: 12px;
+  }
+}
+
+/* ================================================= */
+/* 🎭 触摸交互优化 */
+/* ================================================= */
+
+@media (hover: none) and (pointer: coarse) {
+  /* 增加触摸反馈 */
+  .el-button:active,
+  .el-menu-item:active,
+  .el-tabs__item:active {
+    transform: scale(0.96);
+    transition: transform 0.1s ease;
+  }
+
+  /* 禁用hover效果 */
+  .el-button:hover,
+  .el-menu-item:hover {
+    transform: none;
+  }
+
+  /* 增强点击反馈 */
+  .el-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* ================================================= */
+/* 🌈 动画增强 */
+/* ================================================= */
+
+@media (max-width: 768px) {
+  /* 页面过渡动画 */
+  .fade-slide-enter-active,
+  .fade-slide-leave-active {
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .fade-slide-enter-from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.98);
+  }
+
+  .fade-slide-leave-to {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.98);
+  }
+
+  /* 卡片进入动画 */
+  .el-card {
+    animation: cardFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes cardFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* 按钮脉冲动画（活跃状态） */
+  .el-button--primary {
+    animation: buttonPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes buttonPulse {
+    0%, 100% {
+      box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3), 0 0 20px rgba(212, 175, 55, 0.1);
+    }
+    50% {
+      box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.15);
+    }
+  }
+}
+
+/* ================================================= */
+/* 🎨 iOS Safari特殊优化 */
+/* ================================================= */
+
+@supports (-webkit-touch-callout: none) {
+  .main-content {
+    min-height: -webkit-fill-available;
+  }
+
+  .el-input__inner,
+  .el-textarea__inner,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .el-dialog__body {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+

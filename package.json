@@ -3,10 +3,15 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "admin"
+  ],
   "scripts": {
     "dev": "astro dev",
+    "dev:admin": "npm run dev -w admin",
     "start": "astro dev",
-    "build": "astro build && node scripts/verify-admin-dist.mjs",
+    "build:admin": "node scripts/build-admin.mjs",
+    "build": "npm run build:admin && astro build && node scripts/verify-admin-dist.mjs",
     "pages:deploy": "wrangler pages deploy dist --project-name=shanchuan-zaowu-site --branch=main",
     "pages:version": "true",
     "preview": "astro preview",

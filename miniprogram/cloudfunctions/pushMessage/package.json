@@ -1,0 +1,9 @@
+{
+  "name": "pushMessage",
+  "version": "1.0.0",
+  "description": "山海有信运营推送",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

@@ -1,0 +1,113 @@
+<!--pages/about/index.wxml-->
+<view class="container">
+  
+  <!-- 🟢 1. 全局噪点纹理 (Film Grain) -->
+  <view class="grain-overlay"></view>
+  
+  <!-- 导航栏 (返回按钮) -->
+  <view class="nav-bar" style="top: {{statusBarHeight}}px">
+    <view class="back-btn" bindtap="goBack">✕</view>
+  </view>
+
+  <scroll-view scroll-y="true" class="scroll-content" enable-flex="true">
+    
+    <!-- 2. 沉浸式首图 (The Opening) -->
+    <view class="hero-poster">
+      <image class="hero-img" src="cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/banners/chris-nguyen-tXmc2mVDxJc-unsplash.jpg" mode="aspectFill"></image>
+      <view class="hero-mask"></view>
+      <view class="hero-text {{isLoaded ? 'active' : ''}}">
+        <text class="h-sub">EST. 2026</text>
+        <text class="h-title">NATURE'S</text>
+        <text class="h-title-sub">CREATIONS</text>
+        <view class="h-line"></view>
+        <text class="h-cn">山海造物</text>
+        <text class="h-tagline">把山海带回家</text>
+        <text class="h-idea">自然 · 标本 · 美艺 · 生活</text>
+      </view>
+    </view>
+
+    <!-- 3. 策展人独白 (The Manifesto) -->
+    <view class="article-section">
+      <view class="para para-intro fade-up" style="animation-delay: 0.2s">
+        <text class="p-en">策展人独白｜PHILOSOPHY</text>
+        <text class="p-cn">敬畏生命，珍藏时光。</text>
+      </view>
+      
+      <view class="para para-body fade-up" style="animation-delay: 0.4s">
+        <text class="p-body">山海造物是一个自然美学生活方式品牌。我们在自然与人之间建立联系，让自然之美通过标本，以美的方式进入日常。
+
+每一件标本，都来自山野与时间的馈赠。我们用心的装裱与保存，只为把这一刻留在你身边。
+
+在这里遇见的，可以是一只蝶翅膀上的微光，也可以是一块石头里沉默的年轮——像朋友在窗边慢慢讲给你听。
+
+欢迎到店里坐坐：把山海带回家。</text>
+      </view>
+
+      <view class="para para-quote fade-up" style="animation-delay: 0.6s">
+        <view class="quote-wrapper">
+          <text class="p-quote">"在一粒沙中看见一个世界，在一朵野花里看见天堂。"
+
+"To see a world in a grain of sand, And a heaven in a wild flower."</text>
+          <text class="p-author">—威廉·布莱克 William Blake</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 4. 参观指南卡片 (The Guide) -->
+    <view class="info-section fade-up" style="transition-delay: 0.8s">
+      <view class="info-card">
+        <view class="card-header">
+          <text>VISIT US</text>
+          <text class="dot">●</text>
+          <text>OPEN DAILY</text>
+        </view>
+        
+        <view class="card-body">
+          <view class="row">
+            <text class="lbl">营业时间｜HOURS</text>
+            <text class="val">10:00 - 22:00</text>
+          </view>
+          <view class="row">
+            <text class="lbl">联系电话｜TEL</text>
+            <text class="val underline" bindtap="callPhone">{{phone}}</text>
+          </view>
+          <view class="row">
+            <text class="lbl">品牌官网｜WEB</text>
+            <text class="val underline" bindtap="copyWebsite">{{brandWebsite}}</text>
+          </view>
+          <view class="row">
+            <text class="lbl">地址｜ADD</text>
+            <text class="val">{{address}}</text>
+          </view>
+        </view>
+
+        <!-- 嵌入地图 -->
+        <view class="map-box" bindtap="openMap">
+           <map 
+            class="mini-map"
+            latitude="{{markers[0].latitude}}" 
+            longitude="{{markers[0].longitude}}"
+            markers="{{markers}}"
+            enable-scroll="{{false}}"
+            enable-zoom="{{false}}"
+          ></map>
+          <view class="map-mask">
+            <text>TAP TO NAVIGATE</text>
+          </view>
+        </view>
+
+        <view class="store-link-btn" bindtap="goToStoreTab">
+          <text>走进这有店 · 查看两家门店</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部 Logo -->
+    <view class="footer-logo">
+      <image class="logo-icon" src="/assets/icons/home-active.png" mode="aspectFit"></image> 
+      <text class="footer-cr-cn">© 2026 山海造物</text>
+      <text class="footer-cr-en">NATURE'S CREATIONS</text>
+    </view>
+
+  </scroll-view>
+</view>

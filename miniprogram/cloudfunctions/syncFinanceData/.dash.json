@@ -1,0 +1,10 @@
+{
+  "name": "syncFinanceData",
+  "desc": "财务数据同步云函数",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

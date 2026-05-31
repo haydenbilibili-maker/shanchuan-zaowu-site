@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "product-list": "/components/ProductList/index"
+  },
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "backgroundColor": "#1A1814"
+}

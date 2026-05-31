@@ -1,0 +1,9 @@
+{
+  "name": "manageAddress",
+  "version": "1.0.0",
+  "description": "用户收货地址管理",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

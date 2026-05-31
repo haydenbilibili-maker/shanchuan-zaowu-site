@@ -1,0 +1,10 @@
+{
+  "name": "likeComment",
+  "desc": "点赞评价",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

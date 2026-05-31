@@ -1,0 +1,117 @@
+/* pages/framer/index.wxss */
+page {
+  background-color: #1A1814;
+  color: #fff;
+  font-family: "PingFang SC", "Helvetica Neue", sans-serif;
+}
+
+/* 🟢 自定义导航栏 */
+.nav-bar {
+  position: fixed; left: 30rpx; z-index: 100;
+  /* top 由 JS 动态控制 */
+}
+.back-icon {
+  width: 64rpx; height: 64rpx; 
+  background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%; text-align: center; line-height: 60rpx; 
+  color: #fff; font-size: 32rpx;
+}
+
+/* 1. 头部档案 */
+.framer-header {
+  position: relative;
+  width: 100%;
+  height: 700rpx; /* 🟢 加高头部，让图片展示更完整 */
+  display: flex; justify-content: center; align-items: center;
+  overflow: hidden;
+}
+
+/* 背景图 */
+.bg-layer {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0.6; /* 降低透明度，让背景暗一点，凸显文字 */
+}
+.mask {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  /* 🟢 优化渐变：从透明到纯黑，无缝衔接下方内容 */
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 60%, #1A1814 100%);
+}
+
+.content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 60rpx; text-align: center;
+  margin-top: 100rpx; /* 避开顶部内容 */
+}
+
+.avatar-box { position: relative; margin-bottom: 24rpx; }
+.avatar-box image {
+  width: 180rpx; height: 180rpx; border-radius: 50%;
+  border: 4rpx solid #C4A76C;
+  box-shadow: 0 10rpx 40rpx rgba(0,0,0,0.6);
+}
+.verified-badge {
+  position: absolute; bottom: 10rpx; right: 10rpx;
+  width: 40rpx; height: 40rpx; background: #C4A76C; color: #1A1814;
+  border-radius: 50%; font-size: 24rpx; font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #1A1814;
+}
+
+.name {
+  font-size: 44rpx; font-weight: bold; color: #fff; margin-bottom: 20rpx;
+  letter-spacing: 2rpx; text-shadow: 0 4rpx 10rpx rgba(0,0,0,0.5);
+}
+
+.tags { display: flex; gap: 16rpx; margin-bottom: 30rpx; }
+.tag {
+  font-size: 22rpx; color: #C4A76C; 
+  border: 1px solid rgba(196, 167, 108, 0.4);
+  padding: 6rpx 20rpx; border-radius: 30rpx;
+  background: rgba(0,0,0,0.4);
+}
+
+.bio {
+  font-size: 26rpx; color: #ccc; line-height: 1.6;
+  max-width: 600rpx; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+
+/* 2. 作品集 */
+.work-section {
+  padding: 0 30rpx 60rpx; position: relative; top: -20rpx;
+}
+
+.section-header {
+  display: flex; align-items: center; justify-content: center; margin-bottom: 50rpx;
+}
+.title-group { display: flex; flex-direction: column; align-items: center; margin: 0 30rpx; }
+.section-header .en { font-size: 20rpx; color: #C4A76C; letter-spacing: 6rpx; margin-bottom: 6rpx; }
+.section-header .cn { font-size: 32rpx; font-weight: bold; color: #fff; letter-spacing: 2rpx; }
+.line { width: 60rpx; height: 1px; background: linear-gradient(to right, transparent, #333, transparent); }
+
+/* Grid 布局 */
+.product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24rpx; }
+
+.product-card {
+  background: #1a1a1a; border-radius: 12rpx; overflow: hidden;
+  border: 1px solid #2a2a2a;
+  box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.3);
+}
+
+.img-box { position: relative; width: 100%; padding-top: 100%; }
+.img-box image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.status-badge {
+  position: absolute; top: 12rpx; right: 12rpx;
+  background: rgba(0,0,0,0.8); color: #C4A76C; font-size: 18rpx;
+  padding: 4rpx 10rpx; border-radius: 4rpx;
+}
+
+.info { padding: 24rpx; }
+.p-title {
+  display: block; font-size: 26rpx; color: #eee; margin-bottom: 10rpx;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold;
+}
+.p-year { font-size: 22rpx; color: #666; display: block; }
+
+.empty-tip { text-align: center; color: #555; font-size: 24rpx; margin-top: 100rpx; }

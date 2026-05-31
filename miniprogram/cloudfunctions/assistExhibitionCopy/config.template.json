@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "openapi": []
+  },
+  "timeout": 60,
+  "envVariables": {
+    "DASHSCOPE_API_KEY": "YOUR_DASHSCOPE_API_KEY"
+  }
+}

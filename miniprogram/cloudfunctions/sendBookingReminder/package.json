@@ -1,0 +1,17 @@
+{
+  "name": "sendBookingReminder",
+  "version": "1.0.0",
+  "description": "发送预约提醒",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}
+
+
+
+
+
+
+
+

@@ -30,3 +30,13 @@ pnpm-debug.log*
 
 # wrangler local dev
 .wrangler/
+
+# monorepo · admin 源码（产物在 public/admin/）
+admin/node_modules/
+admin/dist/
+
+# monorepo · 微信小程序
+miniprogram/project.private.config.json
+miniprogram/cloudfunctions/*/node_modules/
+miniprogram/cloudfunctions/*/.env
+miniprogram/**/.DS_Store

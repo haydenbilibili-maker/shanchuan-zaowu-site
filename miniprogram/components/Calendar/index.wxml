@@ -1,0 +1,72 @@
+<!--components/Calendar/index.wxml-->
+<view class="calendar-container">
+  <!-- 月份导航 -->
+  <view class="calendar-header">
+    <view class="month-nav">
+      <view class="nav-btn prev" bindtap="changeMonth" data-direction="prev">
+        <text class="nav-icon">‹</text>
+      </view>
+      <view class="month-title">
+        <text class="year">{{currentYear}}</text>
+        <text class="month">{{currentMonth}}月</text>
+      </view>
+      <view class="nav-btn next" bindtap="changeMonth" data-direction="next">
+        <text class="nav-icon">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 星期标题 -->
+  <view class="week-header">
+    <block wx:for="{{weekDays}}" wx:key="*this">
+      <view class="week-day">{{item}}</view>
+    </block>
+  </view>
+
+  <!-- 日期网格 -->
+  <view class="calendar-grid">
+    <block wx:for="{{calendarDays}}" wx:key="index">
+      <view 
+        class="calendar-day {{item.month}} {{item.disabled ? 'disabled' : ''}} {{item.isSelected ? 'selected' : ''}} {{item.isToday ? 'today' : ''}} {{item.isFull ? 'full' : ''}}"
+        bindtap="selectDate"
+        data-full-date="{{item.fullDate}}"
+        data-disabled="{{item.disabled}}">
+        <text class="day-number">{{item.date}}</text>
+        <view class="day-status" wx:if="{{item.isFull}}">
+          <text class="status-dot">满</text>
+        </view>
+        <view class="day-status" wx:if="{{item.isSelected}}">
+          <text class="status-dot selected-dot">✓</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 图例 -->
+  <view class="calendar-legend">
+    <view class="legend-item">
+      <view class="legend-dot today"></view>
+      <text class="legend-text">今天</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-dot available"></view>
+      <text class="legend-text">可预约</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-dot full"></view>
+      <text class="legend-text">已满</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-dot disabled"></view>
+      <text class="legend-text">不可约</text>
+    </view>
+  </view>
+</view>
+
+
+
+
+
+
+
+

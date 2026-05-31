@@ -1,0 +1,80 @@
+/**
+ * 移动端适配关键修复
+ * 确保移动端样式能够覆盖Element Plus默认样式
+ */
+
+@media (max-width: 768px) {
+  /* ================================================= */
+  /* 🎯 强制覆盖Element Plus组件样式 */
+  /* ================================================= */
+  
+  /* 主容器 - 确保flex布局 */
+  .admin-container {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* el-container - 确保不占用空间 */
+  .admin-container .el-container {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* el-aside - 移动端隐藏，不占用布局空间 */
+  .admin-container .el-container .el-aside {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  /* aside类 - 作为fixed定位的抽屉菜单 */
+  .admin-container .el-container .el-aside.aside {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    height: -webkit-fill-available !important;
+    z-index: 2000 !important;
+    background: linear-gradient(180deg, var(--brand-green-900) 0%, var(--brand-green-700) 100%) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-right: none !important;
+  }
+  
+  .admin-container .el-container .el-aside.aside.mobile-menu-open {
+    transform: translateX(0) !important;
+  }
+  
+  /* el-main - 全宽显示 */
+  .admin-container .el-container .el-main {
+    width: 100% !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    flex: 1 !important;
+  }
+  
+  /* main-content类 - 为顶部导航留空间 */
+  .admin-container .el-container .el-main.main-content {
+    margin-top: 56px !important;
+    padding: 16px !important;
+    height: calc(100vh - 56px) !important;
+    height: calc(-webkit-fill-available - 56px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: var(--bg-light) !important;
+  }
+}
+

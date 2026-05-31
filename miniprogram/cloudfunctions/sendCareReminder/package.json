@@ -1,0 +1,9 @@
+{
+  "name": "sendCareReminder",
+  "version": "1.0.0",
+  "description": "签收后标本养护提醒（山海有信 care_tip）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

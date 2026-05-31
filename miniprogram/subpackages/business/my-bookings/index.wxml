@@ -1,0 +1,95 @@
+<!--pages/my-bookings/index.wxml-->
+<view class="container">
+  
+  <!-- 自定义导航栏 -->
+  <view class="custom-navbar">
+    <view class="nav-back" bindtap="goBack">
+      <text class="back-icon-text">←</text>
+    </view>
+    <text class="nav-title">我的预约</text>
+  </view>
+  <view class="nav-spacer"></view>
+  
+  <!-- 1. 顶部 Tab -->
+  <view class="tab-header">
+    <view class="tab-item {{curTab===0?'active':''}}" bindtap="switchTab" data-idx="0">
+      <text>待参加</text>
+      <view class="dot" wx:if="{{upcomingList.length>0}}"></view>
+    </view>
+    <view class="tab-item {{curTab===1?'active':''}}" bindtap="switchTab" data-idx="1">
+      <text>历史记录</text>
+    </view>
+  </view>
+
+  <!-- 2. 待核销列表 (复用 Booking 页票据样式) -->
+  <view class="list-box" wx:if="{{curTab===0}}">
+    <block wx:for="{{upcomingList}}" wx:key="_id">
+      
+      <!-- 🟢 票据卡片 -->
+      <view class="ticket-card stagger-item" bindtap="goToTicket" data-id="{{item._id}}">
+        <view class="ticket-left">
+          <view class="hole-circle top"></view>
+          <view class="hole-circle bottom"></view>
+          <view class="dashed-line"></view>
+          <text class="t-type">{{item.type === 'handcraft_course' ? 'HANDCRAFT' : (item.type==='special_activity'?'EVENT':'VISIT')}}</text>
+        </view>
+        
+        <view class="ticket-right">
+          <view class="tr-top">
+             <text class="tr-title">{{item.title}}</text>
+             <view class="tr-badge">NO.{{item._id_short}}</view>
+          </view>
+          
+          <view class="tr-mid">
+             <view class="info-col">
+               <text class="lbl">DATE</text>
+               <text class="val">{{item.month}} {{item.day}}</text>
+             </view>
+             <view class="info-col">
+               <text class="lbl">TIME</text>
+               <text class="val highlight">{{item.time}}</text>
+             </view>
+             <view class="info-col">
+               <text class="lbl">GUEST</text>
+               <text class="val">{{item.people}}</text>
+             </view>
+          </view>
+
+          <view class="tr-bot">
+             <view class="btn-use">点击核销 →</view>
+          </view>
+        </view>
+      </view>
+
+    </block>
+
+    <view class="empty-state" wx:if="{{upcomingList.length === 0 && !loading}}">
+      <view class="empty-icon">🎫</view>
+      <text>暂无待参加行程</text>
+    </view>
+  </view>
+
+  <!-- 3. 历史记录 (存根风格) -->
+  <view class="list-box" wx:if="{{curTab===1}}">
+    <block wx:for="{{historyList}}" wx:key="_id">
+      <view class="history-card stagger-item" bindtap="goToTicket" data-id="{{item._id}}">
+        <view class="hc-left">
+           <text class="hc-day">{{item.day}}</text>
+           <text class="hc-month">{{item.month}}</text>
+        </view>
+        <view class="hc-mid">
+           <text class="hc-title">{{item.title}}</text>
+           <text class="hc-time">{{item.time}} · {{item.people}}人</text>
+        </view>
+        <view class="hc-right">
+           <view class="stamp-used">USED</view>
+        </view>
+      </view>
+    </block>
+
+    <view class="empty-state" wx:if="{{historyList.length === 0 && !loading}}">
+      <text>暂无历史记录</text>
+    </view>
+  </view>
+
+</view>

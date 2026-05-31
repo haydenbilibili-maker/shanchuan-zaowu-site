@@ -1,0 +1,102 @@
+<!--pages/ticket/index.wxml-->
+<view class="page">
+  <!-- 顶部导航 -->
+  <view class="page-header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="back-btn" bindtap="goBack">
+      <text class="back-arrow">←</text>
+    </view>
+    <text class="page-title">预约详情</text>
+    <view class="header-spacer"></view>
+  </view>
+
+  <!-- 票务主体（可滚动） -->
+  <scroll-view scroll-y class="page-body" enhanced show-scrollbar="{{false}}">
+    <view class="ticket-wrap">
+      <view class="ticket-box">
+        <view class="ticket-header">
+          <text class="header-main">MUSEUM PASS</text>
+          <text class="sub">山海造物 · 把山海带回家</text>
+        </view>
+
+        <view class="qr-section">
+          <image class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{booking._id}}" mode="aspectFill"></image>
+          <text class="qr-tip">请向工作人员出示此码</text>
+          <text class="qr-code">NO. {{bookingShortId}}</text>
+        </view>
+
+        <view class="info-section">
+          <view class="row">
+            <text class="label">PROJECT</text>
+            <text class="val">{{booking.title}}</text>
+          </view>
+          <view class="row">
+            <text class="label">DATE</text>
+            <text class="val">{{booking.date}} {{booking.time}}</text>
+          </view>
+          <view class="row">
+            <text class="label">GUEST</text>
+            <text class="val">{{booking.people}} 位</text>
+          </view>
+        </view>
+
+        <view class="stamp" wx:if="{{booking.status === 'used'}}">
+          <view class="stamp-circle">
+            <text>USED</text>
+            <text class="stamp-date">已核销</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作栏（固定，不遮挡票券） -->
+  <view class="page-footer" wx:if="{{booking.status === 'confirmed'}}">
+    <view class="footer-btn outline" bindtap="showCancel">
+      <text>取消预约</text>
+    </view>
+    <view class="footer-btn primary" bindtap="showReschedule">
+      <view class="icon-calendar"></view>
+      <text>改期</text>
+    </view>
+  </view>
+
+  <!-- 改期弹窗 -->
+  <view class="modal-overlay {{showRescheduleModal ? 'show' : ''}}" bindtap="closeRescheduleModal" catchtouchmove="true">
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">改期预约</text>
+        <view class="modal-close" bindtap="closeRescheduleModal">✕</view>
+      </view>
+
+      <view class="modal-body">
+        <view class="form-section">
+          <text class="section-label">选择新日期</text>
+          <scroll-view scroll-x class="date-scroll" enable-flex show-scrollbar="{{false}}">
+            <block wx:for="{{weekDays}}" wx:key="index">
+              <view class="date-pill {{selectedDateIndex === index ? 'active' : ''}}" bindtap="selectDate" data-index="{{index}}">
+                <text class="d-week">{{item.week}}</text>
+                <text class="d-day">{{item.day}}</text>
+              </view>
+            </block>
+          </scroll-view>
+        </view>
+
+        <view class="form-section">
+          <text class="section-label">选择新时间</text>
+          <view class="time-grid">
+            <block wx:for="{{timeSlots}}" wx:key="index">
+              <view class="time-btn {{selectedTimeIndex === index ? 'active' : ''}}" bindtap="selectTime" data-index="{{index}}">
+                <text>{{item.time}}</text>
+              </view>
+            </block>
+          </view>
+        </view>
+      </view>
+
+      <view class="modal-footer">
+        <view class="modal-btn cancel" bindtap="closeRescheduleModal">取消</view>
+        <view class="modal-btn confirm" bindtap="confirmReschedule">确认改期</view>
+      </view>
+    </view>
+  </view>
+</view>

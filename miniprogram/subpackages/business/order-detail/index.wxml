@@ -1,0 +1,167 @@
+<view class="container">
+  
+  <view class="archive-folder {{isDecrypted ? 'active' : ''}}">
+    
+    <view class="folder-header">
+      <view class="fh-left">
+        <text class="fh-label"><text class="en-label">ARCHIVE NO.</text> 订单编号</text>
+        <text class="fh-val copy" bindtap="copyOrderNo">{{order.serialNo}} ❐</text>
+      </view>
+      <view class="fh-right">
+        <text class="fh-label"><text class="en-label">DATE</text> 日期</text>
+        <text class="fh-val">{{order.archiveDate}}</text>
+      </view>
+    </view>
+
+    <view class="divider-dashed"></view>
+
+    <view class="shipping-label slide-in-delay-1" 
+          wx:if="{{order.status === 'shipped' || order.status === 'received'}}">
+      
+      <view class="air-mail-border"></view>
+
+      <view class="sl-header">
+        <text><text class="en-label">PRIORITY MAIL</text> 优先派送</text>
+        <view class="sl-carrier">
+          <text>{{order.logistics.carrier || '顺丰速运'}}</text>
+          <view class="sl-icon"><image src="/assets/icons/plane.png" mode="aspectFit" class="icon-gold"></image></view>
+        </view>
+      </view>
+
+      <view class="sl-content">
+        <view class="sl-row" bindtap="copyTracking">
+           <text class="sl-lbl"><text class="en-label">WAYBILL NO.</text> 运单号</text>
+           <text class="sl-val code">{{order.logistics.trackingNumber || '待发货'}} ❐</text>
+        </view>
+        
+        <view class="sl-row">
+           <text class="sl-lbl"><text class="en-label">TO:</text> 收件人</text>
+           <view class="sl-user-box">
+             <text class="sl-user">{{order.address.name}}</text>
+             <text class="sl-phone">{{order.address.phone}}</text>
+           </view>
+        </view>
+        <text class="sl-addr">{{order.address.region[0]}} {{order.address.region[1]}} {{order.address.region[2]}} {{order.address.detail}}</text>
+      </view>
+      
+      <view class="sl-barcode">||| || |||| ||| || ||||| | |||</view>
+      
+      <view class="confirm-btn-area" wx:if="{{order.status === 'shipped'}}">
+         <view class="btn-sign" bindtap="confirmReceipt">
+            <text>确认签收</text>
+            <text class="btn-arrow">→</text>
+         </view>
+      </view>
+    </view>
+    <view class="manifest-section slide-in-delay-2">
+      <text class="section-title"><text class="en-label">MANIFEST</text> 订单清单</text>
+      <block wx:for="{{order.products}}" wx:key="id" wx:for-index="prodIndex">
+        <view class="manifest-item" bindtap="goToProduct" data-id="{{item.id}}">
+          <image src="{{item.image}}" mode="aspectFill" class="m-img"></image>
+          <view class="m-info">
+            <text class="m-title">{{item.title}}</text>
+            <text class="m-latin">{{item.latin}}</text>
+            <view class="m-meta">
+              <text class="m-qty"><text class="en-label">QTY:</text> 数量 {{item.count || 1}}</text>
+              <text class="m-price">¥ {{item.price}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="custom-section slide-in-delay-2" wx:if="{{isCustomOrder && customPreviewLines.length}}">
+      <text class="section-title"><text class="en-label">ATELIER</text> 定制方案</text>
+      <view class="custom-plate">
+        <view class="custom-line" wx:for="{{customPreviewLines}}" wx:key="label">
+          <text class="custom-lbl">{{item.label}}</text>
+          <text class="custom-val {{item.latin ? 'latin' : ''}}">{{item.value}}</text>
+        </view>
+        <view class="custom-line" wx:if="{{productionStatusLabel}}">
+          <text class="custom-lbl">制作进度</text>
+          <text class="custom-val gold">{{productionStatusLabel}}</text>
+        </view>
+        <view class="custom-line" wx:if="{{order.customExtraPrice > 0}}">
+          <text class="custom-lbl">定制加价</text>
+          <text class="custom-val gold">+¥ {{order.customExtraPrice}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="care-section slide-in-delay-2" wx:if="{{order.status === 'received' && showCare}}">
+      <text class="section-title"><text class="en-label">SPECIMEN CARE</text> 养护提醒</text>
+      <view class="care-hint-strip" bindtap="goToCare">
+        <view class="care-hint-main">
+          <text class="care-hint-title">{{careContext.productTitle}}</text>
+          <text class="care-hint-desc">{{careContext.careSummary}}</text>
+          <text class="care-hint-tag" style="color: {{careContext.categoryColor}};">{{careContext.categoryLabel}}</text>
+        </view>
+        <text class="care-hint-cta">查看指南 →</text>
+      </view>
+    </view>
+
+    <view class="finance-section slide-in-delay-3">
+      <view class="f-row">
+        <text>商品总额</text>
+        <text>¥ {{order.originalPrice || order.totalPrice}}</text>
+      </view>
+      
+      <view class="f-row highlight" wx:if="{{order.discountRate < 1}}">
+        <text>会员折扣 ({{order.discountRate * 10}}折)</text>
+        <text>- ¥ {{order.discountAmount}}</text>
+      </view>
+      <view class="f-row highlight" wx:if="{{order.couponValue > 0}}">
+        <text>礼券抵扣</text>
+        <text>- ¥ {{order.couponValue}}</text>
+      </view>
+      
+      <view class="f-row">
+        <text>运费</text>
+        <text>¥ 0.00</text>
+      </view>
+      
+      <view class="f-divider"></view>
+      
+      <view class="f-total">
+        <text><text class="en-label">PAID</text> 实付金额</text>
+        <text class="gold-txt">¥ {{order.totalPrice}}</text>
+      </view>
+    </view>
+
+    <view class="stamp-mark {{stampClass}} {{isDecrypted ? 'stamp-drop' : ''}}">
+      <view class="s-inner">{{stampText}}</view>
+    </view>
+
+    <view class="holes">
+      <view class="hole"></view><view class="hole"></view><view class="hole"></view>
+    </view>
+
+  </view>
+
+  <view class="action-footer safe-area">
+    <!-- 待付款：支付 + 取消 -->
+    <view class="pending-pay-actions" wx:if="{{order.status === 'pending_pay'}}">
+      <view class="btn-text cancel" catchtap="handleCancelOrder">取消订单</view>
+      <view class="hologram-btn flex-grow" catchtap="handlePay">
+        <text>立即支付 ¥{{order.totalPrice}}</text>
+      </view>
+    </view>
+
+    <!-- 已签收：养护 + 证书 -->
+    <view class="received-actions" wx:if="{{order.status === 'received' && showCare}}">
+      <view class="btn-main flex-grow" catchtap="goToCare">标本养护</view>
+      <view class="hologram-btn flex-grow" catchtap="viewCertificate">收藏证书</view>
+    </view>
+    <view class="hologram-btn" catchtap="viewCertificate" wx:elif="{{order.status === 'received'}}">
+      <text>查看收藏证书</text>
+    </view>
+
+    <!-- 未签收订单：显示操作按钮组 -->
+    <view class="btn-group" wx:if="{{order.status !== 'received' && order.status !== 'pending_pay'}}">
+      <view class="btn-text" bindtap="requestRefund" wx:if="{{order.status === 'paid'}}">申请退款</view>
+      <!-- 🟢 代金券订单不显示评价入口 -->
+      <view class="btn-text" bindtap="goToComment" wx:if="{{order.products && order.products.length > 0 && !isVoucherOrder}}">评价商品</view>
+      <view class="btn-text" bindtap="goToSupport">联系专员</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,211 @@
+page { background: #1A1814; color: #D5D1C8; padding-bottom: 160rpx; }
+view, text { box-sizing: border-box; }
+
+.page { padding: 24rpx; }
+
+.card {
+  background: #1F1D1A;
+  border: 1px solid rgba(38, 35, 32, 0.4);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.address-card { position: relative; padding-right: 60rpx; }
+.addr-head { display: flex; gap: 24rpx; margin-bottom: 12rpx; }
+.addr-name { font-size: 32rpx; font-weight: 500; color: #fff; }
+.addr-phone { font-size: 28rpx; color: #A09A90; }
+.addr-detail { font-size: 26rpx; color: #D5D1C8; line-height: 1.5; }
+.addr-placeholder { font-size: 30rpx; color: #C4A76C; }
+.addr-arrow { position: absolute; right: 32rpx; top: 50%; transform: translateY(-50%); font-size: 40rpx; color: #6B6560; }
+
+.section-label {
+  font-size: 22rpx;
+  color: #6B6560;
+  letter-spacing: 0.1em;
+  margin-bottom: 24rpx;
+}
+
+.goods-item { display: flex; gap: 24rpx; padding: 16rpx 0; border-bottom: 1px solid rgba(38, 35, 32, 0.6); }
+.goods-item:last-child { border-bottom: none; }
+.goods-img { width: 140rpx; height: 140rpx; border-radius: 16rpx; background: #262320; flex-shrink: 0; }
+.goods-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+.goods-title { font-size: 28rpx; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goods-latin { font-size: 22rpx; color: #C4A76C; font-style: italic; margin-top: 4rpx; }
+.goods-sku { font-size: 22rpx; color: #A09A90; margin-top: 4rpx; display: block; }
+.shipping-tip { font-size: 22rpx; color: #6B6560; padding-top: 8rpx; }
+.remark-input {
+  width: 100%;
+  min-height: 120rpx;
+  background: #262320;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  font-size: 26rpx;
+  color: #D5D1C8;
+}
+.invoice-types { display: flex; gap: 16rpx; margin-bottom: 16rpx; }
+.inv-type {
+  font-size: 24rpx;
+  color: #6B6560;
+  padding: 8rpx 24rpx;
+  border: 1px solid rgba(38, 35, 32, 0.6);
+  border-radius: 9999px;
+}
+.inv-type.active { color: #C4A76C; border-color: rgba(196, 167, 108, 0.5); }
+.inv-input {
+  width: 100%;
+  background: #262320;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 26rpx;
+  color: #D5D1C8;
+  margin-bottom: 12rpx;
+}
+.goods-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx; }
+.goods-price { font-size: 28rpx; color: #fff; font-family: monospace; }
+.goods-count { font-size: 24rpx; color: #A09A90; }
+
+.row-item { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 0; }
+.row-label { font-size: 28rpx; color: #A09A90; }
+.row-value { font-size: 28rpx; color: #D5D1C8; display: flex; align-items: center; gap: 8rpx; }
+.row-value.gold { color: #C4A76C; }
+.row-arrow { color: #6B6560; font-size: 32rpx; }
+.coupon-hint { color: #C4A76C; }
+.coupon-hint.muted { color: #6B6560; }
+
+.total-row { border-top: 1px solid rgba(38, 35, 32, 0.6); margin-top: 8rpx; padding-top: 24rpx; }
+.total-price { font-size: 36rpx; font-weight: 600; color: #C4A76C; font-family: monospace; }
+
+.footer-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(26, 24, 20, 0.98);
+  border-top: 1px solid rgba(38, 35, 32, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  z-index: 100;
+}
+.footer-price { display: flex; align-items: baseline; gap: 8rpx; }
+.fp-label { font-size: 24rpx; color: #A09A90; }
+.fp-value { font-size: 40rpx; font-weight: 600; color: #C4A76C; font-family: monospace; }
+.submit-btn {
+  background: #C4A76C;
+  color: #1A1814;
+  font-size: 30rpx;
+  font-weight: 500;
+  padding: 24rpx 64rpx;
+  border-radius: 16rpx;
+}
+.submit-btn.disabled { opacity: 0.6; pointer-events: none; }
+
+.modal-mask {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+.modal-panel {
+  width: 100%;
+  max-height: 70vh;
+  background: #1F1D1A;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 32rpx;
+}
+.modal-head { display: flex; justify-content: space-between; font-size: 32rpx; color: #fff; margin-bottom: 24rpx; }
+.modal-close { color: #6B6560; padding: 8rpx; }
+.coupon-scroll { max-height: 50vh; }
+.coupon-opt {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+  border: 1px solid rgba(38, 35, 32, 0.6);
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+}
+.coupon-opt.disabled { opacity: 0.4; pointer-events: none; }
+.c-left { display: flex; flex-direction: column; }
+.c-val { font-size: 32rpx; color: #C4A76C; font-weight: 600; }
+.c-min { font-size: 22rpx; color: #6B6560; margin-top: 4rpx; }
+.c-name { font-size: 26rpx; color: #D5D1C8; }
+.check { color: #C4A76C; font-size: 32rpx; }
+
+.custom-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 12rpx 0;
+  border-bottom: 1px solid rgba(38, 35, 32, 0.5);
+}
+.custom-line:last-of-type { border-bottom: none; }
+.custom-label { font-size: 24rpx; color: #6B6560; flex-shrink: 0; }
+.custom-value { font-size: 24rpx; color: #D5D1C8; text-align: right; flex: 1; }
+.custom-value.latin { font-style: italic; color: #C4A76C; }
+.custom-value.gold { color: #C4A76C; }
+
+.specimen-mask {
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+}
+.specimen-panel {
+  width: 100%;
+  background: #1F1D1A;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: 24rpx;
+  padding: 40rpx 36rpx 36rpx;
+}
+.specimen-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  margin-bottom: 24rpx;
+}
+.specimen-body {
+  display: block;
+  font-size: 28rpx;
+  color: #D5D1C8;
+  line-height: 1.65;
+  margin-bottom: 20rpx;
+}
+.specimen-note {
+  display: block;
+  font-size: 24rpx;
+  color: #A09A90;
+  line-height: 1.55;
+  margin-bottom: 36rpx;
+}
+.specimen-actions {
+  display: flex;
+  gap: 20rpx;
+}
+.specimen-btn {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+}
+.specimen-btn.secondary {
+  background: transparent;
+  border: 1px solid rgba(196, 167, 108, 0.45);
+  color: #C4A76C;
+}
+.specimen-btn.primary {
+  background: #C4A76C;
+  color: #1A1814;
+}
+.custom-estimate {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #A09A90;
+}

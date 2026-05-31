@@ -1,0 +1,10 @@
+{
+  "name": "getUserStatistics",
+  "desc": "获取用户详细统计数据",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

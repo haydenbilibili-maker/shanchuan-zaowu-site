@@ -1,0 +1,430 @@
+<!--pages/detail/index.wxml-->
+<wxs module="tool">
+var calcVip = function(price, rate) {
+  if (!price) return '0';
+  var p = parseFloat(price);
+  return (p * rate).toFixed(0);
+}
+module.exports.calcVip = calcVip;
+</wxs>
+
+<view class="container">
+  <!-- 顶部导航：滚动渐显 -->
+  <view class="nav-bar-wrap" style="padding-top: {{statusBarHeight}}px; background: rgba(26,24,20,{{navOpacity}});">
+    <view class="nav-bar-inner" style="height: {{navBarHeight}}px;">
+      <view class="nav-icon-btn back-icon" bindtap="goBack">
+        <text class="back-arrow">←</text>
+      </view>
+      <text class="nav-title" wx:if="{{navOpacity > 0.5}}">{{product.title}}</text>
+      <view class="nav-right-group" style="padding-right: {{navPaddingRight}}px;">
+        <button class="nav-icon-btn nav-share-btn" plain open-type="share" hover-class="nav-share-hover">
+          <image src="/assets/icons/share.png" class="nav-action-icon" mode="aspectFit"></image>
+        </button>
+        <view class="nav-icon-btn nav-cart-btn" bindtap="goToCart">
+          <image src="/assets/icons/box.png" class="nav-action-icon" mode="aspectFit"></image>
+          <view class="cart-badge" wx:if="{{cartCount > 0}}">{{cartCount > 99 ? '99+' : cartCount}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 吸顶 Tab（商品 / 档案 / 评价） -->
+  <view class="sticky-tabs {{showStickyTabs ? 'visible' : ''}}" style="top: {{statusBarHeight + navBarHeight}}px;">
+    <view class="tab-item {{activeTab === 'detail' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="detail">商品</view>
+    <view class="tab-item {{activeTab === 'archive' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="archive">档案</view>
+    <view class="tab-item {{activeTab === 'review' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="review">评价<text wx:if="{{commentTotal > 0}}" class="tab-count">({{commentTotal}})</text></view>
+  </view>
+
+  <!-- 主图轮播 -->
+  <view class="hero-wrapper">
+    <swiper class="hero-swiper" indicator-dots="{{imageTotal > 1}}" indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#C4A76C" circular="true" bindchange="onSwiperChange">
+      <block wx:for="{{product.images}}" wx:key="*this">
+        <swiper-item>
+          <image src="{{item}}" mode="aspectFill" class="slide-image" bindtap="previewImage" data-current="{{item}}"></image>
+        </swiper-item>
+      </block>
+    </swiper>
+    <view class="img-counter" wx:if="{{imageTotal > 1}}">{{imageIndex + 1}}/{{imageTotal}}</view>
+    <view class="hero-overlay"></view>
+  </view>
+
+  <!-- 核心内容区 -->
+  <view class="content-body">
+    <!-- 价格与标题 -->
+    <view class="commerce-card" id="section-detail">
+      <view class="price-block">
+        <view class="price-row">
+          <block wx:if="{{discountRate < 1}}">
+            <view class="vip-box">
+              <text class="symbol">VIP ¥</text>
+              <text class="num">{{tool.calcVip(displayPrice, discountRate)}}</text>
+            </view>
+            <text class="origin">¥{{displayPrice}}{{priceFrom ? '起' : ''}}</text>
+          </block>
+          <block wx:else>
+            <text class="symbol">¥</text>
+            <text class="num">{{displayPrice}}</text>
+            <text class="price-from" wx:if="{{priceFrom}}">起</text>
+          </block>
+        </view>
+        <view class="stock-row">
+          <text class="stock-label soldout" wx:if="{{displayStock <= 0}}">已售罄</text>
+          <text class="stock-label warn" wx:elif="{{displayStock <= 2}}">仅剩 {{displayStock}} 件</text>
+          <text class="stock-label" wx:else>现货 {{displayStock}} 件</text>
+        </view>
+      </view>
+
+      <view class="title-block">
+        <view class="tags-row">
+          <text class="tag-item treasure" wx:if="{{product.isTreasure}}">镇馆之宝</text>
+          <text class="tag-item">{{product.category}}</text>
+        </view>
+        <text class="title-main">{{product.title}}</text>
+        <text class="latin-sub" wx:if="{{product.latinName}}">{{product.latinName}}</text>
+      </view>
+
+      <!-- 服务保障 -->
+      <view class="service-row">
+        <view class="service-item"><text class="service-dot"></text><text>博物级装裱</text></view>
+        <view class="service-item"><text class="service-dot"></text><text>正品保障</text></view>
+        <view class="service-item"><text class="service-dot"></text><text>售后无忧</text></view>
+      </view>
+    </view>
+
+    <!-- 优惠券条 -->
+    <view class="coupon-strip" wx:if="{{couponHint || claimableCoupons.length}}" bindtap="openCouponSheet">
+      <text class="coupon-strip-label">优惠</text>
+      <scroll-view scroll-x class="coupon-strip-scroll" enable-flex="true">
+        <view class="coupon-tag" wx:for="{{claimableCoupons}}" wx:key="_id" wx:if="{{!item.claimed}}">{{item.label}}</view>
+        <view class="coupon-tag highlight" wx:if="{{bestCoupon && couponSavedAmount > 0}}">可省 ¥{{couponSavedAmount}}</view>
+      </scroll-view>
+      <text class="coupon-strip-action">{{couponHint || '查看'}} ›</text>
+    </view>
+
+    <!-- 规格 / 运费 / 数量 信息行 -->
+    <view class="info-rows">
+      <view class="info-row" bindtap="openSkuSheet">
+        <text class="info-label">已选</text>
+        <text class="info-value">{{specSummary}}</text>
+        <text class="info-arrow">›</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">运费</text>
+        <text class="info-value gold">{{shippingHint}}</text>
+      </view>
+      <view class="info-row muted">
+        <text class="info-label">说明</text>
+        <text class="info-value">{{shippingRuleText}}</text>
+      </view>
+    </view>
+
+    <!-- 标本养护摘要（购前预览） -->
+    <view class="care-strip" wx:if="{{showCareStrip}}" bindtap="goToCareGuide">
+      <view class="care-strip-accent"></view>
+      <view class="care-strip-main">
+        <text class="care-strip-overline">SPECIMEN CARE · 养护说明</text>
+        <text class="care-strip-summary">{{careSummary}}</text>
+        <text class="care-strip-tag" style="color: {{careCategoryColor}};">{{careCategoryLabel}}</text>
+      </view>
+      <text class="care-strip-cta">查看指南 →</text>
+    </view>
+
+    <!-- 快捷功能 -->
+    <view class="quick-actions">
+      <view class="quick-btn" bindtap="showAR">
+        <image src="/assets/icons/box.png" class="quick-icon"></image>
+        <text>AR 试摆</text>
+      </view>
+      <view class="quick-btn" bindtap="show360">
+        <image src="/assets/icons/trend.png" class="quick-icon"></image>
+        <text>360° 鉴赏</text>
+      </view>
+      <view class="quick-btn" bindtap="createPoster">
+        <image src="/assets/icons/poster.png" class="quick-icon"></image>
+        <text>知识卡</text>
+      </view>
+      <view class="quick-btn" bindtap="handleAudio">
+        <image src="/assets/icons/audio.png" class="quick-icon"></image>
+        <text>讲解</text>
+      </view>
+    </view>
+
+    <!-- 商品参数 -->
+    <view class="section-title">PARAMETERS / 商品参数</view>
+    <view class="params-card">
+      <view class="param-row"><text class="param-k">品类</text><text class="param-v">{{product.category || '—'}}</text></view>
+      <view class="param-row"><text class="param-k">采集地</text><text class="param-v">{{product.origin || '—'}}</text></view>
+      <view class="param-row"><text class="param-k">采集时间</text><text class="param-v">{{product.collectDate || product.date || '—'}}</text></view>
+      <view class="param-row"><text class="param-k">装裱尺寸</text><text class="param-v">{{product.size || '—'}}</text></view>
+      <view class="param-row"><text class="param-k">装裱师</text><text class="param-v gold" bindtap="goToFramer" data-id="{{product.framerId}}">{{product.framerName || '—'}}</text></view>
+      <view class="param-row"><text class="param-k">拉丁学名</text><text class="param-v latin">{{product.latinName || '—'}}</text></view>
+    </view>
+
+    <!-- 图文详情 -->
+    <view class="section-title">DETAILS / 图文详情</view>
+    <view class="detail-content">
+      <text class="story-text">{{product.description}}</text>
+      <block wx:if="{{product.detailHtml}}">
+        <rich-text nodes="{{product.detailHtml}}" class="detail-rich"></rich-text>
+      </block>
+      <view class="detail-images" wx:if="{{detailImages.length}}">
+        <image
+          wx:for="{{detailImages}}"
+          wx:key="*this"
+          src="{{item}}"
+          mode="widthFix"
+          class="detail-img"
+          bindtap="previewDetailImage"
+          data-current="{{item}}"
+        ></image>
+      </view>
+    </view>
+
+    <!-- 档案区 -->
+    <view id="section-archive">
+      <view class="section-title">SPECIMEN ARCHIVES / 标本档案</view>
+      <view class="archive-grid">
+        <view class="archive-item">
+          <text class="lbl">采集地 ORIGIN</text>
+          <text class="val">{{product.origin}}</text>
+        </view>
+        <view class="archive-item">
+          <text class="lbl">采集时间 DATE</text>
+          <text class="val">{{product.collectDate || product.date}}</text>
+        </view>
+        <view class="archive-item">
+          <text class="lbl">装裱尺寸 SIZE</text>
+          <text class="val">{{product.size}}</text>
+        </view>
+        <view class="archive-item clickable" bindtap="goToFramer" data-id="{{product.framerId}}">
+          <text class="lbl">装裱师 FRAMER</text>
+          <view class="val-row">
+            <text class="val gold">{{product.framerName}}</text>
+            <text class="arrow">→</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-title">TAXONOMY / 科学分类</view>
+      <view class="taxonomy-card" wx:if="{{product.taxonomy && (product.taxonomy.kingdom || product.taxonomy.phylum || product.taxonomy.class)}}">
+        <view class="tax-row" wx:if="{{product.taxonomy.kingdom}}"><text class="k">界 Kingdom</text><text class="v">{{product.taxonomy.kingdom}}</text></view>
+        <view class="tax-row" wx:if="{{product.taxonomy.phylum}}"><text class="k">门 Phylum</text><text class="v">{{product.taxonomy.phylum}}</text></view>
+        <view class="tax-row" wx:if="{{product.taxonomy.class}}"><text class="k">纲 Class</text><text class="v">{{product.taxonomy.class}}</text></view>
+        <view class="tax-row" wx:if="{{product.taxonomy.order}}"><text class="k">目 Order</text><text class="v">{{product.taxonomy.order}}</text></view>
+        <view class="tax-row" wx:if="{{product.taxonomy.family}}"><text class="k">科 Family</text><text class="v">{{product.taxonomy.family}}</text></view>
+        <view class="tax-row" wx:if="{{product.taxonomy.genus}}"><text class="k">属 Genus</text><text class="v">{{product.taxonomy.genus}}</text></view>
+        <view class="tax-row highlight" wx:if="{{product.latinName}}"><text class="k">种 Species</text><text class="v">{{product.latinName}}</text></view>
+      </view>
+      <view class="taxonomy-card" wx:elif="{{product.category}}">
+        <view class="tax-row highlight"><text class="k">分类 Category</text><text class="v">{{product.rootCategoryName ? product.rootCategoryName + ' · ' : ''}}{{product.category}}</text></view>
+        <view class="tax-row highlight" wx:if="{{product.latinName}}"><text class="k">种 Species</text><text class="v">{{product.latinName}}</text></view>
+      </view>
+      <view class="taxonomy-empty" wx:else>
+        <text class="muted">暂无科学分类信息</text>
+      </view>
+
+      <block wx:if="{{showProtectionCert}}">
+        <view class="section-title">COLLECTION CERTIFICATE / 合法收藏</view>
+        <view class="cert-card" bindtap="previewCertificate">
+          <view class="cert-badge">{{protectionLabel}}</view>
+          <view class="cert-body">
+            <image class="cert-image" src="{{certificateUrl}}" mode="widthFix" />
+            <view class="cert-footer">
+              <text class="cert-tip">本藏品持有合法收藏许可证明</text>
+              <text class="cert-action">点击查看大图 →</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 相关推荐 -->
+    <view class="section-title">RELATED / 相关推荐</view>
+    <scroll-view class="recommend-scroll" scroll-x="true" enable-flex="true">
+      <block wx:for="{{recommends}}" wx:key="_id">
+        <view class="rec-card" bindtap="goToDetail" data-id="{{item._id}}">
+          <image src="{{item.images[0]}}" mode="aspectFill"></image>
+          <text class="rec-name">{{item.title}}</text>
+          <text class="rec-price">¥{{item.price}}</text>
+        </view>
+      </block>
+    </scroll-view>
+
+    <!-- 用户评价 -->
+    <view class="comment-section" id="section-review">
+      <view class="comment-header">
+        <view class="section-title inline">REVIEWS / 用户评价</view>
+        <view class="comment-action" bindtap="goToComment" wx:if="{{product._id}}">
+          <text>发表评价</text>
+          <text class="arrow">→</text>
+        </view>
+      </view>
+      <comment-list
+        wx:if="{{product._id}}"
+        target-type="product"
+        target-id="{{product._id}}"
+        show-stats="{{true}}"></comment-list>
+      <view class="comment-empty-hint" wx:else>
+        <text>加载中...</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar safe-area">
+    <view class="bottom-icons">
+      <view class="icon-btn" bindtap="goToSupport">
+        <image class="bar-icon" src="/assets/icons/message.png" mode="aspectFit"></image>
+        <text class="bar-txt">客服</text>
+      </view>
+      <view class="icon-btn" bindtap="goToCart">
+        <image class="bar-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+        <text class="bar-txt">购物车</text>
+        <view class="bar-badge" wx:if="{{cartCount > 0}}">{{cartCount > 99 ? '99+' : cartCount}}</view>
+      </view>
+      <view class="icon-btn" bindtap="toggleCollect">
+        <image class="bar-icon {{isCollected ? 'bar-icon-active' : ''}}" src="{{isCollected ? '/assets/icons/star-active.png' : '/assets/icons/star.png'}}" mode="aspectFit"></image>
+        <text class="bar-txt">收藏</text>
+      </view>
+    </view>
+    <view class="bottom-cta">
+      <view class="custom-btn {{displayStock <= 0 ? 'disabled' : ''}}" bindtap="goToCustom">
+        <text class="btn-sub">定制</text>
+      </view>
+      <view class="add-cart-btn {{displayStock <= 0 ? 'disabled' : ''}}" bindtap="handleBuy">
+        <text class="btn-sub">加购物车</text>
+      </view>
+      <view class="buy-now-btn {{displayStock <= 0 ? 'disabled' : ''}}" bindtap="handleBuyNow">
+        <text class="btn-main">{{displayStock <= 0 ? '已售罄' : '立即购买'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 积分提示 -->
+  <view class="point-toast {{showPointTip ? 'active' : ''}}">
+    <view class="pt-icon">✦</view>
+    <text class="pt-text">{{pointTipText}}</text>
+  </view>
+
+  <!-- 360 鉴赏弹窗 -->
+  <view class="mask-360" wx:if="{{show360Modal}}" bindtap="close360">
+    <view class="box-360"
+          catchtap="true"
+          catchtouchstart="on360TouchStart"
+          catchtouchmove="on360TouchMove"
+          catchtouchend="on360TouchEnd">
+      <view class="tip-360">360° INTERACTIVE</view>
+      <view class="spinner-3d"
+            style="transform: rotateX({{rotateX}}deg) rotateY({{rotateY}}deg); transition: {{transition}};">
+        <image src="{{product.images[0]}}" mode="aspectFill"></image>
+        <view class="spinner-back"></view>
+      </view>
+      <view class="hint-360">左右/上下滑动以鉴赏细节</view>
+    </view>
+  </view>
+
+  <!-- SKU 规格选择 -->
+  <view class="sku-mask" wx:if="{{showSkuSheet}}" bindtap="closeSkuSheet">
+    <view class="sku-panel" catchtap="true">
+      <view class="sku-head">
+        <image class="sku-img" src="{{selectedSku.image || product.images[0]}}" mode="aspectFill"></image>
+        <view class="sku-meta">
+          <text class="sku-price">¥{{displayPrice}}</text>
+          <text class="sku-stock">库存 {{displayStock}}</text>
+          <text class="sku-selected">已选：{{specSummary}}</text>
+          <text class="sku-shipping">{{shippingHint}}</text>
+        </view>
+        <text class="sku-close" bindtap="closeSkuSheet">✕</text>
+      </view>
+      <block wx:if="{{hasSku && product.skuDimensions && product.skuDimensions.length}}">
+        <view class="sku-section" wx:for="{{dimensionOptions}}" wx:key="name">
+          <text class="sku-label">{{item.name}}</text>
+          <view class="sku-options">
+            <view
+              class="sku-pill {{selectedSpecs[item.name] === val.value ? 'active' : ''}} {{val.disabled ? 'soldout' : ''}}"
+              wx:for="{{item.values}}"
+              wx:for-item="val"
+              wx:key="value"
+              bindtap="selectDimension"
+              data-dim="{{item.name}}"
+              data-value="{{val.value}}"
+            >{{val.value}}</view>
+          </view>
+        </view>
+      </block>
+      <view class="sku-section" wx:elif="{{hasSku}}">
+        <text class="sku-label">规格</text>
+        <view class="sku-options">
+          <view
+            class="sku-pill {{selectedSkuId === item.id ? 'active' : ''}} {{item.stock <= 0 ? 'soldout' : ''}}"
+            wx:for="{{product.skus}}"
+            wx:key="id"
+            bindtap="selectSku"
+            data-id="{{item.id}}"
+          >{{item.specLabel}}</view>
+        </view>
+      </view>
+      <view class="sku-section qty-section">
+        <text class="sku-label">数量</text>
+        <view class="qty-stepper">
+          <view class="qty-btn {{buyCount <= 1 ? 'disabled' : ''}}" bindtap="changeBuyCount" data-delta="-1">−</view>
+          <text class="qty-num">{{buyCount}}</text>
+          <view class="qty-btn {{buyCount >= displayStock ? 'disabled' : ''}}" bindtap="changeBuyCount" data-delta="1">+</view>
+        </view>
+      </view>
+      <view class="sku-confirm" bindtap="confirmSkuAction">{{skuAction === 'cart' ? '加入购物车' : '立即购买'}}</view>
+    </view>
+  </view>
+
+  <!-- 优惠券弹层 -->
+  <view class="coupon-mask" wx:if="{{showCouponSheet}}" bindtap="closeCouponSheet">
+    <view class="coupon-panel" catchtap="true">
+      <view class="coupon-panel-head">
+        <text>优惠券</text>
+        <text class="sku-close" bindtap="closeCouponSheet">✕</text>
+      </view>
+      <scroll-view scroll-y class="coupon-panel-body">
+        <view class="coupon-section-title" wx:if="{{claimableCoupons.length}}">可领取</view>
+        <view class="coupon-card" wx:for="{{claimableCoupons}}" wx:key="_id">
+          <view class="coupon-card-left">
+            <text class="coupon-card-value">{{item.label}}</text>
+            <text class="coupon-card-title">{{item.title}}</text>
+          </view>
+          <view
+            class="coupon-card-btn {{item.claimed ? 'claimed' : ''}}"
+            bindtap="claimCoupon"
+            data-id="{{item._id}}"
+            data-claimed="{{item.claimed}}"
+          >{{item.claimed ? '已领取' : '领取'}}</view>
+        </view>
+
+        <view class="coupon-section-title" wx:if="{{bestCoupon}}">本单推荐</view>
+        <view class="coupon-card active" wx:if="{{bestCoupon}}">
+          <view class="coupon-card-left">
+            <text class="coupon-card-value">{{bestCoupon.label}}</text>
+            <text class="coupon-card-title">{{bestCoupon.title}} · 可省 ¥{{couponSavedAmount}}</text>
+          </view>
+          <view class="coupon-card-btn claimed">已拥有</view>
+        </view>
+
+        <view class="coupon-empty" wx:if="{{!claimableCoupons.length && !bestCoupon}}">
+          <text>暂无可用优惠券</text>
+        </view>
+      </scroll-view>
+      <view class="coupon-panel-foot">
+        <view class="coupon-link-btn" bindtap="goToCoupons">我的优惠券</view>
+        <view class="coupon-buy-btn" bindtap="buyNowWithCoupon">立即购买</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 海报弹窗 -->
+  <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
+  <view class="poster-modal" wx:if="{{showPosterModal}}" bindtap="closePosterModal">
+    <view class="poster-container" catchtap="true">
+      <view class="close-icon-out" bindtap="closePosterModal">✕</view>
+      <image src="{{posterImage}}" mode="widthFix" class="generated-img"></image>
+      <view class="poster-btns"><button class="save-btn" bindtap="savePoster">保存收藏证书</button></view>
+    </view>
+  </view>
+</view>

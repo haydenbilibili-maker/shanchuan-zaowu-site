@@ -1,0 +1,119 @@
+/* pages/orders/index.wxss */
+page { 
+  background-color: #1A1814; 
+  color: #fff; 
+  font-family: "PingFang SC", sans-serif; 
+  height: 100%; 
+  overflow-y: auto;
+}
+view, text, image { box-sizing: border-box; }
+
+.container { width: 100%; min-height: 100%; padding-bottom: 40rpx; }
+
+/* === 1. 横向滚动 Tab (解决拥挤) === */
+.tab-container {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px);
+  border-bottom: 1px solid #222;
+  padding: 20rpx 0;
+}
+
+.tab-scroll {
+  white-space: nowrap; width: 100%; padding-left: 30rpx; display: flex;
+}
+
+.tab-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 10rpx 30rpx; margin-right: 20rpx;
+  background: #222; border: 1px solid #333; border-radius: 40rpx;
+  color: #888; font-size: 24rpx; transition: all 0.2s;
+}
+
+.tab-pill.active {
+  background: #C4A76C; color: #1A1814; border-color: #C4A76C; font-weight: bold;
+  box-shadow: none;
+}
+
+/* === 2. 列表区域 === */
+.archive-cabinet { padding: 30rpx; width: 100%; }
+
+/* Loading */
+.loading-box { text-align: center; padding-top: 100rpx; opacity: 0.7; }
+.scanner { 
+  width: 100%; height: 2rpx; background: linear-gradient(to right, transparent, #C4A76C, transparent);
+  margin-bottom: 20rpx; animation: scan 1.5s infinite;
+}
+@keyframes scan { 0% { opacity: 0; width: 0; } 50% { opacity: 1; width: 100%; } 100% { opacity: 0; width: 0; } }
+.loading-box text { font-size: 22rpx; letter-spacing: 2rpx; color: #C4A76C; }
+
+
+/* 卡片 */
+.order-card {
+  background: #1F1D1A; border: 1px solid #2a2a2a; border-radius: 16rpx;
+  padding: 30rpx; margin-bottom: 30rpx;
+  position: relative; overflow: hidden;
+  opacity: 0; animation: slideUp 0.5s ease-out forwards;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(30rpx); } to { opacity: 1; transform: translateY(0); } }
+
+/* 头部 */
+.card-head { 
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 24rpx; border-bottom: 1px dashed #333; padding-bottom: 20rpx;
+  min-height: 60rpx;
+}
+.order-no { font-family: 'DIN'; font-size: 24rpx; color: #666; letter-spacing: 1rpx; margin-top: 8rpx; }
+
+/* 🟢 双语印章 */
+.status-stamp {
+  padding: 4rpx 8rpx; 
+  border: 4rpx double; /* 双线边框，模拟印章 */
+  border-radius: 8rpx;
+  transform: rotate(-10deg); opacity: 0.9;
+}
+.stamp-inner {
+  display: flex; flex-direction: column; align-items: center; line-height: 1;
+}
+.stamp-inner .cn { font-size: 20rpx; font-weight: 900; letter-spacing: 2rpx; margin-bottom: 2rpx; }
+.stamp-inner .en { font-size: 12rpx; font-weight: bold; transform: scale(0.8); font-family: 'DIN'; }
+
+/* 状态颜色 */
+.status-stamp.paid { color: #C4A76C; border-color: #C4A76C; }
+.status-stamp.shipped { color: #52B788; border-color: #52B788; }
+.status-stamp.received { color: #666; border-color: #666; }
+.status-stamp.refunding { color: #ff4d4f; border-color: #ff4d4f; }
+
+/* 内容 */
+.card-body { display: flex; margin-bottom: 24rpx; }
+.prod-img { width: 140rpx; height: 140rpx; background: #1A1814; border-radius: 8rpx; border: 1px solid #333; margin-right: 24rpx; flex-shrink: 0; }
+.prod-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.prod-name { font-size: 28rpx; font-weight: bold; color: #eee; margin-bottom: 6rpx; }
+.prod-latin { font-family: 'Times New Roman'; font-style: italic; font-size: 22rpx; color: #666; margin-bottom: 12rpx; }
+.sku-tag { font-size: 20rpx; color: #888; border: 1px solid #333; align-self: flex-start; padding: 2rpx 8rpx; border-radius: 4rpx; }
+
+/* 底部 */
+.card-foot { display: flex; justify-content: space-between; align-items: center; }
+.total-box { display: flex; align-items: baseline; }
+.lbl { font-size: 20rpx; color: #888; margin-right: 8rpx; }
+.val { font-family: 'DIN'; font-size: 36rpx; color: #C4A76C; font-weight: bold; }
+
+.btn-action {
+  background: #2a2a2a; color: #fff; font-size: 22rpx; font-weight: bold;
+  padding: 10rpx 30rpx; border-radius: 30rpx; border: 1px solid #444;
+  letter-spacing: 1rpx; transition: all 0.2s;
+}
+.btn-action:active { background: #C4A76C; color: #1A1814; border-color: #C4A76C; }
+
+.end-mark { text-align: center; margin-top: 40rpx; display: flex; flex-direction: column; align-items: center; }
+.end-mark text { font-size: 20rpx; color: #444; letter-spacing: 2rpx; }
+.end-mark .sub { font-size: 14rpx; margin-top: 4rpx; font-family: 'DIN'; opacity: 0.5; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding-top: 120rpx; color: #444; }
+.safe-box-icon { 
+  width: 100rpx; height: 100rpx; border: 4rpx solid #333; border-radius: 12rpx; margin: 0 auto 30rpx; 
+  display: flex; align-items: center; justify-content: center;
+}
+.lock { width: 20rpx; height: 30rpx; background: #333; border-radius: 4rpx; }
+.empty-title { font-size: 28rpx; letter-spacing: 2rpx; margin-bottom: 8rpx; display: block; }
+.empty-desc { font-size: 20rpx; opacity: 0.5; font-family: 'DIN'; }

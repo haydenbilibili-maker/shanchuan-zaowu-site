@@ -1,0 +1,180 @@
+/* pages/custom/hub/index.wxss */
+page { background: #1A1814; color: #fff; }
+
+.page-hub { min-height: 100vh; position: relative; }
+
+.grain-overlay {
+  position: fixed; inset: 0; pointer-events: none; opacity: 0.03; z-index: 0;
+}
+
+/* Hero */
+.hero {
+  position: relative;
+  min-height: 420rpx;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+
+.hero-mask {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(26, 24, 20, 0.55) 0%,
+    rgba(26, 24, 20, 0.72) 55%,
+    #1A1814 100%
+  );
+}
+
+.hero-content {
+  position: relative; z-index: 2;
+  padding: 16rpx 32rpx 48rpx;
+}
+
+.header-row {
+  display: flex; align-items: center; gap: 16rpx;
+  margin-bottom: 48rpx;
+}
+
+.back-btn {
+  width: 72rpx; font-size: 32rpx; color: #D5D1C8; flex-shrink: 0;
+}
+
+.header-spacer { width: 72rpx; flex-shrink: 0; }
+
+.brand { flex: 1; text-align: center; }
+
+.title {
+  display: block; font-size: 40rpx; font-weight: 600; color: #FFFFFF;
+}
+
+.sub {
+  display: block; font-size: 20rpx; color: #C4A76C;
+  letter-spacing: 0.14em; margin-top: 8rpx;
+}
+
+.hero-copy { padding: 0 8rpx; }
+
+.hero-tagline {
+  display: block; font-size: 28rpx; color: #E0CFA3;
+  letter-spacing: 0.12em; margin-bottom: 12rpx;
+}
+
+.hero-desc {
+  display: block; font-size: 26rpx; color: #A09A90;
+  line-height: 1.65; max-width: 620rpx;
+}
+
+/* Body */
+.body { padding: 8rpx 32rpx 64rpx; position: relative; z-index: 1; }
+
+.intro { margin-bottom: 36rpx; }
+
+.intro-overline {
+  display: block; font-size: 20rpx; color: #6B6560;
+  letter-spacing: 0.14em; margin-bottom: 12rpx;
+}
+
+.intro-text { font-size: 26rpx; color: #A09A90; line-height: 1.65; }
+
+.fork-card {
+  position: relative;
+  display: flex; align-items: flex-start; gap: 20rpx;
+  padding: 32rpx 28rpx;
+  margin-bottom: 20rpx;
+  background: #1F1D1A;
+  border: 1px solid rgba(38, 35, 32, 0.9);
+  border-radius: 24rpx;
+}
+
+.fork-card.highlight {
+  border-color: rgba(77, 64, 26, 0.65);
+  background: rgba(196, 167, 108, 0.06);
+}
+
+.fork-card:active { opacity: 0.92; }
+
+.fork-icon {
+  flex-shrink: 0;
+  width: 56rpx; height: 56rpx;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22rpx; font-weight: 600; color: #C4A76C;
+  background: rgba(196, 167, 108, 0.12);
+  border: 1px solid rgba(196, 167, 108, 0.25);
+  border-radius: 12rpx;
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+}
+
+.fork-body { flex: 1; min-width: 0; padding-right: 40rpx; }
+
+.fork-overline {
+  display: block; font-size: 20rpx; color: #6B6560;
+  letter-spacing: 0.1em; margin-bottom: 10rpx;
+}
+
+.fork-card.highlight .fork-overline { color: #C4A76C; }
+
+.fork-title {
+  display: block; font-size: 34rpx; font-weight: 600;
+  margin-bottom: 10rpx; color: #FFFFFF;
+}
+
+.fork-desc {
+  display: block; font-size: 24rpx; color: #A09A90; line-height: 1.55;
+}
+
+.fork-arrow {
+  position: absolute; right: 28rpx; top: 50%;
+  transform: translateY(-50%);
+  font-size: 28rpx; color: #C4A76C;
+}
+
+/* Orders section */
+.orders-section {
+  margin-top: 48rpx;
+  padding-top: 36rpx;
+  border-top: 1px solid rgba(38, 35, 32, 0.8);
+}
+
+.section-overline {
+  display: block; font-size: 20rpx; color: #6B6560;
+  letter-spacing: 0.14em; margin-bottom: 8rpx;
+}
+
+.section-title {
+  display: block; font-size: 30rpx; font-weight: 600;
+  color: #D5D1C8; margin-bottom: 24rpx;
+}
+
+.orders-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 16rpx;
+}
+
+.order-tile {
+  position: relative;
+  padding: 28rpx 24rpx;
+  background: #1F1D1A;
+  border: 1px solid rgba(38, 35, 32, 0.85);
+  border-radius: 16rpx;
+  min-height: 160rpx;
+}
+
+.order-tile:active { opacity: 0.9; background: rgba(196, 167, 108, 0.04); }
+
+.order-tile-label {
+  display: block; font-size: 28rpx; font-weight: 600; color: #FFFFFF;
+  margin-bottom: 8rpx;
+}
+
+.order-tile-desc {
+  display: block; font-size: 22rpx; color: #6B6560; line-height: 1.45;
+  padding-right: 32rpx;
+}
+
+.order-tile-arrow {
+  position: absolute; right: 20rpx; bottom: 24rpx;
+  font-size: 24rpx; color: #C4A76C;
+}

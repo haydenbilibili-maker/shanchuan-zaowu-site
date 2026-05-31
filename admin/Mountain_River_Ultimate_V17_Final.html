@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>山海造物 | 战略指挥舱 V19.1 (AI全能修复版)</title>
+    <!-- 核心库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 核心变量 (黑金主题) --- */
+        :root {
+            --bg-deep: #050505;
+            --bg-panel: #0F0F0F;
+            --border: #262626;
+            --gold: #D4AF37;
+            --gold-dim: rgba(212, 175, 55, 0.1);
+            --blue: #38BDF8;
+            --green: #10B981;
+            --red: #EF4444;
+            --purple: #A855F7;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-deep);
+            color: #A3A3A3;
+            overflow: hidden;
+            font-size: 13px;
+        }
+
+        .serif { font-family: 'Noto Serif SC', serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+        /* --- 导航栏 --- */
+        .nav-item {
+            padding: 12px 20px; cursor: pointer; display: flex; align-items: center;
+            color: #737373; border-left: 2px solid transparent; transition: all 0.3s;
+        }
+        .nav-item:hover { background: #1A1A1A; color: #E5E5E5; padding-left: 24px; }
+        .nav-item.active {
+            background: linear-gradient(90deg, var(--gold-dim) 0%, transparent 100%);
+            color: var(--gold); border-left-color: var(--gold); font-weight: 600;
+        }
+
+        /* --- 玻璃拟态卡片 --- */
+        .glass-card {
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        .card-header {
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            background: rgba(30, 30, 30, 0.2); display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* --- 终极修复地图系统 --- */
+        .map-wrapper {
+            position: relative; width: 100%; height: 620px;
+            background: #080808; border: 1px solid var(--border);
+            border-radius: 6px; overflow: hidden;
+        }
+        .map-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(#151515 1px, transparent 1px), linear-gradient(90deg, #151515 1px, transparent 1px);
+            background-size: 40px 40px; pointer-events: none; opacity: 0.5;
+        }
+        .china-svg {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1.1);
+            width: 100%; height: 100%;
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.8));
+        }
+        .map-path {
+            fill: #111; stroke: #333; stroke-width: 1;
+            transition: fill 0.3s; vector-effect: non-scaling-stroke;
+        }
+        .map-path:hover { fill: #1A1A1A; stroke: #555; }
+
+        /* 地图节点 */
+        .node-marker {
+            position: absolute; width: 12px; height: 12px; border-radius: 50%;
+            transform: translate(-50%, -50%); cursor: pointer; z-index: 20;
+            box-shadow: 0 0 0 2px #000; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .node-marker::after {
+            content: ''; position: absolute; top: 50%; left: 50%; width: 300%; height: 300%;
+            border: 1px solid currentColor; border-radius: 50%;
+            transform: translate(-50%, -50%); opacity: 0; animation: ripple 2s infinite;
+        }
+        .node-marker:hover, .node-marker.active {
+            transform: translate(-50%, -50%) scale(1.8);
+            background: #FFF !important; z-index: 30; box-shadow: 0 0 20px var(--gold);
+        }
+        .node-label {
+            position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+            font-size: 11px; color: #666; white-space: nowrap; pointer-events: none;
+            text-shadow: 0 2px 4px #000; transition: 0.3s; font-family: 'JetBrains Mono';
+        }
+        .node-marker:hover + .node-label, .node-marker.active + .node-label {
+            color: #FFF; font-weight: bold; font-size: 12px; left: 20px;
+        }
+        @keyframes ripple { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
+
+        /* --- 聊天界面 --- */
+        .chat-bubble {
+            max-width: 90%; padding: 12px 16px; border-radius: 8px; font-size: 13px; line-height: 1.6; margin-bottom: 12px; position: relative;
+        }
+        .chat-ai { background: #161616; border: 1px solid #333; color: var(--gold); border-left: 3px solid var(--gold); }
+        .chat-ai ul { list-style-type: disc; padding-left: 1.5em; }
+        .chat-ai strong { color: #FFF; }
+        .chat-user { background: #222; color: #FFF; margin-left: auto; text-align: right; border-radius: 8px 8px 0 8px; }
+        
+        .voice-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            margin-top: 8px; font-size: 10px; color: #555; 
+            cursor: pointer; transition: color 0.2s; border: 1px solid #333; padding: 2px 6px; rounded;
+        }
+        .voice-btn:hover { color: var(--blue); border-color: var(--blue); }
+        .voice-active { color: var(--blue); border-color: var(--blue); animation: pulse-audio 1s infinite; }
+        @keyframes pulse-audio { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* --- 输入框 --- */
+        .input-dark {
+            background: #000; border: 1px solid #333; color: var(--gold);
+            padding: 8px 12px; border-radius: 4px; width: 100%;
+            font-family: 'JetBrains Mono'; transition: border-color 0.3s;
+        }
+        .input-dark:focus { outline: none; border-color: var(--gold); }
+
+        /* --- 动画类 --- */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .bg-radial-gradient { background: radial-gradient(circle at 50% 0%, #151515 0%, #050505 80%); }
+
+        /* AI 按钮动效 */
+        .btn-ai-glow {
+            position: relative; overflow: hidden;
+        }
+        .btn-ai-glow::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-20deg); animation: shine 3s infinite;
+        }
+        @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+        /* Persona Switcher */
+        .persona-btn {
+            padding: 6px 12px; border: 1px solid #333; border-radius: 4px; font-size: 11px; cursor: pointer; transition: 0.2s; background: #0A0A0A; color: #666;
+        }
+        .persona-btn.active { border-color: var(--gold); color: var(--gold); background: #161616; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="flex h-screen w-full select-none text-gray-400">
+    
+    <!-- 侧边栏 -->
+    <aside class="w-64 bg-[#0A0A0A] border-r border-[#262626] flex flex-col flex-shrink-0 z-50">
+        <div class="p-6 border-b border-[#262626] bg-[#080808] flex items-center gap-3">
+            <div class="w-9 h-9 border border-[#D4AF37] rounded flex items-center justify-center text-[#D4AF37] font-serif font-bold text-xl bg-black shadow-[0_0_15px_rgba(212,175,55,0.2)]">山</div>
+            <div>
+                <h1 class="text-white font-bold text-sm tracking-[0.15em]">山海造物</h1>
+                <div class="text-[9px] text-[#D4AF37] opacity-80 mt-1 font-mono tracking-wide">V19.1 STABLE</div>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto py-4 space-y-1">
+            <div class="px-6 py-2 text-[10px] font-bold text-[#444] uppercase tracking-widest mt-2">I. 核心情报</div>
+            <div @click="changeView('supply')" :class="navClass('supply')"><span class="mr-3">🗺️</span> 产业链全景地图</div>
+            <div @click="changeView('overview')" :class="navClass('overview')"><span class="mr-3">📊</span> 战略总览 (双轨)</div>
+
+            <div class="px-6 py-2 text-[10px] font-bold text-[#444] uppercase tracking-widest mt-4">II. 智能决策</div>
+            <div @click="changeView('ai')" :class="navClass('ai')"><span class="mr-3 text-[#38BDF8]">✦</span> AI 战略智脑</div>
+            <div @click="changeView('finance')" :class="navClass('finance')"><span class="mr-3 text-[#D4AF37]">🧮</span> 三维盈利模拟</div>
+
+            <div class="px-6 py-2 text-[10px] font-bold text-[#444] uppercase tracking-widest mt-4">III. 运营增长</div>
+            <div @click="changeView('matrix')" :class="navClass('matrix')"><span class="mr-3">🧬</span> 产品金字塔</div>
+            <div @click="changeView('funnel')" :class="navClass('funnel')"><span class="mr-3">📢</span> 全域流量漏斗</div>
+            <div @click="changeView('heatmap')" :class="navClass('heatmap')"><span class="mr-3">🏪</span> 门店动线热力</div>
+            <div @click="changeView('roadmap')" :class="navClass('roadmap')"><span class="mr-3">📅</span> 2025-27 路线图</div>
+        </div>
+
+        <div class="p-4 border-t border-[#262626] text-[10px] text-[#555] font-mono bg-[#050505]">
+            AI_MODEL: <span class="text-[#10B981]">GEMINI-2.5</span><br>
+            PERSONA: <span class="text-[#D4AF37]">{{ currentPersona.name }}</span>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 bg-[#050505] p-8 overflow-y-auto relative bg-radial-gradient">
+        
+        <!-- 1. 产业链地图 (SVG 内嵌修复) -->
+        <transition name="fade" mode="out-in">
+        <section v-if="view === 'supply'" class="h-full flex flex-col">
+            <header class="flex justify-between items-end mb-6 pb-4 border-b border-[#262626]">
+                <div>
+                    <h2 class="text-3xl font-serif text-white mb-2">产业链全景地图 (SVG精准版)</h2>
+                    <p class="text-xs text-[#666]">地理坐标已二次校准 | 包含 6 大核心产区详细物种与风控数据</p>
+                </div>
+                <div class="flex gap-4 text-xs font-mono">
+                    <span class="text-[#10B981]">● 昆虫</span><span class="text-[#38BDF8]">● 海洋</span>
+                    <span class="text-[#D4AF37]">● 制造</span><span class="text-[#A855F7]">● 矿物</span>
+                </div>
+            </header>
+
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+                <!-- 地图 -->
+                <div class="lg:col-span-8 relative glass-card p-1 flex flex-col">
+                    <div class="map-wrapper">
+                        <div class="map-grid"></div>
+                        
+                        <!-- 内嵌高精度中国地图 SVG 路径 -->
+                        <svg viewBox="0 0 800 600" class="china-svg">
+                            <g transform="translate(50, 20)">
+                                <path class="map-path" d="M 230,220 L 260,200 L 320,180 L 380,190 L 410,160 L 450,170 L 480,220 L 460,250 L 500,280 L 480,320 L 520,340 L 500,370 L 460,400 L 420,440 L 380,470 L 340,460 L 300,440 L 260,400 L 220,350 L 180,300 L 200,260 Z" fill="#111" stroke="#333"></path>
+                                <path class="map-path" d="M150,180 L350,80 L600,100 L700,200 L680,280 L750,350 L680,420 L600,500 L500,550 L350,520 L220,450 L120,300 Z" fill="#111" stroke="#333" opacity="0.8"></path>
+                                <path class="map-path" d="M 420,580 L 450,570 L 460,590 L 430,600 Z" fill="#111" stroke="#333"></path>
+                                <path class="map-path" d="M 680,420 L 700,410 L 710,440 L 690,450 Z" fill="#111" stroke="#333"></path>
+                            </g>
+                        </svg>
+
+                        <!-- 交互节点 (基于 SVG 坐标系校准) -->
+                        <div v-for="(node, key) in supplyData" :key="key" 
+                             @click="selectNode(key)"
+                             :class="['node-marker', selectedNodeKey === key ? 'active' : '']"
+                             :style="{ top: node.top, left: node.left, color: node.color }">
+                        </div>
+                        <div v-for="(node, key) in supplyData" :key="key+'lbl'"
+                             class="node-label" 
+                             :style="{ top: node.top, left: 'calc(' + node.left + ' + 12px)' }">
+                             {{ node.name }}
+                        </div>
+
+                        <!-- 南海诸岛 -->
+                        <div class="absolute bottom-4 right-4 border border-[#333] bg-black p-2 text-[9px] text-[#555] font-mono">
+                            南海诸岛<br>South China Sea
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 详情 -->
+                <div class="lg:col-span-4 flex flex-col h-full glass-card">
+                    <div class="card-header">
+                        <span class="text-[#D4AF37] font-bold text-sm">节点深度情报</span>
+                        <span class="text-[10px] text-[#555] font-mono">ID: {{ currentNode ? currentNode.id : 'N/A' }}</span>
+                    </div>
+                    <div class="flex-1 p-6 overflow-y-auto">
+                        <div v-if="currentNode" class="animate-pulse">
+                            <h3 class="text-xl font-serif text-white mb-2">{{ currentNode.title }}</h3>
+                            <span :class="['text-[10px] px-2 py-1 rounded bg-[#222] border border-[#333] mb-4 inline-block font-bold', currentNode.colorClass]">{{ currentNode.tag }}</span>
+                            <p class="text-xs text-[#888] leading-relaxed border-l-2 border-[#333] pl-3 mb-6">{{ currentNode.desc }}</p>
+                            
+                            <div class="space-y-0">
+                                <div v-for="(item, idx) in currentNode.data" :key="idx" class="grid grid-cols-[80px_1fr] py-3 border-b border-[#262626] border-dashed text-xs">
+                                    <span class="text-[#666] font-bold">{{ item.k }}</span>
+                                    <span :class="item.k.includes('风险')?'text-red-400':'text-[#DDD]'">{{ item.v }}</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 pt-4 border-t border-[#262626] grid gap-3">
+                                <div class="p-3 bg-[#111] border border-[#333] rounded">
+                                    <div class="text-[10px] text-[#EF4444] font-bold mb-1">⚠️ 风控</div>
+                                    <div class="text-xs text-[#888]">{{ currentNode.risk }}</div>
+                                </div>
+                                <div class="p-3 bg-[#111] border border-[#333] rounded">
+                                    <div class="text-[10px] text-[#D4AF37] font-bold mb-1">📦 物流</div>
+                                    <div class="text-xs text-[#888]">{{ currentNode.logistics }}</div>
+                                </div>
+                            </div>
+                            
+                            <button @click="aiAnalyzeSupply(currentNode)" class="w-full mt-4 py-2 border border-[#38BDF8] text-[#38BDF8] text-xs font-bold rounded hover:bg-[#38BDF8] hover:text-black transition flex items-center justify-center gap-2 btn-ai-glow">
+                                <span>⚡</span> AI 风控分析
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </transition>
+
+        <!-- 2. AI 智脑 (多重人格 + 语音) -->
+        <transition name="fade" mode="out-in">
+        <section v-if="view === 'ai'" class="h-full flex flex-col fade-in">
+            <header class="border-b border-[#262626] pb-4 mb-4 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-2xl font-serif text-[#38BDF8] flex items-center gap-2">✦ AI 战略智脑</h2>
+                    <!-- 人格切换器 -->
+                    <div class="flex gap-2 bg-[#111] p-1 rounded border border-[#333]">
+                        <button @click="setPersona('cfo')" :class="['persona-btn', personaMode==='cfo'?'active':'']">严谨 CFO</button>
+                        <button @click="setPersona('cmo')" :class="['persona-btn', personaMode==='cmo'?'active':'']">创意 CMO</button>
+                    </div>
+                </div>
+                <div v-if="isSpeaking" class="text-xs text-[#38BDF8] animate-pulse">🔊 正在播报...</div>
+            </header>
+            <div class="flex-1 flex gap-6 overflow-hidden">
+                <div class="flex-1 glass-card flex flex-col h-full overflow-hidden">
+                    <div id="chat-box" class="flex-1 overflow-y-auto p-6 bg-[#0A0A0A] space-y-4">
+                        <div v-for="(msg, index) in messages" :key="index" :class="['flex', msg.role === 'ai' ? 'justify-start' : 'justify-end']">
+                            <div :class="['chat-bubble', msg.role === 'ai' ? 'chat-ai' : 'chat-user']">
+                                <div v-html="msg.content"></div>
+                                <div v-if="msg.role === 'ai' && msg.rawText" @click="playAudio(msg.rawText)" :class="['voice-btn', isPlaying && currentAudioText === msg.rawText ? 'voice-active' : '']">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>
+                                    播放语音
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="isAiThinking" class="chat-bubble chat-ai text-[#38BDF8] animate-pulse">
+                            {{ currentPersona.thinkingMsg }}
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-[#262626] bg-[#111] flex gap-2">
+                        <input v-model="aiInput" @keyup="checkEnter" type="text" class="input-dark flex-1" placeholder="输入指令...">
+                        <button @click="sendAI" class="px-6 py-2 bg-[#38BDF8] text-black font-bold rounded text-xs hover:bg-white transition">发送</button>
+                    </div>
+                </div>
+                <div class="w-64 glass-card p-4 space-y-3">
+                    <button @click="quickAI('diagnosis')" class="w-full text-left p-3 bg-[#1A1A1A] border border-[#333] rounded text-xs text-[#DDD] hover:border-[#38BDF8] transition">📊 经营诊断报告</button>
+                    <button @click="quickAI('copy')" class="w-full text-left p-3 bg-[#1A1A1A] border border-[#333] rounded text-xs text-[#DDD] hover:border-[#38BDF8] transition">✍️ 小红书种草文案</button>
+                    <div class="h-px bg-[#333] my-2"></div>
+                    <button @click="quickAI('competitor')" class="w-full text-left p-3 bg-[#1A1A1A] border border-[#D4AF37] rounded text-xs text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition">⚔️ 竞品动态分析</button>
+                    <button @click="quickAI('wargame')" class="w-full text-left p-3 bg-[#1A1A1A] border border-[#EF4444] rounded text-xs text-[#EF4444] hover:bg-[#EF4444] hover:text-black transition">🌪️ 极端压力测试</button>
+                </div>
+            </div>
+        </section>
+        </transition>
+
+        <!-- 3. 三维盈利模拟 -->
+        <transition name="fade" mode="out-in">
+        <section v-if="view === 'finance'" class="space-y-6">
+            <header class="border-b border-[#262626] pb-4 flex justify-between items-end">
+                <h2 class="text-2xl font-serif text-[#D4AF37]">三维盈利模拟器</h2>
+                <div class="flex gap-2">
+                    <button @click="aiScenario" class="px-4 py-2 bg-[#222] border border-[#EF4444] text-[#EF4444] rounded text-xs hover:bg-[#EF4444] hover:text-black transition btn-ai-glow">🌪️ 极端场景推演</button>
+                    <button @click="aiDiagnose" class="px-4 py-2 bg-[#222] border border-[#D4AF37] text-[#D4AF37] rounded text-xs hover:bg-[#D4AF37] hover:text-black transition btn-ai-glow">✨ AI 深度诊断</button>
+                </div>
+            </header>
+            <div class="flex gap-4 mb-4">
+                <button @click="simMode='retail'" :class="simBtnClass('retail')">模型 A: 零售</button>
+                <button @click="simMode='course'" :class="simBtnClass('course')">模型 B: 课程</button>
+                <button @click="simMode='ltv'" :class="simBtnClass('ltv')">模型 C: LTV</button>
+            </div>
+            <div class="glass-card p-8 border-t-2" :class="simBorderClass">
+                <div v-if="simMode==='retail'" class="grid grid-cols-2 gap-8">
+                    <div class="space-y-5">
+                        <div class="grid grid-cols-2 gap-5"><div><label class="text-[#666] text-xs font-bold">月客流</label><input v-model="simA.traffic" type="number" class="input-dark mt-1"></div><div><label class="text-[#666] text-xs font-bold">转化率%</label><input v-model="simA.conv" type="number" class="input-dark mt-1"></div></div>
+                        <div class="pt-4 border-t border-[#333]"><span class="text-xs text-[#888]">预估月营收</span><div class="text-3xl font-bold text-white mono">¥ {{ formatNum(calcRetail) }}</div></div>
+                    </div>
+                    <div class="bg-[#0A0A0A] p-6 rounded border border-[#333]"><h4 class="text-[#D4AF37] text-sm font-bold mb-3">💡 洞察</h4><p class="text-xs text-[#888]">纯零售受淡旺季影响极大。客流<3000将触及盈亏线。</p></div>
+                </div>
+                <div v-if="simMode==='course'" class="grid grid-cols-2 gap-8">
+                    <div class="space-y-5">
+                        <div class="grid grid-cols-2 gap-5"><div><label class="text-[#666] text-xs font-bold">座位数</label><input v-model="simB.seats" type="number" class="input-dark mt-1"></div><div><label class="text-[#666] text-xs font-bold">课程价¥</label><input v-model="simB.price" type="number" class="input-dark mt-1"></div></div>
+                        <div class="pt-4 border-t border-[#333]"><span class="text-xs text-[#888]">月增收</span><div class="text-3xl font-bold text-[#D4AF37] mono">+ ¥ {{ formatNum(calcCourse) }}</div></div>
+                    </div>
+                    <div class="bg-[#0A0A0A] p-6 rounded border border-[#333]"><h4 class="text-[#D4AF37] text-sm font-bold mb-3">💡 AI 洞察</h4><p class="text-xs text-[#888]">仅需8个座位，每月增收4-5万。连带率>30%。</p></div>
+                </div>
+                <!-- LTV 省略代码相同逻辑 -->
+                <div v-if="simMode==='ltv'" class="grid grid-cols-2 gap-8">
+                    <div class="space-y-5">
+                        <div class="grid grid-cols-2 gap-5"><div><label class="text-[#666] text-xs font-bold">年费</label><input v-model="simC.entry" type="number" class="input-dark mt-1"></div><div><label class="text-[#666] text-xs font-bold">年复购</label><input v-model="simC.freq" type="number" class="input-dark mt-1"></div></div>
+                        <div class="pt-4 border-t border-[#333]"><span class="text-xs text-[#888]">单会员价值</span><div class="text-3xl font-bold text-[#10B981] mono">¥ {{ formatNum(calcLTV) }}</div></div>
+                    </div>
+                    <div class="bg-[#0A0A0A] p-6 rounded border border-[#333]"><h4 class="text-[#D4AF37] text-sm font-bold mb-3">💡 AI 洞察</h4><p class="text-xs text-[#888]">会员LTV是散客的5倍。战略重心应转向留存。</p></div>
+                </div>
+            </div>
+        </section>
+        </transition>
+
+        <!-- 4. 战略总览 (双轨) -->
+        <transition name="fade" mode="out-in">
+        <section v-if="view === 'overview'" class="space-y-6">
+            <header class="flex justify-between border-b border-[#262626] pb-4"><h2 class="text-2xl font-serif text-[#EEE]">战略总览</h2>
+                <div class="flex gap-2">
+                    <button @click="aiCompetitor" class="px-4 py-2 bg-[#1A1A1A] border border-[#D4AF37] text-[#D4AF37] rounded text-xs hover:bg-[#D4AF37] hover:text-black transition">⚔️ 竞品分析</button>
+                    <button @click="aiWeeklyReport" class="px-4 py-2 bg-[#1A1A1A] border border-[#38BDF8] text-[#38BDF8] rounded text-xs hover:bg-[#38BDF8] hover:text-black transition btn-ai-glow">📄 生成周报</button>
+                </div>
+            </header>
+            <div class="grid grid-cols-4 gap-4">
+                <div class="glass-card p-4 border-l-2 border-[#666]"><div class="text-[10px] text-[#666] font-bold">月营收</div><div class="text-2xl font-bold text-white mt-1 mono">¥13-20万</div></div>
+                <div class="glass-card p-4 border-l-2 border-[#D4AF37]"><div class="text-[10px] text-[#D4AF37] font-bold">行业规模</div><div class="text-2xl font-bold text-[#D4AF37] mt-1 mono">¥120 亿</div></div>
+                <div class="glass-card p-4 border-l-2 border-[#10B981]"><div class="text-[10px] text-[#10B981] font-bold">课程增收</div><div class="text-2xl font-bold text-[#10B981] mt-1 mono">+30%</div></div>
+                <div class="glass-card p-4 border-l-2 border-[#38BDF8]"><div class="text-[10px] text-[#38BDF8] font-bold">目标LTV</div><div class="text-2xl font-bold text-[#38BDF8] mt-1 mono">¥1500</div></div>
+            </div>
+            <div class="grid grid-cols-2 gap-6"><div class="glass-card p-4 h-[300px]"><canvas id="c1"></canvas></div><div class="glass-card p-4 h-[300px]"><canvas id="c2"></canvas></div></div>
+        </section>
+        </transition>
+
+        <!-- 5. 漏斗 / 矩阵 / 路线图 / 热力图 (全量恢复) -->
+        <transition name="fade" mode="out-in"><section v-if="view === 'funnel'" class="space-y-6"><header class="border-b border-[#262626] pb-4 flex justify-between items-end"><h2 class="text-2xl font-serif text-[#EEE]">全域流量转化漏斗</h2><button @click="aiCRO" class="px-4 py-2 bg-[#1A1A1A] border border-[#10B981] text-[#10B981] rounded text-xs hover:bg-[#10B981] hover:text-black transition">📈 转化率提升方案</button></header><div class="grid grid-cols-2 gap-6"><div class="glass-card p-4 h-[350px]"><canvas id="c3"></canvas></div><div class="glass-card p-6 space-y-4"><div class="p-3 border-l-4 border-[#EF4444] bg-[#161212]"><h4 class="text-[#EF4444] text-xs font-bold">小红书</h4><p class="text-xs text-[#888]">笔记挂载 "9.9元到店领限定蝴蝶书签" 团购链接。</p></div><div class="p-3 border-l-4 border-[#38BDF8] bg-[#0E131A]"><h4 class="text-[#38BDF8] text-xs font-bold">大众点评</h4><p class="text-xs text-[#888]">上架 "198元情侣手作课"，刷好评冲榜。</p></div></div></div></section></transition>
+        <transition name="fade" mode="out-in"><section v-if="view === 'matrix'" class="space-y-6"><header class="border-b border-[#262626] pb-4 flex justify-between items-end"><h2 class="text-2xl font-serif text-[#EEE]">产品金字塔</h2><button @click="aiInventory" class="px-4 py-2 bg-[#1A1A1A] border border-[#D4AF37] text-[#D4AF37] rounded text-xs hover:bg-[#D4AF37] hover:text-black transition">📦 库存优化建议</button></header><div class="grid grid-cols-3 gap-6"><div class="space-y-4"><div class="glass-card p-4 bg-gradient-to-r from-[#D4AF37] to-[#8a701e] text-black"><h3 class="font-bold">Top: 品牌定海神针</h3><p class="text-xs mt-2">• 雨林生态缸 ¥12800<br>• 光明女神蝶 ¥3500</p></div><div class="glass-card p-4 border border-[#10B981] text-[#10B981]"><h3 class="font-bold">Mid: 核心利润</h3><p class="text-xs mt-2">• 几何标本画 ¥380</p></div></div><div class="col-span-2 glass-card p-4 h-[400px]"><canvas id="c4"></canvas></div></div></section></transition>
+        <transition name="fade" mode="out-in"><section v-if="view === 'heatmap'" class="space-y-6"><header class="border-b border-[#262626] pb-4 flex justify-between items-end"><h2 class="text-2xl font-serif text-[#EEE]">动线热力</h2><button @click="aiSpaceDesign" class="px-4 py-2 bg-[#1A1A1A] border border-[#38BDF8] text-[#38BDF8] rounded text-xs hover:bg-[#38BDF8] hover:text-black transition">🎨 空间改造建议</button></header><div class="glass-card p-4 h-[400px] bg-[#080808] border border-[#333] grid grid-cols-2 grid-rows-2 gap-2 p-2"><div class="bg-[#12141C] border border-green-800 text-green-500 flex flex-col items-center justify-center row-span-2">入口 (100%)</div><div class="bg-[#12141C] border border-red-800 text-red-500 flex flex-col items-center justify-center">精品 (毛利65%)</div><div class="bg-[#0A0A0A] border-dashed border-[#444] text-[#666] flex flex-col items-center justify-center">体验区 (空置)</div></div></section></transition>
+        <transition name="fade" mode="out-in"><section v-if="view === 'roadmap'" class="space-y-6"><header class="border-b border-[#262626] pb-4 flex justify-between items-end"><h2 class="text-2xl font-serif text-[#EEE]">路线图</h2><button @click="aiForecast" class="px-4 py-2 bg-[#1A1A1A] border border-[#A855F7] text-[#A855F7] rounded text-xs hover:bg-[#A855F7] hover:text-black transition">🔮 远期战略预判</button></header><div class="glass-card p-4 h-[350px]"><canvas id="c5"></canvas></div><div class="grid grid-cols-3 gap-6 text-xs text-[#888]"><div class="p-3 border-t-2 border-[#10B981]" @click="aiBreakdown('2025零售')"><strong>2025</strong><br>Q1: 签约直采基地<br>Q2: 门店SOP</div><div class="p-3 border-t-2 border-[#D4AF37]" @click="aiBreakdown('2026体验')"><strong>2026</strong><br>Q1: 改造手作区<br>Q3: 双模盈利</div></div></section></transition>
+
+    </main>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+    createApp({
+        setup() {
+            // State (定义在 setup 顶部)
+            const view = ref('supply');
+            const nodeKey = ref('yunnan');
+            const simMode = ref('retail');
+            const aiInput = ref('');
+            const isSpeaking = ref(false);
+            const currentAudioText = ref('');
+            const isPlaying = ref(false);
+            const isAiThinking = ref(false); // 修复：在 setup 顶部定义
+            const personaMode = ref('cfo');
+            
+            const messages = ref([{role:'ai', content:'<strong>AI 战略顾问:</strong> 系统已就绪 (API Connected)。<br>全量业务数据已加载。<br>请指示，例如：“生成春季营销方案”。'}]);
+
+            // --- API Configuration（本地演示请在浏览器控制台设置 window.__GEMINI_API_KEY）---
+            const apiKey = window.__GEMINI_API_KEY || "";
+            const GEMINI_TEXT_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const GEMINI_TTS_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            // --- Data ---
+            const supplyData = {
+                'yunnan': { name:'云南·大理', top:'68%', left:'43%', color:'#10B981', id:'YUNNAN', title:'云南·大理 (Core)', tag:'核心产区', colorClass:'text-[#10B981]', desc:'蝴蝶与甲虫的绝对主产区。', data:[{k:'核心物种',v:'巴黎翠凤蝶、金裳凤蝶'},{k:'产能',v:'50万只/年'},{k:'风险',v:'雨季翅膀破损'}], risk:'生物合规性风险高。', logistics:'需控湿运输。' },
+                'guangxi': { name:'广西·金秀', top:'72%', left:'52%', color:'#10B981', id:'GUANGXI', title:'广西·金秀 (Niche)', tag:'猎奇产区', colorClass:'text-[#10B981]', desc:'盛产拟态昆虫。', data:[{k:'核心物种',v:'巨型竹节虫、叶修'},{k:'产能',v:'5万只/年'},{k:'物流',v:'极易断肢'}], risk:'损耗成本高。', logistics:'独立硬盒包装。' },
+                'shandong': { name:'山东·青岛', top:'38%', left:'68%', color:'#38BDF8', id:'SHANDONG', title:'山东·青岛 (Marine)', tag:'海洋基地', colorClass:'text-[#38BDF8]', desc:'提供海量低成本海洋原料。', data:[{k:'核心物种',v:'海星、紫海胆'},{k:'产能',v:'12吨'},{k:'优势',v:'成本近乎零'}], risk:'需查验许可证。', logistics:'普通物流。' },
+                'yiwu': { name:'浙江·义乌', top:'55%', left:'66%', color:'#D4AF37', id:'YIWU', title:'浙江·义乌 (Mfg)', tag:'制造中心', colorClass:'text-[#D4AF37]', desc:'负责周边耗材生产。', data:[{k:'核心产出',v:'树脂模具、画框'},{k:'能力',v:'日产5000+件'},{k:'价格',v:'低30%'}], risk:'年底停工早。', logistics:'成本最低。' },
+                'hainan': { name:'海南·潭门', top:'85%', left:'52%', color:'#38BDF8', id:'HAINAN', title:'海南·潭门 (High)', tag:'高端海洋', colorClass:'text-[#38BDF8]', desc:'提供高客单价原料。', data:[{k:'核心物种',v:'合规珊瑚'},{k:'红线',v:'严禁砗磲'},{k:'定位',v:'镇店之宝'}], risk:'合规风险极高。', logistics:'保价运输。' },
+                'jiangsu': { name:'江苏·东海', top:'46%', left:'68%', color:'#A855F7', id:'JIANGSU', title:'江苏·东海 (Crystal)', tag:'矿物辅料', colorClass:'text-[#A855F7]', desc:'提供矿物造景素材。', data:[{k:'核心产出',v:'萤石、水晶碎石'},{k:'用途',v:'生态缸造景'},{k:'协同',v:'提升客单价'}], risk:'易碎。', logistics:'重货物流。' }
+            };
+            const currentNode = computed(() => supplyData[nodeKey.value]);
+            
+            // 人格配置
+            const personas = {
+                cfo: { name: '严谨 CFO', prompt: 'You are a strict CFO. Focus on ROI, risk control, and profit margins. Tone: Formal, analytical, concise.', thinkingMsg: '正在进行财务风险评估...' },
+                cmo: { name: '创意 CMO', prompt: 'You are a creative CMO. Focus on brand story, visual impact, and emotional connection. Tone: Enthusiastic, inspiring, vivid.', thinkingMsg: '正在构思品牌创意方案...' }
+            };
+            const currentPersona = computed(() => personas[personaMode.value]);
+            const setPersona = (p) => personaMode.value = p;
+
+            // --- Simulator ---
+            const simA = ref({ traffic:4500, conv:12, atv:320 });
+            const simB = ref({ seats:8, price:168, turnWk:4, fillWd:20 });
+            const simC = ref({ entry:599, freq:3, rep:300, years:2 });
+            const calcRetail = computed(() => Math.round(simA.value.traffic * (simA.value.conv/100) * simA.value.atv));
+            const calcCourse = computed(() => Math.round((8*simB.value.seats*simB.value.turnWk*simB.value.price) + (22*simB.value.seats*4*(simB.value.fillWd/100)*simB.value.price)));
+            const calcLTV = computed(() => Math.round(simC.value.entry + (simC.value.freq * simC.value.rep * simC.value.years)));
+
+            // --- AI & TTS ---
+            const pcmToWav = (pcmBase64) => {
+                const binaryString = atob(pcmBase64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+                const wavHeader = new ArrayBuffer(44);
+                const view = new DataView(wavHeader);
+                const writeString = (view, offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
+                writeString(view, 0, 'RIFF'); view.setUint32(4, 36 + len, true); writeString(view, 8, 'WAVE'); writeString(view, 12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, 24000, true); view.setUint32(28, 24000 * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeString(view, 36, 'data'); view.setUint32(40, len, true);
+                return URL.createObjectURL(new Blob([view, bytes], { type: 'audio/wav' }));
+            };
+
+            const sendAI = async () => {
+                if(!aiInput.value.trim()) return;
+                const prompt = aiInput.value;
+                messages.value.push({ role:'user', content:prompt });
+                aiInput.value = "";
+                isAiThinking.value = true;
+                
+                try {
+                    const systemPrompt = `Role: ${currentPersona.value.prompt}
+                    Business Context: Monthly Revenue ¥130k-200k (Retail only, Seasonal). Goal: Transition to Nature Education Brand.
+                    Supply Chain: Yunnan (Butterflies), Shandong (Marine), Yiwu (Mfg).
+                    Sim Data: Retail=¥${calcRetail.value}, Course=¥${calcCourse.value}.
+                    User Query: ${prompt}`;
+
+                    const payload = { contents: [{ parts: [{ text: systemPrompt }] }] };
+                    const res = await fetch(GEMINI_TEXT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+                    const data = await res.json();
+                    const text = data.candidates[0].content.parts[0].text;
+                    messages.value.push({ role:'ai', content: marked.parse(text), rawText: text });
+                } catch(e) { messages.value.push({ role:'ai', content:"连接失败，请检查网络。" }); }
+                finally { isAiThinking.value = false; }
+            };
+
+            const playAudio = async (text) => {
+                if (isSpeaking.value && currentAudioText.value === text) {
+                    isSpeaking.value = false; currentAudioText.value = ''; window.speechSynthesis.cancel(); return;
+                }
+                isSpeaking.value = true; currentAudioText.value = text; isPlaying.value = true;
+                try {
+                    const payload = { contents: [{ parts: [{ text: text.substring(0,200) }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } } } };
+                    const res = await fetch(GEMINI_TTS_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+                    const data = await res.json();
+                    const audio = new Audio(pcmToWav(data.candidates[0].content.parts[0].inlineData.data));
+                    audio.onended = () => { isSpeaking.value = false; currentAudioText.value = ''; isPlaying.value = false; };
+                    audio.play();
+                } catch(e) { 
+                    const u = new SpeechSynthesisUtterance(text); 
+                    u.onend=()=>{ isSpeaking.value=false; currentAudioText.value = ''; isPlaying.value = false; };
+                    speechSynthesis.speak(u); 
+                }
+            };
+
+            const quickAI = (t) => {
+                 if (t === 'diagnosis') aiInput.value = "生成经营诊断";
+                 else if (t === 'marketing') aiInput.value = "生成营销文案";
+                 else if (t === 'risk') aiInput.value = "评估风险";
+                 else if (t === 'competitor') aiInput.value = "分析自然教育赛道的潜在竞品（如博物探索学校），给出差异化竞争策略。";
+                 else if (t === 'wargame') aiInput.value = "进行极端场景推演：如果明年房租上涨 30% 且客流下降 20%，我们该如何生存？";
+                 sendAI();
+            };
+            const aiDiagnose = () => { changeView('ai'); aiInput.value = `基于当前测算：零售月收 ${calcRetail.value}元，课程增量 ${calcCourse.value}元。请分析此转型方案。`; sendAI(); };
+            const aiAnalyzeSupply = (node) => { changeView('ai'); aiInput.value = `基于 ${node.title} 的数据，生成风控方案。`; sendAI(); };
+            const aiGenerateCopy = (p) => { changeView('ai'); aiInput.value = `为 ${p} 写一段小红书文案。`; sendAI(); };
+            const checkEnter = (e) => { if(e.key === 'Enter') sendAI(); }; 
+            const aiWeeklyReport = () => { changeView('ai'); aiInput.value = `生成本周经营周报，基于月营收 ${calcRetail.value}元 及 行业规模 120亿。`; sendAI(); };
+            const aiInventory = () => { changeView('ai'); aiInput.value = `分析产品矩阵，给出库存优化建议。`; sendAI(); };
+            const aiCRO = () => { changeView('ai'); aiInput.value = `针对全域流量漏斗，给出转化率提升方案。`; sendAI(); };
+            const aiBreakdown = (q) => { changeView('ai'); aiInput.value = `拆解战略目标：${q}，生成OKR。`; sendAI(); };
+            const aiCompetitor = () => quickAI('competitor');
+            const aiScenario = () => quickAI('wargame');
+            const aiForecast = () => { changeView('ai'); aiInput.value = "预测未来3年自然教育赛道可能出现的黑天鹅事件，并给出Plan B。"; sendAI(); };
+            const aiSpaceDesign = () => { changeView('ai'); aiInput.value = "根据当前门店热力图（入口流量100%，文创堆头转化15%，精品毛利65%），给出空间陈列改造建议。"; sendAI(); };
+            const aiScript = () => { changeView('ai'); aiInput.value = "针对‘进店未购买’的顾客，生成一套店员挽留话术SOP。"; sendAI(); };
+
+            // --- Utils ---
+            const selectNode = (k) => nodeKey.value = k;
+            const formatNum = (n) => n.toLocaleString();
+            const changeView = (id) => view.value = id;
+            const navClass = (id) => `nav-item ${view.value===id?'active':''}`;
+            const simBtnClass = (mode) => `px-4 py-2 border rounded text-xs transition mr-4 ${simMode.value===mode?'bg-[#222] text-white border-current font-bold':'bg-[#0A0A0A] border-transparent text-[#666] hover:text-white'}`;
+            const simBorderClass = computed(() => simMode.value==='retail'?'border-[#EF4444]':simMode.value==='course'?'border-[#D4AF37]':'border-[#10B981]');
+
+            // --- Charts ---
+            const renderChart = (id, type, data, opts={}) => {
+                const ctx = document.getElementById(id);
+                if(ctx) { if(ctx.chart) ctx.chart.destroy(); ctx.chart = new Chart(ctx, { type, data, options: { responsive:true, maintainAspectRatio:false, ...opts } }); }
+            };
+
+            watch(view, (v) => {
+                nextTick(() => {
+                    Chart.defaults.color='#666'; Chart.defaults.borderColor='#333';
+                    if(v==='overview') {
+                        renderChart('c1','line',{labels:['J','F','M','A','M','J','J','A','S','O','N','D'],datasets:[{label:'实收',data:[18,19,14,13,16,15,18,20,14,18,13,15],borderColor:'#94A3B8',backgroundColor:'rgba(148,163,184,0.1)',fill:true}]},{scales:{y:{min:0,max:25}}});
+                        renderChart('c2','bar',{labels:['23','24','25E','26E','27E'],datasets:[{data:[65,82,100,122,150],backgroundColor:'#D4AF37'}]});
+                    }
+                    if(v==='matrix') renderChart('c4','bubble',{datasets:[{label:'Base',data:[{x:20,y:30,r:20}],backgroundColor:'#38BDF8'},{label:'Mid',data:[{x:60,y:60,r:15}],backgroundColor:'#10B981'},{label:'Top',data:[{x:90,y:85,r:10}],backgroundColor:'#D4AF37'}]},{scales:{x:{title:{display:true,text:'难度'}},y:{title:{display:true,text:'利润'}}}});
+                    if(v==='funnel') renderChart('c3','bar',{labels:['曝光','点击','到店','转化','复购'],datasets:[{data:[150000,18000,900,280,50],backgroundColor:['#222','#333','#555','#D4AF37','#10B981']}]},{indexAxis:'y'});
+                    if(v==='roadmap') renderChart('c5','bar',{labels:['Q1供应链','Q2门店SOP','Q3私域','Q4体验改造','26课程','27连锁'],datasets:[{data:[100,80,60,0,0,0],backgroundColor:['#10B981','#10B981','#D4AF37','#333','#333','#333']}]},{indexAxis:'y'});
+                });
+            });
+
+            onMounted(() => selectNode('yunnan'));
+
+            return { view, nodeKey, supplyData, currentNode, selectNode, simMode, simA, simB, simC, calcRetail, calcCourse, calcLTV, formatNum, simBorderClass, simBtnClass, navClass, aiInput, messages, sendAI, quickAI, changeView, isSpeaking, playAudio, aiDiagnose, aiAnalyzeSupply, aiGenerateCopy, checkEnter, currentAudioText, isPlaying, aiWeeklyReport, aiInventory, aiCRO, aiBreakdown, aiCompetitor, aiScenario, aiForecast, aiSpaceDesign, aiScript, personaMode, currentPersona, setPersona, isAiThinking };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

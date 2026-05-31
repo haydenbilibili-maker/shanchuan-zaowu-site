@@ -1,0 +1,52 @@
+<!--pages/coupons/index.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">MY WALLET</text>
+    <text class="sub">我的礼券夹 · {{usableCount}} 张可用 / 共 {{coupons.length}} 张</text>
+  </view>
+
+  <view class="coupon-list">
+    <block wx:for="{{coupons}}" wx:key="_id">
+      <view class="coupon-card {{item.isUsable ? '' : 'disabled'}} {{item.isExpired ? 'expired' : ''}}">
+        <view class="expired-stamp" wx:if="{{item.isExpired}}">失效</view>
+        <view class="c-left">
+          <view class="val-box" wx:if="{{item.type === 'discount'}}">
+            <text class="amount discount">{{item.valueDisplay}}</text>
+          </view>
+          <view class="val-box" wx:else>
+            <text class="symbol">¥</text>
+            <text class="amount">{{item.value}}</text>
+          </view>
+          <text class="condition" wx:if="{{item.minSpend > 0}}">满 {{item.minSpend}} 可用</text>
+        </view>
+        <view class="split-line"><view class="circle top"></view><view class="line"></view><view class="circle bottom"></view></view>
+        <view class="c-right">
+          <view class="info">
+            <text class="c-name">{{item.title}}</text>
+            <text class="c-tag">{{item.typeLabel}}</text>
+            <text class="c-date {{item.isExpired ? 'expired-date' : ''}}">
+              {{item.isExpired ? '已于 ' : '有效期至 '}}{{item.expireDate}}
+            </text>
+          </view>
+          <view
+            class="c-status clickable"
+            wx:if="{{item.isUsable}}"
+            bindtap="useCoupon"
+            data-index="{{index}}"
+          >
+            <text>{{item.statusLabel}}</text>
+          </view>
+          <view class="c-status {{item.isExpired ? 'expired-badge' : ''}}" wx:else>
+            <text>{{item.statusLabel}}</text>
+          </view>
+        </view>
+        <view class="texture"></view>
+      </view>
+    </block>
+  </view>
+
+  <view class="empty" wx:if="{{coupons.length === 0 && !loading}}">
+    <text>暂无礼券</text>
+    <view class="go-btn" bindtap="goPoints">去积分中心兑换</view>
+  </view>
+</view>

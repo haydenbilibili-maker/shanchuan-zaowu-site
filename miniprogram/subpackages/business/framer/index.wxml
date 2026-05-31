@@ -1,0 +1,64 @@
+<!--pages/framer/index.wxml-->
+<view class="container">
+  
+  <!-- 🟢 1. 自定义返回按钮 (沉浸式必备) -->
+  <view class="nav-bar" style="top: {{statusBarHeight}}px">
+    <view class="back-icon" bindtap="goBack">←</view>
+  </view>
+
+  <!-- 2. 艺术家档案头部 -->
+  <view class="framer-header">
+    <!-- 🟢 背景图优化：使用一张更有质感的通用背景，而不是头像 -->
+    <image class="bg-layer" src="cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/banners/__-drz-__-CK7rdTauhDE-unsplash.jpg" mode="aspectFill"></image>
+    <!-- 渐变遮罩 -->
+    <view class="mask"></view>
+    
+    <view class="content">
+      <view class="avatar-box">
+        <image src="{{framer.avatar}}" mode="aspectFill"></image>
+        <!-- 认证标识 -->
+        <view class="verified-badge" wx:if="{{framer.type === 'store'}}">✓</view>
+      </view>
+      
+      <text class="name">{{framer.name}}</text>
+      
+      <view class="tags">
+        <text class="tag">{{framer.type === 'store' ? '门店首席装裱师' : '特邀合作艺术家'}}</text>
+        <text class="tag">收录 {{works.length}} 件作品</text>
+      </view>
+      
+      <text class="bio">{{framer.bio || '暂无个人简介...'}}</text>
+    </view>
+  </view>
+
+  <!-- 3. 作品集 -->
+  <view class="work-section">
+    <view class="section-header">
+      <view class="line"></view>
+      <view class="title-group">
+        <text class="en">THE COLLECTION</text>
+        <text class="cn">代表作品</text>
+      </view>
+      <view class="line"></view>
+    </view>
+
+    <view class="product-grid">
+      <block wx:for="{{works}}" wx:key="_id">
+        <view class="product-card" bindtap="goToDetail" data-id="{{item._id}}">
+          <view class="img-box">
+            <image src="{{item.images[0]}}" mode="aspectFill" lazy-load="true"></image>
+            <view class="status-badge" wx:if="{{item.stock <= 0}}">已藏</view>
+          </view>
+          <view class="info">
+            <text class="p-title">{{item.title}}</text>
+            <text class="p-year">{{item.collectDate || '2023'}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+    
+    <view class="empty-tip" wx:if="{{works.length === 0}}">
+      该标本师暂无公开作品
+    </view>
+  </view>
+</view>

@@ -1,0 +1,10 @@
+{
+  "name": "moveCollectionItems",
+  "desc": "移动收藏物品",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

@@ -1,0 +1,32 @@
+<view class="page">
+  <view class="addr-list" wx:if="{{addresses.length > 0}}">
+    <view
+      class="addr-card {{item.isDefault ? 'default' : ''}}"
+      wx:for="{{addresses}}"
+      wx:key="_id"
+      bindtap="onSelectAddress"
+      data-index="{{index}}"
+    >
+      <view class="addr-head">
+        <text class="addr-name">{{item.name}}</text>
+        <text class="addr-phone">{{item.phone}}</text>
+        <text class="default-tag" wx:if="{{item.isDefault}}">默认</text>
+      </view>
+      <text class="addr-detail">{{item.region[0]}} {{item.region[1]}} {{item.region[2]}} {{item.detail}}</text>
+      <view class="addr-actions" catchtap="true">
+        <text class="act-btn" catchtap="setDefault" data-id="{{item._id}}">设为默认</text>
+        <text class="act-btn danger" catchtap="deleteAddress" data-id="{{item._id}}">删除</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty" wx:else>
+    <text>暂无收货地址</text>
+    <text class="empty-sub">添加地址后可快速结算</text>
+  </view>
+
+  <view class="add-bar">
+    <view class="add-btn" bindtap="importFromWechat">从微信导入</view>
+    <view class="add-btn primary" bindtap="addAddress">新增地址</view>
+  </view>
+</view>

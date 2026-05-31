@@ -1,0 +1,127 @@
+<!--pages/category/index.wxml-->
+<view class="page-ency">
+  <view class="grain-overlay"></view>
+
+  <!-- 吸顶：标题 + 搜索 + 品类 -->
+  <view class="sticky-header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-row">
+      <view class="nav-brand">
+        <text class="nav-title">馆藏</text>
+        <text class="nav-sub" wx:if="{{!listLoading}}">{{currentSubtitle}}</text>
+      </view>
+    </view>
+    <view class="search-row">
+      <view class="search-main" bindtap="goSearch">
+        <icon type="search" size="14" color="#6B6560"></icon>
+        <text class="search-placeholder">{{keyword || '搜索标本档案与藏品'}}</text>
+      </view>
+      <view class="search-identify" bindtap="goIdentify" hover-class="search-identify-active">
+        <image class="search-identify-ico" src="/assets/icons/camera.png" mode="aspectFit" />
+        <text>AI鉴定</text>
+      </view>
+    </view>
+    <scroll-view scroll-x class="category-scroll" enable-flex show-scrollbar="{{false}}">
+      <view
+        class="cat-pill {{currentId === item._id ? 'active' : ''}}"
+        wx:for="{{categories}}"
+        wx:key="_id"
+        bindtap="switchCategory"
+        data-item="{{item}}"
+      >
+        <text>{{item.shortName}}</text>
+      </view>
+      <view class="cat-scroll-pad"></view>
+      <view class="cat-pill cat-pill-custom" bindtap="goCustom">
+        <text>定制</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 主内容区 -->
+  <scroll-view
+    scroll-y
+    class="main-scroll"
+    style="top: {{headerHeight}}px;"
+    scroll-top="{{scrollTop}}"
+    scroll-with-animation
+    bindscrolltolower="onFeedScrollToLower"
+    lower-threshold="120"
+  >
+    <view class="skeleton-wrap" wx:if="{{listLoading}}">
+      <view class="sk-line sk-shine"></view>
+      <view class="sk-line sk-shine short"></view>
+      <view class="sk-card sk-shine"></view>
+      <view class="sk-card sk-shine"></view>
+    </view>
+
+    <view class="feed-wrap" wx:else>
+      <!-- A 区：标本档案（首屏仅突出最新一篇，横滑查看更多） -->
+      <view class="feed-block archive-block" wx:if="{{showContentSection || contentItems.length}}">
+        <view class="block-head">
+          <text class="block-title">标本档案</text>
+          <text class="block-swipe-hint" wx:if="{{contentTotal > 1}}">左滑更多</text>
+          <text class="block-meta" wx:if="{{contentTotal > 0}}">{{contentTotal}} 篇</text>
+        </view>
+
+        <swiper
+          wx:if="{{contentItems.length}}"
+          class="archive-swiper"
+          indicator-dots="{{contentTotal > 1}}"
+          indicator-color="rgba(255,255,255,0.15)"
+          indicator-active-color="#C4A76C"
+          next-margin="48rpx"
+          bindchange="onArchiveSwiperChange"
+        >
+          <swiper-item wx:for="{{contentItems}}" wx:key="_id" class="archive-swiper-item">
+            <view class="archive-card" hover-class="archive-card-active" bindtap="goToWikiDetail" data-id="{{item._id}}">
+              <image class="archive-thumb" src="{{item.coverImage || fallbackImg}}" mode="aspectFill" lazy-load></image>
+              <view class="archive-body">
+                <view class="tag-type" wx:if="{{item.typeLabel}}">{{item.typeLabel}}</view>
+                <text class="archive-title">{{item.title}}</text>
+                <text class="content-latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+              </view>
+              <text class="archive-enter">›</text>
+            </view>
+          </swiper-item>
+        </swiper>
+
+        <view class="empty-tip" wx:if="{{contentItems.length === 0}}">该品类档案筹备中</view>
+      </view>
+
+      <!-- B 区：可购藏品 -->
+      <view class="feed-block product-block" wx:if="{{orphanProducts.length || !showContentSection}}">
+        <view class="block-head">
+          <text class="block-title">{{showContentSection ? '本类可购' : '可购藏品'}}</text>
+          <text class="block-meta" wx:if="{{orphanTotal > 0}}">{{orphanTotal}} 件</text>
+        </view>
+
+        <view class="product-grid">
+          <view
+            class="product-cell"
+            wx:for="{{orphanProducts}}"
+            wx:key="_id"
+            bindtap="goToProductFromFeed"
+            data-id="{{item._id}}"
+          >
+            <image class="product-img" src="{{item.displayImage || fallbackImg}}" mode="aspectFill" lazy-load></image>
+            <view class="product-info">
+              <text class="product-name">{{item.title}}</text>
+              <text class="product-latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+              <view class="product-foot">
+                <text class="product-price">¥{{item.price}}</text>
+                <text class="product-soldout" wx:if="{{item.stock <= 0}}">售罄</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="empty-tip" wx:if="{{orphanProducts.length === 0}}">暂无可购藏品</view>
+      </view>
+
+      <view class="list-footer" wx:if="{{loadingMore}}">加载中...</view>
+      <view class="list-footer muted" wx:elif="{{!hasMoreContent && !hasMoreProducts && (contentItems.length || orphanProducts.length)}}">— 到底了 —</view>
+    </view>
+
+    <view class="scroll-bottom-pad"></view>
+  </scroll-view>
+</view>

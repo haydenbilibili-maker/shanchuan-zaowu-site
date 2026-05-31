@@ -1,0 +1,10 @@
+{
+  "name": "createGroupBuying",
+  "desc": "创建拼团",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}

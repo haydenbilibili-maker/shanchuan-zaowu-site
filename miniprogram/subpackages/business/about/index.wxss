@@ -1,0 +1,559 @@
+/* pages/about/index.wxss */
+page { background-color: #1A1814; color: #fff; font-family: "PingFang SC", serif; height: 100%; overflow: hidden; }
+view, text, image, map { box-sizing: border-box; }
+
+.container { width: 100%; height: 100%; position: relative; }
+
+/* 🟢 1. 全局噪点纹理 (模拟胶片感) */
+.grain-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 999; opacity: 0.07;
+  /* 使用重复的径向渐变模拟噪点 */
+  background-image: radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px);
+  background-size: 4px 4px;
+}
+
+/* 导航 - 黑金质感 */
+.nav-bar { 
+  position: fixed; 
+  left: 30rpx; 
+  z-index: 100; 
+}
+.back-btn {
+  width: 64rpx; 
+  height: 64rpx; 
+  line-height: 60rpx; 
+  text-align: center;
+  background: linear-gradient(135deg, rgba(196, 167, 108,0.15), rgba(196, 167, 108,0.08));
+  backdrop-filter: blur(10px);
+  border-radius: 50%; 
+  color: var(--gold); 
+  border: 1.5px solid rgba(196, 167, 108,0.4); 
+  font-size: 32rpx;
+  box-shadow: 
+    0 4rpx 12rpx rgba(0,0,0,0.3),
+    0 0 16rpx rgba(196, 167, 108,0.2),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.1);
+  transition: all 0.3s;
+  font-weight: 300;
+}
+.back-btn:active {
+  background: linear-gradient(135deg, rgba(196, 167, 108,0.25), rgba(196, 167, 108,0.15));
+  border-color: rgba(196, 167, 108,0.6);
+  transform: scale(0.95);
+  box-shadow: 
+    0 2rpx 8rpx rgba(0,0,0,0.4),
+    0 0 20rpx rgba(196, 167, 108,0.3),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.15);
+}
+
+.scroll-content { width: 100%; height: 100%; }
+
+/* 2. 首图海报 - 黑金质感增强 */
+.hero-poster { 
+  position: relative; 
+  width: 100%; 
+  height: 900rpx; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center;
+  overflow: hidden;
+}
+.hero-img { 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  filter: brightness(0.6) contrast(1.2) saturate(1.1) grayscale(0.3) sepia(0.1);
+  transition: filter 0.6s;
+}
+.hero-mask { 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  background: linear-gradient(
+    to bottom, 
+    rgba(0,0,0,0.4) 0%,
+    rgba(0,0,0,0.5) 50%,
+    rgba(0,0,0,0.7) 80%,
+    #1A1814 100%
+  );
+  z-index: 1;
+}
+
+.hero-text { 
+  position: relative; 
+  z-index: 2; 
+  text-align: center; 
+  opacity: 0; 
+  transform: translateY(40rpx); 
+  transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.hero-text.active { 
+  opacity: 1; 
+  transform: translateY(0); 
+}
+
+.h-sub { 
+  font-size: 22rpx; 
+  letter-spacing: 8rpx; 
+  color: var(--gold); 
+  display: block; 
+  margin-bottom: 24rpx; 
+  font-weight: 800; 
+  font-family: 'DIN';
+  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.4);
+}
+.h-title { 
+  font-size: 88rpx; 
+  font-weight: 900; 
+  letter-spacing: 12rpx; 
+  line-height: 0.9; 
+  display: block; 
+  color: #fff; 
+  font-family: 'Times New Roman';
+  text-shadow: 
+    0 4rpx 20rpx rgba(0,0,0,0.8),
+    0 2rpx 10rpx rgba(0,0,0,0.6),
+    0 0 30rpx rgba(0,0,0,0.4);
+}
+.h-title-sub { 
+  font-size: 52rpx; 
+  font-weight: 400; 
+  letter-spacing: 18rpx; 
+  display: block; 
+  color: rgba(255,255,255,0.95); 
+  margin-bottom: 36rpx; 
+  font-family: 'Times New Roman';
+  text-shadow: 
+    0 3rpx 15rpx rgba(0,0,0,0.8),
+    0 1rpx 8rpx rgba(0,0,0,0.6);
+}
+.h-line { 
+  width: 3rpx; 
+  height: 70rpx; 
+  background: linear-gradient(to bottom, var(--gold), rgba(196, 167, 108,0.6));
+  margin: 0 auto 36rpx;
+  box-shadow: none;
+  border-radius: 2rpx;
+}
+.h-cn { 
+  font-size: 30rpx; 
+  letter-spacing: 0.35em; 
+  color: rgba(255,255,255,0.95); 
+  font-weight: 500;
+  display: block;
+  text-shadow: 
+    0 2rpx 10rpx rgba(0,0,0,0.8),
+    0 1rpx 5rpx rgba(0,0,0,0.6);
+}
+.h-tagline {
+  display: block;
+  font-size: 26rpx;
+  letter-spacing: 0.28em;
+  margin-top: 28rpx;
+  color: rgba(255,255,255,0.88);
+  font-weight: 400;
+}
+.h-idea {
+  display: block;
+  font-size: 22rpx;
+  letter-spacing: 0.2em;
+  margin-top: 20rpx;
+  color: rgba(255,255,255,0.55);
+  font-weight: 400;
+}
+
+/* 3. 文章段落 - 优化排版 */
+.article-section { 
+  padding: 80rpx 50rpx 100rpx; 
+  text-align: center; 
+  position: relative; 
+  top: -80rpx; 
+  z-index: 3;
+  max-width: 750rpx;
+  margin: 0 auto;
+}
+
+/* 进场动画类 */
+.fade-up { 
+  opacity: 0; 
+  transform: translateY(40rpx); 
+  animation: fadeUpAnim 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes fadeUpAnim { 
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  } 
+}
+
+.para { 
+  margin-bottom: 0;
+  display: flex; 
+  flex-direction: column; 
+  align-items: center;
+  width: 100%;
+}
+
+/* 引言段落 */
+.para-intro {
+  margin-bottom: 100rpx;
+  padding-bottom: 60rpx;
+  border-bottom: 1px solid rgba(196, 167, 108,0.15);
+}
+
+/* 正文段落 */
+.para-body {
+  margin-bottom: 100rpx;
+  text-align: justify;
+  text-align-last: center;
+}
+
+/* 引用段落 */
+.para-quote {
+  margin-bottom: 80rpx;
+  padding: 60rpx 40rpx;
+  background: linear-gradient(135deg, rgba(196, 167, 108,0.05), rgba(196, 167, 108,0.02));
+  border-left: 4rpx solid var(--gold);
+  border-radius: 8rpx;
+  position: relative;
+}
+
+.quote-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.p-en { 
+  font-size: 22rpx; 
+  color: var(--gold); 
+  letter-spacing: 6rpx; 
+  margin-bottom: 32rpx; 
+  font-weight: 800; 
+  border-bottom: 2rpx solid var(--gold); 
+  padding-bottom: 12rpx;
+  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.4);
+  position: relative;
+  display: inline-block;
+  width: auto;
+}
+.p-en::after {
+  content: '';
+  position: absolute;
+  bottom: -2rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50rpx;
+  height: 2rpx;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.6;
+}
+.p-cn { 
+  font-size: 42rpx; 
+  color: rgba(255,255,255,0.95); 
+  font-weight: 900; 
+  letter-spacing: 4rpx; 
+  line-height: 1.8;
+  text-shadow: 
+    0 3rpx 12rpx rgba(0,0,0,0.8),
+    0 1rpx 6rpx rgba(0,0,0,0.6);
+  display: block;
+  margin-top: 8rpx;
+}
+
+.p-body { 
+  font-size: 30rpx; 
+  color: rgba(255,255,255,0.75); 
+  line-height: 2.6; 
+  text-align: justify; 
+  text-align-last: center;
+  text-shadow: 0 1rpx 4rpx rgba(0,0,0,0.6);
+  letter-spacing: 1.5rpx;
+  max-width: 680rpx;
+  margin: 0 auto;
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+.p-quote { 
+  font-family: 'Times New Roman', serif; 
+  font-style: italic; 
+  font-size: 38rpx; 
+  color: rgba(255,255,255,0.95); 
+  line-height: 2; 
+  margin-bottom: 32rpx;
+  text-shadow: 
+    0 2rpx 10rpx rgba(0,0,0,0.8),
+    0 1rpx 5rpx rgba(0,0,0,0.6);
+  position: relative;
+  padding: 0 50rpx;
+  max-width: 600rpx;
+  white-space: pre-line;
+}
+.p-quote::before,
+.p-quote::after {
+  content: '"';
+  font-size: 56rpx;
+  color: var(--gold);
+  opacity: 0.5;
+  position: absolute;
+  font-family: 'Times New Roman', serif;
+  font-weight: 300;
+  line-height: 1;
+}
+.p-quote::before {
+  left: 10rpx;
+  top: -8rpx;
+}
+.p-quote::after {
+  right: 10rpx;
+  bottom: -20rpx;
+}
+.p-author { 
+  font-size: 24rpx; 
+  color: rgba(196, 167, 108,0.85); 
+  letter-spacing: 4rpx; 
+  text-transform: uppercase;
+  font-weight: 700;
+  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.3);
+  margin-top: 8rpx;
+  font-family: 'DIN', sans-serif;
+}
+
+/* 4. 信息卡片 - 黑金质感增强 */
+.info-section { 
+  padding: 0 50rpx; 
+  margin-bottom: 120rpx;
+  max-width: 750rpx;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.info-card {
+  background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(20,20,20,0.6));
+  border: 1.5px solid rgba(196, 167, 108,0.3);
+  border-radius: 12rpx;
+  padding: 44rpx;
+  position: relative;
+  box-shadow: 
+    0 12rpx 40rpx rgba(0,0,0,0.6),
+    0 4rpx 16rpx rgba(0,0,0,0.4),
+    0 0 24rpx rgba(196, 167, 108,0.1),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.05);
+  backdrop-filter: blur(8px);
+}
+/* 四角装饰 - 增强金色 */
+.info-card::before { 
+  content: ''; 
+  position: absolute; 
+  top: -2rpx; 
+  left: -2rpx; 
+  width: 32rpx; 
+  height: 32rpx; 
+  border-top: 3rpx solid var(--gold); 
+  border-left: 3rpx solid var(--gold);
+  box-shadow: none;
+}
+.info-card::after { 
+  content: ''; 
+  position: absolute; 
+  bottom: -2rpx; 
+  right: -2rpx; 
+  width: 32rpx; 
+  height: 32rpx; 
+  border-bottom: 3rpx solid var(--gold); 
+  border-right: 3rpx solid var(--gold);
+  box-shadow: none;
+}
+
+.card-header { 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  font-size: 22rpx; 
+  color: rgba(255,255,255,0.5); 
+  letter-spacing: 5rpx; 
+  margin-bottom: 44rpx; 
+  font-weight: 800;
+  font-family: 'DIN';
+  text-transform: uppercase;
+}
+.dot { 
+  margin: 0 24rpx; 
+  color: var(--gold); 
+  font-size: 14rpx;
+  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.5);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.3); }
+}
+
+.card-body { 
+  margin-bottom: 44rpx; 
+}
+.row { 
+  display: flex; 
+  margin-bottom: 32rpx; 
+  font-size: 26rpx; 
+  line-height: 2;
+  align-items: flex-start;
+  gap: 24rpx;
+}
+.row:last-child {
+  margin-bottom: 0;
+}
+.lbl { 
+  min-width: 160rpx; 
+  color: rgba(196, 167, 108,0.85); 
+  letter-spacing: 3rpx; 
+  flex-shrink: 0;
+  font-weight: 700;
+  font-family: 'DIN';
+  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.3);
+  text-align: left;
+  line-height: 1.8;
+}
+.val { 
+  color: rgba(255,255,255,0.9); 
+  flex: 1;
+  font-weight: 600;
+  text-shadow: 0 1rpx 3rpx rgba(0,0,0,0.6);
+  line-height: 1.8;
+  word-break: break-word;
+}
+.val.underline { 
+  text-decoration: underline; 
+  text-underline-offset: 4rpx;
+  color: var(--gold);
+  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.4);
+  transition: all 0.3s;
+}
+.val.underline:active {
+  color: #E0CFA3;
+  text-shadow: 0 0 16rpx rgba(196, 167, 108,0.6);
+}
+
+/* 地图 - 黑金质感 */
+.map-box { 
+  width: 100%; 
+  height: 260rpx; 
+  position: relative; 
+  border: 1.5px solid rgba(196, 167, 108,0.3);
+  filter: brightness(0.7) contrast(1.2) saturate(1.1) grayscale(0.5) sepia(0.1);
+  border-radius: 8rpx;
+  overflow: hidden;
+  box-shadow: 
+    0 8rpx 24rpx rgba(0,0,0,0.5),
+    0 0 16rpx rgba(196, 167, 108,0.1),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.05);
+  transition: all 0.3s;
+}
+.map-box:active {
+  border-color: rgba(196, 167, 108,0.5);
+  filter: brightness(0.8) contrast(1.3) saturate(1.2) grayscale(0.3) sepia(0.15);
+  box-shadow: 
+    0 12rpx 32rpx rgba(0,0,0,0.6),
+    0 0 24rpx rgba(196, 167, 108,0.2),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.1);
+  transform: scale(0.99);
+}
+.mini-map { 
+  width: 100%; 
+  height: 100%; 
+}
+.map-mask {
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.3));
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  transition: all 0.3s;
+}
+.map-box:active .map-mask {
+  background: linear-gradient(135deg, rgba(0,0,0,0.5), rgba(0,0,0,0.4));
+}
+
+.store-link-btn {
+  margin-top: 32rpx;
+  padding: 24rpx;
+  text-align: center;
+  border: 1px solid rgba(196, 167, 108, 0.45);
+  border-radius: 12rpx;
+  color: #C4A76C;
+  font-size: 26rpx;
+  letter-spacing: 0.04em;
+}
+
+.store-link-btn:active { opacity: 0.88; }
+
+.map-mask text { 
+  color: var(--gold); 
+  border: 1.5px solid rgba(196, 167, 108,0.5); 
+  padding: 8rpx 24rpx; 
+  font-size: 22rpx; 
+  letter-spacing: 3rpx; 
+  background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.5));
+  backdrop-filter: blur(8px);
+  border-radius: 20rpx;
+  font-weight: 700;
+  font-family: 'DIN';
+  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.4);
+  box-shadow: 
+    0 4rpx 12rpx rgba(0,0,0,0.4),
+    0 0 16rpx rgba(196, 167, 108,0.2),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.05);
+}
+
+.footer-logo { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  padding-bottom: 80rpx; 
+  opacity: 0.5;
+  position: relative;
+}
+.footer-logo::before {
+  content: '';
+  position: absolute;
+  top: -30rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60rpx;
+  height: 1rpx;
+  background: linear-gradient(90deg, transparent, rgba(196, 167, 108,0.5), transparent);
+}
+.logo-icon { 
+  width: 44rpx; 
+  height: 44rpx; 
+  margin-bottom: 14rpx; 
+  filter: invert(1) sepia(1) hue-rotate(15deg) saturate(2) brightness(1.2);
+  opacity: 0.8;
+}
+.footer-cr-cn {
+  font-size: 20rpx;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.55);
+  font-weight: 400;
+  margin-bottom: 8rpx;
+}
+.footer-cr-en {
+  font-size: 18rpx;
+  letter-spacing: 0.25em;
+  color: rgba(196, 167, 108, 0.75);
+  font-family: 'DIN', sans-serif;
+  font-weight: 600;
+}

@@ -1,0 +1,336 @@
+<!--pages/booking/index.wxml-->
+<view class="container">
+  
+  <!-- 背景氛围 -->
+  <image class="bg-image" src="https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?q=80&w=1000&auto=format&fit=crop" mode="aspectFill"></image>
+  <view class="bg-mask"></view>
+
+  <!-- 1. 顶部：典藏票据预览 -->
+  <view class="ticket-header" style="padding-top: {{statusBarHeight + 10}}px">
+    <view class="ticket-3d-container {{isFlipped ? 'flipped' : ''}}" bindtap="flipTicket">
+      <!-- A面：黑金 -->
+      <view class="ticket-face face-front">
+        <view class="paper-texture"></view><view class="gold-strip"></view><view class="watermark">🦋</view>
+        <view class="notch left"></view><view class="notch right"></view>
+        <view class="tp-header">
+          <view class="tp-brand"><text class="tp-logo">山海造物</text><text class="tp-tagline">把山海带回家</text><text class="tp-sub">NATURE'S CREATIONS</text></view>
+          <text class="tp-serial">NO.V-2025</text>
+        </view>
+        <view class="tp-body">
+          <view class="info-row">
+            <view class="info-item"><text class="label">日期｜DATE</text><text class="val">{{ticketInfo.dateStr}}</text></view>
+            <view class="info-item center"><text class="label">时间｜TIME</text><text class="val highlight">{{ticketInfo.timeStr}}</text></view>
+            <view class="info-item right"><text class="label">贵宾｜HOLDER</text><text class="val-calligraphy">{{contactName || 'Guest'}}</text></view>
+          </view>
+          <view class="info-row sub">
+            <view class="info-item"><text class="label">人数｜GUEST</text><text class="val-sm">0{{bookCount}} 人</text></view>
+            <view class="info-item right"><text class="label">请柬｜ACCESS</text><text class="val-sm">{{ticketInfo.typeStr}}</text></view>
+          </view>
+        </view>
+        <view class="tp-footer"><view class="security-thread"><view class="scan-light"></view></view><view class="stamp-seal">VALID</view></view>
+        <view class="flip-hint">Tap to Flip ↻</view>
+      </view>
+      <!-- B面：白银 -->
+      <view class="ticket-face face-back">
+        <view class="silver-strip"></view><view class="watermark light">🦋</view>
+        <view class="notch left light"></view><view class="notch right light"></view>
+        <view class="tp-header light">
+          <view class="tp-brand"><text class="tp-logo light">山海造物</text><text class="tp-tagline light">把山海带回家</text><text class="tp-sub light">NATURE'S CREATIONS</text></view>
+          <text class="tp-serial light">NO.V-2025</text>
+        </view>
+        <view class="tp-body">
+          <view class="info-row">
+            <view class="info-item"><text class="label light">日期｜DATE</text><text class="val light">{{ticketInfo.dateStr}}</text></view>
+            <view class="info-item center"><text class="label light">时间｜TIME</text><text class="val highlight light">{{ticketInfo.timeStr}}</text></view>
+            <view class="info-item right"><text class="label light">贵宾｜HOLDER</text><text class="val-calligraphy light">{{contactName || 'Guest'}}</text></view>
+          </view>
+          <view class="info-row sub">
+            <view class="info-item"><text class="label light">人数｜GUEST</text><text class="val-sm light">0{{bookCount}} 人</text></view>
+            <view class="info-item right"><text class="label light">请柬｜ACCESS</text><text class="val-sm light">{{ticketInfo.typeStr}}</text></view>
+          </view>
+        </view>
+        <view class="tp-footer light"><view class="security-thread light"><view class="scan-light"></view></view><view class="stamp-seal light">VALID</view></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 2. 中间：滚动操作区 -->
+  <scroll-view scroll-y="true" class="scroll-content" enable-flex="true">
+    <view class="scroll-inner">
+      <view class="tab-box">
+        <view class="tab-item {{currentTab==0 ? 'active' : ''}}" bindtap="switchTab" data-idx="0">入店参观</view>
+        <view class="tab-item {{currentTab==1 ? 'active' : ''}}" bindtap="switchTab" data-idx="1">手作课程</view>
+        <view class="tab-item {{currentTab==2 ? 'active' : ''}}" bindtap="switchTab" data-idx="2">特别活动</view>
+        <view class="tab-item {{currentTab==3 ? 'active' : ''}}" bindtap="switchTab" data-idx="3">预约历史</view>
+      </view>
+
+      <!-- A: 参观表单 (仅 Tab 0 显示日期选择) -->
+      <block wx:if="{{currentTab == 0}}">
+        <view class="custom-plan-banner store-banner {{storeLocked ? 'locked' : ''}}" bindtap="toggleStorePicker">
+          <text class="cp-overline">STORE · 预约门店</text>
+          <text class="cp-title">{{storeName}}</text>
+          <text class="cp-sub" wx:if="{{storeLocationLabel}}">{{storeLocationLabel}}</text>
+          <text class="cp-switch" wx:if="{{!storeLocked}}">切换门店 ▼</text>
+          <text class="cp-switch locked-tip" wx:else>定制 / 伴宠服务固定预约星宸标本工作室</text>
+          <block wx:for="{{storeVisitTips}}" wx:key="*this">
+            <text class="cp-tip">· {{item}}</text>
+          </block>
+        </view>
+        <view class="store-picker-mask" wx:if="{{storePickerOpen}}" bindtap="closeStorePicker"></view>
+        <view class="store-picker-sheet" wx:if="{{storePickerOpen}}">
+          <view
+            class="store-picker-item {{item.storeId === storeId ? 'active' : ''}}"
+            wx:for="{{storeList}}"
+            wx:key="storeId"
+            bindtap="selectBookingStore"
+            data-id="{{item.storeId}}"
+          >
+            <text class="spi-name">{{item.name}}</text>
+            <text class="spi-loc">{{item.locationLabel}}</text>
+          </view>
+        </view>
+        <view class="custom-plan-banner" wx:if="{{isCustomBooking && customPlanLines.length}}">
+          <text class="cp-overline">ATELIER · 定制方案</text>
+          <text class="cp-title">{{customPlanTitle}}</text>
+          <view class="cp-line" wx:for="{{customPlanLines}}" wx:key="label">
+            <text class="cp-label">{{item.label}}</text>
+            <text class="cp-val">{{item.value}}</text>
+          </view>
+          <text class="cp-tip">预约成功后，门店将按此方案为您预留确认时段</text>
+        </view>
+        <view class="custom-plan-banner pet" wx:if="{{isPetIntakeBooking && petPlanLines.length}}">
+          <text class="cp-overline">PET MEMORIAL · 遗体交接</text>
+          <text class="cp-title">{{petPlanTitle}}</text>
+          <view class="cp-line" wx:for="{{petPlanLines}}" wx:key="label">
+            <text class="cp-label">{{item.label}}</text>
+            <text class="cp-val">{{item.value}}</text>
+          </view>
+          <text class="cp-tip">请选择到店交接时间，标本师将当面确认并接收</text>
+        </view>
+        <view class="section-label">选择日期 | SELECT DATE</view>
+        
+        <!-- 日历视图 -->
+        <view class="calendar-wrapper" wx:if="{{showCalendar}}">
+          <calendar 
+            selected-date="{{selectedCalendarDate}}"
+            unavailable-dates="{{unavailableDates}}"
+            full-dates="{{fullDates}}"
+            bind:select="onCalendarSelect">
+          </calendar>
+        </view>
+        
+        <!-- 快速日期选择（横向滚动） -->
+        <view class="date-selector-toggle" bindtap="toggleCalendarView">
+          <text class="toggle-text">{{showCalendar ? '切换到快速选择' : '切换到日历视图'}}</text>
+          <view class="toggle-icon" wx:if="{{!showCalendar}}"><image src="/assets/icons/calendar_gold.png" mode="aspectFit"></image></view>
+          <text class="toggle-icon" wx:else>→</text>
+        </view>
+        
+        <scroll-view scroll-x="true" class="date-scroll {{showCalendar ? 'hidden' : ''}}" enable-flex="true">
+          <block wx:for="{{weekDays}}" wx:key="index">
+            <view class="date-pill {{selectedDateIndex === index ? 'active' : ''}}" bindtap="selectDate" data-index="{{index}}">
+              <text class="d-week">{{item.week}}</text><text class="d-day">{{item.day}}</text>
+            </view>
+          </block>
+        </scroll-view>
+        
+        <view class="section-label">预约时间 | SELECT SESSION</view>
+        <view class="time-grid">
+          <block wx:for="{{timeSlots}}" wx:key="index">
+            <view class="time-btn {{item.status === 'full' ? 'disabled' : ''}} {{selectedTimeIndex === index ? 'active' : ''}}" bindtap="selectTime" data-index="{{index}}" data-status="{{item.status}}">
+              <text>{{item.time}}</text>
+            </view>
+          </block>
+        </view>
+        
+        <!-- 🟢 候补功能提示 -->
+        <view class="waitlist-hint" wx:if="{{selectedTimeIndex !== -1 && timeSlots[selectedTimeIndex].status === 'full'}}">
+          <view class="hint-icon"><image src="/assets/icons/clock.png" mode="aspectFit" class="icon-gold"></image></view>
+          <text class="hint-text">该时间段已满，可加入候补列表</text>
+          <view class="waitlist-btn" bindtap="addToWaitlist">加入候补</view>
+        </view>
+        <view class="section-label">参观人数 | GUEST COUNT</view>
+        <view class="guest-card">
+           <text class="guest-tip">单次预约上限 10 人</text>
+           <view class="stepper"><view class="s-btn" bindtap="changeCount" data-type="minus">-</view><view class="s-val">{{bookCount}}</view><view class="s-btn" bindtap="changeCount" data-type="add">+</view></view>
+        </view>
+      </block>
+
+      <!-- B: 手作课程列表 -->
+      <block wx:if="{{currentTab == 1}}">
+        <view class="activity-list">
+          <block wx:for="{{courses}}" wx:key="_id">
+            <view class="act-card {{selectedActivityId === item._id ? 'selected' : ''}}" bindtap="selectActivity" data-id="{{item._id}}" data-status="{{item.status}}" data-type="course">
+              <image class="act-img" src="{{item.image}}" mode="aspectFill"></image>
+              <view class="act-info">
+                <text class="act-t">{{item.title}}</text>
+                <text class="act-d">{{item.date}} | {{item.time}}</text>
+                <view class="act-b"><text class="act-p">¥{{item.price}}</text></view>
+              </view>
+            </view>
+          </block>
+          <view class="empty-state" wx:if="{{courses.length === 0}}"><text style="color:#666; font-size:24rpx;">暂无课程排期</text></view>
+        </view>
+      </block>
+
+      <!-- C: 特别活动列表 -->
+      <block wx:if="{{currentTab == 2}}">
+        <view class="activity-list">
+          <block wx:for="{{activities}}" wx:key="_id">
+            <view class="act-card {{selectedActivityId === item._id ? 'selected' : ''}}" bindtap="selectActivity" data-id="{{item._id}}" data-status="{{item.status}}" data-type="activity">
+              <image class="act-img" src="{{item.image}}" mode="aspectFill"></image>
+              <view class="act-info">
+                <text class="act-t">{{item.title}}</text>
+                <text class="act-d">{{item.date}} | {{item.location}}</text>
+                <view class="act-b"><text class="act-p">¥{{item.price}}</text></view>
+              </view>
+            </view>
+          </block>
+          <view class="empty-state" wx:if="{{activities.length === 0}}"><text style="color:#666; font-size:24rpx;">暂无活动安排</text></view>
+        </view>
+      </block>
+
+      <!-- D: 预约历史 -->
+      <block wx:if="{{currentTab == 3}}">
+        <view class="booking-history-tabs">
+          <view class="history-tab-item {{bookingHistoryTab==0 ? 'active' : ''}}" bindtap="switchHistoryTab" data-idx="0">待参加</view>
+          <view class="history-tab-item {{bookingHistoryTab==1 ? 'active' : ''}}" bindtap="switchHistoryTab" data-idx="1">历史记录</view>
+        </view>
+        
+        <!-- 待参加列表 -->
+        <view class="booking-list" wx:if="{{bookingHistoryTab==0}}">
+          <block wx:for="{{upcomingBookings}}" wx:key="_id">
+            <view class="ticket-card" bindtap="goToBookingDetail" data-id="{{item._id}}">
+              <view class="ticket-left">
+                <view class="hole-circle top"></view>
+                <view class="hole-circle bottom"></view>
+                <view class="dashed-line"></view>
+                <text class="t-type">{{item.type === 'handcraft_course' ? 'HANDCRAFT' : (item.type==='special_activity'?'EVENT':'VISIT')}}</text>
+              </view>
+              <view class="ticket-right">
+                <view class="tr-top">
+                  <text class="tr-title">{{item.title}}</text>
+                  <view class="tr-badge">NO.{{item._id_short}}</view>
+                </view>
+                <view class="tr-mid">
+                  <view class="info-col">
+                    <text class="lbl">DATE</text>
+                    <text class="val">{{item.month}} {{item.day}}</text>
+                  </view>
+                  <view class="info-col">
+                    <text class="lbl">TIME</text>
+                    <text class="val highlight">{{item.time}}</text>
+                  </view>
+                  <view class="info-col">
+                    <text class="lbl">GUEST</text>
+                    <text class="val">{{item.people}}</text>
+                  </view>
+                </view>
+                <view class="tr-bot">
+                  <view class="btn-use">查看详情 →</view>
+                </view>
+              </view>
+            </view>
+          </block>
+          <view class="empty-state" wx:if="{{upcomingBookings.length === 0 && !loadingBookings}}">
+            <text>暂无待参加行程</text>
+          </view>
+        </view>
+        
+        <!-- 历史记录列表 -->
+        <view class="booking-list" wx:if="{{bookingHistoryTab==1}}">
+          <block wx:for="{{historyBookings}}" wx:key="_id">
+            <view class="history-card" bindtap="goToBookingDetail" data-id="{{item._id}}">
+              <view class="hc-left">
+                <text class="hc-day">{{item.day}}</text>
+                <text class="hc-month">{{item.month}}</text>
+              </view>
+              <view class="hc-mid">
+                <text class="hc-title">{{item.title}}</text>
+                <text class="hc-time">{{item.time}} · {{item.people}}人</text>
+              </view>
+              <view class="hc-right">
+                <view class="stamp-used">USED</view>
+              </view>
+            </view>
+          </block>
+          <view class="empty-state" wx:if="{{historyBookings.length === 0 && !loadingBookings}}">
+            <text>暂无历史记录</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 🟢 公共部分：联系人信息 (Tab 0, 1, 2 显示，Tab 3不显示) -->
+      <view class="common-form-area" wx:if="{{currentTab < 3}}" style="margin-top: 60rpx;">
+        <view class="section-label">联系信息 | CONTACT INFO</view>
+        <view class="input-group">
+           <view class="input-row"><view class="input-icon"><image src="/assets/icons/user.png" mode="aspectFit" class="icon-gold"></image></view><input class="mini-input" placeholder="姓名 / Name" placeholder-class="ph" value="{{contactName}}" bindinput="onInput" data-field="contactName"/></view>
+           <view class="input-row"><view class="input-icon"><image src="/assets/icons/phone.png" mode="aspectFit" class="icon-gold"></image></view><input class="mini-input" type="number" placeholder="手机号 / Phone" placeholder-class="ph" value="{{contactPhone}}" bindinput="onInput" data-field="contactPhone"/></view>
+        </view>
+      </view>
+
+    </view>
+  </scroll-view>
+
+  <!-- 3. 底部：悬浮操作栏 (仅Tab 0, 1, 2显示) -->
+  <view class="fixed-footer safe-area" wx:if="{{currentTab < 3}}">
+    <!-- 入店参观 -->
+    <view class="submit-btn full-width" wx:if="{{currentTab == 0}}" bindtap="submitBooking">
+      <view class="btn-content"><text class="btn-main">免费预约</text><text class="btn-sub">GENERATE PASS</text></view><view class="btn-icon">→</view>
+    </view>
+    <!-- 手作课程 -->
+    <view class="submit-btn full-width" wx:if="{{currentTab == 1}}" bindtap="submitActivityBooking">
+      <view class="btn-content"><text class="btn-main">预约课程</text><text class="btn-sub">BOOK COURSE</text></view><view class="btn-icon">→</view>
+    </view>
+    <!-- 特别活动 -->
+    <view class="submit-btn full-width" wx:if="{{currentTab == 2}}" bindtap="submitActivityBooking">
+      <view class="btn-content"><text class="btn-main">报名活动</text><text class="btn-sub">JOIN EVENT</text></view><view class="btn-icon">→</view>
+    </view>
+  </view>
+
+  <!-- 4. 门票铸造动画 -->
+  <view class="mint-modal {{showMintModal ? 'active' : ''}}" catchtouchmove="true">
+    <view class="mint-content">
+      <view class="mint-machine">
+        <view class="printer-light {{mintAnimation ? 'blink' : ''}}"></view>
+        <view class="printer-slot"></view>
+      </view>
+      <view class="ticket-paper {{mintAnimation ? 'printing' : ''}}">
+        <view class="tp-mini">
+          <view class="tm-head">
+             <text class="tm-title">NATURE'S CREATIONS</text>
+             <view class="tm-line"></view>
+          </view>
+          <view class="tm-invite">
+            <text class="tm-label">邀请函｜INVITATION</text>
+            <text class="tm-name">诚邀 {{contactName || '贵宾'}} 先生/女士</text>
+            <text class="tm-desc">欢迎预约到店，慢慢看、慢慢选。</text>
+          </view>
+          <view class="tm-code-box">
+            <view class="tm-qr">
+              <image src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{newTicketCode}}" mode="aspectFill"></image>
+              <view class="scan-bar"></view>
+            </view>
+            <text class="tm-val">{{newTicketCode}}</text>
+          </view>
+          <view class="tm-foot">仅限本人｜PERSONAL USE ONLY</view>
+        </view>
+      </view>
+      <view class="mint-bottom-area">
+        <block wx:if="{{!mintFinished}}">
+           <text class="mint-tip">正在打印您的专属通行证...</text>
+           <view class="mint-progress"><view class="mp-bar"></view></view>
+        </block>
+        <view class="mint-actions {{mintFinished ? 'show' : ''}}">
+          <view class="btn-check primary" bindtap="goToMyBookings">
+             <text>查看凭证</text> <text class="arrow">→</text>
+          </view>
+          <view class="btn-group-sub">
+             <view class="btn-sub-act" bindtap="closeMintModal">继续预约</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+</view>

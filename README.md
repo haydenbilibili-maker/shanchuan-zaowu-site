@@ -34,9 +34,12 @@ npm run dev    # http://localhost:4321/
 ## 构建与预览
 
 ```bash
-npm run build      # 输出到 dist/（21 个 HTML 页面）
-npm run preview    # 本地预览构建产物
+npm run build:admin   # 仅 ERP → public/admin/
+npm run build         # ERP + 官网 → dist/
+npm run preview       # 本地预览构建产物
 ```
+
+**Monorepo**：ERP 源码在 `admin/`，小程序在 `miniprogram/`。详见 **`docs/monorepo.md`**。
 
 ---
 
@@ -44,6 +47,8 @@ npm run preview    # 本地预览构建产物
 
 ```
 shanhaizaowu/
+├── admin/                 # Vue 3 ERP 源码（npm run dev:admin）
+├── miniprogram/           # 微信小程序（微信开发者工具打开此目录）
 ├── astro.config.mjs       # Astro 配置（Tailwind 集成）
 ├── tailwind.config.mjs    # 设计 token：黄铜 + ink 暗调 + paper 米白 + VI 色
 ├── tsconfig.json          # TS strict

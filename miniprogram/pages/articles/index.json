@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "知识文章",
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#1A1814",
+  "backgroundTextStyle": "light"
+}

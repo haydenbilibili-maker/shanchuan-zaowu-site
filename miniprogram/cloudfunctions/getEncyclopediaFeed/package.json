@@ -1,0 +1,9 @@
+{
+  "name": "getEncyclopediaFeed",
+  "version": "1.0.0",
+  "description": "馆藏页内容+孤儿商品聚合流",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

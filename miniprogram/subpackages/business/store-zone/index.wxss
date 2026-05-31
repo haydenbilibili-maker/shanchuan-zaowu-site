@@ -1,0 +1,148 @@
+page { background: #1A1814; color: #fff; }
+
+.page-zone { min-height: 100vh; }
+
+.grain-overlay {
+  position: fixed; inset: 0; pointer-events: none; opacity: 0.03; z-index: 0;
+}
+
+.header {
+  display: flex; align-items: center; gap: 16rpx;
+  padding: 16rpx 32rpx 24rpx;
+  position: relative; z-index: 10;
+}
+
+.back-btn { font-size: 28rpx; color: #A09A90; width: 72rpx; }
+
+.title {
+  flex: 1; font-size: 32rpx; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.content {
+  height: calc(100vh - 120rpx);
+  box-sizing: border-box;
+}
+
+.zone-hero {
+  position: relative; height: 480rpx; margin-bottom: 32rpx;
+}
+
+.zone-swiper, .zone-hero-img { width: 100%; height: 100%; }
+
+.zone-hero-mask {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, rgba(26,24,20,0.95) 0%, rgba(26,24,20,0.1) 60%);
+}
+
+.zone-hero-text {
+  position: absolute; left: 32rpx; right: 32rpx; bottom: 32rpx; z-index: 2;
+}
+
+.swiper-count {
+  display: block; font-size: 20rpx; color: #A09A90; margin-top: 8rpx;
+}
+
+.zone-head { padding: 0 32rpx 12rpx; }
+
+.overline { display: block; font-size: 22rpx; letter-spacing: 0.1em; margin-bottom: 12rpx; }
+
+.zone-title { display: block; font-size: 40rpx; font-weight: 600; margin-bottom: 12rpx; }
+
+.store-name {
+  display: block; font-size: 24rpx; color: #A09A90; margin: 0 32rpx 24rpx;
+}
+
+.desc {
+  display: block; font-size: 28rpx; color: #D5D1C8; line-height: 1.65;
+  padding: 0 32rpx;
+}
+
+.cta-wrap { padding: 48rpx 32rpx 64rpx; }
+
+.btn-primary {
+  width: 100%; height: 88rpx; line-height: 88rpx;
+  background: #C4A76C; color: #1A1814; border-radius: 16rpx; font-size: 28rpx; border: none;
+}
+
+.btn-primary::after { border: none; }
+
+.section-label {
+  display: block; font-size: 20rpx; color: #A09A90; letter-spacing: 0.12em;
+  margin: 32rpx 32rpx 16rpx;
+}
+
+.long-desc-block { padding-bottom: 8rpx; }
+
+.long-desc {
+  display: block; font-size: 28rpx; color: #D5D1C8; line-height: 1.7;
+  padding: 0 32rpx; max-height: 160rpx; overflow: hidden;
+}
+
+.long-desc.expanded { max-height: none; }
+
+.long-desc-toggle {
+  display: block; font-size: 24rpx; color: #C4A76C;
+  padding: 16rpx 32rpx 0;
+}
+
+.species-block { padding-bottom: 8rpx; }
+
+.species-plate {
+  margin: 0 32rpx 16rpx; padding: 20rpx 24rpx;
+  background: rgba(250, 246, 237, 0.06);
+  border: 1rpx solid rgba(196, 167, 108, 0.25);
+  border-radius: 12rpx;
+}
+
+.species-cn {
+  display: block; font-size: 28rpx; font-weight: 600; color: #C4A76C;
+}
+
+.species-latin {
+  display: block; font-size: 24rpx; font-style: italic; color: #A09A90; margin-top: 6rpx;
+}
+
+.related-block { margin-bottom: 8rpx; }
+
+.product-scroll {
+  white-space: nowrap; padding-left: 32rpx; height: 320rpx;
+}
+
+.product-card {
+  display: inline-flex; flex-direction: column; width: 220rpx;
+  margin-right: 20rpx; vertical-align: top;
+  background: #1F1D1A; border: 1rpx solid rgba(38, 35, 32, 0.8);
+  border-radius: 16rpx; overflow: hidden;
+}
+
+.product-img { width: 220rpx; height: 180rpx; }
+
+.product-body { padding: 12rpx 16rpx 16rpx; }
+
+.product-title { font-size: 24rpx; color: #fff; display: block; }
+
+.product-latin { font-size: 20rpx; color: #A09A90; display: block; margin-top: 4rpx; }
+
+.product-price { font-size: 22rpx; color: #C4A76C; margin-top: 8rpx; display: block; }
+
+.wiki-row {
+  display: flex; align-items: center; gap: 16rpx;
+  margin: 0 32rpx 16rpx; padding: 16rpx;
+  background: #1F1D1A; border-radius: 12rpx;
+  border: 1rpx solid rgba(38, 35, 32, 0.6);
+}
+
+.wiki-thumb { width: 88rpx; height: 88rpx; border-radius: 8rpx; flex-shrink: 0; }
+
+.wiki-meta { flex: 1; min-width: 0; }
+
+.wiki-title { font-size: 26rpx; color: #fff; display: block; }
+
+.wiki-brief { font-size: 22rpx; color: #A09A90; display: block; margin-top: 4rpx; }
+
+.wiki-arr { color: #C4A76C; font-size: 28rpx; }
+
+.text-cut {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}

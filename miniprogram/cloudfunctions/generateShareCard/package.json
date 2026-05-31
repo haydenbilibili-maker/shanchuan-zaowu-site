@@ -1,0 +1,17 @@
+{
+  "name": "generateShareCard",
+  "version": "1.0.0",
+  "description": "生成分享卡片云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}
+
+
+
+
+
+
+
+

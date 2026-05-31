@@ -1,0 +1,693 @@
+<!--pages/user/index.wxml-->
+<view class="container">
+
+  <!-- 新用户引导条（可关闭，不强制跳转） -->
+  <view class="onboard-banner stagger-item" wx:if="{{showOnboardingBanner}}" style="animation-delay: 0s;">
+    <view class="onboard-banner-body" bindtap="startOnboarding">
+      <view class="onboard-ring" style="background: conic-gradient(from -90deg, #C4A76C {{profileScore}}%, rgba(196,167,108,0.12) 0);">
+        <view class="onboard-ring-inner"><text class="onboard-ring-val">{{profileScore}}</text></view>
+      </view>
+      <view class="onboard-banner-text">
+        <text class="onboard-banner-title">建立你的藏家档案</text>
+        <text class="onboard-banner-desc">微信快速注册 · 解锁签到与会员权益</text>
+      </view>
+      <text class="onboard-banner-cta">开始 →</text>
+    </view>
+    <view class="onboard-banner-close" catchtap="dismissOnboardingBanner">×</view>
+  </view>
+  
+  <!-- 1. 光感会员卡（可翻转背板 · 淡入切换，避免真机镜像） -->
+  <view class="vip-card-container {{cardFlipped ? 'is-flipped' : ''}}">
+    <view class="vip-card-stage">
+      <!-- 正面 -->
+      <view class="vip-card vip-card-front lv{{level}}" bindtap="toggleCardFlip">
+        <view class="card-shine" style="{{shineStyle}}"></view>
+        <view class="bg-texture"></view>
+        <view class="card-glare"></view>
+
+        <view class="card-top">
+          <view class="org-name">
+            <text class="cn">山海造物</text>
+            <text class="en">NATURE'S CREATIONS</text>
+            <text class="tagline">把山海带回家</text>
+          </view>
+
+          <view class="action-pill" catchtap="doCheckIn">
+            <image class="ap-icon icon-gold" src="/assets/icons/checkin.png" mode="aspectFit" wx:if="{{!hasCheckedIn}}"></image>
+            <text class="ap-text">{{hasCheckedIn ? '已签到' : '每日签到'}}</text>
+            <view class="ap-line"></view>
+            <view class="qr-btn" catchtap="showMemberCode">
+              <image class="qr-icon icon-gold" src="/assets/icons/qrcode.png" mode="aspectFit"></image>
+            </view>
+          </view>
+        </view>
+
+        <view class="card-main">
+          <view class="user-info-row" catchtap="goToProfile">
+            <view class="avatar-wrap">
+              <image class="avatar-img" src="{{userInfo.avatarUrl || '/assets/icons/user.png'}}" mode="aspectFill"></image>
+            </view>
+            <view class="text-meta">
+              <view class="nick-row">
+                <text class="nick-display">{{userInfo.nickName || '设定代号'}}</text>
+              </view>
+              <view class="badge-row">
+                <view class="badge-pill" catchtap="showLevelBenefits">{{levelName}}</view>
+                <view class="rate-tag" wx:if="{{discountRate < 1}}" catchtap="showLevelBenefits">权益 {{discountRate*10}}折</view>
+              </view>
+            </view>
+            <text class="profile-edit-hint">›</text>
+          </view>
+
+          <view class="profile-score-bar" wx:if="{{profileScore < 100}}">
+            <view class="profile-score-fill" style="width: {{profileScore}}%;"></view>
+          </view>
+        </view>
+
+        <view class="card-footer">
+          <view class="growth-panel {{nextThreshold > 0 ? '' : 'is-max'}}">
+            <view class="growth-lead">
+              <text class="growth-num">{{growthValueDisplay}}</text>
+              <text class="growth-label">成长值</text>
+              <text class="growth-target" wx:if="{{nextThreshold > 0}}">/ {{nextThresholdDisplay}}</text>
+            </view>
+            <text class="growth-status" wx:if="{{nextThreshold > 0}}">还需 {{growthGapDisplay}}</text>
+            <text class="growth-status is-max" wx:else>最高等级</text>
+          </view>
+          <view class="progress-track" wx:if="{{nextThreshold > 0}}">
+            <view class="progress-bar" style="width: {{progressWidth}}"></view>
+          </view>
+          <view class="card-flip-glyph" aria-hidden="true">
+            <view class="flip-layer flip-layer-back"></view>
+            <view class="flip-layer flip-layer-front"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 背板 · 藏家铭牌 -->
+      <view class="vip-card vip-card-back lv{{level}}" bindtap="toggleCardFlip">
+        <view class="bg-texture"></view>
+
+        <view class="cb-stripe"></view>
+
+        <view class="cb-body">
+          <view class="cb-head-row">
+            <view class="cb-head-main">
+              <text class="cb-overline">COLLECTOR PLATE</text>
+              <text class="cb-title">藏家铭牌</text>
+            </view>
+            <text class="cb-member">{{memberNo}}</text>
+          </view>
+
+          <view class="cb-row cb-birthday-row {{cardBirthday.isToday ? 'today' : ''}}">
+            <text class="cb-row-label">生日礼遇</text>
+            <view class="cb-row-content" wx:if="{{cardBirthday.hasBirthday}}">
+              <text class="cb-row-val">{{cardBirthday.headline}}</text>
+              <text class="cb-row-sub">{{cardBirthday.subline}}</text>
+            </view>
+            <text class="cb-row-link" wx:else catchtap="goToProfileFromCardBack">填写生日 →</text>
+          </view>
+
+          <view class="cb-stats-row">
+            <view class="cb-stat-cell">
+              <text class="cb-stat-val">{{cardConsumptionDisplay}}</text>
+              <text class="cb-stat-label">累计消费</text>
+            </view>
+            <view class="cb-stat-cell">
+              <text class="cb-stat-val">{{statistics.orderCount || 0}}</text>
+              <text class="cb-stat-label">订单</text>
+            </view>
+            <view class="cb-stat-cell">
+              <text class="cb-stat-val">{{cardPointsDisplay}}</text>
+              <text class="cb-stat-label">积分</text>
+            </view>
+          </view>
+
+          <view class="cb-tags-block">
+            <text class="cb-tags-label">偏好标签</text>
+            <scroll-view scroll-x class="cb-tag-scroll" enable-flex show-scrollbar="{{false}}" wx:if="{{cardInterestTags.length}}">
+              <view class="cb-tag-inner">
+                <text
+                  class="cb-tag"
+                  wx:for="{{cardInterestTags}}"
+                  wx:key="key"
+                  style="border-color: {{item.color}}44; color: {{item.color}}; background: {{item.color}}14;"
+                >{{item.label}}</text>
+              </view>
+            </scroll-view>
+            <text class="cb-persona" wx:if="{{cardPersona}}">{{cardPersona}}</text>
+            <text class="cb-tags-empty" wx:if="{{!cardInterestTags.length && !cardPersona}}" catchtap="goToProfileFromCardBack">添加兴趣标签 →</text>
+          </view>
+        </view>
+
+        <view class="card-back-foot">
+          <text class="cb-since">{{levelName}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 藏家档案条 -->
+  <view class="profile-archive stagger-item" style="animation-delay: 0.08s;" bindtap="{{profileScore >= 60 ? 'goToProfile' : 'goToOnboarding'}}">
+    <view class="archive-ring-wrap" style="background: conic-gradient(from -90deg, #C4A76C {{profileScore}}%, rgba(196,167,108,0.12) 0);">
+      <view class="archive-ring-inner"><text class="archive-ring-val">{{profileScore}}</text></view>
+    </view>
+    <view class="archive-left">
+      <text class="archive-label">藏家档案</text>
+      <text class="archive-score">{{profileScore}}% 完成</text>
+      <view class="archive-tags" wx:if="{{interestLabels.length}}">
+        <text class="archive-tag" wx:for="{{interestLabels}}" wx:key="*this">{{item}}</text>
+      </view>
+      <text class="archive-hint" wx:else>完善资料，解锁生日礼遇与专属推荐</text>
+    </view>
+    <text class="archive-arrow">{{profileScore >= 60 ? '编辑' : '去完善'}} →</text>
+  </view>
+
+  <!-- 🟢 2. 个人资产 (4宫格) -->
+  <view class="assets-panel stagger-item" style="animation-delay: 0.1s;">
+    
+    <view class="asset-item" bindtap="handleMenuClick" data-path="booking">
+      <image class="as-icon" src="/assets/icons/calendar_gold.png"></image>
+      <text class="as-val">{{bookingCount}}</text>
+      <text class="as-lbl">我的预约</text>
+    </view>
+
+    <view class="v-divider"></view>
+
+    <view class="asset-item" bindtap="handleMenuClick" data-path="certificate">
+      <image class="as-icon" src="/assets/icons/medal_gold.png"></image>
+      <text class="as-val">{{certificateCount || 0}}</text>
+      <text class="as-lbl">我的证书</text>
+    </view>
+
+    <view class="v-divider"></view>
+
+    <view class="asset-item" bindtap="handleMenuClick" data-path="points">
+      <image class="as-icon" src="/assets/icons/coin_gold.png"></image>
+      <text class="as-val">{{points}}</text>
+      <text class="as-lbl">积分余额</text>
+    </view>
+    
+    <view class="v-divider"></view>
+    
+    <view class="asset-item" bindtap="handleMenuClick" data-path="coupons">
+      <image class="as-icon" src="/assets/icons/coupon.png"></image>
+      <text class="as-val">{{couponCount || 0}}</text>
+      <text class="as-lbl">优惠券</text>
+    </view>
+  </view>
+
+  <!-- 🟢 数据统计预览面板 -->
+  <view class="panel-box stagger-item" style="animation-delay: 0.15s;">
+    <view class="panel-head" bindtap="showStatistics">
+      <text class="ph-title">我的数据 | STATISTICS</text>
+      <text class="ph-more">查看详情 ></text>
+    </view>
+    <view class="stats-preview">
+      <view class="stat-item">
+        <text class="stat-val">{{statistics.viewCount || 0}}</text>
+        <text class="stat-label">浏览</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-val">{{statistics.collectCount || 0}}</text>
+        <text class="stat-label">收藏</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-val">{{statistics.shareCount || 0}}</text>
+        <text class="stat-label">分享</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-val">{{statistics.orderCount || 0}}</text>
+        <text class="stat-label">订单</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 4. 藏品订单 (矩阵入口) -->
+  <view class="panel-box stagger-item" style="animation-delay: 0.3s;">
+    <view class="panel-head" bindtap="handleMenuClick" data-path="orders">
+      <text class="ph-title">藏品订单 | ORDERS</text>
+      <text class="ph-more">全部订单 ></text>
+    </view>
+    <view class="order-matrix">
+      <view class="om-item" bindtap="goToOrderList" data-type="ALL">
+        <image class="om-icon" src="/assets/icons/pay.png"></image><text>待付款</text>
+      </view>
+      <view class="om-item" bindtap="goToOrderList" data-type="paid">
+        <image class="om-icon" src="/assets/icons/ship.png"></image><text>待发货</text>
+      </view>
+      <view class="om-item" bindtap="goToOrderList" data-type="shipped">
+        <image class="om-icon" src="/assets/icons/deliver.png"></image><text>待收货</text>
+      </view>
+      <view class="om-item" bindtap="goToOrderList" data-type="received">
+        <image class="om-icon icon-gold" src="/assets/icons/done.png"></image><text>已签收</text>
+      </view>
+      <view class="om-item" bindtap="goToOrderList" data-type="refund">
+        <image class="om-icon" src="/assets/icons/refund.png"></image><text>售后</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 3. 馆藏服务 -->
+  <view class="panel-box stagger-item" style="animation-delay: 0.2s;">
+    <view class="panel-head"><text class="ph-title">馆藏服务 | SERVICES</text></view>
+    <view class="service-list">
+      <!-- 消息与服务 -->
+      <view class="menu-row" bindtap="goToMessages">
+        <image class="m-img gold" src="/assets/icons/message.png"></image>
+        <view class="m-info">
+          <text class="m-cn">山海有信</text>
+          <text class="m-en">MESSAGES</text>
+        </view>
+        <view class="message-badge" wx:if="{{unreadMessageCount > 0}}">
+          <text class="badge-dot" wx:if="{{unreadMessageCount <= 99}}">{{unreadMessageCount}}</text>
+          <text class="badge-dot" wx:else>99+</text>
+        </view>
+        <text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="goToSupport">
+        <image class="m-img silver" src="/assets/icons/service.png"></image>
+        <view class="m-info"><text class="m-cn">联系专员</text><text class="m-en">SUPPORT</text></view><text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="goToCustom">
+        <image class="m-img gold" src="/assets/icons/gift.png"></image>
+        <view class="m-info"><text class="m-cn">标本工坊</text><text class="m-en">ATELIER</text></view><text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="goToCare">
+        <image class="m-img silver" src="/assets/icons/knowledge.png"></image>
+        <view class="m-info"><text class="m-cn">标本养护</text><text class="m-en">SPECIMEN CARE</text></view><text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="goToCommunity">
+        <image class="m-img gold" src="/assets/icons/article-tab.png"></image>
+        <view class="m-info"><text class="m-cn">山海社区</text><text class="m-en">SHANHAI COMMUNITY</text></view><text class="m-arr">→</text>
+      </view>
+
+      <!-- 探索与收藏 -->
+      <view class="menu-row section-start" bindtap="handleMenuClick" data-path="identify">
+        <image class="m-img gold" src="/assets/icons/camera.png"></image>
+        <view class="m-info"><text class="m-cn">AI 标本鉴定</text><text class="m-en">AI IDENTIFY · 限时免费</text></view>
+        <text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="handleMenuClick" data-path="collection">
+        <image class="m-img silver" src="/assets/icons/knowledge.png"></image>
+        <view class="m-info"><text class="m-cn">我的自然图鉴</text><text class="m-en">MY ATLAS</text></view>
+        <text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="goToAchievements">
+        <image class="m-img gold" src="/assets/icons/medal_gold.png"></image>
+        <view class="m-info">
+          <text class="m-cn">我的成就</text>
+          <text class="m-en">ACHIEVEMENTS</text>
+        </view>
+        <view class="achievement-badge" wx:if="{{achievementStats && achievementStats.unlocked > 0}}">
+          <text class="badge-count">{{achievementStats.unlocked}}</text>
+        </view>
+        <text class="m-arr">→</text>
+      </view>
+
+      <!-- 账户与品牌 -->
+      <view class="menu-row section-start" bindtap="handleMenuClick" data-path="address">
+        <image class="m-img silver" src="/assets/icons/map.png"></image>
+        <view class="m-info"><text class="m-cn">地址管理</text><text class="m-en">ADDRESS</text></view><text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="handleMenuClick" data-path="about">
+        <image class="m-img silver" src="/assets/icons/store.png"></image>
+        <view class="m-info"><text class="m-cn">关于品牌</text><text class="m-en">ABOUT US</text></view><text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="handleMenuClick" data-path="feedback">
+        <image class="m-img gold" src="/assets/icons/message.png"></image>
+        <view class="m-info"><text class="m-cn">反馈与建议</text><text class="m-en">FEEDBACK</text></view><text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="handleMenuClick" data-path="group">
+        <image class="m-img silver" src="/assets/icons/group.png"></image>
+        <view class="m-info"><text class="m-cn">官方社群</text><text class="m-en">COMMUNITY</text></view><text class="m-arr">→</text>
+      </view>
+      <view class="menu-row" bindtap="handleMenuClick" data-path="admin" wx:if="{{isAdmin}}">
+        <image class="m-img gold" src="/assets/icons/lock.png"></image>
+        <view class="m-info"><text class="m-cn gold">店长后台</text><text class="m-en gold">ADMIN</text></view><text class="m-arr">→</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="copyright">
+    <text class="cr-line">把山海带回家</text>
+    <text class="cr-line en">NATURE'S CREATIONS</text>
+    <view class="cr-legal">
+      <text class="cr-link" bindtap="goToFeedback">反馈建议</text>
+    </view>
+  </view>
+
+  <!-- 🟢 弹窗：会员码与权益 -->
+  <view class="qr-mask" wx:if="{{showQrModal}}" bindtap="closeMemberCode"> 
+    <view class="qr-content pop-in" catchtap="true"> 
+      
+      <!-- 顶部：会员码 -->
+      <view class="qr-header">
+        <text>MEMBER PASS</text>
+        <view class="qr-level-badge">{{levelName}}</view>
+      </view> 
+      
+      <view class="qr-box">
+        <canvas type="2d" id="memberQrCanvas" class="qr-canvas"></canvas>
+        <text class="pass-countdown">{{passCountdown}}s 后刷新</text>
+        <text class="pass-member-no">{{memberNo}}</text>
+      </view> 
+
+      <!-- 底部：会员权益 -->
+      <view class="qr-privileges">
+         <view class="privilege-title">- CURRENT BENEFITS -</view>
+         <view class="pass-perk-list">
+           <view class="pass-perk-item" wx:for="{{currentLevelPerks}}" wx:key="*this">
+             <text class="pass-perk-dot">·</text>
+             <text class="pass-perk-text">{{item}}</text>
+           </view>
+         </view>
+         <view class="pass-level-link" catchtap="openLevelFromPass">查看等级详情 →</view>
+         <view class="qr-tips">出示此码以享受门店权益</view>
+         <view class="qr-tips sub">动态验证码，请勿截图转发</view>
+      </view>
+
+    </view> 
+  </view>
+
+  <!-- 🟢 官方社群二维码弹窗 -->
+  <view class="group-mask {{showGroupModal ? 'active' : ''}}" bindtap="closeGroupModal" wx:if="{{showGroupModal}}"> 
+    <view class="group-content slide-up" catchtap="true"> 
+      
+      <!-- 顶部标题 -->
+      <view class="group-header">
+        <view class="group-close" catchtap="closeGroupModal">✕</view>
+        <text class="group-title">官方社群</text>
+        <text class="group-subtitle">COMMUNITY</text>
+      </view> 
+      
+      <!-- 二维码区域 -->
+      <view class="group-qr-box">
+        <view class="qr-frame">
+          <image 
+            class="group-qr-img" 
+            src="cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/qrcode/community-qrcode.jpg" 
+            mode="aspectFit"
+            binderror="onQrError"
+          ></image>
+          <view class="qr-scan-line"></view>
+        </view>
+      </view> 
+
+      <!-- 底部说明 -->
+      <view class="group-footer">
+         <view class="group-tips">
+           <view class="tip-icon"><image src="/assets/icons/phone.png" mode="aspectFit" class="icon-gold"></image></view>
+           <text class="tip-text">使用微信扫一扫加入官方社群</text>
+         </view>
+         <view class="group-desc">
+           <text>与收藏家们交流心得，获取最新资讯</text>
+         </view>
+      </view>
+
+    </view> 
+  </view>
+
+  <!-- 🟢 数据统计弹窗 -->
+  <view class="statistics-mask {{showStatisticsModal ? 'active' : ''}}" bindtap="closeStatistics" wx:if="{{showStatisticsModal}}">
+    <view class="statistics-content slide-up" catchtap="true">
+      <!-- 头部 -->
+      <view class="statistics-header">
+        <view class="statistics-close" catchtap="closeStatistics">✕</view>
+        <text class="statistics-title">我的数据</text>
+        <text class="statistics-subtitle">STATISTICS</text>
+      </view>
+
+      <!-- 内容区域 -->
+      <scroll-view scroll-y="true" class="statistics-body">
+        <!-- 我的数据 -->
+        <view class="stat-section">
+          <view class="section-title">
+            <text class="title-cn">我的数据</text>
+            <text class="title-en">MY DATA</text>
+          </view>
+          <view class="stat-grid">
+            <view class="stat-card">
+              <view class="card-icon"><image src="/assets/icons/eye.png" mode="aspectFit" class="icon-gold"></image></view>
+              <text class="card-val">{{statistics.viewCount || 0}}</text>
+              <text class="card-label">浏览数</text>
+            </view>
+            <view class="stat-card">
+              <view class="card-icon"><image src="/assets/icons/heart.png" mode="aspectFit" class="icon-gold"></image></view>
+              <text class="card-val">{{statistics.collectCount || 0}}</text>
+              <text class="card-label">收藏数</text>
+            </view>
+            <view class="stat-card">
+              <view class="card-icon"><image src="/assets/icons/share.png" mode="aspectFit" class="icon-gold"></image></view>
+              <text class="card-val">{{statistics.shareCount || 0}}</text>
+              <text class="card-label">分享数</text>
+            </view>
+            <view class="stat-card">
+              <view class="card-icon"><image src="/assets/icons/search.png" mode="aspectFit" class="icon-gold"></image></view>
+              <text class="card-val">{{statistics.searchCount || 0}}</text>
+              <text class="card-label">搜索数</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 消费统计 -->
+        <view class="stat-section">
+          <view class="section-title">
+            <text class="title-cn">消费统计</text>
+            <text class="title-en">CONSUMPTION</text>
+          </view>
+          <view class="stat-list">
+            <view class="stat-row">
+              <text class="row-label">总消费</text>
+              <text class="row-value gold">¥{{statistics.totalConsumption || '0.00'}}</text>
+            </view>
+            <view class="stat-row">
+              <text class="row-label">订单数</text>
+              <text class="row-value">{{statistics.orderCount || 0}} 笔</text>
+            </view>
+            <view class="stat-row">
+              <text class="row-label">平均客单价</text>
+              <text class="row-value">¥{{statistics.avgOrderValue || '0.00'}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 学习记录 -->
+        <view class="stat-section">
+          <view class="section-title">
+            <text class="title-cn">学习记录</text>
+            <text class="title-en">LEARNING</text>
+          </view>
+          <view class="stat-grid">
+            <view class="stat-card">
+              <view class="card-icon"><image src="/assets/icons/knowledge.png" mode="aspectFit" class="icon-gold"></image></view>
+              <text class="card-val">{{statistics.courseCount || 0}}</text>
+              <text class="card-label">完成课程</text>
+            </view>
+            <view class="stat-card">
+              <view class="card-icon"><image src="/assets/icons/medal_gold.png" mode="aspectFit" class="icon-gold"></image></view>
+              <text class="card-val">{{statistics.certificateCount || 0}}</text>
+              <text class="card-label">获得证书</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 收藏分类 -->
+        <view class="stat-section">
+          <view class="section-title">
+            <text class="title-cn">收藏分类</text>
+            <text class="title-en">COLLECTIONS</text>
+          </view>
+          <view class="stat-list">
+            <view class="stat-row">
+              <text class="row-label">藏品</text>
+              <text class="row-value">{{statistics.collectionByType.product || 0}} 件</text>
+            </view>
+            <view class="stat-row">
+              <text class="row-label">活动</text>
+              <text class="row-value">{{statistics.collectionByType.activity || 0}} 个</text>
+            </view>
+            <view class="stat-row">
+              <text class="row-label">课程</text>
+              <text class="row-value">{{statistics.collectionByType.course || 0}} 门</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 活跃度 -->
+        <view class="stat-section">
+          <view class="section-title">
+            <text class="title-cn">活跃度</text>
+            <text class="title-en">ACTIVITY</text>
+          </view>
+          <view class="stat-list">
+            <view class="stat-row">
+              <text class="row-label">最后活跃</text>
+              <text class="row-value">{{formattedLastActive}}</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 🟢 等级权益弹窗 - 自然科技黑金质感 -->
+  <view class="level-mask {{showLevelModal ? 'active' : ''}}" bindtap="closeLevelModal" wx:if="{{showLevelModal}}">
+    <view class="level-content" catchtap="true">
+      <!-- 头部 -->
+      <view class="level-header">
+        <view class="level-close" catchtap="closeLevelModal">
+          <text class="close-icon">✕</text>
+        </view>
+        <view class="level-header-content">
+          <text class="level-title">会员等级</text>
+          <text class="level-subtitle">MEMBERSHIP LEVELS</text>
+        </view>
+      </view>
+
+      <!-- 内容区域 -->
+      <scroll-view scroll-y="true" class="level-body">
+        <!-- 当前等级卡片 -->
+        <view class="current-level-card">
+          <view class="cl-content">
+            <view class="cl-icon-wrapper">
+              <image class="cl-icon icon-gold" src="{{currentLevelIcon}}" mode="aspectFit"></image>
+            </view>
+            <view class="cl-info">
+              <text class="cl-name">{{levelName}}</text>
+              <text class="cl-desc">CURRENT LEVEL</text>
+              <view class="cl-badge">
+                <text class="badge-text">尊享会员</text>
+              </view>
+            </view>
+            <view class="cl-progress" wx:if="{{nextThreshold > 0}}">
+              <view class="cl-progress-header">
+                <text class="cl-progress-label">成长进度</text>
+                <text class="cl-progress-percent">{{progressPercent}}%</text>
+              </view>
+              <view class="cl-progress-bar">
+                <view class="cl-progress-track">
+                  <view class="cl-progress-fill" style="width: {{progressWidth}}"></view>
+                </view>
+              </view>
+              <text class="cl-progress-text">距下一级还需 {{nextThreshold - growthValue}} 成长值</text>
+            </view>
+            <view class="cl-max" wx:else>
+              <image class="cl-max-icon icon-gold" src="/assets/icons/medal_gold.png" mode="aspectFit"></image>
+              <text class="cl-max-text">已达成最高等级</text>
+              <text class="cl-max-sub">享受所有尊享权益</text>
+            </view>
+            <view class="next-level-preview" wx:if="{{nextLevelPreview && nextThreshold > 0}}">
+              <text class="nlp-label">下一级 · {{nextLevelPreview.name}}</text>
+              <text class="nlp-meta">成长值 ≥ {{nextLevelPreview.threshold}} · {{nextLevelPreview.discount}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 等级列表 -->
+        <view class="levels-list">
+          <view class="levels-list-title">
+            <text class="llt-cn">等级体系</text>
+            <text class="llt-en">LEVEL SYSTEM</text>
+          </view>
+          <block wx:for="{{levelBenefits}}" wx:key="level">
+            <view class="level-item-wrapper">
+              <view class="level-item {{level === item.level ? 'current' : ''}} {{level > item.level ? 'unlocked' : 'locked'}}">
+                <view class="li-left">
+                  <view class="li-icon-wrapper">
+                    <image class="li-icon icon-gold" src="{{item.icon}}" mode="aspectFit"></image>
+                  </view>
+                  <view class="li-info">
+                    <view class="li-name-row">
+                      <text class="li-name">{{item.name}}</text>
+                      <view class="li-level-badge">Lv{{item.level}}</view>
+                    </view>
+                    <view class="li-meta">
+                      <text class="li-threshold">成长值 ≥ {{item.threshold}}</text>
+                      <view class="li-divider"></view>
+                      <text class="li-discount-label">折扣</text>
+                    </view>
+                  </view>
+                </view>
+                <view class="li-right">
+                  <view class="li-discount-wrapper">
+                    <text class="li-discount">{{item.discount}}</text>
+                  </view>
+                  <view class="li-status">
+                    <view class="status-badge {{level > item.level ? 'unlocked' : ''}} {{level === item.level ? 'current' : ''}} {{level < item.level ? 'locked' : ''}}">
+                      <text wx:if="{{level > item.level}}" class="status-text">✓ 已达成</text>
+                      <text wx:elif="{{level === item.level}}" class="status-text">当前</text>
+                      <text wx:else class="status-text">未达成</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+              
+              <!-- 权益列表 -->
+              <view class="benefits-list" wx:if="{{level >= item.level}}">
+                <view class="benefits-header">
+                  <text class="bh-text">专属权益</text>
+                </view>
+                <view class="benefits-grid">
+                  <view class="benefit-item" wx:for="{{item.benefits}}" wx:key="*this" wx:for-item="benefit">
+                    <view class="benefit-icon-wrapper">
+                      <image class="benefit-icon icon-gold" src="/assets/icons/done.png" mode="aspectFit"></image>
+                    </view>
+                    <text class="benefit-text">{{benefit}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+
+        <!-- 成长值说明 -->
+        <view class="growth-info">
+          <view class="gi-title">
+            <view class="gi-title-text">
+              <text class="gi-title-cn">成长值说明</text>
+              <text class="gi-title-en">GROWTH VALUE</text>
+            </view>
+          </view>
+          <view class="gi-content">
+            <view class="gi-item">
+              <view class="gi-item-icon">
+                <image src="/assets/icons/coin_gold.png" mode="aspectFit" class="icon-gold"></image>
+              </view>
+              <view class="gi-item-content">
+                <text class="gi-label">消费获得</text>
+                <text class="gi-value">每消费 ¥1 = 1 成长值</text>
+              </view>
+            </view>
+            <view class="gi-divider"></view>
+            <view class="gi-item highlight">
+              <view class="gi-item-icon">
+                <image src="/assets/icons/star-active.png" mode="aspectFit" class="icon-gold"></image>
+              </view>
+              <view class="gi-item-content">
+                <text class="gi-label">当前成长值</text>
+                <text class="gi-value gold">{{growthValue}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 等级升级铭牌动效 -->
+  <view class="level-up-mask {{showLevelUp ? 'active' : ''}}" wx:if="{{showLevelUp}}" bindtap="closeLevelUp">
+    <view class="level-up-plate" catchtap="true">
+      <view class="level-up-shine"></view>
+      <text class="level-up-overline">LEVEL UP</text>
+      <text class="level-up-lv">Lv{{levelUpLevel}}</text>
+      <text class="level-up-name">{{levelUpName}}</text>
+      <text class="level-up-hint">新权益已解锁，可在会员码中查看</text>
+      <view class="level-up-btn" bindtap="closeLevelUp">继续探索</view>
+    </view>
+  </view>
+
+</view>

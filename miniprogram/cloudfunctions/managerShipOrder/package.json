@@ -1,0 +1,9 @@
+{
+  "name": "managerShipOrder",
+  "version": "1.0.0",
+  "description": "店长发货并推送山海有信",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

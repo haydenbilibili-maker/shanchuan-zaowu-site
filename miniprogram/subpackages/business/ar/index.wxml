@@ -1,0 +1,122 @@
+<!--subpackages/business/ar/index.wxml-->
+<view class="container {{isCustomMode ? 'custom-mode' : ''}} {{isStaticPreview ? 'static-mode' : ''}}">
+
+  <!-- 相机 / 静态背景墙 -->
+  <camera
+    wx:if="{{!isStaticPreview}}"
+    class="camera-view"
+    mode="normal"
+    device-position="back"
+    flash="off"
+    binderror="error"
+    frame-size="medium"
+  ></camera>
+  <view wx:else class="wall-bg">
+    <view class="wall-texture"></view>
+    <text class="wall-hint">拖动标本，感受它在墙上的样子</text>
+  </view>
+
+  <!-- HUD -->
+  <view class="scan-overlay" wx:if="{{!isCustomMode}}">
+    <view class="grid-bg"></view>
+    <view class="corner tl"></view>
+    <view class="corner tr"></view>
+    <view class="corner bl"></view>
+    <view class="corner br"></view>
+    <view class="scan-line"></view>
+    <view class="hud-top-bar" style="top: {{statusBarHeight + 10}}px">
+      <view class="ht-item">REC ●</view>
+      <view class="ht-item">{{envData.temp}}</view>
+      <view class="ht-item">{{envData.light}}</view>
+    </view>
+    <view class="hud-data bottom">
+      <text class="hud-label">系统状态｜SYSTEM STATUS</text>
+      <text class="hud-val">扫描目标中｜SCANNING...</text>
+    </view>
+  </view>
+
+  <view class="custom-hud" wx:if="{{isCustomMode}}" style="top: {{statusBarHeight + 10}}px">
+    <text class="custom-overline">ATELIER · 试摆</text>
+    <text class="custom-frame-name">{{frameName}}</text>
+    <text class="custom-specimen" wx:if="{{specimenTitle}}">{{specimenTitle}}</text>
+  </view>
+
+  <!-- 装裱标本（可拖拽） -->
+  <view
+    class="specimen-box framed {{frameStyle.className}}"
+    style="left: {{x}}px; top: {{y}}px; transform: scale({{scale}});"
+    catchtouchmove="onTouchMove"
+    catchtouchstart="onTouchStart"
+    catchtouchend="onTouchEnd"
+  >
+    <view class="frame-outer" style="border-color: {{frameStyle.borderColor}}; padding: {{frameStyle.borderWidth}}rpx;">
+      <view class="frame-mat" style="background: {{frameStyle.matColor}}; padding: {{frameStyle.matPadding}}rpx;">
+        <image class="s-img" src="{{imgUrl}}" mode="widthFix"></image>
+      </view>
+    </view>
+    <view class="target-lock" wx:if="{{!isCustomMode}}">
+      <view class="c-mark tl"></view>
+      <view class="c-mark tr"></view>
+      <view class="c-mark bl"></view>
+      <view class="c-mark br"></view>
+      <view class="crosshair"></view>
+    </view>
+  </view>
+
+  <!-- 操作 UI -->
+  <view class="ui-layer">
+    <view class="nav-bar" style="top: {{statusBarHeight}}px">
+      <view class="back-btn" bindtap="goBack">✕</view>
+    </view>
+
+    <view class="controls">
+      <scroll-view wx:if="{{isCustomMode}}" scroll-x class="frame-switcher" enable-flex show-scrollbar="{{false}}">
+        <view
+          class="frame-pill {{frameId === item.id ? 'active' : ''}}"
+          wx:for="{{frameOptions}}"
+          wx:key="id"
+          bindtap="switchFrame"
+          data-id="{{item.id}}"
+        >{{item.name}}</view>
+      </scroll-view>
+
+      <view class="slider-wrapper">
+        <text class="lbl min">-</text>
+        <slider
+          class="ar-slider"
+          min="0.3" max="2.0" step="0.1" value="{{scale}}"
+          activeColor="#C4A76C" backgroundColor="rgba(255,255,255,0.2)" block-color="#C4A76C" block-size="16"
+          bindchanging="onScaleChange" bindchange="onScaleChange"
+        />
+        <text class="lbl max">+</text>
+      </view>
+
+      <view class="shutter-row" wx:if="{{!isStaticPreview}}">
+        <view class="shutter-btn" bindtap="takePhoto">
+          <view class="inner"></view>
+        </view>
+        <text class="shutter-tip">{{isCustomMode ? '拍摄试摆效果' : '保存影像'}}</text>
+      </view>
+      <text class="static-tip" wx:if="{{isStaticPreview}}">可拖动、缩放标本，截图分享给朋友</text>
+    </view>
+  </view>
+
+  <view class="flash-layer {{shutterFlash ? 'active' : ''}}"></view>
+
+  <view class="analyzing-mask" wx:if="{{isAnalyzing}}">
+    <view class="scanner-bar"></view>
+    <text>{{isCustomMode ? '生成试摆影像...' : 'ANALYZING BIOMETRICS...'}}</text>
+  </view>
+
+  <view class="preview-mask" wx:if="{{tempPhoto}}">
+    <view class="photo-frame">
+      <image src="{{tempPhoto}}" mode="heightFix" class="photo-result"></image>
+      <view class="frame-corner tl"></view><view class="frame-corner tr"></view>
+      <view class="frame-corner bl"></view><view class="frame-corner br"></view>
+    </view>
+    <view class="p-actions">
+      <view class="btn retry" bindtap="reTake">重拍</view>
+      <view class="btn save" bindtap="savePhoto">保存影像</view>
+    </view>
+  </view>
+</view>

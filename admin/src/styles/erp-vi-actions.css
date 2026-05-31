@@ -1,0 +1,74 @@
+/**
+ * ERP 详情弹窗 / 表单底部操作区 VI：按钮组对齐、主次按钮与说明文字色
+ */
+
+/* ---------- 对话框底部 ---------- */
+.el-dialog__footer {
+  padding: var(--space-4) var(--space-6) var(--space-5);
+  border-top: 1px solid var(--light-border-subtle);
+}
+
+.el-dialog__footer .dialog-footer {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 取消 / 次要：暖灰字 + 浅底，悬停微绿 */
+.el-dialog__footer .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger) {
+  --el-button-text-color: var(--light-text-secondary);
+  --el-button-border-color: var(--light-border-default);
+  --el-button-bg-color: var(--light-bg-elevated);
+  font-weight: 500;
+}
+
+.el-dialog__footer .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):hover {
+  --el-button-hover-text-color: var(--light-text-primary);
+  --el-button-hover-border-color: var(--brand-green-400);
+  --el-button-hover-bg-color: var(--brand-green-50);
+}
+
+/* 主操作保持全局 .el-button--primary（App.vue 已覆盖） */
+.el-dialog__footer .el-button--primary {
+  font-weight: 600;
+}
+
+/* 底部说明小字（若放在 footer 内） */
+.el-dialog__footer .footer-hint,
+.el-dialog__footer .erp-footer-note {
+  width: 100%;
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--light-text-tertiary);
+  text-align: left;
+}
+
+/* ---------- 页面内「详情区块」底部操作（非弹窗） ---------- */
+.erp-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--light-border-subtle);
+}
+
+.erp-detail-actions .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger) {
+  --el-button-text-color: var(--light-text-secondary);
+  --el-button-border-color: var(--light-border-default);
+  --el-button-bg-color: var(--light-bg-elevated);
+  font-weight: 500;
+}
+
+.erp-detail-actions .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):hover {
+  --el-button-hover-text-color: var(--light-text-primary);
+  --el-button-hover-border-color: var(--brand-green-400);
+  --el-button-hover-bg-color: var(--brand-green-50);
+}

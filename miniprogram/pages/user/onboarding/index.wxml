@@ -1,0 +1,211 @@
+<!--pages/user/onboarding/index.wxml-->
+<view class="account-page page-onboard">
+  <view class="grain-overlay"></view>
+
+  <!-- 固定顶栏：避让胶囊 -->
+  <view
+    class="account-nav ob-nav"
+    style="padding-top: {{statusBarHeight}}px; padding-right: {{navPaddingRight}}px;"
+  >
+    <view class="account-nav-row">
+      <view class="account-nav-back" hover-class="care-back-hover" bindtap="goBack">
+        <text class="account-nav-back-icon">←</text>
+      </view>
+      <view class="account-nav-brand">
+        <text class="account-nav-title">加入山海造物</text>
+        <text class="account-nav-sub">COLLECTOR ONBOARDING</text>
+      </view>
+      <text class="account-nav-badge">{{step}}/{{totalSteps}}</text>
+    </view>
+    <view class="account-nav-extra">
+      <view class="step-dots">
+        <view class="step-dot {{step >= item ? 'done' : ''}} {{step === item ? 'current' : ''}}" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
+      </view>
+      <view class="progress-track">
+        <view class="progress-fill" style="width: {{step / totalSteps * 100}}%;"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 可滚动内容区 -->
+  <scroll-view
+    scroll-y
+    class="account-scroll ob-scroll"
+    show-scrollbar="{{false}}"
+    style="top: {{headerBlockPx}}px; height: {{scrollHeightPx}}px;"
+  >
+    <!-- Step 1 -->
+    <view class="step-panel" wx:if="{{step === 1}}">
+      <view class="step-hero compact">
+        <text class="step-overline">WELCOME</text>
+        <text class="step-title">建立藏家身份</text>
+        <text class="step-desc">头像与代号将出现在会员卡、社区与订单中</text>
+      </view>
+
+      <view class="avatar-plate">
+        <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+          <image class="avatar-img" src="{{avatarUrl || '/assets/icons/user.png'}}" mode="aspectFill"></image>
+        </button>
+        <text class="avatar-hint">点击设定头像</text>
+      </view>
+
+      <view class="account-section-card">
+        <view class="account-field">
+          <text class="account-field-label">藏家代号</text>
+          <input class="account-field-input" type="nickname" placeholder="输入昵称" value="{{nickName}}" bindinput="onNickInput" />
+        </view>
+        <view class="agree-row" bindtap="toggleAgree">
+          <view class="agree-check {{agreed ? 'checked' : ''}}"></view>
+          <text class="agree-text">我已阅读并同意</text>
+        </view>
+        <view class="agree-links">
+          <text class="agree-link" catchtap="openTerms">《用户服务协议》</text>
+          <text class="agree-sep">与</text>
+          <text class="agree-link" catchtap="openPrivacy">《隐私政策》</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Step 2 -->
+    <view class="step-panel phone-panel" wx:if="{{step === 2}}">
+      <view class="step-hero">
+        <view class="step-badge-row">
+          <text class="step-overline">VERIFY</text>
+          <text class="step-chip">安全验证</text>
+        </view>
+        <text class="step-title">绑定手机号</text>
+        <text class="step-desc">用于订单通知、预约提醒与门店权益。下单前需完成绑定。</text>
+      </view>
+
+      <view class="phone-feature-card">
+        <view class="phone-visual">
+          <view class="phone-glow"></view>
+          <view class="phone-icon-ring">
+            <image class="phone-icon-img" src="/assets/icons/phone.png" mode="aspectFit"></image>
+          </view>
+        </view>
+
+        <view class="phone-benefits">
+          <view class="benefit-item">
+            <text class="benefit-dot">·</text>
+            <text class="benefit-text">订单与物流状态实时通知</text>
+          </view>
+          <view class="benefit-item">
+            <text class="benefit-dot">·</text>
+            <text class="benefit-text">门店预约与活动提醒</text>
+          </view>
+          <view class="benefit-item">
+            <text class="benefit-dot">·</text>
+            <text class="benefit-text">会员权益与专属礼遇验证</text>
+          </view>
+        </view>
+
+        <view class="phone-bound-card" wx:if="{{phoneBound}}">
+          <view class="phone-bound-head">
+            <view class="phone-ok-badge">已验证</view>
+            <text class="phone-ok">{{phoneMasked}}</text>
+          </view>
+          <text class="phone-bound-hint">手机号已安全绑定，可继续完善档案</text>
+        </view>
+        <view class="phone-pending" wx:else>
+          <text class="phone-tip">使用微信授权，一键完成手机号验证</text>
+          <text class="phone-tip-sub">我们不会向第三方泄露你的号码</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Step 3 -->
+    <view class="step-panel" wx:if="{{step === 3}}">
+      <view class="step-hero compact">
+        <text class="step-overline">PROFILE</text>
+        <text class="step-title">基础档案</text>
+        <text class="step-desc">便于生日礼遇与品类推荐，可随时修改</text>
+      </view>
+
+      <view class="account-section-card">
+        <view class="account-field">
+          <text class="account-field-label">性别</text>
+          <view class="account-chip-row">
+            <view class="account-chip {{gender === item.key ? 'active' : ''}}" wx:for="{{genderOptions}}" wx:key="key" bindtap="selectGender" data-key="{{item.key}}">{{item.label}}</view>
+          </view>
+        </view>
+        <view class="account-field">
+          <text class="account-field-label">生日</text>
+          <picker mode="date" value="{{birthday}}" end="2026-12-31" bindchange="onBirthdayChange">
+            <view class="account-picker-val">{{birthday || '选择日期'}}</view>
+          </picker>
+        </view>
+        <view class="account-field">
+          <text class="account-field-label">兴趣偏好（最多 5 项）</text>
+          <view class="account-chip-row">
+            <view
+              class="account-chip {{interests.indexOf(item.key) > -1 ? 'active' : ''}}"
+              wx:for="{{interestOptions}}"
+              wx:key="key"
+              bindtap="toggleInterest"
+              data-key="{{item.key}}"
+              style="{{interests.indexOf(item.key) > -1 ? 'border-color:' + item.color + '66; color:' + item.color : ''}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Step 4 -->
+    <view class="step-panel" wx:if="{{step === 4}}">
+      <view class="step-hero compact">
+        <text class="step-overline">OPTIONAL</text>
+        <text class="step-title">自我标签</text>
+        <text class="step-desc">MBTI 与星座默认仅自己可见</text>
+      </view>
+
+      <view class="account-section-card">
+        <view class="account-field">
+          <text class="account-field-label">MBTI</text>
+          <scroll-view scroll-x class="mbti-scroll" enable-flex show-scrollbar="{{false}}">
+            <view class="mbti-inner">
+              <view class="account-chip mbti-chip {{mbti === item ? 'active' : ''}}" wx:for="{{mbtiOptions}}" wx:key="*this" bindtap="selectMbti" data-key="{{item}}">{{item}}</view>
+            </view>
+          </scroll-view>
+        </view>
+        <view class="account-field">
+          <text class="account-field-label">星座</text>
+          <view class="account-chip-row">
+            <view class="account-chip {{zodiac === item.key ? 'active' : ''}}" wx:for="{{zodiacOptions}}" wx:key="key" bindtap="selectZodiac" data-key="{{item.key}}">{{item.label}}</view>
+          </view>
+        </view>
+        <view class="reward-plate">
+          <text class="reward-label">完成奖励</text>
+          <text class="reward-val">{{rewardText}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="account-scroll-pad"></view>
+  </scroll-view>
+
+  <!-- 固定底栏 -->
+  <view class="account-footer account-footer-safe ob-footer">
+    <button
+      wx:if="{{step === 2 && !phoneBound}}"
+      class="account-btn-phone"
+      open-type="getPhoneNumber"
+      bindgetphonenumber="onGetPhoneNumber"
+    >
+      <image class="btn-phone-icon" src="/assets/icons/phone.png" mode="aspectFit"></image>
+      <text>微信手机号快捷绑定</text>
+    </button>
+
+    <view
+      class="account-btn-primary {{footerPrimaryDisabled ? 'disabled' : ''}}"
+      wx:if="{{footerPrimaryText}}"
+      bindtap="{{footerPrimaryAction}}"
+    >{{footerPrimaryText}}</view>
+
+    <view
+      class="account-btn-ghost"
+      wx:if="{{footerGhostText}}"
+      bindtap="{{footerGhostAction}}"
+    >{{footerGhostText}}</view>
+  </view>
+</view>

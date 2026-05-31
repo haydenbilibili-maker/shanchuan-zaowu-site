@@ -1,0 +1,39 @@
+# Windows
+[Dd]esktop.ini
+Thumbs.db
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+
+# Node.js
+node_modules/
+
+# WeChat Mini Program
+project.private.config.json
+*.log
+*.swp
+*.swo
+*~
+
+# Cloud Functions
+cloudfunctions/*/node_modules/
+cloudfunctions/*/.env
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Temporary files
+*.tmp
+*.temp
+.!*!
+**/.!*!
+.#*
+project_code_context.txt
+export_code.py

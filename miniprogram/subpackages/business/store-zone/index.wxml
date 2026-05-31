@@ -1,0 +1,97 @@
+<!--pages/store/zone/index.wxml-->
+<view class="page-zone" wx:if="{{zone}}">
+  <view class="grain-overlay"></view>
+
+  <view class="header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="back-btn" bindtap="goBack">←</view>
+    <text class="title">{{zone.title}}</text>
+  </view>
+
+  <scroll-view scroll-y class="content">
+    <view class="zone-hero" wx:if="{{swiperImages.length}}">
+      <swiper
+        class="zone-swiper"
+        circular
+        indicator-dots="{{swiperImages.length > 1}}"
+        indicator-color="rgba(255,255,255,0.25)"
+        indicator-active-color="#C4A76C"
+        bindchange="onSwiperChange"
+      >
+        <swiper-item wx:for="{{swiperImages}}" wx:key="*this">
+          <image class="zone-hero-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-src="{{item}}"></image>
+        </swiper-item>
+      </swiper>
+      <view class="zone-hero-mask"></view>
+      <view class="zone-hero-text">
+        <text class="overline" style="color: {{zone.color}}">{{zone.overline}}</text>
+        <text class="zone-title">{{zone.title}}</text>
+        <text class="swiper-count" wx:if="{{swiperImages.length > 1}}">{{swiperCurrent + 1}} / {{swiperImages.length}}</text>
+      </view>
+    </view>
+
+    <view class="zone-head" wx:else>
+      <text class="overline" style="color: {{zone.color}}">{{zone.overline}}</text>
+      <text class="zone-title">{{zone.title}}</text>
+    </view>
+
+    <text class="store-name">{{store.name}} · {{store.locationLabel}}</text>
+    <text class="desc">{{zone.desc}}</text>
+
+    <view class="long-desc-block" wx:if="{{zone.longDesc}}">
+      <text class="section-label">策展手记 | CURATOR</text>
+      <text class="long-desc {{longDescExpanded ? 'expanded' : ''}}">{{zone.longDesc}}</text>
+      <text class="long-desc-toggle" bindtap="toggleLongDesc">{{longDescExpanded ? '收起' : '展开阅读'}}</text>
+    </view>
+
+    <view class="species-block" wx:if="{{zone.featuredSpecies.length}}">
+      <text class="section-label">代表物种 | SPECIMENS</text>
+      <view class="species-plate" wx:for="{{zone.featuredSpecies}}" wx:key="nameZh">
+        <text class="species-cn">{{item.nameZh}}</text>
+        <text class="species-latin">{{item.nameLatin}}</text>
+      </view>
+    </view>
+
+    <view class="related-block" wx:if="{{relatedProducts.length}}">
+      <text class="section-label">相关藏品 | COLLECTION</text>
+      <scroll-view scroll-x class="product-scroll" enable-flex show-scrollbar="{{false}}">
+        <view
+          class="product-card"
+          wx:for="{{relatedProducts}}"
+          wx:key="_id"
+          bindtap="goProduct"
+          data-id="{{item._id}}"
+        >
+          <image class="product-img" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+          <view class="product-body">
+            <text class="product-title text-cut">{{item.title}}</text>
+            <text class="product-latin text-cut" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+            <text class="product-price" wx:if="{{item.price}}">¥{{item.price}}</text>
+          </view>
+        </view>
+        <view style="width: 24rpx; flex-shrink: 0;"></view>
+      </scroll-view>
+    </view>
+
+    <view class="related-block" wx:if="{{relatedWikis.length}}">
+      <text class="section-label">关联档案 | ARCHIVE</text>
+      <view
+        class="wiki-row"
+        wx:for="{{relatedWikis}}"
+        wx:key="_id"
+        bindtap="goWiki"
+        data-id="{{item._id}}"
+      >
+        <image class="wiki-thumb" src="{{item.coverImage}}" mode="aspectFill" wx:if="{{item.coverImage}}"></image>
+        <view class="wiki-meta">
+          <text class="wiki-title text-cut">{{item.title}}</text>
+          <text class="wiki-brief text-cut">{{item.brief || item.latinName}}</text>
+        </view>
+        <text class="wiki-arr">→</text>
+      </view>
+    </view>
+
+    <view class="cta-wrap">
+      <button class="btn-primary" bindtap="goBooking">预约参观此区域</button>
+    </view>
+  </scroll-view>
+</view>

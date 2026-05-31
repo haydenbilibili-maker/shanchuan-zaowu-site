@@ -1,0 +1,169 @@
+<view class="page">
+  <!-- 收货地址 -->
+  <view class="card address-card" bindtap="chooseAddress">
+    <block wx:if="{{address}}">
+      <view class="addr-head">
+        <text class="addr-name">{{address.name}}</text>
+        <text class="addr-phone">{{address.phone}}</text>
+      </view>
+      <text class="addr-detail">{{address.region[0]}} {{address.region[1]}} {{address.region[2]}} {{address.detail}}</text>
+    </block>
+    <block wx:else>
+      <text class="addr-placeholder">请选择收货地址</text>
+    </block>
+    <text class="addr-arrow">›</text>
+  </view>
+
+  <!-- 定制摘要 -->
+  <view class="card custom-card" wx:if="{{isCustomOrder && customPreviewLines.length}}">
+    <view class="section-label">标本工坊 · 定制方案</view>
+    <view class="custom-line" wx:for="{{customPreviewLines}}" wx:key="label">
+      <text class="custom-label">{{item.label}}</text>
+      <text class="custom-value {{item.latin ? 'latin' : ''}}">{{item.value}}</text>
+    </view>
+    <view class="custom-line" wx:if="{{customExtraPrice > 0}}">
+      <text class="custom-label">定制加价</text>
+      <text class="custom-value gold">+¥{{customExtraPrice}}</text>
+    </view>
+    <text class="custom-estimate" wx:if="{{customMeta.estimatedDays}}">预计 {{customMeta.estimatedDays}} 个工作日内发出</text>
+  </view>
+
+  <!-- 商品清单 -->
+  <view class="card">
+    <view class="section-label">藏品清单</view>
+    <view class="goods-item" wx:for="{{items}}" wx:key="productId">
+      <image class="goods-img" src="{{item.image}}" mode="aspectFill"></image>
+      <view class="goods-info">
+        <text class="goods-title">{{item.title}}</text>
+        <text class="goods-sku" wx:if="{{item.skuLabel}}">{{item.skuLabel}}</text>
+        <text class="goods-latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+        <view class="goods-row">
+          <text class="goods-price">¥{{item.price}}</text>
+          <text class="goods-count">×{{item.count}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 发票 -->
+  <view class="card">
+    <view class="row-item">
+      <text class="row-label">开具发票</text>
+      <switch checked="{{needInvoice}}" color="#C4A76C" bindchange="toggleInvoice" style="transform:scale(0.8)"/>
+    </view>
+    <block wx:if="{{needInvoice}}">
+      <view class="invoice-types">
+        <text class="inv-type {{invoiceType === 'personal' ? 'active' : ''}}" bindtap="switchInvoiceType" data-type="personal">个人</text>
+        <text class="inv-type {{invoiceType === 'company' ? 'active' : ''}}" bindtap="switchInvoiceType" data-type="company">企业</text>
+      </view>
+      <input class="inv-input" placeholder="发票抬头" value="{{invoiceTitle}}" bindinput="onInvoiceInput" data-field="invoiceTitle" />
+      <input class="inv-input" wx:if="{{invoiceType === 'company'}}" placeholder="纳税人识别号" value="{{invoiceTaxNo}}" bindinput="onInvoiceInput" data-field="invoiceTaxNo" />
+      <input class="inv-input" placeholder="接收邮箱（选填）" value="{{invoiceEmail}}" bindinput="onInvoiceInput" data-field="invoiceEmail" />
+    </block>
+  </view>
+
+  <!-- 备注 -->
+  <view class="card">
+    <view class="section-label">订单备注</view>
+    <textarea
+      class="remark-input"
+      placeholder="选填：包装、配送等特殊要求"
+      maxlength="200"
+      value="{{remark}}"
+      bindinput="onRemarkInput"
+    />
+  </view>
+
+  <!-- 优惠 -->
+  <view class="card">
+    <view class="row-item" bindtap="openCouponModal">
+      <text class="row-label">优惠券</text>
+      <view class="row-value">
+        <text class="coupon-hint" wx:if="{{selectedCoupon}}">-¥{{couponSaved}}</text>
+        <text class="coupon-hint muted" wx:else>{{coupons.length > 0 ? '可选 ' + coupons.length + ' 张' : '暂无可用'}}</text>
+        <text class="row-arrow">›</text>
+      </view>
+    </view>
+    <view class="row-item" wx:if="{{discountRate < 1}}">
+      <text class="row-label">{{levelName}}折扣</text>
+      <text class="row-value gold">-{{vipSaved}} ({{discountRate * 10}}折)</text>
+    </view>
+    <view class="row-item">
+      <text class="row-label">运费</text>
+      <text class="row-value">{{shippingFee > 0 ? '¥' + shippingFeeDisplay : '包邮'}}</text>
+    </view>
+    <view class="shipping-tip">{{shippingRuleText}}</view>
+  </view>
+
+  <!-- 价格汇总 -->
+  <view class="card summary">
+    <view class="row-item">
+      <text class="row-label">商品合计</text>
+      <text class="row-value">¥{{originalPrice}}</text>
+    </view>
+    <view class="row-item" wx:if="{{savedAmount !== '0.00'}}">
+      <text class="row-label">已优惠</text>
+      <text class="row-value gold">-¥{{savedAmount}}</text>
+    </view>
+    <view class="row-item total-row">
+      <text class="row-label">应付</text>
+      <text class="total-price">¥{{finalPrice}}</text>
+    </view>
+  </view>
+
+  <!-- 底部提交 -->
+  <view class="footer-bar">
+    <view class="footer-price">
+      <text class="fp-label">合计</text>
+      <text class="fp-value">¥{{finalPrice}}</text>
+    </view>
+    <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitOrder">
+      {{submitting ? '处理中...' : '提交订单'}}
+    </view>
+  </view>
+</view>
+
+<!-- 优惠券弹窗 -->
+<view class="modal-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal">
+  <view class="modal-panel" catchtap="true">
+    <view class="modal-head">
+      <text>选择优惠券</text>
+      <text class="modal-close" bindtap="closeCouponModal">✕</text>
+    </view>
+    <scroll-view scroll-y class="coupon-scroll">
+      <view class="coupon-opt" bindtap="selectCoupon" data-index="-1">
+        <text>不使用优惠券</text>
+        <text class="check" wx:if="{{!selectedCoupon}}">✓</text>
+      </view>
+      <view
+        class="coupon-opt {{item._disabled ? 'disabled' : ''}}"
+        wx:for="{{coupons}}"
+        wx:key="_id"
+        bindtap="selectCoupon"
+        data-index="{{index}}"
+      >
+        <view class="c-left">
+          <text class="c-val">¥{{item.value}}</text>
+          <text class="c-min" wx:if="{{item.minSpend > 0}}">满{{item.minSpend}}可用</text>
+        </view>
+        <view class="c-right">
+          <text class="c-name">{{item.name || '优惠券'}}</text>
+          <text class="check" wx:if="{{selectedCoupon && selectedCoupon._id === item._id}}">✓</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>
+
+<!-- 标本 uniqueness 提示 -->
+<view class="modal-mask specimen-mask" wx:if="{{showSpecimenNotice}}" catchtouchmove="true">
+  <view class="specimen-panel" catchtap="true">
+    <text class="specimen-title">温馨提示</text>
+    <text class="specimen-body">标本类藏品均由标本师手工装裱与自然采集，每一件的形态、色泽与细节均为独一无二。图片展示的是风格与大致规格，实物可能存在合理的个体差异，这正是手工标本的温度所在。</text>
+    <text class="specimen-note">下单即表示您已理解并接受这一特性，请以收到的实物为准。</text>
+    <view class="specimen-actions">
+      <view class="specimen-btn secondary" bindtap="closeSpecimenNotice">我再想想</view>
+      <view class="specimen-btn primary" bindtap="confirmSpecimenNotice">我已了解，继续下单</view>
+    </view>
+  </view>
+</view>

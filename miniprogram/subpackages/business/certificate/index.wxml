@@ -1,0 +1,39 @@
+<!--pages/certificate/index.wxml-->
+<view class="container">
+  
+  <view class="nav-bar" style="top:{{statusBarHeight}}px">
+    <view class="back-btn" bindtap="goBack">✕</view>
+  </view>
+
+  <!-- 1. 铸造动画 -->
+  <view class="minting-layer" wx:if="{{isMinting}}">
+    <view class="mint-spinner"></view>
+    <text class="mint-txt">正在铸造专属证书...</text>
+  </view>
+
+  <!-- 2. 证书展示（canvas 需始终挂载以便铸造时绘制） -->
+  <view class="cert-layer {{showCert ? 'active' : 'preparing'}}">
+    
+    <view class="cert-shadow-box">
+       <canvas type="2d" id="certCanvas" class="cert-canvas"></canvas>
+    </view>
+    
+    <!-- 底部操作 -->
+    <view class="action-bar safe-area">
+      <view class="care-link" bindtap="goToCare" wx:if="{{careGuideUrl || orderId}}">
+        <text>如何养护这件藏品 →</text>
+      </view>
+      <view class="action-row">
+        <button class="icon-btn share" open-type="share">
+          <image src="/assets/icons/share.png" class="btn-icon"></image>
+          <text>分享</text>
+        </button>
+        
+        <view class="save-btn" bindtap="saveImage">
+          <text>保存到相册</text>
+        </view>
+      </view>
+    </view>
+
+  </view>
+</view>

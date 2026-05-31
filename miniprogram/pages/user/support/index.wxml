@@ -1,0 +1,176 @@
+<!--pages/user/support/index.wxml-->
+<view class="page-support">
+  <view class="grain-overlay"></view>
+
+  <view class="sticky-header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-row">
+      <view class="back-btn" bindtap="goBack">←</view>
+      <view class="nav-brand">
+        <text class="nav-title">联系专员</text>
+        <text class="nav-sub">SUPPORT</text>
+      </view>
+      <view class="nav-spacer"></view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="main-scroll" style="top: {{headerHeight}}px;">
+    <view class="skeleton-wrap" wx:if="{{loading}}">
+      <view class="sk-card sk-shine"></view>
+      <view class="sk-card sk-shine short"></view>
+    </view>
+
+    <block wx:else>
+      <!-- 服务信息 -->
+      <view class="service-card">
+        <view class="service-row">
+          <text class="service-label">服务时间</text>
+          <text class="service-val">{{config.hours || '10:00 - 22:00'}}</text>
+        </view>
+        <view class="service-row">
+          <text class="service-label">响应说明</text>
+          <text class="service-val muted">{{config.responseHint}}</text>
+        </view>
+        <view class="context-banner" wx:if="{{contextSummary}}">
+          <text class="context-text">{{contextSummary}}</text>
+        </view>
+      </view>
+
+      <!-- 咨询主题 -->
+      <view class="section">
+        <text class="section-title">选择咨询类型</text>
+        <view class="topic-grid">
+          <view
+            class="topic-item {{activeTopic === item.id ? 'active' : ''}}"
+            wx:for="{{topics}}"
+            wx:key="id"
+            bindtap="selectTopic"
+            data-id="{{item.id}}"
+          >
+            <image class="topic-icon" src="{{item.icon}}" mode="aspectFit"></image>
+            <text class="topic-label">{{item.label}}</text>
+            <text class="topic-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 联系方式 -->
+      <view class="section">
+        <text class="section-title">即时联系</text>
+        <view class="channel-list">
+          <view class="channel-item primary">
+            <view class="channel-info">
+              <text class="channel-name">微信专员</text>
+              <text class="channel-desc">推荐 · 可发送订单/藏品卡片</text>
+            </view>
+            <button
+              class="channel-btn"
+              open-type="contact"
+              session-from="{{sessionFrom}}"
+              send-message-title="{{sendMessageTitle}}"
+              send-message-path="{{sendMessagePath}}"
+              show-message-card="{{showMessageCard}}"
+              bindcontact="onContactTap"
+            >开始对话</button>
+          </view>
+
+          <view class="channel-item" bindtap="callPhone">
+            <view class="channel-info">
+              <text class="channel-name">电话专线</text>
+              <text class="channel-desc">{{config.phone}}</text>
+            </view>
+            <text class="channel-arrow">→</text>
+          </view>
+
+          <view class="channel-item" bindtap="goMessages">
+            <view class="channel-info">
+              <text class="channel-name">山海有信</text>
+              <text class="channel-desc">查看系统通知与留言回执</text>
+            </view>
+            <text class="channel-arrow">→</text>
+          </view>
+
+          <view class="channel-item" bindtap="openCommunity">
+            <view class="channel-info">
+              <text class="channel-name">官方社群</text>
+              <text class="channel-desc">加入藏家交流群</text>
+            </view>
+            <text class="channel-arrow">→</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 留言表单 -->
+      <view class="section">
+        <text class="section-title">留言给专员</text>
+        <text class="section-hint">若暂时无法接入微信客服，可留下文字说明，专员会通过山海有信回复</text>
+        <view class="form-card">
+          <textarea
+            class="message-input"
+            placeholder="请描述您的问题（至少 5 字）"
+            placeholder-class="ph"
+            maxlength="500"
+            value="{{messageText}}"
+            bindinput="onMessageInput"
+          ></textarea>
+          <view class="phone-row">
+            <text class="phone-label">联系电话（选填）</text>
+            <input
+              class="phone-input"
+              type="number"
+              maxlength="11"
+              placeholder="便于专员回拨"
+              placeholder-class="ph"
+              value="{{contactPhone}}"
+              bindinput="onPhoneInput"
+            />
+          </view>
+          <button class="submit-btn" bindtap="submitTicket" loading="{{submitting}}" disabled="{{submitting}}">
+            提交留言
+          </button>
+        </view>
+      </view>
+
+      <!-- 常见问题 -->
+      <view class="section" wx:if="{{faqs.length}}">
+        <text class="section-title">常见问题</text>
+        <view class="faq-list">
+          <view
+            class="faq-item {{expandedFaq === index ? 'expanded' : ''}}"
+            wx:for="{{faqs}}"
+            wx:key="index"
+            bindtap="toggleFaq"
+            data-index="{{index}}"
+          >
+            <view class="faq-q">
+              <text>{{item.q}}</text>
+              <text class="faq-toggle">{{expandedFaq === index ? '−' : '+'}}</text>
+            </view>
+            <text class="faq-a" wx:if="{{expandedFaq === index}}">{{item.a}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 到店信息 -->
+      <view class="section visit-section">
+        <text class="section-title">到店咨询</text>
+        <view class="visit-card" bindtap="openMap">
+          <text class="visit-addr">{{config.address}}</text>
+          <text class="visit-link">点击导航 →</text>
+        </view>
+      </view>
+
+      <view class="footer-pad"></view>
+    </block>
+  </scroll-view>
+
+  <!-- 社群弹窗 -->
+  <view class="modal-mask {{showCommunity ? 'active' : ''}}" bindtap="closeCommunity" wx:if="{{showCommunity}}">
+    <view class="modal-sheet" catchtap="true">
+      <view class="modal-close" bindtap="closeCommunity">✕</view>
+      <text class="modal-title">官方社群</text>
+      <text class="modal-sub">COMMUNITY</text>
+      <image class="community-qr" src="{{config.communityQr}}" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
+      <text class="modal-tip">长按识别二维码加入社群</text>
+    </view>
+  </view>
+</view>

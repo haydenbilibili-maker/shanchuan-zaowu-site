@@ -1,0 +1,233 @@
+/* pages/certificate/index.wxss */
+page {
+  background-color: #1A1814;
+  color: #fff;
+  font-family: "PingFang SC", serif;
+  height: 100%;
+  overflow: hidden;
+}
+view, text, image, button { box-sizing: border-box; }
+.container { width: 100%; height: 100%; position: relative; }
+
+/* 导航 - 黑金质感 */
+.nav-bar { 
+  position: absolute; 
+  left: 30rpx; 
+  z-index: 100; 
+}
+.back-btn {
+  width: 64rpx; 
+  height: 64rpx; 
+  background: linear-gradient(135deg, rgba(196, 167, 108,0.15), rgba(196, 167, 108,0.08));
+  backdrop-filter: blur(10px);
+  border-radius: 50%; 
+  text-align: center; 
+  line-height: 60rpx; 
+  color: var(--gold); 
+  font-size: 32rpx; 
+  border: 1.5px solid rgba(196, 167, 108,0.4);
+  box-shadow: 
+    0 4rpx 12rpx rgba(0,0,0,0.3),
+    0 0 16rpx rgba(196, 167, 108,0.2),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.1);
+  transition: all 0.3s;
+}
+.back-btn:active {
+  background: linear-gradient(135deg, rgba(196, 167, 108,0.25), rgba(196, 167, 108,0.15));
+  border-color: rgba(196, 167, 108,0.6);
+  transform: scale(0.95);
+  box-shadow: 
+    0 2rpx 8rpx rgba(0,0,0,0.4),
+    0 0 20rpx rgba(196, 167, 108,0.3),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.15);
+}
+
+/* 铸造动画 */
+.minting-layer {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: #1A1814; z-index: 50;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.mint-spinner {
+  width: 60rpx; height: 60rpx; border: 4rpx solid rgba(196, 167, 108,0.3);
+  border-top-color: #C4A76C; border-radius: 50%;
+  animation: spin 1s linear infinite; margin-bottom: 30rpx;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.mint-txt { font-family: 'DIN'; font-size: 24rpx; color: #C4A76C; letter-spacing: 4rpx; opacity: 0.8; }
+
+/* 证书展示层 */
+.cert-layer {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(circle at center, #1a1a1a 0%, #1A1814 80%);
+  opacity: 0; transition: opacity 0.8s ease;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding-bottom: 120rpx;
+  pointer-events: none;
+}
+.cert-layer.preparing {
+  opacity: 0;
+  z-index: 1;
+}
+.cert-layer.active { opacity: 1; pointer-events: auto; }
+
+.cert-shadow-box {
+  width: 600rpx; 
+  height: 960rpx;
+  box-shadow: 
+    0 20rpx 80rpx rgba(0,0,0,0.8),
+    0 8rpx 32rpx rgba(0,0,0,0.6),
+    0 0 60rpx rgba(196, 167, 108, 0.2),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.05);
+  border: 2rpx solid rgba(196, 167, 108,0.3);
+  border-radius: 8rpx;
+  background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(20,20,20,0.7));
+  transform: translateY(0);
+  animation: float 6s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+.cert-shadow-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(196, 167, 108,0.05) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes float { 
+  0%, 100% { transform: translateY(0); } 
+  50% { transform: translateY(-10rpx); } 
+}
+
+.cert-canvas { width: 100%; height: 100%; }
+
+/* 底部按钮 */
+.action-bar {
+  position: absolute;
+  bottom: 60rpx;
+  left: 0;
+  right: 0;
+  padding: 0 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.care-link {
+  width: 100%;
+  max-width: 520rpx;
+  text-align: center;
+  padding: 16rpx 24rpx;
+  font-size: 24rpx;
+  color: #C4A76C;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(196, 167, 108, 0.35);
+  border-radius: 9999px;
+  background: rgba(196, 167, 108, 0.06);
+}
+
+.care-link:active {
+  opacity: 0.88;
+}
+
+.action-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40rpx;
+}
+
+.icon-btn.share {
+  width: 100rpx; 
+  height: 100rpx; 
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(196, 167, 108,0.15), rgba(196, 167, 108,0.08));
+  border: 1.5px solid rgba(196, 167, 108,0.4);
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center;
+  color: var(--gold); 
+  font-size: 20rpx; 
+  padding: 0; 
+  margin: 0;
+  box-shadow: 
+    0 4rpx 12rpx rgba(0,0,0,0.3),
+    0 0 16rpx rgba(196, 167, 108,0.2),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s;
+  font-weight: 700;
+}
+.icon-btn.share::after { border: none; }
+.icon-btn.share:active {
+  background: linear-gradient(135deg, rgba(196, 167, 108,0.25), rgba(196, 167, 108,0.15));
+  border-color: rgba(196, 167, 108,0.6);
+  transform: scale(0.95);
+  box-shadow: 
+    0 2rpx 8rpx rgba(0,0,0,0.4),
+    0 0 20rpx rgba(196, 167, 108,0.3),
+    inset 0 1rpx 2rpx rgba(255,255,255,0.15);
+}
+.btn-icon { 
+  width: 36rpx; 
+  height: 36rpx; 
+  margin-bottom: 6rpx; 
+  filter: invert(1) sepia(1) hue-rotate(15deg) saturate(2) brightness(1.2);
+}
+
+.save-btn {
+  width: 300rpx; 
+  height: 100rpx; 
+  border-radius: 50rpx;
+  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
+  background-size: 200% 100%;
+  color: #1A1814;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  font-size: 30rpx; 
+  font-weight: 800; 
+  letter-spacing: 3rpx;
+  box-shadow: 
+    0 8rpx 32rpx rgba(196, 167, 108,0.5),
+    0 4rpx 16rpx rgba(0,0,0,0.4),
+    inset 0 2rpx 4rpx rgba(255,255,255,0.3),
+    inset 0 -1rpx 2rpx rgba(0,0,0,0.2);
+  border: 1.5px solid rgba(196, 167, 108,0.6);
+  transition: all 0.4s;
+  position: relative;
+  overflow: hidden;
+  animation: save-btn-shine 3s ease-in-out infinite;
+}
+@keyframes save-btn-shine {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.save-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.save-btn:active { 
+  transform: scale(0.97);
+  box-shadow: 
+    0 6rpx 24rpx rgba(196, 167, 108,0.6),
+    0 3rpx 12rpx rgba(0,0,0,0.5),
+    inset 0 2rpx 4rpx rgba(255,255,255,0.4);
+}
+.save-btn:active::before {
+  opacity: 1;
+}

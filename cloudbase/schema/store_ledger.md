@@ -37,6 +37,9 @@
 
 在环境 `cloud1-8gnkty5bfff9f0bf` 新建集合 **`store_ledger`**，权限参考 `cloudbase/rules/store_ledger.json`（与 finance 相同：`auth != null`）。
 
-## 小程序侧（需在 shanchuan-admin / 小程序源码配置）
+## 小程序侧
 
-店长账本读写 **`store_ledger`**，字段与上表一致；`date` 与 `bizDate` 建议同时写入以便兼容。
+店长账本读写 **`store_ledger`**（`miniprogram/utils/storeLedger.js` + 店长页 `manager/index.js`）。  
+云函数 `syncFinanceData` 上传时镜像 **`finance_records`**。字段与上表一致；`date` 与 `bizDate` 同时写入。
+
+Web 端逻辑：`admin/src/utils/financeSync.js`、`admin/src/utils/storeLedgerSync.js`。

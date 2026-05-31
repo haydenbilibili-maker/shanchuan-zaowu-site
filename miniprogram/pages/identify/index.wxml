@@ -1,0 +1,80 @@
+<view class="page">
+  <view class="hero">
+    <text class="hero-en">AI SPECIMEN LAB</text>
+    <text class="hero-cn">拍一张照片，读懂自然</text>
+    <text class="hero-sub">视觉识别 + 科普手记 · 关联馆藏档案与可购藏品</text>
+  </view>
+
+  <view class="free-banner">
+    <text class="free-badge">限时免费</text>
+    <text class="free-txt">不限次数体验 · 结果仅供参考，请以实物为准</text>
+  </view>
+
+  <view class="hint-block" wx:if="{{!busy}}">
+    <text class="hint-title">我猜这是</text>
+    <scroll-view scroll-x class="hint-scroll" enable-flex show-scrollbar="{{false}}">
+      <view class="hint-inner">
+        <view
+          class="hint-chip {{categoryHint === item.id ? 'active' : ''}}"
+          wx:for="{{categoryHints}}"
+          wx:key="id"
+          bindtap="onCategoryHint"
+          data-id="{{item.id}}"
+        >{{item.label}}</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="steps" wx:if="{{busy}}">
+    <view class="step {{loadingStep >= 1 ? 'done' : ''}}">入镜</view>
+    <view class="step-line {{loadingStep >= 2 ? 'done' : ''}}"></view>
+    <view class="step {{loadingStep >= 2 ? 'done' : ''}}">归档</view>
+    <view class="step-line {{loadingStep >= 3 ? 'done' : ''}}"></view>
+    <view class="step {{loadingStep >= 3 ? 'done' : ''}}">解读</view>
+  </view>
+
+  <view class="actions">
+    <button class="btn primary" bindtap="onTakePhoto" disabled="{{busy}}">
+      <image class="btn-ico" src="/assets/icons/camera.png" mode="aspectFit" />
+      拍照识别
+    </button>
+    <button class="btn ghost" bindtap="onChooseAlbum" disabled="{{busy}}">从相册选择</button>
+  </view>
+
+  <view class="progress-wrap" wx:if="{{uploadProgress > 0 && uploadProgress < 100}}">
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{uploadProgress}}%;"></view>
+    </view>
+    <text class="progress-txt">{{loadingText}} {{uploadProgress}}%</text>
+  </view>
+
+  <view class="recent" wx:if="{{recentList.length && !busy}}">
+    <view class="recent-head">
+      <text class="recent-title">最近鉴定</text>
+      <text class="recent-link" bindtap="goAtlas">我的图鉴 ›</text>
+    </view>
+    <view
+      class="recent-item"
+      wx:for="{{recentList}}"
+      wx:key="_id"
+      bindtap="openRecent"
+      data-id="{{item._id}}"
+    >
+      <text class="recent-name">{{item.name}}</text>
+      <text class="recent-time">{{item.timeText}}</text>
+    </view>
+  </view>
+
+  <view class="loading-mask" wx:if="{{busy}}">
+    <view class="loading-core">
+      <view class="spinner"></view>
+      <text class="loading-txt">{{loadingText}}</text>
+    </view>
+  </view>
+
+  <view class="tips">
+    <text class="tip-title">拍摄建议</text>
+    <text class="tip-line" wx:for="{{photoTips}}" wx:key="*this">· {{item}}</text>
+    <text class="tip-line">· 识别结果可保存到「我的自然图鉴」</text>
+  </view>
+</view>

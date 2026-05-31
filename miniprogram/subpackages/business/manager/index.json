@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "管理后台",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "disableSwipeBack": true, 
+  "usingComponents": {}
+}

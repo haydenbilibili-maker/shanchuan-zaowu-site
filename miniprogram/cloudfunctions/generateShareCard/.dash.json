@@ -1,0 +1,10 @@
+{
+  "name": "generateShareCard",
+  "desc": "生成分享卡片云函数",
+  "tags": [
+    "Node.js"
+  ],
+  "startCmd": "npm run dev",
+  "port": "5173",
+  "status": "开发中"
+}
