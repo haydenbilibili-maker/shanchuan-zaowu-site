@@ -844,7 +844,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, nextTick, computed } from 'vue'
+import { onMounted, onUnmounted, reactive, ref, nextTick, computed } from 'vue'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
 import { ElMessage, ElMessageBox, ElDropdown, ElDropdownMenu, ElDropdownItem, ElDatePicker, ElSelect, ElOption } from 'element-plus'
@@ -1237,6 +1237,8 @@ const handleUnlock = () => {
 const handleFinanceLogout = () => {
     isUnlocked.value = false
     securityKey.value = ''
+    try { app.clearTimers() } catch (e) {}
+    try { app.destroyAllCharts() } catch (e) {}
     try { localStorage.removeItem(FINANCE_SESSION_KEY) } catch (e) {}
     ElMessage.info('已退出财务模块')
 }
@@ -1270,23 +1272,35 @@ const app = reactive({
         return el;
     },
 
+    _timers: [],
+    _setTimer(fn, ms) {
+        const id = setTimeout(fn, ms);
+        this._timers.push(id);
+        return id;
+    },
+    clearTimers() {
+        this._timers.forEach(id => clearTimeout(id));
+        this._timers = [];
+    },
+
     async init() {
         await this.loadData();
-        // 先回填用户上次的设置参数，再绑定事件，再渲染
         this.restoreSettings();
         this.bindEvents();
         await nextTick();
-        setTimeout(() => this.renderAll(), 100);
+        this._setTimer(() => this.renderAll(), 100);
     },
 
     bindEvents() {
         let renderTimer;
-        // 使用可选链防止未解锁时找不到元素报错
         document.querySelectorAll('.calc-trigger').forEach(el => {
             el.addEventListener('input', () => {
                 clearTimeout(renderTimer);
-                renderTimer = setTimeout(() => {
+                renderTimer = this._setTimer(() => {
+                    if (!document.getElementById('setTarget')) return;
                     try {
+                        const s = this.getSettings();
+                        this.persistSettings(s);
                         this.renderAll();
                     } catch(error) {
                         console.error('渲染时出错:', error);
@@ -1380,9 +1394,12 @@ const app = reactive({
     },
 
     getSettings() {
+        const raw = {};
         const val = (id) => {
             const el = document.getElementById(id);
-            return el ? (parseFloat(el.value) || 0) : 0;
+            const v = el ? (parseFloat(el.value) || 0) : 0;
+            raw[id] = v;
+            return v;
         };
         const settings = {
             target: val('setTarget'),
@@ -1400,34 +1417,28 @@ const app = reactive({
             commRate: val('setCommRate') / 100,
             tax: val('setTax') / 100
         };
-        // 🟢 每次读取后顺手持久化（用户改完任何输入下次自动回填）
-        try {
-            localStorage.setItem('sc_finance_settings_v1', JSON.stringify({
-                setTarget: val('setTarget'),
-                setInvest: val('setInvest'),
-                setInvestCount: val('setInvestCount'),
-                setCostRate: val('setCostRate'),
-                setEarlyShare: val('setEarlyShare'),
-                setLateShare: val('setLateShare'),
-                setRent: val('setRent'),
-                setMallThreshold: val('setMallThreshold'),
-                setMallRate: val('setMallRate'),
-                setUtility: val('setUtility'),
-                setStaffCount: val('setStaffCount'),
-                setStaffSalary: val('setStaffSalary'),
-                setCommRate: val('setCommRate'),
-                setTax: val('setTax')
-            }));
-        } catch (e) { /* 配额满则忽略 */ }
+        settings._raw = raw;
         return settings;
     },
 
-    /** 🟢 从 localStorage 恢复设置到 DOM 输入框 */
+    persistSettings(settings) {
+        if (!document.getElementById('setTarget')) return;
+        const raw = settings?._raw || this.getSettings()._raw;
+        try {
+            localStorage.setItem('sc_finance_settings_v1', JSON.stringify(raw));
+        } catch (e) { /* 配额满则忽略 */ }
+    },
+
     restoreSettings() {
         try {
             const raw = localStorage.getItem('sc_finance_settings_v1');
             if (!raw) return;
             const cfg = JSON.parse(raw);
+            const values = Object.values(cfg).map(v => parseFloat(v) || 0);
+            if (values.length && values.every(v => v === 0)) {
+                localStorage.removeItem('sc_finance_settings_v1');
+                return;
+            }
             Object.entries(cfg).forEach(([id, v]) => {
                 const el = document.getElementById(id);
                 if (el && v != null && v !== '') el.value = v;
@@ -1501,6 +1512,7 @@ const app = reactive({
     },
 
     renderAll() {
+        if (!document.getElementById('setTarget')) return;
         this.data.sort((a,b) => new Date(a.date) - new Date(b.date));
         const s = this.getSettings();
 
@@ -5536,6 +5548,11 @@ onMounted(() => {
             try { await app.init() } catch (e) { console.warn('app.init 失败', e) }
         })
     }
+})
+
+onUnmounted(() => {
+    try { app.clearTimers() } catch (e) {}
+    try { app.destroyAllCharts() } catch (e) {}
 })
 </script>
 

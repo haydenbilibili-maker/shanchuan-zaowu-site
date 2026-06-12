@@ -227,7 +227,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { Refresh, InfoFilled } from '@element-plus/icons-vue'
 import { getCdnDatabase } from '../cloud'
 import { ElMessage } from 'element-plus'
@@ -586,7 +586,6 @@ onUnmounted(() => {
   if (donutChart) donutChart.destroy()
 })
 
-import { watch } from 'vue'
 watch(rawEvents, () => recomputeTops(), { deep: true })
 </script>
 

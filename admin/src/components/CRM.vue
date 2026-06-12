@@ -123,6 +123,9 @@
         共 <b>{{ filteredUsers.length }}</b> / {{ users.length }} 位会员
         · 算法依据 <code>orders</code> + <code>user_behaviors</code>
         · 完整图谱见 <el-link type="primary" @click="$emit('switch-tab', '45')">用户画像看板</el-link>
+        <el-tag v-if="dataCapped" type="warning" size="small" style="margin-left: 8px;">
+          数据量达上限，RFM 可能偏低
+        </el-tag>
       </div>
     </el-card>
 
@@ -245,14 +248,18 @@ const formatDate = (ts) => {
 }
 
 // ====== 数据加载 ======
+const FETCH_CAP = 1000
+const dataCapped = ref(false)
+
 const fetchUsers = async () => {
   loading.value = true
   try {
     const { users: rawUsers, orders, behaviors } = await loadPortraitSourceData({
-      userLimit: 500,
-      orderLimit: 1000,
-      behaviorLimit: 1000,
+      userLimit: FETCH_CAP,
+      orderLimit: FETCH_CAP,
+      behaviorLimit: FETCH_CAP,
     })
+    dataCapped.value = rawUsers.length >= FETCH_CAP || orders.length >= FETCH_CAP || behaviors.length >= FETCH_CAP
     users.value = buildProfile({ users: rawUsers, orders, behaviors })
   } catch (e) {
     console.error(e)
@@ -320,7 +327,10 @@ const openEdit = (row) => {
         })
       } catch (e) { /* 忽略 */ }
       ElMessage.success('积分调整成功')
-      fetchUsers()
+      row.points = (row.points || 0) + val
+      if (currentUser.value && currentUser.value._id === row._id) {
+        currentUser.value.points = row.points
+      }
     } catch (e) {
       ElMessage.error('操作失败：' + e.message)
     }

@@ -166,17 +166,26 @@ const onMenuCommand = (cmd) => {
 // 全局点击关菜单 + 快捷键
 const onGlobalClick = () => closeContextMenu()
 const onKey = (e) => {
-  // Ctrl/Cmd + Shift + W: 关闭当前 tab
-  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
-    e.preventDefault()
-    if (!openTabs.value.find(t => t.id === activeTabId.value)?.pinned) {
-      closeTab(activeTabId.value)
+  const t = e.target
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+  // Cmd+Tab / Cmd+Shift+W 是浏览器保留键；改用 Alt 组合，用 e.code 匹配（macOS Option+W → ∑）
+  if (e.altKey && !e.ctrlKey && !e.metaKey) {
+    if (e.code === 'KeyW') {
+      e.preventDefault()
+      if (!openTabs.value.find(x => x.id === activeTabId.value)?.pinned) {
+        closeTab(activeTabId.value)
+      }
+      return
     }
-  }
-  // Ctrl/Cmd + Tab: 下一个
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Tab') {
-    e.preventDefault()
-    cycleTab(e.shiftKey ? -1 : 1)
+    if (e.code === 'BracketRight') {
+      e.preventDefault()
+      cycleTab(1)
+      return
+    }
+    if (e.code === 'BracketLeft') {
+      e.preventDefault()
+      cycleTab(-1)
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 <template>
   <transition name="cp-fade">
     <div v-if="visible" class="cp-mask" @click.self="close">
-      <div class="cp-panel" @keydown.prevent.stop="onKey">
+      <div class="cp-panel">
         <div class="cp-search">
           <el-icon class="cp-search-icon"><Search /></el-icon>
           <input
@@ -9,7 +9,6 @@
             v-model="query"
             class="cp-input"
             placeholder="搜索模块 / 命令…（拼音、英文、关键词均可）"
-            @input="onInput"
             @keydown.down.prevent="moveActive(1)"
             @keydown.up.prevent="moveActive(-1)"
             @keydown.enter.prevent="select()"
@@ -135,6 +134,7 @@
         <div class="cp-footer">
           <span><kbd>⌘K</kbd> / <kbd>Ctrl+K</kbd> 打开命令面板</span>
           <span><kbd>⌘1</kbd> ~ <kbd>⌘6</kbd> 切换一级分类</span>
+          <span><kbd>Alt+]</kbd> / <kbd>Alt+[</kbd> 切换标签 · <kbd>Alt+W</kbd> 关闭标签</span>
           <span>悬浮 ⭐ 置顶模块</span>
         </div>
       </div>
@@ -170,7 +170,11 @@ function loadIds(key) {
 }
 function persistIds(key, arr) {
   try { localStorage.setItem(key, JSON.stringify(arr)) } catch (e) {}
+  // storage 事件只派发给其它标签页；同页内用自定义事件通知 App.vue 侧栏刷新
+  window.dispatchEvent(new CustomEvent('pinned-changed'))
 }
+// 接收来自侧栏（App.vue togglePin）的同页变更
+const onPinnedChanged = () => { pinnedIds.value = loadIds(PIN_KEY) }
 
 const recent = computed(() => recentIds.value.map(id => MODULES_BY_ID[id]).filter(Boolean).slice(0, 5))
 const pinned = computed(() => pinnedIds.value.map(id => MODULES_BY_ID[id]).filter(Boolean))
@@ -249,11 +253,13 @@ const open = () => {
   visible.value = true
   query.value = ''
   activeIndex.value = 0
+  // 兜底：重新加载置顶/最近，防止其它入口修改后状态陈旧
+  pinnedIds.value = loadIds(PIN_KEY)
+  recentIds.value = loadIds(RECENT_KEY)
   nextTick(() => inputRef.value?.focus())
 }
 const close = () => { visible.value = false }
-const onInput = () => {}
-const onKey = () => {}
+
 
 // ====== 全局快捷键 ======
 const onKeydown = (e) => {
@@ -279,8 +285,16 @@ const onKeydown = (e) => {
 // 暴露给父组件的方法
 defineExpose({ open, close })
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('pinned-changed', onPinnedChanged)
+  window.addEventListener('storage', onPinnedChanged) // 跨标签页兜底
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('pinned-changed', onPinnedChanged)
+  window.removeEventListener('storage', onPinnedChanged)
+})
 </script>
 
 <style scoped>

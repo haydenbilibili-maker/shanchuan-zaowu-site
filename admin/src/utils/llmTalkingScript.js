@@ -86,11 +86,18 @@ ${buildContext(profile)}
 ${OUTPUT_SCHEMA}`
 
   try {
-    const text = await callGeminiAPI(prompt, {
-      temperature: 0.75,
-      maxTokens: 1024,
-      timeout: options.timeout || 30000
-    })
+    // 注意 callGeminiAPI 的选项名是 maxOutputTokens（不是 maxTokens），也不支持 timeout
+    // —— 超时在本层用 Promise.race 兜底，避免 UI 无限等待
+    const timeoutMs = options.timeout || 30000
+    const text = await Promise.race([
+      callGeminiAPI(prompt, {
+        temperature: 0.75,
+        maxOutputTokens: 1024
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`LLM 响应超时（${Math.round(timeoutMs / 1000)}s）`)), timeoutMs)
+      )
+    ])
     const json = extractJSON(text)
     if (!json) {
       return { ok: false, error: '模型未返回合法 JSON', raw: text }

@@ -29,3 +29,7 @@ dist-ssr
 # System Files
 .DS_Store
 Thumbs.db
+
+# Claude worktrees / local dash cache
+.claude/
+.dash.json

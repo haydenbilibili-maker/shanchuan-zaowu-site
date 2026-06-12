@@ -172,8 +172,10 @@ const formatNum = (n) => {
   return Number(n).toLocaleString()
 }
 
-// 选择工单后异步加载该用户的画像
+// 选择工单后异步加载该用户的画像（竞态保护：快速切工单不会张冠李戴）
+let profileReqSeq = 0
 const loadCustomerProfile = async (openid) => {
+  const seq = ++profileReqSeq
   if (!openid) {
     customerProfile.value = null
     return
@@ -182,19 +184,23 @@ const loadCustomerProfile = async (openid) => {
   customerProfile.value = null
   try {
     const { users, orders, behaviors } = await loadPortraitForOpenid(openid)
-    if (!users.length) {
-      customerProfile.value = buildProfile({
-        users: [{ _id: openid, _openid: openid, nickName: '匿名访客', createTime: Date.now() }],
-        orders,
-        behaviors
-      })[0]
-    } else {
-      customerProfile.value = buildProfile({ users, orders, behaviors })[0]
+    if (seq !== profileReqSeq) return
+    const baseUsers = users.length
+      ? users
+      : [{ _id: openid, _openid: openid, nickName: '匿名访客', createTime: Date.now() }]
+    const profile = buildProfile({ users: baseUsers, orders, behaviors })[0]
+    // 单用户样本跑 RFM 分位无意义，隐藏分群徽章只留原始事实
+    if (profile) {
+      profile.rfm = ''
+      profile.segment = null
+      profile.segmentMeta = null
+      profile.singleSample = true
     }
+    customerProfile.value = profile
   } catch (e) {
     console.warn('客户画像加载失败', e)
   } finally {
-    profileLoading.value = false
+    if (seq === profileReqSeq) profileLoading.value = false
   }
 }
 

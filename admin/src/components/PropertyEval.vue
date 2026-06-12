@@ -25,9 +25,9 @@
             <span>{{ p.city || '—' }}</span>
             <el-tag size="small" :type="STATUS_LABELS[p.status]?.type">{{ STATUS_LABELS[p.status]?.text }}</el-tag>
           </div>
-          <div class="pc-result" v-if="p._result">
+          <div class="pc-result" v-if="propSummaries[p.id]">
             <span class="lbl">三年园区(阶梯)</span>
-            <span class="val">¥{{ p._result.summary.recommendedTotal }} 万</span>
+            <span class="val">¥{{ propSummaries[p.id].recommendedTotal }} 万</span>
           </div>
         </div>
         <div v-if="!properties.length" class="empty-tip">还没有物业，点右上"新增"</div>
@@ -84,7 +84,7 @@
           </div>
           <div class="kpi-mini hot">
             <span class="lbl">回本周期 · 阶梯</span>
-            <span class="val">{{ result.metrics.paybackLadder }}<small>年</small></span>
+            <span class="val">{{ fmtPayback(result.metrics.paybackLadder) }}</span>
             <span class="sub">5y IRR {{ formatPct(result.metrics.irr5) }}</span>
           </div>
           <div class="kpi-mini">
@@ -288,19 +288,19 @@
             <div class="payback-grid">
               <div class="pb-card recommended">
                 <div class="pb-label">阶梯·毛利分润 (推荐)</div>
-                <div class="pb-val">{{ result?.metrics.paybackLadder }}<small>年</small></div>
+                <div class="pb-val">{{ fmtPayback(result?.metrics.paybackLadder) }}</div>
               </div>
               <div class="pb-card">
                 <div class="pb-label">传统固定租金</div>
-                <div class="pb-val">{{ result?.metrics.paybackTraditional || '—' }}<small>年</small></div>
+                <div class="pb-val">{{ fmtPayback(result?.metrics.paybackTraditional) }}</div>
               </div>
               <div class="pb-card">
                 <div class="pb-label">纯分成</div>
-                <div class="pb-val">{{ result?.metrics.paybackPure }}<small>年</small></div>
+                <div class="pb-val">{{ fmtPayback(result?.metrics.paybackPure) }}</div>
               </div>
               <div class="pb-card">
                 <div class="pb-label">保底+抽成</div>
-                <div class="pb-val">{{ result?.metrics.paybackFloor }}<small>年</small></div>
+                <div class="pb-val">{{ fmtPayback(result?.metrics.paybackFloor) }}</div>
               </div>
             </div>
           </el-tab-pane>
@@ -351,12 +351,7 @@
 import { ref, computed, reactive, watch, onMounted, onUnmounted, nextTick, h } from 'vue'
 import { Plus, Refresh, Document, Delete, Check, RefreshRight, Setting } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {
-  fetchCollectionLimit,
-  fetchCollectionWhere,
-  cdnAdd,
-  cdnUpdate,
-} from '../cloud'
+import { db, loginToCloud } from '../cloud'
 import Chart from 'chart.js/auto'
 import { DEFAULT_INPUTS, PRESET_PROPERTIES, STATUS_LABELS, computeProposal } from '../utils/propertyEvalModel'
 
@@ -378,18 +373,22 @@ const lastComputeStamp = ref(0)
 const justRecomputed = ref(false)
 let flashTimer = null
 
+// computed 保持纯函数（getter 无副作用），flash/时间戳等 UI 状态移到 watch 里
 const result = computed(() => {
-  // 引用 recomputeVersion 让按钮也能触发
+  // 引用 recomputeVersion 让"重算"按钮也能触发
   // eslint-disable-next-line no-unused-expressions
   recomputeVersion.value
   if (!current.value) return null
-  const r = computeProposal(current.value)
-  lastComputeStamp.value = Date.now()
-  // 触发一次 flash 动画
-  if (flashTimer) clearTimeout(flashTimer)
-  justRecomputed.value = true
-  flashTimer = setTimeout(() => { justRecomputed.value = false }, 600)
-  return r
+  return computeProposal(current.value)
+})
+
+// 左侧物业卡片的三年收益预览（之前模板引用 p._result 但从未赋值）
+const propSummaries = computed(() => {
+  const map = {}
+  properties.value.forEach(p => {
+    try { map[p.id] = computeProposal(p).summary } catch (e) { /* 忽略坏数据 */ }
+  })
+  return map
 })
 
 const forceRecompute = () => {
@@ -432,6 +431,11 @@ if (typeof window !== 'undefined') {
 const formatPct = (v) => {
   if (v == null || isNaN(v)) return '-'
   return (v * 100).toFixed(1) + '%'
+}
+/** 回本周期：null 表示五年内未回本（不能显示成 0 年） */
+const fmtPayback = (v) => {
+  if (v == null) return '5年内未回本'
+  return v + ' 年'
 }
 const deltaClass = (v) => v > 0.05 ? 'delta-up' : (v < -0.05 ? 'delta-down' : 'delta-flat')
 
@@ -525,14 +529,20 @@ const refresh = async () => {
     currentId.value = properties.value[0].id
   }
   // 后台同步云端
-  fetchCollectionLimit('property_proposals', { limit: 100 }).then(cloud => {
-    if (cloud.length) {
-      const map = new Map(properties.value.map(p => [p.id, p]))
-      cloud.forEach(c => map.set(c.id || c._id, c))
-      properties.value = Array.from(map.values())
-      persistLocal()
-    }
-  }).catch(e => { console.warn('云端拉取失败', e) })
+  loginToCloud().then(async ok => {
+    if (!ok) return
+    try {
+      const res = await db.collection('property_proposals').limit(100).get()
+      const cloud = res.data || []
+      if (cloud.length) {
+        // 合并：以 id 去重，云端为准
+        const map = new Map(properties.value.map(p => [p.id, p]))
+        cloud.forEach(c => map.set(c.id || c._id, c))
+        properties.value = Array.from(map.values())
+        persistLocal()
+      }
+    } catch (e) { console.warn('云端拉取失败', e) }
+  })
 }
 
 const selectProperty = (id) => { currentId.value = id; nextTick(renderCharts) }
@@ -549,15 +559,18 @@ const saveCurrent = async () => {
   ElMessage.success('已保存到本机')
   // 后台云端同步
   try {
+    const ok = await loginToCloud()
+    if (!ok) return
     const payload = JSON.parse(JSON.stringify(current.value))
     payload.snapshot = result.value
-    payload.updateTime = Date.now()
-    const exist = await fetchCollectionWhere('property_proposals', { id: current.value.id }, 1)
-    if (exist.length) {
-      await cdnUpdate('property_proposals', exist[0]._id, payload)
+    payload.updateTime = db.serverDate()
+    // 先查 id
+    const exist = await db.collection('property_proposals').where({ id: current.value.id }).limit(1).get().catch(() => ({ data: [] }))
+    if (exist.data?.length) {
+      await db.collection('property_proposals').doc(exist.data[0]._id).update(payload)
     } else {
-      payload.createTime = Date.now()
-      await cdnAdd('property_proposals', payload)
+      payload.createTime = db.serverDate()
+      await db.collection('property_proposals').add(payload)
     }
     ElMessage.success('已同步到云端')
   } catch (e) {
@@ -604,7 +617,7 @@ const exportCSV = () => {
   lines.push(['四、回本与回报'])
   lines.push(['指标', '值'])
   lines.push(['山海净改造投入(万元)', result.value.metrics.capexAll])
-  lines.push(['回本周期·阶梯', result.value.metrics.paybackLadder])
+  lines.push(['回本周期·阶梯', fmtPayback(result.value.metrics.paybackLadder)])
   lines.push(['三年累计经营利润', result.value.metrics.threeYearProfitLadder])
   lines.push(['五年累计经营利润', result.value.metrics.fiveYearProfitLadder])
   lines.push(['五年 IRR', formatPct(result.value.metrics.irr5)])
@@ -669,7 +682,15 @@ const renderCharts = () => {
   }
 }
 
-watch(() => result.value, () => nextTick(renderCharts), { deep: true })
+// result 是 computed 返回的新对象，引用变化即触发，无需 deep（省去大对象深遍历）
+watch(result, () => {
+  // flash + 时间戳（从 computed getter 移出，保持 getter 纯净）
+  lastComputeStamp.value = Date.now()
+  if (flashTimer) clearTimeout(flashTimer)
+  justRecomputed.value = true
+  flashTimer = setTimeout(() => { justRecomputed.value = false }, 600)
+  nextTick(renderCharts)
+})
 watch(() => activeTab.value, () => nextTick(renderCharts))
 
 onMounted(() => {
@@ -678,6 +699,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   ;[revChart, structChart, senseChart].forEach(c => { try { c?.destroy() } catch (e) {} })
+  if (flashTimer) clearTimeout(flashTimer)
 })
 </script>
 

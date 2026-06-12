@@ -86,15 +86,10 @@ export function computeRFMScores(rawMap) {
   const entries = Array.from(rawMap.entries())
   const buyers = entries.filter(([, v]) => v.frequency > 0)
 
-  // 计算分位边界
+  // 排序值数组（用于平均秩百分位打分）
   const recencyValues = buyers.map(([, v]) => v.recencyDays).sort((a, b) => a - b)
   const frequencyValues = buyers.map(([, v]) => v.frequency).sort((a, b) => a - b)
   const monetaryValues = buyers.map(([, v]) => v.monetary).sort((a, b) => a - b)
-
-  // R 反向：越小越好（高分对应低 recency）
-  const rCuts = quintileCuts(recencyValues)
-  const fCuts = quintileCuts(frequencyValues)
-  const mCuts = quintileCuts(monetaryValues)
 
   const result = new Map()
   entries.forEach(([openid, v]) => {
@@ -102,28 +97,33 @@ export function computeRFMScores(rawMap) {
       result.set(openid, { ...v, R: 1, F: 1, M: 1, rfm: '111', segment: 'never_purchased' })
       return
     }
-    const R = 6 - scoreByCuts(v.recencyDays, rCuts) // 反转
-    const F = scoreByCuts(v.frequency, fCuts)
-    const M = scoreByCuts(v.monetary, mCuts)
+    // R 反向：recency 越小分越高
+    const R = 6 - scoreByRank(v.recencyDays, recencyValues)
+    const F = scoreByRank(v.frequency, frequencyValues)
+    const M = scoreByRank(v.monetary, monetaryValues)
     result.set(openid, { ...v, R, F, M, rfm: `${R}${F}${M}`, segment: deriveSegment(R, F, M) })
   })
   return result
 }
 
-function quintileCuts(sortedArr) {
-  if (!sortedArr.length) return [0, 0, 0, 0]
-  return [0.2, 0.4, 0.6, 0.8].map(p => {
-    const idx = Math.min(sortedArr.length - 1, Math.floor(sortedArr.length * p))
-    return sortedArr[idx]
-  })
-}
-
-function scoreByCuts(value, cuts) {
-  // cuts 是 [q20, q40, q60, q80]，return 1-5
-  for (let i = 0; i < cuts.length; i++) {
-    if (value <= cuts[i]) return i + 1
+/**
+ * 平均秩（midrank）百分位打分，返回 1-5。
+ * 相比固定下标的分位切分：
+ * - n≥3 且值不全相同时，最大值必得 5、最小值必得 1（小样本下 champions 仍可达）
+ * - 单一买家（n=1）得 3 分（中性，不武断推向任一极端）
+ * - 全体并列（如所有人 frequency=1 的常见场景）统一得 3 分
+ */
+function scoreByRank(value, sortedArr) {
+  const n = sortedArr.length
+  if (!n) return 1
+  let lt = 0, le = 0
+  for (const v of sortedArr) {
+    if (v < value) lt++
+    if (v <= value) le++
+    else break
   }
-  return 5
+  const pct = (lt + le) / (2 * n) // 等价于 (rank-0.5)/n，并列取中
+  return Math.min(5, Math.floor(pct * 5) + 1)
 }
 
 // ============ 11 分群定义 ============
@@ -154,13 +154,14 @@ export const SEGMENTS = {
 export function deriveSegment(R, F, M) {
   if (R >= 5 && F >= 5 && M >= 4) return 'champions'
   if (R >= 3 && F >= 4 && M >= 4) return 'loyal'
+  // 注意规则顺序：更具体的分群必须先于覆盖域更大的分群，否则永远不可达
+  if (R >= 5 && F <= 1) return 'new_customers'        // 先于 potential_loyal（其 F∈[1,3] 覆盖 F=1）
+  if (R >= 4 && F >= 1 && F <= 2 && M <= 2) return 'promising' // 同上
   if (R >= 4 && F >= 1 && F <= 3 && M >= 1) return 'potential_loyal'
-  if (R >= 5 && F <= 1) return 'new_customers'
-  if (R >= 4 && F >= 1 && F <= 2 && M <= 2) return 'promising'
   if (R >= 3 && R <= 4 && F >= 2 && F <= 3 && M >= 2 && M <= 3) return 'need_attention'
   if (R === 3 && F <= 3) return 'about_to_sleep'
+  if (R <= 2 && F >= 4 && M >= 4) return 'cant_lose'  // 先于 at_risk（其 F≥3,M≥3 覆盖 F≥4,M≥4）
   if (R <= 2 && F >= 3 && M >= 3) return 'at_risk'
-  if (R <= 2 && F >= 4 && M >= 4) return 'cant_lose'
   if (R <= 2 && F >= 2 && M >= 2) return 'hibernating'
   if (R <= 1 && F <= 1 && M <= 1) return 'lost'
   return 'hibernating'
@@ -285,10 +286,15 @@ export function computeRetentionCohort(users, behaviors, opts = {}) {
 }
 
 function isoWeekKey(ts) {
+  // ISO-8601 Thursday 法：周一为一周起点，年份取所在周周四的年份。
+  // 必须与 isoWeekToMs（真 ISO）保持往返一致，否则留存矩阵跨年错位。
   const d = new Date(ts)
-  const year = d.getUTCFullYear()
-  const onejan = new Date(Date.UTC(year, 0, 1))
-  const week = Math.ceil((((d - onejan) / DAY_MS) + onejan.getUTCDay() + 1) / 7)
+  const day = d.getUTCDay() || 7
+  const thursday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 4 - day))
+  const year = thursday.getUTCFullYear()
+  const jan4 = new Date(Date.UTC(year, 0, 4))
+  const week1Start = jan4.getTime() - ((jan4.getUTCDay() || 7) - 1) * DAY_MS
+  const week = Math.floor((thursday.getTime() - week1Start) / (7 * DAY_MS)) + 1
   return `${year}-W${String(week).padStart(2, '0')}`
 }
 

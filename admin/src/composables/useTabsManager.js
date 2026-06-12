@@ -13,18 +13,22 @@ const TABS_KEY = 'sc_admin_open_tabs'
 const ACTIVE_KEY = 'sc_admin_tab_active'
 const MAX_TABS = 12  // 软上限，超过会提示
 
-// 单例 state（多个组件共享）
-const openTabs = ref(loadTabs())
-const activeTabId = ref(loadActive())
+// 兜底工厂：每次返回新对象，避免共享引用被 togglePin 突变
+const fallbackTabs = () => [{ id: '0', pinned: false }]
 
 function loadTabs() {
   try {
     const raw = localStorage.getItem(TABS_KEY)
-    if (!raw) return ['0'] // 默认开"经营驾驶舱"
+    if (!raw) return fallbackTabs() // 默认开"经营驾驶舱"
     const arr = JSON.parse(raw)
-    if (!Array.isArray(arr) || !arr.length) return ['0']
-    return arr.filter(t => t && MODULES_BY_ID[t.id || t]).map(t => typeof t === 'string' ? { id: t, pinned: false } : t)
-  } catch (e) { return [{ id: '0', pinned: false }] }
+    if (!Array.isArray(arr)) return fallbackTabs()
+    // 统一归一化为 {id, pinned} 对象；过滤已被注册表删除的模块 id
+    const list = arr
+      .filter(t => t && MODULES_BY_ID[typeof t === 'string' ? t : t.id])
+      .map(t => typeof t === 'string' ? { id: t, pinned: false } : t)
+    // 全部条目失效（如模块 id 迭代删除）时回退默认，避免空标签条
+    return list.length ? list : fallbackTabs()
+  } catch (e) { return fallbackTabs() }
 }
 function loadActive() {
   try {
@@ -40,9 +44,14 @@ function persistActive() {
   try { localStorage.setItem(ACTIVE_KEY, activeTabId.value) } catch (e) {}
 }
 
-// 初始化：兼容旧 string 数组数据
-if (openTabs.value.length && typeof openTabs.value[0] === 'string') {
-  openTabs.value = openTabs.value.map(id => ({ id, pinned: false }))
+// 单例 state（多个组件共享）
+const openTabs = ref(loadTabs())
+const activeTabId = ref(loadActive())
+
+// 一致性兜底：active 与 openTabs 存于不同 key，任一被单独清除时可能脱节，
+// 此处把游离的 active 收编为标签（保留用户上次视图）
+if (!openTabs.value.some(t => t.id === activeTabId.value)) {
+  openTabs.value = [...openTabs.value, { id: activeTabId.value, pinned: false }]
 }
 
 watch(openTabs, persistTabs, { deep: true })

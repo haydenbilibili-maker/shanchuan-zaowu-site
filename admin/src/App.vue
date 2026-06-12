@@ -80,7 +80,7 @@
             <div class="brand-logo">山</div>
             <div class="brand-text" v-show="!sidebarCollapsed">
               <div class="cn">山海造物</div>
-              <div class="en">经营管理系统</div>
+              <div class="en">ERP SYSTEM</div>
             </div>
             <el-button class="collapse-btn" link @click="toggleSidebar" :title="sidebarCollapsed ? '展开侧栏 ⌘B' : '收起侧栏 ⌘B'">
               <el-icon><component :is="sidebarCollapsed ? Expand : Fold" /></el-icon>
@@ -92,18 +92,18 @@
             <div class="brand-logo">山</div>
             <div class="brand-text">
               <div class="cn">山海造物</div>
-              <div class="en">经营管理系统</div>
+              <div class="en">ERP SYSTEM</div>
             </div>
           </div>
 
           <!-- 🟢 快捷搜索栏（折叠时变成按钮） -->
           <div class="sidebar-search" :class="{ collapsed: sidebarCollapsed }" @click="openCommandPalette">
-            <el-tooltip v-if="sidebarCollapsed" content="搜索功能" placement="right">
+            <el-tooltip v-if="sidebarCollapsed" content="搜索模块 ⌘K" placement="right">
               <el-icon><Search /></el-icon>
             </el-tooltip>
             <template v-else>
               <el-icon><Search /></el-icon>
-              <span>搜索功能</span>
+              <span>搜索模块...</span>
               <kbd class="kbd-hint">⌘K</kbd>
             </template>
           </div>
@@ -123,13 +123,11 @@
             </div>
           </div>
 
-          <div class="sidebar-nav-scroll">
           <el-menu
             :collapse="sidebarCollapsed && !isMobile"
             ref="sideMenuRef"
             :default-active="currentTab"
             :default-openeds="defaultOpeneds"
-            unique-opened
             active-text-color="#ffffff"
             background-color="transparent"
             text-color="rgba(245, 242, 236, 0.72)"
@@ -138,55 +136,118 @@
             @open="handleSubMenuOpen"
             @close="handleSubMenuClose">
 
-            <el-menu-item-group :title="SIDEBAR_NAV.overview.title">
-              <el-menu-item
-                v-for="item in SIDEBAR_NAV.overview.items"
-                :key="item.id"
-                :index="item.id"
-              >
-                <el-icon><component :is="navIcons[item.icon]" /></el-icon>
-                <span>{{ item.label }}</span>
-              </el-menu-item>
+            <!-- ============ 1. 总览决策 / OVERVIEW ============ -->
+            <el-menu-item-group title="🎯 总览决策 / OVERVIEW">
+                <el-menu-item index="0"><el-icon><Odometer /></el-icon><span>经营驾驶舱</span></el-menu-item>
+                <el-menu-item index="26"><el-icon><Monitor /></el-icon><span>实时监控大屏</span></el-menu-item>
+                <el-menu-item index="49"><el-icon><DataBoard /></el-icon><span>经营数据大屏</span></el-menu-item>
+                <el-menu-item index="25"><el-icon><Trophy /></el-icon><span>运营决策中心</span></el-menu-item>
             </el-menu-item-group>
 
-            <el-sub-menu
-              v-for="section in sidebarSubmenus"
-              :key="section.key"
-              :index="section.key"
-            >
+            <!-- ============ 2. 业务运营 / BUSINESS ============ -->
+            <el-sub-menu index="grp-business">
               <template #title>
-                <el-icon><component :is="navIcons[section.icon]" /></el-icon>
-                <span>{{ section.title }}</span>
+                <el-icon><Shop /></el-icon>
+                <span>🏪 业务运营 / BUSINESS</span>
               </template>
-              <el-menu-item-group
-                v-for="group in section.groups"
-                :key="group.title"
-                :title="group.title"
-              >
-                <el-menu-item
-                  v-for="item in group.items"
-                  :key="item.id"
-                  :index="item.id"
-                >
-                  <el-icon><component :is="navIcons[item.icon]" /></el-icon>
-                  <span>{{ item.label }}</span>
-                </el-menu-item>
+              <el-menu-item-group title="货 · 资产">
+                <el-menu-item index="1"><el-icon><Box /></el-icon><span>藏品档案库</span></el-menu-item>
+                <el-menu-item index="43"><el-icon><Menu /></el-icon><span>分类管理</span></el-menu-item>
+                <el-menu-item index="3"><el-icon><List /></el-icon><span>全渠道订单</span></el-menu-item>
+                <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
+              </el-menu-item-group>
+              <el-menu-item-group title="场 · 体验">
+                <el-menu-item index="37"><el-icon><Stamp /></el-icon><span>预约与核销</span></el-menu-item>
+                <el-menu-item index="5"><el-icon><Calendar /></el-icon><span>活动与排期</span></el-menu-item>
+                <el-menu-item index="6"><el-icon><Ticket /></el-icon><span>权益与营销</span></el-menu-item>
+                <el-menu-item index="30"><el-icon><Shop /></el-icon><span>店铺管理</span></el-menu-item>
+                <el-menu-item index="34"><el-icon><Brush /></el-icon><span>门店设计中心</span></el-menu-item>
+                <el-menu-item index="35"><el-icon><Promotion /></el-icon><span>加盟商管理</span></el-menu-item>
+                <el-menu-item index="48"><el-icon><House /></el-icon><span>物业合作测算</span></el-menu-item>
+              </el-menu-item-group>
+              <el-menu-item-group title="定制工坊">
+                <el-menu-item index="38"><el-icon><Brush /></el-icon><span>标本定制工单</span></el-menu-item>
+                <el-menu-item index="39"><el-icon><Avatar /></el-icon><span>伴宠记忆订单</span></el-menu-item>
               </el-menu-item-group>
             </el-sub-menu>
 
-            <el-menu-item-group :title="SIDEBAR_NAV.intelligence.title">
-              <el-menu-item
-                v-for="item in SIDEBAR_NAV.intelligence.items"
-                :key="item.id"
-                :index="item.id"
-              >
-                <el-icon><component :is="navIcons[item.icon]" /></el-icon>
-                <span>{{ item.label }}</span>
-              </el-menu-item>
+            <!-- ============ 3. 客户经营 / CUSTOMER ============ -->
+            <el-sub-menu index="grp-customer">
+              <template #title>
+                <el-icon><UserFilled /></el-icon>
+                <span>👥 客户经营 / CUSTOMER</span>
+              </template>
+              <el-menu-item-group title="会员资产">
+                <el-menu-item index="4"><el-icon><UserFilled /></el-icon><span>会员 CRM</span></el-menu-item>
+                <el-menu-item index="45"><el-icon><MagicStick /></el-icon><span>用户画像</span></el-menu-item>
+                <el-menu-item index="46"><el-icon><Promotion /></el-icon><span>人群包</span></el-menu-item>
+                <el-menu-item index="47"><el-icon><DataBoard /></el-icon><span>人群对比</span></el-menu-item>
+              </el-menu-item-group>
+              <el-menu-item-group title="行为与互动">
+                <el-menu-item index="44"><el-icon><DataAnalysis /></el-icon><span>C 端行为看板</span></el-menu-item>
+                <el-menu-item index="40"><el-icon><Message /></el-icon><span>山海有信工单</span></el-menu-item>
+                <el-menu-item index="41"><el-icon><ChatDotRound /></el-icon><span>评论审核</span></el-menu-item>
+              </el-menu-item-group>
+            </el-sub-menu>
+
+            <!-- ============ 4. 小程序配置 / MINI-PROGRAM ============ -->
+            <el-sub-menu index="grp-miniapp">
+              <template #title>
+                <el-icon><Iphone /></el-icon>
+                <span>📱 小程序配置 / MINI-APP</span>
+              </template>
+              <el-menu-item-group title="内容运营">
+                <el-menu-item index="8"><el-icon><Picture /></el-icon><span>首页轮播</span></el-menu-item>
+                <el-menu-item index="13"><el-icon><Setting /></el-icon><span>首页配置</span></el-menu-item>
+                <el-menu-item index="9"><el-icon><Collection /></el-icon><span>内容管理</span></el-menu-item>
+              </el-menu-item-group>
+              <el-menu-item-group title="会员/营销规则">
+                <el-menu-item index="14"><el-icon><UserFilled /></el-icon><span>会员等级体系</span></el-menu-item>
+                <el-menu-item index="15"><el-icon><Ticket /></el-icon><span>积分规则配置</span></el-menu-item>
+                <el-menu-item index="22"><el-icon><Trophy /></el-icon><span>成就系统配置</span></el-menu-item>
+                <el-menu-item index="20"><el-icon><Ticket /></el-icon><span>活动营销规则</span></el-menu-item>
+              </el-menu-item-group>
+              <el-menu-item-group title="系统/算法/通知">
+                <el-menu-item index="16"><el-icon><Calendar /></el-icon><span>预约规则配置</span></el-menu-item>
+                <el-menu-item index="19"><el-icon><MagicStick /></el-icon><span>推荐算法配置</span></el-menu-item>
+                <el-menu-item index="18"><el-icon><Search /></el-icon><span>搜索关键词管理</span></el-menu-item>
+                <el-menu-item index="24"><el-icon><ChatDotRound /></el-icon><span>通知消息配置</span></el-menu-item>
+                <el-menu-item index="23"><el-icon><DataAnalysis /></el-icon><span>用户行为追踪</span></el-menu-item>
+                <el-menu-item index="21"><el-icon><DataAnalysis /></el-icon><span>数据报表增强</span></el-menu-item>
+                <el-menu-item index="17"><el-icon><Lock /></el-icon><span>权限管理系统</span></el-menu-item>
+              </el-menu-item-group>
+            </el-sub-menu>
+
+            <!-- ============ 5. 组织治理 / GOVERNANCE ============ -->
+            <el-sub-menu index="grp-governance">
+              <template #title>
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>🏛️ 组织治理 / GOVERNANCE</span>
+              </template>
+              <el-menu-item-group title="人才组织">
+                <el-menu-item index="7"><el-icon><Brush /></el-icon><span>标本师管理</span></el-menu-item>
+                <el-menu-item index="32"><el-icon><User /></el-icon><span>员工花名册</span></el-menu-item>
+                <el-menu-item index="31"><el-icon><Wallet /></el-icon><span>员工薪酬管理</span></el-menu-item>
+              </el-menu-item-group>
+              <el-menu-item-group title="财务资本">
+                <el-menu-item index="2"><el-icon><Money /></el-icon><span>财务核算系统</span></el-menu-item>
+                <el-menu-item index="36"><el-icon><DataBoard /></el-icon><span>资本架构沙盘</span></el-menu-item>
+                <el-menu-item index="27"><el-icon><DocumentCopy /></el-icon><span>合伙人命理中心</span></el-menu-item>
+              </el-menu-item-group>
+              <el-menu-item-group title="治理与合规">
+                <el-menu-item index="33"><el-icon><OfficeBuilding /></el-icon><span>公司治理</span></el-menu-item>
+                <el-menu-item index="28"><el-icon><Lock /></el-icon><span>合规专栏</span></el-menu-item>
+              </el-menu-item-group>
+            </el-sub-menu>
+
+            <!-- ============ 6. 战略与知识 / INTELLIGENCE ============ -->
+            <el-menu-item-group title="🧠 战略与知识 / INTELLIGENCE">
+                <el-menu-item index="12"><el-icon><MagicStick /></el-icon><span>AI 智能中心</span></el-menu-item>
+                <el-menu-item index="10"><el-icon><DataAnalysis /></el-icon><span>战略调研看板</span></el-menu-item>
+                <el-menu-item index="29"><el-icon><Notebook /></el-icon><span>经营手册</span></el-menu-item>
             </el-menu-item-group>
 
           </el-menu>
-          </div>
           
           <div class="sidebar-footer">
              <div class="user-badge">
@@ -211,11 +272,8 @@
 
           <div class="content-scroll-wrap" :class="{ 'is-embed-page': currentTab === '36', 'is-mobile-scroll': isMobile }">
           <transition name="fade-slide" mode="out-in">
-            <keep-alive :max="10">
-            <div :key="currentTab + '-' + reloadKey" class="tab-page-root" :class="{ 'is-embed-root': currentTab === '36' }">
-              <component :is="Dashboard" v-if="currentTab === '0'" @switch-tab="handleMenuSelect" />
-
-              <div v-if="currentTab === '1'" class="module-wrapper">
+            <!-- tab 1 藏品库为内联模块（依赖 App.vue 大量本地状态），不参与 keep-alive -->
+            <div v-if="currentTab === '1'" :key="'1-' + reloadKey" class="module-wrapper">
                <div class="module-header">
                   <div class="title-box">
                     <h2>藏品档案库</h2>
@@ -408,57 +466,16 @@
                  <InventoryAI :products="products" />
                </el-dialog>
             </div>
-
-              <component :is="FinanceDashboard" v-else-if="currentTab === '2'" @switch-tab="handleMenuSelect" />
-              <PayrollManagement v-else-if="currentTab === '31'" />
-              <component :is="OrderCenter" v-else-if="currentTab === '3'" />
-              <component :is="CRMSystem" v-else-if="currentTab === '4'" />
-              <component :is="ActivityManager" v-else-if="currentTab === '5'" />
-              <component :is="MarketingCenter" v-else-if="currentTab === '6'" />
-              <component :is="TeamManager" v-else-if="currentTab === '7'" initial-section="framer" />
-              <component :is="TeamManager" v-else-if="currentTab === '32'" initial-section="staff" />
-              
-              <component :is="BannerManager" v-else-if="currentTab === '8'" />
-              <component :is="HomeConfigManager" v-else-if="currentTab === '13'" />
-              <component :is="ContentManager" v-else-if="currentTab === '9'" />
-              <StrategyResearch v-else-if="currentTab === '10'" />
-              <component :is="RealtimeMonitor" v-else-if="currentTab === '26'" />
-              <component :is="OperationsDecisionCenter" v-else-if="currentTab === '25'" :products="products" :orders="[]" />
-              <AICenter v-else-if="currentTab === '12'" />
-              <PartnerDestinyCenter v-else-if="currentTab === '27'" />
-              <CapitalArchitectureSandbox v-else-if="currentTab === '36'" @switch-tab="handleMenuSelect" />
-              <ComplianceCenter v-else-if="currentTab === '28'" />
-              <StoreManagement v-else-if="currentTab === '30'" />
-              <FranchiseManagement v-else-if="currentTab === '35'" @switch-tab="handleMenuSelect" />
-              <OperationsManual v-else-if="currentTab === '29'" />
-              <CorporateGovernanceCenter v-else-if="currentTab === '33'" />
-              <StoreDesignCenter v-else-if="currentTab === '34'" />
-              <component :is="MemberLevelConfig" v-else-if="currentTab === '14'" />
-              <component :is="PointsRulesConfig" v-else-if="currentTab === '15'" />
-              <component :is="BookingRulesConfig" v-else-if="currentTab === '16'" />
-              <component :is="PermissionManager" v-else-if="currentTab === '17'" />
-              <component :is="SearchKeywordsManager" v-else-if="currentTab === '18'" />
-              <component :is="RecommendAlgorithmConfig" v-else-if="currentTab === '19'" />
-              <component :is="MarketingRulesConfig" v-else-if="currentTab === '20'" />
-              <component :is="CustomReportBuilder" v-else-if="currentTab === '21'" />
-              <component :is="AchievementConfig" v-else-if="currentTab === '22'" />
-              <component :is="UserBehaviorConfig" v-else-if="currentTab === '23'" />
-              <component :is="NotificationConfig" v-else-if="currentTab === '24'" />
-
-              <!-- 🟢 对齐小程序能力的 7 个新模块 -->
-              <Bookings v-else-if="currentTab === '37'" />
-              <CustomOrders v-else-if="currentTab === '38'" />
-              <PetMemorial v-else-if="currentTab === '39'" />
-              <SupportTickets v-else-if="currentTab === '40'" />
-              <CommentsModeration v-else-if="currentTab === '41'" />
-              <Refunds v-else-if="currentTab === '42'" />
-              <Categories v-else-if="currentTab === '43'" />
-              <BehaviorAnalytics v-else-if="currentTab === '44'" />
-              <UserInsights v-else-if="currentTab === '45'" />
-              <AudienceManager v-else-if="currentTab === '46'" />
-              <CohortCompare v-else-if="currentTab === '47'" />
-              <PropertyEval v-else-if="currentTab === '48'" />
-            </div>
+            <!-- 其余 47 个模块走动态组件 + keep-alive：
+                 keep-alive 只能缓存组件实例，之前包 keyed div 完全失效（切 tab 即销毁重建）；
+                 现在切回标签时组件状态（表单/滚动/已加载数据）保留，:max=10 LRU 控制内存 -->
+            <keep-alive v-else :max="10">
+              <component
+                :is="activeModuleDef.comp"
+                v-bind="activeModuleDef.props"
+                :key="currentTab + '-' + reloadKey"
+                @switch-tab="handleMenuSelect"
+              />
             </keep-alive>
           </transition>
           </div>
@@ -744,7 +761,7 @@ import {
   // 🟢 小程序对齐补充图标
   Stamp, Avatar, Message, Refresh, Document,
   // 🟢 命令面板/收藏夹
-  Star, Close,
+  Close,
   // 🟢 侧栏折叠
   Expand, Fold,
   // 🟢 物业合作测算
@@ -774,7 +791,6 @@ const AICenter = asyncWith(() => import('./components/AICenter.vue'))
 import PartnerDestinyCenter from './components/PartnerDestinyCenter.vue'
 import CapitalArchitectureSandbox from './components/CapitalArchitectureSandbox.vue'
 import ComplianceCenter from './components/ComplianceCenter.vue'
-const CompanionRobot = asyncWith(() => import('./components/CompanionRobot.vue'))
 import MemberLevelConfig from './components/MemberLevelConfig.vue'
 import PointsRulesConfig from './components/PointsRulesConfig.vue'
 import BookingRulesConfig from './components/BookingRulesConfig.vue'
@@ -808,25 +824,69 @@ import CohortCompare from './components/CohortCompare.vue'
 import PropertyEval from './components/PropertyEval.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import MainTabsBar from './components/MainTabsBar.vue'
-import { MODULES_BY_ID, getSubmenuKey } from './utils/modulesRegistry'
-import { SIDEBAR_NAV } from './config/sidebarNav'
+import { MODULES_BY_ID } from './utils/modulesRegistry'
 import { useTabsManager } from './composables/useTabsManager'
 
-const navIcons = {
-  Odometer, Monitor, Trophy, Shop, UserFilled, Iphone, OfficeBuilding,
-  Box, Menu, List, Refresh, Stamp, Calendar, Ticket, Brush, Promotion, House, Avatar,
-  MagicStick, DataBoard, DataAnalysis, Message, ChatDotRound,
-  Picture, Setting, Collection, Search, Lock, Money, DocumentCopy, User, Wallet, Notebook,
-}
-
-const sidebarSubmenus = [
-  SIDEBAR_NAV.business,
-  SIDEBAR_NAV.customer,
-  SIDEBAR_NAV.miniapp,
-  SIDEBAR_NAV.governance,
-]
-
 const { openTab: openTabAPI, activeTabId, closeOthers: closeOthersAPI, closeAll: closeAllAPI } = useTabsManager()
+
+// ============ 动态组件映射（替代 47 条 v-else-if 链，让 keep-alive 真正缓存组件实例） ============
+// 值为工厂函数：props 在 computed 求值时取（products 等响应式数据变更可触发更新）
+const TAB_COMPONENT_MAP = {
+  '0': () => ({ comp: Dashboard }),
+  '2': () => ({ comp: FinanceDashboard }),
+  '3': () => ({ comp: OrderCenter }),
+  '4': () => ({ comp: CRMSystem }),
+  '5': () => ({ comp: ActivityManager }),
+  '6': () => ({ comp: MarketingCenter }),
+  '7': () => ({ comp: TeamManager, props: { initialSection: 'framer' } }),
+  '8': () => ({ comp: BannerManager }),
+  '9': () => ({ comp: ContentManager }),
+  '10': () => ({ comp: StrategyResearch }),
+  '12': () => ({ comp: AICenter }),
+  '13': () => ({ comp: HomeConfigManager }),
+  '14': () => ({ comp: MemberLevelConfig }),
+  '15': () => ({ comp: PointsRulesConfig }),
+  '16': () => ({ comp: BookingRulesConfig }),
+  '17': () => ({ comp: PermissionManager }),
+  '18': () => ({ comp: SearchKeywordsManager }),
+  '19': () => ({ comp: RecommendAlgorithmConfig }),
+  '20': () => ({ comp: MarketingRulesConfig }),
+  '21': () => ({ comp: CustomReportBuilder }),
+  '22': () => ({ comp: AchievementConfig }),
+  '23': () => ({ comp: UserBehaviorConfig }),
+  '24': () => ({ comp: NotificationConfig }),
+  '25': () => ({ comp: OperationsDecisionCenter, props: { products: products.value, orders: [] } }),
+  '26': () => ({ comp: RealtimeMonitor }),
+  '27': () => ({ comp: PartnerDestinyCenter }),
+  '28': () => ({ comp: ComplianceCenter }),
+  '29': () => ({ comp: OperationsManual }),
+  '30': () => ({ comp: StoreManagement }),
+  '31': () => ({ comp: PayrollManagement }),
+  '32': () => ({ comp: TeamManager, props: { initialSection: 'staff' } }),
+  '33': () => ({ comp: CorporateGovernanceCenter }),
+  '34': () => ({ comp: StoreDesignCenter }),
+  '35': () => ({ comp: FranchiseManagement }),
+  '36': () => ({ comp: CapitalArchitectureSandbox }),
+  '37': () => ({ comp: Bookings }),
+  '38': () => ({ comp: CustomOrders }),
+  '39': () => ({ comp: PetMemorial }),
+  '40': () => ({ comp: SupportTickets }),
+  '41': () => ({ comp: CommentsModeration }),
+  '42': () => ({ comp: Refunds }),
+  '43': () => ({ comp: Categories }),
+  '44': () => ({ comp: BehaviorAnalytics }),
+  '45': () => ({ comp: UserInsights }),
+  '46': () => ({ comp: AudienceManager }),
+  '47': () => ({ comp: CohortCompare }),
+  '48': () => ({ comp: PropertyEval }),
+  '49': () => ({ comp: RealtimeMonitor })
+}
+const activeModuleDef = computed(() => {
+  const factory = TAB_COMPONENT_MAP[String(currentTab.value)]
+  if (!factory) return { comp: Dashboard, props: {} } // 未注册的 tab 回退驾驶舱
+  const def = factory()
+  return { comp: def.comp, props: def.props || {} }
+})
 
 /** 生产环境可在 .env.production 中设置 VITE_ADMIN_PASSWORD；未设置时沿用开发默认口令 */
 const ADMIN_SECRET = import.meta.env.VITE_ADMIN_PASSWORD || 'admin888'
@@ -857,21 +917,32 @@ const toggleSidebar = () => {
 }
 
 // ============ 全局动作监听（命令面板触发 / 快捷键触发） ============
+// 必须用命名常量包装（不能直接注册 closeOthersAPI，避免 Event 被当作 keepId），
+// 且 add/remove 必须传同一引用，否则 removeEventListener 是 no-op，HMR 下监听器累积
+const onTabsCloseOthers = () => closeOthersAPI()
+const onTabsCloseAll = () => closeAllAPI()
+const onActionLogout = () => logout()
+const onExportCurrent = () => {
+  ElMessage.info('请在当前模块内点击对应"导出"按钮（暂未做统一导出）')
+}
+const onSwitchTabEvent = (event) => {
+  if (event.detail) handleMenuSelect(event.detail)
+}
 const setupActionListeners = () => {
   window.addEventListener('toggle-sidebar', toggleSidebar)
-  window.addEventListener('tabs-close-others', () => closeOthersAPI())
-  window.addEventListener('tabs-close-all', () => closeAllAPI())
+  window.addEventListener('tabs-close-others', onTabsCloseOthers)
+  window.addEventListener('tabs-close-all', onTabsCloseAll)
   window.addEventListener('reload-current', forceReloadCurrent)
-  window.addEventListener('logout', () => logout())
-  window.addEventListener('export-current', () => {
-    ElMessage.info('请在当前模块内点击对应"导出"按钮（暂未做统一导出）')
-  })
+  window.addEventListener('logout', onActionLogout)
+  window.addEventListener('export-current', onExportCurrent)
 }
 const cleanupActionListeners = () => {
   window.removeEventListener('toggle-sidebar', toggleSidebar)
-  window.removeEventListener('tabs-close-others', closeOthersAPI)
-  window.removeEventListener('tabs-close-all', closeAllAPI)
+  window.removeEventListener('tabs-close-others', onTabsCloseOthers)
+  window.removeEventListener('tabs-close-all', onTabsCloseAll)
   window.removeEventListener('reload-current', forceReloadCurrent)
+  window.removeEventListener('logout', onActionLogout)
+  window.removeEventListener('export-current', onExportCurrent)
 }
 
 // 全局 Cmd+B 折叠侧栏
@@ -881,9 +952,6 @@ const onSidebarKey = (e) => {
     toggleSidebar()
   }
 }
-/** 与小程序/C 端同步的配置项 tab index */
-const MINIAPP_CONFIG_TABS = new Set(['8', '9', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24'])
-
 // ============ 侧边栏分组展开持久化 ============
 // 6 大顶级分类：3 个是 flat（不需要 sub-menu key），4 个是折叠 sub-menu
 const ALL_SUBMENUS = ['grp-business', 'grp-customer', 'grp-miniapp', 'grp-governance']
@@ -917,6 +985,8 @@ const loadPinned = () => {
 }
 const persistPinned = () => {
   try { localStorage.setItem(PINNED_KEY, JSON.stringify(pinnedIds.value)) } catch (e) {}
+  // 同页内通知命令面板同步（storage 事件只派发给其它标签页）
+  window.dispatchEvent(new CustomEvent('pinned-changed'))
 }
 const pinnedModules = computed(() => pinnedIds.value.map(id => MODULES_BY_ID[id]).filter(Boolean))
 const togglePin = (id) => {
@@ -944,16 +1014,18 @@ const loadOpeneds = () => {
       if (Array.isArray(parsed)) return parsed.filter(k => ALL_SUBMENUS.includes(k))
     }
   } catch (e) { /* ignore */ }
-  // 默认展开「业务运营」
-  return ['grp-business']
+  // 默认展开"业务运营"和"客户经营"
+  return ['grp-business', 'grp-customer']
 }
 const defaultOpeneds = ref(loadOpeneds())
 const persistOpeneds = () => {
   try { localStorage.setItem(SIDEBAR_OPENED_KEY, JSON.stringify(defaultOpeneds.value)) } catch (e) {}
 }
 const handleSubMenuOpen = (key) => {
-  defaultOpeneds.value = [key]
-  persistOpeneds()
+  if (!defaultOpeneds.value.includes(key)) {
+    defaultOpeneds.value.push(key)
+    persistOpeneds()
+  }
 }
 const handleSubMenuClose = (key) => {
   defaultOpeneds.value = defaultOpeneds.value.filter(k => k !== key)
@@ -1062,11 +1134,6 @@ const handleMenuSelect = (index) => {
     // 🟢 走 tabs manager：自动添加到多标签栏并激活
     openTabAPI(String(index))
     // 🟢 通过 Dashboard 快捷链接跳转时，自动展开对应一级分类
-    const targetGroup = TAB_TO_GROUP[index]
-    if (targetGroup && !defaultOpeneds.value.includes(targetGroup)) {
-        defaultOpeneds.value.push(targetGroup)
-        persistOpeneds()
-    }
     // 移动端选择菜单后自动关闭菜单
     if (isMobile.value) {
         mobileMenuVisible.value = false
@@ -1083,7 +1150,20 @@ const handleMenuSelect = (index) => {
     }
 }
 
-// 检测是否为移动端（与 CSS @media 768px 对齐）
+// 跳转时自动展开所属一级分组（watch 而非 handleMenuSelect：MainTabsBar 点标签不走后者）
+// 注意：必须用 TAB_TO_GROUP 求真实存在的 sub-menu index（'grp-*'），
+// 之前写死 'sub-miniapp' 在 Element Plus 内部解构 undefined 直接抛 TypeError；
+// el-menu 的 default-openeds 只在 setup 读一次，运行时必须调 open() 才有效，
+// open() 会触发 @open → handleSubMenuOpen 自动完成 defaultOpeneds 同步与持久化
+watch(currentTab, (tab) => {
+    if (sidebarCollapsed.value) return // 折叠态没有展开概念
+    const targetGroup = TAB_TO_GROUP[tab]
+    if (!targetGroup) return
+    nextTick(() => {
+        try { sideMenuRef.value?.open?.(targetGroup) } catch (e) { /* 菜单未挂载时忽略 */ }
+    })
+}, { flush: 'post' })
+
 const MOBILE_MQ = typeof window !== 'undefined'
   ? window.matchMedia('(max-width: 768px)')
   : null
@@ -1109,7 +1189,6 @@ const onMobileMqChange = (e) => {
   if (!e.matches) mobileMenuVisible.value = false
 }
 
-// 初始化时立即检测
 if (typeof window !== 'undefined') {
   checkMobile()
 }
@@ -1368,36 +1447,62 @@ const loadProducts = async () => {
     if (!isLoggedIn.value) return
     loading.value = true
     try {
-        const rows = await fetchCollectionSorted(COLLECTIONS.PRODUCTS, {
-            limit: 200,
-            sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0)
-        })
-
-        const list = await Promise.all(rows.map(async (item) => {
+        // 确保数据库连接
+        const connected = await loginToCloud()
+        if (!connected) {
+            ElMessage.error('数据库连接失败，请检查网络或配置')
+            loading.value = false
+            return
+        }
+        
+        // 确保 db 和 collection 对象可用
+        if (!db || typeof db.collection !== 'function') {
+            throw new Error('数据库对象未正确初始化')
+        }
+        
+        const productsCollection = db.collection(COLLECTIONS.PRODUCTS)
+        if (!productsCollection || typeof productsCollection.orderBy !== 'function') {
+            throw new Error('数据库集合对象未正确初始化')
+        }
+        
+        const res = await productsCollection
+            .orderBy('createTime', 'desc')
+            .limit(50)
+            .get()
+            
+        // 处理图片链接 - 添加安全检查
+        if (!res || !res.data || !Array.isArray(res.data)) {
+            console.warn('商品数据格式异常:', res)
+            products.value = []
+            return
+        }
+        
+        const list = await Promise.all(res.data.map(async (item) => {
             try {
                 let img = ''
-                if (item?.images?.length > 0) {
+                if (item && item.images && Array.isArray(item.images) && item.images.length > 0) {
                     try {
                         img = await getTempFileUrl(item.images[0])
                     } catch (imgErr) {
                         console.warn('图片加载失败:', imgErr)
+                        img = ''
                     }
                 }
-                return {
-                    ...item,
-                    httpImage: img,
-                    isOnShelf: !item.isOffShelf
+                return { 
+                    ...item, 
+                    httpImage: img, 
+                    isOnShelf: !item.isOffShelf 
                 }
             } catch (itemErr) {
                 console.error('处理商品项失败:', itemErr, item)
                 return null
             }
         }))
-
+        
+        // 过滤掉null项
         products.value = list.filter(item => item !== null)
     } catch (err) {
         console.error('加载商品失败', err)
-        products.value = []
         ElMessage.error('数据库连接异常: ' + (err.message || '未知错误'))
     } finally {
         loading.value = false
@@ -1406,7 +1511,12 @@ const loadProducts = async () => {
 
 const toggleShelf = async (row) => {
     try {
-        await cdnUpdate(COLLECTIONS.PRODUCTS, row._id, {
+        const connected = await loginToCloud()
+        if (!connected) {
+            ElMessage.error('数据库连接失败')
+            return
+        }
+        await db.collection(COLLECTIONS.PRODUCTS).doc(row._id).update({ 
             isOffShelf: !row.isOnShelf,
             updateTime: Date.now()
         })
@@ -1444,8 +1554,13 @@ const handleAddToArchive = async () => {
     }
     try {
         loading.value = true
+        const connected = await loginToCloud()
+        if (!connected) {
+            ElMessage.error('数据库连接失败')
+            return
+        }
         const promises = selectedProducts.value.map(p =>
-            cdnUpdate(COLLECTIONS.PRODUCTS, p._id, {
+            db.collection(COLLECTIONS.PRODUCTS).doc(p._id).update({
                 inArchive: true,
                 updateTime: Date.now()
             })
@@ -1495,9 +1610,14 @@ const handleBatchToggleShelf = async (isOnShelf) => {
     ).then(async () => {
         try {
             loading.value = true
+            const connected = await loginToCloud()
+            if (!connected) {
+                ElMessage.error('数据库连接失败')
+                return
+            }
 
-            const promises = selectedProducts.value.map(product =>
-                cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
+            const promises = selectedProducts.value.map(product => 
+                db.collection(COLLECTIONS.PRODUCTS).doc(product._id).update({
                     isOffShelf: !isOnShelf,
                     updateTime: Date.now()
                 })
@@ -1551,10 +1671,15 @@ const handleBatchPrice = async () => {
     ).then(async () => {
         try {
             loading.value = true
+            const connected = await loginToCloud()
+            if (!connected) {
+                ElMessage.error('数据库连接失败')
+                return
+            }
 
             const promises = validProducts.map(product => {
                 if (!product || !product._id) return Promise.resolve()
-
+                
                 let newPrice = product.price || 0
                 if (batchPriceForm.value.type === 'set') {
                     newPrice = batchPriceForm.value.value
@@ -1564,7 +1689,7 @@ const handleBatchPrice = async () => {
                     newPrice = Math.round((product.price || 0) * (batchPriceForm.value.discount / 100) * 100) / 100
                 }
 
-                return cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
+                return db.collection(COLLECTIONS.PRODUCTS).doc(product._id).update({
                     price: Math.max(0, newPrice),
                     updateTime: Date.now()
                 }).catch(err => {
@@ -1615,6 +1740,11 @@ const handleBatchStock = async () => {
     ).then(async () => {
         try {
             loading.value = true
+            const connected = await loginToCloud()
+            if (!connected) {
+                ElMessage.error('数据库连接失败')
+                return
+            }
 
             const promises = selectedProducts.value.map(product => {
                 let newStock = product.stock || 0
@@ -1626,7 +1756,7 @@ const handleBatchStock = async () => {
                     newStock = Math.max(0, (product.stock || 0) - batchStockForm.value.value)
                 }
 
-                return cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
+                return db.collection(COLLECTIONS.PRODUCTS).doc(product._id).update({
                     stock: Math.max(0, newStock),
                     updateTime: Date.now()
                 })
@@ -1745,7 +1875,12 @@ const deleteItem = (row) => {
         { confirmButtonText: '确认删除', cancelButtonText: '取消', type: 'warning' }
     ).then(async () => {
         try {
-            await cdnRemove(COLLECTIONS.PRODUCTS, row._id)
+            const connected = await loginToCloud()
+            if (!connected) {
+                ElMessage.error('数据库连接失败')
+                return
+            }
+            await db.collection(COLLECTIONS.PRODUCTS).doc(row._id).remove()
             ElMessage.success('档案已销毁')
             loadProducts()
         } catch (err) {
@@ -1759,6 +1894,13 @@ const saveProduct = async () => {
     if(!form.value.title) return ElMessage.warning('请输入藏品名称')
     
     try {
+        const connected = await loginToCloud()
+        if (!connected) {
+            ElMessage.error('数据库连接失败')
+            return
+        }
+        
+        // 🟢 处理秒杀数据
         let seckill = null
         if (form.value.seckillEnabled) {
             seckill = {
@@ -1770,7 +1912,8 @@ const saveProduct = async () => {
                 endTime: form.value.seckillEndTime ? new Date(form.value.seckillEndTime).getTime() : null
             }
         }
-
+        
+        // 🟢 处理拼团数据
         let groupBuying = null
         if (form.value.groupBuyingEnabled) {
             groupBuying = {
@@ -1779,7 +1922,7 @@ const saveProduct = async () => {
                 groupSize: form.value.groupBuyingSize
             }
         }
-
+        
         const data = {
             title: form.value.title,
             price: form.value.price,
@@ -1796,18 +1939,18 @@ const saveProduct = async () => {
         }
         
         if (isEditing.value) {
-            await cdnUpdate(COLLECTIONS.PRODUCTS, form.value._id, data)
+            await db.collection(COLLECTIONS.PRODUCTS).doc(form.value._id).update(data)
             ElMessage.success('更新成功')
         } else {
             data.createTime = Date.now()
             data.isOffShelf = false
             data.images = []
-            data.framerName = 'NATURE'
+            data.framerName = 'NATURE' // 默认标本师
             data.framerId = null
             data.origin = ''
             data.collectDate = ''
-            data.size = '0x0x0 cm'
-            await cdnAdd(COLLECTIONS.PRODUCTS, data)
+            data.size = '0x0x0 cm' // 默认尺寸
+            await db.collection(COLLECTIONS.PRODUCTS).add(data)
             ElMessage.success('创建成功')
         }
         
@@ -1819,7 +1962,6 @@ const saveProduct = async () => {
     }
 }
 
-// 初始化移动端检测
 const initMobileDetection = () => {
     checkMobile()
     MOBILE_MQ?.addEventListener('change', onMobileMqChange)
@@ -1840,25 +1982,23 @@ onMounted(() => {
     loadPinned()
     window.addEventListener('hashchange', onHashLegacyCleanup)
     window.addEventListener('storage', onStorage)
+    window.addEventListener('pinned-changed', loadPinned) // 同页内命令面板置顶 → 侧栏同步
     window.addEventListener('keydown', onSidebarKey)
     setupActionListeners()
     // 立即检测移动端
     initMobileDetection()
-
-    // 监听自定义事件，支持组件间跳转
-    window.addEventListener('switch-tab', (event) => {
-      if (event.detail) {
-        handleMenuSelect(event.detail)
-      }
-    })
+    // 监听自定义事件，支持组件间跳转（命名引用，确保可被移除）
+    window.addEventListener('switch-tab', onSwitchTabEvent)
 })
 
 onUnmounted(() => {
     window.removeEventListener('hashchange', onHashLegacyCleanup)
     window.removeEventListener('storage', onStorage)
+    window.removeEventListener('pinned-changed', loadPinned)
     window.removeEventListener('keydown', onSidebarKey)
-    cleanupActionListeners()
+    window.removeEventListener('switch-tab', onSwitchTabEvent)
     cleanupMobileDetection()
+    cleanupActionListeners()
 })
 </script>
 
@@ -1970,77 +2110,48 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     letter-spacing: 1px; 
 }
 .brand-text .en { 
-    color: rgba(212, 175, 55, 0.55); 
-    font-size: 11px; 
-    letter-spacing: 0.5px; 
-    margin-top: 2px;
-}
-
-/* 侧栏菜单滚动区 */
-.sidebar-nav-scroll {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-bottom: 4px;
-}
-.sidebar-nav-scroll::-webkit-scrollbar { width: 4px; }
-.sidebar-nav-scroll::-webkit-scrollbar-thumb {
-    background: rgba(212, 175, 55, 0.22);
-    border-radius: 2px;
-}
-.sidebar-nav-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(212, 175, 55, 0.38);
+    color: var(--text-dark-muted); 
+    font-size: 10px; 
+    letter-spacing: 2px; 
 }
 
 /* 菜单调整 - 黑金效果 */
 .el-menu { 
     border-right: none !important; 
-    margin-top: 4px; 
+    margin-top: 10px; 
     background: transparent !important;
 }
 .el-menu-item-group__title { 
-    padding: 14px 0 6px 28px !important; 
-    font-size: 11px; 
-    color: rgba(212, 175, 55, 0.45) !important; 
-    letter-spacing: 0.5px; 
-    font-weight: 500; 
-    text-transform: none;
-    margin-top: 4px;
-    line-height: 1.4;
-}
-.el-menu-item-group:first-child .el-menu-item-group__title {
-    padding-top: 8px !important;
-    color: rgba(245, 242, 236, 0.55) !important;
-    font-size: 12px;
-    font-weight: 600;
-}
-.el-menu-item-group:not(:first-child) .el-menu-item-group__title {
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-    margin-top: 6px;
-    padding-top: 12px !important;
+    padding: 16px 0 10px 24px !important; 
+    font-size: 12px; 
+    color: var(--text-dark-muted) !important; 
+    letter-spacing: 1px; 
+    font-weight: 600; 
+    text-transform: uppercase;
+    margin-top: 8px;
 }
 .el-menu-item { 
-    height: 44px; 
-    line-height: 44px; 
-    margin: 1px 10px; 
+    height: 48px; 
+    line-height: 48px; 
+    margin: 2px 12px; 
     border-radius: 8px; 
-    color: rgba(245, 242, 236, 0.78) !important;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-    padding: 0 14px !important;
-    font-size: 13px;
+    color: var(--text-dark-secondary) !important;
+    transition: all 0.3s ease;
+    padding: 0 12px !important;
+    font-size: 14px;
     display: flex;
     align-items: center;
 }
 .el-menu-item:hover { 
-    background: rgba(255, 255, 255, 0.07) !important; 
-    color: rgba(245, 242, 236, 0.95) !important; 
+    background: rgba(255, 255, 255, 0.06) !important; 
+    color: var(--text-dark) !important; 
     transform: translateX(2px);
 }
 .el-menu-item.is-active { 
-    background: linear-gradient(90deg, var(--brand-green-500) 0%, rgba(45, 106, 79, 0.85) 100%) !important; 
+    background: var(--brand-green-500) !important; 
     color: var(--light-bg-elevated) !important; 
     font-weight: 600; 
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    box-shadow: none;
     position: relative;
 }
 .el-menu-item.is-active .el-icon {
@@ -2113,10 +2224,9 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 }
 .pinned-title {
     padding: 6px 14px 4px;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-    color: rgba(212, 175, 55, 0.55);
-    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(212, 175, 55, 0.5);
 }
 .pinned-item {
     display: flex;
@@ -2151,36 +2261,27 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 .pin-remove:hover { color: #f56c6c; }
 
 .el-menu-vertical .el-sub-menu__title {
-    height: 46px;
-    line-height: 46px;
-    margin: 4px 10px 2px;
+    height: 48px;
+    line-height: 48px;
+    margin: 2px 12px;
     border-radius: 8px;
-    padding: 0 14px !important;
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(245, 242, 236, 0.88) !important;
-    letter-spacing: 0.3px;
+    padding: 0 12px !important;
+    font-size: 14px;
+    color: rgba(245, 242, 236, 0.72) !important;
 }
 .el-menu-vertical .el-sub-menu__title:hover {
-    background: rgba(255, 255, 255, 0.07) !important;
-    color: #fff !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: var(--text-dark) !important;
 }
 .el-menu-vertical .el-sub-menu.is-opened > .el-sub-menu__title {
-    color: rgba(212, 175, 55, 0.95) !important;
-    background: rgba(212, 175, 55, 0.08) !important;
+    color: rgba(245, 242, 236, 0.92) !important;
 }
 .el-menu-vertical .el-menu--inline {
-    background: rgba(0, 0, 0, 0.12) !important;
-    margin: 0 10px 6px;
-    border-radius: 8px;
-    padding: 4px 0 6px;
+    background: transparent !important;
 }
 .el-menu-vertical .el-menu--inline .el-menu-item {
-    padding-left: 40px !important;
+    padding-left: 36px !important;
     min-width: auto;
-    height: 42px;
-    line-height: 42px;
-    margin: 1px 6px;
 }
 
 /* 侧边栏底部 - 黑金效果 */
@@ -2237,27 +2338,6 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     flex: 1;
     overflow-y: auto;
     padding: 24px 30px;
-}
-.content-scroll-wrap.is-embed-page {
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-.tab-page-root.is-embed-root {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-.content-scroll-wrap.is-embed-page :deep(.fade-slide-enter-active),
-.content-scroll-wrap.is-embed-page :deep(.fade-slide-leave-active) {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
 }
 .main-content::before {
     content: '';

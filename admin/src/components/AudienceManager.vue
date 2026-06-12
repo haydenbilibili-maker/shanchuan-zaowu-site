@@ -470,7 +470,7 @@ const executeDispatch = async () => {
     const res = await cdnAdd('audience_campaigns', campaign)
 
     await cdnUpdate('user_audiences', currentAudience.value._id, {
-      lastCampaign: { type: dispatchType.value, at: Date.now(), dispatched: openids.length, campaignId: res.id || res._id },
+      lastCampaign: { type: dispatchType.value, at: Date.now(), dispatched: openids.length, campaignId: res.id || res._id || '' },
       updateTime: Date.now()
     })
 

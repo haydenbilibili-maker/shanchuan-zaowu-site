@@ -372,7 +372,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, computed, nextTick, watch } from 'vue'
+import { reactive, ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { Clock, Trophy, Bell, Box, Service, Warning, EditPen, Plus, Ticket, User, DataAnalysis, DataBoard, WarningFilled, InfoFilled, ArrowUp, ArrowDown, Star, Refresh, Calendar } from '@element-plus/icons-vue'
 import { loginToCloud, cdnCount, fetchCollectionLimit, fetchCollectionWhere, getCdnDatabase } from '../cloud'
 import Chart from 'chart.js/auto'
@@ -831,9 +831,10 @@ const renderChart = (records) => {
   })
 }
 
-setInterval(() => { currentTime.value = new Date().toLocaleTimeString() }, 1000)
+let clockTimer = null
 
-onMounted(() => { 
+onMounted(() => {
+  clockTimer = setInterval(() => { currentTime.value = new Date().toLocaleTimeString() }, 1000)
   refreshAll()
   // 初始化洞察数据
   setTimeout(() => {
@@ -841,6 +842,10 @@ onMounted(() => {
     const records = financeRaw ? JSON.parse(financeRaw) : []
     calculateInsights(records, stats)
   }, 1000)
+})
+
+onUnmounted(() => {
+  if (clockTimer) clearInterval(clockTimer)
 })
 </script>
 

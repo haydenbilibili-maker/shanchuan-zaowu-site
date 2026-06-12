@@ -12,6 +12,11 @@
 
 const round2 = (n) => Math.round(n * 100) / 100
 const round4 = (n) => Math.round(n * 10000) / 10000
+// null 透传版：computePayback/computeIRR 用 null 表示"未回本/不收敛"，不能被 round 吞成 0
+const r2n = (n) => (n == null ? null : round2(n))
+const r4n = (n) => (n == null ? null : round4(n))
+// 比例安全除法：分母为 0 时返回 null（如 baseRent=0 时传统租金为 0）
+const safeRatio = (num, den) => (den > 0 ? round4(num / den) : null)
 
 // ============ v3 默认输入（与 Excel 完全一致） ============
 export const DEFAULT_INPUTS = {
@@ -185,8 +190,9 @@ export function computeProposal(i = DEFAULT_INPUTS) {
   ])
   const paybackFloor = computePayback(capexAll, [
     grossY1 - floorY1, grossY2 - floorY2, grossY3 - floorY3,
-    grossY4 - (floorBaseY + grossY4 * i.rev_floor_share),
-    grossY5 - (floorBaseY + grossY5 * i.rev_floor_share)
+    // 与第 1-3 年口径一致：保底与抽成取大（非相加）
+    grossY4 - Math.max(floorBaseY, grossY4 * i.rev_floor_share),
+    grossY5 - Math.max(floorBaseY, grossY5 * i.rev_floor_share)
   ])
 
   // —— 五年累计经营利润（阶梯） ——
@@ -246,7 +252,7 @@ export function computeProposal(i = DEFAULT_INPUTS) {
         key: 'pure', name: '纯分成（毛利比例）',
         y1: round2(pureShareY1), y2: round2(pureShareY2), y3: round2(pureShareY3),
         total: round2(pureShareTotal3),
-        deltaVsTraditional: round4((pureShareTotal3 - traditionalTotal3) / traditionalTotal3),
+        deltaVsTraditional: safeRatio(pureShareTotal3 - traditionalTotal3, traditionalTotal3),
         retention: round2(retentionPure),
         retentionShareOfGross: grossTotal3 > 0 ? round4(pureShareTotal3 / grossTotal3) : 0
       },
@@ -254,7 +260,7 @@ export function computeProposal(i = DEFAULT_INPUTS) {
         key: 'floor', name: '保底 + 毛利抽成',
         y1: round2(floorY1), y2: round2(floorY2), y3: round2(floorY3),
         total: round2(floorTotal3),
-        deltaVsTraditional: round4((floorTotal3 - traditionalTotal3) / traditionalTotal3),
+        deltaVsTraditional: safeRatio(floorTotal3 - traditionalTotal3, traditionalTotal3),
         retention: round2(retentionFloor),
         retentionShareOfGross: grossTotal3 > 0 ? round4(floorTotal3 / grossTotal3) : 0
       },
@@ -262,7 +268,7 @@ export function computeProposal(i = DEFAULT_INPUTS) {
         key: 'ladder', name: '阶梯·毛利分润（推荐）', recommended: true,
         y1: round2(ladderY1), y2: round2(ladderY2), y3: round2(ladderY3),
         total: round2(ladderTotal3),
-        deltaVsTraditional: round4((ladderTotal3 - traditionalTotal3) / traditionalTotal3),
+        deltaVsTraditional: safeRatio(ladderTotal3 - traditionalTotal3, traditionalTotal3),
         retention: round2(retentionLadder),
         retentionShareOfGross: grossTotal3 > 0 ? round4(ladderTotal3 / grossTotal3) : 0
       }
@@ -286,19 +292,19 @@ export function computeProposal(i = DEFAULT_INPUTS) {
     })),
     metrics: {
       capexAll: round2(capexAll),
-      paybackLadder: round2(paybackLadder),
-      paybackTraditional: round2(paybackTraditional),
-      paybackPure: round2(paybackPure),
-      paybackFloor: round2(paybackFloor),
+      paybackLadder: r2n(paybackLadder),
+      paybackTraditional: r2n(paybackTraditional),
+      paybackPure: r2n(paybackPure),
+      paybackFloor: r2n(paybackFloor),
       threeYearProfitLadder: round2(retentionLadder),
       fiveYearProfitLadder: round2(total5YearProfit),
       fiveYearROI: round2(fiveYearROI),
-      irr5: round4(irr5)
+      irr5: r4n(irr5)
     },
     sensitivity,
     summary: {
       recommendedTotal: round2(ladderTotal3),
-      recommendedDelta: round4((ladderTotal3 - traditionalTotal3) / traditionalTotal3),
+      recommendedDelta: safeRatio(ladderTotal3 - traditionalTotal3, traditionalTotal3),
       effectiveShareRate: grossTotal3 > 0 ? round4(ladderTotal3 / grossTotal3) : 0
     }
   }
@@ -328,12 +334,14 @@ function computeIRR(cashflows, guess = 0.1) {
     const f = npv(rate)
     const df = dnpv(rate)
     if (Math.abs(f) < 1e-6) return rate
-    if (df === 0) return rate
+    // 导数为 0：若已接近根则收敛返回，否则视为发散
+    if (df === 0) return Math.abs(f) < 1e-4 ? rate : null
     rate = rate - f / df
     if (rate < -0.99) rate = -0.99
     if (rate > 10) rate = 10
   }
-  return rate
+  // 100 次未收敛：容差放宽到 1e-4（钳制震荡时真实根附近也算收敛），否则返回 null 表示发散
+  return Math.abs(npv(rate)) < 1e-4 ? rate : null
 }
 
 // ============ 预置案例 ============
