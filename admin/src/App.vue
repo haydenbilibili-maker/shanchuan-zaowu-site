@@ -47,7 +47,7 @@
           <div class="brand-logo">山</div>
           <div class="brand-text">
             <div class="cn">山海造物</div>
-            <div class="en">ERP SYSTEM</div>
+            <div class="brand-sub">管理后台</div>
           </div>
         </div>
         <button 
@@ -80,7 +80,7 @@
             <div class="brand-logo">山</div>
             <div class="brand-text" v-show="!sidebarCollapsed">
               <div class="cn">山海造物</div>
-              <div class="en">ERP SYSTEM</div>
+              <div class="brand-sub">管理后台</div>
             </div>
             <el-button class="collapse-btn" link @click="toggleSidebar" :title="sidebarCollapsed ? '展开侧栏 ⌘B' : '收起侧栏 ⌘B'">
               <el-icon><component :is="sidebarCollapsed ? Expand : Fold" /></el-icon>
@@ -88,12 +88,15 @@
           </div>
           
           <!-- 移动端抽屉菜单头部 -->
-          <div v-if="isMobile" class="brand-header">
+          <div v-if="isMobile" class="brand-header mobile-drawer-header">
             <div class="brand-logo">山</div>
             <div class="brand-text">
               <div class="cn">山海造物</div>
-              <div class="en">ERP SYSTEM</div>
+              <div class="brand-sub">管理后台</div>
             </div>
+            <button type="button" class="mobile-sidebar-close" aria-label="关闭菜单" @click="mobileMenuVisible = false">
+              <el-icon><Close /></el-icon>
+            </button>
           </div>
 
           <!-- 🟢 快捷搜索栏（折叠时变成按钮） -->
@@ -104,12 +107,12 @@
             <template v-else>
               <el-icon><Search /></el-icon>
               <span>搜索模块...</span>
-              <kbd class="kbd-hint">⌘K</kbd>
+              <kbd v-if="!isMobile" class="kbd-hint">⌘K</kbd>
             </template>
           </div>
 
           <!-- 🟢 置顶收藏夹（折叠时隐藏） -->
-          <div v-if="pinnedModules.length && !sidebarCollapsed" class="pinned-section">
+          <div v-if="pinnedModules.length && (!sidebarCollapsed || isMobile)" class="pinned-section">
             <div class="pinned-title">⭐ 置顶</div>
             <div
               v-for="m in pinnedModules"
@@ -136,19 +139,19 @@
             @open="handleSubMenuOpen"
             @close="handleSubMenuClose">
 
-            <!-- ============ 1. 总览决策 / OVERVIEW ============ -->
-            <el-menu-item-group title="🎯 总览决策 / OVERVIEW">
+            <!-- ============ 1. 总览决策 ============ -->
+            <el-menu-item-group title="总览决策">
                 <el-menu-item index="0"><el-icon><Odometer /></el-icon><span>经营驾驶舱</span></el-menu-item>
                 <el-menu-item index="26"><el-icon><Monitor /></el-icon><span>实时监控大屏</span></el-menu-item>
                 <el-menu-item index="49"><el-icon><DataBoard /></el-icon><span>经营数据大屏</span></el-menu-item>
                 <el-menu-item index="25"><el-icon><Trophy /></el-icon><span>运营决策中心</span></el-menu-item>
             </el-menu-item-group>
 
-            <!-- ============ 2. 业务运营 / BUSINESS ============ -->
+            <!-- ============ 2. 业务运营 ============ -->
             <el-sub-menu index="grp-business">
               <template #title>
                 <el-icon><Shop /></el-icon>
-                <span>🏪 业务运营 / BUSINESS</span>
+                <span>业务运营</span>
               </template>
               <el-menu-item-group title="货 · 资产">
                 <el-menu-item index="1"><el-icon><Box /></el-icon><span>藏品档案库</span></el-menu-item>
@@ -171,30 +174,30 @@
               </el-menu-item-group>
             </el-sub-menu>
 
-            <!-- ============ 3. 客户经营 / CUSTOMER ============ -->
+            <!-- ============ 3. 客户经营 ============ -->
             <el-sub-menu index="grp-customer">
               <template #title>
                 <el-icon><UserFilled /></el-icon>
-                <span>👥 客户经营 / CUSTOMER</span>
+                <span>客户经营</span>
               </template>
               <el-menu-item-group title="会员资产">
-                <el-menu-item index="4"><el-icon><UserFilled /></el-icon><span>会员 CRM</span></el-menu-item>
+                <el-menu-item index="4"><el-icon><UserFilled /></el-icon><span>会员管理</span></el-menu-item>
                 <el-menu-item index="45"><el-icon><MagicStick /></el-icon><span>用户画像</span></el-menu-item>
                 <el-menu-item index="46"><el-icon><Promotion /></el-icon><span>人群包</span></el-menu-item>
                 <el-menu-item index="47"><el-icon><DataBoard /></el-icon><span>人群对比</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="行为与互动">
-                <el-menu-item index="44"><el-icon><DataAnalysis /></el-icon><span>C 端行为看板</span></el-menu-item>
+                <el-menu-item index="44"><el-icon><DataAnalysis /></el-icon><span>用户行为看板</span></el-menu-item>
                 <el-menu-item index="40"><el-icon><Message /></el-icon><span>山海有信工单</span></el-menu-item>
                 <el-menu-item index="41"><el-icon><ChatDotRound /></el-icon><span>评论审核</span></el-menu-item>
               </el-menu-item-group>
             </el-sub-menu>
 
-            <!-- ============ 4. 小程序配置 / MINI-PROGRAM ============ -->
+            <!-- ============ 4. 小程序配置 ============ -->
             <el-sub-menu index="grp-miniapp">
               <template #title>
                 <el-icon><Iphone /></el-icon>
-                <span>📱 小程序配置 / MINI-APP</span>
+                <span>小程序配置</span>
               </template>
               <el-menu-item-group title="内容运营">
                 <el-menu-item index="8"><el-icon><Picture /></el-icon><span>首页轮播</span></el-menu-item>
@@ -218,11 +221,11 @@
               </el-menu-item-group>
             </el-sub-menu>
 
-            <!-- ============ 5. 组织治理 / GOVERNANCE ============ -->
+            <!-- ============ 5. 组织治理 ============ -->
             <el-sub-menu index="grp-governance">
               <template #title>
                 <el-icon><OfficeBuilding /></el-icon>
-                <span>🏛️ 组织治理 / GOVERNANCE</span>
+                <span>组织治理</span>
               </template>
               <el-menu-item-group title="人才组织">
                 <el-menu-item index="7"><el-icon><Brush /></el-icon><span>标本师管理</span></el-menu-item>
@@ -241,9 +244,9 @@
               </el-menu-item-group>
             </el-sub-menu>
 
-            <!-- ============ 6. 战略与知识 / INTELLIGENCE ============ -->
-            <el-menu-item-group title="🧠 战略与知识 / INTELLIGENCE">
-                <el-menu-item index="12"><el-icon><MagicStick /></el-icon><span>AI 智能中心</span></el-menu-item>
+            <!-- ============ 6. 战略与知识 ============ -->
+            <el-menu-item-group title="战略与知识">
+                <el-menu-item index="12"><el-icon><MagicStick /></el-icon><span>智能中心</span></el-menu-item>
                 <el-menu-item index="10"><el-icon><DataAnalysis /></el-icon><span>战略调研看板</span></el-menu-item>
                 <el-menu-item index="29"><el-icon><Notebook /></el-icon><span>经营手册</span></el-menu-item>
             </el-menu-item-group>
@@ -1189,8 +1192,16 @@ const checkMobile = () => {
 const onMobileMqChange = (e) => {
   isMobile.value = e.matches
   applyMobileClass(e.matches)
-  if (!e.matches) mobileMenuVisible.value = false
+  if (!e.matches) {
+    mobileMenuVisible.value = false
+    document.body.style.overflow = ''
+  }
 }
+
+watch(mobileMenuVisible, (open) => {
+  if (typeof document === 'undefined' || !isMobile.value) return
+  document.body.style.overflow = open ? 'hidden' : ''
+})
 
 if (typeof window !== 'undefined') {
   checkMobile()
@@ -2112,10 +2123,11 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     font-size: 16px; 
     letter-spacing: 1px; 
 }
-.brand-text .en { 
+.brand-text .brand-sub { 
     color: var(--text-dark-muted); 
-    font-size: 10px; 
-    letter-spacing: 2px; 
+    font-size: 11px; 
+    letter-spacing: 0.5px; 
+    margin-top: 1px;
 }
 
 /* 菜单调整 - 黑金效果 */
@@ -2128,9 +2140,8 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     padding: 16px 0 10px 24px !important; 
     font-size: 12px; 
     color: var(--text-dark-muted) !important; 
-    letter-spacing: 1px; 
+    letter-spacing: 0.5px; 
     font-weight: 600; 
-    text-transform: uppercase;
     margin-top: 8px;
 }
 .el-menu-item { 

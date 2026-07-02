@@ -92,10 +92,10 @@
     letter-spacing: 0.5px;
   }
 
-  .mobile-top-nav .brand-text .en {
-    font-size: 9px;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 1.5px;
+  .mobile-top-nav .brand-text .brand-sub {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.5px;
     line-height: 1;
   }
 
@@ -203,13 +203,13 @@
   }
 
   .admin-container .el-aside .el-menu-item-group__title {
-    padding: 16px 20px 8px 20px !important;
-    font-size: 11px !important;
-    color: rgba(212, 175, 55, 0.6) !important;
-    letter-spacing: 1px !important;
+    padding: 14px 20px 6px 20px !important;
+    font-size: 12px !important;
+    color: rgba(212, 175, 55, 0.65) !important;
+    letter-spacing: 0.5px !important;
     font-weight: 600 !important;
-    text-transform: uppercase !important;
-    line-height: 1.4 !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
   }
 
   /* 菜单项 - 移动端优化 */
