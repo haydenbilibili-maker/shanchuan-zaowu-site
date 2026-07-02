@@ -232,6 +232,7 @@
               <el-menu-item-group title="财务资本">
                 <el-menu-item index="2"><el-icon><Money /></el-icon><span>财务核算系统</span></el-menu-item>
                 <el-menu-item index="36"><el-icon><DataBoard /></el-icon><span>资本架构沙盘</span></el-menu-item>
+                <el-menu-item index="50"><el-icon><TrendCharts /></el-icon><span>工作室启动成本</span></el-menu-item>
                 <el-menu-item index="27"><el-icon><DocumentCopy /></el-icon><span>合伙人命理中心</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="治理与合规">
@@ -270,7 +271,7 @@
           <!-- 🟢 多标签条 + 面包屑 -->
           <MainTabsBar @open-palette="openCommandPalette" @reload="forceReloadCurrent" />
 
-          <div class="content-scroll-wrap" :class="{ 'is-embed-page': currentTab === '36', 'is-mobile-scroll': isMobile }">
+          <div class="content-scroll-wrap" :class="{ 'is-embed-page': currentTab === '36' || currentTab === '50', 'is-mobile-scroll': isMobile }">
           <transition name="fade-slide" mode="out-in">
             <!-- tab 1 藏品库为内联模块（依赖 App.vue 大量本地状态），不参与 keep-alive -->
             <div v-if="currentTab === '1'" :key="'1-' + reloadKey" class="module-wrapper">
@@ -757,7 +758,7 @@ import {
   Plus, Edit, Delete, Box, List, Lock, Money, Odometer, FolderAdd,
   UserFilled, Picture, PictureFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu,
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
-  DataBoard,
+  DataBoard, TrendCharts,
   // 🟢 小程序对齐补充图标
   Stamp, Avatar, Message, Refresh, Document,
   // 🟢 命令面板/收藏夹
@@ -790,6 +791,7 @@ const StrategyResearch = asyncWith(() => import('./components/StrategyResearch.v
 const AICenter = asyncWith(() => import('./components/AICenter.vue'))
 import PartnerDestinyCenter from './components/PartnerDestinyCenter.vue'
 import CapitalArchitectureSandbox from './components/CapitalArchitectureSandbox.vue'
+import StartupCostModel from './components/StartupCostModel.vue'
 import ComplianceCenter from './components/ComplianceCenter.vue'
 import MemberLevelConfig from './components/MemberLevelConfig.vue'
 import PointsRulesConfig from './components/PointsRulesConfig.vue'
@@ -867,6 +869,7 @@ const TAB_COMPONENT_MAP = {
   '34': () => ({ comp: StoreDesignCenter }),
   '35': () => ({ comp: FranchiseManagement }),
   '36': () => ({ comp: CapitalArchitectureSandbox }),
+  '50': () => ({ comp: StartupCostModel }),
   '37': () => ({ comp: Bookings }),
   '38': () => ({ comp: CustomOrders }),
   '39': () => ({ comp: PetMemorial }),
@@ -968,7 +971,7 @@ const TAB_TO_GROUP = {
   '19': 'grp-miniapp', '20': 'grp-miniapp', '21': 'grp-miniapp', '22': 'grp-miniapp',
   '23': 'grp-miniapp', '24': 'grp-miniapp',
   '2': 'grp-governance', '7': 'grp-governance', '27': 'grp-governance', '28': 'grp-governance',
-  '31': 'grp-governance', '32': 'grp-governance', '33': 'grp-governance', '36': 'grp-governance'
+  '31': 'grp-governance', '32': 'grp-governance', '33': 'grp-governance', '36': 'grp-governance', '50': 'grp-governance'
 }
 // ============ 置顶收藏夹（与 CommandPalette 共享 localStorage key） ============
 const PINNED_KEY = 'sc_admin_pinned_modules'

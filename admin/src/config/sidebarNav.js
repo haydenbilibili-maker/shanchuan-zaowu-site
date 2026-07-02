@@ -127,6 +127,7 @@ export const SIDEBAR_NAV = {
         items: [
           { id: '2', icon: 'Money', label: '财务核算系统' },
           { id: '36', icon: 'DataBoard', label: '资本架构沙盘' },
+          { id: '50', icon: 'TrendCharts', label: '工作室启动成本' },
           { id: '27', icon: 'DocumentCopy', label: '合伙人命理中心' },
         ],
       },

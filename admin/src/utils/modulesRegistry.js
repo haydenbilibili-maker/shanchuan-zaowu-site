@@ -79,6 +79,7 @@ export const MODULES = [
   // 组织治理 — 财务资本
   { id: '2',  name: '财务核算系统', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'Money', keywords: 'finance accounting cwhs ledger' },
   { id: '36', name: '资本架构沙盘', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'DataBoard', keywords: 'capital sandbox zbjg' },
+  { id: '50', name: '工作室启动成本', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'TrendCharts', keywords: 'startup cost studio qdcb 启动成本 北极星 现金流 爬坡' },
   { id: '27', name: '合伙人命理中心', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'DocumentCopy', keywords: 'partner destiny hhrm' },
   // 组织治理 — 治理与合规
   { id: '33', name: '公司治理', group: 'GOVERNANCE', subgroup: '治理与合规', icon: 'OfficeBuilding', keywords: 'governance gszl board' },
