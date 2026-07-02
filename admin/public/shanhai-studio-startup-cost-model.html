@@ -98,20 +98,20 @@
       <h2>资本 · 团队</h2>
       <div class="row"><label>合伙人A（Hayden）出资 <span class="hint">元</span></label><input type="number" id="capA" value="100000" step="10000"></div>
       <div class="row"><label>合伙人B（廉澍）出资 <span class="hint">元</span></label><input type="number" id="capB" value="100000" step="10000"></div>
-      <div class="row"><label>员工人数（含创始人？）</label><input type="number" id="head" value="6" step="1"></div>
+      <div class="row"><label>员工人数（含创始人？）</label><input type="number" id="head" value="5" step="1"></div>
       <div class="row"><label>人均月薪 <span class="hint">元</span></label><input type="number" id="sal" value="5000" step="500"></div>
 
       <div class="subh">一次性启动投入</div>
       <div class="row"><label>装修 + 初期货物/原料 <span class="hint">元</span></label><input type="number" id="deco" value="100000" step="10000"></div>
-      <div class="row"><label>标本设备（含在上项则填0）<span class="hint">元</span></label><input type="number" id="equip" value="30000" step="5000"></div>
-      <div class="row"><label>注册开办 <span class="hint">元</span></label><input type="number" id="reg" value="3000" step="1000"></div>
+      <div class="row"><label>标本设备（含在上项则填0）<span class="hint">元</span></label><input type="number" id="equip" value="0" step="5000"></div>
+      <div class="row"><label>注册开办 <span class="hint">元</span></label><input type="number" id="reg" value="0" step="1000"></div>
 
       <div class="subh">月度固定支出（除房租）</div>
       <div class="row"><label>社保/五险（不缴填0）<span class="hint">元/月</span></label><input type="number" id="ins" value="0" step="600"></div>
-      <div class="row"><label>水电网 + 取暖均摊 <span class="hint">元/月</span></label><input type="number" id="util" value="1500" step="500"></div>
-      <div class="row"><label>物流 / 耗材 / 包装 <span class="hint">元/月</span></label><input type="number" id="logi" value="3000" step="500"></div>
-      <div class="row"><label>营销 / 推广 / 投流 <span class="hint">元/月</span></label><input type="number" id="mkt" value="3000" step="500"></div>
-      <div class="row"><label>杂费 / 软件 / 保证金摊销 <span class="hint">元/月</span></label><input type="number" id="misc" value="1000" step="500"></div>
+      <div class="row"><label>水电网 + 取暖均摊 <span class="hint">元/月</span></label><input type="number" id="util" value="1000" step="500"></div>
+      <div class="row"><label>物流 / 耗材 / 包装 <span class="hint">元/月</span></label><input type="number" id="logi" value="0" step="500"></div>
+      <div class="row"><label>营销 / 推广 / 投流 <span class="hint">元/月</span></label><input type="number" id="mkt" value="0" step="500"></div>
+      <div class="row"><label>杂费 / 软件 / 保证金摊销 <span class="hint">元/月</span></label><input type="number" id="misc" value="0" step="500"></div>
     </div>
 
     <!-- 参数：房租 -->
@@ -120,12 +120,12 @@
       <div class="row"><label>选择方案</label>
         <select id="rentsel">
           <option value="0">① 孵化器 免租</option>
-          <option value="4200" selected>② 市府140㎡ 毛租4200</option>
+          <option value="4200">② 市府140㎡ 毛租4200</option>
           <option value="6000">③ 200㎡ 估算 6000</option>
-          <option value="-1">自定义</option>
+          <option value="-1" selected>自定义</option>
         </select></div>
-      <div class="row"><label>月房租 <span class="hint">元/月</span></label><input type="number" id="rent" value="4200" step="200"></div>
-      <div class="row"><label>押金（一次性）<span class="hint">元</span></label><input type="number" id="dep" value="8400" step="1000"></div>
+      <div class="row"><label>月房租 <span class="hint">元/月</span></label><input type="number" id="rent" value="5000" step="200"></div>
+      <div class="row"><label>押金（一次性）<span class="hint">元</span></label><input type="number" id="dep" value="5000" step="1000"></div>
       <label class="chk"><input type="checkbox" id="live" checked> 住办合一：可抵扣你的个人房租</label>
       <div class="row"><label>你个人现月租房成本（抵扣）<span class="hint">元/月</span></label><input type="number" id="off" value="2000" step="500"></div>
 
@@ -139,19 +139,19 @@
     <div class="card star full">
       <h2>★ 北极星 · 营收结构（各渠道 营收 × 毛利率）</h2>
       <div class="subh">门店供货（含手工费）— 由门店营收推导</div>
-      <div class="row"><label>楼下门店 月营收 <span class="hint">元</span></label><input type="number" id="s1" value="100000" step="10000"></div>
-      <div class="row"><label>楼上门店 月营收 <span class="hint">元</span></label><input type="number" id="s2" value="200000" step="10000"></div>
-      <div class="row"><label>门店进货成本率</label><div class="rng"><input type="range" id="proc" min="0.1" max="0.5" step="0.01" value="0.33"><b id="procv">33%</b></div></div>
+      <div class="row"><label>楼下门店 月营收 <span class="hint">元</span></label><input type="number" id="s1" value="50000" step="10000"></div>
+      <div class="row"><label>楼上门店 月营收 <span class="hint">元</span></label><input type="number" id="s2" value="150000" step="10000"></div>
+      <div class="row"><label>门店进货成本率</label><div class="rng"><input type="range" id="proc" min="0.1" max="0.5" step="0.01" value="0.17"><b id="procv">17%</b></div></div>
       <div class="row"><label>手工费率（加收）</label><div class="rng"><input type="range" id="fee" min="0.05" max="0.3" step="0.01" value="0.10"><b id="feev">10%</b></div></div>
       <div class="row"><label>门店供货 毛利率</label><div class="rng"><input type="range" id="feegm" min="0.3" max="1" step="0.05" value="1"><b id="feegmv">100%</b></div></div>
 
       <div class="subh" style="margin-top:14px">其它渠道（营收 + 毛利率）</div>
       <div class="row"><label>标本定制增值费用 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="custom" value="8000" step="1000"><input type="number" id="customgm" class="gm" value="0.6" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="custom" value="0" step="1000"><input type="number" id="customgm" class="gm" value="0.6" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>线上小程序收入 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="online" value="25000" step="5000"><input type="number" id="ogm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="online" value="5000" step="5000"><input type="number" id="ogm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>国内电商收入 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="dom" value="10000" step="5000"><input type="number" id="domgm" class="gm" value="0.45" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="dom" value="20000" step="5000"><input type="number" id="domgm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>国际电商收入 <span class="hint">元/月</span></label>
         <div class="pair"><input type="number" id="intl" value="0" step="5000"><input type="number" id="intlgm" class="gm" value="0.4" step="0.05" title="毛利率"></div></div>
       <div class="flag">右侧小框为该渠道毛利率（0–1）。门店供货毛利率默认100%（手工费为纯服务收入，人工已在固定工资里）；其它渠道毛利率为假设值，请按实际调整。</div>
