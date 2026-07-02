@@ -21,6 +21,10 @@
   .btn:hover{background:#163a5c}.btn:active{transform:translateY(1px)}
   .btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--navy);box-shadow:none}
   .btn.ghost:hover{background:#eef4fb}
+  .btn.preset{font-size:12px;padding:8px 13px;transition:background .2s,color .2s,border-color .2s,box-shadow .2s}
+  .btn.preset.active{background:var(--navy);color:#fff;border-color:var(--navy);box-shadow:0 2px 8px rgba(31,78,121,.22);font-weight:700}
+  .btn.preset.active:hover{background:#163a5c}
+  .bar.preset-bar{align-items:stretch}
   .btn.star{background:var(--star)}.btn.star:hover{background:#6e4700}
   .flow{background:#f3f8ff;border:1px solid #cfe0f5;border-radius:12px;padding:11px 15px;margin-bottom:16px;font-size:12px;color:#243b57}
   .flow b{color:var(--navy)}
@@ -71,6 +75,11 @@
   html.embed-mode .wrap { padding: 14px 14px 40px; max-width: none; }
   html.embed-mode header h1 { font-size: 18px; }
   html.embed-mode header p { font-size: 12px; }
+  @media(max-width:640px){
+    .bar.preset-bar{flex-direction:column;align-items:stretch}
+    .bar.preset-bar .btn.preset{width:100%;justify-content:center;min-height:44px}
+    .bar.preset-bar>span{text-align:center;margin:4px 0 2px}
+  }
 </style>
 </head>
 <body>
@@ -78,13 +87,13 @@
   <header>
     <h1>山海造物 · 标本工作室　启动成本与北极星营收</h1>
     <p>可调参数交互模型　v3（多渠道北极星营收 + 生命周期情景：起步→成长→扩张→成熟）</p>
-    <div class="bar">
+    <div class="bar preset-bar">
       <button id="calcBtn" class="btn">↻ 重新计算</button>
       <span style="font-size:12px;color:var(--sub);margin-right:4px">生命周期情景：</span>
-      <button class="btn ghost" data-preset="起步期">① 起步期 · 精简保命</button>
-      <button class="btn ghost" data-preset="成长期">② 成长期 · 渠道铺开</button>
-      <button class="btn ghost" data-preset="扩张期">③ 扩张期 · 全渠道发力</button>
-      <button class="btn ghost" data-preset="成熟稳定期">④ 成熟稳定期 · 规模盈利</button>
+      <button type="button" class="btn ghost preset active" data-preset="起步期" aria-pressed="true">① 起步期 · 精简保命</button>
+      <button type="button" class="btn ghost preset" data-preset="成长期" aria-pressed="false">② 成长期 · 渠道铺开</button>
+      <button type="button" class="btn ghost preset" data-preset="扩张期" aria-pressed="false">③ 扩张期 · 全渠道发力</button>
+      <button type="button" class="btn ghost preset" data-preset="成熟稳定期" aria-pressed="false">④ 成熟稳定期 · 规模盈利</button>
     </div>
   </header>
 
@@ -103,7 +112,7 @@
       <div class="subh">利润分配（可分配净现金流）</div>
       <div class="row"><label>合伙人A（Hayden）分成</label><div class="rng"><input type="range" id="shareA" min="0.05" max="0.95" step="0.05" value="0.5"><b id="shareAv">50%</b></div></div>
       <div class="row"><label>合伙人B（廉澍）分成</label><div class="rng"><b id="shareBv" style="width:auto;color:var(--green)">50%</b></div></div>
-      <div class="row"><label>员工人数（含创始人？）</label><input type="number" id="head" value="5" step="1"></div>
+      <div class="row"><label>员工人数（含创始人？）</label><input type="number" id="head" value="3" step="1"></div>
       <div class="row"><label>人均月薪 <span class="hint">元</span></label><input type="number" id="sal" value="5000" step="500"></div>
 
       <div class="subh">一次性启动投入</div>
@@ -124,18 +133,18 @@
       <h2>房租方案</h2>
       <div class="row"><label>选择方案</label>
         <select id="rentsel">
-          <option value="0">① 孵化器 免租</option>
+          <option value="0" selected>① 孵化器 免租</option>
           <option value="4200">② 市府140㎡ 毛租4200</option>
           <option value="6000">③ 200㎡ 估算 6000</option>
-          <option value="-1" selected>自定义</option>
+          <option value="-1">自定义</option>
         </select></div>
-      <div class="row"><label>月房租 <span class="hint">元/月</span></label><input type="number" id="rent" value="5000" step="200"></div>
-      <div class="row"><label>押金（一次性）<span class="hint">元</span></label><input type="number" id="dep" value="5000" step="1000"></div>
+      <div class="row"><label>月房租 <span class="hint">元/月</span></label><input type="number" id="rent" value="0" step="200"></div>
+      <div class="row"><label>押金（一次性）<span class="hint">元</span></label><input type="number" id="dep" value="0" step="1000"></div>
       <label class="chk"><input type="checkbox" id="live" checked> 住办合一：可抵扣你的个人房租</label>
       <div class="row"><label>你个人现月租房成本（抵扣）<span class="hint">元/月</span></label><input type="number" id="off" value="2000" step="500"></div>
 
       <div class="subh">爬坡（数字渠道放量）</div>
-      <div class="row"><label>起始数字营收（线上+电商）<span class="hint">元</span></label><input type="number" id="rampStart" value="35000" step="5000"></div>
+      <div class="row"><label>起始数字营收（线上+电商）<span class="hint">元</span></label><input type="number" id="rampStart" value="18000" step="5000"></div>
       <div class="row"><label>月环比增长</label><div class="rng"><input type="range" id="rampG" min="0" max="0.5" step="0.05" value="0.2"><b id="rampGv">20%</b></div></div>
       <div class="row"><label>投影月数</label><div class="rng"><input type="range" id="rampN" min="6" max="12" step="1" value="9"><b id="rampNv">9</b></div></div>
     </div>
@@ -144,19 +153,19 @@
     <div class="card star full">
       <h2>★ 北极星 · 营收结构（各渠道 营收 × 毛利率）</h2>
       <div class="subh">门店供货（含手工费）— 由门店营收推导</div>
-      <div class="row"><label>楼下门店 月营收 <span class="hint">元</span></label><input type="number" id="s1" value="50000" step="10000"></div>
-      <div class="row"><label>楼上门店 月营收 <span class="hint">元</span></label><input type="number" id="s2" value="150000" step="10000"></div>
-      <div class="row"><label>门店进货成本率</label><div class="rng"><input type="range" id="proc" min="0.1" max="0.5" step="0.01" value="0.17"><b id="procv">17%</b></div></div>
+      <div class="row"><label>楼下门店 月营收 <span class="hint">元</span></label><input type="number" id="s1" value="100000" step="10000"></div>
+      <div class="row"><label>楼上门店 月营收 <span class="hint">元</span></label><input type="number" id="s2" value="200000" step="10000"></div>
+      <div class="row"><label>门店进货成本率</label><div class="rng"><input type="range" id="proc" min="0.1" max="0.5" step="0.01" value="0.33"><b id="procv">33%</b></div></div>
       <div class="row"><label>手工费率（加收）</label><div class="rng"><input type="range" id="fee" min="0.05" max="0.3" step="0.01" value="0.10"><b id="feev">10%</b></div></div>
       <div class="row"><label>门店供货 毛利率</label><div class="rng"><input type="range" id="feegm" min="0.3" max="1" step="0.05" value="1"><b id="feegmv">100%</b></div></div>
 
       <div class="subh" style="margin-top:14px">其它渠道（营收 + 毛利率）</div>
       <div class="row"><label>标本定制增值费用 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="custom" value="0" step="1000"><input type="number" id="customgm" class="gm" value="0.6" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="custom" value="5000" step="1000"><input type="number" id="customgm" class="gm" value="0.6" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>线上小程序收入 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="online" value="5000" step="5000"><input type="number" id="ogm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="online" value="15000" step="5000"><input type="number" id="ogm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>国内电商收入 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="dom" value="20000" step="5000"><input type="number" id="domgm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="dom" value="3000" step="5000"><input type="number" id="domgm" class="gm" value="0.45" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>国际电商收入 <span class="hint">元/月</span></label>
         <div class="pair"><input type="number" id="intl" value="0" step="5000"><input type="number" id="intlgm" class="gm" value="0.4" step="0.05" title="毛利率"></div></div>
       <div class="flag">右侧小框为该渠道毛利率（0–1）。门店供货毛利率默认100%（手工费为纯服务收入，人工已在固定工资里）；其它渠道毛利率为假设值，请按实际调整。</div>
@@ -308,10 +317,38 @@ const PRESETS = {
     custom:20000,customgm:0.62,online:50000,ogm:0.55,dom:45000,domgm:0.48,intl:35000,intlgm:0.42,rampStart:130000,rampG:0.10,
     fN:10,fNew:2,fFee:30000,fMgmt:3000,fGM:0.9,dN:3,dRev:180000,dGM:0.18}
 };
+let activePreset='起步期';
+function readField(id){
+  const el=$(id); if(!el) return null;
+  if(el.type==='checkbox') return el.checked;
+  return el.value;
+}
+function presetMatches(name){
+  const p=PRESETS[name];
+  return Object.entries(p).every(([id,val])=>{
+    const cur=readField(id);
+    if(typeof val==='boolean') return !!val===cur;
+    if(typeof val==='number') return Math.abs(parseFloat(cur)-val)<1e-9;
+    return String(cur)===String(val);
+  });
+}
+function setActivePreset(name){
+  activePreset=name||null;
+  document.querySelectorAll('[data-preset]').forEach(b=>{
+    const on=!!name && b.dataset.preset===name;
+    b.classList.toggle('active',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+function syncPresetHighlight(){
+  const matched=Object.keys(PRESETS).find(presetMatches)||null;
+  setActivePreset(matched);
+}
 function applyPreset(name){
   const p=PRESETS[name]; if(!p) return;
   Object.entries(p).forEach(([id,val])=>{ const el=$(id); if(!el) return;
     if(el.type==='checkbox') el.checked=!!val; else el.value=val; });
+  setActivePreset(name);
   safeRender();
 }
 
@@ -547,12 +584,15 @@ function drawChart(vals){
 }
 
 ids.forEach(id=>{const el=$(id);if(!el)return;['input','change','keyup'].forEach(ev=>el.addEventListener(ev,safeRender));});
+const presetFieldIds=[...new Set(Object.values(PRESETS).flatMap(p=>Object.keys(p)))];
+presetFieldIds.forEach(id=>{const el=$(id);if(!el)return;['input','change'].forEach(ev=>el.addEventListener(ev,syncPresetHighlight));});
 document.addEventListener('input',safeRender);
 document.addEventListener('change',safeRender);
 $('calcBtn').addEventListener('click',safeRender);
 document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>applyPreset(b.dataset.preset)));
-$('rent').addEventListener('input',()=>{$('rentsel').value='-1';});
+$('rent').addEventListener('input',()=>{$('rentsel').value='-1'; syncPresetHighlight();});
 window.addEventListener('resize',safeRender);
+syncPresetHighlight();
 safeRender();
 </script>
 </body>
