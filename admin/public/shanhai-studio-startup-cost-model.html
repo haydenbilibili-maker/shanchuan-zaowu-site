@@ -212,6 +212,40 @@
       </table>
       <div class="note">爬坡仅数字渠道（线上小程序+国内电商+国际电商）按月环比增长，用其当前综合毛利率折算贡献；门店供货与标本定制维持不变。</div>
     </div>
+
+    <!-- 阶段2 输入 -->
+    <div class="card full" style="border-color:#cbb8e6;box-shadow:0 1px 6px rgba(107,63,160,.10)">
+      <h2 style="color:#6b3fa0;border-color:#6b3fa0">阶段2 · 加盟与直营（后续单独核算 · 填数量即启用）</h2>
+      <div class="subh">加盟模块</div>
+      <div class="row"><label>加盟店总数（存量）</label><input type="number" id="fN" value="0" step="1"></div>
+      <div class="row"><label>本月新增加盟店</label><input type="number" id="fNew" value="0" step="1"></div>
+      <div class="row"><label>单店加盟费（一次性）<span class="hint">元</span></label><input type="number" id="fFee" value="30000" step="5000"></div>
+      <div class="row"><label>单店月管理费 <span class="hint">元/月</span></label><input type="number" id="fMgmt" value="3000" step="500"></div>
+      <div class="row"><label>加盟费&管理费 毛利率</label><div class="rng"><input type="range" id="fGM" min="0.5" max="1" step="0.05" value="0.9"><b id="fGMv">90%</b></div></div>
+      <div class="subh" style="margin-top:12px">直营模块</div>
+      <div class="row"><label>直营店数量</label><input type="number" id="dN" value="0" step="1"></div>
+      <div class="row"><label>单店月营收 <span class="hint">元</span></label><input type="number" id="dRev" value="150000" step="10000"></div>
+      <div class="row"><label>直营店 净利率</label><div class="rng"><input type="range" id="dGM" min="0.05" max="0.4" step="0.01" value="0.15"><b id="dGMv">15%</b></div></div>
+      <div class="flag">阶段2为后续扩张层，与阶段1（工作室本体）分开核算。加盟费＝本月新增×单店费；管理费＝存量店数×单店月费；直营店＝店数×月营收×净利率（净利率已含门店自身成本）。默认数量为0即关闭。</div>
+    </div>
+
+    <!-- 阶段2 结果 + 全盘 -->
+    <div class="card full" style="border-color:#cbb8e6;box-shadow:0 1px 6px rgba(107,63,160,.10)">
+      <h2 style="color:#6b3fa0;border-color:#6b3fa0">阶段2 指标 ＋ 全盘合并</h2>
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><div class="k">阶段2 月营收</div><div class="v" id="o_p2rev">–</div><div class="u">加盟+管理+直营</div></div>
+        <div class="kpi"><div class="k">阶段2 月贡献</div><div class="v" id="o_p2con">–</div><div class="u">净贡献</div></div>
+        <div class="kpi" id="k_p2on"><div class="k">阶段2 状态</div><div class="v" id="o_p2on">–</div><div class="u">填数量即启用</div></div>
+      </div>
+      <table id="p2tab"><thead><tr><th>阶段2 渠道</th><th>月营收</th><th>毛利/净利率</th><th>贡献</th></tr></thead><tbody></tbody></table>
+      <div class="subh" style="margin-top:12px">全盘合并（阶段1 工作室本体 ＋ 阶段2 加盟直营）</div>
+      <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi"><div class="k">全盘 月总营收</div><div class="v" id="o_allrev">–</div></div>
+        <div class="kpi"><div class="k">全盘 月总贡献</div><div class="v" id="o_allcon">–</div></div>
+        <div class="kpi"><div class="k">阶段1 净现金流</div><div class="v" id="o_p1net">–</div><div class="u">工作室本体</div></div>
+        <div class="kpi" id="k_allnet"><div class="k">★ 全盘 净现金流</div><div class="v" id="o_allnet">–</div><div class="u">阶段1净 + 阶段2贡献</div></div>
+      </div>
+    </div>
   </div>
 
   <div class="foot" id="foot"></div>
@@ -224,29 +258,34 @@ if (IS_EMBED) document.documentElement.classList.add('embed-mode');
 const $ = id => document.getElementById(id);
 const ids = ['capA','capB','head','sal','deco','equip','reg','ins','util','logi','mkt','misc',
   'rentsel','rent','dep','live','off','rampStart','rampG','rampN',
-  's1','s2','proc','fee','feegm','custom','customgm','online','ogm','dom','domgm','intl','intlgm'];
+  's1','s2','proc','fee','feegm','custom','customgm','online','ogm','dom','domgm','intl','intlgm',
+  'fN','fNew','fFee','fMgmt','fGM','dN','dRev','dGM'];
 const money = n => (n<0?'-':'') + Math.abs(Math.round(n)).toLocaleString('zh-CN') + ' 元';
 const wan = n => (n/10000).toFixed(1) + ' 万';
 const pct = x => (x*100).toFixed(0) + '%';
 const num = id => parseFloat($(id).value)||0;
 
 const PRESETS = {
-  // ① 起步期：精简保命、孵化器免租、验证模式，近盈亏平衡
+  // ① 起步期：精简保命、孵化器免租、验证模式，近盈亏平衡（阶段2关闭）
   '起步期': {head:3,sal:5000,ins:0,rentsel:'0',rent:0,dep:0,live:true,
     s1:100000,s2:200000,proc:0.33,fee:0.10,feegm:1,
-    custom:5000,customgm:0.6,online:15000,ogm:0.5,dom:3000,domgm:0.45,intl:0,intlgm:0.4,rampStart:18000,rampG:0.20},
-  // ② 成长期：团队补齐到4人、市府140㎡落定、渠道铺开，转正
+    custom:5000,customgm:0.6,online:15000,ogm:0.5,dom:3000,domgm:0.45,intl:0,intlgm:0.4,rampStart:18000,rampG:0.20,
+    fN:0,fNew:0,dN:0},
+  // ② 成长期：团队补齐到4人、市府140㎡落定、渠道铺开，转正（阶段2仍关闭）
   '成长期': {head:4,sal:5000,ins:0,rentsel:'4200',rent:4200,dep:8400,live:true,
     s1:100000,s2:200000,proc:0.33,fee:0.10,feegm:1,
-    custom:10000,customgm:0.6,online:30000,ogm:0.5,dom:15000,domgm:0.45,intl:5000,intlgm:0.4,rampStart:50000,rampG:0.22},
-  // ③ 扩张期：6人、200㎡、社保合规、国际电商起量
+    custom:10000,customgm:0.6,online:30000,ogm:0.5,dom:15000,domgm:0.45,intl:5000,intlgm:0.4,rampStart:50000,rampG:0.22,
+    fN:0,fNew:0,dN:0},
+  // ③ 扩张期：6人、200㎡、社保合规、国际电商起量、加盟与直营开启
   '扩张期': {head:6,sal:5000,ins:7200,rentsel:'6000',rent:6000,dep:12000,live:false,
     s1:120000,s2:240000,proc:0.33,fee:0.10,feegm:1,
-    custom:15000,customgm:0.6,online:40000,ogm:0.5,dom:30000,domgm:0.45,intl:20000,intlgm:0.4,rampStart:90000,rampG:0.25},
-  // ④ 成熟稳定期：8人、规模盈利、增速放缓、毛利提升
+    custom:15000,customgm:0.6,online:40000,ogm:0.5,dom:30000,domgm:0.45,intl:20000,intlgm:0.4,rampStart:90000,rampG:0.25,
+    fN:3,fNew:1,fFee:30000,fMgmt:3000,fGM:0.9,dN:1,dRev:150000,dGM:0.15},
+  // ④ 成熟稳定期：8人、规模盈利、加盟连锁与多直营店成型
   '成熟稳定期': {head:8,sal:5500,ins:9600,rentsel:'6000',rent:6000,dep:12000,live:false,
     s1:150000,s2:300000,proc:0.33,fee:0.10,feegm:1,
-    custom:20000,customgm:0.62,online:50000,ogm:0.55,dom:45000,domgm:0.48,intl:35000,intlgm:0.42,rampStart:130000,rampG:0.10}
+    custom:20000,customgm:0.62,online:50000,ogm:0.55,dom:45000,domgm:0.48,intl:35000,intlgm:0.42,rampStart:130000,rampG:0.10,
+    fN:10,fNew:2,fFee:30000,fMgmt:3000,fGM:0.9,dN:3,dRev:180000,dGM:0.18}
 };
 function applyPreset(name){
   const p=PRESETS[name]; if(!p) return;
@@ -379,6 +418,31 @@ function render(){
   $('o_endbal').textContent=money(cash);
   $('o_endm').textContent='第'+rn+'月';
   drawChart(balances);
+
+  // 阶段2 · 加盟与直营（单独核算）
+  $('fGMv').textContent=pct(num('fGM')); $('dGMv').textContent=pct(num('dGM'));
+  const fFeeRev=num('fNew')*num('fFee');
+  const mgmtRev=num('fN')*num('fMgmt');
+  const directRev=num('dN')*num('dRev');
+  const p2rev=fFeeRev+mgmtRev+directRev;
+  const p2con=(fFeeRev+mgmtRev)*num('fGM')+directRev*num('dGM');
+  $('o_p2rev').textContent=money(p2rev);
+  $('o_p2con').textContent=money(p2con);
+  $('o_p2on').textContent=(p2rev>0?'已启用':'未启用');
+  $('k_p2on').className='kpi '+(p2rev>0?'good':'');
+  const p2tb=$('p2tab').querySelector('tbody'); p2tb.innerHTML='';
+  [['加盟费收入（本月新增×单店费）',fFeeRev,num('fGM'),fFeeRev*num('fGM')],
+   ['管理费收入（存量店×月费）',mgmtRev,num('fGM'),mgmtRev*num('fGM')],
+   ['直营店收入（店数×月营收×净利率）',directRev,num('dGM'),directRev*num('dGM')]].forEach(([n,rev,gm,gp])=>{
+    p2tb.insertAdjacentHTML('beforeend',`<tr><td>${n}</td><td>${money(rev)}</td><td>${pct(gm)}</td><td style="color:var(--green)">${money(gp)}</td></tr>`);
+  });
+  p2tb.insertAdjacentHTML('beforeend',`<tr class="total"><td>阶段2 合计</td><td>${money(p2rev)}</td><td>—</td><td>${money(p2con)}</td></tr>`);
+  const allRev=r.totalRev+p2rev, allCon=r.contrib+p2con, allNet=r.net+p2con;
+  $('o_allrev').textContent=money(allRev);
+  $('o_allcon').textContent=money(allCon);
+  $('o_p1net').textContent=(r.net>=0?'+':'')+money(r.net)+'/月';
+  $('o_allnet').textContent=(allNet>=0?'+':'')+money(allNet)+'/月';
+  $('k_allnet').className='kpi '+(allNet>=0?'good':'bad');
 
   $('foot').innerHTML='北极星月营收 '+money(r.totalRev)+'　·　月总毛利贡献 '+money(r.contrib)+'　·　综合毛利率 '+pct(r.blended)+
     '　·　房租 '+money(r.rent)+'/月　·　净现金流 '+(r.net>=0?'+':'')+money(r.net)+'/月。'+
