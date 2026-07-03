@@ -39,6 +39,45 @@
       </div>
       <div class="result-content" v-html="generatedContent"></div>
     </div>
+
+    <el-divider />
+
+    <div class="constitution-test">
+      <div class="ai-header">
+        <h3>🛡️ 话术宪法自测</h3>
+        <p class="subtitle">校验「标本不作主语」等规则（useContentAgents.constitutionCheck）</p>
+      </div>
+      <el-form label-width="100px">
+        <el-form-item label="待检文案">
+          <el-input v-model="constitutionText" type="textarea" :rows="3" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="warning" :loading="constitutionLoading" @click="runConstitutionTest">
+            话术宪法校验
+          </el-button>
+          <el-button link type="primary" @click="fillConstitutionSample">填入违规样例</el-button>
+        </el-form-item>
+      </el-form>
+      <div v-if="constitutionResult" class="result-box constitution-result">
+        <el-alert
+          :type="constitutionResult.passed ? 'success' : 'error'"
+          :title="constitutionResult.passed ? '通过话术宪法' : '未通过话术宪法'"
+          :closable="false"
+          show-icon
+        />
+        <div v-if="constitutionResult.violations?.length" class="cr-block">
+          <div class="cr-label">违规项</div>
+          <ul>
+            <li v-for="(v, i) in constitutionResult.violations" :key="i">{{ v }}</li>
+          </ul>
+        </div>
+        <div v-if="constitutionResult.rewritten" class="cr-block">
+          <div class="cr-label">合规改写</div>
+          <p>{{ constitutionResult.rewritten }}</p>
+        </div>
+        <div v-if="constitutionResult.ip_tone_ok === false" class="cr-hint">IP 调性未对齐</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -46,7 +85,10 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { callGeminiAPI } from '../../utils/aiHelper'
+import { useContentAgents } from '../../composables/useContentAgents'
 import { marked } from 'marked'
+
+const { constitutionCheck } = useContentAgents()
 
 const props = defineProps({
   feature: Object
@@ -54,6 +96,9 @@ const props = defineProps({
 
 const generating = ref(false)
 const generatedContent = ref('')
+const constitutionLoading = ref(false)
+const constitutionResult = ref(null)
+const constitutionText = ref('这只北美君主蝶展翅10cm，今年新品，快抢')
 const contentForm = ref({
   type: 'xiaohongshu',
   topic: '',
@@ -123,6 +168,40 @@ const copyContent = () => {
   document.body.removeChild(text)
   ElMessage.success('已复制到剪贴板')
 }
+
+const CONSTITUTION_SAMPLE = '这只北美君主蝶展翅10cm，今年新品，快抢'
+
+function fillConstitutionSample() {
+  constitutionText.value = CONSTITUTION_SAMPLE
+}
+
+async function runConstitutionTest() {
+  if (!constitutionText.value.trim()) {
+    ElMessage.warning('请输入待检文案')
+    return
+  }
+  constitutionLoading.value = true
+  constitutionResult.value = null
+  try {
+    const res = await constitutionCheck({
+      mode: 'check',
+      text: constitutionText.value,
+      ip: 'GRAVITY',
+      platform: 'xhs',
+      category: '标本',
+    })
+    constitutionResult.value = res
+    if (res.passed) {
+      ElMessage.success('通过话术宪法')
+    } else {
+      ElMessage.warning('未通过话术宪法，请查看违规项与改写建议')
+    }
+  } catch (e) {
+    ElMessage.error(e.message || '校验失败')
+  } finally {
+    constitutionLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -164,6 +243,45 @@ const copyContent = () => {
 .result-content {
   line-height: 1.8;
   color: #e0e0e0;
+}
+
+.constitution-test {
+  margin-top: 8px;
+}
+
+.constitution-result {
+  margin-top: 16px;
+}
+
+.cr-block {
+  margin-top: 12px;
+}
+
+.cr-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4af37;
+  margin-bottom: 6px;
+}
+
+.cr-block p {
+  margin: 0;
+  line-height: 1.7;
+  color: #e0e0e0;
+}
+
+.cr-block ul {
+  margin: 0;
+  padding-left: 1.2em;
+  color: #f0c0b0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.cr-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #c4a76c;
 }
 
 :deep(.el-form-item__label) {

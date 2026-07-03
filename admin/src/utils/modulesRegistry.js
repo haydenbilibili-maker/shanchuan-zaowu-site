@@ -1,5 +1,5 @@
 /**
- * 47 个模块的单一事实来源
+ * 模块注册的单一事实来源（含内容工厂 id:51）
  * 用于：命令面板搜索 / 面包屑 / 收藏夹 / 顶级快捷键 / 文档
  *
  * 字段约定：
@@ -53,6 +53,8 @@ export const MODULES = [
   { id: '44', name: 'C 端行为看板', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'DataAnalysis', keywords: 'behavior analytics cdxwkb event' },
   { id: '40', name: '山海有信工单', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'Message', keywords: 'support ticket shyxgd 客服 工单' },
   { id: '41', name: '评论审核', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'ChatDotRound', keywords: 'comment plsh moderation 评论' },
+  // 客户经营 — 内容营销
+  { id: '51', name: '内容工厂', group: 'CUSTOMER', subgroup: '内容营销', icon: 'VideoCamera', keywords: 'content factory nrgc 内容 营销 选题 话术' },
 
   // 小程序配置 — 内容运营
   { id: '8',  name: '首页轮播', group: 'MINIAPP', subgroup: '内容运营', icon: 'Picture', keywords: 'banner sylb carousel' },

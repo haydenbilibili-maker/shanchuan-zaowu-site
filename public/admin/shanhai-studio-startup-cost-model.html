@@ -101,6 +101,7 @@
     <b>算账逻辑：</b> 门店营收→进货成本(营收×1/3)→门店付款给工作室→工作室代采原料(过路资金)→加收10%手工费=门店供货营收；
     再加 标本定制增值、线上小程序、国内电商、国际电商 各渠道营收，各自 <b>营收×毛利率=毛利贡献</b>。
     <b>北极星 = 工作室月总营收</b>；<b>月总毛利贡献 − 固定烧钱 = 净现金流</b>。
+    人力按 <b>正式员工 + 创始人 + 实习生</b> 分项计薪（默认 3+2 人，实习生人数与薪酬可调）。
   </div>
 
   <div class="grid">
@@ -112,8 +113,14 @@
       <div class="subh">利润分配（可分配净现金流）</div>
       <div class="row"><label>合伙人A（Hayden）分成</label><div class="rng"><input type="range" id="shareA" min="0.05" max="0.95" step="0.05" value="0.5"><b id="shareAv">50%</b></div></div>
       <div class="row"><label>合伙人B（廉澍）分成</label><div class="rng"><b id="shareBv" style="width:auto;color:var(--green)">50%</b></div></div>
-      <div class="row"><label>员工人数（含创始人？）</label><input type="number" id="head" value="3" step="1"></div>
-      <div class="row"><label>人均月薪 <span class="hint">元</span></label><input type="number" id="sal" value="5000" step="500"></div>
+      <div class="subh">团队构成（3 正式 + 2 创始人 + 实习生）</div>
+      <div class="row"><label>正式员工人数</label><input type="number" id="headFormal" value="3" min="0" step="1"></div>
+      <div class="row"><label>正式员工月薪 <span class="hint">元</span></label><input type="number" id="salFormal" value="5000" step="500"></div>
+      <div class="row"><label>创始人人数</label><input type="number" id="headFounder" value="2" min="0" step="1"></div>
+      <div class="row"><label>创始人月薪 <span class="hint">元</span></label><input type="number" id="salFounder" value="5000" step="500"></div>
+      <div class="row"><label>学生实习生人数</label><input type="number" id="headIntern" value="0" min="0" step="1"></div>
+      <div class="row"><label>实习生月均薪酬 <span class="hint">元</span></label><input type="number" id="salIntern" value="1000" step="100"></div>
+      <div class="flag" id="teamSummary">–</div>
 
       <div class="subh">一次性启动投入</div>
       <div class="row"><label>装修 + 初期货物/原料 <span class="hint">元</span></label><input type="number" id="deco" value="100000" step="10000"></div>
@@ -133,18 +140,18 @@
       <h2>房租方案</h2>
       <div class="row"><label>选择方案</label>
         <select id="rentsel">
-          <option value="0" selected>① 孵化器 免租</option>
+          <option value="0">① 孵化器 免租</option>
           <option value="4200">② 市府140㎡ 毛租4200</option>
           <option value="6000">③ 200㎡ 估算 6000</option>
-          <option value="-1">自定义</option>
+          <option value="-1" selected>自定义</option>
         </select></div>
-      <div class="row"><label>月房租 <span class="hint">元/月</span></label><input type="number" id="rent" value="0" step="200"></div>
-      <div class="row"><label>押金（一次性）<span class="hint">元</span></label><input type="number" id="dep" value="0" step="1000"></div>
+      <div class="row"><label>月房租 <span class="hint">元/月</span></label><input type="number" id="rent" value="5000" step="200"></div>
+      <div class="row"><label>押金（一次性）<span class="hint">元</span></label><input type="number" id="dep" value="5000" step="1000"></div>
       <label class="chk"><input type="checkbox" id="live" checked> 住办合一：可抵扣你的个人房租</label>
       <div class="row"><label>你个人现月租房成本（抵扣）<span class="hint">元/月</span></label><input type="number" id="off" value="2000" step="500"></div>
 
       <div class="subh">爬坡（数字渠道放量）</div>
-      <div class="row"><label>起始数字营收（线上+电商）<span class="hint">元</span></label><input type="number" id="rampStart" value="18000" step="5000"></div>
+      <div class="row"><label>起始数字营收（线上+电商）<span class="hint">元</span></label><input type="number" id="rampStart" value="35000" step="5000"></div>
       <div class="row"><label>月环比增长</label><div class="rng"><input type="range" id="rampG" min="0" max="0.5" step="0.05" value="0.2"><b id="rampGv">20%</b></div></div>
       <div class="row"><label>投影月数</label><div class="rng"><input type="range" id="rampN" min="6" max="12" step="1" value="9"><b id="rampNv">9</b></div></div>
     </div>
@@ -153,19 +160,19 @@
     <div class="card star full">
       <h2>★ 北极星 · 营收结构（各渠道 营收 × 毛利率）</h2>
       <div class="subh">门店供货（含手工费）— 由门店营收推导</div>
-      <div class="row"><label>楼下门店 月营收 <span class="hint">元</span></label><input type="number" id="s1" value="100000" step="10000"></div>
-      <div class="row"><label>楼上门店 月营收 <span class="hint">元</span></label><input type="number" id="s2" value="200000" step="10000"></div>
-      <div class="row"><label>门店进货成本率</label><div class="rng"><input type="range" id="proc" min="0.1" max="0.5" step="0.01" value="0.33"><b id="procv">33%</b></div></div>
+      <div class="row"><label>楼下门店 月营收 <span class="hint">元</span></label><input type="number" id="s1" value="50000" step="10000"></div>
+      <div class="row"><label>楼上门店 月营收 <span class="hint">元</span></label><input type="number" id="s2" value="150000" step="10000"></div>
+      <div class="row"><label>门店进货成本率</label><div class="rng"><input type="range" id="proc" min="0.1" max="0.5" step="0.01" value="0.17"><b id="procv">17%</b></div></div>
       <div class="row"><label>手工费率（加收）</label><div class="rng"><input type="range" id="fee" min="0.05" max="0.3" step="0.01" value="0.10"><b id="feev">10%</b></div></div>
       <div class="row"><label>门店供货 毛利率</label><div class="rng"><input type="range" id="feegm" min="0.3" max="1" step="0.05" value="1"><b id="feegmv">100%</b></div></div>
 
       <div class="subh" style="margin-top:14px">其它渠道（营收 + 毛利率）</div>
       <div class="row"><label>标本定制增值费用 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="custom" value="5000" step="1000"><input type="number" id="customgm" class="gm" value="0.6" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="custom" value="0" step="1000"><input type="number" id="customgm" class="gm" value="0.6" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>线上小程序收入 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="online" value="15000" step="5000"><input type="number" id="ogm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="online" value="5000" step="5000"><input type="number" id="ogm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>国内电商收入 <span class="hint">元/月</span></label>
-        <div class="pair"><input type="number" id="dom" value="3000" step="5000"><input type="number" id="domgm" class="gm" value="0.45" step="0.05" title="毛利率"></div></div>
+        <div class="pair"><input type="number" id="dom" value="20000" step="5000"><input type="number" id="domgm" class="gm" value="0.5" step="0.05" title="毛利率"></div></div>
       <div class="row"><label>国际电商收入 <span class="hint">元/月</span></label>
         <div class="pair"><input type="number" id="intl" value="0" step="5000"><input type="number" id="intlgm" class="gm" value="0.4" step="0.05" title="毛利率"></div></div>
       <div class="flag">右侧小框为该渠道毛利率（0–1）。门店供货毛利率默认100%（手工费为纯服务收入，人工已在固定工资里）；其它渠道毛利率为假设值，请按实际调整。</div>
@@ -286,7 +293,7 @@ const IS_EMBED = new URLSearchParams(location.search).get('embed') === '1' || wi
 if (IS_EMBED) document.documentElement.classList.add('embed-mode');
 
 const $ = id => document.getElementById(id);
-const ids = ['capA','capB','shareA','head','sal','deco','equip','reg','ins','util','logi','mkt','misc',
+const ids = ['capA','capB','shareA','headFormal','headFounder','headIntern','salFormal','salFounder','salIntern','deco','equip','reg','ins','util','logi','mkt','misc',
   'rentsel','rent','dep','live','off','rampStart','rampG','rampN',
   's1','s2','proc','fee','feegm','custom','customgm','online','ogm','dom','domgm','intl','intlgm',
   'fN','fNew','fFee','fMgmt','fGM','dN','dRev','dGM'];
@@ -295,27 +302,45 @@ const wan = n => (n/10000).toFixed(1) + ' 万';
 const pct = x => (x*100).toFixed(0) + '%';
 const num = id => parseFloat($(id).value)||0;
 
+/** 页面默认参数（起步期预设与此保持同步） */
+const BASE_DEFAULTS = {
+  headFormal:3, headFounder:2, headIntern:0, salFormal:5000, salFounder:5000, salIntern:1000,
+  ins:0, util:1000, logi:0, mkt:0, misc:0,
+  rentsel:'-1', rent:5000, dep:5000, live:true, off:2000,
+  rampStart:35000, rampG:0.20, rampN:9,
+  s1:50000, s2:150000, proc:0.17, fee:0.10, feegm:1,
+  custom:0, customgm:0.6, online:5000, ogm:0.5, dom:20000, domgm:0.5,
+  intl:0, intlgm:0.4,
+  fN:0, fNew:0, dN:0
+};
+function teamHead(){ return num('headFormal')+num('headFounder')+num('headIntern'); }
+function teamPayroll(){
+  return num('headFormal')*num('salFormal')+num('headFounder')*num('salFounder')+num('headIntern')*num('salIntern');
+}
+
 const PRESETS = {
-  // ① 起步期：精简保命、孵化器免租、验证模式，近盈亏平衡（阶段2关闭）
-  '起步期': {head:3,sal:5000,ins:0,rentsel:'0',rent:0,dep:0,live:true,
-    s1:100000,s2:200000,proc:0.33,fee:0.10,feegm:1,
-    custom:5000,customgm:0.6,online:15000,ogm:0.5,dom:3000,domgm:0.45,intl:0,intlgm:0.4,rampStart:18000,rampG:0.20,
-    fN:0,fNew:0,dN:0},
-  // ② 成长期：团队补齐到4人、市府140㎡落定、渠道铺开，转正（阶段2仍关闭）
-  '成长期': {head:4,sal:5000,ins:0,rentsel:'4200',rent:4200,dep:8400,live:true,
-    s1:100000,s2:200000,proc:0.33,fee:0.10,feegm:1,
-    custom:10000,customgm:0.6,online:30000,ogm:0.5,dom:15000,domgm:0.45,intl:5000,intlgm:0.4,rampStart:50000,rampG:0.22,
-    fN:0,fNew:0,dN:0},
+  // ① 起步期：与 BASE_DEFAULTS 同步
+  '起步期': {...BASE_DEFAULTS},
+  // ② 成长期：团队补齐到4人、市府140㎡落定、渠道铺开
+  '成长期': {...BASE_DEFAULTS,
+    headFormal:2, headFounder:2, headIntern:0,
+    rentsel:'4200', rent:4200, dep:8400, live:true,
+    s1:100000, s2:200000, proc:0.33,
+    custom:10000, online:30000, dom:15000, domgm:0.45, intl:5000, rampStart:50000, rampG:0.22},
   // ③ 扩张期：6人、200㎡、社保合规、国际电商起量、加盟与直营开启
-  '扩张期': {head:6,sal:5000,ins:7200,rentsel:'6000',rent:6000,dep:12000,live:false,
-    s1:120000,s2:240000,proc:0.33,fee:0.10,feegm:1,
-    custom:15000,customgm:0.6,online:40000,ogm:0.5,dom:30000,domgm:0.45,intl:20000,intlgm:0.4,rampStart:90000,rampG:0.25,
-    fN:3,fNew:1,fFee:30000,fMgmt:3000,fGM:0.9,dN:1,dRev:150000,dGM:0.15},
+  '扩张期': {...BASE_DEFAULTS,
+    headFormal:4, headFounder:2, headIntern:0, salFormal:5000, salFounder:5000,
+    ins:7200, rentsel:'6000', rent:6000, dep:12000, live:false,
+    s1:120000, s2:240000, proc:0.33,
+    custom:15000, online:40000, dom:30000, domgm:0.45, intl:20000, rampStart:90000, rampG:0.25,
+    fN:3, fNew:1, fFee:30000, fMgmt:3000, fGM:0.9, dN:1, dRev:150000, dGM:0.15},
   // ④ 成熟稳定期：8人、规模盈利、加盟连锁与多直营店成型
-  '成熟稳定期': {head:8,sal:5500,ins:9600,rentsel:'6000',rent:6000,dep:12000,live:false,
-    s1:150000,s2:300000,proc:0.33,fee:0.10,feegm:1,
-    custom:20000,customgm:0.62,online:50000,ogm:0.55,dom:45000,domgm:0.48,intl:35000,intlgm:0.42,rampStart:130000,rampG:0.10,
-    fN:10,fNew:2,fFee:30000,fMgmt:3000,fGM:0.9,dN:3,dRev:180000,dGM:0.18}
+  '成熟稳定期': {...BASE_DEFAULTS,
+    headFormal:6, headFounder:2, headIntern:0, salFormal:5500, salFounder:5500,
+    ins:9600, rentsel:'6000', rent:6000, dep:12000, live:false,
+    s1:150000, s2:300000, proc:0.33,
+    custom:20000, customgm:0.62, online:50000, ogm:0.55, dom:45000, domgm:0.48, intl:35000, intlgm:0.42, rampStart:130000, rampG:0.10,
+    fN:10, fNew:2, fFee:30000, fMgmt:3000, fGM:0.9, dN:3, dRev:180000, dGM:0.18}
 };
 let activePreset='起步期';
 function readField(id){
@@ -356,7 +381,7 @@ function calc(rentOverride, liveOverride){
   const cap=num('capA')+num('capB');
   const one=num('deco')+num('equip')+num('reg')+num('dep');
   const rent=rentOverride!==undefined?rentOverride:num('rent');
-  const nonRent=num('head')*num('sal')+num('ins')+num('util')+num('logi')+num('mkt')+num('misc');
+  const nonRent=teamPayroll()+num('ins')+num('util')+num('logi')+num('mkt')+num('misc');
   const burn=nonRent+rent;
   const proc=(num('s1')+num('s2'))*num('proc');   // 代采额（过路）
   const feeRev=proc*num('fee');                    // 门店供货营收（手工费）
@@ -388,6 +413,9 @@ function render(){
   $('rampGv').textContent=pct(num('rampG'));
   $('rampNv').textContent=Math.round(num('rampN'));
   const sel=$('rentsel').value; if(sel!=='-1') $('rent').value=sel;
+
+  const th=teamHead(), tp=teamPayroll();
+  $('teamSummary').textContent=`合计 ${th} 人（${Math.round(num('headFormal'))} 正式 + ${Math.round(num('headFounder'))} 创始人 + ${Math.round(num('headIntern'))} 实习生）· 月人力 ${money(tp)}`;
 
   const r=calc();
 

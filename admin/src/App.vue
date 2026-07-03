@@ -191,6 +191,9 @@
                 <el-menu-item index="40"><el-icon><Message /></el-icon><span>山海有信工单</span></el-menu-item>
                 <el-menu-item index="41"><el-icon><ChatDotRound /></el-icon><span>评论审核</span></el-menu-item>
               </el-menu-item-group>
+              <el-menu-item-group title="内容营销">
+                <el-menu-item index="51"><el-icon><VideoCamera /></el-icon><span>内容工厂</span></el-menu-item>
+              </el-menu-item-group>
             </el-sub-menu>
 
             <!-- ============ 4. 小程序配置 ============ -->
@@ -470,7 +473,7 @@
                  <InventoryAI :products="products" />
                </el-dialog>
             </div>
-            <!-- 其余 47 个模块走动态组件 + keep-alive：
+            <!-- 其余模块走动态组件 + keep-alive（含 id:51 内容工厂 → ContentFactory）：
                  keep-alive 只能缓存组件实例，之前包 keyed div 完全失效（切 tab 即销毁重建）；
                  现在切回标签时组件状态（表单/滚动/已加载数据）保留，:max=10 LRU 控制内存 -->
             <keep-alive v-else :max="10">
@@ -761,7 +764,7 @@ import {
   Plus, Edit, Delete, Box, List, Lock, Money, Odometer, FolderAdd,
   UserFilled, Picture, PictureFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu,
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
-  DataBoard, TrendCharts,
+  DataBoard, TrendCharts, VideoCamera,
   // 🟢 小程序对齐补充图标
   Stamp, Avatar, Message, Refresh, Document,
   // 🟢 命令面板/收藏夹
@@ -795,6 +798,7 @@ const AICenter = asyncWith(() => import('./components/AICenter.vue'))
 import PartnerDestinyCenter from './components/PartnerDestinyCenter.vue'
 import CapitalArchitectureSandbox from './components/CapitalArchitectureSandbox.vue'
 import StartupCostModel from './components/StartupCostModel.vue'
+import ContentFactory from './components/ContentFactory.vue'
 import ComplianceCenter from './components/ComplianceCenter.vue'
 import MemberLevelConfig from './components/MemberLevelConfig.vue'
 import PointsRulesConfig from './components/PointsRulesConfig.vue'
@@ -873,6 +877,7 @@ const TAB_COMPONENT_MAP = {
   '35': () => ({ comp: FranchiseManagement }),
   '36': () => ({ comp: CapitalArchitectureSandbox }),
   '50': () => ({ comp: StartupCostModel }),
+  '51': () => ({ comp: ContentFactory }),
   '37': () => ({ comp: Bookings }),
   '38': () => ({ comp: CustomOrders }),
   '39': () => ({ comp: PetMemorial }),
@@ -968,7 +973,7 @@ const TAB_TO_GROUP = {
   '38': 'grp-business', '39': 'grp-business', '42': 'grp-business', '43': 'grp-business',
   '48': 'grp-business',
   '4': 'grp-customer', '40': 'grp-customer', '41': 'grp-customer', '44': 'grp-customer',
-  '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer',
+  '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer', '51': 'grp-customer',
   '8': 'grp-miniapp', '9': 'grp-miniapp', '13': 'grp-miniapp', '14': 'grp-miniapp',
   '15': 'grp-miniapp', '16': 'grp-miniapp', '17': 'grp-miniapp', '18': 'grp-miniapp',
   '19': 'grp-miniapp', '20': 'grp-miniapp', '21': 'grp-miniapp', '22': 'grp-miniapp',

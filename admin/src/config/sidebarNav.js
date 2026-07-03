@@ -79,6 +79,12 @@ export const SIDEBAR_NAV = {
           { id: '41', icon: 'ChatDotRound', label: '评论审核' },
         ],
       },
+      {
+        title: '内容营销',
+        items: [
+          { id: '51', icon: 'VideoCamera', label: '内容工厂' },
+        ],
+      },
     ],
   },
   miniapp: {
