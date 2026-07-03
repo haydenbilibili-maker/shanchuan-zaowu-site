@@ -1,4 +1,4 @@
-import{$t as e,Qt as t,Xt as n,fn as r,gn as i,nn as a,r as o,tn as s,un as c,yn as l}from"./element-plus-UT91gMua.js";import{g as u,h as d,s as f,v as p}from"./index-Cc4SPh2y.js";var m={class:`customer-ai`},h={key:0,class:`result-card`},g=[`innerHTML`],_=d({__name:`CustomerAI`,props:{feature:Object},setup(d){let _=l(!1),v=l(``),y=async()=>{_.value=!0;try{let e=await f(!1,{useFinancialData:!0,period:`week`});if(!e){o.error(`获取数据失败`);return}let t=await p(`基于以下客户数据，生成详细的客户画像分析：
+import{$t as e,Qt as t,Xt as n,fn as r,gn as i,nn as a,r as o,tn as s,un as c,yn as l}from"./element-plus-UT91gMua.js";import{g as u,h as d,s as f,v as p}from"./index-C1Vze8T2.js";var m={class:`customer-ai`},h={key:0,class:`result-card`},g=[`innerHTML`],_=d({__name:`CustomerAI`,props:{feature:Object},setup(d){let _=l(!1),v=l(``),y=async()=>{_.value=!0;try{let e=await f(!1,{useFinancialData:!0,period:`week`});if(!e){o.error(`获取数据失败`);return}let t=await p(`基于以下客户数据，生成详细的客户画像分析：
 
 客户数据：
 - 总会员数：${e.members.total}

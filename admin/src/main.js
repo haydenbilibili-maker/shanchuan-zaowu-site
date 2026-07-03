@@ -9,6 +9,7 @@ import { migrateFinanceRecordsFromLegacy } from './utils/financeLocalStorageKey.
 migrateFinanceRecordsFromLegacy()
 import './styles/design-tokens.css'
 import './styles/vi-enterprise-modules.css'
+import './styles/content-factory-vi.css'
 import './styles/erp-vi-actions.css'
 import './styles/global-refinement.css'
 import './styles/mobile-responsive.css'

@@ -4,7 +4,7 @@
     title="人工终审"
     size="640px"
     destroy-on-close
-    class="review-drawer"
+    class="content-factory-drawer"
     @update:model-value="emit('update:modelValue', $event)"
     @opened="onOpened"
   >
@@ -25,7 +25,7 @@
         class="rv-alert"
       />
 
-      <div v-if="liveViolations.length" class="rv-violations section-card">
+      <div v-if="liveViolations.length" class="rv-violations cf-card">
         <div class="rv-label">违规项</div>
         <ul>
           <li v-for="(v, i) in liveViolations" :key="i">{{ v }}</li>
@@ -38,18 +38,18 @@
       </div>
 
       <div class="rv-compare">
-        <div class="rv-col section-card">
+        <div class="rv-compare-col">
           <div class="rv-label">原文</div>
           <el-input v-model="editBody" type="textarea" :rows="9" placeholder="正文 / 脚本" />
         </div>
-        <div class="rv-col section-card rv-col--rewrite">
+        <div class="rv-compare-col">
           <div class="rv-label">AI 合规改写</div>
           <div v-if="checking" class="rv-checking">
             <el-icon class="is-loading"><Loading /></el-icon>
             话术宪法校验中…
           </div>
-          <div v-else-if="rewritten" class="rv-rewritten">{{ rewritten }}</div>
-          <div v-else class="rv-placeholder">提交终审或打开抽屉时将自动校验</div>
+          <div v-else-if="rewritten" class="rv-rewritten-text">{{ rewritten }}</div>
+          <div v-else class="cf-muted">提交终审或打开抽屉时将自动校验</div>
           <el-button
             v-if="rewritten"
             size="small"
@@ -272,30 +272,14 @@ async function onDirectEdit() {
   margin-bottom: 14px;
 }
 
-.section-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 10px;
-  padding: 12px;
-}
-
-.rv-label {
-  font-size: 12px;
-  color: #888;
-  margin-bottom: 8px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .rv-section {
   margin-bottom: 14px;
 }
 
 .rv-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #e0e0e0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--light-text-primary);
 }
 
 .rv-compare {
@@ -311,68 +295,16 @@ async function onDirectEdit() {
   }
 }
 
-.rv-col--rewrite .rv-rewritten {
-  font-size: 13px;
-  line-height: 1.65;
-  color: #c8e6c9;
-  min-height: 120px;
-  white-space: pre-wrap;
-}
-
-.rv-placeholder {
-  font-size: 12px;
-  color: #666;
-  min-height: 80px;
-}
-
 .rv-checking {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  color: #d4af37;
+  font-size: var(--text-sm);
+  color: var(--brand-green-600);
   min-height: 80px;
-}
-
-.rv-violations ul {
-  margin: 0;
-  padding-left: 18px;
-  color: #e8a090;
-  font-size: 13px;
-  line-height: 1.55;
 }
 
 .rv-comment {
   margin-bottom: 12px;
-}
-
-.rv-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.rv-hint {
-  font-size: 12px;
-  color: #c4a76c;
-  margin-top: 10px;
-  line-height: 1.5;
-}
-
-:deep(.el-drawer__header) {
-  color: #d4af37;
-  margin-bottom: 8px;
-}
-
-:deep(.el-drawer__body) {
-  background: #141210;
-  color: #e0e0e0;
-}
-
-:deep(.el-textarea__inner) {
-  background: rgba(0, 0, 0, 0.4) !important;
-  border-color: rgba(212, 175, 55, 0.2) !important;
-  color: #e0e0e0 !important;
 }
 </style>

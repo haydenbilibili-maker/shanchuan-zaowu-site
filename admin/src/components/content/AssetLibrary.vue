@@ -1,17 +1,17 @@
 <template>
-  <div class="asset-library">
-    <div class="ai-header">
-      <h3>🎬 母素材库</h3>
-      <p class="subtitle">登记拍摄素材 · 关联藏品档案 · 改写分发至多平台</p>
+  <div class="cf-subpanel asset-library">
+    <div class="cf-subheader">
+      <h3>母素材库</h3>
+      <p>登记拍摄素材 · 关联藏品档案 · 改写分发至多平台</p>
     </div>
 
-    <div class="al-toolbar">
+    <div class="cf-toolbar">
       <el-button type="primary" @click="openAdd">登记母素材</el-button>
       <el-button :loading="loading" @click="load">刷新</el-button>
     </div>
 
-    <div class="section-card">
-      <el-table :data="assets" v-loading="loading" stripe class="al-table">
+    <div class="cf-card cf-card--flush">
+      <el-table :data="assets" v-loading="loading" stripe>
         <el-table-column prop="title" label="标题" min-width="140" />
         <el-table-column prop="type" label="类型" width="72">
           <template #default="{ row }">{{ row.type === 'video' ? '视频' : '照片' }}</template>
@@ -107,7 +107,7 @@
 
     <!-- 改写分发 -->
     <el-dialog v-model="showRepurpose" title="多平台改写分发" width="440px" destroy-on-close>
-      <p v-if="repurposeRow" class="rp-hint">母素材：{{ repurposeRow.title }}</p>
+      <p v-if="repurposeRow" class="cf-muted rp-hint">母素材：{{ repurposeRow.title }}</p>
       <el-form label-width="90px">
         <el-form-item label="目标平台">
           <el-checkbox-group v-model="targetPlatforms">
@@ -322,30 +322,6 @@ onMounted(() => {
   min-height: 320px;
 }
 
-.ai-header h3 {
-  color: #d4af37;
-  margin: 0 0 6px 0;
-}
-
-.subtitle {
-  color: #888;
-  margin: 0 0 16px 0;
-  font-size: 13px;
-}
-
-.al-toolbar {
-  margin-bottom: 16px;
-  display: flex;
-  gap: 8px;
-}
-
-.section-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 12px;
-  padding: 12px;
-}
-
 .file-tags {
   margin-top: 8px;
   display: flex;
@@ -354,20 +330,6 @@ onMounted(() => {
 }
 
 .rp-hint {
-  font-size: 13px;
-  color: #888;
-  margin: 0 0 12px 0;
-}
-
-:deep(.el-table) {
-  --el-table-bg-color: transparent;
-  --el-table-tr-bg-color: transparent;
-  --el-table-header-bg-color: rgba(0, 0, 0, 0.25);
-  --el-table-row-hover-bg-color: rgba(212, 175, 55, 0.06);
-  color: #e0e0e0;
-}
-
-:deep(.el-table th.el-table__cell) {
-  color: #d4af37;
+  margin: 0 0 12px;
 }
 </style>

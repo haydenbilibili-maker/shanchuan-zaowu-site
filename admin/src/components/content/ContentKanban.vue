@@ -1,11 +1,11 @@
 <template>
-  <div class="content-kanban">
-    <div class="ai-header">
-      <h3>📋 内容看板</h3>
-      <p class="subtitle">按状态分列 · 卡片 = content_pieces</p>
+  <div class="cf-subpanel content-kanban">
+    <div class="cf-subheader">
+      <h3>内容看板</h3>
+      <p>按状态分列 · 卡片 = content_pieces · 点击待终审卡片可打开终审抽屉</p>
     </div>
 
-    <div class="kb-toolbar">
+    <div class="cf-toolbar">
       <el-button type="primary" :loading="loading" @click="load">刷新看板</el-button>
       <el-button @click="createDraft">新建草稿</el-button>
     </div>
@@ -16,19 +16,25 @@
       :title="loadError"
       show-icon
       :closable="false"
-      class="kb-alert"
+      style="margin-bottom: 12px"
     />
 
     <div class="kb-columns">
-      <div v-for="st in states" :key="st" class="kb-col section-card">
-        <div class="kb-col-title">{{ stateLabels[st] }} ({{ columnPieces(st).length }})</div>
-        <div v-if="!columnPieces(st).length" class="kb-empty">暂无</div>
+      <div v-for="st in states" :key="st" class="kb-col" :data-state="st">
+        <div class="kb-col-title">
+          <span>{{ stateLabels[st] }}</span>
+          <span class="kb-col-count">{{ columnPieces(st).length }}</span>
+        </div>
+        <div v-if="!columnPieces(st).length" class="kb-empty">暂无内容<br /><span class="cf-muted">可从未选题库挑选入板</span></div>
         <div
           v-for="p in columnPieces(st)"
           :key="p._id"
           class="kb-card"
           :class="{ 'kb-card--warn': p.compliance && !p.compliance.passed }"
+          tabindex="0"
+          role="button"
           @click="onCardClick(p)"
+          @keyup.enter="onCardClick(p)"
         >
           <div class="kb-card-title">{{ p.title || '未命名' }}</div>
           <div class="kb-card-meta">
@@ -207,115 +213,5 @@ defineExpose({ load })
 <style scoped>
 .content-kanban {
   min-height: 400px;
-}
-
-.ai-header h3 {
-  color: #d4af37;
-  margin: 0 0 6px 0;
-}
-
-.subtitle {
-  color: #888;
-  margin: 0 0 16px 0;
-  font-size: 13px;
-}
-
-.kb-toolbar {
-  margin-bottom: 16px;
-  display: flex;
-  gap: 8px;
-}
-
-.kb-alert {
-  margin-bottom: 12px;
-}
-
-.kb-columns {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-
-.section-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.kb-col {
-  flex: 0 0 240px;
-  min-height: 360px;
-}
-
-.kb-col-title {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: #d4af37;
-}
-
-.kb-empty {
-  font-size: 12px;
-  color: #666;
-  text-align: center;
-  padding: 24px 0;
-}
-
-.kb-card {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(212, 175, 55, 0.15);
-  border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.kb-card:hover {
-  border-color: rgba(212, 175, 55, 0.45);
-  box-shadow: 0 2px 12px rgba(212, 175, 55, 0.08);
-}
-
-.kb-card--warn {
-  border-color: rgba(196, 92, 74, 0.45);
-}
-
-.kb-card-title {
-  font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 6px;
-  color: #e0e0e0;
-}
-
-.kb-card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 6px;
-}
-
-.kb-warn {
-  font-size: 11px;
-  color: #e8a090;
-  margin-bottom: 4px;
-}
-
-.kb-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-:deep(.el-button) {
-  background: #000 !important;
-  border-color: rgba(212, 175, 55, 0.3) !important;
-  color: #fff !important;
-}
-
-:deep(.el-button--primary) {
-  border-color: #d4af37 !important;
-  color: #d4af37 !important;
 }
 </style>

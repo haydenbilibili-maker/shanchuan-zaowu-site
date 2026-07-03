@@ -1,11 +1,11 @@
 <template>
-  <div class="topic-library">
-    <div class="ai-header">
-      <h3>💡 选题库</h3>
-      <p class="subtitle">AI 生成候选 · 人工挑选置 picked · 入看板选题列</p>
+  <div class="cf-subpanel topic-library">
+    <div class="cf-subheader">
+      <h3>选题库</h3>
+      <p>AI 生成候选 · 人工挑选置 picked · 入看板选题列</p>
     </div>
 
-    <div class="tl-toolbar">
+    <div class="cf-toolbar">
       <el-button type="primary" @click="createManual">新建选题</el-button>
       <el-button :loading="generating" @click="runAgent">AI 生成选题</el-button>
       <el-button :loading="loading" @click="load">刷新</el-button>
@@ -16,8 +16,8 @@
       </el-radio-group>
     </div>
 
-    <div class="section-card">
-      <el-table :data="topics" v-loading="loading" stripe class="tl-table">
+    <div class="cf-card cf-card--flush">
+      <el-table :data="topics" v-loading="loading" stripe>
         <el-table-column prop="title" label="选题" min-width="160" show-overflow-tooltip />
         <el-table-column prop="hook" label="钩子" min-width="140" show-overflow-tooltip />
         <el-table-column prop="angle" label="角度" width="100" show-overflow-tooltip />
@@ -45,7 +45,7 @@
               :loading="pickingId === row._id"
               @click="pick(row)"
             >挑选入看板</el-button>
-            <span v-else class="picked-hint">已在看板</span>
+            <span v-else class="cf-muted">已在看板</span>
           </template>
         </el-table-column>
       </el-table>
@@ -147,48 +147,5 @@ onMounted(load)
 <style scoped>
 .topic-library {
   min-height: 320px;
-}
-
-.ai-header h3 {
-  color: #d4af37;
-  margin: 0 0 6px 0;
-}
-
-.subtitle {
-  color: #888;
-  margin: 0 0 16px 0;
-  font-size: 13px;
-}
-
-.tl-toolbar {
-  margin-bottom: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.section-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.picked-hint {
-  font-size: 12px;
-  color: #888;
-}
-
-:deep(.el-table) {
-  --el-table-bg-color: transparent;
-  --el-table-tr-bg-color: transparent;
-  --el-table-header-bg-color: rgba(0, 0, 0, 0.25);
-  --el-table-row-hover-bg-color: rgba(212, 175, 55, 0.06);
-  color: #e0e0e0;
-}
-
-:deep(.el-table th.el-table__cell) {
-  color: #d4af37;
 }
 </style>

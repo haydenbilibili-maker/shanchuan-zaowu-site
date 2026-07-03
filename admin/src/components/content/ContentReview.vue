@@ -1,11 +1,11 @@
 <template>
-  <div class="content-review">
-    <div class="panel-header">
-      <div class="title-box">
-        <h2>内容复盘 · CONTENT RETROSPECT</h2>
-        <span class="subtitle">PIECES METRICS + 飞轮回灌选题库</span>
+  <div class="cf-subpanel content-review">
+    <div class="cf-subheader cf-review-header">
+      <div>
+        <h3>内容复盘</h3>
+        <p>PIECES METRICS + 飞轮回灌选题库</p>
       </div>
-      <div class="header-actions">
+      <div class="cf-toolbar cf-toolbar--end">
         <el-radio-group v-model="rangePreset" size="small" @change="onRangeChange">
           <el-radio-button label="all">全部已发布</el-radio-button>
           <el-radio-button label="30d">近 30 天</el-radio-button>
@@ -15,74 +15,71 @@
       </div>
     </div>
 
-    <!-- KPI（BehaviorAnalytics 范式） -->
-    <div class="kpi-strip">
-      <div class="kpi-card big">
-        <div class="kpi-top"><span class="lbl">总播放</span><span class="ico">👁️</span></div>
-        <div class="kpi-val">{{ formatNum(metrics.totalViews) }}</div>
-        <div class="kpi-sub">已发布 {{ metrics.publishedCount }} 条</div>
+    <div class="cf-kpi-strip">
+      <div class="cf-kpi-card is-hero">
+        <div class="cf-kpi-top"><span>总播放</span><span>👁️</span></div>
+        <div class="cf-kpi-val">{{ formatNum(metrics.totalViews) }}</div>
+        <div class="cf-kpi-sub">已发布 {{ metrics.publishedCount }} 条</div>
       </div>
-      <div class="kpi-card highlight">
-        <div class="kpi-top"><span class="lbl">平均完播率</span><span class="ico">▶️</span></div>
-        <div class="kpi-val">{{ metrics.avg完播率 }}%</div>
-        <div class="kpi-sub">有数据条目均值</div>
+      <div class="cf-kpi-card is-highlight">
+        <div class="cf-kpi-top"><span>平均完播率</span><span>▶️</span></div>
+        <div class="cf-kpi-val">{{ metrics.avg完播率 }}%</div>
+        <div class="cf-kpi-sub">有数据条目均值</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-top"><span class="lbl">总收藏</span><span class="ico">⭐</span></div>
-        <div class="kpi-val">{{ formatNum(metrics.total收藏) }}</div>
-        <div class="kpi-sub">内容吸引力</div>
+      <div class="cf-kpi-card">
+        <div class="cf-kpi-top"><span>总收藏</span><span>⭐</span></div>
+        <div class="cf-kpi-val">{{ formatNum(metrics.total收藏) }}</div>
+        <div class="cf-kpi-sub">内容吸引力</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-top"><span class="lbl">评论具体句</span><span class="ico">💬</span></div>
-        <div class="kpi-val">{{ formatNum(metrics.total评论具体句) }}</div>
-        <div class="kpi-sub">非泛泛互动</div>
+      <div class="cf-kpi-card">
+        <div class="cf-kpi-top"><span>评论具体句</span><span>💬</span></div>
+        <div class="cf-kpi-val">{{ formatNum(metrics.total评论具体句) }}</div>
+        <div class="cf-kpi-sub">非泛泛互动</div>
       </div>
-      <div class="kpi-card warn">
-        <div class="kpi-top"><span class="lbl">引流私域</span><span class="ico">🔗</span></div>
-        <div class="kpi-val">{{ formatNum(metrics.total引流私域) }}</div>
-        <div class="kpi-sub">转化向指标</div>
+      <div class="cf-kpi-card is-warn">
+        <div class="cf-kpi-top"><span>引流私域</span><span>🔗</span></div>
+        <div class="cf-kpi-val">{{ formatNum(metrics.total引流私域) }}</div>
+        <div class="cf-kpi-sub">转化向指标</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-top"><span class="lbl">周期</span><span class="ico">📅</span></div>
-        <div class="kpi-val kpi-period">{{ metrics.period }}</div>
-        <div class="kpi-sub">复盘飞轮周期</div>
+      <div class="cf-kpi-card">
+        <div class="cf-kpi-top"><span>周期</span><span>📅</span></div>
+        <div class="cf-kpi-val" style="font-size: 18px">{{ metrics.period }}</div>
+        <div class="cf-kpi-sub">复盘飞轮周期</div>
       </div>
     </div>
 
-    <!-- 图表区 -->
-    <div class="main-grid">
-      <el-card shadow="never" class="chart-card">
+    <div class="cf-chart-grid">
+      <el-card shadow="never" class="cf-chart-card">
         <template #header>
-          <div class="card-header">
-            <span>📈 发布内容播放趋势</span>
+          <div class="cf-chart-header">
+            <span>发布内容播放趋势</span>
             <el-select v-model="trendMetric" size="small" style="width: 120px" @change="renderTrendChart">
               <el-option label="播放量" value="views" />
               <el-option label="发布条数" value="count" />
             </el-select>
           </div>
         </template>
-        <div class="chart-wrap"><canvas ref="trendCanvas"></canvas></div>
+        <div class="cf-chart-wrap"><canvas ref="trendCanvas"></canvas></div>
       </el-card>
 
-      <el-card shadow="never" class="chart-card">
+      <el-card shadow="never" class="cf-chart-card">
         <template #header>
-          <div class="card-header"><span>🍩 平台播放分布</span></div>
+          <div class="cf-chart-header"><span>平台播放分布</span></div>
         </template>
-        <div class="chart-wrap"><canvas ref="donutCanvas"></canvas></div>
+        <div class="cf-chart-wrap"><canvas ref="donutCanvas"></canvas></div>
         <div class="platform-legend">
-          <div v-for="p in platformBreakdown" :key="p.key" class="lg-item">
-            <span class="lg-dot" :style="{ background: p.color }"></span>
-            <span class="lg-name">{{ p.label }}</span>
-            <span class="lg-num">{{ formatNum(p.views) }}</span>
+          <div v-for="p in platformBreakdown" :key="p.key" class="cf-legend-item">
+            <span class="cf-legend-dot" :style="{ background: p.color }"></span>
+            <span class="cf-muted" style="flex: 1">{{ p.label }}</span>
+            <span style="font-weight: 600">{{ formatNum(p.views) }}</span>
           </div>
         </div>
       </el-card>
     </div>
 
-    <!-- Top 内容 -->
-    <el-card shadow="never" class="top-card">
+    <el-card shadow="never" class="cf-chart-card">
       <template #header>
-        <div class="card-header"><span>🔥 Top 已发布内容（按播放）</span></div>
+        <div class="cf-chart-header"><span>Top 已发布内容（按播放）</span></div>
       </template>
       <el-table :data="metrics.topPieces" size="small" v-loading="loading" stripe>
         <el-table-column type="index" width="48" />
@@ -99,36 +96,35 @@
       </el-table>
     </el-card>
 
-    <!-- 复盘记录 -->
-    <el-card shadow="never" class="records-card">
+    <el-card shadow="never" class="cf-chart-card">
       <template #header>
-        <div class="card-header">
-          <span>🔄 复盘记录 · content_analytics</span>
+        <div class="cf-chart-header">
+          <span>复盘记录 · content_analytics</span>
           <el-button size="small" link @click="loadRecords">刷新</el-button>
         </div>
       </template>
-      <div v-if="!records.length" class="empty-hint">暂无复盘记录，点击「运行复盘 Agent」</div>
-      <div v-for="rec in records" :key="rec._id" class="rec-block section-card">
+      <div v-if="!records.length" class="cf-muted empty-hint">暂无复盘记录，点击「运行复盘 Agent」</div>
+      <div v-for="rec in records" :key="rec._id" class="cf-rec-block">
         <div class="rec-head">
           <el-tag size="small">{{ rec.period }}</el-tag>
-          <span class="rec-by">{{ rec.generatedBy }}</span>
+          <span class="cf-muted rec-by">{{ rec.generatedBy }}</span>
         </div>
         <div v-if="rec.insights?.length" class="rec-section">
-          <div class="rec-label">洞察</div>
+          <div class="cf-rec-label">洞察</div>
           <ul><li v-for="(x, i) in rec.insights" :key="i">{{ x }}</li></ul>
         </div>
         <div v-if="rec.nextTopics?.length" class="rec-section">
-          <div class="rec-label">回灌选题（flywheel）</div>
+          <div class="cf-rec-label">回灌选题（flywheel）</div>
           <el-tag v-for="(t, i) in rec.nextTopics" :key="i" size="small" class="topic-tag">{{ t }}</el-tag>
         </div>
         <div v-if="rec.stopList?.length" class="rec-section stop">
-          <div class="rec-label">停做清单</div>
+          <div class="cf-rec-label">停做清单</div>
           <ul><li v-for="(x, i) in rec.stopList" :key="i">{{ x }}</li></ul>
         </div>
       </div>
     </el-card>
 
-    <div class="data-source-tip">
+    <div class="cf-data-tip">
       <el-icon><InfoFilled /></el-icon>
       <span>
         指标来源：<code>content_pieces.metrics</code>（已发布工单）；
@@ -267,8 +263,8 @@ function renderTrendChart() {
       datasets: [{
         label: trendMetric.value === 'count' ? '发布条数' : '播放量',
         data: values,
-        borderColor: '#d4af37',
-        backgroundColor: 'rgba(212, 175, 55, 0.12)',
+        borderColor: '#2d6a4f',
+        backgroundColor: 'rgba(45, 106, 79, 0.12)',
         borderWidth: 2,
         tension: 0.35,
         fill: true,
@@ -280,8 +276,8 @@ function renderTrendChart() {
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' } },
-        x: { grid: { display: false }, ticks: { color: '#888', maxRotation: 45 } },
+        y: { beginAtZero: true, grid: { color: 'rgba(26, 24, 21, 0.07)' }, ticks: { color: '#9b968d' } },
+        x: { grid: { display: false }, ticks: { color: '#9b968d', maxRotation: 45 } },
       },
     },
   })
@@ -295,7 +291,7 @@ function renderDonutChart() {
   if (!data.length) {
     donutChart = new Chart(donutCanvas.value, {
       type: 'doughnut',
-      data: { labels: ['暂无'], datasets: [{ data: [1], backgroundColor: ['#333'] }] },
+      data: { labels: ['暂无'], datasets: [{ data: [1], backgroundColor: ['#e5e2db'] }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
     })
     return
@@ -309,7 +305,7 @@ function renderDonutChart() {
         data: data.map((p) => p.views),
         backgroundColor: data.map((p) => p.color),
         borderWidth: 2,
-        borderColor: '#141210',
+        borderColor: '#ffffff',
       }],
     },
     options: {
@@ -344,160 +340,26 @@ watch(filteredPieces, () => onRangeChange(), { deep: true })
 
 <style scoped>
 .content-review {
-  padding: 8px 0 24px;
-  color: #e0e0e0;
+  padding-bottom: var(--space-6);
 }
 
-.panel-header {
+.cf-review-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
-.title-box h2 {
-  margin: 0;
-  font-size: 20px;
-  color: #d4af37;
-  border-left: 4px solid #d4af37;
-  padding-left: 12px;
-  font-weight: 700;
-}
-
-.title-box .subtitle {
-  color: #666;
-  font-size: 11px;
-  padding-left: 16px;
-  letter-spacing: 1.5px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.kpi-strip {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-@media (max-width: 1100px) {
-  .kpi-strip { grid-template-columns: repeat(3, 1fr); }
-}
-
-.kpi-card {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  padding: 14px 16px;
-  border-top: 3px solid rgba(212, 175, 55, 0.25);
-}
-
-.kpi-card.big {
-  border-top-color: #d4af37;
-  background: linear-gradient(145deg, #1c1c1c, #0a0a0a);
-  color: #d4af37;
-}
-
-.kpi-card.highlight { border-top-color: #d4af37; }
-.kpi-card.warn { border-top-color: #c45c4a; }
-
-.kpi-top {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  opacity: 0.75;
-}
-
-.kpi-val {
-  font-size: 24px;
-  font-weight: 800;
-  margin-top: 6px;
-}
-
-.kpi-period { font-size: 18px; }
-
-.kpi-sub {
-  font-size: 11px;
-  color: #888;
-  margin-top: 4px;
-}
-
-.main-grid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-@media (max-width: 900px) {
-  .main-grid { grid-template-columns: 1fr; }
-}
-
-.chart-card,
-.top-card,
-.records-card {
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(212, 175, 55, 0.15);
-  margin-bottom: 16px;
-}
-
-.chart-card :deep(.el-card__header),
-.top-card :deep(.el-card__header),
-.records-card :deep(.el-card__header) {
-  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-  color: #e0e0e0;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.chart-wrap {
-  height: 260px;
-  position: relative;
+.cf-toolbar--end {
+  margin-bottom: 0;
 }
 
 .platform-legend {
-  margin-top: 12px;
+  margin: var(--space-3) var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.lg-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.lg-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.lg-name { flex: 1; color: #aaa; }
-.lg-num { font-weight: 600; color: #e0e0e0; }
-
-.section-card {
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(212, 175, 55, 0.12);
-  border-radius: 10px;
-  padding: 14px;
-  margin-bottom: 12px;
 }
 
 .rec-head {
@@ -507,55 +369,24 @@ watch(filteredPieces, () => onRangeChange(), { deep: true })
   margin-bottom: 10px;
 }
 
-.rec-by { font-size: 12px; color: #666; }
-
-.rec-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #d4af37;
-  margin-bottom: 6px;
-}
-
 .rec-section ul {
   margin: 0;
   padding-left: 18px;
-  font-size: 13px;
-  line-height: 1.55;
-  color: #ccc;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--light-text-secondary);
 }
 
-.rec-section.stop ul { color: #e8a090; }
+.rec-section.stop ul {
+  color: var(--semantic-error-text);
+}
 
-.topic-tag { margin: 2px 4px 2px 0; }
+.topic-tag {
+  margin: 2px 4px 2px 0;
+}
 
 .empty-hint {
   text-align: center;
-  color: #666;
-  padding: 24px;
-  font-size: 13px;
+  padding: var(--space-6);
 }
-
-.data-source-tip {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 12px;
-  color: #666;
-  margin-top: 8px;
-  line-height: 1.5;
-}
-
-.data-source-tip code {
-  color: #c4a76c;
-  font-size: 11px;
-}
-
-:deep(.el-table) {
-  --el-table-bg-color: transparent;
-  --el-table-tr-bg-color: transparent;
-  --el-table-header-bg-color: rgba(0, 0, 0, 0.3);
-  color: #e0e0e0;
-}
-
-:deep(.el-table th.el-table__cell) { color: #d4af37; }
 </style>
