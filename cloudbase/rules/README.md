@@ -15,5 +15,6 @@
 | `_template_anonymous_rw.json` | A1 默认：已登录（含匿名）可读可写 |
 | `_template_public_read_auth_write.json` | 全员可读，仅登录可写 |
 | `_template_user_openid_scoped.json` | 用户数据按 `_openid` 隔离（A2+） |
+| `purchase_intents.json` | 采购意向：登录可 create/read/update，禁止 delete |
 
 完整集合清单见 [docs/cloudbase-collections.md](../../docs/cloudbase-collections.md)。

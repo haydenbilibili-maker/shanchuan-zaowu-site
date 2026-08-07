@@ -122,6 +122,7 @@
 | `support_tickets` | 客服工单 |
 | `support_configs` | 客服入口配置 |
 | `custom_inquiries` | 定制咨询 |
+| `purchase_intents` | 官网报价单采购意向（`/price-list` 提交；ERP「采购意向」）；规则见 `cloudbase/rules/purchase_intents.json`，字段见 `cloudbase/schema/purchase_intents.md`；CLI：`cd admin && node scripts/provision-purchase-intents.mjs` |
 | `custom_drafts` | 定制草稿 |
 | `pet_memorial_orders` | 伴宠记忆订单 |
 | `user_behaviors` | 用户行为埋点 |

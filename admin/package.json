@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "build:xietian-fragment": "node scripts/build-xietian-html.mjs",
-    "provision:content": "node scripts/provision-content-collections.mjs"
+    "provision:content": "node scripts/provision-content-collections.mjs",
+    "provision:purchase-intents": "node scripts/provision-purchase-intents.mjs"
   },
   "dependencies": {
     "@cloudbase/js-sdk": "^2.9.1",

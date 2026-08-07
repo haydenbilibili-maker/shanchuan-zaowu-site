@@ -468,6 +468,7 @@ export const COLLECTIONS = {
   BANNERS: 'banners',                // 轮播图
   ACTIVITIES: 'activities',          // 活动
   ORDERS: 'orders',                  // 订单
+  PURCHASE_INTENTS: 'purchase_intents', // 官网报价单采购意向
   USERS: 'users',                    // 用户
   BOOKINGS: 'bookings',              // 预约
   COUPONS: 'coupons',                // 优惠券

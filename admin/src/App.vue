@@ -766,7 +766,7 @@ import {
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
   DataBoard, TrendCharts, VideoCamera,
   // 🟢 小程序对齐补充图标
-  Stamp, Avatar, Message, Refresh, Document,
+  Stamp, Avatar, Message, Refresh, Document, ShoppingCart,
   // 🟢 命令面板/收藏夹
   Close,
   // 🟢 侧栏折叠
@@ -821,6 +821,7 @@ import StoreDesignCenter from './components/StoreDesignCenter.vue'
 // 🟢 对齐小程序能力的 7 个新模块
 import Bookings from './components/Bookings.vue'
 import CustomOrders from './components/CustomOrders.vue'
+import PurchaseIntents from './components/PurchaseIntents.vue'
 import PetMemorial from './components/PetMemorial.vue'
 import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
@@ -880,6 +881,7 @@ const TAB_COMPONENT_MAP = {
   '51': () => ({ comp: ContentFactory }),
   '37': () => ({ comp: Bookings }),
   '38': () => ({ comp: CustomOrders }),
+  '52': () => ({ comp: PurchaseIntents }),
   '39': () => ({ comp: PetMemorial }),
   '40': () => ({ comp: SupportTickets }),
   '41': () => ({ comp: CommentsModeration }),
@@ -971,7 +973,7 @@ const TAB_TO_GROUP = {
   '1': 'grp-business', '3': 'grp-business', '5': 'grp-business', '6': 'grp-business',
   '30': 'grp-business', '34': 'grp-business', '35': 'grp-business', '37': 'grp-business',
   '38': 'grp-business', '39': 'grp-business', '42': 'grp-business', '43': 'grp-business',
-  '48': 'grp-business',
+  '48': 'grp-business', '52': 'grp-business',
   '4': 'grp-customer', '40': 'grp-customer', '41': 'grp-customer', '44': 'grp-customer',
   '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer', '51': 'grp-customer',
   '8': 'grp-miniapp', '9': 'grp-miniapp', '13': 'grp-miniapp', '14': 'grp-miniapp',

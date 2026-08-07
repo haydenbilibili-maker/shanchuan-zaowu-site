@@ -31,6 +31,7 @@ export const MODULES = [
   { id: '1',  name: '藏品档案库', group: 'BUSINESS', subgroup: '货', icon: 'Box', keywords: 'product collection archive cpdak sku 商品' },
   { id: '43', name: '分类管理', group: 'BUSINESS', subgroup: '货', icon: 'Menu', keywords: 'category flgl tag' },
   { id: '3',  name: '全渠道订单', group: 'BUSINESS', subgroup: '货', icon: 'List', keywords: 'order qqdd 订单' },
+  { id: '52', name: '采购意向', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase intent cgxy 采购 报价单 price-list' },
   { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '货', icon: 'Refresh', keywords: 'refund tksh 退款' },
   // 业务运营 — 场
   { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
