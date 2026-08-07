@@ -296,7 +296,7 @@ export const operationsYearPlans: YearPlanDetail[] = [
         title: 'Q1（2026.01-03）· 已完成',
         items: [
           { text: '品牌核心文档体系建立（vision / 六观 / 治理）', done: true },
-          { text: '廉澍 + 李贺合伙关系确认', done: true },
+          { text: '廉澍 + 独菽合伙关系确认', done: true },
           { text: '长春这有山首家 Pro 门店签约并完成开业', done: true },
           { text: '长春这有山第二家 Pro 门店开业 · 这有山双店布局完成', done: true },
           { text: '双店空间方案与工坊动线落地', done: true },
