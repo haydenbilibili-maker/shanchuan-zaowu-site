@@ -110,7 +110,11 @@ export const bioFilterOptions: BioFilter[] = [
 ];
 
 export const priceListMeta = {
-  title: '线下供货价格表',
+  /** 完整页面/SEO 标题（含品牌） */
+  title: '山海造物线下供货价格表',
+  /** 封面主标题拆行：品牌行 + 说明行 */
+  brand: '山海造物',
+  heading: '线下供货价格表',
   year: '2026',
   eyebrow: 'Price List · 供货报价',
   lead: '按包装/品类与题材组合筛选线下供货报价。每条商品标注物种、制作方式与包装；图片与价格持续补充。',

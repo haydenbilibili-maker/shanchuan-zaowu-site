@@ -47,7 +47,7 @@ const rows = priceListItems.map(renderRow);
 ---
 
 <Layout
-  title={`${priceListMeta.year}年${priceListMeta.title}`}
+  title={priceListMeta.title}
   description="山海造物 · 线下供货价格表——按包装/品类与题材组合筛选，查阅商品图片、品名、物种、制作方式、包装、供货价、指导售价与规格。"
   image={coverImage}
   preloadImage={coverImage}
@@ -72,8 +72,12 @@ const rows = priceListItems.map(renderRow);
         {priceListMeta.eyebrow}
       </p>
       <h1 id="price-hero-title" class="price-hero-title display-title">
-        {priceListMeta.year}年<br />{priceListMeta.title}
+        <span class="price-hero-brand">{priceListMeta.brand}</span>
+        <span class="price-hero-heading">{priceListMeta.heading}</span>
       </h1>
+      <p class="price-hero-year font-serif-en italic text-brass-mid tracking-widest" aria-hidden="true">
+        {priceListMeta.year}
+      </p>
       <p class="price-hero-lead font-serif text-cream tracking-cn">{priceListMeta.lead}</p>
     </div>
   </section>
@@ -299,8 +303,8 @@ const rows = priceListItems.map(renderRow);
                       )}
                     </button>
                   ) : (
-                    <span class="price-thumb-empty font-serif tracking-cn" aria-label="暂时无货">
-                      暂时无货
+                    <span class="price-thumb-oos" aria-label="暂时无货">
+                      <span class="price-thumb-oos__text" aria-hidden="true">暂时<br />无货</span>
                     </span>
                   )}
                 </div>
@@ -409,8 +413,8 @@ const rows = priceListItems.map(renderRow);
                   )}
                 </button>
               ) : (
-                <span class="price-thumb-empty price-thumb-empty--lg font-serif tracking-cn" aria-label="暂时无货">
-                  暂时无货
+                <span class="price-thumb-oos" aria-label="暂时无货">
+                  <span class="price-thumb-oos__text" aria-hidden="true">暂时<br />无货</span>
                 </span>
               )}
             </div>
@@ -753,7 +757,19 @@ const rows = priceListItems.map(renderRow);
     apply();
   }
 
-  /** 缩略图加载失败：与无图一致显示「暂时无货」，避免浏览器破图图标 + alt 挤爆方框 */
+  /** 与 SSR 无图占位同一 markup（.price-thumb-oos）；避免破图图标 + alt 挤框 */
+  function createPriceThumbOos(): HTMLElement {
+    const root = document.createElement('span');
+    root.className = 'price-thumb-oos';
+    root.setAttribute('aria-label', '暂时无货');
+    const text = document.createElement('span');
+    text.className = 'price-thumb-oos__text';
+    text.setAttribute('aria-hidden', 'true');
+    text.append('暂时', document.createElement('br'), '无货');
+    root.appendChild(text);
+    return root;
+  }
+
   function initThumbFallbacks() {
     const thumbs = document.querySelectorAll<HTMLImageElement>('img[data-price-thumb]');
     thumbs.forEach((img) => {
@@ -766,12 +782,7 @@ const rows = priceListItems.map(renderRow);
         const trigger = img.closest('[data-price-zoom]');
         const wrap = trigger?.parentElement;
         if (!wrap) return;
-        const isLg = Boolean(wrap.closest('[data-price-mobile-list]'));
-        const span = document.createElement('span');
-        span.className = `price-thumb-empty${isLg ? ' price-thumb-empty--lg' : ''} font-serif tracking-cn`;
-        span.setAttribute('aria-label', '暂时无货');
-        span.textContent = '暂时无货';
-        wrap.replaceChildren(span);
+        wrap.replaceChildren(createPriceThumbOos());
       };
 
       img.addEventListener('error', applyFallback, { once: true });
@@ -1451,8 +1462,33 @@ const rows = priceListItems.map(renderRow);
   }
 
   .price-hero-title {
-    margin: 0 0 1.25rem;
+    margin: 0 0 0.65rem;
     text-shadow: 0 1px 14px rgba(0, 0, 0, 0.5);
+  }
+
+  .price-hero-brand,
+  .price-hero-heading {
+    display: block;
+  }
+
+  /* 品牌行略大，避免年份/说明盖过「山海造物」 */
+  .price-hero-brand {
+    font-size: 1.08em;
+    letter-spacing: 0.12em;
+  }
+
+  .price-hero-heading {
+    margin-top: 0.2em;
+    font-size: 0.78em;
+    letter-spacing: 0.08em;
+    opacity: 0.96;
+  }
+
+  .price-hero-year {
+    margin: 0 0 1.25rem;
+    font-size: 0.8125rem;
+    letter-spacing: 0.28em;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
   }
 
   .price-hero-lead {
@@ -1470,6 +1506,10 @@ const rows = priceListItems.map(renderRow);
 
     .price-hero-lead {
       font-size: 1.05rem;
+    }
+
+    .price-hero-year {
+      font-size: 0.875rem;
     }
   }
 
@@ -1491,19 +1531,24 @@ const rows = priceListItems.map(renderRow);
     font-variant-numeric: tabular-nums;
   }
 
-  /* 无商品图：brass/ink 水印占位（非报错态；仍可勾选采购） */
-  .price-thumb-empty {
+  /*
+   * 无货缩略图占位：:global 保证 SSR 与 JS onerror 回退共用同一套样式
+   *（动态节点没有 Astro scoped data-attr，scoped 选择器会失效 → 大白字换行）
+   */
+  :global(.price-thumb-oos) {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
     height: 100%;
-    padding: 0.2rem;
+    box-sizing: border-box;
+    padding: 0.25rem;
     text-align: center;
-    font-size: 0.5625rem;
-    letter-spacing: 0.14em;
-    line-height: 1.35;
-    color: color-mix(in srgb, var(--color-brass-mid) 72%, transparent);
+    font-family: 'Source Han Serif SC', '思源宋体', 'Songti SC', '宋体', serif;
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    line-height: 1.3;
+    color: color-mix(in srgb, var(--color-brass-mid) 78%, transparent);
     background:
       linear-gradient(
         145deg,
@@ -1514,9 +1559,8 @@ const rows = priceListItems.map(renderRow);
     user-select: none;
   }
 
-  .price-thumb-empty--lg {
-    font-size: 0.6875rem;
-    letter-spacing: 0.16em;
+  :global(.price-thumb-oos__text) {
+    display: block;
   }
 
   .price-cart-trigger[data-has-items='1'] {
