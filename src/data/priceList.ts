@@ -36,12 +36,20 @@ export function isPriceRange(value: PriceAmount | null | undefined): value is { 
   return typeof value === 'object' && value !== null && 'min' in value && 'max' in value;
 }
 
-/** 展示文案：15 / 20–40 / — */
+/** 单一金额展示：¥290；无价不加 ¥ */
+export function formatMoneyYuan(value: number): string {
+  return `¥${value}`;
+}
+
+/** 展示文案：¥15 / ¥20–¥40 / —（无价不加 ¥） */
 export function formatPriceAmount(value: PriceAmount | null | undefined): string {
   if (value === null || value === undefined) return '—';
-  if (isPriceRange(value)) return `${value.min}–${value.max}`;
-  return String(value);
+  if (isPriceRange(value)) return `${formatMoneyYuan(value.min)}–${formatMoneyYuan(value.max)}`;
+  return formatMoneyYuan(value);
 }
+
+/** @deprecated 使用 formatPriceAmount；保留别名避免漏改 */
+export const formatPrice = formatPriceAmount;
 
 /** 采购估算用下限；区间取 min，单一取自身 */
 export function priceLowerBound(value: PriceAmount | null | undefined): number | null {

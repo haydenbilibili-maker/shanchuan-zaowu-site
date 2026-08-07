@@ -913,9 +913,10 @@ const rows = priceListItems.map(renderRow);
     return Number.isFinite(n) ? n : null;
   }
 
+  /** 与 formatPriceAmount 一致：¥290；无价为 — */
   function formatMoney(n: number | null): string {
     if (n === null || n === undefined) return '—';
-    return String(n);
+    return `¥${n}`;
   }
 
   function syncPriceHeaderOffset() {
