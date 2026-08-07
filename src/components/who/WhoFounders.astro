@@ -3,7 +3,11 @@ const founders = [
   {
     cn: '李贺',
     alt: '李贺 · 「山海造物」联合创始人',
-    image: '/images/founders/lihe.png',
+    image: '/images/founders/lihe.jpg',
+    width: 1024,
+    height: 1023,
+    /** 人像偏右，竖幅裁切时锚定面孔 */
+    objectPosition: '72% 28%',
     bio: [
       '1992 年生于东北。互联网行业背景——优酷、支付宝、B 站。',
       '在「山海造物」，主导品牌叙事、IP 体系、空间规划、内容输出、资本结构。',
@@ -15,6 +19,9 @@ const founders = [
     cn: '廉澍',
     alt: '廉澍 · 「山海造物」联合创始人',
     image: '/images/founders/lianshu.png',
+    width: 900,
+    height: 1125,
+    objectPosition: '50% 30%',
     bio: [
       '生于吉林。标本工艺与工坊运营主导。',
       '在「山海造物」，主导生产体系、品控、本地交付、加盟落地。',
@@ -38,11 +45,12 @@ const founders = [
           <img
             src={f.image}
             alt={f.alt}
-            width="900"
-            height="1125"
+            width={f.width}
+            height={f.height}
             loading="lazy"
             decoding="async"
             class="w-full h-full object-cover who-founder-portrait__img transition-transform duration-700 hover:scale-[1.02]"
+            style={`object-position: ${f.objectPosition};`}
           />
         </figure>
         <h3 class="font-serif text-2xl text-cream mb-1 tracking-cn">{f.cn}</h3>
