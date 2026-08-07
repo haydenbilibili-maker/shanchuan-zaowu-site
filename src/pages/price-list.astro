@@ -164,7 +164,7 @@ const rows = priceListItems.map(renderRow);
         <button
           type="button"
           data-cart-open
-          class="text-xs tracking-cn border border-brass-mid/40 px-3 py-1.5 text-brass-mid hover:border-brass-mid hover:text-cream transition-colors"
+          class="price-cart-trigger text-xs tracking-cn border border-brass-mid/40 px-3 py-1.5 text-brass-mid hover:border-brass-mid hover:text-cream transition-colors"
         >
           采购篮 <span data-cart-badge class="tabular-nums">0</span>
         </button>
@@ -447,122 +447,143 @@ const rows = priceListItems.map(renderRow);
     </p>
   </section>
 
-  {/* 采购篮：侧栏汇总 + 提交意向 */}
+  {/* 采购篮：侧栏汇总 + 提交意向（高于表格/页头，低于原生 dialog lightbox） */}
   <div
-    data-cart-drawer
-    class="price-cart-drawer fixed inset-y-0 right-0 z-[60] w-full max-w-md translate-x-full border-l border-brass-mid/30 bg-ink-elevated shadow-[-12px_0_40px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-out"
+    data-cart-backdrop
+    class="price-cart-backdrop"
+    hidden
     aria-hidden="true"
+  ></div>
+  <aside
+    data-cart-drawer
+    class="price-cart-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="price-cart-title"
+    aria-hidden="true"
+    tabindex="-1"
   >
-    <div class="flex h-full flex-col">
-      <div class="flex items-center justify-between border-b border-brass-mid/20 px-5 py-4">
-        <div>
-          <p class="font-serif-en italic text-xs text-brass-mid tracking-widest uppercase">Purchase basket</p>
-          <h2 class="font-serif text-xl text-cream tracking-cn mt-1">采购篮</h2>
+    <div class="price-cart-shell">
+      <header class="price-cart-header">
+        <div class="min-w-0">
+          <p class="font-serif-en italic text-[11px] text-brass-mid tracking-widest uppercase">
+            Purchase basket
+          </p>
+          <h2 id="price-cart-title" class="font-serif text-xl text-cream tracking-cn mt-0.5">
+            采购篮
+          </h2>
         </div>
         <button
           type="button"
           data-cart-close
-          class="text-sm text-brass-mid tracking-cn hover:text-cream focus:outline-none focus-visible:ring-2 focus-visible:ring-brass-bright/70"
+          class="price-cart-close"
+          aria-label="关闭采购篮"
         >
-          关闭
+          <span aria-hidden="true">×</span>
         </button>
-      </div>
+      </header>
 
-      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-        <div data-cart-empty class="border border-brass-mid/20 px-4 py-8 text-center">
-          <p class="font-serif text-cream tracking-cn mb-1">尚未选择商品</p>
-          <p class="text-xs text-text-dim tracking-cn">在清单中勾选 SKU 并填写数量</p>
+      <div class="price-cart-body" data-cart-body>
+        {/* 空篮 */}
+        <div data-cart-empty class="price-cart-empty">
+          <p class="font-serif-en italic text-[11px] text-brass-mid tracking-widest uppercase mb-3">
+            Empty
+          </p>
+          <p class="font-serif text-cream text-lg tracking-cn mb-2">尚未选择商品</p>
+          <p class="text-xs text-text-dim tracking-cn leading-relaxed">
+            在清单中勾选商品并填写数量，再打开采购篮提交意向。
+          </p>
+          <button
+            type="button"
+            data-cart-close
+            class="mt-6 border border-brass-mid/40 px-4 py-2 text-sm text-brass-mid tracking-cn hover:border-brass-mid hover:text-cream transition-colors"
+          >
+            继续选购
+          </button>
         </div>
 
-        <ul data-cart-lines class="space-y-3" hidden></ul>
+        {/* 已选清单 */}
+        <section data-cart-lines-section class="price-cart-section" hidden>
+          <div class="price-cart-section-label">
+            <span>已选清单</span>
+            <span data-cart-line-count class="tabular-nums text-text-dim">0 款</span>
+          </div>
+          <ul data-cart-lines class="price-cart-lines"></ul>
+        </section>
 
-        <div data-cart-total-wrap class="flex items-baseline justify-between border-t border-brass-mid/20 pt-3" hidden>
-          <span class="text-sm text-text-soft tracking-cn">供货价小计</span>
-          <span data-cart-total class="font-serif text-brass-bright text-xl tabular-nums">—</span>
-        </div>
+        {/* 小计：独立分区，避免被列表/浮层遮挡 */}
+        <section data-cart-total-wrap class="price-cart-total" hidden>
+          <div class="price-cart-total-row">
+            <span class="text-sm text-text-soft tracking-cn">供货价小计</span>
+            <span data-cart-total class="font-serif text-brass-bright text-2xl tabular-nums tracking-cn">
+              —
+            </span>
+          </div>
+          <p data-cart-total-hint class="price-cart-total-hint" hidden>
+            含区间价商品，按供货价下限估算；精确金额以沟通确认为准
+          </p>
+        </section>
 
-        <form data-cart-form class="space-y-3 border-t border-brass-mid/20 pt-4" hidden>
-          <p class="font-serif text-cream tracking-cn">提交采购意向</p>
-          <label class="block">
-            <span class="text-xs text-brass-mid tracking-cn">联系人 *</span>
-            <input
-              name="contactName"
-              required
-              maxlength="40"
-              autocomplete="name"
-              class="mt-1 w-full border border-brass-mid/30 bg-ink-deep/50 px-3 py-2 text-sm text-cream tracking-cn focus:outline-none focus:border-brass-mid"
-            />
+        {/* 联系表单（操作按钮在 sticky footer） */}
+        <form data-cart-form class="price-cart-form" hidden>
+          <div class="price-cart-section-label">
+            <span>联系与备注</span>
+          </div>
+          <label class="price-cart-field">
+            <span>联系人 *</span>
+            <input name="contactName" required maxlength="40" autocomplete="name" />
           </label>
-          <label class="block">
-            <span class="text-xs text-brass-mid tracking-cn">电话 / 微信 *</span>
-            <input
-              name="contactPhone"
-              required
-              maxlength="60"
-              autocomplete="tel"
-              class="mt-1 w-full border border-brass-mid/30 bg-ink-deep/50 px-3 py-2 text-sm text-cream tracking-cn focus:outline-none focus:border-brass-mid"
-            />
+          <label class="price-cart-field">
+            <span>电话 / 微信 *</span>
+            <input name="contactPhone" required maxlength="60" autocomplete="tel" />
           </label>
-          <label class="block">
-            <span class="text-xs text-brass-mid tracking-cn">公司或店铺名（可选）</span>
-            <input
-              name="company"
-              maxlength="80"
-              class="mt-1 w-full border border-brass-mid/30 bg-ink-deep/50 px-3 py-2 text-sm text-cream tracking-cn focus:outline-none focus:border-brass-mid"
-            />
+          <label class="price-cart-field">
+            <span>公司或店铺名（可选）</span>
+            <input name="company" maxlength="80" />
           </label>
-          <label class="block">
-            <span class="text-xs text-brass-mid tracking-cn">收货 / 备注（可选）</span>
-            <textarea
-              name="note"
-              rows="3"
-              maxlength="500"
-              class="mt-1 w-full border border-brass-mid/30 bg-ink-deep/50 px-3 py-2 text-sm text-cream tracking-cn focus:outline-none focus:border-brass-mid resize-y"
-            ></textarea>
+          <label class="price-cart-field">
+            <span>收货 / 备注（可选）</span>
+            <textarea name="note" rows="2" maxlength="500"></textarea>
           </label>
           {/* 蜜罐：对用户隐藏，机器人填写则拒收 */}
           <label class="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
             网站
             <input name="website" tabindex="-1" autocomplete="off" />
           </label>
-          <p data-cart-msg class="text-xs tracking-cn min-h-[1.25rem]" role="status"></p>
-          <div class="flex flex-wrap gap-2 pt-1">
-            <button
-              type="button"
-              data-cart-clear
-              class="border border-brass-mid/30 px-3 py-2 text-sm text-text-soft tracking-cn hover:border-brass-mid/50 hover:text-cream"
-            >
-              清空
-            </button>
-            <button
-              type="submit"
-              data-cart-submit
-              class="flex-1 border border-brass-mid bg-brass-mid/20 px-3 py-2 text-sm text-cream tracking-cn hover:bg-brass-mid/30 disabled:opacity-50"
-            >
-              提交采购意向
-            </button>
-          </div>
         </form>
 
-        <div data-cart-success class="border border-brass-mid/30 bg-ink-deep/40 px-4 py-8 text-center" hidden>
-          <p class="font-serif text-cream text-lg tracking-cn mb-2">已提交，我们会尽快联系</p>
-          <p class="text-xs text-text-dim tracking-cn mb-4">采购意向已进入后台清单</p>
+        {/* 成功态 */}
+        <div data-cart-success class="price-cart-success" hidden>
+          <p class="font-serif-en italic text-[11px] text-brass-mid tracking-widest uppercase mb-3">
+            Sent
+          </p>
+          <p class="font-serif text-cream text-xl tracking-cn mb-2">已提交，我们会尽快联系</p>
+          <p data-cart-success-note class="text-xs text-text-dim tracking-cn leading-relaxed mb-6">
+            采购意向已进入后台清单
+          </p>
           <button
             type="button"
             data-cart-success-close
-            class="border border-brass-mid/40 px-4 py-2 text-sm text-brass-mid tracking-cn hover:text-cream"
+            class="border border-brass-mid/50 bg-brass-mid/15 px-5 py-2.5 text-sm text-cream tracking-cn hover:bg-brass-mid/25 transition-colors"
           >
             继续浏览
           </button>
         </div>
       </div>
+
+      <footer data-cart-footer class="price-cart-footer" hidden>
+        <p data-cart-msg class="price-cart-msg" role="status" aria-live="polite"></p>
+        <div class="price-cart-actions">
+          <button type="button" data-cart-clear class="price-cart-btn-ghost">
+            清空
+          </button>
+          <button type="button" data-cart-submit class="price-cart-btn-primary">
+            提交采购意向
+          </button>
+        </div>
+      </footer>
     </div>
-  </div>
-  <div
-    data-cart-backdrop
-    class="price-cart-backdrop fixed inset-0 z-[55] bg-ink-deep/60 opacity-0 pointer-events-none transition-opacity duration-300"
-    hidden
-  ></div>
+  </aside>
 
   {/* 商品图放大：原生 dialog；多图时支持上一张 / 下一张 */}
   <dialog
@@ -866,18 +887,27 @@ const rows = priceListItems.map(renderRow);
     drawer.dataset.bound = 'true';
 
     const openBtns = document.querySelectorAll<HTMLButtonElement>('[data-cart-open]');
-    const closeBtn = drawer.querySelector<HTMLButtonElement>('[data-cart-close]');
+    const closeBtns = drawer.querySelectorAll<HTMLButtonElement>('[data-cart-close]');
     const clearBtn = drawer.querySelector<HTMLButtonElement>('[data-cart-clear]');
     const form = drawer.querySelector<HTMLFormElement>('[data-cart-form]');
+    const linesSection = drawer.querySelector<HTMLElement>('[data-cart-lines-section]');
     const linesEl = drawer.querySelector<HTMLElement>('[data-cart-lines]');
+    const lineCountEl = drawer.querySelector<HTMLElement>('[data-cart-line-count]');
     const emptyEl = drawer.querySelector<HTMLElement>('[data-cart-empty]');
     const totalWrap = drawer.querySelector<HTMLElement>('[data-cart-total-wrap]');
     const totalEl = drawer.querySelector<HTMLElement>('[data-cart-total]');
+    const totalHint = drawer.querySelector<HTMLElement>('[data-cart-total-hint]');
+    const footerEl = drawer.querySelector<HTMLElement>('[data-cart-footer]');
     const msgEl = drawer.querySelector<HTMLElement>('[data-cart-msg]');
     const successEl = drawer.querySelector<HTMLElement>('[data-cart-success]');
+    const successNote = drawer.querySelector<HTMLElement>('[data-cart-success-note]');
     const successClose = drawer.querySelector<HTMLButtonElement>('[data-cart-success-close]');
     const submitBtn = drawer.querySelector<HTMLButtonElement>('[data-cart-submit]');
     const badges = document.querySelectorAll<HTMLElement>('[data-cart-badge]');
+
+    let successMode = false;
+    let lastFocus: HTMLElement | null = null;
+    let submitting = false;
 
     type CartLine = {
       skuId: string;
@@ -891,20 +921,6 @@ const rows = priceListItems.map(renderRow);
       guidePriceMax: number | null;
       guidePriceLabel: string;
     };
-
-    function rowNodes(): HTMLElement[] {
-      // 桌面与移动各有一份；按 skuId 去重，优先取当前可见（未 hidden）行
-      const all = Array.from(root!.querySelectorAll<HTMLElement>('.price-list-row[data-sku-id]'));
-      const map = new Map<string, HTMLElement>();
-      for (const row of all) {
-        const id = row.dataset.skuId || '';
-        if (!id) continue;
-        const prev = map.get(id);
-        if (!prev || (!row.hidden && prev.hidden)) map.set(id, row);
-        // 同步勾选状态到同 sku 的另一份 DOM
-      }
-      return Array.from(map.values());
-    }
 
     function syncPair(skuId: string, checked: boolean, qty: number) {
       root!.querySelectorAll<HTMLElement>(`.price-list-row[data-sku-id="${CSS.escape(skuId)}"]`).forEach((row) => {
@@ -950,51 +966,10 @@ const rows = priceListItems.map(renderRow);
       return lines;
     }
 
-    function render() {
-      const lines = collect();
-      const count = lines.reduce((s, l) => s + l.quantity, 0);
-      badges.forEach((b) => {
-        b.textContent = String(count);
-      });
-
-      if (!linesEl || !emptyEl || !totalWrap || !totalEl || !form) return;
-
-      if (lines.length === 0) {
-        emptyEl.hidden = false;
-        linesEl.hidden = true;
-        linesEl.innerHTML = '';
-        totalWrap.hidden = true;
-        form.hidden = true;
-        return;
-      }
-
-      emptyEl.hidden = true;
-      linesEl.hidden = false;
-      form.hidden = false;
-      totalWrap.hidden = false;
-
-      let subtotal: number | null = null;
-      let hasRange = false;
-      linesEl.innerHTML = lines
-        .map((l) => {
-          if (l.priceIsRange) hasRange = true;
-          const lineTotal =
-            typeof l.price === 'number' ? Math.round(l.price * l.quantity * 100) / 100 : null;
-          if (lineTotal !== null) subtotal = (subtotal ?? 0) + lineTotal;
-          const rangeHint = l.priceIsRange ? '（按区间下限估）' : '';
-          return `<li class="border border-brass-mid/20 px-3 py-2.5">
-            <div class="flex justify-between gap-3">
-              <span class="font-serif text-sm text-cream tracking-cn">${escapeHtml(l.name)}</span>
-              <span class="text-sm text-text-soft tabular-nums shrink-0">×${l.quantity}</span>
-            </div>
-            <div class="mt-1 text-xs text-text-dim tracking-cn tabular-nums">
-              供货 ${escapeHtml(l.priceLabel)}${lineTotal !== null ? ` · 小计约 ${formatMoney(lineTotal)}${rangeHint}` : ''}
-            </div>
-          </li>`;
-        })
-        .join('');
-      totalEl.textContent =
-        subtotal === null ? '—' : hasRange ? `约 ${formatMoney(subtotal)}（含区间按下限）` : formatMoney(subtotal);
+    function setMsg(text: string, kind: 'idle' | 'info' | 'error' | 'ok' = 'idle') {
+      if (!msgEl) return;
+      msgEl.textContent = text;
+      msgEl.dataset.kind = kind;
     }
 
     function escapeHtml(s: string) {
@@ -1005,25 +980,233 @@ const rows = priceListItems.map(renderRow);
         .replace(/"/g, '&quot;');
     }
 
-    function openDrawer() {
+    function focusableInDrawer(): HTMLElement[] {
+      return Array.from(
+        drawer.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => {
+        if (el.closest('[hidden]')) return false;
+        const style = window.getComputedStyle(el);
+        return style.visibility !== 'hidden' && style.display !== 'none';
+      });
+    }
+
+    function render() {
+      const lines = collect();
+      const count = lines.reduce((s, l) => s + l.quantity, 0);
+      badges.forEach((b) => {
+        b.textContent = String(count);
+      });
+      openBtns.forEach((btn) => {
+        btn.dataset.hasItems = lines.length > 0 ? '1' : '0';
+      });
+
+      if (!linesEl || !emptyEl || !totalWrap || !totalEl || !form || !footerEl || !linesSection) return;
+
+      if (successMode) {
+        emptyEl.hidden = true;
+        linesSection.hidden = true;
+        totalWrap.hidden = true;
+        form.hidden = true;
+        footerEl.hidden = true;
+        if (successEl) successEl.hidden = false;
+        return;
+      }
+
       if (successEl) successEl.hidden = true;
-      if (form) form.hidden = collect().length === 0;
+
+      if (lines.length === 0) {
+        emptyEl.hidden = false;
+        linesSection.hidden = true;
+        linesEl.innerHTML = '';
+        totalWrap.hidden = true;
+        form.hidden = true;
+        footerEl.hidden = true;
+        if (totalHint) totalHint.hidden = true;
+        return;
+      }
+
+      emptyEl.hidden = true;
+      linesSection.hidden = false;
+      form.hidden = false;
+      totalWrap.hidden = false;
+      footerEl.hidden = false;
+      if (lineCountEl) lineCountEl.textContent = `${lines.length} 款`;
+
+      let subtotal: number | null = null;
+      let hasRange = false;
+      linesEl.innerHTML = lines
+        .map((l) => {
+          if (l.priceIsRange) hasRange = true;
+          const lineTotal =
+            typeof l.price === 'number' ? Math.round(l.price * l.quantity * 100) / 100 : null;
+          if (lineTotal !== null) subtotal = (subtotal ?? 0) + lineTotal;
+          const lineTotalLabel =
+            lineTotal === null
+              ? ''
+              : l.priceIsRange
+                ? `约 ${formatMoney(lineTotal)}`
+                : formatMoney(lineTotal);
+          return `<li class="price-cart-line" data-cart-line data-sku-id="${escapeHtml(l.skuId)}">
+            <div class="price-cart-line-top">
+              <span class="price-cart-line-name">${escapeHtml(l.name)}</span>
+              <button type="button" class="price-cart-line-remove" data-cart-remove="${escapeHtml(l.skuId)}" aria-label="移除 ${escapeHtml(l.name)}">移除</button>
+            </div>
+            <div class="price-cart-line-meta">
+              <span>供货 ${escapeHtml(l.priceLabel)}</span>
+              ${l.priceIsRange ? '<span class="price-cart-line-range">按下限估</span>' : ''}
+            </div>
+            <div class="price-cart-line-bottom">
+              <div class="price-cart-qty" role="group" aria-label="${escapeHtml(l.name)} 数量">
+                <button type="button" data-cart-qty-delta="-1" data-sku-id="${escapeHtml(l.skuId)}" aria-label="减少数量">−</button>
+                <input type="number" min="1" max="9999" value="${l.quantity}" data-cart-qty-input data-sku-id="${escapeHtml(l.skuId)}" aria-label="${escapeHtml(l.name)} 数量" />
+                <button type="button" data-cart-qty-delta="1" data-sku-id="${escapeHtml(l.skuId)}" aria-label="增加数量">+</button>
+              </div>
+              <span class="price-cart-line-subtotal tabular-nums">${lineTotalLabel || '—'}</span>
+            </div>
+          </li>`;
+        })
+        .join('');
+
+      if (subtotal === null) {
+        totalEl.textContent = '—';
+        if (totalHint) totalHint.hidden = true;
+      } else if (hasRange) {
+        totalEl.textContent = `约 ${formatMoney(subtotal)}`;
+        if (totalHint) totalHint.hidden = false;
+      } else {
+        totalEl.textContent = formatMoney(subtotal);
+        if (totalHint) totalHint.hidden = true;
+      }
+    }
+
+    function openDrawer() {
+      successMode = false;
+      setMsg('');
       render();
+      lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       drawer.classList.add('is-open');
       drawer.setAttribute('aria-hidden', 'false');
       backdrop.hidden = false;
-      requestAnimationFrame(() => backdrop.classList.add('is-open'));
+      backdrop.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('price-cart-open');
       document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => {
+        backdrop.classList.add('is-open');
+        const focusables = focusableInDrawer();
+        (focusables[0] || drawer).focus?.();
+      });
     }
 
     function closeDrawer() {
       drawer.classList.remove('is-open');
       drawer.setAttribute('aria-hidden', 'true');
       backdrop.classList.remove('is-open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      document.documentElement.classList.remove('price-cart-open');
       document.body.style.overflow = '';
       window.setTimeout(() => {
         if (!drawer.classList.contains('is-open')) backdrop.hidden = true;
       }, 300);
+      lastFocus?.focus?.();
+      lastFocus = null;
+    }
+
+    function setQty(skuId: string, qty: number) {
+      const next = Math.min(9999, Math.max(1, Math.floor(qty)));
+      syncPair(skuId, true, next);
+      render();
+    }
+
+    function removeLine(skuId: string) {
+      syncPair(skuId, false, 1);
+      setMsg('');
+      render();
+    }
+
+    function clearCart() {
+      root!.querySelectorAll<HTMLInputElement>('[data-sku-check]').forEach((c) => {
+        c.checked = false;
+      });
+      root!.querySelectorAll<HTMLInputElement>('[data-sku-qty]').forEach((q) => {
+        q.value = '1';
+        q.disabled = true;
+      });
+      successMode = false;
+      setMsg('');
+      render();
+    }
+
+    async function handleSubmit() {
+      if (!form || submitting) return;
+      const lines = collect();
+      if (lines.length === 0) {
+        setMsg('请至少选择 1 个商品', 'error');
+        return;
+      }
+      const fd = new FormData(form);
+      if (String(fd.get('website') || '').trim()) {
+        // 蜜罐命中：静默成功，不落库
+        successMode = true;
+        if (successNote) successNote.textContent = '采购意向已进入后台清单';
+        setMsg('');
+        render();
+        return;
+      }
+      const contactName = String(fd.get('contactName') || '').trim();
+      const contactPhone = String(fd.get('contactPhone') || '').trim();
+      if (!contactName || !contactPhone) {
+        setMsg('请填写联系人与联系方式', 'error');
+        form.querySelector<HTMLInputElement>(!contactName ? '[name="contactName"]' : '[name="contactPhone"]')?.focus();
+        return;
+      }
+
+      submitting = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '提交中…';
+      }
+      setMsg('正在提交采购意向…', 'info');
+
+      try {
+        const result = await submitPurchaseIntent({
+          contactName,
+          contactPhone,
+          company: String(fd.get('company') || '').trim() || undefined,
+          note: String(fd.get('note') || '').trim() || undefined,
+          items: lines,
+        });
+        if (!result.ok) {
+          setMsg(result.error || '提交失败，请稍后重试', 'error');
+          return;
+        }
+        form.reset();
+        root!.querySelectorAll<HTMLInputElement>('[data-sku-check]').forEach((c) => {
+          c.checked = false;
+        });
+        root!.querySelectorAll<HTMLInputElement>('[data-sku-qty]').forEach((q) => {
+          q.value = '1';
+          q.disabled = true;
+        });
+        successMode = true;
+        if (successNote) {
+          successNote.textContent =
+            result.mode === 'local'
+              ? '已本机暂存；云端就绪后可同步写入采购意向库'
+              : '采购意向已进入后台清单';
+        }
+        setMsg('');
+        render();
+      } catch (err) {
+        setMsg(err instanceof Error ? err.message : '提交失败，请稍后重试', 'error');
+      } finally {
+        submitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '提交采购意向';
+        }
+      }
     }
 
     root.addEventListener('change', (e) => {
@@ -1036,6 +1219,7 @@ const rows = priceListItems.map(renderRow);
         const qtyInput = row.querySelector<HTMLInputElement>('[data-sku-qty]');
         const qty = Math.min(9999, Math.max(1, Math.floor(Number(qtyInput?.value || 1))));
         syncPair(skuId, t.checked, qty);
+        if (successMode) successMode = false;
         render();
       } else if (t.matches('[data-sku-qty]')) {
         const check = row.querySelector<HTMLInputElement>('[data-sku-check]');
@@ -1052,111 +1236,70 @@ const rows = priceListItems.map(renderRow);
       render();
     });
 
+    linesEl?.addEventListener('click', (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      const removeBtn = t.closest<HTMLElement>('[data-cart-remove]');
+      if (removeBtn) {
+        removeLine(removeBtn.getAttribute('data-cart-remove') || '');
+        return;
+      }
+      const deltaBtn = t.closest<HTMLElement>('[data-cart-qty-delta]');
+      if (deltaBtn) {
+        const skuId = deltaBtn.getAttribute('data-sku-id') || '';
+        const delta = Number(deltaBtn.getAttribute('data-cart-qty-delta') || 0);
+        const line = collect().find((l) => l.skuId === skuId);
+        if (!line) return;
+        const next = line.quantity + delta;
+        if (next < 1) removeLine(skuId);
+        else setQty(skuId, next);
+      }
+    });
+
+    linesEl?.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement) || !t.matches('[data-cart-qty-input]')) return;
+      const skuId = t.getAttribute('data-sku-id') || '';
+      setQty(skuId, Number(t.value || 1));
+    });
+
     openBtns.forEach((btn) => btn.addEventListener('click', openDrawer));
-    closeBtn?.addEventListener('click', closeDrawer);
+    closeBtns.forEach((btn) => btn.addEventListener('click', closeDrawer));
     backdrop.addEventListener('click', closeDrawer);
     successClose?.addEventListener('click', () => {
-      if (successEl) successEl.hidden = true;
+      successMode = false;
       closeDrawer();
-    });
-
-    clearBtn?.addEventListener('click', () => {
-      root!.querySelectorAll<HTMLInputElement>('[data-sku-check]').forEach((c) => {
-        c.checked = false;
-      });
-      root!.querySelectorAll<HTMLInputElement>('[data-sku-qty]').forEach((q) => {
-        q.value = '1';
-        q.disabled = true;
-      });
-      if (msgEl) {
-        msgEl.textContent = '';
-        msgEl.className = 'text-xs tracking-cn min-h-[1.25rem]';
-      }
-      if (successEl) successEl.hidden = true;
       render();
     });
-
-    form?.addEventListener('submit', async (e) => {
+    clearBtn?.addEventListener('click', clearCart);
+    submitBtn?.addEventListener('click', () => {
+      void handleSubmit();
+    });
+    form?.addEventListener('submit', (e) => {
       e.preventDefault();
-      const lines = collect();
-      if (lines.length === 0) {
-        if (msgEl) {
-          msgEl.textContent = '请至少选择 1 个商品';
-          msgEl.className = 'text-xs tracking-cn min-h-[1.25rem] text-coral-mid';
-        }
-        return;
-      }
-      const fd = new FormData(form);
-      if (String(fd.get('website') || '').trim()) {
-        // 蜜罐命中：静默成功，不落库
-        form.hidden = true;
-        if (successEl) successEl.hidden = false;
-        return;
-      }
-      const contactName = String(fd.get('contactName') || '').trim();
-      const contactPhone = String(fd.get('contactPhone') || '').trim();
-      if (!contactName || !contactPhone) {
-        if (msgEl) {
-          msgEl.textContent = '请填写联系人与联系方式';
-          msgEl.className = 'text-xs tracking-cn min-h-[1.25rem] text-[color:var(--color-coral,#c45c4a)]';
-        }
-        return;
-      }
-
-      if (submitBtn) submitBtn.disabled = true;
-      if (msgEl) {
-        msgEl.textContent = '提交中…';
-        msgEl.className = 'text-xs tracking-cn min-h-[1.25rem] text-text-dim';
-      }
-
-      try {
-        const result = await submitPurchaseIntent({
-          contactName,
-          contactPhone,
-          company: String(fd.get('company') || '').trim() || undefined,
-          note: String(fd.get('note') || '').trim() || undefined,
-          items: lines,
-        });
-        if (!result.ok) {
-          if (msgEl) {
-            msgEl.textContent = result.error || '提交失败，请稍后重试';
-            msgEl.className = 'text-xs tracking-cn min-h-[1.25rem] text-[color:var(--color-coral,#c45c4a)]';
-          }
-          return;
-        }
-        form.reset();
-        root!.querySelectorAll<HTMLInputElement>('[data-sku-check]').forEach((c) => {
-          c.checked = false;
-        });
-        root!.querySelectorAll<HTMLInputElement>('[data-sku-qty]').forEach((q) => {
-          q.value = '1';
-          q.disabled = true;
-        });
-        render();
-        form.hidden = true;
-        if (linesEl) linesEl.hidden = true;
-        if (totalWrap) totalWrap.hidden = true;
-        if (emptyEl) emptyEl.hidden = true;
-        if (successEl) successEl.hidden = false;
-        if (msgEl) {
-          msgEl.textContent =
-            result.mode === 'local'
-              ? '已提交（本机暂存；云端就绪后将自动写入采购意向库）'
-              : '';
-          msgEl.className = 'text-xs tracking-cn min-h-[1.25rem] text-text-dim';
-        }
-      } catch (err) {
-        if (msgEl) {
-          msgEl.textContent = err instanceof Error ? err.message : '提交失败，请稍后重试';
-          msgEl.className = 'text-xs tracking-cn min-h-[1.25rem] text-[color:var(--color-coral,#c45c4a)]';
-        }
-      } finally {
-        if (submitBtn) submitBtn.disabled = false;
-      }
+      void handleSubmit();
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && drawer.classList.contains('is-open')) closeDrawer();
+      if (!drawer.classList.contains('is-open')) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeDrawer();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const focusables = focusableInDrawer();
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     });
 
     render();
@@ -1303,12 +1446,451 @@ const rows = priceListItems.map(renderRow);
     letter-spacing: 0.16em;
   }
 
-  .price-cart-drawer.is-open {
-    transform: translateX(0);
+  .price-cart-trigger[data-has-items='1'] {
+    border-color: var(--color-brass-mid);
+    background: color-mix(in srgb, var(--color-brass-mid) 14%, transparent);
+    color: var(--color-cream);
+  }
+
+  /* ===== 采购篮抽屉 ===== */
+  .price-cart-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: color-mix(in srgb, var(--color-ink-deep) 72%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
   }
 
   .price-cart-backdrop.is-open {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  .price-cart-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 80;
+    width: min(100vw, 400px);
+    max-width: 100vw;
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    /* 不透明底，避免表格「规格」等列透出/叠层打架 */
+    background:
+      linear-gradient(
+        165deg,
+        color-mix(in srgb, var(--color-brass-mid) 8%, var(--color-ink-elevated)) 0%,
+        var(--color-ink-elevated) 28%,
+        var(--color-ink-deep) 100%
+      );
+    border-left: 1px solid color-mix(in srgb, var(--color-brass-mid) 38%, transparent);
+    box-shadow: -16px 0 48px rgba(0, 0, 0, 0.4);
+    outline: none;
+  }
+
+  .price-cart-drawer.is-open {
+    transform: translateX(0);
+  }
+
+  .price-cart-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .price-cart-header {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-shrink: 0;
+    padding: 1.15rem 1.25rem 1rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-brass-mid) 22%, transparent);
+    background: color-mix(in srgb, var(--color-ink-elevated) 92%, transparent);
+  }
+
+  .price-cart-close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: -0.25rem -0.35rem 0 0;
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 35%, transparent);
+    color: var(--color-brass-mid);
+    font-size: 1.35rem;
+    line-height: 1;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .price-cart-close:hover {
+    color: var(--color-cream);
+    border-color: var(--color-brass-mid);
+    background: color-mix(in srgb, var(--color-brass-mid) 12%, transparent);
+  }
+
+  .price-cart-close:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-brass-bright) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  .price-cart-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.1rem 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+  }
+
+  .price-cart-empty {
+    margin: auto 0;
+    text-align: center;
+    padding: 2rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 22%, transparent);
+    background: color-mix(in srgb, var(--color-ink-deep) 45%, transparent);
+  }
+
+  .price-cart-section-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-serif, ui-serif, Georgia, serif);
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    color: var(--color-cream);
+  }
+
+  .price-cart-lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  /* 动态渲染行无 Astro scope 属性，子树样式用 :global */
+  .price-cart-lines :global(.price-cart-line) {
+    padding: 0.85rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 24%, transparent);
+    background: color-mix(in srgb, var(--color-ink-deep) 55%, transparent);
+  }
+
+  .price-cart-lines :global(.price-cart-line-top) {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .price-cart-lines :global(.price-cart-line-name) {
+    font-family: var(--font-serif, ui-serif, Georgia, serif);
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    color: var(--color-cream);
+    line-height: 1.4;
+  }
+
+  .price-cart-lines :global(.price-cart-line-remove) {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--color-text-dim);
+    transition: color 0.2s ease;
+  }
+
+  .price-cart-lines :global(.price-cart-line-remove:hover) {
+    color: var(--color-coral-mid, #c97a5e);
+  }
+
+  .price-cart-lines :global(.price-cart-line-meta) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--color-text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .price-cart-lines :global(.price-cart-line-range) {
+    padding: 0.05rem 0.35rem;
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 35%, transparent);
+    color: var(--color-brass-mid);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+  }
+
+  .price-cart-lines :global(.price-cart-line-bottom) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.7rem;
+  }
+
+  .price-cart-lines :global(.price-cart-qty) {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 30%, transparent);
+  }
+
+  .price-cart-lines :global(.price-cart-qty button) {
+    width: 1.85rem;
+    color: var(--color-brass-mid);
+    font-size: 1rem;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .price-cart-lines :global(.price-cart-qty button:hover) {
+    background: color-mix(in srgb, var(--color-brass-mid) 14%, transparent);
+    color: var(--color-cream);
+  }
+
+  .price-cart-lines :global(.price-cart-qty input) {
+    width: 2.6rem;
+    border: 0;
+    border-left: 1px solid color-mix(in srgb, var(--color-brass-mid) 25%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--color-brass-mid) 25%, transparent);
+    background: transparent;
+    color: var(--color-cream);
+    text-align: center;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+  }
+
+  .price-cart-lines :global(.price-cart-qty input::-webkit-outer-spin-button),
+  .price-cart-lines :global(.price-cart-qty input::-webkit-inner-spin-button) {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .price-cart-lines :global(.price-cart-line-subtotal) {
+    font-family: var(--font-serif, ui-serif, Georgia, serif);
+    font-size: 1rem;
+    color: var(--color-brass-bright);
+    letter-spacing: 0.04em;
+  }
+
+  .price-cart-total {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    padding: 0.95rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 40%, transparent);
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--color-brass-mid) 12%, var(--color-ink-deep)) 0%,
+        var(--color-ink-deep) 100%
+      );
+  }
+
+  .price-cart-total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .price-cart-total-hint {
+    margin: 0.55rem 0 0;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    color: var(--color-brass-mid);
+  }
+
+  .price-cart-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding-top: 0.15rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-brass-mid) 18%, transparent);
+  }
+
+  .price-cart-form .price-cart-section-label {
+    margin-bottom: 0.15rem;
+  }
+
+  .price-cart-field {
+    display: block;
+  }
+
+  .price-cart-field > span {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--color-brass-mid);
+  }
+
+  .price-cart-field input,
+  .price-cart-field textarea {
+    width: 100%;
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 28%, transparent);
+    background: color-mix(in srgb, var(--color-ink-deep) 70%, transparent);
+    padding: 0.65rem 0.75rem;
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+    color: var(--color-cream);
+    resize: vertical;
+  }
+
+  .price-cart-field input:focus,
+  .price-cart-field textarea:focus {
+    outline: none;
+    border-color: var(--color-brass-mid);
+  }
+
+  .price-cart-success {
+    margin: auto 0;
+    text-align: center;
+    padding: 2rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 35%, transparent);
+    background: color-mix(in srgb, var(--color-ink-deep) 50%, transparent);
+  }
+
+  .price-cart-footer {
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding: 0.85rem 1.25rem calc(0.95rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid color-mix(in srgb, var(--color-brass-mid) 28%, transparent);
+    background: color-mix(in srgb, var(--color-ink-elevated) 96%, transparent);
+    backdrop-filter: blur(8px);
+  }
+
+  .price-cart-msg {
+    min-height: 1.15rem;
+    margin: 0 0 0.55rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    color: var(--color-text-dim);
+  }
+
+  .price-cart-msg[data-kind='error'] {
+    color: var(--color-coral-mid, #c97a5e);
+  }
+
+  .price-cart-msg[data-kind='info'] {
+    color: var(--color-brass-mid);
+  }
+
+  .price-cart-msg[data-kind='ok'] {
+    color: var(--color-brass-bright);
+  }
+
+  .price-cart-actions {
+    display: flex;
+    gap: 0.55rem;
+  }
+
+  .price-cart-btn-ghost,
+  .price-cart-btn-primary {
+    padding: 0.7rem 0.9rem;
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .price-cart-btn-ghost {
+    border: 1px solid color-mix(in srgb, var(--color-brass-mid) 28%, transparent);
+    color: var(--color-text-soft);
+  }
+
+  .price-cart-btn-ghost:hover {
+    border-color: color-mix(in srgb, var(--color-brass-mid) 50%, transparent);
+    color: var(--color-cream);
+  }
+
+  .price-cart-btn-primary {
+    flex: 1;
+    border: 1px solid var(--color-brass-mid);
+    background: color-mix(in srgb, var(--color-brass-mid) 22%, transparent);
+    color: var(--color-cream);
+  }
+
+  .price-cart-btn-primary:hover {
+    background: color-mix(in srgb, var(--color-brass-mid) 32%, transparent);
+  }
+
+  .price-cart-btn-primary:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+
+  /* 打开时压低页头/主题钮叠层冲突，保证抽屉可读 */
+  :global(html.price-cart-open header.sticky) {
+    z-index: 40;
+  }
+
+  :global(html.price-cart-open .skip-to-main) {
+    z-index: 40;
+  }
+
+  /* 移动端：底部 sheet，避免裁切表单与提交区 */
+  @media (max-width: 767px) {
+    .price-cart-drawer {
+      top: auto;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: none;
+      max-height: min(92vh, 760px);
+      border-left: none;
+      border-top: 1px solid color-mix(in srgb, var(--color-brass-mid) 40%, transparent);
+      box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+      transform: translateY(100%);
+    }
+
+    .price-cart-drawer.is-open {
+      transform: translateY(0);
+    }
+
+    .price-cart-header {
+      padding-top: 0.85rem;
+    }
+
+    .price-cart-header::before {
+      content: '';
+      position: absolute;
+      top: 0.4rem;
+      left: 50%;
+      width: 2.5rem;
+      height: 3px;
+      transform: translateX(-50%);
+      background: color-mix(in srgb, var(--color-brass-mid) 45%, transparent);
+    }
+
+    .price-cart-shell {
+      position: relative;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .price-cart-drawer,
+    .price-cart-backdrop {
+      transition: none;
+    }
   }
 </style>
