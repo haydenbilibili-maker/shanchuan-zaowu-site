@@ -1,4 +1,4 @@
-import{$t as e,Zt as t,_n as n,bn as r,dn as i,en as a,nn as o,pn as s,r as c,rn as l}from"./element-plus-fsBmGXUl.js";import{g as u,h as d,s as f,v as p}from"./index-B_BVpAxk.js";var m={class:`sales-ai`},h={key:0,class:`result-card`},g=[`innerHTML`],_=d({__name:`SalesAI`,props:{feature:Object},setup(d){let _=r(!1),v=r(``),y=async()=>{_.value=!0;try{let e=await f(!1,{useFinancialData:!0,period:`week`});if(!e){c.error(`获取数据失败`);return}let t=await p(`基于以下销售数据，预测未来30天的销售趋势：
+import{$t as e,Zt as t,_n as n,bn as r,dn as i,en as a,nn as o,pn as s,r as c,rn as l}from"./element-plus-fsBmGXUl.js";import{g as u,h as d,s as f,v as p}from"./index-DuFA98fB.js";var m={class:`sales-ai`},h={key:0,class:`result-card`},g=[`innerHTML`],_=d({__name:`SalesAI`,props:{feature:Object},setup(d){let _=r(!1),v=r(``),y=async()=>{_.value=!0;try{let e=await f(!1,{useFinancialData:!0,period:`week`});if(!e){c.error(`获取数据失败`);return}let t=await p(`基于以下销售数据，预测未来30天的销售趋势：
 
 当前数据：
 - 本周营收：¥${e.finance.weeklyRevenue.toFixed(2)}
