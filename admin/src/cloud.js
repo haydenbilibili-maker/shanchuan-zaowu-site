@@ -400,7 +400,7 @@ export const getCollectionData = async (collectionName, options = {}) => {
  * 拉取集合并在客户端排序（仅 CDN SDK，不回退 bundle）
  */
 export const fetchCollectionSorted = async (collectionName, options = {}) => {
-  const { limit = 500, sortFn, where } = options;
+  const { limit = 500, sortFn, where, throwOnError = false } = options;
   try {
     let rows = await fetchCollectionLimit(collectionName, { limit, where });
     if (sortFn && rows.length) {
@@ -409,6 +409,7 @@ export const fetchCollectionSorted = async (collectionName, options = {}) => {
     return rows;
   } catch (err) {
     console.warn(`[fetchCollectionSorted] ${collectionName}`, err?.message || err);
+    if (throwOnError) throw err;
     return [];
   }
 };

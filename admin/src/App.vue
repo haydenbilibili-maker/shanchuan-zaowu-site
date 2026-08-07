@@ -157,6 +157,7 @@
                 <el-menu-item index="1"><el-icon><Box /></el-icon><span>藏品档案库</span></el-menu-item>
                 <el-menu-item index="43"><el-icon><Menu /></el-icon><span>分类管理</span></el-menu-item>
                 <el-menu-item index="3"><el-icon><List /></el-icon><span>全渠道订单</span></el-menu-item>
+                <el-menu-item index="52"><el-icon><ShoppingCart /></el-icon><span>采购管理</span></el-menu-item>
                 <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="场 · 体验">

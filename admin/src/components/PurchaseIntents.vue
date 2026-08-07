@@ -2,16 +2,25 @@
   <div class="pi-container">
     <div class="panel-header">
       <div class="title-box">
-        <h2>采购意向清单 / PURCHASE INTENTS</h2>
-        <span class="subtitle">PRICE-LIST · 官网报价单提交</span>
+        <h2>采购管理 / PURCHASE INTENTS</h2>
+        <span class="subtitle">官网报价单 · purchase_intents</span>
       </div>
       <div class="header-actions">
+        <el-input
+          v-model="keyword"
+          size="small"
+          clearable
+          placeholder="搜索联系人 / 电话"
+          style="width: 180px"
+          :prefix-icon="Search"
+        />
         <el-select v-model="statusFilter" size="small" style="width: 120px" @change="refresh">
           <el-option label="全部状态" value="all" />
           <el-option label="待处理" value="pending" />
           <el-option label="已联系" value="contacted" />
           <el-option label="已关闭" value="closed" />
         </el-select>
+        <el-button size="small" :icon="Download" @click="exportCsv" :disabled="!filteredList.length">导出</el-button>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
     </div>
@@ -19,47 +28,62 @@
     <el-alert
       v-if="sourceHint"
       :title="sourceHint"
-      type="info"
+      :type="hintType"
       :closable="false"
       show-icon
       style="margin-bottom: 12px"
     />
 
     <el-card shadow="never">
-      <el-table :data="list" v-loading="loading" stripe @row-click="viewDetail">
-        <el-table-column label="提交时间" width="170">
+      <el-table
+        :data="filteredList"
+        v-loading="loading"
+        stripe
+        @row-click="viewDetail"
+      >
+        <template #empty>
+          <el-empty :description="emptyDesc" :image-size="88" />
+        </template>
+        <el-table-column label="提交时间" width="168">
           <template #default="{ row }">
             <div class="t-main">{{ fmt(row.createdAt || row.createTime) }}</div>
-            <div class="t-sub">{{ row.source || 'price-list' }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="联系人" width="140">
+        <el-table-column label="联系人" width="110" show-overflow-tooltip>
           <template #default="{ row }">
-            <div class="t-main">{{ row.contactName || '-' }}</div>
-            <div class="t-sub" v-if="row.company">{{ row.company }}</div>
+            <span class="t-main">{{ row.contactName || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="联系方式" width="160">
+        <el-table-column label="电话/微信" width="140" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="phone">{{ row.contactPhone || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="SKU 明细" min-width="220">
+        <el-table-column label="公司" min-width="120" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.company || '—' }}</template>
+        </el-table-column>
+        <el-table-column label="SKU 件数" width="90" align="center">
+          <template #default="{ row }">{{ skuCount(row.items) }}</template>
+        </el-table-column>
+        <el-table-column label="供货小计" width="120">
           <template #default="{ row }">
-            <div class="items-preview">{{ itemsPreview(row.items) }}</div>
-            <div class="t-sub" v-if="row.totalAmount != null">
-              估算合计 ¥{{ row.totalAmount }}{{ hasRange(row.items) ? '（含区间按下限）' : '' }}
-            </div>
+            <template v-if="row.totalAmount != null">
+              <span class="amount">¥{{ row.totalAmount }}</span>
+              <div class="t-sub" v-if="hasRange(row.items)">含区间下限</div>
+            </template>
+            <span v-else class="t-sub">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="备注" min-width="140" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.note || '—' }}</template>
-        </el-table-column>
-        <el-table-column label="状态" width="110">
+        <el-table-column label="状态" width="96">
           <template #default="{ row }">
             <el-tag :type="statusType(row.status)" effect="dark" size="small">
               {{ statusLabel(row.status) }}
             </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="来源" width="100">
+          <template #default="{ row }">
+            <span class="t-sub">{{ sourceLabel(row.source) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
@@ -90,7 +114,7 @@
       </el-table>
     </el-card>
 
-    <el-drawer v-model="detailOpen" title="采购意向详情" size="480px" destroy-on-close>
+    <el-drawer v-model="detailOpen" title="采购意向详情" size="520px" destroy-on-close>
       <template v-if="current">
         <el-descriptions :column="1" border size="small">
           <el-descriptions-item label="提交时间">{{ fmt(current.createdAt || current.createTime) }}</el-descriptions-item>
@@ -100,13 +124,13 @@
           <el-descriptions-item label="联系人">{{ current.contactName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="电话/微信">{{ current.contactPhone || '-' }}</el-descriptions-item>
           <el-descriptions-item label="公司/店铺">{{ current.company || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="备注">{{ current.note || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="来源">{{ current.source || 'price-list' }}</el-descriptions-item>
-          <el-descriptions-item label="存储">{{ current.persistedVia || (String(current._id || '').startsWith('local_') ? 'local' : 'cloudbase') }}</el-descriptions-item>
+          <el-descriptions-item label="客户备注">{{ current.note || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="来源">{{ sourceLabel(current.source) }}</el-descriptions-item>
+          <el-descriptions-item label="存储">{{ storageLabel(current) }}</el-descriptions-item>
         </el-descriptions>
 
         <div class="detail-items">
-          <div class="seg">SKU 明细</div>
+          <div class="seg">SKU 明细（{{ skuCount(current.items) }} 件）</div>
           <el-table :data="current.items || []" size="small" border>
             <el-table-column prop="name" label="品名" min-width="140" />
             <el-table-column prop="quantity" label="数量" width="70" />
@@ -122,7 +146,7 @@
             </el-table-column>
           </el-table>
           <p class="total-line" v-if="current.totalAmount != null">
-            估算合计：¥{{ current.totalAmount }}
+            供货小计：¥{{ current.totalAmount }}
             <span v-if="hasRange(current.items)">（区间 SKU 按下限）</span>
           </p>
         </div>
@@ -131,6 +155,7 @@
           <el-button v-if="current.status !== 'contacted'" type="primary" color="#d4af37" @click="setStatus(current, 'contacted')">标记已联系</el-button>
           <el-button v-if="current.status !== 'closed'" @click="setStatus(current, 'closed')">关闭</el-button>
           <el-button v-if="current.status !== 'pending'" @click="setStatus(current, 'pending')">标为待处理</el-button>
+          <el-button :icon="DocumentCopy" @click="copyDetail(current)">复制明细</el-button>
         </div>
       </template>
     </el-drawer>
@@ -138,8 +163,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue'
+import { Refresh, Search, Download, DocumentCopy } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { fetchCollectionSorted, cdnUpdate } from '../cloud'
 
@@ -149,9 +174,12 @@ const LOCAL_KEY = 'shanhai_purchase_intents_v1'
 const list = ref([])
 const loading = ref(false)
 const statusFilter = ref('pending')
+const keyword = ref('')
 const detailOpen = ref(false)
 const current = ref(null)
 const sourceHint = ref('')
+const hintType = ref('info')
+const cloudOk = ref(false)
 
 const STATUS = {
   pending: { text: '待处理', type: 'warning' },
@@ -160,6 +188,16 @@ const STATUS = {
 }
 const statusLabel = (s) => STATUS[s]?.text || s || '待处理'
 const statusType = (s) => STATUS[s]?.type || 'info'
+
+const sourceLabel = (s) => {
+  if (!s || s === 'price-list') return '报价页'
+  return s
+}
+
+const storageLabel = (row) => {
+  if (row.persistedVia) return row.persistedVia
+  return String(row._id || '').startsWith('local_') ? 'local' : 'cloudbase'
+}
 
 const fmt = (ts) => {
   if (!ts) return ''
@@ -178,13 +216,25 @@ const formatItemPrice = (row) => {
 
 const hasRange = (items) => Array.isArray(items) && items.some((i) => i?.priceIsRange)
 
-const itemsPreview = (items) => {
-  if (!Array.isArray(items) || !items.length) return '—'
-  return items
-    .slice(0, 3)
-    .map((i) => `${i.name}×${i.quantity}`)
-    .join('、') + (items.length > 3 ? ` 等${items.length}项` : '')
-}
+const skuCount = (items) => (Array.isArray(items) ? items.length : 0)
+
+const filteredList = computed(() => {
+  const q = keyword.value.trim().toLowerCase()
+  if (!q) return list.value
+  return list.value.filter((r) => {
+    const name = String(r.contactName || '').toLowerCase()
+    const phone = String(r.contactPhone || '').toLowerCase()
+    const company = String(r.company || '').toLowerCase()
+    return name.includes(q) || phone.includes(q) || company.includes(q)
+  })
+})
+
+const emptyDesc = computed(() => {
+  if (keyword.value.trim()) return '无匹配联系人/电话'
+  if (statusFilter.value === 'pending') return '暂无待处理意向（可切换「全部状态」查看）'
+  if (!cloudOk.value) return '云端不可用且本机暂无镜像'
+  return '暂无采购意向'
+})
 
 const readLocal = () => {
   try {
@@ -219,19 +269,22 @@ const mergeById = (cloudRows, localRows) => {
 const refresh = async () => {
   loading.value = true
   sourceHint.value = ''
+  hintType.value = 'info'
+  cloudOk.value = false
   try {
     let cloudRows = []
-    let cloudOk = false
     try {
       const where = statusFilter.value === 'all' ? null : { status: statusFilter.value }
       cloudRows = await fetchCollectionSorted(COLLECTION, {
         limit: 200,
         where,
+        throwOnError: true,
         sortFn: (a, b) => (b.createdAt || b.createTime || 0) - (a.createdAt || a.createTime || 0)
       })
-      cloudOk = true
+      cloudOk.value = true
     } catch (e) {
       console.warn('purchase_intents cloud load failed', e)
+      hintType.value = 'warning'
       sourceHint.value = 'CloudBase 集合 purchase_intents 暂不可用，已显示本机镜像（需建集合并配置规则后可云端同步）'
     }
 
@@ -241,9 +294,11 @@ const refresh = async () => {
     }
 
     list.value = mergeById(cloudRows, localRows)
-    if (cloudOk && !cloudRows.length && localRows.length) {
+    if (cloudOk.value && !cloudRows.length && !localRows.length) {
+      // 空态由 el-empty 展示，无需额外提示
+    } else if (cloudOk.value && !cloudRows.length && localRows.length) {
       sourceHint.value = '云端暂无记录；列表含本机暂存（同源报价页提交）'
-    } else if (cloudOk && localRows.some((r) => r.persistedVia === 'local')) {
+    } else if (cloudOk.value && localRows.some((r) => r.persistedVia === 'local')) {
       sourceHint.value = '已合并 CloudBase 与本机暂存'
     }
   } catch (e) {
@@ -259,6 +314,67 @@ const viewDetail = (row) => {
   detailOpen.value = true
 }
 
+const buildDetailText = (row) => {
+  const lines = [
+    `【采购意向】${fmt(row.createdAt || row.createTime)}`,
+    `联系人：${row.contactName || '-'}`,
+    `电话/微信：${row.contactPhone || '-'}`,
+    `公司：${row.company || '—'}`,
+    `状态：${statusLabel(row.status)}`,
+    `来源：${sourceLabel(row.source)}`,
+    `备注：${row.note || '—'}`,
+    '',
+    'SKU 明细：',
+    ...(Array.isArray(row.items) ? row.items.map((it, i) =>
+      `${i + 1}. ${it.name} × ${it.quantity} · 供货 ${it.priceLabel || formatItemPrice(it)}`
+    ) : ['（无）']),
+  ]
+  if (row.totalAmount != null) lines.push('', `供货小计：¥${row.totalAmount}`)
+  return lines.join('\n')
+}
+
+const copyDetail = async (row) => {
+  try {
+    await navigator.clipboard.writeText(buildDetailText(row))
+    ElMessage.success('明细已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动选择文本')
+  }
+}
+
+const exportCsv = () => {
+  const rows = filteredList.value
+  if (!rows.length) return
+  const header = ['提交时间', '联系人', '电话微信', '公司', 'SKU件数', '供货小计', '状态', '来源', '备注', '明细']
+  const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const lines = [header.join(',')]
+  for (const r of rows) {
+    const detail = (r.items || [])
+      .map((it) => `${it.name}×${it.quantity}`)
+      .join('；')
+    lines.push([
+      fmt(r.createdAt || r.createTime),
+      r.contactName,
+      r.contactPhone,
+      r.company || '',
+      skuCount(r.items),
+      r.totalAmount ?? '',
+      statusLabel(r.status),
+      sourceLabel(r.source),
+      r.note || '',
+      detail
+    ].map(escape).join(','))
+  }
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `采购意向_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success(`已导出 ${rows.length} 条`)
+}
+
 const setStatus = async (row, status) => {
   if (!row?._id) return
   const id = row._id
@@ -267,21 +383,18 @@ const setStatus = async (row, status) => {
     if (!isLocal) {
       await cdnUpdate(COLLECTION, id, { status, updatedAt: Date.now() })
     }
-    // 同步本地镜像
     const local = readLocal()
     const idx = local.findIndex((x) => x._id === id)
     if (idx >= 0) {
       local[idx] = { ...local[idx], status, updatedAt: Date.now() }
       writeLocal(local)
     } else if (isLocal) {
-      // 仅本地：更新列表项本身
       writeLocal([{ ...row, status, updatedAt: Date.now() }, ...local.filter((x) => x._id !== id)])
     }
     ElMessage.success(`已更新为「${statusLabel(status)}」`)
     if (current.value?._id === id) current.value = { ...current.value, status }
     refresh()
   } catch (e) {
-    // 云端失败时仍改本地
     const local = readLocal()
     const next = local.map((x) => (x._id === id ? { ...x, status, updatedAt: Date.now() } : x))
     if (!next.find((x) => x._id === id)) next.unshift({ ...row, status, updatedAt: Date.now() })
@@ -296,14 +409,14 @@ onMounted(refresh)
 
 <style scoped>
 .pi-container { padding: 10px; }
-.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
 .title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid #d4af37; padding-left: 12px; font-weight: 800; }
 .title-box .subtitle { color: #999; font-size: 12px; padding-left: 17px; letter-spacing: 2px; }
-.header-actions { display: flex; align-items: center; gap: 8px; }
+.header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .t-main { font-weight: 600; color: #333; }
 .t-sub { font-size: 12px; color: #999; margin-top: 2px; }
 .phone { color: #666; }
-.items-preview { font-size: 13px; color: #333; line-height: 1.45; }
+.amount { font-weight: 700; color: #333; }
 .detail-items { margin-top: 20px; }
 .seg { font-size: 12px; color: #999; margin-bottom: 8px; letter-spacing: 1px; }
 .total-line { margin-top: 12px; color: #d4af37; font-weight: 700; }

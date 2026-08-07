@@ -1,0 +1,140 @@
+---
+/** 工坊现场 · 内部工作环境图带（创始团队之后） */
+const photos = [
+  {
+    src: '/images/who/studio/workshop-overview.jpg',
+    alt: '山海造物工坊全景：多人在木质工作台前组装标本匣，货架上码放框架与物料',
+    width: 1024,
+    height: 684,
+  },
+  {
+    src: '/images/who/studio/shell-clock-team.jpg',
+    alt: '三位工坊伙伴围桌协作，细致组装以蓝色闪蝶为中心的贝壳钟面',
+    width: 1024,
+    height: 684,
+  },
+  {
+    src: '/images/who/studio/fine-detail.jpg',
+    alt: '工坊伙伴俯身近景，在切割垫上用镊子进行精细手工装配',
+    width: 1024,
+    height: 684,
+  },
+  {
+    src: '/images/who/studio/glasses-bench.jpg',
+    alt: '戴眼镜的工坊伙伴在工位前专注作业，桌上摆放滴胶与工具',
+    width: 1024,
+    height: 684,
+  },
+  {
+    src: '/images/who/studio/window-station.jpg',
+    alt: '靠窗工位与竹帘采光，工匠在木质桌前作业，旁侧物料架与绿植',
+    width: 1024,
+    height: 684,
+  },
+];
+---
+
+<section class="who-studio fade-in" aria-labelledby="who-studio-title">
+  <div class="editorial-section who-studio__intro">
+    <p class="font-serif-en italic text-brass-mid text-xs tracking-widest uppercase mb-2">
+      Studio · 工坊
+    </p>
+    <h2 id="who-studio-title" class="section-title text-cream mb-3">制作现场</h2>
+    <p class="prose-cn max-w-[48ch] text-text-soft">
+      长春工坊的日常——标本匣、贝壳钟与精细装配，都在同一张工作台上发生。
+    </p>
+  </div>
+
+  <div
+    class="who-studio__bleed"
+    role="region"
+    aria-label="工坊工作环境照片，可横向滑动浏览"
+    tabindex="0"
+  >
+    <ul class="who-studio__track">
+      {
+        photos.map((p) => (
+          <li class="who-studio__frame">
+            <img
+              src={p.src}
+              alt={p.alt}
+              width={p.width}
+              height={p.height}
+              loading="lazy"
+              decoding="async"
+              class="who-studio__img"
+            />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .who-studio {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem);
+  }
+
+  .who-studio__intro {
+    padding-block: 0 1.75rem;
+  }
+
+  /* 全宽横滑图带（章节本身通栏，不再用 100vw 以免挤出页面滚动条） */
+  .who-studio__bleed {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--rgb-brass-mid) / 0.45) transparent;
+    outline: none;
+  }
+
+  .who-studio__bleed:focus-visible {
+    box-shadow: inset 0 0 0 1px rgb(var(--rgb-brass-mid) / 0.55);
+  }
+
+  .who-studio__track {
+    list-style: none;
+    margin: 0;
+    padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+    display: flex;
+    gap: clamp(0.65rem, 1.4vw, 1.1rem);
+    width: max-content;
+  }
+
+  .who-studio__frame {
+    flex: 0 0 auto;
+    width: min(78vw, 32rem);
+    aspect-ratio: 1024 / 684;
+    overflow: hidden;
+    scroll-snap-align: start;
+    background: var(--color-ink-elevated);
+  }
+
+  .who-studio__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.9) contrast(1.03);
+    transform: scale(1.01);
+    transition: transform 0.9s ease, filter 0.6s ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .who-studio__frame:hover .who-studio__img {
+      transform: scale(1.04);
+      filter: saturate(0.96) contrast(1.04);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .who-studio__img {
+      transition: none;
+      transform: none;
+    }
+  }
+</style>

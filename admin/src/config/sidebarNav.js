@@ -21,7 +21,7 @@ export const SIDEBAR_NAV = {
         title: '交易履约',
         items: [
           { id: '3', icon: 'List', label: '全渠道订单' },
-          { id: '52', icon: 'ShoppingCart', label: '采购意向' },
+          { id: '52', icon: 'ShoppingCart', label: '采购管理' },
           { id: '42', icon: 'Refresh', label: '退款审核' },
         ],
       },
