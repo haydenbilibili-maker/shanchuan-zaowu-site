@@ -15,7 +15,7 @@ const statementLines = data.statement.split('\n');
 ---
 
 <Layout title={`${data.name} · ${data.en}`} description={statementLines[0]}>
-  <div class="view-page">
+  <div class="view-page museum-palette">
     <section class="view-hero">
       <p class="caps-tag-num">{data.num} &nbsp;/&nbsp; {data.en.toUpperCase()}</p>
       <h1 class="view-title">{data.name}</h1>
@@ -69,20 +69,7 @@ const statementLines = data.statement.split('\n');
 </Layout>
 
 <style>
-  .view-page {
-    --ink: #0e0e0e;
-    --cream-100: #f5f0e1;
-    --text-primary: #f5f0e1;
-    --text-secondary: #a89f87;
-    --brass-mid: #b89867;
-    --brass-light: #c9a876;
-    --border-quiet: rgba(184, 152, 103, 0.15);
-    --font-cn-serif: 'Source Han Serif SC', 'Noto Serif SC', '思源宋体', serif;
-    --font-en-serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
-    background: var(--ink);
-    color: var(--text-primary);
-    font-family: var(--font-cn-serif);
-  }
+  /* 色板由全局 .museum-palette 桥接 data-theme */
 
   .caps-tag,
   .caps-tag-num {

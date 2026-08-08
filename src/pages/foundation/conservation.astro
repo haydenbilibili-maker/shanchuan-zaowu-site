@@ -6,7 +6,7 @@ import Layout from '../../components/Layout.astro';
   title="1% 承诺执行细则"
   description="山海造物 1% 营收承诺的捐赠方向、红线、影响测算与透明披露——即将上线。"
 >
-  <div class="conservation-placeholder">
+  <div class="conservation-placeholder museum-palette">
     <p class="caps-tag">CONSERVATION &nbsp;·&nbsp; 1% 承诺执行细则</p>
     <h1 class="placeholder-title">即将上线</h1>
     <p class="placeholder-body">
@@ -20,18 +20,9 @@ import Layout from '../../components/Layout.astro';
 
 <style>
   .conservation-placeholder {
-    --ink: #0e0e0e;
-    --cream-100: #f5f0e1;
-    --text-secondary: #a89f87;
-    --brass-mid: #b89867;
-    --font-cn-serif: 'Source Han Serif SC', 'Noto Serif SC', '思源宋体', serif;
-    --font-en-serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
     min-height: 60vh;
     padding: 200px 6vw;
     text-align: center;
-    background: var(--ink);
-    color: var(--cream-100);
-    font-family: var(--font-cn-serif);
   }
   .caps-tag {
     font-family: var(--font-en-serif);
@@ -60,8 +51,9 @@ import Layout from '../../components/Layout.astro';
     text-decoration: none;
     border-bottom: 0.5px solid var(--brass-mid);
     padding-bottom: 2px;
+    transition: color 0.25s ease;
   }
   .placeholder-back a:hover {
-    color: #c9a876;
+    color: var(--brass-light);
   }
 </style>

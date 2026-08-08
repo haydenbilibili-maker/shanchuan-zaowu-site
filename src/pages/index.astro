@@ -10,20 +10,20 @@ import Layout from '../components/Layout.astro';
   image="/specimens/hero-specimen.jpg"
   preloadImage="/specimens/hero-specimen.jpg"
 >
-  <div class="home">
+  <div class="home museum-palette">
     {/* 节拍 1 · Hero · Direction B · 全幅背景 + 文字叠加 */}
-    <section class="hero" aria-labelledby="hero-title">
+    <section class="hero museum-hero-night" aria-labelledby="hero-title">
       <div class="hero-bg" role="img" aria-label="山海造物展陈空间 · 暖光下实木标本柜与装框蝴蝶陈列"></div>
       <div class="hero-overlay" aria-hidden="true"></div>
 
       <div class="hero-content">
-        <p class="caps-tag hero-caps">NATURE'S CREATIONS &nbsp;·&nbsp; SINCE 2024</p>
+        <p class="caps-tag hero-caps hero-reveal">NATURE'S CREATIONS &nbsp;·&nbsp; SINCE 2024</p>
         <h1 id="hero-title" class="hero-title">
-          <span class="hero-phrase">让自然博物美学</span><br aria-hidden="true" />
-          <span class="hero-phrase">进入日常生活</span>
+          <span class="hero-phrase hero-reveal hero-reveal-d1">让自然博物美学</span><br aria-hidden="true" />
+          <span class="hero-phrase hero-reveal hero-reveal-d2">进入日常生活</span>
         </h1>
-        <p class="hero-tagline-en">Bring Nature Home.</p>
-        <p class="hero-blurb">
+        <p class="hero-tagline-en hero-reveal hero-reveal-d3">Bring Nature Home.</p>
+        <p class="hero-blurb hero-reveal hero-reveal-d4">
           做自然博物美学的标本与衍生品 · 开「让人留得比必要的久」的店。
         </p>
       </div>
@@ -35,7 +35,7 @@ import Layout from '../components/Layout.astro';
     </section>
 
     {/* 节拍 2 · 品牌画像 · 四入口 */}
-    <section class="entry-grid" aria-labelledby="entry-title">
+    <section class="entry-grid fade-in" aria-labelledby="entry-title">
       <h2 id="entry-title" class="section-major-title">品牌画像</h2>
 
       <div class="entry-cards">
@@ -82,7 +82,7 @@ import Layout from '../components/Layout.astro';
     </section>
 
     {/* 节拍 3 · 价值底座 */}
-    <section class="foundation" aria-labelledby="foundation-title">
+    <section class="foundation fade-in" aria-labelledby="foundation-title">
       <p class="caps-tag-deep">FOUNDATION</p>
       <h2 id="foundation-title" class="foundation-title">价值底座</h2>
       <p class="foundation-subtitle">一切的底色</p>
@@ -101,7 +101,7 @@ import Layout from '../components/Layout.astro';
     </section>
 
     {/* 节拍 4 · 我们的承诺 · 2x2 */}
-    <section class="commitments" aria-labelledby="commitments-title">
+    <section class="commitments fade-in" aria-labelledby="commitments-title">
       <p class="caps-tag">OUR COMMITMENTS &nbsp;·&nbsp; 我们的承诺</p>
       <h2 id="commitments-title" class="section-title">
         山海造物的店不只是商业空间<br />是城市公共生活的一部分。
@@ -178,24 +178,22 @@ import Layout from '../components/Layout.astro';
 </Layout>
 
 <style>
-  .home {
-    --ink: #0e0e0e;
-    --ink-deep: #1a140b;
-    --cream-100: #f5f0e1;
-    --text-primary: #f5f0e1;
-    --text-secondary: #a89f87;
-    --text-tertiary: #6b6353;
-    --brass-mid: #b89867;
-    --brass-light: #c9a876;
-    --border-quiet: rgba(184, 152, 103, 0.15);
-    --border-mid: rgba(184, 152, 103, 0.3);
+  /* 色板由全局 .museum-palette 桥接 data-theme；Hero 用 .museum-hero-night 保可读 */
 
-    --font-cn-serif: 'Source Han Serif SC', 'Noto Serif SC', 'Songti SC', '宋体', serif;
-    --font-en-serif: 'Cormorant Garamond', 'Lyon Text', Georgia, serif;
-
-    background: var(--ink);
-    color: var(--text-primary);
-    font-family: var(--font-cn-serif);
+  .hero-reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: hero-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .hero-reveal-d1 { animation-delay: 0.12s; }
+  .hero-reveal-d2 { animation-delay: 0.24s; }
+  .hero-reveal-d3 { animation-delay: 0.36s; }
+  .hero-reveal-d4 { animation-delay: 0.48s; }
+  @keyframes hero-rise {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .caps-tag,
@@ -338,7 +336,7 @@ import Layout from '../components/Layout.astro';
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    color: #e8e2d0;
+    color: var(--cream-100);
   }
 
   .scroll-arrow {
@@ -359,6 +357,16 @@ import Layout from '../components/Layout.astro';
 
   @media (prefers-reduced-motion: reduce) {
     .scroll-arrow {
+      animation: none;
+    }
+
+    .hero-reveal,
+    .hero-reveal-d1,
+    .hero-reveal-d2,
+    .hero-reveal-d3,
+    .hero-reveal-d4 {
+      opacity: 1;
+      transform: none;
       animation: none;
     }
 
@@ -401,7 +409,7 @@ import Layout from '../components/Layout.astro';
     min-height: 280px;
   }
   .entry-card:hover {
-    background: rgba(184, 152, 103, 0.04);
+    background: var(--hover-wash, rgb(var(--rgb-brass-mid) / 0.06));
   }
   .card-tag-en {
     position: absolute;
@@ -507,7 +515,7 @@ import Layout from '../components/Layout.astro';
   }
 
   .cta-button--quiet {
-    border-color: rgba(184, 152, 103, 0.35);
+    border-color: var(--border-mid);
     color: var(--text-secondary);
     font-size: 13px;
     letter-spacing: 0.12em;

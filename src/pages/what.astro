@@ -286,7 +286,7 @@ const themeSpecimenSchematics = [
   title="我们做什么"
   description="山海造物做四件事：让你拿走一件来自山海的物 · 走进一座小型博物馆 · 读到它背后的语境 · 加入这个长期项目。"
 >
-  <div class="what-page">
+  <div class="what-page museum-palette">
 
     {/* ━━━━━━━━━━━━━━━ INTRO ━━━━━━━━━━━━━━━ */}
     <section class="what-hero">
@@ -786,26 +786,7 @@ const themeSpecimenSchematics = [
 </Layout>
 
 <style>
-  /* 色板 + 字体 · 与主页 v0.3.1 一致 */
-  .what-page {
-    --ink: #0E0E0E;
-    --ink-deep: #1A140B;
-    --cream-100: #F5F0E1;
-    --cream-200: #E8E2D0;
-    --text-primary: #F5F0E1;
-    --text-secondary: #A89F87;
-    --text-tertiary: #6B6353;
-    --brass-deep: #5F4C2B;
-    --brass-mid: #B89867;
-    --brass-light: #C9A876;
-    --border-quiet: rgba(184, 152, 103, 0.15);
-    --border-mid: rgba(184, 152, 103, 0.3);
-    --font-cn-serif: 'Source Han Serif SC', 'Noto Serif SC', '思源宋体', serif;
-    --font-en-serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
-    background: var(--ink);
-    color: var(--text-primary);
-    font-family: var(--font-cn-serif);
-  }
+  /* 色板由全局 .museum-palette 桥接 data-theme */
 
   .caps-tag,
   .caps-tag-deep {
@@ -939,7 +920,7 @@ const themeSpecimenSchematics = [
   }
   .line-block.text-only { max-width: 820px; }
   .line-block.featured {
-    background: rgba(184, 152, 103, 0.03);
+    background: var(--hover-wash);
     border-left: 2px solid var(--brass-mid);
     padding-left: calc(6vw + 12px);
   }

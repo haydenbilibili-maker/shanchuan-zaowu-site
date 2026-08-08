@@ -17,12 +17,14 @@ function isNavActive(href: string): boolean {
 }
 ---
 
-<header class="sticky top-0 z-50 bg-ink/85 backdrop-blur-md border-b border-brass-mid/15">
+<header class="site-header sticky top-0 z-50 bg-ink/85 backdrop-blur-md border-b border-brass-mid/15">
   <nav class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-    <!-- Logo -->
+    <!-- Logo · 品牌级信号 -->
     <a href="/" class="group flex items-baseline gap-3">
-      <span class="font-serif text-xl text-cream tracking-cn">山海造物</span>
-      <span class="font-serif-en text-sm text-brass-mid italic hidden sm:inline">
+      <span class="font-serif text-xl text-cream tracking-cn transition-colors duration-200 group-hover:text-brass-mid">
+        山海造物
+      </span>
+      <span class="font-serif-en text-sm text-brass-mid italic hidden sm:inline transition-opacity duration-200 group-hover:opacity-80">
         Nature&rsquo;s Creations
       </span>
     </a>
@@ -34,9 +36,10 @@ function isNavActive(href: string): boolean {
           <a
             href={item.href}
             class:list={[
-              'text-text-soft hover:text-brass-mid transition-colors duration-200',
-              isNavActive(item.href) && 'text-brass-mid',
+              'nav-link text-text-soft hover:text-brass-mid transition-colors duration-200',
+              isNavActive(item.href) && 'is-active text-brass-mid',
             ]}
+            aria-current={isNavActive(item.href) ? 'page' : undefined}
           >
             {item.label}
           </a>
@@ -49,8 +52,10 @@ function isNavActive(href: string): boolean {
       <button
         id="theme-toggle"
         type="button"
-        aria-label="切换深浅模式"
-        class="p-2 text-text-soft hover:text-brass-mid transition-colors"
+        class="theme-toggle"
+        aria-label="切换到浅色模式"
+        aria-pressed="true"
+        title="切换日视 / 夜览"
       >
         <!-- 深色模式时显示太阳（提示切到浅色） -->
         <svg
@@ -63,6 +68,7 @@ function isNavActive(href: string): boolean {
           stroke-width="1.5"
           stroke-linecap="round"
           stroke-linejoin="round"
+          aria-hidden="true"
         >
           <circle cx="12" cy="12" r="4" />
           <line x1="12" y1="2" x2="12" y2="5" />
@@ -86,6 +92,7 @@ function isNavActive(href: string): boolean {
           stroke-width="1.5"
           stroke-linecap="round"
           stroke-linejoin="round"
+          aria-hidden="true"
         >
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>
@@ -95,12 +102,12 @@ function isNavActive(href: string): boolean {
       <button
         id="mobile-menu-btn"
         type="button"
-        class="md:hidden p-2 text-cream"
+        class="md:hidden theme-toggle"
         aria-expanded="false"
         aria-controls="mobile-menu"
         aria-label="打开菜单"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
           <line x1="4" y1="8" x2="20" y2="8" />
           <line x1="4" y1="16" x2="20" y2="16" />
         </svg>
@@ -110,15 +117,16 @@ function isNavActive(href: string): boolean {
 
   <!-- Mobile menu drawer -->
   <div id="mobile-menu" class="hidden md:hidden border-t border-brass-mid/15 bg-ink-elevated">
-    <ul class="px-6 py-4 space-y-3">
+    <ul class="px-6 py-4 space-y-1">
       {navItems.map((item) => (
         <li>
           <a
             href={item.href}
             class:list={[
-              'mobile-nav-link block py-2 text-text-soft transition-colors',
+              'mobile-nav-link block py-2.5 text-text-soft transition-colors duration-200 hover:text-brass-mid',
               isNavActive(item.href) && 'text-brass-mid',
             ]}
+            aria-current={isNavActive(item.href) ? 'page' : undefined}
           >
             {item.label}
           </a>
@@ -130,23 +138,66 @@ function isNavActive(href: string): boolean {
 
 <script>
   // @ts-nocheck
+  const THEME_META = { dark: '#1A1814', light: '#FAFAF5' };
+
   function syncThemeColor(theme) {
     const tc = document.getElementById('theme-color-dynamic');
-    if (tc) tc.setAttribute('content', theme === 'dark' ? '#1A1814' : '#FAFAF5');
+    if (tc) tc.setAttribute('content', THEME_META[theme] || THEME_META.dark);
   }
+
+  function syncThemeToggle(theme) {
+    const themeBtn = document.getElementById('theme-toggle');
+    if (!themeBtn) return;
+    const isDark = theme === 'dark';
+    themeBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+    themeBtn.setAttribute('aria-label', isDark ? '切换到浅色模式' : '切换到深色模式');
+    themeBtn.setAttribute('title', isDark ? '切换日视' : '切换夜览');
+  }
+
+  function applyTheme(next, { persist = true, animate = true } = {}) {
+    const root = document.documentElement;
+    if (animate && !root.classList.contains('reduce-motion')) {
+      root.classList.add('theme-transition');
+      window.setTimeout(() => root.classList.remove('theme-transition'), 400);
+    }
+    root.dataset.theme = next;
+    root.style.colorScheme = next;
+    syncThemeColor(next);
+    syncThemeToggle(next);
+    if (persist) {
+      try {
+        localStorage.setItem('theme', next);
+      } catch (e) {
+        // localStorage 不可用时静默失败
+      }
+    }
+  }
+
+  syncThemeToggle(document.documentElement.dataset.theme || 'dark');
 
   const themeBtn = document.getElementById('theme-toggle');
   themeBtn?.addEventListener('click', () => {
     const current = document.documentElement.dataset.theme;
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    syncThemeColor(next);
-    try {
-      localStorage.setItem('theme', next);
-    } catch (e) {
-      // localStorage 不可用时静默失败
-    }
+    applyTheme(current === 'dark' ? 'light' : 'dark');
   });
+
+  // 未手动选择时，跟随系统偏好变化
+  try {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onSchemeChange = (e) => {
+      let stored = null;
+      try {
+        stored = localStorage.getItem('theme');
+      } catch (_) {}
+      if (stored) return;
+      applyTheme(e.matches ? 'dark' : 'light', { persist: false });
+    };
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', onSchemeChange);
+    } else if (typeof mq.addListener === 'function') {
+      mq.addListener(onSchemeChange);
+    }
+  } catch (_) {}
 
   const btn = document.getElementById('mobile-menu-btn');
   const menu = document.getElementById('mobile-menu');
@@ -165,15 +216,48 @@ function isNavActive(href: string): boolean {
 </script>
 
 <style>
+  .site-header {
+    transition: background-color 0.35s ease, border-color 0.35s ease;
+  }
+
+  .nav-link {
+    position: relative;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -0.35rem;
+    width: 100%;
+    height: 1px;
+    background: var(--color-brass-mid);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+    opacity: 0.7;
+  }
+
+  .nav-link:hover::after,
+  .nav-link.is-active::after {
+    transform: scaleX(1);
+  }
+
   /* 根据当前主题显示对应图标 · 默认隐藏，由 data-theme 选中显示 */
   .theme-icon-sun,
   .theme-icon-moon {
     display: none;
   }
-  :root[data-theme='dark'] .theme-icon-sun {
+  :global(:root[data-theme='dark']) .theme-icon-sun {
     display: block;
   }
-  :root[data-theme='light'] .theme-icon-moon {
+  :global(:root[data-theme='light']) .theme-icon-moon {
     display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-link::after {
+      transition: none;
+    }
   }
 </style>

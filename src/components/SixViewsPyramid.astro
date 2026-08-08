@@ -82,27 +82,29 @@
 </div>
 
 <style>
+  /* 与全局 ink/brass/coral token 对齐，仍保留金字塔专用层级对比 */
   .six-views-pyramid-root {
-    --pyramid-coral-fill: #4a1b0c;
-    --pyramid-coral-stroke: #f0997b;
-    --pyramid-coral-title: #faece7;
-    --pyramid-coral-sub: #f0997b;
-    --pyramid-tier-fill: #412402;
-    --pyramid-tier-stroke: #ef9f27;
-    --pyramid-tier-title: #faeeda;
-    --pyramid-tier-sub: #ef9f27;
-    --pyramid-footnote: #998b73;
+    --pyramid-coral-fill: color-mix(in srgb, var(--color-coral-deep) 55%, #1a0c08);
+    --pyramid-coral-stroke: var(--color-coral-mid);
+    --pyramid-coral-title: var(--color-cream);
+    --pyramid-coral-sub: var(--color-coral-mid);
+    --pyramid-tier-fill: color-mix(in srgb, var(--color-brass-deep) 40%, var(--color-ink-deep));
+    --pyramid-tier-stroke: var(--color-brass-mid);
+    --pyramid-tier-title: var(--color-cream);
+    --pyramid-tier-sub: var(--color-brass-mid);
+    --pyramid-footnote: var(--color-text-dim);
+    transition: opacity 0.35s ease;
   }
 
   :global(:root[data-theme='light']) .six-views-pyramid-root {
-    --pyramid-coral-fill: #faece7;
-    --pyramid-coral-stroke: #993c1d;
-    --pyramid-coral-title: #712b13;
-    --pyramid-coral-sub: #993c1d;
-    --pyramid-tier-fill: #faeeda;
-    --pyramid-tier-stroke: #854f0b;
-    --pyramid-tier-title: #633806;
-    --pyramid-tier-sub: #854f0b;
-    --pyramid-footnote: #6b5f4f;
+    --pyramid-coral-fill: color-mix(in srgb, var(--color-coral-mid) 18%, var(--color-ink));
+    --pyramid-coral-stroke: var(--color-coral-deep);
+    --pyramid-coral-title: var(--color-coral-deep);
+    --pyramid-coral-sub: var(--color-coral-mid);
+    --pyramid-tier-fill: color-mix(in srgb, var(--color-brass-mid) 12%, var(--color-ink-elevated));
+    --pyramid-tier-stroke: var(--color-brass-mid);
+    --pyramid-tier-title: var(--color-brass-deep);
+    --pyramid-tier-sub: var(--color-brass-mid);
+    --pyramid-footnote: var(--color-text-soft);
   }
 </style>

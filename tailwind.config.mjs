@@ -66,15 +66,13 @@ export default {
         // ============================================================
         // VI v2.0 米白纸张色族 · 独立色族 · 不参与双主题切换
         // ----------------------------------------------------------------
-        // Footer 是"翻到出版物末页"的物理体验，需要稳定的米白纸张感。
-        // paper 设为 #F2EDE4 而非 #FAFAF5，避免浅色模式下 Footer
-        // 与 main（也是 #FAFAF5）同色合并丢失边界。
+        // 预留给印刷感区块 / 拉丁学名等；站点 Footer 现随 data-theme。
         // ============================================================
-        paper: '#F2EDE4',          // 微暖白纸张：比浅色 main 深一档
-        'nature-green': '#2D6A4F', // 自然绿：Footer 标题 / hover
-        'earth-brown': '#8B6F47',  // 大地棕：拉丁学名
-        'mineral-purple': '#7B68AE', // 矿物紫：保留备用
-        'ink-text': '#2C2C2C',     // 墨绿黑：Footer 正文
+        paper: '#F2EDE4',
+        'nature-green': '#2D6A4F',
+        'earth-brown': '#8B6F47',
+        'mineral-purple': '#7B68AE',
+        'ink-text': '#2C2C2C',
       },
       fontFamily: {
         serif: [

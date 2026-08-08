@@ -53,7 +53,7 @@ const rows = priceListItems.map(renderRow);
   preloadImage={coverImage}
 >
   {/* 全宽 bleed 封面：主视觉平面 + 标题叠层（本页专用，不改 PageHero） */}
-  <section class="price-hero" aria-labelledby="price-hero-title">
+  <section class="price-hero museum-hero-night" aria-labelledby="price-hero-title">
     <div class="price-hero-media">
       <img
         src={coverImage}
@@ -1455,6 +1455,17 @@ const rows = priceListItems.map(renderRow);
     margin: 0 auto;
     padding: 7.5rem 1.25rem 3.5rem;
     text-align: center;
+    /* 摄影 Hero：强制夜览可读色，不随浅色主题反色 */
+    color: var(--cream-100);
+  }
+
+  .price-hero :global(.text-cream),
+  .price-hero :global(.display-title) {
+    color: var(--cream-100);
+  }
+
+  .price-hero :global(.text-brass-mid) {
+    color: var(--brass-mid);
   }
 
   .price-hero-eyebrow {
@@ -1518,10 +1529,27 @@ const rows = priceListItems.map(renderRow);
     scrollbar-width: thin;
   }
 
+  .price-filter-chip {
+    border-radius: 0;
+  }
+
+  .price-filter-chip:focus-visible {
+    outline: 2px solid var(--color-brass-mid);
+    outline-offset: 2px;
+  }
+
   .price-filter-chip.is-active {
     border-color: var(--color-brass-mid);
     background-color: color-mix(in srgb, var(--color-brass-mid) 15%, transparent);
     color: var(--color-cream);
+  }
+
+  .price-list-row {
+    transition: background-color 0.2s ease;
+  }
+
+  .price-list-row:hover {
+    background-color: var(--color-hover-wash);
   }
 
   .price-zoom-dialog::backdrop {
