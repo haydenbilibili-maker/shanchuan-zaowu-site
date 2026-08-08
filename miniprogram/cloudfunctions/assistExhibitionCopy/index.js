@@ -81,7 +81,7 @@ async function callQwenText(prompt, apiKey) {
 
 function buildPrompt(title, themeHint) {
   const hintLine = themeHint ? `\n【创作方向/关键词】${themeHint}` : ''
-  return `你是「山川造物 Nature's Creations」博物馆的专题策展文案助手。品牌调性：维多利亚博物学奇珍柜——克制、具体、有感官细节，禁止直播电商话术与 emoji。
+  return `你是「山海造物 Nature's Creations」博物馆的专题策展文案助手。品牌调性：维多利亚博物学奇珍柜——克制、具体、有感官细节，禁止直播电商话术与 emoji。
 
 【任务】为以下专题生成策展文案，输出 JSON。
 

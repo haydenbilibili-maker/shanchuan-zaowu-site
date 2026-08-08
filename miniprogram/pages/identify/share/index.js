@@ -224,7 +224,7 @@ Page({
 
     ctx.fillStyle = 'rgba(196, 167, 108,0.35)'
     ctx.font = '22px sans-serif'
-    ctx.fillText(a.brand_sub || '把山川带回家', 48, y)
+    ctx.fillText(a.brand_sub || '把山海带回家', 48, y)
     if (a.brand_en) {
       y += 28
       ctx.fillStyle = 'rgba(255,255,255,0.28)'

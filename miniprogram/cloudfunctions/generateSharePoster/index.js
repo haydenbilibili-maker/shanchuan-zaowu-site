@@ -87,7 +87,7 @@ exports.main = async (event, context) => {
         fun_fact: ai.fun_fact || '',
         brief: si.brief_description || '',
         poster_title: '山海造物 · AI 标本鉴定',
-        brand_sub: '把山川带回家',
+        brand_sub: '把山海带回家',
         brand_en: "NATURE'S CREATIONS"
       }
     }

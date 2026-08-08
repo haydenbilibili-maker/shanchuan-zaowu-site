@@ -544,5 +544,5 @@ flowchart TD
 
 ---
 
-*山海造物 Nature's Creations — 把山川带回家*  
+*山海造物 Nature's Creations — 把山海带回家*  
 *PRD v0.1 | 2026-05-23*

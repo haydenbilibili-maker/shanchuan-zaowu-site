@@ -162,7 +162,7 @@ const LEGACY_EXHIBITIONS = [
     content: sectionsToHtml([
       {
         title: '策展语',
-        body: '山川造物的空间，像一间可以走进去的奇珍柜。暖光压低对比，让黄铜、木纹与标本本体成为唯一主角。',
+        body: '山海造物的空间，像一间可以走进去的奇珍柜。暖光压低对比，让黄铜、木纹与标本本体成为唯一主角。',
         images: [MEDIA.bannerMuseum, MEDIA.storeCover]
       }
     ])
