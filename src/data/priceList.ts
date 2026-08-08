@@ -781,9 +781,11 @@ export const priceListItems: PriceListItem[] = [
     packaging: '瓶',
     packagingFilter: '其它标本',
     bioFilter: '海洋',
-    price: null,
+    price: 10,
+    guidePrice: 39,
     specs: '瓶装浸液标本 · 容量 / 尺寸待补',
     note: '海洋浸液标本',
+    image: '/images/price-list/jellyfish-bottle.jpg',
   },
 
   // —— 爬行动物 ——
