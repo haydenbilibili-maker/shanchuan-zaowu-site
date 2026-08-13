@@ -803,7 +803,7 @@ import PartnerDestinyCenter from './components/PartnerDestinyCenter.vue'
 import CapitalArchitectureSandbox from './components/CapitalArchitectureSandbox.vue'
 import StartupCostModel from './components/StartupCostModel.vue'
 import ContentFactory from './components/ContentFactory.vue'
-import BrandVIS from './components/BrandVIS.vue'
+const BrandVIS = asyncWith(() => import('./components/BrandVIS.vue'))
 import ComplianceCenter from './components/ComplianceCenter.vue'
 import MemberLevelConfig from './components/MemberLevelConfig.vue'
 import PointsRulesConfig from './components/PointsRulesConfig.vue'
@@ -826,7 +826,7 @@ import StoreDesignCenter from './components/StoreDesignCenter.vue'
 // 🟢 对齐小程序能力的 7 个新模块
 import Bookings from './components/Bookings.vue'
 import CustomOrders from './components/CustomOrders.vue'
-import FulfillmentCenter from './components/FulfillmentCenter.vue'
+const FulfillmentCenter = asyncWith(() => import('./components/FulfillmentCenter.vue'))
 import PetMemorial from './components/PetMemorial.vue'
 import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
