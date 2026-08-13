@@ -46,15 +46,19 @@ async function loadFramers() {
   try {
     const res = await db.collection('framers').get()
     if (res.data && res.data.length) {
-      return res.data.map((row) => ({
-        id: row._id,
-        name: row.name,
-        avatar: row.avatar || '',
-        type: row.type || 'store',
-        bio: row.bio || '',
-        priceDelta: row.priceDelta || 0,
-        extraDays: row.extraDays || 0
-      }))
+      return res.data
+        .filter((row) => row.active !== false)
+        .sort((a, b) => (b.sort || 0) - (a.sort || 0))
+        .map((row) => ({
+          id: row._id,
+          name: row.name,
+          title: row.title || '',
+          avatar: row.avatar || '',
+          type: row.type || 'store',
+          bio: row.bio || row.desc || '',
+          priceDelta: row.priceDelta || 0,
+          extraDays: row.extraDays || 0
+        }))
     }
   } catch (e) {
     console.warn('framers read failed:', e.message)

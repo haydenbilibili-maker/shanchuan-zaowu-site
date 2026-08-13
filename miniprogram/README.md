@@ -33,6 +33,8 @@ npm install
 - 店长账本集合：**`store_ledger`**（见 `cloudbase/schema/store_ledger.md`）
 - 工具：`utils/storeLedger.js`（店长页直接读写）、`utils/financeSync.js`（云函数双向同步）
 - 云函数：**`syncFinanceData`** — 上传时镜像 `finance_records` 供 Web ERP 读取
+- **门店订货（P0/P1）**：集合 `purchase_orders` / `fulfillment_shipments` / `stock_movements`；云函数 **`managePurchaseOrder`**（含发货扣库、收货）；店长「订货」页；Admin「订货履约」确认 / 出货 / 意向转单
+- **飞书多维表对接**：云函数 **`syncFeishuBitable`**（环境变量 `FEISHU_APP_ID` / `FEISHU_APP_SECRET`）；集合 `feishu_purchases` / `feishu_inventory` / `feishu_sync_logs`；Admin 订货履约 → 飞书对接 Tab
 
 **部署**：修改云函数后，在微信开发者工具中右键 `cloudfunctions/syncFinanceData` → **上传并部署：云端安装依赖**（若报 FunctionName 已存在，说明应走「上传」而非「创建」）。
 

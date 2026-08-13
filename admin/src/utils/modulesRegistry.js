@@ -31,7 +31,7 @@ export const MODULES = [
   { id: '1',  name: '藏品档案库', group: 'BUSINESS', subgroup: '货', icon: 'Box', keywords: 'product collection archive cpdak sku 商品' },
   { id: '43', name: '分类管理', group: 'BUSINESS', subgroup: '货', icon: 'Menu', keywords: 'category flgl tag' },
   { id: '3',  name: '全渠道订单', group: 'BUSINESS', subgroup: '货', icon: 'List', keywords: 'order qqdd 订单' },
-  { id: '52', name: '采购管理', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase intent cgxy 采购 采购意向 报价单 price-list' },
+  { id: '52', name: '订货履约', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase order fulfillment dhly 订货 采购 意向 出货 price-list 飞书 bitable 库存' },
   { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '货', icon: 'Refresh', keywords: 'refund tksh 退款' },
   // 业务运营 — 场
   { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
@@ -87,6 +87,8 @@ export const MODULES = [
   // 组织治理 — 治理与合规
   { id: '33', name: '公司治理', group: 'GOVERNANCE', subgroup: '治理与合规', icon: 'OfficeBuilding', keywords: 'governance gszl board' },
   { id: '28', name: '合规专栏', group: 'GOVERNANCE', subgroup: '治理与合规', icon: 'Lock', keywords: 'compliance hgzl regulation' },
+  // 组织治理 — 品牌视觉
+  { id: '53', name: '品牌 VIS', group: 'GOVERNANCE', subgroup: '品牌视觉', icon: 'Brush', keywords: 'brand vis logo ppvis 品牌 视觉识别 规范 色彩 字体 包装 VI' },
 
   // 战略与知识
   { id: '12', name: 'AI 智能中心', group: 'INTELLIGENCE', subgroup: null, icon: 'MagicStick', keywords: 'ai aiznzx assistant llm' },

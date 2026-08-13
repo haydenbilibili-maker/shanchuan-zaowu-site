@@ -1,0 +1,117 @@
+<!-- 店长 · 门店订货（P0） -->
+<view class="page">
+  <view class="tabs">
+    <view class="tab {{view==='list'?'on':''}}" data-v="list" bindtap="switchView">订货单</view>
+    <view class="tab {{view==='create'?'on':''}}" data-v="create" bindtap="switchView">新建</view>
+  </view>
+
+  <!-- 列表 -->
+  <view wx:if="{{view==='list'}}" class="panel">
+    <scroll-view scroll-x class="filter-row">
+      <view
+        wx:for="{{statusFilters}}"
+        wx:key="value"
+        class="chip {{statusFilter===item.value?'on':''}}"
+        data-v="{{item.value}}"
+        bindtap="setStatusFilter"
+      >{{item.label}}</view>
+    </scroll-view>
+
+    <view wx:if="{{loading}}" class="hint">加载中…</view>
+    <view wx:elif="{{!orders.length}}" class="empty">暂无订货单</view>
+
+    <view wx:for="{{orders}}" wx:key="_id" class="card" data-id="{{item._id}}" bindtap="openDetail">
+      <view class="row-top">
+        <text class="ono">{{item.orderNo}}</text>
+        <text class="st st-{{item.status}}">{{item.statusText}}</text>
+      </view>
+      <view class="row-sub">{{item.storeName || '未选门店'}} · {{item.itemCount}} 种</view>
+      <view class="row-sub" wx:if="{{item.totalAmount != null}}">合计 ¥{{item.totalAmount}}</view>
+      <view class="row-actions" catchtap="noop">
+        <button
+          wx:if="{{item.status==='draft'}}"
+          size="mini"
+          class="btn-gold"
+          data-id="{{item._id}}"
+          bindtap="submitOrder"
+        >提交</button>
+        <button
+          wx:if="{{item.status==='shipped'}}"
+          size="mini"
+          class="btn-gold solid"
+          data-id="{{item._id}}"
+          bindtap="receiveOrder"
+        >确认收货</button>
+        <button
+          wx:if="{{item.status==='draft' || item.status==='submitted'}}"
+          size="mini"
+          data-id="{{item._id}}"
+          bindtap="cancelOrder"
+        >取消</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 新建 -->
+  <view wx:if="{{view==='create'}}" class="panel">
+    <view class="field">
+      <text class="label">门店</text>
+      <picker mode="selector" range="{{storeNames}}" value="{{storeIndex}}" bindchange="onStorePick">
+        <view class="picker">{{storeNames[storeIndex] || '请选择'}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="label">联系人</text>
+      <input class="input" placeholder="姓名" value="{{contactName}}" bindinput="onContactName" />
+    </view>
+    <view class="field">
+      <text class="label">电话</text>
+      <input class="input" placeholder="手机号" value="{{contactPhone}}" bindinput="onContactPhone" />
+    </view>
+    <view class="field">
+      <text class="label">备注</text>
+      <textarea class="textarea" placeholder="选填" value="{{note}}" bindinput="onNote" />
+    </view>
+
+    <view class="seg">选品（供货价目）</view>
+    <view wx:for="{{catalog}}" wx:key="skuId" class="cat-row">
+      <view class="cat-info">
+        <text class="cat-name">{{item.name}}</text>
+        <text class="cat-price">{{item.priceLabel}}</text>
+      </view>
+      <view class="qty">
+        <button size="mini" data-sku="{{item.skuId}}" data-d="-1" bindtap="bumpQty">−</button>
+        <text class="q">{{cartMap[item.skuId] || 0}}</text>
+        <button size="mini" data-sku="{{item.skuId}}" data-d="1" bindtap="bumpQty">+</button>
+      </view>
+    </view>
+
+    <view class="footer-bar">
+      <text>已选 {{cartCount}} 件</text>
+      <button class="btn-gold" loading="{{saving}}" bindtap="saveDraft">保存草稿</button>
+      <button class="btn-gold solid" loading="{{saving}}" bindtap="saveAndSubmit">提交订货</button>
+    </view>
+  </view>
+
+  <!-- 详情 -->
+  <view wx:if="{{detail}}" class="mask" bindtap="closeDetail">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-title">{{detail.orderNo}}</view>
+      <view class="row-sub">状态：{{detail.statusText}}</view>
+      <view class="row-sub">门店：{{detail.storeName || '—'}}</view>
+      <view class="row-sub">联系人：{{detail.contactName || '—'}} {{detail.contactPhone || ''}}</view>
+      <view class="seg">明细</view>
+      <view wx:for="{{detail.items}}" wx:key="skuId" class="line">
+        {{item.name}} × {{item.quantity}}
+        <text wx:if="{{item.unitPrice != null}}"> · ¥{{item.unitPrice}}</text>
+      </view>
+      <button
+        wx:if="{{detail.status==='shipped'}}"
+        class="btn-gold solid"
+        data-id="{{detail._id}}"
+        bindtap="receiveOrder"
+      >确认收货</button>
+      <button class="btn-close" bindtap="closeDetail">关闭</button>
+    </view>
+  </view>
+</view>

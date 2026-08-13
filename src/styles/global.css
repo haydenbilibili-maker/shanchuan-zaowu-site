@@ -348,17 +348,67 @@
     font-family: var(--font-cn-serif);
   }
 
-  /* 摄影 Hero：始终「夜览可读」——图上叠加层不随浅色主题反色 */
+  /* 摄影 Hero：始终「夜览可读」——图上叠层不随浅色主题反色
+     同时重映射全局 / Tailwind token（--color-*、--rgb-*），
+     避免 text-cream / text-brass-mid 在日览下变成深墨色叠在暗图上 */
   .museum-hero-night {
+    /* 博物馆页本地变量（index / foundation 等） */
     --cream-100: #F2EDE4;
+    --cream-200: #B8B0A4;
     --text-primary: #F2EDE4;
     --text-secondary: #B8B0A4;
     --text-tertiary: #8A837A;
+    --brass-deep: #8A7530;
     --brass-mid: #C4A76C;
     --brass-light: #E8DDC2;
     --brass-bright: #DDC890;
     --ink: #0e0e0e;
     --ink-deep: #0F0D0B;
+
+    /* 全局 token · 供 Tailwind utilities（text-cream / text-brass-*）与继承色 */
+    --color-cream: #F2EDE4;
+    --color-text: #F2EDE4;
+    --color-text-soft: #B8B0A4;
+    --color-text-dim: #8A837A;
+    --rgb-cream: 242, 237, 228;
+    --color-brass-deep: #8A7530;
+    --color-brass-mid: #C4A76C;
+    --color-brass-light: #E8DDC2;
+    --color-brass-bright: #DDC890;
+    --rgb-brass-deep: 138, 117, 48;
+    --rgb-brass-mid: 196, 167, 108;
+    --rgb-brass-light: 232, 221, 194;
+    --rgb-brass-bright: 221, 200, 144;
+
+    color: #F2EDE4;
+  }
+
+  /*
+   * 日览 Header 叠在摄影 Hero 上：重映射 ink/cream/brass token，
+   * 让既有 bg-ink/85、text-cream、theme-toggle 自动变成夜览可读，
+   * 滚出 hero（移除 .is-over-hero）后恢复日览深色字。
+   */
+  :root[data-theme='light'] .site-header.is-over-hero {
+    --color-cream: #F2EDE4;
+    --color-text: #F2EDE4;
+    --color-text-soft: #B8B0A4;
+    --color-text-dim: #8A837A;
+    --rgb-cream: 242, 237, 228;
+    --color-brass-deep: #8A7530;
+    --color-brass-mid: #C4A76C;
+    --color-brass-light: #E8DDC2;
+    --color-brass-bright: #DDC890;
+    --rgb-brass-deep: 138, 117, 48;
+    --rgb-brass-mid: 196, 167, 108;
+    --rgb-brass-light: 232, 221, 194;
+    --rgb-brass-bright: 221, 200, 144;
+    --color-ink: #0F0D0B;
+    --color-ink-elevated: #1A1814;
+    --rgb-ink: 15, 13, 11;
+    --rgb-ink-elevated: 26, 24, 20;
+    --color-hover-wash: rgb(196 167 108 / 0.1);
+    --color-border: rgb(196 167 108 / 0.22);
+    color: #F2EDE4;
   }
 
   /* 统一幽灵按钮 / 边框 CTA */

@@ -72,6 +72,10 @@ page {
   background: rgba(0,0,0,0.4);
 }
 
+.quote {
+  font-size: 24rpx; color: #C4A76C; line-height: 1.5;
+  margin-bottom: 16rpx; max-width: 600rpx;
+}
 .bio {
   font-size: 26rpx; color: #ccc; line-height: 1.6;
   max-width: 600rpx; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;

@@ -9,7 +9,7 @@
   <!-- 2. 艺术家档案头部 -->
   <view class="framer-header">
     <!-- 🟢 背景图优化：使用一张更有质感的通用背景，而不是头像 -->
-    <image class="bg-layer" src="cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/banners/__-drz-__-CK7rdTauhDE-unsplash.jpg" mode="aspectFill"></image>
+    <image class="bg-layer" src="{{framer.cover || 'cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/banners/__-drz-__-CK7rdTauhDE-unsplash.jpg'}}" mode="aspectFill"></image>
     <!-- 渐变遮罩 -->
     <view class="mask"></view>
     
@@ -23,11 +23,13 @@
       <text class="name">{{framer.name}}</text>
       
       <view class="tags">
-        <text class="tag">{{framer.type === 'store' ? '门店首席装裱师' : '特邀合作艺术家'}}</text>
+        <text class="tag">{{framer.title || (framer.type === 'store' ? '门店首席装裱师' : '特邀合作艺术家')}}</text>
+        <text class="tag" wx:if="{{framer.city}}">{{framer.city}}</text>
         <text class="tag">收录 {{works.length}} 件作品</text>
       </view>
-      
-      <text class="bio">{{framer.bio || '暂无个人简介...'}}</text>
+
+      <text class="quote" wx:if="{{framer.quote}}">「{{framer.quote}}」</text>
+      <text class="bio">{{framer.bio || framer.desc || '暂无个人简介...'}}</text>
     </view>
   </view>
 

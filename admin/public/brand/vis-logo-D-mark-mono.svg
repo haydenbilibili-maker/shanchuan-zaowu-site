@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-labelledby="title desc">
+  <title id="title">山海造物 · 方案D · 单色雕刻版（墨）</title>
+  <desc id="desc">仅单字山印章单色墨稿，用于烫印/雕刻/凹印</desc>
+  <rect width="200" height="200" fill="#FAFAF5"/>
+  <g transform="translate(6,6)">
+    <circle cx="94" cy="94" r="88" fill="none" stroke="#1A1A1A" stroke-width="8"/>
+    <circle cx="94" cy="94" r="79" fill="none" stroke="#1A1A1A" stroke-width="2"/>
+    <rect x="52" y="74" width="13" height="38" fill="#1A1A1A"/>
+    <rect x="87" y="53" width="13" height="59" fill="#1A1A1A"/>
+    <rect x="122" y="74" width="13" height="38" fill="#1A1A1A"/>
+    <rect x="43" y="109" width="102" height="13" fill="#1A1A1A"/>
+  </g>
+</svg>

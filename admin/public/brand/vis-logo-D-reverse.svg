@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 240" role="img" aria-labelledby="title desc">
+  <title id="title">山海造物 · 方案D · 反白版（深色背景）</title>
+  <desc id="desc">白/黄铜色单字山印章 + 白色字标，用于深色背景</desc>
+  <rect width="560" height="240" fill="#1B4332"/>
+  <g transform="translate(26,58) scale(0.55)">
+    <circle cx="100" cy="100" r="94" fill="none" stroke="#FAFAF5" stroke-width="8"/>
+    <circle cx="100" cy="100" r="85" fill="none" stroke="#FAFAF5" stroke-width="2"/>
+    <rect x="56" y="78" width="13" height="40" fill="#FAFAF5"/>
+    <rect x="93" y="56" width="13" height="62" fill="#FAFAF5"/>
+    <rect x="130" y="78" width="13" height="40" fill="#FAFAF5"/>
+    <rect x="47" y="116" width="105" height="13" fill="#FAFAF5"/>
+  </g>
+  <text x="152" y="118" font-family="'Songti SC','STSong','Noto Serif SC','Source Han Serif SC',serif" font-size="80" font-weight="600" fill="#FAFAF5" letter-spacing="14">山海造物</text>
+  <text x="155" y="164" font-family="Georgia,'Times New Roman',serif" font-size="18" letter-spacing="5.5" fill="#C4A76C">NATURE'S CREATIONS</text>
+</svg>

@@ -106,6 +106,7 @@
         "coupons/index",
         "certificate/index",
         "manager/index",
+        "manager/purchase-orders/index",
         "framer/index",
         "about/index",
         "ar/index",

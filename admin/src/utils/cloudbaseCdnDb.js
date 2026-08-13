@@ -7,6 +7,7 @@ const ENV_ID = 'cloud1-8gnkty5bfff9f0bf'
 const REGION = 'ap-shanghai'
 
 let db = null
+let cdnApp = null
 let initPromise = null
 
 export { ENV_ID, REGION }
@@ -54,11 +55,36 @@ export async function getCdnDatabase() {
       } catch {
         await auth.signInAnonymously()
       }
+      cdnApp = app
       db = app.database()
       return db
     })()
   }
   return initPromise
+}
+
+function formatFnError(err) {
+  const code = err?.code || err?.error?.code || ''
+  const msg = err?.msg || err?.message || err?.error?.message || (typeof err === 'string' ? err : JSON.stringify(err))
+  const blob = `${code} ${msg}`
+  if (/PERMISSION_DENIED|FUNCTION_NOT_FOUND|not found|不存在/i.test(blob)) {
+    return '云函数无权调用或尚未部署。请用微信开发者工具上传 syncFeishuBitable，并在云函数环境变量填写 FEISHU_APP_ID / FEISHU_APP_SECRET（不要写进 admin/.env）。'
+  }
+  return msg
+}
+
+/** 与数据库同一 CDN SDK 实例调用云函数（密钥在云函数环境变量） */
+export async function callCdnFunction(name, data = {}) {
+  await getCdnDatabase()
+  if (!cdnApp || typeof cdnApp.callFunction !== 'function') {
+    throw new Error('CloudBase SDK 不支持 callFunction')
+  }
+  try {
+    const res = await cdnApp.callFunction({ name, data })
+    return res?.result ?? res
+  } catch (err) {
+    throw new Error(formatFnError(err))
+  }
 }
 
 export function isCloudbasePromiseBug(err) {

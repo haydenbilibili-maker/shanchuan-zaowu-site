@@ -213,11 +213,39 @@ function isNavActive(href: string): boolean {
   menu?.querySelectorAll('.mobile-nav-link').forEach((link) => {
     link.addEventListener('click', () => setMenuOpen(false));
   });
+
+  // 透明 Header 叠在摄影 Hero 上：日览也用浅色字/图标，滚出后恢复
+  const header = document.querySelector('.site-header');
+  const photoHero = document.querySelector('.museum-hero-night');
+  if (header && photoHero && typeof IntersectionObserver !== 'undefined') {
+    const syncOverHero = (isOver) => {
+      header.classList.toggle('is-over-hero', isOver);
+    };
+    // 先按几何关系设一次，避免首屏 FOUC
+    const headerH = header.getBoundingClientRect().height || 72;
+    const heroRect = photoHero.getBoundingClientRect();
+    syncOverHero(heroRect.bottom > headerH * 0.5);
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        syncOverHero(entry.isIntersecting);
+      },
+      {
+        // 顶部留出 header 高度：hero 仍在 header 下方可见时视为「叠在 hero 上」
+        rootMargin: `-${Math.round(headerH)}px 0px 0px 0px`,
+        threshold: 0,
+      },
+    );
+    io.observe(photoHero);
+  }
 </script>
 
 <style>
   .site-header {
-    transition: background-color 0.35s ease, border-color 0.35s ease;
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      color 0.35s ease;
   }
 
   .nav-link {

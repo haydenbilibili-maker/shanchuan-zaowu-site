@@ -2,6 +2,7 @@ import cloudbase from "@cloudbase/js-sdk";
 import {
   fetchCollectionLimit,
   isCloudbasePromiseBug,
+  callCdnFunction,
 } from "./utils/cloudbaseCdnDb.js";
 
 // =================================================
@@ -470,6 +471,12 @@ export const COLLECTIONS = {
   ACTIVITIES: 'activities',          // 活动
   ORDERS: 'orders',                  // 订单
   PURCHASE_INTENTS: 'purchase_intents', // 官网报价单采购意向
+  PURCHASE_ORDERS: 'purchase_orders', // 正式订货单（门店/渠道）
+  FULFILLMENT_SHIPMENTS: 'fulfillment_shipments', // 总部出货单（P1）
+  STOCK_MOVEMENTS: 'stock_movements', // 总部成品库存流水（P1）
+  FEISHU_PURCHASES: 'feishu_purchases', // 飞书采购镜像
+  FEISHU_INVENTORY: 'feishu_inventory', // 飞书库存镜像
+  FEISHU_SYNC_LOGS: 'feishu_sync_logs', // 飞书同步审计
   USERS: 'users',                    // 用户
   BOOKINGS: 'bookings',              // 预约
   COUPONS: 'coupons',                // 优惠券
@@ -516,5 +523,12 @@ export {
   cdnUpsertByWhere,
   cdnCount,
 } from './utils/cloudbaseCdnDb.js';
+
+/**
+ * 调用已部署的云函数（飞书密钥只放云函数环境变量，走与数据库同一 CDN SDK）
+ */
+export async function callCloudFunction(name, data = {}) {
+  return callCdnFunction(name, data);
+}
 
 export { db, app, auth, envId, region };

@@ -587,9 +587,13 @@ Page({
   async loadFramers(config = {}) {
     try {
       const limit = config.limit || 6;
-      const res = await db.collection('framers').limit(limit).get();
-      const framers = res.data.length > 0 
-        ? res.data 
+      const res = await db.collection('framers').limit(50).get();
+      const visible = (res.data || [])
+        .filter((f) => f.active !== false)
+        .sort((a, b) => (b.sort || 0) - (a.sort || 0))
+        .slice(0, limit);
+      const framers = visible.length > 0
+        ? visible
         : [{ _id: 'f1', name: '林深', title: '首席标本师', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200', type: 'store' }];
       this.setData({ framers, loadingFramers: false });
     } catch(e) {

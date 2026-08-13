@@ -277,6 +277,13 @@ Page({
     this.setData(patch);
     if (idx !== 0) this.refreshSubData(idx);
   },
+
+  goPurchaseOrders() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({
+      url: '/subpackages/business/manager/purchase-orders/index',
+    });
+  },
   
   switchSubTab(e) { this.setData({ subTab: parseInt(e.currentTarget.dataset.idx) }); },
   switchSubTabReward(e) { this.setData({ subTabReward: parseInt(e.currentTarget.dataset.idx) }); },

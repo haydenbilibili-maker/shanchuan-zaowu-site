@@ -141,6 +141,24 @@
 
 ---
 
+### P5 · 订货履约与成品库存（P0 进行中）
+
+> 蓝图：[`admin/docs/订货履约与成品库存_Phase1_技术蓝图.md`](../admin/docs/订货履约与成品库存_Phase1_技术蓝图.md) · [`admin/docs/飞书多维表对接_技术蓝图.md`](../admin/docs/飞书多维表对接_技术蓝图.md)  
+> 边界：飞书管原材料采购/库存；Admin 管总部成品仓 + 门店/渠道订货出货。两边通过映射同步，禁止无映射双写。
+
+| 集合名 | 用途 | 状态 | 主写入口 |
+|--------|------|------|----------|
+| `purchase_orders` | 正式订货单（自营店 / 渠道履约） | **P0 已建**；CLI：`cd admin && node scripts/provision-purchase-orders.mjs` | 店长云函数 `managePurchaseOrder` / Admin 订货履约 |
+| `fulfillment_shipments` | 总部→门店/渠道出货单 | **P1 已建**；CLI：`cd admin && node scripts/provision-fulfillment-p1.mjs` | Admin 出货 / 云函数 `ship`；可回写飞书出货表 |
+| `stock_movements` | 总部成品库存流水（`warehouseId=hq`） | **P1 已建**（同上 CLI） | 出货扣库自动写入；飞书「应用库存」记 `feishu_pull` |
+| `feishu_purchases` | 飞书采购镜像（只读） | **对接已建**；CLI：`cd admin && node scripts/provision-feishu-bridge.mjs` | 云函数 `syncFeishuBitable` pull |
+| `feishu_inventory` | 飞书库存镜像（只读） | 同上 | 同上；人工确认后可应用到 `products.stock` |
+| `feishu_sync_logs` | 飞书同步审计 | 同上 | 云函数每次动作追加 |
+
+与现有关系：`purchase_intents` 可一键转为 `purchase_orders`；仓存数量仍落在 `products.stock`，流水表追加追溯。飞书 Base：`WCs2bnIHsaty7vsjcnaczu0Wnod`。
+
+---
+
 ## 三、权限规则模板
 
 规则 JSON 放在 [`cloudbase/rules/`](../cloudbase/rules/)，在控制台 **数据库 → 集合 → 权限设置 → 自定义安全规则** 中粘贴。

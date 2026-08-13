@@ -45,6 +45,8 @@ A2+（管理端改为 CUSTOM / EMAIL 登录后）可将 read/update 收紧为：
 | `note` | string? | 备注 |
 | `items` | array | SKU 明细（skuId / name / quantity / price…） |
 | `status` | string | `pending` \| `contacted` \| `closed` |
+| `convertedOrderId` | string? | 转正式订货单后的 `purchase_orders` id |
+| `convertedAt` | number? | 转单时间 |
 | `source` | string | 固定 `price-list` |
 | `totalAmount` | number\|null | 估算合计（区间价按下限） |
 | `createdAt` | number | 毫秒时间戳 |

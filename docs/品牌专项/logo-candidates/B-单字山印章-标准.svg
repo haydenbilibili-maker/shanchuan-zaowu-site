@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" role="img" aria-labelledby="title desc">
+  <title id="title">山海造物 · 候选B · 单字山印章（标准版）</title>
+  <desc id="desc">圆形印章：几何化单字「山」，下置「山海造物」字标与 NATURE'S CREATIONS</desc>
+  <rect width="480" height="560" fill="#FAFAF5"/>
+  <g transform="translate(140,10)">
+    <circle cx="100" cy="100" r="94" fill="none" stroke="#1A1A1A" stroke-width="7"/>
+    <circle cx="100" cy="100" r="85" fill="none" stroke="#1A1A1A" stroke-width="1.6"/>
+    <rect x="56" y="78" width="13" height="40" fill="#1A1A1A"/>
+    <rect x="93" y="56" width="13" height="62" fill="#1A1A1A"/>
+    <rect x="130" y="78" width="13" height="40" fill="#1A1A1A"/>
+    <rect x="47" y="116" width="105" height="13" fill="#1A1A1A"/>
+  </g>
+  <text x="240" y="468" text-anchor="middle" font-family="'Songti SC','STSong','Noto Serif SC','Source Han Serif SC',serif" font-size="88" font-weight="600" fill="#2C2C2C" letter-spacing="18">山海造物</text>
+  <text x="240" y="516" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="20" letter-spacing="6" fill="#8B6F47">NATURE'S CREATIONS</text>
+</svg>

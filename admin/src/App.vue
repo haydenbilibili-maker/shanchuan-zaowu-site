@@ -157,7 +157,7 @@
                 <el-menu-item index="1"><el-icon><Box /></el-icon><span>藏品档案库</span></el-menu-item>
                 <el-menu-item index="43"><el-icon><Menu /></el-icon><span>分类管理</span></el-menu-item>
                 <el-menu-item index="3"><el-icon><List /></el-icon><span>全渠道订单</span></el-menu-item>
-                <el-menu-item index="52"><el-icon><ShoppingCart /></el-icon><span>采购管理</span></el-menu-item>
+                <el-menu-item index="52"><el-icon><ShoppingCart /></el-icon><span>订货履约</span></el-menu-item>
                 <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="场 · 体验">
@@ -245,6 +245,9 @@
               <el-menu-item-group title="治理与合规">
                 <el-menu-item index="33"><el-icon><OfficeBuilding /></el-icon><span>公司治理</span></el-menu-item>
                 <el-menu-item index="28"><el-icon><Lock /></el-icon><span>合规专栏</span></el-menu-item>
+              </el-menu-item-group>
+              <el-menu-item-group title="品牌视觉">
+                <el-menu-item index="53"><el-icon><Brush /></el-icon><span>品牌 VIS</span></el-menu-item>
               </el-menu-item-group>
             </el-sub-menu>
 
@@ -800,6 +803,7 @@ import PartnerDestinyCenter from './components/PartnerDestinyCenter.vue'
 import CapitalArchitectureSandbox from './components/CapitalArchitectureSandbox.vue'
 import StartupCostModel from './components/StartupCostModel.vue'
 import ContentFactory from './components/ContentFactory.vue'
+import BrandVIS from './components/BrandVIS.vue'
 import ComplianceCenter from './components/ComplianceCenter.vue'
 import MemberLevelConfig from './components/MemberLevelConfig.vue'
 import PointsRulesConfig from './components/PointsRulesConfig.vue'
@@ -822,7 +826,7 @@ import StoreDesignCenter from './components/StoreDesignCenter.vue'
 // 🟢 对齐小程序能力的 7 个新模块
 import Bookings from './components/Bookings.vue'
 import CustomOrders from './components/CustomOrders.vue'
-import PurchaseIntents from './components/PurchaseIntents.vue'
+import FulfillmentCenter from './components/FulfillmentCenter.vue'
 import PetMemorial from './components/PetMemorial.vue'
 import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
@@ -882,7 +886,8 @@ const TAB_COMPONENT_MAP = {
   '51': () => ({ comp: ContentFactory }),
   '37': () => ({ comp: Bookings }),
   '38': () => ({ comp: CustomOrders }),
-  '52': () => ({ comp: PurchaseIntents }),
+  '52': () => ({ comp: FulfillmentCenter }),
+  '53': () => ({ comp: BrandVIS }),
   '39': () => ({ comp: PetMemorial }),
   '40': () => ({ comp: SupportTickets }),
   '41': () => ({ comp: CommentsModeration }),

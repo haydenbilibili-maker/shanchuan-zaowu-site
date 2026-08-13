@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" role="img" aria-labelledby="title desc">
+  <title id="title">山海造物 · 候选A · 山海印章（标准版）</title>
+  <desc id="desc">圆形印章：几何山峰 + 三道海浪，下置「山海造物」字标与 NATURE'S CREATIONS</desc>
+  <rect width="480" height="560" fill="#FAFAF5"/>
+  <g transform="translate(140,10)">
+    <circle cx="100" cy="100" r="94" fill="none" stroke="#2D6A4F" stroke-width="7"/>
+    <circle cx="100" cy="100" r="85" fill="none" stroke="#2D6A4F" stroke-width="1.6"/>
+    <path d="M44,124 L62,80 L80,124 Z" fill="#2D6A4F"/>
+    <path d="M70,124 L100,58 L130,124 Z" fill="#2D6A4F"/>
+    <path d="M120,124 L138,80 L156,124 Z" fill="#2D6A4F"/>
+    <path d="M46,140 C62,132 78,148 100,140 C122,132 138,148 154,140" fill="none" stroke="#2D6A4F" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M46,153 C62,145 78,161 100,153 C122,145 138,161 154,153" fill="none" stroke="#2D6A4F" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M46,166 C62,158 78,174 100,166 C122,158 138,174 154,166" fill="none" stroke="#2D6A4F" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+  <text x="240" y="468" text-anchor="middle" font-family="'Songti SC','STSong','Noto Serif SC','Source Han Serif SC',serif" font-size="88" font-weight="600" fill="#2C2C2C" letter-spacing="18">山海造物</text>
+  <text x="240" y="516" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="20" letter-spacing="6" fill="#8B6F47">NATURE'S CREATIONS</text>
+</svg>

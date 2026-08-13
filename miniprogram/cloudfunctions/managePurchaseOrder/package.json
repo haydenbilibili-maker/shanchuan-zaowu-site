@@ -1,0 +1,9 @@
+{
+  "name": "managePurchaseOrder",
+  "version": "1.0.0",
+  "description": "门店/渠道订货履约（P0 订货 + P1 出货扣库/收货）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

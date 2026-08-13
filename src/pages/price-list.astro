@@ -1455,17 +1455,22 @@ const rows = priceListItems.map(renderRow);
     margin: 0 auto;
     padding: 7.5rem 1.25rem 3.5rem;
     text-align: center;
-    /* 摄影 Hero：强制夜览可读色，不随浅色主题反色 */
-    color: var(--cream-100);
+    /* 摄影 Hero：强制夜览可读色（.museum-hero-night 已重映射全局 token） */
+    color: #F2EDE4;
   }
 
   .price-hero :global(.text-cream),
-  .price-hero :global(.display-title) {
-    color: var(--cream-100);
+  .price-hero :global(.display-title),
+  .price-hero-brand,
+  .price-hero-heading,
+  .price-hero-lead {
+    color: #F2EDE4;
   }
 
-  .price-hero :global(.text-brass-mid) {
-    color: var(--brass-mid);
+  .price-hero :global(.text-brass-mid),
+  .price-hero-eyebrow,
+  .price-hero-year {
+    color: #C4A76C;
   }
 
   .price-hero-eyebrow {

@@ -2,8 +2,8 @@
   <div class="pi-container">
     <div class="panel-header">
       <div class="title-box">
-        <h2>采购管理 / PURCHASE INTENTS</h2>
-        <span class="subtitle">官网报价单 · purchase_intents</span>
+        <h2>意向线索 / PURCHASE INTENTS</h2>
+        <span class="subtitle">官网报价单 · 可转正式订货单</span>
       </div>
       <div class="header-actions">
         <el-input
@@ -86,14 +86,19 @@
             <span class="t-sub">{{ sourceLabel(row.source) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button size="small" link @click.stop="viewDetail(row)">详情</el-button>
             <el-button
-              v-if="row.status === 'pending'"
+              v-if="canConvert(row)"
               size="small"
               type="primary"
               color="#d4af37"
+              @click.stop="convertToOrder(row)"
+            >转正式单</el-button>
+            <el-button
+              v-if="row.status === 'pending'"
+              size="small"
               @click.stop="setStatus(row, 'contacted')"
             >已联系</el-button>
             <el-button
@@ -104,7 +109,7 @@
               @click.stop="setStatus(row, 'closed')"
             >关闭</el-button>
             <el-button
-              v-if="row.status === 'closed'"
+              v-if="row.status === 'closed' && !row.convertedOrderId"
               size="small"
               link
               @click.stop="setStatus(row, 'pending')"
@@ -127,6 +132,9 @@
           <el-descriptions-item label="客户备注">{{ current.note || '—' }}</el-descriptions-item>
           <el-descriptions-item label="来源">{{ sourceLabel(current.source) }}</el-descriptions-item>
           <el-descriptions-item label="存储">{{ storageLabel(current) }}</el-descriptions-item>
+          <el-descriptions-item v-if="current.convertedOrderId" label="已转订货单">
+            {{ current.convertedOrderId }}
+          </el-descriptions-item>
         </el-descriptions>
 
         <div class="detail-items">
@@ -152,9 +160,16 @@
         </div>
 
         <div class="detail-actions">
-          <el-button v-if="current.status !== 'contacted'" type="primary" color="#d4af37" @click="setStatus(current, 'contacted')">标记已联系</el-button>
+          <el-button
+            v-if="canConvert(current)"
+            type="primary"
+            color="#d4af37"
+            :loading="converting"
+            @click="convertToOrder(current)"
+          >转为正式订货单</el-button>
+          <el-button v-if="current.status !== 'contacted'" @click="setStatus(current, 'contacted')">标记已联系</el-button>
           <el-button v-if="current.status !== 'closed'" @click="setStatus(current, 'closed')">关闭</el-button>
-          <el-button v-if="current.status !== 'pending'" @click="setStatus(current, 'pending')">标为待处理</el-button>
+          <el-button v-if="current.status !== 'pending' && !current.convertedOrderId" @click="setStatus(current, 'pending')">标为待处理</el-button>
           <el-button :icon="DocumentCopy" @click="copyDetail(current)">复制明细</el-button>
         </div>
       </template>
@@ -165,14 +180,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Refresh, Search, Download, DocumentCopy } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-import { fetchCollectionSorted, cdnUpdate } from '../cloud'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { fetchCollectionSorted, cdnUpdate, cdnAdd } from '../cloud'
+
+const emit = defineEmits(['converted'])
 
 const COLLECTION = 'purchase_intents'
+const ORDERS_COL = 'purchase_orders'
 const LOCAL_KEY = 'shanhai_purchase_intents_v1'
 
 const list = ref([])
 const loading = ref(false)
+const converting = ref(false)
 const statusFilter = ref('pending')
 const keyword = ref('')
 const detailOpen = ref(false)
@@ -404,7 +423,103 @@ const setStatus = async (row, status) => {
   }
 }
 
+const canConvert = (row) => {
+  if (!row || row.convertedOrderId) return false
+  if (String(row._id || '').startsWith('local_') || row.persistedVia === 'local') return false
+  return Array.isArray(row.items) && row.items.length > 0
+}
+
+const genOrderNo = () => {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const seq = String(Math.floor(Math.random() * 900) + 100)
+  return `PO${y}${m}${day}${seq}`
+}
+
+const convertToOrder = async (row) => {
+  if (!canConvert(row)) {
+    ElMessage.warning(row.convertedOrderId ? '已转过正式单' : '本机镜像请先确保已写入云端后再转单')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `将「${row.contactName || '客户'}」的意向转为正式订货单？转单后意向将关闭。`,
+      '转正式订货单',
+      { type: 'warning' }
+    )
+  } catch {
+    return
+  }
+
+  converting.value = true
+  try {
+    const items = (row.items || []).map((it) => ({
+      skuId: String(it.skuId || ''),
+      productId: null,
+      name: String(it.name || '').trim(),
+      quantity: Math.max(1, parseInt(it.quantity, 10) || 1),
+      unitPrice: it.price != null ? Number(it.price) : null,
+      priceLabel: it.priceLabel || null,
+      priceMax: it.priceMax != null ? Number(it.priceMax) : null,
+      priceIsRange: !!it.priceIsRange,
+    })).filter((it) => it.name)
+    if (!items.length) {
+      ElMessage.error('意向明细为空')
+      return
+    }
+    let totalAmount = 0
+    let any = false
+    for (const it of items) {
+      if (it.unitPrice != null && Number.isFinite(it.unitPrice)) {
+        totalAmount += it.unitPrice * it.quantity
+        any = true
+      }
+    }
+    const now = Date.now()
+    const addRes = await cdnAdd(ORDERS_COL, {
+      orderNo: genOrderNo(),
+      source: 'price_list_convert',
+      intentId: row._id,
+      storeId: null,
+      storeName: row.company || '',
+      buyerType: 'channel',
+      contactName: row.contactName || '',
+      contactPhone: row.contactPhone || '',
+      company: row.company || '',
+      shipToAddress: '',
+      note: row.note || '',
+      items,
+      totalAmount: any ? Math.round(totalAmount * 100) / 100 : row.totalAmount ?? null,
+      status: 'submitted',
+      shipmentIds: [],
+      submittedAt: now,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: 'admin',
+    })
+    const orderId = addRes?.id || addRes?._id
+    if (!orderId) throw new Error('未返回订货单 id')
+    await cdnUpdate(COLLECTION, row._id, {
+      status: 'closed',
+      convertedOrderId: orderId,
+      convertedAt: now,
+      updatedAt: now,
+    })
+    ElMessage.success('已转为正式订货单')
+    detailOpen.value = false
+    emit('converted', { orderId, intentId: row._id })
+    await refresh()
+  } catch (e) {
+    ElMessage.error(e.message || '转单失败（请确认已创建 purchase_orders 集合）')
+  } finally {
+    converting.value = false
+  }
+}
+
 onMounted(refresh)
+defineExpose({ refresh })
 </script>
 
 <style scoped>

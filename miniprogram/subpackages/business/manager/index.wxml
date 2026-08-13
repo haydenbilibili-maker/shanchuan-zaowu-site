@@ -65,6 +65,10 @@
             <view class="icon-box">📦<view class="badge" wx:if="{{orders.length>0}}">{{orders.length}}</view></view>
             <text>订单</text>
          </view>
+         <view class="menu-btn" bindtap="goPurchaseOrders">
+            <view class="icon-box">🛒</view>
+            <text>订货</text>
+         </view>
          <view class="menu-btn" bindtap="switchTab" data-idx="3" data-title="核销验票">
             <view class="icon-box">📷<view class="badge" wx:if="{{bookings.length>0}}">{{bookings.length}}</view></view>
             <text>核销</text>
