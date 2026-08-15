@@ -1,0 +1,319 @@
+/**
+ * Admin 飞书对接：
+ * - 飞书 Open API：经 /api/feishu-sync（Cloudflare Function）或本地 Vite 代理
+ * - 镜像 / 映射 / 库存：CloudBase 匿名 SDK 直写
+ * 不再依赖微信云函数（Web 匿名会 PERMISSION_DENIED）
+ */
+import {
+  COLLECTIONS,
+  cdnAdd,
+  cdnDocGet,
+  cdnSet,
+  cdnUpdate,
+  fetchCollectionLimit,
+  fetchCollectionWhere,
+} from '../cloud'
+
+const CONFIG_ID = 'feishu_bitable'
+const APP_TOKEN = 'WCs2bnIHsaty7vsjcnaczu0Wnod'
+
+function candidateUrls() {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
+  const urls = []
+  // 生产：站点根 Cloudflare Function
+  urls.push('/api/feishu-sync')
+  // 本地 Vite Admin（base=/admin/）
+  if (base && base !== '/') urls.push(`${base}/api/feishu-sync`)
+  return [...new Set(urls)]
+}
+
+async function feishuApi(body) {
+  const urls = candidateUrls()
+  let lastErr
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const ctype = res.headers.get('content-type') || ''
+      if (ctype.includes('text/html')) {
+        lastErr = new Error(`${url} 未部署飞书代理（返回了 HTML）`)
+        continue
+      }
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok && json.success !== false) {
+        lastErr = new Error(`飞书代理 HTTP ${res.status}`)
+        continue
+      }
+      // 代理已到达：业务失败不再换 URL
+      if (json.success === false) {
+        const err = new Error(json.msg || '飞书同步失败')
+        err.fatal = true
+        throw err
+      }
+      return json
+    } catch (e) {
+      if (e.fatal) throw e
+      lastErr = e
+    }
+  }
+  throw lastErr || new Error('飞书代理不可用')
+}
+
+export async function feishuProxyStatus() {
+  for (const url of candidateUrls()) {
+    try {
+      const res = await fetch(url)
+      const ctype = res.headers.get('content-type') || ''
+      if (ctype.includes('text/html')) continue
+      const json = await res.json()
+      if (json && typeof json === 'object') return json
+    } catch {
+      /* try next */
+    }
+  }
+  return {
+    success: false,
+    configured: false,
+    msg: '飞书代理不可用。本地：在 admin/.env 配置 FEISHU_APP_ID/SECRET 后重启 npm run dev:admin；线上：Cloudflare Pages 环境变量 + 重新部署（含 functions/）。',
+  }
+}
+
+function cellText(value) {
+  if (value == null || value === '') return ''
+  if (typeof value === 'string' || typeof value === 'number') return String(value)
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  if (Array.isArray(value)) {
+    return value
+      .map((v) => (v && (v.text || v.name)) || (typeof v === 'string' || typeof v === 'number' ? String(v) : ''))
+      .filter(Boolean)
+      .join(',')
+  }
+  if (value.text) return String(value.text)
+  if (value.name) return String(value.name)
+  return String(value)
+}
+
+function cellNumber(value) {
+  const n = Number(cellText(value).replace(/,/g, ''))
+  return Number.isFinite(n) ? n : 0
+}
+
+function pickField(fields, name) {
+  if (!name) return undefined
+  if (fields[name] !== undefined) return fields[name]
+  const key = Object.keys(fields || {}).find((k) => k.trim() === String(name).trim())
+  return key ? fields[key] : undefined
+}
+
+function mapRecord(rec, fieldMap) {
+  const f = rec.fields || {}
+  const out = { raw: f }
+  for (const [key, colName] of Object.entries(fieldMap || {})) {
+    const v = pickField(f, colName)
+    out[key] = key === 'qty' ? cellNumber(v) : cellText(v)
+  }
+  return out
+}
+
+async function upsertByRecordId(col, recordId, data) {
+  const found = await fetchCollectionWhere(col, { recordId }, 1)
+  const payload = { ...data, recordId, syncedAt: Date.now() }
+  if (found[0]?._id) {
+    await cdnUpdate(col, found[0]._id, payload)
+    return found[0]._id
+  }
+  await cdnAdd(col, payload)
+}
+
+async function logSync(action, result) {
+  try {
+    await cdnAdd(COLLECTIONS.FEISHU_SYNC_LOGS, {
+      action,
+      ok: !!result.success,
+      message: result.msg || '',
+      stats: result.stats || {},
+      createdAt: Date.now(),
+    })
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function readFeishuConfig() {
+  try {
+    const doc = await cdnDocGet('configs', CONFIG_ID)
+    if (doc) return doc
+  } catch {
+    /* collection may miss */
+  }
+  return {
+    appToken: APP_TOKEN,
+    tables: {
+      purchase: { tableId: '', fields: { orderNo: '单号', skuName: '物料', qty: '数量', supplier: '供应商', status: '状态', date: '日期' } },
+      inventory: { tableId: '', fields: { skuName: '品名', skuId: 'SKU', qty: '数量', unit: '单位' } },
+      shipment: { tableId: '', fields: { orderNo: '订货单号', storeName: '门店', carrier: '物流公司', trackingNumber: '物流单号', status: '状态' } },
+    },
+  }
+}
+
+function matchProduct(row, products) {
+  const sku = String(row.skuId || '').trim()
+  const name = String(row.skuName || '').replace(/\s/g, '')
+  if (sku) {
+    const hit = products.find((p) => p._id === sku || p.skuId === sku || String(p.sku || '') === sku)
+    if (hit) return hit._id
+  }
+  if (!name) return null
+  const hit =
+    products.find((p) => String(p.title || '').replace(/\s/g, '') === name) ||
+    products.find((p) => String(p.title || '').includes(row.skuName) || name.includes(String(p.title || '').replace(/\s/g, '')))
+  return hit ? hit._id : null
+}
+
+async function pullTable(role, col) {
+  const config = await readFeishuConfig()
+  const spec = (config.tables || {})[role]
+  if (!spec?.tableId) return { success: false, msg: `请先映射「${role}」表并保存` }
+  const { records } = await feishuApi({ action: 'listRecords', tableId: spec.tableId })
+  let upserted = 0
+  for (const rec of records || []) {
+    await upsertByRecordId(col, rec.record_id, mapRecord(rec, spec.fields))
+    upserted += 1
+  }
+  return { success: true, stats: { pulled: (records || []).length, upserted }, msg: `已同步 ${upserted} 条` }
+}
+
+export async function runFeishuSync(action, extra = {}) {
+  let result
+  try {
+    switch (action) {
+      case 'inspect': {
+        const data = await feishuApi({ action: 'inspect' })
+        result = { success: true, tables: data.tables || [], appToken: data.appToken }
+        break
+      }
+      case 'getConfig':
+        result = { success: true, config: await readFeishuConfig() }
+        break
+      case 'saveMapping': {
+        const tables = extra.mapping?.tables || extra.mapping || extra.tables
+        const config = {
+          ...(await readFeishuConfig()),
+          tables,
+          appToken: extra.mapping?.appToken || APP_TOKEN,
+          updatedAt: Date.now(),
+        }
+        await cdnSet('configs', CONFIG_ID, config)
+        result = { success: true, config, msg: '映射已保存' }
+        break
+      }
+      case 'pullPurchases':
+        result = await pullTable('purchase', COLLECTIONS.FEISHU_PURCHASES)
+        break
+      case 'pullInventory': {
+        const pulled = await pullTable('inventory', COLLECTIONS.FEISHU_INVENTORY)
+        if (!pulled.success) {
+          result = pulled
+          break
+        }
+        const products = await fetchCollectionLimit('products', { limit: 400 })
+        const rows = await fetchCollectionLimit(COLLECTIONS.FEISHU_INVENTORY, { limit: 400 })
+        let matched = 0
+        for (const row of rows) {
+          const productId = matchProduct(row, products)
+          if (productId && row.productId !== productId) {
+            await cdnUpdate(COLLECTIONS.FEISHU_INVENTORY, row._id, { productId })
+            matched += 1
+          } else if (row.productId) matched += 1
+        }
+        result = {
+          success: true,
+          stats: { ...pulled.stats, matched },
+          msg: `库存镜像 ${pulled.stats.upserted} 条，已映射藏品 ${matched} 条`,
+        }
+        break
+      }
+      case 'applyInventory': {
+        const rows = await fetchCollectionLimit(COLLECTIONS.FEISHU_INVENTORY, { limit: 400 })
+        let applied = 0
+        let skipped = 0
+        for (const row of rows) {
+          if (!row.productId) {
+            skipped += 1
+            continue
+          }
+          const product = await cdnDocGet('products', row.productId)
+          if (!product) {
+            skipped += 1
+            continue
+          }
+          const current = parseInt(product.stock, 10) || 0
+          const target = Number(row.qty) || 0
+          const delta = target - current
+          if (delta === 0) {
+            skipped += 1
+            continue
+          }
+          await cdnUpdate('products', row.productId, { stock: target })
+          await cdnAdd(COLLECTIONS.STOCK_MOVEMENTS, {
+            warehouseId: 'hq',
+            productId: row.productId,
+            skuId: row.skuId || null,
+            skuName: product.title || row.skuName,
+            delta,
+            balanceAfter: target,
+            type: 'feishu_pull',
+            refType: 'feishu_inventory',
+            refId: row.recordId,
+            note: `飞书库存对齐 ${row.skuName || ''} ${current}→${target}`,
+            operator: 'feishu_sync',
+            createdAt: Date.now(),
+          })
+          applied += 1
+        }
+        result = { success: true, stats: { applied, skipped }, msg: `已应用 ${applied} 条，跳过 ${skipped} 条` }
+        break
+      }
+      case 'pushShipments': {
+        const config = await readFeishuConfig()
+        const spec = (config.tables || {}).shipment
+        if (!spec?.tableId) {
+          result = { success: false, msg: '请先映射「出货」表并保存' }
+          break
+        }
+        const ships = await fetchCollectionLimit(COLLECTIONS.FULFILLMENT_SHIPMENTS, { limit: 200 })
+        const pending = ships
+          .filter((s) => s.status === 'shipped' || s.status === 'delivered')
+          .filter((s) => !s.feishuRecordId)
+        const fmap = spec.fields || {}
+        let pushed = 0
+        for (const s of pending) {
+          const fields = {}
+          if (fmap.orderNo) fields[fmap.orderNo] = s.orderNo || ''
+          if (fmap.storeName) fields[fmap.storeName] = s.storeName || ''
+          if (fmap.carrier) fields[fmap.carrier] = (s.logistics && s.logistics.carrier) || ''
+          if (fmap.trackingNumber) fields[fmap.trackingNumber] = (s.logistics && s.logistics.trackingNumber) || ''
+          if (fmap.status) fields[fmap.status] = s.status === 'delivered' ? '已送达' : '已发货'
+          const created = await feishuApi({ action: 'createRecord', tableId: spec.tableId, fields })
+          const rid = created.record?.record_id || created.record?.id
+          await cdnUpdate(COLLECTIONS.FULFILLMENT_SHIPMENTS, s._id, {
+            feishuRecordId: rid,
+            updatedAt: Date.now(),
+          })
+          pushed += 1
+        }
+        result = { success: true, stats: { pushed }, msg: `已回写 ${pushed} 张出货单` }
+        break
+      }
+      default:
+        result = { success: false, msg: `未知 action: ${action}` }
+    }
+  } catch (e) {
+    result = { success: false, msg: e.message || String(e) }
+  }
+  if (action !== 'getConfig') await logSync(action, result)
+  return result
+}

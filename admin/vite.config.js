@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { viteAliyunNlsPlugin } from './scripts/viteAliyunNlsPlugin.mjs'
+import { viteFeishuBitablePlugin } from './scripts/viteFeishuBitablePlugin.mjs'
 
 function buildDevProxies() {
   const withAuthHeader = (proxy) => {
@@ -59,7 +60,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const devProxy = buildDevProxies()
   return {
-    plugins: [vue(), viteAliyunNlsPlugin(env)],
+    plugins: [vue(), viteAliyunNlsPlugin(env), viteFeishuBitablePlugin(env)],
     /** 挂载于 shanhaizaowu.com/admin/；构建输出到 public/admin/ */
     base: '/admin/',
     build: {

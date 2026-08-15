@@ -28,7 +28,7 @@
       :closable="false"
       show-icon
       style="margin-bottom: 14px"
-      title="开通：飞书自建应用开通 bitable:app → ⋯更多 → 添加文档应用（可编辑）→ 微信开发者工具上传云函数 syncFeishuBitable，环境变量填 FEISHU_APP_ID / FEISHU_APP_SECRET。"
+      title="开通：飞书应用 bitable:app → 添加文档应用（可编辑）→ 本地 admin/.env 或线上 Cloudflare Pages 环境变量填写 FEISHU_APP_ID / FEISHU_APP_SECRET（不要 VITE_）。密钥不进 SPA。"
     />
 
     <el-row :gutter="12" class="stat-row">
@@ -56,7 +56,7 @@
       <template #header>
         <div class="card-head">
           <span>表与字段映射</span>
-          <el-button size="small" type="primary" :loading="saving" :disabled="!tables.length" @click="saveMapping">
+          <el-button size="small" type="primary" :loading="saving" @click="saveMapping">
             保存映射
           </el-button>
         </div>
@@ -156,7 +156,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
-import { callCloudFunction, fetchCollectionLimit, COLLECTIONS } from '../cloud'
+import { fetchCollectionLimit, COLLECTIONS } from '../cloud'
+import { feishuProxyStatus, runFeishuSync } from '../utils/feishuSync'
 
 const roles = [
   {
@@ -267,7 +268,7 @@ const inspect = async () => {
   inspecting.value = true
   hint.value = ''
   try {
-    const res = unwrap(await callCloudFunction('syncFeishuBitable', { action: 'inspect' }))
+    const res = unwrap(await runFeishuSync('inspect'))
     tables.value = res.tables || []
     for (const t of tables.value) {
       const role = guessRole(t.name)
@@ -292,7 +293,7 @@ const inspect = async () => {
 const saveMapping = async () => {
   saving.value = true
   try {
-    unwrap(await callCloudFunction('syncFeishuBitable', { action: 'saveMapping', mapping: { tables: { ...mapping } } }))
+    unwrap(await runFeishuSync('saveMapping', { mapping: { tables: { ...mapping } } }))
     ElMessage.success('映射已保存')
   } catch (e) {
     ElMessage.error(e.message || '保存失败')
@@ -304,7 +305,7 @@ const saveMapping = async () => {
 const run = async (action) => {
   busy.value = action
   try {
-    const res = unwrap(await callCloudFunction('syncFeishuBitable', { action }))
+    const res = unwrap(await runFeishuSync(action))
     ElMessage.success(res.msg || '完成')
     await refreshMirrors()
   } catch (e) {
@@ -349,7 +350,7 @@ const refreshMirrors = async () => {
 
 const loadConfig = async () => {
   try {
-    const res = await callCloudFunction('syncFeishuBitable', { action: 'getConfig' })
+    const res = await runFeishuSync('getConfig')
     if (res?.success && res.config?.tables) {
       for (const key of ['purchase', 'inventory', 'shipment']) {
         if (res.config.tables[key]) {
@@ -366,6 +367,14 @@ const loadConfig = async () => {
 onMounted(async () => {
   await refreshMirrors()
   await loadConfig()
+  const st = await feishuProxyStatus()
+  if (!st.configured) {
+    hintType.value = 'warning'
+    hint.value = st.msg || '请配置 FEISHU_APP_ID / FEISHU_APP_SECRET 后重试。'
+  } else if (!hint.value) {
+    hintType.value = 'success'
+    hint.value = '飞书代理已就绪，可点「探测表结构」。'
+  }
 })
 
 defineExpose({ refresh: refreshMirrors })
