@@ -112,7 +112,7 @@ async function main() {
     if (!r) ok = false
   }
   if (!ok) process.exitCode = 1
-  else console.log('\n完成。请重新部署云函数 managePurchaseOrder。')
+  else console.log('\n完成。出货扣库由 Admin「订货履约」直连集合完成，无需订货云函数。')
 }
 
 main().catch((e) => {

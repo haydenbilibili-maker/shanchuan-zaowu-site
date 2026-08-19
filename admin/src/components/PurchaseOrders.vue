@@ -62,6 +62,9 @@
           批量确认 ({{ selectedSubmitted.length }})
         </el-button>
         <el-button size="small" :icon="Download" :disabled="!filteredList.length" @click="exportCsv">导出</el-button>
+        <el-button size="small" :loading="catalogPublishing" @click="publishCatalog">
+          同步价目 ({{ catalogSource === 'configs' ? '云端' : '本地' }})
+        </el-button>
         <el-button size="small" type="primary" color="#d4af37" @click="openCreate">新建订货单</el-button>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
@@ -404,6 +407,7 @@ import {
   summarizeOrders,
   buildOrderCopyText,
 } from '../utils/b2bFulfillment'
+import { loadB2bCatalog, publishB2bCatalog } from '../utils/b2bCatalogSync'
 
 const emit = defineEmits(['shipped', 'changed'])
 
@@ -426,6 +430,8 @@ const sourceHint = ref('')
 const productOptions = ref([])
 const stores = ref([])
 const selected = ref([])
+const catalogSource = ref('seed')
+const catalogPublishing = ref(false)
 
 const shipForm = ref({ carrier: '顺丰速运', trackingNumber: '', items: [] })
 const metaForm = ref({})
@@ -772,8 +778,40 @@ const applyFilter = (status) => {
   statusFilter.value = status || 'all'
 }
 
+const refreshCatalogSource = async () => {
+  try {
+    const { source } = await loadB2bCatalog()
+    catalogSource.value = source
+  } catch {
+    catalogSource.value = 'seed'
+  }
+}
+
+const publishCatalog = async () => {
+  try {
+    await ElMessageBox.confirm(
+      `将 Admin 本地 ${B2B_CATALOG.length} 条供货价目写入 configs/b2b_catalog，店长端 listCatalog 将优先读取云端。`,
+      '同步价目到云端',
+      { type: 'info' }
+    )
+  } catch {
+    return
+  }
+  catalogPublishing.value = true
+  try {
+    await publishB2bCatalog(B2B_CATALOG)
+    catalogSource.value = 'configs'
+    ElMessage.success('价目已同步到云端')
+  } catch (e) {
+    ElMessage.error(e.message || '同步失败')
+  } finally {
+    catalogPublishing.value = false
+  }
+}
+
 onMounted(async () => {
   refresh()
+  refreshCatalogSource()
   productOptions.value = await loadHqProducts()
   stores.value = await loadStores()
 })

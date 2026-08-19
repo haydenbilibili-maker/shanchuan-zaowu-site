@@ -68,7 +68,7 @@ function formatFnError(err) {
   const msg = err?.msg || err?.message || err?.error?.message || (typeof err === 'string' ? err : JSON.stringify(err))
   const blob = `${code} ${msg}`
   if (/PERMISSION_DENIED|FUNCTION_NOT_FOUND|not found|不存在/i.test(blob)) {
-    return '云函数无权调用或尚未部署。请用微信开发者工具上传 syncFeishuBitable，并在云函数环境变量填写 FEISHU_APP_ID / FEISHU_APP_SECRET（不要写进 admin/.env）。'
+    return '云函数无权调用或尚未部署。Admin 飞书同步请走 /api/feishu-sync 代理；小程序侧云函数请在微信开发者工具上传并配置环境变量。'
   }
   return msg
 }

@@ -48,7 +48,7 @@
                     └───────────┬─────────────────┬───────────────┘
           主写 ▲                │                 │ 转单
                │                ▼                 │
-  店长小程序 ──┼── managePurchaseOrder            │
+  店长小程序 ──┼── 直连 purchase_orders            │
   (主入口)     │         │                        │
                │         │ 确认后生成               ▼
   官网 price-list ──► purchase_intents ──一键转──► purchase_orders
@@ -112,20 +112,16 @@
 3. 列表按状态筛选；确认收货
 4. 只读看出货物流（关联 `fulfillment_shipments`）
 
-云函数（推荐单一入口）：`managePurchaseOrder`
+两端均直连 CloudBase 集合（店长 `utils/b2bPurchaseOrder.js`，Admin `b2bFulfillment.js`），**不**依赖微信云函数。
 
-| action | 谁调用 | 说明 |
-|--------|--------|------|
-| `createDraft` / `updateDraft` | 店长 | 写草稿 |
-| `submit` | 店长 | → `submitted` |
-| `list` / `get` | 店长 / Admin | 列表详情 |
-| `confirm` | Admin（或店长只读） | → `confirmed`，可预生成出货草稿 |
+| 动作 | 谁调用 | 说明 |
+|------|--------|------|
+| 建草稿 / 提交 / 列表 | 店长 | 写 `purchase_orders` |
+| `confirm` | Admin | → `confirmed` |
 | `cancel` | 店长（仅 draft/submitted）/ Admin | 取消 |
-| `receive` | 店长 | → `received` → `closed` |
-| `convertFromIntent` | Admin | 意向 → 正式单 |
-| `createShipment` / `ship` | Admin | 出货 + 扣 `products.stock` + 写流水（Admin 亦可走 `b2bFulfillment.js`） |
-| `listShipments` | Admin / 店长 | 出货单列表 |
-| `adjustStock` | Admin | 手工入库/盘点（**P2**） |
+| `receive` | 店长 | → `closed` |
+| 意向转单 | Admin | 意向 → 正式单 |
+| 出货扣库 | Admin `shipPurchaseOrder` | 出货 + 扣 `products.stock` + 写流水 |
 
 鉴权：对齐 `MESSAGE_ADMIN_OPENIDS` / 现有店长口令策略；**写库存与发货必须走云函数**，禁止 Admin 前端直改 `stock` 绕过流水（藏品库原有「批量调库存」可逐步改为调 `adjustStock`）。
 
@@ -261,11 +257,11 @@ Admin 确认单时可补全映射；或维护 `configs` 文档 `b2b_sku_map`：`
 
 | 动作 | 主入口 | 集合变化 | 禁止 |
 |------|--------|----------|------|
-| 门店下单 | 店长 `managePurchaseOrder` | `purchase_orders` | Admin/官网直插绕过云函数（官网仅意向） |
+| 门店下单 | 店长直连集合 | `purchase_orders` | 官网仅意向，不直写订货单 |
 | 意向转单 | Admin | intent + new PO | 改 intent 当正式履约 |
 | 确认订货 | Admin | PO → confirmed | 无确认直接发货（可配置开关，默认关） |
-| 出货 | Admin 云函数 `ship` | shipment + stock + movement + PO | 前端只改 status 不扣库 |
-| 收货 | 店长 | PO → received/closed | Admin 代收货仅作兜底并留操作者 |
+| 出货 | Admin `b2bFulfillment.shipPurchaseOrder` | shipment + stock + movement + PO | 只改 status 不扣库 |
+| 收货 | 店长直连集合 | PO → closed | Admin 代收货仅作兜底并留操作者 |
 | 调库存 | Admin 库存页 → `adjustStock` | stock + movement | 藏品库静默改数字且无流水（迁移期可双写告警） |
 
 ---
@@ -279,7 +275,7 @@ Admin 确认单时可补全映射；或维护 `configs` 文档 `b2b_sku_map`：`
 | **P2** | 模块 `53` 成品库存 UI + 手工入库/盘点 + 藏品库调库存改走流水 | 任意库存变动可追溯 |
 | **P3** | 飞书多维表对接：只读采购/库存镜像、出货回写、人工应用 HQ 库存 | 见 [`飞书多维表对接_技术蓝图.md`](./飞书多维表对接_技术蓝图.md) |
 
-建议实施顺序：**先 P0 文档落地集合与云函数骨架 → 店长 Tab → Admin 升级 52 → P1 出货扣库**。
+建议实施顺序：**先 P0 落地集合 → 店长 Tab 直连写单 → Admin 升级 52 → P1 出货扣库**。
 
 ---
 
@@ -289,7 +285,7 @@ Admin 确认单时可补全映射；或维护 `configs` 文档 `b2b_sku_map`：`
 - [x] `cloudbase/schema|rules` · `purchase_orders` / `fulfillment_shipments` / `stock_movements`
 - [x] `docs/cloudbase-collections.md` 登记 P5
 - [x] `admin/scripts/provision-purchase-orders.mjs` + `provision-fulfillment-p1.mjs`（已执行）
-- [x] 云函数 `managePurchaseOrder`（`ship` / `receive` / `listShipments`；需开发者工具重传）
+- [x] 店长订货页直连 `purchase_orders`（`utils/b2bPurchaseOrder.js`；**无** `managePurchaseOrder` 云函数）
 - [x] 店长订货页 + 确认收货
 - [x] Admin 订货履约：确认 / 出货扣库 / 出货单 Tab / 意向转单
 - [x] `modulesRegistry.js` / `sidebarNav.js` / `App.vue` / 能力边界文档
@@ -303,7 +299,7 @@ Admin 确认单时可补全映射；或维护 `configs` 文档 `b2b_sku_map`：`
 | 项 | 说明 | 建议默认 |
 |----|------|----------|
 | 价目 SKU ↔ `products` 未一一对应 | 扣库前必须有 `productId` | 确认单时强制映射 |
-| 店长鉴权偏弱（客户端口令） | 与现网一致；库存写操作依赖云函数 + openid 白名单 | P0 沿用；P2 收紧 |
+| 店长鉴权偏弱（客户端口令） | 与现网一致；库存写操作在 Admin 侧完成 | P0 沿用；P2 收紧 |
 | 分批发货 | 复杂度高 | P1 整单一次发齐 |
 | 渠道无 `storeId` | `buyerType=channel`，地址用联系人字段 | 允许 `storeId` 空 |
 | 与 C 端抢同一 `products.stock` | 零售与 B2B 共用 HQ 成品仓 | 接受共用；二期可标 `stockReserved` |

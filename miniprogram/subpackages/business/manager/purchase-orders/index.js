@@ -1,4 +1,5 @@
 const { guardManagerPage } = require('../../../../utils/managerAuth')
+const purchase = require('../../../../utils/b2bPurchaseOrder')
 
 const STATUS_TEXT = {
   draft: '草稿',
@@ -50,24 +51,12 @@ Page({
 
   noop() {},
 
-  async call(action, payload = {}) {
-    const res = await wx.cloud.callFunction({
-      name: 'managePurchaseOrder',
-      data: { action, ...payload },
-    })
-    const result = (res && res.result) || {}
-    if (!result.success) {
-      throw new Error(result.msg || '操作失败')
-    }
-    return result
-  },
-
   async bootstrap() {
     this.setData({ loading: true })
     try {
       const [storesRes, catalogRes] = await Promise.all([
-        this.call('listStores'),
-        this.call('listCatalog'),
+        purchase.listStores(),
+        purchase.listCatalog(),
       ])
       const stores = storesRes.stores || []
       this.setData({
@@ -79,7 +68,7 @@ Page({
     } catch (e) {
       console.error(e)
       wx.showToast({
-        title: e.message || '请先部署 managePurchaseOrder',
+        title: e.message || '订货数据加载失败',
         icon: 'none',
       })
     } finally {
@@ -102,7 +91,7 @@ Page({
     this.setData({ loading: true })
     try {
       const { statusFilter } = this.data
-      const res = await this.call('list', {
+      const res = await purchase.listOrders({
         status: statusFilter,
         limit: 80,
       })
@@ -179,7 +168,7 @@ Page({
     const store = this.data.stores[this.data.storeIndex] || {}
     this.setData({ saving: true })
     try {
-      const created = await this.call('createDraft', {
+      const created = await purchase.createDraft({
         items,
         storeId: store.storeId || null,
         storeName: store.name || '',
@@ -190,7 +179,7 @@ Page({
         source: 'store_manager',
       })
       if (submit && created._id) {
-        await this.call('submit', { orderId: created._id })
+        await purchase.submitOrder(created._id)
       }
       wx.showToast({ title: submit ? '已提交' : '草稿已保存', icon: 'success' })
       this.setData({
@@ -211,7 +200,7 @@ Page({
   async submitOrder(e) {
     const orderId = e.currentTarget.dataset.id
     try {
-      await this.call('submit', { orderId })
+      await purchase.submitOrder(orderId)
       wx.showToast({ title: '已提交', icon: 'success' })
       this.loadOrders()
     } catch (err) {
@@ -230,7 +219,7 @@ Page({
     })
     if (!ok) return
     try {
-      await this.call('cancel', { orderId })
+      await purchase.cancelOrder(orderId)
       wx.showToast({ title: '已取消', icon: 'success' })
       this.loadOrders()
     } catch (err) {
@@ -249,7 +238,7 @@ Page({
     })
     if (!ok) return
     try {
-      await this.call('receive', { orderId })
+      await purchase.receiveOrder(orderId)
       wx.showToast({ title: '已收货', icon: 'success' })
       this.setData({ statusFilter: 'closed', detail: null })
       this.loadOrders()

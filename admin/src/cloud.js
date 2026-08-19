@@ -502,6 +502,7 @@ export const COLLECTIONS = {
   NOTIFICATION_TEMPLATES: 'notification_templates',        // 通知消息模板配置
   STORE_DESIGN_VERSIONS: 'store_design_versions',          // 门店设计中心：设计版本（Web 端沉淀）
   STORE_DESIGN_MATERIALS: 'store_design_materials',         // 门店设计中心：标准物料库（可选）
+  CUSTOM_CONFIGS: 'custom_configs',                       // 标本定制选项（框型/包装，getCustomConfig）
 };
 
 // =================================================

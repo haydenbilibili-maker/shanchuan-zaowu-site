@@ -46,7 +46,7 @@ function printManual() {
   console.log('1. https://console.cloud.tencent.com/tcb → 数据库 → 新建集合 →', COLLECTION)
   console.log('2. 集合 → 权限设置 → 自定义安全规则 → 粘贴：')
   console.log(rule)
-  console.log('3. 微信开发者工具上传并部署云函数 managePurchaseOrder')
+  console.log('3. 店长「订货」与 ERP「订货履约」均直连本集合，无需上传订货云函数')
   console.log('文档: cloudbase/schema/purchase_orders.md')
   console.log('蓝图: admin/docs/订货履约与成品库存_Phase1_技术蓝图.md\n')
 }
@@ -121,7 +121,7 @@ async function main() {
     return
   }
 
-  console.log('\n完成。下一步：部署云函数 managePurchaseOrder → 店长后台「订货」下单 → ERP「订货履约」确认。')
+  console.log('\n完成。下一步：店长后台「订货」下单 → ERP「订货履约」确认（两端直连本集合）。')
 }
 
 main().catch((e) => {

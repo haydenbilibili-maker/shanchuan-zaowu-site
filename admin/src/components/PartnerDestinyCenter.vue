@@ -64,13 +64,15 @@ const cacheBuster = ref(Date.now())
 
 const STORAGE_KEY = 'sc_partner_destiny_unlocked'
 const DEFAULT_PASSWORD = 'admin888'
+// Admin 部署在 /admin/，静态页在 admin/public/ → /admin/partner-destiny-center.html
+const BASE = import.meta.env.BASE_URL || '/admin/'
 
 const unlocked = ref(typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY) === '1')
 const password = ref('')
 const unlocking = ref(false)
 
-// 放在 public/ 下，走同源静态资源加载
-const src = computed(() => `/partner-destiny-center.html?v=${cacheBuster.value}`)
+const destinyPageUrl = (v = cacheBuster.value) => `${BASE}partner-destiny-center.html?v=${v}`
+const src = computed(() => destinyPageUrl())
 
 const unlock = async () => {
   if (unlocking.value) return
@@ -121,7 +123,7 @@ const openInNewTab = () => {
       ElMessage.warning('请先解锁后再打开')
       return
     }
-    window.open(`/partner-destiny-center.html?v=${Date.now()}`, '_blank', 'noopener,noreferrer')
+    window.open(destinyPageUrl(Date.now()), '_blank', 'noopener,noreferrer')
   } catch (e) {
     ElMessage.warning('无法打开新窗口，请检查浏览器拦截设置')
   }

@@ -38,7 +38,7 @@
 |--------|------|----------|----------|----------|
 | `home_configs` | 首页模块编排 | 小程序配置 → 首页配置 | `getHomeConfig` 云函数 | ERP 新建一条配置即可 |
 | `member_levels` | 会员等级 | 会员等级体系 | 会员中心 | 无数据时 ERP 显示默认 5 级，保存后入库 |
-| `configs` | 通用 KV 配置 | 会员成长值规则 | — | 文档 ID：`member_growth_rules` |
+| `configs` | 通用 KV 配置 | 会员成长值规则 | — | 文档 ID：`member_growth_rules` · `feishu_bitable` · `b2b_catalog` |
 | `points_rules` | 积分规则 | 积分规则配置 | `earnPoints` 等 | ERP 保存一次 |
 | `booking_rules` | 预约规则 | 预约规则配置 | 预约流程 | ERP 保存一次 |
 | `marketing_rules_config` | 营销全局规则 | 活动营销规则 | 秒杀/拼团/券 | 文档 ID：`seckill` / `group_buy` / `coupon` |
@@ -49,7 +49,7 @@
 | `admin_operation_logs` | 操作审计 | 权限管理 → 操作日志 | — | 可为空 |
 | `admin_login_logs` | 登录审计 | 权限管理 → 登录日志 | — | 可为空 |
 
-**`configs` 集合说明**：会员成长值存在固定文档 `member_growth_rules`，不是独立集合。创建 `configs` 集合后，在 ERP 会员等级页点「保存成长值规则」即可自动创建该文档。
+**`configs` 集合说明**：会员成长值存在固定文档 `member_growth_rules`；飞书表映射为 `feishu_bitable`；B2B 供货价目为 `b2b_catalog`（Admin 订货履约「同步价目」写入，店长端 `listCatalog` 优先读取）。
 
 **`marketing_rules_config` 文档 ID**（可选预置，或在 ERP 各 Tab 点保存）：
 
@@ -148,14 +148,15 @@
 
 | 集合名 | 用途 | 状态 | 主写入口 |
 |--------|------|------|----------|
-| `purchase_orders` | 正式订货单（自营店 / 渠道履约） | **P0 已建**；CLI：`cd admin && node scripts/provision-purchase-orders.mjs` | 店长云函数 `managePurchaseOrder` / Admin 订货履约 |
+| `purchase_orders` | 正式订货单（自营店 / 渠道履约） | **P0 已建**；CLI：`cd admin && node scripts/provision-purchase-orders.mjs` | 店长直连集合 / Admin 订货履约 |
 | `fulfillment_shipments` | 总部→门店/渠道出货单 | **P1 已建**；CLI：`cd admin && node scripts/provision-fulfillment-p1.mjs` | Admin 出货 / 云函数 `ship`；可回写飞书出货表 |
 | `stock_movements` | 总部成品库存流水（`warehouseId=hq`） | **P1 已建**（同上 CLI） | 出货扣库自动写入；飞书「应用库存」记 `feishu_pull` |
 | `feishu_purchases` | 飞书采购镜像（只读） | **对接已建**；CLI：`cd admin && node scripts/provision-feishu-bridge.mjs` | 云函数 `syncFeishuBitable` pull |
 | `feishu_inventory` | 飞书库存镜像（只读） | 同上 | 同上；人工确认后可应用到 `products.stock` |
-| `feishu_sync_logs` | 飞书同步审计 | 同上 | 云函数每次动作追加 |
+| `feishu_sync_logs` | 飞书同步审计 | 同上 | Admin `/api/feishu-sync` 代理每次动作追加 |
+| `custom_configs` | 标本定制选项（框型/包装） | 待建；规则 [`custom_configs.json`](../cloudbase/rules/custom_configs.json) | Admin 定制工坊 / 店长后台 / `getCustomConfig` |
 
-与现有关系：`purchase_intents` 可一键转为 `purchase_orders`；仓存数量仍落在 `products.stock`，流水表追加追溯。飞书 Base：`WCs2bnIHsaty7vsjcnaczu0Wnod`。
+与现有关系：`purchase_intents` 可一键转为 `purchase_orders`；仓存数量仍落在 `products.stock`，流水表追加追溯。B2B 供货价目可写入 `configs/b2b_catalog`（Admin「同步价目」）。飞书 Base：`WCs2bnIHsaty7vsjcnaczu0Wnod`。
 
 ---
 

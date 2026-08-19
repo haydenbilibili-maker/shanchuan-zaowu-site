@@ -4,7 +4,7 @@
 
 ## 用途
 
-- 小程序店长端下单 / 提交 / 收货（主入口，云函数 `managePurchaseOrder`）
+- 小程序店长端下单 / 提交 / 收货（主入口：直连本集合，`miniprogram/utils/b2bPurchaseOrder.js`）
 - Admin「订货履约」确认与列表
 - 官网 `purchase_intents` 一键转正式单
 

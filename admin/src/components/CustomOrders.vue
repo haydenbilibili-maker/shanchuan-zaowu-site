@@ -22,6 +22,7 @@
           <el-badge v-if="productionCount > 0" :value="productionCount" class="badge" />
         </template>
       </el-tab-pane>
+      <el-tab-pane label="定制选项" name="config" />
     </el-tabs>
 
     <!-- 客户询单 -->
@@ -152,6 +153,82 @@
       </el-card>
     </div>
 
+    <!-- 定制选项（框型 / 包装，与 getCustomConfig 对齐） -->
+    <div v-if="activeTab === 'config'">
+      <div class="config-toolbar">
+        <el-select v-model="configTypeFilter" size="small" style="width: 120px" @change="refresh">
+          <el-option label="全部类型" value="all" />
+          <el-option label="框型" value="frame" />
+          <el-option label="包装" value="packaging" />
+        </el-select>
+        <el-button size="small" type="primary" color="#d4af37" @click="openConfigForm()">新增选项</el-button>
+      </div>
+      <el-card shadow="never">
+        <el-table :data="filteredConfigs" v-loading="loading" stripe>
+          <el-table-column label="名称" min-width="140">
+            <template #default="{ row }">
+              <div class="b-title">{{ row.name }}</div>
+              <div class="b-sub">{{ row.configId || row._id }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="类型" width="90">
+            <template #default="{ row }">
+              <el-tag size="small">{{ configTypeLabel(row.type) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="描述" min-width="160" show-overflow-tooltip prop="desc" />
+          <el-table-column label="加价" width="90">
+            <template #default="{ row }">¥{{ row.priceDelta || 0 }}</template>
+          </el-table-column>
+          <el-table-column label="排序" width="72" prop="sort" />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 'active' ? 'success' : 'info'" size="small">
+                {{ row.status === 'active' ? '启用' : '停用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="160" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" link @click="openConfigForm(row)">编辑</el-button>
+              <el-button size="small" type="danger" link @click="deleteConfig(row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </div>
+
+    <!-- 定制选项编辑 -->
+    <el-dialog v-model="configDialog" :title="configForm._id ? '编辑定制选项' : '新增定制选项'" width="480px">
+      <el-form :model="configForm" label-width="88px">
+        <el-form-item label="类型" required>
+          <el-select v-model="configForm.type" style="width: 100%">
+            <el-option label="框型" value="frame" />
+            <el-option label="包装" value="packaging" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="名称" required>
+          <el-input v-model="configForm.name" placeholder="如：经典木框" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="configForm.desc" type="textarea" :rows="2" />
+        </el-form-item>
+        <el-form-item label="加价">
+          <el-input-number v-model="configForm.priceDelta" :min="0" :step="10" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="configForm.sort" :min="0" :max="999" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-switch v-model="configForm.active" active-text="启用" inactive-text="停用" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="configDialog = false">取消</el-button>
+        <el-button type="primary" color="#d4af37" :loading="configSaving" @click="saveConfig">保存</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 报价弹窗 -->
     <el-dialog v-model="quoteDialog" title="录入报价" width="500px">
       <el-form :model="quoteForm" label-width="100px">
@@ -185,9 +262,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import {
+  COLLECTIONS,
   fetchCollectionSorted,
   fetchCollectionWhere,
+  cdnAdd,
   cdnUpdate,
+  cdnRemove,
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -196,6 +276,11 @@ const loading = ref(false)
 const inquiries = ref([])
 const drafts = ref([])
 const productions = ref([])
+const customConfigs = ref([])
+const configTypeFilter = ref('all')
+const configDialog = ref(false)
+const configSaving = ref(false)
+const configForm = ref(emptyConfigForm())
 const quoteDialog = ref(false)
 const detailDrawer = ref(false)
 const currentRow = ref(null)
@@ -203,6 +288,24 @@ const quoteForm = ref({ amount: 0, days: 14, estimatedDate: '', note: '' })
 
 const inquiryPending = computed(() => inquiries.value.filter(i => i.status === 'pending').length)
 const productionCount = computed(() => productions.value.filter(p => !['completed', 'cancelled'].includes(p.productionStatus)).length)
+const filteredConfigs = computed(() => {
+  if (configTypeFilter.value === 'all') return customConfigs.value
+  return customConfigs.value.filter((c) => c.type === configTypeFilter.value)
+})
+
+function emptyConfigForm() {
+  return {
+    _id: '',
+    type: 'frame',
+    name: '',
+    desc: '',
+    priceDelta: 0,
+    sort: 10,
+    active: true,
+  }
+}
+
+const configTypeLabel = (t) => ({ frame: '框型', packaging: '包装' }[t] || t || '—')
 
 const fmt = (ts) => {
   if (!ts) return ''
@@ -248,6 +351,11 @@ const refresh = async () => {
       const rows = await fetchCollectionWhere('custom_inquiries', { status: 'accepted' }, 200)
       rows.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
       productions.value = rows
+    } else if (activeTab.value === 'config') {
+      customConfigs.value = await fetchCollectionSorted(COLLECTIONS.CUSTOM_CONFIGS, {
+        limit: 200,
+        sortFn: (a, b) => (a.sort ?? 0) - (b.sort ?? 0),
+      })
     }
   } catch (e) {
     console.error(e)
@@ -344,6 +452,61 @@ const viewDraft = (row) => {
   detailDrawer.value = true
 }
 
+const openConfigForm = (row) => {
+  if (row) {
+    configForm.value = {
+      _id: row._id,
+      type: row.type || 'frame',
+      name: row.name || '',
+      desc: row.desc || '',
+      priceDelta: Number(row.priceDelta) || 0,
+      sort: Number(row.sort) || 10,
+      active: row.status !== 'inactive',
+    }
+  } else {
+    configForm.value = emptyConfigForm()
+  }
+  configDialog.value = true
+}
+
+const saveConfig = async () => {
+  const f = configForm.value
+  if (!f.name?.trim() || !f.type) return ElMessage.warning('请填写名称与类型')
+  configSaving.value = true
+  try {
+    const data = {
+      type: f.type,
+      name: f.name.trim(),
+      desc: (f.desc || '').trim(),
+      priceDelta: Number(f.priceDelta) || 0,
+      sort: Number(f.sort) || 10,
+      status: f.active ? 'active' : 'inactive',
+    }
+    if (f._id) {
+      await cdnUpdate(COLLECTIONS.CUSTOM_CONFIGS, f._id, data)
+    } else {
+      await cdnAdd(COLLECTIONS.CUSTOM_CONFIGS, { ...data, configId: `cfg_${Date.now()}` })
+    }
+    ElMessage.success('已保存')
+    configDialog.value = false
+    refresh()
+  } catch (e) {
+    ElMessage.error(e.message || '保存失败')
+  } finally {
+    configSaving.value = false
+  }
+}
+
+const deleteConfig = (row) => {
+  ElMessageBox.confirm(`删除「${row.name}」？小程序定制页将不再展示。`, '删除确认', { type: 'warning' })
+    .then(async () => {
+      await cdnRemove(COLLECTIONS.CUSTOM_CONFIGS, row._id)
+      ElMessage.success('已删除')
+      refresh()
+    })
+    .catch(() => {})
+}
+
 onMounted(refresh)
 </script>
 
@@ -361,4 +524,5 @@ onMounted(refresh)
 .price { color: #d4af37; font-weight: bold; }
 .link-id { font-family: monospace; color: #409eff; font-size: 12px; }
 .raw-json { background: #f5f5f5; padding: 16px; border-radius: 8px; font-size: 12px; max-height: 80vh; overflow: auto; }
+.config-toolbar { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
 </style>
