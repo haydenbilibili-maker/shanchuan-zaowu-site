@@ -5102,6 +5102,7 @@ window.sw = function sw(n){
     if(nav) window.scrollTo({top:nav.offsetTop,behavior:'smooth'});
   }catch(ex){}
 };
+var sw = window.sw;
 // 初始状态：只显示第一个 tab
 document.querySelectorAll('.tc').forEach(function(t){t.classList.remove('on');});
 var firstTab=document.getElementById('tab-a');
