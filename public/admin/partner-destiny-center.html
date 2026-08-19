@@ -5088,6 +5088,26 @@
 
 </div>
 <div class="footer"><div class="seal">山海造物 · 命理全书</div><p>丙午年四月 · 二〇二六</p></div>
-<script>function sw(n){document.querySelectorAll('.tc').forEach(t=>t.classList.remove('on'));document.querySelectorAll('.pn').forEach(t=>t.classList.remove('on'));const e=document.getElementById('tab-'+n);if(e)e.classList.add('on');const m={a:0,b:1,c:2,d:3,e:4,f:5,g:6,h:7,hcx:8,wh:9,lel:10,xt:11,fam:12,z:13};const bs=document.querySelectorAll('.pn');if(bs[m[n]])bs[m[n]].classList.add('on');window.scrollTo({top:document.querySelector('.pnav').offsetTop,behavior:'smooth'})}document.querySelectorAll('.tc').forEach(t=>t.classList.add('on'));document.querySelectorAll('.pn').forEach(t=>t.classList.remove('on'));</script>
+<script>
+window.sw = function sw(n){
+  document.querySelectorAll('.tc').forEach(function(t){t.classList.remove('on');});
+  document.querySelectorAll('.pn').forEach(function(t){t.classList.remove('on');});
+  var e=document.getElementById('tab-'+n);
+  if(e) e.classList.add('on');
+  var m={a:0,b:1,c:2,d:3,e:4,f:5,g:6,h:7,hcx:8,wh:9,lel:10,xt:11,fam:12,z:13};
+  var bs=document.querySelectorAll('.pn');
+  if(typeof m[n]!=='undefined' && bs[m[n]]) bs[m[n]].classList.add('on');
+  try{
+    var nav=document.querySelector('.pnav');
+    if(nav) window.scrollTo({top:nav.offsetTop,behavior:'smooth'});
+  }catch(ex){}
+};
+// 初始状态：只显示第一个 tab
+document.querySelectorAll('.tc').forEach(function(t){t.classList.remove('on');});
+var firstTab=document.getElementById('tab-a');
+if(firstTab) firstTab.classList.add('on');
+var firstBtn=document.querySelector('.pn');
+if(firstBtn) firstBtn.classList.add('on');
+</script>
 </body>
 </html>
