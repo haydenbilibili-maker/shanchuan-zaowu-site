@@ -1474,37 +1474,19 @@ const loadProducts = async () => {
     if (!isLoggedIn.value) return
     loading.value = true
     try {
-        // 确保数据库连接
-        const connected = await loginToCloud()
-        if (!connected) {
-            ElMessage.error('数据库连接失败，请检查网络或配置')
-            loading.value = false
-            return
-        }
-        
-        // 确保 db 和 collection 对象可用
-        if (!db || typeof db.collection !== 'function') {
-            throw new Error('数据库对象未正确初始化')
-        }
-        
-        const productsCollection = db.collection(COLLECTIONS.PRODUCTS)
-        if (!productsCollection || typeof productsCollection.orderBy !== 'function') {
-            throw new Error('数据库集合对象未正确初始化')
-        }
-        
-        const res = await productsCollection
-            .orderBy('createTime', 'desc')
-            .limit(50)
-            .get()
-            
-        // 处理图片链接 - 添加安全检查
-        if (!res || !res.data || !Array.isArray(res.data)) {
-            console.warn('商品数据格式异常:', res)
+        const rows = await fetchCollectionSorted(COLLECTIONS.PRODUCTS, {
+            limit: 200,
+            throwOnError: true,
+            sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0),
+        })
+
+        if (!Array.isArray(rows)) {
+            console.warn('商品数据格式异常:', rows)
             products.value = []
             return
         }
-        
-        const list = await Promise.all(res.data.map(async (item) => {
+
+        const list = await Promise.all(rows.map(async (item) => {
             try {
                 let img = ''
                 if (item && item.images && Array.isArray(item.images) && item.images.length > 0) {
@@ -1530,7 +1512,7 @@ const loadProducts = async () => {
         products.value = list.filter(item => item !== null)
     } catch (err) {
         console.error('加载商品失败', err)
-        ElMessage.error('数据库连接异常: ' + (err.message || '未知错误'))
+        ElMessage.error('查询藏品档案失败: ' + (err.message || '未知错误'))
     } finally {
         loading.value = false
     }
@@ -1538,12 +1520,7 @@ const loadProducts = async () => {
 
 const toggleShelf = async (row) => {
     try {
-        const connected = await loginToCloud()
-        if (!connected) {
-            ElMessage.error('数据库连接失败')
-            return
-        }
-        await db.collection(COLLECTIONS.PRODUCTS).doc(row._id).update({ 
+        await cdnUpdate(COLLECTIONS.PRODUCTS, row._id, {
             isOffShelf: !row.isOnShelf,
             updateTime: Date.now()
         })
@@ -1581,13 +1558,8 @@ const handleAddToArchive = async () => {
     }
     try {
         loading.value = true
-        const connected = await loginToCloud()
-        if (!connected) {
-            ElMessage.error('数据库连接失败')
-            return
-        }
         const promises = selectedProducts.value.map(p =>
-            db.collection(COLLECTIONS.PRODUCTS).doc(p._id).update({
+            cdnUpdate(COLLECTIONS.PRODUCTS, p._id, {
                 inArchive: true,
                 updateTime: Date.now()
             })
@@ -1637,14 +1609,8 @@ const handleBatchToggleShelf = async (isOnShelf) => {
     ).then(async () => {
         try {
             loading.value = true
-            const connected = await loginToCloud()
-            if (!connected) {
-                ElMessage.error('数据库连接失败')
-                return
-            }
-
-            const promises = selectedProducts.value.map(product => 
-                db.collection(COLLECTIONS.PRODUCTS).doc(product._id).update({
+            const promises = selectedProducts.value.map(product =>
+                cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
                     isOffShelf: !isOnShelf,
                     updateTime: Date.now()
                 })
@@ -1698,12 +1664,6 @@ const handleBatchPrice = async () => {
     ).then(async () => {
         try {
             loading.value = true
-            const connected = await loginToCloud()
-            if (!connected) {
-                ElMessage.error('数据库连接失败')
-                return
-            }
-
             const promises = validProducts.map(product => {
                 if (!product || !product._id) return Promise.resolve()
                 
@@ -1716,7 +1676,7 @@ const handleBatchPrice = async () => {
                     newPrice = Math.round((product.price || 0) * (batchPriceForm.value.discount / 100) * 100) / 100
                 }
 
-                return db.collection(COLLECTIONS.PRODUCTS).doc(product._id).update({
+                return cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
                     price: Math.max(0, newPrice),
                     updateTime: Date.now()
                 }).catch(err => {
@@ -1767,12 +1727,6 @@ const handleBatchStock = async () => {
     ).then(async () => {
         try {
             loading.value = true
-            const connected = await loginToCloud()
-            if (!connected) {
-                ElMessage.error('数据库连接失败')
-                return
-            }
-
             const promises = selectedProducts.value.map(product => {
                 let newStock = product.stock || 0
                 if (batchStockForm.value.type === 'set') {
@@ -1783,7 +1737,7 @@ const handleBatchStock = async () => {
                     newStock = Math.max(0, (product.stock || 0) - batchStockForm.value.value)
                 }
 
-                return db.collection(COLLECTIONS.PRODUCTS).doc(product._id).update({
+                return cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
                     stock: Math.max(0, newStock),
                     updateTime: Date.now()
                 })
@@ -1902,12 +1856,7 @@ const deleteItem = (row) => {
         { confirmButtonText: '确认删除', cancelButtonText: '取消', type: 'warning' }
     ).then(async () => {
         try {
-            const connected = await loginToCloud()
-            if (!connected) {
-                ElMessage.error('数据库连接失败')
-                return
-            }
-            await db.collection(COLLECTIONS.PRODUCTS).doc(row._id).remove()
+            await cdnRemove(COLLECTIONS.PRODUCTS, row._id)
             ElMessage.success('档案已销毁')
             loadProducts()
         } catch (err) {
@@ -1921,12 +1870,6 @@ const saveProduct = async () => {
     if(!form.value.title) return ElMessage.warning('请输入藏品名称')
     
     try {
-        const connected = await loginToCloud()
-        if (!connected) {
-            ElMessage.error('数据库连接失败')
-            return
-        }
-        
         // 🟢 处理秒杀数据
         let seckill = null
         if (form.value.seckillEnabled) {
@@ -1966,7 +1909,7 @@ const saveProduct = async () => {
         }
         
         if (isEditing.value) {
-            await db.collection(COLLECTIONS.PRODUCTS).doc(form.value._id).update(data)
+            await cdnUpdate(COLLECTIONS.PRODUCTS, form.value._id, data)
             ElMessage.success('更新成功')
         } else {
             data.createTime = Date.now()
@@ -1977,7 +1920,7 @@ const saveProduct = async () => {
             data.origin = ''
             data.collectDate = ''
             data.size = '0x0x0 cm' // 默认尺寸
-            await db.collection(COLLECTIONS.PRODUCTS).add(data)
+            await cdnAdd(COLLECTIONS.PRODUCTS, data)
             ElMessage.success('创建成功')
         }
         
