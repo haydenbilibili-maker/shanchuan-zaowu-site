@@ -1,464 +1,451 @@
 <template>
-  <div class="ai-center">
-    <!-- 工具模式：扁平化工作台头部 -->
-    <div class="ai-header ai-workbench-header" v-if="currentMode === 'tools' || currentMode === 'openclaw'">
-      <div class="header-left">
-        <div class="header-kicker">AI WORKBENCH</div>
-        <h2 class="title">AI 智能中心</h2>
-        <p class="subtitle">{{ workbenchSubtitle }}</p>
-        <div class="mode-switcher flat-switcher">
-          <button @click="currentMode = 'tools'" :class="['mode-btn', currentMode === 'tools' ? 'active' : '']">工具</button>
-          <button @click="currentMode = 'openclaw'" :class="['mode-btn', currentMode === 'openclaw' ? 'active' : '']">OpenClaw</button>
-          <button @click="currentMode = 'chat'" :class="['mode-btn', currentMode === 'chat' ? 'active' : '']">咨询</button>
-          <button @click="currentMode = 'debate'" :class="['mode-btn', currentMode === 'debate' ? 'active' : '']">辩论</button>
+  <div class="ai-center aic-v2">
+    <!-- 统一壳层：降低首屏噪音，模式切换始终可见 -->
+    <header class="aic-topbar" aria-label="AI 智能中心">
+      <div class="aic-topbar-left">
+        <div class="aic-mark" aria-hidden="true">山</div>
+        <div class="aic-topbar-titles">
+          <h2 class="aic-topbar-title">AI 智能中心</h2>
+          <p class="aic-topbar-sub">{{ shellSubtitle }}</p>
         </div>
       </div>
-      <div class="header-right">
-        <div class="header-stats flat-stats">
-          <div class="stat-item">
-            <span class="stat-label">今日调用</span>
-            <span class="stat-value">{{ todayUsage }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">成功率</span>
-            <span class="stat-value success">{{ successRate }}%</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">工具数</span>
-            <span class="stat-value">{{ features.length }}</span>
-          </div>
-        </div>
-        <button @click="showBackendConfigDialog = true" class="action-btn backend-config-btn flat-action" title="后台调用配置">
-          <el-icon><Setting /></el-icon>
-          <span>后台配置</span>
+      <nav class="aic-segment" aria-label="工作模式">
+        <button
+          v-for="mode in modeTabs"
+          :key="mode.id"
+          type="button"
+          :class="['aic-seg', currentMode === mode.id ? 'is-active' : '']"
+          @click="switchMode(mode.id)"
+        >
+          {{ mode.label }}
+        </button>
+      </nav>
+      <div class="aic-topbar-right">
+        <button
+          type="button"
+          class="aic-model-pill"
+          :class="providerChipClass"
+          @click="openOnlineConfig"
+          :title="aiProviderConfigHint"
+        >
+          <span class="aic-provider-dot" aria-hidden="true" />
+          <span>{{ providerChipLabel }}</span>
+        </button>
+        <button type="button" class="aic-icon-ghost" @click="showBackendConfigDialog = true" title="模型配置">
+          <el-icon :size="18"><Setting /></el-icon>
         </button>
       </div>
-    </div>
+    </header>
 
-    <!-- 咨询/辩论模式：统一模块（合并原顶部 + 左侧黑色面板） -->
-    <div class="ai-unified-module" v-if="currentMode === 'chat' || currentMode === 'debate'">
-      <header class="unified-top">
-        <div class="unified-top-row unified-top-row--primary">
-          <div class="unified-brand">
-            <h2 class="unified-title">AI 智能中心</h2>
-            <p class="unified-subtitle">虚拟员工咨询、OpenClaw 与博弈辩论</p>
-          </div>
-          <nav class="unified-tabs" aria-label="模式切换">
-            <button type="button" @click="currentMode = 'tools'" class="unified-tab">工具</button>
-            <button type="button" @click="currentMode = 'openclaw'" :class="['unified-tab', currentMode === 'openclaw' ? 'active' : '']">OpenClaw</button>
-            <button type="button" @click="currentMode = 'chat'" :class="['unified-tab', currentMode === 'chat' ? 'active' : '']">智能咨询</button>
-            <button type="button" @click="currentMode = 'debate'" :class="['unified-tab', currentMode === 'debate' ? 'active' : '']">博弈辩论</button>
-          </nav>
-          <div class="unified-toolbar">
-            <div class="unified-stats-inline" aria-label="调用概览">
-              <span class="u-stat">今日 <strong>{{ todayUsage }}</strong></span>
-              <span class="u-stat-dot" aria-hidden="true" />
-              <span class="u-stat u-stat--ok">成功率 <strong>{{ successRate }}%</strong></span>
-              <span class="u-stat-dot" aria-hidden="true" />
-              <span class="u-stat u-stat--persona" :title="currentPersona.name">{{ currentPersona.name }}</span>
-            </div>
-            <div class="unified-actions">
-              <button type="button" class="unified-action" :class="{ active: showPersonaPanel }" @click="showPersonaPanel = !showPersonaPanel" :title="showPersonaPanel ? '收起角色与快捷指令' : '展开角色与快捷指令'">
-                {{ showPersonaPanel ? '收起面板' : '角色与指令' }}
-              </button>
-              <button type="button" class="unified-action" @click="clearHistory" title="清空对话">清空</button>
-              <button type="button" class="unified-action" v-if="messages.length > 3" @click="scrollToBottom" title="滚动到底部">到底</button>
-            </div>
+    <!-- DeepSeek / Provider 未配置提示 -->
+    <el-alert
+      v-if="showProviderWarning"
+      class="aic-env-alert"
+      type="warning"
+      show-icon
+      :closable="false"
+      title="尚未配置可用的云端 AI Key"
+    >
+      <template #default>
+        <div class="aic-env-alert-body">
+          <p>{{ aiProviderConfigHint }}</p>
+          <div class="aic-env-alert-actions">
+            <el-button type="primary" size="small" @click="openOnlineConfig">打开配置</el-button>
+            <el-button size="small" text @click="dismissProviderWarning = true">稍后</el-button>
           </div>
         </div>
-        <div class="unified-top-row unified-top-row--filters">
-          <div class="unified-search-wrap">
-            <el-input
-              v-model="personaSearch"
-              placeholder="搜索角色或领域…"
-              size="small"
-              clearable
-              prefix-icon="Search"
-              class="unified-search-input"
-            />
-          </div>
-          <div class="unified-categories-scroll" role="tablist" aria-label="角色战队分类">
+      </template>
+    </el-alert>
+
+    <!-- ===== 工具工作台 ===== -->
+    <section v-if="currentMode === 'tools'" class="aic-tools" aria-label="AI 工具工作台">
+      <aside class="aic-tools-side">
+        <div class="aic-side-block">
+          <div class="aic-side-label">搜索工具</div>
+          <el-input
+            v-model="toolSearch"
+            placeholder="名称、标签或描述…"
+            clearable
+            size="default"
+            prefix-icon="Search"
+          />
+        </div>
+        <div class="aic-side-block">
+          <div class="aic-side-label">分类</div>
+          <div class="aic-cat-list" role="tablist">
             <button
               type="button"
               role="tab"
-              :aria-selected="selectedPersonaCategory === 'all'"
-              :class="['unified-cat', selectedPersonaCategory === 'all' ? 'active' : '']"
-              @click="selectedPersonaCategory = 'all'"
+              :aria-selected="activeCategory === 'all'"
+              :class="['aic-cat', activeCategory === 'all' ? 'is-active' : '']"
+              @click="activeCategory = 'all'"
             >
-              全部
+              <span>全部</span>
+              <em>{{ features.length }}</em>
             </button>
+            <button
+              v-for="category in categories"
+              :key="category.id"
+              type="button"
+              role="tab"
+              :aria-selected="activeCategory === category.id"
+              :class="['aic-cat', activeCategory === category.id ? 'is-active' : '']"
+              @click="activeCategory = category.id"
+            >
+              <span>{{ category.icon }} {{ category.name }}</span>
+              <em>{{ featureCountByCategory[category.id] || 0 }}</em>
+            </button>
+          </div>
+        </div>
+        <div class="aic-side-block" v-if="recentFeatures.length">
+          <div class="aic-side-label">最近使用</div>
+          <div class="aic-recent-list">
+            <button
+              v-for="item in recentFeatures"
+              :key="item.id"
+              type="button"
+              class="aic-recent-item"
+              @click="openFeature(item)"
+            >
+              <span class="aic-recent-ico" aria-hidden="true">{{ item.icon }}</span>
+              <span class="aic-recent-name">{{ item.title }}</span>
+            </button>
+          </div>
+        </div>
+        <div class="aic-side-block aic-side-shortcuts">
+          <div class="aic-side-label">快捷入口</div>
+          <button type="button" class="aic-shortcut" @click="switchMode('chat')">
+            <span>智能咨询</span>
+            <small>选人 → 交代任务</small>
+          </button>
+          <button type="button" class="aic-shortcut" @click="switchMode('openclaw')">
+            <span>OpenClaw</span>
+            <small>PRD 与派发对接</small>
+          </button>
+          <button type="button" class="aic-shortcut" @click="openFeatureById('strategic-brain')">
+            <span>战略智脑</span>
+            <small>多角色决策建议</small>
+          </button>
+        </div>
+      </aside>
+
+      <div class="aic-tools-main">
+        <div class="aic-tools-head">
+          <div>
+            <h3 class="aic-section-title">{{ activeCategoryMeta?.name || '全部工具' }}</h3>
+            <p class="aic-section-desc">{{ activeCategoryDesc }}</p>
+          </div>
+          <div class="aic-legend">
+            <span class="aic-legend-item"><i class="cap-dot cap-api" />真 API</span>
+            <span class="aic-legend-item"><i class="cap-dot cap-bridge" />对接</span>
+            <span class="aic-legend-item"><i class="cap-dot cap-demo" />演示</span>
+          </div>
+        </div>
+
+        <div v-if="filteredFeatures.length" class="aic-feature-grid">
+          <button
+            v-for="feature in filteredFeatures"
+            :key="feature.id"
+            type="button"
+            class="aic-feature-card"
+            :title="feature.capabilityHint || feature.description"
+            @click="openFeature(feature)"
+          >
+            <div class="aic-feature-top">
+              <span class="aic-feature-icon" aria-hidden="true">{{ feature.icon }}</span>
+              <el-tag
+                size="small"
+                effect="plain"
+                :type="capabilityTagType(feature.capability)"
+                class="aic-cap-tag"
+              >
+                {{ feature.capabilityLabel || '真 API' }}
+              </el-tag>
+            </div>
+            <h4 class="aic-feature-title">{{ feature.title }}</h4>
+            <p class="aic-feature-desc">{{ feature.description }}</p>
+            <div class="aic-feature-foot">
+              <div class="aic-feature-tags">
+                <span v-for="tag in feature.tags.slice(0, 3)" :key="tag">{{ tag }}</span>
+              </div>
+              <span class="aic-feature-cta">进入</span>
+            </div>
+          </button>
+        </div>
+        <div v-else class="aic-empty">
+          <p class="aic-empty-title">没有匹配的工具</p>
+          <p class="aic-empty-desc">试试其他关键词，或切换分类</p>
+          <el-button size="small" @click="toolSearch = ''; activeCategory = 'all'">重置筛选</el-button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== OpenClaw ===== -->
+    <section v-else-if="currentMode === 'openclaw'" class="aic-openclaw" aria-label="OpenClaw 虚拟员工">
+      <OpenClawVirtualStaff @close="switchMode('tools')" @open-chat="switchMode('chat')" />
+    </section>
+
+    <!-- ===== 咨询 / 辩论：选人 → 交代任务 → 输出 ===== -->
+    <section
+      v-else-if="currentMode === 'chat' || currentMode === 'debate'"
+      class="aic-consult"
+      aria-label="智能咨询工作区"
+    >
+      <aside class="aic-persona-rail" :class="{ 'is-collapsed': !showPersonaPanel }">
+        <div class="aic-rail-head">
+          <div>
+            <div class="aic-side-label">虚拟员工</div>
+            <p class="aic-rail-hint">先选人，再交代任务</p>
+          </div>
+          <button type="button" class="aic-icon-btn" @click="showPersonaPanel = !showPersonaPanel" :title="showPersonaPanel ? '收起' : '展开'">
+            {{ showPersonaPanel ? '‹' : '›' }}
+          </button>
+        </div>
+        <template v-if="showPersonaPanel">
+          <el-input
+            v-model="personaSearch"
+            placeholder="搜索角色或领域…"
+            size="small"
+            clearable
+            prefix-icon="Search"
+            class="aic-persona-search"
+          />
+          <div class="aic-persona-cats" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              :class="['aic-p-cat', selectedPersonaCategory === 'all' ? 'is-active' : '']"
+              @click="selectedPersonaCategory = 'all'"
+            >全部</button>
             <button
               v-for="(cat, key) in personaCategories"
               :key="key"
               type="button"
               role="tab"
-              :aria-selected="selectedPersonaCategory === key"
-              :class="['unified-cat', selectedPersonaCategory === key ? 'active' : '']"
+              :class="['aic-p-cat', selectedPersonaCategory === key ? 'is-active' : '']"
               @click="selectedPersonaCategory = key"
-            >
-              <span class="unified-cat-ico" aria-hidden="true">{{ cat.icon }}</span>
-              <span class="unified-cat-txt">{{ cat.name.split(' ')[1] }}</span>
-            </button>
+            >{{ cat.icon }} {{ cat.name.split(' ')[1] || cat.name }}</button>
           </div>
-        </div>
-      </header>
-      <div class="unified-row2" v-show="showPersonaPanel" role="region" aria-label="虚拟员工与快捷指令">
-        <div class="unified-personas-wrap">
-          <div class="unified-row2-label">
-            <span class="row2-label-cn">虚拟员工</span>
-            <span class="row2-label-en">Personas</span>
-          </div>
-          <div class="unified-personas-scroll">
+          <div class="aic-persona-scroll">
             <template v-for="(cat, catKey) in personaCategories" :key="catKey">
               <template v-if="selectedPersonaCategory === 'all' || selectedPersonaCategory === catKey">
-                <button
-                  v-for="([key, persona]) in Object.entries(filteredPersonas).filter(([k, p]) => p.category === catKey)"
-                  :key="key"
-                  type="button"
-                  :class="['unified-persona-chip', personaMode === key ? 'active' : '']"
-                  :aria-pressed="personaMode === key"
-                  :title="persona.shortDesc || persona.name"
-                  @click="selectPersona(key)"
+                <div
+                  v-if="Object.entries(filteredPersonas).some(([, p]) => p.category === catKey)"
+                  class="aic-persona-group"
                 >
-                  <span class="chip-icon" aria-hidden="true">{{ persona.icon }}</span>
-                  <span class="chip-name">{{ persona.name }}</span>
-                  <span v-if="personaMode === key" class="chip-check" aria-hidden="true">✓</span>
-                </button>
-              </template>
-            </template>
-            <div v-if="Object.keys(filteredPersonas).length === 0" class="unified-personas-empty">未找到匹配角色，请调整搜索或分类筛选。</div>
-          </div>
-        </div>
-        <div class="unified-quick-wrap">
-          <div class="unified-row2-label">
-            <span class="row2-label-cn">快捷指令</span>
-            <span class="row2-label-en">Shortcuts</span>
-          </div>
-          <div class="unified-quick-list" role="toolbar" aria-label="快捷指令">
-            <button
-              v-for="(action, key) in quickActions"
-              :key="key"
-              type="button"
-              class="unified-quick-chip"
-              :disabled="isAiThinking || isDebating"
-              @click="quickAI(key)"
-            >
-              <span class="quick-chip-icon" aria-hidden="true">{{ action.icon }}</span>
-              <span class="quick-chip-label">{{ action.label }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 工具模式：功能分类和卡片 -->
-    <template v-if="currentMode === 'tools'">
-      <div class="tools-toolbar">
-        <div class="toolbar-copy">
-          <div class="toolbar-title">{{ activeCategoryMeta?.name || '全部工具' }}</div>
-          <div class="toolbar-desc">{{ activeCategoryDesc }}</div>
-        </div>
-        <div class="ai-categories flat-categories">
-          <button
-            v-for="category in categories"
-            :key="category.id"
-            type="button"
-            @click="activeCategory = category.id"
-            :class="['category-tab', { active: activeCategory === category.id }]"
-          >
-            <span class="category-icon">{{ category.icon }}</span>
-            <span class="category-name">{{ category.name }}</span>
-            <span class="category-count">{{ featureCountByCategory[category.id] || 0 }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- AI功能卡片网格 -->
-      <div class="ai-features-grid">
-        <button
-          v-for="feature in filteredFeatures"
-          :key="feature.id"
-          class="feature-card"
-          @click="openFeature(feature)"
-        >
-          <div class="feature-icon-wrap">
-            <span class="feature-icon">{{ feature.icon }}</span>
-          </div>
-          <div class="feature-content">
-            <h3 class="feature-title">{{ feature.title }}</h3>
-            <p class="feature-desc">{{ feature.description }}</p>
-            <div class="feature-tags">
-              <span v-for="tag in feature.tags" :key="tag" class="feature-tag">{{ tag }}</span>
-            </div>
-          </div>
-          <div class="feature-arrow">进入</div>
-        </button>
-      </div>
-    </template>
-
-    <template v-else-if="currentMode === 'openclaw'">
-      <div class="openclaw-workbench">
-        <OpenClawVirtualStaff @close="currentMode = 'tools'" />
-      </div>
-    </template>
-
-    <!-- 咨询/辩论模式：聊天界面（角色与快捷指令已合并至上方统一模块） -->
-    <template v-else-if="currentMode === 'chat' || currentMode === 'debate'">
-      <div class="ai-chat-container ai-chat-fullwidth">
-        <!-- 左侧角色面板已合并到上方统一模块，此处不再渲染 -->
-        <div class="persona-panel panel-hidden" aria-hidden="true" style="display: none;">
-          <div class="panel-header">
-            <h3>👥 虚拟员工战队</h3>
-            <div class="persona-search">
-              <el-input
-                v-model="personaSearch"
-                placeholder="🔍 搜索角色名称或专业领域..."
-                size="small"
-                clearable
-                prefix-icon="Search"
-              />
-            </div>
-            <!-- 分类筛选 -->
-            <div class="persona-categories">
-              <div 
-                class="category-filter"
-                :class="{ active: selectedPersonaCategory === 'all' }"
-                @click="selectedPersonaCategory = 'all'"
-              >
-                全部
-              </div>
-              <div 
-                v-for="(cat, key) in personaCategories"
-                :key="key"
-                class="category-filter"
-                :class="{ active: selectedPersonaCategory === key }"
-                @click="selectedPersonaCategory = key"
-              >
-                {{ cat.icon }} {{ cat.name.split(' ')[1] }}
-              </div>
-            </div>
-          </div>
-          <div class="persona-list">
-            <!-- 按分类分组显示 -->
-            <template v-for="(cat, catKey) in personaCategories" :key="catKey">
-              <template v-if="selectedPersonaCategory === 'all' || selectedPersonaCategory === catKey">
-                <div 
-                  v-if="Object.entries(filteredPersonas).some(([k, p]) => p.category === catKey)"
-                  class="persona-category-section"
-                >
-                  <div class="category-header">
-                    <span class="category-icon">{{ cat.icon }}</span>
-                    <span class="category-title">{{ cat.name }}</span>
-                    <span class="category-count">({{ Object.entries(filteredPersonas).filter(([k, p]) => p.category === catKey).length }})</span>
-                  </div>
-                  <div
-                    v-for="([key, persona]) in Object.entries(filteredPersonas).filter(([k, p]) => p.category === catKey)"
-                    :key="key"
-                    @click="selectPersona(key)"
-                    :class="['persona-card', personaMode === key ? 'active' : '']"
-                  >
-                    <div class="persona-icon">{{ persona.icon }}</div>
-                    <div class="persona-info">
-                      <div class="persona-name">{{ persona.name }}</div>
-                      <div class="persona-desc">{{ persona.shortDesc }}</div>
-                    </div>
-                    <div v-if="personaMode === key" class="persona-check">✓</div>
-                  </div>
-                </div>
-              </template>
-            </template>
-            
-            <!-- 空状态 -->
-            <div v-if="Object.keys(filteredPersonas).length === 0" class="empty-personas">
-              <div class="empty-icon">🔍</div>
-              <p class="empty-title">未找到匹配的角色</p>
-              <p class="empty-hint">尝试调整搜索关键词或切换分类筛选</p>
-              <el-button size="small" @click="personaSearch = ''; selectedPersonaCategory = 'all'" text>
-                重置筛选条件
-              </el-button>
-            </div>
-          </div>
-          <!-- 快捷指令 -->
-          <div class="quick-actions-panel">
-            <div class="quick-title">💡 快捷指令</div>
-            <div class="quick-actions-grid">
-              <el-button 
-                v-for="(action, key) in quickActions"
-                :key="key"
-                @click="quickAI(key)" 
-                class="quick-btn"
-                text
-                :disabled="isAiThinking || isDebating"
-              >
-                {{ action.icon }} {{ action.label }}
-              </el-button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 中间：聊天区域 -->
-        <div class="chat-area">
-          <!-- 辩论控制 -->
-          <div class="chat-header" v-if="currentMode === 'debate'">
-            <div class="debate-controls">
-              <div class="debate-topic-section">
-                <el-select v-model="debateTopic" size="small" placeholder="📋 选择辩论主题" style="width: 240px">
-                  <el-option label="是否应该扩大线上销售渠道？" value="online-expansion" />
-                  <el-option label="是否应该增加门店体验投入？" value="store-experience" />
-                  <el-option label="是否应该开发新产品线？" value="product-line" />
-                  <el-option label="是否应该加大营销预算？" value="marketing-budget" />
-                  <el-option label="是否应该拓展新市场？" value="market-expansion" />
-                  <el-option label="是否应该引入新技术？" value="tech-innovation" />
-                  <el-option label="自定义主题" value="custom" />
-                </el-select>
-                <el-input
-                  v-if="debateTopic === 'custom'"
-                  v-model="customDebateTopic"
-                  size="small"
-                  placeholder="💡 输入自定义辩论主题..."
-                  style="width: 240px; margin-left: 8px;"
-                />
-              </div>
-              <div class="debate-actions">
-                <el-button 
-                  size="small" 
-                  @click="startDebate" 
-                  :disabled="isDebating || isAiThinking || !debateTopic || (debateTopic === 'custom' && !customDebateTopic.trim()) || selectedDebatePersonas.length < 2"
-                  type="primary"
-
-                >
-                  🚀 开始辩论
-                </el-button>
-                <el-button 
-                  size="small" 
-                  @click="stopDebate" 
-                  :disabled="!isDebating"
-                  type="danger"
-                >
-                  ⏹️ 停止辩论
-                </el-button>
-              </div>
-              <el-select 
-                v-model="selectedDebatePersonas" 
-                multiple 
-                size="small" 
-                placeholder="👥 选择参与角色（至少2个，建议3-5个）" 
-                style="width: 360px"
-                :max-collapse-tags="2"
-              >
-                <el-option-group
-                  v-for="(cat, catKey) in personaCategories"
-                  :key="catKey"
-                  :label="cat.name"
-                >
-                  <el-option
-                    v-for="([key, persona]) in Object.entries(personas).filter(([k, p]) => p.category === catKey)"
-                    :key="key"
-                    :label="persona.name"
-                    :value="key"
-                  >
-                    <span>{{ persona.icon }}</span>
-                    <span style="margin-left: 8px;">{{ persona.name }}</span>
-                  </el-option>
-                </el-option-group>
-              </el-select>
-            </div>
-          </div>
-
-          <!-- 聊天消息 -->
-          <div ref="chatBoxRef" class="chat-box">
-            <!-- 空状态引导：仅欢迎消息时显示快捷示例 -->
-            <div v-if="messages.length <= 1 && !isAiThinking && !isDebating" class="chat-empty-state">
-              <div class="empty-state-inner">
-                <div class="empty-state-icon">💬</div>
-                <p class="empty-state-title">向 {{ currentPersona.name }} 提问</p>
-                <p class="empty-state-desc">选择下方示例快速开始，或直接输入你的问题</p>
-                <div class="empty-state-suggestions">
+                  <div class="aic-persona-group-title">{{ cat.icon }} {{ cat.name }}</div>
                   <button
-                    v-for="(s, i) in emptySuggestions"
-                    :key="i"
+                    v-for="([key, persona]) in Object.entries(filteredPersonas).filter(([, p]) => p.category === catKey)"
+                    :key="key"
                     type="button"
-                    class="suggestion-chip"
-                    @click="applySuggestion(s)"
+                    :class="['aic-persona', personaMode === key ? 'is-active' : '']"
+                    :aria-pressed="personaMode === key"
+                    @click="selectPersona(key)"
                   >
-                    {{ s }}
+                    <span class="aic-persona-ico" aria-hidden="true">{{ persona.icon }}</span>
+                    <span class="aic-persona-meta">
+                      <span class="aic-persona-name">{{ persona.name }}</span>
+                      <span class="aic-persona-desc">{{ persona.shortDesc }}</span>
+                    </span>
+                    <span v-if="personaMode === key" class="aic-persona-check" aria-hidden="true">✓</span>
                   </button>
                 </div>
+              </template>
+            </template>
+            <div v-if="Object.keys(filteredPersonas).length === 0" class="aic-empty aic-empty--compact">
+              <p class="aic-empty-title">未找到角色</p>
+              <el-button size="small" text @click="personaSearch = ''; selectedPersonaCategory = 'all'">重置</el-button>
+            </div>
+          </div>
+        </template>
+      </aside>
+
+      <div class="aic-consult-main">
+        <div class="aic-thread-bar">
+          <div class="aic-thread-persona" :style="{ '--p-color': currentPersona.color }">
+            <span class="aic-thread-avatar" aria-hidden="true">{{ currentPersona.icon }}</span>
+            <div>
+              <div class="aic-thread-name">{{ currentPersona.name }}</div>
+              <div class="aic-thread-desc">{{ currentPersona.shortDesc }}</div>
+            </div>
+          </div>
+          <div class="aic-thread-actions">
+            <button type="button" class="aic-text-btn" @click="clearHistory">新对话</button>
+            <button v-if="messages.length > 3" type="button" class="aic-text-btn" @click="scrollToBottom">滚到底</button>
+          </div>
+        </div>
+
+        <div v-if="currentMode === 'debate'" class="aic-debate-bar">
+          <el-select v-model="debateTopic" size="small" placeholder="选择辩论主题" style="width: 220px">
+            <el-option label="是否应该扩大线上销售渠道？" value="online-expansion" />
+            <el-option label="是否应该增加门店体验投入？" value="store-experience" />
+            <el-option label="是否应该开发新产品线？" value="product-line" />
+            <el-option label="是否应该加大营销预算？" value="marketing-budget" />
+            <el-option label="是否应该拓展新市场？" value="market-expansion" />
+            <el-option label="是否应该引入新技术？" value="tech-innovation" />
+            <el-option label="自定义主题" value="custom" />
+          </el-select>
+          <el-input
+            v-if="debateTopic === 'custom'"
+            v-model="customDebateTopic"
+            size="small"
+            placeholder="输入自定义辩论主题…"
+            style="width: 200px"
+          />
+          <el-select
+            v-model="selectedDebatePersonas"
+            multiple
+            size="small"
+            placeholder="参与角色（≥2）"
+            style="min-width: 240px; flex: 1"
+            :max-collapse-tags="2"
+          >
+            <el-option-group
+              v-for="(cat, catKey) in personaCategories"
+              :key="catKey"
+              :label="cat.name"
+            >
+              <el-option
+                v-for="([key, persona]) in Object.entries(personas).filter(([, p]) => p.category === catKey)"
+                :key="key"
+                :label="persona.name"
+                :value="key"
+              >
+                <span>{{ persona.icon }} {{ persona.name }}</span>
+              </el-option>
+            </el-option-group>
+          </el-select>
+          <el-button
+            size="small"
+            type="primary"
+            @click="startDebate"
+            :disabled="isDebating || isAiThinking || !debateTopic || (debateTopic === 'custom' && !customDebateTopic.trim()) || selectedDebatePersonas.length < 2"
+          >开始辩论</el-button>
+          <el-button size="small" type="danger" plain @click="stopDebate" :disabled="!isDebating">停止</el-button>
+        </div>
+
+        <div class="aic-chat-panel">
+          <div ref="chatBoxRef" class="aic-chat-box">
+            <div v-if="messages.length <= 1 && !isAiThinking && !isDebating" class="aic-welcome">
+              <div class="aic-welcome-mark" aria-hidden="true">{{ currentPersona.icon }}</div>
+              <h3 class="aic-welcome-title">你好，我是{{ currentPersona.name }}</h3>
+              <p class="aic-welcome-desc">{{ currentPersona.shortDesc }} · 直接输入问题，或点下方示例开始</p>
+              <div class="aic-suggests">
+                <button
+                  v-for="(s, i) in emptySuggestions"
+                  :key="i"
+                  type="button"
+                  class="aic-suggest"
+                  @click="applySuggestion(s)"
+                >{{ s }}</button>
               </div>
             </div>
-            <div 
-              v-for="(msg, index) in messages" 
-              :key="index" 
-              :class="['chat-item', msg.role === 'ai' ? 'ai-msg' : 'user-msg', msg.persona ? `persona-${msg.persona}` : '']"
+            <div
+              v-for="(msg, index) in messages"
+              :key="index"
+              :class="['aic-msg', msg.role === 'ai' ? 'is-ai' : 'is-user']"
             >
-              <div class="msg-header" v-if="msg.persona">
-                <span class="persona-badge" :style="{ '--persona-color': personas[msg.persona]?.color || '#38bdf8' }">
+              <div class="aic-msg-head" v-if="msg.persona">
+                <span class="aic-msg-badge" :style="{ '--persona-color': personas[msg.persona]?.color || 'var(--brand-green-500)' }">
                   {{ personas[msg.persona]?.icon }} {{ personas[msg.persona]?.name }}
                 </span>
               </div>
-              <div :class="['chat-bubble', msg.role === 'ai' ? 'bubble-ai' : 'bubble-user']">
+              <div :class="['aic-bubble', msg.role === 'ai' ? 'is-ai' : 'is-user']">
                 <div v-html="msg.content"></div>
-                <div 
-                  v-if="msg.role === 'ai' && msg.rawText" 
-                  @click="playAudio(msg.rawText, msg.persona)" 
-                  :class="['voice-btn', isPlaying && currentAudioText === msg.rawText ? 'voice-active' : '']"
+                <button
+                  v-if="msg.role === 'ai' && msg.rawText"
+                  type="button"
+                  :class="['aic-voice', isPlaying && currentAudioText === msg.rawText ? 'is-active' : '']"
+                  @click="playAudio(msg.rawText, msg.persona)"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="voice-icon">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
-                  </svg>
-                  <span>{{ isPlaying && currentAudioText === msg.rawText ? '停止播放' : '播放语音' }}</span>
-                </div>
+                  {{ isPlaying && currentAudioText === msg.rawText ? '停止播放' : '播放语音' }}
+                </button>
               </div>
             </div>
-            <div v-if="isAiThinking" class="chat-item ai-msg">
-              <div class="chat-bubble bubble-ai thinking">
+            <div v-if="isAiThinking" class="aic-msg is-ai">
+              <div class="aic-bubble is-ai is-thinking">
                 {{ currentPersona.thinkingMsg }}
-                <span class="thinking-dots">
-                  <span>.</span><span>.</span><span>.</span>
-                </span>
+                <span class="aic-thinking-dots" aria-hidden="true"><i /><i /><i /></span>
               </div>
+            </div>
+            <div v-if="lastChatError" class="aic-error-banner">
+              <strong>调用失败</strong>
+              <span>{{ lastChatError }}</span>
+              <el-button v-if="isConfigError(lastChatError)" size="small" type="primary" @click="openOnlineConfig">去配置</el-button>
+              <el-button size="small" text @click="lastChatError = ''">关闭</el-button>
             </div>
           </div>
-          
-          <!-- 输入区域 -->
-          <div class="input-area">
-            <el-input
-              ref="aiInputRef"
-              v-model="aiInput"
-              @keyup.enter="handleEnterKey"
-              @keydown.enter.prevent
-              @keydown.esc="aiInput = ''"
-              :placeholder="currentMode === 'debate' ? '💬 输入观察或补充问题（可选）...' : `💡 向${currentPersona.name}提问，例如：生成经营诊断、评估风险、制定营销方案、分析数据...`"
-              class="ai-input"
-              clearable
-              :disabled="isAiThinking || isDebating"
-            />
-            <el-button 
-              type="primary" 
-              @click="sendAI" 
-              :disabled="isAiThinking || isDebating || !aiInput.trim()"
-              :loading="isAiThinking || isDebating"
 
-              title="发送消息（Enter）"
-            >
-              {{ isAiThinking || isDebating ? '思考中...' : '发送' }}
-            </el-button>
+          <div class="aic-composer">
+            <div class="aic-composer-card">
+              <div class="aic-quick-row" role="toolbar" aria-label="快捷指令">
+                <button
+                  v-for="(action, key) in quickActions"
+                  :key="key"
+                  type="button"
+                  class="aic-quick"
+                  :disabled="isAiThinking || isDebating || showProviderWarning"
+                  @click="quickAI(key)"
+                >
+                  <span aria-hidden="true">{{ action.icon }}</span>
+                  {{ action.label }}
+                </button>
+              </div>
+              <el-input
+                ref="aiInputRef"
+                v-model="aiInput"
+                type="textarea"
+                :autosize="{ minRows: 2, maxRows: 8 }"
+                resize="none"
+                @keydown.enter.exact.prevent="handleEnterKey"
+                @keydown.esc="aiInput = ''"
+                :placeholder="currentMode === 'debate' ? '补充观察或追问…' : `给 ${currentPersona.name} 发消息…`"
+                class="aic-textarea"
+                :disabled="isAiThinking || isDebating"
+              />
+              <div class="aic-composer-foot">
+                <div class="aic-composer-meta">
+                  <span class="aic-composer-hint">Enter 发送 · Shift+Enter 换行</span>
+                  <button type="button" class="aic-model-mini" @click="openOnlineConfig">{{ providerChipLabel }}</button>
+                </div>
+                <el-button
+                  type="primary"
+                  class="aic-send-cta"
+                  round
+                  @click="sendAI"
+                  :disabled="isAiThinking || isDebating || !aiInput.trim()"
+                  :loading="isAiThinking || isDebating"
+                >
+                  {{ isAiThinking || isDebating ? '生成中' : '发送' }}
+                </el-button>
+              </div>
+            </div>
+            <p v-if="recentTasks.length" class="aic-recent-tasks">
+              <span class="aic-recent-tasks-label">最近</span>
+              <button
+                v-for="(t, i) in recentTasks"
+                :key="i"
+                type="button"
+                class="aic-recent-task"
+                :disabled="isAiThinking || isDebating"
+                @click="applySuggestion(t)"
+              >{{ t }}</button>
+            </p>
           </div>
         </div>
       </div>
-    </template>
+    </section>
 
     <!-- 后台调用配置弹窗 -->
     <el-dialog
       v-model="showBackendConfigDialog"
-      title="⚙️ 后台调用配置"
+      title="模型与接口配置"
       width="900px"
       :close-on-click-modal="false"
       class="backend-config-dialog"
       destroy-on-close
     >
       <div class="backend-config-content">
-        <!-- 服务类型切换标签 -->
         <div class="service-type-tabs">
           <div
             class="type-tab"
@@ -478,7 +465,6 @@
           </div>
         </div>
 
-        <!-- 本地模型服务 -->
         <template v-if="serviceType === 'local'">
           <div class="compact-panel-content">
             <div class="compact-service-info">
@@ -503,57 +489,16 @@
               </div>
             </div>
             <div class="compact-service-actions">
-              <el-button
-                type="success"
-                size="small"
-                :icon="SwitchButton"
-                @click="startService"
-                :loading="backendServiceStatus === 'starting'"
-                :disabled="backendServiceStatus === 'online' || backendServiceStatus === 'starting' || backendServiceStatus === 'stopping'"
-              >
-                开机
-              </el-button>
-              <el-button
-                type="warning"
-                size="small"
-                :icon="SwitchButton"
-                @click="stopService"
-                :loading="backendServiceStatus === 'stopping'"
-                :disabled="backendServiceStatus === 'offline' || backendServiceStatus === 'starting' || backendServiceStatus === 'stopping'"
-              >
-                关机
-              </el-button>
-              <el-button
-                type="primary"
-                size="small"
-                :icon="Refresh"
-                @click="restartService"
-                :loading="backendServiceStatus === 'starting' || backendServiceStatus === 'stopping'"
-                :disabled="backendServiceStatus === 'offline' || backendServiceStatus === 'starting' || backendServiceStatus === 'stopping'"
-              >
-                重启
-              </el-button>
-              <el-button
-                text
-                size="small"
-                :icon="Refresh"
-                @click="refreshModelList"
-                :loading="refreshingModels"
-              >
-                刷新模型
-              </el-button>
+              <el-button type="success" size="small" :icon="SwitchButton" @click="startService" :loading="backendServiceStatus === 'starting'" :disabled="backendServiceStatus === 'online' || backendServiceStatus === 'starting' || backendServiceStatus === 'stopping'">开机</el-button>
+              <el-button type="warning" size="small" :icon="SwitchButton" @click="stopService" :loading="backendServiceStatus === 'stopping'" :disabled="backendServiceStatus === 'offline' || backendServiceStatus === 'starting' || backendServiceStatus === 'stopping'">关机</el-button>
+              <el-button type="primary" size="small" :icon="Refresh" @click="restartService" :loading="backendServiceStatus === 'starting' || backendServiceStatus === 'stopping'" :disabled="backendServiceStatus === 'offline' || backendServiceStatus === 'starting' || backendServiceStatus === 'stopping'">重启</el-button>
+              <el-button text size="small" :icon="Refresh" @click="refreshModelList" :loading="refreshingModels">刷新模型</el-button>
             </div>
           </div>
-          
-          <!-- 紧凑模型列表 -->
           <div class="compact-model-list-section">
             <div class="section-header-compact">
-              <h4 class="section-title-compact">
-                <el-icon><Box /></el-icon>
-                可用模型列表
-              </h4>
+              <h4 class="section-title-compact"><el-icon><Box /></el-icon>可用模型列表</h4>
             </div>
-            
             <div class="compact-model-list" v-if="modelList.length > 0">
               <div
                 v-for="model in modelList"
@@ -566,22 +511,19 @@
                 <div class="compact-model-info">
                   <div class="compact-model-title">{{ model.name }}</div>
                   <div class="compact-model-meta">
-                    <span>{{ model.params }}B</span>
-                    <span>·</span>
+                    <span>{{ model.params }}B</span><span>·</span>
                     <span>{{ model.status === 'active' ? '运行中' : '待机' }}</span>
                   </div>
                 </div>
                 <el-icon class="check-icon" v-if="currentModel?.id === model.id"><Check /></el-icon>
               </div>
             </div>
-            
             <div class="empty-model-compact" v-else>
               <p>暂无可用模型，请刷新列表</p>
             </div>
           </div>
         </template>
 
-        <!-- 在线接口配置 -->
         <template v-if="serviceType === 'online'">
           <div class="compact-online-api-panel">
             <el-alert
@@ -592,72 +534,30 @@
               title="优先使用环境变量（构建时注入），勿将生产 Key 明文写入云库或 localStorage"
               :description="aiProviderConfigHint"
             />
-
             <div class="env-config-status-card">
               <div class="env-config-status-header">
-                <h4 class="config-title-compact">
-                  <el-icon><Key /></el-icon>
-                  环境变量 AI 配置
-                </h4>
-                <el-tag
-                  :type="aiProviderConfigStatus.deepseekConfigured ? 'success' : 'danger'"
-                  size="small"
-                >
+                <h4 class="config-title-compact"><el-icon><Key /></el-icon>环境变量 AI 配置</h4>
+                <el-tag :type="aiProviderConfigStatus.deepseekConfigured ? 'success' : 'danger'" size="small">
                   {{ aiProviderConfigStatus.deepseekConfigured ? 'DeepSeek 已配置' : 'DeepSeek 未配置' }}
                 </el-tag>
               </div>
               <div class="env-config-grid">
-                <div class="env-config-row">
-                  <span class="env-label">默认 Provider</span>
-                  <span class="env-value">{{ aiProviderConfigStatus.defaultProvider || '—' }}</span>
-                </div>
-                <div class="env-config-row">
-                  <span class="env-label">DeepSeek Key</span>
-                  <span class="env-value mono">{{ aiProviderConfigStatus.deepseekMaskedKey || '未设置 VITE_DEEPSEEK_API_KEY' }}</span>
-                </div>
-                <div class="env-config-row">
-                  <span class="env-label">模型</span>
-                  <span class="env-value">{{ aiProviderConfigStatus.deepseekModel || 'deepseek-chat' }}</span>
-                </div>
-                <div class="env-config-row">
-                  <span class="env-label">Base URL</span>
-                  <span class="env-value mono">{{ aiProviderConfigStatus.deepseekBaseUrl || 'https://api.deepseek.com' }}</span>
-                </div>
-                <div class="env-config-row">
-                  <span class="env-label">其他 Key</span>
-                  <span class="env-value">
-                    百炼 {{ aiProviderConfigStatus.bailian }} /
-                    Gemini {{ aiProviderConfigStatus.gemini }} /
-                    OpenAI {{ aiProviderConfigStatus.openai }}
-                  </span>
-                </div>
+                <div class="env-config-row"><span class="env-label">默认 Provider</span><span class="env-value">{{ aiProviderConfigStatus.defaultProvider || '—' }}</span></div>
+                <div class="env-config-row"><span class="env-label">DeepSeek Key</span><span class="env-value mono">{{ aiProviderConfigStatus.deepseekMaskedKey || '未设置 VITE_DEEPSEEK_API_KEY' }}</span></div>
+                <div class="env-config-row"><span class="env-label">模型</span><span class="env-value">{{ aiProviderConfigStatus.deepseekModel || 'deepseek-chat' }}</span></div>
+                <div class="env-config-row"><span class="env-label">Base URL</span><span class="env-value mono">{{ aiProviderConfigStatus.deepseekBaseUrl || 'https://api.deepseek.com' }}</span></div>
+                <div class="env-config-row"><span class="env-label">其他 Key</span><span class="env-value">百炼 {{ aiProviderConfigStatus.bailian }} / Gemini {{ aiProviderConfigStatus.gemini }} / OpenAI {{ aiProviderConfigStatus.openai }}</span></div>
               </div>
               <p class="env-config-tip">
                 本地：在 <code>admin/.env</code> 填写后重启 <code>npm run dev:admin</code>。
                 生产：GitHub Secrets 注入后重新部署。详见 <code>admin/docs/AI_DeepSeek环境变量配置.md</code>。
               </p>
             </div>
-
             <div class="compact-api-header">
-              <h4 class="config-title-compact">
-                <el-icon><Setting /></el-icon>
-                浏览器备用接口（次优先）
-              </h4>
-              <el-button
-                type="primary"
-                size="small"
-                :icon="Plus"
-                @click="handleAddApiClick"
-                class="add-api-btn-compact"
-              >
-                新增接口
-              </el-button>
+              <h4 class="config-title-compact"><el-icon><Setting /></el-icon>浏览器备用接口（次优先）</h4>
+              <el-button type="primary" size="small" :icon="Plus" @click="handleAddApiClick" class="add-api-btn-compact">新增接口</el-button>
             </div>
-            <p class="env-secondary-tip">
-              以下条目保存在本机 localStorage，仅作开发/演示备用；实际 AI 调用优先读环境变量中的 DeepSeek / 百炼等 Key。
-            </p>
-
-            <!-- 紧凑API列表 -->
+            <p class="env-secondary-tip">以下条目保存在本机 localStorage，仅作开发/演示备用；实际 AI 调用优先读环境变量中的 DeepSeek / 百炼等 Key。</p>
             <div class="compact-api-list" v-if="apiConfigList.length > 0">
               <div
                 v-for="api in apiConfigList"
@@ -674,41 +574,21 @@
                   <div class="compact-api-info">
                     <div class="compact-api-name-row">
                       <span class="compact-api-name">{{ api.name }}</span>
-                      <el-tag :type="api.status === 'active' ? 'success' : 'info'" size="small">
-                        {{ api.status === 'active' ? '启用' : '禁用' }}
-                      </el-tag>
+                      <el-tag :type="api.status === 'active' ? 'success' : 'info'" size="small">{{ api.status === 'active' ? '启用' : '禁用' }}</el-tag>
                     </div>
                     <div class="compact-api-desc">{{ api.description || api.baseUrl }}</div>
                   </div>
                 </div>
                 <div class="compact-api-actions">
-                  <el-button
-                    text
-                    size="small"
-                    @click.stop="editApiConfig(api)"
-                    title="编辑"
-                  >
-                    <el-icon><Edit /></el-icon>
-                  </el-button>
-                  <el-button
-                    text
-                    size="small"
-                    type="danger"
-                    @click.stop="deleteApiConfig(api)"
-                    title="删除"
-                  >
-                    <el-icon><Delete /></el-icon>
-                  </el-button>
+                  <el-button text size="small" @click.stop="editApiConfig(api)" title="编辑"><el-icon><Edit /></el-icon></el-button>
+                  <el-button text size="small" type="danger" @click.stop="deleteApiConfig(api)" title="删除"><el-icon><Delete /></el-icon></el-button>
                 </div>
               </div>
             </div>
-
             <div class="empty-api-compact" v-else>
               <el-icon class="empty-icon-small"><Cloudy /></el-icon>
               <p class="empty-text-small">暂无浏览器备用接口（可忽略，推荐只用环境变量）</p>
-              <el-button type="primary" size="small" :icon="Plus" @click="handleAddApiClick">
-                添加备用接口
-              </el-button>
+              <el-button type="primary" size="small" :icon="Plus" @click="handleAddApiClick">添加备用接口</el-button>
             </div>
           </div>
         </template>
@@ -718,7 +598,6 @@
       </template>
     </el-dialog>
 
-    <!-- 新增/编辑API配置弹窗 -->
     <el-dialog
       v-model="showAddApiDialog"
       :title="editingApiConfig ? '编辑API配置' : '新增API配置'"
@@ -727,28 +606,12 @@
       class="api-config-dialog"
       destroy-on-close
     >
-      <el-form
-        :model="apiForm"
-        :rules="apiFormRules"
-        ref="apiFormRef"
-        label-width="100px"
-        label-position="left"
-      >
+      <el-form :model="apiForm" :rules="apiFormRules" ref="apiFormRef" label-width="100px" label-position="left">
         <el-form-item label="接口名称" prop="name">
-          <el-input
-            v-model="apiForm.name"
-            placeholder="例如：OpenAI API、通义千问API"
-            clearable
-          />
+          <el-input v-model="apiForm.name" placeholder="例如：OpenAI API、通义千问API" clearable />
         </el-form-item>
         <el-form-item label="接口描述" prop="description">
-          <el-input
-            v-model="apiForm.description"
-            type="textarea"
-            :rows="2"
-            placeholder="简要描述此API接口的用途"
-            clearable
-          />
+          <el-input v-model="apiForm.description" type="textarea" :rows="2" placeholder="简要描述此API接口的用途" clearable />
         </el-form-item>
         <el-form-item label="API类型" prop="type">
           <el-select v-model="apiForm.type" placeholder="选择API类型" style="width: 100%">
@@ -760,61 +623,29 @@
           </el-select>
         </el-form-item>
         <el-form-item label="基础URL" prop="baseUrl">
-          <el-input
-            v-model="apiForm.baseUrl"
-            placeholder="https://api.example.com/v1"
-            clearable
-          />
+          <el-input v-model="apiForm.baseUrl" placeholder="https://api.example.com/v1" clearable />
           <div class="form-tip">API服务的基础URL地址</div>
         </el-form-item>
         <el-form-item label="API Key" prop="apiKey">
-          <el-input
-            v-model="apiForm.apiKey"
-            type="password"
-            placeholder="请输入API密钥"
-            show-password
-            clearable
-          />
+          <el-input v-model="apiForm.apiKey" type="password" placeholder="请输入API密钥" show-password clearable />
           <div class="form-tip">仅作本机备用；生产请用环境变量 VITE_DEEPSEEK_API_KEY（优先于此处）</div>
         </el-form-item>
         <el-form-item label="模型列表" prop="models">
-          <el-select
-            v-model="apiForm.models"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="选择或输入模型名称，例如：gpt-4, gpt-3.5-turbo"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="model in suggestedModels[apiForm.type] || []"
-              :key="model"
-              :label="model"
-              :value="model"
-            />
+          <el-select v-model="apiForm.models" multiple filterable allow-create default-first-option placeholder="选择或输入模型名称" style="width: 100%">
+            <el-option v-for="model in suggestedModels[apiForm.type] || []" :key="model" :label="model" :value="model" />
           </el-select>
           <div class="form-tip">支持多个模型，用逗号分隔或在下拉列表中选择</div>
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch
-            v-model="apiForm.status"
-            active-text="启用"
-            inactive-text="禁用"
-            :active-value="'active'"
-            :inactive-value="'inactive'"
-          />
+          <el-switch v-model="apiForm.status" active-text="启用" inactive-text="禁用" :active-value="'active'" :inactive-value="'inactive'" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="cancelApiConfig">取消</el-button>
-        <el-button type="primary" @click="saveApiConfig" :loading="savingApiConfig">
-          {{ editingApiConfig ? '保存' : '添加' }}
-        </el-button>
+        <el-button type="primary" @click="saveApiConfig" :loading="savingApiConfig">{{ editingApiConfig ? '保存' : '添加' }}</el-button>
       </template>
     </el-dialog>
 
-    <!-- AI功能详情弹窗 -->
     <el-dialog
       v-model="featureDialogVisible"
       :title="currentFeature?.title"
@@ -824,29 +655,35 @@
       destroy-on-close
     >
       <template v-if="currentFeature">
+        <div v-if="currentFeature.capabilityHint || currentFeature.capability === 'demo'" class="aic-feature-dialog-note">
+          <el-tag size="small" :type="capabilityTagType(currentFeature.capability)" effect="plain">
+            {{ currentFeature.capabilityLabel || currentFeature.capability }}
+          </el-tag>
+          <span>{{ currentFeature.capabilityHint || '本工具通过 AI API 生成建议；业务落地请人工复核。' }}</span>
+        </div>
         <Suspense>
           <template #default>
-            <component 
-              v-if="componentMap[currentFeature.component]" 
+            <component
+              v-if="componentMap[currentFeature.component]"
               :is="componentMap[currentFeature.component]"
               :feature="currentFeature"
               @close="featureDialogVisible = false"
             />
-            <div v-else class="error-placeholder">
-              <p>⚠️ 组件加载失败</p>
-              <p style="font-size: 12px; color: #888; margin-top: 8px;">组件ID: {{ currentFeature.component }}</p>
-              <p style="font-size: 12px; color: #888;">可用组件: {{ Object.keys(componentMap).join(', ') }}</p>
+            <div v-else class="error-placeholder aic-empty">
+              <p class="aic-empty-title">组件未能挂载</p>
+              <p class="aic-empty-desc">组件 ID：{{ currentFeature.component }}</p>
+              <el-button size="small" @click="featureDialogVisible = false">关闭</el-button>
             </div>
           </template>
           <template #fallback>
-            <div class="loading-placeholder">
-              <p>正在加载AI功能...</p>
+            <div class="loading-placeholder aic-empty">
+              <p class="aic-empty-title">正在加载 AI 功能…</p>
             </div>
           </template>
         </Suspense>
       </template>
-      <div v-else class="loading-placeholder">
-        <p>请选择功能...</p>
+      <div v-else class="loading-placeholder aic-empty">
+        <p class="aic-empty-title">请选择功能…</p>
       </div>
     </el-dialog>
   </div>
@@ -858,15 +695,24 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor, SwitchButton, Refresh, Box, Check, Cpu, Connection, Cloudy, Setting, Plus, Edit, Delete, Link, Key, InfoFilled } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 import { callGeminiAPI, buildConversationHistory, getAIProviderConfigStatus } from '../utils/aiHelper'
-import { aiFeatureCategories, aiFeatureComponents, aiFeatures, findAiFeature } from '../data/aiFeatureRegistry'
+import { aiFeatureCategories, aiFeatureComponents, aiFeatures, findAiFeature, capabilityTagType } from '../data/aiFeatureRegistry'
 import OpenClawVirtualStaff from './ai/OpenClawVirtualStaff.vue'
 import { waitForVoices, selectBestVoice, createOptimizedUtterance } from '../utils/ttsHelper'
+import '../styles/ai-center-workbench.css'
 
-const activeCategory = ref('store')
+const activeCategory = ref('all')
+const toolSearch = ref('')
 const featureDialogVisible = ref(false)
 const currentFeature = ref(null)
 const todayUsage = ref(0)
 const successRate = ref(98.5)
+const dismissProviderWarning = ref(false)
+const lastChatError = ref('')
+const RECENT_FEATURES_KEY = 'ai_center_recent_features'
+const RECENT_TASKS_KEY = 'ai_center_recent_tasks'
+const recentFeatureIds = ref([])
+const recentTasks = ref([])
+
 const aiProviderConfigStatus = computed(() => getAIProviderConfigStatus())
 const aiProviderConfigHint = computed(() => {
   const s = aiProviderConfigStatus.value
@@ -885,6 +731,81 @@ const aiProviderConfigHint = computed(() => {
   }
   return '未检测到云端 API Key。请在 admin/.env 配置 VITE_DEEPSEEK_API_KEY，并设置 VITE_AI_DEFAULT_PROVIDER=deepseek。'
 })
+
+const hasCloudProvider = computed(() => {
+  const s = aiProviderConfigStatus.value
+  return s.deepseekConfigured || s.bailian > 0 || s.gemini > 0 || s.openai > 0
+})
+const showProviderWarning = computed(() => !hasCloudProvider.value && !dismissProviderWarning.value)
+const providerChipLabel = computed(() => {
+  const s = aiProviderConfigStatus.value
+  if (s.deepseekConfigured) return `DeepSeek · ${s.deepseekModel || 'chat'}`
+  if (s.bailian > 0) return '百炼已配置'
+  if (s.gemini > 0) return 'Gemini 已配置'
+  if (s.openai > 0) return 'OpenAI 已配置'
+  return '未配置 API Key'
+})
+const providerChipClass = computed(() =>
+  hasCloudProvider.value ? 'is-ok' : 'is-warn',
+)
+
+const modeTabs = [
+  { id: 'chat', label: '对话', hint: '咨询' },
+  { id: 'tools', label: '工具', hint: '场景' },
+  { id: 'openclaw', label: 'OpenClaw', hint: '派发' },
+  { id: 'debate', label: '辩论', hint: '博弈' },
+]
+
+/** 默认进入对话（Claude / Codex 式） */
+const currentMode = ref('chat') // 'chat' | 'tools' | 'openclaw' | 'debate'
+
+const shellSubtitle = computed(() => {
+  const map = {
+    chat: '与虚拟员工对话 · Enter 发送',
+    tools: '场景工具 · 真 API / 演示已标注',
+    openclaw: 'PRD 与 OpenClaw 派发',
+    debate: '多角色议题博弈',
+  }
+  return map[currentMode.value] || map.chat
+})
+
+function switchMode(mode) {
+  currentMode.value = mode
+  lastChatError.value = ''
+}
+
+function openOnlineConfig() {
+  serviceType.value = 'online'
+  showBackendConfigDialog.value = true
+}
+
+function isConfigError(msg) {
+  const t = String(msg || '')
+  return /未配置|API Key|VITE_DEEPSEEK|环境变量/i.test(t)
+}
+
+function pushRecentFeature(feature) {
+  if (!feature?.id) return
+  const next = [feature.id, ...recentFeatureIds.value.filter((id) => id !== feature.id)].slice(0, 6)
+  recentFeatureIds.value = next
+  try {
+    localStorage.setItem(RECENT_FEATURES_KEY, JSON.stringify(next))
+  } catch (_) {}
+}
+
+function pushRecentTask(text) {
+  const t = String(text || '').trim()
+  if (!t) return
+  const next = [t, ...recentTasks.value.filter((x) => x !== t)].slice(0, 5)
+  recentTasks.value = next
+  try {
+    localStorage.setItem(RECENT_TASKS_KEY, JSON.stringify(next))
+  } catch (_) {}
+}
+
+const recentFeatures = computed(() =>
+  recentFeatureIds.value.map((id) => findAiFeature(id)).filter(Boolean),
+)
 
 // 后台配置弹窗
 const showBackendConfigDialog = ref(false)
@@ -1438,7 +1359,13 @@ const componentMap = aiFeatureComponents
 const features = aiFeatures
 
 const filteredFeatures = computed(() => {
-  return features.filter(f => f.category === activeCategory.value)
+  const q = toolSearch.value.trim().toLowerCase()
+  return features.filter((f) => {
+    if (activeCategory.value !== 'all' && f.category !== activeCategory.value) return false
+    if (!q) return true
+    const hay = `${f.title} ${f.description} ${(f.tags || []).join(' ')} ${f.capabilityLabel || ''}`.toLowerCase()
+    return hay.includes(q)
+  })
 })
 
 const featureCountByCategory = computed(() => {
@@ -1448,9 +1375,14 @@ const featureCountByCategory = computed(() => {
   }, {})
 })
 
-const activeCategoryMeta = computed(() => categories.find((category) => category.id === activeCategory.value))
+const activeCategoryMeta = computed(() =>
+  activeCategory.value === 'all'
+    ? { id: 'all', name: '全部工具', icon: '✦' }
+    : categories.find((category) => category.id === activeCategory.value),
+)
 
 const categoryDescriptions = {
+  all: '从分类或搜索进入场景工具；卡片已标注真 API / 演示 / 对接边界。',
   store: '围绕商品、库存、定价、销售和门店日常经营，快速进入具体工具。',
   marketing: '聚合内容、投放、社媒和搜索优化能力，服务增长与转化。',
   strategy: '承接战略调研、战略智脑、董事会与竞品分析等高阶决策任务。',
@@ -1461,8 +1393,18 @@ const activeCategoryDesc = computed(() => categoryDescriptions[activeCategory.va
 
 const openFeature = (feature) => {
   if (!feature) return
+  if (feature.id === 'openclaw-virtual-staff' || feature.component === 'openclaw-virtual-staff') {
+    pushRecentFeature(feature)
+    switchMode('openclaw')
+    return
+  }
+  if (!componentMap[feature.component]) {
+    ElMessage.error(`功能「${feature.title}」组件未挂载（${feature.component}）`)
+    return
+  }
+  pushRecentFeature(feature)
   currentFeature.value = feature
-  activeCategory.value = feature.category || activeCategory.value
+  if (feature.category) activeCategory.value = feature.category
   featureDialogVisible.value = true
 }
 
@@ -1480,14 +1422,8 @@ const handleOpenAiFeature = (event) => {
   if (featureId) openFeatureById(featureId)
 }
 
-// 模式切换
-const currentMode = ref('tools') // 'tools' | 'openclaw' | 'chat' | 'debate'
+// 模式切换（currentMode 已在壳层状态区声明）
 
-const workbenchSubtitle = computed(() =>
-  currentMode.value === 'openclaw'
-    ? 'OpenClaw 虚拟员工：PRD 执行框架、质量闸门与派发对接；任务执行在 OpenClaw 侧完成。'
-    : '统一管理经营、营销、战略与运营 AI 工具，按任务进入，不堆叠层级。',
-)
 const PERSONA_PANEL_KEY = 'ai_center_persona_panel'
 const AI_PENDING_FEATURE_KEY = 'ai_center_pending_feature'
 const showPersonaPanel = ref(true)
@@ -2257,6 +2193,7 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
       return
     }
     messages.value.push({ role: 'user', content: prompt })
+    pushRecentTask(prompt)
     aiInput.value = ''
     // 更新使用统计
     todayUsage.value++
@@ -2277,6 +2214,7 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
   }
   
   isAiThinking.value = true
+  lastChatError.value = ''
   await nextTick()
   scrollToBottom()
 
@@ -2313,15 +2251,18 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
   } catch (error) {
     console.error('AI请求失败:', error)
     const errorMsg = error.message || '未知错误'
+    lastChatError.value = errorMsg
     ElMessage.error({
       message: `AI请求失败: ${errorMsg}`,
       duration: 4000,
       showClose: true
     })
-    // 添加错误消息到对话
+    const configHint = isConfigError(errorMsg)
+      ? '<br><small>可点击上方「去配置」检查 DeepSeek / 环境变量。</small>'
+      : '<br><small>请检查网络连接或稍后重试</small>'
     messages.value.push({
       role: 'ai',
-      content: `<div style="color: #e74c3c;"><strong>❌ 错误:</strong> ${errorMsg}<br><small>请检查网络连接或稍后重试</small></div>`,
+      content: `<div style="color: var(--semantic-error-icon, #c45c26);"><strong>错误：</strong> ${errorMsg}${configHint}</div>`,
       rawText: `错误: ${errorMsg}`
     })
   } finally {
@@ -2503,6 +2444,10 @@ onMounted(() => {
       localStorage.removeItem(AI_PENDING_FEATURE_KEY)
       nextTick(() => openFeatureById(pendingFeature))
     }
+    const rf = JSON.parse(localStorage.getItem(RECENT_FEATURES_KEY) || '[]')
+    if (Array.isArray(rf)) recentFeatureIds.value = rf.filter((id) => typeof id === 'string').slice(0, 6)
+    const rt = JSON.parse(localStorage.getItem(RECENT_TASKS_KEY) || '[]')
+    if (Array.isArray(rt)) recentTasks.value = rt.filter((t) => typeof t === 'string').slice(0, 5)
   } catch (_) {}
 })
 
@@ -2574,6 +2519,15 @@ const playAudio = async (text, personaKey = null) => {
 </script>
 
 <style scoped>
+/* Claude/Codex 重塑：由 ai-center-workbench.css 接管布局，抵消历史壳层冲突 */
+.ai-center.aic-v2 {
+  padding: 0 !important;
+  min-height: 0 !important;
+  height: 100%;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
 .ai-center {
   padding: var(--space-3) var(--space-4) var(--space-4);
   background: var(--light-bg-tertiary);
@@ -5094,8 +5048,8 @@ const playAudio = async (text, personaKey = null) => {
   color: #2D6A4F;
 }
 
-/* ---------- VI 扁平化升级覆盖层 ---------- */
-.ai-center {
+/* ---------- VI 扁平化升级覆盖层（旧工作台；aic-v2 不受影响） ---------- */
+.ai-center:not(.aic-v2) {
   padding: var(--space-5);
   background:
     linear-gradient(180deg, rgba(250, 250, 245, 0.96) 0%, rgba(237, 235, 228, 0.92) 100%);

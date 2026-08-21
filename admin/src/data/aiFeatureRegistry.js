@@ -7,6 +7,12 @@ export const aiFeatureCategories = [
   { id: 'operations', name: '运营优化', icon: '⚙️' },
 ]
 
+/**
+ * capability:
+ * - api: 生产可用路径，走 aiHelper 真 API 生成建议（业务数据可能仍需人工核对）
+ * - bridge: 对接框架/外部系统，非纯文案生成
+ * - demo: 演示向能力，勿当作已上线业务系统
+ */
 export const aiFeatureComponents = {
   inventory: defineAsyncComponent(() => import('../components/ai/InventoryAI.vue')),
   pricing: defineAsyncComponent(() => import('../components/ai/PricingAI.vue')),
@@ -41,6 +47,9 @@ export const aiFeatures = [
     icon: '📦',
     tags: ['库存', '预测', '补货'],
     component: 'inventory',
+    capability: 'demo',
+    capabilityLabel: '演示',
+    capabilityHint: '生成补货建议走真 API；勿当作已上线 WMS',
   },
   {
     id: 'pricing',
@@ -50,6 +59,9 @@ export const aiFeatures = [
     icon: '💰',
     tags: ['定价', '策略', '竞品'],
     component: 'pricing',
+    capability: 'api',
+    capabilityLabel: '真 API',
+    capabilityHint: '定价建议由 AI API 生成，落地需人工确认',
   },
   {
     id: 'sales-forecast',
@@ -59,6 +71,8 @@ export const aiFeatures = [
     icon: '📈',
     tags: ['预测', '趋势', '分析'],
     component: 'sales-forecast',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'customer-insight',
@@ -68,6 +82,8 @@ export const aiFeatures = [
     icon: '👥',
     tags: ['画像', '分析', '个性化'],
     component: 'customer-insight',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'store-ai',
@@ -77,6 +93,8 @@ export const aiFeatures = [
     icon: '🤖',
     tags: ['门店', '运营', '助手'],
     component: 'store-ai',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'content-gen',
@@ -86,6 +104,8 @@ export const aiFeatures = [
     icon: '✍️',
     tags: ['文案', '内容', '创作'],
     component: 'content-gen',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'ad-strategy',
@@ -95,6 +115,8 @@ export const aiFeatures = [
     icon: '📢',
     tags: ['广告', '优化', '策略'],
     component: 'ad-strategy',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'social-media',
@@ -104,6 +126,8 @@ export const aiFeatures = [
     icon: '📱',
     tags: ['社交', '运营', '多平台'],
     component: 'social-media',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'seo-optimize',
@@ -113,6 +137,8 @@ export const aiFeatures = [
     icon: '🔍',
     tags: ['SEO', '关键词', '优化'],
     component: 'seo-optimize',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'strategic-brain',
@@ -122,6 +148,8 @@ export const aiFeatures = [
     icon: '🧠',
     tags: ['战略智脑', '董事会', '周报'],
     component: 'strategic-brain',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'strategy-research',
@@ -131,6 +159,8 @@ export const aiFeatures = [
     icon: '🔬',
     tags: ['调研', '用户研究', '战略'],
     component: 'strategy-research',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'virtual-board',
@@ -140,6 +170,8 @@ export const aiFeatures = [
     icon: '👔',
     tags: ['决策', '战略', '会议'],
     component: 'virtual-board',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'competitor-analysis',
@@ -149,6 +181,8 @@ export const aiFeatures = [
     icon: '🔍',
     tags: ['竞品', '分析', '洞察'],
     component: 'competitor-analysis',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'business-plan',
@@ -158,6 +192,8 @@ export const aiFeatures = [
     icon: '📋',
     tags: ['商业计划', '提案', '路演'],
     component: 'business-plan',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'operations-decision-center',
@@ -167,6 +203,8 @@ export const aiFeatures = [
     icon: '🎯',
     tags: ['经营驾驶舱', '决策流', '风险预警'],
     component: 'operations-decision-center',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'finance-ai',
@@ -176,6 +214,8 @@ export const aiFeatures = [
     icon: '💳',
     tags: ['财务', '分析', '预测'],
     component: 'finance-ai',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'supply-chain',
@@ -185,6 +225,9 @@ export const aiFeatures = [
     icon: '🚚',
     tags: ['供应链', '采购', '优化'],
     component: 'supply-chain',
+    capability: 'demo',
+    capabilityLabel: '演示',
+    capabilityHint: '采购建议为演示向，履约库存以蓝图模块为准',
   },
   {
     id: 'staff-optimize',
@@ -194,6 +237,8 @@ export const aiFeatures = [
     icon: '👔',
     tags: ['排班', '人力', '优化'],
     component: 'staff-optimize',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'customer-service',
@@ -203,6 +248,8 @@ export const aiFeatures = [
     icon: '💬',
     tags: ['客服', '话术', '情绪'],
     component: 'customer-service',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'contract-review',
@@ -212,6 +259,8 @@ export const aiFeatures = [
     icon: '📄',
     tags: ['合同', '审查', '风险'],
     component: 'contract-review',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'data-report',
@@ -221,6 +270,8 @@ export const aiFeatures = [
     icon: '📊',
     tags: ['报告', '数据', '分析'],
     component: 'data-report',
+    capability: 'api',
+    capabilityLabel: '真 API',
   },
   {
     id: 'openclaw-virtual-staff',
@@ -230,9 +281,18 @@ export const aiFeatures = [
     icon: '🛰️',
     tags: ['OpenClaw', 'PRD', '虚拟员工'],
     component: 'openclaw-virtual-staff',
+    capability: 'bridge',
+    capabilityLabel: '对接',
+    capabilityHint: '本页做 PRD/派发；任务执行在 OpenClaw 侧',
   },
 ]
 
 export function findAiFeature(featureId) {
   return aiFeatures.find((feature) => feature.id === featureId || feature.component === featureId) || null
+}
+
+export function capabilityTagType(capability) {
+  if (capability === 'api') return 'success'
+  if (capability === 'bridge') return 'warning'
+  return 'info'
 }

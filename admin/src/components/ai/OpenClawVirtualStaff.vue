@@ -14,96 +14,110 @@
           <p class="oc-deploy-alert-body">
             与<strong>轻量应用服务器</strong>上的 OpenClaw 镜像对接：公网访问需在<strong>防火墙</strong>放行 Web
             服务端口；未配置 HTTPS 前请使用 <code>http://</code>。控制台地址一般为
-            <code>http://&lt;公网IP&gt;:&lt;端口&gt;</code>（端口以实例内实际监听为准，常见为 80 或应用默认端口）。
+            <code>http://&lt;公网IP&gt;:&lt;端口&gt;</code>（端口以实例内实际监听为准）。
           </p>
         </el-alert>
       </div>
       <div class="oc-header-actions">
-        <el-button type="primary" plain @click="copyPrdBrief">复制 PRD 简报</el-button>
-        <el-button v-if="consoleUrl" @click="openConsole">打开控制台</el-button>
-        <el-button text type="primary" @click="$emit('close')">关闭</el-button>
+        <el-button type="primary" @click="copyPrdBrief">复制 PRD 简报</el-button>
+        <el-button v-if="consoleUrl" type="primary" plain @click="openConsole">打开控制台</el-button>
+        <el-button plain @click="$emit('open-chat')">去智能咨询</el-button>
+        <el-button text type="primary" @click="$emit('close')">返回工具台</el-button>
       </div>
     </header>
 
-    <section class="oc-config card-block">
-      <div class="card-head">
-        <span class="card-title">对接配置</span>
-        <el-button size="small" type="primary" @click="saveConfig">保存到本机</el-button>
-      </div>
-      <el-form label-position="top" class="oc-form">
-        <el-form-item label="OpenClaw / 控制台地址（可选）">
-          <el-input
-            v-model="form.consoleUrl"
-            placeholder="http://公网IP:端口 或 https://已备案域名"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="任务 Webhook（可选，需服务端允许 CORS 或由网关转发）">
-          <el-input v-model="form.webhookUrl" placeholder="https://api.example.com/openclaw/tasks" clearable />
-        </el-form-item>
-        <el-form-item label="默认空间 / 项目标识">
-          <el-input v-model="form.projectSlug" placeholder="例如 shanhai-admin / 经营中台" clearable />
-        </el-form-item>
-      </el-form>
-    </section>
+    <div class="oc-layout">
+      <aside class="oc-side">
+        <section class="card-block">
+          <div class="card-head">
+            <span class="card-title">对接配置</span>
+            <el-tag size="small" type="warning" effect="plain">对接</el-tag>
+          </div>
+          <p class="oc-side-hint">配置保存在本机；Webhook 推送需服务端允许 CORS 或走网关。</p>
+          <el-form label-position="top" class="oc-form" size="small">
+            <el-form-item label="控制台地址">
+              <el-input
+                v-model="form.consoleUrl"
+                placeholder="http://公网IP:端口 或 https://域名"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item label="任务 Webhook">
+              <el-input v-model="form.webhookUrl" placeholder="https://api.example.com/openclaw/tasks" clearable />
+            </el-form-item>
+            <el-form-item label="项目标识">
+              <el-input v-model="form.projectSlug" placeholder="shanhai-admin" clearable />
+            </el-form-item>
+          </el-form>
+          <el-button type="primary" class="oc-save-btn" @click="saveConfig">保存到本机</el-button>
+        </section>
 
-    <section class="oc-prd card-block">
-      <div class="card-head">
-        <span class="card-title">PRD 执行框架</span>
-        <span class="card-hint">七阶段闸门 · 交付物与状态可持久化，便于与虚拟员工对齐上下文</span>
-      </div>
-      <el-table :data="phases" border stripe class="oc-table" size="small">
-        <el-table-column prop="phase" label="阶段" width="100" />
-        <el-table-column prop="name" label="名称" min-width="120" />
-        <el-table-column label="核心交付物" min-width="200">
-          <template #default="{ row }">
-            <el-tag v-for="d in row.deliverables" :key="d" size="small" class="oc-tag">{{ d }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="责任人" width="130">
-          <template #default="{ row }">
-            <el-input v-model="row.owner" size="small" placeholder="角色/姓名" />
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="120">
-          <template #default="{ row }">
-            <el-select v-model="row.status" size="small" style="width: 100%">
-              <el-option label="未开始" value="todo" />
-              <el-option label="进行中" value="doing" />
-              <el-option label="已完成" value="done" />
-              <el-option label="阻塞" value="blocked" />
-            </el-select>
-          </template>
-        </el-table-column>
-        <el-table-column label="备注" min-width="160">
-          <template #default="{ row }">
-            <el-input v-model="row.note" size="small" type="textarea" :rows="1" placeholder="风险、依赖、链接" />
-          </template>
-        </el-table-column>
-      </el-table>
-    </section>
+        <section class="card-block">
+          <div class="card-head">
+            <span class="card-title">质量闸门</span>
+          </div>
+          <ul class="oc-gates-list">
+            <li><strong>需求</strong>：范围、非目标、验收口径一致</li>
+            <li><strong>方案</strong>：数据流、权限、降级与回滚已评审</li>
+            <li><strong>上线</strong>：监控、告警、值班与回滚就绪</li>
+          </ul>
+        </section>
+      </aside>
 
-    <section class="oc-gates card-block">
-      <div class="card-head">
-        <span class="card-title">质量闸门（Definition of Done）</span>
-      </div>
-      <ul class="oc-gates-list">
-        <li><strong>需求闸门</strong>：范围、非目标、验收口径三方（业务 / 产品 / 技术）书面一致。</li>
-        <li><strong>方案闸门</strong>：数据流、权限、降级与回滚策略已评审。</li>
-        <li><strong>上线闸门</strong>：监控指标、告警、值班与回滚脚本就绪。</li>
-      </ul>
-    </section>
+      <div class="oc-main">
+        <section class="card-block">
+          <div class="card-head">
+            <div>
+              <span class="card-title">PRD 执行框架</span>
+              <span class="card-hint">七阶段闸门 · 交付物与状态可持久化</span>
+            </div>
+            <div class="oc-phase-summary">
+              <span>完成 {{ doneCount }}/{{ phases.length }}</span>
+            </div>
+          </div>
+          <el-table :data="phases" border stripe class="oc-table" size="small">
+            <el-table-column prop="phase" label="阶段" width="72" />
+            <el-table-column prop="name" label="名称" min-width="110" />
+            <el-table-column label="核心交付物" min-width="200">
+              <template #default="{ row }">
+                <el-tag v-for="d in row.deliverables" :key="d" size="small" class="oc-tag">{{ d }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="责任人" width="120">
+              <template #default="{ row }">
+                <el-input v-model="row.owner" size="small" placeholder="角色/姓名" />
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="120">
+              <template #default="{ row }">
+                <el-select v-model="row.status" size="small" style="width: 100%">
+                  <el-option label="未开始" value="todo" />
+                  <el-option label="进行中" value="doing" />
+                  <el-option label="已完成" value="done" />
+                  <el-option label="阻塞" value="blocked" />
+                </el-select>
+              </template>
+            </el-table-column>
+            <el-table-column label="备注" min-width="140">
+              <template #default="{ row }">
+                <el-input v-model="row.note" size="small" type="textarea" :rows="1" placeholder="风险、依赖、链接" />
+              </template>
+            </el-table-column>
+          </el-table>
+        </section>
 
-    <section class="oc-dispatch card-block">
-      <div class="card-head">
-        <span class="card-title">派发到 OpenClaw</span>
-        <el-button size="small" :loading="dispatching" @click="dispatchWebhook">推送 Webhook</el-button>
+        <section class="card-block">
+          <div class="card-head">
+            <span class="card-title">派发到 OpenClaw</span>
+            <el-button size="small" type="primary" :loading="dispatching" @click="dispatchWebhook">推送 Webhook</el-button>
+          </div>
+          <p class="oc-dispatch-hint">
+            将当前阶段快照以 JSON POST 到 Webhook。若浏览器因 CORS 失败，请改为服务端或网关转发。
+          </p>
+          <el-input v-model="dispatchPreview" type="textarea" :rows="6" readonly class="oc-json-preview" />
+        </section>
       </div>
-      <p class="oc-dispatch-hint">
-        将当前阶段快照以 JSON POST 到 Webhook。若浏览器因 CORS 失败，请改为服务端或网关转发。
-      </p>
-      <el-input v-model="dispatchPreview" type="textarea" :rows="6" readonly class="oc-json-preview" />
-    </section>
+    </div>
   </div>
 </template>
 
@@ -115,7 +129,7 @@ defineProps({
   feature: { type: Object, default: null },
 })
 
-const emit = defineEmits(['close'])
+defineEmits(['close', 'open-chat'])
 
 const STORAGE_KEY = 'openclaw_virtual_staff_v1'
 
@@ -139,6 +153,7 @@ const phases = ref(defaultPhases())
 const dispatching = ref(false)
 
 const consoleUrl = computed(() => (form.value.consoleUrl || import.meta.env.VITE_OPENCLAW_CONSOLE_URL || '').trim())
+const doneCount = computed(() => phases.value.filter((p) => p.status === 'done').length)
 
 function normalizeExternalUrl(u) {
   const s = (u || '').trim()
@@ -225,6 +240,7 @@ async function copyPrdBrief() {
 function openConsole() {
   const u = normalizeExternalUrl(consoleUrl.value)
   if (u) window.open(u, '_blank', 'noopener,noreferrer')
+  else ElMessage.warning('请先填写控制台地址')
 }
 
 async function dispatchWebhook() {
@@ -252,8 +268,8 @@ async function dispatchWebhook() {
 
 <style scoped>
 .openclaw-root {
-  padding: 0 0 24px;
-  max-width: 1100px;
+  padding: 0;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -263,33 +279,34 @@ async function dispatchWebhook() {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .oc-kicker {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.12em;
-  color: var(--el-text-color-secondary);
+  color: var(--light-text-tertiary, var(--el-text-color-secondary));
   margin-bottom: 6px;
+  font-weight: 600;
 }
 
 .oc-title {
   margin: 0 0 8px;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: var(--light-text-primary, var(--el-text-color-primary));
 }
 
 .oc-desc {
   margin: 0;
   font-size: 13px;
   line-height: 1.55;
-  color: var(--el-text-color-regular);
+  color: var(--light-text-secondary, var(--el-text-color-regular));
   max-width: 640px;
 }
 
 .oc-desc a {
-  color: var(--el-color-primary);
+  color: var(--brand-green-600, var(--el-color-primary));
 }
 
 .oc-deploy-alert {
@@ -307,7 +324,7 @@ async function dispatchWebhook() {
   font-size: 12px;
   padding: 1px 4px;
   border-radius: 4px;
-  background: var(--el-fill-color-light);
+  background: var(--light-bg-secondary, var(--el-fill-color-light));
 }
 
 .oc-header-actions {
@@ -317,12 +334,45 @@ async function dispatchWebhook() {
   align-items: center;
 }
 
+.oc-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.oc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+}
+
+.oc-side-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--light-text-tertiary, var(--el-text-color-secondary));
+  line-height: 1.45;
+}
+
+.oc-save-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.oc-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 .card-block {
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
+  background: var(--light-bg-primary, var(--el-bg-color));
+  border: 1px solid var(--light-border-default, var(--el-border-color-lighter));
   border-radius: 10px;
-  padding: 16px 18px;
-  margin-bottom: 16px;
+  padding: 14px 16px;
 }
 
 .card-head {
@@ -337,15 +387,25 @@ async function dispatchWebhook() {
 .card-title {
   font-weight: 600;
   font-size: 15px;
+  color: var(--light-text-primary, var(--el-text-color-primary));
 }
 
 .card-hint {
+  display: block;
+  margin-top: 2px;
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--light-text-tertiary, var(--el-text-color-secondary));
+  font-weight: 400;
+}
+
+.oc-phase-summary {
+  font-size: 12px;
+  color: var(--brand-green-700, var(--el-color-primary));
+  font-weight: 600;
 }
 
 .oc-form :deep(.el-form-item) {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .oc-table {
@@ -358,20 +418,30 @@ async function dispatchWebhook() {
 
 .oc-gates-list {
   margin: 0;
-  padding-left: 1.2rem;
+  padding-left: 1.1rem;
   font-size: 13px;
-  line-height: 1.65;
-  color: var(--el-text-color-regular);
+  line-height: 1.7;
+  color: var(--light-text-secondary, var(--el-text-color-regular));
 }
 
 .oc-dispatch-hint {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--light-text-tertiary, var(--el-text-color-secondary));
   margin: 0 0 8px;
 }
 
 .oc-json-preview :deep(textarea) {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 12px;
+}
+
+@media (max-width: 960px) {
+  .oc-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .oc-side {
+    position: static;
+  }
 }
 </style>
