@@ -9,7 +9,8 @@ export const SIDEBAR_NAV = {
     items: [
       { id: '0', icon: 'Odometer', label: '经营驾驶舱' },
       { id: '25', icon: 'Trophy', label: '运营决策中心' },
-      { id: '26', icon: 'Monitor', label: '实时监控大屏' },
+      { id: '26', icon: 'Monitor', label: '实时监控大屏 · 告警' },
+      { id: '49', icon: 'DataBoard', label: '经营数据大屏 · 看板' },
     ],
   },
   business: {
@@ -22,6 +23,7 @@ export const SIDEBAR_NAV = {
         items: [
           { id: '3', icon: 'List', label: '全渠道订单' },
           { id: '52', icon: 'ShoppingCart', label: '订货履约' },
+          { id: '57', icon: 'Ticket', label: '报价单配置' },
           { id: '42', icon: 'Refresh', label: '退款审核' },
         ],
       },
@@ -44,6 +46,7 @@ export const SIDEBAR_NAV = {
         title: '门店场域',
         items: [
           { id: '30', icon: 'Shop', label: '店铺管理' },
+          { id: '55', icon: 'Shop', label: 'C端门店展区' },
           { id: '34', icon: 'Brush', label: '门店设计中心' },
           { id: '35', icon: 'Promotion', label: '加盟商管理' },
           { id: '48', icon: 'House', label: '物业合作测算' },
@@ -99,6 +102,8 @@ export const SIDEBAR_NAV = {
           { id: '8', icon: 'Picture', label: '首页轮播' },
           { id: '13', icon: 'Setting', label: '首页配置' },
           { id: '9', icon: 'Collection', label: '内容管理' },
+          { id: '54', icon: 'Notebook', label: '养护指南' },
+          { id: '56', icon: 'Phone', label: '客服入口配置' },
         ],
       },
       {

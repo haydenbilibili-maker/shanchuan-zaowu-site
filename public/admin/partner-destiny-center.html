@@ -5103,12 +5103,8 @@ window.sw = function sw(n){
   }catch(ex){}
 };
 var sw = window.sw;
-// 初始状态：只显示第一个 tab
-document.querySelectorAll('.tc').forEach(function(t){t.classList.remove('on');});
-var firstTab=document.getElementById('tab-a');
-if(firstTab) firstTab.classList.add('on');
-var firstBtn=document.querySelector('.pn');
-if(firstBtn) firstBtn.classList.add('on');
+// 默认仅展示第一人（独菽）；人员切换由 window.sw 负责
+try { window.sw('a'); } catch (ex) {}
 </script>
 </body>
 </html>

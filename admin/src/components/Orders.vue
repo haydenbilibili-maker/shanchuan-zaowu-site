@@ -155,7 +155,7 @@
         </div>
     </el-card>
 
-    <el-dialog v-model="shipVisible" title="📦 订单发货" width="400px" destroy-on-close>
+    <el-dialog v-model="shipVisible" title="订单发货" width="400px" destroy-on-close>
         <el-form label-position="top">
             <el-form-item label="物流公司">
                 <el-select v-model="shipForm.carrier" style="width:100%">
@@ -163,12 +163,37 @@
                 </el-select>
             </el-form-item>
             <el-form-item label="快递单号">
-                <el-input v-model="shipForm.trackingNumber" placeholder="请扫描或手动输入" clearable />
+                <el-input v-model="shipForm.trackingNumber" placeholder="请扫描或手动输入真实运单号" clearable />
             </el-form-item>
         </el-form>
         <template #footer>
             <el-button @click="shipVisible = false">取消</el-button>
             <el-button type="primary" @click="confirmShip" :loading="submitting">确认发货</el-button>
+        </template>
+    </el-dialog>
+
+    <el-dialog v-model="batchShipVisible" title="批量发货" width="560px" destroy-on-close>
+        <p style="margin:0 0 12px;color:#6B6560;font-size:13px;">每单须填写真实运单号（至少 6 位），禁止自动生成假单号。</p>
+        <el-form label-position="top">
+            <el-form-item label="统一物流公司（可按单覆盖）">
+                <el-select v-model="batchShipCarrier" style="width:100%" @change="applyBatchCarrier">
+                    <el-option value="顺丰速运"/><el-option value="中通快递"/><el-option value="圆通速递"/><el-option value="EMS"/><el-option value="京东物流"/>
+                </el-select>
+            </el-form-item>
+            <div v-for="row in batchShipRows" :key="row.id" style="display:grid;grid-template-columns:1fr 1.2fr;gap:8px;margin-bottom:10px;align-items:end;">
+                <el-form-item :label="row.label" style="margin-bottom:0;">
+                    <el-select v-model="row.carrier" style="width:100%">
+                        <el-option value="顺丰速运"/><el-option value="中通快递"/><el-option value="圆通速递"/><el-option value="EMS"/><el-option value="京东物流"/>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="运单号" style="margin-bottom:0;" required>
+                    <el-input v-model="row.trackingNumber" placeholder="真实运单号" clearable />
+                </el-form-item>
+            </div>
+        </el-form>
+        <template #footer>
+            <el-button @click="batchShipVisible = false">取消</el-button>
+            <el-button type="primary" @click="confirmBatchShip" :loading="submitting">确认发货</el-button>
         </template>
     </el-dialog>
 
@@ -189,7 +214,7 @@
 <script setup>
 import { ref, onMounted, reactive, computed, nextTick } from 'vue'
 import { Refresh, Search, Picture, MagicStick, Box, DocumentCopy } from '@element-plus/icons-vue'
-import { getTempFileUrl, cdnUpdate, cdnCount, fetchCollectionLimit } from '../cloud'
+import { getTempFileUrl, cdnUpdate, cdnCount, fetchCollectionLimit, callCloudFunction } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import OrderAI from './ai/OrderAI.vue'
 
@@ -208,6 +233,9 @@ const searchKeyword = ref('')
 
 const shipVisible = ref(false)
 const shipForm = ref({ id: '', carrier: '顺丰速运', trackingNumber: '' })
+const batchShipVisible = ref(false)
+const batchShipCarrier = ref('顺丰速运')
+const batchShipRows = ref([])
 const showAIDialog = ref(false)
 const orderTableRef = ref(null)
 
@@ -257,54 +285,68 @@ const batchShipCount = computed(() => {
   return selectedOrders.value.filter(order => order.status === 'paid').length
 })
 
-// 批量发货
-const handleBatchShip = async () => {
+// 批量发货：打开表单，强制每单填写真实运单号（禁止自动生成假 SF 单号）
+const handleBatchShip = () => {
   const shipOrders = selectedOrders.value.filter(order => order.status === 'paid')
   if (shipOrders.length === 0) {
     ElMessage.warning('请选择待发货的订单')
     return
   }
+  batchShipCarrier.value = '顺丰速运'
+  batchShipRows.value = shipOrders.map((order) => ({
+    id: order._id,
+    label: order.orderNo || String(order._id).slice(-8),
+    carrier: '顺丰速运',
+    trackingNumber: String(order.logistics?.trackingNumber || '').trim()
+  }))
+  batchShipVisible.value = true
+}
 
-  ElMessageBox.confirm(
-    `确认批量发货 ${shipOrders.length} 个订单吗？`,
-    '批量发货确认',
-    {
-      confirmButtonText: '确认发货',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      submitting.value = true
-      // 这里可以打开批量发货对话框，或者使用默认物流信息
-      // 为了简化，我们使用默认物流信息
-      const defaultCarrier = '顺丰速运'
-      
-      const promises = shipOrders.map(async (order) => {
-        // 为每个订单生成一个临时单号（实际应该由用户输入或系统生成）
-        const tempTrackingNumber = `SF${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`
-        
-        return cdnUpdate('orders', order._id, {
-          status: 'shipped',
-          logistics: {
-            carrier: defaultCarrier,
-            trackingNumber: tempTrackingNumber,
-            shipTime: new Date().getTime()
-          }
-        })
+const applyBatchCarrier = (carrier) => {
+  const next = carrier || '顺丰速运'
+  batchShipRows.value = batchShipRows.value.map((row) => ({ ...row, carrier: next }))
+}
+
+const confirmBatchShip = async () => {
+  const rows = batchShipRows.value || []
+  if (!rows.length) {
+    ElMessage.warning('没有待发货订单')
+    return
+  }
+  const invalid = rows.find((row) => {
+    const tracking = String(row.trackingNumber || '').trim().replace(/\s/g, '')
+    return !tracking || tracking.length < 6
+  })
+  if (invalid) {
+    ElMessage.warning(`请为订单 ${invalid.label} 填写真实运单号（至少 6 位）`)
+    return
+  }
+
+  submitting.value = true
+  try {
+    const adminOpsKey = import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+    for (const row of rows) {
+      const tracking = String(row.trackingNumber || '').trim().replace(/\s/g, '')
+      const result = await callCloudFunction('managerShipOrder', {
+        orderId: row.id,
+        carrier: row.carrier || batchShipCarrier.value || '顺丰速运',
+        trackingNumber: tracking,
+        adminOpsKey
       })
-      
-      await Promise.all(promises)
-      ElMessage.success(`成功发货 ${shipOrders.length} 个订单`)
-      clearSelection()
-      fetchOrders()
-    } catch (error) {
-      console.error('批量发货失败:', error)
-      ElMessage.error('批量发货失败，请重试')
-    } finally {
-      submitting.value = false
+      if (result && result.success === false) {
+        throw new Error(result.msg || `订单 ${row.label} 发货失败`)
+      }
     }
-  }).catch(() => {})
+    ElMessage.success(`成功发货 ${rows.length} 个订单`)
+    batchShipVisible.value = false
+    clearSelection()
+    fetchOrders()
+  } catch (error) {
+    console.error('批量发货失败:', error)
+    ElMessage.error(error?.message || '批量发货失败：请确认已部署 managerShipOrder 并配置 ADMIN_OPS_KEY')
+  } finally {
+    submitting.value = false
+  }
 }
 
 // 批量导出
@@ -418,34 +460,67 @@ const confirmShip = async () => {
     if(!shipForm.value.trackingNumber) return ElMessage.warning('请填写单号')
     submitting.value = true
     try {
-        await cdnUpdate('orders', shipForm.value.id, {
-            status: 'shipped',
-            logistics: {
-                carrier: shipForm.value.carrier,
-                trackingNumber: shipForm.value.trackingNumber,
-                shipTime: new Date().getTime()
-            }
+        // SSOT 写路径：与小程序店长一致，走 managerShipOrder（站内信 + 物流字段）
+        const result = await callCloudFunction('managerShipOrder', {
+            orderId: shipForm.value.id,
+            carrier: shipForm.value.carrier || '顺丰速运',
+            trackingNumber: String(shipForm.value.trackingNumber || '').trim(),
+            // 与 refundOrder 一致：匿名 Web 身份需 ADMIN_OPS_KEY / VITE_ADMIN_OPS_KEY
+            adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
         })
-        ElMessage.success('发货成功')
+        if (result && result.success === false) {
+            throw new Error(result.msg || result.message || '发货失败')
+        }
+        ElMessage.success(result?.messageSent === false ? '已发货（通知可能延迟）' : '发货成功')
         shipVisible.value = false
         fetchOrders()
     } catch(e) {
-        ElMessage.error('操作失败')
+        console.error('发货失败', e)
+        ElMessage.error(e?.message || '操作失败：请确认已部署 managerShipOrder，且配置 ADMIN_OPS_KEY')
     } finally {
         submitting.value = false
     }
 }
 
 const handleRefund = (row) => {
-    ElMessageBox.confirm(`确认退款 ¥${row.totalPrice} 吗？此操作不可撤销。`, '退款确认', {
-        confirmButtonText: '确认退款',
-        confirmButtonClass: 'el-button--danger',
-        type: 'warning'
-    }).then(async () => {
-        await cdnUpdate('orders', row._id, { status: 'refunded' })
-        ElMessage.success('状态已更新为已退款')
-        fetchOrders()
-    })
+    ElMessageBox.confirm(
+        `确认对订单执行微信退款 ¥${row.totalPrice}？将调用云函数 refundOrder（含库存回滚）。若仅想改状态请取消后联系技术。`,
+        '退款确认',
+        {
+            confirmButtonText: '确认退款',
+            confirmButtonClass: 'el-button--danger',
+            type: 'warning'
+        }
+    ).then(async () => {
+        try {
+            // 先确保状态为 refunding，refundOrder 只接受 refunding/aftersales
+            if (row.status === 'paid' || row.status === 'shipped' || row.status === 'received') {
+                await cdnUpdate('orders', row._id, { status: 'refunding', refundRequestedAt: Date.now() })
+            }
+            const result = await callCloudFunction('refundOrder', {
+                orderId: row._id,
+                // 可选：在 Admin 构建环境注入 VITE_ADMIN_OPS_KEY，与云函数 ADMIN_OPS_KEY 一致
+                adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+            })
+            if (result && result.success === false) {
+                // Web 匿名身份可能无 admin openid：降级提示，禁止静默假退款
+                ElMessageBox.alert(
+                    (result.msg || '云函数退款失败') +
+                    '。请在小程序「店长后台 → 订单 → 退款」处理真实退款，避免 Admin 直改状态导致未退款到账。',
+                    '需在小程序完成退款',
+                    { type: 'warning' }
+                )
+                fetchOrders()
+                return
+            }
+            ElMessage.success(result?.msg || '退款已提交')
+            fetchOrders()
+        } catch (e) {
+            console.error('退款失败', e)
+            ElMessage.error(e?.message || '退款失败')
+            fetchOrders()
+        }
+    }).catch(() => {})
 }
 
 // --- 工具函数 ---

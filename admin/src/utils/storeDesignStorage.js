@@ -1,4 +1,4 @@
-import { db, loginToCloud, COLLECTIONS, getCollectionData } from '../cloud'
+import { COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate } from '../cloud'
 
 function now() {
   return Date.now()
@@ -66,18 +66,16 @@ export function createEmptyDesignVersion({ storeId, storeCode = '', storeName = 
 
 export async function listDesignVersions(storeId) {
   if (!storeId) return []
-  const ok = await loginToCloud()
-  if (!ok) throw new Error('云端连接失败')
   try {
-    return await getCollectionData(COLLECTIONS.STORE_DESIGN_VERSIONS, {
+    return await fetchCollectionSorted(COLLECTIONS.STORE_DESIGN_VERSIONS, {
       where: { storeId },
-      orderBy: { field: 'updatedAt', order: 'desc' },
       limit: 200,
+      throwOnError: true,
+      sortFn: (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0),
     })
   } catch (e) {
     // 集合不存在或权限限制时，降级为空列表，避免页面被 SDK 内部错误打断
     const msg = e?.message || String(e)
-    // cloudbase js-sdk 在某些“集合不存在/权限不足”场景会抛 TypeError: setting 'promise'
     if (
       msg.includes('not exist') ||
       msg.includes('不存在') ||
@@ -93,20 +91,16 @@ export async function listDesignVersions(storeId) {
 }
 
 export async function createDesignVersion(doc) {
-  const ok = await loginToCloud()
-  if (!ok) throw new Error('云端连接失败')
   const data = { ...(doc || {}), createdAt: now(), updatedAt: now() }
-  const res = await db.collection(COLLECTIONS.STORE_DESIGN_VERSIONS).add(data)
-  return { _id: res.id, ...data }
+  const res = await cdnAdd(COLLECTIONS.STORE_DESIGN_VERSIONS, data)
+  const id = res?.id || res?._id
+  return { _id: id, ...data }
 }
 
 export async function updateDesignVersion(id, patch) {
   if (!id) throw new Error('缺少版本 id')
-  const ok = await loginToCloud()
-  if (!ok) throw new Error('云端连接失败')
   const next = { ...(patch || {}), updatedAt: now() }
-  // cloudbase update API 在不同版本存在参数差异；此处使用对象形式更稳妥
-  await db.collection(COLLECTIONS.STORE_DESIGN_VERSIONS).doc(id).update(next)
+  await cdnUpdate(COLLECTIONS.STORE_DESIGN_VERSIONS, id, next)
   return next
 }
 
@@ -124,4 +118,3 @@ export async function cloneDesignVersion(source) {
 export async function archiveDesignVersion(id) {
   return await updateDesignVersion(id, { status: 'archived' })
 }
-

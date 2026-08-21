@@ -8,6 +8,7 @@
           <div class="tabs-wrapper">
             <el-radio-group v-model="activeModule" fill="#2D6A4F" @change="refreshData">
               <el-radio-button label="coupon">优惠券配置</el-radio-button>
+              <el-radio-button label="reward">积分兑换</el-radio-button>
               <el-radio-button label="vip">会员权益卡</el-radio-button>
               <el-radio-button label="level">会员等级体系</el-radio-button>
               <el-radio-button label="virtual">虚拟权益商品</el-radio-button>
@@ -41,6 +42,53 @@
               </template>
             </el-table-column>
           </el-table>
+        </div>
+
+        <div v-if="activeModule === 'reward'" class="list-area">
+          <div class="action-bar">
+            <span class="tip">对齐小程序积分中心 · 集合 rewards · redeemReward</span>
+            <el-button type="primary" icon="Plus" @click="openEditor('reward')">新建兑换品</el-button>
+          </div>
+          <el-table :data="listData" v-loading="loading" @row-click="setPreview" highlight-current-row empty-text="暂无积分兑换品">
+            <el-table-column label="兑换品" min-width="180">
+              <template #default="{ row }">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <img v-if="row.image" :src="row.image" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" />
+                  <div>
+                    <div>{{ row.title }}</div>
+                    <div style="font-size:12px;color:#999;">{{ row.type }}</div>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="积分" width="100">
+              <template #default="{ row }"><span class="highlight">{{ row.cost }} PTS</span></template>
+            </el-table-column>
+            <el-table-column prop="stock" label="库存" width="80" />
+            <el-table-column label="券面值" width="100">
+              <template #default="{ row }">{{ row.type === 'coupon' ? `¥${row.value || 0}` : '-' }}</template>
+            </el-table-column>
+            <el-table-column label="上架" width="90">
+              <template #default="{ row }">
+                <el-switch
+                  :model-value="!row.isOffShelf"
+                  active-color="#27ae60"
+                  @change="(v) => toggleRewardShelf(row, v)"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120">
+              <template #default="{ row }">
+                <el-button link type="primary" @click.stop="editItem(row)">编辑</el-button>
+                <el-button link type="danger" @click.stop="deleteItem(row, 'rewards')">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty
+            v-if="!loading && !listData.length"
+            description="尚无兑换品。新建后小程序积分中心可兑换（集合 rewards）。"
+            :image-size="72"
+          />
         </div>
 
         <div v-if="activeModule === 'vip'" class="list-area">
@@ -200,6 +248,23 @@
           <el-form-item label="使用门槛"><el-input v-model="form.condition" placeholder="如：无门槛 / 满100可用" /></el-form-item>
         </template>
 
+        <template v-if="activeModule === 'reward'">
+          <el-form-item label="标题"><el-input v-model="form.title" placeholder="如：50 元优惠券" /></el-form-item>
+          <el-form-item label="类型">
+            <el-radio-group v-model="form.type">
+              <el-radio label="coupon">优惠券</el-radio>
+              <el-radio label="goods">实物</el-radio>
+              <el-radio label="virtual">虚拟核销</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="所需积分"><el-input-number v-model="form.cost" :min="1" /></el-form-item>
+          <el-form-item label="库存"><el-input-number v-model="form.stock" :min="0" /></el-form-item>
+          <el-form-item v-if="form.type === 'coupon'" label="券面值"><el-input-number v-model="form.value" :min="0" /></el-form-item>
+          <el-form-item v-if="form.type === 'coupon'" label="使用门槛"><el-input-number v-model="form.minSpend" :min="0" /></el-form-item>
+          <el-form-item label="图片 URL"><el-input v-model="form.image" placeholder="https:// 或 cloud://" /></el-form-item>
+          <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="2" /></el-form-item>
+        </template>
+
         <template v-if="activeModule === 'vip'">
           <el-form-item label="卡片名称"><el-input v-model="form.name" placeholder="如：黑金会员" /></el-form-item>
           <el-form-item label="等级权重"><el-input-number v-model="form.level" :min="1" placeholder="数字越大等级越高" /></el-form-item>
@@ -247,7 +312,7 @@ import { Plus, Edit, Delete, Ticket, Connection, Select, Picture, Minus } from '
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 // --- 状态定义 ---
-const activeModule = ref('coupon') // coupon | vip | virtual
+const activeModule = ref('coupon') // coupon | reward | vip | virtual
 const loading = ref(false)
 const listData = ref([])
 const previewItem = ref({}) // 当前预览的对象
@@ -259,7 +324,8 @@ const form = reactive({
   _id: null,
   name: '', type: 'cash', value: 0, condition: '', active: true, // Coupon
   level: 1, price: 0, styleType: 'black', privileges: [], // VIP
-  title: '', subTitle: '', stock: 99 // Virtual
+  title: '', subTitle: '', stock: 99, // Virtual / Reward
+  cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false // Reward
 })
 
 // --- 样式辅助 ---
@@ -275,6 +341,7 @@ const getCardStyle = (type) => {
 // --- 数据加载 ---
 const getCollectionName = () => {
   if (activeModule.value === 'coupon') return 'coupons'
+  if (activeModule.value === 'reward') return 'rewards'
   if (activeModule.value === 'vip') return 'vip_cards' // 需在云开发创建此集合
   if (activeModule.value === 'virtual') return 'equity_goods' // 需在云开发创建此集合
   return 'coupons'
@@ -295,6 +362,7 @@ const refreshData = async () => {
   } catch (e) {
     console.error(e)
     listData.value = []
+    ElMessage.error('加载失败：' + (e.message || e))
   } finally {
     loading.value = false
   }
@@ -317,7 +385,7 @@ watch(form, (newVal) => {
 
 const dialogTitle = computed(() => {
   const action = isEditing.value ? '编辑' : '新建'
-  const map = { coupon: '优惠券', vip: '会员权益卡', virtual: '权益商品' }
+  const map = { coupon: '优惠券', reward: '积分兑换品', vip: '会员权益卡', virtual: '权益商品' }
   return `${action}${map[activeModule.value]}`
 })
 
@@ -326,9 +394,10 @@ const openEditor = (module) => {
   // 重置表单
   Object.assign(form, {
     _id: null,
-    name: '', type: 'cash', value: 10, condition: '无门槛', active: true,
+    name: '', type: module === 'reward' ? 'coupon' : 'cash', value: 10, condition: '无门槛', active: true,
     level: 1, price: 99, styleType: 'black', privileges: ['全场88折'],
-    title: '', subTitle: '', stock: 99
+    title: '', subTitle: '', stock: 99,
+    cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false
   })
   // 将预览切到当前表单
   previewItem.value = form
@@ -359,6 +428,20 @@ const saveData = async () => {
   // 清理空权益
   if(data.privileges) data.privileges = data.privileges.filter(p => p.trim() !== '')
 
+  if (activeModule.value === 'reward') {
+    data.cost = parseInt(data.cost, 10) || 0
+    data.stock = parseInt(data.stock, 10) || 0
+    data.isOffShelf = !!data.isOffShelf
+    delete data.name
+    delete data.condition
+    delete data.active
+    delete data.level
+    delete data.price
+    delete data.styleType
+    delete data.privileges
+    delete data.subTitle
+  }
+
   try {
     if (isEditing.value && form._id) {
       await cdnUpdate(colName, form._id, data)
@@ -371,6 +454,15 @@ const saveData = async () => {
     refreshData()
   } catch (e) {
     ElMessage.error('保存失败，请检查数据库集合是否存在')
+  }
+}
+
+const toggleRewardShelf = async (row, onShelf) => {
+  try {
+    await cdnUpdate('rewards', row._id, { isOffShelf: !onShelf })
+    row.isOffShelf = !onShelf
+  } catch (e) {
+    ElMessage.error('更新失败')
   }
 }
 

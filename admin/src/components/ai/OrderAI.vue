@@ -81,7 +81,6 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Box, WarningFilled, Service } from '@element-plus/icons-vue'
 import { callGeminiAPI } from '../../utils/aiHelper'
-import { db, loginToCloud } from '../../cloud'
 import { marked } from 'marked'
 
 const props = defineProps({

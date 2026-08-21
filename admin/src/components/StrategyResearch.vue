@@ -1769,7 +1769,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
 import { callGeminiAPI, extractJSON } from '../utils/aiHelper'
-import { db, loginToCloud, COLLECTIONS } from '../cloud'
+import { fetchCollectionSorted, COLLECTIONS } from '../cloud'
 import { marked } from 'marked'
 import { ElMessage } from 'element-plus'
 
@@ -4544,18 +4544,11 @@ watch(currentView, (newView, oldView) => {
 const loadAIResearch = async () => {
   loadingResearch.value = true
   try {
-    const connected = await loginToCloud()
-    if (!connected) {
-      console.warn('数据库连接失败，无法加载用研结论')
-      aiResearchList.value = []
-      return
-    }
-
-    const res = await db.collection(COLLECTIONS.STRATEGY_RESEARCH)
-      .orderBy('createTime', 'desc')
-      .get()
-    
-    aiResearchList.value = res.data || []
+    aiResearchList.value = await fetchCollectionSorted(COLLECTIONS.STRATEGY_RESEARCH, {
+      limit: 200,
+      throwOnError: true,
+      sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0),
+    })
   } catch (error) {
     console.error('加载用研结论失败:', error)
     aiResearchList.value = []

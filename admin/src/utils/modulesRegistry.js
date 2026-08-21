@@ -23,8 +23,8 @@ export const GROUPS = {
 export const MODULES = [
   // 总览决策
   { id: '0',  name: '经营驾驶舱', group: 'OVERVIEW', subgroup: null, icon: 'Odometer', keywords: 'dashboard cockpit jyjsc ovw 首页' },
-  { id: '26', name: '实时监控大屏', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'monitor realtime sslg dashboard' },
-  { id: '49', name: '经营数据大屏', group: 'OVERVIEW', subgroup: null, icon: 'DataBoard', keywords: 'bigscreen jydp dataviz cockpit screen 大屏' },
+  { id: '26', name: '实时监控大屏 · 告警', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'monitor realtime sslg dashboard 告警刷新' },
+  { id: '49', name: '经营数据大屏 · 看板', group: 'OVERVIEW', subgroup: null, icon: 'DataBoard', keywords: 'bigscreen jydp dataviz cockpit screen 大屏 看板' },
   { id: '25', name: '运营决策中心', group: 'OVERVIEW', subgroup: null, icon: 'Trophy', keywords: 'decision center yyjzzx ops' },
 
   // 业务运营 — 货
@@ -32,12 +32,14 @@ export const MODULES = [
   { id: '43', name: '分类管理', group: 'BUSINESS', subgroup: '货', icon: 'Menu', keywords: 'category flgl tag' },
   { id: '3',  name: '全渠道订单', group: 'BUSINESS', subgroup: '货', icon: 'List', keywords: 'order qqdd 订单' },
   { id: '52', name: '订货履约', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase order fulfillment dhly 订货 采购 意向 出货 price-list 飞书 bitable 库存' },
+  { id: '57', name: '报价单配置', group: 'BUSINESS', subgroup: '货', icon: 'Ticket', keywords: 'price list quote bjd 报价单 price_list_items 供货价' },
   { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '货', icon: 'Refresh', keywords: 'refund tksh 退款' },
   // 业务运营 — 场
   { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
   { id: '5',  name: '活动与排期', group: 'BUSINESS', subgroup: '场', icon: 'Calendar', keywords: 'activity event hdpc 活动' },
   { id: '6',  name: '权益与营销', group: 'BUSINESS', subgroup: '场', icon: 'Ticket', keywords: 'marketing benefit qyyx coupon 营销' },
   { id: '30', name: '店铺管理', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store dpgl shop' },
+  { id: '55', name: 'C端门店展区', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store front zones cdmxq 这有店 store_zones' },
   { id: '34', name: '门店设计中心', group: 'BUSINESS', subgroup: '场', icon: 'Brush', keywords: 'store design mdsjzx 装修' },
   { id: '35', name: '加盟商管理', group: 'BUSINESS', subgroup: '场', icon: 'Promotion', keywords: 'franchise jmsgl 加盟' },
   { id: '48', name: '物业合作测算', group: 'BUSINESS', subgroup: '场', icon: 'House', keywords: 'property eval rent revenue wyhz 物业 测算 房租 分润' },
@@ -61,6 +63,8 @@ export const MODULES = [
   { id: '8',  name: '首页轮播', group: 'MINIAPP', subgroup: '内容运营', icon: 'Picture', keywords: 'banner sylb carousel' },
   { id: '13', name: '首页配置', group: 'MINIAPP', subgroup: '内容运营', icon: 'Setting', keywords: 'home config sypz layout' },
   { id: '9',  name: '内容管理', group: 'MINIAPP', subgroup: '内容运营', icon: 'Collection', keywords: 'content cms nrgl article' },
+  { id: '54', name: '养护指南', group: 'MINIAPP', subgroup: '内容运营', icon: 'Notebook', keywords: 'care guides yhzh specimen care' },
+  { id: '56', name: '客服入口配置', group: 'MINIAPP', subgroup: '内容运营', icon: 'Phone', keywords: 'support config kf rk 联系专员 FAQ getSupportConfig' },
   // 小程序配置 — 会员/营销规则
   { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'UserFilled', keywords: 'member level hydjtx vip' },
   { id: '15', name: '积分规则配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz' },

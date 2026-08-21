@@ -236,7 +236,7 @@
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { marked } from 'marked'
 import { ElMessage } from 'element-plus'
-import { loginToCloud, COLLECTIONS, getCollectionData, countCollection } from '../cloud'
+import { COLLECTIONS, getCollectionData, countCollection } from '../cloud'
 import { callGeminiAPI, buildConversationHistory as buildHistory, enhancePrompt } from '../utils/aiHelper'
 
 const props = defineProps({
@@ -405,15 +405,7 @@ const fetchSiteData = async (showMessage = true) => {
   }
   
   try {
-    debugLog('开始连接云数据库...')
-    const connected = await loginToCloud()
-    debugLog('云数据库连接结果:', connected)
-    
-    if (!connected) {
-      const error = new Error('数据库连接失败')
-      debugLog('数据库连接失败', error)
-      throw error
-    }
+    debugLog('开始拉取全站数据（CDN）...')
     
     if (showMessage) {
       ElMessage.info('正在获取全站数据...')

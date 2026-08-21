@@ -25,9 +25,13 @@
             <span>{{ p.city || '—' }}</span>
             <el-tag size="small" :type="STATUS_LABELS[p.status]?.type">{{ STATUS_LABELS[p.status]?.text }}</el-tag>
           </div>
-          <div class="pc-result" v-if="propSummaries[p.id]">
+          <div class="pc-result" v-if="propSummaries[p.id] && p.status !== 'declined'">
             <span class="lbl">三年园区(阶梯)</span>
             <span class="val">¥{{ propSummaries[p.id].recommendedTotal }} 万</span>
+          </div>
+          <div class="pc-result pc-declined" v-else-if="p.status === 'declined'">
+            <span class="lbl">结论</span>
+            <span class="val">🚫 不合作</span>
           </div>
         </div>
         <div v-if="!properties.length" class="empty-tip">还没有物业，点右上"新增"</div>
@@ -330,13 +334,34 @@
           </el-tab-pane>
         </el-tabs>
 
+        <!-- 风险与决策（评估案例） -->
+        <div class="risk-section" v-if="current.decision || (current.risks && current.risks.length)">
+          <div class="risk-head">
+            <span class="risk-title">🚦 风险与决策</span>
+            <el-tag v-if="current.decision?.result === 'declined'" type="danger" effect="dark">🚫 结论：不合作</el-tag>
+            <el-tag v-else-if="current.decision" type="warning">{{ current.decision.summary || current.decision.result }}</el-tag>
+          </div>
+          <div class="terms-box" v-if="current.dealTerms && current.dealTerms.length">
+            <div class="terms-title">📋 合作条件（原文记录）</div>
+            <ul class="terms-list">
+              <li v-for="(t, i) in current.dealTerms" :key="i">{{ t }}</li>
+            </ul>
+          </div>
+          <div class="risk-list" v-if="current.risks && current.risks.length">
+            <div v-for="(r, i) in current.risks" :key="i" class="risk-item">
+              <el-tag size="small" :type="riskTagType(r.level)" effect="dark">{{ riskLevelText(r.level) }}</el-tag>
+              <span class="risk-point">{{ r.point }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- 备注 -->
         <div class="note-section">
           <label class="note-label">📝 谈判要点 / 备注</label>
           <el-input
             v-model="current.note"
             type="textarea"
-            :rows="3"
+            :rows="5"
             placeholder="可填写关键约束、谈判要点、风险提示等"
           />
         </div>
@@ -351,7 +376,7 @@
 import { ref, computed, reactive, watch, onMounted, onUnmounted, nextTick, h } from 'vue'
 import { Plus, Refresh, Document, Delete, Check, RefreshRight, Setting } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { db, loginToCloud } from '../cloud'
+import { fetchCollectionLimit, fetchCollectionWhere, cdnAdd, cdnUpdate } from '../cloud'
 import Chart from 'chart.js/auto'
 import { DEFAULT_INPUTS, PRESET_PROPERTIES, STATUS_LABELS, computeProposal } from '../utils/propertyEvalModel'
 
@@ -439,6 +464,10 @@ const fmtPayback = (v) => {
 }
 const deltaClass = (v) => v > 0.05 ? 'delta-up' : (v < -0.05 ? 'delta-down' : 'delta-flat')
 
+// 风险等级 → 标签类型/文案
+const riskTagType = (l) => ({ critical: 'danger', high: 'warning', medium: 'primary', low: 'info' }[l] || 'info')
+const riskLevelText = (l) => ({ critical: '致命', high: '高', medium: '中', low: '低' }[l] || l)
+
 const revenueRows = computed(() => {
   if (!result.value) return []
   return [
@@ -520,6 +549,9 @@ function persistLocal() {
 const refresh = async () => {
   const local = loadFromLocal()
   if (local) {
+    // 老用户也可见新增的预置案例（如评估案例）：按 id 补齐缺失预置
+    const ids = new Set(local.map(p => p.id))
+    PRESET_PROPERTIES.forEach(p => { if (!ids.has(p.id)) local.push({ ...p }) })
     properties.value = local
   } else {
     properties.value = PRESET_PROPERTIES.map(p => ({ ...p }))
@@ -528,21 +560,16 @@ const refresh = async () => {
   if (!currentId.value && properties.value.length) {
     currentId.value = properties.value[0].id
   }
-  // 后台同步云端
-  loginToCloud().then(async ok => {
-    if (!ok) return
-    try {
-      const res = await db.collection('property_proposals').limit(100).get()
-      const cloud = res.data || []
-      if (cloud.length) {
-        // 合并：以 id 去重，云端为准
-        const map = new Map(properties.value.map(p => [p.id, p]))
-        cloud.forEach(c => map.set(c.id || c._id, c))
-        properties.value = Array.from(map.values())
-        persistLocal()
-      }
-    } catch (e) { console.warn('云端拉取失败', e) }
-  })
+  // 后台同步云端（CDN SDK，避免 bundle db promise bug）
+  fetchCollectionLimit('property_proposals', { limit: 100 })
+    .then((cloud) => {
+      if (!cloud?.length) return
+      const map = new Map(properties.value.map(p => [p.id, p]))
+      cloud.forEach(c => map.set(c.id || c._id, c))
+      properties.value = Array.from(map.values())
+      persistLocal()
+    })
+    .catch((e) => console.warn('云端拉取失败', e))
 }
 
 const selectProperty = (id) => { currentId.value = id; nextTick(renderCharts) }
@@ -557,20 +584,17 @@ const createNew = () => {
 const saveCurrent = async () => {
   persistLocal()
   ElMessage.success('已保存到本机')
-  // 后台云端同步
+  // 后台云端同步（CDN SDK）
   try {
-    const ok = await loginToCloud()
-    if (!ok) return
     const payload = JSON.parse(JSON.stringify(current.value))
     payload.snapshot = result.value
-    payload.updateTime = db.serverDate()
-    // 先查 id
-    const exist = await db.collection('property_proposals').where({ id: current.value.id }).limit(1).get().catch(() => ({ data: [] }))
-    if (exist.data?.length) {
-      await db.collection('property_proposals').doc(exist.data[0]._id).update(payload)
+    payload.updateTime = Date.now()
+    const exist = await fetchCollectionWhere('property_proposals', { id: current.value.id }, 1).catch(() => [])
+    if (exist?.length) {
+      await cdnUpdate('property_proposals', exist[0]._id, payload)
     } else {
-      payload.createTime = db.serverDate()
-      await db.collection('property_proposals').add(payload)
+      payload.createTime = Date.now()
+      await cdnAdd('property_proposals', payload)
     }
     ElMessage.success('已同步到云端')
   } catch (e) {
@@ -836,6 +860,19 @@ onUnmounted(() => {
 
 .note-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
 .note-label { display: block; font-size: 12px; color: #666; margin-bottom: 6px; }
+
+/* 风险与决策（评估案例） */
+.risk-section { margin-top: 18px; padding: 14px 16px; background: #fdf6ec; border: 1px solid #f3e0bd; border-radius: 10px; }
+.risk-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.risk-title { font-weight: bold; color: #333; font-size: 13px; }
+.terms-box { margin-bottom: 10px; }
+.terms-title { font-size: 12px; color: #b7950b; margin-bottom: 4px; }
+.terms-list { margin: 0; padding-left: 18px; font-size: 12px; color: #666; line-height: 1.8; }
+.risk-list { display: flex; flex-direction: column; gap: 7px; }
+.risk-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #444; line-height: 1.6; }
+.risk-item :deep(.el-tag) { margin-top: 1px; flex-shrink: 0; }
+.risk-point { flex: 1; }
+.pc-declined .val { color: #f56c6c; }
 
 @media (max-width: 1200px) {
   .layout { grid-template-columns: 1fr; }

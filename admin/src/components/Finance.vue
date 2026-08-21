@@ -853,7 +853,7 @@ import FinanceAI from './ai/FinanceAI.vue'
 import { autoSyncFinanceData, manualSyncFinanceData, touchLocalFinanceUpdateTime } from '../utils/financeSync'
 import { ledgerKey, dedupeFinanceRecords } from '../utils/storeLedgerSync'
 import { FINANCE_RECORDS_KEY } from '../utils/financeLocalStorageKey'
-import { db, loginToCloud, COLLECTIONS } from '../cloud'
+import { fetchCollectionSorted, cdnUpdate, COLLECTIONS } from '../cloud'
 import {
   loadStoreBundle,
   findStoreById,
@@ -3596,16 +3596,11 @@ const app = reactive({
         syncInventoryLoading.value = true;
         syncInventoryResult.value = null;
         try {
-            const connected = await loginToCloud();
-            if (!connected) {
-                ElMessage.error('数据库连接失败，请检查网络');
-                return;
-            }
-            const res = await db.collection(COLLECTIONS.PRODUCTS)
-                .orderBy('createTime', 'desc')
-                .limit(500)
-                .get();
-            const products = res.data || [];
+            const products = await fetchCollectionSorted(COLLECTIONS.PRODUCTS, {
+                limit: 500,
+                throwOnError: true,
+                sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0),
+            });
             const normalize = (s) => String(s || '').replace(/\s+/g, '').replace(/[-－—]/g, '').trim();
 
             const updatedList = [];
@@ -3614,13 +3609,14 @@ const app = reactive({
             for (const { name, qty } of lines) {
                 const nName = normalize(name);
                 if (!nName || qty == null) continue;
+                const stockPayload = {
+                    stock: Math.max(0, parseInt(qty, 10)),
+                    updateTime: Date.now()
+                };
 
                 const exact = products.find(p => normalize(p.title) === nName);
                 if (exact) {
-                    await db.collection(COLLECTIONS.PRODUCTS).doc(exact._id).update({
-                        stock: Math.max(0, parseInt(qty, 10)),
-                        updateTime: Date.now()
-                    });
+                    await cdnUpdate(COLLECTIONS.PRODUCTS, exact._id, stockPayload);
                     updatedList.push({ name, qty, title: exact.title, _id: exact._id });
                     continue;
                 }
@@ -3630,17 +3626,11 @@ const app = reactive({
                 });
                 if (partial.length === 1) {
                     const p = partial[0];
-                    await db.collection(COLLECTIONS.PRODUCTS).doc(p._id).update({
-                        stock: Math.max(0, parseInt(qty, 10)),
-                        updateTime: Date.now()
-                    });
+                    await cdnUpdate(COLLECTIONS.PRODUCTS, p._id, stockPayload);
                     updatedList.push({ name, qty, title: p.title, _id: p._id });
                 } else if (partial.length > 1) {
                     const best = partial.sort((a, b) => Math.abs(normalize(a.title).length - nName.length) - Math.abs(normalize(b.title).length - nName.length))[0];
-                    await db.collection(COLLECTIONS.PRODUCTS).doc(best._id).update({
-                        stock: Math.max(0, parseInt(qty, 10)),
-                        updateTime: Date.now()
-                    });
+                    await cdnUpdate(COLLECTIONS.PRODUCTS, best._id, stockPayload);
                     updatedList.push({ name, qty, title: best.title, _id: best._id });
                 } else {
                     unmatched.push({ name, qty });

@@ -167,7 +167,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { callGeminiAPI } from '../../utils/aiHelper'
-import { db, loginToCloud, COLLECTIONS } from '../../cloud'
+import { fetchCollectionSorted, cdnAdd, cdnRemove, COLLECTIONS } from '../../cloud'
 import { marked } from 'marked'
 
 const props = defineProps({
@@ -313,12 +313,6 @@ const saveToResearchBoard = async (silent = false) => {
 
   saving.value = true
   try {
-    const connected = await loginToCloud()
-    if (!connected) {
-      ElMessage.error('数据库连接失败')
-      return
-    }
-
     // 提取摘要（取前200字）
     const plainText = rawResult.value.replace(/<[^>]*>/g, '').replace(/\n/g, ' ')
     const summary = plainText.length > 200 ? plainText.substring(0, 200) + '...' : plainText
@@ -356,7 +350,7 @@ const saveToResearchBoard = async (silent = false) => {
       updateTime: Date.now()
     }
 
-    await db.collection(COLLECTIONS.STRATEGY_RESEARCH).add(researchData)
+    await cdnAdd(COLLECTIONS.STRATEGY_RESEARCH, researchData)
     if (!silent) {
       ElMessage.success({
         message: '✅ 已同步到调研看板，可在战略调研看板中查看',
@@ -410,18 +404,11 @@ const loadHistoryItem = (item) => {
 const loadResearchHistory = async () => {
   loadingHistory.value = true
   try {
-    const connected = await loginToCloud()
-    if (!connected) {
-      loadingHistory.value = false
-      return
-    }
-
-    const res = await db.collection(COLLECTIONS.STRATEGY_RESEARCH)
-      .orderBy('createTime', 'desc')
-      .limit(20)
-      .get()
-    
-    researchHistory.value = res.data || []
+    researchHistory.value = await fetchCollectionSorted(COLLECTIONS.STRATEGY_RESEARCH, {
+      limit: 20,
+      throwOnError: true,
+      sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0),
+    })
   } catch (error) {
     console.error('加载历史记录失败:', error)
     ElMessage.error('加载历史记录失败：' + (error.message || '未知错误'))
@@ -442,14 +429,8 @@ const clearHistory = () => {
     }
   ).then(async () => {
     try {
-      const connected = await loginToCloud()
-      if (!connected) {
-        ElMessage.error('数据库连接失败')
-        return
-      }
-      // 删除所有记录
       for (const item of researchHistory.value) {
-        await db.collection(COLLECTIONS.STRATEGY_RESEARCH).doc(item._id).remove()
+        await cdnRemove(COLLECTIONS.STRATEGY_RESEARCH, item._id)
       }
       researchHistory.value = []
       ElMessage.success('历史记录已清空')
@@ -474,12 +455,7 @@ const deleteHistoryItem = async (id) => {
     }
   ).then(async () => {
     try {
-      const connected = await loginToCloud()
-      if (!connected) {
-        ElMessage.error('数据库连接失败')
-        return
-      }
-      await db.collection(COLLECTIONS.STRATEGY_RESEARCH).doc(id).remove()
+      await cdnRemove(COLLECTIONS.STRATEGY_RESEARCH, id)
       researchHistory.value = researchHistory.value.filter(item => item._id !== id)
       ElMessage.success('删除成功')
     } catch (error) {

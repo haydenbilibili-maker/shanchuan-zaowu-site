@@ -675,6 +675,15 @@ small, .text-muted {
   z-index: 9999;
 }
 
+/*
+ * el-image 大图预览层级兜底
+ * 默认未 teleport 时会落在表格/卡片 stacking context 内，被条纹行与操作列盖住。
+ * 侧栏~10 · EP Dialog/Drawer~2000 · 伴侣机器人~3000 · 预览 5000 · 命令面板 9000 · 登录 9999
+ */
+.el-image-viewer__wrapper {
+  z-index: 5000 !important;
+}
+
 /* 居中定位 */
 .absolute-center {
   position: absolute;

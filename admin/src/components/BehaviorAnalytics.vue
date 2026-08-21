@@ -24,6 +24,7 @@
           size="small"
         />
         <el-button :icon="Refresh" circle @click="refresh" :loading="loading" title="刷新" />
+        <el-button size="small" @click="guideVisible = true">埋点说明</el-button>
       </div>
     </div>
 
@@ -41,8 +42,8 @@
       </div>
       <div class="kpi-card">
         <div class="kpi-top"><span class="lbl">会话数</span><span class="ico">🔄</span></div>
-        <div class="kpi-val">{{ formatNum(kpi.sessions) }}</div>
-        <div class="kpi-sub">独立 sessionId</div>
+        <div class="kpi-val">{{ kpi.sessions != null ? formatNum(kpi.sessions) : '—' }}</div>
+        <div class="kpi-sub">{{ kpi.sessionsNote }}</div>
       </div>
       <div class="kpi-card highlight">
         <div class="kpi-top"><span class="lbl">AI 鉴定数</span><span class="ico">🔍</span></div>
@@ -61,6 +62,24 @@
       </div>
     </div>
 
+    <el-alert
+      v-if="loadError"
+      type="error"
+      :closable="false"
+      show-icon
+      class="ba-alert"
+      :title="loadError"
+    />
+    <el-alert
+      v-else-if="!loading && !hasEventData"
+      type="info"
+      :closable="false"
+      show-icon
+      class="ba-alert"
+      :title="EMPTY_TRACKING"
+      description="请确认小程序已上报 trackBehavior，或缩短/调整日期范围。可点右上角「埋点说明」查看字段与联调步骤。"
+    />
+
     <!-- 时间序列图 + 模块分布 -->
     <div class="main-grid">
       <el-card shadow="never" class="chart-card">
@@ -73,21 +92,25 @@
             </el-select>
           </div>
         </template>
-        <div class="chart-wrap"><canvas ref="trendCanvas"></canvas></div>
+        <div v-if="hasEventData" class="chart-wrap"><canvas ref="trendCanvas"></canvas></div>
+        <el-empty v-else :description="EMPTY_TRACKING" :image-size="72" />
       </el-card>
 
       <el-card shadow="never" class="chart-card">
         <template #header>
           <div class="card-header"><span>🍩 模块流量分布</span></div>
         </template>
-        <div class="chart-wrap"><canvas ref="donutCanvas"></canvas></div>
-        <div class="module-legend">
-          <div v-for="m in moduleBreakdown" :key="m.key" class="lg-item">
-            <span class="lg-dot" :style="{ background: m.color }"></span>
-            <span class="lg-name">{{ m.icon }} {{ m.name }}</span>
-            <span class="lg-num">{{ formatNum(m.count) }}</span>
+        <template v-if="moduleBreakdown.length">
+          <div class="chart-wrap"><canvas ref="donutCanvas"></canvas></div>
+          <div class="module-legend">
+            <div v-for="m in moduleBreakdown" :key="m.key" class="lg-item">
+              <span class="lg-dot" :style="{ background: m.color }"></span>
+              <span class="lg-name">{{ m.icon }} {{ m.name }}</span>
+              <span class="lg-num">{{ formatNum(m.count) }}</span>
+            </div>
           </div>
-        </div>
+        </template>
+        <el-empty v-else :description="EMPTY_TRACKING" :image-size="72" />
       </el-card>
     </div>
 
@@ -172,7 +195,7 @@
             <span>📄 Top 页面 (TOP 10)</span>
           </div>
         </template>
-        <el-table :data="topPages" size="small" v-loading="loading">
+        <el-table v-if="topPages.length" :data="topPages" size="small" v-loading="loading">
           <el-table-column label="#" width="48" type="index" />
           <el-table-column label="页面路径" min-width="240">
             <template #default="{ row }">
@@ -186,6 +209,11 @@
             <template #default="{ row }">{{ formatNum(row.uv) }}</template>
           </el-table-column>
         </el-table>
+        <el-empty
+          v-else
+          :description="pageStatsNote || EMPTY_TRACKING"
+          :image-size="64"
+        />
       </el-card>
     </div>
 
@@ -210,7 +238,7 @@
           </div>
           <div class="ma-num">{{ formatNum(a.count) }}</div>
         </div>
-        <div v-if="!selectedModuleActions.length" class="empty">该模块在所选时间段暂无埋点数据</div>
+        <div v-if="!selectedModuleActions.length" class="empty">{{ EMPTY_TRACKING }}</div>
       </div>
     </el-card>
 
@@ -221,21 +249,49 @@
         数据来源：<code>user_behaviors</code> 与 <code>analytics_daily</code> 集合（小程序 trackBehavior 实时上报）。
         埋点目录共 <b>{{ totalActions }}</b> 个事件 · 跨 <b>{{ totalModules }}</b> 个业务模块，
         与小程序 <code>utils/analytics/eventSchema.js</code> 保持同构。
+        <el-button link type="primary" @click="guideVisible = true">查看埋点说明</el-button>
       </span>
     </div>
+
+    <el-drawer v-model="guideVisible" title="C 端行为埋点说明" size="420px" direction="rtl">
+      <div class="guide-body">
+        <p>看板读取云集合 <code>user_behaviors</code> / <code>analytics_daily</code>，与小程序 <code>eventSchema.js</code> 同构。</p>
+        <h4>必填字段</h4>
+        <ul>
+          <li><code>action</code> · 事件名</li>
+          <li><code>module</code> · 业务模块</li>
+          <li><code>openid</code> · UV</li>
+          <li><code>createTime</code> · 毫秒时间戳</li>
+        </ul>
+        <h4>可选（影响 KPI）</h4>
+        <ul>
+          <li><code>sessionId</code> · 真实会话数</li>
+          <li><code>page</code> · Top 页面表</li>
+        </ul>
+        <h4>空态约定</h4>
+        <p>无数据时不展示假曲线；统一文案「所选时间段暂无埋点数据」。缺 page / sessionId 时另有专项提示。</p>
+        <h4>文档</h4>
+        <p>完整说明见仓库 <code>admin/docs/C端行为埋点说明.md</code>。</p>
+        <el-button type="primary" color="#2D6A4F" @click="guideVisible = false">知道了</el-button>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { Refresh, InfoFilled } from '@element-plus/icons-vue'
-import { getCdnDatabase } from '../cloud'
+import { getCdnDatabase, fetchCollectionWhere } from '../cloud'
 import { ElMessage } from 'element-plus'
 import Chart from 'chart.js/auto'
 import { MODULE, MODULE_META, EVENTS, FUNNELS, getEventMeta, ACTION_NAMES } from '../utils/analyticsSchema'
 
+const EMPTY_TRACKING = '所选时间段暂无埋点数据'
+
 // ----- 状态 -----
 const loading = ref(false)
+const loadError = ref('')
+const guideVisible = ref(false)
 const rangePreset = ref('7d')
 const dateRange = ref([])
 const trendMetric = ref('count')
@@ -244,8 +300,12 @@ const selectedModule = ref(MODULE.IDENTIFY)
 
 // 原始数据
 const rawEvents = ref([])           // 每日聚合行：{ dateKey, action, module, count, uv:[] }
+const sessionIds = ref([])          // 真实 sessionId 列表（来自 user_behaviors）
+const pageAgg = ref([])             // { page, pv, uv }
+const pageStatsNote = ref('')
 const totalActions = ACTION_NAMES.length
 const totalModules = Object.keys(MODULE).length
+const hasEventData = computed(() => rawEvents.value.length > 0)
 
 // 图表实例
 const trendCanvas = ref(null)
@@ -286,40 +346,59 @@ const formatNum = (n) => {
 // ----- 数据加载 -----
 const refresh = async () => {
   loading.value = true
+  loadError.value = ''
+  pageStatsNote.value = ''
+  sessionIds.value = []
+  pageAgg.value = []
   try {
     const [start, end] = currentRange.value
     const cdnDb = await getCdnDatabase()
     const _ = cdnDb.command
+    let dailyRows = []
     try {
-      const res = await cdnDb.collection('analytics_daily')
-        .where({ dateKey: _.gte(start).and(_.lte(end)) })
-        .limit(1000)
-        .get()
-      rawEvents.value = res.data || []
+      dailyRows = await fetchCollectionWhere(
+        'analytics_daily',
+        { dateKey: _.gte(start).and(_.lte(end)) },
+        1000
+      )
+      rawEvents.value = dailyRows || []
     } catch (e) {
       console.warn('analytics_daily 不可读，降级 user_behaviors', e?.message)
       rawEvents.value = []
     }
-    if (!rawEvents.value.length) {
-      try {
-        const ms = new Date(start + 'T00:00:00').getTime()
-        const me = new Date(end + 'T23:59:59').getTime()
-        const r2 = await cdnDb.collection('user_behaviors')
-          .where({ timestamp: _.gte(ms).and(_.lte(me)) })
-          .limit(500)
-          .get()
-        rawEvents.value = aggregateLocal(r2.data || [])
-      } catch (e) {
-        console.warn('user_behaviors 不可读，使用模拟数据', e?.message)
-        rawEvents.value = generateMockData()
+
+    // 页面 / 会话级明细：从 user_behaviors 聚合（analytics_daily 无 page/sessionId）
+    let behaviorRows = []
+    try {
+      const ms = new Date(start + 'T00:00:00').getTime()
+      const me = new Date(end + 'T23:59:59').getTime()
+      behaviorRows = await fetchCollectionWhere(
+        'user_behaviors',
+        { timestamp: _.gte(ms).and(_.lte(me)) },
+        1000
+      )
+      applyBehaviorExtras(behaviorRows)
+      if (!rawEvents.value.length) {
+        rawEvents.value = aggregateLocal(behaviorRows)
       }
+    } catch (e) {
+      console.warn('user_behaviors 不可读', e?.message)
+      if (!rawEvents.value.length) {
+        throw e
+      }
+      pageStatsNote.value = 'user_behaviors 不可读，页面/会话指标暂缺'
     }
+
     if (!rawEvents.value.length) {
-      rawEvents.value = generateMockData()
+      pageStatsNote.value = pageStatsNote.value || EMPTY_TRACKING
+    } else if (!pageAgg.value.length) {
+      pageStatsNote.value = '暂无页面级埋点（请确认事件含 page 字段）'
     }
   } catch (e) {
-    console.warn('行为看板加载失败，使用模拟数据', e?.message)
-    rawEvents.value = generateMockData()
+    const msg = e?.message || '未知错误'
+    loadError.value = `行为看板加载失败：${msg}`
+    rawEvents.value = []
+    ElMessage.error(loadError.value)
   } finally {
     loading.value = false
     await nextTick()
@@ -337,31 +416,29 @@ const aggregateLocal = (events) => {
       map[key] = { dateKey, action: ev.action, module: ev.module || getEventMeta(ev.action)?.module, count: 0, uv: new Set() }
     }
     map[key].count++
-    if (ev.userId) map[key].uv.add(ev.userId)
+    const uid = ev.userId || ev._openid
+    if (uid) map[key].uv.add(uid)
   })
   return Object.values(map).map(r => ({ ...r, uv: Array.from(r.uv) }))
 }
 
-const generateMockData = () => {
-  // 7 天 × 已知 action 的伪数据，便于在空数据库下也能看到完整看板
-  const list = []
-  const days = 7
-  ACTION_NAMES.forEach(action => {
-    const meta = getEventMeta(action)
-    if (!meta) return
-    const base = 20 + Math.floor(Math.random() * 80)
-    for (let i = days - 1; i >= 0; i--) {
-      const dk = dateKeyAt(-i)
-      list.push({
-        dateKey: dk,
-        action,
-        module: meta.module,
-        count: Math.floor(base * (0.7 + Math.random() * 0.6)),
-        uv: Array.from({ length: Math.floor(5 + Math.random() * 15) }, (_, k) => 'mock-user-' + (k + Math.floor(Math.random() * 10)))
-      })
-    }
+const applyBehaviorExtras = (events = []) => {
+  const sessions = new Set()
+  const pages = {}
+  events.forEach((ev) => {
+    if (ev.sessionId) sessions.add(ev.sessionId)
+    const page = (ev.page || '').trim()
+    if (!page) return
+    if (!pages[page]) pages[page] = { page, pv: 0, uv: new Set() }
+    pages[page].pv += 1
+    const uid = ev.userId || ev._openid
+    if (uid) pages[page].uv.add(uid)
   })
-  return list
+  sessionIds.value = Array.from(sessions)
+  pageAgg.value = Object.values(pages)
+    .map((p) => ({ page: p.page, pv: p.pv, uv: p.uv.size }))
+    .sort((a, b) => b.pv - a.pv)
+    .slice(0, 10)
 }
 
 // ----- 聚合计算 -----
@@ -397,13 +474,17 @@ const kpi = computed(() => {
   })
   const getCount = (action) => groupedByAction.value[action]?.count || 0
   const identifySuccess = getCount('identify_success')
-  const identifyStart = getCount('identify_start') || 1
+  const identifyStart = getCount('identify_start')
+  const hasSessions = sessionIds.value.length > 0
   return {
     totalEvents,
     uv: uvSet.size,
-    sessions: Math.round(uvSet.size * 1.4), // 估算
-    identifyCount: getCount('identify_start'),
-    identifySuccessRate: ((identifySuccess / identifyStart) * 100).toFixed(0),
+    sessions: hasSessions ? sessionIds.value.length : null,
+    sessionsNote: hasSessions ? '独立 sessionId' : '待埋点 · 无 sessionId',
+    identifyCount: identifyStart,
+    identifySuccessRate: identifyStart > 0
+      ? ((identifySuccess / identifyStart) * 100).toFixed(0)
+      : '0',
     customSubmits: getCount('custom_order_submit') + getCount('custom_inquiry_submit'),
     petSubmits: getCount('pet_memorial_submit'),
     supportTickets: getCount('support_ticket_submit')
@@ -471,20 +552,7 @@ const recomputeTops = () => {
   })
   entries.sort((a, b) => (b[topMetric.value] || 0) - (a[topMetric.value] || 0))
   topEvents.value = entries.slice(0, 15)
-
-  // 页面 Top（从 user_behaviors 中抽样 ; analytics_daily 没有 page 字段，留作扩展）
-  topPages.value = [
-    { page: 'pages/index/index', pv: Math.round(kpi.value.totalEvents * 0.18), uv: Math.round(kpi.value.uv * 0.7) },
-    { page: 'pages/category/index', pv: Math.round(kpi.value.totalEvents * 0.12), uv: Math.round(kpi.value.uv * 0.5) },
-    { page: 'pages/store/index', pv: Math.round(kpi.value.totalEvents * 0.10), uv: Math.round(kpi.value.uv * 0.45) },
-    { page: 'pages/identify/index', pv: Math.round(kpi.value.totalEvents * 0.08), uv: Math.round(kpi.value.uv * 0.3) },
-    { page: 'pages/user/index', pv: Math.round(kpi.value.totalEvents * 0.07), uv: Math.round(kpi.value.uv * 0.4) },
-    { page: 'pages/detail/index', pv: Math.round(kpi.value.totalEvents * 0.06), uv: Math.round(kpi.value.uv * 0.25) },
-    { page: 'pages/custom/index', pv: Math.round(kpi.value.totalEvents * 0.04), uv: Math.round(kpi.value.uv * 0.15) },
-    { page: 'pages/cart/index', pv: Math.round(kpi.value.totalEvents * 0.03), uv: Math.round(kpi.value.uv * 0.18) },
-    { page: 'pages/community/index', pv: Math.round(kpi.value.totalEvents * 0.03), uv: Math.round(kpi.value.uv * 0.2) },
-    { page: 'subpackages/business/orders/index', pv: Math.round(kpi.value.totalEvents * 0.02), uv: Math.round(kpi.value.uv * 0.12) }
-  ].filter(p => p.pv > 0).sort((a, b) => b.pv - a.pv)
+  topPages.value = pageAgg.value.slice(0, 10)
 }
 
 const selectedModuleActions = computed(() => {
@@ -502,11 +570,15 @@ const selectedModuleActions = computed(() => {
 
 // ----- Chart 渲染 -----
 const renderTrendChart = () => {
-  if (!trendCanvas.value) return
-  if (trendChart) trendChart.destroy()
+  if (trendChart) {
+    trendChart.destroy()
+    trendChart = null
+  }
+  if (!trendCanvas.value || !hasEventData.value) return
 
   const dates = Object.keys(groupedByDate.value).sort()
   const topModules = moduleBreakdown.value.slice(0, 6)
+  if (!dates.length || !topModules.length) return
 
   const datasets = topModules.map(m => ({
     label: m.icon + ' ' + m.name,
@@ -542,9 +614,13 @@ const renderTrendChart = () => {
 }
 
 const renderDonutChart = () => {
+  if (donutChart) {
+    donutChart.destroy()
+    donutChart = null
+  }
   if (!donutCanvas.value) return
-  if (donutChart) donutChart.destroy()
   const data = moduleBreakdown.value.slice(0, 10)
+  if (!data.length) return
   donutChart = new Chart(donutCanvas.value, {
     type: 'doughnut',
     data: {
@@ -566,7 +642,7 @@ const renderDonutChart = () => {
           callbacks: {
             label: (c) => {
               const total = c.dataset.data.reduce((a, b) => a + b, 0)
-              const pct = ((c.parsed / total) * 100).toFixed(1)
+              const pct = total ? ((c.parsed / total) * 100).toFixed(1) : '0'
               return `${c.label}: ${formatNum(c.parsed)} (${pct}%)`
             }
           }
@@ -591,6 +667,7 @@ watch(rawEvents, () => recomputeTops(), { deep: true })
 
 <style scoped>
 .ba-container { padding: 16px; }
+.ba-alert { margin-bottom: 16px; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
 .title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid #d4af37; padding-left: 12px; font-weight: 800; }
 .title-box .subtitle { color: #999; font-size: 12px; padding-left: 17px; letter-spacing: 2px; }
@@ -665,6 +742,10 @@ watch(rawEvents, () => recomputeTops(), { deep: true })
 .empty { padding: 40px; text-align: center; color: #ccc; }
 .data-source-tip { background: #fdf6ec; padding: 10px 14px; border-radius: 8px; color: #b7950b; font-size: 12px; display: flex; align-items: center; gap: 8px; }
 .data-source-tip code { background: rgba(255,255,255,0.6); padding: 1px 6px; border-radius: 4px; font-family: monospace; }
+.guide-body { font-size: 13px; color: #444; line-height: 1.6; }
+.guide-body h4 { margin: 16px 0 8px; color: #2D6A4F; font-size: 14px; }
+.guide-body ul { margin: 0; padding-left: 18px; }
+.guide-body code { background: #f5f5f5; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
 
 @media (max-width: 1200px) {
   .kpi-strip { grid-template-columns: repeat(3, 1fr); }

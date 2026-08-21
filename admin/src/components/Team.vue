@@ -209,6 +209,9 @@
               :src="url"
               :preview-src-list="current.httpGallery"
               :initial-index="i"
+              preview-teleported
+              :z-index="5000"
+              hide-on-click-modal
               fit="cover"
               class="gal-img"
             />

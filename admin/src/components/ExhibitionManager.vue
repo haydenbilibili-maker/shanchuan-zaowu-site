@@ -7,6 +7,9 @@
 
     <el-card shadow="never">
       <el-table :data="wikis" v-loading="loading" style="width: 100%">
+        <template #empty>
+          <el-empty description="暂无专题，点击右上角新建" :image-size="80" />
+        </template>
         <el-table-column label="封面" width="100">
           <template #default="scope">
             <el-image 
@@ -93,7 +96,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { db, getTempFileUrl, loginToCloud, COLLECTIONS } from '../cloud'
+import { getTempFileUrl, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const wikis = ref([])
@@ -110,24 +113,19 @@ const form = ref({
 const loadWikis = async () => {
   loading.value = true
   try {
-    // 确保数据库连接
-    const connected = await loginToCloud()
-    if (!connected) {
-      ElMessage.error('数据库连接失败，请检查网络或配置')
-      return
-    }
+    const rows = await fetchCollectionSorted(COLLECTIONS.CMS_WIKIS, {
+      limit: 200,
+      throwOnError: true,
+      sortFn: (a, b) => (b._createTime || b.createTime || 0) - (a._createTime || a.createTime || 0),
+    })
     
-    // 读取 cms_wikis 集合（小程序使用的集合名）
-    const res = await db.collection(COLLECTIONS.CMS_WIKIS).orderBy('_createTime', 'desc').get()
-    
-    wikis.value = await Promise.all(res.data.map(async item => ({
+    wikis.value = await Promise.all(rows.map(async item => ({
       ...item,
       httpCover: await getTempFileUrl(item.coverImage || item.cover)
     })))
   } catch (e) {
     console.error('加载专题失败', e)
     ElMessage.error('加载失败: ' + (e.message || '未知错误'))
-    // 如果集合不存在，列表为空
     wikis.value = []
   } finally {
     loading.value = false
@@ -157,12 +155,6 @@ const editItem = (row) => {
 const saveWiki = async () => {
   if (!form.value.title) return ElMessage.warning('标题必填')
   
-  const connected = await loginToCloud()
-  if (!connected) {
-    ElMessage.error('数据库连接失败')
-    return
-  }
-  
   const tags = form.value.tagsStr.split(/[,，]/).map(s => s.trim()).filter(s => s)
   
   const data = {
@@ -180,12 +172,12 @@ const saveWiki = async () => {
 
   try {
     if (isEditing.value) {
-      await db.collection(COLLECTIONS.CMS_WIKIS).doc(form.value._id).update(data)
+      await cdnUpdate(COLLECTIONS.CMS_WIKIS, form.value._id, data)
       ElMessage.success('更新成功')
     } else {
       data._createTime = Date.now()
       data.createTime = Date.now()
-      await db.collection(COLLECTIONS.CMS_WIKIS).add(data)
+      await cdnAdd(COLLECTIONS.CMS_WIKIS, data)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
@@ -199,12 +191,7 @@ const saveWiki = async () => {
 const deleteItem = (row) => {
   ElMessageBox.confirm('确定删除该专题吗？', '警告', { type: 'warning' }).then(async () => {
     try {
-      const connected = await loginToCloud()
-      if (!connected) {
-        ElMessage.error('数据库连接失败')
-        return
-      }
-      await db.collection(COLLECTIONS.CMS_WIKIS).doc(row._id).remove()
+      await cdnRemove(COLLECTIONS.CMS_WIKIS, row._id)
       ElMessage.success('已删除')
       loadWikis()
     } catch (e) {

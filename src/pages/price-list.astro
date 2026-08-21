@@ -642,6 +642,7 @@ const rows = priceListItems.map(renderRow);
 
 <script>
   import { submitPurchaseIntent } from '../lib/purchaseIntent';
+  import { applyPriceListToDom, fetchPublishedPriceList } from '../lib/priceListCloud';
 
   function setChipActive(chip: HTMLButtonElement, on: boolean) {
     chip.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -656,6 +657,8 @@ const rows = priceListItems.map(renderRow);
   function initPriceFilters() {
     const root = document.querySelector('[data-price-list]');
     if (!root) return;
+    if ((root as HTMLElement).dataset.filtersBound === 'true') return;
+    (root as HTMLElement).dataset.filtersBound = 'true';
 
     const packagingBar = root.querySelector<HTMLElement>('[data-filter-dim="packaging"]');
     const bioBar = root.querySelector<HTMLElement>('[data-filter-dim="bio"]');
@@ -665,18 +668,18 @@ const rows = priceListItems.map(renderRow);
     const mobileList = root.querySelector<HTMLElement>('[data-price-mobile-list]');
     if (!packagingBar || !bioBar || !countEl || !emptyEl) return;
 
-    const desktopRows = Array.from(
-      root.querySelectorAll<HTMLElement>('tbody .price-list-row[data-packaging]')
-    );
-    const mobileRows = Array.from(
-      root.querySelectorAll<HTMLElement>('[data-price-mobile-list] .price-list-row[data-packaging]')
-    );
-    const itemTotal = desktopRows.length || mobileRows.length;
-
     let packaging: string = 'all';
     let bio: string = 'all';
 
     function apply() {
+      const desktopRows = Array.from(
+        root.querySelectorAll<HTMLElement>('tbody .price-list-row[data-packaging]')
+      );
+      const mobileRows = Array.from(
+        root.querySelectorAll<HTMLElement>('[data-price-mobile-list] .price-list-row[data-packaging]')
+      );
+      const itemTotal = desktopRows.length || mobileRows.length;
+
       let visible = 0;
       const match = (el: HTMLElement) => {
         const p = el.dataset.packaging || '';
@@ -710,6 +713,8 @@ const rows = priceListItems.map(renderRow);
         history.replaceState(null, '', next);
       }
     }
+
+    document.addEventListener('price-list:hydrated', () => apply());
 
     function bindBar(bar: HTMLElement, dim: 'packaging' | 'bio') {
       const chips = Array.from(bar.querySelectorAll<HTMLButtonElement>('.price-filter-chip'));
@@ -1359,12 +1364,20 @@ const rows = priceListItems.map(renderRow);
     render();
   }
 
+  async function hydratePriceListFromCloud() {
+    const result = await fetchPublishedPriceList();
+    if (result.source !== 'cloud' || !result.items.length) return;
+    applyPriceListToDom(result.items);
+    initThumbFallbacks();
+  }
+
   function initPriceListPage() {
     syncPriceHeaderOffset();
     initPriceFilters();
     initThumbFallbacks();
     initPriceZoom();
     initPurchaseCart();
+    void hydratePriceListFromCloud();
   }
 
   initPriceListPage();

@@ -3,17 +3,12 @@
  * 统一的数据获取接口，供AI功能使用
  * 优化：订单数据优先从财务报表获取，确保数据一致性
  */
-import { db, loginToCloud, getCollectionData, countCollection, COLLECTIONS } from '../cloud'
+import { getCollectionData, countCollection, COLLECTIONS } from '../cloud'
 import { fetchFinancialData } from './financialData'
 
 export async function fetchStoreData(showMessage = false, options = {}) {
   const { useFinancialData = true, period = 'week' } = options
   try {
-    const connected = await loginToCloud()
-    if (!connected) {
-      throw new Error('数据库连接失败')
-    }
-
     const now = new Date()
     const weekStart = new Date(now)
     weekStart.setDate(now.getDate() - now.getDay())
@@ -23,7 +18,7 @@ export async function fetchStoreData(showMessage = false, options = {}) {
 
     const results = await Promise.allSettled([
       getCollectionData(COLLECTIONS.PRODUCTS, { limit: 1000 }).catch(() => []),
-      getCollectionData(COLLECTIONS.ORDERS, { orderBy: { field: 'createTime', order: 'desc' }, limit: 500 }).catch(() => []),
+      getCollectionData(COLLECTIONS.ORDERS, { limit: 500 }).catch(() => []),
       getCollectionData(COLLECTIONS.USERS, { limit: 1000 }).catch(() => []),
       getCollectionData(COLLECTIONS.ACTIVITIES, { limit: 100 }).catch(() => []),
       countCollection(COLLECTIONS.PRODUCTS).catch(() => 0),

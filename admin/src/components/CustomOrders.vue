@@ -29,27 +29,32 @@
     <div v-if="activeTab === 'inquiry'">
       <el-card shadow="never">
         <el-table :data="inquiries" v-loading="loading" stripe>
+          <template #empty>
+            <el-empty description="暂无客户询单（小程序企业团购/到店确认提交后出现）" :image-size="80" />
+          </template>
           <el-table-column label="询单号" width="160">
             <template #default="{ row }">
               <div class="ticket-no">{{ row._id.slice(0, 10) }}</div>
               <div class="ticket-type">{{ fmt(row.createTime) }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="意向商品/方案" min-width="220">
+          <el-table-column label="意向方案" min-width="220">
             <template #default="{ row }">
-              <div class="b-title">{{ row.title || row.payload?.productName || '未命名定制' }}</div>
-              <div class="b-sub" v-if="row.payload?.materials">材料：{{ formatMaterials(row.payload.materials) }}</div>
+              <div class="b-title">{{ inquiryTitle(row) }}</div>
+              <div class="b-sub" v-if="metaSummary(row)">{{ metaSummary(row) }}</div>
+              <div class="b-sub" v-if="row.message">留言：{{ row.message }}</div>
             </template>
           </el-table-column>
           <el-table-column label="联系方式" width="180">
             <template #default="{ row }">
-              <div>{{ row.contact?.name || row.userName || '-' }}</div>
-              <div class="phone-cell">📞 {{ row.contact?.phone || row.userPhone || '-' }}</div>
+              <div>{{ contactNameOf(row) }}</div>
+              <div class="phone-cell">{{ contactPhoneOf(row) }}</div>
+              <div class="b-sub" v-if="row.companyName">{{ row.companyName }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="预算" width="100">
+          <el-table-column label="数量" width="80">
             <template #default="{ row }">
-              <span class="price">¥{{ row.budget || row.payload?.budget || '面议' }}</span>
+              <span class="price">{{ row.quantity || '—' }}</span>
             </template>
           </el-table-column>
           <el-table-column label="状态" width="120">
@@ -59,12 +64,13 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="240" fixed="right">
+          <el-table-column label="操作" width="280" fixed="right">
             <template #default="{ row }">
               <el-button v-if="row.status === 'pending'" size="small" type="primary" color="#d4af37" @click="quoteInquiry(row)">报价</el-button>
+              <el-button v-if="row.status === 'pending'" size="small" @click="markContacted(row)">已联系</el-button>
               <el-button v-if="row.status === 'quoted'" size="small" type="success" @click="acceptInquiry(row)">确认接单</el-button>
               <el-button size="small" link @click="viewInquiry(row)">详情</el-button>
-              <el-button size="small" type="danger" link @click="closeInquiry(row)">关闭</el-button>
+              <el-button v-if="row.status !== 'closed'" size="small" type="danger" link @click="closeInquiry(row)">关闭</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -75,15 +81,18 @@
     <div v-if="activeTab === 'draft'">
       <el-card shadow="never">
         <el-table :data="drafts" v-loading="loading" stripe>
+          <template #empty>
+            <el-empty description="暂无定制草稿" :image-size="80" />
+          </template>
           <el-table-column label="方案标题" min-width="200">
             <template #default="{ row }">
-              <div class="b-title">{{ row.title || '未命名草稿' }}</div>
-              <div class="b-sub">用户：{{ row._openid?.slice(0, 12) }}...</div>
+              <div class="b-title">{{ row.title || row.customMeta?.specimen?.title || '未命名草稿' }}</div>
+              <div class="b-sub">用户：{{ row._openid?.slice(0, 12) || '—' }}...</div>
             </template>
           </el-table-column>
           <el-table-column label="工艺/材料" min-width="200">
             <template #default="{ row }">
-              <span>{{ row.customMeta?.craftLabel || '-' }}</span>
+              <span>{{ metaSummary(row) || '-' }}</span>
             </template>
           </el-table-column>
           <el-table-column label="分享状态" width="120">
@@ -94,7 +103,7 @@
           </el-table-column>
           <el-table-column label="关联预约" width="160">
             <template #default="{ row }">
-              <span v-if="row.linkedBookingId" class="link-id">{{ row.linkedBookingId.slice(0, 8) }}</span>
+              <span v-if="row.linkedBookingId || row.bookingId" class="link-id">{{ (row.linkedBookingId || row.bookingId).slice(0, 8) }}</span>
               <span v-else style="color:#ccc">未关联</span>
             </template>
           </el-table-column>
@@ -114,15 +123,19 @@
     <div v-if="activeTab === 'production'">
       <el-card shadow="never">
         <el-table :data="productions" v-loading="loading" stripe>
+          <template #empty>
+            <el-empty description="暂无生产工单（接单询单或小程序定制订单会出现在此）" :image-size="80" />
+          </template>
           <el-table-column label="工单号" width="160">
             <template #default="{ row }">
               <div class="ticket-no">{{ row.orderNo || row._id.slice(0, 10) }}</div>
+              <div class="ticket-type">{{ row._source === 'order' ? '定制订单' : '询单接单' }}</div>
             </template>
           </el-table-column>
           <el-table-column label="客户" width="180">
             <template #default="{ row }">
-              {{ row.contact?.name || row.userName || '-' }}
-              <div class="phone-cell">{{ row.contact?.phone || '' }}</div>
+              {{ contactNameOf(row) }}
+              <div class="phone-cell">{{ contactPhoneOf(row) }}</div>
             </template>
           </el-table-column>
           <el-table-column label="生产阶段" width="140">
@@ -134,12 +147,12 @@
           </el-table-column>
           <el-table-column label="负责师傅" width="140">
             <template #default="{ row }">
-              {{ row.framerName || '未分配' }}
+              {{ row.framerName || row.customMeta?.framer?.name || '未分配' }}
             </template>
           </el-table-column>
           <el-table-column label="预计完成" width="140">
             <template #default="{ row }">
-              {{ row.estimatedDate || '-' }}
+              {{ row.estimatedDate || row.quote?.estimatedDate || '-' }}
             </template>
           </el-table-column>
           <el-table-column label="操作" width="280" fixed="right">
@@ -165,6 +178,9 @@
       </div>
       <el-card shadow="never">
         <el-table :data="filteredConfigs" v-loading="loading" stripe>
+          <template #empty>
+            <el-empty description="暂无定制选项，可新增或由云函数种子配置兜底" :image-size="80" />
+          </template>
           <el-table-column label="名称" min-width="140">
             <template #default="{ row }">
               <div class="b-title">{{ row.name }}</div>
@@ -315,13 +331,41 @@ const fmt = (ts) => {
 
 const formatMaterials = (arr) => Array.isArray(arr) ? arr.join('/') : (arr || '')
 
+const contactNameOf = (row) =>
+  row?.contactName || row?.contact?.name || row?.userName || row?.products?.[0]?.buyerName || '-'
+const contactPhoneOf = (row) =>
+  row?.contactPhone || row?.contact?.phone || row?.userPhone || ''
+
+const inquiryTitle = (row) =>
+  row?.summary ||
+  row?.companyName ||
+  row?.typeLabel ||
+  row?.customMeta?.specimen?.title ||
+  row?.title ||
+  '定制意向'
+
+const metaSummary = (row) => {
+  const m = row?.customMeta
+  if (!m) return formatMaterials(row?.payload?.materials) || ''
+  if (m.craftLabel) return m.craftLabel
+  const parts = [
+    m.specimen?.title ? `标本：${m.specimen.title}` : '',
+    m.frame?.name ? `装裱：${m.frame.name}` : '',
+    m.packaging?.name ? `包装：${m.packaging.name}` : '',
+    m.framer?.name ? `标本师：${m.framer.name}` : '',
+  ].filter(Boolean)
+  return parts.join(' · ')
+}
+
 const STATUS_INQUIRY = {
-  pending: { text: '待报价', type: 'warning' },
+  pending: { text: '待跟进', type: 'warning' },
+  contacted: { text: '已联系', type: '' },
   quoted: { text: '已报价', type: '' },
   accepted: { text: '已接单', type: 'success' },
   closed: { text: '已关闭', type: 'info' }
 }
 const STATUS_PROD = {
+  pending_make: { text: '待制作', type: 'warning' },
   awaiting_intake: { text: '待收料', type: 'warning' },
   framing: { text: '装裱中', type: '' },
   packing: { text: '打包', type: '' },
@@ -348,9 +392,17 @@ const refresh = async () => {
         sortFn: (a, b) => (b.updateTime || 0) - (a.updateTime || 0)
       })
     } else if (activeTab.value === 'production') {
-      const rows = await fetchCollectionWhere('custom_inquiries', { status: 'accepted' }, 200)
-      rows.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
-      productions.value = rows
+      // 询单接单 + 小程序定制订单（source=custom）合并
+      const [acceptedInquiries, customOrders] = await Promise.all([
+        fetchCollectionWhere('custom_inquiries', { status: 'accepted' }, 200).catch(() => []),
+        fetchCollectionWhere(COLLECTIONS.ORDERS, { source: 'custom' }, 200).catch(() => []),
+      ])
+      const merged = [
+        ...(acceptedInquiries || []).map((r) => ({ ...r, _source: 'inquiry', _collection: 'custom_inquiries' })),
+        ...(customOrders || []).map((r) => ({ ...r, _source: 'order', _collection: COLLECTIONS.ORDERS })),
+      ]
+      merged.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
+      productions.value = merged
     } else if (activeTab.value === 'config') {
       customConfigs.value = await fetchCollectionSorted(COLLECTIONS.CUSTOM_CONFIGS, {
         limit: 200,
@@ -368,12 +420,25 @@ const refresh = async () => {
 const quoteInquiry = (row) => {
   currentRow.value = row
   quoteForm.value = {
-    amount: row.budget || 0,
-    days: 14,
-    estimatedDate: '',
-    note: ''
+    amount: row.quote?.amount || row.budget || 0,
+    days: row.quote?.days || 14,
+    estimatedDate: row.quote?.estimatedDate || '',
+    note: row.quote?.note || ''
   }
   quoteDialog.value = true
+}
+
+const markContacted = async (row) => {
+  try {
+    await cdnUpdate('custom_inquiries', row._id, {
+      status: 'contacted',
+      updateTime: Date.now()
+    })
+    ElMessage.success('已标记为已联系')
+    refresh()
+  } catch (e) {
+    ElMessage.error(e.message || '更新失败')
+  }
 }
 
 const submitQuote = async () => {
@@ -389,7 +454,8 @@ const submitQuote = async () => {
         estimatedDate: quoteForm.value.estimatedDate,
         note: quoteForm.value.note,
         quotedAt: Date.now()
-      }
+      },
+      updateTime: Date.now()
     })
     ElMessage.success('报价已发送')
     quoteDialog.value = false
@@ -403,8 +469,9 @@ const acceptInquiry = (row) => {
   ElMessageBox.confirm('确认接单后将进入生产工单跟踪。', '接单确认', { type: 'warning' }).then(async () => {
     await cdnUpdate('custom_inquiries', row._id, {
       status: 'accepted',
-      productionStatus: 'awaiting_intake',
-      acceptedAt: Date.now()
+      productionStatus: 'pending_make',
+      acceptedAt: Date.now(),
+      updateTime: Date.now()
     })
     ElMessage.success('已接单')
     refresh()
@@ -413,21 +480,23 @@ const acceptInquiry = (row) => {
 
 const closeInquiry = (row) => {
   ElMessageBox.confirm('关闭询单？关闭后无法继续报价。', '关闭确认', { type: 'warning' }).then(async () => {
-    await cdnUpdate('custom_inquiries', row._id, { status: 'closed' })
+    await cdnUpdate('custom_inquiries', row._id, { status: 'closed', updateTime: Date.now() })
     ElMessage.success('已关闭')
     refresh()
   }).catch(() => {})
 }
 
 const advanceProduction = (row) => {
-  const order = ['awaiting_intake', 'framing', 'packing', 'shipped', 'completed']
-  const cur = row.productionStatus || 'awaiting_intake'
-  const idx = order.indexOf(cur)
+  const order = ['pending_make', 'awaiting_intake', 'framing', 'packing', 'shipped', 'completed']
+  const cur = row.productionStatus || 'pending_make'
+  const idx = Math.max(0, order.indexOf(cur))
   const next = order[Math.min(idx + 1, order.length - 1)]
+  const collection = row._collection || 'custom_inquiries'
   ElMessageBox.confirm(`推进至【${productionStatusLabel(next)}】？`, '阶段推进', { type: 'warning' }).then(async () => {
-    await cdnUpdate('custom_inquiries', row._id, {
+    await cdnUpdate(collection, row._id, {
       productionStatus: next,
-      [`stageTime.${next}`]: Date.now()
+      [`stageTime.${next}`]: Date.now(),
+      updateTime: Date.now()
     })
     ElMessage.success('已推进')
     refresh()
@@ -437,7 +506,8 @@ const advanceProduction = (row) => {
 const assignFramer = (row) => {
   ElMessageBox.prompt('请输入师傅姓名 / ID', '分配标本师', { inputPlaceholder: '例如：王师傅' }).then(async ({ value }) => {
     if (!value) return
-    await cdnUpdate('custom_inquiries', row._id, { framerName: value })
+    const collection = row._collection || 'custom_inquiries'
+    await cdnUpdate(collection, row._id, { framerName: value, updateTime: Date.now() })
     ElMessage.success('已分配')
     refresh()
   }).catch(() => {})

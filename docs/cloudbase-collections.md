@@ -49,7 +49,7 @@
 | `admin_operation_logs` | 操作审计 | 权限管理 → 操作日志 | — | 可为空 |
 | `admin_login_logs` | 登录审计 | 权限管理 → 登录日志 | — | 可为空 |
 
-**`configs` 集合说明**：会员成长值存在固定文档 `member_growth_rules`；飞书表映射为 `feishu_bitable`；B2B 供货价目为 `b2b_catalog`（Admin 订货履约「同步价目」写入，店长端 `listCatalog` 优先读取）。
+**`configs` 集合说明**：会员成长值存在固定文档 `member_growth_rules`；飞书表映射为 `feishu_bitable`；B2B 供货价目为 `b2b_catalog`（Admin「报价单配置」发布或订货履约「同步价目」写入，店长端 `listCatalog` 优先读取）。
 
 **`marketing_rules_config` 文档 ID**（可选预置，或在 ERP 各 Tab 点保存）：
 
@@ -120,16 +120,22 @@
 | 集合名 | 用途 |
 |--------|------|
 | `support_tickets` | 客服工单 |
-| `support_configs` | 客服入口配置 |
+| `support_configs` | 客服入口配置（`getSupportConfig`；Admin「客服入口配置」`56`）；CLI：`npm run provision:miniapp-ops` |
 | `custom_inquiries` | 定制咨询 |
 | `purchase_intents` | 官网报价单采购意向（`/price-list` 提交；ERP「采购意向」）；规则见 `cloudbase/rules/purchase_intents.json`，字段见 `cloudbase/schema/purchase_intents.md`；CLI：`cd admin && node scripts/provision-purchase-intents.mjs` |
+| `price_list_items` | 官网线下供货报价条目（`/price-list` 运行时读；Admin「报价单配置」`57`）；规则见 `cloudbase/rules/price_list_items.json`，字段见 `cloudbase/schema/price_list_items.md`；CLI：`cd admin && npm run provision:price-list` |
 | `custom_drafts` | 定制草稿 |
 | `pet_memorial_orders` | 伴宠记忆订单 |
+| `pet_craft_configs` | 伴宠工艺配置（`getPetMemorialConfig`；Admin 伴宠 → 工艺配置） |
+| `care_guides` | 养护指南（`getCareGuides`；Admin「养护指南」）；CLI：`npm run provision:miniapp-ops` |
+| `stores` | C 端门店主数据（`getStoreConfig`；Admin「C端门店展区」；≠ ERP 店铺合规档案） |
+| `store_zones` | C 端展区动线 |
+| `rewards` | 积分兑换品（`redeemReward`；Admin 权益与营销 → 积分兑换） |
 | `user_behaviors` | 用户行为埋点 |
 | `analytics_daily` | 日聚合统计 |
 | `user_messages` | 站内消息 |
 | `message_templates` | 云函数消息模板（与 ERP `notification_templates` 可并存） |
-| `waitlist` | 预约候补 |
+| `waitlist` | 预约候补（Admin「预约与核销 → 候补队列」） |
 | `booking_reminders` | 预约提醒记录 |
 | `store_visits` | 到店签到 |
 | `user_addresses` | 收货地址 |
@@ -204,6 +210,14 @@
 | `finance_records.json` | `finance_records` |
 | `finance_settings.json` | `finance_settings` |
 | `store_ledger.json` | `store_ledger` |
+| `care_guides.json` | `care_guides` |
+| `stores.json` | `stores` |
+| `store_zones.json` | `store_zones` |
+| `pet_craft_configs.json` | `pet_craft_configs` |
+| `rewards.json` | `rewards` |
+| `waitlist.json` | `waitlist` |
+| `support_configs.json` | `support_configs` |
+| `price_list_items.json` | `price_list_items` |
 
 ---
 
@@ -290,16 +304,32 @@
 
 ---
 
-## 六、批量创建集合（控制台操作指引）
+## 六、批量创建集合（脚本优先）
 
-CloudBase 控制台暂不支持一条命令批量建表，建议：
+环境：`cloud1-8gnkty5bfff9f0bf`。在 `admin/.env` 配置腾讯云 API 密钥（`TCB_SECRET_ID` / `TCB_SECRET_KEY`，见 `admin/.env.example`，**勿提交**）。
 
-1. 打开 **数据库** → **新建集合**
-2. 按 **第二节 P0 表格** 逐个创建（约 12 个）
-3. 进入每个集合 → **权限设置** → 自定义 → 粘贴对应 `cloudbase/rules/*.json`
-4. 回到 ERP 各配置页点 **保存** 或 **刷新**，由应用写入首条记录
+```bash
+# 一条命令：幂等建齐仓库已登记的业务集合 + 部署 cloudbase/rules
+cd admin && npm run provision:all
 
-若某集合已存在，跳过即可；只需补权限规则。
+# 仅小程序运营对齐（care_guides / stores / store_zones / pet_craft_configs / rewards / waitlist / support_configs）
+cd admin && npm run provision:miniapp-ops
+
+# 不写库，只列出任务
+cd admin && npm run provision:all:dry
+```
+
+| npm script | 脚本 | 说明 |
+|------------|------|------|
+| `provision:all` | `scripts/provision-all.mjs` | 统一入口（内容工厂、订货、飞书、小程序运营等） |
+| `provision:miniapp-ops` | `scripts/provision-miniapp-ops.mjs` | 本轮 6 集合 |
+| `provision:content` 等 | 各 `provision-*.mjs` | 分域脚本（仍可单独跑） |
+
+共用逻辑：`admin/scripts/lib/cloudbaseProvision.mjs`（`createCollectionIfNotExists` + `modifyResourcePermission`）。
+
+**无密钥时**：打开控制台 → **数据库 → 新建集合** → 各集合 **权限设置** 粘贴 `cloudbase/rules/*.json`。
+
+若某集合已存在，脚本会跳过创建并重新部署规则。
 
 ---
 
@@ -309,6 +339,7 @@ CloudBase 控制台暂不支持一条命令批量建表，建议：
 |----------|------|
 | `admin/src/cloud.js` → `COLLECTIONS` | ERP 集合名常量 |
 | `admin/src/utils/modulesRegistry.js` | ERP Tab 与组件映射 |
+| `admin/scripts/provision-*.mjs` | 远程建集合 + 规则 |
 | `miniprogram/cloudfunctions/getHomeConfig` | 小程序读 `home_configs` |
 | `cloudbase/rules/` | 权限 JSON 模板 |
 | `cloudbase/schema/` | 部分集合字段说明 |

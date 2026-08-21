@@ -91,7 +91,11 @@
             </div>
           </template>
           <div class="chart-box" @click="handleChartClick" style="position: relative;">
-            <canvas ref="chartCanvas"></canvas>
+            <div v-if="chartEmpty && !loading" class="chart-empty">
+              <div class="chart-empty-title">近 7 日账本暂无营收</div>
+              <div class="chart-empty-desc">请到财务模块录入日账，或确认今日订单已同步入账。下方仍会渲染零轴趋势供对照。</div>
+            </div>
+            <canvas ref="chartCanvas" :class="{ 'chart-dimmed': chartEmpty && !loading }"></canvas>
             <transition name="fade">
               <div v-if="showRobotMessage" class="chart-blessing">
                 {{ robotMessage }}
@@ -213,6 +217,39 @@
               <div class="todo-icon bg-red"><el-icon><Service /></el-icon></div>
               <div class="todo-content"><div class="t-title">售后/退款</div><div class="t-desc">需审核处理</div></div>
               <div class="todo-num">{{ stats.refunding }}</div>
+            </div>
+            <div class="todo-item" @click="openPromoArchive('seckill')" :class="{active: stats.seckillActive > 0 || stats.seckillExpired > 0}">
+              <div class="todo-icon bg-red"><el-icon><Timer /></el-icon></div>
+              <div class="todo-content">
+                <div class="t-title">秒杀商品</div>
+                <div class="t-desc">
+                  进行中 {{ stats.seckillActive }}
+                  <template v-if="stats.seckillExpired"> · 已过期 {{ stats.seckillExpired }}</template>
+                </div>
+              </div>
+              <div class="todo-num" :class="{ 'todo-num-warn': stats.seckillExpired > 0 }">
+                {{ stats.seckillActive }}
+              </div>
+            </div>
+            <div class="todo-item" @click="openPromoArchive('group')" :class="{active: stats.groupProducts > 0}">
+              <div class="todo-icon bg-orange"><el-icon><UserFilled /></el-icon></div>
+              <div class="todo-content">
+                <div class="t-title">拼团商品</div>
+                <div class="t-desc">已启用拼团的 SKU</div>
+              </div>
+              <div class="todo-num">{{ stats.groupProducts }}</div>
+            </div>
+            <div
+              v-if="stats.seckillExpired > 0"
+              class="todo-item active"
+              @click="openPromoArchive('seckill_expired')"
+            >
+              <div class="todo-icon bg-orange"><el-icon><Warning /></el-icon></div>
+              <div class="todo-content">
+                <div class="t-title">秒杀已过期</div>
+                <div class="t-desc">仍开启但 endTime 已过，建议关闭</div>
+              </div>
+              <div class="todo-num todo-num-warn">{{ stats.seckillExpired }}</div>
             </div>
             <div class="todo-item" @click="$emit('switch-tab', '1')" :class="{active: stats.lowStock > 0}">
               <div class="todo-icon bg-orange"><el-icon><Warning /></el-icon></div>
@@ -373,8 +410,8 @@
 
 <script setup>
 import { reactive, ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
-import { Clock, Trophy, Bell, Box, Service, Warning, EditPen, Plus, Ticket, User, DataAnalysis, DataBoard, WarningFilled, InfoFilled, ArrowUp, ArrowDown, Star, Refresh, Calendar } from '@element-plus/icons-vue'
-import { loginToCloud, cdnCount, fetchCollectionLimit, fetchCollectionWhere, getCdnDatabase } from '../cloud'
+import { Clock, Trophy, Bell, Box, Service, Warning, EditPen, Plus, Ticket, User, DataAnalysis, DataBoard, WarningFilled, InfoFilled, ArrowUp, ArrowDown, Star, Refresh, Calendar, Timer, UserFilled } from '@element-plus/icons-vue'
+import { cdnCount, fetchCollectionLimit, fetchCollectionWhere, getCdnDatabase } from '../cloud'
 import Chart from 'chart.js/auto'
 import CompanionRobot from './CompanionRobot.vue'
 import { ElMessage } from 'element-plus'
@@ -383,6 +420,7 @@ const emit = defineEmits(['switch-tab'])
 
 const loading = ref(false)
 const currentTime = ref(new Date().toLocaleTimeString())
+const chartEmpty = ref(false)
 const chartRange = ref('7')
 const chartCanvas = ref(null) // 🟢 使用 ref 引用 canvas
 let chartInstance = null
@@ -464,6 +502,14 @@ const handleNavigate = (target) => {
   }
 }
 
+/** 跳转藏品库并带上营销筛选（App.vue 读 sessionStorage） */
+const openPromoArchive = (filter) => {
+  try {
+    sessionStorage.setItem('sc_archive_promo_filter', filter)
+  } catch (_) { /* ignore */ }
+  emit('switch-tab', '1')
+}
+
 // 核心数据
 const stats = reactive({
   todaySales: 0,
@@ -484,7 +530,11 @@ const stats = reactive({
   pendingCustom: 0,
   pendingPet: 0,
   pendingTickets: 0,
-  pendingComments: 0
+  pendingComments: 0,
+  seckillProducts: 0,
+  seckillActive: 0,
+  seckillExpired: 0,
+  groupProducts: 0
 })
 
 // 🟢 C 端小程序脉搏（来自 analytics_daily + user_behaviors 集合）
@@ -508,16 +558,6 @@ const businessStatus = computed(() => {
 const refreshAll = async () => {
   loading.value = true
   try {
-    // 确保数据库连接
-    const connected = await loginToCloud()
-    if (!connected) {
-      console.error('数据库连接失败，无法刷新数据')
-      loading.value = false
-      return
-    }
-    
-    // 确保 CDN 数据库可用
-    await getCdnDatabase()
     const now = new Date()
     const todayStr = now.toISOString().split('T')[0] 
     const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
@@ -541,7 +581,6 @@ const refreshAll = async () => {
     // 计算订单相关数据
     const monthOrderRecords = monthRecords.filter(r => r.orderCount && r.orderCount > 0)
     const totalMonthOrders = monthOrderRecords.reduce((sum, r) => sum + (r.orderCount || 0), 0)
-    const todayOrderCount = todayRecord?.orderCount || 0
     
     const costRate = (financeSettings?.costRate || 25) / 100
     const estProfit = Math.round(ledgerMonthSales * (1 - costRate))
@@ -581,26 +620,28 @@ const refreshAll = async () => {
     ])
     const refundingTotal = refundingOrders + pendingRefunds
 
-    // 3. 实时订单兜底（今日营收）
+    // 3. 实时订单兜底：仅当今日尚未入账时才全量扫 orders（有账本则跳过，减一次 500 拉取）
     let realtimeTodaySales = 0
     let realtimeOrderCount = 0
-    try {
-      const todayOrderRows = await fetchCollectionLimit('orders', { limit: 500 })
-      todayOrderRows.forEach(o => {
-        const ts = o.createTime || o._createTime || 0
-        if (ts >= startMs && ['paid', 'shipped', 'received'].includes(o.status)) {
-          realtimeTodaySales += (parseFloat(o.totalPrice) || 0)
-          realtimeOrderCount++
-        }
-      })
-    } catch (e) {
-      console.warn('[Dashboard] 今日订单兜底失败', e?.message)
+    if (!todayRecord) {
+      try {
+        const todayOrderRows = await fetchCollectionLimit('orders', { limit: 500 })
+        todayOrderRows.forEach(o => {
+          const ts = o.createTime || o._createTime || 0
+          if (ts >= startMs && ['paid', 'shipped', 'received'].includes(o.status)) {
+            realtimeTodaySales += (parseFloat(o.totalPrice) || 0)
+            realtimeOrderCount++
+          }
+        })
+      } catch (e) {
+        console.warn('[Dashboard] 今日订单兜底失败', e?.message)
+      }
     }
 
     // 4. 合并数据（优先使用财务账本数据，保证数据一致性）
     if (todayRecord) {
         stats.todaySales = todayRecord.revenue
-        stats.todayOrderCount = todayRecord.orderCount || realtimeOrderCount
+        stats.todayOrderCount = todayRecord.orderCount || 0
         stats.isManualData = true
     } else {
         stats.todaySales = realtimeTodaySales
@@ -623,6 +664,36 @@ const refreshAll = async () => {
     stats.pendingPet = petTotal
     stats.pendingTickets = ticketTotal
     stats.pendingComments = commentTotal
+
+    // 活动商品 KPI（商品侧 seckill / groupBuying；秒杀拆「进行中 / 已过期」）
+    try {
+      const productRows = await fetchCollectionLimit('products', { limit: 500 })
+      const nowMs = Date.now()
+      let seckillN = 0
+      let seckillActive = 0
+      let seckillExpired = 0
+      let groupN = 0
+      productRows.forEach((p) => {
+        if (p?.seckill?.enabled) {
+          seckillN += 1
+          const end = p.seckill.endTime ? Number(p.seckill.endTime) : null
+          if (end && end < nowMs) seckillExpired += 1
+          else seckillActive += 1
+        }
+        if (p?.groupBuying?.enabled) groupN += 1
+      })
+      stats.seckillProducts = seckillN
+      stats.seckillActive = seckillActive
+      stats.seckillExpired = seckillExpired
+      stats.groupProducts = groupN
+    } catch (e) {
+      console.warn('[Dashboard] 活动商品统计失败', e?.message)
+      stats.seckillProducts = 0
+      stats.seckillActive = 0
+      stats.seckillExpired = 0
+      stats.groupProducts = 0
+    }
+
     stats.totalTodos = pendingTotal + refundingTotal + stockTotal
                      + bookingTotal + customTotal + petTotal
                      + ticketTotal + commentTotal
@@ -800,6 +871,8 @@ const renderChart = (records) => {
     dataPoints.push(rec ? rec.revenue : 0)
   }
 
+  chartEmpty.value = dataPoints.every((v) => !v)
+
   if (chartInstance) chartInstance.destroy()
 
   chartInstance = new Chart(ctx, {
@@ -900,6 +973,22 @@ onUnmounted(() => {
 .middle-right .todo-card { flex: 1; }
 .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 .chart-box { height: 250px; position: relative; width: 100%; } /* 确保有宽度 */
+.chart-empty {
+  position: absolute;
+  inset: 12px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72));
+  border-radius: 8px;
+}
+.chart-empty-title { font-size: 14px; font-weight: 700; color: #606266; }
+.chart-empty-desc { margin-top: 6px; font-size: 12px; color: #909399; max-width: 360px; line-height: 1.5; }
+.chart-dimmed { opacity: 0.35; }
 
 /* 待办列表 */
 .todo-list { display: flex; flex-direction: column; gap: 15px; }
@@ -916,6 +1005,7 @@ onUnmounted(() => {
 .t-title { font-weight: bold; font-size: 14px; color: #333; }
 .t-desc { font-size: 12px; color: #999; margin-top: 2px; }
 .todo-num { font-weight: bold; font-size: 16px; color: #333; }
+.todo-num-warn { color: #E6A23C; }
 
 /* 快捷操作 */
 .quick-actions h3 { border-left: 4px solid var(--brand-green-500); padding-left: 12px; margin-bottom: 20px; font-size: 16px; }

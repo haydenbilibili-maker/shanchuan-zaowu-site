@@ -14,6 +14,9 @@
               style="width: 160px; height: 90px; border-radius: 8px;" 
               fit="cover"
               :preview-src-list="[scope.row.httpImage]"
+              preview-teleported
+              :z-index="5000"
+              hide-on-click-modal
             />
           </template>
         </el-table-column>

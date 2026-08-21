@@ -14,6 +14,11 @@ export { ENV_ID, REGION }
 
 const CDN_URL = 'https://static.cloudbase.net/cloudbase-js-sdk/2.11.0/cloudbase.full.js'
 
+export function isCloudbasePromiseBug(err) {
+  const msg = err?.message || String(err)
+  return msg.includes("setting 'promise'") || msg.includes('setting "promise"')
+}
+
 /** 确保 CDN SDK 可用（dev 热更新后 __cloudbaseCDN 可能丢失） */
 async function ensureCdnSdk() {
   if (window.__cloudbaseCDN?.init) {
@@ -70,6 +75,9 @@ function formatFnError(err) {
   if (/PERMISSION_DENIED|FUNCTION_NOT_FOUND|not found|不存在/i.test(blob)) {
     return '云函数无权调用或尚未部署。Admin 飞书同步请走 /api/feishu-sync 代理；小程序侧云函数请在微信开发者工具上传并配置环境变量。'
   }
+  if (isCloudbasePromiseBug({ message: msg })) {
+    return "CloudBase CDN/SDK 异常（setting 'promise'）。请确认 index.html 已预加载 CDN SDK，且业务走 getCdnDatabase，而非 bundle 内 db。"
+  }
   return msg
 }
 
@@ -85,11 +93,6 @@ export async function callCdnFunction(name, data = {}) {
   } catch (err) {
     throw new Error(formatFnError(err))
   }
-}
-
-export function isCloudbasePromiseBug(err) {
-  const msg = err?.message || String(err)
-  return msg.includes("setting 'promise'") || msg.includes('setting "promise"')
 }
 
 /** limit 拉取（不用 orderBy，避免索引/SDK bug） */

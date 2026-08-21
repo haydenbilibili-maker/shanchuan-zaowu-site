@@ -2,8 +2,9 @@
   <div ref="rootRef" class="realtime-monitor" :class="{ 'realtime-monitor--fs': isFullscreen }">
     <header class="monitor-header">
       <div class="monitor-header-brand">
-        <p class="monitor-kicker">LIVE · 经营监控</p>
-        <h1 class="monitor-title">实时数据大屏</h1>
+        <p class="monitor-kicker">{{ pageKicker }}</p>
+        <h1 class="monitor-title">{{ pageTitle }}</h1>
+        <p class="monitor-hint">{{ pageHint }}</p>
         <p class="monitor-meta">
           <span>上次更新 {{ lastUpdatedText }}</span>
           <template v-if="isAutoRefresh">
@@ -37,6 +38,16 @@
       </div>
     </header>
 
+    <el-alert
+      v-if="loadError"
+      type="error"
+      :closable="false"
+      show-icon
+      class="monitor-load-error"
+      :title="loadError"
+      description="请确认 CDN 云库可读（orders / products / users / analytics）。失败时勿把零 KPI 当成真实空闲。"
+    />
+
     <!-- 核心指标卡片区 -->
     <div class="kpi-grid">
       <div class="kpi-card revenue" :class="{ 'alert': revenueAlert }">
@@ -69,13 +80,15 @@
 
       <div class="kpi-card customers" :class="{ 'alert': customersAlert }">
         <div class="kpi-header">
-          <span class="kpi-label">活跃用户</span>
+          <span class="kpi-label">会员总数</span>
           <el-icon class="pulse-icon"><UserFilled /></el-icon>
         </div>
         <div class="kpi-value">{{ stats.activeUsers }}</div>
         <div class="kpi-footer">
-          <span>在线: {{ stats.onlineUsers }}</span>
-          <span class="kpi-change positive">实时</span>
+          <span>今日活跃 UV: {{ stats.onlineUsers != null ? stats.onlineUsers : '—' }}</span>
+          <span class="kpi-change" :class="stats.onlineUsers != null ? 'positive' : ''">
+            {{ stats.onlineUsersNote || '云库' }}
+          </span>
         </div>
       </div>
 
@@ -136,7 +149,10 @@
           </el-radio-group>
         </div>
         <div ref="revenueChartWrap" class="chart-container">
-          <canvas ref="revenueChartCanvas" />
+          <canvas v-show="revenueData.length" ref="revenueChartCanvas" />
+          <div v-if="!revenueData.length && !loading" class="empty-stream chart-empty">
+            {{ revenueEmptyNote || '暂无营收趋势数据' }}
+          </div>
         </div>
       </div>
 
@@ -322,9 +338,32 @@ import {
 } from '@element-plus/icons-vue'
 import { fetchStoreData } from '../utils/storeData'
 import { fetchFinancialData } from '../utils/financialData'
+import { fetchCollectionWhere, getCdnDatabase } from '../cloud'
+
+/** live=菜单「实时监控」；business=菜单「经营数据大屏」——同一组件，文案入口不同 */
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'live',
+    validator: (v) => ['live', 'business'].includes(v),
+  },
+})
+
+const pageTitle = computed(() =>
+  props.variant === 'business' ? '经营数据大屏' : '实时监控大屏'
+)
+const pageKicker = computed(() =>
+  props.variant === 'business' ? 'COCKPIT · 经营看板' : 'LIVE · 实时监控'
+)
+const pageHint = computed(() =>
+  props.variant === 'business'
+    ? '与「实时监控大屏」共用同一数据源；本入口侧重全屏经营看板展示'
+    : '与「经营数据大屏」共用同一数据源；本入口侧重自动刷新与阈值告警'
+)
 
 // 状态管理
 const loading = ref(false)
+const loadError = ref('')
 const isAutoRefresh = ref(true)
 const refreshInterval = ref(30) // 默认30秒
 let refreshTimer = null
@@ -366,7 +405,8 @@ const stats = ref({
   yesterdayOrders: 0,
   ordersChange: 0,
   activeUsers: 0,
-  onlineUsers: 0,
+  onlineUsers: null,
+  onlineUsersNote: '待埋点',
   lowStockCount: 0,
   outOfStockCount: 0,
   conversionRate: 0,
@@ -378,6 +418,8 @@ const stats = ref({
 const revenueChartCanvas = ref(null)
 const revenueChartRange = ref('24h')
 const revenueData = ref([])
+const revenueEmptyNote = ref('')
+const cachedOrders = ref([])
 
 // 订单流
 const recentOrders = ref([])
@@ -484,6 +526,7 @@ const formatRelativeTime = (timestamp) => {
 // 刷新数据
 const refreshData = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     // 获取财务数据（真实数据）
     const financialData = await fetchFinancialData({ period: 'today' })
@@ -511,9 +554,44 @@ const refreshData = async () => {
     const todayProfit = todayRevenue - todayCost
     const profitMargin = todayRevenue > 0 ? (todayProfit / todayRevenue * 100) : 0
     
-    // 计算转化率（访问用户转订单，简化计算）
-    const totalUsers = data?.members?.total || 0
-    const conversionRate = totalUsers > 0 ? (todayOrders / totalUsers * 100) : 0
+    // 今日活跃 UV：优先 analytics_daily / user_behaviors，无埋点则标注待埋点
+    let todayUv = null
+    let uvNote = '待埋点'
+    try {
+      const todayStr = new Date().toISOString().split('T')[0]
+      const startMs = new Date(todayStr + 'T00:00:00').getTime()
+      const cdnDb = await getCdnDatabase()
+      const _ = cdnDb.command
+      const daily = await fetchCollectionWhere('analytics_daily', { dateKey: todayStr }, 200)
+      if (daily.length) {
+        const uvSet = new Set()
+        daily.forEach((r) => (Array.isArray(r.uv) ? r.uv : []).forEach((u) => uvSet.add(u)))
+        todayUv = uvSet.size
+        uvNote = '今日埋点 UV'
+      } else {
+        const behaviors = await fetchCollectionWhere(
+          'user_behaviors',
+          { timestamp: _.gte(startMs) },
+          500
+        )
+        if (behaviors.length) {
+          const uvSet = new Set()
+          behaviors.forEach((b) => {
+            const uid = b.userId || b._openid
+            if (uid) uvSet.add(uid)
+          })
+          todayUv = uvSet.size
+          uvNote = '今日行为 UV'
+        }
+      }
+    } catch (e) {
+      console.warn('[RealtimeMonitor] 今日 UV 拉取失败', e?.message)
+      uvNote = 'UV 加载失败'
+    }
+
+    // 转化率：今日订单 / 今日 UV（有埋点时）；否则用会员总数作分母并标注口径
+    const conversionBase = todayUv != null && todayUv > 0 ? todayUv : (data?.members?.total || 0)
+    const conversionRate = conversionBase > 0 ? (todayOrders / conversionBase * 100) : 0
     
     stats.value = {
       todayRevenue,
@@ -523,13 +601,17 @@ const refreshData = async () => {
       yesterdayOrders,
       ordersChange,
       activeUsers: data?.members?.total || 0,
-      onlineUsers: Math.min(data?.members?.total || 0, Math.floor(Math.random() * 20) + 5), // 模拟在线用户（5-25人）
+      onlineUsers: todayUv,
+      onlineUsersNote: uvNote,
       lowStockCount: data?.inventory?.lowStock || 0,
       outOfStockCount: data?.inventory?.outOfStock || 0,
       conversionRate,
       todayProfit,
       profitMargin
     }
+
+    // 保留订单列表供小时级营收聚合
+    cachedOrders.value = data?.orders?.items || []
     
     // 更新订单流（从订单列表获取最新订单，按时间倒序）
     if (data?.orders?.items && data.orders.items.length > 0) {
@@ -649,116 +731,91 @@ const refreshData = async () => {
     
   } catch (error) {
     console.error('[RealtimeMonitor] 刷新数据失败:', error)
-    ElMessage.error('刷新数据失败: ' + (error.message || '未知错误'))
+    loadError.value = '刷新数据失败: ' + (error.message || '未知错误')
+    ElMessage.error(loadError.value)
   } finally {
     loading.value = false
     lastUpdated.value = Date.now()
   }
 }
 
-// 更新营收图表数据（使用真实财务记录）
+// 更新营收图表数据（财务账本 / 订单真实聚合，无假波动）
 const updateRevenueChartData = async (financialData = null) => {
   try {
+    revenueEmptyNote.value = ''
     let records = []
-    
+
     if (revenueChartRange.value === '1h') {
-      // 1小时数据：使用今日数据按小时拆分（简化处理）
-      const todayRevenue = stats.value.todayRevenue
+      // 今日订单按小时聚合（无订单级实时流则空态，不造假曲线）
       const now = new Date()
-      const currentHour = now.getHours()
-      const dataPoints = Math.max(currentHour + 1, 6) // 至少6个数据点
-      const hourlyRevenue = todayRevenue / dataPoints
-      
-      revenueData.value = Array.from({ length: dataPoints }, (_, i) => {
-        const hour = now.getHours() - (dataPoints - i - 1)
-        const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0).getTime()
-        return {
-          time,
-          value: hourlyRevenue * (0.8 + Math.random() * 0.4) // 添加一些波动
-        }
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+      const paid = (cachedOrders.value || []).filter((order) => {
+        const t = order.createTime || order._createTime || 0
+        return t >= startOfDay && ['paid', 'shipped', 'received', 'completed'].includes(order.status)
       })
-    } else if (revenueChartRange.value === '24h') {
-      // 24小时数据：获取最近7天的数据
-      const weekData = await fetchFinancialData({ period: 'week' })
-      records = weekData.records || []
-      
-      if (records.length > 0) {
-        // 按日期分组，计算每天的收入
-        const dailyRevenue = {}
-        records.forEach(record => {
-          const date = record.date
-          if (!dailyRevenue[date]) {
-            dailyRevenue[date] = 0
-          }
-          dailyRevenue[date] += record.revenue || 0
-        })
-        
-        // 转换为时间序列数据
-        const sortedDates = Object.keys(dailyRevenue).sort()
-        revenueData.value = sortedDates.slice(-7).map(date => {
-          const dateObj = new Date(date + 'T00:00:00')
-          return {
-            time: dateObj.getTime(),
-            value: dailyRevenue[date]
-          }
-        })
+      if (!paid.length) {
+        revenueData.value = []
+        revenueEmptyNote.value = '今日暂无已支付订单，无法绘制小时营收（待更高频财务流水）'
       } else {
-        // 如果没有数据，使用今日数据
-        const todayRevenue = stats.value.todayRevenue
-        revenueData.value = [{
-          time: new Date().setHours(0, 0, 0, 0),
-          value: todayRevenue
-        }]
+        const byHour = {}
+        paid.forEach((order) => {
+          const t = order.createTime || order._createTime || 0
+          const h = new Date(t).getHours()
+          byHour[h] = (byHour[h] || 0) + (Number(order.totalPrice || order.price) || 0)
+        })
+        const maxH = now.getHours()
+        revenueData.value = Array.from({ length: maxH + 1 }, (_, h) => ({
+          time: new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, 0, 0).getTime(),
+          value: byHour[h] || 0
+        }))
       }
-    } else if (revenueChartRange.value === '7d') {
-      // 7天数据：获取最近7天的数据
-      const weekData = await fetchFinancialData({ period: 'week' })
+    } else if (revenueChartRange.value === '24h' || revenueChartRange.value === '7d') {
+      const weekData = financialData || await fetchFinancialData({ period: 'week' })
       records = weekData.records || []
-      
+
       if (records.length > 0) {
         const dailyRevenue = {}
         records.forEach(record => {
           const date = record.date
-          if (!dailyRevenue[date]) {
-            dailyRevenue[date] = 0
-          }
+          if (!dailyRevenue[date]) dailyRevenue[date] = 0
           dailyRevenue[date] += record.revenue || 0
         })
-        
         const sortedDates = Object.keys(dailyRevenue).sort()
-        revenueData.value = sortedDates.slice(-7).map(date => {
-          const dateObj = new Date(date + 'T00:00:00')
-          return {
-            time: dateObj.getTime(),
+        const slice = revenueChartRange.value === '24h' ? sortedDates.slice(-1) : sortedDates.slice(-7)
+        // 24h 标签仍用日粒度账本；无日流水时尝试今日订单单点
+        if (revenueChartRange.value === '24h' && slice.length === 0) {
+          revenueData.value = []
+        } else if (revenueChartRange.value === '24h') {
+          // 展示最近有数据的日期（日账本）；若仅今日有值也可
+          const last7 = sortedDates.slice(-7)
+          revenueData.value = last7.map(date => ({
+            time: new Date(date + 'T00:00:00').getTime(),
             value: dailyRevenue[date]
-          }
-        })
+          }))
+        } else {
+          revenueData.value = slice.map(date => ({
+            time: new Date(date + 'T00:00:00').getTime(),
+            value: dailyRevenue[date]
+          }))
+        }
       } else {
         revenueData.value = []
+        revenueEmptyNote.value = '财务账本暂无记录'
       }
     }
-    
-    // 如果数据为空，使用默认数据
-    if (revenueData.value.length === 0) {
-      const todayRevenue = stats.value.todayRevenue || 0
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
-      revenueData.value = [{
-        time: todayStart.getTime(),
-        value: todayRevenue
-      }]
+
+    if (revenueData.value.length === 0 && !revenueEmptyNote.value) {
+      revenueEmptyNote.value = '暂无营收趋势数据'
     }
-    
+
     nextTick(() => {
       drawRevenueChart()
     })
   } catch (error) {
     console.error('[RealtimeMonitor] 更新图表数据失败:', error)
-    // 使用默认数据
-    revenueData.value = [{
-      time: Date.now(),
-      value: stats.value.todayRevenue || 0
-    }]
+    revenueData.value = []
+    revenueEmptyNote.value = '营收趋势加载失败: ' + (error.message || '未知错误')
+    ElMessage.error(revenueEmptyNote.value)
     nextTick(() => {
       drawRevenueChart()
     })
@@ -1172,6 +1229,9 @@ watch(
   box-shadow: var(--shadow-sm);
   position: relative;
 }
+.monitor-load-error {
+  margin: 0 0 var(--space-4);
+}
 
 .monitor-header::before {
   content: '';
@@ -1192,6 +1252,13 @@ watch(
   padding-left: var(--space-2);
 }
 
+.monitor-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--light-text-tertiary);
+  max-width: 520px;
+}
 .monitor-kicker {
   margin: 0 0 var(--space-1);
   font-size: var(--text-xs);
@@ -1557,6 +1624,14 @@ watch(
   text-align: center;
   padding: 40px;
   color: var(--light-text-tertiary);
+}
+.chart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
 
 .top-products {

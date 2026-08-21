@@ -2,6 +2,9 @@
  * 物业合作测算 v3 模型
  * 与《山海造物_水文化园19号楼_收益测算模型_v3.xlsx》100% 对齐
  *
+ * 评估案例：PRESET_PROPERTIES 中 status=declined（不合作）的案例为复盘样本，
+ * 附 decision / risks / dealTerms 结构化否决记录，供后续物业评估对照参考。
+ *
  * 核心思想：
  * - 以『这有山』门店实测坪效为锚
  * - 通过大店密度折让系数推算旗舰坪效（下行/中性/上行 = 锚×折让 ±20%）
@@ -25,7 +28,7 @@ export const DEFAULT_INPUTS = {
   city: '',
   address: '',
   proposalDate: '',
-  status: 'evaluating', // evaluating | negotiating | signed | rejected
+  status: 'evaluating', // evaluating | negotiating | signed | declined(不合作) | rejected(已搁置)
 
   // 一、关键参数
   areaTotal: 1000,           // 名义建筑面积 (㎡)
@@ -69,7 +72,12 @@ export const DEFAULT_INPUTS = {
   capexWorkshop: 28,         // 工坊设备 (万元)
   capexDesign: 45,           // 设计软装
   capexPrep: 18,             // 开办筹备
-  steadyGrowth: 0.08         // 稳态年增长（第四年起）
+  steadyGrowth: 0.08,        // 稳态年增长（第四年起）
+
+  // 评估记录（非计算字段，随案例保存展示）
+  risks: [],                 // 风险清单 [{ level: 'critical|high|medium|low', point: '...' }]
+  decision: null,            // 决策结论 { result: 'declined', summary: '不合作', date: 'YYYY-MM-DD', reasons: [...] }
+  dealTerms: []              // 合作条件清单（原文记录，用于评估案例复盘）
 }
 
 // ============ 计算引擎 ============
@@ -389,6 +397,78 @@ export const PRESET_PROPERTIES = [
     capexPrep: 18,
     steadyGrowth: 0.08,
     note: '依据《物业合作提案 v3》。以这有山门店实测坪效为锚（淡季 2857 / 旺季 4286 元/㎡/月），通过 0.30 大店折让推算旗舰坪效；中性情景下经营坪效 ≈ 1071 元/㎡/月；推荐阶梯·毛利分润结构。'
+  },
+  {
+    id: 'preset-shichahai-minfang',
+    name: '北京什刹海民房（评估案例）',
+    city: '北京',
+    address: '什刹海地区民房（约 70㎡ · 非营运场景）',
+    proposalDate: '2026-08-14',
+    status: 'declined',
+    isPreset: true,
+    // 案例口径：70㎡ 民房 · 4 个月免租 · 月营收超 2 万进入分成
+    areaTotal: 70,
+    areaOpRatio: 1.0,
+    anchorArea: 70,
+    anchorRevenueLow: 20,
+    anchorRevenueHigh: 30,
+    anchorNetMargin: 0.495,
+    bigStoreDiscount: 0.10,   // 非营运民房 + 胡同游业态：按锚点坪效 10% 保守估测
+    scenario: 1,               // 下行（保守）
+    growthY2: 0.30,
+    growthY3: 0.25,
+    monthsPerYear: 12,
+    grossMargin: 0.60,
+    opCostRate: 0.20,
+    baseRent: 214,             // 实际房租 15000 元/月 ÷ 70㎡（对方虚报 25000 → 357 元/㎡/月）
+    rentGrowth: 0.05,
+    rev_pure_share: 0.28,
+    rev_floor_rent: 30,
+    rev_floor_share: 0.22,
+    ladder_floor_rent: 20,
+    ladder_share_y1: 0.20,
+    ladder_share_y2: 0.25,
+    ladder_share_y3: 0.30,
+    renovOp: 2800,
+    renovPublic: 2000,
+    renovPublicParkPart: 0.60,
+    renovBase: 1200,
+    renovBaseParkPart: 0.80,
+    capexExhibition: 15,       // 轻量展陈（70㎡ 规模）
+    capexIP: 5,
+    capexWorkshop: 5,
+    capexDesign: 10,
+    capexPrep: 5,
+    steadyGrowth: 0.08,
+    decision: {
+      result: 'declined',
+      summary: '不合作',
+      date: '2026-08-14',
+      reasons: [
+        '非合法营运场景（民房住宅属性，无合法商业营运手续）',
+        '时间窗口不足：4 个月无法完成布展并形成合法营收',
+        '房租虚报：报价 25000 元/月，实际 15000 元/月，水分约 66%',
+        '合作方为个人投资 + 朋友合伙，非公司主体，结构脆弱',
+        '淡季房屋空置 + 合作方行为止损，分成模式空转',
+        '地段悖论：什刹海地段好只是表面，无法转化为合规商业坪效'
+      ]
+    },
+    dealTerms: [
+      '北京什刹海地区民房（非营运场景），约 70㎡',
+      '4 个月免租金窗口',
+      '营业额超过 20000 元/月进入分成模式（分成比例未明确）',
+      '合作方：中青旅旗下酒店经理（个人投资），与朋友合伙做「胡同博士游」'
+    ],
+    risks: [
+      { level: 'critical', point: '非合法营运场景：什刹海民房为住宅属性，商业营运无合法手续，随时面临取缔/停业风险，布展投入无法保全。' },
+      { level: 'critical', point: '时间窗口不足：仅 4 个月免租期，无法完成布展并形成合法营收；布展 + 冷启动周期远超 4 个月。' },
+      { level: 'high', point: '房租虚报：对方报价 25000 元/月，核实实际为 15000 元/月（≈214 元/㎡/月），报价水分约 66%，合作方信用存疑。' },
+      { level: 'high', point: '合作结构脆弱：合作方为个人投资 + 朋友合伙，非公司主体，无对赌/保证金条款；项目不顺时止损成本由山海承担。' },
+      { level: 'medium', point: '淡季空置与行为止损：胡同游强季节性，淡季房屋空置、营收为零，分成模式空转；合作方「行为止损」意味着淡季即收缩退出。' },
+      { level: 'medium', point: '地段悖论：什刹海地段虽好但只承接流量，非营运民房无法转化为合规商业坪效，「地段好」只是表面。' },
+      { level: 'medium', point: '变量过多：面积小、周期短、业态未验证、分成条款模糊（超 2 万营收后的分成比例未明确），测算置信度低。' }
+    ],
+    note: '【评估案例 · 结论：不合作】\n一、合作条件：北京什刹海地区民房（非营运场景），约 70㎡；4 个月免租金；营业额超过 20000 元/月进入分成模式（分成比例未明确）。\n二、否决原因：① 非合法营运场景，民房住宅属性无法合规商业营运，随时面临取缔/停业，投入无法保全；② 时间窗口不足，4 个月无法完成布展并形成合法营收；③ 房租虚报，报价 25000 元/月、实际 15000 元/月（≈214 元/㎡/月），水分约 66%，信用存疑；④ 合作结构脆弱，中青旅旗下酒店经理个人投资 + 朋友合伙做「胡同博士游」，非公司主体、无对赌/保证金；⑤ 淡季房屋空置 + 合作方行为止损，淡季无营收、分成空转，止损成本转嫁山海；⑥ 地段悖论，什刹海地段虽好但只是表面，非营运民房无法转化为合规商业坪效。\n三、测算口径：以这有山锚点坪效的 10% 保守估测（非营运民房 + 胡同游业态），月营收约 2 万、恰好踩在分成门槛上；模型四种结构（年度固定租金/分成）与实际条款（4 个月免租 + 超 2 万分成）不对应，数值仅作示意，决策由定性风险驱动。\n四、可复用否决条件：非合法营运 / 房租虚报 / 时间窗口不足以完成布展与合法营收 / 合作方非公司主体无担保 / 强季节性空置 —— 命中任一即不合作。'
   }
 ]
 
@@ -396,5 +476,6 @@ export const STATUS_LABELS = {
   evaluating: { text: '评估中', type: 'warning', icon: '🔍' },
   negotiating: { text: '谈判中', type: 'primary', icon: '🤝' },
   signed: { text: '已签约', type: 'success', icon: '✅' },
+  declined: { text: '不合作', type: 'danger', icon: '🚫' },
   rejected: { text: '已搁置', type: 'info', icon: '🛑' }
 }

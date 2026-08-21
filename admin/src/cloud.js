@@ -3,6 +3,7 @@ import {
   fetchCollectionLimit,
   isCloudbasePromiseBug,
   callCdnFunction,
+  cdnCount,
 } from "./utils/cloudbaseCdnDb.js";
 
 // =================================================
@@ -355,11 +356,10 @@ export const safeDbOperation = async (operation) => {
   try {
     const connected = await loginToCloud();
     if (!connected) {
-      throw new Error("数据库连接失败");
+      throw new Error("云开发登录失败：匿名登录未成功。业务读写请优先走 CDN 数据库接口（getCdnDatabase / fetchCollection*）。");
     }
     return await operation();
   } catch (err) {
-    // 更友好的错误处理
     const errorMessage = err?.message || '未知错误';
     const isSdkPromiseBug =
       typeof errorMessage === 'string' &&
@@ -370,12 +370,17 @@ export const safeDbOperation = async (operation) => {
       stack: err?.stack,
       timestamp: new Date().toISOString()
     });
-    
-    // 如果是连接相关错误，提供更详细的提示
-    if (errorMessage.includes('连接') || errorMessage.includes('connection')) {
-      throw new Error(`数据库连接失败：${errorMessage}。请检查网络连接或稍后重试。`);
+
+    if (isSdkPromiseBug) {
+      throw new Error(
+        "CloudBase bundle SDK 异常（setting 'promise'）。请改用 CDN SDK（cloudbaseCdnDb），不要依赖 bundle 内 db.get/count。"
+      );
     }
-    
+
+    if (errorMessage.includes('连接') || errorMessage.includes('connection') || errorMessage.includes('登录')) {
+      throw new Error(`${errorMessage}。若持续失败，请检查安全域名白名单与网络，或改走 CDN 数据库接口。`);
+    }
+
     throw err;
   }
 };
@@ -416,31 +421,23 @@ export const fetchCollectionSorted = async (collectionName, options = {}) => {
 };
 
 /**
- * 统计集合数据量
+ * 统计集合数据量（CDN SDK，避免 bundle db.count 的 promise bug）
  */
 export const countCollection = async (collectionName, where = {}) => {
-  return safeDbOperation(async () => {
-    if (!db || typeof db.collection !== 'function') {
-      throw new Error('数据库未就绪');
+  try {
+    const filter =
+      where && typeof where === 'object' && Object.keys(where).length > 0
+        ? where
+        : null;
+    return await cdnCount(collectionName, filter);
+  } catch (err) {
+    if (isCloudbasePromiseBug(err)) {
+      console.warn(`[countCollection] ${collectionName} SDK 异常，返回 0`);
+      return 0;
     }
-    let query = db.collection(collectionName);
-    if (!query || typeof query.count !== 'function') {
-      throw new Error(`集合不可用：${collectionName}`);
-    }
-    if (Object.keys(where).length > 0) {
-      query = query.where(where);
-    }
-    try {
-      const res = await query.count();
-      return res.total || 0;
-    } catch (err) {
-      const msg = err?.message || String(err);
-      if (msg.includes("setting 'promise'") || msg.includes('setting "promise"')) {
-        return 0;
-      }
-      throw err;
-    }
-  });
+    console.warn(`[countCollection] ${collectionName} 失败:`, err?.message || err);
+    return 0;
+  }
 };
 
 /**
@@ -471,6 +468,7 @@ export const COLLECTIONS = {
   ACTIVITIES: 'activities',          // 活动
   ORDERS: 'orders',                  // 订单
   PURCHASE_INTENTS: 'purchase_intents', // 官网报价单采购意向
+  PRICE_LIST_ITEMS: 'price_list_items', // 官网 /price-list 供货报价条目
   PURCHASE_ORDERS: 'purchase_orders', // 正式订货单（门店/渠道）
   FULFILLMENT_SHIPMENTS: 'fulfillment_shipments', // 总部出货单（P1）
   STOCK_MOVEMENTS: 'stock_movements', // 总部成品库存流水（P1）
@@ -503,6 +501,13 @@ export const COLLECTIONS = {
   STORE_DESIGN_VERSIONS: 'store_design_versions',          // 门店设计中心：设计版本（Web 端沉淀）
   STORE_DESIGN_MATERIALS: 'store_design_materials',         // 门店设计中心：标准物料库（可选）
   CUSTOM_CONFIGS: 'custom_configs',                       // 标本定制选项（框型/包装，getCustomConfig）
+  CARE_GUIDES: 'care_guides',                             // 养护指南（getCareGuides）
+  STORES: 'stores',                                       // C 端门店主数据（getStoreConfig）
+  STORE_ZONES: 'store_zones',                             // C 端展区动线
+  PET_CRAFT_CONFIGS: 'pet_craft_configs',                 // 伴宠工艺（getPetMemorialConfig）
+  REWARDS: 'rewards',                                     // 积分兑换品
+  WAITLIST: 'waitlist',                                   // 预约候补
+  SUPPORT_CONFIGS: 'support_configs',                     // 客服入口（getSupportConfig）
 };
 
 // =================================================
@@ -532,4 +537,22 @@ export async function callCloudFunction(name, data = {}) {
   return callCdnFunction(name, data);
 }
 
-export { db, app, auth, envId, region };
+/**
+ * 禁止业务侧再 import { db }：bundle 内 db.get/count 有 promise bug。
+ * 认证/上传仍可用下方 app / auth；数据读写请用 getCdnDatabase / fetchCollection*。
+ */
+const deprecatedBundleDb = new Proxy(
+  {},
+  {
+    get(_t, prop) {
+      if (prop === 'collection' || prop === 'command') {
+        throw new Error(
+          "请勿使用 bundle db。" + String(prop) + "：请改用 getCdnDatabase() / fetchCollection*（CDN SDK）。",
+        )
+      }
+      return undefined
+    },
+  },
+)
+
+export { deprecatedBundleDb as db, app, auth, envId, region };

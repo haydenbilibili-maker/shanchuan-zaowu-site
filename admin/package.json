@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "build:xietian-fragment": "node scripts/build-xietian-html.mjs",
     "provision:content": "node scripts/provision-content-collections.mjs",
-    "provision:purchase-intents": "node scripts/provision-purchase-intents.mjs"
+    "provision:purchase-intents": "node scripts/provision-purchase-intents.mjs",
+    "provision:miniapp-ops": "node scripts/provision-miniapp-ops.mjs",
+    "provision:price-list": "node scripts/provision-price-list.mjs",
+    "provision:all": "node scripts/provision-all.mjs",
+    "provision:all:dry": "node scripts/provision-all.mjs --dry-run"
   },
   "dependencies": {
     "@cloudbase/js-sdk": "^2.9.1",

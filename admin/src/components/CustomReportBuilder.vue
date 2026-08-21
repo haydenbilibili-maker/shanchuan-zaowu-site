@@ -8,6 +8,15 @@
     <el-tabs v-model="activeTab" type="card" class="config-tabs">
       <!-- 自定义报表 -->
       <el-tab-pane label="📊 自定义报表" name="builder">
+        <el-alert
+          v-if="reportError"
+          type="error"
+          :closable="true"
+          show-icon
+          style="margin-bottom: 12px"
+          :title="reportError"
+          @close="reportError = ''"
+        />
         <div class="report-builder-section">
           <el-row :gutter="24">
             <el-col :span="6">
@@ -121,7 +130,14 @@
                     </el-card>
                   </div>
                 </div>
-                <el-empty v-else description='配置报表参数并点击"生成报表"查看数据' />
+                <el-empty
+                  v-else-if="generating"
+                  description="正在从云库聚合…"
+                />
+                <el-empty
+                  v-else
+                  description='配置报表参数并点击「生成报表」。数据来自 orders / users / products / 财务账本，无数据时显示空表。'
+                />
               </el-card>
             </el-col>
           </el-row>
@@ -131,6 +147,16 @@
       <!-- 报表模板 -->
       <el-tab-pane label="📁 报表模板" name="templates">
         <div class="templates-section">
+          <el-alert
+            v-if="templateError"
+            type="error"
+            :closable="true"
+            show-icon
+            style="margin-bottom: 12px"
+            :title="templateError"
+            description="请确认 report_templates 集合可读；失败时勿与「暂无模板」混淆。"
+            @close="templateError = ''"
+          />
           <div class="action-bar">
             <el-button type="primary" @click="createNewTemplate">
               <el-icon><Plus /></el-icon>新建模板
@@ -201,15 +227,18 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { fetchCollectionSorted, cdnAdd, cdnRemove } from '../cloud'
+import { fetchCollectionSorted, fetchCollectionLimit, cdnAdd, cdnRemove } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Download, Document } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
+import { fetchFinancialData } from '../utils/financialData'
 
 // --- 状态定义 ---
 const activeTab = ref('builder')
 const loading = ref(false)
 const generating = ref(false)
+const reportError = ref('')
+const templateError = ref('')
 const templateDialogVisible = ref(false)
 
 // 报表配置
@@ -235,18 +264,19 @@ const templateForm = reactive({
 // 报表列定义
 const reportColumns = computed(() => {
   const columns = []
+  const groupBy = reportConfig.groupBy.length ? reportConfig.groupBy : ['date']
   
   // 根据分组维度添加列
-  if (reportConfig.groupBy.includes('date')) {
+  if (groupBy.includes('date')) {
     columns.push({ prop: 'date', label: '日期', width: 120 })
   }
-  if (reportConfig.groupBy.includes('category')) {
+  if (groupBy.includes('category')) {
     columns.push({ prop: 'category', label: '分类', width: 120 })
   }
-  if (reportConfig.groupBy.includes('status')) {
+  if (groupBy.includes('status')) {
     columns.push({ prop: 'status', label: '状态', width: 100 })
   }
-  if (reportConfig.groupBy.includes('user')) {
+  if (groupBy.includes('user')) {
     columns.push({ prop: 'user', label: '用户', width: 150 })
   }
   
@@ -302,57 +332,235 @@ const generateReport = async () => {
   }
   
   generating.value = true
+  reportError.value = ''
   try {
     const startDate = new Date(reportConfig.dateRange[0])
     startDate.setHours(0, 0, 0, 0)
     const endDate = new Date(reportConfig.dateRange[1])
     endDate.setHours(23, 59, 59, 999)
-    
-    // 模拟数据生成（实际应该从数据库查询）
-    // 这里简化处理，实际应该根据groupBy和metrics从数据库聚合数据
-    const mockData = generateMockReportData(startDate, endDate)
-    reportData.value = mockData
-    
-    // 计算汇总
-    calculateSummary(mockData)
-    
-    ElMessage.success('报表生成成功')
+
+    const rows = await buildRealReportData(startDate, endDate)
+    reportData.value = rows
+    calculateSummary(rows)
+
+    if (!rows.length) {
+      ElMessage.info('所选范围内暂无云库数据')
+    } else {
+      ElMessage.success(`报表生成成功（${rows.length} 行，来自云库聚合）`)
+    }
   } catch (err) {
     console.error('生成报表失败', err)
-    ElMessage.error('生成报表失败')
+    reportData.value = []
+    Object.keys(reportSummary).forEach((k) => delete reportSummary[k])
+    reportError.value = '生成报表失败：' + (err.message || '未知错误')
+    ElMessage.error(reportError.value)
   } finally {
     generating.value = false
   }
 }
 
-const generateMockReportData = (startDate, endDate) => {
-  const data = []
-  const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
-  
-  for (let i = 0; i < Math.min(days, 30); i++) {
-    const date = new Date(startDate)
-    date.setDate(startDate.getDate() + i)
-    
-    const row = {
-      date: date.toISOString().split('T')[0]
+const toDateKey = (ts) => {
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toISOString().split('T')[0]
+}
+
+const PAID_STATUSES = new Set(['paid', 'shipped', 'received', 'completed'])
+
+const buildRealReportData = async (startDate, endDate) => {
+  const startMs = startDate.getTime()
+  const endMs = endDate.getTime()
+  const groupBy = reportConfig.groupBy.length ? reportConfig.groupBy : ['date']
+  const metrics = reportConfig.metrics
+
+  const needOrders = metrics.some((m) => ['revenue', 'orders', 'profit', 'cost'].includes(m))
+    || groupBy.some((g) => ['status', 'user', 'category'].includes(g))
+  const needUsers = metrics.includes('users')
+  const needProducts = metrics.includes('products')
+  const needFinance = metrics.some((m) => ['profit', 'cost'].includes(m))
+
+  const [orders, users, products, finance] = await Promise.all([
+    needOrders
+      ? fetchCollectionLimit('orders', { limit: 1000 })
+      : Promise.resolve([]),
+    needUsers
+      ? fetchCollectionLimit('users', { limit: 1000 })
+      : Promise.resolve([]),
+    needProducts
+      ? fetchCollectionLimit('products', { limit: 1000 })
+      : Promise.resolve([]),
+    needFinance
+      ? fetchFinancialData({ startDate, endDate })
+      : Promise.resolve({ records: [], settings: {} }),
+  ])
+
+  const costRate = (() => {
+    const s = finance?.settings || {}
+    if (s.costRate != null) {
+      const r = Number(s.costRate)
+      return r > 1 ? r / 100 : r
     }
-    
-    reportConfig.metrics.forEach(metric => {
-      if (metric === 'revenue') row[metric] = Math.floor(Math.random() * 10000) + 5000
-      else if (metric === 'orders') row[metric] = Math.floor(Math.random() * 50) + 10
-      else if (metric === 'users') row[metric] = Math.floor(Math.random() * 20) + 5
-      else if (metric === 'products') row[metric] = Math.floor(Math.random() * 100) + 50
-      else if (metric === 'profit') row[metric] = Math.floor((row.revenue || 0) * 0.3)
-      else if (metric === 'cost') row[metric] = Math.floor((row.revenue || 0) * 0.7)
-    })
-    
-    data.push(row)
+    return 0.6
+  })()
+
+  const productCategoryMap = {}
+  products.forEach((p) => {
+    productCategoryMap[p._id] = p.category || p.categoryName || '未分类'
+  })
+
+  const filteredOrders = orders.filter((o) => {
+    const t = o.createTime || o._createTime || 0
+    return t >= startMs && t <= endMs
+  })
+
+  const filteredUsers = users.filter((u) => {
+    const t = u.createTime || u._createTime || 0
+    return t >= startMs && t <= endMs
+  })
+
+  // 财务账本按日成本/利润兜底
+  const financeByDate = {}
+  ;(finance.records || []).forEach((r) => {
+    if (!r?.date) return
+    financeByDate[r.date] = {
+      revenue: Number(r.revenue) || 0,
+      cost: Number(r.cost) || 0,
+      profit: Number(r.profit) || 0,
+      orders: Number(r.orderCount) || 0,
+    }
+  })
+
+  const bucketKey = (parts) => parts.join('|')
+  const buckets = {}
+
+  const ensureBucket = (key, dims) => {
+    if (!buckets[key]) {
+      buckets[key] = {
+        ...dims,
+        revenue: 0,
+        orders: 0,
+        users: 0,
+        products: 0,
+        profit: 0,
+        cost: 0,
+        _userSet: new Set(),
+        _productSet: new Set(),
+      }
+    }
+    return buckets[key]
   }
-  
-  return data
+
+  const dimsFromOrder = (order) => {
+    const date = toDateKey(order.createTime || order._createTime)
+    const status = order.status || 'unknown'
+    const user = order._openid || order.userId || order.openid || 'anonymous'
+    let category = '未分类'
+    if (Array.isArray(order.products) && order.products.length) {
+      const pid = order.products[0].productId || order.products[0]._id
+      category = productCategoryMap[pid] || order.products[0].category || '未分类'
+    } else if (order.category) {
+      category = order.category
+    }
+    return { date, status, user, category }
+  }
+
+  if (needOrders) {
+    filteredOrders.forEach((order) => {
+      const dimsAll = dimsFromOrder(order)
+      const dims = {}
+      const keyParts = []
+      groupBy.forEach((g) => {
+        dims[g] = dimsAll[g] || '-'
+        keyParts.push(`${g}=${dims[g]}`)
+      })
+      const b = ensureBucket(bucketKey(keyParts), dims)
+      const amount = Number(order.totalPrice || order.price) || 0
+      const isPaid = PAID_STATUSES.has(order.status)
+      b.orders += 1
+      if (isPaid) {
+        b.revenue += amount
+        b.cost += amount * costRate
+        b.profit += amount * (1 - costRate)
+      }
+      const uid = order._openid || order.userId
+      if (uid) b._userSet.add(uid)
+      if (Array.isArray(order.products)) {
+        order.products.forEach((p) => {
+          const pid = p.productId || p._id
+          if (pid) b._productSet.add(pid)
+        })
+      }
+    })
+  }
+
+  // 用户指标：按注册日入桶（仅 date 分组时精确；其它维度标 0）
+  if (needUsers && groupBy.includes('date') && groupBy.every((g) => g === 'date' || g === 'user')) {
+    filteredUsers.forEach((u) => {
+      const date = toDateKey(u.createTime || u._createTime)
+      const user = u._openid || u._id || 'anonymous'
+      const dims = {}
+      const keyParts = []
+      groupBy.forEach((g) => {
+        dims[g] = g === 'date' ? date : (g === 'user' ? user : '-')
+        keyParts.push(`${g}=${dims[g]}`)
+      })
+      const b = ensureBucket(bucketKey(keyParts), dims)
+      b.users += 1
+    })
+  } else if (needUsers && groupBy.length === 1 && groupBy[0] === 'date') {
+    filteredUsers.forEach((u) => {
+      const date = toDateKey(u.createTime || u._createTime)
+      const b = ensureBucket(`date=${date}`, { date })
+      b.users += 1
+    })
+  }
+
+  // 商品数：上架商品总量挂到「整表汇总行」意义不大；按日用创建时间近似
+  if (needProducts && groupBy.includes('date')) {
+    products.forEach((p) => {
+      const t = p.createTime || p._createTime || 0
+      if (t < startMs || t > endMs) return
+      const date = toDateKey(t)
+      const b = ensureBucket(`date=${date}`, { date })
+      b.products += 1
+    })
+  }
+
+  // 若仅选了财务利润/成本且无订单，用账本按日填充
+  if (needFinance && groupBy.includes('date') && !Object.keys(buckets).length) {
+    Object.entries(financeByDate).forEach(([date, row]) => {
+      const b = ensureBucket(`date=${date}`, { date })
+      b.revenue = row.revenue
+      b.orders = row.orders
+      b.cost = row.cost || row.revenue * costRate
+      b.profit = row.profit || (row.revenue - b.cost)
+    })
+  }
+
+  const rows = Object.values(buckets).map((b) => {
+    const row = { ...b }
+    if (metrics.includes('users') && b._userSet?.size && !row.users) {
+      row.users = b._userSet.size
+    }
+    if (metrics.includes('products') && b._productSet?.size && !row.products) {
+      row.products = b._productSet.size
+    }
+    delete row._userSet
+    delete row._productSet
+    // 只保留选中的维度与指标
+    const out = {}
+    groupBy.forEach((g) => { out[g] = row[g] })
+    metrics.forEach((m) => { out[m] = Math.round(Number(row[m]) || 0) })
+    return out
+  })
+
+  // 默认按日期排序
+  rows.sort((a, b) => String(a.date || a.status || a.user || '').localeCompare(String(b.date || b.status || b.user || '')))
+  return rows
 }
 
 const calculateSummary = (data) => {
+  Object.keys(reportSummary).forEach((k) => delete reportSummary[k])
   reportConfig.metrics.forEach(metric => {
     reportSummary[metric] = data.reduce((sum, row) => sum + (row[metric] || 0), 0)
   })
@@ -361,15 +569,18 @@ const calculateSummary = (data) => {
 // --- 模板管理 ---
 const loadTemplates = async () => {
   loading.value = true
+  templateError.value = ''
   try {
     templates.value = await fetchCollectionSorted('report_templates', {
       limit: 200,
+      throwOnError: true,
       sortFn: (a, b) => new Date(b.createdAt || b._createTime || 0) - new Date(a.createdAt || a._createTime || 0)
     })
   } catch (err) {
     console.error('加载模板失败', err)
     templates.value = []
-    ElMessage.error('加载模板失败')
+    templateError.value = '加载模板失败：' + (err.message || '未知错误')
+    ElMessage.error(templateError.value)
   } finally {
     loading.value = false
   }

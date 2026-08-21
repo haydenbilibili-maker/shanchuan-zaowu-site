@@ -142,8 +142,8 @@
             <!-- ============ 1. 总览决策 ============ -->
             <el-menu-item-group title="总览决策">
                 <el-menu-item index="0"><el-icon><Odometer /></el-icon><span>经营驾驶舱</span></el-menu-item>
-                <el-menu-item index="26"><el-icon><Monitor /></el-icon><span>实时监控大屏</span></el-menu-item>
-                <el-menu-item index="49"><el-icon><DataBoard /></el-icon><span>经营数据大屏</span></el-menu-item>
+                <el-menu-item index="26"><el-icon><Monitor /></el-icon><span>实时监控大屏 · 告警</span></el-menu-item>
+                <el-menu-item index="49"><el-icon><DataBoard /></el-icon><span>经营数据大屏 · 看板</span></el-menu-item>
                 <el-menu-item index="25"><el-icon><Trophy /></el-icon><span>运营决策中心</span></el-menu-item>
             </el-menu-item-group>
 
@@ -158,6 +158,7 @@
                 <el-menu-item index="43"><el-icon><Menu /></el-icon><span>分类管理</span></el-menu-item>
                 <el-menu-item index="3"><el-icon><List /></el-icon><span>全渠道订单</span></el-menu-item>
                 <el-menu-item index="52"><el-icon><ShoppingCart /></el-icon><span>订货履约</span></el-menu-item>
+                <el-menu-item index="57"><el-icon><Ticket /></el-icon><span>报价单配置</span></el-menu-item>
                 <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="场 · 体验">
@@ -165,6 +166,7 @@
                 <el-menu-item index="5"><el-icon><Calendar /></el-icon><span>活动与排期</span></el-menu-item>
                 <el-menu-item index="6"><el-icon><Ticket /></el-icon><span>权益与营销</span></el-menu-item>
                 <el-menu-item index="30"><el-icon><Shop /></el-icon><span>店铺管理</span></el-menu-item>
+                <el-menu-item index="55"><el-icon><Shop /></el-icon><span>C端门店展区</span></el-menu-item>
                 <el-menu-item index="34"><el-icon><Brush /></el-icon><span>门店设计中心</span></el-menu-item>
                 <el-menu-item index="35"><el-icon><Promotion /></el-icon><span>加盟商管理</span></el-menu-item>
                 <el-menu-item index="48"><el-icon><House /></el-icon><span>物业合作测算</span></el-menu-item>
@@ -207,6 +209,8 @@
                 <el-menu-item index="8"><el-icon><Picture /></el-icon><span>首页轮播</span></el-menu-item>
                 <el-menu-item index="13"><el-icon><Setting /></el-icon><span>首页配置</span></el-menu-item>
                 <el-menu-item index="9"><el-icon><Collection /></el-icon><span>内容管理</span></el-menu-item>
+                <el-menu-item index="54"><el-icon><Notebook /></el-icon><span>养护指南</span></el-menu-item>
+                <el-menu-item index="56"><el-icon><Phone /></el-icon><span>客服入口配置</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="会员/营销规则">
                 <el-menu-item index="14"><el-icon><UserFilled /></el-icon><span>会员等级体系</span></el-menu-item>
@@ -368,6 +372,33 @@
                         </el-button>
                         <el-button 
                             size="small" 
+                            type="danger"
+                            plain
+                            @click="handleBatchTogglePromo('seckill', false)"
+                            :disabled="!selectedProducts.some(p => p?.seckill?.enabled)"
+                        >
+                            批量关秒杀
+                        </el-button>
+                        <el-button
+                            size="small"
+                            type="warning"
+                            plain
+                            @click="handleBatchExtendSeckill"
+                            :disabled="!selectedProducts.some(p => p?.seckill?.enabled)"
+                        >
+                            批量延长 +3 天
+                        </el-button>
+                        <el-button 
+                            size="small" 
+                            type="warning"
+                            plain
+                            @click="handleBatchTogglePromo('group', false)"
+                            :disabled="!selectedProducts.some(p => p?.groupBuying?.enabled)"
+                        >
+                            批量关拼团
+                        </el-button>
+                        <el-button 
+                            size="small" 
                             @click="clearProductSelection"
                         >
                             取消选择
@@ -375,12 +406,38 @@
                     </div>
                  </div>
 
-                 <div class="archive-filter-row" style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                 <div class="archive-filter-row" style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                     <span class="archive-filter-label">档案筛选：</span>
                     <el-radio-group v-model="archiveFilter" size="small">
                         <el-radio-button label="all">全部</el-radio-button>
                         <el-radio-button label="archive">仅档案藏品</el-radio-button>
                     </el-radio-group>
+                    <span class="archive-filter-label" style="margin-left: 8px;">营销：</span>
+                    <el-radio-group v-model="promoFilter" size="small">
+                        <el-radio-button label="all">全部</el-radio-button>
+                        <el-radio-button label="seckill">秒杀进行中</el-radio-button>
+                        <el-radio-button label="seckill_expired">秒杀已过期</el-radio-button>
+                        <el-radio-button label="group">拼团</el-radio-button>
+                    </el-radio-group>
+                    <el-tag
+                      v-if="expiredSeckillCount > 0"
+                      type="warning"
+                      size="small"
+                      effect="dark"
+                      class="expired-promo-badge"
+                      @click="promoFilter = 'seckill_expired'"
+                    >
+                      过期提醒 {{ expiredSeckillCount }}
+                    </el-tag>
+                    <el-button
+                      v-if="expiredSeckillCount > 0"
+                      size="small"
+                      type="danger"
+                      plain
+                      @click="handleClearExpiredSeckill"
+                    >
+                      一键清理过期
+                    </el-button>
                  </div>
 
                  <el-table 
@@ -390,6 +447,7 @@
                      v-loading="loading" 
                      row-key="_id" 
                      stripe
+                     empty-text="暂无藏品，点击右上角录入"
                      @selection-change="handleProductSelectionChange"
                  >
                     <el-table-column type="selection" width="55" />
@@ -399,7 +457,10 @@
                             class="product-table-cover"
                             style="width: 64px; height: 64px;"
                             :src="scope.row.httpImage" 
-                            :preview-src-list="[scope.row.httpImage]" 
+                            :preview-src-list="[scope.row.httpImage]"
+                            preview-teleported
+                            :z-index="5000"
+                            hide-on-click-modal
                             fit="cover" />
                       </template>
                     </el-table-column>
@@ -418,6 +479,28 @@
                          <template #default="scope">
                              <span class="price-tag">¥{{ scope.row.price }}</span>
                          </template>
+                    </el-table-column>
+                    <el-table-column label="营销活动" width="180">
+                        <template #default="scope">
+                            <div class="promo-cell" v-if="scope.row.seckill?.enabled || scope.row.groupBuying?.enabled">
+                              <el-tag
+                                v-if="scope.row.seckill?.enabled"
+                                :type="isSeckillExpired(scope.row) ? 'info' : 'danger'"
+                                size="small"
+                                effect="dark"
+                              >
+                                {{ isSeckillExpired(scope.row) ? '秒杀已过期' : '秒杀' }} ¥{{ scope.row.seckill.price ?? '-' }}
+                              </el-tag>
+                              <el-tag v-if="scope.row.groupBuying?.enabled" type="warning" size="small" effect="plain" style="margin-top:4px;">
+                                拼团 ¥{{ scope.row.groupBuying.price ?? '-' }} / {{ scope.row.groupBuying.groupSize || 2 }}人
+                              </el-tag>
+                              <div v-if="scope.row.seckill?.enabled" class="promo-meta" :class="{ 'promo-meta-expired': isSeckillExpired(scope.row) }">
+                                库存 {{ scope.row.seckill.stock ?? '-' }}
+                                <template v-if="scope.row.seckill.endTime"> · 至 {{ formatPromoTime(scope.row.seckill.endTime) }}</template>
+                              </div>
+                            </div>
+                            <span v-else class="promo-none">—</span>
+                        </template>
                     </el-table-column>
                     <el-table-column prop="stock" label="库存" width="120">
                         <template #default="scope">
@@ -770,7 +853,7 @@ import {
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
   DataBoard, TrendCharts, VideoCamera,
   // 🟢 小程序对齐补充图标
-  Stamp, Avatar, Message, Refresh, Document, ShoppingCart,
+  Stamp, Avatar, Message, Refresh, Document, ShoppingCart, Phone,
   // 🟢 命令面板/收藏夹
   Close,
   // 🟢 侧栏折叠
@@ -828,6 +911,10 @@ import Bookings from './components/Bookings.vue'
 import CustomOrders from './components/CustomOrders.vue'
 const FulfillmentCenter = asyncWith(() => import('./components/FulfillmentCenter.vue'))
 import PetMemorial from './components/PetMemorial.vue'
+import CareGuides from './components/CareGuides.vue'
+import StoreFrontConfig from './components/StoreFrontConfig.vue'
+import SupportConfigs from './components/SupportConfigs.vue'
+import PriceListManager from './components/PriceListManager.vue'
 import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
 import Refunds from './components/Refunds.vue'
@@ -871,7 +958,7 @@ const TAB_COMPONENT_MAP = {
   '23': () => ({ comp: UserBehaviorConfig }),
   '24': () => ({ comp: NotificationConfig }),
   '25': () => ({ comp: OperationsDecisionCenter, props: { products: products.value, orders: [] } }),
-  '26': () => ({ comp: RealtimeMonitor }),
+  '26': () => ({ comp: RealtimeMonitor, props: { variant: 'live' } }),
   '27': () => ({ comp: PartnerDestinyCenter }),
   '28': () => ({ comp: ComplianceCenter }),
   '29': () => ({ comp: OperationsManual }),
@@ -889,6 +976,10 @@ const TAB_COMPONENT_MAP = {
   '52': () => ({ comp: FulfillmentCenter }),
   '53': () => ({ comp: BrandVIS }),
   '39': () => ({ comp: PetMemorial }),
+  '54': () => ({ comp: CareGuides }),
+  '55': () => ({ comp: StoreFrontConfig }),
+  '56': () => ({ comp: SupportConfigs }),
+  '57': () => ({ comp: PriceListManager }),
   '40': () => ({ comp: SupportTickets }),
   '41': () => ({ comp: CommentsModeration }),
   '42': () => ({ comp: Refunds }),
@@ -898,7 +989,7 @@ const TAB_COMPONENT_MAP = {
   '46': () => ({ comp: AudienceManager }),
   '47': () => ({ comp: CohortCompare }),
   '48': () => ({ comp: PropertyEval }),
-  '49': () => ({ comp: RealtimeMonitor })
+  '49': () => ({ comp: RealtimeMonitor, props: { variant: 'business' } })
 }
 const activeModuleDef = computed(() => {
   const factory = TAB_COMPONENT_MAP[String(currentTab.value)]
@@ -979,15 +1070,15 @@ const TAB_TO_GROUP = {
   '1': 'grp-business', '3': 'grp-business', '5': 'grp-business', '6': 'grp-business',
   '30': 'grp-business', '34': 'grp-business', '35': 'grp-business', '37': 'grp-business',
   '38': 'grp-business', '39': 'grp-business', '42': 'grp-business', '43': 'grp-business',
-  '48': 'grp-business', '52': 'grp-business',
+  '48': 'grp-business', '52': 'grp-business', '55': 'grp-business',
   '4': 'grp-customer', '40': 'grp-customer', '41': 'grp-customer', '44': 'grp-customer',
   '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer', '51': 'grp-customer',
   '8': 'grp-miniapp', '9': 'grp-miniapp', '13': 'grp-miniapp', '14': 'grp-miniapp',
   '15': 'grp-miniapp', '16': 'grp-miniapp', '17': 'grp-miniapp', '18': 'grp-miniapp',
   '19': 'grp-miniapp', '20': 'grp-miniapp', '21': 'grp-miniapp', '22': 'grp-miniapp',
-  '23': 'grp-miniapp', '24': 'grp-miniapp',
+  '23': 'grp-miniapp', '24': 'grp-miniapp', '54': 'grp-miniapp', '56': 'grp-miniapp',
   '2': 'grp-governance', '7': 'grp-governance', '27': 'grp-governance', '28': 'grp-governance',
-  '31': 'grp-governance', '32': 'grp-governance', '33': 'grp-governance', '36': 'grp-governance', '50': 'grp-governance'
+  '31': 'grp-governance', '32': 'grp-governance', '33': 'grp-governance', '36': 'grp-governance', '50': 'grp-governance', '53': 'grp-governance'
 }
 // ============ 置顶收藏夹（与 CommandPalette 共享 localStorage key） ============
 const PINNED_KEY = 'sc_admin_pinned_modules'
@@ -1071,6 +1162,7 @@ const form = ref({
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
 const archiveFilter = ref('all') // 'all' | 'archive' 全部 / 仅档案藏品
+const promoFilter = ref('all') // 'all' | 'seckill' | 'seckill_expired' | 'group'
 
 // =================================================
 // 🔐 认证与会话管理
@@ -1159,6 +1251,13 @@ const handleMenuSelect = (index) => {
     }
     // 懒加载：仅在切换到藏品库且需要时加载
     if (index === '1') {
+        try {
+            const promo = sessionStorage.getItem('sc_archive_promo_filter')
+            if (promo === 'seckill' || promo === 'seckill_expired' || promo === 'group' || promo === 'all') {
+                promoFilter.value = promo
+                sessionStorage.removeItem('sc_archive_promo_filter')
+            }
+        } catch (_) { /* ignore */ }
         // 使用nextTick确保组件已挂载后再加载数据
         nextTick(() => {
             // 再次检查是否仍在当前tab
@@ -1541,14 +1640,42 @@ const handleProductSelectionChange = (selection) => {
     }
 }
 
-// 档案筛选后的列表（用于表格展示）
+// 档案 + 营销筛选后的列表（用于表格展示）
 const displayProducts = computed(() => {
-    const list = products.value || []
+    let list = products.value || []
     if (archiveFilter.value === 'archive') {
-        return list.filter(p => p.inArchive === true)
+        list = list.filter(p => p.inArchive === true)
+    }
+    if (promoFilter.value === 'seckill') {
+        list = list.filter(p => p.seckill?.enabled && !isSeckillExpired(p))
+    } else if (promoFilter.value === 'seckill_expired') {
+        list = list.filter(p => p.seckill?.enabled && isSeckillExpired(p))
+    } else if (promoFilter.value === 'group') {
+        list = list.filter(p => p.groupBuying?.enabled)
     }
     return list
 })
+
+const isSeckillExpired = (row) => {
+    if (!row?.seckill?.enabled) return false
+    const end = row.seckill.endTime ? Number(row.seckill.endTime) : null
+    return !!(end && end < Date.now())
+}
+
+const expiredSeckillCount = computed(() =>
+    (products.value || []).filter((p) => isSeckillExpired(p)).length
+)
+
+const formatPromoTime = (ts) => {
+    if (!ts) return ''
+    const d = new Date(typeof ts === 'number' ? ts : Number(ts))
+    if (Number.isNaN(d.getTime())) return ''
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const h = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${m}-${day} ${h}:${min}`
+}
 
 // 将选中重要SKU加入藏品档案
 const handleAddToArchive = async () => {
@@ -1627,6 +1754,126 @@ const handleBatchToggleShelf = async (isOnShelf) => {
             loading.value = false
         }
     }).catch(() => {})
+}
+
+/** 批量关闭秒杀 / 拼团（保留历史字段，仅 enabled=false） */
+const handleBatchTogglePromo = async (kind, enabled) => {
+    if (!selectedProducts.value?.length) {
+        ElMessage.warning('请先选择商品')
+        return
+    }
+    const label = kind === 'seckill' ? '秒杀' : '拼团'
+    const targets = selectedProducts.value.filter((p) => {
+        if (!p) return false
+        if (kind === 'seckill') return !!p.seckill?.enabled
+        return !!p.groupBuying?.enabled
+    })
+    if (!targets.length) {
+        ElMessage.warning(`所选商品中没有已开启的${label}`)
+        return
+    }
+    try {
+        await ElMessageBox.confirm(
+            `确认批量关闭 ${targets.length} 个商品的${label}？`,
+            `批量关${label}`,
+            { type: 'warning' }
+        )
+    } catch {
+        return
+    }
+    try {
+        loading.value = true
+        await Promise.all(targets.map((p) => {
+            if (kind === 'seckill') {
+                const next = { ...(p.seckill || {}), enabled: !!enabled }
+                return cdnUpdate(COLLECTIONS.PRODUCTS, p._id, { seckill: next, updateTime: Date.now() })
+            }
+            const next = { ...(p.groupBuying || {}), enabled: !!enabled }
+            return cdnUpdate(COLLECTIONS.PRODUCTS, p._id, { groupBuying: next, updateTime: Date.now() })
+        }))
+        ElMessage.success(`已关闭 ${targets.length} 个商品的${label}`)
+        clearProductSelection()
+        loadProducts()
+    } catch (err) {
+        console.error(`批量关${label}失败:`, err)
+        ElMessage.error(`批量关${label}失败: ${err.message || '未知错误'}`)
+    } finally {
+        loading.value = false
+    }
+}
+
+/** 批量延长已开秒杀的 endTime（+3 天；无 endTime 则从现在起算） */
+const handleBatchExtendSeckill = async () => {
+    if (!selectedProducts.value?.length) {
+        ElMessage.warning('请先选择商品')
+        return
+    }
+    const targets = selectedProducts.value.filter((p) => p?.seckill?.enabled)
+    if (!targets.length) {
+        ElMessage.warning('所选商品中没有已开启的秒杀')
+        return
+    }
+    const DAY = 3 * 24 * 60 * 60 * 1000
+    try {
+        await ElMessageBox.confirm(
+            `将为 ${targets.length} 个商品的秒杀结束时间延长 3 天（在现有 endTime 或当前时刻基础上）。`,
+            '批量延长秒杀',
+            { type: 'info' }
+        )
+    } catch {
+        return
+    }
+    try {
+        loading.value = true
+        const now = Date.now()
+        await Promise.all(targets.map((p) => {
+            const cur = Number(p.seckill?.endTime) || 0
+            const base = cur > now ? cur : now
+            const next = { ...(p.seckill || {}), enabled: true, endTime: base + DAY }
+            return cdnUpdate(COLLECTIONS.PRODUCTS, p._id, { seckill: next, updateTime: Date.now() })
+        }))
+        ElMessage.success(`已延长 ${targets.length} 个商品的秒杀结束时间`)
+        clearProductSelection()
+        loadProducts()
+    } catch (err) {
+        console.error('批量延长秒杀失败:', err)
+        ElMessage.error('批量延长秒杀失败: ' + (err.message || '未知错误'))
+    } finally {
+        loading.value = false
+    }
+}
+
+/** 一键关闭所有已过期但仍 enabled 的秒杀（不改价，仅 enabled=false） */
+const handleClearExpiredSeckill = async () => {
+    const targets = (products.value || []).filter((p) => isSeckillExpired(p))
+    if (!targets.length) {
+        ElMessage.info('当前没有过期秒杀')
+        return
+    }
+    try {
+        await ElMessageBox.confirm(
+            `将关闭 ${targets.length} 个「已过期但仍开启」的秒杀标记（保留历史价格字段）。`,
+            '清理过期秒杀',
+            { type: 'warning' }
+        )
+    } catch {
+        return
+    }
+    try {
+        loading.value = true
+        await Promise.all(targets.map((p) => {
+            const next = { ...(p.seckill || {}), enabled: false }
+            return cdnUpdate(COLLECTIONS.PRODUCTS, p._id, { seckill: next, updateTime: Date.now() })
+        }))
+        ElMessage.success(`已清理 ${targets.length} 个过期秒杀`)
+        clearProductSelection()
+        loadProducts()
+    } catch (err) {
+        console.error('清理过期秒杀失败:', err)
+        ElMessage.error('清理过期秒杀失败: ' + (err.message || '未知错误'))
+    } finally {
+        loading.value = false
+    }
 }
 
 // 批量调价
@@ -2340,6 +2587,10 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
   color: var(--light-text-secondary);
   font-size: var(--text-sm);
 }
+.expired-promo-badge {
+  cursor: pointer;
+  margin-left: 4px;
+}
 
 .sku-hint-muted {
   margin-left: 8px;
@@ -2421,6 +2672,10 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 .stock-tag.out { background: var(--semantic-error-bg); color: var(--semantic-error-text); border: 1px solid rgba(208, 84, 80, 0.28); }
 .stock-tag.low { background: var(--semantic-warning-bg); color: var(--semantic-warning-text); border: 1px solid rgba(196, 165, 90, 0.45); }
 .stock-tag.normal { background: var(--semantic-success-bg); color: var(--semantic-success-text); border: 1px solid rgba(45, 106, 79, 0.22); }
+.promo-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.promo-meta { font-size: 11px; color: #999; margin-top: 2px; }
+.promo-meta-expired { color: #E6A23C; }
+.promo-none { color: #ccc; }
 
 /* 🟢 Element Plus 全局样式覆盖 - 黑金效果 */
 .el-button--primary { 

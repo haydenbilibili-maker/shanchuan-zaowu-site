@@ -3,129 +3,216 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>预约与核销 / BOOKINGS</h2>
-        <span class="subtitle">RESERVATION & TICKET CHECK-IN</span>
+        <span class="subtitle">RESERVATION · WAITLIST · CHECK-IN</span>
       </div>
       <div class="header-actions">
-        <el-input
-          v-model="ticketInput"
-          placeholder="扫描或输入票号 BOOKING:xxxx"
-          style="width: 280px"
-          clearable
-          prefix-icon="Search"
-          @keyup.enter="verifyTicket"
-        />
-        <el-button type="primary" color="#d4af37" :icon="Stamp" @click="verifyTicket">核销</el-button>
+        <template v-if="activeTab === 'bookings'">
+          <el-input
+            v-model="ticketInput"
+            placeholder="扫描或输入票号 BOOKING:xxxx"
+            style="width: 280px"
+            clearable
+            prefix-icon="Search"
+            @keyup.enter="verifyTicket"
+          />
+          <el-button type="primary" color="#d4af37" :icon="Stamp" @click="verifyTicket">核销</el-button>
+        </template>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
     </div>
 
-    <div class="filter-bar">
-      <el-radio-group v-model="statusFilter" fill="#d4af37" @change="refresh">
-        <el-radio-button label="all">全部</el-radio-button>
-        <el-radio-button label="confirmed">已确认</el-radio-button>
-        <el-radio-button label="pending">待确认</el-radio-button>
-        <el-radio-button label="used">已核销</el-radio-button>
-        <el-radio-button label="cancelled">已取消</el-radio-button>
-      </el-radio-group>
-      <el-select v-model="typeFilter" placeholder="预约类型" style="width: 160px" clearable @change="refresh">
-        <el-option label="入馆参观" value="museum_visit" />
-        <el-option label="手作课程" value="workshop" />
-        <el-option label="活动报名" value="activity" />
-        <el-option label="定制确认" value="custom_confirm" />
-        <el-option label="宠物送检" value="pet_intake" />
-      </el-select>
-      <el-date-picker
-        v-model="dateRange"
-        type="daterange"
-        range-separator="至"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
-        format="YYYY-MM-DD"
-        value-format="YYYY-MM-DD"
-        @change="refresh"
-      />
-    </div>
+    <el-tabs v-model="activeTab" @tab-change="refresh">
+      <el-tab-pane label="预约列表" name="bookings" />
+      <el-tab-pane label="候补队列" name="waitlist" />
+    </el-tabs>
 
-    <div class="stats-row">
-      <div class="stat-pill">
-        <span class="lbl">今日预约</span><span class="val">{{ todayCount }}</span>
-      </div>
-      <div class="stat-pill warn">
-        <span class="lbl">待核销</span><span class="val">{{ pendingCheckIn }}</span>
-      </div>
-      <div class="stat-pill ok">
-        <span class="lbl">已完成</span><span class="val">{{ usedCount }}</span>
-      </div>
-    </div>
+    <el-alert
+      v-if="loadError"
+      type="error"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 12px"
+      :title="loadError"
+      :description="activeTab === 'waitlist'
+        ? '请确认 waitlist 集合已 provision；失败时勿与「暂无候补」混淆。'
+        : '请确认 bookings 可读；失败时勿与「暂无预约」混淆。'"
+    />
 
-    <el-card shadow="never">
-      <el-table :data="list" v-loading="loading" stripe height="calc(100vh - 360px)">
-        <el-table-column label="票号" width="160">
-          <template #default="{ row }">
-            <div class="ticket-no">{{ row.ticketCode || row._id.slice(0, 8) }}</div>
-            <div class="ticket-type">{{ typeLabel(row.type) }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column label="活动主题" min-width="180">
-          <template #default="{ row }">
-            <div class="b-title">{{ row.title }}</div>
-            <div class="b-store" v-if="row.storeName">📍 {{ row.storeName }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column label="时间" width="160">
-          <template #default="{ row }">
-            <div>{{ row.date }} <span v-if="row.week">({{ row.week }})</span></div>
-            <div class="time-cell">{{ row.time || '全天' }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column label="联系人" width="180">
-          <template #default="{ row }">
-            <div>{{ row.name }}</div>
-            <div class="phone-cell">📞 {{ row.phone }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column label="人数" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" type="info">{{ row.people || 1 }}人</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="金额" width="100">
-          <template #default="{ row }">
-            <span class="price">¥{{ row.price || 0 }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="statusType(row.status)" effect="dark" size="small">{{ statusLabel(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'confirmed'"
-              size="small"
-              type="primary"
-              color="#d4af37"
-              @click="checkIn(row)"
-            >核销</el-button>
-            <el-button
-              v-if="row.status === 'pending'"
-              size="small"
-              type="success"
-              @click="confirmBooking(row)"
-            >确认</el-button>
-            <el-button
-              v-if="['pending', 'confirmed'].includes(row.status)"
-              size="small"
-              type="danger"
-              link
-              @click="cancelBooking(row)"
-            >取消</el-button>
-            <el-button size="small" link @click="viewDetail(row)">详情</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    <template v-if="activeTab === 'bookings'">
+      <div class="filter-bar">
+        <el-radio-group v-model="statusFilter" fill="#d4af37" @change="refresh">
+          <el-radio-button label="all">全部</el-radio-button>
+          <el-radio-button label="confirmed">已确认</el-radio-button>
+          <el-radio-button label="pending">待确认</el-radio-button>
+          <el-radio-button label="used">已核销</el-radio-button>
+          <el-radio-button label="cancelled">已取消</el-radio-button>
+        </el-radio-group>
+        <el-select v-model="typeFilter" placeholder="预约类型" style="width: 160px" clearable @change="refresh">
+          <el-option label="入馆参观" value="museum_visit" />
+          <el-option label="手作课程" value="workshop" />
+          <el-option label="活动报名" value="activity" />
+          <el-option label="定制确认" value="custom_confirm" />
+          <el-option label="宠物送检" value="pet_intake" />
+        </el-select>
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          format="YYYY-MM-DD"
+          value-format="YYYY-MM-DD"
+          @change="refresh"
+        />
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-pill">
+          <span class="lbl">今日预约</span><span class="val">{{ todayCount }}</span>
+        </div>
+        <div class="stat-pill warn">
+          <span class="lbl">待核销</span><span class="val">{{ pendingCheckIn }}</span>
+        </div>
+        <div class="stat-pill ok">
+          <span class="lbl">已完成</span><span class="val">{{ usedCount }}</span>
+        </div>
+      </div>
+
+      <el-card shadow="never">
+        <el-table :data="list" v-loading="loading" stripe height="calc(100vh - 420px)">
+          <el-table-column label="票号" width="160">
+            <template #default="{ row }">
+              <div class="ticket-no">{{ row.ticketCode || row._id.slice(0, 8) }}</div>
+              <div class="ticket-type">{{ typeLabel(row.type) }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="活动主题" min-width="180">
+            <template #default="{ row }">
+              <div class="b-title">{{ row.title }}</div>
+              <div class="b-store" v-if="row.storeName">📍 {{ row.storeName }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="时间" width="160">
+            <template #default="{ row }">
+              <div>{{ row.date }} <span v-if="row.week">({{ row.week }})</span></div>
+              <div class="time-cell">{{ row.time || '全天' }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="联系人" width="180">
+            <template #default="{ row }">
+              <div>{{ row.name }}</div>
+              <div class="phone-cell">📞 {{ row.phone }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="人数" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag size="small" type="info">{{ row.people || 1 }}人</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="金额" width="100">
+            <template #default="{ row }">
+              <span class="price">¥{{ row.price || 0 }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="statusType(row.status)" effect="dark" size="small">{{ statusLabel(row.status) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.status === 'confirmed'"
+                size="small"
+                type="primary"
+                color="#d4af37"
+                @click="checkIn(row)"
+              >核销</el-button>
+              <el-button
+                v-if="row.status === 'pending'"
+                size="small"
+                type="success"
+                @click="confirmBooking(row)"
+              >确认</el-button>
+              <el-button
+                v-if="['pending', 'confirmed'].includes(row.status)"
+                size="small"
+                type="danger"
+                link
+                @click="cancelBooking(row)"
+              >取消</el-button>
+              <el-button size="small" link @click="viewDetail(row)">详情</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </template>
+
+    <template v-else>
+      <div class="filter-bar">
+        <el-radio-group v-model="waitStatusFilter" fill="#d4af37" @change="refresh">
+          <el-radio-button label="waiting">候补中</el-radio-button>
+          <el-radio-button label="notified">已通知</el-radio-button>
+          <el-radio-button label="converted">已转预约</el-radio-button>
+          <el-radio-button label="cancelled">已取消</el-radio-button>
+          <el-radio-button label="all">全部</el-radio-button>
+        </el-radio-group>
+      </div>
+      <el-card shadow="never">
+        <el-table :data="waitlist" v-loading="loading" stripe height="calc(100vh - 360px)" empty-text="暂无候补记录">
+          <el-table-column label="排位" width="72" prop="position" />
+          <el-table-column label="日期时段" width="180">
+            <template #default="{ row }">
+              <div>{{ row.date }}</div>
+              <div class="time-cell">{{ row.time }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="联系人" width="180">
+            <template #default="{ row }">
+              <div>{{ row.name }}</div>
+              <div class="phone-cell">{{ row.phone }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">
+              <el-tag size="small" :type="waitStatusType(row.status)">{{ waitStatusLabel(row.status) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="加入时间" width="180">
+            <template #default="{ row }">{{ fmt(row.createTime) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="220" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.status === 'waiting'"
+                size="small"
+                type="primary"
+                color="#d4af37"
+                @click="notifyWait(row)"
+              >标记已通知</el-button>
+              <el-button
+                v-if="['waiting', 'notified'].includes(row.status)"
+                size="small"
+                type="success"
+                @click="convertWait(row)"
+              >已转预约</el-button>
+              <el-button
+                v-if="['waiting', 'notified'].includes(row.status)"
+                size="small"
+                type="danger"
+                link
+                @click="cancelWait(row)"
+              >取消</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-empty
+          v-if="!loading && !waitlist.length"
+          description="当前筛选下无候补。小程序约满后用户可加入 waitlist。"
+          :image-size="80"
+        />
+      </el-card>
+    </template>
 
     <el-dialog v-model="detailVisible" title="预约详情" width="600px">
       <el-descriptions :column="2" border v-if="currentBooking">
@@ -160,14 +247,19 @@ import { Stamp, Refresh } from '@element-plus/icons-vue'
 import {
   fetchCollectionLimit,
   fetchCollectionWhere,
+  fetchCollectionSorted,
   cdnUpdate,
   cdnDocGet,
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
+const activeTab = ref('bookings')
 const loading = ref(false)
+const loadError = ref('')
 const list = ref([])
+const waitlist = ref([])
 const statusFilter = ref('all')
+const waitStatusFilter = ref('waiting')
 const typeFilter = ref('')
 const dateRange = ref([])
 const ticketInput = ref('')
@@ -187,10 +279,18 @@ const STATUS_MAP = {
   used: { text: '已核销', type: 'success' },
   cancelled: { text: '已取消', type: 'info' }
 }
+const WAIT_STATUS = {
+  waiting: { text: '候补中', type: 'warning' },
+  notified: { text: '已通知', type: '' },
+  converted: { text: '已转预约', type: 'success' },
+  cancelled: { text: '已取消', type: 'info' }
+}
 
 const typeLabel = (t) => TYPE_MAP[t] || t || '未知'
 const statusLabel = (s) => STATUS_MAP[s]?.text || s
 const statusType = (s) => STATUS_MAP[s]?.type || 'info'
+const waitStatusLabel = (s) => WAIT_STATUS[s]?.text || s
+const waitStatusType = (s) => WAIT_STATUS[s]?.type || 'info'
 
 const todayCount = computed(() => {
   const today = new Date().toISOString().split('T')[0]
@@ -207,29 +307,71 @@ const fmt = (ts) => {
 
 const refresh = async () => {
   loading.value = true
+  loadError.value = ''
   try {
-    const where = {}
-    if (statusFilter.value !== 'all') where.status = statusFilter.value
-    if (typeFilter.value) where.type = typeFilter.value
+    if (activeTab.value === 'waitlist') {
+      const where = waitStatusFilter.value !== 'all' ? { status: waitStatusFilter.value } : null
+      waitlist.value = await fetchCollectionSorted('waitlist', {
+        limit: 200,
+        where,
+        throwOnError: true,
+        sortFn: (a, b) => String(a.date || '').localeCompare(String(b.date || ''))
+          || (a.position || 0) - (b.position || 0)
+      })
+    } else {
+      const where = {}
+      if (statusFilter.value !== 'all') where.status = statusFilter.value
+      if (typeFilter.value) where.type = typeFilter.value
 
-    let rows = Object.keys(where).length
-      ? await fetchCollectionWhere('bookings', where, 500)
-      : await fetchCollectionLimit('bookings', { limit: 500 })
+      let rows = Object.keys(where).length
+        ? await fetchCollectionWhere('bookings', where, 500)
+        : await fetchCollectionLimit('bookings', { limit: 500 })
 
-    if (dateRange.value && dateRange.value.length === 2) {
-      const [start, end] = dateRange.value
-      rows = rows.filter(b => b.date >= start && b.date <= end)
+      if (dateRange.value && dateRange.value.length === 2) {
+        const [start, end] = dateRange.value
+        rows = rows.filter(b => b.date >= start && b.date <= end)
+      }
+
+      rows.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
+      list.value = rows.slice(0, 100)
     }
-
-    rows.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
-    list.value = rows.slice(0, 100)
   } catch (e) {
     console.error(e)
     list.value = []
-    ElMessage.error('加载预约失败')
+    waitlist.value = []
+    loadError.value = (activeTab.value === 'waitlist' ? '加载候补失败：' : '加载预约失败：') + (e.message || e)
+    ElMessage.error(loadError.value)
   } finally {
     loading.value = false
   }
+}
+
+const notifyWait = async (row) => {
+  try {
+    await cdnUpdate('waitlist', row._id, { status: 'notified', notifiedAt: Date.now() })
+    ElMessage.success('已标记通知')
+    refresh()
+  } catch (e) {
+    ElMessage.error('操作失败：' + e.message)
+  }
+}
+
+const convertWait = async (row) => {
+  try {
+    await cdnUpdate('waitlist', row._id, { status: 'converted', convertedAt: Date.now() })
+    ElMessage.success('已标记转预约')
+    refresh()
+  } catch (e) {
+    ElMessage.error('操作失败：' + e.message)
+  }
+}
+
+const cancelWait = (row) => {
+  ElMessageBox.confirm(`取消 ${row.name} 的候补？`, '取消候补', { type: 'warning' }).then(async () => {
+    await cdnUpdate('waitlist', row._id, { status: 'cancelled', cancelTime: Date.now() })
+    ElMessage.success('已取消')
+    refresh()
+  }).catch(() => {})
 }
 
 const checkIn = (row) => {

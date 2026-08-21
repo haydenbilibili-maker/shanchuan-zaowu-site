@@ -12,6 +12,24 @@
     </div>
 
     <!-- 概览 KPI -->
+    <el-alert
+      v-if="loadError"
+      type="error"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px"
+      :title="loadError"
+      description="请确认 users / orders / user_behaviors 可读；失败时勿与「暂无会员」混淆。"
+    />
+    <el-alert
+      v-else-if="!loading && !totalUsers"
+      type="info"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px"
+      title="暂无会员画像数据"
+      description="请确认云库 users 集合有数据；orders / user_behaviors 用于 RFM 与标签。"
+    />
     <div class="kpi-strip">
       <div class="kpi-card">
         <div class="kpi-top"><span class="lbl">活跃用户</span><span class="ico">👥</span></div>
@@ -296,6 +314,7 @@ import {
 } from '../utils/userSegmentation'
 
 const loading = ref(false)
+const loadError = ref('')
 const profiles = ref([])
 const retentionCohorts = ref([])
 const eventCount = ref(0)
@@ -315,6 +334,7 @@ const formatNum = (n) => {
 // ========= 数据加载 =========
 const refresh = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     let { users, orders, behaviors } = await loadPortraitSourceData({
       userLimit: 1000,
@@ -322,13 +342,12 @@ const refresh = async () => {
       behaviorLimit: 1000,
     })
 
-    // 兜底：无数据时生成可视的模拟集
     if (!users.length) {
-      const mock = generateMockData()
-      users = mock.users
-      orders = mock.orders
-      behaviors = mock.behaviors
-      ElMessage.info('使用模拟样本演示，请上线后接入真实数据')
+      profiles.value = []
+      retentionCohorts.value = []
+      eventCount.value = behaviors.length
+      ElMessage.info('云库暂无会员数据，画像为空态')
+      return
     }
 
     eventCount.value = behaviors.length
@@ -336,54 +355,14 @@ const refresh = async () => {
     retentionCohorts.value = computeRetentionCohort(users, behaviors, { weeks: 8 })
   } catch (e) {
     console.error(e)
-    ElMessage.error('加载失败：' + e.message)
+    profiles.value = []
+    retentionCohorts.value = []
+    eventCount.value = 0
+    loadError.value = '加载失败：' + (e.message || '未知错误')
+    ElMessage.error(loadError.value)
   } finally {
     loading.value = false
   }
-}
-
-const generateMockData = () => {
-  const users = []
-  const orders = []
-  const behaviors = []
-  const now = Date.now()
-  const DAY = 86400000
-
-  for (let i = 0; i < 80; i++) {
-    const openid = 'mock-u-' + i
-    const regTime = now - Math.floor(Math.random() * 90 * DAY)
-    users.push({
-      _id: openid,
-      _openid: openid,
-      nickName: ['张三', '李四', '王五', '赵六', '钱七', '孙八'][i % 6] + (i + 1),
-      avatarUrl: '',
-      points: Math.floor(Math.random() * 3000),
-      createTime: regTime
-    })
-    // 0-12 个订单
-    const orderCount = Math.floor(Math.random() * Math.random() * 12)
-    for (let j = 0; j < orderCount; j++) {
-      orders.push({
-        _id: 'o-' + i + '-' + j,
-        _openid: openid,
-        status: ['paid', 'shipped', 'received'][j % 3],
-        totalPrice: Math.floor(80 + Math.random() * 2000),
-        createTime: regTime + Math.floor(Math.random() * (now - regTime))
-      })
-    }
-    // 行为事件
-    const actions = ['identify_start', 'product_view', 'cart_view', 'custom_hub_enter', 'pet_memorial_enter', 'store_checkin', 'support_topic_select']
-    const eventCount = Math.floor(Math.random() * 30)
-    for (let k = 0; k < eventCount; k++) {
-      behaviors.push({
-        userId: openid,
-        action: actions[k % actions.length],
-        timestamp: regTime + Math.floor(Math.random() * (now - regTime)),
-        createdAt: new Date(regTime + Math.floor(Math.random() * (now - regTime)))
-      })
-    }
-  }
-  return { users, orders, behaviors }
 }
 
 // ========= 派生指标 =========
