@@ -12,7 +12,8 @@ import {
 } from '../utils/contentDb'
 import { currentContentPeriod } from '../utils/contentMetrics'
 
-const BAILIAN_CONSTITUTION = { provider: 'bailian', usePro: true, temperature: 0.4 }
+/** 内容合规检查走默认 AI 通道（环境变量 VITE_AI_DEFAULT_PROVIDER，通常为 deepseek） */
+const CONSTITUTION_AI_OPTS = { temperature: 0.4 }
 
 /** extractJSON 失败或调用异常时的统一兜底 */
 function constitutionFail(reason) {
@@ -74,7 +75,7 @@ export function useContentAgents() {
 
     let rawResponse
     try {
-      rawResponse = await callGeminiAPI(prompt, BAILIAN_CONSTITUTION)
+      rawResponse = await callGeminiAPI(prompt, CONSTITUTION_AI_OPTS)
     } catch (e) {
       return constitutionFail(`模型调用失败：${e.message || '未知错误'}`)
     }

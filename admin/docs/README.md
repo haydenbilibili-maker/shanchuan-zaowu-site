@@ -22,6 +22,7 @@
 |------|------|
 | [AI_SYSTEM_ARCHITECTURE.md](./AI_SYSTEM_ARCHITECTURE.md) | AI 战略智脑 vs 智能中心、整合策略 |
 | [AI功能升级说明.md](./AI功能升级说明.md) | AI 功能升级记录 |
+| [AI_DeepSeek环境变量配置.md](./AI_DeepSeek环境变量配置.md) | DeepSeek / 默认 Provider：本地 `.env` 与 GitHub Secrets |
 | [TTS优化说明.md](./TTS优化说明.md) | 语音/TTS 相关优化 |
 
 ## 移动端与访问

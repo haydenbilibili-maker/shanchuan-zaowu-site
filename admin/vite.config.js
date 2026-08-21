@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { viteAliyunNlsPlugin } from './scripts/viteAliyunNlsPlugin.mjs'
 import { viteFeishuBitablePlugin } from './scripts/viteFeishuBitablePlugin.mjs'
 
-function buildDevProxies() {
+function buildDevProxies(env = {}) {
   const withAuthHeader = (proxy) => {
     proxy.on('proxyReq', (proxyReq, req) => {
       if (req.headers['x-api-key']) {
@@ -28,8 +28,12 @@ function buildDevProxies() {
     rewrite: (path) => path.replace(/^\/(?:admin\/)?api\/gemini/, '/v1beta'),
   }
 
+  const deepseekTarget = String(env.VITE_DEEPSEEK_BASE_URL || 'https://api.deepseek.com')
+    .replace(/\/v1\/?$/i, '')
+    .replace(/\/$/, '')
+
   const deepseek = {
-    target: 'https://api.deepseek.com',
+    target: deepseekTarget || 'https://api.deepseek.com',
     changeOrigin: true,
     secure: true,
     configure: withAuthHeader,
@@ -58,7 +62,7 @@ function buildDevProxies() {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const devProxy = buildDevProxies()
+  const devProxy = buildDevProxies(env)
   return {
     plugins: [vue(), viteAliyunNlsPlugin(env), viteFeishuBitablePlugin(env)],
     /** 挂载于 shanhaizaowu.com/admin/；构建输出到 public/admin/ */

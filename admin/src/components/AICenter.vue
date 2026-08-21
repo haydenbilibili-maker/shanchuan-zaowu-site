@@ -585,17 +585,63 @@
         <template v-if="serviceType === 'online'">
           <div class="compact-online-api-panel">
             <el-alert
-              type="warning"
+              :type="aiProviderConfigStatus.deepseekConfigured || (aiProviderConfigStatus.bailian + aiProviderConfigStatus.gemini + aiProviderConfigStatus.openai) > 0 ? 'success' : 'warning'"
               show-icon
               :closable="false"
               class="api-security-alert"
-              title="生产密钥请使用环境变量或后端代理托管"
-              :description="`${aiProviderConfigHint} 浏览器 localStorage 配置仅适合开发/演示，不建议存放生产密钥。`"
+              title="优先使用环境变量（构建时注入），勿将生产 Key 明文写入云库或 localStorage"
+              :description="aiProviderConfigHint"
             />
+
+            <div class="env-config-status-card">
+              <div class="env-config-status-header">
+                <h4 class="config-title-compact">
+                  <el-icon><Key /></el-icon>
+                  环境变量 AI 配置
+                </h4>
+                <el-tag
+                  :type="aiProviderConfigStatus.deepseekConfigured ? 'success' : 'danger'"
+                  size="small"
+                >
+                  {{ aiProviderConfigStatus.deepseekConfigured ? 'DeepSeek 已配置' : 'DeepSeek 未配置' }}
+                </el-tag>
+              </div>
+              <div class="env-config-grid">
+                <div class="env-config-row">
+                  <span class="env-label">默认 Provider</span>
+                  <span class="env-value">{{ aiProviderConfigStatus.defaultProvider || '—' }}</span>
+                </div>
+                <div class="env-config-row">
+                  <span class="env-label">DeepSeek Key</span>
+                  <span class="env-value mono">{{ aiProviderConfigStatus.deepseekMaskedKey || '未设置 VITE_DEEPSEEK_API_KEY' }}</span>
+                </div>
+                <div class="env-config-row">
+                  <span class="env-label">模型</span>
+                  <span class="env-value">{{ aiProviderConfigStatus.deepseekModel || 'deepseek-chat' }}</span>
+                </div>
+                <div class="env-config-row">
+                  <span class="env-label">Base URL</span>
+                  <span class="env-value mono">{{ aiProviderConfigStatus.deepseekBaseUrl || 'https://api.deepseek.com' }}</span>
+                </div>
+                <div class="env-config-row">
+                  <span class="env-label">其他 Key</span>
+                  <span class="env-value">
+                    百炼 {{ aiProviderConfigStatus.bailian }} /
+                    Gemini {{ aiProviderConfigStatus.gemini }} /
+                    OpenAI {{ aiProviderConfigStatus.openai }}
+                  </span>
+                </div>
+              </div>
+              <p class="env-config-tip">
+                本地：在 <code>admin/.env</code> 填写后重启 <code>npm run dev:admin</code>。
+                生产：GitHub Secrets 注入后重新部署。详见 <code>admin/docs/AI_DeepSeek环境变量配置.md</code>。
+              </p>
+            </div>
+
             <div class="compact-api-header">
               <h4 class="config-title-compact">
                 <el-icon><Setting /></el-icon>
-                API接口配置
+                浏览器备用接口（次优先）
               </h4>
               <el-button
                 type="primary"
@@ -607,6 +653,9 @@
                 新增接口
               </el-button>
             </div>
+            <p class="env-secondary-tip">
+              以下条目保存在本机 localStorage，仅作开发/演示备用；实际 AI 调用优先读环境变量中的 DeepSeek / 百炼等 Key。
+            </p>
 
             <!-- 紧凑API列表 -->
             <div class="compact-api-list" v-if="apiConfigList.length > 0">
@@ -656,9 +705,9 @@
 
             <div class="empty-api-compact" v-else>
               <el-icon class="empty-icon-small"><Cloudy /></el-icon>
-              <p class="empty-text-small">暂无配置的API接口</p>
+              <p class="empty-text-small">暂无浏览器备用接口（可忽略，推荐只用环境变量）</p>
               <el-button type="primary" size="small" :icon="Plus" @click="handleAddApiClick">
-                立即添加
+                添加备用接口
               </el-button>
             </div>
           </div>
@@ -726,7 +775,7 @@
             show-password
             clearable
           />
-          <div class="form-tip">API密钥将被加密存储，仅用于API调用</div>
+          <div class="form-tip">仅作本机备用；生产请用环境变量 VITE_DEEPSEEK_API_KEY（优先于此处）</div>
         </el-form-item>
         <el-form-item label="模型列表" prop="models">
           <el-select
@@ -822,10 +871,19 @@ const aiProviderConfigStatus = computed(() => getAIProviderConfigStatus())
 const aiProviderConfigHint = computed(() => {
   const s = aiProviderConfigStatus.value
   const cloudKeys = s.bailian + s.gemini + s.openai + s.deepseek
-  if (s.bailian > 0) return `AI 已接入阿里云百炼（${s.bailian} 个 Key，默认模型 qwen-plus）`
-  if (cloudKeys > 0) return `已检测到云端 API Key：百炼 ${s.bailian} / Gemini ${s.gemini} / OpenAI ${s.openai} / DeepSeek ${s.deepseek}`
-  if (s.local > 0) return '未检测到云端 API Key，将优先依赖本地模型兜底。'
-  return '未检测到云端 API Key 或本地模型，请在 .env 配置 VITE_BAILIAN_API_KEY。'
+  if (s.deepseekConfigured) {
+    return `默认 Provider：${s.defaultProvider}。DeepSeek 已从环境变量加载（${s.deepseek} 个 Key，模型 ${s.deepseekModel}）。浏览器备用接口为次优先。`
+  }
+  if (s.bailian > 0) {
+    return `默认 Provider：${s.defaultProvider}。已检测到百炼 Key（${s.bailian} 个）。建议改配 VITE_DEEPSEEK_API_KEY 并设 VITE_AI_DEFAULT_PROVIDER=deepseek。`
+  }
+  if (cloudKeys > 0) {
+    return `已检测到云端 API Key：百炼 ${s.bailian} / Gemini ${s.gemini} / OpenAI ${s.openai} / DeepSeek ${s.deepseek}。默认 ${s.defaultProvider}。`
+  }
+  if (s.local > 0) {
+    return '未检测到云端 API Key，将优先依赖本地模型兜底。请在 admin/.env 配置 VITE_DEEPSEEK_API_KEY。'
+  }
+  return '未检测到云端 API Key。请在 admin/.env 配置 VITE_DEEPSEEK_API_KEY，并设置 VITE_AI_DEFAULT_PROVIDER=deepseek。'
 })
 
 // 后台配置弹窗
@@ -4408,6 +4466,69 @@ const playAudio = async (text, personaKey = null) => {
 
 .api-security-alert {
   margin-bottom: 16px;
+}
+
+.env-config-status-card {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(45, 106, 79, 0.18);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(45, 106, 79, 0.06) 0%, rgba(110, 91, 40, 0.04) 100%);
+}
+
+.env-config-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.env-config-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.env-config-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.env-label {
+  color: #6b7280;
+}
+
+.env-value {
+  color: #1f2937;
+  word-break: break-all;
+}
+
+.env-value.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.env-config-tip,
+.env-secondary-tip {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.env-secondary-tip {
+  margin: 0 0 12px;
+}
+
+.env-config-tip code,
+.env-secondary-tip code {
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .api-config-header {

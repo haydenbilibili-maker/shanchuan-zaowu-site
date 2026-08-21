@@ -30,12 +30,40 @@ const DEEPSEEK_API_KEYS = readEnvList('VITE_DEEPSEEK_API_KEYS', 'VITE_DEEPSEEK_A
 const BAILIAN_API_KEYS = readEnvList('VITE_BAILIAN_API_KEYS', 'VITE_BAILIAN_API_KEY', 'VITE_DASHSCOPE_API_KEY')
 const BAILIAN_MODEL_DEFAULT = import.meta.env.VITE_BAILIAN_MODEL || 'qwen-plus'
 const BAILIAN_MODEL_PRO = import.meta.env.VITE_BAILIAN_MODEL_PRO || 'qwen-max'
-const DEFAULT_AI_PROVIDER = import.meta.env.VITE_AI_DEFAULT_PROVIDER
-  || (BAILIAN_API_KEYS.length ? 'bailian' : 'gemini')
+const DEEPSEEK_MODEL_DEFAULT = import.meta.env.VITE_DEEPSEEK_MODEL || 'deepseek-chat'
+const DEEPSEEK_BASE_URL = String(import.meta.env.VITE_DEEPSEEK_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
+
+function resolveDefaultProvider() {
+  const fromEnv = String(import.meta.env.VITE_AI_DEFAULT_PROVIDER || '').trim().toLowerCase()
+  if (fromEnv) return fromEnv
+  if (DEEPSEEK_API_KEYS.length) return 'deepseek'
+  if (BAILIAN_API_KEYS.length) return 'bailian'
+  if (GEMINI_API_KEYS.length) return 'gemini'
+  if (OPENAI_API_KEYS.length) return 'openai'
+  return 'deepseek'
+}
+
+const DEFAULT_AI_PROVIDER = resolveDefaultProvider()
+
+function maskSecret(key) {
+  const s = String(key || '')
+  if (!s) return ''
+  if (s.length <= 8) return '••••••••'
+  return `${s.slice(0, 4)}••••••••${s.slice(-4)}`
+}
+
+function resolveDeepSeekChatUrl(baseUrl = DEEPSEEK_BASE_URL) {
+  const base = String(baseUrl || 'https://api.deepseek.com').replace(/\/$/, '')
+  if (/\/v1$/i.test(base)) return `${base}/chat/completions`
+  return `${base}/v1/chat/completions`
+}
 
 function getFallbackProvider(excludeProvider) {
-  for (const p of ['bailian', 'gemini', 'deepseek', 'openai']) {
-    if (p === excludeProvider) continue
+  const order = [DEFAULT_AI_PROVIDER, 'deepseek', 'bailian', 'gemini', 'openai']
+  const seen = new Set()
+  for (const p of order) {
+    if (!p || p === excludeProvider || seen.has(p)) continue
+    seen.add(p)
     const counts = {
       bailian: BAILIAN_API_KEYS.length,
       gemini: GEMINI_API_KEYS.length,
@@ -45,6 +73,17 @@ function getFallbackProvider(excludeProvider) {
     if (counts[p] > 0) return p
   }
   return null
+}
+
+function missingKeyHint(apiType) {
+  const map = {
+    deepseek: 'VITE_DEEPSEEK_API_KEY（可选 VITE_DEEPSEEK_BASE_URL / VITE_DEEPSEEK_MODEL）',
+    bailian: 'VITE_BAILIAN_API_KEY',
+    gemini: 'VITE_GEMINI_API_KEY',
+    openai: 'VITE_OPENAI_API_KEY',
+  }
+  const envName = map[apiType] || '对应的 VITE_*_API_KEY'
+  return `未配置 ${apiType} API Key。请检查环境变量 ${envName}（本地 admin/.env，生产 GitHub Secrets），并确认 VITE_AI_DEFAULT_PROVIDER。`
 }
 
 // 本地模型配置（Ollama）- 已部署多个模型
@@ -68,6 +107,7 @@ const keyStatus = {
 }
 
 export function getAIProviderConfigStatus() {
+  const deepseekKey = DEEPSEEK_API_KEYS[0] || ''
   return {
     bailian: BAILIAN_API_KEYS.length,
     gemini: GEMINI_API_KEYS.length,
@@ -75,6 +115,13 @@ export function getAIProviderConfigStatus() {
     deepseek: DEEPSEEK_API_KEYS.length,
     local: LOCAL_MODEL_CONFIG.enabled ? 1 : 0,
     defaultProvider: DEFAULT_AI_PROVIDER,
+    /** 环境变量优先于浏览器 localStorage / 云库配置 */
+    envPriority: true,
+    deepseekConfigured: DEEPSEEK_API_KEYS.length > 0,
+    deepseekMaskedKey: deepseekKey ? maskSecret(deepseekKey) : '',
+    deepseekModel: DEEPSEEK_MODEL_DEFAULT,
+    deepseekBaseUrl: DEEPSEEK_BASE_URL,
+    bailianConfigured: BAILIAN_API_KEYS.length > 0,
   }
 }
 
@@ -165,13 +212,14 @@ function getOpenAIURL(model = 'gpt-4o-mini') {
 }
 
 /**
- * 生成DeepSeek API URL
+ * 生成DeepSeek API URL（base / model 可由 VITE_DEEPSEEK_* 覆盖）
  */
-function getDeepSeekURL(model = 'deepseek-chat') {
+function getDeepSeekURL(model = DEEPSEEK_MODEL_DEFAULT) {
   const key = selectAvailableKey('deepseek')
   return {
-    url: 'https://api.deepseek.com/v1/chat/completions',
-    key: key
+    url: resolveDeepSeekChatUrl(),
+    key,
+    model: model || DEEPSEEK_MODEL_DEFAULT,
   }
 }
 
@@ -611,7 +659,7 @@ async function callLocalModel(prompt, options = {}) {
  * 统一的AI API调用函数（增强版，支持多Key和故障转移）
  * @param {string} prompt - 用户提示词
  * @param {object} options - 配置选项
- * @param {string} options.provider - 'bailian' | 'gemini' | 'openai' | 'deepseek' | 'local'，默认百炼（有 Key 时）
+ * @param {string} options.provider - 'bailian' | 'gemini' | 'openai' | 'deepseek' | 'local'，默认读 VITE_AI_DEFAULT_PROVIDER（优先 deepseek）
  * @param {boolean} options.usePro - 是否使用 Pro 模型（百炼 qwen-max / Gemini Pro）
  * @param {number} options.temperature - 温度参数
  * @param {number} options.maxOutputTokens - 最大输出token数
@@ -619,7 +667,7 @@ async function callLocalModel(prompt, options = {}) {
  * @param {object} options.systemInstruction - 系统指令
  * @param {array} options.conversationHistory - 对话历史
  * @param {string} options.openaiModel - OpenAI模型名称，默认'gpt-4o-mini'
- * @param {string} options.deepseekModel - DeepSeek模型名称，默认'deepseek-chat'
+ * @param {string} options.deepseekModel - DeepSeek模型名称，默认 VITE_DEEPSEEK_MODEL 或 deepseek-chat
  * @param {string} options.bailianModel - 百炼模型名称，默认 qwen-plus
  * @returns {Promise<string>} AI响应文本
  */
@@ -635,7 +683,7 @@ export async function callGeminiAPI(prompt, options = {}) {
     systemInstruction = null,
     conversationHistory = [],
     openaiModel = 'gpt-4o-mini',
-    deepseekModel = 'deepseek-chat',
+    deepseekModel = DEEPSEEK_MODEL_DEFAULT,
     bailianModel = BAILIAN_MODEL_DEFAULT,
     retryCount = 0,
     maxRetries = 3
@@ -694,7 +742,7 @@ export async function callGeminiAPI(prompt, options = {}) {
       ? resolveLocalApiProxyUrl('api/deepseek/chat/completions')
       : deepseekConfig.url
     currentKey = deepseekConfig.key
-    activeModel = deepseekModel
+    activeModel = deepseekConfig.model || deepseekModel
     useProxy = shouldUseLocalAiProxy()
   } else {
     currentKey = selectAvailableKey('gemini')
@@ -707,9 +755,7 @@ export async function callGeminiAPI(prompt, options = {}) {
       console.warn(`[AI] ${apiType} 未配置 API Key，尝试使用本地模型兜底`)
       return await callLocalModel(prompt, options)
     }
-    throw new Error(
-      `未配置 ${apiType} API Key。请在 .env 中配置 VITE_BAILIAN_API_KEY 等变量，或启用本地模型。`,
-    )
+    throw new Error(missingKeyHint(apiType))
   }
 
   const requestFn = async () => {

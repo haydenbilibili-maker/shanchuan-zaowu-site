@@ -16,8 +16,13 @@ jobs:
       contents: read
       deployments: write
     env:
+      # DeepSeek（默认 AI 通道；在仓库 Settings → Secrets 配置）
+      VITE_DEEPSEEK_API_KEY: ${{ secrets.VITE_DEEPSEEK_API_KEY }}
+      VITE_DEEPSEEK_BASE_URL: ${{ secrets.VITE_DEEPSEEK_BASE_URL }}
+      VITE_DEEPSEEK_MODEL: ${{ secrets.VITE_DEEPSEEK_MODEL }}
+      VITE_AI_DEFAULT_PROVIDER: deepseek
+      # 百炼可选备用（未配置 secret 时为空，不影响 DeepSeek）
       VITE_BAILIAN_API_KEY: ${{ secrets.VITE_BAILIAN_API_KEY }}
-      VITE_AI_DEFAULT_PROVIDER: bailian
     steps:
       - uses: actions/checkout@v4
 
