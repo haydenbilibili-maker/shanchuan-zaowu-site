@@ -467,6 +467,7 @@ export const COLLECTIONS = {
   BANNERS: 'banners',                // 轮播图
   ACTIVITIES: 'activities',          // 活动
   ORDERS: 'orders',                  // 订单
+  REFUNDS: 'refunds',                // 退款审核单（可与 orders 退款状态回流合并展示）
   PURCHASE_INTENTS: 'purchase_intents', // 官网报价单采购意向
   PRICE_LIST_ITEMS: 'price_list_items', // 官网 /price-list 供货报价条目
   PURCHASE_ORDERS: 'purchase_orders', // 正式订货单（门店/渠道）
@@ -478,7 +479,8 @@ export const COLLECTIONS = {
   USERS: 'users',                    // 用户
   BOOKINGS: 'bookings',              // 预约
   COUPONS: 'coupons',                // 优惠券
-  STRATEGY_RESEARCH: 'strategy_research', // 战略调研结论
+  STRATEGY_RESEARCH: 'strategy_research', // 战略调研结论（AI 用研）
+  BENCHMARK_RESEARCH_DOCS: 'benchmark_research_docs', // 对标研究文档库（PDF/MD 全文检索）
   FINANCE_RECORDS: 'finance_records', // 财务账本记录（多端同步）
   FINANCE_SETTINGS: 'finance_settings', // 财务设置（多端同步）
   STORE_LEDGER: 'store_ledger', // 店长小程序账本（与 finance_records 桥接）

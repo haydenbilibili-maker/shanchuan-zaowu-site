@@ -4,11 +4,19 @@
  * 支持多个API Key，自动故障转移和负载均衡
  */
 
+function isPlausibleApiKey(key) {
+  const s = String(key || '').trim()
+  if (!s || s.length < 8) return false
+  if (/^(sk-)?your[-_]?|placeholder|changeme|xxx+|<.*>|example/i.test(s)) return false
+  if (/sk-your-deepseek-key-here/i.test(s)) return false
+  return true
+}
+
 function readEnvList(...names) {
   return names
     .flatMap((name) => String(import.meta.env?.[name] || '').split(','))
     .map((key) => key.trim())
-    .filter(Boolean)
+    .filter(isPlausibleApiKey)
 }
 
 /** Vite base 为 /admin/ 时，开发代理路径须为 /admin/api/... */
@@ -106,8 +114,97 @@ const keyStatus = {
   local: [{ key: 'local', failures: 0, lastFailure: 0, successCount: 0 }] // 本地模型状态
 }
 
+/** 浏览器备用 Key（localStorage）；环境变量仍优先被 selectAvailableKey 选中（先入列表） */
+const RUNTIME_API_STORAGE_KEY = 'ai_api_configs'
+const RUNTIME_API_CURRENT_ID_KEY = 'ai_current_api_config_id'
+const RUNTIME_DEEPSEEK_KEY = 'ai_center_runtime_deepseek_key'
+
+function mapRuntimeTypeToProvider(type = '') {
+  const t = String(type || '').toLowerCase()
+  if (t.includes('deepseek')) return 'deepseek'
+  if (t.includes('bailian') || t.includes('dashscope') || t === 'qwen') return 'bailian'
+  if (t.includes('gemini')) return 'gemini'
+  if (t.includes('openai') || t === 'custom') return 'openai'
+  return ''
+}
+
+function ensureKeySlot(provider, key) {
+  if (!provider || !isPlausibleApiKey(key)) return false
+  const list =
+    provider === 'deepseek' ? DEEPSEEK_API_KEYS
+    : provider === 'bailian' ? BAILIAN_API_KEYS
+    : provider === 'gemini' ? GEMINI_API_KEYS
+    : provider === 'openai' ? OPENAI_API_KEYS
+    : null
+  if (!list) return false
+  if (list.includes(key)) return false
+  list.push(key)
+  if (keyStatus[provider] && !keyStatus[provider].some((k) => k.key === key)) {
+    keyStatus[provider].push({ key, failures: 0, lastFailure: 0, successCount: 0 })
+  }
+  return true
+}
+
+/**
+ * 从 localStorage 同步浏览器备用 Key 到运行时（追加，不移除 env Key）
+ */
+export function syncRuntimeApiKeysFromStorage() {
+  if (typeof localStorage === 'undefined') return { added: 0 }
+  let added = 0
+  try {
+    const quick = localStorage.getItem(RUNTIME_DEEPSEEK_KEY)
+    if (ensureKeySlot('deepseek', quick)) added += 1
+
+    const raw = localStorage.getItem(RUNTIME_API_STORAGE_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    if (!Array.isArray(list)) return { added }
+    const currentId = localStorage.getItem(RUNTIME_API_CURRENT_ID_KEY)
+    const ordered = [
+      ...list.filter((a) => a && a.id === currentId),
+      ...list.filter((a) => a && a.id !== currentId),
+    ]
+    for (const item of ordered) {
+      if (!item || item.status === 'inactive') continue
+      const provider = mapRuntimeTypeToProvider(item.type)
+      const key = item.apiKey || item.key
+      if (ensureKeySlot(provider, key)) added += 1
+    }
+  } catch (e) {
+    console.warn('[AI] 同步浏览器备用 Key 失败', e)
+  }
+  return { added }
+}
+
+export function setRuntimeDeepSeekKey(key) {
+  if (typeof localStorage === 'undefined') return false
+  const k = String(key || '').trim()
+  if (!isPlausibleApiKey(k)) return false
+  localStorage.setItem(RUNTIME_DEEPSEEK_KEY, k)
+  ensureKeySlot('deepseek', k)
+  return true
+}
+
+export function clearRuntimeDeepSeekKey() {
+  if (typeof localStorage === 'undefined') return
+  localStorage.removeItem(RUNTIME_DEEPSEEK_KEY)
+}
+
+export function hasUsableCloudProvider() {
+  syncRuntimeApiKeysFromStorage()
+  return (
+    DEEPSEEK_API_KEYS.length > 0 ||
+    BAILIAN_API_KEYS.length > 0 ||
+    GEMINI_API_KEYS.length > 0 ||
+    OPENAI_API_KEYS.length > 0
+  )
+}
+
 export function getAIProviderConfigStatus() {
+  syncRuntimeApiKeysFromStorage()
   const deepseekKey = DEEPSEEK_API_KEYS[0] || ''
+  const runtimeDeepseek = typeof localStorage !== 'undefined'
+    ? Boolean(localStorage.getItem(RUNTIME_DEEPSEEK_KEY))
+    : false
   return {
     bailian: BAILIAN_API_KEYS.length,
     gemini: GEMINI_API_KEYS.length,
@@ -115,13 +212,20 @@ export function getAIProviderConfigStatus() {
     deepseek: DEEPSEEK_API_KEYS.length,
     local: LOCAL_MODEL_CONFIG.enabled ? 1 : 0,
     defaultProvider: DEFAULT_AI_PROVIDER,
-    /** 环境变量优先于浏览器 localStorage / 云库配置 */
+    /** 环境变量优先；浏览器备用 Key 可立即生效 */
     envPriority: true,
     deepseekConfigured: DEEPSEEK_API_KEYS.length > 0,
     deepseekMaskedKey: deepseekKey ? maskSecret(deepseekKey) : '',
     deepseekModel: DEEPSEEK_MODEL_DEFAULT,
     deepseekBaseUrl: DEEPSEEK_BASE_URL,
     bailianConfigured: BAILIAN_API_KEYS.length > 0,
+    runtimeDeepseekConfigured: runtimeDeepseek,
+    hasUsableCloudProvider: (
+      DEEPSEEK_API_KEYS.length > 0 ||
+      BAILIAN_API_KEYS.length > 0 ||
+      GEMINI_API_KEYS.length > 0 ||
+      OPENAI_API_KEYS.length > 0
+    ),
   }
 }
 
@@ -671,7 +775,16 @@ async function callLocalModel(prompt, options = {}) {
  * @param {string} options.bailianModel - 百炼模型名称，默认 qwen-plus
  * @returns {Promise<string>} AI响应文本
  */
+/** 判断是否为用户主动 abort（AbortController） */
+export function isAbortError(err) {
+  if (!err) return false
+  if (err.name === 'AbortError' || err.code === 20) return true
+  const msg = String(err.message || '')
+  return /aborted|AbortError|The user aborted/i.test(msg)
+}
+
 export async function callGeminiAPI(prompt, options = {}) {
+  syncRuntimeApiKeysFromStorage()
   const {
     provider = DEFAULT_AI_PROVIDER,
     usePro = false,
@@ -686,8 +799,14 @@ export async function callGeminiAPI(prompt, options = {}) {
     deepseekModel = DEEPSEEK_MODEL_DEFAULT,
     bailianModel = BAILIAN_MODEL_DEFAULT,
     retryCount = 0,
-    maxRetries = 3
+    maxRetries = 3,
+    signal = null
   } = options
+
+  if (signal?.aborted) {
+    const abortErr = new DOMException('The user aborted a request.', 'AbortError')
+    throw abortErr
+  }
 
   // 如果直接指定使用本地模型
   if (provider === 'local') {
@@ -751,11 +870,12 @@ export async function callGeminiAPI(prompt, options = {}) {
   }
 
   if (!currentKey || !url) {
-    if (LOCAL_MODEL_CONFIG.fallbackEnabled && LOCAL_MODEL_CONFIG.enabled) {
-      console.warn(`[AI] ${apiType} 未配置 API Key，尝试使用本地模型兜底`)
-      return await callLocalModel(prompt, options)
-    }
-    throw new Error(missingKeyHint(apiType))
+    // 无云端 Key 时不再静默打 Ollama（未启动时会变成难懂的「后台报错」）
+    // 本地模型仅在云端调用失败后的 retry 兜底路径启用
+    throw new Error(
+      missingKeyHint(apiType) +
+      ' 也可在「模型配置」粘贴 DeepSeek Key（本机备用，立即生效）。'
+    )
   }
 
   const requestFn = async () => {
@@ -874,7 +994,8 @@ export async function callGeminiAPI(prompt, options = {}) {
     const response = await fetch(url, {
       method: 'POST',
       headers: fetchHeaders,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      ...(signal ? { signal } : {})
     })
     
     console.log('[AI] 收到响应，状态码:', response.status)
@@ -1261,21 +1382,42 @@ export async function batchCallGeminiAPI(requests) {
  * @param {function} onChunk - 接收数据块的回调函数
  * @returns {Promise<void>}
  */
+/**
+ * 渐进式输出：先完整拉取，再按句/词块回放（支持 AbortSignal）
+ * 真 SSE 流接入前，先保证对话区「边出边看」体验。
+ */
 export async function streamGeminiAPI(prompt, options = {}, onChunk) {
-  // 注意：Gemini API的流式响应需要使用不同的端点
-  // 这里提供一个基础实现框架
-  console.warn('[AI Stream] 流式响应功能正在开发中')
-  
-  // 临时实现：使用普通调用，然后模拟流式输出
+  const signal = options.signal
+  if (signal?.aborted) {
+    throw new DOMException('The user aborted a request.', 'AbortError')
+  }
+
   const fullResponse = await callGeminiAPI(prompt, options)
-  const chunks = fullResponse.split(/(?<=[。！？\n])/)
-  
-  for (const chunk of chunks) {
-    if (chunk.trim()) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-      onChunk(chunk)
+  if (!fullResponse) return ''
+
+  const parts = String(fullResponse).split(/(?<=[。！？；;!?\n])/).filter((p) => p.length)
+  // 过短则再按字符组切，避免整段一次性蹦出
+  const chunks = []
+  for (const part of parts) {
+    if (part.length <= 24) chunks.push(part)
+    else {
+      for (let i = 0; i < part.length; i += 18) chunks.push(part.slice(i, i + 18))
     }
   }
+  if (!chunks.length) chunks.push(fullResponse)
+
+  let assembled = ''
+  for (const chunk of chunks) {
+    if (signal?.aborted) {
+      const err = new DOMException('The user aborted a request.', 'AbortError')
+      err.partialText = assembled
+      throw err
+    }
+    assembled += chunk
+    if (typeof onChunk === 'function') onChunk(chunk, assembled)
+    await new Promise((r) => setTimeout(r, chunk.length > 40 ? 28 : 16))
+  }
+  return assembled
 }
 
 /**
@@ -1499,6 +1641,7 @@ export function addAPIKey(key, type = 'bailian') {
 
 export default {
   callGeminiAPI,
+  isAbortError,
   batchCallGeminiAPI,
   streamGeminiAPI,
   extractJSON,
@@ -1510,4 +1653,8 @@ export default {
   resetKeyStatus,
   addAPIKey,
   getAIProviderConfigStatus,
+  syncRuntimeApiKeysFromStorage,
+  setRuntimeDeepSeekKey,
+  clearRuntimeDeepSeekKey,
+  hasUsableCloudProvider,
 }

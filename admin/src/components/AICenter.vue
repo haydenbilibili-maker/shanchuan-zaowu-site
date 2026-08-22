@@ -50,7 +50,7 @@
         <div class="aic-env-alert-body">
           <p>{{ aiProviderConfigHint }}</p>
           <div class="aic-env-alert-actions">
-            <el-button type="primary" size="small" @click="openOnlineConfig">打开配置</el-button>
+            <el-button type="primary" size="small" @click="openOnlineConfig">粘贴 Key / 打开配置</el-button>
             <el-button size="small" text @click="dismissProviderWarning = true">稍后</el-button>
           </div>
         </div>
@@ -135,10 +135,10 @@
             <h3 class="aic-section-title">{{ activeCategoryMeta?.name || '全部工具' }}</h3>
             <p class="aic-section-desc">{{ activeCategoryDesc }}</p>
           </div>
-          <div class="aic-legend">
-            <span class="aic-legend-item"><i class="cap-dot cap-api" />真 API</span>
-            <span class="aic-legend-item"><i class="cap-dot cap-bridge" />对接</span>
-            <span class="aic-legend-item"><i class="cap-dot cap-demo" />演示</span>
+          <div class="aic-legend" title="点击可筛选能力类型">
+            <button type="button" :class="['aic-legend-item', 'aic-legend-item--api', capabilityFilter === 'api' ? 'is-on' : '']" @click="toggleCapabilityFilter('api')"><i class="cap-dot cap-api" />真 API</button>
+            <button type="button" :class="['aic-legend-item', 'aic-legend-item--bridge', capabilityFilter === 'bridge' ? 'is-on' : '']" @click="toggleCapabilityFilter('bridge')"><i class="cap-dot cap-bridge" />对接</button>
+            <button type="button" :class="['aic-legend-item', 'aic-legend-item--demo', capabilityFilter === 'demo' ? 'is-on' : '']" @click="toggleCapabilityFilter('demo')"><i class="cap-dot cap-demo" />演示</button>
           </div>
         </div>
 
@@ -157,7 +157,8 @@
                 size="small"
                 effect="plain"
                 :type="capabilityTagType(feature.capability)"
-                class="aic-cap-tag"
+                :class="['aic-cap-tag', `aic-cap-tag--${feature.capability || 'demo'}`]"
+                :title="feature.capabilityHint || feature.capabilityLabel || ''"
               >
                 {{ feature.capabilityLabel || '真 API' }}
               </el-tag>
@@ -172,10 +173,18 @@
             </div>
           </button>
         </div>
-        <div v-else class="aic-empty">
-          <p class="aic-empty-title">没有匹配的工具</p>
-          <p class="aic-empty-desc">试试其他关键词，或切换分类</p>
-          <el-button size="small" @click="toolSearch = ''; activeCategory = 'all'">重置筛选</el-button>
+        <div v-else class="aic-empty aic-empty--tools">
+          <p class="aic-empty-title">{{ toolSearch.trim() ? '没有匹配的工具' : '当前分类暂无工具' }}</p>
+          <p class="aic-empty-desc">
+            {{ toolSearch.trim()
+              ? `未找到与「${toolSearch.trim()}」相关的能力，试试更短关键词或切换分类`
+              : '试试其他分类，或从左侧快捷入口进入对话 / OpenClaw' }}
+          </p>
+          <div class="aic-empty-actions">
+            <el-button v-if="toolSearch.trim()" size="small" type="primary" plain @click="toolSearch = ''">清空搜索</el-button>
+            <el-button size="small" @click="toolSearch = ''; activeCategory = 'all'">查看全部工具</el-button>
+            <el-button size="small" type="primary" @click="switchMode('chat')">去智能咨询</el-button>
+          </div>
         </div>
       </div>
     </section>
@@ -202,6 +211,41 @@
           </button>
         </div>
         <template v-if="showPersonaPanel">
+          <div class="aic-session-block">
+            <div class="aic-session-head">
+              <div class="aic-side-label">会话</div>
+              <button type="button" class="aic-text-btn aic-session-new" @click="startNewSession" title="新对话 (⌘/Ctrl+N)">
+                + 新对话
+              </button>
+            </div>
+            <el-input
+              v-model="sessionSearch"
+              size="small"
+              clearable
+              placeholder="搜索会话…"
+              class="aic-session-search"
+            />
+            <div class="aic-session-list" role="list">
+              <button
+                v-for="s in filteredSessionList"
+                :key="s.id"
+                type="button"
+                role="listitem"
+                :class="['aic-session-item', s.id === currentSessionId ? 'is-active' : '']"
+                @click="switchSession(s.id)"
+              >
+                <span class="aic-session-title">{{ s.title || '新对话' }}</span>
+                <span class="aic-session-meta">{{ formatSessionTime(s.updatedAt) }}</span>
+                <span
+                  class="aic-session-del"
+                  title="删除会话"
+                  role="button"
+                  @click.stop="deleteSession(s.id)"
+                >×</span>
+              </button>
+              <p v-if="!sessionListSorted.length" class="aic-session-empty">暂无会话</p>
+            </div>
+          </div>
           <el-input
             v-model="personaSearch"
             placeholder="搜索角色或领域…"
@@ -270,7 +314,8 @@
             </div>
           </div>
           <div class="aic-thread-actions">
-            <button type="button" class="aic-text-btn" @click="clearHistory">新对话</button>
+            <button type="button" class="aic-text-btn" @click="exportCurrentSession" title="导出 Markdown">导出</button>
+            <button type="button" class="aic-text-btn" @click="startNewSession" title="新对话 (⌘/Ctrl+N)">新对话</button>
             <button v-if="messages.length > 3" type="button" class="aic-text-btn" @click="scrollToBottom">滚到底</button>
           </div>
         </div>
@@ -326,7 +371,7 @@
 
         <div class="aic-chat-panel">
           <div ref="chatBoxRef" class="aic-chat-box">
-            <div v-if="messages.length <= 1 && !isAiThinking && !isDebating" class="aic-welcome">
+            <div v-if="showWelcomeState" class="aic-welcome">
               <div class="aic-welcome-mark" aria-hidden="true">{{ currentPersona.icon }}</div>
               <h3 class="aic-welcome-title">你好，我是{{ currentPersona.name }}</h3>
               <p class="aic-welcome-desc">{{ currentPersona.shortDesc }} · 直接输入问题，或点下方示例开始</p>
@@ -341,8 +386,8 @@
               </div>
             </div>
             <div
-              v-for="(msg, index) in messages"
-              :key="index"
+              v-for="(msg, index) in visibleMessages"
+              :key="msg.id || index"
               :class="['aic-msg', msg.role === 'ai' ? 'is-ai' : 'is-user']"
             >
               <div class="aic-msg-head" v-if="msg.persona">
@@ -350,33 +395,64 @@
                   {{ personas[msg.persona]?.icon }} {{ personas[msg.persona]?.name }}
                 </span>
               </div>
-              <div :class="['aic-bubble', msg.role === 'ai' ? 'is-ai' : 'is-user']">
+              <div :class="['aic-bubble', msg.role === 'ai' ? 'is-ai' : 'is-user', msg.isStreaming ? 'is-streaming' : '']">
                 <div v-html="msg.content"></div>
-                <button
-                  v-if="msg.role === 'ai' && msg.rawText"
-                  type="button"
-                  :class="['aic-voice', isPlaying && currentAudioText === msg.rawText ? 'is-active' : '']"
-                  @click="playAudio(msg.rawText, msg.persona)"
-                >
-                  {{ isPlaying && currentAudioText === msg.rawText ? '停止播放' : '播放语音' }}
-                </button>
+                <span v-if="msg.isStreaming" class="aic-stream-caret" aria-hidden="true"></span>
+                <div v-if="msg.role === 'ai' && !msg.isStreaming" class="aic-msg-actions">
+                  <button
+                    v-if="msg.rawText"
+                    type="button"
+                    class="aic-msg-action"
+                    @click="copyMessageText(msg)"
+                  >复制</button>
+                  <button
+                    v-if="msg.rawText"
+                    type="button"
+                    class="aic-msg-action"
+                    @click="quoteMessage(msg)"
+                  >引用追问</button>
+                  <button
+                    v-if="msg.rawText"
+                    type="button"
+                    :class="['aic-msg-action', isPlaying && currentAudioText === msg.rawText ? 'is-active' : '']"
+                    @click="playAudio(msg.rawText, msg.persona)"
+                  >
+                    {{ isPlaying && currentAudioText === msg.rawText ? '停止播放' : '播放语音' }}
+                  </button>
+                  <button
+                    v-if="canRegenerateAt(index)"
+                    type="button"
+                    class="aic-msg-action"
+                    :disabled="isAiThinking || isDebating"
+                    @click="regenerateLastAI"
+                  >重新生成</button>
+                </div>
               </div>
             </div>
-            <div v-if="isAiThinking" class="aic-msg is-ai">
+            <div v-if="isAiThinking && !hasStreamingMessage" class="aic-msg is-ai">
               <div class="aic-bubble is-ai is-thinking">
-                {{ currentPersona.thinkingMsg }}
+                <span>{{ currentPersona.thinkingMsg }}</span>
                 <span class="aic-thinking-dots" aria-hidden="true"><i /><i /><i /></span>
+                <button type="button" class="aic-msg-action aic-stop-inline" @click="stopGeneration">停止</button>
               </div>
             </div>
             <div v-if="lastChatError" class="aic-error-banner">
               <strong>调用失败</strong>
               <span>{{ lastChatError }}</span>
               <el-button v-if="isConfigError(lastChatError)" size="small" type="primary" @click="openOnlineConfig">去配置</el-button>
+              <el-button v-else size="small" type="primary" plain @click="regenerateLastAI">重试</el-button>
               <el-button size="small" text @click="lastChatError = ''">关闭</el-button>
             </div>
           </div>
 
           <div class="aic-composer">
+            <div v-if="quoteDraft" class="aic-quote-bar">
+              <div class="aic-quote-bar-main">
+                <span class="aic-quote-label">引用</span>
+                <span class="aic-quote-text">{{ quoteDraft }}</span>
+              </div>
+              <button type="button" class="aic-text-btn" @click="clearQuote">取消</button>
+            </div>
             <div class="aic-composer-card">
               <div class="aic-quick-row" role="toolbar" aria-label="快捷指令">
                 <button
@@ -398,26 +474,36 @@
                 :autosize="{ minRows: 2, maxRows: 8 }"
                 resize="none"
                 @keydown.enter.exact.prevent="handleEnterKey"
-                @keydown.esc="aiInput = ''"
+                @keydown.esc.prevent="handleComposerEscape"
                 :placeholder="currentMode === 'debate' ? '补充观察或追问…' : `给 ${currentPersona.name} 发消息…`"
                 class="aic-textarea"
                 :disabled="isAiThinking || isDebating"
               />
               <div class="aic-composer-foot">
                 <div class="aic-composer-meta">
-                  <span class="aic-composer-hint">Enter 发送 · Shift+Enter 换行</span>
+                  <span class="aic-composer-hint">{{ composerHint }}</span>
                   <button type="button" class="aic-model-mini" @click="openOnlineConfig">{{ providerChipLabel }}</button>
                 </div>
-                <el-button
-                  type="primary"
-                  class="aic-send-cta"
-                  round
-                  @click="sendAI"
-                  :disabled="isAiThinking || isDebating || !aiInput.trim()"
-                  :loading="isAiThinking || isDebating"
-                >
-                  {{ isAiThinking || isDebating ? '生成中' : '发送' }}
-                </el-button>
+                <div class="aic-composer-ctas">
+                  <el-button
+                    v-if="isAiThinking || isDebating"
+                    class="aic-stop-cta"
+                    round
+                    @click="stopGeneration"
+                  >
+                    停止
+                  </el-button>
+                  <el-button
+                    v-else
+                    type="primary"
+                    class="aic-send-cta"
+                    round
+                    @click="sendAI"
+                    :disabled="isAiThinking || isDebating || !aiInput.trim() || showProviderWarning"
+                  >
+                    发送
+                  </el-button>
+                </div>
               </div>
             </div>
             <p v-if="recentTasks.length" class="aic-recent-tasks">
@@ -552,6 +638,21 @@
                 本地：在 <code>admin/.env</code> 填写后重启 <code>npm run dev:admin</code>。
                 生产：GitHub Secrets 注入后重新部署。详见 <code>admin/docs/AI_DeepSeek环境变量配置.md</code>。
               </p>
+              <div class="runtime-key-panel">
+                <div class="runtime-key-title">本机即时备用 Key（无需重启）</div>
+                <div class="runtime-key-row">
+                  <el-input
+                    v-model="runtimeDeepseekDraft"
+                    type="password"
+                    show-password
+                    clearable
+                    placeholder="粘贴 DeepSeek API Key（sk-…）"
+                    @keyup.enter="saveRuntimeDeepseekKey"
+                  />
+                  <el-button type="primary" @click="saveRuntimeDeepseekKey">立即生效</el-button>
+                </div>
+                <p class="runtime-key-tip">仅存本机浏览器；生产环境仍建议用环境变量。{{ aiProviderConfigStatus.runtimeDeepseekConfigured ? '已检测到本机备用 Key。' : '' }}</p>
+              </div>
             </div>
             <div class="compact-api-header">
               <h4 class="config-title-compact"><el-icon><Setting /></el-icon>浏览器备用接口（次优先）</h4>
@@ -694,13 +795,14 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor, SwitchButton, Refresh, Box, Check, Cpu, Connection, Cloudy, Setting, Plus, Edit, Delete, Link, Key, InfoFilled } from '@element-plus/icons-vue'
 import { marked } from 'marked'
-import { callGeminiAPI, buildConversationHistory, getAIProviderConfigStatus } from '../utils/aiHelper'
+import { callGeminiAPI, streamGeminiAPI, buildConversationHistory, getAIProviderConfigStatus, isAbortError, syncRuntimeApiKeysFromStorage, setRuntimeDeepSeekKey, hasUsableCloudProvider } from '../utils/aiHelper'
 import { aiFeatureCategories, aiFeatureComponents, aiFeatures, findAiFeature, capabilityTagType } from '../data/aiFeatureRegistry'
 import OpenClawVirtualStaff from './ai/OpenClawVirtualStaff.vue'
 import { waitForVoices, selectBestVoice, createOptimizedUtterance } from '../utils/ttsHelper'
 import '../styles/ai-center-workbench.css'
 
 const activeCategory = ref('all')
+const capabilityFilter = ref('')
 const toolSearch = ref('')
 const featureDialogVisible = ref(false)
 const currentFeature = ref(null)
@@ -713,7 +815,27 @@ const RECENT_TASKS_KEY = 'ai_center_recent_tasks'
 const recentFeatureIds = ref([])
 const recentTasks = ref([])
 
-const aiProviderConfigStatus = computed(() => getAIProviderConfigStatus())
+const providerStatusTick = ref(0)
+const refreshProviderStatus = () => {
+  syncRuntimeApiKeysFromStorage()
+  providerStatusTick.value += 1
+}
+const aiProviderConfigStatus = computed(() => {
+  providerStatusTick.value
+  return getAIProviderConfigStatus()
+})
+const runtimeDeepseekDraft = ref('')
+const saveRuntimeDeepseekKey = () => {
+  const ok = setRuntimeDeepSeekKey(runtimeDeepseekDraft.value)
+  if (!ok) {
+    ElMessage.warning('请输入有效的 DeepSeek API Key（通常以 sk- 开头）')
+    return
+  }
+  refreshProviderStatus()
+  runtimeDeepseekDraft.value = ''
+  dismissProviderWarning.value = false
+  ElMessage.success('本机 DeepSeek Key 已生效，可直接发送消息')
+}
 const aiProviderConfigHint = computed(() => {
   const s = aiProviderConfigStatus.value
   const cloudKeys = s.bailian + s.gemini + s.openai + s.deepseek
@@ -734,9 +856,31 @@ const aiProviderConfigHint = computed(() => {
 
 const hasCloudProvider = computed(() => {
   const s = aiProviderConfigStatus.value
-  return s.deepseekConfigured || s.bailian > 0 || s.gemini > 0 || s.openai > 0
+  return Boolean(
+    s.hasUsableCloudProvider ||
+    s.deepseekConfigured ||
+    s.bailian > 0 ||
+    s.gemini > 0 ||
+    s.openai > 0 ||
+    hasUsableCloudProvider()
+  )
 })
+const ensureCloudProviderOrGuide = (actionLabel = '发送') => {
+  refreshProviderStatus()
+  if (hasCloudProvider.value) return true
+  ElMessage.warning({
+    message: `尚未配置可用的云端 AI Key，无法${actionLabel}。请粘贴 DeepSeek Key 或配置环境变量。`,
+    duration: 3500,
+  })
+  openOnlineConfig()
+  return false
+}
 const showProviderWarning = computed(() => !hasCloudProvider.value && !dismissProviderWarning.value)
+const composerHint = computed(() => {
+  if (!hasCloudProvider.value) return '尚未配置 Key — 点发送将打开配置；也可先粘贴 DeepSeek Key'
+  if (isAiThinking.value) return '生成中 · Esc 停止'
+  return 'Enter 发送 · Esc 停止/清空 · ⌘/Ctrl+N 新对话'
+})
 const providerChipLabel = computed(() => {
   const s = aiProviderConfigStatus.value
   if (s.deepseekConfigured) return `DeepSeek · ${s.deepseekModel || 'chat'}`
@@ -1199,6 +1343,7 @@ const saveApiConfigList = () => {
 const selectApiConfig = (api) => {
   currentApiConfig.value = api
   saveApiConfigList()
+  refreshProviderStatus()
   ElMessage.success(`已切换到：${api.name}`)
 }
 
@@ -1238,6 +1383,7 @@ const saveApiConfig = async () => {
     }
     
     saveApiConfigList()
+    refreshProviderStatus()
     resetApiForm()
     showAddApiDialog.value = false
   } catch (error) {
@@ -1352,6 +1498,7 @@ const handleAddApiClick = async () => {
 // 初始化时加载API配置
 onMounted(() => {
   loadApiConfigList()
+  refreshProviderStatus()
 })
 
 const categories = aiFeatureCategories
@@ -1360,13 +1507,18 @@ const features = aiFeatures
 
 const filteredFeatures = computed(() => {
   const q = toolSearch.value.trim().toLowerCase()
+  const cap = capabilityFilter.value
   return features.filter((f) => {
     if (activeCategory.value !== 'all' && f.category !== activeCategory.value) return false
+    if (cap && (f.capability || 'demo') !== cap) return false
     if (!q) return true
-    const hay = `${f.title} ${f.description} ${(f.tags || []).join(' ')} ${f.capabilityLabel || ''}`.toLowerCase()
+    const hay = `${f.title || ''} ${f.description || ''} ${(f.tags || []).join(' ')} ${f.capabilityLabel || ''}`.toLowerCase()
     return hay.includes(q)
   })
 })
+const toggleCapabilityFilter = (cap) => {
+  capabilityFilter.value = capabilityFilter.value === cap ? '' : cap
+}
 
 const featureCountByCategory = computed(() => {
   return features.reduce((acc, feature) => {
@@ -1426,17 +1578,35 @@ const handleOpenAiFeature = (event) => {
 
 const PERSONA_PANEL_KEY = 'ai_center_persona_panel'
 const AI_PENDING_FEATURE_KEY = 'ai_center_pending_feature'
+const SESSIONS_STORAGE_KEY = 'ai_center_chat_sessions_v1'
 const showPersonaPanel = ref(true)
 const personaSearch = ref('')
 const personaMode = ref('store_manager')
 const aiInput = ref('')
-const messages = ref([
-  {
-    role: 'ai',
-    content: '<strong>👥 虚拟员工战队:</strong> 系统已就绪！<br>全量业务数据已加载。<br><br>🏪 <strong>线下门店战队</strong>：门店运营、采购、创意设计、标本制作<br>🌐 <strong>线上互联网战队</strong>：流量运营、用户增长、社媒运营、产品经理、研发、PMO<br>💼 <strong>专业支持战队</strong>：CFO、CMO、COO、HR、法务、数据分析、商务拓展、品牌总监等<br><br>选择一个专业角色开始咨询，或启动智能博弈辩论模式！',
-    rawText: '系统已就绪！全量业务数据已加载。可以选择单个角色咨询，或启动智能博弈辩论模式。'
+
+const createWelcomeMessage = () => ({
+  id: `welcome_${Date.now()}`,
+  role: 'ai',
+  isWelcome: true,
+  content: '<strong>👥 虚拟员工战队:</strong> 系统已就绪！<br>全量业务数据已加载。<br><br>🏪 <strong>线下门店战队</strong>：门店运营、采购、创意设计、标本制作<br>🌐 <strong>线上互联网战队</strong>：流量运营、用户增长、社媒运营、产品经理、研发、PMO<br>💼 <strong>专业支持战队</strong>：CFO、CMO、COO、HR、法务、数据分析、商务拓展、品牌总监等<br><br>选择一个专业角色开始咨询，或启动智能博弈辩论模式！',
+  rawText: '系统已就绪！全量业务数据已加载。可以选择单个角色咨询，或启动智能博弈辩论模式。'
+})
+
+const createEmptySession = (persona = 'store_manager') => {
+  const now = Date.now()
+  return {
+    id: `s_${now}_${Math.random().toString(36).slice(2, 8)}`,
+    title: '新对话',
+    persona,
+    messages: [createWelcomeMessage()],
+    updatedAt: now,
+    createdAt: now
   }
-])
+}
+
+const sessions = ref([])
+const currentSessionId = ref('')
+const messages = ref([createWelcomeMessage()])
 const isAiThinking = ref(false)
 const isSpeaking = ref(false)
 const currentAudioText = ref('')
@@ -1444,18 +1614,258 @@ const isPlaying = ref(false)
 const chatBoxRef = ref(null)
 const aiInputRef = ref(null)
 const isDebating = ref(false)
+/** @type {AbortController | null} */
+let chatAbortController = null
+let persistSessionsTimer = null
 
-// 空状态快捷示例（仅当仅有一条欢迎消息时显示）
-const emptySuggestions = [
-  '生成一份经营诊断报告，包括当前运营状况与改进建议',
-  '分析我们门店的主要风险点并给出应对策略',
-  '针对标本产品设计，给几条创意方案建议'
-]
-const applySuggestion = (text) => {
-  aiInput.value = text
-  nextTick(() => {
-    aiInputRef.value?.focus?.()
+const sessionListSorted = computed(() =>
+  [...sessions.value].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+)
+const sessionSearch = ref('')
+const filteredSessionList = computed(() => {
+  const q = sessionSearch.value.trim().toLowerCase()
+  if (!q) return sessionListSorted.value
+  return sessionListSorted.value.filter((s) => {
+    const title = String(s.title || '').toLowerCase()
+    const preview = String(s.preview || s.lastMessage || '').toLowerCase()
+    return title.includes(q) || preview.includes(q)
   })
+})
+const quoteDraft = ref('')
+const hasStreamingMessage = computed(() => messages.value.some((m) => m.isStreaming))
+const quoteMessage = (msg) => {
+  const text = (msg?.rawText || '').trim()
+  if (!text) return
+  quoteDraft.value = text.length > 160 ? `${text.slice(0, 160)}…` : text
+  nextTick(() => aiInputRef.value?.focus?.())
+}
+const clearQuote = () => { quoteDraft.value = '' }
+const exportCurrentSession = () => {
+  const persona = currentPersona.value
+  const lines = [
+    `# AI 智能中心会话`,
+    ``,
+    `- 角色：${persona?.name || '未指定'}`,
+    `- 导出时间：${new Date().toLocaleString()}`,
+    ``,
+  ]
+  for (const msg of messages.value) {
+    if (msg.isWelcome) continue
+    const who = msg.role === 'user' ? '用户' : (personas[msg.persona]?.name || persona?.name || 'AI')
+    const body = msg.rawText || stripHtml(msg.content || '')
+    if (!body.trim()) continue
+    lines.push(`## ${who}`, '', body, '')
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `ai-session-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.md`
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('已导出 Markdown')
+}
+
+const showWelcomeState = computed(() =>
+  !isAiThinking.value &&
+  !isDebating.value &&
+  !messages.value.some((m) => m.role === 'user')
+)
+
+const visibleMessages = computed(() => {
+  if (showWelcomeState.value) return []
+  return messages.value.filter((m) => !m.isWelcome)
+})
+
+const stripHtml = (html = '') => String(html).replace(/<[^>]*>/g, '').trim()
+
+const titleFromMessages = (msgs = []) => {
+  const firstUser = msgs.find((m) => m.role === 'user')
+  if (!firstUser) return '新对话'
+  const text = stripHtml(firstUser.rawText || firstUser.content || '')
+  if (!text) return '新对话'
+  return text.length > 28 ? `${text.slice(0, 28)}…` : text
+}
+
+const formatSessionTime = (ts) => {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const now = new Date()
+  const sameDay = d.toDateString() === now.toDateString()
+  if (sameDay) {
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
+
+const persistSessionsNow = () => {
+  try {
+    localStorage.setItem(
+      SESSIONS_STORAGE_KEY,
+      JSON.stringify({
+        currentId: currentSessionId.value,
+        sessions: sessions.value
+      })
+    )
+  } catch (_) {}
+}
+
+const schedulePersistSessions = () => {
+  if (persistSessionsTimer) clearTimeout(persistSessionsTimer)
+  persistSessionsTimer = setTimeout(persistSessionsNow, 200)
+}
+
+const syncCurrentSessionToStore = () => {
+  if (!currentSessionId.value) return
+  const idx = sessions.value.findIndex((s) => s.id === currentSessionId.value)
+  if (idx < 0) return
+  const prev = sessions.value[idx]
+  sessions.value[idx] = {
+    ...prev,
+    persona: personaMode.value,
+    messages: JSON.parse(JSON.stringify(messages.value)),
+    title: titleFromMessages(messages.value),
+    updatedAt: Date.now()
+  }
+  schedulePersistSessions()
+}
+
+const hydrateFromSession = (session) => {
+  if (!session) return
+  currentSessionId.value = session.id
+  personaMode.value = session.persona || 'store_manager'
+  messages.value = Array.isArray(session.messages) && session.messages.length
+    ? JSON.parse(JSON.stringify(session.messages))
+    : [createWelcomeMessage()]
+  lastChatError.value = ''
+  nextTick(() => scrollToBottom())
+}
+
+const loadSessionsFromStorage = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SESSIONS_STORAGE_KEY) || 'null')
+    if (raw && Array.isArray(raw.sessions) && raw.sessions.length) {
+      sessions.value = raw.sessions.map((s) => ({
+        id: s.id || `s_${Date.now()}`,
+        title: s.title || '新对话',
+        persona: s.persona || 'store_manager',
+        messages: Array.isArray(s.messages) && s.messages.length ? s.messages : [createWelcomeMessage()],
+        updatedAt: s.updatedAt || Date.now(),
+        createdAt: s.createdAt || s.updatedAt || Date.now()
+      }))
+      const wanted = raw.currentId
+      const cur = sessions.value.find((s) => s.id === wanted) || sessions.value[0]
+      hydrateFromSession(cur)
+      return
+    }
+  } catch (_) {}
+  const fresh = createEmptySession(personaMode.value)
+  sessions.value = [fresh]
+  hydrateFromSession(fresh)
+  persistSessionsNow()
+}
+
+const startNewSession = async () => {
+  if (isAiThinking.value || isDebating.value) {
+    stopGeneration()
+  }
+  const hasContent = messages.value.some((m) => m.role === 'user')
+  if (hasContent) {
+    try {
+      await ElMessageBox.confirm(
+        '将保存当前会话并开始新对话，是否继续？',
+        '新对话',
+        {
+          confirmButtonText: '开始新对话',
+          cancelButtonText: '取消',
+          type: 'info'
+        }
+      )
+    } catch {
+      return
+    }
+  }
+  syncCurrentSessionToStore()
+  const fresh = createEmptySession(personaMode.value)
+  sessions.value = [fresh, ...sessions.value].slice(0, 30)
+  hydrateFromSession(fresh)
+  persistSessionsNow()
+  ElMessage.success({ message: '已开启新对话', duration: 1500 })
+}
+
+const switchSession = (id) => {
+  if (!id || id === currentSessionId.value) return
+  if (isAiThinking.value || isDebating.value) {
+    stopGeneration()
+  }
+  syncCurrentSessionToStore()
+  const target = sessions.value.find((s) => s.id === id)
+  if (!target) return
+  hydrateFromSession(target)
+  persistSessionsNow()
+}
+
+const deleteSession = async (id) => {
+  const target = sessions.value.find((s) => s.id === id)
+  if (!target) return
+  const label = target.title || '新对话'
+  try {
+    await ElMessageBox.confirm(`确定删除会话「${label}」？`, '删除会话', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+      confirmButtonClass: 'el-button--danger'
+    })
+  } catch {
+    return
+  }
+  const wasCurrent = id === currentSessionId.value
+  sessions.value = sessions.value.filter((s) => s.id !== id)
+  if (!sessions.value.length) {
+    const fresh = createEmptySession(personaMode.value)
+    sessions.value = [fresh]
+    hydrateFromSession(fresh)
+  } else if (wasCurrent) {
+    hydrateFromSession(sessionListSorted.value[0] || sessions.value[0])
+  }
+  persistSessionsNow()
+  ElMessage.success('会话已删除')
+}
+
+// 空状态快捷示例（仅当尚无用户消息时显示）
+const emptySuggestionsByPersona = {
+  default: [
+    '生成一份经营诊断报告，包括当前运营状况与改进建议',
+    '分析我们门店的主要风险点并给出应对策略',
+    '针对标本产品设计，给几条创意方案建议',
+  ],
+  cfo: [
+    '输出本月经营诊断：收入结构、毛利、费用与现金流风险',
+    '给出门店坪效与客单价提升的财务测算框架',
+    '列一份标本业务的成本控制清单（可执行）',
+  ],
+  store_manager: [
+    '诊断当前门店转化漏斗并给出本周可执行动作',
+    '设计周末客流高峰的排班与接待话术',
+    '针对易碎品陈列给出损耗控制方案',
+  ],
+  cmo: [
+    '规划下一波标本主题营销活动与内容节奏',
+    '给出小红书/私域获客的低成本实验清单',
+    '写一份品牌调性统一的门店体验叙事',
+  ],
+}
+const emptySuggestions = computed(() => {
+  const key = personaMode.value
+  return emptySuggestionsByPersona[key] || emptySuggestionsByPersona.default
+})
+const applySuggestion = async (text, { send = true } = {}) => {
+  aiInput.value = text
+  await nextTick()
+  aiInputRef.value?.focus?.()
+  if (!send) return
+  if (!ensureCloudProviderOrGuide('发送示例问题')) return
+  await sendAI(0, false, text)
 }
 const debateTopic = ref('')
 const customDebateTopic = ref('')
@@ -2174,8 +2584,10 @@ const selectPersona = (key) => {
 }
 
 // 发送AI请求
-const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specificPersona = null) => {
-  if (retryCount === 0) {
+const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specificPersona = null, opts = {}) => {
+  const { skipPushUser = false, useCache = true } = opts
+  if (retryCount === 0 && !ensureCloudProviderOrGuide('发送')) return
+  if (retryCount === 0 && !skipPushUser) {
     if (!aiInput.value.trim() && !prompt) {
       ElMessage.warning({
         message: '请输入问题或指令',
@@ -2184,6 +2596,10 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
       return
     }
     prompt = prompt || aiInput.value.trim()
+    if (quoteDraft.value) {
+      prompt = `【引用上文】\n${quoteDraft.value}\n\n【追问】\n${prompt}`
+      quoteDraft.value = ''
+    }
     // 限制输入长度
     if (prompt.length > 2000) {
       ElMessage.warning({
@@ -2192,27 +2608,37 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
       })
       return
     }
-    messages.value.push({ role: 'user', content: prompt })
+    messages.value.push({
+      id: `u_${Date.now()}`,
+      role: 'user',
+      content: prompt,
+      rawText: prompt
+    })
     pushRecentTask(prompt)
     aiInput.value = ''
     // 更新使用统计
     todayUsage.value++
     const today = new Date().toDateString()
     localStorage.setItem('ai_today_usage', JSON.stringify({ date: today, count: todayUsage.value }))
+    syncCurrentSessionToStore()
   }
   
   if (!prompt || !String(prompt).trim()) {
     const lastUserMsg = messages.value.length > 0
       ? [...messages.value].reverse().find(msg => msg.role === 'user')
       : null
-    if (lastUserMsg && lastUserMsg.content) {
-      prompt = lastUserMsg.content
+    if (lastUserMsg && (lastUserMsg.rawText || lastUserMsg.content)) {
+      prompt = lastUserMsg.rawText || stripHtml(lastUserMsg.content)
     } else {
       ElMessage.warning({ message: '请输入问题或指令', duration: 2000 })
       return
     }
   }
   
+  if (chatAbortController) {
+    try { chatAbortController.abort() } catch (_) {}
+  }
+  chatAbortController = new AbortController()
   isAiThinking.value = true
   lastChatError.value = ''
   await nextTick()
@@ -2220,35 +2646,89 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
 
   try {
     const persona = specificPersona ? personas[specificPersona] : currentPersona.value
-    const recentMessages = messages.value.slice(-10).map(msg => ({
-      role: msg.role === 'ai' ? 'assistant' : msg.role,
-      content: msg.rawText || msg.content.replace(/<[^>]*>/g, '')
-    }))
+    const recentMessages = messages.value
+      .filter((msg) => !msg.isWelcome)
+      .slice(-10)
+      .map(msg => ({
+        role: msg.role === 'ai' ? 'assistant' : msg.role,
+        content: msg.rawText || stripHtml(msg.content)
+      }))
     const conversationHistory = buildConversationHistory(recentMessages)
     
     const finalPrompt = conversationHistory.length > 0 
       ? prompt 
       : `${persona.systemPrompt}\n\n用户问题：${prompt}`
 
-    const text = await callGeminiAPI(finalPrompt, {
-      usePro: useBackup,
-      temperature: specificPersona === 'cfo' ? 0.7 : 0.9,
-      maxOutputTokens: 2048,
-      useCache: true,
-      systemInstruction: persona.systemPrompt,
-      conversationHistory: conversationHistory.length > 0 ? conversationHistory : []
+    const streamId = `a_${Date.now()}`
+    messages.value.push({
+      id: streamId,
+      role: 'ai',
+      content: '',
+      rawText: '',
+      persona: specificPersona || personaMode.value,
+      isStreaming: true,
     })
-    
-    if (text) {
-      const parsedContent = marked.parse(text)
-      messages.value.push({
-        role: 'ai',
-        content: parsedContent,
-        rawText: text,
-        persona: specificPersona || personaMode.value
-      })
+    await nextTick()
+    scrollToBottom()
+
+    const text = await streamGeminiAPI(
+      finalPrompt,
+      {
+        usePro: useBackup,
+        temperature: specificPersona === 'cfo' ? 0.7 : 0.9,
+        maxOutputTokens: 2048,
+        useCache: skipPushUser ? false : useCache,
+        systemInstruction: persona.systemPrompt,
+        conversationHistory: conversationHistory.length > 0 ? conversationHistory : [],
+        signal: chatAbortController.signal,
+      },
+      (_chunk, assembled) => {
+        const idx = messages.value.findIndex((m) => m.id === streamId)
+        if (idx < 0) return
+        messages.value[idx] = {
+          ...messages.value[idx],
+          rawText: assembled,
+          content: marked.parse(assembled),
+          isStreaming: true,
+        }
+        scrollToBottom()
+      }
+    )
+
+    const doneIdx = messages.value.findIndex((m) => m.id === streamId)
+    if (doneIdx >= 0) {
+      messages.value[doneIdx] = {
+        ...messages.value[doneIdx],
+        rawText: text || messages.value[doneIdx].rawText,
+        content: marked.parse(text || messages.value[doneIdx].rawText || ''),
+        isStreaming: false,
+      }
     }
+    syncCurrentSessionToStore()
   } catch (error) {
+    if (isAbortError(error)) {
+      // 保留已流出的半成品，标记为已停止
+      const streamingIdx = messages.value.findIndex((m) => m.isStreaming)
+      if (streamingIdx >= 0) {
+        const partial = error.partialText || messages.value[streamingIdx].rawText || ''
+        if (partial.trim()) {
+          messages.value[streamingIdx] = {
+            ...messages.value[streamingIdx],
+            rawText: partial + '\n\n（已停止生成）',
+            content: marked.parse(partial + '\n\n*（已停止生成）*'),
+            isStreaming: false,
+          }
+          syncCurrentSessionToStore()
+        } else {
+          messages.value.splice(streamingIdx, 1)
+        }
+      }
+      return
+    }
+    // 流式失败时清掉空的占位气泡
+    const emptyStreamIdx = messages.value.findIndex((m) => m.isStreaming && !m.rawText)
+    if (emptyStreamIdx >= 0) messages.value.splice(emptyStreamIdx, 1)
+
     console.error('AI请求失败:', error)
     const errorMsg = error.message || '未知错误'
     lastChatError.value = errorMsg
@@ -2261,15 +2741,78 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
       ? '<br><small>可点击上方「去配置」检查 DeepSeek / 环境变量。</small>'
       : '<br><small>请检查网络连接或稍后重试</small>'
     messages.value.push({
+      id: `a_err_${Date.now()}`,
       role: 'ai',
       content: `<div style="color: var(--semantic-error-icon, #c45c26);"><strong>错误：</strong> ${errorMsg}${configHint}</div>`,
       rawText: `错误: ${errorMsg}`
     })
+    syncCurrentSessionToStore()
   } finally {
     isAiThinking.value = false
+    chatAbortController = null
     await nextTick()
     scrollToBottom()
   }
+}
+
+const stopGeneration = () => {
+  if (chatAbortController) {
+    try { chatAbortController.abort() } catch (_) {}
+    chatAbortController = null
+  }
+  const wasBusy = isAiThinking.value || isDebating.value || hasStreamingMessage.value
+  isAiThinking.value = false
+  if (isDebating.value) isDebating.value = false
+  // 半成品气泡由 sendAI 的 abort catch 收尾；此处兜底去掉空流
+  const emptyIdx = messages.value.findIndex((m) => m.isStreaming && !String(m.rawText || '').trim())
+  if (emptyIdx >= 0) messages.value.splice(emptyIdx, 1)
+  if (wasBusy) {
+    ElMessage.info({ message: '已停止', duration: 1500 })
+  }
+}
+
+const canRegenerateAt = (visibleIndex) => {
+  const list = visibleMessages.value
+  if (!list.length || visibleIndex !== list.length - 1) return false
+  const msg = list[visibleIndex]
+  if (!msg || msg.role !== 'ai') return false
+  return messages.value.some((m) => m.role === 'user')
+}
+
+const copyMessageText = async (msg) => {
+  const text = msg?.rawText || stripHtml(msg?.content || '')
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success({ message: '已复制', duration: 1200 })
+  } catch (_) {
+    ElMessage.warning('复制失败，请手动选择文本')
+  }
+}
+
+const regenerateLastAI = async () => {
+  if (isAiThinking.value || isDebating.value) return
+  if (!ensureCloudProviderOrGuide('重新生成')) return
+  let lastAiIdx = -1
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].role === 'ai' && !messages.value[i].isWelcome) {
+      lastAiIdx = i
+      break
+    }
+  }
+  if (lastAiIdx < 0) return
+  let lastUserContent = ''
+  for (let i = lastAiIdx - 1; i >= 0; i--) {
+    if (messages.value[i].role === 'user') {
+      lastUserContent = messages.value[i].rawText || stripHtml(messages.value[i].content)
+      break
+    }
+  }
+  if (!lastUserContent) return
+  const removed = messages.value[lastAiIdx]
+  messages.value.splice(lastAiIdx, 1)
+  syncCurrentSessionToStore()
+  await sendAI(0, false, lastUserContent, removed?.persona || null, { skipPushUser: true, useCache: false })
 }
 
 // 智能博弈辩论系统
@@ -2301,9 +2844,12 @@ const startDebate = async () => {
   const topic = debateTopic.value === 'custom' ? customDebateTopic.value : debateTopic.value
   
   messages.value.push({
+    id: `u_${Date.now()}`,
     role: 'user',
-    content: `开始智能博弈辩论：${topic}`
+    content: `开始智能博弈辩论：${topic}`,
+    rawText: `开始智能博弈辩论：${topic}`
   })
+  syncCurrentSessionToStore()
   
   for (const personaKey of selectedDebatePersonas.value) {
     if (!isDebating.value) break
@@ -2323,6 +2869,11 @@ const startDebate = async () => {
 
 const stopDebate = () => {
   isDebating.value = false
+  if (chatAbortController) {
+    try { chatAbortController.abort() } catch (_) {}
+    chatAbortController = null
+  }
+  isAiThinking.value = false
   ElMessage.info('辩论已停止')
 }
 
@@ -2362,10 +2913,10 @@ const quickAI = (type) => {
   }
 }
 
-// 清空对话历史
+// 清空对话历史（保留为显式清空当前会话内容；「新对话」走 startNewSession）
 const clearHistory = () => {
   ElMessageBox.confirm(
-    '确定要清空所有对话历史吗？此操作不可恢复。',
+    '确定要清空当前会话的对话内容吗？此操作不可恢复。',
     '确认清空',
     {
       confirmButtonText: '确定清空',
@@ -2374,11 +2925,8 @@ const clearHistory = () => {
       confirmButtonClass: 'el-button--danger'
     }
   ).then(() => {
-    messages.value = [{
-      role: 'ai',
-      content: '<strong>👥 虚拟员工战队:</strong> 对话历史已清空。系统已重新就绪。<br>请选择一个专业角色开始咨询！',
-      rawText: '对话历史已清空。系统已重新就绪。请选择一个专业角色开始咨询！'
-    }]
+    messages.value = [createWelcomeMessage()]
+    syncCurrentSessionToStore()
     ElMessage.success('对话历史已清空')
   }).catch(() => {
     // 用户取消
@@ -2398,15 +2946,32 @@ const scrollToBottom = () => {
 const handleEnterKey = (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    if (aiInput.value.trim() && !isAiThinking.value && !isDebating.value) {
+    if (aiInput.value.trim() && !isAiThinking.value && !isDebating.value && !showProviderWarning.value) {
       sendAI()
     }
   }
 }
 
+const handleComposerEscape = () => {
+  if (isAiThinking.value || isDebating.value) {
+    stopGeneration()
+    return
+  }
+  if (aiInput.value) aiInput.value = ''
+}
+
 // 快捷键支持
 const handleKeydown = (e) => {
-  // Ctrl+K 清空历史
+  const meta = e.metaKey || e.ctrlKey
+  // ⌘/Ctrl+N 新会话
+  if (meta && (e.key === 'n' || e.key === 'N')) {
+    if (currentMode.value === 'chat' || currentMode.value === 'debate') {
+      e.preventDefault()
+      startNewSession()
+    }
+    return
+  }
+  // Ctrl+K 清空当前会话内容（兼容旧快捷键）
   if (e.ctrlKey && e.key === 'k') {
     e.preventDefault()
     clearHistory()
@@ -2416,9 +2981,14 @@ const handleKeydown = (e) => {
     e.preventDefault()
     showPersonaPanel.value = !showPersonaPanel.value
   }
-  // Esc 清空输入框（当输入框有内容时）
-  if (e.key === 'Escape' && aiInput.value.trim()) {
-    aiInput.value = ''
+  // Esc：思考中停止；否则清空输入
+  if (e.key === 'Escape') {
+    if (isAiThinking.value || isDebating.value) {
+      e.preventDefault()
+      stopGeneration()
+    } else if (aiInput.value.trim()) {
+      aiInput.value = ''
+    }
   }
 }
 
@@ -2426,6 +2996,7 @@ const handleKeydown = (e) => {
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('open-ai-feature', handleOpenAiFeature)
+  loadSessionsFromStorage()
   // 加载使用统计
   const savedUsage = localStorage.getItem('ai_today_usage')
   if (savedUsage) {
@@ -2458,9 +3029,18 @@ watch(showPersonaPanel, (val) => {
   } catch (_) {}
 })
 
+watch(personaMode, () => {
+  syncCurrentSessionToStore()
+})
+
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('open-ai-feature', handleOpenAiFeature)
+  if (persistSessionsTimer) clearTimeout(persistSessionsTimer)
+  if (chatAbortController) {
+    try { chatAbortController.abort() } catch (_) {}
+    chatAbortController = null
+  }
   stopUptimeCounter()
 })
 

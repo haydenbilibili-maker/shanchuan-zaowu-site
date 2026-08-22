@@ -144,6 +144,7 @@
 | `audience_campaigns` | 分群营销 |
 | `property_proposals` | 资产提案 |
 | `strategy_research` | 战略调研 |
+| `benchmark_research_docs` | 对标研究文档库（PDF/MD 全文检索；Admin 战略调研看板） |
 
 ---
 

@@ -692,11 +692,229 @@
       </div>
     </section>
 
-    <!-- SECTION: 竞品分析 -->
-    <section v-if="currentView === 'competitors'" class="view-section sr-view">
-      <div class="info-card">
-        <h2 class="section-title">竞品分析 · 市场定位与竞争优势</h2>
-        <p class="section-text"><strong>市场格局：</strong> 标本艺术市场呈现"大市场、小品牌"特征，头部品牌尚未形成绝对优势。主要竞争者分为三类：传统工艺品品牌、新兴文创品牌、专业标本品牌。</p>
+    <!-- SECTION: 对标研究（宪章三轴三群 + 绿黄红 + 国内竞品） -->
+    <section v-if="currentView === 'competitors'" class="view-section sr-view bm-page">
+      <div class="bm-hero info-card">
+        <p class="bm-eyebrow">{{ BENCHMARK_META.charter }} · {{ BENCHMARK_META.methodology }}</p>
+        <h2 class="section-title">对标研究 · 战略坐标系</h2>
+        <p class="section-text">
+          <strong>原则：</strong>{{ BENCHMARK_META.principle }}
+          资料来源归档「{{ BENCHMARK_META.source }}」，当前库内
+          <strong>{{ benchmarkStats.done }}/{{ benchmarkStats.total }}</strong> 品牌已有报告沉淀，
+          另含 <strong>{{ benchmarkStats.topics }}</strong> 个专题。
+        </p>
+        <div class="bm-kpi-row">
+          <div v-for="g in benchmarkStats.byGroup" :key="g.id" class="bm-kpi" :style="{ '--bm-accent': g.color }">
+            <span class="bm-kpi-role">群 {{ g.id }} · {{ g.role }}</span>
+            <strong class="bm-kpi-num">{{ g.count }}</strong>
+            <span class="bm-kpi-label">对标品牌</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bm-axes">
+        <div v-for="axis in BENCHMARK_AXES" :key="axis.id" class="bm-axis-card chart-card">
+          <div class="bm-axis-head">
+            <span class="bm-axis-short">{{ axis.short }}</span>
+            <h3 class="chart-title">{{ axis.name }}</h3>
+          </div>
+          <p class="bm-axis-desc">{{ axis.desc }}</p>
+          <p class="bm-axis-q">{{ axis.question }}</p>
+        </div>
+      </div>
+
+
+      <div class="bm-cloud chart-card">
+        <div class="bm-cloud-head">
+          <div>
+            <p class="bm-eyebrow">CloudBase · benchmark_research_docs</p>
+            <h3 class="chart-title">资料库全文检索</h3>
+            <p class="bm-cloud-lead">
+              动态入库归档 PDF/MD；客户端对 <code>searchableText</code> 做关键词检索。
+              云端文档 <strong>{{ cloudDocStats.total }}</strong> 篇，
+              可检索 <strong>{{ cloudDocStats.ready }}</strong>，
+              PDF 待抽文本 <strong>{{ cloudDocStats.pending }}</strong>。
+            </p>
+          </div>
+          <div class="bm-cloud-actions">
+            <button type="button" class="chart-action-btn" :disabled="cloudDocsLoading" @click="refreshCloudBenchmarkDocs">
+              {{ cloudDocsLoading ? '同步中…' : '同步云库' }}
+            </button>
+            <label class="chart-action-btn bm-upload-btn" :class="{ disabled: cloudUploading }">
+              {{ cloudUploading ? '入库中…' : '上传 PDF/MD' }}
+              <input type="file" accept=".pdf,.md,.markdown,.txt,application/pdf,text/markdown,text/plain" hidden :disabled="cloudUploading" @change="onBenchmarkFileUpload" />
+            </label>
+          </div>
+        </div>
+        <div class="bm-cloud-search-row">
+          <input
+            v-model="cloudSearchQuery"
+            type="search"
+            class="bm-search bm-cloud-search"
+            placeholder="全文检索：如 愿景 51% / 盲盒 / 提案型…"
+            aria-label="对标资料全文检索"
+            @keydown.enter.prevent="runCloudBenchmarkSearch"
+          />
+          <button type="button" class="chart-action-btn primary" @click="runCloudBenchmarkSearch">检索</button>
+        </div>
+        <p v-if="cloudDocsError" class="bm-cloud-error">{{ cloudDocsError }}</p>
+        <div v-if="cloudSearchResults.length" class="bm-cloud-results">
+          <article v-for="hit in cloudSearchResults" :key="hit._id || hit.docKey" class="bm-cloud-hit" @click="openCloudDocHit(hit)">
+            <div class="bm-cloud-hit-top">
+              <h4>{{ hit.title }}</h4>
+              <span class="bm-doc-tag">{{ hit.docType }} · {{ hit.textStatus }}</span>
+            </div>
+            <p class="bm-cloud-meta">
+              <span v-if="hit.brandId">品牌 {{ hit.brandId }}</span>
+              <span v-if="hit.group">群 {{ hit.group }}</span>
+              <span v-if="hit.era">{{ hit.era }}</span>
+              <span>{{ hit.charCount || 0 }} 字</span>
+            </p>
+            <p class="bm-cloud-snippet">{{ hit._snippet || hit.excerpt }}</p>
+          </article>
+        </div>
+        <p v-else-if="cloudSearchQuery.trim() && !cloudDocsLoading" class="bm-cloud-empty">未命中「{{ cloudSearchQuery }}」。可先上传 PDF 或运行 <code>npm run seed:benchmark</code> 灌入归档 MD。</p>
+        <div v-else-if="cloudDocs.length && !cloudSearchQuery.trim()" class="bm-cloud-recent">
+          <h4>最近入库</h4>
+          <ul>
+            <li v-for="d in cloudDocs.slice(0, 8)" :key="d._id || d.docKey">
+              <button type="button" class="bm-linkish" @click="openCloudDocHit(d)">{{ d.title }}</button>
+              <span class="bm-cloud-meta">{{ d.docType }} · {{ d.textStatus }} · {{ d.brandId || '未挂品牌' }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="bm-toolbar info-card">
+        <div class="bm-filters" role="group" aria-label="对标群筛选">
+          <button
+            type="button"
+            class="bm-filter-btn"
+            :class="{ active: benchmarkGroupFilter === 'all' }"
+            @click="benchmarkGroupFilter = 'all'"
+          >全部群</button>
+          <button
+            v-for="g in BENCHMARK_GROUPS"
+            :key="g.id"
+            type="button"
+            class="bm-filter-btn"
+            :class="{ active: benchmarkGroupFilter === g.id }"
+            :style="benchmarkGroupFilter === g.id ? { '--bm-accent': g.color } : {}"
+            @click="benchmarkGroupFilter = g.id"
+          >群 {{ g.id }} · {{ g.role }}</button>
+        </div>
+        <input
+          v-model="benchmarkSearch"
+          type="search"
+          class="bm-search"
+          placeholder="搜索品牌 / 角色 / 启示…"
+          aria-label="搜索对标品牌"
+        />
+      </div>
+
+      <div class="bm-group-panels">
+        <div
+          v-for="g in filteredBenchmarkGroups"
+          :key="g.id"
+          class="bm-group-panel"
+          :style="{ '--bm-accent': g.color }"
+        >
+          <header class="bm-group-head">
+            <div>
+              <h3>{{ g.name }}</h3>
+              <p>{{ g.summary }}</p>
+            </div>
+            <span class="bm-group-count">{{ brandsInGroup(g.id).length }}</span>
+          </header>
+          <div class="bm-brand-grid">
+            <article
+              v-for="brand in brandsInGroup(g.id)"
+              :key="brand.id"
+              class="bm-brand-card"
+              :class="{ selected: selectedBenchmarkId === brand.id }"
+              @click="selectedBenchmarkId = brand.id"
+            >
+              <div class="bm-brand-top">
+                <h4>{{ brand.name }}</h4>
+                <span class="bm-status" :data-status="brand.status">{{ brand.status === 'done' ? '已沉淀' : brand.status }}</span>
+              </div>
+              <p class="bm-brand-en">{{ brand.nameEn }}</p>
+              <p class="bm-brand-role">{{ brand.role }}</p>
+              <p class="bm-brand-line">{{ brand.oneLiner }}</p>
+              <div class="bm-brand-tags">
+                <span v-for="d in brand.docs" :key="d" class="bm-doc-tag">{{ d }}</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="selectedBenchmarkBrand" class="bm-detail chart-card">
+        <div class="bm-detail-head">
+          <div>
+            <p class="bm-eyebrow">群 {{ selectedBenchmarkBrand.group }} · 启动阅读</p>
+            <h3 class="chart-title">{{ selectedBenchmarkBrand.name }} <span class="bm-detail-en">{{ selectedBenchmarkBrand.nameEn }}</span></h3>
+          </div>
+          <button type="button" class="chart-action-btn" @click="selectedBenchmarkId = null">收起</button>
+        </div>
+        <p class="bm-detail-role">{{ selectedBenchmarkBrand.role }}</p>
+        <p class="section-text">{{ selectedBenchmarkBrand.oneLiner }}</p>
+        <div class="bm-detail-grid">
+          <div class="bm-detail-block learn">
+            <h4>可迁移启示</h4>
+            <p>{{ selectedBenchmarkBrand.learn }}</p>
+          </div>
+          <div class="bm-detail-block risk">
+            <h4>暗角 / 风险</h4>
+            <p>{{ selectedBenchmarkBrand.risk }}</p>
+          </div>
+        </div>
+        <div v-if="selectedBrandCloudDocs.length" class="bm-brand-cloud-docs">
+          <h4>云库相关文档</h4>
+          <ul>
+            <li v-for="d in selectedBrandCloudDocs" :key="d._id || d.docKey">
+              <button type="button" class="bm-linkish" @click="openCloudDocHit(d)">{{ d.title }}</button>
+              <span class="bm-cloud-meta">{{ d.docType }} · {{ d.textStatus }} · {{ d.charCount || 0 }} 字</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="bm-zones">
+        <div v-for="z in BENCHMARK_ZONES" :key="z.id" class="bm-zone-card" :data-zone="z.id">
+          <h3>{{ z.name }} · {{ z.meaning }}</h3>
+          <p class="bm-zone-rule">{{ z.rule }}</p>
+          <ul>
+            <li v-for="(s, i) in z.samples" :key="i">{{ s }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="bm-method chart-card">
+        <h3 class="chart-title">报告统一骨架（方法论）</h3>
+        <ol class="bm-outline">
+          <li v-for="step in BENCHMARK_REPORT_OUTLINE" :key="step.step">
+            <span class="bm-step-no">{{ step.step }}</span>
+            <div>
+              <strong>{{ step.title }}</strong>
+              <p>{{ step.desc }}</p>
+            </div>
+          </li>
+        </ol>
+        <div class="bm-topics">
+          <h4>专题研究</h4>
+          <div class="bm-topic-row">
+            <div v-for="t in BENCHMARK_SPECIAL_TOPICS" :key="t.id" class="bm-topic-chip">
+              <strong>{{ t.title }}</strong>
+              <span>{{ t.desc }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card bm-domestic-head">
+        <h2 class="section-title">国内市场竞品 · 标本品类近场对照</h2>
+        <p class="section-text"><strong>市场格局：</strong>标本艺术市场呈「大市场、小品牌」；近场竞争者分为传统工艺品、新兴文创、专业标本三类。对标体系看「怎么长成」，本区看「怎么抢份额」。</p>
       </div>
       <div class="competitor-grid">
         <div class="chart-card"><h3 class="chart-title">核心竞品多维对比</h3><div class="chart-container" style="height: 400px;"><canvas ref="competitorRadarCanvas"></canvas></div></div>
@@ -1772,6 +1990,22 @@ import { callGeminiAPI, extractJSON } from '../utils/aiHelper'
 import { fetchCollectionSorted, COLLECTIONS } from '../cloud'
 import { marked } from 'marked'
 import { ElMessage } from 'element-plus'
+import {
+  BENCHMARK_META,
+  BENCHMARK_AXES,
+  BENCHMARK_GROUPS,
+  BENCHMARK_REPORT_OUTLINE,
+  BENCHMARK_ZONES,
+  BENCHMARK_BRANDS,
+  BENCHMARK_SPECIAL_TOPICS,
+  getBenchmarkStats
+} from '../data/benchmarkResearchLibrary'
+import {
+  loadBenchmarkDocs,
+  searchBenchmarkDocs,
+  ingestUploadFile,
+  docsForBrand
+} from '../utils/benchmarkResearchCloud'
 
 // -------------------------------------------------
 // VI 调色板（与 design-tokens.css 对齐的固定色值）
@@ -2186,7 +2420,7 @@ const tabs = [
   { value: 'products', label: '产品金字塔', icon: '💎' },
   { value: 'productGenerator', label: '爆品生成器', icon: '🎨' },
   { value: 'channels', label: '流量漏斗', icon: '🚀' },
-  { value: 'competitors', label: '竞品分析', icon: '⚔️' },
+  { value: 'competitors', label: '对标研究', icon: '🧭' },
   { value: 'profit', label: '盈利模拟', icon: '💰' },
   { value: 'store', label: '门店设计', icon: '🏪' },
   { value: 'planning', label: '3年规划', icon: '📅' },
@@ -2975,7 +3209,108 @@ const valueChainStages = [
   { name: '下游-品牌零售', icon: '🏪', valueShare: 50, profitMargin: 45, color: VI.gold400 }
 ]
 
-// 竞品数据
+// 对标研究（宪章三轴三群）
+const benchmarkStats = getBenchmarkStats()
+const benchmarkGroupFilter = ref('all')
+const benchmarkSearch = ref('')
+const selectedBenchmarkId = ref(null)
+
+const filteredBenchmarkBrands = computed(() => {
+  const q = benchmarkSearch.value.trim().toLowerCase()
+  return BENCHMARK_BRANDS.filter((b) => {
+    if (benchmarkGroupFilter.value !== 'all' && b.group !== benchmarkGroupFilter.value) return false
+    if (!q) return true
+    const hay = [b.name, b.nameEn, b.role, b.oneLiner, b.learn, b.risk, ...(b.docs || [])]
+      .join(' ')
+      .toLowerCase()
+    return hay.includes(q)
+  })
+})
+
+const filteredBenchmarkGroups = computed(() => {
+  if (benchmarkGroupFilter.value === 'all') return BENCHMARK_GROUPS
+  return BENCHMARK_GROUPS.filter((g) => g.id === benchmarkGroupFilter.value)
+})
+
+const brandsInGroup = (groupId) => filteredBenchmarkBrands.value.filter((b) => b.group === groupId)
+
+const selectedBenchmarkBrand = computed(() =>
+  BENCHMARK_BRANDS.find((b) => b.id === selectedBenchmarkId.value) || null
+)
+
+// CloudBase 对标文档库
+const cloudDocs = ref([])
+const cloudDocsLoading = ref(false)
+const cloudUploading = ref(false)
+const cloudDocsError = ref('')
+const cloudSearchQuery = ref('')
+const cloudSearchResults = ref([])
+
+const cloudDocStats = computed(() => {
+  const total = cloudDocs.value.length
+  const ready = cloudDocs.value.filter((d) => d.textStatus === 'ready' && d.searchableText).length
+  const pending = cloudDocs.value.filter((d) => d.textStatus === 'pending_pdf').length
+  return { total, ready, pending }
+})
+
+const selectedBrandCloudDocs = computed(() =>
+  docsForBrand(cloudDocs.value, selectedBenchmarkBrand.value?.id)
+)
+
+const refreshCloudBenchmarkDocs = async () => {
+  cloudDocsLoading.value = true
+  cloudDocsError.value = ''
+  try {
+    cloudDocs.value = await loadBenchmarkDocs({ limit: 400 })
+    if (cloudSearchQuery.value.trim()) runCloudBenchmarkSearch()
+  } catch (err) {
+    cloudDocsError.value = `云库同步失败：${err?.message || err}。请确认已创建集合 benchmark_research_docs 并粘贴权限规则。`
+    cloudDocs.value = []
+  } finally {
+    cloudDocsLoading.value = false
+  }
+}
+
+const runCloudBenchmarkSearch = () => {
+  cloudSearchResults.value = searchBenchmarkDocs(cloudDocs.value, cloudSearchQuery.value)
+}
+
+const openCloudDocHit = (hit) => {
+  if (!hit) return
+  if (hit.brandId) selectedBenchmarkId.value = hit.brandId
+  cloudSearchQuery.value = cloudSearchQuery.value || hit.title || ''
+  if (!cloudSearchResults.value.some((x) => (x._id || x.docKey) === (hit._id || hit.docKey))) {
+    cloudSearchResults.value = [{
+      ...hit,
+      _snippet: hit._snippet || hit.excerpt || '',
+    }]
+  }
+  ElMessage.info(`已定位：${hit.title}`)
+}
+
+const onBenchmarkFileUpload = async (evt) => {
+  const file = evt?.target?.files?.[0]
+  if (evt?.target) evt.target.value = ''
+  if (!file) return
+  cloudUploading.value = true
+  cloudDocsError.value = ''
+  try {
+    const payload = await ingestUploadFile(file, { uploadOriginal: true })
+    ElMessage.success(`已入库：${payload.title}（${payload.charCount || 0} 字）`)
+    await refreshCloudBenchmarkDocs()
+    if (payload.brandId) selectedBenchmarkId.value = payload.brandId
+    cloudSearchQuery.value = payload.title
+    runCloudBenchmarkSearch()
+  } catch (err) {
+    console.error(err)
+    ElMessage.error(`入库失败：${err?.message || err}`)
+    cloudDocsError.value = err?.message || String(err)
+  } finally {
+    cloudUploading.value = false
+  }
+}
+
+// 国内近场竞品数据
 const competitors = [
   {
     name: '自然造物',
@@ -4516,6 +4851,9 @@ watch(currentView, (newView, oldView) => {
       }
       if (newView === 'competitors' && !competitorRadarChart && resolveRefCanvas(competitorRadarCanvas)) {
         initCompetitorRadarChart()
+      }
+      if (newView === 'competitors' && !cloudDocs.value.length && !cloudDocsLoading.value) {
+        refreshCloudBenchmarkDocs()
       }
       if (newView === 'profit' && !profit3DChart && resolveRefCanvas(profit3DChartCanvas)) {
         initProfit3DChart()
@@ -9912,6 +10250,562 @@ onUnmounted(() => {
   .strategy-research-container .view-section {
     padding: var(--space-5) var(--space-4);
   }
+}
+
+
+/* —— 对标研究页 —— */
+.bm-page .bm-eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--light-text-tertiary, #9b968d);
+  text-transform: none;
+}
+
+.bm-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.bm-kpi {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--bm-accent, #2d6a4f) 28%, transparent);
+  background: color-mix(in srgb, var(--bm-accent, #2d6a4f) 8%, white);
+}
+
+.bm-kpi-role {
+  display: block;
+  font-size: 12px;
+  color: var(--light-text-secondary, #6b665d);
+}
+
+.bm-kpi-num {
+  display: block;
+  margin-top: 4px;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--bm-accent, #2d6a4f);
+  font-variant-numeric: tabular-nums;
+}
+
+.bm-kpi-label {
+  font-size: 12px;
+  color: var(--light-text-tertiary, #9b968d);
+}
+
+.bm-axes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.bm-axis-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bm-axis-short {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #2d6a4f;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bm-axis-card .chart-title {
+  margin: 0;
+}
+
+.bm-axis-desc,
+.bm-axis-q {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--light-text-secondary, #6b665d);
+}
+
+.bm-axis-q {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(45, 106, 79, 0.22);
+  color: #2d6a4f;
+  font-weight: 500;
+}
+
+.bm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.bm-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bm-filter-btn {
+  border: 1px solid rgba(45, 106, 79, 0.2);
+  background: #fff;
+  color: #6b665d;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.bm-filter-btn.active {
+  border-color: var(--bm-accent, #2d6a4f);
+  background: color-mix(in srgb, var(--bm-accent, #2d6a4f) 12%, white);
+  color: var(--bm-accent, #2d6a4f);
+  font-weight: 600;
+}
+
+.bm-search {
+  min-width: 220px;
+  flex: 1;
+  max-width: 320px;
+  border: 1px solid rgba(45, 106, 79, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.bm-group-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.bm-group-panel {
+  border: 1px solid color-mix(in srgb, var(--bm-accent) 24%, transparent);
+  border-radius: 12px;
+  background: #fff;
+  padding: 18px;
+}
+
+.bm-group-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.bm-group-head h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: var(--bm-accent);
+}
+
+.bm-group-head p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b665d;
+  line-height: 1.55;
+}
+
+.bm-group-count {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bm-accent) 14%, white);
+  color: var(--bm-accent);
+  font-weight: 700;
+}
+
+.bm-brand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.bm-brand-card {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  background: #fafaf8;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bm-brand-card:hover,
+.bm-brand-card.selected {
+  border-color: var(--bm-accent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--bm-accent) 16%, transparent);
+  background: #fff;
+}
+
+.bm-brand-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.bm-brand-top h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #2c2a26;
+}
+
+.bm-status {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8f5ee;
+  color: #2d6a4f;
+}
+
+.bm-brand-en {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #9b968d;
+}
+
+.bm-brand-role {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bm-accent);
+}
+
+.bm-brand-line {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #6b665d;
+}
+
+.bm-brand-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.bm-doc-tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(45, 106, 79, 0.08);
+  color: #5a564e;
+}
+
+.bm-detail {
+  margin-bottom: 20px;
+}
+
+.bm-detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.bm-detail-en {
+  font-weight: 400;
+  color: #9b968d;
+  font-size: 14px;
+}
+
+.bm-detail-role {
+  margin: 0 0 8px;
+  color: #2d6a4f;
+  font-weight: 600;
+}
+
+.bm-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.bm-detail-block {
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.bm-detail-block h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.bm-detail-block p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5a564e;
+}
+
+.bm-detail-block.learn {
+  background: #eef7f1;
+}
+
+.bm-detail-block.risk {
+  background: #faf1eb;
+}
+
+.bm-zones {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.bm-zone-card {
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid transparent;
+}
+
+.bm-zone-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.bm-zone-rule {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #6b665d;
+  line-height: 1.5;
+}
+
+.bm-zone-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.bm-zone-card li {
+  font-size: 13px;
+  line-height: 1.55;
+  margin-bottom: 6px;
+  color: #4a463e;
+}
+
+.bm-zone-card[data-zone='green'] {
+  background: #eef7f1;
+  border-color: rgba(45, 106, 79, 0.25);
+}
+
+.bm-zone-card[data-zone='yellow'] {
+  background: #fbf6e9;
+  border-color: rgba(196, 165, 90, 0.35);
+}
+
+.bm-zone-card[data-zone='red'] {
+  background: #faf0ef;
+  border-color: rgba(208, 84, 80, 0.28);
+}
+
+.bm-outline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bm-outline li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f7f6f2;
+}
+
+.bm-step-no {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2d6a4f;
+  min-width: 28px;
+}
+
+.bm-outline strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.bm-outline p {
+  margin: 0;
+  font-size: 12px;
+  color: #6b665d;
+}
+
+.bm-topics {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.bm-topics h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.bm-topic-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bm-topic-chip {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f7f6f2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bm-topic-chip strong {
+  font-size: 13px;
+}
+
+.bm-topic-chip span {
+  font-size: 12px;
+  color: #6b665d;
+  line-height: 1.45;
+}
+
+.bm-domestic-head {
+  margin-top: 8px;
+}
+
+@media (max-width: 1100px) {
+  .bm-kpi-row,
+  .bm-axes,
+  .bm-zones,
+  .bm-outline,
+  .bm-topic-row,
+  .bm-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.bm-cloud { margin-bottom: 20px; }
+.bm-cloud-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.bm-cloud-lead {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #6b665d;
+}
+.bm-cloud-lead code { font-size: 12px; }
+.bm-cloud-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.bm-upload-btn { cursor: pointer; display: inline-flex; align-items: center; }
+.bm-upload-btn.disabled { opacity: 0.6; pointer-events: none; }
+.bm-cloud-search-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  align-items: center;
+}
+.bm-cloud-search { max-width: none; flex: 1; }
+.bm-cloud-error { margin: 10px 0 0; color: #d05450; font-size: 13px; }
+.bm-cloud-empty { margin: 12px 0 0; font-size: 13px; color: #6b665d; }
+.bm-cloud-results {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.bm-cloud-hit {
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fafaf8;
+  cursor: pointer;
+}
+.bm-cloud-hit:hover { border-color: #2d6a4f; background: #fff; }
+.bm-cloud-hit-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.bm-cloud-hit-top h4 { margin: 0; font-size: 14px; }
+.bm-cloud-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #9b968d;
+}
+.bm-cloud-snippet {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #5a564e;
+}
+.bm-cloud-recent { margin-top: 14px; }
+.bm-cloud-recent h4, .bm-brand-cloud-docs h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #2d6a4f;
+}
+.bm-cloud-recent ul, .bm-brand-cloud-docs ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.bm-cloud-recent li, .bm-brand-cloud-docs li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+.bm-linkish {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #2d6a4f;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+.bm-linkish:hover { text-decoration: underline; }
+.bm-brand-cloud-docs {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+.chart-action-btn.primary {
+  background: #2d6a4f;
+  color: #fff;
+  border-color: #2d6a4f;
 }
 
 </style>

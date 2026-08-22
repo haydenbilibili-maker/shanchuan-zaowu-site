@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 240" role="img" aria-labelledby="title desc">
+  <title id="title">山海造物 · 融合稿 · 单字山印章 × 字标（自然绿版）</title>
+  <desc id="desc">B 单字山印章作符号 + C 横版字标结构，自然绿主色</desc>
+  <rect width="560" height="240" fill="#FAFAF5"/>
+  <g transform="translate(26,58) scale(0.55)">
+    <circle cx="100" cy="100" r="94" fill="none" stroke="#2D6A4F" stroke-width="8"/>
+    <circle cx="100" cy="100" r="85" fill="none" stroke="#2D6A4F" stroke-width="2"/>
+    <rect x="56" y="78" width="13" height="40" fill="#2D6A4F"/>
+    <rect x="93" y="56" width="13" height="62" fill="#2D6A4F"/>
+    <rect x="130" y="78" width="13" height="40" fill="#2D6A4F"/>
+    <rect x="47" y="116" width="105" height="13" fill="#2D6A4F"/>
+  </g>
+  <text x="152" y="118" font-family="'Songti SC','STSong','Noto Serif SC','Source Han Serif SC',serif" font-size="80" font-weight="600" fill="#2C2C2C" letter-spacing="14">山海造物</text>
+  <text x="155" y="164" font-family="Georgia,'Times New Roman',serif" font-size="18" letter-spacing="5.5" fill="#8B6F47">NATURE'S CREATIONS</text>
+</svg>

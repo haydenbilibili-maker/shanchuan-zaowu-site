@@ -78,6 +78,40 @@ exports.main = async (event) => {
       }
     })
 
+    // 写入退款审核集合，供 Admin「退款审核」展示历史记录
+    try {
+      const exist = await db.collection('refunds').where({ orderId }).limit(1).get()
+      const refundPayload = {
+        orderId,
+        orderNo: order.orderNo || '',
+        amount: order.totalPrice,
+        refundAmount: order.totalPrice,
+        reason: order.refundReason || '客户申请退款',
+        description: order.refundDesc || '',
+        userName: order.address?.name || '',
+        contactPhone: order.address?.phone || '',
+        _openid: order._openid || '',
+        status: 'refunded',
+        refundNo,
+        refundMock,
+        refundedTime: db.serverDate(),
+        updateTime: db.serverDate(),
+      }
+      if (exist.data && exist.data.length > 0) {
+        await db.collection('refunds').doc(exist.data[0]._id).update({ data: refundPayload })
+      } else {
+        await db.collection('refunds').add({
+          data: {
+            ...refundPayload,
+            createTime: order.refundTime || order.createTime || db.serverDate(),
+            source: 'refundOrder',
+          },
+        })
+      }
+    } catch (refundLogErr) {
+      console.warn('refunds 集合写入失败（不影响退款主流程）:', refundLogErr)
+    }
+
     await dispatchInAppMessage(db, {
       eventType: 'order_refunded',
       openid: order._openid,
