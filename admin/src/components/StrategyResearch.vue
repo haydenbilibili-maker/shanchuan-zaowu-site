@@ -28,7 +28,8 @@
         <p class="status-text">最后更新: {{ lastUpdateTime }}</p>
         <div class="nav-actions">
           <button type="button" class="nav-action-btn" @click="refreshBoard" title="刷新图表与数据">刷新看板</button>
-          <button type="button" class="nav-action-btn" @click="exportBoardSummary" title="导出看板一页纸摘要">导出摘要</button>
+          <button type="button" class="nav-action-btn" @click="exportBoardSummary('md')" title="导出战略简报 Markdown">导出简报</button>
+          <button type="button" class="nav-action-btn" @click="exportBoardSummary('json')" title="导出战略简报 JSON">导出 JSON</button>
           <button type="button" class="nav-action-btn primary" @click="goToAIStrategyResearch" title="前往 AI 智能中心做战略调研">AI 战略调研</button>
         </div>
       </div>
@@ -36,6 +37,17 @@
     
     <!-- 主内容区 -->
     <div class="main-content-area">
+    <div v-if="bridgedConcept" class="pcg-bridge-banner" role="status">
+      <div>
+        <strong>来自爆品概念生成器</strong>
+        <p>{{ bridgedConcept.name }} · {{ bridgedConcept.position }} · ¥{{ bridgedConcept.price }}</p>
+      </div>
+      <div class="pcg-bridge-actions">
+        <button type="button" class="nav-action-btn" @click="goToView('products')">查看产品金字塔</button>
+        <button type="button" class="nav-action-btn" @click="goToProductConceptGenerator">返回生成器</button>
+        <button type="button" class="nav-action-btn" @click="dismissBridgedConcept">关闭</button>
+      </div>
+    </div>
     <!-- SECTION: OVERVIEW -->
     <section v-if="currentView === 'overview'" class="view-section sr-view overview-page">
       <div class="overview-strip" aria-label="行业总览定位">
@@ -50,50 +62,65 @@
           <div class="command-hero-text">
             <p class="eyebrow">战略指挥 · Command</p>
             <h2 class="command-hero-title">战略指挥舱</h2>
-            <p class="command-hero-lead">把市场机会、合规风险、AI 用研与下一步动作压缩成经营层可直接决策的一页纸。</p>
+            <p class="command-hero-lead">把对标研究、合规风险、AI 用研与盈利弹性压缩成经营层可直接决策的一页纸。</p>
           </div>
-          <button class="nav-action-btn primary command-hero-cta" type="button" @click="goToAIStrategyResearch('strategic-brain')">
-            打开 AI 战略智脑
+          <div class="command-hero-actions">
+            <button class="nav-action-btn primary command-hero-cta" type="button" @click="goToAIStrategyResearch('strategic-brain')">打开 AI 战略智脑</button>
+            <button class="nav-action-btn command-hero-cta" type="button" @click="goToView('competitors')">进入对标研究</button>
+          </div>
+        </div>
+        <div class="module-status-strip" aria-label="关键模块状态">
+          <button v-for="mod in moduleStatusStrip" :key="mod.view" type="button" class="module-status-chip" :class="mod.tone" @click="goToView(mod.view)">
+            <span class="module-status-label">{{ mod.label }}</span>
+            <strong class="module-status-value">{{ mod.value }}</strong>
+            <span class="module-status-hint">{{ mod.hint }}</span>
           </button>
         </div>
         <div class="command-grid">
-          <div v-for="card in strategicCommandCards" :key="card.label" class="command-card" :class="card.tone">
+          <button v-for="card in strategicCommandCards" :key="card.label" type="button" class="command-card command-card-btn" :class="card.tone" @click="goToView(card.view)">
             <div class="command-label">{{ card.label }}</div>
             <div class="command-value">{{ card.value }}</div>
             <div class="command-desc">{{ card.desc }}</div>
-          </div>
+            <span class="command-jump">查看 →</span>
+          </button>
         </div>
         <div class="decision-grid">
           <div class="decision-panel">
             <div class="panel-title">机会 / 风险雷达</div>
             <p class="panel-subtitle">规则化摘要，非实时行情</p>
-            <div v-for="item in riskOpportunityCards" :key="item.title" class="decision-item">
+            <button v-for="item in riskOpportunityCards" :key="item.title" type="button" class="decision-item decision-item-btn" @click="item.view ? goToView(item.view) : null">
               <span class="decision-badge" :class="item.tone">{{ item.badge }}</span>
-              <div>
-                <strong>{{ item.title }}</strong>
-                <p>{{ item.desc }}</p>
-              </div>
-            </div>
+              <div><strong>{{ item.title }}</strong><p>{{ item.desc }}</p></div>
+            </button>
           </div>
           <div class="decision-panel">
             <div class="panel-title">AI 用研同步</div>
             <p class="panel-subtitle">来自 AI 智能中心写入的结论</p>
             <div v-if="latestAIResearch" class="latest-research">
+              <span class="research-type-badge">{{ getResearchTypeLabel(latestAIResearch.type) }}</span>
               <strong>{{ latestAIResearch.topic || latestAIResearch.type || '最新用研结论' }}</strong>
               <p>{{ latestAIResearch.summary || getResearchSummary(latestAIResearch.content) }}</p>
-              <button class="chart-action-btn" @click="currentView = 'aiResearch'">查看全部 {{ aiResearchList.length }} 条</button>
+              <div class="latest-research-actions">
+                <button class="chart-action-btn" type="button" @click="goToView('aiResearch')">全部 {{ aiResearchList.length }} 条</button>
+                <button v-if="relatedViewForResearch(latestAIResearch)" class="chart-action-btn" type="button" @click="goToView(relatedViewForResearch(latestAIResearch))">关联视图</button>
+              </div>
             </div>
             <div v-else class="latest-research empty">
               <strong>暂无同步结论</strong>
-              <p>建议先使用“战略用研AI”生成首轮目标客群、竞品与渠道调研。</p>
-              <button class="chart-action-btn" @click="goToAIStrategyResearch('strategy-research')">生成用研</button>
+              <p>建议先生成目标客群、竞品与渠道调研，再回流看板与对标研究互证。</p>
+              <div class="latest-research-actions">
+                <button class="chart-action-btn" type="button" @click="goToAIStrategyResearch('strategy-research')">生成用研</button>
+                <button class="chart-action-btn" type="button" @click="goToView('competitors')">先看对标</button>
+              </div>
             </div>
           </div>
           <div class="decision-panel">
             <div class="panel-title">下一步动作</div>
             <p class="panel-subtitle">基于当前看板数据的建议清单</p>
             <ol class="next-actions">
-              <li v-for="action in nextStrategicActions" :key="action">{{ action }}</li>
+              <li v-for="action in nextStrategicActions" :key="action.text">
+                <button type="button" class="next-action-link" @click="action.openProductConcept ? goToProductConceptGenerator() : action.view ? goToView(action.view) : goToAIStrategyResearch(action.featureId)">{{ action.text }}</button>
+              </li>
             </ol>
           </div>
         </div>
@@ -467,6 +494,14 @@
           </div>
         </div>
       </div>
+
+      <div class="pcg-entry-card">
+        <div class="pcg-entry-text">
+          <h3>爆品概念生成器</h3>
+          <p>完整生成、历史收藏与导出已拆为独立模块。可在此跳转立项，也可将概念「带回」本看板。</p>
+        </div>
+        <button type="button" class="nav-action-btn primary" @click="goToProductConceptGenerator">打开独立模块</button>
+      </div>
     </section>
 
     <!-- SECTION: 流量漏斗 / 全渠道（单区块：合并原重复 channels，避免双 DOM 与图表异常） -->
@@ -756,7 +791,9 @@
             @keydown.enter.prevent="runCloudBenchmarkSearch"
           />
           <button type="button" class="chart-action-btn primary" @click="runCloudBenchmarkSearch">检索</button>
+          <button v-if="cloudBrandFilter" type="button" class="chart-action-btn" @click="clearCloudBrandFilter">清除品牌筛 · {{ cloudBrandFilterLabel }}</button>
         </div>
+        <p v-if="cloudBrandFilter" class="bm-cloud-filter-hint">当前按品牌「{{ cloudBrandFilterLabel }}」筛选云库，共 {{ brandFilteredCloudDocs.length }} 篇。</p>
         <p v-if="cloudDocsError" class="bm-cloud-error">{{ cloudDocsError }}</p>
         <div v-if="cloudSearchResults.length" class="bm-cloud-results">
           <article v-for="hit in cloudSearchResults" :key="hit._id || hit.docKey" class="bm-cloud-hit" @click="openCloudDocHit(hit)">
@@ -777,7 +814,7 @@
         <div v-else-if="cloudDocs.length && !cloudSearchQuery.trim()" class="bm-cloud-recent">
           <h4>最近入库</h4>
           <ul>
-            <li v-for="d in cloudDocs.slice(0, 8)" :key="d._id || d.docKey">
+            <li v-for="d in displayCloudDocs.slice(0, 8)" :key="d._id || d.docKey">
               <button type="button" class="bm-linkish" @click="openCloudDocHit(d)">{{ d.title }}</button>
               <span class="bm-cloud-meta">{{ d.docType }} · {{ d.textStatus }} · {{ d.brandId || '未挂品牌' }}</span>
             </li>
@@ -841,6 +878,10 @@
               <p class="bm-brand-en">{{ brand.nameEn }}</p>
               <p class="bm-brand-role">{{ brand.role }}</p>
               <p class="bm-brand-line">{{ brand.oneLiner }}</p>
+              <div class="bm-brand-meta-row">
+                <span class="bm-cloud-count" :class="{ ready: cloudDocCountForBrand(brand.id) > 0 }">云库 {{ cloudDocCountForBrand(brand.id) }} 篇</span>
+                <button type="button" class="bm-filter-cloud-btn" @click.stop="filterCloudByBrand(brand)">筛云库</button>
+              </div>
               <div class="bm-brand-tags">
                 <span v-for="d in brand.docs" :key="d" class="bm-doc-tag">{{ d }}</span>
               </div>
@@ -870,7 +911,10 @@
           </div>
         </div>
         <div v-if="selectedBrandCloudDocs.length" class="bm-brand-cloud-docs">
-          <h4>云库相关文档</h4>
+          <div class="bm-brand-cloud-head">
+            <h4>云库相关文档（{{ selectedBrandCloudDocs.length }}）</h4>
+            <button type="button" class="chart-action-btn" @click="filterCloudByBrand(selectedBenchmarkBrand)">在云库中筛选</button>
+          </div>
           <ul>
             <li v-for="d in selectedBrandCloudDocs" :key="d._id || d.docKey">
               <button type="button" class="bm-linkish" @click="openCloudDocHit(d)">{{ d.title }}</button>
@@ -878,15 +922,24 @@
             </li>
           </ul>
         </div>
+        <p v-else class="bm-brand-cloud-empty">该品牌暂无云库文档，可上传 PDF/MD 或运行 seed 灌库。</p>
       </div>
 
       <div class="bm-zones">
-        <div v-for="z in BENCHMARK_ZONES" :key="z.id" class="bm-zone-card" :data-zone="z.id">
-          <h3>{{ z.name }} · {{ z.meaning }}</h3>
+        <div v-for="z in editableZones" :key="z.id" class="bm-zone-card" :data-zone="z.id">
+          <div class="bm-zone-head">
+            <h3>{{ z.name }} · {{ z.meaning }}</h3>
+            <button type="button" class="chart-action-btn" @click="addZoneSample(z.id)">+ 条目</button>
+          </div>
           <p class="bm-zone-rule">{{ z.rule }}</p>
-          <ul>
-            <li v-for="(s, i) in z.samples" :key="i">{{ s }}</li>
+          <p class="bm-zone-edit-hint">本地可编辑，自动保存到本机</p>
+          <ul class="bm-zone-edit-list">
+            <li v-for="(s, i) in z.samples" :key="`${z.id}-${i}`" class="bm-zone-edit-item">
+              <textarea v-model="z.samples[i]" class="bm-zone-textarea" rows="2" :aria-label="`${z.name}条目${i + 1}`" @change="persistEditableZones" @blur="persistEditableZones" />
+              <button type="button" class="bm-zone-remove" title="删除" @click="removeZoneSample(z.id, i)">×</button>
+            </li>
           </ul>
+          <button type="button" class="bm-zone-reset" @click="resetZoneSamples(z.id)">恢复默认</button>
         </div>
       </div>
 
@@ -1166,155 +1219,6 @@
               <div class="metric-large-value">{{ calculatedMargin.toFixed(1) }}%</div>
               <div class="metric-trend">净利 ÷ 营收</div>
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION: 爆品概念生成器 -->
-    <section v-if="currentView === 'productGenerator'" class="view-section sr-view">
-      <div class="info-card">
-        <h2 class="section-title">🎨 爆品概念生成器</h2>
-        <p class="section-text">
-          <strong>功能说明：</strong> 基于产品金字塔定位，AI自动生成新品SKU方案，包含材质选择、定价策略、核心卖点等完整产品概念。
-        </p>
-      </div>
-
-      <!-- 生成器控制面板 -->
-      <div class="generator-control-panel">
-        <div class="control-section">
-          <h3 class="control-section-title">选择产品定位</h3>
-          <div class="product-type-selector">
-            <button 
-              v-for="type in productTypes" 
-              :key="type.value"
-              @click="selectedProductType = type.value"
-              :class="['type-select-btn', { active: selectedProductType === type.value }]"
-            >
-              <span class="type-icon">{{ type.icon }}</span>
-              <span class="type-name">{{ type.name }}</span>
-              <span class="type-desc">{{ type.desc }}</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="control-section">
-          <h3 class="control-section-title">生成选项</h3>
-          <div class="generator-options">
-            <div class="option-group">
-              <label>产品类别</label>
-              <select v-model="generatorOptions.category" class="option-select">
-                <option value="insect">昆虫/蝴蝶</option>
-                <option value="plant">植物</option>
-                <option value="marine">海洋生物</option>
-                <option value="resin">树脂工艺品</option>
-                <option value="mixed">混合类型</option>
-              </select>
-            </div>
-            <div class="option-group">
-              <label>创新方向</label>
-              <select v-model="generatorOptions.innovation" class="option-select">
-                <option value="material">材质创新</option>
-                <option value="design">设计创新</option>
-                <option value="function">功能创新</option>
-                <option value="experience">体验创新</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="generate-action">
-          <button 
-            @click="generateProductConcept" 
-            :disabled="isGenerating"
-            class="generate-btn"
-          >
-            <span v-if="!isGenerating">✨ 生成新品方案</span>
-            <span v-else>🔄 正在生成中...</span>
-          </button>
-        </div>
-      </div>
-
-          <!-- 加载状态 -->
-      <div v-if="isGenerating" class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <p class="loading-text">AI正在生成中，请稍候...</p>
-      </div>
-
-      <!-- 生成结果展示 -->
-      <div v-if="generatedConcept" class="generated-concept-card">
-        <div class="concept-header">
-          <h3 class="concept-title">{{ generatedConcept.name }}</h3>
-          <div class="concept-actions">
-            <button @click="exportConcept" class="export-btn">📥 导出方案</button>
-            <button @click="regenerateConcept" class="regenerate-btn">🔄 重新生成</button>
-          </div>
-        </div>
-        
-        <div class="concept-content">
-          <div class="concept-section">
-            <h4 class="concept-section-title">📦 产品信息</h4>
-            <div class="concept-info-grid">
-              <div class="info-item">
-                <span class="info-label">产品名称</span>
-                <span class="info-value">{{ generatedConcept.name }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">产品定位</span>
-                <span class="info-value">{{ generatedConcept.position }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">建议定价</span>
-                <span class="info-value highlight">¥{{ generatedConcept.price }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">目标毛利率</span>
-                <span class="info-value">{{ generatedConcept.margin }}%</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="concept-section">
-            <h4 class="concept-section-title">🔬 材质与工艺</h4>
-            <div class="concept-text">{{ generatedConcept.materials }}</div>
-          </div>
-
-          <div class="concept-section">
-            <h4 class="concept-section-title">💡 核心卖点</h4>
-            <ul class="selling-points">
-              <li v-for="(point, index) in generatedConcept.sellingPoints" :key="index">
-                {{ point }}
-              </li>
-            </ul>
-          </div>
-
-          <div class="concept-section">
-            <h4 class="concept-section-title">🎯 目标人群</h4>
-            <div class="concept-text">{{ generatedConcept.targetAudience }}</div>
-          </div>
-
-          <div class="concept-section">
-            <h4 class="concept-section-title">📈 市场策略</h4>
-            <div class="concept-text">{{ generatedConcept.strategy }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 历史生成记录 -->
-      <div v-if="conceptHistory.length > 0" class="concept-history">
-        <h3 class="history-title">📚 历史生成记录</h3>
-        <div class="history-list">
-          <div 
-            v-for="(concept, index) in conceptHistory" 
-            :key="index"
-            class="history-item"
-            @click="loadConcept(concept)"
-          >
-            <div class="history-item-header">
-              <span class="history-name">{{ concept.name }}</span>
-              <span class="history-type">{{ concept.position }}</span>
-            </div>
-            <div class="history-item-price">¥{{ concept.price }}</div>
           </div>
         </div>
       </div>
@@ -1886,10 +1790,16 @@
     <!-- SECTION: AI用研结论 -->
     <section v-if="currentView === 'aiResearch'" class="view-section sr-view">
       <div class="info-card">
-        <h2 class="section-title">🔬 AI用研结论</h2>
+        <h2 class="section-title">AI 用研结论</h2>
         <p class="section-text">
-          <strong>数据来源：</strong> AI智能中心 - 战略用研模块自动同步的调研结论
+          <strong>数据来源：</strong> AI 智能中心 · 战略用研模块同步。结论可回流总览指挥舱，并关联对标研究 / 合规专栏。
         </p>
+        <div class="ai-research-quick-links">
+          <button type="button" class="chart-action-btn" @click="goToView('overview')">← 总览指挥舱</button>
+          <button type="button" class="chart-action-btn" @click="goToView('competitors')">对标研究</button>
+          <button type="button" class="chart-action-btn" @click="goToView('compliance')">合规专栏</button>
+          <button type="button" class="chart-action-btn primary" @click="goToAIStrategyResearch('strategy-research')">生成新用研</button>
+        </div>
       </div>
 
       <!-- 筛选和排序 -->
@@ -1965,17 +1875,23 @@
             </div>
 
             <div class="research-actions">
-              <button @click="exportResearch(item)" class="export-btn-small">📥 导出报告</button>
+              <button type="button" @click="exportResearch(item)" class="export-btn-small">导出报告</button>
+              <button v-if="relatedViewForResearch(item)" type="button" class="export-btn-small" @click="goToView(relatedViewForResearch(item))">打开关联视图</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 空状态 -->
-      <div v-else class="empty-state">
+      <div v-else class="empty-state ai-research-empty">
         <div class="empty-icon">🔬</div>
         <h3>暂无用研结论</h3>
-        <p>前往 AI智能中心 → 战略用研AI 模块创建调研并同步到看板</p>
+        <p>在 AI 智能中心生成调研并同步后，结论会出现在此，并自动汇入总览指挥舱。</p>
+        <div class="ai-research-empty-actions">
+          <button type="button" class="nav-action-btn primary" @click="goToAIStrategyResearch('strategy-research')">去生成战略用研</button>
+          <button type="button" class="nav-action-btn" @click="goToView('competitors')">先完善对标研究</button>
+          <button type="button" class="nav-action-btn" @click="goToView('overview')">返回指挥舱</button>
+        </div>
       </div>
     </section>
 
@@ -1987,6 +1903,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
 import { callGeminiAPI, extractJSON } from '../utils/aiHelper'
+import { PRODUCT_PYRAMID } from '../data/productConcept'
 import { fetchCollectionSorted, COLLECTIONS } from '../cloud'
 import { marked } from 'marked'
 import { ElMessage } from 'element-plus'
@@ -2416,16 +2333,15 @@ const complianceStats = computed(() => {
 
 const tabs = [
   { value: 'overview', label: '行业总览', icon: '📊' },
-  { value: 'supply', label: '产业链地图', icon: '🗺️' },
+  { value: 'supply', label: '产业链', icon: '🗺️' },
   { value: 'products', label: '产品金字塔', icon: '💎' },
-  { value: 'productGenerator', label: '爆品生成器', icon: '🎨' },
   { value: 'channels', label: '流量漏斗', icon: '🚀' },
   { value: 'competitors', label: '对标研究', icon: '🧭' },
   { value: 'profit', label: '盈利模拟', icon: '💰' },
   { value: 'store', label: '门店设计', icon: '🏪' },
-  { value: 'planning', label: '3年规划', icon: '📅' },
+  { value: 'planning', label: '三年规划', icon: '📅' },
   { value: 'compliance', label: '合规专栏', icon: '🛡️' },
-  { value: 'aiResearch', label: 'AI用研结论', icon: '🔬' }
+  { value: 'aiResearch', label: 'AI 用研', icon: '🔬' }
 ]
 
 const trendChartCanvas = ref(null)
@@ -2550,92 +2466,140 @@ const researchStatusText = computed(() => {
 
 const latestAIResearch = computed(() => aiResearchList.value[0] || null)
 
-const strategicCommandCards = computed(() => [
-  { label: '市场势能', value: `${growthRate.value}%`, desc: `当前指数 ${currentIndex.value}，峰值 ${peakYear.value}`, tone: 'green' },
-  { label: '盈利弹性', value: `${calculatedMargin.value.toFixed(1)}%`, desc: `模拟月净利 ¥${calculatedProfit.value.toLocaleString()}`, tone: 'gold' },
-  { label: '合规闭环', value: `${complianceStats.value.coverage.toFixed(0)}%`, desc: `高风险未关闭 ${complianceStats.value.highOpen} 项`, tone: complianceStats.value.highOpen > 0 ? 'red' : 'green' },
-  { label: 'AI 用研', value: `${aiResearchList.value.length} 条`, desc: latestAIResearch.value ? '已有同步结论可复盘' : '建议生成首轮战略用研', tone: 'blue' },
-])
-
-const riskOpportunityCards = computed(() => [
-  {
-    badge: '机会',
-    title: '自然美学与礼赠场景共振',
-    desc: '装饰画、树脂与体验课能同时承接家居审美、亲子教育和礼赠需求。',
-    tone: 'opportunity',
-  },
-  {
-    badge: '风险',
-    title: '合规证据链决定扩张上限',
-    desc: complianceStats.value.highOpen > 0
-      ? `仍有 ${complianceStats.value.highOpen} 项高风险事项未关闭，需先完成物种与来源核验。`
-      : '高风险事项已关闭，建议保持季度复核与供应商证据链抽检。',
-    tone: 'risk',
-  },
-  {
-    badge: '动作',
-    title: '用 AI 把调研变成经营议题',
-    desc: latestAIResearch.value ? '可基于最新用研进入战略智脑做多角色辩论。' : '先生成目标客群与竞品调研，再回流看板沉淀。',
-    tone: 'action',
-  },
-])
-
-const nextStrategicActions = computed(() => [
-  '用战略用研AI补齐目标客群、竞品价格带与渠道验证。',
-  complianceStats.value.highOpen > 0 ? '优先关闭高风险合规事项，再推进供应链扩张。' : '将合规清单纳入季度复核与新品立项门槛。',
-  '在战略智脑中发起“线上渠道扩张 vs 门店体验投入”董事会辩论。',
-])
-
-const getResearchSummary = (content = '') => {
-  const text = String(content || '').replace(/[#>*_`-]/g, '').replace(/\s+/g, ' ').trim()
-  return text ? `${text.slice(0, 120)}${text.length > 120 ? '...' : ''}` : '暂无摘要'
-}
-
-// 刷新看板：重新初始化图表并可选拉取用研
-const refreshBoard = () => {
+const goToView = (view) => {
+  if (!view) return
+  currentView.value = view
   nextTick(() => {
-    initCharts()
-    if (currentView.value === 'aiResearch') loadAIResearch()
+    const main = containerRef.value?.querySelector?.('.main-content-area')
+    if (main) main.scrollTop = 0
   })
 }
 
-// 导出看板一页纸摘要
-const exportBoardSummary = () => {
-  const now = new Date().toLocaleString('zh-CN')
+const relatedViewForResearch = (item) => {
+  const type = item?.type || ''
+  if (type === 'competitor') return 'competitors'
+  if (type === 'market' || type === 'trend') return 'overview'
+  if (type === 'product') return 'products'
+  if (type === 'user') return 'channels'
+  return 'overview'
+}
+
+const moduleStatusStrip = computed(() => [
+  { label: '对标研究', value: `${benchmarkStats.done}/${benchmarkStats.total}`, hint: `云库 ${cloudDocStats.value.total} 篇`, view: 'competitors', tone: cloudDocStats.value.total > 0 ? 'green' : 'gold' },
+  { label: '合规专栏', value: `${complianceStats.value.coverage.toFixed(0)}%`, hint: complianceStats.value.highOpen > 0 ? `${complianceStats.value.highOpen} 项高风险未关` : '高风险已闭环', view: 'compliance', tone: complianceStats.value.highOpen > 0 ? 'red' : 'green' },
+  { label: 'AI 用研', value: `${aiResearchList.value.length} 条`, hint: latestAIResearch.value ? String(latestAIResearch.value.topic || '已有结论').slice(0, 18) : '待生成', view: 'aiResearch', tone: aiResearchList.value.length > 0 ? 'green' : 'gold' },
+  { label: '盈利模拟', value: `${calculatedMargin.value.toFixed(0)}%`, hint: `月净利 ¥${calculatedProfit.value.toLocaleString()}`, view: 'profit', tone: calculatedProfit.value > 0 ? 'green' : 'red' },
+])
+
+const strategicCommandCards = computed(() => [
+  { label: '市场势能', value: `${growthRate.value}%`, desc: `当前指数 ${currentIndex.value}，峰值 ${peakYear.value}`, tone: 'green', view: 'overview' },
+  { label: '对标沉淀', value: `${benchmarkStats.done}/${benchmarkStats.total}`, desc: `专题 ${benchmarkStats.topics} · 云库 ${cloudDocStats.value.ready} 可检索`, tone: 'green', view: 'competitors' },
+  { label: '云库文档', value: `${cloudDocStats.value.total}`, desc: cloudDocStats.value.pending ? `待抽文本 ${cloudDocStats.value.pending}` : '全文可检索', tone: 'gold', view: 'competitors' },
+  { label: '合规闭环', value: `${complianceStats.value.coverage.toFixed(0)}%`, desc: `高风险未关闭 ${complianceStats.value.highOpen} 项`, tone: complianceStats.value.highOpen > 0 ? 'red' : 'green', view: 'compliance' },
+  { label: '盈利弹性', value: `${calculatedMargin.value.toFixed(1)}%`, desc: `模拟月净利 ¥${calculatedProfit.value.toLocaleString()}`, tone: 'gold', view: 'profit' },
+  { label: 'AI 用研', value: `${aiResearchList.value.length} 条`, desc: latestAIResearch.value ? '已有同步结论可复盘' : '建议生成首轮战略用研', tone: aiResearchList.value.length ? 'green' : 'gold', view: 'aiResearch' },
+])
+
+const riskOpportunityCards = computed(() => [
+  { badge: '机会', title: '自然美学与礼赠场景共振', desc: '装饰画、树脂与体验课能同时承接家居审美、亲子教育和礼赠需求。', tone: 'opportunity', view: 'products' },
+  { badge: '风险', title: '合规证据链决定扩张上限', desc: complianceStats.value.highOpen > 0 ? `仍有 ${complianceStats.value.highOpen} 项高风险事项未关闭，需先完成物种与来源核验。` : '高风险事项已关闭，建议保持季度复核与供应商证据链抽检。', tone: 'risk', view: 'compliance' },
+  { badge: '动作', title: latestAIResearch.value ? '用研结论可回流对标坐标系' : '用 AI 把调研变成经营议题', desc: latestAIResearch.value ? `最新：${String(latestAIResearch.value.topic || '').slice(0, 36) || '已有结论'} — 建议与对标绿黄红互证。` : '先生成目标客群与竞品调研，再回流看板沉淀。', tone: 'action', view: latestAIResearch.value ? 'aiResearch' : 'competitors' },
+])
+
+const nextStrategicActions = computed(() => {
+  const actions = []
+  if (!aiResearchList.value.length) actions.push({ text: '用战略用研 AI 补齐目标客群、竞品价格带与渠道验证。', featureId: 'strategy-research' })
+  else actions.push({ text: `复盘最新用研「${String(latestAIResearch.value?.topic || '结论').slice(0, 20)}」，写入对标三区判断。`, view: 'competitors' })
+  actions.push(complianceStats.value.highOpen > 0 ? { text: '优先关闭高风险合规事项，再推进供应链扩张。', view: 'compliance' } : { text: '将合规清单纳入季度复核与新品立项门槛。', view: 'compliance' })
+  actions.push({ text: '在战略智脑中发起「线上渠道扩张 vs 门店体验投入」董事会辩论。', featureId: 'strategic-brain' })
+  actions.push({ text: '用爆品概念生成器产出可立项 SKU，再回流产品金字塔验证价格带。', openProductConcept: true })
+  return actions
+})
+
+const getResearchSummary = (content = '') => {
+  const t = String(content || '').replace(/[#>*_`-]/g, '').replace(/\s+/g, ' ').trim()
+  return t ? `${t.slice(0, 120)}${t.length > 120 ? '...' : ''}` : '暂无摘要'
+}
+
+const refreshBoard = async () => {
+  await Promise.allSettled([loadAIResearch(), refreshCloudBenchmarkDocs()])
+  nextTick(() => { initCharts() })
+  ElMessage.success('看板数据已刷新')
+}
+
+const buildBoardBriefPayload = () => {
+  const zoneLines = editableZones.value.map((z) => ({ id: z.id, name: z.name, samples: (z.samples || []).filter((s) => String(s || '').trim()) }))
+  const cloudHits = (cloudSearchResults.value.length ? cloudSearchResults.value : displayCloudDocs.value.slice(0, 8)).slice(0, 12).map((d) => ({
+    title: d.title, brandId: d.brandId || '', group: d.group || '', docType: d.docType, textStatus: d.textStatus, snippet: d._snippet || d.excerpt || '', charCount: d.charCount || 0,
+  }))
+  const aiSummaries = aiResearchList.value.slice(0, 5).map((r) => ({ type: r.type, topic: r.topic, summary: r.summary || getResearchSummary(r.content), createTime: r.createTime }))
+  return {
+    title: '山海造物标本艺术馆 · 战略简报',
+    generatedAt: new Date().toISOString(),
+    lastUpdate: lastUpdateTime.value,
+    market: { sizeNote: '¥95亿+，CAGR 16.8%（2025-2028）', coreAudience: '25-40岁新中产/审美Z世代', searchIndex: currentIndex.value, growthRate: Number(growthRate.value) },
+    profit: { revenue: calculatedRevenue.value, profit: calculatedProfit.value, margin: Number(calculatedMargin.value.toFixed(1)) },
+    compliance: { ...complianceStats.value },
+    benchmark: { ...benchmarkStats, cloud: { ...cloudDocStats.value }, zones: zoneLines },
+    cloudHits,
+    aiResearch: { count: aiResearchList.value.length, latest: aiSummaries },
+  }
+}
+
+const exportBoardSummary = (format = 'md') => {
+  const payload = buildBoardBriefPayload()
+  const stamp = new Date().toISOString().slice(0, 10)
+  if (format === 'json') {
+    downloadFile(JSON.stringify(payload, null, 2), `战略简报_${stamp}.json`)
+    ElMessage.success('已导出 JSON 战略简报')
+    return
+  }
+  const zoneMd = payload.benchmark.zones.map((z) => {
+    const items = z.samples.length ? z.samples.map((s) => `  - ${s}`).join('\n') : '  - （空）'
+    return `### ${z.name}\n${items}`
+  }).join('\n\n')
+  const cloudMd = payload.cloudHits.length
+    ? payload.cloudHits.map((h, i) => `${i + 1}. **${h.title}**（${h.brandId || '未挂品牌'} · ${h.docType}）\n   ${h.snippet || '无摘要'}`).join('\n')
+    : '暂无云库文档（请同步云库或上传资料）。'
+  const aiMd = payload.aiResearch.count > 0
+    ? payload.aiResearch.latest.map((r, i) => `${i + 1}. [${r.type}] ${r.topic}\n   ${r.summary}`).join('\n')
+    : '暂无同步结论，可前往 AI 智能中心 → 战略用研 生成并同步。'
   const lines = [
-    '# 山海造物标本艺术馆 · 战略调研看板摘要',
-    `生成时间：${now}`,
+    `# ${payload.title}`,
+    `生成时间：${new Date().toLocaleString('zh-CN')}`,
+    '',
+    '## 指挥舱 KPI',
+    `- 市场势能：指数 ${payload.market.searchIndex}，总增长 ${payload.market.growthRate}%`,
+    `- 对标沉淀：${payload.benchmark.done}/${payload.benchmark.total} 品牌，专题 ${payload.benchmark.topics}`,
+    `- 云库：共 ${payload.benchmark.cloud.total} 篇（可检索 ${payload.benchmark.cloud.ready}，待抽文本 ${payload.benchmark.cloud.pending}）`,
+    `- 合规闭环：${payload.compliance.coverage.toFixed(0)}%，高风险未关 ${payload.compliance.highOpen}`,
+    `- 盈利模拟：月营收 ¥${payload.profit.revenue.toLocaleString()}，月净利 ¥${payload.profit.profit.toLocaleString()}，净利率 ${payload.profit.margin}%`,
+    `- AI 用研：${payload.aiResearch.count} 条`,
     '',
     '## 行业总览',
-    `- 预估文创标本市场规模：¥95亿+，CAGR 16.8%（2025-2028）`,
-    `- 核心人群：25-40岁新中产/审美Z世代，占比约65%`,
-    `- 热门赛道：装饰画与树脂，家居装饰类近两年增速更稳`,
-    `- 市场关注度当前指数：${currentIndex.value}，总增长率 ${growthRate.value}%`,
+    `- 预估文创标本市场规模：${payload.market.sizeNote}`,
+    `- 核心人群：${payload.market.coreAudience}`,
+    '',
+    '## 对标研究 · 三区判断（本机编辑版）',
+    zoneMd,
+    '',
+    '## 云库命中 / 最近文档',
+    cloudMd,
+    '',
+    '## AI 用研摘要',
+    aiMd,
     '',
     '## 产业链与供应链',
     `- 全品类核心产区：${(reportData.supplyChain.all.labels || []).join('、')}`,
     `- 洞察：${currentInsight.value || reportData.supplyChain.all.insight}`,
     '',
-    '## 产品策略',
-    '- 引流款：树脂饰品/果壳铃；利润款：昆虫/蝴蝶装饰画；形象款：大型生态缸/稀有收藏级',
-    '',
-    '## 渠道与盈利',
-    '- 渠道优先级：B端教育/研学 > 生活方式集合店 > 抖音/小红书',
-    `- 盈利模拟（当前参数）：月营收 ¥${calculatedRevenue.value.toLocaleString()}，月净利润 ¥${calculatedProfit.value.toLocaleString()}，净利润率 ${calculatedMargin.value.toFixed(1)}%`,
-    '',
-    '## AI 用研结论',
-    aiResearchList.value.length > 0
-      ? `已同步 ${aiResearchList.value.length} 条用研结论，详见看板「AI用研结论」页。`
-      : '暂无同步结论，可前往 AI 智能中心 → 战略用研 生成并同步。',
-    '',
     '---',
-    `看板最后更新：${lastUpdateTime.value}`
+    `看板最后更新：${payload.lastUpdate}`,
   ]
-  const content = lines.join('\n')
-  downloadFile(content, `战略调研看板摘要_${new Date().toISOString().slice(0, 10)}.md`)
+  downloadFile(lines.join('\n'), `战略简报_${stamp}.md`)
+  ElMessage.success('已导出 Markdown 战略简报')
 }
 
-// 前往 AI 智能中心（战略用研/战略智脑入口）
 const goToAIStrategyResearch = (featureId = 'strategy-research') => {
   try {
     localStorage.setItem('ai_center_pending_feature', featureId)
@@ -2696,206 +2660,24 @@ const toggleFullscreen = async () => {
   }
 }
 
-// 爆品生成器相关状态
-const selectedProductType = ref('profit') // 'profit' | 'traffic' | 'premium'
-const generatorOptions = ref({
-  category: 'insect',
-  innovation: 'design'
-})
-const isGenerating = ref(false)
-const generatedConcept = ref(null)
-const conceptHistory = ref([])
 
-// 产品类型选项
-const productTypes = [
-  {
-    value: 'profit',
-    name: '利润款',
-    icon: '💎',
-    desc: '中高客单价，核心营收'
-  },
-  {
-    value: 'traffic',
-    name: '引流款',
-    icon: '🛍️',
-    desc: '低单价，高复购'
-  },
-  {
-    value: 'premium',
-    name: '形象款',
-    icon: '👑',
-    desc: '极高单价，品牌调性'
-  }
-]
-
-// 使用统一的AI辅助工具（已从 aiHelper.js 导入）
-
-// 显示错误提示的统一函数
-const showError = (message) => {
-  alert(`❌ ${message}\n\n请稍后重试，或检查网络连接。`)
+const goToProductConceptGenerator = () => {
+  window.dispatchEvent(new CustomEvent('switch-tab', { detail: '58' }))
 }
 
-// 生成产品概念
-const generateProductConcept = async () => {
-  // 防止重复点击
-  if (isGenerating.value) {
-    console.warn('[生成产品概念] 正在生成中，忽略重复请求')
-    return
-  }
-  
-  // 清空上一次的结果，确保生成新方案
-  generatedConcept.value = null
-  
-  isGenerating.value = true
-  
+const bridgedConcept = ref(null)
+const dismissBridgedConcept = () => {
+  bridgedConcept.value = null
+  try { localStorage.removeItem('sc_product_concept_for_strategy') } catch (_) {}
+}
+const loadBridgedConcept = () => {
   try {
-    const productType = productTypes.find(t => t.value === selectedProductType.value)
-    if (!productType) {
-      throw new Error('请先选择产品定位')
-    }
-    
-    const pyramidData = productPyramid.find(p => p.type === selectedProductType.value)
-    if (!pyramidData) {
-      throw new Error('未找到对应的产品金字塔数据')
-    }
-    
-    // 添加随机性和时间戳，确保每次生成不同的内容
-    const timestamp = Date.now()
-    const randomSeed = Math.floor(Math.random() * 10000)
-    
-    const prompt = `你是山海造物标本艺术馆的产品设计师。请基于以下信息，生成一个全新的、独特的爆品SKU方案（这是第${randomSeed}次生成，请确保每次生成的内容都不同）：
-
-产品定位：${productType.name}（${productType.desc}）
-价格区间：¥${pyramidData.priceRange}
-目标毛利率：${pyramidData.margin}%
-产品类别：${generatorOptions.value.category === 'insect' ? '昆虫/蝴蝶' : generatorOptions.value.category === 'plant' ? '植物' : generatorOptions.value.category === 'marine' ? '海洋生物' : generatorOptions.value.category === 'resin' ? '树脂工艺品' : '混合类型'}
-创新方向：${generatorOptions.value.innovation === 'material' ? '材质创新' : generatorOptions.value.innovation === 'design' ? '设计创新' : generatorOptions.value.innovation === 'function' ? '功能创新' : '体验创新'}
-
-重要要求：
-1. 必须生成一个全新的、与之前不同的产品方案
-2. 产品名称要独特、有创意、有记忆点
-3. 所有内容都要原创，不要重复之前生成过的方案
-
-请生成一个完整的产品方案，包含：
-1. 产品名称（创意、有记忆点，必须独特）
-2. 材质与工艺（详细说明）
-3. 核心卖点（3-5个，每个一句话）
-4. 目标人群（具体描述）
-5. 市场策略（如何推广和销售）
-6. 建议定价（具体数字，在${pyramidData.priceRange}范围内）
-7. 预期毛利率（百分比，目标${pyramidData.margin}%）
-
-请以JSON格式返回，格式如下：
-{
-  "name": "产品名称",
-  "position": "${productType.name}",
-  "price": "具体价格数字",
-  "margin": "毛利率百分比",
-  "materials": "材质与工艺的详细描述",
-  "sellingPoints": ["卖点1", "卖点2", "卖点3"],
-  "targetAudience": "目标人群描述",
-  "strategy": "市场策略描述"
-}`
-
-    console.log('[生成产品概念] 开始生成，时间戳:', timestamp, '随机种子:', randomSeed)
-    
-    const text = await callGeminiAPI(prompt, {
-      temperature: 0.95, // 提高温度以增加随机性和多样性
-      maxOutputTokens: 4096,
-      usePro: false,
-      useCache: false // 禁用缓存，确保每次都是新生成
-    })
-    
-    // 记录响应内容用于调试
-    console.log('[生成产品概念] AI响应长度:', text.length)
-    console.log('[生成产品概念] AI响应预览:', text.substring(0, 300))
-    
-    let concept
-    try {
-      concept = extractJSON(text)
-      
-      // 验证概念数据的完整性
-      if (!concept.name || !concept.position || !concept.price) {
-        throw new Error('AI返回的数据不完整，缺少必要字段')
-      }
-      
-      // 添加生成时间戳，用于区分不同的生成结果
-      concept.generatedAt = timestamp
-      concept.randomSeed = randomSeed
-      
-    } catch (jsonError) {
-      console.error('[生成产品概念] JSON解析失败:', jsonError)
-      console.error('[生成产品概念] 原始响应:', text)
-      throw new Error(`JSON解析失败: ${jsonError.message}。响应可能被截断，请重试。`)
-    }
-    
-    // 检查是否与历史记录重复
-    const isDuplicate = conceptHistory.value.some(h => 
-      h.name === concept.name && 
-      h.position === concept.position &&
-      Math.abs(parseFloat(h.price) - parseFloat(concept.price)) < 1
-    )
-    
-    if (isDuplicate) {
-      console.warn('[生成产品概念] 检测到重复方案，将重新生成')
-      // 如果重复，等待一小段时间后重新生成
-      await new Promise(resolve => setTimeout(resolve, 500))
-      // 递归调用，但只允许一次重试
-      if (!concept.retryCount) {
-        concept.retryCount = 1
-        return generateProductConcept()
-      }
-    }
-    
-    // 设置新生成的概念
-    generatedConcept.value = concept
-    
-    // 添加到历史记录（只在成功生成后添加，避免重复归档）
-    const historyItem = { 
-      ...concept, 
-      timestamp: timestamp,
-      id: `concept_${timestamp}_${randomSeed}` // 添加唯一ID
-    }
-    
-    // 检查历史记录中是否已存在相同的ID
-    const existingIndex = conceptHistory.value.findIndex(h => h.id === historyItem.id)
-    if (existingIndex === -1) {
-      conceptHistory.value.unshift(historyItem)
-      // 限制历史记录数量
-      if (conceptHistory.value.length > 10) {
-        conceptHistory.value = conceptHistory.value.slice(0, 10)
-      }
-      console.log('[生成产品概念] 已添加到历史记录，当前历史记录数:', conceptHistory.value.length)
-    } else {
-      console.warn('[生成产品概念] 历史记录中已存在相同ID，跳过添加')
-    }
-    
-  } catch (error) {
-    console.error('生成产品概念失败:', error)
-    showError(`生成产品概念失败：${error.message}`)
-    // 确保失败时也清空状态
-    generatedConcept.value = null
-  } finally {
-    isGenerating.value = false
+    const raw = localStorage.getItem('sc_product_concept_for_strategy')
+    if (!raw) { bridgedConcept.value = null; return }
+    bridgedConcept.value = JSON.parse(raw)
+  } catch (_) {
+    bridgedConcept.value = null
   }
-}
-
-// 重新生成
-const regenerateConcept = () => {
-  // 清空当前概念
-  generatedConcept.value = null
-  // 等待一小段时间确保UI更新
-  setTimeout(() => {
-    generateProductConcept()
-  }, 100)
-}
-
-// 加载历史概念
-const loadConcept = (concept) => {
-  if (!concept) return
-  // 深拷贝，避免引用问题
-  generatedConcept.value = { ...concept }
-  console.log('[加载历史概念] 已加载:', concept.name)
 }
 
 // 展陈空间设计师相关状态
@@ -3117,37 +2899,6 @@ const regenerateSalesScript = () => {
   generateSalesScript()
 }
 
-// 导出功能
-const exportConcept = () => {
-  if (!generatedConcept.value) return
-  
-  const content = `# ${generatedConcept.value.name} - 产品方案
-
-## 产品信息
-- **产品名称**: ${generatedConcept.value.name}
-- **产品定位**: ${generatedConcept.value.position}
-- **建议定价**: ¥${generatedConcept.value.price}
-- **目标毛利率**: ${generatedConcept.value.margin}%
-
-## 材质与工艺
-${generatedConcept.value.materials}
-
-## 核心卖点
-${generatedConcept.value.sellingPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
-
-## 目标人群
-${generatedConcept.value.targetAudience}
-
-## 市场策略
-${generatedConcept.value.strategy}
-
----
-生成时间: ${new Date().toLocaleString('zh-CN')}
-`
-
-  downloadFile(content, `${generatedConcept.value.name}_产品方案.txt`)
-}
-
 const exportSpatialDesign = () => {
   if (!spatialDesign.value) return
   
@@ -3257,6 +3008,66 @@ const selectedBrandCloudDocs = computed(() =>
   docsForBrand(cloudDocs.value, selectedBenchmarkBrand.value?.id)
 )
 
+const cloudBrandFilter = ref('')
+const ZONE_STORAGE_KEY = 'sc_strategy_benchmark_zones_v1'
+const cloneDefaultZones = () => BENCHMARK_ZONES.map((z) => ({ id: z.id, name: z.name, meaning: z.meaning, rule: z.rule, samples: [...(z.samples || [])] }))
+const loadEditableZones = () => {
+  try {
+    const raw = localStorage.getItem(ZONE_STORAGE_KEY)
+    if (!raw) return cloneDefaultZones()
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed) || !parsed.length) return cloneDefaultZones()
+    const byId = Object.fromEntries(parsed.map((z) => [z.id, z]))
+    return BENCHMARK_ZONES.map((z) => ({
+      id: z.id, name: z.name, meaning: z.meaning, rule: z.rule,
+      samples: Array.isArray(byId[z.id]?.samples) ? [...byId[z.id].samples] : [...(z.samples || [])],
+    }))
+  } catch (_) { return cloneDefaultZones() }
+}
+const editableZones = ref(loadEditableZones())
+const persistEditableZones = () => {
+  try { localStorage.setItem(ZONE_STORAGE_KEY, JSON.stringify(editableZones.value.map((z) => ({ id: z.id, samples: z.samples })))) } catch (_) {}
+}
+const addZoneSample = (zoneId) => {
+  const zone = editableZones.value.find((z) => z.id === zoneId)
+  if (!zone) return
+  zone.samples.push('')
+  persistEditableZones()
+}
+const removeZoneSample = (zoneId, index) => {
+  const zone = editableZones.value.find((z) => z.id === zoneId)
+  if (!zone) return
+  zone.samples.splice(index, 1)
+  if (!zone.samples.length) zone.samples.push('')
+  persistEditableZones()
+}
+const resetZoneSamples = (zoneId) => {
+  const defaults = BENCHMARK_ZONES.find((z) => z.id === zoneId)
+  const zone = editableZones.value.find((z) => z.id === zoneId)
+  if (!defaults || !zone) return
+  zone.samples = [...(defaults.samples || [])]
+  persistEditableZones()
+  ElMessage.success(`已恢复「${zone.name}」默认条目`)
+}
+const cloudDocCountForBrand = (brandId) => docsForBrand(cloudDocs.value, brandId).length
+const cloudBrandFilterLabel = computed(() => {
+  if (!cloudBrandFilter.value) return ''
+  const brand = BENCHMARK_BRANDS.find((b) => b.id === cloudBrandFilter.value)
+  return brand?.name || cloudBrandFilter.value
+})
+const brandFilteredCloudDocs = computed(() => cloudBrandFilter.value ? docsForBrand(cloudDocs.value, cloudBrandFilter.value) : cloudDocs.value)
+const displayCloudDocs = computed(() => brandFilteredCloudDocs.value)
+const filterCloudByBrand = (brand) => {
+  if (!brand?.id) return
+  cloudBrandFilter.value = brand.id
+  selectedBenchmarkId.value = brand.id
+  cloudSearchQuery.value = ''
+  cloudSearchResults.value = []
+  nextTick(() => { containerRef.value?.querySelector?.('.bm-cloud')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }) })
+  ElMessage.success(`已按「${brand.name}」筛选云库`)
+}
+const clearCloudBrandFilter = () => { cloudBrandFilter.value = '' }
+
 const refreshCloudBenchmarkDocs = async () => {
   cloudDocsLoading.value = true
   cloudDocsError.value = ''
@@ -3272,7 +3083,8 @@ const refreshCloudBenchmarkDocs = async () => {
 }
 
 const runCloudBenchmarkSearch = () => {
-  cloudSearchResults.value = searchBenchmarkDocs(cloudDocs.value, cloudSearchQuery.value)
+  const pool = cloudBrandFilter.value ? brandFilteredCloudDocs.value : cloudDocs.value
+  cloudSearchResults.value = searchBenchmarkDocs(pool, cloudSearchQuery.value)
 }
 
 const openCloudDocHit = (hit) => {
@@ -3501,44 +3313,7 @@ const profitCostMix = computed(() => {
 })
 
 // 产品金字塔数据
-const productPyramid = [
-  {
-    name: '形象款',
-    type: 'premium',
-    badge: '镇店之宝',
-    icon: '👑',
-    description: '极高单价，提升品牌调性',
-    priceRange: '2000-10000',
-    targetShare: '10',
-    margin: '60',
-    products: ['大型生态缸', '稀有收藏级标本', '定制作品'],
-    strategy: '品牌展示，吸引高端客户，提升品牌溢价'
-  },
-  {
-    name: '利润款',
-    type: 'profit',
-    badge: '核心主力',
-    icon: '💎',
-    description: '中高客单价，主要营收来源',
-    priceRange: '500-2000',
-    targetShare: '40',
-    margin: '55',
-    products: ['蝴蝶装饰画', '昆虫标本画', '植物标本框'],
-    strategy: '核心营收，体现品牌审美，保持高毛利'
-  },
-  {
-    name: '引流款',
-    type: 'traffic',
-    badge: '高频消费',
-    icon: '🛍️',
-    description: '低单价，高复购，易标准化',
-    priceRange: '50-500',
-    targetShare: '50',
-    margin: '40',
-    products: ['树脂饰品', '果壳铃', '小型标本'],
-    strategy: '流量获取，降低购买门槛，提高转化率'
-  }
-]
+const productPyramid = PRODUCT_PYRAMID
 
 // 流量渠道数据
 const trafficChannels = [
@@ -3846,7 +3621,6 @@ const initCharts = () => {
           initIndustryGrowthChart()
           break
         case 'products':
-        case 'productGenerator':
           initProductRadar()
           break
         case 'channels':
@@ -4957,16 +4731,18 @@ ${item.content}
   URL.revokeObjectURL(link.href)
 }
 
+const onStrategyResearchSynced = () => { loadAIResearch() }
+
 onMounted(() => {
+  loadBridgedConcept()
+  window.addEventListener('product-concept-bridged', loadBridgedConcept)
+
   document.addEventListener('fullscreenchange', syncFullscreenState)
-  // 预加载 AI 用研条数，用于导航栏「调研状态」展示
-  loadAIResearch()
-  // 默认显示 overview，延迟初始化图表
+  window.addEventListener('strategy-research-synced', onStrategyResearchSynced)
+  Promise.allSettled([loadAIResearch(), refreshCloudBenchmarkDocs()])
   nextTick(() => {
     setTimeout(() => {
-      if (currentView.value === 'overview') {
-        initTrendChart()
-      }
+      if (currentView.value === 'overview') initTrendChart()
       initCharts()
     }, 300)
   })
@@ -4974,6 +4750,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', syncFullscreenState)
+  window.removeEventListener('strategy-research-synced', onStrategyResearchSynced)
+  window.removeEventListener('product-concept-bridged', loadBridgedConcept)
   // 销毁所有图表实例
   if (trendChart) trendChart.destroy()
   if (supplyChart) supplyChart.destroy()
@@ -7988,415 +7766,50 @@ onUnmounted(() => {
   }
 }
 
-/* 爆品生成器样式 */
-.generator-control-panel {
-  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: 32px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
 
-.control-section {
-  margin-bottom: 32px;
-}
-
-.control-section:last-child {
-  margin-bottom: 0;
-}
-
-.control-section-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e2e8f0;
+/* 爆品概念独立模块入口 */
+.pcg-entry-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.control-section-title::before {
-  content: '';
-  width: 4px;
-  height: 20px;
-  background: var(--brand-green-500);
-  border-radius: 2px;
-}
-
-.product-type-selector {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.type-select-btn {
-  padding: 20px;
-  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.type-select-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(45, 106, 79, 0.05), rgba(232, 200, 86, 0.05));
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.type-select-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(45, 106, 79, 0.15);
-  border-color: #2D6A4F;
-}
-
-.type-select-btn:hover::before {
-  opacity: 1;
-}
-
-.type-select-btn.active {
-  background: linear-gradient(135deg, rgba(45, 106, 79, 0.1), rgba(232, 200, 86, 0.05));
-  border-color: #2D6A4F;
-  box-shadow: 
-    0 8px 24px rgba(45, 106, 79, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-.type-icon {
-  font-size: 36px;
-  line-height: 1;
-}
-
-.type-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a202c;
-}
-
-.type-desc {
-  font-size: 12px;
-  color: #718096;
-}
-
-.generator-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-}
-
-.option-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.option-group label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #4a5568;
-}
-
-.option-select {
-  padding: 12px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  font-size: 14px;
-  color: #2d3748;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.option-select:hover {
-  border-color: #2D6A4F;
-  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.1);
-}
-
-.option-select:focus {
-  outline: none;
-  border-color: #2D6A4F;
-  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
-}
-
-.generate-action {
-  display: flex;
-  justify-content: center;
-  margin-top: 32px;
-  padding-top: 32px;
-  border-top: 2px solid #e2e8f0;
-}
-
-.generate-btn {
-  padding: 16px 48px;
-  background: var(--brand-green-600);
-  border: none;
-  border-radius: 12px;
-  color: #000;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    0 4px 16px rgba(45, 106, 79, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.generate-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.generate-btn:hover:not(:disabled) {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 
-    0 8px 32px rgba(45, 106, 79, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.generate-btn:hover:not(:disabled)::before {
-  opacity: 1;
-}
-
-.generate-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
-}
-
-.generate-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* 生成结果卡片 */
-.generated-concept-card {
-  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: 32px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  animation: fadeIn 0.5s ease;
-}
-
-.concept-header {
-  display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e2e8f0;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding: 20px 22px;
+  border-radius: 14px;
+  border: 1px solid rgba(45, 106, 79, 0.18);
+  background: linear-gradient(135deg, rgba(45, 106, 79, 0.06), rgba(196, 165, 90, 0.08));
 }
-
-.concept-title {
-  font-size: 28px;
-  font-weight: 900;
-  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
+.pcg-entry-card--solo {
+  margin-top: 0;
 }
-
-.regenerate-btn {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #f7fafc 0%, #ffffff 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  color: #4a5568;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.regenerate-btn:hover {
-  background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
-  border-color: #2D6A4F;
-  color: #2D6A4F;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.15);
-}
-
-.concept-content {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.concept-section {
-  padding: 24px;
-  background: #f7fafc;
-  border-radius: 12px;
-  border-left: 4px solid #2D6A4F;
-}
-
-.concept-section-title {
+.pcg-entry-text h3 {
+  margin: 0 0 6px;
   font-size: 18px;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: #1a2e24;
 }
-
-.concept-info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.info-label {
-  font-size: 12px;
-  color: #718096;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
-}
-
-.info-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: #2d3748;
-}
-
-.info-value.highlight {
-  color: #2D6A4F;
-  font-size: 24px;
-}
-
-.concept-text {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #4a5568;
-}
-
-.selling-points {
-  list-style: none;
-  padding: 0;
+.pcg-entry-text p {
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.selling-points li {
-  padding: 12px 16px;
-  background: white;
-  border-radius: 8px;
-  border-left: 3px solid #2D6A4F;
   font-size: 14px;
-  color: #2d3748;
+  color: #5c6b63;
   line-height: 1.6;
-  position: relative;
-  padding-left: 24px;
+  max-width: 40rem;
 }
-
-.selling-points li::before {
-  content: '✓';
-  position: absolute;
-  left: 8px;
-  color: #2D6A4F;
-  font-weight: bold;
-}
-
-/* 历史记录 */
-.concept-history {
-  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.history-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.history-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.history-item {
-  padding: 16px;
-  background: #f7fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.history-item:hover {
-  background: white;
-  border-color: #2D6A4F;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.15);
-}
-
-.history-item-header {
+.pcg-bridge-banner {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(196, 165, 90, 0.35);
+  background: rgba(196, 165, 90, 0.12);
 }
-
-.history-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.history-type {
-  font-size: 12px;
-  padding: 4px 10px;
-  background: rgba(45, 106, 79, 0.1);
-  color: #2D6A4F;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.history-item-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #2D6A4F;
-}
+.pcg-bridge-banner strong { display: block; margin-bottom: 4px; }
+.pcg-bridge-banner p { margin: 0; font-size: 13px; color: #5c6b63; }
+.pcg-bridge-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 @media (max-width: 1200px) { 
   .competitor-grid, 
@@ -8418,13 +7831,6 @@ onUnmounted(() => {
     height: 300px;
   }
   
-  .product-type-selector {
-    grid-template-columns: 1fr;
-  }
-  
-  .generator-options {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ---------- 盈利模拟页（升级版布局与组件） ---------- */
@@ -10807,6 +10213,34 @@ onUnmounted(() => {
   color: #fff;
   border-color: #2d6a4f;
 }
+
+
+/* ---- 指挥舱升级 ---- */
+.command-hero-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.module-status-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.module-status-chip{text-align:left;border:1px solid rgba(45,106,79,.14);background:rgba(255,255,255,.88);border-radius:14px;padding:12px 14px;cursor:pointer}
+.module-status-chip.green{border-left:3px solid #52b788}.module-status-chip.gold{border-left:3px solid #c4a55a}.module-status-chip.red{border-left:3px solid #d05450}
+.module-status-label{display:block;font-size:12px;color:#9b968d}.module-status-value{display:block;margin:4px 0;font-size:18px}.module-status-hint{display:block;font-size:12px;color:#6b665d}
+.command-card-btn{width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit}.command-jump{display:inline-block;margin-top:8px;font-size:12px;color:#2d6a4f;font-weight:600}
+.decision-item-btn{width:100%;text-align:left;background:transparent;border:0;padding:10px 0;display:flex;gap:10px;cursor:pointer;font:inherit;color:inherit;border-top:1px solid rgba(45,106,79,.08)}
+.decision-item-btn:first-of-type{border-top:none}
+.latest-research-actions,.ai-research-quick-links,.ai-research-empty-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.research-type-badge{display:inline-block;margin-bottom:6px;padding:2px 8px;border-radius:999px;font-size:12px;background:rgba(45,106,79,.1);color:#2d6a4f}
+.next-action-link{background:none;border:0;padding:0;color:#2d6a4f;font:inherit;text-align:left;cursor:pointer;line-height:1.6}
+.bm-cloud-filter-hint{margin:8px 0 0;font-size:12px;color:#74603e}
+.bm-brand-meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}
+.bm-cloud-count{font-size:12px;color:#9b968d}.bm-cloud-count.ready{color:#2d6a4f;font-weight:600}
+.bm-filter-cloud-btn{border:1px solid rgba(45,106,79,.2);background:#f4f8f5;color:#2d6a4f;border-radius:999px;padding:2px 10px;font-size:12px;cursor:pointer}
+.bm-brand-cloud-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.bm-brand-cloud-empty{margin-top:10px;font-size:13px;color:#6b665d}
+.bm-zone-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.bm-zone-edit-hint{margin:0 0 8px;font-size:12px;color:#9b968d}
+.bm-zone-edit-list{list-style:none;margin:0;padding:0}.bm-zone-edit-item{display:flex;gap:8px;margin-bottom:8px}
+.bm-zone-textarea{flex:1;min-width:0;border:1px solid rgba(45,106,79,.18);border-radius:10px;padding:8px 10px;font:inherit;resize:vertical;background:rgba(255,255,255,.9)}
+.bm-zone-remove{width:28px;height:28px;border:0;border-radius:8px;background:rgba(208,84,80,.12);color:#a53d39;cursor:pointer}
+.bm-zone-reset{margin-top:4px;border:0;background:transparent;color:#74603e;font-size:12px;cursor:pointer;text-decoration:underline}
+@media (max-width:1100px){.module-status-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:768px){.module-status-strip{grid-template-columns:1fr}.bm-zones{grid-template-columns:1fr!important}.ai-research-empty-actions,.ai-research-quick-links{flex-direction:column;align-items:stretch}}
 
 </style>
 

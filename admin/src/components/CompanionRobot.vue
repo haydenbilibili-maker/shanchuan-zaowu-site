@@ -381,6 +381,7 @@ import { Microphone, VideoPlay, Camera, Close, Grid, DataAnalysis, MagicStick, D
 import { callGeminiAPI, resetKeyStatus } from '../utils/aiHelper'
 import { getTTSInstance, VOICE_CONFIGS, waitForVoices, selectBestVoice } from '../utils/ttsHelper'
 import { tryPlayAliyunNlsTts } from '../utils/aliyunCompanionTts'
+import { tryPlayOssCompanionTts } from '../utils/ossCompanionTts'
 
 /** 新一轮播报时递增，用于取消过期的分段队列 */
 let companionSpeakSeq = 0
@@ -1205,7 +1206,7 @@ const speakTextEnhanced = async (text, options = {}) => {
     isSpeaking.value = true
     isThinking.value = false
 
-    const usedAliyun = await tryPlayAliyunNlsTts(cleanText, {
+    const ttsAttachOpts = {
       shouldContinue: () => seq === companionSpeakSeq,
       onAttach: (audio) => {
         companionTtsAudio.value = audio
@@ -1213,6 +1214,23 @@ const speakTextEnhanced = async (text, options = {}) => {
       onDetach: () => {
         companionTtsAudio.value = null
       },
+    }
+
+    // 优先级：开源 CosyVoice 风格 → 阿里云 NLS → Web Speech（均安静降级，不打断对话）
+    const usedOss = await tryPlayOssCompanionTts(cleanText, {
+      ...ttsAttachOpts,
+      voice: import.meta.env.VITE_OSS_TTS_VOICE || undefined,
+    })
+    if (usedOss) {
+      if (seq === companionSpeakSeq) {
+        isSpeaking.value = false
+        isThinking.value = false
+      }
+      return
+    }
+
+    const usedAliyun = await tryPlayAliyunNlsTts(cleanText, {
+      ...ttsAttachOpts,
       voice: import.meta.env.VITE_ALIYUN_NLS_VOICE || undefined,
       format: import.meta.env.VITE_ALIYUN_NLS_FORMAT || undefined,
     })
@@ -1226,7 +1244,7 @@ const speakTextEnhanced = async (text, options = {}) => {
     }
 
     if (!synth.value || !window.SpeechSynthesisUtterance) {
-      console.warn('浏览器不支持语音合成功能，且未启用可用的云端 TTS')
+      console.warn('浏览器不支持语音合成功能，且未启用可用的云端/开源 TTS')
       isThinking.value = false
       isSpeaking.value = false
       return

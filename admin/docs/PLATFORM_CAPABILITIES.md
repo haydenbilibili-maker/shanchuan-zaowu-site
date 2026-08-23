@@ -72,6 +72,7 @@
 | `8` | 首页轮播 | `BannerManager.vue` |
 | `9` | 内容管理 | `ContentManager.vue` |
 | `10` | 战略调研看板 | `StrategyResearch.vue`（含大量行业/趋势可视化与调研内容） |
+| `58` | 爆品概念生成器 | `ProductConceptGenerator.vue`（7 类定位 + 筛选项；灵感骰子/批量变体；历史/导出/看板桥接） |
 | `12` | AI 智能中心 | `AICenter.vue`（多场景 AI 子模块，见下文） |
 | `13` | 首页配置 | `HomeConfigManager.vue` |
 | `14` | 会员等级体系 | `MemberLevelConfig.vue` |

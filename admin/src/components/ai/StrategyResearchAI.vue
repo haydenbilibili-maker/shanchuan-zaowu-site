@@ -351,6 +351,9 @@ const saveToResearchBoard = async (silent = false) => {
     }
 
     await cdnAdd(COLLECTIONS.STRATEGY_RESEARCH, researchData)
+    try {
+      window.dispatchEvent(new CustomEvent('strategy-research-synced'))
+    } catch (_) {}
     if (!silent) {
       ElMessage.success({
         message: '✅ 已同步到调研看板，可在战略调研看板中查看',

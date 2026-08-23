@@ -259,6 +259,7 @@
             <el-menu-item-group title="战略与知识">
                 <el-menu-item index="12"><el-icon><MagicStick /></el-icon><span>智能中心</span></el-menu-item>
                 <el-menu-item index="10"><el-icon><DataAnalysis /></el-icon><span>战略调研看板</span></el-menu-item>
+                <el-menu-item index="58"><el-icon><MagicStick /></el-icon><span>爆品概念生成器</span></el-menu-item>
                 <el-menu-item index="29"><el-icon><Notebook /></el-icon><span>经营手册</span></el-menu-item>
             </el-menu-item-group>
 
@@ -881,6 +882,7 @@ import BannerManager from './components/BannerManager.vue'
 import HomeConfigManager from './components/HomeConfigManager.vue'
 import ContentManager from './components/ContentManager.vue'
 const StrategyResearch = asyncWith(() => import('./components/StrategyResearch.vue'))
+const ProductConceptGenerator = asyncWith(() => import('./components/ProductConceptGenerator.vue'))
 const AICenter = asyncWith(() => import('./components/AICenter.vue'))
 import PartnerDestinyCenter from './components/PartnerDestinyCenter.vue'
 import CapitalArchitectureSandbox from './components/CapitalArchitectureSandbox.vue'
@@ -944,6 +946,7 @@ const TAB_COMPONENT_MAP = {
   '8': () => ({ comp: BannerManager }),
   '9': () => ({ comp: ContentManager }),
   '10': () => ({ comp: StrategyResearch }),
+  '58': () => ({ comp: ProductConceptGenerator }),
   '12': () => ({ comp: AICenter }),
   '13': () => ({ comp: HomeConfigManager }),
   '14': () => ({ comp: MemberLevelConfig }),

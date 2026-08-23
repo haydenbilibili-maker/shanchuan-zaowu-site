@@ -97,6 +97,7 @@ export const MODULES = [
   // 战略与知识
   { id: '12', name: 'AI 智能中心', group: 'INTELLIGENCE', subgroup: null, icon: 'MagicStick', keywords: 'ai aiznzx assistant llm' },
   { id: '10', name: '战略调研看板', group: 'INTELLIGENCE', subgroup: null, icon: 'DataAnalysis', keywords: 'strategy research zldykb' },
+  { id: '58', name: '爆品概念生成器', group: 'INTELLIGENCE', subgroup: null, icon: 'MagicStick', keywords: 'product concept generator bpgnq sku 爆品 概念 金字塔' },
   { id: '29', name: '经营手册', group: 'INTELLIGENCE', subgroup: null, icon: 'Notebook', keywords: 'manual ops jysc sop' }
 ]
 

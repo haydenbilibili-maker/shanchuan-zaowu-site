@@ -23,7 +23,8 @@
 | [AI_SYSTEM_ARCHITECTURE.md](./AI_SYSTEM_ARCHITECTURE.md) | AI 战略智脑 vs 智能中心、整合策略 |
 | [AI功能升级说明.md](./AI功能升级说明.md) | AI 功能升级记录 |
 | [AI_DeepSeek环境变量配置.md](./AI_DeepSeek环境变量配置.md) | DeepSeek / 默认 Provider：本地 `.env` 与 GitHub Secrets |
-| [TTS优化说明.md](./TTS优化说明.md) | 语音/TTS 相关优化 |
+| [TTS优化说明.md](./TTS优化说明.md) | 语音/TTS 相关优化（Web Speech 参数；开源路径见下） |
+| [OSS_TTS_P1.md](./OSS_TTS_P1.md) | 「马上有」开源 TTS P1：CosyVoice 风格代理、优先级与环境变量 |
 
 ## 移动端与访问
 
@@ -48,6 +49,7 @@
 | [首页配置无限刷新修复说明.md](./首页配置无限刷新修复说明.md) | 专项修复记录 |
 | [物业合作测算_评估案例说明.md](./物业合作测算_评估案例说明.md) | 物业合作测算 v3 模型、评估案例结构（decision/risks/dealTerms）与预置案例（含什刹海不合作复盘） |
 | [官网报价单配置.md](./官网报价单配置.md) | Admin「报价单配置」↔ `/price-list`：集合 `price_list_items`、运行时云端覆盖、订货价目发布 |
+| [爆品概念生成器.md](./爆品概念生成器.md) | 从战略看板拆出的独立模块（菜单 58）：7 类定位、渠道/客群筛选项、灵感骰子、批量变体、历史导出与看板桥接 |
 | [Admin近阶段体验加固摘要.md](./Admin近阶段体验加固摘要.md) | loadError/骨架、秒杀安全批量、bundle db 禁用、驾驶舱与报价单联动等近阶段能力索引 |
 
 ---

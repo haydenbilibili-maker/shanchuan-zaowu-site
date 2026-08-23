@@ -126,21 +126,19 @@ await quickSpeak('你好，我是AI助手', {
 
 ### 2. 本地部署TTS服务（可选）
 
-如果需要完全离线的高质量语音：
+文档早期提到的 ChatTTS / GPT-SoVITS **并未真正接入前端**。
 
-- **ChatTTS**：可本地部署，生成自然语音
-- **GPT-SoVITS**：可本地部署，支持语音克隆
-
-这些方案需要服务器资源，适合对语音质量要求极高的场景。
+**P1 已落地**：开源 CosyVoice 风格同源代理（按句合成 + 顺序播放，失败降级 NLS / Web Speech）。  
+详见 → [`OSS_TTS_P1.md`](./OSS_TTS_P1.md)
 
 ## 📝 总结
 
-本次优化主要针对Web Speech API进行了参数调优和文本预处理优化，在不需要额外API或服务器的情况下，显著提升了语音的自然度和真实感。优化参考了GitHub上最先进的TTS方案（ChatTTS、GPT-SoVITS等），使语音更接近真实人声。
+Web Speech 参数调优仍有效；云端路径为阿里云 NLS；开源路径为 CosyVoice 风格 HTTP（见 OSS_TTS_P1）。
 
 ---
 
-**最后更新**：2025-01-XX  
-**版本**：v1.0
+**最后更新**：2026-08  
+**版本**：v1.1（P1 开源 TTS）
 
 
 

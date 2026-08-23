@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { viteAliyunNlsPlugin } from './scripts/viteAliyunNlsPlugin.mjs'
+import { viteOssTtsPlugin } from './scripts/viteOssTtsPlugin.mjs'
 import { viteFeishuBitablePlugin } from './scripts/viteFeishuBitablePlugin.mjs'
 
 function buildDevProxies(env = {}) {
@@ -64,7 +65,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const devProxy = buildDevProxies(env)
   return {
-    plugins: [vue(), viteAliyunNlsPlugin(env), viteFeishuBitablePlugin(env)],
+    plugins: [vue(), viteAliyunNlsPlugin(env), viteOssTtsPlugin(env), viteFeishuBitablePlugin(env)],
     /** 挂载于 shanhaizaowu.com/admin/；构建输出到 public/admin/ */
     base: '/admin/',
     build: {
