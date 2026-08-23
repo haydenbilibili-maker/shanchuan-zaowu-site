@@ -1,1 +1,0 @@
-import"./element-plus-CxgvyxlJ.js";import{l as e}from"./index-A86d_NB1.js";export{e as default};

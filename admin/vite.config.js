@@ -49,9 +49,20 @@ function buildDevProxies(env = {}) {
     rewrite: (path) => path.replace(/^\/(?:admin\/)?api\/openai/, '/v1'),
   }
 
+  /** 百炼原生文生图 / 异步任务（非 OpenAI 兼容路径） */
+  const bailianNative = {
+    target: 'https://dashscope.aliyuncs.com',
+    changeOrigin: true,
+    secure: true,
+    configure: withAuthHeader,
+    rewrite: (path) => path.replace(/^\/(?:admin\/)?api\/bailian-native/, '/api/v1'),
+  }
+
   return {
     '/api/bailian': bailian,
     '/admin/api/bailian': bailian,
+    '/api/bailian-native': bailianNative,
+    '/admin/api/bailian-native': bailianNative,
     '/api/gemini': gemini,
     '/admin/api/gemini': gemini,
     '/api/deepseek': deepseek,

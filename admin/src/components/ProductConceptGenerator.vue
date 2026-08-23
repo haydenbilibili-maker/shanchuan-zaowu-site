@@ -284,6 +284,74 @@
                 </ul>
               </div>
             </div>
+
+            <!-- 效果图 · 一键生图 -->
+            <section class="pcg-image-section" aria-label="概念效果图">
+              <div class="pcg-image-head">
+                <div>
+                  <h4>概念效果图</h4>
+                  <p class="pcg-image-hint">基于结构化字段组装视觉描述，支持站内生图或跳转 Gemini 粘贴生成</p>
+                </div>
+                <div class="pcg-image-actions">
+                  <el-button
+                    type="primary"
+                    :loading="imageGenLoading"
+                    :disabled="imageGenLoading"
+                    @click="generateInSiteImage"
+                  >
+                    {{
+                      imageGenLoading
+                        ? '正在生图…'
+                        : imageGenEnabled
+                          ? '生成效果图'
+                          : '需配置 Key'
+                    }}
+                  </el-button>
+                  <el-button :disabled="imageGenLoading" @click="openPromptPreview">
+                    预览 / 编辑描述
+                  </el-button>
+                  <el-button :disabled="imageGenLoading" @click="openGeminiExternal">
+                    在 Gemini 中生图
+                  </el-button>
+                </div>
+              </div>
+
+              <p v-if="!imageGenEnabled" class="pcg-image-config-hint">
+                站内生图需配置
+                <code>VITE_IMAGE_GEN_ENABLED=1</code>
+                及 Gemini / OpenAI / 百炼 Key；亦可直接使用「在 Gemini 中生图」（自动复制描述）。
+              </p>
+
+              <div v-if="imageGenLoading" class="pcg-image-loading">
+                <el-icon class="pcg-spin"><Loading /></el-icon>
+                <span>AI 正在绘制产品效果图，约需 15–40 秒…</span>
+              </div>
+
+              <div v-else-if="imageGenError" class="pcg-image-error">
+                <strong>生图失败</strong>
+                <p>{{ imageGenError }}</p>
+                <el-button size="small" type="primary" plain @click="openGeminiExternal">
+                  改用 Gemini 外链
+                </el-button>
+              </div>
+
+              <div v-else-if="currentDisplayImage" class="pcg-image-preview">
+                <img :src="currentDisplayImage" :alt="`${generatedConcept.name} 概念效果图`" />
+                <div class="pcg-image-meta">
+                  <span v-if="generatedConcept.generatedImage?.provider">
+                    {{ providerLabel(generatedConcept.generatedImage.provider) }}
+                  </span>
+                  <span v-if="generatedConcept.generatedImage?.createdAt">
+                    {{ formatImageTime(generatedConcept.generatedImage.createdAt) }}
+                  </span>
+                  <el-button link type="primary" @click="downloadCurrentImage">下载</el-button>
+                </div>
+              </div>
+
+              <div v-else class="pcg-image-empty">
+                <span>尚无效果图，点击「生成效果图」或「在 Gemini 中生图」开始视觉化</span>
+              </div>
+            </section>
           </article>
         </template>
       </section>
@@ -365,6 +433,35 @@
         </div>
       </div>
     </section>
+
+    <el-dialog
+      v-model="promptPreviewVisible"
+      title="视觉描述预览"
+      width="min(640px, 92vw)"
+      destroy-on-close
+    >
+      <p class="pcg-dialog-hint">可编辑后用于站内生图或复制到 Gemini；外链无法自动填入，需手动粘贴。</p>
+      <el-input
+        v-model="editablePrompt"
+        type="textarea"
+        :rows="12"
+        maxlength="4000"
+        show-word-limit
+      />
+      <template #footer>
+        <el-button @click="promptPreviewVisible = false">关闭</el-button>
+        <el-button @click="copyEditablePrompt">复制描述</el-button>
+        <el-button type="primary" plain @click="openGeminiFromPreview">在 Gemini 中生图</el-button>
+        <el-button
+          type="primary"
+          :loading="imageGenLoading"
+          :disabled="!imageGenEnabled || imageGenLoading"
+          @click="generateFromPreview"
+        >
+          {{ imageGenEnabled ? '站内生图' : '需配置 Key' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -392,6 +489,13 @@ import {
   downloadTextFile,
   conceptToMarkdown
 } from '../utils/productConceptStorage'
+import {
+  buildConceptVisualPrompt,
+  generateConceptImage,
+  isImageGenEnabled,
+  openGeminiImageApp,
+  revokeConceptImageUrls
+} from '../utils/conceptImageGen'
 
 defineOptions({ name: 'ProductConceptGenerator' })
 
@@ -422,7 +526,15 @@ const batchResults = ref([])
 const batchTotal = ref(1)
 const batchDone = ref(0)
 
+const imageGenLoading = ref(false)
+const imageGenError = ref('')
+const promptPreviewVisible = ref(false)
+const editablePrompt = ref('')
+const liveImageUrl = ref('')
+const imageGenEnabled = isImageGenEnabled()
+
 let abortController = null
+let imageAbortController = null
 
 const typeMeta = (value) => productTypes.find((t) => t.value === value)
 
@@ -502,6 +614,145 @@ const allFilteredSelected = computed(() => {
   const ids = filteredHistory.value.map((c) => c.id)
   return ids.length > 0 && ids.every((id) => selectedIds.value.includes(id))
 })
+
+const currentVisualPrompt = computed(() =>
+  generatedConcept.value ? buildConceptVisualPrompt(generatedConcept.value) : ''
+)
+
+const currentDisplayImage = computed(() => {
+  if (liveImageUrl.value) return liveImageUrl.value
+  const thumb = generatedConcept.value?.generatedImage?.thumbUrl
+  return thumb || ''
+})
+
+const providerLabel = (p) =>
+  ({ gemini: 'Gemini Imagen', openai: 'OpenAI', bailian: '百炼万相' }[p] || p)
+
+const formatImageTime = (ts) =>
+  ts ? new Date(ts).toLocaleString('zh-CN', { hour12: false }) : ''
+
+const resetImageSession = () => {
+  if (liveImageUrl.value?.startsWith('blob:')) {
+    try {
+      URL.revokeObjectURL(liveImageUrl.value)
+    } catch {
+      /* ignore */
+    }
+  }
+  liveImageUrl.value = ''
+  imageGenError.value = ''
+}
+
+const persistConceptImage = (concept, imageResult) => {
+  if (!concept?.id || !imageResult) return concept
+  const next = {
+    ...concept,
+    generatedImage: {
+      thumbUrl: imageResult.thumbUrl,
+      provider: imageResult.provider,
+      createdAt: imageResult.createdAt,
+    },
+  }
+  conceptHistory.value = upsertConcept(next, conceptHistory.value)
+  if (generatedConcept.value?.id === concept.id) {
+    generatedConcept.value = { ...next }
+  }
+  const inBatch = batchResults.value.findIndex((c) => c.id === concept.id)
+  if (inBatch >= 0) {
+    batchResults.value = batchResults.value.map((c) => (c.id === concept.id ? next : c))
+  }
+  return next
+}
+
+const runInSiteImageGen = async (promptText) => {
+  if (!generatedConcept.value) return
+  const prompt = String(promptText || '').trim()
+  if (!prompt) {
+    ElMessage.warning('视觉描述为空')
+    return
+  }
+  if (!imageGenEnabled) {
+    ElMessage.warning('站内生图未配置 Key，请使用「在 Gemini 中生图」')
+    openPromptPreview()
+    return
+  }
+
+  imageGenLoading.value = true
+  imageGenError.value = ''
+  imageAbortController = new AbortController()
+
+  try {
+    const result = await generateConceptImage(prompt, { signal: imageAbortController.signal })
+    resetImageSession()
+    liveImageUrl.value = result.displayUrl
+    persistConceptImage(generatedConcept.value, result)
+    ElMessage.success(`效果图已生成（${providerLabel(result.provider)}）`)
+    promptPreviewVisible.value = false
+  } catch (error) {
+    if (isAbortError(error)) {
+      ElMessage.info('已中止生图')
+    } else {
+      console.error('[概念生图]', error)
+      imageGenError.value = error.message || '未知错误'
+      ElMessage.error(`生图失败：${imageGenError.value}`)
+    }
+  } finally {
+    imageGenLoading.value = false
+    imageAbortController = null
+  }
+}
+
+const generateInSiteImage = () => runInSiteImageGen(currentVisualPrompt.value)
+
+const generateFromPreview = () => runInSiteImageGen(editablePrompt.value)
+
+const openPromptPreview = () => {
+  editablePrompt.value = currentVisualPrompt.value
+  promptPreviewVisible.value = true
+}
+
+const copyEditablePrompt = async () => {
+  try {
+    await navigator.clipboard.writeText(editablePrompt.value)
+    ElMessage.success('视觉描述已复制')
+  } catch {
+    ElMessage.warning('复制失败，请手动选中复制')
+  }
+}
+
+const launchGeminiWithPrompt = async (prompt) => {
+  const text = String(prompt || '').trim()
+  if (!text) {
+    ElMessage.warning('视觉描述为空')
+    return
+  }
+  try {
+    const { copied } = await openGeminiImageApp(text)
+    if (copied) {
+      ElMessage.success('已复制视觉描述，请在 Gemini 粘贴后生成')
+    } else {
+      ElMessage.warning('无法写入剪贴板，请从预览弹窗手动复制后粘贴到 Gemini')
+      editablePrompt.value = text
+      promptPreviewVisible.value = true
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '打开 Gemini 失败')
+  }
+}
+
+const openGeminiExternal = () => launchGeminiWithPrompt(currentVisualPrompt.value)
+
+const openGeminiFromPreview = () => launchGeminiWithPrompt(editablePrompt.value)
+
+const downloadCurrentImage = () => {
+  const src = currentDisplayImage.value
+  if (!src || !generatedConcept.value) return
+  const safe = String(generatedConcept.value.name || 'concept').replace(/[\\/:*?"<>|]/g, '_')
+  const a = document.createElement('a')
+  a.href = src
+  a.download = `${safe}_效果图.jpg`
+  a.click()
+}
 
 const goStrategy = () => {
   emit('switch-tab', '10')
@@ -752,6 +1003,7 @@ const generateVariantFrom = (item) => {
 
 const loadConcept = (concept) => {
   if (!concept) return
+  resetImageSession()
   generatedConcept.value = { ...concept }
   if (concept.options) applyOptionsSnapshot(concept.options)
   if (!batchResults.value.some((c) => c.id === concept.id)) {
@@ -862,6 +1114,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   abortGeneration()
+  if (imageAbortController) imageAbortController.abort()
+  resetImageSession()
+  revokeConceptImageUrls({ displayUrl: liveImageUrl.value })
 })
 </script>
 
@@ -1246,6 +1501,118 @@ onBeforeUnmount(() => {
 
 .pcg-list.warn {
   color: #9a3412;
+}
+
+.pcg-image-section {
+  margin-top: 4px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--pcg-border);
+  background:
+    radial-gradient(ellipse at 0% 0%, var(--pcg-gold-soft), transparent 55%),
+    #fafcfb;
+}
+
+.pcg-image-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pcg-image-head h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pcg-text);
+}
+
+.pcg-image-hint,
+.pcg-image-config-hint,
+.pcg-dialog-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--pcg-muted);
+}
+
+.pcg-image-config-hint {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--pcg-green-soft);
+}
+
+.pcg-image-config-hint code {
+  font-size: 11px;
+  color: var(--pcg-green);
+}
+
+.pcg-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pcg-image-loading,
+.pcg-image-empty,
+.pcg-image-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 160px;
+  padding: 20px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px dashed rgba(45, 106, 79, 0.2);
+  text-align: center;
+  color: var(--pcg-muted);
+  font-size: 13px;
+}
+
+.pcg-image-error {
+  border-color: rgba(185, 28, 28, 0.25);
+  background: #fef2f2;
+}
+
+.pcg-image-error strong {
+  color: #991b1b;
+}
+
+.pcg-image-error p {
+  margin: 0;
+  font-size: 12px;
+  color: #7f1d1d;
+  max-width: 36rem;
+}
+
+.pcg-image-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pcg-image-preview img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid var(--pcg-border);
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(26, 46, 36, 0.08);
+}
+
+.pcg-image-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--pcg-muted);
 }
 
 .pcg-history-head {
