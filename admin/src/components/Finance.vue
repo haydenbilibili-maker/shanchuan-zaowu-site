@@ -750,6 +750,10 @@
                     <button class="btn btn-outline" @click="handleDownload" :disabled="syncing">
                         <i class="fas fa-download"></i> 从云端下载
                     </button>
+                    <button class="btn btn-outline" @click="openDuplicateCleanupPreview" :disabled="duplicateCleanupLoading">
+                        <i class="fas" :class="duplicateCleanupLoading ? 'fa-spinner fa-spin' : 'fa-broom'"></i>
+                        清理重复日账
+                    </button>
                     <input type="file" id="importFile" style="display:none;" accept=".xlsx" @change="e => app.importExcel(e.target)">
                     <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">
                         <i class="fas fa-file-import"></i> 导入备份
@@ -773,6 +777,74 @@
                     <i class="fas fa-info-circle"></i> {{ syncStatus }}
                 </div>
             </div>
+            <div v-if="duplicateCleanupStatus" style="padding: 10px; margin-top: 10px; border-radius: 4px; background: rgba(230, 126, 34, 0.08); border: 1px solid rgba(230, 126, 34, 0.25);">
+                <div style="color: #b7791f; font-size: var(--text-xs);">
+                    <i class="fas fa-broom"></i> {{ duplicateCleanupStatus }}
+                </div>
+            </div>
+
+            <el-dialog
+                v-model="duplicateCleanupVisible"
+                title="清理重复日账 · 预览"
+                width="720px"
+                :close-on-click-modal="false"
+                destroy-on-close
+            >
+                <div v-if="duplicateCleanupPreview">
+                    <el-alert
+                        type="warning"
+                        :closable="false"
+                        show-icon
+                        style="margin-bottom: 14px;"
+                        title="同一 canonical 门店 + 日期存在多条记录时，将保留 canonical storeId → 较新更新时间 → 金额较大的一条；其余删除。"
+                    />
+                    <p style="margin: 0 0 12px; font-size: 13px; color: var(--light-text-secondary);">
+                        检测到 <strong>{{ duplicateCleanupPreview.duplicateDayCount }}</strong> 个重复日 ·
+                        拟删除 <strong>{{ duplicateCleanupPreview.removeCount }}</strong> 条 ·
+                        虚增约 <strong>¥{{ duplicateCleanupPreview.totalInflatedRevenue.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong>
+                    </p>
+                    <el-table
+                        v-if="duplicateCleanupPreview.groups.length"
+                        :data="duplicateCleanupPreview.groups"
+                        size="small"
+                        max-height="360"
+                        border
+                    >
+                        <el-table-column prop="date" label="日期" width="110" />
+                        <el-table-column prop="storeLabel" label="门店" width="140" />
+                        <el-table-column label="保留" min-width="160">
+                            <template #default="{ row }">
+                                ¥{{ Number(row.keep.revenue || 0).toLocaleString() }}
+                                <span style="color:#888;font-size:11px;"> · {{ row.keep.storeId || row.keep.storeCode || '—' }}</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="删除" min-width="160">
+                            <template #default="{ row }">
+                                <span v-for="(r, i) in row.remove" :key="i">
+                                    ¥{{ Number(r.revenue || 0).toLocaleString() }}
+                                    <span style="color:#888;font-size:11px;"> · {{ r.storeId || r.storeCode || '—' }}</span>
+                                    <br v-if="i < row.remove.length - 1" />
+                                </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="虚增" width="90" align="right">
+                            <template #default="{ row }">¥{{ Number(row.inflatedRevenue || 0).toLocaleString() }}</template>
+                        </el-table-column>
+                    </el-table>
+                    <el-empty v-else description="未发现重复日账，无需清理" :image-size="64" />
+                </div>
+                <template #footer>
+                    <el-button @click="duplicateCleanupVisible = false">取消</el-button>
+                    <el-button
+                        type="danger"
+                        :disabled="!duplicateCleanupPreview?.removeCount"
+                        :loading="duplicateCleanupLoading"
+                        @click="confirmDuplicateCleanup"
+                    >
+                        确认清理（本地 + 云端）
+                    </el-button>
+                </template>
+            </el-dialog>
             
             <!-- 新增：数据筛选和搜索 -->
             <div class="ledger-filters" style="padding:15px; background:#f8f9fa; border-radius:8px; margin-bottom:15px;">
@@ -852,6 +924,10 @@ import { MagicStick } from '@element-plus/icons-vue'
 import FinanceAI from './ai/FinanceAI.vue'
 import { autoSyncFinanceData, manualSyncFinanceData, touchLocalFinanceUpdateTime } from '../utils/financeSync'
 import { ledgerKey, dedupeFinanceRecords } from '../utils/storeLedgerSync'
+import {
+  previewDuplicateCleanup,
+  cleanupDuplicateFinanceRecords,
+} from '../utils/financeDuplicateCleanup'
 import { FINANCE_RECORDS_KEY } from '../utils/financeLocalStorageKey'
 import { fetchCollectionSorted, cdnUpdate, COLLECTIONS } from '../cloud'
 import {
@@ -1017,6 +1093,10 @@ const isPrivacy = ref(false)
 const showFinanceAI = ref(false)
 const syncing = ref(false)
 const syncStatus = ref('')
+const duplicateCleanupVisible = ref(false)
+const duplicateCleanupLoading = ref(false)
+const duplicateCleanupPreview = ref(null)
+const duplicateCleanupStatus = ref('')
 const activeAnalysisTab = ref('cost-detail')
 const activeCashflowTab = ref('cashflow')
 const dateRange = ref(null)
@@ -1174,6 +1254,53 @@ const handleExport = (command) => {
         app.exportJSON();
     }
 };
+
+const openDuplicateCleanupPreview = async () => {
+  duplicateCleanupLoading.value = true
+  duplicateCleanupStatus.value = ''
+  try {
+    await autoSyncFinanceData({ forceDownload: false })
+    const raw = localStorage.getItem(FINANCE_RECORDS_KEY)
+    const rows = raw ? JSON.parse(raw) : []
+    duplicateCleanupPreview.value = previewDuplicateCleanup(Array.isArray(rows) ? rows : [])
+    duplicateCleanupVisible.value = true
+  } catch (err) {
+    ElMessage.error(`预览失败：${err.message}`)
+  } finally {
+    duplicateCleanupLoading.value = false
+  }
+}
+
+const confirmDuplicateCleanup = async () => {
+  if (!duplicateCleanupPreview.value?.removeCount) return
+  try {
+    await ElMessageBox.confirm(
+      `将删除 ${duplicateCleanupPreview.value.removeCount} 条重复日账（约虚增 ¥${duplicateCleanupPreview.value.totalInflatedRevenue.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}），并同步 CloudBase finance_records。此操作不可撤销，是否继续？`,
+      '确认清理重复日账',
+      { type: 'warning', confirmButtonText: '确认清理', cancelButtonText: '取消' },
+    )
+  } catch {
+    return
+  }
+
+  duplicateCleanupLoading.value = true
+  try {
+    const result = await cleanupDuplicateFinanceRecords({ syncCloud: true })
+    if (result.cloudError) {
+      duplicateCleanupStatus.value = `本地已清理 ${result.removedCount} 条；云端部分失败：${result.cloudError}（可稍后点「同步到云端」重试）`
+      ElMessage.warning(duplicateCleanupStatus.value)
+    } else {
+      duplicateCleanupStatus.value = `已清理 ${result.removedCount} 条重复日账（本地 ${result.localCount} → ${result.mergedCount}；云端删除 ${result.cloudRemoved || 0} 条）`
+      ElMessage.success('重复日账清理完成')
+    }
+    duplicateCleanupVisible.value = false
+    if (window.app?.loadData) await window.app.loadData()
+  } catch (err) {
+    ElMessage.error(`清理失败：${err.message}`)
+  } finally {
+    duplicateCleanupLoading.value = false
+  }
+}
 
 const handleDownload = async () => {
   syncing.value = true

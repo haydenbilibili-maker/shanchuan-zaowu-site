@@ -1137,6 +1137,26 @@ html.embed-mode .tab-nav::after {
   letter-spacing: 0.06em;
   margin-bottom: 8px;
 }
+.capability-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+.capability-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(28, 24, 20, 0.08);
+}
+.capability-list li:last-child { border-bottom: none; }
+.capability-list .cap-name { font-weight: 500; color: var(--ink); }
+.capability-list .cap-weight { font-family: var(--mono); color: var(--brass); white-space: nowrap; }
+.capability-list .cap-desc { display: block; font-size: 11px; color: var(--ink-light); margin-top: 2px; }
+.capability-list li.missing { opacity: 0.45; }
 </style>
 </head>
 <body>
@@ -1172,7 +1192,7 @@ html.embed-mode .tab-nav::after {
   </nav>
 
   <div id="erpSyncBanner" class="erp-sync-banner">
-    <span><strong>ERP 财务已同步</strong> · 总览区指标来自财务核算账本</span>
+    <span><strong>ERP 财务已同步</strong> · 山川造物来自财务核算；星宸标本为用户 TTM（待按店拆分覆盖）</span>
     <span id="erpSyncMeta" style="font-family: var(--mono); font-size: 11px; opacity: 0.75;"></span>
   </div>
 
@@ -1186,7 +1206,7 @@ html.embed-mode .tab-nav::after {
         <div class="section-header">
           <span class="section-num">§ I.1</span>
           <h2 class="section-title">业务基本面</h2>
-          <span class="section-desc" id="fundamentalsPeriodDesc">— TTM 口径 · 默认 93.7 万（待 ERP 同步）</span>
+          <span class="section-desc" id="fundamentalsPeriodDesc">— TTM 口径 · 集团 = 星宸 93.7 万 + 山川造物 ERP</span>
         </div>
 
         <div class="grid grid-4">
@@ -1194,7 +1214,7 @@ html.embed-mode .tab-nav::after {
             <span class="card-corner tl"></span><span class="card-corner br"></span>
             <div class="card-label">集团 TTM 营收</div>
             <div class="card-value">¥<span data-erp="total-revenue">93.7</span><span class="card-value-unit">万</span></div>
-            <div class="card-sub" data-erp="date-range">滚动 12 个月 · 账面 POS 口径</div>
+            <div class="card-sub" data-erp="date-range">两店合计 · 星宸用户 TTM + 山川造物 ERP</div>
           </div>
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
@@ -1221,20 +1241,48 @@ html.embed-mode .tab-nav::after {
         <div class="section-header">
           <span class="section-num">§ I.1b</span>
           <h2 class="section-title">双店分列</h2>
-          <span class="section-desc">— 楼上山海造物 · 楼下星宸标本</span>
+          <span class="section-desc">— 楼上山川造物（ERP）· 楼下星宸标本（用户 TTM）</span>
         </div>
         <div class="grid grid-2" id="storeBreakdownGrid">
-          <div class="card" data-store-key="shanhaizaowu">
+          <div class="card store-card-pending" data-store-key="shanhaizaowu">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
-            <div class="card-label">楼上 · 山海造物 <span class="store-floor-tag">store_shanhaizaowu</span></div>
+            <div class="card-label">楼上 · 山川造物 <span class="store-floor-tag">store_shanhaizaowu</span></div>
             <div class="card-value">¥<span data-store-rev="shanhaizaowu">—</span><span class="card-value-unit">万 TTM</span></div>
-            <div class="card-sub" data-store-sub="shanhaizaowu">待 ERP 同步</div>
+            <div class="card-sub" data-store-sub="shanhaizaowu">财务核算 · 待同步</div>
           </div>
-          <div class="card store-card-pending" data-store-key="xingchen">
+          <div class="card" data-store-key="xingchen">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
             <div class="card-label">楼下 · 星宸标本 <span class="store-floor-tag">store_xingchen</span></div>
-            <div class="card-value"><span data-store-rev="xingchen">待录入</span></div>
-            <div class="card-sub" data-store-sub="xingchen">ERP 暂无该店独立账本</div>
+            <div class="card-value">¥<span data-store-rev="xingchen">93.7</span><span class="card-value-unit">万 TTM</span></div>
+            <div class="card-sub" data-store-sub="xingchen">用户提供 TTM · 待 ERP 按店拆分后可覆盖</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" id="mpChannelSection">
+        <div class="section-header">
+          <span class="section-num">§ I.1c</span>
+          <h2 class="section-title">小程序线上渠道</h2>
+          <span class="section-desc">— 上线前默认 0 · CloudBase 测试订单不计入</span>
+        </div>
+        <div class="grid grid-3">
+          <div class="card" id="mpOrderCard">
+            <span class="card-corner tl"></span><span class="card-corner br"></span>
+            <div class="card-label">小程序 TTM 订单</div>
+            <div class="card-value"><span id="mpOrderCount">—</span><span class="card-value-unit"> 笔</span></div>
+            <div class="card-sub" id="mpOrderSub">待上线 · 测试数据不计入</div>
+          </div>
+          <div class="card" id="mpRevenueCard">
+            <span class="card-corner tl"></span><span class="card-corner br"></span>
+            <div class="card-label">小程序 TTM 营收</div>
+            <div class="card-value">¥<span id="mpRevenueWan">—</span><span class="card-value-unit">万</span></div>
+            <div class="card-sub" id="mpRevenueSub">与门店 NET 分开计 · 上线后自动更新</div>
+          </div>
+          <div class="card" id="mpStatusCard">
+            <span class="card-corner tl"></span><span class="card-corner br"></span>
+            <div class="card-label">渠道状态</div>
+            <div class="card-value" style="font-size:22px;" id="mpStatusLabel">待上线</div>
+            <div class="card-sub" id="mpStatusSub">小程序即将上线 · 测试订单不计入估值</div>
           </div>
         </div>
       </div>
@@ -1243,7 +1291,7 @@ html.embed-mode .tab-nav::after {
         <div class="section-header">
           <span class="section-num">§ I.2a</span>
           <h2 class="section-title">当前基本面锚点</h2>
-          <span class="section-desc">— 基于 TTM · 30–40% 账面净利率</span>
+          <span class="section-desc">— 基于集团年化 run-rate · 30–40% 账面净利率</span>
         </div>
 
         <div class="valuation-grid">
@@ -1257,7 +1305,7 @@ html.embed-mode .tab-nav::after {
             <div class="anchor-tier-label">TODAY · 中性</div>
             <div class="val-label">中性 / Book PE 5–6x</div>
             <div class="val-amount">¥<span id="anchorCurrentMid2">165</span>–<span id="anchorCurrentHigh">220</span><span class="val-amount-unit">万</span></div>
-            <div class="val-method">TTM 93.7 万 × 35% 净利 × PE</div>
+            <div class="val-method" id="anchorCurrentMidMethod">集团 TTM × 35% 净利 × PE</div>
           </div>
           <div class="val-cell">
             <div class="anchor-tier-label">TODAY · 含 IP 溢价上限</div>
@@ -1299,6 +1347,40 @@ html.embed-mode .tab-nav::after {
         <div class="callout">
           <div class="callout-title"><span class="callout-icon">RECOMMENDATION</span>谈判锚点策略</div>
           <strong>今日基本面</strong>（§ I.2a）与<strong>目标估值</strong>（§ I.2b）不可混用。目标情景下首次报价可用账面口径 + 中性偏乐观 = <strong>¥4,500 万</strong>，但需明确前提为「2 直营 + 3 加盟跑通后」；基于当前 TTM，对外应锚定 § I.2a 区间，底线以调整口径（含创始人薪酬）复核。
+        </div>
+      </div>
+
+      <div class="section" id="mpCapabilitySection">
+        <div class="section-header">
+          <span class="section-num">§ I.2c</span>
+          <h2 class="section-title">数字化资产 · 线上能力评分</h2>
+          <span class="section-desc">— 基于 miniprogram/ 代码盘点 · 溢价为可调假设</span>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <span class="card-corner tl"></span><span class="card-corner br"></span>
+            <div class="card-label">能力评分</div>
+            <div class="card-value"><span id="mpCapScore">—</span><span class="card-value-unit"> / <span id="mpCapMax">—</span></span></div>
+            <div class="card-sub" id="mpCapSub">已实现 <span id="mpCapCount">—</span> 项 · 覆盖率 <span id="mpCapPct">—</span></div>
+            <ul class="capability-list" id="mpCapabilityList"></ul>
+          </div>
+          <div class="card">
+            <span class="card-corner tl"></span><span class="card-corner br"></span>
+            <div class="card-label">数字化资产估值（假设）</div>
+            <div class="card-value">¥<span id="mpDigitalVal">—</span><span class="card-value-unit">万</span></div>
+            <div class="card-sub" id="mpDigitalSub">每权重分 2 万 × 溢价系数 · 非市场成交价</div>
+            <div class="field" style="margin-top:16px;">
+              <label class="field-label">线上能力溢价系数 <span class="note">Digital Premium Coeff</span></label>
+              <div class="slider-row">
+                <input type="range" class="slider" id="digitalPremiumCoeff" min="0" max="200" value="100" step="10">
+                <span class="slider-val" id="digitalPremiumCoeffVal">1.0x</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="callout" style="margin-top: 16px;">
+          <div class="callout-title"><span class="callout-icon">NOTE</span>口径说明</div>
+          能力清单来自仓库 <code>miniprogram/</code> 页面与分包盘点（商城/预约/会员/内容/店长后台/CloudBase 同步等）。溢价系数仅用于沙盘情景推演，不代表已成交估值；小程序 TTM 营收纳入 § II 集团年化时与线下门店分开列示。
         </div>
       </div>
 
@@ -1444,7 +1526,7 @@ html.embed-mode .tab-nav::after {
             <div class="field">
               <label class="field-label">单店稳态年化营收 <span class="note">Annual Revenue / Store · ERP 同步后可按店拆分</span></label>
               <div class="slider-row">
-                <input type="range" class="slider" id="storeRev" min="60" max="350" value="94" step="1">
+                <input type="range" class="slider" id="storeRev" min="60" max="400" value="94" step="1">
                 <span class="slider-val" id="storeRevVal">¥94万</span>
               </div>
             </div>
@@ -1496,6 +1578,14 @@ html.embed-mode .tab-nav::after {
                 <span class="slider-val" id="strategicPremiumVal">+30%</span>
               </div>
             </div>
+
+            <div class="field">
+              <label class="field-label">线上渠道 TTM 营收 <span class="note">Mini-Program · 默认 0</span></label>
+              <div class="slider-row" style="opacity:0.85;">
+                <input type="text" class="input" id="onlineChannelRev" readonly value="0" style="flex:1; background:#f8f4ec;">
+                <span class="slider-val" id="onlineChannelRevVal">¥0 万</span>
+              </div>
+            </div>
           </div>
 
           <div class="card">
@@ -1523,8 +1613,16 @@ html.embed-mode .tab-nav::after {
                   <td class="num" id="peValuation">—</td>
                 </tr>
                 <tr>
-                  <td class="label-cell">PS 估值（参考）</td>
+                  <td class="label-cell">PS 估值（参考）<span class="note" id="psMultipleLabel">—</span></td>
                   <td class="num" id="psValuation">—</td>
+                </tr>
+                <tr>
+                  <td class="label-cell">+ 线上渠道 TTM</td>
+                  <td class="num" id="onlineChannelRow">—</td>
+                </tr>
+                <tr>
+                  <td class="label-cell">+ 数字化资产（假设）</td>
+                  <td class="num" id="digitalAssetRow">—</td>
                 </tr>
                 <tr class="highlight-row">
                   <td class="label-cell">+ 战略溢价后</td>
@@ -1922,10 +2020,10 @@ html.embed-mode .tab-nav::after {
             </div>
 
             <div class="field">
-              <label class="field-label">集团整体估值 <span class="note">Group Valuation</span></label>
+              <label class="field-label">集团整体估值 <span class="note" id="cvGroupValNote">默认联动估值实验室结果 · 拖动后转为手动</span></label>
               <div class="slider-row">
-                <input type="range" class="slider" id="cvGroupVal" min="1500" max="8000" value="4000" step="100">
-                <span class="slider-val" id="cvGroupValVal">¥4,000万</span>
+                <input type="range" class="slider" id="cvGroupVal" min="300" max="8000" value="1000" step="50">
+                <span class="slider-val" id="cvGroupValVal">¥1,000万</span>
               </div>
             </div>
           </div>
@@ -2146,7 +2244,134 @@ function fmtWan(n) {
   return Number(n).toFixed(1);
 }
 
-const DEFAULT_TTM_WAN = 93.7;
+/** 星宸标本（楼下）用户提供的 TTM，非集团总数 */
+const XINGCHEN_DEFAULT_TTM_WAN = 93.7;
+
+/** 小程序沙盘快照（orders + 能力估值） */
+let lastMpSnapshot = null;
+
+function getDigitalPremiumCoeff() {
+  const el = document.getElementById('digitalPremiumCoeff');
+  return el ? (+el.value / 100) : 1;
+}
+
+function applyErpMiniprogramSync(payload) {
+  if (!payload || payload.source !== 'erp-miniprogram') return;
+  lastMpSnapshot = payload;
+  const orders = payload.orders || {};
+  const cap = payload.capability || {};
+
+  const orderEl = document.getElementById('mpOrderCount');
+  const orderSub = document.getElementById('mpOrderSub');
+  const revEl = document.getElementById('mpRevenueWan');
+  const revSub = document.getElementById('mpRevenueSub');
+  const statusLabel = document.getElementById('mpStatusLabel');
+  const statusSub = document.getElementById('mpStatusSub');
+
+  const ordersEnabled = orders.ordersEnabled !== false;
+  const isLive = orders.isLive;
+  const orderCount = orders.orderCount || 0;
+  const revWan = orders.ttmRevenueWan || 0;
+
+  if (orderEl) orderEl.textContent = isLive ? orderCount.toLocaleString() : '0';
+  if (orderSub) {
+    orderSub.textContent = isLive
+      ? (orders.dateFrom && orders.dateTo ? `${orders.dateFrom} – ${orders.dateTo} · orders` : 'orders 集合 · TTM')
+      : (ordersEnabled ? '待上线 · orders 集合' : '待上线 · 测试数据不计入');
+  }
+  if (revEl) revEl.textContent = isLive ? fmtWan(revWan) : '0.0';
+  if (revSub) {
+    revSub.textContent = isLive
+      ? `TTM ¥${(orders.ttmRevenueYuan || 0).toLocaleString()} · 与门店 NET 分开`
+      : '与门店 NET 分开计 · 上线后开启统计';
+  }
+  if (statusLabel) statusLabel.textContent = orders.statusLabel || (isLive ? '已上线' : '待上线');
+  if (statusSub) {
+    statusSub.textContent = isLive
+      ? `CloudBase ${orders.collection || 'orders'} · ${new Date(payload.syncedAt || Date.now()).toLocaleString('zh-CN')}`
+      : (orders.note || '小程序即将上线 · 测试订单不计入估值');
+  }
+
+  document.getElementById('mpOrderCard')?.classList.toggle('store-card-pending', !isLive);
+  document.getElementById('mpRevenueCard')?.classList.toggle('store-card-pending', !isLive);
+
+  const scoreEl = document.getElementById('mpCapScore');
+  const maxEl = document.getElementById('mpCapMax');
+  const countEl = document.getElementById('mpCapCount');
+  const pctEl = document.getElementById('mpCapPct');
+  const valEl = document.getElementById('mpDigitalVal');
+  const listEl = document.getElementById('mpCapabilityList');
+
+  const coeff = getDigitalPremiumCoeff();
+  const score = cap.score || 0;
+  const maxScore = cap.maxScore || 0;
+  const valWan = (cap.score || 0) * 2 * coeff;
+
+  if (scoreEl) scoreEl.textContent = score;
+  if (maxEl) maxEl.textContent = maxScore;
+  if (countEl) countEl.textContent = `${cap.implementedCount || 0}/${cap.totalCount || 0}`;
+  if (pctEl) pctEl.textContent = maxScore ? `${Math.round((score / maxScore) * 100)}%` : '—';
+  if (valEl) valEl.textContent = fmtWan(valWan);
+
+  if (listEl && cap.capabilities?.length) {
+    listEl.innerHTML = cap.capabilities.map((c) => `
+      <li class="${c.implemented ? '' : 'missing'}">
+        <div>
+          <span class="cap-name">${c.name}</span>
+          <span class="cap-desc">${c.desc}</span>
+        </div>
+        <span class="cap-weight">${c.implemented ? '+' + c.weight : '—'}</span>
+      </li>
+    `).join('');
+  }
+
+  const onlineInput = document.getElementById('onlineChannelRev');
+  const onlineVal = document.getElementById('onlineChannelRevVal');
+  if (onlineInput) onlineInput.value = isLive ? fmtWan(revWan) : '0';
+  if (onlineVal) onlineVal.textContent = isLive ? `¥${fmtWan(revWan)} 万` : '¥0 万 · 待上线';
+
+  updateValuation();
+}
+
+function getDefaultStoreBreakdown() {
+  return [
+    {
+      key: 'shanhaizaowu',
+      name: '山川造物',
+      floor: '楼上',
+      hasData: false,
+      ttmRevenueWan: 0,
+      status: 'pending',
+    },
+    {
+      key: 'xingchen',
+      name: '星宸标本',
+      floor: '楼下',
+      hasData: true,
+      ttmRevenueWan: XINGCHEN_DEFAULT_TTM_WAN,
+      status: 'user-provided',
+      sourceNote: '用户提供 TTM，待 ERP 按店拆分后可覆盖',
+    },
+  ];
+}
+
+/** 估值口径的集团年化营收：账本不满 12 个月时用 run-rate 折年，否则等于 TTM */
+let lastGroupAnnualWan = XINGCHEN_DEFAULT_TTM_WAN;
+
+function resolveGroupAnnualWan(payload) {
+  const annual = Number(payload?.annualizedRunRateWan);
+  if (Number.isFinite(annual) && annual > 0) return annual;
+  return resolveGroupTtmWan(payload);
+}
+
+function resolveGroupTtmWan(payload) {
+  if (!payload) return XINGCHEN_DEFAULT_TTM_WAN;
+  if (payload.groupTtmRevenueWan > 0) return payload.groupTtmRevenueWan;
+  if (payload.stores?.length) {
+    return payload.stores.reduce((sum, s) => sum + (Number(s.ttmRevenueWan) || 0), 0);
+  }
+  return (payload.shanhaizaowuTtmWan || 0) + (payload.xingchenTtmWan || XINGCHEN_DEFAULT_TTM_WAN);
+}
 
 function getActiveNetMargin() {
   if (currentCaliper === 'adjusted') return NET_MARGIN.adjusted;
@@ -2155,7 +2380,7 @@ function getActiveNetMargin() {
 }
 
 function updateCurrentFundamentalsAnchors(ttmWan) {
-  const rev = Number(ttmWan) > 0 ? Number(ttmWan) : DEFAULT_TTM_WAN;
+  const rev = Number(ttmWan) > 0 ? Number(ttmWan) : XINGCHEN_DEFAULT_TTM_WAN;
   const margin = getActiveNetMargin();
   const profit = rev * margin;
   const set = (id, val) => {
@@ -2167,6 +2392,10 @@ function updateCurrentFundamentalsAnchors(ttmWan) {
   set('anchorCurrentMid2', profit * 5.5);
   set('anchorCurrentHigh', profit * 6);
   set('anchorCurrentPs', rev * 1.2);
+  const midMethod = document.getElementById('anchorCurrentMidMethod');
+  if (midMethod) {
+    midMethod.textContent = `集团年化 ${fmtWan(rev)} 万 × ${Math.round(margin * 100)}% 净利 × PE`;
+  }
 }
 
 function renderStoreBreakdown(stores) {
@@ -2175,17 +2404,35 @@ function renderStoreBreakdown(stores) {
     const subEl = document.querySelector(`[data-store-sub="${st.key}"]`);
     const card = document.querySelector(`[data-store-key="${st.key}"]`);
     if (!revEl) return;
-    if (st.hasData && st.ttmRevenueWan > 0) {
-      revEl.textContent = fmtWan(st.ttmRevenueWan);
+
+    if (st.key === 'xingchen') {
+      const rev = st.ttmRevenueWan > 0 ? st.ttmRevenueWan : XINGCHEN_DEFAULT_TTM_WAN;
+      revEl.textContent = fmtWan(rev);
       if (subEl) {
-        const range = st.dateFrom && st.dateTo ? `${st.dateFrom} – ${st.dateTo}` : 'TTM';
-        subEl.textContent = `${range} · ${st.recordCount || 0} 条 · ERP 同步`;
+        if (st.status === 'synced' && st.hasErpData) {
+          const range = st.dateFrom && st.dateTo ? `${st.dateFrom} – ${st.dateTo}` : 'TTM';
+          subEl.textContent = `${range} · ${st.recordCount || 0} 条 · ERP 按店拆分`;
+        } else {
+          subEl.textContent = st.sourceNote || '用户提供 TTM · 待 ERP 按店拆分后可覆盖';
+        }
       }
       if (card) card.classList.remove('store-card-pending');
-    } else {
-      revEl.textContent = '待录入';
-      if (subEl) subEl.textContent = 'ERP 暂无该店独立账本';
-      if (card) card.classList.add('store-card-pending');
+      return;
+    }
+
+    if (st.key === 'shanhaizaowu') {
+      if (st.hasErpData) {
+        revEl.textContent = st.ttmRevenueWan > 0 ? fmtWan(st.ttmRevenueWan) : '0.0';
+        if (subEl) {
+          const range = st.dateFrom && st.dateTo ? `${st.dateFrom} – ${st.dateTo}` : 'TTM';
+          subEl.textContent = `${range} · ${st.recordCount || 0} 条 · 财务核算同步`;
+        }
+        if (card) card.classList.remove('store-card-pending');
+      } else {
+        revEl.textContent = '—';
+        if (subEl) subEl.textContent = '财务核算 · 待同步';
+        if (card) card.classList.add('store-card-pending');
+      }
     }
   });
 }
@@ -2193,18 +2440,10 @@ function renderStoreBreakdown(stores) {
 function applyStoreRevFromErp(payload) {
   const storeRevEl = document.getElementById('storeRev');
   if (!storeRevEl || !payload) return;
-  const stores = payload.stores || [];
-  const withData = stores.filter((s) => s.hasData && s.ttmRevenueWan > 0);
-  let nextRev = DEFAULT_TTM_WAN;
-  if (withData.length === 1) {
-    nextRev = withData[0].ttmRevenueWan;
-  } else if (withData.length >= 2) {
-    nextRev = withData.reduce((a, s) => a + s.ttmRevenueWan, 0) / withData.length;
-  } else if (payload.ttmRevenueWan > 0) {
-    const directStores = +document.getElementById('directStores')?.value || 2;
-    nextRev = payload.ttmRevenueWan / Math.max(1, directStores);
-  }
-  nextRev = Math.max(60, Math.min(350, Math.round(nextRev)));
+  const groupAnnual = resolveGroupAnnualWan(payload);
+  const directStores = +document.getElementById('directStores')?.value || 2;
+  let nextRev = groupAnnual > 0 ? groupAnnual / Math.max(1, directStores) : XINGCHEN_DEFAULT_TTM_WAN;
+  nextRev = Math.max(60, Math.min(400, Math.round(nextRev)));
   storeRevEl.value = nextRev;
 }
 
@@ -2215,9 +2454,14 @@ function applyErpFinanceSync(payload) {
     if (el) el.textContent = val;
   };
 
-  const ttmWan = payload.hasErpTtm ? payload.ttmRevenueWan : (payload.defaultTtmWan || DEFAULT_TTM_WAN);
-  setText('total-revenue', fmtWan(ttmWan));
-  setText('monthly-avg', fmtWan(payload.monthlyAvgWan ?? (ttmWan / 12)));
+  const groupTtmWan = resolveGroupTtmWan(payload);
+  const groupAnnualWan = resolveGroupAnnualWan(payload);
+  lastGroupAnnualWan = groupAnnualWan;
+  const shWan = payload.shanhaizaowuTtmWan ?? 0;
+  const xcWan = payload.xingchenTtmWan ?? XINGCHEN_DEFAULT_TTM_WAN;
+
+  setText('total-revenue', fmtWan(groupTtmWan));
+  setText('monthly-avg', fmtWan(payload.monthlyAvgWan ?? (groupTtmWan / 12)));
   if (payload.peakMonthWan != null && payload.peakMonthWan > 0) {
     setText('peak-month', fmtWan(payload.peakMonthWan));
   }
@@ -2225,52 +2469,57 @@ function applyErpFinanceSync(payload) {
 
   const periodDesc = document.getElementById('fundamentalsPeriodDesc');
   if (periodDesc) {
-    periodDesc.textContent = payload.hasErpTtm
-      ? `— ${payload.periodLabel || 'TTM'} · ERP 同步`
-      : '— 默认 TTM 93.7 万 · 待 ERP 同步';
+    periodDesc.textContent = payload.hasErpShanhaizaowu
+      ? `— ${payload.periodLabel || 'TTM'} · 集团合计 ${fmtWan(groupTtmWan)} 万（星宸 ${fmtWan(xcWan)} + 山川 ${fmtWan(shWan)}）`
+      : `— TTM 口径 · 集团暂 ${fmtWan(groupTtmWan)} 万（星宸 ${fmtWan(xcWan)} + 山川造物待 ERP）`;
   }
 
   const rangeEl = document.querySelector('[data-erp="date-range"]');
   if (rangeEl) {
-    if (payload.hasErpTtm && payload.dateFrom && payload.dateTo) {
-      rangeEl.textContent = `${payload.dateFrom} – ${payload.dateTo} · ${payload.periodLabel || 'TTM'} · ${payload.recordCount} 条`;
+    if (payload.hasErpShanhaizaowu && payload.dateFrom && payload.dateTo) {
+      rangeEl.textContent = `两店合计 ${fmtWan(groupTtmWan)} 万 · 山川 ${payload.dateFrom} – ${payload.dateTo} · ${payload.recordCount || 0} 条`;
     } else {
-      rangeEl.textContent = '默认 TTM 93.7 万 · 账面 POS · 待 ERP 同步';
+      rangeEl.textContent = `两店合计 · 星宸 ${fmtWan(xcWan)} 万（用户 TTM）+ 山川造物 ERP 待同步`;
     }
   }
   const monthSub = document.querySelector('[data-erp="monthly-sub"]');
   if (monthSub) {
-    monthSub.textContent = payload.hasErpTtm
-      ? `覆盖 ${payload.monthCount || '—'} 个自然月 · 不含创始人薪酬/展陈摊销/税`
-      : '默认口径 · 不含创始人薪酬/展陈摊销/税';
+    monthSub.textContent = payload.hasErpShanhaizaowu
+      ? `山川 ERP 覆盖 ${payload.monthCount || '—'} 月 · 年化 run-rate ${fmtWan(groupAnnualWan)} 万（估值口径）· 不含创始人薪酬/展陈摊销/税`
+      : '集团月均 · 星宸用户 TTM 已计入 · 不含创始人薪酬/展陈摊销/税';
   }
   const peakSub = document.querySelector('[data-erp="peak-sub"]');
   if (peakSub && payload.peakMonthWan > 0) {
-    peakSub.textContent = payload.hasErpTtm ? `近 ${payload.monthCount || '—'} 月最高单月` : 'ERP 同步后更新';
+    peakSub.textContent = payload.hasErpShanhaizaowu ? `山川造物近 ${payload.monthCount || '—'} 月最高单月` : '山川造物 ERP 同步后更新';
   }
   if (payload.orderCount && document.querySelector('[data-erp="order-sub"]')) {
-    setText('order-sub', `${payload.orderCount.toLocaleString()} 笔订单（账本汇总）`);
+    setText('order-sub', `${payload.orderCount.toLocaleString()} 笔订单（山川造物账本）`);
   }
 
   const headerRange = document.getElementById('headerDataRange');
   if (headerRange) {
-    headerRange.textContent = payload.hasErpTtm && payload.dateFrom && payload.dateTo
-      ? `${payload.dateFrom} – ${payload.dateTo} · TTM`
-      : 'TTM · 默认 93.7 万';
+    headerRange.textContent = payload.hasErpShanhaizaowu && payload.dateFrom && payload.dateTo
+      ? `集团 TTM ${fmtWan(groupTtmWan)} 万 · 山川 ${payload.dateFrom} – ${payload.dateTo}`
+      : `集团 TTM ${fmtWan(groupTtmWan)} 万 · 星宸 ${fmtWan(xcWan)} + 山川待 ERP`;
   }
 
-  renderStoreBreakdown(payload.stores);
-  updateCurrentFundamentalsAnchors(ttmWan);
+  renderStoreBreakdown(payload.stores || getDefaultStoreBreakdown());
+  updateCurrentFundamentalsAnchors(groupAnnualWan);
   applyStoreRevFromErp(payload);
 
   const banner = document.getElementById('erpSyncBanner');
   const meta = document.getElementById('erpSyncMeta');
-  if (banner) banner.classList.add('visible');
-  if (meta && payload.syncedAt) {
-    const storeNote = (payload.stores || [])
-      .map((s) => `${s.floor}${s.name}:${s.hasData ? fmtWan(s.ttmRevenueWan) + '万' : '待录入'}`)
+  if (banner) {
+    banner.classList.toggle('visible', !!payload.hasErpShanhaizaowu);
+  }
+  if (meta && payload.syncedAt && payload.hasErpShanhaizaowu) {
+    const storeNote = (payload.stores || getDefaultStoreBreakdown())
+      .map((s) => {
+        if (s.key === 'xingchen') return `星宸:${fmtWan(s.ttmRevenueWan || XINGCHEN_DEFAULT_TTM_WAN)}万`;
+        return `山川:${s.hasErpData ? fmtWan(s.ttmRevenueWan) + '万' : '待同步'}`;
+      })
       .join(' · ');
-    meta.textContent = `${new Date(payload.syncedAt).toLocaleString('zh-CN')} · ${storeNote}`;
+    meta.textContent = `${new Date(payload.syncedAt).toLocaleString('zh-CN')} · 集团 ${fmtWan(groupTtmWan)} 万 · ${storeNote}`;
   }
 
   updateValuation();
@@ -2279,6 +2528,9 @@ function applyErpFinanceSync(payload) {
 window.addEventListener('message', (event) => {
   if (event?.data?.type === 'erp-finance-sync') {
     applyErpFinanceSync(event.data.payload);
+  }
+  if (event?.data?.type === 'erp-miniprogram-sync') {
+    applyErpMiniprogramSync(event.data.payload);
   }
 });
 
@@ -2345,10 +2597,12 @@ function fmtSimple(num) {
   return num.toLocaleString('zh-CN', { maximumFractionDigits: 1 });
 }
 
+/** 估值一律用年化口径；ERP 未同步时回退到卡片显示值 */
 function getLastTtmWan() {
+  if (Number.isFinite(lastGroupAnnualWan) && lastGroupAnnualWan > 0) return lastGroupAnnualWan;
   const el = document.querySelector('[data-erp="total-revenue"]');
   const n = el ? parseFloat(el.textContent) : NaN;
-  return Number.isFinite(n) && n > 0 ? n : DEFAULT_TTM_WAN;
+  return Number.isFinite(n) && n > 0 ? n : XINGCHEN_DEFAULT_TTM_WAN;
 }
 
 function updateValuation() {
@@ -2359,6 +2613,10 @@ function updateValuation() {
   const peRatio = +document.getElementById('peRatio').value;
   const strategicPremium = +document.getElementById('strategicPremium').value;
   const bookMarginPct = +document.getElementById('bookNetMargin').value;
+  const onlineRevWan = lastMpSnapshot?.orders?.isLive
+    ? (lastMpSnapshot.orders.ttmRevenueWan || 0)
+    : 0;
+  const digitalAssetWan = (lastMpSnapshot?.capability?.score || 0) * 2 * getDigitalPremiumCoeff();
 
   document.getElementById('storeRevVal').textContent = '¥' + storeRev + '万';
   document.getElementById('bookNetMarginVal').textContent = bookMarginPct + '%';
@@ -2376,19 +2634,39 @@ function updateValuation() {
   const franchiseAnnualContribution = (franchiseFee / 3) + (storeRev * 0.05) + (storeRev * 0.04);
   const franchiseRevenue = franchiseStores * franchiseAnnualContribution;
   
-  const groupRevenue = directRevenue + franchiseRevenue;
+  const groupRevenue = directRevenue + franchiseRevenue + onlineRevWan;
   const netMargin = getActiveNetMargin();
   const groupProfit = groupRevenue * netMargin;
   
   const peValuation = groupProfit * peRatio;
-  const psValuation = groupRevenue * 5; // PS 5x 作为参考
-  const premiumValuation = peValuation * (1 + strategicPremium / 100);
+  // PS 倍数按业务形态派生：纯直营小微零售 0.8–2x，加盟网络跑通后才够到集团含 IP 的 3–5x
+  const psMultiple = franchiseStores > 0
+    ? Math.min(5, 3 + franchiseStores * 0.25)
+    : (directStores >= 3 ? 2 : 1.2);
+  const psValuation = groupRevenue * psMultiple;
+  const premiumValuation = peValuation * (1 + strategicPremium / 100) + digitalAssetWan;
 
   document.getElementById('groupRevenue').textContent = '¥' + fmtSimple(groupRevenue) + '万';
   document.getElementById('groupProfit').textContent = '¥' + fmtSimple(groupProfit) + '万';
   document.getElementById('peValuation').textContent = '¥' + fmtSimple(peValuation) + '万';
   document.getElementById('psValuation').textContent = '¥' + fmtSimple(psValuation) + '万';
+  const onlineRow = document.getElementById('onlineChannelRow');
+  if (onlineRow) {
+    onlineRow.textContent = onlineRevWan > 0
+      ? '+ ¥' + fmtSimple(onlineRevWan) + '万'
+      : '¥0 万 · 待上线';
+  }
+  const digitalRow = document.getElementById('digitalAssetRow');
+  if (digitalRow) digitalRow.textContent = '+ ¥' + fmtSimple(digitalAssetWan) + '万';
+  const psLabel = document.getElementById('psMultipleLabel');
+  if (psLabel) {
+    psLabel.textContent = franchiseStores > 0
+      ? `PS ${psMultiple.toFixed(2)}x · 集团含品牌/加盟`
+      : `PS ${psMultiple.toFixed(2)}x · 纯直营口径`;
+  }
   document.getElementById('premiumValuation').textContent = '¥' + fmtSimple(premiumValuation) + '万';
+
+  syncConversionGroupVal(premiumValuation);
 
   // 最终估值显示
   document.getElementById('finalValuation').innerHTML = '¥' + fmtSimple(premiumValuation) + '<span class="unit">万</span>';
@@ -2437,8 +2715,18 @@ function updateScenarioTable() {
   }).join('');
 }
 
-['storeRev','bookNetMargin','directStores','franchiseStores','franchiseFee','peRatio','strategicPremium'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updateValuation);
+['storeRev','bookNetMargin','directStores','franchiseStores','franchiseFee','peRatio','strategicPremium','digitalPremiumCoeff'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    if (id === 'digitalPremiumCoeff') {
+      const v = +el.value / 100;
+      const label = document.getElementById('digitalPremiumCoeffVal');
+      if (label) label.textContent = v.toFixed(1) + 'x';
+      if (lastMpSnapshot?.capability) applyErpMiniprogramSync(lastMpSnapshot);
+    }
+    updateValuation();
+  });
 });
 
 // ============ 股权稀释 ============
@@ -2658,6 +2946,19 @@ function updateProfitShare() {
 });
 
 // ============ 置换计算器 ============
+/** 置换用的集团估值默认跟随估值实验室结果，避免两个 Tab 各说各话；用户手动拖动后不再覆盖 */
+let cvGroupValTouched = false;
+
+function syncConversionGroupVal(valuationWan) {
+  if (cvGroupValTouched) return;
+  const el = document.getElementById('cvGroupVal');
+  if (!el || !Number.isFinite(valuationWan) || valuationWan <= 0) return;
+  const next = Math.max(+el.min, Math.min(+el.max, Math.round(valuationWan / 50) * 50));
+  if (+el.value === next) return;
+  el.value = next;
+  updateConversion();
+}
+
 function updateConversion() {
   const monthlyProfit = +document.getElementById('cvMonthlyProfit').value; // 千元
   const divRatio = +document.getElementById('cvDivRatio').value;
@@ -2703,6 +3004,11 @@ function updateConversion() {
 
 ['cvMonthlyProfit','cvDivRatio','cvRemainYears','cvDiscount','cvGroupVal'].forEach(id => {
   document.getElementById(id).addEventListener('input', updateConversion);
+});
+document.getElementById('cvGroupVal').addEventListener('input', () => {
+  cvGroupValTouched = true;
+  const note = document.getElementById('cvGroupValNote');
+  if (note) note.textContent = '手动设定 · 已脱离估值实验室联动';
 });
 
 // ============ 数据归档 ============
@@ -2766,6 +3072,8 @@ function loadSnapshot(snap) {
     const el = document.getElementById(k);
     if (el) el.value = v;
   }
+  // 快照里存过集团估值就按快照走，别被估值实验室的联动覆盖掉
+  if (snap.conversion?.cvGroupVal) cvGroupValTouched = true;
   updateValuation();
   updateCapTable();
   updateProfitShare();
@@ -2992,7 +3300,8 @@ function renderTodos() {
 // ============ 初始化 ============
 function bootSandbox() {
   try {
-    updateCurrentFundamentalsAnchors(DEFAULT_TTM_WAN);
+    renderStoreBreakdown(getDefaultStoreBreakdown());
+    updateCurrentFundamentalsAnchors(XINGCHEN_DEFAULT_TTM_WAN);
     updateValuation();
     updateCapTable();
     updateProfitShare();

@@ -122,7 +122,7 @@ export function findStoreById(bundle, id) {
   return (bundle?.stores || []).find((s) => s.id === id) || null
 }
 
-/** 财务入账、智能日报默认关联门店（与店铺管理名称对齐） */
+/** 财务入账默认关联门店 = 楼上山川造物（ERP 财务核算口径） */
 export const DEFAULT_FINANCE_STORE_NAME = '长春这有山1号门店'
 
 /** 与小程序 storeSeed 对齐的 canonical storeId（楼上=山海造物，楼下=星宸标本） */
@@ -152,8 +152,9 @@ export const CANONICAL_STORE_DEFS = [
 
 /**
  * 将财务账本行解析为 canonical 门店 key（shanhaizaowu | xingchen）
+ * ERP 财务入账 storeId 可能是 bundle 内部 id，需反查门店主数据
  */
-export function resolveCanonicalStoreKey(record) {
+export function resolveCanonicalStoreKey(record, bundle) {
   const sid = String(record?.storeId || '')
   const sn = String(record?.storeName || '')
   if (sid === CANONICAL_STORE_IDS.xingchen || /星宸/i.test(sn)) return 'xingchen'
@@ -165,8 +166,26 @@ export function resolveCanonicalStoreKey(record) {
   ) {
     return 'shanhaizaowu'
   }
-  if (!sid && !sn) return 'shanhaizaowu'
-  return 'unknown'
+
+  const b = bundle || loadStoreBundle()
+  if (sid && b?.stores?.length) {
+    const st = b.stores.find((s) => s.id === sid || s.storeId === sid)
+    if (st) {
+      if (st.storeId === CANONICAL_STORE_IDS.xingchen || /星宸/i.test(String(st.name || ''))) {
+        return 'xingchen'
+      }
+      if (
+        st.storeId === CANONICAL_STORE_IDS.shanhaizaowu ||
+        /山海造物|山川造物/i.test(String(st.name || '')) ||
+        String(st.name || '').trim() === DEFAULT_FINANCE_STORE_NAME
+      ) {
+        return 'shanhaizaowu'
+      }
+    }
+  }
+
+  // 无门店字段或无法识别时，ERP 账本默认归属楼上山川造物
+  return 'shanhaizaowu'
 }
 
 /**

@@ -10,6 +10,7 @@
           已同步财务账本
         </el-tag>
         <el-button size="small" @click="goFinance">财务核算</el-button>
+        <el-button size="small" :loading="syncing" @click="syncFinanceLedger">同步财务账本</el-button>
         <el-tooltip content="重新加载沙盘" placement="bottom">
           <el-button size="small" circle :loading="loading" @click="reload">
             <el-icon><Refresh /></el-icon>
@@ -41,7 +42,14 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { Refresh, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { embeddedPageUrl, standalonePageUrl } from '../utils/embeddedPageUrl'
-import { pushFinanceSnapshotToIframe, readFinanceSnapshot } from '../utils/financeSandboxBridge'
+import {
+  pushFinanceSnapshotToIframeAsync,
+  readFinanceSnapshotAsync,
+} from '../utils/financeSandboxBridge'
+import {
+  pushMiniprogramSnapshotToIframeAsync,
+  readMiniprogramSandboxSnapshot,
+} from '../utils/miniprogramSandboxBridge'
 
 const emit = defineEmits(['switch-tab'])
 
@@ -49,19 +57,40 @@ const PAGE = 'shanhai-capital-architecture-sandbox.html'
 
 const iframeRef = ref(null)
 const loading = ref(true)
+const syncing = ref(false)
 const financeSynced = ref(false)
 const cacheBuster = ref(Date.now())
 
 const src = computed(() => embeddedPageUrl(PAGE, { cacheBuster: cacheBuster.value }))
 
-const syncFinanceToIframe = () => {
-  if (!iframeRef.value) return
-  financeSynced.value = pushFinanceSnapshotToIframe(iframeRef.value)
+const syncFinanceToIframe = async () => {
+  if (!iframeRef.value || syncing.value) return
+  syncing.value = true
+  try {
+    const [financeOk] = await Promise.all([
+      pushFinanceSnapshotToIframeAsync(iframeRef.value),
+      pushMiniprogramSnapshotToIframeAsync(iframeRef.value),
+    ])
+    financeSynced.value = financeOk
+  } catch {
+    financeSynced.value = false
+  } finally {
+    syncing.value = false
+  }
 }
 
 const onIframeLoad = () => {
   loading.value = false
   syncFinanceToIframe()
+}
+
+const syncFinanceLedger = async () => {
+  await syncFinanceToIframe()
+  if (financeSynced.value) {
+    ElMessage.success('财务账本已同步至沙盘')
+  } else {
+    ElMessage.warning('未读取到山川造物 ERP 账本，请先在「财务核算」录入或检查云端同步')
+  }
 }
 
 const goFinance = () => emit('switch-tab', '2')
@@ -91,7 +120,10 @@ const onMessage = (event) => {
 
 onMounted(() => {
   window.addEventListener('message', onMessage)
-  financeSynced.value = !!readFinanceSnapshot()
+  Promise.all([readFinanceSnapshotAsync(), readMiniprogramSandboxSnapshot()]).then(([snap]) => {
+    financeSynced.value = !!(snap?.hasErpShanhaizaowu)
+    if (iframeRef.value && !loading.value) syncFinanceToIframe()
+  })
 })
 
 onUnmounted(() => {
