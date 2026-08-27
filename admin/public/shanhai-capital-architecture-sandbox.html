@@ -1116,6 +1116,27 @@ html.embed-mode .tab-nav::after {
   color: var(--ink-soft);
   font-weight: 600;
 }
+.store-card-pending .card-value {
+  color: var(--ink-light);
+  font-size: 22px;
+}
+.store-floor-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-family: var(--mono);
+  border: 1px solid rgba(154, 123, 79, 0.35);
+  color: var(--brass-deep);
+  border-radius: 2px;
+}
+.anchor-tier-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--brass-deep);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
 </style>
 </head>
 <body>
@@ -1131,7 +1152,7 @@ html.embed-mode .tab-nav::after {
         <div class="brand-eng">Nature's Creations · Bring Nature Home</div>
       </div>
       <div class="header-meta">
-        <div class="meta-line"><span class="meta-key">DATA</span> 2025.11.20 – 2026.05.14</div>
+        <div class="meta-line"><span class="meta-key">DATA</span> <span id="headerDataRange">TTM · 待 ERP 同步</span></div>
         <div class="meta-line"><span class="meta-key">VERSION</span> v0.2 / DOUBLE-TRACK</div>
         <div class="meta-line"><span class="meta-key">FOUNDERS</span> 独菽 × 廉澍</div>
         <div class="meta-line"><span class="meta-key">STATUS</span> INTERNAL · 内部决策稿</div>
@@ -1165,56 +1186,110 @@ html.embed-mode .tab-nav::after {
         <div class="section-header">
           <span class="section-num">§ I.1</span>
           <h2 class="section-title">业务基本面</h2>
-          <span class="section-desc">— 6 个月真实经营数据</span>
+          <span class="section-desc" id="fundamentalsPeriodDesc">— TTM 口径 · 默认 93.7 万（待 ERP 同步）</span>
         </div>
 
         <div class="grid grid-4">
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
-            <div class="card-label">累计营收</div>
-            <div class="card-value">¥<span data-erp="total-revenue">126.5</span><span class="card-value-unit">万</span></div>
-            <div class="card-sub" data-erp="date-range">6 个月 · 仅 POS 口径</div>
+            <div class="card-label">集团 TTM 营收</div>
+            <div class="card-value">¥<span data-erp="total-revenue">93.7</span><span class="card-value-unit">万</span></div>
+            <div class="card-sub" data-erp="date-range">滚动 12 个月 · 账面 POS 口径</div>
           </div>
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
             <div class="card-label">月均营收</div>
-            <div class="card-value">¥<span data-erp="monthly-avg">17.5</span><span class="card-value-unit">万</span></div>
-            <div class="card-sub" data-erp="monthly-sub">2026 Q1-Q2 稳态</div>
+            <div class="card-value">¥<span data-erp="monthly-avg">7.8</span><span class="card-value-unit">万</span></div>
+            <div class="card-sub" data-erp="monthly-sub">TTM 月均 · 不含创始人薪酬/展陈摊销/税</div>
           </div>
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
             <div class="card-label">单月峰值</div>
-            <div class="card-value">¥<span data-erp="peak-month">29.9</span><span class="card-value-unit">万</span></div>
-            <div class="card-sub" data-erp="peak-sub">2026-02 · 节庆爆发力</div>
+            <div class="card-value">¥<span data-erp="peak-month">—</span><span class="card-value-unit">万</span></div>
+            <div class="card-sub" data-erp="peak-sub">ERP 同步后更新</div>
           </div>
           <div class="card">
             <span class="card-corner tl"></span><span class="card-corner br"></span>
             <div class="card-label">客单价</div>
-            <div class="card-value">¥<span data-erp="avg-ticket">79.93</span></div>
-            <div class="card-sub" data-erp="order-sub">15,827 订单加权</div>
+            <div class="card-value">¥<span data-erp="avg-ticket">—</span></div>
+            <div class="card-sub" data-erp="order-sub">ERP 同步后更新</div>
           </div>
         </div>
       </div>
 
       <div class="section">
         <div class="section-header">
-          <span class="section-num">§ I.2</span>
-          <h2 class="section-title">三档估值锚点</h2>
-          <span class="section-desc">— 双轨制 · 双口径</span>
+          <span class="section-num">§ I.1b</span>
+          <h2 class="section-title">双店分列</h2>
+          <span class="section-desc">— 楼上山海造物 · 楼下星宸标本</span>
+        </div>
+        <div class="grid grid-2" id="storeBreakdownGrid">
+          <div class="card" data-store-key="shanhaizaowu">
+            <span class="card-corner tl"></span><span class="card-corner br"></span>
+            <div class="card-label">楼上 · 山海造物 <span class="store-floor-tag">store_shanhaizaowu</span></div>
+            <div class="card-value">¥<span data-store-rev="shanhaizaowu">—</span><span class="card-value-unit">万 TTM</span></div>
+            <div class="card-sub" data-store-sub="shanhaizaowu">待 ERP 同步</div>
+          </div>
+          <div class="card store-card-pending" data-store-key="xingchen">
+            <span class="card-corner tl"></span><span class="card-corner br"></span>
+            <div class="card-label">楼下 · 星宸标本 <span class="store-floor-tag">store_xingchen</span></div>
+            <div class="card-value"><span data-store-rev="xingchen">待录入</span></div>
+            <div class="card-sub" data-store-sub="xingchen">ERP 暂无该店独立账本</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-num">§ I.2a</span>
+          <h2 class="section-title">当前基本面锚点</h2>
+          <span class="section-desc">— 基于 TTM · 30–40% 账面净利率</span>
         </div>
 
         <div class="valuation-grid">
           <div class="val-cell">
-            <div class="val-label">保守 / Conservative</div>
-            <div class="val-amount">¥1,500-1,800<span class="val-amount-unit">万</span></div>
-            <div class="val-method">2 直营 / 0 加盟</div>
+            <div class="anchor-tier-label">TODAY · 当前可辩护区间</div>
+            <div class="val-label">保守 / Book PE 4x</div>
+            <div class="val-amount">¥<span id="anchorCurrentLow">130</span>–<span id="anchorCurrentMid">180</span><span class="val-amount-unit">万</span></div>
+            <div class="val-method">单店/双店 TTM · 无战略溢价</div>
           </div>
           <div class="val-cell bordered">
+            <div class="anchor-tier-label">TODAY · 中性</div>
+            <div class="val-label">中性 / Book PE 5–6x</div>
+            <div class="val-amount">¥<span id="anchorCurrentMid2">165</span>–<span id="anchorCurrentHigh">220</span><span class="val-amount-unit">万</span></div>
+            <div class="val-method">TTM 93.7 万 × 35% 净利 × PE</div>
+          </div>
+          <div class="val-cell">
+            <div class="anchor-tier-label">TODAY · 含 IP 溢价上限</div>
+            <div class="val-label">乐观 / PS 1.2x</div>
+            <div class="val-amount">¥<span id="anchorCurrentPs">110</span><span class="val-amount-unit">万</span></div>
+            <div class="val-method">不宜直接套用集团 5x PS</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-num">§ I.2b</span>
+          <h2 class="section-title">目标估值锚点</h2>
+          <span class="section-desc">— 达成多店/加盟后 · 非今日报价</span>
+        </div>
+
+        <div class="valuation-grid">
+          <div class="val-cell">
+            <div class="anchor-tier-label">TARGET · 2 直营达成后</div>
+            <div class="val-label">保守 / Conservative</div>
+            <div class="val-amount">¥1,500-1,800<span class="val-amount-unit">万</span></div>
+            <div class="val-method">2 直营 / 0 加盟 · 稳态年化</div>
+          </div>
+          <div class="val-cell bordered">
+            <div class="anchor-tier-label">TARGET · 2D+3F 跑通后</div>
             <div class="val-label">中性 / Anchor</div>
             <div class="val-amount">¥3,500-4,500<span class="val-amount-unit">万</span></div>
             <div class="val-method">2 直营 / 3 加盟 + 战略溢价</div>
           </div>
           <div class="val-cell">
+            <div class="anchor-tier-label">TARGET · 3D+6F 头部叙事</div>
             <div class="val-label">乐观 / Aspirational</div>
             <div class="val-amount">¥8,000-11,000<span class="val-amount-unit">万</span></div>
             <div class="val-method">3 直营 / 6 加盟</div>
@@ -1223,7 +1298,7 @@ html.embed-mode .tab-nav::after {
 
         <div class="callout">
           <div class="callout-title"><span class="callout-icon">RECOMMENDATION</span>谈判锚点策略</div>
-          首次报价用账面口径 + 中性偏乐观 = <strong>¥4,500 万</strong>。被砍后退守 ¥3,500 万。底线 ¥2,500 万——低于此意味着对方不认双轨制叙事。
+          <strong>今日基本面</strong>（§ I.2a）与<strong>目标估值</strong>（§ I.2b）不可混用。目标情景下首次报价可用账面口径 + 中性偏乐观 = <strong>¥4,500 万</strong>，但需明确前提为「2 直营 + 3 加盟跑通后」；基于当前 TTM，对外应锚定 § I.2a 区间，底线以调整口径（含创始人薪酬）复核。
         </div>
       </div>
 
@@ -1353,7 +1428,7 @@ html.embed-mode .tab-nav::after {
 
         <div class="callout">
           <div class="callout-title"><span class="callout-icon">DUAL CALIPER</span>双口径切换</div>
-          <strong>账面口径</strong>：不计创始人薪酬（净利率 46%），用于首次报价 · <strong>调整口径</strong>：计入创始人 ¥30k/月薪酬（净利率 29%），用于尽调防御
+          <strong>账面口径</strong>：不计创始人薪酬、展陈摊销、税（净利率默认 35%，可调 30–40%），用于对外报价 · <strong>调整口径</strong>：计入创始人 ¥30k/月薪酬（净利率约 22%），用于尽调防御与回购定价
         </div>
 
         <div class="toggle-group">
@@ -1367,10 +1442,18 @@ html.embed-mode .tab-nav::after {
             <div class="card-label">输入参数 / Input Parameters</div>
             
             <div class="field">
-              <label class="field-label">单店稳态年化营收 <span class="note">Annual Revenue / Store</span></label>
+              <label class="field-label">单店稳态年化营收 <span class="note">Annual Revenue / Store · ERP 同步后可按店拆分</span></label>
               <div class="slider-row">
-                <input type="range" class="slider" id="storeRev" min="180" max="350" value="220" step="10">
-                <span class="slider-val" id="storeRevVal">¥220万</span>
+                <input type="range" class="slider" id="storeRev" min="60" max="350" value="94" step="1">
+                <span class="slider-val" id="storeRevVal">¥94万</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">账面净利率 <span class="note">Book Net Margin · 30–40%</span></label>
+              <div class="slider-row">
+                <input type="range" class="slider" id="bookNetMargin" min="30" max="40" value="35" step="1">
+                <span class="slider-val" id="bookNetMarginVal">35%</span>
               </div>
             </div>
 
@@ -2063,37 +2146,134 @@ function fmtWan(n) {
   return Number(n).toFixed(1);
 }
 
+const DEFAULT_TTM_WAN = 93.7;
+
+function getActiveNetMargin() {
+  if (currentCaliper === 'adjusted') return NET_MARGIN.adjusted;
+  const el = document.getElementById('bookNetMargin');
+  return el ? (+el.value / 100) : NET_MARGIN.book;
+}
+
+function updateCurrentFundamentalsAnchors(ttmWan) {
+  const rev = Number(ttmWan) > 0 ? Number(ttmWan) : DEFAULT_TTM_WAN;
+  const margin = getActiveNetMargin();
+  const profit = rev * margin;
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = Math.round(val);
+  };
+  set('anchorCurrentLow', profit * 4);
+  set('anchorCurrentMid', profit * 5);
+  set('anchorCurrentMid2', profit * 5.5);
+  set('anchorCurrentHigh', profit * 6);
+  set('anchorCurrentPs', rev * 1.2);
+}
+
+function renderStoreBreakdown(stores) {
+  (stores || []).forEach((st) => {
+    const revEl = document.querySelector(`[data-store-rev="${st.key}"]`);
+    const subEl = document.querySelector(`[data-store-sub="${st.key}"]`);
+    const card = document.querySelector(`[data-store-key="${st.key}"]`);
+    if (!revEl) return;
+    if (st.hasData && st.ttmRevenueWan > 0) {
+      revEl.textContent = fmtWan(st.ttmRevenueWan);
+      if (subEl) {
+        const range = st.dateFrom && st.dateTo ? `${st.dateFrom} – ${st.dateTo}` : 'TTM';
+        subEl.textContent = `${range} · ${st.recordCount || 0} 条 · ERP 同步`;
+      }
+      if (card) card.classList.remove('store-card-pending');
+    } else {
+      revEl.textContent = '待录入';
+      if (subEl) subEl.textContent = 'ERP 暂无该店独立账本';
+      if (card) card.classList.add('store-card-pending');
+    }
+  });
+}
+
+function applyStoreRevFromErp(payload) {
+  const storeRevEl = document.getElementById('storeRev');
+  if (!storeRevEl || !payload) return;
+  const stores = payload.stores || [];
+  const withData = stores.filter((s) => s.hasData && s.ttmRevenueWan > 0);
+  let nextRev = DEFAULT_TTM_WAN;
+  if (withData.length === 1) {
+    nextRev = withData[0].ttmRevenueWan;
+  } else if (withData.length >= 2) {
+    nextRev = withData.reduce((a, s) => a + s.ttmRevenueWan, 0) / withData.length;
+  } else if (payload.ttmRevenueWan > 0) {
+    const directStores = +document.getElementById('directStores')?.value || 2;
+    nextRev = payload.ttmRevenueWan / Math.max(1, directStores);
+  }
+  nextRev = Math.max(60, Math.min(350, Math.round(nextRev)));
+  storeRevEl.value = nextRev;
+}
+
 function applyErpFinanceSync(payload) {
   if (!payload || payload.source !== 'erp-finance') return;
   const setText = (sel, val) => {
     const el = document.querySelector(`[data-erp="${sel}"]`);
     if (el) el.textContent = val;
   };
-  setText('total-revenue', fmtWan(payload.totalRevenueWan));
-  setText('monthly-avg', fmtWan(payload.monthlyAvgWan));
-  setText('peak-month', fmtWan(payload.peakMonthWan));
+
+  const ttmWan = payload.hasErpTtm ? payload.ttmRevenueWan : (payload.defaultTtmWan || DEFAULT_TTM_WAN);
+  setText('total-revenue', fmtWan(ttmWan));
+  setText('monthly-avg', fmtWan(payload.monthlyAvgWan ?? (ttmWan / 12)));
+  if (payload.peakMonthWan != null && payload.peakMonthWan > 0) {
+    setText('peak-month', fmtWan(payload.peakMonthWan));
+  }
   if (payload.avgTicket != null) setText('avg-ticket', Number(payload.avgTicket).toFixed(2));
 
+  const periodDesc = document.getElementById('fundamentalsPeriodDesc');
+  if (periodDesc) {
+    periodDesc.textContent = payload.hasErpTtm
+      ? `— ${payload.periodLabel || 'TTM'} · ERP 同步`
+      : '— 默认 TTM 93.7 万 · 待 ERP 同步';
+  }
+
   const rangeEl = document.querySelector('[data-erp="date-range"]');
-  if (rangeEl && payload.dateFrom && payload.dateTo) {
-    rangeEl.textContent = `${payload.dateFrom} – ${payload.dateTo} · ERP 账本 ${payload.recordCount} 条`;
+  if (rangeEl) {
+    if (payload.hasErpTtm && payload.dateFrom && payload.dateTo) {
+      rangeEl.textContent = `${payload.dateFrom} – ${payload.dateTo} · ${payload.periodLabel || 'TTM'} · ${payload.recordCount} 条`;
+    } else {
+      rangeEl.textContent = '默认 TTM 93.7 万 · 账面 POS · 待 ERP 同步';
+    }
   }
   const monthSub = document.querySelector('[data-erp="monthly-sub"]');
-  if (monthSub && payload.monthCount) {
-    monthSub.textContent = `覆盖 ${payload.monthCount} 个自然月 · ERP 同步`;
+  if (monthSub) {
+    monthSub.textContent = payload.hasErpTtm
+      ? `覆盖 ${payload.monthCount || '—'} 个自然月 · 不含创始人薪酬/展陈摊销/税`
+      : '默认口径 · 不含创始人薪酬/展陈摊销/税';
   }
   const peakSub = document.querySelector('[data-erp="peak-sub"]');
-  if (peakSub) peakSub.textContent = `近 ${payload.monthCount || '—'} 月最高单月`;
+  if (peakSub && payload.peakMonthWan > 0) {
+    peakSub.textContent = payload.hasErpTtm ? `近 ${payload.monthCount || '—'} 月最高单月` : 'ERP 同步后更新';
+  }
   if (payload.orderCount && document.querySelector('[data-erp="order-sub"]')) {
     setText('order-sub', `${payload.orderCount.toLocaleString()} 笔订单（账本汇总）`);
   }
+
+  const headerRange = document.getElementById('headerDataRange');
+  if (headerRange) {
+    headerRange.textContent = payload.hasErpTtm && payload.dateFrom && payload.dateTo
+      ? `${payload.dateFrom} – ${payload.dateTo} · TTM`
+      : 'TTM · 默认 93.7 万';
+  }
+
+  renderStoreBreakdown(payload.stores);
+  updateCurrentFundamentalsAnchors(ttmWan);
+  applyStoreRevFromErp(payload);
 
   const banner = document.getElementById('erpSyncBanner');
   const meta = document.getElementById('erpSyncMeta');
   if (banner) banner.classList.add('visible');
   if (meta && payload.syncedAt) {
-    meta.textContent = new Date(payload.syncedAt).toLocaleString('zh-CN');
+    const storeNote = (payload.stores || [])
+      .map((s) => `${s.floor}${s.name}:${s.hasData ? fmtWan(s.ttmRevenueWan) + '万' : '待录入'}`)
+      .join(' · ');
+    meta.textContent = `${new Date(payload.syncedAt).toLocaleString('zh-CN')} · ${storeNote}`;
   }
+
+  updateValuation();
 }
 
 window.addEventListener('message', (event) => {
@@ -2107,10 +2287,10 @@ const STORAGE_KEY = 'shanhai_capital_v02';
 const TODO_KEY = 'shanhai_todo_v02';
 let currentCaliper = 'book'; // 'book' or 'adjusted'
 
-// 净利率（双口径）
+// 净利率（双口径）— 账面默认 35%（30–40% 可调），调整口径含创始人薪酬
 const NET_MARGIN = {
-  book: 0.46,      // 账面口径
-  adjusted: 0.29   // 调整口径
+  book: 0.35,
+  adjusted: 0.22
 };
 
 // ============ Tab 切换 ============
@@ -2148,6 +2328,7 @@ document.querySelectorAll('.toggle-btn').forEach(btn => {
     document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentCaliper = btn.dataset.caliper;
+    updateCurrentFundamentalsAnchors(getLastTtmWan());
     updateValuation();
   });
 });
@@ -2164,6 +2345,12 @@ function fmtSimple(num) {
   return num.toLocaleString('zh-CN', { maximumFractionDigits: 1 });
 }
 
+function getLastTtmWan() {
+  const el = document.querySelector('[data-erp="total-revenue"]');
+  const n = el ? parseFloat(el.textContent) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_TTM_WAN;
+}
+
 function updateValuation() {
   const storeRev = +document.getElementById('storeRev').value;
   const directStores = +document.getElementById('directStores').value;
@@ -2171,13 +2358,17 @@ function updateValuation() {
   const franchiseFee = +document.getElementById('franchiseFee').value;
   const peRatio = +document.getElementById('peRatio').value;
   const strategicPremium = +document.getElementById('strategicPremium').value;
+  const bookMarginPct = +document.getElementById('bookNetMargin').value;
 
   document.getElementById('storeRevVal').textContent = '¥' + storeRev + '万';
+  document.getElementById('bookNetMarginVal').textContent = bookMarginPct + '%';
   document.getElementById('directStoresVal').textContent = directStores + ' 家';
   document.getElementById('franchiseStoresVal').textContent = franchiseStores + ' 家';
   document.getElementById('franchiseFeeVal').textContent = '¥' + franchiseFee + '万';
   document.getElementById('peRatioVal').textContent = peRatio + 'x';
   document.getElementById('strategicPremiumVal').textContent = '+' + strategicPremium + '%';
+
+  updateCurrentFundamentalsAnchors(getLastTtmWan());
 
   // 直营店营收
   const directRevenue = directStores * storeRev;
@@ -2186,7 +2377,7 @@ function updateValuation() {
   const franchiseRevenue = franchiseStores * franchiseAnnualContribution;
   
   const groupRevenue = directRevenue + franchiseRevenue;
-  const netMargin = NET_MARGIN[currentCaliper];
+  const netMargin = getActiveNetMargin();
   const groupProfit = groupRevenue * netMargin;
   
   const peValuation = groupProfit * peRatio;
@@ -2216,13 +2407,14 @@ function updateValuation() {
 }
 
 function updateScenarioTable() {
-  const netMargin = NET_MARGIN[currentCaliper];
+  const netMargin = getActiveNetMargin();
+  const baseRev = Math.max(60, Math.round(getLastTtmWan() / 2));
   const scenarios = [
-    { name: '保守 · 单店模型', direct: 1, franchise: 0, storeRev: 220, pe: 18, premium: 10 },
-    { name: '保守 · 2店模型', direct: 2, franchise: 0, storeRev: 220, pe: 18, premium: 15 },
-    { name: '中性 · 推荐锚点', direct: 2, franchise: 3, storeRev: 240, pe: 20, premium: 30 },
-    { name: '中性偏乐观', direct: 3, franchise: 5, storeRev: 260, pe: 22, premium: 35 },
-    { name: '乐观 · 头部 VC', direct: 3, franchise: 8, storeRev: 280, pe: 25, premium: 40 }
+    { name: '保守 · 单店模型', direct: 1, franchise: 0, storeRev: baseRev, pe: 18, premium: 10 },
+    { name: '保守 · 2店模型', direct: 2, franchise: 0, storeRev: baseRev, pe: 18, premium: 15 },
+    { name: '中性 · 目标锚点（非今日）', direct: 2, franchise: 3, storeRev: Math.max(baseRev, 120), pe: 20, premium: 30 },
+    { name: '中性偏乐观 · 目标', direct: 3, franchise: 5, storeRev: Math.max(baseRev + 20, 140), pe: 22, premium: 35 },
+    { name: '乐观 · 头部 VC · 目标', direct: 3, franchise: 8, storeRev: Math.max(baseRev + 40, 160), pe: 25, premium: 40 }
   ];
 
   const tbody = document.getElementById('scenarioTable');
@@ -2233,7 +2425,7 @@ function updateScenarioTable() {
     const profit = totalRev * netMargin;
     const peVal = profit * s.pe;
     const premiumVal = peVal * (1 + s.premium / 100);
-    const isAnchor = s.name.includes('推荐锚点');
+    const isAnchor = s.name.includes('目标锚点');
     return `<tr class="${isAnchor ? 'highlight-row' : ''}">
       <td class="label-cell">${s.name}</td>
       <td>${s.direct}D / ${s.franchise}F</td>
@@ -2245,7 +2437,7 @@ function updateScenarioTable() {
   }).join('');
 }
 
-['storeRev','directStores','franchiseStores','franchiseFee','peRatio','strategicPremium'].forEach(id => {
+['storeRev','bookNetMargin','directStores','franchiseStores','franchiseFee','peRatio','strategicPremium'].forEach(id => {
   document.getElementById(id).addEventListener('input', updateValuation);
 });
 
@@ -2518,6 +2710,7 @@ function getCurrentSnapshot() {
   return {
     valuation: {
       storeRev: +document.getElementById('storeRev').value,
+      bookNetMargin: +document.getElementById('bookNetMargin').value,
       directStores: +document.getElementById('directStores').value,
       franchiseStores: +document.getElementById('franchiseStores').value,
       franchiseFee: +document.getElementById('franchiseFee').value,
@@ -2799,6 +2992,7 @@ function renderTodos() {
 // ============ 初始化 ============
 function bootSandbox() {
   try {
+    updateCurrentFundamentalsAnchors(DEFAULT_TTM_WAN);
     updateValuation();
     updateCapTable();
     updateProfitShare();

@@ -125,11 +125,59 @@ export function findStoreById(bundle, id) {
 /** 财务入账、智能日报默认关联门店（与店铺管理名称对齐） */
 export const DEFAULT_FINANCE_STORE_NAME = '长春这有山1号门店'
 
+/** 与小程序 storeSeed 对齐的 canonical storeId（楼上=山海造物，楼下=星宸标本） */
+export const CANONICAL_STORE_IDS = {
+  shanhaizaowu: 'store_shanhaizaowu',
+  xingchen: 'store_xingchen',
+}
+
+export const CANONICAL_STORE_DEFS = [
+  {
+    key: 'shanhaizaowu',
+    storeId: CANONICAL_STORE_IDS.shanhaizaowu,
+    name: '山海造物',
+    code: 'CCYS-SH',
+    floor: '楼上',
+    locationLabel: '这有山 · 山腰',
+  },
+  {
+    key: 'xingchen',
+    storeId: CANONICAL_STORE_IDS.xingchen,
+    name: '星宸标本工作室',
+    code: 'CCYS-XC',
+    floor: '楼下',
+    locationLabel: '这有山 · 楼下',
+  },
+]
+
 /**
- * 解析默认财务门店 id：精确名 → 模糊（长春/这有山 + 1号/一号）
+ * 将财务账本行解析为 canonical 门店 key（shanhaizaowu | xingchen）
+ */
+export function resolveCanonicalStoreKey(record) {
+  const sid = String(record?.storeId || '')
+  const sn = String(record?.storeName || '')
+  if (sid === CANONICAL_STORE_IDS.xingchen || /星宸/i.test(sn)) return 'xingchen'
+  if (
+    sid === CANONICAL_STORE_IDS.shanhaizaowu ||
+    /山海造物|山川造物/i.test(sn) ||
+    /这有山.*(1号|一号)/.test(sn) ||
+    sn.trim() === DEFAULT_FINANCE_STORE_NAME
+  ) {
+    return 'shanhaizaowu'
+  }
+  if (!sid && !sn) return 'shanhaizaowu'
+  return 'unknown'
+}
+
+/**
+ * 解析默认财务门店 id：优先楼上山海造物 → 旧「1号门店」→ 模糊匹配
  */
 export function findDefaultFinanceStoreId(bundle) {
   const stores = [...(bundle?.stores || [])]
+  const byCanonical = stores.find(
+    (s) => s.storeId === CANONICAL_STORE_IDS.shanhaizaowu || String(s.name || '').includes('山海造物'),
+  )
+  if (byCanonical?.id) return byCanonical.id
   const exact = stores.find((s) => String(s.name || '').trim() === DEFAULT_FINANCE_STORE_NAME)
   if (exact?.id) return exact.id
   const fuzzy = stores.find((s) => {
@@ -155,29 +203,66 @@ export function applyDefaultStoreToFinanceRecord(record, bundle) {
 }
 
 /**
- * 若本地店铺主数据中尚不存在默认门店，则自动创建一条（便于财务模块立即可用）
+ * 若本地店铺主数据中尚不存在 canonical 双店，则自动补齐（便于财务与沙盘双店拆分）
  */
 export function ensureDefaultFinanceStoreInLocalBundle() {
   let b = loadStoreBundle()
-  if (findDefaultFinanceStoreId(b)) return b
-  const newStore = {
-    id: genStoreEntityId('store'),
-    code: 'CCYS001',
-    name: DEFAULT_FINANCE_STORE_NAME,
-    status: 'operating',
-    city: '长春',
-    managerName: '',
-    address: '红旗街这有山',
-    postalCode: '',
-    latLng: '',
-    areaM2: null,
-    unitNo: '',
-    leaseStart: '',
-    leaseEnd: '',
-    landlordName: '',
-    landlordContact: '',
+  let changed = false
+  const stores = [...(b.stores || [])]
+
+  for (const def of CANONICAL_STORE_DEFS) {
+    const exists = stores.some(
+      (s) =>
+        s.storeId === def.storeId ||
+        String(s.name || '').trim() === def.name ||
+        (def.key === 'shanhaizaowu' && String(s.name || '').trim() === DEFAULT_FINANCE_STORE_NAME),
+    )
+    if (exists) continue
+    stores.push({
+      id: genStoreEntityId('store'),
+      storeId: def.storeId,
+      code: def.code,
+      name: def.name,
+      status: 'operating',
+      city: '长春',
+      managerName: '',
+      address: def.locationLabel,
+      postalCode: '',
+      latLng: '',
+      areaM2: null,
+      unitNo: def.floor,
+      leaseStart: '',
+      leaseEnd: '',
+      landlordName: '',
+      landlordContact: '',
+    })
+    changed = true
   }
-  b.stores = [...(b.stores || []), newStore]
+
+  if (!findDefaultFinanceStoreId(b) && !changed) {
+    stores.push({
+      id: genStoreEntityId('store'),
+      storeId: CANONICAL_STORE_IDS.shanhaizaowu,
+      code: 'CCYS001',
+      name: DEFAULT_FINANCE_STORE_NAME,
+      status: 'operating',
+      city: '长春',
+      managerName: '',
+      address: '红旗街这有山',
+      postalCode: '',
+      latLng: '',
+      areaM2: null,
+      unitNo: '楼上',
+      leaseStart: '',
+      leaseEnd: '',
+      landlordName: '',
+      landlordContact: '',
+    })
+    changed = true
+  }
+
+  if (!changed) return b
+  b.stores = stores
   return saveStoreBundle(b)
 }
 
