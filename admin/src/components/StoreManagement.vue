@@ -179,7 +179,7 @@
               :closable="false"
               show-icon
               style="margin-bottom: 12px;"
-              title="此处为门店进销项发票登记（账本）。C 端用户开票申请（invoice_requests）在小程序「我的 → 开票申请」与店长开票处理页，本模块不替代。"
+              title="此处为门店进销项发票登记（账本）。C 端用户开票申请请用「业务运营 → C端开票申请台」（invoice_requests）。"
             />
             <div class="tab-actions">
               <el-button type="primary" size="small" @click="openInvoiceDialog()">登记发票</el-button>

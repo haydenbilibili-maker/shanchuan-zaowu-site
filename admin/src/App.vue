@@ -160,6 +160,8 @@
                 <el-menu-item index="52"><el-icon><ShoppingCart /></el-icon><span>订货履约</span></el-menu-item>
                 <el-menu-item index="57"><el-icon><Ticket /></el-icon><span>报价单配置</span></el-menu-item>
                 <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
+                <el-menu-item index="59"><el-icon><Ticket /></el-icon><span>C端开票申请台</span></el-menu-item>
+                <el-menu-item index="60"><el-icon><Stamp /></el-icon><span>订单绑定审核台</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="场 · 体验">
                 <el-menu-item index="37"><el-icon><Stamp /></el-icon><span>预约与核销</span></el-menu-item>
@@ -193,6 +195,7 @@
                 <el-menu-item index="44"><el-icon><DataAnalysis /></el-icon><span>用户行为看板</span></el-menu-item>
                 <el-menu-item index="40"><el-icon><Message /></el-icon><span>山海有信工单</span></el-menu-item>
                 <el-menu-item index="41"><el-icon><ChatDotRound /></el-icon><span>评论审核</span></el-menu-item>
+                <el-menu-item index="59"><el-icon><Document /></el-icon><span>开票申请台</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="内容营销">
                 <el-menu-item index="51"><el-icon><VideoCamera /></el-icon><span>内容工厂</span></el-menu-item>
@@ -928,6 +931,10 @@ import PriceListManager from './components/PriceListManager.vue'
 import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
 import Refunds from './components/Refunds.vue'
+import InvoiceRequests from './components/InvoiceRequests.vue'
+import PlatformOrderBinds from './components/PlatformOrderBinds.vue'
+import InvoiceRequests from './components/InvoiceRequests.vue'
+import PlatformOrderBindsDesk from './components/PlatformOrderBindsDesk.vue'
 import Categories from './components/Categories.vue'
 import BehaviorAnalytics from './components/BehaviorAnalytics.vue'
 import UserInsights from './components/UserInsights.vue'
@@ -994,6 +1001,8 @@ const TAB_COMPONENT_MAP = {
   '40': () => ({ comp: SupportTickets }),
   '41': () => ({ comp: CommentsModeration }),
   '42': () => ({ comp: Refunds }),
+  '59': () => ({ comp: InvoiceRequests }),
+  '60': () => ({ comp: PlatformOrderBindsDesk }),
   '43': () => ({ comp: Categories }),
   '44': () => ({ comp: BehaviorAnalytics }),
   '45': () => ({ comp: UserInsights }),

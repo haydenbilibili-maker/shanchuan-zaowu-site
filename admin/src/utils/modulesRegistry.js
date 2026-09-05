@@ -34,6 +34,9 @@ export const MODULES = [
   { id: '52', name: '订货履约', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase order fulfillment dhly 订货 采购 意向 出货 price-list 飞书 bitable 库存' },
   { id: '57', name: '报价单配置', group: 'BUSINESS', subgroup: '货', icon: 'Ticket', keywords: 'price list quote bjd 报价单 price_list_items 供货价' },
   { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '货', icon: 'Refresh', keywords: 'refund tksh 退款' },
+  { id: '60', name: '订单绑定审核', group: 'BUSINESS', subgroup: '货', icon: 'Connection', keywords: 'platform order bind bindPlatformOrder ddbd 订单绑定 积分' },
+  { id: '59', name: 'C端开票申请台', group: 'BUSINESS', subgroup: '货', icon: 'Ticket', keywords: 'invoice request kpsq invoice_requests manageInvoiceRequests 开票' },
+  { id: '60', name: '订单绑定审核台', group: 'BUSINESS', subgroup: '货', icon: 'Stamp', keywords: 'platform order bind ddbd bindPlatformOrder 订单绑定 积分' },
   // 业务运营 — 场
   { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
   { id: '5',  name: '活动与排期', group: 'BUSINESS', subgroup: '场', icon: 'Calendar', keywords: 'activity event hdpc 活动' },
@@ -56,6 +59,7 @@ export const MODULES = [
   { id: '44', name: 'C 端行为看板', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'DataAnalysis', keywords: 'behavior analytics cdxwkb event' },
   { id: '40', name: '山海有信工单', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'Message', keywords: 'support ticket shyxgd 客服 工单' },
   { id: '41', name: '评论审核', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'ChatDotRound', keywords: 'comment plsh moderation 评论' },
+  { id: '59', name: '开票申请台', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'Document', keywords: 'invoice manageInvoiceRequests kpsq 开票 发票' },
   // 客户经营 — 内容营销
   { id: '51', name: '内容工厂', group: 'CUSTOMER', subgroup: '内容营销', icon: 'VideoCamera', keywords: 'content factory nrgc 内容 营销 选题 话术' },
 
