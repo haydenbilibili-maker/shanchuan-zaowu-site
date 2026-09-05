@@ -160,8 +160,7 @@
                 <el-menu-item index="52"><el-icon><ShoppingCart /></el-icon><span>订货履约</span></el-menu-item>
                 <el-menu-item index="57"><el-icon><Ticket /></el-icon><span>报价单配置</span></el-menu-item>
                 <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
-                <el-menu-item index="59"><el-icon><Ticket /></el-icon><span>C端开票申请台</span></el-menu-item>
-                <el-menu-item index="60"><el-icon><Stamp /></el-icon><span>订单绑定审核台</span></el-menu-item>
+                <el-menu-item index="60"><el-icon><Connection /></el-icon><span>订单绑定审核</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="场 · 体验">
                 <el-menu-item index="37"><el-icon><Stamp /></el-icon><span>预约与核销</span></el-menu-item>
@@ -933,8 +932,6 @@ import CommentsModeration from './components/CommentsModeration.vue'
 import Refunds from './components/Refunds.vue'
 import InvoiceRequests from './components/InvoiceRequests.vue'
 import PlatformOrderBinds from './components/PlatformOrderBinds.vue'
-import InvoiceRequests from './components/InvoiceRequests.vue'
-import PlatformOrderBindsDesk from './components/PlatformOrderBindsDesk.vue'
 import Categories from './components/Categories.vue'
 import BehaviorAnalytics from './components/BehaviorAnalytics.vue'
 import UserInsights from './components/UserInsights.vue'
@@ -1002,7 +999,7 @@ const TAB_COMPONENT_MAP = {
   '41': () => ({ comp: CommentsModeration }),
   '42': () => ({ comp: Refunds }),
   '59': () => ({ comp: InvoiceRequests }),
-  '60': () => ({ comp: PlatformOrderBindsDesk }),
+  '60': () => ({ comp: PlatformOrderBinds }),
   '43': () => ({ comp: Categories }),
   '44': () => ({ comp: BehaviorAnalytics }),
   '45': () => ({ comp: UserInsights }),

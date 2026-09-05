@@ -25,6 +25,7 @@ export const SIDEBAR_NAV = {
           { id: '52', icon: 'ShoppingCart', label: '订货履约' },
           { id: '57', icon: 'Ticket', label: '报价单配置' },
           { id: '42', icon: 'Refresh', label: '退款审核' },
+          { id: '60', icon: 'Connection', label: '订单绑定审核' },
         ],
       },
       {
@@ -81,6 +82,7 @@ export const SIDEBAR_NAV = {
           { id: '44', icon: 'DataAnalysis', label: '用户行为看板' },
           { id: '40', icon: 'Message', label: '山海有信' },
           { id: '41', icon: 'ChatDotRound', label: '评论审核' },
+          { id: '59', icon: 'Document', label: '开票申请台' },
         ],
       },
       {
