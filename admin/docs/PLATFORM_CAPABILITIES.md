@@ -76,7 +76,7 @@
 | `12` | AI 智能中心 | `AICenter.vue`（多场景 AI 子模块，见下文） |
 | `13` | 首页配置 | `HomeConfigManager.vue` |
 | `14` | 会员等级体系 | `MemberLevelConfig.vue` |
-| `15` | 积分规则配置 | `PointsRulesConfig.vue` |
+| `15` | 门店积分规则 | `PointsRulesConfig.vue`（SSOT: `store_point_rules`，¥10=1） |
 | `16` | 预约规则配置 | `BookingRulesConfig.vue` |
 | `17` | 权限管理系统 | `PermissionManager.vue` |
 | `18` | 搜索关键词管理 | `SearchKeywordsManager.vue` |
@@ -142,7 +142,8 @@
 | `STRATEGY_RESEARCH` | `strategy_research` | 战略调研结论持久化 |
 | `FINANCE_RECORDS` / `FINANCE_SETTINGS` | `finance_records` / `finance_settings` | 财务账本与设置（多端同步，见 `docs/财务数据多端同步说明.md`） |
 | `MEMBER_LEVELS` | `member_levels` | 会员等级 |
-| `POINTS_RULES` | `points_rules` | 积分规则 |
+| `POINTS_RULES` | `points_rules` | 【遗留】旧积分规则，非线上源 |
+| `STORE_POINT_RULES` | `store_point_rules` | 门店积分规则（线上 SSOT，默认 ¥10=1） |
 | `BOOKING_RULES` | `booking_rules` | 预约规则 |
 | `ADMIN_*` | `admin_roles` / `admin_users` / `admin_operation_logs` / `admin_login_logs` | 权限与审计（若模块启用） |
 | 搜索与推荐 | `search_hot_keywords` / `search_blacklist` / `recommend_algorithm_config` | 搜索运营与推荐配置 |

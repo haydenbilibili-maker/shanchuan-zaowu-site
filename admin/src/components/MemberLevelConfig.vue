@@ -2,7 +2,15 @@
   <div class="member-level-config">
     <div class="header-section">
       <h2>会员等级体系配置</h2>
-      <p class="subtitle">配置会员等级、成长值门槛、折扣率和权益特权</p>
+      <p class="subtitle">配置会员等级、成长值门槛、折扣率和权益特权（与小程序 member_levels 同源；缺档自动补齐至星耀·博物官 Lv6）</p>
+      <el-alert
+        v-if="levelsSource === 'cloud+default'"
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-top: 12px;"
+        title="已从代码默认补齐缺档/占位名/空权益；点「保存全部配置」写入云库。"
+      />
     </div>
 
     <div class="config-container">
@@ -160,12 +168,14 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { COLLECTIONS, fetchCollectionSorted, fetchCollectionWhere, cdnAdd, cdnUpdate, cdnRemove, cdnDocGet, cdnSet } from '../cloud'
+import { mergeLevelsWithDefaults, remapBirthdayBenefitText } from '../utils/memberLevels'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Check, Delete } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const saving = ref(false)
 const levels = ref([])
+const levelsSource = ref('default')
 const levelDialogVisible = ref(false)
 const editingLevel = ref(null)
 
@@ -184,7 +194,7 @@ const formatDiscount = (rate) => {
   return `${(rate * 10).toFixed(1)}折`
 }
 
-// 加载等级配置
+// 加载等级配置（云库 + 缺档合并，对齐小程序 loadMemberLevels）
 const loadLevels = async () => {
   loading.value = true
   try {
@@ -192,19 +202,9 @@ const loadLevels = async () => {
       limit: 50,
       sortFn: (a, b) => (a.level ?? 0) - (b.level ?? 0)
     })
-
-    if (rows.length > 0) {
-      levels.value = rows
-    } else {
-      // 初始化默认等级
-      levels.value = [
-        { level: 1, name: '原木·见习者', threshold: 0, discountRate: 1.0, icon: '/assets/icons/knowledge.png', benefits: ['基础权益', '浏览收藏', '参与活动'] },
-        { level: 2, name: '秘银·采集家', threshold: 500, discountRate: 0.98, icon: '/assets/icons/star.png', benefits: ['9.8折优惠', '优先预约', '生日礼包'] },
-        { level: 3, name: '流金·研究员', threshold: 3000, discountRate: 0.95, icon: '/assets/icons/star-active.png', benefits: ['9.5折优惠', '专属客服', '优先预约', '生日礼包'] },
-        { level: 4, name: '曜石·策展人', threshold: 10000, discountRate: 0.90, icon: '/assets/icons/medal_gold.png', benefits: ['9折优惠', '专属客服', '优先预约', '生日礼包', '专属活动'] },
-        { level: 5, name: '星陨·守护者', threshold: 30000, discountRate: 0.85, icon: '/assets/icons/medal_gold.png', benefits: ['8.5折优惠', '专属客服', '优先预约', '生日礼包', '专属活动', '定制服务'] }
-      ]
-    }
+    const merged = mergeLevelsWithDefaults(rows)
+    levels.value = merged.levels
+    levelsSource.value = merged.source
 
     // 加载成长值规则
     try {
@@ -223,18 +223,22 @@ const loadLevels = async () => {
   }
 }
 
-// 更新等级
+// 更新等级（保存时剥离 _id，按 level 查文档后 update/add）
 const updateLevel = async (level) => {
   try {
+    const { _id, ...payload } = level
+    if (Array.isArray(payload.benefits)) {
+      payload.benefits = payload.benefits.map(remapBirthdayBenefitText).filter(Boolean)
+    }
     const existing = await fetchCollectionWhere(COLLECTIONS.MEMBER_LEVELS, { level: level.level }, 1)
     if (existing.length > 0) {
       await cdnUpdate(COLLECTIONS.MEMBER_LEVELS, existing[0]._id, {
-        ...level,
+        ...payload,
         _updateTime: Date.now()
       })
     } else {
       await cdnAdd(COLLECTIONS.MEMBER_LEVELS, {
-        ...level,
+        ...payload,
         _createTime: Date.now(),
         _updateTime: Date.now()
       })
@@ -287,6 +291,11 @@ const saveLevelBenefits = async () => {
   try {
     const index = levels.value.findIndex(l => l.level === editingLevel.value.level)
     if (index >= 0) {
+      if (Array.isArray(editingLevel.value.benefits)) {
+        editingLevel.value.benefits = editingLevel.value.benefits
+          .map(remapBirthdayBenefitText)
+          .filter(Boolean)
+      }
       levels.value[index] = { ...editingLevel.value }
       await updateLevel(editingLevel.value)
       ElMessage.success('权益配置已保存')
@@ -339,8 +348,9 @@ const saveGrowthRules = async () => {
   saving.value = true
   try {
     const existing = await cdnDocGet('configs', 'member_growth_rules')
+    const { _id, ...rest } = growthRules
     const payload = {
-      ...growthRules,
+      ...rest,
       _updateTime: Date.now()
     }
     if (existing) {

@@ -458,7 +458,7 @@ const suggestedActions = computed(() => SUGGEST_MAP[currentSegment.value] || ['�
 
 const SUGGEST_MAP = {
   champions: ['VIP 专属权益', '邀请新品体验', '社群运营加深绑定'],
-  loyal: ['复购满减券', '生日礼遇', '老带新分销'],
+  loyal: ['复购满减券', '生日礼券', '老带新分销'],
   potential_loyal: ['第二单折扣', '展示热门 SKU', '订阅邮件营销'],
   new_customers: ['新人礼包', '产品教学内容', '首单售后回访'],
   promising: ['限时优惠券', '推送相关品类', '社群引导'],

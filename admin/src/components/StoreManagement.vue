@@ -174,6 +174,13 @@
             </el-table>
           </el-tab-pane>
           <el-tab-pane label="发票" name="inv">
+            <el-alert
+              type="info"
+              :closable="false"
+              show-icon
+              style="margin-bottom: 12px;"
+              title="此处为门店进销项发票登记（账本）。C 端用户开票申请（invoice_requests）在小程序「我的 → 开票申请」与店长开票处理页，本模块不替代。"
+            />
             <div class="tab-actions">
               <el-button type="primary" size="small" @click="openInvoiceDialog()">登记发票</el-button>
               <el-button size="small" @click="exportStoreInvoiceCsv">导出本店发票 CSV</el-button>

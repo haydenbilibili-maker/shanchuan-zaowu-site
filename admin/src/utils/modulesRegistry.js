@@ -67,7 +67,7 @@ export const MODULES = [
   { id: '56', name: '客服入口配置', group: 'MINIAPP', subgroup: '内容运营', icon: 'Phone', keywords: 'support config kf rk 联系专员 FAQ getSupportConfig' },
   // 小程序配置 — 会员/营销规则
   { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'UserFilled', keywords: 'member level hydjtx vip' },
-  { id: '15', name: '积分规则配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz' },
+  { id: '15', name: '门店积分规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz store_point_rules' },
   { id: '22', name: '成就系统配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'achievement cjxt badge' },
   { id: '20', name: '活动营销规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'marketing rule hdyx coupon' },
   // 小程序配置 — 系统/算法/通知

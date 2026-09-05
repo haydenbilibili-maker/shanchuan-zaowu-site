@@ -485,7 +485,8 @@ export const COLLECTIONS = {
   FINANCE_SETTINGS: 'finance_settings', // 财务设置（多端同步）
   STORE_LEDGER: 'store_ledger', // 店长小程序账本（与 finance_records 桥接）
   MEMBER_LEVELS: 'member_levels',   // 会员等级体系配置
-  POINTS_RULES: 'points_rules',      // 积分规则配置
+  POINTS_RULES: 'points_rules',      // 【遗留】旧积分规则，非线上赠分 SSOT
+  STORE_POINT_RULES: 'store_point_rules', // 门店积分规则（线上 SSOT，¥10=1）
   BOOKING_RULES: 'booking_rules',    // 预约规则配置
   ADMIN_ROLES: 'admin_roles',        // 管理员角色配置
   ADMIN_USERS: 'admin_users',        // 管理员用户

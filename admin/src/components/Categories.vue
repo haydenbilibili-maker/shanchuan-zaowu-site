@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>分类管理 / CATEGORIES</h2>
-        <span class="subtitle">CATEGORY TREE</span>
+        <span class="subtitle">CATEGORY TREE · 藏品通过 categoryId / rootCategoryId 关联（录入藏品时选择）</span>
       </div>
       <el-button type="primary" color="#d4af37" :icon="Plus" @click="openRootDialog">新增一级分类</el-button>
     </div>
@@ -64,9 +64,10 @@
               <el-switch v-model="row.active" :active-value="true" :inactive-value="false" active-color="#d4af37" @change="toggleSubActive(row)" />
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="160">
+          <el-table-column label="操作" width="220">
             <template #default="{ row }">
               <el-button size="small" link @click="openSubDialog(row)">编辑</el-button>
+              <el-button size="small" link type="primary" @click="showLinkedProducts(row)">关联藏品</el-button>
               <el-button size="small" type="danger" link @click="delSub(row)">删除</el-button>
             </template>
           </el-table-column>
@@ -103,6 +104,20 @@
         <el-button type="primary" color="#d4af37" @click="saveSub">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="linkedDialog" :title="`关联藏品 · ${linkedCatName}`" width="640px">
+      <p class="linked-hint">按 categoryId 精确匹配；无 ID 的旧数据可能不显示，请在「藏品档案」重新选择分类并保存。</p>
+      <el-table :data="linkedProducts" v-loading="linkedLoading" max-height="400">
+        <el-table-column prop="title" label="名称" min-width="200" />
+        <el-table-column prop="category" label="分类名" width="120" />
+        <el-table-column prop="price" label="售价" width="100" />
+        <el-table-column label="会员折扣" width="100">
+          <template #default="{ row }">
+            {{ row.memberDiscountEnabled === false ? '关闭' : '开启' }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -127,6 +142,27 @@ const rootDialog = ref(false)
 const subDialog = ref(false)
 const rootForm = reactive({ _id: '', name: '', icon: '', cover: '', desc: '', sort: 0 })
 const subForm = reactive({ _id: '', name: '', latinName: '', icon: '', desc: '', active: true })
+const linkedDialog = ref(false)
+const linkedLoading = ref(false)
+const linkedProducts = ref([])
+const linkedCatName = ref('')
+
+const showLinkedProducts = async (row) => {
+  linkedCatName.value = row.name || ''
+  linkedDialog.value = true
+  linkedLoading.value = true
+  linkedProducts.value = []
+  try {
+    const byId = await fetchCollectionWhere('products', { categoryId: row._id }, 100)
+    linkedProducts.value = byId
+    // 顺带刷新子分类上的 productCount 展示
+    row.productCount = byId.length
+  } catch (e) {
+    ElMessage.error('加载关联藏品失败：' + (e.message || ''))
+  } finally {
+    linkedLoading.value = false
+  }
+}
 
 const refresh = async () => {
   loading.value = true
@@ -293,6 +329,7 @@ onMounted(refresh)
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid #d4af37; padding-left: 12px; font-weight: 800; }
 .title-box .subtitle { color: #999; font-size: 12px; padding-left: 17px; letter-spacing: 2px; }
+.linked-hint { color: #6b6560; font-size: 13px; margin: 0 0 12px; }
 .layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
 .root-pane, .sub-pane { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 .pane-title { font-size: 14px; color: #333; font-weight: bold; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center; }

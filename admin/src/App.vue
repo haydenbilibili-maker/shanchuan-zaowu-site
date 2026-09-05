@@ -214,7 +214,7 @@
               </el-menu-item-group>
               <el-menu-item-group title="会员/营销规则">
                 <el-menu-item index="14"><el-icon><UserFilled /></el-icon><span>会员等级体系</span></el-menu-item>
-                <el-menu-item index="15"><el-icon><Ticket /></el-icon><span>积分规则配置</span></el-menu-item>
+                <el-menu-item index="15"><el-icon><Ticket /></el-icon><span>门店积分规则</span></el-menu-item>
                 <el-menu-item index="22"><el-icon><Trophy /></el-icon><span>成就系统配置</span></el-menu-item>
                 <el-menu-item index="20"><el-icon><Ticket /></el-icon><span>活动营销规则</span></el-menu-item>
               </el-menu-item-group>
@@ -592,13 +592,17 @@
                 <el-input v-model="form.title" placeholder="请输入商品全称" />
             </el-form-item>
             <el-form-item label="所属分类">
-                <el-select v-model="form.category" placeholder="请选择" style="width:100%">
-                    <el-option label="🦋 昆虫标本" value="昆虫" />
-                    <el-option label="💎 矿石晶体" value="矿石" />
-                    <el-option label="🌿 植物封存" value="植物" />
-                    <el-option label="🐚 海洋生物" value="海洋" />
-                    <el-option label="🎨 原创手作" value="手作" />
-                </el-select>
+                <el-cascader
+                    v-model="form.categoryPath"
+                    :options="categoryCascaderOptions"
+                    :props="{ expandTrigger: 'hover', value: 'value', label: 'label', children: 'children' }"
+                    clearable
+                    filterable
+                    placeholder="选择一级 / 二级分类（写入 categoryId）"
+                    style="width:100%"
+                    @change="onCategoryPathChange"
+                />
+                <span class="sku-hint-muted">与小程序馆藏筛选同源：保存 rootCategoryId + categoryId</span>
             </el-form-item>
             <el-row :gutter="20">
                 <el-col :span="12">
@@ -633,6 +637,10 @@
             <el-form-item label="列入藏品档案">
                 <el-switch v-model="form.inArchive" />
                 <span class="sku-hint-muted">重要SKU入档，便于档案筛选与盘点</span>
+            </el-form-item>
+            <el-form-item label="是否参与会员折扣">
+                <el-switch v-model="form.memberDiscountEnabled" />
+                <span class="sku-hint-muted">关闭后按下单原价计价，仍可叠加优惠券等其它促销</span>
             </el-form-item>
             
             <!-- 🟢 限时秒杀设置 -->
@@ -1160,10 +1168,13 @@ const batchPriceForm = ref({ type: 'set', value: 0, discount: 0 }) // 批量调�
 const batchStockForm = ref({ type: 'set', value: 0 }) // 批量调库存表单
 const form = ref({ 
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
-    latinName: '', description: '', isTreasure: false, inArchive: false,
+    categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
+    latinName: '', description: '', isTreasure: false, inArchive: false, memberDiscountEnabled: true,
     seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
+const categoryCascaderOptions = ref([])
+const categoryFlatMap = ref({}) // id -> category doc
 const archiveFilter = ref('all') // 'all' | 'archive' 全部 / 仅档案藏品
 const promoFilter = ref('all') // 'all' | 'seckill' | 'seckill_expired' | 'group'
 
@@ -2067,11 +2078,85 @@ const handleBatchExport = () => {
     }
 }
 
-const openDialog = () => { 
+const loadCategoriesForProduct = async () => {
+    try {
+        const roots = await fetchCollectionSorted(COLLECTIONS.CATEGORIES, {
+            limit: 500,
+            where: { level: 1 },
+            sortFn: (a, b) => (a.sort ?? 0) - (b.sort ?? 0)
+        })
+        const subs = await fetchCollectionSorted(COLLECTIONS.CATEGORIES, {
+            limit: 500,
+            where: { level: 2 },
+            sortFn: (a, b) => (a.sort ?? 0) - (b.sort ?? 0)
+        })
+        const flat = {}
+        roots.forEach((r) => { flat[r._id] = r })
+        subs.forEach((s) => { flat[s._id] = s })
+        categoryFlatMap.value = flat
+        categoryCascaderOptions.value = roots.map((r) => ({
+            value: r._id,
+            label: r.name,
+            children: subs
+                .filter((s) => s.parentId === r._id && s.active !== false)
+                .map((s) => ({ value: s._id, label: s.name }))
+        }))
+    } catch (e) {
+        console.warn('加载分类树失败', e)
+        categoryCascaderOptions.value = []
+    }
+}
+
+const onCategoryPathChange = (path) => {
+    if (!path || !path.length) {
+        form.value.category = ''
+        form.value.categoryId = ''
+        form.value.rootCategoryId = ''
+        form.value.rootCategoryName = ''
+        form.value.categoryType = ''
+        return
+    }
+    const rootId = path[0]
+    const subId = path[1] || ''
+    const root = categoryFlatMap.value[rootId]
+    const sub = subId ? categoryFlatMap.value[subId] : null
+    form.value.rootCategoryId = rootId
+    form.value.rootCategoryName = (root && root.name) || ''
+    form.value.categoryId = subId
+    form.value.category = (sub && sub.name) || form.value.rootCategoryName
+    form.value.categoryType = (sub && sub.categoryType) || (root && root.categoryType) || ''
+}
+
+const resolveCategoryPath = (row) => {
+    if (!row) return []
+    if (row.rootCategoryId && row.categoryId) return [row.rootCategoryId, row.categoryId]
+    if (row.rootCategoryId) return [row.rootCategoryId]
+    if (row.categoryId) {
+        const sub = categoryFlatMap.value[row.categoryId]
+        if (sub && sub.parentId) return [sub.parentId, row.categoryId]
+        return [row.categoryId]
+    }
+    // 兼容仅写了中文 category 名：尝试在子分类中匹配
+    if (row.category) {
+        const hit = Object.values(categoryFlatMap.value).find(
+            (c) => c.level === 2 && c.name === row.category
+        )
+        if (hit) return [hit.parentId, hit._id]
+        const rootHit = Object.values(categoryFlatMap.value).find(
+            (c) => c.level === 1 && c.name === row.category
+        )
+        if (rootHit) return [rootHit._id]
+    }
+    return []
+}
+
+const openDialog = async () => { 
     isEditing.value = false 
+    await loadCategoriesForProduct()
     form.value = { 
-        title: '', price: 0, costPrice: 0, stock: 1, category: '昆虫',
-        latinName: '', description: '', isTreasure: false, inArchive: false,
+        title: '', price: 0, costPrice: 0, stock: 1, category: '',
+        categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
+        latinName: '', description: '', isTreasure: false, inArchive: false, memberDiscountEnabled: true,
         seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
         groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
     } 
@@ -2080,13 +2165,21 @@ const openDialog = () => {
 
 const editItem = async (row) => { 
     isEditing.value = true 
+    await loadCategoriesForProduct()
+    const path = resolveCategoryPath(row)
     form.value = { 
         ...row,
         costPrice: row.costPrice || 0,
+        categoryId: row.categoryId || '',
+        rootCategoryId: row.rootCategoryId || '',
+        rootCategoryName: row.rootCategoryName || '',
+        categoryType: row.categoryType || '',
+        categoryPath: path,
         latinName: row.latinName || '',
         description: row.description || '',
         isTreasure: row.isTreasure || false,
         inArchive: row.inArchive || false,
+        memberDiscountEnabled: row.memberDiscountEnabled !== false,
         seckillEnabled: row.seckill && row.seckill.enabled || false,
         seckillPrice: row.seckill && row.seckill.price || 0,
         seckillStock: row.seckill && row.seckill.stock || 0,
@@ -2148,11 +2241,16 @@ const saveProduct = async () => {
             price: form.value.price,
             costPrice: form.value.costPrice || 0,
             stock: form.value.stock,
-            category: form.value.category,
+            category: form.value.category || '',
+            categoryId: form.value.categoryId || '',
+            rootCategoryId: form.value.rootCategoryId || '',
+            rootCategoryName: form.value.rootCategoryName || '',
+            categoryType: form.value.categoryType || '',
             latinName: form.value.latinName || '',
             description: form.value.description || '',
             isTreasure: form.value.isTreasure || false,
             inArchive: form.value.inArchive || false,
+            memberDiscountEnabled: form.value.memberDiscountEnabled !== false,
             updateTime: Date.now(),
             seckill: seckill,
             groupBuying: groupBuying

@@ -1,196 +1,119 @@
 <template>
   <div class="points-rules-config">
     <div class="header-section">
-      <h2>积分规则配置</h2>
-      <p class="subtitle">配置积分获取规则、上限和有效期设置</p>
+      <h2>门店积分规则</h2>
+      <p class="subtitle">
+        线上 SSOT 为集合 <code>store_point_rules</code>（与小程序 / 云函数同源）。默认：每满 ¥10 赠 1 分。
+        旧集合 <code>points_rules</code> 仅作历史遗留，不再作为线上赠分来源。
+      </p>
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-top: 12px;"
+        title="现场赠分 / 规则保存 / 外部订单绑定审核在小程序「门店积分」与店员工作台；本页用于总部对齐规则与模块开关。"
+      />
     </div>
 
     <div class="config-container">
-      <!-- 积分获取规则 -->
       <div class="rules-section">
-        <h3>积分获取规则</h3>
-        <el-card>
-          <el-form :model="pointsRules" label-width="180px">
-            <!-- 签到规则 -->
-            <el-divider content-position="left">签到奖励</el-divider>
-            <el-form-item label="每日签到积分">
-              <el-input-number 
-                v-model="pointsRules.checkIn.points" 
-                :min="0"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">分</span>
+        <h3>消费赠分（store_point_rules）</h3>
+        <el-card v-loading="loading">
+          <p class="rule-preview">当前规则：{{ ruleText }}</p>
+          <el-form :model="storeRules" label-width="180px">
+            <el-form-item label="规则名称">
+              <el-input v-model="storeRules.name" style="max-width: 360px;" />
             </el-form-item>
-            <el-form-item label="每日签到上限">
-              <el-input-number 
-                v-model="pointsRules.checkIn.dailyLimit" 
-                :min="1"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">次/天</span>
-            </el-form-item>
-            <el-form-item label="连续签到奖励">
-              <el-input-number 
-                v-model="pointsRules.checkIn.continuousBonus" 
-                :min="0"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">连续签到额外奖励积分</span>
-            </el-form-item>
-
-            <!-- 浏览规则 -->
-            <el-divider content-position="left">浏览奖励</el-divider>
-            <el-form-item label="每次浏览积分">
-              <el-input-number 
-                v-model="pointsRules.browse.points" 
-                :min="0"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">分</span>
-            </el-form-item>
-            <el-form-item label="每日浏览上限">
-              <el-input-number 
-                v-model="pointsRules.browse.dailyLimit" 
-                :min="1"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">次/天</span>
-            </el-form-item>
-            <el-form-item label="同商品重复浏览">
-              <el-switch 
-                v-model="pointsRules.browse.allowDuplicate"
-                active-text="允许"
-                inactive-text="不允许"
-              />
-              <span style="margin-left: 10px; color: #999;">同一商品是否可重复获得积分</span>
-            </el-form-item>
-
-            <!-- 消费规则 -->
-            <el-divider content-position="left">消费奖励</el-divider>
-            <el-form-item label="消费金额比例">
-              <el-input-number 
-                v-model="pointsRules.consumption.rate" 
-                :min="0"
-                :step="0.1"
-                :precision="2"
-              />
-              <span style="margin-left: 10px; color: #999;">元 = 1 积分</span>
-            </el-form-item>
-            <el-form-item label="消费积分上限">
-              <el-input-number 
-                v-model="pointsRules.consumption.dailyLimit" 
-                :min="0"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">分/天（0表示无上限）</span>
-            </el-form-item>
-
-            <!-- 分享规则 -->
-            <el-divider content-position="left">分享奖励</el-divider>
-            <el-form-item label="每次分享积分">
-              <el-input-number 
-                v-model="pointsRules.share.points" 
-                :min="0"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">分</span>
-            </el-form-item>
-            <el-form-item label="每日分享上限">
-              <el-input-number 
-                v-model="pointsRules.share.dailyLimit" 
-                :min="1"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">次/天</span>
-            </el-form-item>
-
-            <!-- 评价规则 -->
-            <el-divider content-position="left">评价奖励</el-divider>
-            <el-form-item label="每次评价积分">
-              <el-input-number 
-                v-model="pointsRules.review.points" 
-                :min="0"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">分</span>
-            </el-form-item>
-            <el-form-item label="每日评价上限">
-              <el-input-number 
-                v-model="pointsRules.review.dailyLimit" 
-                :min="1"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">次/天</span>
-            </el-form-item>
-
-            <!-- 积分有效期 -->
-            <el-divider content-position="left">积分有效期</el-divider>
-            <el-form-item label="积分有效期">
-              <el-radio-group v-model="pointsRules.expiry.type">
-                <el-radio label="never">永久有效</el-radio>
-                <el-radio label="days">按天数</el-radio>
-                <el-radio label="year">按年度</el-radio>
+            <el-form-item label="赠送方式">
+              <el-radio-group v-model="storeRules.mode">
+                <el-radio label="perThreshold">每满门槛累加</el-radio>
+                <el-radio label="fixed">满门槛只送一次</el-radio>
+                <el-radio label="ratio">按比例</el-radio>
               </el-radio-group>
             </el-form-item>
-            <el-form-item label="有效期天数" v-if="pointsRules.expiry.type === 'days'">
-              <el-input-number 
-                v-model="pointsRules.expiry.days" 
-                :min="1"
-                :precision="0"
-              />
-              <span style="margin-left: 10px; color: #999;">天</span>
+            <el-form-item v-if="storeRules.mode !== 'ratio'" label="金额门槛（元）">
+              <el-input-number v-model="storeRules.threshold" :min="0.01" :step="1" :precision="2" />
+              <span class="hint">默认 10（¥10 = 1 分）</span>
+            </el-form-item>
+            <el-form-item v-if="storeRules.mode !== 'ratio'" label="每档赠分">
+              <el-input-number v-model="storeRules.pointsPerThreshold" :min="0" :precision="0" />
+            </el-form-item>
+            <template v-if="storeRules.mode === 'ratio'">
+              <el-form-item label="最低消费（元）">
+                <el-input-number v-model="storeRules.minAmount" :min="0" :precision="2" />
+              </el-form-item>
+              <el-form-item label="赠分比例">
+                <el-input-number v-model="storeRules.ratio" :min="0" :max="10" :step="0.01" :precision="3" />
+                <span class="hint">0.1 = 10%</span>
+              </el-form-item>
+            </template>
+            <el-form-item label="取整方式">
+              <el-radio-group v-model="storeRules.roundMode">
+                <el-radio label="floor">向下取整</el-radio>
+                <el-radio label="round">四舍五入</el-radio>
+                <el-radio label="ceil">向上取整</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="单用户日上限">
+              <el-input-number v-model="storeRules.dailyPointsCapPerUser" :min="0" :precision="0" />
+              <span class="hint">分 / 天</span>
+            </el-form-item>
+            <el-form-item label="兑券说明">
+              <span class="hint">小程序侧：100 积分 ≈ ¥10 代金券（见 exchangeCoupon / storePoints）</span>
             </el-form-item>
 
-            <!-- 特殊活动倍率 -->
-            <el-divider content-position="left">特殊活动</el-divider>
-            <el-form-item label="活动积分倍率">
-              <el-input-number 
-                v-model="pointsRules.activity.multiplier" 
-                :min="1"
-                :step="0.1"
-                :precision="1"
-              />
-              <span style="margin-left: 10px; color: #999;">倍（活动期间积分倍率）</span>
+            <el-divider content-position="left">模块开关</el-divider>
+            <el-form-item
+              v-for="(label, key) in moduleLabels"
+              :key="key"
+              :label="label"
+            >
+              <el-switch v-model="storeRules.modules[key]" active-text="开" inactive-text="关" />
             </el-form-item>
-            <el-form-item label="活动开始时间" v-if="pointsRules.activity.enabled">
-              <el-date-picker
-                v-model="pointsRules.activity.startTime"
-                type="datetime"
-                placeholder="选择开始时间"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
+
+            <el-divider content-position="left">行为奖励额度</el-divider>
+            <el-form-item
+              v-for="(cfg, key) in storeRules.moduleRewards"
+              :key="key"
+              :label="moduleLabels[key] || key"
+            >
+              <el-input-number v-model="cfg.points" :min="0" :precision="0" />
+              <span class="hint">分 / 次</span>
+              <el-input-number
+                v-model="cfg.dailyLimit"
+                :min="0"
+                :precision="0"
+                style="margin-left: 12px;"
               />
+              <span class="hint">次 / 天</span>
             </el-form-item>
-            <el-form-item label="活动结束时间" v-if="pointsRules.activity.enabled">
-              <el-date-picker
-                v-model="pointsRules.activity.endTime"
-                type="datetime"
-                placeholder="选择结束时间"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
-              />
+
+            <el-divider content-position="left">外部订单绑定</el-divider>
+            <el-form-item label="须填写金额">
+              <el-switch v-model="storeRules.platformOrderBind.requireAmount" />
             </el-form-item>
-            <el-form-item label="启用活动倍率">
-              <el-switch 
-                v-model="pointsRules.activity.enabled"
-                active-text="启用"
-                inactive-text="禁用"
-              />
+            <el-form-item label="须店长确认">
+              <el-switch v-model="storeRules.platformOrderBind.requireManagerConfirm" />
+            </el-form-item>
+            <el-form-item label="支持平台">
+              <el-tag
+                v-for="p in storeRules.platformOrderBind.platforms"
+                :key="p.id"
+                style="margin-right: 8px;"
+              >{{ p.name }}</el-tag>
+              <span class="hint">审核入口在小程序门店积分 / 订单绑定</span>
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" @click="saveRules" :loading="saving">
-                保存积分规则
-              </el-button>
-              <el-button @click="resetRules">重置为默认值</el-button>
+              <el-button type="primary" :loading="saving" @click="saveStoreRules">保存门店积分规则</el-button>
+              <el-button @click="resetStoreRules">重置为 v3 默认</el-button>
             </el-form-item>
           </el-form>
         </el-card>
       </div>
 
-      <!-- 积分流水记录 -->
       <div class="records-section" style="margin-top: 40px;">
-        <h3>积分流水记录</h3>
+        <h3>积分流水（只读）</h3>
         <div class="action-bar">
           <el-date-picker
             v-model="dateRange"
@@ -200,159 +123,201 @@
             end-placeholder="结束日期"
             @change="loadRecords"
           />
-          <el-select v-model="actionFilter" placeholder="筛选动作类型" @change="loadRecords" style="width: 200px;">
+          <el-select v-model="actionFilter" placeholder="筛选动作类型" style="width: 200px;" @change="loadRecords">
             <el-option label="全部" value="" />
             <el-option label="签到" value="check_in" />
             <el-option label="浏览" value="browse" />
-            <el-option label="消费" value="consumption" />
+            <el-option label="消费/门店赠分" value="store_purchase" />
             <el-option label="分享" value="share" />
             <el-option label="评价" value="review" />
+            <el-option label="订单绑定" value="order_bind" />
           </el-select>
           <el-button @click="loadRecords">
             <el-icon><Refresh /></el-icon>刷新
           </el-button>
         </div>
 
-        <el-table 
-          :data="records" 
-          v-loading="recordsLoading"
-          style="margin-top: 20px;"
-          max-height="400"
-        >
+        <el-table :data="records" v-loading="recordsLoading" style="margin-top: 20px;" max-height="400">
           <el-table-column prop="userName" label="用户" width="120" />
-          <el-table-column prop="action" label="动作类型" width="100">
+          <el-table-column prop="action" label="动作类型" width="120">
             <template #default="{ row }">
-              <el-tag>{{ getActionName(row.action) }}</el-tag>
+              <el-tag>{{ getActionName(row.action || row.type || row.source) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="points" label="积分" width="80">
             <template #default="{ row }">
-              <span style="color: #d4af37;">+{{ row.points }}</span>
+              <span style="color: #d4af37;">{{ formatPoints(row.points ?? row.delta) }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="dateStr" label="日期" width="120" />
           <el-table-column prop="createTime" label="时间" width="180">
             <template #default="{ row }">
-              {{ formatTime(row.createTime) }}
+              {{ formatTime(row.createTime || row._createTime) }}
             </template>
           </el-table-column>
         </el-table>
       </div>
+
+      <el-collapse style="margin-top: 32px;">
+        <el-collapse-item title="旧 points_rules（遗留，勿当作线上源）" name="legacy">
+          <el-alert
+            type="error"
+            :closable="false"
+            show-icon
+            title="此集合不被 earnPoints / grantStorePoints 读取。仅保留只读对照；请勿再依赖「元=1积分」口径。"
+            style="margin-bottom: 16px;"
+          />
+          <pre class="legacy-pre">{{ legacyPreview }}</pre>
+        </el-collapse-item>
+      </el-collapse>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { fetchCollectionLimit, fetchCollectionWhere, cdnUpsertSingleton, getCdnDatabase, COLLECTIONS } from '../cloud'
+import { ref, reactive, computed, onMounted } from 'vue'
+import {
+  fetchCollectionLimit,
+  fetchCollectionWhere,
+  cdnUpsertSingleton,
+  cdnUpdate,
+  getCdnDatabase,
+  COLLECTIONS
+} from '../cloud'
+import {
+  getDefaultStorePointConfig,
+  normalizeStorePointConfig,
+  describeStorePointRule,
+  MODULE_LABELS
+} from '../utils/storePointRules'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 
+const loading = ref(false)
 const saving = ref(false)
 const recordsLoading = ref(false)
 const records = ref([])
 const dateRange = ref(null)
 const actionFilter = ref('')
+const ruleDocId = ref('')
+const moduleLabels = MODULE_LABELS
 
-// 积分规则配置
-const pointsRules = reactive({
-  checkIn: {
-    points: 5,
-    dailyLimit: 1,
-    continuousBonus: 10
-  },
-  browse: {
-    points: 1,
-    dailyLimit: 5,
-    allowDuplicate: false
-  },
-  consumption: {
-    rate: 1, // 1元 = 1积分
-    dailyLimit: 0 // 0表示无上限
-  },
-  share: {
-    points: 2,
-    dailyLimit: 10
-  },
-  review: {
-    points: 3,
-    dailyLimit: 5
-  },
-  expiry: {
-    type: 'never', // never | days | year
-    days: 365
-  },
-  activity: {
-    enabled: false,
-    multiplier: 2,
-    startTime: null,
-    endTime: null
-  }
-})
+const storeRules = reactive(getDefaultStorePointConfig())
+const legacyRules = ref(null)
 
-// 获取动作名称
+const ruleText = computed(() => describeStorePointRule(storeRules))
+const legacyPreview = computed(() =>
+  legacyRules.value
+    ? JSON.stringify(legacyRules.value, null, 2)
+    : '（云库无 points_rules 文档）'
+)
+
 const getActionName = (action) => {
   const map = {
     check_in: '签到',
     browse: '浏览',
     consumption: '消费',
+    store_purchase: '门店赠分',
     share: '分享',
-    review: '评价'
+    review: '评价',
+    order_bind: '订单绑定',
+    orderBind: '订单绑定'
   }
-  return map[action] || action
+  return map[action] || action || '—'
 }
 
-// 格式化时间
 const formatTime = (time) => {
   if (!time) return ''
   const date = time instanceof Date ? time : new Date(time)
   return date.toLocaleString('zh-CN')
 }
 
-// 加载积分规则
-const loadRules = async () => {
+const formatPoints = (n) => {
+  const v = Number(n) || 0
+  return v >= 0 ? `+${v}` : String(v)
+}
+
+const applyStoreConfig = (raw, docId = '') => {
+  const normalized = normalizeStorePointConfig(raw || {})
+  Object.keys(storeRules).forEach((k) => delete storeRules[k])
+  Object.assign(storeRules, normalized)
+  ruleDocId.value = docId || ''
+}
+
+const loadStoreRules = async () => {
+  loading.value = true
   try {
-    const rows = await fetchCollectionLimit(COLLECTIONS.POINTS_RULES, { limit: 1 })
-    if (rows.length > 0) {
-      Object.assign(pointsRules, rows[0].rules || pointsRules)
+    const rows = await fetchCollectionLimit(COLLECTIONS.STORE_POINT_RULES, { limit: 20 })
+    const active = (rows || [])
+      .filter((r) => r.status !== 'inactive')
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+    const global = active.find((r) => !Array.isArray(r.storeIds) || !r.storeIds.length) || active[0]
+    if (global) {
+      applyStoreConfig(global, global._id)
+    } else {
+      applyStoreConfig(getDefaultStorePointConfig(), '')
     }
   } catch (error) {
-    console.error('加载积分规则失败:', error)
+    console.error('加载门店积分规则失败:', error)
+    applyStoreConfig(getDefaultStorePointConfig(), '')
+    ElMessage.warning('未读到 store_point_rules，已使用 v3 默认（¥10=1）')
+  } finally {
+    loading.value = false
   }
 }
 
-// 保存积分规则
-const saveRules = async () => {
+const loadLegacyRules = async () => {
+  try {
+    const rows = await fetchCollectionLimit(COLLECTIONS.POINTS_RULES, { limit: 1 })
+    legacyRules.value = rows[0] || null
+  } catch (e) {
+    legacyRules.value = null
+  }
+}
+
+const saveStoreRules = async () => {
   saving.value = true
   try {
-    await cdnUpsertSingleton(COLLECTIONS.POINTS_RULES, {
-      rules: { ...pointsRules },
-      _updateTime: Date.now()
-    })
-    ElMessage.success('积分规则已保存')
+    const normalized = normalizeStorePointConfig(storeRules)
+    const { modules, moduleRewards, platformOrderBind, ...rest } = normalized
+    const payload = {
+      ...rest,
+      modules: { ...modules },
+      moduleRewards: JSON.parse(JSON.stringify(moduleRewards)),
+      platformOrderBind: {
+        ...platformOrderBind,
+        platforms: (platformOrderBind.platforms || []).slice()
+      },
+      status: 'active',
+      applyMemberMultiplier: false,
+      _updateTime: Date.now(),
+      updateTime: Date.now()
+    }
+    if (ruleDocId.value) {
+      await cdnUpdate(COLLECTIONS.STORE_POINT_RULES, ruleDocId.value, payload)
+    } else {
+      await cdnUpsertSingleton(COLLECTIONS.STORE_POINT_RULES, {
+        ...payload,
+        ruleId: payload.ruleId || 'store_points_default_v3',
+        _createTime: Date.now(),
+        createTime: Date.now()
+      })
+    }
+    ElMessage.success('已写入 store_point_rules')
+    await loadStoreRules()
   } catch (error) {
-    console.error('保存积分规则失败:', error)
-    ElMessage.error('保存失败')
+    console.error('保存门店积分规则失败:', error)
+    ElMessage.error('保存失败：' + (error.message || '未知错误'))
   } finally {
     saving.value = false
   }
 }
 
-// 重置规则
-const resetRules = () => {
-  Object.assign(pointsRules, {
-    checkIn: { points: 5, dailyLimit: 1, continuousBonus: 10 },
-    browse: { points: 1, dailyLimit: 5, allowDuplicate: false },
-    consumption: { rate: 1, dailyLimit: 0 },
-    share: { points: 2, dailyLimit: 10 },
-    review: { points: 3, dailyLimit: 5 },
-    expiry: { type: 'never', days: 365 },
-    activity: { enabled: false, multiplier: 2, startTime: null, endTime: null }
-  })
-  ElMessage.info('已重置为默认值')
+const resetStoreRules = () => {
+  applyStoreConfig(getDefaultStorePointConfig(), ruleDocId.value)
+  ElMessage.info('已重置为 v3 默认（每满 ¥10 赠 1 分）')
 }
 
-// 加载积分流水记录
 const loadRecords = async () => {
   recordsLoading.value = true
   try {
@@ -379,18 +344,18 @@ const loadRecords = async () => {
       .sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
       .slice(0, 100)
 
-    const userIds = [...new Set(rows.map(r => r._openid).filter(Boolean))]
+    const userIds = [...new Set(rows.map((r) => r._openid).filter(Boolean))]
     let users = []
     if (userIds.length && _) {
       users = await fetchCollectionWhere(COLLECTIONS.USERS, { _openid: _.in(userIds) }, userIds.length)
     }
 
     const userMap = {}
-    users.forEach(u => {
+    users.forEach((u) => {
       userMap[u._openid] = u.nickName || u.name || '未知用户'
     })
 
-    records.value = rows.map(r => ({
+    records.value = rows.map((r) => ({
       ...r,
       userName: userMap[r._openid] || '未知用户'
     }))
@@ -404,7 +369,8 @@ const loadRecords = async () => {
 }
 
 onMounted(() => {
-  loadRules()
+  loadStoreRules()
+  loadLegacyRules()
   loadRecords()
 })
 </script>
@@ -431,6 +397,14 @@ onMounted(() => {
   color: #5a6c7d;
   margin: 0;
   font-size: 14px;
+  line-height: 1.6;
+}
+
+.subtitle code {
+  background: #f5f0e6;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 .config-container {
@@ -448,11 +422,35 @@ onMounted(() => {
   font-size: 18px;
 }
 
+.rule-preview {
+  margin: 0 0 16px;
+  color: #8a7530;
+  font-weight: 500;
+}
+
+.hint {
+  margin-left: 10px;
+  color: #999;
+  font-size: 13px;
+}
+
 .action-bar {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.legacy-pre {
+  background: #f8f6f2;
+  border: 1px solid #e8e5de;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  max-height: 280px;
+  overflow: auto;
+  color: #4a4540;
 }
 
 :deep(.el-card) {
@@ -461,52 +459,12 @@ onMounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
-:deep(.el-card__body) {
-  color: #2c3e50;
-}
-
 :deep(.el-form-item__label) {
   color: #2c3e50;
-}
-
-:deep(.el-input__wrapper) {
-  background: #ffffff;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-}
-
-:deep(.el-input__inner) {
-  color: #2c3e50;
-}
-
-:deep(.el-table) {
-  background: #ffffff;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-}
-
-:deep(.el-table th) {
-  background: #f5f7fa;
-  color: #d4af37;
-  border-bottom: 2px solid rgba(212, 175, 55, 0.2);
-}
-
-:deep(.el-table td) {
-  background: #ffffff;
-  color: #2c3e50;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
 }
 
 :deep(.el-divider__text) {
   background: #ffffff;
   color: #d4af37;
 }
-
-:deep(.el-date-editor) {
-  background: #ffffff;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-}
-
-:deep(.el-select) {
-  background: #ffffff;
-}
 </style>
-
