@@ -417,6 +417,7 @@
                     <el-radio-group v-model="archiveFilter" size="small">
                         <el-radio-button label="all">全部</el-radio-button>
                         <el-radio-button label="archive">仅档案藏品</el-radio-button>
+                        <el-radio-button label="oneOfAKind">仅孤品</el-radio-button>
                     </el-radio-group>
                     <span class="archive-filter-label" style="margin-left: 8px;">营销：</span>
                     <el-radio-group v-model="promoFilter" size="small">
@@ -496,6 +497,13 @@
                     <el-table-column prop="price" label="售价" width="140">
                          <template #default="scope">
                              <span class="price-tag">¥{{ scope.row.price }}</span>
+                             <el-tag
+                                 v-if="scope.row.hasSku && scope.row.skus?.length"
+                                 size="small"
+                                 type="warning"
+                                 effect="plain"
+                                 style="margin-left:6px;"
+                             >{{ scope.row.skus.length }}规格</el-tag>
                          </template>
                     </el-table-column>
                     <el-table-column label="营销活动" width="180">
@@ -531,6 +539,12 @@
                         <template #default="scope">
                             <el-tag v-if="scope.row.inArchive" type="success" size="small" effect="light">在档</el-tag>
                             <el-tag v-else type="info" size="small" effect="plain">未入档</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="孤品" width="80">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.isOneOfAKind" type="warning" size="small" effect="dark">孤品</el-tag>
+                            <span v-else class="promo-none">—</span>
                         </template>
                     </el-table-column>
                     <el-table-column label="状态" width="100">
@@ -601,7 +615,7 @@
     <el-dialog
         v-model="dialogVisible"
         :title="isEditing ? '编辑藏品档案' : '录入新藏品'" 
-        width="720px"
+        width="800px"
         destroy-on-close
         class="product-archive-dialog"
     >
@@ -671,7 +685,14 @@
             <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="初始库存">
-                        <el-input-number v-model="form.stock" :min="0" :step="1" style="width:100%" />
+                        <el-input-number
+                            v-model="form.stock"
+                            :min="0"
+                            :step="1"
+                            style="width:100%"
+                            :disabled="form.hasSku"
+                        />
+                        <span v-if="form.hasSku" class="sku-hint-muted">多规格时由各规格库存汇总</span>
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -683,6 +704,74 @@
             <el-form-item label="藏品描述">
                 <el-input v-model="form.description" type="textarea" :rows="3" placeholder="列表/详情页简介（纯文本 description）" />
             </el-form-item>
+
+            <el-divider content-position="left">多规格 SKU（skus）</el-divider>
+            <el-form-item label="启用多规格">
+                <el-switch v-model="form.hasSku" @change="onHasSkuChange" />
+                <span class="sku-hint-muted">一物一图：每规格独立封面/图集，小程序选规格所见即所得</span>
+            </el-form-item>
+            <template v-if="form.hasSku">
+                <el-form-item label="规格维度">
+                    <el-input
+                        v-model="form.skuDimensionsStr"
+                        placeholder="可选，如：尺寸,装裱（逗号分隔；多维规格名用 / 分隔）"
+                    />
+                </el-form-item>
+                <div class="sku-variants-editor">
+                    <div
+                        v-for="(sku, idx) in form.skus"
+                        :key="sku.id || idx"
+                        class="sku-variant-row"
+                    >
+                        <div class="sku-variant-fields">
+                            <el-input v-model="sku.specLabel" placeholder="规格名（如 30cm / 金框）" />
+                            <el-input v-model="sku.sku" placeholder="SKU 编码（可选）" />
+                            <el-input-number v-model="sku.price" :min="0" :precision="2" :step="10" controls-position="right" placeholder="价格" />
+                            <el-input-number v-model="sku.stock" :min="0" :step="1" controls-position="right" placeholder="库存" />
+                            <el-button type="danger" link :icon="Delete" @click="removeSkuRow(idx)">删除</el-button>
+                        </div>
+                        <div class="sku-variant-images">
+                            <div v-if="sku.imagePreviews?.length" class="gallery-thumbs">
+                                <div
+                                    v-for="(url, imgIdx) in sku.imagePreviews"
+                                    :key="'skuimg-' + idx + '-' + imgIdx"
+                                    class="gallery-thumb"
+                                    :class="{ 'is-cover': imgIdx === 0 }"
+                                >
+                                    <el-image
+                                        :src="url"
+                                        :preview-src-list="sku.imagePreviews"
+                                        :initial-index="imgIdx"
+                                        preview-teleported
+                                        fit="cover"
+                                        class="gallery-thumb-img"
+                                    />
+                                    <div class="gallery-thumb-actions">
+                                        <el-button v-if="imgIdx !== 0" size="small" link type="primary" @click="setSkuCoverImage(idx, imgIdx)">设封面</el-button>
+                                        <el-button size="small" link type="danger" @click="removeSkuImage(idx, imgIdx)">删除</el-button>
+                                    </div>
+                                    <span v-if="imgIdx === 0" class="cover-badge">封面</span>
+                                </div>
+                            </div>
+                            <el-upload
+                                drag
+                                class="product-image-upload product-image-upload--sku"
+                                :show-file-list="false"
+                                accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                                multiple
+                                :disabled="productMediaUploading"
+                                :before-upload="beforeProductImageUpload"
+                                :http-request="(opt) => uploadSkuImage(idx, opt)"
+                            >
+                                <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+                                <div class="el-upload__text">点击或拖拽图片到此处</div>
+                            </el-upload>
+                            <span class="sku-hint-muted">至少 1 张；首张为该规格主图；支持 JPG / PNG / WebP / GIF</span>
+                        </div>
+                    </div>
+                    <el-button type="primary" plain :icon="Plus" @click="addSkuRow">添加规格</el-button>
+                </div>
+            </template>
 
             <el-divider content-position="left">商品图（images）</el-divider>
             <el-form-item label="轮播图">
@@ -712,14 +801,19 @@
                         </div>
                     </div>
                     <el-upload
+                        drag
+                        class="product-image-upload"
                         :show-file-list="false"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
                         multiple
+                        :disabled="productMediaUploading"
+                        :before-upload="beforeProductImageUpload"
                         :http-request="uploadProductImage"
                     >
-                        <el-button :icon="Picture" :loading="productMediaUploading">上传轮播图</el-button>
+                        <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+                        <div class="el-upload__text">点击或拖拽图片到此处</div>
                     </el-upload>
-                    <span class="sku-hint-muted">首张为封面 images[0]，与小程序详情轮播一致</span>
+                    <span class="sku-hint-muted">首张为封面 images[0]，与小程序详情轮播一致；支持 JPG / PNG / WebP / GIF</span>
                 </div>
             </el-form-item>
 
@@ -748,14 +842,19 @@
                         </div>
                     </div>
                     <el-upload
+                        drag
+                        class="product-image-upload"
                         :show-file-list="false"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
                         multiple
+                        :disabled="productMediaUploading"
+                        :before-upload="beforeProductImageUpload"
                         :http-request="uploadDetailImage"
                     >
-                        <el-button :icon="Picture" :loading="productMediaUploading">上传详情图</el-button>
+                        <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+                        <div class="el-upload__text">点击或拖拽图片到此处</div>
                     </el-upload>
-                    <span class="sku-hint-muted">写入 detailImages，详情页「图文详情」区展示</span>
+                    <span class="sku-hint-muted">写入 detailImages，详情页「图文详情」区展示；支持 JPG / PNG / WebP / GIF</span>
                 </div>
             </el-form-item>
             <el-form-item label="富文本">
@@ -767,6 +866,10 @@
 
             <el-form-item label="镇店之宝">
                 <el-switch v-model="form.isTreasure" />
+            </el-form-item>
+            <el-form-item label="孤品">
+                <el-switch v-model="form.isOneOfAKind" />
+                <span class="sku-hint-muted">仅一件、不可复制补货</span>
             </el-form-item>
             <el-form-item label="列入藏品档案">
                 <el-switch v-model="form.inArchive" />
@@ -990,7 +1093,7 @@ const asyncWith = (loader) => defineAsyncComponent({
 // 导入图标库
 import {
   Plus, Edit, Delete, Box, List, Lock, Money, Odometer, FolderAdd,
-  UserFilled, Picture, PictureFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View,
+  UserFilled, Picture, PictureFilled, UploadFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View,
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
   DataBoard, TrendCharts, VideoCamera, Van,
   // 🟢 小程序对齐补充图标
@@ -1315,10 +1418,11 @@ const form = ref({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
-    latinName: '', description: '', isTreasure: false, inArchive: false, memberDiscountEnabled: true,
+    latinName: '', description: '', isTreasure: false, isOneOfAKind: false, inArchive: false, memberDiscountEnabled: true,
     images: [], imagePreviews: [],
     detailImages: [], detailImagePreviews: [],
     detailHtml: '',
+    hasSku: false, skus: [], skuDimensionsStr: '',
     seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
@@ -1338,7 +1442,7 @@ const isCraftEligibleProduct = computed(() => {
     const blob = [f.rootCategoryName, f.category].filter(Boolean).join(' ')
     return /昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)
 })
-const archiveFilter = ref('all') // 'all' | 'archive' 全部 / 仅档案藏品
+const archiveFilter = ref('all') // 'all' | 'archive' | 'oneOfAKind' 全部 / 仅档案藏品 / 仅孤品
 const promoFilter = ref('all') // 'all' | 'seckill' | 'seckill_expired' | 'group'
 
 // =================================================
@@ -1822,6 +1926,8 @@ const displayProducts = computed(() => {
     let list = products.value || []
     if (archiveFilter.value === 'archive') {
         list = list.filter(p => p.inArchive === true)
+    } else if (archiveFilter.value === 'oneOfAKind') {
+        list = list.filter(p => p.isOneOfAKind === true)
     }
     if (promoFilter.value === 'seckill') {
         list = list.filter(p => p.seckill?.enabled && !isSeckillExpired(p))
@@ -2201,6 +2307,7 @@ const handleBatchExport = () => {
             成本价: `¥${product.costPrice || 0}`,
             库存: product.stock || 0,
             上架状态: product.isOnShelf ? '上架' : '下架',
+            孤品: product.isOneOfAKind ? '是' : '否',
             拉丁学名: product.latinName || '',
             描述: (product.description || '').substring(0, 100),
             创建时间: product.createTime ? new Date(product.createTime).toLocaleString() : ''
@@ -2327,10 +2434,11 @@ const openDialog = async () => {
         title: '', price: 0, costPrice: 0, stock: 1, category: '',
         categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
         channel: '', craftType: '',
-        latinName: '', description: '', isTreasure: false, inArchive: false, memberDiscountEnabled: true,
+        latinName: '', description: '', isTreasure: false, isOneOfAKind: false, inArchive: false, memberDiscountEnabled: true,
         images: [], imagePreviews: [],
         detailImages: [], detailImagePreviews: [],
         detailHtml: '',
+        hasSku: false, skus: [], skuDimensionsStr: '',
         seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
         groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
     } 
@@ -2343,6 +2451,23 @@ const editItem = async (row) => {
     const path = resolveCategoryPath(row)
     const images = Array.isArray(row.images) ? [...row.images].filter(Boolean) : []
     const detailImages = Array.isArray(row.detailImages) ? [...row.detailImages].filter(Boolean) : []
+    const rawSkus = Array.isArray(row.skus) ? row.skus.filter((s) => s && s.id) : []
+    const skus = await Promise.all(rawSkus.map(async (s) => {
+        const skuImages = Array.isArray(s.images) && s.images.length
+            ? s.images.filter(Boolean)
+            : (s.image ? [s.image] : [])
+        const imagePreviews = skuImages.length ? await getTempFileUrls(skuImages) : []
+        return {
+            id: s.id,
+            specLabel: s.specLabel || '',
+            sku: s.sku || s.skuCode || '',
+            price: parseFloat(s.price) || 0,
+            stock: parseInt(s.stock, 10) || 0,
+            images: skuImages,
+            imagePreviews,
+            specs: s.specs || null,
+        }
+    }))
     const [imagePreviews, detailImagePreviews] = await Promise.all([
         getTempFileUrls(images),
         getTempFileUrls(detailImages),
@@ -2364,7 +2489,11 @@ const editItem = async (row) => {
         detailImages,
         detailImagePreviews,
         detailHtml: row.detailHtml || '',
+        hasSku: !!(row.hasSku && skus.length),
+        skus,
+        skuDimensionsStr: Array.isArray(row.skuDimensions) ? row.skuDimensions.join(',') : '',
         isTreasure: row.isTreasure || false,
+        isOneOfAKind: row.isOneOfAKind || false,
         inArchive: row.inArchive || false,
         memberDiscountEnabled: row.memberDiscountEnabled !== false,
         seckillEnabled: row.seckill && row.seckill.enabled || false,
@@ -2385,6 +2514,134 @@ const refreshImagePreviews = async () => {
 }
 const refreshDetailImagePreviews = async () => {
     form.value.detailImagePreviews = await getTempFileUrls(form.value.detailImages || [])
+}
+
+const makeSkuId = () => `sku_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+
+const createEmptySkuRow = () => ({
+    id: makeSkuId(),
+    specLabel: '',
+    sku: '',
+    price: form.value.price || 0,
+    stock: 1,
+    images: [],
+    imagePreviews: [],
+    specs: null,
+})
+
+const onHasSkuChange = (enabled) => {
+    if (enabled && (!form.value.skus || !form.value.skus.length)) {
+        form.value.skus = [createEmptySkuRow()]
+    }
+    if (!enabled) {
+        form.value.skus = []
+        form.value.skuDimensionsStr = ''
+    }
+}
+
+const addSkuRow = () => {
+    form.value.skus = [...(form.value.skus || []), createEmptySkuRow()]
+}
+
+const removeSkuRow = (idx) => {
+    const next = [...(form.value.skus || [])]
+    next.splice(idx, 1)
+    form.value.skus = next
+    if (!next.length) {
+        form.value.hasSku = false
+        form.value.skuDimensionsStr = ''
+    }
+}
+
+const refreshSkuImagePreviews = async (skuIdx) => {
+    const sku = form.value.skus?.[skuIdx]
+    if (!sku) return
+    sku.imagePreviews = await getTempFileUrls(sku.images || [])
+}
+
+const PRODUCT_IMAGE_MIME = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'])
+const PRODUCT_IMAGE_EXT = /\.(jpe?g|png|webp|gif)$/i
+
+/** 拖拽时 accept 未必可靠，统一校验图片类型 */
+const beforeProductImageUpload = (file) => {
+    const type = String(file?.type || '').toLowerCase()
+    const name = String(file?.name || '')
+    if (PRODUCT_IMAGE_MIME.has(type) || PRODUCT_IMAGE_EXT.test(name)) return true
+    if (type.startsWith('image/') && (!name.includes('.') || PRODUCT_IMAGE_EXT.test(name))) return true
+    ElMessage.error('仅支持 JPG / PNG / WebP / GIF 图片')
+    return false
+}
+
+const uploadSkuImage = async (skuIdx, opt) => {
+    const sku = form.value.skus?.[skuIdx]
+    if (!sku) return
+    productMediaUploading.value = true
+    try {
+        const fileID = await uploadAdminBinary(opt.file, 'products')
+        sku.images = [...(sku.images || []), fileID]
+        await refreshSkuImagePreviews(skuIdx)
+        ElMessage.success('规格图已上传')
+    } catch (e) {
+        ElMessage.error('上传失败: ' + (e.message || '未知错误'))
+    } finally {
+        productMediaUploading.value = false
+    }
+}
+
+const removeSkuImage = async (skuIdx, imgIdx) => {
+    const sku = form.value.skus?.[skuIdx]
+    if (!sku) return
+    const imgs = [...(sku.images || [])]
+    imgs.splice(imgIdx, 1)
+    sku.images = imgs
+    await refreshSkuImagePreviews(skuIdx)
+}
+
+const setSkuCoverImage = async (skuIdx, imgIdx) => {
+    if (imgIdx <= 0) return
+    const sku = form.value.skus?.[skuIdx]
+    if (!sku) return
+    const imgs = [...(sku.images || [])]
+    const [picked] = imgs.splice(imgIdx, 1)
+    imgs.unshift(picked)
+    sku.images = imgs
+    await refreshSkuImagePreviews(skuIdx)
+}
+
+const buildSkusForSave = () => {
+    const dims = String(form.value.skuDimensionsStr || '')
+        .split(/[,，]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+
+    const skus = (form.value.skus || [])
+        .filter((s) => s && String(s.specLabel || '').trim())
+        .map((s, i) => {
+            const specLabel = String(s.specLabel).trim()
+            let specs = s.specs && typeof s.specs === 'object' ? { ...s.specs } : null
+            if (dims.length && specLabel.includes('/')) {
+                const parts = specLabel.split('/').map((x) => x.trim())
+                specs = {}
+                dims.forEach((dim, idx) => {
+                    specs[dim] = parts[idx] || parts[parts.length - 1] || ''
+                })
+            } else if (dims.length === 1) {
+                specs = { [dims[0]]: specLabel }
+            }
+            const images = Array.isArray(s.images) ? s.images.filter(Boolean) : []
+            return {
+                id: s.id || makeSkuId() + '_' + i,
+                specLabel,
+                sku: String(s.sku || '').trim(),
+                specs: specs || {},
+                price: parseFloat(s.price) || 0,
+                stock: parseInt(s.stock, 10) || 0,
+                image: images[0] || '',
+                images,
+            }
+        })
+
+    return { skus, skuDimensions: dims }
 }
 
 const uploadProductImage = async (opt) => {
@@ -2481,6 +2738,19 @@ const deleteItem = (row) => {
 
 const saveProduct = async () => {
     if(!form.value.title) return ElMessage.warning('请输入藏品名称')
+
+    let hasSku = false
+    let skus = []
+    let skuDimensions = []
+    if (form.value.hasSku) {
+        const built = buildSkusForSave()
+        skus = built.skus
+        skuDimensions = built.skuDimensions
+        if (!skus.length) return ElMessage.warning('请至少添加一条有效规格（需填写规格名）')
+        const missingImg = skus.find((s) => !s.images || !s.images.length)
+        if (missingImg) return ElMessage.warning(`规格「${missingImg.specLabel}」请至少上传 1 张图`)
+        hasSku = true
+    }
     
     try {
         // 🟢 处理秒杀数据
@@ -2509,18 +2779,30 @@ const saveProduct = async () => {
         const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
         const channelOk = /蝴蝶|鳞翅|蝶|昆虫/.test(blob)
         const craftOk = /昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)
-        const images = (form.value.images || []).filter(Boolean)
+        let images = (form.value.images || []).filter(Boolean)
         const detailImages = (form.value.detailImages || []).filter(Boolean)
         const detailHtml = String(form.value.detailHtml || '')
             .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
             .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
             .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
 
+        let price = form.value.price
+        let stock = form.value.stock
+        if (hasSku) {
+            const prices = skus.map((s) => parseFloat(s.price) || 0).filter((p) => p > 0)
+            price = prices.length ? Math.min(...prices) : price
+            stock = skus.reduce((sum, s) => sum + (parseInt(s.stock, 10) || 0), 0)
+            // 无商品级封面时，用首规格封面兜底
+            if (!images.length && skus[0]?.images?.[0]) {
+                images.push(skus[0].images[0])
+            }
+        }
+
         const data = {
             title: form.value.title,
-            price: form.value.price,
+            price,
             costPrice: form.value.costPrice || 0,
-            stock: form.value.stock,
+            stock,
             category: form.value.category || '',
             categoryId: form.value.categoryId || '',
             rootCategoryId: form.value.rootCategoryId || '',
@@ -2533,7 +2815,11 @@ const saveProduct = async () => {
             images,
             detailImages,
             detailHtml,
+            hasSku,
+            skus: hasSku ? skus : [],
+            skuDimensions: hasSku ? skuDimensions : [],
             isTreasure: form.value.isTreasure || false,
+            isOneOfAKind: form.value.isOneOfAKind || false,
             inArchive: form.value.inArchive || false,
             memberDiscountEnabled: form.value.memberDiscountEnabled !== false,
             updateTime: Date.now(),
@@ -2983,6 +3269,83 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
   font-size: var(--text-xs);
 }
 
+.sku-variants-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0 0 16px 90px;
+  padding: 12px 14px;
+  background: #FAF8F3;
+  border: 1px solid #E8E5DE;
+  border-radius: 8px;
+}
+.sku-variant-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed #E0DCD3;
+}
+.sku-variant-row:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.sku-variant-fields {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 110px 90px auto;
+  gap: 8px;
+  align-items: center;
+}
+.sku-variant-images {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sku-variant-images .gallery-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sku-variant-images .gallery-thumb {
+  position: relative;
+  width: 80px;
+  border: 1px solid #E8E5DE;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #FAF6ED;
+}
+.sku-variant-images .gallery-thumb.is-cover {
+  border-color: #C4A76C;
+}
+.sku-variant-images .gallery-thumb-img {
+  width: 80px;
+  height: 80px;
+  display: block;
+}
+.sku-variant-images .gallery-thumb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+  padding: 2px 4px 4px;
+  background: #fff;
+}
+.sku-variant-images .cover-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: #C4A76C;
+  color: #1A1814;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+@media (max-width: 900px) {
+  .sku-variants-editor { margin-left: 0; }
+  .sku-variant-fields { grid-template-columns: 1fr 1fr; }
+}
+
 .product-media-gallery {
   width: 100%;
   display: flex;
@@ -3028,6 +3391,50 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 4px;
+}
+
+.product-image-upload {
+  width: 100%;
+  max-width: 420px;
+}
+.product-image-upload :deep(.el-upload) {
+  width: 100%;
+}
+.product-image-upload :deep(.el-upload-dragger) {
+  width: 100%;
+  padding: 18px 16px;
+  background: #FAF8F3;
+  border: 1px dashed #E0DCD3;
+  border-radius: 8px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.product-image-upload :deep(.el-upload-dragger:hover),
+.product-image-upload :deep(.el-upload-dragger.is-dragover) {
+  border-color: #C4A76C;
+  background: #FAF6ED;
+}
+.product-image-upload :deep(.el-icon--upload) {
+  font-size: 36px;
+  color: #C4A76C;
+  margin-bottom: 6px;
+}
+.product-image-upload :deep(.el-upload__text) {
+  color: #6b6560;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.product-image-upload--sku {
+  max-width: 320px;
+}
+.product-image-upload--sku :deep(.el-upload-dragger) {
+  padding: 12px 12px;
+}
+.product-image-upload--sku :deep(.el-icon--upload) {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+.product-image-upload--sku :deep(.el-upload__text) {
+  font-size: 12px;
 }
 .product-archive-dialog .el-dialog__body {
   max-height: min(72vh, 720px);

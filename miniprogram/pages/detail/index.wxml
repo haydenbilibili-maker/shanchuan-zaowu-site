@@ -35,15 +35,26 @@ module.exports.calcVip = calcVip;
     <view class="tab-item {{activeTab === 'review' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="review">评价<text wx:if="{{commentTotal > 0}}" class="tab-count">({{commentTotal}})</text></view>
   </view>
 
-  <!-- 主图轮播 -->
+  <!-- 主图轮播：heroKey 变化时重建 swiper，规格图所见即所得 -->
   <view class="hero-wrapper">
-    <swiper class="hero-swiper" indicator-dots="{{imageTotal > 1}}" indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#C4A76C" circular="true" bindchange="onSwiperChange">
-      <block wx:for="{{product.images}}" wx:key="*this">
-        <swiper-item>
-          <image src="{{item}}" mode="aspectFill" class="slide-image" bindtap="previewImage" data-current="{{item}}"></image>
-        </swiper-item>
+    <block wx:if="{{displayImages.length}}">
+      <block wx:for="{{[heroKey]}}" wx:key="*this">
+        <swiper
+          class="hero-swiper"
+          indicator-dots="{{imageTotal > 1}}"
+          indicator-color="rgba(255,255,255,0.3)"
+          indicator-active-color="#C4A76C"
+          circular="{{imageTotal > 1}}"
+          bindchange="onSwiperChange"
+        >
+          <block wx:for="{{displayImages}}" wx:for-item="img" wx:key="*this">
+            <swiper-item>
+              <image src="{{img}}" mode="aspectFill" class="slide-image" bindtap="previewImage" data-current="{{img}}"></image>
+            </swiper-item>
+          </block>
+        </swiper>
       </block>
-    </swiper>
+    </block>
     <view class="img-counter" wx:if="{{imageTotal > 1}}">{{imageIndex + 1}}/{{imageTotal}}</view>
     <view class="hero-overlay"></view>
   </view>
@@ -77,6 +88,7 @@ module.exports.calcVip = calcVip;
       <view class="title-block">
         <view class="tags-row">
           <text class="tag-item treasure" wx:if="{{product.isTreasure}}">镇馆之宝</text>
+          <text class="tag-item one-of-a-kind" wx:if="{{product.isOneOfAKind}}">孤品</text>
           <text class="tag-item">{{product.category}}</text>
         </view>
         <text class="title-main">{{product.title}}</text>
@@ -327,7 +339,7 @@ module.exports.calcVip = calcVip;
   <view class="sku-mask" wx:if="{{showSkuSheet}}" bindtap="closeSkuSheet">
     <view class="sku-panel" catchtap="true">
       <view class="sku-head">
-        <image class="sku-img" src="{{selectedSku.image || product.images[0]}}" mode="aspectFill"></image>
+        <image class="sku-img" src="{{selectedSkuCover || product.images[0]}}" mode="aspectFill"></image>
         <view class="sku-meta">
           <text class="sku-price">¥{{displayPrice}}</text>
           <text class="sku-stock">库存 {{displayStock}}</text>

@@ -212,6 +212,11 @@ button.nav-share-btn::after { display: none; border: none; }
   border: 1px solid rgba(196, 167, 108, 0.35);
 }
 .tag-item.treasure { border-color: #C4A76C; }
+.tag-item.one-of-a-kind {
+  background: rgba(214, 64, 69, 0.12);
+  color: #D64045;
+  border-color: rgba(214, 64, 69, 0.4);
+}
 .title-main { font-size: 36rpx; font-weight: 600; color: #fff; line-height: 1.4; display: block; }
 .latin-sub { font-size: 24rpx; color: #C4A76C; font-style: italic; margin-top: 8rpx; display: block; font-family: Georgia, serif; }
 

@@ -92,7 +92,7 @@
 
 | 集合名 | 用途 |
 |--------|------|
-| `products` | 商品/藏品 |
+| `products` | 商品/藏品（常用字段含 `isTreasure` 镇店之宝、`isOneOfAKind` 孤品、`inArchive` 入档；多规格：`hasSku` + `skus[{ id, specLabel, sku, price, stock, image, images[] }]` + `skuDimensions[]`，规格图一物一图） |
 | `categories` | 分类树 |
 | `cms_wikis` | 百科/专题 |
 | `articles` | 社区文章 |

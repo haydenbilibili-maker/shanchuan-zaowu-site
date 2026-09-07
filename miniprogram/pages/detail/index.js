@@ -13,7 +13,9 @@ const {
   getDimensionValues,
   resolveSkuFromSpecs,
   initSelectedSpecs,
-  isDimensionValueAvailable
+  isDimensionValueAvailable,
+  getSkuImages,
+  getSkuCoverImage
 } = require('../../utils/sku');
 const { trackBehavior } = require('../../utils/trackBehavior');
 const { ensureOpenId, markCartDirty, fetchCartCount, updateCartTabBadge } = require('../../utils/cartHelper');
@@ -65,6 +67,9 @@ Page({
 
     imageIndex: 0,
     imageTotal: 0,
+    displayImages: [],
+    selectedSkuCover: '',
+    heroKey: 'base',
     buyCount: 1,
     cartCount: 0,
     specSummary: '默认规格',
@@ -174,6 +179,12 @@ Page({
       const detailImages = (data.detailImages && data.detailImages.length)
         ? data.detailImages
         : (data.images || []).slice(1);
+      const displayImages = productHasSku
+        ? getSkuImages(firstSku, data)
+        : (data.images || []);
+      const selectedSkuCover = productHasSku
+        ? getSkuCoverImage(firstSku, data)
+        : getFirstImage(data.images);
 
       const protectionType = data.protectionType || 'none';
       const protectionLabel = PROTECTION_LABELS[protectionType] || '';
@@ -191,7 +202,10 @@ Page({
         selectedSku: firstSku,
         selectedSkuId: firstSku ? firstSku.id : '',
         selectedSpecs,
-        imageTotal: (data.images || []).length,
+        displayImages,
+        selectedSkuCover,
+        heroKey: (firstSku && firstSku.id) || 'base',
+        imageTotal: displayImages.length,
         imageIndex: 0,
         buyCount: 1,
         detailImages,
@@ -552,8 +566,8 @@ Page({
           // 传入快照，方便收藏列表展示
           snapshot: {
             title: p.title,
-            image: getFirstImage(p.images),
-            price: p.price,
+            image: getSkuCoverImage(this.data.selectedSku, p) || getFirstImage(p.images),
+            price: this.data.displayPrice || p.price,
             latinName: p.latinName
           }
         }
@@ -625,6 +639,8 @@ Page({
     const displayStock = sku ? (parseInt(sku.stock, 10) || 0) : 0;
     let buyCount = this.data.buyCount || 1;
     if (buyCount > displayStock) buyCount = Math.max(1, displayStock);
+    const displayImages = getSkuImages(sku, this.data.product);
+    const selectedSkuCover = getSkuCoverImage(sku, this.data.product);
     this.setData({
       selectedSpecs,
       selectedSku: sku || null,
@@ -632,6 +648,11 @@ Page({
       displayPrice,
       displayStock,
       buyCount,
+      displayImages,
+      selectedSkuCover,
+      heroKey: (sku && sku.id) || 'base',
+      imageTotal: displayImages.length,
+      imageIndex: 0,
       shippingHint: this.buildShippingHint(displayPrice)
     });
     this.refreshDimensionOptions();
@@ -718,7 +739,7 @@ Page({
           skuLabel: sku ? sku.specLabel : '',
           snapshot: {
             title: p.title,
-            image: getFirstImage(p.images),
+            image: getSkuCoverImage(sku, p) || getFirstImage(p.images),
             price,
             latinName: p.latinName,
             skuLabel: sku ? sku.specLabel : '',
@@ -769,7 +790,7 @@ Page({
       skuLabel: sku ? sku.specLabel : '',
       count,
       title: p.title,
-      image: getFirstImage(sku && sku.image ? [sku.image] : p.images),
+      image: getSkuCoverImage(sku, p) || getFirstImage(p.images),
       price: sku ? sku.price : p.price,
       latinName: p.latinName
     }], {
@@ -820,9 +841,9 @@ Page({
 
   previewImage(e) {
     const current = e.currentTarget.dataset.current;
-    const urls = (this.data.product.images || []).length
-      ? this.data.product.images
-      : [current];
+    const urls = (this.data.displayImages || []).length
+      ? this.data.displayImages
+      : ((this.data.product.images || []).length ? this.data.product.images : [current]);
     wx.previewImage({ current, urls });
   },
 

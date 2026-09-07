@@ -458,7 +458,7 @@ export const unwrapDocData = (res) => {
  * 小程序使用的集合名称常量
  */
 export const COLLECTIONS = {
-  PRODUCTS: 'products',              // 商品/藏品
+  PRODUCTS: 'products',              // 商品/藏品（含 isTreasure / isOneOfAKind 孤品 / inArchive / hasSku+skus 多规格）
   CATEGORIES: 'categories',           // 分类
   CMS_WIKIS: 'cms_wikis',            // 百科内容/专题策展
   ARTICLES: 'articles',              // 知识文章

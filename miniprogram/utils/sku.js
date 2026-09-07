@@ -1,6 +1,6 @@
 /**
  * 商品 SKU 工具（客户端）
- * product.skus = [{ id, specLabel, specs?, price, stock, image? }]
+ * product.skus = [{ id, specLabel, specs?, sku?, price, stock, image?, images? }]
  * product.skuDimensions = ['尺寸', '装裱']  // 可选，多维度规格
  */
 
@@ -11,6 +11,22 @@ function hasSkus(product) {
 function getSkuList(product) {
   if (!hasSkus(product)) return []
   return product.skus.filter((s) => s && s.id)
+}
+
+/** 规格图集：优先 images[]，其次 image，再回退商品级 images */
+function getSkuImages(sku, product) {
+  if (sku) {
+    if (Array.isArray(sku.images) && sku.images.length) {
+      return sku.images.filter(Boolean)
+    }
+    if (sku.image) return [sku.image]
+  }
+  return (product && Array.isArray(product.images)) ? product.images.filter(Boolean) : []
+}
+
+function getSkuCoverImage(sku, product) {
+  const imgs = getSkuImages(sku, product)
+  return imgs[0] || ''
 }
 
 function getSkuDimensions(product) {
@@ -152,6 +168,8 @@ function buildCollectionKey(productId, skuId) {
 module.exports = {
   hasSkus,
   getSkuList,
+  getSkuImages,
+  getSkuCoverImage,
   getSkuDimensions,
   isMultiDimension,
   findSku,
