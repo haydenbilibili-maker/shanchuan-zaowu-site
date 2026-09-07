@@ -600,8 +600,9 @@
     <el-dialog
         v-model="dialogVisible"
         :title="isEditing ? '编辑藏品档案' : '录入新藏品'" 
-        width="500px"
+        width="720px"
         destroy-on-close
+        class="product-archive-dialog"
     >
         <el-form :model="form" label-width="90px" label-position="left">
             <el-form-item label="藏品名称">
@@ -679,8 +680,90 @@
                 </el-col>
             </el-row>
             <el-form-item label="藏品描述">
-                <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入藏品描述..." />
+                <el-input v-model="form.description" type="textarea" :rows="3" placeholder="列表/详情页简介（纯文本 description）" />
             </el-form-item>
+
+            <el-divider content-position="left">商品图（images）</el-divider>
+            <el-form-item label="轮播图">
+                <div class="product-media-gallery">
+                    <div v-if="form.imagePreviews?.length" class="gallery-thumbs">
+                        <div
+                            v-for="(url, idx) in form.imagePreviews"
+                            :key="'img-' + idx + '-' + (form.images?.[idx] || '')"
+                            class="gallery-thumb"
+                            :class="{ 'is-cover': idx === 0 }"
+                        >
+                            <el-image
+                                :src="url"
+                                :preview-src-list="form.imagePreviews"
+                                :initial-index="idx"
+                                preview-teleported
+                                fit="cover"
+                                class="gallery-thumb-img"
+                            />
+                            <div class="gallery-thumb-actions">
+                                <el-button v-if="idx !== 0" size="small" link type="primary" @click="setCoverImage(idx)">设封面</el-button>
+                                <el-button v-if="idx > 0" size="small" link @click="moveProductImage(idx, -1)">左移</el-button>
+                                <el-button v-if="idx < form.images.length - 1" size="small" link @click="moveProductImage(idx, 1)">右移</el-button>
+                                <el-button size="small" link type="danger" @click="removeProductImage(idx)">删除</el-button>
+                            </div>
+                            <span v-if="idx === 0" class="cover-badge">封面</span>
+                        </div>
+                    </div>
+                    <el-upload
+                        :show-file-list="false"
+                        accept="image/*"
+                        multiple
+                        :http-request="uploadProductImage"
+                    >
+                        <el-button :icon="Picture" :loading="productMediaUploading">上传轮播图</el-button>
+                    </el-upload>
+                    <span class="sku-hint-muted">首张为封面 images[0]，与小程序详情轮播一致</span>
+                </div>
+            </el-form-item>
+
+            <el-divider content-position="left">图文详情</el-divider>
+            <el-form-item label="详情图">
+                <div class="product-media-gallery">
+                    <div v-if="form.detailImagePreviews?.length" class="gallery-thumbs">
+                        <div
+                            v-for="(url, idx) in form.detailImagePreviews"
+                            :key="'dimg-' + idx + '-' + (form.detailImages?.[idx] || '')"
+                            class="gallery-thumb"
+                        >
+                            <el-image
+                                :src="url"
+                                :preview-src-list="form.detailImagePreviews"
+                                :initial-index="idx"
+                                preview-teleported
+                                fit="cover"
+                                class="gallery-thumb-img"
+                            />
+                            <div class="gallery-thumb-actions">
+                                <el-button v-if="idx > 0" size="small" link @click="moveDetailImage(idx, -1)">左移</el-button>
+                                <el-button v-if="idx < form.detailImages.length - 1" size="small" link @click="moveDetailImage(idx, 1)">右移</el-button>
+                                <el-button size="small" link type="danger" @click="removeDetailImage(idx)">删除</el-button>
+                            </div>
+                        </div>
+                    </div>
+                    <el-upload
+                        :show-file-list="false"
+                        accept="image/*"
+                        multiple
+                        :http-request="uploadDetailImage"
+                    >
+                        <el-button :icon="Picture" :loading="productMediaUploading">上传详情图</el-button>
+                    </el-upload>
+                    <span class="sku-hint-muted">写入 detailImages，详情页「图文详情」区展示</span>
+                </div>
+            </el-form-item>
+            <el-form-item label="富文本">
+                <RichHtmlEditor
+                    v-model="form.detailHtml"
+                    @image-uploaded="onRichImageUploaded"
+                />
+            </el-form-item>
+
             <el-form-item label="镇店之宝">
                 <el-switch v-model="form.isTreasure" />
             </el-form-item>
@@ -747,8 +830,6 @@
                     </el-col>
                 </el-row>
             </template>
-            
-            <el-alert title="图片上传与富文本描述请在小程序端操作" type="info" :closable="false" show-icon style="margin-top:10px" />
         </el-form>
         <template #footer>
             <span class="dialog-footer">
@@ -921,8 +1002,9 @@ import {
   House
 } from '@element-plus/icons-vue'
 // 导入云开发工具
-import { getTempFileUrl, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from './cloud'
+import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from './cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import RichHtmlEditor from './components/RichHtmlEditor.vue'
 
 // --- 动态组件引入（同步加载，保证各 Tab 稳定渲染） ---
 const FinanceDashboard = asyncWith(() => import('./components/Finance.vue'))
@@ -1230,9 +1312,13 @@ const form = ref({
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
     latinName: '', description: '', isTreasure: false, inArchive: false, memberDiscountEnabled: true,
+    images: [], imagePreviews: [],
+    detailImages: [], detailImagePreviews: [],
+    detailHtml: '',
     seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
+const productMediaUploading = ref(false)
 const categoryCascaderOptions = ref([])
 const categoryFlatMap = ref({}) // id -> category doc
 
@@ -2238,6 +2324,9 @@ const openDialog = async () => {
         categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
         channel: '', craftType: '',
         latinName: '', description: '', isTreasure: false, inArchive: false, memberDiscountEnabled: true,
+        images: [], imagePreviews: [],
+        detailImages: [], detailImagePreviews: [],
+        detailHtml: '',
         seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
         groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
     } 
@@ -2248,6 +2337,12 @@ const editItem = async (row) => {
     isEditing.value = true 
     await loadCategoriesForProduct()
     const path = resolveCategoryPath(row)
+    const images = Array.isArray(row.images) ? [...row.images].filter(Boolean) : []
+    const detailImages = Array.isArray(row.detailImages) ? [...row.detailImages].filter(Boolean) : []
+    const [imagePreviews, detailImagePreviews] = await Promise.all([
+        getTempFileUrls(images),
+        getTempFileUrls(detailImages),
+    ])
     form.value = { 
         ...row,
         costPrice: row.costPrice || 0,
@@ -2260,6 +2355,11 @@ const editItem = async (row) => {
         craftType: row.craftType || '',
         latinName: row.latinName || '',
         description: row.description || '',
+        images,
+        imagePreviews,
+        detailImages,
+        detailImagePreviews,
+        detailHtml: row.detailHtml || '',
         isTreasure: row.isTreasure || false,
         inArchive: row.inArchive || false,
         memberDiscountEnabled: row.memberDiscountEnabled !== false,
@@ -2274,6 +2374,89 @@ const editItem = async (row) => {
         groupBuyingSize: row.groupBuying && row.groupBuying.groupSize || 2
     } 
     dialogVisible.value = true 
+}
+
+const refreshImagePreviews = async () => {
+    form.value.imagePreviews = await getTempFileUrls(form.value.images || [])
+}
+const refreshDetailImagePreviews = async () => {
+    form.value.detailImagePreviews = await getTempFileUrls(form.value.detailImages || [])
+}
+
+const uploadProductImage = async (opt) => {
+    productMediaUploading.value = true
+    try {
+        const fileID = await uploadAdminBinary(opt.file, 'products')
+        form.value.images = [...(form.value.images || []), fileID]
+        await refreshImagePreviews()
+        ElMessage.success('轮播图已上传')
+    } catch (e) {
+        ElMessage.error('上传失败: ' + (e.message || '未知错误'))
+    } finally {
+        productMediaUploading.value = false
+    }
+}
+
+const uploadDetailImage = async (opt) => {
+    productMediaUploading.value = true
+    try {
+        const fileID = await uploadAdminBinary(opt.file, 'products')
+        form.value.detailImages = [...(form.value.detailImages || []), fileID]
+        await refreshDetailImagePreviews()
+        ElMessage.success('详情图已上传')
+    } catch (e) {
+        ElMessage.error('上传失败: ' + (e.message || '未知错误'))
+    } finally {
+        productMediaUploading.value = false
+    }
+}
+
+const removeProductImage = async (idx) => {
+    const imgs = [...(form.value.images || [])]
+    imgs.splice(idx, 1)
+    form.value.images = imgs
+    await refreshImagePreviews()
+}
+
+const removeDetailImage = async (idx) => {
+    const imgs = [...(form.value.detailImages || [])]
+    imgs.splice(idx, 1)
+    form.value.detailImages = imgs
+    await refreshDetailImagePreviews()
+}
+
+const setCoverImage = async (idx) => {
+    if (idx <= 0) return
+    const imgs = [...(form.value.images || [])]
+    const [picked] = imgs.splice(idx, 1)
+    imgs.unshift(picked)
+    form.value.images = imgs
+    await refreshImagePreviews()
+}
+
+const moveProductImage = async (idx, delta) => {
+    const imgs = [...(form.value.images || [])]
+    const j = idx + delta
+    if (j < 0 || j >= imgs.length) return
+    ;[imgs[idx], imgs[j]] = [imgs[j], imgs[idx]]
+    form.value.images = imgs
+    await refreshImagePreviews()
+}
+
+const moveDetailImage = async (idx, delta) => {
+    const imgs = [...(form.value.detailImages || [])]
+    const j = idx + delta
+    if (j < 0 || j >= imgs.length) return
+    ;[imgs[idx], imgs[j]] = [imgs[j], imgs[idx]]
+    form.value.detailImages = imgs
+    await refreshDetailImagePreviews()
+}
+
+const onRichImageUploaded = async (fileID) => {
+    if (!fileID) return
+    if ((form.value.detailImages || []).includes(fileID)) return
+    form.value.detailImages = [...(form.value.detailImages || []), fileID]
+    await refreshDetailImagePreviews()
 }
 
 const deleteItem = (row) => { 
@@ -2322,6 +2505,12 @@ const saveProduct = async () => {
         const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
         const channelOk = /蝴蝶|鳞翅|蝶|昆虫/.test(blob)
         const craftOk = /昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)
+        const images = (form.value.images || []).filter(Boolean)
+        const detailImages = (form.value.detailImages || []).filter(Boolean)
+        const detailHtml = String(form.value.detailHtml || '')
+            .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+            .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
+            .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
 
         const data = {
             title: form.value.title,
@@ -2337,6 +2526,9 @@ const saveProduct = async () => {
             craftType: craftOk ? (form.value.craftType || '') : '',
             latinName: form.value.latinName || '',
             description: form.value.description || '',
+            images,
+            detailImages,
+            detailHtml,
             isTreasure: form.value.isTreasure || false,
             inArchive: form.value.inArchive || false,
             memberDiscountEnabled: form.value.memberDiscountEnabled !== false,
@@ -2351,7 +2543,6 @@ const saveProduct = async () => {
         } else {
             data.createTime = Date.now()
             data.isOffShelf = false
-            data.images = []
             data.framerName = 'NATURE' // 默认标本师
             data.framerId = null
             data.origin = ''
@@ -2786,6 +2977,57 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
   margin-left: 8px;
   color: var(--light-text-tertiary);
   font-size: var(--text-xs);
+}
+
+.product-media-gallery {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.product-media-gallery .gallery-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.product-media-gallery .gallery-thumb {
+  position: relative;
+  width: 96px;
+  border: 1px solid #E8E5DE;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #FAF6ED;
+}
+.product-media-gallery .gallery-thumb.is-cover {
+  border-color: #C4A76C;
+}
+.product-media-gallery .gallery-thumb-img {
+  width: 96px;
+  height: 96px;
+  display: block;
+}
+.product-media-gallery .gallery-thumb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+  padding: 2px 4px 6px;
+  background: #fff;
+}
+.product-media-gallery .cover-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: #C4A76C;
+  color: #1A1814;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.product-archive-dialog .el-dialog__body {
+  max-height: min(72vh, 720px);
+  overflow-y: auto;
 }
 
 .product-table-cover {
