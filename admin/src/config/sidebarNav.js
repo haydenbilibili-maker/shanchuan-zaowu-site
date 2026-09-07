@@ -26,6 +26,7 @@ export const SIDEBAR_NAV = {
           { id: '57', icon: 'Ticket', label: '报价单配置' },
           { id: '42', icon: 'Refresh', label: '退款审核' },
           { id: '60', icon: 'Connection', label: '订单绑定审核' },
+          { id: '61', icon: 'Van', label: '运费与包邮规则' },
         ],
       },
       {

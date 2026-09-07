@@ -121,6 +121,7 @@
 |--------|------|
 | `support_tickets` | 客服工单 |
 | `support_configs` | 客服入口配置（`getSupportConfig`；Admin「客服入口配置」`56`）；CLI：`npm run provision:miniapp-ops` |
+| `shipping_rules` | 商城运费/包邮规则（`getShippingRules` / `makeOrder`；Admin「运费与包邮规则」`61`） |
 | `custom_inquiries` | 定制咨询 |
 | `purchase_intents` | 官网报价单采购意向（`/price-list` 提交；ERP「采购意向」）；规则见 `cloudbase/rules/purchase_intents.json`，字段见 `cloudbase/schema/purchase_intents.md`；CLI：`cd admin && node scripts/provision-purchase-intents.mjs` |
 | `price_list_items` | 官网线下供货报价条目（`/price-list` 运行时读；Admin「报价单配置」`57`）；规则见 `cloudbase/rules/price_list_items.json`，字段见 `cloudbase/schema/price_list_items.md`；CLI：`cd admin && npm run provision:price-list` |

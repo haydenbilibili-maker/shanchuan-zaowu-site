@@ -161,6 +161,7 @@
                 <el-menu-item index="57"><el-icon><Ticket /></el-icon><span>报价单配置</span></el-menu-item>
                 <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
                 <el-menu-item index="60"><el-icon><Connection /></el-icon><span>订单绑定审核</span></el-menu-item>
+                <el-menu-item index="61"><el-icon><Van /></el-icon><span>运费与包邮规则</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="场 · 体验">
                 <el-menu-item index="37"><el-icon><Stamp /></el-icon><span>预约与核销</span></el-menu-item>
@@ -908,7 +909,7 @@ import {
   Plus, Edit, Delete, Box, List, Lock, Money, Odometer, FolderAdd,
   UserFilled, Picture, PictureFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu,
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
-  DataBoard, TrendCharts, VideoCamera,
+  DataBoard, TrendCharts, VideoCamera, Van,
   // 🟢 小程序对齐补充图标
   Stamp, Avatar, Message, Refresh, Document, ShoppingCart, Phone,
   // 🟢 命令面板/收藏夹
@@ -978,6 +979,7 @@ import CommentsModeration from './components/CommentsModeration.vue'
 import Refunds from './components/Refunds.vue'
 import InvoiceRequests from './components/InvoiceRequests.vue'
 import PlatformOrderBinds from './components/PlatformOrderBinds.vue'
+import ShippingRulesConfig from './components/ShippingRulesConfig.vue'
 import Categories from './components/Categories.vue'
 import BehaviorAnalytics from './components/BehaviorAnalytics.vue'
 import UserInsights from './components/UserInsights.vue'
@@ -1046,6 +1048,7 @@ const TAB_COMPONENT_MAP = {
   '42': () => ({ comp: Refunds }),
   '59': () => ({ comp: InvoiceRequests }),
   '60': () => ({ comp: PlatformOrderBinds }),
+  '61': () => ({ comp: ShippingRulesConfig }),
   '43': () => ({ comp: Categories }),
   '44': () => ({ comp: BehaviorAnalytics }),
   '45': () => ({ comp: UserInsights }),
@@ -1134,8 +1137,9 @@ const TAB_TO_GROUP = {
   '30': 'grp-business', '34': 'grp-business', '35': 'grp-business', '37': 'grp-business',
   '38': 'grp-business', '39': 'grp-business', '42': 'grp-business', '43': 'grp-business',
   '48': 'grp-business', '52': 'grp-business', '55': 'grp-business',
+  '57': 'grp-business', '60': 'grp-business', '61': 'grp-business',
   '4': 'grp-customer', '40': 'grp-customer', '41': 'grp-customer', '44': 'grp-customer',
-  '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer', '51': 'grp-customer',
+  '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer', '51': 'grp-customer', '59': 'grp-customer',
   '8': 'grp-miniapp', '9': 'grp-miniapp', '13': 'grp-miniapp', '14': 'grp-miniapp',
   '15': 'grp-miniapp', '16': 'grp-miniapp', '17': 'grp-miniapp', '18': 'grp-miniapp',
   '19': 'grp-miniapp', '20': 'grp-miniapp', '21': 'grp-miniapp', '22': 'grp-miniapp',

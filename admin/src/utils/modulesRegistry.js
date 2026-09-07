@@ -35,6 +35,7 @@ export const MODULES = [
   { id: '57', name: '报价单配置', group: 'BUSINESS', subgroup: '货', icon: 'Ticket', keywords: 'price list quote bjd 报价单 price_list_items 供货价' },
   { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '货', icon: 'Refresh', keywords: 'refund tksh 退款' },
   { id: '60', name: '订单绑定审核', group: 'BUSINESS', subgroup: '货', icon: 'Connection', keywords: 'platform order bind bindPlatformOrder ddbd 订单绑定 积分' },
+  { id: '61', name: '运费与包邮规则', group: 'BUSINESS', subgroup: '货', icon: 'Van', keywords: 'shipping rules yfgz 运费 包邮 shipping_rules makeOrder' },
   // 业务运营 — 场
   { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
   { id: '5',  name: '活动与排期', group: 'BUSINESS', subgroup: '场', icon: 'Calendar', keywords: 'activity event hdpc 活动' },

@@ -33,6 +33,7 @@ export const COLLECTIONS = [
   'rewards',
   'waitlist',
   'support_configs',
+  'shipping_rules',
 ]
 
 async function main() {
