@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * 小程序运营对齐集合：care_guides / stores / store_zones /
- * pet_craft_configs / rewards / waitlist / support_configs
+ * pet_craft_configs / rewards / waitlist / support_configs /
+ * content_display_flags
  *
  * 幂等：已存在则跳过创建；每次尝试部署 cloudbase/rules/<name>.json
  *
@@ -34,6 +35,7 @@ export const COLLECTIONS = [
   'waitlist',
   'support_configs',
   'shipping_rules',
+  'content_display_flags',
 ]
 
 async function main() {
@@ -77,7 +79,7 @@ async function main() {
   console.log('失败:', summary.failed.length ? summary.failed.join(', ') : '（无）')
 
   if (summary.failed.length) process.exitCode = 1
-  else console.log('\n完成。Admin 菜单：养护指南 / C端门店展区 / 伴宠工艺 / 积分兑换 / 候补队列 / 客服入口配置。')
+  else console.log('\n完成。Admin 菜单：养护指南 / C端门店展区 / 伴宠工艺 / 积分兑换 / 候补队列 / 客服入口配置 / 内容展示开关。')
 }
 
 const isDirect =

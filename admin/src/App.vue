@@ -214,6 +214,7 @@
                 <el-menu-item index="9"><el-icon><Collection /></el-icon><span>内容管理</span></el-menu-item>
                 <el-menu-item index="54"><el-icon><Notebook /></el-icon><span>养护指南</span></el-menu-item>
                 <el-menu-item index="56"><el-icon><Phone /></el-icon><span>客服入口配置</span></el-menu-item>
+                <el-menu-item index="62"><el-icon><View /></el-icon><span>内容展示开关</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="会员/营销规则">
                 <el-menu-item index="14"><el-icon><UserFilled /></el-icon><span>会员等级体系</span></el-menu-item>
@@ -907,7 +908,7 @@ const asyncWith = (loader) => defineAsyncComponent({
 // 导入图标库
 import {
   Plus, Edit, Delete, Box, List, Lock, Money, Odometer, FolderAdd,
-  UserFilled, Picture, PictureFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu,
+  UserFilled, Picture, PictureFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View,
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
   DataBoard, TrendCharts, VideoCamera, Van,
   // 🟢 小程序对齐补充图标
@@ -973,6 +974,7 @@ import PetMemorial from './components/PetMemorial.vue'
 import CareGuides from './components/CareGuides.vue'
 import StoreFrontConfig from './components/StoreFrontConfig.vue'
 import SupportConfigs from './components/SupportConfigs.vue'
+import ContentDisplayFlags from './components/ContentDisplayFlags.vue'
 import PriceListManager from './components/PriceListManager.vue'
 import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
@@ -1042,6 +1044,7 @@ const TAB_COMPONENT_MAP = {
   '54': () => ({ comp: CareGuides }),
   '55': () => ({ comp: StoreFrontConfig }),
   '56': () => ({ comp: SupportConfigs }),
+  '62': () => ({ comp: ContentDisplayFlags }),
   '57': () => ({ comp: PriceListManager }),
   '40': () => ({ comp: SupportTickets }),
   '41': () => ({ comp: CommentsModeration }),

@@ -68,6 +68,7 @@ export const MODULES = [
   { id: '9',  name: '内容管理', group: 'MINIAPP', subgroup: '内容运营', icon: 'Collection', keywords: 'content cms nrgl article' },
   { id: '54', name: '养护指南', group: 'MINIAPP', subgroup: '内容运营', icon: 'Notebook', keywords: 'care guides yhzh specimen care' },
   { id: '56', name: '客服入口配置', group: 'MINIAPP', subgroup: '内容运营', icon: 'Phone', keywords: 'support config kf rk 联系专员 FAQ getSupportConfig' },
+  { id: '62', name: '内容展示开关', group: 'MINIAPP', subgroup: '内容运营', icon: 'View', keywords: 'content display flags 展示开关 标本档案 山海社区 getContentDisplayFlags' },
   // 小程序配置 — 会员/营销规则
   { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'UserFilled', keywords: 'member level hydjtx vip' },
   { id: '15', name: '门店积分规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz store_point_rules' },

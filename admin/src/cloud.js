@@ -512,6 +512,7 @@ export const COLLECTIONS = {
   REWARDS: 'rewards',                                     // 积分兑换品
   WAITLIST: 'waitlist',                                   // 预约候补
   SUPPORT_CONFIGS: 'support_configs',                     // 客服入口（getSupportConfig）
+  CONTENT_DISPLAY_FLAGS: 'content_display_flags',         // 内容展示开关（getContentDisplayFlags）
 };
 
 // =================================================

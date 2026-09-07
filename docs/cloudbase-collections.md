@@ -121,6 +121,7 @@
 |--------|------|
 | `support_tickets` | 客服工单 |
 | `support_configs` | 客服入口配置（`getSupportConfig`；Admin「客服入口配置」`56`）；CLI：`npm run provision:miniapp-ops` |
+| `content_display_flags` | 内容展示开关（`getContentDisplayFlags`；Admin「内容展示开关」`62`；默认关闭标本档案/山海社区）；CLI：`npm run provision:miniapp-ops` |
 | `shipping_rules` | 商城运费/包邮规则（`getShippingRules` / `makeOrder`；Admin「运费与包邮规则」`61`） |
 | `custom_inquiries` | 定制咨询 |
 | `purchase_intents` | 官网报价单采购意向（`/price-list` 提交；ERP「采购意向」）；规则见 `cloudbase/rules/purchase_intents.json`，字段见 `cloudbase/schema/purchase_intents.md`；CLI：`cd admin && node scripts/provision-purchase-intents.mjs` |
@@ -219,6 +220,7 @@
 | `rewards.json` | `rewards` |
 | `waitlist.json` | `waitlist` |
 | `support_configs.json` | `support_configs` |
+| `content_display_flags.json` | `content_display_flags` |
 | `price_list_items.json` | `price_list_items` |
 
 ---
