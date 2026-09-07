@@ -696,14 +696,131 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="拉丁学名">
-                        <el-input v-model="form.latinName" placeholder="可选" />
+                    <el-form-item :label="isMerchandiseForm ? '拉丁学名' : '拉丁学名 *'">
+                        <el-input
+                            v-model="form.latinName"
+                            :placeholder="isMerchandiseForm ? '文创类可选' : '标本类必填（与店长端一致）'"
+                        />
                     </el-form-item>
                 </el-col>
             </el-row>
             <el-form-item label="藏品描述">
                 <el-input v-model="form.description" type="textarea" :rows="3" placeholder="列表/详情页简介（纯文本 description）" />
             </el-form-item>
+
+            <el-divider content-position="left">合规标识（与店长端同源）</el-divider>
+            <el-form-item label="保护物种">
+                <el-select v-model="form.protectionType" style="width:100%" @change="onProtectionTypeChange">
+                    <el-option label="否" value="none" />
+                    <el-option label="三有保护动物" value="sanyou" />
+                    <el-option label="保护植物" value="protected_plant" />
+                    <el-option label="保护动物" value="protected_animal" />
+                </el-select>
+                <span class="sku-hint-muted">写入 protectionType</span>
+            </el-form-item>
+            <el-form-item
+                v-if="form.protectionType && form.protectionType !== 'none'"
+                label="收藏证书 *"
+                required
+            >
+                <ImageUploadField
+                    v-model="form.collectionCertificate"
+                    folder="products"
+                    upload-label="上传证书"
+                    tip="三有或保护类须上传合法收藏/许可证明；与店长端 collectionCertificate 同源；支持 JPG / PNG / WebP / GIF"
+                    preview-width="180px"
+                    preview-height="120px"
+                />
+            </el-form-item>
+
+            <el-divider content-position="left">标本档案（与店长端同源）</el-divider>
+            <el-row :gutter="20">
+                <el-col :span="12">
+                    <el-form-item label="采集地">
+                        <el-input v-model="form.origin" placeholder="如：云南西双版纳" />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="采集时间">
+                        <el-date-picker
+                            v-model="form.collectDate"
+                            type="date"
+                            value-format="YYYY-MM-DD"
+                            placeholder="选择日期"
+                            style="width:100%"
+                        />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row :gutter="20">
+                <el-col :span="12">
+                    <el-form-item label="装裱师">
+                        <el-select
+                            v-model="form.framerId"
+                            clearable
+                            filterable
+                            placeholder="选择装裱师"
+                            style="width:100%"
+                            @change="onFramerChange"
+                        >
+                            <el-option
+                                v-for="f in framerOptions"
+                                :key="f._id"
+                                :label="f.name"
+                                :value="f._id"
+                            />
+                        </el-select>
+                        <span class="sku-hint-muted">未选时默认 framerName=NATURE</span>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="尺寸 (cm)">
+                        <div class="size-inputs">
+                            <el-input v-model="form.sizeL" placeholder="长" />
+                            <span>×</span>
+                            <el-input v-model="form.sizeW" placeholder="宽" />
+                            <span>×</span>
+                            <el-input v-model="form.sizeH" placeholder="高" />
+                        </div>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <el-divider content-position="left">科学分类 taxonomy</el-divider>
+            <el-row :gutter="12">
+                <el-col :span="8">
+                    <el-form-item label="界">
+                        <el-input v-model="form.taxonomy.kingdom" placeholder="如：动物界" />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="8">
+                    <el-form-item label="门">
+                        <el-input v-model="form.taxonomy.phylum" placeholder="如：节肢动物门" />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="8">
+                    <el-form-item label="纲">
+                        <el-input v-model="form.taxonomy.class" placeholder="如：昆虫纲" />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row :gutter="12">
+                <el-col :span="8">
+                    <el-form-item label="目">
+                        <el-input v-model="form.taxonomy.order" placeholder="可选" />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="8">
+                    <el-form-item label="科">
+                        <el-input v-model="form.taxonomy.family" placeholder="可选" />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="8">
+                    <el-form-item label="属">
+                        <el-input v-model="form.taxonomy.genus" placeholder="可选" />
+                    </el-form-item>
+                </el-col>
+            </el-row>
 
             <el-divider content-position="left">多规格 SKU（skus）</el-divider>
             <el-form-item label="启用多规格">
@@ -878,6 +995,10 @@
             <el-form-item label="是否参与会员折扣">
                 <el-switch v-model="form.memberDiscountEnabled" />
                 <span class="sku-hint-muted">关闭后按下单原价计价，仍可叠加优惠券等其它促销</span>
+            </el-form-item>
+            <el-form-item label="支持定制">
+                <el-switch v-model="form.supportsCustom" />
+                <span class="sku-hint-muted">与店长端 supportsCustom 同源</span>
             </el-form-item>
             
             <!-- 🟢 限时秒杀设置 -->
@@ -1109,6 +1230,7 @@ import {
 import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from './cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
+import ImageUploadField from './components/ImageUploadField.vue'
 
 // --- 动态组件引入（同步加载，保证各 Tab 稳定渲染） ---
 const FinanceDashboard = asyncWith(() => import('./components/Finance.vue'))
@@ -1419,6 +1541,11 @@ const form = ref({
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
     latinName: '', description: '', isTreasure: false, isOneOfAKind: false, inArchive: false, memberDiscountEnabled: true,
+    supportsCustom: true,
+    protectionType: 'none', collectionCertificate: '',
+    origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
+    sizeL: '', sizeW: '', sizeH: '',
+    taxonomy: { kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' },
     images: [], imagePreviews: [],
     detailImages: [], detailImagePreviews: [],
     detailHtml: '',
@@ -1429,6 +1556,32 @@ const form = ref({
 const productMediaUploading = ref(false)
 const categoryCascaderOptions = ref([])
 const categoryFlatMap = ref({}) // id -> category doc
+const framerOptions = ref([])
+
+const emptyTaxonomy = () => ({ kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' })
+
+const parseProductSize = (sizeStr) => {
+    let sizeL = '', sizeW = '', sizeH = ''
+    if (sizeStr) {
+        const cleanSize = String(sizeStr).replace(/cm/gi, '').trim()
+        const p = cleanSize.split(/[xX×]/)
+        if (p.length >= 3) {
+            sizeL = p[0].trim()
+            sizeW = p[1].trim()
+            sizeH = p[2].trim()
+        }
+    }
+    return { sizeL, sizeW, sizeH }
+}
+
+const isMerchandiseProduct = (f) => {
+    if (!f) return false
+    if (f.categoryType === 'merch') return true
+    const text = `${f.rootCategoryName || ''}${f.category || ''}`
+    return /衍生|文创|书籍|画册|工具|耗材|周边|礼品|包装|礼盒|卡片|陈饰|联名/.test(text)
+}
+
+const isMerchandiseForm = computed(() => isMerchandiseProduct(form.value))
 
 const isButterflyProduct = computed(() => {
     const f = form.value || {}
@@ -2377,6 +2530,54 @@ const loadCategoriesForProduct = async () => {
     }
 }
 
+const loadFramersForProduct = async () => {
+    try {
+        const rows = await fetchCollectionSorted(COLLECTIONS.FRAMERS, {
+            limit: 200,
+            sortFn: (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh')
+        })
+        framerOptions.value = rows || []
+    } catch (e) {
+        console.warn('加载装裱师失败', e)
+        framerOptions.value = []
+    }
+}
+
+const onProtectionTypeChange = (val) => {
+    if (!val || val === 'none') {
+        form.value.collectionCertificate = ''
+    }
+}
+
+const onFramerChange = (id) => {
+    if (!id) {
+        form.value.framerId = null
+        form.value.framerName = 'NATURE'
+        return
+    }
+    const hit = framerOptions.value.find((f) => f._id === id)
+    form.value.framerId = id
+    form.value.framerName = hit?.name || 'NATURE'
+}
+
+const blankProductForm = () => ({
+    title: '', price: 0, costPrice: 0, stock: 1, category: '',
+    categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
+    channel: '', craftType: '',
+    latinName: '', description: '', isTreasure: false, isOneOfAKind: false, inArchive: false, memberDiscountEnabled: true,
+    supportsCustom: true,
+    protectionType: 'none', collectionCertificate: '',
+    origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
+    sizeL: '', sizeW: '', sizeH: '',
+    taxonomy: emptyTaxonomy(),
+    images: [], imagePreviews: [],
+    detailImages: [], detailImagePreviews: [],
+    detailHtml: '',
+    hasSku: false, skus: [], skuDimensionsStr: '',
+    seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
+    groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
+})
+
 const onCategoryPathChange = (path) => {
     if (!path || !path.length) {
         form.value.category = ''
@@ -2402,6 +2603,19 @@ const onCategoryPathChange = (path) => {
     const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
     if (!/蝴蝶|鳞翅|蝶|昆虫/.test(blob)) form.value.channel = ''
     if (!/昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)) form.value.craftType = ''
+
+    // 与店长端一致：二级分类带 taxonomy 时预填科学分类
+    const tax = (sub && sub.taxonomy) || (root && root.taxonomy) || null
+    if (tax && typeof tax === 'object') {
+        form.value.taxonomy = {
+            kingdom: tax.kingdom || '',
+            phylum: tax.phylum || '',
+            class: tax.class || '',
+            order: tax.order || '',
+            family: tax.family || '',
+            genus: tax.genus || ''
+        }
+    }
 }
 
 const resolveCategoryPath = (row) => {
@@ -2429,25 +2643,14 @@ const resolveCategoryPath = (row) => {
 
 const openDialog = async () => { 
     isEditing.value = false 
-    await loadCategoriesForProduct()
-    form.value = { 
-        title: '', price: 0, costPrice: 0, stock: 1, category: '',
-        categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
-        channel: '', craftType: '',
-        latinName: '', description: '', isTreasure: false, isOneOfAKind: false, inArchive: false, memberDiscountEnabled: true,
-        images: [], imagePreviews: [],
-        detailImages: [], detailImagePreviews: [],
-        detailHtml: '',
-        hasSku: false, skus: [], skuDimensionsStr: '',
-        seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
-        groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
-    } 
+    await Promise.all([loadCategoriesForProduct(), loadFramersForProduct()])
+    form.value = blankProductForm()
     dialogVisible.value = true 
 }
 
 const editItem = async (row) => { 
     isEditing.value = true 
-    await loadCategoriesForProduct()
+    await Promise.all([loadCategoriesForProduct(), loadFramersForProduct()])
     const path = resolveCategoryPath(row)
     const images = Array.isArray(row.images) ? [...row.images].filter(Boolean) : []
     const detailImages = Array.isArray(row.detailImages) ? [...row.detailImages].filter(Boolean) : []
@@ -2472,6 +2675,8 @@ const editItem = async (row) => {
         getTempFileUrls(images),
         getTempFileUrls(detailImages),
     ])
+    const sizeParts = parseProductSize(row.size)
+    const tax = row.taxonomy || {}
     form.value = { 
         ...row,
         costPrice: row.costPrice || 0,
@@ -2496,6 +2701,24 @@ const editItem = async (row) => {
         isOneOfAKind: row.isOneOfAKind || false,
         inArchive: row.inArchive || false,
         memberDiscountEnabled: row.memberDiscountEnabled !== false,
+        supportsCustom: row.supportsCustom !== false,
+        protectionType: row.protectionType || 'none',
+        collectionCertificate: row.collectionCertificate || '',
+        origin: row.origin || '',
+        collectDate: row.collectDate || '',
+        framerName: row.framerName || 'NATURE',
+        framerId: row.framerId || null,
+        sizeL: sizeParts.sizeL,
+        sizeW: sizeParts.sizeW,
+        sizeH: sizeParts.sizeH,
+        taxonomy: {
+            kingdom: tax.kingdom || '',
+            phylum: tax.phylum || '',
+            class: tax.class || '',
+            order: tax.order || '',
+            family: tax.family || '',
+            genus: tax.genus || ''
+        },
         seckillEnabled: row.seckill && row.seckill.enabled || false,
         seckillPrice: row.seckill && row.seckill.price || 0,
         seckillStock: row.seckill && row.seckill.stock || 0,
@@ -2738,6 +2961,13 @@ const deleteItem = (row) => {
 
 const saveProduct = async () => {
     if(!form.value.title) return ElMessage.warning('请输入藏品名称')
+    if (!isMerchandiseProduct(form.value) && !String(form.value.latinName || '').trim()) {
+        return ElMessage.warning('标本类藏品须填写拉丁学名（与店长端一致）')
+    }
+    const needsCert = form.value.protectionType && form.value.protectionType !== 'none'
+    if (needsCert && !String(form.value.collectionCertificate || '').trim()) {
+        return ElMessage.warning('请上传收藏证书（保护类标本必填）')
+    }
 
     let hasSku = false
     let skus = []
@@ -2798,6 +3028,11 @@ const saveProduct = async () => {
             }
         }
 
+        const sizeStr = `${form.value.sizeL || 0}x${form.value.sizeW || 0}x${form.value.sizeH || 0} cm`
+        const tax = form.value.taxonomy || emptyTaxonomy()
+        let collectionCertificate = String(form.value.collectionCertificate || '').trim()
+        if (!needsCert) collectionCertificate = ''
+
         const data = {
             title: form.value.title,
             price,
@@ -2822,6 +3057,22 @@ const saveProduct = async () => {
             isOneOfAKind: form.value.isOneOfAKind || false,
             inArchive: form.value.inArchive || false,
             memberDiscountEnabled: form.value.memberDiscountEnabled !== false,
+            supportsCustom: form.value.supportsCustom !== false,
+            protectionType: form.value.protectionType || 'none',
+            collectionCertificate,
+            origin: form.value.origin || '',
+            collectDate: form.value.collectDate || '',
+            framerName: form.value.framerName || 'NATURE',
+            framerId: form.value.framerId || null,
+            size: sizeStr,
+            taxonomy: {
+                kingdom: tax.kingdom || '',
+                phylum: tax.phylum || '',
+                class: tax.class || '',
+                order: tax.order || '',
+                family: tax.family || '',
+                genus: tax.genus || ''
+            },
             updateTime: Date.now(),
             seckill: seckill,
             groupBuying: groupBuying
@@ -2833,11 +3084,6 @@ const saveProduct = async () => {
         } else {
             data.createTime = Date.now()
             data.isOffShelf = false
-            data.framerName = 'NATURE' // 默认标本师
-            data.framerId = null
-            data.origin = ''
-            data.collectDate = ''
-            data.size = '0x0x0 cm' // 默认尺寸
             await cdnAdd(COLLECTIONS.PRODUCTS, data)
             ElMessage.success('创建成功')
         }
@@ -3267,6 +3513,20 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
   margin-left: 8px;
   color: var(--light-text-tertiary);
   font-size: var(--text-xs);
+}
+
+.size-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.size-inputs .el-input {
+  flex: 1;
+}
+.size-inputs > span {
+  color: var(--light-text-tertiary);
+  flex-shrink: 0;
 }
 
 .sku-variants-editor {
