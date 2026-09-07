@@ -478,6 +478,18 @@
                              <el-tag effect="light" type="info" round>{{ scope.row.category }}</el-tag>
                          </template>
                     </el-table-column>
+                    <el-table-column label="渠道/工艺" width="130">
+                         <template #default="scope">
+                             <div class="promo-cell">
+                               <el-tag v-if="scope.row.channel" effect="plain" size="small" round>
+                                 {{ scope.row.channel === 'import' ? '进口' : scope.row.channel === 'domestic' ? '国产' : scope.row.channel }}
+                               </el-tag>
+                               <el-tag v-if="scope.row.craftType" effect="plain" type="success" size="small" round>
+                                 {{ ({ frame: '相框', cloche: '玻璃罩', diorama: '造景', magnet: '冰箱贴' })[scope.row.craftType] || scope.row.craftType }}
+                               </el-tag>
+                             </div>
+                         </template>
+                    </el-table-column>
                     <el-table-column prop="price" label="售价" width="140">
                          <template #default="scope">
                              <span class="price-tag">¥{{ scope.row.price }}</span>
@@ -606,6 +618,40 @@
                 />
                 <span class="sku-hint-muted">与小程序馆藏筛选同源：保存 rootCategoryId + categoryId</span>
             </el-form-item>
+            <el-row :gutter="20">
+                <el-col :span="12">
+                    <el-form-item label="渠道">
+                        <el-select
+                            v-model="form.channel"
+                            clearable
+                            placeholder="蝴蝶可选：进口/国产"
+                            style="width:100%"
+                            :disabled="!isButterflyProduct"
+                        >
+                            <el-option label="进口" value="import" />
+                            <el-option label="国产" value="domestic" />
+                        </el-select>
+                        <span class="sku-hint-muted">仅蝴蝶相关商品启用；空=未标注</span>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="生产方式">
+                        <el-select
+                            v-model="form.craftType"
+                            clearable
+                            placeholder="相框/玻璃罩/造景/冰箱贴"
+                            style="width:100%"
+                            :disabled="!isCraftEligibleProduct"
+                        >
+                            <el-option label="相框" value="frame" />
+                            <el-option label="玻璃罩" value="cloche" />
+                            <el-option label="造景" value="diorama" />
+                            <el-option label="冰箱贴" value="magnet" />
+                        </el-select>
+                        <span class="sku-hint-muted">蝴蝶/昆虫/植物/海洋；空=未标注</span>
+                    </el-form-item>
+                </el-col>
+            </el-row>
             <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="进货价格">
@@ -1175,12 +1221,26 @@ const batchStockForm = ref({ type: 'set', value: 0 }) // 批量调库存表单
 const form = ref({ 
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
+    channel: '', craftType: '',
     latinName: '', description: '', isTreasure: false, inArchive: false, memberDiscountEnabled: true,
     seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
 const categoryCascaderOptions = ref([])
 const categoryFlatMap = ref({}) // id -> category doc
+
+const isButterflyProduct = computed(() => {
+    const f = form.value || {}
+    const blob = [f.rootCategoryName, f.category].filter(Boolean).join(' ')
+    // 蝴蝶二级，或昆虫馆下可标注（运营仅对蝴蝶填写）
+    return /蝴蝶|鳞翅|蝶|昆虫/.test(blob)
+})
+
+const isCraftEligibleProduct = computed(() => {
+    const f = form.value || {}
+    const blob = [f.rootCategoryName, f.category].filter(Boolean).join(' ')
+    return /昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)
+})
 const archiveFilter = ref('all') // 'all' | 'archive' 全部 / 仅档案藏品
 const promoFilter = ref('all') // 'all' | 'seckill' | 'seckill_expired' | 'group'
 
@@ -2120,6 +2180,8 @@ const onCategoryPathChange = (path) => {
         form.value.rootCategoryId = ''
         form.value.rootCategoryName = ''
         form.value.categoryType = ''
+        form.value.channel = ''
+        form.value.craftType = ''
         return
     }
     const rootId = path[0]
@@ -2131,6 +2193,11 @@ const onCategoryPathChange = (path) => {
     form.value.categoryId = subId
     form.value.category = (sub && sub.name) || form.value.rootCategoryName
     form.value.categoryType = (sub && sub.categoryType) || (root && root.categoryType) || ''
+
+    // 切换分类后清理不适用维度，避免脏数据写入
+    const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
+    if (!/蝴蝶|鳞翅|蝶|昆虫/.test(blob)) form.value.channel = ''
+    if (!/昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)) form.value.craftType = ''
 }
 
 const resolveCategoryPath = (row) => {
@@ -2162,6 +2229,7 @@ const openDialog = async () => {
     form.value = { 
         title: '', price: 0, costPrice: 0, stock: 1, category: '',
         categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
+        channel: '', craftType: '',
         latinName: '', description: '', isTreasure: false, inArchive: false, memberDiscountEnabled: true,
         seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
         groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
@@ -2181,6 +2249,8 @@ const editItem = async (row) => {
         rootCategoryName: row.rootCategoryName || '',
         categoryType: row.categoryType || '',
         categoryPath: path,
+        channel: row.channel || '',
+        craftType: row.craftType || '',
         latinName: row.latinName || '',
         description: row.description || '',
         isTreasure: row.isTreasure || false,
@@ -2242,6 +2312,10 @@ const saveProduct = async () => {
             }
         }
         
+        const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
+        const channelOk = /蝴蝶|鳞翅|蝶|昆虫/.test(blob)
+        const craftOk = /昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)
+
         const data = {
             title: form.value.title,
             price: form.value.price,
@@ -2252,6 +2326,8 @@ const saveProduct = async () => {
             rootCategoryId: form.value.rootCategoryId || '',
             rootCategoryName: form.value.rootCategoryName || '',
             categoryType: form.value.categoryType || '',
+            channel: channelOk ? (form.value.channel || '') : '',
+            craftType: craftOk ? (form.value.craftType || '') : '',
             latinName: form.value.latinName || '',
             description: form.value.description || '',
             isTreasure: form.value.isTreasure || false,
