@@ -1,5 +1,7 @@
 # 管理后台：仅补全尾斜杠；勿对 /admin/* 做 200 回退（会把 /admin/assets/*.js 也重写成 HTML，导致白屏）
 /admin /admin/ 301
+# 缺失的 hashed chunk 必须 404，禁止回退官网 index.html（否则 MIME=text/html → 模块加载失败）
+/admin/assets/* /404.html 404
 /products /what 301
 /about /who 301
 /senses /how/senses 301
