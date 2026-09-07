@@ -261,7 +261,15 @@
           <el-form-item label="库存"><el-input-number v-model="form.stock" :min="0" /></el-form-item>
           <el-form-item v-if="form.type === 'coupon'" label="券面值"><el-input-number v-model="form.value" :min="0" /></el-form-item>
           <el-form-item v-if="form.type === 'coupon'" label="使用门槛"><el-input-number v-model="form.minSpend" :min="0" /></el-form-item>
-          <el-form-item label="图片 URL"><el-input v-model="form.image" placeholder="https:// 或 cloud://" /></el-form-item>
+          <el-form-item label="图片">
+            <ImageUploadField
+              v-model="form.image"
+              folder="rewards"
+              tip="优先上传兑换商品图；也可粘贴 cloud:// 或 HTTPS"
+              preview-width="96px"
+              preview-height="96px"
+            />
+          </el-form-item>
           <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="2" /></el-form-item>
         </template>
 
@@ -310,6 +318,7 @@ import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from '../cloud'
 import { Plus, Edit, Delete, Ticket, Connection, Select, Picture, Minus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import ImageUploadField from './ImageUploadField.vue'
 
 // --- 状态定义 ---
 const activeModule = ref('coupon') // coupon | reward | vip | virtual

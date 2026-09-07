@@ -80,7 +80,15 @@
       <el-form :model="rootForm" label-width="100px">
         <el-form-item label="分类名称"><el-input v-model="rootForm.name" /></el-form-item>
         <el-form-item label="图标"><el-input v-model="rootForm.icon" placeholder="emoji 或图片 URL" /></el-form-item>
-        <el-form-item label="封面图"><el-input v-model="rootForm.cover" placeholder="cloud:// 或 https://" /></el-form-item>
+        <el-form-item label="封面图">
+          <ImageUploadField
+            v-model="rootForm.cover"
+            folder="categories"
+            tip="优先上传分类封面；也可粘贴 cloud:// 或 HTTPS"
+            preview-width="120px"
+            preview-height="120px"
+          />
+        </el-form-item>
         <el-form-item label="简介"><el-input v-model="rootForm.desc" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="排序权重"><el-input-number v-model="rootForm.sort" :min="0" /></el-form-item>
       </el-form>
@@ -132,6 +140,7 @@ import {
   cdnRemove,
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import ImageUploadField from './ImageUploadField.vue'
 
 const roots = ref([])
 const subs = ref([])

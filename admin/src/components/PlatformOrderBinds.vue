@@ -201,7 +201,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { callCloudFunction } from '../cloud'
 
 const FN = 'bindPlatformOrder'
-const opsKey = () => import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+/** 鉴权密钥由 /api/cloud-fn 服务端注入 ADMIN_OPS_KEY；勿再依赖 VITE_ 进 SPA */
 
 const loading = ref(false)
 const list = ref([])
@@ -250,7 +250,7 @@ function fmtFull(value) {
 }
 
 async function callFn(data) {
-  const res = await callCloudFunction(FN, { ...data, adminOpsKey: opsKey() })
+  const res = await callCloudFunction(FN, data)
   if (!res || res.success === false) {
     throw new Error(res?.msg || '云函数调用失败')
   }
@@ -277,7 +277,10 @@ async function loadList() {
   } catch (e) {
     list.value = []
     total.value = 0
-    ElMessage.error(e?.message || '加载失败：请确认已部署 bindPlatformOrder 并配置 ADMIN_OPS_KEY')
+    ElMessage.error(
+      e?.message ||
+        '加载失败：请确认已部署 Pages 代理 /api/cloud-fn、云函数 bindPlatformOrder，以及 Cloudflare / 云函数环境变量 ADMIN_OPS_KEY、TCB_SECRET_*',
+    )
   } finally {
     loading.value = false
   }
@@ -309,14 +312,18 @@ function approve(row) {
         ElMessage.warning('金额无效')
         return
       }
-      const res = await callFn({
-        action: 'approve',
-        bindId: row._id,
-        amount
-      })
-      ElMessage.success(res.msg || `已入账 +${res.pointsGranted ?? 0} 分`)
-      detailDrawer.value = false
-      refresh()
+      try {
+        const res = await callFn({
+          action: 'approve',
+          bindId: row._id,
+          amount
+        })
+        ElMessage.success(res.msg || `已入账 +${res.pointsGranted ?? 0} 分`)
+        detailDrawer.value = false
+        refresh()
+      } catch (e) {
+        ElMessage.error(e?.message || '通过失败')
+      }
     })
     .catch(() => {})
 }
@@ -330,14 +337,18 @@ function reject(row) {
     inputValue: ''
   })
     .then(async ({ value }) => {
-      await callFn({
-        action: 'reject',
-        bindId: row._id,
-        rejectReason: String(value || '').trim() || undefined
-      })
-      ElMessage.success('已驳回')
-      detailDrawer.value = false
-      refresh()
+      try {
+        await callFn({
+          action: 'reject',
+          bindId: row._id,
+          rejectReason: String(value || '').trim() || undefined
+        })
+        ElMessage.success('已驳回')
+        detailDrawer.value = false
+        refresh()
+      } catch (e) {
+        ElMessage.error(e?.message || '驳回失败')
+      }
     })
     .catch(() => {})
 }

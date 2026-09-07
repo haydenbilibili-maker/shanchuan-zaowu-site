@@ -56,7 +56,13 @@
         </el-row>
 
         <el-form-item label="封面图">
-          <el-input v-model="form.coverImage" placeholder="请输入图片链接 (云存储ID或HTTPS)" />
+          <ImageUploadField
+            v-model="form.coverImage"
+            folder="exhibitions"
+            tip="优先上传封面；也可粘贴 cloud:// 或 HTTPS"
+            preview-width="160px"
+            preview-height="100px"
+          />
         </el-form-item>
 
         <el-form-item label="导语">
@@ -98,6 +104,7 @@
 import { ref, onMounted } from 'vue'
 import { getTempFileUrl, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import ImageUploadField from './ImageUploadField.vue'
 
 const wikis = ref([])
 const loading = ref(false)

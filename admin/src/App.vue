@@ -218,6 +218,7 @@
               </el-menu-item-group>
               <el-menu-item-group title="会员/营销规则">
                 <el-menu-item index="14"><el-icon><UserFilled /></el-icon><span>会员等级体系</span></el-menu-item>
+                <el-menu-item index="63"><el-icon><Trophy /></el-icon><span>荣誉馆长名单</span></el-menu-item>
                 <el-menu-item index="15"><el-icon><Ticket /></el-icon><span>门店积分规则</span></el-menu-item>
                 <el-menu-item index="22"><el-icon><Trophy /></el-icon><span>成就系统配置</span></el-menu-item>
                 <el-menu-item index="20"><el-icon><Ticket /></el-icon><span>活动营销规则</span></el-menu-item>
@@ -1062,6 +1063,7 @@ import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
 import Refunds from './components/Refunds.vue'
 import InvoiceRequests from './components/InvoiceRequests.vue'
+import HonoraryCurators from './components/HonoraryCurators.vue'
 import PlatformOrderBinds from './components/PlatformOrderBinds.vue'
 import ShippingRulesConfig from './components/ShippingRulesConfig.vue'
 import Categories from './components/Categories.vue'
@@ -1094,6 +1096,7 @@ const TAB_COMPONENT_MAP = {
   '12': () => ({ comp: AICenter }),
   '13': () => ({ comp: HomeConfigManager }),
   '14': () => ({ comp: MemberLevelConfig }),
+  '63': () => ({ comp: HonoraryCurators }),
   '15': () => ({ comp: PointsRulesConfig }),
   '16': () => ({ comp: BookingRulesConfig }),
   '17': () => ({ comp: PermissionManager }),
@@ -1229,6 +1232,7 @@ const TAB_TO_GROUP = {
   '15': 'grp-miniapp', '16': 'grp-miniapp', '17': 'grp-miniapp', '18': 'grp-miniapp',
   '19': 'grp-miniapp', '20': 'grp-miniapp', '21': 'grp-miniapp', '22': 'grp-miniapp',
   '23': 'grp-miniapp', '24': 'grp-miniapp', '54': 'grp-miniapp', '56': 'grp-miniapp',
+  '62': 'grp-miniapp', '63': 'grp-miniapp',
   '2': 'grp-governance', '7': 'grp-governance', '27': 'grp-governance', '28': 'grp-governance',
   '31': 'grp-governance', '32': 'grp-governance', '33': 'grp-governance', '36': 'grp-governance', '50': 'grp-governance', '53': 'grp-governance'
 }

@@ -78,7 +78,15 @@
             <el-form-item label="举办地点">
                 <el-input v-model="form.location" placeholder="例如：本店" />
             </el-form-item>
-            <el-alert title="封面图请在小程序端上传" type="info" :closable="false" show-icon style="margin-top:10px" />
+            <el-form-item label="封面图">
+                <ImageUploadField
+                  v-model="form.image"
+                  folder="activities"
+                  tip="优先在此上传活动封面；也可粘贴 cloud:// 或 HTTPS"
+                  preview-width="160px"
+                  preview-height="100px"
+                />
+            </el-form-item>
         </el-form>
         </div>
         <template #footer>
@@ -93,6 +101,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { fetchCollectionSorted, cdnAdd, cdnUpdate } from '../cloud'
 import { ElMessage } from 'element-plus'
+import ImageUploadField from './ImageUploadField.vue'
 
 const loading = ref(false)
 const list = ref([])

@@ -4,14 +4,14 @@
       <h2>内容展示开关</h2>
       <p class="subtitle">
         对齐小程序云函数 <code>getContentDisplayFlags</code> · 集合 <code>content_display_flags</code>。
-        控制馆藏「标本档案」、我的「山海社区」等前端区块显隐。
+        控制馆藏「标本档案」、我的「山海社区」、预约发起入口等前端区块显隐。
       </p>
       <el-alert
-        type="warning"
+        type="info"
         :closable="false"
         show-icon
         class="hint-alert"
-        title="默认关闭，内容生态成熟后再开放。缺配置时小程序按关闭兜底，不会误开。"
+        title="标本档案 / 山海社区默认关闭（成熟后再开）；预约入口默认开启（缺配置小程序仍显示发起入口）。仅显式关闭预约入口才会隐藏。"
       />
     </div>
 
@@ -41,11 +41,26 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="预约 · 发起入口">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.showBookingEntry"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              关闭后隐藏「我的预约」页发起 CTA，以及「我的」页「预约参观」菜单行；
+              「我的预约」列表/票根仍可查看。缺配置默认开启。
+            </span>
+          </div>
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" color="#2D6A4F" :loading="saving" @click="saveFlags">
             保存开关
           </el-button>
-          <el-button @click="resetClosed">全部关闭（推荐默认）</el-button>
+          <el-button @click="resetDefaults">恢复默认</el-button>
           <el-button :loading="loading" @click="loadFlags">刷新</el-button>
         </el-form-item>
       </el-form>
@@ -65,9 +80,11 @@ import {
 } from '../cloud'
 import { ElMessage } from 'element-plus'
 
+/** 与云函数 getContentDisplayFlags 默认策略对齐 */
 const DEFAULT_FLAGS = {
   showSpecimenArchive: false,
-  showUserCommunity: false
+  showUserCommunity: false,
+  showBookingEntry: true
 }
 
 const loading = ref(false)
@@ -86,6 +103,7 @@ function formatTime(v) {
 function applyFlags(raw = {}, id = '') {
   form.showSpecimenArchive = raw.showSpecimenArchive === true
   form.showUserCommunity = raw.showUserCommunity === true
+  form.showBookingEntry = raw.showBookingEntry !== false
   docId.value = id || ''
   updatedAtText.value = formatTime(raw.updateTime || raw._updateTime || raw.updatedAt || null)
 }
@@ -104,11 +122,11 @@ async function loadFlags() {
       applyFlags(top, top._id)
     } else {
       applyFlags(DEFAULT_FLAGS, '')
-      ElMessage.info('尚无配置记录，当前为默认关闭；保存后写入云库')
+      ElMessage.info('尚无配置记录，当前为默认值；保存后写入云库')
     }
   } catch (e) {
     applyFlags(DEFAULT_FLAGS, '')
-    ElMessage.warning('加载失败，已回退为默认关闭：' + (e.message || e))
+    ElMessage.warning('加载失败，已回退为默认值：' + (e.message || e))
   } finally {
     loading.value = false
   }
@@ -121,6 +139,7 @@ function buildPayload() {
     priority: 10,
     showSpecimenArchive: form.showSpecimenArchive === true,
     showUserCommunity: form.showUserCommunity === true,
+    showBookingEntry: form.showBookingEntry !== false,
     updateTime: Date.now(),
     _updateTime: Date.now()
   }
@@ -139,7 +158,7 @@ async function saveFlags() {
         _createTime: Date.now()
       })
     }
-    ElMessage.success('已保存（默认关闭项不会被误开）')
+    ElMessage.success('已保存')
     await loadFlags()
   } catch (e) {
     ElMessage.error(
@@ -150,10 +169,11 @@ async function saveFlags() {
   }
 }
 
-function resetClosed() {
-  form.showSpecimenArchive = false
-  form.showUserCommunity = false
-  ElMessage.info('已本地全部关闭，点击「保存开关」写入云库')
+function resetDefaults() {
+  form.showSpecimenArchive = DEFAULT_FLAGS.showSpecimenArchive
+  form.showUserCommunity = DEFAULT_FLAGS.showUserCommunity
+  form.showBookingEntry = DEFAULT_FLAGS.showBookingEntry
+  ElMessage.info('已恢复本地默认值，点击「保存开关」写入云库')
 }
 
 onMounted(loadFlags)

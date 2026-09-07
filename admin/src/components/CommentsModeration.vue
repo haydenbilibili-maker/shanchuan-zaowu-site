@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>评论审核 / COMMENT MODERATION</h2>
-        <span class="subtitle">UGC REVIEW & MODERATION</span>
+        <span class="subtitle">UGC · moderateComment</span>
       </div>
       <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
     </div>
@@ -18,18 +18,27 @@
         <el-radio-button label="hidden">已隐藏</el-radio-button>
         <el-radio-button label="all">全部</el-radio-button>
       </el-radio-group>
-      <el-input v-model="keyword" placeholder="搜索内容关键字..." style="width: 240px" clearable prefix-icon="Search" @change="filterLocal" />
+      <el-input
+        v-model="keyword"
+        placeholder="搜索内容关键字..."
+        style="width: 240px"
+        clearable
+        prefix-icon="Search"
+      />
     </div>
 
     <el-card shadow="never">
       <el-table :data="filteredList" v-loading="loading" stripe height="calc(100vh - 280px)">
+        <template #empty>
+          <el-empty description="暂无评论" :image-size="88" />
+        </template>
         <el-table-column label="评论内容" min-width="320">
           <template #default="{ row }">
             <div class="comment-content">{{ row.content }}</div>
             <div class="comment-meta">
-              <span v-if="row.isPinned" class="pin-tag">📌 已置顶</span>
-              <span>👍 {{ row.likes || 0 }}</span>
-              <span v-if="row.images?.length">🖼️ {{ row.images.length }} 图</span>
+              <span v-if="row.isPinned" class="pin-tag">已置顶</span>
+              <span>赞 {{ row.likes || 0 }}</span>
+              <span v-if="row.images?.length">图 {{ row.images.length }}</span>
             </div>
           </template>
         </el-table-column>
@@ -45,14 +54,14 @@
               <el-avatar :size="28" :src="row.userAvatar" />
               <div>
                 <div class="user-name">{{ row.userName || row.nickName || '匿名用户' }}</div>
-                <div class="user-id">{{ row._openid?.slice(0, 8) }}...</div>
+                <div class="user-id">{{ shortId(row._openid) }}</div>
               </div>
             </div>
           </template>
         </el-table-column>
         <el-table-column label="时间" width="150">
           <template #default="{ row }">
-            <div>{{ fmt(row.createTime) }}</div>
+            <div>{{ fmt(row.createTime || row.createdAt) }}</div>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100">
@@ -62,12 +71,31 @@
         </el-table-column>
         <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="row.status !== 'approved'" size="small" type="success" @click="moderate(row, 'approved')">通过</el-button>
-            <el-button v-if="row.status !== 'hidden'" size="small" type="warning" @click="moderate(row, 'hidden')">隐藏</el-button>
-            <el-button size="small" :type="row.isPinned ? 'info' : 'primary'" color="#d4af37" plain @click="togglePin(row)">
+            <el-button
+              v-if="row.status !== 'approved'"
+              size="small"
+              type="success"
+              :loading="busyId === row._id"
+              @click="moderate(row, 'approve')"
+            >通过</el-button>
+            <el-button
+              v-if="row.status !== 'hidden'"
+              size="small"
+              type="warning"
+              :loading="busyId === row._id"
+              @click="moderate(row, 'hide')"
+            >隐藏</el-button>
+            <el-button
+              size="small"
+              :type="row.isPinned ? 'info' : 'primary'"
+              color="#d4af37"
+              plain
+              :loading="busyId === row._id"
+              @click="togglePin(row)"
+            >
               {{ row.isPinned ? '取消置顶' : '置顶' }}
             </el-button>
-            <el-button size="small" type="danger" link @click="del(row)">删除</el-button>
+            <el-button size="small" type="danger" link :loading="busyId === row._id" @click="del(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -78,11 +106,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
-import { fetchCollectionSorted, cdnCount, cdnUpdate, cdnRemove } from '../cloud'
+import { callCloudFunction } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const FN = 'moderateComment'
 
 const list = ref([])
 const loading = ref(false)
+const busyId = ref('')
 const statusFilter = ref('pending')
 const keyword = ref('')
 const pendingCount = ref(0)
@@ -92,73 +123,115 @@ const STATUS = {
   approved: { text: '已通过', type: 'success' },
   hidden: { text: '已隐藏', type: 'info' }
 }
-const statusLabel = (s) => STATUS[s]?.text || s
+const statusLabel = (s) => STATUS[s]?.text || s || '—'
 const statusType = (s) => STATUS[s]?.type || 'info'
 
-const fmt = (ts) => {
-  if (!ts) return ''
+function shortId(id) {
+  const s = String(id || '')
+  return s ? `${s.slice(0, 8)}…` : '—'
+}
+
+function fmt(ts) {
+  if (!ts) return '—'
   const d = typeof ts === 'object' && ts.toDate ? ts.toDate() : new Date(ts)
+  if (Number.isNaN(d.getTime())) return '—'
   return d.toLocaleString('zh-CN')
 }
 
 const filteredList = computed(() => {
   if (!keyword.value) return list.value
   const k = keyword.value.toLowerCase()
-  return list.value.filter(c => (c.content || '').toLowerCase().includes(k))
+  return list.value.filter((c) => (c.content || '').toLowerCase().includes(k))
 })
 
-const filterLocal = () => {}
+async function callFn(data) {
+  const res = await callCloudFunction(FN, data)
+  if (!res || res.success === false) {
+    throw new Error(res?.msg || '云函数调用失败')
+  }
+  return res
+}
 
 const refresh = async () => {
   loading.value = true
   try {
-    const where = statusFilter.value !== 'all' ? { status: statusFilter.value } : null
-    list.value = await fetchCollectionSorted('comments', {
+    const res = await callFn({
+      action: 'list',
+      listFilter: statusFilter.value,
       limit: 200,
-      where,
-      sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0)
+      skip: 0
     })
-    pendingCount.value = await cdnCount('comments', { status: 'pending' })
+    list.value = res.list || res.data || []
+    pendingCount.value = Number(res.pendingCount) || 0
   } catch (e) {
     list.value = []
-    ElMessage.error('加载失败：' + e.message)
+    ElMessage.error(e?.message || '加载失败：请确认已部署 moderateComment 并配置 ADMIN_OPS_KEY')
   } finally {
     loading.value = false
   }
 }
 
-const moderate = async (row, newStatus) => {
+function applyLocalStatus(row, newStatus) {
+  const id = row._id
+  if (statusFilter.value !== 'all' && statusFilter.value !== newStatus) {
+    list.value = list.value.filter((c) => c._id !== id)
+  } else {
+    list.value = list.value.map((c) => (c._id === id ? { ...c, status: newStatus } : c))
+  }
+  if (row.status === 'pending' && newStatus !== 'pending' && pendingCount.value > 0) {
+    pendingCount.value -= 1
+  }
+}
+
+const moderate = async (row, action) => {
+  if (!row?._id) return
+  busyId.value = row._id
   try {
-    await cdnUpdate('comments', row._id, {
-      status: newStatus,
-      updatedAt: Date.now()
-    })
-    ElMessage.success(newStatus === 'approved' ? '已通过' : '已隐藏')
+    const res = await callFn({ action, commentId: row._id })
+    const newStatus = res.status || (action === 'approve' ? 'approved' : 'hidden')
+    applyLocalStatus(row, newStatus)
+    ElMessage.success(res.msg || (newStatus === 'approved' ? '已通过' : '已隐藏'))
+    // 后台再拉一次，校正角标
     refresh()
   } catch (e) {
-    ElMessage.error('操作失败：' + e.message)
+    ElMessage.error(e?.message || '操作失败')
+  } finally {
+    busyId.value = ''
   }
 }
 
 const togglePin = async (row) => {
+  if (!row?._id) return
+  busyId.value = row._id
   try {
-    await cdnUpdate('comments', row._id, {
-      isPinned: !row.isPinned,
-      updatedAt: Date.now()
-    })
-    ElMessage.success(row.isPinned ? '已取消置顶' : '已置顶')
-    refresh()
+    const res = await callFn({ action: 'pin', commentId: row._id })
+    const isPinned = typeof res.isPinned === 'boolean' ? res.isPinned : !row.isPinned
+    list.value = list.value.map((c) => (c._id === row._id ? { ...c, isPinned } : c))
+    ElMessage.success(res.msg || (isPinned ? '已置顶' : '已取消置顶'))
   } catch (e) {
-    ElMessage.error('操作失败')
+    ElMessage.error(e?.message || '操作失败')
+  } finally {
+    busyId.value = ''
   }
 }
 
 const del = (row) => {
-  ElMessageBox.confirm('永久删除此评论？', '删除确认', { type: 'warning' }).then(async () => {
-    await cdnRemove('comments', row._id)
-    ElMessage.success('已删除')
-    refresh()
-  }).catch(() => {})
+  if (!row?._id) return
+  ElMessageBox.confirm('永久删除此评论？', '删除确认', { type: 'warning' })
+    .then(async () => {
+      busyId.value = row._id
+      try {
+        const res = await callFn({ action: 'delete', commentId: row._id })
+        list.value = list.value.filter((c) => c._id !== row._id)
+        if (row.status === 'pending' && pendingCount.value > 0) pendingCount.value -= 1
+        ElMessage.success(res.msg || '已删除')
+      } catch (e) {
+        ElMessage.error(e?.message || '删除失败')
+      } finally {
+        busyId.value = ''
+      }
+    })
+    .catch(() => {})
 }
 
 onMounted(refresh)

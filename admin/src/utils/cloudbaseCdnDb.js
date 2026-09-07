@@ -68,12 +68,78 @@ export async function getCdnDatabase() {
   return initPromise
 }
 
+/** 浏览器匿名 callFunction 常被拒；管理类函数走 /api/cloud-fn 服务端代理 */
+const ADMIN_PROXY_FUNCTIONS = new Set([
+  'manageInvoiceRequests',
+  'manageHonoraryCurators',
+  'bindPlatformOrder',
+  'managerShipOrder',
+  'refundOrder',
+  'getShippingRules',
+  'moderateComment',
+])
+
+function cloudFnProxyUrls() {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
+  const urls = ['/api/cloud-fn']
+  if (base && base !== '/') urls.push(`${base}/api/cloud-fn`)
+  return [...new Set(urls)]
+}
+
+function proxyUnavailableMessage(detail = '') {
+  const hint =
+    'Admin 管理类云函数须经 /api/cloud-fn 代理（勿浏览器匿名直调）。' +
+    '本地：admin/.env 配 TCB_SECRET_ID/TCB_SECRET_KEY 与 ADMIN_OPS_KEY 后重启 npm run dev:admin；' +
+    '线上：提交并部署仓库 functions/api/cloud-fn.js，且 Cloudflare Pages 配置同名环境变量。' +
+    '飞书同步走 /api/feishu-sync，与本代理无关。'
+  return detail ? `${detail} ${hint}` : hint
+}
+
+async function callViaCloudFnProxy(name, data = {}) {
+  const urls = cloudFnProxyUrls()
+  let lastErr
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, data }),
+      })
+      const ctype = res.headers.get('content-type') || ''
+      if (ctype.includes('text/html')) {
+        lastErr = new Error(
+          proxyUnavailableMessage(`${url} 未部署云函数代理（返回了 HTML，常见于 Pages Function 未随站点发布）。`),
+        )
+        continue
+      }
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok && json.success !== false) {
+        // 线上无 Function 时常见：GET→404 HTML，POST→405 空 body
+        const statusHint =
+          res.status === 404 || res.status === 405
+            ? `${url} 代理未部署（HTTP ${res.status}）。`
+            : `云函数代理 HTTP ${res.status}。`
+        lastErr = new Error(proxyUnavailableMessage(statusHint))
+        continue
+      }
+      // 代理已到达：业务失败原样返回，由调用方读 success/msg
+      return json
+    } catch (e) {
+      lastErr = e
+    }
+  }
+  throw lastErr || new Error(proxyUnavailableMessage('云函数代理不可用。'))
+}
+
 function formatFnError(err) {
   const code = err?.code || err?.error?.code || ''
   const msg = err?.msg || err?.message || err?.error?.message || (typeof err === 'string' ? err : JSON.stringify(err))
   const blob = `${code} ${msg}`
-  if (/PERMISSION_DENIED|FUNCTION_NOT_FOUND|not found|不存在/i.test(blob)) {
-    return '云函数无权调用或尚未部署。Admin 飞书同步请走 /api/feishu-sync 代理；小程序侧云函数请在微信开发者工具上传并配置环境变量。'
+  // 仅匹配云开发权限/函数缺失码；避免把普通业务「不存在」误映射成笼统提示
+  if (/PERMISSION_DENIED|FUNCTION_NOT_FOUND|ResourceNotFound\.Function|function not exist/i.test(blob)) {
+    return proxyUnavailableMessage(
+      `云函数「调用被拒或未部署」（${code || 'PERMISSION_DENIED'}）。`,
+    )
   }
   if (isCloudbasePromiseBug({ message: msg })) {
     return "CloudBase CDN/SDK 异常（setting 'promise'）。请确认 index.html 已预加载 CDN SDK，且业务走 getCdnDatabase，而非 bundle 内 db。"
@@ -81,8 +147,11 @@ function formatFnError(err) {
   return msg
 }
 
-/** 与数据库同一 CDN SDK 实例调用云函数（密钥在云函数环境变量） */
+/** 管理类云函数走 HTTP 代理；其它走 CDN SDK（密钥在云函数环境变量） */
 export async function callCdnFunction(name, data = {}) {
+  if (ADMIN_PROXY_FUNCTIONS.has(name)) {
+    return callViaCloudFnProxy(name, data)
+  }
   await getCdnDatabase()
   if (!cdnApp || typeof cdnApp.callFunction !== 'function') {
     throw new Error('CloudBase SDK 不支持 callFunction')

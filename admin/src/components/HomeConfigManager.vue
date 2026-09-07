@@ -397,7 +397,8 @@ const getDefaultModules = () => [
   {
     id: 'collections',
     name: '专题展览',
-    enabled: true,
+    // 与小程序一致：缺省关闭，仅 enabled === true 才展示
+    enabled: false,
     order: 3,
     config: { limit: 10, sortBy: 'createTime', sortOrder: 'desc' }
   },
@@ -411,7 +412,8 @@ const getDefaultModules = () => [
   {
     id: 'activities',
     name: '近期活动',
-    enabled: true,
+    // 与小程序一致：缺省关闭，仅 enabled === true 才展示
+    enabled: false,
     order: 5,
     config: { limit: 5, status: 'open', sortBy: 'date', sortOrder: 'asc' }
   },

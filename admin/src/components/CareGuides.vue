@@ -124,10 +124,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 const CATEGORIES = ['GENERAL', 'INSECTA', 'PLANTAE', 'MARINE', 'MINERALS', 'FRAMING']
 const CATEGORY_LABEL = {
   GENERAL: '通用安放',
-  INSECTA: '神奇昆虫',
-  PLANTAE: '植物探微',
-  MARINE: '无尽海洋',
-  MINERALS: '群山回响',
+  INSECTA: '蝴蝶昆虫',
+  PLANTAE: '植物果实',
+  MARINE: '海洋标本',
+  MINERALS: '矿石馆',
   FRAMING: '装裱养护'
 }
 

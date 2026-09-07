@@ -115,7 +115,14 @@
           </el-col>
         </el-row>
         <el-form-item label="社群二维码">
-          <el-input v-model="form.communityQr" placeholder="cloud:// 或 https://" />
+          <ImageUploadField
+            v-model="form.communityQr"
+            folder="qrcode"
+            tip="优先上传社群二维码图；也可粘贴 cloud:// 或 HTTPS"
+            preview-width="120px"
+            preview-height="120px"
+            :max-size-mb="3"
+          />
         </el-form-item>
 
         <el-divider content-position="left">咨询主题</el-divider>
@@ -210,6 +217,7 @@ import { ref, onMounted } from 'vue'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import { fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import ImageUploadField from './ImageUploadField.vue'
 
 /** 小程序 assets/icons 常用主题图标（路径写入云端；Admin 用 emoji 预览） */
 const TOPIC_ICON_PRESETS = [

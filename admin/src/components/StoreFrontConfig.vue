@@ -122,7 +122,15 @@
         <el-form-item label="地址"><el-input v-model="storeForm.address" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="一句话"><el-input v-model="storeForm.heroTagline" /></el-form-item>
         <el-form-item label="简介"><el-input v-model="storeForm.intro" type="textarea" :rows="3" /></el-form-item>
-        <el-form-item label="封面图"><el-input v-model="storeForm.coverImage" placeholder="https:// 或 cloud://" /></el-form-item>
+        <el-form-item label="封面图">
+          <ImageUploadField
+            v-model="storeForm.coverImage"
+            folder="stores"
+            tip="优先上传门店封面；也可粘贴 cloud:// 或 HTTPS"
+            preview-width="160px"
+            preview-height="100px"
+          />
+        </el-form-item>
         <el-form-item label="营业时段">
           <div class="hours-row">
             <el-input v-model="storeForm.hoursOpen" placeholder="10:00" style="width: 120px" />
@@ -162,9 +170,33 @@
         <el-form-item label="品类标签"><el-input v-model="zoneForm.categoryTag" /></el-form-item>
         <el-form-item label="短描述"><el-input v-model="zoneForm.desc" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="长描述"><el-input v-model="zoneForm.longDesc" type="textarea" :rows="3" /></el-form-item>
-        <el-form-item label="封面图"><el-input v-model="zoneForm.coverImage" /></el-form-item>
+        <el-form-item label="封面图">
+          <ImageUploadField
+            v-model="zoneForm.coverImage"
+            folder="store-zones"
+            tip="优先上传展区封面；也可粘贴 cloud:// 或 HTTPS"
+            preview-width="160px"
+            preview-height="100px"
+          />
+        </el-form-item>
         <el-form-item label="图集">
-          <el-input v-model="zoneForm.imagesStr" type="textarea" :rows="2" placeholder="多张 URL，逗号或换行分隔" />
+          <div class="gallery-upload-row">
+            <el-upload
+              accept="image/*"
+              :show-file-list="false"
+              :http-request="uploadZoneGalleryImage"
+            >
+              <el-button type="primary" plain :loading="zoneGalleryUploading">上传并追加</el-button>
+            </el-upload>
+            <span class="gallery-hint">上传一张追加一行；下方可批量粘贴/调整顺序</span>
+          </div>
+          <el-input
+            v-model="zoneForm.imagesStr"
+            type="textarea"
+            :rows="2"
+            placeholder="多张 URL，逗号或换行分隔"
+            style="margin-top: 8px"
+          />
         </el-form-item>
         <el-form-item label="排序"><el-input-number v-model="zoneForm.sort" :min="0" /></el-form-item>
         <el-form-item label="状态">
@@ -185,8 +217,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Plus, Refresh } from '@element-plus/icons-vue'
-import { fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from '../cloud'
+import { fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, uploadAdminBinary } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import ImageUploadField from './ImageUploadField.vue'
 
 const activeTab = ref('stores')
 const loading = ref(false)
@@ -199,6 +232,37 @@ const storeDialog = ref(false)
 const zoneDialog = ref(false)
 const storeForm = ref(emptyStore())
 const zoneForm = ref(emptyZone())
+const zoneGalleryUploading = ref(false)
+
+async function uploadZoneGalleryImage(opt) {
+  const file = opt?.file
+  if (!file) return
+  if (file.type && !file.type.startsWith('image/')) {
+    ElMessage.error('仅支持图片文件')
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.error('图片过大，请压缩到 5MB 以内')
+    return
+  }
+  zoneGalleryUploading.value = true
+  try {
+    const fileID = await uploadAdminBinary(file, 'store-zones')
+    const existing = String(zoneForm.value.imagesStr || '')
+      .split(/[\n,，]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (!existing.includes(fileID)) existing.push(fileID)
+    zoneForm.value.imagesStr = existing.join('\n')
+    opt.onSuccess?.({ fileID }, file)
+    ElMessage.success('已追加到图集')
+  } catch (e) {
+    opt.onError?.(e)
+    ElMessage.error('上传失败：' + (e?.message || '请检查云存储权限'))
+  } finally {
+    zoneGalleryUploading.value = false
+  }
+}
 
 function emptyStore() {
   return {
@@ -443,6 +507,8 @@ onMounted(refresh)
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid #2D6A4F; padding-left: 12px; font-weight: 800; }
 .title-box .subtitle { color: #999; font-size: 12px; padding-left: 17px; }
+.gallery-upload-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.gallery-hint { font-size: 12px; color: #6b6560; }
 .dual-track-alert { margin-bottom: 12px; }
 .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
 .tip { color: #888; font-size: 13px; }

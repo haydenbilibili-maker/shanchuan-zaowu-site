@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { viteAliyunNlsPlugin } from './scripts/viteAliyunNlsPlugin.mjs'
 import { viteOssTtsPlugin } from './scripts/viteOssTtsPlugin.mjs'
 import { viteFeishuBitablePlugin } from './scripts/viteFeishuBitablePlugin.mjs'
+import { viteCloudFnPlugin } from './scripts/viteCloudFnPlugin.mjs'
 
 function buildDevProxies(env = {}) {
   const withAuthHeader = (proxy) => {
@@ -76,7 +77,13 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const devProxy = buildDevProxies(env)
   return {
-    plugins: [vue(), viteAliyunNlsPlugin(env), viteOssTtsPlugin(env), viteFeishuBitablePlugin(env)],
+    plugins: [
+      vue(),
+      viteAliyunNlsPlugin(env),
+      viteOssTtsPlugin(env),
+      viteFeishuBitablePlugin(env),
+      viteCloudFnPlugin(env),
+    ],
     /** 挂载于 shanhaizaowu.com/admin/；构建输出到 public/admin/ */
     base: '/admin/',
     build: {

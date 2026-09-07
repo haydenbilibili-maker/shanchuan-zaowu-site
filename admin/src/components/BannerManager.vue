@@ -38,16 +38,18 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="isEditing ? '编辑海报' : '新增海报'" width="500px">
+    <el-dialog v-model="dialogVisible" :title="isEditing ? '编辑海报' : '新增海报'" width="560px">
       <el-form :model="form" label-width="100px">
         <el-form-item label="图片链接">
-          <el-input v-model="form.image" placeholder="请输入云存储 FileID 或 HTTPS 链接">
-             <template #append>
-                <el-tooltip content="建议 16:9 比例 (800x450px)" placement="top">
-                  <el-icon><InfoFilled /></el-icon>
-                </el-tooltip>
-             </template>
-          </el-input>
+          <ImageUploadField
+            v-model="form.image"
+            folder="banners"
+            hint="建议 16:9 比例 (800×450px)"
+            tip="优先上传；也可粘贴 cloud:// 或 HTTPS。小程序按 FileID/CDN 链接消费。"
+            preview-width="200px"
+            preview-height="112px"
+            :max-size-mb="8"
+          />
         </el-form-item>
         
         <el-form-item label="主标题">
@@ -90,7 +92,7 @@ import { ref, onMounted } from 'vue'
 import { getTempFileUrl, COLLECTIONS, fetchCollectionSorted } from '../cloud'
 import { cdnAdd, cdnUpdate, cdnRemove } from '../utils/cloudbaseCdnDb'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { InfoFilled } from '@element-plus/icons-vue'
+import ImageUploadField from './ImageUploadField.vue'
 
 const banners = ref([])
 const loading = ref(false)
