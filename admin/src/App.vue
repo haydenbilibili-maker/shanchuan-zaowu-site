@@ -297,7 +297,15 @@
             <div v-if="currentTab === '1'" :key="'1-' + reloadKey" class="module-wrapper">
                <div class="module-header">
                   <div class="title-box">
-                    <h2>藏品档案库</h2>
+                    <h2>
+                      藏品档案库
+                      <span class="archive-sku-count" :title="displaySkuCountTitle">
+                        共 {{ displaySkuCount }} 个 SKU
+                        <template v-if="displayProducts.length !== displaySkuCount">
+                          · {{ displayProducts.length }} 件藏品
+                        </template>
+                      </span>
+                    </h2>
                     <span class="subtitle">ARCHIVES MANAGEMENT</span>
                   </div>
                   <div style="display: flex; gap: 10px;">
@@ -2179,6 +2187,23 @@ const displayProducts = computed(() => {
     return list
 })
 
+/** 单品计 1；开启多规格且有 skus 时按规格条数计（非库存 stock） */
+const countProductSkus = (p) => {
+    if (p?.hasSku && Array.isArray(p.skus) && p.skus.length > 0) return p.skus.length
+    return 1
+}
+
+const displaySkuCount = computed(() =>
+    (displayProducts.value || []).reduce((sum, p) => sum + countProductSkus(p), 0)
+)
+
+const displaySkuCountTitle = computed(() => {
+    const productsN = displayProducts.value?.length || 0
+    const skusN = displaySkuCount.value
+    if (productsN === skusN) return '与当前档案/营销筛选一致的商品条目数'
+    return `当前筛选 ${productsN} 件藏品，展开多规格后共 ${skusN} 个 SKU`
+})
+
 const isSeckillExpired = (row) => {
     if (!row?.seckill?.enabled) return false
     const end = row.seckill.endTime ? Number(row.seckill.endTime) : null
@@ -4037,6 +4062,14 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     letter-spacing: 2px; 
     display: block; 
     margin-top: 5px; 
+}
+.title-box .archive-sku-count {
+    margin-left: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--primary);
+    letter-spacing: 0;
+    vertical-align: middle;
 }
 
 /* 🟢 表格卡片 - 白色低饱和度 + 黑金边框 */
