@@ -1266,6 +1266,7 @@ import {
 } from '@element-plus/icons-vue'
 // 导入云开发工具
 import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, callCloudFunction, getCdnDatabase } from './cloud'
+import { toChineseTaxonomy } from './utils/taxonomyZh'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
 import ImageUploadField from './components/ImageUploadField.vue'
@@ -1601,6 +1602,19 @@ const categoryFlatMap = ref({}) // id -> category doc
 const framerOptions = ref([])
 
 const emptyTaxonomy = () => ({ kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' })
+
+/** 科学分类展示/落库：拉丁层级名归一为中文 */
+const normalizeFormTaxonomy = (raw) => {
+    const base = toChineseTaxonomy(raw || {})
+    return {
+        kingdom: base.kingdom || '',
+        phylum: base.phylum || '',
+        class: base.class || '',
+        order: base.order || '',
+        family: base.family || '',
+        genus: base.genus || ''
+    }
+}
 
 const parseProductSize = (sizeStr) => {
     let sizeL = '', sizeW = '', sizeH = ''
@@ -2695,14 +2709,15 @@ const applyAssistProductCopyResult = (d, { force = false, fillCategory = false }
 
     const tax = d.taxonomy || {}
     const prevTax = form.value.taxonomy || emptyTaxonomy()
-    form.value.taxonomy = {
+    const nextTax = normalizeFormTaxonomy({
         kingdom: tax.kingdom || prevTax.kingdom || '',
         phylum: tax.phylum || prevTax.phylum || '',
         class: tax.class || prevTax.class || '',
         order: tax.order || prevTax.order || '',
         family: tax.family || prevTax.family || '',
         genus: tax.genus || prevTax.genus || '',
-    }
+    })
+    form.value.taxonomy = nextTax
     return latinName
 }
 
@@ -2735,14 +2750,14 @@ const onCategoryPathChange = (path) => {
     // 与店长端一致：二级分类带 taxonomy 时预填科学分类
     const tax = (sub && sub.taxonomy) || (root && root.taxonomy) || null
     if (tax && typeof tax === 'object') {
-        form.value.taxonomy = {
+        form.value.taxonomy = normalizeFormTaxonomy({
             kingdom: tax.kingdom || '',
             phylum: tax.phylum || '',
             class: tax.class || '',
             order: tax.order || '',
             family: tax.family || '',
             genus: tax.genus || ''
-        }
+        })
     }
 
     // 选完分类且已有名称、拉丁名为空时，自动识别（与失焦互补）
@@ -2943,14 +2958,14 @@ const editItem = async (row) => {
         sizeL: sizeParts.sizeL,
         sizeW: sizeParts.sizeW,
         sizeH: sizeParts.sizeH,
-        taxonomy: {
+        taxonomy: normalizeFormTaxonomy({
             kingdom: tax.kingdom || '',
             phylum: tax.phylum || '',
             class: tax.class || '',
             order: tax.order || '',
             family: tax.family || '',
             genus: tax.genus || ''
-        },
+        }),
         seckillEnabled: row.seckill && row.seckill.enabled || false,
         seckillPrice: row.seckill && row.seckill.price || 0,
         seckillStock: row.seckill && row.seckill.stock || 0,
@@ -3263,7 +3278,8 @@ const saveProduct = async () => {
         }
 
         const sizeStr = `${form.value.sizeL || 0}x${form.value.sizeW || 0}x${form.value.sizeH || 0} cm`
-        const tax = form.value.taxonomy || emptyTaxonomy()
+        const tax = normalizeFormTaxonomy(form.value.taxonomy || emptyTaxonomy())
+        form.value.taxonomy = tax
         let collectionCertificate = String(form.value.collectionCertificate || '').trim()
         if (!needsCert) collectionCertificate = ''
 

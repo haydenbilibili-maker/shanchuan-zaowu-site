@@ -141,18 +141,19 @@ function normalizeSpecies(raw) {
         .filter((a) => a.species_name_zh)
         .slice(0, 2)
     : []
+  const { toChineseTaxonomy } = require('./taxonomyZh')
   return {
     species_name_zh: String(d.species_name_zh || '').trim() || '未知物种',
     species_name_latin: String(d.species_name_latin || '').trim(),
     species_name_en: String(d.species_name_en || '').trim(),
-    taxonomy: {
+    taxonomy: toChineseTaxonomy({
       kingdom: tax.kingdom || '',
       phylum: tax.phylum || '',
       class: tax.class || '',
       order: tax.order || '',
       family: tax.family || '',
       genus: tax.genus || ''
-    },
+    }),
     confidence: typeof d.confidence === 'number' ? d.confidence : parseFloat(d.confidence) || 0,
     brief_description: String(d.brief_description || '').trim(),
     is_specimen: d.is_specimen !== false,
@@ -170,7 +171,7 @@ const VISION_PROMPT_BASE = `你是标本与自然博物领域的图像识别助�
   "species_name_zh": "中文名或主要识别对象",
   "species_name_latin": "拉丁学名，无法判断可填空字符串",
   "species_name_en": "英文俗名，可空",
-  "taxonomy": { "kingdom":"界","phylum":"门","class":"纲","order":"目","family":"科","genus":"属" },
+  "taxonomy": { "kingdom":"中文界名如动物界","phylum":"中文门名","class":"中文纲名","order":"中文目名","family":"中文科名","genus":"中文属名可空" },
   "confidence": 0.0到1之间的小数,
   "brief_description": "一句话简介",
   "is_specimen": true或false,
@@ -181,7 +182,8 @@ const VISION_PROMPT_BASE = `你是标本与自然博物领域的图像识别助�
 规则：
 1. 若图片明显不是生物、动植物或标本（如风景、文字、纯物品），设 is_specimen 为 false，confidence 为 0，brief_description 说明原因，alternatives 为空数组。
 2. 若是生物/标本但光线、角度导致难以判断，仍给出最佳猜测并适当降低 confidence。
-3. alternatives 最多 2 条，为除主结果外最可能的备选物种；若非常确定则返回空数组。`
+3. alternatives 最多 2 条，为除主结果外最可能的备选物种；若非常确定则返回空数组。
+4. taxonomy 各字段必须用中文（如动物界/节肢动物门/昆虫纲/鳞翅目），禁止填 Animalia、Insecta 等拉丁层级名；不确定则留空字符串。`
 
 function buildVisionPrompt(categoryHint) {
   let extra = ''

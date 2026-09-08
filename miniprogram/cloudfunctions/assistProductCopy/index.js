@@ -1,15 +1,57 @@
 /**
- * 藏品录入 AI 补全：拉丁学名 + 描述 + 科学分类
+ * 藏品录入 AI 补全：分类 / 拉丁学名 / 描述 / 科学分类 / 保护物种
  * 环境变量：DASHSCOPE_API_KEY（与 identifySpecimen 共用，需在云函数配置中填写）
  */
 const cloud = require('wx-server-sdk')
 const https = require('https')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const db = cloud.database()
 
 const DASHSCOPE_HOST = 'dashscope.aliyuncs.com'
 const TEXT_PATH = '/api/v1/services/aigc/text-generation/generation'
 const MAX_LATIN_RETRIES = 2
+
+const PROTECTION_TYPES = new Set(['none', 'sanyou', 'protected_plant', 'protected_animal'])
+
+/** 与 seedCategories/categorySeed 对齐的馆名别名 */
+const LEGACY_ROOT_ALIASES = {
+  神奇昆虫: '昆虫馆',
+  蝴蝶昆虫: '昆虫馆',
+  群山回响: '矿石馆',
+  植物探微: '植物馆',
+  植物果实: '植物馆',
+  无尽海洋: '海洋馆',
+  海洋标本: '海洋馆',
+  动物类: '动物馆',
+  动物世界: '动物馆',
+  昆虫: '昆虫馆',
+  植物: '植物馆',
+  海洋: '海洋馆',
+  矿石: '矿石馆',
+  矿物: '矿石馆',
+  动物: '动物馆'
+}
+
+const LEGACY_CHILD_ALIASES = {
+  蝴蝶: '鳞翅目 · 蝴蝶',
+  甲虫: '鞘翅目 · 甲虫',
+  矿石晶体: '石英与水晶',
+  晶洞: '紫水晶与晶洞',
+  干花标本: '被子植物 · 押花',
+  种子标本: '种子与果实',
+  贝壳: '腹足纲 · 贝壳',
+  珊瑚: '珊瑚纲 · 珊瑚',
+  头足类: '头足纲 · 头足类',
+  哺乳类: '哺乳纲',
+  爬行类: '爬行纲',
+  鸟类: '鸟纲',
+  两栖类: '两栖纲',
+  鱼类: '辐鳍鱼纲',
+  周边文创: '品牌联名周边',
+  书籍画册: '书籍与画册',
+  工具耗材: '标本工具耗材'
+}
 
 function httpsPostJson(path, body, headers) {
   const data = JSON.stringify(body)
@@ -80,9 +122,10 @@ async function callQwenText(prompt, apiKey) {
   return extractTextGen(res)
 }
 
-function isMerchandise(rootCategory, category) {
+function isMerchandise(rootCategory, category, categoryType) {
+  if (categoryType === 'merch') return true
   const text = `${rootCategory || ''}${category || ''}`
-  return /衍生|文创|书籍|画册|工具|耗材|周边|礼品/.test(text)
+  return /衍生|文创|书籍|画册|工具|耗材|周边|礼品|包装|礼盒/.test(text)
 }
 
 function isValidLatinName(name) {
@@ -106,29 +149,142 @@ function extractLatinFromPlainText(text) {
   return isValidLatinName(cleaned) ? cleaned : ''
 }
 
-function buildPrompt(title, rootCategory, category, origin) {
+function normalizeProtectionType(raw) {
+  const s = String(raw || '').trim().toLowerCase()
+  if (PROTECTION_TYPES.has(s)) return s
+  if (/三有/.test(String(raw || ''))) return 'sanyou'
+  if (/保护植物|国家.*植物/.test(String(raw || ''))) return 'protected_plant'
+  if (/保护动物|国家.*动物|重点保护/.test(String(raw || ''))) return 'protected_animal'
+  return 'none'
+}
+
+const { toChineseTaxonomy } = require('./taxonomyZh')
+
+function emptyTaxonomy() {
+  return { kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' }
+}
+
+function normalizeTaxonomy(raw) {
+  const t = raw && typeof raw === 'object' ? raw : {}
+  return toChineseTaxonomy({
+    kingdom: String(t.kingdom || '').trim(),
+    phylum: String(t.phylum || '').trim(),
+    class: String(t.class || '').trim(),
+    order: String(t.order || '').trim(),
+    family: String(t.family || '').trim(),
+    genus: String(t.genus || '').trim()
+  })
+}
+
+async function loadCategoryTree() {
+  const [rootsRes, childrenRes] = await Promise.all([
+    db.collection('categories').where({ level: 1 }).limit(100).get(),
+    db.collection('categories').where({ level: 2 }).limit(500).get()
+  ])
+  const roots = (rootsRes.data || []).filter((c) => c && c.active !== false && c.status !== 'inactive')
+  const children = (childrenRes.data || []).filter((c) => c && c.active !== false && c.status !== 'inactive')
+  roots.sort((a, b) => (a.sortOrder ?? a.sort ?? 0) - (b.sortOrder ?? b.sort ?? 0))
+  children.sort((a, b) => (a.sortOrder ?? a.sort ?? 0) - (b.sortOrder ?? b.sort ?? 0))
+  return { roots, children }
+}
+
+function buildCatalogText(roots, children) {
+  const lines = []
+  for (const root of roots) {
+    const subs = children.filter((c) => c.parentId === root._id)
+    const subNames = subs.map((c) => c.name).join('、') || '（无二级）'
+    lines.push(`- ${root.name}：${subNames}`)
+  }
+  return lines.join('\n')
+}
+
+function toCanonicalRootName(raw, rootNames) {
+  const s = String(raw || '').trim()
+  if (!s) return ''
+  const set = new Set(rootNames)
+  if (set.has(s)) return s
+  if (LEGACY_ROOT_ALIASES[s]) return LEGACY_ROOT_ALIASES[s]
+  if (!s.endsWith('馆')) {
+    const withHall = `${s}馆`
+    if (set.has(withHall)) return withHall
+    if (LEGACY_ROOT_ALIASES[withHall]) return LEGACY_ROOT_ALIASES[withHall]
+  }
+  // 短名：昆虫馆 → 去掉「馆」后精确命中展示短名
+  for (const name of rootNames) {
+    if (name === s || name.replace(/馆$/, '') === s) return name
+  }
+  return ''
+}
+
+function normalizeChildName(raw) {
+  const s = String(raw || '').trim()
+  if (!s) return ''
+  if (LEGACY_CHILD_ALIASES[s]) return LEGACY_CHILD_ALIASES[s]
+  return s
+}
+
+function resolveCategorySuggestion(aiRoot, aiChild, roots, children) {
+  const rootNames = roots.map((r) => r.name)
+  const canonicalRoot = toCanonicalRootName(aiRoot, rootNames)
+  if (!canonicalRoot) return null
+  const root = roots.find((r) => r.name === canonicalRoot)
+  if (!root) return null
+
+  const wanted = normalizeChildName(aiChild)
+  const siblings = children.filter((c) => c.parentId === root._id)
+  let child = null
+  if (wanted) {
+    child = siblings.find((c) => c.name === wanted)
+      || siblings.find((c) => c.name.includes(wanted) || wanted.includes(c.name))
+      || siblings.find((c) => {
+        const aliasHit = Object.entries(LEGACY_CHILD_ALIASES).find(
+          ([legacy, canon]) => (legacy === wanted || canon === wanted) && (c.name === canon || c.name.includes(legacy))
+        )
+        return !!aliasHit
+      })
+  }
+
+  return {
+    rootCategoryId: root._id,
+    rootCategoryName: root.name,
+    categoryId: child ? child._id : '',
+    category: child ? child.name : root.name,
+    categoryType: (child && child.categoryType) || root.categoryType || 'specimen'
+  }
+}
+
+function buildPrompt(title, rootCategory, category, origin, catalogText) {
   const merch = isMerchandise(rootCategory, category)
   const originLine = origin ? `\n【采集/产地】${origin}` : ''
-  return `你是自然标本博物领域的专业文案助手。
+  const hasCategory = !!(rootCategory || category)
+  return `你是自然标本博物领域的专业文案助手（山海造物）。
 
-【任务】根据下方「藏品名称」和「分类」，生成该藏品的拉丁学名、描述文案、科学分类。输出必须严格对应该藏品，禁止使用示例物种或模板内容。
+【任务】根据「藏品名称」补齐档案字段。输出必须严格对应该藏品，禁止使用示例物种或模板内容。文案克制、事实向，符合博物馆调性；禁止浮夸推销与 emoji。
 
 【藏品名称】${title}
 【所属馆】${rootCategory || '未指定'}
 【具体分类】${category || '未指定'}${originLine}
 
+【可选分类目录】（必须从中选择；勿自造馆名/二级名）
+${catalogText || '（目录暂缺）'}
+
 【硬性规则】
-1. 必须以「${title}」为识别主体，不得输出与名称无关的物种（例如名称不是闪蝶时，禁止输出 Morpho menelaus / 大蓝闪蝶）。
+1. 必须以「${title}」为识别主体，不得输出与名称无关的物种。
 2. ${merch
-    ? '该藏品属于衍生品/文创类，latinName 可留空 ""，taxonomy 各字段留空 ""，description 写产品描述。'
-    : 'latinName 为必填：给出标准拉丁学名（双名法，属名首字母大写，种加词小写；矿物可用公认拉丁/英文学名如 Amethyst）。禁止留空，禁止输出中文作为 latinName。'}
-3. 描述 80-150 字，克制、具体、有感官细节，符合标本馆调性；描述中必须体现「${title}」。
-4. ${merch ? '' : 'taxonomy 填写中文生物分类；矿石/晶洞等可填矿物学相关分类。'}
-5. 仅输出一个 JSON 对象，不要 markdown 代码围栏，不要任何解释文字。
+    ? '若判定为衍生品/文创类，latinName 可留空 ""，taxonomy 各字段留空 ""，description 写产品描述。'
+    : 'latinName 为必填：标准拉丁学名（双名法；矿物可用公认学名）。禁止中文作 latinName。'}
+3. description：80-150 字，维基百科式简要介绍，事实向、有感官细节，必须体现「${title}」。
+4. taxonomy：必须用中文生物/矿物分类（界门纲目科属），禁止填拉丁文。示例：动物界/节肢动物门/昆虫纲/鳞翅目；不确定的字段留空 ""。
+5. protectionType 只能是：none / sanyou / protected_plant / protected_animal。不确定时用 none，禁止夸大保护等级。
+6. rootCategoryName、category 必须选自上方目录；${hasCategory ? '若已指定所属馆/分类，优先沿用，仅在明显错误时纠正。' : '根据物种归属给出最合适的一级馆与二级分类。'}
+7. 仅输出一个 JSON 对象，不要 markdown 代码围栏，不要任何解释文字。
 
 {
+  "rootCategoryName": "",
+  "category": "",
   "latinName": "",
   "description": "",
+  "protectionType": "none",
   "taxonomy": {
     "kingdom": "",
     "phylum": "",
@@ -181,14 +337,15 @@ async function resolveLatinName(titleStr, rootCategory, category, origin, apiKey
 }
 
 exports.main = async (event) => {
-  const { title, category, rootCategory, origin } = event
+  const { title, category, rootCategory, origin } = event || {}
   const titleStr = String(title || '').trim()
   if (!titleStr) {
     return { success: false, msg: '请先填写藏品名称' }
   }
 
-  const merch = isMerchandise(rootCategory, category)
   const originStr = String(origin || '').trim()
+  const hintRoot = String(rootCategory || '').trim()
+  const hintChild = String(category || '').trim()
 
   const apiKey = process.env.DASHSCOPE_API_KEY
   if (!apiKey) {
@@ -199,8 +356,20 @@ exports.main = async (event) => {
   }
 
   try {
+    let roots = []
+    let children = []
+    let catalogText = ''
+    try {
+      const tree = await loadCategoryTree()
+      roots = tree.roots
+      children = tree.children
+      catalogText = buildCatalogText(roots, children)
+    } catch (e) {
+      console.warn('loadCategoryTree failed', e)
+    }
+
     const raw = await callQwenText(
-      buildPrompt(titleStr, rootCategory, category, originStr),
+      buildPrompt(titleStr, hintRoot, hintChild, originStr, catalogText),
       apiKey
     )
     const parsed = parseJsonObject(raw)
@@ -210,7 +379,26 @@ exports.main = async (event) => {
 
     let latinName = normalizeLatinName(parsed.latinName)
     const description = String(parsed.description || '').trim()
-    const taxonomy = parsed.taxonomy || {}
+    const taxonomy = normalizeTaxonomy(parsed.taxonomy)
+    const protectionType = normalizeProtectionType(parsed.protectionType)
+
+    const suggested = resolveCategorySuggestion(
+      parsed.rootCategoryName || hintRoot,
+      parsed.category || hintChild,
+      roots,
+      children
+    )
+
+    // 若 AI 未命中但表单已有分类提示，尽量用提示归一
+    const categoryResult = suggested || resolveCategorySuggestion(hintRoot, hintChild, roots, children)
+
+    const effectiveRoot = (categoryResult && categoryResult.rootCategoryName) || hintRoot
+    const effectiveChild = (categoryResult && categoryResult.category) || hintChild
+    const merch = isMerchandise(
+      effectiveRoot,
+      effectiveChild,
+      categoryResult && categoryResult.categoryType
+    )
 
     if (rejectMorphoMismatch(titleStr, latinName, description)) {
       return {
@@ -226,8 +414,8 @@ exports.main = async (event) => {
     if (!merch) {
       latinName = await resolveLatinName(
         titleStr,
-        rootCategory,
-        category,
+        effectiveRoot,
+        effectiveChild,
         originStr,
         apiKey,
         latinName
@@ -242,7 +430,15 @@ exports.main = async (event) => {
 
     return {
       success: true,
-      data: { latinName, description, taxonomy }
+      data: {
+        latinName,
+        description,
+        taxonomy: taxonomy || emptyTaxonomy(),
+        protectionType,
+        category: categoryResult || null,
+        rootCategoryName: categoryResult ? categoryResult.rootCategoryName : '',
+        categoryName: categoryResult ? categoryResult.category : ''
+      }
     }
   } catch (e) {
     console.error('assistProductCopy error:', e)
