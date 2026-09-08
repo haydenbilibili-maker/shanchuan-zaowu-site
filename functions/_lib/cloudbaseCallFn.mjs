@@ -21,6 +21,7 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   'refundOrder',
   'getShippingRules',
   'moderateComment',
+  'assistProductCopy',
 ])
 
 const ALLOWED = new Set(ALLOWED_FUNCTIONS)

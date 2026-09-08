@@ -621,7 +621,23 @@
     >
         <el-form :model="form" label-width="90px" label-position="left">
             <el-form-item label="藏品名称">
-                <el-input v-model="form.title" placeholder="请输入商品全称" />
+                <div class="latin-name-row">
+                    <el-input
+                        v-model="form.title"
+                        placeholder="请输入商品全称"
+                        @blur="onProductTitleBlur"
+                    />
+                    <el-button
+                        type="primary"
+                        :loading="productAiFillLoading"
+                        :disabled="productAiFillLoading || latinAiLoading"
+                        @click="assistProductFillAll"
+                    >
+                        <el-icon v-if="!productAiFillLoading"><MagicStick /></el-icon>
+                        一键补齐
+                    </el-button>
+                </div>
+                <span class="sku-hint-muted">根据名称补齐分类、描述、保护物种、科学分类与拉丁学名；结果可手改</span>
             </el-form-item>
             <el-form-item label="所属分类">
                 <el-cascader
@@ -691,16 +707,33 @@
                             :step="1"
                             style="width:100%"
                             :disabled="form.hasSku"
+                            @change="onStockChange"
                         />
                         <span v-if="form.hasSku" class="sku-hint-muted">多规格时由各规格库存汇总</span>
+                        <span v-else class="sku-hint-muted">库存为 1 时默认标记孤品</span>
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
                     <el-form-item :label="isMerchandiseForm ? '拉丁学名' : '拉丁学名 *'">
-                        <el-input
-                            v-model="form.latinName"
-                            :placeholder="isMerchandiseForm ? '文创类可选' : '标本类必填（与店长端一致）'"
-                        />
+                        <div class="latin-name-row">
+                            <el-input
+                                v-model="form.latinName"
+                                :placeholder="isMerchandiseForm ? '文创类可选' : '标本类必填 · 可 AI 识别'"
+                            />
+                            <el-button
+                                type="primary"
+                                plain
+                                :loading="latinAiLoading"
+                                :disabled="latinAiLoading || productAiFillLoading"
+                                @click="assistProductLatin({ force: true })"
+                            >
+                                <el-icon v-if="!latinAiLoading"><MagicStick /></el-icon>
+                                AI 识别
+                            </el-button>
+                        </div>
+                        <span class="sku-hint-muted">
+                            {{ isMerchandiseForm ? '文创类可选；可点「一键补齐」或「AI 识别」' : '标本类必填；可用「一键补齐」或本按钮，结果可改写' }}
+                        </span>
                     </el-form-item>
                 </el-col>
             </el-row>
@@ -985,12 +1018,12 @@
                 <el-switch v-model="form.isTreasure" />
             </el-form-item>
             <el-form-item label="孤品">
-                <el-switch v-model="form.isOneOfAKind" />
-                <span class="sku-hint-muted">仅一件、不可复制补货</span>
+                <el-switch v-model="form.isOneOfAKind" @change="onOneOfAKindChange" />
+                <span class="sku-hint-muted">仅一件、不可复制补货；库存=1 自动勾选，手动关掉后不再强开</span>
             </el-form-item>
             <el-form-item label="列入藏品档案">
                 <el-switch v-model="form.inArchive" />
-                <span class="sku-hint-muted">重要SKU入档，便于档案筛选与盘点</span>
+                <span class="sku-hint-muted">重要SKU入档，便于档案筛选与盘点（新建默认开启）</span>
             </el-form-item>
             <el-form-item label="是否参与会员折扣">
                 <el-switch v-model="form.memberDiscountEnabled" />
@@ -1227,7 +1260,7 @@ import {
   House
 } from '@element-plus/icons-vue'
 // 导入云开发工具
-import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from './cloud'
+import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, callCloudFunction } from './cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
 import ImageUploadField from './components/ImageUploadField.vue'
@@ -1540,7 +1573,7 @@ const form = ref({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
-    latinName: '', description: '', isTreasure: false, isOneOfAKind: false, inArchive: false, memberDiscountEnabled: true,
+    latinName: '', description: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: true,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
@@ -1554,6 +1587,10 @@ const form = ref({
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
 const productMediaUploading = ref(false)
+const latinAiLoading = ref(false)
+const productAiFillLoading = ref(false)
+/** 用户在库存=1 时手动关掉孤品后，不再因 stock===1 反复强开 */
+const oneOfAKindManualOff = ref(false)
 const categoryCascaderOptions = ref([])
 const categoryFlatMap = ref({}) // id -> category doc
 const framerOptions = ref([])
@@ -2564,7 +2601,7 @@ const blankProductForm = () => ({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
-    latinName: '', description: '', isTreasure: false, isOneOfAKind: false, inArchive: false, memberDiscountEnabled: true,
+    latinName: '', description: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: true,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
@@ -2577,6 +2614,83 @@ const blankProductForm = () => ({
     seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
+
+const syncOneOfAKindFromStock = (stockVal) => {
+    const n = Number(stockVal)
+    if (n === 1) {
+        if (!oneOfAKindManualOff.value) form.value.isOneOfAKind = true
+    } else if (Number.isFinite(n) && n > 1) {
+        form.value.isOneOfAKind = false
+        oneOfAKindManualOff.value = false
+    }
+}
+
+const onStockChange = (val) => {
+    syncOneOfAKindFromStock(val)
+}
+
+const onOneOfAKindChange = (val) => {
+    if (!val && Number(form.value.stock) === 1) {
+        oneOfAKindManualOff.value = true
+    } else if (val) {
+        oneOfAKindManualOff.value = false
+    }
+}
+
+/** 将 AI 分类建议落到 cascader / 表单字段（不触发自动拉丁识别） */
+const applyCategorySuggestion = (cat) => {
+    if (!cat || !cat.rootCategoryId) return false
+    const path = cat.categoryId ? [cat.rootCategoryId, cat.categoryId] : [cat.rootCategoryId]
+    form.value.categoryPath = path
+    form.value.rootCategoryId = cat.rootCategoryId
+    form.value.rootCategoryName = cat.rootCategoryName || ''
+    form.value.categoryId = cat.categoryId || ''
+    form.value.category = cat.category || cat.rootCategoryName || ''
+    form.value.categoryType = cat.categoryType || ''
+
+    const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
+    if (!/蝴蝶|鳞翅|蝶|昆虫/.test(blob)) form.value.channel = ''
+    if (!/昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)) form.value.craftType = ''
+    return true
+}
+
+/** 将 assistProductCopy 返回写入表单；fillAll 时覆盖分类/保护物种等 */
+const applyAssistProductCopyResult = (d, { force = false, fillCategory = false } = {}) => {
+    const f = form.value || {}
+    const latinName = String(d.latinName || '').trim()
+    if (!isMerchandiseProduct(f) && !latinName && !fillCategory) {
+        throw new Error('未能识别拉丁学名，请补充更具体的名称或分类后重试')
+    }
+    if (latinName) form.value.latinName = latinName
+
+    if (d.description && (force || !String(form.value.description || '').trim())) {
+        form.value.description = String(d.description).trim()
+    }
+
+    if (fillCategory && d.category) {
+        applyCategorySuggestion(d.category)
+    }
+
+    if (fillCategory && d.protectionType) {
+        const pt = String(d.protectionType).trim()
+        if (['none', 'sanyou', 'protected_plant', 'protected_animal'].includes(pt)) {
+            form.value.protectionType = pt
+            if (pt === 'none') form.value.collectionCertificate = ''
+        }
+    }
+
+    const tax = d.taxonomy || {}
+    const prevTax = form.value.taxonomy || emptyTaxonomy()
+    form.value.taxonomy = {
+        kingdom: tax.kingdom || prevTax.kingdom || '',
+        phylum: tax.phylum || prevTax.phylum || '',
+        class: tax.class || prevTax.class || '',
+        order: tax.order || prevTax.order || '',
+        family: tax.family || prevTax.family || '',
+        genus: tax.genus || prevTax.genus || '',
+    }
+    return latinName
+}
 
 const onCategoryPathChange = (path) => {
     if (!path || !path.length) {
@@ -2616,6 +2730,108 @@ const onCategoryPathChange = (path) => {
             genus: tax.genus || ''
         }
     }
+
+    // 选完分类且已有名称、拉丁名为空时，自动识别（与失焦互补）
+    if (
+        !isMerchandiseProduct(form.value) &&
+        String(form.value.title || '').trim() &&
+        !String(form.value.latinName || '').trim()
+    ) {
+        assistProductLatin({ force: false, quiet: true })
+    }
+}
+
+/** 复用店长端 assistProductCopy：拉丁学名 + 描述 + taxonomy（需已有分类时自动/失焦） */
+const assistProductLatin = async ({ force = false, quiet = false } = {}) => {
+    const f = form.value || {}
+    const title = String(f.title || '').trim()
+    if (!title) {
+        if (!quiet) ElMessage.warning('请先填写藏品名称')
+        return
+    }
+    if (!isMerchandiseProduct(f) && !f.category && !f.rootCategoryName) {
+        if (!quiet) ElMessage.warning('请先选择所属分类，或使用「一键补齐」')
+        return
+    }
+    if (!force && String(f.latinName || '').trim()) return
+    if (latinAiLoading.value || productAiFillLoading.value) return
+
+    latinAiLoading.value = true
+    try {
+        const res = await callCloudFunction('assistProductCopy', {
+            title,
+            category: f.category || '',
+            rootCategory: f.rootCategoryName || '',
+            origin: f.origin || '',
+        })
+        if (!res || res.success === false) {
+            throw new Error((res && res.msg) || '识别失败')
+        }
+        const latinName = applyAssistProductCopyResult(res.data || {}, { force, fillCategory: false })
+        ElMessage.success(latinName ? '已识别拉丁学名' : '描述已补全')
+    } catch (e) {
+        console.error('assistProductLatin', e)
+        if (!quiet) {
+            ElMessage.error(e.message || 'AI 识别失败')
+        } else {
+            ElMessage.warning(e.message || '自动识别未完成，可点「一键补齐」或「AI 识别」重试')
+        }
+    } finally {
+        latinAiLoading.value = false
+    }
+}
+
+/** 一键补齐：仅需藏品名称；补分类 / 描述 / 保护物种 / taxonomy / latinName */
+const assistProductFillAll = async () => {
+    const f = form.value || {}
+    const title = String(f.title || '').trim()
+    if (!title) {
+        ElMessage.warning('请先填写藏品名称')
+        return
+    }
+    if (productAiFillLoading.value || latinAiLoading.value) return
+
+    productAiFillLoading.value = true
+    try {
+        const res = await callCloudFunction('assistProductCopy', {
+            title,
+            category: f.category || '',
+            rootCategory: f.rootCategoryName || '',
+            origin: f.origin || '',
+        })
+        if (!res || res.success === false) {
+            throw new Error((res && res.msg) || '补齐失败')
+        }
+        const d = res.data || {}
+        const latinName = applyAssistProductCopyResult(d, { force: true, fillCategory: true })
+        if (!isMerchandiseProduct(form.value) && !latinName) {
+            throw new Error('未能补全拉丁学名，请核对名称后重试')
+        }
+        const parts = []
+        if (d.category?.rootCategoryName) {
+            parts.push(d.category.categoryId
+                ? `${d.category.rootCategoryName} / ${d.category.category}`
+                : d.category.rootCategoryName)
+        }
+        if (latinName) parts.push('学名')
+        if (d.description) parts.push('描述')
+        if (d.protectionType && d.protectionType !== 'none') parts.push('保护物种')
+        if (d.taxonomy && Object.values(d.taxonomy).some(Boolean)) parts.push('科学分类')
+        ElMessage.success(parts.length ? `已补齐：${parts.join('、')}` : '补齐完成，请核对')
+    } catch (e) {
+        console.error('assistProductFillAll', e)
+        ElMessage.error(e.message || '一键补齐失败')
+    } finally {
+        productAiFillLoading.value = false
+    }
+}
+
+const onProductTitleBlur = () => {
+    if (isMerchandiseProduct(form.value)) return
+    if (String(form.value.latinName || '').trim()) return
+    if (!String(form.value.title || '').trim()) return
+    if (!form.value.category && !form.value.rootCategoryName) return
+    assistProductLatin({ force: false, quiet: true })
 }
 
 const resolveCategoryPath = (row) => {
@@ -2643,6 +2859,7 @@ const resolveCategoryPath = (row) => {
 
 const openDialog = async () => { 
     isEditing.value = false 
+    oneOfAKindManualOff.value = false
     await Promise.all([loadCategoriesForProduct(), loadFramersForProduct()])
     form.value = blankProductForm()
     dialogVisible.value = true 
@@ -2650,6 +2867,7 @@ const openDialog = async () => {
 
 const editItem = async (row) => { 
     isEditing.value = true 
+    oneOfAKindManualOff.value = false
     await Promise.all([loadCategoriesForProduct(), loadFramersForProduct()])
     const path = resolveCategoryPath(row)
     const images = Array.isArray(row.images) ? [...row.images].filter(Boolean) : []
@@ -2728,7 +2946,9 @@ const editItem = async (row) => {
         groupBuyingEnabled: row.groupBuying && row.groupBuying.enabled || false,
         groupBuyingPrice: row.groupBuying && row.groupBuying.price || 0,
         groupBuyingSize: row.groupBuying && row.groupBuying.groupSize || 2
-    } 
+    }
+    const stockN = parseInt(row.stock, 10) || 0
+    oneOfAKindManualOff.value = stockN === 1 && !row.isOneOfAKind
     dialogVisible.value = true 
 }
 
@@ -3513,6 +3733,19 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
   margin-left: 8px;
   color: var(--light-text-tertiary);
   font-size: var(--text-xs);
+}
+
+.latin-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.latin-name-row .el-input {
+  flex: 1;
+}
+.latin-name-row .el-button {
+  flex-shrink: 0;
 }
 
 .size-inputs {

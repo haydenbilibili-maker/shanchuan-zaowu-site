@@ -77,6 +77,7 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'refundOrder',
   'getShippingRules',
   'moderateComment',
+  'assistProductCopy',
 ])
 
 function cloudFnProxyUrls() {
