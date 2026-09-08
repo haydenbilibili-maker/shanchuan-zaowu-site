@@ -1260,7 +1260,7 @@ import {
   House
 } from '@element-plus/icons-vue'
 // 导入云开发工具
-import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, callCloudFunction } from './cloud'
+import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, callCloudFunction, getCdnDatabase } from './cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
 import ImageUploadField from './components/ImageUploadField.vue'
@@ -1574,7 +1574,7 @@ const form = ref({
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
     latinName: '', description: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
-    supportsCustom: true,
+    supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
     sizeL: '', sizeW: '', sizeH: '',
@@ -2602,7 +2602,7 @@ const blankProductForm = () => ({
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
     latinName: '', description: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
-    supportsCustom: true,
+    supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
     sizeL: '', sizeW: '', sizeH: '',
@@ -3299,10 +3299,24 @@ const saveProduct = async () => {
         }
         
         if (isEditing.value) {
+            // 存量 Admin 文档若 createTime 为 Number，orderBy(createTime) 会从商品流索引中漏掉；编辑时一并纠正为 Date
+            const existingCt = form.value.createTime
+            const ctIsDate = existingCt instanceof Date
+                || (existingCt && typeof existingCt === 'object' && typeof existingCt.getTime === 'function')
+                || (typeof existingCt === 'string' && !Number.isNaN(Date.parse(existingCt)))
+            if (!ctIsDate && existingCt != null) {
+                const ms = typeof existingCt === 'number' ? existingCt : Number(existingCt)
+                if (Number.isFinite(ms) && ms > 0) data.createTime = new Date(ms)
+            } else if (existingCt == null) {
+                data.createTime = new Date()
+            }
             await cdnUpdate(COLLECTIONS.PRODUCTS, form.value._id, data)
             ElMessage.success('更新成功')
         } else {
-            data.createTime = Date.now()
+            // 必须与店长端一致写 Date（db.serverDate / new Date），不能写 Date.now() Number：
+            // 小程序 ProductList 用 where(isOffShelf)+orderBy(createTime)，混类型会被索引排除
+            const db = await getCdnDatabase()
+            data.createTime = typeof db.serverDate === 'function' ? db.serverDate() : new Date()
             data.isOffShelf = false
             await cdnAdd(COLLECTIONS.PRODUCTS, data)
             ElMessage.success('创建成功')
