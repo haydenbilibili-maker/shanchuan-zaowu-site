@@ -30,13 +30,26 @@ const db = app.database();
 let isConnecting = false;
 let connectionPromise = null;
 
+const AUTH_WAIT_MS = 15000;
+
+function withAuthTimeout(promise, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label} 超时（${AUTH_WAIT_MS / 1000}s）`)),
+      AUTH_WAIT_MS,
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 /**
  * 连接云开发数据库（带重试机制）
  */
 export const loginToCloud = async (retryCount = 0) => {
   // 如果已经登录，直接返回
   try {
-    const loginState = await auth.getLoginState();
+    const loginState = await withAuthTimeout(auth.getLoginState(), '检查登录状态');
     if (loginState) {
       console.log("✅ 云开发已连接", auth.currentUser);
       return true;
@@ -71,7 +84,7 @@ export const loginToCloud = async (retryCount = 0) => {
       
       // 步骤1：检查是否已经登录
       try {
-        const existingState = await auth.getLoginState();
+        const existingState = await withAuthTimeout(auth.getLoginState(), '检查既有登录');
         if (existingState) {
           loginSuccess = true;
           console.log("✅ 已存在登录状态");
@@ -85,7 +98,7 @@ export const loginToCloud = async (retryCount = 0) => {
         try {
           // 尝试 signInAnonymously（@cloudbase/js-sdk 2.9.1 的标准方法）
           if (typeof auth.signInAnonymously === 'function') {
-            await auth.signInAnonymously();
+            await withAuthTimeout(auth.signInAnonymously(), '匿名登录');
             loginAttempted = true;
             loginSuccess = true;
             console.log("✅ 使用 signInAnonymously 匿名登录成功");
@@ -104,7 +117,7 @@ export const loginToCloud = async (retryCount = 0) => {
       try {
         // 尝试一个简单的数据库操作来验证连接
         // 使用 products 集合进行测试（limit(0) 只验证连接，不返回数据）
-        await db.collection('products').limit(0).get();
+        await withAuthTimeout(db.collection('products').limit(0).get(), '数据库连接验证');
         console.log("✅ 数据库连接验证成功");
         loginSuccess = true;
       } catch (dbErr) {
@@ -124,9 +137,9 @@ export const loginToCloud = async (retryCount = 0) => {
           // 如果还没有尝试登录，现在尝试
           if (!loginAttempted && typeof auth.signInAnonymously === 'function') {
             try {
-              await auth.signInAnonymously();
+              await withAuthTimeout(auth.signInAnonymously(), '匿名登录（重试）');
               // 重试数据库操作
-              await db.collection('products').limit(0).get();
+              await withAuthTimeout(db.collection('products').limit(0).get(), '数据库连接验证');
               loginSuccess = true;
               console.log("✅ 登录后数据库连接成功");
             } catch (retryErr) {

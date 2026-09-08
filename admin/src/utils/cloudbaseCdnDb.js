@@ -13,10 +13,23 @@ let initPromise = null
 export { ENV_ID, REGION }
 
 const CDN_URL = 'https://static.cloudbase.net/cloudbase-js-sdk/2.11.0/cloudbase.full.js'
+const CDN_LOAD_TIMEOUT_MS = 12000
+const AUTH_TIMEOUT_MS = 15000
 
 export function isCloudbasePromiseBug(err) {
   const msg = err?.message || String(err)
   return msg.includes("setting 'promise'") || msg.includes('setting "promise"')
+}
+
+function withTimeout(promise, ms, label) {
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label} 超时（${Math.round(ms / 1000)}s）。请检查网络或 CloudBase 匿名登录/安全域名。`)),
+      ms,
+    )
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
 /** 确保 CDN SDK 可用（dev 热更新后 __cloudbaseCDN 可能丢失） */
@@ -24,22 +37,43 @@ async function ensureCdnSdk() {
   if (window.__cloudbaseCDN?.init) {
     return window.__cloudbaseCDN
   }
+
+  // index.html 异步预载：有结果（含失败）后继续，不无限等待
+  if (window.__cloudbaseCDNReady) {
+    try {
+      await withTimeout(window.__cloudbaseCDNReady, CDN_LOAD_TIMEOUT_MS, 'CloudBase CDN 预加载')
+    } catch (e) {
+      console.warn('[cloudbaseCdnDb]', e?.message || e)
+    }
+    if (window.__cloudbaseCDN?.init) return window.__cloudbaseCDN
+    if (window.cloudbase?.init) {
+      window.__cloudbaseCDN = window.cloudbase
+      return window.__cloudbaseCDN
+    }
+  }
+
   const existing = document.querySelector(`script[src="${CDN_URL}"]`)
   if (existing && window.cloudbase?.init) {
     window.__cloudbaseCDN = window.cloudbase
     return window.__cloudbaseCDN
   }
-  await new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = CDN_URL
-    script.async = false
-    script.onload = () => {
-      window.__cloudbaseCDN = window.cloudbase
-      resolve()
-    }
-    script.onerror = () => reject(new Error('CloudBase CDN 脚本加载失败，请检查网络'))
-    document.head.appendChild(script)
-  })
+
+  await withTimeout(
+    new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = CDN_URL
+      script.async = true
+      script.onload = () => {
+        window.__cloudbaseCDN = window.cloudbase
+        resolve()
+      }
+      script.onerror = () => reject(new Error('CloudBase CDN 脚本加载失败，请检查网络'))
+      document.head.appendChild(script)
+    }),
+    CDN_LOAD_TIMEOUT_MS,
+    'CloudBase CDN 脚本加载',
+  )
+
   if (!window.__cloudbaseCDN?.init) {
     throw new Error('CloudBase CDN SDK 未就绪')
   }
@@ -50,19 +84,44 @@ export async function getCdnDatabase() {
   if (db) return db
   if (!initPromise) {
     initPromise = (async () => {
-      const cloudbase = await ensureCdnSdk()
-      const app = cloudbase.init({ env: ENV_ID, region: REGION, persistence: 'local' })
-      const auth = app.auth()
       try {
-        if (!(await auth.getLoginState())) {
-          await auth.signInAnonymously()
+        const cloudbase = await ensureCdnSdk()
+        const app = cloudbase.init({ env: ENV_ID, region: REGION, persistence: 'local' })
+        const auth = app.auth()
+        try {
+          const state = await withTimeout(
+            Promise.resolve(auth.getLoginState()),
+            AUTH_TIMEOUT_MS,
+            'CloudBase 登录状态检查',
+          )
+          if (!state) {
+            await withTimeout(
+              Promise.resolve(auth.signInAnonymously()),
+              AUTH_TIMEOUT_MS,
+              'CloudBase 匿名登录',
+            )
+          }
+        } catch (authErr) {
+          // 二次尝试；仍失败则抛出，由调用方展示错误（禁止无限挂起）
+          try {
+            await withTimeout(
+              Promise.resolve(auth.signInAnonymously()),
+              AUTH_TIMEOUT_MS,
+              'CloudBase 匿名登录重试',
+            )
+          } catch {
+            throw authErr
+          }
         }
-      } catch {
-        await auth.signInAnonymously()
+        cdnApp = app
+        db = app.database()
+        return db
+      } catch (err) {
+        initPromise = null
+        db = null
+        cdnApp = null
+        throw err
       }
-      cdnApp = app
-      db = app.database()
-      return db
     })()
   }
   return initPromise

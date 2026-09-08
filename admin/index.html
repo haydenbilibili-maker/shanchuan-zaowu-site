@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
-    <!-- 🟢 Font Awesome 6 — 用于财务核算等模块的 fa-* 图标（避免空白方块） -->
+    <!-- Font Awesome 6 — 财务等模块 fa-* 图标 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>山海造物 · 数智化中台</title>
     
@@ -20,22 +20,84 @@
       window.global = window;
     </script>
 
-    <!-- CloudBase CDN：financeSync 使用；须在 bundle 覆盖 window.cloudbase 前保留引用 -->
-    <script src="https://static.cloudbase.net/cloudbase-js-sdk/2.11.0/cloudbase.full.js"></script>
+    <!--
+      CloudBase CDN：异步加载，禁止阻塞 Vue 挂载。
+      部分网络下 static.cloudbase.net 同步 script 会无限挂起 → 永远停在「加载中」。
+      业务侧 ensureCdnSdk / getCdnDatabase 会等待 __cloudbaseCDNReady 或自行补载。
+    -->
     <script>
-      window.__cloudbaseCDN = window.cloudbase;
+      (function () {
+        var CDN_URL = 'https://static.cloudbase.net/cloudbase-js-sdk/2.11.0/cloudbase.full.js';
+        var CDN_TIMEOUT_MS = 12000;
+        window.__cloudbaseCDN = null;
+        window.__cloudbaseCDNReady = new Promise(function (resolve) {
+          var settled = false;
+          function finish() {
+            if (settled) return;
+            settled = true;
+            if (window.cloudbase && typeof window.cloudbase.init === 'function') {
+              window.__cloudbaseCDN = window.cloudbase;
+            }
+            resolve(window.__cloudbaseCDN);
+          }
+          var s = document.createElement('script');
+          s.src = CDN_URL;
+          s.async = true;
+          s.onload = finish;
+          s.onerror = finish;
+          document.head.appendChild(s);
+          setTimeout(finish, CDN_TIMEOUT_MS);
+        });
+      })();
     </script>
     
   </head>
   <body>
     <div id="app">
       <div id="admin-boot" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f0c;color:#c5c9c3;font-family:system-ui,sans-serif;">
-        <div style="text-align:center;">
+        <div style="text-align:center;max-width:420px;padding:0 24px;">
           <div style="width:48px;height:48px;margin:0 auto 16px;border-radius:50%;background:#2d6a4f;color:#fff;line-height:48px;font-size:20px;">山</div>
-          <div>山海造物 · 数智化中台加载中…</div>
+          <div id="admin-boot-msg">山海造物 · 数智化中台加载中…</div>
+          <div id="admin-boot-hint" style="display:none;margin-top:12px;font-size:13px;line-height:1.6;color:#8a918c;"></div>
+          <button id="admin-boot-retry" type="button" style="display:none;margin-top:20px;padding:10px 20px;border:0;border-radius:8px;background:#2d6a4f;color:#fff;font-size:14px;cursor:pointer;">重新加载</button>
         </div>
       </div>
     </div>
+    <script>
+      (function () {
+        var BOOT_TIMEOUT_MS = 20000;
+        var failed = false;
+        function bootEl() { return document.getElementById('admin-boot'); }
+        function showBootFail(detail) {
+          if (failed) return;
+          var root = bootEl();
+          if (!root) return; // Vue 已挂载并替换 #app
+          failed = true;
+          var msg = document.getElementById('admin-boot-msg');
+          var hint = document.getElementById('admin-boot-hint');
+          var btn = document.getElementById('admin-boot-retry');
+          if (msg) msg.textContent = '加载失败，无法进入后台';
+          if (hint) {
+            hint.style.display = 'block';
+            hint.textContent = detail ||
+              '应用脚本未能就绪（网络超时、资源 404，或 CloudBase CDN 不可达）。请检查网络后重试；若仅个别账号卡住，可换网络或清除站点缓存。';
+          }
+          if (btn) {
+            btn.style.display = 'inline-block';
+            btn.onclick = function () { location.reload(); };
+          }
+        }
+        setTimeout(function () {
+          if (bootEl()) showBootFail('启动超过 ' + (BOOT_TIMEOUT_MS / 1000) + ' 秒仍未完成，已停止无限等待。');
+        }, BOOT_TIMEOUT_MS);
+        window.addEventListener('error', function (ev) {
+          var t = ev && ev.target;
+          if (t && t.tagName === 'SCRIPT' && String(t.src || '').indexOf('/admin/assets/') !== -1) {
+            showBootFail('主脚本加载失败：' + (t.src || '') + '（常见于发版后旧 HTML 指向已删除的 chunk）。请强制刷新或联系管理员重新部署 Admin。');
+          }
+        }, true);
+      })();
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

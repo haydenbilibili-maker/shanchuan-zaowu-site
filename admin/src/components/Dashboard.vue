@@ -710,6 +710,7 @@ const refreshAll = async () => {
 
   } catch(e) {
     console.error('看板加载失败', e)
+    ElMessage.warning(e?.message || '看板云数据加载失败，本地账本仍可使用；请检查网络后点「刷新看板」')
   } finally {
     loading.value = false
   }

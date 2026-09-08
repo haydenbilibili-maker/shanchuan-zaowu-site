@@ -1240,9 +1240,14 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch, defineAsyncComp
 const asyncWith = (loader) => defineAsyncComponent({
   loader,
   loadingComponent: { render: () => h('div', { style: 'padding: 60px; text-align: center; color: #d4af37;' }, '加载中…') },
-  errorComponent: { render: () => h('div', { style: 'padding: 60px; text-align: center; color: #f56c6c;' }, '模块加载失败，请刷新重试') },
+  errorComponent: {
+    render: () => h('div', { style: 'padding: 60px; text-align: center; color: #f56c6c; line-height: 1.6;' }, [
+      h('div', '模块加载失败或超时'),
+      h('div', { style: 'margin-top: 8px; font-size: 13px; color: #909399;' }, '请刷新页面重试；若持续失败，可能是发版资源未同步。'),
+    ]),
+  },
   delay: 100,
-  timeout: 30000
+  timeout: 20000,
 })
 // 导入图标库
 import {
@@ -1669,20 +1674,29 @@ const checkSession = () => {
 const handleLogin = () => {
     if (!password.value) return ElMessage.warning('请输入管理口令')
     loggingIn.value = true
-    
-    // 模拟鉴权延迟
-    setTimeout(() => {
-        if (password.value === ADMIN_SECRET) { 
-            isLoggedIn.value = true
-            localStorage.setItem('sc_admin_token', 'verified_888')
-            setAdminHash(true)
-            ElMessage.success({ message: '身份验证通过，欢迎回来', duration: 2000 })
-        } else {
-            ElMessage.error('口令错误，访问被拒绝')
-            password.value = ''
+
+    // 口令门禁（演示级）；错误必须立刻结束 loading，禁止假加载
+    const loginTimer = setTimeout(() => {
+        try {
+            if (password.value === ADMIN_SECRET) {
+                isLoggedIn.value = true
+                localStorage.setItem('sc_admin_token', 'verified_888')
+                setAdminHash(true)
+                ElMessage.success({ message: '身份验证通过，欢迎回来', duration: 2000 })
+            } else {
+                ElMessage.error('口令错误或无权访问，请联系管理员确认口令')
+                password.value = ''
+            }
+        } finally {
+            loggingIn.value = false
+            clearTimeout(loginTimer)
         }
-        loggingIn.value = false
     }, 800)
+
+    // 兜底：极端情况下定时器被挂起时仍释放按钮 loading
+    setTimeout(() => {
+        if (loggingIn.value) loggingIn.value = false
+    }, 5000)
 }
 
 const logout = () => {
