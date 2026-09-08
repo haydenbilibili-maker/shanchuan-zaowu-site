@@ -597,7 +597,7 @@ Page({
           tempCertificate: '',
           taxonomy: item.taxonomy || { kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' }
         } : { 
-          tempImg: '', title: '', price: '', costPrice: '', stock: 1, category: '', categoryId: '', rootCategoryName: '', rootCategoryId: '', categoryType: '', framerName: '', framerId: '', description: '', origin: '', latinName: '', sizeL:'', sizeW:'', sizeH:'', collectDate: '', isTreasure: false, supportsCustom: true, hasSku: false, skus: [], skuDimensionsStr: '', detailImages: [], detailHtml: '',
+          tempImg: '', title: '', price: '', costPrice: '', stock: 1, category: '', categoryId: '', rootCategoryName: '', rootCategoryId: '', categoryType: '', framerName: '', framerId: '', description: '', origin: '', latinName: '', sizeL:'', sizeW:'', sizeH:'', collectDate: '', isTreasure: false, supportsCustom: false, hasSku: false, skus: [], skuDimensionsStr: '', detailImages: [], detailHtml: '',
           protectionType: 'none',
           collectionCertificate: '',
           tempCertificate: '',

@@ -421,6 +421,13 @@
                  </div>
 
                  <div class="archive-filter-row" style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <el-input
+                      v-model="productSearchQuery"
+                      clearable
+                      placeholder="搜索名称 / 学名 / 分类"
+                      style="width: 220px;"
+                      size="small"
+                    />
                     <span class="archive-filter-label">档案筛选：</span>
                     <el-radio-group v-model="archiveFilter" size="small">
                         <el-radio-button label="all">全部</el-radio-button>
@@ -512,6 +519,11 @@
                                  effect="plain"
                                  style="margin-left:6px;"
                              >{{ scope.row.skus.length }}规格</el-tag>
+                         </template>
+                    </el-table-column>
+                    <el-table-column label="毛利" width="90">
+                         <template #default="scope">
+                             <span class="profit-cell">{{ scope.row.profitRate }}%</span>
                          </template>
                     </el-table-column>
                     <el-table-column label="营销活动" width="180">
@@ -1683,6 +1695,7 @@ const isButterflyProduct = isTaxonomyEligibleProduct
 const isCraftEligibleProduct = isTaxonomyEligibleProduct
 const archiveFilter = ref('all') // 'all' | 'archive' | 'oneOfAKind' 全部 / 仅档案藏品 / 仅孤品
 const promoFilter = ref('all') // 'all' | 'seckill' | 'seckill_expired' | 'group'
+const productSearchQuery = ref('')
 
 // =================================================
 // 🔐 认证与会话管理
@@ -2128,7 +2141,13 @@ const loadProducts = async () => {
                 return { 
                     ...item, 
                     httpImage: img, 
-                    isOnShelf: !item.isOffShelf 
+                    isOnShelf: !item.isOffShelf,
+                    profitRate: (() => {
+                        const pr = parseFloat(item.price)
+                        const cp = parseFloat(item.costPrice)
+                        if (!Number.isFinite(pr) || pr === 0 || !Number.isFinite(cp)) return '0.0'
+                        return (((pr - cp) / pr) * 100).toFixed(1)
+                    })()
                 }
             } catch (itemErr) {
                 console.error('处理商品项失败:', itemErr, item)
@@ -2172,6 +2191,12 @@ const handleProductSelectionChange = (selection) => {
 // 档案 + 营销筛选后的列表（用于表格展示）
 const displayProducts = computed(() => {
     let list = products.value || []
+    const q = String(productSearchQuery.value || '').trim().toLowerCase()
+    if (q) {
+        list = list.filter((p) => String(p.title || '').toLowerCase().includes(q)
+            || String(p.latinName || '').toLowerCase().includes(q)
+            || String(p.category || '').toLowerCase().includes(q))
+    }
     if (archiveFilter.value === 'archive') {
         list = list.filter(p => p.inArchive === true)
     } else if (archiveFilter.value === 'oneOfAKind') {
@@ -3358,7 +3383,7 @@ const saveProduct = async () => {
             isOneOfAKind: form.value.isOneOfAKind || false,
             inArchive: form.value.inArchive || false,
             memberDiscountEnabled: form.value.memberDiscountEnabled !== false,
-            supportsCustom: form.value.supportsCustom !== false,
+            supportsCustom: !!form.value.supportsCustom,
             protectionType: form.value.protectionType || 'none',
             collectionCertificate,
             origin: form.value.origin || '',
@@ -4101,6 +4126,10 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     font-weight: bold; 
     font-family: 'Segoe UI', monospace; 
     text-shadow: 0 1px 2px rgba(45, 106, 79, 0.2);
+}
+.profit-cell {
+    font-size: 13px;
+    color: var(--color-text-secondary, #6B6560);
 }
 .stock-tag { 
     font-size: 12px; 
