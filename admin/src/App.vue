@@ -168,6 +168,7 @@
                 <el-menu-item index="5"><el-icon><Calendar /></el-icon><span>活动与排期</span></el-menu-item>
                 <el-menu-item index="6"><el-icon><Ticket /></el-icon><span>权益与营销</span></el-menu-item>
                 <el-menu-item index="30"><el-icon><Shop /></el-icon><span>店铺管理</span></el-menu-item>
+                <el-menu-item index="64"><el-icon><Lock /></el-icon><span>店员工作台权限</span></el-menu-item>
                 <el-menu-item index="55"><el-icon><Shop /></el-icon><span>C端门店展区</span></el-menu-item>
                 <el-menu-item index="34"><el-icon><Brush /></el-icon><span>门店设计中心</span></el-menu-item>
                 <el-menu-item index="35"><el-icon><Promotion /></el-icon><span>加盟商管理</span></el-menu-item>
@@ -243,6 +244,7 @@
               <el-menu-item-group title="人才组织">
                 <el-menu-item index="7"><el-icon><Brush /></el-icon><span>标本师管理</span></el-menu-item>
                 <el-menu-item index="32"><el-icon><User /></el-icon><span>员工花名册</span></el-menu-item>
+                <el-menu-item index="64"><el-icon><Lock /></el-icon><span>店员工作台权限</span></el-menu-item>
                 <el-menu-item index="31"><el-icon><Wallet /></el-icon><span>员工薪酬管理</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="财务资本">
@@ -1353,6 +1355,7 @@ import CommentsModeration from './components/CommentsModeration.vue'
 import Refunds from './components/Refunds.vue'
 import InvoiceRequests from './components/InvoiceRequests.vue'
 import HonoraryCurators from './components/HonoraryCurators.vue'
+import StoreStaffPermissions from './components/StoreStaffPermissions.vue'
 import PlatformOrderBinds from './components/PlatformOrderBinds.vue'
 import ShippingRulesConfig from './components/ShippingRulesConfig.vue'
 import Categories from './components/Categories.vue'
@@ -1386,6 +1389,7 @@ const TAB_COMPONENT_MAP = {
   '13': () => ({ comp: HomeConfigManager }),
   '14': () => ({ comp: MemberLevelConfig }),
   '63': () => ({ comp: HonoraryCurators }),
+  '64': () => ({ comp: StoreStaffPermissions }),
   '15': () => ({ comp: PointsRulesConfig }),
   '16': () => ({ comp: BookingRulesConfig }),
   '17': () => ({ comp: PermissionManager }),
@@ -1514,7 +1518,7 @@ const TAB_TO_GROUP = {
   '30': 'grp-business', '34': 'grp-business', '35': 'grp-business', '37': 'grp-business',
   '38': 'grp-business', '39': 'grp-business', '42': 'grp-business', '43': 'grp-business',
   '48': 'grp-business', '52': 'grp-business', '55': 'grp-business',
-  '57': 'grp-business', '60': 'grp-business', '61': 'grp-business',
+  '57': 'grp-business', '60': 'grp-business', '61': 'grp-business', '64': 'grp-business',
   '4': 'grp-customer', '40': 'grp-customer', '41': 'grp-customer', '44': 'grp-customer',
   '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer', '51': 'grp-customer', '59': 'grp-customer',
   '8': 'grp-miniapp', '9': 'grp-miniapp', '13': 'grp-miniapp', '14': 'grp-miniapp',

@@ -16,6 +16,7 @@ export const DEFAULT_REGION = 'ap-shanghai'
 export const ALLOWED_FUNCTIONS = Object.freeze([
   'manageInvoiceRequests',
   'manageHonoraryCurators',
+  'manageStaff',
   'bindPlatformOrder',
   'managerShipOrder',
   'refundOrder',

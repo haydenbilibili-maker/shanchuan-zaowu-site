@@ -48,6 +48,7 @@ export const SIDEBAR_NAV = {
         title: '门店场域',
         items: [
           { id: '30', icon: 'Shop', label: '店铺管理' },
+          { id: '64', icon: 'Lock', label: '店员工作台权限' },
           { id: '55', icon: 'Shop', label: 'C端门店展区' },
           { id: '34', icon: 'Brush', label: '门店设计中心' },
           { id: '35', icon: 'Promotion', label: '加盟商管理' },
@@ -151,6 +152,7 @@ export const SIDEBAR_NAV = {
         items: [
           { id: '7', icon: 'Brush', label: '标本师管理' },
           { id: '32', icon: 'User', label: '员工花名册' },
+          { id: '64', icon: 'Lock', label: '店员工作台权限' },
           { id: '31', icon: 'Wallet', label: '员工薪酬管理' },
         ],
       },

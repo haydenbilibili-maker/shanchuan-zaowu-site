@@ -131,6 +131,7 @@ export async function getCdnDatabase() {
 const ADMIN_PROXY_FUNCTIONS = new Set([
   'manageInvoiceRequests',
   'manageHonoraryCurators',
+  'manageStaff',
   'bindPlatformOrder',
   'managerShipOrder',
   'refundOrder',
