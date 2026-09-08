@@ -486,10 +486,10 @@
                          <template #default="scope">
                              <div class="promo-cell">
                                <el-tag v-if="scope.row.channel" effect="plain" size="small" round>
-                                 {{ scope.row.channel === 'import' ? '进口' : scope.row.channel === 'domestic' ? '国产' : scope.row.channel }}
+                                 {{ CHANNEL_LABEL_MAP[scope.row.channel] || scope.row.channel }}
                                </el-tag>
                                <el-tag v-if="scope.row.craftType" effect="plain" type="success" size="small" round>
-                                 {{ ({ frame: '相框', cloche: '玻璃罩', diorama: '造景', magnet: '冰箱贴' })[scope.row.craftType] || scope.row.craftType }}
+                                 {{ CRAFT_TYPE_LABEL_MAP[scope.row.craftType] || scope.row.craftType }}
                                </el-tag>
                              </div>
                          </template>
@@ -658,14 +658,16 @@
                         <el-select
                             v-model="form.channel"
                             clearable
-                            placeholder="蝴蝶可选：进口/国产"
+                            placeholder="进口/国产/野采/其它"
                             style="width:100%"
-                            :disabled="!isButterflyProduct"
+                            :disabled="!isTaxonomyEligibleProduct"
                         >
                             <el-option label="进口" value="import" />
                             <el-option label="国产" value="domestic" />
+                            <el-option label="野采" value="wild" />
+                            <el-option label="其它" value="other" />
                         </el-select>
-                        <span class="sku-hint-muted">仅蝴蝶相关商品启用；空=未标注</span>
+                        <span class="sku-hint-muted">昆虫/植物/海洋/动物；空=未标注</span>
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -673,16 +675,19 @@
                         <el-select
                             v-model="form.craftType"
                             clearable
-                            placeholder="相框/玻璃罩/造景/冰箱贴"
+                            placeholder="相框/玻璃罩/造景/冰箱贴/饰品/蝶翅画/其它"
                             style="width:100%"
-                            :disabled="!isCraftEligibleProduct"
+                            :disabled="!isTaxonomyEligibleProduct"
                         >
                             <el-option label="相框" value="frame" />
                             <el-option label="玻璃罩" value="cloche" />
                             <el-option label="造景" value="diorama" />
                             <el-option label="冰箱贴" value="magnet" />
+                            <el-option label="饰品" value="accessory" />
+                            <el-option label="蝶翅画" value="wing_art" />
+                            <el-option label="其它" value="other" />
                         </el-select>
-                        <span class="sku-hint-muted">蝴蝶/昆虫/植物/海洋；空=未标注</span>
+                        <span class="sku-hint-muted">昆虫/植物/海洋/动物；空=未标注</span>
                     </el-form-item>
                 </el-col>
             </el-row>
@@ -1630,6 +1635,26 @@ const parseProductSize = (sizeStr) => {
     return { sizeL, sizeW, sizeH }
 }
 
+const CHANNEL_LABEL_MAP = {
+    import: '进口',
+    domestic: '国产',
+    wild: '野采',
+    other: '其它'
+}
+
+const CRAFT_TYPE_LABEL_MAP = {
+    frame: '相框',
+    cloche: '玻璃罩',
+    diorama: '造景',
+    magnet: '冰箱贴',
+    accessory: '饰品',
+    jewelry: '饰品',
+    wing_art: '蝶翅画',
+    other: '其它'
+}
+
+const TAXONOMY_ELIGIBLE_RE = /昆虫|植物|海洋|动物|蝴蝶|鳞翅|蝶/
+
 const isMerchandiseProduct = (f) => {
     if (!f) return false
     if (f.categoryType === 'merch') return true
@@ -1639,18 +1664,15 @@ const isMerchandiseProduct = (f) => {
 
 const isMerchandiseForm = computed(() => isMerchandiseProduct(form.value))
 
-const isButterflyProduct = computed(() => {
+/** 渠道 / 生产方式：昆虫·植物·海洋·动物（含蝴蝶二级） */
+const isTaxonomyEligibleProduct = computed(() => {
     const f = form.value || {}
     const blob = [f.rootCategoryName, f.category].filter(Boolean).join(' ')
-    // 蝴蝶二级，或昆虫馆下可标注（运营仅对蝴蝶填写）
-    return /蝴蝶|鳞翅|蝶|昆虫/.test(blob)
+    return TAXONOMY_ELIGIBLE_RE.test(blob)
 })
-
-const isCraftEligibleProduct = computed(() => {
-    const f = form.value || {}
-    const blob = [f.rootCategoryName, f.category].filter(Boolean).join(' ')
-    return /昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)
-})
+/** @deprecated 保留别名，语义已对齐 isTaxonomyEligibleProduct */
+const isButterflyProduct = isTaxonomyEligibleProduct
+const isCraftEligibleProduct = isTaxonomyEligibleProduct
 const archiveFilter = ref('all') // 'all' | 'archive' | 'oneOfAKind' 全部 / 仅档案藏品 / 仅孤品
 const promoFilter = ref('all') // 'all' | 'seckill' | 'seckill_expired' | 'group'
 
@@ -2677,8 +2699,10 @@ const applyCategorySuggestion = (cat) => {
     form.value.categoryType = cat.categoryType || ''
 
     const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
-    if (!/蝴蝶|鳞翅|蝶|昆虫/.test(blob)) form.value.channel = ''
-    if (!/昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)) form.value.craftType = ''
+    if (!TAXONOMY_ELIGIBLE_RE.test(blob)) {
+        form.value.channel = ''
+        form.value.craftType = ''
+    }
     return true
 }
 
@@ -2744,8 +2768,10 @@ const onCategoryPathChange = (path) => {
 
     // 切换分类后清理不适用维度，避免脏数据写入
     const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
-    if (!/蝴蝶|鳞翅|蝶|昆虫/.test(blob)) form.value.channel = ''
-    if (!/昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)) form.value.craftType = ''
+    if (!TAXONOMY_ELIGIBLE_RE.test(blob)) {
+        form.value.channel = ''
+        form.value.craftType = ''
+    }
 
     // 与店长端一致：二级分类带 taxonomy 时预填科学分类
     const tax = (sub && sub.taxonomy) || (root && root.taxonomy) || null
@@ -3256,8 +3282,8 @@ const saveProduct = async () => {
         }
         
         const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
-        const channelOk = /蝴蝶|鳞翅|蝶|昆虫/.test(blob)
-        const craftOk = /昆虫|植物|海洋|蝴蝶|鳞翅/.test(blob)
+        const channelOk = TAXONOMY_ELIGIBLE_RE.test(blob)
+        const craftOk = channelOk
         let images = (form.value.images || []).filter(Boolean)
         const detailImages = (form.value.detailImages || []).filter(Boolean)
         const detailHtml = String(form.value.detailHtml || '')
