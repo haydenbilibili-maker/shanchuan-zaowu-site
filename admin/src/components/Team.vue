@@ -165,7 +165,7 @@
       <div class="action-bar">
         <div class="tip">
           与「员工薪酬管理」「店铺管理」门店员工 Tab 使用同一套本地花名册；门店店员绑定门店后将同步至对应店铺详情。
-          小程序店长登录账号仍使用云库 <code>staffs</code>，与本地花名册独立，需另行维护。
+          可从飞书人事多维表同步（含身份证、银行卡等；列表脱敏）。小程序店长账号仍用云库 <code>staffs</code>，与本地花名册独立。
         </div>
       </div>
       <UnifiedEmployeePanel />

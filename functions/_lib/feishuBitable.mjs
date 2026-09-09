@@ -7,6 +7,13 @@ export function envToken(env = {}) {
   return env.FEISHU_APP_TOKEN || DEFAULT_APP_TOKEN
 }
 
+/** 单次请求可覆盖 app_token（人事 Base 与采购库存 Base 不同） */
+function scopedEnv(env = {}, payload = {}) {
+  const appToken = payload.appToken || payload.app_token
+  if (!appToken) return env
+  return { ...env, FEISHU_APP_TOKEN: String(appToken).trim() }
+}
+
 async function feishuJson(url, { method = 'GET', token, body } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers.Authorization = `Bearer ${token}`
@@ -58,7 +65,25 @@ export async function inspectBase(env = {}) {
   return { appToken, tables }
 }
 
-export async function listAllRecords(tableId, env = {}) {
+export async function listTableFields(tableId, env = {}) {
+  const token = await getTenantToken(env)
+  const appToken = envToken(env)
+  const fieldsRes = await feishuJson(
+    `${API}/apps/${appToken}/tables/${tableId}/fields?page_size=100`,
+    { token },
+  )
+  return {
+    appToken,
+    tableId,
+    fields: (fieldsRes.data?.items || []).map((f) => ({
+      name: f.field_name,
+      type: f.type,
+      uiType: f.ui_type,
+    })),
+  }
+}
+
+export async function listAllRecords(tableId, env = {}, { viewId } = {}) {
   const token = await getTenantToken(env)
   const appToken = envToken(env)
   const records = []
@@ -66,6 +91,7 @@ export async function listAllRecords(tableId, env = {}) {
   do {
     const qs = new URLSearchParams({ page_size: '500' })
     if (pageToken) qs.set('page_token', pageToken)
+    if (viewId) qs.set('view_id', viewId)
     const json = await feishuJson(
       `${API}/apps/${appToken}/tables/${tableId}/records?${qs}`,
       { token },
@@ -90,12 +116,13 @@ export async function createFeishuRecord(tableId, fields, env = {}) {
 export async function handleFeishuAction(payload = {}, env = {}) {
   const configured = Boolean(env.FEISHU_APP_ID && env.FEISHU_APP_SECRET)
   const action = payload.action
+  const envScoped = scopedEnv(env, payload)
 
   if (action === 'status' || !action) {
     return {
       success: true,
       configured,
-      appToken: envToken(env),
+      appToken: envToken(envScoped),
       msg: configured
         ? '飞书密钥已配置'
         : '未配置 FEISHU_APP_ID / FEISHU_APP_SECRET',
@@ -110,17 +137,24 @@ export async function handleFeishuAction(payload = {}, env = {}) {
   }
 
   if (action === 'inspect') {
-    const data = await inspectBase(env)
+    const data = await inspectBase(envScoped)
+    return { success: true, ...data }
+  }
+  if (action === 'listFields') {
+    if (!payload.tableId) return { success: false, msg: '缺少 tableId' }
+    const data = await listTableFields(payload.tableId, envScoped)
     return { success: true, ...data }
   }
   if (action === 'listRecords') {
     if (!payload.tableId) return { success: false, msg: '缺少 tableId' }
-    const records = await listAllRecords(payload.tableId, env)
+    const records = await listAllRecords(payload.tableId, envScoped, {
+      viewId: payload.viewId || payload.view_id || '',
+    })
     return { success: true, records }
   }
   if (action === 'createRecord') {
     if (!payload.tableId) return { success: false, msg: '缺少 tableId' }
-    const record = await createFeishuRecord(payload.tableId, payload.fields || {}, env)
+    const record = await createFeishuRecord(payload.tableId, payload.fields || {}, envScoped)
     return { success: true, record }
   }
   return { success: false, msg: `未知 action: ${action}` }

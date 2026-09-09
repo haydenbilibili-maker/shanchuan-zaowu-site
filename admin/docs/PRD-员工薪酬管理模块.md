@@ -194,14 +194,17 @@
 ## 7. 数据模型概要
 
 ```
-员工 PayrollEmployee
+员工 PayrollEmployee（本地 localStorage `sc_payroll_bundle_v1`，非 CloudBase）
   - id, employeeNo, name, employeeType(store_clerk|specimen|function),
+    phone, gender,
+    idCardNumber, bankCardNumber, bankName,   // 敏感：列表脱敏，编辑可看完整值
     department, position, status, hireDate, leaveDate(optional),
     storeId(optional, 店员必填), teamMemberId(optional),
     baseSalaryMonthly,
     commissionParticipate(boolean, 店员默认 true),
     commissionRateOverride(optional, decimal),
     monthlyPerformanceBonus(optional, 职能/标本师默认可空),
+    feishuRecordId(optional), syncedFromFeishuAt(optional),
     createdAt, updatedAt
 
 考勤汇总 PayrollAttendanceMonth

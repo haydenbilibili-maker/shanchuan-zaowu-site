@@ -6,13 +6,19 @@
       show-icon
       class="ue-hint"
       title="员工主数据唯一入口"
-      description="此处维护的人员与「员工薪酬管理」考勤/算薪、「店铺管理」门店花名册自动同步。门店店员须绑定门店；标本师/职能用于薪酬分支。"
+      description="此处维护的人员与「员工薪酬管理」考勤/算薪、「店铺管理」门店花名册自动同步。门店店员须绑定门店；标本师/职能用于薪酬分支。身份证/银行卡完整值存本地；列表默认脱敏。"
     />
     <div class="tab-actions">
       <el-button type="primary" @click="openEmployeeDialog()">
         <el-icon><Plus /></el-icon>
         新增员工
       </el-button>
+      <el-button :loading="syncing" @click="openFeishuSync">
+        <el-icon><Refresh /></el-icon>
+        从飞书同步
+      </el-button>
+      <el-button link type="primary" @click="mappingDialog = true">字段映射</el-button>
+      <el-switch v-model="revealSensitive" active-text="显示敏感信息" inactive-text="脱敏" />
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="payroll.employees" stripe empty-text="暂无员工">
@@ -26,6 +32,17 @@
           </template>
         </el-table-column>
         <el-table-column prop="phone" label="手机" width="120" />
+        <el-table-column label="身份证" min-width="160">
+          <template #default="{ row }">
+            {{ displayIdCard(row.idCardNumber) || '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="银行卡" min-width="150">
+          <template #default="{ row }">
+            {{ displayBankCard(row.bankCardNumber) || '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="bankName" label="开户行" width="120" show-overflow-tooltip />
         <el-table-column prop="department" label="部门" width="100" />
         <el-table-column prop="position" label="岗位" width="100" />
         <el-table-column label="状态" width="80">
@@ -76,6 +93,15 @@
         </el-form-item>
         <el-form-item label="手机">
           <el-input v-model="empForm.phone" maxlength="20" placeholder="与门店花名册、考勤联系用" />
+        </el-form-item>
+        <el-form-item label="身份证号">
+          <el-input v-model="empForm.idCardNumber" maxlength="32" placeholder="完整号码仅本地保存" />
+        </el-form-item>
+        <el-form-item label="银行卡号">
+          <el-input v-model="empForm.bankCardNumber" maxlength="32" placeholder="完整卡号仅本地保存" />
+        </el-form-item>
+        <el-form-item label="开户行">
+          <el-input v-model="empForm.bankName" maxlength="64" />
         </el-form-item>
         <el-form-item label="性别">
           <el-select v-model="empForm.gender" clearable placeholder="可选" style="width: 100%">
@@ -136,10 +162,54 @@
             <el-input-number v-model="empForm.monthlyPerformanceBonus" :min="0" :precision="2" style="width: 100%" />
           </el-form-item>
         </template>
+        <el-form-item v-if="empForm.feishuRecordId" label="飞书记录">
+          <el-input :model-value="empForm.feishuRecordId" readonly />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="empDialog = false">取消</el-button>
         <el-button type="primary" @click="saveEmployee">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="mappingDialog" title="飞书人事表字段映射" width="640px" destroy-on-close>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        class="ue-hint"
+        title="人事 Base 与采购库存 Base 不同"
+        description="默认 app_token=UOIcbbRBwaX9U1sIR9xcezhenzb · table=tblSuPKdcSnJwNTq。密钥仍用 FEISHU_APP_ID/SECRET；请确认该应用已添加到此人事 Base。"
+      />
+      <el-form label-width="100px" size="small">
+        <el-form-item label="app_token">
+          <el-input v-model="mappingForm.appToken" />
+        </el-form-item>
+        <el-form-item label="table_id">
+          <el-input v-model="mappingForm.tableId" />
+        </el-form-item>
+        <el-form-item label="view_id">
+          <el-input v-model="mappingForm.viewId" placeholder="可选，按视图过滤" />
+        </el-form-item>
+        <el-divider content-position="left">列映射（飞书列名）</el-divider>
+        <el-form-item v-for="def in ROSTER_FIELD_DEFS" :key="def.key" :label="def.label">
+          <el-select
+            v-model="mappingForm.fields[def.key]"
+            filterable
+            clearable
+            allow-create
+            default-first-option
+            :placeholder="def.hints?.[0] || '飞书列名'"
+            style="width: 100%"
+          >
+            <el-option v-for="col in probedFields" :key="col.name" :label="`${col.name} (${col.uiType || col.type})`" :value="col.name" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button :loading="probing" @click="probeFields">探测字段</el-button>
+        <el-button @click="mappingDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveMapping">保存映射</el-button>
       </template>
     </el-dialog>
   </div>
@@ -147,7 +217,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { loadStoreBundle, getStoreSelectOptions, findStoreById, saveStoreBundle } from '../utils/storeStorage.js'
 import {
@@ -159,16 +229,34 @@ import {
 } from '../utils/payrollStorage.js'
 import { generateNextEmployeeNo } from '../utils/employeeNoGenerator.js'
 import { rebuildStoreStaffFromPayrollEmployees, UNIFIED_EMPLOYEES_CHANGED } from '../utils/unifiedEmployeeSync.js'
+import { maskIdCard, maskBankCard } from '../utils/sensitiveMask.js'
+import {
+  ROSTER_FIELD_DEFS,
+  loadRosterMapping,
+  saveRosterMapping,
+  inspectRosterTable,
+  syncRosterFromFeishu,
+} from '../utils/feishuRosterSync.js'
 
 const payroll = reactive(loadPayrollBundle())
 const storeBundle = ref(loadStoreBundle())
 
 const empDialog = ref(false)
 const empEditingId = ref(null)
+const revealSensitive = ref(false)
+const syncing = ref(false)
+const probing = ref(false)
+const mappingDialog = ref(false)
+const probedFields = ref([])
+const mappingForm = reactive(loadRosterMapping())
+
 const empForm = reactive({
   employeeNo: '',
   name: '',
   phone: '',
+  idCardNumber: '',
+  bankCardNumber: '',
+  bankName: '',
   gender: '',
   employeeType: 'function',
   storeId: null,
@@ -181,6 +269,7 @@ const empForm = reactive({
   commissionParticipate: true,
   commissionRateOverridePct: null,
   monthlyPerformanceBonus: 0,
+  feishuRecordId: '',
 })
 
 const storeSelectOptions = computed(() => getStoreSelectOptions(storeBundle.value))
@@ -196,6 +285,16 @@ function storeLabel(storeId) {
   const s = findStoreById(storeBundle.value, storeId)
   if (!s) return storeId
   return `${s.code || '—'} · ${s.name || ''}`
+}
+
+function displayIdCard(v) {
+  if (!v) return ''
+  return revealSensitive.value ? String(v) : maskIdCard(v)
+}
+
+function displayBankCard(v) {
+  if (!v) return ''
+  return revealSensitive.value ? String(v) : maskBankCard(v)
 }
 
 function reloadFromDisk() {
@@ -220,6 +319,9 @@ function openEmployeeDialog(row) {
     empForm.employeeNo = row.employeeNo || ''
     empForm.name = row.name || ''
     empForm.phone = row.phone || ''
+    empForm.idCardNumber = row.idCardNumber || ''
+    empForm.bankCardNumber = row.bankCardNumber || ''
+    empForm.bankName = row.bankName || ''
     empForm.gender = row.gender || ''
     empForm.employeeType = row.employeeType || 'function'
     empForm.storeId = row.storeId || null
@@ -235,6 +337,7 @@ function openEmployeeDialog(row) {
         ? Math.round(Number(row.commissionRateOverride) * 10000) / 100
         : null
     empForm.monthlyPerformanceBonus = Number(row.monthlyPerformanceBonus) || 0
+    empForm.feishuRecordId = row.feishuRecordId || ''
   } else {
     empEditingId.value = null
     resetEmpForm()
@@ -246,6 +349,9 @@ function resetEmpForm() {
   empForm.employeeNo = ''
   empForm.name = ''
   empForm.phone = ''
+  empForm.idCardNumber = ''
+  empForm.bankCardNumber = ''
+  empForm.bankName = ''
   empForm.gender = ''
   empForm.employeeType = 'function'
   empForm.storeId = null
@@ -258,6 +364,7 @@ function resetEmpForm() {
   empForm.commissionParticipate = true
   empForm.commissionRateOverridePct = null
   empForm.monthlyPerformanceBonus = 0
+  empForm.feishuRecordId = ''
 }
 
 function regenEmployeeNo() {
@@ -312,6 +419,9 @@ function saveEmployee() {
     employeeNo,
     name: empForm.name.trim(),
     phone: (empForm.phone || '').trim(),
+    idCardNumber: (empForm.idCardNumber || '').replace(/\s/g, '').trim(),
+    bankCardNumber: (empForm.bankCardNumber || '').replace(/\s/g, '').trim(),
+    bankName: (empForm.bankName || '').trim(),
     gender: empForm.gender || '',
     employeeType: empForm.employeeType,
     storeId: empForm.storeId || null,
@@ -330,6 +440,7 @@ function saveEmployee() {
         : null,
     monthlyPerformanceBonus:
       empForm.employeeType !== 'store_clerk' ? Number(empForm.monthlyPerformanceBonus) || 0 : 0,
+    feishuRecordId: empForm.feishuRecordId || undefined,
     teamMemberId: null,
     updatedAt: now,
   }
@@ -362,6 +473,74 @@ function removeEmployee(row) {
     .catch(() => {})
 }
 
+async function probeFields() {
+  probing.value = true
+  try {
+    const res = await inspectRosterTable({
+      appToken: mappingForm.appToken,
+      tableId: mappingForm.tableId,
+      viewId: mappingForm.viewId,
+      fields: mappingForm.fields,
+    })
+    if (!res.success) {
+      ElMessage.error(res.msg || '探测失败')
+      return
+    }
+    probedFields.value = res.fields || []
+    if (res.guessed) {
+      Object.assign(mappingForm.fields, res.guessed)
+    }
+    ElMessage.success(res.msg || '探测成功')
+  } finally {
+    probing.value = false
+  }
+}
+
+function saveMapping() {
+  const saved = saveRosterMapping({
+    appToken: mappingForm.appToken,
+    tableId: mappingForm.tableId,
+    viewId: mappingForm.viewId,
+    fields: { ...mappingForm.fields },
+  })
+  Object.assign(mappingForm, saved)
+  mappingDialog.value = false
+  ElMessage.success('字段映射已保存')
+}
+
+async function openFeishuSync() {
+  const map = loadRosterMapping()
+  Object.assign(mappingForm, map, { fields: { ...map.fields } })
+  try {
+    await ElMessageBox.confirm(
+      '将从飞书人事多维表拉取员工，按「飞书 record_id」优先、其次「姓名+手机」upsert 到本地花名册。是否继续？',
+      '从飞书同步',
+      { type: 'info', confirmButtonText: '开始同步', cancelButtonText: '先改映射' },
+    )
+  } catch {
+    mappingDialog.value = true
+    return
+  }
+  syncing.value = true
+  try {
+    const res = await syncRosterFromFeishu(payroll, {
+      mapping: loadRosterMapping(),
+      storeBundle: storeBundle.value,
+    })
+    if (!res.success) {
+      ElMessage.error(res.msg || '同步失败')
+      mappingDialog.value = true
+      return
+    }
+    Object.keys(payroll).forEach((k) => delete payroll[k])
+    Object.assign(payroll, res.payroll)
+    persistPayrollAndSyncStores()
+    ElMessage.success(res.msg)
+  } finally {
+    syncing.value = false
+  }
+}
+
 watch(
   () => [empDialog.value, empEditingId.value, empForm.storeId, empForm.employeeType],
   () => applyAutoEmployeeNoForNew(),
@@ -369,6 +548,8 @@ watch(
 
 onMounted(() => {
   reloadFromDisk()
+  const map = loadRosterMapping()
+  Object.assign(mappingForm, map, { fields: { ...map.fields } })
   window.addEventListener(UNIFIED_EMPLOYEES_CHANGED, reloadFromDisk)
 })
 
@@ -391,6 +572,7 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
   margin-bottom: 12px;
 }
 .table-card {
