@@ -2780,8 +2780,16 @@ const applyAssistProductCopyResult = (d, { force = false, fillCategory = false }
     if (fillCategory && d.protectionType) {
         const pt = String(d.protectionType).trim()
         if (['none', 'sanyou', 'protected_plant', 'protected_animal'].includes(pt)) {
-            form.value.protectionType = pt
-            if (pt === 'none') form.value.collectionCertificate = ''
+            // 无证书时不自动升为保护类，避免「一键补齐」后被收藏证书校验卡死无法保存
+            const hasCert = !!String(form.value.collectionCertificate || '').trim()
+            if (pt === 'none') {
+                form.value.protectionType = 'none'
+                form.value.collectionCertificate = ''
+            } else if (hasCert) {
+                form.value.protectionType = pt
+            } else if (pt !== (form.value.protectionType || 'none')) {
+                ElMessage.warning(`AI 建议保护等级「${pt}」，请确认后手动选择并上传收藏证书`)
+            }
         }
     }
 
@@ -3363,11 +3371,18 @@ const saveProduct = async () => {
         let collectionCertificate = String(form.value.collectionCertificate || '').trim()
         if (!needsCert) collectionCertificate = ''
 
+        // 元为单位的数值；与店长端 / manageProducts 一致，禁止 CDN 直写 products（write:false）
+        const safePrice = Number.isFinite(Number(price)) ? Math.max(0, Number(price)) : 0
+        const safeCost = Number.isFinite(Number(form.value.costPrice))
+            ? Math.max(0, Number(form.value.costPrice))
+            : 0
+        const safeStock = Number.isFinite(Number(stock)) ? Math.max(0, Math.floor(Number(stock))) : 0
+
         const data = {
             title: form.value.title,
-            price,
-            costPrice: form.value.costPrice || 0,
-            stock,
+            price: safePrice,
+            costPrice: safeCost,
+            stock: safeStock,
             category: form.value.category || '',
             categoryId: form.value.categoryId || '',
             rootCategoryId: form.value.rootCategoryId || '',
@@ -3407,33 +3422,26 @@ const saveProduct = async () => {
             seckill: seckill,
             groupBuying: groupBuying
         }
-        
-        if (isEditing.value) {
-            // 存量 Admin 文档若 createTime 为 Number，orderBy(createTime) 会从商品流索引中漏掉；编辑时一并纠正为 Date
-            const existingCt = form.value.createTime
-            const ctIsDate = existingCt instanceof Date
-                || (existingCt && typeof existingCt === 'object' && typeof existingCt.getTime === 'function')
-                || (typeof existingCt === 'string' && !Number.isNaN(Date.parse(existingCt)))
-            if (!ctIsDate && existingCt != null) {
-                const ms = typeof existingCt === 'number' ? existingCt : Number(existingCt)
-                if (Number.isFinite(ms) && ms > 0) data.createTime = new Date(ms)
-            } else if (existingCt == null) {
-                data.createTime = new Date()
-            }
-            await cdnUpdate(COLLECTIONS.PRODUCTS, form.value._id, data)
-            ElMessage.success('更新成功')
-        } else {
-            // 必须与店长端一致写 Date（db.serverDate / new Date），不能写 Date.now() Number：
-            // 小程序 ProductList 用 where(isOffShelf)+orderBy(createTime)，混类型会被索引排除
-            const db = await getCdnDatabase()
-            data.createTime = typeof db.serverDate === 'function' ? db.serverDate() : new Date()
-            data.isOffShelf = false
-            await cdnAdd(COLLECTIONS.PRODUCTS, data)
-            ElMessage.success('创建成功')
+
+        const productId = isEditing.value ? String(form.value._id || '').trim() : ''
+        if (isEditing.value && !productId) {
+            throw new Error('藏品 ID 缺失，请关闭后重新打开编辑')
         }
-        
+
+        // 上下架仅 manageApprovals；upsert 会剥离 isOffShelf，新建默认下架
+        const res = await callCloudFunction('manageProducts', {
+            action: 'upsert',
+            productId,
+            data,
+            adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+        })
+        if (!res || res.success === false) {
+            throw new Error(res?.msg || '保存失败')
+        }
+
+        ElMessage.success(isEditing.value ? '更新成功' : '创建成功（默认下架，上架请走审批）')
         dialogVisible.value = false
-        loadProducts() 
+        loadProducts()
     } catch (err) {
         console.error('保存失败', err)
         ElMessage.error('保存失败: ' + (err.message || '未知错误'))
