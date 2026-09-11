@@ -146,6 +146,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { Search, Star } from '@element-plus/icons-vue'
 import { MODULES, MODULES_BY_ID, GROUPS, searchModules, modulesByGroup, ACTIONS, searchActions, runAction } from '../utils/modulesRegistry'
+import { useRecentModules, RECENT_MODULES_KEY, RECENT_CHANGED_EVENT } from '../composables/useRecentModules'
 
 const emit = defineEmits(['switch-tab'])
 
@@ -154,10 +155,9 @@ const query = ref('')
 const activeIndex = ref(0)
 const inputRef = ref(null)
 
-const RECENT_KEY = 'sc_admin_recent_modules'
 const PIN_KEY = 'sc_admin_pinned_modules'
 
-const recentIds = ref(loadIds(RECENT_KEY))
+const { recentModules, recordRecent, loadRecent } = useRecentModules()
 const pinnedIds = ref(loadIds(PIN_KEY))
 
 function loadIds(key) {
@@ -168,15 +168,16 @@ function loadIds(key) {
     return Array.isArray(arr) ? arr.filter(id => MODULES_BY_ID[id]) : []
   } catch (e) { return [] }
 }
-function persistIds(key, arr) {
-  try { localStorage.setItem(key, JSON.stringify(arr)) } catch (e) {}
+function persistPinnedIds(arr) {
+  try { localStorage.setItem(PIN_KEY, JSON.stringify(arr)) } catch (e) {}
   // storage 事件只派发给其它标签页；同页内用自定义事件通知 App.vue 侧栏刷新
   window.dispatchEvent(new CustomEvent('pinned-changed'))
 }
 // 接收来自侧栏（App.vue togglePin）的同页变更
 const onPinnedChanged = () => { pinnedIds.value = loadIds(PIN_KEY) }
+const onRecentChanged = () => { loadRecent() }
 
-const recent = computed(() => recentIds.value.map(id => MODULES_BY_ID[id]).filter(Boolean).slice(0, 5))
+const recent = computed(() => recentModules.value.slice(0, 5))
 const pinned = computed(() => pinnedIds.value.map(id => MODULES_BY_ID[id]).filter(Boolean))
 const results = computed(() => query.value ? searchModules(query.value) : [])
 const actionResults = computed(() => query.value ? searchActions(query.value) : [])
@@ -204,12 +205,7 @@ const togglePin = (m) => {
   } else {
     pinnedIds.value = [...pinnedIds.value, m.id].slice(0, 8) // 最多 8 个
   }
-  persistIds(PIN_KEY, pinnedIds.value)
-}
-
-const recordRecent = (m) => {
-  recentIds.value = [m.id, ...recentIds.value.filter(id => id !== m.id)].slice(0, 6)
-  persistIds(RECENT_KEY, recentIds.value)
+  persistPinnedIds(pinnedIds.value)
 }
 
 const moveActive = (dir) => {
@@ -236,7 +232,7 @@ const select = (m) => {
   }
   if (!m) return
   emit('switch-tab', m.id)
-  recordRecent(m)
+  recordRecent(m.id)
   close()
 }
 
@@ -255,7 +251,7 @@ const open = () => {
   activeIndex.value = 0
   // 兜底：重新加载置顶/最近，防止其它入口修改后状态陈旧
   pinnedIds.value = loadIds(PIN_KEY)
-  recentIds.value = loadIds(RECENT_KEY)
+  loadRecent()
   nextTick(() => inputRef.value?.focus())
 }
 const close = () => { visible.value = false }
@@ -282,18 +278,25 @@ const onKeydown = (e) => {
   }
 }
 
+const onStorage = (e) => {
+  if (e.key === PIN_KEY) onPinnedChanged()
+  if (e.key === RECENT_MODULES_KEY) onRecentChanged()
+}
+
 // 暴露给父组件的方法
 defineExpose({ open, close })
 
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('pinned-changed', onPinnedChanged)
-  window.addEventListener('storage', onPinnedChanged) // 跨标签页兜底
+  window.addEventListener(RECENT_CHANGED_EVENT, onRecentChanged)
+  window.addEventListener('storage', onStorage)
 })
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('pinned-changed', onPinnedChanged)
-  window.removeEventListener('storage', onPinnedChanged)
+  window.removeEventListener(RECENT_CHANGED_EVENT, onRecentChanged)
+  window.removeEventListener('storage', onStorage)
 })
 </script>
 

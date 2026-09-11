@@ -11,7 +11,7 @@
         :closable="false"
         show-icon
         class="hint-alert"
-        title="标本档案 / 山海社区默认关闭（成熟后再开）；预约入口默认开启（缺配置小程序仍显示发起入口）。仅显式关闭预约入口才会隐藏。"
+        title="标本档案 / 山海社区 / 标本定制默认关闭；预约入口与 AI 鉴定默认开启。缺配置时小程序按上述默认策略显隐。"
       />
     </div>
 
@@ -56,6 +56,50 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="标本工坊 · 标本定制">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.showSpecimenCustom"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              关闭后隐藏工坊「标本定制」、馆藏「定制」Pill、商详「定制」按钮及定制向导入口；
+              伴宠记忆不受影响。缺配置默认关闭。
+            </span>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="我的 · 我的钱包">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.showStoredValue"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              关闭后隐藏「我的」页钱包入口，并拒绝充值。缺配置默认关闭。档位与折扣见「我的钱包」配置页。
+            </span>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="AI · 标本鉴定">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.showAiIdentify"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              关闭后隐藏「我的」鉴定入口、馆藏搜索旁鉴定按钮、图鉴拍照采集入口，并拦截鉴定页直达。
+              已有鉴定结果页仍可查看。缺配置默认开启。
+            </span>
+          </div>
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" color="#2D6A4F" :loading="saving" @click="saveFlags">
             保存开关
@@ -84,7 +128,10 @@ import { ElMessage } from 'element-plus'
 const DEFAULT_FLAGS = {
   showSpecimenArchive: false,
   showUserCommunity: false,
-  showBookingEntry: true
+  showBookingEntry: true,
+  showSpecimenCustom: false,
+  showStoredValue: false,
+  showAiIdentify: true
 }
 
 const loading = ref(false)
@@ -104,6 +151,9 @@ function applyFlags(raw = {}, id = '') {
   form.showSpecimenArchive = raw.showSpecimenArchive === true
   form.showUserCommunity = raw.showUserCommunity === true
   form.showBookingEntry = raw.showBookingEntry !== false
+  form.showSpecimenCustom = raw.showSpecimenCustom === true
+  form.showStoredValue = raw.showStoredValue === true
+  form.showAiIdentify = raw.showAiIdentify !== false
   docId.value = id || ''
   updatedAtText.value = formatTime(raw.updateTime || raw._updateTime || raw.updatedAt || null)
 }
@@ -140,6 +190,9 @@ function buildPayload() {
     showSpecimenArchive: form.showSpecimenArchive === true,
     showUserCommunity: form.showUserCommunity === true,
     showBookingEntry: form.showBookingEntry !== false,
+    showSpecimenCustom: form.showSpecimenCustom === true,
+    showStoredValue: form.showStoredValue === true,
+    showAiIdentify: form.showAiIdentify !== false,
     updateTime: Date.now(),
     _updateTime: Date.now()
   }
@@ -173,6 +226,9 @@ function resetDefaults() {
   form.showSpecimenArchive = DEFAULT_FLAGS.showSpecimenArchive
   form.showUserCommunity = DEFAULT_FLAGS.showUserCommunity
   form.showBookingEntry = DEFAULT_FLAGS.showBookingEntry
+  form.showSpecimenCustom = DEFAULT_FLAGS.showSpecimenCustom
+  form.showStoredValue = DEFAULT_FLAGS.showStoredValue
+  form.showAiIdentify = DEFAULT_FLAGS.showAiIdentify
   ElMessage.info('已恢复本地默认值，点击「保存开关」写入云库')
 }
 

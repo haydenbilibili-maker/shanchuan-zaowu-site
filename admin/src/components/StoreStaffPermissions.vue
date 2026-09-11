@@ -4,7 +4,7 @@
       <div class="title-box">
         <h2>店员工作台权限</h2>
         <span class="subtitle">
-          维护小程序店长 / 店员账号（云库 staff_members）· 支持手机号查找与 openid 配置 · 控制「店长后台 / 店员工作台」入口
+          维护小程序超管 / 店长 / 店员（staff_members + workspace_acl）· 支持手机号查找与 openid 配置
         </span>
       </div>
       <div class="header-actions">
@@ -20,6 +20,28 @@
       class="hint-alert"
       title="与「员工花名册」相互独立：本页写入 staff_members，供小程序 staffGuard 鉴权；花名册用于总部 HR / 薪酬，不会自动开通小程序店长权限。"
     />
+
+    <el-card shadow="never" class="acl-card" v-loading="aclLoading">
+      <template #header>
+        <div class="acl-header">
+          <div>
+            <div class="acl-title">超管白名单（workspace_acl）</div>
+            <div class="acl-sub">硬编码兜底始终生效；此处仅管理云库追加 openid。保存后约 1 分钟内各云函数缓存刷新。</div>
+          </div>
+          <el-button type="primary" :loading="aclSaving" @click="saveAcl">保存超管名单</el-button>
+        </div>
+      </template>
+      <div class="acl-hardcoded" v-if="aclHardcoded.length">
+        <span class="acl-label">硬编码兜底</span>
+        <el-tag v-for="id in aclHardcoded" :key="id" size="small" type="warning" effect="plain" class="oid-tag">…{{ id.slice(-8) }}</el-tag>
+      </div>
+      <el-input
+        v-model="aclOpenidsText"
+        type="textarea"
+        :rows="3"
+        placeholder="每行一个 openid（可追加；硬编码项不必重复填写）"
+      />
+    </el-card>
 
     <div class="filter-bar">
       <el-input
@@ -37,6 +59,7 @@
       </el-radio-group>
       <el-radio-group v-model="roleFilter" fill="#2D5A3F" @change="onSearch">
         <el-radio-button label="all">全部角色</el-radio-button>
+        <el-radio-button label="super_admin">超管</el-radio-button>
         <el-radio-button label="manager">店长</el-radio-button>
         <el-radio-button label="staff">店员</el-radio-button>
       </el-radio-group>
@@ -54,10 +77,14 @@
             <div class="ts" v-if="row.staffNo">工号 {{ row.staffNo }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="角色" width="100">
+        <el-table-column label="角色" width="110">
           <template #default="{ row }">
-            <el-tag :type="row.role === 'manager' ? 'warning' : 'success'" effect="plain" size="small">
-              {{ row.roleText || (row.role === 'manager' ? '店长' : '店员') }}
+            <el-tag
+              :type="row.role === 'super_admin' ? 'danger' : (row.role === 'manager' ? 'warning' : 'success')"
+              effect="plain"
+              size="small"
+            >
+              {{ row.roleText || roleLabel(row.role) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -107,7 +134,7 @@
 
     <el-dialog
       v-model="dialogVisible"
-      :title="form._id ? '编辑店长 / 店员权限' : '开通店长 / 店员权限'"
+      :title="form._id ? '编辑工作台权限' : '开通店长 / 店员权限'"
       width="520px"
       destroy-on-close
     >
@@ -142,7 +169,11 @@
           <el-radio-group v-model="form.role">
             <el-radio label="manager">店长</el-radio>
             <el-radio label="staff">店员</el-radio>
+            <el-radio label="super_admin">超管</el-radio>
           </el-radio-group>
+          <div class="field-hint" v-if="form.role === 'super_admin'">
+            保存后写入 staff_members，并自动并入 workspace_acl 超管名单
+          </div>
         </el-form-item>
         <el-form-item label="门店 ID">
           <el-input
@@ -168,6 +199,46 @@
         <el-button type="primary" :loading="submitting" @click="submitUpsert">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-card shadow="never" class="audit-card" v-loading="auditLoading">
+      <template #header>
+        <div class="acl-header">
+          <div>
+            <div class="acl-title">操作审计（只读）</div>
+            <div class="acl-sub">staff_audit_logs · 发货 / 积分审核 / 权限变更等</div>
+          </div>
+          <div class="audit-actions">
+            <el-select v-model="auditAction" clearable placeholder="全部 action" style="width: 180px" @change="loadAudit">
+              <el-option v-for="a in auditActionOptions" :key="a" :label="a" :value="a" />
+            </el-select>
+            <el-select v-model="auditSinceDays" style="width: 120px" @change="loadAudit">
+              <el-option :value="1" label="近 1 天" />
+              <el-option :value="7" label="近 7 天" />
+              <el-option :value="30" label="近 30 天" />
+              <el-option :value="0" label="不限" />
+            </el-select>
+            <el-button :icon="Refresh" circle title="刷新审计" @click="loadAudit" />
+          </div>
+        </div>
+      </template>
+      <el-table :data="auditList" stripe max-height="320" size="small">
+        <template #empty>
+          <el-empty description="暂无审计记录" :image-size="64" />
+        </template>
+        <el-table-column label="时间" width="160">
+          <template #default="{ row }">{{ formatAuditTime(row.createdAtMs) }}</template>
+        </el-table-column>
+        <el-table-column prop="action" label="action" width="140" />
+        <el-table-column label="操作者" width="100">
+          <template #default="{ row }">…{{ row.openidTail || '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="workspaceRole" label="角色" width="120" />
+        <el-table-column prop="relatedId" label="relatedId" min-width="140" show-overflow-tooltip />
+        <el-table-column label="详情" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">{{ formatAuditDetail(row.detail) }}</template>
+        </el-table-column>
+      </el-table>
+    </el-card>
   </div>
 </template>
 
@@ -190,6 +261,22 @@ const dialogVisible = ref(false)
 const phoneLookup = ref('')
 const candidates = ref([])
 const form = ref(emptyForm())
+const aclLoading = ref(false)
+const aclSaving = ref(false)
+const aclHardcoded = ref([])
+const aclOpenidsText = ref('')
+const auditLoading = ref(false)
+const auditList = ref([])
+const auditAction = ref('')
+const auditSinceDays = ref(7)
+const auditActionOptions = [
+  'staff_upsert',
+  'staff_remove',
+  'workspace_acl_save',
+  'order_ship',
+  'order_refund',
+  'points_review'
+]
 
 function emptyForm() {
   return {
@@ -204,6 +291,12 @@ function emptyForm() {
   }
 }
 
+function roleLabel(role) {
+  if (role === 'super_admin') return '超管'
+  if (role === 'manager') return '店长'
+  return '店员'
+}
+
 const filteredList = computed(() => {
   let rows = list.value.slice()
   if (roleFilter.value !== 'all') {
@@ -212,7 +305,7 @@ const filteredList = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   if (!kw) return rows
   return rows.filter((r) => {
-    const blob = `${r.name || ''} ${r.staffNo || ''} ${r.openid || ''} ${r.openidTail || ''}`.toLowerCase()
+    const blob = `${r.name || ''} ${r.staffNo || ''} ${r.openid || ''} ${r.openidTail || ''} ${r.roleText || ''}`.toLowerCase()
     return blob.includes(kw)
   })
 })
@@ -240,8 +333,82 @@ async function loadList() {
   }
 }
 
+async function loadAcl() {
+  aclLoading.value = true
+  try {
+    const res = await callFn({ action: 'getWorkspaceAcl' })
+    aclHardcoded.value = res.hardcoded || []
+    const configured = res.configured || []
+    aclOpenidsText.value = configured.join('\n')
+  } catch (e) {
+    aclHardcoded.value = []
+    aclOpenidsText.value = ''
+    // 非超管或未部署时不打断主列表
+    console.warn('getWorkspaceAcl', e)
+  } finally {
+    aclLoading.value = false
+  }
+}
+
+async function saveAcl() {
+  const openids = String(aclOpenidsText.value || '')
+    .split(/[\n,，\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  aclSaving.value = true
+  try {
+    const res = await callFn({ action: 'saveWorkspaceAcl', openids })
+    ElMessage.success(res.msg || '超管名单已保存')
+    aclHardcoded.value = res.hardcoded || aclHardcoded.value
+    aclOpenidsText.value = (res.configured || []).join('\n')
+    await loadList()
+  } catch (e) {
+    ElMessage.error(e?.message || '保存失败（需超管权限，且云库已建 workspace_acl）')
+  } finally {
+    aclSaving.value = false
+  }
+}
+
+async function loadAudit() {
+  auditLoading.value = true
+  try {
+    const payload = { action: 'listAuditLogs', limit: 50 }
+    if (auditAction.value) payload.actionFilter = auditAction.value
+    if (auditSinceDays.value > 0) {
+      payload.sinceMs = Date.now() - auditSinceDays.value * 24 * 60 * 60 * 1000
+    }
+    const res = await callFn(payload)
+    auditList.value = res.list || []
+  } catch (e) {
+    auditList.value = []
+    console.warn('listAuditLogs', e)
+  } finally {
+    auditLoading.value = false
+  }
+}
+
+function formatAuditTime(ms) {
+  const n = Number(ms) || 0
+  if (!n) return '—'
+  const d = new Date(n)
+  const p = (x) => String(x).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+function formatAuditDetail(detail) {
+  if (!detail) return '—'
+  if (typeof detail === 'string') return detail
+  try {
+    return JSON.stringify(detail)
+  } catch (_) {
+    return String(detail)
+  }
+}
+
 function refresh() {
   loadList()
+  loadAcl()
+  loadAudit()
 }
 
 function onSearch() {
@@ -252,12 +419,15 @@ function openUpsert(row) {
   candidates.value = []
   phoneLookup.value = ''
   if (row) {
+    let role = 'staff'
+    if (row.role === 'super_admin' || row.isSuperAdmin) role = 'super_admin'
+    else if (row.role === 'manager') role = 'manager'
     form.value = {
       _id: row._id || '',
       openid: row.openid || '',
       name: row.name || '',
       staffNo: row.staffNo || '',
-      role: row.role === 'manager' ? 'manager' : 'staff',
+      role,
       storeIdsText: (row.storeIds || []).join(','),
       dailyGrantCap: Number(row.dailyGrantCap) || 0,
       active: row.status !== 'disabled'
@@ -311,7 +481,7 @@ async function submitUpsert() {
     })
     ElMessage.success(res.msg || '已保存')
     dialogVisible.value = false
-    await loadList()
+    await Promise.all([loadList(), loadAcl(), loadAudit()])
   } catch (e) {
     ElMessage.error(e?.message || '保存失败')
   } finally {
@@ -322,13 +492,14 @@ async function submitUpsert() {
 async function onDisable(row) {
   try {
     await ElMessageBox.confirm(
-      `确认停用「${row.name || row.openidTail}」的小程序店长/店员权限？`,
+      `确认停用「${row.name || row.openidTail}」的工作台权限？` +
+        (row.role === 'super_admin' || row.isSuperAdmin ? '（将同步移出超管 ACL）' : ''),
       '停用权限',
       { type: 'warning', confirmButtonText: '停用', cancelButtonText: '取消' }
     )
     await callFn({ action: 'remove', staffId: row._id })
     ElMessage.success('已停用')
-    await loadList()
+    await Promise.all([loadList(), loadAcl(), loadAudit()])
   } catch (e) {
     if (e === 'cancel' || e === 'close') return
     ElMessage.error(e?.message || '停用失败')
@@ -348,7 +519,7 @@ async function onReactivate(row) {
       status: 'active'
     })
     ElMessage.success('已恢复')
-    await loadList()
+    await Promise.all([loadList(), loadAcl(), loadAudit()])
   } catch (e) {
     ElMessage.error(e?.message || '恢复失败')
   }
@@ -356,6 +527,8 @@ async function onReactivate(row) {
 
 onMounted(() => {
   loadList()
+  loadAcl()
+  loadAudit()
 })
 </script>
 
@@ -396,6 +569,47 @@ onMounted(() => {
 
 .hint-alert {
   margin-bottom: 16px;
+}
+
+.acl-card {
+  margin-bottom: 16px;
+  border: 1px solid #E8E5DE;
+}
+
+.acl-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.acl-title {
+  font-weight: 600;
+  color: #33302C;
+}
+
+.acl-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6B6560;
+  line-height: 1.4;
+}
+
+.acl-hardcoded {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.acl-label {
+  font-size: 12px;
+  color: #6B6560;
+}
+
+.oid-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .filter-bar {
@@ -442,5 +656,18 @@ onMounted(() => {
   margin-left: 10px;
   font-size: 12px;
   color: #A09A90;
+}
+
+.audit-card {
+  margin-top: 16px;
+  border: 1px solid #E8E5DE;
+}
+
+.audit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 </style>

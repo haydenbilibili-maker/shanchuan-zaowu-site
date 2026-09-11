@@ -133,12 +133,16 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'manageHonoraryCurators',
   'manageMemberLevelAdjust',
   'manageStaff',
+  'manageProducts',
   'bindPlatformOrder',
+  'claimStoreReceipt',
   'managerShipOrder',
   'refundOrder',
   'getShippingRules',
+  'manageStoredValue',
   'moderateComment',
   'assistProductCopy',
+  'seedCategories',
 ])
 
 function cloudFnProxyUrls() {
@@ -226,14 +230,31 @@ export async function callCdnFunction(name, data = {}) {
   }
 }
 
-/** limit 拉取（不用 orderBy，避免索引/SDK bug） */
+/**
+ * limit 拉取（不用 orderBy，避免索引/SDK bug）
+ * 匿名客户端单次常被截断为 20 条：用 skip 循环凑满请求量。
+ */
 export async function fetchCollectionLimit(collectionName, options = {}) {
-  const { limit = 500, where = null } = options
+  const { limit = 500, where = null, batchSize = 20 } = options
   const db = await getCdnDatabase()
-  let query = db.collection(collectionName)
-  if (where) query = query.where(where)
-  const res = await query.limit(limit).get()
-  return res.data || []
+  const pageSize = Math.min(Math.max(parseInt(batchSize, 10) || 20, 1), 100)
+  const maxRows = Math.max(0, parseInt(limit, 10) || 0)
+  if (!maxRows) return []
+
+  const all = []
+  let skip = 0
+  while (all.length < maxRows) {
+    let query = db.collection(collectionName)
+    if (where) query = query.where(where)
+    const take = Math.min(pageSize, maxRows - all.length)
+    const res = await query.skip(skip).limit(take).get()
+    const batch = res.data || []
+    if (!batch.length) break
+    all.push(...batch)
+    skip += batch.length
+    if (batch.length < take) break
+  }
+  return all
 }
 
 export async function cdnAdd(collectionName, data) {

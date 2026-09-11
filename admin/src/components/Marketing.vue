@@ -53,7 +53,17 @@
             <el-table-column label="兑换品" min-width="180">
               <template #default="{ row }">
                 <div style="display:flex;align-items:center;gap:10px;">
-                  <img v-if="row.image" :src="row.image" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" />
+                  <img
+                    v-if="row.httpImage"
+                    :src="row.httpImage"
+                    style="width:40px;height:40px;object-fit:cover;border-radius:6px;background:#f0f0f0;"
+                  />
+                  <div
+                    v-else
+                    style="width:40px;height:40px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#bbb;flex-shrink:0;"
+                  >
+                    <el-icon><Picture /></el-icon>
+                  </div>
                   <div>
                     <div>{{ row.title }}</div>
                     <div style="font-size:12px;color:#999;">{{ row.type }}</div>
@@ -265,9 +275,10 @@
             <ImageUploadField
               v-model="form.image"
               folder="rewards"
-              tip="优先上传兑换商品图；也可粘贴 cloud:// 或 HTTPS"
+              tip="上传成功后须再点「保存配置」，新图才会写入云库并同步小程序"
               preview-width="96px"
               preview-height="96px"
+              @uploading-change="onImageUploading"
             />
           </el-form-item>
           <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="2" /></el-form-item>
@@ -306,7 +317,9 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveData">保存配置</el-button>
+        <el-button type="primary" :disabled="imageUploading" :loading="imageUploading" @click="saveData">
+          {{ imageUploading ? '图片上传中…' : '保存配置' }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -315,7 +328,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
-import { fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from '../cloud'
+import { fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, getTempFileUrls } from '../cloud'
 import { Plus, Edit, Delete, Ticket, Connection, Select, Picture, Minus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ImageUploadField from './ImageUploadField.vue'
@@ -327,6 +340,10 @@ const listData = ref([])
 const previewItem = ref({}) // 当前预览的对象
 const dialogVisible = ref(false)
 const isEditing = ref(false) // 标记是新增还是编辑
+const imageUploading = ref(false)
+const onImageUploading = (v) => {
+  imageUploading.value = !!v
+}
 
 // 表单模型 (由所有模块共用，按需取值)
 const form = reactive({
@@ -334,7 +351,8 @@ const form = reactive({
   name: '', type: 'cash', value: 0, condition: '', active: true, // Coupon
   level: 1, price: 0, styleType: 'black', privileges: [], // VIP
   title: '', subTitle: '', stock: 99, // Virtual / Reward
-  cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false // Reward
+  cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false,
+  expireDays: 30, limitPerUser: 0, channel: 'online' // Reward · 对齐小程序兑券
 })
 
 // --- 样式辅助 ---
@@ -361,10 +379,19 @@ const refreshData = async () => {
   previewItem.value = {}
   try {
     const colName = getCollectionName()
-    listData.value = await fetchCollectionSorted(colName, {
+    let rows = await fetchCollectionSorted(colName, {
       limit: 200,
       sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0)
     })
+    // rewards.image 多为 cloud:// fileID，浏览器无法直接加载，需转临时 HTTPS
+    if (activeModule.value === 'reward' && rows.length) {
+      const urls = await getTempFileUrls(rows.map((r) => r.image || ''))
+      rows = rows.map((item, i) => ({
+        ...item,
+        httpImage: urls[i] || ''
+      }))
+    }
+    listData.value = rows
     if (listData.value.length > 0) {
       previewItem.value = { ...listData.value[0] }
     }
@@ -400,13 +427,15 @@ const dialogTitle = computed(() => {
 
 const openEditor = (module) => {
   isEditing.value = false
+  imageUploading.value = false
   // 重置表单
   Object.assign(form, {
     _id: null,
     name: '', type: module === 'reward' ? 'coupon' : 'cash', value: 10, condition: '无门槛', active: true,
     level: 1, price: 99, styleType: 'black', privileges: ['全场88折'],
     title: '', subTitle: '', stock: 99,
-    cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false
+    cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false,
+    expireDays: 30, limitPerUser: 0, channel: 'online'
   })
   // 将预览切到当前表单
   previewItem.value = form
@@ -415,7 +444,9 @@ const openEditor = (module) => {
 
 const editItem = (row) => {
   isEditing.value = true
-  Object.assign(form, row)
+  imageUploading.value = false
+  const { httpImage: _httpImage, ...rest } = row
+  Object.assign(form, rest)
   previewItem.value = form
   dialogVisible.value = true
 }
@@ -430,6 +461,11 @@ const removePrivilege = (idx) => {
 
 // --- 核心 CRUD ---
 const saveData = async () => {
+  if (imageUploading.value) {
+    ElMessage.warning('图片仍在上传，请稍候再保存')
+    return
+  }
+
   const colName = getCollectionName()
   const data = { ...form }
   delete data._id // 插入/更新时不带 ID
@@ -438,9 +474,31 @@ const saveData = async () => {
   if(data.privileges) data.privileges = data.privileges.filter(p => p.trim() !== '')
 
   if (activeModule.value === 'reward') {
+    // 对齐小程序积分中心 / exchangeCoupon / redeemReward 读模型
+    data.type = data.type || 'coupon'
     data.cost = parseInt(data.cost, 10) || 0
     data.stock = parseInt(data.stock, 10) || 0
-    data.isOffShelf = !!data.isOffShelf
+    data.value = Number(data.value) || 0
+    data.minSpend = Number(data.minSpend) || 0
+    data.expireDays = parseInt(data.expireDays, 10) > 0
+      ? parseInt(data.expireDays, 10)
+      : (data.type === 'coupon' ? 30 : 0)
+    data.limitPerUser = parseInt(data.limitPerUser, 10) || 0
+    data.channel = data.channel || 'online'
+    // 小程序上架语义：未明确下架即可展示；新建默认上架
+    data.isOffShelf = isEditing.value ? !!data.isOffShelf : false
+    data.image = String(data.image || '').trim()
+    data.description = String(data.description || '').trim()
+    data.title = String(data.title || '').trim()
+    if (!data.title) {
+      ElMessage.warning('请填写标题')
+      return
+    }
+    if (!data.image) {
+      ElMessage.warning('请先上传图片，再保存配置')
+      return
+    }
+    delete data.httpImage
     delete data.name
     delete data.condition
     delete data.active
@@ -460,9 +518,10 @@ const saveData = async () => {
     }
     ElMessage.success('保存成功')
     dialogVisible.value = false
+    imageUploading.value = false
     refreshData()
   } catch (e) {
-    ElMessage.error('保存失败，请检查数据库集合是否存在')
+    ElMessage.error('保存失败：' + (e?.message || '请检查数据库集合是否存在'))
   }
 }
 

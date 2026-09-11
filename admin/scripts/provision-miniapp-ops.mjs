@@ -36,6 +36,7 @@ export const COLLECTIONS = [
   'support_configs',
   'shipping_rules',
   'content_display_flags',
+  'member_welcome_gift',
 ]
 
 async function main() {

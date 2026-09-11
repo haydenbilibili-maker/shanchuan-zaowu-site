@@ -35,6 +35,8 @@ export const MODULES = [
   { id: '57', name: '报价单配置', group: 'BUSINESS', subgroup: '货', icon: 'Ticket', keywords: 'price list quote bjd 报价单 price_list_items 供货价' },
   { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '货', icon: 'Refresh', keywords: 'refund tksh 退款' },
   { id: '60', name: '订单绑定审核', group: 'BUSINESS', subgroup: '货', icon: 'Connection', keywords: 'platform order bind bindPlatformOrder ddbd 订单绑定 积分' },
+  { id: '65', name: '小票兑积分审核', group: 'BUSINESS', subgroup: '货', icon: 'Tickets', keywords: 'store receipt claim claimStoreReceipt 小票 门店积分 审核' },
+  { id: '67', name: '待我审批', group: 'BUSINESS', subgroup: '货', icon: 'Checked', keywords: 'approval queue manageApprovals staff_approvals 审批 上架 店长 超管' },
   { id: '61', name: '运费与包邮规则', group: 'BUSINESS', subgroup: '货', icon: 'Van', keywords: 'shipping rules yfgz 运费 包邮 shipping_rules makeOrder' },
   // 业务运营 — 场
   { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
@@ -69,12 +71,14 @@ export const MODULES = [
   { id: '9',  name: '内容管理', group: 'MINIAPP', subgroup: '内容运营', icon: 'Collection', keywords: 'content cms nrgl article' },
   { id: '54', name: '养护指南', group: 'MINIAPP', subgroup: '内容运营', icon: 'Notebook', keywords: 'care guides yhzh specimen care' },
   { id: '56', name: '客服入口配置', group: 'MINIAPP', subgroup: '内容运营', icon: 'Phone', keywords: 'support config kf rk 联系专员 FAQ getSupportConfig' },
-  { id: '62', name: '内容展示开关', group: 'MINIAPP', subgroup: '内容运营', icon: 'View', keywords: 'content display flags 展示开关 标本档案 山海社区 getContentDisplayFlags' },
+  { id: '62', name: '内容展示开关', group: 'MINIAPP', subgroup: '内容运营', icon: 'View', keywords: 'content display flags 展示开关 标本档案 山海社区 标本定制 AI鉴定 showAiIdentify getContentDisplayFlags' },
   // 小程序配置 — 会员/营销规则
   { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'UserFilled', keywords: 'member level hydjtx vip' },
   { id: '69', name: '会员等级调整', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Sort', keywords: 'member level adjust 等级调整 levelOverride manageMemberLevelAdjust 调级' },
   { id: '63', name: '荣誉馆长名单', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'honorary curator 荣誉馆长 lv99 isHonorary manageHonoraryCurators' },
   { id: '15', name: '门店积分规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz store_point_rules' },
+  { id: '66', name: '新会员礼包', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Present', keywords: 'welcome gift register 新会员礼包 注册礼 积分 礼券 member_welcome_gift' },
+  { id: '68', name: '我的钱包', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Wallet', keywords: 'wallet stored value 钱包 充值 支付折扣 manageStoredValue showStoredValue' },
   { id: '22', name: '成就系统配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'achievement cjxt badge' },
   { id: '20', name: '活动营销规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'marketing rule hdyx coupon' },
   // 小程序配置 — 系统/算法/通知
@@ -201,9 +205,19 @@ export const ACTIONS = [
     event: { type: 'tabs-close-all' }
   },
   {
-    id: 'act-toggle-sidebar', label: '折叠/展开侧栏', hint: '切换侧栏窄屏/宽屏',
-    icon: '↔️', shortcut: '⌘B', keywords: 'sidebar collapse toggle zdcl 侧栏',
+    id: 'act-toggle-sidebar', label: '一键缩放侧栏', hint: '展开 ↔ 仅图标窄栏（⌘B）',
+    icon: '↔️', shortcut: '⌘B', keywords: 'sidebar collapse toggle zoom 缩放 zdcl 侧栏',
     event: { type: 'toggle-sidebar' }
+  },
+  {
+    id: 'act-sidebar-groups-collapse', label: '收起全部侧栏分组', hint: '垂直折叠业务/客户/小程序/治理等一级菜单',
+    icon: '⬆️', shortcut: '', keywords: 'sidebar groups collapse all fold vertical sqqb 收起分组',
+    event: { type: 'sidebar-groups-collapse' }
+  },
+  {
+    id: 'act-sidebar-groups-expand', label: '展开全部侧栏分组', hint: '垂直展开全部一级菜单分组',
+    icon: '⬇️', shortcut: '', keywords: 'sidebar groups expand all unfold vertical zkqb 展开分组',
+    event: { type: 'sidebar-groups-expand' }
   },
   {
     id: 'act-export-data', label: '导出当前数据 CSV', hint: '若当前模块支持',

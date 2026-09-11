@@ -500,6 +500,7 @@ export const COLLECTIONS = {
   MEMBER_LEVELS: 'member_levels',   // 会员等级体系配置
   POINTS_RULES: 'points_rules',      // 【遗留】旧积分规则，非线上赠分 SSOT
   STORE_POINT_RULES: 'store_point_rules', // 门店积分规则（线上 SSOT，¥10=1）
+  MEMBER_WELCOME_GIFT: 'member_welcome_gift', // 新会员礼包（完成注册发放，upsertUserProfile）
   SHIPPING_RULES: 'shipping_rules',       // 商城运费/包邮规则（makeOrder SSOT）
   BOOKING_RULES: 'booking_rules',    // 预约规则配置
   ADMIN_ROLES: 'admin_roles',        // 管理员角色配置

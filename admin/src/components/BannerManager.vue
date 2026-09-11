@@ -22,10 +22,17 @@
         </el-table-column>
         <el-table-column prop="title" label="主标题" width="200" />
         <el-table-column prop="subtitle" label="副标题" />
+        <el-table-column label="状态" width="90">
+          <template #default="scope">
+            <el-tag size="small" :type="scope.row.enabled === false ? 'info' : 'success'">
+              {{ scope.row.enabled === false ? '已关闭' : '展示中' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="跳转目标">
           <template #default="scope">
-            <el-tag size="small" type="info">{{ scope.row.type }}</el-tag>
-            <span style="margin-left: 10px; font-size: 12px; color: #666">{{ scope.row.target }}</span>
+            <el-tag size="small" type="info">{{ typeLabel(scope.row.type) }}</el-tag>
+            <span style="margin-left: 10px; font-size: 12px; color: #666">{{ scope.row.target || scope.row.link || '—' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="sort" label="排序权重" width="100" sortable />
@@ -61,20 +68,52 @@
         </el-form-item>
 
         <el-form-item label="跳转类型">
-          <el-radio-group v-model="form.type">
+          <el-radio-group v-model="form.type" @change="onTypeChange">
             <el-radio-button label="product">商品</el-radio-button>
             <el-radio-button label="category">分类</el-radio-button>
             <el-radio-button label="booking">预约</el-radio-button>
+            <el-radio-button label="scheme">功能页</el-radio-button>
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item label="目标ID" v-if="form.type !== 'booking'">
-          <el-input v-model="form.target" placeholder="商品ID 或 分类关键词 (如: insect)" />
+        <el-form-item label="目标ID" v-if="form.type === 'product' || form.type === 'category'">
+          <el-input v-model="form.target" :placeholder="form.type === 'product' ? '商品ID' : '分类关键词 (如: 昆虫 / insect)'" />
         </el-form-item>
+
+        <template v-if="form.type === 'scheme'">
+          <el-form-item label="常用入口">
+            <el-select
+              v-model="schemePresetId"
+              placeholder="选择功能入口"
+              style="width: 100%"
+              @change="onSchemePresetChange"
+            >
+              <el-option
+                v-for="p in SCHEME_PRESETS"
+                :key="p.id"
+                :label="p.label"
+                :value="p.id"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="小程序路径">
+            <el-input
+              v-model="form.target"
+              placeholder="/subpackages/business/order-claim/index"
+              @input="onSchemePathInput"
+            />
+            <div class="field-tip">支持 /pages/... 或 /subpackages/...，可带 query；将写入 type=scheme 与 target/link</div>
+          </el-form-item>
+        </template>
 
         <el-form-item label="排序权重">
           <el-input-number v-model="form.sort" :min="0" :max="999" />
           <span style="margin-left:10px; font-size:12px; color:#999">数字越大越靠前</span>
+        </el-form-item>
+
+        <el-form-item label="首页展示">
+          <el-switch v-model="form.enabled" active-text="开启" inactive-text="关闭" />
+          <div class="field-tip">关闭后仍保留配置，首页轮播不再展示（等同可关种子）</div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -93,12 +132,71 @@ import { getTempFileUrl, COLLECTIONS, fetchCollectionSorted } from '../cloud'
 import { cdnAdd, cdnUpdate, cdnRemove } from '../utils/cloudbaseCdnDb'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ImageUploadField from './ImageUploadField.vue'
+import {
+  SCHEME_PRESETS,
+  buildBannerLinkForSave,
+  validateSchemePath,
+  matchSchemePresetId as matchSchemePresetFromNav
+} from '../utils/bannerNav.js'
+
+const TYPE_LABELS = {
+  product: '商品',
+  category: '分类',
+  booking: '预约',
+  scheme: '功能页',
+  page: '功能页',
+  path: '功能页'
+}
 
 const banners = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const isEditing = ref(false)
-const form = ref({ image: '', title: '', subtitle: '', type: 'product', target: '', sort: 100 })
+const schemePresetId = ref('order-claim')
+const form = ref(blankForm())
+
+function blankForm() {
+  return { image: '', title: '', subtitle: '', type: 'product', target: '', link: '', sort: 100, enabled: true }
+}
+
+function typeLabel(type) {
+  return TYPE_LABELS[type] || type || '—'
+}
+
+function ensureSlash(path) {
+  const s = String(path || '').trim()
+  if (!s) return ''
+  return s.startsWith('/') ? s : `/${s}`
+}
+
+function buildLink(type, target) {
+  return buildBannerLinkForSave(type, target) || (type === 'category' ? '' : ensureSlash(target))
+}
+
+function matchSchemePreset(path) {
+  return matchSchemePresetFromNav(path)
+}
+
+function onTypeChange(type) {
+  if (type === 'booking') {
+    form.value.target = ''
+    form.value.link = ''
+  } else if (type === 'scheme') {
+    const preset = SCHEME_PRESETS.find((p) => p.id === schemePresetId.value) || SCHEME_PRESETS[0]
+    schemePresetId.value = preset.id
+    if (preset.path) form.value.target = preset.path
+  }
+}
+
+function onSchemePresetChange(id) {
+  const preset = SCHEME_PRESETS.find((p) => p.id === id)
+  if (!preset) return
+  if (preset.path) form.value.target = preset.path
+}
+
+function onSchemePathInput() {
+  schemePresetId.value = matchSchemePreset(form.value.target)
+}
 
 const loadBanners = async () => {
   loading.value = true
@@ -121,13 +219,23 @@ const loadBanners = async () => {
 }
 
 const openDialog = () => {
-  form.value = { image: '', title: '', subtitle: '', type: 'product', target: '', sort: 100 }
+  form.value = blankForm()
+  schemePresetId.value = 'order-claim'
   isEditing.value = false
   dialogVisible.value = true
 }
 
 const editItem = (row) => {
-  form.value = { ...row }
+  const type = row.type === 'page' || row.type === 'path' ? 'scheme' : (row.type || 'product')
+  const target = row.target || row.link || ''
+  form.value = {
+    ...row,
+    type,
+    target,
+    link: row.link || '',
+    enabled: row.enabled !== false
+  }
+  schemePresetId.value = type === 'scheme' ? matchSchemePreset(target) : 'order-claim'
   isEditing.value = true
   dialogVisible.value = true
 }
@@ -135,13 +243,27 @@ const editItem = (row) => {
 const saveBanner = async () => {
   if (!form.value.image || !form.value.title) return ElMessage.warning('图片和标题必填')
 
+  const type = form.value.type || 'product'
+  if ((type === 'product' || type === 'category') && !String(form.value.target || '').trim()) {
+    return ElMessage.warning(type === 'product' ? '请填写商品ID' : '请填写分类关键词')
+  }
+  let savedTarget = type === 'booking' ? '' : String(form.value.target || '').trim()
+  if (type === 'scheme') {
+    const v = validateSchemePath(savedTarget)
+    if (!v.ok) return ElMessage.warning(v.message)
+    savedTarget = v.path
+  }
+  const link = buildLink(type, savedTarget)
+
   const data = {
     image: form.value.image,
     title: form.value.title,
     subtitle: form.value.subtitle,
-    type: form.value.type,
-    target: form.value.target,
+    type,
+    target: savedTarget,
+    link,
     sort: form.value.sort,
+    enabled: form.value.enabled !== false,
     updateTime: Date.now()
   }
 
@@ -184,4 +306,5 @@ onMounted(() => loadBanners())
 
 <style scoped>
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.field-tip { margin-top: 6px; font-size: 12px; color: #999; line-height: 1.4; }
 </style>

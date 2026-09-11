@@ -75,16 +75,62 @@
           :class="{ 'mobile-menu-open': isMobile ? mobileMenuVisible : true, 'is-collapsed': sidebarCollapsed && !isMobile }"
           ref="sidebarRef"
         >
-          <!-- 桌面端品牌头部 -->
-          <div v-if="!isMobile" class="brand-header">
-            <div class="brand-logo">山</div>
-            <div class="brand-text" v-show="!sidebarCollapsed">
-              <div class="cn">山海造物</div>
-              <div class="brand-sub">管理后台</div>
+          <!-- 桌面端品牌头部 + 一键缩放侧栏 -->
+          <div v-if="!isMobile" class="brand-header" :class="{ 'is-rail': sidebarCollapsed }">
+            <div class="brand-row">
+              <div class="brand-logo" :title="sidebarCollapsed ? '山海造物 · 管理后台' : undefined">山</div>
+              <div class="brand-text" v-show="!sidebarCollapsed">
+                <div class="cn">山海造物</div>
+                <div class="brand-sub">管理后台</div>
+              </div>
+              <div v-if="!sidebarCollapsed" class="brand-actions">
+                <el-tooltip content="收起全部分组" placement="bottom" :show-after="400">
+                  <el-button
+                    class="collapse-btn collapse-btn--groups"
+                    link
+                    aria-label="收起全部分组"
+                    @click="collapseAllGroups"
+                  >
+                    <el-icon><ArrowUpBold /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="展开全部分组" placement="bottom" :show-after="400">
+                  <el-button
+                    class="collapse-btn collapse-btn--groups"
+                    link
+                    aria-label="展开全部分组"
+                    @click="expandAllGroups"
+                  >
+                    <el-icon><ArrowDownBold /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="一键缩放侧栏 ⌘B" placement="bottom" :show-after="400">
+                  <el-button
+                    class="collapse-btn"
+                    link
+                    aria-label="一键缩放侧栏"
+                    @click="toggleSidebar"
+                  >
+                    <el-icon><Fold /></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </div>
             </div>
-            <el-button class="collapse-btn" link @click="toggleSidebar" :title="sidebarCollapsed ? '展开侧栏 ⌘B' : '收起侧栏 ⌘B'">
-              <el-icon><component :is="sidebarCollapsed ? Expand : Fold" /></el-icon>
-            </el-button>
+            <el-tooltip
+              v-if="sidebarCollapsed"
+              content="展开侧栏 ⌘B"
+              placement="right"
+              :show-after="200"
+            >
+              <el-button
+                class="collapse-btn collapse-btn--rail"
+                link
+                aria-label="展开侧栏"
+                @click="toggleSidebar"
+              >
+                <el-icon><Expand /></el-icon>
+              </el-button>
+            </el-tooltip>
           </div>
           
           <!-- 移动端抽屉菜单头部 -->
@@ -94,9 +140,31 @@
               <div class="cn">山海造物</div>
               <div class="brand-sub">管理后台</div>
             </div>
-            <button type="button" class="mobile-sidebar-close" aria-label="关闭菜单" @click="mobileMenuVisible = false">
-              <el-icon><Close /></el-icon>
-            </button>
+            <div class="brand-actions">
+              <el-tooltip content="收起全部分组" placement="bottom" :show-after="400">
+                <el-button
+                  class="collapse-btn collapse-btn--groups"
+                  link
+                  aria-label="收起全部分组"
+                  @click="collapseAllGroups"
+                >
+                  <el-icon><ArrowUpBold /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="展开全部分组" placement="bottom" :show-after="400">
+                <el-button
+                  class="collapse-btn collapse-btn--groups"
+                  link
+                  aria-label="展开全部分组"
+                  @click="expandAllGroups"
+                >
+                  <el-icon><ArrowDownBold /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <button type="button" class="mobile-sidebar-close" aria-label="关闭菜单" @click="mobileMenuVisible = false">
+                <el-icon><Close /></el-icon>
+              </button>
+            </div>
           </div>
 
           <!-- 🟢 快捷搜索栏（折叠时变成按钮） -->
@@ -123,6 +191,21 @@
             >
               <span class="pin-name">{{ m.name }}</span>
               <el-icon class="pin-remove" @click.stop="togglePin(m.id)"><Close /></el-icon>
+            </div>
+          </div>
+
+          <!-- 🟢 最近常用（进入菜单路由后写入；无记录时隐藏） -->
+          <div v-if="recentModules.length && (!sidebarCollapsed || isMobile)" class="recent-section">
+            <div class="recent-title">RECENT · 最近常用</div>
+            <div
+              v-for="m in recentModules"
+              :key="'recent-' + m.id"
+              class="recent-item"
+              :class="{ active: currentTab === m.id }"
+              @click="handleMenuSelect(m.id)"
+            >
+              <el-icon v-if="m.icon" class="recent-ico"><component :is="m.icon" /></el-icon>
+              <span class="recent-name">{{ m.name }}</span>
             </div>
           </div>
 
@@ -222,6 +305,7 @@
                 <el-menu-item index="69"><el-icon><Sort /></el-icon><span>会员等级调整</span></el-menu-item>
                 <el-menu-item index="63"><el-icon><Trophy /></el-icon><span>荣誉馆长名单</span></el-menu-item>
                 <el-menu-item index="15"><el-icon><Ticket /></el-icon><span>门店积分规则</span></el-menu-item>
+                <el-menu-item index="66"><el-icon><Present /></el-icon><span>新会员礼包</span></el-menu-item>
                 <el-menu-item index="22"><el-icon><Trophy /></el-icon><span>成就系统配置</span></el-menu-item>
                 <el-menu-item index="20"><el-icon><Ticket /></el-icon><span>活动营销规则</span></el-menu-item>
               </el-menu-item-group>
@@ -273,20 +357,38 @@
 
           </el-menu>
           
-          <div class="sidebar-footer">
-             <div class="user-badge">
-                 <el-avatar :size="32" style="background:var(--brand-green-500); color:var(--light-bg-elevated); font-weight:600;">馆</el-avatar>
-                 <div class="user-info">
-                    <span class="name">主理人</span>
-                    <span class="status">● 在线</span>
-                 </div>
-             </div>
-             <el-button link class="mobile-access-btn" @click="showMobileAccessDialog">
-               <el-icon><Iphone /></el-icon> <span>手机访问</span>
-             </el-button>
-             <el-button link class="logout-btn" @click="logout">
-               <el-icon><SwitchButton /></el-icon> <span>退出系统</span>
-             </el-button>
+          <div class="sidebar-footer" :class="{ 'is-rail': sidebarCollapsed && !isMobile }">
+             <el-tooltip
+               :disabled="!(sidebarCollapsed && !isMobile)"
+               content="主理人 · 在线"
+               placement="right"
+             >
+               <div class="user-badge">
+                   <el-avatar :size="32" style="background:var(--brand-green-500); color:var(--light-bg-elevated); font-weight:600;">馆</el-avatar>
+                   <div class="user-info" v-show="!(sidebarCollapsed && !isMobile)">
+                      <span class="name">主理人</span>
+                      <span class="status">● 在线</span>
+                   </div>
+               </div>
+             </el-tooltip>
+             <el-tooltip
+               :disabled="!(sidebarCollapsed && !isMobile)"
+               content="手机访问"
+               placement="right"
+             >
+               <el-button link class="mobile-access-btn" @click="showMobileAccessDialog">
+                 <el-icon><Iphone /></el-icon> <span v-show="!(sidebarCollapsed && !isMobile)">手机访问</span>
+               </el-button>
+             </el-tooltip>
+             <el-tooltip
+               :disabled="!(sidebarCollapsed && !isMobile)"
+               content="退出系统"
+               placement="right"
+             >
+               <el-button link class="logout-btn" @click="logout">
+                 <el-icon><SwitchButton /></el-icon> <span v-show="!(sidebarCollapsed && !isMobile)">退出系统</span>
+               </el-button>
+             </el-tooltip>
           </div>
         </el-aside>
         
@@ -303,9 +405,9 @@
                     <h2>
                       藏品档案库
                       <span class="archive-sku-count" :title="displaySkuCountTitle">
-                        共 {{ displaySkuCount }} 个 SKU
-                        <template v-if="displayProducts.length !== displaySkuCount">
-                          · {{ displayProducts.length }} 件藏品
+                        共 {{ productsTotal }} 件
+                        <template v-if="displaySkuCount">
+                          · 本页 {{ displaySkuCount }} 个 SKU
                         </template>
                       </span>
                     </h2>
@@ -427,18 +529,21 @@
                     <el-input
                       v-model="productSearchQuery"
                       clearable
-                      placeholder="搜索名称 / 学名 / 分类"
-                      style="width: 220px;"
+                      placeholder="搜索名称 / 学名 / 分类（全库）"
+                      style="width: 240px;"
                       size="small"
+                      @keyup.enter="resetProductPageAndLoad"
+                      @clear="resetProductPageAndLoad"
                     />
+                    <el-button size="small" type="primary" plain @click="resetProductPageAndLoad">查询</el-button>
                     <span class="archive-filter-label">档案筛选：</span>
-                    <el-radio-group v-model="archiveFilter" size="small">
+                    <el-radio-group v-model="archiveFilter" size="small" @change="resetProductPageAndLoad">
                         <el-radio-button label="all">全部</el-radio-button>
                         <el-radio-button label="archive">仅档案藏品</el-radio-button>
                         <el-radio-button label="oneOfAKind">仅孤品</el-radio-button>
                     </el-radio-group>
                     <span class="archive-filter-label" style="margin-left: 8px;">营销：</span>
-                    <el-radio-group v-model="promoFilter" size="small">
+                    <el-radio-group v-model="promoFilter" size="small" @change="resetProductPageAndLoad">
                         <el-radio-button label="all">全部</el-radio-button>
                         <el-radio-button label="seckill">秒杀进行中</el-radio-button>
                         <el-radio-button label="seckill_expired">秒杀已过期</el-radio-button>
@@ -450,7 +555,7 @@
                       size="small"
                       effect="dark"
                       class="expired-promo-badge"
-                      @click="promoFilter = 'seckill_expired'"
+                      @click="promoFilter = 'seckill_expired'; resetProductPageAndLoad()"
                     >
                       过期提醒 {{ expiredSeckillCount }}
                     </el-tag>
@@ -589,6 +694,18 @@
                       </template>
                     </el-table-column>
                  </el-table>
+                 <div class="product-pagination-row" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                   <el-pagination
+                     v-model:current-page="productPage"
+                     v-model:page-size="productPageSize"
+                     :page-sizes="[50, 100]"
+                     :total="productsTotal"
+                     layout="total, sizes, prev, pager, next, jumper"
+                     background
+                     @current-change="loadProducts"
+                     @size-change="onProductPageSizeChange"
+                   />
+                 </div>
                </el-card>
 
                <!-- AI商品助手弹窗 -->
@@ -681,13 +798,12 @@
                         <el-select
                             v-model="form.channel"
                             clearable
-                            placeholder="进口/国产/野采/其它"
+                            placeholder="进口/国产/其它"
                             style="width:100%"
                             :disabled="!isTaxonomyEligibleProduct"
                         >
                             <el-option label="进口" value="import" />
                             <el-option label="国产" value="domestic" />
-                            <el-option label="野采" value="wild" />
                             <el-option label="其它" value="other" />
                         </el-select>
                         <span class="sku-hint-muted">昆虫/植物/海洋/动物；空=未标注</span>
@@ -1280,21 +1396,22 @@ const asyncWith = (loader) => defineAsyncComponent({
 // 导入图标库
 import {
   Plus, Edit, Delete, Box, List, Lock, Money, Odometer, FolderAdd,
-  UserFilled, Picture, PictureFilled, UploadFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View, Sort,
+  UserFilled, Picture, PictureFilled, UploadFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View, Present, Sort,
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
   DataBoard, TrendCharts, VideoCamera, Van,
   // 🟢 小程序对齐补充图标
   Stamp, Avatar, Message, Refresh, Document, ShoppingCart, Phone,
   // 🟢 命令面板/收藏夹
   Close,
-  // 🟢 侧栏折叠
-  Expand, Fold,
+  // 🟢 侧栏折叠（左右宽度 / 上下分组）
+  Expand, Fold, ArrowUpBold, ArrowDownBold,
   // 🟢 物业合作测算
   House
 } from '@element-plus/icons-vue'
 // 导入云开发工具
-import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, callCloudFunction, getCdnDatabase } from './cloud'
+import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnUpdate, callCloudFunction, getCdnDatabase, cdnCount, cdnQueryPage } from './cloud'
 import { toChineseTaxonomy } from './utils/taxonomyZh'
+import { isActiveCategory } from './utils/categoryActive'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
 import ImageUploadField from './components/ImageUploadField.vue'
@@ -1351,6 +1468,7 @@ import CareGuides from './components/CareGuides.vue'
 import StoreFrontConfig from './components/StoreFrontConfig.vue'
 import SupportConfigs from './components/SupportConfigs.vue'
 import ContentDisplayFlags from './components/ContentDisplayFlags.vue'
+import WalletConfig from './components/WalletConfig.vue'
 import PriceListManager from './components/PriceListManager.vue'
 import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
@@ -1359,7 +1477,10 @@ import InvoiceRequests from './components/InvoiceRequests.vue'
 import HonoraryCurators from './components/HonoraryCurators.vue'
 import StoreStaffPermissions from './components/StoreStaffPermissions.vue'
 import PlatformOrderBinds from './components/PlatformOrderBinds.vue'
+import StoreReceiptClaims from './components/StoreReceiptClaims.vue'
+import ApprovalQueue from './components/ApprovalQueue.vue'
 import ShippingRulesConfig from './components/ShippingRulesConfig.vue'
+import WelcomeGiftConfig from './components/WelcomeGiftConfig.vue'
 import Categories from './components/Categories.vue'
 import BehaviorAnalytics from './components/BehaviorAnalytics.vue'
 import UserInsights from './components/UserInsights.vue'
@@ -1370,8 +1491,10 @@ import CommandPalette from './components/CommandPalette.vue'
 import MainTabsBar from './components/MainTabsBar.vue'
 import { MODULES_BY_ID } from './utils/modulesRegistry'
 import { useTabsManager } from './composables/useTabsManager'
+import { useRecentModules, RECENT_MODULES_KEY, RECENT_CHANGED_EVENT } from './composables/useRecentModules'
 
 const { openTab: openTabAPI, activeTabId, closeOthers: closeOthersAPI, closeAll: closeAllAPI } = useTabsManager()
+const { recentModules, recordRecent, loadRecent } = useRecentModules()
 
 // ============ 动态组件映射（替代 47 条 v-else-if 链，让 keep-alive 真正缓存组件实例） ============
 // 值为工厂函数：props 在 computed 求值时取（products 等响应式数据变更可触发更新）
@@ -1394,6 +1517,7 @@ const TAB_COMPONENT_MAP = {
   '63': () => ({ comp: HonoraryCurators }),
   '64': () => ({ comp: StoreStaffPermissions }),
   '15': () => ({ comp: PointsRulesConfig }),
+  '66': () => ({ comp: WelcomeGiftConfig }),
   '16': () => ({ comp: BookingRulesConfig }),
   '17': () => ({ comp: PermissionManager }),
   '18': () => ({ comp: SearchKeywordsManager }),
@@ -1426,12 +1550,15 @@ const TAB_COMPONENT_MAP = {
   '55': () => ({ comp: StoreFrontConfig }),
   '56': () => ({ comp: SupportConfigs }),
   '62': () => ({ comp: ContentDisplayFlags }),
+  '68': () => ({ comp: WalletConfig }),
   '57': () => ({ comp: PriceListManager }),
   '40': () => ({ comp: SupportTickets }),
   '41': () => ({ comp: CommentsModeration }),
   '42': () => ({ comp: Refunds }),
   '59': () => ({ comp: InvoiceRequests }),
   '60': () => ({ comp: PlatformOrderBinds }),
+  '65': () => ({ comp: StoreReceiptClaims }),
+  '67': () => ({ comp: ApprovalQueue }),
   '61': () => ({ comp: ShippingRulesConfig }),
   '43': () => ({ comp: Categories }),
   '44': () => ({ comp: BehaviorAnalytics }),
@@ -1474,6 +1601,8 @@ const sidebarCollapsed = ref(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
   try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed.value ? '1' : '0') } catch (e) {}
+  // 通知依赖布局宽度的图表/表格重算
+  requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
 }
 
 // ============ 全局动作监听（命令面板触发 / 快捷键触发） ============
@@ -1490,6 +1619,8 @@ const onSwitchTabEvent = (event) => {
 }
 const setupActionListeners = () => {
   window.addEventListener('toggle-sidebar', toggleSidebar)
+  window.addEventListener('sidebar-groups-collapse', collapseAllGroups)
+  window.addEventListener('sidebar-groups-expand', expandAllGroups)
   window.addEventListener('tabs-close-others', onTabsCloseOthers)
   window.addEventListener('tabs-close-all', onTabsCloseAll)
   window.addEventListener('reload-current', forceReloadCurrent)
@@ -1498,6 +1629,8 @@ const setupActionListeners = () => {
 }
 const cleanupActionListeners = () => {
   window.removeEventListener('toggle-sidebar', toggleSidebar)
+  window.removeEventListener('sidebar-groups-collapse', collapseAllGroups)
+  window.removeEventListener('sidebar-groups-expand', expandAllGroups)
   window.removeEventListener('tabs-close-others', onTabsCloseOthers)
   window.removeEventListener('tabs-close-all', onTabsCloseAll)
   window.removeEventListener('reload-current', forceReloadCurrent)
@@ -1521,14 +1654,14 @@ const TAB_TO_GROUP = {
   '30': 'grp-business', '34': 'grp-business', '35': 'grp-business', '37': 'grp-business',
   '38': 'grp-business', '39': 'grp-business', '42': 'grp-business', '43': 'grp-business',
   '48': 'grp-business', '52': 'grp-business', '55': 'grp-business',
-  '57': 'grp-business', '60': 'grp-business', '61': 'grp-business', '64': 'grp-business',
+  '57': 'grp-business', '60': 'grp-business', '61': 'grp-business', '64': 'grp-business', '65': 'grp-business', '67': 'grp-business',
   '4': 'grp-customer', '40': 'grp-customer', '41': 'grp-customer', '44': 'grp-customer',
   '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer', '51': 'grp-customer', '59': 'grp-customer',
   '8': 'grp-miniapp', '9': 'grp-miniapp', '13': 'grp-miniapp', '14': 'grp-miniapp',
   '15': 'grp-miniapp', '16': 'grp-miniapp', '17': 'grp-miniapp', '18': 'grp-miniapp',
   '19': 'grp-miniapp', '20': 'grp-miniapp', '21': 'grp-miniapp', '22': 'grp-miniapp',
   '23': 'grp-miniapp', '24': 'grp-miniapp', '54': 'grp-miniapp', '56': 'grp-miniapp',
-  '62': 'grp-miniapp', '63': 'grp-miniapp', '69': 'grp-miniapp',
+  '62': 'grp-miniapp', '63': 'grp-miniapp', '66': 'grp-miniapp', '68': 'grp-miniapp', '69': 'grp-miniapp',
   '2': 'grp-governance', '7': 'grp-governance', '27': 'grp-governance', '28': 'grp-governance',
   '31': 'grp-governance', '32': 'grp-governance', '33': 'grp-governance', '36': 'grp-governance', '50': 'grp-governance', '53': 'grp-governance'
 }
@@ -1565,6 +1698,7 @@ const openCommandPalette = () => {
 // 监听 localStorage 变化（CommandPalette 内部修改后同步到侧栏）
 const onStorage = (e) => {
   if (e.key === PINNED_KEY) loadPinned()
+  if (e.key === RECENT_MODULES_KEY) loadRecent()
 }
 
 const SIDEBAR_OPENED_KEY = 'sc_admin_sidebar_openeds'
@@ -1591,6 +1725,29 @@ const handleSubMenuOpen = (key) => {
 }
 const handleSubMenuClose = (key) => {
   defaultOpeneds.value = defaultOpeneds.value.filter(k => k !== key)
+  persistOpeneds()
+}
+
+/** 窄栏（仅图标）模式下垂直分组控件不可用 */
+const canToggleGroups = () => !(sidebarCollapsed.value && !isMobile.value)
+
+/** 一键收起全部一级菜单分组（垂直） */
+const collapseAllGroups = () => {
+  if (!canToggleGroups()) return
+  ALL_SUBMENUS.forEach((key) => {
+    try { sideMenuRef.value?.close?.(key) } catch (e) { /* 菜单未挂载时忽略 */ }
+  })
+  defaultOpeneds.value = []
+  persistOpeneds()
+}
+
+/** 一键展开全部一级菜单分组（垂直） */
+const expandAllGroups = () => {
+  if (!canToggleGroups()) return
+  ALL_SUBMENUS.forEach((key) => {
+    try { sideMenuRef.value?.open?.(key) } catch (e) { /* 菜单未挂载时忽略 */ }
+  })
+  defaultOpeneds.value = [...ALL_SUBMENUS]
   persistOpeneds()
 }
 
@@ -1703,6 +1860,10 @@ const isCraftEligibleProduct = isTaxonomyEligibleProduct
 const archiveFilter = ref('all') // 'all' | 'archive' | 'oneOfAKind' 全部 / 仅档案藏品 / 仅孤品
 const promoFilter = ref('all') // 'all' | 'seckill' | 'seckill_expired' | 'group'
 const productSearchQuery = ref('')
+const productPage = ref(1)
+const productPageSize = ref(50)
+const productsTotal = ref(0)
+const productsServerFiltered = ref(false)
 
 // =================================================
 // 🔐 认证与会话管理
@@ -1823,6 +1984,8 @@ const handleMenuSelect = (index) => {
 // el-menu 的 default-openeds 只在 setup 读一次，运行时必须调 open() 才有效，
 // open() 会触发 @open → handleSubMenuOpen 自动完成 defaultOpeneds 同步与持久化
 watch(currentTab, (tab) => {
+    // 记录最近常用（侧栏 / 标签栏 / 命令面板等所有入口都会改 currentTab）
+    if (isLoggedIn.value) recordRecent(tab)
     if (sidebarCollapsed.value) return // 折叠态没有展开概念
     const targetGroup = TAB_TO_GROUP[tab]
     if (!targetGroup) return
@@ -2118,52 +2281,187 @@ const copyAccessUrl = async () => {
 // 📦 藏品管理逻辑 (Tab 1 核心功能)
 // =================================================
 
+const escapeRegExpClient = (s) => String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const enrichProductRows = async (rows) => {
+    const list = await Promise.all((rows || []).map(async (item) => {
+        try {
+            let img = ''
+            if (item && item.images && Array.isArray(item.images) && item.images.length > 0) {
+                try {
+                    img = await getTempFileUrl(item.images[0])
+                } catch (imgErr) {
+                    console.warn('图片加载失败:', imgErr)
+                    img = ''
+                }
+            }
+            return {
+                ...item,
+                httpImage: img,
+                isOnShelf: !item.isOffShelf,
+                profitRate: (() => {
+                    const pr = parseFloat(item.price)
+                    const cp = parseFloat(item.costPrice)
+                    if (!Number.isFinite(pr) || pr === 0 || !Number.isFinite(cp)) return '0.0'
+                    return (((pr - cp) / pr) * 100).toFixed(1)
+                })()
+            }
+        } catch (itemErr) {
+            console.error('处理商品项失败:', itemErr, item)
+            return null
+        }
+    }))
+    return list.filter((item) => item !== null)
+}
+
+const buildClientProductWhere = async () => {
+    const db = await getCdnDatabase()
+    const _ = db.command
+    const keyword = String(productSearchQuery.value || '').trim().slice(0, 64)
+    const conditions = []
+    if (archiveFilter.value === 'archive') conditions.push({ inArchive: true })
+    else if (archiveFilter.value === 'oneOfAKind') conditions.push({ isOneOfAKind: true })
+    if (promoFilter.value === 'group') conditions.push({ 'groupBuying.enabled': true })
+    else if (promoFilter.value === 'seckill' || promoFilter.value === 'seckill_expired') {
+        conditions.push({ 'seckill.enabled': true })
+    }
+    if (keyword && typeof db.RegExp === 'function') {
+        const re = db.RegExp({ regexp: escapeRegExpClient(keyword), options: 'i' })
+        conditions.push(_.or([{ title: re }, { latinName: re }, { category: re }]))
+    }
+    if (!conditions.length) return null
+    if (conditions.length === 1) return conditions[0]
+    return _.and(conditions)
+}
+
+/** CDN 直读兜底：匿名端单次常限 20 条，用 skip 循环凑满当前页 */
+const loadProductsViaCdnPage = async () => {
+    const page = productPage.value
+    const pageSize = productPageSize.value
+    const skip = (page - 1) * pageSize
+    const where = await buildClientProductWhere()
+    const needsMemoryPromo =
+        promoFilter.value === 'seckill' || promoFilter.value === 'seckill_expired'
+
+    if (needsMemoryPromo) {
+        const matched = []
+        let cursor = 0
+        const MAX = 3000
+        while (matched.length < skip + pageSize && cursor < MAX) {
+            const batch = await cdnQueryPage(COLLECTIONS.PRODUCTS, {
+                where,
+                skip: cursor,
+                limit: 20
+            })
+            if (!batch.length) break
+            batch.forEach((row) => {
+                if (promoFilter.value === 'seckill' && row?.seckill?.enabled && !isSeckillExpired(row)) {
+                    matched.push(row)
+                } else if (promoFilter.value === 'seckill_expired' && isSeckillExpired(row)) {
+                    matched.push(row)
+                }
+            })
+            cursor += batch.length
+            if (batch.length < 20) break
+        }
+        // 继续扫完以得到较准确 total（上限内）
+        while (cursor < MAX) {
+            const batch = await cdnQueryPage(COLLECTIONS.PRODUCTS, {
+                where,
+                skip: cursor,
+                limit: 20
+            })
+            if (!batch.length) break
+            batch.forEach((row) => {
+                if (promoFilter.value === 'seckill' && row?.seckill?.enabled && !isSeckillExpired(row)) {
+                    matched.push(row)
+                } else if (promoFilter.value === 'seckill_expired' && isSeckillExpired(row)) {
+                    matched.push(row)
+                }
+            })
+            cursor += batch.length
+            if (batch.length < 20) break
+        }
+        matched.sort((a, b) => (Number(b.createTime) || 0) - (Number(a.createTime) || 0))
+        productsTotal.value = matched.length
+        return matched.slice(skip, skip + pageSize)
+    }
+
+    try {
+        productsTotal.value = await cdnCount(COLLECTIONS.PRODUCTS, where)
+    } catch (e) {
+        console.warn('cdnCount products', e)
+        productsTotal.value = 0
+    }
+
+    const rows = []
+    let cursor = skip
+    while (rows.length < pageSize) {
+        const take = Math.min(20, pageSize - rows.length)
+        const batch = await cdnQueryPage(COLLECTIONS.PRODUCTS, {
+            where,
+            skip: cursor,
+            limit: take
+        })
+        if (!batch.length) break
+        rows.push(...batch)
+        cursor += batch.length
+        if (batch.length < take) break
+    }
+    return [...rows].sort((a, b) => (Number(b.createTime) || 0) - (Number(a.createTime) || 0))
+}
+
+const resetProductPageAndLoad = () => {
+    productPage.value = 1
+    loadProducts()
+}
+
+const onProductPageSizeChange = () => {
+    productPage.value = 1
+    loadProducts()
+}
+
 const loadProducts = async () => {
     if (!isLoggedIn.value) return
     loading.value = true
     try {
-        const rows = await fetchCollectionSorted(COLLECTIONS.PRODUCTS, {
-            limit: 200,
-            throwOnError: true,
-            sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0),
-        })
+        let rows = []
+        productsServerFiltered.value = false
+        try {
+            const res = await callCloudFunction('manageProducts', {
+                action: 'list',
+                page: productPage.value,
+                pageSize: productPageSize.value,
+                keyword: String(productSearchQuery.value || '').trim(),
+                archiveFilter: archiveFilter.value,
+                promoFilter: promoFilter.value,
+                adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+            })
+            if (res && res.success !== false && Array.isArray(res.list)) {
+                rows = res.list
+                productsTotal.value = Number(res.total) || 0
+                productsServerFiltered.value = true
+            } else {
+                throw new Error(res?.msg || 'manageProducts list 失败')
+            }
+        } catch (fnErr) {
+            console.warn('manageProducts list 回退 CDN 分页:', fnErr?.message || fnErr)
+            rows = await loadProductsViaCdnPage()
+            productsServerFiltered.value = !!(
+                String(productSearchQuery.value || '').trim()
+                || archiveFilter.value !== 'all'
+                || promoFilter.value !== 'all'
+            )
+        }
 
         if (!Array.isArray(rows)) {
             console.warn('商品数据格式异常:', rows)
             products.value = []
+            productsTotal.value = 0
             return
         }
 
-        const list = await Promise.all(rows.map(async (item) => {
-            try {
-                let img = ''
-                if (item && item.images && Array.isArray(item.images) && item.images.length > 0) {
-                    try {
-                        img = await getTempFileUrl(item.images[0])
-                    } catch (imgErr) {
-                        console.warn('图片加载失败:', imgErr)
-                        img = ''
-                    }
-                }
-                return { 
-                    ...item, 
-                    httpImage: img, 
-                    isOnShelf: !item.isOffShelf,
-                    profitRate: (() => {
-                        const pr = parseFloat(item.price)
-                        const cp = parseFloat(item.costPrice)
-                        if (!Number.isFinite(pr) || pr === 0 || !Number.isFinite(cp)) return '0.0'
-                        return (((pr - cp) / pr) * 100).toFixed(1)
-                    })()
-                }
-            } catch (itemErr) {
-                console.error('处理商品项失败:', itemErr, item)
-                return null
-            }
-        }))
-        
-        // 过滤掉null项
-        products.value = list.filter(item => item !== null)
+        products.value = await enrichProductRows(rows)
     } catch (err) {
         console.error('加载商品失败', err)
         ElMessage.error('查询藏品档案失败: ' + (err.message || '未知错误'))
@@ -2173,14 +2471,27 @@ const loadProducts = async () => {
 }
 
 const toggleShelf = async (row) => {
+    const onShelf = !!row.isOnShelf
+    const prev = row.isOnShelf
     try {
-        await cdnUpdate(COLLECTIONS.PRODUCTS, row._id, {
-            isOffShelf: !row.isOnShelf,
-            updateTime: Date.now()
+        const res = await callCloudFunction('manageApprovals', {
+            action: 'submitProductShelf',
+            productId: row._id,
+            onShelf
         })
-        ElMessage.success(row.isOnShelf ? '商品已上架' : '商品已下架')
-    } catch (err) { 
-        row.isOnShelf = !row.isOnShelf // 回滚
+        if (!res || res.success === false) {
+            row.isOnShelf = !prev
+            ElMessage.error(res?.msg || '状态更新失败')
+            return
+        }
+        if (res.pendingApproval) {
+            row.isOnShelf = false
+            ElMessage.success(res.msg || '已提交上架审批')
+        } else {
+            ElMessage.success(res.msg || (onShelf ? '商品已上架' : '商品已下架'))
+        }
+    } catch (err) {
+        row.isOnShelf = !prev
         console.error('状态更新失败', err)
         ElMessage.error('状态更新失败: ' + (err.message || '未知错误'))
     }
@@ -2196,28 +2507,8 @@ const handleProductSelectionChange = (selection) => {
 }
 
 // 档案 + 营销筛选后的列表（用于表格展示）
-const displayProducts = computed(() => {
-    let list = products.value || []
-    const q = String(productSearchQuery.value || '').trim().toLowerCase()
-    if (q) {
-        list = list.filter((p) => String(p.title || '').toLowerCase().includes(q)
-            || String(p.latinName || '').toLowerCase().includes(q)
-            || String(p.category || '').toLowerCase().includes(q))
-    }
-    if (archiveFilter.value === 'archive') {
-        list = list.filter(p => p.inArchive === true)
-    } else if (archiveFilter.value === 'oneOfAKind') {
-        list = list.filter(p => p.isOneOfAKind === true)
-    }
-    if (promoFilter.value === 'seckill') {
-        list = list.filter(p => p.seckill?.enabled && !isSeckillExpired(p))
-    } else if (promoFilter.value === 'seckill_expired') {
-        list = list.filter(p => p.seckill?.enabled && isSeckillExpired(p))
-    } else if (promoFilter.value === 'group') {
-        list = list.filter(p => p.groupBuying?.enabled)
-    }
-    return list
-})
+// 筛选/搜索已在 loadProducts（云函数 list 或 CDN 分页）完成，此处不再二次截断
+const displayProducts = computed(() => products.value || [])
 
 /** 单品计 1；开启多规格且有 skus 时按规格条数计（非库存 stock） */
 const countProductSkus = (p) => {
@@ -2230,10 +2521,10 @@ const displaySkuCount = computed(() =>
 )
 
 const displaySkuCountTitle = computed(() => {
-    const productsN = displayProducts.value?.length || 0
+    const total = productsTotal.value || 0
+    const pageN = displayProducts.value?.length || 0
     const skusN = displaySkuCount.value
-    if (productsN === skusN) return '与当前档案/营销筛选一致的商品条目数'
-    return `当前筛选 ${productsN} 件藏品，展开多规格后共 ${skusN} 个 SKU`
+    return `全库/筛选合计 ${total} 件；本页 ${pageN} 件、${skusN} 个 SKU`
 })
 
 const isSeckillExpired = (row) => {
@@ -2297,7 +2588,7 @@ const clearProductSelection = () => {
     })
 }
 
-// 批量上下架
+// 批量上下架（上架走审批闸门 manageApprovals；下架直通）
 const handleBatchToggleShelf = async (isOnShelf) => {
     if (selectedProducts.value.length === 0) {
         ElMessage.warning('请先选择商品')
@@ -2306,7 +2597,9 @@ const handleBatchToggleShelf = async (isOnShelf) => {
 
     const action = isOnShelf ? '上架' : '下架'
     ElMessageBox.confirm(
-        `确认批量${action} ${selectedProducts.value.length} 个商品吗？`,
+        isOnShelf
+            ? `确认批量提交上架审批 ${selectedProducts.value.length} 个商品？非超管账号将进入待审队列。`
+            : `确认批量下架 ${selectedProducts.value.length} 个商品吗？`,
         `批量${action}确认`,
         {
             confirmButtonText: `确认${action}`,
@@ -2316,15 +2609,37 @@ const handleBatchToggleShelf = async (isOnShelf) => {
     ).then(async () => {
         try {
             loading.value = true
-            const promises = selectedProducts.value.map(product =>
-                cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
-                    isOffShelf: !isOnShelf,
-                    updateTime: Date.now()
-                })
-            )
-
-            await Promise.all(promises)
-            ElMessage.success(`成功${action} ${selectedProducts.value.length} 个商品`)
+            if (!isOnShelf) {
+                const promises = selectedProducts.value.map(product =>
+                    cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
+                        isOffShelf: true,
+                        updateTime: Date.now()
+                    })
+                )
+                await Promise.all(promises)
+                ElMessage.success(`成功下架 ${selectedProducts.value.length} 个商品`)
+            } else {
+                let pending = 0
+                let direct = 0
+                let failed = 0
+                for (const product of selectedProducts.value) {
+                    try {
+                        const res = await callCloudFunction('manageApprovals', {
+                            action: 'submitProductShelf',
+                            productId: product._id,
+                            onShelf: true
+                        })
+                        if (res && res.pendingApproval) pending += 1
+                        else if (res && res.success) direct += 1
+                        else failed += 1
+                    } catch (e) {
+                        failed += 1
+                    }
+                }
+                ElMessage.success(
+                    `上架完成：直通 ${direct} · 待审 ${pending}${failed ? ` · 失败 ${failed}` : ''}`
+                )
+            }
             clearProductSelection()
             loadProducts()
         } catch (err) {
@@ -2650,22 +2965,24 @@ const loadCategoriesForProduct = async () => {
         const roots = await fetchCollectionSorted(COLLECTIONS.CATEGORIES, {
             limit: 500,
             where: { level: 1 },
-            sortFn: (a, b) => (a.sort ?? 0) - (b.sort ?? 0)
+            sortFn: (a, b) => (a.sort ?? a.sortOrder ?? 0) - (b.sort ?? b.sortOrder ?? 0)
         })
         const subs = await fetchCollectionSorted(COLLECTIONS.CATEGORIES, {
             limit: 500,
             where: { level: 2 },
-            sortFn: (a, b) => (a.sort ?? 0) - (b.sort ?? 0)
+            sortFn: (a, b) => (a.sort ?? a.sortOrder ?? 0) - (b.sort ?? b.sortOrder ?? 0)
         })
+        const activeRoots = (roots || []).filter(isActiveCategory)
+        const activeSubs = (subs || []).filter(isActiveCategory)
         const flat = {}
-        roots.forEach((r) => { flat[r._id] = r })
-        subs.forEach((s) => { flat[s._id] = s })
+        activeRoots.forEach((r) => { flat[r._id] = r })
+        activeSubs.forEach((s) => { flat[s._id] = s })
         categoryFlatMap.value = flat
-        categoryCascaderOptions.value = roots.map((r) => ({
+        categoryCascaderOptions.value = activeRoots.map((r) => ({
             value: r._id,
             label: r.name,
-            children: subs
-                .filter((s) => s.parentId === r._id && s.active !== false)
+            children: activeSubs
+                .filter((s) => s.parentId === r._id)
                 .map((s) => ({ value: s._id, label: s.name }))
         }))
     } catch (e) {
@@ -3283,20 +3600,36 @@ const onRichImageUploaded = async (fileID) => {
     await refreshDetailImagePreviews()
 }
 
-const deleteItem = (row) => { 
+const deleteItem = (row) => {
+    const productId = String(row?._id || '').trim()
+    if (!productId) {
+        ElMessage.error('缺少藏品 ID，无法删除')
+        return
+    }
     ElMessageBox.confirm(
-        `确定要永久删除藏品《${row.title}》吗?`, '高风险操作', 
+        `确定要永久删除藏品《${row.title}》吗?`, '高风险操作',
         { confirmButtonText: '确认删除', cancelButtonText: '取消', type: 'warning' }
     ).then(async () => {
         try {
-            await cdnRemove(COLLECTIONS.PRODUCTS, row._id)
+            // products 集合 write:false：禁止 CDN 直删，须走 manageProducts.remove（硬删）
+            const res = await callCloudFunction('manageProducts', {
+                action: 'remove',
+                productId,
+                adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+            })
+            if (!res || res.success === false) {
+                throw new Error(res?.msg || '删除失败')
+            }
+            // 立即从当前页移除并刷新总数，再拉齐服务端
+            products.value = (products.value || []).filter((p) => p && p._id !== productId)
+            productsTotal.value = Math.max(0, (Number(productsTotal.value) || 0) - 1)
             ElMessage.success('档案已销毁')
-            loadProducts()
+            await loadProducts()
         } catch (err) {
             console.error('删除失败', err)
             ElMessage.error('删除失败: ' + (err.message || '未知错误'))
         }
-    }).catch(()=>{}) 
+    }).catch(() => {})
 }
 
 const saveProduct = async () => {
@@ -3469,9 +3802,11 @@ onMounted(() => {
     stripLegacyBrandHashes()
     checkSession()
     loadPinned()
+    loadRecent()
     window.addEventListener('hashchange', onHashLegacyCleanup)
     window.addEventListener('storage', onStorage)
     window.addEventListener('pinned-changed', loadPinned) // 同页内命令面板置顶 → 侧栏同步
+    window.addEventListener(RECENT_CHANGED_EVENT, loadRecent)
     window.addEventListener('keydown', onSidebarKey)
     setupActionListeners()
     // 立即检测移动端
@@ -3484,6 +3819,7 @@ onUnmounted(() => {
     window.removeEventListener('hashchange', onHashLegacyCleanup)
     window.removeEventListener('storage', onStorage)
     window.removeEventListener('pinned-changed', loadPinned)
+    window.removeEventListener(RECENT_CHANGED_EVENT, loadRecent)
     window.removeEventListener('keydown', onSidebarKey)
     window.removeEventListener('switch-tab', onSwitchTabEvent)
     cleanupMobileDetection()
@@ -3539,6 +3875,8 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
     z-index: 10;
     position: relative;
+    transition: width 0.25s ease;
+    overflow-x: hidden;
 }
 
 /* 🟢 左侧菜单 - 黑金效果 */
@@ -3558,6 +3896,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     display: flex; 
     align-items: center; 
     padding-left: 24px;
+    padding-right: 12px;
     border-bottom: 1px solid var(--border-dark); 
     background: rgba(10, 31, 23, 0.35);
     backdrop-filter: blur(10px);
@@ -3573,6 +3912,25 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     background: linear-gradient(90deg, transparent, var(--primary), transparent);
     opacity: 0.2;
 }
+.brand-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+.brand-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.mobile-drawer-header .brand-actions {
+    margin-left: auto;
+}
+.mobile-drawer-header .mobile-sidebar-close {
+    margin-left: 2px;
+}
 .brand-logo { 
     width: 36px; 
     height: 36px; 
@@ -3585,6 +3943,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     justify-content: center; 
     font-size: 20px; 
     margin-right: 12px;
+    flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(45, 106, 79, 0.3);
     transition: all 0.3s ease;
 }
@@ -3610,6 +3969,9 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     border-right: none !important; 
     margin-top: 10px; 
     background: transparent !important;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 .el-menu-item-group__title { 
     padding: 16px 0 10px 24px !important; 
@@ -3657,17 +4019,80 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     text-align: center;
 }
 
-/* 🟢 侧栏折叠按钮 */
+/* 🟢 侧栏一键缩放（左右）+ 分组展开/收起（上下） */
 .collapse-btn {
-    margin-left: auto !important;
+    margin-left: 0 !important;
     color: rgba(245, 242, 236, 0.5) !important;
-    padding: 4px !important;
+    padding: 6px !important;
+    min-height: 32px;
+    border-radius: 8px !important;
 }
-.collapse-btn:hover { color: #d4af37 !important; }
-.aside.is-collapsed .brand-header { justify-content: center; padding: 0 !important; }
-.aside.is-collapsed .brand-logo { margin: 0 auto; }
-.aside.is-collapsed .collapse-btn { position: absolute; right: 4px; top: 8px; }
-.aside { transition: width 0.25s ease; position: relative; }
+.collapse-btn:hover { color: #d4af37 !important; background: rgba(212, 175, 55, 0.12) !important; }
+.collapse-btn--rail {
+    margin: 0 !important;
+    width: 40px;
+    height: 32px;
+}
+.aside.is-collapsed .brand-header {
+    height: auto;
+    min-height: 80px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 0 10px !important;
+}
+.aside.is-collapsed .brand-header::after {
+    left: 12px;
+    right: 12px;
+}
+.aside.is-collapsed .brand-row {
+    justify-content: center;
+    width: auto;
+}
+.aside.is-collapsed .brand-logo {
+    margin: 0;
+}
+.aside.is-collapsed .el-menu-item-group__title {
+    display: none !important;
+    padding: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden;
+}
+.aside.is-collapsed .el-menu-item,
+.aside.is-collapsed .el-sub-menu__title {
+    margin: 4px 8px !important;
+    padding: 0 !important;
+    justify-content: center;
+}
+.aside.is-collapsed .el-menu-item .el-icon,
+.aside.is-collapsed .el-sub-menu__title .el-icon {
+    margin-right: 0 !important;
+}
+.aside.is-collapsed .sidebar-footer {
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.aside.is-collapsed .sidebar-footer .user-badge {
+    margin-bottom: 4px;
+    padding: 0;
+    justify-content: center;
+}
+.aside.is-collapsed .sidebar-footer .mobile-access-btn,
+.aside.is-collapsed .sidebar-footer .logout-btn {
+    width: auto;
+    min-width: 40px;
+    justify-content: center;
+    padding: 8px !important;
+}
+.aside.is-collapsed .sidebar-footer .mobile-access-btn .el-icon,
+.aside.is-collapsed .sidebar-footer .logout-btn .el-icon {
+    margin: 0;
+}
 
 /* 🟢 侧栏快捷搜索栏 */
 .sidebar-search {
@@ -3748,6 +4173,57 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     transition: 0.15s;
 }
 .pin-remove:hover { color: #f56c6c; }
+
+/* 🟢 最近常用 */
+.recent-section {
+    margin: 0 8px 12px;
+    padding: 6px 0 8px;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+}
+.recent-title {
+    padding: 6px 14px 4px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6B6560;
+}
+.recent-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin: 1px 4px;
+    transition: 0.15s;
+}
+.recent-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+.recent-item.active {
+    background: rgba(212, 175, 55, 0.14);
+}
+.recent-item.active .recent-name,
+.recent-item.active .recent-ico {
+    color: #d4af37;
+}
+.recent-item.active .recent-name {
+    font-weight: 600;
+}
+.recent-ico {
+    flex-shrink: 0;
+    font-size: 14px;
+    color: rgba(245, 242, 236, 0.45);
+}
+.recent-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    color: rgba(245, 242, 236, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 .el-menu-vertical .el-sub-menu__title {
     height: 48px;

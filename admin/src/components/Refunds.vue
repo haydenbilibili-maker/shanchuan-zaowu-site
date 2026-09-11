@@ -194,6 +194,7 @@ import {
   fetchCollectionWhere,
   cdnUpdate,
   cdnAdd,
+  callCloudFunction,
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -481,23 +482,38 @@ const reject = (row) => {
 
 const execRefund = (row) => {
   ElMessageBox.confirm(
-    `确认执行退款 ¥${Number(row.amount || 0).toFixed(2)}？\n注意：实际打款请走云函数 refundOrder（微信支付退款）。此处仅更新审核状态。`,
+    `确认执行退款 ¥${Number(row.amount || 0).toFixed(2)}？将调用云函数 refundOrder 发起微信退款。`,
     '执行退款',
     { type: 'warning' },
   )
     .then(async () => {
-      const patch = { status: 'refunded', refundedTime: Date.now() }
-      await ensureRefundDoc(row, patch)
       const orderId = row.orderId || (row._fromOrder ? String(row._id).replace(/^order_/, '') : '')
-      if (orderId) {
-        try {
-          await cdnUpdate(COLLECTIONS.ORDERS, orderId, { status: 'refunded', refundTime: Date.now() })
-        } catch {
-          /* ignore */
-        }
+      if (!orderId) {
+        ElMessage.error('缺少订单 ID，无法执行退款')
+        return
       }
-      ElMessage.success('已标记为已退款（请确认微信侧实际打款）')
-      refresh()
+      try {
+        // 确保订单处于可退状态
+        try {
+          await cdnUpdate(COLLECTIONS.ORDERS, orderId, { status: 'refunding' })
+        } catch {
+          /* ignore if already refunding */
+        }
+        const result = await callCloudFunction('refundOrder', {
+          orderId,
+          adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+        })
+        if (!result || result.success === false) {
+          ElMessage.error(result?.msg || '退款失败')
+          return
+        }
+        const patch = { status: 'refunded', refundedTime: Date.now() }
+        await ensureRefundDoc(row, patch)
+        ElMessage.success(result.msg || '退款已提交')
+        refresh()
+      } catch (e) {
+        ElMessage.error(e?.message || '退款失败')
+      }
     })
     .catch(() => {})
 }

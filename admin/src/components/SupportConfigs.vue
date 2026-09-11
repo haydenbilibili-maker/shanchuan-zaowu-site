@@ -40,7 +40,7 @@
           <div class="sub">{{ row._id?.slice(0, 10) }}…</div>
         </template>
       </el-table-column>
-      <el-table-column label="电话" width="140">
+      <el-table-column label="客服电话" width="140">
         <template #default="{ row }">{{ row.config?.phone || '-' }}</template>
       </el-table-column>
       <el-table-column label="营业时间" width="140">
@@ -90,8 +90,9 @@
           <el-input-number v-model="form.priority" :min="0" :max="999" />
           <span class="form-hint-inline">数值越大优先被读取</span>
         </el-form-item>
-        <el-form-item label="电话" required>
-          <el-input v-model="form.phone" placeholder="门店专线，如 18519110274" maxlength="20" />
+        <el-form-item label="客服电话" required>
+          <el-input v-model="form.phone" placeholder="客服热线，如 19917242871" maxlength="20" />
+          <div class="form-hint-block">C 端「联系专员」与标本师招募拨号读取此号；与门店电话（门店前台配置）相互独立。</div>
         </el-form-item>
         <el-form-item label="营业时间">
           <el-input v-model="form.hours" placeholder="10:00 - 22:00" />
@@ -247,7 +248,7 @@ const iconEmoji = (path) => {
 }
 
 const DEFAULT_CONFIG = {
-  phone: '18519110274',
+  phone: '19917242871',
   hours: '10:00 - 22:00',
   responseHint: '专员通常在工作时间内 30 分钟内回复',
   address: '吉林省长春市朝阳区红旗街959号这有山商场山坡X-06-1',
@@ -381,11 +382,11 @@ const openDialog = (row) => {
 const validateForm = () => {
   const f = form.value
   if (!f.phone?.trim()) {
-    ElMessage.warning('电话必填')
+    ElMessage.warning('客服电话必填')
     return false
   }
   if (!/^[\d+\-\s]{6,20}$/.test(f.phone.trim())) {
-    ElMessage.warning('电话格式不正确（仅数字、空格、+、-）')
+    ElMessage.warning('客服电话格式不正确（仅数字、空格、+、-）')
     return false
   }
   const topics = f.topics || []
@@ -534,6 +535,7 @@ onMounted(refresh)
 .name { font-weight: 600; color: #333; }
 .sub { font-size: 11px; color: #999; font-family: monospace; margin-top: 2px; }
 .form-hint-inline { margin-left: 10px; font-size: 12px; color: #999; }
+.form-hint-block { margin-top: 6px; font-size: 12px; color: #999; line-height: 1.5; }
 .row-editor { margin: 0 0 8px 0; padding: 0 0 0 12px; }
 .row-editor-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
 .row-editor-tip { font-size: 12px; color: #888; }

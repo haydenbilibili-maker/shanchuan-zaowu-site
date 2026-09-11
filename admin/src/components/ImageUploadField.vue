@@ -73,10 +73,15 @@ const props = defineProps({
   clearable: { type: Boolean, default: true },
 })
 
-const emit = defineEmits(['update:modelValue', 'uploaded'])
+const emit = defineEmits(['update:modelValue', 'uploaded', 'uploading-change'])
 
 const uploading = ref(false)
 const previewUrl = ref('')
+
+function setUploading(v) {
+  uploading.value = !!v
+  emit('uploading-change', uploading.value)
+}
 
 async function refreshPreview(val) {
   const v = String(val || '').trim()
@@ -125,19 +130,19 @@ function beforeUpload(file) {
 }
 
 async function handleUpload(opt) {
-  uploading.value = true
+  setUploading(true)
   try {
     const fileID = await uploadAdminBinary(opt.file, props.folder)
     emit('update:modelValue', fileID)
     emit('uploaded', fileID)
     await refreshPreview(fileID)
     opt.onSuccess?.({ fileID }, opt.file)
-    ElMessage.success('图片已上传')
+    ElMessage.success('图片已上传，请点击保存以写入数据库')
   } catch (e) {
     opt.onError?.(e)
     ElMessage.error('上传失败：' + (e?.message || '请检查登录态与云存储权限'))
   } finally {
-    uploading.value = false
+    setUploading(false)
   }
 }
 </script>
