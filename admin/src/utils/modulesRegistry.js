@@ -72,6 +72,7 @@ export const MODULES = [
   { id: '62', name: '内容展示开关', group: 'MINIAPP', subgroup: '内容运营', icon: 'View', keywords: 'content display flags 展示开关 标本档案 山海社区 getContentDisplayFlags' },
   // 小程序配置 — 会员/营销规则
   { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'UserFilled', keywords: 'member level hydjtx vip' },
+  { id: '69', name: '会员等级调整', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Sort', keywords: 'member level adjust 等级调整 levelOverride manageMemberLevelAdjust 调级' },
   { id: '63', name: '荣誉馆长名单', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'honorary curator 荣誉馆长 lv99 isHonorary manageHonoraryCurators' },
   { id: '15', name: '门店积分规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz store_point_rules' },
   { id: '22', name: '成就系统配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'achievement cjxt badge' },

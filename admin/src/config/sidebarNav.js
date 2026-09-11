@@ -114,6 +114,8 @@ export const SIDEBAR_NAV = {
         title: '会员与营销',
         items: [
           { id: '14', icon: 'UserFilled', label: '会员等级体系' },
+          { id: '69', icon: 'Sort', label: '会员等级调整' },
+          { id: '63', icon: 'Trophy', label: '荣誉馆长名单' },
           { id: '15', icon: 'Ticket', label: '积分规则配置' },
           { id: '22', icon: 'Trophy', label: '成就系统配置' },
           { id: '20', icon: 'Ticket', label: '活动营销规则' },

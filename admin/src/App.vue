@@ -219,6 +219,7 @@
               </el-menu-item-group>
               <el-menu-item-group title="会员/营销规则">
                 <el-menu-item index="14"><el-icon><UserFilled /></el-icon><span>会员等级体系</span></el-menu-item>
+                <el-menu-item index="69"><el-icon><Sort /></el-icon><span>会员等级调整</span></el-menu-item>
                 <el-menu-item index="63"><el-icon><Trophy /></el-icon><span>荣誉馆长名单</span></el-menu-item>
                 <el-menu-item index="15"><el-icon><Ticket /></el-icon><span>门店积分规则</span></el-menu-item>
                 <el-menu-item index="22"><el-icon><Trophy /></el-icon><span>成就系统配置</span></el-menu-item>
@@ -1279,7 +1280,7 @@ const asyncWith = (loader) => defineAsyncComponent({
 // 导入图标库
 import {
   Plus, Edit, Delete, Box, List, Lock, Money, Odometer, FolderAdd,
-  UserFilled, Picture, PictureFilled, UploadFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View,
+  UserFilled, Picture, PictureFilled, UploadFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View, Sort,
   InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
   DataBoard, TrendCharts, VideoCamera, Van,
   // 🟢 小程序对齐补充图标
@@ -1323,6 +1324,7 @@ import ContentFactory from './components/ContentFactory.vue'
 const BrandVIS = asyncWith(() => import('./components/BrandVIS.vue'))
 import ComplianceCenter from './components/ComplianceCenter.vue'
 import MemberLevelConfig from './components/MemberLevelConfig.vue'
+import MemberLevelAdjust from './components/MemberLevelAdjust.vue'
 import PointsRulesConfig from './components/PointsRulesConfig.vue'
 import BookingRulesConfig from './components/BookingRulesConfig.vue'
 import PermissionManager from './components/PermissionManager.vue'
@@ -1388,6 +1390,7 @@ const TAB_COMPONENT_MAP = {
   '12': () => ({ comp: AICenter }),
   '13': () => ({ comp: HomeConfigManager }),
   '14': () => ({ comp: MemberLevelConfig }),
+  '69': () => ({ comp: MemberLevelAdjust }),
   '63': () => ({ comp: HonoraryCurators }),
   '64': () => ({ comp: StoreStaffPermissions }),
   '15': () => ({ comp: PointsRulesConfig }),
@@ -1525,7 +1528,7 @@ const TAB_TO_GROUP = {
   '15': 'grp-miniapp', '16': 'grp-miniapp', '17': 'grp-miniapp', '18': 'grp-miniapp',
   '19': 'grp-miniapp', '20': 'grp-miniapp', '21': 'grp-miniapp', '22': 'grp-miniapp',
   '23': 'grp-miniapp', '24': 'grp-miniapp', '54': 'grp-miniapp', '56': 'grp-miniapp',
-  '62': 'grp-miniapp', '63': 'grp-miniapp',
+  '62': 'grp-miniapp', '63': 'grp-miniapp', '69': 'grp-miniapp',
   '2': 'grp-governance', '7': 'grp-governance', '27': 'grp-governance', '28': 'grp-governance',
   '31': 'grp-governance', '32': 'grp-governance', '33': 'grp-governance', '36': 'grp-governance', '50': 'grp-governance', '53': 'grp-governance'
 }
