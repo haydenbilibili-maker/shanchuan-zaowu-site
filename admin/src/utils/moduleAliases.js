@@ -16,6 +16,7 @@ export const MODULE_ALIASES = {
   '66': { hub: '6', section: 'welcome' },
   '15': { hub: '6', section: 'points' },
   '68': { hub: '6', section: 'wallet' },
+  '70': { hub: '6', section: 'gift' },
   '22': { hub: '6', section: 'achievement' },
 
   // 会员经营 ← 会员 CRM(4)

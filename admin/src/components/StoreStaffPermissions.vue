@@ -62,6 +62,9 @@
         <el-radio-button label="super_admin">超管</el-radio-button>
         <el-radio-button label="manager">店长</el-radio-button>
         <el-radio-button label="staff">店员</el-radio-button>
+        <el-radio-button label="specimen_artisan">标本师</el-radio-button>
+        <el-radio-button label="live_host">主播</el-radio-button>
+        <el-radio-button label="investor">投资人</el-radio-button>
       </el-radio-group>
       <div class="summary muted">本页 {{ filteredList.length }} 条</div>
     </div>
@@ -77,14 +80,14 @@
             <div class="ts" v-if="row.staffNo">工号 {{ row.staffNo }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="角色" width="110">
+        <el-table-column label="角色" min-width="140">
           <template #default="{ row }">
             <el-tag
-              :type="row.role === 'super_admin' ? 'danger' : (row.role === 'manager' ? 'warning' : 'success')"
+              :type="roleTagType(row.role)"
               effect="plain"
               size="small"
             >
-              {{ row.roleText || roleLabel(row.role) }}
+              {{ row.roleText || rolesLabel(row.roles || [row.role]) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -135,7 +138,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="form._id ? '编辑工作台权限' : '开通店长 / 店员权限'"
-      width="520px"
+      width="640px"
       destroy-on-close
     >
       <el-form label-width="100px">
@@ -166,14 +169,34 @@
           <el-input v-model="form.staffNo" maxlength="20" placeholder="可选" />
         </el-form-item>
         <el-form-item label="角色" required>
-          <el-radio-group v-model="form.role">
-            <el-radio label="manager">店长</el-radio>
-            <el-radio label="staff">店员</el-radio>
-            <el-radio label="super_admin">超管</el-radio>
-          </el-radio-group>
-          <div class="field-hint" v-if="form.role === 'super_admin'">
+          <el-checkbox-group v-model="form.roles">
+            <el-checkbox label="staff">店员</el-checkbox>
+            <el-checkbox label="manager">店长</el-checkbox>
+            <el-checkbox label="specimen_artisan">标本师</el-checkbox>
+            <el-checkbox label="live_host">直播主播</el-checkbox>
+            <el-checkbox label="investor">投资人</el-checkbox>
+            <el-checkbox label="super_admin">超管</el-checkbox>
+          </el-checkbox-group>
+          <div class="field-hint" v-if="(form.roles || []).includes('super_admin')">
             保存后写入 staff_members，并自动并入 workspace_acl 超管名单
           </div>
+        </el-form-item>
+        <el-form-item label="能力勾选" v-if="featureGroups.length">
+          <div class="feature-groups">
+            <div v-for="g in featureGroups" :key="g.roleKey" class="feature-group">
+              <div class="feature-group-title">{{ g.title }} <span class="en">{{ g.en }}</span></div>
+              <el-checkbox
+                v-for="item in g.items"
+                :key="item.key"
+                :model-value="item.checked"
+                :disabled="item.disabled || g.readOnly"
+                @change="(v) => toggleFeature(g.roleKey, item.key, v)"
+              >
+                {{ item.label }}
+              </el-checkbox>
+            </div>
+          </div>
+          <div class="field-hint">与小程序「门店后台权限」同源；保存时写入 permissionsExplicit</div>
         </el-form-item>
         <el-form-item label="门店 ID">
           <el-input
@@ -243,10 +266,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { callCloudFunction } from '../cloud'
+import {
+  buildWorkbenchFeatureUI,
+  featureKeysForRoles,
+  permissionsFromFeatureGroups
+} from '../utils/workspaceFeatures'
 
 const FN = 'manageStaff'
 
@@ -261,6 +289,8 @@ const dialogVisible = ref(false)
 const phoneLookup = ref('')
 const candidates = ref([])
 const form = ref(emptyForm())
+const featureGroups = ref([])
+const editingPermissions = ref([])
 const aclLoading = ref(false)
 const aclSaving = ref(false)
 const aclHardcoded = ref([])
@@ -285,6 +315,7 @@ function emptyForm() {
     name: '',
     staffNo: '',
     role: 'staff',
+    roles: ['staff'],
     storeIdsText: '',
     dailyGrantCap: 0,
     active: true
@@ -294,18 +325,80 @@ function emptyForm() {
 function roleLabel(role) {
   if (role === 'super_admin') return '超管'
   if (role === 'manager') return '店长'
+  if (role === 'specimen_artisan') return '标本师'
+  if (role === 'live_host') return '主播'
+  if (role === 'investor') return '投资人'
   return '店员'
 }
+
+function rolesLabel(roles) {
+  const list = Array.isArray(roles) ? roles.filter(Boolean) : []
+  if (!list.length) return '店员'
+  return list.map(roleLabel).join(' / ')
+}
+
+function roleTagType(role) {
+  if (role === 'super_admin') return 'danger'
+  if (role === 'manager') return 'warning'
+  if (role === 'investor') return 'info'
+  if (role === 'specimen_artisan' || role === 'live_host') return ''
+  return 'success'
+}
+
+function normalizeRoles(row) {
+  if (row && Array.isArray(row.roles) && row.roles.length) {
+    return row.roles.map((r) => String(r || '').trim()).filter(Boolean)
+  }
+  if (row && (row.role === 'super_admin' || row.isSuperAdmin)) return ['super_admin']
+  if (row && row.role) return [String(row.role)]
+  return ['staff']
+}
+
+function rebuildFeatureGroups(roles, permissions) {
+  const roleList = Array.isArray(roles) ? roles.filter(Boolean) : []
+  const selected =
+    Array.isArray(permissions) && permissions.length
+      ? permissions
+      : featureKeysForRoles(roleList)
+  featureGroups.value = buildWorkbenchFeatureUI(roleList, selected)
+  editingPermissions.value = selected.slice()
+}
+
+function toggleFeature(roleKey, key, checked) {
+  const groups = featureGroups.value.map((g) => {
+    if (g.roleKey !== roleKey || g.readOnly) return g
+    return {
+      ...g,
+      items: (g.items || []).map((item) =>
+        item.key === key ? { ...item, checked: !!checked } : item
+      )
+    }
+  })
+  featureGroups.value = groups
+}
+
+watch(
+  () => (form.value.roles || []).slice().sort().join(','),
+  () => {
+    if (!dialogVisible.value) return
+    const picked = permissionsFromFeatureGroups(featureGroups.value)
+    const fallback = picked.length ? picked : editingPermissions.value
+    rebuildFeatureGroups(form.value.roles, fallback)
+  }
+)
 
 const filteredList = computed(() => {
   let rows = list.value.slice()
   if (roleFilter.value !== 'all') {
-    rows = rows.filter((r) => r.role === roleFilter.value)
+    rows = rows.filter((r) => {
+      const roles = normalizeRoles(r)
+      return roles.includes(roleFilter.value) || r.role === roleFilter.value
+    })
   }
   const kw = keyword.value.trim().toLowerCase()
   if (!kw) return rows
   return rows.filter((r) => {
-    const blob = `${r.name || ''} ${r.staffNo || ''} ${r.openid || ''} ${r.openidTail || ''} ${r.roleText || ''}`.toLowerCase()
+    const blob = `${r.name || ''} ${r.staffNo || ''} ${r.openid || ''} ${r.openidTail || ''} ${r.roleText || ''} ${rolesLabel(normalizeRoles(r))}`.toLowerCase()
     return blob.includes(kw)
   })
 })
@@ -419,21 +512,22 @@ function openUpsert(row) {
   candidates.value = []
   phoneLookup.value = ''
   if (row) {
-    let role = 'staff'
-    if (row.role === 'super_admin' || row.isSuperAdmin) role = 'super_admin'
-    else if (row.role === 'manager') role = 'manager'
+    const roles = normalizeRoles(row)
     form.value = {
       _id: row._id || '',
       openid: row.openid || '',
       name: row.name || '',
       staffNo: row.staffNo || '',
-      role,
+      role: roles[0] || row.role || 'staff',
+      roles: roles.slice(),
       storeIdsText: (row.storeIds || []).join(','),
       dailyGrantCap: Number(row.dailyGrantCap) || 0,
       active: row.status !== 'disabled'
     }
+    rebuildFeatureGroups(roles, row.permissions || [])
   } else {
     form.value = emptyForm()
+    rebuildFeatureGroups(['staff'], featureKeysForRoles(['staff']))
   }
   dialogVisible.value = true
 }
@@ -467,17 +561,26 @@ async function submitUpsert() {
     ElMessage.warning('请填写 openid')
     return
   }
+  const roles = Array.isArray(f.roles) ? f.roles.filter(Boolean) : []
+  if (!roles.length) {
+    ElMessage.warning('请至少选择一个角色')
+    return
+  }
   submitting.value = true
   try {
+    const permissions = permissionsFromFeatureGroups(featureGroups.value)
     const res = await callFn({
       action: 'upsert',
       openid: String(f.openid).trim(),
       name: f.name,
       staffNo: f.staffNo,
-      role: f.role,
+      roles,
+      role: roles[0],
       storeIds: f.storeIdsText,
       dailyGrantCap: f.dailyGrantCap,
-      status: f.active ? 'active' : 'disabled'
+      status: f.active ? 'active' : 'disabled',
+      permissions,
+      permissionsExplicit: true
     })
     ElMessage.success(res.msg || '已保存')
     dialogVisible.value = false
@@ -508,12 +611,14 @@ async function onDisable(row) {
 
 async function onReactivate(row) {
   try {
+    const roles = normalizeRoles(row)
     await callFn({
       action: 'upsert',
       openid: row.openid,
       name: row.name,
       staffNo: row.staffNo,
-      role: row.role,
+      roles,
+      role: roles[0] || row.role,
       storeIds: row.storeIds,
       dailyGrantCap: row.dailyGrantCap,
       status: 'active'
@@ -656,6 +761,42 @@ onMounted(() => {
   margin-left: 10px;
   font-size: 12px;
   color: #A09A90;
+}
+
+.feature-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-height: 280px;
+  overflow: auto;
+  padding: 8px 10px;
+  border: 1px solid #E8E5DE;
+  border-radius: 8px;
+  background: #FAF6ED;
+}
+
+.feature-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #33302C;
+  margin-bottom: 6px;
+}
+
+.feature-group-title .en {
+  margin-left: 6px;
+  font-size: 11px;
+  color: #A09A90;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.feature-group :deep(.el-checkbox) {
+  display: flex;
+  margin-right: 0;
+  margin-bottom: 4px;
+  height: auto;
+  white-space: normal;
 }
 
 .audit-card {

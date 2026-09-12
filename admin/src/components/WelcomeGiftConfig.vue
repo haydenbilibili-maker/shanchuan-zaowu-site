@@ -156,7 +156,8 @@ import {
   applyDefaultExpireDaysToCoupons,
   resolveExpireDays,
   coerceNumber,
-  buildWelcomeGiftWritePayload
+  buildWelcomeGiftWritePayload,
+  validateWelcomeGiftCoupons
 } from '../utils/welcomeGift'
 import { ElMessage } from 'element-plus'
 
@@ -242,6 +243,10 @@ function buildPayload() {
 async function saveRules() {
   saving.value = true
   try {
+    const couponCheck = validateWelcomeGiftCoupons(form)
+    if (!couponCheck.ok) {
+      throw new Error(couponCheck.msg || '礼券档位不符合折扣纪律')
+    }
     const payload = buildPayload()
     if (!(payload.expireDays >= 1)) {
       throw new Error('有效天数无效，请重新设置后再保存')
@@ -296,7 +301,7 @@ function addCoupon() {
     id: `c${Date.now()}`,
     enabled: true,
     value: 10,
-    minSpend: 10,
+    minSpend: 100,
     expireDays: days,
     count: 1,
     title: '新会员礼券',

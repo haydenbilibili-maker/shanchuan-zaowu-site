@@ -1,9 +1,42 @@
 /**
  * 新会员礼包默认配置（与小程序 upsertUserProfile/welcomeGiftDefaults.js 对齐）
+ * 折扣纪律：不低于 7.5 折（value/minSpend ≤ 0.25）；默认约 8～9 折
  */
 
 export const COLLECTION = 'member_welcome_gift'
 export const SOURCE = 'register_gift'
+export const MIN_PAY_RATIO = 0.75
+export const MAX_OFF_RATIO = 1 - MIN_PAY_RATIO
+
+export function cashCouponMinSpendFloor(value) {
+  const v = Math.max(0, Number(value) || 0)
+  if (v <= 0) return 0
+  return Math.ceil(v / MAX_OFF_RATIO)
+}
+
+export function enforceCashMinSpend(value, minSpend) {
+  const v = Math.max(0, Math.floor(Number(value) || 0))
+  const raw = Math.max(0, Math.floor(Number(minSpend) || 0))
+  const floor = cashCouponMinSpendFloor(v)
+  if (v <= 0) return raw
+  if (raw <= 0) return Math.max(floor, v * 5)
+  return Math.max(raw, floor)
+}
+
+export function validateCashCoupon(value, minSpend) {
+  const v = Number(value) || 0
+  const m = Number(minSpend) || 0
+  if (!(v > 0)) return { ok: false, msg: '代金券面额无效' }
+  if (!(m > 0)) return { ok: false, msg: '代金券须设置使用门槛' }
+  if (v / m > MAX_OFF_RATIO + 1e-9) {
+    return {
+      ok: false,
+      msg: `优惠过猛：满${m}减${v}低于7.5折（实付须≥原价75%），请提高门槛或降低面额`,
+      minSpendFloor: cashCouponMinSpendFloor(v)
+    }
+  }
+  return { ok: true }
+}
 
 export function getDefaultWelcomeGiftConfig() {
   return {
@@ -21,10 +54,10 @@ export function getDefaultWelcomeGiftConfig() {
     stackable: false,
     priority: 100,
     coupons: [
-      { id: 'c10', enabled: true, value: 10, minSpend: 10, expireDays: 30, count: 1, title: '新会员礼券 · 10元' },
-      { id: 'c30', enabled: true, value: 30, minSpend: 30, expireDays: 30, count: 1, title: '新会员礼券 · 30元' },
-      { id: 'c50', enabled: true, value: 50, minSpend: 50, expireDays: 30, count: 1, title: '新会员礼券 · 50元' },
-      { id: 'c100', enabled: true, value: 100, minSpend: 100, expireDays: 30, count: 1, title: '新会员礼券 · 100元' }
+      { id: 'c10', enabled: true, value: 10, minSpend: 100, expireDays: 30, count: 1, title: '新会员礼券 · 满100减10', channel: 'all' },
+      { id: 'c30', enabled: true, value: 30, minSpend: 200, expireDays: 30, count: 1, title: '新会员礼券 · 满200减30', channel: 'all' },
+      { id: 'c50', enabled: true, value: 50, minSpend: 300, expireDays: 30, count: 1, title: '新会员礼券 · 满300减50', channel: 'all' },
+      { id: 'c100', enabled: true, value: 100, minSpend: 500, expireDays: 30, count: 1, title: '新会员礼券 · 满500减100', channel: 'all' }
     ]
   }
 }
@@ -62,11 +95,12 @@ function normalizeCouponRow(row, index, defaultExpireDays) {
   const expireDays = resolveExpireDays(src.expireDays, defaultExpireDays, 30)
   const count = Math.max(0, Math.floor(toNumber(src.count, 1)))
   const minSpendRaw = src.minSpend != null && src.minSpend !== ''
-    ? toNumber(src.minSpend, value)
-    : value
-  const minSpend = Math.max(0, Math.floor(minSpendRaw))
+    ? toNumber(src.minSpend, 0)
+    : 0
+  const minSpend = enforceCashMinSpend(value, minSpendRaw)
   const id = String(src.id || `c${value || index}`).trim() || `c${index}`
-  const title = String(src.title || '').trim() || (value > 0 ? `新会员礼券 · ${value}元` : `新会员礼券 ${index + 1}`)
+  const title = String(src.title || '').trim()
+    || (value > 0 && minSpend > 0 ? `新会员礼券 · 满${minSpend}减${value}` : (value > 0 ? `新会员礼券 · ${value}元` : `新会员礼券 ${index + 1}`))
   return {
     id,
     enabled: src.enabled !== false,
@@ -79,6 +113,24 @@ function normalizeCouponRow(row, index, defaultExpireDays) {
       ? String(src.channel)
       : 'all'
   }
+}
+
+/** 保存前校验原始门槛 */
+export function validateWelcomeGiftCoupons(config) {
+  const src = config && typeof config === 'object' ? config : {}
+  const coupons = Array.isArray(src.coupons) ? src.coupons : []
+  for (let i = 0; i < coupons.length; i += 1) {
+    const row = coupons[i] || {}
+    if (row.enabled === false) continue
+    const value = Math.max(0, Math.floor(toNumber(row.value, 0)))
+    if (!(value > 0)) continue
+    const minSpend = row.minSpend != null && row.minSpend !== ''
+      ? Math.max(0, Math.floor(toNumber(row.minSpend, 0)))
+      : 0
+    const check = validateCashCoupon(value, minSpend)
+    if (!check.ok) return check
+  }
+  return { ok: true }
 }
 
 /**
@@ -181,9 +233,9 @@ export function describeWelcomeGift(config) {
       const daysLabel = sameDays
         ? `${cfg.expireDays} 天`
         : `默认 ${cfg.expireDays} 天（各券可不同）`
-      parts.push(`礼券 ${active.map((c) => `¥${c.value}${c.count > 1 ? `×${c.count}` : ''}`).join(' / ')}（${daysLabel}）`)
+      parts.push(`礼券 ${active.map((c) => `满${c.minSpend}减${c.value}${c.count > 1 ? `×${c.count}` : ''}`).join(' / ')}（${daysLabel}）`)
     }
   }
   if (!parts.length) return '已启用，但积分与礼券均为空'
-  return `${parts.join(' + ')}；${cfg.stackable ? '可叠加' : '不可叠加'}`
+  return `${parts.join(' + ')}；${cfg.stackable ? '可叠加' : '不可叠加（一单一券）'}；折扣不低于7.5折`
 }

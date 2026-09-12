@@ -29,7 +29,7 @@
               @mouseenter="activeIndex = i"
               @click="select(m)"
             >
-              <span class="cp-icon">{{ groupIcon(m.group) }}</span>
+              <el-icon class="cp-icon"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
               <span class="cp-name">{{ m.name }}</span>
               <span class="cp-group">{{ groupName(m.group) }}</span>
               <el-icon class="cp-pin" @click.stop="togglePin(m)"><Star /></el-icon>
@@ -47,7 +47,7 @@
               @mouseenter="activeIndex = pinned.length + i"
               @click="select(m)"
             >
-              <span class="cp-icon">{{ groupIcon(m.group) }}</span>
+              <el-icon class="cp-icon"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
               <span class="cp-name">{{ m.name }}</span>
               <span class="cp-group">{{ groupName(m.group) }}</span>
               <el-icon class="cp-pin" @click.stop="togglePin(m)" :class="{ pinned: isPinned(m.id) }"><Star /></el-icon>
@@ -84,7 +84,7 @@
               @mouseenter="activeIndex = actionResults.length + i"
               @click="select(m)"
             >
-              <span class="cp-icon">{{ groupIcon(m.group) }}</span>
+              <el-icon class="cp-icon"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
               <span class="cp-name" v-html="highlight(m.name)"></span>
               <span class="cp-group">{{ groupName(m.group) }}<span v-if="m.subgroup"> / {{ m.subgroup }}</span></span>
               <el-icon class="cp-pin" @click.stop="togglePin(m)" :class="{ pinned: isPinned(m.id) }"><Star /></el-icon>
@@ -115,7 +115,10 @@
               :key="key"
               class="cp-grp"
             >
-              <div class="cp-grp-name">{{ GROUPS[key].icon }} {{ GROUPS[key].name }}</div>
+              <div class="cp-grp-name">
+                <el-icon class="cp-grp-ico"><component :is="resolveEpIcon(GROUPS[key].icon)" /></el-icon>
+                {{ GROUPS[key].name }}
+              </div>
               <div
                 v-for="m in grp"
                 :key="m.id"
@@ -144,9 +147,12 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import * as EpIcons from '@element-plus/icons-vue'
 import { Search, Star } from '@element-plus/icons-vue'
 import { MODULES, MODULES_BY_ID, GROUPS, searchModules, modulesByGroup, ACTIONS, searchActions, runAction } from '../utils/modulesRegistry'
 import { useRecentModules, RECENT_MODULES_KEY, RECENT_CHANGED_EVENT } from '../composables/useRecentModules'
+
+const resolveEpIcon = (name) => EpIcons[name] || EpIcons.Menu
 
 const emit = defineEmits(['switch-tab'])
 
@@ -195,7 +201,7 @@ const totalItems = computed(() => {
 
 watch(query, () => { activeIndex.value = 0 })
 
-const groupIcon = (key) => GROUPS[key]?.icon || ''
+const groupIconName = (key) => GROUPS[key]?.icon || 'Menu'
 const groupName = (key) => GROUPS[key]?.name || ''
 const isPinned = (id) => pinnedIds.value.includes(id)
 
@@ -340,16 +346,53 @@ onUnmounted(() => {
 .cp-item:hover, .cp-item.active {
   background: linear-gradient(90deg, #fdf6ec, transparent);
 }
-.cp-icon { font-size: 16px; width: 20px; }
-.cp-name { flex: 1; color: #333; font-size: 14px; font-weight: 500; }
+.cp-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #b7950b;
+  overflow: hidden;
+  line-height: 1;
+}
+.cp-name {
+  flex: 1;
+  min-width: 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .cp-name :deep(mark) { background: #ffe58f; color: #b7950b; padding: 0 2px; border-radius: 2px; }
-.cp-group { color: #999; font-size: 12px; }
-.cp-pin { color: #ddd; cursor: pointer; }
+.cp-group {
+  color: #999;
+  font-size: 12px;
+  flex-shrink: 0;
+  max-width: 36%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-pin { color: #ddd; cursor: pointer; flex-shrink: 0; }
 .cp-pin:hover { color: #d4af37; }
 .cp-pin.pinned { color: #d4af37; }
 
 .cp-grp { padding: 4px 0; }
-.cp-grp-name { padding: 6px 18px 2px; font-size: 11px; color: #b7950b; font-weight: bold; }
+.cp-grp-name {
+  padding: 6px 18px 2px;
+  font-size: 11px;
+  color: #b7950b;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cp-grp-ico { font-size: 14px; }
 
 /* 动作项样式 */
 .cp-item.act:hover, .cp-item.act.active {

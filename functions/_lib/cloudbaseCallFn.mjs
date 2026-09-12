@@ -18,12 +18,17 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   'manageHonoraryCurators',
   'manageMemberLevelAdjust',
   'manageStaff',
+  'manageProducts',
   'bindPlatformOrder',
+  'claimStoreReceipt',
   'managerShipOrder',
   'refundOrder',
   'getShippingRules',
+  'manageStoredValue',
   'moderateComment',
   'assistProductCopy',
+  'seedCategories',
+  'manageGift',
 ])
 
 const ALLOWED = new Set(ALLOWED_FUNCTIONS)

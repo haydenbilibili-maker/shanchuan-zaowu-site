@@ -67,7 +67,7 @@ export const NAV_DOMAINS = {
         entries: [
           { id: '37', title: '预约中心', desc: '预约核销与规则配置', icon: 'Stamp' },
           { id: '5', title: '活动与排期', desc: '活动日历与报名', icon: 'Calendar' },
-          { id: '6', title: '权益与营销', desc: '券、礼包、积分与成就', icon: 'Ticket' },
+          { id: '6', title: '权益与营销', desc: '券、礼赠、礼包、积分与成就', icon: 'Ticket' },
         ],
       },
       {

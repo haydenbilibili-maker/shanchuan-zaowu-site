@@ -184,7 +184,7 @@
               :class="{ active: currentTab === m.id }"
               @click="handleMenuSelect(m.id)"
             >
-              <el-icon v-if="m.icon" class="recent-ico"><component :is="m.icon" /></el-icon>
+              <el-icon v-if="m.icon" class="recent-ico"><component :is="resolveRecentIcon(m.icon)" /></el-icon>
               <span class="recent-name">{{ m.name }}</span>
             </div>
           </div>
@@ -691,6 +691,16 @@
                     </div>
                 </div>
                 <span class="sku-hint-muted">写入 products.tags，与小程序藏品库同源；用于首页推荐、搜索关联与用户画像</span>
+            </el-form-item>
+            <el-form-item label="适配礼赠场景">
+                <el-checkbox-group v-model="form.giftScenes" class="gift-scene-checks">
+                    <el-checkbox
+                        v-for="sc in giftSceneOptions"
+                        :key="sc.key"
+                        :label="sc.key"
+                    >{{ sc.label }}</el-checkbox>
+                </el-checkbox-group>
+                <span class="sku-hint-muted">写入 products.giftScenes（英文 key）；与兴趣标签 tags 分离，用于礼赠场景选品</span>
             </el-form-item>
             <el-row :gutter="20">
                 <el-col :span="12">
@@ -1310,14 +1320,19 @@ import {
   // 🟢 小票审核 / 待我审批
   Tickets, Checked
 } from '@element-plus/icons-vue'
+import * as EpIcons from '@element-plus/icons-vue'
 // 导入云开发工具
 import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnUpdate, callCloudFunction, getCdnDatabase, cdnCount, cdnQueryPage } from './cloud'
 import { toChineseTaxonomy } from './utils/taxonomyZh'
 import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
+import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
 import { isActiveCategory } from './utils/categoryActive'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
 import ImageUploadField from './components/ImageUploadField.vue'
+
+/** 侧栏「最近常用」：把 modulesRegistry 的图标名解析为组件，避免字符串当文本叠字 */
+const resolveRecentIcon = (name) => EpIcons[name] || EpIcons.Menu
 
 // --- 动态组件引入（同步加载，保证各 Tab 稳定渲染） ---
 const FinanceDashboard = asyncWith(() => import('./components/Finance.vue'))
@@ -1683,7 +1698,7 @@ const form = ref({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
-    latinName: '', description: '', tags: [], tagDraft: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
+    latinName: '', description: '', tags: [], tagDraft: '', giftScenes: [], isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
@@ -1696,6 +1711,7 @@ const form = ref({
     seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
+const giftSceneOptions = GIFT_SCENES
 const productMediaUploading = ref(false)
 const latinAiLoading = ref(false)
 const productAiFillLoading = ref(false)
@@ -2213,6 +2229,7 @@ const enrichProductRows = async (rows) => {
                 ...item,
                 tags: readProductTags(item),
                 displayTags: readProductTags(item).slice(0, 4),
+                giftScenes: readGiftScenes(item),
                 httpImage: img,
                 isOnShelf: !item.isOffShelf,
                 profitRate: (() => {
@@ -2942,7 +2959,7 @@ const blankProductForm = () => ({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
-    latinName: '', description: '', tags: [], tagDraft: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
+    latinName: '', description: '', tags: [], tagDraft: '', giftScenes: [], isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
@@ -3282,6 +3299,7 @@ const editItem = async (row) => {
         description: row.description || '',
         tags: readProductTags(row),
         tagDraft: '',
+        giftScenes: readGiftScenes(row),
         images,
         imagePreviews,
         detailImages,
@@ -3667,6 +3685,7 @@ const saveProduct = async () => {
             latinName: form.value.latinName || '',
             description: form.value.description || '',
             tags: sanitizeProductTags(form.value.tags),
+            giftScenes: sanitizeGiftScenes(form.value.giftScenes),
             images,
             detailImages,
             detailHtml,
@@ -4152,8 +4171,11 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 }
 .recent-ico {
     flex-shrink: 0;
+    width: 16px;
+    height: 16px;
     font-size: 14px;
     color: rgba(245, 242, 236, 0.45);
+    overflow: hidden;
 }
 .recent-name {
     flex: 1;
@@ -4613,6 +4635,14 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     flex-wrap: wrap;
     gap: 6px;
     margin-bottom: 8px;
+}
+.gift-scene-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}
+.gift-scene-checks .el-checkbox {
+    margin-right: 0;
 }
 .product-tags-add {
     display: flex;

@@ -143,6 +143,7 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'moderateComment',
   'assistProductCopy',
   'seedCategories',
+  'manageGift',
 ])
 
 function cloudFnProxyUrls() {

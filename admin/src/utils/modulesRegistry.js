@@ -49,9 +49,11 @@ export const MODULES = [
   // 业务运营 — 场
   { id: '37', name: '预约中心', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约 预约规则' },
   { id: '5',  name: '活动与排期', group: 'BUSINESS', subgroup: '场', icon: 'Calendar', keywords: 'activity event hdpc 活动' },
-  { id: '6',  name: '权益与营销', group: 'BUSINESS', subgroup: '场', icon: 'Ticket', keywords: 'marketing benefit qyyx coupon 营销 礼包 积分 成就 钱包 活动规则' },
+  { id: '6',  name: '权益与营销', group: 'BUSINESS', subgroup: '场', icon: 'Ticket', keywords: 'marketing benefit qyyx coupon 营销 礼包 积分 成就 钱包 活动规则 礼赠履约 gift-board gift_settings manageGift listBoard' },
+  { id: '70', name: '礼赠运营配置', group: 'BUSINESS', subgroup: '场', icon: 'Present', keywords: 'gift ops gift_settings manageGift 礼赠 运营配置 填址超时 已并入权益营销' },
+  { id: '71', name: '礼赠履约看板', group: 'BUSINESS', subgroup: '场', icon: 'Box', keywords: 'gift board listBoard giftOps 履约 待填址 待发货 自提 已并入权益营销' },
   { id: '30', name: '门店中心', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store dpgl shop 展区 设计 店员权限 这有店' },
-  { id: '64', name: '店员工作台权限', group: 'BUSINESS', subgroup: '场', icon: 'Lock', keywords: 'store manager staff_members manageStaff 店长 店员 权限 staffGuard 工作台 手机号 openid 已并入门店中心' },
+  { id: '64', name: '店员工作台权限', group: 'BUSINESS', subgroup: '场', icon: 'Lock', keywords: 'store manager staff_members manageStaff 店长 店员 权限 staffGuard 工作台 手机号 openid giftOps verifyStoreCoupon verifyGiftPickup 已并入门店中心' },
   { id: '55', name: 'C端门店展区', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store front zones cdmxq 这有店 store_zones 已并入门店中心' },
   { id: '34', name: '门店设计中心', group: 'BUSINESS', subgroup: '场', icon: 'Brush', keywords: 'store design mdsjzx 装修 已并入门店中心' },
   { id: '35', name: '加盟商管理', group: 'BUSINESS', subgroup: '场', icon: 'Promotion', keywords: 'franchise jmsgl 加盟' },

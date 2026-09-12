@@ -2,7 +2,7 @@
   <ModuleHub
     hub-id="6"
     title="权益与营销"
-    subtitle="券 · 积分礼包 · 活动规则 · 成就 · 钱包"
+    subtitle="券 · 礼赠履约 · 礼赠运营 · 积分礼包 · 活动规则 · 成就 · 钱包"
     :tabs="tabs"
     :initial-section="initialSection"
   />
@@ -13,6 +13,8 @@ import ModuleHub from './ModuleHub.vue'
 import Marketing from './Marketing.vue'
 import MarketingRulesConfig from './MarketingRulesConfig.vue'
 import WelcomeGiftConfig from './WelcomeGiftConfig.vue'
+import GiftFulfillmentBoard from './GiftFulfillmentBoard.vue'
+import GiftOpsConfig from './GiftOpsConfig.vue'
 import PointsRulesConfig from './PointsRulesConfig.vue'
 import WalletConfig from './WalletConfig.vue'
 import AchievementConfig from './AchievementConfig.vue'
@@ -23,6 +25,8 @@ defineProps({
 
 const tabs = [
   { name: 'assets', label: '券与权益商品', comp: Marketing },
+  { name: 'gift-board', label: '礼赠履约', comp: GiftFulfillmentBoard },
+  { name: 'gift', label: '礼赠运营', comp: GiftOpsConfig },
   { name: 'welcome', label: '新会员礼包', comp: WelcomeGiftConfig },
   { name: 'points', label: '积分规则', comp: PointsRulesConfig },
   { name: 'rules', label: '活动营销规则', comp: MarketingRulesConfig },
