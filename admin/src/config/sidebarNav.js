@@ -1,6 +1,6 @@
 /**
- * 侧栏导航结构（单一数据源，App.vue 渲染用）
- * 排序按日常使用频率与业务链路组织
+ * 侧栏导航结构（单一数据源；App.vue 应对齐本文件）
+ * 合并后只保留主入口，子能力在 Hub 内 Tab 切换；旧 id 仍可经命令面板搜索跳转。
  */
 export const SIDEBAR_NAV = {
   overview: {
@@ -8,9 +8,8 @@ export const SIDEBAR_NAV = {
     title: '总览决策',
     items: [
       { id: '0', icon: 'Odometer', label: '经营驾驶舱' },
+      { id: '26', icon: 'Monitor', label: '监控大屏' },
       { id: '25', icon: 'Trophy', label: '运营决策中心' },
-      { id: '26', icon: 'Monitor', label: '实时监控大屏 · 告警' },
-      { id: '49', icon: 'DataBoard', label: '经营数据大屏 · 看板' },
     ],
   },
   business: {
@@ -41,7 +40,7 @@ export const SIDEBAR_NAV = {
       {
         title: '体验营销',
         items: [
-          { id: '37', icon: 'Stamp', label: '预约与核销' },
+          { id: '37', icon: 'Stamp', label: '预约中心' },
           { id: '5', icon: 'Calendar', label: '活动与排期' },
           { id: '6', icon: 'Ticket', label: '权益与营销' },
         ],
@@ -49,10 +48,7 @@ export const SIDEBAR_NAV = {
       {
         title: '门店场域',
         items: [
-          { id: '30', icon: 'Shop', label: '店铺管理' },
-          { id: '64', icon: 'Lock', label: '店员工作台权限' },
-          { id: '55', icon: 'Shop', label: 'C端门店展区' },
-          { id: '34', icon: 'Brush', label: '门店设计中心' },
+          { id: '30', icon: 'Shop', label: '门店中心' },
           { id: '35', icon: 'Promotion', label: '加盟商管理' },
           { id: '48', icon: 'House', label: '物业合作测算' },
         ],
@@ -74,16 +70,13 @@ export const SIDEBAR_NAV = {
       {
         title: '会员洞察',
         items: [
-          { id: '4', icon: 'UserFilled', label: '会员管理' },
-          { id: '45', icon: 'MagicStick', label: '用户画像' },
-          { id: '46', icon: 'Promotion', label: '人群包' },
-          { id: '47', icon: 'DataBoard', label: '人群对比' },
+          { id: '4', icon: 'UserFilled', label: '会员经营' },
         ],
       },
       {
         title: '互动服务',
         items: [
-          { id: '44', icon: 'DataAnalysis', label: '用户行为看板' },
+          { id: '44', icon: 'DataAnalysis', label: '行为洞察' },
           { id: '40', icon: 'Message', label: '山海有信' },
           { id: '41', icon: 'ChatDotRound', label: '评论审核' },
           { id: '59', icon: 'Document', label: '开票申请台' },
@@ -105,34 +98,18 @@ export const SIDEBAR_NAV = {
       {
         title: '内容与首页',
         items: [
-          { id: '8', icon: 'Picture', label: '首页轮播' },
-          { id: '13', icon: 'Setting', label: '首页配置' },
+          { id: '13', icon: 'Setting', label: '首页运营' },
           { id: '9', icon: 'Collection', label: '内容管理' },
           { id: '54', icon: 'Notebook', label: '养护指南' },
           { id: '56', icon: 'Phone', label: '客服入口配置' },
         ],
       },
       {
-        title: '会员与营销',
+        title: '系统与算法',
         items: [
-          { id: '14', icon: 'UserFilled', label: '会员等级体系' },
-          { id: '69', icon: 'Sort', label: '会员等级调整' },
-          { id: '63', icon: 'Trophy', label: '荣誉馆长名单' },
-          { id: '15', icon: 'Ticket', label: '积分规则配置' },
-          { id: '66', icon: 'Present', label: '新会员礼包' },
-          { id: '68', icon: 'Wallet', label: '我的钱包' },
-          { id: '22', icon: 'Trophy', label: '成就系统配置' },
-          { id: '20', icon: 'Ticket', label: '活动营销规则' },
-        ],
-      },
-      {
-        title: '系统与权限',
-        items: [
-          { id: '16', icon: 'Calendar', label: '预约规则配置' },
           { id: '19', icon: 'MagicStick', label: '推荐算法配置' },
           { id: '18', icon: 'Search', label: '搜索关键词管理' },
           { id: '24', icon: 'ChatDotRound', label: '通知消息配置' },
-          { id: '23', icon: 'DataAnalysis', label: '用户行为追踪' },
           { id: '21', icon: 'DataAnalysis', label: '数据报表增强' },
           { id: '17', icon: 'Lock', label: '权限管理系统' },
         ],
@@ -158,7 +135,6 @@ export const SIDEBAR_NAV = {
         items: [
           { id: '7', icon: 'Brush', label: '标本师管理' },
           { id: '32', icon: 'User', label: '员工花名册' },
-          { id: '64', icon: 'Lock', label: '店员工作台权限' },
           { id: '31', icon: 'Wallet', label: '员工薪酬管理' },
         ],
       },
@@ -169,6 +145,12 @@ export const SIDEBAR_NAV = {
           { id: '28', icon: 'Lock', label: '合规专栏' },
         ],
       },
+      {
+        title: '品牌视觉',
+        items: [
+          { id: '53', icon: 'Brush', label: '品牌 VIS' },
+        ],
+      },
     ],
   },
   intelligence: {
@@ -177,6 +159,7 @@ export const SIDEBAR_NAV = {
     items: [
       { id: '12', icon: 'MagicStick', label: '智能中心' },
       { id: '10', icon: 'DataAnalysis', label: '战略调研看板' },
+      { id: '58', icon: 'MagicStick', label: '爆品概念生成器' },
       { id: '29', icon: 'Notebook', label: '经营手册' },
     ],
   },

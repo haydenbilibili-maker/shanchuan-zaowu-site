@@ -225,8 +225,7 @@
             <!-- ============ 1. 总览决策 ============ -->
             <el-menu-item-group title="总览决策">
                 <el-menu-item index="0"><el-icon><Odometer /></el-icon><span>经营驾驶舱</span></el-menu-item>
-                <el-menu-item index="26"><el-icon><Monitor /></el-icon><span>实时监控大屏 · 告警</span></el-menu-item>
-                <el-menu-item index="49"><el-icon><DataBoard /></el-icon><span>经营数据大屏 · 看板</span></el-menu-item>
+                <el-menu-item index="26"><el-icon><Monitor /></el-icon><span>监控大屏</span></el-menu-item>
                 <el-menu-item index="25"><el-icon><Trophy /></el-icon><span>运营决策中心</span></el-menu-item>
             </el-menu-item-group>
 
@@ -244,16 +243,15 @@
                 <el-menu-item index="57"><el-icon><Ticket /></el-icon><span>报价单配置</span></el-menu-item>
                 <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
                 <el-menu-item index="60"><el-icon><Connection /></el-icon><span>订单绑定审核</span></el-menu-item>
+                <el-menu-item index="65"><el-icon><Tickets /></el-icon><span>小票兑积分审核</span></el-menu-item>
+                <el-menu-item index="67"><el-icon><Checked /></el-icon><span>待我审批</span></el-menu-item>
                 <el-menu-item index="61"><el-icon><Van /></el-icon><span>运费与包邮规则</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="场 · 体验">
-                <el-menu-item index="37"><el-icon><Stamp /></el-icon><span>预约与核销</span></el-menu-item>
+                <el-menu-item index="37"><el-icon><Stamp /></el-icon><span>预约中心</span></el-menu-item>
                 <el-menu-item index="5"><el-icon><Calendar /></el-icon><span>活动与排期</span></el-menu-item>
                 <el-menu-item index="6"><el-icon><Ticket /></el-icon><span>权益与营销</span></el-menu-item>
-                <el-menu-item index="30"><el-icon><Shop /></el-icon><span>店铺管理</span></el-menu-item>
-                <el-menu-item index="64"><el-icon><Lock /></el-icon><span>店员工作台权限</span></el-menu-item>
-                <el-menu-item index="55"><el-icon><Shop /></el-icon><span>C端门店展区</span></el-menu-item>
-                <el-menu-item index="34"><el-icon><Brush /></el-icon><span>门店设计中心</span></el-menu-item>
+                <el-menu-item index="30"><el-icon><Shop /></el-icon><span>门店中心</span></el-menu-item>
                 <el-menu-item index="35"><el-icon><Promotion /></el-icon><span>加盟商管理</span></el-menu-item>
                 <el-menu-item index="48"><el-icon><House /></el-icon><span>物业合作测算</span></el-menu-item>
               </el-menu-item-group>
@@ -270,13 +268,10 @@
                 <span>客户经营</span>
               </template>
               <el-menu-item-group title="会员资产">
-                <el-menu-item index="4"><el-icon><UserFilled /></el-icon><span>会员管理</span></el-menu-item>
-                <el-menu-item index="45"><el-icon><MagicStick /></el-icon><span>用户画像</span></el-menu-item>
-                <el-menu-item index="46"><el-icon><Promotion /></el-icon><span>人群包</span></el-menu-item>
-                <el-menu-item index="47"><el-icon><DataBoard /></el-icon><span>人群对比</span></el-menu-item>
+                <el-menu-item index="4"><el-icon><UserFilled /></el-icon><span>会员经营</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="行为与互动">
-                <el-menu-item index="44"><el-icon><DataAnalysis /></el-icon><span>用户行为看板</span></el-menu-item>
+                <el-menu-item index="44"><el-icon><DataAnalysis /></el-icon><span>行为洞察</span></el-menu-item>
                 <el-menu-item index="40"><el-icon><Message /></el-icon><span>山海有信工单</span></el-menu-item>
                 <el-menu-item index="41"><el-icon><ChatDotRound /></el-icon><span>评论审核</span></el-menu-item>
                 <el-menu-item index="59"><el-icon><Document /></el-icon><span>开票申请台</span></el-menu-item>
@@ -293,28 +288,15 @@
                 <span>小程序配置</span>
               </template>
               <el-menu-item-group title="内容运营">
-                <el-menu-item index="8"><el-icon><Picture /></el-icon><span>首页轮播</span></el-menu-item>
-                <el-menu-item index="13"><el-icon><Setting /></el-icon><span>首页配置</span></el-menu-item>
+                <el-menu-item index="13"><el-icon><Setting /></el-icon><span>首页运营</span></el-menu-item>
                 <el-menu-item index="9"><el-icon><Collection /></el-icon><span>内容管理</span></el-menu-item>
                 <el-menu-item index="54"><el-icon><Notebook /></el-icon><span>养护指南</span></el-menu-item>
                 <el-menu-item index="56"><el-icon><Phone /></el-icon><span>客服入口配置</span></el-menu-item>
-                <el-menu-item index="62"><el-icon><View /></el-icon><span>内容展示开关</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="会员/营销规则">
-                <el-menu-item index="14"><el-icon><UserFilled /></el-icon><span>会员等级体系</span></el-menu-item>
-                <el-menu-item index="69"><el-icon><Sort /></el-icon><span>会员等级调整</span></el-menu-item>
-                <el-menu-item index="63"><el-icon><Trophy /></el-icon><span>荣誉馆长名单</span></el-menu-item>
-                <el-menu-item index="15"><el-icon><Ticket /></el-icon><span>门店积分规则</span></el-menu-item>
-                <el-menu-item index="66"><el-icon><Present /></el-icon><span>新会员礼包</span></el-menu-item>
-                <el-menu-item index="22"><el-icon><Trophy /></el-icon><span>成就系统配置</span></el-menu-item>
-                <el-menu-item index="20"><el-icon><Ticket /></el-icon><span>活动营销规则</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="系统/算法/通知">
-                <el-menu-item index="16"><el-icon><Calendar /></el-icon><span>预约规则配置</span></el-menu-item>
                 <el-menu-item index="19"><el-icon><MagicStick /></el-icon><span>推荐算法配置</span></el-menu-item>
                 <el-menu-item index="18"><el-icon><Search /></el-icon><span>搜索关键词管理</span></el-menu-item>
                 <el-menu-item index="24"><el-icon><ChatDotRound /></el-icon><span>通知消息配置</span></el-menu-item>
-                <el-menu-item index="23"><el-icon><DataAnalysis /></el-icon><span>用户行为追踪</span></el-menu-item>
                 <el-menu-item index="21"><el-icon><DataAnalysis /></el-icon><span>数据报表增强</span></el-menu-item>
                 <el-menu-item index="17"><el-icon><Lock /></el-icon><span>权限管理系统</span></el-menu-item>
               </el-menu-item-group>
@@ -329,7 +311,6 @@
               <el-menu-item-group title="人才组织">
                 <el-menu-item index="7"><el-icon><Brush /></el-icon><span>标本师管理</span></el-menu-item>
                 <el-menu-item index="32"><el-icon><User /></el-icon><span>员工花名册</span></el-menu-item>
-                <el-menu-item index="64"><el-icon><Lock /></el-icon><span>店员工作台权限</span></el-menu-item>
                 <el-menu-item index="31"><el-icon><Wallet /></el-icon><span>员工薪酬管理</span></el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="财务资本">
@@ -1440,7 +1421,9 @@ import {
   // 🟢 侧栏折叠（左右宽度 / 上下分组）
   Expand, Fold, ArrowUpBold, ArrowDownBold,
   // 🟢 物业合作测算
-  House
+  House,
+  // 🟢 小票审核 / 待我审批
+  Tickets, Checked
 } from '@element-plus/icons-vue'
 // 导入云开发工具
 import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnUpdate, callCloudFunction, getCdnDatabase, cdnCount, cdnQueryPage } from './cloud'
@@ -1454,17 +1437,12 @@ import ImageUploadField from './components/ImageUploadField.vue'
 // --- 动态组件引入（同步加载，保证各 Tab 稳定渲染） ---
 const FinanceDashboard = asyncWith(() => import('./components/Finance.vue'))
 import OrderCenter from './components/Orders.vue'
-import CRMSystem from './components/CRM.vue'
 import ProductAI from './components/ai/ProductAI.vue'
 import InventoryAI from './components/ai/InventoryAI.vue'
 import OperationsDecisionCenter from './components/ai/OperationsDecisionCenter.vue'
-import RealtimeMonitor from './components/RealtimeMonitor.vue'
 import Dashboard from './components/Dashboard.vue'
 import ActivityManager from './components/Activities.vue'
-import MarketingCenter from './components/Marketing.vue'
 import TeamManager from './components/Team.vue'
-import BannerManager from './components/BannerManager.vue'
-import HomeConfigManager from './components/HomeConfigManager.vue'
 import ContentManager from './components/ContentManager.vue'
 const StrategyResearch = asyncWith(() => import('./components/StrategyResearch.vue'))
 const ProductConceptGenerator = asyncWith(() => import('./components/ProductConceptGenerator.vue'))
@@ -1475,52 +1453,42 @@ import StartupCostModel from './components/StartupCostModel.vue'
 import ContentFactory from './components/ContentFactory.vue'
 const BrandVIS = asyncWith(() => import('./components/BrandVIS.vue'))
 import ComplianceCenter from './components/ComplianceCenter.vue'
-import MemberLevelConfig from './components/MemberLevelConfig.vue'
-import MemberLevelAdjust from './components/MemberLevelAdjust.vue'
-import PointsRulesConfig from './components/PointsRulesConfig.vue'
-import BookingRulesConfig from './components/BookingRulesConfig.vue'
 import PermissionManager from './components/PermissionManager.vue'
 import SearchKeywordsManager from './components/SearchKeywordsManager.vue'
 import RecommendAlgorithmConfig from './components/RecommendAlgorithmConfig.vue'
-import MarketingRulesConfig from './components/MarketingRulesConfig.vue'
 import CustomReportBuilder from './components/CustomReportBuilder.vue'
-import AchievementConfig from './components/AchievementConfig.vue'
-import UserBehaviorConfig from './components/UserBehaviorConfig.vue'
 import NotificationConfig from './components/NotificationConfig.vue'
 import OperationsManual from './components/OperationsManual.vue'
-import StoreManagement from './components/StoreManagement.vue'
 import FranchiseManagement from './components/FranchiseManagement.vue'
 import PayrollManagement from './components/PayrollManagement.vue'
 import CorporateGovernanceCenter from './components/CorporateGovernanceCenter.vue'
-import StoreDesignCenter from './components/StoreDesignCenter.vue'
 
-// 🟢 对齐小程序能力的 7 个新模块
-import Bookings from './components/Bookings.vue'
+// 合并后的 Hub 入口（子能力以 Tab 呈现，旧 id 经 moduleAliases 跳转）
+import StoreOpsHub from './components/StoreOpsHub.vue'
+import MarketingOpsHub from './components/MarketingOpsHub.vue'
+import MemberOpsHub from './components/MemberOpsHub.vue'
+import HomeOpsHub from './components/HomeOpsHub.vue'
+import BehaviorOpsHub from './components/BehaviorOpsHub.vue'
+import BookingOpsHub from './components/BookingOpsHub.vue'
+import MonitorOpsHub from './components/MonitorOpsHub.vue'
+import { hubSections } from './utils/moduleAliases'
+
+// 🟢 对齐小程序能力的模块
 import CustomOrders from './components/CustomOrders.vue'
 const FulfillmentCenter = asyncWith(() => import('./components/FulfillmentCenter.vue'))
 import PetMemorial from './components/PetMemorial.vue'
 import CareGuides from './components/CareGuides.vue'
-import StoreFrontConfig from './components/StoreFrontConfig.vue'
 import SupportConfigs from './components/SupportConfigs.vue'
-import ContentDisplayFlags from './components/ContentDisplayFlags.vue'
-import WalletConfig from './components/WalletConfig.vue'
 import PriceListManager from './components/PriceListManager.vue'
 import SupportTickets from './components/SupportTickets.vue'
 import CommentsModeration from './components/CommentsModeration.vue'
 import Refunds from './components/Refunds.vue'
 import InvoiceRequests from './components/InvoiceRequests.vue'
-import HonoraryCurators from './components/HonoraryCurators.vue'
-import StoreStaffPermissions from './components/StoreStaffPermissions.vue'
 import PlatformOrderBinds from './components/PlatformOrderBinds.vue'
 import StoreReceiptClaims from './components/StoreReceiptClaims.vue'
 import ApprovalQueue from './components/ApprovalQueue.vue'
 import ShippingRulesConfig from './components/ShippingRulesConfig.vue'
-import WelcomeGiftConfig from './components/WelcomeGiftConfig.vue'
 import Categories from './components/Categories.vue'
-import BehaviorAnalytics from './components/BehaviorAnalytics.vue'
-import UserInsights from './components/UserInsights.vue'
-import AudienceManager from './components/AudienceManager.vue'
-import CohortCompare from './components/CohortCompare.vue'
 import PropertyEval from './components/PropertyEval.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import MainTabsBar from './components/MainTabsBar.vue'
@@ -1537,55 +1505,40 @@ const TAB_COMPONENT_MAP = {
   '0': () => ({ comp: Dashboard }),
   '2': () => ({ comp: FinanceDashboard }),
   '3': () => ({ comp: OrderCenter }),
-  '4': () => ({ comp: CRMSystem }),
+  '4': () => ({ comp: MemberOpsHub, props: { initialSection: hubSections['4'] || 'crm' } }),
   '5': () => ({ comp: ActivityManager }),
-  '6': () => ({ comp: MarketingCenter }),
+  '6': () => ({ comp: MarketingOpsHub, props: { initialSection: hubSections['6'] || 'assets' } }),
   '7': () => ({ comp: TeamManager, props: { initialSection: 'framer' } }),
-  '8': () => ({ comp: BannerManager }),
   '9': () => ({ comp: ContentManager }),
   '10': () => ({ comp: StrategyResearch }),
   '58': () => ({ comp: ProductConceptGenerator }),
   '12': () => ({ comp: AICenter }),
-  '13': () => ({ comp: HomeConfigManager }),
-  '14': () => ({ comp: MemberLevelConfig }),
-  '69': () => ({ comp: MemberLevelAdjust }),
-  '63': () => ({ comp: HonoraryCurators }),
-  '64': () => ({ comp: StoreStaffPermissions }),
-  '15': () => ({ comp: PointsRulesConfig }),
-  '66': () => ({ comp: WelcomeGiftConfig }),
-  '16': () => ({ comp: BookingRulesConfig }),
+  '13': () => ({ comp: HomeOpsHub, props: { initialSection: hubSections['13'] || 'layout' } }),
   '17': () => ({ comp: PermissionManager }),
   '18': () => ({ comp: SearchKeywordsManager }),
   '19': () => ({ comp: RecommendAlgorithmConfig }),
-  '20': () => ({ comp: MarketingRulesConfig }),
   '21': () => ({ comp: CustomReportBuilder }),
-  '22': () => ({ comp: AchievementConfig }),
-  '23': () => ({ comp: UserBehaviorConfig }),
   '24': () => ({ comp: NotificationConfig }),
   '25': () => ({ comp: OperationsDecisionCenter, props: { products: products.value, orders: [] } }),
-  '26': () => ({ comp: RealtimeMonitor, props: { variant: 'live' } }),
+  '26': () => ({ comp: MonitorOpsHub, props: { initialSection: hubSections['26'] || 'live' } }),
   '27': () => ({ comp: PartnerDestinyCenter }),
   '28': () => ({ comp: ComplianceCenter }),
   '29': () => ({ comp: OperationsManual }),
-  '30': () => ({ comp: StoreManagement }),
+  '30': () => ({ comp: StoreOpsHub, props: { initialSection: hubSections['30'] || 'erp' } }),
   '31': () => ({ comp: PayrollManagement }),
   '32': () => ({ comp: TeamManager, props: { initialSection: 'staff' } }),
   '33': () => ({ comp: CorporateGovernanceCenter }),
-  '34': () => ({ comp: StoreDesignCenter }),
   '35': () => ({ comp: FranchiseManagement }),
   '36': () => ({ comp: CapitalArchitectureSandbox }),
   '50': () => ({ comp: StartupCostModel }),
   '51': () => ({ comp: ContentFactory }),
-  '37': () => ({ comp: Bookings }),
+  '37': () => ({ comp: BookingOpsHub, props: { initialSection: hubSections['37'] || 'ops' } }),
   '38': () => ({ comp: CustomOrders }),
   '52': () => ({ comp: FulfillmentCenter }),
   '53': () => ({ comp: BrandVIS }),
   '39': () => ({ comp: PetMemorial }),
   '54': () => ({ comp: CareGuides }),
-  '55': () => ({ comp: StoreFrontConfig }),
   '56': () => ({ comp: SupportConfigs }),
-  '62': () => ({ comp: ContentDisplayFlags }),
-  '68': () => ({ comp: WalletConfig }),
   '57': () => ({ comp: PriceListManager }),
   '40': () => ({ comp: SupportTickets }),
   '41': () => ({ comp: CommentsModeration }),
@@ -1596,12 +1549,8 @@ const TAB_COMPONENT_MAP = {
   '67': () => ({ comp: ApprovalQueue }),
   '61': () => ({ comp: ShippingRulesConfig }),
   '43': () => ({ comp: Categories }),
-  '44': () => ({ comp: BehaviorAnalytics }),
-  '45': () => ({ comp: UserInsights }),
-  '46': () => ({ comp: AudienceManager }),
-  '47': () => ({ comp: CohortCompare }),
-  '48': () => ({ comp: PropertyEval }),
-  '49': () => ({ comp: RealtimeMonitor, props: { variant: 'business' } })
+  '44': () => ({ comp: BehaviorOpsHub, props: { initialSection: hubSections['44'] || 'analytics' } }),
+  '48': () => ({ comp: PropertyEval })
 }
 const activeModuleDef = computed(() => {
   const factory = TAB_COMPONENT_MAP[String(currentTab.value)]

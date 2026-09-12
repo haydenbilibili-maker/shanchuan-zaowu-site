@@ -23,8 +23,8 @@ export const GROUPS = {
 export const MODULES = [
   // 总览决策
   { id: '0',  name: '经营驾驶舱', group: 'OVERVIEW', subgroup: null, icon: 'Odometer', keywords: 'dashboard cockpit jyjsc ovw 首页' },
-  { id: '26', name: '实时监控大屏 · 告警', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'monitor realtime sslg dashboard 告警刷新' },
-  { id: '49', name: '经营数据大屏 · 看板', group: 'OVERVIEW', subgroup: null, icon: 'DataBoard', keywords: 'bigscreen jydp dataviz cockpit screen 大屏 看板' },
+  { id: '26', name: '监控大屏', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'monitor realtime sslg dashboard 告警刷新 经营数据大屏 看板' },
+  { id: '49', name: '经营数据大屏 · 看板', group: 'OVERVIEW', subgroup: null, icon: 'DataBoard', keywords: 'bigscreen jydp dataviz cockpit screen 大屏 看板 已并入监控大屏' },
   { id: '25', name: '运营决策中心', group: 'OVERVIEW', subgroup: null, icon: 'Trophy', keywords: 'decision center yyjzzx ops' },
 
   // 业务运营 — 货
@@ -39,13 +39,13 @@ export const MODULES = [
   { id: '67', name: '待我审批', group: 'BUSINESS', subgroup: '货', icon: 'Checked', keywords: 'approval queue manageApprovals staff_approvals 审批 上架 店长 超管' },
   { id: '61', name: '运费与包邮规则', group: 'BUSINESS', subgroup: '货', icon: 'Van', keywords: 'shipping rules yfgz 运费 包邮 shipping_rules makeOrder' },
   // 业务运营 — 场
-  { id: '37', name: '预约与核销', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约' },
+  { id: '37', name: '预约中心', group: 'BUSINESS', subgroup: '场', icon: 'Stamp', keywords: 'booking checkin yyhx 核销 预约 预约规则' },
   { id: '5',  name: '活动与排期', group: 'BUSINESS', subgroup: '场', icon: 'Calendar', keywords: 'activity event hdpc 活动' },
-  { id: '6',  name: '权益与营销', group: 'BUSINESS', subgroup: '场', icon: 'Ticket', keywords: 'marketing benefit qyyx coupon 营销' },
-  { id: '30',  name: '店铺管理', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store dpgl shop' },
-  { id: '64', name: '店员工作台权限', group: 'BUSINESS', subgroup: '场', icon: 'Lock', keywords: 'store manager staff_members manageStaff 店长 店员 权限 staffGuard 工作台 手机号 openid' },
-  { id: '55', name: 'C端门店展区', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store front zones cdmxq 这有店 store_zones' },
-  { id: '34', name: '门店设计中心', group: 'BUSINESS', subgroup: '场', icon: 'Brush', keywords: 'store design mdsjzx 装修' },
+  { id: '6',  name: '权益与营销', group: 'BUSINESS', subgroup: '场', icon: 'Ticket', keywords: 'marketing benefit qyyx coupon 营销 礼包 积分 成就 钱包 活动规则' },
+  { id: '30', name: '门店中心', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store dpgl shop 展区 设计 店员权限 这有店' },
+  { id: '64', name: '店员工作台权限', group: 'BUSINESS', subgroup: '场', icon: 'Lock', keywords: 'store manager staff_members manageStaff 店长 店员 权限 staffGuard 工作台 手机号 openid 已并入门店中心' },
+  { id: '55', name: 'C端门店展区', group: 'BUSINESS', subgroup: '场', icon: 'Shop', keywords: 'store front zones cdmxq 这有店 store_zones 已并入门店中心' },
+  { id: '34', name: '门店设计中心', group: 'BUSINESS', subgroup: '场', icon: 'Brush', keywords: 'store design mdsjzx 装修 已并入门店中心' },
   { id: '35', name: '加盟商管理', group: 'BUSINESS', subgroup: '场', icon: 'Promotion', keywords: 'franchise jmsgl 加盟' },
   { id: '48', name: '物业合作测算', group: 'BUSINESS', subgroup: '场', icon: 'House', keywords: 'property eval rent revenue wyhz 物业 测算 房租 分润' },
   // 业务运营 — 定制工坊
@@ -53,12 +53,12 @@ export const MODULES = [
   { id: '39', name: '伴宠记忆订单', group: 'BUSINESS', subgroup: '定制工坊', icon: 'Avatar', keywords: 'pet memorial bcjy 宠物' },
 
   // 客户经营 — 会员资产
-  { id: '4',  name: '会员 CRM', group: 'CUSTOMER', subgroup: '会员资产', icon: 'UserFilled', keywords: 'crm member hycrm 会员' },
-  { id: '45', name: '用户画像', group: 'CUSTOMER', subgroup: '会员资产', icon: 'MagicStick', keywords: 'profile rfm yhhx 画像' },
-  { id: '46', name: '人群包', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Promotion', keywords: 'audience rqb cohort' },
-  { id: '47', name: '人群对比', group: 'CUSTOMER', subgroup: '会员资产', icon: 'DataBoard', keywords: 'cohort compare rqdb' },
+  { id: '4',  name: '会员经营', group: 'CUSTOMER', subgroup: '会员资产', icon: 'UserFilled', keywords: 'crm member hycrm 会员 画像 人群 等级 荣誉馆长' },
+  { id: '45', name: '用户画像', group: 'CUSTOMER', subgroup: '会员资产', icon: 'MagicStick', keywords: 'profile rfm yhhx 画像 已并入会员经营' },
+  { id: '46', name: '人群包', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Promotion', keywords: 'audience rqb cohort 已并入会员经营' },
+  { id: '47', name: '人群对比', group: 'CUSTOMER', subgroup: '会员资产', icon: 'DataBoard', keywords: 'cohort compare rqdb 已并入会员经营' },
   // 客户经营 — 行为与互动
-  { id: '44', name: 'C 端行为看板', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'DataAnalysis', keywords: 'behavior analytics cdxwkb event' },
+  { id: '44', name: '行为洞察', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'DataAnalysis', keywords: 'behavior analytics cdxwkb event 追踪配置' },
   { id: '40', name: '山海有信工单', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'Message', keywords: 'support ticket shyxgd 客服 工单' },
   { id: '41', name: '评论审核', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'ChatDotRound', keywords: 'comment plsh moderation 评论' },
   { id: '59', name: '开票申请台', group: 'CUSTOMER', subgroup: '行为与互动', icon: 'Document', keywords: 'invoice manageInvoiceRequests kpsq 开票 发票' },
@@ -66,27 +66,27 @@ export const MODULES = [
   { id: '51', name: '内容工厂', group: 'CUSTOMER', subgroup: '内容营销', icon: 'VideoCamera', keywords: 'content factory nrgc 内容 营销 选题 话术' },
 
   // 小程序配置 — 内容运营
-  { id: '8',  name: '首页轮播', group: 'MINIAPP', subgroup: '内容运营', icon: 'Picture', keywords: 'banner sylb carousel' },
-  { id: '13', name: '首页配置', group: 'MINIAPP', subgroup: '内容运营', icon: 'Setting', keywords: 'home config sypz layout' },
+  { id: '8',  name: '首页轮播', group: 'MINIAPP', subgroup: '内容运营', icon: 'Picture', keywords: 'banner sylb carousel 已并入首页运营' },
+  { id: '13', name: '首页运营', group: 'MINIAPP', subgroup: '内容运营', icon: 'Setting', keywords: 'home config sypz layout 轮播 展示开关' },
   { id: '9',  name: '内容管理', group: 'MINIAPP', subgroup: '内容运营', icon: 'Collection', keywords: 'content cms nrgl article' },
   { id: '54', name: '养护指南', group: 'MINIAPP', subgroup: '内容运营', icon: 'Notebook', keywords: 'care guides yhzh specimen care' },
   { id: '56', name: '客服入口配置', group: 'MINIAPP', subgroup: '内容运营', icon: 'Phone', keywords: 'support config kf rk 联系专员 FAQ getSupportConfig' },
-  { id: '62', name: '内容展示开关', group: 'MINIAPP', subgroup: '内容运营', icon: 'View', keywords: 'content display flags 展示开关 标本档案 山海社区 标本定制 AI鉴定 showAiIdentify getContentDisplayFlags' },
-  // 小程序配置 — 会员/营销规则
-  { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'UserFilled', keywords: 'member level hydjtx vip' },
-  { id: '69', name: '会员等级调整', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Sort', keywords: 'member level adjust 等级调整 levelOverride manageMemberLevelAdjust 调级' },
-  { id: '63', name: '荣誉馆长名单', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'honorary curator 荣誉馆长 lv99 isHonorary manageHonoraryCurators' },
-  { id: '15', name: '门店积分规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz store_point_rules' },
-  { id: '66', name: '新会员礼包', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Present', keywords: 'welcome gift register 新会员礼包 注册礼 积分 礼券 member_welcome_gift' },
-  { id: '68', name: '我的钱包', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Wallet', keywords: 'wallet stored value 钱包 充值 支付折扣 manageStoredValue showStoredValue' },
-  { id: '22', name: '成就系统配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'achievement cjxt badge' },
-  { id: '20', name: '活动营销规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'marketing rule hdyx coupon' },
+  { id: '62', name: '内容展示开关', group: 'MINIAPP', subgroup: '内容运营', icon: 'View', keywords: 'content display flags 展示开关 标本档案 山海社区 标本定制 AI鉴定 showAiIdentify getContentDisplayFlags 已并入首页运营' },
+  // 小程序配置 — 会员/营销规则（已并入会员经营 / 权益营销，保留搜索别名）
+  { id: '14', name: '会员等级体系', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'UserFilled', keywords: 'member level hydjtx vip 已并入会员经营' },
+  { id: '69', name: '会员等级调整', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Sort', keywords: 'member level adjust 等级调整 levelOverride manageMemberLevelAdjust 调级 已并入会员经营' },
+  { id: '63', name: '荣誉馆长名单', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'honorary curator 荣誉馆长 lv99 isHonorary manageHonoraryCurators 已并入会员经营' },
+  { id: '15', name: '门店积分规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'point rule jfgz store_point_rules 已并入权益营销' },
+  { id: '66', name: '新会员礼包', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Present', keywords: 'welcome gift register 新会员礼包 注册礼 积分 礼券 member_welcome_gift 已并入权益营销' },
+  { id: '68', name: '我的钱包', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Wallet', keywords: 'wallet stored value 钱包 充值 支付折扣 manageStoredValue showStoredValue 已并入权益营销' },
+  { id: '22', name: '成就系统配置', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Trophy', keywords: 'achievement cjxt badge 已并入权益营销' },
+  { id: '20', name: '活动营销规则', group: 'MINIAPP', subgroup: '会员/营销规则', icon: 'Ticket', keywords: 'marketing rule hdyx coupon 已并入权益营销' },
   // 小程序配置 — 系统/算法/通知
-  { id: '16', name: '预约规则配置', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'Calendar', keywords: 'booking rule yygz slot' },
+  { id: '16', name: '预约规则配置', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'Calendar', keywords: 'booking rule yygz slot 已并入预约中心' },
   { id: '19', name: '推荐算法配置', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'MagicStick', keywords: 'recommend algorithm tjsf rec' },
   { id: '18', name: '搜索关键词管理', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'Search', keywords: 'search keyword sshjc' },
   { id: '24', name: '通知消息配置', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'ChatDotRound', keywords: 'notification message tzxx push' },
-  { id: '23', name: '用户行为追踪', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'DataAnalysis', keywords: 'behavior track yhxw event' },
+  { id: '23', name: '用户行为追踪', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'DataAnalysis', keywords: 'behavior track yhxw event 已并入行为洞察' },
   { id: '21', name: '数据报表增强', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'DataAnalysis', keywords: 'report sjbb' },
   { id: '17', name: '权限管理系统', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'Lock', keywords: 'permission rbac qxgl' },
 

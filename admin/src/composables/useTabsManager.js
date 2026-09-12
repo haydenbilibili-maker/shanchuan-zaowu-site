@@ -8,6 +8,7 @@
  */
 import { ref, watch } from 'vue'
 import { MODULES_BY_ID } from '../utils/modulesRegistry'
+import { resolveModuleOpen } from '../utils/moduleAliases'
 
 const TABS_KEY = 'sc_admin_open_tabs'
 const ACTIVE_KEY = 'sc_admin_tab_active'
@@ -16,24 +17,36 @@ const MAX_TABS = 12  // 软上限，超过会提示
 // 兜底工厂：每次返回新对象，避免共享引用被 togglePin 突变
 const fallbackTabs = () => [{ id: '0', pinned: false }]
 
+function normalizeTabId(rawId) {
+  const resolved = resolveModuleOpen(rawId)
+  return MODULES_BY_ID[resolved] ? resolved : null
+}
+
 function loadTabs() {
   try {
     const raw = localStorage.getItem(TABS_KEY)
     if (!raw) return fallbackTabs() // 默认开"经营驾驶舱"
     const arr = JSON.parse(raw)
     if (!Array.isArray(arr)) return fallbackTabs()
-    // 统一归一化为 {id, pinned} 对象；过滤已被注册表删除的模块 id
-    const list = arr
-      .filter(t => t && MODULES_BY_ID[typeof t === 'string' ? t : t.id])
-      .map(t => typeof t === 'string' ? { id: t, pinned: false } : t)
+    // 统一归一化为 {id, pinned}；别名 id 合并到 Hub 主入口并去重
+    const seen = new Set()
+    const list = []
+    for (const t of arr) {
+      if (!t) continue
+      const rawId = typeof t === 'string' ? t : t.id
+      const id = normalizeTabId(rawId)
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      list.push({ id, pinned: typeof t === 'string' ? false : !!t.pinned })
+    }
     // 全部条目失效（如模块 id 迭代删除）时回退默认，避免空标签条
     return list.length ? list : fallbackTabs()
   } catch (e) { return fallbackTabs() }
 }
 function loadActive() {
   try {
-    const v = localStorage.getItem(ACTIVE_KEY)
-    if (v && MODULES_BY_ID[v]) return v
+    const v = normalizeTabId(localStorage.getItem(ACTIVE_KEY))
+    if (v) return v
   } catch (e) {}
   return '0'
 }
@@ -58,10 +71,11 @@ watch(openTabs, persistTabs, { deep: true })
 watch(activeTabId, persistActive)
 
 export function useTabsManager() {
-  /** 打开（或激活）一个 tab */
+  /** 打开（或激活）一个 tab（别名 id 自动落到合并后的 Hub） */
   const openTab = (moduleId) => {
-    if (!MODULES_BY_ID[moduleId]) return
-    const exists = openTabs.value.find(t => t.id === moduleId)
+    const id = normalizeTabId(moduleId)
+    if (!id) return
+    const exists = openTabs.value.find(t => t.id === id)
     if (!exists) {
       if (openTabs.value.length >= MAX_TABS) {
         // 关掉最旧的未固定标签
@@ -70,9 +84,9 @@ export function useTabsManager() {
           openTabs.value = openTabs.value.filter(t => t.id !== oldestUnpinned.id)
         }
       }
-      openTabs.value = [...openTabs.value, { id: moduleId, pinned: false }]
+      openTabs.value = [...openTabs.value, { id, pinned: false }]
     }
-    activeTabId.value = moduleId
+    activeTabId.value = id
   }
 
   /** 关闭一个 tab */

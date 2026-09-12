@@ -5,6 +5,7 @@
  */
 import { ref, computed } from 'vue'
 import { MODULES_BY_ID } from '../utils/modulesRegistry'
+import { resolveModuleOpen } from '../utils/moduleAliases'
 
 export const RECENT_MODULES_KEY = 'sc_admin_recent_modules'
 export const RECENT_CHANGED_EVENT = 'recent-changed'
@@ -17,9 +18,15 @@ function loadRecentIds() {
     if (!raw) return []
     const arr = JSON.parse(raw)
     if (!Array.isArray(arr)) return []
-    return arr
-      .map((id) => String(id))
-      .filter((id) => MODULES_BY_ID[id])
+    const seen = new Set()
+    const out = []
+    for (const rawId of arr) {
+      const id = resolveModuleOpen(String(rawId))
+      if (!MODULES_BY_ID[id] || seen.has(id)) continue
+      seen.add(id)
+      out.push(id)
+    }
+    return out
   } catch {
     return []
   }
@@ -40,7 +47,7 @@ function persistRecentIds(ids) {
 const recentIds = ref(loadRecentIds())
 
 function isRecordableModuleId(moduleId) {
-  const id = String(moduleId || '')
+  const id = resolveModuleOpen(moduleId)
   if (!id) return false
   if (id.startsWith('grp-') || id.startsWith('sub-')) return false
   return Boolean(MODULES_BY_ID[id])
@@ -53,7 +60,7 @@ export function useRecentModules() {
 
   const recordRecent = (moduleId) => {
     if (!isRecordableModuleId(moduleId)) return
-    const id = String(moduleId)
+    const id = resolveModuleOpen(moduleId)
     recentIds.value = [id, ...recentIds.value.filter((x) => x !== id)].slice(0, RECENT_MAX)
     persistRecentIds(recentIds.value)
   }
