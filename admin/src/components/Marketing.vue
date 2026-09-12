@@ -32,7 +32,7 @@
             <el-table-column prop="condition" label="门槛" />
             <el-table-column label="渠道" width="110">
               <template #default="{ row }">
-                {{ row.channel === 'store' ? '仅门店' : (row.channel === 'all' ? '线上+门店' : '仅线上') }}
+                {{ channelLabel(row.channel) }}
               </template>
             </el-table-column>
             <el-table-column label="状态" width="100">
@@ -85,7 +85,7 @@
             </el-table-column>
             <el-table-column label="渠道" width="100">
               <template #default="{ row }">
-                <span v-if="row.type === 'coupon'">{{ row.channel === 'store' ? '仅门店' : (row.channel === 'all' ? '线上+门店' : '仅线上') }}</span>
+                <span v-if="row.type === 'coupon'">{{ channelLabel(row.channel) }}</span>
                 <span v-else>-</span>
               </template>
             </el-table-column>
@@ -261,8 +261,8 @@
           <el-form-item label="优惠券名"><el-input v-model="form.name" placeholder="如：新客立减券" /></el-form-item>
           <el-form-item label="类型">
             <el-radio-group v-model="form.type">
-              <el-radio label="cash">满减券(元)</el-radio>
-              <el-radio label="discount">折扣券(折)</el-radio>
+              <el-radio value="cash">满减券(元)</el-radio>
+              <el-radio value="discount">折扣券(折)</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="面额/数值"><el-input-number v-model="form.value" :min="0.1" :precision="1" /></el-form-item>
@@ -275,9 +275,9 @@
           <el-form-item label="每人限领"><el-input-number v-model="form.limitPerUser" :min="0" :precision="0" /></el-form-item>
           <el-form-item label="适用渠道">
             <el-radio-group v-model="form.channel">
-              <el-radio label="online">仅线上商城</el-radio>
-              <el-radio label="store">仅门店</el-radio>
-              <el-radio label="all">线上+门店</el-radio>
+              <el-radio value="online">仅线上商城</el-radio>
+              <el-radio value="store">仅门店</el-radio>
+              <el-radio value="all">线上+门店</el-radio>
             </el-radio-group>
           </el-form-item>
         </template>
@@ -286,9 +286,9 @@
           <el-form-item label="标题"><el-input v-model="form.title" placeholder="如：50 元优惠券" /></el-form-item>
           <el-form-item label="类型">
             <el-radio-group v-model="form.type">
-              <el-radio label="coupon">优惠券</el-radio>
-              <el-radio label="goods">实物</el-radio>
-              <el-radio label="virtual">虚拟核销</el-radio>
+              <el-radio value="coupon">优惠券</el-radio>
+              <el-radio value="goods">实物</el-radio>
+              <el-radio value="virtual">虚拟核销</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="所需积分"><el-input-number v-model="form.cost" :min="1" /></el-form-item>
@@ -299,9 +299,9 @@
           <el-form-item v-if="form.type === 'coupon'" label="每人限兑"><el-input-number v-model="form.limitPerUser" :min="0" /></el-form-item>
           <el-form-item v-if="form.type === 'coupon'" label="适用渠道">
             <el-radio-group v-model="form.channel">
-              <el-radio label="online">仅线上</el-radio>
-              <el-radio label="store">仅门店</el-radio>
-              <el-radio label="all">线上+门店</el-radio>
+              <el-radio value="online">仅线上</el-radio>
+              <el-radio value="store">仅门店</el-radio>
+              <el-radio value="all">线上+门店</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="图片">
@@ -323,9 +323,9 @@
           <el-form-item label="售卖价格"><el-input-number v-model="form.price" :min="0" /> 元/年</el-form-item>
           <el-form-item label="卡面风格">
             <el-radio-group v-model="form.styleType">
-              <el-radio label="black">黑金尊享</el-radio>
-              <el-radio label="silver">流光白银</el-radio>
-              <el-radio label="red">故宫丹红</el-radio>
+              <el-radio value="black">黑金尊享</el-radio>
+              <el-radio value="silver">流光白银</el-radio>
+              <el-radio value="red">故宫丹红</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="权益列表">
@@ -366,6 +366,46 @@ import { Plus, Edit, Delete, Ticket, Connection, Select, Picture, Minus } from '
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ImageUploadField from './ImageUploadField.vue'
 
+const CHANNEL_OPTIONS = ['online', 'store', 'all']
+
+function normalizeChannel(raw) {
+  const s = String(raw || '').trim().toLowerCase()
+  return CHANNEL_OPTIONS.includes(s) ? s : 'online'
+}
+
+function emptyForm(module = 'coupon') {
+  return {
+    _id: null,
+    name: '',
+    type: module === 'reward' ? 'coupon' : 'cash',
+    value: module === 'coupon' || module === 'reward' ? 10 : 0,
+    condition: '无门槛',
+    active: true,
+    level: 1,
+    price: 99,
+    styleType: 'black',
+    privileges: ['全场88折'],
+    title: '',
+    subTitle: '',
+    stock: 99,
+    cost: 100,
+    description: '',
+    image: '',
+    minSpend: 0,
+    isOffShelf: false,
+    expireDays: 30,
+    limitPerUser: 0,
+    channel: 'online'
+  }
+}
+
+function channelLabel(ch) {
+  const c = normalizeChannel(ch)
+  if (c === 'store') return '仅门店'
+  if (c === 'all') return '线上+门店'
+  return '仅线上'
+}
+
 // --- 状态定义 ---
 const activeModule = ref('coupon') // coupon | reward | vip | virtual
 const loading = ref(false)
@@ -379,14 +419,7 @@ const onImageUploading = (v) => {
 }
 
 // 表单模型 (由所有模块共用，按需取值)
-const form = reactive({
-  _id: null,
-  name: '', type: 'cash', value: 0, condition: '', active: true, // Coupon
-  level: 1, price: 0, styleType: 'black', privileges: [], // VIP
-  title: '', subTitle: '', stock: 99, // Virtual / Reward
-  cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false,
-  expireDays: 30, limitPerUser: 0, channel: 'online' // Coupon / Reward · 热更新
-})
+const form = reactive(emptyForm('coupon'))
 
 // --- 样式辅助 ---
 const getCardStyle = (type) => {
@@ -461,26 +494,27 @@ const dialogTitle = computed(() => {
 const openEditor = (module) => {
   isEditing.value = false
   imageUploading.value = false
-  // 重置表单
-  Object.assign(form, {
-    _id: null,
-    name: '', type: module === 'reward' ? 'coupon' : 'cash', value: 10, condition: '无门槛', active: true,
-    level: 1, price: 99, styleType: 'black', privileges: ['全场88折'],
-    title: '', subTitle: '', stock: 99,
-    cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false,
-    expireDays: 30, limitPerUser: 0, channel: 'online'
-  })
-  // 将预览切到当前表单
-  previewItem.value = form
+  Object.assign(form, emptyForm(module))
+  previewItem.value = { ...form }
   dialogVisible.value = true
 }
 
 const editItem = (row) => {
   isEditing.value = true
   imageUploading.value = false
-  const { httpImage: _httpImage, ...rest } = row
-  Object.assign(form, rest)
-  previewItem.value = form
+  const base = emptyForm(activeModule.value)
+  const { httpImage: _httpImage, _openid, _createTime, ...rest } = row || {}
+  Object.assign(form, base, rest, {
+    _id: row && row._id ? row._id : null,
+    channel: normalizeChannel(row && row.channel),
+    minSpend: Number(row && row.minSpend) || 0,
+    value: Number(row && row.value) || 0,
+    expireDays: parseInt(row && row.expireDays, 10) > 0 ? parseInt(row.expireDays, 10) : 30,
+    limitPerUser: parseInt(row && row.limitPerUser, 10) || 0,
+    active: row && row.active !== false,
+    isOffShelf: !!(row && row.isOffShelf)
+  })
+  previewItem.value = { ...form }
   dialogVisible.value = true
 }
 
@@ -492,6 +526,65 @@ const removePrivilege = (idx) => {
   form.privileges.splice(idx, 1)
 }
 
+function buildCouponPayload() {
+  const name = String(form.name || '').trim()
+  const minSpend = Number(form.minSpend) || 0
+  const channel = normalizeChannel(form.channel)
+  return {
+    name,
+    type: form.type === 'discount' ? 'discount' : 'cash',
+    value: Number(form.value) || 0,
+    minSpend,
+    condition: String(form.condition || '').trim() || (minSpend > 0 ? `满${minSpend}可用` : '无门槛'),
+    expireDays: parseInt(form.expireDays, 10) > 0 ? parseInt(form.expireDays, 10) : 30,
+    limitPerUser: parseInt(form.limitPerUser, 10) || 0,
+    channel,
+    active: form.active !== false,
+    updateTime: Date.now()
+  }
+}
+
+function buildRewardPayload() {
+  return {
+    title: String(form.title || '').trim(),
+    type: form.type || 'coupon',
+    cost: parseInt(form.cost, 10) || 0,
+    stock: parseInt(form.stock, 10) || 0,
+    value: Number(form.value) || 0,
+    minSpend: Number(form.minSpend) || 0,
+    expireDays: parseInt(form.expireDays, 10) > 0
+      ? parseInt(form.expireDays, 10)
+      : (form.type === 'coupon' ? 30 : 0),
+    limitPerUser: parseInt(form.limitPerUser, 10) || 0,
+    channel: normalizeChannel(form.channel),
+    isOffShelf: isEditing.value ? !!form.isOffShelf : false,
+    image: String(form.image || '').trim(),
+    description: String(form.description || '').trim(),
+    updateTime: Date.now()
+  }
+}
+
+function buildVipPayload() {
+  return {
+    name: String(form.name || '').trim(),
+    level: parseInt(form.level, 10) || 1,
+    price: Number(form.price) || 0,
+    styleType: form.styleType || 'black',
+    privileges: (form.privileges || []).map((p) => String(p || '').trim()).filter(Boolean),
+    updateTime: Date.now()
+  }
+}
+
+function buildVirtualPayload() {
+  return {
+    title: String(form.title || '').trim(),
+    subTitle: String(form.subTitle || '').trim(),
+    price: Number(form.price) || 0,
+    stock: parseInt(form.stock, 10) || 0,
+    updateTime: Date.now()
+  }
+}
+
 // --- 核心 CRUD ---
 const saveData = async () => {
   if (imageUploading.value) {
@@ -500,58 +593,16 @@ const saveData = async () => {
   }
 
   const colName = getCollectionName()
-  const data = { ...form }
-  delete data._id // 插入/更新时不带 ID
-  
-  // 清理空权益
-  if(data.privileges) data.privileges = data.privileges.filter(p => p.trim() !== '')
+  let data = null
 
   if (activeModule.value === 'coupon') {
-    data.name = String(data.name || '').trim()
-    data.type = data.type === 'discount' ? 'discount' : 'cash'
-    data.value = Number(data.value) || 0
-    data.minSpend = Number(data.minSpend) || 0
-    if (!data.condition) {
-      data.condition = data.minSpend > 0 ? `满${data.minSpend}可用` : '无门槛'
-    }
-    data.expireDays = parseInt(data.expireDays, 10) > 0 ? parseInt(data.expireDays, 10) : 30
-    data.limitPerUser = parseInt(data.limitPerUser, 10) || 0
-    data.channel = ['online', 'store', 'all'].includes(data.channel) ? data.channel : 'online'
-    data.active = data.active !== false
+    data = buildCouponPayload()
     if (!data.name) {
       ElMessage.warning('请填写优惠券名')
       return
     }
-    delete data.title
-    delete data.cost
-    delete data.stock
-    delete data.description
-    delete data.image
-    delete data.isOffShelf
-    delete data.level
-    delete data.price
-    delete data.styleType
-    delete data.privileges
-    delete data.subTitle
-  }
-
-  if (activeModule.value === 'reward') {
-    // 对齐小程序积分中心 / exchangeCoupon / redeemReward 读模型
-    data.type = data.type || 'coupon'
-    data.cost = parseInt(data.cost, 10) || 0
-    data.stock = parseInt(data.stock, 10) || 0
-    data.value = Number(data.value) || 0
-    data.minSpend = Number(data.minSpend) || 0
-    data.expireDays = parseInt(data.expireDays, 10) > 0
-      ? parseInt(data.expireDays, 10)
-      : (data.type === 'coupon' ? 30 : 0)
-    data.limitPerUser = parseInt(data.limitPerUser, 10) || 0
-    data.channel = ['online', 'store', 'all'].includes(data.channel) ? data.channel : 'online'
-    // 小程序上架语义：未明确下架即可展示；新建默认上架
-    data.isOffShelf = isEditing.value ? !!data.isOffShelf : false
-    data.image = String(data.image || '').trim()
-    data.description = String(data.description || '').trim()
-    data.title = String(data.title || '').trim()
+  } else if (activeModule.value === 'reward') {
+    data = buildRewardPayload()
     if (!data.title) {
       ElMessage.warning('请填写标题')
       return
@@ -560,28 +611,34 @@ const saveData = async () => {
       ElMessage.warning('请先上传图片，再保存配置')
       return
     }
-    delete data.httpImage
-    delete data.name
-    delete data.condition
-    delete data.active
-    delete data.level
-    delete data.price
-    delete data.styleType
-    delete data.privileges
-    delete data.subTitle
+  } else if (activeModule.value === 'vip') {
+    data = buildVipPayload()
+    if (!data.name) {
+      ElMessage.warning('请填写卡片名称')
+      return
+    }
+  } else if (activeModule.value === 'virtual') {
+    data = buildVirtualPayload()
+    if (!data.title) {
+      ElMessage.warning('请填写商品标题')
+      return
+    }
+  } else {
+    ElMessage.warning('未知模块')
+    return
   }
 
   try {
     if (isEditing.value && form._id) {
       await cdnUpdate(colName, form._id, data)
     } else {
-      data.createTime = new Date().getTime()
+      data.createTime = Date.now()
       await cdnAdd(colName, data)
     }
-    ElMessage.success('保存成功')
+    ElMessage.success(`保存成功${data.channel ? `（渠道：${channelLabel(data.channel)}）` : ''}`)
     dialogVisible.value = false
     imageUploading.value = false
-    refreshData()
+    await refreshData()
   } catch (e) {
     ElMessage.error('保存失败：' + (e?.message || '请检查数据库集合是否存在'))
   }
