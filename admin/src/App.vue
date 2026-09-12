@@ -84,24 +84,14 @@
                 <div class="brand-sub">管理后台</div>
               </div>
               <div v-if="!sidebarCollapsed" class="brand-actions">
-                <el-tooltip content="收起全部分组" placement="bottom" :show-after="400">
+                <el-tooltip :content="recentCollapsed ? '展开最近常用' : '收起最近常用'" placement="bottom" :show-after="400">
                   <el-button
                     class="collapse-btn collapse-btn--groups"
                     link
-                    aria-label="收起全部分组"
-                    @click="collapseAllGroups"
+                    :aria-label="recentCollapsed ? '展开最近常用' : '收起最近常用'"
+                    @click="toggleRecentCollapsed"
                   >
-                    <el-icon><ArrowUpBold /></el-icon>
-                  </el-button>
-                </el-tooltip>
-                <el-tooltip content="展开全部分组" placement="bottom" :show-after="400">
-                  <el-button
-                    class="collapse-btn collapse-btn--groups"
-                    link
-                    aria-label="展开全部分组"
-                    @click="expandAllGroups"
-                  >
-                    <el-icon><ArrowDownBold /></el-icon>
+                    <el-icon><component :is="recentCollapsed ? ArrowDownBold : ArrowUpBold" /></el-icon>
                   </el-button>
                 </el-tooltip>
                 <el-tooltip content="一键缩放侧栏 ⌘B" placement="bottom" :show-after="400">
@@ -141,24 +131,14 @@
               <div class="brand-sub">管理后台</div>
             </div>
             <div class="brand-actions">
-              <el-tooltip content="收起全部分组" placement="bottom" :show-after="400">
+              <el-tooltip :content="recentCollapsed ? '展开最近常用' : '收起最近常用'" placement="bottom" :show-after="400">
                 <el-button
                   class="collapse-btn collapse-btn--groups"
                   link
-                  aria-label="收起全部分组"
-                  @click="collapseAllGroups"
+                  :aria-label="recentCollapsed ? '展开最近常用' : '收起最近常用'"
+                  @click="toggleRecentCollapsed"
                 >
-                  <el-icon><ArrowUpBold /></el-icon>
-                </el-button>
-              </el-tooltip>
-              <el-tooltip content="展开全部分组" placement="bottom" :show-after="400">
-                <el-button
-                  class="collapse-btn collapse-btn--groups"
-                  link
-                  aria-label="展开全部分组"
-                  @click="expandAllGroups"
-                >
-                  <el-icon><ArrowDownBold /></el-icon>
+                  <el-icon><component :is="recentCollapsed ? ArrowDownBold : ArrowUpBold" /></el-icon>
                 </el-button>
               </el-tooltip>
               <button type="button" class="mobile-sidebar-close" aria-label="关闭菜单" @click="mobileMenuVisible = false">
@@ -181,7 +161,7 @@
 
           <!-- 🟢 置顶收藏夹（折叠时隐藏） -->
           <div v-if="pinnedModules.length && (!sidebarCollapsed || isMobile)" class="pinned-section">
-            <div class="pinned-title">⭐ 置顶</div>
+            <div class="pinned-title">PINNED · 置顶</div>
             <div
               v-for="m in pinnedModules"
               :key="m.id"
@@ -195,7 +175,7 @@
           </div>
 
           <!-- 🟢 最近常用（进入菜单路由后写入；无记录时隐藏） -->
-          <div v-if="recentModules.length && (!sidebarCollapsed || isMobile)" class="recent-section">
+          <div v-if="recentModules.length && !recentCollapsed && (!sidebarCollapsed || isMobile)" class="recent-section">
             <div class="recent-title">RECENT · 最近常用</div>
             <div
               v-for="m in recentModules"
@@ -212,128 +192,24 @@
           <el-menu
             :collapse="sidebarCollapsed && !isMobile"
             ref="sideMenuRef"
-            :default-active="currentTab"
-            :default-openeds="defaultOpeneds"
+            :default-active="sidebarActiveIndex"
             active-text-color="#ffffff"
             background-color="transparent"
             text-color="rgba(245, 242, 236, 0.72)"
             class="el-menu-vertical"
-            @select="handleMenuSelect"
-            @open="handleSubMenuOpen"
-            @close="handleSubMenuClose">
+            @select="handleMenuSelect">
 
-            <!-- ============ 1. 总览决策 ============ -->
-            <el-menu-item-group title="总览决策">
+            <el-menu-item-group title="HOME">
                 <el-menu-item index="0"><el-icon><Odometer /></el-icon><span>经营驾驶舱</span></el-menu-item>
-                <el-menu-item index="26"><el-icon><Monitor /></el-icon><span>监控大屏</span></el-menu-item>
-                <el-menu-item index="25"><el-icon><Trophy /></el-icon><span>运营决策中心</span></el-menu-item>
             </el-menu-item-group>
 
-            <!-- ============ 2. 业务运营 ============ -->
-            <el-sub-menu index="grp-business">
-              <template #title>
-                <el-icon><Shop /></el-icon>
-                <span>业务运营</span>
-              </template>
-              <el-menu-item-group title="货 · 资产">
-                <el-menu-item index="1"><el-icon><Box /></el-icon><span>藏品档案库</span></el-menu-item>
-                <el-menu-item index="43"><el-icon><Menu /></el-icon><span>分类管理</span></el-menu-item>
-                <el-menu-item index="3"><el-icon><List /></el-icon><span>全渠道订单</span></el-menu-item>
-                <el-menu-item index="52"><el-icon><ShoppingCart /></el-icon><span>订货履约</span></el-menu-item>
-                <el-menu-item index="57"><el-icon><Ticket /></el-icon><span>报价单配置</span></el-menu-item>
-                <el-menu-item index="42"><el-icon><Refresh /></el-icon><span>退款审核</span></el-menu-item>
-                <el-menu-item index="60"><el-icon><Connection /></el-icon><span>订单绑定审核</span></el-menu-item>
-                <el-menu-item index="65"><el-icon><Tickets /></el-icon><span>小票兑积分审核</span></el-menu-item>
-                <el-menu-item index="67"><el-icon><Checked /></el-icon><span>待我审批</span></el-menu-item>
-                <el-menu-item index="61"><el-icon><Van /></el-icon><span>运费与包邮规则</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="场 · 体验">
-                <el-menu-item index="37"><el-icon><Stamp /></el-icon><span>预约中心</span></el-menu-item>
-                <el-menu-item index="5"><el-icon><Calendar /></el-icon><span>活动与排期</span></el-menu-item>
-                <el-menu-item index="6"><el-icon><Ticket /></el-icon><span>权益与营销</span></el-menu-item>
-                <el-menu-item index="30"><el-icon><Shop /></el-icon><span>门店中心</span></el-menu-item>
-                <el-menu-item index="35"><el-icon><Promotion /></el-icon><span>加盟商管理</span></el-menu-item>
-                <el-menu-item index="48"><el-icon><House /></el-icon><span>物业合作测算</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="定制工坊">
-                <el-menu-item index="38"><el-icon><Brush /></el-icon><span>标本定制工单</span></el-menu-item>
-                <el-menu-item index="39"><el-icon><Avatar /></el-icon><span>伴宠记忆订单</span></el-menu-item>
-              </el-menu-item-group>
-            </el-sub-menu>
-
-            <!-- ============ 3. 客户经营 ============ -->
-            <el-sub-menu index="grp-customer">
-              <template #title>
-                <el-icon><UserFilled /></el-icon>
-                <span>客户经营</span>
-              </template>
-              <el-menu-item-group title="会员资产">
-                <el-menu-item index="4"><el-icon><UserFilled /></el-icon><span>会员经营</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="行为与互动">
-                <el-menu-item index="44"><el-icon><DataAnalysis /></el-icon><span>行为洞察</span></el-menu-item>
-                <el-menu-item index="40"><el-icon><Message /></el-icon><span>山海有信工单</span></el-menu-item>
-                <el-menu-item index="41"><el-icon><ChatDotRound /></el-icon><span>评论审核</span></el-menu-item>
-                <el-menu-item index="59"><el-icon><Document /></el-icon><span>开票申请台</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="内容营销">
-                <el-menu-item index="51"><el-icon><VideoCamera /></el-icon><span>内容工厂</span></el-menu-item>
-              </el-menu-item-group>
-            </el-sub-menu>
-
-            <!-- ============ 4. 小程序配置 ============ -->
-            <el-sub-menu index="grp-miniapp">
-              <template #title>
-                <el-icon><Iphone /></el-icon>
-                <span>小程序配置</span>
-              </template>
-              <el-menu-item-group title="内容运营">
-                <el-menu-item index="13"><el-icon><Setting /></el-icon><span>首页运营</span></el-menu-item>
-                <el-menu-item index="9"><el-icon><Collection /></el-icon><span>内容管理</span></el-menu-item>
-                <el-menu-item index="54"><el-icon><Notebook /></el-icon><span>养护指南</span></el-menu-item>
-                <el-menu-item index="56"><el-icon><Phone /></el-icon><span>客服入口配置</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="系统/算法/通知">
-                <el-menu-item index="19"><el-icon><MagicStick /></el-icon><span>推荐算法配置</span></el-menu-item>
-                <el-menu-item index="18"><el-icon><Search /></el-icon><span>搜索关键词管理</span></el-menu-item>
-                <el-menu-item index="24"><el-icon><ChatDotRound /></el-icon><span>通知消息配置</span></el-menu-item>
-                <el-menu-item index="21"><el-icon><DataAnalysis /></el-icon><span>数据报表增强</span></el-menu-item>
-                <el-menu-item index="17"><el-icon><Lock /></el-icon><span>权限管理系统</span></el-menu-item>
-              </el-menu-item-group>
-            </el-sub-menu>
-
-            <!-- ============ 5. 组织治理 ============ -->
-            <el-sub-menu index="grp-governance">
-              <template #title>
-                <el-icon><OfficeBuilding /></el-icon>
-                <span>组织治理</span>
-              </template>
-              <el-menu-item-group title="人才组织">
-                <el-menu-item index="7"><el-icon><Brush /></el-icon><span>标本师管理</span></el-menu-item>
-                <el-menu-item index="32"><el-icon><User /></el-icon><span>员工花名册</span></el-menu-item>
-                <el-menu-item index="31"><el-icon><Wallet /></el-icon><span>员工薪酬管理</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="财务资本">
-                <el-menu-item index="2"><el-icon><Money /></el-icon><span>财务核算系统</span></el-menu-item>
-                <el-menu-item index="36"><el-icon><DataBoard /></el-icon><span>资本架构沙盘</span></el-menu-item>
-                <el-menu-item index="50"><el-icon><TrendCharts /></el-icon><span>工作室启动成本</span></el-menu-item>
-                <el-menu-item index="27"><el-icon><DocumentCopy /></el-icon><span>合伙人命理中心</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="治理与合规">
-                <el-menu-item index="33"><el-icon><OfficeBuilding /></el-icon><span>公司治理</span></el-menu-item>
-                <el-menu-item index="28"><el-icon><Lock /></el-icon><span>合规专栏</span></el-menu-item>
-              </el-menu-item-group>
-              <el-menu-item-group title="品牌视觉">
-                <el-menu-item index="53"><el-icon><Brush /></el-icon><span>品牌 VIS</span></el-menu-item>
-              </el-menu-item-group>
-            </el-sub-menu>
-
-            <!-- ============ 6. 战略与知识 ============ -->
-            <el-menu-item-group title="战略与知识">
-                <el-menu-item index="12"><el-icon><MagicStick /></el-icon><span>智能中心</span></el-menu-item>
-                <el-menu-item index="10"><el-icon><DataAnalysis /></el-icon><span>战略调研看板</span></el-menu-item>
-                <el-menu-item index="58"><el-icon><MagicStick /></el-icon><span>爆品概念生成器</span></el-menu-item>
-                <el-menu-item index="29"><el-icon><Notebook /></el-icon><span>经营手册</span></el-menu-item>
+            <el-menu-item-group title="DOMAINS">
+                <el-menu-item index="nav-overview"><el-icon><Monitor /></el-icon><span>总览决策</span></el-menu-item>
+                <el-menu-item index="nav-business"><el-icon><Shop /></el-icon><span>业务运营</span></el-menu-item>
+                <el-menu-item index="nav-customer"><el-icon><UserFilled /></el-icon><span>客户经营</span></el-menu-item>
+                <el-menu-item index="nav-miniapp"><el-icon><Iphone /></el-icon><span>小程序配置</span></el-menu-item>
+                <el-menu-item index="nav-governance"><el-icon><OfficeBuilding /></el-icon><span>组织治理</span></el-menu-item>
+                <el-menu-item index="nav-intelligence"><el-icon><MagicStick /></el-icon><span>战略与知识</span></el-menu-item>
             </el-menu-item-group>
 
           </el-menu>
@@ -377,7 +253,15 @@
           <!-- 🟢 多标签条 + 面包屑 -->
           <MainTabsBar @open-palette="openCommandPalette" @reload="forceReloadCurrent" />
 
-          <div class="content-scroll-wrap" :class="{ 'is-embed-page': currentTab === '36' || currentTab === '50', 'is-mobile-scroll': isMobile }">
+          <div class="content-scroll-wrap" :class="{ 'is-embed-page': currentTab === '36' || currentTab === '50' || isNavHubTab, 'is-nav-hub': isNavHubTab, 'is-mobile-scroll': isMobile }">
+          <div v-if="domainContextBar" class="domain-context-bar">
+            <button type="button" class="domain-back" @click="backToDomainHub">
+              <span class="domain-back-arrow">←</span>
+              {{ domainContextBar.domainTitle }}
+            </button>
+            <span class="domain-sep" aria-hidden="true">/</span>
+            <span class="domain-current">{{ domainContextBar.moduleName }}</span>
+          </div>
           <transition name="fade-slide" mode="out-in">
             <!-- tab 1 藏品库为内联模块（依赖 App.vue 大量本地状态），不参与 keep-alive -->
             <div v-if="currentTab === '1'" :key="'1-' + reloadKey" class="module-wrapper">
@@ -731,6 +615,7 @@
                 v-bind="activeModuleDef.props"
                 :key="currentTab + '-' + reloadKey"
                 @switch-tab="handleMenuSelect"
+                @open-module="onNavHubOpen"
               />
             </keep-alive>
           </transition>
@@ -1471,7 +1356,10 @@ import HomeOpsHub from './components/HomeOpsHub.vue'
 import BehaviorOpsHub from './components/BehaviorOpsHub.vue'
 import BookingOpsHub from './components/BookingOpsHub.vue'
 import MonitorOpsHub from './components/MonitorOpsHub.vue'
-import { hubSections } from './utils/moduleAliases'
+import AdminNavHub from './components/AdminNavHub.vue'
+import { hubSections, resolveModuleOpen } from './utils/moduleAliases'
+import { getNavDomain, MODULE_TO_NAV_DOMAIN, NAV_DOMAIN_IDS } from './config/adminNavDomains'
+import { setNavOrigin, getNavOrigin } from './utils/navOrigin'
 
 // 🟢 对齐小程序能力的模块
 import CustomOrders from './components/CustomOrders.vue'
@@ -1502,6 +1390,12 @@ const { recentModules, recordRecent, loadRecent } = useRecentModules()
 // ============ 动态组件映射（替代 47 条 v-else-if 链，让 keep-alive 真正缓存组件实例） ============
 // 值为工厂函数：props 在 computed 求值时取（products 等响应式数据变更可触发更新）
 const TAB_COMPONENT_MAP = {
+  'nav-overview': () => ({ comp: AdminNavHub, props: { domainId: 'nav-overview' } }),
+  'nav-business': () => ({ comp: AdminNavHub, props: { domainId: 'nav-business' } }),
+  'nav-customer': () => ({ comp: AdminNavHub, props: { domainId: 'nav-customer' } }),
+  'nav-miniapp': () => ({ comp: AdminNavHub, props: { domainId: 'nav-miniapp' } }),
+  'nav-governance': () => ({ comp: AdminNavHub, props: { domainId: 'nav-governance' } }),
+  'nav-intelligence': () => ({ comp: AdminNavHub, props: { domainId: 'nav-intelligence' } }),
   '0': () => ({ comp: Dashboard }),
   '2': () => ({ comp: FinanceDashboard }),
   '3': () => ({ comp: OrderCenter }),
@@ -1575,18 +1469,61 @@ const currentTab = computed({
 const mobileMenuVisible = ref(false) // 移动端菜单显示状态
 const sideMenuRef = ref(null)
 
+const isNavHubTab = computed(() => String(currentTab.value || '').startsWith('nav-'))
+
+/** 侧栏高亮：功能页高亮所属业务域；导航大屏/驾驶舱高亮自身 */
+const sidebarActiveIndex = computed(() => {
+  const tab = String(currentTab.value || '')
+  if (tab === '0' || NAV_DOMAIN_IDS.includes(tab)) return tab
+  return MODULE_TO_NAV_DOMAIN[tab] || tab
+})
+
+const domainContextBar = computed(() => {
+  const tab = String(currentTab.value || '')
+  if (!tab || tab === '0' || tab.startsWith('nav-')) return null
+  const domainId = getNavOrigin(tab) || MODULE_TO_NAV_DOMAIN[tab]
+  const domain = getNavDomain(domainId)
+  if (!domain) return null
+  const mod = MODULES_BY_ID[tab]
+  return {
+    domainId: domain.id,
+    domainTitle: domain.title,
+    moduleName: mod?.name || tab,
+  }
+})
+
+const onNavHubOpen = (payload) => {
+  const id = String(payload?.id || '')
+  const domainId = String(payload?.domainId || '')
+  if (!id) return
+  if (domainId) setNavOrigin(id, domainId)
+  handleMenuSelect(id)
+}
+
+const backToDomainHub = () => {
+  const bar = domainContextBar.value
+  if (!bar?.domainId) return
+  openTabAPI(bar.domainId)
+}
+
 // 强制刷新当前 tab 的 key（reload-current 动作用）
 const reloadKey = ref(0)
 const forceReloadCurrent = () => { reloadKey.value++ }
 
 // ============ 侧栏折叠 ============
 const SIDEBAR_COLLAPSED_KEY = 'sc_admin_sidebar_collapsed'
+const RECENT_COLLAPSED_KEY = 'sc_admin_recent_collapsed'
 const sidebarCollapsed = ref(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1')
+const recentCollapsed = ref(localStorage.getItem(RECENT_COLLAPSED_KEY) === '1')
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
   try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed.value ? '1' : '0') } catch (e) {}
   // 通知依赖布局宽度的图表/表格重算
   requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
+}
+const toggleRecentCollapsed = () => {
+  recentCollapsed.value = !recentCollapsed.value
+  try { localStorage.setItem(RECENT_COLLAPSED_KEY, recentCollapsed.value ? '1' : '0') } catch (e) {}
 }
 
 // ============ 全局动作监听（命令面板触发 / 快捷键触发） ============
@@ -1715,24 +1652,18 @@ const handleSubMenuClose = (key) => {
 /** 窄栏（仅图标）模式下垂直分组控件不可用 */
 const canToggleGroups = () => !(sidebarCollapsed.value && !isMobile.value)
 
-/** 一键收起全部一级菜单分组（垂直） */
+/** 兼容命令面板：收起最近常用（侧栏已无二级分组） */
 const collapseAllGroups = () => {
   if (!canToggleGroups()) return
-  ALL_SUBMENUS.forEach((key) => {
-    try { sideMenuRef.value?.close?.(key) } catch (e) { /* 菜单未挂载时忽略 */ }
-  })
-  defaultOpeneds.value = []
-  persistOpeneds()
+  recentCollapsed.value = true
+  try { localStorage.setItem(RECENT_COLLAPSED_KEY, '1') } catch (e) {}
 }
 
-/** 一键展开全部一级菜单分组（垂直） */
+/** 兼容命令面板：展开最近常用 */
 const expandAllGroups = () => {
   if (!canToggleGroups()) return
-  ALL_SUBMENUS.forEach((key) => {
-    try { sideMenuRef.value?.open?.(key) } catch (e) { /* 菜单未挂载时忽略 */ }
-  })
-  defaultOpeneds.value = [...ALL_SUBMENUS]
-  persistOpeneds()
+  recentCollapsed.value = false
+  try { localStorage.setItem(RECENT_COLLAPSED_KEY, '0') } catch (e) {}
 }
 
 // --- 藏品模块状态 ---
@@ -1936,15 +1867,25 @@ const handleMenuSelect = (index) => {
         }
     }
 
+    const raw = String(index)
+    const resolved = resolveModuleOpen(raw)
+    // 驾驶舱 / 命令面板 / Hub 进入功能页时统一记录返回域，保证「返回」可靠
+    if (resolved && !resolved.startsWith('nav-') && resolved !== '0') {
+        const from = String(currentTab.value || '')
+        const domainId = from.startsWith('nav-')
+            ? from
+            : (MODULE_TO_NAV_DOMAIN[resolved] || null)
+        if (domainId) setNavOrigin(resolved, domainId)
+    }
+
     // 🟢 走 tabs manager：自动添加到多标签栏并激活
-    openTabAPI(String(index))
-    // 🟢 通过 Dashboard 快捷链接跳转时，自动展开对应一级分类
+    openTabAPI(raw)
     // 移动端选择菜单后自动关闭菜单
     if (isMobile.value) {
         mobileMenuVisible.value = false
     }
     // 懒加载：仅在切换到藏品库且需要时加载
-    if (index === '1') {
+    if (resolved === '1' || raw === '1') {
         try {
             const promo = sessionStorage.getItem('sc_archive_promo_filter')
             if (promo === 'seckill' || promo === 'seckill_expired' || promo === 'group' || promo === 'all') {
@@ -1962,20 +1903,9 @@ const handleMenuSelect = (index) => {
     }
 }
 
-// 跳转时自动展开所属一级分组（watch 而非 handleMenuSelect：MainTabsBar 点标签不走后者）
-// 注意：必须用 TAB_TO_GROUP 求真实存在的 sub-menu index（'grp-*'），
-// 之前写死 'sub-miniapp' 在 Element Plus 内部解构 undefined 直接抛 TypeError；
-// el-menu 的 default-openeds 只在 setup 读一次，运行时必须调 open() 才有效，
-// open() 会触发 @open → handleSubMenuOpen 自动完成 defaultOpeneds 同步与持久化
+// 记录最近常用；侧栏已无二级 submenu，不再自动 open 分组
 watch(currentTab, (tab) => {
-    // 记录最近常用（侧栏 / 标签栏 / 命令面板等所有入口都会改 currentTab）
     if (isLoggedIn.value) recordRecent(tab)
-    if (sidebarCollapsed.value) return // 折叠态没有展开概念
-    const targetGroup = TAB_TO_GROUP[tab]
-    if (!targetGroup) return
-    nextTick(() => {
-        try { sideMenuRef.value?.open?.(targetGroup) } catch (e) { /* 菜单未挂载时忽略 */ }
-    })
 }, { flush: 'post' })
 
 const MOBILE_MQ = typeof window !== 'undefined'
@@ -3984,10 +3914,11 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 }
 .el-menu-item-group__title { 
     padding: 16px 0 10px 24px !important; 
-    font-size: 12px; 
+    font-size: 10px; 
     color: var(--text-dark-muted) !important; 
-    letter-spacing: 0.5px; 
-    font-weight: 600; 
+    letter-spacing: 0.15em; 
+    font-weight: 600;
+    text-transform: uppercase;
     margin-top: 8px;
 }
 .el-menu-item { 
@@ -4312,6 +4243,53 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     flex: 1;
     overflow-y: auto;
     padding: 24px 30px;
+}
+.content-scroll-wrap.is-nav-hub {
+    padding: 0;
+    background: #f2ede4;
+}
+.content-scroll-wrap.is-embed-page:not(.is-nav-hub) {
+    padding: 0;
+}
+.domain-context-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 1px solid #e8e5de;
+    border-radius: 8px;
+}
+.domain-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #2d5a3f;
+    cursor: pointer;
+}
+.domain-back:hover {
+    color: #1b4332;
+}
+.domain-back-arrow {
+    font-size: 14px;
+}
+.domain-sep {
+    color: #d5d1c8;
+}
+.domain-current {
+    font-size: 13px;
+    color: #33302c;
+    font-weight: 500;
+}
+.content-scroll-wrap.is-nav-hub .domain-context-bar {
+    display: none;
 }
 .main-content::before {
     content: '';

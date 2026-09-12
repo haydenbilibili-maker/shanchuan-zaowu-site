@@ -1,171 +1,30 @@
 /**
- * 侧栏导航结构（单一数据源；App.vue 应对齐本文件）
- * 合并后只保留主入口，子能力在 Hub 内 Tab 切换；旧 id 仍可经命令面板搜索跳转。
+ * 侧栏导航（瘦身版）：一级只保留驾驶舱 + 各业务域导航大屏。
+ * 具体功能在 AdminNavHub 全页入口中进入；Ops Hub（门店/权益等）仍为功能内 Tab。
  */
 export const SIDEBAR_NAV = {
-  overview: {
-    key: 'overview',
-    title: '总览决策',
+  home: {
+    key: 'home',
+    title: 'HOME',
     items: [
       { id: '0', icon: 'Odometer', label: '经营驾驶舱' },
-      { id: '26', icon: 'Monitor', label: '监控大屏' },
-      { id: '25', icon: 'Trophy', label: '运营决策中心' },
     ],
   },
-  business: {
-    key: 'grp-business',
-    title: '业务运营',
-    icon: 'Shop',
-    groups: [
-      {
-        title: '交易履约',
-        items: [
-          { id: '3', icon: 'List', label: '全渠道订单' },
-          { id: '52', icon: 'ShoppingCart', label: '订货履约' },
-          { id: '57', icon: 'Ticket', label: '报价单配置' },
-          { id: '42', icon: 'Refresh', label: '退款审核' },
-          { id: '60', icon: 'Connection', label: '订单绑定审核' },
-          { id: '65', icon: 'Tickets', label: '小票兑积分审核' },
-          { id: '67', icon: 'Checked', label: '待我审批' },
-          { id: '61', icon: 'Van', label: '运费与包邮规则' },
-        ],
-      },
-      {
-        title: '商品资产',
-        items: [
-          { id: '1', icon: 'Box', label: '藏品档案库' },
-          { id: '43', icon: 'Menu', label: '分类管理' },
-        ],
-      },
-      {
-        title: '体验营销',
-        items: [
-          { id: '37', icon: 'Stamp', label: '预约中心' },
-          { id: '5', icon: 'Calendar', label: '活动与排期' },
-          { id: '6', icon: 'Ticket', label: '权益与营销' },
-        ],
-      },
-      {
-        title: '门店场域',
-        items: [
-          { id: '30', icon: 'Shop', label: '门店中心' },
-          { id: '35', icon: 'Promotion', label: '加盟商管理' },
-          { id: '48', icon: 'House', label: '物业合作测算' },
-        ],
-      },
-      {
-        title: '定制工坊',
-        items: [
-          { id: '38', icon: 'Brush', label: '标本定制工单' },
-          { id: '39', icon: 'Avatar', label: '伴宠记忆订单' },
-        ],
-      },
-    ],
-  },
-  customer: {
-    key: 'grp-customer',
-    title: '客户经营',
-    icon: 'UserFilled',
-    groups: [
-      {
-        title: '会员洞察',
-        items: [
-          { id: '4', icon: 'UserFilled', label: '会员经营' },
-        ],
-      },
-      {
-        title: '互动服务',
-        items: [
-          { id: '44', icon: 'DataAnalysis', label: '行为洞察' },
-          { id: '40', icon: 'Message', label: '山海有信' },
-          { id: '41', icon: 'ChatDotRound', label: '评论审核' },
-          { id: '59', icon: 'Document', label: '开票申请台' },
-        ],
-      },
-      {
-        title: '内容营销',
-        items: [
-          { id: '51', icon: 'VideoCamera', label: '内容工厂' },
-        ],
-      },
-    ],
-  },
-  miniapp: {
-    key: 'grp-miniapp',
-    title: '小程序配置',
-    icon: 'Iphone',
-    groups: [
-      {
-        title: '内容与首页',
-        items: [
-          { id: '13', icon: 'Setting', label: '首页运营' },
-          { id: '9', icon: 'Collection', label: '内容管理' },
-          { id: '54', icon: 'Notebook', label: '养护指南' },
-          { id: '56', icon: 'Phone', label: '客服入口配置' },
-        ],
-      },
-      {
-        title: '系统与算法',
-        items: [
-          { id: '19', icon: 'MagicStick', label: '推荐算法配置' },
-          { id: '18', icon: 'Search', label: '搜索关键词管理' },
-          { id: '24', icon: 'ChatDotRound', label: '通知消息配置' },
-          { id: '21', icon: 'DataAnalysis', label: '数据报表增强' },
-          { id: '17', icon: 'Lock', label: '权限管理系统' },
-        ],
-      },
-    ],
-  },
-  governance: {
-    key: 'grp-governance',
-    title: '组织治理',
-    icon: 'OfficeBuilding',
-    groups: [
-      {
-        title: '财务资本',
-        items: [
-          { id: '2', icon: 'Money', label: '财务核算系统' },
-          { id: '36', icon: 'DataBoard', label: '资本架构沙盘' },
-          { id: '50', icon: 'TrendCharts', label: '工作室启动成本' },
-          { id: '27', icon: 'DocumentCopy', label: '合伙人命理中心' },
-        ],
-      },
-      {
-        title: '人才组织',
-        items: [
-          { id: '7', icon: 'Brush', label: '标本师管理' },
-          { id: '32', icon: 'User', label: '员工花名册' },
-          { id: '31', icon: 'Wallet', label: '员工薪酬管理' },
-        ],
-      },
-      {
-        title: '治理合规',
-        items: [
-          { id: '33', icon: 'OfficeBuilding', label: '公司治理' },
-          { id: '28', icon: 'Lock', label: '合规专栏' },
-        ],
-      },
-      {
-        title: '品牌视觉',
-        items: [
-          { id: '53', icon: 'Brush', label: '品牌 VIS' },
-        ],
-      },
-    ],
-  },
-  intelligence: {
-    key: 'intelligence',
-    title: '战略与知识',
+  domains: {
+    key: 'domains',
+    title: 'DOMAINS',
     items: [
-      { id: '12', icon: 'MagicStick', label: '智能中心' },
-      { id: '10', icon: 'DataAnalysis', label: '战略调研看板' },
-      { id: '58', icon: 'MagicStick', label: '爆品概念生成器' },
-      { id: '29', icon: 'Notebook', label: '经营手册' },
+      { id: 'nav-overview', icon: 'Monitor', label: '总览决策' },
+      { id: 'nav-business', icon: 'Shop', label: '业务运营' },
+      { id: 'nav-customer', icon: 'UserFilled', label: '客户经营' },
+      { id: 'nav-miniapp', icon: 'Iphone', label: '小程序配置' },
+      { id: 'nav-governance', icon: 'OfficeBuilding', label: '组织治理' },
+      { id: 'nav-intelligence', icon: 'MagicStick', label: '战略与知识' },
     ],
   },
 }
 
-/** 扁平 id → label，供侧栏以外引用 */
+/** 扁平 id → label */
 export const NAV_LABEL_BY_ID = Object.values(SIDEBAR_NAV).reduce((map, section) => {
   if (section.items) {
     section.items.forEach((item) => { map[item.id] = item.label })

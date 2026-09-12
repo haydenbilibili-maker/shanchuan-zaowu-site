@@ -12,15 +12,23 @@
  */
 
 export const GROUPS = {
-  OVERVIEW: { key: 'OVERVIEW', name: '总览决策', icon: '🎯', submenuKey: null },
-  BUSINESS: { key: 'BUSINESS', name: '业务运营', icon: '🏪', submenuKey: 'grp-business' },
-  CUSTOMER: { key: 'CUSTOMER', name: '客户经营', icon: '👥', submenuKey: 'grp-customer' },
-  MINIAPP:  { key: 'MINIAPP',  name: '小程序配置', icon: '📱', submenuKey: 'grp-miniapp' },
-  GOVERNANCE: { key: 'GOVERNANCE', name: '组织治理', icon: '🏛️', submenuKey: 'grp-governance' },
-  INTELLIGENCE: { key: 'INTELLIGENCE', name: '战略与知识', icon: '🧠', submenuKey: null }
+  OVERVIEW: { key: 'OVERVIEW', name: '总览决策', icon: 'Odometer', submenuKey: null, navId: 'nav-overview' },
+  BUSINESS: { key: 'BUSINESS', name: '业务运营', icon: 'Shop', submenuKey: null, navId: 'nav-business' },
+  CUSTOMER: { key: 'CUSTOMER', name: '客户经营', icon: 'UserFilled', submenuKey: null, navId: 'nav-customer' },
+  MINIAPP:  { key: 'MINIAPP',  name: '小程序配置', icon: 'Iphone', submenuKey: null, navId: 'nav-miniapp' },
+  GOVERNANCE: { key: 'GOVERNANCE', name: '组织治理', icon: 'OfficeBuilding', submenuKey: null, navId: 'nav-governance' },
+  INTELLIGENCE: { key: 'INTELLIGENCE', name: '战略与知识', icon: 'MagicStick', submenuKey: null, navId: 'nav-intelligence' }
 }
 
 export const MODULES = [
+  // 导航大屏（侧栏一级）
+  { id: 'nav-overview', name: '总览决策', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'nav overview 总览 导航大屏' },
+  { id: 'nav-business', name: '业务运营', group: 'BUSINESS', subgroup: null, icon: 'Shop', keywords: 'nav business 业务运营 导航大屏' },
+  { id: 'nav-customer', name: '客户经营', group: 'CUSTOMER', subgroup: null, icon: 'UserFilled', keywords: 'nav customer 客户 导航大屏' },
+  { id: 'nav-miniapp', name: '小程序配置', group: 'MINIAPP', subgroup: null, icon: 'Iphone', keywords: 'nav miniapp 小程序 导航大屏' },
+  { id: 'nav-governance', name: '组织治理', group: 'GOVERNANCE', subgroup: null, icon: 'OfficeBuilding', keywords: 'nav governance 组织 治理 导航大屏' },
+  { id: 'nav-intelligence', name: '战略与知识', group: 'INTELLIGENCE', subgroup: null, icon: 'MagicStick', keywords: 'nav intelligence 战略 知识 导航大屏' },
+
   // 总览决策
   { id: '0',  name: '经营驾驶舱', group: 'OVERVIEW', subgroup: null, icon: 'Odometer', keywords: 'dashboard cockpit jyjsc ovw 首页' },
   { id: '26', name: '监控大屏', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'monitor realtime sslg dashboard 告警刷新 经营数据大屏 看板' },
@@ -210,13 +218,13 @@ export const ACTIONS = [
     event: { type: 'toggle-sidebar' }
   },
   {
-    id: 'act-sidebar-groups-collapse', label: '收起全部侧栏分组', hint: '垂直折叠业务/客户/小程序/治理等一级菜单',
-    icon: '⬆️', shortcut: '', keywords: 'sidebar groups collapse all fold vertical sqqb 收起分组',
+    id: 'act-sidebar-groups-collapse', label: '收起最近常用', hint: '隐藏侧栏「最近常用」列表',
+    icon: '⬆️', shortcut: '', keywords: 'sidebar recent collapse fold sqzj 收起最近',
     event: { type: 'sidebar-groups-collapse' }
   },
   {
-    id: 'act-sidebar-groups-expand', label: '展开全部侧栏分组', hint: '垂直展开全部一级菜单分组',
-    icon: '⬇️', shortcut: '', keywords: 'sidebar groups expand all unfold vertical zkqb 展开分组',
+    id: 'act-sidebar-groups-expand', label: '展开最近常用', hint: '显示侧栏「最近常用」列表',
+    icon: '⬇️', shortcut: '', keywords: 'sidebar recent expand unfold zkzj 展开最近',
     event: { type: 'sidebar-groups-expand' }
   },
   {
