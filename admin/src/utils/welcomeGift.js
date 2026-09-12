@@ -77,7 +77,7 @@ function normalizeCouponRow(row, index, defaultExpireDays) {
     title,
     channel: ['online', 'store', 'all'].includes(String(src.channel || ''))
       ? String(src.channel)
-      : 'online'
+      : 'all'
   }
 }
 
@@ -162,7 +162,7 @@ export function buildWelcomeGiftWritePayload(config) {
       expireDays: c.expireDays,
       count: c.count,
       title: c.title,
-      channel: c.channel || 'online'
+      channel: c.channel || 'all'
     })),
     updateTime: Date.now(),
     _updateTime: Date.now()

@@ -300,7 +300,7 @@ function addCoupon() {
     expireDays: days,
     count: 1,
     title: '新会员礼券',
-    channel: 'online'
+    channel: 'all'
   })
 }
 

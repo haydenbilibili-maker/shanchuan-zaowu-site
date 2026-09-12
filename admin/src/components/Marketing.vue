@@ -370,7 +370,7 @@ const CHANNEL_OPTIONS = ['online', 'store', 'all']
 
 function normalizeChannel(raw) {
   const s = String(raw || '').trim().toLowerCase()
-  return CHANNEL_OPTIONS.includes(s) ? s : 'online'
+  return CHANNEL_OPTIONS.includes(s) ? s : 'all'
 }
 
 function emptyForm(module = 'coupon') {
@@ -395,7 +395,7 @@ function emptyForm(module = 'coupon') {
     isOffShelf: false,
     expireDays: 30,
     limitPerUser: 0,
-    channel: 'online'
+    channel: 'all'
   }
 }
 
