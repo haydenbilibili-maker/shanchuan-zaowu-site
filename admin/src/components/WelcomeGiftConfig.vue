@@ -102,6 +102,15 @@
                 <el-input-number v-model="row.expireDays" :min="1" :precision="0" size="small" :disabled="!form.couponsEnabled" />
               </template>
             </el-table-column>
+            <el-table-column label="渠道" width="130">
+              <template #default="{ row }">
+                <el-select v-model="row.channel" size="small" :disabled="!form.couponsEnabled">
+                  <el-option label="仅线上" value="online" />
+                  <el-option label="仅门店" value="store" />
+                  <el-option label="线上+门店" value="all" />
+                </el-select>
+              </template>
+            </el-table-column>
             <el-table-column label="券标题" min-width="180">
               <template #default="{ row }">
                 <el-input v-model="row.title" size="small" :disabled="!form.couponsEnabled" />
@@ -290,7 +299,8 @@ function addCoupon() {
     minSpend: 10,
     expireDays: days,
     count: 1,
-    title: '新会员礼券'
+    title: '新会员礼券',
+    channel: 'online'
   })
 }
 

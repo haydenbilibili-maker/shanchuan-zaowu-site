@@ -30,6 +30,11 @@
               </template>
             </el-table-column>
             <el-table-column prop="condition" label="门槛" />
+            <el-table-column label="渠道" width="110">
+              <template #default="{ row }">
+                {{ row.channel === 'store' ? '仅门店' : (row.channel === 'all' ? '线上+门店' : '仅线上') }}
+              </template>
+            </el-table-column>
             <el-table-column label="状态" width="100">
               <template #default="{ row }">
                 <el-switch v-model="row.active" active-color="#27ae60" @change="toggleStatus(row, 'coupons')" />
@@ -77,6 +82,12 @@
             <el-table-column prop="stock" label="库存" width="80" />
             <el-table-column label="券面值" width="100">
               <template #default="{ row }">{{ row.type === 'coupon' ? `¥${row.value || 0}` : '-' }}</template>
+            </el-table-column>
+            <el-table-column label="渠道" width="100">
+              <template #default="{ row }">
+                <span v-if="row.type === 'coupon'">{{ row.channel === 'store' ? '仅门店' : (row.channel === 'all' ? '线上+门店' : '仅线上') }}</span>
+                <span v-else>-</span>
+              </template>
             </el-table-column>
             <el-table-column label="上架" width="90">
               <template #default="{ row }">
@@ -256,6 +267,19 @@
           </el-form-item>
           <el-form-item label="面额/数值"><el-input-number v-model="form.value" :min="0.1" :precision="1" /></el-form-item>
           <el-form-item label="使用门槛"><el-input v-model="form.condition" placeholder="如：无门槛 / 满100可用" /></el-form-item>
+          <el-form-item label="门槛金额">
+            <el-input-number v-model="form.minSpend" :min="0" :precision="0" />
+            <span class="hint" style="margin-left:8px;color:#999;font-size:12px;">写入 minSpend，小程序运行时热读</span>
+          </el-form-item>
+          <el-form-item label="有效天数"><el-input-number v-model="form.expireDays" :min="1" :precision="0" /></el-form-item>
+          <el-form-item label="每人限领"><el-input-number v-model="form.limitPerUser" :min="0" :precision="0" /></el-form-item>
+          <el-form-item label="适用渠道">
+            <el-radio-group v-model="form.channel">
+              <el-radio label="online">仅线上商城</el-radio>
+              <el-radio label="store">仅门店</el-radio>
+              <el-radio label="all">线上+门店</el-radio>
+            </el-radio-group>
+          </el-form-item>
         </template>
 
         <template v-if="activeModule === 'reward'">
@@ -271,6 +295,15 @@
           <el-form-item label="库存"><el-input-number v-model="form.stock" :min="0" /></el-form-item>
           <el-form-item v-if="form.type === 'coupon'" label="券面值"><el-input-number v-model="form.value" :min="0" /></el-form-item>
           <el-form-item v-if="form.type === 'coupon'" label="使用门槛"><el-input-number v-model="form.minSpend" :min="0" /></el-form-item>
+          <el-form-item v-if="form.type === 'coupon'" label="有效天数"><el-input-number v-model="form.expireDays" :min="1" /></el-form-item>
+          <el-form-item v-if="form.type === 'coupon'" label="每人限兑"><el-input-number v-model="form.limitPerUser" :min="0" /></el-form-item>
+          <el-form-item v-if="form.type === 'coupon'" label="适用渠道">
+            <el-radio-group v-model="form.channel">
+              <el-radio label="online">仅线上</el-radio>
+              <el-radio label="store">仅门店</el-radio>
+              <el-radio label="all">线上+门店</el-radio>
+            </el-radio-group>
+          </el-form-item>
           <el-form-item label="图片">
             <ImageUploadField
               v-model="form.image"
@@ -352,7 +385,7 @@ const form = reactive({
   level: 1, price: 0, styleType: 'black', privileges: [], // VIP
   title: '', subTitle: '', stock: 99, // Virtual / Reward
   cost: 100, description: '', image: '', minSpend: 0, isOffShelf: false,
-  expireDays: 30, limitPerUser: 0, channel: 'online' // Reward · 对齐小程序兑券
+  expireDays: 30, limitPerUser: 0, channel: 'online' // Coupon / Reward · 热更新
 })
 
 // --- 样式辅助 ---
@@ -473,6 +506,35 @@ const saveData = async () => {
   // 清理空权益
   if(data.privileges) data.privileges = data.privileges.filter(p => p.trim() !== '')
 
+  if (activeModule.value === 'coupon') {
+    data.name = String(data.name || '').trim()
+    data.type = data.type === 'discount' ? 'discount' : 'cash'
+    data.value = Number(data.value) || 0
+    data.minSpend = Number(data.minSpend) || 0
+    if (!data.condition) {
+      data.condition = data.minSpend > 0 ? `满${data.minSpend}可用` : '无门槛'
+    }
+    data.expireDays = parseInt(data.expireDays, 10) > 0 ? parseInt(data.expireDays, 10) : 30
+    data.limitPerUser = parseInt(data.limitPerUser, 10) || 0
+    data.channel = ['online', 'store', 'all'].includes(data.channel) ? data.channel : 'online'
+    data.active = data.active !== false
+    if (!data.name) {
+      ElMessage.warning('请填写优惠券名')
+      return
+    }
+    delete data.title
+    delete data.cost
+    delete data.stock
+    delete data.description
+    delete data.image
+    delete data.isOffShelf
+    delete data.level
+    delete data.price
+    delete data.styleType
+    delete data.privileges
+    delete data.subTitle
+  }
+
   if (activeModule.value === 'reward') {
     // 对齐小程序积分中心 / exchangeCoupon / redeemReward 读模型
     data.type = data.type || 'coupon'
@@ -484,7 +546,7 @@ const saveData = async () => {
       ? parseInt(data.expireDays, 10)
       : (data.type === 'coupon' ? 30 : 0)
     data.limitPerUser = parseInt(data.limitPerUser, 10) || 0
-    data.channel = data.channel || 'online'
+    data.channel = ['online', 'store', 'all'].includes(data.channel) ? data.channel : 'online'
     // 小程序上架语义：未明确下架即可展示；新建默认上架
     data.isOffShelf = isEditing.value ? !!data.isOffShelf : false
     data.image = String(data.image || '').trim()

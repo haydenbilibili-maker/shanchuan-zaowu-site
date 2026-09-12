@@ -598,6 +598,15 @@
                         <template #default="scope">
                             <div class="prod-title">{{ scope.row.title }}</div>
                             <div class="prod-id">ID: {{ scope.row._id.substring(0,8) }}...</div>
+                            <div v-if="(scope.row.displayTags || []).length" class="prod-tags">
+                                <el-tag
+                                    v-for="tag in scope.row.displayTags"
+                                    :key="tag"
+                                    size="small"
+                                    effect="plain"
+                                    class="product-tag-chip"
+                                >{{ tag }}</el-tag>
+                            </div>
                         </template>
                     </el-table-column>
                     <el-table-column prop="category" label="分类" width="120">
@@ -777,7 +786,7 @@
                         一键补齐
                     </el-button>
                 </div>
-                <span class="sku-hint-muted">根据名称补齐分类、描述、保护物种、科学分类与拉丁学名；结果可手改</span>
+                <span class="sku-hint-muted">根据名称补齐分类、描述、保护物种、科学分类、拉丁学名与标签；结果可手改</span>
             </el-form-item>
             <el-form-item label="所属分类">
                 <el-cascader
@@ -791,6 +800,31 @@
                     @change="onCategoryPathChange"
                 />
                 <span class="sku-hint-muted">与小程序馆藏筛选同源：保存 rootCategoryId + categoryId</span>
+            </el-form-item>
+            <el-form-item label="标签">
+                <div class="product-tags-editor">
+                    <div v-if="form.tags && form.tags.length" class="product-tags-chips">
+                        <el-tag
+                            v-for="tag in form.tags"
+                            :key="tag"
+                            closable
+                            size="small"
+                            effect="plain"
+                            class="product-tag-chip"
+                            @close="removeProductTag(tag)"
+                        >{{ tag }}</el-tag>
+                    </div>
+                    <div class="product-tags-add">
+                        <el-input
+                            v-model="form.tagDraft"
+                            placeholder="回车添加，最多 10 个短词"
+                            maxlength="12"
+                            @keyup.enter.prevent="addProductTag"
+                        />
+                        <el-button @click="addProductTag">添加</el-button>
+                    </div>
+                </div>
+                <span class="sku-hint-muted">写入 products.tags，与小程序藏品库同源；用于首页推荐、搜索关联与用户画像</span>
             </el-form-item>
             <el-row :gutter="20">
                 <el-col :span="12">
@@ -1411,6 +1445,7 @@ import {
 // 导入云开发工具
 import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnUpdate, callCloudFunction, getCdnDatabase, cdnCount, cdnQueryPage } from './cloud'
 import { toChineseTaxonomy } from './utils/taxonomyZh'
+import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
 import { isActiveCategory } from './utils/categoryActive'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
@@ -1768,7 +1803,7 @@ const form = ref({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
-    latinName: '', description: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
+    latinName: '', description: '', tags: [], tagDraft: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
@@ -2297,6 +2332,8 @@ const enrichProductRows = async (rows) => {
             }
             return {
                 ...item,
+                tags: readProductTags(item),
+                displayTags: readProductTags(item).slice(0, 4),
                 httpImage: img,
                 isOnShelf: !item.isOffShelf,
                 profitRate: (() => {
@@ -2327,7 +2364,7 @@ const buildClientProductWhere = async () => {
     }
     if (keyword && typeof db.RegExp === 'function') {
         const re = db.RegExp({ regexp: escapeRegExpClient(keyword), options: 'i' })
-        conditions.push(_.or([{ title: re }, { latinName: re }, { category: re }]))
+        conditions.push(_.or([{ title: re }, { latinName: re }, { category: re }, { tags: re }]))
     }
     if (!conditions.length) return null
     if (conditions.length === 1) return conditions[0]
@@ -2921,6 +2958,7 @@ const handleBatchExport = () => {
             上架状态: product.isOnShelf ? '上架' : '下架',
             孤品: product.isOneOfAKind ? '是' : '否',
             拉丁学名: product.latinName || '',
+            标签: readProductTags(product).join('、'),
             描述: (product.description || '').substring(0, 100),
             创建时间: product.createTime ? new Date(product.createTime).toLocaleString() : ''
         }))
@@ -3025,7 +3063,7 @@ const blankProductForm = () => ({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '',
-    latinName: '', description: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
+    latinName: '', description: '', tags: [], tagDraft: '', isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
@@ -3124,7 +3162,25 @@ const applyAssistProductCopyResult = (d, { force = false, fillCategory = false }
         genus: tax.genus || prevTax.genus || '',
     })
     form.value.taxonomy = nextTax
+    const incoming = sanitizeProductTags(d.tags)
+    if (incoming.length) {
+        form.value.tags = sanitizeProductTags([...(form.value.tags || []), ...incoming])
+    }
     return latinName
+}
+
+const addProductTag = () => {
+    const current = form.value.tags || []
+    const next = sanitizeProductTags([...current, form.value.tagDraft])
+    if (next.length === current.length && String(form.value.tagDraft || '').trim()) {
+        ElMessage.warning(current.length >= MAX_TAGS ? '最多 10 个标签' : '标签无效或已存在')
+    }
+    form.value.tags = next
+    form.value.tagDraft = ''
+}
+
+const removeProductTag = (tag) => {
+    form.value.tags = (form.value.tags || []).filter((item) => item !== tag)
 }
 
 const onCategoryPathChange = (path) => {
@@ -3254,6 +3310,7 @@ const assistProductFillAll = async () => {
         if (d.description) parts.push('描述')
         if (d.protectionType && d.protectionType !== 'none') parts.push('保护物种')
         if (d.taxonomy && Object.values(d.taxonomy).some(Boolean)) parts.push('科学分类')
+        if (sanitizeProductTags(d.tags).length) parts.push('标签')
         ElMessage.success(parts.length ? `已补齐：${parts.join('、')}` : '补齐完成，请核对')
     } catch (e) {
         console.error('assistProductFillAll', e)
@@ -3344,6 +3401,8 @@ const editItem = async (row) => {
         craftType: row.craftType || '',
         latinName: row.latinName || '',
         description: row.description || '',
+        tags: readProductTags(row),
+        tagDraft: '',
         images,
         imagePreviews,
         detailImages,
@@ -3728,6 +3787,7 @@ const saveProduct = async () => {
             craftType: craftOk ? (form.value.craftType || '') : '',
             latinName: form.value.latinName || '',
             description: form.value.description || '',
+            tags: sanitizeProductTags(form.value.tags),
             images,
             detailImages,
             detailHtml,
@@ -4611,6 +4671,31 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     color: var(--text-light-muted); 
     margin-top: 2px; 
     font-family: monospace; 
+}
+.prod-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+.product-tags-editor {
+    width: 100%;
+}
+.product-tags-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.product-tags-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.product-tag-chip {
+    --el-tag-text-color: #8A7530;
+    --el-tag-bg-color: #FAF6ED;
+    --el-tag-border-color: #E0CFA3;
 }
 .price-tag { 
     color: var(--primary-dark); 
