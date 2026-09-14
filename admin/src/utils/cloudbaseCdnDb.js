@@ -181,7 +181,12 @@ const STORE_CONTENT_WRITE_COLLECTIONS = new Set([
 ])
 
 /** manageStoreContent.setDoc 白名单（须与云函数 allowSetDocIds 一致；未列入的 configs id 降级为 update） */
-const STORE_CONTENT_SET_DOC_IDS = new Set(['booking_config'])
+const STORE_CONTENT_SET_DOC_IDS = new Set([
+  'booking_config',
+  'feishu_bitable',
+  'b2b_catalog',
+  'member_growth_rules',
+])
 
 async function callStoreContentWrite(payload) {
   const res = await callCdnFunction('manageStoreContent', payload)
@@ -361,18 +366,32 @@ export async function cdnSet(collectionName, docId, data) {
   if (shouldProxyStoreContent(collectionName)) {
     const id = String(docId || '').trim()
     // configs 等集合 setDoc 有 id 白名单；未授权时降级为 update（文档须已存在）
-    if (collectionName === 'configs' && id && !STORE_CONTENT_SET_DOC_IDS.has(id)) {
-      return callStoreContentWrite({
-        action: 'update',
-        collection: collectionName,
-        id,
-        data,
-      })
+    const canTrySetDoc = collectionName !== 'configs' || !id || STORE_CONTENT_SET_DOC_IDS.has(id)
+    if (canTrySetDoc) {
+      try {
+        return await callStoreContentWrite({
+          action: 'setDoc',
+          collection: collectionName,
+          id: docId,
+          data,
+        })
+      } catch (e) {
+        const msg = e?.message || String(e)
+        if (collectionName === 'configs' && /未授权 setDoc|文档未授权/i.test(msg)) {
+          return callStoreContentWrite({
+            action: 'update',
+            collection: collectionName,
+            id,
+            data,
+          })
+        }
+        throw e
+      }
     }
     return callStoreContentWrite({
-      action: 'setDoc',
+      action: 'update',
       collection: collectionName,
-      id: docId,
+      id,
       data,
     })
   }

@@ -391,6 +391,25 @@ const step = computed(() => {
   return 3
 })
 
+/** 与 pull/save 共用的纯对象映射，避免 Vue Proxy / 读库不一致 */
+const plainTables = () =>
+  JSON.parse(
+    JSON.stringify({
+      purchase: {
+        tableId: mapping.purchase.tableId || '',
+        fields: { ...mapping.purchase.fields },
+      },
+      inventory: {
+        tableId: mapping.inventory.tableId || '',
+        fields: { ...mapping.inventory.fields },
+      },
+      shipment: {
+        tableId: mapping.shipment.tableId || '',
+        fields: { ...mapping.shipment.fields },
+      },
+    }),
+  )
+
 const fieldsOf = (tableId) => {
   const t = tables.value.find((x) => x.tableId === tableId)
   return t?.fields || []
@@ -420,7 +439,7 @@ const guessField = (roleKey, fieldKey, cols) => {
     orderNo: [/单号/, /编号/, /NO/i],
     skuName: [/品名/, /物料/, /名称/, /商品/],
     skuId: [/SKU/i, /货号/, /编码/],
-    qty: [/数量/, /库存/, /余量/],
+    qty: [/数量/, /余量/, /当前库存/, /^库存$/],
     unit: [/单位/],
     unitPrice: [/单价/, /价格/, /金额/],
     supplier: [/供应商/, /厂家/],
@@ -505,7 +524,7 @@ const saveMapping = async (opts = {}) => {
   const silent = typeof opts === 'object' && opts && !(opts instanceof Event) ? !!opts.silent : false
   saving.value = true
   try {
-    unwrap(await runFeishuSync('saveMapping', { mapping: { tables: { ...mapping } } }))
+    unwrap(await runFeishuSync('saveMapping', { mapping: { tables: plainTables() } }))
     if (!silent) ElMessage.success('映射已保存')
   } catch (e) {
     if (!silent) ElMessage.error(e.message || '保存失败')
@@ -518,7 +537,7 @@ const saveMapping = async (opts = {}) => {
 const run = async (action) => {
   busy.value = action
   try {
-    const res = unwrap(await runFeishuSync(action))
+    const res = unwrap(await runFeishuSync(action, { mapping: { tables: plainTables() } }))
     ElMessage.success(res.msg || '完成')
     await Promise.all([refreshMirrors(), loadSyncMeta()])
   } catch (e) {

@@ -19,6 +19,111 @@ import {
 const CONFIG_ID = 'feishu_bitable'
 const APP_TOKEN = 'WCs2bnIHsaty7vsjcnaczu0Wnod'
 const PURCHASE_FN = 'managePurchaseOrder'
+const CONFIG_CACHE_KEY = 'sc_feishu_bitable_config_v1'
+
+/** 进程内缓存：UI「就绪」与 pull 校验共用，避免匿名读 configs 失败时假就绪 */
+let configCache = null
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj || {}))
+}
+
+function defaultFeishuConfig() {
+  return {
+    appToken: APP_TOKEN,
+    tables: {
+      purchase: {
+        tableId: '',
+        fields: {
+          orderNo: '单号',
+          skuName: '物料',
+          qty: '数量',
+          unit: '单位',
+          unitPrice: '单价',
+          supplier: '供应商',
+          status: '状态',
+          date: '日期',
+          entityName: '归属',
+          spec: '规格',
+          note: '备注',
+        },
+      },
+      inventory: { tableId: '', fields: { skuName: '品名', skuId: 'SKU', qty: '数量', unit: '单位' } },
+      shipment: {
+        tableId: '',
+        fields: {
+          orderNo: '订货单号',
+          storeName: '门店',
+          carrier: '物流公司',
+          trackingNumber: '物流单号',
+          status: '状态',
+        },
+      },
+    },
+  }
+}
+
+function normalizeTables(raw) {
+  const base = defaultFeishuConfig().tables
+  const src = raw && typeof raw === 'object' ? raw : {}
+  const out = deepClone(base)
+  for (const key of ['purchase', 'inventory', 'shipment']) {
+    if (!src[key]) continue
+    out[key].tableId = String(src[key].tableId || '').trim()
+    out[key].fields = { ...out[key].fields, ...(src[key].fields || {}) }
+  }
+  return out
+}
+
+function hasRoleTable(tables, role) {
+  return !!String(tables?.[role]?.tableId || '').trim()
+}
+
+function rememberConfig(config) {
+  const next = {
+    ...defaultFeishuConfig(),
+    ...deepClone(config || {}),
+    tables: normalizeTables(config?.tables),
+    appToken: config?.appToken || APP_TOKEN,
+  }
+  configCache = next
+  try {
+    localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(next))
+  } catch {
+    /* ignore */
+  }
+  return next
+}
+
+function readLocalConfigCache() {
+  if (configCache?.tables) return configCache
+  try {
+    const raw = localStorage.getItem(CONFIG_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed?.tables) {
+      configCache = rememberConfig(parsed)
+      return configCache
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+async function readConfigViaStoreContent() {
+  try {
+    const res = await callCloudFunction('manageStoreContent', {
+      action: 'getDoc',
+      collection: 'configs',
+      id: CONFIG_ID,
+    })
+    if (res?.success && res.data) return res.data
+  } catch {
+    /* getDoc 未部署或无权限时降级 */
+  }
+  return null
+}
 
 function candidateUrls() {
   const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
@@ -172,8 +277,10 @@ function buildPurchaseFeishuFields(row, fmap) {
   return fields
 }
 
-async function pullTable(role, col) {
-  const config = await readFeishuConfig()
+async function pullTable(role, col, tablesOverride = null) {
+  const config = tablesOverride
+    ? { ...defaultFeishuConfig(), tables: normalizeTables(tablesOverride) }
+    : await readFeishuConfig()
   const spec = (config.tables || {})[role]
   if (!spec?.tableId) return { success: false, msg: `请先映射「${role}」表并保存` }
   const { records } = await feishuApi({ action: 'listRecords', tableId: spec.tableId })
@@ -216,44 +323,49 @@ async function logSync(action, result) {
 }
 
 export async function readFeishuConfig() {
+  // 1) 匿名 CDN 直读
   try {
     const doc = await cdnDocGet('configs', CONFIG_ID)
-    if (doc) return doc
+    if (doc?.tables && (hasRoleTable(doc.tables, 'purchase') || hasRoleTable(doc.tables, 'inventory') || hasRoleTable(doc.tables, 'shipment'))) {
+      return rememberConfig(doc)
+    }
+    // 文档存在但 tableId 空：继续尝试管理端读 / 本地缓存
+    if (doc?.tables) {
+      const local = readLocalConfigCache()
+      if (local && (hasRoleTable(local.tables, 'purchase') || hasRoleTable(local.tables, 'inventory'))) {
+        return local
+      }
+    }
   } catch {
-    /* collection may miss */
+    /* 匿名常无 configs 读权限 */
   }
-  return {
-    appToken: APP_TOKEN,
-    tables: {
-      purchase: {
-        tableId: '',
-        fields: {
-          orderNo: '单号',
-          skuName: '物料',
-          qty: '数量',
-          unit: '单位',
-          unitPrice: '单价',
-          supplier: '供应商',
-          status: '状态',
-          date: '日期',
-          entityName: '归属',
-          spec: '规格',
-          note: '备注',
-        },
-      },
-      inventory: { tableId: '', fields: { skuName: '品名', skuId: 'SKU', qty: '数量', unit: '单位' } },
-      shipment: {
-        tableId: '',
-        fields: {
-          orderNo: '订货单号',
-          storeName: '门店',
-          carrier: '物流公司',
-          trackingNumber: '物流单号',
-          status: '状态',
-        },
-      },
-    },
+
+  // 2) 管理端 getDoc（manageStoreContent，需云函数已部署 getDoc）
+  const viaFn = await readConfigViaStoreContent()
+  if (viaFn?.tables && (hasRoleTable(viaFn.tables, 'purchase') || hasRoleTable(viaFn.tables, 'inventory') || hasRoleTable(viaFn.tables, 'shipment'))) {
+    return rememberConfig(viaFn)
   }
+
+  // 3) 同浏览器缓存（保存成功后 pull 立即可用）
+  const cached = readLocalConfigCache()
+  if (cached) return cached
+
+  return defaultFeishuConfig()
+}
+
+function resolveTablesOverride(extra = {}) {
+  const raw = extra.mapping?.tables || extra.mapping || extra.tables || null
+  if (!raw || typeof raw !== 'object') return null
+  const tables = normalizeTables(raw)
+  if (
+    hasRoleTable(tables, 'purchase') ||
+    hasRoleTable(tables, 'inventory') ||
+    hasRoleTable(tables, 'shipment')
+  ) {
+    rememberConfig({ tables, appToken: APP_TOKEN })
+    return tables
+  }
+  return null
 }
 
 function matchProduct(row, products) {
@@ -287,19 +399,50 @@ export async function runFeishuSync(action, extra = {}) {
         result = { success: true, config: await readFeishuConfig() }
         break
       case 'saveMapping': {
-        const tables = extra.mapping?.tables || extra.mapping || extra.tables
-        const config = {
-          ...(await readFeishuConfig()),
+        const tables = normalizeTables(extra.mapping?.tables || extra.mapping || extra.tables)
+        if (!hasRoleTable(tables, 'purchase') && !hasRoleTable(tables, 'inventory') && !hasRoleTable(tables, 'shipment')) {
+          result = { success: false, msg: '映射为空：请先探测并选择飞书数据表' }
+          break
+        }
+        const config = rememberConfig({
           tables,
           appToken: extra.mapping?.appToken || APP_TOKEN,
           updatedAt: Date.now(),
+        })
+        try {
+          // 走 setDoc（feishu_bitable 已在白名单）；深拷贝去掉 Vue Proxy
+          await cdnSet('configs', CONFIG_ID, deepClone(config))
+          result = {
+            success: true,
+            config,
+            msg: hasRoleTable(tables, 'purchase')
+              ? '映射已保存（采购表已就绪）'
+              : '映射已保存',
+            persisted: {
+              purchase: hasRoleTable(tables, 'purchase'),
+              inventory: hasRoleTable(tables, 'inventory'),
+              shipment: hasRoleTable(tables, 'shipment'),
+            },
+          }
+        } catch (e) {
+          // 本地缓存已写入；同步中心 pull 会带上 mapping / 读 cache，不阻断
+          result = {
+            success: true,
+            config,
+            cloudPersist: false,
+            msg: `映射已保存到本地，可立即同步。云端写入稍后重试：${e.message || e}`,
+            persisted: {
+              purchase: hasRoleTable(tables, 'purchase'),
+              inventory: hasRoleTable(tables, 'inventory'),
+              shipment: hasRoleTable(tables, 'shipment'),
+            },
+          }
         }
-        await cdnSet('configs', CONFIG_ID, config)
-        result = { success: true, config, msg: '映射已保存' }
         break
       }
       case 'pullPurchases': {
-        const pulled = await pullTable('purchase', COLLECTIONS.FEISHU_PURCHASES)
+        const override = resolveTablesOverride(extra)
+        const pulled = await pullTable('purchase', COLLECTIONS.FEISHU_PURCHASES, override)
         if (!pulled.success) {
           result = pulled
           break
@@ -320,6 +463,7 @@ export async function runFeishuSync(action, extra = {}) {
         break
       }
       case 'pushOpsPurchase': {
+        resolveTablesOverride(extra)
         const config = await readFeishuConfig()
         const spec = (config.tables || {}).purchase
         if (!spec?.tableId) {
@@ -365,7 +509,8 @@ export async function runFeishuSync(action, extra = {}) {
         break
       }
       case 'pullInventory': {
-        const pulled = await pullTable('inventory', COLLECTIONS.FEISHU_INVENTORY)
+        const override = resolveTablesOverride(extra)
+        const pulled = await pullTable('inventory', COLLECTIONS.FEISHU_INVENTORY, override)
         if (!pulled.success) {
           result = pulled
           break
@@ -429,6 +574,7 @@ export async function runFeishuSync(action, extra = {}) {
         break
       }
       case 'pushShipments': {
+        resolveTablesOverride(extra)
         const config = await readFeishuConfig()
         const spec = (config.tables || {}).shipment
         if (!spec?.tableId) {
