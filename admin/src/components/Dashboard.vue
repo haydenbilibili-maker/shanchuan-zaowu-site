@@ -1,275 +1,289 @@
 <template>
-  <div class="dashboard-container">
-    <div class="header-section">
-      <div class="welcome-text">
-        <h2>指挥中心 / DASHBOARD</h2>
+  <div class="cockpit" v-loading="loading">
+    <header class="cockpit-header">
+      <div class="welcome">
+        <h2>经营驾驶舱</h2>
         <p class="subtitle">
-          <span :class="businessStatus.color">● {{ businessStatus.text }}</span> 
-          <span style="margin-left:10px; color:#999; font-size:12px;">(数据来源: 财务账本 + 实时订单)</span>
+          <span :class="['status-dot', businessStatus.tone]">{{ businessStatus.text }}</span>
+          <span class="sep">·</span>
+          <span>账本与线上分列 · 应捐按门店账本 1%</span>
         </p>
       </div>
-      <div class="header-right">
-        <!-- 智能陪伴机器人 -->
-        <CompanionRobot 
-          :dashboard-stats="stats" 
+      <div class="header-tools">
+        <CompanionRobot
+          :dashboard-stats="robotStats"
           @ai-action="handleAIAction"
           @navigate="handleNavigate"
         />
-        <div class="time-badge">
-          <el-icon><Clock /></el-icon> {{ currentTime }}
-          <el-button link type="primary" size="small" @click="refreshAll" :loading="loading" style="margin-left:10px;">刷新看板</el-button>
+        <div class="filters">
+          <el-radio-group v-model="rangePreset" size="small" @change="onFilterChange">
+            <el-radio-button value="today">今日</el-radio-button>
+            <el-radio-button value="7">近7日</el-radio-button>
+            <el-radio-button value="30">近30日</el-radio-button>
+            <el-radio-button value="mtd">本月</el-radio-button>
+          </el-radio-group>
+          <el-select
+            v-model="storeFilter"
+            size="small"
+            style="width: 150px"
+            @change="onFilterChange"
+          >
+            <el-option label="全部门店" value="all" />
+            <el-option
+              v-for="s in storeOptions"
+              :key="s.value"
+              :label="s.label"
+              :value="s.value"
+            />
+          </el-select>
+          <el-button type="primary" size="small" :loading="loading" @click="refreshAll">
+            刷新
+          </el-button>
+          <span class="clock"><el-icon><Clock /></el-icon> {{ currentTime }}</span>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="kpi-grid">
-      <div class="kpi-card black">
-        <div class="kpi-top">
-          <span class="label">今日营收 (元)</span>
-          <el-tag type="success" size="small" effect="dark">+{{ stats.todayOrderCount }} 单</el-tag>
-        </div>
-        <div class="kpi-value">¥{{ stats.todaySales.toLocaleString() }}</div>
-        <div class="kpi-sub">
-          昨日: ¥{{ stats.yesterdaySales.toLocaleString() }}
-          <span v-if="stats.isManualData" style="color:var(--gold-500); margin-left:5px;">(已入账)</span>
-        </div>
+    <el-alert
+      v-if="dataNotes.length"
+      type="info"
+      :closable="false"
+      show-icon
+      class="notes-alert"
+    >
+      <template #title>
+        <span class="notes-inline">{{ dataNotes.join('；') }}</span>
+      </template>
+    </el-alert>
+
+    <!-- 营收头条 -->
+    <section class="section">
+      <div class="section-head">
+        <h3>营收与承诺</h3>
+        <el-button link type="primary" @click="go('2')">营收账本</el-button>
       </div>
-
-      <div class="kpi-card gold">
-        <div class="kpi-top">
-          <span class="label">本月总营收</span>
-          <el-icon><Trophy /></el-icon>
-        </div>
-        <div class="kpi-value">¥{{ stats.monthSales.toLocaleString() }}</div>
-        <div class="kpi-sub">净利润(估): ¥{{ stats.monthProfit.toLocaleString() }}</div>
+      <div class="kpi-row">
+        <button type="button" class="kpi kpi-gold" @click="go('2')">
+          <div class="kpi-label">综合营收</div>
+          <div class="kpi-value">¥{{ fmt(headline.grandTotal) }}</div>
+          <div class="kpi-sub">线上净额 + 账本净额 · {{ rangeLabel }}</div>
+        </button>
+        <button type="button" class="kpi" @click="go('2')">
+          <div class="kpi-label">营收账本净额</div>
+          <div class="kpi-value accent">¥{{ fmt(headline.ledgerNet) }}</div>
+          <div class="kpi-sub">
+            {{ headline.ledgerOrders || 0 }} 单
+            <span v-if="headline.ledgerEmpty" class="muted"> · 账本空态</span>
+          </div>
+        </button>
+        <button type="button" class="kpi" @click="go('3')">
+          <div class="kpi-label">小程序毛 GMV</div>
+          <div class="kpi-value">¥{{ fmt(headline.gmvPaid) }}</div>
+          <div class="kpi-sub">
+            净额 ¥{{ fmt(headline.netOnline) }} · 退款 ¥{{ fmt(headline.refundAmount) }}
+          </div>
+        </button>
+        <button type="button" class="kpi kpi-donate" @click="go('2')">
+          <div class="kpi-label">应捐 1%</div>
+          <div class="kpi-value">¥{{ fmt(headline.donationLedger) }}</div>
+          <div class="kpi-sub">
+            账本口径 · 综合对照 ¥{{ fmt(headline.donationGrand) }}
+          </div>
+        </button>
+        <button type="button" class="kpi" @click="go('4')">
+          <div class="kpi-label">会员 / 金粉兑换</div>
+          <div class="kpi-value">{{ stats.totalUsers }}</div>
+          <div class="kpi-sub">
+            新会员 +{{ stats.newUsers }} · 兑换 {{ headline.exchangeCount }} 单
+          </div>
+        </button>
       </div>
+    </section>
 
-      <div class="kpi-card white">
-        <div class="kpi-top">
-          <span class="label">本月总订单数</span>
-          <el-tag type="success" size="small" effect="light" v-if="stats.totalMonthOrders > 0">
-            财务账本
-          </el-tag>
-        </div>
-        <div class="kpi-value">{{ stats.totalMonthOrders > 0 ? stats.totalMonthOrders.toLocaleString() : '-' }}</div>
-        <div class="kpi-sub">
-          <span v-if="stats.totalMonthOrders > 0 && stats.monthSales > 0">
-            订单均价: ¥{{ Math.round(stats.monthSales / stats.totalMonthOrders).toLocaleString() }}
-          </span>
-          <span v-else>数据来源: 财务账本</span>
-        </div>
-      </div>
-
-      <div class="kpi-card white">
-        <div class="kpi-top">
-          <span class="label">会员总数</span>
-          <el-tag type="warning" size="small" effect="light">+{{ stats.newUsers }} 新</el-tag>
-        </div>
-        <div class="kpi-value">{{ stats.totalUsers }}</div>
-        <div class="kpi-sub">库存预警: <span class="text-red">{{ stats.lowStock }}</span></div>
-      </div>
-
-      <div class="kpi-card white">
-        <div class="kpi-top">
-          <span class="label">待处理事项</span>
-          <el-icon color="#f56c6c"><Bell /></el-icon>
-        </div>
-        <div class="kpi-value" :class="{ 'text-red': stats.totalTodos > 0 }">{{ stats.totalTodos }}</div>
-        <div class="kpi-sub">发货 · 售后 · 补货</div>
-      </div>
-    </div>
-
-    <el-row :gutter="20" class="middle-section">
-      <el-col :xs="24" :sm="24" :md="16" :lg="16" class="middle-left">
-        <el-card shadow="never" class="chart-card">
+    <el-row :gutter="16" class="mid-row">
+      <el-col :xs="24" :lg="15">
+        <el-card shadow="never" class="panel">
           <template #header>
-            <div class="card-header">
-              <span>📈 营收趋势 (近7日)</span>
-              <el-radio-group v-model="chartRange" size="small" fill="#2D6A4F">
-                <el-radio-button label="7">资金视图</el-radio-button>
+            <div class="panel-head">
+              <span>趋势 · {{ rangeLabel }}</span>
+              <el-radio-group v-model="chartMode" size="small">
+                <el-radio-button value="dual">账本+线上</el-radio-button>
+                <el-radio-button value="ledger">仅账本</el-radio-button>
+                <el-radio-button value="online">仅线上</el-radio-button>
               </el-radio-group>
             </div>
           </template>
-          <div class="chart-box" @click="handleChartClick" style="position: relative;">
+          <div class="chart-box">
             <div v-if="chartEmpty && !loading" class="chart-empty">
-              <div class="chart-empty-title">近 7 日账本暂无营收</div>
-              <div class="chart-empty-desc">请到财务模块录入日账，或确认今日订单已同步入账。下方仍会渲染零轴趋势供对照。</div>
+              <div class="chart-empty-title">所选区间暂无营收</div>
+              <div class="chart-empty-desc">请到营收账本录入日报，或确认小程序订单已支付入账。</div>
             </div>
-            <canvas ref="chartCanvas" :class="{ 'chart-dimmed': chartEmpty && !loading }"></canvas>
-            <transition name="fade">
-              <div v-if="showRobotMessage" class="chart-blessing">
-                {{ robotMessage }}
-              </div>
-            </transition>
+            <canvas ref="trendCanvas" :class="{ dimmed: chartEmpty && !loading }"></canvas>
           </div>
         </el-card>
 
-        <!-- C 端小程序脉搏：置于营收趋势下方，填满左栏空白 -->
-        <div class="miniapp-pulse compact">
-          <div class="mp-header">
-            <h3>📱 C 端小程序脉搏 <span class="mp-sub">MINI-PROGRAM PULSE</span></h3>
-            <el-button link type="primary" @click="$emit('switch-tab', '44')">
-              行为看板 <el-icon><ArrowUp style="transform: rotate(45deg)" /></el-icon>
-            </el-button>
+        <el-card shadow="never" class="panel" style="margin-top: 16px">
+          <template #header>
+            <div class="panel-head">
+              <span>结构占比</span>
+              <span class="muted tiny">已付订单来源 / 品类（采样内）</span>
+            </div>
+          </template>
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <div class="chart-box chart-box-sm">
+                <div v-if="mixEmpty" class="chart-empty compact">暂无结构数据</div>
+                <canvas ref="mixCanvas"></canvas>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="chart-box chart-box-sm">
+                <div v-if="catEmpty" class="chart-empty compact">暂无品类数据</div>
+                <canvas ref="catCanvas"></canvas>
+              </div>
+            </el-col>
+          </el-row>
+        </el-card>
+
+        <!-- C 端脉搏 -->
+        <el-card shadow="never" class="panel" style="margin-top: 16px">
+          <template #header>
+            <div class="panel-head">
+              <span>C 端脉搏</span>
+              <el-button link type="primary" @click="go('44')">行为看板</el-button>
+            </div>
+          </template>
+          <div class="pulse-grid">
+            <button type="button" class="pulse-card" @click="go('44')">
+              <div class="p-lbl">AI 鉴定（今日）</div>
+              <div class="p-val">{{ miniapp.identifyToday }}</div>
+              <div class="p-sub">成功率 {{ miniapp.identifySuccessRate }}%</div>
+            </button>
+            <button type="button" class="pulse-card" @click="go('38')">
+              <div class="p-lbl">定制询单</div>
+              <div class="p-val">{{ miniapp.customSubmitsToday }}</div>
+              <div class="p-sub">伴宠 {{ miniapp.petSubmitsToday }}</div>
+            </button>
+            <button type="button" class="pulse-card" @click="go('40')">
+              <div class="p-lbl">客服工单</div>
+              <div class="p-val">{{ miniapp.supportToday }}</div>
+              <div class="p-sub">主动求助</div>
+            </button>
+            <button type="button" class="pulse-card" @click="go('37')">
+              <div class="p-lbl">到店签到</div>
+              <div class="p-val">{{ miniapp.storeCheckinToday }}</div>
+              <div class="p-sub">线下转化</div>
+            </button>
+            <button type="button" class="pulse-card" @click="go('44')">
+              <div class="p-lbl">总事件</div>
+              <div class="p-val">{{ miniapp.eventsToday }}</div>
+              <div class="p-sub">埋点上报</div>
+            </button>
+            <button type="button" class="pulse-card" @click="go('44')">
+              <div class="p-lbl">活跃 UV</div>
+              <div class="p-val">{{ miniapp.uvToday }}</div>
+              <div class="p-sub">独立 openid</div>
+            </button>
           </div>
-          <div class="mp-grid">
-            <div class="mp-card" @click="$emit('switch-tab', '44')">
-              <div class="mp-ico" style="background: #00BCD420; color: #00BCD4;">🔍</div>
-              <div class="mp-info">
-                <div class="mp-lbl">AI 鉴定（今日）</div>
-                <div class="mp-val">{{ miniapp.identifyToday }}</div>
-                <div class="mp-trend">成功率 {{ miniapp.identifySuccessRate }}%</div>
-              </div>
-            </div>
-            <div class="mp-card" @click="$emit('switch-tab', '38')">
-              <div class="mp-ico" style="background: #d4af3720; color: #d4af37;">🎨</div>
-              <div class="mp-info">
-                <div class="mp-lbl">定制询单（今日）</div>
-                <div class="mp-val">{{ miniapp.customSubmitsToday }}</div>
-                <div class="mp-trend">伴宠 {{ miniapp.petSubmitsToday }}</div>
-              </div>
-            </div>
-            <div class="mp-card" @click="$emit('switch-tab', '40')">
-              <div class="mp-ico" style="background: #FF572220; color: #FF5722;">💬</div>
-              <div class="mp-info">
-                <div class="mp-lbl">客服工单（今日）</div>
-                <div class="mp-val">{{ miniapp.supportToday }}</div>
-                <div class="mp-trend">主动求助</div>
-              </div>
-            </div>
-            <div class="mp-card" @click="$emit('switch-tab', '37')">
-              <div class="mp-ico" style="background: #67C23A20; color: #67C23A;">🏪</div>
-              <div class="mp-info">
-                <div class="mp-lbl">到店签到（今日）</div>
-                <div class="mp-val">{{ miniapp.storeCheckinToday }}</div>
-                <div class="mp-trend">线下转化</div>
-              </div>
-            </div>
-            <div class="mp-card" @click="$emit('switch-tab', '44')">
-              <div class="mp-ico" style="background: #E6A23C20; color: #E6A23C;">📈</div>
-              <div class="mp-info">
-                <div class="mp-lbl">总事件（今日）</div>
-                <div class="mp-val">{{ miniapp.eventsToday }}</div>
-                <div class="mp-trend">埋点上报</div>
-              </div>
-            </div>
-            <div class="mp-card" @click="$emit('switch-tab', '44')">
-              <div class="mp-ico" style="background: #9C27B020; color: #9C27B0;">👥</div>
-              <div class="mp-info">
-                <div class="mp-lbl">活跃 UV</div>
-                <div class="mp-val">{{ miniapp.uvToday }}</div>
-                <div class="mp-trend">独立 openid</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </el-card>
       </el-col>
 
-      <el-col :xs="24" :sm="24" :md="8" :lg="8" class="middle-right">
-        <el-card shadow="never" class="todo-card">
+      <el-col :xs="24" :lg="9">
+        <!-- 业务分区卡片 -->
+        <el-card shadow="never" class="panel">
           <template #header>
-            <div class="card-header">
-              <span>📋 待办清单</span>
-              <el-button 
-                text 
-                size="small" 
-                type="primary" 
-                @click="showInsightsDialog = true"
-                title="数据洞察分析"
-              >
-                <el-icon><DataAnalysis /></el-icon>
-                数据洞察
-              </el-button>
+            <div class="panel-head">
+              <span>业务分区</span>
+              <el-button link type="primary" @click="showInsightsDialog = true">数据洞察</el-button>
+            </div>
+          </template>
+
+          <div class="biz-block" @click="go('72')">
+            <div class="biz-title">
+              <span>售罄孤品定金</span>
+              <el-tag size="small" type="warning" effect="plain">{{ deposit.openPipeline }} 进行中</el-tag>
+            </div>
+            <div class="biz-grid">
+              <div><b>{{ deposit.counts.intent + deposit.counts.pending_pay }}</b><span>意向/待付</span></div>
+              <div><b>{{ deposit.counts.deposit_paid }}</b><span>已付定金</span></div>
+              <div><b>{{ deposit.counts.awaiting_balance }}</b><span>待尾款</span></div>
+              <div class="warn"><b>{{ deposit.counts.overdue }}</b><span>逾期</span></div>
+            </div>
+            <div class="biz-foot">已付定金合计 ¥{{ fmt(deposit.paidDepositYuan) }}</div>
+          </div>
+
+          <div class="biz-block" @click="go('74')">
+            <div class="biz-title">
+              <span>标本师提成</span>
+              <el-tag size="small" effect="plain">台账</el-tag>
+            </div>
+            <div class="biz-grid cols-3">
+              <div><b>¥{{ fmt(commission.netAmount) }}</b><span>净佣金</span></div>
+              <div><b>¥{{ fmt(commission.earnAmount) }}</b><span>入账 {{ commission.earnCount }}</span></div>
+              <div><b>¥{{ fmt(commission.reverseAmount) }}</b><span>冲销 {{ commission.reverseCount }}</span></div>
+            </div>
+          </div>
+
+          <div class="biz-block" @click="openGiftBoard">
+            <div class="biz-title">
+              <span>礼赠履约待办</span>
+              <el-tag size="small" type="danger" effect="plain" v-if="gift.todo > 0">{{ gift.todo }}</el-tag>
+            </div>
+            <div class="biz-grid">
+              <div><b>{{ gift.awaiting_address }}</b><span>待填址</span></div>
+              <div><b>{{ gift.awaiting_ship }}</b><span>待发货</span></div>
+              <div><b>{{ gift.pickup_verify }}</b><span>自提核销</span></div>
+              <div><b>{{ gift.done }}</b><span>已完成</span></div>
+            </div>
+          </div>
+
+          <div class="biz-block" @click="go('75')">
+            <div class="biz-title">
+              <span>生日礼</span>
+              <el-tag size="small" :type="birthday.enabled ? 'success' : 'info'" effect="plain">
+                {{ birthday.enabled ? '已启用' : '未启用 / 未读到' }}
+              </el-tag>
+            </div>
+            <div class="biz-foot">
+              {{ birthday.name || '跳转配置页 · 会员生日当天可领' }}
+            </div>
+          </div>
+        </el-card>
+
+        <el-card shadow="never" class="panel" style="margin-top: 16px">
+          <template #header>
+            <div class="panel-head">
+              <span>待办摘要</span>
+              <span class="todo-total" :class="{ hot: stats.totalTodos > 0 }">{{ stats.totalTodos }}</span>
             </div>
           </template>
           <div class="todo-list">
-            <div class="todo-item" @click="$emit('switch-tab', '3')" :class="{active: stats.pendingOrders > 0}">
-              <div class="todo-icon bg-blue"><el-icon><Box /></el-icon></div>
-              <div class="todo-content"><div class="t-title">待发货订单</div><div class="t-desc">客户等待中</div></div>
-              <div class="todo-num">{{ stats.pendingOrders }}</div>
-            </div>
-            <div class="todo-item" @click="$emit('switch-tab', '37')" :class="{active: stats.pendingBookings > 0}">
-              <div class="todo-icon bg-blue"><el-icon><Calendar /></el-icon></div>
-              <div class="todo-content"><div class="t-title">待核销预约</div><div class="t-desc">门票 / 课程 / 参观</div></div>
-              <div class="todo-num">{{ stats.pendingBookings }}</div>
-            </div>
-            <div class="todo-item" @click="$emit('switch-tab', '38')" :class="{active: stats.pendingCustom > 0}">
-              <div class="todo-icon bg-orange"><el-icon><EditPen /></el-icon></div>
-              <div class="todo-content"><div class="t-title">定制询单</div><div class="t-desc">待报价 / 接单</div></div>
-              <div class="todo-num">{{ stats.pendingCustom }}</div>
-            </div>
-            <div class="todo-item" @click="$emit('switch-tab', '39')" :class="{active: stats.pendingPet > 0}">
-              <div class="todo-icon bg-orange"><el-icon><User /></el-icon></div>
-              <div class="todo-content"><div class="t-title">伴宠订单</div><div class="t-desc">宠物纪念审核</div></div>
-              <div class="todo-num">{{ stats.pendingPet }}</div>
-            </div>
-            <div class="todo-item" @click="$emit('switch-tab', '40')" :class="{active: stats.pendingTickets > 0}">
-              <div class="todo-icon bg-red"><el-icon><Service /></el-icon></div>
-              <div class="todo-content"><div class="t-title">山海有信</div><div class="t-desc">待回复工单</div></div>
-              <div class="todo-num">{{ stats.pendingTickets }}</div>
-            </div>
-            <div class="todo-item" @click="$emit('switch-tab', '41')" :class="{active: stats.pendingComments > 0}">
-              <div class="todo-icon bg-red"><el-icon><Service /></el-icon></div>
-              <div class="todo-content"><div class="t-title">评论审核</div><div class="t-desc">UGC 待审</div></div>
-              <div class="todo-num">{{ stats.pendingComments }}</div>
-            </div>
-            <div class="todo-item" @click="$emit('switch-tab', '42')" :class="{active: stats.refunding > 0}">
-              <div class="todo-icon bg-red"><el-icon><Service /></el-icon></div>
-              <div class="todo-content"><div class="t-title">售后/退款</div><div class="t-desc">需审核处理</div></div>
-              <div class="todo-num">{{ stats.refunding }}</div>
-            </div>
-            <div class="todo-item" @click="openPromoArchive('seckill')" :class="{active: stats.seckillActive > 0 || stats.seckillExpired > 0}">
-              <div class="todo-icon bg-red"><el-icon><Timer /></el-icon></div>
-              <div class="todo-content">
-                <div class="t-title">秒杀商品</div>
-                <div class="t-desc">
-                  进行中 {{ stats.seckillActive }}
-                  <template v-if="stats.seckillExpired"> · 已过期 {{ stats.seckillExpired }}</template>
-                </div>
-              </div>
-              <div class="todo-num" :class="{ 'todo-num-warn': stats.seckillExpired > 0 }">
-                {{ stats.seckillActive }}
-              </div>
-            </div>
-            <div class="todo-item" @click="openPromoArchive('group')" :class="{active: stats.groupProducts > 0}">
-              <div class="todo-icon bg-orange"><el-icon><UserFilled /></el-icon></div>
-              <div class="todo-content">
-                <div class="t-title">拼团商品</div>
-                <div class="t-desc">已启用拼团的 SKU</div>
-              </div>
-              <div class="todo-num">{{ stats.groupProducts }}</div>
-            </div>
-            <div
-              v-if="stats.seckillExpired > 0"
-              class="todo-item active"
-              @click="openPromoArchive('seckill_expired')"
+            <button
+              v-for="item in todoItems"
+              :key="item.key"
+              type="button"
+              class="todo-item"
+              :class="{ active: item.count > 0 }"
+              @click="item.action()"
             >
-              <div class="todo-icon bg-orange"><el-icon><Warning /></el-icon></div>
-              <div class="todo-content">
-                <div class="t-title">秒杀已过期</div>
-                <div class="t-desc">仍开启但 endTime 已过，建议关闭</div>
+              <div class="todo-text">
+                <div class="t-title">{{ item.title }}</div>
+                <div class="t-desc">{{ item.desc }}</div>
               </div>
-              <div class="todo-num todo-num-warn">{{ stats.seckillExpired }}</div>
-            </div>
-            <div class="todo-item" @click="$emit('switch-tab', '1')" :class="{active: stats.lowStock > 0}">
-              <div class="todo-icon bg-orange"><el-icon><Warning /></el-icon></div>
-              <div class="todo-content"><div class="t-title">库存预警</div><div class="t-desc">库存不足3件</div></div>
-              <div class="todo-num">{{ stats.lowStock }}</div>
-            </div>
+              <div class="todo-num" :class="{ warn: item.warn }">{{ item.count }}</div>
+            </button>
           </div>
-          
-          <!-- 数据洞察卡片 -->
-          <div class="insights-preview">
+          <div class="insights-preview" v-if="insights.trend || insights.alert">
             <div class="insight-item" v-if="insights.trend">
               <el-icon class="insight-icon"><DataAnalysis /></el-icon>
-              <div class="insight-content">
+              <div>
                 <div class="insight-title">{{ insights.trend.title }}</div>
                 <div class="insight-desc">{{ insights.trend.desc }}</div>
               </div>
             </div>
-            <div class="insight-item" v-if="insights.alert">
-              <el-icon class="insight-icon warning"><WarningFilled /></el-icon>
-              <div class="insight-content">
+            <div class="insight-item alert" v-if="insights.alert">
+              <el-icon class="insight-icon"><WarningFilled /></el-icon>
+              <div>
                 <div class="insight-title">{{ insights.alert.title }}</div>
                 <div class="insight-desc">{{ insights.alert.desc }}</div>
               </div>
@@ -279,266 +293,171 @@
       </el-col>
     </el-row>
 
-    <!-- 数据洞察分析弹窗 -->
+    <section class="section quick">
+      <h3>快捷入口</h3>
+      <div class="action-grid">
+        <el-button @click="go('1')">藏品库</el-button>
+        <el-button @click="go('2')">记一笔账</el-button>
+        <el-button @click="go('3')">订单履约</el-button>
+        <el-button @click="go('72')">定金管理</el-button>
+        <el-button @click="go('74')">标本师提成</el-button>
+        <el-button @click="openGiftBoard">礼赠履约</el-button>
+        <el-button @click="go('75')">生日礼</el-button>
+        <el-button @click="go('6')">权益营销</el-button>
+        <el-button @click="go('4')">会员经营</el-button>
+        <el-button @click="go('44')">行为洞察</el-button>
+      </div>
+    </section>
+
     <el-dialog
       v-model="showInsightsDialog"
-      title="🔍 数据洞察分析"
-      width="900px"
+      title="数据洞察"
+      width="720px"
       :close-on-click-modal="false"
-      class="insights-dialog"
     >
-      <div class="insights-container">
-        <!-- 趋势分析 -->
-        <div class="insight-section">
-          <h3 class="section-title">
-            <el-icon><DataBoard /></el-icon>
-            趋势分析
-          </h3>
-          <div class="trend-analysis">
-            <div class="trend-item" v-for="trend in trendAnalysis" :key="trend.metric">
-              <div class="trend-label">{{ trend.label }}</div>
-              <div class="trend-value" :class="trend.type">
-                <el-icon v-if="trend.type === 'up'"><ArrowUp /></el-icon>
-                <el-icon v-else-if="trend.type === 'down'"><ArrowDown /></el-icon>
-                <span>{{ trend.value }}</span>
-                <span class="trend-desc">{{ trend.desc }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 异常检测 -->
-        <div class="insight-section" v-if="anomalies.length > 0">
-          <h3 class="section-title">
-            <el-icon><WarningFilled /></el-icon>
-            异常检测
-          </h3>
-          <div class="anomalies-list">
-            <div 
-              v-for="(anomaly, index) in anomalies" 
-              :key="index"
-              class="anomaly-item"
-              :class="anomaly.level"
-            >
-              <div class="anomaly-icon">
-                <el-icon v-if="anomaly.level === 'high'"><WarningFilled /></el-icon>
-                <el-icon v-else><InfoFilled /></el-icon>
-              </div>
-              <div class="anomaly-content">
-                <div class="anomaly-title">{{ anomaly.title }}</div>
-                <div class="anomaly-desc">{{ anomaly.desc }}</div>
-                <div class="anomaly-action" v-if="anomaly.action">
-                  <el-button size="small" type="primary" @click="handleAnomalyAction(anomaly)">
-                    {{ anomaly.action }}
-                  </el-button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 预测分析 -->
-        <div class="insight-section">
-          <h3 class="section-title">
-            <el-icon><DataAnalysis /></el-icon>
-            预测分析
-          </h3>
-          <div class="forecast-grid">
-            <div class="forecast-card" v-for="forecast in forecasts" :key="forecast.metric">
-              <div class="forecast-label">{{ forecast.label }}</div>
-              <div class="forecast-value">{{ forecast.value }}</div>
-              <div class="forecast-desc">{{ forecast.desc }}</div>
-              <div class="forecast-confidence">
-                <span>置信度: {{ forecast.confidence }}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 业务建议 -->
-        <div class="insight-section" v-if="suggestions.length > 0">
-          <h3 class="section-title">
-            <el-icon><Star /></el-icon>
-            AI 业务建议
-          </h3>
-          <div class="suggestions-list">
-            <div 
-              v-for="(suggestion, index) in suggestions" 
-              :key="index"
-              class="suggestion-item"
-            >
-              <div class="suggestion-icon">{{ suggestion.icon }}</div>
-              <div class="suggestion-content">
-                <div class="suggestion-title">{{ suggestion.title }}</div>
-                <div class="suggestion-desc">{{ suggestion.desc }}</div>
-                <div class="suggestion-impact">
-                  <span>预期影响: {{ suggestion.impact }}</span>
-                </div>
-              </div>
-              <div class="suggestion-action">
-                <el-button size="small" @click="handleSuggestion(suggestion)">
-                  查看详情
-                </el-button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="insights-dialog-body">
+        <p v-if="insights.trend"><strong>{{ insights.trend.title }}</strong> — {{ insights.trend.desc }}</p>
+        <p v-if="insights.alert"><strong>{{ insights.alert.title }}</strong> — {{ insights.alert.desc }}</p>
+        <ul>
+          <li v-for="(n, i) in dataNotes" :key="i">{{ n }}</li>
+        </ul>
+        <p class="muted">口径：线上与账本分列，避免把账本 online 渠道再加进小程序 GMV；兑换单不计 GMV，单独计「金粉兑换」。</p>
       </div>
       <template #footer>
         <el-button @click="showInsightsDialog = false">关闭</el-button>
-        <el-button type="primary" @click="exportInsights">导出报告</el-button>
-        <el-button type="primary" @click="refreshInsights" :loading="insightsLoading">
-          <el-icon><Refresh /></el-icon>
-          刷新分析
-        </el-button>
+        <el-button type="primary" @click="refreshAll">重新聚合</el-button>
       </template>
     </el-dialog>
-
-    <div class="quick-actions">
-      <h3>⚡️ 快捷功能</h3>
-      <div class="action-grid">
-        <el-button size="large" icon="Plus" @click="$emit('switch-tab', '1')">发布新品</el-button>
-        <el-button size="large" icon="EditPen" @click="$emit('switch-tab', '2')">记一笔账</el-button>
-        <el-button size="large" icon="Ticket" @click="$emit('switch-tab', '6')">发优惠券</el-button>
-        <el-button size="large" icon="User" @click="$emit('switch-tab', '4')">会员查询</el-button>
-        <el-button size="large" icon="DataAnalysis" @click="$emit('switch-tab', '44')">C 端行为</el-button>
-      </div>
-    </div>
-
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
-import { Clock, Trophy, Bell, Box, Service, Warning, EditPen, Plus, Ticket, User, DataAnalysis, DataBoard, WarningFilled, InfoFilled, ArrowUp, ArrowDown, Star, Refresh, Calendar, Timer, UserFilled } from '@element-plus/icons-vue'
-import { cdnCount, fetchCollectionLimit, fetchCollectionWhere, getCdnDatabase } from '../cloud'
-import { excludeExchangeOrders } from '../utils/orderFilters'
+import { reactive, ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import {
+  Clock,
+  DataAnalysis,
+  WarningFilled,
+} from '@element-plus/icons-vue'
+import {
+  cdnCount,
+  fetchCollectionLimit,
+  fetchCollectionWhere,
+  getCdnDatabase,
+  callCloudFunction,
+} from '../cloud'
 import Chart from 'chart.js/auto'
 import CompanionRobot from './CompanionRobot.vue'
 import { ElMessage } from 'element-plus'
+import { setHubSection } from '../utils/moduleAliases'
+import { loadStoreBundle } from '../utils/storeStorage'
+import {
+  resolveRangePreset,
+  loadLedgerRecords,
+  filterLedgerByRange,
+  summarizeLedger,
+  aggregateOrders,
+  summarizeDepositIntents,
+  donationFrom,
+  fmtYuan,
+  categoryLabel,
+  ORDER_SCAN_MAX,
+  todayBizDate,
+} from '../utils/dashboardMetrics'
 
 const emit = defineEmits(['switch-tab'])
 
 const loading = ref(false)
 const currentTime = ref(new Date().toLocaleTimeString())
+const rangePreset = ref('7')
+const storeFilter = ref('all')
+const chartMode = ref('dual')
 const chartEmpty = ref(false)
-const chartRange = ref('7')
-const chartCanvas = ref(null) // 🟢 使用 ref 引用 canvas
-let chartInstance = null
-
-// 机器人祝福消息
-const robotMessage = ref('')
-const showRobotMessage = ref(false)
-
-// 数据洞察相关
+const mixEmpty = ref(true)
+const catEmpty = ref(true)
 const showInsightsDialog = ref(false)
-const insightsLoading = ref(false)
-const insights = reactive({
-  trend: null,
-  alert: null
+const dataNotes = ref([])
+const trendCanvas = ref(null)
+const mixCanvas = ref(null)
+const catCanvas = ref(null)
+let trendChart = null
+let mixChart = null
+let catChart = null
+let clockTimer = null
+
+const storeOptions = ref([])
+
+const headline = reactive({
+  grandTotal: 0,
+  ledgerNet: 0,
+  ledgerOrders: 0,
+  ledgerEmpty: true,
+  gmvPaid: 0,
+  netOnline: 0,
+  refundAmount: 0,
+  donationLedger: 0,
+  donationGrand: 0,
+  exchangeCount: 0,
+  aov: 0,
 })
 
-const trendAnalysis = ref([])
-const anomalies = ref([])
-const forecasts = ref([])
-const suggestions = ref([])
-
-// 祝福文案库
-const blessings = [
-  '💰 恭喜发财，财源广进！',
-  '🎉 生意兴隆，日进斗金！',
-  '🌟 财源滚滚，大吉大利！',
-  '💎 招财进宝，富贵吉祥！',
-  '🎊 财源广进，生意红火！',
-  '✨ 财源茂盛，蒸蒸日上！',
-  '🏆 财源亨通，步步高升！',
-  '💵 财源广进，日进斗金！',
-  '🎁 财源滚滚，好运连连！',
-  '💫 财源茂盛，生意兴隆！',
-  '🔥 财源广进，大展宏图！',
-  '⭐ 财源滚滚，前程似锦！',
-  '💖 财源广进，心想事成！',
-  '🎈 财源茂盛，万事如意！',
-  '🌈 财源广进，福星高照！',
-  '🚀 财源滚滚，事业腾飞！',
-  '💐 财源广进，花开富贵！',
-  '🎯 财源茂盛，目标达成！',
-  '💪 财源广进，勇往直前！',
-  '🎨 财源滚滚，创意无限！'
-]
-
-const getRandomBlessing = () => {
-  return blessings[Math.floor(Math.random() * blessings.length)]
-}
-
-const handleChartClick = () => {
-  // 点击图表时显示祝福
-  robotMessage.value = getRandomBlessing()
-  showRobotMessage.value = true
-  
-  setTimeout(() => {
-    showRobotMessage.value = false
-  }, 3000)
-}
-
-// 处理AI操作
-const handleAIAction = (action) => {
-  switch(action) {
-    case 'analyze':
-      ElMessage.info('正在调用AI进行数据分析...')
-      break
-    case 'suggest':
-      ElMessage.info('正在生成优化建议...')
-      break
-    case 'report':
-      ElMessage.info('正在生成经营报告...')
-      break
-  }
-}
-
-// 处理导航
-const handleNavigate = (target) => {
-  if (target) {
-    emit('switch-tab', target)
-  }
-}
-
-/** 跳转藏品库并带上营销筛选（App.vue 读 sessionStorage） */
-const openPromoArchive = (filter) => {
-  try {
-    sessionStorage.setItem('sc_archive_promo_filter', filter)
-  } catch (_) { /* ignore */ }
-  emit('switch-tab', '1')
-}
-
-// 核心数据
 const stats = reactive({
-  todaySales: 0,
-  yesterdaySales: 0,
-  todayOrderCount: 0,
-  monthSales: 0,
-  monthProfit: 0,
-  totalMonthOrders: 0, // 新增：本月总订单数
   totalUsers: 0,
   newUsers: 0,
   pendingOrders: 0,
   refunding: 0,
   lowStock: 0,
   totalTodos: 0,
-  isManualData: false,
-  // 🟢 对齐小程序的运营待办
   pendingBookings: 0,
   pendingCustom: 0,
   pendingPet: 0,
   pendingTickets: 0,
   pendingComments: 0,
-  seckillProducts: 0,
   seckillActive: 0,
   seckillExpired: 0,
-  groupProducts: 0
+  groupProducts: 0,
+  todaySales: 0,
 })
 
-// 🟢 C 端小程序脉搏（来自 analytics_daily + user_behaviors 集合）
+const deposit = reactive({
+  counts: {
+    intent: 0,
+    pending_pay: 0,
+    deposit_paid: 0,
+    awaiting_balance: 0,
+    settled: 0,
+    forfeited_open: 0,
+    cancelled: 0,
+    overdue: 0,
+    other: 0,
+  },
+  paidDepositYuan: 0,
+  openPipeline: 0,
+  available: false,
+})
+
+const commission = reactive({
+  netAmount: 0,
+  earnAmount: 0,
+  earnCount: 0,
+  reverseAmount: 0,
+  reverseCount: 0,
+  available: false,
+})
+
+const gift = reactive({
+  awaiting_address: 0,
+  awaiting_ship: 0,
+  pickup_verify: 0,
+  done: 0,
+  todo: 0,
+  available: false,
+})
+
+const birthday = reactive({
+  enabled: false,
+  name: '',
+})
+
 const miniapp = reactive({
   eventsToday: 0,
   uvToday: 0,
@@ -547,65 +466,525 @@ const miniapp = reactive({
   customSubmitsToday: 0,
   petSubmitsToday: 0,
   supportToday: 0,
-  storeCheckinToday: 0
+  storeCheckinToday: 0,
 })
 
-const businessStatus = computed(() => {
-  if (stats.todaySales > 5000) return { text: '🔥 生意火爆', color: 'text-red' }
-  if (stats.todaySales > 1000) return { text: '🙂 平稳运行', color: 'text-green' }
-  return { text: '💤 暂无波澜', color: 'text-gray' }
+const insights = reactive({ trend: null, alert: null })
+
+const chartState = reactive({
+  labels: [],
+  ledger: [],
+  online: [],
+  mix: [],
+  categories: [],
 })
+
+const rangeLabel = computed(() => resolveRangePreset(rangePreset.value).label)
+
+const businessStatus = computed(() => {
+  const v = headline.grandTotal || stats.todaySales
+  if (v > 5000) return { text: '生意火爆', tone: 'hot' }
+  if (v > 1000) return { text: '平稳运行', tone: 'ok' }
+  return { text: '待升温', tone: 'idle' }
+})
+
+const robotStats = computed(() => ({
+  todaySales: headline.netOnline || headline.ledgerNet,
+  todayOrderCount: headline.ledgerOrders,
+  monthSales: headline.grandTotal,
+  totalTodos: stats.totalTodos,
+  lowStock: stats.lowStock,
+}))
+
+const todoItems = computed(() => [
+  {
+    key: 'ship',
+    title: '待发货订单',
+    desc: '已付待履约',
+    count: stats.pendingOrders,
+    action: () => go('3'),
+  },
+  {
+    key: 'gift',
+    title: '礼赠待办',
+    desc: '填址 / 发货 / 自提',
+    count: gift.todo,
+    action: () => openGiftBoard(),
+  },
+  {
+    key: 'deposit',
+    title: '定金逾期/待尾款',
+    desc: '孤品定金漏斗',
+    count: deposit.counts.overdue || deposit.counts.awaiting_balance,
+    warn: deposit.counts.overdue > 0,
+    action: () => go('72'),
+  },
+  {
+    key: 'book',
+    title: '待核销预约',
+    desc: '门票 / 课程',
+    count: stats.pendingBookings,
+    action: () => go('37'),
+  },
+  {
+    key: 'custom',
+    title: '定制询单',
+    desc: '待报价',
+    count: stats.pendingCustom,
+    action: () => go('38'),
+  },
+  {
+    key: 'pet',
+    title: '伴宠审核',
+    desc: '宠物纪念',
+    count: stats.pendingPet,
+    action: () => go('39'),
+  },
+  {
+    key: 'ticket',
+    title: '山海有信',
+    desc: '待回复工单',
+    count: stats.pendingTickets,
+    action: () => go('40'),
+  },
+  {
+    key: 'refund',
+    title: '售后/退款',
+    desc: '需审核',
+    count: stats.refunding,
+    action: () => go('42'),
+  },
+  {
+    key: 'stock',
+    title: '库存预警',
+    desc: '库存不足 3 件',
+    count: stats.lowStock,
+    warn: stats.lowStock > 0,
+    action: () => go('1'),
+  },
+  {
+    key: 'seckill',
+    title: '秒杀过期',
+    desc: '仍开启但已过期',
+    count: stats.seckillExpired,
+    warn: stats.seckillExpired > 0,
+    action: () => openPromoArchive('seckill_expired'),
+  },
+])
+
+function fmt(n) {
+  return fmtYuan(n)
+}
+
+function go(id) {
+  emit('switch-tab', String(id))
+}
+
+function openGiftBoard() {
+  setHubSection('6', 'gift-board')
+  go('6')
+}
+
+function openPromoArchive(filter) {
+  try {
+    sessionStorage.setItem('sc_archive_promo_filter', filter)
+  } catch (_) { /* ignore */ }
+  go('1')
+}
+
+function handleAIAction(action) {
+  if (action === 'analyze' || action === 'report') showInsightsDialog.value = true
+  else ElMessage.info('正在生成建议…')
+}
+
+function handleNavigate(target) {
+  if (target) go(target)
+}
+
+function onFilterChange() {
+  refreshAll()
+}
+
+function refreshStoreOptions() {
+  const bundle = loadStoreBundle()
+  const stores = Array.isArray(bundle?.stores) ? bundle.stores : []
+  storeOptions.value = stores.map((s) => ({
+    value: String(s.storeId || s.id || ''),
+    label: s.name || s.storeId || s.id,
+  })).filter((s) => s.value)
+}
+
+async function safeCdnCount(coll, where = null) {
+  try {
+    return await cdnCount(coll, where)
+  } catch (e) {
+    console.warn(`[Cockpit] count ${coll}`, e?.message)
+    return 0
+  }
+}
+
+async function loadOpsModules() {
+  const notes = []
+
+  // 定金
+  try {
+    const res = await callCloudFunction('manageDeposit', {
+      action: 'listIntents',
+      status: 'all',
+      limit: 100,
+    })
+    if (res && res.success !== false) {
+      const sum = summarizeDepositIntents(res.list || [])
+      Object.assign(deposit, { ...sum, available: true })
+    } else {
+      notes.push('定金意向暂不可用（manageDeposit）')
+    }
+  } catch (e) {
+    notes.push('定金模块未连通')
+    console.warn('[Cockpit] deposit', e?.message)
+  }
+
+  // 提成
+  try {
+    const res = await callCloudFunction('manageArtisanCommission', { action: 'getSummary' })
+    const s = (res && (res.summary || res)) || {}
+    if (res && res.success !== false) {
+      Object.assign(commission, {
+        netAmount: Number(s.netAmount) || 0,
+        earnAmount: Number(s.earnAmount) || 0,
+        earnCount: Number(s.earnCount) || 0,
+        reverseAmount: Number(s.reverseAmount) || 0,
+        reverseCount: Number(s.reverseCount) || 0,
+        available: true,
+      })
+    } else {
+      notes.push('标本师提成汇总暂不可用')
+    }
+  } catch (e) {
+    notes.push('提成模块未连通')
+    console.warn('[Cockpit] commission', e?.message)
+  }
+
+  // 礼赠
+  try {
+    const res = await callCloudFunction('manageGift', {
+      action: 'listBoard',
+      bucket: 'awaiting_address',
+      page: 1,
+      pageSize: 1,
+    })
+    if (res && res.success !== false) {
+      const c = res.counts || {}
+      gift.awaiting_address = Number(c.awaiting_address) || 0
+      gift.awaiting_ship = Number(c.awaiting_ship) || 0
+      gift.pickup_verify = Number(c.pickup_verify) || 0
+      gift.done = Number(c.done) || 0
+      gift.todo = gift.awaiting_address + gift.awaiting_ship + gift.pickup_verify
+      gift.available = true
+    } else {
+      notes.push('礼赠履约看板暂不可用')
+    }
+  } catch (e) {
+    notes.push('礼赠模块未连通')
+    console.warn('[Cockpit] gift', e?.message)
+  }
+
+  // 生日礼配置（只读）
+  try {
+    const res = await callCloudFunction('manageBirthdayGift', { action: 'get' })
+    const cfg = (res && (res.config || res.data || res)) || {}
+    if (res && res.success !== false) {
+      birthday.enabled = cfg.enabled !== false
+      birthday.name = cfg.name || cfg.title || ''
+    }
+  } catch (e) {
+    console.warn('[Cockpit] birthday', e?.message)
+  }
+
+  return notes
+}
+
+async function loadMiniappPulse() {
+  const todayStr = todayBizDate()
+  const startMs = new Date(`${todayStr}T00:00:00+08:00`).getTime()
+  const cdnDb = await getCdnDatabase()
+  const _ = cdnDb.command
+
+  const applyPulseFromRows = (rows) => {
+    const sum = (action) =>
+      rows.filter((r) => r.action === action).reduce((s, r) => s + (r.count || 0), 0)
+    const allUv = new Set()
+    let total = 0
+    rows.forEach((r) => {
+      total += r.count || 0
+      ;(r.uv || []).forEach((u) => allUv.add(u))
+    })
+    const idStart = sum('identify_start')
+    const idSuccess = sum('identify_success')
+    miniapp.eventsToday = total
+    miniapp.uvToday = allUv.size
+    miniapp.identifyToday = idStart
+    miniapp.identifySuccessRate = idStart > 0 ? Math.round((idSuccess / idStart) * 100) : 0
+    miniapp.customSubmitsToday = sum('custom_order_submit') + sum('custom_inquiry_submit')
+    miniapp.petSubmitsToday = sum('pet_memorial_submit')
+    miniapp.supportToday =
+      sum('support_ticket_submit') + sum('support_call') + sum('support_wechat_contact')
+    miniapp.storeCheckinToday = sum('store_checkin')
+  }
+
+  try {
+    const rows = await fetchCollectionWhere('analytics_daily', { dateKey: todayStr }, 200)
+    if (rows.length) {
+      applyPulseFromRows(rows)
+      return
+    }
+  } catch (e) {
+    console.warn('analytics_daily', e?.message)
+  }
+
+  try {
+    const events = await fetchCollectionWhere('user_behaviors', { timestamp: _.gte(startMs) }, 500)
+    const cnt = (action) => events.filter((e) => e.action === action).length
+    miniapp.eventsToday = events.length
+    miniapp.uvToday = new Set(events.map((e) => e.userId).filter(Boolean)).size
+    const idStart = cnt('identify_start')
+    const idSuccess = cnt('identify_success')
+    miniapp.identifyToday = idStart
+    miniapp.identifySuccessRate = idStart > 0 ? Math.round((idSuccess / idStart) * 100) : 0
+    miniapp.customSubmitsToday = cnt('custom_order_submit') + cnt('custom_inquiry_submit')
+    miniapp.petSubmitsToday = cnt('pet_memorial_submit')
+    miniapp.supportToday =
+      cnt('support_ticket_submit') + cnt('support_call') + cnt('support_wechat_contact')
+    miniapp.storeCheckinToday = cnt('store_checkin')
+  } catch (e) {
+    console.warn('user_behaviors', e?.message)
+  }
+}
+
+function buildInsights(ledgerSum, orderAgg) {
+  const daily = orderAgg.daily || []
+  const last = daily[daily.length - 1]
+  const prev = daily[daily.length - 2]
+  const todayOnline = last?.gmvPaid || 0
+  const yOnline = prev?.gmvPaid || 0
+  const dir = todayOnline >= yOnline ? '升' : '降'
+  const pct =
+    yOnline > 0 ? Math.abs(((todayOnline - yOnline) / yOnline) * 100).toFixed(1) : '—'
+  insights.trend = {
+    title: `${rangeLabel.value}趋势`,
+    desc: `账本 ¥${fmt(ledgerSum.revenue)} · 线上毛 GMV ¥${fmt(orderAgg.totals.gmvPaid)}；末日较前一日线上${dir} ${pct}%`,
+  }
+  const alerts = []
+  if (stats.totalTodos > 0) alerts.push(`待办 ${stats.totalTodos}`)
+  if (deposit.counts.overdue > 0) alerts.push(`定金逾期 ${deposit.counts.overdue}`)
+  if (gift.todo > 0) alerts.push(`礼赠待办 ${gift.todo}`)
+  if (stats.lowStock > 0) alerts.push(`库存预警 ${stats.lowStock}`)
+  insights.alert = alerts.length
+    ? { title: '待关注', desc: alerts.join('；') }
+    : null
+}
+
+function renderCharts() {
+  const labels = chartState.labels
+  const ledger = chartState.ledger
+  const online = chartState.online
+
+  const showLedger = chartMode.value === 'dual' || chartMode.value === 'ledger'
+  const showOnline = chartMode.value === 'dual' || chartMode.value === 'online'
+  chartEmpty.value =
+    (!showLedger || ledger.every((v) => !v)) && (!showOnline || online.every((v) => !v))
+
+  const datasets = []
+  if (showLedger) {
+    datasets.push({
+      label: '营收账本',
+      data: ledger,
+      borderColor: '#2D5A3F',
+      backgroundColor: 'rgba(45, 90, 63, 0.12)',
+      borderWidth: 2,
+      tension: 0.35,
+      fill: true,
+      pointRadius: 3,
+    })
+  }
+  if (showOnline) {
+    datasets.push({
+      label: '小程序毛 GMV',
+      data: online,
+      borderColor: '#C4A76C',
+      backgroundColor: 'rgba(196, 167, 108, 0.15)',
+      borderWidth: 2,
+      tension: 0.35,
+      fill: true,
+      pointRadius: 3,
+    })
+  }
+
+  if (trendChart) trendChart.destroy()
+  if (trendCanvas.value) {
+    trendChart = new Chart(trendCanvas.value, {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: datasets.length > 1, position: 'bottom' } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#E8E5DE' } },
+          x: { grid: { display: false } },
+        },
+      },
+    })
+  }
+
+  const mix = chartState.mix.filter((x) => x.value > 0)
+  mixEmpty.value = !mix.length
+  if (mixChart) mixChart.destroy()
+  if (mixCanvas.value && mix.length) {
+    mixChart = new Chart(mixCanvas.value, {
+      type: 'doughnut',
+      data: {
+        labels: mix.map((m) => m.label),
+        datasets: [
+          {
+            data: mix.map((m) => m.value),
+            backgroundColor: ['#2D5A3F', '#C4A76C', '#7B68AE', '#5B8FB9', '#8B6F47'],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      },
+    })
+  }
+
+  const cats = chartState.categories.filter((x) => x.value > 0)
+  catEmpty.value = !cats.length
+  if (catChart) catChart.destroy()
+  if (catCanvas.value && cats.length) {
+    catChart = new Chart(catCanvas.value, {
+      type: 'doughnut',
+      data: {
+        labels: cats.map((c) => c.label),
+        datasets: [
+          {
+            data: cats.map((c) => c.value),
+            backgroundColor: ['#52B788', '#7B68AE', '#6DA34D', '#5B8FB9', '#C4A76C', '#8B6F47', '#A09A90'],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      },
+    })
+  }
+}
 
 const refreshAll = async () => {
   loading.value = true
+  const notes = []
   try {
+    refreshStoreOptions()
+    const range = resolveRangePreset(rangePreset.value)
+    const storeId = storeFilter.value
+
+    // 1) 账本
+    const allLedger = loadLedgerRecords()
+    const ledgerRows = filterLedgerByRange(allLedger, {
+      startDate: range.startDate,
+      endDate: range.endDate,
+      storeId,
+    })
+    const ledgerSum = summarizeLedger(ledgerRows)
+    headline.ledgerNet = ledgerSum.revenue
+    headline.ledgerOrders = ledgerSum.orderCount
+    headline.ledgerEmpty = ledgerRows.length === 0
+    if (headline.ledgerEmpty) notes.push('所选区间营收账本为空')
+
+    // 2) 线上订单采样
+    let orderRows = []
+    try {
+      orderRows = await fetchCollectionLimit('orders', { limit: ORDER_SCAN_MAX })
+    } catch (e) {
+      notes.push('订单采样失败，线上 GMV 暂缺')
+      console.warn('[Cockpit] orders', e?.message)
+    }
+    const orderAgg = aggregateOrders(orderRows, {
+      startDate: range.startDate,
+      endDate: range.endDate,
+      storeId,
+    })
+    if (orderAgg.truncated) {
+      notes.push(`订单已采样最近 ${ORDER_SCAN_MAX} 单，GMV 为采样内统计`)
+    }
+
+    headline.gmvPaid = orderAgg.totals.gmvPaid
+    headline.netOnline = orderAgg.totals.netOnline
+    headline.refundAmount = orderAgg.totals.refundAmount
+    headline.aov = orderAgg.totals.aov
+    headline.exchangeCount = orderAgg.totals.exchangeCount
+    headline.grandTotal = Math.round((headline.netOnline + headline.ledgerNet) * 100) / 100
+    headline.donationLedger = donationFrom(headline.ledgerNet)
+    headline.donationGrand = donationFrom(headline.grandTotal)
+
+    // 今日对照（给状态灯）
+    const today = todayBizDate()
+    const todayLedger = filterLedgerByRange(allLedger, {
+      startDate: today,
+      endDate: today,
+      storeId,
+    })
+    const todayOnline = (orderAgg.daily || []).find((d) => d.dateKey === today)
+    stats.todaySales =
+      summarizeLedger(todayLedger).revenue || todayOnline?.gmvPaid || 0
+
+    // 图表数据
+    const keys = orderAgg.daily.map((d) => d.dateKey)
+    chartState.labels = keys.map((k) => {
+      const [, m, d] = k.split('-')
+      return `${Number(m)}/${Number(d)}`
+    })
+    chartState.ledger = keys.map((k) => Math.round((ledgerSum.byDate[k]?.revenue || 0) * 100) / 100)
+    chartState.online = orderAgg.daily.map((d) => d.gmvPaid)
+    const mix = orderAgg.totals.mix
+    chartState.mix = [
+      { label: '零售', value: mix.commerce },
+      { label: '礼赠', value: mix.gift },
+      { label: '定金', value: mix.deposit },
+      { label: '尾款', value: mix.depositBalance },
+      { label: '定制', value: mix.custom },
+    ]
+    chartState.categories = orderAgg.categoryShare.map((c) => ({
+      label: categoryLabel(c.key),
+      value: c.value,
+    }))
+
+    // 3) 待办 counts
     const now = new Date()
-    const todayStr = now.toISOString().split('T')[0] 
-    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0]
-    const currentMonth = todayStr.substring(0, 7)
-
-    // 1. 读取【财务系统】的账本数据（统一使用 shanhai_v12 key）
-    const financeRaw = localStorage.getItem('shanhai_v12')
-    const records = financeRaw ? JSON.parse(financeRaw) : []
-    
-    // 读取财务系统设置（从另一个key读取，如果存在）
-    const settingsRaw = localStorage.getItem('sc_finance_v12')
-    const financeSettings = settingsRaw ? JSON.parse(settingsRaw).settings : {}
-    
-    // 查找账本数据
-    const todayRecord = records.find(r => r.date === todayStr)
-    const yesterdayRecord = records.find(r => r.date === yesterdayStr)
-    const monthRecords = records.filter(r => r.date.startsWith(currentMonth))
-    const ledgerMonthSales = monthRecords.reduce((sum, r) => sum + (r.revenue || 0), 0)
-    
-    // 计算订单相关数据
-    const monthOrderRecords = monthRecords.filter(r => r.orderCount && r.orderCount > 0)
-    const totalMonthOrders = monthOrderRecords.reduce((sum, r) => sum + (r.orderCount || 0), 0)
-    
-    const costRate = (financeSettings?.costRate || 25) / 100
-    const estProfit = Math.round(ledgerMonthSales * (1 - costRate))
-
-    // 2. 读取【云数据库】实时数据（CDN SDK，避免 bundle db.count 静默失败）
     const startOfDay = new Date(now)
     startOfDay.setHours(0, 0, 0, 0)
     const startMs = startOfDay.getTime()
-
     const cdnDb = await getCdnDatabase()
     const _ = cdnDb.command
 
-    const safeCdnCount = async (coll, where = null) => {
-      try {
-        return await cdnCount(coll, where)
-      } catch (e) {
-        console.warn(`[Dashboard] count ${coll} failed:`, e?.message)
-        return 0
-      }
-    }
-
     const [
-      usersTotal, newUsersTotal, pendingTotal, refundingOrders, pendingRefunds, stockTotal,
-      bookingTotal, customTotal, petTotal, ticketTotal, commentTotal
+      usersTotal,
+      newUsersTotal,
+      pendingTotal,
+      refundingOrders,
+      pendingRefunds,
+      stockTotal,
+      bookingTotal,
+      customTotal,
+      petTotal,
+      ticketTotal,
+      commentTotal,
     ] = await Promise.all([
       safeCdnCount('users'),
       safeCdnCount('users', { createTime: _.gt(startMs) }),
@@ -619,47 +998,11 @@ const refreshAll = async () => {
       safeCdnCount('support_tickets', { status: 'pending' }),
       safeCdnCount('comments', { status: 'pending' }),
     ])
-    const refundingTotal = refundingOrders + pendingRefunds
 
-    // 3. 实时订单兜底：仅当今日尚未入账时才全量扫 orders（有账本则跳过，减一次 500 拉取）
-    let realtimeTodaySales = 0
-    let realtimeOrderCount = 0
-    if (!todayRecord) {
-      try {
-        // 兑换单（source=exchange）不计入订单/营收口径
-        const todayOrderRows = excludeExchangeOrders(await fetchCollectionLimit('orders', { limit: 500 }))
-        todayOrderRows.forEach(o => {
-          const ts = o.createTime || o._createTime || 0
-          if (ts >= startMs && ['paid', 'shipped', 'received'].includes(o.status)) {
-            realtimeTodaySales += (parseFloat(o.totalPrice) || 0)
-            realtimeOrderCount++
-          }
-        })
-      } catch (e) {
-        console.warn('[Dashboard] 今日订单兜底失败', e?.message)
-      }
-    }
-
-    // 4. 合并数据（优先使用财务账本数据，保证数据一致性）
-    if (todayRecord) {
-        stats.todaySales = todayRecord.revenue
-        stats.todayOrderCount = todayRecord.orderCount || 0
-        stats.isManualData = true
-    } else {
-        stats.todaySales = realtimeTodaySales
-        stats.todayOrderCount = realtimeOrderCount
-        stats.isManualData = false
-    }
-    
-    stats.yesterdaySales = yesterdayRecord ? yesterdayRecord.revenue : 0
-    stats.monthSales = ledgerMonthSales || realtimeTodaySales
-    stats.monthProfit = estProfit
-    stats.totalMonthOrders = totalMonthOrders // 从财务账本读取本月总订单数
-    // 会员数据与数据库保持一致
     stats.totalUsers = usersTotal
     stats.newUsers = newUsersTotal
     stats.pendingOrders = pendingTotal
-    stats.refunding = refundingTotal
+    stats.refunding = refundingOrders + pendingRefunds
     stats.lowStock = stockTotal
     stats.pendingBookings = bookingTotal
     stats.pendingCustom = customTotal
@@ -667,318 +1010,228 @@ const refreshAll = async () => {
     stats.pendingTickets = ticketTotal
     stats.pendingComments = commentTotal
 
-    // 活动商品 KPI（商品侧 seckill / groupBuying；秒杀拆「进行中 / 已过期」）
     try {
       const productRows = await fetchCollectionLimit('products', { limit: 500 })
       const nowMs = Date.now()
-      let seckillN = 0
       let seckillActive = 0
       let seckillExpired = 0
       let groupN = 0
       productRows.forEach((p) => {
         if (p?.seckill?.enabled) {
-          seckillN += 1
           const end = p.seckill.endTime ? Number(p.seckill.endTime) : null
           if (end && end < nowMs) seckillExpired += 1
           else seckillActive += 1
         }
         if (p?.groupBuying?.enabled) groupN += 1
       })
-      stats.seckillProducts = seckillN
       stats.seckillActive = seckillActive
       stats.seckillExpired = seckillExpired
       stats.groupProducts = groupN
     } catch (e) {
-      console.warn('[Dashboard] 活动商品统计失败', e?.message)
-      stats.seckillProducts = 0
-      stats.seckillActive = 0
-      stats.seckillExpired = 0
-      stats.groupProducts = 0
+      console.warn('[Cockpit] products promo', e?.message)
     }
 
-    stats.totalTodos = pendingTotal + refundingTotal + stockTotal
-                     + bookingTotal + customTotal + petTotal
-                     + ticketTotal + commentTotal
+    const opsNotes = await loadOpsModules()
+    notes.push(...opsNotes)
 
-    // 🟢 加载 C 端小程序脉搏数据（来自 analytics_daily / user_behaviors）
-    loadMiniappPulse(todayStr).catch(e => console.warn('miniapp pulse skip', e))
+    stats.totalTodos =
+      stats.pendingOrders +
+      stats.refunding +
+      stats.lowStock +
+      stats.pendingBookings +
+      stats.pendingCustom +
+      stats.pendingPet +
+      stats.pendingTickets +
+      stats.pendingComments +
+      gift.todo +
+      deposit.counts.overdue
 
-    // 🟢 5. 渲染图表 (关键修复：使用 nextTick)
-    await nextTick() // 等待 DOM 更新
-    renderChart(records)
-    
-    // 6. 计算数据洞察
-    calculateInsights(records, stats)
+    await loadMiniappPulse().catch((e) => console.warn('pulse', e))
 
-  } catch(e) {
-    console.error('看板加载失败', e)
-    ElMessage.warning(e?.message || '看板云数据加载失败，本地账本仍可使用；请检查网络后点「刷新看板」')
+    buildInsights(ledgerSum, orderAgg)
+    dataNotes.value = notes
+
+    await nextTick()
+    renderCharts()
+  } catch (e) {
+    console.error('驾驶舱加载失败', e)
+    ElMessage.warning(e?.message || '看板加载失败，请检查网络后刷新')
   } finally {
     loading.value = false
   }
 }
 
-// 根据账本与 stats 计算数据洞察（填充 insights.trend / insights.alert）
-// 🟢 加载 C 端小程序脉搏数据（基于埋点）
-const loadMiniappPulse = async (todayStr) => {
-  const startMs = new Date(todayStr + 'T00:00:00').getTime()
-  const cdnDb = await getCdnDatabase()
-  const _ = cdnDb.command
-
-  const applyPulseFromRows = (rows) => {
-    const sum = (action) => rows
-      .filter(r => r.action === action)
-      .reduce((s, r) => s + (r.count || 0), 0)
-    const allUv = new Set()
-    let total = 0
-    rows.forEach(r => {
-      total += (r.count || 0)
-      ;(r.uv || []).forEach(u => allUv.add(u))
-    })
-    const idStart = sum('identify_start')
-    const idSuccess = sum('identify_success')
-    miniapp.eventsToday = total
-    miniapp.uvToday = allUv.size
-    miniapp.identifyToday = idStart
-    miniapp.identifySuccessRate = idStart > 0 ? Math.round((idSuccess / idStart) * 100) : 0
-    miniapp.customSubmitsToday = sum('custom_order_submit') + sum('custom_inquiry_submit')
-    miniapp.petSubmitsToday = sum('pet_memorial_submit')
-    miniapp.supportToday = sum('support_ticket_submit') + sum('support_call') + sum('support_wechat_contact')
-    miniapp.storeCheckinToday = sum('store_checkin')
-  }
-
-  // 优先用 analytics_daily 聚合表
-  try {
-    const rows = await fetchCollectionWhere('analytics_daily', { dateKey: todayStr }, 200)
-    if (rows.length) {
-      applyPulseFromRows(rows)
-      return
-    }
-  } catch (e) {
-    console.warn('analytics_daily 不可读', e?.message)
-  }
-
-  // 兜底：从 user_behaviors 实时统计今日
-  try {
-    const events = await fetchCollectionWhere('user_behaviors', { timestamp: _.gte(startMs) }, 500)
-    const cnt = (action) => events.filter(e => e.action === action).length
-    miniapp.eventsToday = events.length
-    miniapp.uvToday = new Set(events.map(e => e.userId).filter(Boolean)).size
-    const idStart = cnt('identify_start')
-    const idSuccess = cnt('identify_success')
-    miniapp.identifyToday = idStart
-    miniapp.identifySuccessRate = idStart > 0 ? Math.round((idSuccess / idStart) * 100) : 0
-    miniapp.customSubmitsToday = cnt('custom_order_submit') + cnt('custom_inquiry_submit')
-    miniapp.petSubmitsToday = cnt('pet_memorial_submit')
-    miniapp.supportToday = cnt('support_ticket_submit') + cnt('support_call') + cnt('support_wechat_contact')
-    miniapp.storeCheckinToday = cnt('store_checkin')
-  } catch (e) {
-    console.warn('user_behaviors 不可读', e?.message)
-  }
-}
-
-const calculateInsights = (records, stats) => {
-  if (!records || !stats) return
-  const weekRecords = (records || []).slice(-7)
-  const weekSales = weekRecords.reduce((s, r) => s + (r.revenue || 0), 0)
-  const avgDaily = weekRecords.length ? weekSales / weekRecords.length : 0
-  const yesterday = stats.yesterdaySales || 0
-  const today = stats.todaySales || 0
-  const trendDir = today >= yesterday ? 'up' : 'down'
-  const trendPct = yesterday > 0 ? Math.abs(((today - yesterday) / yesterday) * 100).toFixed(1) : '—'
-  insights.trend = {
-    title: weekRecords.length ? '近7日经营趋势' : '暂无账本数据',
-    desc: weekRecords.length
-      ? `日均营收 ¥${Math.round(avgDaily).toLocaleString()}，今日较昨日${trendDir === 'up' ? '升' : '降'} ${trendPct}%`
-      : '请先在财务模块录入日报'
-  }
-  const todos = stats.totalTodos || 0
-  const lowStock = stats.lowStock || 0
-  if (todos > 0 || lowStock > 0) {
-    insights.alert = {
-      title: '待关注事项',
-      desc: [todos > 0 && `待处理 ${todos} 项`, lowStock > 0 && `库存预警 ${lowStock} 件`].filter(Boolean).join('；') || '暂无'
-    }
-  } else {
-    insights.alert = null
-  }
-  trendAnalysis.value = [
-    { metric: 'today', label: '今日营收', value: `¥${(stats.todaySales || 0).toLocaleString()}`, type: 'neutral', desc: '' },
-    { metric: 'month', label: '本月营收', value: `¥${(stats.monthSales || 0).toLocaleString()}`, type: 'neutral', desc: '' }
-  ]
-  if (stats.totalTodos > 0) {
-    anomalies.value = [{ level: 'high', title: '待处理事项', desc: `共 ${stats.totalTodos} 项待处理`, action: '去处理' }]
-  } else {
-    anomalies.value = []
-  }
-  if (!forecasts.value?.length) forecasts.value = [{ period: '下周', value: '—', confidence: '-' }]
-  if (!suggestions.value?.length) suggestions.value = [{ title: '保持数据录入', desc: '每日录入日报可提升看板准确性' }]
-}
-
-const refreshInsights = async () => {
-  insightsLoading.value = true
-  try {
-    const financeRaw = localStorage.getItem('shanhai_v12')
-    const records = financeRaw ? JSON.parse(financeRaw) : []
-    calculateInsights(records, stats)
-    ElMessage.success('洞察已刷新')
-  } catch (e) {
-    console.error('刷新洞察失败', e)
-    ElMessage.error('刷新失败')
-  } finally {
-    insightsLoading.value = false
-  }
-}
-
-const exportInsights = () => {
-  const text = [
-    `数据洞察报告 ${new Date().toLocaleDateString('zh-CN')}`,
-    insights.trend ? `${insights.trend.title}: ${insights.trend.desc}` : '',
-    insights.alert ? `${insights.alert.title}: ${insights.alert.desc}` : ''
-  ].filter(Boolean).join('\n')
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = `洞察报告_${new Date().toISOString().slice(0, 10)}.txt`
-  a.click()
-  URL.revokeObjectURL(a.href)
-  ElMessage.success('报告已导出')
-}
-
-const handleAnomalyAction = (anomaly) => {
-  if (anomaly.action === '去处理') emit('switch-tab', '3')
-  showInsightsDialog.value = false
-}
-
-const renderChart = (records) => {
-  // 使用 ref 获取元素
-  const ctx = chartCanvas.value
-  if (!ctx) {
-      console.warn("Canvas ref is null, chart rendering skipped.")
-      return
-  }
-
-  // 构造近7天日期数组
-  const labels = []
-  const dataPoints = []
-  
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
-    const displayDate = d.toLocaleDateString('zh-CN', {month:'numeric', day:'numeric'})
-    
-    // 在账本中查找，找不到则为 0
-    const rec = records.find(r => r.date === dateStr)
-    labels.push(displayDate)
-    dataPoints.push(rec ? rec.revenue : 0)
-  }
-
-  chartEmpty.value = dataPoints.every((v) => !v)
-
-  if (chartInstance) chartInstance.destroy()
-
-  chartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: '营收趋势 (账本)',
-        data: dataPoints,
-        borderColor: '#2D6A4F',
-        backgroundColor: 'rgba(45, 106, 79, 0.12)',
-        borderWidth: 2,
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: '#fff',
-        pointBorderColor: '#2D6A4F',
-        pointRadius: 4
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, grid: { color: '#f5f5f5' }, ticks: { font: { family: 'Arial' } } },
-        x: { grid: { display: false } }
-      }
-    }
-  })
-}
-
-let clockTimer = null
+watch(chartMode, () => {
+  nextTick(() => renderCharts())
+})
 
 onMounted(() => {
-  clockTimer = setInterval(() => { currentTime.value = new Date().toLocaleTimeString() }, 1000)
-  refreshAll()
-  // 初始化洞察数据
-  setTimeout(() => {
-    const financeRaw = localStorage.getItem('shanhai_v12')
-    const records = financeRaw ? JSON.parse(financeRaw) : []
-    calculateInsights(records, stats)
+  clockTimer = setInterval(() => {
+    currentTime.value = new Date().toLocaleTimeString()
   }, 1000)
+  refreshStoreOptions()
+  refreshAll()
 })
 
 onUnmounted(() => {
   if (clockTimer) clearInterval(clockTimer)
+  if (trendChart) trendChart.destroy()
+  if (mixChart) mixChart.destroy()
+  if (catChart) catChart.destroy()
 })
 </script>
 
 <style scoped>
-.dashboard-container { padding: 10px; height: 100%; box-sizing: border-box; overflow-y: auto; }
-
-/* 头部 */
-.header-section { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; }
-.header-section h2 { margin: 0; font-size: 26px; color: #333; }
-.subtitle { color: #999; font-size: 13px; margin: 5px 0 0 0; display: flex; align-items: center; }
-.text-red { color: #f56c6c; }
-.text-green { color: #27ae60; }
-.text-gray { color: #999; }
-
-.header-right {
+.cockpit {
+  padding: 8px 4px 32px;
+  color: var(--light-text-primary, #33302c);
+  background: transparent;
+}
+.cockpit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.welcome h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--light-text-primary, #33302c);
+}
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--light-text-secondary, #6b6560);
   display: flex;
   align-items: center;
-  gap: 15px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.status-dot.hot { color: #d64045; }
+.status-dot.ok { color: #2d5a3f; }
+.status-dot.idle { color: #a09a90; }
+.sep { color: #c5c2bb; }
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid var(--light-border-subtle, #e8e5de);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.clock {
+  font-size: 12px;
+  color: #6b6560;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.notes-alert { margin-bottom: 14px; }
+.notes-inline { font-size: 12px; font-weight: 400; line-height: 1.5; }
+
+.section { margin-bottom: 18px; }
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.section-head h3,
+.quick h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  border-left: 3px solid var(--brand-green-500, #2d5a3f);
+  padding-left: 10px;
 }
 
-.time-badge { background: #fff; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; color: #555; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 5px; }
-
-/* KPI Grid */
-.kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 30px; }
-.kpi-card { padding: 20px; border-radius: 12px; height: 120px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.03); position: relative; overflow: hidden; transition: 0.3s; cursor: pointer; }
-.kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
-
-.kpi-card.black {
-  background: var(--dark-bg-secondary);
-  color: var(--dark-text-secondary);
-  border: 1px solid var(--dark-border-subtle);
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
 }
-.kpi-card.black .kpi-value { color: var(--brand-green-300); }
-.kpi-card.black .kpi-top { color: var(--dark-text-tertiary); }
-.kpi-card.gold {
-  background: var(--brand-green-50);
-  color: var(--light-text-primary);
-  border: 1px solid var(--light-border-default);
+.kpi {
+  text-align: left;
+  border: 1px solid var(--light-border-subtle, #e8e5de);
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  box-shadow: 0 1px 2px rgba(26, 24, 20, 0.04);
 }
-.kpi-card.gold .kpi-value { color: var(--brand-green-500); }
-.kpi-card.gold .kpi-top .label { color: var(--light-text-secondary); }
-.kpi-card.white { background: #fff; color: #333; border: 1px solid var(--light-border-subtle); }
+.kpi:hover {
+  border-color: #c4a76c;
+  box-shadow: 0 4px 12px rgba(26, 24, 20, 0.06);
+  transform: translateY(-1px);
+}
+.kpi-gold {
+  background: linear-gradient(135deg, #a8903c 0%, #c4a76c 100%);
+  border-color: transparent;
+  color: #fff;
+}
+.kpi-gold .kpi-label,
+.kpi-gold .kpi-sub { color: rgba(255, 255, 255, 0.78); }
+.kpi-gold .kpi-value { color: #fff; }
+.kpi-donate {
+  background: #faf6ed;
+  border-color: #e0cfa3;
+}
+.kpi-label {
+  font-size: 12px;
+  color: #6b6560;
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'DM Mono', ui-monospace, monospace;
+  letter-spacing: -0.02em;
+  color: #33302c;
+}
+.kpi-value.accent { color: #c4a76c; }
+.kpi-sub {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #a09a90;
+  line-height: 1.4;
+}
+.muted { color: #a09a90; }
+.tiny { font-size: 11px; font-weight: 400; }
 
-.kpi-top { display: flex; justify-content: space-between; align-items: flex-start; font-size: 12px; opacity: 0.8; }
-.kpi-value { font-size: 28px; font-weight: 600; font-family: var(--font-en-body), 'Segoe UI', sans-serif; letter-spacing: -0.5px; }
-.kpi-sub { font-size: 12px; opacity: 0.6; }
-
-/* 图表与待办 */
-.middle-section { margin-bottom: 30px; align-items: stretch; }
-.middle-left,
-.middle-right { display: flex; flex-direction: column; gap: 16px; }
-.middle-right .todo-card { flex: 1; }
-.card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-.chart-box { height: 250px; position: relative; width: 100%; } /* 确保有宽度 */
+.mid-row { margin-bottom: 8px; }
+.panel {
+  border: 1px solid var(--light-border-subtle, #e8e5de) !important;
+  border-radius: 12px !important;
+  background: #fff;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.chart-box {
+  height: 260px;
+  position: relative;
+}
+.chart-box-sm { height: 200px; }
 .chart-empty {
   position: absolute;
-  inset: 12px;
+  inset: 8px;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -986,428 +1239,154 @@ onUnmounted(() => {
   justify-content: center;
   text-align: center;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72));
+  background: rgba(255, 255, 255, 0.88);
   border-radius: 8px;
 }
-.chart-empty-title { font-size: 14px; font-weight: 700; color: #606266; }
-.chart-empty-desc { margin-top: 6px; font-size: 12px; color: #909399; max-width: 360px; line-height: 1.5; }
-.chart-dimmed { opacity: 0.35; }
+.chart-empty.compact { font-size: 12px; color: #909399; }
+.chart-empty-title { font-size: 14px; font-weight: 600; color: #606266; }
+.chart-empty-desc { margin-top: 6px; font-size: 12px; color: #909399; max-width: 320px; }
+.dimmed { opacity: 0.35; }
 
-/* 待办列表 */
-.todo-list { display: flex; flex-direction: column; gap: 15px; }
-.todo-item { display: flex; align-items: center; padding: 12px; background: #f9f9f9; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
-.todo-item:hover { background: #fff; border-color: #eee; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-.todo-item.active { border-left: 3px solid #f56c6c; } 
+.pulse-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.pulse-card {
+  border: 1px solid #e8e5de;
+  background: #fafaf5;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.pulse-card:hover { border-color: #c4a76c; background: #fff; }
+.p-lbl { font-size: 11px; color: #a09a90; }
+.p-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: #33302c;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  margin-top: 2px;
+}
+.p-sub { font-size: 11px; color: #c4a76c; margin-top: 2px; }
 
-.todo-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; margin-right: 12px; }
-.bg-blue { background: #409eff; }
-.bg-red { background: #f56c6c; }
-.bg-orange { background: #e6a23c; }
-
-.todo-content { flex: 1; }
-.t-title { font-weight: bold; font-size: 14px; color: #333; }
-.t-desc { font-size: 12px; color: #999; margin-top: 2px; }
-.todo-num { font-weight: bold; font-size: 16px; color: #333; }
-.todo-num-warn { color: #E6A23C; }
-
-/* 快捷操作 */
-.quick-actions h3 { border-left: 4px solid var(--brand-green-500); padding-left: 12px; margin-bottom: 20px; font-size: 16px; }
-.action-grid { display: flex; gap: 15px; flex-wrap: wrap; }
-
-/* C 端小程序脉搏 */
-.miniapp-pulse { background: #fff; border-radius: 12px; padding: 16px 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
-.miniapp-pulse.compact { flex: 1; margin-bottom: 0; min-height: 0; }
-.mp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.mp-header h3 { margin: 0; font-size: 15px; color: #333; border-left: 4px solid #d4af37; padding-left: 10px; }
-.mp-sub { color: #999; font-size: 10px; letter-spacing: 1px; font-weight: normal; margin-left: 4px; }
-.mp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.miniapp-pulse.compact .mp-card { padding: 10px; }
-.miniapp-pulse.compact .mp-val { font-size: 18px; }
-.mp-card { display: flex; gap: 10px; align-items: center; padding: 12px; background: #fafafa; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: 0.2s; }
-.mp-card:hover { background: #fff; border-color: #d4af37; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15); transform: translateY(-2px); }
-.mp-ico { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-.mp-info { flex: 1; min-width: 0; }
-.mp-lbl { font-size: 11px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mp-val { font-size: 20px; font-weight: 800; color: #333; line-height: 1.2; margin-top: 2px; }
-.mp-trend { font-size: 11px; color: #d4af37; margin-top: 2px; }
-@media (max-width: 1200px) { .mp-grid { grid-template-columns: repeat(2, 1fr); } }
-
-/* 图表祝福消息 */
-.chart-blessing {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--brand-green-50);
-  color: var(--brand-green-700);
-  border: 1px solid var(--light-border-default);
-  padding: 15px 25px;
-  border-radius: 12px;
-  font-size: 16px;
+.biz-block {
+  border: 1px solid #e8e5de;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.biz-block:hover { border-color: #c4a76c; background: #faf6ed; }
+.biz-block:last-child { margin-bottom: 0; }
+.biz-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
   font-weight: 600;
-  box-shadow: var(--shadow-md);
-  z-index: 10;
-  pointer-events: none;
-  animation: blessingPop 0.5s ease;
+  margin-bottom: 10px;
+}
+.biz-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.biz-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.biz-grid > div {
+  text-align: center;
+}
+.biz-grid b {
+  display: block;
+  font-size: 16px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: #33302c;
+}
+.biz-grid span {
+  font-size: 11px;
+  color: #a09a90;
+}
+.biz-grid .warn b { color: #d64045; }
+.biz-foot {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b6560;
 }
 
-@keyframes blessingPop {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.1);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+.todo-list { display: flex; flex-direction: column; gap: 8px; }
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #fafaf5;
+  cursor: pointer;
+  text-align: left;
 }
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.todo-item:hover { background: #fff; border-color: #e8e5de; }
+.todo-item.active { border-left: 3px solid #d64045; }
+.t-title { font-size: 13px; font-weight: 600; color: #33302c; }
+.t-desc { font-size: 11px; color: #a09a90; margin-top: 2px; }
+.todo-num {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.todo-num.warn { color: #e9a23b; }
+.todo-total {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 16px;
 }
+.todo-total.hot { color: #d64045; }
 
-/* 数据洞察样式 */
 .insights-preview {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8e5de;
 }
-
 .insight-item {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px;
-  background: linear-gradient(135deg, rgba(45, 106, 79, 0.05) 0%, rgba(45, 106, 79, 0.02) 100%);
-  border-radius: 8px;
-  margin-bottom: 8px;
-  border-left: 3px solid #2D6A4F;
-}
-
-.insight-icon {
-  font-size: 18px;
-  color: #2D6A4F;
-  margin-top: 2px;
-}
-
-.insight-icon.warning {
-  color: #f56c6c;
-}
-
-.insight-content {
-  flex: 1;
-}
-
-.insight-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
-}
-
-.insight-desc {
-  font-size: 12px;
-  color: #666;
-  line-height: 1.4;
-}
-
-/* 洞察弹窗样式 */
-.insights-container {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.insight-section {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #eee;
-}
-
-.insight-section:last-child {
-  border-bottom: none;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #2D6A4F;
-}
-
-.section-title .el-icon {
-  font-size: 18px;
-  color: #2D6A4F;
-}
-
-.trend-analysis {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.trend-item {
-  padding: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-  border: 1px solid #eee;
-  border-radius: 10px;
-  transition: all 0.3s ease;
-}
-
-.trend-item:hover {
-  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.15);
-  transform: translateY(-2px);
-}
-
-.trend-label {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.trend-value {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 20px;
-  font-weight: 700;
-  color: #333;
-}
-
-.trend-value.up {
-  color: #27ae60;
-}
-
-.trend-value.down {
-  color: #f56c6c;
-}
-
-.trend-desc {
-  font-size: 12px;
-  color: #999;
-  font-weight: normal;
-}
-
-.anomalies-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.anomaly-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  border-left: 4px solid #f56c6c;
-  transition: all 0.3s ease;
-}
-
-.anomaly-item.medium {
-  border-left-color: #e6a23c;
-}
-
-.anomaly-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.anomaly-icon {
-  font-size: 20px;
-  color: #f56c6c;
-  margin-top: 2px;
-}
-
-.anomaly-item.medium .anomaly-icon {
-  color: #e6a23c;
-}
-
-.anomaly-content {
-  flex: 1;
-}
-
-.anomaly-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
+  padding: 8px;
+  border-radius: 8px;
+  background: #e1f5ee55;
+  border-left: 3px solid #2d5a3f;
   margin-bottom: 6px;
 }
-
-.anomaly-desc {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 8px;
+.insight-item.alert {
+  background: #faf6ed;
+  border-left-color: #e9a23b;
 }
+.insight-icon { color: #2d5a3f; margin-top: 2px; }
+.insight-title { font-size: 12px; font-weight: 600; }
+.insight-desc { font-size: 12px; color: #6b6560; margin-top: 2px; }
 
-.anomaly-action {
-  margin-top: 8px;
-}
-
-.forecast-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.forecast-card {
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(45, 106, 79, 0.08) 0%, rgba(45, 106, 79, 0.03) 100%);
-  border: 1px solid rgba(45, 106, 79, 0.2);
-  border-radius: 12px;
-  text-align: center;
-  transition: all 0.3s ease;
-}
-
-.forecast-card:hover {
-  box-shadow: 0 6px 20px rgba(45, 106, 79, 0.2);
-  transform: translateY(-3px);
-}
-
-.forecast-label {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 12px;
-}
-
-.forecast-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #2D6A4F;
-  margin-bottom: 8px;
-}
-
-.forecast-desc {
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 8px;
-}
-
-.forecast-confidence {
-  font-size: 11px;
-  color: #999;
-  padding-top: 8px;
-  border-top: 1px solid rgba(45, 106, 79, 0.1);
-}
-
-.suggestions-list {
+.action-grid {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
 }
+.insights-dialog-body { font-size: 13px; line-height: 1.6; color: #4a4540; }
+.insights-dialog-body ul { padding-left: 18px; }
 
-.suggestion-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-  border: 1px solid #eee;
-  border-radius: 10px;
-  border-left: 4px solid #2D6A4F;
-  transition: all 0.3s ease;
+@media (max-width: 1200px) {
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .pulse-grid { grid-template-columns: repeat(2, 1fr); }
 }
-
-.suggestion-item:hover {
-  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.15);
-  transform: translateX(4px);
-}
-
-.suggestion-icon {
-  font-size: 24px;
-  flex-shrink: 0;
-}
-
-.suggestion-content {
-  flex: 1;
-}
-
-.suggestion-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 6px;
-}
-
-.suggestion-desc {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 8px;
-}
-
-.suggestion-impact {
-  font-size: 12px;
-  color: #999;
-}
-
-.suggestion-action {
-  flex-shrink: 0;
-}
-
 @media (max-width: 768px) {
-  .dashboard-container { padding: 0; }
-  .header-section {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .header-section h2 { font-size: 20px; }
-  .header-right {
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .time-badge { font-size: 12px; padding: 6px 12px; }
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .kpi-card {
-    height: auto;
-    min-height: 96px;
-    padding: 14px;
-  }
-  .kpi-value { font-size: 22px; }
-  .chart-box { height: 210px; }
-  .card-header { flex-wrap: wrap; gap: 8px; }
-  .todo-item { padding: 10px; }
-  .todo-num { font-size: 15px; }
-  .insights-preview { margin-top: 12px; padding-top: 12px; }
-  .quick-actions h3 { font-size: 15px; margin-bottom: 14px; }
-  .action-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-  .action-grid .el-button {
-    width: 100%;
-    margin: 0;
-    min-height: 44px;
-  }
-  .mp-grid { grid-template-columns: repeat(2, 1fr); }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .biz-grid { grid-template-columns: repeat(2, 1fr); }
+  .filters { width: 100%; }
 }
-
 @media (max-width: 480px) {
-  .kpi-grid { grid-template-columns: 1fr; }
-  .mp-grid { grid-template-columns: 1fr; }
-  .action-grid { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: 1fr; }
+  .pulse-grid { grid-template-columns: 1fr; }
 }
 </style>
