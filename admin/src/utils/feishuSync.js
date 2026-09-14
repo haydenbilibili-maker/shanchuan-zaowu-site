@@ -1,10 +1,12 @@
 /**
  * Admin 飞书对接：
  * - 飞书 Open API：经 /api/feishu-sync（Cloudflare Function）或本地 Vite 代理
- * - 镜像 / 映射 / 库存：CloudBase 匿名 SDK 直写
- * - 采购账目 SSOT：managePurchaseOrder → ops_purchases（按 feishuRecordId upsert）
- * - 门店出货 SSOT：manageStoreShipment → ops_shipments（小程序主录入；ERP/飞书同步同库）
- * 不再依赖微信云函数直连飞书（Web 匿名会 PERMISSION_DENIED）
+ * - 镜像 / 映射：CloudBase 匿名 SDK 直写
+ * - 采购账目 SSOT：managePurchaseOrder → ops_purchases（飞书「采购记录」）
+ * - 出货 SSOT：manageStoreShipment → ops_shipments（飞书「出货表」）
+ * - 成品库存：manageStudioInventory → studio_inventory（飞书「成品库存」）
+ * - 原材料库存：manageStudioRawInventory → studio_raw_inventory（飞书「库存管理」；多平台进货）
+ * 勿将飞书「库存管理」同步进成品集合。
  */
 import {
   COLLECTIONS,
@@ -21,6 +23,8 @@ const CONFIG_ID = 'feishu_bitable'
 const APP_TOKEN = 'WCs2bnIHsaty7vsjcnaczu0Wnod'
 const PURCHASE_FN = 'managePurchaseOrder'
 const SHIPMENT_FN = 'manageStoreShipment'
+const FINISHED_INV_FN = 'manageStudioInventory'
+const RAW_INV_FN = 'manageStudioRawInventory'
 const CONFIG_CACHE_KEY = 'sc_feishu_bitable_config_v1'
 
 /** 进程内缓存：UI「就绪」与 pull 校验共用，避免匿名读 configs 失败时假就绪 */
@@ -30,36 +34,82 @@ function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj || {}))
 }
 
+/**
+ * 默认映射对齐 .base「标本工作室采购库存管理系统」
+ * inventory = 成品库存；rawInventory = 飞书「库存管理」（原材料）
+ */
 function defaultFeishuConfig() {
   return {
     appToken: APP_TOKEN,
     tables: {
       purchase: {
-        tableId: '',
+        tableId: 'tblMHhGXhpmGTiI5',
         fields: {
-          orderNo: '单号',
-          skuName: '物料',
+          orderNo: '采购编号',
+          skuName: '物品名称',
           qty: '数量',
-          unit: '单位',
           unitPrice: '单价',
           supplier: '供应商',
           status: '状态',
-          date: '日期',
+          date: '采购日期',
           entityName: '归属',
-          spec: '规格',
+          spec: '规格型号',
+          category: '分类',
+          budgetType: '预算类型',
+          platform: '采购平台',
+          platformOrderNo: '平台订单号',
+          expectedArrival: '预计到货',
+          expressCompany: '快递公司',
+          trackingNo: '运单号',
+          invoiceNo: '发票号',
           note: '备注',
         },
       },
-      inventory: { tableId: '', fields: { skuName: '品名', skuId: 'SKU', qty: '数量', unit: '单位' } },
-      shipment: {
-        tableId: '',
+      /** 成品库存 → studio_inventory（飞书表名「成品库存」） */
+      inventory: {
+        tableId: 'tblh9wqtrQmZgRO5',
         fields: {
-          shipmentNo: '出货单号',
-          storeName: '门店',
-          itemName: '品名',
+          skuName: '物品名称',
+          itemName: '物品名称',
+          framingSpec: '规格装裱',
           qty: '数量',
+          date: '盘点日期',
+          note: '备注',
+        },
+      },
+      /** 原材料库存 → studio_raw_inventory（飞书表名「库存管理」） */
+      rawInventory: {
+        tableId: 'tblekBh0CRPMa7ie',
+        fields: {
+          inventoryNo: '库存编号',
+          skuName: '物品名称',
+          itemName: '物品名称',
+          spec: '规格型号',
+          category: '分类',
+          qty: '当前库存',
+          minQty: '最低库存预警',
+          unitPrice: '单价',
+          inboundTotal: '累计入库',
+          outboundTotal: '累计出库',
+          locationText: '存放位置',
+          note: '备注',
+        },
+      },
+      shipment: {
+        tableId: 'tbl2lCz8GX2MVDnO',
+        fields: {
+          shipmentNo: '出货编号',
+          storeName: '客户名称',
+          customerName: '客户名称',
+          itemName: '物品名称',
+          spec: '规格型号',
+          category: '分类',
+          qty: '数量',
+          unitPrice: '单价',
           status: '状态',
           date: '出货日期',
+          expressCompany: '快递公司',
+          trackingNo: '运单号',
           note: '备注',
         },
       },
@@ -71,7 +121,7 @@ function normalizeTables(raw) {
   const base = defaultFeishuConfig().tables
   const src = raw && typeof raw === 'object' ? raw : {}
   const out = deepClone(base)
-  for (const key of ['purchase', 'inventory', 'shipment']) {
+  for (const key of ['purchase', 'inventory', 'rawInventory', 'shipment']) {
     if (!src[key]) continue
     out[key].tableId = String(src[key].tableId || '').trim()
     out[key].fields = { ...out[key].fields, ...(src[key].fields || {}) }
@@ -225,7 +275,14 @@ function mapRecord(rec, fieldMap) {
   const out = { raw: f }
   for (const [key, colName] of Object.entries(fieldMap || {})) {
     const v = pickField(f, colName)
-    out[key] = key === 'qty' || key === 'unitPrice' ? cellNumber(v) : cellText(v)
+    out[key] =
+      key === 'qty' ||
+      key === 'unitPrice' ||
+      key === 'minQty' ||
+      key === 'inboundTotal' ||
+      key === 'outboundTotal'
+        ? cellNumber(v)
+        : cellText(v)
   }
   return out
 }
@@ -248,6 +305,14 @@ function toOpsPurchaseItem(rec, fieldMap) {
     purchaseDate: mapped.date || '',
     entityName: mapped.entityName || mapped.storeName || '',
     spec: mapped.spec || '',
+    category: mapped.category || '',
+    budgetType: mapped.budgetType || '',
+    platform: mapped.platform || '',
+    platformOrderNo: mapped.platformOrderNo || '',
+    expectedArrival: mapped.expectedArrival || '',
+    expressCompany: mapped.expressCompany || '',
+    trackingNo: mapped.trackingNo || '',
+    invoiceNo: mapped.invoiceNo || '',
     note: mapped.note || '',
   }
 }
@@ -274,11 +339,17 @@ function toOpsShipmentItem(rec, fieldMap) {
     shipmentNo: mapped.shipmentNo || mapped.orderNo || '',
     itemName: mapped.itemName || mapped.skuName || '',
     skuName: mapped.itemName || mapped.skuName || '',
+    spec: mapped.spec || '',
+    category: mapped.category || '',
     qty: mapped.qty,
+    unitPrice: mapped.unitPrice || 0,
     status: mapped.status || '',
     date: mapped.date || '',
     shipmentDate: mapped.date || '',
-    storeName: mapped.storeName || mapped.entityName || '',
+    storeName: mapped.storeName || mapped.customerName || mapped.entityName || '',
+    customerName: mapped.customerName || mapped.storeName || '',
+    expressCompany: mapped.expressCompany || '',
+    trackingNo: mapped.trackingNo || '',
     note: mapped.note || '',
   }
 }
@@ -308,6 +379,14 @@ function buildPurchaseFeishuFields(row, fmap) {
   if (fmap.date) fields[fmap.date] = row.purchaseDate || ''
   if (fmap.entityName) fields[fmap.entityName] = row.entityName || ''
   if (fmap.spec) fields[fmap.spec] = row.spec || ''
+  if (fmap.category) fields[fmap.category] = row.category || ''
+  if (fmap.budgetType) fields[fmap.budgetType] = row.budgetType || ''
+  if (fmap.platform) fields[fmap.platform] = row.platform || ''
+  if (fmap.platformOrderNo) fields[fmap.platformOrderNo] = row.platformOrderNo || ''
+  if (fmap.expectedArrival) fields[fmap.expectedArrival] = row.expectedArrival || ''
+  if (fmap.expressCompany) fields[fmap.expressCompany] = row.expressCompany || ''
+  if (fmap.trackingNo) fields[fmap.trackingNo] = row.trackingNo || ''
+  if (fmap.invoiceNo) fields[fmap.invoiceNo] = row.invoiceNo || ''
   if (fmap.note) fields[fmap.note] = row.note || ''
   return fields
 }
@@ -316,12 +395,18 @@ function buildShipmentFeishuFields(row, item, fmap) {
   const fields = {}
   if (fmap.shipmentNo) fields[fmap.shipmentNo] = row.shipmentNo || ''
   if (fmap.orderNo) fields[fmap.orderNo] = row.shipmentNo || ''
-  if (fmap.storeName) fields[fmap.storeName] = row.storeName || ''
+  if (fmap.storeName) fields[fmap.storeName] = row.customerName || row.storeName || ''
+  if (fmap.customerName) fields[fmap.customerName] = row.customerName || row.storeName || ''
   if (fmap.itemName) fields[fmap.itemName] = (item && item.itemName) || ''
   if (fmap.skuName) fields[fmap.skuName] = (item && item.itemName) || ''
+  if (fmap.spec) fields[fmap.spec] = (item && item.spec) || ''
+  if (fmap.category) fields[fmap.category] = (item && item.category) || row.category || ''
   if (fmap.qty) fields[fmap.qty] = Number((item && item.qty) || row.totalQty) || 0
+  if (fmap.unitPrice) fields[fmap.unitPrice] = Number((item && item.unitPrice) || row.unitPrice) || 0
   if (fmap.status) fields[fmap.status] = row.statusLabel || row.status || ''
   if (fmap.date) fields[fmap.date] = row.shipmentDate || ''
+  if (fmap.expressCompany) fields[fmap.expressCompany] = row.expressCompany || ''
+  if (fmap.trackingNo) fields[fmap.trackingNo] = row.trackingNo || ''
   if (fmap.note) fields[fmap.note] = row.note || ''
   return fields
 }
@@ -371,17 +456,26 @@ async function logSync(action, result) {
   }
 }
 
+function configHasAnyTable(tables) {
+  return (
+    hasRoleTable(tables, 'purchase') ||
+    hasRoleTable(tables, 'inventory') ||
+    hasRoleTable(tables, 'rawInventory') ||
+    hasRoleTable(tables, 'shipment')
+  )
+}
+
 export async function readFeishuConfig() {
   // 1) 匿名 CDN 直读
   try {
     const doc = await cdnDocGet('configs', CONFIG_ID)
-    if (doc?.tables && (hasRoleTable(doc.tables, 'purchase') || hasRoleTable(doc.tables, 'inventory') || hasRoleTable(doc.tables, 'shipment'))) {
+    if (doc?.tables && configHasAnyTable(doc.tables)) {
       return rememberConfig(doc)
     }
     // 文档存在但 tableId 空：继续尝试管理端读 / 本地缓存
     if (doc?.tables) {
       const local = readLocalConfigCache()
-      if (local && (hasRoleTable(local.tables, 'purchase') || hasRoleTable(local.tables, 'inventory'))) {
+      if (local && configHasAnyTable(local.tables)) {
         return local
       }
     }
@@ -391,7 +485,7 @@ export async function readFeishuConfig() {
 
   // 2) 管理端 getDoc（manageStoreContent，需云函数已部署 getDoc）
   const viaFn = await readConfigViaStoreContent()
-  if (viaFn?.tables && (hasRoleTable(viaFn.tables, 'purchase') || hasRoleTable(viaFn.tables, 'inventory') || hasRoleTable(viaFn.tables, 'shipment'))) {
+  if (viaFn?.tables && configHasAnyTable(viaFn.tables)) {
     return rememberConfig(viaFn)
   }
 
@@ -406,11 +500,7 @@ function resolveTablesOverride(extra = {}) {
   const raw = extra.mapping?.tables || extra.mapping || extra.tables || null
   if (!raw || typeof raw !== 'object') return null
   const tables = normalizeTables(raw)
-  if (
-    hasRoleTable(tables, 'purchase') ||
-    hasRoleTable(tables, 'inventory') ||
-    hasRoleTable(tables, 'shipment')
-  ) {
+  if (configHasAnyTable(tables)) {
     rememberConfig({ tables, appToken: APP_TOKEN })
     return tables
   }
@@ -449,7 +539,7 @@ export async function runFeishuSync(action, extra = {}) {
         break
       case 'saveMapping': {
         const tables = normalizeTables(extra.mapping?.tables || extra.mapping || extra.tables)
-        if (!hasRoleTable(tables, 'purchase') && !hasRoleTable(tables, 'inventory') && !hasRoleTable(tables, 'shipment')) {
+        if (!configHasAnyTable(tables)) {
           result = { success: false, msg: '映射为空：请先探测并选择飞书数据表' }
           break
         }
@@ -458,6 +548,12 @@ export async function runFeishuSync(action, extra = {}) {
           appToken: extra.mapping?.appToken || APP_TOKEN,
           updatedAt: Date.now(),
         })
+        const persisted = {
+          purchase: hasRoleTable(tables, 'purchase'),
+          inventory: hasRoleTable(tables, 'inventory'),
+          rawInventory: hasRoleTable(tables, 'rawInventory'),
+          shipment: hasRoleTable(tables, 'shipment'),
+        }
         try {
           // 走 setDoc（feishu_bitable 已在白名单）；深拷贝去掉 Vue Proxy
           await cdnSet('configs', CONFIG_ID, deepClone(config))
@@ -467,11 +563,7 @@ export async function runFeishuSync(action, extra = {}) {
             msg: hasRoleTable(tables, 'purchase')
               ? '映射已保存（采购表已就绪）'
               : '映射已保存',
-            persisted: {
-              purchase: hasRoleTable(tables, 'purchase'),
-              inventory: hasRoleTable(tables, 'inventory'),
-              shipment: hasRoleTable(tables, 'shipment'),
-            },
+            persisted,
           }
         } catch (e) {
           // 本地缓存已写入；同步中心 pull 会带上 mapping / 读 cache，不阻断
@@ -480,11 +572,7 @@ export async function runFeishuSync(action, extra = {}) {
             config,
             cloudPersist: false,
             msg: `映射已保存到本地，可立即同步。云端写入稍后重试：${e.message || e}`,
-            persisted: {
-              purchase: hasRoleTable(tables, 'purchase'),
-              inventory: hasRoleTable(tables, 'inventory'),
-              shipment: hasRoleTable(tables, 'shipment'),
-            },
+            persisted,
           }
         }
         break
@@ -557,27 +645,92 @@ export async function runFeishuSync(action, extra = {}) {
         }
         break
       }
-      case 'pullInventory': {
+      case 'pullInventory':
+      case 'pullFinishedInventory': {
+        // 成品库存：飞书「成品库存」→ 镜像 + studio_inventory
         const override = resolveTablesOverride(extra)
         const pulled = await pullTable('inventory', COLLECTIONS.FEISHU_INVENTORY, override)
         if (!pulled.success) {
           result = pulled
           break
         }
-        const products = await fetchCollectionLimit('products', { limit: 400 })
-        const rows = await fetchCollectionLimit(COLLECTIONS.FEISHU_INVENTORY, { limit: 400 })
-        let matched = 0
-        for (const row of rows) {
-          const productId = matchProduct(row, products)
-          if (productId && row.productId !== productId) {
-            await cdnUpdate(COLLECTIONS.FEISHU_INVENTORY, row._id, { productId })
-            matched += 1
-          } else if (row.productId) matched += 1
+        const items = (pulled.records || []).map((rec) => {
+          const mapped = mapRecord(rec, pulled.fieldMap || {})
+          return {
+            feishuRecordId: rec.record_id || rec.recordId || '',
+            itemName: mapped.itemName || mapped.skuName || '',
+            skuName: mapped.skuName || mapped.itemName || '',
+            framingSpec: mapped.framingSpec || mapped.spec || '',
+            qty: mapped.qty,
+            inventoryDate: mapped.date || '',
+            note: mapped.note || '',
+          }
+        })
+        let ops = { stats: {} }
+        try {
+          ops = await callCloudFunction(FINISHED_INV_FN, {
+            action: 'upsertFromFeishu',
+            items,
+          })
+        } catch (e) {
+          ops = { success: false, msg: e.message || String(e), stats: {} }
         }
         result = {
           success: true,
-          stats: { ...pulled.stats, matched },
-          msg: `库存镜像 ${pulled.stats.upserted} 条，已映射藏品 ${matched} 条`,
+          stats: {
+            ...pulled.stats,
+            opsCreated: ops.stats?.created || 0,
+            opsUpdated: ops.stats?.updated || 0,
+            opsSkipped: ops.stats?.skipped || 0,
+          },
+          msg: `成品库存镜像 ${pulled.stats.upserted} 条；台账新建 ${ops.stats?.created || 0} / 更新 ${ops.stats?.updated || 0}`,
+          ops,
+        }
+        break
+      }
+      case 'pullRawInventory': {
+        // 原材料：飞书「库存管理」→ studio_raw_inventory
+        const override = resolveTablesOverride(extra)
+        const pulled = await pullTable('rawInventory', 'feishu_raw_inventory', override)
+        if (!pulled.success) {
+          result = pulled
+          break
+        }
+        const items = (pulled.records || []).map((rec) => {
+          const mapped = mapRecord(rec, pulled.fieldMap || {})
+          return {
+            feishuRecordId: rec.record_id || rec.recordId || '',
+            inventoryNo: mapped.inventoryNo || mapped.skuId || '',
+            itemName: mapped.itemName || mapped.skuName || '',
+            skuName: mapped.skuName || mapped.itemName || '',
+            spec: mapped.spec || '',
+            category: mapped.category || '',
+            qty: mapped.qty,
+            minQty: mapped.minQty,
+            unitPrice: mapped.unitPrice,
+            inboundTotal: mapped.inboundTotal,
+            outboundTotal: mapped.outboundTotal,
+            locationText: mapped.locationText || '',
+            note: mapped.note || '',
+          }
+        })
+        const ops = await callCloudFunction(RAW_INV_FN, {
+          action: 'upsertFromFeishu',
+          items,
+        })
+        if (!ops || ops.success === false) {
+          throw new Error((ops && ops.msg) || '写入 studio_raw_inventory 失败')
+        }
+        result = {
+          success: true,
+          stats: {
+            ...pulled.stats,
+            opsCreated: ops.stats?.created || 0,
+            opsUpdated: ops.stats?.updated || 0,
+            opsSkipped: ops.stats?.skipped || 0,
+          },
+          msg: `原材料镜像 ${pulled.stats.upserted} 条；台账新建 ${ops.stats?.created || 0} / 更新 ${ops.stats?.updated || 0}`,
+          ops,
         }
         break
       }
@@ -611,9 +764,9 @@ export async function runFeishuSync(action, extra = {}) {
             delta,
             balanceAfter: target,
             type: 'feishu_pull',
-            refType: 'feishu_inventory',
+            refType: 'feishu_finished_inventory',
             refId: row.recordId,
-            note: `飞书库存对齐 ${row.skuName || ''} ${current}→${target}`,
+            note: `飞书成品库存对齐 ${row.skuName || ''} ${current}→${target}`,
             operator: 'feishu_sync',
             createdAt: Date.now(),
           })

@@ -194,17 +194,25 @@
           拉取只更新镜像；「应用为 HQ 库存」才会改 <code>products.stock</code>（唯一需确认的危险操作）。
         </p>
         <el-row :gutter="12" class="stat-row">
-          <el-col :span="12">
+          <el-col :span="8">
             <el-card shadow="never" class="stat">
               <div class="stat-num">{{ inventory.length }}</div>
-              <div class="stat-label">库存镜像</div>
+              <div class="stat-label">成品库存镜像</div>
             </el-card>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="8">
             <el-card shadow="never" class="stat">
               <div class="stat-num">{{ matchedCount }}</div>
               <div class="stat-label">已映射藏品 SKU</div>
             </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-button type="primary" :loading="busy === 'pullInventory'" :disabled="!configured" @click="run('pullInventory')">
+              同步成品库存
+            </el-button>
+            <el-button :loading="busy === 'pullRawInventory'" :disabled="!configured" @click="run('pullRawInventory')" style="margin-left: 8px">
+              同步原材料库存
+            </el-button>
           </el-col>
         </el-row>
         <el-table :data="inventory" v-loading="loadingMirrors" stripe max-height="420" size="small">
@@ -309,41 +317,66 @@ import { feishuProxyStatus, runFeishuSync } from '../utils/feishuSync'
 const PURCHASE_FN = 'managePurchaseOrder'
 
 const purchaseFields = [
-  { key: 'orderNo', label: '单号列', hint: '单号' },
-  { key: 'skuName', label: '物料列', hint: '物料' },
+  { key: 'orderNo', label: '采购编号列', hint: '采购编号' },
+  { key: 'skuName', label: '物品名称列', hint: '物品名称' },
   { key: 'qty', label: '数量列', hint: '数量' },
-  { key: 'unit', label: '单位列', hint: '单位' },
   { key: 'unitPrice', label: '单价列', hint: '单价' },
   { key: 'supplier', label: '供应商列', hint: '供应商' },
   { key: 'status', label: '状态列', hint: '状态' },
-  { key: 'date', label: '日期列', hint: '日期' },
-  { key: 'entityName', label: '归属列', hint: '归属/门店' },
-  { key: 'spec', label: '规格列', hint: '规格' },
+  { key: 'date', label: '采购日期列', hint: '采购日期' },
+  { key: 'spec', label: '规格型号列', hint: '规格型号' },
+  { key: 'category', label: '分类列', hint: '分类' },
+  { key: 'budgetType', label: '预算类型列', hint: '预算类型' },
+  { key: 'platform', label: '采购平台列', hint: '采购平台' },
+  { key: 'platformOrderNo', label: '平台订单号列', hint: '平台订单号' },
   { key: 'note', label: '备注列', hint: '备注' },
 ]
 
 const roles = [
-  { key: 'purchase', label: '采购（飞书→ops_purchases）', fields: purchaseFields },
+  { key: 'purchase', label: '采购记录 → ops_purchases', fields: purchaseFields },
   {
     key: 'inventory',
-    label: '库存（飞书主写）',
+    label: '成品库存 → studio_inventory（飞书「成品库存」）',
     fields: [
-      { key: 'skuName', label: '品名列', hint: '品名' },
-      { key: 'skuId', label: 'SKU 列', hint: 'SKU' },
+      { key: 'skuName', label: '物品名称列', hint: '物品名称' },
+      { key: 'framingSpec', label: '规格装裱列', hint: '规格装裱' },
       { key: 'qty', label: '数量列', hint: '数量' },
-      { key: 'unit', label: '单位列', hint: '单位' },
+      { key: 'date', label: '盘点日期列', hint: '盘点日期' },
+      { key: 'note', label: '备注列', hint: '备注' },
+    ],
+  },
+  {
+    key: 'rawInventory',
+    label: '原材料库存 → studio_raw_inventory（飞书「库存管理」）',
+    fields: [
+      { key: 'inventoryNo', label: '库存编号列', hint: '库存编号' },
+      { key: 'skuName', label: '物品名称列', hint: '物品名称' },
+      { key: 'spec', label: '规格型号列', hint: '规格型号' },
+      { key: 'category', label: '分类列', hint: '分类' },
+      { key: 'qty', label: '当前库存列', hint: '当前库存' },
+      { key: 'minQty', label: '最低预警列', hint: '最低库存预警' },
+      { key: 'unitPrice', label: '单价列', hint: '单价' },
+      { key: 'inboundTotal', label: '累计入库列', hint: '累计入库' },
+      { key: 'outboundTotal', label: '累计出库列', hint: '累计出库' },
+      { key: 'locationText', label: '存放位置列', hint: '存放位置' },
+      { key: 'note', label: '备注列', hint: '备注' },
     ],
   },
   {
     key: 'shipment',
-    label: '出货（飞书↔ops_shipments）',
+    label: '出货表 → ops_shipments',
     fields: [
-      { key: 'shipmentNo', label: '出货单号列', hint: '出货单号' },
-      { key: 'storeName', label: '门店列', hint: '门店' },
-      { key: 'itemName', label: '品名列', hint: '品名' },
+      { key: 'shipmentNo', label: '出货编号列', hint: '出货编号' },
+      { key: 'storeName', label: '客户名称列', hint: '客户名称' },
+      { key: 'itemName', label: '物品名称列', hint: '物品名称' },
+      { key: 'spec', label: '规格型号列', hint: '规格型号' },
+      { key: 'category', label: '分类列', hint: '分类' },
       { key: 'qty', label: '数量列', hint: '数量' },
+      { key: 'unitPrice', label: '单价列', hint: '单价' },
       { key: 'status', label: '状态列', hint: '状态' },
       { key: 'date', label: '出货日期列', hint: '出货日期' },
+      { key: 'expressCompany', label: '快递公司列', hint: '快递公司' },
+      { key: 'trackingNo', label: '运单号列', hint: '运单号' },
       { key: 'note', label: '备注列', hint: '备注' },
     ],
   },
@@ -351,31 +384,64 @@ const roles = [
 
 const emptyMapping = () => ({
   purchase: {
-    tableId: '',
+    tableId: 'tblMHhGXhpmGTiI5',
     fields: {
-      orderNo: '单号',
-      skuName: '物料',
+      orderNo: '采购编号',
+      skuName: '物品名称',
       qty: '数量',
-      unit: '单位',
       unitPrice: '单价',
       supplier: '供应商',
       status: '状态',
-      date: '日期',
+      date: '采购日期',
       entityName: '归属',
-      spec: '规格',
+      spec: '规格型号',
+      category: '分类',
+      budgetType: '预算类型',
+      platform: '采购平台',
+      platformOrderNo: '平台订单号',
       note: '备注',
     },
   },
-  inventory: { tableId: '', fields: { skuName: '品名', skuId: 'SKU', qty: '数量', unit: '单位' } },
-  shipment: {
-    tableId: '',
+  inventory: {
+    tableId: 'tblh9wqtrQmZgRO5',
     fields: {
-      shipmentNo: '出货单号',
-      storeName: '门店',
-      itemName: '品名',
+      skuName: '物品名称',
+      framingSpec: '规格装裱',
       qty: '数量',
+      date: '盘点日期',
+      note: '备注',
+    },
+  },
+  rawInventory: {
+    tableId: 'tblekBh0CRPMa7ie',
+    fields: {
+      inventoryNo: '库存编号',
+      skuName: '物品名称',
+      spec: '规格型号',
+      category: '分类',
+      qty: '当前库存',
+      minQty: '最低库存预警',
+      unitPrice: '单价',
+      inboundTotal: '累计入库',
+      outboundTotal: '累计出库',
+      locationText: '存放位置',
+      note: '备注',
+    },
+  },
+  shipment: {
+    tableId: 'tbl2lCz8GX2MVDnO',
+    fields: {
+      shipmentNo: '出货编号',
+      storeName: '客户名称',
+      itemName: '物品名称',
+      spec: '规格型号',
+      category: '分类',
+      qty: '数量',
+      unitPrice: '单价',
       status: '状态',
       date: '出货日期',
+      expressCompany: '快递公司',
+      trackingNo: '运单号',
       note: '备注',
     },
   },
@@ -422,6 +488,10 @@ const plainTables = () =>
         tableId: mapping.inventory.tableId || '',
         fields: { ...mapping.inventory.fields },
       },
+      rawInventory: {
+        tableId: mapping.rawInventory?.tableId || '',
+        fields: { ...(mapping.rawInventory?.fields || {}) },
+      },
       shipment: {
         tableId: mapping.shipment.tableId || '',
         fields: { ...mapping.shipment.fields },
@@ -446,35 +516,48 @@ const fmt = (t) => {
 }
 
 const guessRole = (name = '') => {
-  if (/采购|订货|purchase/i.test(name)) return 'purchase'
+  if (/成品库存|成品盘点/i.test(name)) return 'inventory'
+  if (/原材料|原料库存|^库存管理$/i.test(name)) return 'rawInventory'
+  if (/采购记录|^采购$|订货|purchase/i.test(name)) return 'purchase'
   if (/出货|发货|物流|shipment/i.test(name)) return 'shipment'
-  if (/库存|盘点|inventory|stock/i.test(name)) return 'inventory'
+  if (/库存|盘点|inventory|stock/i.test(name)) return 'rawInventory'
   return null
 }
 
 const guessField = (roleKey, fieldKey, cols) => {
   const names = cols.map((c) => c.name)
   const hints = {
-    orderNo: [/单号/, /编号/, /NO/i],
-    skuName: [/品名/, /物料/, /名称/, /商品/],
-    skuId: [/SKU/i, /货号/, /编码/],
-    qty: [/数量/, /余量/, /当前库存/, /^库存$/],
+    orderNo: [/采购编号/, /单号/, /编号/, /NO/i],
+    skuName: [/物品名称/, /品名/, /物料/, /名称/, /商品/],
+    skuId: [/SKU/i, /货号/, /编码/, /库存编号/],
+    inventoryNo: [/库存编号/, /编号/],
+    qty: [/当前库存/, /数量/, /余量/, /^库存$/],
     unit: [/单位/],
-    unitPrice: [/单价/, /价格/, /金额/],
+    unitPrice: [/单价/, /价格/],
     supplier: [/供应商/, /厂家/],
-    status: [/状态/],
-    date: [/日期/, /时间/],
+    status: [/状态/, /审批状态/],
+    date: [/盘点日期/, /出货日期/, /采购日期/, /日期/, /时间/],
     entityName: [/归属/, /门店/, /主体/, /店铺/],
-    spec: [/规格/, /型号/],
+    spec: [/规格型号/, /规格/, /型号/],
+    framingSpec: [/规格装裱/, /装裱/],
+    category: [/^分类$/],
+    budgetType: [/预算类型/],
+    platform: [/采购平台/, /平台/],
+    platformOrderNo: [/平台订单号/, /订单号/],
     note: [/备注/, /说明/],
-    storeName: [/门店/, /客户/, /收货/],
-    shipmentNo: [/出货单/, /单号/, /编号/],
-    itemName: [/品名/, /物料/, /名称/, /商品/],
-    carrier: [/物流/, /快递/, /承运/],
-    trackingNumber: [/运单/, /快递单/, /物流单/],
+    storeName: [/客户名称/, /客户/, /门店/, /收货/],
+    customerName: [/客户名称/, /客户/],
+    shipmentNo: [/出货编号/, /出货单/, /单号/, /编号/],
+    itemName: [/物品名称/, /品名/, /物料/, /名称/, /商品/],
+    expressCompany: [/快递公司/, /物流/, /承运/],
+    trackingNo: [/运单号/, /运单/, /快递单/, /物流单/],
+    minQty: [/最低库存/, /预警/],
+    inboundTotal: [/累计入库/, /入库/],
+    outboundTotal: [/累计出库/, /出库/],
+    locationText: [/存放位置/, /位置/, /库位/],
   }
   const patterns = hints[fieldKey] || []
-  return names.find((n) => patterns.some((p) => p.test(n))) || mapping[roleKey].fields[fieldKey] || ''
+  return names.find((n) => patterns.some((p) => p.test(n))) || mapping[roleKey]?.fields?.[fieldKey] || ''
 }
 
 const unwrap = (res) => {
@@ -484,7 +567,7 @@ const unwrap = (res) => {
 }
 
 const retryable = (action) =>
-  ['pullPurchases', 'pullInventory', 'pullShipments', 'pushShipments', 'applyInventory', 'inspect', 'saveMapping'].includes(action)
+  ['pullPurchases', 'pullInventory', 'pullRawInventory', 'pullShipments', 'pushShipments', 'applyInventory', 'inspect', 'saveMapping'].includes(action)
 
 const retryAction = async (action) => {
   if (action === 'inspect' || action === 'saveMapping') {
@@ -502,9 +585,11 @@ const applyGuesses = (list) => {
   let guessedRoles = 0
   for (const t of list) {
     const role = guessRole(t.name)
-    if (role && !mapping[role].tableId) {
+    if (!role || !mapping[role]) continue
+    if (!mapping[role].tableId) {
       mapping[role].tableId = t.tableId
-      for (const f of roles.find((r) => r.key === role).fields) {
+      const roleDef = roles.find((r) => r.key === role)
+      for (const f of (roleDef && roleDef.fields) || []) {
         mapping[role].fields[f.key] = guessField(role, f.key, t.fields)
       }
       guessedRoles += 1
@@ -614,7 +699,8 @@ const loadConfig = async () => {
   try {
     const res = await runFeishuSync('getConfig')
     if (res?.success && res.config?.tables) {
-      for (const key of ['purchase', 'inventory', 'shipment']) {
+      for (const key of ['purchase', 'inventory', 'rawInventory', 'shipment']) {
+        if (!mapping[key]) continue
         if (res.config.tables[key]) {
           mapping[key].tableId = res.config.tables[key].tableId || ''
           mapping[key].fields = { ...mapping[key].fields, ...(res.config.tables[key].fields || {}) }
