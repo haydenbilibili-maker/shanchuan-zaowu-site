@@ -13,7 +13,7 @@
         <div class="card-head">
           <span>同步管理 · 飞书 ↔ 账目库</span>
           <div class="sync-actions">
-            <el-button size="small" @click="openFeishuBridge">映射与探测</el-button>
+            <el-button size="small" @click="openFeishuCenter">飞书同步中心</el-button>
             <el-button type="primary" size="small" :loading="syncing" @click="syncFromFeishu">
               从飞书同步
             </el-button>
@@ -42,6 +42,9 @@
           <span class="sync-value">{{ syncStatus.lastPullMsg || '—' }}</span>
         </div>
       </div>
+      <p class="sync-hint">
+        快捷同步与「飞书同步中心」共用同一套拉取逻辑。映射/探测/库存与出货请到同步中心。
+      </p>
       <el-table :data="syncLogs" size="small" empty-text="暂无同步日志" max-height="200" class="log-table">
         <el-table-column label="时间" width="160">
           <template #default="{ row }">{{ fmtTime(row.createdAt) }}</template>
@@ -209,8 +212,10 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { callCloudFunction } from '../cloud'
 import { runFeishuSync } from '../utils/feishuSync'
+import { useTabsManager } from '../composables/useTabsManager'
 
 const FN = 'managePurchaseOrder'
+const { openTab } = useTabsManager()
 const loading = ref(false)
 const saving = ref(false)
 const syncLoading = ref(false)
@@ -366,15 +371,15 @@ async function syncFromFeishu() {
     ElMessage.success(res.msg || '同步完成')
     await Promise.all([loadList(), loadSyncPanel()])
   } catch (e) {
-    ElMessage.error(e?.message || '同步失败：请先在订货履约→飞书对接完成映射，并配置 FEISHU_APP_ID/SECRET')
+    ElMessage.error(e?.message || '同步失败：请先在「飞书同步中心」完成映射，并配置 FEISHU_APP_ID/SECRET')
     await loadSyncPanel()
   } finally {
     syncing.value = false
   }
 }
 
-function openFeishuBridge() {
-  ElMessage.info('请打开「订货履约 → 飞书对接」完成探测与字段映射后，回到本页点「从飞书同步」。')
+function openFeishuCenter() {
+  openTab('78')
 }
 
 function onScopeChange() {
@@ -546,6 +551,12 @@ onMounted(async () => {
 }
 .log-table {
   margin-top: 4px;
+}
+.sync-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #a09a90;
+  line-height: 1.5;
 }
 .cell-title {
   color: #33302c;

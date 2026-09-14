@@ -27,6 +27,7 @@ export const MODULES = [
   { id: '74', name: '装裱师佣金', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Wallet', keywords: 'commission yongjin 佣金 装裱师 提成 台账' },
   { id: '75', name: '生日礼配置', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Present', keywords: 'birthday shengri 生日礼 礼包 礼券' },
   { id: '76', name: '采购管理', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase ops_purchases managePurchaseOrder caigou 门店采购 工作室采购 供应商' },
+  { id: '78', name: '飞书同步中心', group: 'BUSINESS', subgroup: '货', icon: 'Connection', keywords: 'feishu bitable sync 飞书 多维表 同步 采购映射 ops_purchases feishu_bitable' },
   { id: '77', name: '物业成本', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'House', keywords: 'property cost property_costs managePropertyCost 水电 房租 票据 物业成本' },
   // 导航大屏（侧栏一级）
   { id: 'nav-overview', name: '总览决策', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'nav overview 总览 导航大屏' },
@@ -46,7 +47,7 @@ export const MODULES = [
   { id: '1',  name: '藏品档案库', group: 'BUSINESS', subgroup: '货', icon: 'Box', keywords: 'product collection archive cpdak sku 商品' },
   { id: '43', name: '分类管理', group: 'BUSINESS', subgroup: '货', icon: 'Menu', keywords: 'category flgl tag' },
   { id: '3',  name: '全渠道订单', group: 'BUSINESS', subgroup: '货', icon: 'List', keywords: 'order qqdd 订单' },
-  { id: '52', name: '订货履约', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase order fulfillment dhly 订货 采购 意向 出货 price-list 飞书 bitable 库存' },
+  { id: '52', name: '订货履约', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase order fulfillment dhly 订货 采购 意向 出货 price-list 库存' },
   { id: '57', name: '报价单配置', group: 'BUSINESS', subgroup: '货', icon: 'Ticket', keywords: 'price list quote bjd 报价单 price_list_items 供货价' },
   { id: '42', name: '退款审核', group: 'BUSINESS', subgroup: '货', icon: 'Refresh', keywords: 'refund tksh 退款' },
   { id: '60', name: '订单绑定审核', group: 'BUSINESS', subgroup: '货', icon: 'Connection', keywords: 'platform order bind bindPlatformOrder ddbd 订单绑定 积分' },
@@ -175,6 +176,11 @@ export function getSubmenuKey(moduleId) {
 // 与 MODULES（名词）相对：这些是可执行命令
 // 每个 action 通过 window.dispatchEvent 触发，App.vue 内统一监听派发
 export const ACTIONS = [
+  {
+    id: 'act-feishu-sync', label: '打开飞书同步中心', hint: '连接状态 / 映射 / 一键同步采购表',
+    icon: '🔗', shortcut: '', keywords: 'feishu sync bitable 飞书 同步 采购',
+    event: { type: 'switch-tab', detail: '78' }
+  },
   {
     id: 'act-quick-order', label: '记一笔账', hint: '跳到财务，立即新增收入/支出',
     icon: '💰', shortcut: '', keywords: 'finance ledger jyb 记账',
