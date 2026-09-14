@@ -74,6 +74,7 @@
           <div class="kpi-sub">
             {{ headline.ledgerOrders || 0 }} 单
             <span v-if="headline.ledgerEmpty" class="muted"> · 账本空态</span>
+            <span v-else-if="storeFilter === 'all'"> · 双店合计</span>
           </div>
         </button>
         <button type="button" class="kpi" @click="go('3')">
@@ -97,6 +98,25 @@
             新会员 +{{ stats.newUsers }} · 兑换 {{ headline.exchangeCount }} 单
           </div>
         </button>
+      </div>
+    </section>
+
+    <section class="section" v-if="headline.ledgerByStore?.length && storeFilter === 'all'">
+      <div class="section-head">
+        <h3>门店账本分列</h3>
+        <span class="muted tiny">山川造物 + 星宸标本 · 净额占比</span>
+      </div>
+      <div class="store-split-row">
+        <div class="store-split-card" v-for="s in headline.ledgerByStore" :key="s.storeId">
+          <div class="store-split-head">
+            <span class="store-split-name">{{ s.name }}</span>
+            <span class="store-split-pct">{{ s.pct }}%</span>
+          </div>
+          <div class="store-split-track">
+            <div class="store-split-fill" :style="{ width: Math.max(s.pct || 0, 0) + '%' }"></div>
+          </div>
+          <div class="store-split-val">¥{{ fmt(s.value) }}</div>
+        </div>
       </div>
     </section>
 
@@ -355,6 +375,7 @@ import {
   loadLedgerRecords,
   filterLedgerByRange,
   summarizeLedger,
+  summarizeLedgerByStore,
   aggregateOrders,
   mapAnalyticsOrdersToAgg,
   summarizeDepositIntents,
@@ -392,6 +413,7 @@ const headline = reactive({
   ledgerNet: 0,
   ledgerOrders: 0,
   ledgerEmpty: true,
+  ledgerByStore: [],
   gmvPaid: 0,
   netOnline: 0,
   refundAmount: 0,
@@ -895,7 +917,7 @@ const refreshAll = async () => {
     const range = resolveRangePreset(rangePreset.value)
     const storeId = storeFilter.value
 
-    // 1) 账本
+    // 1) 账本（本地）
     const allLedger = loadLedgerRecords()
     const ledgerRows = filterLedgerByRange(allLedger, {
       startDate: range.startDate,
@@ -903,9 +925,12 @@ const refreshAll = async () => {
       storeId,
     })
     const ledgerSum = summarizeLedger(ledgerRows)
+    const bundle = loadStoreBundle()
     headline.ledgerNet = ledgerSum.revenue
     headline.ledgerOrders = ledgerSum.orderCount
     headline.ledgerEmpty = ledgerRows.length === 0
+    headline.ledgerByStore =
+      storeId === 'all' ? summarizeLedgerByStore(ledgerRows, bundle) : []
     if (headline.ledgerEmpty) notes.push('所选区间营收账本为空')
 
     // 2) 线上订单：优先 getAnalyticsDashboard 全量口径；失败再回退 CDN 采样
@@ -924,7 +949,7 @@ const refreshAll = async () => {
         const fnNotes = (res.data.notes || orderAgg.notes || []).filter(Boolean)
         // 只保留与线上 GMV / 采样相关的短提示，避免刷屏
         fnNotes
-          .filter((n) => /采样|门店范围|毛 GMV|周期退款|兑换/.test(String(n)))
+          .filter((n) => /采样|门店范围|毛 GMV|周期退款|兑换|门店账本/.test(String(n)))
           .slice(0, 3)
           .forEach((n) => notes.push(String(n)))
         if (!fnNotes.some((n) => /采样/.test(String(n)))) {
@@ -932,6 +957,24 @@ const refreshAll = async () => {
         }
         if (res.data.users && res.data.users.totalNewUsers != null) {
           analyticsNewUsers = Number(res.data.users.totalNewUsers) || 0
+        }
+        // 与小程序对齐：优先用云函数双店账本净额 + 分店占比
+        const cloudOffline = Number(
+          res.data.headline?.offlineLedger ?? res.data.orders?.totals?.offlineLedger,
+        )
+        const cloudByStore = res.data.ledgerByStore || res.data.headline?.ledgerByStore || []
+        if (Number.isFinite(cloudOffline) && cloudOffline >= 0) {
+          headline.ledgerNet = cloudOffline
+          headline.ledgerEmpty = cloudOffline <= 0 && !(cloudByStore || []).some((s) => Number(s.value) > 0)
+          notes.push('门店账本来自 getAnalyticsDashboard（山川造物+星宸标本）')
+        }
+        if (storeId === 'all' && Array.isArray(cloudByStore) && cloudByStore.length) {
+          headline.ledgerByStore = cloudByStore.map((s) => ({
+            storeId: s.storeId,
+            name: s.name || s.storeId,
+            value: Number(s.value) || 0,
+            pct: Number(s.pct) || 0,
+          }))
         }
       } else {
         throw new Error(res?.msg || res?.code || 'getAnalyticsDashboard 返回失败')
@@ -1019,7 +1062,7 @@ const refreshAll = async () => {
       commentTotal,
     ] = await Promise.all([
       safeCdnCount('users'),
-      safeCdnCount('users', { createTime: _.gt(startMs) }),
+      safeCdnCount('users', { createTime: _.gt(startOfDay) }),
       safeCdnCount('orders', { status: 'paid' }),
       safeCdnCount('orders', { status: 'refunding' }),
       safeCdnCount('refunds', { status: 'pending' }),
@@ -1217,6 +1260,55 @@ onUnmounted(() => {
 .kpi-gold .kpi-label,
 .kpi-gold .kpi-sub { color: rgba(255, 255, 255, 0.78); }
 .kpi-gold .kpi-value { color: #fff; }
+.store-split-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.store-split-card {
+  background: #fff;
+  border: 1px solid #e8e5de;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(26, 24, 20, 0.05);
+}
+.store-split-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.store-split-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #33302c;
+}
+.store-split-pct {
+  font-family: 'JetBrains Mono', 'DM Mono', ui-monospace, monospace;
+  font-size: 13px;
+  color: #c4a76c;
+}
+.store-split-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: #f2ede4;
+  overflow: hidden;
+}
+.store-split-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #2d5a3f, #c4a76c);
+}
+.store-split-val {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', 'DM Mono', ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a4540;
+}
+@media (max-width: 640px) {
+  .store-split-row { grid-template-columns: 1fr; }
+}
 .kpi-donate {
   background: #faf6ed;
   border-color: #e0cfa3;

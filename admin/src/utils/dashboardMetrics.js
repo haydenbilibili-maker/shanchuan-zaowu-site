@@ -182,6 +182,65 @@ export function summarizeLedger(records) {
   return { revenue: round2(revenue), orderCount, byDate }
 }
 
+/** 账本按门店拆分（山川造物 / 星宸标本），与小程序 REPORT_STORES 对齐 */
+export const REPORT_LEDGER_STORES = [
+  {
+    storeId: 'store_shanhaizaowu',
+    name: '山川造物',
+    aliases: ['store_1780146782017_6w0okpr', 'main', 'default'],
+  },
+  { storeId: 'store_xingchen', name: '星宸标本', aliases: [] },
+]
+
+function resolveLedgerStoreGroup(record, bundle) {
+  const rid = String(record?.storeId || '').trim()
+  if (!rid) return 'store_shanhaizaowu'
+  for (const s of REPORT_LEDGER_STORES) {
+    if (s.storeId === rid || (s.aliases || []).includes(rid)) return s.storeId
+  }
+  // 名称兜底
+  const name = String(record?.storeName || record?.store || '')
+  if (/星宸/.test(name)) return 'store_xingchen'
+  if (/山川|山海|这有山/.test(name)) return 'store_shanhaizaowu'
+  if (bundle) {
+    const store = (bundle.stores || []).find(
+      (s) => String(s.storeId || s.id) === rid || String(s.name || '') === name,
+    )
+    if (store) {
+      const sid = String(store.storeId || store.id || '')
+      for (const s of REPORT_LEDGER_STORES) {
+        if (s.storeId === sid || (s.aliases || []).includes(sid)) return s.storeId
+        if (/星宸/.test(String(store.name || ''))) return 'store_xingchen'
+        if (/山川|山海|这有山/.test(String(store.name || ''))) return 'store_shanhaizaowu'
+      }
+    }
+  }
+  return null
+}
+
+export function summarizeLedgerByStore(records, bundle) {
+  const totals = {}
+  REPORT_LEDGER_STORES.forEach((s) => {
+    totals[s.storeId] = 0
+  })
+  ;(records || []).forEach((r) => {
+    const gid = resolveLedgerStoreGroup(r, bundle)
+    if (!gid || totals[gid] == null) return
+    totals[gid] += Number(r?.revenue) || 0
+  })
+  const grand = Object.values(totals).reduce((s, v) => s + v, 0)
+  return REPORT_LEDGER_STORES.map((s) => {
+    const value = round2(totals[s.storeId] || 0)
+    const pct = grand > 0 ? Math.round((value / grand) * 1000) / 10 : 0
+    return {
+      storeId: s.storeId,
+      name: s.name,
+      value,
+      pct,
+    }
+  })
+}
+
 /**
  * 从订单样本聚合周期内线上指标（不重复计兑换单）
  */
