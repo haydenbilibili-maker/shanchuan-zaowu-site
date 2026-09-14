@@ -2,10 +2,12 @@
  * Admin 飞书对接：
  * - 飞书 Open API：经 /api/feishu-sync（Cloudflare Function）或本地 Vite 代理
  * - 镜像 / 映射 / 库存：CloudBase 匿名 SDK 直写
- * 不再依赖微信云函数（Web 匿名会 PERMISSION_DENIED）
+ * - 采购账目 SSOT：managePurchaseOrder → ops_purchases（按 feishuRecordId upsert）
+ * 不再依赖微信云函数直连飞书（Web 匿名会 PERMISSION_DENIED）
  */
 import {
   COLLECTIONS,
+  callCloudFunction,
   cdnAdd,
   cdnDocGet,
   cdnSet,
@@ -16,6 +18,7 @@ import {
 
 const CONFIG_ID = 'feishu_bitable'
 const APP_TOKEN = 'WCs2bnIHsaty7vsjcnaczu0Wnod'
+const PURCHASE_FN = 'managePurchaseOrder'
 
 function candidateUrls() {
   const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
@@ -113,9 +116,79 @@ function mapRecord(rec, fieldMap) {
   const out = { raw: f }
   for (const [key, colName] of Object.entries(fieldMap || {})) {
     const v = pickField(f, colName)
-    out[key] = key === 'qty' ? cellNumber(v) : cellText(v)
+    out[key] = key === 'qty' || key === 'unitPrice' ? cellNumber(v) : cellText(v)
   }
   return out
+}
+
+/** 飞书记录 → managePurchaseOrder upsertFromFeishu 行 */
+function toOpsPurchaseItem(rec, fieldMap) {
+  const mapped = mapRecord(rec, fieldMap)
+  return {
+    feishuRecordId: rec.record_id || rec.recordId || '',
+    recordId: rec.record_id || rec.recordId || '',
+    orderNo: mapped.orderNo || '',
+    itemName: mapped.skuName || mapped.itemName || '',
+    skuName: mapped.skuName || '',
+    qty: mapped.qty,
+    unit: mapped.unit || '件',
+    unitPrice: mapped.unitPrice || 0,
+    supplier: mapped.supplier || '',
+    status: mapped.status || '',
+    date: mapped.date || '',
+    purchaseDate: mapped.date || '',
+    entityName: mapped.entityName || mapped.storeName || '',
+    spec: mapped.spec || '',
+    note: mapped.note || '',
+  }
+}
+
+async function upsertOpsPurchasesFromFeishu(records, fieldMap) {
+  const items = (records || []).map((rec) => toOpsPurchaseItem(rec, fieldMap))
+  const res = await callCloudFunction(PURCHASE_FN, {
+    action: 'upsertFromFeishu',
+    items,
+    defaultEntityId: 'studio_specimen',
+  })
+  if (!res || res.success === false) {
+    throw new Error((res && res.msg) || '写入 ops_purchases 失败')
+  }
+  return res
+}
+
+function buildPurchaseFeishuFields(row, fmap) {
+  const fields = {}
+  if (fmap.orderNo) fields[fmap.orderNo] = row.orderNo || ''
+  if (fmap.skuName) fields[fmap.skuName] = row.itemName || ''
+  if (fmap.qty) fields[fmap.qty] = Number(row.qty) || 0
+  if (fmap.unit) fields[fmap.unit] = row.unit || ''
+  if (fmap.unitPrice) fields[fmap.unitPrice] = Number(row.unitPrice) || 0
+  if (fmap.supplier) fields[fmap.supplier] = row.supplier || ''
+  if (fmap.status) fields[fmap.status] = row.statusLabel || row.status || ''
+  if (fmap.date) fields[fmap.date] = row.purchaseDate || ''
+  if (fmap.entityName) fields[fmap.entityName] = row.entityName || ''
+  if (fmap.spec) fields[fmap.spec] = row.spec || ''
+  if (fmap.note) fields[fmap.note] = row.note || ''
+  return fields
+}
+
+async function pullTable(role, col) {
+  const config = await readFeishuConfig()
+  const spec = (config.tables || {})[role]
+  if (!spec?.tableId) return { success: false, msg: `请先映射「${role}」表并保存` }
+  const { records } = await feishuApi({ action: 'listRecords', tableId: spec.tableId })
+  let upserted = 0
+  for (const rec of records || []) {
+    await upsertByRecordId(col, rec.record_id, mapRecord(rec, spec.fields))
+    upserted += 1
+  }
+  return {
+    success: true,
+    stats: { pulled: (records || []).length, upserted },
+    msg: `已同步 ${upserted} 条`,
+    records,
+    fieldMap: spec.fields || {},
+  }
 }
 
 async function upsertByRecordId(col, recordId, data) {
@@ -152,9 +225,33 @@ export async function readFeishuConfig() {
   return {
     appToken: APP_TOKEN,
     tables: {
-      purchase: { tableId: '', fields: { orderNo: '单号', skuName: '物料', qty: '数量', supplier: '供应商', status: '状态', date: '日期' } },
+      purchase: {
+        tableId: '',
+        fields: {
+          orderNo: '单号',
+          skuName: '物料',
+          qty: '数量',
+          unit: '单位',
+          unitPrice: '单价',
+          supplier: '供应商',
+          status: '状态',
+          date: '日期',
+          entityName: '归属',
+          spec: '规格',
+          note: '备注',
+        },
+      },
       inventory: { tableId: '', fields: { skuName: '品名', skuId: 'SKU', qty: '数量', unit: '单位' } },
-      shipment: { tableId: '', fields: { orderNo: '订货单号', storeName: '门店', carrier: '物流公司', trackingNumber: '物流单号', status: '状态' } },
+      shipment: {
+        tableId: '',
+        fields: {
+          orderNo: '订货单号',
+          storeName: '门店',
+          carrier: '物流公司',
+          trackingNumber: '物流单号',
+          status: '状态',
+        },
+      },
     },
   }
 }
@@ -169,21 +266,12 @@ function matchProduct(row, products) {
   if (!name) return null
   const hit =
     products.find((p) => String(p.title || '').replace(/\s/g, '') === name) ||
-    products.find((p) => String(p.title || '').includes(row.skuName) || name.includes(String(p.title || '').replace(/\s/g, '')))
+    products.find(
+      (p) =>
+        String(p.title || '').includes(row.skuName) ||
+        name.includes(String(p.title || '').replace(/\s/g, '')),
+    )
   return hit ? hit._id : null
-}
-
-async function pullTable(role, col) {
-  const config = await readFeishuConfig()
-  const spec = (config.tables || {})[role]
-  if (!spec?.tableId) return { success: false, msg: `请先映射「${role}」表并保存` }
-  const { records } = await feishuApi({ action: 'listRecords', tableId: spec.tableId })
-  let upserted = 0
-  for (const rec of records || []) {
-    await upsertByRecordId(col, rec.record_id, mapRecord(rec, spec.fields))
-    upserted += 1
-  }
-  return { success: true, stats: { pulled: (records || []).length, upserted }, msg: `已同步 ${upserted} 条` }
 }
 
 export async function runFeishuSync(action, extra = {}) {
@@ -210,9 +298,72 @@ export async function runFeishuSync(action, extra = {}) {
         result = { success: true, config, msg: '映射已保存' }
         break
       }
-      case 'pullPurchases':
-        result = await pullTable('purchase', COLLECTIONS.FEISHU_PURCHASES)
+      case 'pullPurchases': {
+        const pulled = await pullTable('purchase', COLLECTIONS.FEISHU_PURCHASES)
+        if (!pulled.success) {
+          result = pulled
+          break
+        }
+        // SSOT：同步写入 ops_purchases
+        const ops = await upsertOpsPurchasesFromFeishu(pulled.records || [], pulled.fieldMap || {})
+        result = {
+          success: true,
+          stats: {
+            ...pulled.stats,
+            opsCreated: ops.stats?.created || 0,
+            opsUpdated: ops.stats?.updated || 0,
+            opsSkipped: ops.stats?.skipped || 0,
+          },
+          msg: `镜像 ${pulled.stats.upserted} 条；账目库新建 ${ops.stats?.created || 0} / 更新 ${ops.stats?.updated || 0}`,
+          ops,
+        }
         break
+      }
+      case 'pushOpsPurchase': {
+        const config = await readFeishuConfig()
+        const spec = (config.tables || {}).purchase
+        if (!spec?.tableId) {
+          result = { success: false, msg: '请先映射「采购」表并保存' }
+          break
+        }
+        const row = extra.item || extra.row || null
+        if (!row || !row._id) {
+          result = { success: false, msg: '缺少采购记录 item' }
+          break
+        }
+        const fmap = spec.fields || {}
+        const fields = buildPurchaseFeishuFields(row, fmap)
+        let rid = String(row.feishuRecordId || '').trim()
+        if (rid) {
+          await feishuApi({
+            action: 'updateRecord',
+            tableId: spec.tableId,
+            recordId: rid,
+            fields,
+          })
+        } else {
+          const created = await feishuApi({
+            action: 'createRecord',
+            tableId: spec.tableId,
+            fields,
+          })
+          rid = created.record?.record_id || created.record?.id || ''
+          if (rid) {
+            await callCloudFunction(PURCHASE_FN, {
+              action: 'bindFeishuRecord',
+              id: row._id,
+              feishuRecordId: rid,
+            })
+          }
+        }
+        result = {
+          success: true,
+          feishuRecordId: rid,
+          stats: { pushed: rid ? 1 : 0 },
+          msg: rid ? `已回写飞书 ${rid}` : '飞书未返回 record_id',
+        }
+        break
+      }
       case 'pullInventory': {
         const pulled = await pullTable('inventory', COLLECTIONS.FEISHU_INVENTORY)
         if (!pulled.success) {

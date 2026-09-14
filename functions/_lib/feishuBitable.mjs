@@ -113,6 +113,20 @@ export async function createFeishuRecord(tableId, fields, env = {}) {
   return json.data?.record
 }
 
+export async function updateFeishuRecord(tableId, recordId, fields, env = {}) {
+  const token = await getTenantToken(env)
+  const appToken = envToken(env)
+  const json = await feishuJson(
+    `${API}/apps/${appToken}/tables/${tableId}/records/${recordId}`,
+    {
+      method: 'PUT',
+      token,
+      body: { fields },
+    },
+  )
+  return json.data?.record
+}
+
 export async function handleFeishuAction(payload = {}, env = {}) {
   const configured = Boolean(env.FEISHU_APP_ID && env.FEISHU_APP_SECRET)
   const action = payload.action
@@ -155,6 +169,18 @@ export async function handleFeishuAction(payload = {}, env = {}) {
   if (action === 'createRecord') {
     if (!payload.tableId) return { success: false, msg: '缺少 tableId' }
     const record = await createFeishuRecord(payload.tableId, payload.fields || {}, envScoped)
+    return { success: true, record }
+  }
+  if (action === 'updateRecord') {
+    if (!payload.tableId || !payload.recordId) {
+      return { success: false, msg: '缺少 tableId 或 recordId' }
+    }
+    const record = await updateFeishuRecord(
+      payload.tableId,
+      payload.recordId,
+      payload.fields || {},
+      envScoped,
+    )
     return { success: true, record }
   }
   return { success: false, msg: `未知 action: ${action}` }

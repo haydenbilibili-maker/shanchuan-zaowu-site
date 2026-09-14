@@ -3,11 +3,58 @@
     <div class="header-section">
       <h2>采购管理</h2>
       <p class="subtitle">
-        门店采购（山川造物 / 星宸标本）与工作室采购。字段对齐飞书采购表常见列（单号、物料、数量、供应商、状态、日期），并扩展规格/单价/备注；
-        <strong>当前为 Admin 主写</strong>，可后续与飞书多维表同步。集合 <code>ops_purchases</code>（与订货履约
-        <code>purchase_orders</code> 分离）。
+        SSOT 集合 <code>ops_purchases</code>（与订货履约 <code>purchase_orders</code> 分离）。
+        飞书多维表为录入源之一，ERP 负责同步与管理；小程序超管/店长/股东按权限只读或有限写。
       </p>
     </div>
+
+    <el-card shadow="never" class="sync-card" v-loading="syncLoading">
+      <template #header>
+        <div class="card-head">
+          <span>同步管理 · 飞书 ↔ 账目库</span>
+          <div class="sync-actions">
+            <el-button size="small" @click="openFeishuBridge">映射与探测</el-button>
+            <el-button type="primary" size="small" :loading="syncing" @click="syncFromFeishu">
+              从飞书同步
+            </el-button>
+          </div>
+        </div>
+      </template>
+      <div class="sync-meta">
+        <div class="sync-item">
+          <span class="sync-label">上次拉取</span>
+          <span class="sync-value">{{ fmtTime(syncStatus.lastPullAt) }}</span>
+        </div>
+        <div class="sync-item">
+          <span class="sync-label">结果</span>
+          <el-tag
+            v-if="syncStatus.lastPullOk != null"
+            :type="syncStatus.lastPullOk ? 'success' : 'danger'"
+            size="small"
+            effect="plain"
+          >
+            {{ syncStatus.lastPullOk ? '成功' : '失败/部分失败' }}
+          </el-tag>
+          <span v-else class="sync-value muted">尚未同步</span>
+        </div>
+        <div class="sync-item wide">
+          <span class="sync-label">摘要</span>
+          <span class="sync-value">{{ syncStatus.lastPullMsg || '—' }}</span>
+        </div>
+      </div>
+      <el-table :data="syncLogs" size="small" empty-text="暂无同步日志" max-height="200" class="log-table">
+        <el-table-column label="时间" width="160">
+          <template #default="{ row }">{{ fmtTime(row.createdAt) }}</template>
+        </el-table-column>
+        <el-table-column prop="action" label="动作" width="160" />
+        <el-table-column label="结果" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.ok ? 'success' : 'danger'" size="small">{{ row.ok ? '成功' : '失败' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="message" label="摘要" min-width="200" show-overflow-tooltip />
+      </el-table>
+    </el-card>
 
     <el-tabs v-model="activeScope" @tab-change="onScopeChange">
       <el-tab-pane label="门店采购" name="store" />
@@ -34,6 +81,12 @@
                 :label="s.label"
                 :value="s.value"
               />
+            </el-select>
+            <el-select v-model="sourceFilter" style="width: 120px" @change="loadList">
+              <el-option label="全部来源" value="all" />
+              <el-option label="飞书" value="feishu" />
+              <el-option label="ERP" value="erp" />
+              <el-option label="手工" value="manual" />
             </el-select>
             <el-input
               v-model="keyword"
@@ -68,6 +121,13 @@
         </el-table-column>
         <el-table-column prop="supplier" label="供应商" width="120" show-overflow-tooltip />
         <el-table-column prop="purchaseDate" label="采购日期" width="110" />
+        <el-table-column label="来源" width="90">
+          <template #default="{ row }">
+            <el-tag :type="sourceTone(row.source)" size="small" effect="plain">
+              {{ row.sourceLabel || '手工' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="statusTone(row.status)" size="small" effect="plain">{{ row.statusLabel }}</el-tag>
@@ -131,6 +191,10 @@
         <el-form-item label="备注">
           <el-input v-model="form.note" type="textarea" :rows="2" />
         </el-form-item>
+        <el-form-item label="回写飞书">
+          <el-switch v-model="pushToFeishu" />
+          <span class="form-hint">保存后按映射创建/更新飞书采购行</span>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -144,19 +208,30 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { callCloudFunction } from '../cloud'
+import { runFeishuSync } from '../utils/feishuSync'
 
 const FN = 'managePurchaseOrder'
 const loading = ref(false)
 const saving = ref(false)
+const syncLoading = ref(false)
+const syncing = ref(false)
 const list = ref([])
 const statuses = ref([])
 const entities = ref([])
 const activeScope = ref('store')
 const entityFilter = ref('')
 const statusFilter = ref('all')
+const sourceFilter = ref('all')
 const keyword = ref('')
 const dialogVisible = ref(false)
 const editingId = ref('')
+const pushToFeishu = ref(true)
+const syncStatus = reactive({
+  lastPullAt: null,
+  lastPullOk: null,
+  lastPullMsg: '',
+})
+const syncLogs = ref([])
 
 const form = reactive({
   entityId: '',
@@ -181,11 +256,24 @@ function money(n) {
   return v.toFixed(2).replace(/\.00$/, '')
 }
 
+function fmtTime(t) {
+  if (!t) return '—'
+  const d = new Date(t)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleString('zh-CN', { hour12: false })
+}
+
 function statusTone(s) {
   if (s === 'received') return 'success'
   if (s === 'ordered' || s === 'shipped') return 'warning'
   if (s === 'cancelled') return 'info'
   return ''
+}
+
+function sourceTone(s) {
+  if (s === 'feishu') return 'warning'
+  if (s === 'erp') return 'success'
+  return 'info'
 }
 
 function statusLabelOf(s) {
@@ -212,6 +300,7 @@ function resetForm() {
     status: 'draft',
     note: '',
   })
+  pushToFeishu.value = true
 }
 
 async function loadMeta() {
@@ -225,6 +314,28 @@ async function loadMeta() {
   }
 }
 
+async function loadSyncPanel() {
+  syncLoading.value = true
+  try {
+    const [st, logs] = await Promise.all([
+      callCloudFunction(FN, { action: 'syncStatus' }),
+      callCloudFunction(FN, { action: 'syncLogs', limit: 20 }),
+    ])
+    if (st && st.success !== false) {
+      syncStatus.lastPullAt = st.lastPullAt || null
+      syncStatus.lastPullOk = st.lastPullOk
+      syncStatus.lastPullMsg = st.lastPullMsg || ''
+    }
+    if (logs && logs.success !== false) {
+      syncLogs.value = logs.logs || []
+    }
+  } catch {
+    /* 同步面板非阻断 */
+  } finally {
+    syncLoading.value = false
+  }
+}
+
 async function loadList() {
   loading.value = true
   try {
@@ -233,6 +344,7 @@ async function loadList() {
       scope: activeScope.value,
       entityId: entityFilter.value || undefined,
       status: statusFilter.value,
+      source: sourceFilter.value,
       keyword: keyword.value || undefined,
       limit: 80,
     })
@@ -244,6 +356,25 @@ async function loadList() {
   } finally {
     loading.value = false
   }
+}
+
+async function syncFromFeishu() {
+  syncing.value = true
+  try {
+    const res = await runFeishuSync('pullPurchases')
+    if (!res || res.success === false) throw new Error((res && res.msg) || '同步失败')
+    ElMessage.success(res.msg || '同步完成')
+    await Promise.all([loadList(), loadSyncPanel()])
+  } catch (e) {
+    ElMessage.error(e?.message || '同步失败：请先在订货履约→飞书对接完成映射，并配置 FEISHU_APP_ID/SECRET')
+    await loadSyncPanel()
+  } finally {
+    syncing.value = false
+  }
+}
+
+function openFeishuBridge() {
+  ElMessage.info('请打开「订货履约 → 飞书对接」完成探测与字段映射后，回到本页点「从飞书同步」。')
 }
 
 function onScopeChange() {
@@ -271,6 +402,7 @@ function openEdit(row) {
     status: row.status || 'draft',
     note: row.note || '',
   })
+  pushToFeishu.value = true
   dialogVisible.value = true
 }
 
@@ -280,13 +412,28 @@ async function saveForm() {
     const payload = {
       action: editingId.value ? 'update' : 'create',
       id: editingId.value || undefined,
-      item: { ...form },
+      item: { ...form, source: 'erp' },
     }
     const res = await callCloudFunction(FN, payload)
     if (!res || res.success === false) throw new Error((res && res.msg) || '保存失败')
-    ElMessage.success('已保存')
+    const saved = res.item
+    if (pushToFeishu.value && saved) {
+      try {
+        const push = await runFeishuSync('pushOpsPurchase', { item: saved })
+        if (push && push.success === false) {
+          ElMessage.warning(`已保存账目，飞书回写失败：${push.msg || ''}`)
+        } else {
+          ElMessage.success(push?.msg ? `已保存并${push.msg}` : '已保存并回写飞书')
+        }
+      } catch (pe) {
+        ElMessage.warning(`已保存账目，飞书回写失败：${pe?.message || pe}`)
+      }
+    } else {
+      ElMessage.success('已保存')
+    }
     dialogVisible.value = false
     loadList()
+    loadSyncPanel()
   } catch (e) {
     ElMessage.error(e?.message || '保存失败')
   } finally {
@@ -325,7 +472,7 @@ function removeRow(row) {
 onMounted(async () => {
   await loadMeta()
   resetForm()
-  loadList()
+  await Promise.all([loadList(), loadSyncPanel()])
 })
 </script>
 
@@ -351,8 +498,10 @@ onMounted(async () => {
   padding: 1px 6px;
   border-radius: 4px;
 }
+.sync-card,
 .list-card {
   border: 1px solid #e8e5de;
+  margin-bottom: 14px;
 }
 .card-head {
   display: flex;
@@ -361,11 +510,42 @@ onMounted(async () => {
   gap: 12px;
   flex-wrap: wrap;
 }
+.sync-actions,
 .filters {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   align-items: center;
+}
+.sync-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-bottom: 12px;
+}
+.sync-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 180px;
+}
+.sync-item.wide {
+  flex: 1;
+  min-width: 240px;
+}
+.sync-label {
+  color: #6b6560;
+  font-size: 12px;
+}
+.sync-value {
+  color: #33302c;
+  font-size: 13px;
+}
+.sync-value.muted {
+  color: #a09a90;
+}
+.log-table {
+  margin-top: 4px;
 }
 .cell-title {
   color: #33302c;
@@ -375,5 +555,10 @@ onMounted(async () => {
   color: #a09a90;
   font-size: 12px;
   margin-top: 2px;
+}
+.form-hint {
+  margin-left: 10px;
+  color: #a09a90;
+  font-size: 12px;
 }
 </style>

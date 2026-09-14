@@ -4,7 +4,7 @@
       <div class="title-box">
         <h2>飞书多维表对接</h2>
         <span class="subtitle">
-          飞书管采购/原料库存 · Admin 管订货履约与成品仓 · 禁止无映射双写
+          飞书录入 → ERP 同步 → ops_purchases（SSOT）→ 小程序多端展示 · 禁止无映射双写库存
         </span>
       </div>
       <div class="header-actions">
@@ -96,13 +96,14 @@
     <el-card shadow="never" class="block">
       <template #header>同步动作</template>
       <div class="actions">
-        <el-button :loading="busy === 'pullPurchases'" @click="run('pullPurchases')">拉取采购</el-button>
+        <el-button :loading="busy === 'pullPurchases'" @click="run('pullPurchases')">拉取采购→账目库</el-button>
         <el-button :loading="busy === 'pullInventory'" @click="run('pullInventory')">拉取库存</el-button>
         <el-button type="warning" :loading="busy === 'applyInventory'" @click="confirmApply">应用为 HQ 库存</el-button>
         <el-button type="success" :loading="busy === 'pushShipments'" @click="run('pushShipments')">回写出货单</el-button>
       </div>
       <p class="hint-line">
-        拉取只更新镜像，不改商城库存。「应用为 HQ 库存」才把已映射 SKU 写入 products.stock 并记 feishu_pull 流水。
+        「拉取采购→账目库」会同时写入镜像 <code>feishu_purchases</code> 与 SSOT <code>ops_purchases</code>（按 feishuRecordId upsert）。
+        库存拉取只更新镜像；「应用为 HQ 库存」才改 products.stock。
       </p>
     </el-card>
 
@@ -162,14 +163,19 @@ import { feishuProxyStatus, runFeishuSync } from '../utils/feishuSync'
 const roles = [
   {
     key: 'purchase',
-    label: '采购（飞书主写）',
+    label: '采购（飞书→ops_purchases）',
     fields: [
       { key: 'orderNo', label: '单号列', hint: '单号' },
       { key: 'skuName', label: '物料列', hint: '物料' },
       { key: 'qty', label: '数量列', hint: '数量' },
+      { key: 'unit', label: '单位列', hint: '单位' },
+      { key: 'unitPrice', label: '单价列', hint: '单价' },
       { key: 'supplier', label: '供应商列', hint: '供应商' },
       { key: 'status', label: '状态列', hint: '状态' },
       { key: 'date', label: '日期列', hint: '日期' },
+      { key: 'entityName', label: '归属列', hint: '归属/门店' },
+      { key: 'spec', label: '规格列', hint: '规格' },
+      { key: 'note', label: '备注列', hint: '备注' },
     ],
   },
   {
@@ -196,7 +202,22 @@ const roles = [
 ]
 
 const emptyMapping = () => ({
-  purchase: { tableId: '', fields: { orderNo: '单号', skuName: '物料', qty: '数量', supplier: '供应商', status: '状态', date: '日期' } },
+  purchase: {
+    tableId: '',
+    fields: {
+      orderNo: '单号',
+      skuName: '物料',
+      qty: '数量',
+      unit: '单位',
+      unitPrice: '单价',
+      supplier: '供应商',
+      status: '状态',
+      date: '日期',
+      entityName: '归属',
+      spec: '规格',
+      note: '备注',
+    },
+  },
   inventory: { tableId: '', fields: { skuName: '品名', skuId: 'SKU', qty: '数量', unit: '单位' } },
   shipment: { tableId: '', fields: { orderNo: '订货单号', storeName: '门店', carrier: '物流公司', trackingNumber: '物流单号', status: '状态' } },
 })
@@ -247,9 +268,13 @@ const guessField = (roleKey, fieldKey, cols) => {
     skuId: [/SKU/i, /货号/, /编码/],
     qty: [/数量/, /库存/, /余量/],
     unit: [/单位/],
+    unitPrice: [/单价/, /价格/, /金额/],
     supplier: [/供应商/, /厂家/],
     status: [/状态/],
     date: [/日期/, /时间/],
+    entityName: [/归属/, /门店/, /主体/, /店铺/],
+    spec: [/规格/, /型号/],
+    note: [/备注/, /说明/],
     storeName: [/门店/, /客户/, /收货/],
     carrier: [/物流/, /快递/, /承运/],
     trackingNumber: [/运单/, /快递单/, /物流单/],
