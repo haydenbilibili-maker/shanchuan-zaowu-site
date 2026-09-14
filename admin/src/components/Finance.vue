@@ -351,13 +351,13 @@
                         <details class="panel-hint-details">
                             <summary>口径说明</summary>
                             <p class="panel-hint-body">
-                                <strong>月累计对赌口径：</strong>超额 = max(0, 当月总营收 − 商场抽成阈值)，商场提成 = 超额 × 商场超额扣点。阈值与扣点与上方「成本与投资分红模型设置」一致（默认 17 万、15%）。与「成本明细分析」中按日折算的商场抽成可能不一致，请以合同约定为准。
+                                <strong>月累计对赌口径：</strong>{{ FORMULA_NOTE }}
                             </p>
                         </details>
                     </div>
                     <div class="mall-share-grid">
                         <div class="stat-box mall-share-card highlight-box" style="border-left-color: #1B4332;">
-                            <div class="stat-label">当月累计营收</div>
+                            <div class="stat-label">已达额度（当月营收）</div>
                             <div class="stat-val money-val mall-share-val" id="mallBriefMonthRev">-</div>
                         </div>
                         <div class="stat-box mall-share-card">
@@ -365,11 +365,11 @@
                             <div class="stat-val money-val mall-share-val" id="mallBriefThreshold">-</div>
                         </div>
                         <div class="stat-box mall-share-card">
-                            <div class="stat-label">超额部分</div>
+                            <div class="stat-label">超额金额</div>
                             <div class="stat-val money-val mall-share-val" id="mallBriefExcess">-</div>
                         </div>
                         <div class="stat-box mall-share-card highlight-box" style="border-left-color: #c4a55a;">
-                            <div class="stat-label">商场当月提成额</div>
+                            <div class="stat-label">抽成金额</div>
                             <div class="stat-val money-val mall-share-val" id="mallBriefAmount">-</div>
                             <div class="stat-sub mall-share-sub" id="mallBriefRateHint">-</div>
                         </div>
@@ -959,6 +959,13 @@ import {
   DEFAULT_FINANCE_STORE_NAME,
 } from '../utils/storeStorage'
 import { parseDailyFinanceText } from '../utils/financeDailyParse'
+import {
+  DEFAULT_MALL_THRESHOLD,
+  DEFAULT_MALL_RATE,
+  FORMULA_NOTE,
+  computeMallCommission,
+  computeDailyMallCost,
+} from '../utils/mallCommission'
 
 const emit = defineEmits(['switch-tab'])
 const goCapitalSandbox = () => emit('switch-tab', '36')
@@ -1221,8 +1228,8 @@ function generateMonthlyBriefFromData() {
     const targetPct = s.target > 0 ? (totalRev / s.target) * 100 : 0
     const [y, mm] = month.split('-').map(Number)
     const label = `${y}年${mm}月`
-    const mallExcess = Math.max(0, totalRev - s.mallThreshold)
-    const mallAmt = mallExcess * s.mallRate
+    const mall = computeMallCommission(totalRev, s)
+    const mallAmt = mall.fee
     const parts = [
         `${label}累计营收 ¥${Math.round(totalRev).toLocaleString()}，`,
         totalProfit >= 0
@@ -1232,7 +1239,7 @@ function generateMonthlyBriefFromData() {
     ]
     if (mallAmt > 0) {
         parts.push(
-            `商场月累计超额分成约 ¥${Math.round(mallAmt).toLocaleString()}（月营收超过 ¥${Math.round(s.mallThreshold).toLocaleString()} 的部分 × ${(s.mallRate * 100).toFixed(0)}%）。`,
+            `商场月累计超额分成约 ¥${Math.round(mallAmt).toLocaleString()}（月营收超过 ¥${Math.round(mall.threshold).toLocaleString()} 的部分 × ${mall.ratePct}%）。`,
         )
     } else {
         parts.push('本月营收未超过商场抽成阈值，无月累计超额分成。')
@@ -1560,8 +1567,15 @@ const app = reactive({
             earlyShare: val('setEarlyShare') / 100,
             lateShare: val('setLateShare') / 100,
             rent: val('setRent'),
-            mallThreshold: val('setMallThreshold'),
-            mallRate: val('setMallRate') / 100,
+            mallThreshold: (() => {
+                const v = val('setMallThreshold')
+                return v > 0 ? v : DEFAULT_MALL_THRESHOLD
+            })(),
+            mallRate: (() => {
+                const v = val('setMallRate')
+                if (!v || v < 0) return DEFAULT_MALL_RATE
+                return v / 100
+            })(),
             utility: val('setUtility'),
             staffCount: val('setStaffCount'),
             staffSalary: val('setStaffSalary'),
@@ -1608,20 +1622,15 @@ const app = reactive({
         if(!s.staffSalary || s.staffSalary < 0) s.staffSalary = 0;
         if(!s.costRate || s.costRate < 0) s.costRate = 0;
         if(!s.commRate || s.commRate < 0) s.commRate = 0;
-        if(!s.mallThreshold || s.mallThreshold < 0) s.mallThreshold = 0;
-        if(!s.mallRate || s.mallRate < 0) s.mallRate = 0;
+        if(!s.mallThreshold || s.mallThreshold < 0) s.mallThreshold = DEFAULT_MALL_THRESHOLD;
+        if(!s.mallRate || s.mallRate < 0) s.mallRate = DEFAULT_MALL_RATE;
         if(!s.tax || s.tax < 0) s.tax = 0;
         
         const monthlyFixed = s.rent + s.utility + (s.staffCount * s.staffSalary);
         const dailyFixed = monthlyFixed / 30;
         const cogs = revenue * s.costRate;
         const comm = revenue * s.commRate;
-        
-        const dailyThreshold = s.mallThreshold / 30;
-        let mallCost = 0;
-        if (revenue > dailyThreshold) {
-            mallCost = (revenue - dailyThreshold) * s.mallRate;
-        }
+        const mallCost = computeDailyMallCost(revenue, s);
 
         let opProfit = revenue - cogs - comm - mallCost - dailyFixed;
         if (opProfit > 0) opProfit *= (1 - s.tax);
@@ -1826,16 +1835,15 @@ const app = reactive({
 
         this.renderAnalysis(totalRev, totalProfit, margin, mData.length, s);
 
-        // 商场分成（月累计口径：超额 = 月营收 − 阈值，提成 = 超额 × 扣点）
-        const mallExcess = Math.max(0, totalRev - s.mallThreshold);
-        const mallMonthCommission = mallExcess * s.mallRate;
-        this.setSafeText('mallBriefMonthRev', '¥' + Math.round(totalRev).toLocaleString());
-        this.setSafeText('mallBriefThreshold', '¥' + Math.round(s.mallThreshold).toLocaleString());
-        this.setSafeText('mallBriefExcess', '¥' + Math.round(mallExcess).toLocaleString());
-        this.setSafeText('mallBriefAmount', '¥' + Math.round(mallMonthCommission).toLocaleString());
+        // 商场分成（月累计口径：与 mallCommission SSOT 同源）
+        const mall = computeMallCommission(totalRev, s);
+        this.setSafeText('mallBriefMonthRev', '¥' + Math.round(mall.reached).toLocaleString());
+        this.setSafeText('mallBriefThreshold', '¥' + Math.round(mall.threshold).toLocaleString());
+        this.setSafeText('mallBriefExcess', '¥' + Math.round(mall.excess).toLocaleString());
+        this.setSafeText('mallBriefAmount', '¥' + Math.round(mall.fee).toLocaleString());
         const mallRateHint = this.safeGetElement('mallBriefRateHint');
         if (mallRateHint) {
-            mallRateHint.innerText = `扣点 ${(s.mallRate * 100).toFixed(0)}% · 月累计对赌口径`;
+            mallRateHint.innerText = `扣点 ${mall.ratePct}% · 月累计对赌口径`;
         }
 
         if (month !== lastLoadedBriefMonth.value) {
@@ -1847,15 +1855,15 @@ const app = reactive({
             totalProfit,
             margin: Number(margin),
             targetPct: Number(targetPct),
-            mallMonthCommission,
+            mallMonthCommission: mall.fee,
             daysWithData,
             totalOrderCount,
             avgOrderPrice,
             dailyRev,
             dailyOrdersStr: daysWithData > 0 ? String(dailyOrders) : '',
             targetRevenue: s.target,
-            mallThreshold: s.mallThreshold,
-            mallRatePct: s.mallRate * 100,
+            mallThreshold: mall.threshold,
+            mallRatePct: mall.ratePct,
         });
 
         this.renderCalendar(month, mData);

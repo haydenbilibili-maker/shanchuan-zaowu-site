@@ -176,13 +176,25 @@ export async function saveFinanceSettingsToCloud(settings) {
       return { success: true, message: '无设置需要同步' }
     }
 
+    const { DEFAULT_MALL_THRESHOLD, DEFAULT_MALL_RATE } = await import('./mallCommission.js')
+    const normalized = { ...settings }
+    if (!Number.isFinite(Number(normalized.mallThreshold)) || Number(normalized.mallThreshold) < 0) {
+      normalized.mallThreshold = DEFAULT_MALL_THRESHOLD
+    }
+    let rate = Number(normalized.mallRate)
+    if (!Number.isFinite(rate) || rate < 0) {
+      normalized.mallRate = DEFAULT_MALL_RATE
+    } else if (rate > 1) {
+      normalized.mallRate = rate / 100
+    }
+
     const res = await db.collection(COLLECTIONS.FINANCE_SETTINGS).limit(20).get()
     const rows = (res.data || []).sort(
       (a, b) => (b._updateTime || 0) - (a._updateTime || 0),
     )
 
     const payload = {
-      settings,
+      settings: normalized,
       _updateTime: Date.now(),
       syncedAt: Date.now(),
     }
