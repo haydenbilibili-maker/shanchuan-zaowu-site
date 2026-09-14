@@ -3,6 +3,7 @@
  * - 飞书 Open API：经 /api/feishu-sync（Cloudflare Function）或本地 Vite 代理
  * - 镜像 / 映射 / 库存：CloudBase 匿名 SDK 直写
  * - 采购账目 SSOT：managePurchaseOrder → ops_purchases（按 feishuRecordId upsert）
+ * - 门店出货 SSOT：manageStoreShipment → ops_shipments（小程序主录入；ERP/飞书同步同库）
  * 不再依赖微信云函数直连飞书（Web 匿名会 PERMISSION_DENIED）
  */
 import {
@@ -19,6 +20,7 @@ import {
 const CONFIG_ID = 'feishu_bitable'
 const APP_TOKEN = 'WCs2bnIHsaty7vsjcnaczu0Wnod'
 const PURCHASE_FN = 'managePurchaseOrder'
+const SHIPMENT_FN = 'manageStoreShipment'
 const CONFIG_CACHE_KEY = 'sc_feishu_bitable_config_v1'
 
 /** 进程内缓存：UI「就绪」与 pull 校验共用，避免匿名读 configs 失败时假就绪 */
@@ -52,11 +54,13 @@ function defaultFeishuConfig() {
       shipment: {
         tableId: '',
         fields: {
-          orderNo: '订货单号',
+          shipmentNo: '出货单号',
           storeName: '门店',
-          carrier: '物流公司',
-          trackingNumber: '物流单号',
+          itemName: '品名',
+          qty: '数量',
           status: '状态',
+          date: '出货日期',
+          note: '备注',
         },
       },
     },
@@ -261,6 +265,37 @@ async function upsertOpsPurchasesFromFeishu(records, fieldMap) {
   return res
 }
 
+/** 飞书记录 → manageStoreShipment upsertFromFeishu 行 */
+function toOpsShipmentItem(rec, fieldMap) {
+  const mapped = mapRecord(rec, fieldMap)
+  return {
+    feishuRecordId: rec.record_id || rec.recordId || '',
+    recordId: rec.record_id || rec.recordId || '',
+    shipmentNo: mapped.shipmentNo || mapped.orderNo || '',
+    itemName: mapped.itemName || mapped.skuName || '',
+    skuName: mapped.itemName || mapped.skuName || '',
+    qty: mapped.qty,
+    status: mapped.status || '',
+    date: mapped.date || '',
+    shipmentDate: mapped.date || '',
+    storeName: mapped.storeName || mapped.entityName || '',
+    note: mapped.note || '',
+  }
+}
+
+async function upsertOpsShipmentsFromFeishu(records, fieldMap) {
+  const items = (records || []).map((rec) => toOpsShipmentItem(rec, fieldMap))
+  const res = await callCloudFunction(SHIPMENT_FN, {
+    action: 'upsertFromFeishu',
+    items,
+    defaultStoreId: 'store_shanhaizaowu',
+  })
+  if (!res || res.success === false) {
+    throw new Error((res && res.msg) || '写入 ops_shipments 失败')
+  }
+  return res
+}
+
 function buildPurchaseFeishuFields(row, fmap) {
   const fields = {}
   if (fmap.orderNo) fields[fmap.orderNo] = row.orderNo || ''
@@ -273,6 +308,20 @@ function buildPurchaseFeishuFields(row, fmap) {
   if (fmap.date) fields[fmap.date] = row.purchaseDate || ''
   if (fmap.entityName) fields[fmap.entityName] = row.entityName || ''
   if (fmap.spec) fields[fmap.spec] = row.spec || ''
+  if (fmap.note) fields[fmap.note] = row.note || ''
+  return fields
+}
+
+function buildShipmentFeishuFields(row, item, fmap) {
+  const fields = {}
+  if (fmap.shipmentNo) fields[fmap.shipmentNo] = row.shipmentNo || ''
+  if (fmap.orderNo) fields[fmap.orderNo] = row.shipmentNo || ''
+  if (fmap.storeName) fields[fmap.storeName] = row.storeName || ''
+  if (fmap.itemName) fields[fmap.itemName] = (item && item.itemName) || ''
+  if (fmap.skuName) fields[fmap.skuName] = (item && item.itemName) || ''
+  if (fmap.qty) fields[fmap.qty] = Number((item && item.qty) || row.totalQty) || 0
+  if (fmap.status) fields[fmap.status] = row.statusLabel || row.status || ''
+  if (fmap.date) fields[fmap.date] = row.shipmentDate || ''
   if (fmap.note) fields[fmap.note] = row.note || ''
   return fields
 }
@@ -573,7 +622,29 @@ export async function runFeishuSync(action, extra = {}) {
         result = { success: true, stats: { applied, skipped }, msg: `已应用 ${applied} 条，跳过 ${skipped} 条` }
         break
       }
-      case 'pushShipments': {
+      case 'pullShipments': {
+        const override = resolveTablesOverride(extra)
+        const pulled = await pullTable('shipment', COLLECTIONS.FEISHU_SHIPMENTS || 'feishu_shipments', override)
+        if (!pulled.success) {
+          result = pulled
+          break
+        }
+        const ops = await upsertOpsShipmentsFromFeishu(pulled.records || [], pulled.fieldMap || {})
+        result = {
+          success: true,
+          stats: {
+            ...pulled.stats,
+            opsCreated: ops.stats?.created || 0,
+            opsUpdated: ops.stats?.updated || 0,
+            opsSkipped: ops.stats?.skipped || 0,
+          },
+          msg: `镜像 ${pulled.stats.upserted} 条；出货库新建 ${ops.stats?.created || 0} / 更新 ${ops.stats?.updated || 0}`,
+          ops,
+        }
+        break
+      }
+      case 'pushShipments':
+      case 'pushOpsShipments': {
         resolveTablesOverride(extra)
         const config = await readFeishuConfig()
         const spec = (config.tables || {}).shipment
@@ -581,28 +652,48 @@ export async function runFeishuSync(action, extra = {}) {
           result = { success: false, msg: '请先映射「出货」表并保存' }
           break
         }
-        const ships = await fetchCollectionLimit(COLLECTIONS.FULFILLMENT_SHIPMENTS, { limit: 200 })
-        const pending = ships
-          .filter((s) => s.status === 'shipped' || s.status === 'delivered')
-          .filter((s) => !s.feishuRecordId)
+        // SSOT：ops_shipments（小程序主录入）；按明细行回写飞书
+        const listRes = await callCloudFunction(SHIPMENT_FN, {
+          action: 'list',
+          status: 'all',
+          limit: 100,
+        })
+        const ships = (listRes && listRes.list) || []
+        const pending = ships.filter((s) => s.status !== 'cancelled' && !s.feishuRecordId)
         const fmap = spec.fields || {}
         let pushed = 0
         for (const s of pending) {
-          const fields = {}
-          if (fmap.orderNo) fields[fmap.orderNo] = s.orderNo || ''
-          if (fmap.storeName) fields[fmap.storeName] = s.storeName || ''
-          if (fmap.carrier) fields[fmap.carrier] = (s.logistics && s.logistics.carrier) || ''
-          if (fmap.trackingNumber) fields[fmap.trackingNumber] = (s.logistics && s.logistics.trackingNumber) || ''
-          if (fmap.status) fields[fmap.status] = s.status === 'delivered' ? '已送达' : '已发货'
-          const created = await feishuApi({ action: 'createRecord', tableId: spec.tableId, fields })
-          const rid = created.record?.record_id || created.record?.id
-          await cdnUpdate(COLLECTIONS.FULFILLMENT_SHIPMENTS, s._id, {
-            feishuRecordId: rid,
-            updatedAt: Date.now(),
-          })
-          pushed += 1
+          const items = Array.isArray(s.items) && s.items.length ? s.items : [{ itemName: '', qty: s.totalQty || 0 }]
+          let firstRid = ''
+          for (let i = 0; i < items.length; i += 1) {
+            const it = items[i]
+            if (it.feishuRecordId) continue
+            const fields = buildShipmentFeishuFields(s, it, fmap)
+            const created = await feishuApi({ action: 'createRecord', tableId: spec.tableId, fields })
+            const rid = created.record?.record_id || created.record?.id || ''
+            if (!rid) continue
+            if (!firstRid) firstRid = rid
+            await callCloudFunction(SHIPMENT_FN, {
+              action: 'bindFeishuRecord',
+              id: s._id,
+              feishuRecordId: rid,
+              itemIndex: i,
+            })
+            pushed += 1
+          }
+          if (firstRid && !s.feishuRecordId) {
+            await callCloudFunction(SHIPMENT_FN, {
+              action: 'bindFeishuRecord',
+              id: s._id,
+              feishuRecordId: firstRid,
+            })
+          }
         }
-        result = { success: true, stats: { pushed }, msg: `已回写 ${pushed} 张出货单` }
+        result = {
+          success: true,
+          stats: { pushed },
+          msg: `已回写 ${pushed} 条出货明细到飞书（SSOT: ops_shipments）`,
+        }
         break
       }
       default:

@@ -222,21 +222,30 @@
         </el-table>
       </el-tab-pane>
 
-      <!-- 出货 -->
-      <el-tab-pane name="shipment" label="出货回写">
+      <!-- 出货：ops_shipments SSOT -->
+      <el-tab-pane name="shipment" label="出货同步">
         <div class="pane-toolbar">
+          <el-button
+            type="primary"
+            :loading="busy === 'pullShipments'"
+            :disabled="!configured"
+            @click="run('pullShipments')"
+          >
+            从飞书拉取 → ops_shipments
+          </el-button>
           <el-button
             type="success"
             :loading="busy === 'pushShipments'"
             :disabled="!configured"
             @click="run('pushShipments')"
           >
-            回写出货单到飞书
+            回写 ops_shipments → 飞书
           </el-button>
           <el-button size="small" @click="mainTab = 'mapping'">编辑出货映射</el-button>
         </div>
         <p class="hint-line">
-          仅回写 Admin 已发货且尚无 <code>feishuRecordId</code> 的出货单；订货履约日常操作仍在「订货履约」模块。
+          SSOT 为 <code>ops_shipments</code>：小程序超管/店长主录入，ERP 本处负责飞书双向同步与核对；订货履约
+          <code>fulfillment_shipments</code> 仍走「订货履约」模块，不写入此表。
         </p>
       </el-tab-pane>
 
@@ -327,13 +336,15 @@ const roles = [
   },
   {
     key: 'shipment',
-    label: '出货（Admin 回写）',
+    label: '出货（飞书↔ops_shipments）',
     fields: [
-      { key: 'orderNo', label: '订货单号列', hint: '订货单号' },
+      { key: 'shipmentNo', label: '出货单号列', hint: '出货单号' },
       { key: 'storeName', label: '门店列', hint: '门店' },
-      { key: 'carrier', label: '物流公司列', hint: '物流公司' },
-      { key: 'trackingNumber', label: '物流单号列', hint: '物流单号' },
+      { key: 'itemName', label: '品名列', hint: '品名' },
+      { key: 'qty', label: '数量列', hint: '数量' },
       { key: 'status', label: '状态列', hint: '状态' },
+      { key: 'date', label: '出货日期列', hint: '出货日期' },
+      { key: 'note', label: '备注列', hint: '备注' },
     ],
   },
 ]
@@ -358,7 +369,15 @@ const emptyMapping = () => ({
   inventory: { tableId: '', fields: { skuName: '品名', skuId: 'SKU', qty: '数量', unit: '单位' } },
   shipment: {
     tableId: '',
-    fields: { orderNo: '订货单号', storeName: '门店', carrier: '物流公司', trackingNumber: '物流单号', status: '状态' },
+    fields: {
+      shipmentNo: '出货单号',
+      storeName: '门店',
+      itemName: '品名',
+      qty: '数量',
+      status: '状态',
+      date: '出货日期',
+      note: '备注',
+    },
   },
 })
 
@@ -449,6 +468,8 @@ const guessField = (roleKey, fieldKey, cols) => {
     spec: [/规格/, /型号/],
     note: [/备注/, /说明/],
     storeName: [/门店/, /客户/, /收货/],
+    shipmentNo: [/出货单/, /单号/, /编号/],
+    itemName: [/品名/, /物料/, /名称/, /商品/],
     carrier: [/物流/, /快递/, /承运/],
     trackingNumber: [/运单/, /快递单/, /物流单/],
   }
@@ -463,7 +484,7 @@ const unwrap = (res) => {
 }
 
 const retryable = (action) =>
-  ['pullPurchases', 'pullInventory', 'pushShipments', 'applyInventory', 'inspect', 'saveMapping'].includes(action)
+  ['pullPurchases', 'pullInventory', 'pullShipments', 'pushShipments', 'applyInventory', 'inspect', 'saveMapping'].includes(action)
 
 const retryAction = async (action) => {
   if (action === 'inspect' || action === 'saveMapping') {

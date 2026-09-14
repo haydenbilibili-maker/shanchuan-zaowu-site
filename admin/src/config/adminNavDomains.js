@@ -60,6 +60,7 @@ export const NAV_DOMAINS = {
           { id: '61', title: '运费与包邮规则', desc: '运费模板与包邮门槛', icon: 'Van' },
           { id: '72', title: '定金管理', desc: '售罄孤品定金规则与意向', icon: 'Money' },
           { id: '76', title: '采购管理', desc: '门店与工作室采购清单', icon: 'ShoppingCart' },
+          { id: '79', title: '门店出货单', desc: '出货账本核对（SSOT ops_shipments）', icon: 'Van' },
           { id: '78', title: '飞书同步中心', desc: '连接状态、字段映射与一键同步', icon: 'Connection' },
         ],
       },

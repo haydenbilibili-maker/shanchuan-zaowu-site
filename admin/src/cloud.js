@@ -485,11 +485,13 @@ export const COLLECTIONS = {
   PRICE_LIST_ITEMS: 'price_list_items', // 官网 /price-list 供货报价条目
   PURCHASE_ORDERS: 'purchase_orders', // 正式订货单（门店/渠道）
   OPS_PURCHASES: 'ops_purchases', // 超管采购管理（门店+工作室，managePurchaseOrder）
+  OPS_SHIPMENTS: 'ops_shipments', // 门店出货单 SSOT（manageStoreShipment；小程序主录入）
   PROPERTY_COSTS: 'property_costs', // 物业成本（水电/房租，managePropertyCost）
   FULFILLMENT_SHIPMENTS: 'fulfillment_shipments', // 总部出货单（P1）
   STOCK_MOVEMENTS: 'stock_movements', // 总部成品库存流水（P1）
   FEISHU_PURCHASES: 'feishu_purchases', // 飞书采购镜像
   FEISHU_INVENTORY: 'feishu_inventory', // 飞书库存镜像
+  FEISHU_SHIPMENTS: 'feishu_shipments', // 飞书出货镜像（同步至 ops_shipments）
   FEISHU_SYNC_LOGS: 'feishu_sync_logs', // 飞书同步审计
   USERS: 'users',                    // 用户
   BOOKINGS: 'bookings',              // 预约

@@ -1342,6 +1342,7 @@ const LiveSessions = asyncWith(() => import('./components/LiveSessions.vue'))
 const ArtisanCommissionRegistry = asyncWith(() => import('./components/ArtisanCommission.vue'))
 const BirthdayGiftConfig = asyncWith(() => import('./components/BirthdayGiftConfig.vue'))
 const PurchaseOps = asyncWith(() => import('./components/PurchaseOps.vue'))
+const StoreShipments = asyncWith(() => import('./components/StoreShipments.vue'))
 const FeishuSyncCenter = asyncWith(() => import('./components/FeishuBridge.vue'))
 const PropertyCostOps = asyncWith(() => import('./components/PropertyCostOps.vue'))
 import OrderCenter from './components/Orders.vue'
@@ -1475,6 +1476,7 @@ const TAB_COMPONENT_MAP = {
   '74': () => ({ comp: ArtisanCommissionRegistry }),
   '75': () => ({ comp: BirthdayGiftConfig }),
   '76': () => ({ comp: PurchaseOps }),
+  '79': () => ({ comp: StoreShipments }),
   '78': () => ({ comp: FeishuSyncCenter }),
   '77': () => ({ comp: PropertyCostOps })
 }

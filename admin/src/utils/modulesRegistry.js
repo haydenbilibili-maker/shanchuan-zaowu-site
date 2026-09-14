@@ -27,7 +27,8 @@ export const MODULES = [
   { id: '74', name: '装裱师佣金', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Wallet', keywords: 'commission yongjin 佣金 装裱师 提成 台账' },
   { id: '75', name: '生日礼配置', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Present', keywords: 'birthday shengri 生日礼 礼包 礼券' },
   { id: '76', name: '采购管理', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase ops_purchases managePurchaseOrder caigou 门店采购 工作室采购 供应商' },
-  { id: '78', name: '飞书同步中心', group: 'BUSINESS', subgroup: '货', icon: 'Connection', keywords: 'feishu bitable sync 飞书 多维表 同步 采购映射 ops_purchases feishu_bitable' },
+  { id: '79', name: '门店出货单', group: 'BUSINESS', subgroup: '货', icon: 'Van', keywords: 'shipment ops_shipments manageStoreShipment chuhuo 出货单 门店出货' },
+  { id: '78', name: '飞书同步中心', group: 'BUSINESS', subgroup: '货', icon: 'Connection', keywords: 'feishu bitable sync 飞书 多维表 同步 采购映射 ops_purchases ops_shipments feishu_bitable' },
   { id: '77', name: '物业成本', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'House', keywords: 'property cost property_costs managePropertyCost 水电 房租 票据 物业成本' },
   // 导航大屏（侧栏一级）
   { id: 'nav-overview', name: '总览决策', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'nav overview 总览 导航大屏' },
