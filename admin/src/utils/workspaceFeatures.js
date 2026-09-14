@@ -74,16 +74,27 @@ export const WORKBENCH_CATALOG = {
     ]
   },
   investor: {
-    title: '投资人观测台',
-    en: 'INVESTOR',
+    title: '投资观测台',
+    en: 'OBSERVATORY',
     features: [
       { key: 'viewInvestorFinance', label: '财务汇总（只读）' },
       { key: 'viewInvestorAnalytics', label: '小程序数据大盘（只读）' }
     ]
+  },
+  shareholder: {
+    title: '股东观测台',
+    en: 'SHAREHOLDER OBSERVATORY',
+    features: [
+      {
+        key: 'viewShareholderObservatory',
+        label: '股东权益与分红（只读）',
+        hint: '按绑定门店与占股/分成比例查看回本进度、应得分成、月度经营与汇报摘要'
+      }
+    ]
   }
 }
 
-const ROLE_ORDER = ['super_admin', 'manager', 'staff', 'specimen_artisan', 'live_host', 'investor']
+const ROLE_ORDER = ['super_admin', 'manager', 'staff', 'specimen_artisan', 'live_host', 'investor', 'shareholder']
 
 export function featureKeysForRoles(roles) {
   const keys = {}

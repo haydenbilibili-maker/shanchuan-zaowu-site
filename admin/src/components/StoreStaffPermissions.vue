@@ -65,6 +65,7 @@
         <el-radio-button label="specimen_artisan">标本师</el-radio-button>
         <el-radio-button label="live_host">主播</el-radio-button>
         <el-radio-button label="investor">投资人</el-radio-button>
+        <el-radio-button label="shareholder">股东</el-radio-button>
       </el-radio-group>
       <div class="summary muted">本页 {{ filteredList.length }} 条</div>
     </div>
@@ -175,10 +176,29 @@
             <el-checkbox label="specimen_artisan">标本师</el-checkbox>
             <el-checkbox label="live_host">直播主播</el-checkbox>
             <el-checkbox label="investor">投资人</el-checkbox>
+            <el-checkbox label="shareholder">股东</el-checkbox>
             <el-checkbox label="super_admin">超管</el-checkbox>
           </el-checkbox-group>
           <div class="field-hint" v-if="(form.roles || []).includes('super_admin')">
             保存后写入 staff_members，并自动并入 workspace_acl 超管名单
+          </div>
+        </el-form-item>
+        <el-form-item label="股东配置" v-if="(form.roles || []).includes('shareholder')">
+          <div class="shareholder-config">
+            <el-select v-model="form.shareholderStoreId" placeholder="绑定门店股东" style="width: 100%; margin-bottom: 10px">
+              <el-option label="山川造物" value="store_shanhaizaowu" />
+              <el-option label="星宸标本" value="store_xingchen" />
+            </el-select>
+            <div class="shareholder-grid">
+              <el-input-number v-model="form.ownershipRatio" :min="0" :max="100" :step="1" placeholder="占股%" controls-position="right" />
+              <span class="field-hint">占股 %</span>
+              <el-input-number v-model="form.dividendRatio" :min="0" :max="100" :step="1" placeholder="分成%" controls-position="right" />
+              <span class="field-hint">分成 %</span>
+              <el-input-number v-model="form.capitalContribution" :min="0" :step="1000" placeholder="出资额" controls-position="right" />
+              <span class="field-hint">出资额（元）</span>
+              <el-date-picker v-model="form.effectiveDate" type="date" value-format="YYYY-MM-DD" placeholder="生效日" style="width: 100%" />
+              <span class="field-hint">生效日</span>
+            </div>
           </div>
         </el-form-item>
         <el-form-item label="能力勾选" v-if="featureGroups.length">
@@ -318,7 +338,12 @@ function emptyForm() {
     roles: ['staff'],
     storeIdsText: '',
     dailyGrantCap: 0,
-    active: true
+    active: true,
+    shareholderStoreId: '',
+    ownershipRatio: 0,
+    dividendRatio: 0,
+    capitalContribution: 0,
+    effectiveDate: ''
   }
 }
 
@@ -328,6 +353,7 @@ function roleLabel(role) {
   if (role === 'specimen_artisan') return '标本师'
   if (role === 'live_host') return '主播'
   if (role === 'investor') return '投资人'
+  if (role === 'shareholder') return '股东'
   return '店员'
 }
 
@@ -340,7 +366,7 @@ function rolesLabel(roles) {
 function roleTagType(role) {
   if (role === 'super_admin') return 'danger'
   if (role === 'manager') return 'warning'
-  if (role === 'investor') return 'info'
+  if (role === 'investor' || role === 'shareholder') return 'info'
   if (role === 'specimen_artisan' || role === 'live_host') return ''
   return 'success'
 }
@@ -513,6 +539,7 @@ function openUpsert(row) {
   phoneLookup.value = ''
   if (row) {
     const roles = normalizeRoles(row)
+    const sp = row.shareholderProfile || {}
     form.value = {
       _id: row._id || '',
       openid: row.openid || '',
@@ -522,7 +549,12 @@ function openUpsert(row) {
       roles: roles.slice(),
       storeIdsText: (row.storeIds || []).join(','),
       dailyGrantCap: Number(row.dailyGrantCap) || 0,
-      active: row.status !== 'disabled'
+      active: row.status !== 'disabled',
+      shareholderStoreId: sp.storeId || '',
+      ownershipRatio: Number(sp.ownershipRatio) || 0,
+      dividendRatio: Number(sp.dividendRatio) || 0,
+      capitalContribution: Number(sp.capitalContribution) || 0,
+      effectiveDate: sp.effectiveDate || ''
     }
     rebuildFeatureGroups(roles, row.permissions || [])
   } else {
@@ -566,10 +598,14 @@ async function submitUpsert() {
     ElMessage.warning('请至少选择一个角色')
     return
   }
+  if (roles.includes('shareholder') && !String(f.shareholderStoreId || '').trim()) {
+    ElMessage.warning('请为股东绑定门店（山川造物 / 星宸标本）')
+    return
+  }
   submitting.value = true
   try {
     const permissions = permissionsFromFeatureGroups(featureGroups.value)
-    const res = await callFn({
+    const payload = {
       action: 'upsert',
       openid: String(f.openid).trim(),
       name: f.name,
@@ -581,7 +617,19 @@ async function submitUpsert() {
       status: f.active ? 'active' : 'disabled',
       permissions,
       permissionsExplicit: true
-    })
+    }
+    if (roles.includes('shareholder')) {
+      payload.shareholderProfile = {
+        storeId: String(f.shareholderStoreId || '').trim(),
+        ownershipRatio: f.ownershipRatio,
+        dividendRatio: f.dividendRatio,
+        capitalContribution: f.capitalContribution,
+        effectiveDate: f.effectiveDate || ''
+      }
+    } else {
+      payload.shareholderProfile = null
+    }
+    const res = await callFn(payload)
     ElMessage.success(res.msg || '已保存')
     dialogVisible.value = false
     await Promise.all([loadList(), loadAcl(), loadAudit()])
@@ -612,7 +660,7 @@ async function onDisable(row) {
 async function onReactivate(row) {
   try {
     const roles = normalizeRoles(row)
-    await callFn({
+    const payload = {
       action: 'upsert',
       openid: row.openid,
       name: row.name,
@@ -622,7 +670,11 @@ async function onReactivate(row) {
       storeIds: row.storeIds,
       dailyGrantCap: row.dailyGrantCap,
       status: 'active'
-    })
+    }
+    if (roles.includes('shareholder')) {
+      payload.shareholderProfile = row.shareholderProfile || null
+    }
+    await callFn(payload)
     ElMessage.success('已恢复')
     await Promise.all([loadList(), loadAcl(), loadAudit()])
   } catch (e) {
@@ -761,6 +813,16 @@ onMounted(() => {
   margin-left: 10px;
   font-size: 12px;
   color: #A09A90;
+}
+
+.shareholder-config {
+  width: 100%;
+}
+.shareholder-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 10px;
+  align-items: center;
 }
 
 .feature-groups {
