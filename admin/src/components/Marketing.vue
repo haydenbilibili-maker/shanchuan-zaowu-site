@@ -655,15 +655,25 @@ const toggleRewardShelf = async (row, onShelf) => {
 
 const deleteItem = (row, colName) => {
   ElMessageBox.confirm('确定要删除吗？', '警告', { type: 'warning' }).then(async () => {
-    await cdnRemove(colName, row._id)
-    ElMessage.success('已删除')
-    refreshData()
-  })
+    try {
+      await cdnRemove(colName, row._id)
+      ElMessage.success('已删除')
+      await refreshData()
+    } catch (e) {
+      console.error('删除失败', e)
+      ElMessage.error('删除失败：' + (e?.message || '请确认 manageStoreContent 已部署且 ADMIN_OPS_KEY 配置正确'))
+    }
+  }).catch(() => {})
 }
 
 const toggleStatus = async (row, colName) => {
-  await cdnUpdate(colName, row._id, { active: row.active })
-  ElMessage.success('状态已更新')
+  try {
+    await cdnUpdate(colName, row._id, { active: row.active })
+    ElMessage.success('状态已更新')
+  } catch (e) {
+    row.active = !row.active
+    ElMessage.error('状态更新失败：' + (e?.message || '无写权限'))
+  }
 }
 
 // 初始化

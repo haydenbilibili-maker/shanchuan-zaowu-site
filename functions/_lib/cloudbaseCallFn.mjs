@@ -29,6 +29,14 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   'assistProductCopy',
   'seedCategories',
   'manageGift',
+  // 运营内容写库（banners/categories/rewards/framers 等 write:false → 须经此函数）
+  'manageStoreContent',
+  // 2026-09-14 对齐：定金 / 直播 / 装裱师佣金 / 生日礼 / 审批
+  'manageDeposit',
+  'manageLiveSession',
+  'manageArtisanCommission',
+  'manageBirthdayGift',
+  'manageApprovals',
 ])
 
 const ALLOWED = new Set(ALLOWED_FUNCTIONS)

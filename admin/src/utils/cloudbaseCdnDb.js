@@ -144,12 +144,56 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'assistProductCopy',
   'seedCategories',
   'manageGift',
-  // 2026-09-14 对齐四模块：定金 / 直播 / 装裱师佣金 / 生日礼
+  // 运营内容写库（集合 write:false 后 ERP 不可 CDN 直写）
+  'manageStoreContent',
+  // 2026-09-14 对齐：定金 / 直播 / 装裱师佣金 / 生日礼 / 审批
   'manageDeposit',
   'manageLiveSession',
   'manageArtisanCommission',
   'manageBirthdayGift',
+  'manageApprovals',
 ])
+
+/**
+ * 小程序侧安全规则已 write:false 的运营集合。
+ * ERP 匿名 CDN 直写会静默失败或抛权限错；统一改走 manageStoreContent。
+ * 与 cloudfunctions/manageStoreContent ALLOWED_COLLECTIONS 保持同步。
+ */
+const STORE_CONTENT_WRITE_COLLECTIONS = new Set([
+  'banners',
+  'categories',
+  'activities',
+  'rewards',
+  'framers',
+  'care_guides',
+  'custom_configs',
+  'custom_inquiries',
+  'pet_memorial_orders',
+  'framer_recruit_applications',
+  'articles',
+  'cms_wikis',
+  'configs',
+])
+
+/** manageStoreContent.setDoc 白名单（须与云函数 allowSetDocIds 一致；未列入的 configs id 降级为 update） */
+const STORE_CONTENT_SET_DOC_IDS = new Set(['booking_config'])
+
+async function callStoreContentWrite(payload) {
+  const res = await callCdnFunction('manageStoreContent', payload)
+  if (!res || res.success === false) {
+    const err = new Error(res?.msg || 'manageStoreContent 写入失败')
+    err.code = res?.code || ''
+    err.result = res
+    throw err
+  }
+  // 兼容原 CDN add 返回 { id } / 部分调用方读 _id
+  if (res.id && res._id == null) res._id = res.id
+  return res
+}
+
+function shouldProxyStoreContent(collectionName) {
+  return STORE_CONTENT_WRITE_COLLECTIONS.has(String(collectionName || '').trim())
+}
 
 function cloudFnProxyUrls() {
   const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
@@ -264,16 +308,38 @@ export async function fetchCollectionLimit(collectionName, options = {}) {
 }
 
 export async function cdnAdd(collectionName, data) {
+  if (shouldProxyStoreContent(collectionName)) {
+    return callStoreContentWrite({
+      action: 'upsert',
+      collection: collectionName,
+      data,
+    })
+  }
   const db = await getCdnDatabase()
   return db.collection(collectionName).add(data)
 }
 
 export async function cdnUpdate(collectionName, docId, data) {
+  if (shouldProxyStoreContent(collectionName)) {
+    return callStoreContentWrite({
+      action: 'update',
+      collection: collectionName,
+      id: docId,
+      data,
+    })
+  }
   const db = await getCdnDatabase()
   return db.collection(collectionName).doc(docId).update(data)
 }
 
 export async function cdnRemove(collectionName, docId) {
+  if (shouldProxyStoreContent(collectionName)) {
+    return callStoreContentWrite({
+      action: 'remove',
+      collection: collectionName,
+      id: docId,
+    })
+  }
   const db = await getCdnDatabase()
   return db.collection(collectionName).doc(docId).remove()
 }
@@ -287,6 +353,24 @@ export async function cdnDocGet(collectionName, docId) {
 }
 
 export async function cdnSet(collectionName, docId, data) {
+  if (shouldProxyStoreContent(collectionName)) {
+    const id = String(docId || '').trim()
+    // configs 等集合 setDoc 有 id 白名单；未授权时降级为 update（文档须已存在）
+    if (collectionName === 'configs' && id && !STORE_CONTENT_SET_DOC_IDS.has(id)) {
+      return callStoreContentWrite({
+        action: 'update',
+        collection: collectionName,
+        id,
+        data,
+      })
+    }
+    return callStoreContentWrite({
+      action: 'setDoc',
+      collection: collectionName,
+      id: docId,
+      data,
+    })
+  }
   const db = await getCdnDatabase()
   return db.collection(collectionName).doc(docId).set(data)
 }
