@@ -39,6 +39,9 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   'manageApprovals',
   // 经营驾驶舱 / 投资人观测台：全量订单口径（替代 CDN 500 单采样）
   'getAnalyticsDashboard',
+  // 2026-09-14：超管采购管理 / 物业成本
+  'managePurchaseOrder',
+  'managePropertyCost',
 ])
 
 const ALLOWED = new Set(ALLOWED_FUNCTIONS)

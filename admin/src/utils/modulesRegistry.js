@@ -26,6 +26,8 @@ export const MODULES = [
   { id: '73', name: '直播管理', group: 'BUSINESS', subgroup: '场', icon: 'VideoCamera', keywords: 'live zhibo 直播 场次 主播 开播' },
   { id: '74', name: '装裱师佣金', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Wallet', keywords: 'commission yongjin 佣金 装裱师 提成 台账' },
   { id: '75', name: '生日礼配置', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Present', keywords: 'birthday shengri 生日礼 礼包 礼券' },
+  { id: '76', name: '采购管理', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase ops_purchases managePurchaseOrder caigou 门店采购 工作室采购 供应商' },
+  { id: '77', name: '物业成本', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'House', keywords: 'property cost property_costs managePropertyCost 水电 房租 票据 物业成本' },
   // 导航大屏（侧栏一级）
   { id: 'nav-overview', name: '总览决策', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'nav overview 总览 导航大屏' },
   { id: 'nav-business', name: '业务运营', group: 'BUSINESS', subgroup: null, icon: 'Shop', keywords: 'nav business 业务运营 导航大屏' },

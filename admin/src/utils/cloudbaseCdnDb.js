@@ -154,6 +154,9 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'manageApprovals',
   // 经营驾驶舱：全量订单口径（替代 CDN 500 单采样）
   'getAnalyticsDashboard',
+  // 2026-09-14：超管采购管理 / 物业成本
+  'managePurchaseOrder',
+  'managePropertyCost',
 ])
 
 /**

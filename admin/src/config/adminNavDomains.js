@@ -59,6 +59,7 @@ export const NAV_DOMAINS = {
           { id: '67', title: '待我审批', desc: '上架与店长审批队列', icon: 'Checked' },
           { id: '61', title: '运费与包邮规则', desc: '运费模板与包邮门槛', icon: 'Van' },
           { id: '72', title: '定金管理', desc: '售罄孤品定金规则与意向', icon: 'Money' },
+          { id: '76', title: '采购管理', desc: '门店与工作室采购清单', icon: 'ShoppingCart' },
         ],
       },
       {
@@ -80,6 +81,7 @@ export const NAV_DOMAINS = {
           { id: '30', title: '门店中心', desc: 'ERP 档案、C 端展区与店员权限', icon: 'Shop' },
           { id: '35', title: '加盟商管理', desc: '加盟线索与合作档案', icon: 'Promotion' },
           { id: '48', title: '物业合作测算', desc: '房租分润与物业测算', icon: 'House' },
+          { id: '77', title: '物业成本', desc: '水电房租登记与票据', icon: 'House' },
         ],
       },
       {
@@ -174,6 +176,7 @@ export const NAV_DOMAINS = {
           { id: '2', title: '财务核算系统', desc: '收支记账与对账', icon: 'Money' },
           { id: '36', title: '资本架构沙盘', desc: '股权与资本结构推演', icon: 'DataBoard' },
           { id: '50', title: '工作室启动成本', desc: '启动现金流与爬坡模型', icon: 'TrendCharts' },
+          { id: '77', title: '物业成本', desc: '水电房租登记与票据', icon: 'House' },
           { id: '27', title: '合伙人命理中心', desc: '合伙人匹配辅助', icon: 'DocumentCopy' },
         ],
       },

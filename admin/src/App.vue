@@ -1341,6 +1341,8 @@ const DepositOps = asyncWith(() => import('./components/DepositOps.vue'))
 const LiveSessions = asyncWith(() => import('./components/LiveSessions.vue'))
 const ArtisanCommissionRegistry = asyncWith(() => import('./components/ArtisanCommission.vue'))
 const BirthdayGiftConfig = asyncWith(() => import('./components/BirthdayGiftConfig.vue'))
+const PurchaseOps = asyncWith(() => import('./components/PurchaseOps.vue'))
+const PropertyCostOps = asyncWith(() => import('./components/PropertyCostOps.vue'))
 import OrderCenter from './components/Orders.vue'
 import ProductAI from './components/ai/ProductAI.vue'
 import InventoryAI from './components/ai/InventoryAI.vue'
@@ -1470,7 +1472,9 @@ const TAB_COMPONENT_MAP = {
   '72': () => ({ comp: DepositOps }),
   '73': () => ({ comp: LiveSessions }),
   '74': () => ({ comp: ArtisanCommissionRegistry }),
-  '75': () => ({ comp: BirthdayGiftConfig })
+  '75': () => ({ comp: BirthdayGiftConfig }),
+  '76': () => ({ comp: PurchaseOps }),
+  '77': () => ({ comp: PropertyCostOps })
 }
 const activeModuleDef = computed(() => {
   const factory = TAB_COMPONENT_MAP[String(currentTab.value)]

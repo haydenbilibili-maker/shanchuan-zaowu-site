@@ -484,6 +484,8 @@ export const COLLECTIONS = {
   PURCHASE_INTENTS: 'purchase_intents', // 官网报价单采购意向
   PRICE_LIST_ITEMS: 'price_list_items', // 官网 /price-list 供货报价条目
   PURCHASE_ORDERS: 'purchase_orders', // 正式订货单（门店/渠道）
+  OPS_PURCHASES: 'ops_purchases', // 超管采购管理（门店+工作室，managePurchaseOrder）
+  PROPERTY_COSTS: 'property_costs', // 物业成本（水电/房租，managePropertyCost）
   FULFILLMENT_SHIPMENTS: 'fulfillment_shipments', // 总部出货单（P1）
   STOCK_MOVEMENTS: 'stock_movements', // 总部成品库存流水（P1）
   FEISHU_PURCHASES: 'feishu_purchases', // 飞书采购镜像
