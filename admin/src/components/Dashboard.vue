@@ -356,6 +356,7 @@ import {
   filterLedgerByRange,
   summarizeLedger,
   aggregateOrders,
+  mapAnalyticsOrdersToAgg,
   summarizeDepositIntents,
   donationFrom,
   fmtYuan,
@@ -907,21 +908,52 @@ const refreshAll = async () => {
     headline.ledgerEmpty = ledgerRows.length === 0
     if (headline.ledgerEmpty) notes.push('所选区间营收账本为空')
 
-    // 2) 线上订单采样
-    let orderRows = []
+    // 2) 线上订单：优先 getAnalyticsDashboard 全量口径；失败再回退 CDN 采样
+    let orderAgg = null
+    let analyticsNewUsers = null
     try {
-      orderRows = await fetchCollectionLimit('orders', { limit: ORDER_SCAN_MAX })
+      const fnPayload = {
+        action: 'report',
+        startDate: range.startDate,
+        endDate: range.endDate,
+      }
+      if (storeId && storeId !== 'all') fnPayload.storeId = storeId
+      const res = await callCloudFunction('getAnalyticsDashboard', fnPayload)
+      if (res && res.success !== false && res.data?.orders) {
+        orderAgg = mapAnalyticsOrdersToAgg(res.data.orders)
+        const fnNotes = (res.data.notes || orderAgg.notes || []).filter(Boolean)
+        // 只保留与线上 GMV / 采样相关的短提示，避免刷屏
+        fnNotes
+          .filter((n) => /采样|门店范围|毛 GMV|周期退款|兑换/.test(String(n)))
+          .slice(0, 3)
+          .forEach((n) => notes.push(String(n)))
+        if (!fnNotes.some((n) => /采样/.test(String(n)))) {
+          notes.push('线上 GMV 来自 getAnalyticsDashboard 全量口径')
+        }
+        if (res.data.users && res.data.users.totalNewUsers != null) {
+          analyticsNewUsers = Number(res.data.users.totalNewUsers) || 0
+        }
+      } else {
+        throw new Error(res?.msg || res?.code || 'getAnalyticsDashboard 返回失败')
+      }
     } catch (e) {
-      notes.push('订单采样失败，线上 GMV 暂缺')
-      console.warn('[Cockpit] orders', e?.message)
-    }
-    const orderAgg = aggregateOrders(orderRows, {
-      startDate: range.startDate,
-      endDate: range.endDate,
-      storeId,
-    })
-    if (orderAgg.truncated) {
-      notes.push(`订单已采样最近 ${ORDER_SCAN_MAX} 单，GMV 为采样内统计`)
+      console.warn('[Cockpit] getAnalyticsDashboard', e?.message || e)
+      notes.push('全量报表暂不可用，已回退 CDN 订单采样')
+      let orderRows = []
+      try {
+        orderRows = await fetchCollectionLimit('orders', { limit: ORDER_SCAN_MAX })
+      } catch (e2) {
+        notes.push('订单采样失败，线上 GMV 暂缺')
+        console.warn('[Cockpit] orders', e2?.message)
+      }
+      orderAgg = aggregateOrders(orderRows, {
+        startDate: range.startDate,
+        endDate: range.endDate,
+        storeId,
+      })
+      if (orderAgg.truncated) {
+        notes.push(`订单已采样最近 ${ORDER_SCAN_MAX} 单，GMV 为采样内统计`)
+      }
     }
 
     headline.gmvPaid = orderAgg.totals.gmvPaid
@@ -961,7 +993,7 @@ const refreshAll = async () => {
       { label: '定制', value: mix.custom },
     ]
     chartState.categories = orderAgg.categoryShare.map((c) => ({
-      label: categoryLabel(c.key),
+      label: c.label || categoryLabel(c.key),
       value: c.value,
     }))
 
@@ -1000,7 +1032,8 @@ const refreshAll = async () => {
     ])
 
     stats.totalUsers = usersTotal
-    stats.newUsers = newUsersTotal
+    // 区间新会员优先用 getAnalyticsDashboard（与 GMV 同窗）；CDN 仅今日新增作兜底
+    stats.newUsers = analyticsNewUsers != null ? analyticsNewUsers : newUsersTotal
     stats.pendingOrders = pendingTotal
     stats.refunding = refundingOrders + pendingRefunds
     stats.lowStock = stockTotal

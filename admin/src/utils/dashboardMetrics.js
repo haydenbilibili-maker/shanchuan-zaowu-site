@@ -1,6 +1,8 @@
 /**
- * 经营驾驶舱 · 只读指标口径（对齐小程序 getAnalyticsDashboard 说明，ERP 端聚合）
+ * 经营驾驶舱 · 只读指标口径（对齐小程序 getAnalyticsDashboard）
  *
+ * - 优先：经 /api/cloud-fn 调 getAnalyticsDashboard（action=report），全量订单口径
+ * - 回退：CDN 采样 ORDER_SCAN_MAX 单，由本文件 aggregateOrders 本地聚合
  * - 营业日：Asia/Shanghai
  * - 小程序毛 GMV：paid|paid_awaiting_address|shipped|received|ready_pickup
  *   按 paidTime（无则 createTime）归入营业日；金额 = totalPrice；排除 source=exchange
@@ -8,9 +10,8 @@
  * - 周期退款：refunded|refunding|expired_refunding|aftersales，按 refundTime
  * - 线上净额 = 毛 GMV − 周期退款
  * - 营收账本：localStorage shanhai_v12（含 store_ledger 桥接）；与线上分列
- * - 综合营收 = 线上净额 + 账本净额
+ * - 综合营收 = 线上净额 + 账本净额（ERP 账本优先 localStorage，不用云函数 offlineLedger 覆盖）
  * - 应捐 1%：品牌承诺「门店营收的 1%」→ 以账本净额为基准；另展示综合口径供对照
- * - 订单采样上限见 ORDER_SCAN_MAX（CDN 拉取上限）
  */
 
 import { isExchangeOrder } from './orderFilters.js'
@@ -370,4 +371,57 @@ export const CATEGORY_LABELS = {
 
 export function categoryLabel(key) {
   return CATEGORY_LABELS[key] || key || '其他'
+}
+
+/**
+ * 将 getAnalyticsDashboard report/orders 结果映射为驾驶舱与 aggregateOrders 同构的结构。
+ * 综合营收仍由调用方用 localStorage 账本 + 线上净额合成。
+ */
+export function mapAnalyticsOrdersToAgg(ordersPayload = {}) {
+  const totalsIn = ordersPayload.totals || {}
+  const mixIn = totalsIn.mix || {}
+  const daily = (ordersPayload.daily || []).map((d) => ({
+    dateKey: d.dateKey,
+    paid: Number(d.paid) || 0,
+    gmvPaid: round2(d.gmvPaid),
+    refundAmount: round2(d.refundAmount),
+    giftGmv: round2(d.giftGmv),
+    depositGmv: round2(d.depositGmv),
+    exchangeCount: Number(d.exchangeCount) || 0,
+    netOnline: round2(
+      d.netOnline != null ? d.netOnline : (Number(d.gmvPaid) || 0) - (Number(d.refundAmount) || 0),
+    ),
+  }))
+
+  const categoryShare = (ordersPayload.category?.byType || ordersPayload.categoryShare || []).map(
+    (c) => ({
+      key: c.key || c.label || 'OTHER',
+      value: round2(c.value),
+      label: c.label || categoryLabel(c.key),
+    }),
+  )
+
+  return {
+    daily,
+    totals: {
+      paid: Number(totalsIn.paid) || 0,
+      gmvPaid: round2(totalsIn.gmvPaid),
+      refundAmount: round2(totalsIn.refundAmount),
+      netOnline: round2(totalsIn.netOnline),
+      aov: round2(totalsIn.aov),
+      exchangeCount: Number(totalsIn.exchangeCount) || 0,
+      mix: {
+        commerce: round2(mixIn.commerce),
+        gift: round2(mixIn.gift),
+        deposit: round2(mixIn.deposit),
+        depositBalance: round2(mixIn.depositBalance),
+        custom: round2(mixIn.custom),
+      },
+    },
+    categoryShare,
+    scanned: Number(totalsIn.paid) || daily.length,
+    truncated: !!ordersPayload.truncated,
+    source: 'getAnalyticsDashboard',
+    notes: Array.isArray(ordersPayload.notes) ? ordersPayload.notes.slice() : [],
+  }
 }

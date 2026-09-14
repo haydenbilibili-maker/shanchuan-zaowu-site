@@ -152,6 +152,8 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'manageArtisanCommission',
   'manageBirthdayGift',
   'manageApprovals',
+  // 经营驾驶舱：全量订单口径（替代 CDN 500 单采样）
+  'getAnalyticsDashboard',
 ])
 
 /**
