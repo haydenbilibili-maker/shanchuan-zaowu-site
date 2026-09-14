@@ -1,22 +1,24 @@
 <template>
-  <div class="cockpit" v-loading="loading">
+  <div class="cockpit" :class="{ 'cockpit--refreshing': loading && ready }">
     <header class="cockpit-header">
       <div class="welcome">
         <h2>经营驾驶舱</h2>
         <p class="subtitle">
-          <span :class="['status-dot', businessStatus.tone]">{{ businessStatus.text }}</span>
+          <span v-if="showSkeleton" class="status-dot idle">加载中</span>
+          <span v-else :class="['status-dot', businessStatus.tone]">{{ businessStatus.text }}</span>
           <span class="sep">·</span>
           <span>账本与线上分列 · 应捐按门店账本 1%</span>
         </p>
       </div>
       <div class="header-tools">
         <CompanionRobot
+          v-if="ready"
           :dashboard-stats="robotStats"
           @ai-action="handleAIAction"
           @navigate="handleNavigate"
         />
         <div class="filters">
-          <el-radio-group v-model="rangePreset" size="small" @change="onFilterChange">
+          <el-radio-group v-model="rangePreset" size="small" :disabled="loading && !ready" @change="onFilterChange">
             <el-radio-button value="today">今日</el-radio-button>
             <el-radio-button value="7">近7日</el-radio-button>
             <el-radio-button value="30">近30日</el-radio-button>
@@ -26,6 +28,7 @@
             v-model="storeFilter"
             size="small"
             style="width: 150px"
+            :disabled="loading && !ready"
             @change="onFilterChange"
           >
             <el-option label="全部门店" value="all" />
@@ -45,7 +48,24 @@
     </header>
 
     <el-alert
-      v-if="dataNotes.length"
+      v-if="loadError"
+      type="error"
+      :closable="false"
+      show-icon
+      class="notes-alert load-error-alert"
+    >
+      <template #title>
+        <div class="load-error-row">
+          <span>{{ loadError }}</span>
+          <el-button type="danger" size="small" plain :loading="loading" @click="refreshAll">
+            重试
+          </el-button>
+        </div>
+      </template>
+    </el-alert>
+
+    <el-alert
+      v-if="ready && dataNotes.length"
       type="info"
       :closable="false"
       show-icon
@@ -56,6 +76,63 @@
       </template>
     </el-alert>
 
+    <!-- 首屏骨架：壳 + 分区标题立即可见，避免奶油底「假白屏」 -->
+    <div v-if="showSkeleton" class="cockpit-skeleton" aria-busy="true" aria-live="polite">
+      <div class="skel-banner">
+        <span class="skel-spinner" aria-hidden="true" />
+        <span>正在聚合经营数据…</span>
+      </div>
+      <section class="section">
+        <div class="section-head">
+          <h3>营收与承诺</h3>
+          <span class="muted tiny">加载中</span>
+        </div>
+        <div class="kpi-row">
+          <div v-for="n in 5" :key="'sk-kpi-' + n" class="kpi skel-kpi" :class="{ 'kpi-gold': n === 1 }">
+            <div class="skel-line skel-w40" />
+            <div class="skel-line skel-w70 skel-lg" />
+            <div class="skel-line skel-w55" />
+          </div>
+        </div>
+      </section>
+      <el-row :gutter="16" class="mid-row">
+        <el-col :xs="24" :lg="15">
+          <el-card shadow="never" class="panel">
+            <template #header>
+              <div class="panel-head"><span>趋势 · {{ rangeLabel }}</span></div>
+            </template>
+            <div class="chart-box skel-chart">
+              <div class="skel-chart-bars">
+                <span v-for="n in 8" :key="'bar-' + n" :style="{ height: 30 + (n % 5) * 18 + '%' }" />
+              </div>
+            </div>
+          </el-card>
+          <el-card shadow="never" class="panel" style="margin-top: 16px">
+            <template #header>
+              <div class="panel-head"><span>结构占比</span></div>
+            </template>
+            <div class="skel-mix-row">
+              <div class="skel-donut" />
+              <div class="skel-donut" />
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :lg="9">
+          <el-card shadow="never" class="panel">
+            <template #header>
+              <div class="panel-head"><span>业务分区</span></div>
+            </template>
+            <div v-for="n in 4" :key="'sk-biz-' + n" class="biz-block skel-biz">
+              <div class="skel-line skel-w45" />
+              <div class="skel-line skel-w90" />
+              <div class="skel-line skel-w60" />
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
+
+    <template v-if="ready">
     <!-- 营收头条 -->
     <section class="section">
       <div class="section-head">
@@ -348,6 +425,7 @@
         <el-button type="primary" @click="refreshAll">重新聚合</el-button>
       </template>
     </el-dialog>
+    </template>
   </div>
 </template>
 
@@ -389,6 +467,10 @@ import {
 const emit = defineEmits(['switch-tab'])
 
 const loading = ref(false)
+/** 至少成功聚合过一次后才展示正式 KPI，避免零值卡片造成假白屏 */
+const ready = ref(false)
+const loadError = ref('')
+const showSkeleton = computed(() => loading.value && !ready.value)
 const currentTime = ref(new Date().toLocaleTimeString())
 const rangePreset = ref('7')
 const storeFilter = ref('all')
@@ -911,13 +993,14 @@ function renderCharts() {
 
 const refreshAll = async () => {
   loading.value = true
+  loadError.value = ''
   const notes = []
   try {
     refreshStoreOptions()
     const range = resolveRangePreset(rangePreset.value)
     const storeId = storeFilter.value
 
-    // 1) 账本（本地）
+    // 1) 账本（本地）— 首屏即可先填壳，缩短空白感
     const allLedger = loadLedgerRecords()
     const ledgerRows = filterLedgerByRange(allLedger, {
       startDate: range.startDate,
@@ -1044,7 +1127,6 @@ const refreshAll = async () => {
     const now = new Date()
     const startOfDay = new Date(now)
     startOfDay.setHours(0, 0, 0, 0)
-    const startMs = startOfDay.getTime()
     const cdnDb = await getCdnDatabase()
     const _ = cdnDb.command
 
@@ -1127,11 +1209,18 @@ const refreshAll = async () => {
     buildInsights(ledgerSum, orderAgg)
     dataNotes.value = notes
 
+    ready.value = true
     await nextTick()
     renderCharts()
   } catch (e) {
     console.error('驾驶舱加载失败', e)
-    ElMessage.warning(e?.message || '看板加载失败，请检查网络后刷新')
+    const msg = e?.message || '看板加载失败，请检查网络后刷新'
+    loadError.value = msg
+    if (!ready.value) {
+      // 首屏失败：保留骨架区外的可读错误态，勿只弹 toast
+    } else {
+      ElMessage.warning(msg)
+    }
   } finally {
     loading.value = false
   }
@@ -1162,6 +1251,139 @@ onUnmounted(() => {
   padding: 8px 4px 32px;
   color: var(--light-text-primary, #33302c);
   background: transparent;
+  position: relative;
+}
+.cockpit--refreshing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(242, 237, 228, 0.35) 0%,
+    rgba(242, 237, 228, 0.12) 40%,
+    transparent 100%
+  );
+  border-radius: 12px;
+}
+.load-error-alert { margin-bottom: 14px; }
+.load-error-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Studio Mode 骨架：奶油底 + 白卡 + 可见边框，避免假白屏 */
+.cockpit-skeleton {
+  margin-top: 4px;
+}
+.skel-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: #faf6ed;
+  border: 1px solid #e0cfa3;
+  color: #8a7530;
+  font-size: 13px;
+  font-weight: 500;
+}
+.skel-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #e0cfa3;
+  border-top-color: #2d5a3f;
+  animation: skel-spin 0.8s linear infinite;
+}
+@keyframes skel-spin {
+  to { transform: rotate(360deg); }
+}
+.skel-kpi {
+  pointer-events: none;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+.skel-kpi.kpi-gold .skel-line {
+  background: linear-gradient(90deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.28) 100%);
+  background-size: 200% 100%;
+}
+.skel-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e8e5de 0%, #f0e6cc 45%, #e8e5de 90%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.4s ease-in-out infinite;
+}
+.skel-lg { height: 22px; }
+.skel-w40 { width: 40%; }
+.skel-w45 { width: 45%; }
+.skel-w55 { width: 55%; }
+.skel-w60 { width: 60%; }
+.skel-w70 { width: 70%; }
+.skel-w90 { width: 90%; }
+@keyframes skel-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+.skel-chart {
+  display: flex;
+  align-items: flex-end;
+  background: #fafaf5;
+  border: 1px dashed #e8e5de;
+  border-radius: 8px;
+  padding: 16px 12px 12px;
+}
+.skel-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+}
+.skel-chart-bars span {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #d4bc85 0%, #e8e5de 100%);
+  opacity: 0.85;
+  animation: skel-bar 1.2s ease-in-out infinite alternate;
+}
+.skel-chart-bars span:nth-child(odd) { animation-delay: 0.15s; }
+.skel-chart-bars span:nth-child(3n) { animation-delay: 0.3s; }
+@keyframes skel-bar {
+  from { opacity: 0.45; }
+  to { opacity: 0.95; }
+}
+.skel-mix-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-height: 180px;
+  place-items: center;
+}
+.skel-donut {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 18px solid #e8e5de;
+  border-top-color: #c4a76c;
+  border-right-color: #2d5a3f;
+  animation: skel-spin 1.6s linear infinite;
+}
+.skel-biz {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .cockpit-header {
   display: flex;
