@@ -11,7 +11,7 @@
         :closable="false"
         show-icon
         class="hint-alert"
-        title="标本档案 / 山海社区 / 标本定制默认关闭；预约入口与 AI 鉴定默认开启。缺配置时小程序按上述默认策略显隐。"
+        title="标本档案 / 山海社区 / 标本定制默认关闭；预约入口、伴宠记忆与 AI 鉴定默认开启。缺配置时小程序按上述默认策略显隐。"
       />
     </div>
 
@@ -66,7 +66,22 @@
             />
             <span class="hint">
               关闭后隐藏工坊「标本定制」、馆藏「定制」Pill、商详「定制」按钮及定制向导入口；
-              伴宠记忆不受影响。缺配置默认关闭。
+              伴宠记忆由独立开关控制。缺配置默认关闭。
+            </span>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="标本工坊 · 伴宠记忆">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.showPetMemorial"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              关闭后隐藏工坊「伴宠记忆」卡片、首页 chip、伴宠工单入口，并拦截申请页直达。
+              缺配置默认开启（现网已开放）。
             </span>
           </div>
         </el-form-item>
@@ -130,6 +145,7 @@ const DEFAULT_FLAGS = {
   showUserCommunity: false,
   showBookingEntry: true,
   showSpecimenCustom: false,
+  showPetMemorial: true,
   showStoredValue: false,
   showAiIdentify: true
 }
@@ -152,6 +168,7 @@ function applyFlags(raw = {}, id = '') {
   form.showUserCommunity = raw.showUserCommunity === true
   form.showBookingEntry = raw.showBookingEntry !== false
   form.showSpecimenCustom = raw.showSpecimenCustom === true
+  form.showPetMemorial = raw.showPetMemorial !== false
   form.showStoredValue = raw.showStoredValue === true
   form.showAiIdentify = raw.showAiIdentify !== false
   docId.value = id || ''
@@ -191,6 +208,7 @@ function buildPayload() {
     showUserCommunity: form.showUserCommunity === true,
     showBookingEntry: form.showBookingEntry !== false,
     showSpecimenCustom: form.showSpecimenCustom === true,
+    showPetMemorial: form.showPetMemorial !== false,
     showStoredValue: form.showStoredValue === true,
     showAiIdentify: form.showAiIdentify !== false,
     updateTime: Date.now(),
@@ -227,6 +245,7 @@ function resetDefaults() {
   form.showUserCommunity = DEFAULT_FLAGS.showUserCommunity
   form.showBookingEntry = DEFAULT_FLAGS.showBookingEntry
   form.showSpecimenCustom = DEFAULT_FLAGS.showSpecimenCustom
+  form.showPetMemorial = DEFAULT_FLAGS.showPetMemorial
   form.showStoredValue = DEFAULT_FLAGS.showStoredValue
   form.showAiIdentify = DEFAULT_FLAGS.showAiIdentify
   ElMessage.info('已恢复本地默认值，点击「保存开关」写入云库')

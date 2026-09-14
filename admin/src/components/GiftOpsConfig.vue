@@ -102,7 +102,6 @@ import { callCloudFunction } from '../cloud'
 import { cloudFnErrorMessage } from '../utils/cloudFnErrors'
 
 const FN = 'manageGift'
-const opsKey = () => import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
 
 const loading = ref(false)
 const saving = ref(false)
@@ -128,7 +127,7 @@ const stats = ref({ todayCount: 0, last7Count: 0, todoTotal: 0, todos: {}, note:
 const subscribe = ref({ summary: '', hint: '', items: [] })
 
 async function callFn(data) {
-  const res = await callCloudFunction(FN, { ...data, adminOpsKey: opsKey() })
+  const res = await callCloudFunction(FN, data)
   if (!res || res.success === false) {
     const info = cloudFnErrorMessage(res, { preferSilentPermission: true })
     const err = new Error(info.message)

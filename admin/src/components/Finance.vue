@@ -124,11 +124,11 @@
                     />
                 </el-select>
                 <p class="finance-store-hint">
-                  与「店铺管理」主数据一致。默认入账门店为「{{ DEFAULT_FINANCE_STORE_NAME }}」；不选「不关联门店」时新录入与历史无门店收入将归集到该店。
+                  与「店铺管理」主数据一致（写入 canonical storeId，对齐小程序账本）。粘贴含「山川造物 / 山海造物 / 星宸」时会自动匹配门店；「现金」= 在手现金余额，不计入当日营收。
                 </p>
             </div>
             <div class="form-group">
-                <textarea id="dailyInput" class="form-control" rows="4" placeholder="请粘贴日报，例如：2025年11月22日，银联POS收款：5200..."></textarea>
+                <textarea id="dailyInput" class="form-control" rows="6" placeholder="请粘贴日报，例如：&#10;山川造物&#10;2026年 9月10日&#10;银联POS收款:1743.3元&#10;订单数:30&#10;线上：0元&#10;退款：0元&#10;现金：985.5元&#10;9月合计：49898.46元"></textarea>
             </div>
             <div style="display:flex; gap:15px;">
                 <button class="btn btn-primary" @click="app.parseInput()">
@@ -253,11 +253,28 @@
         </div>
 
         <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap:wrap; gap:12px;">
                 <div class="card-title"><i class="fas fa-chart-pie"></i> 月度经营看板</div>
-                <select id="monthSelect" class="form-control" style="width:auto; font-weight:bold;" @change="app.renderMonthlyView()">
-                    <option value="">-- 选择月份 --</option>
-                </select>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+                    <select id="monthSelect" class="form-control" style="width:auto; font-weight:bold;" @change="app.renderMonthlyView()">
+                        <option value="">-- 选择月份 --</option>
+                    </select>
+                    <el-select
+                        v-model="monthlyStoreFilter"
+                        placeholder="全部门店"
+                        filterable
+                        size="default"
+                        style="width:220px;"
+                        @change="app.renderMonthlyView()"
+                    >
+                        <el-option
+                            v-for="opt in financeStoreLedgerOptions"
+                            :key="'m-' + String(opt.value)"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
+                </div>
             </div>
 
             <div class="monthly-dashboard">
@@ -936,8 +953,12 @@ import {
   findDefaultFinanceStoreId,
   applyDefaultStoreToFinanceRecord,
   ensureDefaultFinanceStoreInLocalBundle,
+  resolveFinanceStoreWriteId,
+  recordMatchesFinanceStoreFilter,
+  matchStoreFromDailyText,
   DEFAULT_FINANCE_STORE_NAME,
 } from '../utils/storeStorage'
+import { parseDailyFinanceText } from '../utils/financeDailyParse'
 
 const emit = defineEmits(['switch-tab'])
 const goCapitalSandbox = () => emit('switch-tab', '36')
@@ -1102,13 +1123,15 @@ const activeCashflowTab = ref('cashflow')
 const dateRange = ref(null)
 const financeRecordStoreId = ref('')
 const ledgerStoreFilter = ref('all')
+const monthlyStoreFilter = ref('all')
 const filteredCount = ref(-1)
 
 const financeStorePickOptions = computed(() => {
   const b = loadStoreBundle()
   const opts = [{ value: '', label: '不关联门店' }]
   ;(b.stores || []).forEach((s) => {
-    opts.push({ value: s.id, label: `${s.code || '—'} · ${s.name}` })
+    const value = resolveFinanceStoreWriteId(s) || s.id
+    opts.push({ value, label: `${s.code || '—'} · ${s.name}` })
   })
   return opts
 })
@@ -1120,7 +1143,8 @@ const financeStoreLedgerOptions = computed(() => {
     { value: '__unassigned__', label: '未关联门店' },
   ]
   ;(b.stores || []).forEach((s) => {
-    opts.push({ value: s.id, label: `${s.code || '—'} · ${s.name}` })
+    const value = resolveFinanceStoreWriteId(s) || s.id
+    opts.push({ value, label: `${s.code || '—'} · ${s.name}` })
   })
   return opts
 })
@@ -1753,7 +1777,12 @@ const app = reactive({
         }
         wrapper.style.display = 'block';
 
-        const mData = data.filter(r => r.date.startsWith(month));
+        const bundle = loadStoreBundle();
+        const msf = monthlyStoreFilter.value || 'all';
+        let mData = data.filter(r => r.date && r.date.startsWith(month));
+        if (msf !== 'all') {
+            mData = mData.filter((r) => recordMatchesFinanceStoreFilter(r, msf, bundle));
+        }
         const totalRev = mData.reduce((a,b)=>a+b.revenue,0);
         const totalProfit = mData.reduce((a,b)=>a+b.profit,0);
         
@@ -3277,11 +3306,8 @@ const app = reactive({
 
         const sf = ledgerStoreFilter.value || 'all';
         if (sf !== 'all') {
-            if (sf === '__unassigned__') {
-                filtered = filtered.filter(r => !r.storeId);
-            } else {
-                filtered = filtered.filter(r => r.storeId === sf);
-            }
+            const bundle = loadStoreBundle();
+            filtered = filtered.filter((r) => recordMatchesFinanceStoreFilter(r, sf, bundle));
         }
         
         if (searchText) {
@@ -3563,105 +3589,86 @@ const app = reactive({
             return;
         }
 
-        // 日期：支持 2026年 2月10日、2026年2月10日
-        const dateMatch = text.match(/(\d{4})[年\-\/.]\s*(\d{1,2})[月\-\/.]\s*(\d{1,2})[日]?/);
-        // 营收：银联POS收款:8284.4元 或 8284.4（元可选）
-        let revMatch = text.match(/银联POS收款[:：\s]*([\d,.]+)\s*元?/);
-        if(!revMatch) revMatch = text.match(/(POS|刷卡)[:：\s]*([\d,.]+)\s*元?/i);
-        
-        // 订单数
-        let orderCountMatch = text.match(/订单数[:：\s]*(\d+)/i);
-        if(!orderCountMatch) orderCountMatch = text.match(/订单[:：\s]*(\d+)/i);
-
-        // 线上/退款/现金/月合计（可选展示）
-        const onlineMatch = text.match(/线上[:：\s]*([\d,.]+)\s*元?/);
-        const refundMatch = text.match(/退款[:：\s]*([\d,.]+)\s*元?/);
-        const cashMatch = text.match(/现金[:：\s]*([\d,.]+)\s*元?/);
-        const monthTotalMatch = text.match(/(?:本月|当月|\d+月)\s*合计[:：\s]*([\d,.]+)\s*元?/);
-
-        // 库存正则识别（山海造物编号清单格式）
+        const parsed = parseDailyFinanceText(text);
         const { inventoryLines, totalStock } = this.parseInventoryFromText(text);
 
-        if(dateMatch && revMatch) {
-            const date = `${dateMatch[1]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[3].padStart(2,'0')}`;
-            const revenue = parseFloat(revMatch[1].replace(/,/g, ''));
-            
-            if(isNaN(revenue) || revenue < 0) {
-                msg.style.display = 'block';
-                msg.className = 'alert alert-error';
-                msg.innerHTML = '❌ 营收金额格式错误，请检查输入';
-                btn.disabled = true;
-                return;
-            }
-            
-            const dateObj = new Date(date);
-            if(isNaN(dateObj.getTime())) {
-                msg.style.display = 'block';
-                msg.className = 'alert alert-error';
-                msg.innerHTML = '❌ 日期格式错误，请检查输入';
-                btn.disabled = true;
-                return;
-            }
-            
-            let orderCount = null;
-            let avgOrderPrice = null;
-            let customerPrice = null;
-            
-            if(orderCountMatch) {
-                orderCount = parseInt(orderCountMatch[1], 10);
-                if(orderCount > 0 && revenue > 0) {
-                    avgOrderPrice = parseFloat((revenue / orderCount).toFixed(2));
-                    customerPrice = avgOrderPrice;
-                }
-            }
-            
-            const sid = financeRecordStoreId.value || findDefaultFinanceStoreId(loadStoreBundle());
-            const st = sid ? findStoreById(loadStoreBundle(), sid) : null;
-            this.tempRecord = { 
-                date, 
-                revenue, 
-                raw: text,
-                orderCount: orderCount || null,
-                avgOrderPrice: avgOrderPrice || null,
-                customerPrice: customerPrice || null,
-                inventoryLines: inventoryLines.length ? inventoryLines : null,
-                totalStock: totalStock ?? null,
-                online: onlineMatch ? parseFloat(onlineMatch[1].replace(/,/g, '')) : null,
-                refund: refundMatch ? parseFloat(refundMatch[1].replace(/,/g, '')) : null,
-                cash: cashMatch ? parseFloat(cashMatch[1].replace(/,/g, '')) : null,
-                monthTotal: monthTotalMatch ? parseFloat(monthTotalMatch[1].replace(/,/g, '')) : null,
-                storeId: sid || undefined,
-                storeCode: st ? st.code : '',
-                storeName: st ? st.name : '',
-            };
-            pendingInventoryLines.value = inventoryLines.length ? [...inventoryLines] : [];
-            syncInventoryResult.value = null;
-
-            let successMsg = `✅ 识别成功：<b>${date}</b> 营收 <b>¥${revenue}</b>`;
-            if(orderCount !== null) {
-                successMsg += ` | 订单数 <b>${orderCount}</b>`;
-                if(avgOrderPrice != null) successMsg += ` | 订单均价 <b>¥${avgOrderPrice}</b>`;
-            }
-            if (cashMatch) successMsg += ` | 现金 <b>¥${parseFloat(cashMatch[1].replace(/,/g, '')).toLocaleString()}</b>`;
-            if (monthTotalMatch) successMsg += ` | 月合计 <b>¥${parseFloat(monthTotalMatch[1].replace(/,/g, '')).toLocaleString()}</b>`;
-            if (inventoryLines.length > 0) {
-                const invPreview = inventoryLines.slice(0, 6).map(i => `${i.name} ${i.qty}件`).join('；');
-                successMsg += ` | 库存 <b>${invPreview}</b>${inventoryLines.length > 6 ? '…' : ''}`;
-            }
-            if (totalStock != null && inventoryLines.length === 0) {
-                successMsg += ` | 总库存 <b>${totalStock}</b>件`;
-            }
-            
-            msg.style.display = 'block';
-            msg.className = 'alert alert-success';
-            msg.innerHTML = successMsg;
-            btn.disabled = false;
-        } else {
+        if (!parsed.ok) {
             msg.style.display = 'block';
             msg.className = 'alert alert-error';
-            msg.innerHTML = `❌ 识别失败，请检查格式。`;
+            msg.innerHTML = `❌ ${parsed.error || '识别失败，请检查格式。'}`;
             btn.disabled = true;
+            return;
         }
+
+        const bundle = loadStoreBundle();
+        const matched = matchStoreFromDailyText(text, bundle);
+        if (matched) {
+            financeRecordStoreId.value = resolveFinanceStoreWriteId(matched) || matched.id;
+        }
+        const sid =
+            financeRecordStoreId.value ||
+            findDefaultFinanceStoreId(bundle);
+        const st = sid ? findStoreById(bundle, sid) : null;
+        const writeId = st ? resolveFinanceStoreWriteId(st) || sid : sid;
+
+        let orderCount = parsed.orderCount;
+        let avgOrderPrice = null;
+        let customerPrice = null;
+        const revenue = parsed.revenue;
+        if (orderCount != null && orderCount > 0 && revenue > 0) {
+            avgOrderPrice = parseFloat((revenue / orderCount).toFixed(2));
+            customerPrice = avgOrderPrice;
+        }
+
+        this.tempRecord = {
+            date: parsed.date,
+            revenue,
+            pos: parsed.pos,
+            online: parsed.online,
+            refund: parsed.refund,
+            cash: 0,
+            cashIncome: 0,
+            cashBalance: parsed.cashBalance,
+            monthTotal: parsed.monthTotal,
+            raw: text,
+            orderCount: orderCount || null,
+            avgOrderPrice: avgOrderPrice || null,
+            customerPrice: customerPrice || null,
+            inventoryLines: inventoryLines.length ? inventoryLines : null,
+            totalStock: totalStock ?? null,
+            storeId: writeId || undefined,
+            storeCode: st ? st.code : '',
+            storeName: st ? st.name : (parsed.storeNameHint || ''),
+        };
+        pendingInventoryLines.value = inventoryLines.length ? [...inventoryLines] : [];
+        syncInventoryResult.value = null;
+
+        let successMsg = `✅ 识别成功：<b>${parsed.date}</b> 营收 <b>¥${revenue}</b>（POS+线上−退款）`;
+        if (st || parsed.storeNameHint) {
+            successMsg += ` | 门店 <b>${st?.name || parsed.storeNameHint}</b>`;
+        }
+        if (orderCount != null) {
+            successMsg += ` | 订单数 <b>${orderCount}</b>`;
+            if (avgOrderPrice != null) successMsg += ` | 订单均价 <b>¥${avgOrderPrice}</b>`;
+        }
+        if (parsed.cashBalance != null) {
+            successMsg += ` | 在手现金 <b>¥${Number(parsed.cashBalance).toLocaleString()}</b>`;
+        }
+        if (parsed.monthTotal != null) {
+            successMsg += ` | 月合计 <b>¥${Number(parsed.monthTotal).toLocaleString()}</b>`;
+        }
+        if (inventoryLines.length > 0) {
+            const invPreview = inventoryLines.slice(0, 6).map(i => `${i.name} ${i.qty}件`).join('；');
+            successMsg += ` | 库存 <b>${invPreview}</b>${inventoryLines.length > 6 ? '…' : ''}`;
+        }
+        if (totalStock != null && inventoryLines.length === 0) {
+            successMsg += ` | 总库存 <b>${totalStock}</b>件`;
+        }
+        
+        msg.style.display = 'block';
+        msg.className = 'alert alert-success';
+        msg.innerHTML = successMsg;
+        btn.disabled = false;
     },
 
     addRecord() {

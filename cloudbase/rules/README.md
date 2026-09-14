@@ -15,6 +15,12 @@
 | `_template_anonymous_rw.json` | A1 默认：已登录（含匿名）可读可写 |
 | `_template_public_read_auth_write.json` | 全员可读，仅登录可写 |
 | `_template_user_openid_scoped.json` | 用户数据按 `_openid` 隔离（A2+） |
-| `purchase_intents.json` | 采购意向：登录可 create/read/update，禁止 delete |
+| `purchase_orders.json` | 采购意向：登录可 create/read/update，禁止 delete |
+| `products.json` / `orders.json` | 商品全员可读、订单登录可读；**write:false**（仅云函数可写） |
+| `users.json` / `user_coupons.json` | 仅本人可读；**write:false**（资料/券经云函数） |
+| `banners.json` 等运营集合 | 公开或登录可读；**write:false**（`manageStoreContent`） |
+| `staff_members.json` / `workspace_acl.json` | **read/write 均 false**（RBAC 数据源，仅云函数 `manageStaff` 可访问） |
+
+小程序侧权威副本与应用脚本：`WeChatProjects/shanchuanspecimens/database-rules/`。
 
 完整集合清单见 [docs/cloudbase-collections.md](../../docs/cloudbase-collections.md)。

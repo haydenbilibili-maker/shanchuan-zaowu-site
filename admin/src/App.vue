@@ -1336,6 +1336,11 @@ const resolveRecentIcon = (name) => EpIcons[name] || EpIcons.Menu
 
 // --- 动态组件引入（同步加载，保证各 Tab 稳定渲染） ---
 const FinanceDashboard = asyncWith(() => import('./components/Finance.vue'))
+// 2026-09-14 与小程序对齐补的四模块（定金 / 直播 / 装裱师佣金 / 生日礼）
+const DepositOps = asyncWith(() => import('./components/DepositOps.vue'))
+const LiveSessions = asyncWith(() => import('./components/LiveSessions.vue'))
+const ArtisanCommissionRegistry = asyncWith(() => import('./components/ArtisanCommission.vue'))
+const BirthdayGiftConfig = asyncWith(() => import('./components/BirthdayGiftConfig.vue'))
 import OrderCenter from './components/Orders.vue'
 import ProductAI from './components/ai/ProductAI.vue'
 import InventoryAI from './components/ai/InventoryAI.vue'
@@ -1460,6 +1465,12 @@ const TAB_COMPONENT_MAP = {
   '43': () => ({ comp: Categories }),
   '44': () => ({ comp: BehaviorOpsHub, props: { initialSection: hubSections['44'] || 'analytics' } }),
   '48': () => ({ comp: PropertyEval })
+  ,
+  // 2026-09-14 与小程序对齐补的四模块
+  '72': () => ({ comp: DepositOps }),
+  '73': () => ({ comp: LiveSessions }),
+  '74': () => ({ comp: ArtisanCommissionRegistry }),
+  '75': () => ({ comp: BirthdayGiftConfig })
 }
 const activeModuleDef = computed(() => {
   const factory = TAB_COMPONENT_MAP[String(currentTab.value)]
@@ -2367,8 +2378,7 @@ const loadProducts = async () => {
                 pageSize: productPageSize.value,
                 keyword: String(productSearchQuery.value || '').trim(),
                 archiveFilter: archiveFilter.value,
-                promoFilter: promoFilter.value,
-                adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+                promoFilter: promoFilter.value
             })
             if (res && res.success !== false && Array.isArray(res.list)) {
                 rows = res.list
@@ -3570,8 +3580,7 @@ const deleteItem = (row) => {
             // products 集合 write:false：禁止 CDN 直删，须走 manageProducts.remove（硬删）
             const res = await callCloudFunction('manageProducts', {
                 action: 'remove',
-                productId,
-                adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+                productId
             })
             if (!res || res.success === false) {
                 throw new Error(res?.msg || '删除失败')
@@ -3726,8 +3735,7 @@ const saveProduct = async () => {
         const res = await callCloudFunction('manageProducts', {
             action: 'upsert',
             productId,
-            data,
-            adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+            data
         })
         if (!res || res.success === false) {
             throw new Error(res?.msg || '保存失败')

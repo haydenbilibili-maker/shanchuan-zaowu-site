@@ -500,8 +500,7 @@ const execRefund = (row) => {
           /* ignore if already refunding */
         }
         const result = await callCloudFunction('refundOrder', {
-          orderId,
-          adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+          orderId
         })
         if (!result || result.success === false) {
           ElMessage.error(result?.msg || '退款失败')

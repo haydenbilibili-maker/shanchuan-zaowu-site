@@ -237,6 +237,7 @@ import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { marked } from 'marked'
 import { ElMessage } from 'element-plus'
 import { COLLECTIONS, getCollectionData, countCollection } from '../cloud'
+import { excludeExchangeOrders } from '../utils/orderFilters'
 import { callGeminiAPI, buildConversationHistory as buildHistory, enhancePrompt } from '../utils/aiHelper'
 
 const props = defineProps({
@@ -432,10 +433,11 @@ const fetchSiteData = async (showMessage = true) => {
       const results = await Promise.allSettled([
         // 获取数据
         getCollectionData(COLLECTIONS.PRODUCTS, { limit: 1000 }).catch(e => { debugLog('获取products失败', e); return [] }),
-        getCollectionData(COLLECTIONS.ORDERS, { 
+        // 兑换单不计入藏品订单样本（与小程序/看板同口径）
+        getCollectionData(COLLECTIONS.ORDERS, {
           orderBy: { field: 'createTime', order: 'desc' },
-          limit: 500 
-        }).catch(e => { debugLog('获取orders失败', e); return [] }),
+          limit: 500
+        }).then(rows => excludeExchangeOrders(rows)).catch(e => { debugLog('获取orders失败', e); return [] }),
         getCollectionData(COLLECTIONS.USERS, { limit: 1000 }).catch(e => { debugLog('获取users失败', e); return [] }),
         getCollectionData(COLLECTIONS.ACTIVITIES, { limit: 100 }).catch(e => { debugLog('获取activities失败', e); return [] }),
         getCollectionData(COLLECTIONS.BOOKINGS, { limit: 500 }).catch(e => { debugLog('获取bookings失败', e); return [] }),

@@ -14,9 +14,20 @@ function isPlausibleApiKey(key) {
   return true
 }
 
+/** 同 aiHelper：必须静态读取，动态访问会把整个 import.meta.env 打进产物 */
+const ENV_KEYS = {
+  VITE_GEMINI_API_KEYS: import.meta.env.VITE_GEMINI_API_KEYS,
+  VITE_GEMINI_API_KEY: import.meta.env.VITE_GEMINI_API_KEY,
+  VITE_OPENAI_API_KEYS: import.meta.env.VITE_OPENAI_API_KEYS,
+  VITE_OPENAI_API_KEY: import.meta.env.VITE_OPENAI_API_KEY,
+  VITE_BAILIAN_API_KEYS: import.meta.env.VITE_BAILIAN_API_KEYS,
+  VITE_BAILIAN_API_KEY: import.meta.env.VITE_BAILIAN_API_KEY,
+  VITE_DASHSCOPE_API_KEY: import.meta.env.VITE_DASHSCOPE_API_KEY,
+}
+
 function readEnvList(...names) {
   return names
-    .flatMap((name) => String(import.meta.env?.[name] || '').split(','))
+    .flatMap((name) => String(ENV_KEYS[name] || '').split(','))
     .map((key) => key.trim())
     .filter(isPlausibleApiKey)
 }

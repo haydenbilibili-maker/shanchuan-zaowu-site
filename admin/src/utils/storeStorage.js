@@ -119,7 +119,107 @@ export function getStoreSelectOptions(bundle) {
 }
 
 export function findStoreById(bundle, id) {
-  return (bundle?.stores || []).find((s) => s.id === id) || null
+  if (!id) return null
+  const sid = String(id)
+  return (
+    (bundle?.stores || []).find(
+      (s) => s.id === sid || String(s.storeId || '') === sid || String(s.code || '') === sid,
+    ) || null
+  )
+}
+
+/**
+ * 财务入账写入用的 storeId：优先 canonical 云端 ID（与小程序 store_shanhaizaowu 等对齐），
+ * 否则回退本地 bundle id。勿另造门店表。
+ */
+export function resolveFinanceStoreWriteId(store) {
+  if (!store) return ''
+  const canonical = String(store.storeId || '').trim()
+  if (canonical) return canonical
+  return String(store.id || '').trim()
+}
+
+/** 同一门店在账本中可能出现的全部 ID（筛选 / 去重匹配） */
+export function financeStoreMatchIds(store) {
+  const ids = new Set()
+  if (!store) return []
+  if (store.id) ids.add(String(store.id))
+  if (store.storeId) ids.add(String(store.storeId))
+  if (store.code) ids.add(String(store.code))
+  const sid = String(store.storeId || store.id || '')
+  const sn = String(store.name || '')
+  if (sid === CANONICAL_STORE_IDS.shanhaizaowu || /山海造物|山川造物/.test(sn) || sn.trim() === DEFAULT_FINANCE_STORE_NAME) {
+    ids.add(CANONICAL_STORE_IDS.shanhaizaowu)
+    ids.add('store_1780146782017_6w0okpr')
+  }
+  if (sid === CANONICAL_STORE_IDS.xingchen || /星宸/.test(sn)) {
+    ids.add(CANONICAL_STORE_IDS.xingchen)
+  }
+  return [...ids].filter(Boolean)
+}
+
+/** 账本行是否属于筛选门店（兼容 local id / canonical storeId / 别名） */
+export function recordMatchesFinanceStoreFilter(record, filterValue, bundle) {
+  if (!filterValue || filterValue === 'all') return true
+  if (filterValue === '__unassigned__') return !record?.storeId
+  const b = bundle || loadStoreBundle()
+  const store = findStoreById(b, filterValue)
+  const matchIds = store
+    ? financeStoreMatchIds(store)
+    : [String(filterValue)]
+  const rid = String(record?.storeId || '')
+  if (matchIds.includes(rid)) return true
+  // 无 storeId 但名称能归到该店
+  if (!rid && store) {
+    const key = resolveCanonicalStoreKey(record, b)
+    const storeKey = resolveCanonicalStoreKey(
+      { storeId: store.storeId || store.id, storeName: store.name },
+      b,
+    )
+    return key === storeKey
+  }
+  return false
+}
+
+/**
+ * 从日报粘贴文案推断门店（店名行：山川造物 / 山海造物 / 星宸…）
+ * @returns {object|null} bundle.stores 项
+ */
+export function matchStoreFromDailyText(text, bundle) {
+  const b = bundle || loadStoreBundle()
+  const stores = b?.stores || []
+  if (!stores.length) return null
+  const head = String(text || '')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 6)
+    .join('\n')
+
+  for (const s of stores) {
+    const name = String(s.name || '').trim()
+    if (name && head.includes(name)) return s
+    const code = String(s.code || '').trim()
+    if (code && head.includes(code)) return s
+  }
+
+  if (/星宸/.test(head)) {
+    return (
+      stores.find((s) => s.storeId === CANONICAL_STORE_IDS.xingchen || /星宸/.test(String(s.name || ''))) ||
+      null
+    )
+  }
+  if (/山川造物|山海造物|这有山\s*1\s*号|这有山一号/.test(head)) {
+    return (
+      stores.find(
+        (s) =>
+          s.storeId === CANONICAL_STORE_IDS.shanhaizaowu ||
+          /山海造物|山川造物/.test(String(s.name || '')) ||
+          String(s.name || '').trim() === DEFAULT_FINANCE_STORE_NAME,
+      ) || null
+    )
+  }
+  return null
 }
 
 /** 财务入账默认关联门店 = 楼上山川造物（ERP 财务核算口径） */
@@ -190,20 +290,23 @@ export function resolveCanonicalStoreKey(record, bundle) {
 
 /**
  * 解析默认财务门店 id：优先楼上山海造物 → 旧「1号门店」→ 模糊匹配
+ * 返回值优先为 canonical storeId（与小程序/云账本对齐）
  */
 export function findDefaultFinanceStoreId(bundle) {
   const stores = [...(bundle?.stores || [])]
   const byCanonical = stores.find(
-    (s) => s.storeId === CANONICAL_STORE_IDS.shanhaizaowu || String(s.name || '').includes('山海造物'),
+    (s) =>
+      s.storeId === CANONICAL_STORE_IDS.shanhaizaowu ||
+      /山海造物|山川造物/.test(String(s.name || '')),
   )
-  if (byCanonical?.id) return byCanonical.id
+  if (byCanonical) return resolveFinanceStoreWriteId(byCanonical)
   const exact = stores.find((s) => String(s.name || '').trim() === DEFAULT_FINANCE_STORE_NAME)
-  if (exact?.id) return exact.id
+  if (exact) return resolveFinanceStoreWriteId(exact)
   const fuzzy = stores.find((s) => {
     const n = String(s.name || '')
     return (n.includes('长春') || n.includes('这有山')) && (n.includes('1号') || n.includes('一号'))
   })
-  return fuzzy?.id || ''
+  return fuzzy ? resolveFinanceStoreWriteId(fuzzy) : ''
 }
 
 /** 账本记录无门店时补上默认门店字段 */
@@ -215,7 +318,7 @@ export function applyDefaultStoreToFinanceRecord(record, bundle) {
   if (!st) return record
   return {
     ...record,
-    storeId: id,
+    storeId: resolveFinanceStoreWriteId(st) || id,
     storeCode: st.code || '',
     storeName: st.name || '',
   }

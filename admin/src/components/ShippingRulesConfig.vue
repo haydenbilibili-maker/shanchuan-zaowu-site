@@ -113,7 +113,6 @@ const syncing = ref(false)
 const ruleDocId = ref('')
 const form = reactive(getDefaultShippingConfig())
 const ruleText = computed(() => describeShippingRule(form))
-const opsKey = () => import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
 
 function applyForm(raw, docId = '') {
   const normalized = normalizeShippingConfig(raw || {})
@@ -189,8 +188,7 @@ async function saveViaCloud() {
     const res = await callCloudFunction('getShippingRules', {
       action: 'save',
       ruleDocId: ruleDocId.value || '',
-      config: payload,
-      adminOpsKey: opsKey()
+      config: payload
     })
     if (!res || res.success === false) {
       throw new Error(res?.msg || '云函数保存失败')

@@ -190,7 +190,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { callCloudFunction } from '../cloud'
 
 const FN = 'manageInvoiceRequests'
-const opsKey = () => import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
 
 const loading = ref(false)
 const detailLoading = ref(false)
@@ -235,7 +234,7 @@ function fmtFull(ms) {
 }
 
 async function callFn(data) {
-  const res = await callCloudFunction(FN, { ...data, adminOpsKey: opsKey() })
+  const res = await callCloudFunction(FN, data)
   if (!res || res.success === false) {
     throw new Error(res?.msg || '云函数调用失败')
   }

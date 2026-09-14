@@ -232,6 +232,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Download, Document } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
 import { fetchFinancialData } from '../utils/financialData'
+import { excludeExchangeOrders } from '../utils/orderFilters'
 
 // --- 状态定义 ---
 const activeTab = ref('builder')
@@ -381,7 +382,7 @@ const buildRealReportData = async (startDate, endDate) => {
 
   const [orders, users, products, finance] = await Promise.all([
     needOrders
-      ? fetchCollectionLimit('orders', { limit: 1000 })
+      ? excludeExchangeOrders(await fetchCollectionLimit('orders', { limit: 1000 }))
       : Promise.resolve([]),
     needUsers
       ? fetchCollectionLimit('users', { limit: 1000 })

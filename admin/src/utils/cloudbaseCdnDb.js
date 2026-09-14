@@ -144,6 +144,11 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'assistProductCopy',
   'seedCategories',
   'manageGift',
+  // 2026-09-14 对齐四模块：定金 / 直播 / 装裱师佣金 / 生日礼
+  'manageDeposit',
+  'manageLiveSession',
+  'manageArtisanCommission',
+  'manageBirthdayGift',
 ])
 
 function cloudFnProxyUrls() {

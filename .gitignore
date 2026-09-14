@@ -2,6 +2,13 @@
 dist/
 .output/
 
+# ERP 构建产物（由 npm run build 生成；历史曾把 ADMIN_OPS_KEY 带进这些文件并入库发布）
+public/admin/assets/
+public/admin/index.html
+
+# local snapshots（审计/备份快照，不入版本库）
+backups/
+
 # dependencies
 node_modules/
 

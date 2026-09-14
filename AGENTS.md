@@ -27,7 +27,7 @@
 - `admin/docs/PLATFORM_CAPABILITIES.md`（ERP 能力边界，勿将演示当生产）
 - `admin/docs/内容工厂_Phase1_技术蓝图.md`（内容工厂，已落地）
 - `admin/docs/订货履约与成品库存_Phase1_技术蓝图.md` · `admin/docs/飞书多维表对接_技术蓝图.md`（进行中模块）
-- `miniprogram/README.md`（小程序与云函数说明）
+- `miniprogram/docs/README.md`（小程序文档索引；代码同 `WeChatProjects/shanchuanspecimens`，2026-09-14 已回灌对齐）
 
 ## 环境
 

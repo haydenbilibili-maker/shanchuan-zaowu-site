@@ -89,7 +89,6 @@ import { callCloudFunction } from '../cloud'
 import { cloudFnErrorMessage } from '../utils/cloudFnErrors'
 
 const FN = 'manageGift'
-const opsKey = () => import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
 
 const BUCKETS = [
   { key: 'awaiting_address', label: '待填址' },
@@ -116,7 +115,7 @@ const counts = reactive({
 })
 
 async function callFn(data) {
-  const res = await callCloudFunction(FN, { ...data, adminOpsKey: opsKey() })
+  const res = await callCloudFunction(FN, data)
   if (!res || res.success === false) {
     const info = cloudFnErrorMessage(res)
     const err = new Error(info.message)

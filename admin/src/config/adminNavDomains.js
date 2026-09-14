@@ -58,6 +58,7 @@ export const NAV_DOMAINS = {
           { id: '65', title: '小票兑积分审核', desc: '门店小票核销积分', icon: 'Tickets' },
           { id: '67', title: '待我审批', desc: '上架与店长审批队列', icon: 'Checked' },
           { id: '61', title: '运费与包邮规则', desc: '运费模板与包邮门槛', icon: 'Van' },
+          { id: '72', title: '定金管理', desc: '售罄孤品定金规则与意向', icon: 'Money' },
         ],
       },
       {
@@ -68,6 +69,7 @@ export const NAV_DOMAINS = {
           { id: '37', title: '预约中心', desc: '预约核销与规则配置', icon: 'Stamp' },
           { id: '5', title: '活动与排期', desc: '活动日历与报名', icon: 'Calendar' },
           { id: '6', title: '权益与营销', desc: '券、礼赠、礼包、积分与成就', icon: 'Ticket' },
+          { id: '73', title: '直播管理', desc: '场次、挂载商品与互动数据', icon: 'VideoCamera' },
         ],
       },
       {
@@ -103,6 +105,7 @@ export const NAV_DOMAINS = {
         overline: 'MEMBERS',
         entries: [
           { id: '4', title: '会员经营', desc: 'CRM、画像、人群与等级', icon: 'UserFilled' },
+          { id: '75', title: '生日礼配置', desc: '生日礼包、积分与礼券', icon: 'Present' },
         ],
       },
       {
@@ -182,6 +185,7 @@ export const NAV_DOMAINS = {
           { id: '7', title: '标本师管理', desc: '标本师档案与作品', icon: 'Brush' },
           { id: '32', title: '员工花名册', desc: '总部 HR 花名册', icon: 'User' },
           { id: '31', title: '员工薪酬管理', desc: '薪酬与薪资单', icon: 'Wallet' },
+          { id: '74', title: '装裱师佣金', desc: '按单佣金规则与台账', icon: 'Wallet' },
         ],
       },
       {

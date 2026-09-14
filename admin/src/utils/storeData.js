@@ -5,6 +5,7 @@
  */
 import { getCollectionData, countCollection, COLLECTIONS } from '../cloud'
 import { fetchFinancialData } from './financialData'
+import { excludeExchangeOrders } from './orderFilters'
 
 export async function fetchStoreData(showMessage = false, options = {}) {
   const { useFinancialData = true, period = 'week' } = options
@@ -27,7 +28,8 @@ export async function fetchStoreData(showMessage = false, options = {}) {
     ])
 
     const products = results[0].status === 'fulfilled' ? results[0].value : []
-    const orders = results[1].status === 'fulfilled' ? results[1].value : []
+    // 兑换单（source=exchange）不是藏品订单：AI/监控的订单口径统一排除
+    const orders = excludeExchangeOrders(results[1].status === 'fulfilled' ? results[1].value : [])
     const users = results[2].status === 'fulfilled' ? results[2].value : []
     const activities = results[3].status === 'fulfilled' ? results[3].value : []
 
@@ -166,6 +168,5 @@ export async function fetchStoreData(showMessage = false, options = {}) {
     return null
   }
 }
-
 
 

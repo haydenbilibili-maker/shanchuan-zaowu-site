@@ -180,8 +180,6 @@ const form = reactive({
   customStepYuan: DEFAULT_RECHARGE.customStepYuan
 })
 
-const opsKey = () => import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
-
 function fenToYuan(fen) {
   return Math.round((Number(fen) || 0)) / 100
 }
@@ -230,8 +228,7 @@ async function loadConfig() {
   loading.value = true
   try {
     const res = await callCloudFunction('manageStoredValue', {
-      action: 'getConfig',
-      adminOpsKey: opsKey()
+      action: 'getConfig'
     })
     if (!res || res.success === false) {
       throw new Error((res && res.msg) || '加载失败')
@@ -328,7 +325,6 @@ async function saveConfig() {
   try {
     const res = await callCloudFunction('manageStoredValue', {
       action: 'saveConfig',
-      adminOpsKey: opsKey(),
       config: payload
     })
     if (!res || res.success === false) {

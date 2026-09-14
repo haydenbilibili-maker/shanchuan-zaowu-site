@@ -23,6 +23,9 @@
 | `refundAmount` | number | 退款 |
 | `netAmount` | number | 净额 |
 | `orderCount` | number | 订单数 |
+| `pos` / `online` | number | 渠道流水 |
+| `cash` / `cashIncome` | number | 当日现金**收入**（遗留；有 `cashBalance` 时通常为 0） |
+| `cashBalance` | number | **在手现金余额**（日报「现金：」语义，不计入 netAmount） |
 | `channel` | string | `offline_pos` / `miniprogram` / `other` |
 | `raw` / `remark` | string | 备注或原始凭证摘要 |
 | `source` | string | `web_admin` / `store_manager` / `store_ledger` |

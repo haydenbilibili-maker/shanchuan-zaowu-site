@@ -111,6 +111,13 @@
                     </div>
                 </template>
             </el-table-column>
+
+            <el-table-column label="店长备注" width="170">
+                <template #default="scope">
+                    <div v-if="scope.row.managerNote" class="note-cell" :title="scope.row.managerNote">{{ scope.row.managerNote }}</div>
+                    <span v-else class="note-empty">—</span>
+                </template>
+            </el-table-column>
             
             <el-table-column label="时间/状态" width="160">
                 <template #default="scope">
@@ -125,7 +132,7 @@
                 </template>
             </el-table-column>
             
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column label="操作" width="150" fixed="right">
                 <template #default="scope">
                     <el-button v-if="scope.row.status==='paid'" type="primary" size="small" @click="openShip(scope.row)">发货</el-button>
                     <el-button v-else-if="scope.row.status==='refunding'" type="danger" size="small" @click="handleRefund(scope.row)">退款</el-button>
@@ -135,6 +142,7 @@
                         <p style="font-family:monospace">{{ scope.row.logistics?.trackingNumber }}</p>
                         <el-button size="small" link type="primary" @click="copyText(scope.row.logistics?.trackingNumber)">复制单号</el-button>
                     </el-popover>
+                    <el-button size="small" link type="primary" @click="editOrderNote(scope.row)">备注</el-button>
                 </template>
             </el-table-column>
             
@@ -216,6 +224,7 @@ import { ref, onMounted, reactive, computed, nextTick } from 'vue'
 import { Refresh, Search, Picture, MagicStick, Box, DocumentCopy } from '@element-plus/icons-vue'
 import { getTempFileUrl, cdnUpdate, cdnCount, fetchCollectionLimit, callCloudFunction } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { excludeExchangeOrders } from '../utils/orderFilters'
 import OrderAI from './ai/OrderAI.vue'
 
 // --- 状态 ---
@@ -324,14 +333,12 @@ const confirmBatchShip = async () => {
 
   submitting.value = true
   try {
-    const adminOpsKey = import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
     for (const row of rows) {
       const tracking = String(row.trackingNumber || '').trim().replace(/\s/g, '')
       const result = await callCloudFunction('managerShipOrder', {
         orderId: row.id,
         carrier: row.carrier || batchShipCarrier.value || '顺丰速运',
-        trackingNumber: tracking,
-        adminOpsKey
+        trackingNumber: tracking
       })
       if (result && result.success === false) {
         throw new Error(result.msg || `订单 ${row.label} 发货失败`)
@@ -403,7 +410,8 @@ const resetAndFetch = () => {
 const fetchOrders = async () => {
     loading.value = true
     try {
-        let rows = await fetchCollectionLimit('orders', { limit: 500 })
+        // 兑换单（source=exchange）不属于藏品订单：与小程序侧同口径过滤
+        let rows = excludeExchangeOrders(await fetchCollectionLimit('orders', { limit: 500 }))
 
         if (activeTab.value !== 'all') {
             rows = rows.filter(o => o.status === activeTab.value)
@@ -464,9 +472,7 @@ const confirmShip = async () => {
         const result = await callCloudFunction('managerShipOrder', {
             orderId: shipForm.value.id,
             carrier: shipForm.value.carrier || '顺丰速运',
-            trackingNumber: String(shipForm.value.trackingNumber || '').trim(),
-            // 与 refundOrder 一致：匿名 Web 身份需 ADMIN_OPS_KEY / VITE_ADMIN_OPS_KEY
-            adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+            trackingNumber: String(shipForm.value.trackingNumber || '').trim()
         })
         if (result && result.success === false) {
             throw new Error(result.msg || result.message || '发货失败')
@@ -498,9 +504,7 @@ const handleRefund = (row) => {
                 await cdnUpdate('orders', row._id, { status: 'refunding', refundRequestedAt: Date.now() })
             }
             const result = await callCloudFunction('refundOrder', {
-                orderId: row._id,
-                // 可选：在 Admin 构建环境注入 VITE_ADMIN_OPS_KEY，与云函数 ADMIN_OPS_KEY 一致
-                adminOpsKey: import.meta.env?.VITE_ADMIN_OPS_KEY || undefined
+                orderId: row._id
             })
             if (result && result.success === false) {
                 // Web 匿名身份可能无 admin openid：降级提示，禁止静默假退款
@@ -526,6 +530,42 @@ const handleRefund = (row) => {
 // --- 工具函数 ---
 const formatPrice = (p) => parseFloat(p).toLocaleString('en-US', {minimumFractionDigits: 2})
 const formatDate = (ts) => new Date(ts).toLocaleString()
+
+/**
+ * 店长备注（orders.managerNote）：与小程序店长台同字段、同入口。
+ * 保存走 managerShipOrder.saveNote —— products 写权限之外的订单写路径统一在该函数内做鉴权。
+ * 备注会随发货私信「馆员留言」发给买家，所以这里提示清楚。
+ */
+const editOrderNote = (row) => {
+    if (!row || !row._id) return ElMessage.warning('订单信息缺失')
+    ElMessageBox.prompt('店长备注会随发货私信发给买家（上限 100 字）', `订单备注 · ${row.orderNo || row._id}`, {
+        confirmButtonText: '保存',
+        cancelButtonText: '取消',
+        inputType: 'textarea',
+        inputValue: String(row.managerNote || ''),
+        inputPlaceholder: '如：附赠养护卡 · 易碎请轻放',
+        inputValidator: (value) => String(value || '').length <= 100 || '最多 100 字',
+    })
+        .then(async ({ value }) => {
+            try {
+                const note = String(value || '').trim()
+                const res = await callCloudFunction('managerShipOrder', {
+                    action: 'saveNote',
+                    orderId: row._id,
+                    note,
+                })
+                if (!res || res.success === false) {
+                    throw new Error((res && res.msg) || '保存失败')
+                }
+                row.managerNote = (res && res.note) || ''
+                ElMessage.success(note ? '备注已保存' : '备注已清空')
+            } catch (e) {
+                ElMessage.error(e?.message || '保存失败：请确认已部署 managerShipOrder')
+            }
+        })
+        .catch(() => {})
+}
+
 const copyText = (text) => {
     navigator.clipboard.writeText(text)
     ElMessage.success('复制成功')
@@ -553,6 +593,17 @@ onMounted(() => fetchOrders())
 .price-cell .currency { font-size: 12px; margin-right: 2px; }
 
 .user-info { line-height: 1.4; }
+.note-cell {
+    font-size: 12px;
+    color: #b88a4d;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-all;
+}
+.note-empty { color: #6b6560; }
 .u-top { font-size: 13px; font-weight: bold; color: #333; }
 .u-phone { font-weight: normal; color: #999; margin-left: 5px; font-size: 12px; }
 .u-addr { font-size: 12px; color: #666; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

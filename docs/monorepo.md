@@ -50,6 +50,30 @@ Cloudflare Pages 仍只部署 **`dist/`**（含 `dist/admin/`）。
 
 原独立仓库可保留作归档；后续以本 monorepo 为准。
 
+## 回灌记录
+
+### 2026-09-14 · 小程序安全修复回灌
+
+小程序侧的安全加固（云端口令 `manageStaff.verifyUiGate`、`staffGuard` 角色鉴权、客户端写操作全部收回云函数、
+`database-rules/`、三个分包重构）先在 `WeChatProjects/shanchuanspecimens` 落地，本仓 `miniprogram/` 当时仍是旧版镜像，
+形成「规则是新的、代码是旧的」矛盾，故执行一次完整回灌。
+
+回灌命令（在仓库根执行，`--delete` 保证镜像一致，不复制依赖与 Git 元数据）：
+
+```bash
+rsync -a --delete \
+  --exclude='node_modules/' --exclude='.git/' --exclude='.DS_Store' \
+  ~/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens/ \
+  miniprogram/
+```
+
+结果：云函数 81 → **121**；分包 `business` → `business`/`manager`/`feature`；`miniprogram/README.md` 随之删除
+（小程序侧以 `miniprogram/docs/README.md` 为文档索引）；主包 1.58 MB → **1.19 MB**；客户端直写数据库实测 **0 处**。
+
+配套动作：`cloudbase/rules/user_collection.json` 已与小程序侧收严版对齐为 `write:false`（其余 29 份共用规则两边一致）。
+注意此后规则有**两份副本**——`cloudbase/rules/`（本仓权威，含 Admin 专属集合）与 `miniprogram/database-rules/`
+（小程序侧自带，随回灌覆盖）；修改共用集合的规则时需同时改两处。
+
 ## 待办（合并后）
 
 1. ~~将 `financeSync` / `storeLedgerSync` 回灌到 `admin/src/utils/`~~（已完成）

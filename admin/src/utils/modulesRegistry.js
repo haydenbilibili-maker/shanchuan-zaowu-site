@@ -21,6 +21,11 @@ export const GROUPS = {
 }
 
 export const MODULES = [
+  // ── 2026-09-14 与小程序对齐补的四模块 ──
+  { id: '72', name: '定金管理', group: 'BUSINESS', subgroup: '货', icon: 'Money', keywords: 'deposit dingjin 定金 尾款 售罄孤品 意向' },
+  { id: '73', name: '直播管理', group: 'BUSINESS', subgroup: '场', icon: 'VideoCamera', keywords: 'live zhibo 直播 场次 主播 开播' },
+  { id: '74', name: '装裱师佣金', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Wallet', keywords: 'commission yongjin 佣金 装裱师 提成 台账' },
+  { id: '75', name: '生日礼配置', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Present', keywords: 'birthday shengri 生日礼 礼包 礼券' },
   // 导航大屏（侧栏一级）
   { id: 'nav-overview', name: '总览决策', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'nav overview 总览 导航大屏' },
   { id: 'nav-business', name: '业务运营', group: 'BUSINESS', subgroup: null, icon: 'Shop', keywords: 'nav business 业务运营 导航大屏' },

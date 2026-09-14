@@ -7,7 +7,8 @@ import { fetchAllFromCollection } from './cloudbaseCdnDb.js'
 
 /** 是否从 CloudBase orders 拉 TTM 订单/营收；默认 false（测试数据不计入估值锚点） */
 export function isMiniprogramSandboxOrdersEnabled() {
-  const raw = String(import.meta.env?.VITE_MINIPROGRAM_SANDBOX_USE_ORDERS ?? '').trim().toLowerCase()
+  // 静态读取：动态访问会让 Vite 内联整个 import.meta.env（见 aiHelper 顶部说明）
+  const raw = String(import.meta.env.VITE_MINIPROGRAM_SANDBOX_USE_ORDERS || '').trim().toLowerCase()
   if (!raw) return false
   return raw === 'true' || raw === '1' || raw === 'yes'
 }

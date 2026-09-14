@@ -35,8 +35,8 @@ function cloudEnv(env = {}) {
   return {
     TCB_SECRET_ID: env.TCB_SECRET_ID,
     TCB_SECRET_KEY: env.TCB_SECRET_KEY,
-    ADMIN_OPS_KEY: env.ADMIN_OPS_KEY || env.VITE_ADMIN_OPS_KEY,
-    VITE_ADMIN_OPS_KEY: env.VITE_ADMIN_OPS_KEY,
+    // 只认非 VITE_ 前缀的 ADMIN_OPS_KEY：VITE_ 变量会被打进前端包（历史泄露点）
+    ADMIN_OPS_KEY: env.ADMIN_OPS_KEY,
     CLOUDBASE_ENV: env.CLOUDBASE_ENV || env.TCB_ENV,
     CLOUDBASE_REGION: env.CLOUDBASE_REGION,
   }

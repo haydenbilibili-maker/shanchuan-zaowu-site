@@ -21,16 +21,38 @@ export function dedupeFinanceRecords(records) {
   return mergeRecords([], records || [])
 }
 
+import { rowNetFromChannels } from './financeDailyParse.js'
+
 export function toFinanceRecord(doc) {
   const date = doc.date || doc.bizDate || ''
+  const pos = Number(doc.pos) || 0
+  const online = Number(doc.online) || 0
+  const refund = Number(doc.refundAmount ?? doc.refund) || 0
+  const cashBalance =
+    doc.cashBalance != null && doc.cashBalance !== '' ? Number(doc.cashBalance) : null
+  const hasBalance = cashBalance != null && Number.isFinite(cashBalance)
+  const cashIncome = hasBalance
+    ? Number(doc.cashIncome) || 0
+    : Number(doc.cashIncome ?? doc.cash) || 0
+  const revenue =
+    pos || online || cashIncome || refund
+      ? rowNetFromChannels(doc)
+      : Number(doc.netAmount ?? doc.revenue ?? 0) || 0
   return {
     date,
     storeId: doc.storeId || '',
     storeCode: doc.storeCode || '',
-    revenue: Number(doc.netAmount ?? doc.revenue ?? 0) || 0,
+    storeName: doc.storeName || '',
+    revenue,
     orderCount: Number(doc.orderCount) || 0,
     avgOrderPrice: doc.avgOrderPrice ?? null,
     customerPrice: doc.customerPrice ?? null,
+    pos: pos || null,
+    online: online || null,
+    refund: refund || null,
+    cash: cashIncome || null,
+    cashIncome: cashIncome || null,
+    cashBalance: hasBalance ? cashBalance : null,
     raw: doc.raw || doc.remark || '',
     _updateTime: doc._updateTime || doc.syncedAt || Date.now(),
     source: doc.source || 'store_ledger',
@@ -38,19 +60,43 @@ export function toFinanceRecord(doc) {
 }
 
 export function toStoreLedgerDoc(record) {
-  const revenue = Number(record.revenue) || 0
-  return {
+  const pos = Number(record.pos) || 0
+  const online = Number(record.online) || 0
+  const refund = Number(record.refundAmount ?? record.refund) || 0
+  const cashBalance =
+    record.cashBalance != null && record.cashBalance !== ''
+      ? Number(record.cashBalance)
+      : null
+  const hasBalance = cashBalance != null && Number.isFinite(cashBalance)
+  const cashIncome = hasBalance
+    ? Number(record.cashIncome) || 0
+    : Number(record.cashIncome ?? record.cash) || 0
+  const revenueFromChannels =
+    pos || online || cashIncome || refund
+      ? Math.max(0, pos + online + cashIncome - refund)
+      : null
+  const revenue =
+    revenueFromChannels != null
+      ? revenueFromChannels
+      : Number(record.revenue) || 0
+  const doc = {
     storeId: record.storeId || '',
     storeCode: record.storeCode || '',
+    storeName: record.storeName || '',
     date: record.date,
     bizDate: record.date,
     revenue,
-    grossAmount: record.grossAmount ?? revenue,
-    refundAmount: Number(record.refundAmount) || 0,
+    grossAmount: record.grossAmount ?? pos + online + cashIncome,
+    refundAmount: refund,
     netAmount: record.netAmount ?? revenue,
     orderCount: Number(record.orderCount) || 0,
     avgOrderPrice: record.avgOrderPrice ?? null,
     customerPrice: record.customerPrice ?? null,
+    pos,
+    online,
+    cash: cashIncome,
+    cashIncome,
+    refund,
     channel: record.channel || 'offline_pos',
     raw: record.raw || '',
     remark: record.raw || '',
@@ -58,6 +104,8 @@ export function toStoreLedgerDoc(record) {
     _updateTime: Date.now(),
     syncedAt: Date.now(),
   }
+  if (hasBalance) doc.cashBalance = cashBalance
+  return doc
 }
 
 /** 按 storeId|date 合并，_updateTime 较新者胜出 */

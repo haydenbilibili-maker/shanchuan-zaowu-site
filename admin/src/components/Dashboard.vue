@@ -412,6 +412,7 @@
 import { reactive, ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { Clock, Trophy, Bell, Box, Service, Warning, EditPen, Plus, Ticket, User, DataAnalysis, DataBoard, WarningFilled, InfoFilled, ArrowUp, ArrowDown, Star, Refresh, Calendar, Timer, UserFilled } from '@element-plus/icons-vue'
 import { cdnCount, fetchCollectionLimit, fetchCollectionWhere, getCdnDatabase } from '../cloud'
+import { excludeExchangeOrders } from '../utils/orderFilters'
 import Chart from 'chart.js/auto'
 import CompanionRobot from './CompanionRobot.vue'
 import { ElMessage } from 'element-plus'
@@ -625,7 +626,8 @@ const refreshAll = async () => {
     let realtimeOrderCount = 0
     if (!todayRecord) {
       try {
-        const todayOrderRows = await fetchCollectionLimit('orders', { limit: 500 })
+        // 兑换单（source=exchange）不计入订单/营收口径
+        const todayOrderRows = excludeExchangeOrders(await fetchCollectionLimit('orders', { limit: 500 }))
         todayOrderRows.forEach(o => {
           const ts = o.createTime || o._createTime || 0
           if (ts >= startMs && ['paid', 'shipped', 'received'].includes(o.status)) {

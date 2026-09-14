@@ -12,9 +12,27 @@ function isPlausibleApiKey(key) {
   return true
 }
 
+/**
+ * 环境变量必须**静态**读取（写死属性名），Vite 才能只替换该字段。
+ * ⚠️ 切勿改成 `import.meta.env?.[name]` 这类动态访问：那样 Vite 无法做字段级替换，
+ * 会把**整个 import.meta.env 对象**内联进产物，导致所有 VITE_ 变量（含密钥、运维口令）
+ * 随前端包公开发布——2026-09 的 ADMIN_OPS_KEY 泄露即由此产生。
+ */
+const ENV_KEYS = {
+  VITE_GEMINI_API_KEYS: import.meta.env.VITE_GEMINI_API_KEYS,
+  VITE_GEMINI_API_KEY: import.meta.env.VITE_GEMINI_API_KEY,
+  VITE_OPENAI_API_KEYS: import.meta.env.VITE_OPENAI_API_KEYS,
+  VITE_OPENAI_API_KEY: import.meta.env.VITE_OPENAI_API_KEY,
+  VITE_DEEPSEEK_API_KEYS: import.meta.env.VITE_DEEPSEEK_API_KEYS,
+  VITE_DEEPSEEK_API_KEY: import.meta.env.VITE_DEEPSEEK_API_KEY,
+  VITE_BAILIAN_API_KEYS: import.meta.env.VITE_BAILIAN_API_KEYS,
+  VITE_BAILIAN_API_KEY: import.meta.env.VITE_BAILIAN_API_KEY,
+  VITE_DASHSCOPE_API_KEY: import.meta.env.VITE_DASHSCOPE_API_KEY,
+}
+
 function readEnvList(...names) {
   return names
-    .flatMap((name) => String(import.meta.env?.[name] || '').split(','))
+    .flatMap((name) => String(ENV_KEYS[name] || '').split(','))
     .map((key) => key.trim())
     .filter(isPlausibleApiKey)
 }
@@ -29,6 +47,39 @@ function resolveLocalApiProxyUrl(apiPath) {
 
 function shouldUseLocalAiProxy() {
   return Boolean(import.meta.env.DEV)
+}
+
+/**
+ * 生产环境走 Pages Function 网关 /api/ai：厂商密钥只存服务端环境变量，
+ * 前端不持有任何 AI Key（VITE_ 前缀会随包发布，禁止用于密钥）。
+ */
+function shouldUseAiGateway() {
+  return !import.meta.env.DEV
+}
+
+async function fetchViaAiGateway(provider, payload, signal) {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
+  const urls = base && base !== '/' ? [`${base}/api/ai`, '/api/ai'] : ['/api/ai']
+  let lastErr = null
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, payload }),
+        ...(signal ? { signal } : {}),
+      })
+      const ctype = res.headers.get('content-type') || ''
+      if (ctype.includes('text/html')) {
+        lastErr = new Error(`AI 网关未部署（${url} 返回 HTML，请确认 functions/api/ai.js 随站点发布）`)
+        continue
+      }
+      return res
+    } catch (e) {
+      lastErr = e
+    }
+  }
+  throw lastErr || new Error('AI 网关不可用')
 }
 
 // API Key 仅从 Vite 环境变量读取，避免在前端源码中继续扩散明文密钥。
@@ -85,13 +136,13 @@ function getFallbackProvider(excludeProvider) {
 
 function missingKeyHint(apiType) {
   const map = {
-    deepseek: 'VITE_DEEPSEEK_API_KEY（可选 VITE_DEEPSEEK_BASE_URL / VITE_DEEPSEEK_MODEL）',
-    bailian: 'VITE_BAILIAN_API_KEY',
-    gemini: 'VITE_GEMINI_API_KEY',
-    openai: 'VITE_OPENAI_API_KEY',
+    deepseek: '服务端 DEEPSEEK_API_KEY（Cloudflare Pages 环境变量）；本地开发用 VITE_DEEPSEEK_API_KEY',
+    bailian: '服务端 BAILIAN_API_KEY；本地开发用 VITE_BAILIAN_API_KEY',
+    gemini: '服务端 GEMINI_API_KEY；本地开发用 VITE_GEMINI_API_KEY',
+    openai: '服务端 OPENAI_API_KEY；本地开发用 VITE_OPENAI_API_KEY',
   }
-  const envName = map[apiType] || '对应的 VITE_*_API_KEY'
-  return `未配置 ${apiType} API Key。请检查环境变量 ${envName}（本地 admin/.env，生产 GitHub Secrets），并确认 VITE_AI_DEFAULT_PROVIDER。`
+  const envName = map[apiType] || '对应的服务端 *_API_KEY'
+  return `未配置 ${apiType} API Key。生产环境请检查 ${envName}（Pages → Settings → Environment variables）；本地开发请检查 admin/.env，并确认 VITE_AI_DEFAULT_PROVIDER。`
 }
 
 // 本地模型配置（Ollama）- 已部署多个模型
@@ -828,6 +879,7 @@ export async function callGeminiAPI(prompt, options = {}) {
   let url = null
   let apiType = provider
   let useProxy = false // 是否使用代理（解决CORS问题）
+  let useGateway = false // 生产：走 /api/ai 服务端网关（前端不持有密钥）
   let activeModel = null // OpenAI 兼容接口使用的模型名
   
   // 如果所有云端API都失败，尝试使用本地模型作为兜底
@@ -846,6 +898,7 @@ export async function callGeminiAPI(prompt, options = {}) {
     url = bailianConfig.url
     currentKey = bailianConfig.key
     activeModel = bailianConfig.model
+    useGateway = shouldUseAiGateway()
     useProxy = shouldUseLocalAiProxy()
   } else if (apiType === 'openai') {
     const openaiConfig = getOpenAIURL(openaiModel)
@@ -854,6 +907,7 @@ export async function callGeminiAPI(prompt, options = {}) {
       : openaiConfig.url
     currentKey = openaiConfig.key
     activeModel = openaiModel
+    useGateway = shouldUseAiGateway()
     useProxy = shouldUseLocalAiProxy()
   } else if (apiType === 'deepseek') {
     const deepseekConfig = getDeepSeekURL(deepseekModel)
@@ -862,14 +916,17 @@ export async function callGeminiAPI(prompt, options = {}) {
       : deepseekConfig.url
     currentKey = deepseekConfig.key
     activeModel = deepseekConfig.model || deepseekModel
+    useGateway = shouldUseAiGateway()
     useProxy = shouldUseLocalAiProxy()
   } else {
     currentKey = selectAvailableKey('gemini')
-    url = getGeminiURL(usePro ? 'pro' : 'flash', currentKey)
+    useGateway = shouldUseAiGateway()
+    url = useGateway ? getGeminiURL(usePro ? 'pro' : 'flash', 'gateway') : getGeminiURL(usePro ? 'pro' : 'flash', currentKey)
     useProxy = false // Gemini API 支持CORS
   }
 
-  if (!currentKey || !url) {
+  // 网关模式下前端无需持有密钥；非网关模式仍要求本地有 Key（开发/浏览器备用 Key）
+  if ((!currentKey && !useGateway) || (!url && !useGateway)) {
     // 无云端 Key 时不再静默打 Ollama（未启动时会变成难懂的「后台报错」）
     // 本地模型仅在云端调用失败后的 retry 兜底路径启用
     throw new Error(
@@ -981,22 +1038,25 @@ export async function callGeminiAPI(prompt, options = {}) {
     console.log('[AI] 使用代理:', useProxy)
     console.log('[AI] 请求payload:', JSON.stringify(payload).substring(0, 200))
     
-    // 如果使用代理，需要将Authorization header通过query参数传递（或使用其他方式）
+    // 网关模式（生产）：/api/ai 在服务端注入密钥，前端不发送任何 Key
+    // 开发代理模式：以 X-API-Key 交给 Vite 代理转成 Authorization
     const fetchHeaders = { ...headers }
-    
-    // 如果使用代理，添加自定义header传递API Key，代理服务器会将其转换为Authorization header
-    if (useProxy) {
+    if (useGateway) {
+      delete fetchHeaders['Authorization']
+    } else if (useProxy) {
       fetchHeaders['X-API-Key'] = currentKey
       // 移除Authorization header，因为代理会处理
       delete fetchHeaders['Authorization']
     }
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: fetchHeaders,
-      body: JSON.stringify(payload),
-      ...(signal ? { signal } : {})
-    })
+
+    const response = useGateway
+      ? await fetchViaAiGateway(apiType, payload, signal)
+      : await fetch(url, {
+          method: 'POST',
+          headers: fetchHeaders,
+          body: JSON.stringify(payload),
+          ...(signal ? { signal } : {})
+        })
     
     console.log('[AI] 收到响应，状态码:', response.status)
 
