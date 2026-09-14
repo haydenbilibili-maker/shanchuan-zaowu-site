@@ -479,7 +479,7 @@
                              <el-tag effect="light" type="info" round>{{ scope.row.category }}</el-tag>
                          </template>
                     </el-table-column>
-                    <el-table-column label="渠道/工艺" width="130">
+                    <el-table-column label="渠道/装裱/工艺" width="180">
                          <template #default="scope">
                              <div class="promo-cell">
                                <el-tag v-if="scope.row.channel" effect="plain" size="small" round>
@@ -487,6 +487,9 @@
                                </el-tag>
                                <el-tag v-if="scope.row.craftType" effect="plain" type="success" size="small" round>
                                  {{ CRAFT_TYPE_LABEL_MAP[scope.row.craftType] || scope.row.craftType }}
+                               </el-tag>
+                               <el-tag v-if="scope.row.craftProcess" effect="plain" type="warning" size="small" round>
+                                 {{ CRAFT_PROCESS_LABEL_MAP[scope.row.craftProcess] || scope.row.craftProcess }}
                                </el-tag>
                              </div>
                          </template>
@@ -720,7 +723,7 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="生产方式">
+                    <el-form-item label="装裱方式">
                         <el-select
                             v-model="form.craftType"
                             clearable
@@ -729,23 +732,44 @@
                             :disabled="!isTaxonomyEligibleProduct"
                         >
                             <el-option label="相框" value="frame" />
-                            <el-option label="玻璃罩" value="cloche" />
+                            <el-option label="方形玻璃罩" value="cloche" />
+                            <el-option label="圆形玻璃罩" value="cloche_round" />
+                            <el-option label="圆柱形玻璃罩" value="cloche_cylinder" />
                             <el-option label="造景" value="diorama" />
                             <el-option label="冰箱贴" value="magnet" />
                             <el-option label="饰品" value="accessory" />
                             <el-option label="蝶翅画" value="wing_art" />
                             <el-option label="其它" value="other" />
                         </el-select>
-                        <span class="sku-hint-muted">昆虫/植物/海洋/动物；空=未标注</span>
+                        <span class="sku-hint-muted">装裱/封装形态；DB 字段 craftType；空=未标注</span>
                     </el-form-item>
                 </el-col>
             </el-row>
             <el-row :gutter="20">
                 <el-col :span="12">
+                    <el-form-item label="制作工艺">
+                        <el-select
+                            v-model="form.craftProcess"
+                            clearable
+                            placeholder="浸制/塑化/剥制/其它"
+                            style="width:100%"
+                            :disabled="!isTaxonomyEligibleProduct"
+                        >
+                            <el-option label="浸制" value="immersion" />
+                            <el-option label="塑化" value="plastination" />
+                            <el-option label="剥制" value="taxidermy" />
+                            <el-option label="其它" value="other" />
+                        </el-select>
+                        <span class="sku-hint-muted">标本制作工艺；DB 字段 craftProcess；空=未标注</span>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
                     <el-form-item label="进货价格">
                         <el-input-number v-model="form.costPrice" :min="0" :precision="2" :step="10" style="width:100%" />
                     </el-form-item>
                 </el-col>
+            </el-row>
+            <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="销售价格">
                         <el-input-number v-model="form.price" :min="0" :precision="2" :step="10" style="width:100%" />
@@ -1716,7 +1740,7 @@ const batchStockForm = ref({ type: 'set', value: 0 }) // 批量调库存表单
 const form = ref({ 
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
-    channel: '', craftType: '',
+    channel: '', craftType: '', craftProcess: '',
     latinName: '', description: '', tags: [], tagDraft: '', giftScenes: [], isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
@@ -1778,12 +1802,21 @@ const CHANNEL_LABEL_MAP = {
 
 const CRAFT_TYPE_LABEL_MAP = {
     frame: '相框',
-    cloche: '玻璃罩',
+    cloche: '方形玻璃罩',
+    cloche_round: '圆形玻璃罩',
+    cloche_cylinder: '圆柱形玻璃罩',
     diorama: '造景',
     magnet: '冰箱贴',
     accessory: '饰品',
     jewelry: '饰品',
     wing_art: '蝶翅画',
+    other: '其它'
+}
+
+const CRAFT_PROCESS_LABEL_MAP = {
+    immersion: '浸制',
+    plastination: '塑化',
+    taxidermy: '剥制',
     other: '其它'
 }
 
@@ -1798,7 +1831,7 @@ const isMerchandiseProduct = (f) => {
 
 const isMerchandiseForm = computed(() => isMerchandiseProduct(form.value))
 
-/** 渠道 / 生产方式：昆虫·植物·海洋·动物（含蝴蝶二级） */
+/** 渠道 / 装裱方式 / 制作工艺：昆虫·植物·海洋·动物（含蝴蝶二级） */
 const isTaxonomyEligibleProduct = computed(() => {
     const f = form.value || {}
     const blob = [f.rootCategoryName, f.category].filter(Boolean).join(' ')
@@ -2976,7 +3009,7 @@ const onFramerChange = (id) => {
 const blankProductForm = () => ({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
-    channel: '', craftType: '',
+    channel: '', craftType: '', craftProcess: '',
     latinName: '', description: '', tags: [], tagDraft: '', giftScenes: [], isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
@@ -3028,6 +3061,7 @@ const applyCategorySuggestion = (cat) => {
     if (!TAXONOMY_ELIGIBLE_RE.test(blob)) {
         form.value.channel = ''
         form.value.craftType = ''
+        form.value.craftProcess = ''
     }
     return true
 }
@@ -3106,6 +3140,7 @@ const onCategoryPathChange = (path) => {
         form.value.categoryType = ''
         form.value.channel = ''
         form.value.craftType = ''
+        form.value.craftProcess = ''
         return
     }
     const rootId = path[0]
@@ -3123,6 +3158,7 @@ const onCategoryPathChange = (path) => {
     if (!TAXONOMY_ELIGIBLE_RE.test(blob)) {
         form.value.channel = ''
         form.value.craftType = ''
+        form.value.craftProcess = ''
     }
 
     // 与店长端一致：二级分类带 taxonomy 时预填科学分类
@@ -3313,6 +3349,7 @@ const editItem = async (row) => {
         categoryPath: path,
         channel: row.channel || '',
         craftType: row.craftType || '',
+        craftProcess: row.craftProcess || '',
         latinName: row.latinName || '',
         description: row.description || '',
         tags: readProductTags(row),
@@ -3699,6 +3736,7 @@ const saveProduct = async () => {
             categoryType: form.value.categoryType || '',
             channel: channelOk ? (form.value.channel || '') : '',
             craftType: craftOk ? (form.value.craftType || '') : '',
+            craftProcess: craftOk ? (form.value.craftProcess || '') : '',
             latinName: form.value.latinName || '',
             description: form.value.description || '',
             tags: sanitizeProductTags(form.value.tags),
