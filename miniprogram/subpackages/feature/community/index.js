@@ -42,7 +42,18 @@ Page({
   },
 
   onShow() {
-    if (this._needRefresh) {
+    // 超管在「工作台 → 内容 → 种子同步」灌库后（跨分包，不能 require 通知模块），
+    // 会挂 app.globalData.communityNeedsRefresh；此前该信号无人设置，
+    // 导致灌库后社区列表要手动下拉才更新。
+    let globalNeed = false
+    try {
+      const app = getApp()
+      if (app && app.globalData && app.globalData.communityNeedsRefresh) {
+        app.globalData.communityNeedsRefresh = false
+        globalNeed = true
+      }
+    } catch (e) { /* ignore */ }
+    if (this._needRefresh || globalNeed) {
       this._needRefresh = false
       this.loadTabContent(this.data.currentTab, true)
     }

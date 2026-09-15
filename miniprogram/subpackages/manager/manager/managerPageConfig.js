@@ -1018,6 +1018,14 @@ function resolveListItem(list, e) {
   return ds.item || null;
 }
 
+/** 通知社区页「内容已变，需要重新拉取」（跨分包，直接挂 app.globalData） */
+function markCommunityContentStale() {
+  try {
+    const app = getApp()
+    if (app && app.globalData) app.globalData.communityNeedsRefresh = true
+  } catch (e) { /* ignore */ }
+}
+
 async function callCommunitySeedAction(action) {
   const map = { seed: 'communitySeed', clear: 'communityClear', status: 'communityStatus' }
   const primaryAction = map[action] || action
@@ -8260,6 +8268,7 @@ bindSubCatChange(e) {
         wx.showToast({ title: result.msg || '导入失败', icon: 'none', duration: 3000 })
         return
       }
+      markCommunityContentStale()
       wx.showToast({ title: '内容已导入', icon: 'success' })
       this.loadContent()
     } catch (e) {
@@ -8287,6 +8296,7 @@ bindSubCatChange(e) {
             wx.showToast({ title: result.msg || '清除失败', icon: 'none' })
             return
           }
+          markCommunityContentStale()
           wx.showToast({ title: '已清除', icon: 'success' })
           this.loadContent()
         } catch (e) {
