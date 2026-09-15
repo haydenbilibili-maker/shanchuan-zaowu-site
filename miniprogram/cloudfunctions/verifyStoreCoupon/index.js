@@ -27,7 +27,7 @@ function fail(msg, extra) {
   return { success: false, msg, ...(extra || {}) }
 }
 
-/** 小票附图 fileID，最多 3 张 */
+/** 赠分凭证附图 fileID（券核销环节拍商品实物图），最多 3 张 */
 function normalizeReceiptImages(raw) {
   if (!Array.isArray(raw)) return []
   const out = []
@@ -181,7 +181,7 @@ async function submitPointsFromRedeem(opts) {
   }
   const receiptImages = normalizeReceiptImages(opts && opts.receiptImages)
   if (!receiptImages.length) {
-    return { success: false, msg: '请上传小票照片后再提交积分' }
+    return { success: false, msg: '请上传商品照片后再提交积分' }
   }
 
   try {
@@ -363,9 +363,9 @@ async function redeem(event, openid, guard) {
   const receiptImages = normalizeReceiptImages(
     (event && (event.receiptImages || event.imageFileIds || event.images)) || []
   )
-  // 填了消费金额则强制至少 1 张小票（无金额仅核销时选填，不传亦可）
+  // 填了消费金额则强制至少 1 张商品图（无金额仅核销时选填，不传亦可）
   if (amount != null && amount > 0 && !receiptImages.length) {
-    return fail('请上传小票照片后再提交消费金额')
+    return fail('请上传商品照片后再提交消费金额')
   }
 
   // 幂等：同 clientRequestId 已核销则直接返回（仍尝试联动积分，靠 COUPON:id 去重）

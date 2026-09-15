@@ -62,7 +62,8 @@ function parseGrantAmount(raw) {
   if (!/^\d+(\.\d{1,2})?$/.test(text)) return { ok: false, msg: '金额须为数字，最多两位小数' };
   const amount = Math.round(Number(text) * 100) / 100;
   if (!Number.isFinite(amount) || amount <= 0) return { ok: false, msg: '请输入大于 0 的金额' };
-  if (amount > 999999) return { ok: false, msg: '单笔金额过大，请核对小票' };
+  // 该校验被「现场赠分」与「券核销」共用：券核销环节还没有小票，故文案不写「核对小票」
+  if (amount > 999999) return { ok: false, msg: '单笔金额过大，请核对金额' };
   return { ok: true, amount };
 }
 
@@ -783,7 +784,7 @@ Page({
     const current = this.data.couponReceiptPaths || [];
     const remain = Math.max(0, 3 - current.length);
     if (remain <= 0) {
-      return wx.showToast({ title: '最多上传 3 张小票', icon: 'none' });
+      return wx.showToast({ title: '最多上传 3 张商品图', icon: 'none' });
     }
     wx.chooseMedia({
       count: remain,
@@ -825,7 +826,7 @@ Page({
         cloudPath,
         filePath: locals[i]
       });
-      if (!up || !up.fileID) throw new Error('小票上传失败');
+      if (!up || !up.fileID) throw new Error('商品图上传失败');
       fileIds.push(up.fileID);
     }
     return fileIds;
@@ -964,14 +965,14 @@ Page({
     const willSubmitPoints = !!(amountParsed && amountParsed.ok && amountParsed.amount > 0);
     const receiptPaths = this.data.couponReceiptPaths || [];
     if (willSubmitPoints && !receiptPaths.length) {
-      return wx.showToast({ title: '请上传小票照片', icon: 'none' });
+      return wx.showToast({ title: '请上传商品照片', icon: 'none' });
     }
 
     const confirmed = await new Promise((resolve) => {
       wx.showModal({
         title: '确认核销',
         content: willSubmitPoints
-          ? `将核销「${form.title || '礼券'}」，并按消费 ¥${amountParsed.amount} 提交线下积分（待店长审核）。请确认小票已上传。`
+          ? `将核销「${form.title || '礼券'}」，并按消费 ¥${amountParsed.amount} 提交线下积分（待店长审核）。请确认商品图已上传。`
           : `将核销「${form.title || '礼券'}」。未填消费金额，本次不提交积分。`,
         confirmText: '确认核销',
         confirmColor: '#C4A76C',
@@ -982,7 +983,7 @@ Page({
     if (!confirmed) return;
 
     this.setData({ couponRedeeming: true });
-    wx.showLoading({ title: willSubmitPoints ? '上传小票…' : '核销中…', mask: true });
+    wx.showLoading({ title: willSubmitPoints ? '上传商品图…' : '核销中…', mask: true });
     try {
       let receiptImages = [];
       if (receiptPaths.length) {

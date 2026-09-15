@@ -346,7 +346,7 @@
       </view>
     </view>
 
-    <!-- 核销态：单一 scroll-view（券+金额+小票+确认），JS 写入 px 高度，保证可滑可选 -->
+    <!-- 核销态：单一 scroll-view（券+金额+商品图+确认），JS 写入 px 高度，保证可滑可选 -->
     <scroll-view
       wx:if="{{memberPassResult.valid && memberPassStep === 'redeem'}}"
       class="pass-redeem-scroll"
@@ -433,8 +433,9 @@
 
       <view class="receipt-upload {{couponRedeemForm.userCouponId ? '' : 'is-idle'}}">
         <view class="receipt-upload-head">
-          <text class="amount-label">小票照片</text>
+          <text class="amount-label">商品照片</text>
           <text class="amount-hint">{{couponRedeemForm.amount ? '填金额时必传 · 最多 3 张' : '选填 · 填金额后必传'}}</text>
+          <text class="amount-hint">此环节尚未产生小票，请拍商品实物图（用作赠分凭证）</text>
         </view>
         <view class="receipt-thumbs">
           <view
@@ -470,7 +471,7 @@
         hover-stay-time="120"
         bindtap="redeemStoreCoupon"
       >{{couponRedeeming ? '核销中…' : '确认核销此礼券'}}</view>
-      <text class="pass-foot-hint" wx:if="{{couponRedeemForm.userCouponId}}">核销后不可撤销；有金额将一并提交积分待审（须附小票）</text>
+      <text class="pass-foot-hint" wx:if="{{couponRedeemForm.userCouponId}}">核销后不可撤销；有金额将一并提交积分待审（须附商品图）</text>
       <text class="pass-foot-hint muted" wx:else>请先点选上方一张可用礼券</text>
       <view class="pass-redeem-spacer"></view>
     </scroll-view>

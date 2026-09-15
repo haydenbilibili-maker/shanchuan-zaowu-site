@@ -193,7 +193,8 @@ async function attachReceiptClaimImages(list) {
 }
 
 /**
- * 门店赠分 / 券核销赠分：从 payload 或 store_purchases 补齐小票附图。
+ * 门店赠分 / 券核销赠分：从 payload 或 store_purchases 补齐赠分凭证附图
+ * （门店现场直接赠分上传小票；券核销环节小票尚未产生，上传的是商品实物图）。
  */
 async function attachStoreGrantImages(list) {
   const rows = Array.isArray(list) ? list : []
