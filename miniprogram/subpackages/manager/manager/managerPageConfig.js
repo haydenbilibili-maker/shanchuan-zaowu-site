@@ -5144,7 +5144,7 @@ const managerPageConfig = {
         hasSku = true
       }
 
-      wx.showLoading({title:'保存…'});
+      wx.showLoading({title:'保存…', mask:true});
       try {
       const productSizeFields = normalizeSkuSizeForSave(
         { sizeL: p.sizeL, sizeW: p.sizeW, sizeH: p.sizeH, sizeText: p.sizeText },
@@ -6121,7 +6121,7 @@ const managerPageConfig = {
     if (!id || !next) {
       return wx.showToast({ title: '参数缺失', icon: 'none' });
     }
-    wx.showLoading({ title: '更新中…' });
+    wx.showLoading({ title: '更新中…', mask: true });
     try {
       const call = await wx.cloud.callFunction({
         name: 'managerShipOrder',
@@ -6602,7 +6602,7 @@ parseRevenueText(e) {
         return wx.showToast({ title: '日期必填', icon: 'none' });
     }
     
-    wx.showLoading({ title: '入账中…' });
+    wx.showLoading({ title: '入账中…', mask: true });
     
     try {
         const sid = storeLedger.normalizeStoreId(
@@ -7740,7 +7740,7 @@ bindSubCatChange(e) {
       return wx.showToast({ title: '订单信息丢失，请重新打开发货', icon: 'none' });
     }
 
-    wx.showLoading({ title: '发货中…' });
+    wx.showLoading({ title: '发货中…', mask: true });
 
     try {
       // 订单备注：带上卡片里正在编辑的值（未保存也会随本次发货写入并发出）
@@ -7888,7 +7888,7 @@ bindSubCatChange(e) {
     const level = this.data.newCatLevel;
     const tree = this.data.categoryManageTree || [];
 
-    wx.showLoading({ title: '添加中…' });
+    wx.showLoading({ title: '添加中…', mask: true });
     try {
       if (level === 2) {
         const parent = tree[this.data.newCatParentIndex];
@@ -8437,7 +8437,7 @@ bindSubCatChange(e) {
       status: g.status || 'active',
       updateTime: Date.now()
     };
-    wx.showLoading({ title: '保存…' });
+    wx.showLoading({ title: '保存…', mask: true });
     try {
       if (this.data.isEditing && this.data.editId) {
         await callStoreContent({
@@ -8582,7 +8582,7 @@ bindSubCatChange(e) {
   async submitCommentReply() {
     const { commentId, content } = this.data.tempCommentReply || {};
     if (!content || !String(content).trim()) return wx.showToast({ title: '请输入回复', icon: 'none' });
-    wx.showLoading({ title: '提交中…' });
+    wx.showLoading({ title: '提交中…', mask: true });
     try {
       const res = await wx.cloud.callFunction({
         name: 'moderateComment',
@@ -8854,7 +8854,7 @@ bindSubCatChange(e) {
   async submitContent() {
     const c = this.data.tempContent;
     if(!c.title) return wx.showToast({title:'标题必填',icon:'none'});
-    wx.showLoading({title:'保存…'});
+    wx.showLoading({title:'保存…', mask:true});
     let img = c.coverImage;
     if(img && !img.startsWith('cloud') && !img.startsWith('http')) {
       const up = await wx.cloud.uploadFile({cloudPath:`content/${Date.now()}.png`,filePath:img});
@@ -9251,7 +9251,7 @@ bindSubCatChange(e) {
   async submitPush() {
     const form = this.data.pushForm;
     this.setData({ pushSending: true, showPushConfirm: false });
-    wx.showLoading({ title: '发送中…' });
+    wx.showLoading({ title: '发送中…', mask: true });
     try {
       const basePayload = {
         action: 'send',
@@ -9341,7 +9341,7 @@ bindSubCatChange(e) {
     if (!content.trim()) {
       return wx.showToast({ title: '请填写回复', icon: 'none' });
     }
-    wx.showLoading({ title: '发送中…' });
+    wx.showLoading({ title: '发送中…', mask: true });
     try {
       const res = await wx.cloud.callFunction({
         name: 'messageAdmin',
