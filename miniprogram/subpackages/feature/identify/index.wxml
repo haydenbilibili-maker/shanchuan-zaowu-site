@@ -10,11 +10,6 @@
     <text class="free-txt">不限次数体验 · 结果仅供参考，请以实物为准</text>
   </view>
 
-  <!-- 合规：照片会传输至第三方大模型服务，须在使用前明确告知 -->
-  <view class="ai-privacy-note">
-    <text class="ai-privacy-txt">照片将发送至第三方 AI 服务（阿里云通义千问）用于识别，仅用于本次鉴定与科普生成；如不希望照片被用于该用途，请勿使用本功能。详见「用户隐私保护政策」。</text>
-  </view>
-
   <view class="hint-block" wx:if="{{!busy}}">
     <text class="hint-title">我猜这是</text>
     <scroll-view scroll-x class="hint-scroll" enable-flex show-scrollbar="{{false}}">
@@ -88,5 +83,11 @@
     <text class="tip-line" wx:for="{{photoTips}}" wx:key="*this">· {{item}}</text>
     <text class="tip-line">· 识别结果可保存到「我的山海图鉴」</text>
   </view>
+
+  <!-- 合规：照片会传输至第三方大模型服务；按产品要求置于页面最下方 -->
+  <view class="ai-privacy-note">
+    <text class="ai-privacy-txt">照片将发送至第三方 AI 服务（阿里云通义千问）用于识别，仅用于本次鉴定与科普生成；如不希望照片被用于该用途，请勿使用本功能。详见「用户隐私保护政策」。</text>
+  </view>
+
   <easter-egg-note id="easterEggNote" />
 </view>

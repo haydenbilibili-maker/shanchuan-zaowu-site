@@ -357,9 +357,9 @@
   flex-shrink: 0;
 }
 
-/* 第三方 AI 处理告知（合规）：与免费横幅同区域，弱化但可读 */
+/* 第三方 AI 处理告知（合规）：置于页面最下方，弱化但可读 */
 .ai-privacy-note {
-  margin: 0 32rpx 16rpx;
+  margin: 32rpx 0 0;
   padding: 16rpx 20rpx;
   border-radius: 12rpx;
   background: rgba(196, 167, 108, 0.06);
