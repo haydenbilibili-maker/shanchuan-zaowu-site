@@ -91,7 +91,18 @@
   </view>
 
   <!-- 主内容区 -->
+  <!-- 整页错误态：分类树或首屏馆藏加载失败（区分「加载失败」与「该品类档案筹备中」） -->
+  <view class="page-error" wx:if="{{pageError}}" style="top: {{headerHeight}}px;">
+    <view class="page-error-mark">
+      <text class="page-error-glyph">山海</text>
+    </view>
+    <text class="page-error-title">馆藏暂时无法抵达</text>
+    <text class="page-error-desc">{{pageErrorMsg}}</text>
+    <view class="page-error-btn" bindtap="onRetryLoad" hover-class="page-error-btn-press" hover-stay-time="80">重新加载</view>
+  </view>
+
   <scroll-view
+    wx:else
     scroll-y
     class="main-scroll"
     style="top: {{headerHeight}}px;"

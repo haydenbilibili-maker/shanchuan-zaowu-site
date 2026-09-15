@@ -134,6 +134,9 @@ Page({
     
     // 加载状态
     loading: true,
+    /** 关键内容全部加载失败时的整页错误态（可重试），区别于"内容为空" */
+    pageError: false,
+    pageErrorMsg: '',
     loadingBanners: true,
     loadingCategories: true,
     loadingFramers: true,
@@ -513,12 +516,26 @@ Page({
       // 优先加载关键内容（轮播图和分类）
       const criticalModules = enabledModules.filter(m => ['banners', 'categories', 'recommendations'].includes(m.id));
       if (criticalModules.length > 0) {
-        try {
-          await Promise.all(
-            criticalModules.map(m => this.loadModuleData(m.id))
-          );
-        } catch (e) {
-          console.error('加载关键模块失败:', e);
+        // 逐模块捕获：单个模块失败不应拖垮整页，但**全部失败**说明是网络/服务问题，
+        // 必须给出可重试的错误态，而不是留一个空白首页（原实现只 console.error）。
+        const results = await Promise.all(
+          criticalModules.map(m =>
+            Promise.resolve()
+              .then(() => this.loadModuleData(m.id))
+              .then(() => true)
+              .catch(err => {
+                console.error(`加载关键模块失败(${m.id}):`, err);
+                return false
+              })
+          )
+        );
+        if (!results.some(Boolean)) {
+          this.setData({
+            pageError: true,
+            pageErrorMsg: '首页内容加载失败，请检查网络后重试',
+          });
+        } else {
+          this.setData({ pageError: false, pageErrorMsg: '' });
         }
       }
       
@@ -539,7 +556,13 @@ Page({
       }, 300);
     } catch (e) {
       console.error('初始化数据失败:', e);
-      this.setData({ loading: false, loadingConfig: false });
+      // 首页配置都拿不到时，页面基本是空的：给出错误态与重试
+      this.setData({
+        loading: false,
+        loadingConfig: false,
+        pageError: true,
+        pageErrorMsg: '首页加载失败，请检查网络后重试',
+      });
     } finally {
       this._initializing = false;
       wx.nextTick(() => this._setupFeedScrollGuard());
@@ -812,6 +835,27 @@ Page({
       this.refreshNewArrivalsList();
       this.loadDisplayFlags();
       wx.stopPullDownRefresh();
+    });
+  },
+
+  // 错误态「重试」：复用下拉刷新的重置逻辑（清缓存 + 解锁 + 重新初始化）
+  onRetryLoad() {
+    if (this.data.loading) return;
+    this.setData({ pageError: false, pageErrorMsg: '', loading: true, loadingConfig: true });
+    // 与 onPullDownRefresh 保持一致的重置集合，避免命中旧的失败缓存
+    this._initializing = false;
+    this._configLoaded = false;
+    clearCache('HOME_CONFIG');
+    clearCache('BANNERS');
+    clearCache('COLLECTIONS');
+    clearCache('NEW_ARRIVALS');
+    try {
+      const { invalidateContentDisplayFlags } = require('../../utils/contentDisplayFlags');
+      invalidateContentDisplayFlags();
+    } catch (e) { /* ignore */ }
+    this.initData().finally(() => {
+      this.refreshNewArrivalsList();
+      this.loadDisplayFlags();
     });
   },
 

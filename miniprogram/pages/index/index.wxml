@@ -26,7 +26,18 @@
   <!-- 🔧 重写：内容顶部占位，避免内容被导航栏遮挡 -->
   <view class="content-spacer" wx:if="{{!isSinglePage}}" style="height: {{navTop + 44}}px;"></view>
 
-  <scroll-view scroll-y class="main-scroll" bindscroll="onPageScroll" enable-back-to-top>
+  <!-- 整页错误态：关键内容全部加载失败时替换内容区（区分「加载失败」与「内容为空」） -->
+  <view class="page-error" wx:if="{{pageError}}">
+    <view class="page-error-mark">
+      <text class="page-error-glyph">山海</text>
+    </view>
+    <text class="page-error-title">内容暂时无法抵达</text>
+    <text class="page-error-desc">{{pageErrorMsg}}</text>
+    <view class="page-error-btn" bindtap="onRetryLoad" hover-class="page-error-btn-press" hover-stay-time="80">重新加载</view>
+    <text class="page-error-hint">也可以下拉刷新</text>
+  </view>
+
+  <scroll-view wx:else scroll-y class="main-scroll" bindscroll="onPageScroll" enable-back-to-top>
     
     <!-- 轮播图模块：有直播时首位抢插「直播中」帧；无直播时恢复 baseBanners -->
     <view class="hero-section" wx:if="{{showBanners || (showLive && liveSession && liveSession.pullUrl)}}">

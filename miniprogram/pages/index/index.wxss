@@ -1977,3 +1977,54 @@ page {
 .atelier-card-pro:active .atelier-cta-arrow {
   transform: translateX(6rpx);
 }
+/* ===== 整页错误态（关键内容全部加载失败）===== */
+/* 与 collection-detail 的 .cd-state 保持同一视觉语言 */
+.page-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 220rpx 60rpx 120rpx;
+}
+.page-error-mark {
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: 50%;
+  border: 1rpx solid var(--brass-400, #C4A76C);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: .55;
+}
+.page-error-glyph {
+  font-family: var(--font-brand, inherit);
+  font-size: 30rpx;
+  letter-spacing: .12em;
+  color: var(--brass-400, #C4A76C);
+}
+.page-error-title {
+  margin-top: 44rpx;
+  font-size: 32rpx;
+  color: var(--color-text-primary);
+}
+.page-error-desc {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.page-error-btn {
+  margin-top: 44rpx;
+  padding: 18rpx 60rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid var(--brass-400, #C4A76C);
+  font-size: 26rpx;
+  color: var(--brass-400, #C4A76C);
+}
+.page-error-btn-press { opacity: .7; }
+.page-error-hint {
+  margin-top: 24rpx;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}

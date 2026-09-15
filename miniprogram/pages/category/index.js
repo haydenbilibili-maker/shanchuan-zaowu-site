@@ -108,6 +108,9 @@ Page({
     contentTotal: 0,
     orphanTotal: 0,
     listLoading: true,
+    /** 分类树/首屏馆藏加载失败时的整页错误态（可重试），区别于「该品类档案筹备中」 */
+    pageError: false,
+    pageErrorMsg: '',
     loadingMore: false,
     contentSkip: 0,
     productSkip: 0,
@@ -390,7 +393,12 @@ Page({
       this.loadFeed(true);
     } catch (err) {
       console.error('loadCategories', err);
-      this.setData({ listLoading: false });
+      // 分类树都拿不到 → 页面无可操作内容，给出可重试的错误态而非静默空白
+      this.setData({
+        listLoading: false,
+        pageError: true,
+        pageErrorMsg: '分类信息加载失败，请检查网络后重试',
+      });
     }
   },
 
@@ -694,15 +702,34 @@ Page({
     } catch (err) {
       console.error('loadFeed', err);
       if (gen !== (this._feedGen || 0)) return;
-      this.setData({ listLoading: false, loadingMore: false });
-      wx.showToast({
-        title: err.message && err.message.length < 20 ? err.message : '馆藏加载失败，请检查云环境',
-        icon: 'none',
-        duration: 3000
+      const firstScreen = !!reset;
+      this.setData({
+        listLoading: false,
+        loadingMore: false,
+        // 首屏失败 = 页面基本空白，用整页错误态；翻页失败只需 toast，不该掀掉已有内容
+        ...(firstScreen
+          ? { pageError: true, pageErrorMsg: '馆藏加载失败，请检查网络后重试' }
+          : {}),
       });
+      if (!firstScreen) {
+        wx.showToast({
+          title: err.message && err.message.length < 20 ? err.message : '馆藏加载失败，请检查云环境',
+          icon: 'none',
+          duration: 3000
+        });
+      }
     } finally {
       if (gen === (this._feedGen || 0)) this._feedLoading = false;
     }
+  },
+
+  // 错误态「重试」：重置锁定标记后重新走完整的 bootstrap 流程
+  onRetryLoad() {
+    if (this.data.listLoading) return;
+    this.setData({ pageError: false, pageErrorMsg: '', listLoading: true });
+    this._feedLoading = false;
+    this._categoriesBootstrapped = false;
+    this.loadCategories();
   },
 
   getFeedParams() {

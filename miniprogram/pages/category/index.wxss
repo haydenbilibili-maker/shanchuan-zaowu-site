@@ -839,3 +839,55 @@ view, text, image, scroll-view { box-sizing: border-box; }
   0%, 100% { opacity: 0.5; }
   50% { opacity: 0.85; }
 }
+
+/* ===== 整页错误态（分类树/首屏馆藏加载失败）===== */
+/* 与 .main-scroll 同一定位（fixed + top 内联），保证替换内容区时不跳版 */
+.page-error {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 60rpx 120rpx;
+}
+.page-error-mark {
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: 50%;
+  border: 1rpx solid var(--gold, #C4A76C);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: .55;
+}
+.page-error-glyph {
+  font-size: 30rpx;
+  letter-spacing: .12em;
+  color: var(--gold, #C4A76C);
+}
+.page-error-title {
+  margin-top: 44rpx;
+  font-size: 32rpx;
+  color: var(--color-text-primary);
+}
+.page-error-desc {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.page-error-btn {
+  margin-top: 44rpx;
+  padding: 18rpx 60rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid var(--gold, #C4A76C);
+  font-size: 26rpx;
+  color: var(--gold, #C4A76C);
+}
+.page-error-btn-press { opacity: .7; }
