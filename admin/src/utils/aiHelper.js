@@ -55,9 +55,45 @@ function shouldUseAiGateway() {
   return !import.meta.env.DEV
 }
 
-async function fetchViaAiGateway(provider, payload, signal) {
+/**
+ * 站点 Functions 固定在站点根 /api/*；ERP 的 Vite base 是 /admin/，
+ * 因此根路径必须排在前面，避免先打一次 /admin/api/*（405）再回退。
+ */
+function aiGatewayUrls() {
   const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
-  const urls = base && base !== '/' ? [`${base}/api/ai`, '/api/ai'] : ['/api/ai']
+  const urls = ['/api/ai']
+  if (base && base !== '/') urls.push(`${base}/api/ai`)
+  return [...new Set(urls)]
+}
+
+/**
+ * 查询**服务端** AI 网关的密钥配置状态（GET /api/ai）。
+ *
+ * 生产环境的厂商密钥只存在于 Cloudflare Pages 环境变量里，前端打包产物中
+ * 没有任何密钥，因此**不能**用前端 env 判断「是否已配置」——那会让已经配好
+ * 服务端 DEEPSEEK_API_KEY 的环境永远显示「未配置」。必须以网关自述为准。
+ *
+ * @returns {Promise<null | {deepseek:boolean,bailian:boolean,openai:boolean,gemini:boolean}>}
+ */
+export async function fetchAIGatewayStatus() {
+  for (const url of aiGatewayUrls()) {
+    try {
+      const res = await fetch(url, { method: 'GET', cache: 'no-store' })
+      const ctype = res.headers.get('content-type') || ''
+      if (ctype.includes('text/html')) continue // SPA 回退页 = 网关未部署
+      const data = await res.json().catch(() => null)
+      if (data && data.ok && data.configured && typeof data.configured === 'object') {
+        return data.configured
+      }
+    } catch (e) {
+      /* 试下一个地址 */
+    }
+  }
+  return null
+}
+
+async function fetchViaAiGateway(provider, payload, signal) {
+  const urls = aiGatewayUrls()
   let lastErr = null
   for (const url of urls) {
     try {
@@ -248,12 +284,22 @@ export function hasUsableCloudProvider() {
   )
 }
 
-export function getAIProviderConfigStatus() {
+/**
+ * @param {null|{deepseek:boolean,bailian:boolean,openai:boolean,gemini:boolean}} gateway
+ *   服务端网关自述的配置状态（见 fetchAIGatewayStatus）。生产环境必须传入，
+ *   否则会因前端无密钥而误报「未配置」。
+ */
+export function getAIProviderConfigStatus(gateway = null) {
   syncRuntimeApiKeysFromStorage()
   const deepseekKey = DEEPSEEK_API_KEYS[0] || ''
   const runtimeDeepseek = typeof localStorage !== 'undefined'
     ? Boolean(localStorage.getItem(RUNTIME_DEEPSEEK_KEY))
     : false
+  const gw = gateway && typeof gateway === 'object' ? gateway : null
+  const gwDeepseek = Boolean(gw && gw.deepseek)
+  const gwBailian = Boolean(gw && gw.bailian)
+  const gwGemini = Boolean(gw && gw.gemini)
+  const gwOpenai = Boolean(gw && gw.openai)
   return {
     bailian: BAILIAN_API_KEYS.length,
     gemini: GEMINI_API_KEYS.length,
@@ -263,17 +309,29 @@ export function getAIProviderConfigStatus() {
     defaultProvider: DEFAULT_AI_PROVIDER,
     /** 环境变量优先；浏览器备用 Key 可立即生效 */
     envPriority: true,
-    deepseekConfigured: DEEPSEEK_API_KEYS.length > 0,
-    deepseekMaskedKey: deepseekKey ? maskSecret(deepseekKey) : '',
+    /** 服务端网关自述状态（生产环境的真实来源） */
+    gateway: gw,
+    gatewayReachable: Boolean(gw),
+    deepseekGateway: gwDeepseek,
+    deepseekConfigured: DEEPSEEK_API_KEYS.length > 0 || gwDeepseek,
+    deepseekMaskedKey: deepseekKey
+      ? maskSecret(deepseekKey)
+      : gwDeepseek
+        ? '已配置于服务端（密钥不出网关）'
+        : '',
     deepseekModel: DEEPSEEK_MODEL_DEFAULT,
     deepseekBaseUrl: DEEPSEEK_BASE_URL,
-    bailianConfigured: BAILIAN_API_KEYS.length > 0,
+    bailianConfigured: BAILIAN_API_KEYS.length > 0 || gwBailian,
     runtimeDeepseekConfigured: runtimeDeepseek,
     hasUsableCloudProvider: (
       DEEPSEEK_API_KEYS.length > 0 ||
       BAILIAN_API_KEYS.length > 0 ||
       GEMINI_API_KEYS.length > 0 ||
-      OPENAI_API_KEYS.length > 0
+      OPENAI_API_KEYS.length > 0 ||
+      gwDeepseek ||
+      gwBailian ||
+      gwGemini ||
+      gwOpenai
     ),
   }
 }

@@ -624,15 +624,18 @@
               <div class="env-config-status-header">
                 <h4 class="config-title-compact"><el-icon><Key /></el-icon>环境变量 AI 配置</h4>
                 <el-tag :type="aiProviderConfigStatus.deepseekConfigured ? 'success' : 'danger'" size="small">
-                  {{ aiProviderConfigStatus.deepseekConfigured ? 'DeepSeek 已配置' : 'DeepSeek 未配置' }}
+                  {{ aiProviderConfigStatus.deepseekConfigured
+                    ? (aiProviderConfigStatus.deepseekGateway ? 'DeepSeek 已配置（服务端）' : 'DeepSeek 已配置')
+                    : (gatewayChecked ? 'DeepSeek 未配置' : '正在检测…') }}
                 </el-tag>
               </div>
               <div class="env-config-grid">
                 <div class="env-config-row"><span class="env-label">默认 Provider</span><span class="env-value">{{ aiProviderConfigStatus.defaultProvider || '—' }}</span></div>
-                <div class="env-config-row"><span class="env-label">DeepSeek Key</span><span class="env-value mono">{{ aiProviderConfigStatus.deepseekMaskedKey || '未设置服务端 DEEPSEEK_API_KEY' }}</span></div>
+                <div class="env-config-row"><span class="env-label">DeepSeek Key</span><span class="env-value mono">{{ aiProviderConfigStatus.deepseekMaskedKey || (gatewayChecked ? '未设置服务端 DEEPSEEK_API_KEY' : '正在检测…') }}</span></div>
+                <div class="env-config-row"><span class="env-label">配置来源</span><span class="env-value">{{ aiProviderConfigStatus.deepseekGateway ? 'Cloudflare Pages 环境变量（经 /api/ai 网关）' : (aiProviderConfigStatus.deepseek > 0 ? '前端环境变量（仅开发）' : '—') }}</span></div>
                 <div class="env-config-row"><span class="env-label">模型</span><span class="env-value">{{ aiProviderConfigStatus.deepseekModel || 'deepseek-chat' }}</span></div>
                 <div class="env-config-row"><span class="env-label">Base URL</span><span class="env-value mono">{{ aiProviderConfigStatus.deepseekBaseUrl || 'https://api.deepseek.com' }}</span></div>
-                <div class="env-config-row"><span class="env-label">其他 Key</span><span class="env-value">百炼 {{ aiProviderConfigStatus.bailian }} / Gemini {{ aiProviderConfigStatus.gemini }} / OpenAI {{ aiProviderConfigStatus.openai }}</span></div>
+                <div class="env-config-row"><span class="env-label">其他 Key</span><span class="env-value">百炼 {{ aiProviderConfigStatus.bailian }}{{ aiProviderConfigStatus.gateway?.bailian ? '（服务端）' : '' }} / Gemini {{ aiProviderConfigStatus.gemini }}{{ aiProviderConfigStatus.gateway?.gemini ? '（服务端）' : '' }} / OpenAI {{ aiProviderConfigStatus.openai }}{{ aiProviderConfigStatus.gateway?.openai ? '（服务端）' : '' }}</span></div>
               </div>
               <p class="env-config-tip">
                 本地：在 <code>admin/.env</code> 填写后重启 <code>npm run dev:admin</code>。
@@ -795,7 +798,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor, SwitchButton, Refresh, Box, Check, Cpu, Connection, Cloudy, Setting, Plus, Edit, Delete, Link, Key, InfoFilled } from '@element-plus/icons-vue'
 import { marked } from 'marked'
-import { callGeminiAPI, streamGeminiAPI, buildConversationHistory, getAIProviderConfigStatus, isAbortError, syncRuntimeApiKeysFromStorage, setRuntimeDeepSeekKey, hasUsableCloudProvider } from '../utils/aiHelper'
+import { callGeminiAPI, streamGeminiAPI, buildConversationHistory, getAIProviderConfigStatus, fetchAIGatewayStatus, isAbortError, syncRuntimeApiKeysFromStorage, setRuntimeDeepSeekKey, hasUsableCloudProvider } from '../utils/aiHelper'
 import { aiFeatureCategories, aiFeatureComponents, aiFeatures, findAiFeature, capabilityTagType } from '../data/aiFeatureRegistry'
 import OpenClawVirtualStaff from './ai/OpenClawVirtualStaff.vue'
 import { waitForVoices, selectBestVoice, createOptimizedUtterance } from '../utils/ttsHelper'
@@ -816,13 +819,30 @@ const recentFeatureIds = ref([])
 const recentTasks = ref([])
 
 const providerStatusTick = ref(0)
+/**
+ * 服务端网关自述的密钥配置状态（GET /api/ai）。
+ * 生产环境密钥只存在于 Cloudflare Pages 环境变量，前端包内没有任何密钥，
+ * 因此「是否已配置」必须问网关——否则配好了服务端 DEEPSEEK_API_KEY 也会显示「未配置」。
+ */
+const gatewayConfig = ref(null)
+const gatewayChecked = ref(false)
 const refreshProviderStatus = () => {
   syncRuntimeApiKeysFromStorage()
   providerStatusTick.value += 1
 }
+const loadGatewayConfig = async () => {
+  try {
+    gatewayConfig.value = (await fetchAIGatewayStatus()) || null
+  } catch (e) {
+    gatewayConfig.value = null
+  } finally {
+    gatewayChecked.value = true
+    providerStatusTick.value += 1
+  }
+}
 const aiProviderConfigStatus = computed(() => {
   providerStatusTick.value
-  return getAIProviderConfigStatus()
+  return getAIProviderConfigStatus(gatewayConfig.value)
 })
 const runtimeDeepseekDraft = ref('')
 const saveRuntimeDeepseekKey = () => {
@@ -840,6 +860,9 @@ const aiProviderConfigHint = computed(() => {
   const s = aiProviderConfigStatus.value
   const cloudKeys = s.bailian + s.gemini + s.openai + s.deepseek
   if (s.deepseekConfigured) {
+    if (s.deepseekGateway) {
+      return `默认 Provider：${s.defaultProvider}。DeepSeek 已配置于服务端环境变量，经 /api/ai 网关调用（密钥不进入前端包，模型 ${s.deepseekModel}）。`
+    }
     return `默认 Provider：${s.defaultProvider}。DeepSeek 已从环境变量加载（${s.deepseek} 个 Key，模型 ${s.deepseekModel}）。浏览器备用接口为次优先。`
   }
   if (s.bailian > 0) {
@@ -1499,6 +1522,8 @@ const handleAddApiClick = async () => {
 onMounted(() => {
   loadApiConfigList()
   refreshProviderStatus()
+  // 服务端网关自述的密钥状态才是生产环境的真实来源
+  loadGatewayConfig()
 })
 
 const categories = aiFeatureCategories
