@@ -1,0 +1,286 @@
+<wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
+<view class="page" wx:if="{{ready && !expired && !invalid}}">
+  <!-- 送礼人：等待 / 回执态（不进开盒仪式） -->
+  <block wx:if="{{isSender}}">
+    <view class="sender-stage phase-{{senderPhase}}">
+      <view class="sender-seal" aria-hidden="true">
+        <view class="sender-seal-ring"></view>
+        <text class="sender-seal-glyph">{{senderPhase === 'waiting_open' || senderPhase === 'waiting_pickup' ? '待' : (senderPhase === 'expired' ? '逾' : '启')}}</text>
+      </view>
+      <text class="stage-over">{{senderOverline}}</text>
+      <text class="stage-title">{{senderTitle}}</text>
+      <text class="sender-desc">{{senderDesc}}</text>
+
+      <view class="specimen sender-specimen" wx:if="{{product}}">
+        <view class="specimen-img-wrap">
+          <image class="specimen-img" src="{{product.image}}" mode="aspectFill" wx:if="{{product.image}}"></image>
+          <protected-badge product="{{product}}" size="xs" corner="bl" />
+        </view>
+        <view class="specimen-meta">
+          <text class="specimen-title">{{product.title}}</text>
+          <text class="specimen-latin" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
+          <text class="specimen-hint">已备妥的藏品</text>
+        </view>
+      </view>
+
+      <view class="actions sender-actions">
+        <button
+          class="btn-primary share-btn"
+          open-type="share"
+          hover-class="btn-primary-press"
+          hover-stay-time="80"
+          wx:if="{{senderCanShare}}"
+        >再把礼笺交给 TA</button>
+        <view
+          class="btn-secondary"
+          hover-class="btn-secondary-press"
+          hover-stay-time="80"
+          bindtap="onSenderNudge"
+          wx:if="{{senderCanNudge}}"
+        >再提醒一声</view>
+        <view
+          class="btn-secondary"
+          hover-class="btn-secondary-press"
+          hover-stay-time="80"
+          bindtap="goSenderProgress"
+          wx:if="{{senderPhase === 'address_done' || senderPhase === 'claimed' || senderPhase === 'expired' || senderPhase === 'ship_path' || senderPhase === 'waiting_address' || senderPhase === 'waiting_open' || senderPhase === 'waiting_pickup'}}"
+        >查看礼赠进度</view>
+        <view class="btn-ghost" bindtap="later">稍后再看</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 礼盒启封仪式（仅收件人 / 访客） -->
+  <block wx:else>
+  <view
+    class="box-stage phase-{{ritePhase}} {{sfxMuted ? 'muted' : ''}}"
+    wx:if="{{!revealed}}"
+    bindtap="onOpenBox"
+    bindlongpress="skipCeremony"
+  >
+    <view class="stage-toolbar">
+      <view
+        class="tool-btn"
+        catchtap="toggleSfxMute"
+        aria-role="button"
+        aria-label="{{sfxMuted ? '开启音效' : '静音'}}"
+      >
+        <view class="icon-sound {{sfxMuted ? 'off' : 'on'}}" aria-hidden="true"></view>
+        <text>{{sfxMuted ? '静音' : '音效'}}</text>
+      </view>
+      <view class="tool-skip" catchtap="skipCeremony">直接查看</view>
+    </view>
+
+    <view class="box-scene" aria-hidden="true">
+      <!-- 博物馆暖光 + 底座阴影 -->
+      <view class="box-glow"></view>
+      <view class="box-shadow"></view>
+
+      <!-- 木礼盒：奇珍柜封缄盒 -->
+      <view class="gift-box">
+        <!-- 盒内微露：标本纸礼笺角 -->
+        <view class="box-inner">
+          <view class="inner-letter">
+            <view class="inner-line"></view>
+            <view class="inner-line short"></view>
+            <view class="inner-seal"></view>
+          </view>
+        </view>
+
+        <!-- 盒身 -->
+        <view class="box-body">
+          <view class="box-wood grain-a"></view>
+          <view class="box-wood grain-b"></view>
+          <view class="box-bevel"></view>
+          <view class="box-edge"></view>
+          <view class="box-corner tl"></view>
+          <view class="box-corner tr"></view>
+          <view class="box-corner bl"></view>
+          <view class="box-corner br"></view>
+        </view>
+
+        <!-- 底部铜牌铭文：置于束带之上，完整可读 -->
+        <view class="box-plate">
+          <text class="plate-tagline">把山海带回家</text>
+        </view>
+
+        <!-- 黄铜封带（竖带止于铭牌上方，避免遮字） -->
+        <view class="ribbon-v">
+          <view class="ribbon-sheen"></view>
+        </view>
+        <view class="ribbon-h">
+          <view class="ribbon-sheen"></view>
+        </view>
+
+        <!-- 盒盖（铰链翻开） -->
+        <view class="box-lid">
+          <view class="lid-face">
+            <view class="lid-wood grain-a"></view>
+            <view class="lid-wood grain-b"></view>
+            <view class="lid-bevel"></view>
+            <view class="lid-brass-line"></view>
+            <view class="lid-panel">
+              <text class="lid-panel-en">NATURE'S CREATIONS</text>
+            </view>
+            <view class="lid-inner"></view>
+          </view>
+        </view>
+
+        <!-- 封缄展翅蝴蝶：分包 GIF（浅黄奶油色，路径 subpackages/feature/gift/assets/） -->
+        <view class="brass-butterfly" aria-hidden="true">
+          <view class="butterfly-glow"></view>
+          <image
+            class="butterfly-img"
+            src="/subpackages/feature/gift/assets/gift-butterfly.gif"
+            mode="aspectFit"
+          />
+        </view>
+      </view>
+    </view>
+
+    <view class="stage-copy">
+      <text class="stage-over">SEALED GIFT</text>
+      <text class="stage-title">有人为你备妥一份山海</text>
+      <text class="stage-sub">{{ritePhase === 'idle' ? '轻启礼盒，拆开山海礼笺' : '启封中…'}}</text>
+    </view>
+    <text class="tap-hint">轻触开盒 · 长按可跳过</text>
+  </view>
+
+  <!-- 展笺态 -->
+  <block wx:else>
+    <view class="letter revealed" bindtap="onLetterTap">
+      <view class="letter-watermark" aria-hidden="true"></view>
+      <text class="letter-over">LETTER</text>
+      <text
+        class="letter-to {{letterToShown ? 'shown' : ''}}"
+        wx:if="{{recipientName}}"
+      >写给 · {{recipientName}}</text>
+      <view class="letter-body-wrap">
+        <text class="letter-body {{letterWriting ? 'writing' : ''}}">{{letterBodyShown}}</text><text
+          class="letter-cursor {{showLetterCursor ? 'on' : ''}}"
+          wx:if="{{letterWriting}}"
+          aria-hidden="true"
+        >|</text>
+      </view>
+      <text
+        class="letter-sig {{letterSigReady ? 'shown' : ''}}"
+        wx:if="{{cardSignature && letterSigReady}}"
+      >— {{cardSignature}}</text>
+      <view class="seal-mark" aria-hidden="true">山海</view>
+    </view>
+
+    <!-- 语音：对齐 compose voice-rite / giftVoice 播放器 -->
+    <view class="voice-rite receive" wx:if="{{hasVoice}}">
+      <view class="voice-rite-head">
+        <text class="voice-rite-label">VOICE</text>
+        <text class="voice-rite-hint">TA 留下的声音</text>
+      </view>
+      <view
+        class="voice-play {{voicePlaying ? 'on' : ''}} {{voiceLoading ? 'busy' : ''}}"
+        bindtap="onListenVoice"
+      >
+        <view class="voice-brass {{voicePlaying ? 'pulse' : ''}}"></view>
+        <text wx:if="{{voiceLoading}}">取声中…</text>
+        <text wx:elif="{{voicePlaying}}">暂停</text>
+        <text wx:else>听一听</text>
+        <text class="voice-dur" wx:if="{{voiceDurationLabel}}">{{voiceDurationLabel}}</text>
+      </view>
+    </view>
+
+    <view class="specimen" wx:if="{{product}}">
+      <view class="specimen-img-wrap">
+        <image class="specimen-img" src="{{product.image}}" mode="aspectFill" wx:if="{{product.image}}"></image>
+        <protected-badge product="{{product}}" size="xs" corner="bl" />
+      </view>
+      <view class="specimen-meta">
+        <text class="specimen-title">{{product.title}}</text>
+        <text class="specimen-latin" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
+        <text class="specimen-price" wx:if="{{!hidePrice && priceLabel}}">¥{{priceLabel}}</text>
+        <text class="specimen-hint">{{specimenHint}}</text>
+      </view>
+    </view>
+
+    <view class="actions">
+      <!-- 先付后填址 -->
+      <block wx:if="{{isInvite}}">
+        <view class="share-lock" wx:if="{{needFriendShare}}">
+          <text class="share-lock-title">礼笺可先读</text>
+          <text class="share-lock-desc">收下需通过好友分享的礼笺链接进入。朋友圈旧卡如无法收下，请对方再转发一次。</text>
+        </view>
+        <block wx:else>
+          <view class="btn-primary" bindtap="accept" wx:if="{{!accepted}}">收下这份山海</view>
+          <view class="btn-primary" bindtap="goAddress" wx:elif="{{!addressDone}}">留下收件去处</view>
+          <view class="addr-done" wx:else>
+            <text class="btn-done">去处已记下，即将启程</text>
+            <text class="addr-masked" wx:if="{{phoneMasked}}">联系 · {{phoneMasked}}</text>
+            <text class="addr-masked" wx:if="{{addressMaskedLine}}">妥投 · {{addressMaskedLine}}</text>
+          </view>
+          <view class="after-gift-actions" wx:if="{{addressDone}}">
+            <view
+              class="btn-primary"
+              hover-class="btn-primary-press"
+              hover-stay-time="80"
+              bindtap="goSendGift"
+            >我也去送</view>
+            <view
+              class="btn-secondary"
+              hover-class="btn-secondary-press"
+              hover-stay-time="80"
+              bindtap="goHome"
+            >回到主页</view>
+          </view>
+        </block>
+        <view class="btn-ghost" bindtap="later" wx:if="{{!addressDone || needFriendShare}}">稍后再看</view>
+      </block>
+
+      <!-- 门店自提：展示领取码，到店核销 -->
+      <block wx:elif="{{isPickup}}">
+        <view class="pickup-card" wx:if="{{claimCode && !claimClaimed}}">
+          <text class="pickup-label">门店领取码</text>
+          <text class="pickup-code" bindtap="copyClaimCode">{{claimCode}}</text>
+          <text class="pickup-hint">{{pickupHint}}</text>
+          <text class="pickup-copy" bindtap="copyClaimCode">轻触复制</text>
+        </view>
+        <view class="addr-done" wx:else>
+          <text class="btn-done">{{claimClaimed ? '已到店领取' : '门店正在备妥'}}</text>
+          <text class="addr-masked" wx:if="{{pickupHint}}">{{pickupHint}}</text>
+        </view>
+        <view class="btn-ghost" bindtap="later">稍后再看</view>
+      </block>
+
+      <!-- 直寄 / 寄给自己：礼笺只读 -->
+      <block wx:else>
+        <view class="addr-done">
+          <text class="btn-done">礼笺已拆开</text>
+          <text class="addr-masked">藏品正按既定去处启程，无需再填地址。</text>
+        </view>
+        <view class="btn-ghost" bindtap="later">稍后再看</view>
+      </block>
+    </view>
+  </block>
+  </block>
+</view>
+
+<view class="page checking" wx:elif="{{expired}}">
+  <view class="hero-plate">
+    <text class="overline">EXPIRED</text>
+    <text class="title">邀约已过期</text>
+    <text class="desc">这份心意的期限已至。若仍想送出，需由赠予者重新从柜中备妥。</text>
+  </view>
+  <view class="btn-ghost state-cta" bindtap="later">回到首页</view>
+</view>
+
+<view class="page checking" wx:elif="{{invalid}}">
+  <view class="state-block">
+    <text class="state-title">礼笺未能开启</text>
+    <text class="muted">{{errorMsg || '链接已失效，或这份礼已另有去处'}}</text>
+    <view class="btn-ghost state-cta" bindtap="later">回到首页</view>
+  </view>
+</view>
+
+<view class="page checking" wx:else>
+  <view class="state-block">
+    <view class="state-seal" aria-hidden="true"></view>
+    <text class="muted">礼笺正从柜中取出…</text>
+  </view>
+</view>

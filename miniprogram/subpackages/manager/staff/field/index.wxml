@@ -1,0 +1,679 @@
+<view class="page-boot" wx:if="{{!ready}}">
+  <text class="boot-en">ON-SITE SERVICE</text>
+  <text class="boot-cn">门店现场服务</text>
+  <text class="boot-hint">校验权限中…</text>
+</view>
+
+<view class="container" wx:elif="{{ready}}">
+
+  <!-- 头部：角色 + 门店 + 今日汇总 -->
+  <view class="header">
+    <view class="header-top">
+      <view class="brand-group">
+        <text class="en">ON-SITE SERVICE</text>
+        <text class="cn">门店现场服务</text>
+      </view>
+      <view class="role-badge">
+        <text>{{roleText}}{{staffName ? ' · ' + staffName : ''}}</text>
+      </view>
+    </view>
+
+    <picker class="store-picker" mode="selector" range="{{storeNames}}" value="{{storeIndex}}" bindchange="onStoreChange">
+      <view class="picker-inner" hover-class="picker-press" hover-stay-time="100">
+        <text class="picker-label">当前门店</text>
+        <text class="picker-value">{{storeName}}</text>
+        <text class="picker-arrow">切换</text>
+      </view>
+    </picker>
+
+    <view class="summary-card">
+      <view class="sum-item">
+        <text class="sum-val">{{summary.count}}</text>
+        <text class="sum-label">今日笔数</text>
+      </view>
+      <view class="sum-divider"></view>
+      <view class="sum-item">
+        <text class="sum-val">¥{{summary.amount}}</text>
+        <text class="sum-label">今日金额</text>
+      </view>
+      <view class="sum-divider"></view>
+      <view class="sum-item">
+        <text class="sum-val gold">{{summary.points}}</text>
+        <text class="sum-label">已发积分</text>
+      </view>
+      <view class="sum-divider"></view>
+      <view class="sum-item">
+        <text class="sum-val">{{summary.cap > 0 ? summary.remaining : '不限'}}</text>
+        <text class="sum-label">剩余额度</text>
+      </view>
+    </view>
+    <text class="rule-hint">{{ruleText}}</text>
+    <text class="rule-hint muted">金额仅作凭据，不自动入财务账本</text>
+    <view class="header-tools">
+      <view class="signal-legend header-legend">
+        <view class="signal-legend-item"><view class="signal-light blink"></view><text class="signal-legend-text">绿成功</text></view>
+        <view class="signal-legend-item"><view class="signal-light warn"></view><text class="signal-legend-text">黄待办</text></view>
+        <view class="signal-legend-item"><view class="signal-light danger"></view><text class="signal-legend-text">红失败</text></view>
+        <view class="signal-legend-item"><view class="signal-light lamp-muted"></view><text class="signal-legend-text">灰空闲</text></view>
+      </view>
+      <view class="quick-link" hover-class="quick-link-press" hover-stay-time="100" bindtap="goApprovals">我的审批</view>
+    </view>
+  </view>
+
+  <!-- Tab：0 消费赠分 | 1 核销 | 2 流水 | 3 到店 -->
+  <view class="tab-bar">
+    <view class="tab {{curTab===0?'active':''}}" hover-class="tab-press" hover-stay-time="100" bindtap="switchTab" data-idx="0">消费赠分</view>
+    <view class="tab {{curTab===1?'active':''}}" hover-class="tab-press" hover-stay-time="100" bindtap="switchTab" data-idx="1">核销</view>
+    <view class="tab {{curTab===2?'active':''}}" hover-class="tab-press" hover-stay-time="100" bindtap="switchTab" data-idx="2">流水</view>
+    <view class="tab {{curTab===3?'active':''}}" hover-class="tab-press" hover-stay-time="100" bindtap="switchTab" data-idx="3">到店</view>
+  </view>
+
+  <!-- 主 CTA：紧跟 Tab 下方（文档流），四 Tab 共用同一节点；弹层 / 赠分录入时隐藏 -->
+  <view
+    class="scan-cta"
+    wx:if="{{!showMemberPassResult && !showCouponRedeemResult && !showBookingVerifyResult && !showPickupConfirm && !showPickupVerifyResult && !(curTab===0 && member)}}"
+  >
+    <view
+      class="btn-primary big scan-cta-btn"
+      hover-class="btn-primary-press"
+      hover-stay-time="120"
+      bindtap="handleScan"
+      data-purpose="verify"
+    >扫顾客会员码</view>
+    <text class="scan-cta-hint">也可识别门店自取码、预约票、礼券与礼赠</text>
+  </view>
+
+  <!-- Tab 0 消费赠分 -->
+  <block wx:if="{{curTab===0}}">
+    <view class="section scan-fail" wx:if="{{scanFail && scanFail.purpose === 'grant'}}">
+      <text class="row-title">{{scanFail.title}}</text>
+      <text class="row-sub">{{scanFail.msg}}</text>
+      <view class="btn-outline" bindtap="retryScan">再扫一次</view>
+    </view>
+
+    <view class="section verify-last" wx:if="{{lastGrant}}">
+      <view class="verify-last-row">
+        <view class="signal-light {{lastGrant.ok ? 'blink' : 'danger'}}"></view>
+        <view class="row-main">
+          <text class="row-title">{{lastGrant.title}}</text>
+          <text class="row-sub" wx:if="{{lastGrant.sub}}">{{lastGrant.sub}}</text>
+        </view>
+        <text class="verify-badge {{lastGrant.ok ? 'ok' : 'warn'}}">{{lastGrant.badge}}</text>
+      </view>
+    </view>
+    <view class="section" wx:if="{{!member}}">
+      <view class="fallback-block">
+        <text class="fallback-title">扫码不便时，用手机号后 4 位查找</text>
+        <view class="phone-row">
+          <input class="input" type="number" maxlength="4" placeholder="后 4 位" placeholder-class="ph"
+                 value="{{phoneTail}}" bindinput="onPhoneTailInput" />
+          <view class="btn-outline" bindtap="searchByPhone">查找</view>
+        </view>
+      </view>
+
+      <view class="candidates" wx:if="{{candidates.length}}">
+        <view class="candidate" wx:for="{{candidates}}" wx:key="openid" hover-class="candidate-press" hover-stay-time="100" bindtap="pickCandidate" data-openid="{{item.openid}}">
+          <view class="row-main">
+            <text class="row-title">{{item.nickName}}</text>
+            <text class="row-sub">{{item.memberNo}} · {{item.phoneMasked}}</text>
+          </view>
+          <text class="row-side">门店累计 ¥{{item.storeSpendTotal}}</text>
+        </view>
+      </view>
+    </view>
+
+    <block wx:if="{{member}}">
+      <view class="section member-card">
+        <view class="member-head">
+          <view class="row-main">
+            <text class="member-name">{{member.nickName}}</text>
+            <text class="row-sub">{{member.memberNo}}{{member.phoneMasked ? ' · ' + member.phoneMasked : ''}}</text>
+          </view>
+          <text class="link" bindtap="resetMember">重选</text>
+        </view>
+        <view class="member-stats">
+          <view class="ms-item"><text class="ms-val gold">{{member.points}}</text><text class="ms-label">当前积分</text></view>
+          <view class="ms-item"><text class="ms-val">¥{{member.storeSpendTotal}}</text><text class="ms-label">门店累计</text></view>
+          <view class="ms-item"><text class="ms-val">¥{{member.onlineSpendTotal || 0}}</text><text class="ms-label">线上累计</text></view>
+          <view class="ms-item"><text class="ms-val">{{member.storePointsTotal || 0}}</text><text class="ms-label">累计赠分</text></view>
+        </view>
+        <view class="member-stats-note" wx:if="{{member.platformSpendTotal > 0}}">平台订单累计 ¥{{member.platformSpendTotal}}</view>
+      </view>
+
+      <view class="section">
+        <view class="field">
+          <text class="field-label">实收金额（元）<text class="req">*</text></text>
+          <input class="input" type="digit" placeholder="如 2500" placeholder-class="ph"
+                 value="{{grantForm.amount}}" bindinput="onGrantInput" data-field="amount" />
+          <text class="field-error" wx:if="{{amountError}}">{{amountError}}</text>
+        </view>
+        <view class="field">
+          <text class="field-label">小票号 / POS 流水号</text>
+          <input class="input" placeholder="留空则按本次录入去重" placeholder-class="ph"
+                 value="{{grantForm.receiptNo}}" bindinput="onGrantInput" data-field="receiptNo" />
+        </view>
+        <view class="field">
+          <text class="field-label">备注</text>
+          <input class="input" placeholder="选填，≤200 字" placeholder-class="ph"
+                 value="{{grantForm.remark}}" bindinput="onGrantInput" data-field="remark" />
+        </view>
+
+        <view class="preview-box" wx:if="{{previewPoints !== null}}">
+          <text class="pv-val">应赠 {{previewPoints}} 积分</text>
+          <text class="pv-note {{quotaOk ? '' : 'warn'}}">{{previewMsg}}</text>
+        </view>
+        <view class="preview-box warn-box" wx:elif="{{previewMsg}}">
+          <text class="pv-note warn">{{previewMsg}}</text>
+        </view>
+
+        <view class="btn-row">
+          <view class="btn-ghost {{previewing ? 'disabled' : ''}}" bindtap="previewGrant">试算积分</view>
+          <view class="btn-primary {{previewPoints === null || granting || !quotaOk ? 'disabled' : ''}}" bindtap="submitGrant">{{canDirectGrant ? '确认赠分' : '提交审核'}}</view>
+        </view>
+        <text class="section-note">{{ruleText}}</text>
+      </view>
+    </block>
+  </block>
+
+  <!-- Tab 1 核销（主扫码 CTA 在 Tab 下方，弹层打开时隐藏） -->
+  <block wx:if="{{curTab===1}}">
+    <view class="verify-guide-bar">
+      <text class="verify-guide-text">本店可核 {{verifyScopeText}}</text>
+    </view>
+
+    <view class="section scan-fail" wx:if="{{scanFail && scanFail.purpose !== 'grant'}}">
+      <text class="row-title">{{scanFail.title}}</text>
+      <text class="row-sub">{{scanFail.msg}}</text>
+      <view class="btn-outline" bindtap="retryScan">再扫一次</view>
+    </view>
+
+    <!-- 门店自取：待交付订单（顾客不出示凭证也能当面核对交付） -->
+    <view class="section section-compact" wx:if="{{canVerifyPickup}}">
+      <view class="section-title section-title-tight">
+        <view class="st-left">
+          <view class="signal-light {{pendingPickups.length > 0 ? 'warn' : 'lamp-muted'}}" wx:if="{{!pickupsLoading && !pickupsError}}"></view>
+          <text class="st-cn">待自取订单</text>
+        </view>
+        <text class="st-count">{{pendingPickups.length}}</text>
+      </view>
+
+      <view class="pickup-input-row">
+        <input
+          class="pickup-input"
+          value="{{pickupCodeInput}}"
+          placeholder="手输自取码（或 GIFT:领取码）"
+          placeholder-class="pickup-input-ph"
+          confirm-type="search"
+          bindinput="onPickupCodeInput"
+          bindconfirm="submitPickupCode"
+        />
+        <view class="btn-outline pickup-input-btn" hover-class="btn-outline-press" hover-stay-time="100" bindtap="submitPickupCode">核销</view>
+      </view>
+
+      <view class="empty empty-compact" wx:if="{{pickupsLoading}}">加载中…</view>
+      <view class="empty empty-compact" wx:elif="{{pickupsError}}">
+        <text>{{pickupsError}}</text>
+        <view class="btn-outline" bindtap="loadPendingPickups">重新加载</view>
+      </view>
+      <view class="list" wx:elif="{{pendingPickups.length}}">
+        <view class="row" wx:for="{{pendingPickups}}" wx:key="orderId">
+          <view class="row-main">
+            <text class="row-title">{{item.title}}</text>
+            <text class="row-sub">{{item.orderNo}}{{item.timeText ? ' · ' + item.timeText : ''}}{{item.metaText ? ' · ' + item.metaText : ''}}</text>
+          </view>
+          <view class="row-actions">
+            <text class="verify-badge {{item.statusLabel === '可领取' ? 'approved' : 'pending'}}">{{item.statusLabel}}</text>
+            <view class="btn-outline" catchtap="verifyPickupFromList" data-code="{{item.pickupCode}}">交付</view>
+          </view>
+        </view>
+      </view>
+      <view class="empty empty-compact" wx:else>
+        <text>本店暂无待自取订单</text>
+      </view>
+    </view>
+
+    <view class="section verify-last" wx:if="{{lastVerify}}">
+      <view class="verify-last-row">
+        <view class="signal-light {{lastVerify.ok ? 'blink' : 'danger'}}"></view>
+        <view class="row-main">
+          <text class="kind-label" wx:if="{{lastVerify.kindLabel}}">{{lastVerify.kindLabel}}</text>
+          <text class="row-title">{{lastVerify.title}}</text>
+          <text class="row-sub" wx:if="{{lastVerify.sub}}">{{lastVerify.sub}}</text>
+        </view>
+        <view class="row-actions">
+          <text class="verify-badge {{lastVerify.ok ? 'ok' : 'warn'}}">{{lastVerify.badge}}</text>
+          <view class="btn-outline" wx:if="{{lastVerify.canRetry}}" catchtap="retryLastVerify">再试</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section section-compact">
+      <view class="section-title section-title-tight">
+        <view class="st-left">
+          <view class="signal-light {{bookings.length > 0 ? 'warn' : 'lamp-muted'}}" wx:if="{{!bookingsLoading && !bookingsError}}"></view>
+          <text class="st-cn">待核销预约</text>
+        </view>
+        <text class="st-count">{{bookings.length}}</text>
+      </view>
+      <view class="empty empty-compact" wx:if="{{bookingsLoading}}">加载中…</view>
+      <view class="empty empty-compact" wx:elif="{{bookingsError}}">
+        <text>{{bookingsError}}</text>
+        <view class="btn-outline" bindtap="loadBookings">重新加载</view>
+      </view>
+      <view class="list" wx:elif="{{bookings.length}}">
+        <view class="row" wx:for="{{bookings}}" wx:key="_id">
+          <view class="row-main">
+            <text class="row-title">{{item.title || '到店参观'}}</text>
+            <text class="row-sub">{{item.timeText}}{{item.guestText ? ' · ' + item.guestText : ''}}{{item.ticketCode ? ' · ' + item.ticketCode : ''}}</text>
+          </view>
+          <view class="row-actions">
+            <text class="verify-badge {{item.statusClass}}">{{item.statusLabel}}</text>
+            <view class="btn-outline" catchtap="verifyBooking" data-id="{{item._id}}">核销</view>
+          </view>
+        </view>
+      </view>
+      <view class="empty empty-compact" wx:else>
+        <text>本店暂无待核销预约</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- Tab 2 流水 -->
+  <block wx:if="{{curTab===2}}">
+    <view class="section">
+      <view class="summary-card mini">
+        <view class="sum-item"><text class="sum-val">{{mineSummary.count}}</text><text class="sum-label">我今日笔数</text></view>
+        <view class="sum-divider"></view>
+        <view class="sum-item"><text class="sum-val gold">{{mineSummary.points}}</text><text class="sum-label">我今日发分</text></view>
+        <view class="sum-divider"></view>
+        <view class="sum-item"><text class="sum-val">¥{{mineSummary.amount}}</text><text class="sum-label">我今日金额</text></view>
+      </view>
+      <text class="section-note">{{canRevoke ? '显示本店全部流水，撤销请在审批中心 · 积分流水中操作' : '仅显示我录入的记录，撤销需店长处理'}}</text>
+      <view class="btn-outline" wx:if="{{canRevoke}}" bindtap="goStorePoints">打开积分流水</view>
+    </view>
+
+    <view class="section">
+      <view class="list">
+        <view class="record" wx:for="{{records}}" wx:key="_id" hover-class="record-press" hover-stay-time="80">
+          <view class="rec-top">
+            <text class="rec-member">{{item.memberName || item.memberNo}}</text>
+            <view class="rec-aside">
+              <text class="rec-points {{item.status === 'revoked' || item.status === 'rejected' ? 'muted' : 'gold'}}">+{{item.pointsGranted}}</text>
+              <text class="rec-status {{item.status}}">{{item.statusText}}</text>
+            </view>
+          </view>
+          <view class="rec-bottom">
+            <text class="rec-meta">¥{{item.amount}} · {{item.timeText}}{{item.receiptNo ? ' · ' + item.receiptNo : ''}}</text>
+          </view>
+          <text class="rec-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
+        </view>
+      </view>
+      <view class="empty" wx:if="{{records.length === 0 && !recordsLoading}}">暂无流水</view>
+    </view>
+  </block>
+
+  <!-- Tab 3 到店 -->
+  <block wx:if="{{curTab===3}}">
+    <view class="section">
+      <view class="section-title"><text class="st-cn">今日到店签到</text></view>
+      <view class="summary-card mini" wx:if="{{!visitStatsError}}">
+        <view class="sum-item"><text class="sum-val gold">{{visitStats.storeCount || 0}}</text><text class="sum-label">{{storeName}}</text></view>
+        <view class="sum-divider"></view>
+        <view class="sum-item"><text class="sum-val">{{visitStats.total || 0}}</text><text class="sum-label">全部门店</text></view>
+      </view>
+      <view class="empty" wx:if="{{visitStatsError}}">{{visitStatsError}}</view>
+      <text class="section-note">顾客在门店页签到后计入，同一顾客同一门店每日只计一次</text>
+    </view>
+  </block>
+
+  <view class="footer">
+    <text class="cr-cn">山海造物</text>
+    <text class="cr-en">NATURE'S CREATIONS</text>
+  </view>
+</view>
+
+<!-- 会员码核验结果：主路径可核销门店券 -->
+<!-- catchtouchmove 只挡遮罩穿透；弹层本体可滚区域不嵌套 scroll-view -->
+<view class="mask {{memberPassClosing ? 'is-closing' : ''}}" wx:if="{{showMemberPassResult}}" bindtap="closeMemberPassResult">
+  <view class="mask-blocker" catchtouchmove="noop" catchtap="closeMemberPassResult"></view>
+  <view class="modal modal-pass {{memberPassClosing ? 'is-closing' : ''}}" catchtap="noop">
+    <!-- 顶栏：类型说明 + 信号灯状态（固定） -->
+    <view class="pass-head">
+      <text class="kind-label">{{memberPassResult.kindLabel || '会员码核验 · 不消耗、不入场'}}</text>
+      <view class="modal-title-row">
+        <view class="signal-light {{memberPassResult.valid ? 'blink' : 'danger'}}"></view>
+        <text class="modal-title {{memberPassResult.valid ? 'ok' : 'no'}}">{{memberPassResult.msg}}</text>
+      </view>
+    </view>
+
+    <!-- 核销态：单一 scroll-view（券+金额+小票+确认），JS 写入 px 高度，保证可滑可选 -->
+    <scroll-view
+      wx:if="{{memberPassResult.valid && memberPassStep === 'redeem'}}"
+      class="pass-redeem-scroll"
+      scroll-y="{{true}}"
+      enhanced="{{false}}"
+      show-scrollbar="{{true}}"
+      style="{{passRedeemScrollStyle}}"
+    >
+      <view class="pass-identity is-compact">
+        <text class="modal-name">{{memberPassResult.nickName}}</text>
+        <view class="pass-compact-meta">
+          <text class="pass-compact-chip level">{{memberPassResult.levelName || '会员'}}</text>
+          <text class="pass-compact-dot" aria-hidden="true">·</text>
+          <text class="pass-compact-chip">{{memberPassResult.discountText || '原价'}}</text>
+          <text class="pass-compact-dot" aria-hidden="true">·</text>
+          <text class="pass-compact-chip mono">{{memberPassResult.memberNo || '—'}}</text>
+        </view>
+      </view>
+
+      <view class="coupon-redeem-panel">
+        <view class="coupon-panel-head">
+          <view
+            class="coupon-panel-back"
+            hover-class="coupon-panel-back-press"
+            bindtap="backToPassSummary"
+          >‹ 返回</view>
+          <view class="coupon-panel-head-main">
+            <text class="coupon-panel-title">{{memberPassResult.couponPrefill ? '确认核销此礼券' : '选择门店礼券'}}</text>
+            <text class="coupon-panel-kicker" wx:if="{{memberPassResult.couponPrefill}}">顾客已选定 · 可改选其他礼券 · 核销后不可撤销</text>
+            <text class="coupon-panel-kicker" wx:else>共 {{memberPassResult.storeCoupons.length}} 张 · 核销后不可撤销</text>
+          </view>
+        </view>
+
+        <view class="coupon-pick-list">
+          <view
+            class="coupon-pick {{couponRedeemForm.userCouponId===item._id?'on':''}}"
+            wx:for="{{memberPassResult.storeCoupons}}"
+            wx:key="_id"
+            hover-class="coupon-pick-press"
+            bindtap="pickStoreCoupon"
+            data-id="{{item._id}}"
+            data-title="{{item.title}}"
+            data-value="{{item.value}}"
+            data-min="{{item.minSpend}}"
+          >
+            <view class="cp-radio">
+              <view class="cp-radio-dot" wx:if="{{couponRedeemForm.userCouponId===item._id}}"></view>
+            </view>
+            <view class="cp-body">
+              <text class="cp-title">{{item.title}}</text>
+              <text class="cp-meta">满{{item.minSpend || 0}}可用 · {{item.channelLabel}}</text>
+            </view>
+            <view class="cp-value">
+              <text class="cp-value-num">{{item.value}}</text>
+              <text class="cp-value-unit">元</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="amount-field {{couponRedeemForm.userCouponId ? '' : 'is-idle'}}">
+        <view class="amount-field-head">
+          <text class="amount-label">消费金额</text>
+          <text class="amount-hint" wx:if="{{couponRedeemForm.userCouponId}}">
+            {{couponRedeemForm.minSpend > 0 ? ('门槛满 ¥' + couponRedeemForm.minSpend) : '无门槛，可留空'}}
+          </text>
+          <text class="amount-hint" wx:else>请先选择上方礼券</text>
+        </view>
+        <view class="amount-input-wrap {{couponRedeemForm.userCouponId ? '' : 'is-disabled'}}">
+          <text class="amount-prefix">¥</text>
+          <input
+            class="amount-input"
+            type="digit"
+            disabled="{{!couponRedeemForm.userCouponId}}"
+            placeholder="{{couponRedeemForm.minSpend > 0 ? '请输入实付金额' : '选填实付金额'}}"
+            value="{{couponRedeemForm.amount}}"
+            bindinput="onCouponAmountInput"
+            adjust-position="{{true}}"
+            hold-keyboard="{{true}}"
+            cursor-spacing="{{120}}"
+          />
+        </view>
+      </view>
+
+      <view class="receipt-upload {{couponRedeemForm.userCouponId ? '' : 'is-idle'}}">
+        <view class="receipt-upload-head">
+          <text class="amount-label">小票照片</text>
+          <text class="amount-hint">{{couponRedeemForm.amount ? '填金额时必传 · 最多 3 张' : '选填 · 填金额后必传'}}</text>
+        </view>
+        <view class="receipt-thumbs">
+          <view
+            class="receipt-thumb"
+            wx:for="{{couponReceiptPaths}}"
+            wx:key="*this"
+            wx:for-index="idx"
+          >
+            <image
+              class="receipt-thumb-img"
+              src="{{item}}"
+              mode="aspectFill"
+              catchtap="previewCouponReceipt"
+              data-idx="{{idx}}"
+            ></image>
+            <view class="receipt-thumb-x" catchtap="removeCouponReceipt" data-idx="{{idx}}">×</view>
+          </view>
+          <view
+            class="receipt-add {{couponRedeemForm.userCouponId && couponReceiptPaths.length < 3 ? '' : 'is-disabled'}}"
+            wx:if="{{couponReceiptPaths.length < 3}}"
+            hover-class="btn-ghost-press"
+            bindtap="chooseCouponReceipt"
+          >
+            <text class="receipt-add-plus">+</text>
+            <text class="receipt-add-label">上传</text>
+          </view>
+        </view>
+      </view>
+
+      <view
+        class="btn-primary pass-cta {{couponRedeemForm.userCouponId && !couponRedeeming ? '' : 'is-disabled'}}"
+        hover-class="btn-primary-press"
+        hover-stay-time="120"
+        bindtap="redeemStoreCoupon"
+      >{{couponRedeeming ? '核销中…' : '确认核销此礼券'}}</view>
+      <text class="pass-foot-hint" wx:if="{{couponRedeemForm.userCouponId}}">核销后不可撤销；有金额将一并提交积分待审（须附小票）</text>
+      <text class="pass-foot-hint muted" wx:else>请先点选上方一张可用礼券</text>
+      <view class="pass-redeem-spacer"></view>
+    </scroll-view>
+
+    <!-- 摘要 / 失败：中部可滚 + 底栏 CTA -->
+    <block wx:else>
+      <scroll-view
+        class="pass-scroll"
+        scroll-y="{{true}}"
+        enhanced="{{false}}"
+        show-scrollbar="{{false}}"
+        style="{{passRedeemScrollStyle}}"
+      >
+        <block wx:if="{{memberPassResult.valid}}">
+          <view class="pass-identity">
+            <text class="modal-name">{{memberPassResult.nickName}}</text>
+            <view class="pass-id-row">
+              <view class="pass-id-cell">
+                <text class="pass-id-label">会员号</text>
+                <text class="pass-id-value mono">{{memberPassResult.memberNo || '—'}}</text>
+              </view>
+              <view class="pass-id-cell">
+                <text class="pass-id-label">等级</text>
+                <text class="pass-id-value level">{{memberPassResult.levelName || '—'}}</text>
+              </view>
+              <view class="pass-id-cell">
+                <text class="pass-id-label">折扣</text>
+                <text class="pass-id-value discount">{{memberPassResult.discountText || '—'}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="perk-section" wx:if="{{memberPassResult.perks.length}}">
+            <view
+              class="perk-fold {{passPerksExpanded ? 'is-open' : ''}}"
+              hover-class="perk-fold-press"
+              bindtap="togglePassPerks"
+            >
+              <text class="perk-fold-text">会员权益 {{memberPassResult.perks.length}} 项</text>
+              <view class="perk-fold-trail">
+                <text class="perk-fold-action">{{passPerksExpanded ? '收起' : '展开'}}</text>
+                <text class="perk-fold-chevron">›</text>
+              </view>
+            </view>
+            <view class="perk-grid {{passPerksExpanded ? 'is-open' : ''}}">
+              <view class="perk-cell" wx:for="{{memberPassResult.perks}}" wx:key="label">
+                <text class="perk">{{item.label}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="coupon-summary" wx:if="{{!memberPassResult.storeCouponsLoaded}}">
+            <text class="coupon-hint-text">正在查询门店可用礼券…</text>
+          </view>
+          <view class="coupon-summary empty" wx:elif="{{memberPassResult.storeCouponError}}">
+            <text class="coupon-hint-text">{{memberPassResult.storeCouponError}}</text>
+            <view class="btn-outline coupon-retry" hover-class="btn-ghost-press" bindtap="retryLoadStoreCoupons">重新查询</view>
+          </view>
+          <view class="coupon-summary empty" wx:elif="{{!memberPassResult.storeCoupons.length}}">
+            <text class="coupon-hint-text">该会员暂无门店可用礼券</text>
+            <text class="coupon-hint-sub">仅门店 / 门店+线上渠道且未过期的礼券可核销</text>
+          </view>
+        </block>
+
+        <view class="pass-fail-note" wx:elif="{{!memberPassResult.valid}}">
+          <text class="pass-fail-text">{{memberPassResult.expired ? '会员码约 60 秒过期，请让顾客刷新后再扫' : '请确认顾客出示的是有效会员码'}}</text>
+        </view>
+      </scroll-view>
+
+      <view class="pass-foot" wx:if="{{memberPassResult.valid}}">
+        <view class="pass-actions">
+          <view
+            class="btn-primary"
+            wx:if="{{memberPassResult.storeCouponsLoaded && memberPassResult.storeCoupons.length}}"
+            hover-class="btn-primary-press"
+            bindtap="openStoreCouponRedeem"
+          >核销礼券（{{memberPassResult.storeCoupons.length}}）</view>
+          <view
+            class="btn-primary is-disabled"
+            wx:elif="{{!memberPassResult.storeCouponsLoaded}}"
+          >查询可用礼券…</view>
+          <view
+            class="{{memberPassResult.storeCouponsLoaded && memberPassResult.storeCoupons.length ? 'btn-ghost' : 'btn-primary'}}"
+            hover-class="{{memberPassResult.storeCouponsLoaded && memberPassResult.storeCoupons.length ? 'btn-ghost-press' : 'btn-primary-press'}}"
+            bindtap="closeMemberPassResult"
+          >知道了</view>
+        </view>
+      </view>
+      <view class="pass-foot" wx:else>
+        <view class="btn-row pass-fail-actions">
+          <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="closeMemberPassResult">关闭</view>
+          <view class="btn-primary" hover-class="btn-primary-press" bindtap="retryLastVerify">再扫一次</view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>
+
+<!-- 门店券核销结果：遮罩隔离底层；点遮罩或「完成」关闭 -->
+<view class="mask mask-result" wx:if="{{showCouponRedeemResult}}" bindtap="closeCouponRedeemResult" catchtouchmove="noop">
+  <view class="modal modal-result" catchtap="noop">
+    <text class="kind-label">{{couponRedeemResult.kindLabel || '门店礼券 · 已核销'}}</text>
+    <view class="modal-title-row">
+      <view class="signal-light {{couponRedeemResult.titleLamp || (couponRedeemResult.ok ? 'blink' : 'danger')}}"></view>
+      <text class="modal-title {{couponRedeemResult.ok ? 'ok' : 'no'}}">{{couponRedeemResult.title || '核销成功'}}</text>
+    </view>
+    <text class="modal-sub" wx:if="{{couponRedeemResult.sub}}">{{couponRedeemResult.sub}}</text>
+
+    <view class="points-result-row" wx:if="{{couponRedeemResult.pointsTitle}}">
+      <view class="signal-light {{couponRedeemResult.pointsLamp || ''}}" wx:if="{{couponRedeemResult.pointsLamp}}"></view>
+      <view class="signal-light lamp-muted" wx:else></view>
+      <text class="points-result-text {{couponRedeemResult.pointsStatus}}">{{couponRedeemResult.pointsTitle}}</text>
+    </view>
+    <text class="modal-tip tip-warn" wx:if="{{couponRedeemResult.tip}}">{{couponRedeemResult.tip}}</text>
+
+    <view class="btn-row modal-result-actions" wx:if="{{couponRedeemResult.showGrantLink}}">
+      <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="goCouponRedeemGrantTab">去消费赠分补录</view>
+      <view class="btn-primary" hover-class="btn-primary-press" bindtap="closeCouponRedeemResult">完成</view>
+    </view>
+    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" bindtap="closeCouponRedeemResult">完成</view>
+  </view>
+</view>
+
+<!-- 预约票核销结果 -->
+<view class="mask mask-result" wx:if="{{showBookingVerifyResult}}" bindtap="closeBookingVerifyResult" catchtouchmove="noop">
+  <view class="modal modal-result" catchtap="noop">
+    <text class="kind-label">{{bookingVerifyResult.kindLabel || '预约票核销 · 入场消耗'}}</text>
+    <view class="modal-title-row">
+      <view class="signal-light {{bookingVerifyResult.ok ? 'blink' : 'danger'}}"></view>
+      <text class="modal-title {{bookingVerifyResult.ok ? 'ok' : 'no'}}">{{bookingVerifyResult.title}}</text>
+    </view>
+    <text class="modal-name" wx:if="{{bookingVerifyResult.name}}">{{bookingVerifyResult.name}}</text>
+    <text class="modal-sub">{{bookingVerifyResult.bookingTitle}}{{bookingVerifyResult.ticketCode ? ' · ' + bookingVerifyResult.ticketCode : ''}}{{bookingVerifyResult.people ? ' · ' + bookingVerifyResult.people + '人' : ''}}</text>
+    <text class="modal-tip" wx:if="{{bookingVerifyResult.msg}}">{{bookingVerifyResult.msg}}</text>
+    <view class="btn-row modal-result-actions" wx:if="{{bookingVerifyResult.already}}">
+      <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="closeBookingVerifyResult">关闭</view>
+      <view class="btn-primary" hover-class="btn-primary-press" bindtap="requestBookingReverse">申请冲正</view>
+    </view>
+    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" bindtap="closeBookingVerifyResult">知道了</view>
+  </view>
+</view>
+
+<!-- 门店自取：交付二次确认（先核对单号 / 藏品 / 买家尾号，再核销） -->
+<view class="mask mask-result" wx:if="{{showPickupConfirm}}" bindtap="closePickupConfirm" catchtouchmove="noop">
+  <view class="modal modal-result pickup-confirm" catchtap="noop">
+    <text class="kind-label">门店自取 · 交付确认</text>
+    <view class="pc-head">
+      <text class="pc-title">{{pickupConfirm.title}}</text>
+      <text class="pc-count" wx:if="{{pickupConfirm.productCount}}">{{pickupConfirm.productCount}} 件</text>
+    </view>
+    <view class="pc-meta">
+      <view class="pc-row" wx:if="{{pickupConfirm.orderNo}}">
+        <text class="pc-k">订单编号</text>
+        <text class="pc-v">{{pickupConfirm.orderNo}}</text>
+      </view>
+      <view class="pc-row" wx:if="{{pickupConfirm.storeName}}">
+        <text class="pc-k">领取门店</text>
+        <text class="pc-v">{{pickupConfirm.storeName}}</text>
+      </view>
+      <view class="pc-row" wx:if="{{pickupConfirm.buyerPhoneMasked}}">
+        <text class="pc-k">买家手机</text>
+        <text class="pc-v">{{pickupConfirm.buyerPhoneMasked}}</text>
+      </view>
+      <view class="pc-row" wx:if="{{pickupConfirm.payTimeText}}">
+        <text class="pc-k">下单时间</text>
+        <text class="pc-v">{{pickupConfirm.payTimeText}}</text>
+      </view>
+      <view class="pc-row">
+        <text class="pc-k">自取码</text>
+        <text class="pc-v pc-v-mono">{{pickupConfirm.codeText}}</text>
+      </view>
+      <view class="pc-row">
+        <text class="pc-k">当前状态</text>
+        <text class="pc-v pc-v-gold">{{pickupConfirm.statusLabel || '可领取'}}</text>
+      </view>
+    </view>
+    <text class="modal-tip">请当面核对买家手机尾号与件数，确认无误后再交付。</text>
+    <view class="btn-row modal-result-actions">
+      <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="closePickupConfirm">再核对一下</view>
+      <view class="btn-primary {{pickupConfirmBusy ? 'disabled' : ''}}" hover-class="btn-primary-press" bindtap="confirmPickupDelivery">{{pickupConfirmBusy ? '核销中…' : '确认交付'}}</view>
+    </view>
+  </view>
+</view>
+
+<!-- 门店自取核销结果 -->
+<view class="mask mask-result" wx:if="{{showPickupVerifyResult}}" bindtap="closePickupVerifyResult" catchtouchmove="noop">
+  <view class="modal modal-result" catchtap="noop">
+    <text class="kind-label">{{pickupVerifyResult.kindLabel || '门店自取核销'}}</text>
+    <view class="modal-title-row">
+      <view class="signal-light {{pickupVerifyResult.ok ? 'blink' : 'danger'}}"></view>
+      <text class="modal-title {{pickupVerifyResult.ok ? 'ok' : 'no'}}">{{pickupVerifyResult.title}}</text>
+    </view>
+    <text class="modal-name" wx:if="{{pickupVerifyResult.name}}">{{pickupVerifyResult.name}}</text>
+    <text class="modal-sub" wx:if="{{pickupVerifyResult.sub}}">{{pickupVerifyResult.sub}}</text>
+    <text class="modal-sub" wx:if="{{pickupVerifyResult.phone}}">{{pickupVerifyResult.phone}}</text>
+    <text class="modal-sub" wx:if="{{pickupVerifyResult.claimedText}}">{{pickupVerifyResult.claimedText}}</text>
+    <text class="modal-sub" wx:if="{{pickupVerifyResult.codeText}}">自取码 {{pickupVerifyResult.codeText}}</text>
+    <text class="modal-sub modal-sub-brass" wx:if="{{pickupVerifyResult.pointsText}}">{{pickupVerifyResult.pointsText}}</text>
+    <text class="modal-tip {{pickupVerifyResult.ok ? '' : 'tip-warn'}}" wx:if="{{pickupVerifyResult.msg}}">{{pickupVerifyResult.msg}}</text>
+    <view class="btn-row modal-result-actions" wx:if="{{pickupVerifyResult.canRetry}}">
+      <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="closePickupVerifyResult">关闭</view>
+      <view class="btn-primary" hover-class="btn-primary-press" bindtap="retryLastVerify">{{pickupVerifyResult.retryText || '再试一次'}}</view>
+    </view>
+    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" bindtap="closePickupVerifyResult">完成</view>
+  </view>
+</view>

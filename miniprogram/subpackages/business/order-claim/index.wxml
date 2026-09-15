@@ -1,0 +1,218 @@
+<view class="page">
+  <!-- 一屏品牌头 -->
+  <view class="hero fade-in">
+    <view class="hero-rule"></view>
+    <text class="hero-en">ORDER CLAIM</text>
+    <text class="hero-cn">订单认领</text>
+    <text class="hero-desc">门店小票或外部平台订单，均可认领积分。{{receiptClaimRuleText || orderBindRuleText || '按门店赠分规则计分'}}，通常 3 个工作日内审核。</text>
+  </view>
+
+  <!-- 分段切换 -->
+  <view class="seg fade-in" style="animation-delay: 0.06s;" wx:if="{{receiptClaimEnabled || orderBindEnabled}}">
+    <view
+      class="seg-item {{mode === 'receipt' ? 'active' : ''}} {{receiptClaimEnabled ? '' : 'disabled'}}"
+      hover-class="seg-press"
+      hover-stay-time="80"
+      bindtap="switchMode"
+      data-mode="receipt"
+    >
+      <text class="seg-cn">门店小票</text>
+      <text class="seg-en">RECEIPT</text>
+    </view>
+    <view
+      class="seg-item {{mode === 'order' ? 'active' : ''}} {{orderBindEnabled ? '' : 'disabled'}}"
+      hover-class="seg-press"
+      hover-stay-time="80"
+      bindtap="switchMode"
+      data-mode="order"
+    >
+      <text class="seg-cn">外部订单</text>
+      <text class="seg-en">PLATFORM</text>
+    </view>
+  </view>
+
+  <view class="empty-block" wx:elif="{{optionsReady}}">
+    <text class="empty-title">认领暂未开放</text>
+    <text class="empty-desc">门店小票与外部订单认领当前均未开启，请稍后再试或联系店员。</text>
+  </view>
+
+  <!-- 表单区 -->
+  <view class="panel panel-enter" wx:if="{{mode === 'receipt' && receiptClaimEnabled}}">
+    <view class="panel-head">
+      <text class="panel-title">上传小票</text>
+      <text class="panel-hint">清晰拍摄 1–3 张，并填写实付金额</text>
+    </view>
+    <text class="panel-note" wx:if="{{receiptClaimNotice}}">{{receiptClaimNotice}}</text>
+    <text class="panel-rule" wx:if="{{receiptClaimRuleText}}">{{receiptClaimRuleText}}</text>
+
+    <view class="upload-row">
+      <view
+        class="upload-thumb"
+        wx:for="{{receiptLocalPaths}}"
+        wx:key="*this"
+        wx:for-index="idx"
+        hover-class="thumb-press"
+        hover-stay-time="80"
+      >
+        <image src="{{item}}" mode="aspectFill" bindtap="previewReceiptImage" data-idx="{{idx}}"></image>
+        <view class="upload-del" catchtap="removeReceiptImage" data-idx="{{idx}}">×</view>
+      </view>
+      <view
+        class="upload-add"
+        wx:if="{{receiptLocalPaths.length < 3}}"
+        hover-class="thumb-press"
+        hover-stay-time="80"
+        bindtap="chooseReceiptImages"
+      >
+        <text class="upload-plus">+</text>
+        <text class="upload-label">小票照片</text>
+      </view>
+    </view>
+
+    <view class="field-group">
+      <picker mode="selector" range="{{storeNames}}" value="{{receiptStoreIndex}}" bindchange="onReceiptStoreChange">
+        <view class="field" hover-class="field-press" hover-stay-time="80">
+          <text class="field-label">消费门店</text>
+          <text class="field-value">{{storeNames[receiptStoreIndex] || '请选择（选填）'}}</text>
+        </view>
+      </picker>
+      <view class="field field-input">
+        <text class="field-label">实付金额</text>
+        <input
+          class="field-ctrl"
+          type="digit"
+          placeholder="请输入金额（元）"
+          placeholder-class="field-ph"
+          value="{{receiptForm.amount}}"
+          bindinput="onReceiptInput"
+          data-field="amount"
+        />
+      </view>
+      <view class="field field-input">
+        <text class="field-label">备注</text>
+        <input
+          class="field-ctrl"
+          placeholder="选填"
+          placeholder-class="field-ph"
+          value="{{receiptForm.remark}}"
+          bindinput="onReceiptInput"
+          data-field="remark"
+        />
+      </view>
+    </view>
+
+    <view
+      class="btn-submit {{receiptSubmitting ? 'is-loading' : ''}}"
+      hover-class="btn-press"
+      hover-stay-time="100"
+      bindtap="submitReceiptClaim"
+    >
+      <text>{{receiptSubmitting ? '提交中…' : '提交小票申请'}}</text>
+    </view>
+
+    <view class="history" wx:if="{{receiptClaimList.length}}">
+      <view class="history-head">
+        <text class="history-title">申请记录</text>
+        <text class="history-count">{{receiptClaimList.length}}</text>
+      </view>
+      <view class="history-row" wx:for="{{receiptClaimList}}" wx:key="_id">
+        <view class="hr-main">
+          <text class="hr-title">¥{{item.amount}}{{item.storeName ? ' · ' + item.storeName : ''}}</text>
+          <text class="hr-meta">{{item.timeText}}{{item.pointsGranted ? ' · +' + item.pointsGranted + ' 分' : ''}}</text>
+          <text class="hr-reject" wx:if="{{item.status === 'rejected' && item.rejectReason}}">{{item.rejectReason}}</text>
+        </view>
+        <text class="hr-status {{item.statusClass}}">{{item.statusText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel panel-enter" wx:elif="{{mode === 'order' && orderBindEnabled}}">
+    <view class="panel-head">
+      <text class="panel-title">绑定外部订单</text>
+      <text class="panel-hint">抖音 / 淘宝等平台订单号认领积分</text>
+    </view>
+
+    <view class="steps">
+      <text class="step">1 选平台</text>
+      <text class="step-gap">·</text>
+      <text class="step">2 填订单号与金额</text>
+      <text class="step-gap">·</text>
+      <text class="step">3 等待审核</text>
+    </view>
+
+    <text class="panel-note" wx:if="{{orderBindNotice}}">{{orderBindNotice}}</text>
+    <text class="panel-rule" wx:if="{{orderBindRuleText}}">{{orderBindRuleText}}</text>
+
+    <view class="field-group">
+      <picker mode="selector" range="{{orderBindPlatformNames}}" value="{{orderBindPlatformIndex}}" bindchange="onOrderBindPlatformChange">
+        <view class="field" hover-class="field-press" hover-stay-time="80">
+          <text class="field-label">平台</text>
+          <text class="field-value">{{orderBindPlatformNames[orderBindPlatformIndex] || '请选择'}}</text>
+        </view>
+      </picker>
+      <view class="field field-input">
+        <text class="field-label">订单号</text>
+        <input
+          class="field-ctrl"
+          placeholder="外部订单号"
+          placeholder-class="field-ph"
+          value="{{orderBindForm.orderNo}}"
+          bindinput="onOrderBindInput"
+          data-field="orderNo"
+        />
+      </view>
+      <view class="field field-input">
+        <text class="field-label">实付金额</text>
+        <input
+          class="field-ctrl"
+          type="digit"
+          placeholder="请输入金额（元）"
+          placeholder-class="field-ph"
+          value="{{orderBindForm.amount}}"
+          bindinput="onOrderBindInput"
+          data-field="amount"
+        />
+      </view>
+      <view class="field field-input">
+        <text class="field-label">备注</text>
+        <input
+          class="field-ctrl"
+          placeholder="选填"
+          placeholder-class="field-ph"
+          value="{{orderBindForm.remark}}"
+          bindinput="onOrderBindInput"
+          data-field="remark"
+        />
+      </view>
+    </view>
+
+    <view
+      class="btn-submit {{orderBindSubmitting ? 'is-loading' : ''}}"
+      hover-class="btn-press"
+      hover-stay-time="100"
+      bindtap="submitOrderBind"
+    >
+      <text>{{orderBindSubmitting ? '提交中…' : '提交绑定申请'}}</text>
+    </view>
+
+    <view class="history" wx:if="{{orderBindList.length}}">
+      <view class="history-head">
+        <text class="history-title">申请记录</text>
+        <text class="history-count">{{orderBindList.length}}</text>
+      </view>
+      <view class="history-row" wx:for="{{orderBindList}}" wx:key="_id">
+        <view class="hr-main">
+          <text class="hr-title">{{item.platformName}} · {{item.orderNo}}</text>
+          <text class="hr-meta">{{item.timeText}}{{item.amount ? ' · ¥' + item.amount : ''}}{{item.pointsGranted ? ' · +' + item.pointsGranted + ' 分' : ''}}</text>
+          <text class="hr-reject" wx:if="{{item.status === 'rejected' && item.rejectReason}}">{{item.rejectReason}}</text>
+        </view>
+        <text class="hr-status {{item.statusClass}}">{{item.statusText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <text class="footer-cn">山海造物</text>
+    <text class="footer-en">NATURE'S CREATIONS</text>
+  </view>
+</view>

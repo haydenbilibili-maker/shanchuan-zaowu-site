@@ -1,0 +1,20 @@
+<view
+  class="page-nav-back ext-class"
+  style="{{customStyle}}"
+  hover-class="page-nav-back-press"
+  hover-stay-time="80"
+  catchtap="onTap"
+  aria-role="button"
+  aria-label="{{ariaLabel}}"
+>
+  <image
+    wx:if="{{!iconBroken}}"
+    class="page-nav-back-icon"
+    src="{{src}}"
+    mode="aspectFit"
+    binderror="onIconError"
+  />
+  <!-- 图标资源缺失兜底：返回是强导航诉求，绝不能渲染成空热区 -->
+  <text wx:else class="page-nav-back-fallback" aria-hidden="true">‹</text>
+  <text wx:if="{{label}}" class="page-nav-back-label">{{label}}</text>
+</view>

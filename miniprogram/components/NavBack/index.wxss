@@ -1,0 +1,48 @@
+/* 组件内兜底；全局同名类见 app.wxss，便于页面直接引用 image */
+.page-nav-back {
+  min-width: 72rpx;
+  min-height: 72rpx;
+  padding: 0 4rpx;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-md, 16rpx);
+  border: 1px solid transparent;
+}
+
+.page-nav-back-icon {
+  width: 48rpx;
+  height: 48rpx;
+  display: block;
+}
+
+/* 图标缺失时的文字箭头兜底（与 icon 保持同一占位，不跳版） */
+.page-nav-back-fallback {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  line-height: 1;
+  color: var(--brass-400, #C4A76C);
+  font-weight: 400;
+  transform: translateY(-2rpx);
+}
+
+.page-nav-back-label {
+  margin-left: 6rpx;
+  font-size: 26rpx;
+  line-height: 1;
+  color: var(--brass-400, #C4A76C);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.page-nav-back-press {
+  background: rgba(196, 167, 108, 0.08);
+  border-color: var(--color-border, rgba(38, 35, 32, 0.4));
+  opacity: 0.92;
+}

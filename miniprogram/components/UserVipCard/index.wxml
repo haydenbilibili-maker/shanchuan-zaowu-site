@@ -1,0 +1,236 @@
+  <!-- 1. 光感会员卡（可翻转背板 · 淡入切换，避免真机镜像） -->
+  <view class="vip-card-container {{cardFlipped ? 'is-flipped' : ''}}">
+    <view class="vip-card-stage">
+      <!-- 正面：三区热区 — 品牌·翻转 / 身份·档案 / 里程·权益；签到与通行码独立 -->
+      <view class="vip-card vip-card-front {{cardSkinClass}}">
+        <view class="bg-texture"></view>
+        <!-- 材质层（纸 → 木 → 金属，由 level-skin-N 决定；对标预约票纤维噪点） -->
+        <view class="card-grain" aria-hidden="true"></view>
+        <!-- 卡纸厚度：inset 高光 + 暗角（对标 ticket-paper-sheen） -->
+        <view class="card-thickness" aria-hidden="true"></view>
+        <!-- 金属光泽扫过层（仅 Lv5–6 启用，克制） -->
+        <view class="card-sheen" aria-hidden="true"></view>
+        <!-- 标本剪影水印：同构预约票 .watermark —— 右侧大淡影 emoji，非角标贴纸 -->
+        <view class="card-specimen" aria-hidden="true">{{specimenEmoji}}</view>
+        <view class="card-edge" aria-hidden="true"></view>
+
+        <!-- 区 1 · 品牌 + 签到 / 通行码 -->
+        <view class="card-top">
+          <view
+            class="org-name"
+            catchtap="onToggleFlip"
+            catchlongpress="onEasterEggLongPress"
+            data-egg-id="xiwangmu"
+            hover-class="org-name-press"
+            hover-stay-time="80"
+          >
+            <text class="cn">山海造物</text>
+            <text class="en">NATURE'S CREATIONS</text>
+            <text class="tagline">把山海带回家</text>
+          </view>
+
+          <view class="card-actions">
+            <view
+              class="action-chip checkin-chip {{hasCheckedIn ? 'is-done' : ''}}"
+              catchtap="onCheckIn"
+              hover-class="action-chip-press"
+              hover-stay-time="80"
+            >
+              <image class="ap-icon icon-gold" src="/assets/icons/checkin.png" mode="aspectFit" wx:if="{{!hasCheckedIn}}"></image>
+              <text class="ap-text">{{hasCheckedIn ? '已签到' : '签到'}}</text>
+            </view>
+            <view
+              class="action-chip pass-chip"
+              catchtap="onShowMemberCode"
+              hover-class="action-chip-press"
+              hover-stay-time="80"
+            >
+              <image class="qr-icon icon-gold" src="/assets/icons/qrcode.png" mode="aspectFit"></image>
+              <text class="ap-text">亮码</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 区 2 · 藏家身份：点头像选图；昵称/› 进档案 -->
+        <view class="card-main">
+          <view class="user-info-row">
+            <view
+              class="avatar-hit"
+              catchtap="onChangeAvatar"
+              hover-class="avatar-choose-press"
+              hover-stay-time="80"
+              aria-label="更换头像"
+            >
+              <view class="avatar-wrap {{cardPending ? 'is-pending' : ''}}">
+                <view class="vip-skel vip-skel-avatar" wx:if="{{cardPending}}"></view>
+                <image
+                  class="avatar-img"
+                  src="{{avatarBroken ? '/assets/icons/user.png' : (userInfo.avatarUrl || '/assets/icons/user.png')}}"
+                  mode="aspectFill"
+                  wx:else
+                  binderror="onAvatarError"
+                ></image>
+              </view>
+              <view class="avatar-badge" aria-hidden="true" wx:if="{{!cardPending}}">
+                <image class="avatar-badge-icon" src="/assets/icons/camera.png" mode="aspectFit"></image>
+              </view>
+            </view>
+            <view
+              class="text-meta"
+              catchtap="onGoProfile"
+              hover-class="user-info-row-press"
+              hover-stay-time="80"
+            >
+              <view class="nick-row">
+                <view class="vip-skel vip-skel-nick" wx:if="{{cardPending}}"></view>
+                <text class="nick-display" wx:else>{{userInfo.nickName || '设定代号'}}</text>
+              </view>
+              <view class="badge-row">
+                <block wx:if="{{cardPending}}">
+                  <view class="vip-skel vip-skel-badge"></view>
+                </block>
+                <block wx:else>
+                  <view class="badge-pill">{{levelName}}</view>
+                  <view class="rate-tag" wx:if="{{discountRate < 1}}">权益 {{discountText}}</view>
+                </block>
+              </view>
+            </view>
+            <text
+              class="profile-edit-hint"
+              catchtap="onGoProfile"
+              hover-class="user-info-row-press"
+              hover-stay-time="80"
+              wx:if="{{!cardPending}}"
+            >›</text>
+          </view>
+
+        </view>
+
+        <!-- 区隔：自定义细轨（禁用 border/原生 progress 在安卓上的粗白 SeekBar 观感）
+             档案未满时在深色细轨上叠克制黄铜填充；已满/最高成长档仅显示细分隔线 -->
+        <view class="card-section-rule" aria-hidden="true">
+          <view
+            class="card-section-rule-fill"
+            wx:if="{{!cardPending && profileScore < 100}}"
+            style="width: {{profileScore}}%;"
+          ></view>
+        </view>
+
+        <!-- 区 3 · 成长里程 → 等级权益 -->
+        <view class="card-footer">
+          <view
+            class="growth-panel {{growthIsMax ? 'is-max' : ''}}"
+            catchtap="onShowLevelBenefits"
+            hover-class="growth-panel-press"
+            hover-stay-time="80"
+          >
+            <view class="growth-head">
+              <text class="growth-overline">成长里程</text>
+              <text class="growth-link-hint" wx:if="{{!cardPending}}">权益 ›</text>
+            </view>
+            <block wx:if="{{cardPending}}">
+              <view class="growth-lead">
+                <view class="vip-skel vip-skel-growth"></view>
+              </view>
+              <view class="vip-skel vip-skel-meta"></view>
+              <view class="progress-track">
+                <view class="progress-bar vip-skel-bar" style="width: 42%"></view>
+              </view>
+            </block>
+            <block wx:else>
+              <view class="growth-lead">
+                <text class="growth-num">{{growthValueDisplay}}</text>
+                <text class="growth-label">成长值</text>
+                <text class="growth-target" wx:if="{{!growthIsMax && nextThreshold > 0}}">/ {{nextThresholdDisplay}}</text>
+              </view>
+              <view class="growth-meta" wx:if="{{!growthIsMax}}">
+                <text class="growth-gap-line">{{growthGapLine}}</text>
+                <text class="growth-perk-delta" wx:if="{{growthPerkDelta}}">{{growthPerkDelta}}</text>
+              </view>
+              <text class="growth-status is-max" wx:else>{{growthGapLine || '已达当前最高成长档'}}</text>
+              <view class="progress-track" wx:if="{{!growthIsMax && nextThreshold > 0}}">
+                <view class="progress-bar" style="width: {{progressWidth}}"></view>
+              </view>
+            </block>
+          </view>
+          <view
+            class="card-flip-glyph"
+            catchtap="onToggleFlip"
+            hover-class="card-flip-glyph-press"
+            hover-stay-time="80"
+            aria-label="翻转铭牌"
+            wx:if="{{!cardPending}}"
+          >
+            <view class="flip-layer flip-layer-back"></view>
+            <view class="flip-layer flip-layer-front"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 背板 · 藏家铭牌 -->
+      <view class="vip-card vip-card-back {{cardSkinClass}}" bindtap="onToggleFlip">
+        <view class="bg-texture"></view>
+        <view class="card-grain" aria-hidden="true"></view>
+        <view class="card-thickness" aria-hidden="true"></view>
+        <view class="card-specimen card-specimen-back" aria-hidden="true">{{specimenEmoji}}</view>
+
+        <view class="cb-stripe"></view>
+
+        <view class="cb-body">
+          <view class="cb-head-row">
+            <view class="cb-head-main">
+              <text class="cb-overline">COLLECTOR PLATE</text>
+              <text class="cb-title">藏家铭牌</text>
+            </view>
+            <text class="cb-member">{{memberNo}}</text>
+          </view>
+
+          <view class="cb-row cb-birthday-row {{cardBirthday.isToday ? 'today' : ''}}">
+            <text class="cb-row-label">生日礼券</text>
+            <view class="cb-row-content" wx:if="{{cardBirthday.hasBirthday}}">
+              <text class="cb-row-val">{{cardBirthday.headline}}</text>
+              <text class="cb-row-sub">{{cardBirthday.subline}}</text>
+            </view>
+            <text class="cb-row-link" wx:else catchtap="onGoProfileFromCardBack">填写生日 →</text>
+          </view>
+
+          <view class="cb-stats-row">
+            <view class="cb-stat-cell">
+              <text class="cb-stat-val">{{cardConsumptionDisplay}}</text>
+              <text class="cb-stat-label">累计消费</text>
+            </view>
+            <view class="cb-stat-cell">
+              <text class="cb-stat-val">{{statistics.orderCount || 0}}</text>
+              <text class="cb-stat-label">订单</text>
+            </view>
+            <view class="cb-stat-cell">
+              <text class="cb-stat-val">{{cardPointsDisplay}}</text>
+              <text class="cb-stat-label">积分</text>
+            </view>
+          </view>
+
+          <view class="cb-tags-block">
+            <text class="cb-tags-label">偏好标签</text>
+            <scroll-view scroll-x class="cb-tag-scroll" enable-flex show-scrollbar="{{false}}" wx:if="{{cardInterestTags.length}}">
+              <view class="cb-tag-inner">
+                <text
+                  class="cb-tag"
+                  wx:for="{{cardInterestTags}}"
+                  wx:key="key"
+                  style="border-color: {{item.color}}44; color: {{item.color}}; background: {{item.color}}14;"
+                >{{item.label}}</text>
+              </view>
+            </scroll-view>
+            <text class="cb-persona" wx:if="{{cardPersona}}">{{cardPersona}}</text>
+            <text class="cb-tags-empty" wx:if="{{!cardInterestTags.length && !cardPersona}}" catchtap="onGoProfileFromCardBack">添加兴趣标签 →</text>
+          </view>
+        </view>
+
+        <view class="card-back-foot">
+          <text class="cb-since">{{levelName}}</text>
+          <text class="cb-specimen" wx:if="{{specimenName}}">{{specimenName}}</text>
+          <text class="cb-specimen-latin" wx:if="{{specimenLatin}}">{{specimenLatin}}</text>
+        </view>
+      </view>
+    </view>
+  </view>

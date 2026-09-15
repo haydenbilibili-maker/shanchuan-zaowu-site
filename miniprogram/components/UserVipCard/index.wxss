@@ -1,0 +1,2733 @@
+/* === 1. 会员卡 === */
+.vip-card-container {
+  width: 100%;
+  height: 448rpx;
+  margin-top: 30rpx;
+  margin-bottom: 50rpx;
+}
+
+.vip-card-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.vip-card {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  /* 暖调卡纸底：多层渐变（对标预约票 ticket-card） */
+  background:
+    linear-gradient(165deg, rgba(242, 237, 228, 0.04) 0%, transparent 32%),
+    linear-gradient(180deg, #24211C 0%, var(--color-bg-card) 48%, #1C1A17 100%);
+  border: 1px solid rgba(139, 111, 71, 0.38);
+  /* 柜木棕暖边 + 极轻厚度阴影（无白色发光、无纯黑） */
+  box-shadow:
+    0 10rpx 28rpx rgba(26, 24, 20, 0.55),
+    0 2rpx 8rpx rgba(26, 24, 20, 0.35),
+    inset 0 1rpx 0 rgba(196, 167, 108, 0.12),
+    inset 0 -2rpx 6rpx rgba(26, 24, 20, 0.35);
+  padding: 28rpx 32rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: opacity 0.32s ease, transform 0.32s ease;
+}
+
+.vip-card-front {
+  z-index: 2;
+  opacity: 1;
+  transform: scale(1);
+  justify-content: flex-start;
+}
+
+.vip-card-back {
+  z-index: 1;
+  opacity: 0;
+  transform: scale(0.98);
+  pointer-events: none;
+  padding: 0;
+  justify-content: flex-start;
+}
+
+.vip-card-container.is-flipped .vip-card-front {
+  opacity: 0;
+  transform: scale(0.98);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.vip-card-container.is-flipped .vip-card-back {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  z-index: 2;
+}
+
+/* 内沿铜线：层次，非发光 */
+.card-edge {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  bottom: 10rpx;
+  left: 10rpx;
+  border: 1px solid rgba(77, 64, 26, 0.35);
+  border-radius: calc(var(--radius-lg) - 6rpx);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.bg-texture {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.08;
+  background-image: radial-gradient(rgba(196, 167, 108, 0.22) 0.6px, transparent 1px);
+  background-size: 24rpx 24rpx;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* —— 材质层 / 厚度层 / 光泽层 / 标本剪影（几何与默认态；材质由 .level-skin-N 指定） —— */
+.card-grain {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.62;
+}
+
+/* 卡纸厚度感：对标 ticket-paper-sheen（全档常驻，非科技发光） */
+.card-thickness {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    linear-gradient(
+      155deg,
+      rgba(242, 237, 228, 0.09) 0%,
+      transparent 24%,
+      transparent 66%,
+      rgba(26, 24, 20, 0.34) 100%
+    ),
+    radial-gradient(
+      ellipse 88% 68% at 72% 38%,
+      transparent 38%,
+      rgba(26, 24, 20, 0.22) 100%
+    );
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.07);
+}
+
+.card-sheen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+}
+
+/*
+ * 标本剪影水印：右下角压片 / 铜牌角饰意向。
+ * 卡面固定 overflow:hidden（圆角裁切），故 emoji 必须完整落在可视区内——
+ * 禁止大负值 right/bottom + scale>1 的「半截溢出」。各档形变见 .level-skin-N。
+ * 内容区 z-index:2，水印不抢昵称 / 等级 / 成长值 / 右侧按钮。
+ * 卡高 448rpx：字号约 168–210rpx、scale≤1、inset≥4rpx，旋转后外接矩形仍在卡内。
+ */
+.card-specimen {
+  position: absolute;
+  bottom: 12rpx;
+  right: 8rpx;
+  z-index: 1;
+  pointer-events: none;
+  font-size: 196rpx;
+  line-height: 1;
+  opacity: 0.1;
+  transform-origin: center center;
+  transform: rotate(-12deg) scale(0.96);
+  filter: grayscale(1) contrast(1.2);
+}
+
+.card-specimen-back {
+  bottom: 16rpx;
+  right: 12rpx;
+  font-size: 168rpx;
+  opacity: 0.07;
+  transform-origin: center center;
+  transform: rotate(-10deg) scale(0.9);
+}
+
+/* —— 区 1 · 品牌 / 操作 —— */
+.card-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16rpx;
+  flex-shrink: 0;
+}
+
+.org-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 4rpx 8rpx 4rpx 0;
+  margin: -4rpx 0;
+  border-radius: var(--radius-sm);
+  transition: opacity 80ms ease;
+}
+
+.org-name-press {
+  opacity: 0.72;
+}
+
+.org-name .cn {
+  font-family: var(--font-brand);
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.18em;
+  margin-bottom: 4rpx;
+}
+
+.org-name .en {
+  font-family: var(--font-din);
+  font-size: 16rpx;
+  color: var(--brass-400);
+  letter-spacing: 0.14em;
+  margin-bottom: 4rpx;
+  font-weight: 600;
+}
+
+.org-name .tagline {
+  font-size: 18rpx;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.16em;
+  font-weight: 400;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex-shrink: 0;
+}
+
+.action-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  min-height: 52rpx;
+  padding: 0 18rpx;
+  background: rgba(196, 167, 108, 0.08);
+  border: 1px solid rgba(196, 167, 108, 0.36);
+  border-radius: var(--radius-full);
+  box-sizing: border-box;
+  transition: background 80ms ease, border-color 80ms ease, opacity 80ms ease;
+}
+
+.action-chip-press {
+  background: rgba(196, 167, 108, 0.18);
+  border-color: var(--brass-400);
+}
+
+.checkin-chip.is-done {
+  background: transparent;
+  border-color: rgba(77, 64, 26, 0.35);
+}
+
+.checkin-chip.is-done .ap-text {
+  color: rgba(160, 154, 144, 0.92);
+  font-weight: 500;
+}
+
+.pass-chip {
+  padding: 0 16rpx;
+  min-width: 96rpx;
+}
+
+.pass-chip .ap-text {
+  letter-spacing: 0;
+  font-size: 20rpx;
+}
+
+.ap-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.ap-text {
+  font-size: 22rpx;
+  color: var(--brass-400);
+  font-weight: 600;
+  letter-spacing: 1rpx;
+  line-height: 1;
+}
+
+.qr-icon {
+  width: 28rpx;
+  height: 28rpx;
+  filter: invert(1) brightness(1.5) sepia(1) hue-rotate(15deg) saturate(2);
+}
+
+/* —— 区 2 · 身份 —— */
+.card-main {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  padding: 16rpx 0 12rpx;
+}
+
+.user-info-row {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  padding: 8rpx 4rpx 8rpx 0;
+  margin: 0 -4rpx;
+  border-radius: var(--radius-md);
+  transition: background 80ms ease, opacity 80ms ease;
+}
+
+.user-info-row-press {
+  background: rgba(196, 167, 108, 0.07);
+  opacity: 0.92;
+}
+
+/* 正圆头像 + 相机角标；整块热区走 chooseMedia */
+.avatar-hit {
+  position: relative;
+  width: 96rpx;
+  height: 96rpx;
+  margin-right: 20rpx;
+  flex: none;
+  flex-shrink: 0;
+  padding: 4rpx;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.avatar-wrap {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  border: 1.5px solid rgba(196, 167, 108, 0.55);
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.avatar-choose-press {
+  opacity: 0.88;
+}
+
+.avatar-wrap .avatar-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.avatar-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  background: var(--brass-400);
+  border: 2rpx solid var(--color-bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.avatar-badge-icon {
+  width: 18rpx;
+  height: 18rpx;
+  filter: brightness(0) saturate(100%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.text-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.nick-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.nick-display {
+  font-size: 34rpx;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.nick-input {
+  font-size: 36rpx;
+  color: #fff;
+  font-weight: 900;
+  width: auto;
+  min-width: 100rpx;
+  max-width: 300rpx;
+  height: 44rpx;
+  min-height: 44rpx;
+  letter-spacing: 1rpx;
+}
+
+.ph {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.edit-icon {
+  font-size: 20rpx;
+  color: #666;
+  margin-left: 8rpx;
+}
+
+.badge-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.badge-pill {
+  font-size: 20rpx;
+  color: var(--color-bg);
+  background: var(--gold);
+  padding: 5rpx 14rpx;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+
+.rate-tag {
+  font-size: 20rpx;
+  color: var(--brass-400);
+  border: 1px solid rgba(196, 167, 108, 0.38);
+  padding: 4rpx 12rpx;
+  border-radius: var(--radius-sm);
+  background: rgba(196, 167, 108, 0.06);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+}
+
+.profile-edit-hint {
+  font-size: 32rpx;
+  color: var(--brass-400);
+  opacity: 0.7;
+  margin-left: 8rpx;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* 身份区 / 成长区细轨：纯 view，避免安卓 border-top / 近白 pill 被看成 SeekBar */
+.card-section-rule {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 100%;
+  height: 2rpx;
+  margin: 14rpx 0 0;
+  background: rgba(48, 40, 16, 0.72);
+  border-radius: 1rpx;
+  overflow: hidden;
+}
+
+.card-section-rule-fill {
+  height: 100%;
+  background: rgba(138, 117, 48, 0.72);
+  border-radius: 0;
+}
+
+/* —— 区 3 · 成长里程 —— */
+.card-footer {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  padding-top: 14rpx;
+}
+
+.growth-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8rpx;
+  margin-bottom: 0;
+  padding: 10rpx 8rpx 8rpx 44rpx;
+  margin: 0 -8rpx;
+  border-radius: var(--radius-md);
+  transition: background 80ms ease, opacity 80ms ease;
+}
+
+.growth-panel.is-max {
+  gap: 6rpx;
+}
+
+.growth-panel-press {
+  background: rgba(196, 167, 108, 0.07);
+  opacity: 0.94;
+}
+
+.growth-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.growth-overline {
+  font-size: 18rpx;
+  color: var(--color-text-muted);
+  letter-spacing: 0.14em;
+  font-weight: 500;
+}
+
+.growth-link-hint {
+  font-size: 18rpx;
+  color: var(--brass-400);
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.growth-lead {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.growth-num {
+  font-family: var(--font-mono);
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 1rpx;
+  line-height: 1;
+}
+
+.growth-label {
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
+}
+
+.growth-target {
+  font-family: var(--font-mono);
+  font-size: 20rpx;
+  color: rgba(196, 167, 108, 0.5);
+}
+
+.growth-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-width: 0;
+}
+
+.growth-gap-line {
+  flex: 1;
+  min-width: 0;
+  font-size: 22rpx;
+  color: rgba(196, 167, 108, 0.9);
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.growth-perk-delta {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  font-weight: 500;
+  color: var(--brass-300);
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+
+.growth-status {
+  font-size: 22rpx;
+  color: rgba(196, 167, 108, 0.9);
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.growth-status.is-max {
+  color: var(--brass-400);
+  font-weight: 500;
+}
+
+.card-flip-glyph {
+  position: absolute;
+  left: 0;
+  bottom: 4rpx;
+  width: 44rpx;
+  height: 36rpx;
+  opacity: 0.36;
+  z-index: 3;
+  transition: opacity 80ms ease;
+}
+
+.card-flip-glyph-press {
+  opacity: 0.72;
+}
+
+.flip-layer {
+  position: absolute;
+  border: 1px solid rgba(196, 167, 108, 0.36);
+  border-radius: 4rpx;
+  background: rgba(196, 167, 108, 0.08);
+}
+
+.flip-layer-back {
+  width: 28rpx;
+  height: 20rpx;
+  left: 10rpx;
+  bottom: 2rpx;
+}
+
+.flip-layer-front {
+  width: 28rpx;
+  height: 20rpx;
+  left: 2rpx;
+  bottom: 8rpx;
+}
+
+.progress-track {
+  width: 100%;
+  height: 4rpx;
+  background: rgba(38, 35, 32, 0.92);
+  border-radius: 1rpx;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin-top: 4rpx;
+}
+
+.progress-bar {
+  position: relative;
+  height: 100%;
+  background: linear-gradient(90deg, #8A7530 0%, var(--gold) 100%);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/*
+ * 六档皮肤：直接写属性（不用 CSS 变量继承）。
+ * 微信 WXSS 对自定义属性 + 渐变赋值不稳定，会导致皮肤“看起来全是默认黄铜”。
+ * class 由 JS cardSkinClass = level-skin-N 写入。
+ */
+/* 六档材质（底色 / 纹理 / 文字色 / 水印 / 动效）统一写在文件下方
+ * 「六档会员牌材质」章节，见 .vip-card.level-skin-N 各档完整块。 */
+
+/* ==========================================================================
+ * 六档会员牌材质：纸（Lv1–2） / 木（Lv3–4） / 金属（Lv5–6） / 黑蟒皮（99）
+ * --------------------------------------------------------------------------
+ * 同一句设计语言：「博物柜里的一块牌子」，下一级明显优于上一级。
+ *   纸  Lv1 道林纸 · Lv2 云龙纸 —— 洁白书写纸 / 帘纹云絮特种纸，深色文字
+ *   木  Lv3 胡桃木 · Lv4 紫檀 —— 木纹 / 暖光 / 年轮，浅色文字
+ *   金属 Lv5 白银 · Lv6 黄金 —— 拉丝 / 高光边缘 / 铭牌，冷白 / 亮金文字
+ *   荣誉 Lv99 黑蟒皮 —— 深黑鳞纹 + 克制黄铜点缀（独立档，不与 Lv6 共用）
+ * 全部由 CSS 多层渐变 + 内联 SVG 绘制，不新增图片资源。
+ * 明度序列：洁白道林 → 云絮云龙 → 巧克力胡桃 → 绛红紫檀 → 冷白银 → 亮黄金 → 黑蟒鳞皮。
+ *
+ * 层次（wxml 顺序，z-index 见上方几何定义）
+ *   .bg-texture  底纹（细目/纸纹点）
+ *   .card-grain  主材质（纤维 / 木纹 / 拉丝，含 ::after 附加细节）
+ *   .card-thickness 受光与厚度（金属档兼「内凹雕刻场」，保证文字对比度）
+ *   .card-sheen  扫光（金属 / 蟒皮轻掠光）
+ *   .card-specimen 标本剪影水印（浅色纸/玉卡上为深色剪影）
+ *   .card-edge   压印线 / 倒角 / 铭牌刻线
+ *
+ * 动效分级：纸与木静止；金属与蟒皮保留一道克制扫光。
+ * 元素固定映射见 pages/user CARD_SPECIMENS：
+ *   Lv1 🍀 / Lv2 🦀 / Lv3 🐞 / Lv4 🦋 / Lv5 🦎 / Lv6 💎 / 99 🏵
+ * class 由 JS cardSkinClass = level-skin-N 整串下发，选择器一律显式书写。
+ * ========================================================================== */
+
+/* —— 动效关键帧（仅金属档 sheen 使用；水印形变写死在各档 .card-specimen） —— */
+@keyframes scSheenSweep {
+  0% { transform: translateX(-10%) rotate(15deg); opacity: 0; }
+  6% { opacity: 0.85; }
+  30% { opacity: 0.85; }
+  38%, 100% { transform: translateX(420%) rotate(15deg); opacity: 0; }
+}
+@keyframes scBarShimmer {
+  0% { transform: translateX(-120%); }
+  55%, 100% { transform: translateX(260%); }
+}
+@keyframes scRimRun {
+  0% { transform: translateX(-60%); opacity: 0; }
+  15%, 42% { opacity: 0.75; }
+  58%, 100% { transform: translateX(280%); opacity: 0; }
+}
+
+/* ==========================================================================
+ * 标本 emoji 的「材质工艺层」：让 emoji 是做在材质上的，不是贴上去的
+ * --------------------------------------------------------------------------
+ * 本块只写 text-shadow / mix-blend-mode / isolation 三类属性，
+ * 不写 filter、不写 opacity、不写任何形变（inset / font-size / transform）。
+ *   形变与亮度阶梯仍旧各自留在下方 .vip-card.level-skin-N 与
+ *   .current-level-card.level-skin-N / .level-item.level-skin-N 原处，
+ *   两边互不覆盖 —— 改亮度去那边，改工艺来这边。
+ *
+ * 覆盖的五个承载面（尺寸不同 → 描边偏移量必须分级，故按面分写）：
+ *   L  .card-specimen（正/背面主卡水印 144–210rpx）、.cl-specimen（弹窗卡水印 144–176rpx）
+ *   M  .li-specimen-bg（阶梯项水印 96–116rpx）
+ *   S  .cl-glyph（弹窗当前档主视觉 72rpx）
+ *   XS .li-specimen（阶梯项前景标识 44rpx）
+ *
+ * 工艺分工（三处强度递减：水印最融入材质 → 阶梯项 → 弹窗主视觉最中性可读）：
+ *   纸 Lv1–2  印刷。multiply 让墨压进纸纤维（纸目点阵 / 帘纹 / 折痕从墨里透出），
+ *             双向偏移的两层墨影 = 套印错位，外加一圈低透墨晕 = 墨吃进纸。
+ *             Lv1 走植物图鉴水彩淡染（暖褐 + 苔藓绿两版 + filter 微 blur）；
+ *             Lv2 走照相凹版（冷中性单向偏移 + 更紧墨晕 + 更高 contrast）。
+ *   木 Lv3    烙印。胡桃木是中调巧克力暖底，watermark 用 multiply 做焦痕：
+ *             木纹从焦痕里透出，热晕沿纹理方向双向散开。
+ *   木 Lv4    阴刻露芯。紫檀绛红近深，watermark 用 screen 让刻痕露出浅色芯材；
+ *             screen 不能压暗，故只留下缘受光唇（暗影仍写着，作为不支持混合时的兜底）。
+ *   金属 Lv5–6 / 黑蟒皮 99  镭雕或鳞面压印。overlay 以「材质亮度」为基准：
+ *             暗侧刻痕更暗、亮侧高光更亮，拉丝 / 抛光带直接穿过刻痕；
+ *             text-shadow 全部 0 blur = 比木质更锐，上暗下亮 = 掠射光下的凹槽。
+ *             .card-sheen 在 z 序上就在 .card-specimen 之下，
+ *             扫光扫过时会被 overlay 重新参与运算 —— 天然拿到「扫光掠过刻痕」，
+ *             不需要 mask / background-clip:text。
+ *
+ * 受光方向全档统一：左上来光（卡面 96–100deg 渐变 + thickness 顶部高光）。
+ *   凹陷（阴刻 / 镭雕）= 上缘暗（背光内壁）+ 下缘亮（迎光内壁），即经典 engraved 关系。
+ *
+ * 兼容与降级：
+ *   text-shadow 在 emoji 上渲染为「实色剪影副本」（iOS WKWebView / Android XWeb 一致），
+ *     无兼容风险，是本次质感的主力。
+ *   mix-blend-mode 是增强项；不支持时退化为 normal，
+ *     即当前已调好的「低透明度 filter 剪影」，可读性不受影响。
+ *   .vip-card / .current-level-card / .level-item 上加 isolation: isolate，
+ *     把混合范围锁死在卡片自身（含其材质层），防止个别 XWeb 版本把
+ *     混合算到页面底色上而露出一个矩形。
+ *   未使用 background-clip: text、mask-image、backdrop-filter。
+ * ========================================================================== */
+
+/* 混合隔离组 = 卡片自身，混合只吃卡片材质，不吃页面底色 */
+.vip-card,
+.current-level-card,
+.level-item {
+  isolation: isolate;
+}
+
+/* —— 纸 Lv1 🍀 · 铜版水彩：暖褐版 + 苔藓绿版套印错位 + 墨晕 —— */
+.vip-card.level-skin-1 .card-specimen,
+.current-level-card.level-skin-1 .cl-specimen {
+  mix-blend-mode: multiply;
+  text-shadow:
+    -1.4rpx -1rpx 0 rgba(122, 95, 60, 0.5),
+    1.2rpx 1.4rpx 0 rgba(45, 90, 63, 0.32),
+    0 0 4rpx rgba(58, 46, 28, 0.34);
+}
+.level-item.level-skin-1 .li-specimen-bg {
+  mix-blend-mode: multiply;
+  text-shadow:
+    -1rpx -0.8rpx 0 rgba(122, 95, 60, 0.5),
+    0.8rpx 1rpx 0 rgba(45, 90, 63, 0.3),
+    0 0 3rpx rgba(58, 46, 28, 0.32);
+}
+.current-level-card.level-skin-1 .cl-glyph {
+  text-shadow:
+    -0.8rpx -0.6rpx 0 rgba(122, 95, 60, 0.52),
+    0.6rpx 0.8rpx 0 rgba(45, 90, 63, 0.3),
+    0 0 2.4rpx rgba(58, 46, 28, 0.3);
+}
+.level-item.level-skin-1 .li-specimen {
+  text-shadow:
+    -0.5rpx -0.5rpx 0 rgba(122, 95, 60, 0.5),
+    0.5rpx 0.5rpx 0 rgba(45, 90, 63, 0.28),
+    0 0 1.4rpx rgba(58, 46, 28, 0.28);
+}
+
+/* —— 纸 Lv2 🦀 · 照相凹版：冷中性单向偏移 + 紧墨晕 —— */
+.vip-card.level-skin-2 .card-specimen,
+.current-level-card.level-skin-2 .cl-specimen {
+  mix-blend-mode: multiply;
+  text-shadow:
+    1.4rpx -1rpx 0 rgba(72, 80, 86, 0.52),
+    -1rpx 1.2rpx 0 rgba(38, 42, 46, 0.34),
+    0 0 2.6rpx rgba(30, 34, 38, 0.4);
+}
+.level-item.level-skin-2 .li-specimen-bg {
+  mix-blend-mode: multiply;
+  text-shadow:
+    1rpx -0.8rpx 0 rgba(72, 80, 86, 0.52),
+    -0.8rpx 0.8rpx 0 rgba(38, 42, 46, 0.32),
+    0 0 2rpx rgba(30, 34, 38, 0.38);
+}
+.current-level-card.level-skin-2 .cl-glyph {
+  text-shadow:
+    0.8rpx -0.6rpx 0 rgba(72, 80, 86, 0.54),
+    -0.6rpx 0.6rpx 0 rgba(38, 42, 46, 0.32),
+    0 0 1.6rpx rgba(30, 34, 38, 0.36);
+}
+.level-item.level-skin-2 .li-specimen {
+  text-shadow:
+    0.5rpx -0.5rpx 0 rgba(72, 80, 86, 0.52),
+    -0.5rpx 0.5rpx 0 rgba(38, 42, 46, 0.3),
+    0 0 1rpx rgba(30, 34, 38, 0.34);
+}
+
+/* —— 木 Lv3 🐞 · 胡桃木烙印：焦痕 + 沿木纹散开的热晕（multiply 只可压暗） —— */
+.vip-card.level-skin-3 .card-specimen,
+.current-level-card.level-skin-3 .cl-specimen {
+  mix-blend-mode: multiply;
+  text-shadow:
+    -1rpx -1.2rpx 1.4rpx rgba(20, 11, 4, 0.62),
+    1.2rpx 1.4rpx 2.2rpx rgba(38, 22, 8, 0.42),
+    0 0 3rpx rgba(28, 16, 6, 0.48);
+}
+.level-item.level-skin-3 .li-specimen-bg {
+  mix-blend-mode: multiply;
+  text-shadow:
+    -0.8rpx -1rpx 1rpx rgba(20, 11, 4, 0.6),
+    0.8rpx 1rpx 1.6rpx rgba(38, 22, 8, 0.4),
+    0 0 2rpx rgba(28, 16, 6, 0.46);
+}
+/* 前景标识用常规混合 + 较高不透明度：暖白唇的亮度足以越过木底，能做真正的上暗下亮阴刻。
+ * 第 4 条是溢到木面上的暖光（光从刻痕里漏出来），没有它 🐞 这种本身就很暗的
+ * emoji 会塌成一块黑贴纸 —— 实测胡桃木上必须要这一层才立得起来。 */
+.current-level-card.level-skin-3 .cl-glyph {
+  text-shadow:
+    0 -1.2rpx 1rpx rgba(20, 11, 4, 0.85),
+    -0.8rpx -0.8rpx 0.8rpx rgba(20, 11, 4, 0.55),
+    0 2rpx 0 rgba(240, 208, 152, 0.68),
+    0 3rpx 2.4rpx rgba(196, 152, 90, 0.4);
+}
+.level-item.level-skin-3 .li-specimen {
+  text-shadow:
+    0 -0.8rpx 0.8rpx rgba(20, 11, 4, 0.85),
+    -0.5rpx -0.5rpx 0.6rpx rgba(20, 11, 4, 0.5),
+    0 1.2rpx 0 rgba(240, 208, 152, 0.66),
+    0 1.8rpx 1.6rpx rgba(196, 152, 90, 0.38);
+}
+
+/* —— 木 Lv4 🦋 · 紫檀阴刻露芯：screen 只可提亮，故主力是下缘受光唇 —— */
+.vip-card.level-skin-4 .card-specimen,
+.current-level-card.level-skin-4 .cl-specimen {
+  mix-blend-mode: screen;
+  text-shadow:
+    0 1.6rpx 0.8rpx rgba(255, 248, 233, 0.55),
+    0 0 3.2rpx rgba(226, 218, 204, 0.3),
+    -1rpx -1.2rpx 1.6rpx rgba(6, 5, 4, 0.7);
+}
+.level-item.level-skin-4 .li-specimen-bg {
+  mix-blend-mode: screen;
+  text-shadow:
+    0 1.2rpx 0.6rpx rgba(255, 248, 233, 0.55),
+    0 0 2.4rpx rgba(226, 218, 204, 0.28),
+    -0.8rpx -1rpx 1.2rpx rgba(6, 5, 4, 0.68);
+}
+.current-level-card.level-skin-4 .cl-glyph {
+  text-shadow:
+    0 -1rpx 1rpx rgba(6, 5, 4, 0.85),
+    0 1.4rpx 0.6rpx rgba(255, 248, 233, 0.6),
+    0.6rpx 0.8rpx 1.2rpx rgba(232, 226, 214, 0.28);
+}
+.level-item.level-skin-4 .li-specimen {
+  text-shadow:
+    0 -0.6rpx 0.8rpx rgba(6, 5, 4, 0.82),
+    0 1rpx 0.5rpx rgba(255, 248, 233, 0.58),
+    0.4rpx 0.5rpx 0.8rpx rgba(232, 226, 214, 0.26);
+}
+
+/* —— 金属 Lv5 🦎 · 白银镭雕：0 blur 锐边，上暗下亮，冷白高光 —— */
+.vip-card.level-skin-5 .card-specimen,
+.current-level-card.level-skin-5 .cl-specimen {
+  mix-blend-mode: overlay;
+  text-shadow:
+    0 -1.4rpx 0 rgba(8, 11, 13, 0.85),
+    -1rpx -1rpx 0 rgba(8, 11, 13, 0.6),
+    0 1.6rpx 0 rgba(244, 250, 253, 0.8),
+    1rpx 1.2rpx 0.6rpx rgba(198, 214, 224, 0.4);
+}
+.level-item.level-skin-5 .li-specimen-bg {
+  mix-blend-mode: overlay;
+  text-shadow:
+    0 -1rpx 0 rgba(8, 11, 13, 0.85),
+    -0.8rpx -0.8rpx 0 rgba(8, 11, 13, 0.58),
+    0 1.2rpx 0 rgba(244, 250, 253, 0.8),
+    0.8rpx 1rpx 0.5rpx rgba(198, 214, 224, 0.38);
+}
+.current-level-card.level-skin-5 .cl-glyph {
+  text-shadow:
+    0 -0.8rpx 0 rgba(8, 11, 13, 0.88),
+    0 1rpx 0 rgba(244, 250, 253, 0.85),
+    0.6rpx 0.8rpx 0.6rpx rgba(160, 178, 190, 0.4);
+}
+.level-item.level-skin-5 .li-specimen {
+  text-shadow:
+    0 -0.5rpx 0 rgba(8, 11, 13, 0.85),
+    0 0.7rpx 0 rgba(244, 250, 253, 0.82),
+    0.4rpx 0.5rpx 0.4rpx rgba(160, 178, 190, 0.38);
+}
+
+/* —— 金属 Lv6 💎 · 黄金镭雕：同 Lv5 手法，高光换暖金 —— */
+.vip-card.level-skin-6 .card-specimen,
+.current-level-card.level-skin-6 .cl-specimen {
+  mix-blend-mode: overlay;
+  text-shadow:
+    0 -1.4rpx 0 rgba(26, 17, 4, 0.85),
+    -1rpx -1rpx 0 rgba(26, 17, 4, 0.6),
+    0 1.6rpx 0 rgba(255, 248, 224, 0.82),
+    1rpx 1.2rpx 0.6rpx rgba(224, 196, 132, 0.42);
+}
+.level-item.level-skin-6 .li-specimen-bg {
+  mix-blend-mode: overlay;
+  text-shadow:
+    0 -1rpx 0 rgba(26, 17, 4, 0.85),
+    -0.8rpx -0.8rpx 0 rgba(26, 17, 4, 0.58),
+    0 1.2rpx 0 rgba(255, 248, 224, 0.82),
+    0.8rpx 1rpx 0.5rpx rgba(224, 196, 132, 0.4);
+}
+.current-level-card.level-skin-6 .cl-glyph {
+  text-shadow:
+    0 -0.8rpx 0 rgba(26, 17, 4, 0.88),
+    0 1rpx 0 rgba(255, 248, 224, 0.85),
+    0.6rpx 0.8rpx 0.6rpx rgba(196, 167, 108, 0.42);
+}
+.level-item.level-skin-6 .li-specimen {
+  text-shadow:
+    0 -0.5rpx 0 rgba(26, 17, 4, 0.85),
+    0 0.7rpx 0 rgba(255, 248, 224, 0.82),
+    0.4rpx 0.5rpx 0.4rpx rgba(196, 167, 108, 0.4);
+}
+
+/* —— 黑蟒皮 99 🏵 · 鳞面压印：上暗下亮，克制黄铜唇 —— */
+.vip-card.level-skin-99 .card-specimen,
+.current-level-card.level-skin-99 .cl-specimen {
+  mix-blend-mode: overlay;
+  text-shadow:
+    0 -1.4rpx 0 rgba(0, 0, 0, 0.85),
+    -1rpx -1rpx 0 rgba(8, 6, 4, 0.65),
+    0 1.6rpx 0 rgba(220, 200, 160, 0.35),
+    1rpx 1.2rpx 0.5rpx rgba(196, 167, 108, 0.28);
+}
+.level-item.level-skin-99 .li-specimen-bg {
+  mix-blend-mode: overlay;
+  text-shadow:
+    0 -1rpx 0 rgba(0, 0, 0, 0.85),
+    -0.8rpx -0.8rpx 0 rgba(8, 6, 4, 0.6),
+    0 1.2rpx 0 rgba(220, 200, 160, 0.32),
+    0.8rpx 1rpx 0.4rpx rgba(196, 167, 108, 0.26);
+}
+.current-level-card.level-skin-99 .cl-glyph {
+  text-shadow:
+    0 -0.8rpx 0 rgba(0, 0, 0, 0.88),
+    0 1rpx 0 rgba(232, 210, 160, 0.4),
+    0.6rpx 0.8rpx 0.5rpx rgba(196, 167, 108, 0.32);
+}
+.level-item.level-skin-99 .li-specimen {
+  text-shadow:
+    0 -0.5rpx 0 rgba(0, 0, 0, 0.85),
+    0 0.7rpx 0 rgba(232, 210, 160, 0.38),
+    0.4rpx 0.5rpx 0.4rpx rgba(196, 167, 108, 0.28);
+}
+
+/* —— 纸档共用：浅色卡纸上的深色文字系统（Lv1 / Lv2） ——
+ * 浅底卡片上禁止再出现白字；此块统一把正面 + 背板的文字压到深色。 */
+.vip-card.level-skin-1 .org-name .cn,
+.vip-card.level-skin-2 .org-name .cn,
+.vip-card.level-skin-1 .nick-display,
+.vip-card.level-skin-2 .nick-display,
+.vip-card.level-skin-1 .growth-num,
+.vip-card.level-skin-2 .growth-num,
+.vip-card.level-skin-1 .cb-title,
+.vip-card.level-skin-2 .cb-title,
+.vip-card.level-skin-1 .cb-stat-val,
+.vip-card.level-skin-2 .cb-stat-val {
+  color: #33302C;
+  /* 压印（letterpress）微高光，非深色模式发光 */
+  text-shadow: 0 1rpx 0 rgba(255, 255, 255, 0.55);
+}
+.vip-card.level-skin-1 .card-thickness,
+.vip-card.level-skin-2 .card-thickness {
+  /* 纸不做暗角包裹，只留左上受光 + 右下极轻的纸面阴影 */
+  background:
+    linear-gradient(152deg, rgba(255, 255, 255, 0.5) 0%, transparent 26%, transparent 72%, rgba(92, 74, 48, 0.1) 100%),
+    radial-gradient(ellipse 96% 78% at 34% 26%, rgba(255, 255, 255, 0.32) 0%, transparent 66%);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.34);
+}
+.vip-card.level-skin-1 .card-edge,
+.vip-card.level-skin-2 .card-edge {
+  /* 压印版口（plate mark）：细凹线 + 下沿高光，像被印版压出来的 */
+  border-color: rgba(92, 74, 48, 0.2);
+  box-shadow:
+    inset 0 1rpx 2rpx rgba(92, 74, 48, 0.1),
+    0 1rpx 0 rgba(255, 255, 255, 0.5);
+}
+.vip-card.level-skin-1 .card-sheen,
+.vip-card.level-skin-2 .card-sheen { opacity: 0; }
+/* 纸卡共用：浅底必须深色淡影；形变与 filter 按档分写，避免两档同一姿势
+ * Lv1 走暖褐水彩淡染（saturate 留 8% 色度，让两版套印墨影保住色差）
+ * Lv2 走冷中性照相凹版（grayscale 全灰 + 更高 contrast） */
+.vip-card.level-skin-1 .ap-icon,
+.vip-card.level-skin-2 .ap-icon,
+.vip-card.level-skin-1 .qr-icon,
+.vip-card.level-skin-2 .qr-icon {
+  /* 图标同样要跟着材质翻黑，金色描边在纸上会糊掉 */
+  filter: brightness(0) saturate(100%);
+  opacity: 0.66;
+}
+.vip-card.level-skin-1 .avatar-wrap,
+.vip-card.level-skin-2 .avatar-wrap { background: #E6DFD1; }
+.vip-card.level-skin-1 .user-info-row-press,
+.vip-card.level-skin-2 .user-info-row-press,
+.vip-card.level-skin-1 .growth-panel-press,
+.vip-card.level-skin-2 .growth-panel-press { background: rgba(92, 74, 48, 0.09); }
+.vip-card.level-skin-1 .card-flip-glyph,
+.vip-card.level-skin-2 .card-flip-glyph { opacity: 0.5; }
+.vip-card.level-skin-1 .flip-layer,
+.vip-card.level-skin-2 .flip-layer {
+  border-color: rgba(92, 74, 48, 0.42);
+  background: rgba(92, 74, 48, 0.08);
+}
+.vip-card.level-skin-1 .cb-stripe,
+.vip-card.level-skin-2 .cb-stripe {
+  /* 背板顶栏：从暗色胶片条改成贴在卡纸上的标签带 */
+  background: linear-gradient(180deg, #E9E1CE 0%, #E0D6C0 100%);
+}
+.vip-card.level-skin-1 .cb-stripe::after,
+.vip-card.level-skin-2 .cb-stripe::after {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(92, 74, 48, 0.14) 0,
+    rgba(92, 74, 48, 0.14) 2rpx,
+    transparent 2rpx,
+    transparent 10rpx
+  );
+}
+.vip-card.level-skin-1 .cb-row,
+.vip-card.level-skin-2 .cb-row,
+.vip-card.level-skin-1 .cb-stat-cell,
+.vip-card.level-skin-2 .cb-stat-cell {
+  background: rgba(255, 255, 255, 0.44);
+  border-color: rgba(92, 74, 48, 0.18);
+}
+.vip-card.level-skin-1 .cb-member,
+.vip-card.level-skin-2 .cb-member { color: rgba(51, 48, 44, 0.62); }
+.vip-card.level-skin-1 .cb-row-sub,
+.vip-card.level-skin-2 .cb-row-sub,
+.vip-card.level-skin-1 .cb-stat-label,
+.vip-card.level-skin-2 .cb-stat-label,
+.vip-card.level-skin-1 .cb-persona,
+.vip-card.level-skin-2 .cb-persona,
+.vip-card.level-skin-1 .cb-tags-empty,
+.vip-card.level-skin-2 .cb-tags-empty,
+.vip-card.level-skin-1 .cb-specimen,
+.vip-card.level-skin-2 .cb-specimen { color: #5C554A; }
+.vip-card.level-skin-1 .cb-tag,
+.vip-card.level-skin-2 .cb-tag {
+  /* 品类色由 JS 内联下发，无法逐条改写：整体压暗以适配浅底 */
+  filter: brightness(0.6) saturate(1.25);
+}
+.vip-card.level-skin-1 .card-back-foot,
+.vip-card.level-skin-2 .card-back-foot { border-top-color: rgba(92, 74, 48, 0.18); }
+
+/* ============ Lv1 · 🍀 四叶草 / 道林纸 ============
+ * 常见洁白书写纸：细纤维、微折、干净留白。勿偏深牛皮褐。
+ * 文字 Dark-600 / 石灰，绝不出现白字。静态。 */
+.vip-card.level-skin-1 {
+  background:
+    /* 微折：极淡亮脊 + 浅灰谷 */
+    linear-gradient(102deg,
+      transparent 34%,
+      rgba(255, 255, 255, 0.9) 36.2%,
+      rgba(255, 255, 255, 0.9) 37%,
+      rgba(160, 154, 144, 0.12) 37.6%,
+      rgba(160, 154, 144, 0.04) 39.5%,
+      transparent 42%),
+    radial-gradient(ellipse 120% 100% at 30% 12%, rgba(255, 255, 255, 0.95) 0%, transparent 58%),
+    /* 道林纸：洁白微暖 */
+    linear-gradient(170deg, #FFFEFB 0%, #F7F5F0 48%, #EEEBE4 100%);
+  border: 1px solid rgba(160, 154, 144, 0.42);
+  box-shadow:
+    0 14rpx 32rpx rgba(12, 9, 6, 0.48),
+    0 3rpx 8rpx rgba(12, 9, 6, 0.3),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.98),
+    inset 0 -2rpx 6rpx rgba(160, 154, 144, 0.12);
+}
+.vip-card.level-skin-1 .bg-texture {
+  /* 细纸目 */
+  opacity: 0.42;
+  background-image: radial-gradient(rgba(107, 101, 96, 0.12) 0.4px, transparent 0.9px);
+  background-size: 7rpx 7rpx;
+}
+.vip-card.level-skin-1 .card-grain {
+  opacity: 1;
+  background-image:
+    /* 细短纤维（浅灰，克制） */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg stroke='%236B6560' stroke-width='0.45' stroke-linecap='round' fill='none'%3E%3Cpath d='M5 9l6 1' stroke-opacity='0.14'/%3E%3Cpath d='M18 5l5-1' stroke-opacity='0.11'/%3E%3Cpath d='M34 12l8 1' stroke-opacity='0.13'/%3E%3Cpath d='M50 7l6 2' stroke-opacity='0.1'/%3E%3Cpath d='M8 24l5 3' stroke-opacity='0.12'/%3E%3Cpath d='M26 22l7-2' stroke-opacity='0.13'/%3E%3Cpath d='M44 28l6 1' stroke-opacity='0.11'/%3E%3Cpath d='M4 40l7-2' stroke-opacity='0.12'/%3E%3Cpath d='M22 44l8 2' stroke-opacity='0.11'/%3E%3Cpath d='M40 39l6 3' stroke-opacity='0.12'/%3E%3Cpath d='M9 56l6 2' stroke-opacity='0.11'/%3E%3Cpath d='M28 58l6-2' stroke-opacity='0.1'/%3E%3Cpath d='M46 54l7 2' stroke-opacity='0.12'/%3E%3C/g%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, rgba(160, 154, 144, 0.03) 0, rgba(160, 154, 144, 0.03) 1rpx, transparent 1rpx, transparent 5rpx);
+  background-size: 96rpx 96rpx, auto;
+}
+.vip-card.level-skin-1 .card-grain::after {
+  /* 干净裁边：一道浅刀口，非牛皮毛边 */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2rpx;
+  background: linear-gradient(180deg, transparent 0%, rgba(160, 154, 144, 0.22) 100%);
+}
+.vip-card.level-skin-1 .org-name .en,
+.vip-card.level-skin-1 .growth-link-hint,
+.vip-card.level-skin-1 .profile-edit-hint,
+.vip-card.level-skin-1 .ap-text,
+.vip-card.level-skin-1 .cb-overline,
+.vip-card.level-skin-1 .cb-row-link { color: #8A7530; }
+.vip-card.level-skin-1 .org-name .tagline,
+.vip-card.level-skin-1 .growth-overline,
+.vip-card.level-skin-1 .growth-label,
+.vip-card.level-skin-1 .growth-target,
+.vip-card.level-skin-1 .cb-row-label,
+.vip-card.level-skin-1 .cb-tags-label,
+.vip-card.level-skin-1 .cb-since { color: var(--color-text-muted); }
+.vip-card.level-skin-1 .growth-gap-line,
+.vip-card.level-skin-1 .growth-status,
+.vip-card.level-skin-1 .growth-perk-delta,
+.vip-card.level-skin-1 .cb-row-val { color: #4A4540; }
+.vip-card.level-skin-1 .cb-specimen-latin { color: #A8903C; }
+.vip-card.level-skin-1 .action-chip {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(160, 154, 144, 0.4);
+}
+.vip-card.level-skin-1 .action-chip-press {
+  background: rgba(196, 167, 108, 0.14);
+  border-color: rgba(138, 117, 48, 0.5);
+}
+.vip-card.level-skin-1 .checkin-chip.is-done {
+  background: transparent;
+  border-color: rgba(160, 154, 144, 0.28);
+}
+.vip-card.level-skin-1 .checkin-chip.is-done .ap-text { color: rgba(107, 101, 96, 0.85); }
+.vip-card.level-skin-1 .avatar-wrap {
+  border-color: rgba(160, 154, 144, 0.45);
+  background: #F0EDE8;
+}
+.vip-card.level-skin-1 .badge-pill {
+  background: #2D5A3F;
+  color: #F2EDE4;
+}
+.vip-card.level-skin-1 .rate-tag {
+  color: var(--color-text-muted);
+  border-color: rgba(160, 154, 144, 0.4);
+  background: rgba(255, 255, 255, 0.45);
+}
+.vip-card.level-skin-1 .card-section-rule { background: rgba(160, 154, 144, 0.35); }
+.vip-card.level-skin-1 .card-section-rule-fill { background: rgba(168, 144, 60, 0.7); }
+.vip-card.level-skin-1 .progress-track {
+  background: rgba(160, 154, 144, 0.18);
+}
+.vip-card.level-skin-1 .progress-bar {
+  background: linear-gradient(90deg, #A8903C 0%, var(--gold) 100%);
+}
+.vip-card.level-skin-1 .cb-stripe {
+  background: linear-gradient(180deg, #F5F3EF 0%, #EBE8E2 100%);
+  border-bottom-color: rgba(160, 154, 144, 0.32);
+}
+.vip-card.level-skin-1 .cb-birthday-row.today {
+  background: rgba(45, 90, 63, 0.08);
+  border-color: rgba(45, 90, 63, 0.32);
+}
+.vip-card.level-skin-1 .cb-birthday-row.today .cb-row-val { color: #2D5A3F; }
+.vip-card.level-skin-1 .card-specimen {
+  bottom: 8rpx;
+  right: 4rpx;
+  font-size: 204rpx;
+  opacity: 0.1;
+  filter: saturate(0.06) sepia(0.2) brightness(0.35) contrast(1.2) blur(0.4px);
+  transform-origin: center center;
+  transform: rotate(-16deg) scale(0.96);
+}
+.vip-card.level-skin-1 .card-specimen-back {
+  bottom: 14rpx;
+  right: 10rpx;
+  font-size: 172rpx;
+  opacity: 0.07;
+  filter: saturate(0.06) sepia(0.2) brightness(0.35) contrast(1.2) blur(0.3px);
+  transform-origin: center center;
+  transform: rotate(-12deg) scale(0.9);
+}
+
+/* ============ Lv2 · 🦀 招潮蟹 / 云龙纸 ============
+ * 不常见特种纸：帘纹 + 云絮棉纤维 + 微米黄特种感，一眼比道林「更稀罕」。 */
+.vip-card.level-skin-2 {
+  background:
+    /* 云絮明暗团 */
+    radial-gradient(ellipse 55% 48% at 18% 70%, rgba(180, 170, 145, 0.14) 0%, transparent 68%),
+    radial-gradient(ellipse 65% 55% at 82% 28%, rgba(255, 252, 245, 0.7) 0%, transparent 65%),
+    radial-gradient(ellipse 110% 90% at 48% 8%, rgba(255, 250, 238, 0.85) 0%, transparent 55%),
+    /* 微米黄云龙纸底 */
+    linear-gradient(168deg, #F6F0E4 0%, #EBE3D2 46%, #DDD3BE 100%);
+  border: 1px solid rgba(139, 111, 71, 0.38);
+  box-shadow:
+    0 14rpx 32rpx rgba(12, 9, 6, 0.5),
+    0 3rpx 8rpx rgba(12, 9, 6, 0.32),
+    inset 0 1rpx 0 rgba(255, 252, 245, 0.85),
+    inset 0 -2rpx 8rpx rgba(139, 111, 71, 0.14);
+}
+.vip-card.level-skin-2 .bg-texture {
+  opacity: 0.5;
+  background-image: radial-gradient(rgba(139, 111, 71, 0.14) 0.5px, transparent 1px);
+  background-size: 10rpx 10rpx;
+}
+.vip-card.level-skin-2 .card-grain {
+  opacity: 1;
+  background-image:
+    /* 云絮长纤维（不规则走向） */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg stroke='%238B6F47' stroke-width='0.7' stroke-linecap='round' fill='none'%3E%3Cpath d='M4 16c10 3 18-4 28-1' stroke-opacity='0.22'/%3E%3Cpath d='M36 10c12 2 20-5 32-2' stroke-opacity='0.18'/%3E%3Cpath d='M8 38c14 4 22-6 38-2' stroke-opacity='0.2'/%3E%3Cpath d='M48 34c10 2 18-4 28-1' stroke-opacity='0.16'/%3E%3Cpath d='M6 58c12 3 20-5 34-1' stroke-opacity='0.2'/%3E%3Cpath d='M44 62c11 2 19-4 30-1' stroke-opacity='0.17'/%3E%3Cpath d='M12 80c10 2 16-3 26 0' stroke-opacity='0.18'/%3E%3Cpath d='M52 78c9 2 15-3 24 0' stroke-opacity='0.15'/%3E%3C/g%3E%3Cg fill='%236B5A3E'%3E%3Ccircle cx='20' cy='24' r='0.8' fill-opacity='0.2'/%3E%3Ccircle cx='58' cy='18' r='0.7' fill-opacity='0.18'/%3E%3Ccircle cx='34' cy='48' r='0.9' fill-opacity='0.16'/%3E%3Ccircle cx='72' cy='52' r='0.7' fill-opacity='0.15'/%3E%3Ccircle cx='16' cy='70' r='0.75' fill-opacity='0.17'/%3E%3Ccircle cx='64' cy='84' r='0.65' fill-opacity='0.14'/%3E%3C/g%3E%3C/svg%3E"),
+    /* 宣纸帘纹：竖链线 + 横密纹 */
+    repeating-linear-gradient(90deg, rgba(139, 111, 71, 0.08) 0, rgba(139, 111, 71, 0.08) 1.2rpx, transparent 1.2rpx, transparent 28rpx),
+    repeating-linear-gradient(0deg, rgba(139, 111, 71, 0.045) 0, rgba(139, 111, 71, 0.045) 1rpx, transparent 1rpx, transparent 4rpx),
+    /* 云团透光 */
+    radial-gradient(ellipse 40% 28% at 70% 55%, rgba(255, 252, 245, 0.35) 0%, transparent 70%);
+  background-size: 144rpx 144rpx, auto, auto, auto;
+}
+.vip-card.level-skin-2 .card-grain::after {
+  /* 手工纸毛边（比道林更「稀罕」） */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 7rpx;
+  background-image:
+    radial-gradient(circle at 50% 0, var(--color-bg) 2.2rpx, transparent 2.4rpx),
+    radial-gradient(circle at 50% 0, var(--color-bg) 1.4rpx, transparent 1.6rpx);
+  background-size: 11rpx 7rpx, 17rpx 7rpx;
+  background-position: 0 100%, 5rpx 100%;
+  background-repeat: repeat-x;
+  opacity: 0.8;
+}
+.vip-card.level-skin-2 .org-name .en,
+.vip-card.level-skin-2 .growth-link-hint,
+.vip-card.level-skin-2 .profile-edit-hint,
+.vip-card.level-skin-2 .ap-text,
+.vip-card.level-skin-2 .cb-overline,
+.vip-card.level-skin-2 .cb-row-link { color: #8A7530; }
+.vip-card.level-skin-2 .org-name .tagline,
+.vip-card.level-skin-2 .growth-overline,
+.vip-card.level-skin-2 .growth-label,
+.vip-card.level-skin-2 .growth-target,
+.vip-card.level-skin-2 .cb-row-label,
+.vip-card.level-skin-2 .cb-tags-label,
+.vip-card.level-skin-2 .cb-since { color: #6B5A3E; }
+.vip-card.level-skin-2 .growth-gap-line,
+.vip-card.level-skin-2 .growth-status,
+.vip-card.level-skin-2 .growth-perk-delta,
+.vip-card.level-skin-2 .cb-row-val { color: #4A3A22; }
+.vip-card.level-skin-2 .cb-specimen-latin { color: #A8903C; }
+.vip-card.level-skin-2 .action-chip {
+  background: rgba(255, 252, 245, 0.45);
+  border-color: rgba(139, 111, 71, 0.36);
+}
+.vip-card.level-skin-2 .action-chip-press {
+  background: rgba(139, 111, 71, 0.14);
+  border-color: rgba(139, 111, 71, 0.55);
+}
+.vip-card.level-skin-2 .checkin-chip.is-done {
+  background: transparent;
+  border-color: rgba(139, 111, 71, 0.24);
+}
+.vip-card.level-skin-2 .checkin-chip.is-done .ap-text { color: rgba(107, 90, 62, 0.85); }
+.vip-card.level-skin-2 .avatar-wrap {
+  border-color: rgba(139, 111, 71, 0.42);
+  background: #E8DFD0;
+}
+.vip-card.level-skin-2 .badge-pill {
+  background: #8B6F47;
+  color: #F2EDE4;
+}
+.vip-card.level-skin-2 .rate-tag {
+  color: #6B5A3E;
+  border-color: rgba(139, 111, 71, 0.36);
+  background: rgba(255, 252, 245, 0.4);
+}
+.vip-card.level-skin-2 .card-section-rule { background: rgba(139, 111, 71, 0.28); }
+.vip-card.level-skin-2 .card-section-rule-fill { background: rgba(168, 144, 60, 0.72); }
+.vip-card.level-skin-2 .progress-track {
+  background: rgba(139, 111, 71, 0.16);
+}
+.vip-card.level-skin-2 .progress-bar {
+  background: linear-gradient(90deg, #8B6F47 0%, var(--gold) 100%);
+}
+.vip-card.level-skin-2 .card-thickness {
+  background:
+    linear-gradient(152deg, rgba(255, 252, 245, 0.55) 0%, transparent 26%, transparent 72%, rgba(139, 111, 71, 0.1) 100%),
+    radial-gradient(ellipse 96% 78% at 36% 24%, rgba(255, 252, 245, 0.35) 0%, transparent 66%);
+}
+.vip-card.level-skin-2 .card-edge {
+  border-color: rgba(139, 111, 71, 0.22);
+  box-shadow:
+    inset 0 1rpx 2rpx rgba(139, 111, 71, 0.08),
+    0 1rpx 0 rgba(255, 252, 245, 0.5);
+}
+.vip-card.level-skin-2 .cb-stripe {
+  background: linear-gradient(180deg, #EFE6D6 0%, #E2D6C2 100%);
+  border-bottom-color: rgba(139, 111, 71, 0.3);
+}
+.vip-card.level-skin-2 .cb-stripe::after {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(139, 111, 71, 0.14) 0,
+    rgba(139, 111, 71, 0.14) 2rpx,
+    transparent 2rpx,
+    transparent 10rpx
+  );
+}
+.vip-card.level-skin-2 .cb-row,
+.vip-card.level-skin-2 .cb-stat-cell { border-color: rgba(139, 111, 71, 0.2); }
+.vip-card.level-skin-2 .cb-member { color: rgba(74, 58, 34, 0.55); }
+.vip-card.level-skin-2 .cb-row-sub,
+.vip-card.level-skin-2 .cb-stat-label,
+.vip-card.level-skin-2 .cb-persona,
+.vip-card.level-skin-2 .cb-tags-empty,
+.vip-card.level-skin-2 .cb-specimen { color: #6B5A3E; }
+.vip-card.level-skin-2 .card-back-foot { border-top-color: rgba(139, 111, 71, 0.2); }
+.vip-card.level-skin-2 .cb-birthday-row.today {
+  background: rgba(45, 90, 63, 0.08);
+  border-color: rgba(45, 90, 63, 0.32);
+}
+.vip-card.level-skin-2 .cb-birthday-row.today .cb-row-val { color: #2D5A3F; }
+.vip-card.level-skin-2 .card-specimen {
+  bottom: 10rpx;
+  right: 6rpx;
+  font-size: 188rpx;
+  opacity: 0.11;
+  filter: saturate(0.1) sepia(0.35) brightness(0.32) contrast(1.28);
+  transform-origin: center center;
+  transform: rotate(11deg) scale(0.94);
+}
+.vip-card.level-skin-2 .card-specimen-back {
+  bottom: 16rpx;
+  right: 12rpx;
+  font-size: 160rpx;
+  opacity: 0.08;
+  filter: saturate(0.1) sepia(0.35) brightness(0.32) contrast(1.28);
+  transform-origin: center center;
+  transform: rotate(8deg) scale(0.88);
+}
+
+/* ============ Lv3 · 🐞 瓢虫 / 胡桃木牌 ============
+ * 真实木牌：纵纹沿卡片长边横走 + 两组年轮拱纹 + 一处结疤 + 侧光倒角。
+ * 巧克力暖褐（胡桃），白 / 浅金文字加一层刻痕投影。静态。 */
+.vip-card.level-skin-3 {
+  background:
+    linear-gradient(96deg,
+      rgba(255, 220, 170, 0.2) 0%,
+      transparent 22%,
+      transparent 64%,
+      rgba(14, 8, 3, 0.55) 100%),
+    linear-gradient(178deg,
+      #744F34 0%,
+      #5E3C26 22%,
+      #785438 46%,
+      #4A2E1A 70%,
+      #63402A 100%);
+  border: 1px solid rgba(44, 28, 12, 0.75);
+  box-shadow:
+    0 12rpx 30rpx rgba(14, 9, 4, 0.55),
+    0 3rpx 8rpx rgba(14, 9, 4, 0.35),
+    inset 0 1rpx 0 rgba(255, 232, 190, 0.22),
+    inset 0 -2rpx 8rpx rgba(24, 14, 6, 0.5);
+}
+.vip-card.level-skin-3 .bg-texture { opacity: 0; }
+.vip-card.level-skin-3 .card-grain {
+  opacity: 1;
+  background-image:
+    /* 开放导管孔（胡桃木） */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg stroke='%23241408' stroke-linecap='round' fill='none'%3E%3Cpath d='M6 9h13' stroke-width='0.8' stroke-opacity='0.3'/%3E%3Cpath d='M34 6h9' stroke-width='0.7' stroke-opacity='0.26'/%3E%3Cpath d='M58 12h15' stroke-width='0.8' stroke-opacity='0.28'/%3E%3Cpath d='M80 8h11' stroke-width='0.6' stroke-opacity='0.22'/%3E%3Cpath d='M12 27h11' stroke-width='0.7' stroke-opacity='0.26'/%3E%3Cpath d='M40 24h16' stroke-width='0.8' stroke-opacity='0.3'/%3E%3Cpath d='M66 30h10' stroke-width='0.6' stroke-opacity='0.24'/%3E%3Cpath d='M4 45h14' stroke-width='0.8' stroke-opacity='0.28'/%3E%3Cpath d='M30 48h9' stroke-width='0.6' stroke-opacity='0.22'/%3E%3Cpath d='M52 43h15' stroke-width='0.75' stroke-opacity='0.27'/%3E%3Cpath d='M78 50h13' stroke-width='0.7' stroke-opacity='0.25'/%3E%3Cpath d='M9 66h12' stroke-width='0.7' stroke-opacity='0.26'/%3E%3Cpath d='M36 70h14' stroke-width='0.8' stroke-opacity='0.28'/%3E%3Cpath d='M62 64h10' stroke-width='0.6' stroke-opacity='0.22'/%3E%3Cpath d='M16 86h15' stroke-width='0.8' stroke-opacity='0.27'/%3E%3Cpath d='M46 90h9' stroke-width='0.6' stroke-opacity='0.21'/%3E%3Cpath d='M70 84h14' stroke-width='0.75' stroke-opacity='0.26'/%3E%3C/g%3E%3C/svg%3E"),
+    /* 年轮拱纹（cathedral）：两组不同周期的宽扁同心弧 */
+    repeating-radial-gradient(ellipse 460rpx 66rpx at 34% 116%,
+      rgba(36, 18, 6, 0.38) 0, rgba(36, 18, 6, 0.38) 3.5rpx,
+      rgba(255, 220, 160, 0.1) 3.5rpx, rgba(255, 220, 160, 0.1) 6rpx,
+      transparent 6rpx, transparent 18rpx),
+    repeating-radial-gradient(ellipse 620rpx 92rpx at 76% -22%,
+      rgba(36, 18, 6, 0.28) 0, rgba(36, 18, 6, 0.28) 4rpx,
+      transparent 4rpx, transparent 26rpx),
+    repeating-linear-gradient(178deg, rgba(255, 226, 178, 0.12) 0, rgba(255, 226, 178, 0.12) 1.2rpx, transparent 1.2rpx, transparent 5rpx),
+    repeating-linear-gradient(179deg, rgba(32, 16, 6, 0.28) 0, rgba(32, 16, 6, 0.28) 2.2rpx, transparent 2.2rpx, transparent 10rpx),
+    repeating-linear-gradient(177deg, rgba(32, 16, 6, 0.16) 0, rgba(32, 16, 6, 0.16) 1rpx, transparent 1rpx, transparent 20rpx);
+  background-size: 150rpx 150rpx, auto, auto, auto, auto, auto;
+}
+.vip-card.level-skin-3 .card-grain::after {
+  /* 结疤：暗核 + 一圈绕流的年轮 */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(ellipse 26rpx 13rpx at 15% 76%, rgba(34, 19, 6, 0.6) 0%, rgba(34, 19, 6, 0.22) 58%, transparent 74%),
+    repeating-radial-gradient(ellipse 60rpx 30rpx at 15% 76%,
+      rgba(34, 19, 6, 0.14) 0, rgba(34, 19, 6, 0.14) 2rpx,
+      transparent 2rpx, transparent 9rpx);
+}
+.vip-card.level-skin-3 .card-thickness {
+  /* 倒角：上沿一线亮，下沿一线暗，中部干净 */
+  background:
+    linear-gradient(180deg, rgba(255, 238, 205, 0.2) 0%, transparent 5%),
+    linear-gradient(0deg, rgba(22, 13, 5, 0.4) 0%, transparent 7%),
+    radial-gradient(ellipse 96% 84% at 46% 40%, transparent 52%, rgba(22, 13, 5, 0.26) 100%);
+  box-shadow: none;
+}
+.vip-card.level-skin-3 .card-edge {
+  /* 铣出来的凹槽线：上暗下亮 = 内凹 */
+  border-color: rgba(28, 16, 6, 0.5);
+  border-top-color: rgba(28, 16, 6, 0.6);
+  border-bottom-color: rgba(255, 232, 190, 0.16);
+  animation: none;
+}
+.vip-card.level-skin-3 .card-sheen { opacity: 0; }
+/* 🐞 木雕嵌饰：略小、收进右缘内侧，微倾如阴刻钉饰
+ * multiply 后剪影是「木底 × 焦痕」，剪影本身太黑会把木纹一起乘没，
+ * 故亮度从 0.32 抬到 0.42：仍是深焦痕，但年轮与导管孔能从焦痕里透出来。
+ * blur 0.6rpx = 烙铁边缘的木纤维吃刀。 */
+.vip-card.level-skin-3 .card-specimen {
+  bottom: 18rpx;
+  right: 18rpx;
+  font-size: 168rpx;
+  /* multiply 的对比上限 = 木底亮度 × 不透明度，0.12 时只有 ~4% 亮度差，
+   * 会被胡桃木自身的高频纹理彻底吃掉（实测几乎看不见）。
+   * 抬到 0.3 才有 ~10% 亮度差；因为是乘法，抬上去仍是「木纹透出的焦痕」而非贴纸。 */
+  opacity: 0.3;
+  filter: grayscale(1) brightness(0.42) contrast(1.12) blur(0.45px);
+  transform-origin: center center;
+  transform: rotate(-8deg) scale(0.92);
+}
+.vip-card.level-skin-3 .card-specimen-back {
+  bottom: 22rpx;
+  right: 22rpx;
+  font-size: 148rpx;
+  opacity: 0.2;
+  filter: grayscale(1) brightness(0.42) contrast(1.12) blur(0.35px);
+  transform-origin: center center;
+  transform: rotate(-6deg) scale(0.88);
+}
+.vip-card.level-skin-3 .org-name .cn,
+.vip-card.level-skin-3 .nick-display,
+.vip-card.level-skin-3 .growth-num,
+.vip-card.level-skin-3 .cb-title,
+.vip-card.level-skin-3 .cb-stat-val {
+  color: #FFF6E6;
+  /* 阴刻：文字像被凿进木头里 */
+  text-shadow: 0 1rpx 2rpx rgba(24, 13, 4, 0.65);
+}
+.vip-card.level-skin-3 .org-name .en,
+.vip-card.level-skin-3 .growth-link-hint,
+.vip-card.level-skin-3 .profile-edit-hint,
+.vip-card.level-skin-3 .ap-text,
+.vip-card.level-skin-3 .cb-overline,
+.vip-card.level-skin-3 .cb-row-link,
+.vip-card.level-skin-3 .cb-specimen-latin { color: #F0DCAE; }
+.vip-card.level-skin-3 .org-name .tagline,
+.vip-card.level-skin-3 .growth-overline,
+.vip-card.level-skin-3 .growth-label,
+.vip-card.level-skin-3 .growth-target,
+.vip-card.level-skin-3 .cb-row-label,
+.vip-card.level-skin-3 .cb-tags-label,
+.vip-card.level-skin-3 .cb-since,
+.vip-card.level-skin-3 .cb-row-sub,
+.vip-card.level-skin-3 .cb-stat-label,
+.vip-card.level-skin-3 .cb-persona,
+.vip-card.level-skin-3 .cb-tags-empty,
+.vip-card.level-skin-3 .cb-specimen { color: #D4BE97; }
+.vip-card.level-skin-3 .growth-gap-line,
+.vip-card.level-skin-3 .growth-status,
+.vip-card.level-skin-3 .growth-perk-delta,
+.vip-card.level-skin-3 .cb-row-val { color: #F2E3BE; }
+.vip-card.level-skin-3 .action-chip {
+  background: rgba(24, 14, 6, 0.3);
+  border-color: rgba(240, 220, 174, 0.42);
+}
+.vip-card.level-skin-3 .action-chip-press {
+  background: rgba(240, 220, 174, 0.2);
+  border-color: rgba(240, 220, 174, 0.7);
+}
+.vip-card.level-skin-3 .checkin-chip.is-done {
+  background: rgba(24, 14, 6, 0.24);
+  border-color: rgba(240, 220, 174, 0.24);
+}
+.vip-card.level-skin-3 .checkin-chip.is-done .ap-text { color: rgba(212, 190, 151, 0.9); }
+.vip-card.level-skin-3 .avatar-wrap {
+  border-color: rgba(240, 220, 174, 0.55);
+  background: #4A331C;
+}
+.vip-card.level-skin-3 .badge-pill {
+  background: #E0CFA3;
+  color: #3A2A12;
+}
+.vip-card.level-skin-3 .rate-tag {
+  color: #F0DCAE;
+  border-color: rgba(240, 220, 174, 0.42);
+  background: rgba(24, 14, 6, 0.26);
+}
+.vip-card.level-skin-3 .card-section-rule { background: rgba(24, 14, 6, 0.55); }
+.vip-card.level-skin-3 .card-section-rule-fill { background: rgba(168, 144, 60, 0.7); }
+.vip-card.level-skin-3 .progress-track {
+  background: rgba(24, 14, 6, 0.55);
+}
+.vip-card.level-skin-3 .progress-bar {
+  background: linear-gradient(90deg, #8A6A2C 0%, var(--gold) 100%);
+}
+.vip-card.level-skin-3 .user-info-row-press,
+.vip-card.level-skin-3 .growth-panel-press { background: rgba(255, 238, 205, 0.09); }
+.vip-card.level-skin-3 .flip-layer {
+  border-color: rgba(240, 220, 174, 0.4);
+  background: rgba(24, 14, 6, 0.24);
+}
+.vip-card.level-skin-3 .cb-stripe {
+  background: linear-gradient(180deg, #3A2812 0%, #4A3319 100%);
+  border-bottom-color: rgba(240, 220, 174, 0.3);
+}
+.vip-card.level-skin-3 .cb-row,
+.vip-card.level-skin-3 .cb-stat-cell {
+  background: rgba(28, 17, 7, 0.42);
+  border-color: rgba(240, 220, 174, 0.2);
+}
+.vip-card.level-skin-3 .cb-member { color: rgba(255, 246, 230, 0.62); }
+.vip-card.level-skin-3 .card-back-foot { border-top-color: rgba(240, 220, 174, 0.16); }
+
+/* ============ Lv4 · 🦋 凤蝶 / 紫檀木牌 ============
+ * 与 Lv3 同为木，但换树种：紫檀纹理更直更密、绛红底，
+ * 表面打蜡后有一层丝缎般的低光泽（不是金属反射）。优于胡桃的深沉与色相。 */
+.vip-card.level-skin-4 {
+  background:
+    linear-gradient(96deg,
+      rgba(240, 170, 160, 0.14) 0%,
+      transparent 20%,
+      transparent 66%,
+      rgba(10, 2, 6, 0.58) 100%),
+    /* 更深绛红紫檀 */
+    linear-gradient(178deg,
+      #5A2030 0%,
+      #3A1522 22%,
+      #4E1E2C 44%,
+      #2A1018 70%,
+      #421C28 100%);
+  border: 1px solid rgba(22, 6, 12, 0.92);
+  box-shadow:
+    0 12rpx 30rpx rgba(12, 4, 8, 0.65),
+    0 3rpx 8rpx rgba(12, 4, 8, 0.45),
+    inset 0 1rpx 0 rgba(255, 190, 180, 0.16),
+    inset 0 -2rpx 8rpx rgba(8, 2, 4, 0.6);
+}
+.vip-card.level-skin-4 .bg-texture { opacity: 0; }
+.vip-card.level-skin-4 .card-grain {
+  opacity: 1;
+  background-image:
+    /* 紫檀导管极细，孔隙近乎闭合 */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%23D8D2C6' stroke-linecap='round' fill='none'%3E%3Cpath d='M5 7h9' stroke-width='0.45' stroke-opacity='0.14'/%3E%3Cpath d='M30 5h7' stroke-width='0.4' stroke-opacity='0.11'/%3E%3Cpath d='M52 10h11' stroke-width='0.45' stroke-opacity='0.13'/%3E%3Cpath d='M8 24h10' stroke-width='0.4' stroke-opacity='0.12'/%3E%3Cpath d='M36 21h12' stroke-width='0.45' stroke-opacity='0.14'/%3E%3Cpath d='M60 27h9' stroke-width='0.4' stroke-opacity='0.11'/%3E%3Cpath d='M4 42h12' stroke-width='0.45' stroke-opacity='0.13'/%3E%3Cpath d='M28 45h8' stroke-width='0.4' stroke-opacity='0.1'/%3E%3Cpath d='M50 40h13' stroke-width='0.45' stroke-opacity='0.13'/%3E%3Cpath d='M7 61h10' stroke-width='0.4' stroke-opacity='0.12'/%3E%3Cpath d='M33 64h11' stroke-width='0.45' stroke-opacity='0.13'/%3E%3Cpath d='M58 58h9' stroke-width='0.4' stroke-opacity='0.1'/%3E%3Cpath d='M14 76h12' stroke-width='0.45' stroke-opacity='0.12'/%3E%3Cpath d='M46 78h10' stroke-width='0.4' stroke-opacity='0.1'/%3E%3C/g%3E%3C/svg%3E"),
+    /* 直纹为主：三层高频纵纹，无 cathedral */
+    repeating-linear-gradient(179.4deg, rgba(232, 200, 196, 0.055) 0, rgba(232, 200, 196, 0.055) 1rpx, transparent 1rpx, transparent 4rpx),
+    repeating-linear-gradient(180deg, rgba(8, 6, 4, 0.3) 0, rgba(8, 6, 4, 0.3) 2rpx, transparent 2rpx, transparent 9rpx),
+    repeating-linear-gradient(178.6deg, rgba(8, 6, 4, 0.16) 0, rgba(8, 6, 4, 0.16) 1rpx, transparent 1rpx, transparent 17rpx),
+    /* 打蜡后的丝缎光带（宽、软、静止，非金属高光） */
+    linear-gradient(102deg, transparent 34%, rgba(232, 200, 196, 0.07) 50%, transparent 64%);
+  background-size: 128rpx 128rpx, auto, auto, auto, auto;
+}
+.vip-card.level-skin-4 .card-grain::after {
+  /* 一处极浅的弦切扰动，防止直纹看起来像印刷网格 */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-image: repeating-radial-gradient(ellipse 700rpx 120rpx at 22% -34%,
+    rgba(8, 6, 4, 0.13) 0, rgba(8, 6, 4, 0.13) 3rpx,
+    transparent 3rpx, transparent 26rpx);
+}
+.vip-card.level-skin-4 .card-thickness {
+  background:
+    linear-gradient(180deg, rgba(236, 210, 206, 0.13) 0%, transparent 5%),
+    linear-gradient(0deg, rgba(6, 5, 4, 0.46) 0%, transparent 7%),
+    radial-gradient(ellipse 96% 84% at 52% 38%, transparent 50%, rgba(6, 5, 4, 0.3) 100%);
+  box-shadow: none;
+}
+.vip-card.level-skin-4 .card-edge {
+  border-color: rgba(8, 6, 4, 0.6);
+  border-top-color: rgba(8, 6, 4, 0.7);
+  border-bottom-color: rgba(232, 200, 196, 0.12);
+  animation: none;
+}
+.vip-card.level-skin-4 .card-sheen { opacity: 0; }
+/* 🦋 展翅压印：完整翅影落在右下，克制斜角
+ * screen 下剪影越白越会把木纹一起洗掉（提亮量 = 1 − 剪影亮度），
+ * 故亮度从 2.4 收到 1.45：刻痕里露出的是「浅色芯材 + 仍可见的纵纹」，
+ * 而不是一团糊白。紫檀纹理细密，不加 blur。 */
+.vip-card.level-skin-4 .card-specimen {
+  bottom: 6rpx;
+  right: 2rpx;
+  font-size: 210rpx;
+  opacity: 0.11;
+  filter: grayscale(1) brightness(1.45) contrast(0.92);
+  transform-origin: center center;
+  transform: rotate(-14deg) scale(0.95);
+}
+.vip-card.level-skin-4 .card-specimen-back {
+  bottom: 12rpx;
+  right: 8rpx;
+  font-size: 176rpx;
+  opacity: 0.08;
+  filter: grayscale(1) brightness(1.45) contrast(0.92);
+  transform-origin: center center;
+  transform: rotate(-11deg) scale(0.9);
+}
+.vip-card.level-skin-4 .org-name .cn,
+.vip-card.level-skin-4 .nick-display,
+.vip-card.level-skin-4 .growth-num,
+.vip-card.level-skin-4 .cb-title,
+.vip-card.level-skin-4 .cb-stat-val {
+  color: #F2EDE4;
+  text-shadow: 0 1rpx 2rpx rgba(6, 5, 4, 0.7);
+}
+.vip-card.level-skin-4 .org-name .en,
+.vip-card.level-skin-4 .growth-link-hint,
+.vip-card.level-skin-4 .profile-edit-hint,
+.vip-card.level-skin-4 .ap-text,
+.vip-card.level-skin-4 .cb-overline,
+.vip-card.level-skin-4 .cb-row-link { color: #D4B0B0; }
+.vip-card.level-skin-4 .org-name .tagline,
+.vip-card.level-skin-4 .growth-overline,
+.vip-card.level-skin-4 .growth-label,
+.vip-card.level-skin-4 .growth-target,
+.vip-card.level-skin-4 .cb-row-label,
+.vip-card.level-skin-4 .cb-tags-label,
+.vip-card.level-skin-4 .cb-since,
+.vip-card.level-skin-4 .cb-row-sub,
+.vip-card.level-skin-4 .cb-stat-label,
+.vip-card.level-skin-4 .cb-persona,
+.vip-card.level-skin-4 .cb-tags-empty,
+.vip-card.level-skin-4 .cb-specimen { color: #B89898; }
+.vip-card.level-skin-4 .growth-gap-line,
+.vip-card.level-skin-4 .growth-status,
+.vip-card.level-skin-4 .growth-perk-delta,
+.vip-card.level-skin-4 .cb-row-val { color: #E4DDCE; }
+.vip-card.level-skin-4 .cb-specimen-latin { color: var(--gold); }
+.vip-card.level-skin-4 .action-chip {
+  background: rgba(8, 6, 4, 0.34);
+  border-color: rgba(210, 170, 168, 0.34);
+}
+.vip-card.level-skin-4 .action-chip-press {
+  background: rgba(210, 170, 168, 0.18);
+  border-color: rgba(210, 170, 168, 0.6);
+}
+.vip-card.level-skin-4 .checkin-chip.is-done {
+  background: rgba(8, 6, 4, 0.28);
+  border-color: rgba(210, 170, 168, 0.2);
+}
+.vip-card.level-skin-4 .checkin-chip.is-done .ap-text { color: rgba(169, 161, 146, 0.9); }
+.vip-card.level-skin-4 .avatar-wrap {
+  border-color: rgba(210, 170, 168, 0.45);
+  background: #241E19;
+}
+.vip-card.level-skin-4 .badge-pill {
+  background: #D4B8B8;
+  color: #241E19;
+}
+.vip-card.level-skin-4 .rate-tag {
+  color: #D4B0B0;
+  border-color: rgba(210, 170, 168, 0.34);
+  background: rgba(8, 6, 4, 0.3);
+}
+.vip-card.level-skin-4 .card-section-rule { background: rgba(6, 5, 4, 0.62); }
+.vip-card.level-skin-4 .card-section-rule-fill { background: rgba(160, 150, 130, 0.65); }
+.vip-card.level-skin-4 .progress-track {
+  background: rgba(6, 5, 4, 0.62);
+}
+.vip-card.level-skin-4 .progress-bar {
+  background: linear-gradient(90deg, #6B6255 0%, #A89F90 100%);
+}
+.vip-card.level-skin-4 .user-info-row-press,
+.vip-card.level-skin-4 .growth-panel-press { background: rgba(236, 210, 206, 0.07); }
+.vip-card.level-skin-4 .flip-layer {
+  border-color: rgba(210, 170, 168, 0.34);
+  background: rgba(8, 6, 4, 0.28);
+}
+.vip-card.level-skin-4 .cb-stripe {
+  background: linear-gradient(180deg, #191411 0%, #241E19 100%);
+  border-bottom-color: rgba(210, 170, 168, 0.24);
+}
+.vip-card.level-skin-4 .cb-stripe::after {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(210, 170, 168, 0.1) 0,
+    rgba(210, 170, 168, 0.1) 2rpx,
+    transparent 2rpx,
+    transparent 10rpx
+  );
+}
+.vip-card.level-skin-4 .cb-row,
+.vip-card.level-skin-4 .cb-stat-cell {
+  background: rgba(14, 11, 9, 0.5);
+  border-color: rgba(210, 170, 168, 0.16);
+}
+.vip-card.level-skin-4 .cb-member { color: rgba(242, 237, 228, 0.55); }
+.vip-card.level-skin-4 .card-back-foot { border-top-color: rgba(210, 170, 168, 0.12); }
+
+/* ==== Lv5 · 🦎 绿鬣蜥 / 白银拉丝铭牌 ====
+ * 冷铂银：高对比拉丝 + 冷亮高光边缘；与 Lv6 黄金冷暖对峙。 */
+.vip-card.level-skin-5 {
+  background:
+    linear-gradient(100deg,
+      #8A929A 0%, #B0B8C0 8%, #9AA2AA 16%, #D0D6DC 26%,
+      #A8B0B8 36%, #E4E8EC 46%, #B4BCC4 56%, #CCD2D8 66%,
+      #98A0A8 78%, #C0C6CC 88%, #848C94 100%);
+  border: 1px solid rgba(48, 56, 64, 0.85);
+  box-shadow:
+    0 12rpx 30rpx rgba(8, 10, 14, 0.58),
+    0 3rpx 8rpx rgba(8, 10, 14, 0.38),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.55),
+    inset 0 -2rpx 6rpx rgba(24, 28, 34, 0.45);
+}
+.vip-card.level-skin-5 .bg-texture { opacity: 0; }
+.vip-card.level-skin-5 .card-grain {
+  opacity: 1;
+  background-image:
+    repeating-linear-gradient(58deg, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 1rpx, transparent 1rpx, transparent 22rpx),
+    repeating-linear-gradient(-56deg, rgba(255, 255, 255, 0.07) 0, rgba(255, 255, 255, 0.07) 1rpx, transparent 1rpx, transparent 30rpx),
+    repeating-linear-gradient(180deg,
+      rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 1rpx,
+      rgba(20, 24, 28, 0.08) 1rpx, rgba(20, 24, 28, 0.08) 2rpx),
+    repeating-linear-gradient(179.5deg, rgba(20, 24, 28, 0.09) 0, rgba(20, 24, 28, 0.09) 1rpx, transparent 1rpx, transparent 6rpx),
+    linear-gradient(100deg, transparent 22%, rgba(255, 255, 255, 0.22) 42%, rgba(255, 255, 255, 0.34) 48%, rgba(255, 255, 255, 0.12) 56%, transparent 72%);
+}
+.vip-card.level-skin-5 .card-grain::after { content: none; }
+.vip-card.level-skin-5 .card-thickness {
+  /* 内凹雕刻场：把中央压到 #3E454A 一带，白字对比度 ≥ 8 */
+  background:
+    radial-gradient(ellipse 88% 80% at 50% 52%,
+      rgba(20, 24, 27, 0.56) 0%,
+      rgba(20, 24, 27, 0.52) 56%,
+      rgba(20, 24, 27, 0.24) 78%,
+      transparent 90%),
+    linear-gradient(180deg, rgba(240, 246, 249, 0.16) 0%, transparent 6%),
+    linear-gradient(0deg, rgba(12, 15, 17, 0.4) 0%, transparent 8%);
+  box-shadow: none;
+}
+.vip-card.level-skin-5 .card-edge {
+  /* 雕刻场的边界：上沿刻痕暗、下沿反光亮 */
+  border-color: rgba(14, 17, 19, 0.55);
+  border-top-color: rgba(14, 17, 19, 0.7);
+  border-bottom-color: rgba(233, 241, 245, 0.22);
+  animation: none;
+}
+.vip-card.level-skin-5 .card-edge::after {
+  /* 四角沉头铆钉：暗孔 + 上缘高光 */
+  content: '';
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  bottom: 8rpx;
+  left: 8rpx;
+  background-repeat: no-repeat;
+  background-size: 9rpx 9rpx, 9rpx 9rpx, 9rpx 9rpx, 9rpx 9rpx;
+  background-position: 0 0, 100% 0, 0 100%, 100% 100%;
+  background-image:
+    radial-gradient(circle at 50% 62%, rgba(16, 19, 21, 0.7) 30%, rgba(233, 241, 245, 0.45) 42%, transparent 50%),
+    radial-gradient(circle at 50% 62%, rgba(16, 19, 21, 0.7) 30%, rgba(233, 241, 245, 0.45) 42%, transparent 50%),
+    radial-gradient(circle at 50% 62%, rgba(16, 19, 21, 0.7) 30%, rgba(233, 241, 245, 0.45) 42%, transparent 50%),
+    radial-gradient(circle at 50% 62%, rgba(16, 19, 21, 0.7) 30%, rgba(233, 241, 245, 0.45) 42%, transparent 50%);
+}
+.vip-card.level-skin-5 .card-sheen { opacity: 1; }
+.vip-card.level-skin-5 .card-sheen::before {
+  content: '';
+  position: absolute;
+  top: -22%;
+  bottom: -22%;
+  left: -34%;
+  width: 24%;
+  background: linear-gradient(90deg, transparent 0%, rgba(240, 248, 252, 0.07) 42%, rgba(240, 248, 252, 0.14) 52%, rgba(240, 248, 252, 0.06) 62%, transparent 100%);
+  animation: scSheenSweep 10s ease-in-out infinite;
+}
+/* 🦎 白银蚀刻：完整蜥蜴姿态，顺时针微倾贴右下（禁止半截裁切）
+ * overlay 以材质亮度为基准：剪影压到 1.5 上下（略高于中性）时，
+ * 拉丝暗带被压得更暗、亮带被抬得更亮 —— 纹理直接穿过刻痕，
+ * 且 .card-sheen 扫光扫过时会被重新参与运算，天然得到掠光扫过刻痕。
+ * 剪影若继续留在 2.6（等于纯白）overlay 会在亮带上直接烧成死白，故下调。
+ * contrast 从 0.85 提到 1.15：镭雕面比木雕更硬更锐。 */
+.vip-card.level-skin-5 .card-specimen {
+  bottom: 10rpx;
+  right: 4rpx;
+  font-size: 198rpx;
+  opacity: 0.12;
+  filter: grayscale(1) brightness(1.5) contrast(1.15);
+  transform-origin: center center;
+  transform: rotate(12deg) scale(0.96);
+}
+.vip-card.level-skin-5 .card-specimen-back {
+  bottom: 16rpx;
+  right: 10rpx;
+  font-size: 168rpx;
+  opacity: 0.08;
+  filter: grayscale(1) brightness(1.5) contrast(1.15);
+  transform-origin: center center;
+  transform: rotate(9deg) scale(0.9);
+}
+.vip-card.level-skin-5 .org-name .cn,
+.vip-card.level-skin-5 .nick-display,
+.vip-card.level-skin-5 .growth-num,
+.vip-card.level-skin-5 .cb-title,
+.vip-card.level-skin-5 .cb-stat-val {
+  color: var(--color-text-primary);
+  /* 激光雕刻：亮字压一道深影，跨过任何一条反光带都不糊 */
+  text-shadow: 0 1rpx 2rpx rgba(10, 13, 15, 0.8);
+}
+.vip-card.level-skin-5 .org-name .en,
+.vip-card.level-skin-5 .growth-link-hint,
+.vip-card.level-skin-5 .profile-edit-hint,
+.vip-card.level-skin-5 .ap-text,
+.vip-card.level-skin-5 .cb-overline,
+.vip-card.level-skin-5 .cb-row-link { color: #E3EAEF; }
+.vip-card.level-skin-5 .org-name .tagline,
+.vip-card.level-skin-5 .growth-overline,
+.vip-card.level-skin-5 .growth-label,
+.vip-card.level-skin-5 .growth-target,
+.vip-card.level-skin-5 .cb-row-label,
+.vip-card.level-skin-5 .cb-tags-label,
+.vip-card.level-skin-5 .cb-since,
+.vip-card.level-skin-5 .cb-row-sub,
+.vip-card.level-skin-5 .cb-stat-label,
+.vip-card.level-skin-5 .cb-persona,
+.vip-card.level-skin-5 .cb-tags-empty,
+.vip-card.level-skin-5 .cb-specimen { color: #C3CDD4; }
+.vip-card.level-skin-5 .growth-gap-line,
+.vip-card.level-skin-5 .growth-status,
+.vip-card.level-skin-5 .growth-perk-delta,
+.vip-card.level-skin-5 .cb-row-val { color: #EEF4F8; }
+.vip-card.level-skin-5 .cb-specimen-latin { color: #E0CFA3; }
+.vip-card.level-skin-5 .ap-icon,
+.vip-card.level-skin-5 .qr-icon {
+  /* 冷银牌上不用黄铜图标 */
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}
+.vip-card.level-skin-5 .action-chip {
+  background: rgba(14, 17, 19, 0.42);
+  border-color: rgba(227, 234, 239, 0.42);
+}
+.vip-card.level-skin-5 .action-chip-press {
+  background: rgba(227, 234, 239, 0.2);
+  border-color: rgba(227, 234, 239, 0.75);
+}
+.vip-card.level-skin-5 .checkin-chip.is-done {
+  background: rgba(14, 17, 19, 0.32);
+  border-color: rgba(227, 234, 239, 0.24);
+}
+.vip-card.level-skin-5 .checkin-chip.is-done .ap-text { color: rgba(195, 205, 212, 0.92); }
+.vip-card.level-skin-5 .avatar-wrap {
+  border-color: rgba(233, 241, 245, 0.6);
+  background: #2A3034;
+}
+.vip-card.level-skin-5 .badge-pill {
+  /* 拉丝场上钉一小块抛光牌 */
+  background: #DCE4EA;
+  color: #22262A;
+}
+.vip-card.level-skin-5 .rate-tag {
+  color: #E3EAEF;
+  border-color: rgba(227, 234, 239, 0.42);
+  background: rgba(14, 17, 19, 0.36);
+}
+.vip-card.level-skin-5 .card-section-rule { background: rgba(12, 15, 17, 0.62); }
+.vip-card.level-skin-5 .card-section-rule-fill { background: rgba(140, 150, 158, 0.7); }
+.vip-card.level-skin-5 .progress-track {
+  background: rgba(12, 15, 17, 0.62);
+}
+.vip-card.level-skin-5 .progress-bar {
+  background: linear-gradient(90deg, #6E787F 0%, #A8B2B8 100%);
+}
+.vip-card.level-skin-5 .progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  animation: scBarShimmer 4.5s linear infinite;
+}
+.vip-card.level-skin-5 .user-info-row-press,
+.vip-card.level-skin-5 .growth-panel-press { background: rgba(240, 248, 252, 0.09); }
+.vip-card.level-skin-5 .flip-layer {
+  border-color: rgba(227, 234, 239, 0.4);
+  background: rgba(14, 17, 19, 0.32);
+}
+.vip-card.level-skin-5 .cb-stripe {
+  background: linear-gradient(180deg, #1C2124 0%, #2A3034 100%);
+  border-bottom-color: rgba(227, 234, 239, 0.3);
+}
+.vip-card.level-skin-5 .cb-stripe::after {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(227, 234, 239, 0.12) 0,
+    rgba(227, 234, 239, 0.12) 2rpx,
+    transparent 2rpx,
+    transparent 10rpx
+  );
+}
+.vip-card.level-skin-5 .cb-row,
+.vip-card.level-skin-5 .cb-stat-cell {
+  background: rgba(16, 20, 22, 0.52);
+  border-color: rgba(227, 234, 239, 0.18);
+}
+.vip-card.level-skin-5 .cb-member { color: rgba(255, 255, 255, 0.6); }
+.vip-card.level-skin-5 .card-back-foot { border-top-color: rgba(227, 234, 239, 0.14); }
+
+/* ==== Lv6 · 💎 紫晶簇 / 黄金铭牌 ====
+ * 亮金箔感：暖高光带宽、明金底；克制扫光，非土豪闪烁。优于白银。 */
+.vip-card.level-skin-6 {
+  background:
+    linear-gradient(102deg,
+      #C9A24A 0%, #E8C86A 7%, #F5DEA0 14%, #FFF4C8 20%,
+      #E2C060 28%, #D4AE48 36%, #F0D88A 46%, #FFF0B8 54%,
+      #E6C45C 64%, #C8A040 74%, #F2D878 84%, #FFF6D0 90%,
+      #D8B450 96%, #C49C3E 100%);
+  border: 1px solid rgba(120, 88, 24, 0.75);
+  box-shadow:
+    0 12rpx 30rpx rgba(40, 28, 8, 0.55),
+    0 3rpx 8rpx rgba(40, 28, 8, 0.35),
+    inset 0 1rpx 0 rgba(255, 252, 230, 0.7),
+    inset 0 -2rpx 6rpx rgba(100, 70, 16, 0.4);
+}
+.vip-card.level-skin-6 .bg-texture { opacity: 0; }
+.vip-card.level-skin-6 .card-grain {
+  opacity: 1;
+  background-image:
+    repeating-linear-gradient(180deg,
+      rgba(255, 252, 230, 0.12) 0, rgba(255, 252, 230, 0.12) 1rpx,
+      rgba(120, 80, 20, 0.06) 1rpx, rgba(120, 80, 20, 0.06) 2rpx),
+    repeating-linear-gradient(179.4deg, rgba(120, 80, 20, 0.07) 0, rgba(120, 80, 20, 0.07) 1rpx, transparent 1rpx, transparent 8rpx),
+    linear-gradient(102deg,
+      transparent 10%,
+      rgba(255, 252, 230, 0.38) 22%,
+      transparent 36%,
+      rgba(120, 80, 20, 0.12) 50%,
+      transparent 60%,
+      rgba(255, 252, 230, 0.3) 80%,
+      transparent 92%);
+}
+.vip-card.level-skin-6 .card-grain::after { content: none; }
+.vip-card.level-skin-6 .card-thickness {
+  /* 内凹雕刻场略压暗，四周留亮金包边；整体比旧黄铜更亮 */
+  background:
+    radial-gradient(ellipse 88% 80% at 50% 52%,
+      rgba(90, 60, 12, 0.4) 0%,
+      rgba(90, 60, 12, 0.34) 56%,
+      rgba(90, 60, 12, 0.12) 78%,
+      transparent 90%),
+    linear-gradient(180deg, rgba(255, 250, 220, 0.34) 0%, transparent 7%),
+    linear-gradient(0deg, rgba(80, 52, 10, 0.32) 0%, transparent 8%);
+  box-shadow: none;
+}
+.vip-card.level-skin-6 .card-sheen { opacity: 1; }
+.vip-card.level-skin-6 .card-sheen::before {
+  content: '';
+  position: absolute;
+  top: -24%;
+  bottom: -24%;
+  left: -38%;
+  width: 30%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 250, 232, 0.1) 38%, rgba(255, 250, 232, 0.2) 52%, rgba(255, 250, 232, 0.08) 64%, transparent 100%);
+  animation: scSheenSweep 7.5s ease-in-out infinite;
+}
+.vip-card.level-skin-6 .card-edge {
+  /* 雕刻场刻线：上暗下亮 = 凿进去 */
+  border-color: rgba(34, 24, 8, 0.6);
+  border-top-color: rgba(34, 24, 8, 0.75);
+  border-bottom-color: rgba(255, 246, 214, 0.3);
+  border-width: 1px;
+  overflow: hidden;
+  animation: none;
+}
+.vip-card.level-skin-6 .card-edge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 36%;
+  height: 2rpx;
+  background: linear-gradient(90deg, transparent, rgba(255, 250, 232, 0.75), transparent);
+  animation: scRimRun 6s ease-in-out infinite;
+}
+.vip-card.level-skin-6 .card-edge::after {
+  /* 四角黄金沉头螺钉 */
+  content: '';
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  bottom: 8rpx;
+  left: 8rpx;
+  background-repeat: no-repeat;
+  background-size: 10rpx 10rpx, 10rpx 10rpx, 10rpx 10rpx, 10rpx 10rpx;
+  background-position: 0 0, 100% 0, 0 100%, 100% 100%;
+  background-image:
+    radial-gradient(circle at 50% 62%, rgba(40, 28, 8, 0.72) 30%, rgba(255, 246, 214, 0.6) 42%, transparent 50%),
+    radial-gradient(circle at 50% 62%, rgba(40, 28, 8, 0.72) 30%, rgba(255, 246, 214, 0.6) 42%, transparent 50%),
+    radial-gradient(circle at 50% 62%, rgba(40, 28, 8, 0.72) 30%, rgba(255, 246, 214, 0.6) 42%, transparent 50%),
+    radial-gradient(circle at 50% 62%, rgba(40, 28, 8, 0.72) 30%, rgba(255, 246, 214, 0.6) 42%, transparent 50%);
+}
+.vip-card.level-skin-6 .card-specimen {
+  /* 💎 黄金镭雕：完整宝石落在右下内侧；overlay 让抛光带穿过刻痕 */
+  bottom: 16rpx;
+  right: 10rpx;
+  font-size: 176rpx;
+  opacity: 0.12;
+  filter: grayscale(1) brightness(1.58) contrast(1.18);
+  transform-origin: center center;
+  transform: rotate(-6deg) scale(0.92);
+}
+.vip-card.level-skin-6 .card-specimen-back {
+  bottom: 20rpx;
+  right: 14rpx;
+  font-size: 152rpx;
+  opacity: 0.08;
+  filter: grayscale(1) brightness(1.58) contrast(1.18);
+  transform-origin: center center;
+  transform: rotate(-4deg) scale(0.88);
+}
+.vip-card.level-skin-6 .org-name .cn,
+.vip-card.level-skin-6 .nick-display,
+.vip-card.level-skin-6 .growth-num,
+.vip-card.level-skin-6 .cb-title,
+.vip-card.level-skin-6 .cb-stat-val {
+  color: #FFF8E9;
+  text-shadow: 0 1rpx 2rpx rgba(28, 19, 4, 0.82);
+}
+.vip-card.level-skin-6 .org-name .en,
+.vip-card.level-skin-6 .growth-link-hint,
+.vip-card.level-skin-6 .profile-edit-hint,
+.vip-card.level-skin-6 .ap-text,
+.vip-card.level-skin-6 .cb-overline,
+.vip-card.level-skin-6 .cb-row-link,
+.vip-card.level-skin-6 .cb-specimen-latin { color: #F2E4B8; }
+.vip-card.level-skin-6 .org-name .tagline,
+.vip-card.level-skin-6 .growth-overline,
+.vip-card.level-skin-6 .growth-label,
+.vip-card.level-skin-6 .growth-target,
+.vip-card.level-skin-6 .cb-row-label,
+.vip-card.level-skin-6 .cb-tags-label,
+.vip-card.level-skin-6 .cb-since,
+.vip-card.level-skin-6 .cb-row-sub,
+.vip-card.level-skin-6 .cb-stat-label,
+.vip-card.level-skin-6 .cb-persona,
+.vip-card.level-skin-6 .cb-tags-empty,
+.vip-card.level-skin-6 .cb-specimen { color: #D8C08A; }
+.vip-card.level-skin-6 .growth-gap-line,
+.vip-card.level-skin-6 .growth-status,
+.vip-card.level-skin-6 .growth-perk-delta,
+.vip-card.level-skin-6 .cb-row-val { color: #F7EBC9; }
+.vip-card.level-skin-6 .action-chip {
+  background: rgba(34, 24, 8, 0.42);
+  border-color: rgba(242, 228, 184, 0.5);
+}
+.vip-card.level-skin-6 .action-chip-press {
+  background: rgba(242, 228, 184, 0.22);
+  border-color: rgba(255, 248, 233, 0.8);
+}
+.vip-card.level-skin-6 .checkin-chip.is-done {
+  background: rgba(34, 24, 8, 0.34);
+  border-color: rgba(242, 228, 184, 0.26);
+}
+.vip-card.level-skin-6 .checkin-chip.is-done .ap-text { color: rgba(216, 192, 138, 0.92); }
+.vip-card.level-skin-6 .avatar-wrap {
+  border-color: rgba(255, 246, 214, 0.7);
+  background: #3E2E10;
+}
+.vip-card.level-skin-6 .badge-pill {
+  background: #F0E6CC;
+  color: #3A2A0E;
+}
+.vip-card.level-skin-6 .rate-tag {
+  color: #F2E4B8;
+  border-color: rgba(242, 228, 184, 0.5);
+  background: rgba(34, 24, 8, 0.36);
+}
+.vip-card.level-skin-6 .card-section-rule { background: rgba(28, 20, 6, 0.72); }
+.vip-card.level-skin-6 .card-section-rule-fill { background: rgba(168, 144, 60, 0.72); }
+.vip-card.level-skin-6 .progress-track {
+  background: rgba(28, 20, 6, 0.65);
+}
+.vip-card.level-skin-6 .progress-bar {
+  background: linear-gradient(90deg, #A8903C 0%, var(--gold) 100%);
+}
+.vip-card.level-skin-6 .progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 252, 240, 0.2), transparent);
+  animation: scBarShimmer 3.5s linear infinite;
+}
+.vip-card.level-skin-6 .user-info-row-press,
+.vip-card.level-skin-6 .growth-panel-press { background: rgba(255, 250, 232, 0.1); }
+.vip-card.level-skin-6 .flip-layer {
+  border-color: rgba(242, 228, 184, 0.45);
+  background: rgba(34, 24, 8, 0.34);
+}
+.vip-card.level-skin-6 .cb-stripe {
+  background: linear-gradient(180deg, #2A1E08 0%, #3E2E10 100%);
+  border-bottom-color: rgba(242, 228, 184, 0.36);
+}
+.vip-card.level-skin-6 .cb-row,
+.vip-card.level-skin-6 .cb-stat-cell {
+  background: rgba(30, 21, 6, 0.5);
+  border-color: rgba(242, 228, 184, 0.2);
+}
+.vip-card.level-skin-6 .cb-member { color: rgba(255, 248, 233, 0.62); }
+.vip-card.level-skin-6 .card-back-foot { border-top-color: rgba(242, 228, 184, 0.16); }
+
+/* ==== Lv99 · 🏵 蔷薇章 / 黑蟒皮 ====
+ * 深黑底 + 菱形蟒鳞重复纹 + 鳞脊轻高光；黄铜仅作铭牌点缀，主体一眼是黑蟒皮。
+ * 底色用 Museum Dark 暖黑，禁止纯黑 #000。 */
+.vip-card.level-skin-99 {
+  background:
+    /* 侧光：鳞面微起伏 */
+    linear-gradient(108deg,
+      rgba(196, 167, 108, 0.06) 0%,
+      transparent 18%,
+      transparent 70%,
+      rgba(0, 0, 0, 0.45) 100%),
+    linear-gradient(175deg, #221E1A 0%, #161310 42%, #0F0D0B 100%);
+  border: 1px solid rgba(77, 64, 26, 0.55);
+  box-shadow:
+    0 12rpx 30rpx rgba(8, 6, 4, 0.65),
+    0 3rpx 8rpx rgba(8, 6, 4, 0.45),
+    inset 0 1rpx 0 rgba(196, 167, 108, 0.14),
+    inset 0 -2rpx 8rpx rgba(0, 0, 0, 0.55);
+}
+.vip-card.level-skin-99 .bg-texture {
+  opacity: 0.35;
+  background-image: radial-gradient(rgba(196, 167, 108, 0.08) 0.45px, transparent 1px);
+  background-size: 11rpx 11rpx;
+}
+.vip-card.level-skin-99 .card-grain {
+  opacity: 1;
+  background-image:
+    /* 菱形鳞片网格（两向交叉 = 蟒鳞） */
+    repeating-linear-gradient(60deg,
+      transparent 0, transparent 15rpx,
+      rgba(255, 248, 230, 0.055) 15rpx, rgba(255, 248, 230, 0.055) 16.2rpx,
+      transparent 16.2rpx, transparent 32rpx),
+    repeating-linear-gradient(-60deg,
+      transparent 0, transparent 15rpx,
+      rgba(0, 0, 0, 0.42) 15rpx, rgba(0, 0, 0, 0.42) 16.2rpx,
+      transparent 16.2rpx, transparent 32rpx),
+    /* 错位鳞列 */
+    repeating-linear-gradient(60deg,
+      transparent 0, transparent 7rpx,
+      rgba(196, 167, 108, 0.04) 7rpx, rgba(196, 167, 108, 0.04) 8rpx,
+      transparent 8rpx, transparent 32rpx),
+    repeating-linear-gradient(-60deg,
+      transparent 0, transparent 7rpx,
+      rgba(255, 255, 255, 0.03) 7rpx, rgba(255, 255, 255, 0.03) 8rpx,
+      transparent 8rpx, transparent 32rpx),
+    /* 鳞面起伏：暗核 + 脊线高光 */
+    repeating-radial-gradient(ellipse 28rpx 18rpx at 25% 30%,
+      rgba(0, 0, 0, 0.28) 0, rgba(0, 0, 0, 0.28) 8rpx,
+      transparent 14rpx, transparent 36rpx),
+    repeating-radial-gradient(ellipse 28rpx 18rpx at 75% 70%,
+      rgba(255, 248, 230, 0.04) 0, rgba(255, 248, 230, 0.04) 5rpx,
+      transparent 12rpx, transparent 36rpx);
+  background-size: auto, auto, auto, auto, 64rpx 40rpx, 64rpx 40rpx;
+  background-position: 0 0, 0 0, 16rpx 10rpx, 16rpx 10rpx, 0 0, 32rpx 20rpx;
+}
+.vip-card.level-skin-99 .card-grain::after {
+  /* 克制黄铜内框（铭牌感，非主材质） */
+  content: '';
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  bottom: 12rpx;
+  left: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.28);
+  border-radius: calc(var(--radius-lg) - 14rpx);
+  box-shadow: inset 0 0 0 1rpx rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.vip-card.level-skin-99 .card-thickness {
+  background:
+    linear-gradient(160deg, rgba(196, 167, 108, 0.08) 0%, transparent 22%, transparent 68%, rgba(0, 0, 0, 0.4) 100%),
+    radial-gradient(ellipse 90% 80% at 48% 42%, transparent 45%, rgba(0, 0, 0, 0.35) 100%);
+  box-shadow: none;
+}
+.vip-card.level-skin-99 .card-sheen { opacity: 1; }
+.vip-card.level-skin-99 .card-sheen::before {
+  content: '';
+  position: absolute;
+  top: -24%;
+  bottom: -24%;
+  left: -38%;
+  width: 22%;
+  /* 皮革掠光：极弱，勿金属闪烁 */
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 248, 230, 0.04) 42%, rgba(196, 167, 108, 0.07) 52%, rgba(255, 248, 230, 0.03) 62%, transparent 100%);
+  animation: scSheenSweep 12s ease-in-out infinite;
+}
+.vip-card.level-skin-99 .card-edge {
+  border-color: rgba(48, 40, 16, 0.7);
+  border-top-color: rgba(196, 167, 108, 0.28);
+  border-bottom-color: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1rpx 0 rgba(196, 167, 108, 0.12);
+  animation: none;
+}
+.vip-card.level-skin-99 .card-edge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32%;
+  height: 1rpx;
+  background: linear-gradient(90deg, transparent, rgba(196, 167, 108, 0.45), transparent);
+  animation: scRimRun 9s ease-in-out infinite;
+}
+.vip-card.level-skin-99 .card-edge::after {
+  content: none;
+}
+.vip-card.level-skin-99 .card-specimen {
+  bottom: 22rpx;
+  right: 12rpx;
+  font-size: 164rpx;
+  opacity: 0.12;
+  filter: grayscale(1) brightness(1.55) contrast(1.12);
+  transform-origin: center center;
+  transform: rotate(10deg) scale(0.9);
+}
+.vip-card.level-skin-99 .card-specimen-back {
+  bottom: 26rpx;
+  right: 16rpx;
+  font-size: 144rpx;
+  opacity: 0.08;
+  filter: grayscale(1) brightness(1.55) contrast(1.12);
+  transform-origin: center center;
+  transform: rotate(8deg) scale(0.86);
+}
+.vip-card.level-skin-99 .org-name .cn,
+.vip-card.level-skin-99 .nick-display,
+.vip-card.level-skin-99 .growth-num,
+.vip-card.level-skin-99 .cb-title,
+.vip-card.level-skin-99 .cb-stat-val {
+  color: #F2EDE4;
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.75);
+}
+.vip-card.level-skin-99 .org-name .en,
+.vip-card.level-skin-99 .growth-link-hint,
+.vip-card.level-skin-99 .profile-edit-hint,
+.vip-card.level-skin-99 .ap-text,
+.vip-card.level-skin-99 .cb-overline,
+.vip-card.level-skin-99 .cb-row-link,
+.vip-card.level-skin-99 .cb-specimen-latin { color: var(--gold); }
+.vip-card.level-skin-99 .org-name .tagline,
+.vip-card.level-skin-99 .growth-overline,
+.vip-card.level-skin-99 .growth-label,
+.vip-card.level-skin-99 .growth-target,
+.vip-card.level-skin-99 .cb-row-label,
+.vip-card.level-skin-99 .cb-tags-label,
+.vip-card.level-skin-99 .cb-since,
+.vip-card.level-skin-99 .cb-row-sub,
+.vip-card.level-skin-99 .cb-stat-label,
+.vip-card.level-skin-99 .cb-persona,
+.vip-card.level-skin-99 .cb-tags-empty,
+.vip-card.level-skin-99 .cb-specimen { color: var(--color-text-secondary); }
+.vip-card.level-skin-99 .growth-gap-line,
+.vip-card.level-skin-99 .growth-status,
+.vip-card.level-skin-99 .growth-perk-delta,
+.vip-card.level-skin-99 .cb-row-val { color: #E0CFA3; }
+.vip-card.level-skin-99 .action-chip {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(196, 167, 108, 0.38);
+}
+.vip-card.level-skin-99 .action-chip-press {
+  background: rgba(196, 167, 108, 0.16);
+  border-color: rgba(196, 167, 108, 0.65);
+}
+.vip-card.level-skin-99 .checkin-chip.is-done {
+  background: rgba(0, 0, 0, 0.28);
+  border-color: rgba(196, 167, 108, 0.22);
+}
+.vip-card.level-skin-99 .checkin-chip.is-done .ap-text { color: rgba(160, 154, 144, 0.9); }
+.vip-card.level-skin-99 .ap-icon,
+.vip-card.level-skin-99 .qr-icon {
+  filter: invert(1) brightness(1.5) sepia(1) hue-rotate(15deg) saturate(2);
+  opacity: 0.9;
+}
+.vip-card.level-skin-99 .avatar-wrap {
+  border-color: rgba(196, 167, 108, 0.55);
+  background: var(--color-bg-card);
+}
+.vip-card.level-skin-99 .badge-pill {
+  background: var(--gold);
+  color: var(--color-bg);
+}
+.vip-card.level-skin-99 .rate-tag {
+  color: var(--gold);
+  border-color: rgba(196, 167, 108, 0.4);
+  background: rgba(0, 0, 0, 0.32);
+}
+.vip-card.level-skin-99 .card-section-rule { background: rgba(48, 40, 16, 0.75); }
+.vip-card.level-skin-99 .card-section-rule-fill { background: rgba(168, 144, 60, 0.7); }
+.vip-card.level-skin-99 .progress-track { background: rgba(0, 0, 0, 0.55); }
+.vip-card.level-skin-99 .progress-bar {
+  background: linear-gradient(90deg, #8A7530 0%, var(--gold) 100%);
+}
+.vip-card.level-skin-99 .progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 248, 230, 0.14), transparent);
+  animation: scBarShimmer 4.5s linear infinite;
+}
+.vip-card.level-skin-99 .user-info-row-press,
+.vip-card.level-skin-99 .growth-panel-press { background: rgba(196, 167, 108, 0.08); }
+.vip-card.level-skin-99 .flip-layer {
+  border-color: rgba(196, 167, 108, 0.4);
+  background: rgba(0, 0, 0, 0.35);
+}
+.vip-card.level-skin-99 .cb-stripe {
+  background: linear-gradient(180deg, #0C0A08 0%, #161310 100%);
+  border-bottom-color: rgba(196, 167, 108, 0.28);
+}
+.vip-card.level-skin-99 .cb-stripe::after {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(196, 167, 108, 0.12) 0,
+    rgba(196, 167, 108, 0.12) 2rpx,
+    transparent 2rpx,
+    transparent 10rpx
+  );
+}
+.vip-card.level-skin-99 .cb-row,
+.vip-card.level-skin-99 .cb-stat-cell {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(196, 167, 108, 0.18);
+}
+.vip-card.level-skin-99 .cb-member { color: rgba(242, 237, 228, 0.5); }
+.vip-card.level-skin-99 .card-back-foot { border-top-color: rgba(196, 167, 108, 0.14); }
+
+
+/* —— 等级权益弹窗材质：见下方「等级权益弹窗 · 材质皮肤」章节
+ * （.current-level-card / .level-item 的 .level-skin-N），与主卡纸/木/金属对齐。 —— */
+
+/*
+ * 卡片翻到背面时暂停正面动效（省电）。
+ * 必须写在各档 animation 简写之后：简写会把 animation-play-state 重置为 running。
+ */
+.vip-card-container.is-flipped .vip-card-front .card-specimen,
+.vip-card-container.is-flipped .vip-card-front .card-sheen::before,
+.vip-card-container.is-flipped .vip-card-front .card-edge,
+.vip-card-container.is-flipped .vip-card-front .card-edge::before,
+.vip-card-container.is-flipped .vip-card-front .progress-bar::after {
+  animation-play-state: paused;
+}
+
+/* —— 背板：标本标签（中文名 + 拉丁学名，Georgia 斜体） —— */
+.cb-specimen {
+  font-size: 18rpx;
+  color: rgba(213, 209, 200, 0.6);
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  margin-right: 10rpx;
+}
+
+.cb-specimen-latin {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 18rpx;
+  color: rgba(196, 167, 108, 0.72);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  max-width: 260rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 各档拉丁学名色随材质走，见上方「六档会员牌材质」章节 —— 此处不要再覆写，
+ * 否则浅色纸卡（Lv1–2）会被冷银色改回近似隐形的浅字。 */
+
+.member-no-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 10rpx;
+  flex-shrink: 0;
+}
+
+.card-flip-hint {
+  font-size: 18rpx;
+  color: rgba(196, 167, 108, 0.45);
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.card-flip-hint.back {
+  color: rgba(196, 167, 108, 0.55);
+}
+
+.member-no-label {
+  font-size: 18rpx;
+  color: rgba(196, 167, 108, 0.55);
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  flex-shrink: 0;
+  font-family: var(--font-din);
+}
+
+.member-no-code {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 2rpx;
+  font-weight: 500;
+}
+
+/* === 会员卡背板 · 藏家铭牌 === */
+.cb-stripe {
+  flex-shrink: 0;
+  width: 100%;
+  height: 44rpx;
+  background: linear-gradient(180deg, #14120f, #1e1a14);
+  border-bottom: 1px solid rgba(77, 64, 26, 0.55);
+  position: relative;
+  z-index: 2;
+}
+
+.cb-stripe::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(196, 167, 108, 0.1) 0,
+    rgba(196, 167, 108, 0.1) 2rpx,
+    transparent 2rpx,
+    transparent 10rpx
+  );
+}
+
+.cb-body {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  padding: 20rpx 32rpx 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  overflow: hidden;
+}
+
+.cb-head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.cb-head-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cb-overline {
+  display: block;
+  font-size: 16rpx;
+  color: var(--brass-400);
+  letter-spacing: 0.14em;
+  margin-bottom: 4rpx;
+}
+
+.cb-title {
+  display: block;
+  font-size: 30rpx;
+  font-family: var(--font-brand);
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.cb-member {
+  font-size: 20rpx;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.cb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 14rpx 18rpx;
+  background: rgba(31, 29, 26, 0.9);
+  border: 1px solid rgba(196, 167, 108, 0.16);
+  border-radius: var(--radius-md);
+}
+
+.cb-row-label,
+.cb-tags-label {
+  font-size: 18rpx;
+  color: rgba(196, 167, 108, 0.65);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.cb-row-content {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+
+.cb-row-val {
+  display: block;
+  font-size: 28rpx;
+  font-family: var(--font-mono);
+  color: var(--brass-400);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cb-row-sub {
+  display: block;
+  font-size: 18rpx;
+  color: var(--color-text-secondary);
+  margin-top: 2rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cb-row-link {
+  font-size: 22rpx;
+  color: var(--brass-400);
+  flex-shrink: 0;
+}
+
+.cb-birthday-row.today {
+  border-color: rgba(196, 167, 108, 0.4);
+  background: rgba(196, 167, 108, 0.08);
+}
+
+.cb-birthday-row.today .cb-row-val {
+  color: #fff;
+}
+
+.cb-stats-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10rpx;
+}
+
+.cb-stat-cell {
+  flex: 1;
+  min-width: 0;
+  padding: 12rpx 8rpx;
+  text-align: center;
+  background: rgba(31, 29, 26, 0.9);
+  border: 1px solid rgba(196, 167, 108, 0.14);
+  border-radius: var(--radius-md);
+}
+
+.cb-stat-val {
+  display: block;
+  font-size: 24rpx;
+  font-family: var(--font-mono);
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cb-stat-label {
+  display: block;
+  font-size: 16rpx;
+  color: var(--color-text-muted);
+  margin-top: 4rpx;
+  white-space: nowrap;
+}
+
+.cb-tags-block {
+  min-height: 0;
+  flex-shrink: 1;
+}
+
+.cb-tag-scroll {
+  width: 100%;
+  box-sizing: border-box;
+  white-space: nowrap;
+  margin-top: 8rpx;
+}
+
+.cb-tag-inner {
+  display: inline-flex;
+  gap: 8rpx;
+  padding-right: 32rpx;
+}
+
+.cb-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  flex-shrink: 0;
+  width: auto;
+  padding: 4rpx 14rpx;
+  border-radius: var(--radius-full);
+  border: 1px solid;
+  font-size: 20rpx;
+  flex-shrink: 0;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.cb-persona {
+  display: block;
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+  margin-top: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cb-tags-empty {
+  display: block;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+  margin-top: 8rpx;
+}
+
+.card-back-foot {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx 32rpx 24rpx;
+  border-top: 1px solid rgba(196, 167, 108, 0.1);
+}
+
+.cb-since {
+  font-size: 20rpx;
+  color: rgba(196, 167, 108, 0.55);
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 无快照加载：金铜卡同结构骨架，高度对齐真卡，避免浅色未登录闪屏 */
+.vip-skel {
+  background: linear-gradient(
+    90deg,
+    rgba(196, 167, 108, 0.1) 0%,
+    rgba(242, 228, 184, 0.28) 46%,
+    rgba(196, 167, 108, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8rpx;
+}
+
+.vip-skel-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.avatar-wrap.is-pending {
+  overflow: hidden;
+}
+
+.vip-skel-nick {
+  width: 220rpx;
+  height: 36rpx;
+  margin-top: 6rpx;
+}
+
+.vip-skel-badge {
+  width: 160rpx;
+  height: 36rpx;
+  border-radius: 9999px;
+}
+
+.vip-skel-growth {
+  width: 180rpx;
+  height: 44rpx;
+  margin: 8rpx 0 4rpx;
+}
+
+.vip-skel-meta {
+  width: 280rpx;
+  height: 24rpx;
+  margin-top: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.progress-bar.vip-skel-bar {
+  opacity: 0.55;
+}

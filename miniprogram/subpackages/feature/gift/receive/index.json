@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "一份山海",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "usingComponents": {
+    "protected-badge": "/components/ProtectedBadge/index"
+  },
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundTextStyle": "light"
+}
