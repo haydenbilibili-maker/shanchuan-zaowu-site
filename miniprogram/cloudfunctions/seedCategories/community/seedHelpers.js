@@ -1,5 +1,13 @@
 const { MEDIA } = require('./cdn')
 
+/**
+ * 把小节数组渲染为正文 HTML。
+ *
+ * 兼容两种小节写法：
+ *   - `body: '单段正文'`（历史内容，渲染为一个 <p>）
+ *   - `paras: ['第一段', '第二段']`（长文内容，渲染为多个 <p>）
+ * 长文（如国家地理式科普）需要一节多段，用 body 只能挤成一大段，可读性很差。
+ */
 function sectionsToHtml(sections) {
   return (sections || [])
     .map((s) => {
@@ -13,7 +21,15 @@ function sectionsToHtml(sections) {
             `<p><img src="${u}" alt="" style="width:100%;border-radius:8px;margin:20px 0;" /></p>`
         )
         .join('')
-      return `<h2>${s.title}</h2>${imgs}<p>${s.body}</p>${list}`
+      const paras = Array.isArray(s.paras) && s.paras.length
+        ? s.paras
+        : (s.body ? [s.body] : [])
+      const html = paras
+        .map((p) => String(p || '').trim())
+        .filter(Boolean)
+        .map((p) => `<p>${p}</p>`)
+        .join('')
+      return `<h2>${s.title}</h2>${imgs}${html}${list}`
     })
     .join('')
 }
