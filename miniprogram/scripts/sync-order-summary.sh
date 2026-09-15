@@ -4,7 +4,8 @@
 set -e
 cd "$(dirname "$0")/.."
 SRC="cloudfunctions/dispatchMessage/orderSummary.js"
-DIRS="dispatchMessage makeOrder cancelOrder refundOrder sweepExpiredOrders payCallback confirmPayment managerShipOrder confirmOrderReceipt createBooking manageGift submitSupportTicket submitCustomInquiry getUserMessages"
+# 仅同步到**实际渲染订单站内信**的云函数（getUserMessages 只做列表映射，不需要本模块）
+DIRS="dispatchMessage makeOrder cancelOrder refundOrder sweepExpiredOrders payCallback confirmPayment managerShipOrder confirmOrderReceipt createBooking manageGift submitSupportTicket submitCustomInquiry"
 n=0
 for d in $DIRS; do
   [ -d "cloudfunctions/$d" ] || { echo "跳过（无此函数）: $d"; continue; }
