@@ -18,7 +18,48 @@ const ZODIAC_RANGES = [
 ]
 
 function isCloudFileId(url) {
-  return url && (String(url).startsWith('cloud://') || String(url).startsWith('wxfile://'))
+  return !!(url && String(url).startsWith('cloud://'))
+}
+
+/** 微信占位/游客昵称：不可当作正式藏家代号 */
+const INVALID_NICKNAMES = {
+  微信用户: 1,
+  未登录用户: 1,
+  藏家: 1,
+  用户: 1
+}
+
+/**
+ * 清洗昵称：去空白、截断；无效占位返回空串
+ */
+function sanitizeNickName(raw) {
+  const nick = String(raw || '').trim()
+  if (!nick || INVALID_NICKNAMES[nick]) return ''
+  return nick.slice(0, 20)
+}
+
+/**
+ * 注册/礼赠预填：从 globalData → session → 会员卡快照带出有效昵称
+ * （微信已无法静默 getUserProfile；正式回填依赖 input type=nickname 用户点选）
+ */
+function resolvePrefillNickName(appInstance) {
+  try {
+    const app = appInstance || (typeof getApp === 'function' ? getApp() : null)
+    const gd = (app && app.globalData) || {}
+    const fromUser = sanitizeNickName(
+      (gd.userInfo && (gd.userInfo.nickName || gd.userInfo.nickname)) || ''
+    )
+    if (fromUser) return fromUser
+    const su = (gd.userSession && gd.userSession.user) || null
+    const fromSession = sanitizeNickName(su && (su.nickName || su.nickname))
+    if (fromSession) return fromSession
+    try {
+      const snap = wx.getStorageSync('member_vip_card_snapshot_v1')
+      const fromSnap = sanitizeNickName(snap && snap.nickName)
+      if (fromSnap) return fromSnap
+    } catch (e) { /* ignore */ }
+  } catch (e) { /* ignore */ }
+  return ''
 }
 
 function maskPhone(phone) {
@@ -102,18 +143,18 @@ function birthdayCountdown(birthday) {
       hasBirthday: false,
       daysLeft: null,
       headline: '填写生日',
-      subline: '解锁生日礼遇与专属祝福',
+      subline: '解锁生日礼券与专属祝福',
       isToday: false
     }
   }
   const parts = String(birthday).split('-')
   if (parts.length < 3) {
-    return { hasBirthday: false, daysLeft: null, headline: '填写生日', subline: '解锁生日礼遇与专属祝福', isToday: false }
+    return { hasBirthday: false, daysLeft: null, headline: '填写生日', subline: '解锁生日礼券与专属祝福', isToday: false }
   }
   const month = parseInt(parts[1], 10) - 1
   const day = parseInt(parts[2], 10)
   if (Number.isNaN(month) || Number.isNaN(day)) {
-    return { hasBirthday: false, daysLeft: null, headline: '填写生日', subline: '解锁生日礼遇与专属祝福', isToday: false }
+    return { hasBirthday: false, daysLeft: null, headline: '填写生日', subline: '解锁生日礼券与专属祝福', isToday: false }
   }
 
   const now = new Date()
@@ -132,10 +173,12 @@ function birthdayCountdown(birthday) {
   let subline = `距下次生日 · ${dateLabel}`
   if (isToday) {
     headline = '今天'
-    subline = '生日快乐，藏家'
+    subline = '生日快乐 · 生日礼券已备好'
   } else if (daysLeft === 1) {
     headline = '明天'
-    subline = `生日礼遇即将开启 · ${dateLabel}`
+    subline = `生日礼券即将送达 · ${dateLabel}`
+  } else if (daysLeft <= 7) {
+    subline = `生日将近 · 礼券将于当天送达`
   }
 
   return { hasBirthday: true, daysLeft, headline, subline, isToday, dateLabel }
@@ -175,7 +218,22 @@ const LEVEL_ICONS = {
   3: '/assets/icons/star-active.png',
   4: '/assets/icons/medal_gold.png',
   5: '/assets/icons/medal_gold.png',
+  6: '/assets/icons/medal_gold.png',
   99: '/assets/icons/medal_gold.png'
+}
+
+/**
+ * 六档标本元素 emoji（与 pages/user/index.js 的 CARD_SPECIMENS 保持一致）。
+ * 用于会员等级阶梯每一档的元素标识。
+ */
+const LEVEL_SPECIMEN_EMOJI = {
+  1: '🍀',
+  2: '🦀',
+  3: '🐞',
+  4: '🦋',
+  5: '🦎',
+  6: '💎',
+  99: '🏵'
 }
 
 function formatDiscount(rate) {
@@ -184,18 +242,101 @@ function formatDiscount(rate) {
   return `${text}折`
 }
 
+function isDrinkPerk(perk) {
+  const blob = [
+    perk && perk.title,
+    perk && perk.label,
+    perk && perk.desc,
+    perk && perk.icon,
+    typeof perk === 'string' ? perk : ''
+  ].join(' ')
+  return /饮品|咖啡|coffee|\bdrink\b|drink\.png/i.test(blob)
+}
+
+function normalizePerk(perk, index) {
+  const n = String(index + 1).padStart(2, '0')
+  if (!perk) {
+    return { index: n, title: '', label: '', desc: '', icon: '/assets/icons/done.png' }
+  }
+  if (typeof perk === 'string') {
+    return { index: n, title: perk, label: perk, desc: '', icon: '/assets/icons/done.png' }
+  }
+  const title = perk.title || perk.label || ''
+  const label = perk.label || title
+  return {
+    index: n,
+    title,
+    label,
+    desc: perk.desc || '',
+    icon: perk.icon || '/assets/icons/done.png'
+  }
+}
+
+/** 弹窗卡面明暗：浅底（纸/金属）用深字；深底（木/蟒皮）用浅字 */
+function resolveSkinToneClass(level) {
+  const n = Number(level)
+  if (n === 3 || n === 4 || n === 99) return 'skin-tone-dark'
+  return 'skin-tone-light'
+}
+
 function buildLevelBenefitsUI(levelBenefits) {
   return (levelBenefits || [])
     .filter((item) => item.level !== 99)
-    .map((item) => ({
-      level: item.level,
-      name: item.name,
-      threshold: item.threshold,
-      discount: formatDiscount(item.discount),
-      discountRate: item.discount,
-      benefits: item.perks || [],
-      icon: LEVEL_ICONS[item.level] || LEVEL_ICONS[1]
-    }))
+    .map((item) => {
+      const perkItems = (item.perks || [])
+        .filter((perk) => !isDrinkPerk(perk))
+        .map((perk, index) => normalizePerk(perk, index))
+      const levelNum = item.level === 99 ? 99 : Math.min(Math.max(Number(item.level) || 1, 1), 6)
+      return {
+        level: item.level,
+        name: item.name,
+        threshold: item.threshold,
+        discount: formatDiscount(item.discount),
+        discountRate: item.discount,
+        benefits: perkItems.map((perk) => perk.label || perk.title).filter(Boolean),
+        perkItems,
+        icon: LEVEL_ICONS[item.level] || LEVEL_ICONS[1],
+        specimenEmoji: LEVEL_SPECIMEN_EMOJI[item.level] || '',
+        // 会员卡六档皮肤 class（完整字符串，供 wxml 直接绑定 .level-skin-N 规则）
+        skinClass: `level-skin-${levelNum}`,
+        toneClass: resolveSkinToneClass(levelNum)
+      }
+    })
+}
+
+/** 当前等级已解锁权益（含更低等级；折扣只保留当前档） */
+function collectCurrentPerkItems(levelBenefits, level) {
+  const list = buildLevelBenefitsUI(levelBenefits)
+  const includeAll = Number(level) === 99
+  const seen = {}
+  const others = []
+  let discountPerk = null
+  list.forEach((row) => {
+    if (!includeAll && row.level > level) return
+    ;(row.perkItems || []).forEach((perk) => {
+      const key = perk.label || perk.title
+      if (!key || seen[key] || isDrinkPerk(perk)) return
+      seen[key] = true
+      if (/折/.test(key) || /折/.test(perk.title || '')) discountPerk = perk
+      else others.push(perk)
+    })
+  })
+  if (includeAll) {
+    const honorary = (levelBenefits || []).find((item) => item.level === 99)
+    ;(honorary && honorary.perks ? honorary.perks : []).forEach((perk) => {
+      if (isDrinkPerk(perk)) return
+      const item = normalizePerk(perk, others.length)
+      const key = item.label || item.title
+      if (!key || seen[key] || /全等级|全档/.test(key) || /全等级|全档/.test(item.title || '')) return
+      seen[key] = true
+      others.push(item)
+    })
+  }
+  const items = discountPerk ? [discountPerk, ...others] : others
+  return items.map((perk, index) => ({
+    ...perk,
+    index: String(index + 1).padStart(2, '0')
+  }))
 }
 
 function getLevelBenefit(levelBenefits, level) {
@@ -205,6 +346,120 @@ function getLevelBenefit(levelBenefits, level) {
 function getNextLevelBenefit(levelBenefits, level) {
   const list = (levelBenefits || []).filter((item) => item.level !== 99 && item.level > level)
   return list.length ? list[0] : null
+}
+
+/** 云端占位名（等级6 / Lv6 等）→ 应用本地正式名 */
+function isPlaceholderLevelName(name, level) {
+  const n = String(name || '').trim()
+  if (!n) return true
+  if (/^等级\s*\d+$/.test(n)) return true
+  if (/^Lv\.?\s*\d+$/i.test(n)) return true
+  if (/^Level\s*\d+$/i.test(n)) return true
+  if (level != null && n === String(level)) return true
+  // 已更名旧称，按占位处理以便 resolveDisplayLevelName / merge 落到正式名
+  if (n === '琥珀·博物官') return true
+  return false
+}
+
+/** 已知更名：旧本地名 → 以 defaults / Admin 新名为准 */
+function isOutdatedLevelAlias(name, defName) {
+  const n = String(name || '').trim()
+  const d = String(defName || '').trim()
+  if (!n || !d || n === d) return false
+  if (n === '琥珀·博物官' && d === '星耀·博物官') return true
+  return false
+}
+
+/**
+ * 合并云端 ladder 与本地正式名：保留云端门槛/折扣；占位名与旧别名用 defaults；空权益补 defaults。
+ * @param {Array} ladder 云端 levelLadder
+ * @param {Array} defaults 本地 LEVEL_BENEFITS
+ */
+function mergeLevelLadderWithDefaults(ladder, defaults) {
+  if (!Array.isArray(ladder) || !ladder.length) return ladder || []
+  const defByLevel = {}
+  ;(defaults || []).forEach((row) => {
+    if (row && row.level != null) defByLevel[row.level] = row
+  })
+  return ladder.map((row) => {
+    if (!row || row.level == null) return row
+    const def = defByLevel[row.level]
+    if (!def) return row
+    const next = { ...row }
+    if (
+      def.name &&
+      (isPlaceholderLevelName(row.name, row.level) || isOutdatedLevelAlias(row.name, def.name))
+    ) {
+      next.name = def.name
+    }
+    if ((!row.perks || !row.perks.length) && def.perks && def.perks.length) {
+      next.perks = def.perks
+    }
+    return next
+  })
+}
+
+/** 下一档专属权益短标签（排除折扣类，供会员卡一行提示） */
+function pickNextExclusivePerkLabel(nextPreview) {
+  if (!nextPreview) return ''
+  const fromItems = (nextPreview.perkItems || [])
+    .map((item) => item.label || item.title || '')
+    .filter((label) => label && !/折/.test(label))
+  const fromBenefits = (nextPreview.benefits || []).filter(
+    (label) => label && !/折/.test(label)
+  )
+  const raw = fromItems[0] || fromBenefits[0] || ''
+  if (!raw) return ''
+  return raw.length > 8 ? `${raw.slice(0, 8)}…` : raw
+}
+
+/**
+ * 会员卡成长里程提示（Museum Mode，一两行）
+ * 数据来自 levelLadder / nextLevelPreview，勿写死档位。
+ */
+function buildGrowthMilestoneHint({
+  level,
+  discountRate,
+  discountText,
+  nextThreshold,
+  growthGapDisplay,
+  nextPreview
+}) {
+  const isHonorary = Number(level) === 99
+  const hasNext = !isHonorary && Number(nextThreshold) > 0
+
+  if (!hasNext) {
+    return {
+      growthIsMax: true,
+      growthNextName: '',
+      growthGapLine: '已达当前最高成长档',
+      growthPerkDelta: ''
+    }
+  }
+
+  const nextName = String((nextPreview && nextPreview.name) || '').trim()
+  const gap = growthGapDisplay || '0'
+  const currentDisc = discountText || formatDiscount(discountRate)
+  let perkDelta = ''
+
+  if (nextPreview) {
+    const nextDisc = nextPreview.discount || formatDiscount(nextPreview.discountRate)
+    const curRate = Number(discountRate)
+    const nextRate = Number(nextPreview.discountRate)
+    if (Number.isFinite(nextRate) && Number.isFinite(curRate) && nextRate < curRate) {
+      perkDelta = currentDisc === '无折扣' ? `解锁${nextDisc}` : `${currentDisc}→${nextDisc}`
+    } else {
+      const exclusive = pickNextExclusivePerkLabel(nextPreview)
+      if (exclusive) perkDelta = `解锁${exclusive}`
+    }
+  }
+
+  return {
+    growthIsMax: false,
+    growthNextName: nextName,
+    growthGapLine: nextName ? `距「${nextName}」还需 ${gap}` : `还需 ${gap}`,
+    growthPerkDelta: perkDelta
+  }
 }
 
 /** 兴趣 Chip 展示列表（避免 WXML 内 indexOf 在真机失效） */
@@ -240,10 +495,18 @@ module.exports = {
   formatCompactCount,
   formatGrowthDisplay,
   isCloudFileId,
+  sanitizeNickName,
+  resolvePrefillNickName,
   formatDiscount,
   buildLevelBenefitsUI,
+  resolveSkinToneClass,
+  collectCurrentPerkItems,
   getLevelBenefit,
   getNextLevelBenefit,
+  isPlaceholderLevelName,
+  mergeLevelLadderWithDefaults,
+  pickNextExclusivePerkLabel,
+  buildGrowthMilestoneHint,
   buildInterestChips,
   LEVEL_ICONS
 }

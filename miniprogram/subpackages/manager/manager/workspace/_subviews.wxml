@@ -1006,7 +1006,7 @@
           </view>
           <view class="om-sku-empty" wx:else><text>暂无藏品明细</text></view>
           <view class="om-addr om-addr-copyable" wx:if="{{item.address}}" catchtap="copyOrderAddress" data-id="{{item._id}}" data-scope="pendingPayOrders" hover-class="om-addr-press" hover-stay-time="80">
-            <image class="om-addr-icon" src="/assets/icons/location.png" mode="aspectFit"></image>
+            <image class="om-addr-icon" src="/subpackages/manager/assets/icons/location.png" mode="aspectFit"></image>
             <view class="om-addr-body">
               <text class="om-addr-title">{{item.address.name}} {{item.address.phone}}</text>
               <text class="om-addr-sub">{{item.addressLine || item.address.detail}}</text>

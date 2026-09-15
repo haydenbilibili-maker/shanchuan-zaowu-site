@@ -25,21 +25,52 @@ function normalizeStoreImageList(list) {
   return list.map(normalizeStoreImageUrl).filter(Boolean)
 }
 
+const _storeUrlMem = Object.create(null)
+const STORE_URL_TTL = 50 * 60 * 1000
+
 async function batchResolveCloudUrls(fileIds) {
   const urlMap = {}
   const unique = [...new Set((fileIds || []).filter((id) => id && String(id).startsWith('cloud://')))]
   if (!unique.length || !wx.cloud) return urlMap
 
+  const now = Date.now()
+  const miss = []
+  unique.forEach((id) => {
+    const hit = _storeUrlMem[id]
+    if (hit && hit.url && now - hit.at < STORE_URL_TTL) {
+      urlMap[id] = hit.url
+    } else {
+      miss.push(id)
+    }
+  })
+  if (!miss.length) return urlMap
+
   try {
     const res = await wx.cloud.callFunction({
       name: 'getStoreMediaUrls',
-      data: { fileList: unique }
+      data: { fileList: miss }
     })
     if (res.result && res.result.urlMap) {
-      Object.assign(urlMap, res.result.urlMap)
+      Object.keys(res.result.urlMap).forEach((id) => {
+        const url = res.result.urlMap[id]
+        if (url) {
+          urlMap[id] = url
+          _storeUrlMem[id] = { url, at: now }
+        }
+      })
     }
   } catch (e) {
-    console.warn('getStoreMediaUrls cloud function failed, fallback to cloud://', e)
+    console.warn('getStoreMediaUrls cloud function failed, fallback to getTempFileURL', e)
+    try {
+      const { batchTempFileURLs } = require('./util')
+      const mapped = await batchTempFileURLs(miss.filter((id) => !urlMap[id]))
+      Object.keys(mapped).forEach((id) => {
+        urlMap[id] = mapped[id]
+        _storeUrlMem[id] = { url: mapped[id], at: now }
+      })
+    } catch (err) {
+      console.warn('batchTempFileURLs fallback failed', err)
+    }
   }
   return urlMap
 }
@@ -48,7 +79,7 @@ function pickDisplayUrl(fileId, urlMap) {
   if (!fileId) return ''
   if (fileId.startsWith('https://') || fileId.startsWith('http://')) return fileId
   if (fileId.startsWith('cloud://')) {
-    return (urlMap && urlMap[fileId]) || ''
+    return (urlMap && urlMap[fileId]) || fileId
   }
   return fileId
 }

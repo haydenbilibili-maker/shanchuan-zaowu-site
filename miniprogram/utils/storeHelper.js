@@ -5,6 +5,8 @@ const {
   STORE_SERVICES
 } = require('./storeDefaults')
 const { normalizeStoreImageUrl, normalizeStoreImageList } = require('./storeMedia')
+const { displayStoreName } = require('./storeName')
+const { getCachedStores } = require('./storeCatalog')
 
 const PREFERRED_STORE_KEY = 'preferredStoreId'
 
@@ -34,6 +36,9 @@ function setPreferredStoreId(storeId) {
 }
 
 function findStore(storeId) {
+  const catalog = getCachedStores()
+  const fromCatalog = catalog.find((s) => s.storeId === storeId)
+  if (fromCatalog) return fromCatalog
   return DEFAULT_STORES.find((s) => s.storeId === storeId) || DEFAULT_STORES[0]
 }
 
@@ -42,7 +47,8 @@ function getDefaultStore() {
 }
 
 function getWorkshopStore() {
-  return DEFAULT_STORES.find((s) => s.role === 'workshop') || DEFAULT_STORES[1]
+  const catalog = getCachedStores()
+  return catalog.find((s) => s.role === 'workshop') || DEFAULT_STORES.find((s) => s.role === 'workshop') || DEFAULT_STORES[1]
 }
 
 function getZonesForStore(storeId) {
@@ -80,16 +86,24 @@ function closedReasonLabel(reason) {
   return '今日店休'
 }
 
-function mergeWalkingGuide(store) {
+function mergeWalkingGuide(store, stores) {
   if (!store) return null
+  const list = (stores && stores.length) ? stores : getCachedStores()
   const seed = DEFAULT_STORES.find((s) => s.storeId === store.storeId)
   const guide = store.walkingGuide || (seed && seed.walkingGuide)
   if (!guide) return null
-  const peer = DEFAULT_STORES.find((s) => s.storeId === guide.peerStoreId)
+  const peer = list.find((s) => s.storeId === guide.peerStoreId)
+    || DEFAULT_STORES.find((s) => s.storeId === guide.peerStoreId)
+  const peerName = displayStoreName(peer)
+  const goingDown = store.role !== 'workshop'
+  const headline = peerName && peerName !== '门店'
+    ? `${goingDown ? '下楼到' : '上山到'}${peerName} · 步行约 5 分钟`
+    : (guide.headline || '')
   return {
     ...guide,
-    peerName: (peer && peer.name) || '',
-    peerLocation: (peer && peer.locationLabel) || ''
+    headline,
+    peerName,
+    peerLocation: (peer && (peer.locationLabel || peer.floor)) || ''
   }
 }
 
@@ -140,12 +154,13 @@ function enrichStore(store) {
     id: 1,
     latitude: store.latitude,
     longitude: store.longitude,
-    title: store.name,
+    title: displayStoreName(store),
     width: 24,
     height: 24
   }]
   return {
     ...store,
+    name: displayStoreName(store),
     coverImage: normalizeStoreImageUrl(store.coverImage) || (seed && seed.coverImage) || '',
     hoursText: formatHours(store.hours),
     openStatus,

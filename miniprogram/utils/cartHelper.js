@@ -55,7 +55,7 @@ async function fetchCartCount(app) {
     const db = wx.cloud.database()
     const res = await db.collection('collections').where({ _openid: openid }).limit(100).get()
     const list = (res.data || []).filter((item) => {
-      if (!item || item.type === 'wishlist') return false
+      if (!item || item.type === 'wishlist' || item.type === 'favorite') return false
       return !item.type || item.type === 'product' || item.type === 'activity' || item.type === 'course'
     })
     return list.length

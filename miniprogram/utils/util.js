@@ -24,6 +24,47 @@ const getFirstImage = (images, fallback = '') => {
   return (images && Array.isArray(images) && images.length > 0) ? images[0] : fallback
 }
 
+/** 临时链内存缓存（约 50min，短于微信默认 2h） */
+const _tempUrlMem = Object.create(null)
+const TEMP_URL_TTL = 50 * 60 * 1000
+
+/**
+ * 批量 cloud:// → HTTPS，避免 N 次 getTempFileURL；命中内存则跳过网络
+ */
+const batchTempFileURLs = async (fileIds) => {
+  const unique = [...new Set((fileIds || []).filter((id) => id && String(id).startsWith('cloud://')))]
+  const urlMap = {}
+  if (!unique.length || !wx.cloud) return urlMap
+
+  const now = Date.now()
+  const miss = []
+  unique.forEach((id) => {
+    const hit = _tempUrlMem[id]
+    if (hit && hit.url && now - hit.at < TEMP_URL_TTL) {
+      urlMap[id] = hit.url
+    } else {
+      miss.push(id)
+    }
+  })
+  if (!miss.length) return urlMap
+
+  try {
+    for (let i = 0; i < miss.length; i += 50) {
+      const chunk = miss.slice(i, i + 50)
+      const res = await wx.cloud.getTempFileURL({ fileList: chunk })
+      ;(res.fileList || []).forEach((f) => {
+        if (f.fileID && f.tempFileURL) {
+          urlMap[f.fileID] = f.tempFileURL
+          _tempUrlMem[f.fileID] = { url: f.tempFileURL, at: now }
+        }
+      })
+    }
+  } catch (e) {
+    console.warn('batchTempFileURLs', e)
+  }
+  return urlMap
+}
+
 /**
  * 格式化价格显示
  * @param {number|string} price - 价格
@@ -56,6 +97,7 @@ const getSafe = (obj, path, defaultValue = null) => {
 module.exports = {
   formatTime,
   getFirstImage,
+  batchTempFileURLs,
   formatPrice,
   getSafe
 }

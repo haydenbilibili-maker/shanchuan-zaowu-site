@@ -1,0 +1,50 @@
+// 拉丁学名展示清洗：空值与 N/A 类占位返回空串，配合 wx:if 隐藏行。
+// WXS 勿用正则字面量 /.../、可选链等。
+
+var PLACEHOLDERS = {
+  'n/a': true,
+  'na': true,
+  'n.a.': true,
+  'n.a': true,
+  'null': true,
+  'undefined': true,
+  'none': true,
+  'nil': true,
+  'unknown': true,
+  '-': true,
+  '—': true,
+  '–': true,
+  '暂无': true,
+  '无': true,
+  '未知': true
+}
+
+function isSpace(ch) {
+  return ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r'
+}
+
+function trim(s) {
+  var start = 0
+  var end = s.length - 1
+  while (start <= end && isSpace(s.charAt(start))) {
+    start = start + 1
+  }
+  while (end >= start && isSpace(s.charAt(end))) {
+    end = end - 1
+  }
+  if (end < start) return ''
+  return s.substring(start, end + 1)
+}
+
+function display(raw) {
+  if (raw === null || raw === undefined) return ''
+  var s = trim('' + raw)
+  if (!s) return ''
+  var key = s.toLowerCase()
+  if (PLACEHOLDERS[key]) return ''
+  return s
+}
+
+module.exports = {
+  display: display
+}
