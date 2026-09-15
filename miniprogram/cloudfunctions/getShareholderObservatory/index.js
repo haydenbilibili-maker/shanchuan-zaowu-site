@@ -6,7 +6,23 @@
  * 返回：signals/trafficLights（股东专属信号灯）+ charts（营收/净利/分成趋势、回本、结构）
  */
 const cloud = require('wx-server-sdk')
-const { assertStaff } = require('./staffGuard')
+const { assertStaff: _assertStaff } = require('./staffGuard')
+
+/**
+ * 鉴权包装（2026-09-15 修复）：Admin Web 经 /api/cloud-fn 调用时，代理会把密钥注入
+ * event.adminOpsKey，而 staffGuard 只比较 options.adminOpsKey —— 原实现从不透传，
+ * 导致 ERP 调用本函数一律 NOT_LOGGED_IN。此处统一从 globalThis 取用。
+ *
+ * 注意：入口对 globalThis.__adminOpsKey 必须**无条件赋值**（无密钥时置空）。
+ * 预热容器会跨请求复用 globalThis，若只在有密钥时赋值，上一个请求的超管身份
+ * 会泄漏给下一个无密钥请求。
+ */
+function assertStaff(db, openid, options = {}) {
+  const opts = { ...(options || {}) }
+  if (opts.adminOpsKey == null) opts.adminOpsKey = globalThis.__adminOpsKey || ''
+  return _assertStaff(db, openid, opts)
+}
+
 const {
   DEFAULT_MALL_THRESHOLD,
   DEFAULT_MALL_RATE,
@@ -1126,6 +1142,7 @@ async function buildDashboard(event, openid, actor) {
 }
 
 exports.main = async (event) => {
+  globalThis.__adminOpsKey = (event && event.adminOpsKey) || ''
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID
   const action = String((event && event.action) || 'dashboard').trim() || 'dashboard'
