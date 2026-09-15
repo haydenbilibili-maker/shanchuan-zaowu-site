@@ -13,6 +13,7 @@
     "build:admin": "node scripts/build-admin.mjs",
     "build": "npm run build:admin && astro build && node scripts/verify-admin-dist.mjs",
     "pages:deploy": "wrangler pages deploy dist --project-name=shanchuan-zaowu-site --branch=main",
+    "check:cloud-files": "node miniprogram/scripts/check-cloud-files.cjs",
     "sync:miniprogram": "node scripts/check-miniprogram-sync.mjs --fix",
     "sync:miniprogram:check": "node scripts/check-miniprogram-sync.mjs",
     "lint:wxml": "node miniprogram/scripts/check-wxml.mjs miniprogram",
