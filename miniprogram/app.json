@@ -2,44 +2,9 @@
   "pages": [
     "pages/index/index",
     "pages/category/index",
-    "pages/community/index",
-    "pages/community/publish/index",
-    "pages/store/index",
+    "pages/atelier/index",
     "pages/cart/index",
     "pages/user/index",
-    "pages/user/onboarding/index",
-    "pages/user/onboarding/done",
-    "pages/user/profile/index",
-    "pages/user/achievements/index",
-    "pages/user/messages/index",
-    "pages/user/support/index",
-    "pages/user/legal/index",
-    "pages/user/feedback/index",
-    "pages/user/certificates/index",
-    "pages/custom/index",
-    "pages/custom/hub/index",
-    "pages/custom/pet/index",
-    "pages/custom/pet/status/index",
-    "pages/custom/pet/list/index",
-    "pages/custom/orders/index",
-    "pages/custom/share/index",
-    "pages/custom/inquiry/index",
-    "pages/care/index",
-    "pages/care/guide/index",
-    "pages/care/my/index",
-    "pages/detail/index",
-    "pages/detail/wiki-detail/index",
-    "pages/comment/index",
-    "pages/search/index",
-    "pages/identify/index",
-    "pages/identify/result/index",
-    "pages/identify/share/index",
-    "pages/collection/index",
-    "pages/collection/detail/index",
-    "pages/collection-detail/index",
-    "pages/articles/index",
-    "pages/articles/detail/index",
-    "pages/videos/index",
     "custom-tab-bar/index"
   ],
   "window": {
@@ -47,7 +12,9 @@
     "navigationBarBackgroundColor": "#1A1814",
     "navigationBarTitleText": "山海造物",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#1A1814"
+    "backgroundColor": "#1A1814",
+    "backgroundColorTop": "#1A1814",
+    "backgroundColorBottom": "#1A1814"
   },
   "tabBar": {
     "custom": true,
@@ -59,89 +26,194 @@
       {
         "pagePath": "pages/index/index",
         "text": "探索",
-        "iconPath": "assets/icons/home.png",
-        "selectedIconPath": "assets/icons/home-active.png"
+        "iconPath": "assets/icons/tab-explore.png",
+        "selectedIconPath": "assets/icons/tab-explore-on.png"
       },
       {
         "pagePath": "pages/category/index",
         "text": "馆藏",
-        "iconPath": "assets/icons/knowledge.png",
-        "selectedIconPath": "assets/icons/knowledge-active.png"
+        "iconPath": "assets/icons/tab-collection.png",
+        "selectedIconPath": "assets/icons/tab-collection-on.png"
       },
       {
-        "pagePath": "pages/store/index",
-        "text": "这有店",
-        "iconPath": "assets/icons/store-tab.png",
-        "selectedIconPath": "assets/icons/store-tab-active.png"
+        "pagePath": "pages/atelier/index",
+        "text": "标本工坊",
+        "iconPath": "assets/icons/tab-atelier.png",
+        "selectedIconPath": "assets/icons/tab-atelier-on.png"
       },
       {
         "pagePath": "pages/cart/index",
         "text": "购物车",
-        "iconPath": "assets/icons/cart.png",
-        "selectedIconPath": "assets/icons/cart-active.png"
+        "iconPath": "assets/icons/tab-cart.png",
+        "selectedIconPath": "assets/icons/tab-cart-on.png"
       },
       {
         "pagePath": "pages/user/index",
         "text": "我的",
-        "iconPath": "assets/icons/user.png",
-        "selectedIconPath": "assets/icons/user-active.png"
+        "iconPath": "assets/icons/tab-user.png",
+        "selectedIconPath": "assets/icons/tab-user-on.png"
       }
     ]
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",
+  "singlePage": {
+    "navigationBarFit": "float"
+  },
+  "usingComponents": {
+    "nav-back": "/components/NavBack/index",
+    "page-edge-back": "/components/PageEdgeBack/index",
+    "protected-badge": "/components/ProtectedBadge/index"
+  },
   "subpackages": [
     {
       "root": "subpackages/business",
       "name": "business",
+      "plugins": {
+        "logisticsPlugin": {
+          "version": "2.3.0",
+          "provider": "wx9ad912bf20548d92"
+        }
+      },
       "pages": [
         "my-bookings/index",
         "ticket/index",
         "orders/index",
         "order-detail/index",
+        "pickup-pass/index",
+        "aftersale-apply/index",
+        "logistics-track/index",
         "confirm-order/index",
         "address/index",
         "points/index",
+        "order-claim/index",
         "coupons/index",
+        "rewards/index",
         "certificate/index",
-        "manager/index",
-        "manager/purchase-orders/index",
         "framer/index",
+        "framer-recruit/index",
         "about/index",
         "ar/index",
         "booking/index",
+        "store/index",
         "store-zone/index"
+      ]
+    },
+    {
+      "root": "subpackages/manager",
+      "name": "manager",
+      "pages": [
+        "manager/index",
+        "manager/workspace/index",
+        "invoice-requests/index",
+        "gift-ops/index",
+        "gift-manage/index",
+        "store-points/index",
+        "staff-directory/index",
+        "staff-permissions/index",
+        "shareholder-config/index",
+        "approvals/index",
+        "honorary-curators/index",
+        "member-crm/index",
+        "member-level-adjust/index",
+        "wallet-config/index",
+        "welcome-gift/index",
+        "birthday-gift/index",
+        "deposit-ops/index",
+        "purchase-ops/index",
+        "shipment-ops/index",
+        "inventory-ops/index",
+        "raw-inventory-ops/index",
+        "studio-dashboard/index",
+        "property-cost/index",
+        "artisan-commission/index",
+        "booking-rules/index",
+        "support-config/index",
+        "staff/index",
+        "staff/field/index",
+        "staff/attendance/index",
+        "staff/leave/index",
+        "staff/leave-review/index",
+        "staff/store-todos/index",
+        "staff/payslips/index",
+        "payslip/index",
+        "payslip/admin/index",
+        "staff/reimbursements/index",
+        "staff/reimburse-review/index",
+        "live/broadcast/index",
+        "live/studio/index",
+        "artisan/index",
+        "artisan/concept/index",
+        "artisan/profile/index",
+        "artisan/works/index",
+        "artisan/commission/index",
+        "investor/index",
+        "shareholder/index"
+      ]
+    },
+    {
+      "root": "subpackages/feature",
+      "name": "feature",
+      "pages": [
+        "search/index",
+        "detail/index",
+        "detail/wiki-detail/index",
+        "community/index",
+        "community/publish/index",
+        "custom/index",
+        "custom/hub/index",
+        "custom/pet/index",
+        "custom/pet/status/index",
+        "custom/pet/list/index",
+        "custom/orders/index",
+        "custom/share/index",
+        "custom/inquiry/index",
+        "care/index",
+        "care/guide/index",
+        "care/my/index",
+        "comment/index",
+        "identify/index",
+        "identify/result/index",
+        "identify/share/index",
+        "collection/index",
+        "collection/detail/index",
+        "collection/log/index",
+        "collection-detail/index",
+        "articles/index",
+        "articles/detail/index",
+        "live/watch/index",
+        "videos/index",
+        "user/onboarding/index",
+        "user/onboarding/done",
+        "user/profile/index",
+        "user/achievements/index",
+        "user/messages/index",
+        "user/messages/detail/index",
+        "user/support/index",
+        "user/invoice-request/index",
+        "user/legal/index",
+        "user/feedback/index",
+        "user/certificates/index",
+        "user/stored-value/index",
+        "user/wishlist/index",
+        "gift/hub/index",
+        "gift/compose/index",
+        "gift/success/index",
+        "gift/receive/index",
+        "gift/address/index",
+        "gift/my-gifts/index"
       ]
     }
   ],
-  "preloadRule": {
-    "pages/index/index": {
-      "network": "all",
-      "packages": ["business"]
-    },
-    "pages/custom/index": {
-      "network": "all",
-      "packages": ["business"]
-    },
-    "pages/store/index": {
-      "network": "all",
-      "packages": ["business"]
-    },
-    "pages/user/index": {
-      "network": "all",
-      "packages": ["business"]
-    }
-  },
+  "preloadRule": {},
   "requiredPrivateInfos": [
-    "chooseAddress"
+    "chooseAddress",
+    "getLocation"
   ],
   "permission": {
-    "scope.camera": {
-      "desc": "用于 AR 试摆与 AI 标本鉴定拍照，将藏品或标本清晰摄入画面"
-    },
-    "scope.writePhotosAlbum": {
-      "desc": "用于保存AR合成照片"
+    "scope.userLocation": {
+      "desc": "用于展示附近门店距离与到店指引，推荐可到店门店"
     }
   }
 }

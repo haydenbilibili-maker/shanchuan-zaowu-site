@@ -1,52 +1,163 @@
-<!--pages/coupons/index.wxml-->
+<!-- 我的券夹 · Museum Mode（归属钱包枢纽） -->
 <view class="container">
+  <wallet-hub-bar active="coupons" coupon-count="{{usableCouponCount}}"></wallet-hub-bar>
+
   <view class="header">
-    <text class="title">MY WALLET</text>
-    <text class="sub">我的礼券夹 · {{usableCount}} 张可用 / 共 {{coupons.length}} 张</text>
+    <text class="title">MY VOUCHERS</text>
+    <text class="sub">我的礼券夹 · {{coupons.length}}</text>
   </view>
 
-  <view class="coupon-list">
+  <view class="coupon-list" wx:if="{{coupons.length}}">
     <block wx:for="{{coupons}}" wx:key="_id">
-      <view class="coupon-card {{item.isUsable ? '' : 'disabled'}} {{item.isExpired ? 'expired' : ''}}">
-        <view class="expired-stamp" wx:if="{{item.isExpired}}">失效</view>
+      <view class="coupon-card {{item.canUse ? '' : 'disabled'}}">
         <view class="c-left">
-          <view class="val-box" wx:if="{{item.type === 'discount'}}">
-            <text class="amount discount">{{item.valueDisplay}}</text>
+          <view class="val-box">
+            <text class="symbol" wx:if="{{!item.faceLabel}}">¥</text>
+            <text class="amount">{{item.faceLabel || item.value}}</text>
           </view>
-          <view class="val-box" wx:else>
-            <text class="symbol">¥</text>
-            <text class="amount">{{item.value}}</text>
-          </view>
-          <text class="condition" wx:if="{{item.minSpend > 0}}">满 {{item.minSpend}} 可用</text>
+          <text class="condition">满 {{item.minSpend || 0}} 可用</text>
         </view>
-        <view class="split-line"><view class="circle top"></view><view class="line"></view><view class="circle bottom"></view></view>
+        <view class="split-line" aria-hidden="true">
+          <view class="circle top"></view>
+          <view class="line"></view>
+          <view class="circle bottom"></view>
+        </view>
         <view class="c-right">
           <view class="info">
             <text class="c-name">{{item.title}}</text>
-            <text class="c-tag">{{item.typeLabel}}</text>
-            <text class="c-date {{item.isExpired ? 'expired-date' : ''}}">
-              {{item.isExpired ? '已于 ' : '有效期至 '}}{{item.expireDate}}
-            </text>
+            <view class="c-meta-row">
+              <text class="c-tag {{item.channel}}" wx:if="{{item.channelLabel}}">{{item.channelLabel}}</text>
+              <text class="c-date">{{item.expireDate ? '至 ' + item.expireDate : ''}}</text>
+            </view>
+            <text class="c-source" wx:if="{{item.sourceLabel}}">{{item.sourceLabel}}{{item.costPoints > 0 ? ' · ' + item.costPoints + ' 积分' : ''}}</text>
           </view>
           <view
-            class="c-status clickable"
-            wx:if="{{item.isUsable}}"
+            class="c-status {{item.canUse ? 'clickable' : ''}}"
+            wx:if="{{item.canUse}}"
             bindtap="useCoupon"
-            data-index="{{index}}"
-          >
-            <text>{{item.statusLabel}}</text>
-          </view>
-          <view class="c-status {{item.isExpired ? 'expired-badge' : ''}}" wx:else>
-            <text>{{item.statusLabel}}</text>
-          </view>
+            data-id="{{item._id}}"
+            data-title="{{item.title}}"
+            data-value="{{item.value}}"
+            data-min="{{item.minSpend}}"
+            data-channel="{{item.channel}}"
+            data-can-online="{{item.canUseOnline}}"
+            data-can-store="{{item.canUseStore}}"
+          >{{item.useLabel || '去使用'}}</view>
+          <view class="c-status muted" wx:elif="{{item.status === 'used'}}">已使用</view>
+          <view class="c-status muted" wx:elif="{{item.status === 'locked'}}">占用中</view>
+          <view class="c-status muted" wx:else>已过期</view>
         </view>
-        <view class="texture"></view>
+        <view class="texture" aria-hidden="true"></view>
       </view>
     </block>
   </view>
 
   <view class="empty" wx:if="{{coupons.length === 0 && !loading}}">
-    <text>暂无礼券</text>
-    <view class="go-btn" bindtap="goPoints">去积分中心兑换</view>
+    <view class="empty-body" wx:if="{{needLogin}}">
+      <text class="empty-overline">VOUCHERS</text>
+      <text class="empty-title">先重新进入</text>
+      <text class="empty-sub">退出本机登录后，礼券与会员号不会在此展示</text>
+      <view class="go-btn" bindtap="goResumeLogin">重新进入</view>
+    </view>
+    <view class="empty-body" wx:elif="{{loadError}}">
+      <text class="empty-overline">VOUCHERS</text>
+      <text class="empty-title">礼券夹暂时打不开</text>
+      <text class="empty-sub">网络或权限异常，稍后再试</text>
+      <view class="go-btn" bindtap="loadCoupons">重新加载</view>
+    </view>
+    <view class="empty-body" wx:else>
+      <text class="empty-overline">VOUCHERS</text>
+      <text class="empty-title">礼券夹还是空的</text>
+      <text class="empty-sub">完成注册可获新客礼券；积分也可兑换门店与线上通用礼券</text>
+      <view class="go-btn" bindtap="goWelcomeOrPoints">{{emptyCtaText}}</view>
+    </view>
+  </view>
+
+  <!-- 双渠道：Museum 底栏（替代系统 ActionSheet） -->
+  <view class="sheet-mask {{showUseSheet ? 'show' : ''}}" wx:if="{{showUseSheet}}" bindtap="closeUseSheet" catchtouchmove="preventClose">
+    <view class="use-sheet" catchtap="preventClose">
+      <view class="sheet-handle" aria-hidden="true"></view>
+      <text class="sheet-overline">HOW TO USE</text>
+      <text class="sheet-title">如何使用此礼券</text>
+      <text class="sheet-coupon" wx:if="{{sheetCoupon.title}}">{{sheetCoupon.title}}{{sheetCoupon.value ? ' · ¥' + sheetCoupon.value : ''}}</text>
+
+      <view class="sheet-option" hover-class="sheet-option-press" bindtap="onSheetOnline">
+        <view class="sheet-option-main">
+          <text class="sheet-opt-title">线上商城抵扣</text>
+          <text class="sheet-opt-sub">下单结算时选用此礼券</text>
+        </view>
+        <text class="sheet-arrow">›</text>
+      </view>
+      <view class="sheet-option primary" hover-class="sheet-option-press" bindtap="onSheetStore">
+        <view class="sheet-option-main">
+          <text class="sheet-opt-title">到店亮码核销</text>
+          <text class="sheet-opt-sub">出示会员码，请店员核销礼券</text>
+        </view>
+        <text class="sheet-arrow">›</text>
+      </view>
+      <view class="sheet-cancel" hover-class="sheet-cancel-press" bindtap="closeUseSheet">取消</view>
+    </view>
+  </view>
+
+  <!-- 到店亮码弹层：catchtouchmove 只挡遮罩穿透，面板可滚 -->
+  <view class="pass-mask" wx:if="{{showPassModal}}" bindtap="closePassModal">
+    <view class="pass-mask-blocker" catchtouchmove="preventClose" catchtap="closePassModal"></view>
+    <view class="pass-panel {{passState === 'redeemed' ? 'is-redeemed' : ''}}" catchtap="preventClose">
+      <view class="pass-head">
+        <text class="pass-overline">{{passState === 'redeemed' ? 'REDEEMED' : 'MEMBER PASS'}}</text>
+        <text class="pass-title">{{passState === 'redeemed' ? '核销成功' : '到店亮码'}}</text>
+        <view class="pass-close" bindtap="closePassModal">关闭</view>
+      </view>
+
+      <!-- 等待核销提示 -->
+      <view class="pass-coupon-tip" wx:if="{{passState !== 'redeemed' && passCouponTip}}">
+        <view class="signal-light lamp-brass blink"></view>
+        <view class="pass-tip-copy">
+          <text class="pass-tip-main">{{passCouponTip}}</text>
+          <text class="pass-tip-sub" wx:if="{{passCouponTitle}}">{{passCouponTitle}}</text>
+        </view>
+      </view>
+
+      <!-- 核销成功结果卡（与会员卡亮码共用 PassRedeemCard） -->
+      <pass-redeem-card
+        wx:if="{{passState === 'redeemed'}}"
+        title="{{redeemTitle || passCouponTitle || '门店礼券'}}"
+        value-text="{{redeemValueText}}"
+        animating="{{redeemAnimating}}"
+        note="礼券已从礼券夹移除 · 可关闭本页"
+      />
+
+      <!-- 二维码舞台：成功后灰态占位，避免继续被扫 -->
+      <view class="pass-qr-stage {{passState === 'redeemed' ? 'is-spent' : ''}}" wx:if="{{passState !== 'redeemed'}}">
+        <view class="pass-qr-empty" wx:if="{{passState === 'loading'}}">正在生成会员码…</view>
+        <view class="pass-qr-empty-wrap" wx:elif="{{passState === 'error'}}">
+          <text class="pass-qr-empty">{{passErrorMsg || '会员码暂时无法生成'}}</text>
+          <text class="pass-qr-retry" bindtap="refreshPassQr">重新获取</text>
+        </view>
+        <view class="pass-qr-frame" wx:else>
+          <canvas
+            type="2d"
+            id="couponPassQrCanvas"
+            class="pass-qr-canvas"
+            style="width: 300rpx; height: 300rpx;"
+          ></canvas>
+        </view>
+        <view class="pass-qr-plate" wx:if="{{memberNo}}">
+          <text class="pass-qr-id">{{memberNo}}</text>
+          <view class="pass-qr-meta" wx:if="{{passState === 'ready'}}">
+            <view class="signal-light {{passCountdown <= 0 ? '' : (passCountdown <= 10 ? 'danger blink' : (passCountdown <= 30 ? 'warn blink' : 'blink'))}}"></view>
+            <text class="pass-qr-timer">{{passCountdown}}s</text>
+          </view>
+        </view>
+      </view>
+
+      <block wx:if="{{passState === 'redeemed'}}">
+        <view class="pass-done-btn" hover-class="pass-done-btn-press" bindtap="closePassModal">完成</view>
+      </block>
+      <block wx:else>
+        <text class="pass-foot">动态会员码 · 请勿截图转发</text>
+        <text class="pass-foot sub">店员扫码核销后，本页将自动提示成功</text>
+      </block>
+    </view>
   </view>
 </view>

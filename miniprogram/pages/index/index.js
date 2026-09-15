@@ -2,7 +2,7 @@
 const app = getApp();
 const db = wx.cloud.database();
 const _ = db.command;
-const { getFirstImage } = require('../../utils/util');
+const { getFirstImage, batchTempFileURLs } = require('../../utils/util');
 const { setCache, getCache, clearCache } = require('../../utils/cache');
 const { xingchenCover } = require('../../config/storeMediaCdn');
 const { enrichStore, setPreferredStoreId } = require('../../utils/storeHelper');
@@ -10,16 +10,120 @@ const { DEFAULT_STORES, DEFAULT_STORE_ID } = require('../../utils/storeDefaults'
 const { haversineKm, formatDistance } = require('../../utils/storeGeo');
 const { hydrateStoreMedia } = require('../../utils/storeMedia');
 const { trackBehavior } = require('../../utils/trackBehavior');
+const { cdnPath } = require('../../config/cloudEnv');
+const easterEggHost = require('../../utils/easterEggHost');
+const easterEgg = require('../../utils/easterEgg');
+const { getAuthorizedLocation } = require('../../utils/locationAuth');
+const { HOME_ORB_ROOT, collectRootAliases } = require('../../utils/categorySeed');
+const { resolveBannerNav, openBannerItem } = require('../../utils/bannerNav');
+const { isSinglePageMode, blockIfSinglePage } = require('../../utils/singlePageMode');
+const { isSensitiveBlurProduct } = require('../../utils/sensitiveBlur');
+const { navigateToProductDetail } = require('../../utils/productDetailNav');
+const FRAMER_RECRUIT_PATH = '/subpackages/business/framer-recruit/index';
+/** 库为空时的视觉占位（无跳转），不写死业务 banner */
+const EMPTY_BANNER_FALLBACK = {
+  id: 'fallback-hero',
+  image: cdnPath('banners/chris-nguyen-tXmc2mVDxJc-unsplash.jpg'),
+  title: '蓝色闪蝶特展',
+  subtitle: 'BLUE MORPHO',
+  badge: '精选'
+};
 
-/** 博物标本室 · 服务入口灵动球（第二行） */
-const SERVICE_ORBS = [
-  { _id: 'svc_identify', displayName: 'AI识别', enName: 'AI SCAN', icon: '📷', action: 'identify', animDelay: 1.6 },
-  { _id: 'svc_atelier', displayName: '标本工坊', enName: 'ATELIER', icon: '🎁', action: 'atelier', animDelay: 2 },
-  { _id: 'svc_care', displayName: '标本养护', enName: 'CARE', icon: '🌡', action: 'care', animDelay: 2.4 },
-  { _id: 'svc_community', displayName: '山海社区', enName: 'COMMUNITY', icon: '✦', action: 'community', animDelay: 2.8 }
-];
+/** 直播抢插帧 id（仅前端合并，不入库） */
+const LIVE_BANNER_ID = 'live-on-air-hero';
+const LIVE_BANNER_COVER = EMPTY_BANNER_FALLBACK.image;
+
+function buildLiveBannerSlide(session) {
+  const s = session || {};
+  const cover = s.coverUrl || s.cover || s.image || LIVE_BANNER_COVER;
+  const hostLine = s.hostName ? `主播 · ${s.hostName}` : '';
+  const sub = s.notice || hostLine || '点击进入直播间';
+  return {
+    id: LIVE_BANNER_ID,
+    isLive: true,
+    image: cover,
+    title: s.title || '馆内直播进行中',
+    subtitle: sub,
+    badge: '直播中',
+    link: (s._id
+      ? `/subpackages/feature/live/watch/index?sessionId=${encodeURIComponent(s._id)}`
+      : '/subpackages/feature/live/watch/index'),
+    sort: 999999
+  };
+}
+
+/** 有可拉流场次时插到最前；不影响库内 banner 顺序 */
+function mergeBannersWithLive(baseList, liveSession, showLive) {
+  const base = (Array.isArray(baseList) ? baseList : []).filter(
+    (b) => b && b.id !== LIVE_BANNER_ID && !b.isLive
+  );
+  if (showLive && liveSession && liveSession.pullUrl) {
+    return [buildLiveBannerSlide(liveSession), ...base];
+  }
+  return base;
+}
+
+function stampBannerKey(item, index) {
+  if (!item) return item;
+  const key = item.id || item._id || `banner-${index}`;
+  return { ...item, id: key, _id: item._id || key };
+}
+
+function pickBannerImage(item) {
+  if (!item) return '';
+  return item.image || item.fileID || item.cloudPath || '';
+}
+
+/**
+ * 仅消费云库/装修配置：过滤关闭项、去重、按 sort 降序、可选 limit。
+ * 不在客户端强制插入任何业务 banner。
+ */
+function normalizeBanners(list, options) {
+  const opts = options || {};
+  const limit = Number(opts.limit) > 0 ? Number(opts.limit) : 0;
+  const seenIds = new Set();
+  const seenPaths = new Set();
+
+  let rows = (Array.isArray(list) ? list : [])
+    .filter((item) => item && item.enabled !== false)
+    .map((item, index) => {
+      const stamped = stampBannerKey(item, index);
+      const image = pickBannerImage(stamped);
+      const { href } = resolveBannerNav(stamped);
+      return {
+        ...stamped,
+        image,
+        link: href || stamped.link || '',
+        sort: Number(stamped.sort) || 0
+      };
+    })
+    .filter((item) => {
+      if (!item.image) return false;
+      const idKey = String(item._id || item.id || '');
+      if (idKey && seenIds.has(idKey)) return false;
+      const pathKey = String(item.link || item.target || '').split('?')[0];
+      if (pathKey && seenPaths.has(pathKey)) return false;
+      if (idKey) seenIds.add(idKey);
+      if (pathKey) seenPaths.add(pathKey);
+      return true;
+    })
+    .sort((a, b) => (b.sort || 0) - (a.sort || 0));
+
+  if (limit > 0) rows = rows.slice(0, limit);
+  return rows;
+}
+
+async function hydrateBannerImages(list) {
+  const banners = Array.isArray(list) ? list : [];
+  const urlMap = await batchTempFileURLs(banners.map((item) => item && item.image));
+  return banners.map((item) => {
+    const https = item && urlMap[item.image];
+    return https ? { ...item, image: https } : item;
+  });
+}
 
 Page({
+  behaviors: [easterEggHost],
   data: {
     navTop: 40,
     isScrolled: false,
@@ -44,54 +148,216 @@ Page({
     orbExpanded: false, // 底部面板是否展开
     orbProducts: [], // 展开的商品数据
     orbLoading: false,
+    orbLoadingMore: false,
+    orbHasMore: false,
     
     banners: [],
     categories: [],
-    serviceOrbs: SERVICE_ORBS,
     framers: [],
     activities: [],
     collections: [],
     newArrivals: [],
     recommendations: [], // 推荐内容
     currentBannerIndex: 0,
+    heroAutoplay: true,
     
-    // 模块显示控制
+    // 模块显示控制（专题展览/近期活动：仅 enabled === true 才展示，缺省关闭）
     showBanners: true,
     showCategories: true,
-    showCollections: true,
+    showCollections: false,
     showFramers: true,
-    showActivities: true,
+    showActivities: false,
     showRecommendations: true,
     showNewArrivals: true,
 
     exploreStore: null,
-    showExploreStore: true,
-    loadingExploreStore: true,
-    showQuickGrid: false,
-    quickEntries: [
-      { id: 'identify', label: 'AI 鉴定', icon: '/assets/icons/camera.png', badge: '限时免费', action: 'identify' },
-      { id: 'gallery', label: '馆藏', icon: '/assets/icons/exhibition-tab-active.png', action: 'gallery' },
-      { id: 'atelier', label: '标本工坊', icon: '/assets/icons/edit.png', action: 'atelier' },
-      { id: 'atlas', label: '我的图鉴', icon: '/assets/icons/medal_gold.png', action: 'atlas' }
-    ],
+    showExploreStore: false,
+    loadingExploreStore: false,
 
-    atelierHeroImage: xingchenCover
+    atelierHeroImage: xingchenCover,
+    workshopStoreName: '工坊',
+    showSpecimenCustom: false,
+    showPetMemorial: true,
+    showLive: false,
+    showStore: true,
+    liveSession: null,
+    /** 朋友圈单页模式（scene=1154）：平台预览，不可路由跳转 */
+    isSinglePage: false
   },
 
-  onLoad() {
+  onLoad(options) {
+    const singlePage = isSinglePageMode(options);
     const { getWindowInfo } = require('../../utils/systemInfo');
     const win = getWindowInfo();
     const menu = wx.getMenuButtonBoundingClientRect();
-    this.setData({ navTop: menu.top || win.statusBarHeight || 40 });
+    // 单页模式顶部已有微信固定导航，收起自定义胶囊区避免双顶栏
+    this.setData({
+      isSinglePage: singlePage,
+      navTop: singlePage ? 8 : (menu.top || win.statusBarHeight || 40)
+    });
+    try {
+      const app = getApp();
+      if (app && app.globalData) app.globalData.isSinglePage = singlePage;
+    } catch (e) { /* ignore */ }
+
+    // 先用水合缓存开关，减少首屏闪动；再异步 SWR
+    try {
+      const { getCachedContentDisplayFlags } = require('../../utils/contentDisplayFlags');
+      const cached = getCachedContentDisplayFlags();
+      if (cached && cached.flags) {
+        const showStore = cached.flags.showStore !== false;
+        this.setData({
+          showSpecimenCustom: cached.flags.showSpecimenCustom === true,
+          showPetMemorial: cached.flags.showPetMemorial !== false,
+          showLive: cached.flags.showLive === true,
+          showStore,
+          showExploreStore: showStore && this.data.showExploreStore
+        });
+      }
+    } catch (e) { /* ignore */ }
+
+    // 有首页缓存时跳过整页 loading 盖住旧内容
+    try {
+      const { getCache } = require('../../utils/cache');
+      if (getCache('HOME_CONFIG', { allowStale: true }) || getCache('BANNERS', { allowStale: true })) {
+        this.setData({ loading: false, loadingConfig: false });
+      }
+    } catch (e) { /* ignore */ }
 
     this.initData();
+    this.loadDisplayFlags();
+  },
+
+  async loadDisplayFlags() {
+    try {
+      const { fetchContentDisplayFlags } = require('../../utils/contentDisplayFlags');
+      const apply = (flags) => {
+        const showStore = flags.showStore !== false;
+        this.setData({
+          showSpecimenCustom: flags.showSpecimenCustom === true,
+          showPetMemorial: flags.showPetMemorial !== false,
+          showLive: flags.showLive === true,
+          showStore,
+          showExploreStore: showStore && this.data.showExploreStore
+        });
+        return flags.showLive === true;
+      };
+      const { flags } = await fetchContentDisplayFlags({
+        onUpdate: (payload) => {
+          if (payload && payload.flags) {
+            const live = apply(payload.flags);
+            if (live) this.loadActiveLive().catch(() => {});
+            else {
+              this.setData({ liveSession: null });
+              this.applyDisplayBanners();
+            }
+          }
+        }
+      });
+      if (apply(flags)) {
+        await this.loadActiveLive();
+      } else {
+        this.setData({ liveSession: null });
+        this.applyDisplayBanners();
+      }
+    } catch (e) {
+      this.setData({ showSpecimenCustom: false, showPetMemorial: true, showLive: false, showStore: true, liveSession: null });
+      this.applyDisplayBanners();
+    }
+  },
+
+  /** 将 baseBanners 与直播抢插帧合并为展示用 banners（不写库） */
+  async applyDisplayBanners() {
+    const base = this.data.baseBanners && this.data.baseBanners.length
+      ? this.data.baseBanners
+      : [];
+    let live = this.data.liveSession;
+    if (live && live.coverUrl && /^cloud:\/\//i.test(String(live.coverUrl))) {
+      try {
+        const urlMap = await batchTempFileURLs([live.coverUrl]);
+        const https = urlMap[live.coverUrl];
+        if (https) live = { ...live, coverUrl: https };
+      } catch (e) { /* keep cloud id / fallback */ }
+    }
+    const merged = mergeBannersWithLive(base, live, this.data.showLive);
+    const patch = { banners: merged };
+    if (live && live !== this.data.liveSession) {
+      patch.liveSession = live;
+    }
+    // 直播抢插出现时回到第一帧，保证用户立刻看到
+    if (merged[0] && merged[0].isLive) {
+      patch.currentBannerIndex = 0;
+    }
+    this.setData(patch);
+  },
+
+  async setBaseBanners(list) {
+    const rows = Array.isArray(list) ? list : [];
+    this.setData({ baseBanners: rows, loadingBanners: false });
+    this.applyDisplayBanners();
+  },
+
+  async loadActiveLive() {
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageLiveSession',
+        data: { action: 'getActive' }
+      });
+      const result = (res && res.result) || {};
+      if (result.enabled === false) {
+        this.setData({ liveSession: null, showLive: false });
+        this.applyDisplayBanners();
+        return;
+      }
+      const session = result.session || null;
+      if (session && session.pushUrl) delete session.pushUrl;
+      const usable = session && session.pullUrl && session.status === 'live' ? session : null;
+      this.setData({
+        showLive: true,
+        liveSession: usable
+      });
+      this.applyDisplayBanners();
+    } catch (e) {
+      this.setData({ liveSession: null });
+      this.applyDisplayBanners();
+    }
+  },
+
+  goToLiveWatch() {
+    if (blockIfSinglePage()) return;
+    if (!this.data.showLive) {
+      const { toastLiveClosed } = require('../../utils/contentDisplayFlags');
+      toastLiveClosed();
+      return;
+    }
+    if (!this.data.liveSession || !this.data.liveSession.pullUrl) {
+      wx.showToast({ title: '此刻没有直播', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({
+      url: '/subpackages/feature/live/watch/index',
+      fail: () => wx.showToast({ title: '直播页暂不可用', icon: 'none' })
+    });
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+    if (this.data.isSinglePage) {
+      // 单页模式不渲染 tabBar；避免误触 getTabBar
+    } else if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 });
     }
-    this.refreshNewArrivalsList();
+    if (!this.data.heroAutoplay) this.setData({ heroAutoplay: true });
+    if (this.data.showLive) this.loadActiveLive();
+    wx.nextTick(() => this._setupFeedScrollGuard());
+  },
+
+  onHide() {
+    if (this.data.heroAutoplay) this.setData({ heroAutoplay: false });
+    this._teardownFeedScrollGuard();
+  },
+
+  onUnload() {
+    this._teardownFeedScrollGuard();
   },
 
   refreshNewArrivalsList() {
@@ -101,12 +367,132 @@ Page({
     }
   },
 
+  _getNewArrivalsList() {
+    return this.selectComponent('#newArrivalsList');
+  },
+
+  _setNewArrivalsPaused(paused) {
+    const list = this._getNewArrivalsList();
+    if (list && typeof list.setFeedPaused === 'function') {
+      list.setFeedPaused(!!paused);
+    }
+  },
+
+  /** 下方模块进入视口中部 → 暂停商品流；回到流内可恢复 */
+  _setupFeedScrollGuard() {
+    if (!this.data.showNewArrivals) {
+      this._setNewArrivalsPaused(false);
+      return;
+    }
+    this._teardownFeedScrollGuard();
+    try {
+      const { getWindowInfo } = require('../../utils/systemInfo');
+      const win = getWindowInfo();
+      this._feedGuardViewportH = win.windowHeight || 667;
+
+      this._belowFeedObserver = this.createIntersectionObserver({
+        thresholds: [0, 0.01, 0.1, 0.25, 0.5],
+        observeAll: false
+      });
+      this._belowFeedObserver
+        .relativeToViewport({ top: 0, bottom: 0 })
+        .observe('.home-below-feed-anchor', (res) => {
+          if (!res) return;
+          const vh = this._feedGuardViewportH || 667;
+          const top = res.boundingClientRect ? res.boundingClientRect.top : vh;
+          // 锚点已进入视口上半区：用户意图在下方模块，停止继续分页
+          const shouldPause = res.intersectionRatio > 0 && top < vh * 0.55;
+          this._belowFeedActive = shouldPause;
+          this._setNewArrivalsPaused(shouldPause || !!this._fastScrollPaused);
+        });
+    } catch (e) {
+      console.warn('home feed scroll guard', e);
+    }
+  },
+
+  _teardownFeedScrollGuard() {
+    if (this._belowFeedObserver) {
+      try { this._belowFeedObserver.disconnect(); } catch (e) { /* ignore */ }
+      this._belowFeedObserver = null;
+    }
+    if (this._fastScrollTimer) {
+      clearTimeout(this._fastScrollTimer);
+      this._fastScrollTimer = null;
+    }
+    if (this._feedRectThrottle) {
+      clearTimeout(this._feedRectThrottle);
+      this._feedRectThrottle = null;
+    }
+    this._fastScrollPaused = false;
+  },
+
+  /** scroll-view 内 IO 偶发不准时，用锚点位置兜底同步暂停态 */
+  _syncFeedPauseByAnchorRect() {
+    if (this._feedRectQuerying || !this.data.showNewArrivals) return;
+    this._feedRectQuerying = true;
+    try {
+      this.createSelectorQuery()
+        .select('.home-below-feed-anchor')
+        .boundingClientRect()
+        .exec((rects) => {
+          this._feedRectQuerying = false;
+          const rect = rects && rects[0];
+          if (!rect) return;
+          const vh = this._feedGuardViewportH || 667;
+          // 已越过流底进入下方：锚点顶部进入视口中部以上，或已滚过锚点
+          const shouldPause = rect.top < vh * 0.55;
+          this._belowFeedActive = shouldPause;
+          this._setNewArrivalsPaused(shouldPause || !!this._fastScrollPaused);
+        });
+    } catch (e) {
+      this._feedRectQuerying = false;
+    }
+  },
+
+  onReachBottom() {
+    const list = this._getNewArrivalsList();
+    if (!list || typeof list.loadMore !== 'function') return;
+    if (typeof list.isFeedPaused === 'function' && list.isFeedPaused()) return;
+    list.loadMore({ reason: 'reachbottom' });
+  },
+
   onPageScroll(e) {
-    const scrollTop = e.scrollTop;
-    if (scrollTop > 80 && !this.data.isScrolled) {
-      this.setData({ isScrolled: true });
-    } else if (scrollTop <= 80 && this.data.isScrolled) {
-      this.setData({ isScrolled: false });
+    const scrollTop = (e && e.detail && e.detail.scrollTop != null)
+      ? e.detail.scrollTop
+      : ((e && e.scrollTop) || 0);
+    const scrolled = scrollTop > 80;
+    if (scrolled !== this._scrolled) {
+      this._scrolled = scrolled;
+      this.setData({ isScrolled: scrolled });
+    }
+
+    // 快速下滑时临时暂停，避免哨兵掠过视口连环请求
+    const now = Date.now();
+    const prevTop = this._lastScrollTop != null ? this._lastScrollTop : scrollTop;
+    const prevTs = this._lastScrollTs || now;
+    const dt = Math.max(16, now - prevTs);
+    const dy = scrollTop - prevTop;
+    this._lastScrollTop = scrollTop;
+    this._lastScrollTs = now;
+    const speed = dy / dt;
+    if (speed > 1.2) {
+      this._fastScrollPaused = true;
+      this._setNewArrivalsPaused(true);
+      if (this._fastScrollTimer) clearTimeout(this._fastScrollTimer);
+      this._fastScrollTimer = setTimeout(() => {
+        this._fastScrollPaused = false;
+        this._fastScrollTimer = null;
+        // 快滑结束后按下方锚点状态恢复（仍在下方则保持暂停）
+        this._setNewArrivalsPaused(!!this._belowFeedActive);
+      }, 320);
+    }
+
+    // 节流：用锚点位置同步暂停（兼容 scroll-view）
+    if (!this._feedRectThrottle) {
+      this._feedRectThrottle = setTimeout(() => {
+        this._feedRectThrottle = null;
+        this._syncFeedPauseByAnchorRect();
+      }, 80);
     }
   },
 
@@ -125,7 +511,7 @@ Page({
       const enabledModules = this.getEnabledModules();
       
       // 优先加载关键内容（轮播图和分类）
-      const criticalModules = enabledModules.filter(m => ['banners', 'categories', 'recommendations', 'newArrivals'].includes(m.id));
+      const criticalModules = enabledModules.filter(m => ['banners', 'categories', 'recommendations'].includes(m.id));
       if (criticalModules.length > 0) {
         try {
           await Promise.all(
@@ -156,6 +542,7 @@ Page({
       this.setData({ loading: false, loadingConfig: false });
     } finally {
       this._initializing = false;
+      wx.nextTick(() => this._setupFeedScrollGuard());
     }
   },
 
@@ -168,7 +555,7 @@ Page({
     
     try {
       // 先尝试从缓存获取
-      const cached = getCache('HOME_CONFIG');
+      const cached = getCache('HOME_CONFIG', { allowStale: true });
       if (cached) {
         const moduleOrder = this.getModuleOrder(cached);
         const visibility = this.computeModuleVisibility(cached);
@@ -210,18 +597,8 @@ Page({
         });
       } else {
         // 使用默认配置
-        const defaultOrder = this.getDefaultModuleOrder();
-        const defaultVisibility = {
-          showBanners: true,
-          showCategories: true,
-          showCollections: true,
-          showFramers: true,
-          showActivities: true,
-          showRecommendations: true,
-          showNewArrivals: true,
-          showQuickGrid: false,
-          showExploreStore: true
-        };
+        const defaultVisibility = this.computeModuleVisibility([]);
+        const defaultOrder = this.getModuleOrder([]);
         
         this.setData({ 
           homeConfig: [],
@@ -235,18 +612,8 @@ Page({
     } catch (e) {
       console.error('加载首页配置失败:', e);
       // 使用默认配置
-      const defaultOrder = this.getDefaultModuleOrder();
-      const defaultVisibility = {
-        showBanners: true,
-        showCategories: true,
-        showCollections: true,
-        showFramers: true,
-        showActivities: true,
-        showRecommendations: true,
-        showNewArrivals: true,
-        showQuickGrid: false,
-        showExploreStore: true
-      };
+      const defaultVisibility = this.computeModuleVisibility([]);
+      const defaultOrder = this.getModuleOrder([]);
       
       this.setData({ 
         homeConfig: [],
@@ -259,27 +626,64 @@ Page({
     }
   },
 
-  // 后台更新配置缓存
+  // 后台更新配置缓存，并同步刷新可见性（避免 Admin 关闭后仍被旧缓存展示）
   async updateHomeConfigCache() {
     try {
       const res = await wx.cloud.callFunction({
         name: 'getHomeConfig'
       });
-      if (res.result && res.result.success) {
-        setCache('HOME_CONFIG', res.result.data, 24 * 60 * 60 * 1000);
+      if (res.result && res.result.success && res.result.data) {
+        const config = res.result.data;
+        setCache('HOME_CONFIG', config, 24 * 60 * 60 * 1000);
+
+        const prevShowCollections = this.data.showCollections;
+        const prevShowActivities = this.data.showActivities;
+        const moduleOrder = this.getModuleOrder(config);
+        const visibility = this.computeModuleVisibility(config);
+
+        this.setData({
+          homeConfig: config,
+          moduleOrder,
+          ...visibility
+        });
+
+        // 开关由关→开时补拉数据；关→关/开→关仅依赖 wx:if 隐藏
+        if (visibility.showCollections && !prevShowCollections) {
+          this.loadModuleData('collections').catch(() => {});
+        }
+        if (visibility.showActivities && !prevShowActivities) {
+          this.loadModuleData('activities').catch(() => {});
+        }
+        if (!visibility.showCollections && this.data.collections && this.data.collections.length) {
+          this.setData({ collections: [] });
+        }
+        if (!visibility.showActivities && this.data.activities && this.data.activities.length) {
+          this.setData({ activities: [] });
+        }
       }
     } catch (e) {
       console.warn('更新配置缓存失败:', e);
     }
   },
 
+  // 需显式开启的模块（与标本档案/山海社区同严格度：仅 === true）
+  isOptInModule(id) {
+    return id === 'collections' || id === 'activities' || id === 'exploreStore';
+  },
+
+  isModuleEnabled(m) {
+    if (!m) return false;
+    if (this.isOptInModule(m.id)) return m.enabled === true;
+    return m.enabled !== false;
+  },
+
   // 获取启用的模块
   getEnabledModules() {
-    if (!this.data.homeConfig || this.data.homeConfig.length === 0) {
-      return this.getDefaultModules();
-    }
-    return this.data.homeConfig
-      .filter(m => m.enabled !== false)
+    const modules = (!this.data.homeConfig || this.data.homeConfig.length === 0)
+      ? this.getDefaultModules()
+      : this.data.homeConfig;
+    return modules
+      .filter(m => this.isModuleEnabled(m))
       .sort((a, b) => (a.order || 999) - (b.order || 999));
   },
 
@@ -289,41 +693,44 @@ Page({
       return {
         showBanners: true,
         showCategories: true,
-        showCollections: true,
+        showCollections: false,
         showFramers: true,
-        showActivities: true,
+        showActivities: false,
         showRecommendations: true,
         showNewArrivals: true,
-        showQuickGrid: false,
-        showExploreStore: true
+        showExploreStore: false
       };
     }
 
     const configMap = {};
     config.forEach(m => {
-      configMap[m.id] = m.enabled !== false;
+      configMap[m.id] = m.enabled;
     });
 
     return {
       showBanners: configMap.banners !== false,
       showCategories: configMap.categories !== false,
-      showCollections: configMap.collections !== false,
+      // 专题展览 / 近期活动：仅 enabled === true 才展示（缺省关闭）
+      showCollections: configMap.collections === true,
       showFramers: configMap.framers !== false,
-      showActivities: configMap.activities !== false,
+      showActivities: configMap.activities === true,
       showRecommendations: configMap.recommendations !== false,
       showNewArrivals: configMap.newArrivals !== false,
-      showQuickGrid: configMap.quickGrid === true,
-      showExploreStore: configMap.exploreStore !== false
+      // 首页「走进这有店」模块还须内容开关 showStore
+      showExploreStore: configMap.exploreStore === true && this.data.showStore !== false
     };
   },
 
   // 获取模块顺序
   getModuleOrder(config) {
     if (!config || config.length === 0) {
-      return this.getDefaultModuleOrder();
+      return this.getDefaultModuleOrder().filter(id => {
+        if (this.isOptInModule(id)) return false;
+        return true;
+      });
     }
     return config
-      .filter(m => m.enabled !== false)
+      .filter(m => this.isModuleEnabled(m))
       .sort((a, b) => (a.order || 999) - (b.order || 999))
       .map(m => m.id);
   },
@@ -343,7 +750,7 @@ Page({
     ];
   },
 
-  // 获取默认模块配置
+  // 获取默认模块配置（专题展览/近期活动缺省关闭，需 Admin 显式开启）
   getDefaultModules() {
     return [
       { id: 'banners', enabled: true, order: 1 },
@@ -351,11 +758,10 @@ Page({
       { id: 'recommendations', enabled: true, order: 3 },
       { id: 'newArrivals', enabled: true, order: 4 },
       { id: 'atelier', enabled: true, order: 5 },
-      { id: 'exploreStore', enabled: true, order: 6 },
-      { id: 'collections', enabled: true, order: 7 },
+      { id: 'exploreStore', enabled: false, order: 6 },
+      { id: 'collections', enabled: false, order: 7 },
       { id: 'framers', enabled: true, order: 8 },
-      { id: 'activities', enabled: true, order: 9 },
-      { id: 'quickGrid', enabled: false, order: 99 }
+      { id: 'activities', enabled: false, order: 9 }
     ];
   },
 
@@ -390,32 +796,28 @@ Page({
     this._initializing = false;
     this._configLoaded = false;
     
-    // 清除数据缓存（但保留配置缓存，配置变化不频繁）
+    // 清除数据与首页配置缓存，确保 Admin 开关变更可立即生效
+    clearCache('HOME_CONFIG');
     clearCache('BANNERS');
     clearCache('COLLECTIONS');
     clearCache('NEW_ARRIVALS');
+    try {
+      const { invalidateContentDisplayFlags } = require('../../utils/contentDisplayFlags');
+      invalidateContentDisplayFlags();
+    } catch (e) { /* ignore */ }
     
     // 重新初始化
     this.setData({ loading: true, loadingConfig: true });
     this.initData().finally(() => {
       this.refreshNewArrivalsList();
+      this.loadDisplayFlags();
       wx.stopPullDownRefresh();
     });
   },
 
-  // 🟢 核心交互：点击灵动球 -> 展开下方轨道 / 服务入口跳转
+  // 点击品类灵动球 -> 展开下方轨道
   onOrbClick(e) {
     const id = e.currentTarget.dataset.id;
-    const orbType = e.currentTarget.dataset.type || 'category';
-
-    if (orbType === 'service') {
-      wx.vibrateShort({ type: 'light' });
-      if (this.data.orbExpanded) {
-        this.setData({ orbExpanded: false, currentOrbId: '' });
-      }
-      this.handleServiceOrb(e.currentTarget.dataset.action);
-      return;
-    }
 
     // 如果点击当前已展开的球 -> 收起
     if (id === this.data.currentOrbId && this.data.orbExpanded) {
@@ -430,140 +832,202 @@ Page({
       orbProducts: [], 
       orbLoading: true
     });
-
-    setTimeout(() => { this.loadOrbData(id); }, 200);
+    this.loadOrbData(id);
   },
 
-  async loadOrbData(categoryId) {
-    const map = { 'insect': '昆虫', 'plant': '植物', 'mineral': '矿', 'marine': '海' };
-    const keyword = map[categoryId] || '';
-    
+  async loadOrbData(categoryId, reset = true) {
+    // 按一级馆 rootCategoryId / rootCategoryName 精确匹配（Admin 写入的 category 多为二级名，不能用「动物/海」短词正则）
+    const rootName = HOME_ORB_ROOT[categoryId] || '';
+    const aliases = rootName ? collectRootAliases(rootName) : [];
+
+    if (!aliases.length) {
+      this._orbHasMore = false;
+      this._orbLoading = false;
+      this.setData({ orbProducts: [], orbLoading: false });
+      return;
+    }
+
+    if (reset) {
+      this._orbSkip = 0;
+      this._orbHasMore = true;
+      this._orbCategoryId = categoryId;
+      this._orbGen = (this._orbGen || 0) + 1;
+      this._orbLoading = false;
+    }
+
+    if (!this._orbHasMore && !reset) return;
+    if (this._orbLoading) return;
+
+    this._orbLoading = true;
+    const gen = this._orbGen || 0;
+    const skip = this._orbSkip || 0;
+    const pageSize = 6;
+    const isAppend = !reset && skip > 0;
+
     try {
-      const res = await db.collection('products')
-        .where(_.or([
-           { category: db.RegExp({ regexp: keyword, options: 'i' }) },
-           { title: db.RegExp({ regexp: keyword, options: 'i' }) }
-        ]))
-        .where({ isOffShelf: false })
-        .limit(6)
-        .get();
-        
-      let list = [];
-      if (res.data.length > 0) {
-          list = res.data.map(item => ({
-              ...item,
-              image: getFirstImage(item.images)
-          }));
-      } else {
-          // 兜底数据
-          const mockImg = {
-              'insect': 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=300',
-              'plant': 'https://images.unsplash.com/photo-1463936575829-25148e1db1b8?q=80&w=300',
-              'mineral': 'https://images.unsplash.com/photo-1611263995786-d1f5370c0840?q=80&w=300',
-              'marine': 'https://images.unsplash.com/photo-1546500840-ae38253aba9b?q=80&w=300'
-          };
-          list = [
-              { _id: 'm1', title: keyword + '精选标本 A', price: 299, image: mockImg[categoryId], latinName: 'Specimen A' },
-              { _id: 'm2', title: keyword + '精选标本 B', price: 499, image: mockImg[categoryId], latinName: 'Specimen B' },
-              { _id: 'm3', title: keyword + '精选标本 C', price: 699, image: mockImg[categoryId], latinName: 'Specimen C' }
-          ];
+      if (isAppend) {
+        this.setData({ orbLoadingMore: true });
       }
-      this.setData({ orbProducts: list, orbLoading: false });
+
+      // 解析规范一级馆 _id（缓存），与名称别名并用
+      if (!this._orbRootIdCache) this._orbRootIdCache = {};
+      let rootDocId = this._orbRootIdCache[rootName];
+      if (rootDocId === undefined) {
+        try {
+          const rootRes = await db.collection('categories')
+            .where({ level: 1, name: rootName })
+            .limit(1)
+            .get();
+          rootDocId = (rootRes.data && rootRes.data[0] && rootRes.data[0]._id) || '';
+        } catch (e) {
+          rootDocId = '';
+        }
+        this._orbRootIdCache[rootName] = rootDocId;
+      }
+
+      const orConds = [
+        { rootCategoryName: _.in(aliases) },
+        { category: _.in(aliases) }
+      ];
+      if (rootDocId) orConds.unshift({ rootCategoryId: rootDocId });
+
+      const res = await db.collection('products')
+        .where(_.and([
+          { isOffShelf: _.neq(true) },
+          _.or(orConds)
+        ]))
+        .skip(skip)
+        .limit(pageSize)
+        .get();
+
+      if (gen !== (this._orbGen || 0)) return;
+
+      let batch = [];
+      if (res.data && res.data.length > 0) {
+          const imgs = res.data.map((item) => getFirstImage(item.images));
+          const urlMap = await batchTempFileURLs(imgs);
+          if (gen !== (this._orbGen || 0)) return;
+          batch = res.data.map((item, i) => {
+            const img = imgs[i];
+            return {
+              ...item,
+              uniqueId: item._id,
+              image: (img && urlMap[img]) || img
+            };
+          });
+      }
+
+      this._orbSkip = skip + batch.length;
+      this._orbHasMore = batch.length >= pageSize;
+      const prev = isAppend ? (this.data.orbProducts || []) : [];
+      const seen = new Set(prev.map((p) => (p && p._id != null ? String(p._id) : '')).filter(Boolean));
+      const merged = prev.slice();
+      batch.forEach((item) => {
+        const key = item && item._id != null ? String(item._id) : '';
+        if (key) {
+          if (seen.has(key)) return;
+          seen.add(key);
+        }
+        merged.push(item);
+      });
+      this.setData({
+        orbProducts: merged,
+        orbLoading: false,
+        orbLoadingMore: false,
+        orbHasMore: this._orbHasMore
+      });
     } catch(e) {
       console.error(e);
-      this.setData({ orbLoading: false });
+      if (gen !== (this._orbGen || 0)) return;
+      this.setData({ orbLoading: false, orbLoadingMore: false, orbProducts: isAppend ? this.data.orbProducts : [] });
+      if (!isAppend) wx.showToast({ title: '藏品加载失败', icon: 'none' });
+    } finally {
+      if (gen === (this._orbGen || 0)) this._orbLoading = false;
     }
   },
 
-  handleServiceOrb(action) {
-    switch (action) {
-      case 'identify':
-        trackBehavior('identify_entry_click', 'identification', 'home_orb', { source: 'home_orb' });
-        wx.navigateTo({ url: '/pages/identify/index?from=home_orb' });
-        break;
-      case 'atelier':
-        trackBehavior('atelier_entry_click', 'custom', 'home_orb', { source: 'home_orb' });
-        this.goToCustom();
-        break;
-      case 'care':
-        trackBehavior('care_entry_click', 'care', 'home_orb', { source: 'home_orb' });
-        this.goToCare();
-        break;
-      case 'community':
-        trackBehavior('community_entry_click', 'community', 'home_orb', { source: 'home_orb' });
-        this.goToCommunity();
-        break;
-      default:
-        break;
-    }
+  loadMoreOrbData() {
+    if (this._orbLoading || this.data.orbLoading || this.data.orbLoadingMore || !this._orbHasMore) return;
+    const id = this._orbCategoryId || this.data.currentOrbId;
+    if (!id) return;
+    this.loadOrbData(id, false);
   },
 
   goToCategory(e) {
+      if (blockIfSinglePage()) return;
+      const orbId = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id)
+        || this.data.currentOrbId
+        || '';
+      // 与一级馆名对齐，供馆藏页 autoSwitchToName 使用
+      const target = HOME_ORB_ROOT[orbId];
+      if (target) {
+        getApp().globalData.targetCategory = target;
+      }
       wx.switchTab({ url: '/pages/category/index' });
   },
 
-  goToIdentify() {
-    trackBehavior('identify_entry_click', 'identification', 'explore_quick', { source: 'explore_quick' });
-    wx.navigateTo({ url: '/pages/identify/index?from=explore_quick' });
-  },
-
-  goToAtlas() {
-    wx.navigateTo({ url: '/pages/collection/index' });
-  },
-
-  onQuickEntry(e) {
-    const action = e.currentTarget.dataset.action;
-    if (action === 'identify') this.goToIdentify();
-    else if (action === 'gallery') this.goToCategory();
-    else if (action === 'atelier') this.goToCustom();
-    else if (action === 'atlas') this.goToAtlas();
-  },
-
   goToCustom() {
-    wx.navigateTo({ url: '/pages/custom/hub/index?from=home' });
+    if (blockIfSinglePage()) return;
+    wx.switchTab({
+      url: '/pages/atelier/index',
+      fail: () => wx.showToast({ title: '无法打开定制', icon: 'none' })
+    });
   },
 
-  goToCare() {
-    wx.navigateTo({ url: '/pages/care/index?from=home_orb' });
-  },
-
-  goToCommunity() {
-    wx.navigateTo({ url: '/pages/community/index?from=home_orb' });
+  goToFramerRecruit() {
+    if (blockIfSinglePage()) return;
+    trackBehavior('framer_recruit_entry', 'from', 'home_rail');
+    wx.navigateTo({
+      url: `${FRAMER_RECRUIT_PATH}?from=home`,
+      fail: (err) => {
+        console.error('goToFramerRecruit failed', err);
+        wx.showToast({ title: '无法打开招募说明', icon: 'none' });
+      }
+    });
   },
 
   // --- 基础数据 ---
   async loadBanners(config = {}) {
+    const limit = config.limit;
     try {
-      // 先尝试从缓存获取
-      const cached = getCache('BANNERS');
+      const cached = getCache('BANNERS', { allowStale: true });
       if (cached) {
-        this.setData({ banners: cached, loadingBanners: false });
-        // 后台更新缓存
-        this.updateBannersCache();
+        const normalized = normalizeBanners(cached, { limit });
+        const hydrated = await hydrateBannerImages(
+          normalized.length ? normalized : normalizeBanners([EMPTY_BANNER_FALLBACK])
+        );
+        await this.setBaseBanners(hydrated);
+        this.updateBannersCache(config);
         return;
       }
 
       const res = await db.collection('banners').orderBy('sort', 'desc').get();
-      const banners = res.data.length > 0 
-        ? res.data 
-        : [{ id: 1, image: 'cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/banners/chris-nguyen-tXmc2mVDxJc-unsplash.jpg', title: '蓝色闪蝶特展', subtitle: 'BLUE MORPHO' }];
-      
-      // 更新缓存
-      setCache('BANNERS', banners);
-      this.setData({ banners, loadingBanners: false });
-    } catch(e) {
+      const raw = (res.data && res.data.length > 0) ? res.data : [];
+      setCache('BANNERS', raw);
+      const normalized = normalizeBanners(raw, { limit });
+      const hydrated = await hydrateBannerImages(
+        normalized.length ? normalized : normalizeBanners([EMPTY_BANNER_FALLBACK])
+      );
+      await this.setBaseBanners(hydrated);
+    } catch (e) {
       console.error('加载轮播图失败', e);
-      this.setData({ loadingBanners: false });
+      const hydrated = await hydrateBannerImages(normalizeBanners([EMPTY_BANNER_FALLBACK]));
+      await this.setBaseBanners(hydrated);
     }
   },
 
   // 后台更新轮播图缓存
-  async updateBannersCache() {
+  async updateBannersCache(config = {}) {
     try {
       const res = await db.collection('banners').orderBy('sort', 'desc').get();
-      const banners = res.data.length > 0 ? res.data : [];
-      setCache('BANNERS', banners);
-    } catch(e) {
+      const raw = (res.data && res.data.length > 0) ? res.data : [];
+      setCache('BANNERS', raw);
+      const normalized = normalizeBanners(raw, { limit: config.limit });
+      const hydrated = await hydrateBannerImages(
+        normalized.length ? normalized : normalizeBanners([EMPTY_BANNER_FALLBACK])
+      );
+      await this.setBaseBanners(hydrated);
+    } catch (e) {
       console.warn('更新轮播图缓存失败', e);
     }
   },
@@ -572,10 +1036,10 @@ Page({
     try {
       const limit = config.limit || 4;
       const cats = [
-        { _id: 'insect', displayName: '神奇昆虫', enName: 'INSECTA', icon: '🦋' },
-        { _id: 'mineral', displayName: '群山回响', enName: 'MINERALS', icon: '💎' },
-        { _id: 'plant', displayName: '植物探微', enName: 'PLANTAE', icon: '🌿' },
-        { _id: 'marine', displayName: '无尽海洋', enName: 'MARINE', icon: '🐚' }
+        { _id: 'insect', displayName: '蝴蝶昆虫', enName: 'INSECTA', icon: '🦋' },
+        { _id: 'animal', displayName: '动物世界', enName: 'ANIMALIA', icon: '🐥' },
+        { _id: 'plant', displayName: '植物果实', enName: 'PLANTAE', icon: '🍀' },
+        { _id: 'marine', displayName: '海洋标本', enName: 'MARINE', icon: '🦀' }
       ].slice(0, limit);
       this.setData({ categories: cats, loadingCategories: false });
     } catch(e) {
@@ -587,14 +1051,39 @@ Page({
   async loadFramers(config = {}) {
     try {
       const limit = config.limit || 6;
-      const res = await db.collection('framers').limit(50).get();
-      const visible = (res.data || [])
-        .filter((f) => f.active !== false)
-        .sort((a, b) => (b.sort || 0) - (a.sort || 0))
-        .slice(0, limit);
-      const framers = visible.length > 0
-        ? visible
-        : [{ _id: 'f1', name: '林深', title: '首席标本师', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200', type: 'store' }];
+      // Admin 隐藏字段 active:false；与定制云函数一致，公开展示仅 active !== false
+      const res = await db.collection('framers')
+        .where({ active: _.neq(false) })
+        .limit(Math.max(limit * 3, 40))
+        .get();
+      const visible = (res.data || []).filter((f) => f && f.active !== false);
+      // 同一标本师可能多条档案：按 staffOpenid / 姓名去重，保持对外唯一
+      const picked = [];
+      const seenStaff = Object.create(null);
+      const seenName = Object.create(null);
+      const sorted = visible.slice().sort((a, b) => {
+        const ta = a.createTime ? new Date(a.createTime).getTime() : 0;
+        const tb = b.createTime ? new Date(b.createTime).getTime() : 0;
+        if (ta && tb && ta !== tb) return ta - tb;
+        return String(a._id || '').localeCompare(String(b._id || ''));
+      });
+      sorted.forEach((f) => {
+        const so = String(f.staffOpenid || '').trim();
+        const nameKey = String(f.name || '').trim().toLowerCase();
+        if (so) {
+          if (seenStaff[so]) return;
+          seenStaff[so] = true;
+          if (nameKey) seenName[nameKey] = true;
+          picked.push(f);
+          return;
+        }
+        if (nameKey && seenName[nameKey]) return;
+        if (nameKey) seenName[nameKey] = true;
+        picked.push(f);
+      });
+      const framers = picked.length > 0
+        ? picked.slice(0, limit)
+        : [{ _id: 'f1', name: '林深', title: '首席标本师', avatar: cdnPath('stores/store_shanhaizaowu.png'), type: 'store' }];
       this.setData({ framers, loadingFramers: false });
     } catch(e) {
       console.error('加载名师手作失败', e);
@@ -608,22 +1097,21 @@ Page({
       const status = config.status || 'open';
       const res = await db.collection('activities').where({ status }).limit(limit).get();
       const formatData = (list) => list.map(item => {
-           const d = new Date(item.date);
+           const dateStr = item.date ? String(item.date) : '';
+           const d = dateStr ? new Date(dateStr) : null;
+           const valid = d && !isNaN(d.getTime());
            const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
            return { 
                ...item, 
-               dateStr: item.date.slice(5), 
+               dateStr: dateStr.length >= 10 ? dateStr.slice(5) : dateStr, 
                cover: item.image,
-               day: d.getDate(),
-               month: months[d.getMonth()]
+               day: valid ? d.getDate() : '--',
+               month: valid ? months[d.getMonth()] : ''
            };
       });
 
-      const activities = res.data.length > 0
-        ? formatData(res.data)
-        : formatData([
-            { _id: 'mock1', title: '甲虫标本制作·初级课', date: '2025-12-20', location: '长春·这有山', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=400', status:'open', price: 198 }
-          ]);
+      // 空库时展示真实空态（不再用 mock 课程兜底，避免过期假数据被报名）
+      const activities = formatData((res.data || []));
       this.setData({ activities, loadingActivities: false });
     } catch(e) {
       console.error('加载活动失败', e);
@@ -634,7 +1122,7 @@ Page({
   async loadCollections() {
     try {
       // 先尝试从缓存获取
-      const cached = getCache('COLLECTIONS');
+      const cached = getCache('COLLECTIONS', { allowStale: true });
       if (cached) {
         this.setData({ collections: cached, loadingCollections: false });
         // 后台更新缓存
@@ -709,60 +1197,12 @@ Page({
     }
   },
 
-  async loadNewArrivals(config = {}) {
-    try {
-      const limit = config.limit || 10;
-      // 先尝试从缓存获取
-      const cached = getCache('NEW_ARRIVALS');
-      if (cached) {
-        this.setData({ newArrivals: cached.slice(0, limit), loadingNewArrivals: false });
-        // 后台更新缓存
-        this.updateNewArrivalsCache(config);
-        return;
-      }
-
-      const res = await db.collection('products').where({ isOffShelf: false }).orderBy('createTime', 'desc').limit(limit).get();
-      if(res.data.length > 0) {
-        const list = await Promise.all(res.data.map(async item => {
-             let img = getFirstImage(item.images);
-             if(img && img.startsWith('cloud')) {
-                const urlRes = await wx.cloud.getTempFileURL({ fileList: [img] });
-                img = urlRes.fileList[0].tempFileURL;
-             }
-             return { ...item, httpImage: img, isNew: true };
-        }));
-        
-        // 更新缓存
-        setCache('NEW_ARRIVALS', list);
-        this.setData({ newArrivals: list, loadingNewArrivals: false });
-      } else {
-        this.setData({ loadingNewArrivals: false });
-      }
-    } catch(e) {
-      console.error('加载新品失败', e);
-      this.setData({ loadingNewArrivals: false });
-    }
+  async loadNewArrivals() {
+    // 列表由 product-list 分页加载，避免首页再拉一遍 + N 次换链
+    this.setData({ loadingNewArrivals: false });
   },
 
-  // 后台更新新品缓存
-  async updateNewArrivalsCache() {
-    try {
-      const res = await db.collection('products').where({ isOffShelf: false }).orderBy('createTime', 'desc').limit(10).get();
-      if(res.data.length > 0) {
-        const list = await Promise.all(res.data.map(async item => {
-             let img = getFirstImage(item.images);
-             if(img && img.startsWith('cloud')) {
-                const urlRes = await wx.cloud.getTempFileURL({ fileList: [img] });
-                img = urlRes.fileList[0].tempFileURL;
-             }
-             return { ...item, httpImage: img, isNew: true };
-        }));
-        setCache('NEW_ARRIVALS', list);
-      }
-    } catch(e) {
-      console.warn('更新新品缓存失败', e);
-    }
-  },
+  updateNewArrivalsCache() {},
 
   // 加载推荐内容
   async loadRecommendations(config = {}) {
@@ -770,7 +1210,7 @@ Page({
       this.setData({ loadingRecommendations: true });
 
       const userId = app.globalData.openid || '';
-      const limit = config.limit || 8;
+      const limit = config.limit || 6;
       const algorithm = config.algorithm || 'mixed';
       
       // 使用重试机制
@@ -789,7 +1229,8 @@ Page({
         const recommendations = (res.result.data || []).map(item => ({
           ...item,
           image: getFirstImage(item.images) || item.httpImage || '',
-          reason: item.reason || '为你推荐'
+          reason: item.reason || '为你推荐',
+          sensitiveBlur: isSensitiveBlurProduct(item)
         }));
         
         this.setData({ 
@@ -809,18 +1250,27 @@ Page({
     }
   },
 
-  handleSearch() { wx.navigateTo({ url: '/pages/search/index' }); },
+  handleSearch() {
+    if (easterEgg.shouldIgnoreTap(this)) return;
+    if (blockIfSinglePage()) return;
+    wx.navigateTo({
+      url: '/subpackages/feature/search/index',
+      fail: () => wx.showToast({ title: '无法打开搜索', icon: 'none' })
+    });
+  },
 
   async loadExploreStore() {
     this.setData({ loadingExploreStore: true });
+    const { fetchStoreCatalog, findCatalogStore, findWorkshopStore } = require('../../utils/storeCatalog');
+    const { displayStoreName } = require('../../utils/storeName');
     const seed = DEFAULT_STORES.find((s) => s.storeId === DEFAULT_STORE_ID) || DEFAULT_STORES[0];
     let store = enrichStore({ ...seed });
     try {
-      const res = await wx.cloud.callFunction({ name: 'getStoreConfig' });
-      if (res.result && res.result.stores && res.result.stores.length) {
-        const raw = res.result.stores.find((s) => s.storeId === DEFAULT_STORE_ID) || res.result.stores[0];
-        if (raw) store = enrichStore({ ...store, ...raw });
-      }
+      const stores = await fetchStoreCatalog();
+      const raw = findCatalogStore(DEFAULT_STORE_ID, stores) || stores[0];
+      if (raw) store = enrichStore({ ...store, ...raw });
+      const workshop = findWorkshopStore(stores);
+      if (workshop) this.setData({ workshopStoreName: displayStoreName(workshop) });
     } catch (e) {
       console.warn('loadExploreStore config', e);
     }
@@ -830,33 +1280,62 @@ Page({
       console.warn('loadExploreStore media', e);
     }
     const finish = (distanceText) => {
+      const openStatus = store.openStatus || { statusClass: '', label: '' };
       this.setData({
-        exploreStore: { ...store, distanceText },
+        exploreStore: { ...store, distanceText, openStatus },
         loadingExploreStore: false
       });
     };
-    wx.getLocation({
-      type: 'gcj02',
-      success: (res) => {
-        const km = haversineKm(res.latitude, res.longitude, store.latitude, store.longitude);
-        finish(formatDistance(km));
-      },
-      fail: () => finish('')
-    });
+    const loc = await getAuthorizedLocation({ type: 'gcj02' });
+    if (!loc) {
+      finish('');
+      return;
+    }
+    const km = haversineKm(loc.latitude, loc.longitude, store.latitude, store.longitude);
+    finish(formatDistance(km));
   },
 
   goToExploreStore() {
+    if (blockIfSinglePage()) return;
+    if (!this.data.showStore) {
+      const { toastStoreClosed } = require('../../utils/contentDisplayFlags');
+      toastStoreClosed();
+      return;
+    }
     const s = this.data.exploreStore;
     if (!s) return;
     setPreferredStoreId(s.storeId);
     trackBehavior('explore_store_card_click', 'store', s.storeId);
-    wx.switchTab({ url: '/pages/store/index' });
+    wx.navigateTo({ url: '/subpackages/business/store/index' });
   },
 
-  switchTab(e) { wx.switchTab({ url: e.currentTarget.dataset.url }); },
-  goToBooking() { wx.switchTab({ url: '/pages/store/index' }); },
-  goToCollection(e) { wx.navigateTo({ url: `/pages/detail/wiki-detail?id=${e.currentTarget.dataset.id}` }); },
+  switchTab(e) {
+    if (blockIfSinglePage()) return;
+    wx.switchTab({ url: e.currentTarget.dataset.url });
+  },
+  goToBooking() {
+    if (blockIfSinglePage()) return;
+    if (!this.data.showStore) {
+      const { toastStoreClosed } = require('../../utils/contentDisplayFlags');
+      toastStoreClosed();
+      return;
+    }
+    wx.navigateTo({ url: '/subpackages/business/store/index' });
+  },
+  goToCollection(e) {
+    if (blockIfSinglePage()) return;
+    const id = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id;
+    if (!id) {
+      wx.showToast({ title: '档案不存在', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({
+      url: `/subpackages/feature/detail/wiki-detail/index?id=${id}`,
+      fail: () => wx.showToast({ title: '无法打开档案', icon: 'none' })
+    });
+  },
   goToCollectionDetail(e) {
+    if (blockIfSinglePage()) return;
     const id = e.currentTarget.dataset.id;
     if (!id) {
       wx.showToast({ title: '数据异常', icon: 'none' });
@@ -864,16 +1343,21 @@ Page({
     }
     wx.vibrateShort({ type: 'light' });
     wx.navigateTo({ 
-      url: `/pages/collection-detail/index?id=${id}`,
+      url: `/subpackages/feature/collection-detail/index?id=${id}`,
       fail: (err) => {
         console.error('跳转失败', err);
         // 降级：尝试跳转到wiki-detail
-        wx.navigateTo({ url: `/pages/detail/wiki-detail?id=${id}` });
+        wx.navigateTo({ url: `/subpackages/feature/detail/wiki-detail/index?id=${id}` });
       }
     });
   },
   goToFramer(e) { 
-    const id = e.currentTarget.dataset.id;
+    if (blockIfSinglePage()) return;
+    const id = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id;
+    if (!id) {
+      wx.showToast({ title: '标本师信息缺失', icon: 'none' });
+      return;
+    }
     wx.navigateTo({ 
       url: `/subpackages/business/framer/index?id=${id}`,
       fail: (err) => {
@@ -887,17 +1371,17 @@ Page({
     }); 
   },
   goToDetail(e) { 
-    // ProductCard组件通过事件传递整个info对象，需要从e.detail获取
-    // 其他情况（如推荐卡片）通过data-id传递，从dataset获取
+    if (blockIfSinglePage()) return;
+    // ProductList itemtap：e.detail.id / e.detail._id
+    // 推荐卡等：data-id
     let id = null;
     let productInfo = null;
+    const detail = e && e.detail;
     
-    if (e.detail && e.detail._id) {
-      // ProductCard组件传递的对象
-      productInfo = e.detail;
-      id = e.detail._id;
+    if (detail && (detail._id || detail.id)) {
+      productInfo = detail;
+      id = detail._id || detail.id;
     } else if (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) {
-      // 通过data-id传递的情况
       id = e.currentTarget.dataset.id;
     }
     
@@ -906,18 +1390,42 @@ Page({
       wx.showToast({ title: '参数错误', icon: 'none' });
       return;
     }
+    id = String(id);
     
-    // 记录用户行为（浏览）
     trackBehavior('product_view', 'product', id, {
-      category: productInfo?.category,
-      tags: productInfo?.tags,
+      category: (productInfo && productInfo.category) || '',
+      tags: (productInfo && productInfo.tags) || [],
       source: 'explore_list'
     });
     
-    wx.navigateTo({ url: `/pages/detail/index?id=${id}` }); 
+    navigateToProductDetail(id, {
+      seed: productInfo || { _id: id },
+      failToast: '无法打开藏品'
+    });
   },
-  onBannerTap(e) {},
-  onSwiperChange(e) { this.setData({ currentBannerIndex: e.detail.current }); },
+  onBannerTap(e) {
+    const dataset = (e.currentTarget && e.currentTarget.dataset) || {};
+    const item = dataset.item || {};
+    if (item.isLive || item.id === LIVE_BANNER_ID) {
+      this.goToLiveWatch();
+      return;
+    }
+    openBannerItem(
+      {
+        ...item,
+        id: dataset.id || item.id || item._id,
+        link: dataset.link || item.link || item.url || item.path || ''
+      },
+      {
+        onFramerRecruit: () => trackBehavior('framer_recruit_entry', 'from', 'home_banner')
+      }
+    );
+  },
+  onSwiperChange(e) {
+    const current = e.detail && e.detail.current;
+    if (typeof current !== 'number' || current === this.data.currentBannerIndex) return;
+    this.setData({ currentBannerIndex: current });
+  },
 
   // 带重试的数据加载
   async loadWithRetry(loadFn, maxRetries = 2) {
@@ -931,6 +1439,19 @@ Page({
         // 等待后重试
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
+    }
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '山海造物 · 把山海带回家',
+      path: '/pages/index/index'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: '山海造物 · 把山海带回家'
     }
   }
 });

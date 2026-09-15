@@ -1,0 +1,109 @@
+<page-edge-back />
+<view class="page" wx:if="{{ready}}">
+  <view class="hero fade-in">
+    <view class="hero-rule"></view>
+    <text class="hero-en">{{isStoreReturn ? 'STORE RETURN' : (needsEvidence ? 'AFTER-SALE' : 'REFUND')}}</text>
+    <text class="hero-cn">{{pageTitle}}</text>
+    <text class="hero-desc">{{pageDesc}}</text>
+  </view>
+
+  <view class="panel fade-in" style="animation-delay: 0.05s;">
+    <view class="order-row">
+      <text class="order-label">订单</text>
+      <text class="order-no">NO. {{orderNo}}</text>
+    </view>
+    <view class="policy-row" wx:if="{{policyLabel}}">
+      <text class="policy-label">规则</text>
+      <text class="policy-val">{{policyLabel}}</text>
+    </view>
+    <view class="policy-row" wx:if="{{refundHint}}">
+      <text class="policy-label">预计</text>
+      <text class="policy-val">{{refundHint}}</text>
+    </view>
+  </view>
+
+  <view class="panel fade-in" style="animation-delay: 0.08s;" wx:if="{{needsEvidence}}">
+    <view class="panel-head">
+      <text class="panel-title">开箱视频</text>
+      <text class="panel-req">必填</text>
+    </view>
+    <text class="panel-hint">到柜时请全程录制开箱影像。无开箱影像将难以受理售后；蝶类触须不在包损之列。</text>
+    <view class="video-box" wx:if="{{videoLocalPath}}">
+      <video
+        class="video-preview"
+        src="{{videoLocalPath}}"
+        controls
+        object-fit="contain"
+        show-center-play-btn
+      ></video>
+      <view class="video-actions">
+        <view class="link-btn" bindtap="chooseVideo">重新选择</view>
+        <view class="link-btn danger" bindtap="clearVideo">移除</view>
+      </view>
+    </view>
+    <view class="upload-add video-add" wx:else bindtap="chooseVideo" hover-class="thumb-press" hover-stay-time="80">
+      <text class="upload-plus">+</text>
+      <text class="upload-label">上传开箱视频</text>
+      <text class="upload-sub">建议 60 秒内 · 含外箱至开盖全过程</text>
+    </view>
+  </view>
+
+  <view class="panel fade-in" style="animation-delay: 0.1s;" wx:if="{{needsEvidence || isStoreReturn}}">
+    <view class="panel-head">
+      <text class="panel-title">图片举证</text>
+      <text class="panel-opt">选填 · 最多 {{maxImages}} 张</text>
+    </view>
+    <text class="panel-hint">{{isStoreReturn ? '损坏部位特写等，便于门店核对退回实物。' : '损坏部位特写、外包装与运单特写等，便于门店核对。'}}</text>
+    <view class="upload-row">
+      <view
+        class="upload-thumb"
+        wx:for="{{imageLocalPaths}}"
+        wx:key="*this"
+        wx:for-index="idx"
+        hover-class="thumb-press"
+        hover-stay-time="80"
+      >
+        <image src="{{item}}" mode="aspectFill" bindtap="previewImage" data-idx="{{idx}}"></image>
+        <view class="upload-del" catchtap="removeImage" data-idx="{{idx}}">×</view>
+      </view>
+      <view
+        class="upload-add"
+        wx:if="{{imageLocalPaths.length < maxImages}}"
+        hover-class="thumb-press"
+        hover-stay-time="80"
+        bindtap="chooseImages"
+      >
+        <text class="upload-plus">+</text>
+        <text class="upload-label">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel fade-in" style="animation-delay: 0.12s;">
+    <view class="panel-head">
+      <text class="panel-title">说明</text>
+      <text class="panel-opt">选填</text>
+    </view>
+    <textarea
+      class="note-area"
+      maxlength="200"
+      placeholder="简要说明情况即可"
+      placeholder-class="note-ph"
+      value="{{note}}"
+      bindinput="onNoteInput"
+    ></textarea>
+  </view>
+
+  <view
+    class="btn-submit {{submitting ? 'is-loading' : ''}}"
+    hover-class="btn-press"
+    hover-stay-time="100"
+    bindtap="submit"
+  >
+    <text>{{submitting ? '提交中…' : submitLabel}}</text>
+  </view>
+</view>
+
+<view class="page loading-wrap" wx:elif="{{loading}}">
+  <text class="loading-text">载入中…</text>
+</view>

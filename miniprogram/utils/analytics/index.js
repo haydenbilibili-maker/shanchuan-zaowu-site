@@ -35,7 +35,7 @@ function getCurrentPageRoute() {
 function getSystemSnapshot() {
   if (systemInfoCache) return systemInfoCache
   try {
-    const { getSystemSnapshot: snap } = require('./systemInfo')
+    const { getSystemSnapshot: snap } = require('../systemInfo')
     systemInfoCache = snap()
   } catch (e) {
     systemInfoCache = { platform: '', model: '', version: '', SDKVersion: '' }

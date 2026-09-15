@@ -27,5 +27,5 @@ exports.main = async () => {
   } catch (e) {
     console.warn('pet_craft_configs read failed:', e.message)
   }
-  return { success: true, config: { crafts, consentVersion: 'v1' } }
+  return { success: true, config: { crafts, consentVersion: 'v2' } }
 }

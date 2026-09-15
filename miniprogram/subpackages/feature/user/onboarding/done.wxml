@@ -1,0 +1,52 @@
+<!--subpackages/feature/user/onboarding/done.wxml-->
+<view
+  class="page-done account-page"
+  style="padding-top: {{pagePadTop}}px; padding-bottom: {{pagePadBottom}}px; padding-left: {{pagePadX}}px; padding-right: {{pagePadX}}px;"
+>
+  <view class="grain-overlay"></view>
+  <view class="done-card care-enter">
+    <view class="done-icon-ring">
+      <view class="done-icon-dot" aria-hidden="true"></view>
+    </view>
+    <text class="done-overline">{{hasReturn ? 'CONTINUE' : 'WELCOME'}}</text>
+    <text class="done-title">{{giftFail ? '档案已建立' : (hasReturn ? '可以继续了' : '欢迎，藏家')}}</text>
+    <text class="done-desc" wx:if="{{hasRegisterGift && !giftFail && !giftPartial}}">
+      {{hasReturn ? '新客礼已放入账户，即将返回原路径。' : '新客礼已放入账户，可以开始逛馆。'}}
+    </text>
+    <text class="done-desc" wx:elif="{{giftPartial}}">积分可能已到账，部分礼券待补齐。</text>
+    <text class="done-desc" wx:elif="{{giftFail}}">注册已完成。礼包可一键补领，不影响继续使用。</text>
+    <text class="done-desc" wx:else>基础档案已建立。生日与兴趣可稍后在资料中补充。</text>
+
+    <view class="done-reward-plate" wx:if="{{hasRegisterGift && !giftFail && !giftPartial}}">
+      <text class="done-reward-num">{{giftPoints}}</text>
+      <text class="done-reward-unit">积分</text>
+      <text class="done-reward-sep">·</text>
+      <text class="done-reward-num">{{giftCoupons}}</text>
+      <text class="done-reward-unit">张礼券</text>
+    </view>
+
+    <view class="done-reward-plate done-reward-warn" wx:elif="{{giftPartial || giftFail}}">
+      <text class="done-reward">{{giftMsg || (giftPartial ? '礼券未全部到账' : '礼包发放异常')}}</text>
+    </view>
+
+    <text class="done-auto-hint" wx:if="{{autoReturn}}">即将返回…</text>
+    <text class="done-auto-hint" wx:elif="{{autoBrowse}}">即将进入探索…</text>
+
+    <view
+      class="account-btn-primary done-btn"
+      wx:if="{{giftFail || giftPartial}}"
+      hover-class="done-btn-press"
+      bindtap="retryGift"
+    >{{repairing ? '补领中…' : '补领新客礼'}}</view>
+
+    <view class="account-btn-primary done-btn" hover-class="done-btn-press" bindtap="goPrimary">
+      {{primaryCta}}
+    </view>
+    <view
+      class="account-btn-ghost done-btn"
+      hover-class="done-btn-press"
+      bindtap="goCoupons"
+      wx:if="{{hasRegisterGift && !giftFail && !hasReturn}}"
+    >查看礼券夹</view>
+  </view>
+</view>

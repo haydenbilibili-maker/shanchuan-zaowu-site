@@ -8,7 +8,9 @@
         <view 
           class="tab-pill {{curTab === index ? 'active' : ''}}" 
           bindtap="switchTab" 
-          data-index="{{index}}">
+          data-index="{{index}}"
+          hover-class="tab-pill-press"
+          hover-stay-time="80">
           <text>{{item.name}}</text>
         </view>
       </block>
@@ -21,7 +23,7 @@
     <!-- Loading -->
     <view class="loading-box" wx:if="{{loading}}">
       <view class="scanner"></view>
-      <text>正在扫描档案...</text>
+      <text>正在扫描档案…</text>
     </view>
 
     <block wx:else>
@@ -33,7 +35,9 @@
             class="order-card stagger-card" 
             bindtap="handleOrderClick" 
             data-id="{{item._id}}"
-            data-item="{{item}}">
+            data-item="{{item}}"
+            hover-class="order-card-press"
+            hover-stay-time="80">
             
             <view class="card-head">
               <text class="order-no">NO.{{item.orderNo}}</text>
@@ -43,7 +47,7 @@
                 <view class="stamp-inner">
                   <text class="cn">{{item.statusStr}}</text>
                   <!-- 简单的英文映射，也可在 JS 处理 -->
-                  <text class="en">{{item.status === 'signed' ? '已归档' : '状态'}}</text>
+                  <text class="en">{{item.statusEn}}</text>
                 </view>
               </view>
             </view>
@@ -54,25 +58,45 @@
                 <view class="prod-info">
                   <text class="prod-name">{{prod.title}}</text>
                   <text class="prod-latin">{{prod.latin || 'Specimen'}}</text>
-                  <view class="sku-tag">数量: {{item.count}}</view>
+                  <view class="sku-tag">数量： {{prod.count || item.count || 1}}</view>
+                  <view class="sku-tag gift" wx:if="{{item.giftTag}}">{{item.giftTag}}</view>
+                  <view class="sku-tag gift" wx:elif="{{item.depositTag}}">{{item.depositTag}}</view>
                 </view>
               </block>
             </view>
 
             <view class="card-foot">
               <view class="total-box">
-                <text class="lbl">合计</text>
-                <text class="val">¥{{item.totalPrice}}</text>
+                <text class="lbl">{{item.showOrderPrice === false ? '礼赠' : '合计'}}</text>
+                <text class="val" wx:if="{{item.showOrderPrice !== false}}">¥{{item.totalPrice}}</text>
+                <text class="val muted" wx:else>心意已备妥</text>
               </view>
               
               <!-- 操作按钮 -->
               <view class="btn-group" style="display:flex; gap:20rpx;">
-                 <!-- 待付款 -> 去支付 -->
+                 <!-- 待付款 -> 去支付（仅买家） -->
                  <view class="btn-action primary" 
-                      wx:if="{{item.status === 'pending_pay'}}" 
+                      wx:if="{{item.status === 'pending_pay' && !item.isGiftReceiver}}" 
                       catchtap="handlePay" 
                       data-id="{{item._id}}">
-                  去支付
+                  {{item.payBtnLabel || '立即支付'}}
+                </view>
+
+                <!-- 送礼人：待填址 -> 分享礼笺 -->
+                <view class="btn-action gold"
+                      wx:if="{{item.giftNeedsAddress && !item.isGiftReceiver}}"
+                      catchtap="handleOrderClick"
+                      data-id="{{item._id}}"
+                      data-item="{{item}}">
+                  去分享礼笺
+                </view>
+
+                <!-- 受礼人：待填址 -> 填写地址 -->
+                <view class="btn-action primary"
+                      wx:if="{{item.giftNeedsAddress && item.isGiftReceiver}}"
+                      catchtap="goFillGiftAddress"
+                      data-id="{{item._id}}">
+                  去填写地址
                 </view>
 
                 <!-- 待收货 -> 确认签收 -->
@@ -83,12 +107,19 @@
                   确认签收
                 </view>
                 
-                <!-- 已签收 -> 查看详情 -->
+                <!-- 已签收 -> 评价 / 详情 -->
+                <view class="btn-action"
+                      wx:if="{{(item.status === 'received' || item.status === 'signed') && !item.isVoucherOrder}}"
+                      catchtap="goToReview"
+                      data-id="{{item._id}}"
+                      data-item="{{item}}">
+                  写下感受
+                </view>
                 <view class="btn-action gold" 
                       wx:if="{{item.status === 'received' || item.status === 'signed'}}" 
                       catchtap="handleOrderClick" 
-                      data-item="{{item}}">
-                  查看证书
+                      data-id="{{item._id}}">
+                  查看详情
                 </view>
               </view>
             </view>
@@ -96,9 +127,12 @@
           </view>
         </block>
         
-        <view class="end-mark">
+        <!-- 买家侧还有更多：给出可点的加载入口（触底也会自动加载） -->
+        <view class="end-mark load-more" wx:if="{{curTab === 0 && ownedHasMore}}" bindtap="loadMoreOwned">
+          <text>{{loadingMore ? '加载中…' : '点击加载更早的订单'}}</text>
+        </view>
+        <view class="end-mark" wx:else>
           <text>档案检索完毕</text>
-          <text class="sub">档案检索完毕</text>
         </view>
       </view>
 
@@ -107,8 +141,10 @@
         <view class="safe-box-icon">
            <view class="lock"></view><view class="led"></view>
         </view>
-        <text class="empty-title">暂无相关记录</text>
-        <text class="empty-desc">暂无相关记录</text>
+        <text class="empty-title">{{loadError ? '档案读取失败' : '暂无相关记录'}}</text>
+        <text class="empty-desc">{{loadError ? '请检查网络后重试' : '下单后档案会出现在这里'}}</text>
+        <view class="empty-cta" wx:if="{{loadError}}" bindtap="loadOrders" hover-class="empty-cta-press">重新加载</view>
+        <navigator class="empty-cta" wx:else url="/pages/index/index" open-type="switchTab" hover-class="empty-cta-press">去逛逛</navigator>
       </view>
     </block>
 

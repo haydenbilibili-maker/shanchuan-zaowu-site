@@ -1,9 +1,9 @@
 /**
  * 签收后养护提醒 — 调度 + 定时发送
  * action:
- *   schedule — 签收时写入队列（默认 3 日后）
- *   process  — 处理到期队列（定时触发 / 手动）
- *   cancel   — 取消某订单待发送提醒
+ *   schedule — 签收时写入队列（默认 3 日后）；客户端仅可为本人调度
+ *   process  — 处理到期队列（仅定时触发 / 店员）
+ *   cancel   — 取消某订单待发送提醒；客户端仅可取消本人队列
  */
 const cloud = require('wx-server-sdk')
 
@@ -15,12 +15,69 @@ const CARE_TIP_DELAY_DAYS = 3
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 const BATCH_LIMIT = 40
 
+const SUPER_ADMIN_OPENIDS = [
+  'oa22s5ZcMY7xkQDlNW8X8jaYy46M',
+  'oa22s5RuZSXOCRQtXzdrVEiT1JuY'
+]
+
+/**
+ * 是否「非客户端来源」。实测定时触发时 wxContext.SOURCE 为空字符串，
+ * 小程序客户端必带 wx_client / wx_devtools —— 该判定 C 端无法伪造。
+ * event.Type / TriggerName / _internal / _fromApproval / _callerOpenid 等字段
+ * 均由调用方控制，**不得单独作为授权依据**。
+ */
+function isNonClientSource() {
+  try {
+    const src = String((cloud.getWXContext() || {}).SOURCE || '')
+    return !/wx_client|wx_devtools/i.test(src)
+  } catch (e) {
+    return false
+  }
+}
+
+function isClientSource(source) {
+  const s = String(source || '')
+  return s === 'wx_client' || s === 'wx_devtools'
+}
+
+function isTimerEvent(event) {
+  const triggerType = (event && (event.Type || event.triggerType || event.triggerSource)) || ''
+  return /timer/i.test(String(triggerType)) || !!(event && event.TriggerName)
+}
+
+async function isActiveStaff(openid) {
+  if (!openid) return false
+  let superList = SUPER_ADMIN_OPENIDS.slice()
+  try {
+    const acl = await db.collection('workspace_acl').doc('super_admins').get()
+    const fromDb = Array.isArray((acl.data || {}).openids) ? acl.data.openids : []
+    fromDb.forEach((id) => {
+      const v = String(id || '').trim()
+      if (v && superList.indexOf(v) === -1) superList.push(v)
+    })
+  } catch (e) { /* ignore */ }
+  if (superList.indexOf(openid) !== -1) return true
+  try {
+    const res = await db.collection('staff_members').where({ openid, status: 'active' }).limit(1).get()
+    if (res.data && res.data[0]) return true
+  } catch (e) { /* ignore */ }
+  try {
+    const userRes = await db.collection('users').where({ _openid: openid }).limit(1).get()
+    const user = userRes.data && userRes.data[0]
+    if (user && (user.isAdmin === true || user.staffRole === 'manager' || user.staffRole === 'staff')) {
+      return true
+    }
+  } catch (e) { /* ignore */ }
+  const admins = (process.env.MESSAGE_ADMIN_OPENIDS || '').split(',').map((s) => s.trim()).filter(Boolean)
+  return admins.includes(openid)
+}
+
 function buildGuidePath(category, orderId, productId) {
   const q = [`category=${encodeURIComponent(category || 'GENERAL')}`]
   if (orderId) q.push(`orderId=${encodeURIComponent(orderId)}`)
   if (productId) q.push(`productId=${encodeURIComponent(productId)}`)
   q.push('from=care_tip')
-  return `pages/care/guide/index?${q.join('&')}`
+  return `subpackages/feature/care/guide/index?${q.join('&')}`
 }
 
 function isMissingCollectionError(err) {
@@ -215,18 +272,53 @@ async function cancelReminder(event) {
 }
 
 exports.main = async (event) => {
-  const { action = 'process' } = event || {}
+  const payload = event || {}
+  const wxContext = cloud.getWXContext()
+  const fromClient = isClientSource(wxContext.SOURCE)
+  const timer = isTimerEvent(payload) && isNonClientSource()
+  let action = payload.action
+
+  // 定时触发未带 action 时默认 process；客户端必须显式传 action
+  if (timer && !action) action = 'process'
+  if (!action) {
+    return { success: false, msg: '缺少 action，请使用 schedule / process / cancel' }
+  }
 
   try {
     if (action === 'schedule') {
-      return await scheduleReminder(event)
+      const next = { ...payload }
+      if (fromClient) {
+        const caller = wxContext.OPENID || ''
+        if (!caller) return { success: false, code: 'UNAUTHORIZED', msg: '未登录' }
+        next.openid = caller
+      }
+      return await scheduleReminder(next)
     }
+
     if (action === 'process') {
+      if (timer) {
+        return await processDueReminders()
+      }
+      if (fromClient) {
+        const caller = wxContext.OPENID || ''
+        if (!(await isActiveStaff(caller))) {
+          return { success: false, code: 'FORBIDDEN', msg: '无权限' }
+        }
+      }
+      // 非客户端（云函数互调）或已通过店员校验
       return await processDueReminders()
     }
+
     if (action === 'cancel') {
-      return await cancelReminder(event)
+      const next = { ...payload }
+      if (fromClient) {
+        const caller = wxContext.OPENID || ''
+        if (!caller) return { success: false, code: 'UNAUTHORIZED', msg: '未登录' }
+        next.openid = caller
+      }
+      return await cancelReminder(next)
     }
+
     return { success: false, msg: '未知 action，请使用 schedule / process / cancel' }
   } catch (e) {
     console.error('sendCareReminder', e)

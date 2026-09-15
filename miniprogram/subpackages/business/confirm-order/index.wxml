@@ -1,17 +1,81 @@
 <view class="page">
-  <!-- 收货地址 -->
-  <view class="card address-card" bindtap="chooseAddress">
+  <wxs src="../../../utils/latinDisplay.wxs" module="latin" />
+
+  <!-- 授权回流提示：页内铜牌条，替代叠 toast -->
+  <view
+    class="auth-resume-hint"
+    wx:if="{{showAuthResumeHint}}"
+    bindtap="dismissAuthResumeHint"
+    hover-class="auth-resume-hint-press"
+  >
+    <text class="auth-resume-hint-text">{{authResumeHint}}</text>
+    <text class="auth-resume-hint-close">收起</text>
+  </view>
+
+  <!-- 礼赠交付说明 -->
+  <view class="card gift-invite-card" wx:if="{{isGiftOrder}}">
+    <text class="section-label">SEAL · 封笺确认</text>
+    <text class="gift-invite-title">{{giftDeliveryLabel}}</text>
+    <text class="gift-invite-desc">{{giftDeliveryHint}}</text>
+    <view class="gift-pack-note">
+      <text class="gift-pack-label">{{giftPackagingLabel}}</text>
+      <text class="gift-pack-body">{{giftPackagingNote}}</text>
+    </view>
+  </view>
+
+  <!-- 礼笺摘要预览 -->
+  <view class="card gift-note-card" wx:if="{{isGiftOrder && (giftCardBody || giftHasVoice)}}">
+    <text class="section-label">LETTER · 礼笺摘要</text>
+    <text class="gift-note-body" wx:if="{{giftCardBody}}">{{giftCardBody}}</text>
+    <text class="gift-note-voice" wx:if="{{giftHasVoice}}">另封入一段声音</text>
+    <text class="gift-note-sig" wx:if="{{giftCardSignature}}">— {{giftCardSignature}}</text>
+  </view>
+
+  <!-- 收货地址：邀请填址 / 礼赠自提 / 普通门店自取不展示 -->
+  <view class="card address-card" bindtap="chooseAddress" hover-class="address-card-hover" wx:if="{{!isGiftInvite && !isGiftStorePickup && !storePickup}}">
     <block wx:if="{{address}}">
       <view class="addr-head">
         <text class="addr-name">{{address.name}}</text>
         <text class="addr-phone">{{address.phone}}</text>
       </view>
-      <text class="addr-detail">{{address.region[0]}} {{address.region[1]}} {{address.region[2]}} {{address.detail}}</text>
+      <text class="addr-detail">{{address.regionText}} {{address.detail}}</text>
     </block>
     <block wx:else>
-      <text class="addr-placeholder">请选择收货地址</text>
+      <text class="addr-placeholder">{{isGiftOrder ? (giftNeedsAddress ? '写下这份珍物的去处' : '请选择收货地址') : '请选择收货地址'}}</text>
     </block>
     <text class="addr-arrow">›</text>
+  </view>
+
+  <!-- 普通订单：交付方式（快递 / 门店自取）；门店自取关闭时整卡隐藏 -->
+  <view class="card fulfillment-card" wx:if="{{!isGiftOrder && storePickupEnabled}}">
+    <text class="section-label">DELIVERY · 交付方式</text>
+    <view class="fulfill-row">
+      <view
+        class="fulfill-opt {{!storePickup ? 'active' : ''}}"
+        bindtap="setStorePickup"
+        data-on="{{false}}"
+        hover-class="fulfill-opt-press"
+        hover-stay-time="80"
+      >
+        <text class="fulfill-opt-title">快递配送</text>
+        <text class="fulfill-opt-sub">按址妥投 · 计运费</text>
+      </view>
+      <view
+        class="fulfill-opt {{storePickup ? 'active' : ''}}"
+        bindtap="setStorePickup"
+        data-on="{{true}}"
+        hover-class="fulfill-opt-press"
+        hover-stay-time="80"
+      >
+        <text class="fulfill-opt-title">门店自取</text>
+        <text class="fulfill-opt-sub">免运费 · 到店领取</text>
+      </view>
+    </view>
+    <view class="pickup-hint" wx:if="{{storePickup}}">
+      <text class="pickup-hint-title">{{pickupStoreName || '山川造物主店'}}</text>
+      <text class="pickup-hint-addr" wx:if="{{pickupStoreAddress}}">{{pickupStoreAddress}}</text>
+      <text class="pickup-hint-body">支付后馆长备妥；到店出示订单，由馆长核销后交付。</text>
+    </view>
   </view>
 
   <!-- 定制摘要 -->
@@ -32,93 +96,207 @@
   <view class="card">
     <view class="section-label">藏品清单</view>
     <view class="goods-item" wx:for="{{items}}" wx:key="productId">
-      <image class="goods-img" src="{{item.image}}" mode="aspectFill"></image>
+      <view class="goods-img-wrap">
+        <image class="goods-img" src="{{item.image}}" mode="aspectFill"></image>
+        <protected-badge product="{{item}}" size="xs" corner="bl" />
+      </view>
       <view class="goods-info">
         <text class="goods-title">{{item.title}}</text>
         <text class="goods-sku" wx:if="{{item.skuLabel}}">{{item.skuLabel}}</text>
-        <text class="goods-latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+        <text class="goods-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
         <view class="goods-row">
           <text class="goods-price">¥{{item.price}}</text>
           <text class="goods-count">×{{item.count}}</text>
         </view>
       </view>
     </view>
+    <view class="brand-notes">
+      <view
+        class="brand-note {{ethicsExpanded ? 'is-open' : ''}}"
+        wx:if="{{showAnimalEthics}}"
+        bindtap="toggleBrandNote"
+        data-field="ethicsExpanded"
+        hover-class="brand-note-press"
+        hover-stay-time="80"
+      >
+        <view class="brand-note-head">
+          <text class="brand-note-label">{{animalEthicsLabel}}</text>
+          <text class="brand-note-chevron">›</text>
+        </view>
+        <text class="brand-note-summary" wx:if="{{!ethicsExpanded}}">{{animalEthicsSummary}}</text>
+        <text class="brand-note-body" wx:else>{{animalEthicsNote}}</text>
+      </view>
+      <view
+        class="brand-note {{pledgeExpanded ? 'is-open' : ''}}"
+        bindtap="toggleBrandNote"
+        data-field="pledgeExpanded"
+        hover-class="brand-note-press"
+        hover-stay-time="80"
+      >
+        <view class="brand-note-head">
+          <text class="brand-note-label">{{onePercentPledgeLabel}}</text>
+          <text class="brand-note-chevron">›</text>
+        </view>
+        <text class="brand-note-summary" wx:if="{{!pledgeExpanded}}">{{onePercentPledgeSummary}}</text>
+        <text class="brand-note-body" wx:else>{{onePercentPledgeNote}}</text>
+      </view>
+    </view>
   </view>
 
-  <!-- 发票 -->
-  <view class="card">
-    <view class="row-item">
-      <text class="row-label">开具发票</text>
-      <switch checked="{{needInvoice}}" color="#C4A76C" bindchange="toggleInvoice" style="transform:scale(0.8)"/>
+  <!-- 备注：默认折叠行，点开后再展开；聚焦略增高 -->
+  <view class="card remark-card {{remarkOpen ? 'is-open' : ''}}">
+    <view
+      class="remark-collapsed"
+      wx:if="{{!remarkOpen}}"
+      bindtap="openRemark"
+      hover-class="remark-collapsed-hover"
+      hover-stay-time="80"
+    >
+      <text class="remark-label">订单备注</text>
+      <text class="remark-preview {{remark ? '' : 'muted'}}">{{remark || '添加备注'}}</text>
+      <text class="row-arrow">›</text>
     </view>
-    <block wx:if="{{needInvoice}}">
-      <view class="invoice-types">
-        <text class="inv-type {{invoiceType === 'personal' ? 'active' : ''}}" bindtap="switchInvoiceType" data-type="personal">个人</text>
-        <text class="inv-type {{invoiceType === 'company' ? 'active' : ''}}" bindtap="switchInvoiceType" data-type="company">企业</text>
+    <block wx:else>
+      <view class="remark-open-head">
+        <text class="remark-label">订单备注</text>
+        <text class="remark-done" bindtap="closeRemarkIfEmpty" wx:if="{{!remark}}">收起</text>
       </view>
-      <input class="inv-input" placeholder="发票抬头" value="{{invoiceTitle}}" bindinput="onInvoiceInput" data-field="invoiceTitle" />
-      <input class="inv-input" wx:if="{{invoiceType === 'company'}}" placeholder="纳税人识别号" value="{{invoiceTaxNo}}" bindinput="onInvoiceInput" data-field="invoiceTaxNo" />
-      <input class="inv-input" placeholder="接收邮箱（选填）" value="{{invoiceEmail}}" bindinput="onInvoiceInput" data-field="invoiceEmail" />
+      <textarea
+        class="remark-input {{remarkFocused ? 'is-focused' : ''}}"
+        placeholder="选填：包装、配送等特殊要求"
+        maxlength="200"
+        value="{{remark}}"
+        focus="{{remarkFocus}}"
+        auto-height="{{true}}"
+        show-confirm-bar="{{false}}"
+        adjust-position="{{true}}"
+        bindinput="onRemarkInput"
+        bindfocus="onRemarkFocus"
+        bindblur="onRemarkBlur"
+      />
     </block>
   </view>
 
-  <!-- 备注 -->
-  <view class="card">
-    <view class="section-label">订单备注</view>
-    <textarea
-      class="remark-input"
-      placeholder="选填：包装、配送等特殊要求"
-      maxlength="200"
-      value="{{remark}}"
-      bindinput="onRemarkInput"
-    />
-  </view>
+  <!-- 我的钱包：皮质卡与「我的钱包」页共用样式；金额明细落在下方账单 -->
+  <view class="wallet-leather-card wallet-leather-card--checkout {{useWalletPay ? 'is-on' : ''}}" wx:if="{{walletEnabled}}">
+    <view class="wallet-leather-card__inner">
+      <view class="wallet-leather-card__head-row wallet-leather-card__head--inline">
+        <text class="wallet-leather-tag">WALLET</text>
+        <text class="wallet-leather-title-muted">我的钱包</text>
+      </view>
 
-  <!-- 优惠 -->
-  <view class="card">
-    <view class="row-item" bindtap="openCouponModal">
-      <text class="row-label">优惠券</text>
-      <view class="row-value">
-        <text class="coupon-hint" wx:if="{{selectedCoupon}}">-¥{{couponSaved}}</text>
-        <text class="coupon-hint muted" wx:else>{{coupons.length > 0 ? '可选 ' + coupons.length + ' 张' : '暂无可用'}}</text>
-        <text class="row-arrow">›</text>
+      <view class="wallet-leather-balance-block">
+        <text class="wallet-leather-overline">可用余额</text>
+        <view class="wallet-leather-balance-row {{walletBalancePending ? 'is-pending' : ''}}">
+          <text class="wallet-leather-currency">¥</text>
+          <text class="wallet-leather-balance">{{walletAvailableYuan}}</text>
+        </view>
+      </view>
+
+      <text class="wallet-benefit">{{walletBenefitText}}</text>
+
+      <view class="wallet-toggle-row wallet-leather-seam">
+        <view class="wallet-toggle-copy">
+          <text class="wallet-toggle-label">用钱包支付</text>
+          <text class="wallet-toggle-hint">{{useWalletPay ? '已启用，抵扣见下方账单' : '余额可抵扣本单应付'}}</text>
+        </view>
+        <switch
+          class="wallet-switch"
+          checked="{{useWalletPay}}"
+          disabled="{{walletBalancePending || walletAvailableFen <= 0 || walletToggling}}"
+          color="#C4A76C"
+          bindchange="onWalletPayToggle"
+        />
       </view>
     </view>
-    <view class="row-item" wx:if="{{discountRate < 1}}">
-      <text class="row-label">{{levelName}}折扣</text>
-      <text class="row-value gold">-{{vipSaved}} ({{discountRate * 10}}折)</text>
-    </view>
-    <view class="row-item">
-      <text class="row-label">运费</text>
-      <text class="row-value">{{shippingFee > 0 ? '¥' + shippingFeeDisplay : '包邮'}}</text>
-    </view>
-    <view class="shipping-tip">{{shippingRuleText}}</view>
   </view>
 
-  <!-- 价格汇总 -->
-  <view class="card summary">
+  <!-- 单一账单：商品合计 → 优惠券 → 折扣 → 运费/快递 → 应付 -->
+  <view class="card bill-card {{useWalletPay ? 'bill-wallet' : ''}}">
+    <view class="section-label">账单</view>
+
     <view class="row-item">
-      <text class="row-label">商品合计</text>
-      <text class="row-value">¥{{originalPrice}}</text>
+      <text class="row-label">藏品合计</text>
+      <text class="row-value mono">¥{{originalPrice}}</text>
     </view>
-    <view class="row-item" wx:if="{{savedAmount !== '0.00'}}">
-      <text class="row-label">已优惠</text>
-      <text class="row-value gold">-¥{{savedAmount}}</text>
+
+    <view
+      class="row-item {{couponRowBlocked ? 'row-item-blocked' : 'row-item-tap'}}"
+      bindtap="openCouponModal"
+      hover-class="{{couponRowBlocked ? '' : 'row-item-press'}}"
+      hover-stay-time="80"
+    >
+      <text class="row-label">礼券</text>
+      <view class="row-value">
+        <text class="coupon-hint" wx:if="{{selectedCoupon && couponHint}}">{{couponHint}}</text>
+        <text class="coupon-hint" wx:elif="{{selectedCoupon}}">已选礼券</text>
+        <text class="coupon-hint muted {{couponRowBlocked ? 'blocked' : ''}}" wx:else>{{couponRowText}}</text>
+        <text class="row-arrow" wx:if="{{!couponRowBlocked}}">›</text>
+      </view>
     </view>
+
+    <view class="row-item" wx:if="{{discountRate < 1 && vipSaved > 0}}">
+      <text class="row-label">{{discountLabel}}</text>
+      <text class="row-value gold">-¥{{vipSaved}}（{{discountText}}）</text>
+    </view>
+    <view class="row-item" wx:if="{{depositCredit > 0}}">
+      <text class="row-label">已付定金抵扣</text>
+      <text class="row-value gold">-¥{{depositCreditDisplay}}</text>
+    </view>
+    <view class="provisional-tip" wx:if="{{provisionalTip}}">{{provisionalTip}}</view>
+
+    <view class="row-item">
+      <text class="row-label">{{storePickup || isGiftStorePickup ? '运费（门店自取）' : shippingLineLabel}}</text>
+      <view class="row-value shipping-fee-value {{isShippingFree ? 'gold' : ''}}">
+        <text wx:if="{{showShippingStrike}}" class="shipping-fee-strike">¥{{originalShippingFeeDisplay}}</text>
+        <text class="{{isShippingFree ? 'shipping-free-tag' : 'mono'}}">{{storePickup || isGiftStorePickup ? '自取免运费' : shippingFeeLabel}}</text>
+      </view>
+    </view>
+    <view class="shipping-tip {{isShippingFree ? 'free' : ''}}" wx:if="{{!storePickup && !isGiftStorePickup && shippingRuleText}}">{{shippingRuleText}}</view>
+
+    <view class="row-item" wx:if="{{useWalletPay}}">
+      <text class="row-label">订单应付</text>
+      <text class="row-value mono">¥{{finalPrice}}</text>
+    </view>
+    <view class="row-item" wx:if="{{useWalletPay && walletPayYuan !== '0.00'}}">
+      <text class="row-label">钱包抵扣</text>
+      <text class="row-value gold">-¥{{walletPayYuan}}</text>
+    </view>
+
     <view class="row-item total-row">
-      <text class="row-label">应付</text>
-      <text class="total-price">¥{{finalPrice}}</text>
+      <text class="row-label total-label">{{payNowLabel}}</text>
+      <text class="total-price">¥{{payNowYuan}}</text>
+    </view>
+    <text class="summary-foot-hint" wx:if="{{useWalletPay && wxpayYuan !== '0.00'}}">尾款将通过微信支付</text>
+    <text class="summary-foot-hint" wx:elif="{{useWalletPay && wxpayYuan === '0.00'}}">本单将全额使用钱包余额</text>
+  </view>
+
+  <view class="aftercare-plate" wx:if="{{refundPolicyLabel}}">
+    <text class="aftercare-overline">AFTERCARE · {{refundPolicyLabel}}</text>
+    <view class="aftercare-body">
+      <view class="aftercare-para" wx:for="{{refundPolicyRichParagraphs}}" wx:for-item="para" wx:key="idx">
+        <text
+          wx:for="{{para.segments}}"
+          wx:for-item="seg"
+          wx:key="i"
+          class="{{seg.warn ? 'aftercare-warn' : ''}} {{seg.em ? 'aftercare-em' : ''}} {{seg.strong ? 'aftercare-strong' : ''}}"
+        >{{seg.t}}</text>
+      </view>
+    </view>
+    <view class="aftercare-link" bindtap="goToSupport" hover-class="aftercare-link-press">
+      <text class="aftercare-link-label">联系专员</text>
+      <text class="aftercare-link-arrow">→</text>
     </view>
   </view>
 
   <!-- 底部提交 -->
   <view class="footer-bar">
     <view class="footer-price">
-      <text class="fp-label">合计</text>
-      <text class="fp-value">¥{{finalPrice}}</text>
+      <text class="fp-label">{{footerPayLabel}}</text>
+      <text class="fp-value">¥{{payNowYuan}}</text>
     </view>
-    <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitOrder">
-      {{submitting ? '处理中...' : '提交订单'}}
+    <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitOrder" hover-class="{{submitting ? '' : 'submit-btn-hover'}}">
+      {{submitting ? (isGiftOrder ? '备妥中…' : '处理中…') : (isGiftOrder ? (useWalletPay && wxpayYuan === '0.00' ? '钱包支付并备妥' : '支付并备妥') : (useWalletPay && wxpayYuan === '0.00' ? '钱包支付' : '提交订单'))}}
     </view>
   </view>
 </view>
@@ -127,43 +305,158 @@
 <view class="modal-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal">
   <view class="modal-panel" catchtap="true">
     <view class="modal-head">
-      <text>选择优惠券</text>
+      <text>选择礼券</text>
       <text class="modal-close" bindtap="closeCouponModal">✕</text>
     </view>
-    <scroll-view scroll-y class="coupon-scroll">
-      <view class="coupon-opt" bindtap="selectCoupon" data-index="-1">
-        <text>不使用优惠券</text>
-        <text class="check" wx:if="{{!selectedCoupon}}">✓</text>
+    <scroll-view scroll-y class="coupon-scroll" enhanced show-scrollbar="{{false}}" enable-flex="{{true}}">
+      <view
+        class="coupon-opt {{!selectedCoupon ? 'selected' : ''}}"
+        bindtap="selectCoupon"
+        data-index="-1"
+        hover-class="coupon-opt-press"
+        hover-stay-time="80"
+      >
+        <text class="coupon-opt-name">不使用礼券</text>
+        <view class="radio {{!selectedCoupon ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{!selectedCoupon}}"></view></view>
       </view>
       <view
-        class="coupon-opt {{item._disabled ? 'disabled' : ''}}"
+        class="coupon-opt {{item._disabled ? 'disabled' : ''}} {{selectedCoupon && selectedCoupon._id === item._id ? 'selected' : ''}}"
         wx:for="{{coupons}}"
         wx:key="_id"
         bindtap="selectCoupon"
         data-index="{{index}}"
+        hover-class="coupon-opt-press"
+        hover-stay-time="80"
       >
         <view class="c-left">
-          <text class="c-val">¥{{item.value}}</text>
+          <text class="c-val">{{item.faceLabel || ('¥' + item.value)}}</text>
           <text class="c-min" wx:if="{{item.minSpend > 0}}">满{{item.minSpend}}可用</text>
         </view>
         <view class="c-right">
-          <text class="c-name">{{item.name || '优惠券'}}</text>
-          <text class="check" wx:if="{{selectedCoupon && selectedCoupon._id === item._id}}">✓</text>
+          <text class="c-name">{{item.title || item.name || '礼券'}}</text>
         </view>
+        <view class="radio {{selectedCoupon && selectedCoupon._id === item._id ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{selectedCoupon && selectedCoupon._id === item._id}}"></view></view>
       </view>
     </scroll-view>
   </view>
 </view>
 
-<!-- 标本 uniqueness 提示 -->
+<!-- 启程前须知 / 温馨提示：共用居中铜牌；可控分行，保留博物柜温度 -->
+<view class="modal-mask specimen-mask" wx:if="{{showCareNotice}}" catchtouchmove="true">
+  <view class="specimen-panel" catchtap="true">
+    <text class="specimen-title">{{careNoticeTitle}}</text>
+    <text class="notice-intro" wx:if="{{careNoticeIntro}}">{{careNoticeIntro}}</text>
+
+    <view class="notice-block">
+      <text class="notice-block-label">{{careUnboxLabel}}</text>
+      <view
+        class="notice-line"
+        wx:for="{{careUnboxLines}}"
+        wx:for-item="line"
+        wx:for-index="li"
+        wx:key="li"
+      >
+        <text
+          wx:for="{{line.segs}}"
+          wx:for-item="seg"
+          wx:for-index="si"
+          wx:key="si"
+          class="{{seg.brass ? 'notice-brass' : ''}}"
+        >{{seg.t}}</text>
+      </view>
+      <block wx:if="{{careHasButterfly}}">
+        <view
+          class="notice-line notice-antenna"
+          wx:for="{{careAntennaLines}}"
+          wx:for-item="line"
+          wx:for-index="li"
+          wx:key="li"
+        >
+          <text
+            wx:for="{{line.segs}}"
+            wx:for-item="seg"
+            wx:for-index="si"
+            wx:key="si"
+            class="{{seg.brass ? 'notice-brass' : ''}}"
+          >{{seg.t}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="notice-block-rule" aria-hidden="true"></view>
+
+    <view class="notice-block">
+      <text class="notice-block-label">{{careCareLabel}}</text>
+      <view
+        class="notice-line"
+        wx:for="{{careCareLines}}"
+        wx:for-item="line"
+        wx:for-index="li"
+        wx:key="li"
+      >
+        <text
+          wx:for="{{line.segs}}"
+          wx:for-item="seg"
+          wx:for-index="si"
+          wx:key="si"
+          class="{{seg.brass ? 'notice-brass' : ''}}"
+        >{{seg.t}}</text>
+      </view>
+    </view>
+
+    <view class="specimen-actions">
+      <view class="specimen-btn secondary" bindtap="closeCareNotice" hover-class="specimen-btn-hover">再看看</view>
+      <view class="specimen-btn primary" bindtap="confirmCareNotice" hover-class="specimen-btn-primary-hover">已知悉，继续</view>
+    </view>
+  </view>
+</view>
+
+<!-- 标本 uniqueness 提示（同款居中铜牌；正文左齐，有温度） -->
 <view class="modal-mask specimen-mask" wx:if="{{showSpecimenNotice}}" catchtouchmove="true">
   <view class="specimen-panel" catchtap="true">
     <text class="specimen-title">温馨提示</text>
-    <text class="specimen-body">标本类藏品均由标本师手工装裱与自然采集，每一件的形态、色泽与细节均为独一无二。图片展示的是风格与大致规格，实物可能存在合理的个体差异，这正是手工标本的温度所在。</text>
-    <text class="specimen-note">下单即表示您已理解并接受这一特性，请以收到的实物为准。</text>
+    <view
+      class="notice-line notice-line--warm"
+      wx:for="{{specimenNoticeBodyLines}}"
+      wx:for-item="line"
+      wx:for-index="li"
+      wx:key="li"
+    >
+      <text
+        wx:for="{{line.segs}}"
+        wx:for-item="seg"
+        wx:for-index="si"
+        wx:key="si"
+        class="{{seg.brass ? 'notice-brass' : ''}}"
+      >{{seg.t}}</text>
+    </view>
+    <view class="specimen-note notice-line--warm">
+      <text
+        wx:for="{{specimenNoticeNoteSegments}}"
+        wx:for-item="seg"
+        wx:for-index="si"
+        wx:key="si"
+        class="{{seg.brass ? 'notice-brass' : ''}}"
+      >{{seg.t}}</text>
+    </view>
+    <view class="specimen-pledge-plate" wx:if="{{specimenPledgeLine}}">
+      <view class="specimen-pledge-corner tl" aria-hidden="true"></view>
+      <view class="specimen-pledge-corner tr" aria-hidden="true"></view>
+      <view class="specimen-pledge-corner bl" aria-hidden="true"></view>
+      <view class="specimen-pledge-corner br" aria-hidden="true"></view>
+      <view class="specimen-pledge-inner">
+        <text class="specimen-pledge-label">{{onePercentPledgeLabel}}</text>
+        <text class="specimen-pledge-slogan">{{onePercentPledgeSlogan}}</text>
+        <view class="specimen-pledge-rule" aria-hidden="true"></view>
+        <text class="specimen-pledge-line" wx:if="{{specimenPledgeHasAmount}}">
+          <text>{{specimenPledgeLineBefore}}</text><text class="specimen-pledge-amount">{{specimenPledgeLineAmount}}</text><text>{{specimenPledgeLineAfter}}</text>
+        </text>
+        <text class="specimen-pledge-line" wx:else>{{specimenPledgeLine}}</text>
+      </view>
+    </view>
     <view class="specimen-actions">
-      <view class="specimen-btn secondary" bindtap="closeSpecimenNotice">我再想想</view>
-      <view class="specimen-btn primary" bindtap="confirmSpecimenNotice">我已了解，继续下单</view>
+      <view class="specimen-btn secondary" bindtap="closeSpecimenNotice" hover-class="specimen-btn-hover">再看看</view>
+      <view class="specimen-btn primary" bindtap="confirmSpecimenNotice" hover-class="specimen-btn-primary-hover">已知悉，继续</view>
     </view>
   </view>
 </view>

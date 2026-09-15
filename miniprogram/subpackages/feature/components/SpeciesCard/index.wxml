@@ -1,0 +1,81 @@
+<view class="species-card">
+  <view class="card-image-wrap">
+    <image class="card-image" src="{{displayImage}}" mode="aspectFill" />
+    <view class="card-image-veil"></view>
+    <view class="card-image-badge" wx:if="{{rootCategoryTag}}">
+      <text>{{rootCategoryTag}}</text>
+    </view>
+  </view>
+
+  <view class="card-body">
+    <view class="specimen-plate">
+      <text class="plate-en">SPECIMEN PLATE</text>
+      <view class="name-block">
+        <text class="name-zh">{{speciesInfo.species_name_zh || '—'}}</text>
+        <text class="name-latin" wx:if="{{speciesInfo.species_name_latin}}">{{speciesInfo.species_name_latin}}</text>
+      </view>
+      <view class="plate-protection" wx:if="{{showProtection}}">
+        <text class="plate-protection-label">保护等级</text>
+        <view class="prot-tags" wx:if="{{protectionTags.length}}">
+          <view class="prot-tag tone-{{item.tone}}" wx:for="{{protectionTags}}" wx:key="label">
+            <text class="prot-sys">{{item.system}}</text>
+            <text class="prot-val">{{item.label}}</text>
+          </view>
+        </view>
+        <text class="prot-empty" wx:else>{{protectionEmptyLabel || '暂无等级'}}</text>
+        <text class="prot-summary" wx:if="{{protectionSummary}}">{{protectionSummary}}</text>
+      </view>
+    </view>
+
+    <scroll-view class="tax-scroll" scroll-x enable-flex show-scrollbar="{{false}}" wx:if="{{taxTags.length}}">
+      <view class="tax-inner">
+        <block wx:for="{{taxTags}}" wx:key="*this">
+          <view class="tax-chip">{{item}}</view>
+        </block>
+      </view>
+    </scroll-view>
+
+    <view class="confidence-block" wx:if="{{showConfidence}}">
+      <view class="conf-head">
+        <text class="conf-label">识别置信度</text>
+        <text class="conf-pct tone-{{confTone}}">{{confPct}}%</text>
+      </view>
+      <view class="conf-track">
+        <view class="conf-fill tone-{{confTone}}" style="width: {{confPct}}%;"></view>
+      </view>
+      <text class="conf-desc">{{confidenceDesc}}</text>
+    </view>
+
+    <view class="warn-banner" wx:if="{{warningText}}">
+      <text>{{warningText}}</text>
+    </view>
+
+    <view class="photo-tips" wx:if="{{showPhotoTips}}">
+      <text class="pt-title">重拍建议</text>
+      <text class="pt-line">正对藏品主体，减少倾斜</text>
+      <text class="pt-line">避开强反光，选择均匀柔光</text>
+      <text class="pt-line">可近距离补拍翅脉、纹理等细节</text>
+    </view>
+
+    <view class="section science" wx:if="{{aiContent.content}}">
+      <view class="sec-head">
+        <view class="sec-copy">
+          <text class="sec-en">FIELD NOTE</text>
+          <text class="sec-title">科普手记</text>
+        </view>
+        <text class="sec-toggle" bindtap="toggleExpand" hover-class="sec-toggle-press" hover-stay-time="80">{{expanded ? '收起' : '展开'}}</text>
+      </view>
+      <text class="sci-text {{expanded ? 'expanded' : 'collapsed'}}">{{aiContent.content}}</text>
+    </view>
+
+    <view class="fun-fact" wx:if="{{aiContent.fun_fact}}">
+      <view class="ff-rule"></view>
+      <view class="ff-body">
+        <text class="ff-label">CURIOSITY · 冷知识</text>
+        <text class="ff-text">{{aiContent.fun_fact}}</text>
+      </view>
+    </view>
+
+    <text class="disclaimer">AI 鉴定仅供参考，收藏与交易请以实物及证书为准。</text>
+  </view>
+</view>

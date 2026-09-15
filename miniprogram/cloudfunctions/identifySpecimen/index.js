@@ -16,6 +16,14 @@ function bufferToDataUrl(buf) {
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
+const { checkImageBuffer, checkFileImage } = require('./contentSecurity')
+const {
+  fetchSpeciesKnowledge,
+  buildSpeciesProfile,
+  extractAiStructured,
+  knowledgePromptSnippet,
+  PROFILE_VERSION
+} = require('./speciesProfile')
 
 const DASHSCOPE_HOST = 'dashscope.aliyuncs.com'
 const VL_PATH = '/api/v1/services/aigc/multimodal-generation/generation'
@@ -41,7 +49,12 @@ const MOCK_SPECIES = {
 const MOCK_AI = {
   content:
     '大蓝闪蝶的翅膀像被雨水洗过的薄瓷，在阳光下会泛起近乎幻觉的金属蓝。它们生活在南美雨林的中层，常贴着林冠滑翔，以发酵的果实与树液为食。那抹蓝并非来自色素，而是微观鳞片对光的干涉——自然用最省力的方式，写出了最奢侈的诗句。',
-  fun_fact: '闪蝶的蓝色来自结构色，换个角度观察，颜色会悄然变化。'
+  fun_fact: '闪蝶的蓝色来自结构色，换个角度观察，颜色会悄然变化。',
+  morphology: '翅展约 12–20 厘米，翅面呈结构色金属蓝，随观察角度明暗变幻。',
+  habits: '活动于热带雨林中下层，滑翔觅食，取食发酵果实与树液。',
+  distribution: '中美洲至南美洲北部的热带雨林。',
+  collection_note: '常见于展翅标本；结构色来自鳞片微结构，非色素。',
+  conservation_advice: '收藏与流转请核验合法来源；野外种群受栖息地变化影响。'
 }
 
 function httpsPostJson(path, body, headers) {
@@ -132,6 +145,8 @@ function normalizeAlternative(raw) {
   }
 }
 
+const { toChineseTaxonomy } = require('./taxonomyZh')
+
 function normalizeSpecies(raw) {
   const d = raw || {}
   const tax = d.taxonomy || {}
@@ -141,7 +156,6 @@ function normalizeSpecies(raw) {
         .filter((a) => a.species_name_zh)
         .slice(0, 2)
     : []
-  const { toChineseTaxonomy } = require('./taxonomyZh')
   return {
     species_name_zh: String(d.species_name_zh || '').trim() || '未知物种',
     species_name_latin: String(d.species_name_latin || '').trim(),
@@ -258,11 +272,7 @@ function buildSciencePrompt(species, knowledge) {
     .filter(Boolean)
     .join('；')
 
-  let archive = ''
-  if (knowledge && knowledge.description) {
-    const src = knowledge.source === 'cms_wikis' ? '馆藏档案' : '物种知识库'
-    archive = `\n${src}参考（请消化后自然融入叙述，勿整段照抄）：\n${String(knowledge.description).slice(0, 900)}`
-  }
+  const archive = knowledgePromptSnippet(knowledge)
 
   return `你是一位自然博物馆的科普讲解员，同时也是一位文艺作家。
 请为以下物种撰写科普介绍，并严格只输出一个 JSON 对象，不要其它文字。
@@ -276,52 +286,9 @@ ${archive}
 1. 科普正文 200-400 字，按「事实（形态/习性/分布）→ 感受（画面与触觉）→ 连接（与收藏/生活）」三层结构组织。
 2. 语言温暖自然、有画面感，避免堆砌术语与直播电商话术。
 3. 至少一个有趣冷知识融入正文。
-4. 输出格式：{"content":"科普正文","fun_fact":"单独一句话冷知识"}`
-}
-
-/** P3：从云库 species_knowledge / cms_wikis 取标准描述，增强科普 Prompt */
-async function fetchSpeciesKnowledge(zh, latin) {
-  try {
-    if (zh) {
-      const r = await db.collection('species_knowledge').where({ species_name_zh: zh }).limit(3).get()
-      if (r.data && r.data.length) return { source: 'species_knowledge', ...r.data[0] }
-    }
-    if (latin) {
-      const r2 = await db.collection('species_knowledge').where({ species_name_latin: latin }).limit(3).get()
-      if (r2.data && r2.data.length) return { source: 'species_knowledge', ...r2.data[0] }
-    }
-  } catch (e) {
-    console.warn('species_knowledge 查询跳过', e.message)
-  }
-
-  const orConds = []
-  if (zh && zh.length >= 2) {
-    orConds.push({ title: db.RegExp({ regexp: escapeRegExp(zh.slice(0, 12)), options: 'i' }) })
-  }
-  if (latin && latin.length >= 3) {
-    orConds.push({ latinName: db.RegExp({ regexp: escapeRegExp(latin.slice(0, 20)), options: 'i' }) })
-  }
-  if (!orConds.length) return null
-
-  try {
-    const res = await db
-      .collection('cms_wikis')
-      .where(_.and([{ status: _.neq('draft') }, _.or(orConds)]))
-      .limit(1)
-      .get()
-    const w = res.data && res.data[0]
-    if (w) {
-      return {
-        source: 'cms_wikis',
-        species_name_zh: w.title,
-        species_name_latin: w.latinName,
-        description: w.brief || w.content || ''
-      }
-    }
-  } catch (e) {
-    console.warn('cms_wikis 知识查询跳过', e.message)
-  }
-  return null
+4. 不确定的结构化字段必须填空字符串，禁止编造 IUCN、国家重点保护、CITES 等保护等级或具体法律条款。
+5. similar_species 最多 2 条，仅列出形态相近、易混淆物种及简短区分点，须标注为形态参考而非名录判定。
+6. 输出格式：{"content":"科普正文","fun_fact":"单独一句话冷知识","morphology":"形态特征，可空","identification_notes":"鉴别要点，便于对照标本，可空","habits":"生活习性，可空","distribution":"地理分布，可空","habitat":"栖息地，可空","collection_note":"与标本收藏相关的短注，可空","conservation_advice":"通用保护建议（栖息地、合法来源），不要声称具体名录等级，可空","nomenclature":"命名简史，不确定则空","phenology":"季节物候，不确定则空","similar_species":[{"species_name_zh":"","species_name_latin":"","note":""}]}`
 }
 
 async function sendIdentifyNotification(openid, recordId, speciesInfo) {
@@ -360,15 +327,39 @@ async function callQwenText(prompt, apiKey) {
   const text = extractTextGen(res)
   const parsed = parseJsonObject(text)
   if (parsed && parsed.content) {
+    let similar = parsed.similar_species
+    if (typeof similar === 'string') {
+      try {
+        similar = JSON.parse(similar)
+      } catch (e) {
+        similar = []
+      }
+    }
     return {
       content: String(parsed.content),
-      fun_fact: String(parsed.fun_fact || '')
+      fun_fact: String(parsed.fun_fact || ''),
+      morphology: String(parsed.morphology || '').trim(),
+      identification_notes: String(parsed.identification_notes || '').trim(),
+      habits: String(parsed.habits || '').trim(),
+      distribution: String(parsed.distribution || '').trim(),
+      habitat: String(parsed.habitat || '').trim(),
+      collection_note: String(parsed.collection_note || '').trim(),
+      conservation_advice: String(parsed.conservation_advice || '').trim(),
+      nomenclature: String(parsed.nomenclature || '').trim(),
+      phenology: String(parsed.phenology || '').trim(),
+      similar_species: Array.isArray(similar) ? similar : []
     }
   }
   return {
     content: text.slice(0, 1200),
     fun_fact: ''
   }
+}
+
+function productProtectionFromList(products) {
+  const hit = (products || []).find((p) => p && p.protectionType && p.protectionType !== 'none')
+  if (!hit) return null
+  return { type: hit.protectionType, title: hit.title || '' }
 }
 
 function confidenceToLevel(conf, isSpecimen) {
@@ -431,7 +422,8 @@ async function fetchRelatedProductsSnapshot(species) {
           _id: p._id,
           title: p.title || '',
           price: p.price || 0,
-          cover: imgs[0] || ''
+          cover: imgs[0] || '',
+          protectionType: p.protectionType || 'none'
         })
       }
     } catch (e) {
@@ -469,7 +461,8 @@ async function fetchRelatedProductsFromCatalog(species) {
         _id: p._id,
         title: p.title || '',
         price: p.price || 0,
-        cover: imgs[0] || ''
+        cover: imgs[0] || '',
+        protectionType: p.protectionType || 'none'
       }
     })
   } catch (e) {
@@ -517,7 +510,13 @@ async function fetchRelatedWikiArchive(species) {
       title: w.title || '',
       latinName: w.latinName || '',
       coverImage: w.coverImage || w.cover || '',
-      brief: w.brief || ''
+      brief: w.brief || '',
+      taxonomy: w.taxonomy || null,
+      distribution: w.distribution || '',
+      habitat: w.habitat || '',
+      iucn: w.iucn || '',
+      protectionLevel: w.protectionLevel || w.china_level || '',
+      cites: w.cites || ''
     }))
   } catch (e) {
     console.warn('cms_wikis 关联失败', e.message)
@@ -530,7 +529,7 @@ exports.main = async (event, context) => {
   const { action, image_file_id, use_mock, category_hint, entry_source } = event
 
   if (action === 'list_recent') {
-    const limit = Math.min(Math.max(parseInt(event.limit, 10) || 5, 1), 20)
+    const limit = Math.min(Math.max(parseInt(event.limit, 10) || 5, 1), 50)
     try {
       let res
       try {
@@ -552,6 +551,197 @@ exports.main = async (event, context) => {
       return { success: true, data: res.data || [] }
     } catch (e) {
       return { success: false, data: [], msg: e.message }
+    }
+  }
+
+  // 读取单条鉴定记录（服务端读，绕开客户端「仅本人可读」规则）：
+  // 本人记录的详情，或他人通过分享海报公开过的记录（is_shared=true）
+  if (action === 'get_record') {
+    const recordId = String(event.record_id || '').trim()
+    if (!recordId) return { success: false, msg: '缺少 record_id' }
+    try {
+      const rec = await db.collection('identification_records').doc(recordId).get()
+      const doc = rec.data
+      if (!doc) return { success: false, msg: '记录不存在' }
+      const openid = wxContext.OPENID || ''
+      const isOwner = !doc._openid || doc._openid === openid
+      if (!isOwner && !doc.is_shared) {
+        return { success: false, code: 'FORBIDDEN', msg: '该鉴定未公开分享' }
+      }
+      return { success: true, data: { doc, is_owner: isOwner } }
+    } catch (e) {
+      console.error('get_record', e)
+      return { success: false, msg: e.message || '记录读取失败' }
+    }
+  }
+
+  // 标记「允许他人查看」：微信转发 / 朋友圈 / 海报 三条分享路径共用。
+  // 分享即公开（owner-only 才能标记）；shared=false 可撤回为仅本人可见。
+  if (action === 'mark_shared') {
+    const openid = wxContext.OPENID
+    if (!openid) return { success: false, msg: '未登录' }
+    const recordId = String(event.record_id || '').trim()
+    if (!recordId) return { success: false, msg: '缺少 record_id' }
+    const shared = event.shared !== false
+    const stamp = Date.now()
+    try {
+      const rec = await db.collection('identification_records').doc(recordId).get()
+      const doc = rec.data
+      if (!doc) return { success: false, msg: '记录不存在' }
+      if (doc._openid && doc._openid !== openid) return { success: false, msg: '无权操作该记录' }
+      if (shared) {
+        // 公开分享前必须确认图片已通过内容安全检测；历史记录/检测不可用时补检一次
+        let imageChecked = !!(doc.secCheck && doc.secCheck.imageChecked === true)
+        if (!imageChecked && doc.image_url) {
+          const recheck = await checkFileImage(doc.image_url)
+          if (recheck.reason === 'risky') {
+            return { success: false, msg: '该记录图片未通过安全检测，无法公开分享' }
+          }
+          imageChecked = !!recheck.ok
+        }
+        if (!imageChecked) {
+          return { success: false, msg: '内容安全检测暂不可用，请稍后再试分享' }
+        }
+      }
+      await db.collection('identification_records').doc(recordId).update({
+        data: { is_shared: shared, shared_at: shared ? stamp : null }
+      })
+      return { success: true, data: { is_shared: shared, shared_at: shared ? stamp : 0 } }
+    } catch (e) {
+      console.error('mark_shared', e)
+      return { success: false, msg: e.message || '标记失败' }
+    }
+  }
+
+  // 写入山海图鉴（替代客户端直写 user_collection / identification_records）
+  if (action === 'save_atlas') {
+    const openid = wxContext.OPENID
+    if (!openid) return { success: false, msg: '未登录' }
+    const recordId = String(event.record_id || '').trim()
+    if (!recordId) return { success: false, msg: '缺少 record_id' }
+    const ALLOWED = new Set(['昆虫', '矿石', '植物', '海洋', '动物', '衍生品', '其他'])
+    let category = String(event.category || '').trim()
+    if (!ALLOWED.has(category)) category = '其他'
+    try {
+      const rec = await db.collection('identification_records').doc(recordId).get()
+      const doc = rec.data
+      if (!doc) return { success: false, msg: '记录不存在' }
+      if (doc._openid && doc._openid !== openid) return { success: false, msg: '无权操作该记录' }
+
+      const exist = await db
+        .collection('user_collection')
+        .where({ _openid: openid, record_id: recordId })
+        .limit(1)
+        .get()
+      if (!(exist.data && exist.data.length)) {
+        await db.collection('user_collection').add({
+          data: {
+            _openid: openid,
+            record_id: recordId,
+            category,
+            created_at: Date.now()
+          }
+        })
+      }
+      await db.collection('identification_records').doc(recordId).update({
+        data: { is_bookmarked: true, updated_at: Date.now() }
+      })
+      return { success: true, bookmarked: true, category }
+    } catch (e) {
+      console.error('save_atlas', e)
+      return { success: false, msg: e.message || '保存失败' }
+    }
+  }
+
+  // 纠错反馈（替代客户端直写 identification_feedback）
+  if (action === 'submit_feedback') {
+    const openid = wxContext.OPENID
+    if (!openid) return { success: false, msg: '未登录' }
+    const recordId = String(event.record_id || '').trim()
+    const corrected = String(event.corrected_name_zh || '').trim().slice(0, 80)
+    const note = String(event.note || '').trim().slice(0, 500)
+    const original = String(event.original_name_zh || '').trim().slice(0, 80)
+    if (!recordId) return { success: false, msg: '缺少 record_id' }
+    if (!corrected) return { success: false, msg: '请填写正确的中文名' }
+    try {
+      const rec = await db.collection('identification_records').doc(recordId).get()
+      const doc = rec.data
+      if (!doc) return { success: false, msg: '记录不存在' }
+      if (doc._openid && doc._openid !== openid) return { success: false, msg: '无权操作该记录' }
+      await db.collection('identification_feedback').add({
+        data: {
+          _openid: openid,
+          record_id: recordId,
+          corrected_name_zh: corrected,
+          note,
+          original_name_zh: original || ((doc.species_info && doc.species_info.species_name_zh) || ''),
+          created_at: Date.now()
+        }
+      })
+      return { success: true }
+    } catch (e) {
+      console.error('submit_feedback', e)
+      return { success: false, msg: e.message || '提交失败' }
+    }
+  }
+
+  if (action === 'get_species_profile') {
+    try {
+      let species = event.species_info || {}
+      let aiContent = event.ai_content || {}
+      const recordId = String(event.record_id || '').trim()
+      let relatedProducts = event.related_products || []
+      const forceRefresh = event.force_refresh === true
+
+      if (recordId) {
+        const rec = await db.collection('identification_records').doc(recordId).get()
+        const doc = rec.data
+        if (!doc) return { success: false, msg: '记录不存在' }
+        // 归属校验：本人可读；他人记录必须已主动公开分享（is_shared）
+        // 原实现只看 isOwner 决定是否回写，却**不拦读取** → 拿到 record_id 即可读他人鉴定档案
+        const isOwner = !!doc._openid && doc._openid === wxContext.OPENID
+        if (!isOwner && !doc.is_shared) {
+          return { success: false, code: 'FORBIDDEN', msg: '该鉴定记录未公开' }
+        }
+        species = doc.species_info || species
+        aiContent = doc.ai_content || aiContent
+        relatedProducts = doc.related_products_snapshot || relatedProducts
+        if (
+          !forceRefresh &&
+          doc.species_profile &&
+          doc.species_profile.profileVersion >= PROFILE_VERSION
+        ) {
+          return { success: true, data: { species_profile: doc.species_profile } }
+        }
+
+        const species_profile = await buildSpeciesProfile(db, _, species, {
+          aiStructured: extractAiStructured(aiContent),
+          productProtection: productProtectionFromList(relatedProducts),
+          alternatives: (species && species.alternatives) || []
+        })
+
+        if (isOwner) {
+          try {
+            await db.collection('identification_records').doc(recordId).update({
+              data: { species_profile, updated_at: Date.now() }
+            })
+          } catch (e) {
+            console.warn('回写 species_profile 失败', e.message)
+          }
+        }
+
+        return { success: true, data: { species_profile } }
+      }
+
+      const species_profile = await buildSpeciesProfile(db, _, species, {
+        aiStructured: extractAiStructured(aiContent),
+        productProtection: productProtectionFromList(relatedProducts),
+        alternatives: (species && species.alternatives) || []
+      })
+      return { success: true, data: { species_profile } }
+    } catch (e) {
+      console.error('get_species_profile 失败', e)
+      return { success: false, msg: e.message || '补全失败' }
     }
   }
 
@@ -581,6 +771,15 @@ exports.main = async (event, context) => {
       return { success: false, msg: '无法读取云存储图片' }
     }
 
+    // ---- 内容安全：鉴定照片可能被公开分享，先过图检 ----
+    // risky → 直接拒绝（同时也避免把违规图送进大模型）；
+    // 检测不可用 → 允许本人查看，但禁止公开分享（见 is_shared 门禁）。
+    const imageCheck = await checkImageBuffer(fileBuf)
+    if (imageCheck.reason === 'risky') {
+      return { success: false, msg: '该图片未通过安全检测，请更换一张清晰、合规的藏品照片' }
+    }
+    const imageChecked = !!imageCheck.ok
+
     const contentHash = crypto.createHash('sha256').update(fileBuf).digest('hex')
 
     // P3：同图缓存（不重复调用大模型 API）
@@ -598,13 +797,30 @@ exports.main = async (event, context) => {
             const now = Date.now()
             const snap = prev.data.related_products_snapshot || []
             const wikiSnap = prev.data.related_wiki_snapshot || []
+            let species_profile = prev.data.species_profile
+            if (!species_profile) {
+              try {
+                species_profile = await buildSpeciesProfile(db, _, prev.data.species_info, {
+                  aiStructured: extractAiStructured(prev.data.ai_content),
+                  productProtection: productProtectionFromList(snap),
+                  alternatives: (prev.data.species_info && prev.data.species_info.alternatives) || []
+                })
+              } catch (e) {
+                console.warn('缓存记录补全 species_profile 失败', e.message)
+                species_profile = null
+              }
+            }
             const addDup = await db.collection('identification_records').add({
               data: {
                 _openid: wxContext.OPENID,
                 image_url: image_file_id,
                 species_info: prev.data.species_info,
                 ai_content: prev.data.ai_content,
+                species_profile,
                 is_bookmarked: false,
+        // 内容安全留痕；未通过检测的记录不允许公开分享
+        secCheck: { imageChecked },
+        is_shared: false,
                 related_products_snapshot: snap,
                 related_wiki_snapshot: wikiSnap,
                 confidence_level: prev.data.confidence_level,
@@ -623,6 +839,7 @@ exports.main = async (event, context) => {
                 record_id: addDup._id,
                 species_info: prev.data.species_info,
                 ai_content: prev.data.ai_content,
+                species_profile,
                 related_products: snap,
                 related_wiki: wikiSnap,
                 confidence_level: prev.data.confidence_level,
@@ -647,6 +864,7 @@ exports.main = async (event, context) => {
 
     let species_info
     let ai_content
+    let knowledge = null
 
     if (forceMock) {
       species_info = { ...MOCK_SPECIES }
@@ -665,7 +883,7 @@ exports.main = async (event, context) => {
 
       if (needScience) {
         try {
-          const knowledge = await fetchSpeciesKnowledge(species_info.species_name_zh, species_info.species_name_latin)
+          knowledge = await fetchSpeciesKnowledge(db, _, species_info.species_name_zh, species_info.species_name_latin)
           ai_content = await callQwenText(buildSciencePrompt(species_info, knowledge), apiKey)
         } catch (e) {
           console.error('科普生成失败', e)
@@ -692,6 +910,18 @@ exports.main = async (event, context) => {
       fetchRelatedWikiArchive(species_info)
     ])
 
+    let species_profile = null
+    try {
+      species_profile = await buildSpeciesProfile(db, _, species_info, {
+        knowledge,
+        aiStructured: extractAiStructured(ai_content),
+        productProtection: productProtectionFromList(related_products),
+        alternatives: species_info.alternatives || []
+      })
+    } catch (e) {
+      console.warn('species_profile 构建失败', e.message)
+    }
+
     const now = Date.now()
     const addRes = await db.collection('identification_records').add({
       data: {
@@ -699,6 +929,7 @@ exports.main = async (event, context) => {
         image_url: image_file_id,
         species_info,
         ai_content,
+        species_profile,
         is_bookmarked: false,
         related_products_snapshot: related_products,
         related_wiki_snapshot: related_wiki,
@@ -734,6 +965,7 @@ exports.main = async (event, context) => {
         ai_content,
         related_products,
         related_wiki,
+        species_profile,
         confidence_level,
         from_cache: false
       }

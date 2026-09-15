@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "鉴定百科",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "usingComponents": {
+    "species-card": "/subpackages/feature/components/SpeciesCard/index"
+  }
+}

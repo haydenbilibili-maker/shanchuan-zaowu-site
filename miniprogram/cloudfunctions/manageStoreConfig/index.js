@@ -1,19 +1,10 @@
 const cloud = require('wx-server-sdk')
 const { DEFAULT_STORES, DEFAULT_ZONES } = require('./storeSeed')
+const { ensureStoreDocuments } = require('./ensureSeed')
+const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
-
-function getAdminOpenids() {
-  const env = process.env.MESSAGE_ADMIN_OPENIDS || ''
-  return env.split(',').map((s) => s.trim()).filter(Boolean)
-}
-
-function isAdmin(openid) {
-  const admins = getAdminOpenids()
-  if (!admins.length) return true
-  return admins.includes(openid)
-}
 
 const ALLOWED_STORE_FIELDS = [
   'name', 'nameEn', 'phone', 'intro', 'heroTagline', 'address', 'floor',
@@ -38,12 +29,25 @@ exports.main = async (event) => {
   const openid = wxContext.OPENID
   const { action } = event
 
+  // 唯一公开的只读动作
   if (action === 'listPublic') {
     return listPublic()
   }
 
-  if (!isAdmin(openid)) {
-    return { success: false, msg: '无管理权限' }
+  // 鉴权前置：此前 seedStores 在鉴权之前 return，任意用户可触发写入门店/展区文档
+  const guard = await assertStaff(db, openid, { role: ROLE_MANAGER, permission: 'manageStoreConfig' })
+  if (!guard.ok) {
+    return { success: false, code: guard.code, msg: guard.msg }
+  }
+
+  if (action === 'seedStores') {
+    try {
+      const seed = await ensureStoreDocuments(db)
+      const listed = await listPublic()
+      return { success: true, seed, stores: listed.stores, zones: listed.zones }
+    } catch (e) {
+      return { success: false, msg: e.message || '写入门店失败' }
+    }
   }
 
   switch (action) {
@@ -62,6 +66,11 @@ exports.main = async (event) => {
 
 async function listPublic() {
   try {
+    await ensureStoreDocuments(db)
+  } catch (e) {
+    console.warn('listPublic ensureSeed', e.message)
+  }
+  try {
     let stores = DEFAULT_STORES
     let zones = DEFAULT_ZONES
     const storeRes = await db.collection('stores').where({ status: 'active' }).orderBy('sort', 'asc').get()
@@ -76,9 +85,35 @@ async function listPublic() {
 
 async function listStores() {
   try {
+    await ensureStoreDocuments(db)
+  } catch (e) {
+    console.warn('listStores ensureSeed', e.message)
+  }
+  try {
     const res = await db.collection('stores').orderBy('sort', 'asc').get()
-    const stores = res.data && res.data.length ? res.data : DEFAULT_STORES
-    return { success: true, stores }
+    const cloudList = (res.data && res.data.length) ? res.data : []
+    const byId = {}
+    cloudList.forEach((s) => {
+      if (s && s.storeId) byId[s.storeId] = s
+    })
+    const stores = DEFAULT_STORES.map((seed) => {
+      const cloud = byId[seed.storeId]
+      if (!cloud) return { ...seed }
+      return {
+        ...seed,
+        ...cloud,
+        hours: { ...(seed.hours || {}), ...(cloud.hours || {}) },
+        features: (cloud.features && cloud.features.length) ? cloud.features : (seed.features || []),
+        visitTips: (cloud.visitTips && cloud.visitTips.length) ? cloud.visitTips : (seed.visitTips || [])
+      }
+    })
+    cloudList.forEach((s) => {
+      if (s && s.storeId && !DEFAULT_STORES.some((d) => d.storeId === s.storeId)) {
+        stores.push(s)
+      }
+    })
+    stores.sort((a, b) => (a.sort || 99) - (b.sort || 99))
+    return { success: true, stores, fallback: cloudList.length === 0 }
   } catch (e) {
     return { success: true, stores: DEFAULT_STORES, fallback: true }
   }

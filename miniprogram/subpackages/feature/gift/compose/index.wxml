@@ -1,0 +1,328 @@
+<!-- 礼赠编排 · 博物柜仪式（落笔/语音区仅外围增强，正文逻辑不动） -->
+<wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
+<view class="page" wx:if="{{allowed && product}}">
+  <!-- 步骤轨固定：随滚动高亮 -->
+  <view class="step-rail sticky" aria-hidden="true">
+    <view class="step-rail-item {{activeStep === 1 ? 'on' : ''}} {{activeStep > 1 ? 'done' : ''}}">
+      <text class="step-rail-num">01</text>
+      <text class="step-rail-label">选礼</text>
+    </view>
+    <view class="step-rail-line {{activeStep > 1 ? 'on' : ''}}"></view>
+    <view class="step-rail-item {{activeStep === 2 ? 'on' : ''}} {{activeStep > 2 ? 'done' : ''}}">
+      <text class="step-rail-num">02</text>
+      <text class="step-rail-label">写笺</text>
+    </view>
+    <view class="step-rail-line {{activeStep > 2 ? 'on' : ''}}"></view>
+    <view class="step-rail-item {{activeStep === 3 ? 'on' : ''}}">
+      <text class="step-rail-num">03</text>
+      <text class="step-rail-label">交付</text>
+    </view>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="scroll"
+    style="{{scrollStyle}}"
+    enhanced
+    show-scrollbar="{{false}}"
+    bindscroll="onComposeScroll"
+  >
+    <view class="rite-intro">
+      <text class="rite-overline">FROM THE CABINET</text>
+      <text class="rite-title">从柜中取出，封笺赠予</text>
+      <text class="rite-desc">选好藏品、写下礼笺，再选定交付方式——像递出一件值得郑重的东西。</text>
+    </view>
+
+    <!-- 01 已选标本 -->
+    <view class="section sec-specimen">
+      <text class="section-overline">SPECIMEN</text>
+      <text class="section-title">柜中这一件</text>
+      <view class="product-row">
+        <view class="product-cover-wrap">
+          <image class="product-cover" src="{{cover}}" mode="aspectFill"></image>
+          <protected-badge product="{{product}}" size="xs" corner="bl" />
+        </view>
+        <view class="product-meta">
+          <text class="product-title">{{product.title}}</text>
+          <text class="product-latin" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
+          <text class="product-price">¥{{displayPrice}}</text>
+          <text class="product-sku" wx:if="{{skuLabel}}">{{skuLabel}} · ×{{count}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 02 礼笺：信封外壳包裹（不改 textarea / 落笔动画结构） -->
+    <view class="section sec-letter">
+      <text class="section-overline">LETTER</text>
+      <text class="section-title">写下礼笺</text>
+
+      <!-- 场景导语（独立；不改下方关系预设 / 落笔 / 语音结构） -->
+      <view class="scene-note-block" wx:if="{{activeScene}}">
+        <text class="scene-note-label">场景 · {{sceneLabel}}</text>
+        <text class="scene-note-guide" wx:if="{{sceneGuide}}">{{sceneGuide}}</text>
+        <view
+          class="scene-note-chip {{activeNotePresetId === scenePresetId ? 'on' : ''}}"
+          bindtap="onSceneNoteTap"
+          wx:if="{{sceneNoteHint}}"
+        >
+          <text>用场景语向</text>
+        </view>
+      </view>
+
+      <scroll-view
+        class="note-preset-scroll"
+        scroll-x
+        enhanced
+        show-scrollbar="{{false}}"
+        enable-flex
+      >
+        <view class="note-preset-row">
+          <view
+            class="note-preset {{activeNotePresetId === item.id ? 'on' : ''}}"
+            wx:for="{{notePresets}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="onNotePresetTap"
+          >
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="envelope-shell">
+        <view class="envelope-flap"></view>
+        <view class="card-plate {{noteWriting ? 'writing' : ''}}">
+          <!-- 标本纸底纹：黄铜纹样，禁 emoji -->
+          <view class="watermark light" aria-hidden="true">山海</view>
+          <view class="card-plate-head">
+            <view class="card-to {{noteWriting ? 'intimate' : ''}} {{recipientEditing ? 'editing' : ''}}">
+              <text class="card-to-prefix">写给</text>
+              <text class="card-to-dot">·</text>
+              <input
+                class="card-to-input"
+                maxlength="20"
+                placeholder="TA 的名字"
+                placeholder-class="card-to-placeholder"
+                value="{{recipientName}}"
+                focus="{{recipientEditing}}"
+                bindinput="onRecipientInput"
+                bindfocus="onRecipientFocus"
+                bindblur="onRecipientBlur"
+                catchtap="onRecipientTap"
+              />
+            </view>
+            <view class="wax-seal" aria-hidden="true">
+              <text class="wax-seal-text">山海</text>
+            </view>
+          </view>
+          <!-- 落笔动画：纸面展示 + 可点打断；手改走下方 textarea -->
+          <view
+            wx:if="{{noteWriting}}"
+            class="card-write-view"
+            bindtap="onCardAreaTap"
+          >
+            <text class="card-write-text">{{cardBody}}</text><text
+              class="card-write-cursor {{showWriteCursor ? 'on' : ''}}"
+            >|</text>
+          </view>
+          <textarea
+            wx:else
+            class="card-input"
+            maxlength="200"
+            placeholder="这段日子里你帮了太多。柜中挑了一件安静的藏品……"
+            placeholder-class="card-placeholder"
+            value="{{cardBody}}"
+            bindinput="onCardInput"
+            bindfocus="onCardFocus"
+          />
+          <view class="card-foot">
+            <text class="card-count">{{cardBody.length}}/200</text>
+            <text class="card-sig-label">署名</text>
+          </view>
+          <view class="card-sig-wrap {{sigFocused ? 'focused' : ''}} {{sigJustSigned ? 'just-signed' : ''}}">
+            <input
+              class="card-sig"
+              maxlength="20"
+              placeholder="你的署名"
+              placeholder-class="card-placeholder"
+              value="{{cardSignature}}"
+              bindinput="onSigInput"
+              bindfocus="onSigFocus"
+              bindblur="onSigBlur"
+            />
+            <view
+              class="sig-nick-chip"
+              wx:if="{{wxNickName && !cardSignature}}"
+              catchtap="onUseNickName"
+            >
+              <text>用微信昵称</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 语音礼笺：与文字并存；逻辑见 giftVoice.js -->
+        <view class="voice-rite">
+          <view class="voice-rite-head">
+            <text class="voice-rite-label">VOICE</text>
+            <text class="voice-rite-hint">也可留下一段声音，至多 {{voiceMaxSec}} 秒</text>
+          </view>
+
+          <view class="voice-ready" wx:if="{{voiceFileID}}">
+            <view wx:if="{{voiceUploading}}" class="voice-hold busy">
+              <view class="voice-brass"></view>
+              <text>收录中…</text>
+            </view>
+            <block wx:else>
+              <view
+                wx:if="{{!voiceRecording}}"
+                class="voice-play {{voicePlaying ? 'on' : ''}}"
+                bindtap="onVoicePlayTap"
+              >
+                <view class="voice-brass {{voicePlaying ? 'pulse' : ''}}"></view>
+                <text>{{voicePlaying ? '暂停' : '试听'}}</text>
+                <text class="voice-dur">{{voiceDurationLabel}}</text>
+              </view>
+              <view class="voice-actions">
+                <view
+                  class="voice-hold-mini {{voiceRecording ? 'recording' : ''}} {{voiceWillCancel ? 'will-cancel' : ''}}"
+                  hover-stop-propagation="{{true}}"
+                  catchtouchstart="onVoiceHoldStart"
+                  catchtouchmove="onVoiceHoldMove"
+                  catchtouchend="onVoiceHoldEnd"
+                  catchtouchcancel="onVoiceHoldCancel"
+                >
+                  <text wx:if="{{voiceWillCancel}}">松开取消</text>
+                  <text wx:elif="{{voiceRecording}}">松手结束 · {{voiceRecordSec}}s</text>
+                  <text wx:else>重录</text>
+                </view>
+                <view
+                  wx:if="{{!voiceRecording}}"
+                  class="voice-delete"
+                  bindtap="onVoiceDeleteTap"
+                >
+                  <text>删除</text>
+                </view>
+              </view>
+              <text wx:if="{{voiceRecording && !voiceWillCancel}}" class="voice-slide-hint">上滑取消</text>
+            </block>
+          </view>
+
+          <view
+            wx:else
+            class="voice-hold {{voiceRecording ? 'recording' : ''}} {{voiceUploading ? 'busy' : ''}} {{voiceWillCancel ? 'will-cancel' : ''}}"
+            hover-stop-propagation="{{true}}"
+            catchtouchstart="onVoiceHoldStart"
+            catchtouchmove="onVoiceHoldMove"
+            catchtouchend="onVoiceHoldEnd"
+            catchtouchcancel="onVoiceHoldCancel"
+          >
+            <view class="voice-brass"></view>
+            <text wx:if="{{voiceUploading}}">收录中…</text>
+            <text wx:elif="{{voiceWillCancel}}">松开取消</text>
+            <text wx:elif="{{voiceRecording}}">松手结束 · {{voiceRecordSec}}s</text>
+            <text wx:else>按住说话</text>
+          </view>
+          <text
+            wx:if="{{!voiceFileID && voiceRecording && !voiceWillCancel}}"
+            class="voice-slide-hint"
+          >上滑取消</text>
+        </view>
+
+        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>
+      </view>
+
+      <view class="privacy-row privacy-row-locked" wx:else>
+        <view class="check on"></view>
+        <text class="privacy-txt">价格已隐藏（平台设定，不可更改）</text>
+      </view>
+
+      <view class="privacy-row" bindtap="toggleHidePrice" wx:if="{{allowHidePriceToggle !== false}}">
+        <view class="check {{hidePrice ? 'on' : ''}}"></view>
+        <text class="privacy-text">对收礼人隐藏成交价（推荐）</text>
+      </view>
+    </view>
+
+    <!-- 03 交付方式 -->
+    <view class="section sec-delivery">
+      <text class="section-overline">DELIVERY</text>
+      <text class="section-title">怎样交给 TA</text>
+      <view
+        class="delivery-main {{deliveryType === 'invite_address' ? 'active' : ''}}"
+        data-type="invite_address"
+        bindtap="onSelectDelivery"
+      >
+        <view class="delivery-head">
+          <text class="delivery-name">邀请 TA 填写地址</text>
+          <text class="delivery-tag">推荐</text>
+        </view>
+        <text class="delivery-desc">支付后分享领取卡，由 TA 启封礼笺并留下去处，馆员再启程</text>
+      </view>
+
+      <view class="other-toggle" bindtap="toggleOtherDelivery">
+        <text>{{showOtherDelivery ? '收起其他方式' : '其他交付方式'}}</text>
+        <text class="toggle-arrow">{{showOtherDelivery ? '▴' : '▾'}}</text>
+      </view>
+
+      <view class="other-list" wx:if="{{showOtherDelivery}}">
+        <view
+          class="delivery-item {{deliveryType === item.id ? 'active' : ''}}"
+          wx:for="{{otherDeliveries}}"
+          wx:key="id"
+          data-type="{{item.id}}"
+          bindtap="onSelectDelivery"
+        >
+          <text class="delivery-name">{{item.name}}</text>
+          <text class="delivery-desc">{{item.desc}}</text>
+        </view>
+      </view>
+
+      <view class="store-pick" wx:if="{{deliveryType === 'store_pickup' && storePickupEnabled}}">
+        <text class="store-pick-label">自提门店</text>
+        <view
+          class="store-chip {{selectedStoreId === item.storeId ? 'on' : ''}}"
+          wx:for="{{stores}}"
+          wx:key="storeId"
+          data-id="{{item.storeId}}"
+          data-name="{{item.name}}"
+          bindtap="onSelectStore"
+        >
+          <text>{{item.name}}</text>
+        </view>
+        <text class="store-empty" wx:if="{{!stores.length}}">这有店暂未就绪，稍后再选或换其他交付</text>
+      </view>
+
+      <view class="pack-note">
+        <text class="pack-note-label">{{packagingLabel}}</text>
+        <text class="pack-note-body">{{packagingNote}}</text>
+      </view>
+    </view>
+
+    <view class="scroll-pad"></view>
+  </scroll-view>
+
+  <view class="bottom-bar safe-area">
+    <view class="bottom-price">
+      <text class="bottom-label">备妥应付</text>
+      <text class="bottom-value">¥{{displayPrice}}</text>
+    </view>
+    <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="goPay">
+      <text>{{paying ? '备妥中…' : '支付并备妥'}}</text>
+    </view>
+  </view>
+</view>
+
+<view class="page checking" wx:elif="{{checking || loading}}">
+  <view class="state-block">
+    <view class="state-seal" aria-hidden="true"></view>
+    <text class="muted">柜门轻启，正在备妥…</text>
+  </view>
+</view>
+
+<view class="page checking" wx:else>
+  <view class="state-block">
+    <text class="state-title">暂无法打开礼赠</text>
+    <text class="muted">{{loadError || '请从馆藏详情再次进入'}}</text>
+    <view class="btn-secondary state-cta" bindtap="leaveCompose">返回</view>
+    <view class="btn-ghost state-cta" bindtap="goBrowseFromError">去馆藏看看</view>
+  </view>
+</view>

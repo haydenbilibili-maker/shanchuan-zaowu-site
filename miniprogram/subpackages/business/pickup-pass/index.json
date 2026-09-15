@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "门店自取凭证",
+  "usingComponents": {},
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "backgroundTextStyle": "light",
+  "enablePullDownRefresh": true
+}

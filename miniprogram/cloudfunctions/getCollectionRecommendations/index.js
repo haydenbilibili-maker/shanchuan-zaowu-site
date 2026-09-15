@@ -8,8 +8,25 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+
+/** 内部字段（成本/毛利等）不得随商品文档外发 */
+const INTERNAL_PRODUCT_FIELDS = [
+  'costPrice', 'cost', 'costNote', 'purchasePrice', 'supplier', 'supplierName',
+  'profit', 'margin', 'grossMargin', 'wholesalePrice', 'tradePrice'
+]
+
+function toPublicProduct(item) {
+  const out = { ...(item || {}) }
+  INTERNAL_PRODUCT_FIELDS.forEach((k) => {
+    if (k in out) delete out[k]
+  })
+  return out
+}
+
 exports.main = async (event, context) => {
-  const { userId, limit = 8 } = event
+  const { limit = 8 } = event
+  // 安全：用户身份取服务端上下文，忽略客户端自报 userId
+  const userId = String((cloud.getWXContext() || {}).OPENID || '')
 
   try {
     if (!userId) {
@@ -101,7 +118,7 @@ exports.main = async (event, context) => {
 
     // 6. 添加推荐理由
     const recommendationsWithReason = uniqueRecommendations.map(item => ({
-      ...item,
+      ...toPublicProduct(item),
       reason: generateCollectionReason(item, preferences)
     }))
 

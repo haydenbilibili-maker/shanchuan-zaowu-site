@@ -1,5 +1,18 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "user-vip-card": "/components/UserVipCard/index",
+    "member-level-modal": "/components/MemberLevelModal/index",
+    "pass-redeem-card": "/components/PassRedeemCard/index",
+    "easter-egg-note": "/components/EasterEggNote/index"
+  },
+  "navigationStyle": "custom",
   "enablePullDownRefresh": true,
-  "backgroundColor": "#1A1814"
+  "backgroundTextStyle": "light",
+  "backgroundColor": "#1A1814",
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundColorContent": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "navigationBarTitleText": "我的"
 }

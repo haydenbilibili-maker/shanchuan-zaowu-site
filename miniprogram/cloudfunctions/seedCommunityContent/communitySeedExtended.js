@@ -2,6 +2,7 @@
  * 社区 UGC 扩展内容 — 博物学 / 白垩纪 / 自然地理 / 标本文创等
  */
 const { sectionsToHtml, ugc, pick, stats, MEDIA } = require('./seedHelpers')
+const { applyExhibitionCopy } = require('./exhibitionCopy')
 
 const BASE = Date.now()
 
@@ -522,126 +523,57 @@ const EXTENDED_EXHIBITIONS = [
     _seedKey: 'exhibition_cretaceous_echo',
     title: '白垩纪回响',
     latinName: 'Cretaceous Echo',
-    brief: '从洋相白垩到陆相红层，6600 万年前的世界并不只有恐龙。',
     coverImage: pick('mineral', 0, 2)[0],
-    tags: ['白垩纪', '专题', '古生物'],
-    content: sectionsToHtml([
-      {
-        title: '专题概述',
-        body: '白垩纪是地球历史上海陆格局重组、被子植物崛起与海洋缺氧事件交织的时期。本专题汇集蛋化石、植物印痕、海相双壳与昆虫琥珀等切片，呈现「白垩纪不是单一画面」的博物叙事。',
-        images: pick('mineral', 0, 1)
-      },
-      {
-        title: '推荐阅读',
-        body: '社区笔记《K-Pg 界线》《热河生物群》《恐龙蛋巢》与本专题互为补充，建议按「时间轴 → 类群 → 行为」顺序浏览。',
-        tips: ['展陈标本请勿触摸', '摄影关闭闪光灯']
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_cretaceous_echo')
   },
   {
     _seedKey: 'exhibition_dinosauria',
     title: '恐龙世系',
     latinName: 'Dinosauria',
-    brief: '兽脚类、蜥脚类、鸟臀类——一棵仍在生长的树。',
     coverImage: pick('insect', 2)[0],
-    tags: ['恐龙', '专题'],
-    content: sectionsToHtml([
-      {
-        title: '分类框架',
-        body: '恐龙并非「已经灭绝的一群蜥蜴」，而是包含现生鸟类的单系群。专题以 cladogram 为主线，展示爪、齿列、椎体与羽毛证据的对应关系。',
-        images: pick('insect', 1, 3)
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_dinosauria')
   },
   {
     _seedKey: 'exhibition_naturalist_desk',
     title: '博物学家的工作台',
     latinName: 'Naturalist Desk',
-    brief: '放大镜、速写本、铜牌与未完成的学名。',
     coverImage: pick('insect', 0)[0],
-    tags: ['博物学', '专题', '文创'],
-    content: sectionsToHtml([
-      {
-        title: '策展思路',
-        body: '还原 19 世纪至当代自然学家的桌面场景：工具、标签系统、手绘图版与标本盒并置，强调「知识生产的过程」而非仅展示结果。',
-        images: pick('insect', 0, 2, 4)
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_naturalist_desk')
   },
   {
     _seedKey: 'exhibition_plate_tectonics',
     title: '板块与山河',
     latinName: 'Plate & Range',
-    brief: '特提斯、太平洋环、喜马拉雅——地球表面的慢速舞蹈。',
     coverImage: pick('mineral', 4)[0],
-    tags: ['自然地理', '专题', '地质'],
-    content: sectionsToHtml([
-      {
-        title: '地理叙事',
-        body: '从洋壳俯冲到陆陆碰撞，从喀斯特到冰川槽谷，专题以「过程」组织矿物与岩石标本，配合剖面示意图，帮助观众建立空间想象。',
-        images: pick('mineral', 4, 6)
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_plate_tectonics')
   },
   {
     _seedKey: 'exhibition_paleozoic_window',
     title: '古生代之窗',
     latinName: 'Paleozoic Window',
-    brief: '寒武纪爆发、志留纪登陆、石炭纪煤林、二叠纪末事件。',
     coverImage: pick('marine', 4)[0],
-    tags: ['古生代', '专题', '自然考古'],
-    content: sectionsToHtml([
-      {
-        title: '时间轴',
-        body: '古生代占显生宙长度的 70% 以上。专题选取澄江、广西泥盆纪鱼类、石炭纪植物与二叠纪腕足等代表，呈现「生命登陆与海洋交替主导」的双线故事。',
-        images: pick('marine', 4, 5)
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_paleozoic_window')
   },
   {
     _seedKey: 'exhibition_specimen_atelier',
     title: '标本文创实验室',
     latinName: 'Specimen Atelier',
-    brief: '把科学信息变成可触摸的日常物。',
     coverImage: pick('mineral', 2)[0],
-    tags: ['文创', '专题', '标本'],
-    content: sectionsToHtml([
-      {
-        title: '设计理念',
-        body: '铜牌信息结构、微暖纸、黄铜与木头的触感记忆——文创产品应携带与标本相同的信息密度，而非仅图案化。',
-        images: pick('mineral', 2, 3)
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_specimen_atelier')
   },
   {
     _seedKey: 'exhibition_natgeo_light',
     title: '国家地理灵感：光与野',
     latinName: 'Light & Wild',
-    brief: '自然摄影与标本摄影共享同一套光线伦理。',
     coverImage: MEDIA.bannerBlue,
-    tags: ['国家地理', '专题', '摄影'],
-    content: sectionsToHtml([
-      {
-        title: '光',
-        body: '侧光揭示纹理，逆光勾勒轮廓，漫射光还原颜色。专题展陈配合社区摄影笔记，呈现从野外到展柜的完整观看链。',
-        images: [MEDIA.bannerBlue, MEDIA.bannerMuseum]
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_natgeo_light')
   },
   {
     _seedKey: 'exhibition_plant_vertical',
     title: '植物垂直剖面',
     latinName: 'Plantae Verticalis',
-    brief: '从苔原到 rainforest，一条海拔带谱。',
     coverImage: pick('plant', 0)[0],
-    tags: ['植物', '专题', '自然地理'],
-    content: sectionsToHtml([
-      {
-        title: '带谱',
-        body: '以押花、叶形标本与种子标本串联垂直带谱。每个海拔带标注代表种、花期与气候区间，形成可比较的「植物地理墙」。',
-        images: pick('plant', 0, 1)
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_plant_vertical')
   }
 ]
 

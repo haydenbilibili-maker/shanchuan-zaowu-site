@@ -3,23 +3,34 @@
 
 /* 1. 动画定义 */
 @keyframes holo-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
-@keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; box-shadow: 0 0 10rpx #52B788; } }
 @keyframes scan-y { 0% { top: 0; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 
-.container { height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
-.bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.3; z-index: 0; filter: grayscale(1); object-fit: cover; }
-.bg-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, #1A1814 80%); z-index: 1; pointer-events: none; }
-
-
-/* 背景氛围 */
-.bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.3; z-index: 0; filter: grayscale(1); object-fit: cover; }
-.bg-mask { 
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, #1A1814 80%); z-index: 1; pointer-events: none; 
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 0;
+  background: var(--color-bg);
+  position: relative;
 }
 
 /* 2. 典藏票据预览 (3D 翻转版) */
-.ticket-header { position: relative; z-index: 10; width: 100%; padding: 0 40rpx 20rpx; flex-shrink: 0; }
+.ticket-header { position: relative; z-index: 10; width: 100%; padding: 0 40rpx 8rpx; flex-shrink: 0; }
+
+.booking-back {
+  width: 72rpx;
+  height: 72rpx;
+  min-width: 72rpx;
+  min-height: 72rpx;
+  margin-bottom: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md, 16rpx);
+  border: 1px solid transparent;
+  background: transparent;
+}
 
 /* 3D 容器 */
 .ticket-3d-container {
@@ -52,21 +63,21 @@
 }
 
 /* 装饰元素 */
-.paper-texture { position: absolute; width: 100%; height: 100%; opacity: 0.05; background-image: url("https://www.transparenttextures.com/patterns/paper.png"); pointer-events: none; }
+.paper-texture { position: absolute; width: 100%; height: 100%; opacity: 0.05; pointer-events: none; background-image: repeating-linear-gradient(0deg, var(--gold) 0, var(--gold) 1rpx, transparent 0, transparent 6rpx), repeating-linear-gradient(90deg, var(--gold) 0, var(--gold) 1rpx, transparent 0, transparent 6rpx); }
 .gold-strip { position: absolute; top: 0; left: 30rpx; bottom: 0; width: 2rpx; background: linear-gradient(to bottom, transparent, var(--gold), transparent); z-index: 5; opacity: 0.5; }
 .silver-strip { position: absolute; top: 0; left: 30rpx; bottom: 0; width: 4rpx; background: linear-gradient(to bottom, transparent, #ccc, transparent); z-index: 5; }
 
 .watermark { 
   position: absolute; bottom: -20rpx; right: -10rpx; font-size: 260rpx; 
   opacity: 0.08; pointer-events: none; transform: rotate(-15deg); 
-  filter: grayscale(1) contrast(1.2); z-index: 1; font-family: var(--font-serif); 
+  filter: grayscale(1) contrast(1.2); z-index: 1; font-family: var(--font-brand); 
 }
-.watermark.light { opacity: 0.05; filter: none; color: #1A1814; }
+.watermark.light { opacity: 0.05; filter: none; color: var(--color-bg); }
 
-.notch { position: absolute; top: 160rpx; width: 32rpx; height: 32rpx; background: #1A1814; border-radius: 50%; z-index: 5; }
+.notch { position: absolute; top: 160rpx; width: 32rpx; height: 32rpx; background: var(--color-bg); border-radius: 50%; z-index: 5; }
 .notch.left { left: -16rpx; box-shadow: inset -2rpx 0 6rpx rgba(255,255,255,0.1); } 
 .notch.right { right: -16rpx; box-shadow: inset 2rpx 0 6rpx rgba(255,255,255,0.1); }
-.notch.light { background: #1A1814; box-shadow: inset 0 0 4rpx rgba(0,0,0,0.1); }
+.notch.light { background: var(--color-bg); box-shadow: inset 0 0 4rpx rgba(0,0,0,0.1); }
 
 /* 内容布局 */
 .tp-header { 
@@ -88,7 +99,7 @@
 }
 
 .tp-logo { 
-  font-family: var(--font-serif); 
+  font-family: var(--font-brand); 
   font-size: 25rpx; 
   font-weight: 900; 
   letter-spacing: 2rpx; 
@@ -97,7 +108,7 @@
   word-break: break-word; /* 允许长单词换行 */
   white-space: normal; /* 允许换行 */
 }
-.tp-logo.light { color: #1A1814; }
+.tp-logo.light { color: var(--color-bg); }
 
 .tp-tagline {
   font-size: 20rpx;
@@ -143,10 +154,10 @@
 .label.light { color: #999; }
 
 .val { font-family: var(--font-din); font-size: 36rpx; font-weight: bold; color: #fff; line-height: 1; }
-.val.light { color: #1A1814; }
+.val.light { color: var(--color-bg); }
 
 .val.highlight { color: var(--gold); font-size: 48rpx; text-shadow: 0 0 20rpx rgba(196, 167, 108,0.3); line-height: 0.8; }
-.val.highlight.light { color: #C4A76C; text-shadow: none; }
+.val.highlight.light { color: var(--gold); text-shadow: none; }
 
 .val-calligraphy { font-family: "Times New Roman", serif; font-style: italic; font-size: 32rpx; color: #eee; line-height: 1; }
 .val-calligraphy.light { color: #333; }
@@ -189,7 +200,7 @@
 }
 
 .stamp-seal { border: 2rpx solid var(--gold); color: var(--gold); font-size: 18rpx; font-weight: bold; padding: 4rpx 12rpx; border-radius: 4rpx; letter-spacing: 4rpx; opacity: 0.8; }
-.stamp-seal.light { border-color: #1A1814; color: #1A1814; opacity: 0.6; }
+.stamp-seal.light { border-color: var(--color-bg); color: var(--color-bg); opacity: 0.6; }
 
 .flip-hint {
   position: absolute; bottom: 10rpx; right: 20rpx;
@@ -198,17 +209,32 @@
   pointer-events: none;
 }
 
-/* 3. 滚动操作区 */
-.scroll-content { flex: 1; height: 0; width: 100%; position: relative; z-index: 5; }
-.scroll-inner { padding: 40rpx 30rpx 300rpx; }
+/* 3. 滚动操作区
+   iPhone：不用 flex:1 + height:0（scroll-view 会塌成空白） */
+.scroll-content {
+  width: 100%;
+  position: relative;
+  z-index: 5;
+  height: calc(100vh - 420rpx);
+  max-height: calc(100vh - 420rpx);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+/* 底部为固定预约栏预留：用内容区 spacer，不依赖 scroll-view padding-bottom */
+.scroll-inner { padding: 16rpx 30rpx 0; }
+.booking-scroll-safe {
+  width: 100%;
+  height: calc(220rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
 
 /* Tab 切换 - 黑金质感 */
 .tab-box { 
   display: flex; 
   background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(20,20,20,0.5)); 
   border-radius: 100rpx; 
-  padding: 8rpx; 
-  margin-bottom: 50rpx; 
+  padding: 6rpx; 
+  margin-bottom: 28rpx; 
   border: 1.5px solid rgba(196, 167, 108,0.2);
   box-shadow: 
     0 4rpx 12rpx rgba(0,0,0,0.3),
@@ -217,16 +243,20 @@
 }
 .tab-item { 
   flex: 1; 
+  min-width: 0;
   text-align: center; 
-  font-size: 26rpx; 
+  font-size: 24rpx; 
   color: rgba(255,255,255,0.6); 
-  padding: 18rpx 0; 
+  padding: 14rpx 6rpx; 
   border-radius: 40rpx; 
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
   font-weight: 700;
-  letter-spacing: 2rpx;
+  letter-spacing: 1rpx;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 .tab-item::before {
   content: '';
@@ -241,9 +271,9 @@
   opacity: 1;
 }
 .tab-item.active { 
-  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
+  background: linear-gradient(135deg, #A8903C 0%, var(--gold) 100%);
   background-size: 200% 100%;
-  color: #1A1814; 
+  color: var(--color-bg); 
   box-shadow: 
     0 6rpx 24rpx rgba(196, 167, 108,0.5),
     0 3rpx 12rpx rgba(0,0,0,0.4),
@@ -355,7 +385,7 @@
   opacity: 1;
 }
 .date-pill.active { 
-  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
+  background: linear-gradient(135deg, #A8903C 0%, var(--gold) 100%);
   background-size: 200% 100%;
   border-color: rgba(196, 167, 108,0.8); 
   box-shadow: 
@@ -371,7 +401,7 @@
 }
 .d-week { font-size: 20rpx; color: rgba(255,255,255,0.5); margin-bottom: 8rpx; font-family: var(--font-din); text-transform: uppercase; font-weight: 600; transition: color 0.4s; }
 .d-day { font-size: 40rpx; font-weight: 800; color: rgba(255,255,255,0.9); font-family: var(--font-din); transition: color 0.4s; }
-.date-pill.active .d-week, .date-pill.active .d-day { color: #1A1814; }
+.date-pill.active .d-week, .date-pill.active .d-day { color: var(--color-bg); }
 
 /* 时间与人数 - 黑金质感 */
 .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24rpx; margin-bottom: 30rpx; }
@@ -589,28 +619,33 @@
 }
 .act-info { 
   position: absolute; bottom: 0; left: 0; width: 100%; padding: 40rpx;
-  background: linear-gradient(to bottom, transparent, #1A1814);
+  background: linear-gradient(to bottom, transparent, var(--color-bg));
 }
 .act-t { font-size: 36rpx; font-weight: 900; color: #fff; margin-bottom: 10rpx; display: block; letter-spacing: 2rpx; }
 .act-d { font-size: 22rpx; color: #aaa; margin-bottom: 20rpx; display: block; font-family: var(--font-din); }
 .act-b { display: flex; justify-content: flex-start; align-items: center; }
 .act-p { font-size: 40rpx; color: var(--gold); font-family: var(--font-din); font-weight: bold; }
 
-/* 4. 底部悬浮按钮 - 与入店参观tab按钮保持一致 */
+/* 4. 底部固定预约栏（贴底 + safe-area，不遮挡上方日期/时段/须知） */
 .fixed-footer {
-  position: absolute; 
-  width: 100%; 
-  z-index: 50; 
-  padding: 0 40rpx;
-  bottom: calc(130rpx + env(safe-area-inset-bottom)); 
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 50;
+  box-sizing: border-box;
+  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: var(--color-bg, #1A1814);
+  border-top: 1px solid var(--color-border, rgba(38, 35, 32, 0.4));
   pointer-events: none;
 }
 .submit-btn {
   width: 100%; 
   height: 110rpx; 
-  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
+  background: linear-gradient(135deg, #A8903C 0%, var(--gold) 100%);
   background-size: 200% 100%;
-  border-radius: 20rpx; 
+  border-radius: var(--radius-md, 16rpx); 
   display: flex; 
   align-items: center; 
   justify-content: space-between; 
@@ -647,7 +682,7 @@
     inset 0 2rpx 4rpx rgba(255,255,255,0.4);
 }
 .btn-content { display: flex; flex-direction: column; position: relative; z-index: 1; }
-.btn-main { font-size: 34rpx; font-weight: 900; color: #1A1814; letter-spacing: 3rpx; text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.3); }
+.btn-main { font-size: 34rpx; font-weight: 900; color: var(--color-bg); letter-spacing: 3rpx; text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.3); }
 .btn-sub { font-size: 18rpx; color: rgba(0,0,0,0.7); letter-spacing: 4rpx; margin-top: 4rpx; font-family: var(--font-din); font-weight: 800; }
 .btn-icon { 
   width: 42rpx; 
@@ -655,7 +690,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1A1814; 
+  color: var(--color-bg); 
   font-weight: 900; 
   position: relative; 
   z-index: 1; 
@@ -698,18 +733,13 @@
   display: flex; justify-content: center;
 }
 
-/* 指示灯 */
+/* 指示灯：样式见 app.wxss .signal-light；此处仅定位 */
 .printer-light {
-  position: absolute; right: 24rpx; top: 12rpx; width: 12rpx; height: 12rpx;
-  border-radius: 50%; background: #555;
-}
-.printer-light.blink {
-  background: #52B788; box-shadow: 0 0 10rpx #52B788;
-  animation: blink 0.5s infinite;
+  position: absolute; right: 24rpx; top: 12rpx;
 }
 
 .printer-slot {
-  width: 420rpx; height: 6rpx; background: #1A1814; margin-top: 16rpx; border-radius: 4rpx;
+  width: 420rpx; height: 6rpx; background: var(--color-bg); margin-top: 16rpx; border-radius: 4rpx;
   box-shadow: 0 0 10rpx var(--gold);
 }
 
@@ -745,7 +775,7 @@
 }
 
 .tm-head { text-align: center; margin-bottom: 30rpx; width: 100%; }
-.tm-title { font-family: var(--font-serif); font-size: 24rpx; color: var(--gold); font-weight: 900; letter-spacing: 2rpx; }
+.tm-title { font-family: var(--font-brand); font-size: 24rpx; color: var(--gold); font-weight: 900; letter-spacing: 2rpx; }
 .tm-line { width: 60rpx; height: 2rpx; background: #ccc; margin: 16rpx auto 0; }
 
 /* 邀约文案 */
@@ -795,9 +825,9 @@
 .mint-actions.show { opacity: 1; transform: translateY(0); }
 
 .btn-check { 
-  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
+  background: linear-gradient(135deg, #A8903C 0%, var(--gold) 100%);
   background-size: 200% 100%;
-  color: #1A1814; 
+  color: var(--color-bg); 
   font-weight: 800; 
   font-size: 30rpx;
   padding: 26rpx 100rpx; 
@@ -903,7 +933,7 @@
 .cp-switch {
   display: block;
   font-size: 22rpx;
-  color: #C4A76C;
+  color: var(--gold);
   margin: 8rpx 0 12rpx;
 }
 
@@ -927,7 +957,7 @@
   z-index: 91;
   margin: 0 32rpx 24rpx;
   padding: 16rpx;
-  background: #1F1D1A;
+  background: var(--color-bg-card);
   border: 1rpx solid rgba(196, 167, 108, 0.25);
   border-radius: 16rpx;
 }
@@ -982,15 +1012,17 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 30rpx 0;
-  margin-bottom: 30rpx;
+  padding: 24rpx 0 28rpx;
+  margin-bottom: 24rpx;
   border-bottom: 1.5px solid rgba(196, 167, 108,0.2);
+  /* 避免选中下划线被裁切 */
+  overflow: visible;
 }
 
 .history-tab-item {
   font-size: 28rpx;
   color: rgba(255,255,255,0.5);
-  padding: 12rpx 44rpx;
+  padding: 12rpx 44rpx 16rpx;
   position: relative;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 600;
@@ -1000,7 +1032,7 @@
 .history-tab-item::after {
   content: '';
   position: absolute;
-  bottom: -2rpx;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
@@ -1024,6 +1056,8 @@
   display: flex;
   flex-direction: column;
   gap: 30rpx;
+  /* 历史 Tab 无底部悬浮栏，保证末卡与安全区留白 */
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
 }
 
 /* 复用票据和历史卡片样式（已在my-bookings样式表中定义，这里补充缺失的） */
@@ -1060,7 +1094,10 @@
 /* 票据卡片样式（预约历史Tab使用） */
 .ticket-card {
   display: flex;
-  height: 240rpx;
+  /* 内容（标题+时段+按钮）超过原 240rpx 固定高，配合 overflow:hidden 会裁切「查看详情」 */
+  min-height: 280rpx;
+  height: auto;
+  flex-shrink: 0;
   background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(20,20,20,0.6));
   border-radius: 20rpx;
   overflow: hidden;
@@ -1072,6 +1109,7 @@
   border: 1.5px solid rgba(196, 167, 108,0.2);
   position: relative;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 .ticket-card:active {
@@ -1111,7 +1149,7 @@
   right: -14rpx;
   width: 28rpx;
   height: 28rpx;
-  background: radial-gradient(circle, #1A1814 0%, #1A1814 100%);
+  background: radial-gradient(circle, var(--color-bg) 0%, var(--color-bg) 100%);
   border: 2px solid rgba(196, 167, 108,0.2);
   border-radius: 50%;
   z-index: 2;
@@ -1125,17 +1163,21 @@
 
 .ticket-right {
   flex: 1;
-  padding: 28rpx 32rpx;
+  min-width: 0;
+  padding: 24rpx 32rpx 28rpx;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .tr-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16rpx;
+  gap: 16rpx;
+  margin-bottom: 8rpx;
+  flex-shrink: 0;
 }
 
 .tr-title {
@@ -1170,8 +1212,10 @@
 .tr-mid {
   display: flex;
   justify-content: space-between;
-  margin-top: 12rpx;
-  margin-bottom: 16rpx;
+  gap: 12rpx;
+  margin-top: 4rpx;
+  margin-bottom: 8rpx;
+  flex-shrink: 0;
 }
 
 .info-col {
@@ -1209,9 +1253,10 @@
 
 .tr-bot {
   border-top: 1px solid rgba(196, 167, 108,0.15);
-  padding-top: 18rpx;
+  padding-top: 16rpx;
   display: flex;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .btn-use {
@@ -1224,6 +1269,8 @@
   background: linear-gradient(135deg, rgba(196, 167, 108,0.12), rgba(196, 167, 108,0.06));
   border: 1.5px solid rgba(196, 167, 108,0.3);
   transition: all 0.3s;
+  box-sizing: border-box;
+  line-height: 1.3;
   box-shadow: 
     0 2rpx 8rpx rgba(0,0,0,0.3),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);

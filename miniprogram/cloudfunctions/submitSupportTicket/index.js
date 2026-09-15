@@ -38,6 +38,7 @@ exports.main = async (event) => {
     identify: '鉴定疑问',
     refund: '售后退款',
     feedback: '反馈与建议',
+    framer_recruit: '标本师合作',
     other: '其他问题'
   };
 

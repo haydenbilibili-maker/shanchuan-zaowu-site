@@ -1,40 +1,115 @@
 /**
- * 智能推荐云函数
- * 基于用户行为数据，实现个性化内容推荐
+ * 相关 / 个性化推荐
+ * - 详情页传入 productId + category 时，优先同品类相关推荐
+ * - 合并多路结果后按 _id 去重，并排除当前商品
  */
 
 const cloud = require('wx-server-sdk')
+const {
+  sanitizeProductTags,
+  topInterestTagNames,
+  overlapTagScore
+} = require('./productTags')
+
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-exports.main = async (event, context) => {
-  const { userId, type = 'mixed', limit = 10 } = event
+function uniqById(list) {
+  const seen = {}
+  const out = []
+  ;(list || []).forEach((item) => {
+    if (!item || !item._id) return
+    const id = String(item._id)
+    if (seen[id]) return
+    seen[id] = 1
+    out.push(item)
+  })
+  return out
+}
+
+/** 同名同价重复上架时，只保留一条，避免相关推荐刷屏 */
+function uniqBySkuFingerprint(list) {
+  const seen = {}
+  const out = []
+  ;(list || []).forEach((item) => {
+    if (!item) return
+    const title = String(item.title || item.name || '').trim().toLowerCase()
+    const price = Number(item.price)
+    const priceKey = Number.isFinite(price) ? price.toFixed(2) : ''
+    const key = title ? `${title}::${priceKey}` : String(item._id)
+    if (seen[key]) return
+    seen[key] = 1
+    out.push(item)
+  })
+  return out
+}
+
+function finalize(list, limit, excludeId) {
+  let rows = uniqById(list)
+  if (excludeId) {
+    const ex = String(excludeId)
+    rows = rows.filter((item) => String(item._id) !== ex)
+  }
+  rows = uniqBySkuFingerprint(rows)
+  return rows.slice(0, Math.max(1, limit || 6))
+}
+
+
+/** 内部字段（成本/毛利等）不得随商品文档外发 */
+const INTERNAL_PRODUCT_FIELDS = [
+  'costPrice', 'cost', 'costNote', 'purchasePrice', 'supplier', 'supplierName',
+  'profit', 'margin', 'grossMargin', 'wholesalePrice', 'tradePrice'
+]
+
+function toPublicProduct(item) {
+  const out = { ...(item || {}) }
+  INTERNAL_PRODUCT_FIELDS.forEach((k) => {
+    if (k in out) delete out[k]
+  })
+  return out
+}
+
+exports.main = async (event) => {
+  const {
+    productId = '',
+    category = '',
+    limit = 10
+  } = event || {}
+  // 安全：用户身份一律取服务端上下文，忽略客户端自报 userId
+  // （原实现允许任意登录用户传他人 openid，读取其行为与兴趣标签）
+  const userId = String((cloud.getWXContext() || {}).OPENID || '')
+
+  const take = Math.min(20, Math.max(1, parseInt(limit, 10) || 10))
 
   try {
-    // 如果没有userId，返回热门推荐
-    if (!userId) {
-      return await getHotRecommendations(limit)
-    }
-
-    // 获取用户行为数据
-    const userBehaviors = await getUserBehaviors(userId)
-    
-    // 根据行为数据生成推荐
     let recommendations = []
-    
-    if (userBehaviors.length === 0) {
-      // 新用户，返回热门推荐
-      recommendations = await getHotRecommendations(limit)
+
+    // 详情页「相关推荐」：优先同品类 / 同标签
+    if (productId || category) {
+      recommendations = await getRelatedByProduct(productId, category, take)
+    } else if (!userId) {
+      recommendations = await getHotRecommendations(take, productId)
     } else {
-      // 基于用户行为的推荐
-      recommendations = await getPersonalizedRecommendations(userId, userBehaviors, limit)
+      const [userBehaviors, portraitTags] = await Promise.all([
+        getUserBehaviors(userId),
+        getUserInterestTags(userId)
+      ])
+      if (!userBehaviors.length && !portraitTags.length) {
+        recommendations = await getHotRecommendations(take, productId)
+      } else {
+        recommendations = await getPersonalizedRecommendations(
+          userBehaviors,
+          take,
+          productId,
+          portraitTags
+        )
+      }
     }
 
-    // 添加推荐理由
-    recommendations = recommendations.map(item => ({
-      ...item,
-      reason: generateRecommendReason(item, userBehaviors)
+    recommendations = finalize(recommendations, take, productId).map((item) => ({
+      ...toPublicProduct(item),
+      reason: generateRecommendReason(item)
     }))
 
     return {
@@ -44,9 +119,8 @@ exports.main = async (event, context) => {
     }
   } catch (e) {
     console.error('推荐系统错误:', e)
-    // 降级：返回热门推荐
     try {
-      const hot = await getHotRecommendations(limit)
+      const hot = finalize(await getHotRecommendations(take, productId), take, productId)
       return {
         success: true,
         data: hot,
@@ -63,17 +137,13 @@ exports.main = async (event, context) => {
   }
 }
 
-/**
- * 获取用户行为数据
- */
 async function getUserBehaviors(userId) {
   try {
     const res = await db.collection('user_behaviors')
       .where({ userId })
       .orderBy('timestamp', 'desc')
-      .limit(50) // 最近50条行为
+      .limit(50)
       .get()
-    
     return res.data || []
   } catch (e) {
     console.warn('获取用户行为失败:', e)
@@ -81,80 +151,141 @@ async function getUserBehaviors(userId) {
   }
 }
 
-/**
- * 获取个性化推荐
- */
-async function getPersonalizedRecommendations(userId, behaviors, limit) {
-  // 分析用户偏好
+async function getRelatedByProduct(productId, category, limit) {
+  let cat = String(category || '').trim()
+  let sourceTags = []
+  if (productId) {
+    try {
+      const doc = await db.collection('products').doc(productId).get()
+      if (!cat) cat = (doc.data && (doc.data.category || doc.data.categoryName)) || ''
+      sourceTags = sanitizeProductTags(doc.data && doc.data.tags)
+    } catch (e) {
+      console.warn('读取商品分类失败', e)
+    }
+  }
+
+  let list = []
+  if (cat) {
+    try {
+      const where = {
+        category: cat,
+        isOffShelf: _.neq(true)
+      }
+      if (productId) where._id = _.neq(productId)
+      const res = await db.collection('products')
+        .where(where)
+        .limit(limit * 3)
+        .get()
+      list = res.data || []
+    } catch (e) {
+      // 兼容部分库无 isOffShelf 字段 / 查询失败
+      try {
+        const where = { category: cat }
+        if (productId) where._id = _.neq(productId)
+        const res = await db.collection('products').where(where).limit(limit * 3).get()
+        list = (res.data || []).filter((p) => !p.isOffShelf)
+      } catch (err) {
+        console.warn('同品类推荐失败', err)
+      }
+    }
+  }
+
+  if (sourceTags.length) {
+    const tagHits = await queryProductsByTags(sourceTags, limit * 2, productId)
+    list = list.concat(tagHits)
+  }
+
+  if (list.length < limit) {
+    const hot = await getHotRecommendations(limit * 2, productId)
+    list = list.concat(hot)
+  }
+
+  return uniqById(list).map((item) => ({
+    ...item,
+    _tagScore: overlapTagScore(item.tags, sourceTags)
+  })).sort((a, b) => (b._tagScore || 0) - (a._tagScore || 0))
+}
+
+async function getPersonalizedRecommendations(behaviors, limit, excludeProductId, portraitTags) {
   const preferences = analyzePreferences(behaviors)
-  
-  // 1. 基于浏览历史的推荐（协同过滤）
+  const mergedTags = uniqTags([
+    ...(preferences.tags || []),
+    ...(portraitTags || [])
+  ]).slice(0, 8)
   const viewedItems = behaviors
-    .filter(b => b.action === 'view')
-    .map(b => b.targetId)
-    .slice(0, 10) // 最近浏览的10个
+    .filter((b) => b.action === 'view' || b.action === 'product_view')
+    .map((b) => b.targetId)
+    .filter(Boolean)
+    .slice(0, 10)
+  const collectedItems = behaviors
+    .filter((b) => b.action === 'collect')
+    .map((b) => b.targetId)
+    .filter(Boolean)
 
   let recommendations = []
 
-  // 2. 基于收藏的推荐
-  const collectedItems = behaviors
-    .filter(b => b.action === 'collect')
-    .map(b => b.targetId)
+  if (mergedTags.length) {
+    recommendations = await queryProductsByTags(mergedTags, limit * 3, excludeProductId)
+  }
 
-  // 3. 基于分类偏好的推荐
   if (preferences.categories.length > 0) {
-    const categoryRes = await db.collection('products')
-      .where({
-        category: _.in(preferences.categories),
-        isOffShelf: false
-      })
-      .limit(limit)
-      .get()
-    
-    recommendations = categoryRes.data || []
+    try {
+      const categoryRes = await db.collection('products')
+        .where({
+          category: _.in(preferences.categories),
+          isOffShelf: _.neq(true)
+        })
+        .limit(limit * 2)
+        .get()
+      recommendations = recommendations.concat(categoryRes.data || [])
+    } catch (e) {
+      const categoryRes = await db.collection('products')
+        .where({ category: _.in(preferences.categories) })
+        .limit(limit * 2)
+        .get()
+      recommendations = recommendations.concat((categoryRes.data || []).filter((p) => !p.isOffShelf))
+    }
   }
 
-  // 4. 如果推荐不足，补充热门商品
   if (recommendations.length < limit) {
-    const hot = await getHotRecommendations(limit - recommendations.length)
-    recommendations = [...recommendations, ...hot]
+    const hot = await getHotRecommendations(limit * 2, excludeProductId)
+    recommendations = recommendations.concat(hot)
   }
 
-  // 5. 去重（排除已浏览/收藏的）
-  const excludeIds = [...viewedItems, ...collectedItems]
-  recommendations = recommendations
-    .filter(item => !excludeIds.includes(item._id))
-    .slice(0, limit)
+  const excludeIds = new Set(
+    [...viewedItems, ...collectedItems, excludeProductId]
+      .filter(Boolean)
+      .map((id) => String(id))
+  )
 
-  return recommendations
+  return uniqById(recommendations)
+    .filter((item) => !excludeIds.has(String(item._id)))
+    .map((item) => ({
+      ...item,
+      _tagScore: overlapTagScore(item.tags, mergedTags)
+    }))
+    .sort((a, b) => (b._tagScore || 0) - (a._tagScore || 0))
 }
 
-/**
- * 分析用户偏好
- */
 function analyzePreferences(behaviors) {
   const categories = {}
   const tags = {}
 
-  behaviors.forEach(b => {
+  ;(behaviors || []).forEach((b) => {
     if (b.category) {
       categories[b.category] = (categories[b.category] || 0) + 1
     }
-    if (b.tags && Array.isArray(b.tags)) {
-      b.tags.forEach(tag => {
-        tags[tag] = (tags[tag] || 0) + 1
-      })
-    }
+    const eventTags = sanitizeProductTags(b.tags || (b.properties && b.properties.tags))
+    eventTags.forEach((tag) => {
+      tags[tag] = (tags[tag] || 0) + 1
+    })
   })
 
-  // 排序，取前3
-  const topCategories = Object.entries(categories)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([cat]) => cat)
-
   return {
-    categories: topCategories,
+    categories: Object.entries(categories)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([cat]) => cat),
     tags: Object.entries(tags)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
@@ -162,58 +293,84 @@ function analyzePreferences(behaviors) {
   }
 }
 
-/**
- * 获取热门推荐（降级方案）
- */
-async function getHotRecommendations(limit) {
+async function getHotRecommendations(limit, excludeProductId) {
   try {
-    // 基于销量、收藏数、创建时间综合排序
     const res = await db.collection('products')
-      .where({ isOffShelf: false })
+      .where({ isOffShelf: _.neq(true) })
       .orderBy('createTime', 'desc')
-      .limit(limit * 2) // 多取一些，后续可以随机选择
+      .limit(Math.max(limit * 3, 12))
       .get()
 
-    // 简单随机选择（实际可以基于销量、收藏数等排序）
-    const shuffled = res.data.sort(() => Math.random() - 0.5)
-    return shuffled.slice(0, limit)
+    let rows = res.data || []
+    if (excludeProductId) {
+      const ex = String(excludeProductId)
+      rows = rows.filter((item) => String(item._id) !== ex)
+    }
+    // 稳定打散，避免每次完全随机导致调试困难
+    for (let i = rows.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1))
+      const tmp = rows[i]
+      rows[i] = rows[j]
+      rows[j] = tmp
+    }
+    return rows.slice(0, limit)
   } catch (e) {
     console.error('获取热门推荐失败:', e)
+    try {
+      const res = await db.collection('products').limit(Math.max(limit * 2, 8)).get()
+      let rows = (res.data || []).filter((p) => !p.isOffShelf)
+      if (excludeProductId) {
+        const ex = String(excludeProductId)
+        rows = rows.filter((item) => String(item._id) !== ex)
+      }
+      return rows.slice(0, limit)
+    } catch (err) {
+      return []
+    }
+  }
+}
+
+async function getUserInterestTags(userId) {
+  if (!userId) return []
+  try {
+    const res = await db.collection('users').where({ _openid: userId }).limit(1).get()
+    const row = res.data && res.data[0]
+    return topInterestTagNames(row && row.interestTags, 8)
+  } catch (e) {
     return []
   }
 }
 
-/**
- * 生成推荐理由
- */
-function generateRecommendReason(item, behaviors) {
-  if (behaviors.length === 0) {
-    return '热门推荐'
+async function queryProductsByTags(tagList, limit, excludeProductId) {
+  const tags = sanitizeProductTags(tagList).slice(0, 8)
+  if (!tags.length) return []
+  try {
+    const where = {
+      tags: _.in(tags),
+      isOffShelf: _.neq(true)
+    }
+    if (excludeProductId) where._id = _.neq(excludeProductId)
+    const res = await db.collection('products').where(where).limit(Math.max(limit, 8)).get()
+    return res.data || []
+  } catch (e) {
+    try {
+      const where = { tags: _.in(tags) }
+      if (excludeProductId) where._id = _.neq(excludeProductId)
+      const res = await db.collection('products').where(where).limit(Math.max(limit, 8)).get()
+      return (res.data || []).filter((p) => !p.isOffShelf)
+    } catch (err) {
+      console.warn('按标签推荐失败', err)
+      return []
+    }
   }
-
-  // 检查是否有相关浏览记录
-  const relatedView = behaviors.find(b => 
-    b.action === 'view' && 
-    (b.category === item.category || b.tags?.some(tag => item.tags?.includes(tag)))
-  )
-
-  if (relatedView) {
-    return '因为你浏览过类似内容'
-  }
-
-  // 检查是否有收藏记录
-  const hasCollection = behaviors.some(b => b.action === 'collect')
-  if (hasCollection) {
-    return '基于你的收藏偏好'
-  }
-
-  return '为你推荐'
 }
 
+function uniqTags(list) {
+  return sanitizeProductTags(list)
+}
 
-
-
-
-
-
-
+function generateRecommendReason(item) {
+  if (item && item._tagScore > 0) return '相近标签'
+  if (item && item.category) return '同品类推荐'
+  return '为你推荐'
+}

@@ -1,0 +1,34 @@
+<view class="page">
+  <view class="share-hero">
+    <text class="share-en">SHARE · POSTER</text>
+    <text class="share-title">分享这页鉴定</text>
+    <text class="share-desc">海报内含小程序码，好友扫码即可打开结果；转发链接也会同步公开本条鉴定。</text>
+  </view>
+
+  <view class="canvas-wrap">
+    <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
+    <view class="canvas-mask" wx:if="{{generating}}">
+      <view class="spinner small"></view>
+      <text>{{genText}}</text>
+    </view>
+  </view>
+
+  <view class="share-status" wx:if="{{!generating && posterReady}}">
+    <text class="share-status-dot"></text>
+    <text class="share-status-text">{{sharedReady ? '已公开 · 好友可查看' : '正在确认公开…'}}</text>
+  </view>
+
+  <view class="actions">
+    <button
+      class="btn primary"
+      open-type="share"
+      disabled="{{generating || !posterReady}}"
+    >发给微信好友</button>
+    <button class="btn ghost" bindtap="onSaveAlbum" disabled="{{generating || !posterReady}}">保存到相册</button>
+    <view class="action-row">
+      <button class="btn ghost compact" bindtap="onPreview" disabled="{{!posterPath}}">预览</button>
+      <button class="btn ghost compact" bindtap="onRedraw" disabled="{{generating || !hasAssets}}">重绘</button>
+      <button class="btn ghost compact" bindtap="onBack">返回</button>
+    </view>
+  </view>
+</view>

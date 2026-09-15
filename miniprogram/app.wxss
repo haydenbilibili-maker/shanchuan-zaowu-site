@@ -1,4 +1,5 @@
 /** app.wxss **/
+@import "./styles/badges.wxss";
 
 /* ==================== 1. 设计系统 Museum Mode（山海造物 VI） ==================== */
 page {
@@ -64,19 +65,33 @@ page {
   --space-2: 16rpx;
   --space-3: 24rpx;
   --space-4: 32rpx;
+  --space-5: 40rpx;
+  --space-6: 48rpx;
+  --space-8: 64rpx;
+  /* 自定义 TabBar 内容高度（不含 Home Indicator）；与 custom-tab-bar 同步 */
+  --tabbar-content-height: 120rpx;
+  --tabbar-offset: calc(var(--tabbar-content-height) + env(safe-area-inset-bottom));
   --shadow-museum-warm: 0 8rpx 24rpx rgba(26, 24, 20, 0.45);
 
-  background-color: var(--color-bg);
+  background-color: #1A1814;
   color: var(--text-main);
   font-family: var(--font-body);
   font-size: 28rpx;
   line-height: 1.6;
   letter-spacing: 0.02em;
   box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* ==================== 2. 排版工具类 ==================== */
-view, text, image, navigator, button { box-sizing: border-box; }
+view, text, image, navigator, button, scroll-view { box-sizing: border-box; }
+
+/* 原生 input 不继承 page 的 line-height:1.6，否则易裁切/压扁/看起来像翻转 */
+input {
+  line-height: normal;
+}
 
 /* 英文装饰字 (衬线体) */
 .font-serif {
@@ -130,6 +145,25 @@ view, text, image, navigator, button { box-sizing: border-box; }
   border-radius: var(--radius-lg);
   padding: var(--space-4);
 }
+
+/* C 端商品流封面竖框（页面级兜底；ProductCard 已在组件内固定 3:4 + aspectFill） */
+.is-landscape-cover {
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--color-bg-elevated, #262320);
+}
+.is-landscape-cover .p-img,
+.is-landscape-cover .card-cover-img,
+.is-landscape-cover .product-cover-img,
+.is-landscape-cover .rec-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.card-cover-ph {
+  background: var(--color-bg-elevated, #262320);
+}
+
 .text-latin {
   font-family: Georgia, 'Times New Roman', serif;
   font-style: italic;
@@ -207,16 +241,36 @@ button::after {
   border: none;
 }
 
+/* 双按钮行：同高拉伸，子项均分由页面 .flex1 或本行子选择器控制 */
+.btn-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+}
+
+.btn-row > .btn-primary,
+.btn-row > .btn-secondary,
+.btn-row > .btn-ghost,
+.btn-row > button {
+  flex: 1;
+  min-width: 0;
+}
+
 /* 主要按钮 — Museum：黄铜实心，无深色发光/扫光 */
 button.btn-primary,
 .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   background: var(--brass-400);
   color: var(--color-bg);
   font-weight: 500;
   letter-spacing: 0.04em;
+  line-height: 1.2;
   padding: 24rpx 40rpx;
   border-radius: var(--radius-md);
-  border: none;
+  border: 1rpx solid var(--brass-400);
   box-shadow: none;
   position: relative;
   overflow: hidden;
@@ -225,20 +279,34 @@ button.btn-primary,
 button.btn-primary:active,
 .btn-primary:active {
   background: var(--brass-500);
+  border-color: var(--brass-500);
   transform: scale(0.98);
 }
 
-/* 次要按钮 — 透明底 + 黄铜描边 */
+/* 次要按钮 — 透明底 + 黄铜描边（与主按钮同 padding，避免双按钮行高度差）
+ * WeChat：全局 button overflow:hidden + 1rpx 边框在 flex 行内容易吃掉一侧（常见左侧）
+ * 描边按钮用 1px + overflow:visible，并清掉 ::after 默认边框 */
 button.btn-secondary,
 .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   background: transparent;
   color: var(--primary);
-  border: 1px solid var(--primary);
+  border: 1px solid var(--brass-400, #C4A76C);
   font-weight: 500;
   letter-spacing: 0.04em;
-  padding: 22rpx 40rpx;
+  line-height: 1.2;
+  padding: 24rpx 40rpx;
   border-radius: var(--radius-md);
   box-shadow: none;
+  overflow: visible;
+}
+
+button.btn-secondary::after,
+.btn-secondary::after {
+  border: none;
 }
 
 button.btn-secondary:active,
@@ -250,10 +318,15 @@ button.btn-secondary:active,
 /* 文本按钮 */
 button.btn-text,
 .btn-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   background: transparent;
   color: var(--primary);
   font-weight: 500;
   letter-spacing: 0.04em;
+  line-height: 1.2;
   padding: 14rpx 28rpx;
   border-radius: var(--radius-md);
   transition: opacity 0.2s;
@@ -264,17 +337,28 @@ button.btn-text:active,
   opacity: 0.85;
 }
 
-/* 幽灵按钮 — 弱对比底 + 细边框 */
+/* 幽灵按钮 — 弱对比底 + 细边框（同 secondary：避免 overflow/1rpx 吃边） */
 button.btn-ghost,
 .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-main);
   border: 1px solid var(--color-border-highlight);
   font-weight: 500;
   letter-spacing: 0.04em;
-  padding: 22rpx 40rpx;
+  line-height: 1.2;
+  padding: 24rpx 40rpx;
   border-radius: var(--radius-md);
   box-shadow: none;
+  overflow: visible;
+}
+
+button.btn-ghost::after,
+.btn-ghost::after {
+  border: none;
 }
 
 button.btn-ghost:active,
@@ -382,6 +466,241 @@ button[disabled]:active,
 
 .animate-scale-in {
   animation: scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== 信号灯系统（全平台统一） ====================
+ * 语义文档：docs/signal-lamp.md · 工具：utils/signalLamp.js
+ * 基类：.signal-light 或 .lamp
+ * Token：lamp-success|warn|error|info|brass|forest|muted + .hollow / .blink / .dim
+ * 历史别名：.blink=绿脉冲 · .on=绿静 · .warn · .danger · .live
+ */
+@keyframes signal-blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; box-shadow: 0 0 10rpx var(--color-success, #52B788); }
+}
+
+@keyframes signal-live-blink {
+  0%, 100% {
+    opacity: 0.35;
+    box-shadow: 0 0 4rpx rgba(214, 64, 69, 0.28);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 12rpx rgba(214, 64, 69, 0.65), 0 0 2rpx rgba(196, 167, 108, 0.45);
+  }
+}
+
+@keyframes signal-warn-blink {
+  0%, 100% {
+    opacity: 0.35;
+    box-shadow: 0 0 4rpx rgba(233, 162, 59, 0.28);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 12rpx rgba(233, 162, 59, 0.65);
+  }
+}
+
+.signal-light,
+.lamp {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--color-text-muted, #6B6560);
+  border: 2rpx solid transparent;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* —— Token 实心 —— */
+.lamp-success,
+.signal-light.lamp-success,
+.signal-light.on,
+.signal-light.blink {
+  background: var(--color-success, #52B788);
+  border-color: var(--color-success, #52B788);
+  box-shadow: 0 0 8rpx rgba(82, 183, 136, 0.45);
+}
+
+.signal-light.blink {
+  animation: signal-blink 0.5s infinite;
+}
+
+.lamp-warn,
+.lamp-warning,
+.signal-light.lamp-warn,
+.signal-light.lamp-warning,
+.signal-light.warn {
+  background: var(--color-warning, #E9A23B);
+  border-color: var(--color-warning, #E9A23B);
+  box-shadow: 0 0 8rpx rgba(233, 162, 59, 0.5);
+}
+
+.signal-light.warn.blink,
+.lamp-warn.blink,
+.lamp-warning.blink {
+  animation: signal-warn-blink 0.75s ease-in-out infinite;
+}
+
+.lamp-error,
+.signal-light.lamp-error,
+.signal-light.danger,
+.signal-light.live {
+  background: var(--color-error, #D64045);
+  border-color: var(--color-error, #D64045);
+  box-shadow: 0 0 8rpx rgba(214, 64, 69, 0.5);
+}
+
+.signal-light.danger.blink,
+.lamp-error.blink {
+  animation: signal-live-blink 0.6s ease-in-out infinite;
+}
+
+.signal-light.live.blink {
+  background: var(--color-error, #D64045);
+  border-color: var(--color-error, #D64045);
+  box-shadow: 0 0 10rpx rgba(214, 64, 69, 0.6);
+  animation: signal-live-blink 1s ease-in-out infinite;
+}
+
+.lamp-info,
+.signal-light.lamp-info {
+  background: var(--color-info, #5B8FB9);
+  border-color: var(--color-info, #5B8FB9);
+  box-shadow: 0 0 6rpx rgba(91, 143, 185, 0.35);
+}
+
+.lamp-brass,
+.signal-light.lamp-brass {
+  background: var(--brass-400, #C4A76C);
+  border-color: var(--brass-400, #C4A76C);
+  box-shadow: 0 0 6rpx rgba(196, 167, 108, 0.35);
+}
+
+.lamp-forest,
+.signal-light.lamp-forest {
+  background: var(--color-forest, #2D5A3F);
+  border-color: var(--color-forest, #2D5A3F);
+  box-shadow: 0 0 6rpx rgba(45, 90, 63, 0.35);
+}
+
+.lamp-muted,
+.signal-light.lamp-muted {
+  background: var(--color-text-muted, #6B6560);
+  border-color: var(--color-text-muted, #6B6560);
+  box-shadow: none;
+}
+
+/* —— 空心变体 —— */
+.lamp.hollow,
+.signal-light.hollow {
+  background: transparent !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.lamp-success.hollow,
+.signal-light.lamp-success.hollow { border-color: var(--color-success, #52B788); }
+.lamp-warn.hollow,
+.lamp-warning.hollow,
+.signal-light.warn.hollow,
+.signal-light.lamp-warn.hollow { border-color: var(--color-warning, #E9A23B); }
+.lamp-error.hollow,
+.signal-light.lamp-error.hollow,
+.signal-light.danger.hollow { border-color: var(--color-error, #D64045); }
+.lamp-info.hollow,
+.signal-light.lamp-info.hollow { border-color: var(--color-info, #5B8FB9); }
+.lamp-brass.hollow,
+.signal-light.lamp-brass.hollow { border-color: var(--brass-600, #8A7530); }
+.lamp-forest.hollow,
+.signal-light.lamp-forest.hollow { border-color: var(--color-forest, #2D5A3F); }
+.lamp-muted.hollow,
+.signal-light.lamp-muted.hollow { border-color: var(--color-text-muted, #6B6560); }
+
+.lamp.dim,
+.signal-light.dim {
+  opacity: 0.45;
+}
+
+/* 图例行（各工作台可复用） */
+.signal-legend,
+.lamp-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx 24rpx;
+  margin-top: 16rpx;
+}
+
+.signal-legend-item,
+.lamp-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.signal-legend-text,
+.lamp-legend text {
+  font-size: 20rpx;
+  color: var(--color-text-muted, #6B6560);
+  letter-spacing: 0.02em;
+}
+
+/* 门店积分流水 · 状态标签（field 流水 / 审批中心 · 积分流水） */
+.flow-list .rec-status,
+.list .record .rec-status {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  padding: 4rpx 14rpx;
+  border-radius: var(--radius-sm);
+  border: 1rpx solid rgba(82, 183, 136, 0.35);
+  font-size: 20rpx;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--color-success);
+  background: rgba(82, 183, 136, 0.12);
+}
+
+.flow-list .rec-status.granted,
+.flow-list .rec-status.approved,
+.list .record .rec-status.granted,
+.list .record .rec-status.approved {
+  color: var(--color-success);
+  border-color: rgba(82, 183, 136, 0.4);
+  background: rgba(82, 183, 136, 0.12);
+}
+
+.flow-list .rec-status.rejected,
+.list .record .rec-status.rejected {
+  color: var(--color-error);
+  border-color: rgba(214, 64, 69, 0.4);
+  background: rgba(214, 64, 69, 0.12);
+}
+
+.flow-list .rec-status.ignored,
+.flow-list .rec-status.pending_approval,
+.flow-list .rec-status.pending_claim,
+.flow-list .rec-status.pending,
+.list .record .rec-status.ignored,
+.list .record .rec-status.pending_approval,
+.list .record .rec-status.pending_claim,
+.list .record .rec-status.pending {
+  color: var(--color-warning);
+  border-color: rgba(233, 162, 59, 0.4);
+  background: rgba(233, 162, 59, 0.12);
+}
+
+.flow-list .rec-status.revoked,
+.flow-list .rec-status.partial_revoked,
+.list .record .rec-status.revoked,
+.list .record .rec-status.partial_revoked {
+  color: var(--color-text-secondary);
+  border-color: rgba(160, 154, 144, 0.35);
+  background: rgba(38, 35, 32, 0.6);
 }
 
 /* ==================== 6. 加载状态优化 ==================== */
@@ -856,4 +1175,49 @@ image[error] {
 
 .icon-gold image {
   filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+}
+
+/* ==================== 14. 统一回退按钮（Museum Brass） ==================== */
+/* 主 icon：/assets/icons/nav-back-brass.png（圆环+左箭头） */
+.page-nav-back {
+  min-width: 72rpx;
+  min-height: 72rpx;
+  padding: 0 4rpx;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-md, 16rpx);
+  border: 1px solid transparent;
+}
+
+.page-nav-back-icon {
+  width: 48rpx;
+  height: 48rpx;
+  display: block;
+  flex-shrink: 0;
+}
+
+.page-nav-back-label {
+  margin-left: 6rpx;
+  font-size: 26rpx;
+  line-height: 1;
+  color: var(--brass-400, #C4A76C);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.page-nav-back-press {
+  background: rgba(196, 167, 108, 0.08);
+  border-color: var(--color-border, rgba(38, 35, 32, 0.4));
+  opacity: 0.92;
+}
+
+/* 关闭弹层专用：圆环内 X，勿与回退混用 */
+.page-nav-close-icon {
+  width: 48rpx;
+  height: 48rpx;
+  display: block;
+  flex-shrink: 0;
 }

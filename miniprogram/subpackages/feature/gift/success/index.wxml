@@ -1,0 +1,104 @@
+<view class="page" wx:if="{{ready}}">
+  <!-- 封缄信封：标本纸 + 封舌 + 蜡封「封」 -->
+  <view class="envelope breathe">
+    <view class="envelope-cast" aria-hidden="true"></view>
+    <view class="envelope-flap" aria-hidden="true">
+      <!-- 内里衬纸：填满翻盖 V 形负空间，勿露 page 纯黑 -->
+      <view class="envelope-pocket"></view>
+      <view class="envelope-pocket-well"></view>
+      <view class="envelope-flap-face"></view>
+      <view class="envelope-flap-shade"></view>
+      <view class="envelope-crease crease-l"></view>
+      <view class="envelope-crease crease-r"></view>
+    </view>
+    <view class="wax-seal" aria-hidden="true">
+      <view class="wax-glow"></view>
+      <view class="wax-rim"></view>
+      <view class="wax-ring"></view>
+      <view class="wax-core"></view>
+      <view class="wax-highlight"></view>
+      <text class="wax-seal-text">封</text>
+    </view>
+    <view class="envelope-body">
+      <view class="envelope-mouth" aria-hidden="true"></view>
+      <view class="envelope-grain" aria-hidden="true"></view>
+      <text class="overline">{{heroOverline}}</text>
+      <text class="title">{{heroTitle}}</text>
+      <text class="desc">{{heroDesc}}</text>
+      <text class="expire" wx:if="{{expireHint}}">{{expireHint}}</text>
+    </view>
+  </view>
+
+  <view class="claim-card" wx:if="{{showPickupClaim}}">
+    <text class="claim-label">门店妥投码</text>
+    <text class="claim-code">{{claimCode}}</text>
+    <text class="claim-hint">{{claimHint}}</text>
+    <canvas
+      wx:if="{{claimStatus !== 'claimed'}}"
+      type="2d"
+      id="giftClaimQr"
+      class="claim-qr"
+      style="width: 320rpx; height: 320rpx;"
+    ></canvas>
+    <text class="claim-payload" wx:if="{{claimStatus !== 'claimed'}}">馆长扫码 GIFT:{{claimCode}}</text>
+  </view>
+
+  <view class="card-preview" wx:if="{{cardBody || hasVoice}}">
+    <view class="card-preview-head">
+      <text class="card-hint">已封入礼笺</text>
+      <view class="mini-seal" aria-hidden="true">山海</view>
+    </view>
+    <text class="card-body" wx:if="{{cardBody}}">{{cardBody}}</text>
+    <text class="card-voice" wx:if="{{hasVoice}}">含语音 · {{voiceDurationLabel}}</text>
+    <text class="card-sig" wx:if="{{cardSignature}}">— {{cardSignature}}</text>
+  </view>
+
+  <!-- 离屏：分享封面（微信 imageUrl）；失败则无图降级 -->
+  <canvas
+    type="2d"
+    id="giftShareCanvas"
+    class="share-canvas-off"
+    style="width: 500px; height: 400px;"
+  ></canvas>
+
+  <view class="actions">
+    <button
+      class="btn-primary share-btn"
+      open-type="share"
+      hover-class="btn-primary-press"
+      hover-stay-time="80"
+      wx:if="{{canShare}}"
+    >{{shareCta}}</button>
+    <view class="actions-secondary" wx:if="{{canNudge}}">
+      <view
+        class="btn-secondary"
+        hover-class="btn-secondary-press"
+        hover-stay-time="80"
+        bindtap="goOrder"
+      >查看礼赠进度</view>
+      <view
+        class="btn-ghost"
+        hover-class="btn-ghost-press"
+        hover-stay-time="80"
+        bindtap="nudge"
+      >再轻轻提醒一声</view>
+    </view>
+    <view
+      class="btn-secondary btn-secondary-solo"
+      hover-class="btn-secondary-press"
+      hover-stay-time="80"
+      bindtap="goOrder"
+      wx:else
+    >查看礼赠进度</view>
+    <text class="subscribe-hint" wx:if="{{subscribeHint}}">{{subscribeHint}}</text>
+  </view>
+</view>
+
+<view class="page checking" wx:else>
+  <view class="state-block">
+    <view class="state-seal" aria-hidden="true"></view>
+    <text class="state-title" wx:if="{{errorMsg}}">礼笺未能备妥</text>
+    <text class="muted">{{errorMsg || '礼笺正在备妥…'}}</text>
+    <view class="btn-secondary" wx:if="{{errorMsg}}" bindtap="bootstrap">再试一次</view>
+  </view>
+</view>

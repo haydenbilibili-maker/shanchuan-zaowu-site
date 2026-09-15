@@ -1,8 +1,8 @@
 // pages/certificate/index.js
 const app = getApp();
 const db = wx.cloud.database();
-const { ensureOpenId, isOrderOwnedBy, denyOrderAccess } = require('../../../utils/orderScope');
-const { buildGuideUrl, normalizeCategory } = require('../../../utils/careDefaults');
+const { ensureOpenId, canAccessOrder, denyOrderAccess } = require('../../../utils/orderScope');
+const { buildGuideUrl, resolveCareCategory } = require('../utils/careDefaults');
 const { resolveCareContext } = require('../utils/careHelper');
 
 Page({
@@ -10,6 +10,7 @@ Page({
     statusBarHeight: 20,
     isMinting: true,
     showCert: false,
+    missingId: false,
     tempFilePath: '',
     order: null,
     orderId: '',
@@ -21,9 +22,10 @@ Page({
     this.setData({ statusBarHeight, orderId: options.id || '' });
     if (options.id) {
       this.startMinting(options.id);
-      return;
+    } else {
+      this.setData({ isMinting: false, missingId: true });
+      wx.showToast({ title: '证书不存在', icon: 'none' });
     }
-    wx.redirectTo({ url: '/pages/user/certificates/index' });
   },
 
   async startMinting(orderId) {
@@ -40,7 +42,7 @@ Page({
       const orderRes = await db.collection('orders').doc(orderId).get();
       const order = orderRes.data;
 
-      if (!isOrderOwnedBy(order, openid)) {
+      if (!canAccessOrder(order, openid)) {
         wx.showToast({ title: '无权查看此证书', icon: 'none' });
         this.setData({ isMinting: false });
         setTimeout(() => wx.navigateBack(), 1500);
@@ -52,7 +54,7 @@ Page({
       if (careContext.showCare && careContext.guideUrl) {
         this.setData({ careGuideUrl: careContext.guideUrl })
       } else if (order.products && order.products[0]) {
-        const cat = normalizeCategory(order.products[0].category)
+        const cat = resolveCareCategory(order.products[0])
         this.setData({
           careGuideUrl: buildGuideUrl({
             category: cat,
@@ -68,10 +70,19 @@ Page({
       if (app.globalData.openid) {
          try {
            const userRes = await db.collection('users').where({ _openid: app.globalData.openid }).get();
-           if(userRes.data.length > 0) {
+           if (userRes.data && userRes.data.length > 0) {
              userName = userRes.data[0].nickName || 'COLLECTOR';
-             const lvMap = ['见习收藏家', '初级收藏家', '资深收藏家', '金牌收藏家', '荣誉理事', '终身荣誉馆长'];
-             levelName = lvMap[userRes.data[0].level] || '见习收藏家';
+             const lvMap = {
+               1: '原木·见习者',
+               2: '秘银·采集家',
+               3: '流金·研究员',
+               4: '曜石·策展人',
+               5: '星陨·守护者',
+               6: '星耀·博物官',
+               99: '荣誉馆长'
+             };
+             const lv = userRes.data[0].level;
+             levelName = lvMap[lv] || userRes.data[0].levelName || '原木·见习者';
            }
          } catch(e) {}
       }
@@ -85,12 +96,10 @@ Page({
       };
 
       const query = wx.createSelectorQuery();
-      await new Promise((resolve) => setTimeout(resolve, 80));
       query.select('#certCanvas').fields({ node: true, size: true }).exec(async (res) => {
-          if (!res[0]) {
-            console.error('certCanvas 未就绪');
-            wx.showToast({ title: '证书渲染失败', icon: 'none' });
+          if (!res || !res[0] || !res[0].node) {
             this.setData({ isMinting: false });
+            wx.showToast({ title: '证书画布加载失败', icon: 'none' });
             return;
           }
           const canvas = res[0].node;
@@ -119,7 +128,8 @@ Page({
     if (!src) return '';
     if (src.startsWith('cloud://')) {
       const res = await wx.cloud.getTempFileURL({ fileList: [src] });
-      if (res.fileList && res.fileList[0].tempFileURL) return res.fileList[0].tempFileURL;
+      const file = res.fileList && res.fileList[0];
+      if (file && file.tempFileURL) return file.tempFileURL;
     }
     return src;
   },
@@ -151,7 +161,7 @@ Page({
     y += 35;
     ctx.fillStyle = '#fff'; ctx.font = 'bold 20px serif';
     ctx.letterSpacing = '4px';
-    ctx.fillText('永久藏品·独一无二', w / 2, y);
+    ctx.fillText('馆藏证书·仅此一件', w / 2, y);
     
     y += 25;
     ctx.fillStyle = '#bfa15f'; ctx.font = '10px sans-serif'; ctx.letterSpacing = '1px';
@@ -168,12 +178,14 @@ Page({
         img.src = imgUrl;
         await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
 
-        const imgX = (w - imgSize) / 2;
-        ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'; ctx.lineWidth = 1;
-        ctx.strokeRect(imgX - 5, y - 5, imgSize + 10, imgSize + 10);
+        if (img.width && img.height) {
+          const imgX = (w - imgSize) / 2;
+          ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'; ctx.lineWidth = 1;
+          ctx.strokeRect(imgX - 5, y - 5, imgSize + 10, imgSize + 10);
 
-        const sSize = Math.min(img.width, img.height);
-        ctx.drawImage(img, (img.width - sSize)/2, (img.height - sSize)/2, sSize, sSize, imgX, y, imgSize, imgSize);
+          const sSize = Math.min(img.width, img.height);
+          ctx.drawImage(img, (img.width - sSize)/2, (img.height - sSize)/2, sSize, sSize, imgX, y, imgSize, imgSize);
+        }
         
         // 图片下小字
         ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = 'italic 9px serif';
@@ -256,6 +268,10 @@ Page({
   },
 
   saveImage() {
+    if (!this.data.tempFilePath) {
+      wx.showToast({ title: '证书尚未生成', icon: 'none' });
+      return;
+    }
     wx.saveImageToPhotosAlbum({
       filePath: this.data.tempFilePath,
       success: () => wx.showToast({ title: '已保存', icon: 'success' }),
@@ -265,11 +281,18 @@ Page({
   goToCare() {
     const url = this.data.careGuideUrl
     if (!url) {
-      wx.navigateTo({ url: '/pages/care/index?from=certificate' })
+      wx.navigateTo({ url: '/subpackages/feature/care/index?from=certificate' })
       return
     }
     wx.navigateTo({ url })
   },
-  goBack() { wx.navigateBack(); },
+  goBack() {
+    wx.navigateBack({
+      fail: () => wx.redirectTo({
+        url: '/subpackages/feature/user/certificates/index',
+        fail: () => wx.switchTab({ url: '/pages/user/index' })
+      })
+    });
+  },
   onShareAppMessage() { return { title: '我的博物收藏证书', imageUrl: this.data.tempFilePath } }
 });

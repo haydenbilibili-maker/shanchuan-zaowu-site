@@ -1,9 +1,19 @@
 {
   "usingComponents": {
-    "product-list": "/components/ProductList/index"
+    "product-list": "/components/ProductList/index",
+    "protected-badge": "/components/ProtectedBadge/index",
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
+    "easter-egg-note": "/components/EasterEggNote/index"
   },
   "navigationStyle": "custom",
+  "navigationBarTitleText": "山海造物",
   "enablePullDownRefresh": true,
-  "backgroundTextStyle": "dark",
-  "backgroundColor": "#1A1814"
+  "onReachBottomDistance": 120,
+  "backgroundTextStyle": "light",
+  "backgroundColor": "#1A1814",
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundColorContent": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white"
 }

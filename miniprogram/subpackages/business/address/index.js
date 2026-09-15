@@ -1,10 +1,22 @@
 const STORAGE_KEY = 'user_addresses_local'
 
+const EMPTY_FORM = {
+  name: '',
+  phone: '',
+  region: [],
+  detail: '',
+  setAsDefault: false
+}
+
 Page({
   data: {
     addresses: [],
     mode: 'manage',
-    loading: true
+    loading: true,
+    needLogin: false,
+    showManualForm: false,
+    form: { ...EMPTY_FORM },
+    saving: false
   },
 
   onLoad(options) {
@@ -15,8 +27,22 @@ Page({
     this.loadAddresses()
   },
 
+  applyGuestAddressState() {
+    try {
+      wx.removeStorageSync(STORAGE_KEY)
+    } catch (e) { /* ignore */ }
+    this.setData({
+      addresses: [],
+      loading: false,
+      needLogin: true,
+      showManualForm: false
+    })
+  },
+
   getLocalAddresses() {
     try {
+      const { isLocalLoggedOut } = require('../../../utils/userSession')
+      if (isLocalLoggedOut()) return []
       return wx.getStorageSync(STORAGE_KEY) || []
     } catch (e) {
       return []
@@ -25,6 +51,11 @@ Page({
 
   saveLocalAddresses(list) {
     try {
+      const { isLocalLoggedOut } = require('../../../utils/userSession')
+      if (isLocalLoggedOut()) {
+        wx.removeStorageSync(STORAGE_KEY)
+        return
+      }
       wx.setStorageSync(STORAGE_KEY, list)
     } catch (e) {
       console.warn('saveLocalAddresses', e)
@@ -40,17 +71,30 @@ Page({
   },
 
   async loadAddresses() {
-    this.setData({ loading: true })
+    const { isLocalLoggedOut } = require('../../../utils/userSession')
+    if (isLocalLoggedOut()) {
+      this.applyGuestAddressState()
+      return
+    }
+    this.setData({ loading: true, needLogin: false })
     try {
       const result = await this.callManageAddress({ action: 'list' })
+      if (isLocalLoggedOut()) {
+        this.applyGuestAddressState()
+        return
+      }
       if (result.success) {
-        this.setData({ addresses: result.data || [], loading: false })
+        this.setData({ addresses: result.data || [], loading: false, needLogin: false })
         this.saveLocalAddresses(result.data || [])
         return
       }
       throw new Error(result.msg || '加载失败')
     } catch (e) {
       console.error('loadAddresses', e)
+      if (isLocalLoggedOut()) {
+        this.applyGuestAddressState()
+        return
+      }
       const local = this.getLocalAddresses()
       this.setData({
         addresses: local,
@@ -59,6 +103,26 @@ Page({
       if (!local.length) {
         wx.showToast({ title: '地址加载失败', icon: 'none' })
       }
+    }
+  },
+
+  async goResumeLogin() {
+    if (this._resumingLogin) return
+    this._resumingLogin = true
+    wx.showLoading({ title: '进入中', mask: true })
+    try {
+      const { resumeLocalSession, ensureSession } = require('../../../utils/userSession')
+      resumeLocalSession()
+      await ensureSession(getApp(), { force: true })
+      wx.hideLoading()
+      this.setData({ needLogin: false })
+      await this.loadAddresses()
+      wx.showToast({ title: '已重新进入', icon: 'none' })
+    } catch (e) {
+      wx.hideLoading()
+      wx.showToast({ title: '进入失败，请重试', icon: 'none' })
+    } finally {
+      this._resumingLogin = false
     }
   },
 
@@ -76,27 +140,57 @@ Page({
     if (this.data.mode !== 'select') return
     const idx = e.currentTarget.dataset.index
     const addr = this.data.addresses[idx]
-    if (!addr) return
-
-    const eventChannel = this.getOpenerEventChannel()
-    if (eventChannel && eventChannel.emit) {
-      eventChannel.emit('addressSelected', this.formatForCheckout(addr))
+    if (!addr) {
+      wx.showToast({ title: '地址信息缺失', icon: 'none' })
+      return
     }
-    wx.navigateBack()
+
+    try {
+      const eventChannel = typeof this.getOpenerEventChannel === 'function'
+        ? this.getOpenerEventChannel()
+        : null
+      if (eventChannel && typeof eventChannel.emit === 'function') {
+        eventChannel.emit('addressSelected', this.formatForCheckout(addr))
+      }
+    } catch (e) {
+      console.warn('addressSelected emit', e)
+    }
+    wx.navigateBack({
+      fail: () => wx.showToast({ title: '请返回结算页继续', icon: 'none' })
+    })
   },
 
-  openChooseAddress(setAsDefault) {
+  importFromWechat() {
+    try {
+      const { isLocalLoggedOut } = require('../../../utils/userSession')
+      if (isLocalLoggedOut()) {
+        this.goResumeLogin()
+        return
+      }
+    } catch (e) { /* ignore */ }
+    const setAsDefault = this.data.addresses.length === 0
     wx.chooseAddress({
-      success: (res) => this.saveAddressFromWechat(res, setAsDefault),
+      success: (res) => this.saveAddressPayload({
+        userName: res.userName,
+        telNumber: res.telNumber,
+        provinceName: res.provinceName,
+        cityName: res.cityName,
+        countyName: res.countyName,
+        detailInfo: res.detailInfo
+      }, setAsDefault),
       fail: (err) => {
         const msg = (err && err.errMsg) || ''
         if (msg.includes('cancel')) return
         if (msg.includes('auth deny') || msg.includes('authorize')) {
           wx.showModal({
             title: '需要地址权限',
-            content: '请在弹窗中允许获取收货地址，或在小程序设置中开启「通讯地址」权限。',
-            showCancel: false,
-            confirmColor: '#C4A76C'
+            content: '请允许获取微信收货地址，或改用「手动新增」填写。',
+            confirmText: '手动新增',
+            cancelText: '取消',
+            confirmColor: '#C4A76C',
+            success: (r) => {
+              if (r.confirm) this.openManualForm()
+            }
           })
           return
         }
@@ -106,31 +200,87 @@ Page({
     })
   },
 
-  importFromWechat() {
-    this.openChooseAddress(this.data.addresses.length === 0)
+  openManualForm() {
+    try {
+      const { isLocalLoggedOut } = require('../../../utils/userSession')
+      if (isLocalLoggedOut()) {
+        this.goResumeLogin()
+        return
+      }
+    } catch (e) { /* ignore */ }
+    this.setData({
+      showManualForm: true,
+      form: {
+        ...EMPTY_FORM,
+        setAsDefault: this.data.addresses.length === 0
+      }
+    })
   },
 
-  addAddress() {
-    this.openChooseAddress(this.data.addresses.length === 0)
+  closeManualForm() {
+    if (this.data.saving) return
+    this.setData({ showManualForm: false })
   },
 
-  async saveAddressFromWechat(res, asDefault) {
-    wx.showLoading({ title: '保存中...', mask: true })
+  onFormInput(e) {
+    const field = e.currentTarget.dataset.field
+    if (!field) return
+    this.setData({ [`form.${field}`]: e.detail.value || '' })
+  },
+
+  onRegionChange(e) {
+    const region = e.detail.value || []
+    this.setData({ 'form.region': region })
+  },
+
+  toggleFormDefault() {
+    this.setData({ 'form.setAsDefault': !this.data.form.setAsDefault })
+  },
+
+  validateManualForm(form) {
+    const name = (form.name || '').trim()
+    const phone = (form.phone || '').trim()
+    const detail = (form.detail || '').trim()
+    const region = form.region || []
+
+    if (!name) return '请填写收件人'
+    if (!/^1\d{10}$/.test(phone)) return '请填写正确的手机号'
+    if (!region.length || region.length < 3) return '请选择省市区'
+    if (!detail || detail.length < 4) return '请填写详细地址'
+    return ''
+  },
+
+  async submitManualAddress() {
+    if (this.data.saving) return
+    const form = this.data.form || {}
+    const err = this.validateManualForm(form)
+    if (err) {
+      wx.showToast({ title: err, icon: 'none' })
+      return
+    }
+
+    await this.saveAddressPayload({
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      region: form.region,
+      detail: form.detail.trim()
+    }, !!form.setAsDefault)
+
+    this.setData({ showManualForm: false })
+  },
+
+  async saveAddressPayload(raw, asDefault) {
+    this.setData({ saving: true })
+    wx.showLoading({ title: '保存中…', mask: true })
     try {
       const result = await this.callManageAddress({
         action: 'add',
         setAsDefault: asDefault,
-        address: {
-          userName: res.userName,
-          telNumber: res.telNumber,
-          provinceName: res.provinceName,
-          cityName: res.cityName,
-          countyName: res.countyName,
-          detailInfo: res.detailInfo
-        }
+        address: raw
       })
 
       wx.hideLoading()
+      this.setData({ saving: false })
 
       if (result.success) {
         wx.showToast({ title: '已保存', icon: 'success' })
@@ -141,18 +291,21 @@ Page({
       throw new Error(result.msg || '保存失败')
     } catch (e) {
       wx.hideLoading()
-      console.error('saveAddressFromWechat', e)
+      this.setData({ saving: false })
+      console.error('saveAddressPayload', e)
 
       const entry = {
         _id: `local_${Date.now()}`,
-        name: (res.userName || '').trim(),
-        phone: (res.telNumber || '').trim(),
-        region: [res.provinceName, res.cityName, res.countyName].filter(Boolean),
-        detail: (res.detailInfo || '').trim(),
+        name: (raw.name || raw.userName || '').trim(),
+        phone: (raw.phone || raw.telNumber || '').trim(),
+        region: Array.isArray(raw.region)
+          ? raw.region.filter(Boolean)
+          : [raw.provinceName, raw.cityName, raw.countyName].filter(Boolean),
+        detail: (raw.detail || raw.detailInfo || '').trim(),
         isDefault: asDefault || this.data.addresses.length === 0
       }
 
-      if (entry.name && entry.phone) {
+      if (entry.name && entry.phone && entry.detail) {
         let list = [...this.data.addresses]
         if (entry.isDefault) {
           list = list.map((a) => ({ ...a, isDefault: false }))
@@ -165,7 +318,7 @@ Page({
       }
 
       wx.showToast({
-        title: '保存失败，请部署 manageAddress 云函数',
+        title: '保存失败，请稍后重试',
         icon: 'none',
         duration: 2500
       })
@@ -174,7 +327,11 @@ Page({
 
   async setDefault(e) {
     const id = e.currentTarget.dataset.id
-    wx.showLoading({ title: '设置中...' })
+    if (!id) {
+      wx.showToast({ title: '地址信息缺失', icon: 'none' })
+      return
+    }
+    wx.showLoading({ title: '设置中…' })
     try {
       const result = await this.callManageAddress({ action: 'setDefault', addressId: id })
       wx.hideLoading()
@@ -192,6 +349,10 @@ Page({
 
   deleteAddress(e) {
     const id = e.currentTarget.dataset.id
+    if (!id) {
+      wx.showToast({ title: '地址信息缺失', icon: 'none' })
+      return
+    }
     wx.showModal({
       title: '删除地址',
       content: '确定删除该收货地址？',
@@ -206,7 +367,7 @@ Page({
           } else {
             wx.showToast({ title: result.msg || '删除失败', icon: 'none' })
           }
-        } catch (e) {
+        } catch (err) {
           wx.showToast({ title: '删除失败', icon: 'none' })
         }
       }

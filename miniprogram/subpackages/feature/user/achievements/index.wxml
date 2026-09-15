@@ -1,0 +1,418 @@
+<!--subpackages/feature/user/achievements/index.wxml-->
+<view class="page-achievements">
+
+  <view class="nav-bar" style="padding-right: {{navPaddingRight}}px;">
+    <view class="nav-row">
+      <view class="nav-brand">
+        <text class="nav-title">我的成就</text>
+        <text class="nav-sub">ACHIEVEMENTS</text>
+      </view>
+      <view class="share-btn" hover-class="share-btn-press" hover-stay-time="80" bindtap="shareAchievements">
+        <image class="share-icon icon-gold" src="/assets/icons/share.png" mode="aspectFit"></image>
+      </view>
+    </view>
+    <!-- 分享引导：贴在分享钮旁，可关闭，不挡 Tab -->
+    <view class="share-tip" wx:if="{{showShareTip}}" catchtap="stopPropagation">
+      <view class="share-tip-arrow"></view>
+      <view class="share-tip-body">
+        <image class="share-tip-icon icon-gold" src="/assets/icons/share.png" mode="aspectFit"></image>
+        <text class="share-tip-text">请点右上角 ··· 分享</text>
+        <view class="share-tip-close" hover-class="share-tip-close-press" catchtap="dismissShareTip">
+          <image class="share-tip-close-icon icon-gold" src="/subpackages/feature/assets/icons/nav-close-brass.png" mode="aspectFit"></image>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="content"
+    style="padding-top: {{headerBlockPx}}px"
+    refresher-enabled="{{true}}"
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+    refresher-background="#1A1814">
+
+    <!-- 首屏：徽章柜总览 -->
+    <view class="overview-card" wx:if="{{achievementStats}}">
+      <view class="overview-kicker">
+        <text class="title-overline">CABINET</text>
+        <text class="overview-kicker-line"></text>
+        <text class="overview-kicker-meta">{{achievementStats.unlocked}} / {{achievementStats.total}}</text>
+      </view>
+      <text class="title-main">徽章柜总览</text>
+
+      <view class="overview-stats">
+        <view class="stat-item">
+          <text class="stat-val">{{achievementStats.unlocked}}</text>
+          <text class="stat-label">已点亮</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-val muted">{{achievementStats.locked}}</text>
+          <text class="stat-label">未点亮</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-val accent">{{achievementStats.progress}}%</text>
+          <text class="stat-label">完成度</text>
+        </view>
+      </view>
+
+      <view class="overview-progress-wrapper">
+        <view class="progress-header">
+          <text class="progress-label">馆藏进度</text>
+          <text class="progress-percent">{{achievementStats.unlocked}} / {{achievementStats.total}}</text>
+        </view>
+        <view class="progress-track">
+          <view class="progress-fill" style="width: {{achievementStats.progress}}%"></view>
+        </view>
+      </view>
+
+      <view class="overview-reward">
+        <image class="reward-icon-main icon-gold" src="/assets/icons/coin_gold.png" mode="aspectFit"></image>
+        <text class="reward-label">累计积分</text>
+        <text class="reward-value">{{achievementStats.totalRewards}}</text>
+      </view>
+    </view>
+
+    <!-- 筛选 Tab -->
+    <view class="filter-bar" wx:if="{{!loading || achievementTypes.length}}">
+      <view
+        class="filter-chip {{viewFilter === item.key ? 'active' : ''}}"
+        wx:for="{{filterTabs}}"
+        wx:key="key"
+        hover-class="filter-chip-press"
+        hover-stay-time="80"
+        bindtap="onFilterChange"
+        data-key="{{item.key}}"
+      >
+        <text class="filter-chip-text">{{item.label}}</text>
+        <text class="filter-chip-count" wx:if="{{item.count != null}}">{{item.count}}</text>
+      </view>
+    </view>
+
+    <!-- 山海拾遗（全部 Tab） -->
+    <view class="relics-card" wx:if="{{viewFilter === 'all'}}">
+      <view class="relics-head">
+        <text class="relics-overline">SHANHAI RELICS</text>
+        <view class="relics-title-row">
+          <text class="relics-title">{{relicsName}}</text>
+          <view class="section-count">
+            <text class="count-unlocked">{{relicsFound}}</text>
+            <text class="count-separator">/</text>
+            <text class="count-total">{{relicsTotal}}</text>
+          </view>
+        </view>
+        <text class="relics-desc" wx:if="{{relicsUnlocked}}">五页已聚。其余仍藏在馆中，遇见再读即可。</text>
+        <text class="relics-desc" wx:else>在馆中偶遇的笔记，会慢慢记在这里。与积分无关。</text>
+      </view>
+
+      <view class="relics-plaque">
+        <view class="relics-plaque-meta">
+          <text class="relics-plaque-label">已著录</text>
+          <text class="relics-plaque-num">{{relicsFound}}</text>
+          <text class="relics-plaque-dot">·</text>
+          <text class="relics-plaque-total">共 {{relicsTotal}}</text>
+        </view>
+        <view class="progress-track relics-track">
+          <view class="progress-fill" style="width: {{relicsPercent}}%"></view>
+        </view>
+      </view>
+
+      <view class="relics-cabinet">
+        <view
+          class="relic-plate {{item.discovered ? 'on' : 'off'}}"
+          wx:for="{{relicsCatalog}}"
+          wx:key="id"
+          hover-class="relic-plate-press"
+          hover-stay-time="80"
+          bindtap="openRelic"
+          data-id="{{item.id}}"
+        >
+          <text class="relic-roman">{{item.roman}}</text>
+          <view class="relic-plate-body">
+            <text class="relic-plate-title">{{item.plateTitle}}</text>
+            <text class="relic-plate-hint">{{item.plateHint}}</text>
+          </view>
+          <text class="relic-plate-mark" wx:if="{{item.discovered}}">再读</text>
+          <view class="relic-veil" wx:else></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 筛选空态 -->
+    <view class="filter-empty" wx:if="{{!loading && emptyFilterHint && achievementTypes.length === 0}}">
+      <view class="empty-icon-wrap">
+        <image class="empty-icon icon-gold" src="/assets/icons/medal_gold.png" mode="aspectFit"></image>
+      </view>
+      <text class="empty-title">{{viewFilter === 'unlocked' ? '铜牌柜尚空' : '全部点亮'}}</text>
+      <text class="empty-text">{{emptyFilterHint}}</text>
+      <view
+        class="empty-action"
+        wx:if="{{viewFilter === 'unlocked'}}"
+        hover-class="empty-action-press"
+        bindtap="onFilterChange"
+        data-key="locked"
+      >
+        <text class="empty-action-text">去看未点亮目标</text>
+      </view>
+    </view>
+
+    <!-- 成就分类 -->
+    <view class="achievements-section" wx:for="{{achievementTypes}}" wx:key="type" wx:for-item="section">
+      <view class="section-header">
+        <image class="section-icon icon-gold" src="{{section.icon}}" mode="aspectFit"></image>
+        <view class="section-copy">
+          <text class="title-en">{{section.enName}}</text>
+          <view class="section-title-row">
+            <text class="title-cn">{{section.name}}</text>
+            <view class="section-count">
+              <text class="count-unlocked">{{section.unlockedCount}}</text>
+              <text class="count-separator">/</text>
+              <text class="count-total">{{section.totalCount}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 全部：分区展示 -->
+      <block wx:if="{{section.usePartition}}">
+        <block wx:if="{{section.showUnlockedBlock}}">
+          <view class="partition-head">
+            <view class="partition-line"></view>
+            <text class="partition-label">已点亮</text>
+            <text class="partition-count">{{section.unlockedCount}}</text>
+            <view class="partition-line"></view>
+          </view>
+          <view class="achievements-grid">
+            <view
+              class="achievement-item unlocked"
+              wx:for="{{section.unlockedList}}"
+              wx:key="id"
+              wx:for-item="achievement"
+              hover-class="achievement-item-press"
+              bindtap="viewAchievement"
+              data-achievement="{{achievement}}"
+            >
+              <view class="plate-edge"></view>
+              <view class="lit-mark">
+                <image class="status-icon icon-gold" src="/assets/icons/done.png" mode="aspectFit"></image>
+              </view>
+              <view class="badge-ring">
+                <image class="achievement-icon icon-gold" src="{{achievement.icon || '/assets/icons/medal_gold.png'}}" mode="aspectFit"></image>
+              </view>
+              <text class="achievement-name">{{achievement.name}}</text>
+              <text class="achievement-desc">{{achievement.desc}}</text>
+              <view class="achievement-reward" wx:if="{{achievement.rewardPoints > 0}}">
+                <view class="reward-badge">
+                  <image class="reward-icon icon-gold" src="/assets/icons/coin_gold.png" mode="aspectFit"></image>
+                  <text class="reward-text">+{{achievement.rewardPoints}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </block>
+
+        <block wx:if="{{section.showLockedBlock}}">
+          <view class="partition-head">
+            <view class="partition-line"></view>
+            <text class="partition-label muted">未点亮</text>
+            <text class="partition-count muted">{{section.lockedCount}}</text>
+            <view class="partition-line"></view>
+          </view>
+          <view class="achievements-grid">
+            <view
+              class="achievement-item locked"
+              wx:for="{{section.lockedList}}"
+              wx:key="id"
+              wx:for-item="achievement"
+              hover-class="achievement-item-press"
+              bindtap="viewAchievement"
+              data-achievement="{{achievement}}"
+            >
+              <view class="lit-mark locked">
+                <image class="status-icon icon-gold" src="/assets/icons/lock.png" mode="aspectFit"></image>
+              </view>
+              <view class="badge-ring dim">
+                <image class="achievement-icon icon-gold" src="{{achievement.icon || '/assets/icons/medal_gold.png'}}" mode="aspectFit"></image>
+              </view>
+              <text class="achievement-name">{{achievement.name}}</text>
+              <text class="achievement-desc">{{achievement.desc}}</text>
+              <view class="achievement-progress">
+                <view class="progress-header-mini">
+                  <text class="progress-label-mini">进度</text>
+                  <text class="progress-percent-mini">{{achievement.progressPercent}}%</text>
+                </view>
+                <view class="progress-track mini">
+                  <view class="progress-fill" style="width: {{achievement.progressPercent}}%"></view>
+                </view>
+                <text class="progress-text">{{achievement.progressText}}</text>
+                <text class="remain-text">{{achievement.remainText}}</text>
+              </view>
+            </view>
+          </view>
+        </block>
+      </block>
+
+      <!-- 已点亮 / 未点亮：单列网格，无冗余分区头 -->
+      <block wx:else>
+        <view class="achievements-grid">
+          <view
+            class="achievement-item {{achievement.unlocked ? 'unlocked' : 'locked'}}"
+            wx:for="{{section.visible}}"
+            wx:key="id"
+            wx:for-item="achievement"
+            hover-class="achievement-item-press"
+            bindtap="viewAchievement"
+            data-achievement="{{achievement}}"
+          >
+            <view class="plate-edge" wx:if="{{achievement.unlocked}}"></view>
+            <view class="lit-mark {{achievement.unlocked ? '' : 'locked'}}">
+              <image class="status-icon icon-gold" src="{{achievement.unlocked ? '/assets/icons/done.png' : '/assets/icons/lock.png'}}" mode="aspectFit"></image>
+            </view>
+            <view class="badge-ring {{achievement.unlocked ? '' : 'dim'}}">
+              <image class="achievement-icon icon-gold" src="{{achievement.icon || '/assets/icons/medal_gold.png'}}" mode="aspectFit"></image>
+            </view>
+            <text class="achievement-name">{{achievement.name}}</text>
+            <text class="achievement-desc">{{achievement.desc}}</text>
+            <view class="achievement-reward" wx:if="{{achievement.unlocked}}">
+              <view class="reward-badge">
+                <image class="reward-icon icon-gold" src="/assets/icons/coin_gold.png" mode="aspectFit"></image>
+                <text class="reward-text">+{{achievement.rewardPoints}}</text>
+              </view>
+            </view>
+            <view class="achievement-progress" wx:else>
+              <view class="progress-header-mini">
+                <text class="progress-label-mini">进度</text>
+                <text class="progress-percent-mini">{{achievement.progressPercent}}%</text>
+              </view>
+              <view class="progress-track mini">
+                <view class="progress-fill" style="width: {{achievement.progressPercent}}%"></view>
+              </view>
+              <text class="progress-text">{{achievement.progressText}}</text>
+              <text class="remain-text">{{achievement.remainText}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="skeleton-container" wx:if="{{loading && achievementTypes.length === 0}}">
+      <view class="skeleton-card">
+        <view class="skeleton-kicker"></view>
+        <view class="skeleton-title-block"></view>
+        <view class="skeleton-stats">
+          <view class="skeleton-stat" wx:for="{{3}}" wx:key="*this"></view>
+        </view>
+        <view class="skeleton-progress"></view>
+        <view class="skeleton-reward"></view>
+      </view>
+      <view class="skeleton-section" wx:for="{{2}}" wx:key="*this">
+        <view class="skeleton-section-header"></view>
+        <view class="skeleton-grid">
+          <view class="skeleton-item" wx:for="{{4}}" wx:key="*this"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{!loading && loadError && achievementTypes.length === 0}}">
+      <view class="empty-icon-wrap">
+        <image class="empty-icon icon-gold" src="/assets/icons/medal_gold.png" mode="aspectFit"></image>
+      </view>
+      <text class="empty-title">档案暂时读不出</text>
+      <text class="empty-text">网络不稳或尚未登录时，徽章柜会空着</text>
+      <view class="retry-btn" hover-class="retry-btn-press" bindtap="onRetry">重新读取</view>
+    </view>
+
+  </scroll-view>
+
+  <!-- 成就详情：铜牌说明 -->
+  <view class="achievement-modal {{showModal ? 'show' : ''}}" wx:if="{{selectedAchievement}}" catchtap="closeModal">
+    <view class="modal-content {{selectedAchievement.unlocked ? 'lit' : 'dim'}}" catchtap="stopPropagation">
+      <view class="modal-close" hover-class="modal-close-press" bindtap="closeModal">
+        <image class="modal-close-icon icon-gold" src="/subpackages/feature/assets/icons/nav-close-brass.png" mode="aspectFit"></image>
+      </view>
+
+      <view class="modal-plate">
+        <text class="modal-overline">{{selectedAchievement.typeEn || 'BADGE'}}</text>
+        <view class="modal-icon-wrap {{selectedAchievement.unlocked ? '' : 'dim'}}">
+          <image class="modal-icon icon-gold" src="{{selectedAchievement.icon || '/assets/icons/medal_gold.png'}}" mode="aspectFit"></image>
+        </view>
+        <text class="modal-title">{{selectedAchievement.name}}</text>
+        <view class="modal-status-row">
+          <text class="modal-type">{{selectedAchievement.typeLabel || ''}}</text>
+          <view class="modal-status-pill {{selectedAchievement.unlocked ? 'on' : 'off'}}">
+            <text>{{selectedAchievement.statusLabel}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="modal-body">
+        <view class="modal-block">
+          <text class="block-label">完成条件</text>
+          <text class="block-text">{{selectedAchievement.condition || selectedAchievement.desc}}</text>
+        </view>
+
+        <view class="modal-block" wx:if="{{!selectedAchievement.unlocked}}">
+          <view class="block-row">
+            <text class="block-label">当前进度</text>
+            <text class="block-value">{{selectedAchievement.progressText}}</text>
+          </view>
+          <view class="progress-track">
+            <view class="progress-fill" style="width: {{selectedAchievement.progressPercent}}%"></view>
+          </view>
+          <text class="block-hint remain">{{selectedAchievement.remainText}}</text>
+        </view>
+
+        <view class="modal-block reward">
+          <view class="block-row">
+            <text class="block-label">点亮奖励</text>
+            <view class="info-reward" wx:if="{{selectedAchievement.rewardPoints > 0}}">
+              <image class="reward-icon icon-gold" src="/assets/icons/coin_gold.png" mode="aspectFit"></image>
+              <text class="reward-value">+{{selectedAchievement.rewardPoints}}</text>
+            </view>
+          </view>
+          <text class="block-hint" wx:if="{{selectedAchievement.unlocked}}">已计入徽章柜累计积分</text>
+          <text class="block-hint" wx:else>点亮后自动计入累计积分</text>
+        </view>
+      </view>
+
+      <view class="modal-actions" wx:if="{{selectedAchievement.unlocked}}">
+        <view class="modal-share-btn" hover-class="modal-share-press" bindtap="shareSingleAchievement">
+          <image class="share-icon-small icon-gold" src="/assets/icons/share.png" mode="aspectFit"></image>
+          <text class="share-text">分享这枚徽章</text>
+        </view>
+      </view>
+      <view class="modal-actions" wx:else>
+        <view class="modal-dismiss-btn" hover-class="modal-share-press" bindtap="closeModal">
+          <text class="dismiss-text">知道了</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 解锁提示 -->
+  <view class="unlock-overlay {{showUnlockAnimation ? 'show' : ''}}" wx:if="{{unlockedAchievement}}" catchtap="closeUnlockAnimation">
+    <view class="unlock-content" catchtap="stopPropagation">
+      <view class="unlock-icon-wrap">
+        <image class="unlock-icon icon-gold" src="{{unlockedAchievement.icon || '/assets/icons/medal_gold.png'}}" mode="aspectFit"></image>
+      </view>
+      <text class="unlock-overline">ACHIEVEMENT</text>
+      <text class="unlock-title">徽章已点亮</text>
+      <text class="unlock-name">{{unlockedAchievement.name}}</text>
+      <view class="unlock-reward" wx:if="{{unlockedAchievement.rewardPoints > 0}}">
+        <image class="reward-icon icon-gold" src="/assets/icons/coin_gold.png" mode="aspectFit"></image>
+        <text class="reward-label">积分</text>
+        <text class="reward-value">+{{unlockedAchievement.rewardPoints}}</text>
+      </view>
+      <text class="unlock-hint" wx:if="{{unlockedAchievement.rewardPoints > 0}}">已计入徽章柜累计积分</text>
+      <text class="unlock-hint" wx:else>徽章已收入你的徽章柜</text>
+      <view class="unlock-actions">
+        <view class="unlock-btn" hover-class="unlock-btn-press" bindtap="closeUnlockAnimation">知道了</view>
+        <view class="unlock-btn primary" hover-class="unlock-btn-press" bindtap="shareUnlockedAchievement">分享</view>
+      </view>
+    </view>
+  </view>
+  <easter-egg-note id="easterEggNote" />
+</view>

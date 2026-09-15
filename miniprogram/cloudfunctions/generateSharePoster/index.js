@@ -16,13 +16,36 @@ exports.main = async (event, context) => {
   }
 
   try {
-    const rec = await db.collection('identification_records').doc(record_id).get()
-    const doc = rec.data
-    if (!doc) {
-      return { success: false, msg: '记录不存在' }
+    let doc = null
+    try {
+      const rec = await db.collection('identification_records').doc(record_id).get()
+      doc = rec && rec.data
+    } catch (e) {
+      return { success: false, code: 'RECORD_NOT_FOUND', msg: '记录不存在' }
     }
-    if (doc._openid && doc._openid !== wxContext.OPENID) {
+    if (!doc) {
+      return { success: false, code: 'RECORD_NOT_FOUND', msg: '记录不存在' }
+    }
+    // 归属校验：必须本人记录。原实现仅在 doc._openid 存在时才比对，
+    // 无归属字段的历史记录会被放行、并顺手写成 is_shared 转为公开
+    if (!doc._openid || doc._openid !== wxContext.OPENID) {
       return { success: false, msg: '无权生成该记录海报' }
+    }
+
+    // 生成分享海报 = 用户主动公开该条鉴定（重试一次，避免好友扫码仍未公开）
+    let sharedOk = false
+    for (let i = 0; i < 2 && !sharedOk; i++) {
+      try {
+        await db.collection('identification_records').doc(record_id).update({
+          data: { is_shared: true, shared_at: Date.now() }
+        })
+        sharedOk = true
+      } catch (e) {
+        console.warn('标记 is_shared 失败', i, e && e.message)
+      }
+    }
+    if (!sharedOk) {
+      return { success: false, msg: '公开鉴定失败，请稍后重试再分享' }
     }
 
     // 1. 小程序码（scene 最长 32，Mongo _id 通常为 24 位）
@@ -33,13 +56,16 @@ exports.main = async (event, context) => {
 
     const wxacodeRes = await cloud.openapi.wxacode.getUnlimited({
       scene,
-      page: 'pages/identify/result/index',
+      page: 'subpackages/feature/identify/result/index',
       width: 430,
       autoColor: false,
       lineColor: { r: 212, g: 175, b: 55 },
       isHyaline: true,
       checkPath: false,
-      envVersion: 'release'
+      // 开发/体验版测试时，让二维码指向对应版本（默认正式版）
+      envVersion: ['release', 'trial', 'develop'].includes(String(event.env_version || ''))
+        ? String(event.env_version)
+        : 'release'
     })
 
     let qrBuffer = null
@@ -86,8 +112,9 @@ exports.main = async (event, context) => {
         species_name_latin: si.species_name_latin || '',
         fun_fact: ai.fun_fact || '',
         brief: si.brief_description || '',
+        protection_label: (doc.species_profile && doc.species_profile.shareProtection) || '',
         poster_title: '山海造物 · AI 标本鉴定',
-        brand_sub: '把山海带回家',
+        brand_sub: '把山川带回家',
         brand_en: "NATURE'S CREATIONS"
       }
     }

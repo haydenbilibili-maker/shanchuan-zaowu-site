@@ -21,6 +21,11 @@ exports.main = async (event) => {
       if (draftId) {
         const res = await db.collection('custom_drafts').doc(draftId).get()
         doc = res.data
+        // 归属校验：draftId 分支此前绕过 shareEnabled，拿到 id 即可读他人定制方案
+        const isOwner = !!doc && !!doc._openid && doc._openid === openid
+        if (doc && !isOwner && !doc.shareEnabled) {
+          return { success: false, msg: '方案未公开分享' }
+        }
       } else {
         const res = await db.collection('custom_drafts')
           .where({ shareToken, shareEnabled: true })

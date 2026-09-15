@@ -1,12 +1,13 @@
-<view class="container">
+<wxs src="../../utils/latinDisplay.wxs" module="latin" />
+<view class="container {{isSinglePage ? 'is-single-page' : ''}}">
   
-  <!-- 🔧 重写：状态栏占位，防止内容被遮挡 -->
-  <view class="status-bar-placeholder" style="height: {{navTop}}px;"></view>
+  <!-- 🔧 重写：状态栏占位，防止内容被遮挡；单页模式改用微信固定顶栏 -->
+  <view class="status-bar-placeholder" wx:if="{{!isSinglePage}}" style="height: {{navTop}}px;"></view>
   
-  <view class="nav-fixed-wrapper" style="top: {{navTop}}px;">
+  <view class="nav-fixed-wrapper" wx:if="{{!isSinglePage}}" style="top: {{navTop}}px;">
     <view class="nav-bar">
-      <view class="header-capsule {{isScrolled ? 'hidden' : ''}}" bindtap="handleSearch">
-        <view class="brand-part">
+      <view class="header-capsule {{isScrolled ? 'hidden' : ''}}" bindtap="handleSearch" hover-class="header-capsule-press" hover-stay-time="80">
+        <view class="brand-part" catchlongpress="onEasterEggLongPress" data-egg-id="zhulong">
           <view class="brand-en-wrap">
             <text class="brand-en">NATURE'S</text>
             <text class="brand-en brand-en-second">CREATIONS</text>
@@ -16,34 +17,66 @@
         <view class="v-divider"></view>
         <view class="search-part">
           <icon type="search" size="12" color="rgba(255,255,255,0.6)"></icon>
-          <text>搜索藏品...</text>
+          <text>搜索藏品…</text>
         </view>
       </view>
     </view>
   </view>
 
   <!-- 🔧 重写：内容顶部占位，避免内容被导航栏遮挡 -->
-  <view class="content-spacer" style="height: {{navTop + 44}}px;"></view>
+  <view class="content-spacer" wx:if="{{!isSinglePage}}" style="height: {{navTop + 44}}px;"></view>
 
   <scroll-view scroll-y class="main-scroll" bindscroll="onPageScroll" enable-back-to-top>
     
-    <!-- 轮播图模块 -->
-    <view class="hero-section" wx:if="{{showBanners}}">
+    <!-- 轮播图模块：有直播时首位抢插「直播中」帧；无直播时恢复 baseBanners -->
+    <view class="hero-section" wx:if="{{showBanners || (showLive && liveSession && liveSession.pullUrl)}}">
       <!-- 骨架屏 -->
       <view class="skeleton-banner" wx:if="{{loadingBanners}}">
         <view class="sk-banner-item"></view>
       </view>
       <!-- 实际内容 -->
-      <swiper wx:else class="hero-swiper" autoplay circular interval="6000" duration="800" indicator-dots="{{false}}" bindchange="onSwiperChange">
+      <swiper
+        wx:else
+        class="hero-swiper"
+        current="{{currentBannerIndex}}"
+        autoplay="{{heroAutoplay}}"
+        circular="{{banners.length > 1}}"
+        interval="{{banners[0] && banners[0].isLive ? 8000 : 6000}}"
+        duration="450"
+        indicator-dots="{{false}}"
+        bindchange="onSwiperChange"
+      >
         <block wx:for="{{banners}}" wx:key="id">
           <swiper-item>
-            <view class="hero-item" bindtap="onBannerTap" data-item="{{item}}">
-              <image class="hero-img" src="{{item.image}}" mode="aspectFill" />
-              <view class="hero-mask-vignette"></view> 
+            <view
+              class="hero-item {{item.isLive ? 'hero-live' : ''}}"
+              catchtap="onBannerTap"
+              data-item="{{item}}"
+              data-id="{{item.id}}"
+              data-link="{{item.link}}"
+            >
+              <image class="hero-img" src="{{item.image}}" mode="aspectFill" lazy-load="{{index > 0}}" />
+              <view class="hero-mask-vignette"></view>
+              <!-- 直播信号叠层：加深蒙版 + 细线框 + 扫描线 + 信号条 -->
+              <block wx:if="{{item.isLive}}">
+                <view class="hero-live-mask"></view>
+                <view class="hero-live-frame">
+                  <view class="hero-live-scan"></view>
+                  <view class="hero-live-signal-bars">
+                    <view class="bar"></view>
+                    <view class="bar"></view>
+                    <view class="bar"></view>
+                  </view>
+                </view>
+              </block>
               <view class="hero-content slide-up-anim">
-                <view class="hero-badge"><text>精选</text></view>
+                <view class="hero-badge {{item.isLive ? 'live' : ''}}">
+                  <view class="signal-light live blink" wx:if="{{item.isLive}}"></view>
+                  <text>{{item.badge || '精选'}}</text>
+                </view>
                 <text class="h-title">{{item.title}}</text>
                 <text class="h-sub">{{item.subtitle || '探索未知'}}</text>
+                <view class="hero-live-cta" wx:if="{{item.isLive}}">进入直播间 ›</view>
               </view>
             </view>
           </swiper-item>
@@ -51,7 +84,7 @@
       </swiper>
       <view class="dots-row">
         <block wx:for="{{banners}}" wx:key="id">
-           <view class="dot-line {{currentBannerIndex === index ? 'active' : ''}}">
+           <view class="dot-line {{currentBannerIndex === index ? 'active' : ''}} {{item.isLive ? 'live' : ''}}">
              <view class="progress" wx:if="{{currentBannerIndex === index}}"></view>
            </view>
         </block>
@@ -62,7 +95,7 @@
     <view class="section-box orbs-section orbs-first" wx:if="{{showCategories}}">
       <view class="section-header-row section-header-compact">
         <view class="title-group">
-          <text class="t-cn">博物标本室</text>
+          <text class="t-cn">博物藏品室</text>
           <text class="t-en">SPECIMEN ARCHIVES</text>
         </view>
       </view>
@@ -72,11 +105,13 @@
           <view class="orb-wrapper {{currentOrbId === item._id ? 'active' : (currentOrbId ? 'dimmed' : '')}}" 
                 bindtap="onOrbClick" 
                 data-id="{{item._id}}"
-                data-type="category">
+                hover-class="orb-press"
+                hover-stay-time="80">
             <view class="orb-sphere floating" style="animation-delay: {{index * 0.4}}s;">
                <view class="orb-inner-light"></view>
                <view class="orb-texture"></view>
                <view class="orb-ring"></view>
+               <view class="orb-particle"></view>
                <view class="orb-highlight"></view>
                <text class="orb-icon">{{item.icon}}</text>
             </view>
@@ -90,45 +125,25 @@
         </block>
       </view>
 
-      <view class="orb-matrix orb-matrix-services">
-        <block wx:for="{{serviceOrbs}}" wx:key="_id">
-          <view class="orb-wrapper orb-wrapper-service"
-                bindtap="onOrbClick"
-                data-id="{{item._id}}"
-                data-type="service"
-                data-action="{{item.action}}">
-            <view class="orb-sphere floating" style="animation-delay: {{item.animDelay}}s;">
-               <view class="orb-inner-light"></view>
-               <view class="orb-texture"></view>
-               <view class="orb-ring"></view>
-               <view class="orb-highlight"></view>
-               <text class="orb-icon">{{item.icon}}</text>
-            </view>
-            <view class="orb-shadow floating-shadow" style="animation-delay: {{item.animDelay}}s;"></view>
-            <view class="orb-meta">
-              <text class="cn">{{item.displayName}}</text>
-              <text class="en">{{item.enName}}</text>
-            </view>
-          </view>
-        </block>
-      </view>
-
       <view class="orb-expansion-panel {{orbExpanded ? 'expanded' : ''}}">
          <view class="panel-line-top"></view>
-         <scroll-view scroll-x class="orb-product-scroll" enable-flex bindscrolltolower="loadMoreOrbData">
+         <scroll-view scroll-x class="orb-product-scroll" enable-flex bindscrolltolower="loadMoreOrbData" lower-threshold="80">
             <view class="orb-loader" wx:if="{{orbLoading}}">
                <view class="sk-card"></view><view class="sk-card"></view><view class="sk-card"></view>
             </view>
             <block wx:else>
-              <block wx:for="{{orbProducts}}" wx:key="uniqueId">
-                <view class="op-card" catchtap="goToDetail" data-id="{{item._id}}">
+              <view class="orb-empty" wx:if="{{orbProducts.length === 0}}">
+                <text>该品类暂无上架藏品</text>
+              </view>
+              <block wx:for="{{orbProducts}}" wx:key="_id">
+                <view class="op-card" catchtap="goToDetail" data-id="{{item._id}}" hover-class="op-card-press" hover-stay-time="80">
                    <view class="op-img-box">
-                      <image class="op-img" src="{{item.image}}" mode="aspectFill"></image>
+                      <image class="op-img" src="{{item.image}}" mode="aspectFill" lazy-load></image>
                       <view class="op-rare-tag" wx:if="{{index % 3 === 0}}">珍稀</view>
                    </view>
                    <view class="op-info">
                       <text class="op-title text-cut">{{item.title}}</text>
-                      <text class="op-latin text-cut">{{item.latinName}}</text>
+                      <text class="op-latin text-cut" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
                       <view class="op-bot">
                         <text class="op-price">¥{{item.price}}</text>
                         <view class="op-btn">+</view>
@@ -136,7 +151,8 @@
                    </view>
                 </view>
               </block>
-              <view class="op-more-card" catchtap="goToCategory" data-id="{{currentOrbId}}">
+              <view class="orb-loading-more" wx:if="{{orbLoadingMore}}">加载中</view>
+              <view class="op-more-card" catchtap="goToCategory" data-id="{{currentOrbId}}" hover-class="op-card-press" hover-stay-time="80">
                  <text class="txt">查看全部</text><text class="arr">→</text>
               </view>
               <view style="width: 30rpx; flex-shrink: 0;"></view>
@@ -147,7 +163,7 @@
 
     <!-- 为你推荐 -->
     <view class="section-box" wx:if="{{showRecommendations && (recommendations.length > 0 || loadingRecommendations)}}">
-      <view class="section-header-row">
+      <view class="section-header-row section-header-compact">
         <view class="title-group">
           <text class="t-cn">为你推荐</text>
           <text class="t-en">FOR YOU</text>
@@ -163,20 +179,31 @@
       
       <scroll-view wx:elif="{{recommendations.length > 0}}" scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
         <block wx:for="{{recommendations}}" wx:key="_id">
-          <view class="recommend-card" bindtap="goToDetail" data-id="{{item._id}}">
+          <view class="recommend-card" bindtap="goToDetail" data-id="{{item._id}}" hover-class="recommend-card-press" hover-stay-time="80">
             <view class="rec-image-wrapper">
-              <image class="rec-image" src="{{item.image || item.httpImage}}" mode="aspectFill" lazy-load></image>
+              <sensitive-blur-gate
+                enabled="{{item.sensitiveBlur}}"
+                product-id="{{item._id}}"
+                size="card"
+              >
+                <image
+                  class="rec-image"
+                  src="{{item.image || item.httpImage}}"
+                  mode="aspectFill"
+                  lazy-load
+                ></image>
+              </sensitive-blur-gate>
               <view class="rec-overlay"></view>
+              <protected-badge product="{{item}}" size="xs" corner="bl" />
               <view class="rec-reason">{{item.reason}}</view>
             </view>
             <view class="rec-info">
               <text class="rec-title text-cut">{{item.title}}</text>
               <view class="rec-meta">
-                <text class="rec-latin text-cut" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+                <text class="rec-latin text-cut" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
                 <text class="rec-price" wx:if="{{item.price}}">¥{{item.price}}</text>
               </view>
             </view>
-            <view class="rec-shine"></view>
           </view>
         </block>
         <view style="width: 30rpx; flex-shrink: 0;"></view>
@@ -184,35 +211,35 @@
     </view>
 
     <!-- 最新入库 -->
-    <view class="section-box section-compact" wx:if="{{showNewArrivals}}">
+    <view class="section-box section-compact home-feed-section" wx:if="{{showNewArrivals}}">
       <view class="section-header-row section-header-compact">
         <view class="title-group">
           <text class="t-cn">最新入库</text>
           <text class="t-en">NEW ARRIVALS</text>
         </view>
       </view>
-      <product-list id="newArrivalsList" page-size="{{10}}" bind:itemtap="goToDetail" />
+      <product-list id="newArrivalsList" page-size="{{6}}" auto-fill-max="{{1}}" bind:itemtap="goToDetail" />
     </view>
 
-    <!-- 标本工坊 -->
-    <view class="section-box atelier-section">
-      <view class="section-header-row atelier-header-row">
+    <!-- 标本工坊（进入视口中部后暂停上方商品流分页） -->
+    <view class="section-box atelier-section home-below-feed-anchor">
+      <view class="section-header-row section-header-compact atelier-header-row">
         <view class="title-group">
           <text class="t-cn">标本工坊</text>
           <text class="t-en">NATURE'S ATELIER</text>
         </view>
       </view>
-      <view class="atelier-card-pro" bindtap="goToCustom">
+      <view class="atelier-card-pro" bindtap="goToCustom" hover-class="atelier-card-press" hover-stay-time="80">
         <image class="atelier-hero-img" src="{{atelierHeroImage}}" mode="aspectFill" lazy-load />
         <view class="atelier-hero-mask"></view>
         <view class="atelier-brass-frame"></view>
         <view class="atelier-content">
-          <view class="atelier-badge">星宸标本工作室</view>
+          <view class="atelier-badge">{{workshopStoreName}}</view>
           <text class="atelier-tagline">把山海带回家</text>
           <text class="atelier-desc">装裱定制与伴宠记忆，在同一盏暖光下完成</text>
           <view class="atelier-paths">
-            <view class="atelier-path-chip">标本定制</view>
-            <view class="atelier-path-chip soft">伴宠记忆</view>
+            <view class="atelier-path-chip" wx:if="{{showSpecimenCustom}}">标本定制</view>
+            <view class="atelier-path-chip soft" wx:if="{{showPetMemorial}}">伴宠记忆</view>
           </view>
           <view class="atelier-cta-row">
             <text class="atelier-cta">进入工坊</text>
@@ -222,43 +249,14 @@
       </view>
     </view>
 
-    <!-- 走进这有店 -->
-    <view class="section-box explore-store-section" wx:if="{{showExploreStore && (exploreStore || loadingExploreStore)}}">
-      <view class="section-header-row">
-        <view class="title-group">
-          <text class="t-cn">走进这有店</text>
-          <text class="t-en">ZHEIYUSHAN</text>
-        </view>
-      </view>
-      <view class="skeleton-explore-store" wx:if="{{loadingExploreStore}}"></view>
-      <view class="explore-store-card" wx:elif="{{exploreStore}}" bindtap="goToExploreStore" hover-class="explore-store-card-hover">
-        <image class="explore-store-img" src="{{exploreStore.coverImage}}" mode="aspectFill" lazy-load />
-        <view class="explore-store-mask"></view>
-        <view class="explore-store-frame"></view>
-        <view class="explore-store-content">
-          <text class="explore-store-overline">走进这有店 · 这有山</text>
-          <text class="explore-store-name">{{exploreStore.name}}</text>
-          <view class="explore-store-meta">
-            <text class="explore-store-status {{exploreStore.openStatus.statusClass}}">{{exploreStore.openStatus.label}}</text>
-            <text class="explore-store-dot" wx:if="{{exploreStore.distanceText}}">·</text>
-            <text class="explore-store-distance" wx:if="{{exploreStore.distanceText}}">{{exploreStore.distanceText}}</text>
-          </view>
-          <view class="explore-store-cta-row">
-            <text class="explore-store-cta">查看门店</text>
-            <text class="explore-store-arrow">→</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
     <!-- 专题展览 -->
     <view class="section-box" wx:if="{{showCollections}}">
-      <view class="section-header-row">
+      <view class="section-header-row section-header-compact">
         <view class="title-group">
           <text class="t-cn">专题展览</text>
           <text class="t-en">EXHIBITIONS</text>
         </view>
-        <view class="more-link" bindtap="goToCategory" wx:if="{{!loadingCollections}}">查看全部 →</view>
+        <view class="more-link" bindtap="goToCategory" wx:if="{{!loadingCollections}}" hover-class="more-link-press" hover-stay-time="80">查看全部 →</view>
       </view>
       <!-- 骨架屏 -->
       <view class="skeleton-exhibitions" wx:if="{{loadingCollections}}">
@@ -267,10 +265,9 @@
       <!-- 实际内容 -->
       <scroll-view wx:elif="{{collections.length > 0}}" scroll-x class="exhibit-scroll" enable-flex show-scrollbar="{{false}}">
         <block wx:for="{{collections}}" wx:key="_id">
-          <view class="exhibit-card-pro" bindtap="goToCollectionDetail" data-id="{{item._id}}">
+          <view class="exhibit-card-pro" bindtap="goToCollectionDetail" data-id="{{item._id}}" hover-class="exhibit-card-press" hover-stay-time="80">
             <image class="ec-img" src="{{item.cover}}" mode="aspectFill" lazy-load />
             <view class="ec-overlay"></view>
-            <view class="ec-shine"></view>
             <view class="ec-info">
                <view class="ec-tag">专题</view>
                <text class="ec-title">{{item.title}}</text>
@@ -281,19 +278,20 @@
         </block>
         <view style="width: 30rpx; flex-shrink: 0;"></view>
       </scroll-view>
+      <view class="section-empty" wx:else>专题筹备中</view>
     </view>
 
     <!-- 名师手作模块 -->
     <view class="section-box" wx:if="{{showFramers}}">
-      <view class="section-header-row"><view class="title-group"><text class="t-cn">名师手作</text><text class="t-en">ARTIST SPOTLIGHT</text></view></view>
+      <view class="section-header-row section-header-compact"><view class="title-group"><text class="t-cn">名师手作</text><text class="t-en">ARTIST SPOTLIGHT</text></view></view>
       <!-- 骨架屏 -->
       <view class="skeleton-artists" wx:if="{{loadingFramers}}">
         <view class="sk-artist-card" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
       </view>
       <!-- 实际内容 -->
-      <scroll-view wx:elif="{{framers.length > 0}}" scroll-x class="artist-scroll" enable-flex>
+      <scroll-view wx:elif="{{framers.length > 0}}" scroll-x class="artist-scroll" enable-flex show-scrollbar="{{false}}">
         <block wx:for="{{framers}}" wx:key="_id">
-          <view class="artist-card-v3" bindtap="goToFramer" data-id="{{item._id}}">
+          <view class="artist-card-v3" bindtap="goToFramer" data-id="{{item._id}}" hover-class="artist-card-press" hover-stay-time="80">
              <!-- 图片容器 -->
              <view class="ac-image-wrapper">
                <image class="ac-bg" src="{{item.avatar}}" mode="aspectFill" lazy-load></image>
@@ -310,12 +308,50 @@
              </view>
           </view>
         </block>
+        <view style="width: 32rpx; flex-shrink: 0;"></view>
       </scroll-view>
+      <view class="section-empty" wx:else>名师档案筹备中</view>
+    </view>
+
+    <!-- 标本师招募常驻条（置于名师手作下方）— 博物柜铭牌式 -->
+    <view
+      class="recruit-rail"
+      catchtap="goToFramerRecruit"
+      hover-class="recruit-rail-press"
+      hover-stay-time="80"
+      hover-stop-propagation="{{true}}"
+    >
+      <view class="recruit-rail-texture"></view>
+      <view class="recruit-rail-corner recruit-rail-corner--tl"></view>
+      <view class="recruit-rail-corner recruit-rail-corner--tr"></view>
+      <view class="recruit-rail-corner recruit-rail-corner--bl"></view>
+      <view class="recruit-rail-corner recruit-rail-corner--br"></view>
+
+      <view class="recruit-rail-spine">
+        <text class="recruit-rail-spine-mark">合作</text>
+      </view>
+
+      <view class="recruit-rail-body">
+        <view class="recruit-rail-meta">
+          <text class="recruit-rail-kicker">FRAMER RECRUIT</text>
+          <view class="recruit-rail-rule"></view>
+        </view>
+        <text class="recruit-rail-title">标本师招募</text>
+        <view class="recruit-rail-pills">
+          <text class="recruit-rail-pill">门店渠道</text>
+          <text class="recruit-rail-pill">小程序上架</text>
+          <text class="recruit-rail-pill">分成合作</text>
+        </view>
+      </view>
+
+      <view class="recruit-rail-cta">
+        <text class="recruit-rail-arrow">›</text>
+      </view>
     </view>
 
     <!-- 近期活动模块 -->
     <view class="section-box" wx:if="{{showActivities && activities.length > 0}}">
-      <view class="section-header-row">
+      <view class="section-header-row section-header-compact">
         <view class="title-group">
           <text class="t-cn">近期活动</text>
           <text class="t-en">UPCOMING EVENTS</text>
@@ -324,7 +360,7 @@
       
       <scroll-view scroll-x class="ticket-scroll-view" enable-flex>
         <block wx:for="{{activities}}" wx:key="_id">
-          <view class="rich-ticket" bindtap="goToBooking">
+          <view class="rich-ticket" bindtap="goToBooking" hover-class="rich-ticket-press" hover-stay-time="80">
              <view class="ticket-stub">
                 <view class="stub-header"><text class="stub-label">ADMIT ONE</text></view>
                 <view class="stub-date"><text class="sd-day">{{item.day}}</text><text class="sd-month">{{item.month}}</text></view>
@@ -332,7 +368,7 @@
                 <view class="rip-line"></view>
              </view>
              <view class="ticket-main">
-                <image class="tm-bg" src="{{item.cover}}" mode="aspectFill"></image>
+                <image class="tm-bg" src="{{item.cover}}" mode="aspectFill" lazy-load></image>
                 <view class="tm-mask"></view>
                 <view class="tm-content">
                    <view class="tm-top">
@@ -362,10 +398,12 @@
       <view class="f-text-wrap">
         <text class="f-tagline">把山海带回家</text>
         <text class="f-text">NATURE'S CREATIONS · EST. 2026</text>
+        <text class="f-single-page-note" wx:if="{{isSinglePage}}">朋友圈预览 · 可下滑浏览内容</text>
       </view>
       <view class="f-line"></view>
     </view>
     
-    <view style="height: 120rpx;"></view>
+    <view class="scroll-bottom-pad"></view>
   </scroll-view>
+  <easter-egg-note id="easterEggNote" />
 </view>

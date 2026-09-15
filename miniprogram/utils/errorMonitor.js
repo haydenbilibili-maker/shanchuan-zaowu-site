@@ -7,7 +7,7 @@ class ErrorMonitor {
   constructor() {
     this.errorQueue = [];
     this.maxQueueSize = 50;
-    this.reportInterval = 5000; // 5秒上报一次
+    this.reportInterval = 30000; // 有积压再上报，避免空转轮询
     this.timer = null;
     this.initialized = false;
     // 延迟初始化，避免在模块加载时出现问题

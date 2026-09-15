@@ -6,7 +6,8 @@ const { cdnPath } = require('./cdn')
 
 const SH = 'stores/shanhaizaowu'
 const XC = cdnPath('stores/store_xingchen.png')
-const SH_COVER = cdnPath('stores/store_shanhaizaowu.png')
+/** 这有店 · 山海造物展陈导览页底图（特写空镜） */
+const SH_COVER = cdnPath('banners/DSC03847.JPG')
 
 function seq(prefix, count) {
   return Array.from({ length: count }, (_, i) => {

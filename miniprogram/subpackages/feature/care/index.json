@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "标本养护",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "usingComponents": {
+    "easter-egg-note": "/components/EasterEggNote/index"
+  }
+}

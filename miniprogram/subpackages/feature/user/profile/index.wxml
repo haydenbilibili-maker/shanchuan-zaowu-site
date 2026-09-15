@@ -1,0 +1,361 @@
+<!--subpackages/feature/user/profile/index.wxml-->
+<view class="account-page page-profile">
+  <view class="grain-overlay"></view>
+
+  <view
+    class="account-nav profile-nav"
+    style="padding-right: {{navPaddingRight}}px;"
+  >
+    <view class="account-nav-row">
+      <view class="account-nav-brand">
+        <text class="account-nav-title">藏家档案</text>
+        <text class="account-nav-sub">COLLECTOR PROFILE</text>
+      </view>
+      <text class="account-nav-badge" wx:if="{{!loadError}}">{{profileScore}}%</text>
+    </view>
+  </view>
+
+  <!-- 页面原生滚动；头像热区用普通 view + chooseMedia（真机 chooseAvatar 不稳定） -->
+  <view
+    class="profile-body"
+    style="padding-top: {{headerBlockPx}}px; padding-bottom: {{footerPadPx}}px;"
+  >
+    <view class="profile-body-pad"></view>
+
+    <!-- 加载骨架 -->
+    <view class="profile-skeleton" wx:if="{{loading}}">
+      <view class="sk-card sk-hero sk-shine"></view>
+      <view class="sk-card sk-shine" wx:for="{{[1,2,3]}}" wx:key="*this"></view>
+    </view>
+
+    <!-- 加载失败 -->
+    <view class="profile-state" wx:elif="{{loadError}}">
+      <image class="profile-state-icon" src="/assets/icons/user.png" mode="aspectFit"></image>
+      <text class="profile-state-title">档案暂时无法读取</text>
+      <text class="profile-state-desc">请检查网络后重试</text>
+      <view class="profile-retry" hover-class="profile-retry-press" hover-stay-time="80" bindtap="retryLoad">重新读取</view>
+    </view>
+
+    <block wx:else>
+      <!-- 藏家身份 -->
+      <view class="account-section-card profile-plate">
+        <view class="plate-head">
+          <text class="plate-overline">IDENTITY</text>
+          <text class="plate-title">藏家身份</text>
+        </view>
+
+        <!-- 整块热区：圆 + 相机角标 + 文案 → 同一 tap → chooseMedia -->
+        <view class="profile-hero">
+          <view
+            class="avatar-hit"
+            hover-class="avatar-hit-press"
+            hover-stay-time="80"
+            catchtap="onChangeAvatar"
+            aria-label="更换头像"
+          >
+            <view class="avatar-stack {{avatarPickError ? 'has-error' : ''}}">
+              <view class="avatar-ring" style="{{avatarRingStyle}}" aria-hidden="true"></view>
+              <view class="avatar-face">
+                <image
+                  class="avatar-img"
+                  src="{{avatarLoadError || !avatarUrl ? '/assets/icons/user.png' : avatarUrl}}"
+                  mode="aspectFill"
+                  binderror="onAvatarError"
+                ></image>
+              </view>
+              <view class="avatar-badge" aria-hidden="true">
+                <image class="avatar-badge-icon" src="/assets/icons/camera.png" mode="aspectFit"></image>
+              </view>
+            </view>
+            <text class="avatar-hint {{avatarPickError ? 'has-error' : ''}}">{{avatarPickError ? '头像未更新，点击重试' : (avatarSaving ? '头像保存中…' : '点击更换头像')}}</text>
+          </view>
+        </view>
+
+        <view class="profile-identity">
+          <text class="identity-overline">藏家代号</text>
+          <view class="nick-field">
+            <input
+              class="nick-input"
+              type="nickname"
+              value="{{nickName}}"
+              bindinput="onNickInput"
+              maxlength="20"
+              placeholder="输入你的藏家代号"
+              placeholder-class="nick-placeholder"
+            />
+            <image class="nick-edit-icon" src="/subpackages/feature/assets/icons/edit.png" mode="aspectFit"></image>
+          </view>
+          <view
+            class="member-plate"
+            hover-class="member-plate-press"
+            hover-stay-time="80"
+            bindtap="copyMemberNo"
+            aria-label="复制会员卡编号"
+          >
+            <view class="member-plate-frame" aria-hidden="true"></view>
+            <view class="member-plate-rivet tl" aria-hidden="true"></view>
+            <view class="member-plate-rivet tr" aria-hidden="true"></view>
+            <view class="member-plate-rivet bl" aria-hidden="true"></view>
+            <view class="member-plate-rivet br" aria-hidden="true"></view>
+
+            <view class="member-plate-main">
+              <view class="member-plate-titles">
+                <text class="member-plate-cn">会员卡号·</text>
+                <text class="member-plate-en">MEMBER ID</text>
+              </view>
+              <text class="member-plate-code">{{memberNo || '—'}}</text>
+              <text class="member-plate-note">会员卡编号 · 点按复制</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="score-divider"></view>
+
+        <view class="score-bar">
+          <view class="score-bar-head">
+            <text class="score-bar-label">档案完成度</text>
+            <text class="score-bar-val">{{profileScore}}%</text>
+          </view>
+          <view class="score-bar-track">
+            <view class="score-bar-fill" style="width: {{profileScore}}%;"></view>
+          </view>
+          <text class="score-bar-note">{{rewardHint}}</text>
+        </view>
+      </view>
+
+      <!-- 基础资料 -->
+      <view class="account-section-card">
+        <view class="plate-head">
+          <text class="plate-overline">BASICS</text>
+          <text class="plate-title">基础资料</text>
+        </view>
+
+        <view class="phone-bound" wx:if="{{phoneBound}}">
+          <view class="phone-bound-meta">
+            <text class="phone-bound-label">手机号</text>
+            <text class="phone-bound-tip">用于订单与门店通知</text>
+          </view>
+          <text class="phone-bound-val">{{phoneMasked}}</text>
+        </view>
+        <view class="phone-bind-block" wx:else>
+          <view class="phone-bind-copy">
+            <view class="phone-bind-icon-wrap">
+              <image class="phone-bind-icon" src="/assets/icons/phone.png" mode="aspectFit"></image>
+            </view>
+            <view class="phone-bind-text">
+              <text class="phone-bind-title">绑定手机号</text>
+              <text class="phone-bind-desc">用于订单通知、预约提醒与门店权益。下单前需完成绑定。</text>
+            </view>
+          </view>
+          <button
+            class="profile-bind-phone"
+            open-type="getPhoneNumber"
+            bindgetphonenumber="onGetPhoneNumber"
+            hover-class="profile-bind-press"
+            hover-stay-time="80"
+          >手机号快捷绑定</button>
+        </view>
+
+        <view class="account-field">
+          <text class="account-field-label">性别</text>
+          <text class="account-field-hint">可选，便于更贴切的称呼与推荐</text>
+          <view class="account-chip-row">
+            <view
+              class="account-chip {{gender === item.key ? 'active' : ''}}"
+              wx:for="{{genderOptions}}"
+              wx:key="key"
+              hover-class="account-chip-press"
+              hover-stay-time="80"
+              bindtap="selectGender"
+              data-key="{{item.key}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+
+        <view class="account-field" id="field-birthday">
+          <text class="account-field-label">生日</text>
+          <text class="account-field-hint field-hint-brass">填写后，生日当天可领取生日礼券与专属祝福</text>
+          <picker mode="date" value="{{birthday}}" end="{{birthdayMax}}" bindchange="onBirthdayChange">
+            <view class="account-picker-val {{birthday ? '' : 'is-placeholder'}}">{{birthday || '选择日期，解锁生日礼券'}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <!-- 兴趣偏好 -->
+      <view class="account-section-card">
+        <view class="plate-head">
+          <text class="plate-overline">PREFERENCES</text>
+          <view class="plate-title-row">
+            <text class="plate-title">兴趣偏好</text>
+            <text class="interest-count" wx:if="{{interests.length}}">已选 {{interests.length}}/5</text>
+          </view>
+        </view>
+        <text class="plate-desc">最多 5 项；选好偏好后，馆藏与活动推荐会更贴合你</text>
+        <view class="account-chip-row">
+          <view
+            class="account-chip interest-chip {{item.selected ? 'active' : ''}}"
+            wx:for="{{interestChips}}"
+            wx:key="key"
+            bindtap="toggleInterest"
+            data-key="{{item.key}}"
+            hover-class="interest-chip-press"
+            hover-stay-time="80"
+            style="{{item.activeStyle}}"
+          >{{item.label}}</view>
+        </view>
+      </view>
+
+      <!-- 敏感形态展示（与 sensitive_blur_pref_v1 / users.sensitiveBlurPref 同 SSOT） -->
+      <view class="account-section-card">
+        <view class="plate-head">
+          <text class="plate-overline">CABINET</text>
+          <text class="plate-title">敏感形态展示</text>
+        </view>
+        <text class="plate-desc">蛇类、两栖等封面是否默认轻掩；与藏品流模糊策略同步</text>
+        <view
+          class="sensitive-option {{sensitiveBlurPref === item.key ? 'active' : ''}}"
+          wx:for="{{sensitiveOptions}}"
+          wx:key="key"
+          hover-class="sensitive-option-press"
+          hover-stay-time="80"
+          bindtap="selectSensitivePref"
+          data-key="{{item.key}}"
+        >
+          <view class="sensitive-option-radio {{sensitiveBlurPref === item.key ? 'on' : ''}}"></view>
+          <view class="sensitive-option-copy">
+            <text class="sensitive-option-label">{{item.label}}</text>
+            <text class="sensitive-option-hint">{{item.hint}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 自我标签 -->
+      <view class="account-section-card">
+        <view class="plate-head">
+          <text class="plate-overline">NOTES</text>
+          <text class="plate-title">自我标签</text>
+        </view>
+        <text class="plate-desc">可选填写，默认仅自己可见</text>
+
+        <view class="account-field">
+          <text class="account-field-label">MBTI</text>
+          <scroll-view scroll-x class="mbti-scroll" enable-flex show-scrollbar="{{false}}">
+            <view class="mbti-inner">
+              <view
+                class="account-chip mbti-chip {{mbti === item ? 'active' : ''}}"
+                wx:for="{{mbtiOptions}}"
+                wx:key="*this"
+                hover-class="account-chip-press"
+                hover-stay-time="80"
+                bindtap="selectMbti"
+                data-key="{{item}}"
+              >{{item}}</view>
+              <view class="mbti-pad"></view>
+            </view>
+          </scroll-view>
+        </view>
+
+        <view class="account-field">
+          <text class="account-field-label">星座</text>
+          <view class="account-chip-row">
+            <view
+              class="account-chip {{zodiac === item.key ? 'active' : ''}}"
+              wx:for="{{zodiacOptions}}"
+              wx:key="key"
+              hover-class="account-chip-press"
+              hover-stay-time="80"
+              bindtap="selectZodiac"
+              data-key="{{item.key}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+
+        <view class="account-field">
+          <text class="account-field-label">一句话</text>
+          <input
+            class="account-field-input bio-input"
+            maxlength="40"
+            value="{{bio}}"
+            bindinput="onBioInput"
+            placeholder="可选，最多 40 字"
+            placeholder-class="nick-placeholder"
+          />
+          <text class="bio-counter">{{bioLength}}/40</text>
+        </view>
+      </view>
+
+      <!-- 隐私设置 -->
+      <view class="account-section-card">
+        <view class="plate-head">
+          <text class="plate-overline">PRIVACY</text>
+          <text class="plate-title">隐私设置</text>
+        </view>
+        <view class="privacy-row" hover-class="privacy-row-press" hover-stay-time="80" bindtap="togglePrivacy" data-key="showMbti">
+          <view class="privacy-meta">
+            <text class="privacy-label">公开 MBTI</text>
+            <text class="privacy-desc">社区与个人主页展示</text>
+          </view>
+          <view class="privacy-switch {{privacy.showMbti ? 'on' : ''}}"></view>
+        </view>
+        <view class="privacy-row" hover-class="privacy-row-press" hover-stay-time="80" bindtap="togglePrivacy" data-key="showZodiac">
+          <view class="privacy-meta">
+            <text class="privacy-label">公开星座</text>
+            <text class="privacy-desc">社区与个人主页展示</text>
+          </view>
+          <view class="privacy-switch {{privacy.showZodiac ? 'on' : ''}}"></view>
+        </view>
+        <view class="privacy-row last" hover-class="privacy-row-press" hover-stay-time="80" bindtap="togglePrivacy" data-key="showBirthday">
+          <view class="privacy-meta">
+            <text class="privacy-label">公开生日月日</text>
+            <text class="privacy-desc">仅展示月日，不含年份</text>
+          </view>
+          <view class="privacy-switch {{privacy.showBirthday ? 'on' : ''}}"></view>
+        </view>
+      </view>
+
+      <!-- 账户与帮助 -->
+      <view class="account-section-card">
+        <view class="plate-head">
+          <text class="plate-overline">HELP</text>
+          <text class="plate-title">账户与帮助</text>
+        </view>
+        <view class="profile-link-row" hover-class="profile-link-press" hover-stay-time="80" bindtap="goFeedback">
+          <text class="profile-link-label">反馈与建议</text>
+          <text class="profile-link-arrow">→</text>
+        </view>
+        <view class="profile-link-row" hover-class="profile-link-press" hover-stay-time="80" bindtap="goSupport">
+          <text class="profile-link-label">联系专员</text>
+          <text class="profile-link-arrow">→</text>
+        </view>
+        <view class="profile-link-row" hover-class="profile-link-press" hover-stay-time="80" bindtap="openLegal" data-type="terms">
+          <text class="profile-link-label">用户服务协议</text>
+          <text class="profile-link-arrow">→</text>
+        </view>
+        <view class="profile-link-row last" hover-class="profile-link-press" hover-stay-time="80" bindtap="openLegal" data-type="privacy">
+          <text class="profile-link-label">隐私政策</text>
+          <text class="profile-link-arrow">→</text>
+        </view>
+      </view>
+
+      <!-- 退出登录（页底危险区，与帮助区分离） -->
+      <view class="profile-logout-block">
+        <view
+          class="profile-logout-btn"
+          hover-class="profile-logout-press"
+          hover-stay-time="80"
+          bindtap="onLogoutTap"
+        >退出登录</view>
+        <text class="profile-logout-hint">清除本机登录状态，不注销云端藏家档案</text>
+      </view>
+    </block>
+  </view>
+
+  <view class="account-footer account-footer-safe profile-footer" wx:if="{{!loading && !loadError}}">
+    <view
+      class="account-btn-primary {{saving || loading || !isDirty ? 'disabled' : ''}}"
+      hover-class="{{saving || loading || !isDirty ? '' : 'account-btn-press'}}"
+      hover-stay-time="80"
+      bindtap="saveProfile"
+    >{{footerPrimaryText}}</view>
+  </view>
+</view>

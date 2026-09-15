@@ -2,17 +2,22 @@
 <view class="container">
   
   <view class="nav-bar" style="top:{{statusBarHeight}}px">
-    <view class="back-btn" bindtap="goBack">✕</view>
   </view>
 
   <!-- 1. 铸造动画 -->
   <view class="minting-layer" wx:if="{{isMinting}}">
     <view class="mint-spinner"></view>
-    <text class="mint-txt">正在铸造专属证书...</text>
+    <text class="mint-txt">正在铸造专属证书…</text>
   </view>
 
-  <!-- 2. 证书展示（canvas 需始终挂载以便铸造时绘制） -->
-  <view class="cert-layer {{showCert ? 'active' : 'preparing'}}">
+  <view class="empty-cert" wx:if="{{missingId && !isMinting}}">
+    <text class="empty-cert-title">未找到证书</text>
+    <text class="empty-cert-desc">请从证书收藏夹进入，或查看已签收订单</text>
+    <view class="empty-cert-btn" hover-class="back-btn-press" bindtap="goBack">返回</view>
+  </view>
+
+  <!-- 2. 证书展示 -->
+  <view class="cert-layer {{showCert ? 'active' : ''}}">
     
     <view class="cert-shadow-box">
        <canvas type="2d" id="certCanvas" class="cert-canvas"></canvas>
@@ -21,15 +26,16 @@
     <!-- 底部操作 -->
     <view class="action-bar safe-area">
       <view class="care-link" bindtap="goToCare" wx:if="{{careGuideUrl || orderId}}">
+        <image class="care-link-icon" src="/assets/icons/care.png" mode="aspectFit"></image>
         <text>如何养护这件藏品 →</text>
       </view>
       <view class="action-row">
-        <button class="icon-btn share" open-type="share">
+        <button class="icon-btn share" open-type="share" hover-class="icon-btn-press">
           <image src="/assets/icons/share.png" class="btn-icon"></image>
           <text>分享</text>
         </button>
         
-        <view class="save-btn" bindtap="saveImage">
+        <view class="save-btn" hover-class="save-btn-press" bindtap="saveImage">
           <text>保存到相册</text>
         </view>
       </view>

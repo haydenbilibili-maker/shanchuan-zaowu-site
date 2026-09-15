@@ -1,10 +1,12 @@
 // pages/ticket/index.js
 const db = wx.cloud.database();
+const { drawMemberQr } = require('../utils/qrCanvas');
 Page({
   data: { 
     statusBarHeight: 20,
     booking: {},
     bookingShortId: '',
+    loadError: false,
     showRescheduleModal: false,
     showCancelModal: false,
     newDate: '',
@@ -17,22 +19,48 @@ Page({
   onLoad(options) {
     const { statusBarHeight } = wx.getSystemInfoSync();
     this.setData({ statusBarHeight });
-    if (options.id) this.loadBooking(options.id);
+    const id = (options && options.id) || '';
+    if (!id) {
+      this.setData({ loadError: true });
+      wx.showToast({ title: '票据信息缺失', icon: 'none' });
+      return;
+    }
+    this.loadBooking(id);
     this.initDate();
     this.initTimeSlots();
   },
   async loadBooking(id) {
-    wx.showLoading({ title: '获取票据...' });
+    if (!id) {
+      this.setData({ loadError: true });
+      return;
+    }
+    wx.showLoading({ title: '获取票据…' });
     try {
       const res = await db.collection('bookings').doc(id).get();
       const booking = res.data || {};
-      const shortId = booking._id ? String(booking._id).slice(-12).toUpperCase() : '';
-      this.setData({ booking, bookingShortId: shortId });
+      if (!booking._id) {
+        this.setData({ loadError: true, booking: {} });
+        wx.showToast({ title: '票据不存在', icon: 'none' });
+        return;
+      }
+      const ticketCode = String(booking.ticketCode || '').trim();
+      const displayNo = ticketCode
+        || String(booking._id).slice(-12).toUpperCase();
+      const qrPayload = booking.qrData
+        || (ticketCode ? `BOOKING:${ticketCode}` : String(booking._id));
+      this.setData({ booking, bookingShortId: displayNo, loadError: false }, () => {
+        drawMemberQr('#ticketQrCanvas', qrPayload, this, 150).catch(() => {});
+      });
     } catch (err) {
+      this.setData({ loadError: true, booking: {} });
       wx.showToast({ title: '票据不存在', icon: 'none' });
     } finally { wx.hideLoading(); }
   },
-  goBack() { wx.navigateBack(); },
+  goBack() {
+    wx.navigateBack({
+      fail: () => wx.redirectTo({ url: '/subpackages/business/booking/index?tab=3&from=ticket' })
+    });
+  },
 
   // 🟢 显示改期弹窗
   showReschedule() {
@@ -58,7 +86,7 @@ Page({
     const dateObj = this.data.weekDays[this.data.selectedDateIndex];
     const timeObj = this.data.timeSlots[this.data.selectedTimeIndex];
     
-    wx.showLoading({ title: '改期中...' });
+    wx.showLoading({ title: '改期中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'updateBooking',
@@ -70,12 +98,13 @@ Page({
       });
 
       wx.hideLoading();
-      if (res.result.success) {
+      const result = (res && res.result) || {};
+      if (result.success) {
         wx.showToast({ title: '改期成功', icon: 'success' });
         this.setData({ showRescheduleModal: false });
         this.loadBooking(this.data.booking._id); // 重新加载
       } else {
-        wx.showToast({ title: res.result.msg || '改期失败', icon: 'none' });
+        wx.showToast({ title: result.msg || '改期失败', icon: 'none' });
       }
     } catch (err) {
       wx.hideLoading();
@@ -98,9 +127,9 @@ Page({
 
     wx.showModal({
       title: '确认取消',
-      content: canFreeCancel 
-        ? '提前24小时取消，可全额退款' 
-        : '距离预约时间不足24小时，将扣除20%手续费',
+      content: canFreeCancel
+        ? '提前 24 小时取消，不收取任何费用'
+        : '距预约时间不足 24 小时，如需取消请联系专员协助',
       confirmText: '确认取消',
       confirmColor: '#C4A76C',
       success: (res) => {
@@ -113,7 +142,7 @@ Page({
 
   // 🟢 执行取消
   async doCancel() {
-    wx.showLoading({ title: '取消中...' });
+    wx.showLoading({ title: '取消中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'cancelBooking',
@@ -124,13 +153,14 @@ Page({
       });
 
       wx.hideLoading();
-      if (res.result.success) {
-        wx.showToast({ title: res.result.msg, icon: 'success' });
+      const result = (res && res.result) || {};
+      if (result.success) {
+        wx.showToast({ title: result.msg || '已取消', icon: 'success' });
         setTimeout(() => {
           wx.navigateBack();
         }, 1500);
       } else {
-        wx.showToast({ title: res.result.msg || '取消失败', icon: 'none' });
+        wx.showToast({ title: result.msg || '取消失败', icon: 'none' });
       }
     } catch (err) {
       wx.hideLoading();

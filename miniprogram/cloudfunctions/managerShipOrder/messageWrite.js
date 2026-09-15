@@ -3,60 +3,183 @@
  */
 const cloud = require('wx-server-sdk')
 
+/** 店长订单备注（随发货私信发送）上限，与前端输入框 maxlength 保持一致 */
+const NOTE_MAX = 100
+/** C 端展示用备注标签：以「馆员留言：」开头，客户端会高亮这一行 */
+const NOTE_LABEL = '馆员留言'
+
+function normalizeOrderNote(value) {
+  return String(value == null ? '' : value)
+    .replace(/[\r\n]+/g, ' ')
+    .trim()
+    .slice(0, NOTE_MAX)
+}
+
+/** 发货私信附录：开箱售后 + 入柜保养（博物柜语气，事实→感受→连接） */
+const SHIPPED_CARE_APPENDIX = [
+  '开箱与售后',
+  '到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。',
+  '',
+  '入柜保养',
+  '入柜后请避直射阳光，注意防潮；玻璃罩与镜框请尽量保持闭合。'
+].join('\n')
+
+/** 发货私信正文：启程说明 + 运单 + 轻取提示 + 开箱保养 + 备注（无备注则不加空行） */
+function buildShippedContent(headLine, v = {}) {
+  const lines = [
+    headLine,
+    `运单号：${v.trackingNo || ''}`,
+    '到柜时请轻取轻放。',
+    '',
+    SHIPPED_CARE_APPENDIX
+  ]
+  const note = normalizeOrderNote(v.note)
+  if (note) lines.push(`${NOTE_LABEL}：${note}`)
+  return lines.join('\n')
+}
+
 const MINI_TEMPLATES = {
   order_created: {
     category: 'order',
-    title: '订单待支付',
-    content: (v) => `您有一笔订单待支付\n${v.productNames || '藏品订单'}\n实付 ¥${v.totalPrice || '0.00'}\n请在 30 分钟内完成支付`,
+    title: '订单待落定',
+    content: (v) => `柜中这几件标本已为你预留\n${v.productNames || '藏品订单'}\n实付 ¥${v.totalPrice || '0.00'}\n请在 30 分钟内完成支付，逾期将自动释出`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_paid: {
     category: 'order',
-    title: '支付成功',
-    content: (v) => `订单 ${v.orderNo || ''} 已支付成功\n实付 ¥${v.totalPrice || '0.00'}\n我们将尽快为您准备发货`,
+    title: '藏品已入账',
+    content: (v) => `订单 ${v.orderNo || ''} 已收妥款项。\n实付 ¥${v.totalPrice || '0.00'}\n馆员将尽快备妥，启程时再信告你`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_shipped: {
     category: 'order',
-    title: '藏品已发出',
-    content: (v) => `订单 ${v.orderNo || ''} 已通过 ${v.carrier || '快递'} 发出\n运单号：${v.trackingNo || ''}`,
+    title: '标本已启程',
+    content: (v) =>
+      buildShippedContent(`这件标本已启程。经 ${v.carrier || '快递'} 运送。\n订单 ${v.orderNo || ''}`, v),
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  order_received: {
+    category: 'order',
+    title: '门店自取完成',
+    content: (v) =>
+      `订单 ${v.orderNo || ''} 已确认到店领取。\n${v.productNames || '藏品'} 已交予你\n${v.tip || '感谢你走进山海造物'}`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  custom_production_framing: {
+    category: 'custom',
+    title: '开始装裱',
+    content: (v) => `订单 ${v.orderNo || ''} 已进入装裱。标本师正细细为你处理`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  custom_production_packing: {
+    category: 'custom',
+    title: '装裱完成',
+    content: (v) => `订单 ${v.orderNo || ''} 装裱已完成，正在包装，即将启程`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  custom_production_shipped: {
+    category: 'custom',
+    title: '定制藏品已启程',
+    content: (v) =>
+      `订单 ${v.orderNo || ''} 定制藏品已启程。\n感谢你的耐心等候。\n\n${SHIPPED_CARE_APPENDIX}`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_cancelled: {
     category: 'order',
-    title: '订单已取消',
+    title: '订单已释出',
     content: (v) => `订单 ${v.orderNo || ''} 已取消\n${v.reason || ''}`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_refunded: {
     category: 'order',
-    title: '退款已到账',
-    content: (v) => `订单 ${v.orderNo || ''} 退款 ¥${v.refundAmount || '0.00'} 已处理\n预计 1-3 个工作日到账`,
+    title: '款项已退回',
+    content: (v) => `订单 ${v.orderNo || ''} 退款 ¥${v.refundAmount || '0.00'} 已办理。\n预计 1–3 个工作日回到原支付账户`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
+  gift_paid: {
+    category: 'order',
+    title: '心意已备妥',
+    content: (v) => {
+      const head = `礼赠订单 ${v.orderNo || ''} 已收妥款项\n实付 ¥${v.totalPrice || '0.00'}`
+      if (v.days) return `${head}\n请把礼笺交给 TA；${v.days} 日内未填址将自动退回`
+      return `${head}\n${v.tip || v.productNames || '心意已备妥'}`
+    },
+    actionUrl: (id) => `subpackages/feature/gift/success/index?orderId=${id}`
+  },
+  gift_awaiting_address: {
+    category: 'order',
+    title: '正等 TA 留下地址',
+    content: (v) => `「${v.productNames || '标本'}」已备妥\n正等 TA 开启礼笺并留下去处`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  gift_accepted: {
+    category: 'order',
+    title: 'TA 已开启礼笺',
+    content: (v) => `礼赠订单 ${v.orderNo || ''}：TA 已收下这份山海，正待留下地址`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  gift_address_submitted: {
+    category: 'order',
+    title: 'TA 已留下去处',
+    content: (v) => `礼赠订单 ${v.orderNo || ''}：去处已确认，馆员即将备妥启程`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  gift_nudge: {
+    category: 'order',
+    title: '不妨再提醒一声',
+    content: (v) => `礼赠订单 ${v.orderNo || ''} 仍在等待 TA 留下地址\n可再次分享礼笺卡片`,
+    actionUrl: (id) => `subpackages/feature/gift/success/index?orderId=${id}`
+  },
+  gift_nudge_receiver: {
+    category: 'order',
+    title: '还有一份山海等你',
+    content: (v) => `有一份标本礼赠，正等你留下收件去处`,
+    actionUrl: (id) => `subpackages/feature/gift/receive/index?orderId=${id}&token=${v.token || ''}`
+  },
+  gift_shipped: {
+    category: 'order',
+    title: '标本已启程',
+    content: (v) =>
+      buildShippedContent(`这份礼赠已启程。经 ${v.carrier || '快递'} 运送。\n订单 ${v.orderNo || ''}`, v),
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  gift_delivered: {
+    category: 'order',
+    title: '礼物已到柜',
+    content: (v) =>
+      `礼赠订单 ${v.orderNo || ''}：「${v.productTitle || '标本'}」已妥投到柜`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  gift_expired_refund: {
+    category: 'order',
+    title: '邀约已过期',
+    content: (v) => `礼赠订单 ${v.orderNo || ''} 填址期限已至，款项将退回赠予者`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  }
+,
   booking_success: {
     category: 'booking',
-    title: '预约已确认',
+    title: '预约已记下',
     content: (v) => `「${v.title || ''}」\n${v.date || ''} ${v.time || ''}\n票号：${v.ticketCode || ''}\n${v.storeLine || ''}`,
     actionUrl: (id) => `subpackages/business/ticket/index?id=${id}`
   },
   support_ticket_received: {
     category: 'system',
-    title: '留言已收到',
-    content: (v) => `您的「${v.topicLabel || '留言'}」已提交，专员将尽快回复`,
-    actionUrl: () => 'pages/user/messages/index'
+    title: '留言已入册',
+    content: (v) => `你的「${v.topicLabel || '留言'}」留言已提交，专员将尽快回复`,
+    actionUrl: () => 'subpackages/feature/user/messages/index'
   },
   custom_inquiry_received: {
     category: 'custom',
-    title: '定制意向已收到',
-    content: () => '您的标本定制意向已提交，专员将在 1-2 个工作日内与您联系',
-    actionUrl: () => 'pages/custom/inquiry/index'
+    title: '定制意向已入册',
+    content: () => '你的标本定制意向已入册，专员将在 1–2 个工作日内与你联系',
+    actionUrl: () => 'subpackages/feature/custom/inquiry/index'
   },
   pet_intake_booked: {
     category: 'custom',
-    title: '伴宠交接预约已确认',
+    title: '伴宠交接已预约',
     content: (v) => `「${v.petName || '伴宠'}」的到店交接已预约：${v.date || ''} ${v.time || ''}\n票号：${v.ticketCode || ''}`,
-    actionUrl: (id) => `pages/custom/pet/status/index?id=${id}`
+    actionUrl: (id) => `subpackages/feature/custom/pet/status/index?id=${id}`
   }
 }
 
@@ -70,6 +193,9 @@ function renderMini(eventType, relatedId, vars = {}) {
     actionUrl: typeof t.actionUrl === 'function' ? t.actionUrl(relatedId) : (t.actionUrl || '')
   }
 }
+
+/** 供调用方在需要时先把标题/正文渲染好（发货私信含订单备注，需绕过 DB 模板） */
+const renderMiniMessage = renderMini
 
 async function writeDirect(db, payload) {
   const { eventType, openid, relatedId, title, content, category, actionUrl } = payload
@@ -137,7 +263,7 @@ async function writeDirect(db, payload) {
   return { success: true, fallback: true }
 }
 
-async function dispatchInAppMessage(db, { eventType, openid, relatedId, vars = {} }) {
+async function dispatchInAppMessage(db, { eventType, openid, relatedId, vars = {}, title, content }) {
   if (!openid || !eventType) {
     return { success: false, msg: '缺少 openid 或 eventType' }
   }
@@ -150,7 +276,9 @@ async function dispatchInAppMessage(db, { eventType, openid, relatedId, vars = {
         eventType,
         openid,
         relatedId,
-        vars
+        vars,
+        ...(title ? { title } : {}),
+        ...(content != null ? { content } : {})
       }
     })
     const result = res.result || {}
@@ -195,5 +323,9 @@ module.exports = {
   dispatchInAppMessage,
   writeDirect,
   writeInAppMessage,
+  normalizeOrderNote,
+  NOTE_MAX,
+  NOTE_LABEL,
+  renderMiniMessage,
   renderMini
 }

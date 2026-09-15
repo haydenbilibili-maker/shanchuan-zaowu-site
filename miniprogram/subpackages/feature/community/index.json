@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "山海社区",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#1A1814",
+  "backgroundTextStyle": "light",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "easter-egg-note": "/components/EasterEggNote/index"
+  }
+}

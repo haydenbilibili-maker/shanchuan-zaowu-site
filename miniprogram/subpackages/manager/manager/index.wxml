@@ -1,0 +1,606 @@
+<!--pages/manager/index.wxml-->
+<!--
+  返回策略（布局优先）：
+  - 不用 page-container：真机会锁纵向滚动、改写 page 定位，导致顶栏遮挡与难滑
+  - page.json disableSwipeBack + page-edge-back 自绘左缘（不 catch，不挡滚动）
+  - 功能模块已拆至 manager/workspace（系统导航）；hub 仅看板 + leaveWorkbench
+-->
+<view class="container">
+  <page-edge-back bind:back="onWorkspaceBack" disabled="{{showCommentReplyModal}}" />
+
+<!-- ==================== 1. 全局导航栏 (Custom Navbar) ==================== -->
+<!-- 状态栏遮罩：fixed，不占文档流，避免与 nav-spacer 重复叠加 statusBarHeight -->
+<view class="status-bar-placeholder" style="height: {{navTop}}px;"></view>
+
+<!-- 导航栏本体：贴合胶囊高度，固定在状态栏下方 -->
+<view class="custom-navbar" style="top: {{navTop}}px; height: {{navBarHeight}}px;">
+  <!-- 根视图：离开工作台 → 真实上一页（与左滑一致） -->
+  <nav-back
+    wx:if="{{!showCommentReplyModal}}"
+    ext-class="nav-left nav-back"
+    bind:back="leaveWorkbench"
+  />
+  <view class="nav-left" wx:else>
+    <text class="app-name">ADMIN DASHBOARD</text>
+  </view>
+
+  <!-- 中间区域：页面标题 -->
+  <view class="nav-title">经营概况</view>
+</view>
+
+<!-- 仅一处占位：statusBar + navBar，内容紧贴自定义导航下方 -->
+<view class="nav-spacer" style="height: {{navSpacerHeight}}px;"></view>
+
+<view class="workbench-boot" wx:if="{{!workspaceReady}}">
+  <text class="workbench-boot-cn">工作台加载中…</text>
+</view>
+
+<!-- ==================== 2. 主视图：经营看板 (Dashboard) ==================== -->
+<view class="content-area dashboard-view" wx:if="{{curTab === 0 && workspaceReady && !artisanEmbed}}">
+  
+  <!-- 头部问候与日期 -->
+  <view class="dashboard-header">
+    <view class="header-left">
+      <text class="welcome">{{greeting}}{{staffName ? '，' + staffName : ''}}</text>
+      <text class="sub-welcome">{{isSuperAdmin ? '超管工作台' : '店长工作台'}}</text>
+    </view>
+    <view class="header-right">
+       <text class="date-badge">{{todayDate}}</text>
+    </view>
+  </view>
+
+  <!-- 信息流跑马灯：标题下 / GMV 上；仅有待办/异常时展示，不挤标题行 -->
+  <view class="ops-info-feed ops-info-feed--header" wx:if="{{opsInfoFeed.length}}">
+    <view class="ops-info-feed-rail">
+      <text class="ops-info-feed-tag">信息流</text>
+      <view class="ops-info-feed-viewport">
+        <view
+          class="ops-info-feed-track {{opsInfoFeedAnimSec ? 'is-marquee' : ''}}"
+          style="{{opsInfoFeedAnimStyle}}"
+        >
+          <view
+            class="ops-info-feed-segment"
+            wx:for="{{opsInfoFeedSets}}"
+            wx:for-item="seg"
+            wx:for-index="segIdx"
+            wx:key="segIdx"
+          >
+            <view
+              class="ops-info-feed-chip"
+              wx:for="{{seg}}"
+              wx:key="id"
+              bindtap="goOpsSignal"
+              data-target="{{item.target}}"
+              hover-class="ops-signal-press"
+              hover-stay-time="80"
+            >
+              <view class="signal-light {{item.lamp}}"></view>
+              <text class="ops-info-feed-text">{{item.text}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 首屏主 CTA：扫顾客会员码（立刻开相机，成功后再进 field 核销） -->
+  <view class="hub-scan-cta" wx:if="{{menu.verify || menu.grantPoints || menu.staffConsole}}">
+    <view
+      class="hub-scan-btn"
+      hover-class="hub-scan-btn-press"
+      hover-stay-time="120"
+      bindtap="goScanMember"
+    >扫顾客会员码</view>
+    <text class="hub-scan-hint">核验权益 · 预约票 · 门店礼券 · 礼赠自提</text>
+  </view>
+
+  <!-- 核心指标卡片 (金卡) -->
+  <view class="kpi-card gold-card" wx:if="{{menu.dashboardKpi}}">
+     <view class="card-row top">
+       <text class="card-label">GMV 本月营收</text>
+       <image class="card-icon-img" src="/assets/icons/medal_gold.png" mode="aspectFit" />
+     </view>
+     <text class="card-value-lg">¥{{stats.displayGrand || '0'}}</text>
+     <view class="card-row bottom">
+        <view class="sub-metric"><text class="lbl">小程序｜GMV</text><text class="val">¥{{stats.onlineTotal}}</text></view>
+        <view class="v-line"></view>
+        <view class="sub-metric"><text class="lbl">门店｜STORE</text><text class="val">¥{{stats.offlineTotal}}</text></view>
+     </view>
+  </view>
+
+  <!-- 经营信号（可折叠；展开态对齐截图分区 + 图例） -->
+  <view class="ops-signal-board {{opsSignalExpanded ? 'is-open' : 'is-collapsed'}}" wx:if="{{menu.dashboardKpi}}">
+    <view class="ops-signal-top" bindtap="toggleOpsSignalBoard" hover-class="ops-signal-press" hover-stay-time="80">
+      <view class="ops-signal-title-row">
+        <text class="ops-signal-title">经营信号</text>
+        <view class="signal-light {{opsSignalSummary.worstLamp}}" wx:if="{{!opsSignalExpanded}}"></view>
+      </view>
+      <view class="ops-signal-top-actions">
+        <text
+          class="ops-legend-toggle"
+          wx:if="{{opsSignalExpanded}}"
+          catchtap="toggleOpsLegend"
+        >{{opsLegendOpen ? '收起图例' : '图例'}}</text>
+        <text class="ops-signal-fold">{{opsSignalExpanded ? '收起' : '展开'}}</text>
+      </view>
+    </view>
+
+    <!-- 收起态：精简摘要 -->
+    <view class="ops-signal-summary" wx:if="{{!opsSignalExpanded}}">
+      <block wx:if="{{opsSignalSummary.attentionCount}}">
+        <text class="ops-signal-summary-label">{{opsSignalSummary.label}}</text>
+        <view class="ops-signal-summary-chips">
+          <view
+            class="ops-signal-summary-chip"
+            wx:for="{{opsSignalSummary.chips}}"
+            wx:key="id"
+            catchtap="goOpsSignal"
+            data-target="{{item.target}}"
+            hover-class="ops-signal-press"
+            hover-stay-time="80"
+          >
+            <view class="signal-light {{item.lamp}}"></view>
+            <text class="ops-signal-summary-text">{{item.text}}</text>
+          </view>
+        </view>
+      </block>
+      <text class="ops-signal-summary-ok" wx:else>全部健康</text>
+    </view>
+
+    <!-- 展开态：完整分区 -->
+    <block wx:if="{{opsSignalExpanded}}">
+      <view class="ops-signal-group" wx:if="{{menu.orders}}">
+        <text class="ops-signal-group-title">履约</text>
+        <view class="ops-signal-grid">
+          <view class="ops-signal-item ops-signal-tap" bindtap="goOpsSignal" data-target="pending" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.orders}}"></view>
+            <text class="ops-signal-label">待发订单 · {{orders.length}}</text>
+          </view>
+          <view class="ops-signal-item ops-signal-tap" bindtap="goOpsSignal" data-target="shipped" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.shipped}}"></view>
+            <text class="ops-signal-label">已发订单 · {{opsOrderCounts.shipped}}</text>
+          </view>
+          <view class="ops-signal-item ops-signal-tap" bindtap="goOpsSignal" data-target="received" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.received}}"></view>
+            <text class="ops-signal-label">已签收 · {{opsOrderCounts.received}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="ops-signal-group" wx:if="{{menu.orders || menu.support || menu.workOrders || menu.framerRecruit || menu.giftOps || menu.giftManage}}">
+        <text class="ops-signal-group-title">风险与待办</text>
+        <view class="ops-signal-grid">
+          <view class="ops-signal-item ops-signal-tap" wx:if="{{menu.orders}}" bindtap="goOpsSignal" data-target="aftersale" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.aftersale}}"></view>
+            <text class="ops-signal-label">售后 · {{opsOrderCounts.aftersale}}</text>
+          </view>
+          <view class="ops-signal-item ops-signal-tap" wx:if="{{menu.orders}}" bindtap="goOpsSignal" data-target="refunded" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.refunded}}"></view>
+            <text class="ops-signal-label">退款订单数 · {{opsOrderCounts.refunded}}</text>
+          </view>
+          <view class="ops-signal-item ops-signal-tap" wx:if="{{menu.support}}" bindtap="goOpsSignal" data-target="support" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.support}}"></view>
+            <text class="ops-signal-label">有信待回 · {{supportTickets.length}}</text>
+          </view>
+          <view class="ops-signal-item ops-signal-tap" wx:if="{{menu.workOrders}}" bindtap="goOpsSignal" data-target="workOrders" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.workOrders}}"></view>
+            <text class="ops-signal-label">工单 · {{customOrders.length}}</text>
+          </view>
+          <view class="ops-signal-item ops-signal-tap" wx:if="{{menu.framerRecruit}}" bindtap="goOpsSignal" data-target="recruit" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.recruit}}"></view>
+            <text class="ops-signal-label">合作申请 · {{framerRecruitApps.length}}</text>
+          </view>
+          <view class="ops-signal-item ops-signal-tap" wx:if="{{menu.giftOps || menu.giftManage}}" bindtap="goOpsSignal" data-target="gift" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.gift}}"></view>
+            <text class="ops-signal-label">礼赠待办 · {{giftTodoCount}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="ops-signal-group" wx:if="{{menu.dashboardKpi || menu.products}}">
+        <text class="ops-signal-group-title">经营</text>
+        <view class="ops-signal-grid">
+          <view class="ops-signal-item ops-signal-tap" wx:if="{{menu.dashboardKpi}}" bindtap="goOpsSignal" data-target="mom" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.mom}}"></view>
+            <text class="ops-signal-label ops-signal-label--{{stats.momClass}}">营收环比 · {{stats.momLabel}}</text>
+          </view>
+          <view class="ops-signal-item ops-signal-tap" wx:if="{{menu.products}}" bindtap="goOpsSignal" data-target="stock" hover-class="ops-signal-press" hover-stay-time="80">
+            <view class="signal-light {{opsSignals.stock}}"></view>
+            <text class="ops-signal-label">库存 · {{dashStock.ready ? (dashStock.empty ? '暂无' : '在架 ' + dashStock.onShelf) : (dashStock.error ? '失败' : '…')}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="ops-signal-legend signal-legend" wx:if="{{opsLegendOpen}}">
+        <view class="signal-legend-item"><view class="signal-light blink"></view><text class="signal-legend-text">绿 · 健康 / 清空</text></view>
+        <view class="signal-legend-item"><view class="signal-light warn"></view><text class="signal-legend-text">黄 · 待办 / 关注</text></view>
+        <view class="signal-legend-item"><view class="signal-light danger"></view><text class="signal-legend-text">红 · 异常 / 下降</text></view>
+        <view class="signal-legend-item"><view class="signal-light lamp-muted"></view><text class="signal-legend-text">灰 · 持平 / 空闲</text></view>
+        <view class="signal-legend-item"><view class="signal-light lamp-forest"></view><text class="signal-legend-text">深绿 · 已签收</text></view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 瀑布流布局容器：默认 2 列；极窄 stackCols 时单列 -->
+  <view class="dashboard-grid {{chartLayout.stackCols ? 'dash-grid--stack' : ''}}">
+    
+    <!-- 快捷菜单 (占据整行) -->
+    <view class="grid-item full-width menu-panel">
+      <block wx:if="{{menuSectionOps}}">
+        <view class="panel-title">经营 / OPS</view>
+        <view class="menu-grid">
+          <view class="menu-btn" wx:if="{{menu.ledger}}" bindtap="switchTab" data-idx="8" data-title="营收账本">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/coin_gold.png" mode="aspectFit" /></view>
+            <text>账本</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.orders}}" bindtap="onOrdersMenuTap" data-idx="2" data-title="订单管理">
+            <view class="icon-box">
+              <image class="menu-icon-img" src="/assets/icons/box.png" mode="aspectFit" />
+              <view class="badge-info badge-sm menu-badge-pos badge-enter" wx:if="{{newOrderUnreadCount > 0}}">{{newOrderUnreadCount > 99 ? '99+' : newOrderUnreadCount}}</view>
+              <view class="badge-info badge-sm menu-badge-pos badge-enter" wx:elif="{{orders.length>0}}">{{orders.length > 99 ? '99+' : orders.length}}</view>
+            </view>
+            <text>订单</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.products}}" bindtap="switchTab" data-idx="1" data-title="藏品库">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>
+            <text>藏品</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.analytics}}" bindtap="switchTab" data-idx="13" data-title="数据报表">
+            <view class="icon-box"><text class="icon-letter">RP</text></view>
+            <text>报表</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.shipping}}" bindtap="switchTab" data-idx="15" data-title="运费规则">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/ship.png" mode="aspectFit" /></view>
+            <text>运费</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.activities}}" bindtap="switchTab" data-idx="7" data-title="活动课程">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/booking.png" mode="aspectFit" /></view>
+            <text>活动</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.decor}}" bindtap="switchTab" data-idx="4" data-title="店铺装修">
+            <view class="icon-box"><image class="menu-icon-img" src="/subpackages/manager/assets/icons/edit.png" mode="aspectFit" /></view>
+            <text>装修</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.content}}" bindtap="switchTab" data-idx="9" data-title="内容管理">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/article-tab.png" mode="aspectFit" /></view>
+            <text>内容</text>
+          </view>
+          <!-- 馆内直播统一入口：主播工作台（内含开播）；直播中状态见上方信息流 -->
+          <view class="menu-btn" wx:if="{{menu.live}}" bindtap="goLiveStudio">
+            <view class="icon-box">
+              <image class="menu-icon-img" src="/assets/icons/video-tab.png" mode="aspectFit" />
+              <view class="badge live-onair" wx:if="{{liveDash.statusTone === 'live'}}">LIVE</view>
+            </view>
+            <text>主播</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.stores}}" bindtap="switchTab" data-idx="12" data-title="门店管理">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/store.png" mode="aspectFit" /></view>
+            <text>门店</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.contentFlags}}" bindtap="switchTab" data-idx="16" data-title="内容开关">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/eye.png" mode="aspectFit" /></view>
+            <text>开关</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{menuSectionStudio}}">
+        <view class="panel-title sub">工作室 / STUDIO</view>
+        <view class="menu-grid">
+          <view class="menu-btn" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/studio-dashboard.png" mode="aspectFit" /></view>
+            <text>工作室仪表盘</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.propertyCost}}" bindtap="goPropertyCost">
+            <view class="icon-box"><image class="menu-icon-img" src="/subpackages/manager/assets/icons/location.png" mode="aspectFit" /></view>
+            <text>物业</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.purchaseOps}}" bindtap="goPurchaseOps">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/cart.png" mode="aspectFit" /></view>
+            <text>采购</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/ship.png" mode="aspectFit" /></view>
+            <text>出货单</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.inventoryOps || menu.rawInventoryOps}}" bindtap="goInventoryOps">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/box.png" mode="aspectFit" /></view>
+            <text>库存管理</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.framers}}" bindtap="switchTab" data-idx="5" data-title="标本师管理">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/user.png" mode="aspectFit" /></view>
+            <text>标本师管理</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.workOrders}}" bindtap="switchTab" data-idx="10" data-title="工单">
+            <view class="icon-box">
+              <image class="menu-icon-img" src="/assets/icons/gift.png" mode="aspectFit" />
+              <view class="badge-info badge-sm menu-badge-pos badge-enter" wx:if="{{customOrders.length>0}}">{{customOrders.length > 99 ? '99+' : customOrders.length}}</view>
+            </view>
+            <text>工单</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.framerRecruit}}" bindtap="switchTab" data-idx="14" data-title="标本师合作">
+            <view class="icon-box">
+              <image class="menu-icon-img" src="/assets/icons/group.png" mode="aspectFit" />
+              <view class="badge-info badge-sm menu-badge-pos badge-enter" wx:if="{{framerRecruitApps.length>0}}">{{framerRecruitApps.length > 99 ? '99+' : framerRecruitApps.length}}</view>
+            </view>
+            <text>合作申请</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{menuSectionMembers}}">
+        <view class="panel-title sub">会员与触达 / MEMBERS</view>
+        <view class="menu-grid">
+          <view class="menu-btn" wx:if="{{menu.memberCrm}}" bindtap="goMemberCrm">
+            <view class="icon-box"><text class="icon-letter">CRM</text></view>
+            <text>会员 CRM</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.vip}}" bindtap="switchTab" data-idx="6" data-title="权益会员">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/coupon.png" mode="aspectFit" /></view>
+            <text>权益</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.support}}" bindtap="switchTab" data-idx="11" data-title="山海有信">
+            <view class="icon-box">
+              <image class="menu-icon-img" src="/assets/icons/message.png" mode="aspectFit" />
+              <view class="badge-info badge-sm menu-badge-pos badge-enter" wx:if="{{supportTickets.length>0}}">{{supportTickets.length > 99 ? '99+' : supportTickets.length}}</view>
+            </view>
+            <text>有信</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.memberLevelAdjust}}" bindtap="goMemberLevelAdjust">
+            <view class="icon-box"><text class="icon-letter">Lv</text></view>
+            <text>等级调档</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.honoraryCurators}}" bindtap="goHonoraryCurators">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/medal_gold.png" mode="aspectFit" /></view>
+            <text>荣誉馆长</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{menuSectionOrg}}">
+        <view class="panel-title sub">组织 / ORG</view>
+        <view class="link-row">
+        <view class="link-btn" wx:if="{{menu.staffDirectory}}" bindtap="goStaffDirectory">
+          <text class="lb-cn">员工</text>
+          <text class="lb-en">店员 · 店长 · 标本师 · 投资人 · 股东 · 超管</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.staffPermissions}}" bindtap="goStoreStaffPermissionsGuarded">
+          <text class="lb-cn">权限配置</text>
+          <text class="lb-en">手机号 · openid · 角色分配</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.shareholderConfig}}" bindtap="goShareholderConfigGuarded">
+          <text class="lb-cn">股东配置</text>
+          <text class="lb-en">门店 · 占股 · 回本前/后分成</text>
+        </view>
+        </view>
+      </block>
+
+      <block wx:if="{{menuSectionOnSite}}">
+        <view class="panel-title sub">门店现场 / ON-SITE</view>
+        <view class="link-row">
+        <view class="link-btn" wx:if="{{menu.verify}}" bindtap="goStaffTab" data-tab="verify">
+          <text class="lb-cn">核销验票</text>
+          <text class="lb-en">会员码 · 预约票</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.approvals}}" bindtap="goApprovals">
+          <view class="link-btn-head-inline">
+            <text class="lb-cn">审批中心</text>
+            <text class="link-badge" wx:if="{{approvalPendingCount > 0}}">{{approvalPendingCount > 99 ? '99+' : approvalPendingCount}}</text>
+          </view>
+          <text class="lb-en">积分流水 · 小票认领 · 外部订单</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.points}}" bindtap="goStorePoints">
+          <text class="lb-cn">积分管理</text>
+          <text class="lb-en">{{isSuperAdmin ? '今日 · 规则' : '今日汇总'}}</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.orders}}" bindtap="enableStaffOrderWxNotify">
+          <text class="lb-cn">新订单微信通知</text>
+          <text class="lb-en">点击允许 · 支付后服务通知</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.invoice}}" bindtap="goInvoiceRequests">
+          <view class="link-btn-head-inline">
+            <text class="lb-cn">发票管理</text>
+            <text class="link-badge" wx:if="{{invoicePendingCount > 0}}">{{invoicePendingCount > 99 ? '99+' : invoicePendingCount}}</text>
+          </view>
+          <text class="lb-en">开票申请 · 开具 · 驳回</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.giftOps}}" bindtap="goGiftOps">
+          <view class="link-btn-head-inline">
+            <text class="lb-cn">礼赠履约</text>
+            <text class="link-badge" wx:if="{{giftTodoCount > 0}}">{{giftTodoCount > 99 ? '99+' : giftTodoCount}}</text>
+          </view>
+          <text class="lb-en">待填址 · 待发货 · 自提核销</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.giftManage}}" bindtap="goGiftManage">
+          <text class="lb-cn">礼赠管理</text>
+          <text class="lb-en">待办概况 · 运营规则 · 进度提醒</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.payslipAdmin}}" bindtap="goPayslipAdminGuarded">
+          <text class="lb-cn">工资维护</text>
+          <text class="lb-en">录入 · 修正 · 删除</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.myPayslip}}" bindtap="goMyPayslipGuarded">
+          <text class="lb-cn">工资条明细</text>
+          <text class="lb-en">应发实发 · 山川造物经营额度销售分成 1%</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.walletConfig}}" bindtap="goWalletConfig">
+          <text class="lb-cn">钱包配置</text>
+          <text class="lb-en">档位 · 文案</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.welcomeGift}}" bindtap="goWelcomeGift">
+          <text class="lb-cn">新会员礼包</text>
+          <text class="lb-en">积分 · 礼券</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.welcomeGift}}" bindtap="goBirthdayGift">
+          <text class="lb-cn">生日礼包</text>
+          <text class="lb-en">生日当天 · 积分礼券</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.depositOps}}" bindtap="goDepositOps">
+          <text class="lb-cn">售罄孤品定金</text>
+          <text class="lb-en">比例 · 尾款时限 · 意向</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.artisanCommission}}" bindtap="goArtisanCommission">
+          <text class="lb-cn">标本师提成</text>
+          <text class="lb-en">比例 · 类目 · 账目</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.bookingRules}}" bindtap="goBookingRules">
+          <text class="lb-cn">预约规则</text>
+          <text class="lb-en">时段 · 闭店日</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.supportConfig}}" bindtap="goSupportConfig">
+          <text class="lb-cn">客服入口</text>
+          <text class="lb-en">电话 · FAQ</text>
+        </view>
+        <view class="link-btn" wx:if="{{menu.staffConsole}}" bindtap="goStaffHome">
+          <text class="lb-cn">店员工作台</text>
+          <text class="lb-en">考勤 · 请假 · 清单 · 现场</text>
+        </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 数据图表：渠道占比 + 本月订单（并排，避免半空行） -->
+    <view class="grid-item" wx:if="{{menu.dashboardKpi}}">
+       <view class="panel-title">渠道 / RATIO</view>
+       <view class="chart-box {{chartLayout.ratioStacked ? 'chart-box--stacked' : ''}}" id="dash-ratio-box" style="{{chartLayout.ratioBoxStyle}}" wx:if="{{!stats.ratioEmpty}}">
+          <view class="donut" style="{{stats.donutStyle}}"></view>
+          <view class="legend">
+             <view class="legend-row"><view class="dot gold"></view><text>小程序 {{stats.onlineRatio}}%</text></view>
+             <view class="legend-row"><view class="dot forest"></view><text>线下 {{stats.offlineRatio}}%</text></view>
+          </view>
+       </view>
+       <view class="chart-empty" wx:else>
+          <text>暂无本月营收</text>
+          <text class="chart-empty-hint">账本或订单入账后显示占比</text>
+       </view>
+    </view>
+
+    <view class="grid-item" wx:if="{{menu.dashboardKpi}}">
+       <view class="panel-title">本月订单 / ORDERS</view>
+       <view class="kpi-mini">
+          <view class="kpi-mini-main">
+             <text class="kpi-mini-val">{{stats.orderCountFmt}}</text>
+             <text class="kpi-mini-unit">单｜线上</text>
+          </view>
+          <view class="kpi-mini-row">
+             <view class="kpi-mini-cell">
+                <text class="kpi-mini-l">客单价</text>
+                <text class="kpi-mini-v">{{stats.avgOrderFmt}}</text>
+             </view>
+             <view class="kpi-mini-cell">
+                <text class="kpi-mini-l">到店核销</text>
+                <text class="kpi-mini-v">{{stats.visitCountFmt}}</text>
+             </view>
+          </view>
+          <text class="week-split-hint" wx:if="{{stats.ordersEmpty}}">本月尚无已支付线上单</text>
+       </view>
+    </view>
+
+    <!-- 7 日营收趋势（相对峰值缩放 + 日均/环比） -->
+    <view class="grid-item full-width" wx:if="{{menu.dashboardKpi}}">
+       <view class="panel-title-row">
+          <view class="panel-title flat">营收趋势 / TREND</view>
+          <view class="trend-meta {{chartLayout.narrow ? 'trend-meta--narrow' : ''}}" wx:if="{{!stats.ratioEmpty}}">
+             <text class="trend-meta-item">日均 ¥{{stats.dailyAvgFmt}}</text>
+             <text class="trend-meta-sep">·</text>
+             <view class="trend-meta-item {{stats.momClass}} trend-meta-signal">
+               <view class="signal-light {{opsSignals.mom}}"></view>
+               <text>环比 {{stats.momLabel}}</text>
+             </view>
+          </view>
+       </view>
+       <view class="trend-bars" id="dash-trend-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{!trendMeta.empty}}">
+          <block wx:for="{{trendData}}" wx:key="dateKey">
+             <view class="bar-col">
+                <view class="bar-val-slot">
+                   <text class="bar-val" style="{{chartLayout.valFontStyle}}" wx:if="{{item.showVal}}">{{item.valShort}}</text>
+                </view>
+                <view class="bar-track" style="{{chartLayout.barTrackStyle}}">
+                   <view class="bar-fill gold" style="{{item.styleOnline}}"></view>
+                   <view class="bar-fill forest" style="{{item.styleOffline}}"></view>
+                </view>
+                <text class="bar-lbl" style="{{chartLayout.lblFontStyle}}">{{item.day}}</text>
+             </view>
+          </block>
+       </view>
+       <view class="chart-empty trend-empty" wx:else>
+          <text>{{trendMeta.error ? '趋势加载失败' : '近 7 日暂无入账'}}</text>
+          <text class="chart-empty-hint">下拉刷新重试</text>
+       </view>
+       <view class="trend-legend" wx:if="{{!trendMeta.empty}}">
+          <view class="legend-row"><view class="dot gold"></view><text>小程序GMV</text></view>
+          <view class="legend-row"><view class="dot forest"></view><text>门店账本</text></view>
+          <text class="trend-week-sum">近7日 ¥{{trendMeta.weekTotalFmt}}</text>
+       </view>
+    </view>
+
+    <!-- 库存速览 + 近7日渠道拆分 -->
+    <view class="grid-item" wx:if="{{menu.dashboardKpi && menu.products}}">
+       <view class="panel-title-row">
+          <view class="panel-title flat">库存 / STOCK</view>
+          <view class="stock-signal-wrap" wx:if="{{opsSignals.stock}}">
+            <view class="signal-light {{opsSignals.stock}}"></view>
+          </view>
+       </view>
+       <view class="stock-mini" wx:if="{{dashStock.ready && !dashStock.empty}}">
+          <view class="stock-mini-row">
+             <view class="stock-mini-cell">
+                <text class="stock-mini-v accent">{{dashStock.onShelf}}</text>
+                <text class="stock-mini-l">在架</text>
+             </view>
+             <view class="stock-mini-cell">
+                <text class="stock-mini-v">{{dashStock.offShelf}}</text>
+                <text class="stock-mini-l">下架</text>
+             </view>
+             <view class="stock-mini-cell">
+                <text class="stock-mini-v">{{dashStock.stockTotal}}</text>
+                <text class="stock-mini-l">库存件</text>
+             </view>
+          </view>
+          <view class="stock-cat" wx:if="{{dashStock.topCats.length}}">
+             <view class="stock-cat-row" wx:for="{{dashStock.topCats}}" wx:key="key">
+                <text class="stock-cat-n">{{item.name}}</text>
+                <view class="stock-cat-track"><view class="stock-cat-fill" style="{{item.barStyle}}"></view></view>
+                <text class="stock-cat-c">{{item.count}}</text>
+             </view>
+          </view>
+       </view>
+       <view class="chart-empty" wx:elif="{{dashStock.error}}">
+          <text>库存加载失败</text>
+          <text class="chart-empty-hint">下拉刷新重试</text>
+       </view>
+       <view class="chart-empty" wx:else>
+          <text>{{dashStock.loading ? '统计中…' : '暂无库存数据'}}</text>
+       </view>
+    </view>
+
+    <view class="grid-item {{menu.products ? '' : 'full-width'}}" wx:if="{{menu.dashboardKpi}}">
+       <view class="panel-title">近7日 / WEEK</view>
+       <view class="week-split" wx:if="{{!trendMeta.empty}}">
+          <view class="week-split-row">
+             <text class="week-split-l">线上（小程序）</text>
+             <text class="week-split-v">¥{{trendMeta.weekOnlineFmt}}</text>
+          </view>
+          <view class="week-share-track">
+             <view class="week-share-fill gold" style="{{trendMeta.weekOnlineBar}}"></view>
+          </view>
+          <view class="week-split-row">
+             <text class="week-split-l">门店（账本）</text>
+             <text class="week-split-v">¥{{trendMeta.weekOfflineFmt}}</text>
+          </view>
+          <view class="week-share-track">
+             <view class="week-share-fill forest" style="{{trendMeta.weekOfflineBar}}"></view>
+          </view>
+          <text class="week-split-hint">线上=小程序已付GMV · 门店=账本净额（不含mp）</text>
+       </view>
+       <view class="chart-empty" wx:else>
+          <text>近 7 日暂无拆分</text>
+       </view>
+    </view>
+
+  </view>
+  
+  <view class="footer-logo">- NATURE'S ADMIN -</view>
+</view>
+
+</view>

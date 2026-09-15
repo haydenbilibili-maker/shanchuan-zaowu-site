@@ -1,0 +1,474 @@
+<view class="page {{entered ? 'entered' : ''}}">
+  <!-- 启动：避免假白屏 -->
+  <view class="page-boot" wx:if="{{!ready}}">
+    <view class="boot-mark"></view>
+    <text class="boot-en">INVESTMENT OBSERVATORY</text>
+    <text class="boot-cn">投资观测台</text>
+    <text class="boot-hint">{{bootHint}}</text>
+    <view class="boot-skel">
+      <view class="skel-line w40"></view>
+      <view class="skel-line w60 tall"></view>
+      <view class="skel-row">
+        <view class="skel-block"></view>
+        <view class="skel-block"></view>
+        <view class="skel-block"></view>
+      </view>
+    </view>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <!-- 页头 -->
+    <view class="header reveal r1">
+      <view class="brand-group">
+        <text class="en">INVESTMENT OBSERVATORY</text>
+        <text class="cn">投资观测台</text>
+      </view>
+      <view class="header-row">
+        <text class="greeting">{{staffName ? staffName + ' · ' : ''}}只读经营看板</text>
+        <view class="readonly-chip">
+          <view class="signal-light blink"></view>
+          <text class="readonly-text">只读</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 周期：近7/30/90 + 自然月 -->
+    <view class="range-bar reveal r2" wx:if="{{canFinance || canAnalytics}}">
+      <view
+        class="range-tab {{rangeKey===item.key?'on':''}}"
+        wx:for="{{rangeTabs}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="setRange"
+      >{{item.label}}</view>
+    </view>
+    <view class="month-bar reveal r2" wx:if="{{rangeType==='month' && (canFinance || canAnalytics)}}">
+      <view
+        class="month-chip {{monthKey===monthCurrent?'on':''}}"
+        data-preset="current"
+        bindtap="setMonthPreset"
+      >本月</view>
+      <view
+        class="month-chip {{monthKey===monthPrev?'on':''}}"
+        data-preset="prev"
+        bindtap="setMonthPreset"
+      >上月</view>
+      <picker mode="date" fields="month" value="{{monthKey}}" end="{{monthMax}}" bindchange="onMonthPick">
+        <view class="month-chip pick {{monthKey!==monthCurrent && monthKey!==monthPrev?'on':''}}">{{monthLabel}} ▾</view>
+      </picker>
+    </view>
+
+    <!-- 首屏骨架：加载中且尚无信号/营收 -->
+    <block wx:if="{{loading && !signalBoard.items.length && headline.grandFmt==='—'}}">
+      <view class="skel-card reveal r3">
+        <view class="skel-line w40"></view>
+        <view class="skel-line w70 tall"></view>
+        <view class="skel-row">
+          <view class="skel-block"></view>
+          <view class="skel-block"></view>
+          <view class="skel-block"></view>
+          <view class="skel-block"></view>
+        </view>
+      </view>
+      <view class="skel-card reveal r3">
+        <view class="skel-line w50"></view>
+        <view class="skel-line w80 tall"></view>
+        <view class="skel-row">
+          <view class="skel-block"></view>
+          <view class="skel-block"></view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <!-- ① 健康度：综合研判 + 8 盏信号灯 -->
+      <view class="verdict-card reveal r3 {{numPulse ? 'pulse' : ''}}" wx:if="{{canFinance || canAnalytics}}">
+        <view class="verdict-top">
+          <view class="verdict-left">
+            <view class="signal-light {{verdict.className}}"></view>
+            <view class="verdict-copy">
+              <text class="verdict-en">HEALTH · {{rangeLabel}}</text>
+              <text class="verdict-title {{verdict.tone}}">{{verdict.title}}</text>
+            </view>
+          </view>
+          <view class="verdict-badge {{verdict.tone}}">{{verdict.label}}</view>
+        </view>
+        <text class="verdict-insight">{{verdict.insight}}</text>
+        <view class="summary-chips" wx:if="{{signalBoard.summary.ok || signalBoard.summary.warn || signalBoard.summary.danger}}">
+          <text class="sum-chip ok" wx:if="{{signalBoard.summary.ok}}">正常 {{signalBoard.summary.ok}}</text>
+          <text class="sum-chip warn" wx:if="{{signalBoard.summary.warn}}">关注 {{signalBoard.summary.warn}}</text>
+          <text class="sum-chip danger" wx:if="{{signalBoard.summary.danger}}">告警 {{signalBoard.summary.danger}}</text>
+        </view>
+        <view class="verdict-foot">
+          <text class="verdict-meta">{{verdict.updatedAt ? '更新 ' + verdict.updatedAt : '下拉可刷新'}}{{loading ? ' · 刷新中' : ''}}</text>
+          <text class="legend-toggle" bindtap="toggleLegend">{{legendOpen ? '收起图例' : '信号图例'}}</text>
+        </view>
+        <view class="legend-box" wx:if="{{legendOpen}}">
+          <view class="legend-row"><view class="signal-light blink"></view><text class="legend-text">绿 · 正常 / 向好</text></view>
+          <view class="legend-row"><view class="signal-light warn"></view><text class="legend-text">黄 · 需关注</text></view>
+          <view class="legend-row"><view class="signal-light danger"></view><text class="legend-text">红 · 告警</text></view>
+          <view class="legend-row"><view class="signal-light lamp-muted"></view><text class="legend-text">灰 · 持平 / 样本不足</text></view>
+          <text class="legend-hint">{{signalBoard.rulesNote || '综合营收 = 线上净额 + 双店账本净额；与超管数据报表同口径。'}}</text>
+        </view>
+      </view>
+
+      <view class="card signal-board reveal r3" wx:if="{{signalBoard.items.length}}">
+        <view class="card-top">
+          <text class="card-title">数据信号灯</text>
+          <text class="card-meta">点按跳转明细</text>
+        </view>
+        <view class="signal-grid">
+          <view
+            class="signal-item tap"
+            wx:for="{{signalBoard.items}}"
+            wx:key="id"
+            hover-class="signal-item-hover"
+            hover-stay-time="80"
+            data-target="{{item.target}}"
+            bindtap="onSignalTap"
+          >
+            <view class="signal-rail signal-rail--{{item.status}}"></view>
+            <view class="signal-light {{item.lampClass}}"></view>
+            <view class="signal-copy">
+              <text class="signal-name">{{item.name}}</text>
+              <text class="signal-val {{item.tone}}">{{item.value}}</text>
+              <text class="signal-status">{{item.statusLabel}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- ② 核心营收 -->
+      <view class="group" id="anchor-revenue" wx:if="{{canFinance || canAnalytics}}">
+        <view class="group-head reveal r4">
+          <text class="group-en">REVENUE · {{rangeLabel}}</text>
+          <text class="group-cn">核心营收</text>
+        </view>
+
+        <view class="hero-card reveal r4 {{numPulse ? 'pulse' : ''}}">
+          <view class="hero-top">
+            <text class="hero-label">综合营收</text>
+            <text class="hero-delta">线上净额 + 双店账本</text>
+          </view>
+          <text class="hero-value">¥{{headline.grandFmt}}</text>
+          <view class="hero-split">
+            <view class="hero-split-cell">
+              <text class="hero-split-l">线上净额</text>
+              <text class="hero-split-v">¥{{headline.netOnlineFmt}}</text>
+            </view>
+            <view class="hero-split-cell">
+              <text class="hero-split-l">双店账本</text>
+              <text class="hero-split-v">¥{{headline.offlineFmt}}</text>
+            </view>
+            <view class="hero-split-cell">
+              <text class="hero-split-l">周期退款</text>
+              <text class="hero-split-v">¥{{headline.refundFmt}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="kpi-meta reveal r4">
+          <view class="kpi-meta-cell">
+            <text class="kpi-l">毛 GMV</text>
+            <text class="kpi-v">¥{{headline.gmvPaidFmt}}</text>
+          </view>
+          <view class="kpi-meta-cell">
+            <text class="kpi-l">已付单</text>
+            <text class="kpi-v">{{headline.paidOrders}}</text>
+          </view>
+          <view class="kpi-meta-cell">
+            <text class="kpi-l">客单价</text>
+            <text class="kpi-v">{{headline.aovFmt}}</text>
+          </view>
+          <view class="kpi-meta-cell">
+            <text class="kpi-l">新增用户</text>
+            <text class="kpi-v accent">{{headline.newUsers}}</text>
+          </view>
+        </view>
+
+        <view class="card reveal r4" id="anchor-stores" wx:if="{{ledgerByStore.length}}">
+          <view class="card-top">
+            <text class="card-title">双店账本分列</text>
+            <text class="card-meta">山川 + 星宸</text>
+          </view>
+          <view class="share-row" wx:for="{{ledgerByStore}}" wx:key="storeId">
+            <view class="share-head">
+              <text class="share-l">{{item.name}}</text>
+              <text class="share-p">{{item.pct}}%</text>
+            </view>
+            <view class="share-track">
+              <view class="share-fill {{item.tone}}" style="{{item.barStyle}}"></view>
+            </view>
+            <text class="share-val">¥{{item.valueFmt}}</text>
+          </view>
+        </view>
+
+        <view class="card reveal r4" wx:if="{{channelMix.length}}">
+          <view class="card-top">
+            <text class="card-title">综合结构</text>
+            <text class="card-meta">线上 / 账本</text>
+          </view>
+          <view class="share-row" wx:for="{{channelMix}}" wx:key="key">
+            <view class="share-head">
+              <text class="share-l">{{item.label}}</text>
+              <text class="share-p">{{item.pct}}%</text>
+            </view>
+            <view class="share-track">
+              <view class="share-fill {{item.tone}}" style="{{item.barStyle}}"></view>
+            </view>
+            <text class="share-val">¥{{item.valueFmt}}</text>
+          </view>
+        </view>
+
+        <view class="empty-card reveal r4" wx:if="{{headline.empty}}">
+          <text class="empty-title">该周期暂无营收</text>
+          <text class="empty-desc">无线上已付净额与门店账本入账</text>
+        </view>
+      </view>
+
+      <!-- ③ 趋势 -->
+      <view class="group" wx:if="{{canAnalytics && !financeOnly}}">
+        <view class="group-head reveal r5">
+          <text class="group-en">TREND</text>
+          <text class="group-cn">营收趋势</text>
+        </view>
+        <view class="card reveal r5">
+          <view class="sec-head" data-key="trend" bindtap="toggleSection">
+            <text class="card-title">综合 / 日</text>
+            <view class="sec-right">
+              <view class="legend-inline">
+                <view class="dot brass"></view><text class="legend-inline-t">线上</text>
+                <view class="dot forest"></view><text class="legend-inline-t">门店</text>
+              </view>
+              <text class="sec-chevron">{{sectionOpen.trend ? '收起' : '展开'}}</text>
+            </view>
+          </view>
+          <block wx:if="{{sectionOpen.trend}}">
+            <view class="trend-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{!charts.revenueEmpty}}">
+              <view class="bar-col" wx:for="{{charts.revenue}}" wx:key="key">
+                <view class="bar-val-slot">
+                  <text class="bar-val" style="{{chartLayout.valFontStyle}}" wx:if="{{item.showVal}}">{{item.valShort}}</text>
+                </view>
+                <view class="bar-track" style="{{chartLayout.barTrackStyle}}">
+                  <view class="bar-fill gold" style="{{item.styleOnline}}"></view>
+                  <view class="bar-fill forest" style="{{item.styleOffline}}"></view>
+                </view>
+                <text class="bar-lbl" style="{{chartLayout.lblFontStyle}}">{{item.day}}</text>
+              </view>
+            </view>
+            <text class="chart-empty" wx:else>该周期暂无营收趋势</text>
+            <text class="hint" wx:if="{{charts.hint}}">{{charts.hint}}</text>
+          </block>
+        </view>
+      </view>
+
+      <!-- ④ 结构：来源 / 品类 -->
+      <view class="group" id="anchor-structure" wx:if="{{canAnalytics && !financeOnly && (sourceMix.length || categoryMix.length)}}">
+        <view class="group-head reveal r6">
+          <text class="group-en">STRUCTURE</text>
+          <text class="group-cn">订单结构</text>
+        </view>
+        <view class="card reveal r6">
+          <view class="sec-head" data-key="structure" bindtap="toggleSection">
+            <text class="card-title">来源与品类</text>
+            <text class="sec-chevron">{{sectionOpen.structure ? '收起' : '展开'}}</text>
+          </view>
+          <block wx:if="{{sectionOpen.structure}}">
+            <block wx:if="{{sourceMix.length}}">
+              <text class="subhead">来源占比（毛 GMV）</text>
+              <view class="share-row" wx:for="{{sourceMix}}" wx:key="key">
+                <view class="share-head">
+                  <text class="share-l">{{item.label}}</text>
+                  <text class="share-p">{{item.pct}}%</text>
+                </view>
+                <view class="share-track">
+                  <view class="share-fill {{item.tone}}" style="{{item.barStyle}}"></view>
+                </view>
+                <text class="share-val">¥{{item.valueFmt}}</text>
+              </view>
+            </block>
+            <block wx:if="{{categoryMix.length}}">
+              <text class="subhead spaced">品类占比</text>
+              <view class="share-row" wx:for="{{categoryMix}}" wx:key="key">
+                <view class="share-head">
+                  <text class="share-l">{{item.label}}</text>
+                  <text class="share-p">{{item.pct}}%</text>
+                </view>
+                <view class="share-track">
+                  <view class="share-fill brass" style="{{item.barStyle}}"></view>
+                </view>
+                <text class="share-val">¥{{item.valueFmt}}</text>
+              </view>
+            </block>
+          </block>
+        </view>
+      </view>
+
+      <!-- ⑤ 业务漏斗：定金 / 提成 -->
+      <view class="group" id="anchor-funnel" wx:if="{{canAnalytics && !financeOnly}}">
+        <view class="group-head reveal r7">
+          <text class="group-en">FUNNEL</text>
+          <text class="group-cn">业务漏斗</text>
+        </view>
+        <view class="card reveal r7">
+          <view class="sec-head" data-key="funnel" bindtap="toggleSection">
+            <text class="card-title">定金 · 提成</text>
+            <text class="sec-chevron">{{sectionOpen.funnel ? '收起' : '展开'}}</text>
+          </view>
+          <block wx:if="{{sectionOpen.funnel}}">
+            <block wx:if="{{deposit.available}}">
+              <text class="subhead">定金意向</text>
+              <view class="mini-grid">
+                <view class="mini-cell">
+                  <text class="mini-v accent">{{deposit.depositPaid}}</text>
+                  <text class="mini-l">已付定金</text>
+                </view>
+                <view class="mini-cell">
+                  <text class="mini-v">{{deposit.awaiting}}</text>
+                  <text class="mini-l">待尾款</text>
+                </view>
+                <view class="mini-cell">
+                  <text class="mini-v">{{deposit.settled}}</text>
+                  <text class="mini-l">已付清</text>
+                </view>
+                <view class="mini-cell">
+                  <text class="mini-v">¥{{deposit.paidAmtFmt}}</text>
+                  <text class="mini-l">定金金额</text>
+                </view>
+              </view>
+            </block>
+            <text class="hint" wx:else>定金数据暂不可用</text>
+
+            <block wx:if="{{commission.available}}">
+              <text class="subhead spaced">标本师提成</text>
+              <view class="mini-grid three">
+                <view class="mini-cell">
+                  <text class="mini-v accent">¥{{commission.earnFmt}}</text>
+                  <text class="mini-l">入账</text>
+                </view>
+                <view class="mini-cell">
+                  <text class="mini-v">¥{{commission.reverseFmt}}</text>
+                  <text class="mini-l">冲正</text>
+                </view>
+                <view class="mini-cell">
+                  <text class="mini-v">¥{{commission.netFmt}}</text>
+                  <text class="mini-l">净额</text>
+                </view>
+              </view>
+              <view class="share-row" wx:for="{{commission.topArtisans}}" wx:key="key">
+                <view class="share-head">
+                  <text class="share-l">{{item.label}}</text>
+                  <text class="share-p">{{item.pct}}%</text>
+                </view>
+                <view class="share-track">
+                  <view class="share-fill gold" style="{{item.barStyle}}"></view>
+                </view>
+                <text class="share-val">¥{{item.valueFmt}}</text>
+              </view>
+            </block>
+          </block>
+        </view>
+      </view>
+
+      <!-- 用户 / 库存（次要，默认折叠） -->
+      <view class="group" id="anchor-users" wx:if="{{canAnalytics && !financeOnly}}">
+        <view class="card reveal r8">
+          <view class="sec-head" data-key="users" bindtap="toggleSection">
+            <text class="card-title">用户</text>
+            <view class="sec-right">
+              <text class="card-meta accent">新增 {{users.newUsers}}</text>
+              <text class="sec-chevron">{{sectionOpen.users ? '收起' : '展开'}}</text>
+            </view>
+          </view>
+          <block wx:if="{{sectionOpen.users}}">
+            <view class="mini-grid">
+              <view class="mini-cell">
+                <text class="mini-v accent">{{users.uv}}</text>
+                <text class="mini-l">活跃 UV</text>
+              </view>
+              <view class="mini-cell">
+                <text class="mini-v">{{users.pv}}</text>
+                <text class="mini-l">浏览 PV</text>
+              </view>
+              <view class="mini-cell">
+                <text class="mini-v">{{users.d1}}</text>
+                <text class="mini-l">次日留存</text>
+              </view>
+              <view class="mini-cell">
+                <text class="mini-v">{{headline.avgDau}}</text>
+                <text class="mini-l">日均 DAU</text>
+              </view>
+            </view>
+            <view class="trend-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{!charts.newUsersEmpty}}">
+              <view class="bar-col" wx:for="{{charts.newUsers}}" wx:key="key">
+                <view class="bar-val-slot">
+                  <text class="bar-val" style="{{chartLayout.valFontStyle}}" wx:if="{{item.showVal}}">{{item.valShort}}</text>
+                </view>
+                <view class="bar-track" style="{{chartLayout.barTrackStyle}}">
+                  <view class="bar-fill gold" style="{{item.styleOnline}}"></view>
+                </view>
+                <text class="bar-lbl" style="{{chartLayout.lblFontStyle}}">{{item.day}}</text>
+              </view>
+            </view>
+            <text class="hint" wx:if="{{users.dauSource}}">DAU：{{users.dauSource === 'analytics_daily' ? '日汇总 UV 合并' : '行为表采样'}}</text>
+          </block>
+        </view>
+
+        <view class="card reveal r8" id="anchor-stock">
+          <view class="sec-head" data-key="stock" bindtap="toggleSection">
+            <text class="card-title">库存概况</text>
+            <view class="sec-right">
+              <text class="card-meta">低库存 {{stock.lowStock}}</text>
+              <text class="sec-chevron">{{sectionOpen.stock ? '收起' : '展开'}}</text>
+            </view>
+          </view>
+          <block wx:if="{{sectionOpen.stock}}">
+            <view class="mini-grid">
+              <view class="mini-cell">
+                <text class="mini-v accent">{{stock.onShelf}}</text>
+                <text class="mini-l">在架</text>
+              </view>
+              <view class="mini-cell">
+                <text class="mini-v">{{stock.offShelf}}</text>
+                <text class="mini-l">下架</text>
+              </view>
+              <view class="mini-cell">
+                <text class="mini-v">{{stock.stockTotal}}</text>
+                <text class="mini-l">库存件数</text>
+              </view>
+              <view class="mini-cell">
+                <text class="mini-v">{{stock.lowStock}}</text>
+                <text class="mini-l">低库存 SKU</text>
+              </view>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <!-- ⑥ 口径说明 -->
+      <view class="notes-card reveal r9" wx:if="{{notes.length}}">
+        <view class="notes-head" bindtap="toggleNotes">
+          <text class="notes-title">口径说明</text>
+          <text class="notes-toggle">{{notesOpen ? '收起' : '展开 · ' + notes.length}}</text>
+        </view>
+        <block wx:if="{{notesOpen}}">
+          <view class="note-row" wx:for="{{notes}}" wx:key="*this">
+            <text class="note-mark">·</text>
+            <text class="note-text">{{item}}</text>
+          </view>
+        </block>
+      </view>
+    </block>
+
+    <view class="empty-card" wx:if="{{!canFinance && !canAnalytics}}">
+      <text class="empty-title">暂无观测权限</text>
+      <text class="empty-desc">请联系超管开通投资人财务或大盘权限</text>
+    </view>
+
+    <view class="footer-note">
+      <text class="footer-note-kicker">READ ONLY</text>
+      <text class="footer-note-main">只读观测 · 与数据报表同口径</text>
+      <text class="footer-note-sub">综合营收 = 线上净额 + 双店账本 · 无写操作入口</text>
+    </view>
+  </block>
+</view>

@@ -3,19 +3,20 @@
  */
 const db = wx.cloud.database()
 const {
-  normalizeCategory,
+  resolveCareCategory,
+  CARE_CATEGORY_FIELDS,
   getGuideByCategory,
   getCategoryMeta,
   getCareSummary,
   isVoucherLikeProduct,
   buildGuideUrl
-} = require('../../../utils/careDefaults')
+} = require('./careDefaults')
 
 async function resolveProductCategory(productId) {
   if (!productId) return 'GENERAL'
   try {
     const res = await db.collection('products').doc(productId).get()
-    return normalizeCategory(res.data && res.data.category)
+    return resolveCareCategory(res.data)
   } catch (e) {
     return 'GENERAL'
   }
@@ -40,8 +41,8 @@ async function resolveCareContext(order) {
   let productId = specimenProducts[0].id || specimenProducts[0].productId || ''
 
   for (const p of specimenProducts) {
-    if (p.category) {
-      category = normalizeCategory(p.category)
+    if (CARE_CATEGORY_FIELDS.some((key) => p[key])) {
+      category = resolveCareCategory(p)
       productTitle = p.title || productTitle
       productId = p.id || p.productId || productId
       break
@@ -59,7 +60,7 @@ async function resolveCareContext(order) {
   }
 
   if (category === 'GENERAL' && order.customMeta && order.customMeta.specimen) {
-    category = normalizeCategory(order.customMeta.specimen.category)
+    category = resolveCareCategory(order.customMeta.specimen)
     productTitle = order.customMeta.specimen.title || productTitle
   }
 
@@ -85,16 +86,33 @@ async function resolveCareContext(order) {
   }
 }
 
+function buildCommentUrl(orderId, careContext) {
+  const ctx = careContext || {}
+  const productId = ctx.productId || ''
+  let url = `/subpackages/feature/comment/index?targetType=product&orderId=${encodeURIComponent(orderId || '')}`
+  if (productId) url += `&targetId=${encodeURIComponent(productId)}`
+  return url
+}
+
 function showPostReceiptCareSheet(orderId, careContext) {
   const ctx = careContext || {}
   const url = ctx.guideUrl || buildGuideUrl({ orderId, category: ctx.category || 'GENERAL', from: 'receipt' })
+  const commentUrl = buildCommentUrl(orderId, ctx)
 
   wx.showActionSheet({
-    itemList: ['查看养护指南', '查看收藏证书', '稍后再说'],
+    itemList: ['写一条评价', '查看养护指南', '查看收藏证书', '稍后再说'],
     success: (res) => {
       if (res.tapIndex === 0) {
-        wx.navigateTo({ url })
+        wx.navigateTo({
+          url: commentUrl,
+          fail: () => wx.showToast({ title: '无法打开评价页', icon: 'none' })
+        })
       } else if (res.tapIndex === 1) {
+        wx.navigateTo({
+          url,
+          fail: () => wx.showToast({ title: '无法打开养护指南', icon: 'none' })
+        })
+      } else if (res.tapIndex === 2) {
         wx.navigateTo({
           url: `/subpackages/business/certificate/index?id=${orderId}`,
           fail: () => wx.showToast({ title: '证书暂不可用', icon: 'none' })
@@ -110,12 +128,16 @@ function showPostReceiptCareSheet(orderId, careContext) {
 
 async function confirmReceiptOnOrder(orderId, orderSnapshot, options = {}) {
   const { prompt = true } = options
-  await db.collection('orders').doc(orderId).update({
-    data: {
-      status: 'received',
-      receiveTime: db.serverDate()
-    }
+
+  // orders 集合 write:false — 必须经云函数写状态
+  const call = await wx.cloud.callFunction({
+    name: 'confirmOrderReceipt',
+    data: { orderId }
   })
+  const result = (call && call.result) || {}
+  if (!result.success) {
+    throw new Error(result.msg || '确认收货失败')
+  }
 
   let order = orderSnapshot
   if (!order || !order.products) {
@@ -128,39 +150,27 @@ async function confirmReceiptOnOrder(orderId, orderSnapshot, options = {}) {
   }
 
   const careContext = await resolveCareContext({ ...order, _id: orderId, status: 'received' })
+  const buyerOpenid = (orderSnapshot && orderSnapshot._openid) || (order && order._openid) || ''
+  // 确认收货赠分结果（云函数 best-effort 返回，供页面提示）
+  careContext.pointsGranted = Number(result.pointsGranted) || 0
+  careContext.pointsMsg = result.pointsMsg || ''
 
-  if (orderSnapshot && orderSnapshot._openid) {
-    const orderNo = orderSnapshot.orderNo || order.orderNo || ''
-    const careNote = careContext.showCare
-      ? `三天后将提醒您查看「${careContext.productTitle}」养护指南`
-      : '欢迎评价这次收藏体验'
+  if (buyerOpenid && careContext.showCare) {
+    const orderNo = (orderSnapshot && orderSnapshot.orderNo) || order.orderNo || result.orderNo || ''
     wx.cloud.callFunction({
-      name: 'dispatchMessage',
+      name: 'sendCareReminder',
       data: {
-        action: 'dispatch',
-        eventType: 'order_received',
-        openid: orderSnapshot._openid,
-        relatedId: orderId,
-        vars: { orderNo, careNote }
+        action: 'schedule',
+        orderId,
+        openid: buyerOpenid,
+        category: careContext.category,
+        productId: careContext.productId,
+        productTitle: careContext.productTitle,
+        orderNo,
+        careSummary: careContext.careSummary,
+        categoryLabel: careContext.categoryLabel
       }
-    }).catch((err) => console.warn('order_received message failed:', err))
-
-    if (careContext.showCare) {
-      wx.cloud.callFunction({
-        name: 'sendCareReminder',
-        data: {
-          action: 'schedule',
-          orderId,
-          openid: orderSnapshot._openid,
-          category: careContext.category,
-          productId: careContext.productId,
-          productTitle: careContext.productTitle,
-          orderNo,
-          careSummary: careContext.careSummary,
-          categoryLabel: careContext.categoryLabel
-        }
-      }).catch((err) => console.warn('schedule care reminder failed:', err))
-    }
+    }).catch((err) => console.warn('schedule care reminder failed:', err))
   }
 
   if (prompt) {
@@ -169,7 +179,19 @@ async function confirmReceiptOnOrder(orderId, orderSnapshot, options = {}) {
       if (careContext.showCare) {
         showPostReceiptCareSheet(orderId, careContext)
       } else {
-        wx.showToast({ title: '已签收', icon: 'success' })
+        // 无养护上下文时，仍引导评价
+        wx.showActionSheet({
+          itemList: ['写一条评价', '稍后再说'],
+          success: (res) => {
+            if (res.tapIndex === 0) {
+              wx.navigateTo({
+                url: buildCommentUrl(orderId, careContext),
+                fail: () => wx.showToast({ title: '无法打开评价页', icon: 'none' })
+              })
+            }
+          },
+          fail: () => wx.showToast({ title: '已签收', icon: 'success' })
+        })
       }
     }, 80)
   }

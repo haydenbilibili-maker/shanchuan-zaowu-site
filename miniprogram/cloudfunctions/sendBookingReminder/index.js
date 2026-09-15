@@ -35,7 +35,21 @@ exports.main = async (event, context) => {
 
     // 获取用户openid
     const wxContext = cloud.getWXContext();
-    const openid = booking._openid || wxContext.OPENID;
+    const callerOpenid = String(wxContext.OPENID || '');
+    const bookingOwner = String(booking._openid || '');
+    // 安全：C 端只能给自己发；收件人绝不能取自客户端传入的 bookingData
+    // （原实现 `booking._openid || OPENID` 让任意用户向任意 openid 发订阅消息/站内信）
+    if (!isNonClientSource()) {
+      if (!callerOpenid) return { success: false, msg: '请先登录' };
+      if (bookingOwner && bookingOwner !== callerOpenid) {
+        return { success: false, msg: '无权为该预约发送提醒' };
+      }
+      if (!bookingOwner && !bookingId) {
+        return { success: false, msg: '缺少预约信息' };
+      }
+    }
+    const openid = isNonClientSource() ? (bookingOwner || callerOpenid) : callerOpenid;
+    if (!openid) return { success: false, msg: '缺少接收人' };
 
     // 根据提醒类型发送不同的消息
     let message = {};
@@ -131,6 +145,19 @@ exports.main = async (event, context) => {
  * 发送站内消息
  * 与web后台的通知消息配置打通
  */
+/**
+ * 是否「非客户端来源」：小程序客户端调用必带 wx_client / wx_devtools；
+ * 云函数互调与定时触发不带该标记，C 端无法伪造。
+ */
+function isNonClientSource() {
+  try {
+    const src = String((cloud.getWXContext() || {}).SOURCE || '')
+    return !/wx_client|wx_devtools/i.test(src)
+  } catch (e) {
+    return false
+  }
+}
+
 async function sendInAppMessage(openid, message, booking, reminderType) {
   const typeMap = {
     success: 'booking_success',
@@ -142,10 +169,10 @@ async function sendInAppMessage(openid, message, booking, reminderType) {
 
   const actionMap = {
     success: (id) => `subpackages/business/ticket/index?id=${id}`,
-    day_before: () => 'subpackages/business/my-bookings/index',
-    hour_before: () => 'subpackages/business/my-bookings/index',
+    day_before: () => 'subpackages/business/booking/index?tab=3',
+    hour_before: () => 'subpackages/business/booking/index?tab=3',
     changed: (id) => `subpackages/business/ticket/index?id=${id}`,
-    cancelled: () => 'subpackages/business/my-bookings/index'
+    cancelled: () => 'subpackages/business/booking/index?tab=3'
   };
 
   const msgType = typeMap[reminderType] || 'booking_reminder';

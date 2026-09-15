@@ -1,8 +1,9 @@
 const { MEDIA } = require('./cdn')
 const { sectionsToHtml } = require('./seedHelpers')
+const { applyExhibitionCopy } = require('./exhibitionCopy')
 const { EXTENDED_ARTICLES, EXTENDED_EXHIBITIONS } = require('./communitySeedExtended')
 
-const SEED_VERSION = 'community_seed_v2'
+const SEED_VERSION = 'community_seed_v3'
 
 function articleDoc(seedKey, fields) {
   return {
@@ -26,7 +27,9 @@ function exhibitionDoc(seedKey, fields) {
     tags: fields.tags || ['专题'],
     ...fields,
     cover: fields.coverImage,
-    relatedProductIds: fields.relatedProductIds || []
+    relatedProductIds: fields.relatedProductIds || [],
+    relatedSkus: fields.relatedSkus || [],
+    relatedArticleSeedKeys: fields.relatedArticleSeedKeys || []
   }
 }
 
@@ -142,30 +145,14 @@ const LEGACY_EXHIBITIONS = [
   exhibitionDoc('exhibition_blue_morpho', {
     title: '蓝色闪蝶特展',
     latinName: 'Morpho menelaus',
-    brief: '从翅面结构色到制框细节，一次看尽「蓝」的层次。',
     coverImage: MEDIA.insectCover,
-    tags: ['昆虫', '专题', '闪蝶'],
-    content: sectionsToHtml([
-      {
-        title: '策展语',
-        body: '蓝色不是被涂上去的。本专题围绕闪蝶结构色、制框工艺与家居陈列，呈现「柜中一翼」的完整观看路径。',
-        images: [MEDIA.insectCover, MEDIA.insectImages[1]]
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_blue_morpho')
   }),
   exhibitionDoc('exhibition_museum_night', {
     title: '博物馆之夜：暖光下的标本柜',
     latinName: 'Curated Evening',
-    brief: '闭店后的标本柜视角——安静、暖光、留白。',
     coverImage: MEDIA.bannerMuseum,
-    tags: ['专题', '品牌', '博物学'],
-    content: sectionsToHtml([
-      {
-        title: '策展语',
-        body: '山海造物的空间，像一间可以走进去的奇珍柜。暖光压低对比，让黄铜、木纹与标本本体成为唯一主角。',
-        images: [MEDIA.bannerMuseum, MEDIA.storeCover]
-      }
-    ])
+    ...applyExhibitionCopy('exhibition_museum_night')
   })
 ]
 

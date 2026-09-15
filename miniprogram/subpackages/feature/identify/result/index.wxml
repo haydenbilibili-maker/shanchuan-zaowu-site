@@ -1,0 +1,376 @@
+<wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
+<view class="page">
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <view class="load-skel-card">
+      <view class="load-skel-img"></view>
+      <view class="load-skel-plate">
+        <view class="sk-line sk-overline"></view>
+        <view class="sk-line sk-title"></view>
+        <view class="sk-line sk-wide"></view>
+      </view>
+    </view>
+    <text class="load-hint">翻开这一页…</text>
+  </view>
+
+  <view class="load-error" wx:elif="{{loadError}}">
+    <text class="load-error-en">{{loadErrorKind === 'unshared' ? 'SHARED LINK' : 'ARCHIVE'}}</text>
+    <text class="load-error-title">{{loadErrorKind === 'unshared' ? '这份鉴定尚未公开' : '鉴定记录加载失败'}}</text>
+    <text class="load-error-desc">{{loadErrorMsg || '请检查网络后重试，或返回重新拍摄'}}</text>
+    <view class="load-error-actions">
+      <view class="act primary" wx:if="{{loadErrorKind === 'unshared'}}" bindtap="goIdentifyHome">去拍一件自己的</view>
+      <view class="act ghost" bindtap="retryLoad">重新加载</view>
+      <view class="act ghost" wx:if="{{loadErrorKind !== 'unshared'}}" bindtap="goIdentifyHome">返回鉴定</view>
+      <view class="act ghost" wx:else bindtap="goHomeTab">回到探索</view>
+    </view>
+  </view>
+
+  <block wx:else>
+    <view class="guest-share-banner" wx:if="{{!isOwner}}" bindtap="goIdentifyHome" hover-class="guest-share-press" hover-stay-time="80">
+      <view class="guest-share-copy">
+        <text class="guest-share-en">FROM A FRIEND</text>
+        <text class="guest-share-title">来自好友的鉴定分享</text>
+        <text class="guest-share-desc">仅供浏览参考 · 轻点此处去拍一件自己的</text>
+      </view>
+      <text class="guest-share-chevron">›</text>
+    </view>
+
+    <species-card
+      imageUrl="{{displayImage}}"
+      speciesInfo="{{speciesInfo}}"
+      aiContent="{{aiContent}}"
+      confidenceLevel="{{confidenceLevel}}"
+      showConfidence="{{true}}"
+      rootCategoryTag="{{rootCategoryTag}}"
+      showProtection="{{showSpeciesArchive}}"
+      protectionTags="{{speciesProfile.protectionTags}}"
+      protectionEmpty="{{speciesProfile.protectionEmpty}}"
+      protectionEmptyLabel="{{speciesProfile.protectionEmptyLabel}}"
+      protectionSummary="{{speciesProfile.protectionSummary}}"
+    />
+
+    <!-- 备选物种 -->
+    <view class="alt-panel fade-in" wx:if="{{alternatives.length}}">
+      <view class="alt-head">
+        <text class="alt-en">ALTERNATIVES</text>
+        <text class="alt-title">相近可能</text>
+      </view>
+      <text class="alt-tip">置信度不足以唯一确定时，可对照下列形态相近物种。</text>
+      <view class="alt-list">
+        <view class="alt-item" wx:for="{{alternatives}}" wx:key="species_name_zh" wx:for-item="alt">
+          <view class="alt-main">
+            <text class="alt-zh">{{alt.species_name_zh || alt.name_zh || '未命名'}}</text>
+            <text class="alt-latin" wx:if="{{alt.species_name_latin || alt.name_latin}}">{{alt.species_name_latin || alt.name_latin}}</text>
+          </view>
+          <text class="alt-conf" wx:if="{{alt.confidence}}">{{alt.confidencePct || ''}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 鉴定百科 -->
+    <view class="encyclopedia" wx:if="{{showSpeciesArchive}}" id="encyclopedia">
+      <view class="ency-head">
+        <text class="ency-en">SPECIES ARCHIVE</text>
+        <text class="ency-title">鉴定百科</text>
+        <text class="ency-sub" wx:if="{{speciesProfile.sourceLabel}}">著录 · {{speciesProfile.sourceLabel}}</text>
+        <text class="ency-sub" wx:else>博物柜式物种档案 · 供对照与收藏参考</text>
+      </view>
+
+      <scroll-view
+        class="ency-nav"
+        scroll-x
+        enable-flex
+        show-scrollbar="{{false}}"
+        wx:if="{{archiveNav.length}}"
+      >
+        <view class="ency-nav-inner">
+          <view
+            class="ency-nav-chip {{activeArchiveId === item.id ? 'on' : ''}}"
+            wx:for="{{archiveNav}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="onArchiveNavTap"
+            hover-class="ency-nav-press"
+            hover-stay-time="80"
+          >{{item.title}}</view>
+        </view>
+      </scroll-view>
+
+      <view class="ency-skeleton" wx:if="{{profileEnriching && !speciesProfile.blocks.length}}">
+        <view class="sk-block">
+          <view class="sk-line sk-overline"></view>
+          <view class="sk-line sk-title"></view>
+          <view class="sk-line sk-wide"></view>
+          <view class="sk-line"></view>
+          <view class="sk-line sk-short"></view>
+        </view>
+        <view class="sk-block">
+          <view class="sk-line sk-overline"></view>
+          <view class="sk-line sk-title"></view>
+          <view class="sk-line sk-wide"></view>
+          <view class="sk-line sk-short"></view>
+        </view>
+      </view>
+
+      <view class="ency-retry" wx:if="{{profileEnrichError}}">
+        <text class="ency-retry-text">百科信息补全失败</text>
+        <view class="ency-retry-btn" bindtap="retryEnrichProfile" hover-class="ency-retry-press" hover-stay-time="80">重试补全</view>
+      </view>
+
+      <block wx:for="{{speciesProfile.blocks}}" wx:key="id" wx:for-item="block">
+        <view
+          class="ency-block fade-in"
+          id="archive-{{block.id}}"
+          wx:if="{{block.visible}}"
+          hidden="{{block.type === 'source'}}"
+        >
+          <view class="ency-block-head">
+            <view class="ency-block-copy">
+              <text class="ency-block-en" wx:if="{{block.overline}}">{{block.overline}}</text>
+              <text class="ency-block-title">{{block.title}}</text>
+            </view>
+            <text
+              class="ency-toggle"
+              wx:if="{{block.type === 'rows' && block.rows.length > 2}}"
+              data-id="{{block.id}}"
+              bindtap="toggleSection"
+              hover-class="ency-toggle-press"
+              hover-stay-time="80"
+            >{{sectionExpanded[block.id] ? '收起' : '展开'}}</text>
+          </view>
+
+          <block wx:if="{{block.type === 'rows'}}">
+            <block wx:if="{{block.rows.length}}">
+              <view
+                class="ency-row"
+                wx:for="{{block.rows}}"
+                wx:key="title"
+                wx:for-item="row"
+                wx:if="{{sectionExpanded[block.id] || index < 2}}"
+              >
+                <text class="ency-k">{{row.title}}</text>
+                <text class="ency-v">{{row.text}}</text>
+                <text class="ency-src" wx:if="{{row.aiSourced}}">据识别模型整理，仅供参考</text>
+              </view>
+            </block>
+            <text class="ency-empty" wx:else>{{block.emptyLabel || '暂未著录'}}</text>
+          </block>
+
+          <block wx:elif="{{block.type === 'distribution'}}">
+            <text class="ency-v" wx:if="{{block.text}}">{{block.text}}</text>
+            <text class="ency-empty" wx:else>{{block.emptyLabel || '暂未著录'}}</text>
+            <text class="ency-src" wx:if="{{block.aiSourced}}">据识别模型整理，仅供参考</text>
+            <view class="ency-map-wrap" wx:if="{{speciesProfile.mapState.hasMap}}">
+              <map
+                class="ency-map"
+                latitude="{{speciesProfile.mapState.mapCenter.latitude}}"
+                longitude="{{speciesProfile.mapState.mapCenter.longitude}}"
+                scale="{{speciesProfile.mapState.mapScale}}"
+                markers="{{speciesProfile.mapState.mapMarkers}}"
+                enable-scroll="{{false}}"
+                enable-zoom="{{false}}"
+                show-location="{{false}}"
+              ></map>
+              <text class="ency-map-caption">概略分布示意 · 非精确边界</text>
+            </view>
+            <view class="ency-map-placeholder" wx:else>
+              <text>{{speciesProfile.mapState.mapPlaceholder || '分布图待著录'}}</text>
+            </view>
+          </block>
+
+          <block wx:elif="{{block.type === 'conservation'}}">
+            <view class="ency-prot-plate" wx:if="{{block.protectionTags.length}}">
+              <view class="ency-prot-tags">
+                <view class="ency-prot-tag tone-{{tag.tone}}" wx:for="{{block.protectionTags}}" wx:key="label" wx:for-item="tag">
+                  <text class="ency-prot-sys">{{tag.system}}</text>
+                  <text class="ency-prot-val">{{tag.label}}</text>
+                </view>
+              </view>
+              <text class="ency-prot-summary" wx:if="{{speciesProfile.protectionSummary}}">{{speciesProfile.protectionSummary}}</text>
+            </view>
+            <text class="ency-empty" wx:elif="{{block.protectionEmpty}}">{{block.protectionEmptyLabel || '暂无等级'}}</text>
+            <view class="ency-row" wx:for="{{block.rows}}" wx:key="title" wx:for-item="row">
+              <text class="ency-k" wx:if="{{row.title !== block.protectionEmptyLabel}}">{{row.title}}</text>
+              <text class="ency-v">{{row.text}}</text>
+            </view>
+          </block>
+
+          <block wx:elif="{{block.type === 'similar'}}">
+            <view class="ency-similar" wx:for="{{block.items}}" wx:key="species_name_zh" wx:for-item="sim">
+              <text class="sim-zh">{{sim.species_name_zh}}</text>
+              <text class="sim-latin" wx:if="{{sim.species_name_latin}}">{{sim.species_name_latin}}</text>
+              <text class="sim-note" wx:if="{{sim.note}}">{{sim.note}}</text>
+            </view>
+            <text class="ency-src" wx:if="{{block.aiSourced}}">形态参考，非名录判定</text>
+          </block>
+        </view>
+      </block>
+
+      <!-- 与山海造物 -->
+      <view class="ency-block cabinet-block fade-in" id="archive-cabinet" wx:if="{{relatedWiki.length || relatedProducts.length}}">
+        <view class="ency-block-head">
+          <view class="ency-block-copy">
+            <text class="ency-block-en">IN THE CABINET</text>
+            <text class="ency-block-title">与山海造物</text>
+          </view>
+        </view>
+        <view
+          class="wiki-row"
+          wx:for="{{relatedWiki}}"
+          wx:key="_id"
+          bindtap="onWikiTap"
+          data-id="{{item._id}}"
+          hover-class="wiki-row-press"
+          hover-stay-time="80"
+        >
+          <image class="wiki-thumb" src="{{item.coverImage || displayImage}}" mode="aspectFill" />
+          <view class="wiki-meta">
+            <text class="wiki-title">{{item.title}}</text>
+            <text class="wiki-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
+            <text class="wiki-brief" wx:if="{{item.brief}}">{{item.brief}}</text>
+          </view>
+          <text class="wiki-arrow">›</text>
+        </view>
+        <view class="cabinet-products" wx:if="{{relatedProducts.length}}">
+          <text class="cabinet-products-label">可购藏品</text>
+          <scroll-view scroll-x class="strip-scroll" enable-flex show-scrollbar="{{false}}">
+            <view class="strip-inner">
+              <view
+                class="p-card"
+                wx:for="{{relatedProducts}}"
+                wx:key="_id"
+                bindtap="onProductTap"
+                data-id="{{item._id}}"
+                hover-class="p-card-press"
+                hover-stay-time="80"
+              >
+                <image class="p-img" src="{{item.cover}}" mode="aspectFill" />
+                <text class="p-name">{{item.title}}</text>
+                <text class="p-price" wx:if="{{item.price}}">¥{{item.price}}</text>
+              </view>
+              <view class="strip-pad"></view>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+    </view>
+
+    <view class="retake-block" wx:if="{{confidenceLevel === 'low' || speciesInfo.is_specimen === false}}">
+      <button class="act primary" bindtap="onRetake" hover-class="act-primary-press" hover-stay-time="80">重新拍摄</button>
+    </view>
+
+    <view class="action-dock">
+      <view class="action-group" wx:if="{{speciesInfo.is_specimen !== false}}">
+        <view class="fallback-note" wx:if="{{showFallback}}">
+          <text class="fallback-tip">暂未匹配到馆藏档案或可购藏品，你可以浏览同类内容或咨询专员。</text>
+        </view>
+        <view class="act-grid">
+          <button class="act ghost compact" bindtap="onGoGallery" hover-class="act-ghost-press" hover-stay-time="80">馆藏同类</button>
+          <button class="act ghost compact" bindtap="onExpertHelp" hover-class="act-ghost-press" hover-stay-time="80">鉴定疑问</button>
+        </view>
+      </view>
+      <view class="action-group" wx:elif="{{speciesInfo.is_specimen === false}}">
+        <view class="act-grid">
+          <button class="act ghost compact act-grid-span" bindtap="onExpertHelp" hover-class="act-ghost-press" hover-stay-time="80">鉴定疑问</button>
+        </view>
+      </view>
+
+      <view class="action-group action-group-atlas" wx:if="{{speciesInfo.is_specimen !== false}}">
+        <button
+          wx:if="{{!bookmarked && isOwner}}"
+          class="act primary act-row"
+          bindtap="onSaveAtlas"
+          disabled="{{saving}}"
+          hover-class="act-primary-press"
+          hover-stay-time="80"
+        >
+          <image class="act-icon" src="/subpackages/feature/assets/icons/atlas-on-brass.png" mode="aspectFit" />
+          <text>{{saving ? '写入中…' : '保存到我的山海图鉴'}}</text>
+        </button>
+        <view
+          wx:elif="{{!isOwner}}"
+          class="act ghost act-row"
+          bindtap="onRetake"
+          hover-class="act-ghost-press"
+          hover-stay-time="80"
+        >
+          <text>他人分享的鉴定 · 去拍一件自己的</text>
+        </view>
+        <view
+          wx:else
+          class="act status act-row"
+          bindtap="onGoAtlas"
+          hover-class="act-status-press"
+          hover-stay-time="80"
+        >
+          <image class="act-icon act-icon-status" src="/assets/icons/atlas.png" mode="aspectFit" />
+          <text>已加入山海图鉴</text>
+          <text class="act-status-chevron">›</text>
+        </view>
+      </view>
+
+      <view class="action-group action-group-meta">
+        <text class="meta-link" bindtap="onGoShare" hover-class="meta-link-press" hover-stay-time="80">分享海报</text>
+        <text class="meta-dot" wx:if="{{recordId}}">·</text>
+        <text
+          class="meta-link"
+          wx:if="{{recordId}}"
+          bindtap="openFeedback"
+          hover-class="meta-link-press"
+          hover-stay-time="80"
+        >识别纠错</text>
+        <block wx:if="{{relatedProducts.length > 0}}">
+          <text class="meta-dot">·</text>
+          <text class="meta-link" bindtap="onViewProducts" hover-class="meta-link-press" hover-stay-time="80">相关藏品</text>
+        </block>
+      </view>
+
+      <view class="foot-links">
+        <view class="foot-link" bindtap="onGoAtlas" hover-class="foot-link-press" hover-stay-time="80">
+          <image class="foot-link-icon" src="/assets/icons/atlas.png" mode="aspectFit" />
+          <text>我的山海图鉴</text>
+        </view>
+        <block wx:if="{{confidenceLevel !== 'low' && speciesInfo.is_specimen !== false}}">
+          <text class="dot">·</text>
+          <text class="foot-link-text" bindtap="onRetake" hover-class="foot-link-press" hover-stay-time="80">再拍一张</text>
+        </block>
+      </view>
+    </view>
+  </block>
+
+  <view class="fb-mask" wx:if="{{showFeedback}}" catchtap="closeFeedback">
+    <view class="fb-panel" catchtap="noop">
+      <text class="fb-en">CORRECTION</text>
+      <text class="fb-title">识别纠错</text>
+      <text class="fb-tip">帮助我们改进模型。请填写您认为更准确的中文名，备注可选。</text>
+      <input
+        class="fb-input"
+        placeholder="您认为正确的中文名"
+        value="{{feedbackZh}}"
+        bindinput="onFeedbackZh"
+      />
+      <textarea
+        class="fb-area"
+        placeholder="补充说明（可选）"
+        value="{{feedbackNote}}"
+        bindinput="onFeedbackNote"
+        maxlength="500"
+      />
+      <view class="fb-actions">
+        <button class="fb-btn cancel" bindtap="closeFeedback">取消</button>
+        <button class="fb-btn ok" bindtap="submitFeedback" loading="{{feedbackSubmitting}}">提交</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="unlock-mask" wx:if="{{unlockSheet.show}}" catchtouchmove="onUnlockStay">
+    <view class="unlock-sheet" catchtap="noop">
+      <text class="unlock-en">PAGE TURNED</text>
+      <text class="unlock-title">这一页被翻开了</text>
+      <text class="unlock-name">{{unlockSheet.nameZh}}</text>
+      <text class="unlock-latin" wx:if="{{unlockSheet.nameLatin}}">{{unlockSheet.nameLatin}}</text>
+      <text class="unlock-msg">{{unlockSheet.msg}}</text>
+      <view class="unlock-cta" bindtap="onUnlockOpen">去看这一页</view>
+      <text class="unlock-later" bindtap="onUnlockStay">先留在这里</text>
+    </view>
+  </view>
+</view>

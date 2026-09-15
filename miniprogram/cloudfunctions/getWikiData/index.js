@@ -15,6 +15,127 @@ function getProductStock(p) {
   return parseInt(p.stock, 10) || 0
 }
 
+function skuKey(productId, skuId) {
+  const pid = String(productId || '').trim()
+  const sid = String(skuId || '').trim()
+  if (!pid) return ''
+  return sid ? `${pid}::${sid}` : pid
+}
+
+function relatedIdsFromSkus(relatedSkus) {
+  const ids = []
+  const seen = {}
+  ;(Array.isArray(relatedSkus) ? relatedSkus : []).forEach((item) => {
+    const id = String((item && item.productId) || '').trim()
+    if (!id || seen[id]) return
+    seen[id] = true
+    ids.push(id)
+  })
+  return ids
+}
+
+function normalizeRelatedSkus(skus, productIds) {
+  const list = []
+  const seen = {}
+  const push = (productId, skuId, skuLabel) => {
+    const pid = String(productId || '').trim()
+    if (!pid) return
+    const sid = String(skuId || '').trim()
+    const key = skuKey(pid, sid)
+    if (!key || seen[key]) return
+    seen[key] = true
+    list.push({
+      productId: pid,
+      skuId: sid,
+      skuLabel: String(skuLabel || '').trim()
+    })
+  }
+  if (Array.isArray(skus) && skus.length) {
+    skus.forEach((item) => {
+      if (!item) return
+      push(item.productId, item.skuId, item.skuLabel)
+    })
+  } else if (Array.isArray(productIds)) {
+    productIds.forEach((id) => push(id, '', ''))
+  }
+  return list
+}
+
+function findProductSku(product, skuId) {
+  if (!product || !skuId || !Array.isArray(product.skus)) return null
+  return product.skus.find((s) => s && String(s.id) === String(skuId)) || null
+}
+
+function getRelatedLineStock(product, skuId) {
+  const sku = findProductSku(product, skuId)
+  if (sku) return parseInt(sku.stock, 10) || 0
+  return getProductStock(product)
+}
+
+function formatExhibitionItem(item) {
+  if (!item) return null
+  let coverImage = item.coverImage || item.cover || item.image || item.mainImage || item.cover_image || item.coverImageUrl || item.thumbnail || item.poster || ''
+  if (coverImage && !String(coverImage).startsWith('http') && !String(coverImage).startsWith('cloud')) {
+    coverImage = ''
+  }
+  return {
+    _id: item._id,
+    title: item.title || item.name || item.cn_name || item.name_cn || '专题展览',
+    coverImage,
+    cover: coverImage,
+    brief: item.brief || item.description || item.summary || item.intro || '点击查看详情',
+    latinName: item.latinName || item.subtitle || '',
+    createTime: item.createTime || item._createTime || item.create_time
+  }
+}
+
+async function querySorted(collectionName, where, limit) {
+  const col = db.collection(collectionName)
+  const q = where ? col.where(where) : col
+  try {
+    return await q.orderBy('_createTime', 'desc').limit(limit).get()
+  } catch (e1) {
+    try {
+      return await q.orderBy('createTime', 'desc').limit(limit).get()
+    } catch (e2) {
+      return await q.limit(limit).get()
+    }
+  }
+}
+
+async function fetchCmsExhibitions() {
+  const res = await querySorted(CMS_COLLECTION, { type: 'exhibition', status: 'published' }, 20)
+  return (res.data || []).map(formatExhibitionItem).filter(Boolean)
+}
+
+async function fetchLegacyExhibitions() {
+  const res = await querySorted('curated_collections', null, 20)
+  return (res.data || []).map(formatExhibitionItem).filter(Boolean)
+}
+
+async function fetchRelatedArticles(keys) {
+  const list = (keys || []).map((k) => String(k || '').trim()).filter(Boolean)
+  if (!list.length) return []
+  try {
+    const res = await db.collection('articles').where({ _seedKey: _.in(list) }).get()
+    const map = {}
+    ;(res.data || []).forEach((a) => {
+      if (!a || (a.status && a.status !== 'published')) return
+      map[a._seedKey] = {
+        _id: a._id,
+        title: a.title,
+        brief: a.brief || '',
+        coverImage: a.coverImage || a.cover || '',
+        _seedKey: a._seedKey
+      }
+    })
+    return list.map((k) => map[k]).filter(Boolean)
+  } catch (e) {
+    console.warn('relatedArticles query failed', e)
+    return []
+  }
+}
+
 async function fetchAlternativeProducts(category, excludeIds) {
   if (!category) return []
   const altRes = await db.collection('products')
@@ -31,125 +152,26 @@ async function fetchAlternativeProducts(category, excludeIds) {
 exports.main = async (event, context) => {
   const { action, categoryId, keyword, wikiId, page = 1, pageSize = 20 } = event
 
-  // 🟢 1. 获取专题列表 (从 curated_collections 集合)
+  // 1. 专题列表：优先 cms_wikis（type=exhibition, published），空/失败再降级 curated_collections
   if (action === 'get_exhibitions') {
     try {
-      const COLLECTION_NAME = 'curated_collections';
-      console.log('========== 开始查询专题展览 ==========');
-      console.log('集合名称:', COLLECTION_NAME);
-      console.log('环境:', cloud.DYNAMIC_CURRENT_ENV);
-      
-      // 先尝试统计集合中的数据总数
-      let countRes;
+      let data = []
       try {
-        countRes = await db.collection(COLLECTION_NAME).count();
-        console.log('集合数据总数:', countRes.total);
-      } catch (countErr) {
-        console.error('统计集合数据失败:', countErr);
-        // 如果统计失败，可能是集合不存在或权限问题
-        return { 
-          success: false, 
-          data: [], 
-          msg: '集合查询失败: ' + countErr.message,
-          debug: { collection: COLLECTION_NAME, error: countErr.message }
-        };
+        data = await fetchCmsExhibitions()
+      } catch (cmsErr) {
+        console.warn('cms_wikis get_exhibitions failed', cmsErr)
       }
-      
-      if (countRes.total === 0) {
-        console.warn('集合中没有数据');
-        return { success: true, data: [], msg: '集合中没有数据' };
-      }
-      
-      // 直接查询 curated_collections 集合的所有数据
-      let allRes;
-      try {
-        // 尝试按创建时间排序
+      if (!data.length) {
         try {
-          allRes = await db.collection(COLLECTION_NAME)
-            .orderBy('_createTime', 'desc')
-            .limit(10)
-            .get();
-          console.log('✓ 使用 _createTime 排序成功');
-        } catch (e1) {
-          // 如果 _createTime 字段不存在，尝试其他时间字段
-          console.warn('_createTime 排序失败，尝试其他字段:', e1.message);
-          try {
-            allRes = await db.collection(COLLECTION_NAME)
-              .orderBy('createTime', 'desc')
-              .limit(10)
-              .get();
-            console.log('✓ 使用 createTime 排序成功');
-          } catch (e2) {
-            // 如果还是失败，尝试按更新时间排序
-            try {
-              allRes = await db.collection(COLLECTION_NAME)
-                .orderBy('updateTime', 'desc')
-                .limit(10)
-                .get();
-              console.log('✓ 使用 updateTime 排序成功');
-            } catch (e3) {
-              // 如果还是失败，不排序直接查询
-              console.warn('所有排序字段都失败，使用无排序查询:', e3.message);
-              allRes = await db.collection(COLLECTION_NAME)
-                .limit(10)
-                .get();
-              console.log('✓ 无排序查询成功');
-            }
-          }
+          data = await fetchLegacyExhibitions()
+        } catch (legacyErr) {
+          console.warn('curated_collections fallback failed', legacyErr)
         }
-        
-        console.log('查询到数据量:', allRes.data.length);
-        if (allRes.data.length > 0) {
-          console.log('第一条数据示例:', JSON.stringify(allRes.data[0], null, 2));
-          console.log('数据字段列表:', Object.keys(allRes.data[0]));
-        } else {
-          console.warn('查询结果为空，但统计显示有', countRes.total, '条数据');
-        }
-      } catch (e) {
-        console.error('查询集合失败:', e);
-        return { 
-          success: false, 
-          data: [], 
-          msg: '查询失败: ' + e.message,
-          debug: { collection: COLLECTION_NAME, error: e.message, stack: e.stack }
-        };
       }
-      
-      // 格式化数据，确保字段统一映射
-      const formattedData = allRes.data.map(item => {
-        // 处理封面图片：支持多种字段名
-        let coverImage = item.coverImage || item.cover || item.image || item.mainImage || item.cover_image || item.coverImageUrl || item.thumbnail || item.poster || '';
-        
-        // 如果是云存储路径，确保格式正确
-        if (coverImage && !coverImage.startsWith('http') && !coverImage.startsWith('cloud')) {
-          // 如果不是有效的URL或云存储路径，清空
-          coverImage = '';
-        }
-        
-        const formatted = {
-          _id: item._id,
-          title: item.title || item.name || item.cn_name || item.name_cn || '专题展览',
-          coverImage: coverImage,
-          cover: coverImage, // 同时提供 cover 字段，兼容前端
-          brief: item.brief || item.description || item.summary || item.intro || item.content || '点击查看详情',
-          createTime: item.createTime || item._createTime || item.create_time
-        };
-        
-        console.log('格式化数据:', formatted.title, '封面:', formatted.cover ? '有' : '无');
-        return formatted;
-      });
-      
-      console.log('最终返回数据量:', formattedData.length);
-      console.log('========== 查询完成 ==========');
-      return { success: true, data: formattedData };
+      return { success: true, data }
     } catch (e) {
-      console.error('获取专题展览失败', e);
-      return { 
-        success: false, 
-        data: [], 
-        msg: e.message,
-        debug: { error: e.message, stack: e.stack }
-      };
+      console.error('获取专题展览失败', e)
+      return { success: false, data: [], msg: e.message }
     }
   }
 
@@ -348,20 +370,48 @@ exports.main = async (event, context) => {
         gallery: data.gallery || [data.coverImage],
         tags: data.tags || [],
         category: data.category || '',
+        taxonomy: data.taxonomy || null,
+        distribution: data.distribution || data.geoDistribution || '',
+        habitat: data.habitat || '',
+        morphology: data.morphology || data.features || '',
+        habits: data.habits || data.ecology || '',
+        iucn: data.iucn || (data.conservation && data.conservation.iucn) || '',
+        protectionLevel: data.protectionLevel || data.china_level || (data.conservation && data.conservation.china) || '',
+        cites: data.cites || (data.conservation && data.conservation.cites) || '',
         stats: { views: 0, likes: 0 }
       };
 
       let relatedProducts = []
       let alternativeProducts = []
       let usingAlternative = false
-      const relatedIds = data.relatedProductIds || []
+      const relatedSkus = normalizeRelatedSkus(data.relatedSkus, data.relatedProductIds)
+      const relatedIds = relatedIdsFromSkus(relatedSkus)
 
       if (relatedIds.length > 0) {
         const pRes = await db.collection('products')
           .where({ _id: _.in(relatedIds), isOffShelf: _.neq(true) })
           .get()
-        relatedProducts = pRes.data || []
-        const inStock = relatedProducts.filter((p) => getProductStock(p) > 0)
+        const productMap = {}
+        ;(pRes.data || []).forEach((p) => { productMap[p._id] = p })
+
+        relatedProducts = relatedSkus.map((rel) => {
+          const p = productMap[rel.productId]
+          if (!p) return null
+          const sku = findProductSku(p, rel.skuId)
+          const skuLabel = rel.skuLabel || (sku && (sku.specLabel || '')) || ''
+          const price = sku ? (parseFloat(sku.price) || p.price) : p.price
+          const image = (sku && sku.image) || (p.images && p.images[0]) || p.image || ''
+          return {
+            ...p,
+            price,
+            images: image ? [image].concat((p.images || []).filter((u) => u !== image)) : (p.images || []),
+            relatedSkuId: rel.skuId || '',
+            relatedSkuLabel: skuLabel,
+            _relatedKey: skuKey(p._id, rel.skuId)
+          }
+        }).filter(Boolean)
+
+        const inStock = relatedProducts.filter((p) => getRelatedLineStock(p, p.relatedSkuId) > 0)
         if (inStock.length) {
           relatedProducts = inStock
         } else if (relatedProducts.length) {
@@ -375,12 +425,24 @@ exports.main = async (event, context) => {
         usingAlternative = alternativeProducts.length > 0
       }
 
+      if (alternativeProducts.length) {
+        alternativeProducts = alternativeProducts.map((p) => ({
+          ...p,
+          relatedSkuId: '',
+          relatedSkuLabel: '',
+          _relatedKey: skuKey(p._id, '')
+        }))
+      }
+
+      const relatedArticles = await fetchRelatedArticles(data.relatedArticleSeedKeys)
+
       return {
         success: true,
         data: wikiData,
         relatedProducts,
         alternativeProducts,
-        usingAlternative
+        usingAlternative,
+        relatedArticles
       };
 
     } catch (e) {

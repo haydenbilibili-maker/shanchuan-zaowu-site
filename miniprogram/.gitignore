@@ -24,6 +24,12 @@ project.private.config.json
 cloudfunctions/*/node_modules/
 cloudfunctions/*/.env
 
+# Local pay secrets — never commit merchant IDs
+scripts/pay.env.local
+scripts/.env.pay*
+scripts/.env.qr
+scripts/.tmp/
+
 # IDE
 .vscode/
 .idea/
@@ -37,3 +43,13 @@ cloudfunctions/*/.env
 .#*
 project_code_context.txt
 export_code.py
+
+# QR crop/compress candidates (never ship)
+assets/qrcode/_cand_*
+assets/qrcode/_preview*
+assets/qrcode/_verify*
+assets/qrcode/_c*_s*.png
+assets/qrcode/_q*_s*.jpg
+
+# legacy empty miniapp scaffold
+miniapp/

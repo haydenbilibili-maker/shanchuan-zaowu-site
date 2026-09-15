@@ -3,6 +3,7 @@ const { findStore, enrichZone, enrichStore, getZonesForStore } = require('../../
 const { hydrateZoneMedia } = require('../../../utils/storeMedia')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const { getFirstImage } = require('../../../utils/util')
+const { navigateToProductDetail } = require('../../../utils/productDetailNav')
 
 const db = wx.cloud.database()
 const _ = db.command
@@ -31,12 +32,22 @@ Page({
   },
 
   async onLoad(options) {
+    // 固定入口参数，供失败重试时复用（onLoad 的 options 只在这一帧有效）
+    this._zoneOptions = options || {}
     const systemInfo = wx.getSystemInfoSync()
+    const zoneId = options.zoneId || ''
+    const storeId = options.storeId || ''
     this.setData({
       statusBarHeight: systemInfo.statusBarHeight || 0,
-      zoneId: options.zoneId || '',
-      storeId: options.storeId || ''
+      zoneId,
+      storeId
     })
+
+    if (!zoneId || !storeId) {
+      wx.showToast({ title: '展陈信息不完整', icon: 'none' })
+      setTimeout(() => wx.navigateBack(), 1500)
+      return
+    }
 
     let store = findStore(options.storeId)
     let zones = getZonesForStore(store.storeId)
@@ -54,10 +65,35 @@ Page({
         }
       }
     } catch (e) {
+      // 网络/云函数失败不等于内容下架：以前一律提示「展陈不存在或已下架」并自动返回，
+      // 会把偶发故障说成内容没了，用户也无法重试
       console.warn('store-zone getStoreConfig', e)
+      this.setData({ loading: false, loadError: true, zone: null })
+      wx.showModal({
+        title: '展陈加载失败',
+        content: '网络或服务暂时不可用，请稍后重试。',
+        confirmText: '重试',
+        cancelText: '返回',
+        confirmColor: '#C4A76C',
+        success: (r) => {
+          if (r.confirm) {
+            this.setData({ loadError: false, loading: true })
+            this.onLoad(this._zoneOptions || {})
+          } else {
+            wx.navigateBack({ fail: () => wx.navigateTo({ url: '/subpackages/business/store/index' }) })
+          }
+        }
+      })
+      return
     }
 
     let zone = enrichZone(rawZone)
+    if (!zone) {
+      this.setData({ loading: false, zone: null })
+      wx.showToast({ title: '展陈不存在或已下架', icon: 'none' })
+      setTimeout(() => wx.navigateBack({ fail: () => wx.navigateTo({ url: '/subpackages/business/store/index' }) }), 1500)
+      return
+    }
     try {
       zone = await hydrateZoneMedia(zone)
     } catch (e) {
@@ -201,29 +237,49 @@ Page({
 
   goBooking() {
     const { store, zoneId } = this.data
+    const storeId = store && store.storeId
+    if (!storeId) {
+      wx.showToast({ title: '门店信息缺失', icon: 'none' })
+      return
+    }
     wx.navigateTo({
-      url: `/subpackages/business/booking/index?storeId=${store.storeId}&tab=0&from=store&zoneId=${zoneId}`
+      url: `/subpackages/business/booking/index?storeId=${storeId}&tab=0&from=store&zoneId=${zoneId || ''}`,
+      fail: () => wx.showToast({ title: '无法打开预约', icon: 'none' })
     })
   },
 
   goProduct(e) {
     const id = e.currentTarget.dataset.id
-    if (!id) return
+    if (!id) {
+      wx.showToast({ title: '藏品不存在', icon: 'none' })
+      return
+    }
     trackBehavior('store_zone_to_product', 'product', id, {
       zoneId: this.data.zoneId,
       storeId: this.data.storeId
     })
-    wx.navigateTo({ url: `/pages/detail/index?id=${id}&from=store_zone&zoneId=${this.data.zoneId}` })
+    const seed = (this.data.products || this.data.list || []).find((p) => p && p._id === id)
+    navigateToProductDetail(id, {
+      seed: seed || { _id: id },
+      query: { from: 'store_zone', zoneId: this.data.zoneId },
+      failToast: '无法打开藏品'
+    })
   },
 
   goWiki(e) {
     const id = e.currentTarget.dataset.id
-    if (!id) return
+    if (!id) {
+      wx.showToast({ title: '档案不存在', icon: 'none' })
+      return
+    }
     trackBehavior('store_zone_to_wiki', 'wiki', id, {
       zoneId: this.data.zoneId,
       storeId: this.data.storeId
     })
-    wx.navigateTo({ url: `/pages/detail/wiki-detail?id=${id}&from=store_zone` })
+    wx.navigateTo({
+      url: `/subpackages/feature/detail/wiki-detail/index?id=${id}&from=store_zone`,
+      fail: () => wx.showToast({ title: '无法打开档案', icon: 'none' })
+    })
   },
 
   goBack() {

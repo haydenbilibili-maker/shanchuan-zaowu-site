@@ -1,30 +1,59 @@
 const CATEGORY_META = {
   all: { label: '全部', icon: '/assets/icons/message.png' },
-  booking: { label: '预约', icon: '/assets/icons/booking.png' },
-  order: { label: '订单', icon: '/assets/icons/cart.png' },
+  booking: { label: '约访', icon: '/assets/icons/booking.png' },
+  order: { label: '藏品', icon: '/assets/icons/cart.png' },
   custom: { label: '定制', icon: '/assets/icons/gift.png' },
-  activity: { label: '活动', icon: '/assets/icons/gift.png' },
-  system: { label: '系统', icon: '/assets/icons/message.png' },
+  activity: { label: '馆讯', icon: '/assets/icons/gift.png' },
+  system: { label: '馆务', icon: '/assets/icons/message.png' },
+  ops: { label: '工作流', icon: '/assets/icons/message.png' },
   other: { label: '其他', icon: '/assets/icons/message.png' }
 };
 
 const TYPE_META = {
-  booking_success: { label: '预约成功', category: 'booking' },
-  booking_reminder: { label: '预约提醒', category: 'booking' },
-  booking_changed: { label: '预约变更', category: 'booking' },
-  booking_cancelled: { label: '预约取消', category: 'booking' },
-  order_created: { label: '待付款', category: 'order' },
-  order_paid: { label: '支付成功', category: 'order' },
-  order_shipped: { label: '已发货', category: 'order' },
-  order_received: { label: '已签收', category: 'order' },
-  care_tip: { label: '养护提醒', category: 'activity' },
-  order_cancelled: { label: '订单取消', category: 'order' },
-  order_refunded: { label: '退款完成', category: 'order' },
-  custom_inquiry_received: { label: '定制意向', category: 'custom' },
-  custom_inquiry_contacted: { label: '专员联系', category: 'custom' },
+  booking_success: { label: '预约已记下', category: 'booking' },
+  booking_reminder: { label: '约访提醒', category: 'booking' },
+  booking_changed: { label: '约访改期', category: 'booking' },
+  booking_cancelled: { label: '约访取消', category: 'booking' },
+  booking_verified: { label: '已核销', category: 'booking' },
+  order_created: { label: '待落定', category: 'order' },
+  order_paid: { label: '已入账', category: 'order' },
+  staff_order_paid: { label: '新单待发', category: 'ops' },
+  wishlist_restock_request: { label: '候补补货', category: 'ops' },
+  order_shipped: { label: '已启程', category: 'order' },
+  order_received: { label: '已入柜', category: 'order' },
+  care_tip: { label: '养护来信', category: 'activity' },
+  order_cancelled: { label: '已释出', category: 'order' },
+  order_refunded: { label: '款项退回', category: 'order' },
+  gift_paid: { label: '心意备妥', category: 'order' },
+  gift_awaiting_address: { label: '待填地址', category: 'order' },
+  gift_accepted: { label: '礼笺已开', category: 'order' },
+  gift_address_submitted: { label: '去处已留', category: 'order' },
+  gift_nudge: { label: '礼赠提醒', category: 'order' },
+  gift_nudge_receiver: { label: '山海等你', category: 'order' },
+  gift_shipped: { label: '礼赠启程', category: 'order' },
+  gift_delivered: { label: '礼物到柜', category: 'order' },
+  gift_received: { label: '到店领取', category: 'order' },
+  gift_expired_refund: { label: '邀约过期', category: 'order' },
+  gift_expired_refund_receiver: { label: '礼笺收回', category: 'order' },
+  gift_refunded_receiver: { label: '心意收回', category: 'order' },
+  // 以下 6 个云端会发送但此前无渲染分支（站内信显示为未知类型）
+  gift_address_submitted_receiver: { label: 'TA 已留地址', category: 'order' },
+  staff_artisan_sku_sold: { label: '作品售出', category: 'ops' },
+  staff_deposit_paid: { label: '定金已付·待制作', category: 'ops' },
+  staff_deposit_balance_window: { label: '尾款期临近', category: 'ops' },
+  staff_deposit_forfeited: { label: '定金已没收', category: 'ops' },
+  staff_deposit_settled: { label: '尾款已结清', category: 'ops' },
+  wishlist_registered: { label: '候补已记', category: 'activity' },
+  wishlist_available: { label: '候补回柜', category: 'activity' },
+  deposit_paid_confirm: { label: '定金收妥', category: 'order' },
+  deposit_balance_due: { label: '尾款窗口', category: 'order' },
+  deposit_forfeited: { label: '尾款逾期', category: 'order' },
+  deposit_settled_confirm: { label: '尾款结清', category: 'order' },
+  custom_inquiry_received: { label: '定制入册', category: 'custom' },
+  custom_inquiry_contacted: { label: '专员跟进', category: 'custom' },
   custom_production_framing: { label: '开始装裱', category: 'custom' },
   custom_production_packing: { label: '进入包装', category: 'custom' },
-  custom_production_shipped: { label: '定制发出', category: 'custom' },
+  custom_production_shipped: { label: '定制启程', category: 'custom' },
   pet_memorial_received: { label: '伴宠意向', category: 'custom' },
   pet_memorial_need_info: { label: '需补充', category: 'custom' },
   pet_memorial_quoted: { label: '伴宠报价', category: 'custom' },
@@ -33,20 +62,68 @@ const TYPE_META = {
   pet_intake_booked: { label: '交接预约', category: 'custom' },
   pet_memorial_in_production: { label: '制作中', category: 'custom' },
   pet_memorial_completed: { label: '已完成', category: 'custom' },
-  support_ticket_received: { label: '留言回执', category: 'system' },
+  support_ticket_received: { label: '留言入册', category: 'system' },
   support_ticket_replied: { label: '专员回复', category: 'system' },
+  invoice_request_received: { label: '开票入册', category: 'system' },
+  invoice_request_staff: { label: '开票待办', category: 'ops' },
+  invoice_request_issued: { label: '发票已开', category: 'system' },
+  invoice_request_rejected: { label: '开票未过', category: 'system' },
+  approval_submitted: { label: '审批提交', category: 'ops' },
+  approval_approved: { label: '审批通过', category: 'ops' },
+  approval_rejected: { label: '审批驳回', category: 'ops' },
   identify_result: { label: '鉴定结果', category: 'activity' },
-  activity_notice: { label: '活动通知', category: 'activity' },
-  system_notice: { label: '系统通知', category: 'system' }
+  store_visit_thanks: { label: '到访回执', category: 'activity' },
+  store_points_granted: { label: '积分入账', category: 'activity' },
+  store_points_revoked: { label: '积分调整', category: 'activity' },
+  store_receipt_submitted: { label: '小票入册', category: 'activity' },
+  store_receipt_approved: { label: '小票入账', category: 'activity' },
+  store_receipt_rejected: { label: '小票未过', category: 'activity' },
+  platform_order_submitted: { label: '外部入册', category: 'activity' },
+  platform_order_approved: { label: '外部入账', category: 'activity' },
+  platform_order_rejected: { label: '外部未过', category: 'activity' },
+  coupon_exchanged: { label: '礼券入夹', category: 'activity' },
+  birthday_gift: { label: '生日心意', category: 'activity' },
+  honorary_curator_granted: { label: '荣誉馆长', category: 'activity' },
+  live_reminder: { label: '开播提醒', category: 'activity' },
+  activity_notice: { label: '馆讯', category: 'activity' },
+  system_notice: { label: '馆务', category: 'system' }
 };
 
 const ACTION_LABELS = {
-  booking: '查看预约',
-  order: '查看订单',
-  custom: '查看详情',
-  activity: '查看详情',
-  system: '我知道了',
-  other: '查看详情'
+  booking: '查看约访',
+  order: '打开订单',
+  custom: '查看工单',
+  activity: '前往相关页',
+  system: '前往相关页',
+  ops: '去处理',
+  other: '前往相关页'
+};
+
+const TYPE_ACTION_LABELS = {
+  identify_result: '查看报告',
+  booking_success: '查看约访',
+  booking_reminder: '查看约访',
+  booking_changed: '查看约访',
+  booking_cancelled: '查看约访',
+  custom_inquiry_received: '查看工单',
+  custom_inquiry_contacted: '查看工单',
+  support_ticket_replied: '阅读回复',
+  care_tip: '阅读养护要点',
+  birthday_gift: '查看礼券',
+  coupon_exchanged: '打开礼券夹',
+  live_reminder: '进入直播',
+  staff_order_paid: '去处理订单',
+  staff_artisan_sku_sold: '去处理订单',
+  staff_deposit_paid: '去安排制作',
+  staff_deposit_balance_window: '去催尾款',
+  staff_deposit_forfeited: '查看定金单',
+  staff_deposit_settled: '查看定金单',
+  wishlist_restock_request: '去藏品库',
+  invoice_request_staff: '去开票台',
+  approval_submitted: '去审批',
+  approval_approved: '查看审批',
+  approval_rejected: '查看审批',
+  activity_notice: '前往相关页'
 };
 
 function getCategoryMeta(category) {
@@ -90,13 +167,564 @@ function formatMessageTime(dateInput) {
 
 function resolveActionLabel(message) {
   if (!message || !message.actionUrl) return '';
+  if (message.type && TYPE_ACTION_LABELS[message.type]) {
+    return TYPE_ACTION_LABELS[message.type];
+  }
   return ACTION_LABELS[message.category] || ACTION_LABELS.other;
 }
 
+function pickRelatedId(msg) {
+  if (!msg) return '';
+  return String(
+    msg.relatedId || msg.record_id || msg.recordId || msg.orderId || ''
+  ).trim();
+}
+
+function isInboxSelfUrl(url) {
+  const path = String(url || '').split('?')[0].replace(/^\//, '');
+  return path === 'subpackages/feature/user/messages/index'
+    || path === 'pages/user/messages/index';
+}
+
+const FEATURE_LEGACY_PREFIXES = [
+  '/pages/collection-detail',
+  '/pages/user/onboarding',
+  '/pages/user/profile',
+  '/pages/user/achievements',
+  '/pages/user/messages',
+  '/pages/user/support',
+  '/pages/user/legal',
+  '/pages/user/feedback',
+  '/pages/user/certificates',
+  '/pages/user/invoice-request',
+  '/pages/community',
+  '/pages/custom',
+  '/pages/care',
+  '/pages/detail',
+  '/pages/comment',
+  '/pages/search',
+  '/pages/identify',
+  '/pages/collection',
+  '/pages/articles',
+  '/pages/videos'
+].sort((a, b) => b.length - a.length);
+
+/** 业务页迁入 subpackages/business 后的旧 path（站内信 / 分享历史） */
+const BUSINESS_LEGACY_PREFIXES = [
+  '/pages/my-bookings',
+  '/pages/ticket',
+  '/pages/orders',
+  '/pages/order-detail',
+  '/pages/confirm-order',
+  '/pages/address',
+  '/pages/points',
+  '/pages/order-claim',
+  '/pages/coupons',
+  '/pages/certificate',
+  '/pages/manager',
+  '/pages/staff',
+  '/pages/store-points',
+  '/pages/invoice-requests',
+  '/pages/framer-recruit',
+  '/pages/framer',
+  '/pages/about',
+  '/pages/ar',
+  '/pages/booking',
+  '/pages/store',
+  '/pages/store-zone'
+].sort((a, b) => b.length - a.length);
+
+function ensurePageIndex(url) {
+  const original = String(url || '');
+  if (!original) return original;
+  const hashIdx = original.indexOf('#');
+  const hash = hashIdx >= 0 ? original.slice(hashIdx) : '';
+  const noHash = hashIdx >= 0 ? original.slice(0, hashIdx) : original;
+  const qIdx = noHash.indexOf('?');
+  const query = qIdx >= 0 ? noHash.slice(qIdx) : '';
+  const path = qIdx >= 0 ? noHash.slice(0, qIdx) : noHash;
+  if (!path || path === '/') return original;
+  const leading = path.charAt(0) === '/';
+  const abs = leading ? path : `/${path}`;
+  if (abs.indexOf('/pages/') !== 0 && abs.indexOf('/subpackages/') !== 0) {
+    return original;
+  }
+  if (/\/index$/.test(abs)) return original;
+  // app.json 中唯一不以 /index 结尾的页：user/onboarding/done
+  if (/\/onboarding\/done$/.test(abs)) {
+    return (leading ? abs : abs.slice(1)) + query + hash;
+  }
+  const withIndex = `${abs}/index`;
+  return (leading ? withIndex : withIndex.slice(1)) + query + hash;
+}
+
+function remapLegacyPageUrl(raw) {
+  const original = String(raw || '');
+  if (!original) return original;
+  const hadSlash = original.charAt(0) === '/';
+  const url = hadSlash ? original : `/${original}`;
+  let mapped = url;
+  // 标本工坊已升为主包 Tab
+  if (
+    url === '/pages/atelier'
+    || url.indexOf('/pages/atelier/') === 0
+    || url.indexOf('/pages/atelier?') === 0
+    || url === '/subpackages/feature/custom/hub'
+    || url.indexOf('/subpackages/feature/custom/hub/') === 0
+    || url.indexOf('/subpackages/feature/custom/hub?') === 0
+    || url === '/pages/custom/hub'
+    || url.indexOf('/pages/custom/hub/') === 0
+    || url.indexOf('/pages/custom/hub?') === 0
+  ) {
+    mapped = '/pages/atelier/index';
+  } else if (url.indexOf('/pages/custom/framer-recruit') === 0) {
+    mapped = `/subpackages/business/framer-recruit${url.slice('/pages/custom/framer-recruit'.length)}`;
+  } else {
+    let remapped = false;
+    for (let i = 0; i < BUSINESS_LEGACY_PREFIXES.length; i++) {
+      const prefix = BUSINESS_LEGACY_PREFIXES[i];
+      if (url === prefix || url.indexOf(`${prefix}/`) === 0 || url.indexOf(`${prefix}?`) === 0) {
+        mapped = `/subpackages/business${url.slice('/pages'.length)}`;
+        remapped = true;
+        break;
+      }
+    }
+    if (!remapped) {
+      for (let i = 0; i < FEATURE_LEGACY_PREFIXES.length; i++) {
+        const prefix = FEATURE_LEGACY_PREFIXES[i];
+        if (url === prefix || url.indexOf(`${prefix}/`) === 0 || url.indexOf(`${prefix}?`) === 0) {
+          mapped = `/subpackages/feature${url.slice('/pages'.length)}`;
+          break;
+        }
+      }
+    }
+  }
+  mapped = ensurePageIndex(mapped);
+  return hadSlash ? mapped : mapped.slice(1);
+}
+
+function stripLeadingSlash(url) {
+  return String(url || '').replace(/^\//, '');
+}
+
+/**
+ * 有完整 actionUrl 时沿用；否则按类型 + relatedId / record_id 补全。
+ * 历史消息常因发送时传入空 actionUrl 而丢掉模板 path。
+ */
+function inferActionUrl(msg = {}) {
+  const existing = normalizeMiniProgramUrl(msg.actionUrl || '');
+  if (existing && !isInboxSelfUrl(existing)) {
+    return stripLeadingSlash(existing);
+  }
+
+  const type = String(msg.type || msg.templateCode || '');
+  const id = pickRelatedId(msg);
+  const looksIdentify = type === 'identify_result'
+    || type.indexOf('identify_') === 0
+    || /鉴定/.test(String(msg.title || ''));
+
+  if (looksIdentify) {
+    return id ? `subpackages/feature/identify/result/index?record_id=${id}` : '';
+  }
+  if (type.indexOf('order_') === 0 || type.indexOf('custom_production') === 0) {
+    return id ? `subpackages/business/order-detail/index?id=${id}` : '';
+  }
+  if (type === 'booking_success' || type === 'booking_changed') {
+    return id
+      ? `subpackages/business/ticket/index?id=${id}`
+      : 'subpackages/business/booking/index?tab=3';
+  }
+  if (type === 'booking_reminder' || type === 'booking_cancelled') {
+    return 'subpackages/business/booking/index?tab=3';
+  }
+  if (type.indexOf('pet_memorial') === 0 || type === 'pet_intake_booked') {
+    return id
+      ? `subpackages/feature/custom/pet/status/index?id=${id}`
+      : 'subpackages/feature/custom/orders/index';
+  }
+  if (type.indexOf('custom_inquiry') === 0) {
+    return 'subpackages/feature/custom/orders/index';
+  }
+  if (type === 'support_ticket_replied') {
+    return 'subpackages/feature/user/support/index';
+  }
+  if (type === 'support_ticket_received') {
+    return '';
+  }
+  if (type === 'care_tip') {
+    const productId = msg.productId || '';
+    const category = msg.careCategory || msg.productCategory || '';
+    if (id || productId) {
+      return `subpackages/feature/care/guide/index?category=${encodeURIComponent(category)}&orderId=${id}&productId=${productId}&from=message`;
+    }
+    return 'subpackages/feature/care/index';
+  }
+  if (type === 'store_visit_thanks') {
+    return 'subpackages/business/store/index';
+  }
+  if (type.indexOf('store_points_') === 0) {
+    return 'subpackages/business/points/index';
+  }
+  if (type.indexOf('store_receipt_') === 0) {
+    return 'subpackages/business/order-claim/index?mode=receipt';
+  }
+  if (type.indexOf('platform_order_') === 0) {
+    return 'subpackages/business/order-claim/index?mode=order';
+  }
+  if (type === 'coupon_exchanged' || type === 'birthday_gift') {
+    return 'subpackages/business/coupons/index';
+  }
+  if (type === 'honorary_curator_granted') {
+    return 'pages/user/index';
+  }
+  if (type === 'live_reminder') {
+    return id ? `subpackages/feature/live/watch/index?sessionId=${id}` : '';
+  }
+  if (type.indexOf('invoice_request_') === 0) {
+    return '';
+  }
+  return '';
+}
+
+function inferOrderActionUrl(type, relatedId, existing) {
+  return inferActionUrl({ type, relatedId, actionUrl: existing });
+}
+
+const TAB_PATHS = {
+  '/pages/index/index': true,
+  '/pages/category/index': true,
+  '/pages/atelier/index': true,
+  '/pages/cart/index': true,
+  '/pages/user/index': true
+};
+
+function hasEmptyRequiredId(url) {
+  const q = url.split('?')[1] || '';
+  if (!q) return false;
+  return q.split('&').some((pair) => {
+    const eq = pair.indexOf('=');
+    const key = eq >= 0 ? pair.slice(0, eq) : pair;
+    const val = eq >= 0 ? pair.slice(eq + 1) : '';
+    return (key === 'id' || key === 'record_id') && !val;
+  });
+}
+
+function normalizeMiniProgramUrl(raw) {
+  if (!raw) return '';
+  let url = String(raw).trim();
+  if (!url) return '';
+  url = remapLegacyPageUrl(url);
+  if (url.charAt(0) !== '/') url = '/' + url;
+  url = url.replace(/^\/+/, '/');
+  url = ensurePageIndex(url);
+  if (hasEmptyRequiredId(url)) return '';
+  return url;
+}
+
+function openMiniProgramUrl(raw) {
+  const url = normalizeMiniProgramUrl(raw);
+  if (!url || url === '/') {
+    wx.showToast({ title: '链接无效', icon: 'none' });
+    return;
+  }
+  const path = url.split('?')[0];
+  const fail = () => wx.showToast({ title: '页面暂不可用', icon: 'none' });
+  if (TAB_PATHS[path]) {
+    wx.switchTab({ url: path, fail });
+    return;
+  }
+  wx.navigateTo({
+    url,
+    fail: () => wx.redirectTo({ url, fail })
+  });
+}
+
+function eventDedupeKey(item) {
+  const type = item.type || 'system_notice';
+  const relatedId = item.relatedId || item.campaignId || '';
+  if (relatedId) return `${type}::${relatedId}`;
+  return item.dedupeKey || `${type}::${item.title || ''}::${item._id}`;
+}
+
+/**
+ * 同一 relatedId + 同类型事件只保留一条；优先带「查看订单」跳转的卡片。
+ */
+function dedupeInboxMessages(list) {
+  if (!Array.isArray(list) || list.length < 2) return list || [];
+  const best = new Map();
+  const order = [];
+  list.forEach((item) => {
+    const key = eventDedupeKey(item);
+    const prev = best.get(key);
+    const curHas = !!(item && item.actionUrl);
+    const prevHas = !!(prev && prev.actionUrl);
+    if (!prev) {
+      best.set(key, item);
+      order.push(key);
+      return;
+    }
+    if (!prevHas && curHas) {
+      best.set(key, item);
+    }
+  });
+  return order.map((key) => best.get(key));
+}
+
+function isCampaignMessage(msg = {}) {
+  if (msg.campaignId) return true;
+  if (msg.channel === 'inapp_campaign') return true;
+  const type = String(msg.type || msg.templateCode || '');
+  return type === 'activity_notice' || type === 'live_reminder';
+}
+
+function splitParagraphs(content) {
+  return String(content || '')
+    .replace(/\r\n/g, '\n')
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function makePreview(content, maxLen = 48) {
+  const first = splitParagraphs(content)[0] || String(content || '').replace(/\s+/g, ' ').trim();
+  if (!first) return '';
+  if (first.length <= maxLen) return first;
+  return `${first.slice(0, maxLen).replace(/[，。、；,.!\s]+$/, '')}…`;
+}
+
+const LETTER_TOKEN_SPECS = [
+  // 店长订单备注（发货私信）：整行高亮，必须排在最前，避免被金额/日期等规则切碎
+  { type: 'note', pattern: '馆员留言[：:][^\\n]+' },
+  { type: 'coupon', pattern: '\\d[\\d,]*(?:\\.\\d+)?\\s*元\\s*(?:代金券|优惠券|礼券)' },
+  { type: 'money', pattern: '[¥￥]\\s*\\d[\\d,]*(?:\\.\\d+)?' },
+  { type: 'money', pattern: '\\d[\\d,]*(?:\\.\\d+)?\\s*元' },
+  { type: 'points', pattern: '\\d[\\d,]*(?:\\.\\d+)?\\s*积分' },
+  { type: 'growth', pattern: '\\d[\\d,]*(?:\\.\\d+)?\\s*成长值' },
+  { type: 'balance', pattern: '\\d[\\d,]*(?:\\.\\d+)?\\s*分(?!成)' },
+  { type: 'name', pattern: '「[^」]{1,16}」' },
+  { type: 'name', pattern: '『[^』]{1,16}』' },
+  { type: 'name', pattern: '《[^》]{1,16}》' },
+  { type: 'date', pattern: '\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}' }
+];
+
+function looksLikeName(inner) {
+  const s = String(inner || '').replace(/^[「『《"“]+|[」』》"”]+$/g, '').trim();
+  if (s.length < 1 || s.length > 16) return false;
+  if (/点击|查看|订单|积分|报告|详情|链接/.test(s)) return false;
+  return true;
+}
+
+function tightenUnit(text) {
+  return String(text || '').replace(/\s+/g, '');
+}
+
+function collectTokenHits(line) {
+  const hits = [];
+  LETTER_TOKEN_SPECS.forEach((spec) => {
+    const re = new RegExp(spec.pattern, 'g');
+    let m = re.exec(line);
+    while (m) {
+      const raw = m[0];
+      if (spec.type === 'name' && !looksLikeName(raw)) {
+        m = re.exec(line);
+        continue;
+      }
+      hits.push({
+        type: spec.type,
+        start: m.index,
+        end: m.index + raw.length,
+        text: spec.type === 'name' ? raw : tightenUnit(raw)
+      });
+      m = re.exec(line);
+    }
+  });
+
+  const ident = /已识别为\s*([「『"“]?)([^」』"”》，。,\s]{1,16})\1?/.exec(line);
+  if (ident && ident.index >= 0) {
+    const quoted = ident[1];
+    const name = ident[2];
+    if (!quoted && looksLikeName(name)) {
+      const start = ident.index + ident[0].lastIndexOf(name);
+      hits.push({
+        type: 'name',
+        start,
+        end: start + name.length,
+        text: name
+      });
+    }
+  }
+
+  hits.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+  const picked = [];
+  hits.forEach((hit) => {
+    if (picked.some((prev) => hit.start < prev.end && hit.end > prev.start)) return;
+    picked.push(hit);
+  });
+  return picked.sort((a, b) => a.start - b.start);
+}
+
+function tokenizeLetterLine(line) {
+  const text = String(line || '');
+  if (!text) return [];
+  const hits = collectTokenHits(text);
+  if (!hits.length) {
+    return [{ rid: 't0', type: 'text', text }];
+  }
+  const runs = [];
+  let cursor = 0;
+  hits.forEach((hit, idx) => {
+    if (hit.start > cursor) {
+      runs.push({ rid: `t${cursor}`, type: 'text', text: text.slice(cursor, hit.start) });
+    }
+    runs.push({ rid: `h${hit.start}-${idx}`, type: hit.type, text: hit.text });
+    cursor = hit.end;
+  });
+  if (cursor < text.length) {
+    runs.push({ rid: `t${cursor}`, type: 'text', text: text.slice(cursor) });
+  }
+  return runs;
+}
+
+function matchSummaryLine(text) {
+  const m = String(text || '').match(/^(当前可用|可用余额|账户余额)\s*(.+)$/);
+  if (!m) return null;
+  return {
+    label: m[1],
+    value: tightenUnit(m[2])
+  };
+}
+
+function parseLetterContent(content) {
+  const lines = splitParagraphs(content);
+  const bodyBlocks = [];
+  const summaries = [];
+  (lines.length ? lines : []).forEach((line, i) => {
+    const summary = matchSummaryLine(line);
+    if (summary) {
+      summaries.push({
+        id: `s${i}`,
+        label: summary.label,
+        value: summary.value
+      });
+      return;
+    }
+    bodyBlocks.push({
+      id: `p${i}`,
+      text: line,
+      runs: tokenizeLetterLine(line)
+    });
+  });
+  return { bodyBlocks, summaries };
+}
+
+function resolveKind(msg, isCampaign) {
+  if (isCampaign) {
+    return { kind: 'campaign', kindLabel: '馆讯', kindLampClass: 'lamp-info' };
+  }
+  const queue = String(msg.queue || '');
+  const category = msg.category || '';
+  if (queue === 'workflow' || category === 'ops') {
+    return { kind: 'workflow', kindLabel: '工作流', kindLampClass: 'lamp-forest' };
+  }
+  if (category === 'system') {
+    return { kind: 'notice', kindLabel: '通知', kindLampClass: 'lamp-info hollow' };
+  }
+  return { kind: 'receipt', kindLabel: '回执', kindLampClass: 'lamp-success' };
+}
+
+const STATUS_WARNING_TYPES = {
+  order_created: true,
+  booking_reminder: true,
+  booking_changed: true,
+  booking_cancelled: true,
+  order_cancelled: true,
+  pet_memorial_need_info: true,
+  pet_memorial_quoted: true,
+  pet_memorial_awaiting_intake: true,
+  invoice_request_rejected: true,
+  invoice_request_staff: true,
+  store_receipt_rejected: true,
+  platform_order_rejected: true,
+  store_points_revoked: true,
+  live_reminder: true,
+  care_tip: true,
+  support_ticket_replied: true,
+  staff_order_paid: true,
+  wishlist_restock_request: true,
+  approval_submitted: true,
+  approval_rejected: true,
+  // 这三个属于「需要有人去做事」，必须优先于 /_paid$/ 的「已办妥」判定
+  staff_deposit_paid: true,
+  staff_deposit_balance_window: true,
+  staff_deposit_forfeited: true
+};
+
+const STATUS_SUCCESS_TYPES = {
+  order_paid: true,
+  order_shipped: true,
+  order_received: true,
+  order_refunded: true,
+  booking_success: true,
+  booking_verified: true,
+  coupon_exchanged: true,
+  birthday_gift: true,
+  store_points_granted: true,
+  store_receipt_approved: true,
+  platform_order_approved: true,
+  invoice_request_issued: true,
+  honorary_curator_granted: true,
+  pet_memorial_completed: true,
+  pet_memorial_accepted: true,
+  store_visit_thanks: true,
+  custom_production_shipped: true,
+  identify_result: true
+};
+
+function resolveStatus(type, hasAction, isCampaign) {
+  const t = String(type || '');
+  if (STATUS_WARNING_TYPES[t] || /_rejected$|_cancelled$|_revoked$|need_info/.test(t)) {
+    return { statusTone: 'warning', statusLabel: '需处理', statusLampClass: 'lamp-warning' };
+  }
+  if (STATUS_SUCCESS_TYPES[t] || /_paid$|_granted$|_approved$|_issued$|_completed$|_success$|_verified$/.test(t)) {
+    return { statusTone: 'success', statusLabel: '已办妥', statusLampClass: 'lamp-forest' };
+  }
+  if (isCampaign) {
+    return {
+      statusTone: 'info',
+      statusLabel: hasAction ? '可前往' : '备阅',
+      statusLampClass: 'lamp-info'
+    };
+  }
+  return {
+    statusTone: 'info',
+    statusLabel: hasAction ? '可前往' : '备阅',
+    statusLampClass: 'lamp-info'
+  };
+}
+
 function enrichMessage(msg) {
-  const category = msg.category || 'other';
-  const categoryMeta = getCategoryMeta(category);
   const typeMeta = getTypeMeta(msg.type);
+  const category = msg.category || (typeMeta && typeMeta.category) || 'other';
+  const categoryMeta = getCategoryMeta(category);
+  const relatedId = pickRelatedId(msg);
+  const actionUrl = inferActionUrl({ ...msg, relatedId, category });
+  const content = msg.content || '';
+  const paragraphs = splitParagraphs(content);
+  const { bodyBlocks, summaries } = parseLetterContent(content);
+  const preview = makePreview(content);
+  const isCampaign = isCampaignMessage(msg);
+  const isPaper = true;
+  const { kind, kindLabel, kindLampClass } = resolveKind({ ...msg, category }, isCampaign);
+  const stampEn = kind === 'campaign'
+    ? 'YOU XIN'
+    : (kind === 'workflow' ? 'WORKFLOW' : (kind === 'notice' ? 'NOTICE' : 'RECEIPT'));
+  const stampCn = kind === 'campaign'
+    ? '馆方'
+    : (kind === 'workflow' ? '工作流' : (kind === 'notice' ? '通知' : '回执'));
+  const signOff = kind === 'receipt' ? '此据' : (kind === 'workflow' ? '请处理' : '谨启');
+  const needsExpand = paragraphs.length > 8 || String(content).length > 280;
+  const isUnread = msg.read !== true;
+  const { statusTone, statusLabel, statusLampClass } = resolveStatus(msg.type, !!actionUrl, isCampaign);
   let date;
   try {
     date = msg.createTime ? new Date(msg.createTime) : new Date(msg._createTime || Date.now());
@@ -104,14 +732,43 @@ function enrichMessage(msg) {
     date = new Date();
   }
 
+  const typeName = typeMeta ? typeMeta.label : (isCampaign ? '馆讯' : categoryMeta.label);
+
   return {
     ...msg,
+    relatedId,
+    actionUrl,
+    hasAction: !!actionUrl,
+    needsExpand,
+    paragraphs: (paragraphs.length ? paragraphs : (content ? [content] : [])).map((text, i) => ({
+      id: `p${i}`,
+      text
+    })),
+    bodyBlocks,
+    summaries,
+    preview,
+    isCampaign,
+    isPaper,
+    senderName: '山海造物馆方',
+    stampEn,
+    stampCn,
+    signOff,
+    kind,
+    kindLabel,
+    kindLampClass,
+    statusTone,
+    statusLabel,
+    statusLampClass,
+    readLampClass: isUnread ? 'lamp-brass' : 'lamp-brass hollow',
+    readLabel: isUnread ? '未读' : '已读',
     categoryName: categoryMeta.label,
     categoryIcon: msg.icon || categoryMeta.icon,
-    typeName: typeMeta ? typeMeta.label : categoryMeta.label,
+    typeName,
     formattedTime: formatMessageTime(date),
-    actionLabel: resolveActionLabel(msg),
-    isUnread: msg.read === false || msg.read === undefined || !msg.read
+    actionLabel: isCampaign
+      ? (actionUrl ? (TYPE_ACTION_LABELS[msg.type] || '前往相关页') : '')
+      : resolveActionLabel({ ...msg, actionUrl, category }),
+    isUnread
   };
 }
 
@@ -122,5 +779,11 @@ module.exports = {
   getTypeMeta,
   formatMessageTime,
   resolveActionLabel,
-  enrichMessage
+  enrichMessage,
+  dedupeInboxMessages,
+  openMiniProgramUrl,
+  normalizeMiniProgramUrl,
+  remapLegacyPageUrl,
+  inferActionUrl,
+  isCampaignMessage
 };

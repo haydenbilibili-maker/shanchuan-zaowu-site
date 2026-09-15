@@ -1,0 +1,100 @@
+<view class="pass-page">
+
+  <!-- 头部：凭证标识 + 状态章 -->
+  <view class="pass-head">
+    <text class="pass-eyebrow">PICKUP PASS</text>
+    <text class="pass-title">门店自取凭证</text>
+    <view class="pass-chip pass-chip-{{pass.statusTone}}" wx:if="{{!loading && !statusUnknown}}">{{pass.statusLabel}}</view>
+    <text class="pass-headline" wx:if="{{loading}}">正在核对订单…</text>
+    <text class="pass-headline" wx:elif="{{statusUnknown}}">状态以馆长核实为准</text>
+    <text class="pass-headline" wx:else>{{pass.headline}}</text>
+    <text class="pass-orderno" wx:if="{{orderNo}}">订单编号 {{orderNo}}</text>
+  </view>
+
+  <!-- 凭证主体：已交付 → 核销回执；待领取 → 二维码 + 自取码 + 进度 -->
+  <view class="pass-card">
+    <view class="pass-sealed" wx:if="{{pass.statusTone === 'closed'}}">
+      <view class="pass-sealed-tick">!</view>
+      <text class="pass-sealed-title">{{pass.headline || '该凭证已不可使用'}}</text>
+      <text class="pass-sealed-sub">{{pass.hint}}</text>
+      <view class="pass-closed-actions">
+        <view class="btn-ghost" bindtap="goOrderDetail">查看订单</view>
+        <view class="btn-ghost" bindtap="goSupport">联系专员</view>
+      </view>
+    </view>
+
+    <view class="pass-sealed" wx:elif="{{pass.statusTone === 'done'}}">
+      <view class="pass-sealed-tick">✓</view>
+      <text class="pass-sealed-title">本次自取已完成</text>
+      <text class="pass-sealed-sub">{{claimedAtText ? claimedAtText + ' · 已由馆长核销交付' : '已由馆长核销交付'}}</text>
+    </view>
+
+    <block wx:else>
+      <view class="pass-qr-wrap">
+        <view class="pass-qr-frame">
+          <canvas type="2d" id="passQrCanvas" class="pass-qr"></canvas>
+        </view>
+        <text class="pass-qr-hint">{{qrFailed ? '二维码未生成，请向馆长口报下方自取码' : '屏幕已调至最亮，请交予馆长扫码'}}</text>
+      </view>
+
+      <view class="pass-perf">
+        <view class="pass-notch pass-notch-l"></view>
+        <view class="pass-dash"></view>
+        <view class="pass-notch pass-notch-r"></view>
+      </view>
+
+      <view class="pass-code-row" bindtap="copyCode" hover-class="pass-press" hover-stay-time="80">
+        <view class="pass-code-main">
+          <text class="pass-code-label">自取码</text>
+          <text class="pass-code-value" selectable="true">{{pass.codeText || codeText}}</text>
+        </view>
+        <text class="pass-copy">复制</text>
+      </view>
+    </block>
+
+    <view class="pass-steps" wx:if="{{!statusUnknown && pass.steps.length}}">
+      <view class="pass-step" wx:for="{{pass.steps}}" wx:key="label">
+        <view class="pass-step-track">
+          <view class="pass-dot pass-dot-{{item.state}}"></view>
+          <view class="pass-line" wx:if="{{index < pass.steps.length - 1}}"></view>
+        </view>
+        <text class="pass-step-label pass-step-label-{{item.state}}">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 领取门店 -->
+  <view class="pass-store">
+    <view class="pass-store-head">
+      <text class="pass-store-label">领取门店</text>
+      <view
+        class="pass-nav"
+        wx:if="{{storeInfo.canNavigate}}"
+        bindtap="goStore"
+        hover-class="pass-press"
+        hover-stay-time="80"
+      >导航到店 →</view>
+    </view>
+    <text class="pass-store-name">{{storeName}}</text>
+    <text class="pass-store-line" wx:if="{{storeInfo.floor}}">{{storeInfo.floor}}</text>
+    <text class="pass-store-line" wx:if="{{storeInfo.hours}}">营业 {{storeInfo.hours}}</text>
+    <text class="pass-store-line" wx:if="{{storeInfo.address}}">{{storeInfo.address}}</text>
+  </view>
+
+  <!-- 提示 -->
+  <text class="pass-hint" wx:if="{{statusUnknown}}">状态暂未同步，到店以馆长核实为准；此自取码仍可用于核销。</text>
+  <text class="pass-hint" wx:elif="{{pass.statusTone !== 'done'}}">{{pass.hint}}</text>
+  <text class="pass-guard" wx:if="{{pass.statusTone !== 'done'}}">自取码仅限本人到店使用，请勿截图或转发。</text>
+  <text class="pass-refresh" wx:if="{{pass.statusTone !== 'done'}}">状态未更新？下拉页面即可刷新。</text>
+
+  <view class="pass-error" wx:if="{{error}}">
+    <text>{{error}}</text>
+  </view>
+
+  <view class="pass-actions">
+    <view class="pass-btn ghost" wx:if="{{showRefundEntry}}" bindtap="requestRefund" hover-class="pass-press" hover-stay-time="80">申请退款</view>
+    <view class="pass-btn primary" bindtap="goOrderDetail" hover-class="pass-press" hover-stay-time="80">订单详情</view>
+  </view>
+  <view class="pass-support" bindtap="goSupport" hover-class="pass-press" hover-stay-time="80">需要帮助？联系馆长 →</view>
+
+</view>

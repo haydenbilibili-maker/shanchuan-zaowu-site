@@ -1,0 +1,17 @@
+{
+  "navigationBarTitleText": "藏品详情",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "comment-list": "/subpackages/feature/components/CommentList/index",
+    "mp-html": "/subpackages/feature/components/mp-html/index",
+    "coupon-print-mint": "/subpackages/feature/components/CouponPrintMint/index",
+    "protected-badge": "/components/ProtectedBadge/index",
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+  },
+  "backgroundColor": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814",
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundTextStyle": "light"
+}

@@ -1,4 +1,9 @@
 {
   "navigationBarTitleText": "品牌故事",
-  "navigationStyle": "custom"
+  "backgroundColor": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "easter-egg-note": "/components/EasterEggNote/index"
+  }
 }
