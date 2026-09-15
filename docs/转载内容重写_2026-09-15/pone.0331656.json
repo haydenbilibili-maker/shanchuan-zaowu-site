@@ -1,0 +1,82 @@
+{
+ "source": {
+  "doi": "10.1371/journal.pone.0331656",
+  "journal": "PLOS ONE",
+  "year": "2025",
+  "title": "Taphonomy of aquatic insects from the Crato Formation Lagerstätte (Aptian, Lower Cretaceous)",
+  "abstract": "The Crato Formation (Aptian, Lower Cretaceous) is a fossiliferous deposit of global significance, representing a lacustrine palaeoenvironment which offers insights into aquatic insect taphonomy. Despite its importance, prior studies lacked an actualistic approach. Here, we analyze the preservation of mayflies (Ephemeroptera) and dragonflies (Odonata) from this formation using experimental taphonomy on 253 extant Ephemeroptera and 236 Odonata, alongside 306 fossil specimens. Disarticulation experiments showed that the thorax of modern mayfly larvae disarticulated first, yet Crato Hexagenitidae larvae retained intact thoraces, indicating minimal disturbance and autochthonous deposition. Fossil alate specimens rarely exhibited decay-related wing damage, aligning with short decay times. Dragonfly carcasses exhibited a characteristic leg posture in death, also preserved in Crato fossils, further suggesting minimal transport. Additionally, fossil dragonflies retained labial masks, the first structure to disarticulate experimentally, consistent with parautochthonous assemblages. Mayfly larvae exposed to low salinity during experiments exhibited excessive defecation before death, hinting at possible low salinity conditions in the Crato palaeoenvironment, though preservational challenges obscure confirmation. During experimentation, we also noticed that all carcasses immediately floated under hypersaline conditions, while carcasses immersed in non-hypersaline conditions went through s",
+  "results": "Results Actualistic data of mayflies We observed that the usual postmortem position of the C. capixaba larvae, in all survival rate test groups, was either in dorsal view (i.e., ventral decubitus, 47% of specimens) or in ventral view (i.e., dorsal decubitus, 31% of specimens) ( Fig 4a – 4d and 4g ). When the larvae died in dorsal decubitus (ventral view), they remained in a characteristic position with their legs not flexed but extended laterally near the body, with the forelegs extended forward ( Fig 4a and 4d ). The legs were flexed over the body when in dorsal view ( Fig 4b ). Individuals in lateral view/decubitus after death (22% of specimens) were observed being disturbed by the activity of other larvae and/or minor currents in the aquarium ( Fig 4a , 4c and 4g ). However, the G-test results showed no significant differences in postmortem position between the different salinity and temperature rates (df = 12, p-value = 0.312). Download: PNG larger image TIFF original image Fig 4. Callibaetis capixaba larvae during survival tests. a) Two Callibaetis capixaba carcasses, in dorsal view (right) and right lateral view (left). b) C. capixaba carcass in ventral view. c) C. capixaba carcass in dorsal view. d) Five larval carcasses of C. capixaba that died under high temperature, showing a reddish coloration. e,f) C. capixaba larvae allocated at lower salinity levels and defecating in unusual amounts; ‘f’ is already dead. Black arrows point to the excessive excrement eliminated by the larvae. g) Graph with number of specimens recovered in different postmortem attitudes (dorsal, lateral, or ventral view) on y-axis, for each group of survival tests on x-axis (control, 2.5‰ salinity, 10‰ salinity, 21–22°C temperature, and 30°C temperature). https://doi.org/10.1371/journal.pone.0331656.g004 Fifteen specimens of the control group survived and reached the winged stage, combining the three replicates (R1 = 13, R2 = 1, R3 = 1). No specimens allocated in the experimental groups ",
+  "discussion": "Discussion Proxies used for determining if assemblages suffered transport to the depositional site usually involve the study of abundance, the degree of tissue breakage, disarticulation and fragmentation of individuals, and the attitude of fossils in sediments, although disarticulation can occur naturally over time [ 35 , 62 ]. During our experiments, the thorax was the most likely element to disarticulate first in C. capixaba larvae (even more easily in their exuvia), especially in situations of denaturation acceleration, such as in warmer water. As the Hexagenitidae larvae from the Crato Formation rarely present a disarticulated thorax, this indicates that their carcasses suffered little or no disturbance and that the decomposition process must also have been slow. Additionally, rapid mineralization could be another important factor [ 62 ]. This also could suggest that the carcasses suffered minimal transport, corroborating that the group was living in the depositional site (i.e., were autochthonous), as pointed out by [ 21 ]. Another set of biostratinomic data additionally supports the idea that Hexagenitidae carcasses suffered little or no disturbance and/or slower decomposition. All extant mayflies that died in the experiments under higher temperatures presented straighter bodies (i.e., not curving), which could be related to the acceleration of cuticle denaturation at high temperatures [ 63 ]. But in the fossil record, the few larvae that are preserved laterally display a natural curvature in their body. Only a few fossil Hexagenitidae larvae were recovered without cu",
+  "authors": [
+   "Arianny P. Storari",
+   "Frederico F. Salles",
+   "João Luiz Guedes da Fonseca",
+   "Antonio Álamo Feitosa Saraiva",
+   "Taissa Rodrigues"
+  ],
+  "license": "CC BY 4.0",
+  "licenseText": "Creative Commons Attribution License"
+ },
+ "data": {
+  "title": "石灰岩里的静默现场",
+  "brief": "巴西克拉图组化石中的蜉蝣与蜻蜓，保存状态指向一个几乎未被搬运的沉积现场——实验埋藏学给出了新的证据。",
+  "tags": [
+   "埋藏学",
+   "克拉图组",
+   "水生昆虫",
+   "化石保存",
+   "早白垩世"
+  ],
+  "sections": [
+   {
+    "title": "一块裂开的石灰岩",
+    "paragraphs": [
+     "在巴西东北部的石灰岩采石场，工人们有时会沿着层理面把石板撬开。克拉图组的化石就藏在这样的薄层里——鱼、植物、昆虫，压成深色的印痕，像被时间轻轻按在岩面上。其中一类标本格外安静：蜉蝣幼虫，身体轮廓完整，胸部还连着该在的位置。",
+     "这种完整本身就是一个问题。生物死后，身体的连接处往往最先松动。如果尸体被水流搬运过，或者在水底暴露太久，关节会散开，翅膀会脱落，姿态会变得凌乱。克拉图组的许多蜉蝣幼虫却不是这样。",
+     "一项新近发表于 PLOS ONE 的研究，把目光放在这些标本的保存状态上。研究者没有直接解释化石，而是先观察活着的昆虫如何腐烂、如何散架，再回头对照岩层里的印痕。这种方法叫实验埋藏学——用现在的过程，去推断过去发生了什么。"
+    ]
+   },
+   {
+    "title": "让尸体先散架一次",
+    "paragraphs": [
+     "研究团队在实验室里处理了两组现生昆虫：253只蜉蝣和236只蜻蜓。他们让这些昆虫在受控条件下死亡、腐烂，记录身体各部位解体的顺序和姿态。同时，他们分析了306件来自克拉图组的化石标本。",
+     "结果之一是关于蜉蝣幼虫的胸部。在实验中，现生蜉蝣幼虫的胸部是最先解体的结构之一，尤其在温度较高、组织变性加速的情况下，胸部更容易与身体分离。如果克拉图组的蜉蝣幼虫经历过明显的搬运或长时间的腐烂，它们的胸部理应率先散开。",
+     "但化石中的 Hexagenitidae 幼虫很少出现胸部解体。研究者认为，这指向两个可能：尸体受到的扰动极小，分解过程也相当缓慢。快速矿化可能是另一个因素——在组织还来不及散架之前，矿物就已经把它固定住了。"
+    ]
+   },
+   {
+    "title": "翅膀、腿和口器",
+    "paragraphs": [
+     "蜉蝣成虫的翅膀是另一条线索。实验中的现生标本在腐烂过程中，翅膀边缘会出现损伤、破裂，甚至从基部脱落。而克拉图组的带翅化石标本很少表现出这类与腐烂相关的翅部损伤。研究者将这一点与较短的腐烂时间联系起来。",
+     "蜻蜓给出了不同的证据。现生蜻蜓死亡后，腿会呈现一种特征性的姿态。这种姿态在克拉图组的蜻蜓化石中也能看到，研究者据此认为，这些尸体同样没有经历远距离搬运。",
+     "更细微的细节是唇罩——蜻蜓幼虫的下唇结构，在实验中是最先解体的部位之一。克拉图组的蜻蜓化石却保留了唇罩。研究者把这一组合证据解释为 parautochthonous 组合，意思是尸体可能只经过了极短距离的移动，甚至基本留在原地。"
+    ]
+   },
+   {
+    "title": "低盐度的暗示",
+    "paragraphs": [
+     "实验还记录到一个与行为有关的现象。暴露在较低盐度中的蜉蝣幼虫，在死亡前出现了过量排粪。研究者注意到这一现象，并推测克拉图古环境可能存在低盐度条件。",
+     "但这只是一个提示，不是结论。论文明确指出，保存上的困难使这一推测难以确认。低盐度是否真的存在于当时的湖泊中，还需要更多证据。",
+     "同一组实验还记录了另一个现象：在高盐度条件下，所有尸体立即漂浮；而在非高盐度条件下，尸体则经历了下沉过程。论文摘要在此处文字不完整，具体下沉过程待核。这些观察为理解尸体如何进入沉积物提供了实验参照，但并不能直接等同于克拉图组的实际条件。"
+    ]
+   },
+   {
+    "title": "收藏柜里的对照",
+    "paragraphs": [
+     "对博物馆和收藏机构而言，这项研究的意义不在于给出新的采集建议，而在于提醒一件常被忽略的事：化石的保存状态本身就是数据。一件胸部完整的蜉蝣幼虫标本，和一件胸部散开的标本，讲述的可能是完全不同的沉积故事。",
+     "研究者使用的对照逻辑——先观察现生昆虫的腐烂过程，再对照化石——意味着标本的价值不仅在于它是什么物种，也在于它以什么姿态、什么完整程度被保存下来。同一层位中不同标本的保存差异，可能指向搬运距离、分解速度或矿化时机的不同。",
+     "论文没有给出针对收藏或采集的具体操作建议。它提供的是一套解释框架：当一件标本的姿态与实验中的某个阶段吻合时，研究者可以据此提出关于沉积环境的假设，再寻找其他证据来检验。",
+     "克拉图组的蜉蝣和蜻蜓标本，因此不只是物种名录上的条目。它们是某个早白垩世湖泊现场的静默记录——尸体落在哪里，腐烂了多久，被什么打断，都留在岩面上。"
+    ]
+   },
+   {
+    "title": "待核之处",
+    "paragraphs": [
+     "论文摘要中关于非高盐度条件下尸体下沉过程的描述不完整，具体机制待核。低盐度条件的推测也仍属提示性质，论文本身未给出确认性结论。",
+     "实验中的温度与盐度梯度设置，以及不同组别之间的具体差异，本文仅依据已核验的结果部分进行转述，未列出的数据不在此展开。",
+     "所有关于克拉图组古环境的解释，均以论文讨论部分为限。超出该范围的推断，本文不予补充。"
+    ]
+   }
+  ]
+ }
+}

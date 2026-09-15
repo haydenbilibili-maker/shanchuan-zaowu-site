@@ -1,0 +1,87 @@
+{
+ "source": {
+  "doi": "10.1371/journal.pone.0270199",
+  "journal": "PLOS ONE",
+  "year": "2022",
+  "title": "Photogrammetric reconstruction of 3D carpological collection in high resolution",
+  "abstract": "This study provides an accurate and efficient method to reconstruct detailed and high-resolution digital 3D models of carpological materials by photogrammetric method, in which only about 100 to 150 images are required for each model reconstruction. The 3D models reflect the realistic morphology and genuine color of the carpological materials. The 3D models are scaled to represent the true size of the materials even as small as 3 mm in diameter. The interfaces are interactive, in which the 3D models can be rotated in 360° to observe the structures and be zoomed to inspect the macroscopic details. This new platform is beneficial for developing a virtual herbarium of carpological collection which is thus the most important to botanical authentication and education. Citation: Wang HL, Wong TH, Chan YM, Cheng YS, Lau DTW (2022) Photogrammetric reconstruction of 3D carpological collection in high resolution for plants authentication and species discovery. PLoS ONE 17(8): e0270199. https://doi.org/10.1371/journal.pone.0270199 Editor: Antonio Agudo, Institut de Robotica i Informatica Industrial, SPAIN Received: January 10, 2022; Accepted: June 6, 2022; Published: August 4, 2022 Copyright: © 2022 Wang et al. This is an open access article distributed under the terms of the Creative Commons Attribution License , which permits unrestricted use, distribution, and reproduction in any medium, provided the original author and source are credited. Data Availability: All relevant data are wi",
+  "results": "Results consolidated that this platform and method are feasible and replicable in mass digitization of carpological materials. The 3D models were also uploaded to a newly developed online database for researchers and the public. The limitations of this platform were also discussed with proposed solutions. In future, the new platform can be applied to create virtual carpological herbaria in different regions for the purposes of research and education.",
+  "discussion": "Discussion Advantages of the photogrammetric platform and the derived 3D models in this study All the 3D models reconstructed by the photogrammetric platform were diverse in fruit types. Each has its unique morphological structure which can be observed clearly from all angles, such as the prickles on the fruit of Xanthium sp. (PH003) and the fruit of Castanopsis lamontii Hance (PH019 & PH045), the persistent involucre on the fruit of Passiflora foetida Linnaeus (PH034), and the grooves on the fruit of Alpinia sp. (PH050). These results demonstrated that the complex structures of carpological materials could be reconstructed by this photogrammetric platform. Most of these are important phenotypic traits for species identification and classification. Therefore, these 3D models could be used as important references in science and education. All the 3D models have been uploaded to an online database, not only limited to herbarium staffs but also open to co-workers and the general public. Users can freely inspect the 3D models of the carpological material by simply dragging on the interface. Since a macro lens was used to capture the images, most of the macroscopic details could be clearly shown even when the 3D models were magnified up to 10 times. The structural fine details in 360° view would enable the users to inspect the 3D model that looks almost identical to the real carpological materials. Instead of adding a scale bar during the post-reconstruction stage, a customized scale bar was attached right below the carpological material during the image capturing stage as a ref",
+  "authors": [
+   "Ho Lam Wang",
+   "Tin Hang Wong",
+   "Yiu Man Chan",
+   "Yat Sum Cheng",
+   "David Tai Wai Lau"
+  ],
+  "license": "CC BY 4.0",
+  "licenseText": "Creative Commons Attribution License"
+ },
+ "data": {
+  "title": "果实标本的三维档案",
+  "brief": "一项发表于 PLOS ONE 的研究，用约100至150张照片重建果实标本的高分辨率三维模型，小至3毫米的结构也能还原真实尺寸与色彩。",
+  "tags": [
+   "自然史",
+   "植物学",
+   "果实标本",
+   "三维重建",
+   "数字馆藏"
+  ],
+  "sections": [
+   {
+    "title": "从一枚带刺的果实说起",
+    "paragraphs": [
+     "想象一枚苍耳属植物的果实，表面布满细小的刺。在传统标本馆里，它被压平、干燥，固定在一张台纸上，研究者只能从一个固定的角度观察它。刺的弯曲方向、基部与果体的连接方式，这些结构在二维的标本页上往往被压缩成一片模糊的轮廓。",
+     "论文中提到的三维模型改变了这种观看方式。研究者将果实标本放在镜头前，用摄影测量法重建出可以旋转的三维模型。苍耳属果实上的刺、苦槠（Castanopsis lamontii）果实的形态、西番莲（Passiflora foetida）果实上宿存的总苞，以及山姜属（Alpinia sp.）果实表面的沟槽，这些结构都能从各个角度被清楚地观察到。",
+     "这些特征并非无关紧要的装饰。论文指出，它们大多是物种鉴定与分类中重要的表型性状。也就是说，一枚果实表面的刺或沟槽，可能正是区分一个物种与另一个物种的关键线索。"
+    ],
+    "title_note": ""
+   },
+   {
+    "title": "照片如何变成三维模型",
+    "paragraphs": [
+     "这套方法的核心是摄影测量。研究者为每一个模型拍摄大约100到150张图像，覆盖标本的各个角度。这些图像被用来重建出具有真实形态和真实色彩的三维模型。论文未给出具体的拍摄设备型号或软件名称，但提到使用了微距镜头。",
+     "模型的比例被设定为反映材料的真实尺寸。论文明确指出，即使直径小至3毫米的果实，其三维模型也能代表真实大小。这一点对于形态测量和比较研究来说很关键：一个模型如果只是看起来像，但尺寸失真，就无法用于严谨的观察。",
+     "研究者在拍摄阶段就将一个定制的比例尺放在果实材料正下方，而不是在重建完成后再添加。这个做法意味着比例信息从一开始就被记录在图像中，成为模型的一部分。"
+    ],
+    "title_note": ""
+   },
+   {
+    "title": "在屏幕上旋转一枚果实",
+    "paragraphs": [
+     "重建完成的三维模型被上传到一个新开发的在线数据库。论文强调，这个数据库不仅面向标本馆工作人员，也向合作者和公众开放。用户可以在界面上拖动，自由地检视果实材料的三维模型。",
+     "交互方式包括360度旋转和缩放。由于拍摄时使用了微距镜头，论文指出，即使将三维模型放大到10倍，大部分宏观细节仍然清晰可见。研究者认为，这种360度视角下的结构细节，能让用户看到的模型几乎与真实的果实材料相同。",
+     "论文将这一平台的意义归结为虚拟果实标本馆的建设。它被描述为对植物鉴定和教育最为重要的一项基础工作。这里没有夸张的修辞，只是一个朴素的判断：当果实标本可以被旋转、放大、从任意角度观察时，鉴定和教学就有了更可靠的参照。"
+    ],
+    "title_note": ""
+   },
+   {
+    "title": "一套可复制的方法",
+    "paragraphs": [
+     "论文的结果部分指出，这一平台和方法在大规模数字化果实材料方面是可行且可复制的。这意味着它不只是一次性的演示，而是一套可以推广到其他收藏或地区的流程。",
+     "研究者也讨论了平台的局限性，并提出了相应的解决方案。论文未在已核验材料中列出这些局限的具体内容，因此这里只能概括为：作者对方法的边界有清醒的认识，并给出了改进方向。",
+     "论文提到，未来这一新平台可以应用于不同地区，用于创建虚拟果实标本馆，服务于研究和教育。这个表述是谨慎的，没有承诺具体的规模或时间表。"
+    ],
+    "title_note": ""
+   },
+   {
+    "title": "标本收藏与观察的关联",
+    "paragraphs": [
+     "对于标本收藏而言，这套方法提供了一种补充性的记录方式。传统腊叶标本保存的是压制的、干燥的植物体，而果实材料的三维模型保存的是立体的形态和色彩。两者并不互相取代，而是从不同维度记录同一份材料。",
+     "论文中提到的在线数据库，让不在标本馆现场的人也能观察果实材料。这对于需要比对不同标本的研究者，或者需要向学生展示果实形态的教师来说，提供了一种可操作的途径。用户只需在界面上拖动，就能从任意角度查看模型。",
+     "需要说明的是，论文并未建议用三维模型替代实物标本，也没有讨论模型在长期保存中的稳定性。它只是报告了一种重建方法，以及这个方法在鉴定和教育中的潜在用途。对于收藏实践而言，这些模型更像是一种访问工具，而不是保存手段。"
+    ],
+    "title_note": ""
+   },
+   {
+    "title": "写在观察之后",
+    "paragraphs": [
+     "这项研究发表于2022年的 PLOS ONE，作者为 Ho Lam Wang、Tin Hang Wong、Yiu Man Chan、Yat Sum Cheng 和 David Tai Wai Lau。论文以 CC BY 4.0 许可发布，允许商用，但须署名。",
+     "论文报告的核心并不复杂：约100到150张照片，一套摄影测量流程，可以重建出直径小至3毫米的果实材料的高分辨率三维模型。模型具有真实形态和色彩，可以360度旋转和缩放，并被上传到一个面向研究者和公众的在线数据库。",
+     "如果要在自然史收藏的语境下理解这项工作，它指向的是一种更开放的观察方式。一枚被固定在台纸上的果实，和一枚可以在屏幕上被翻转、放大、从刺的基部看到沟槽深处的果实，所提供的信息并不相同。论文没有说前者应该被后者取代，但它确实展示了后者可以做到什么。"
+    ],
+    "title_note": ""
+   }
+  ]
+ }
+}

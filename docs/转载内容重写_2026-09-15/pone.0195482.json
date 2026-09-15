@@ -1,0 +1,83 @@
+{
+ "source": {
+  "doi": "10.1371/journal.pone.0195482",
+  "journal": "PLOS ONE",
+  "year": "2018",
+  "title": "Unlocking preservation bias in the amber insect fossil record through experimental decay",
+  "abstract": "Fossils entombed in amber are a unique resource for reconstructing forest ecosystems, and resolving relationships of modern taxa. Such fossils are famous for their perfect, life-like appearance. However, preservation quality is vast with many sites showing only cuticular preservation, or no fossils. The taphonomic processes that control this range are largely unknown; as such, we know little about potential bias in this important record. Here we employ actualistic experiments, using, fruit flies and modern tree resin to determine whether resin type, gut microbiota, and dehydration prior to entombment affects decay. We used solid phase microextraction gas chromatography-mass spectrometry (SPME GC-MS) to confirm distinct tree resin chemistry; gut microbiota of flies was modified using antibiotics and categorized though sequencing. Decay was assessed using phase contrast synchrotron tomography. Resin type demonstrates a significant control on decay rate. The composition of the gut microbiota was also influential, with minor changes in composition affecting decay rate. Dehydration prior to entombment, contrary to expectations, enhanced decay. Our analyses show that there is potential significant bias in the amber fossil record, especially between sites with different resin types where ecological completeness and preservational fidelity are likely affected. Citation: McCoy VE, Soriano C, Pegoraro M, Luo T, Boom A, Foxman B, et al. (2018) Unlocking preservation bias in the amber in",
+  "results": "Results Resin type After 18 months all 16 flies embedded in W . nobilis resin retained extensive preservation of cuticle and internal soft tissue in the head, thorax, abdomen and legs and ruptured abdomens. Six specimens displayed internal bubbles indicative of decay ( Fig 2 , Table 1 , S4 Table ). Download: PNG larger image TIFF original image Fig 2. Synchrotron scans for resin chemistry experiments. Synchrotron tomographic images (A,B) and drawings (C,D) of flies in resin showing state of decay after 18 months entombment in (A) W . nobilis resin, and in (B) P . sylvestris resin. (A,C) The fly retains most of the cuticle, some of the internal soft tissues (black arrows) and bubbles within the body margin are small. (B,D) The fly retains some cuticle; there is a gap between resin and cuticle (white arrows) and extensive, and large bubbles. Internal soft tissue is absent. Instead the body margins are filled with a medium of the same density as the resin (compare the areas indicated by black circles) and which connects to the resin (black arrow), indicating that this is resin, not soft tissues. In the drawings (C,D), orange represents resin, white represents cuticle, grey represents internal soft tissue, and red represents bubbles. Scale bars = 1 mm. https://doi.org/10.1371/journal.pone.0195482.g002 Download: PNG larger image TIFF original image Table 1. Results of the resin type experiments. The calculated percent of ruptured abdomens uses only specimens in which the abdomen (either ruptured or not) can be clearly seen. https://doi.org/10.1371/journal.pone.0195482.t001 In contrast, over the same time interval all 13 flies embedded in P . sylvestris resin presented as empty moulds where cuticle is frequently present but internal structures are always absent ( Fig 2 , Table 1 , S5 Table ). All flies in this treatment group showed ruptured abdomens and internal bubbles and, some (n = 10) show a gap (ranging from 5 to 50 μm) between the remaining cuticle and the resin, p",
+  "discussion": "Discussion Resin type We demonstrate experimentally that resin type operates a strong control on the decay of fruit flies: over identical time periods, flies in W . nobilis resin retained anatomical details including non-cuticular internal features, whereas flies in P . sylvestris showed poor preservation or loss of most features, including cuticle. This suggests that resin type does impart a preservational bias in the amber fossil record. This is the first, but important, step in developing a more complete understanding of the resin-type bias in the amber fossil record. To add to this we need to determine which specific characteristics of these two resins were responsible for the differences in decay. Then, different ambers could be assessed on the basis of these characteristics to determine how successfully they could inhibit the decay of labile tissues or organisms. Resins influence decay in a number of ways: physically blocking scavengers and external microbes from the entombed carcass, dehydrating tissues to indirectly inhibit microbial activity, and/or or directly inhibiting microbial activity through antiseptic properties. The two resins used in these experiments could differ in any of these factors, for example, different permeability could vary microbe access to the carcass, and different resin chemistry could result in differential dehydration or decay-inhibition rate. There are three potential lines of evidence to understand how the volatile and semi-volatile chemical compounds that differ between the two experimental resins might influence gut microbiota activit",
+  "authors": [
+   "Victoria E. McCoy",
+   "Carmen Soriano",
+   "Mirko Pegoraro",
+   "Ting Luo",
+   "Arnoud Boom",
+   "Betsy Foxman",
+   "Sarah E. Gabbott"
+  ],
+  "license": "CC BY 4.0",
+  "licenseText": "Creative Commons Attribution License"
+ },
+ "data": {
+  "title": "琥珀里的偏见：树脂如何筛选化石",
+  "brief": "同一只果蝇，埋进两种树脂，十八个月后一个保存完好，一个只剩空壳。琥珀化石记录并非公平的档案，树脂类型本身就在筛选谁被记住。",
+  "tags": [
+   "琥珀化石",
+   "埋藏学",
+   "实验埋藏学",
+   "树脂",
+   "果蝇",
+   "保存偏差"
+  ],
+  "sections": [
+   {
+    "title": "一块琥珀里的两种命运",
+    "paragraphs": [
+     "在同步辐射的断层扫描图像里，两只果蝇并排陈列。左边那只的轮廓仍然清晰：头、胸、腹、腿的外骨骼大体连续，身体边缘内部还留着一些软组织，体腔内只有少量小气泡。右边那只只剩一层薄壳，外骨骼与周围树脂之间裂开一道空隙，体腔里没有软组织，取而代之的是与树脂密度相近的物质，气泡大而多，腹部破裂。",
+     "它们来自同一个实验，时间跨度相同，都是十八个月。差别只在于埋藏它们的树脂来自两种不同的树。这项发表于 PLOS ONE 的研究，用果蝇和现代树木树脂做了一次实际埋藏实验，想弄清楚：在琥珀形成之前，哪些因素在决定化石的保存质量。"
+    ]
+   },
+   {
+    "title": "实验设计：树脂、肠道菌与脱水",
+    "paragraphs": [
+     "研究团队选用了两种现代树木树脂。论文确认二者化学组成不同，并用固相微萃取气相色谱-质谱（SPME GC-MS）验证了这一点。实验中的果蝇被分为不同处理组，埋入树脂后经历了十八个月的观察期。",
+     "除了树脂类型，实验还操控了两个变量。其一是果蝇的肠道微生物群：研究者用抗生素改变果蝇的肠道菌群，并通过测序对菌群组成进行分类。其二是埋藏前的脱水处理：一部分果蝇在进入树脂之前先经过脱水。",
+     "保存状态的评估没有依赖肉眼，而是用相位对比同步辐射断层扫描来观察树脂内部的细节。这种方法能在不破坏标本的情况下，分辨外骨骼、软组织、气泡和树脂之间的密度差异。"
+    ]
+   },
+   {
+    "title": "树脂类型：最强的控制因素",
+    "paragraphs": [
+     "十八个月后，结果出现了明显分化。埋入 W. nobilis 树脂的十六只果蝇，全部保留了较大范围的外骨骼和内部软组织，头、胸、腹和腿都有保存，部分腹部破裂。其中六只出现了内部气泡，论文将其视为腐烂的迹象。",
+     "而埋入 P. sylvestris 树脂的十三只果蝇，全部呈现为空模。外骨骼常常还在，但内部结构一律缺失。所有个体都出现腹部破裂和内部气泡，其中十只在外骨骼与树脂之间出现了5到50微米不等的空隙。扫描图像显示，体腔边缘填充着与树脂密度相近、并与外部树脂相连的物质——论文据此判断那是树脂，不是软组织。",
+     "论文的结论很直接：树脂类型对果蝇的腐烂速度有显著控制作用。在相同时间内，一种树脂保留了包括非外骨骼内部特征在内的解剖细节，另一种则只留下外骨骼甚至更少。"
+    ]
+   },
+   {
+    "title": "肠道菌群与脱水的意外结果",
+    "paragraphs": [
+     "肠道微生物群也影响了腐烂速度。论文指出，菌群组成的微小变化就能对腐烂速率产生作用。这意味着，即便两只昆虫进入同一种树脂，它们体内携带的微生物差异也可能让保存结果不同。",
+     "脱水处理的结果则与预期相反。实验前经过脱水的果蝇，腐烂反而增强了。论文没有在已核验的材料中给出这一现象的具体机制解释，只将其作为实验结果呈现。",
+     "论文还提到，树脂影响腐烂的可能途径包括：物理阻挡食腐动物和外部微生物、通过脱水间接抑制微生物活动、或直接以抗菌特性抑制微生物。两种实验树脂在这些因素上可能各有不同，例如渗透性差异可能改变微生物接触尸体的难易，化学差异可能导致脱水和抑菌速率不同。但具体是哪些特性在起作用，论文指出仍需进一步研究。"
+    ]
+   },
+   {
+    "title": "对琥珀化石记录意味着什么",
+    "paragraphs": [
+     "这项实验的核心提示是：琥珀化石记录可能存在显著的保存偏差。不同树脂类型的产地，其化石在生态完整性和保存保真度上可能受到不同影响。换句话说，我们在琥珀里看到的昆虫组合，未必是当时森林里真实组合的忠实缩影——树脂本身就在筛选。",
+     "论文强调，这是理解树脂类型偏差的第一步。要更完整地认识这种偏差，还需要确定两种树脂中具体哪些特征导致了腐烂差异，然后才能据此评估不同琥珀对不稳定组织或生物体的抑制能力。",
+     "论文没有给出关于化石收藏或博物馆采集的建议。它只说明，在解释琥珀化石的生态信号时，树脂类型是一个需要纳入考虑的变量。"
+    ]
+   },
+   {
+    "title": "在标本抽屉里看树脂",
+    "paragraphs": [
+     "博物馆的琥珀标本往往按产地和年代归档。这项实验提示，产地背后的树脂类型本身就可能是一层过滤网。同一片森林，如果分泌树脂的树种不同，落入树脂的昆虫可能走向完全不同的保存路径：有的留下内部软组织，有的只剩空壳，有的甚至没有化石。",
+     "对于观察者而言，这意味着在比较不同产地的琥珀昆虫组合时，需要意识到保存质量本身可能带有系统性偏差。论文没有说应该如何调整采集或收藏策略，但它为理解为什么某些产地的琥珀里软组织更常见、某些产地几乎只有外骨骼，提供了一个实验依据。",
+     "至于具体是树脂的渗透性、化学抑菌性还是脱水速率在主导，论文未给出结论，标注为待核。"
+    ]
+   }
+  ]
+ }
+}

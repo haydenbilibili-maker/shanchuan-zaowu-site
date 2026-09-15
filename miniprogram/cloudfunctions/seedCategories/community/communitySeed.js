@@ -1,9 +1,10 @@
 const { MEDIA } = require('./cdn')
-const { sectionsToHtml } = require('./seedHelpers')
+const { sectionsToHtml, pick } = require('./seedHelpers')
 const { EXTENDED_ARTICLES, EXTENDED_EXHIBITIONS } = require('./communitySeedExtended')
 const { REWRITE_ARTICLES, REWRITE_EXHIBITIONS } = require('./rewrite2026')
+const { REPOST_ARTICLES } = require('./repostSeeds2026')
 
-const SEED_VERSION = 'community_seed_v4'
+const SEED_VERSION = 'community_seed_v5'
 
 /**
  * 应用 AI 重写叠加层（与 seedCommunityContent 共用同一份 rewrite2026.js）。
@@ -193,10 +194,40 @@ const LEGACY_EXHIBITIONS = [
   })
 ]
 
+
+/**
+ * 转载类种子：正文已是最终稿，**不过 rewrite 叠加层**；配图沿用现有云存储资源。
+ * 来源/许可字段供文章详情页渲染「来源与许可」块。
+ */
+function repostDoc(raw) {
+  const {
+    _media, sections, sourceName, sourceTitle, sourceUrl, sourceAuthor,
+    sourceLicense, sourceLicenseUrl, sourceNote, ...rest
+  } = raw
+  return articleDoc(raw._seedKey, {
+    ...rest,
+    coverImage: pick(_media, 0, 2)[0],
+    images: pick(_media, 0, 2, 4),
+    // 生成稿的小节用 paragraphs；sectionsToHtml 认 paras（或历史 body），此处归一化。
+    // 若直接透传 paragraphs，正文会被静默丢弃、只剩小节标题。
+    content: sectionsToHtml((sections || []).map((sec) => ({
+      title: sec.title,
+      paras: sec.paras || sec.paragraphs || (sec.body ? [sec.body] : []),
+      tips: sec.tips
+    }))),
+    sourceName, sourceTitle, sourceUrl, sourceAuthor,
+    sourceLicense, sourceLicenseUrl, sourceNote
+  })
+}
+
 const ARTICLES = [
-  ...LEGACY_ARTICLES,
-  ...EXTENDED_ARTICLES.map(({ _seedKey, ...rest }) => articleDoc(_seedKey, rest))
-].map((doc) => applyRewrite(doc, REWRITE_ARTICLES[doc._seedKey]))
+  ...[
+    ...LEGACY_ARTICLES,
+    ...EXTENDED_ARTICLES.map(({ _seedKey, ...rest }) => articleDoc(_seedKey, rest))
+  ].map((doc) => applyRewrite(doc, REWRITE_ARTICLES[doc._seedKey])),
+  // 转载类：已是终稿，直接入列
+  ...REPOST_ARTICLES.map(repostDoc)
+]
 
 const EXHIBITIONS = [
   ...LEGACY_EXHIBITIONS,

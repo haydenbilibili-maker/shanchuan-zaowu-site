@@ -1,0 +1,76 @@
+{
+ "source": {
+  "doi": "10.1371/journal.pone.0295298",
+  "journal": "PLOS ONE",
+  "year": "2023",
+  "title": "Quantifying error in occurrence data: Comparing the data quality of iNaturalist and digitized herbarium specimens",
+  "abstract": "iNaturalist has the potential to be an extremely rich source of organismal occurrence data. Launched in 2008, it now contains over 150 million uploaded observations as of May 2023. Based on the findings of a limited number of past studies assessing the taxonomic accuracy of participatory science-driven sources of occurrence data such as iNaturalist, there has been concern that some portion of these records might be misidentified in certain taxonomic groups. In this case study, we compare Research Grade iNaturalist observations with digitized herbarium specimens, both of which are currently available for combined download from large data aggregators and are therefore the primary sources of occurrence data for large-scale biodiversity/biogeography studies. Our comparisons were confined regionally to the southeastern United States (Florida, Georgia, North Carolina, South Carolina, Texas, Tennessee, Kentucky, and Virginia). Occurrence records from ten plant families (Gentianaceae, Ericaceae, Melanthiaceae, Ulmaceae, Fabaceae, Asteraceae, Fagaceae, Cyperaceae, Juglandaceae, Apocynaceae) were downloaded and scored on taxonomic accuracy. We found a comparable and relatively low rate of misidentification among both digitized herbarium specimens and Research Grade iNaturalist observations within the study area. This finding illustrates the utility and high quality of iNaturalist data for future research in the region, but also points to key differences between data types, giving each ",
+  "results": "Results Data type comparison Two two-proportions Z-tests were run to determine the effect of “data type” (iNaturalist or digitized herbarium specimen) on the frequency of each taxonomic identification. One Z-test was run to determine the effect of data type on the number of “Correct” identifications, and then the same process was followed for the “Unsure” category ( Table 1 ). Data type was significant in predicting whether each observation/specimen was identified correctly (p <0.001), with iNaturalist having higher accuracy overall (iNaturalist proportion Correct = 0.84267, Herbarium proportion Correct = 0.76345). Data type was not significant in how many observations were placed in the “Unsure” taxonomic identification category (p = 0.3659), and digitized herbarium images were placed in this category at a higher frequency than scored iNaturalist images (iNaturalist proportion Unsure = 0.13851, Herbarium proportion Unsure = 0.14530). There were 113 cases in which iNaturalist observations were initially scored as “Unsure” and were then changed to a different category after assessment of all images associated with the observation URL (see S1 Dataset ). Data type was also significant in predicting how many observations were placed in the “Outdated” and “Incorrect” categories, although in both cases the number of observations in these categories were comparatively low ( Fig 3 , Table 1 ). Download: PNG larger image TIFF original image Fig 3. Total number of Correct, Incorrect, Outdated, and Unsure taxonomic identifications for digitized herbarium specimens (white dots) and iNaturalist (black dots). Each dot represents a sampled plant family. https://doi.org/10.1371/journal.pone.0295298.g003 Download: PNG larger image TIFF original image Table 1. Two-proportions Z- test results showing effects of data type on how many observations were placed in the “Correct” or “Unsure” categories (Prop 1: iNaturalist, Prop 2: Herbarium). https://doi.org/10.1371/journal.pone.0295298.t0",
+  "discussion": "Discussion. Broadly, this decision emphasizes both the unique nature of the iNaturalist platform in that it operates solely on image identification, but also stresses the importance of incorporating ample images of distinguishing features into the standard herbarium digitization protocol moving forward, if the goal is ultimately to make these kinds of data comparable at large scales. Recently published studies have investigated the quality of solely iNaturalist identification [ 13 , 44 ]; here, we aim to provide a direct comparison of the proportion of misidentified observations by assessing iNaturalist and digitized herbarium data side by side. iNaturalist identification errors have been assessed in other studies, but these studies were either at smaller scales than our study or did not make any comparisons with digitized herbarium data [ 13 ]. We confine our scope to a case study among vascular plant families in the southeastern U.S. (confined by a bounding box with GPS localities (SW 24.629, -94.855, NE 38.017, -77.004), including Florida, Georgia, North Carolina, South Carolina, Tennessee, Kentucky, Alabama, Louisiana, Mississippi and parts of eastern Texas and southern Virginia) to keep all occurrences focused within a single flora. In addition, our approach helped to minimize taxonomic discrepancies caused by differing taxonomic opinions, as Weakley’s Flora of the Southeastern U.S. [ 45 ] is the most current reference, and is most comparable to the taxonomy that iNaturalist uses as the authority for vascular plants (Plants of the World Online) [ 17 , 46 , 47 ]. Previo",
+  "authors": [
+   "Elizabeth White",
+   "Pamela S. Soltis",
+   "Douglas E. Soltis",
+   "Robert Guralnick"
+  ],
+  "license": "CC BY 4.0",
+  "licenseText": "Creative Commons Attribution License"
+ },
+ "data": {
+  "title": "谁在替植物验明正身",
+  "brief": "一项针对美国东南部十科植物的研究，把公众上传的照片与馆藏标本放在同一把尺子上，比较两者鉴定错误的频率。",
+  "tags": [
+   "自然史",
+   "植物标本",
+   "公民科学",
+   "生物多样性数据"
+  ],
+  "sections": [
+   {
+    "title": "一张照片与一份标本",
+    "paragraphs": [
+     "想象两样东西并排放在桌上。左边是一张手机拍摄的植物照片：叶片、花、茎，被上传到某个观察平台，经过其他用户确认，获得了一个“研究级”的标记。右边是一份压在台纸上的腊叶标本：茎叶花果被固定、编号、贴上标签，标签上有采集地、日期和鉴定人的签名，然后被扫描成数字图像。",
+     "两者都以“某时某地出现过某种植物”的形式进入数据库。对做大规模生物地理或生物多样性研究的人来说，它们常常被合并下载、一起使用。问题也正在这里：如果两者的鉴定质量相差很大，合并使用就会把误差悄悄带进结论。",
+     "一项发表于 PLOS ONE 的研究，把这两类记录放在一起做了直接比较。研究范围限定在美国东南部，涉及十个植物科。比较的对象不是“谁更权威”这样的印象，而是可以被计数的一个量：鉴定错误的频率。"
+    ],
+    "title_en": "A photo and a specimen"
+   },
+   {
+    "title": "研究级是什么意思",
+    "paragraphs": [
+     "iNaturalist 于 2008 年上线，截至 2023 年 5 月，平台上已有超过 1.5 亿条上传的观察记录。这个数字本身说明它已经成为生物分布数据的一个重要来源。但过去一些评估参与式科学数据的研究提出过担心：在某些类群里，一部分记录可能被鉴定错了。",
+     "平台上被标为“研究级”的观察，通常意味着有足够多的用户对鉴定结果达成了一致。这个机制能不能把错误压到足够低，是这项研究想回答的问题之一。",
+     "研究者的做法是把“研究级”的 iNaturalist 观察与已经数字化的腊叶标本放在同一套评分标准下，逐条判断其分类鉴定是否准确。两类数据都来自大型数据聚合平台，也都是当前大尺度研究常用的来源。"
+    ],
+    "title_en": "What Research Grade means"
+   },
+   {
+    "title": "十个科，一个区域",
+    "paragraphs": [
+     "研究在地理上被限制在美国东南部，包括佛罗里达、佐治亚、北卡罗来纳、南卡罗来纳、得克萨斯、田纳西、肯塔基和弗吉尼亚。论文讨论部分给出的范围框还提到阿拉巴马、路易斯安那、密西西比以及得州东部和弗吉尼亚南部的部分区域。把范围压在一个植物区系之内，是为了减少因不同地区分类处理差异带来的干扰。",
+     "被评估的十个植物科是：龙胆科、杜鹃花科、黑药花科、榆科、豆科、菊科、壳斗科、莎草科、胡桃科和夹竹桃科。这些科在区域内都有分布，也都有可获取的两类记录。",
+     "评分围绕分类鉴定的准确性展开，记录被归入“正确”“不确定”“过时”“错误”等类别。研究者没有只依赖平台上的标记，而是回到观察链接所附的全部图像重新评估。其中 113 条 iNaturalist 观察最初被评分为“不确定”，在查看全部相关图像后被改到了其他类别。"
+    ],
+    "title_en": "Ten families, one region"
+   },
+   {
+    "title": "错误率与两类数据的分野",
+    "paragraphs": [
+     "统计结果显示，数据类型对“是否被正确鉴定”有显著影响（p < 0.001）。iNaturalist 的“正确”比例为 0.84267，数字化腊叶标本为 0.76345。也就是说，在这项研究的样本里，iNaturalist 的总体正确率反而更高。",
+     "在“不确定”这一类上，数据类型的影响不显著（p = 0.3659）。iNaturalist 的“不确定”比例为 0.13851，腊叶标本为 0.14530，后者略高。",
+     "数据类型同样显著地预测了“过时”和“错误”两类记录的数量，但论文指出，这两类的数量相对都较低。研究者的总体判断是：在研究区域内，数字化腊叶标本与研究级 iNaturalist 观察的误鉴定率相近，且都处于较低水平。"
+    ],
+    "title_en": "Error rates and the split between two data types"
+   },
+   {
+    "title": "标本抽屉与像素之间",
+    "paragraphs": [
+     "这项比较也暴露出两类数据在性质上的差异。iNaturalist 完全依赖图像鉴定，鉴定者看到的是拍摄者选择留下的画面。腊叶标本则是实物被数字化后的图像，台纸上往往同时保留茎、叶、花、果等多个结构，但数字化流程是否把这些区分特征都拍清楚，并不统一。",
+     "论文在讨论中提出，如果目标是让两类数据在大尺度上真正可比，那么未来的标本数字化规范需要纳入足够多的区分特征图像。这一建议针对的是数字化流程，而不是对收藏本身下判断。",
+     "对使用标本和观察记录的人来说，这项研究的价值不在于宣布某一类数据更好，而在于给出一个可核验的比较：在同一区域、同一批植物科内，两类记录的误鉴定频率可以被放在一起计数。至于其他地区、其他类群是否呈现同样格局，论文未给出，待核。"
+    ],
+    "title_en": "Between specimen drawers and pixels"
+   }
+  ]
+ }
+}
