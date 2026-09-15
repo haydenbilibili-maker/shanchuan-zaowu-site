@@ -480,6 +480,7 @@ export const COLLECTIONS = {
   BANNERS: 'banners',                // 轮播图
   ACTIVITIES: 'activities',          // 活动
   ORDERS: 'orders',                  // 订单
+  PICKUP_VERIFY_LOGS: 'pickup_verify_logs', // 门店自取核销流水（managerShipOrder.verifyPickup 写入）
   REFUNDS: 'refunds',                // 退款审核单（可与 orders 退款状态回流合并展示）
   PURCHASE_INTENTS: 'purchase_intents', // 官网报价单采购意向
   PRICE_LIST_ITEMS: 'price_list_items', // 官网 /price-list 供货报价条目

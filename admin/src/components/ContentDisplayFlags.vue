@@ -115,6 +115,21 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="门店 · 到店自取">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.showStorePickup"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              关闭后结算页不再提供「门店自取」交付方式，礼赠定制页移除「门店自提代赠」选项；
+              已存在的自取订单仍可在订单详情查看凭证并到店核销（避免存量订单无法取货）。缺配置默认开启。
+            </span>
+          </div>
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" color="#2D6A4F" :loading="saving" @click="saveFlags">
             保存开关
@@ -147,7 +162,8 @@ const DEFAULT_FLAGS = {
   showSpecimenCustom: false,
   showPetMemorial: true,
   showStoredValue: false,
-  showAiIdentify: true
+  showAiIdentify: true,
+  showStorePickup: true
 }
 
 const loading = ref(false)
@@ -171,6 +187,7 @@ function applyFlags(raw = {}, id = '') {
   form.showPetMemorial = raw.showPetMemorial !== false
   form.showStoredValue = raw.showStoredValue === true
   form.showAiIdentify = raw.showAiIdentify !== false
+  form.showStorePickup = raw.showStorePickup !== false
   docId.value = id || ''
   updatedAtText.value = formatTime(raw.updateTime || raw._updateTime || raw.updatedAt || null)
 }
@@ -211,6 +228,7 @@ function buildPayload() {
     showPetMemorial: form.showPetMemorial !== false,
     showStoredValue: form.showStoredValue === true,
     showAiIdentify: form.showAiIdentify !== false,
+    showStorePickup: form.showStorePickup !== false,
     updateTime: Date.now(),
     _updateTime: Date.now()
   }
@@ -248,6 +266,7 @@ function resetDefaults() {
   form.showPetMemorial = DEFAULT_FLAGS.showPetMemorial
   form.showStoredValue = DEFAULT_FLAGS.showStoredValue
   form.showAiIdentify = DEFAULT_FLAGS.showAiIdentify
+  form.showStorePickup = DEFAULT_FLAGS.showStorePickup
   ElMessage.info('已恢复本地默认值，点击「保存开关」写入云库')
 }
 

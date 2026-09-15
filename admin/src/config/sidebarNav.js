@@ -16,6 +16,7 @@ export const SIDEBAR_NAV = {
     items: [
       { id: 'nav-overview', icon: 'Monitor', label: '总览决策' },
       { id: 'nav-business', icon: 'Shop', label: '业务运营' },
+      { id: 'nav-studio', icon: 'Box', label: '工作室' },
       { id: 'nav-customer', icon: 'UserFilled', label: '客户经营' },
       { id: 'nav-miniapp', icon: 'Iphone', label: '小程序配置' },
       { id: 'nav-governance', icon: 'OfficeBuilding', label: '组织治理' },

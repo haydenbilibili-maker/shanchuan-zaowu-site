@@ -84,6 +84,7 @@ export const EVENTS = {
   identify_fail: { module: MODULE.IDENTIFY, desc: '识别失败', targetType: 'identification' },
   identify_result_view: { module: MODULE.IDENTIFY, desc: '结果页浏览', targetType: 'identification' },
   identify_save_atlas: { module: MODULE.IDENTIFY, desc: '保存图鉴', targetType: 'identification' },
+  identify_save_atlas_gate: { module: MODULE.IDENTIFY, desc: '保存图鉴注册引导漏斗（step: show/go_register/dismiss/resume_success）', targetType: 'identification' },
   identify_feedback_submit: { module: MODULE.IDENTIFY, desc: '提交纠错', targetType: 'identification' },
   identify_share_poster: { module: MODULE.IDENTIFY, desc: '分享海报', targetType: 'identification' },
   identify_retake_click: { module: MODULE.IDENTIFY, desc: '低置信重拍', targetType: 'identification' },
@@ -142,6 +143,18 @@ export const FUNNELS = [
       { action: 'identify_result_view', label: '查看结果' },
       { action: 'identify_save_atlas', label: '保存图鉴', endpoint: true },
       { action: 'identify_to_product', label: '跳到商详', endpoint: true }
+    ]
+  },
+  {
+    key: 'identify_gate',
+    name: 'AI 识别 · 注册钩子',
+    module: MODULE.IDENTIFY,
+    icon: '🎁',
+    color: '#C4A76C',
+    steps: [
+      { action: 'identify_save_atlas_gate:show', label: '引导曝光' },
+      { action: 'identify_save_atlas_gate:go_register', label: '去注册' },
+      { action: 'identify_save_atlas_gate:resume_success', label: '注册完成并写入图鉴', endpoint: true }
     ]
   },
   {

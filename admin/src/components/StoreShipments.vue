@@ -1,7 +1,7 @@
 <template>
   <div class="store-shipments">
     <div class="header-section">
-      <h2>门店出货单</h2>
+      <h2>出货单</h2>
       <p class="subtitle">
         SSOT 集合 <code>ops_shipments</code>。小程序超管/店长为主录入；本页用于核对、筛选与报表查看。
         飞书双向同步请到「飞书同步中心 · 出货」。

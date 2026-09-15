@@ -59,9 +59,6 @@ export const NAV_DOMAINS = {
           { id: '67', title: '待我审批', desc: '上架与店长审批队列', icon: 'Checked' },
           { id: '61', title: '运费与包邮规则', desc: '运费模板与包邮门槛', icon: 'Van' },
           { id: '72', title: '定金管理', desc: '售罄孤品定金规则与意向', icon: 'Money' },
-          { id: '76', title: '采购管理', desc: '门店与工作室采购清单', icon: 'ShoppingCart' },
-          { id: '79', title: '门店出货单', desc: '出货账本核对（SSOT ops_shipments）', icon: 'Van' },
-          { id: '78', title: '飞书同步中心', desc: '连接状态、字段映射与一键同步', icon: 'Connection' },
         ],
       },
       {
@@ -83,7 +80,6 @@ export const NAV_DOMAINS = {
           { id: '30', title: '门店中心', desc: 'ERP 档案、C 端展区与店员权限', icon: 'Shop' },
           { id: '35', title: '加盟商管理', desc: '加盟线索与合作档案', icon: 'Promotion' },
           { id: '48', title: '物业合作测算', desc: '房租分润与物业测算', icon: 'House' },
-          { id: '77', title: '物业成本', desc: '水电房租登记与票据', icon: 'House' },
         ],
       },
       {
@@ -91,8 +87,28 @@ export const NAV_DOMAINS = {
         title: '定制工坊',
         overline: 'ATELIER',
         entries: [
-          { id: '38', title: '标本定制工单', desc: '定制生产进度', icon: 'Brush' },
           { id: '39', title: '伴宠记忆订单', desc: '宠物纪念订单履约', icon: 'Avatar' },
+        ],
+      },
+    ],
+  },
+  'nav-studio': {
+    id: 'nav-studio',
+    title: '工作室',
+    overline: 'STUDIO',
+    subtitle: '采购库存、物业、标本师与定制工单（与小程序工作室模块对齐）',
+    sections: [
+      {
+        key: 'studio-ops',
+        title: '工作室运营',
+        overline: 'OPS',
+        entries: [
+          { id: '77', title: '物业', desc: '水电房租登记与票据', icon: 'House' },
+          { id: '76', title: '采购', desc: '门店与工作室采购清单', icon: 'ShoppingCart' },
+          { id: '79', title: '出货单', desc: '出货账本核对（SSOT ops_shipments）', icon: 'Van' },
+          { id: '78', title: '库存同步', desc: '飞书成品/原材料库存与采购出货同步', icon: 'Connection' },
+          { id: '7', title: '标本师管理', desc: '标本师档案与作品', icon: 'Brush' },
+          { id: '38', title: '工单', desc: '标本定制生产进度', icon: 'Brush' },
         ],
       },
     ],
@@ -178,7 +194,6 @@ export const NAV_DOMAINS = {
           { id: '2', title: '财务核算系统', desc: '收支记账与对账', icon: 'Money' },
           { id: '36', title: '资本架构沙盘', desc: '股权与资本结构推演', icon: 'DataBoard' },
           { id: '50', title: '工作室启动成本', desc: '启动现金流与爬坡模型', icon: 'TrendCharts' },
-          { id: '77', title: '物业成本', desc: '水电房租登记与票据', icon: 'House' },
           { id: '27', title: '合伙人命理中心', desc: '合伙人匹配辅助', icon: 'DocumentCopy' },
         ],
       },
@@ -187,7 +202,6 @@ export const NAV_DOMAINS = {
         title: '人才组织',
         overline: 'PEOPLE',
         entries: [
-          { id: '7', title: '标本师管理', desc: '标本师档案与作品', icon: 'Brush' },
           { id: '32', title: '员工花名册', desc: '总部 HR 花名册', icon: 'User' },
           { id: '31', title: '员工薪酬管理', desc: '薪酬与薪资单', icon: 'Wallet' },
           { id: '74', title: '装裱师佣金', desc: '按单佣金规则与台账', icon: 'Wallet' },

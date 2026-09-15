@@ -158,6 +158,8 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'managePurchaseOrder',
   'managePropertyCost',
   'manageStoreShipment',
+  // 2026-09-15：支付补履约（回调缺失时由超管人工核对微信流水后补单）
+  'confirmPayment',
 ])
 
 /**
@@ -222,6 +224,60 @@ function proxyUnavailableMessage(detail = '') {
   return detail ? `${detail} ${hint}` : hint
 }
 
+/**
+ * 建立 / 清除管理代理会话（/api/admin-session 下发 HttpOnly 签名 Cookie）。
+ * 服务端 /api/cloud-fn 只有拿到该 Cookie 才会注入 ADMIN_OPS_KEY，
+ * 因此**必须**在登录成功后调用一次本函数，否则所有管理类云函数都会 401。
+ * 返回 { ok, skipped, msg }：skipped=true 表示本地开发未部署 Pages Functions。
+ */
+export async function establishAdminSession(password) {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
+  const url = `${base}/api/admin-session`
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: String(password || '') }),
+    })
+    if (res.status === 404 || res.status === 405) {
+      // 本地 `npm run dev:admin` 无 Pages Functions：降级为前端口令门禁并明确告警
+      console.warn('[admin-session] 未部署 /api/admin-session，已降级为本地口令门禁（仅限开发环境）')
+      return { ok: true, skipped: true, msg: '未部署代理会话接口（开发环境降级）' }
+    }
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || data.success === false) {
+      return { ok: false, skipped: false, msg: data.msg || `管理会话建立失败（HTTP ${res.status}）` }
+    }
+    return { ok: true, skipped: false, msg: data.msg || '身份验证通过' }
+  } catch (e) {
+    return { ok: false, skipped: false, msg: e?.message || '无法连接管理会话接口' }
+  }
+}
+
+export async function clearAdminSession() {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
+  try {
+    await fetch(`${base}/api/admin-session`, { method: 'DELETE', credentials: 'same-origin' })
+  } catch (e) {
+    /* 忽略：退出登录不因网络失败而阻塞 */
+  }
+}
+
+/** 会话失效时清掉前端登录标记，让口令门禁重新出现 */
+function clearAdminSessionLocal() {
+  try {
+    localStorage.removeItem('sc_admin_token')
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    window.dispatchEvent(new CustomEvent('sc-admin-session-expired'))
+  } catch (e) {
+    /* ignore */
+  }
+}
+
 async function callViaCloudFnProxy(name, data = {}) {
   const urls = cloudFnProxyUrls()
   let lastErr
@@ -229,10 +285,21 @@ async function callViaCloudFnProxy(name, data = {}) {
     try {
       const res = await fetch(url, {
         method: 'POST',
+        // 服务端以 HttpOnly 会话 Cookie 鉴权（/api/admin-session 下发），必须携带凭证
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, data }),
       })
       const ctype = res.headers.get('content-type') || ''
+      if (res.status === 401 || res.status === 503) {
+        const denied = await res.json().catch(() => ({}))
+        if (res.status === 401) clearAdminSessionLocal()
+        lastErr = new Error(
+          denied?.msg ||
+            '管理会话未建立或已过期，请退出后重新在登录页输入管理口令。',
+        )
+        continue
+      }
       if (ctype.includes('text/html')) {
         lastErr = new Error(
           proxyUnavailableMessage(`${url} 未部署云函数代理（返回了 HTML，常见于 Pages Function 未随站点发布）。`),

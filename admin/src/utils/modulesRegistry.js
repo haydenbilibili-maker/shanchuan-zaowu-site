@@ -5,7 +5,7 @@
  * 字段约定：
  * - id        : currentTab 索引（string）
  * - name      : 显示名
- * - group     : 一级分类（六大类之一）
+ * - group     : 一级分类（七大类之一）
  * - subgroup  : 二级分类
  * - icon      : Element Plus 图标名
  * - keywords  : 用于搜索的别名/英文/拼音首字母
@@ -14,6 +14,7 @@
 export const GROUPS = {
   OVERVIEW: { key: 'OVERVIEW', name: '总览决策', icon: 'Odometer', submenuKey: null, navId: 'nav-overview' },
   BUSINESS: { key: 'BUSINESS', name: '业务运营', icon: 'Shop', submenuKey: null, navId: 'nav-business' },
+  STUDIO: { key: 'STUDIO', name: '工作室', icon: 'Box', submenuKey: null, navId: 'nav-studio' },
   CUSTOMER: { key: 'CUSTOMER', name: '客户经营', icon: 'UserFilled', submenuKey: null, navId: 'nav-customer' },
   MINIAPP:  { key: 'MINIAPP',  name: '小程序配置', icon: 'Iphone', submenuKey: null, navId: 'nav-miniapp' },
   GOVERNANCE: { key: 'GOVERNANCE', name: '组织治理', icon: 'OfficeBuilding', submenuKey: null, navId: 'nav-governance' },
@@ -21,18 +22,22 @@ export const GROUPS = {
 }
 
 export const MODULES = [
+  // ── 工作室（与小程序店长/超管「工作室」模块对齐：物业 / 采购 / 出货 / 库存同步）──
+  { id: '77', name: '物业成本', group: 'STUDIO', subgroup: '工作室', icon: 'House', keywords: 'property cost property_costs managePropertyCost 水电 房租 票据 物业成本 物业' },
+  { id: '76', name: '采购管理', group: 'STUDIO', subgroup: '工作室', icon: 'ShoppingCart', keywords: 'purchase ops_purchases managePurchaseOrder caigou 门店采购 工作室采购 供应商 采购' },
+  { id: '79', name: '出货单', group: 'STUDIO', subgroup: '工作室', icon: 'Van', keywords: 'shipment ops_shipments manageStoreShipment chuhuo 出货单 门店出货' },
+  { id: '78', name: '飞书同步中心', group: 'STUDIO', subgroup: '工作室', icon: 'Connection', keywords: 'feishu bitable sync 飞书 多维表 同步 采购映射 ops_purchases ops_shipments feishu_bitable 库存管理 studio_inventory' },
+  { id: '7',  name: '标本师管理', group: 'STUDIO', subgroup: '工作室', icon: 'Brush', keywords: 'framer staff bbsgl artisan 标本师管理' },
+  { id: '38', name: '标本定制工单', group: 'STUDIO', subgroup: '工作室', icon: 'Brush', keywords: 'custom workshop bbdzgd 定制 工单' },
   // ── 2026-09-14 与小程序对齐补的四模块 ──
   { id: '72', name: '定金管理', group: 'BUSINESS', subgroup: '货', icon: 'Money', keywords: 'deposit dingjin 定金 尾款 售罄孤品 意向' },
   { id: '73', name: '直播管理', group: 'BUSINESS', subgroup: '场', icon: 'VideoCamera', keywords: 'live zhibo 直播 场次 主播 开播' },
   { id: '74', name: '装裱师佣金', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Wallet', keywords: 'commission yongjin 佣金 装裱师 提成 台账' },
   { id: '75', name: '生日礼配置', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Present', keywords: 'birthday shengri 生日礼 礼包 礼券' },
-  { id: '76', name: '采购管理', group: 'BUSINESS', subgroup: '货', icon: 'ShoppingCart', keywords: 'purchase ops_purchases managePurchaseOrder caigou 门店采购 工作室采购 供应商' },
-  { id: '79', name: '门店出货单', group: 'BUSINESS', subgroup: '货', icon: 'Van', keywords: 'shipment ops_shipments manageStoreShipment chuhuo 出货单 门店出货' },
-  { id: '78', name: '飞书同步中心', group: 'BUSINESS', subgroup: '货', icon: 'Connection', keywords: 'feishu bitable sync 飞书 多维表 同步 采购映射 ops_purchases ops_shipments feishu_bitable' },
-  { id: '77', name: '物业成本', group: 'GOVERNANCE', subgroup: '财务资本', icon: 'House', keywords: 'property cost property_costs managePropertyCost 水电 房租 票据 物业成本' },
   // 导航大屏（侧栏一级）
   { id: 'nav-overview', name: '总览决策', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'nav overview 总览 导航大屏' },
   { id: 'nav-business', name: '业务运营', group: 'BUSINESS', subgroup: null, icon: 'Shop', keywords: 'nav business 业务运营 导航大屏' },
+  { id: 'nav-studio', name: '工作室', group: 'STUDIO', subgroup: null, icon: 'Box', keywords: 'nav studio 工作室 采购 出货 物业 库存' },
   { id: 'nav-customer', name: '客户经营', group: 'CUSTOMER', subgroup: null, icon: 'UserFilled', keywords: 'nav customer 客户 导航大屏' },
   { id: 'nav-miniapp', name: '小程序配置', group: 'MINIAPP', subgroup: null, icon: 'Iphone', keywords: 'nav miniapp 小程序 导航大屏' },
   { id: 'nav-governance', name: '组织治理', group: 'GOVERNANCE', subgroup: null, icon: 'OfficeBuilding', keywords: 'nav governance 组织 治理 导航大屏' },
@@ -68,7 +73,6 @@ export const MODULES = [
   { id: '35', name: '加盟商管理', group: 'BUSINESS', subgroup: '场', icon: 'Promotion', keywords: 'franchise jmsgl 加盟' },
   { id: '48', name: '物业合作测算', group: 'BUSINESS', subgroup: '场', icon: 'House', keywords: 'property eval rent revenue wyhz 物业 测算 房租 分润' },
   // 业务运营 — 定制工坊
-  { id: '38', name: '标本定制工单', group: 'BUSINESS', subgroup: '定制工坊', icon: 'Brush', keywords: 'custom workshop bbdzgd 定制' },
   { id: '39', name: '伴宠记忆订单', group: 'BUSINESS', subgroup: '定制工坊', icon: 'Avatar', keywords: 'pet memorial bcjy 宠物' },
 
   // 客户经营 — 会员资产
@@ -110,7 +114,6 @@ export const MODULES = [
   { id: '17', name: '权限管理系统', group: 'MINIAPP', subgroup: '系统/算法/通知', icon: 'Lock', keywords: 'permission rbac qxgl' },
 
   // 组织治理 — 人才
-  { id: '7',  name: '标本师管理', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Brush', keywords: 'framer staff bbsgl artisan' },
   { id: '32', name: '员工花名册', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'User', keywords: 'employee roster yghmc hr' },
   { id: '31', name: '员工薪酬管理', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Wallet', keywords: 'payroll salary ygxc' },
   // 组织治理 — 财务资本

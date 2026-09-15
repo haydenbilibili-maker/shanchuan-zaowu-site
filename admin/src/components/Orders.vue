@@ -124,8 +124,11 @@
                     <div class="time-info">{{ formatDate(scope.row.createTime) }}</div>
                     <div style="margin-top:5px;">
                         <el-tag v-if="scope.row.status==='paid'" type="warning" effect="dark" size="small">待发货</el-tag>
+                        <el-tag v-else-if="scope.row.status==='ready_pickup'" type="warning" effect="plain" size="small">待自取</el-tag>
                         <el-tag v-else-if="scope.row.status==='shipped'" type="primary" effect="plain" size="small">运输中</el-tag>
                         <el-tag v-else-if="scope.row.status==='received'" type="success" size="small">已完成</el-tag>
+                        <el-tag v-else-if="scope.row.status==='refunding'" type="danger" effect="plain" size="small">退款中</el-tag>
+                        <el-tag v-else-if="scope.row.status==='aftersales'" type="danger" effect="plain" size="small">{{ scope.row.returnMode==='store_return' && scope.row.pickupReturnStatus!=='returned' ? '售后中 · 待收回藏品' : '售后中' }}</el-tag>
                         <el-tag v-else-if="scope.row.status==='refunded'" type="info" size="small">已退款</el-tag>
                         <el-tag v-else type="info" size="small">{{ scope.row.status }}</el-tag>
                     </div>
@@ -135,7 +138,19 @@
             <el-table-column label="操作" width="150" fixed="right">
                 <template #default="scope">
                     <el-button v-if="scope.row.status==='paid'" type="primary" size="small" @click="openShip(scope.row)">发货</el-button>
+                    <!-- 门店自取未取货：可直接退款（货未交付，无逆向） -->
+                    <el-button v-else-if="scope.row.status==='ready_pickup'" type="danger" size="small" @click="handleRefund(scope.row)">退款</el-button>
                     <el-button v-else-if="scope.row.status==='refunding'" type="danger" size="small" @click="handleRefund(scope.row)">退款</el-button>
+                    <!-- 门店自取已交付：逆向流程 = 确认收回藏品 → 退款 -->
+                    <template v-else-if="scope.row.status==='aftersales'">
+                        <el-button
+                            v-if="scope.row.returnMode==='store_return' && scope.row.pickupReturnStatus!=='returned'"
+                            type="warning"
+                            size="small"
+                            @click="confirmPickupReturn(scope.row)"
+                        >确认收回藏品</el-button>
+                        <el-button v-else type="danger" size="small" @click="handleRefund(scope.row)">退款</el-button>
+                    </template>
                     <el-popover v-else-if="scope.row.status==='shipped'" placement="left" title="物流信息" :width="220" trigger="click">
                         <template #reference><el-button size="small" link>物流</el-button></template>
                         <p><b>{{ scope.row.logistics?.carrier }}</b></p>
@@ -143,6 +158,13 @@
                         <el-button size="small" link type="primary" @click="copyText(scope.row.logistics?.trackingNumber)">复制单号</el-button>
                     </el-popover>
                     <el-button size="small" link type="primary" @click="editOrderNote(scope.row)">备注</el-button>
+                    <el-button
+                        v-if="scope.row.status==='pending_pay'"
+                        size="small"
+                        link
+                        type="danger"
+                        @click="adminFulfill(scope.row)"
+                    >补履约</el-button>
                 </template>
             </el-table-column>
             
@@ -500,7 +522,7 @@ const handleRefund = (row) => {
     ).then(async () => {
         try {
             // 先确保状态为 refunding，refundOrder 只接受 refunding/aftersales
-            if (row.status === 'paid' || row.status === 'shipped' || row.status === 'received') {
+            if (row.status === 'paid' || row.status === 'ready_pickup' || row.status === 'shipped' || row.status === 'received') {
                 await cdnUpdate('orders', row._id, { status: 'refunding', refundRequestedAt: Date.now() })
             }
             const result = await callCloudFunction('refundOrder', {
@@ -528,6 +550,36 @@ const handleRefund = (row) => {
 }
 
 // --- 工具函数 ---
+const confirmPickupReturn = (row) => {
+    ElMessageBox.confirm(
+        '门店自取逆向：请核对顾客送回门店的藏品与订单一致后确认。确认收回后才能执行退款。',
+        '确认收回藏品',
+        {
+            confirmButtonText: '确认收回',
+            confirmButtonClass: 'el-button--warning',
+            type: 'warning'
+        }
+    ).then(async () => {
+        try {
+            const result = await callCloudFunction('refundOrder', {
+                action: 'confirmPickupReturn',
+                orderId: row._id
+            })
+            if (result && result.success === false) {
+                ElMessage.error(result.msg || '确认失败')
+                fetchOrders()
+                return
+            }
+            ElMessage.success(result?.msg || '已确认收回藏品')
+            fetchOrders()
+        } catch (e) {
+            console.error('确认收回失败', e)
+            ElMessage.error(e?.message || '确认失败')
+            fetchOrders()
+        }
+    }).catch(() => {})
+}
+
 const formatPrice = (p) => parseFloat(p).toLocaleString('en-US', {minimumFractionDigits: 2})
 const formatDate = (ts) => new Date(ts).toLocaleString()
 
@@ -561,6 +613,46 @@ const editOrderNote = (row) => {
                 ElMessage.success(note ? '备注已保存' : '备注已清空')
             } catch (e) {
                 ElMessage.error(e?.message || '保存失败：请确认已部署 managerShipOrder')
+            }
+        })
+        .catch(() => {})
+}
+
+/**
+ * 补履约：用户微信已实扣、但支付回调缺失（如 2026-09-15 回调误判事故）时的补救入口。
+ * 仅超管可用（Admin Web 携带 ADMIN_OPS_KEY，服务端二次校验）；会真实扣库存/发券/发消息，
+ * 所以弹窗明确要求先在微信商户平台核对到账。
+ */
+const adminFulfill = (row) => {
+    if (!row || !row._id) return ElMessage.warning('订单信息缺失')
+    ElMessageBox.prompt(
+        '仅在微信商户平台确认该单已收款后使用：将补写支付证据并执行履约（扣库存 / 核销券 / 发通知）。',
+        `补履约 · ${row.orderNo || row._id}`,
+        {
+            confirmButtonText: '确认补履约',
+            cancelButtonText: '取消',
+            inputType: 'textarea',
+            inputPlaceholder: '可填微信交易号或备注（选填）',
+        },
+    )
+        .then(async ({ value }) => {
+            try {
+                const text = String(value || '').trim()
+                // 弹窗文案允许填微信交易号：纯数字长串视为 transactionId，同时写入备注便于审计
+                const looksLikeTx = /^\d{18,}$/.test(text)
+                const res = await callCloudFunction('confirmPayment', {
+                    action: 'adminFulfill',
+                    orderId: row._id,
+                    transactionId: looksLikeTx ? text : '',
+                    note: text,
+                })
+                if (!res || res.success === false) {
+                    throw new Error((res && res.msg) || '补履约失败')
+                }
+                ElMessage.success(res.alreadyPaid ? '该单已支付，无需补履约' : '补履约已执行')
+                fetchOrders()
+            } catch (e) {
+                ElMessage.error(e?.message || '补履约失败：请确认云函数 confirmPayment 已部署')
             }
         })
         .catch(() => {})

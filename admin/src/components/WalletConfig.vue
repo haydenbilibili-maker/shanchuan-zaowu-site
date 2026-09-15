@@ -140,6 +140,33 @@
       <el-button @click="resetDefaults">恢复默认</el-button>
       <el-button :loading="loading" @click="loadConfig">刷新</el-button>
     </div>
+
+    <el-card style="margin-top: 16px;">
+      <template #header>补单入账（支付回调缺失时）</template>
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        title="仅在微信商户平台确认该笔充值已收款后使用。入账走幂等键 recharge:{outTradeNo}，重复执行不会重复加钱。"
+      />
+      <el-form label-width="120px" style="margin-top: 12px;">
+        <el-form-item label="充值单 ID">
+          <el-input v-model="reconcileForm.orderId" placeholder="stored_value_recharge_orders 的 _id" style="max-width: 420px;" />
+        </el-form-item>
+        <el-form-item label="或 outTradeNo">
+          <el-input v-model="reconcileForm.outTradeNo" placeholder="SV 开头的商户单号" style="max-width: 420px;" />
+        </el-form-item>
+        <el-form-item label="微信交易号">
+          <el-input v-model="reconcileForm.transactionId" placeholder="选填，写入充值单便于对账" style="max-width: 420px;" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="reconcileForm.note" placeholder="选填，例如「9-15 回调缺失人工补单」" style="max-width: 420px;" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="danger" :loading="reconciling" @click="reconcileRecharge">确认补单入账</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
@@ -170,6 +197,8 @@ const DEFAULT_RECHARGE = {
 
 const loading = ref(false)
 const saving = ref(false)
+const reconciling = ref(false)
+const reconcileForm = reactive({ orderId: '', outTradeNo: '', transactionId: '', note: '' })
 const enabled = ref(false)
 const form = reactive({
   packages: DEFAULT_PACKAGES.map((p) => ({ ...p })),
@@ -182,6 +211,39 @@ const form = reactive({
 
 function fenToYuan(fen) {
   return Math.round((Number(fen) || 0)) / 100
+}
+
+/**
+ * 补单入账：支付回调缺失（如 2026-09-15 回调误判事故）时，超管核对微信流水后人工入账。
+ * 服务端 manageStoredValue.reconcileRecharge 仅超管可调用，且入账幂等。
+ */
+async function reconcileRecharge() {
+  if (!reconcileForm.orderId && !reconcileForm.outTradeNo) {
+    ElMessage.warning('请填写充值单 ID 或 outTradeNo')
+    return
+  }
+  reconciling.value = true
+  try {
+    const res = await callCloudFunction('manageStoredValue', {
+      action: 'reconcileRecharge',
+      orderId: String(reconcileForm.orderId || '').trim(),
+      outTradeNo: String(reconcileForm.outTradeNo || '').trim(),
+      transactionId: String(reconcileForm.transactionId || '').trim(),
+      note: String(reconcileForm.note || '').trim(),
+    })
+    if (!res || res.success === false) {
+      throw new Error((res && res.msg) || '补单失败')
+    }
+    ElMessage.success(res.alreadyCredited ? '该充值单此前已入账' : '补单入账完成')
+    reconcileForm.orderId = ''
+    reconcileForm.outTradeNo = ''
+    reconcileForm.transactionId = ''
+    reconcileForm.note = ''
+  } catch (e) {
+    ElMessage.error(e?.message || '补单失败：请确认云函数 manageStoredValue 已部署且当前账号为超管')
+  } finally {
+    reconciling.value = false
+  }
 }
 
 function yuanToFen(yuan) {

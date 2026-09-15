@@ -54,6 +54,8 @@ export function getDefaultWelcomeGiftConfig() {
     stackable: false,
     priority: 100,
     coupons: [
+      // 首单友好档：门槛 49（折扣纪律下限 ceil(10/0.25)=40，合规）；与小程序 welcomeGiftDefaults 对齐
+      { id: 'c10s', enabled: true, value: 10, minSpend: 49, expireDays: 30, count: 1, title: '新会员礼券 · 满49减10', channel: 'all' },
       { id: 'c10', enabled: true, value: 10, minSpend: 100, expireDays: 30, count: 1, title: '新会员礼券 · 满100减10', channel: 'all' },
       { id: 'c30', enabled: true, value: 30, minSpend: 200, expireDays: 30, count: 1, title: '新会员礼券 · 满200减30', channel: 'all' },
       { id: 'c50', enabled: true, value: 50, minSpend: 300, expireDays: 30, count: 1, title: '新会员礼券 · 满300减50', channel: 'all' },

@@ -378,6 +378,7 @@ const refresh = async () => {
         1000
       )
       applyBehaviorExtras(behaviorRows)
+      appendGateStepRows(behaviorRows)
       if (!rawEvents.value.length) {
         rawEvents.value = aggregateLocal(behaviorRows)
       }
@@ -420,6 +421,39 @@ const aggregateLocal = (events) => {
     if (uid) map[key].uv.add(uid)
   })
   return Object.values(map).map(r => ({ ...r, uv: Array.from(r.uv) }))
+}
+
+/**
+ * 注册钩子漏斗：把 identify_save_atlas_gate 按 step 展开成合成 action
+ * （identify_save_atlas_gate:show / :go_register / :dismiss / :resume_success），
+ * 追加进 rawEvents 后即可复用通用 FUNNELS 渲染。
+ * 注：analytics_daily 是动作级汇总、不含 step，故此处必须从 user_behaviors 明细派生。
+ */
+const appendGateStepRows = (events = []) => {
+  const GATE_ACTION = 'identify_save_atlas_gate'
+  const map = {}
+  events.forEach((ev) => {
+    if (ev.action !== GATE_ACTION) return
+    const step = String(ev.step || '').trim()
+    if (!step) return
+    const dateKey = (new Date(ev.timestamp || Date.now())).toISOString().split('T')[0]
+    const action = `${GATE_ACTION}:${step}`
+    const key = `${dateKey}|${action}`
+    if (!map[key]) {
+      map[key] = {
+        dateKey,
+        action,
+        module: ev.module || getEventMeta(GATE_ACTION)?.module,
+        count: 0,
+        uv: new Set()
+      }
+    }
+    map[key].count++
+    const uid = ev.userId || ev._openid
+    if (uid) map[key].uv.add(uid)
+  })
+  const rows = Object.values(map).map((r) => ({ ...r, uv: Array.from(r.uv) }))
+  if (rows.length) rawEvents.value = rawEvents.value.concat(rows)
 }
 
 const applyBehaviorExtras = (events = []) => {

@@ -93,30 +93,22 @@ export function assembleContentMetrics(pieces = [], behaviorSnippet = null) {
   }
 }
 
-/** 轻量拉取 C 端行为摘要（与 BehaviorAnalytics 同源集合） */
-export async function fetchBehaviorSnippet(getCdnDatabase) {
+/** 轻量拉取 C 端行为摘要（经 getAnalyticsDashboard，避免 CDN 直读 analytics_daily） */
+export async function fetchBehaviorSnippet(_getCdnDatabaseUnused) {
   try {
-    const db = await getCdnDatabase()
-    const end = new Date().toISOString().split('T')[0]
-    const start = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]
-    const _ = db.command
-    const res = await db
-      .collection('analytics_daily')
-      .where({ dateKey: _.gte(start).and(_.lte(end)) })
-      .limit(500)
-      .get()
-    const rows = res.data || []
-    let totalEvents = 0
-    const uv = new Set()
-    rows.forEach((r) => {
-      totalEvents += num(r.count)
-      ;(Array.isArray(r.uv) ? r.uv : []).forEach((u) => uv.add(u))
+    const { callCdnFunction } = await import('./cloudbaseCdnDb.js')
+    const res = await callCdnFunction('getAnalyticsDashboard', {
+      action: 'behaviorSnippet',
+      days: 7,
     })
+    if (res && res.success === false) return null
+    const data = res?.data || res
+    if (!data || typeof data !== 'object') return null
     return {
-      range: `${start} ~ ${end}`,
-      totalEvents,
-      uv: uv.size,
-      note: '小程序行为埋点摘要，辅助内容复盘',
+      range: data.range || '',
+      totalEvents: Number(data.totalEvents) || 0,
+      uv: Number(data.uv) || 0,
+      note: data.note || '小程序行为埋点摘要，辅助内容复盘',
     }
   } catch {
     return null

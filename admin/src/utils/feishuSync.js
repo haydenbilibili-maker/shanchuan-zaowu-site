@@ -263,6 +263,36 @@ function cellNumber(value) {
   return Number.isFinite(n) ? n : 0
 }
 
+/** 飞书 DateTime 常为毫秒时间戳；出货/采购日期须落成 YYYY-MM-DD（按上海时区） */
+function formatShanghaiYmd(ms) {
+  const d = new Date(ms)
+  if (Number.isNaN(d.getTime())) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d)
+  const y = parts.find((p) => p.type === 'year')?.value
+  const m = parts.find((p) => p.type === 'month')?.value
+  const day = parts.find((p) => p.type === 'day')?.value
+  return y && m && day ? `${y}-${m}-${day}` : ''
+}
+
+function cellDate(value) {
+  if (value == null || value === '') return ''
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return formatShanghaiYmd(value > 1e12 ? value : value * 1000)
+  }
+  const s = cellText(value).trim()
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
+  if (/^\d{10,13}$/.test(s)) {
+    const n = Number(s)
+    return formatShanghaiYmd(n > 1e12 ? n : n * 1000)
+  }
+  return s
+}
+
 function pickField(fields, name) {
   if (!name) return undefined
   if (fields[name] !== undefined) return fields[name]
@@ -282,7 +312,9 @@ function mapRecord(rec, fieldMap) {
       key === 'inboundTotal' ||
       key === 'outboundTotal'
         ? cellNumber(v)
-        : cellText(v)
+        : key === 'date' || key === 'expectedArrival' || key === 'inventoryDate' || key === 'shipmentDate'
+          ? cellDate(v)
+          : cellText(v)
   }
   return out
 }
@@ -419,14 +451,20 @@ async function pullTable(role, col, tablesOverride = null) {
   if (!spec?.tableId) return { success: false, msg: `请先映射「${role}」表并保存` }
   const { records } = await feishuApi({ action: 'listRecords', tableId: spec.tableId })
   let upserted = 0
+  let mirrorFailed = 0
   for (const rec of records || []) {
-    await upsertByRecordId(col, rec.record_id, mapRecord(rec, spec.fields))
-    upserted += 1
+    try {
+      await upsertByRecordId(col, rec.record_id, mapRecord(rec, spec.fields))
+      upserted += 1
+    } catch {
+      // 镜像集合权限/缺失不应阻断 SSOT upsert（出货主库 ops_shipments）
+      mirrorFailed += 1
+    }
   }
   return {
     success: true,
-    stats: { pulled: (records || []).length, upserted },
-    msg: `已同步 ${upserted} 条`,
+    stats: { pulled: (records || []).length, upserted, mirrorFailed },
+    msg: `已同步 ${upserted} 条` + (mirrorFailed ? `（镜像失败 ${mirrorFailed}）` : ''),
     records,
     fieldMap: spec.fields || {},
   }

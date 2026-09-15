@@ -206,6 +206,7 @@
             <el-menu-item-group title="DOMAINS">
                 <el-menu-item index="nav-overview"><el-icon><Monitor /></el-icon><span>总览决策</span></el-menu-item>
                 <el-menu-item index="nav-business"><el-icon><Shop /></el-icon><span>业务运营</span></el-menu-item>
+                <el-menu-item index="nav-studio"><el-icon><Box /></el-icon><span>工作室</span></el-menu-item>
                 <el-menu-item index="nav-customer"><el-icon><UserFilled /></el-icon><span>客户经营</span></el-menu-item>
                 <el-menu-item index="nav-miniapp"><el-icon><Iphone /></el-icon><span>小程序配置</span></el-menu-item>
                 <el-menu-item index="nav-governance"><el-icon><OfficeBuilding /></el-icon><span>组织治理</span></el-menu-item>
@@ -1350,6 +1351,7 @@ import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchC
 import { toChineseTaxonomy } from './utils/taxonomyZh'
 import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
 import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
+import { establishAdminSession, clearAdminSession } from './utils/cloudbaseCdnDb'
 import { isActiveCategory } from './utils/categoryActive'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
@@ -1440,6 +1442,7 @@ const { recentModules, recordRecent, loadRecent } = useRecentModules()
 const TAB_COMPONENT_MAP = {
   'nav-overview': () => ({ comp: AdminNavHub, props: { domainId: 'nav-overview' } }),
   'nav-business': () => ({ comp: AdminNavHub, props: { domainId: 'nav-business' } }),
+  'nav-studio': () => ({ comp: AdminNavHub, props: { domainId: 'nav-studio' } }),
   'nav-customer': () => ({ comp: AdminNavHub, props: { domainId: 'nav-customer' } }),
   'nav-miniapp': () => ({ comp: AdminNavHub, props: { domainId: 'nav-miniapp' } }),
   'nav-governance': () => ({ comp: AdminNavHub, props: { domainId: 'nav-governance' } }),
@@ -1879,32 +1882,35 @@ const checkSession = () => {
     }
 }
 
-const handleLogin = () => {
+const handleLogin = async () => {
     if (!password.value) return ElMessage.warning('请输入管理口令')
     loggingIn.value = true
 
-    // 口令门禁（演示级）；错误必须立刻结束 loading，禁止假加载
-    const loginTimer = setTimeout(() => {
-        try {
-            if (password.value === ADMIN_SECRET) {
-                isLoggedIn.value = true
-                localStorage.setItem('sc_admin_token', 'verified_888')
-                setAdminHash(true)
-                ElMessage.success({ message: '身份验证通过，欢迎回来', duration: 2000 })
-            } else {
-                ElMessage.error('口令错误或无权访问，请联系管理员确认口令')
-                password.value = ''
-            }
-        } finally {
-            loggingIn.value = false
-            clearTimeout(loginTimer)
-        }
-    }, 800)
+    // 先建立**服务端**会话：/api/admin-session 校验 ADMIN_PROXY_PASSWORD 并下发 HttpOnly Cookie。
+    // 管理类云函数代理 /api/cloud-fn 依赖该 Cookie 才会注入 ADMIN_OPS_KEY，故必须先于前端放行。
+    const session = await establishAdminSession(password.value).catch((e) => ({
+        ok: false, skipped: false, msg: e?.message || '管理会话接口异常',
+    }))
 
-    // 兜底：极端情况下定时器被挂起时仍释放按钮 loading
-    setTimeout(() => {
-        if (loggingIn.value) loggingIn.value = false
-    }, 5000)
+    if (!session.ok) {
+        loggingIn.value = false
+        ElMessage.error(session.msg || '口令错误或无权访问，请联系管理员确认口令')
+        password.value = ''
+        return
+    }
+    // 服务端未部署（本地开发）时降级为前端口令门禁
+    if (session.skipped && password.value !== ADMIN_SECRET) {
+        loggingIn.value = false
+        ElMessage.error('口令错误或无权访问，请联系管理员确认口令')
+        password.value = ''
+        return
+    }
+
+    isLoggedIn.value = true
+    localStorage.setItem('sc_admin_token', 'verified_888')
+    setAdminHash(true)
+    ElMessage.success({ message: '身份验证通过，欢迎回来', duration: 2000 })
+    loggingIn.value = false
 }
 
 const logout = () => {
@@ -1912,7 +1918,8 @@ const logout = () => {
         confirmButtonText: '退出',
         cancelButtonText: '取消',
         type: 'warning'
-    }).then(() => {
+    }).then(async () => {
+        await clearAdminSession()
         localStorage.removeItem('sc_admin_token')
         isLoggedIn.value = false
         password.value = ''
@@ -3811,6 +3818,13 @@ function onHashLegacyCleanup() {
 }
 
 onMounted(() => {
+    // 代理会话过期（/api/cloud-fn 返回 401）时立即回到口令门禁，避免页面静默失效
+    window.addEventListener('sc-admin-session-expired', () => {
+        isLoggedIn.value = false
+        password.value = ''
+        setAdminHash(false)
+        ElMessage.warning('管理会话已过期，请重新输入口令')
+    })
     stripLegacyBrandHashes()
     checkSession()
     loadPinned()
