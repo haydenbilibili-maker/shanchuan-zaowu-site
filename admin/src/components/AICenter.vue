@@ -629,7 +629,7 @@
               </div>
               <div class="env-config-grid">
                 <div class="env-config-row"><span class="env-label">默认 Provider</span><span class="env-value">{{ aiProviderConfigStatus.defaultProvider || '—' }}</span></div>
-                <div class="env-config-row"><span class="env-label">DeepSeek Key</span><span class="env-value mono">{{ aiProviderConfigStatus.deepseekMaskedKey || '未设置 VITE_DEEPSEEK_API_KEY' }}</span></div>
+                <div class="env-config-row"><span class="env-label">DeepSeek Key</span><span class="env-value mono">{{ aiProviderConfigStatus.deepseekMaskedKey || '未设置服务端 DEEPSEEK_API_KEY' }}</span></div>
                 <div class="env-config-row"><span class="env-label">模型</span><span class="env-value">{{ aiProviderConfigStatus.deepseekModel || 'deepseek-chat' }}</span></div>
                 <div class="env-config-row"><span class="env-label">Base URL</span><span class="env-value mono">{{ aiProviderConfigStatus.deepseekBaseUrl || 'https://api.deepseek.com' }}</span></div>
                 <div class="env-config-row"><span class="env-label">其他 Key</span><span class="env-value">百炼 {{ aiProviderConfigStatus.bailian }} / Gemini {{ aiProviderConfigStatus.gemini }} / OpenAI {{ aiProviderConfigStatus.openai }}</span></div>
@@ -729,7 +729,7 @@
         </el-form-item>
         <el-form-item label="API Key" prop="apiKey">
           <el-input v-model="apiForm.apiKey" type="password" placeholder="请输入API密钥" show-password clearable />
-          <div class="form-tip">仅作本机备用；生产请用环境变量 VITE_DEEPSEEK_API_KEY（优先于此处）</div>
+          <div class="form-tip">仅作本机备用；生产请在 Cloudflare Pages 配置服务端 DEEPSEEK_API_KEY（经 /api/ai 网关调用，密钥不入前端包）</div>
         </el-form-item>
         <el-form-item label="模型列表" prop="models">
           <el-select v-model="apiForm.models" multiple filterable allow-create default-first-option placeholder="选择或输入模型名称" style="width: 100%">
@@ -843,15 +843,15 @@ const aiProviderConfigHint = computed(() => {
     return `默认 Provider：${s.defaultProvider}。DeepSeek 已从环境变量加载（${s.deepseek} 个 Key，模型 ${s.deepseekModel}）。浏览器备用接口为次优先。`
   }
   if (s.bailian > 0) {
-    return `默认 Provider：${s.defaultProvider}。已检测到百炼 Key（${s.bailian} 个）。建议改配 VITE_DEEPSEEK_API_KEY 并设 VITE_AI_DEFAULT_PROVIDER=deepseek。`
+    return `默认 Provider：${s.defaultProvider}。已检测到百炼 Key（${s.bailian} 个）。建议在 Cloudflare Pages 配置服务端 DEEPSEEK_API_KEY 并设 VITE_AI_DEFAULT_PROVIDER=deepseek。`
   }
   if (cloudKeys > 0) {
     return `已检测到云端 API Key：百炼 ${s.bailian} / Gemini ${s.gemini} / OpenAI ${s.openai} / DeepSeek ${s.deepseek}。默认 ${s.defaultProvider}。`
   }
   if (s.local > 0) {
-    return '未检测到云端 API Key，将优先依赖本地模型兜底。请在 admin/.env 配置 VITE_DEEPSEEK_API_KEY。'
+    return '未检测到云端 API Key，将优先依赖本地模型兜底。生产请在 Cloudflare Pages 配置服务端 DEEPSEEK_API_KEY。'
   }
-  return '未检测到云端 API Key。请在 admin/.env 配置 VITE_DEEPSEEK_API_KEY，并设置 VITE_AI_DEFAULT_PROVIDER=deepseek。'
+  return '未检测到云端 API Key。请在 Cloudflare Pages 配置服务端 DEEPSEEK_API_KEY（本地开发可用 admin/.env 的 VITE_ 变量），并设置 VITE_AI_DEFAULT_PROVIDER=deepseek。'
 })
 
 const hasCloudProvider = computed(() => {

@@ -231,8 +231,11 @@ function proxyUnavailableMessage(detail = '') {
  * 返回 { ok, skipped, msg }：skipped=true 表示本地开发未部署 Pages Functions。
  */
 export async function establishAdminSession(password) {
-  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
-  const url = `${base}/api/admin-session`
+  // 站点 Functions 固定在**站点根** /api/admin-session。
+  // 切勿用 import.meta.env.BASE_URL 拼前缀：ERP 的 base 是 /admin/，
+  // 拼出来会变成 /admin/api/admin-session（405），而 405 又被当成「未部署」降级，
+  // 结果登录"假成功"、服务端会话从未建立 → 之后所有管理调用 401「会话已过期」。
+  const url = '/api/admin-session'
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -240,8 +243,16 @@ export async function establishAdminSession(password) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: String(password || '') }),
     })
-    if (res.status === 404 || res.status === 405) {
-      // 本地 `npm run dev:admin` 无 Pages Functions：降级为前端口令门禁并明确告警
+    const ctype = res.headers.get('content-type') || ''
+    if (res.status === 404 || res.status === 405 || ctype.includes('text/html')) {
+      if (!isLocalDevHost()) {
+        // 线上出现这个分支＝Functions 没随本次发布部署，必须报错而不是降级放行
+        return {
+          ok: false,
+          skipped: false,
+          msg: `管理会话接口不可用（HTTP ${res.status}）。站点 Functions 可能未随本次发布部署，请联系维护者。`,
+        }
+      }
       console.warn('[admin-session] 未部署 /api/admin-session，已降级为本地口令门禁（仅限开发环境）')
       return { ok: true, skipped: true, msg: '未部署代理会话接口（开发环境降级）' }
     }
@@ -255,10 +266,20 @@ export async function establishAdminSession(password) {
   }
 }
 
-export async function clearAdminSession() {
-  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
+/** 本地开发才允许「未部署 Pages Functions」的降级放行 */
+function isLocalDevHost() {
   try {
-    await fetch(`${base}/api/admin-session`, { method: 'DELETE', credentials: 'same-origin' })
+    const h = window.location.hostname
+    return h === 'localhost' || h === '127.0.0.1' || h === '::1' || h.endsWith('.local')
+  } catch (e) {
+    return false
+  }
+}
+
+export async function clearAdminSession() {
+  try {
+    // 与 establishAdminSession 同理：必须是站点根路径
+    await fetch('/api/admin-session', { method: 'DELETE', credentials: 'same-origin' })
   } catch (e) {
     /* 忽略：退出登录不因网络失败而阻塞 */
   }
