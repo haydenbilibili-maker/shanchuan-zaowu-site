@@ -1,0 +1,6 @@
+{
+  "read": true,
+  "create": "auth != null && request.data.isOffShelf == true",
+  "update": "auth != null && (request.data.isOffShelf == undefined || doc.isOffShelf == request.data.isOffShelf)",
+  "delete": false
+}

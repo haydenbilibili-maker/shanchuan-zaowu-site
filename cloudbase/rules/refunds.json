@@ -1,7 +1,4 @@
 {
-  "read": true,
-  "write": "auth != null",
-  "create": "auth != null",
-  "update": "auth != null",
-  "delete": "auth != null"
+  "read": "auth != null",
+  "write": false
 }
