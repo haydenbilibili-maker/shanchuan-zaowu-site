@@ -6,57 +6,75 @@ const cloud = require('wx-server-sdk')
 const MINI_TEMPLATES = {
   order_created: {
     category: 'order',
-    title: '订单待支付',
-    content: (v) => `您有一笔订单待支付\n${v.productNames || '藏品订单'}\n实付 ¥${v.totalPrice || '0.00'}\n请在 30 分钟内完成支付`,
+    title: '订单待落定',
+    content: (v) => `柜中这几件标本已为你预留\n${v.productNames || '藏品订单'}\n实付 ¥${v.totalPrice || '0.00'}\n请在 30 分钟内完成支付，逾期将自动释出`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_paid: {
     category: 'order',
-    title: '支付成功',
-    content: (v) => `订单 ${v.orderNo || ''} 已支付成功\n实付 ¥${v.totalPrice || '0.00'}\n我们将尽快为您准备发货`,
+    title: '藏品已入账',
+    content: (v) => `订单 ${v.orderNo || ''} 已收妥款项。\n实付 ¥${v.totalPrice || '0.00'}\n馆员将尽快备妥，启程时再信告你`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_shipped: {
     category: 'order',
-    title: '藏品已发出',
-    content: (v) => `订单 ${v.orderNo || ''} 已通过 ${v.carrier || '快递'} 发出\n运单号：${v.trackingNo || ''}`,
+    title: '标本已启程',
+    content: (v) => `订单 ${v.orderNo || ''} 已启程，经 ${v.carrier || '快递'} 运送\n运单号：${v.trackingNo || ''}`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_cancelled: {
     category: 'order',
-    title: '订单已取消',
+    title: '订单已释出',
     content: (v) => `订单 ${v.orderNo || ''} 已取消\n${v.reason || ''}`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_refunded: {
     category: 'order',
-    title: '退款已到账',
-    content: (v) => `订单 ${v.orderNo || ''} 退款 ¥${v.refundAmount || '0.00'} 已处理\n预计 1-3 个工作日到账`,
+    title: '款项已退回',
+    content: (v) => `订单 ${v.orderNo || ''} 退款 ¥${v.refundAmount || '0.00'} 已办理。\n预计 1–3 个工作日回到原支付账户`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  gift_expired_refund: {
+    category: 'order',
+    title: '邀约已过期',
+    content: (v) => `礼赠订单 ${v.orderNo || ''} 填址期限已至，款项将退回赠予者`,
+    actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
+  },
+  gift_expired_refund_receiver: {
+    category: 'order',
+    title: '礼笺已收回',
+    content: (v) => `礼赠 ${v.orderNo || ''} 填址期限已至，这份礼笺已收回`,
+    actionUrl: () => 'subpackages/feature/gift/my-gifts/index'
+  },
+  gift_refunded_receiver: {
+    category: 'order',
+    title: '心意已收回',
+    content: (v) => `礼赠 ${v.orderNo || ''} 这份心意已收回；馆中仍有山海可寻`,
+    actionUrl: () => 'subpackages/feature/gift/my-gifts/index'
   },
   booking_success: {
     category: 'booking',
-    title: '预约已确认',
+    title: '预约已记下',
     content: (v) => `「${v.title || ''}」\n${v.date || ''} ${v.time || ''}\n票号：${v.ticketCode || ''}\n${v.storeLine || ''}`,
     actionUrl: (id) => `subpackages/business/ticket/index?id=${id}`
   },
   support_ticket_received: {
     category: 'system',
-    title: '留言已收到',
-    content: (v) => `您的「${v.topicLabel || '留言'}」已提交，专员将尽快回复`,
-    actionUrl: () => 'pages/user/messages/index'
+    title: '留言已入册',
+    content: (v) => `你的「${v.topicLabel || '留言'}」留言已提交，专员将尽快回复`,
+    actionUrl: () => 'subpackages/feature/user/messages/index'
   },
   custom_inquiry_received: {
     category: 'custom',
-    title: '定制意向已收到',
-    content: () => '您的标本定制意向已提交，专员将在 1-2 个工作日内与您联系',
-    actionUrl: () => 'pages/custom/inquiry/index'
+    title: '定制意向已入册',
+    content: () => '你的标本定制意向已入册，专员将在 1–2 个工作日内与你联系',
+    actionUrl: () => 'subpackages/feature/custom/inquiry/index'
   },
   pet_intake_booked: {
     category: 'custom',
-    title: '伴宠交接预约已确认',
+    title: '伴宠交接已预约',
     content: (v) => `「${v.petName || '伴宠'}」的到店交接已预约：${v.date || ''} ${v.time || ''}\n票号：${v.ticketCode || ''}`,
-    actionUrl: (id) => `pages/custom/pet/status/index?id=${id}`
+    actionUrl: (id) => `subpackages/feature/custom/pet/status/index?id=${id}`
   }
 }
 

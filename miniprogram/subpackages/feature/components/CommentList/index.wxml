@@ -1,0 +1,144 @@
+<!--components/CommentList/index.wxml-->
+<view class="comment-list">
+  <!-- 评价统计 -->
+  <view class="comment-stats" wx:if="{{showStats && stats.total > 0}}">
+    <view class="stats-header">
+      <view class="stats-title">
+        <text class="title-cn">用户评价</text>
+        <text class="title-en">REVIEWS</text>
+      </view>
+      <view class="stats-rating">
+        <text class="rating-value">{{stats.averageRating}}</text>
+        <view class="rating-stars">
+          <text class="star {{stats.averageRating >= 1 ? 'active' : ''}}">★</text>
+          <text class="star {{stats.averageRating >= 2 ? 'active' : ''}}">★</text>
+          <text class="star {{stats.averageRating >= 3 ? 'active' : ''}}">★</text>
+          <text class="star {{stats.averageRating >= 4 ? 'active' : ''}}">★</text>
+          <text class="star {{stats.averageRating >= 5 ? 'active' : ''}}">★</text>
+        </view>
+        <text class="stats-count">（{{stats.total}}条评价）</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 排序和筛选 -->
+  <view class="comment-filters" wx:if="{{comments.length > 0}}">
+    <view class="filter-group">
+      <text class="filter-label">排序：</text>
+      <view class="filter-chips">
+        <view 
+          class="filter-chip {{sortBy === 'time' ? 'active' : ''}}" 
+          hover-class="filter-chip-press"
+          bindtap="onSortChange" 
+          data-sort="time">最新</view>
+        <view 
+          class="filter-chip {{sortBy === 'hot' ? 'active' : ''}}" 
+          hover-class="filter-chip-press"
+          bindtap="onSortChange" 
+          data-sort="hot">最热</view>
+        <view 
+          class="filter-chip {{sortBy === 'rating' ? 'active' : ''}}" 
+          hover-class="filter-chip-press"
+          bindtap="onSortChange" 
+          data-sort="rating">评分</view>
+      </view>
+    </view>
+    <view class="filter-group">
+      <text class="filter-label">筛选：</text>
+      <view class="filter-chips">
+        <view 
+          class="filter-chip {{filter === 'all' ? 'active' : ''}}" 
+          hover-class="filter-chip-press"
+          bindtap="onFilterChange" 
+          data-filter="all">全部</view>
+        <view 
+          class="filter-chip {{filter === 'withImages' ? 'active' : ''}}" 
+          hover-class="filter-chip-press"
+          bindtap="onFilterChange" 
+          data-filter="withImages">有图</view>
+        <view 
+          class="filter-chip {{filter === 'highRating' ? 'active' : ''}}" 
+          hover-class="filter-chip-press"
+          bindtap="onFilterChange" 
+          data-filter="highRating">好评</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 评价列表 -->
+  <view class="comments-container">
+    <block wx:for="{{comments}}" wx:key="_id">
+      <view class="comment-item">
+        <view class="comment-header">
+          <view class="comment-user">
+            <text class="user-name">{{item.userInfo && item.userInfo.nickName ? item.userInfo.nickName : '匿名用户'}}</text>
+            <view class="comment-rating">
+              <block wx:for="{{[1,2,3,4,5]}}" wx:key="*this" wx:for-item="star">
+                <text class="star {{item.rating >= star ? 'active' : ''}}">★</text>
+              </block>
+            </view>
+          </view>
+          <text class="comment-time">{{item.timeText}}</text>
+        </view>
+        
+        <view class="comment-content">
+          <text class="pin-tag" wx:if="{{item.isPinned}}">置顶</text>
+          <text>{{item.content}}</text>
+        </view>
+
+        <view class="merchant-reply" wx:if="{{item.merchantReply}}">
+          <text class="reply-label">商家回复</text>
+          <text class="reply-text">{{item.merchantReply}}</text>
+        </view>
+
+        <!-- 评价图片 -->
+        <view class="comment-images" wx:if="{{item.images && item.images.length > 0}}">
+          <block wx:for="{{item.images}}" wx:key="*this" wx:for-item="img" wx:for-index="imgIndex">
+            <image 
+              class="comment-image" 
+              src="{{img}}" 
+              mode="aspectFill"
+              bindtap="previewImage"
+              data-index="{{imgIndex}}"
+              data-urls="{{item.images}}"></image>
+          </block>
+        </view>
+
+        <view class="comment-footer">
+          <view 
+            class="comment-like {{item.userLiked ? 'liked' : ''}}" 
+            hover-class="comment-like-press"
+            bindtap="onLikeComment"
+            data-id="{{item._id}}"
+            data-liked="{{item.userLiked}}">
+            <text class="like-icon">♡</text>
+            <text class="like-count" wx:if="{{item.likes > 0}}">{{item.likes}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 加载更多 -->
+  <view class="load-more" wx:if="{{hasMore && !loading}}">
+    <text hover-class="load-more-press" bindtap="loadMore">加载更多</text>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中…</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && comments.length === 0}}">
+    <image class="empty-icon" src="/subpackages/feature/assets/icons/like.png" mode="aspectFit" />
+    <text class="empty-text">还没有评价</text>
+    <text class="empty-sub">签收后，收藏者会在这里留下真实感受</text>
+  </view>
+</view>
+
+
+
+
+
+

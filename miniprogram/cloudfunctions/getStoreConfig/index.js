@@ -5,6 +5,7 @@ const { cdnPath } = require('./cdn')
 
 const DEFAULT_STORES = require('./storeSeed').DEFAULT_STORES
 const DEFAULT_ZONES = require('./storeSeed').DEFAULT_ZONES
+const { ensureStoreDocuments } = require('./ensureSeed')
 
 function normalizeStoreImageUrl(url) {
   if (!url || typeof url !== 'string') return ''
@@ -25,8 +26,11 @@ function normalizeStoreImageUrl(url) {
 
 function normalizeStoreRecord(store) {
   const seed = DEFAULT_STORES.find((s) => s.storeId === store.storeId)
+  const name = String((store && store.name) || '').trim()
   return {
+    ...(seed || {}),
     ...store,
+    name: name || (seed && seed.name) || '门店',
     coverImage: normalizeStoreImageUrl(store.coverImage) || (seed && seed.coverImage) || ''
   }
 }
@@ -86,6 +90,13 @@ async function resolveMediaUrls(stores, zones) {
 }
 
 exports.main = async () => {
+  let seedReport = null
+  try {
+    seedReport = await ensureStoreDocuments(db)
+  } catch (e) {
+    console.warn('getStoreConfig ensureSeed', e.message)
+  }
+
   let stores = DEFAULT_STORES
   let zones = DEFAULT_ZONES
   try {
@@ -98,5 +109,5 @@ exports.main = async () => {
   }
 
   const resolved = await resolveMediaUrls(stores, zones)
-  return { success: true, stores: resolved.stores, zones: resolved.zones }
+  return { success: true, stores: resolved.stores, zones: resolved.zones, seed: seedReport }
 }

@@ -1,0 +1,273 @@
+<view class="page {{generating ? 'is-busy' : ''}}">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">CONCEPT STUDIO</text>
+    <text class="boot-cn">藏品概念生成</text>
+    <view class="skel-line"></view>
+    <view class="skel-line short"></view>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <!-- 首屏一构图：品牌 + 定位 + 筛选 + 主 CTA -->
+    <view class="hero">
+      <text class="en">CONCEPT STUDIO</text>
+      <text class="cn">藏品概念生成</text>
+      <text class="lead">选定位，一键出方案</text>
+    </view>
+
+    <view class="composer">
+      <scroll-view
+        class="type-scroll"
+        scroll-x
+        enhanced
+        show-scrollbar="{{false}}"
+        scroll-into-view="{{typeScrollInto}}"
+        scroll-with-animation
+      >
+        <view class="type-track">
+          <view
+            id="type-{{item.value}}"
+            class="type-card {{selectedProductType === item.value ? 'on' : ''}}"
+            wx:for="{{productTypes}}"
+            wx:key="value"
+            data-value="{{item.value}}"
+            hover-class="type-press"
+            bindtap="selectProductType"
+          >
+            <text class="type-name">{{item.name}}</text>
+            <text class="type-meta">¥{{item.priceRange}}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="filter-sheet">
+        <view class="field-row">
+          <picker mode="selector" range="{{categoryOptions}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryPick">
+            <view class="picker-chip">
+              <text class="picker-k">类别</text>
+              <text class="picker-v">{{categoryOptions[categoryIndex].label}}</text>
+            </view>
+          </picker>
+          <picker mode="selector" range="{{innovationOptions}}" range-key="label" value="{{innovationIndex}}" bindchange="onInnovationPick">
+            <view class="picker-chip">
+              <text class="picker-k">方向</text>
+              <text class="picker-v">{{innovationOptions[innovationIndex].label}}</text>
+            </view>
+          </picker>
+        </view>
+        <view class="field-row">
+          <picker mode="selector" range="{{channelOptions}}" range-key="label" value="{{channelIndex}}" bindchange="onChannelPick">
+            <view class="picker-chip">
+              <text class="picker-k">渠道</text>
+              <text class="picker-v">{{channelOptions[channelIndex].label}}</text>
+            </view>
+          </picker>
+          <picker mode="selector" range="{{audienceOptions}}" range-key="label" value="{{audienceIndex}}" bindchange="onAudiencePick">
+            <view class="picker-chip">
+              <text class="picker-k">客群</text>
+              <text class="picker-v">{{audienceOptions[audienceIndex].label}}</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="notes-toggle" bindtap="toggleNotes">
+        <text class="notes-toggle-t">{{notesOpen ? '收起约束' : (notes ? '已填约束 · 点此编辑' : '补充约束（可选）')}}</text>
+        <text class="notes-chevron">{{notesOpen ? '⌃' : '⌄'}}</text>
+      </view>
+      <textarea
+        wx:if="{{notesOpen}}"
+        class="notes-input"
+        maxlength="400"
+        placeholder="节气礼赠、合规来源、门店体验联动…"
+        value="{{notes}}"
+        bindinput="onNotesInput"
+        focus="{{notesOpen}}"
+      />
+
+      <scroll-view class="example-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="example-track">
+          <view
+            class="chip"
+            wx:for="{{examples}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            hover-class="chip-press"
+            bindtap="applyExample"
+          >{{item.label}}</view>
+        </view>
+      </scroll-view>
+
+      <view class="cta-block">
+        <button
+          class="btn-primary"
+          loading="{{generating && genMode === 'single'}}"
+          disabled="{{generating}}"
+          bindtap="onGenerate"
+        >生成方案</button>
+        <view class="cta-row">
+          <button
+            class="btn-brass-outline flex"
+            disabled="{{generating}}"
+            bindtap="rollDiceAndGenerate"
+          >灵感即生成</button>
+          <button
+            class="btn-ghost flex"
+            loading="{{generating && genMode === 'batch'}}"
+            disabled="{{generating}}"
+            bindtap="onBatchGenerate"
+          >批量 3 变体</button>
+        </view>
+      </view>
+
+      <view class="status-line" wx:if="{{generating}}">
+        <view class="status-bar">
+          <view class="status-fill" style="width: {{progressPct}}%;"></view>
+        </view>
+        <text class="status-text">{{statusText}}</text>
+      </view>
+      <view class="error-box" wx:elif="{{lastError}}">
+        <text class="error-text">{{lastError}}</text>
+        <text class="error-retry" bindtap="retryLast">重试</text>
+      </view>
+    </view>
+
+    <!-- 结果 -->
+    <view class="group result-anchor" id="result-anchor">
+      <view class="group-head tight">
+        <text class="group-en">RESULT</text>
+        <text class="group-cn">概念卡</text>
+      </view>
+
+      <!-- 骨架 -->
+      <view class="plate-card skel" wx:if="{{generating && !concept}}">
+        <view class="skel-line wide"></view>
+        <view class="skel-line"></view>
+        <view class="skel-line short"></view>
+        <view class="skel-block"></view>
+      </view>
+
+      <view class="empty-plate" wx:elif="{{!concept}}">
+        <text class="empty-title">等待生成</text>
+        <text class="empty-desc">定好定位后点「生成方案」，或「灵感即生成」一步到位。</text>
+      </view>
+
+      <block wx:else>
+        <!-- 批量对比条 -->
+        <scroll-view class="variant-scroll" scroll-x enhanced show-scrollbar="{{false}}" wx:if="{{batchResults.length > 1}}">
+          <view class="variant-track">
+            <view
+              class="variant-chip {{batchTab === index ? 'on' : ''}} {{item.pending ? 'pending' : ''}}"
+              wx:for="{{batchResults}}"
+              wx:key="id"
+              data-idx="{{index}}"
+              bindtap="selectBatchTab"
+            >
+              <text class="variant-idx">{{index + 1}}</text>
+              <text class="variant-name">{{item.pending ? '构思中' : item.shortName}}</text>
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="plate-card">
+          <view class="plate-rail"></view>
+          <view class="plate-body">
+            <text class="plate-en">SPECIMEN CONCEPT</text>
+            <text class="plate-name">{{concept.name}}</text>
+            <view class="plate-meta-row">
+              <text class="plate-price">¥{{concept.price}}</text>
+              <text class="plate-pos">{{concept.position}}</text>
+              <text class="plate-margin">毛利 {{concept.margin}}%</text>
+            </view>
+            <view class="plate-tags" wx:if="{{concept.filterTags.length}}">
+              <text class="ptag" wx:for="{{concept.filterTags}}" wx:key="*this">{{item}}</text>
+            </view>
+
+            <view class="plate-sec">
+              <text class="plate-lab">卖点</text>
+              <view class="plate-bullet" wx:for="{{concept.sellingPoints}}" wx:key="*this">{{item}}</view>
+            </view>
+            <view class="plate-sec">
+              <text class="plate-lab">材质</text>
+              <text class="plate-copy">{{concept.materials}}</text>
+            </view>
+            <view class="plate-sec">
+              <text class="plate-lab">客群 · 策略</text>
+              <text class="plate-copy">{{concept.targetAudience}}</text>
+              <text class="plate-copy dim">{{concept.strategy}}</text>
+            </view>
+
+            <view class="plate-split" wx:if="{{concept.hasChannels || concept.hasRisks || concept.hasNextActions}}">
+              <view class="plate-col" wx:if="{{concept.hasChannels}}">
+                <text class="plate-lab">渠道</text>
+                <text class="plate-mini" wx:for="{{concept.channels}}" wx:key="*this">{{item}}</text>
+              </view>
+              <view class="plate-col" wx:if="{{concept.hasRisks}}">
+                <text class="plate-lab">风险</text>
+                <text class="plate-mini warn" wx:for="{{concept.risks}}" wx:key="*this">{{item}}</text>
+              </view>
+              <view class="plate-col" wx:if="{{concept.hasNextActions}}">
+                <text class="plate-lab">下一步</text>
+                <text class="plate-mini" wx:for="{{concept.nextActions}}" wx:key="*this">{{item}}</text>
+              </view>
+            </view>
+
+            <view class="plate-actions">
+              <button class="btn-primary" disabled="{{generating}}" bindtap="applyToUpload">带入上传藏品</button>
+              <view class="cta-row">
+                <button class="btn-brass-outline flex" bindtap="copyConceptText">复制</button>
+                <button class="btn-ghost flex" disabled="{{generating}}" bindtap="onRegenerate">再生成</button>
+                <button class="btn-ghost flex" disabled="{{generating}}" bindtap="onVariant">变体</button>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 历史：默认折叠，不抢主流程 -->
+    <view class="history-drawer">
+      <view class="history-head" bindtap="toggleHistory">
+        <view>
+          <text class="group-en">HISTORY</text>
+          <text class="group-cn">本机历史{{history.length ? ' · ' + history.length : ''}}</text>
+        </view>
+        <text class="notes-chevron">{{historyOpen ? '⌃' : '⌄'}}</text>
+      </view>
+
+      <block wx:if="{{historyOpen}}">
+        <view class="filter-tabs" wx:if="{{history.length}}">
+          <text class="filter-tab {{historyFilter === 'all' ? 'on' : ''}}" data-filter="all" bindtap="setHistoryFilter">全部</text>
+          <text class="filter-tab {{historyFilter === 'fav' ? 'on' : ''}}" data-filter="fav" bindtap="setHistoryFilter">收藏</text>
+        </view>
+        <view class="search-row" wx:if="{{history.length}}">
+          <input class="search-input" placeholder="搜索…" value="{{historyQuery}}" bindinput="onHistoryQuery" />
+          <text class="search-clear" wx:if="{{historyQuery}}" bindtap="clearHistoryQuery">清除</text>
+        </view>
+        <view class="empty-plate soft" wx:if="{{!history.length}}">
+          <text class="empty-desc">生成后自动保存在本机。</text>
+        </view>
+        <view class="empty-plate soft" wx:elif="{{!historyView.length}}">
+          <text class="empty-desc">无匹配记录。</text>
+        </view>
+        <view
+          class="history-row"
+          wx:for="{{historyView}}"
+          wx:key="id"
+          hover-class="history-press"
+          bindtap="loadHistoryItem"
+          data-id="{{item.id}}"
+        >
+          <view class="history-main">
+            <text class="history-title">{{item.name}}</text>
+            <text class="history-meta">{{item.position}} · ¥{{item.price}}</text>
+          </view>
+          <view class="history-ops">
+            <text class="fav-btn" data-id="{{item.id}}" catchtap="toggleFav">{{item.favorite ? '已藏' : '收藏'}}</text>
+            <text class="del-btn" data-id="{{item.id}}" catchtap="deleteHistory">删</text>
+          </view>
+        </view>
+      </block>
+    </view>
+  </block>
+</view>

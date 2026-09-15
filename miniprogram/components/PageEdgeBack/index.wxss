@@ -1,0 +1,10 @@
+/* 固定左缘热区：z-index 低于 custom 顶栏(≈100)，高于全屏 scroll-view */
+.page-edge-back {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  z-index: 50;
+  background: transparent;
+}

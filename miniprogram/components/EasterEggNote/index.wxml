@@ -1,0 +1,21 @@
+<view
+  class="egg-root {{visible ? 'show' : ''}} {{closing ? 'closing' : ''}}"
+  wx:if="{{visible || closing}}"
+  catchtouchmove="stopPropagation"
+>
+  <view class="egg-mask" catchtap="onMaskTap"></view>
+  <view class="egg-sheet" catchtap="stopPropagation">
+    <view class="egg-handle"></view>
+    <view class="egg-plate">
+      <view class="egg-meta">
+        <text class="egg-overline">{{firstTime ? '新著录' : '博物笔记'}}</text>
+        <text class="egg-source" wx:if="{{egg.source}}">{{egg.source}}</text>
+      </view>
+      <text class="egg-title">{{egg.title}}</text>
+      <text class="egg-latin" wx:if="{{egg.latin}}">{{egg.latin}}</text>
+      <view class="egg-rule"></view>
+      <text class="egg-body">{{egg.excerpt}}</text>
+    </view>
+    <view class="egg-close" hover-class="egg-close-press" hover-stay-time="80" bindtap="onClose">合上</view>
+  </view>
+</view>

@@ -1,0 +1,9 @@
+{
+  "name": "claimStoreReceipt",
+  "version": "1.0.0",
+  "description": "门店小票自助兑积分（用户上传 + 店长审核）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

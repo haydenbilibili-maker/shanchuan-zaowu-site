@@ -1,0 +1,213 @@
+{
+  "mode": "execute",
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "at": "2026-09-12T04:56:02.066Z",
+  "collections": {
+    "coupons": {
+      "dryCounts": [
+        {
+          "query": {
+            "channel": {
+              "$exists": false
+            }
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "channel": null
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "channel": ""
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "channel": "online"
+          },
+          "n": 0
+        }
+      ],
+      "updated": []
+    },
+    "rewards": {
+      "dryCounts": [
+        {
+          "query": {
+            "type": "coupon",
+            "channel": {
+              "$exists": false
+            }
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "type": "coupon",
+            "channel": null
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "type": "coupon",
+            "channel": ""
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "type": "coupon",
+            "channel": "online"
+          },
+          "n": 4
+        }
+      ],
+      "updated": [
+        {
+          "query": {
+            "type": "coupon",
+            "channel": "online"
+          },
+          "matched": 4,
+          "result": {
+            "n": 4,
+            "raw": {
+              "n": 4,
+              "nModified": 4,
+              "opTime": {
+                "ts": {
+                  "$timestamp": {
+                    "t": 1789189009,
+                    "i": 4
+                  }
+                },
+                "t": {
+                  "$numberLong": "4"
+                }
+              },
+              "electionId": "7fffffff0000000000000004",
+              "ok": {
+                "$numberDouble": "1.0"
+              },
+              "$clusterTime": {
+                "clusterTime": {
+                  "$timestamp": {
+                    "t": 1789189009,
+                    "i": 4
+                  }
+                },
+                "signature": {
+                  "hash": {
+                    "$binary": {
+                      "base64": "dYNhtyYYHjeLu9TQDvHJ3G15iqM=",
+                      "subType": "00"
+                    }
+                  },
+                  "keyId": {
+                    "$numberLong": "7661943041535508481"
+                  }
+                }
+              },
+              "operationTime": {
+                "$timestamp": {
+                  "t": 1789189009,
+                  "i": 4
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "user_coupons": {
+      "dryCounts": [
+        {
+          "query": {
+            "channel": {
+              "$exists": false
+            }
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "channel": null
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "channel": ""
+          },
+          "n": 0
+        },
+        {
+          "query": {
+            "channel": "online"
+          },
+          "n": 34
+        }
+      ],
+      "updated": [
+        {
+          "query": {
+            "channel": "online"
+          },
+          "matched": 34,
+          "result": {
+            "n": 34,
+            "raw": {
+              "n": 34,
+              "nModified": 34,
+              "opTime": {
+                "ts": {
+                  "$timestamp": {
+                    "t": 1789189018,
+                    "i": 34
+                  }
+                },
+                "t": {
+                  "$numberLong": "4"
+                }
+              },
+              "electionId": "7fffffff0000000000000004",
+              "ok": {
+                "$numberDouble": "1.0"
+              },
+              "$clusterTime": {
+                "clusterTime": {
+                  "$timestamp": {
+                    "t": 1789189018,
+                    "i": 34
+                  }
+                },
+                "signature": {
+                  "hash": {
+                    "$binary": {
+                      "base64": "5asM6HzeWjFv63BsbrAZ4HSICYI=",
+                      "subType": "00"
+                    }
+                  },
+                  "keyId": {
+                    "$numberLong": "7661943041535508481"
+                  }
+                }
+              },
+              "operationTime": {
+                "$timestamp": {
+                  "t": 1789189018,
+                  "i": 34
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

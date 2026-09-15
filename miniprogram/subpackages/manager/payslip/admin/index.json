@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "工资维护",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "enablePullDownRefresh": true,
+  "usingComponents": {}
+}

@@ -1,0 +1,9 @@
+{
+  "name": "manageStaff",
+  "version": "1.0.0",
+  "description": "店员账号与角色管理（manager / staff）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

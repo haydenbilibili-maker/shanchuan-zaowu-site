@@ -1,0 +1,30 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "at": "2026-09-10T09:03:54.703Z",
+  "defaultPhone": "19917242871",
+  "before": [
+    {
+      "_id": "a8add1456a886d4a0020db604f95a74b",
+      "name": "默认客服入口",
+      "status": "active",
+      "phone": "18519110274"
+    }
+  ],
+  "actions": [
+    {
+      "op": "update",
+      "_id": "a8add1456a886d4a0020db604f95a74b",
+      "from": "18519110274",
+      "to": "19917242871",
+      "n": 0
+    }
+  ],
+  "after": [
+    {
+      "_id": "a8add1456a886d4a0020db604f95a74b",
+      "name": "默认客服入口",
+      "status": "active",
+      "phone": "19917242871"
+    }
+  ]
+}

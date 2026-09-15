@@ -1,0 +1,465 @@
+<view class="page-search">
+  <view class="grain-overlay"></view>
+
+  <!-- 系统导航栏下方检索条，勿改 custom -->
+  <view class="sticky-header">
+    <view class="nav-row">
+      <view class="search-field-wrap">
+        <view class="search-field {{inputFocused || keyword ? 'is-active' : ''}}">
+          <image class="search-icon icon-gold" src="/assets/icons/search.png" mode="aspectFit"></image>
+          <input
+            class="search-input"
+            placeholder="{{scopeCategoryName ? '在「' + scopeCategoryName + '」中搜索' : (showSpecimenArchive ? '搜索藏品与档案' : '搜索藏品')}}"
+            placeholder-class="search-ph"
+            value="{{keyword}}"
+            bindinput="onInput"
+            bindconfirm="doSearch"
+            bindfocus="onInputFocus"
+            bindblur="onInputBlur"
+            confirm-type="search"
+            focus="{{autoFocus}}"
+            maxlength="40"
+          />
+          <view
+            class="clear-btn"
+            wx:if="{{keyword}}"
+            hover-class="clear-btn-press"
+            hover-stay-time="80"
+            catchtap="clearInput"
+          >清空</view>
+          <block wx:if="{{showAiIdentify}}">
+            <view class="identify-divider"></view>
+            <view
+              class="identify-btn"
+              hover-class="identify-btn-press"
+              hover-stay-time="80"
+              catchtap="goToIdentify"
+              data-source="search_bar"
+            >
+              <text class="identify-glyph">鉴</text>
+            </view>
+          </block>
+        </view>
+
+        <view class="suggest-panel" wx:if="{{showSuggestions && suggestions.length > 0}}">
+          <view class="suggest-head">SUGGEST</view>
+          <view
+            class="suggest-item"
+            wx:for="{{suggestions}}"
+            wx:key="*this"
+            hover-class="suggest-item-press"
+            hover-stay-time="80"
+            catchtap="selectSuggestion"
+            data-text="{{item}}"
+          >
+            <image class="suggest-icon icon-gold" src="/assets/icons/search.png" mode="aspectFit"></image>
+            <text class="suggest-text">{{item}}</text>
+            <text class="suggest-go">检索</text>
+          </view>
+        </view>
+      </view>
+
+      <view
+        class="cancel-btn"
+        hover-class="cancel-btn-press"
+        hover-stay-time="80"
+        bindtap="goBack"
+      >取消</view>
+    </view>
+
+    <view class="scope-row" wx:if="{{scopeCategoryName}}">
+      <view class="scope-chip">
+        <text class="scope-label">范围</text>
+        <text class="scope-name">{{scopeCategoryName}}</text>
+      </view>
+      <view
+        class="scope-clear"
+        hover-class="scope-clear-press"
+        hover-stay-time="80"
+        bindtap="clearCategoryScope"
+      >全部品类</view>
+    </view>
+
+    <scroll-view scroll-x class="filter-scroll" show-scrollbar="{{false}}" wx:if="{{isSearching}}">
+      <view class="filter-row">
+        <view
+          class="filter-pill {{resultMode === item.id ? 'active' : ''}} {{item.count === 0 && !loading ? 'is-empty' : ''}}"
+          wx:for="{{filterTabs}}"
+          wx:key="id"
+          hover-class="filter-pill-press"
+          hover-stay-time="80"
+          bindtap="switchResultMode"
+          data-id="{{item.id}}"
+        >
+          <text class="filter-label">{{item.label}}</text>
+          <text class="filter-count" wx:if="{{!loading}}">{{item.count}}</text>
+        </view>
+        <view class="filter-pad"></view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="main-scroll"
+    style="top: {{headerHeight}}px;"
+    show-scrollbar="{{false}}"
+    bindscroll="onBodyScroll"
+    bindscrolltolower="onScrollToLower"
+    lower-threshold="120"
+  >
+    <view class="scroll-inner">
+
+      <!-- 默认：热门 + 历史 -->
+      <view class="idle-zone" wx:if="{{!isSearching}}">
+        <view
+          class="identify-plate"
+          hover-class="identify-plate-press"
+          hover-stay-time="80"
+          bindtap="goToIdentify"
+          data-source="search_idle"
+          wx:if="{{showAiIdentify}}"
+        >
+          <view class="identify-plate-mark">
+            <text class="identify-glyph">鉴</text>
+          </view>
+          <view class="identify-plate-copy">
+            <text class="identify-plate-en">IDENTIFY</text>
+            <text class="identify-plate-cn">识图鉴定</text>
+            <text class="identify-plate-desc">拍一张，对照馆藏档案</text>
+          </view>
+          <text class="identify-plate-arr">→</text>
+        </view>
+
+        <view class="zone-section">
+          <view class="section-head">
+            <view class="section-copy">
+              <text class="section-en">TRENDING</text>
+              <text class="section-cn">热门检索</text>
+            </view>
+          </view>
+          <view class="chip-matrix">
+            <view
+              class="chip chip-hot"
+              wx:for="{{hotKeys}}"
+              wx:key="*this"
+              hover-class="chip-press"
+              hover-stay-time="80"
+              bindtap="tapHotKey"
+              data-text="{{item}}"
+            >
+              <text class="chip-text">{{item}}</text>
+            </view>
+            <view class="chip chip-ghost" wx:if="{{loadingHotKeys && hotKeys.length === 0}}">
+              <text class="chip-text">读取中</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="zone-section" wx:if="{{historyList.length > 0}}">
+          <view class="section-head">
+            <view class="section-copy">
+              <text class="section-en">RECENT</text>
+              <text class="section-cn">最近搜索</text>
+            </view>
+            <view
+              class="clear-history"
+              hover-class="clear-history-press"
+              hover-stay-time="80"
+              bindtap="clearHistory"
+            >
+              <image class="clear-history-icon icon-gold" src="/assets/icons/delete.png" mode="aspectFit"></image>
+              <text>清空</text>
+            </view>
+          </view>
+          <view class="chip-matrix">
+            <view
+              class="chip chip-history"
+              wx:for="{{historyList}}"
+              wx:key="keyword"
+            >
+              <view
+                class="chip-hit"
+                hover-class="chip-press"
+                hover-stay-time="80"
+                bindtap="tapHistory"
+                data-text="{{item.keyword}}"
+              >
+                <text class="chip-text">{{item.keyword}}</text>
+              </view>
+              <view
+                class="chip-del"
+                hover-class="chip-del-press"
+                hover-stay-time="80"
+                catchtap="removeHistory"
+                data-text="{{item.keyword}}"
+              >
+                <image class="chip-del-icon icon-gold" src="/subpackages/feature/assets/icons/nav-close-brass.png" mode="aspectFit"></image>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="idle-hint" wx:if="{{historyList.length === 0}}">
+          <view class="idle-icon-wrap">
+            <image class="idle-icon icon-gold" src="/assets/icons/search.png" mode="aspectFit"></image>
+          </view>
+          <text class="idle-title">从一条线索开始</text>
+          <text class="idle-desc">{{showAiIdentify ? '输入学名、中文名，点选热门检索，或用识图鉴定' : '输入学名、中文名，或点选热门检索'}}</text>
+        </view>
+      </view>
+
+      <!-- 检索结果 -->
+      <view class="result-zone" wx:else bindtap="onResultAreaTap">
+        <view class="skeleton-wrap" wx:if="{{loading}}">
+          <view class="sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+            <view class="sk-thumb sk-shine"></view>
+            <view class="sk-body">
+              <view class="sk-line sk-title sk-shine"></view>
+              <view class="sk-line sk-latin sk-shine"></view>
+              <view class="sk-line sk-meta sk-shine"></view>
+            </view>
+          </view>
+        </view>
+
+        <view class="empty-state" wx:elif="{{loadError}}">
+          <view class="empty-icon-wrap">
+            <image class="empty-icon icon-gold" src="/assets/icons/search.png" mode="aspectFit"></image>
+          </view>
+          <text class="empty-title">检索未能完成</text>
+          <text class="empty-desc">请检查网络后重试</text>
+          <view class="retry-btn" hover-class="retry-btn-press" hover-stay-time="80" bindtap="retrySearch">重新检索</view>
+        </view>
+
+        <block wx:else>
+          <view class="result-meta" wx:if="{{displayList.length > 0}}">
+            <text class="meta-count">{{displayList.length}} 条结果</text>
+            <text class="meta-hint">按相关度</text>
+            <view class="meta-line"></view>
+          </view>
+
+          <view class="archive-list" wx:if="{{displayList.length > 0}}">
+            <view
+              class="archive-card {{item.matchStrong ? 'is-strong' : ''}}"
+              wx:for="{{displayList}}"
+              wx:key="resultKey"
+              hover-class="archive-card-press"
+              hover-stay-time="80"
+              bindtap="goToTarget"
+              data-id="{{item._id}}"
+              data-type="{{item.type}}"
+            >
+              <view class="ac-img">
+                <sensitive-blur-gate
+                  enabled="{{item.sensitiveBlur}}"
+                  product-id="{{item._id}}"
+                  size="thumb"
+                >
+                  <image
+                    wx:if="{{item.image && !item.imgBroken}}"
+                    src="{{item.image}}"
+                    mode="aspectFit"
+                    lazy-load
+                    binderror="onResultImgError"
+                    data-index="{{index}}"
+                  ></image>
+                  <view class="ac-img-ph" wx:else></view>
+                </sensitive-blur-gate>
+              </view>
+
+              <view class="ac-info">
+                <view class="ac-title-row">
+                  <text class="ac-title">{{item.title}}</text>
+                  <text class="ac-match" wx:if="{{item.matchStrong}}">相关</text>
+                </view>
+                <text class="ac-latin" wx:if="{{item.subTitle}}">{{item.subTitle}}</text>
+                <view class="ac-craft-tags" wx:if="{{item.craftTags && item.craftTags.length}}">
+                  <text class="ac-craft-tag" wx:for="{{item.craftTags}}" wx:for-item="ctag" wx:key="key">{{ctag.label}}</text>
+                </view>
+                <view class="ac-btm">
+                  <text class="ac-type">{{item.tag}}</text>
+                  <text class="ac-price" wx:if="{{item.priceText}}">¥{{item.priceText}}</text>
+                </view>
+                <view class="ac-tags" wx:if="{{item.displayTags && item.displayTags.length}}">
+                  <view
+                    class="ac-tag-chip"
+                    wx:for="{{item.displayTags}}"
+                    wx:for-item="tag"
+                    wx:key="*this"
+                    hover-class="ac-tag-chip-press"
+                    hover-stay-time="80"
+                    catchtap="tapHotKey"
+                    data-text="{{tag}}"
+                  >{{tag}}</view>
+                </view>
+              </view>
+
+              <text class="ac-arr">›</text>
+            </view>
+          </view>
+
+          <view class="related-block related-after-hits" wx:if="{{displayList.length > 0 && (relatedList.length || relatedLoading)}}">
+            <view class="section-head related-head">
+              <view class="section-copy">
+                <text class="section-en">RELATED</text>
+                <text class="section-cn">同标签藏品</text>
+              </view>
+            </view>
+            <view class="related-sk" wx:if="{{relatedLoading && !relatedList.length}}">
+              <view class="sk-card sk-compact" wx:for="{{[1,2]}}" wx:key="*this">
+                <view class="sk-thumb sk-shine"></view>
+                <view class="sk-body">
+                  <view class="sk-line sk-title sk-shine"></view>
+                  <view class="sk-line sk-latin sk-shine"></view>
+                </view>
+              </view>
+            </view>
+            <view class="related-list" wx:elif="{{relatedList.length}}">
+              <view
+                class="archive-card related-card"
+                wx:for="{{relatedList}}"
+                wx:key="resultKey"
+                hover-class="archive-card-press"
+                hover-stay-time="80"
+                bindtap="goToTarget"
+                data-id="{{item._id}}"
+                data-type="{{item.type}}"
+              >
+                <view class="ac-img ac-img-sm">
+                  <sensitive-blur-gate
+                    enabled="{{item.sensitiveBlur}}"
+                    product-id="{{item._id}}"
+                    size="thumb"
+                  >
+                    <image
+                      wx:if="{{item.image && !item.imgBroken}}"
+                      src="{{item.image}}"
+                      mode="aspectFit"
+                      lazy-load
+                    ></image>
+                    <view class="ac-img-ph" wx:else></view>
+                  </sensitive-blur-gate>
+                </view>
+                <view class="ac-info">
+                  <text class="ac-title">{{item.title}}</text>
+                  <text class="ac-latin" wx:if="{{item.subTitle}}">{{item.subTitle}}</text>
+                  <view class="ac-craft-tags" wx:if="{{item.craftTags && item.craftTags.length}}">
+                    <text class="ac-craft-tag" wx:for="{{item.craftTags}}" wx:for-item="ctag" wx:key="key">{{ctag.label}}</text>
+                  </view>
+                  <view class="ac-btm" wx:if="{{item.priceText}}">
+                    <text class="ac-price">¥{{item.priceText}}</text>
+                  </view>
+                </view>
+                <text class="ac-arr">›</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="empty-state" wx:if="{{displayList.length === 0}}">
+            <view class="empty-icon-wrap">
+              <image class="empty-icon icon-gold" src="/assets/icons/search.png" mode="aspectFit"></image>
+            </view>
+            <text class="empty-title" wx:if="{{resultList.length === 0}}">未找到相关内容</text>
+            <text class="empty-title" wx:else>此分类暂无结果</text>
+            <text class="empty-desc" wx:if="{{resultList.length === 0}}">{{showAiIdentify ? '换个词试试，或点选下方线索；也可用识图对照馆藏' : '换个词试试，或点选下方线索'}}</text>
+            <text class="empty-desc" wx:else>共 {{resultTotal}} 条在其他分类</text>
+
+            <view
+              class="retry-btn"
+              wx:if="{{resultList.length > 0}}"
+              hover-class="retry-btn-press"
+              hover-stay-time="80"
+              bindtap="switchResultMode"
+              data-id="all"
+            >查看全部结果</view>
+
+            <view class="related-block empty-related" wx:if="{{resultList.length === 0 && relatedTerms.length}}">
+              <text class="related-label">换个词试试</text>
+              <view class="chip-matrix related-chips">
+                <view
+                  class="chip chip-hot"
+                  wx:for="{{relatedTerms}}"
+                  wx:key="*this"
+                  hover-class="chip-press"
+                  hover-stay-time="80"
+                  bindtap="tapHotKey"
+                  data-text="{{item}}"
+                >
+                  <text class="chip-text">{{item}}</text>
+                </view>
+              </view>
+            </view>
+
+            <view class="related-block empty-related" wx:if="{{resultList.length === 0 && relatedLoading && !relatedList.length}}">
+              <text class="related-label">同标签藏品</text>
+              <view class="related-sk">
+                <view class="sk-card sk-compact" wx:for="{{[1,2]}}" wx:key="*this">
+                  <view class="sk-thumb sk-shine"></view>
+                  <view class="sk-body">
+                    <view class="sk-line sk-title sk-shine"></view>
+                    <view class="sk-line sk-latin sk-shine"></view>
+                  </view>
+                </view>
+              </view>
+            </view>
+
+            <view class="related-block empty-related" wx:if="{{resultList.length === 0 && relatedList.length}}">
+              <view class="section-head related-head">
+                <view class="section-copy">
+                  <text class="section-en">RELATED</text>
+                  <text class="section-cn">同标签藏品</text>
+                </view>
+              </view>
+              <view class="related-list">
+                <view
+                  class="archive-card related-card"
+                  wx:for="{{relatedList}}"
+                  wx:key="resultKey"
+                  hover-class="archive-card-press"
+                  hover-stay-time="80"
+                  bindtap="goToTarget"
+                  data-id="{{item._id}}"
+                  data-type="{{item.type}}"
+                >
+                  <view class="ac-img ac-img-sm">
+                    <sensitive-blur-gate
+                      enabled="{{item.sensitiveBlur}}"
+                      product-id="{{item._id}}"
+                      size="thumb"
+                    >
+                      <image
+                        wx:if="{{item.image && !item.imgBroken}}"
+                        src="{{item.image}}"
+                        mode="aspectFit"
+                        lazy-load
+                      ></image>
+                      <view class="ac-img-ph" wx:else></view>
+                    </sensitive-blur-gate>
+                  </view>
+                  <view class="ac-info">
+                    <text class="ac-title">{{item.title}}</text>
+                    <text class="ac-latin" wx:if="{{item.subTitle}}">{{item.subTitle}}</text>
+                    <view class="ac-btm" wx:if="{{item.priceText}}">
+                      <text class="ac-price">¥{{item.priceText}}</text>
+                    </view>
+                  </view>
+                  <text class="ac-arr">›</text>
+                </view>
+              </view>
+            </view>
+
+            <view
+              class="retry-btn"
+              wx:if="{{resultList.length === 0 && showAiIdentify}}"
+              hover-class="retry-btn-press"
+              hover-stay-time="80"
+              bindtap="goToIdentify"
+              data-source="search_empty"
+            >识图鉴定</view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </scroll-view>
+  <easter-egg-note id="easterEggNote" />
+</view>

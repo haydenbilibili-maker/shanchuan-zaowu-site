@@ -1,0 +1,67 @@
+<view class="page-videos">
+  <view class="page-header" >
+    <view class="header-left">
+    </view>
+    <view class="header-brand">
+      <text class="brand-cn">影像内容</text>
+      <text class="brand-en">SHANHAI COMMUNITY · FILMS</text>
+    </view>
+    <view class="header-right"></view>
+  </view>
+
+  <view class="filter-bar">
+    <scroll-view scroll-x class="category-scroll" enhanced show-scrollbar="{{false}}">
+      <block wx:for="{{categories}}" wx:key="value">
+        <view
+          class="category-chip {{activeCategory === item.value ? 'active' : ''}}"
+          hover-class="chip-press"
+          bindtap="switchCategory"
+          data-category="{{item.value}}"
+        >
+          <text>{{item.name}}</text>
+        </view>
+      </block>
+      <view class="category-scroll-pad"></view>
+    </scroll-view>
+  </view>
+
+  <view class="video-grid">
+    <block wx:for="{{videos}}" wx:key="_id">
+      <view class="video-card" hover-class="video-card-press" bindtap="goToVideo" data-id="{{item._id}}">
+        <view class="video-cover-wrap">
+          <image class="video-cover" src="{{item.coverImage || fallbackCover}}" mode="aspectFill" lazy-load binderror="onCoverError" data-index="{{index}}"></image>
+          <view class="video-play">
+            <view class="play-btn">▶</view>
+          </view>
+          <text class="video-badge">{{item.typeLabel}}</text>
+          <text class="video-duration" wx:if="{{item.duration && item.duration !== '00:00'}}">{{item.duration}}</text>
+        </view>
+        <view class="video-body">
+          <text class="video-title">{{item.title}}</text>
+          <view class="video-foot">
+            <view class="stat-item">
+              <image class="stat-icon" src="/assets/icons/eye.png" mode="aspectFit"></image>
+              <text>{{item.playCount || 0}}</text>
+            </view>
+            <view class="stat-item">
+              <image class="stat-icon" src="/assets/icons/heart.png" mode="aspectFit"></image>
+              <text>{{item.stats.likes || 0}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <view class="state-box grid-full" wx:if="{{loading}}">
+      <text class="state-desc">加载中…</text>
+    </view>
+    <view class="state-box grid-full" wx:if="{{noMore && videos.length > 0}}">
+      <text class="state-desc">— 已浏览全部 —</text>
+    </view>
+    <view class="state-box grid-full" wx:if="{{!loading && videos.length === 0}}">
+      <text class="state-title">{{loadError ? '影像暂时无法读取' : '暂无影像'}}</text>
+      <text class="state-desc">{{loadError ? '请检查网络后重试' : '制作过程与标本展示，将陆续上架'}}</text>
+      <view class="retry-btn" wx:if="{{loadError}}" hover-class="chip-press" bindtap="retryLoad">重试</view>
+    </view>
+  </view>
+</view>

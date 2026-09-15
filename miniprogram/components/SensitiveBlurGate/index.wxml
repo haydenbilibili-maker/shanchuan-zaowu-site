@@ -1,0 +1,57 @@
+<view class="sb-wrap sb-{{size}}">
+  <view class="sb-media {{enabled && veiled ? 'is-blurred' : ''}}">
+    <slot></slot>
+  </view>
+
+  <block wx:if="{{enabled}}">
+    <view
+      class="sb-veil {{veiled ? 'is-on' : 'is-off'}}"
+      catchtap="onReveal"
+      hover-class="sb-veil-press"
+      hover-stay-time="80"
+    >
+      <view class="sb-plate">
+        <view class="sb-plate-corner tl"></view>
+        <view class="sb-plate-corner tr"></view>
+        <view class="sb-plate-corner bl"></view>
+        <view class="sb-plate-corner br"></view>
+        <text class="sb-kicker">CABINET</text>
+        <text class="sb-title">{{title}}</text>
+        <text class="sb-sub" wx:if="{{sub}}">{{sub}}</text>
+      </view>
+    </view>
+
+    <view
+      class="sb-badge"
+      wx:if="{{showBadge && !veiled}}"
+      style="{{badgeStyle}}"
+      catchtap="onVeil"
+      hover-class="sb-badge-press"
+      hover-stay-time="80"
+    >{{badge}}</view>
+  </block>
+</view>
+
+<!-- 首次启视：全局展示偏好（Museum 铜牌弹层） -->
+<root-portal wx:if="{{showPrefModal}}">
+  <view class="sb-pref-mask" catchtouchmove="noop" catchtap="noop">
+    <view class="sb-pref-panel" catchtap="noop">
+      <text class="sb-pref-title">{{prefTitle}}</text>
+      <text class="sb-pref-body">{{prefBody}}</text>
+      <view class="sb-pref-actions">
+        <view
+          class="sb-pref-btn secondary {{prefSaving ? 'disabled' : ''}}"
+          catchtap="onPrefClear"
+          hover-class="sb-pref-btn-hover"
+          hover-stay-time="80"
+        >{{prefClear}}</view>
+        <view
+          class="sb-pref-btn primary {{prefSaving ? 'disabled' : ''}}"
+          catchtap="onPrefKeep"
+          hover-class="sb-pref-btn-primary-hover"
+          hover-stay-time="80"
+        >{{prefKeep}}</view>
+      </view>
+    </view>
+  </view>
+</root-portal>

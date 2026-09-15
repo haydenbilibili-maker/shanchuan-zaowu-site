@@ -1,4 +1,9 @@
-const { DEFAULT_TEMPLATES } = require('./templates')
+const {
+  DEFAULT_TEMPLATES,
+  QUEUE_CUSTOMER,
+  QUEUE_WORKFLOW,
+  resolveMessageQueue
+} = require('./templates')
 
 const DEDUPE_HOURS = 24
 
@@ -60,14 +65,23 @@ async function writeMessage(db, payload) {
     icon = '',
     templateCode = '',
     dedupeKey = '',
-    campaignId = ''
+    campaignId = '',
+    queue = QUEUE_CUSTOMER
   } = payload
+
+  const resolvedQueue = resolveMessageQueue({
+    queue,
+    category,
+    eventType: templateCode || type,
+    type
+  })
 
   const data = {
     _openid: openid,
     openid,
     recipient: openid,
     category,
+    queue: resolvedQueue,
     type,
     title,
     content: content || '',
@@ -89,11 +103,15 @@ async function writeMessage(db, payload) {
       data: {
         recipient: openid,
         channel: campaignId ? 'inapp_campaign' : 'inapp',
+        queue: resolvedQueue,
         category,
+        type,
         templateCode: templateCode || type,
         title,
         content: content || '',
         relatedId,
+        actionUrl,
+        dedupeKey,
         campaignId: campaignId || '',
         status: 'success',
         sentAt: db.serverDate(),
@@ -118,6 +136,7 @@ async function dispatch(db, options) {
     content: overrideContent,
     actionUrl: overrideActionUrl,
     category: overrideCategory,
+    queue: overrideQueue,
     campaignId = ''
   } = options
 
@@ -140,6 +159,12 @@ async function dispatch(db, options) {
     : renderTemplate(template.actionUrlTemplate || '', mergedVars)
   const category = overrideCategory || (template && template.category) || 'system'
   const type = eventType
+  const queue = resolveMessageQueue({
+    queue: overrideQueue || (template && template.queue),
+    category,
+    eventType,
+    type
+  })
 
   const dedupeKey = campaignId
     ? `campaign:${campaignId}:${openid}`
@@ -159,6 +184,7 @@ async function dispatch(db, options) {
   const messageId = await writeMessage(db, {
     openid,
     category,
+    queue,
     type,
     title,
     content,
@@ -169,7 +195,7 @@ async function dispatch(db, options) {
     campaignId
   })
 
-  return { success: true, messageId, dedupeKey }
+  return { success: true, messageId, dedupeKey, queue }
 }
 
 module.exports = {
@@ -178,5 +204,8 @@ module.exports = {
   checkDedupe,
   writeMessage,
   dispatch,
-  DEFAULT_TEMPLATES
+  DEFAULT_TEMPLATES,
+  QUEUE_CUSTOMER,
+  QUEUE_WORKFLOW,
+  resolveMessageQueue
 }

@@ -1,0 +1,94 @@
+<!-- 代金券小票打印：对齐预约 mint-machine；槽顶三灯对齐全局信号灯 -->
+<view class="mint-modal {{visible ? 'active' : ''}}" catchtouchmove="true" wx:if="{{visible || animating}}">
+  <view class="mint-content">
+    <view class="mint-machine">
+      <view class="printer-slot"></view>
+      <!-- 顶杆最右侧三灯：须在 slot 之后绘制；样式见本组件 wxss 兜底 + app.wxss -->
+      <view class="machine-lights" aria-hidden="true">
+        <view class="signal-light {{printLightClass}}"></view>
+        <view class="signal-light {{channelLightClass}}"></view>
+        <view class="signal-light {{expireLightClass}}"></view>
+      </view>
+    </view>
+
+    <view class="ticket-paper {{printing ? 'printing' : ''}} {{finished ? 'settled' : ''}} {{failedShow ? 'failed' : ''}}">
+      <view class="tp-mini">
+        <view class="tm-head">
+          <text class="tm-title">NATURE'S CREATIONS</text>
+          <view class="tm-line"></view>
+          <text class="tm-sub">山海造物 · 礼券凭证</text>
+        </view>
+
+        <view class="tm-face">
+          <text class="tm-currency">¥</text>
+          <text class="tm-amount">{{valueLabel}}</text>
+        </view>
+        <text class="tm-name">{{title}}</text>
+
+        <view class="tm-plate">
+          <view class="tm-row">
+            <text class="tm-k">门槛</text>
+            <text class="tm-v">{{minSpendLabel}}</text>
+          </view>
+          <view class="tm-row">
+            <view class="tm-k-wrap">
+              <view class="signal-light {{channelLightClass}}"></view>
+              <text class="tm-k">渠道</text>
+            </view>
+            <text class="tm-v">{{channelLabel}}</text>
+          </view>
+          <view class="tm-row" wx:if="{{expireDate}}">
+            <view class="tm-k-wrap">
+              <view class="signal-light {{expireLightClass}}"></view>
+              <text class="tm-k">有效</text>
+            </view>
+            <text class="tm-v">至 {{expireDate}}</text>
+          </view>
+        </view>
+
+        <view class="tm-foot">{{failedShow ? 'PRINT FAILED · 请稍后重试' : 'VOUCHER · 放入我的礼券夹'}}</view>
+      </view>
+      <view class="ticket-serration" aria-hidden="true"></view>
+    </view>
+
+    <view class="mint-bottom-area">
+      <block wx:if="{{!finished}}">
+        <view class="mint-legend">
+          <view class="legend-row">
+            <view class="signal-light lamp-muted"></view>
+            <text class="legend-text">灰 · 待命</text>
+          </view>
+          <view class="legend-row">
+            <view class="signal-light lamp-warn blink"></view>
+            <text class="legend-text">黄 · 打印中</text>
+          </view>
+          <view class="legend-row">
+            <view class="signal-light lamp-success on"></view>
+            <text class="legend-text">绿 · 可用</text>
+          </view>
+        </view>
+        <text class="mint-tip">正在打印您的礼券…</text>
+        <view class="mint-progress"><view class="mp-bar"></view></view>
+      </block>
+      <view class="mint-actions show" wx:if="{{finished}}">
+        <view class="mint-legend done">
+          <view class="legend-row" wx:if="{{failedShow}}">
+            <view class="signal-light lamp-error"></view>
+            <text class="legend-text">打印失败</text>
+          </view>
+          <view class="legend-row" wx:else>
+            <view class="signal-light lamp-success on"></view>
+            <text class="legend-text">打印完成 · 可用</text>
+          </view>
+        </view>
+        <view class="btn-check primary" bindtap="onGoWallet" wx:if="{{!failedShow}}">
+          <text>查看我的礼券夹</text>
+          <text class="arrow">→</text>
+        </view>
+        <view class="btn-group-sub">
+          <view class="btn-sub-act" bindtap="onClose">{{failedShow ? '关闭' : '完成'}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

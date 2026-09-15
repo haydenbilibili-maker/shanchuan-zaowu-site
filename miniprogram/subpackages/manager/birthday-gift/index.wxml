@@ -1,0 +1,133 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">加载中…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">BIRTHDAY GIFT</text>
+        <text class="cn">生日礼包</text>
+      </view>
+      <text class="header-note">生日当天发放 · 与 claimBirthdayGift 同源 · 仅超管</text>
+    </view>
+
+    <view class="workbench-state" wx:if="{{loading && !ruleText && fromDefault}}">同步配置中…</view>
+
+    <view class="preview" wx:if="{{ruleText}}">当前：{{ruleText}}</view>
+    <view class="meta-line" wx:if="{{fromDefault}}">当前为代码默认，保存后写入 member_birthday_gift</view>
+
+    <view class="section">
+      <view class="form-row">
+        <text class="form-label">启用礼包</text>
+        <switch checked="{{form.enabled}}" color="#C4A76C" data-field="enabled" bindchange="onSwitch" />
+      </view>
+      <view class="field-block">
+        <text class="form-label block">规则名称</text>
+        <input class="input full" value="{{form.name}}" data-field="name" bindinput="onText" />
+      </view>
+      <view class="field-block">
+        <text class="form-label block">礼包标题</text>
+        <input class="input full" value="{{form.title}}" data-field="title" bindinput="onText" />
+      </view>
+      <view class="field-block">
+        <text class="form-label block">站内信标题</text>
+        <input class="input full" value="{{form.messageTitle}}" data-field="messageTitle" bindinput="onText" />
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">积分</text>
+      </view>
+      <view class="form-row">
+        <text class="form-label">发放积分</text>
+        <switch checked="{{form.pointsEnabled}}" color="#C4A76C" data-field="pointsEnabled" bindchange="onSwitch" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">积分数量</text>
+        <input class="input sm" type="number" value="{{form.points}}" data-field="points" bindinput="onNumber" disabled="{{!form.pointsEnabled}}" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">不计成长值</text>
+        <switch checked="{{form.excludeGrowth}}" color="#C4A76C" data-field="excludeGrowth" bindchange="onSwitch" />
+      </view>
+      <view class="field-block">
+        <text class="form-label block">积分流水标题</text>
+        <input class="input full" value="{{form.pointsTitle}}" data-field="pointsTitle" bindinput="onText" disabled="{{!form.pointsEnabled}}" />
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">礼券有效期</text>
+      </view>
+      <view class="form-row">
+        <text class="form-label">生日本月内</text>
+        <view class="toggle {{form.expireMode === 'end_of_month' ? 'on' : ''}}" data-mode="end_of_month" bindtap="setExpireMode">{{form.expireMode === 'end_of_month' ? '已选' : '选用'}}</view>
+      </view>
+      <view class="form-row">
+        <text class="form-label">固定天数</text>
+        <view class="toggle {{form.expireMode === 'days' ? 'on' : ''}}" data-mode="days" bindtap="setExpireMode">{{form.expireMode === 'days' ? '已选' : '选用'}}</view>
+      </view>
+      <view class="form-row" wx:if="{{form.expireMode === 'days'}}">
+        <text class="form-label">有效天数</text>
+        <input class="input sm" type="number" value="{{form.expireDays}}" data-field="expireDays" bindinput="onNumber" />
+      </view>
+      <view class="form-hint">默认「生日本月内」与线上一致；同年每位会员仅发放一次。</view>
+    </view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">礼券</text>
+        <view class="workbench-section-head-action">
+          <view class="workbench-btn-outline sm" bindtap="addCoupon">添加礼券</view>
+        </view>
+      </view>
+      <view class="form-row">
+        <text class="form-label">发放礼券</text>
+        <switch checked="{{form.couponsEnabled}}" color="#C4A76C" data-field="couponsEnabled" bindchange="onSwitch" />
+      </view>
+      <view class="form-hint empty-coupons" wx:if="{{form.couponsEnabled && !form.coupons.length}}">尚未添加礼券，可点击「添加礼券」</view>
+
+      <view class="row-card" wx:for="{{form.coupons}}" wx:key="id">
+        <view class="row-card-head">
+          <text class="row-card-title">礼券 {{index + 1}}</text>
+          <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeCoupon">移除</view>
+        </view>
+        <view class="row-line">
+          <input class="input sm" placeholder="id" value="{{item.id}}" data-index="{{index}}" data-field="id" bindinput="onCouponField" />
+          <input class="input flex" placeholder="标题" value="{{item.title}}" data-index="{{index}}" data-field="title" bindinput="onCouponField" />
+        </view>
+        <view class="row-line">
+          <view class="field">
+            <text class="field-label">面额</text>
+            <input class="input sm" type="number" value="{{item.value}}" data-index="{{index}}" data-field="value" bindinput="onCouponField" />
+          </view>
+          <view class="field">
+            <text class="field-label">门槛</text>
+            <input class="input sm" type="number" value="{{item.minSpend}}" data-index="{{index}}" data-field="minSpend" bindinput="onCouponField" />
+          </view>
+        </view>
+        <view class="row-line">
+          <view class="field">
+            <text class="field-label">张数</text>
+            <input class="input sm" type="number" value="{{item.count}}" data-index="{{index}}" data-field="count" bindinput="onCouponField" />
+          </view>
+          <view class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="toggleCoupon">{{item.enabled ? '启用' : '停用'}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="workbench-page-foot-spacer"></view>
+  </view>
+
+  <view class="workbench-footer-bar">
+    <view
+      class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}"
+      bindtap="saveConfig"
+    >{{saving ? '保存中…' : '保存礼包'}}</view>
+    <view class="workbench-footer-secondary">
+      <view class="workbench-btn-outline {{saving || loading ? 'is-disabled' : ''}}" bindtap="resetDefaults">恢复默认</view>
+      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadConfig">{{loading ? '刷新中…' : '刷新'}}</view>
+    </view>
+  </view>
+</view>

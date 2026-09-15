@@ -4,8 +4,8 @@ const { shanhaizaowu: SHM, xingchenCover: XC } = media
 const DEFAULT_STORES = [
   {
     storeId: 'store_shanhaizaowu',
-    name: '山海造物',
-    nameEn: 'SHANHAI CREATIONS',
+    name: '山川造物',
+    nameEn: 'SHANCHUAN CREATIONS',
     role: 'main',
     roleLabel: '品牌主店',
     locationLabel: '这有山 · 山腰',
@@ -18,7 +18,7 @@ const DEFAULT_STORES = [
     hours: { open: '10:00', close: '22:00', note: '' },
     coverImage: media.STORE_COVER.store_shanhaizaowu,
     heroTagline: '像走进一间暖光标本馆',
-    intro: '山海造物主店位于这有山山腰，陈列昆虫、矿物、植物与海洋标本，可现场选购与预约参观。',
+    intro: '主店位于这有山山腰，陈列昆虫、矿物、植物与海洋标本，可现场选购与预约参观。',
     features: ['入店参观', '馆藏零售', '品牌体验'],
     isDefault: true,
     sort: 1,
@@ -26,7 +26,7 @@ const DEFAULT_STORES = [
   },
   {
     storeId: 'store_xingchen',
-    name: '星宸标本工作室',
+    name: '星宸标本',
     nameEn: 'STELLAR SPECIMEN STUDIO',
     role: 'workshop',
     roleLabel: '标本工坊',
@@ -40,7 +40,7 @@ const DEFAULT_STORES = [
     hours: { open: '10:00', close: '22:00', note: '' },
     coverImage: media.STORE_COVER.store_xingchen,
     heroTagline: '标本定制与手作的工作室空间',
-    intro: '星宸标本工作室承接标本装裱、标品与伴宠定制确认、手作课程等工坊服务。',
+    intro: '楼下工坊承接标本装裱、标品与伴宠定制确认、手作课程等服务。',
     features: ['标本工坊', '定制确认', '手作课程'],
     isDefault: false,
     sort: 2,
@@ -52,7 +52,7 @@ const DEFAULT_ZONES = [
   {
     zoneId: 'zone_insect',
     storeId: 'store_shanhaizaowu',
-    title: '神奇昆虫柜',
+    title: '蝴蝶昆虫柜',
     overline: 'INSECTA',
     desc: '蝴蝶与甲虫标本沿柜陈列，闪蝶、鸟翼蝶与组合框画，每件配有物种信息。',
     longDesc: '柜内按目科分区陈列：闪蝶与鸟翼蝶占据视觉中心，甲虫与螳螂则藏在意想不到的角度。每件标本配有铜牌标注——中文名、拉丁学名与产地，像博物馆里被认真阅读的一页。若你第一次来，建议先找一只闪蝶，换个角度看翅面的结构色。',
@@ -71,7 +71,7 @@ const DEFAULT_ZONES = [
   {
     zoneId: 'zone_mineral',
     storeId: 'store_shanhaizaowu',
-    title: '群山回响',
+    title: '矿石标本柜',
     overline: 'MINERALS',
     desc: '羊角、爬行动物与陆地标本，亦有晶洞与矿石，呈现大地的色彩与几何。',
     longDesc: '这一柜讲「大地的几何」：晶洞剖面、紫水晶簇与矿物标本并置，旁边是陆地生态的爬行动物与角制品。冷色晶体与暖色骨骼在同一视线里对话——不是装饰性的堆砌，而是按质感与来源策展。',
@@ -87,7 +87,7 @@ const DEFAULT_ZONES = [
   {
     zoneId: 'zone_plant',
     storeId: 'store_shanhaizaowu',
-    title: '植物探微',
+    title: '植物果实柜',
     overline: 'PLANTAE',
     desc: '押花、果实与种子标本，亦有植物元素首饰，记录叶片与花的细微结构。',
     longDesc: '植物柜区偏安静：押花保留叶片脉络，干燥果实与种子标本则把季节封存在玻璃里。部分作品与植物主题首饰相邻陈列——从标本到佩戴，是同一条自然观察线的延伸。',
@@ -103,7 +103,7 @@ const DEFAULT_ZONES = [
   {
     zoneId: 'zone_marine',
     storeId: 'store_shanhaizaowu',
-    title: '无尽海洋',
+    title: '海洋标本柜',
     overline: 'MARINE',
     desc: '螃蟹、河豚、贝壳与深海物种，湿标本与框画并列，感受来自深海的安静蓝色。',
     longDesc: '海洋区以深蓝与透明介质为主：螃蟹与贝壳的硬壳、河豚的轮廓、深海物种的奇形，在灯光下像被放慢的海浪。湿标本与框画并列，方便近看细节——适合在这里停久一点。',

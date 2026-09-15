@@ -1,0 +1,9 @@
+{
+  "name": "manageHonoraryCurators",
+  "version": "1.0.0",
+  "description": "荣誉馆长名单管理（手机号维护 + 授权密码）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

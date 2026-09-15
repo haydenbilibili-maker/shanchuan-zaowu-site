@@ -1,0 +1,318 @@
+<view class="page">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">LIVE STUDIO</text>
+    <text class="boot-cn">主播工作台</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header">
+      <view class="header-top">
+        <view class="brand-group">
+          <text class="en">LIVE STUDIO</text>
+          <view class="title-row">
+            <text class="cn">主播工作台</text>
+            <view class="on-air-badge" wx:if="{{showOnAir}}">
+              <view class="signal-light live blink"></view>
+              <text class="on-air-text">ON AIR</text>
+            </view>
+          </view>
+        </view>
+        <view class="role-badge">
+          <text>{{roleText}}{{staffName ? ' · ' + staffName : ''}}</text>
+        </view>
+      </view>
+      <text class="header-note">场次、开播、挂品与话术；全店配置与内容开关仍在超管工作台。</text>
+      <view class="signal-legend header-legend">
+        <view class="signal-legend-item"><view class="signal-light live blink"></view><text class="signal-legend-text">红 · 在播</text></view>
+        <view class="signal-legend-item"><view class="signal-light lamp-brass"></view><text class="signal-legend-text">铜 · 待开播</text></view>
+        <view class="signal-legend-item"><view class="signal-light warn"></view><text class="signal-legend-text">黄 · 未配 / 占场</text></view>
+        <view class="signal-legend-item"><view class="signal-light lamp-muted"></view><text class="signal-legend-text">灰 · 空闲</text></view>
+      </view>
+    </view>
+
+    <view class="workbench-state loading" wx:if="{{liveDashLoading && !statusCard.title && !recentSessions.length}}">
+      <text>加载场次状态…</text>
+    </view>
+
+    <view class="workbench-state error" wx:elif="{{loadError}}">
+      <text>{{loadError}}</text>
+      <view class="warn-actions">
+        <view class="workbench-btn-outline sm state-retry" bindtap="loadLiveDash">重试</view>
+        <view class="workbench-btn-outline sm state-retry" bindtap="goBroadcast">去开播控制台</view>
+      </view>
+    </view>
+
+    <block wx:else>
+      <view class="warn-banner" wx:if="{{adminHint}}">
+        <text>{{adminHint}}</text>
+        <view class="workbench-btn-outline sm warn-action" wx:if="{{configActionLabel}}" bindtap="onConfigAction">{{configActionLabel}}</view>
+      </view>
+      <view class="warn-banner" wx:if="{{otherLiveHint}}">
+        <view class="warn-banner-head">
+          <view class="signal-light {{otherLightClass}}"></view>
+          <text>{{otherLiveHint}}</text>
+        </view>
+        <view class="warn-actions">
+          <view class="workbench-btn-outline sm warn-action" bindtap="goBroadcast">去控制台查看</view>
+          <view
+            class="workbench-btn-outline sm warn-action danger"
+            wx:if="{{canForceOther && otherSessionId}}"
+            bindtap="forceEndOther"
+          >{{ending ? '结束中…' : '结束对方场次'}}</view>
+        </view>
+      </view>
+
+      <view
+        class="status-card {{statusCard.statusTone === 'live' ? 'is-live' : ''}} {{statusCard.statusTone === 'warn' ? 'is-warn' : ''}}"
+      >
+        <view class="status-card-accent"></view>
+        <view class="status-card-head">
+          <text class="status-card-label">本场状态</text>
+          <view class="status-chip {{statusCard.statusTone === 'live' ? 'chip-live' : ''}}">
+            <view class="signal-light {{statusCard.statusLightClass}}"></view>
+            <text>{{liveDashLoading ? '刷新中…' : statusCard.statusLabel}}</text>
+          </view>
+        </view>
+        <text class="status-card-title">{{statusCard.title || '尚未创建场次'}}</text>
+        <text class="status-card-empty" wx:if="{{statusCard.emptyHint}}">{{statusCard.emptyHint}}</text>
+
+        <view class="light-row">
+          <view class="light-item">
+            <view class="signal-light {{configLightClass}}"></view>
+            <text>配置 · {{configured ? '已就绪' : '未配 LIVE_*'}}</text>
+          </view>
+          <view class="light-item">
+            <view class="signal-light {{enabledLightClass}}"></view>
+            <text>开关 · {{enabled ? 'C 端可见' : '未开启'}}</text>
+          </view>
+        </view>
+
+        <view class="metric-row">
+          <view class="metric">
+            <text class="metric-val">{{liveDashLoading ? '—' : statusCard.viewerCount}}</text>
+            <text class="metric-lbl">在线约</text>
+          </view>
+          <view class="metric">
+            <text class="metric-val">{{liveDashLoading ? '—' : statusCard.likeCount}}</text>
+            <text class="metric-lbl">点赞</text>
+          </view>
+          <view class="metric">
+            <text class="metric-val">{{liveDashLoading ? '—' : statusCard.messageCount}}</text>
+            <text class="metric-lbl">留言</text>
+          </view>
+          <view class="metric">
+            <text class="metric-val">{{liveDashLoading ? '—' : statusCard.shelfCount}}</text>
+            <text class="metric-lbl">挂品</text>
+          </view>
+        </view>
+        <view class="metric-row compact">
+          <view class="metric mini">
+            <text class="metric-val metric-sm">{{statusCard.peakViewers}}</text>
+            <text class="metric-lbl">峰值在线</text>
+          </view>
+          <view class="metric mini">
+            <text class="metric-val metric-sm">{{statusCard.joinCount}}</text>
+            <text class="metric-lbl">进房</text>
+          </view>
+          <view class="metric mini">
+            <text class="metric-val metric-sm">{{statusCard.reminderCount}}</text>
+            <text class="metric-lbl">开播提醒</text>
+          </view>
+          <view class="metric mini">
+            <text class="metric-val metric-sm">{{statusCard.startLabel}}</text>
+            <text class="metric-lbl">开播时间</text>
+          </view>
+        </view>
+        <text class="status-card-sub" wx:if="{{statusCard.scheduledLabel}}">预约 {{statusCard.scheduledLabel}}</text>
+      </view>
+
+      <view class="section-head">
+        <text class="section-title">主播职责</text>
+      </view>
+
+      <view class="module-list">
+        <view class="module-card" hover-class="module-card-press" bindtap="goBroadcast">
+          <image class="module-icon icon-gold" src="/assets/icons/video-tab.png" mode="aspectFit"></image>
+          <view class="module-card-body">
+            <text class="module-overline">BROADCAST</text>
+            <text class="module-title">开播控制台</text>
+            <text class="module-desc">推流、美颜、镜头与结束本场</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+
+        <view class="module-card" hover-class="module-card-press" bindtap="goShelf">
+          <image class="module-icon icon-gold" src="/assets/icons/tab-collection.png" mode="aspectFit"></image>
+          <view class="module-card-body">
+            <text class="module-overline">SHELF</text>
+            <text class="module-title">藏品挂载</text>
+            <text class="module-desc">{{statusCard.shelfCount > 0 ? '已挂 ' + statusCard.shelfCount + ' 件，可继续搜藏品上架' : '从藏品库挂品，设置讲解中'}}</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+
+        <view class="module-card" hover-class="module-card-press" bindtap="goTalkSection">
+          <image class="module-icon icon-gold" src="/assets/icons/article-tab.png" mode="aspectFit"></image>
+          <view class="module-card-body">
+            <text class="module-overline">SCRIPT</text>
+            <text class="module-title">本场话术</text>
+            <text class="module-desc">按挂品生成讲解提纲，可复制到开播口播</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+
+        <view class="module-card" hover-class="module-card-press" bindtap="goYouxin">
+          <image class="module-icon icon-gold" src="/assets/icons/message.png" mode="aspectFit"></image>
+          <view class="module-card-body">
+            <text class="module-overline">YOUXIN</text>
+            <text class="module-title">有信协同</text>
+            <text class="module-desc">{{canYouxin ? '去山海有信发送开播提醒或会员触达' : '开播提醒由超管在山海有信发送；可先备好话术'}}</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+
+        <view class="module-card" wx:if="{{canAttendance}}" hover-class="module-card-press" bindtap="goAttendance">
+          <image class="module-icon icon-gold" src="/subpackages/manager/assets/icons/clock.png" mode="aspectFit"></image>
+          <view class="module-card-body">
+            <text class="module-overline">ATTENDANCE</text>
+            <text class="module-title">考勤与请假</text>
+            <text class="module-desc">打卡、申请请假，与店员共用考勤模块</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+
+        <view class="module-card" wx:if="{{canPayslip}}" hover-class="module-card-press" bindtap="goPayslip">
+          <image class="module-icon icon-gold" src="/assets/icons/coin_gold.png" mode="aspectFit"></image>
+          <view class="module-card-body">
+            <text class="module-overline">PAYROLL</text>
+            <text class="module-title">工资条明细</text>
+            <text class="module-desc">查看本人月度应发、扣款与实发</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+      </view>
+
+      <view class="shelf-card" wx:if="{{mineSessionId}}">
+        <view class="section-head tight">
+          <text class="section-title">本场挂品</text>
+          <view class="shelf-head-actions">
+            <view class="workbench-btn-outline sm" bindtap="clearShelf" wx:if="{{shelfPreview.length}}">清空</view>
+            <view class="workbench-btn-outline sm" bindtap="goShelf">{{statusCard.shelfCount ? '继续挂品' : '去挂品'}}</view>
+          </view>
+        </view>
+        <view class="workbench-state dashed" wx:if="{{!shelfPreview.length}}">
+          <text>本场还没有挂品。观众进房看不到购物车；点「去挂品」从藏品库上架。</text>
+        </view>
+        <view class="shelf-preview" wx:else>
+          <view class="shelf-row {{item.spotlight ? 'is-spot' : ''}}" wx:for="{{shelfPreview}}" wx:key="_id">
+            <view class="shelf-row-main">
+              <text class="shelf-chip-title">{{item.title}}</text>
+              <text class="shelf-chip-meta">{{item.priceLabel}}{{item.spotlight ? ' · 讲解中' : ''}}</text>
+              <text class="shelf-chip-warn" wx:if="{{item.warnText}}">{{item.warnText}}</text>
+            </view>
+            <view class="shelf-row-actions">
+              <view class="ghost-mini {{item.canMoveUp ? '' : 'is-disabled'}}" catchtap="moveShelfItem" data-id="{{item._id}}" data-dir="up">上移</view>
+              <view class="ghost-mini {{item.canMoveDown ? '' : 'is-disabled'}}" catchtap="moveShelfItem" data-id="{{item._id}}" data-dir="down">下移</view>
+              <view class="ghost-mini danger" catchtap="removeShelfItem" data-id="{{item._id}}">下架</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="talk-card {{talkHighlight ? 'is-focus' : ''}}" id="talk-card">
+        <view class="section-head tight">
+          <text class="section-title">讲解提纲</text>
+          <view class="shelf-head-actions">
+            <view class="workbench-btn-outline sm" bindtap="regenerateTalk">按挂品重排</view>
+            <view class="workbench-btn-outline sm" bindtap="copyTalkingPoints">复制全文</view>
+          </view>
+        </view>
+        <text class="copy-hint" wx:if="{{copyHint}}">{{copyHint}}</text>
+        <view class="workbench-state dashed" wx:if="{{!talkSegments.length}}">
+          <text>写一句开场公告，或先挂品，即可按藏品分段生成口播提纲。</text>
+        </view>
+        <view class="talk-segs" wx:else>
+          <view class="talk-seg {{item.spotlight ? 'is-spot' : ''}}" wx:for="{{talkSegments}}" wx:key="key">
+            <view class="talk-seg-head">
+              <text class="talk-seg-title">{{item.heading}}</text>
+              <view class="ghost-mini" catchtap="copyTalkSegment" data-key="{{item.key}}">复制本段</view>
+            </view>
+            <text class="talk-seg-body">{{item.body}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="notice-card" wx:if="{{noticeSessionId}}">
+        <text class="notice-label">本场公告 / 开场</text>
+        <input
+          class="workbench-input notice-input"
+          value="{{noticeDraft}}"
+          bindinput="onNoticeInput"
+          maxlength="80"
+          placeholder="观众进房可见的短公告（非弹幕）"
+          placeholder-class="workbench-ph"
+        />
+        <view class="workbench-btn-primary notice-save" bindtap="saveNotice">保存公告</view>
+      </view>
+
+      <view class="section-head">
+        <text class="section-title">历史场次</text>
+      </view>
+
+      <view class="workbench-state dashed" wx:if="{{!liveDashLoading && !recentSessions.length}}">
+        <text>暂无历史场次。点下方「新建场次」创建后，即可开始直播。</text>
+      </view>
+
+      <view class="session-list" wx:if="{{recentSessions.length}}">
+        <view
+          class="session-row"
+          wx:for="{{recentSessions}}"
+          wx:key="_id"
+          hover-class="session-row-press"
+          bindtap="onSessionTap"
+          data-item="{{item}}"
+        >
+          <view class="session-main">
+            <text class="session-title">{{item.title || '未命名场次'}}</text>
+            <text class="session-meta">{{item.hostName ? item.hostName + ' · ' : ''}}{{item.timeHint || item.statusText}}</text>
+            <text class="session-summary" wx:if="{{item.summary}}">{{item.summary}}</text>
+          </view>
+          <view class="session-actions">
+            <view
+              class="status-chip {{item.chipClass}}"
+              catchtap="onSessionEditNotice"
+              data-id="{{item._id}}"
+              data-notice="{{item.notice}}"
+              wx:if="{{item.isMine && item.status !== 'ended'}}"
+            >
+              <text>公告</text>
+            </view>
+            <view class="status-chip {{item.chipClass}}">
+              <text>{{item.statusText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <view class="page-footer-spacer"></view>
+  </block>
+
+  <view class="workbench-footer-bar" wx:if="{{ready}}">
+    <view
+      class="workbench-btn-primary {{creating ? 'is-disabled' : ''}}"
+      bindtap="goPrimaryCta"
+    >{{creating ? '创建中…' : primaryCtaLabel}}</view>
+    <view class="footer-secondary">
+      <view class="workbench-btn-outline {{creating ? 'is-disabled' : ''}}" bindtap="onCreateTap">
+        {{creating ? '创建中…' : '新建场次'}}
+      </view>
+      <view
+        class="workbench-btn-outline footer-end {{(!canEndSession || ending) ? 'is-disabled' : ''}}"
+        bindtap="forceEndLive"
+      >{{ending ? '结束中…' : '结束本场'}}</view>
+    </view>
+  </view>
+</view>

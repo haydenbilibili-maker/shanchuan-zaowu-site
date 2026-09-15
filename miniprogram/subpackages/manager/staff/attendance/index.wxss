@@ -1,0 +1,22 @@
+@import "../scene.wxss";
+
+.container {
+  min-height: 100vh;
+  padding: var(--space-4);
+  box-sizing: border-box;
+}
+
+.status-strip.leave {
+  border-color: rgba(91, 143, 185, 0.45);
+}
+
+.status-strip-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.leave-entry {
+  margin-top: var(--space-3);
+  text-align: center;
+}

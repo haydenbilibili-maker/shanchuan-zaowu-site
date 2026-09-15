@@ -1,0 +1,9 @@
+{
+  "name": "manageWelcomeGift",
+  "version": "1.0.0",
+  "description": "新会员礼包读写（member_welcome_gift）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

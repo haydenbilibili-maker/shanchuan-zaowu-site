@@ -1,0 +1,143 @@
+<view class="container" wx:if="{{ready}}">
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">GIFT FULFILLMENT</text>
+      <text class="cn">礼赠履约</text>
+    </view>
+    <text class="header-note">待填址不可发货 · 自提请扫妥投码</text>
+  </view>
+
+  <view class="toolbar">
+    <view class="count-row">
+      <view
+        class="count-chip {{bucket === item.key ? 'on' : ''}} {{(item.key !== 'done' && counts[item.key] > 0) ? 'has' : ''}}"
+        wx:for="{{buckets}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="switchBucket"
+        hover-class="chip-press"
+        hover-stay-time="70"
+      >
+        <text class="count-val">{{counts[item.key] || 0}}</text>
+        <text class="count-lbl">{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="search-bar">
+      <input
+        class="search-input"
+        value="{{keyword}}"
+        placeholder="搜单号 / 藏品 / 收件人"
+        placeholder-class="search-ph"
+        confirm-type="search"
+        bindinput="onKeywordInput"
+        bindconfirm="onKeywordConfirm"
+      />
+      <view class="search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
+    </view>
+    <text class="sample-note" wx:if="{{note}}">{{note}}</text>
+    <text class="filter-note" wx:if="{{keyword && !loading}}">本栏匹配 {{displayList.length}} / {{list.length}} 笔</text>
+  </view>
+
+  <view class="state-block" wx:if="{{loading && !list.length}}">
+    <text class="muted">正在翻柜…</text>
+  </view>
+
+  <view class="state-block" wx:elif="{{loadError && !list.length}}">
+    <text class="state-title">未能载入</text>
+    <text class="muted">{{loadError}}</text>
+    <view class="btn-secondary" bindtap="retryLoad">再试一次</view>
+  </view>
+
+  <view class="state-block" wx:elif="{{!loading && !list.length}}">
+    <text class="state-title">{{emptyTitle}}</text>
+    <text class="muted">{{emptyHint}}</text>
+    <view class="btn-secondary" wx:if="{{bucket === 'pickup_verify'}}" bindtap="goVerify">去核销台</view>
+  </view>
+
+  <view class="state-block" wx:elif="{{!loading && list.length && !displayList.length}}">
+    <text class="state-title">没有匹配单</text>
+    <text class="muted">试试换关键词，或清除筛选</text>
+    <view class="btn-secondary" bindtap="clearKeyword">清除筛选</view>
+  </view>
+
+  <view class="list" wx:else>
+    <view
+      class="card {{expandedId === item.orderId ? 'open' : ''}} {{item.urgencyClass}}"
+      wx:for="{{displayList}}"
+      wx:key="orderId"
+      data-id="{{item.orderId}}"
+      bindtap="toggleExpand"
+      hover-class="card-press"
+      hover-stay-time="70"
+    >
+      <view class="card-top">
+        <view class="card-titles">
+          <view class="badge-row">
+            <text class="badge {{item.deliveryTone}}">{{item.deliveryLabel}}</text>
+            <text class="badge urgency" wx:if="{{item.urgencyLabel}}">{{item.urgencyLabel}}</text>
+          </view>
+          <text class="card-title">{{item.productTitle}}</text>
+          <text class="card-sub" wx:if="{{item.recipientName}}">写给 · {{item.recipientName}}</text>
+          <text class="card-sub" wx:elif="{{item.storeName}}">门店 · {{item.storeName}}</text>
+        </view>
+        <view class="card-side">
+          <text class="card-price" wx:if="{{item.totalPrice}}">¥{{item.totalPrice}}</text>
+          <text class="expand-hint">{{expandedId === item.orderId ? '收起' : '详情'}}</text>
+        </view>
+      </view>
+
+      <view class="card-meta">
+        <text class="meta">{{item.orderNo || item.orderId}}</text>
+        <text class="meta" wx:if="{{item.paidText}}">付 {{item.paidText}}</text>
+        <text class="meta warn" wx:if="{{item.expireText && bucket === 'awaiting_address'}}">止 {{item.expireText}}</text>
+      </view>
+
+      <!-- 高频操作：无需展开即可点 -->
+      <view class="card-actions" wx:if="{{item.canShip || bucket === 'pickup_verify' || item.shipBlockReason}}">
+        <text class="block-reason" wx:if="{{item.shipBlockReason && !item.canShip && bucket !== 'pickup_verify'}}">{{item.shipBlockReason}}</text>
+        <view class="action-row">
+          <view class="mini-btn primary" wx:if="{{item.canShip}}" data-id="{{item.orderId}}" catchtap="goOrderManage">去发货</view>
+          <view class="mini-btn primary" wx:if="{{bucket === 'pickup_verify'}}" catchtap="goVerify">去核销</view>
+          <view class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
+        </view>
+      </view>
+
+      <view class="card-extra" wx:if="{{expandedId === item.orderId}}">
+        <text class="extra-line" wx:if="{{item.recipientName}}">写给 · {{item.recipientName}}</text>
+        <text class="extra-line" wx:if="{{item.storeName}}">门店 · {{item.storeName}}</text>
+        <text class="extra-line" wx:if="{{item.claimCode}}">妥投码 · {{item.claimCode}}</text>
+        <block wx:if="{{item.address}}">
+          <text class="extra-line">{{item.address.name}} {{item.address.phone}}</text>
+          <text class="extra-line">{{item.address.line}}</text>
+        </block>
+        <text class="extra-line muted" wx:if="{{!item.address && bucket === 'awaiting_address'}}">对方尚未留下地址</text>
+        <text class="extra-line warn" wx:if="{{item.shipBlockReason}}">{{item.shipBlockReason}}</text>
+        <view class="extra-actions" wx:if="{{!item.canShip && bucket !== 'pickup_verify'}}">
+          <view class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="list-foot" wx:if="{{loading}}">
+      <text class="muted">加载中…</text>
+    </view>
+    <view class="list-foot" wx:elif="{{!hasMore && !keyword}}">
+      <text class="muted">共 {{total}} 笔</text>
+    </view>
+  </view>
+
+  <view class="foot-spacer"></view>
+  <view class="foot-bar">
+    <view class="workbench-btn-outline foot-btn" bindtap="retryLoad">{{loading ? '刷新中…' : '刷新'}}</view>
+    <view class="workbench-btn-outline foot-btn" wx:if="{{bucket === 'pickup_verify'}}" bindtap="goVerify">核销台</view>
+  </view>
+</view>
+
+<view class="container checking" wx:else>
+  <view class="state-block" wx:if="{{loadError}}">
+    <text class="state-title">无法进入</text>
+    <text class="muted">{{loadError}}</text>
+  </view>
+  <text class="muted" wx:else>校验权限…</text>
+</view>

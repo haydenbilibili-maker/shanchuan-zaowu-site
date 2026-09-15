@@ -1,0 +1,8 @@
+<view
+  wx:if="{{!disabled}}"
+  class="page-edge-back ext-class"
+  bindtouchstart="onEdgeTouchStart"
+  bindtouchmove="onEdgeTouchMove"
+  bindtouchend="onEdgeTouchEnd"
+  bindtouchcancel="onEdgeTouchCancel"
+/>

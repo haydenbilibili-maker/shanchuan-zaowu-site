@@ -1,5 +1,6 @@
 const cloud = require('wx-server-sdk')
 const { SEED_VERSION, ARTICLES, EXHIBITIONS } = require('./communitySeed')
+const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -138,6 +139,17 @@ async function status() {
 
 exports.main = async (event) => {
   const { action = 'seed' } = event || {}
+  const wxContext = cloud.getWXContext()
+  const openid = wxContext.OPENID || ''
+
+  globalThis.__adminOpsKey = event && event.adminOpsKey
+  const guard = await assertStaff(db, openid, {
+    role: ROLE_MANAGER,
+    adminOpsKey: event && event.adminOpsKey
+  })
+  if (!guard.ok) {
+    return { success: false, code: guard.code, msg: guard.msg || '无权限' }
+  }
 
   try {
     if (action === 'seed') {

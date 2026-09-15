@@ -6,23 +6,22 @@
   
   <!-- 导航栏 (返回按钮) -->
   <view class="nav-bar" style="top: {{statusBarHeight}}px">
-    <view class="back-btn" bindtap="goBack">✕</view>
   </view>
 
   <scroll-view scroll-y="true" class="scroll-content" enable-flex="true">
     
     <!-- 2. 沉浸式首图 (The Opening) -->
     <view class="hero-poster">
-      <image class="hero-img" src="cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/banners/chris-nguyen-tXmc2mVDxJc-unsplash.jpg" mode="aspectFill"></image>
+      <image class="hero-img" src="{{heroImage}}" mode="aspectFill"></image>
       <view class="hero-mask"></view>
-      <view class="hero-text {{isLoaded ? 'active' : ''}}">
+      <view class="hero-text {{isLoaded ? 'active' : ''}}" catchlongpress="onEasterEggLongPress" data-egg-id="kunlun">
         <text class="h-sub">EST. 2026</text>
         <text class="h-title">NATURE'S</text>
         <text class="h-title-sub">CREATIONS</text>
         <view class="h-line"></view>
         <text class="h-cn">山海造物</text>
         <text class="h-tagline">把山海带回家</text>
-        <text class="h-idea">自然 · 标本 · 美艺 · 生活</text>
+        <text class="h-idea">自然 · 藏品 · 美艺 · 生活</text>
       </view>
     </view>
 
@@ -34,9 +33,9 @@
       </view>
       
       <view class="para para-body fade-up" style="animation-delay: 0.4s">
-        <text class="p-body">山海造物是一个自然美学生活方式品牌。我们在自然与人之间建立联系，让自然之美通过标本，以美的方式进入日常。
+        <text class="p-body">山海造物是一个自然美学生活方式品牌。我们在自然与人之间建立联系，让自然之美通过藏品，以美的方式进入日常。
 
-每一件标本，都来自山野与时间的馈赠。我们用心的装裱与保存，只为把这一刻留在你身边。
+每一件藏品，都来自山野与时间的馈赠。我们用心的装裱与保存，只为把这一刻留在你身边。
 
 在这里遇见的，可以是一只蝶翅膀上的微光，也可以是一块石头里沉默的年轮——像朋友在窗边慢慢讲给你听。
 
@@ -50,6 +49,21 @@
 "To see a world in a grain of sand, And a heaven in a wild flower."</text>
           <text class="p-author">—威廉·布莱克 William Blake</text>
         </view>
+      </view>
+
+      <view
+        class="para para-pledge fade-up {{pledgeExpanded ? 'is-open' : ''}}"
+        style="animation-delay: 0.75s"
+        bindtap="togglePledgeNote"
+        hover-class="para-pledge-press"
+        hover-stay-time="80"
+      >
+        <view class="pledge-head">
+          <text class="pledge-label">{{onePercentPledgeLabel}}</text>
+          <text class="pledge-chevron">›</text>
+        </view>
+        <text class="pledge-summary" wx:if="{{!pledgeExpanded}}">{{onePercentPledgeSummary}}</text>
+        <text class="pledge-body" wx:else>{{onePercentPledgeNote}}</text>
       </view>
     </view>
 
@@ -69,11 +83,11 @@
           </view>
           <view class="row">
             <text class="lbl">联系电话｜TEL</text>
-            <text class="val underline" bindtap="callPhone">{{phone}}</text>
+            <text class="val underline" hover-class="val-press" bindtap="callPhone">{{phone}}</text>
           </view>
           <view class="row">
             <text class="lbl">品牌官网｜WEB</text>
-            <text class="val underline" bindtap="copyWebsite">{{brandWebsite}}</text>
+            <text class="val underline" hover-class="val-press" bindtap="copyWebsite">{{brandWebsite}}</text>
           </view>
           <view class="row">
             <text class="lbl">地址｜ADD</text>
@@ -82,7 +96,7 @@
         </view>
 
         <!-- 嵌入地图 -->
-        <view class="map-box" bindtap="openMap">
+        <view class="map-box" hover-class="map-box-press" bindtap="openMap">
            <map 
             class="mini-map"
             latitude="{{markers[0].latitude}}" 
@@ -96,18 +110,22 @@
           </view>
         </view>
 
-        <view class="store-link-btn" bindtap="goToStoreTab">
+        <view class="store-link-btn" hover-class="store-link-press" bindtap="goToStoreTab" wx:if="{{showStore}}">
           <text>走进这有店 · 查看两家门店</text>
+        </view>
+        <view class="recruit-link-btn" hover-class="store-link-press" bindtap="goToFramerRecruit">
+          <text>标本师招募 · 了解合作</text>
         </view>
       </view>
     </view>
 
     <!-- 底部 Logo -->
-    <view class="footer-logo">
-      <image class="logo-icon" src="/assets/icons/home-active.png" mode="aspectFit"></image> 
+    <view class="footer-logo" catchlongpress="onEasterEggLongPress" data-egg-id="kunlun">
+      <image class="logo-icon" src="/subpackages/business/assets/icons/home-active.png" mode="aspectFit"></image> 
       <text class="footer-cr-cn">© 2026 山海造物</text>
       <text class="footer-cr-en">NATURE'S CREATIONS</text>
     </view>
 
   </scroll-view>
+  <easter-egg-note id="easterEggNote" />
 </view>

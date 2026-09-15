@@ -1,0 +1,128 @@
+<!-- 礼赠主入口 · 场景选礼 + 馆藏挑礼 -->
+<view class="page" wx:if="{{allowed}}">
+  <scroll-view scroll-y class="scroll" enhanced show-scrollbar="{{false}}">
+    <view class="hero-plate">
+      <text class="overline">GIFT</text>
+      <text class="title">礼赠</text>
+      <text class="desc">先选人生节点，柜中会按场景备妥藏品；也可直接去馆藏慢慢挑。</text>
+    </view>
+
+    <!-- 场景选择 -->
+    <view class="scene-block">
+      <text class="section-overline">OCCASION</text>
+      <text class="section-title">为哪一个时刻</text>
+      <view class="scene-chips">
+        <view
+          class="scene-chip {{activeScene === item.key ? 'on' : ''}}"
+          wx:for="{{scenes}}"
+          wx:key="key"
+          data-key="{{item.key}}"
+          bindtap="onSceneTap"
+        >
+          <text>{{item.label}}</text>
+        </view>
+      </view>
+      <text class="scene-guide" wx:if="{{sceneGuide}}">{{sceneGuide}}</text>
+    </view>
+
+    <!-- 柜中备妥：双列扫选 -->
+    <view class="match-block" wx:if="{{activeScene}}">
+      <view class="match-head">
+        <view class="match-titles">
+          <text class="section-overline">CABINET</text>
+          <view class="match-title-row">
+            <text class="section-title tight">柜中备妥</text>
+            <text
+              class="match-link"
+              bindtap="onRefreshBatch"
+              wx:if="{{products.length && !loadingProducts}}"
+            >换一批</text>
+          </view>
+        </view>
+      </view>
+      <text class="match-hint" wx:if="{{usedFallback && products.length}}">场景标签尚少，已混入可礼赠藏品作补充</text>
+
+      <view class="match-loading" wx:if="{{loadingProducts}}">
+        <text class="muted">正在从柜中取出…</text>
+      </view>
+
+      <view class="match-empty" wx:elif="{{productsError}}">
+        <text class="muted">{{productsError}}</text>
+        <text class="match-link" bindtap="onRefreshBatch">再试一次</text>
+      </view>
+
+      <view class="product-grid" wx:elif="{{products.length}}">
+        <view
+          class="product-card"
+          wx:for="{{products}}"
+          wx:key="_id"
+          data-id="{{item._id}}"
+          bindtap="onProductTap"
+        >
+          <view class="product-card-inner">
+            <view class="product-cover-wrap">
+              <image class="product-cover" src="{{item.cover}}" mode="aspectFill"></image>
+              <text class="product-badge scene" wx:if="{{item.matchSource === 'scene'}}">场景</text>
+              <text class="product-badge fallback" wx:else>荐</text>
+              <protected-badge
+                wx:if="{{item.isProtected}}"
+                show="{{true}}"
+                size="xs"
+                corner="bl"
+              />
+            </view>
+            <view class="product-body">
+              <text class="product-title">{{item.title}}</text>
+              <text class="product-price">¥{{item.priceLabel}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="match-empty" wx:else>
+        <text class="muted">暂无匹配，可换一批或去馆藏挑选</text>
+        <view class="match-empty-actions">
+          <text class="match-link" bindtap="onRefreshBatch">换一批</text>
+          <text class="match-link" bindtap="goBrowse">去馆藏</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="steps" wx:if="{{!activeScene}}">
+      <view class="step">
+        <text class="step-num">01</text>
+        <view class="step-body">
+          <text class="step-title">选场景或进馆藏</text>
+          <text class="step-desc">场景会优先匹配带标签的藏品</text>
+        </view>
+      </view>
+      <view class="step">
+        <text class="step-num">02</text>
+        <view class="step-body">
+          <text class="step-title">写下礼笺</text>
+          <text class="step-desc">可按关系或场景方向落笔</text>
+        </view>
+      </view>
+      <view class="step">
+        <text class="step-num">03</text>
+        <view class="step-body">
+          <text class="step-title">支付并交给 TA</text>
+          <text class="step-desc">默认邀请 TA 填写地址</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="cta-block">
+      <view class="btn-primary" bindtap="goBrowse">去馆藏挑选</view>
+      <view class="btn-secondary" bindtap="goBack">返回工坊</view>
+    </view>
+    <view class="scroll-pad"></view>
+  </scroll-view>
+</view>
+
+<view class="page checking" wx:else>
+  <view class="state-block">
+    <view class="state-seal" aria-hidden="true"></view>
+    <text class="muted">{{checking ? '柜门轻启…' : '礼赠暂未开放'}}</text>
+  </view>
+</view>

@@ -1,0 +1,14 @@
+{
+  "navigationBarTitleText": "搜索",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "disableScroll": true,
+  "usingComponents": {
+    "easter-egg-note": "/components/EasterEggNote/index",
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+  },
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundTextStyle": "light"
+}

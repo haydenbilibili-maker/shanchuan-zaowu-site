@@ -1,0 +1,523 @@
+/* subpackages/feature/custom/pet/index.wxss */
+@import "../index.wxss";
+
+.page-pet { min-height: 100vh; position: relative; }
+
+/* —— Hero：中文主标题 > 英文 > 标语 > 说明 —— */
+.page-pet .hero-head {
+  padding-bottom: 8rpx;
+}
+
+.page-pet .nav-row {
+  padding: 12rpx 32rpx 0;
+  min-height: 0;
+}
+
+.page-pet .nav-brand {
+  padding: 0 16rpx;
+}
+
+.page-pet .nav-brand .nav-title {
+  font-size: 40rpx;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.14em;
+  color: #FFFFFF;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+}
+
+.page-pet .nav-sub {
+  margin-top: 8rpx;
+  font-size: 18rpx;
+  line-height: 1.3;
+  letter-spacing: 0.18em;
+  color: #C4A76C;
+}
+
+.page-pet .nav-motto {
+  text-align: center;
+  padding: 24rpx 48rpx 20rpx;
+  border-bottom: none;
+}
+
+.page-pet .motto-primary {
+  font-size: 24rpx;
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0.04em;
+  color: #C4A76C;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+}
+
+.page-pet .motto-secondary {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: #A09A90;
+}
+
+/* 步骤条：与标题区用边框锚定，节奏稳定 */
+.page-pet .header-rail-full {
+  padding: 20rpx 28rpx 22rpx;
+  margin-top: 4rpx;
+  background: rgba(31, 29, 26, 0.96);
+  border-top: 1px solid rgba(77, 64, 26, 0.38);
+  border-bottom: 1px solid rgba(38, 35, 32, 0.55);
+}
+
+.page-pet .rail-top {
+  margin-bottom: 12rpx;
+}
+
+.page-pet .rail-label {
+  font-size: 20rpx;
+  letter-spacing: 0.02em;
+}
+
+.page-pet .rail-col.current .rail-label {
+  font-size: 22rpx;
+}
+
+/* Museum Mode：步骤点用边框层次，不用发光 */
+.page-pet .rail-dot.active {
+  box-shadow: none;
+  border-width: 2rpx;
+}
+
+.page-pet .rail-col.current .rail-dot.active {
+  transform: none;
+}
+
+/* 底栏高度：步骤 1 含固定勾选，其余更矮 */
+.page-pet .main-scroll {
+  bottom: 188rpx;
+}
+
+.page-pet.step-consent .main-scroll {
+  bottom: 318rpx;
+}
+
+.page-pet .scroll-pad {
+  height: 64rpx;
+}
+
+.page-pet .panel-lead {
+  padding: 28rpx 32rpx 24rpx;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(38, 35, 32, 0.55);
+}
+
+.page-pet .panel-title {
+  font-size: 34rpx;
+  letter-spacing: 0.02em;
+}
+
+.page-pet .panel-desc {
+  margin-top: 10rpx;
+  color: #A09A90;
+}
+
+.step-enter {
+  animation: pet-step-in 0.28s ease-out;
+}
+
+@keyframes pet-step-in {
+  from { opacity: 0; transform: translateY(12rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-pet .step-panel {
+  padding: 28rpx 32rpx 48rpx;
+}
+
+/* —— 知情条款：铜牌短条，避免灰字墙 —— */
+.notice-plates {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-bottom: 28rpx;
+}
+
+.notice-plate {
+  padding: 20rpx 24rpx;
+  background: rgba(250, 246, 237, 0.04);
+  border: 1px solid rgba(77, 64, 26, 0.42);
+  border-radius: 12rpx;
+  border-left: 4rpx solid rgba(196, 167, 108, 0.55);
+}
+
+.notice-plate-title {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #C4A76C;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  margin-bottom: 8rpx;
+}
+
+.notice-plate-body {
+  display: block;
+  font-size: 24rpx;
+  color: #D5D1C8;
+  line-height: 1.55;
+}
+
+.section-label {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #A09A90;
+  letter-spacing: 0.04em;
+  margin-bottom: 8rpx;
+}
+
+.section-hint {
+  display: block;
+  font-size: 22rpx;
+  color: #6B6560;
+  line-height: 1.4;
+  margin-bottom: 16rpx;
+}
+
+.craft-preview { margin-top: 8rpx; margin-bottom: 8rpx; }
+
+.craft-chip {
+  padding: 20rpx 24rpx; margin-bottom: 12rpx;
+  background: #1F1D1A; border-radius: 16rpx;
+  border: 1px solid rgba(38, 35, 32, 0.8);
+}
+
+.craft-chip.preview {
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.craft-name { display: block; font-size: 26rpx; color: #D5D1C8; }
+.craft-weeks { display: block; font-size: 22rpx; color: #6B6560; margin-top: 6rpx; }
+
+/* 底栏固定勾选：始终可见，消除「灰按钮猜谜」 */
+.consent-dock {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding: 18rpx 20rpx;
+  margin-bottom: 12rpx;
+  background: #1F1D1A;
+  border: 1px solid rgba(77, 64, 26, 0.55);
+  border-radius: 14rpx;
+}
+
+.consent-dock.is-checked {
+  border-color: rgba(196, 167, 108, 0.55);
+  background: rgba(196, 167, 108, 0.08);
+}
+
+.consent-dock-press {
+  background: rgba(196, 167, 108, 0.1);
+  border-color: rgba(196, 167, 108, 0.4);
+}
+
+.consent-checkbox {
+  flex-shrink: 0;
+  margin-top: 2rpx;
+  transform: scale(1.05);
+}
+
+.consent-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.consent-text {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  line-height: 1.4;
+}
+
+.consent-hint {
+  font-size: 20rpx;
+  color: #A09A90;
+  line-height: 1.4;
+}
+
+.page-pet .btn-primary.btn-disabled,
+.page-pet .btn-primary[disabled] {
+  background: #262320 !important;
+  color: #6B6560 !important;
+  opacity: 1;
+}
+
+.form-group { margin-bottom: 36rpx; }
+
+.form-label {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #A09A90;
+  letter-spacing: 0.04em;
+  margin-bottom: 14rpx;
+}
+
+.form-hint {
+  display: block;
+  font-size: 22rpx;
+  color: #6B6560;
+  line-height: 1.45;
+  margin: -4rpx 0 16rpx;
+}
+
+.form-ph { color: #6B6560; }
+
+.form-input, .form-picker {
+  width: 100%; height: 88rpx; padding: 0 28rpx; box-sizing: border-box;
+  background: #1F1D1A;
+  border: 1px solid rgba(38, 35, 32, 0.9);
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #FFFFFF;
+  line-height: 88rpx;
+}
+
+.form-picker.is-placeholder { color: #6B6560; }
+
+.form-textarea {
+  width: 100%; min-height: 160rpx; padding: 24rpx 28rpx; box-sizing: border-box;
+  background: #1F1D1A;
+  border: 1px solid rgba(38, 35, 32, 0.9);
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #FFFFFF;
+  line-height: 1.5;
+  margin-top: 0;
+}
+
+.option-pills { display: flex; flex-wrap: wrap; gap: 16rpx; }
+
+.option-pill {
+  min-height: 64rpx;
+  padding: 14rpx 28rpx;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  color: #A09A90;
+  background: #1F1D1A;
+  border: 1px solid rgba(38, 35, 32, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.option-pill-press {
+  opacity: 0.88;
+  border-color: rgba(196, 167, 108, 0.35);
+}
+
+.option-pill.active {
+  color: #C4A76C;
+  border-color: #C4A76C;
+  background: rgba(196, 167, 108, 0.12);
+  font-weight: 500;
+}
+
+.photo-row { display: flex; flex-wrap: wrap; gap: 16rpx; }
+
+.photo-item, .photo-add {
+  width: 168rpx; height: 168rpx; border-radius: 16rpx; overflow: hidden; position: relative;
+}
+
+.photo-item image { width: 100%; height: 100%; background: #262320; }
+
+.photo-del {
+  position: absolute; top: 8rpx; right: 8rpx;
+  width: 44rpx; height: 44rpx;
+  background: rgba(26, 24, 20, 0.78);
+  border: 1px solid rgba(196, 167, 108, 0.25);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.photo-del-press { opacity: 0.75; }
+.photo-del-x { font-size: 28rpx; color: #D5D1C8; line-height: 1; }
+
+.photo-add {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4rpx;
+  background: #1F1D1A;
+  border: 1px dashed rgba(196, 167, 108, 0.35);
+}
+
+.photo-add-press {
+  background: rgba(196, 167, 108, 0.08);
+  border-color: rgba(196, 167, 108, 0.55);
+}
+
+.photo-add-plus { font-size: 40rpx; color: #C4A76C; line-height: 1; }
+.photo-add-label { font-size: 22rpx; color: #6B6560; }
+
+.craft-card, .intake-card {
+  padding: 28rpx;
+  margin-bottom: 16rpx;
+  background: #1F1D1A;
+  border: 1px solid rgba(38, 35, 32, 0.9);
+  border-radius: 16rpx;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.card-press { opacity: 0.92; }
+
+.craft-card.active, .intake-card.active {
+  border-color: rgba(196, 167, 108, 0.45);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 4rpx 0 0 #C4A76C;
+}
+
+.craft-card-head, .intake-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 10rpx;
+}
+
+.craft-card-name, .intake-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.craft-card-check, .intake-check {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #C4A76C;
+  letter-spacing: 0.04em;
+}
+
+.craft-card-desc, .intake-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #A09A90;
+  line-height: 1.55;
+}
+
+.craft-card-weeks {
+  display: block;
+  font-size: 22rpx;
+  color: #C4A76C;
+  margin-top: 14rpx;
+  letter-spacing: 0.02em;
+}
+
+.submit-tip {
+  display: block;
+  font-size: 22rpx;
+  color: #6B6560;
+  line-height: 1.55;
+  margin-top: 4rpx;
+  padding: 20rpx 24rpx;
+  background: rgba(196, 167, 108, 0.04);
+  border-radius: 12rpx;
+  border: 1px solid rgba(77, 64, 26, 0.28);
+}
+
+.page-pet .preview-plate {
+  padding: 28rpx;
+  margin-bottom: 36rpx;
+  background: #FAF6ED;
+  border: 1px solid #E0CFA3;
+  border-radius: 16rpx;
+}
+
+.preview-plate-title {
+  display: block;
+  font-size: 22rpx;
+  color: #8B6F47;
+  letter-spacing: 0.08em;
+  margin-bottom: 12rpx;
+}
+
+.page-pet .preview-row {
+  display: flex; justify-content: space-between; gap: 16rpx;
+  padding: 12rpx 0;
+  border-bottom: 1px solid rgba(139, 111, 71, 0.12);
+}
+
+.page-pet .preview-row:last-child { border-bottom: none; }
+.page-pet .preview-label { font-size: 22rpx; color: #8B6F47; flex-shrink: 0; }
+.page-pet .preview-value { font-size: 24rpx; color: #6B5A24; text-align: right; flex: 1; }
+
+/* 底部：单行联系专员 + 明确启用提示，不抢主 CTA */
+.page-pet .footer-bar {
+  padding: 14rpx 32rpx calc(18rpx + env(safe-area-inset-bottom));
+  background: rgba(26, 24, 20, 0.98);
+  border-top: 1px solid rgba(38, 35, 32, 0.75);
+}
+
+.page-pet .footer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-height: 40rpx;
+  margin-bottom: 12rpx;
+}
+
+.page-pet .footer-meta-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-pet .footer-support {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 24rpx;
+  color: #A09A90;
+  letter-spacing: 0.02em;
+  padding: 4rpx 0;
+}
+
+.footer-support-press {
+  color: #C4A76C;
+}
+
+.page-pet .footer-gate {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 22rpx;
+  color: #8B6F47;
+  line-height: 1.35;
+}
+
+.page-pet .footer-gate.is-ready {
+  color: #A09A90;
+}
+
+.page-pet .footer-actions { gap: 20rpx; }
+
+.page-pet .btn-ghost {
+  color: #C4A76C;
+  border: 1px solid rgba(196, 167, 108, 0.45);
+  background: transparent;
+}
+
+.btn-ghost-press {
+  background: rgba(196, 167, 108, 0.08);
+}
+
+.page-pet .btn-primary {
+  background: #C4A76C;
+  color: #1A1814;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.btn-primary-press {
+  background: #A8903C;
+}

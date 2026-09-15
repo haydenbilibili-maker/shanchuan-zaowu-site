@@ -1,0 +1,167 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">柜门缓缓开启…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">PROPERTY · COST</text>
+        <text class="cn">物业成本</text>
+      </view>
+      <text class="header-note">两门店与工作室的水电、房租及其他成本；票据可多图入柜。</text>
+    </view>
+
+    <view class="summary-bar" wx:if="{{!loading || list.length}}">
+      <view class="summary-main">
+        <text class="summary-label">本筛选成本合计</text>
+        <text class="summary-value">¥{{summary.totalAmountText}}</text>
+      </view>
+      <text class="summary-count">{{summary.count}} 笔</text>
+      <view class="summary-entities" wx:if="{{summary.byEntity.length}}">
+        <text class="entity-chip" wx:for="{{summary.byEntity}}" wx:key="entityId">
+          {{item.entityName}} ¥{{item.amountText}}
+        </text>
+      </view>
+      <view class="summary-entities" wx:if="{{summary.byType.length}}">
+        <text class="entity-chip muted" wx:for="{{summary.byType}}" wx:key="costType">
+          {{item.costTypeLabel}} ¥{{item.amountText}}
+        </text>
+      </view>
+    </view>
+
+    <view class="filter-row">
+      <picker mode="selector" range="{{entityFilterNames}}" value="{{entityFilterIndex}}" bindchange="onEntityFilter">
+        <view class="filter-chip">{{entityFilterNames[entityFilterIndex]}}</view>
+      </picker>
+      <picker mode="selector" range="{{typeFilterNames}}" value="{{typeFilterIndex}}" bindchange="onTypeFilter">
+        <view class="filter-chip">{{typeFilterNames[typeFilterIndex]}}</view>
+      </picker>
+      <picker mode="date" fields="month" value="{{monthFilter}}" bindchange="onMonthFilter">
+        <view class="filter-chip">{{monthFilter || '所属月'}}</view>
+      </picker>
+      <view class="filter-chip clear" wx:if="{{monthFilter}}" bindtap="clearMonth">清除月</view>
+      <view class="btn-add" bindtap="openCreate">登记</view>
+    </view>
+
+    <view class="skeleton-list" wx:if="{{loading && !list.length}}">
+      <view class="skeleton-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+        <view class="sk-line wide"></view>
+        <view class="sk-line"></view>
+        <view class="sk-line mid"></view>
+      </view>
+    </view>
+
+    <view class="empty-tip" wx:elif="{{!loading && !list.length}}">
+      <text class="empty-title">柜中暂无成本记录</text>
+      <text class="empty-sub">点「登记」录入水电或房租</text>
+    </view>
+
+    <block wx:for="{{list}}" wx:key="_id">
+      <view class="card">
+        <view class="card-top">
+          <text class="card-title">{{item.entityName}}</text>
+          <text class="status-tag {{item.typeTone}}">{{item.costTypeLabel}}</text>
+        </view>
+        <text class="amount">¥{{item.amountText}}</text>
+        <text class="meta">所属月 {{item.periodMonth || '—'}}</text>
+        <text class="meta" wx:if="{{item.periodRangeText}}">周期 {{item.periodRangeText}}</text>
+        <text class="meta">支付日 {{item.paidAt || '—'}} · 更新 {{item.updatedAtText}}</text>
+        <text class="meta" wx:if="{{item.note}}">{{item.note}}</text>
+        <view class="receipt-row" wx:if="{{item.receiptCount}}">
+          <image
+            wx:for="{{item.receiptPreviews}}"
+            wx:for-item="pic"
+            wx:key="fileId"
+            class="receipt-thumb"
+            src="{{pic.url}}"
+            mode="aspectFill"
+            data-id="{{item._id}}"
+            data-url="{{pic.url}}"
+            bindtap="previewListReceipt"
+          />
+          <text class="meta">{{item.receiptCount}} 张票据</text>
+        </view>
+        <view class="card-actions">
+          <view class="chip-btn" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
+          <view class="chip-btn danger" data-id="{{item._id}}" bindtap="onRemove">删除</view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>
+
+<view class="sheet-mask" wx:if="{{showForm}}" bindtap="closeForm"></view>
+<view class="sheet" wx:if="{{showForm}}">
+  <view class="sheet-head">
+    <text class="sheet-title">{{editingId ? '编辑物业成本' : '登记物业成本'}}</text>
+    <text class="sheet-close" bindtap="closeForm">关闭</text>
+  </view>
+  <scroll-view scroll-y class="sheet-body">
+    <view class="field">
+      <text class="field-label">归属主体</text>
+      <picker mode="selector" range="{{formEntityNames}}" value="{{formEntityIndex}}" bindchange="onFormEntity">
+        <view class="input">{{formEntityNames[formEntityIndex] || '请选择'}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">成本类型</text>
+      <picker mode="selector" range="{{formTypeNames}}" value="{{formTypeIndex}}" bindchange="onFormType">
+        <view class="input">{{formTypeNames[formTypeIndex]}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">金额（元）</text>
+      <input class="input" type="digit" value="{{form.amount}}" data-field="amount" bindinput="onFormInput" placeholder="必填" placeholder-class="ph" />
+    </view>
+    <view class="field">
+      <text class="field-label">所属月</text>
+      <picker mode="date" fields="month" value="{{form.periodMonth}}" bindchange="onFormMonth">
+        <view class="input">{{form.periodMonth || '选择月份'}}</view>
+      </picker>
+    </view>
+    <view class="field-row">
+      <view class="field half">
+        <text class="field-label">周期起</text>
+        <picker mode="date" value="{{form.periodStart}}" bindchange="onFormPeriodStart">
+          <view class="input">{{form.periodStart || '可选'}}</view>
+        </picker>
+      </view>
+      <view class="field half">
+        <text class="field-label">周期止</text>
+        <picker mode="date" value="{{form.periodEnd}}" bindchange="onFormPeriodEnd">
+          <view class="input">{{form.periodEnd || '可选'}}</view>
+        </picker>
+      </view>
+    </view>
+    <view class="field">
+      <text class="field-label">支付日期</text>
+      <picker mode="date" value="{{form.paidAt}}" bindchange="onFormPaidAt">
+        <view class="input">{{form.paidAt || '选择日期'}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">支付票据（最多 {{maxReceipts}} 张）</text>
+      <view class="receipt-edit">
+        <view class="receipt-grid" wx:if="{{receiptPreviews.length}}">
+          <view class="receipt-item" wx:for="{{receiptPreviews}}" wx:key="fileId">
+            <image
+              class="receipt-thumb lg"
+              src="{{item.url}}"
+              mode="aspectFill"
+              data-url="{{item.url}}"
+              bindtap="previewReceipt"
+            />
+            <view class="receipt-del" data-index="{{index}}" catchtap="removeReceipt">删</view>
+          </view>
+        </view>
+        <view class="chip-btn" bindtap="chooseReceipt">
+          {{uploading ? '上传中…' : (receiptPreviews.length ? '继续添加' : '上传票据')}}
+        </view>
+      </view>
+    </view>
+    <view class="field">
+      <text class="field-label">备注</text>
+      <input class="input" value="{{form.note}}" data-field="note" bindinput="onFormInput" placeholder-class="ph" />
+    </view>
+    <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
+  </scroll-view>
+</view>

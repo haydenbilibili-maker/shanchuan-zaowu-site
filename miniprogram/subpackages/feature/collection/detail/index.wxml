@@ -1,0 +1,147 @@
+<wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
+<view class="page {{locked && !loading && !loadError ? 'has-dock' : ''}} {{!locked && !loading && !loadError ? 'has-share' : ''}}">
+  <view class="loading" wx:if="{{loading}}">
+    <view class="skel-plate"></view>
+    <view class="skel-block">
+      <view class="skel-line"></view>
+      <view class="skel-line mid"></view>
+      <view class="skel-line short"></view>
+    </view>
+    <text class="loading-t">展开这一页…</text>
+  </view>
+
+  <view class="error" wx:elif="{{loadError}}">
+    <text class="error-t">这一页暂时读不到</text>
+    <button class="btn-brass" bindtap="loadCard">再试一次</button>
+    <text class="link" bindtap="goAtlas">返回图鉴</text>
+  </view>
+
+  <block wx:else>
+    <view class="crumb">
+      <text class="crumb-link" bindtap="goAtlas">山海图鉴</text>
+      <text class="crumb-sep">/</text>
+      <text class="crumb-cur">{{locked ? '未记录' : (card.nameZh || '卡片')}}</text>
+    </view>
+
+    <view class="plate plate-{{card.card}} {{card.toneClass}} {{locked ? 'dim' : ''}}">
+      <view class="plate-rim"></view>
+      <text class="plate-en">SPECIMEN CARD</text>
+      <text class="plate-no">编号 {{card.no || '—'}}</text>
+      <view class="silhouette big" wx:if="{{locked}}">
+        <view class="silhouette-ring"></view>
+      </view>
+      <view class="plate-mark-block" wx:else>
+        <text class="plate-mark-en">SPECIMEN</text>
+      </view>
+      <text class="plate-name">{{card.nameZh || '—'}}</text>
+      <text class="plate-latin" wx:if="{{!locked}}">{{card.nameLatin || '—'}}</text>
+      <view class="meta">
+        <text>{{card.category || '—'}}</text>
+        <text class="dot-sep">·</text>
+        <text>{{card.rarityLabel || '—'}}</text>
+        <block wx:if="{{card.hasSpot}}">
+          <text class="dot-sep">·</text>
+          <text class="meta-spot">{{locked ? '馆内可寻' : '馆内印记'}}</text>
+        </block>
+      </view>
+      <text class="series-line" wx:if="{{seriesText}}">{{seriesText}}</text>
+      <text class="method-line" wx:if="{{methodText && !locked}}">{{methodText}}</text>
+      <view class="dots">
+        <view class="dot {{m ? 'on' : ''}}" wx:for="{{card.marks}}" wx:for-item="m" wx:for-index="di" wx:key="di"></view>
+      </view>
+    </view>
+
+    <view class="locked-note" wx:if="{{locked}}">
+      <text class="essay">它在馆里，等被看见。扫到印记或拍照采集之后，这一页才会把产地、习性、柜位与那段话写给你。</text>
+    </view>
+
+    <view class="collect-dock dual" wx:if="{{locked}}">
+      <view class="dock-half" bindtap="onScan" hover-class="collect-dock-press" hover-stay-time="80">
+        <text class="collect-dock-t ghost">发现印记</text>
+      </view>
+      <view class="dock-half primary" bindtap="goIdentify" hover-class="collect-dock-press" hover-stay-time="80">
+        <text class="collect-dock-t">拍照采集</text>
+      </view>
+    </view>
+
+    <block wx:else>
+      <view class="essay-block">
+        <text class="essay">{{card.essay || '—'}}</text>
+      </view>
+
+      <view class="facts">
+        <view class="fact" wx:for="{{facts}}" wx:key="k">
+          <text class="fact-k">{{item.k}}</text>
+          <view class="fact-row" wx:if="{{item.k === '印记码'}}">
+            <text class="fact-v mono">{{item.v}}</text>
+            <text class="fact-copy" bindtap="copyImprint" hover-class="fact-copy-press" hover-stay-time="80">复制</text>
+          </view>
+          <text class="fact-v" wx:else>{{item.v}}</text>
+        </view>
+      </view>
+
+      <view class="related" wx:if="{{relatedProducts.length}}">
+        <view class="related-head">
+          <text class="sec-t">关联藏品</text>
+          <text class="related-more" bindtap="goGallery" hover-class="related-more-press" hover-stay-time="80">去馆藏</text>
+        </view>
+        <view
+          class="product"
+          wx:for="{{relatedProducts}}"
+          wx:key="_id"
+          bindtap="goProduct"
+          data-id="{{item._id}}"
+          hover-class="product-press"
+          hover-stay-time="80"
+        >
+          <image wx:if="{{item.image}}" class="product-img" src="{{item.image}}" mode="aspectFill" />
+          <view wx:else class="product-img empty"></view>
+          <view class="product-body">
+            <text class="product-title">{{item.title}}</text>
+            <text class="product-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
+            <text class="product-price" wx:if="{{item.priceText}}">¥{{item.priceText}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="related soft" wx:else>
+        <view class="related-head">
+          <text class="sec-t">关联藏品</text>
+        </view>
+        <text class="related-empty">馆藏里暂未挂上对应 SKU。可先去同品类看看。</text>
+        <view class="related-cta" bindtap="goGallery" hover-class="collect-dock-press" hover-stay-time="80">浏览馆藏</view>
+      </view>
+
+      <view class="logs">
+        <view class="logs-head">
+          <text class="sec-t">采集记录</text>
+          <text class="logs-more" bindtap="goLogs" hover-class="related-more-press" hover-stay-time="80">全部足迹</text>
+        </view>
+        <block wx:if="{{hasLogs}}">
+          <view class="log" wx:for="{{logs}}" wx:key="id">
+            <view class="log-row">
+              <text class="log-m">{{item.methodLabel || '—'}}</text>
+              <text class="log-time">{{item.timeText || '—'}}</text>
+            </view>
+            <text class="log-p" wx:if="{{item.place}}">{{item.place}}</text>
+          </view>
+        </block>
+        <text class="logs-empty" wx:else>还没有采集记录。下一次扫码或拍照，会写在这里。</text>
+      </view>
+
+      <view class="share-dock">
+        <button class="btn-share" open-type="share" hover-class="btn-share-press" hover-stay-time="80">把这一页寄出去</button>
+      </view>
+    </block>
+  </block>
+
+  <view class="unlock-mask" wx:if="{{justUnlocked}}" catchtouchmove="closeCeremony">
+    <view class="unlock-sheet">
+      <text class="unlock-en">PAGE TURNED</text>
+      <text class="unlock-title">这一页被翻开了</text>
+      <text class="unlock-name">{{card.nameZh}}</text>
+      <text class="unlock-latin" wx:if="{{card.nameLatin}}">{{card.nameLatin}}</text>
+      <view class="unlock-cta" bindtap="closeCeremony" hover-class="collect-dock-press" hover-stay-time="80">看这一页</view>
+    </view>
+  </view>
+</view>

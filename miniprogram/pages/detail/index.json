@@ -1,8 +1,0 @@
-{
-  "navigationBarTitleText": "标本详情",
-  "navigationStyle": "custom", 
-  "navigationBarTextStyle": "white",
-  "usingComponents": {
-    "comment-list": "/components/CommentList/index"
-  }
-}

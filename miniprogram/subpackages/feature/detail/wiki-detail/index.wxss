@@ -1,0 +1,221 @@
+/* subpackages/feature/detail/wiki-detail.wxss */
+/* 继承 app.wxss */
+page { background: var(--color-bg); color: #fff; }
+
+/* 1. Header */
+.hero-area { position: relative; height: 600rpx; width: 100%; }
+.hero-img { width: 100%; height: 100%; }
+.hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, var(--color-bg) 100%); }
+.hero-text { position: absolute; bottom: 60rpx; left: 40rpx; right: 40rpx; z-index: 2; }
+
+.latin-lg { font-family: "Times New Roman", serif; color: var(--gold); font-style: italic; font-size: 36rpx; display: block; margin-bottom: 10rpx; opacity: 0.9; }
+.name-lg { font-size: 64rpx; color: #fff; font-weight: 900; display: block; text-shadow: 0 4rpx 20rpx rgba(0,0,0,0.8); line-height: 1.1; }
+.taxonomy-row { display: flex; align-items: center; margin-top: 20rpx; font-family: var(--font-din); font-size: 22rpx; color: #aaa; letter-spacing: 2rpx; text-transform: uppercase; }
+.divider { margin: 0 10rpx; color: #444; }
+
+.back-btn {
+  position: fixed;
+  left: 24rpx;
+  width: 72rpx;
+  height: 72rpx;
+  min-width: 72rpx;
+  min-height: 72rpx;
+  background: rgba(26, 24, 20, 0.45);
+  backdrop-filter: blur(8px);
+  border-radius: 50%;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.load-error-overlay {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 160rpx 48rpx 80rpx;
+  text-align: center;
+  gap: 16rpx;
+}
+.load-error-title { color: var(--color-text-primary); font-size: 34rpx; font-weight: 500; }
+.load-error-desc { color: var(--color-text-secondary); font-size: 26rpx; line-height: 1.5; margin-bottom: 24rpx; }
+.load-error-actions { display: flex; flex-direction: column; gap: 20rpx; width: 100%; max-width: 480rpx; }
+.load-error-btn {
+  height: 88rpx; line-height: 88rpx; text-align: center;
+  border-radius: 16rpx; border: 1px solid var(--gold); color: var(--gold); font-size: 28rpx;
+}
+.load-error-btn.primary { background: var(--gold); color: var(--color-bg); border: none; }
+
+/* 2. 正文 */
+.article-body { padding: 40rpx; background: var(--color-bg); min-height: 400rpx; }
+
+.gallery-scroll { white-space: nowrap; margin-bottom: 50rpx; height: 240rpx; }
+.g-img { width: 360rpx; height: 240rpx; border-radius: 12rpx; margin-right: 24rpx; display: inline-block; border: 1px solid #333; background: #111; }
+
+.rich-text-container { color: var(--color-text-body); font-size: 30rpx; line-height: 1.8; text-align: justify; letter-spacing: 1rpx; }
+
+/* 3. 关联藏品卡片 */
+.commerce-float {
+  margin: 40rpx 30rpx; padding: 30rpx;
+  background: var(--color-bg-card); border: 1px solid rgba(196, 167, 108,0.2);
+  border-radius: 20rpx;
+}
+.commerce-title { margin-bottom: 30rpx; border-bottom: 1px solid rgba(38, 35, 32, 0.8); padding-bottom: 16rpx; display: flex; align-items: baseline; justify-content: space-between; }
+.commerce-title text:first-child { font-family: var(--font-din); color: var(--gold); font-weight: bold; letter-spacing: 2rpx; font-size: 24rpx; }
+.commerce-title .sub { color: var(--color-text-secondary); font-size: 22rpx; font-weight: 500; }
+
+.product-card-mini { display: flex; align-items: center; margin-bottom: 24rpx; background: var(--color-bg-elevated); padding: 16rpx; border-radius: 12rpx; border: 1px solid rgba(38, 35, 32, 0.8); }
+.product-card-mini-press { opacity: 0.88; }
+.product-card-mini:last-child { margin-bottom: 0; }
+.p-thumb { width: 100rpx; height: 100rpx; border-radius: 8rpx; background: var(--color-bg); margin-right: 24rpx; border: 1px solid rgba(38, 35, 32, 0.9); flex-shrink: 0; }
+.p-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.p-name { color: var(--color-text-primary); font-size: 26rpx; font-weight: bold; margin-bottom: 4rpx; }
+.p-latin { color: var(--gold); font-size: 20rpx; font-style: italic; margin-bottom: 6rpx; font-family: Georgia, serif; }
+.p-sku { color: var(--color-text-secondary); font-size: 20rpx; margin-bottom: 6rpx; }
+.p-craft-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6rpx;
+  margin-bottom: 6rpx;
+}
+.p-craft-tag {
+  font-size: 16rpx;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--color-text-secondary);
+  background: rgba(196, 167, 108, 0.08);
+  border: 1px solid rgba(77, 64, 26, 0.5);
+  border-radius: 8rpx;
+  padding: 2rpx 8rpx;
+  white-space: nowrap;
+}
+
+.notes-section {
+  margin: 0 30rpx 40rpx;
+  padding: 30rpx;
+  background: var(--color-bg-card);
+  border: 1px solid #26232066;
+  border-radius: 24rpx;
+}
+.notes-head { margin-bottom: 24rpx; }
+.notes-overline {
+  display: block;
+  font-size: 20rpx;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  margin-bottom: 8rpx;
+}
+.notes-title { font-size: 30rpx; color: var(--color-text-primary); font-weight: 500; }
+.notes-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 16rpx 0;
+  border-top: 1px solid #26232066;
+}
+.notes-item-press { opacity: 0.88; }
+.notes-cover {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 16rpx;
+  background: var(--color-bg-elevated);
+  flex-shrink: 0;
+}
+.notes-meta { flex: 1; min-width: 0; }
+.notes-name {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: 26rpx;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+.notes-brief {
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.p-price { color: var(--gold); font-family: var(--font-din); font-size: 28rpx; font-weight: bold; }
+.btn-buy { 
+  background: transparent; color: var(--gold); font-size: 22rpx; padding: 8rpx 24rpx; 
+  border-radius: 16rpx; border: 1px solid rgba(196, 167, 108, 0.45); font-weight: 500;
+}
+
+/* 在原 CSS 基础上追加 */
+.intro-text {
+  font-size: 32rpx; font-weight: 300; color: var(--gold); font-style: italic;
+  margin-bottom: 40rpx; padding: 0 20rpx; border-left: 2rpx solid #4D401A;
+  line-height: 1.6;
+}
+
+.wiki-archive {
+  margin: 0 0 40rpx;
+  padding: 28rpx;
+  background: var(--color-bg-card);
+  border: 1px solid rgba(38, 35, 32, 0.9);
+  border-radius: 16rpx;
+}
+.wiki-prot { margin-bottom: 20rpx; }
+.wiki-archive-label {
+  display: block;
+  font-size: 20rpx;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  margin-bottom: 8rpx;
+}
+.wiki-prot-tags { display: flex; flex-wrap: wrap; gap: 12rpx; }
+.wiki-prot-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  border: 1px solid rgba(196, 167, 108, 0.3);
+  color: var(--color-text-body);
+  font-size: 22rpx;
+  background: rgba(196, 167, 108, 0.08);
+}
+.wiki-prot-sys { font-size: 18rpx; color: #8A7530; }
+.wiki-archive-row { margin-top: 20rpx; }
+.wiki-archive-text {
+  display: block;
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: var(--color-text-body);
+}
+
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--color-bg-card);
+  border-top: 1px solid rgba(38,35,32,0.9);
+  z-index: 90;
+}
+.bottom-price { flex: 1; }
+.bp-label { font-size: 22rpx; color: var(--color-text-muted); display: block; }
+.bp-num { font-size: 36rpx; color: var(--gold); font-weight: 600; }
+.bottom-buy {
+  padding: 0 48rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: var(--gold);
+  color: var(--color-bg);
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+.bottom-buy:active { background: #A8903C; }

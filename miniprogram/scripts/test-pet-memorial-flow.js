@@ -35,7 +35,7 @@ async function main() {
   })
 
   console.log('启动伴宠记忆页（devtest 预填）…')
-  await miniProgram.reLaunch('/pages/custom/pet/index?from=devtest')
+  await miniProgram.reLaunch('/subpackages/feature/custom/pet/index?from=devtest')
   await miniProgram.waitFor(800)
 
   let page = await miniProgram.currentPage()

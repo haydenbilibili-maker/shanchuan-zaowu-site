@@ -1,0 +1,9 @@
+{
+  "name": "sweepExpiredOrders",
+  "version": "1.0.0",
+  "description": "定时清扫超时待支付订单：解锁券、释放库存预占与钱包 held",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -1,3 +1,6 @@
 {
-  "usingComponents": {}
+  "navigationBarTitleText": "珍藏证书",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814"
 }

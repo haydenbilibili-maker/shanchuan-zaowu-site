@@ -1,9 +1,9 @@
 <!--pages/store/zone/index.wxml-->
+<wxs src="../../../utils/latinDisplay.wxs" module="latin" />
 <view class="page-zone" wx:if="{{zone}}">
   <view class="grain-overlay"></view>
 
-  <view class="header" style="padding-top: {{statusBarHeight}}px;">
-    <view class="back-btn" bindtap="goBack">←</view>
+  <view class="header" >
     <text class="title">{{zone.title}}</text>
   </view>
 
@@ -64,7 +64,7 @@
           <image class="product-img" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
           <view class="product-body">
             <text class="product-title text-cut">{{item.title}}</text>
-            <text class="product-latin text-cut" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+            <text class="product-latin text-cut" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
             <text class="product-price" wx:if="{{item.price}}">¥{{item.price}}</text>
           </view>
         </view>
@@ -84,7 +84,7 @@
         <image class="wiki-thumb" src="{{item.coverImage}}" mode="aspectFill" wx:if="{{item.coverImage}}"></image>
         <view class="wiki-meta">
           <text class="wiki-title text-cut">{{item.title}}</text>
-          <text class="wiki-brief text-cut">{{item.brief || item.latinName}}</text>
+          <text class="wiki-brief text-cut">{{item.brief || latin.display(item.latinName)}}</text>
         </view>
         <text class="wiki-arr">→</text>
       </view>

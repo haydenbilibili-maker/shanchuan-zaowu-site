@@ -1,0 +1,432 @@
+/* CouponPrintMint — Museum Mode；对齐预约出纸 + 投资人信号灯语义 */
+.mint-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(26, 24, 20, 0.94);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.mint-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mint-content {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 96rpx 32rpx 0;
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.mint-machine {
+  width: 86%;
+  max-width: 520rpx;
+  height: 44rpx;
+  background: linear-gradient(to bottom, #33302C, #1A1814);
+  border-radius: 30rpx;
+  border: 2rpx solid #4A4540;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.72);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+/* 顶杆最右侧（红框位）：打印 / 渠道 / 有效期 */
+.machine-lights {
+  position: absolute;
+  right: 16rpx;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10rpx;
+  z-index: 30;
+  pointer-events: none;
+}
+
+/*
+ * 组件默认 styleIsolation 会隔绝 app.wxss；即使已 apply-shared，
+ * 仍在本文件兜底灯色，确保深色顶杆上三灯可见。
+ */
+.signal-light {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #6B6560;
+  border: 2rpx solid transparent;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.machine-lights .signal-light {
+  width: 14rpx;
+  height: 14rpx;
+}
+
+.signal-light.lamp-success,
+.signal-light.on {
+  background: #52B788;
+  border-color: #52B788;
+  box-shadow: 0 0 10rpx rgba(82, 183, 136, 0.55);
+}
+
+.signal-light.lamp-warn,
+.signal-light.warn {
+  background: #E9A23B;
+  border-color: #E9A23B;
+  box-shadow: 0 0 10rpx rgba(233, 162, 59, 0.55);
+}
+
+.signal-light.lamp-error,
+.signal-light.danger {
+  background: #D64045;
+  border-color: #D64045;
+  box-shadow: 0 0 10rpx rgba(214, 64, 69, 0.55);
+}
+
+.signal-light.lamp-info {
+  background: #5B8FB9;
+  border-color: #5B8FB9;
+  box-shadow: 0 0 8rpx rgba(91, 143, 185, 0.4);
+}
+
+.signal-light.lamp-brass {
+  background: #C4A76C;
+  border-color: #C4A76C;
+  box-shadow: 0 0 8rpx rgba(196, 167, 108, 0.45);
+}
+
+.signal-light.lamp-muted {
+  background: #6B6560;
+  border-color: #6B6560;
+  box-shadow: none;
+}
+
+.signal-light.blink {
+  animation: coupon-lamp-success-blink 0.5s infinite;
+}
+
+.signal-light.lamp-warn.blink,
+.signal-light.warn.blink {
+  animation: coupon-lamp-warn-blink 0.75s ease-in-out infinite;
+}
+
+@keyframes coupon-lamp-warn-blink {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; box-shadow: 0 0 12rpx rgba(233, 162, 59, 0.7); }
+}
+
+@keyframes coupon-lamp-success-blink {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; box-shadow: 0 0 12rpx rgba(82, 183, 136, 0.65); }
+}
+
+.printer-slot {
+  width: 72%;
+  max-width: 400rpx;
+  height: 6rpx;
+  background: #1A1814;
+  margin-top: 18rpx;
+  border-radius: 4rpx;
+  box-shadow: 0 0 8rpx rgba(196, 167, 108, 0.55);
+}
+
+.ticket-paper {
+  position: relative;
+  margin-top: -2rpx;
+  width: 78%;
+  max-width: 460rpx;
+  height: 0;
+  background-color: #F2EDE4;
+  background-image:
+    radial-gradient(rgba(196, 167, 108, 0.22) 0.7px, transparent 0.7px);
+  background-size: 12rpx 12rpx;
+  border: 3rpx solid #C4A76C;
+  border-top: none;
+  border-radius: 0 0 12rpx 12rpx;
+  overflow: hidden;
+  z-index: 5;
+  box-shadow: 0 18rpx 48rpx rgba(0, 0, 0, 0.42);
+  transition: height 2.75s cubic-bezier(0.22, 0.82, 0.28, 1);
+  box-sizing: border-box;
+}
+.ticket-paper.printing {
+  height: 500rpx;
+}
+.ticket-paper.settled {
+  background-image:
+    linear-gradient(180deg, rgba(250, 246, 237, 0.35) 0%, transparent 28%),
+    radial-gradient(rgba(139, 111, 71, 0.18) 0.7px, transparent 0.7px);
+  background-size: auto, 11rpx 11rpx;
+  box-shadow:
+    0 20rpx 52rpx rgba(0, 0, 0, 0.46),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.35);
+}
+.ticket-paper.failed {
+  border-color: #D64045;
+  opacity: 0.92;
+}
+
+.tp-mini {
+  padding: 36rpx 40rpx 28rpx;
+  width: 100%;
+  min-height: 500rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.tm-head {
+  text-align: center;
+  margin-bottom: 20rpx;
+  width: 100%;
+  flex-shrink: 0;
+}
+.tm-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 20rpx;
+  color: #8A7530;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.tm-line {
+  width: 48rpx;
+  height: 2rpx;
+  background: #D4BC85;
+  margin: 12rpx auto 8rpx;
+}
+.tm-sub {
+  display: block;
+  font-size: 18rpx;
+  color: #8B6F47;
+  letter-spacing: 0.08em;
+}
+
+.tm-face {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin: 8rpx 0 8rpx;
+  color: #1A1814;
+  flex-shrink: 0;
+}
+.tm-currency {
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-right: 4rpx;
+  color: #8A7530;
+  line-height: 1;
+}
+.tm-amount {
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-size: 76rpx;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: #1A1814;
+}
+
+.tm-name {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #33302C;
+  margin: 4rpx 0 28rpx;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 铜牌信息区：门槛 / 渠道 / 有效期分层 */
+.tm-plate {
+  width: 100%;
+  border: 1rpx solid #E0CFA3;
+  border-radius: 8rpx;
+  background: rgba(250, 246, 237, 0.72);
+  padding: 8rpx 20rpx;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.tm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid rgba(224, 207, 163, 0.55);
+}
+.tm-row:last-child {
+  border-bottom: none;
+}
+.tm-k-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex-shrink: 0;
+}
+.tm-k-wrap .signal-light {
+  width: 10rpx;
+  height: 10rpx;
+  box-shadow: 0 0 4rpx rgba(82, 183, 136, 0.25);
+}
+.tm-k {
+  font-size: 20rpx;
+  color: #A09A90;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+.tm-v {
+  font-size: 22rpx;
+  color: #4A4540;
+  text-align: right;
+  line-height: 1.35;
+  max-width: 68%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-foot {
+  margin-top: auto;
+  padding-top: 28rpx;
+  font-size: 15rpx;
+  color: #A09A90;
+  letter-spacing: 0.16em;
+  flex-shrink: 0;
+}
+
+.ticket-serration {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1rpx;
+  height: 10rpx;
+  background:
+    linear-gradient(135deg, #F2EDE4 33.33%, transparent 33.33%) 0 0 / 14rpx 10rpx,
+    linear-gradient(225deg, #F2EDE4 33.33%, transparent 33.33%) 0 0 / 14rpx 10rpx;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.mint-bottom-area {
+  position: absolute;
+  bottom: calc(56rpx + env(safe-area-inset-bottom));
+  left: 0;
+  width: 100%;
+  padding: 0 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+  box-sizing: border-box;
+}
+
+.mint-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20rpx 28rpx;
+  margin-bottom: 18rpx;
+}
+.mint-legend.done {
+  margin-bottom: 24rpx;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.legend-row .signal-light {
+  width: 12rpx;
+  height: 12rpx;
+}
+.legend-text {
+  font-size: 20rpx;
+  color: #A09A90;
+  letter-spacing: 0.06em;
+}
+
+.mint-tip {
+  font-size: 22rpx;
+  color: #A09A90;
+  letter-spacing: 0.14em;
+  margin-bottom: 16rpx;
+}
+.mint-progress {
+  width: 260rpx;
+  height: 3rpx;
+  background: #33302C;
+  border-radius: 2rpx;
+  overflow: hidden;
+}
+.mp-bar {
+  width: 100%;
+  height: 100%;
+  background: #C4A76C;
+  transform: translateX(-100%);
+  animation: coupon-print-progress 2.75s cubic-bezier(0.22, 0.82, 0.28, 1) forwards;
+}
+
+.mint-actions {
+  width: 100%;
+  max-width: 560rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.mint-actions.show {
+  animation: coupon-mint-actions-in 0.45s ease forwards;
+}
+
+@keyframes coupon-mint-actions-in {
+  from { opacity: 0; transform: translateY(24rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.btn-check {
+  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
+  color: #1A1814;
+  font-weight: 700;
+  font-size: 28rpx;
+  padding: 24rpx 72rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  letter-spacing: 0.04em;
+}
+.btn-check .arrow {
+  font-size: 26rpx;
+}
+.btn-group-sub {
+  margin-top: 32rpx;
+}
+.btn-sub-act {
+  font-size: 26rpx;
+  color: #A09A90;
+  letter-spacing: 0.08em;
+  padding: 16rpx 28rpx;
+}
+
+@keyframes coupon-print-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}

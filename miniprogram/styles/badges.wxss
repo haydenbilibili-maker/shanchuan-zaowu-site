@@ -1,0 +1,128 @@
+/* 角标 / 红点展示策略（Museum Mode）
+ * 顾客消息未读 / 购物车待办 → .badge-solid-danger（实心红数字，克制不刺眼）
+ * 成就「新点亮」/ 券夹数量 → .badge-outline-brass（描边金圆数字）
+ * 员工工作台 / 工作流待办 → .badge-info（信息蓝，与顾客红点区分）
+ * 图鉴进度等 → .meta-progress（金色文案，非圆点）
+ * 规则：0 / 空不渲染；>99 显示 99+；禁 emoji；禁闪烁循环动画。
+ * 尺寸：默认行内 36rpx；.badge-sm 图标角 / Tab 角 28rpx。
+ */
+.badge-solid-danger,
+.badge-outline-brass,
+.badge-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  min-width: 36rpx;
+  height: 36rpx;
+  padding: 0 10rpx;
+  border-radius: 9999px;
+  pointer-events: none;
+  font-size: 20rpx;
+  line-height: 1;
+  font-weight: 600;
+  font-family: var(--font-mono, 'DIN', monospace);
+  letter-spacing: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+.badge-solid-danger text,
+.badge-outline-brass text,
+.badge-info text {
+  font-size: inherit;
+  line-height: 1;
+  font-weight: inherit;
+  font-family: inherit;
+  letter-spacing: 0;
+}
+
+/* 顾客待办：醒目但偏博物柜暖红，避免荧光刺眼 */
+.badge-solid-danger {
+  background: #C55458;
+  border: 1px solid rgba(214, 64, 69, 0.35);
+  color: #FAF6ED;
+}
+.badge-solid-danger text {
+  color: #FAF6ED;
+}
+
+.badge-outline-brass {
+  background: transparent;
+  border: 1px solid var(--brass-400, #C4A76C);
+  color: var(--brass-400, #C4A76C);
+  font-weight: 600;
+}
+.badge-outline-brass text {
+  color: var(--brass-400, #C4A76C);
+}
+
+.badge-info {
+  background: #5A86A8;
+  border: 1px solid rgba(91, 143, 185, 0.4);
+  color: var(--color-text-primary);
+}
+.badge-info text {
+  color: var(--color-text-primary);
+}
+
+.meta-progress {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 36rpx;
+  font-size: 22rpx;
+  line-height: 36rpx;
+  color: var(--brass-400, #C4A76C);
+  font-family: var(--font-mono, 'DIN', monospace);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* 菜单行内：角标与箭头间距统一 */
+.badge-solid-danger.badge-inline,
+.badge-outline-brass.badge-inline,
+.badge-info.badge-inline,
+.meta-progress.badge-inline {
+  margin-right: 12rpx;
+}
+
+/* 图标角 / Tab 角：更小一档 */
+.badge-solid-danger.badge-sm,
+.badge-outline-brass.badge-sm,
+.badge-info.badge-sm {
+  min-width: 28rpx;
+  height: 28rpx;
+  padding: 0 6rpx;
+  font-size: 16rpx;
+  font-weight: 600;
+}
+
+/* 99+ 略加宽，避免挤字 */
+.badge-solid-danger.badge-wide,
+.badge-outline-brass.badge-wide,
+.badge-info.badge-wide {
+  min-width: 44rpx;
+  padding: 0 10rpx;
+}
+.badge-solid-danger.badge-sm.badge-wide,
+.badge-outline-brass.badge-sm.badge-wide,
+.badge-info.badge-sm.badge-wide {
+  min-width: 36rpx;
+  padding: 0 8rpx;
+}
+
+/* 轻量入场：单次、短促，禁循环闪烁 */
+@keyframes badge-enter-in {
+  from {
+    opacity: 0;
+    transform: scale(0.78);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.badge-enter {
+  animation: badge-enter-in 0.22s ease-out both;
+}

@@ -1,0 +1,290 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "collections": [
+    {
+      "name": "live_sessions",
+      "aclOk": true,
+      "verified": true,
+      "observedPermission": {
+        "permission": "PRIVATE",
+        "securityRule": null
+      },
+      "finalIndexes": [
+        {
+          "name": "hostOpenid_1_createTime_-1",
+          "keys": [
+            {
+              "name": "hostOpenid",
+              "direction": "1"
+            },
+            {
+              "name": "createTime",
+              "direction": "-1"
+            }
+          ]
+        },
+        {
+          "name": "_openid_1",
+          "keys": [
+            {
+              "name": "_openid",
+              "direction": "1"
+            }
+          ]
+        },
+        {
+          "name": "_id_",
+          "keys": [
+            {
+              "name": "_id",
+              "direction": "1"
+            }
+          ]
+        },
+        {
+          "name": "status_1_startTime_-1",
+          "keys": [
+            {
+              "name": "status",
+              "direction": "1"
+            },
+            {
+              "name": "startTime",
+              "direction": "-1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "live_messages",
+      "aclOk": true,
+      "verified": true,
+      "observedPermission": {
+        "permission": "PRIVATE",
+        "securityRule": null
+      },
+      "finalIndexes": [
+        {
+          "name": "sessionId_1_ts_-1",
+          "keys": [
+            {
+              "name": "sessionId",
+              "direction": "1"
+            },
+            {
+              "name": "ts",
+              "direction": "-1"
+            }
+          ]
+        },
+        {
+          "name": "_id_",
+          "keys": [
+            {
+              "name": "_id",
+              "direction": "1"
+            }
+          ]
+        },
+        {
+          "name": "_openid_1",
+          "keys": [
+            {
+              "name": "_openid",
+              "direction": "1"
+            }
+          ]
+        },
+        {
+          "name": "sessionId_1_openid_1_ts_-1",
+          "keys": [
+            {
+              "name": "sessionId",
+              "direction": "1"
+            },
+            {
+              "name": "openid",
+              "direction": "1"
+            },
+            {
+              "name": "ts",
+              "direction": "-1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "live_reminders",
+      "aclOk": true,
+      "verified": true,
+      "observedPermission": {
+        "permission": "PRIVATE",
+        "securityRule": null
+      },
+      "finalIndexes": [
+        {
+          "name": "_openid_1",
+          "keys": [
+            {
+              "name": "_openid",
+              "direction": "1"
+            }
+          ]
+        },
+        {
+          "name": "sessionId_1_status_1",
+          "keys": [
+            {
+              "name": "sessionId",
+              "direction": "1"
+            },
+            {
+              "name": "status",
+              "direction": "1"
+            }
+          ]
+        },
+        {
+          "name": "sessionId_1_openid_1_status_1",
+          "keys": [
+            {
+              "name": "sessionId",
+              "direction": "1"
+            },
+            {
+              "name": "openid",
+              "direction": "1"
+            },
+            {
+              "name": "status",
+              "direction": "1"
+            }
+          ]
+        },
+        {
+          "name": "_id_",
+          "keys": [
+            {
+              "name": "_id",
+              "direction": "1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permission": "PRIVATE",
+  "at": "2026-09-10T16:11:24.463Z",
+  "results": [
+    {
+      "name": "live_sessions",
+      "op": "建集合",
+      "result": "exists",
+      "note": "已存在"
+    },
+    {
+      "name": "live_sessions ACL",
+      "op": "设权限",
+      "result": "ok",
+      "note": "PRIVATE"
+    },
+    {
+      "name": "live_sessions.status_1_startTime_-1",
+      "op": "建索引",
+      "result": "exists",
+      "note": "non-unique"
+    },
+    {
+      "name": "live_sessions.hostOpenid_1_createTime_-1",
+      "op": "建索引",
+      "result": "exists",
+      "note": "non-unique"
+    },
+    {
+      "name": "live_sessions",
+      "op": "校验集合",
+      "result": "ok",
+      "note": "indexes=hostOpenid_1_createTime_-1,_openid_1,_id_,status_1_startTime_-1"
+    },
+    {
+      "name": "live_sessions 权限核对",
+      "op": "describe",
+      "result": "ok",
+      "note": "PRIVATE"
+    },
+    {
+      "name": "live_messages",
+      "op": "建集合",
+      "result": "exists",
+      "note": "已存在"
+    },
+    {
+      "name": "live_messages ACL",
+      "op": "设权限",
+      "result": "ok",
+      "note": "PRIVATE"
+    },
+    {
+      "name": "live_messages.sessionId_1_ts_-1",
+      "op": "建索引",
+      "result": "exists",
+      "note": "non-unique"
+    },
+    {
+      "name": "live_messages.sessionId_1_openid_1_ts_-1",
+      "op": "建索引",
+      "result": "exists",
+      "note": "non-unique"
+    },
+    {
+      "name": "live_messages",
+      "op": "校验集合",
+      "result": "ok",
+      "note": "indexes=sessionId_1_ts_-1,_id_,_openid_1,sessionId_1_openid_1_ts_-1"
+    },
+    {
+      "name": "live_messages 权限核对",
+      "op": "describe",
+      "result": "ok",
+      "note": "PRIVATE"
+    },
+    {
+      "name": "live_reminders",
+      "op": "建集合",
+      "result": "created",
+      "note": "createCollectionIfNotExists"
+    },
+    {
+      "name": "live_reminders ACL",
+      "op": "设权限",
+      "result": "ok",
+      "note": "PRIVATE"
+    },
+    {
+      "name": "live_reminders.sessionId_1_openid_1_status_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "live_reminders.sessionId_1_status_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "live_reminders",
+      "op": "校验集合",
+      "result": "ok",
+      "note": "indexes=_openid_1,sessionId_1_status_1,sessionId_1_openid_1_status_1,_id_"
+    },
+    {
+      "name": "live_reminders 权限核对",
+      "op": "describe",
+      "result": "ok",
+      "note": "PRIVATE"
+    }
+  ]
+}

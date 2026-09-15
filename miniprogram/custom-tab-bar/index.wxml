@@ -1,18 +1,26 @@
 <!--custom-tab-bar/index.wxml-->
-<cover-view class="tab-bar">
-  <cover-view 
-    wx:for="{{list}}" 
-    wx:key="index" 
-    class="tab-bar-item {{selected === index ? 'active' : ''}}" 
-    data-path="{{item.pagePath}}" 
-    data-index="{{index}}" 
+<!-- 使用 view/image 而非 cover-*：cover-image 会把透明 PNG 渲成黑剪影，深色底上几乎看不见 -->
+<!-- 不用 wx:if 卸载：避免切换瞬间露出系统白底；用 is-hidden 隐藏 -->
+<view class="tab-bar {{hidden ? 'is-hidden' : ''}}">
+  <view
+    wx:for="{{list}}"
+    wx:key="pagePath"
+    class="tab-bar-item {{selected === index ? 'active' : ''}} {{item.center ? 'center' : ''}}"
+    data-path="{{item.pagePath}}"
+    data-index="{{index}}"
     bindtap="switchTab"
     hover-class="tab-bar-item-hover"
     hover-stay-time="100">
-    
-    <cover-image src="{{selected === index ? item.selectedIconPath : item.iconPath}}" class="tab-icon"></cover-image>
-    <cover-view wx:if="{{index === 3 && showCartBadge}}" class="tab-badge">{{cartBadge}}</cover-view>
-    <cover-view class="tab-text" style="color: {{selected === index ? selectedColor : color}}">{{item.text}}</cover-view>
-    
-  </cover-view>
-</cover-view>
+
+    <view class="tab-icon-wrap {{item.center ? 'center' : ''}}">
+      <image
+        src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
+        class="tab-icon {{item.center ? 'center' : ''}}"
+        mode="aspectFit"
+      ></image>
+      <view wx:if="{{index === 3 && showCartBadge}}" class="badge-solid-danger badge-sm tab-badge {{cartBadgeWide ? 'badge-wide' : ''}} badge-enter">{{cartBadge}}</view>
+    </view>
+    <view class="tab-text" style="color: {{selected === index ? selectedColor : color}}">{{item.text}}</view>
+
+  </view>
+</view>

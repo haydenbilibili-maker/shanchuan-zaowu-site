@@ -1,0 +1,308 @@
+<!--subpackages/feature/custom/pet/index.wxml-->
+<view class="page-pet {{currentStep === 1 ? 'step-consent' : ''}}">
+  <view class="grain-overlay"></view>
+
+  <view class="sticky-header">
+    <view class="hero-head">
+      <view class="nav-row" style="padding-right: {{navPaddingRight}}px;">
+        <view class="nav-brand">
+          <text class="nav-title">伴宠记忆</text>
+          <text class="nav-sub">PET MEMORIAL</text>
+        </view>
+      </view>
+
+      <view class="nav-motto">
+        <text class="motto-primary">为已逝的伙伴留一件可触摸的记忆</text>
+        <text class="motto-secondary">提交意向后专员评估 · 无需立即支付</text>
+      </view>
+    </view>
+
+    <view class="header-rail-full">
+      <view class="atelier-rail">
+        <view
+          class="rail-col {{currentStep > item.id ? 'past' : ''}} {{currentStep === item.id ? 'current' : ''}}"
+          wx:for="{{steps}}"
+          wx:key="id"
+        >
+          <view class="rail-top">
+            <view class="rail-dot {{currentStep >= item.id ? 'filled' : ''}} {{currentStep === item.id ? 'active' : ''}}">
+              <text class="rail-num">{{item.id}}</text>
+            </view>
+            <view class="rail-line {{currentStep > item.id ? 'filled' : ''}}" wx:if="{{index < steps.length - 1}}"></view>
+          </view>
+          <text class="rail-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="main-scroll"
+    scroll-top="{{scrollTop}}"
+    scroll-with-animation
+    style="top: {{headerHeight}}px;"
+  >
+    <view class="loading-wrap" wx:if="{{loading || flagChecking}}"><text>{{flagChecking ? '确认开放状态…' : '加载配置…'}}</text></view>
+
+    <block wx:else>
+      <view class="panel-lead" wx:if="{{currentStepMeta}}">
+        <view class="panel-lead-head">
+          <text class="panel-title">{{currentStepMeta.title}}</text>
+          <text class="panel-index">{{currentStep}} / 5</text>
+        </view>
+        <text class="panel-desc">{{currentStepMeta.desc}}</text>
+      </view>
+
+      <!-- Step 1 知情确认 -->
+      <view class="step-panel step-enter" wx:if="{{currentStep === 1}}">
+        <view class="notice-plates">
+          <view class="notice-plate" wx:for="{{serviceNoticePlates}}" wx:key="id">
+            <text class="notice-plate-title">{{item.title}}</text>
+            <text class="notice-plate-body">{{item.body}}</text>
+          </view>
+        </view>
+
+        <view class="craft-preview" wx:if="{{crafts.length}}">
+          <text class="section-label">可选工艺（首批 · 预览）</text>
+          <text class="section-hint">正式选择在第 3 步，此处仅作了解</text>
+          <view class="craft-chip preview" wx:for="{{crafts}}" wx:key="craftId">
+            <text class="craft-name">{{item.name}}</text>
+            <text class="craft-weeks">{{item.estimatedWeeks}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Step 2 档案 -->
+      <view class="step-panel step-enter" wx:if="{{currentStep === 2}}">
+        <view class="form-group">
+          <text class="form-label">名字</text>
+          <input class="form-input" placeholder="它的小名" placeholder-class="form-ph" value="{{petName}}" bindinput="onInput" data-field="petName"/>
+        </view>
+        <view class="form-group">
+          <text class="form-label">物种</text>
+          <view class="option-pills">
+            <view
+              class="option-pill {{species === item.id ? 'active' : ''}}"
+              hover-class="option-pill-press"
+              wx:for="{{speciesOptions}}"
+              wx:key="id"
+              bindtap="selectOption"
+              data-field="species"
+              data-value="{{item.id}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+        <view class="form-group">
+          <text class="form-label">品种 / 毛色</text>
+          <input class="form-input" placeholder="如：英短 / 蓝白" placeholder-class="form-ph" value="{{breed}}" bindinput="onInput" data-field="breed"/>
+        </view>
+        <view class="form-group">
+          <text class="form-label">体量区间</text>
+          <view class="option-pills wrap">
+            <view
+              class="option-pill {{weightRange === item.id ? 'active' : ''}}"
+              hover-class="option-pill-press"
+              wx:for="{{weightRanges}}"
+              wx:key="id"
+              bindtap="selectOption"
+              data-field="weightRange"
+              data-value="{{item.id}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+        <view class="form-group">
+          <text class="form-label">离世日期</text>
+          <picker mode="date" value="{{passedAt}}" end="{{today}}" bindchange="onDateChange">
+            <view class="form-picker {{passedAt ? '' : 'is-placeholder'}}">{{passedAt || '请选择日期'}}</view>
+          </picker>
+        </view>
+        <view class="form-group">
+          <text class="form-label">当前存放</text>
+          <view class="option-pills">
+            <view
+              class="option-pill {{storage === item.id ? 'active' : ''}}"
+              hover-class="option-pill-press"
+              wx:for="{{storageOptions}}"
+              wx:key="id"
+              bindtap="selectOption"
+              data-field="storage"
+              data-value="{{item.id}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+        <view class="form-group">
+          <text class="form-label">参考照片（最多 3 张）</text>
+          <text class="form-hint">清晰正面或侧面照，方便标本师评估体态</text>
+          <view class="photo-row">
+            <view class="photo-item" wx:for="{{photos}}" wx:key="*this">
+              <image src="{{item}}" mode="aspectFill"></image>
+              <view class="photo-del" hover-class="photo-del-press" bindtap="removePhoto" data-idx="{{index}}">
+                <text class="photo-del-x">×</text>
+              </view>
+            </view>
+            <view class="photo-add" hover-class="photo-add-press" bindtap="choosePhotos" wx:if="{{photos.length < 3}}">
+              <text class="photo-add-plus">+</text>
+              <text class="photo-add-label">添加</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Step 3 工艺 -->
+      <view class="step-panel step-enter" wx:if="{{currentStep === 3}}">
+        <view
+          class="craft-card {{craftId === item.craftId ? 'active' : ''}}"
+          hover-class="card-press"
+          wx:for="{{crafts}}"
+          wx:key="craftId"
+          bindtap="selectOption"
+          data-field="craftId"
+          data-value="{{item.craftId}}"
+        >
+          <view class="craft-card-head">
+            <text class="craft-card-name">{{item.name}}</text>
+            <text class="craft-card-check" wx:if="{{craftId === item.craftId}}">已选</text>
+          </view>
+          <text class="craft-card-desc">{{item.desc}}</text>
+          <text class="craft-card-weeks">{{item.estimatedWeeks}}</text>
+        </view>
+        <view class="form-group" wx:if="{{craftId === 'taxidermy' || craftId === 'skeletal'}}">
+          <text class="form-label">姿态意向</text>
+          <view class="option-pills">
+            <view
+              class="option-pill {{pose === item.id ? 'active' : ''}}"
+              hover-class="option-pill-press"
+              wx:for="{{poseOptions}}"
+              wx:key="id"
+              bindtap="selectOption"
+              data-field="pose"
+              data-value="{{item.id}}"
+            >{{item.label}}</view>
+          </view>
+          <textarea
+            wx:if="{{pose === 'custom'}}"
+            class="form-textarea"
+            placeholder="描述期望姿态（选填）"
+            placeholder-class="form-ph"
+            value="{{poseNote}}"
+            bindinput="onInput"
+            data-field="poseNote"
+            maxlength="120"
+          ></textarea>
+        </view>
+        <view class="form-group">
+          <text class="form-label">纪念牌刻字（选填）</text>
+          <input class="form-input" placeholder="最多 40 字" placeholder-class="form-ph" maxlength="40" value="{{plaqueText}}" bindinput="onInput" data-field="plaqueText"/>
+        </view>
+      </view>
+
+      <!-- Step 4 交接 -->
+      <view class="step-panel step-enter" wx:if="{{currentStep === 4}}">
+        <view
+          class="intake-card {{intakeMethod === item.id ? 'active' : ''}}"
+          hover-class="card-press"
+          wx:for="{{intakeMethods}}"
+          wx:key="id"
+          bindtap="selectOption"
+          data-field="intakeMethod"
+          data-value="{{item.id}}"
+        >
+          <view class="intake-card-head">
+            <text class="intake-name">{{item.label}}</text>
+            <text class="intake-check" wx:if="{{intakeMethod === item.id}}">已选</text>
+          </view>
+          <text class="intake-desc">{{item.desc}}</text>
+        </view>
+        <view class="form-group">
+          <text class="form-label">期望交接日期</text>
+          <picker mode="date" value="{{preferredDate}}" start="{{today}}" bindchange="onPreferredDateChange">
+            <view class="form-picker {{preferredDate ? '' : 'is-placeholder'}}">{{preferredDate || '请选择日期'}}</view>
+          </picker>
+        </view>
+        <view class="form-group" wx:if="{{intakeMethod === 'pickup'}}">
+          <text class="form-label">收运地址说明</text>
+          <textarea class="form-textarea" placeholder="区、街道、联系人可送达说明" placeholder-class="form-ph" value="{{addressNote}}" bindinput="onInput" data-field="addressNote" maxlength="200"></textarea>
+        </view>
+      </view>
+
+      <!-- Step 5 提交 -->
+      <view class="step-panel step-enter" wx:if="{{currentStep === 5}}">
+        <view class="preview-plate" wx:if="{{previewLines.length}}">
+          <text class="preview-plate-title">意向摘要</text>
+          <view class="preview-row" wx:for="{{previewLines}}" wx:key="label">
+            <text class="preview-label">{{item.label}}</text>
+            <text class="preview-value">{{item.value}}</text>
+          </view>
+        </view>
+        <view class="form-group">
+          <text class="form-label">联系人</text>
+          <input class="form-input" placeholder="怎么称呼您" placeholder-class="form-ph" value="{{contactName}}" bindinput="onInput" data-field="contactName"/>
+        </view>
+        <view class="form-group">
+          <text class="form-label">手机号</text>
+          <input class="form-input" type="number" maxlength="11" placeholder="便于专员联系" placeholder-class="form-ph" value="{{contactPhone}}" bindinput="onInput" data-field="contactPhone"/>
+        </view>
+        <view class="form-group">
+          <text class="form-label">与伴宠的关系</text>
+          <view class="option-pills">
+            <view
+              class="option-pill {{relation === item.id ? 'active' : ''}}"
+              hover-class="option-pill-press"
+              wx:for="{{relationOptions}}"
+              wx:key="id"
+              bindtap="selectOption"
+              data-field="relation"
+              data-value="{{item.id}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+        <view class="form-group">
+          <text class="form-label">补充说明</text>
+          <textarea class="form-textarea" placeholder="特殊要求或想问标本师的话" placeholder-class="form-ph" value="{{contactNote}}" bindinput="onInput" data-field="contactNote" maxlength="500"></textarea>
+        </view>
+        <text class="submit-tip">提交后专员将在 1–2 个工作日内与您联系，无需立即支付。</text>
+      </view>
+    </block>
+    <view class="scroll-pad"></view>
+  </scroll-view>
+
+  <view class="footer-bar safe-area {{currentStep === 1 ? 'has-consent' : ''}}" wx:if="{{!loading && !flagChecking}}">
+    <checkbox-group wx:if="{{currentStep === 1}}" bindchange="onConsentCheckChange">
+      <label class="consent-dock {{consentChecked ? 'is-checked' : ''}}" hover-class="consent-dock-press">
+        <checkbox
+          class="consent-checkbox"
+          value="agreed"
+          checked="{{consentChecked}}"
+          color="#C4A76C"
+        />
+        <view class="consent-copy">
+          <text class="consent-text">我已阅读并理解上述说明</text>
+          <text class="consent-hint">知晓工艺效果因个体差异可能有所不同</text>
+        </view>
+      </label>
+    </checkbox-group>
+
+    <view class="footer-meta">
+      <text class="footer-gate" wx:if="{{currentStep === 1 && !consentChecked}}">勾选后即可继续</text>
+      <text class="footer-gate is-ready" wx:elif="{{currentStep === 1 && consentChecked}}">已确认</text>
+      <view class="footer-meta-spacer" wx:else></view>
+      <text
+        class="footer-support"
+        hover-class="footer-support-press"
+        bindtap="goToSupport"
+      >联系专员</text>
+    </view>
+    <view class="footer-actions">
+      <button class="btn-ghost" hover-class="btn-ghost-press" bindtap="goPrev" wx:if="{{currentStep > 1}}">上一步</button>
+      <button
+        class="btn-primary {{currentStep === 1 && !consentChecked ? 'btn-disabled' : ''}}"
+        hover-class="btn-primary-press"
+        bindtap="goNext"
+        disabled="{{currentStep === 1 && !consentChecked}}"
+        wx:if="{{currentStep < 5}}"
+      >下一步</button>
+      <button class="btn-primary" hover-class="btn-primary-press" bindtap="submitOrder" loading="{{submitting}}" disabled="{{submitting}}" wx:if="{{currentStep === 5}}">提交意向</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,102 @@
+<view class="page">
+  <view class="head">
+    <text class="en">FIELD NOTES</text>
+    <text class="cn">采集日志</text>
+    <text class="sub">鉴定记录可回看百科；采集笔记对应图鉴点亮与野外偶遇。</text>
+    <text class="back-atlas" bindtap="goAtlas">返回山海图鉴</text>
+  </view>
+
+  <view class="modes">
+    <view class="mode {{tab === 'identify' ? 'on' : ''}}" bindtap="onMode" data-tab="identify" hover-class="mode-press" hover-stay-time="80">鉴定记录</view>
+    <view class="mode {{tab === 'notes' ? 'on' : ''}}" bindtap="onMode" data-tab="notes" hover-class="mode-press" hover-stay-time="80">采集笔记</view>
+  </view>
+
+  <view class="loading" wx:if="{{loading}}">
+    <view class="spinner"></view>
+    <text>装订笔记…</text>
+  </view>
+
+  <block wx:elif="{{tab === 'identify'}}">
+    <view class="stats" wx:if="{{stats.total}}">
+      <view class="stat-box">
+        <text class="stat-num">{{stats.total}}</text>
+        <text class="stat-lbl">鉴定记录</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-box">
+        <text class="stat-num">{{stats.bookmarked}}</text>
+        <text class="stat-lbl">已入图鉴</text>
+      </view>
+    </view>
+
+    <scroll-view scroll-x class="cats" enable-flex show-scrollbar="{{false}}" wx:if="{{stats.total}}">
+      <view class="cats-inner">
+        <view
+          class="cat {{catFilter === item ? 'on' : ''}}"
+          wx:for="{{catTabs}}"
+          wx:key="*this"
+          bindtap="onCat"
+          data-cat="{{item}}"
+        >{{item}}</view>
+      </view>
+    </scroll-view>
+
+    <view class="empty" wx:if="{{recordsEmpty}}">
+      <text class="empty-t">{{stats.total ? '这一类还没有鉴定' : '还没有鉴定记录'}}</text>
+      <text class="empty-s">拍下一件藏品，百科会写在这里。点开即可读详情。</text>
+      <button class="btn-brass" bindtap="goIdentify" wx:if="{{showAiIdentify}}">去拍照鉴定</button>
+    </view>
+
+    <view class="record-list" wx:else>
+      <view
+        class="record {{item.wild ? 'wild' : ''}}"
+        wx:for="{{filtered}}"
+        wx:key="id"
+        bindtap="onOpenRecord"
+        data-id="{{item.id}}"
+        hover-class="record-press"
+        hover-stay-time="80"
+      >
+        <view class="thumb">
+          <image wx:if="{{item.imageUrl}}" class="thumb-img" src="{{item.imageUrl}}" mode="aspectFill" />
+          <view wx:else class="thumb-empty"></view>
+        </view>
+        <view class="record-body">
+          <view class="record-top">
+            <text class="record-name">{{item.nameZh || '—'}}</text>
+            <text class="record-mark" wx:if="{{item.bookmarked}}">已入图鉴</text>
+          </view>
+          <text class="record-latin">{{item.nameLatin || '—'}}</text>
+          <text class="record-meta">{{item.category || '—'}} · {{item.confidenceText || '—'}} · {{item.timeText || '—'}}</text>
+          <text class="record-tax" wx:if="{{item.taxLine}}">{{item.taxLine}}</text>
+          <text class="record-excerpt" wx:if="{{item.excerpt}}">{{item.excerpt}}</text>
+          <text class="record-fact" wx:if="{{item.fact}}">{{item.fact}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="empty" wx:if="{{logsEmpty}}">
+      <text class="empty-t">还没有一笔采集</text>
+      <text class="empty-s">去馆里走走，或拍下一件藏品。笔记会自己写。</text>
+      <button class="btn-brass" bindtap="goIdentify" wx:if="{{showAiIdentify}}">去拍照采集</button>
+    </view>
+    <view class="list" wx:else>
+      <view
+        class="row {{item.wild ? 'wild' : ''}}"
+        wx:for="{{logs}}"
+        wx:key="id"
+        bindtap="onOpenLog"
+        data-record-id="{{item.recordId}}"
+        data-species-id="{{item.speciesId}}"
+        hover-class="row-press"
+        hover-stay-time="80"
+      >
+        <text class="row-title">{{item.title || '—'}}</text>
+        <text class="row-meta">{{item.methodLabel || '—'}}{{item.place ? ' · ' + item.place : ''}}</text>
+        <text class="row-time">{{item.timeText || '—'}}</text>
+      </view>
+    </view>
+  </block>
+</view>

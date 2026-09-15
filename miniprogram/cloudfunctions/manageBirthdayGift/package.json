@@ -1,0 +1,9 @@
+{
+  "name": "manageBirthdayGift",
+  "version": "1.0.0",
+  "description": "生日礼包读写（member_birthday_gift）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -1,1 +1,7 @@
-{ "component": true }
+{
+  "component": true,
+  "usingComponents": {
+    "protected-badge": "/components/ProtectedBadge/index",
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+  }
+}

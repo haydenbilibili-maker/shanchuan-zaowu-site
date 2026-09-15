@@ -1,0 +1,9 @@
+{
+  "name": "manageStoredValue",
+  "version": "1.0.0",
+  "description": "会员储值：账户/流水/充值档位/微信支付入账",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

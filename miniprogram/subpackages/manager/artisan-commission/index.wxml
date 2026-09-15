@@ -1,0 +1,415 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">加载中…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">ARTISAN COMMISSION</text>
+      <text class="cn">标本师提成</text>
+    </view>
+    <text class="header-note">多规则匹配 · 默认蝶翅画 10% · 仅超管可改规则</text>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{tab==='rule'?'on':''}}" data-tab="rule" bindtap="setTab">规则配置</view>
+    <view class="tab {{tab==='ledger'?'on':''}}" data-tab="ledger" bindtap="setTab">账目明细</view>
+  </view>
+
+  <!-- ========== 规则列表 ========== -->
+  <block wx:if="{{tab==='rule' && !editing}}">
+    <view class="list-intro">
+      <text class="list-intro-main">{{enabledCount}} 条启用中</text>
+      <text class="list-intro-sub">{{matchPriorityNote}}</text>
+    </view>
+
+    <view class="empty" wx:if="{{loading}}">加载规则…</view>
+    <view class="empty empty-friendly" wx:if="{{!loading && !rules.length}}">
+      <text class="empty-title">暂无提成规则</text>
+      <text class="empty-desc">可新增规则，或恢复默认蝶翅画 10%</text>
+    </view>
+
+    <view class="rule-card" wx:for="{{rules}}" wx:key="_id">
+      <view class="rule-card-top">
+        <view class="rule-card-titles">
+          <view class="rule-card-name-row">
+            <text class="rule-card-name">{{item.name}}</text>
+            <text class="tier-tag" wx:if="{{item.isDefault}}">默认</text>
+            <text class="tier-tag muted" wx:else>{{item.tierHint}}</text>
+          </view>
+          <text class="rule-card-scope">{{item.scopeSummary}}</text>
+        </view>
+        <text class="rule-card-rate">{{item.ratePercentText}}</text>
+      </view>
+      <view class="rule-card-meta">
+        <text class="status-tag {{item.enabled?'on':'off'}}">{{item.statusLabel}}</text>
+        <text class="rule-card-pri">优先级 {{item.priority}}</text>
+      </view>
+      <view class="rule-card-actions">
+        <text class="act" data-id="{{item._id}}" bindtap="openEdit">编辑</text>
+        <text
+          class="act"
+          data-id="{{item._id}}"
+          data-enabled="{{item.enabled}}"
+          bindtap="toggleRuleFromList"
+        >{{item.enabled ? '停用' : '启用'}}</text>
+        <text
+          class="act danger"
+          wx:if="{{!item.isDefault}}"
+          data-id="{{item._id}}"
+          data-default="{{item.isDefault}}"
+          bindtap="archiveRule"
+        >归档</text>
+      </view>
+    </view>
+
+    <view class="workbench-page-foot-spacer"></view>
+    <view class="workbench-footer-bar">
+      <view class="workbench-btn-primary" bindtap="openCreate">新增规则</view>
+      <view class="workbench-footer-secondary">
+        <view class="workbench-btn-outline" bindtap="resetDefaults">恢复默认规则</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ========== 规则编辑 ========== -->
+  <block wx:if="{{tab==='rule' && editing}}">
+    <view class="editor-bar">
+      <text class="editor-back" bindtap="closeEditor">← 返回列表</text>
+      <text class="editor-title">{{editDocId ? '编辑规则' : '新建规则'}}</text>
+    </view>
+
+    <view class="rule-status">
+      <view class="rule-status-main">
+        <view class="status-tag {{form.enabled?'on':'off'}}">{{form.enabled ? '本条已启用' : '本条已停用'}}</view>
+        <text class="rule-status-rate">{{form.ratePercent}}%</text>
+      </view>
+      <switch checked="{{form.enabled}}" color="#C4A76C" data-field="enabled" bindchange="onSwitch" />
+    </view>
+
+    <view class="rule-block">
+      <view class="block-head">
+        <text class="block-title">分成比例</text>
+        <text class="block-hint">默认 10%</text>
+      </view>
+      <view class="rate-row">
+        <view class="rate-btn" data-delta="-1" bindtap="nudgeRate">−</view>
+        <view class="rate-display">
+          <input
+            class="rate-input"
+            type="digit"
+            value="{{form.ratePercent}}"
+            data-field="ratePercent"
+            bindinput="onNumber"
+          />
+          <text class="rate-unit">%</text>
+        </view>
+        <view class="rate-btn" data-delta="1" bindtap="nudgeRate">+</view>
+      </view>
+      <view class="preset-row">
+        <view
+          class="preset {{form.ratePercent==item?'on':''}}"
+          wx:for="{{ratePresets}}"
+          wx:key="*this"
+          data-value="{{item}}"
+          bindtap="setRatePreset"
+        >{{item}}%</view>
+      </view>
+      <text class="block-note">销售额口径：藏品实付分摊（会员折+礼券后，不含运费与定制加价）</text>
+    </view>
+
+    <view class="rule-block">
+      <view class="block-head">
+        <text class="block-title">规则名称</text>
+      </view>
+      <input class="input full" value="{{form.name}}" data-field="name" bindinput="onText" placeholder="如：熙来寄售销售提成" />
+    </view>
+
+    <view class="rule-block">
+      <view class="block-head">
+        <text class="block-title">优先级</text>
+        <text class="block-hint">同档内数值越大越优先</text>
+      </view>
+      <input
+        class="input full"
+        type="number"
+        value="{{form.priority}}"
+        data-field="priority"
+        bindinput="onNumber"
+        placeholder="100"
+      />
+      <view class="form-row" style="margin-top: 16rpx;">
+        <text class="form-label">设为全局默认规则</text>
+        <switch checked="{{form.isDefault}}" color="#C4A76C" data-field="isDefault" bindchange="onSwitch" />
+      </view>
+      <text class="block-note">匹配顺序：藏品级 → 类目/工艺/标本师级 → 默认。默认规则须保留范围，禁止空范围全站计提。</text>
+    </view>
+
+    <view class="rule-block">
+      <view class="block-head">
+        <text class="block-title">适用工艺</text>
+        <text class="block-hint">可多选</text>
+      </view>
+      <view class="chip-row">
+        <view
+          class="chip {{item.selected?'on':''}}"
+          wx:for="{{craftTypeOptions}}"
+          wx:key="value"
+          data-value="{{item.value}}"
+          bindtap="toggleCraft"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="rule-block" wx:if="{{selectedCategories.length || selectedProducts.length || selectedArtisans.length}}">
+      <view class="block-head">
+        <text class="block-title">已选范围</text>
+      </view>
+      <view class="sel-group" wx:if="{{selectedArtisans.length}}">
+        <text class="sel-label">标本师</text>
+        <view class="tag-row">
+          <view class="sel-tag" wx:for="{{selectedArtisans}}" wx:key="_id">
+            <text class="sel-tag-text">{{item.name}}</text>
+            <text class="sel-tag-x" data-id="{{item._id}}" bindtap="removeRuleArtisan">×</text>
+          </view>
+        </view>
+      </view>
+      <view class="sel-group" wx:if="{{selectedCategories.length}}">
+        <text class="sel-label">类目</text>
+        <view class="tag-row">
+          <view class="sel-tag" wx:for="{{selectedCategories}}" wx:key="_id">
+            <text class="sel-tag-text">{{item.title}}</text>
+            <text class="sel-tag-x" data-id="{{item._id}}" bindtap="removeCategory">×</text>
+          </view>
+        </view>
+      </view>
+      <view class="sel-group" wx:if="{{selectedProducts.length}}">
+        <text class="sel-label">藏品</text>
+        <view class="tag-row">
+          <view class="sel-tag" wx:for="{{selectedProducts}}" wx:key="_id">
+            <text class="sel-tag-text">{{item.title}}</text>
+            <text class="sel-tag-x" data-id="{{item._id}}" bindtap="removeProduct">×</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="rule-block">
+      <view class="block-head">
+        <text class="block-title">限定标本师</text>
+        <text class="block-hint">可选</text>
+      </view>
+      <view class="btn-ghost filter-btn" bindtap="openArtisanPickerForRule">选择标本师</view>
+    </view>
+
+    <view class="rule-block">
+      <view class="block-head">
+        <text class="block-title">添加类目</text>
+        <text class="block-hint">可选</text>
+      </view>
+      <view class="search-row">
+        <input
+          class="input flex"
+          value="{{categoryKeyword}}"
+          bindinput="onCategoryKeyword"
+          bindconfirm="searchCategories"
+          placeholder="搜索类目名称"
+          confirm-type="search"
+        />
+        <view class="search-btn" bindtap="searchCategories">搜索</view>
+      </view>
+      <view class="hit-list" wx:if="{{categoryHits.length}}">
+        <view class="hit-row" wx:for="{{categoryHits}}" wx:key="_id">
+          <view class="hit-main">
+            <text class="hit-title">{{item.title}}</text>
+          </view>
+          <text
+            class="hit-action {{item.added?'dim':''}}"
+            data-id="{{item._id}}"
+            data-title="{{item.title}}"
+            data-added="{{item.added}}"
+            bindtap="addCategory"
+          >{{item.added ? '已添加' : '添加'}}</text>
+        </view>
+      </view>
+      <view class="empty-mini" wx:if="{{!categoryHits.length && categoryKeyword}}">未找到匹配类目</view>
+    </view>
+
+    <view class="rule-block">
+      <view class="block-head">
+        <text class="block-title">添加藏品 / SKU</text>
+        <text class="block-hint">按标题搜索</text>
+      </view>
+      <view class="search-row">
+        <input
+          class="input flex"
+          value="{{productKeyword}}"
+          bindinput="onProductKeyword"
+          bindconfirm="searchProducts"
+          placeholder="搜索藏品标题"
+          confirm-type="search"
+        />
+        <view class="search-btn" bindtap="searchProducts">{{productSearching ? '…' : '搜索'}}</view>
+      </view>
+      <view class="hit-list" wx:if="{{productHits.length}}">
+        <view class="hit-row" wx:for="{{productHits}}" wx:key="_id">
+          <view class="hit-main">
+            <text class="hit-title">{{item.title}}</text>
+            <text class="hit-meta" wx:if="{{item.metaText}}">{{item.metaText}}</text>
+          </view>
+          <text
+            class="hit-action {{item.added?'dim':''}}"
+            data-id="{{item._id}}"
+            data-title="{{item.title}}"
+            data-added="{{item.added}}"
+            bindtap="addProduct"
+          >{{item.added ? '已添加' : '添加'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="advanced-toggle" bindtap="toggleAdvancedIds">
+      <text class="advanced-label">{{showAdvancedIds ? '收起高级选项' : '高级：粘贴类目 / 藏品 ID'}}</text>
+      <text class="advanced-arrow">{{showAdvancedIds ? '▴' : '▾'}}</text>
+    </view>
+    <view class="rule-block advanced" wx:if="{{showAdvancedIds}}">
+      <view class="field-block first">
+        <text class="form-label block">类目 ID</text>
+        <input
+          class="input full"
+          value="{{form.categoryIdsText}}"
+          bindinput="onCategoryIdsText"
+          placeholder="多个用逗号分隔"
+        />
+      </view>
+      <view class="field-block">
+        <text class="form-label block">藏品 ID</text>
+        <input
+          class="input full"
+          value="{{form.productIdsText}}"
+          bindinput="onProductIdsText"
+          placeholder="多个用逗号分隔"
+        />
+      </view>
+    </view>
+
+    <view class="workbench-page-foot-spacer"></view>
+    <view class="workbench-footer-bar">
+      <view class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveRule">
+        {{saving ? '保存中…' : '保存规则'}}
+      </view>
+      <view class="workbench-footer-secondary">
+        <view class="workbench-btn-outline" bindtap="closeEditor">取消</view>
+        <view
+          class="workbench-btn-outline danger-outline"
+          wx:if="{{editDocId && !form.isDefault}}"
+          data-id="{{editDocId}}"
+          data-default="{{form.isDefault}}"
+          bindtap="archiveRule"
+        >归档</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ========== 账目明细 ========== -->
+  <block wx:if="{{tab==='ledger'}}">
+    <view class="summary-card">
+      <text class="summary-label">净提成（筛选范围内）</text>
+      <view class="summary-value">¥{{ledgerSummary.netAmount}}</view>
+      <view class="summary-sub">入账 ¥{{ledgerSummary.earnAmount}} · 冲正 ¥{{ledgerSummary.reverseAmount}} · {{ledgerSummary.earnCount}} 笔</view>
+    </view>
+
+    <view class="filter-card">
+      <view class="filter-field" bindtap="openArtisanSheet">
+        <text class="filter-label">标本师</text>
+        <text class="filter-value {{filterArtisanName?'':'ph'}}">{{filterArtisanName || '全部标本师'}}</text>
+        <text class="filter-arrow">选择</text>
+      </view>
+
+      <picker mode="selector" range="{{typeLabels}}" value="{{filterTypeIndex}}" bindchange="onTypePick">
+        <view class="filter-field">
+          <text class="filter-label">类型</text>
+          <text class="filter-value">{{filterTypeLabel}}</text>
+          <text class="filter-arrow">切换</text>
+        </view>
+      </picker>
+
+      <view class="filter-dates">
+        <picker mode="date" value="{{filterFrom}}" data-field="filterFrom" bindchange="onDatePick">
+          <view class="filter-field half">
+            <text class="filter-label">起始</text>
+            <text class="filter-value {{filterFrom?'':'ph'}}">{{filterFrom || '选择日期'}}</text>
+          </view>
+        </picker>
+        <picker mode="date" value="{{filterTo}}" data-field="filterTo" bindchange="onDatePick">
+          <view class="filter-field half">
+            <text class="filter-label">结束</text>
+            <text class="filter-value {{filterTo?'':'ph'}}">{{filterTo || '选择日期'}}</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="filter-clear-row" wx:if="{{filterArtisanId || filterType || filterFrom || filterTo}}">
+        <text class="filter-clear" wx:if="{{filterArtisanId}}" bindtap="clearArtisan">清除标本师</text>
+        <text class="filter-clear" wx:if="{{filterFrom}}" data-field="filterFrom" bindtap="clearDate">清除起始</text>
+        <text class="filter-clear" wx:if="{{filterTo}}" data-field="filterTo" bindtap="clearDate">清除结束</text>
+      </view>
+
+      <view class="btn-ghost filter-btn" bindtap="loadLedger">筛选查询</view>
+    </view>
+
+    <view class="empty" wx:if="{{ledgerLoading}}">加载账目…</view>
+    <view class="empty empty-friendly" wx:if="{{!ledgerLoading && !ledger.length}}">
+      <text class="empty-title">暂无提成流水</text>
+      <text class="empty-desc">可调整上方筛选后重试；订单履约入账后会出现在此</text>
+    </view>
+    <view class="ledger-card" wx:for="{{ledger}}" wx:key="_id">
+      <view class="ledger-top">
+        <text class="ledger-type {{item.type==='reverse'?'reverse':''}}">{{item.typeLabel}}</text>
+        <text class="ledger-amt">{{item.type==='reverse'?'-':'+'}}¥{{item.amountAbs}}</text>
+      </view>
+      <view class="ledger-title">{{item.productTitle || '藏品'}}</view>
+      <view class="ledger-meta">
+        {{item.artisanName || item.artisanId || '—'}} · 销售额 ¥{{item.salesAmount}} · {{item.ratePercent}}%
+      </view>
+      <view class="ledger-meta" wx:if="{{item.ruleName}}">规则 {{item.ruleName}}</view>
+      <view class="ledger-meta">单号 {{item.orderNo || item.orderId}} · {{item.createTimeText}}</view>
+    </view>
+  </block>
+</view>
+
+<!-- 标本师选择面板 -->
+<view class="sheet-mask" wx:if="{{showArtisanSheet}}" bindtap="closeArtisanSheet"></view>
+<view class="sheet {{showArtisanSheet?'on':''}}" wx:if="{{showArtisanSheet}}">
+  <view class="sheet-hd">
+    <text class="sheet-title">{{artisanSheetMode==='rule' ? '限定标本师' : '选择标本师'}}</text>
+    <text class="sheet-close" bindtap="closeArtisanSheet">关闭</text>
+  </view>
+  <view class="sheet-search">
+    <input
+      class="input full"
+      value="{{artisanKeyword}}"
+      bindinput="onArtisanKeyword"
+      placeholder="搜索姓名"
+      confirm-type="search"
+    />
+  </view>
+  <scroll-view scroll-y class="sheet-list">
+    <view
+      class="sheet-item {{!filterArtisanId?'on':''}}"
+      wx:if="{{artisanSheetMode!=='rule'}}"
+      data-id=""
+      data-name=""
+      bindtap="selectArtisan"
+    >
+      全部标本师
+    </view>
+    <view
+      class="sheet-item {{artisanSheetMode==='filter' && filterArtisanId===item._id?'on':''}}"
+      wx:for="{{artisanFiltered}}"
+      wx:key="_id"
+      data-id="{{item._id}}"
+      data-name="{{item.name}}"
+      bindtap="selectArtisan"
+    >{{item.name}}</view>
+    <view class="empty-mini" wx:if="{{!artisanFiltered.length}}">未找到匹配标本师</view>
+  </scroll-view>
+</view>

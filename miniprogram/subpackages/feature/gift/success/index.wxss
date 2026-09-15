@@ -1,0 +1,585 @@
+page { background: #1A1814; color: #fff; }
+.page {
+  min-height: 100vh;
+  padding: 48rpx 40rpx calc(64rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.checking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.muted { color: #A09A90; font-size: 26rpx; text-align: center; line-height: 1.55; }
+.state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+.state-title {
+  font-size: 30rpx;
+  color: #FFFFFF;
+}
+.state-seal {
+  width: 48rpx;
+  height: 48rpx;
+  border: 2px solid rgba(196, 167, 108, 0.45);
+  border-radius: 50%;
+  animation: seal-breathe 2.4s ease-in-out infinite;
+}
+
+/* —— 封缄信封（标本纸 · 封舌 · 蜡封） —— */
+.envelope {
+  position: relative;
+  margin-bottom: 40rpx;
+  border-radius: 16rpx;
+  overflow: visible;
+  filter: drop-shadow(0 10rpx 28rpx rgba(26, 24, 20, 0.55));
+}
+.envelope-cast {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -10rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(26, 24, 20, 0.45) 0%, transparent 72%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 呼吸：蜡印微光 + 纸缘极轻提亮，忌闪烁 */
+.envelope.breathe .wax-glow {
+  animation: wax-glow 4.2s ease-in-out infinite;
+}
+.envelope.breathe .wax-seal {
+  animation: wax-breathe 4.2s ease-in-out infinite;
+}
+.envelope.breathe .envelope-body,
+.envelope.breathe .envelope-flap-face,
+.envelope.breathe .envelope-pocket {
+  animation: paper-edge 4.2s ease-in-out infinite;
+}
+@keyframes wax-breathe {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.028); }
+}
+@keyframes wax-glow {
+  0%, 100% { opacity: 0.28; }
+  50% { opacity: 0.55; }
+}
+@keyframes paper-edge {
+  0%, 100% { border-color: #D4BC85; }
+  50% { border-color: #C4A76C; }
+}
+@keyframes seal-breathe {
+  0%, 100% { opacity: 0.45; transform: scale(0.96); }
+  50% { opacity: 0.9; transform: scale(1); }
+}
+
+.envelope-flap {
+  position: relative;
+  height: 132rpx;
+  z-index: 2;
+  pointer-events: none;
+}
+/* 封套内里：完整矩形衬纸，盖住翻盖 clip 后的两侧三角空洞 */
+.envelope-pocket {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 132rpx;
+  z-index: 0;
+  border-radius: 16rpx 16rpx 0 0;
+  box-sizing: border-box;
+  border: 1px solid #D4BC85;
+  border-bottom: none;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 5rpx,
+      rgba(139, 111, 71, 0.04) 5rpx,
+      rgba(139, 111, 71, 0.04) 6rpx
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 6rpx,
+      rgba(138, 117, 48, 0.03) 6rpx,
+      rgba(138, 117, 48, 0.03) 7rpx
+    ),
+    linear-gradient(180deg, #E8DFD0 0%, #E0D5C4 48%, #D6CBB6 100%);
+  box-shadow: inset 0 -8rpx 16rpx rgba(107, 90, 36, 0.08);
+}
+/* 内里凹井：略深，模拟封舌盖下的口袋阴影 */
+.envelope-pocket-well {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 132rpx;
+  z-index: 1;
+  pointer-events: none;
+  clip-path: polygon(0 22%, 50% 100%, 100% 22%, 100% 100%, 0 100%);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(139, 111, 71, 0.1) 0%,
+      rgba(107, 90, 36, 0.06) 55%,
+      rgba(77, 64, 26, 0.04) 100%
+    );
+}
+.envelope-flap-face {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 132rpx;
+  z-index: 2;
+  background:
+    linear-gradient(165deg, rgba(250, 246, 237, 0.55) 0%, transparent 42%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 5rpx,
+      rgba(139, 111, 71, 0.045) 5rpx,
+      rgba(139, 111, 71, 0.045) 6rpx
+    ),
+    linear-gradient(180deg, #FAF6ED 0%, #F0E6CC 38%, #E0CFA3 100%);
+  border: 1px solid #D4BC85;
+  border-bottom: none;
+  border-radius: 16rpx 16rpx 0 0;
+  /* 上翻盖盖住封体上沿：浅 V，点落在蜡印处 */
+  clip-path: polygon(0 0, 100% 0, 100% 16%, 50% 100%, 0 16%);
+  box-sizing: border-box;
+  box-shadow:
+    inset 0 2rpx 0 rgba(255, 252, 245, 0.55),
+    inset 0 -6rpx 14rpx rgba(138, 117, 48, 0.08),
+    0 10rpx 18rpx rgba(77, 64, 26, 0.12);
+}
+.envelope-flap-shade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 132rpx;
+  clip-path: polygon(0 0, 100% 0, 100% 16%, 50% 100%, 0 16%);
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 48%,
+      rgba(107, 90, 36, 0.06) 72%,
+      rgba(77, 64, 26, 0.16) 100%
+    );
+  z-index: 3;
+  pointer-events: none;
+}
+.envelope-crease {
+  position: absolute;
+  top: 10rpx;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(138, 117, 48, 0.04),
+    rgba(138, 117, 48, 0.38) 48%,
+    rgba(138, 117, 48, 0.04)
+  );
+  transform-origin: left center;
+  z-index: 3;
+  opacity: 0.9;
+}
+.crease-l {
+  left: 5%;
+  width: 49%;
+  transform: rotate(31deg);
+  z-index: 4;
+}
+.crease-r {
+  right: 5%;
+  left: auto;
+  width: 49%;
+  transform-origin: right center;
+  transform: rotate(-31deg);
+  z-index: 4;
+}
+
+/* 黄铜蜡印：浮雕感 · 对齐全礼盒 brass-seal */
+.wax-seal {
+  position: absolute;
+  left: 50%;
+  top: 92rpx;
+  width: 88rpx;
+  height: 88rpx;
+  margin-left: 0;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+.wax-glow {
+  position: absolute;
+  inset: -16rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 167, 108, 0.28) 0%, transparent 70%);
+  pointer-events: none;
+}
+.wax-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 24%, #F0E6CC 0%, #C4A76C 36%, #A8903C 62%, #8A7530 82%, #4D401A 100%);
+  border: 2px solid rgba(48, 40, 16, 0.72);
+  box-sizing: border-box;
+  box-shadow:
+    0 8rpx 18rpx rgba(26, 24, 20, 0.42),
+    0 2rpx 4rpx rgba(48, 40, 16, 0.28),
+    inset 0 2rpx 4rpx rgba(250, 246, 237, 0.38),
+    inset 0 -5rpx 10rpx rgba(48, 40, 16, 0.38);
+}
+.wax-ring {
+  position: absolute;
+  inset: 11rpx;
+  border: 1.5px solid rgba(48, 40, 16, 0.4);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(224, 207, 163, 0.2);
+  pointer-events: none;
+}
+.wax-core {
+  position: absolute;
+  inset: 20rpx;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 30%, #E0CFA3 0%, #C4A76C 42%, #A8903C 78%, #6B5A24 100%);
+  box-shadow:
+    inset 0 2rpx 4rpx rgba(250, 246, 237, 0.28),
+    inset 0 -2rpx 4rpx rgba(48, 40, 16, 0.18);
+  pointer-events: none;
+}
+.wax-highlight {
+  position: absolute;
+  left: 16rpx;
+  top: 12rpx;
+  width: 26rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: rgba(250, 246, 237, 0.38);
+  transform: rotate(-28deg);
+  pointer-events: none;
+  z-index: 2;
+}
+.wax-seal-text {
+  position: relative;
+  z-index: 3;
+  font-size: 30rpx;
+  color: #302810;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-shadow:
+    0 1px 0 rgba(250, 246, 237, 0.3),
+    0 -1px 0 rgba(48, 40, 16, 0.24);
+}
+
+.envelope-body {
+  position: relative;
+  z-index: 1;
+  /* 上沿钻进翻盖下，闭合封缄，消除缝隙露底 */
+  margin-top: -44rpx;
+  padding: 68rpx 36rpx 40rpx;
+  background:
+    linear-gradient(180deg, rgba(224, 213, 196, 0.75) 0%, transparent 36rpx),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 4rpx,
+      rgba(139, 111, 71, 0.03) 4rpx,
+      rgba(139, 111, 71, 0.03) 5rpx
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 7rpx,
+      rgba(138, 117, 48, 0.02) 7rpx,
+      rgba(138, 117, 48, 0.02) 8rpx
+    ),
+    linear-gradient(180deg, #EDE6D8 0%, #F2EDE4 28%, #EDE6D8 55%, #E8DFD0 100%);
+  border: 1px solid #D4BC85;
+  border-top-color: #C4A76C;
+  border-radius: 0 0 16rpx 16rpx;
+  box-sizing: border-box;
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 252, 245, 0.35),
+    inset 0 -2rpx 8rpx rgba(139, 111, 71, 0.06);
+}
+.envelope-mouth {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 0;
+  height: 18rpx;
+  background: linear-gradient(
+    180deg,
+    rgba(107, 90, 36, 0.1) 0%,
+    rgba(107, 90, 36, 0.03) 60%,
+    transparent 100%
+  );
+  border-bottom: 1px solid rgba(138, 117, 48, 0.16);
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.envelope-grain {
+  position: absolute;
+  inset: 0;
+  border-radius: 0 0 16rpx 16rpx;
+  background:
+    radial-gradient(ellipse at 18% 72%, rgba(196, 167, 108, 0.06) 0%, transparent 42%),
+    radial-gradient(ellipse at 82% 28%, rgba(250, 246, 237, 0.35) 0%, transparent 36%);
+  pointer-events: none;
+  z-index: 0;
+}
+.overline {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-size: 20rpx;
+  color: #8A7530;
+  letter-spacing: 0.16em;
+  margin-bottom: 16rpx;
+  font-weight: 500;
+}
+.title {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #6B5A24;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  margin-bottom: 16rpx;
+  line-height: 1.35;
+  padding-right: 0;
+}
+.desc {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-size: 26rpx;
+  color: #6B6560;
+  line-height: 1.65;
+}
+.expire {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: 22rpx;
+  padding-top: 18rpx;
+  border-top: 1px solid rgba(196, 167, 108, 0.28);
+  font-size: 22rpx;
+  color: #8A7530;
+  letter-spacing: 0.02em;
+}
+
+.claim-card {
+  padding: 36rpx 32rpx;
+  background: #1F1D1A;
+  border: 1px solid #4D401A;
+  border-radius: 16rpx;
+  margin-bottom: 28rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.claim-label {
+  font-size: 20rpx;
+  color: #6B6560;
+  letter-spacing: 0.12em;
+  margin-bottom: 12rpx;
+}
+.claim-code {
+  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #C4A76C;
+  letter-spacing: 0.12em;
+  margin-bottom: 12rpx;
+}
+.claim-hint {
+  font-size: 24rpx;
+  color: #A09A90;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 24rpx;
+}
+.claim-qr {
+  width: 320rpx;
+  height: 320rpx;
+  margin-bottom: 16rpx;
+  background: #FAF6ED;
+  border-radius: 8rpx;
+}
+.claim-payload {
+  font-size: 20rpx;
+  color: #6B6560;
+  letter-spacing: 0.04em;
+}
+
+/* 礼笺预览：暗色铜牌感，让位给上方标本纸信封 */
+.card-preview {
+  padding: 28rpx 32rpx;
+  background: rgba(31, 29, 26, 0.92);
+  border: 1px solid rgba(77, 64, 26, 0.72);
+  border-radius: 16rpx;
+  margin-bottom: 40rpx;
+}
+.card-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+.card-hint {
+  display: block;
+  font-size: 20rpx;
+  color: #6B6560;
+  letter-spacing: 0.1em;
+}
+.mini-seal {
+  width: 40rpx;
+  height: 40rpx;
+  border: 1px solid rgba(196, 167, 108, 0.42);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15rpx;
+  color: rgba(196, 167, 108, 0.85);
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+}
+.card-body {
+  display: block;
+  font-size: 26rpx;
+  color: #D5D1C8;
+  line-height: 1.7;
+}
+.card-voice {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  color: #A8903C;
+  letter-spacing: 0.04em;
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+}
+.card-sig {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 24rpx;
+  color: #C4A76C;
+  text-align: right;
+}
+
+/* —— 操作区：全宽主 CTA + 并排次要动作 —— */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  padding-bottom: 8rpx;
+}
+.btn-primary, .share-btn {
+  width: 100%;
+  height: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #C4A76C;
+  color: #1A1814;
+  font-size: 28rpx;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  border-radius: 16rpx;
+  border: none;
+  line-height: 1.2;
+  padding: 0 24rpx;
+  margin: 0;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.share-btn::after { border: none; }
+.btn-primary-press {
+  background: #A8903C !important;
+  opacity: 1;
+}
+
+/* 次要：两列等分，略矮、略小字，让主 CTA 更突出 */
+.actions-secondary {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 16rpx;
+}
+.actions-secondary .btn-secondary,
+.actions-secondary .btn-ghost {
+  flex: 1;
+  min-width: 0;
+}
+.btn-secondary, .btn-ghost {
+  width: 100%;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #C4A76C;
+  font-size: 24rpx;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(196, 167, 108, 0.42);
+  border-radius: 16rpx;
+  margin: 0;
+  padding: 0 12rpx;
+  box-sizing: border-box;
+  background: transparent;
+  text-align: center;
+  line-height: 1.25;
+}
+.btn-secondary-solo {
+  width: 100%;
+}
+.btn-ghost {
+  border-color: rgba(160, 154, 144, 0.32);
+  color: #A09A90;
+  background: transparent;
+}
+.btn-secondary-press {
+  background: rgba(196, 167, 108, 0.12);
+  border-color: rgba(196, 167, 108, 0.7);
+}
+.btn-ghost-press {
+  background: rgba(38, 35, 32, 0.7);
+  border-color: rgba(160, 154, 144, 0.5);
+  opacity: 0.92;
+}
+
+.subscribe-hint {
+  display: block;
+  margin-top: 4rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #6B6560;
+  line-height: 1.5;
+}
+
+.share-canvas-off {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 500px;
+  height: 400px;
+  pointer-events: none;
+  opacity: 0;
+}

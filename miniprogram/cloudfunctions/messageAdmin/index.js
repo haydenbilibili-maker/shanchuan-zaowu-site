@@ -1,7 +1,9 @@
 /**
  * 山海有信 — 后台管理（记录 / 留言回复 / 模板）
+ * 鉴权：staffGuard — manager + pushMessage
  */
 const cloud = require('wx-server-sdk')
+const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -10,6 +12,14 @@ exports.main = async (event) => {
   const { action } = event
   const wxContext = cloud.getWXContext()
   const operatorOpenid = wxContext.OPENID
+
+  const guard = await assertStaff(db, operatorOpenid, {
+    role: ROLE_MANAGER,
+    permission: 'pushMessage'
+  })
+  if (!guard.ok) {
+    return { success: false, code: guard.code, msg: guard.msg }
+  }
 
   try {
     switch (action) {

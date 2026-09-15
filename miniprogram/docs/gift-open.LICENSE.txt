@@ -1,0 +1,14 @@
+gift-open.mp3 — 礼赠开盒音效（封缄撕开 + 木盖轻启）
+
+Composition (edited/trimmed/EQ/mixed for this project):
+- Mixkit “Page turn single” (id 1104)
+  https://mixkit.co/free-sound-effects/download/1104/
+- Mixkit “Slow creaking floorboard” (id 178)
+  https://mixkit.co/free-sound-effects/download/178/
+- Mixkit “Short creaking floorboard” (id 177) — quiet settle layer
+  https://mixkit.co/free-sound-effects/download/177/
+
+License: Mixkit Sound Effects Free License
+https://mixkit.co/license/#sfxFree
+Royalty-free for commercial & non-commercial use in apps; attribution not required by Mixkit but recorded here for provenance.
+Do not redistribute the unedited Mixkit source files as a competing sound library.

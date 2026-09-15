@@ -1,0 +1,60 @@
+<view class="page-boot" wx:if="{{!ready}}">
+  <text class="boot-en">EXPENSE</text>
+  <text class="boot-cn">报销申请</text>
+  <text class="boot-hint">校验权限中…</text>
+</view>
+
+<view class="container" wx:elif="{{ready}}">
+  <view class="section">
+    <picker class="store-picker" mode="selector" range="{{storeNames}}" value="{{storeIndex}}" bindchange="onStoreChange">
+      <view class="picker-inner">
+        <text class="picker-label">关联门店</text>
+        <text class="picker-value">{{storeName}}</text>
+        <text class="picker-arrow">切换</text>
+      </view>
+    </picker>
+
+    <view class="field">
+      <text class="field-label">报销金额（元）</text>
+      <input class="input" type="digit" placeholder="实报金额" placeholder-class="ph"
+             value="{{form.amount}}" bindinput="onInput" data-field="amount" />
+    </view>
+    <view class="field">
+      <text class="field-label">类别</text>
+      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="input">{{categories[categoryIndex]}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">说明</text>
+      <input class="input" placeholder="用途与说明" placeholder-class="ph"
+             value="{{form.remark}}" bindinput="onInput" data-field="remark" />
+    </view>
+
+    <text class="field-label">凭证照片</text>
+    <view class="image-thumb-row">
+      <image class="thumb" wx:for="{{images}}" wx:key="*this" src="{{item}}" mode="aspectFill"
+             bindtap="removeImage" data-idx="{{index}}" />
+      <view class="thumb-add" wx:if="{{images.length < 5}}" bindtap="chooseImage">添加</view>
+    </view>
+
+    <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="submit">提交报销</view>
+  </view>
+
+  <view class="section">
+    <view class="section-title"><text class="st-cn">我的申请</text></view>
+    <view class="list">
+      <view class="record" wx:for="{{list}}" wx:key="_id">
+        <view class="rec-top">
+          <text class="rec-member">{{item.category}} · ¥{{item.amount}}</text>
+          <text class="tag-status {{item.status}}">{{item.statusLabel}}</text>
+        </view>
+        <text class="rec-meta">{{item.timeText}}{{item.remark ? ' · ' + item.remark : ''}}</text>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{list.length === 0}}">
+      <text>还没有报销申请</text>
+      <text class="section-note">填写金额、类别与凭证后提交，店长审批通过前可在此跟踪状态</text>
+    </view>
+  </view>
+</view>

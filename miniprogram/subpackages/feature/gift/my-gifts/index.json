@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "我的礼赠",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "light",
+  "disableSwipeBack": true,
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814"
+}

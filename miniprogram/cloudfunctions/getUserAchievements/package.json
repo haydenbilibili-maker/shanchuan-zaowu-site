@@ -4,13 +4,6 @@
   "description": "获取用户成就数据",
   "main": "index.js",
   "dependencies": {
-    "wx-server-sdk": "~2.6.3"
+    "wx-server-sdk": "~3.0.1"
   }
 }
-
-
-
-
-
-
-

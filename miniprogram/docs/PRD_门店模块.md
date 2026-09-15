@@ -206,10 +206,10 @@
 
 | 分区 ID | 名称 | 内容方向 |
 |---|---|---|
-| `zone_insect` | 神奇昆虫柜 | 昆虫标本陈列逻辑、代表物种、拍照点 |
-| `zone_mineral` | 群山回响 · 矿物 | 矿石品类、来源故事 |
-| `zone_plant` | 植物探微 | 植物标本与押花 |
-| `zone_marine` | 无尽海洋 | 海洋标本与沉浸角 |
+| `zone_insect` | 蝴蝶昆虫柜 | 昆虫标本陈列逻辑、代表物种、拍照点 |
+| `zone_mineral` | 矿石标本柜 | 矿石品类、来源故事（首页四档已无矿石档） |
+| `zone_plant` | 植物果实柜 | 植物标本与押花 |
+| `zone_marine` | 海洋标本柜 | 海洋标本与沉浸角 |
 | `zone_atelier` | 标本工坊 | 定制流程、装裱案例（需授权） |
 | `zone_gift` | 出口赠礼 | 包装、卡片、礼盒动线（对齐 VI） |
 
@@ -286,7 +286,7 @@
 {
   zoneId: 'zone_insect',
   storeId: 'store_zys_3f',
-  title: '神奇昆虫柜',
+  title: '蝴蝶昆虫柜',
   overline: 'INSECTA',
   desc: '……',
   images: ['cloud://...'],

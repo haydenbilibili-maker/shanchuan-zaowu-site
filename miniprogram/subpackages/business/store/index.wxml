@@ -1,0 +1,368 @@
+<!--subpackages/business/store/index.wxml-->
+<wxs src="../../../utils/latinDisplay.wxs" module="latin" />
+<view class="page-store">
+  <view class="grain-overlay" aria-hidden="true"></view>
+
+  <!-- 顶栏：当前店 + 双店切换 -->
+  <view class="sticky-top">
+    <view class="store-switcher" bindtap="toggleStorePicker" hover-class="store-switcher-press" hover-stay-time="80">
+      <view class="switcher-main">
+        <text class="switcher-label">当前门店</text>
+        <text class="switcher-name">{{store.name || '这有店'}}</text>
+        <text class="switcher-sub" wx:if="{{store}}">{{store.locationLabel}} · {{store.roleLabel}}</text>
+      </view>
+      <view class="switcher-chevron {{storePickerOpen ? 'open' : ''}}"></view>
+    </view>
+    <scroll-view scroll-x class="store-pills" wx:if="{{stores.length > 1 && store}}" enable-flex enhanced show-scrollbar="{{false}}">
+      <view
+        class="store-pill {{item.storeId === store.storeId ? 'active' : ''}}"
+        wx:for="{{stores}}"
+        wx:key="storeId"
+        bindtap="quickSelectStore"
+        data-id="{{item.storeId}}"
+        hover-class="store-pill-press"
+        hover-stay-time="80"
+      >
+        <view class="pill-mark" wx:if="{{item.storeId === store.storeId}}"></view>
+        <text class="pill-name">{{item.name}}</text>
+        <text class="pill-loc">{{item.locationLabel}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="picker-mask" wx:if="{{storePickerOpen}}" bindtap="closeStorePicker"></view>
+  <view class="picker-sheet {{storePickerOpen ? 'open' : ''}}">
+    <text class="picker-title">选择门店</text>
+    <view
+      class="picker-item {{item.storeId === store.storeId ? 'active' : ''}}"
+      wx:for="{{stores}}"
+      wx:key="storeId"
+      bindtap="selectStore"
+      data-id="{{item.storeId}}"
+      hover-class="picker-item-press"
+      hover-stay-time="80"
+    >
+      <image wx:if="{{item.coverImage}}" class="picker-thumb" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+      <view class="picker-body">
+        <text class="picker-name">{{item.name}}</text>
+        <text class="picker-loc">{{item.locationLabel}}</text>
+        <text class="picker-role">{{item.roleLabel}}</text>
+      </view>
+      <text class="picker-current" wx:if="{{item.storeId === store.storeId}}">当前</text>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="main-scroll" style="top: {{scrollTop}}px;" wx:if="{{!loading && store}}">
+    <!-- Hero：一张图 + 店名 + 一句说明 -->
+    <view class="hero {{enterReady ? 'reveal reveal-0' : 'is-entering'}}" bindtap="previewHero" hover-class="hero-press" hover-stay-time="80">
+      <image wx:if="{{store.coverImage}}" class="hero-img" src="{{store.coverImage}}" mode="aspectFill"></image>
+      <view class="hero-placeholder" wx:else></view>
+      <view class="hero-mask"></view>
+      <view class="hero-closed-badge" wx:if="{{bookingClosedToday}}">
+        <text>{{closedReasonLabel || '今日店休'}}</text>
+      </view>
+      <view class="hero-text">
+        <text class="hero-overline">{{store.nameEn}}</text>
+        <text class="hero-title">{{store.name}}</text>
+        <text class="hero-tagline" wx:if="{{store.heroTagline}}">{{store.heroTagline}}</text>
+        <view class="hero-meta">
+          <text class="status-label {{bookingClosedToday ? 'closed' : store.openStatus.statusClass}}">
+            {{bookingClosedToday ? (closedReasonLabel || '今日店休') : store.openStatus.label}}
+          </text>
+          <text class="hero-meta-sep">·</text>
+          <text class="hero-hours">{{store.hoursText}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 唯一快捷动作：预约（导航/电话在名片内） -->
+    <view class="booking-row {{enterReady ? 'reveal reveal-1' : 'is-entering'}}">
+      <view
+        class="booking-btn {{bookingClosedToday ? 'disabled' : ''}}"
+        bindtap="goBooking"
+        data-tab="0"
+        hover-class="{{bookingClosedToday ? '' : 'booking-btn-press'}}"
+        hover-stay-time="80"
+      >
+        <text>{{bookingClosedToday ? '暂不可约' : '预约参观'}}</text>
+      </view>
+      <text class="booking-closed-hint" wx:if="{{bookingClosedToday}}">今日暂停预约，名片内仍可导航与致电</text>
+    </view>
+
+    <!-- 门店名片：事实区；签到位置保持第一轮 -->
+    <view class="section visit-section {{enterReady ? 'reveal reveal-2' : 'is-entering'}}">
+      <view class="section-head">
+        <text class="section-title">门店名片</text>
+        <text class="section-lead">地址、营业与联系方式</text>
+      </view>
+
+      <view class="store-card">
+        <view class="store-card-head">
+          <view class="store-card-title-wrap">
+            <text class="store-card-name">{{store.name}}</text>
+            <text class="store-card-floor" wx:if="{{store.floor || store.mallName}}">
+              {{store.mallName}}{{store.mallName && store.floor ? ' · ' : ''}}{{store.floor}}
+            </text>
+          </view>
+          <view class="status-chip {{bookingClosedToday ? 'closed' : store.openStatus.statusClass}}">
+            <text class="status-dot {{bookingClosedToday ? 'closed' : store.openStatus.statusClass}}"></text>
+            <text>{{bookingClosedToday ? (closedReasonLabel || '今日店休') : store.openStatus.label}}</text>
+          </view>
+        </view>
+
+        <view class="plate-intro-wrap" bindtap="toggleIntro" hover-class="plate-intro-press" hover-stay-time="80" wx:if="{{store.intro}}">
+          <text class="plate-intro {{introExpanded ? 'expanded' : ''}}">{{store.intro}}</text>
+          <text class="plate-intro-toggle">{{introExpanded ? '收起' : '展开'}}</text>
+        </view>
+
+        <view class="info-map-wrap" bindtap="openMap" hover-class="info-map-press" hover-stay-time="80">
+          <map
+            class="info-map"
+            latitude="{{store.latitude}}"
+            longitude="{{store.longitude}}"
+            markers="{{store.mapMarkers}}"
+            enable-scroll="{{false}}"
+            enable-zoom="{{false}}"
+            show-location="{{false}}"
+          ></map>
+          <view class="info-map-mask">
+            <text class="info-map-cta">导航</text>
+          </view>
+        </view>
+
+        <view class="store-facts">
+          <view class="fact-row" bindtap="copyAddress" hover-class="fact-row-press" hover-stay-time="80">
+            <view class="fact-main">
+              <text class="fact-label">地址</text>
+              <text class="fact-val">{{store.address}}</text>
+            </view>
+            <text class="fact-action">复制</text>
+          </view>
+
+          <view class="fact-split">
+            <view class="fact-row fact-half">
+              <text class="fact-label">营业</text>
+              <text class="fact-val">{{store.hoursText}}</text>
+            </view>
+            <view class="fact-row fact-half" bindtap="callStore" hover-class="fact-row-press" hover-stay-time="80">
+              <view class="fact-main">
+                <text class="fact-label">电话</text>
+                <text class="fact-val fact-val-accent">{{store.phone}}</text>
+              </view>
+              <text class="fact-action">拨打</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="visit-tips" wx:if="{{store.visitTips && store.visitTips.length}}">
+          <view class="tips-head" bindtap="toggleTips" hover-class="tips-head-press" hover-stay-time="80">
+            <text class="tips-label">到店提示</text>
+            <text class="tips-toggle-text">{{tipsExpanded ? '收起' : '展开'}}</text>
+          </view>
+          <view class="tips-list {{tipsExpanded ? 'open' : ''}}">
+            <view class="tips-item" wx:for="{{store.visitTips}}" wx:key="*this">
+              <text class="tips-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="feature-line" wx:if="{{featuresLine}}">
+          <text class="feature-text">{{featuresLine}}</text>
+        </view>
+
+        <view class="web-row" bindtap="copyWebsite" hover-class="web-row-press" hover-stay-time="80">
+          <text class="web-label">官网</text>
+          <text class="web-val">{{brandWebsite}}</text>
+          <text class="fact-action">复制</text>
+        </view>
+      </view>
+
+      <view
+        class="checkin-inline {{checkedInToday ? 'done' : ''}} {{checkInLoading ? 'loading' : ''}}"
+        bindtap="onCheckIn"
+        hover-class="{{checkedInToday || checkInLoading ? '' : 'checkin-inline-press'}}"
+        hover-stay-time="80"
+      >
+        <text class="checkin-inline-label">{{checkedInToday ? '今日已到店' : (checkInLoading ? '签到中…' : '我已到店')}}</text>
+        <text class="checkin-inline-hint" wx:if="{{!checkedInToday && stores.length > 1}}">当前：{{store.name}}</text>
+      </view>
+    </view>
+
+    <!-- 展陈 -->
+    <view class="section {{enterReady ? 'reveal reveal-3' : 'is-entering'}}">
+      <view class="section-head">
+        <text class="section-title">展陈导览</text>
+        <text class="section-lead">按柜走读本店展区</text>
+      </view>
+      <view class="zone-grid" wx:if="{{store.zones && store.zones.length}}">
+        <view
+          class="zone-card"
+          wx:for="{{store.zones}}"
+          wx:key="zoneId"
+          bindtap="goZone"
+          data-id="{{item.zoneId}}"
+          hover-class="zone-card-press"
+          hover-stay-time="80"
+        >
+          <image wx:if="{{item.coverImage}}" class="zone-bg" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+          <view class="zone-overlay"></view>
+          <view class="zone-content">
+            <text class="zone-overline" style="color: {{item.color}}">{{item.overline}}</text>
+            <text class="zone-title">{{item.title}}</text>
+            <text class="zone-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="empty-block" wx:else>
+        <text class="empty-title">展区筹备中</text>
+        <text class="empty-desc">本店展陈稍后上线</text>
+      </view>
+    </view>
+
+    <!-- 店内可体验 -->
+    <view class="section {{enterReady ? 'reveal reveal-4' : 'is-entering'}}" wx:if="{{hasExperienceProducts || experienceLoading}}">
+      <view class="section-head">
+        <text class="section-title">店内可体验</text>
+        <text class="section-lead">到店可看可触的藏品</text>
+      </view>
+      <scroll-view scroll-x class="exp-scroll" enable-flex enhanced show-scrollbar="{{false}}">
+        <view class="exp-track">
+          <view
+            class="exp-card"
+            wx:for="{{experienceProducts}}"
+            wx:key="_id"
+            bindtap="goExperienceProduct"
+            data-id="{{item._id}}"
+            hover-class="exp-card-hover"
+            hover-stay-time="80"
+          >
+            <image class="exp-img" src="{{item.image}}" mode="aspectFill" lazy-load></image>
+            <view class="exp-body">
+              <text class="exp-title">{{item.title}}</text>
+              <text class="exp-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
+              <text class="exp-price">¥{{item.priceText}}</text>
+            </view>
+          </view>
+          <view class="exp-loading" wx:if="{{experienceLoading}}">
+            <text>加载中…</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 活动 -->
+    <view class="section {{enterReady ? 'reveal reveal-4' : 'is-entering'}}" wx:if="{{hasActivities}}">
+      <view class="section-head">
+        <text class="section-title">本店活动</text>
+        <text class="section-lead">课程与特别活动</text>
+      </view>
+      <view class="list-block">
+        <view
+          class="list-row"
+          wx:for="{{storeActivities}}"
+          wx:key="_id"
+          bindtap="goActivity"
+          data-type="{{item.type === 'handcraft_course' || item.type === 'course' ? 'course' : 'activity'}}"
+          hover-class="list-row-press"
+          hover-stay-time="80"
+        >
+          <view class="list-main">
+            <text class="list-tag">{{item.type === 'handcraft_course' || item.type === 'course' ? '手作课程' : '特别活动'}}</text>
+            <text class="list-title">{{item.title}}</text>
+            <text class="list-meta">{{item.date}} {{item.time || ''}}</text>
+          </view>
+          <text class="list-arr">报名</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 服务 -->
+    <view class="section {{enterReady ? 'reveal reveal-5' : 'is-entering'}}">
+      <view class="section-head">
+        <text class="section-title">本店服务</text>
+        <text class="section-lead">到店可办事项</text>
+      </view>
+      <view class="list-block" wx:if="{{store.services && store.services.length}}">
+        <view
+          class="list-row"
+          wx:for="{{store.services}}"
+          wx:key="id"
+          bindtap="goService"
+          data-tab="{{item.tab}}"
+          data-path="{{item.path}}"
+          hover-class="list-row-press"
+          hover-stay-time="80"
+        >
+          <text class="list-title-solo">{{item.label}}</text>
+          <text class="list-arr">→</text>
+        </view>
+      </view>
+      <view class="empty-block" wx:else>
+        <text class="empty-title">暂无服务入口</text>
+      </view>
+    </view>
+
+    <!-- 双店动线 -->
+    <view class="section section-last {{enterReady ? 'reveal reveal-6' : 'is-entering'}}" wx:if="{{store.walkingGuide}}">
+      <view class="section-head">
+        <text class="section-title">双店动线</text>
+        <text class="section-lead">主店与工坊之间怎么走</text>
+      </view>
+      <view class="walking-plate">
+        <view class="walking-head" bindtap="toggleWalkingGuide" hover-class="walking-head-press" hover-stay-time="80">
+          <view class="walking-head-main">
+            <text class="walking-headline">{{store.walkingGuide.headline}}</text>
+            <text class="walking-peer" wx:if="{{store.walkingGuide.peerName}}">前往 {{store.walkingGuide.peerName}} · {{store.walkingGuide.peerLocation}}</text>
+          </view>
+          <text class="walking-toggle-text">{{walkingGuideOpen ? '收起' : '展开'}}</text>
+        </view>
+        <view class="walking-body {{walkingGuideOpen ? 'open' : ''}}">
+          <view class="walking-step" wx:for="{{store.walkingGuide.steps}}" wx:key="*this">
+            <text class="walking-step-num">{{index + 1}}</text>
+            <text class="walking-step-text">{{item}}</text>
+          </view>
+          <text class="walking-tip" wx:if="{{store.walkingGuide.tip}}">{{store.walkingGuide.tip}}</text>
+          <view class="walking-peer-btn" bindtap="goPeerStore" hover-class="walking-peer-btn-hover" hover-stay-time="80">
+            <text>切换到 {{store.walkingGuide.peerName}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="scroll-pad"></view>
+  </scroll-view>
+
+  <view
+    class="checkin-dock {{checkInDockVisible ? 'show' : ''}} {{checkedInToday ? 'done' : ''}} {{checkInLoading ? 'loading' : ''}}"
+    wx:if="{{!loading && store}}"
+    bindtap="onCheckIn"
+    hover-class="{{checkedInToday || checkInLoading ? '' : 'checkin-dock-press'}}"
+    hover-stay-time="80"
+  >
+    <text class="checkin-dock-label">{{checkedInToday ? '今日已到店' : (checkInLoading ? '签到中…' : '我已到店')}}</text>
+    <text class="checkin-dock-store" wx:if="{{!checkedInToday && stores.length > 1}}">{{store.name}}</text>
+  </view>
+
+  <view class="lbs-mask" wx:if="{{lbsSheetOpen}}" bindtap="dismissLbsSheet"></view>
+  <view class="lbs-sheet {{lbsSheetOpen ? 'open' : ''}}" wx:if="{{lbsSuggestStore}}">
+    <text class="lbs-title">附近门店</text>
+    <text class="lbs-store-name">{{lbsSuggestStore.name}}</text>
+    <text class="lbs-meta">{{lbsSuggestStore.locationLabel}} · {{lbsSuggestStore.distanceText}}</text>
+    <text class="lbs-desc">切换到该门店？</text>
+    <view class="lbs-actions">
+      <view class="lbs-btn secondary" bindtap="dismissLbsSheet" hover-class="lbs-btn-secondary-press" hover-stay-time="80">暂不</view>
+      <view class="lbs-btn primary" bindtap="confirmLbsSwitch" hover-class="lbs-btn-primary-press" hover-stay-time="80">切换</view>
+    </view>
+  </view>
+
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <view class="loading-pulse"></view>
+    <text class="loading-text">加载门店…</text>
+  </view>
+
+  <view class="empty-page" wx:if="{{!loading && !store}}">
+    <text class="empty-title">暂无门店信息</text>
+    <text class="empty-desc">下拉刷新，或稍后再来</text>
+    <view class="empty-retry" bindtap="loadStores" hover-class="empty-retry-press" hover-stay-time="80">重新加载</view>
+  </view>
+</view>

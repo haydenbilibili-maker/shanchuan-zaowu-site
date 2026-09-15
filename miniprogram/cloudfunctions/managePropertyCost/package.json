@@ -1,0 +1,9 @@
+{
+  "name": "managePropertyCost",
+  "version": "1.0.0",
+  "description": "超管物业成本（水电/房租）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

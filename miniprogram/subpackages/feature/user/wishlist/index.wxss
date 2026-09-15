@@ -1,0 +1,229 @@
+/* Museum Mode — 收藏与候补 */
+page {
+  background: var(--color-bg, #1A1814);
+  color: var(--color-text-primary, #FFFFFF);
+}
+
+.page-wishlist {
+  min-height: 100vh;
+  background: var(--color-bg, #1A1814);
+}
+
+.content {
+  padding: 0 32rpx 80rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.header-text {
+  margin: 32rpx 0 40rpx;
+}
+
+.page-overline {
+  display: block;
+  font-size: 22rpx;
+  letter-spacing: 0.1em;
+  color: var(--brass-400, #C4A76C);
+  font-weight: 500;
+  margin-bottom: 16rpx;
+}
+
+.h1 {
+  display: block;
+  font-family: var(--font-brand, 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif);
+  font-size: 48rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 12rpx;
+  letter-spacing: 0.04em;
+}
+
+.h2 {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+  line-height: 1.5;
+}
+
+.tabs {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.tab {
+  flex: 1;
+  height: 72rpx;
+  border-radius: 16rpx;
+  border: 1px solid var(--color-border, #26232066);
+  background: var(--color-bg-card, #1F1D1A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  color: var(--color-text-secondary, #A09A90);
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.tab.on {
+  border-color: var(--brass-800, #4D401A);
+  color: var(--brass-400, #C4A76C);
+}
+
+.tab-press { opacity: 0.85; }
+
+.tab-count {
+  font-size: 22rpx;
+  opacity: 0.85;
+}
+
+.hint-card {
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--color-border, #26232066);
+  border-radius: 16rpx;
+  padding: 24rpx 28rpx;
+  margin-bottom: 28rpx;
+}
+
+.hint-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 8rpx;
+}
+
+.hint-body {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+  line-height: 1.55;
+}
+
+.loading-box {
+  padding: 80rpx 0;
+  text-align: center;
+  color: var(--color-text-secondary, #A09A90);
+  font-size: 26rpx;
+}
+
+.item-card {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--color-border, #26232066);
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.item-card-press { opacity: 0.9; }
+
+.thumb {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 12rpx;
+  background: var(--color-bg-elevated);
+  flex-shrink: 0;
+}
+
+.meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.title {
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.latin {
+  font-size: 22rpx;
+  color: var(--brass-400, #C4A76C);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  margin-top: 4rpx;
+}
+
+.price {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 26rpx;
+  color: var(--color-text-body);
+}
+
+.tag {
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+}
+
+.tag.sold {
+  color: #E9A23B;
+  background: rgba(233, 162, 59, 0.12);
+}
+
+.tag.deposit {
+  color: var(--brass-400, #C4A76C);
+  background: rgba(196, 167, 108, 0.12);
+}
+
+.remove {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: var(--color-text-muted, #6B6560);
+  padding: 12rpx 8rpx;
+}
+
+.empty-state {
+  padding: 100rpx 40rpx;
+  text-align: center;
+}
+
+.empty-title {
+  display: block;
+  font-size: 30rpx;
+  color: var(--color-text-primary);
+  margin-bottom: 12rpx;
+}
+
+.empty-sub {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+  line-height: 1.5;
+  margin-bottom: 40rpx;
+}
+
+.btn-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 240rpx;
+  height: 72rpx;
+  padding: 0 40rpx;
+  background: var(--brass-400, #C4A76C);
+  color: var(--color-bg);
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.btn-go-press { background: #A8903C; }

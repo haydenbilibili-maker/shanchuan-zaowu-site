@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "新会员礼包",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "enablePullDownRefresh": true,
+  "disableSwipeBack": false,
+  "usingComponents": {}
+}

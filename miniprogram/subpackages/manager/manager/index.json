@@ -1,0 +1,14 @@
+{
+  "navigationBarTitleText": "管理后台",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "disableSwipeBack": true,
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 120,
+  "usingComponents": {},
+  "backgroundColor": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814",
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundTextStyle": "light"
+}

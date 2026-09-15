@@ -1,0 +1,196 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">柜门缓缓开启…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">SHAREHOLDER · CONFIG</text>
+        <text class="cn">股东配置</text>
+      </view>
+      <text class="header-note">绑定山川造物 / 星宸门店股东；占股与回本前/后分成用于观测台双阶段分红口径。</text>
+      <view class="header-actions">
+        <view class="link-chip" bindtap="goObservatoryPreview">股东观测台 ›</view>
+      </view>
+    </view>
+
+    <view class="filter-row">
+      <picker mode="selector" range="{{filterLabels}}" value="{{filterIndex}}" bindchange="onFilterChange">
+        <view class="filter-chip">{{filterLabels[filterIndex]}}</view>
+      </picker>
+      <view class="btn-add" bindtap="openCreate">新增股东</view>
+    </view>
+
+    <view class="formula-card">
+      <text class="formula-title">双阶段分红口径</text>
+      <text class="formula-line">回本判定：累计投资人分红池 ≥ 总投资额后进入回本后阶段（与财务核算一致）。</text>
+      <text class="formula-line">个人应得 = 当日投资人池 × 回本前/后个人分成%；旧字段「分成」等同回本前。</text>
+    </view>
+
+    <view class="skeleton-list" wx:if="{{loading && !list.length}}">
+      <view class="skeleton-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="sk-line wide"></view>
+        <view class="sk-line"></view>
+        <view class="sk-line mid"></view>
+      </view>
+    </view>
+
+    <view class="empty-tip" wx:elif="{{!loading && !list.length}}">
+      <text class="empty-title">柜中暂无股东</text>
+      <text class="empty-sub">点「新增股东」绑定门店与双阶段分成</text>
+    </view>
+
+    <block wx:for="{{list}}" wx:key="_id">
+      <view class="card">
+        <view class="card-top">
+          <view class="title-line">
+            <view class="signal-light {{item.status === 'active' ? 'lamp-forest' : 'lamp-muted hollow'}}"></view>
+            <text class="card-title">{{item.name || '未命名'}}</text>
+          </view>
+          <text class="status-tag {{item.status === 'active' ? 'brass' : 'muted'}}">{{item.statusLabel}}</text>
+        </view>
+        <text class="meta" wx:if="{{item.staffNo}}">备注 {{item.staffNo}}</text>
+        <text class="meta">门店 {{item.storeName}} · …{{item.openidTail}}</text>
+        <view class="ratio-grid">
+          <view class="ratio-cell">
+            <text class="ratio-label">占股</text>
+            <text class="ratio-value">{{item.ownershipRatioText}}</text>
+          </view>
+          <view class="ratio-cell">
+            <text class="ratio-label">回本前分成</text>
+            <text class="ratio-value">{{item.beforeText}}</text>
+          </view>
+          <view class="ratio-cell">
+            <text class="ratio-label">回本后分成</text>
+            <text class="ratio-value">{{item.afterText}}</text>
+          </view>
+          <view class="ratio-cell">
+            <text class="ratio-label">出资</text>
+            <text class="ratio-value">{{item.capitalText}}</text>
+          </view>
+        </view>
+        <text class="meta">生效日 {{item.effectiveDate}}</text>
+        <view class="card-actions">
+          <view class="chip-btn" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
+          <view
+            class="chip-btn danger"
+            wx:if="{{item.status === 'active'}}"
+            data-id="{{item._id}}"
+            bindtap="disableRow"
+          >停用</view>
+          <view
+            class="chip-btn success"
+            wx:else
+            data-id="{{item._id}}"
+            bindtap="enableRow"
+          >启用</view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>
+
+<view class="sheet-mask" wx:if="{{showForm}}" bindtap="closeForm"></view>
+<view class="sheet" wx:if="{{showForm}}">
+  <view class="sheet-head">
+    <text class="sheet-title">{{editingId ? '编辑股东' : '新增股东'}}</text>
+    <text class="sheet-close" bindtap="closeForm">关闭</text>
+  </view>
+  <scroll-view scroll-y class="sheet-body">
+    <view class="field" wx:if="{{!editingId}}">
+      <text class="field-label">手机号查找</text>
+      <view class="phone-toolbar">
+        <input
+          class="input phone-input"
+          type="number"
+          maxlength="11"
+          placeholder="对方已授权的 11 位手机号"
+          placeholder-class="ph"
+          value="{{form.phone}}"
+          bindinput="onInput"
+          data-field="phone"
+        />
+        <view class="lookup-btn {{lookingUp ? 'disabled' : ''}}" bindtap="lookupByPhone">
+          {{lookingUp ? '查找中' : '查找'}}
+        </view>
+      </view>
+      <text class="field-hint warn" wx:if="{{matchHint && !matched}}">{{matchHint}}</text>
+      <view class="match-card" wx:if="{{matched && matched.openid}}">
+        <text class="match-badge">已匹配</text>
+        <text class="match-name">{{matched.nickName || '藏家'}}</text>
+        <text class="match-meta">…{{matched.openidTail}}</text>
+      </view>
+      <view class="candidate-list" wx:if="{{candidates.length}}">
+        <view
+          class="candidate-row"
+          wx:for="{{candidates}}"
+          wx:key="openid"
+          data-openid="{{item.openid}}"
+          bindtap="selectCandidate"
+        >
+          <text class="match-name">{{item.nickName || '藏家'}}</text>
+          <text class="match-meta">{{item.phoneMasked}} · …{{item.openidTail}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="field" wx:if="{{editingId || form.openid}}">
+      <text class="field-label">openid</text>
+      <text class="openid-text">…{{form.openidTail || '—'}}</text>
+    </view>
+
+    <view class="field">
+      <text class="field-label">姓名</text>
+      <input class="input" value="{{form.name}}" bindinput="onInput" data-field="name" placeholder="股东姓名" placeholder-class="ph" />
+    </view>
+    <view class="field">
+      <text class="field-label">备注</text>
+      <input class="input" value="{{form.staffNo}}" bindinput="onInput" data-field="staffNo" placeholder="工号或内部备注" placeholder-class="ph" />
+    </view>
+
+    <view class="field">
+      <text class="field-label">绑定门店（必选）</text>
+      <view class="store-check-list">
+        <view
+          class="store-check {{item.selected ? 'on' : ''}}"
+          wx:for="{{storeChecks}}"
+          wx:key="key"
+          bindtap="toggleStore"
+          data-id="{{item.storeId}}"
+        >{{item.name}}</view>
+      </view>
+      <text class="field-hint">未绑门店不可保存；观测台仅展示该门店账本。</text>
+    </view>
+
+    <view class="field-row">
+      <view class="field half">
+        <text class="field-label">占股比例 (%)</text>
+        <input class="input" type="digit" value="{{form.ownershipRatio}}" bindinput="onInput" data-field="ownershipRatio" placeholder="0–100" placeholder-class="ph" />
+      </view>
+      <view class="field half">
+        <text class="field-label">出资额 （元）</text>
+        <input class="input" type="digit" value="{{form.capitalContribution}}" bindinput="onInput" data-field="capitalContribution" placeholder="个人出资" placeholder-class="ph" />
+      </view>
+    </view>
+
+    <view class="field-row">
+      <view class="field half">
+        <text class="field-label">回本前分成 (%)</text>
+        <input class="input" type="digit" value="{{form.dividendRatioBeforePayback}}" bindinput="onInput" data-field="dividendRatioBeforePayback" placeholder="占分红池" placeholder-class="ph" />
+      </view>
+      <view class="field half">
+        <text class="field-label">回本后分成 (%)</text>
+        <input class="input" type="digit" value="{{form.dividendRatioAfterPayback}}" bindinput="onInput" data-field="dividendRatioAfterPayback" placeholder="默认同回本前" placeholder-class="ph" />
+      </view>
+    </view>
+    <text class="field-hint">个人分成 = 占「投资人分红池」比重；池内占比由财务 earlyShare/lateShare 决定。</text>
+
+    <view class="field">
+      <text class="field-label">生效日</text>
+      <picker mode="date" value="{{form.effectiveDate || '2024-01-01'}}" bindchange="onDateChange">
+        <view class="input picker-like">{{form.effectiveDate || '选择生效日'}}</view>
+      </picker>
+    </view>
+
+    <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">保存</view>
+  </scroll-view>
+</view>

@@ -4,6 +4,6 @@
   "description": "门店图片 cloud:// 转临时 HTTPS（服务端权限）",
   "main": "index.js",
   "dependencies": {
-    "wx-server-sdk": "~2.6.3"
+    "wx-server-sdk": "~3.0.1"
   }
 }

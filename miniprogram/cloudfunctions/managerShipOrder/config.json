@@ -1,6 +1,15 @@
 {
   "permissions": {
-    "openapi": []
+    "openapi": [
+      "auth.getAccessToken"
+    ]
   },
-  "timeout": 20
+  "timeout": 60,
+  "triggers": [
+    {
+      "name": "pollGiftLogistics",
+      "type": "timer",
+      "config": "0 */30 * * * * *"
+    }
+  ]
 }

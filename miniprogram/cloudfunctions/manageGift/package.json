@@ -1,0 +1,9 @@
+{
+  "name": "manageGift",
+  "version": "1.0.0",
+  "description": "礼赠领取/填址/催填",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

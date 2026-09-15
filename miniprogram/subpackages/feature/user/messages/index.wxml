@@ -1,0 +1,160 @@
+<!--subpackages/feature/user/messages/index.wxml-->
+<view class="page-msg {{activeQueue === 'workflow' ? 'queue-workflow' : 'queue-customer'}}">
+  <view class="grain-overlay"></view>
+
+  <view class="sticky-header">
+    <view class="toolbar">
+      <view class="toolbar-meta">
+        <view class="lamp {{unreadCount > 0 ? (activeQueue === 'workflow' ? 'lamp-forest' : 'lamp-brass') : 'lamp-brass hollow'}}"></view>
+        <text class="unread-hint" wx:if="{{unreadCount > 0}}">{{unreadCount}} 封未读</text>
+        <text class="unread-hint muted" wx:else>全部已读</text>
+      </view>
+      <view class="mark-read-btn" bindtap="markAllRead" wx:if="{{unreadCount > 0}}">
+        <text>全部已读</text>
+      </view>
+    </view>
+
+    <!-- 工作信息情境条（由工作台进入） -->
+    <view class="workflow-context" wx:if="{{workflowMode}}">
+      <view class="lamp lamp-forest"></view>
+      <text class="workflow-context-text">工作流 · 仅员工可见</text>
+    </view>
+
+    <!-- 双队列 Tab 已弱化：主入口为工作台「工作信息」；保留 showQueueTabs 开关以备兼容 -->
+    <view class="queue-tabs" wx:if="{{showQueueTabs && isStaff && !workflowMode}}">
+      <view
+        class="queue-tab {{activeQueue === 'customer' ? 'active' : ''}}"
+        hover-class="queue-tab-press"
+        hover-stay-time="80"
+        bindtap="switchQueue"
+        data-queue="customer"
+      >
+        <text class="queue-tab-label">顾客信息</text>
+        <view class="badge-solid-danger badge-sm queue-tab-badge badge-enter" wx:if="{{customerUnread > 0}}">
+          <text>{{customerUnread > 99 ? '99+' : customerUnread}}</text>
+        </view>
+      </view>
+      <view
+        class="queue-tab workflow {{activeQueue === 'workflow' ? 'active' : ''}}"
+        hover-class="queue-tab-press"
+        hover-stay-time="80"
+        bindtap="switchQueue"
+        data-queue="workflow"
+      >
+        <text class="queue-tab-label">工作流</text>
+        <view class="badge-info badge-sm queue-tab-badge badge-enter" wx:if="{{workflowUnread > 0}}">
+          <text>{{workflowUnread > 99 ? '99+' : workflowUnread}}</text>
+        </view>
+      </view>
+    </view>
+
+    <scroll-view scroll-x class="filter-scroll" show-scrollbar="{{false}}">
+      <view class="filter-row">
+        <view
+          class="filter-pill {{activeCategory === item.id ? 'active' : ''}} {{activeQueue === 'workflow' ? 'workflow' : ''}}"
+          wx:for="{{filterTabs}}"
+          wx:key="id"
+          hover-class="filter-pill-press"
+          hover-stay-time="80"
+          bindtap="switchCategory"
+          data-id="{{item.id}}"
+        >
+          <text>{{item.label}}</text>
+        </view>
+        <view class="filter-pad"></view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="main-scroll"
+    style="top: {{headerHeight}}px;"
+    refresher-enabled="{{true}}"
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+    bindscrolltolower="onReachBottom"
+    lower-threshold="80"
+    refresher-background="#1A1814"
+  >
+    <view class="scroll-top-pad"></view>
+
+    <view class="skeleton-wrap" wx:if="{{loading}}">
+      <view class="sk-card sk-shine" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+        <view class="sk-lamps">
+          <view class="lamp lamp-brass dim"></view>
+          <view class="lamp lamp-info dim"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:elif="{{loadError}}">
+      <view class="empty-lamps">
+        <view class="lamp lamp-warning"></view>
+      </view>
+      <text class="empty-text">来信暂时读不到</text>
+      <text class="empty-desc">线路不稳，请稍后再试。</text>
+      <view class="retry-btn" hover-class="retry-btn-press" hover-stay-time="80" bindtap="retryLoad">再试一次</view>
+    </view>
+
+    <view class="empty-state" wx:elif="{{messages.length === 0}}">
+      <view class="empty-lamps">
+        <view class="lamp-legend">
+          <view class="lamp {{activeQueue === 'workflow' ? 'lamp-forest' : 'lamp-brass'}}"></view>
+          <text>未读</text>
+        </view>
+        <view class="lamp-legend">
+          <view class="lamp lamp-brass hollow"></view>
+          <text>已读</text>
+        </view>
+      </view>
+      <text class="empty-text">{{emptyCopy.title}}</text>
+      <text class="empty-desc">{{emptyCopy.desc}}</text>
+    </view>
+
+    <view class="message-list" wx:else>
+      <view
+        class="message-item {{item.isUnread ? 'unread' : 'read'}} {{item.isPaper ? 'paper' : item.kind}} {{activeQueue === 'workflow' || item.kind === 'workflow' ? 'workflow-card' : ''}}"
+        wx:for="{{messages}}"
+        wx:key="_id"
+        hover-class="message-item-press"
+        hover-stay-time="80"
+        bindtap="viewMessage"
+        bindlongpress="onLongPressDelete"
+        data-id="{{item._id}}"
+        data-index="{{index}}"
+      >
+        <view class="item-accent {{item.isUnread ? 'on' : ''}} {{activeQueue === 'workflow' ? 'forest' : ''}}"></view>
+        <view class="lamp-col">
+          <view class="lamp {{item.readLampClass}}"></view>
+          <view class="lamp {{item.kindLampClass}}"></view>
+        </view>
+        <view class="message-body">
+          <view class="message-meta">
+            <text class="kind-tag kind-{{item.kind}}">{{item.kindLabel}}</text>
+            <text class="type-tag">{{item.typeName}}</text>
+            <text class="message-time">{{item.formattedTime}}</text>
+          </view>
+          <text class="message-title">{{item.title}}</text>
+          <text class="message-sender" wx:if="{{item.isPaper}}">寄件 · {{item.senderName}}</text>
+          <text class="message-preview" wx:if="{{item.preview}}">{{item.preview}}</text>
+          <view class="message-foot">
+            <view class="status-chip">
+              <view class="lamp {{item.statusLampClass}}"></view>
+              <text>{{item.statusLabel}}</text>
+            </view>
+            <text class="action-hint" wx:if="{{item.actionUrl}}">{{item.actionLabel || '打开相关页'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="load-more" wx:if="{{loadingMore}}">
+        <view class="lamp lamp-brass dim"></view>
+        <text>继续取信</text>
+      </view>
+      <view class="load-more muted" wx:elif="{{!hasMore && messages.length > 0}}">
+        <text>以上是全部来信</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

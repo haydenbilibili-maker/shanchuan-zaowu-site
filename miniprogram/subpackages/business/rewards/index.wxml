@@ -1,0 +1,5 @@
+<!-- 钱包枢纽路由器（兼容旧「积分与券」路径） -->
+<view class="rw-shell">
+  <text class="rw-en">WALLET & COUPONS</text>
+  <text class="rw-cn">正在打开…</text>
+</view>

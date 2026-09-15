@@ -17,6 +17,8 @@ function seq(prefix, count) {
 const MEDIA = {
   bannerBlue: cdnPath('banners/chris-nguyen-tXmc2mVDxJc-unsplash.jpg'),
   bannerMuseum: cdnPath('banners/__-drz-__-CK7rdTauhDE-unsplash.jpg'),
+  // 标本师招募轮播：由 getHomeConfig 幂等种子写入 banners，或 Admin/店长后台配置
+  bannerRecruit: cdnPath('banners/d225de57986a74fc592cc876cd09a4df-2524a3ca-bb99-481.png'),
   storeCover: cdnPath('stores/store_shanhaizaowu.png'),
   insectCover: cdnPath(`${SH}/insect-cover.png`),
   insectImages: seq('insect', 5),

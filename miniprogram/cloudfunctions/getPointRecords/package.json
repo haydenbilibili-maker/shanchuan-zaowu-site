@@ -1,0 +1,9 @@
+{
+  "name": "getPointRecords",
+  "version": "1.0.0",
+  "description": "用户积分明细与余额汇总",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -1,8 +1,9 @@
 <!--pages/cart/index.wxml-->
-<view class="page-cart {{!loading && cartList.length > 0 ? 'has-items' : ''}}">
+<wxs src="../../utils/latinDisplay.wxs" module="latin" />
+<view class="page-cart {{!loading && cartList.length > 0 ? 'has-items' : ''}}" style="padding-top: {{statusBarHeight}}px;">
 
   <view class="cart-top">
-  <!-- 顶部 -->
+  <!-- 顶部（navigationStyle:custom，与其它 Tab 统一，避免 iOS 切 Tab 白闪） -->
   <view class="cart-header">
     <view class="header-left">
       <view class="header-title">
@@ -12,11 +13,7 @@
       <text class="header-meta" wx:if="{{!loading && cartList.length > 0}}">{{cartList.length}} 件待结算</text>
       <text class="header-meta" wx:elif="{{!loading && currentFolder !== 'all'}}">当前：{{currentFolderName}}</text>
     </view>
-    <view class="header-actions" wx:if="{{!loading && cartList.length > 0}}">
-      <view class="text-btn" wx:if="{{!editMode}}" bindtap="enterEditMode">编辑</view>
-      <view class="text-btn active" wx:else bindtap="exitEditMode">完成</view>
-    </view>
-    <view class="header-actions" wx:elif="{{!loading && currentFolder !== 'all'}}">
+    <view class="header-actions" wx:if="{{!loading && currentFolder !== 'all'}}">
       <view class="text-btn" bindtap="switchToAll">返回全部</view>
     </view>
   </view>
@@ -24,17 +21,17 @@
   <!-- 分类筛选 -->
   <view class="filter-bar" wx:if="{{!loading && (folders.length > 0 || currentFolder !== 'all' || cartList.length > 0)}}">
     <scroll-view scroll-x class="filter-scroll" enable-flex show-scrollbar="{{false}}">
-      <view class="filter-chip {{currentFolder === 'all' ? 'active' : ''}}" bindtap="switchFolder" data-folder="all">全部</view>
-      <view class="filter-chip {{currentFolder === 'product' ? 'active' : ''}}" bindtap="switchFolder" data-folder="product">藏品</view>
-      <view class="filter-chip {{currentFolder === 'activity' ? 'active' : ''}}" bindtap="switchFolder" data-folder="activity">活动</view>
-      <view class="filter-chip {{currentFolder === 'course' ? 'active' : ''}}" bindtap="switchFolder" data-folder="course">课程</view>
+      <view class="filter-chip {{currentFolder === 'all' ? 'active' : ''}}" bindtap="switchFolder" data-folder="all" hover-class="filter-chip-press" hover-stay-time="80">全部</view>
+      <view class="filter-chip {{currentFolder === 'product' ? 'active' : ''}}" bindtap="switchFolder" data-folder="product" hover-class="filter-chip-press" hover-stay-time="80">藏品</view>
+      <view class="filter-chip {{currentFolder === 'activity' ? 'active' : ''}}" bindtap="switchFolder" data-folder="activity" hover-class="filter-chip-press" hover-stay-time="80">活动</view>
+      <view class="filter-chip {{currentFolder === 'course' ? 'active' : ''}}" bindtap="switchFolder" data-folder="course" hover-class="filter-chip-press" hover-stay-time="80">课程</view>
       <block wx:for="{{folders}}" wx:key="_id">
-        <view class="filter-chip {{currentFolder === item._id ? 'active' : ''}}" bindtap="switchFolder" data-folder="{{item._id}}">
+        <view class="filter-chip {{currentFolder === item._id ? 'active' : ''}}" bindtap="switchFolder" data-folder="{{item._id}}" hover-class="filter-chip-press" hover-stay-time="80">
           <text>{{item.name}}</text>
           <text class="chip-count" wx:if="{{item.itemCount}}">({{item.itemCount}})</text>
         </view>
       </block>
-      <view class="filter-chip dashed" bindtap="showFolderManager">+ 管理</view>
+      <view class="filter-pad"></view>
     </scroll-view>
   </view>
   </view>
@@ -42,7 +39,7 @@
   <!-- Loading -->
   <view class="loading-box scroll-panel" wx:if="{{loading}}" style="top: {{scrollTopPx}}px; height: {{scrollHeightPx}}px;">
     <view class="scanner"></view>
-    <text>正在整理清单...</text>
+    <text>正在整理清单…</text>
   </view>
 
   <block wx:else>
@@ -55,7 +52,7 @@
       style="top: {{scrollTopPx}}px; height: {{scrollHeightPx}}px;"
     >
       <view class="invalid-banner" wx:if="{{invalidCount > 0}}">
-        <text class="invalid-text">{{invalidCount}} 件商品已失效</text>
+        <text class="invalid-text">{{invalidCount}} 件藏品已失效</text>
         <text class="invalid-action" bindtap="clearInvalidItems">清理</text>
       </view>
 
@@ -69,20 +66,27 @@
               data-index="{{index}}"
             >
               <view
-                class="cart-card {{item.selected ? 'selected' : ''}} {{item.invalid ? 'invalid' : ''}} {{editMode && selectedItems.indexOf(item._id) > -1 ? 'edit-selected' : ''}}"
-                bindtap="onCartCardTap"
+                class="cart-card {{item.selected ? 'selected' : ''}} {{item.invalid ? 'invalid' : ''}}"
+                bindtap="toggleSelect"
                 data-index="{{index}}"
-                data-id="{{item._id}}"
+                hover-class="cart-card-press"
+                hover-stay-time="80"
               >
-                <view class="gold-checkbox {{item.selected || (editMode && selectedItems.indexOf(item._id) > -1) ? 'checked' : ''}} {{item.stock <= 0 || item.invalid ? 'disabled' : ''}}">
-                  <view class="tick" wx:if="{{item.selected || (editMode && selectedItems.indexOf(item._id) > -1)}}">
+                <view class="gold-checkbox {{item.selected ? 'checked' : ''}} {{item.stock <= 0 || item.invalid ? 'disabled' : ''}}">
+                  <view class="tick" wx:if="{{item.selected}}">
                     <image src="/assets/icons/done.png" mode="aspectFit"></image>
                   </view>
                 </view>
 
                 <view class="card-body">
                   <view class="thumb-wrap" catchtap="goToDetail" data-id="{{item.productId}}">
-                    <image class="thumb" src="{{item.image}}" mode="aspectFill"></image>
+                    <image class="thumb" src="{{item.image}}" mode="aspectFill" lazy-load binderror="onCartThumbError" data-index="{{index}}"></image>
+                    <protected-badge
+                      wx:if="{{item.isProtected}}"
+                      show="{{true}}"
+                      size="xs"
+                      corner="bl"
+                    />
                     <view class="thumb-mask" wx:if="{{item.invalid}}">
                       <text class="mask-cn">失效</text>
                     </view>
@@ -95,7 +99,7 @@
                   <view class="info-col">
                     <view class="info-top" catchtap="goToDetail" data-id="{{item.productId}}">
                       <text class="name">{{item.title}}</text>
-                      <text class="latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+                      <text class="latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
                       <text class="sku-tag" wx:if="{{item.skuLabel}}">{{item.skuLabel}}</text>
                       <text class="invalid-reason" wx:if="{{item.invalid}}">{{item.invalidReason}}</text>
                     </view>
@@ -129,11 +133,24 @@
           <text class="section-sub">YOU MAY ALSO LIKE</text>
         </view>
         <scroll-view scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
-          <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}">
-            <image class="rec-img" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
+            <view class="rec-img-wrap">
+              <image
+                class="rec-img"
+                wx:if="{{item.image || item.httpImage}}"
+                src="{{item.image || item.httpImage}}"
+                mode="aspectFill"
+                lazy-load
+                binderror="onRecommendImageError"
+                data-index="{{index}}"
+              ></image>
+              <view class="rec-img-ph" wx:else>
+                <image class="rec-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+              </view>
+            </view>
             <view class="rec-body">
               <text class="rec-title">{{item.title}}</text>
-              <text class="rec-latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+              <text class="rec-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
               <text class="rec-price">¥{{item.price}}</text>
             </view>
           </view>
@@ -147,21 +164,26 @@
     <view class="empty-section scroll-panel" wx:else style="top: {{scrollTopPx}}px; height: {{scrollHeightPx}}px;">
       <view class="empty-hero">
         <view class="empty-icon-wrap">
-          <image class="empty-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+          <image class="empty-icon" src="/assets/icons/tab-cart.png" mode="aspectFit"></image>
         </view>
         <text class="empty-overline">YOUR CART</text>
-        <text class="empty-title" wx:if="{{currentFolder === 'all'}}">购物车是空的</text>
-        <text class="empty-title" wx:else>该分类暂无商品</text>
-        <text class="empty-desc" wx:if="{{currentFolder === 'all'}}">在馆藏或商品详情页加入购物车，待结算的藏品会出现在这里</text>
+        <text class="empty-title" wx:if="{{loadError}}">购物车加载失败</text>
+        <text class="empty-title" wx:elif="{{currentFolder === 'all'}}">购物车是空的</text>
+        <text class="empty-title" wx:else>该分类暂无藏品</text>
+        <text class="empty-desc" wx:if="{{loadError}}">请检查网络后重试</text>
+        <text class="empty-desc" wx:elif="{{currentFolder === 'all'}}">在馆藏或藏品详情页加入购物车，待结算的藏品会出现在这里</text>
         <text class="empty-desc" wx:else>切换上方分类标签查看，或返回全部列表</text>
         <view class="empty-actions">
-          <view class="empty-cta-primary" bindtap="goHome">
+          <view class="empty-cta-primary" wx:if="{{loadError}}" bindtap="loadCollection" hover-class="empty-cta-press">
+            <text>重新加载</text>
+          </view>
+          <view class="empty-cta-primary" wx:else bindtap="goHome" hover-class="empty-cta-press">
             <text>去逛逛</text>
           </view>
-          <view class="empty-cta-secondary" wx:if="{{currentFolder === 'all'}}" bindtap="goCategory">
+          <view class="empty-cta-secondary" wx:if="{{!loadError && currentFolder === 'all'}}" bindtap="goCategory" hover-class="empty-cta-secondary-press" hover-stay-time="80">
             <text>浏览馆藏</text>
           </view>
-          <view class="empty-cta-secondary" wx:else bindtap="switchToAll">
+          <view class="empty-cta-secondary" wx:elif="{{!loadError}}" bindtap="switchToAll" hover-class="empty-cta-secondary-press" hover-stay-time="80">
             <text>返回全部</text>
           </view>
         </view>
@@ -172,8 +194,21 @@
           <text class="section-label">为你推荐</text>
         </view>
         <scroll-view scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
-          <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}">
-            <image class="rec-img" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
+            <view class="rec-img-wrap">
+              <image
+                class="rec-img"
+                wx:if="{{item.image || item.httpImage}}"
+                src="{{item.image || item.httpImage}}"
+                mode="aspectFill"
+                lazy-load
+                binderror="onRecommendImageError"
+                data-index="{{index}}"
+              ></image>
+              <view class="rec-img-ph" wx:else>
+                <image class="rec-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+              </view>
+            </view>
             <view class="rec-body">
               <text class="rec-title">{{item.title}}</text>
               <text class="rec-price">¥{{item.price}}</text>
@@ -181,16 +216,18 @@
           </view>
         </scroll-view>
       </view>
+      <view class="scroll-spacer empty-spacer"></view>
     </view>
   </block>
 
   <!-- 底部结算栏 -->
-  <view class="checkout-bar safe-area" wx:if="{{!loading && cartList.length > 0 && !editMode}}">
-    <view class="coupon-chip" bindtap="openCouponModal">
+  <view class="checkout-bar safe-area" wx:if="{{!loading && cartList.length > 0}}">
+    <view class="coupon-chip" bindtap="openCouponModal" hover-class="coupon-chip-press">
       <image class="coupon-icon" src="/assets/icons/coupon.png" mode="aspectFit"></image>
-      <text wx:if="{{selectedCoupon}}">{{selectedCoupon.title}} · -¥{{couponSaved}}</text>
-      <text wx:elif="{{coupons.length > 0}}">选择礼券 ({{coupons.length}})</text>
-      <text wx:else>暂无可用礼券</text>
+      <text wx:if="{{selectedCoupon && selectedCoupon.type === 'freeShipping'}}">免邮券</text>
+      <text wx:elif="{{selectedCoupon && couponSaved > 0}}">已减 ¥{{couponSaved}}</text>
+      <text wx:elif="{{selectedCoupon}}">已选礼券</text>
+      <text wx:else>选择礼券</text>
     </view>
 
     <view class="bar-main">
@@ -204,7 +241,7 @@
       <view class="total-block">
         <view class="total-row" wx:if="{{vipSaved > 0 || couponSaved > 0}}">
           <text class="total-hint" wx:if="{{vipSaved > 0}}">会员 -¥{{vipSaved}}</text>
-          <text class="total-hint" wx:if="{{couponSaved > 0}}">券 -¥{{couponSaved}}</text>
+          <text class="total-hint" wx:if="{{couponSaved > 0}}">礼券 -¥{{couponSaved}}</text>
         </view>
         <view class="total-main">
           <text class="total-label">合计</text>
@@ -212,105 +249,41 @@
         </view>
       </view>
 
-      <view class="checkout-btn {{selectedCount === 0 ? 'disabled' : ''}}" bindtap="handleCheckout">
-        <text>签署入藏</text>
+      <view class="checkout-btn {{selectedCount === 0 ? 'disabled' : ''}}" bindtap="handleCheckout" hover-class="{{selectedCount === 0 ? '' : 'checkout-btn-hover'}}">
+        <text>付款入藏</text>
         <text class="checkout-count" wx:if="{{selectedCount > 0}}">({{selectedCount}})</text>
       </view>
     </view>
-  </view>
-
-  <!-- 编辑模式底栏 -->
-  <view class="edit-bar safe-area" wx:if="{{editMode}}">
-    <text class="edit-count">已选 {{selectedItems.length}} 件</text>
-    <view class="edit-actions">
-      <view class="edit-btn secondary" bindtap="showMoveModal">移动到</view>
-      <view class="edit-btn danger" bindtap="batchDelete">删除</view>
+    <view class="shipping-hint-row" wx:if="{{shippingHint}}">
+      <text class="shipping-hint">{{shippingHint}}</text>
     </view>
   </view>
 
   <!-- 优惠券弹窗 -->
-  <view class="modal-mask coupon-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal" catchtouchmove="true">
-    <view class="sheet-panel coupon-sheet" catchtap="noop">
+  <view class="modal-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal" catchtouchmove="true">
+    <view class="sheet-panel" catchtap="true">
       <view class="sheet-drag-handle"></view>
-      <view class="sheet-header row">
-        <text>选择优惠券</text>
-        <text class="header-link" bindtap="closeCouponModal">关闭</text>
-      </view>
-      <scroll-view scroll-y class="sheet-list coupon-sheet-list" show-scrollbar="{{false}}">
-        <view class="sheet-item" bindtap="selectCoupon" data-index="-1">
-          <text class="sheet-item-name">不使用优惠券</text>
-          <view class="radio {{!selectedCoupon ? 'checked' : ''}}"></view>
+      <view class="sheet-header">选择礼券</view>
+      <scroll-view scroll-y class="sheet-list" enhanced show-scrollbar="{{false}}">
+        <view class="sheet-item {{!selectedCoupon ? 'selected' : ''}}" bindtap="selectCoupon" data-index="-1" hover-class="sheet-item-press">
+          <text class="sheet-item-name">不使用礼券</text>
+          <view class="radio {{!selectedCoupon ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{!selectedCoupon}}"></view></view>
         </view>
-        <block wx:if="{{coupons.length > 0}}">
+        <block wx:for="{{coupons}}" wx:key="_id">
           <view
-            class="sheet-item {{item._disabled ? 'disabled' : ''}}"
-            wx:for="{{coupons}}"
-            wx:key="_id"
+            class="sheet-item {{couponBaseAmount < item.minSpend ? 'disabled' : ''}} {{selectedCoupon._id === item._id ? 'selected' : ''}}"
             bindtap="selectCoupon"
             data-index="{{index}}"
+            hover-class="sheet-item-press"
           >
             <view class="cp-left">
-              <text class="cp-val">{{item.valueDisplay}}</text>
+              <text class="cp-val">{{item.faceLabel || ('¥' + item.value)}}</text>
               <view class="cp-meta">
                 <text class="cp-name">{{item.title}}</text>
-                <text class="cp-tag">{{item.typeLabel}}</text>
-                <text class="cp-cond" wx:if="{{item.minSpend > 0}}">满 ¥{{item.minSpend}} 可用</text>
-                <text class="cp-cond warn" wx:if="{{item._disabled}}">当前合计 ¥{{vipTotalNum}}，未达门槛</text>
-                <text class="cp-cond" wx:else>{{item.expireText}}</text>
+                <text class="cp-cond">满 {{item.minSpend}} 可用</text>
               </view>
             </view>
-            <view class="radio {{selectedCoupon && selectedCoupon._id === item._id ? 'checked' : ''}}"></view>
-          </view>
-        </block>
-        <view class="sheet-empty" wx:else>
-          <text>暂无可用礼券</text>
-          <text class="sheet-empty-sub">可在积分中心兑换或在活动页领取</text>
-        </view>
-      </scroll-view>
-    </view>
-  </view>
-
-  <!-- 收藏夹管理 -->
-  <view class="modal-mask" wx:if="{{showFolderModal}}" bindtap="closeFolderModal" catchtouchmove="true">
-    <view class="sheet-panel" catchtap="noop">
-      <view class="sheet-header row">
-        <text>收藏夹管理</text>
-        <view class="header-link" bindtap="createFolder">+ 新建</view>
-      </view>
-      <scroll-view scroll-y class="sheet-list">
-        <block wx:for="{{folders}}" wx:key="_id">
-          <view class="folder-row">
-            <view class="folder-meta">
-              <text class="folder-name">{{item.name}}</text>
-              <text class="folder-count">{{item.itemCount}} 件</text>
-            </view>
-            <view class="folder-btns">
-              <text class="folder-link" bindtap="renameFolder" data-id="{{item._id}}" data-name="{{item.name}}">重命名</text>
-              <text class="folder-link danger" bindtap="deleteFolder" data-id="{{item._id}}">删除</text>
-            </view>
-          </view>
-        </block>
-        <view class="sheet-empty" wx:if="{{folders.length === 0}}">暂无收藏夹</view>
-      </scroll-view>
-    </view>
-  </view>
-
-  <!-- 移动到收藏夹 -->
-  <view class="modal-mask" wx:if="{{showMoveModal}}" bindtap="closeMoveModal" catchtouchmove="true">
-    <view class="sheet-panel" catchtap="noop">
-      <view class="sheet-header">移动到收藏夹</view>
-      <scroll-view scroll-y class="sheet-list">
-        <view class="move-row" bindtap="moveToFolder" data-folder="">
-          <text>移出收藏夹</text>
-          <view class="radio"></view>
-        </view>
-        <block wx:for="{{folders}}" wx:key="_id">
-          <view class="move-row" bindtap="moveToFolder" data-folder="{{item._id}}">
-            <view class="move-meta">
-              <text>{{item.name}}</text>
-              <text class="move-count">{{item.itemCount}} 件</text>
-            </view>
-            <view class="radio"></view>
+            <view class="radio {{selectedCoupon._id === item._id ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{selectedCoupon._id === item._id}}"></view></view>
           </view>
         </block>
       </scroll-view>

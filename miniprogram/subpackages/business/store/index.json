@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "这有店",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundColorContent": "#1A1814",
+  "backgroundTextStyle": "light",
+  "enablePullDownRefresh": true
+}

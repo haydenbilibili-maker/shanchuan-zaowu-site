@@ -1,0 +1,262 @@
+<!-- 与 CRM / 核销一致：原生导航栏左滑回工作台；勿自绘顶栏叠 statusBar -->
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  enhanced
+  show-scrollbar="{{false}}"
+  style="height: {{scrollHeight}}px;"
+>
+  <view class="page-inner">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">LIVE BROADCAST</text>
+        <text class="cn">馆内开播</text>
+      </view>
+      <text class="header-note">推流 · 货架 · 互动 · 从工作台进入后左滑可返回</text>
+    </view>
+
+    <view class="sim-banner" wx:if="{{isSimulator}}">
+      <text>模拟器不支持真实推流与摄像头预览，请用真机调试。</text>
+    </view>
+
+    <view class="workbench-state loading panel-pad" wx:if="{{dashboardLoading && !session && !dashboardLoadError}}">
+      <text>加载场次…</text>
+    </view>
+
+    <view class="workbench-state error panel-pad" wx:elif="{{dashboardLoadError}}">
+      <text>{{dashboardLoadError}}</text>
+      <view class="workbench-btn-outline sm state-retry" bindtap="loadDashboard">重试</view>
+    </view>
+
+    <view class="workbench-state panel-pad" wx:elif="{{!dashboardLoading && !session}}">
+      <text>暂无本人未结束场次。请返回主播工作台新建场次后再开播。</text>
+      <view class="workbench-btn-primary state-cta" bindtap="goCreateSessionHint">返回工作台</view>
+    </view>
+
+    <view class="status-card" wx:if="{{session || dashboardLoading || dashboardLoadError}}">
+      <view class="status-row">
+        <text class="status-label">推流配置</text>
+        <text class="status-val {{configured ? 'ok' : 'warn'}}">{{configured ? '已配置' : '未配置 LIVE_*'}}</text>
+      </view>
+      <view class="status-row">
+        <text class="status-label">内容开关</text>
+        <text class="status-val {{enabled ? 'ok' : 'warn'}}">{{enabled ? '已开启' : '未开启（C 端不可见）'}}</text>
+      </view>
+      <view class="status-row" wx:if="{{active && active._id && !(session && session._id === active._id)}}">
+        <text class="status-label">他人直播</text>
+        <text class="status-val warn">{{active.title}} · {{active.hostName || '同事'}}</text>
+      </view>
+      <view class="status-row" wx:elif="{{session}}">
+        <text class="status-label">本场状态</text>
+        <text class="status-val {{sessionStatusTone}}">{{sessionStatusLabel}}</text>
+      </view>
+      <view class="status-row" wx:else>
+        <text class="status-label">本场状态</text>
+        <text class="status-val">暂无场次</text>
+      </view>
+      <view class="status-row" wx:if="{{pushing}}">
+        <text class="status-label">在线 / 热度</text>
+        <text class="status-val">{{viewerCount}} 人 · 赞 {{likeCount}}</text>
+      </view>
+      <text class="status-tip" wx:if="{{dashboardMsg}}">{{dashboardMsg}}</text>
+      <view class="status-actions" wx:if="{{!enabled}}">
+        <text class="status-tip">C 端首页不会出现直播入口。请超管打开「内容开关 → 馆内直播」。</text>
+      </view>
+      <view
+        class="workbench-btn-outline sm status-end-btn"
+        wx:if="{{(active && active._id) || (session && (session.status === 'live' || session.status === 'idle'))}}"
+        bindtap="forceEndActive"
+      >一键结束异常/进行中场次</view>
+    </view>
+
+    <view class="stage {{pushing ? 'on-air' : ''}}" wx:if="{{session}}">
+      <live-pusher
+        wx:if="{{!isSimulator}}"
+        id="livePusher"
+        class="pusher"
+        url="{{pushing ? pushUrl : ''}}"
+        mode="HD"
+        autopush="{{pushing && !!pushUrl}}"
+        enable-camera="{{true}}"
+        enable-mic="{{pushing}}"
+        muted="{{false}}"
+        beauty="{{beautyOn ? 5 : 0}}"
+        whiteness="{{beautyOn ? 3 : 0}}"
+        device-position="{{devicePosition}}"
+        aspect="9:16"
+        bindstatechange="onPusherState"
+        binderror="onPusherError"
+        bindnetstatus="onNetStatus"
+      />
+      <view class="pusher-fallback" wx:else>
+        <text class="fallback-title">预览不可用</text>
+        <text class="fallback-text">请使用真机打开本页</text>
+      </view>
+      <view class="stage-top">
+        <view class="live-badge {{pushing ? 'on' : ''}}">
+          <view class="dot"></view>
+          <text>{{pushing ? 'ON AIR' : 'PREVIEW'}}</text>
+        </view>
+        <text class="conn-pill {{connLevel}}" wx:if="{{pusherHint}}">{{pusherHint}}</text>
+      </view>
+      <view class="bitrate-bar" wx:if="{{bitrateLabel}}">
+        <text>{{bitrateLabel}}</text>
+      </view>
+    </view>
+
+    <view class="panel" wx:if="{{session && !pushing}}">
+      <text class="label">本场标题</text>
+      <input class="input" maxlength="40" value="{{title}}" bindinput="onTitleInput" placeholder="例如：周五柜前聊藏品" placeholder-class="ph"/>
+      <text class="label">场内公告 / 主播置顶（选填，观众可见）</text>
+      <input class="input" maxlength="80" value="{{notice}}" bindinput="onNoticeInput" placeholder="一句话公告，非弹幕" placeholder-class="ph"/>
+
+      <text class="label">开播封面（首页 Banner / 分享）</text>
+      <view class="cover-row">
+        <image class="cover-thumb" wx:if="{{coverLocal || coverUrl}}" src="{{coverLocal || coverUrl}}" mode="aspectFill"/>
+        <view class="cover-placeholder" wx:else>
+          <text>未选封面</text>
+        </view>
+        <view class="cover-actions">
+          <view class="ghost-light mini" bindtap="chooseCover">上传封面</view>
+          <view class="ghost-light mini" wx:if="{{coverUrl || coverLocal}}" bindtap="clearCover">清除</view>
+        </view>
+      </view>
+
+      <text class="label">预约开播时间（选填，仅展示）</text>
+      <view class="schedule-row">
+        <picker mode="date" value="{{scheduleDate}}" bindchange="onScheduleDate">
+          <view class="picker-chip">{{scheduleDate || '日期'}}</view>
+        </picker>
+        <picker mode="time" value="{{scheduleTime}}" bindchange="onScheduleTime">
+          <view class="picker-chip">{{scheduleTime || '时间'}}</view>
+        </picker>
+        <view class="ghost-light mini" bindtap="saveSchedule">保存</view>
+        <view class="ghost-light mini" wx:if="{{scheduleDate}}" bindtap="clearSchedule">清除</view>
+      </view>
+      <text class="schedule-hint" wx:if="{{scheduleLabel}}">将展示：{{scheduleLabel}}</text>
+
+      <text class="label">本场挂车（{{shelfCount}}/20）</text>
+      <view class="shelf-host-list" wx:if="{{shelfItems.length}}">
+        <view class="shelf-host-row {{item.spotlight ? 'spot' : ''}}" wx:for="{{shelfItems}}" wx:key="_id">
+          <image class="shelf-host-cover" wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill"/>
+          <view class="shelf-host-cover ph" wx:else><text>缺图</text></view>
+          <view class="shelf-host-info">
+            <text class="shelf-host-name">{{item.title}}</text>
+            <text class="shelf-host-price">{{item.priceLabel}}</text>
+            <text class="shelf-host-warn" wx:if="{{item.warnText}}">{{item.warnText}}</text>
+          </view>
+          <view class="shelf-host-actions">
+            <view class="ghost-light mini {{item.canMoveUp ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="up">上移</view>
+            <view class="ghost-light mini {{item.canMoveDown ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="down">下移</view>
+            <view class="ghost-light mini" bindtap="setSpotlightProduct" data-id="{{item._id}}">{{item.spotlight ? '取消讲解' : '讲解中'}}</view>
+            <view class="ghost-light mini" bindtap="removeShelfProduct" data-id="{{item._id}}">下架</view>
+          </view>
+        </view>
+      </view>
+      <view class="shelf-toolbar">
+        <view class="ghost-light full" bindtap="openShelfPicker">从藏品库挂品</view>
+        <view class="ghost-light full danger" wx:if="{{shelfItems.length}}" bindtap="clearShelf">一键清空</view>
+      </view>
+
+      <view class="toggle-row" bindtap="toggleBeauty">
+        <text class="toggle-label">美颜</text>
+        <text class="toggle-val">{{beautyOn ? '开' : '关（默认）'}}</text>
+      </view>
+      <view class="actions-row">
+        <view class="workbench-btn-outline" bindtap="switchCamera">翻转镜头</view>
+        <view class="workbench-btn-primary flex-grow {{busy || !configured ? 'is-disabled' : ''}}" bindtap="startLive">{{busy ? '准备中…' : '开始推流'}}</view>
+      </view>
+      <view class="workbench-btn-outline end-outline" wx:if="{{session && (session.status === 'live' || session.status === 'idle')}}" bindtap="endLive">结束 / 废弃本场</view>
+    </view>
+
+    <view class="panel" wx:elif="{{session && pushing}}">
+      <text class="overlay-title">{{title}}</text>
+      <text class="overlay-stats">在线约 {{viewerCount}} · 峰值 {{liveStats.peakViewers}} · 赞 {{liveStats.likeCount}} · 留言 {{liveStats.messageCount}} · 进房 {{liveStats.joinCount}}</text>
+      <text class="label">主播置顶公告</text>
+      <input class="input" maxlength="80" value="{{notice}}" bindinput="onNoticeInput" placeholder="更新后观众端置顶展示" placeholder-class="ph"/>
+      <view class="workbench-btn-primary sync-notice" bindtap="saveNotice">同步置顶公告</view>
+
+      <text class="label">本场挂车（{{shelfCount}}/20）</text>
+      <view class="spotlight-switch" wx:if="{{shelfItems.length}}">
+        <view class="ghost-light mini" bindtap="cycleSpotlight" data-dir="prev">上一件讲解</view>
+        <view class="ghost-light mini" bindtap="cycleSpotlight" data-dir="next">下一件讲解</view>
+      </view>
+      <view class="shelf-host-list" wx:if="{{shelfItems.length}}">
+        <view class="shelf-host-row {{item.spotlight ? 'spot' : ''}} {{item.soldOut ? 'sold' : ''}}" wx:for="{{shelfItems}}" wx:key="_id">
+          <image class="shelf-host-cover" wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill"/>
+          <view class="shelf-host-cover ph" wx:else><text>缺图</text></view>
+          <view class="shelf-host-info">
+            <text class="shelf-host-name">{{item.title}}</text>
+            <text class="shelf-host-price">{{item.priceLabel}}{{item.spotlight ? ' · 讲解中' : ''}}</text>
+            <text class="shelf-host-warn" wx:if="{{item.warnText}}">{{item.warnText}}</text>
+          </view>
+          <view class="shelf-host-actions">
+            <view class="ghost-light mini {{item.canMoveUp ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="up">上移</view>
+            <view class="ghost-light mini {{item.canMoveDown ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="down">下移</view>
+            <view class="ghost-light mini" bindtap="setSpotlightProduct" data-id="{{item._id}}">{{item.spotlight ? '取消' : '讲解'}}</view>
+            <view class="ghost-light mini" bindtap="removeShelfProduct" data-id="{{item._id}}">下架</view>
+          </view>
+        </view>
+      </view>
+      <view class="shelf-toolbar">
+        <view class="ghost-light full" bindtap="openShelfPicker">挂品 / 搜藏品</view>
+        <view class="ghost-light full danger" wx:if="{{shelfItems.length}}" bindtap="clearShelf">一键清空</view>
+      </view>
+
+      <view class="toggle-row compact" bindtap="toggleBeauty">
+        <text class="toggle-label">美颜</text>
+        <text class="toggle-val">{{beautyOn ? '开' : '关'}}</text>
+      </view>
+      <view class="actions-row wrap">
+        <view class="workbench-btn-outline" bindtap="switchCamera">翻转</view>
+        <view class="workbench-btn-outline" bindtap="toggleTorch">{{torchOn ? '关手电' : '手电筒'}}</view>
+        <view class="workbench-btn-outline" bindtap="retryPush" wx:if="{{needsRetry}}">重试推流</view>
+        <view class="workbench-btn-danger flex-grow" bindtap="endLive">结束直播</view>
+      </view>
+      <view class="host-msg" wx:if="{{messages.length}}">
+        <text class="label">本场留言</text>
+        <view class="host-msg-row" wx:for="{{messages}}" wx:key="_id">
+          <text class="host-msg-author">{{item.author}}</text>
+          <text class="host-msg-text">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-spacer"></view>
+  </view>
+</scroll-view>
+
+<view class="picker-mask" wx:if="{{showShelfPicker}}" bindtap="closeShelfPicker"></view>
+<view class="picker-sheet" wx:if="{{showShelfPicker}}">
+  <view class="picker-hd">
+    <text class="picker-title">选择挂车藏品</text>
+    <text class="picker-close" bindtap="closeShelfPicker">完成</text>
+  </view>
+  <view class="picker-search">
+    <input
+      class="picker-input"
+      value="{{productKeyword}}"
+      bindinput="onProductKeyword"
+      bindconfirm="searchProducts"
+      placeholder="搜索藏品名 / 学名"
+      placeholder-class="ph"
+    />
+    <view class="ghost-light mini" bindtap="searchProducts">搜索</view>
+  </view>
+  <scroll-view class="picker-list" scroll-y>
+    <view class="picker-row" wx:for="{{productCandidates}}" wx:key="_id">
+      <image class="picker-cover" src="{{item.cover}}" mode="aspectFill"/>
+      <view class="picker-info">
+        <text class="picker-name">{{item.title}}</text>
+        <text class="picker-meta">¥{{item.price}}{{item.onShelf ? '' : ' · 已下架'}}</text>
+      </view>
+      <view
+        class="ghost-light mini {{item.already ? 'disabled' : ''}}"
+        bindtap="addShelfProduct"
+        data-id="{{item._id}}"
+      >{{item.already ? '已挂' : '挂上'}}</view>
+    </view>
+    <view class="picker-empty" wx:if="{{productLoading}}">加载中…</view>
+    <view class="picker-empty" wx:elif="{{!productCandidates.length}}">没有匹配藏品</view>
+  </scroll-view>
+</view>

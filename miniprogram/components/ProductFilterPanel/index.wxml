@@ -1,0 +1,144 @@
+<!-- 电商式全部筛选：左栏维度 + 右栏 2 列 chips + 固定底栏清空/确定 -->
+<view class="filter-root" wx:if="{{visible}}" catchtouchmove="stopMove">
+  <view class="filter-mask" bindtap="onMaskTap"></view>
+  <view class="filter-sheet">
+    <view class="filter-head">
+      <text class="filter-title">全部筛选</text>
+      <view class="filter-close" bindtap="onClose" hover-class="filter-close-press" hover-stay-time="80">
+        <text>×</text>
+      </view>
+    </view>
+
+    <view class="filter-body">
+      <scroll-view scroll-y class="filter-left" show-scrollbar="{{false}}">
+        <view
+          wx:for="{{dims}}"
+          wx:key="key"
+          class="dim-item {{activeDim === item.key ? 'active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="selectDim"
+        >
+          <text>{{item.label}}</text>
+        </view>
+      </scroll-view>
+
+      <scroll-view scroll-y class="filter-right" show-scrollbar="{{false}}">
+        <view class="filter-right-inner">
+          <!-- 品类 -->
+          <view class="section" wx:if="{{activeDim === 'category'}}">
+            <text class="section-title">品类</text>
+            <text class="section-hint" wx:if="{{rootName === '全部' || !rootName}}">选一级馆将同步顶部分类；二级品类在本馆下筛选</text>
+            <view class="chip-grid clearfix" wx:if="{{categoryOptions.length}}">
+              <view
+                class="chip {{draft.categoryValue === item.value ? 'on' : ''}}"
+                wx:for="{{categoryOptions}}"
+                wx:key="value"
+                data-value="{{item.value}}"
+                data-id="{{item.categoryId}}"
+                bindtap="selectCategory"
+              >
+                <text>{{item.label}}</text>
+              </view>
+            </view>
+            <view class="empty-hint" wx:else>当前馆暂无二级品类</view>
+          </view>
+
+          <!-- 渠道 -->
+          <view class="section" wx:if="{{activeDim === 'channel' && showChannel}}">
+            <text class="section-title">渠道</text>
+            <text class="section-hint">适用于昆虫 / 植物 / 海洋 / 动物标本 · 未标注在未选渠道时可见</text>
+            <view class="chip-grid clearfix">
+              <view
+                class="chip {{draft.channel === item.value ? 'on' : ''}}"
+                wx:for="{{channelOptions}}"
+                wx:key="value"
+                data-value="{{item.value}}"
+                bindtap="selectChannel"
+              >
+                <text>{{item.label}}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 装裱方式 -->
+          <view class="section" wx:if="{{activeDim === 'craft' && showCraft}}">
+            <text class="section-title">装裱方式</text>
+            <text class="section-hint">适用于昆虫 / 植物 / 海洋 / 动物标本</text>
+            <view class="chip-grid clearfix">
+              <view
+                class="chip {{draft.craftType === item.value ? 'on' : ''}}"
+                wx:for="{{craftOptions}}"
+                wx:key="value"
+                data-value="{{item.value}}"
+                bindtap="selectCraft"
+              >
+                <text>{{item.label}}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 制作工艺 -->
+          <view class="section" wx:if="{{activeDim === 'craftProcess' && showCraft}}">
+            <text class="section-title">制作工艺</text>
+            <text class="section-hint">浸制 / 塑化 / 剥制等藏品工艺</text>
+            <view class="chip-grid clearfix">
+              <view
+                class="chip {{draft.craftProcess === item.value ? 'on' : ''}}"
+                wx:for="{{craftProcessOptions}}"
+                wx:key="value"
+                data-value="{{item.value}}"
+                bindtap="selectCraftProcess"
+              >
+                <text>{{item.label}}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 价格 -->
+          <view class="section" wx:if="{{activeDim === 'price'}}">
+            <text class="section-title">价格区间</text>
+            <view class="price-preset-grid clearfix">
+              <view
+                class="price-preset {{draft.pricePresetId === item.id ? 'on' : ''}}"
+                wx:for="{{pricePresets}}"
+                wx:key="id"
+                data-id="{{item.id}}"
+                bindtap="selectPricePreset"
+              >
+                <text class="price-preset-label">{{item.label}}</text>
+              </view>
+            </view>
+            <view class="price-custom">
+              <input
+                class="price-input"
+                type="digit"
+                placeholder="自定义最低价"
+                placeholder-class="price-ph"
+                value="{{draft.priceMin}}"
+                bindinput="onPriceMinInput"
+              />
+              <text class="price-dash">—</text>
+              <input
+                class="price-input"
+                type="digit"
+                placeholder="自定义最高价"
+                placeholder-class="price-ph"
+                value="{{draft.priceMax}}"
+                bindinput="onPriceMaxInput"
+              />
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <view class="filter-foot">
+      <view class="btn-clear" catchtap="onClear" hover-class="btn-press" hover-stay-time="80">
+        <text>清空选择</text>
+      </view>
+      <view class="btn-confirm" catchtap="onConfirm" hover-class="btn-press" hover-stay-time="80">
+        <text>确定</text>
+      </view>
+    </view>
+  </view>
+</view>

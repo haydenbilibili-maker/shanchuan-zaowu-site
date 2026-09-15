@@ -1,0 +1,74 @@
+page {
+  background: #1A1814;
+  color: #FFFFFF;
+}
+
+.page-track {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 48rpx 32rpx;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  padding: 40rpx 32rpx;
+  background: #1F1D1A;
+  border: 1rpx solid rgba(196, 167, 108, 0.28);
+  border-radius: 24rpx;
+  box-sizing: border-box;
+}
+
+.title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 12rpx;
+}
+
+.sub {
+  display: block;
+  font-size: 24rpx;
+  color: #A09A90;
+  line-height: 1.55;
+  margin-bottom: 16rpx;
+}
+
+.waybill {
+  display: block;
+  font-size: 26rpx;
+  color: #C4A76C;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 28rpx;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.btn-primary,
+.btn-secondary {
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: #C4A76C;
+  color: #1A1814;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #C4A76C;
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
+}

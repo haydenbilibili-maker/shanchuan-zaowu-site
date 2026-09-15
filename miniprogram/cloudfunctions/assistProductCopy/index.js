@@ -4,6 +4,7 @@
  */
 const cloud = require('wx-server-sdk')
 const https = require('https')
+const { assertStaff } = require('./staffGuard')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -131,6 +132,7 @@ function isMerchandise(rootCategory, category, categoryType) {
 function isValidLatinName(name) {
   const s = String(name || '').trim()
   if (!s || s.length < 2) return false
+  if (/^(n\/?a|n\.a\.?|null|undefined|none|nil|unknown|-|—|–)$/i.test(s)) return false
   if (/[\u4e00-\u9fff]/.test(s)) return false
   return /[A-Za-z]/.test(s)
 }
@@ -140,6 +142,7 @@ function normalizeLatinName(raw) {
   s = s.replace(/^["'`]+|["'`]+$/g, '')
   s = s.replace(/（[^）]*）|\([^)]*\)/g, '').trim()
   s = s.replace(/\s+/g, ' ')
+  if (/^(n\/?a|n\.a\.?|null|undefined|none|nil|unknown|-|—|–)$/i.test(s)) return ''
   return s
 }
 
@@ -159,6 +162,7 @@ function normalizeProtectionType(raw) {
 }
 
 const { toChineseTaxonomy } = require('./taxonomyZh')
+const { sanitizeProductTags, fallbackTags } = require('./productTags')
 
 function emptyTaxonomy() {
   return { kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' }
@@ -277,7 +281,8 @@ ${catalogText || '（目录暂缺）'}
 4. taxonomy：必须用中文生物/矿物分类（界门纲目科属），禁止填拉丁文。示例：动物界/节肢动物门/昆虫纲/鳞翅目；不确定的字段留空 ""。
 5. protectionType 只能是：none / sanyou / protected_plant / protected_animal。不确定时用 none，禁止夸大保护等级。
 6. rootCategoryName、category 必须选自上方目录；${hasCategory ? '若已指定所属馆/分类，优先沿用，仅在明显错误时纠正。' : '根据物种归属给出最合适的一级馆与二级分类。'}
-7. 仅输出一个 JSON 对象，不要 markdown 代码围栏，不要任何解释文字。
+7. tags：必须输出 4–8 个可搜索短词（中文为主，可夹拉丁属名）。覆盖俗名/物种、品类、材质或封装（如玻璃罩/相框/晶簇）、使用场景（如客厅/礼品）。禁止句子、禁止重复标题全文、禁止 emoji、每词不超过 12 字。
+8. 仅输出一个 JSON 对象，不要 markdown 代码围栏，不要任何解释文字。
 
 {
   "rootCategoryName": "",
@@ -285,6 +290,7 @@ ${catalogText || '（目录暂缺）'}
   "latinName": "",
   "description": "",
   "protectionType": "none",
+  "tags": [],
   "taxonomy": {
     "kingdom": "",
     "phylum": "",
@@ -337,6 +343,13 @@ async function resolveLatinName(titleStr, rootCategory, category, origin, apiKey
 }
 
 exports.main = async (event) => {
+  const wxContext = cloud.getWXContext()
+  const operatorOpenid = wxContext.OPENID || wxContext.FROM_OPENID || ''
+  const guard = await assertStaff(db, operatorOpenid, { permission: 'manageProducts' })
+  if (!guard.ok) {
+    return { success: false, code: guard.code, msg: guard.msg || '无权限' }
+  }
+
   const { title, category, rootCategory, origin } = event || {}
   const titleStr = String(title || '').trim()
   if (!titleStr) {
@@ -428,6 +441,20 @@ exports.main = async (event) => {
       }
     }
 
+    const aiTags = sanitizeProductTags(parsed.tags)
+    const tags = aiTags.length >= 4
+      ? aiTags
+      : sanitizeProductTags([
+        ...aiTags,
+        ...fallbackTags({
+          title: titleStr,
+          latinName,
+          rootCategory: effectiveRoot,
+          category: effectiveChild,
+          merch
+        })
+      ])
+
     return {
       success: true,
       data: {
@@ -435,6 +462,7 @@ exports.main = async (event) => {
         description,
         taxonomy: taxonomy || emptyTaxonomy(),
         protectionType,
+        tags,
         category: categoryResult || null,
         rootCategoryName: categoryResult ? categoryResult.rootCategoryName : '',
         categoryName: categoryResult ? categoryResult.category : ''

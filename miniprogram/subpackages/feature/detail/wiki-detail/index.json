@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "标本档案",
+  "usingComponents": {
+    "mp-html": "/subpackages/feature/components/mp-html/index"
+  },
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814"
+}

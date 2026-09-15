@@ -6,26 +6,35 @@
       wx:key="key"
       bindtap="onSortTap"
       data-key="{{item.key}}"
+      hover-class="sort-item-press"
+      hover-stay-time="80"
     >{{item.isPrice ? priceSortLabel : item.label}}</view>
   </view>
 
   <view class="grid-waterfall">
     <view class="col">
       <block wx:for="{{list}}" wx:key="_id" wx:if="{{index % 2 === 0}}">
-        <product-card info="{{item}}" bind:click="onProductTap" />
+        <product-card info="{{item}}" bind:cardtap="onProductTap" />
       </block>
     </view>
     <view class="col">
       <block wx:for="{{list}}" wx:key="_id" wx:if="{{index % 2 !== 0}}">
-        <product-card info="{{item}}" bind:click="onProductTap" />
+        <product-card info="{{item}}" bind:cardtap="onProductTap" />
       </block>
     </view>
   </view>
 
   <view class="list-footer">
-    <view class="load-more" wx:if="{{hasMore && !loading}}" bindtap="loadMore">加载更多</view>
-    <view class="loading-tip" wx:if="{{loading}}">加载中...</view>
-    <view class="end-tip" wx:if="{{!hasMore && list.length > 0}}">— 已展示全部 —</view>
-    <view class="empty-tip" wx:if="{{!loading && list.length === 0}}">暂无商品</view>
+    <view class="loading-tip" wx:if="{{loading}}">加载中…</view>
+    <view class="end-tip" wx:elif="{{!hasMore && list.length > 0}}">— 已经到底了 —</view>
+    <view
+      class="load-fallback"
+      wx:elif="{{hasMore && list.length > 0}}"
+      bindtap="loadMore"
+      hover-class="load-fallback-press"
+      hover-stay-time="80"
+    >继续下滑</view>
+    <view class="empty-tip" wx:if="{{!loading && list.length === 0}}" bindtap="onEmptyTap">{{loadError ? '加载失败，点击重试' : '暂无藏品'}}</view>
+    <view class="list-sentinel" aria-hidden="true"></view>
   </view>
 </view>

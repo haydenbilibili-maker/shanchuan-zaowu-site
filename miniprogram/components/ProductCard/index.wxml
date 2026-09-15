@@ -1,17 +1,40 @@
-<view class="prod-card" bindtap="onTap">
+<view class="prod-card {{soldOut ? 'is-soldout' : ''}}" bindtap="onTap" hover-class="prod-card-press" hover-stay-time="80">
   <view class="img-box">
-    <image class="p-img" src="{{info.httpImage}}" mode="widthFix" lazy-load />
+    <sensitive-blur-gate
+      enabled="{{sensitiveEnabled}}"
+      product-id="{{productId}}"
+      size="card"
+    >
+      <image
+        class="p-img"
+        wx:if="{{info.httpImage && !imgBroken}}"
+        src="{{info.httpImage}}"
+        mode="aspectFill"
+        lazy-load
+        binderror="onImgError"
+      />
+      <view class="p-img-ph" wx:else></view>
+    </sensitive-blur-gate>
     <view wx:if="{{info.isNew}}" class="tag-new">NEW</view>
+    <view wx:if="{{isOneOfAKind}}" class="tag-unique">孤品</view>
+    <protected-badge product="{{info}}" size="sm" corner="bl" />
+    <view class="soldout-veil" wx:if="{{soldOut}}"></view>
+    <view class="soldout-mark" wx:if="{{soldOut}}">
+      <text class="soldout-mark-text">售罄</text>
+    </view>
   </view>
   <view class="p-info">
     <view class="p-title text-cut">{{info.title}}</view>
-    <view class="p-latin text-cut">{{info.latinName}}</view>
+    <view class="p-latin text-cut" wx:if="{{latinName}}">{{latinName}}</view>
+    <view class="p-craft-tags" wx:if="{{craftTags.length}}">
+      <text class="p-craft-tag" wx:for="{{craftTags}}" wx:key="key">{{item.label}}</text>
+    </view>
     <view class="p-bot">
       <view class="p-price-wrap">
         <text class="p-price font-num">¥{{priceText}}<text wx:if="{{priceFrom}}" class="p-from">起</text></text>
-        <text class="p-sold">已售 {{soldCount}}</text>
+        <text class="p-sold" wx:if="{{showSold}}">已售 {{soldCount}}</text>
       </view>
-      <view class="btn-add">+</view>
+      <view class="btn-add {{soldOut ? 'disabled' : ''}}">{{soldOut ? '罄' : '+'}}</view>
     </view>
   </view>
 </view>

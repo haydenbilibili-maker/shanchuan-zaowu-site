@@ -1,0 +1,220 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">校验权限…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-row">
+        <view class="brand-group">
+          <text class="en">GIFT OPS</text>
+          <text class="cn">礼赠管理</text>
+        </view>
+        <view class="role-pill {{canEdit ? 'edit' : 'view'}}">
+          {{canEdit ? '可改配置' : '仅查看'}}
+        </view>
+      </view>
+      <text class="header-note">看待办 · 调规则 · 履约请进「礼赠履约」</text>
+    </view>
+
+    <view class="workbench-state" wx:if="{{loading && !hasLoaded}}">同步中…</view>
+
+    <view class="hint-card" wx:if="{{loadError}}">
+      <text class="hint-text">{{loadError}}</text>
+      <view class="workbench-btn-outline sm" bindtap="loadHub">重试</view>
+    </view>
+
+    <view class="readonly-banner" wx:if="{{hasLoaded && !canEdit && !loadError}}">
+      <text class="readonly-text">当前账号可查看概况与规则；改配置需超管权限</text>
+    </view>
+
+    <!-- 待办总览：高频入口 -->
+    <view class="section todo-hero" wx:if="{{hasLoaded}}">
+      <view class="section-head">
+        <text class="section-title">待办总览</text>
+        <view class="lamp-row">
+          <view class="signal-light {{stats.todoLamp === 'warn' ? 'lamp-warn' : (stats.todoLamp === 'brass' ? 'lamp-brass' : 'lamp-success on')}}"></view>
+          <text class="lamp-label">{{stats.todoTotal > 0 ? ('待处理 ' + stats.todoTotal) : '暂无积压'}}</text>
+        </view>
+      </view>
+
+      <view class="todo-row">
+        <view
+          class="todo-tile {{stats.todos.awaiting_address > 0 ? 'warn' : ''}}"
+          data-bucket="awaiting_address"
+          bindtap="goOpsBoard"
+          hover-class="tile-press"
+          hover-stay-time="70"
+        >
+          <text class="todo-num">{{stats.todos.awaiting_address}}</text>
+          <text class="todo-lbl">待填址</text>
+          <text class="todo-hint">不可发货</text>
+        </view>
+        <view
+          class="todo-tile {{stats.todos.awaiting_ship > 0 ? 'hot' : ''}}"
+          data-bucket="awaiting_ship"
+          bindtap="goOpsBoard"
+          hover-class="tile-press"
+          hover-stay-time="70"
+        >
+          <text class="todo-num">{{stats.todos.awaiting_ship}}</text>
+          <text class="todo-lbl">待发货</text>
+          <text class="todo-hint">可去发货</text>
+        </view>
+        <view
+          class="todo-tile {{stats.todos.pickup_verify > 0 ? 'hot' : ''}}"
+          data-bucket="pickup_verify"
+          bindtap="goOpsBoard"
+          hover-class="tile-press"
+          hover-stay-time="70"
+        >
+          <text class="todo-num">{{stats.todos.pickup_verify}}</text>
+          <text class="todo-lbl">自提核销</text>
+          <text class="todo-hint">扫码妥投</text>
+        </view>
+      </view>
+
+      <view class="metric-row">
+        <view class="metric" bindtap="goOpsBoard" hover-class="tile-press" hover-stay-time="70">
+          <text class="metric-num">{{stats.todayCount}}</text>
+          <text class="metric-lbl">今日礼赠</text>
+        </view>
+        <view class="metric-div"></view>
+        <view class="metric" bindtap="goOpsBoard" hover-class="tile-press" hover-stay-time="70">
+          <text class="metric-num">{{stats.last7Count}}</text>
+          <text class="metric-lbl">近 7 日</text>
+        </view>
+        <view class="metric-div"></view>
+        <view class="metric" bindtap="goOpsBoard" hover-class="tile-press" hover-stay-time="70">
+          <text class="metric-num">{{stats.done || 0}}</text>
+          <text class="metric-lbl">已完成</text>
+        </view>
+      </view>
+      <text class="meta-line" wx:if="{{stats.note}}">{{stats.note}}</text>
+    </view>
+
+    <!-- 履约看板入口 -->
+    <view
+      class="section ops-card"
+      wx:if="{{hasLoaded}}"
+      bindtap="goOpsBoard"
+      hover-class="ops-press"
+      hover-stay-time="70"
+    >
+      <view class="section-head tight">
+        <view class="ops-titles">
+          <text class="section-title">打开履约看板</text>
+          <text class="section-body">待填址 · 待发货 · 自提核销 · 已完成</text>
+        </view>
+        <text class="chevron">›</text>
+      </view>
+    </view>
+
+    <!-- 内容入口 -->
+    <view class="section" wx:if="{{hasLoaded}}">
+      <view class="section-head">
+        <text class="section-title">C 端入口</text>
+        <view class="lamp-row">
+          <view class="signal-light {{showGift ? 'lamp-success on' : 'lamp-warn'}}"></view>
+          <text class="lamp-label">{{showGift ? '展示中' : '已隐藏'}}</text>
+        </view>
+      </view>
+      <text class="section-body">{{contentFlagsHint}}</text>
+      <view class="link-row" wx:if="{{canEdit}}" bindtap="goContentFlags" hover-class="link-press" hover-stay-time="70">
+        <text class="link-cn">前往内容开关</text>
+        <text class="link-en">CONTENT</text>
+      </view>
+    </view>
+
+    <!-- 运营配置 -->
+    <view class="section" wx:if="{{hasLoaded}}">
+      <view class="section-head">
+        <text class="section-title">运营规则</text>
+        <view class="tag-row">
+          <text class="meta-tag" wx:if="{{fromDefault}}">默认规则</text>
+          <text class="meta-tag dirty" wx:if="{{dirty}}">未保存</text>
+        </view>
+      </view>
+      <view class="preview" wx:if="{{ruleText}}">{{ruleText}}</view>
+
+      <view class="field-block">
+        <text class="form-label block">填址超时</text>
+        <view class="chip-row">
+          <view
+            class="chip {{settings.addressFillTimeoutDays === item ? 'on' : ''}} {{canEdit ? '' : 'readonly'}}"
+            wx:for="{{timeoutOptions}}"
+            wx:key="*this"
+            data-days="{{item}}"
+            bindtap="pickTimeout"
+            hover-class="{{canEdit ? 'chip-press' : ''}}"
+            hover-stay-time="70"
+          >{{item}} 日</view>
+        </view>
+        <text class="field-hint">超时未填址将全额退回</text>
+      </view>
+
+      <view class="field-block">
+        <text class="form-label block">默认交付方式</text>
+        <picker
+          mode="selector"
+          range="{{deliveryOptions}}"
+          range-key="label"
+          value="{{deliveryIndex}}"
+          disabled="{{!canEdit}}"
+          bindchange="onDeliveryChange"
+        >
+          <view class="picker-value {{canEdit ? '' : 'readonly'}}">
+            <text class="picker-main">{{deliveryOptions[deliveryIndex].label}}</text>
+            <text class="picker-hint" wx:if="{{canEdit}}">更改</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-row">
+        <view class="form-label-col">
+          <text class="form-label">价格可见</text>
+          <text class="field-hint">送礼人是否可切换隐价</text>
+        </view>
+        <view
+          class="toggle {{settings.allowHidePriceToggle ? 'on' : ''}} {{canEdit ? '' : 'readonly'}}"
+          bindtap="onToggleHidePrice"
+          hover-class="{{canEdit ? 'toggle-press' : ''}}"
+          hover-stay-time="70"
+        >{{settings.allowHidePriceToggle ? '可隐价' : '强制隐价'}}</view>
+      </view>
+
+      <view class="field-block">
+        <text class="form-label block">催填节奏</text>
+        <text class="section-body">{{nudgeRuleSummary}}</text>
+      </view>
+    </view>
+
+    <!-- 订阅模板状态 -->
+    <view class="section" wx:if="{{hasLoaded}}">
+      <view class="section-head">
+        <text class="section-title">进度提醒</text>
+        <view class="lamp-row">
+          <view class="signal-light {{subscribe.lamp === 'success' ? 'lamp-success on' : (subscribe.lamp === 'brass' ? 'lamp-brass' : 'lamp-warn')}}"></view>
+          <text class="lamp-label">{{subscribe.summary}}</text>
+        </view>
+      </view>
+      <view class="sub-row" wx:for="{{subscribe.items}}" wx:key="key">
+        <text class="sub-label">{{item.label}}</text>
+        <text class="sub-status {{item.configured ? 'ok' : ''}}">{{item.configured ? '已就绪' : '未就绪'}}</text>
+      </view>
+      <text class="section-body">{{subscribe.hint}}</text>
+    </view>
+
+    <view class="workbench-page-foot-spacer"></view>
+  </view>
+
+  <view class="workbench-footer-bar">
+    <view
+      wx:if="{{canEdit}}"
+      class="workbench-btn-primary {{saving || !dirty ? 'is-disabled' : ''}} {{dirty ? 'has-dirty' : ''}}"
+      bindtap="saveSettings"
+    >{{saving ? '保存中…' : (dirty ? '保存更改' : '已是最新')}}</view>
+    <view class="workbench-footer-secondary">
+      <view class="workbench-btn-outline" bindtap="goOpsBoard">履约看板</view>
+      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="onRefreshTap">{{loading ? '刷新中…' : '刷新'}}</view>
+    </view>
+  </view>
+</view>

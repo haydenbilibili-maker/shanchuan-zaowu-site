@@ -1,0 +1,108 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "at": "2026-08-20T16:09:59.832Z",
+  "results": [
+    {
+      "name": "ledger_daily",
+      "op": "skip",
+      "result": "skipped",
+      "note": "代码未使用；SSOT 为 store_ledger"
+    },
+    {
+      "name": "staff_members",
+      "op": "skip",
+      "result": "skipped",
+      "note": "积分三表已存在"
+    },
+    {
+      "name": "store_purchases",
+      "op": "skip",
+      "result": "skipped",
+      "note": "积分三表已存在"
+    },
+    {
+      "name": "store_point_rules",
+      "op": "skip",
+      "result": "skipped",
+      "note": "积分三表已存在"
+    },
+    {
+      "name": "store_ledger",
+      "op": "建集合",
+      "result": "exists",
+      "note": "已存在；不改 ACL"
+    },
+    {
+      "name": "store_ledger.date_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "store_ledger.storeId_1_date_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "store_ledger.date_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "finance_records",
+      "op": "建集合",
+      "result": "exists",
+      "note": "已存在；不改 ACL"
+    },
+    {
+      "name": "finance_records.date_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "finance_records.date_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "finance_records.storeId_1_date_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "finance_settings",
+      "op": "建集合",
+      "result": "exists",
+      "note": "已存在；不改 ACL"
+    },
+    {
+      "name": "finance_settings._updateTime_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "daily_revenues",
+      "op": "建集合",
+      "result": "exists",
+      "note": "已存在；不改 ACL"
+    },
+    {
+      "name": "daily_revenues.date_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "daily_revenues.date_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    }
+  ]
+}

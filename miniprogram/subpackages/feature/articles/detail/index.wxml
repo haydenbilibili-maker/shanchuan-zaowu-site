@@ -1,0 +1,169 @@
+<!--subpackages/feature/articles/detail/index.wxml-->
+<view class="container">
+  <view class="load-error-overlay" wx:if="{{loadError}}">
+    <text class="load-error-title">笔记加载失败</text>
+    <text class="load-error-desc">内容不存在或网络异常</text>
+    <view class="load-error-actions">
+      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{articleId}}">重新加载</view>
+      <view class="load-error-btn" bindtap="goBack">返回列表</view>
+    </view>
+  </view>
+
+  <block wx:else>
+  
+  <!-- 1. 沉浸式 Header / 多图笔记 -->
+  <view class="hero-area" wx:if="{{!article.images || article.images.length <= 1}}">
+    <image class="hero-img" src="{{article.coverImage || fallbackCover}}" mode="aspectFill" lazy-load binderror="onCoverError"></image>
+    <view class="hero-overlay"></view>
+    
+    <view class="hero-text">
+      <view class="article-category">
+        <image class="category-icon" 
+               src="{{categoryIcon}}" 
+               mode="aspectFit"></image>
+        <text>{{article.category === 'knowledge' ? '标本知识' : article.category === 'art' ? '艺术鉴赏' : article.category === 'craft' ? '制作工艺' : '标本故事'}}</text>
+      </view>
+      <text class="article-title">{{article.title}}</text>
+      <view class="article-meta">
+        <text class="meta-item">{{article.author}}</text>
+        <text class="meta-divider">•</text>
+        <text class="meta-item">{{article.createTime ? (article.createTime < 86400000 ? '今日' : article.createTime < 604800000 ? '本周' : '更早') : ''}}</text>
+      </view>
+    </view>
+
+  </view>
+
+  <view class="note-gallery" wx:if="{{article.images && article.images.length > 1}}">
+    <swiper class="gallery-swiper" indicator-dots indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#C4A76C">
+      <swiper-item wx:for="{{article.images}}" wx:key="*this">
+        <image class="gallery-img" src="{{item}}" mode="aspectFill" binderror="onCoverError"></image>
+      </swiper-item>
+    </swiper>
+    <view class="gallery-head">
+      <view class="article-category">
+        <image class="category-icon" src="{{categoryIcon}}" mode="aspectFit"></image>
+        <text>{{article.category === 'knowledge' ? '标本知识' : article.category === 'art' ? '艺术鉴赏' : article.category === 'craft' ? '制作工艺' : '标本故事'}}</text>
+      </view>
+      <text class="article-title gallery-title">{{article.title}}</text>
+      <view class="article-meta">
+        <text class="meta-item">{{article.author}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 2. 正文内容 -->
+  <view class="article-body">
+    
+    <!-- 摘要 -->
+    <view class="intro-text" wx:if="{{article.brief}}">
+      <text>"{{article.brief}}"</text>
+    </view>
+
+    <!-- 标签 -->
+    <view class="tags-container" wx:if="{{article.tags && article.tags.length > 0}}">
+      <text class="tag-item" wx:for="{{article.tags}}" wx:key="*this">{{item}}</text>
+    </view>
+
+    <!-- 富文本内容 -->
+    <view class="rich-text-container">
+      <mp-html 
+        content="{{article.content}}" 
+        tag-style="{{tagStyle}}" 
+        container-style="color:#ccc;"
+      />
+    </view>
+
+    <!-- 视频播放 -->
+    <view class="video-container" wx:if="{{article.videoUrl}}">
+      <video 
+        id="article-video"
+        src="{{article.videoUrl}}" 
+        controls 
+        poster="{{article.coverImage}}" 
+        class="article-video"
+        bindplay="onVideoPlay"
+        bindpause="onVideoPause"
+        bindended="onVideoEnd"
+        show-center-play-btn="{{true}}"
+        enable-play-gesture="{{true}}"
+        show-play-btn="{{true}}"
+        show-fullscreen-btn="{{true}}"
+        show-progress="{{true}}"
+        object-fit="contain"
+      ></video>
+      <view class="video-controls" wx:if="{{showVideoControls}}">
+        <view class="control-item" hover-class="control-item-press" bindtap="toggleVideoSpeed">
+          <text>{{videoSpeed}}x</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 统计信息 -->
+    <view class="stats-bar">
+      <view class="stat-item">
+        <image class="stat-icon" src="{{iconView}}" mode="aspectFit"></image>
+        <text class="stat-value">{{article.stats.views || 0}}</text>
+      </view>
+      <view class="stat-item" hover-class="stat-item-press" bindtap="toggleLike">
+        <image class="stat-icon {{isLiked ? 'liked' : ''}}" 
+               src="{{isLiked ? iconLikeActive : iconLike}}" 
+               mode="aspectFit"></image>
+        <text class="stat-value">{{article.stats.likes || 0}}</text>
+      </view>
+      <view class="stat-item" hover-class="stat-item-press" bindtap="toggleCollect">
+        <image class="stat-icon {{isCollected ? 'collected' : ''}}" 
+               src="{{isCollected ? iconCollectActive : iconCollect}}" 
+               mode="aspectFit"></image>
+        <text class="stat-value">收藏</text>
+      </view>
+      <button class="stat-item share-btn" open-type="share" hover-class="stat-item-press">
+        <image class="stat-icon" src="{{iconShare}}" mode="aspectFit"></image>
+        <text class="stat-value">转发</text>
+      </button>
+      <view class="stat-item" hover-class="stat-item-press" bindtap="saveShareCard">
+        <image class="stat-icon" src="{{iconShare}}" mode="aspectFit"></image>
+        <text class="stat-value">{{savingCard ? '保存中' : '分享卡'}}</text>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- 3. 相关文章推荐 -->
+  <view class="related-section" wx:if="{{relatedArticles.length > 0}}">
+      <view class="section-head">
+        <text class="section-overline">RELATED</text>
+        <text class="section-title">相关推荐</text>
+      </view>
+    <view class="related-list">
+      <view class="related-item" wx:for="{{relatedArticles}}" wx:key="_id"
+            hover-class="related-item-press"
+            bindtap="goToRelatedArticle" data-id="{{item._id}}">
+        <image class="related-cover" src="{{item.coverImage || fallbackCover}}" mode="aspectFill" binderror="onRelatedCoverError" data-index="{{index}}"></image>
+        <view class="related-content">
+          <text class="related-title">{{item.title}}</text>
+          <text class="related-brief" wx:if="{{item.brief}}">{{item.brief}}</text>
+          <view class="related-stats">
+            <view class="related-stat">
+              <image class="related-stat-icon" src="{{iconView}}" mode="aspectFit"></image>
+              <text>{{item.stats.views || 0}}</text>
+            </view>
+            <view class="related-stat">
+              <image class="related-stat-icon" src="{{iconLike}}" mode="aspectFit"></image>
+              <text>{{item.stats.likes || 0}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="comment-section" wx:if="{{article._id}}">
+    <comment-list target-type="article" target-id="{{article._id}}" show-stats="{{true}}"></comment-list>
+  </view>
+
+  <!-- 底部留白 -->
+  <view style="height: 100rpx;"></view>
+
+  </block>
+</view>
+

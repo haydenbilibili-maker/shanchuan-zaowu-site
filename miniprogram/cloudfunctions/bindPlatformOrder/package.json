@@ -1,0 +1,9 @@
+{
+  "name": "bindPlatformOrder",
+  "version": "1.0.0",
+  "description": "多平台订单绑定兑积分（用户申请 + 店长审核）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

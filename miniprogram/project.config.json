@@ -21,7 +21,27 @@
         "type": "folder"
       },
       {
+        "value": "subpackages/user",
+        "type": "folder"
+      },
+      {
+        "value": "subpackages/detail",
+        "type": "folder"
+      },
+      {
         "value": "project_code_context.txt",
+        "type": "file"
+      },
+      {
+        "value": ".cursorrules",
+        "type": "file"
+      },
+      {
+        "value": ".gitignore",
+        "type": "file"
+      },
+      {
+        "value": "export_code.py",
         "type": "file"
       },
       {
@@ -29,11 +49,11 @@
         "type": "suffix"
       },
       {
-        "value": ".DS_Store",
+        "value": ".md",
         "type": "suffix"
       },
       {
-        "value": ".md",
+        "value": ".LICENSE.txt",
         "type": "suffix"
       },
       {
@@ -51,6 +71,70 @@
       {
         "value": ".swo",
         "type": "suffix"
+      },
+      {
+        "value": "assets/qrcode/_cand_",
+        "type": "prefix"
+      },
+      {
+        "value": "assets/qrcode/_preview",
+        "type": "prefix"
+      },
+      {
+        "value": "assets/qrcode/_verify",
+        "type": "prefix"
+      },
+      {
+        "value": "assets/banners",
+        "type": "folder"
+      },
+      {
+        "value": "i18n",
+        "type": "folder"
+      },
+      {
+        "value": "app.miniapp.json",
+        "type": "file"
+      },
+      {
+        "value": "project.miniapp.json",
+        "type": "file"
+      },
+      {
+        "value": "miniapp",
+        "type": "folder"
+      },
+      {
+        "value": "cloudbaserc.json",
+        "type": "file"
+      },
+      {
+        "value": ".gitignore.tmp_check",
+        "type": "file"
+      },
+      {
+        "value": "assets/textures",
+        "type": "folder"
+      },
+      {
+        "value": "database-rules",
+        "type": "folder"
+      },
+      {
+        "value": ".cursor",
+        "type": "folder"
+      },
+      {
+        "type": "folder",
+        "value": "/minitest"
+      },
+      {
+        "value": "assets/qrcode/identify-store-qr",
+        "type": "prefix"
+      },
+      {
+        "value": "assets/qrcode/register-counter-qr",
+        "type": "prefix"
       }
     ],
     "include": []
@@ -70,10 +154,12 @@
     },
     "compileWorklet": false,
     "uglifyFileName": false,
-    "uploadWithSourceMap": true,
+    "uploadWithSourceMap": false,
     "packNpmManually": false,
     "minifyWXSS": true,
     "minifyWXML": true,
+    "ignoreDevUnusedFiles": true,
+    "ignoreUploadUnusedFiles": true,
     "localPlugins": false,
     "condition": true,
     "swc": false,
@@ -86,21 +172,21 @@
       "list": [
         {
           "name": "伴宠工单列表",
-          "pathName": "pages/custom/pet/list/index",
+          "pathName": "subpackages/feature/custom/pet/list/index",
           "query": "from=devtest",
           "scene": null,
           "launchMode": "default"
         },
         {
           "name": "伴宠记忆·提交流程",
-          "pathName": "pages/custom/pet/index",
+          "pathName": "subpackages/feature/custom/pet/index",
           "query": "from=devtest",
           "scene": null,
           "launchMode": "default"
         },
         {
           "name": "工坊分岔",
-          "pathName": "pages/custom/hub/index",
+          "pathName": "subpackages/feature/custom/hub/index",
           "query": "from=devtest",
           "scene": null,
           "launchMode": "default"
@@ -116,5 +202,6 @@
   "simulatorPluginLibVersion": {
     "wxext14566970e7e9f62": "2.27.3"
   },
-  "projectArchitecture": "multiPlatform"
+  "projectArchitecture": "multiPlatform",
+  "testRoot": "minitest/"
 }

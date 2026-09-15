@@ -1,0 +1,57 @@
+@import "../scene.wxss";
+
+.container {
+  min-height: 100vh;
+  padding: var(--space-4);
+  box-sizing: border-box;
+}
+
+.field-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.field.half {
+  flex: 1;
+  min-width: 0;
+}
+
+.duration-box {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}
+
+.duration-label {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.duration-value {
+  font-family: var(--font-mono);
+  font-size: 30rpx;
+  color: var(--brass-400);
+}
+
+.rec-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.rec-meta.soft {
+  color: var(--color-text-muted);
+}
+
+.btn-ghost.sm {
+  margin-top: var(--space-2);
+  display: inline-flex;
+  padding: 8rpx 20rpx;
+  font-size: 22rpx;
+}

@@ -1,0 +1,9 @@
+@import '../index.wxss';
+
+.workspace-leaf {
+  min-height: 100vh;
+}
+
+.workspace-leaf .sub-view {
+  padding-top: 0;
+}

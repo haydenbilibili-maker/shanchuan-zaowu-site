@@ -1,0 +1,34 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">加载中…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">COMMISSION</text>
+      <text class="cn">销售提成</text>
+    </view>
+    <text class="header-note">{{ruleText || '关联藏品售出后按规则计入'}}</text>
+  </view>
+
+  <view class="summary-card">
+    <text class="summary-label">净提成合计</text>
+    <view class="summary-value">¥{{summary.netAmount}}</view>
+    <view class="summary-sub">
+      入账 ¥{{summary.earnAmount}} · 冲正 ¥{{summary.reverseAmount}}
+      · 对应销售额 ¥{{summary.salesAmount}}
+      · {{enabled ? (ratePercent + '%') : '规则已关闭'}}
+    </view>
+  </view>
+
+  <view class="section-title">明细</view>
+  <view class="empty" wx:if="{{loading}}">同步中…</view>
+  <view class="empty" wx:if="{{!loading && !list.length}}">暂无提成流水</view>
+  <view class="ledger-card" wx:for="{{list}}" wx:key="_id">
+    <view class="ledger-top">
+      <text class="ledger-type {{item.type==='reverse'?'reverse':''}}">{{item.typeLabel}}</text>
+      <text class="ledger-amt">{{item.type==='reverse'?'-':'+'}}¥{{item.amountAbs}}</text>
+    </view>
+    <view class="ledger-title">{{item.productTitle || '藏品'}}</view>
+    <view class="ledger-meta">销售额 ¥{{item.salesAmount}} · {{item.ratePercent}}%</view>
+    <view class="ledger-meta">单号 {{item.orderNo || item.orderId}} · {{item.createTimeText}}</view>
+  </view>
+</view>

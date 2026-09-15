@@ -1,0 +1,93 @@
+<view class="container" wx:if="{{ready}}">
+
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">TEAM DIRECTORY</text>
+      <text class="cn">员工</text>
+    </view>
+    <text class="header-note">数据源：权限中心 · staff_members</text>
+  </view>
+
+  <view class="section summary">
+    <view class="summary-row">
+      <view class="summary-item">
+        <text class="summary-num">{{counts.all}}</text>
+        <text class="summary-label">全部</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-num on">{{counts.active}}</text>
+        <text class="summary-label">生效</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-num off">{{counts.disabled}}</text>
+        <text class="summary-label">停用</text>
+      </view>
+    </view>
+    <view class="summary-actions">
+      <view class="btn-secondary" bindtap="goPermissions">去权限配置</view>
+      <view class="btn-primary" bindtap="goPermissions">开通员工</view>
+    </view>
+  </view>
+
+  <view class="section filters">
+    <scroll-view class="filter-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="filter-row">
+        <view
+          class="filter-chip {{roleFilter === item.key ? 'on' : ''}}"
+          wx:for="{{roleFilters}}"
+          wx:key="key"
+          bindtap="onRoleFilterTap"
+          data-key="{{item.key}}"
+        >{{item.label}}</view>
+      </view>
+    </scroll-view>
+    <view class="filter-row status-row">
+      <view
+        class="filter-chip status {{statusFilter === item.key ? 'on' : ''}}"
+        wx:for="{{statusFilters}}"
+        wx:key="key"
+        bindtap="onStatusFilterTap"
+        data-key="{{item.key}}"
+      >{{item.label}}</view>
+    </view>
+  </view>
+
+  <view class="section list-section">
+    <view class="list-head">
+      <text class="section-title">名册</text>
+      <text class="list-meta" wx:if="{{loading}}">加载中…</text>
+      <text class="list-meta" wx:else>{{staffList.length}} 人</text>
+    </view>
+
+    <view class="row staff-row" wx:for="{{staffList}}" wx:key="_id">
+      <view class="row-main" bindtap="goEditPermissions">
+        <view class="staff-title-line">
+          <view class="signal-light {{item.status === 'active' ? 'lamp-forest' : 'lamp-muted hollow'}}"></view>
+          <text class="row-title">{{item.name || '未命名'}}</text>
+          <text class="tag {{item.status}}">{{item.status === 'active' ? '生效' : '停用'}}</text>
+        </view>
+        <text class="row-sub role">{{item.roleText || '—'}}</text>
+        <text class="row-sub">{{item.phoneText}}{{item.staffNo ? ' · 工号 ' + item.staffNo : ''}}</text>
+        <text class="row-sub" wx:if="{{item.storeText}}">门店 · {{item.storeText}}</text>
+        <text class="row-sub muted">…{{item.openidTail}}</text>
+      </view>
+      <view class="staff-actions">
+        <view class="staff-btn edit" catchtap="goEditPermissions">权限</view>
+        <view
+          class="staff-btn danger"
+          wx:if="{{item.status === 'active'}}"
+          catchtap="disableStaff"
+          data-id="{{item._id}}"
+        >停用</view>
+        <view
+          class="staff-btn success"
+          wx:else
+          catchtap="enableStaff"
+          data-id="{{item._id}}"
+        >启用</view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{!loading && staffList.length === 0}}">{{emptyHint}}</view>
+  </view>
+</view>

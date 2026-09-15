@@ -1,0 +1,601 @@
+---
+import Layout from '../components/Layout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import NoListItem from '../components/NoListItem.astro';
+import PullQuote from '../components/PullQuote.astro';
+import SpecimenMarqueeCarousel from '../components/SpecimenMarqueeCarousel.astro';
+
+const noList = [
+  '不做盲盒',
+  '不做概率消费',
+  '不做隐藏款',
+  '不做限量发售制造抢购',
+  '不做卖萌化的自然 IP',
+  '不做与"自然博物美学"无关的跨品类延伸',
+];
+
+/** 自然小匣示意图（public 静态资源） */
+const natureBoxSchematics = [
+  {
+    src: '/images/what/nature-box/nature-box-01.png',
+    alt: '自然小匣示意：深框标本匣，蝴蝶、干果荚与手绘博物标签同匣陈列',
+  },
+  {
+    src: '/images/what/nature-box/nature-box-02.png',
+    alt: '自然小匣示意：白底深框，闪蝶与多种干果、甲虫等集合',
+  },
+  {
+    src: '/images/what/nature-box/nature-box-03.png',
+    alt: '自然小匣示意：黑底网格与手写学名标签，闪蝶与果实、种荚组合',
+  },
+  {
+    src: '/images/what/nature-box/nature-box-04.png',
+    alt: '自然小匣示意：开窗卡纸格内嵌植物与蝶类标本的集合陈列',
+  },
+];
+
+/** 蝴蝶及衍生品示意图（装框、玻罩、钟表首饰等陈列风格） */
+const butterflySchematics = [
+  {
+    src: '/images/what/butterfly/butterfly-01.png',
+    alt: '蝴蝶线示意：装框闪蝶、玻璃罩组合与双语博物说明的门店陈列',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-02.png',
+    alt: '蝴蝶线示意：墙面黑色画框装裱的闪蝶、斑蝶与蜻蜓等标本',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-03.png',
+    alt: '蝴蝶线示意：玻罩矩阵、蝴蝶主题钟表与项链等衍生品综合墙',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-04.png',
+    alt: '蝴蝶线示意：球形玻罩内单只大型闪蝶，置于工坊切割垫与工具旁',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-05.png',
+    alt: '蝴蝶线示意：球形玻罩内白翅闪蝶标本与金属支架、圆形底座',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-06.png',
+    alt: '蝴蝶线示意：黑框白卡多层衬线装裱的大型绿色鸟翼蝶类标本',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-07.png',
+    alt: '蝴蝶线示意：多只彩色蝴蝶分置独立玻璃罩的桌面陈列矩阵',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-08.png',
+    alt: '蝴蝶线示意：凤蝶标本与 Papilionoidea 说明卡置于木作台面',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-09.png',
+    alt: '蝴蝶线示意：双 Morpho 装框与城市夜景背衬的教化说明卡',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-10.png',
+    alt: '蝴蝶线示意：桌面多只玻罩闪蝶与甲虫、甲螯装框并列',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-11.png',
+    alt: '蝴蝶线示意：台面玻罩群与墙装框标本、大型等足虫玻罩',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-12.png',
+    alt: '蝴蝶线示意：装框墙与台面玻罩、蝴蝶面座钟与树脂块小格陈列',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-13.png',
+    alt: '蝴蝶线示意：球形玻罩内蓝闪蝶俯视',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-14.png',
+    alt: '蝴蝶线示意：四联黑框 Papilionoidea 说明卡装裱系列',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-15.png',
+    alt: '蝴蝶线示意：螺钿贝母外圈蓝闪蝶面座钟',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-16.png',
+    alt: '蝴蝶线示意：墙装框与台面玻罩整组陈列、绿植衬景',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-17.png',
+    alt: '蝴蝶线示意：手持球形玻罩内蓝闪蝶',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-18.png',
+    alt: '蝴蝶线示意：掌心迷你球形罩内蓝闪蝶',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-19.png',
+    alt: '蝴蝶线示意：黑底圆座玻罩群多色蝶与干花衬底',
+  },
+  {
+    src: '/images/what/butterfly/butterfly-20.png',
+    alt: '蝴蝶线示意：玻罩矩阵与墙框组合另一视角',
+  },
+];
+
+/** 植物果实与自然小物示意图 */
+const botanicalSchematics = [
+  {
+    src: '/images/what/botanical/botanical-01.png',
+    alt: '植物果实线示意：木作分格陈列、干种子与果实小格、香氛与玻罩植物小景',
+  },
+  {
+    src: '/images/what/botanical/botanical-02.png',
+    alt: '植物果实线示意：球形玻罩内完整蒲公英绒球与木质底座',
+  },
+  {
+    src: '/images/what/botanical/botanical-03.png',
+    alt: '植物果实线示意：猪笼草主题装框与多格种子果实标本矩阵装裱',
+  },
+  {
+    src: '/images/what/botanical/botanical-04.png',
+    alt: '植物果实线示意：长排木格收纳盒内分装干果荚、种球与挂饰材料',
+  },
+  {
+    src: '/images/what/botanical/botanical-05.png',
+    alt: '植物果实线示意：玻罩小格陈列松果、橡实与单格装裱球果标本',
+  },
+  {
+    src: '/images/what/botanical/botanical-06.png',
+    alt: '植物果实线示意：植物押花树脂耳饰与桌面贝壳、矿石小陈列垫',
+  },
+  {
+    src: '/images/what/botanical/botanical-07.png',
+    alt: '植物果实线示意：多格标本盒俯视、顶层花艺与家居风陈列',
+  },
+  {
+    src: '/images/what/botanical/botanical-08.png',
+    alt: '植物果实线示意：果壳铃与种子串珠挂饰、木珠与棉绳手工组合',
+  },
+  {
+    src: '/images/what/botanical/botanical-09.png',
+    alt: '植物果实线示意：真果实项链与耳饰架、亚麻台面与标价签',
+  },
+  {
+    src: '/images/what/botanical/botanical-10.png',
+    alt: '植物果实线示意：亚克力分格柜与木格盘中的种荚、松果与坚果',
+  },
+  {
+    src: '/images/what/botanical/botanical-11.png',
+    alt: '植物果实线示意：大型弯荚、杉果与多层抽屉收纳的小型种实',
+  },
+  {
+    src: '/images/what/botanical/botanical-12.png',
+    alt: '植物果实线示意：长排米色分格陈列干果荚与背景装框蝴蝶',
+  },
+];
+
+/** 海洋贝壳类示意图 */
+const marineSchematics = [
+  {
+    src: '/images/what/marine/marine-01.png',
+    alt: '海洋贝壳线示意：木格药柜式陈列，每格装裱单枚或成组贝壳与格纹衬底',
+  },
+  {
+    src: '/images/what/marine/marine-02.png',
+    alt: '海洋贝壳线示意：玻罩、浸液管与海星、蟹类等奇珍柜风格标本与复古标签',
+  },
+  {
+    src: '/images/what/marine/marine-03.png',
+    alt: '海洋贝壳线示意：馒头蟹等标本分置玻璃罩与主题腰封陈列',
+  },
+  {
+    src: '/images/what/marine/marine-04.png',
+    alt: '海洋贝壳线示意：珍珠螺柄餐具与亚克力盒装蟹标本、大型海螺衬景',
+  },
+];
+
+/** 门店主题标本 · 大图与轮播下统一说明 */
+const themeSpecimenCaption =
+  '每一个都是标本师用心制作的世界上独一无二的孤品';
+
+/** 门店主题标本（跑马灯 + 大图） */
+const themeSpecimenSchematics = [
+  {
+    src: '/images/what/theme-specimens/theme-specimen-01.png',
+    alt: '孔雀与火烈鸟剥制，台面与首饰小件',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-02.png',
+    alt: '土拨鼠、等足虫、鳄与蜈蚣等奇珍组合',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-03.png',
+    alt: '文鸟栖木、闪蝶墙饰与装框蜻蜓',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-04.png',
+    alt: '维多利亚风白鸽剥制与蕾丝配饰',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-05.png',
+    alt: '玻罩小兽与鸟翼蝶装框',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-06.png',
+    alt: '店面中景：孔雀主景与蝴蝶装框墙',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-07.png',
+    alt: '黑天鹅剥制标本侧影',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-08.png',
+    alt: '着装小羊剥制，透明展柜',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-09.png',
+    alt: '黑蝎装框与玻璃罩等足虫标本并列',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-10.png',
+    alt: '巨型等足虫玻罩与装框蝴蝶、绿植衬景',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-11.png',
+    alt: '暹罗鳄剥制、鳄头骨、鱼骨与甲虫装框组合',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-12.png',
+    alt: '小型鳄剥制侧面，口微张',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-13.png',
+    alt: '刺豚剥制手持与展柜陈设',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-14.png',
+    alt: '伞蜥与张牙马陆等组合装裱板',
+    caption: themeSpecimenCaption,
+  },
+  {
+    src: '/images/what/theme-specimens/theme-specimen-15.png',
+    alt: '长戟大兜展翅标本托于掌心',
+    caption: themeSpecimenCaption,
+  },
+];
+---
+
+<Layout
+  title="我们做什么"
+  description="山海造物 · 自然小匣主推 · 蝴蝶与贝壳 · 化石矿石 · 门店主题标本 · 马上有与小黄双 IP"
+>
+  <SectionHeader
+    eyebrow="What We Make · 我们做什么"
+    title={`我们做的不是\n标本店`}
+    intro={`如果只是"卖标本"，这件事其实早就有人在做。我们做的是别的——把一种叫自然博物美学的东西，让它进入日常生活。`}
+  />
+
+  <hr class="brass-divider" />
+
+  <!-- ============ 产品矩阵 · 结构一眼 ============ -->
+  <section class="editorial-section fade-in max-w-editorial-wide mx-auto px-6">
+    <p class="section-number mb-4">·</p>
+    <h2 class="section-title text-cream">产品矩阵 · 结构一眼</h2>
+    <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">SKU mix · 核心约束</p>
+    <div class="prose-cn space-y-paragraph text-text-soft">
+      <p>
+        店内约 <strong class="text-cream">两成门店主题标本</strong>（可售与非卖品兼有、随叙事轮换），其余为自持商品与衍生品。<strong class="text-brass-bright">自然小匣主推</strong>；蝴蝶、植物果实、贝壳、化石矿石等为材料线与入口。
+      </p>
+      <div class="p-6 border border-brass-mid/20 bg-ink-elevated/35 rounded-sm text-sm leading-relaxed tracking-cn">
+        <p class="text-cream font-serif mb-3">五条主线（与店内陈列一致）</p>
+        <ol class="list-decimal pl-5 space-y-2 text-text-soft">
+          <li><strong class="text-brass-bright">自然小匣</strong>——主打；植物 / 矿物 / 昆虫等围绕冬天、东北、爱情等主题做集合创作。</li>
+          <li><strong class="text-cream">蝴蝶及衍生品</strong>——如首饰、钟表等，承担流量入口与设计实验。</li>
+          <li><strong class="text-cream">植物果实与自然小物</strong>——如果壳吊坠、铃与果实 DIY 等，偏自有工艺壁垒。</li>
+          <li><strong class="text-cream">海洋贝壳</strong>——如餐具等，设计向日常餐桌延伸。</li>
+          <li><strong class="text-cream">化石矿石</strong>——合规采购为主，补时间与地质叙事；自给率口径另计。</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ I. 自然小匣（主推） ============ -->
+  <section class="editorial-section-wide fade-in">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+      <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 max-w-lg mx-auto md:mx-0 w-full">
+        <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-left">
+          Nature Boxes
+        </p>
+        <div class="grid grid-cols-2 gap-2 md:gap-3">
+          {natureBoxSchematics.map((item) => (
+            <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
+              <img
+                src={item.src}
+                alt={item.alt}
+                class="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+                width="600"
+                height="600"
+              />
+            </div>
+          ))}
+        </div>
+        <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-left">
+          示意陈列，以门店为准。
+        </figcaption>
+      </figure>
+
+      <div>
+        <p class="section-number mb-4">I</p>
+        <h2 class="section-title text-cream">自然小匣 · 主推</h2>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Nature Boxes · 门店与叙事的核心</p>
+
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            自然小匣不是「随便装几件标本的盒子」，而是<strong class="text-brass-bright">主体式的标本集合创作</strong>：以植物、矿物、昆虫等材料为主角，围绕<strong class="text-cream">冬天、东北、爱情、季节迁徙</strong>等明确主题，把多件自然物与一张<strong class="text-brass-bright">博物档案卡</strong>收进同一只匣子里。
+          </p>
+          <p>
+            它不是手工艺品，也不是奢侈品。是一件可以放在桌上、家里、孩子房间里的<strong class="text-cream">「可以被翻看的小博物馆」</strong>——也是我们希望客人记住山海造物时，脑海里最先出现的那一类东西。
+          </p>
+          <p class="text-text-soft text-sm">
+            每一只蝴蝶、每一颗矿石都有自己的来路、品相、合规边界。我们的工艺不能自动化到底——保留一定比例的手工，是这件事的一部分。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ II. 蝴蝶及衍生品 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
+      <div class="md:order-2 w-full min-w-0">
+        <SpecimenMarqueeCarousel
+          eyebrow="Lepidoptera"
+          hint="自动轮播，悬停暂停；点画面看大图。以门店为准。"
+          items={butterflySchematics}
+          align="right"
+          maxWidth="max-w-xl"
+        />
+      </div>
+
+      <div class="md:order-1">
+        <p class="section-number mb-4">II</p>
+        <h2 class="section-title text-cream">蝴蝶及衍生品</h2>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Butterfly line · 流量与设计入口</p>
+
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            鳞翅目是我们最容易被看见的一条线——从标本本体延伸到<strong class="text-cream">首饰、座钟 / 怀表、墙面装置</strong>等可穿戴、可陈设的衍生品。它承担「被一眼认出」的任务，但叙事上仍必须回到：这只蝴蝶是谁、来自哪里、为何以这种形式被固定下来。
+          </p>
+          <p class="text-text-soft text-sm">
+            与盲盒、概率玩法无关；每一件上架前仍走博物档案与合规审查，不把「稀有」写成无法核验的口号。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ III. 植物果实与自然小物 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
+      <SpecimenMarqueeCarousel
+        eyebrow="Botanical"
+        hint="自动轮播，悬停暂停；点画面看大图。以门店为准。"
+        items={botanicalSchematics}
+        align="left"
+      />
+
+      <div>
+        <p class="section-number mb-4">III</p>
+        <h2 class="section-title text-cream">植物果实与自然小物</h2>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Fruits &amp; shells of land · 工艺壁垒</p>
+
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            果壳吊坠、果壳铃、可参与的果实 DIY——这类东西<strong class="text-cream">体量小、触感真</strong>，适合作为「把自然握在手里」的日常入口，也和自然小匣里的植物叙事彼此呼应。
+          </p>
+          <p class="text-text-soft text-sm">
+            它们与自然小匣共享同一条伦理线：来源清楚、不夸大稀缺、不把保护物种当卖点。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ IV. 海洋贝壳 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
+      <div class="md:order-2 w-full min-w-0">
+        <figure class="border border-brass-mid/20 bg-ink-elevated/30 p-3 md:p-4 w-full max-w-lg mx-auto md:ml-auto md:mr-0">
+          <p class="font-serif-en italic text-brass-mid/70 text-xs tracking-[0.2em] uppercase mb-3 text-center md:text-right">
+            Marine
+          </p>
+          <div class="grid grid-cols-2 gap-2 md:gap-3">
+            {marineSchematics.map((item) => (
+              <div class="aspect-square overflow-hidden rounded-sm bg-ink-deep ring-1 ring-brass-mid/15">
+                <img
+                  src={item.src}
+                  alt={item.alt}
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  width="500"
+                  height="500"
+                />
+              </div>
+            ))}
+          </div>
+          <figcaption class="mt-4 text-xs text-text-soft leading-relaxed tracking-cn text-center md:text-right">
+            示意陈列，以门店为准。
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="md:order-1">
+        <p class="section-number mb-4">IV</p>
+        <h2 class="section-title text-cream">海洋贝壳</h2>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Shells · 向餐桌与日常延展</p>
+
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            贝壳、螺钿与食器相关的器物——例如<strong class="text-cream">餐具、托盘、杯垫</strong>——把「海」从展柜里拉到一日三餐旁边。设计上仍坚持博物标签与使用说明可读，而不是只做旅游纪念品式的堆砌。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ V. 化石矿石 ============ -->
+  <section class="editorial-section-wide fade-in">
+    <figure class="aspect-[21/9] max-w-editorial-wide mx-auto bg-gradient-to-br from-ink-deep to-ink-elevated border border-brass-mid/20 flex items-center justify-center mb-10">
+      <span class="font-serif-en italic text-brass-mid/40 text-2xl">Fossil &amp; Ore</span>
+    </figure>
+
+    <div class="max-w-editorial mx-auto px-6">
+      <p class="section-number mb-4">V</p>
+      <h2 class="section-title text-cream">化石矿石</h2>
+      <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Scarcity layer · 采购与合规优先</p>
+
+      <div class="prose-cn space-y-paragraph">
+        <p>
+          这一线以<strong class="text-cream">合规采购与可追溯来源</strong>为主，用来补充店里「时间感」与地质叙事——与前面几条自持工艺线不同，它更依赖供应商与文书，因此<strong class="text-brass-bright">不自充「全店自给率」的分子</strong>，但在门店叙事里仍然重要：它回答「地球很久很久以前是什么样」。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ VI. 门店主题标本（约 20%） ============ -->
+  <section class="editorial-section-wide fade-in">
+    <div class="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
+      <SpecimenMarqueeCarousel
+        eyebrow="Theme Specimens"
+        hint={`${themeSpecimenCaption} 自动轮播，悬停暂停；点画面看大图。`}
+        items={themeSpecimenSchematics}
+        align="left"
+      />
+
+      <div>
+        <p class="section-number mb-4">VI</p>
+        <h2 class="section-title text-cream">门店主题标本</h2>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">~20% · 随店叙事轮换</p>
+
+        <div class="prose-cn space-y-paragraph">
+          <p>
+            更准确的说法是<strong class="text-brass-bright">围绕当期门店主题配置的一批标本</strong>，约占相关陈列与库存的 <strong class="text-cream">两成</strong>，随策展轮换——不是「主题展柜」四个字能概括。
+          </p>
+          <p class="text-text-soft text-sm">
+            <strong class="text-cream">多数可售</strong>，亦设<strong class="text-brass-bright">非卖品</strong>用于定调与叙事。档案卡与轮换节奏见 <a href="/how/space" class="text-brass-mid hover:text-brass-bright">/how/space</a>。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ VII. 双 IP ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VII</p>
+    <h2 class="section-title text-cream">两个 IP · 马上有 与 小黄</h2>
+    <p class="font-serif-en italic text-brass-mid text-sm mb-paragraph">Two IPs · 情感线索</p>
+
+    <p class="prose-cn mb-section">
+      <strong class="text-cream">马上有</strong>取「马」的吉意与展厅里的实体马标本；<strong class="text-cream">小黄</strong>是毛绒小鸭一条软情感线。
+    </p>
+
+    <div class="grid md:grid-cols-2 gap-10">
+      <article class="p-8 border border-brass-mid/20 bg-ink-elevated/40">
+        <figure class="mb-6 overflow-hidden rounded-sm border border-brass-mid/15 bg-ink-deep aspect-[4/5] max-h-[min(52vh,28rem)] mx-auto w-full max-w-sm">
+          <img
+            src="/images/what/ip/mashangyou.png"
+            alt="马上有 IP 示意：黑色骏马剥制展台与展柜中的小鸭标本"
+            class="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+            width="600"
+            height="750"
+          />
+        </figure>
+        <h3 class="font-serif text-2xl text-cream mb-2 tracking-cn">马上有</h3>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-4">Mashangyou</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          门店主题剥制与吉意符号；完整设定与延展叙事在专门内容中展开。
+        </p>
+        <p class="mt-3 text-xs text-text-dim tracking-cn">示意陈列，以门店为准。</p>
+      </article>
+
+      <article class="p-8 border border-brass-mid/20 bg-ink-elevated/40">
+        <figure class="mb-6 overflow-hidden rounded-sm border border-brass-mid/15 bg-ink-deep aspect-[4/5] max-h-[min(52vh,28rem)] mx-auto w-full max-w-sm">
+          <img
+            src="/images/what/ip/xiaohuang.png"
+            alt="小黄 IP 示意：手持黄色小鸭剥制标本与复古展柜中的同系列陈列"
+            class="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+            width="600"
+            height="750"
+          />
+        </figure>
+        <h3 class="font-serif text-2xl text-cream mb-2 tracking-cn">小黄</h3>
+        <p class="font-serif-en italic text-brass-mid text-sm mb-4">Xiao Huang</p>
+        <p class="text-text-soft text-sm leading-[1.85] tracking-cn">
+          小鸭标本与周边中的情感锚点；与马上有并列为两条主 IP 线。
+        </p>
+        <p class="mt-3 text-xs text-text-dim tracking-cn">示意陈列，以门店为准。</p>
+      </article>
+    </div>
+
+    <p class="prose-cn mt-paragraph text-sm text-text-soft">
+      诞生故事与随笔 → <a href="/notes" class="text-brass-mid hover:text-brass-bright">/notes</a>
+    </p>
+  </section>
+
+  <hr class="brass-divider" />
+
+  <!-- ============ VIII. 我们不做什么 ============ -->
+  <section class="editorial-section fade-in">
+    <p class="section-number mb-4">VIII</p>
+    <h2 class="section-title text-cream">我们不做的事</h2>
+
+    <p class="prose-cn mb-paragraph">
+      这些不是我们做不了。是我们<strong class="text-brass-bright">选择不做</strong>。
+    </p>
+
+    <ul class="border-l-2 border-brass-deep/40 pl-6 mt-paragraph">
+      {noList.map((item) => (
+        <NoListItem text={item} />
+      ))}
+    </ul>
+
+    <p class="prose-cn mt-paragraph text-sm text-text-soft">
+      完整的「不做」清单在战略原则文档中——共七类（内容 / 商品 / 经营 / 加盟 / 空间 / 文化 / 公共承诺）。
+      <br />详见 → <a href="/who" class="text-brass-mid hover:text-brass-bright">/who</a>
+    </p>
+  </section>
+
+  <PullQuote
+    quote="自然小匣是主推；蝴蝶、贝壳、化石矿石与门店主题标本——产品语言。奇珍柜视觉、黄铜暗调、博物馆级灯光与档案——空间语言。"
+  />
+</Layout>

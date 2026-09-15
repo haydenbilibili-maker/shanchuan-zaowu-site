@@ -1,0 +1,694 @@
+<!-- 我的礼赠 · 人情账本 · Museum 完整体验 -->
+<page-edge-back bind:back="onEdgeBack" disabled="{{sheetOpen}}" />
+
+<view class="page {{paneReady ? 'pane-ready' : ''}}" wx:if="{{allowed}}">
+  <!-- 顶区：标本纸页头 + 摘要芯片 + 信号灯 -->
+  <view class="hero-plate">
+    <view class="paper-fiber" aria-hidden="true"></view>
+    <view class="paper-fiber fine" aria-hidden="true"></view>
+    <view class="paper-emboss" aria-hidden="true"></view>
+    <view class="specimen-wm" aria-hidden="true"></view>
+    <view class="hero-content">
+      <view class="hero-over-row">
+        <text class="hero-over">NATURE'S CREATIONS · LEDGER</text>
+        <view class="signal-light {{headSignalClass}}"></view>
+        <view class="hero-seal metal" aria-hidden="true">
+          <view class="hero-seal-inner"></view>
+        </view>
+      </view>
+      <text class="hero-brand">山海造物</text>
+      <text class="hero-title">我的礼赠</text>
+      <text class="hero-desc">{{heroSummary}}</text>
+      <view class="hero-stats">
+        <view class="hero-stat">
+          <text class="hero-stat-n">{{counts.sent || 0}}</text>
+          <text class="hero-stat-l">送出</text>
+        </view>
+        <view class="hero-stat-div" aria-hidden="true"></view>
+        <view class="hero-stat">
+          <text class="hero-stat-n">{{counts.received || 0}}</text>
+          <text class="hero-stat-l">收到</text>
+        </view>
+        <view class="hero-stat-div" aria-hidden="true"></view>
+        <view class="hero-stat">
+          <text class="hero-stat-n">{{contactsCount || 0}}</text>
+          <text class="hero-stat-l">对象</text>
+        </view>
+        <view class="hero-stat-div" aria-hidden="true"></view>
+        <view class="hero-stat {{upcomingHotCount ? 'hot' : ''}}">
+          <text class="hero-stat-n">{{upcomingHotCount || 0}}</text>
+          <text class="hero-stat-l">临近</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 主分区 -->
+  <view class="hub-tabs">
+    <view
+      class="hub-tab {{hubTab === 'flow' ? 'on' : ''}}"
+      data-tab="flow"
+      hover-class="hub-tab-press"
+      hover-stay-time="70"
+      bindtap="onHubTab"
+    >
+      <text class="hub-tab-lbl">往来</text>
+      <view class="hub-badge" wx:if="{{flowBadge}}">
+        <view class="signal-light lamp-warn hub-lamp"></view>
+        <text class="hub-n">{{flowBadge}}</text>
+      </view>
+    </view>
+    <view
+      class="hub-tab {{hubTab === 'people' ? 'on' : ''}}"
+      data-tab="people"
+      hover-class="hub-tab-press"
+      hover-stay-time="70"
+      bindtap="onHubTab"
+    >
+      <text class="hub-tab-lbl">对象</text>
+      <text class="hub-n" wx:if="{{contactsCount}}">{{contactsCount}}</text>
+    </view>
+    <view
+      class="hub-tab {{hubTab === 'dates' ? 'on' : ''}}"
+      data-tab="dates"
+      hover-class="hub-tab-press"
+      hover-stay-time="70"
+      bindtap="onHubTab"
+    >
+      <text class="hub-tab-lbl">日子</text>
+      <view class="hub-badge" wx:if="{{upcomingHotCount}}">
+        <view class="signal-light lamp-warn blink hub-lamp"></view>
+        <text class="hub-n hot">{{upcomingHotCount}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ===== 往来 ===== -->
+  <view class="pane {{hubTab === 'flow' ? 'show' : 'hide'}}" wx:if="{{hubTab === 'flow'}}">
+    <view class="sub-tabs">
+      <view
+        class="sub-tab {{flowTab === 'sent' ? 'on' : ''}}"
+        data-tab="sent"
+        hover-class="sub-tab-press"
+        hover-stay-time="70"
+        bindtap="onFlowTab"
+      >
+        <text>我送出的</text>
+        <text class="sub-n" wx:if="{{counts.sent}}">{{counts.sent}}</text>
+      </view>
+      <view
+        class="sub-tab {{flowTab === 'received' ? 'on' : ''}}"
+        data-tab="received"
+        hover-class="sub-tab-press"
+        hover-stay-time="70"
+        bindtap="onFlowTab"
+      >
+        <text>我收到的</text>
+        <text class="sub-n" wx:if="{{counts.received}}">{{counts.received}}</text>
+      </view>
+    </view>
+
+    <view class="filter-chip" wx:if="{{filterLabel}}">
+      <view class="signal-light lamp-brass"></view>
+      <text class="filter-chip-txt">{{filterLabel}}</text>
+      <text class="filter-chip-clear" bindtap="clearRecipientFilter">清除</text>
+    </view>
+
+    <scroll-view class="segments" scroll-x enhanced show-scrollbar="{{false}}" enable-flex>
+      <view
+        class="seg {{activeSegment === item.key ? 'on' : ''}}"
+        wx:for="{{segments}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        hover-class="seg-press"
+        hover-stay-time="70"
+        bindtap="onSegmentTap"
+      >
+        <text class="seg-label">{{item.label}}</text>
+        <text class="seg-n" wx:if="{{item.count}}">{{item.count}}</text>
+      </view>
+    </scroll-view>
+
+    <scroll-view
+      scroll-y
+      class="scroll"
+      style="{{scrollStyle}}"
+      enhanced
+      show-scrollbar="{{false}}"
+      refresher-enabled
+      refresher-default-style="white"
+      refresher-background="#1A1814"
+      refresher-triggered="{{refresherTriggered}}"
+      bindrefresherrefresh="onRefresherRefresh"
+      bindscrolltolower="onReachBottom"
+    >
+      <view class="skel-list" wx:if="{{loading && !list.length}}">
+        <view class="skel-card" wx:for="{{skelRows}}" wx:key="*this">
+          <view class="skel-cover"></view>
+          <view class="skel-body">
+            <view class="skel-line short"></view>
+            <view class="skel-line"></view>
+            <view class="skel-line mid"></view>
+          </view>
+        </view>
+        <text class="skel-hint">正在打开礼簿…</text>
+      </view>
+
+      <view class="list-error" wx:elif="{{errorMsg && !list.length}}">
+        <view class="empty-mark paper-empty" aria-hidden="true">
+          <view class="paper-fiber"></view>
+          <view class="empty-ring emboss-ring"></view>
+          <view class="signal-light lamp-warn"></view>
+        </view>
+        <text class="muted">{{errorMsg}}</text>
+        <text class="link" bindtap="reloadFlow">再试一次</text>
+      </view>
+
+      <view class="empty" wx:elif="{{!loading && !list.length}}">
+        <view class="empty-mark paper-empty" aria-hidden="true">
+          <view class="paper-fiber"></view>
+          <view class="empty-ring emboss-ring"></view>
+          <view class="specimen-wm sm"></view>
+        </view>
+        <text class="empty-title">{{emptyTitle}}</text>
+        <text class="empty-desc">{{emptyDesc}}</text>
+        <view class="empty-actions" wx:if="{{showEmptyGuide}}">
+          <view class="btn-brass" hover-class="btn-brass-press" hover-stay-time="80" bindtap="goHub">去选一份山海</view>
+          <view
+            class="btn-ghost"
+            hover-class="btn-ghost-press"
+            hover-stay-time="80"
+            wx:if="{{filterLabel}}"
+            bindtap="clearRecipientFilter"
+          >查看全部往来</view>
+          <view
+            class="btn-ghost"
+            hover-class="btn-ghost-press"
+            hover-stay-time="80"
+            wx:else
+            bindtap="goAtelier"
+          >回工坊看看</view>
+        </view>
+      </view>
+
+      <view class="list {{softRefreshing ? 'dim' : ''}}" wx:else>
+        <view
+          class="card metal-card {{item.attention || item.todo ? 'card-attention' : ''}} {{item.expireUrgent ? 'card-urgent' : ''}} {{item.inactive ? 'card-inactive' : ''}}"
+          wx:for="{{list}}"
+          wx:key="orderId"
+          data-link="{{item.deepLink}}"
+          bindtap="onItemTap"
+          hover-class="card-press"
+          hover-stay-time="80"
+        >
+          <view class="metal-edge" aria-hidden="true"></view>
+          <view class="cover-wrap">
+            <image class="cover" src="{{item.productImage}}" mode="aspectFill" lazy-load wx:if="{{item.productImage}}"></image>
+            <view class="cover placeholder" wx:else>
+              <view class="cover-plate"></view>
+            </view>
+            <view class="role-chip {{flowTab}}">{{item.roleLabel}}</view>
+            <view class="voice-badge" wx:if="{{item.hasVoice}}">
+              <image class="voice-icon" src="/subpackages/feature/assets/icons/audio.png" mode="aspectFit"></image>
+            </view>
+          </view>
+          <view class="body">
+            <view class="row-top">
+              <view class="status-plate">
+                <view class="signal-light {{item.signalClass}}"></view>
+                <text class="status {{item.todo || item.attention ? 'hot' : ''}}">{{item.progressLabel}}</text>
+              </view>
+              <text class="expire {{item.expireUrgent ? 'urgent' : ''}}" wx:if="{{item.expireHint}}">{{item.expireHint}}</text>
+            </view>
+            <text class="title">{{item.productTitle}}</text>
+            <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>
+            <text class="meta" wx:elif="{{item.recipientName && flowTab === 'sent'}}">致 {{item.recipientName}}</text>
+            <text class="meta" wx:elif="{{item.storeName}}">{{item.storeName}}</text>
+            <text class="meta" wx:else>{{item.deliveryLabel}}</text>
+
+            <!-- 履约微轨 -->
+            <view class="prog-rail" wx:if="{{item.showRail}}" aria-hidden="true">
+              <view
+                class="prog-step {{step.state}}"
+                wx:for="{{item.progressSteps.steps}}"
+                wx:for-item="step"
+                wx:key="label"
+              >
+                <view class="prog-dot"></view>
+                <text class="prog-lbl">{{step.label}}</text>
+              </view>
+            </view>
+
+            <view class="row-bottom">
+              <text class="time">{{item.paidText || '—'}}</text>
+              <text class="price" wx:if="{{item.totalPrice != null}}">¥{{item.totalPrice}}</text>
+            </view>
+            <view class="actions" wx:if="{{item.primaryAction}}" catchtap="noop">
+              <view
+                class="act primary"
+                hover-class="act-primary-press"
+                hover-stay-time="80"
+                data-order-id="{{item.orderId}}"
+                data-action-key="{{item.primaryAction.key}}"
+                data-action-type="{{item.primaryAction.type}}"
+                data-action-path="{{item.primaryAction.path}}"
+                bindtap="onActionTap"
+              >{{item.primaryAction.label}}</view>
+              <view
+                class="act ghost"
+                hover-class="act-ghost-press"
+                hover-stay-time="80"
+                wx:if="{{item.secondaryAction}}"
+                data-order-id="{{item.orderId}}"
+                data-action-key="{{item.secondaryAction.key}}"
+                data-action-type="{{item.secondaryAction.type}}"
+                data-action-path="{{item.secondaryAction.path}}"
+                bindtap="onActionTap"
+              >{{item.secondaryAction.label}}</view>
+            </view>
+          </view>
+        </view>
+        <view class="list-foot" wx:if="{{list.length}}">
+          <text class="muted">{{hasMore ? (loadingMore ? '继续翻阅…' : '上拉查看更多') : '— 礼簿至此 —'}}</text>
+        </view>
+      </view>
+      <view class="scroll-pad dock-pad"></view>
+    </scroll-view>
+  </view>
+
+  <!-- ===== 对象 ===== -->
+  <scroll-view
+    wx:elif="{{hubTab === 'people'}}"
+    scroll-y
+    class="scroll alone pane show"
+    style="{{scrollStyle}}"
+    enhanced
+    show-scrollbar="{{false}}"
+    refresher-enabled
+    refresher-default-style="white"
+    refresher-background="#1A1814"
+    refresher-triggered="{{refresherTriggered}}"
+    bindrefresherrefresh="onRefresherRefresh"
+  >
+    <view class="panel-head people-head">
+      <view class="dates-head-paper" aria-hidden="true">
+        <view class="paper-fiber"></view>
+        <view class="paper-emboss tight"></view>
+      </view>
+      <view class="panel-titles">
+        <text class="ph-over">CONTACTS</text>
+        <text class="ph-title">重要馈赠对象</text>
+        <text class="ph-hint">像铜牌一样记下常想送出的人</text>
+      </view>
+      <view class="ph-btn metal" hover-class="ph-btn-press" hover-stay-time="80" bindtap="openContactForm">添加</view>
+    </view>
+
+    <view class="skel-list" wx:if="{{contactsLoading && !contacts.length}}">
+      <view class="skel-plate" wx:for="{{skelRows}}" wx:key="*this"></view>
+      <text class="skel-hint">正在翻开名册…</text>
+    </view>
+
+    <view class="list-error" wx:elif="{{contactsError && !contacts.length}}">
+      <view class="empty-mark paper-empty" aria-hidden="true">
+        <view class="paper-fiber"></view>
+        <view class="empty-ring emboss-ring"></view>
+        <view class="signal-light lamp-warn"></view>
+      </view>
+      <text class="muted">{{contactsError}}</text>
+      <text class="link" bindtap="loadContacts">再试一次</text>
+    </view>
+
+    <view class="empty" wx:elif="{{!contactsLoading && !contacts.length}}">
+      <view class="empty-mark paper-empty" aria-hidden="true">
+        <view class="paper-fiber"></view>
+        <view class="empty-ring emboss-ring"></view>
+        <view class="specimen-wm sm"></view>
+      </view>
+      <text class="empty-title">还没有记下谁</text>
+      <text class="empty-desc">把常想送礼的人放进名单；也可先去柜中选一份山海。</text>
+      <view class="empty-actions">
+        <view class="btn-brass" hover-class="btn-brass-press" hover-stay-time="80" bindtap="openContactForm">添加对象</view>
+        <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="goHub">去选一份山海</view>
+      </view>
+    </view>
+
+    <view class="people-list {{softRefreshing ? 'dim' : ''}}" wx:else>
+      <view class="plate-card brass-plate" wx:for="{{contacts}}" wx:key="id">
+        <view class="paper-fiber" aria-hidden="true"></view>
+        <view class="plate-emboss" aria-hidden="true"></view>
+        <view class="specimen-wm sm dark" aria-hidden="true"></view>
+        <view class="plate-top" hover-class="plate-press" hover-stay-time="80" bindtap="editContact" data-id="{{item.id}}">
+          <view class="plate-avatar">
+            <view class="plate-avatar-shine" aria-hidden="true"></view>
+            <text>{{item.nameInitial}}</text>
+          </view>
+          <view class="plate-body">
+            <view class="plate-row">
+              <text class="plate-name">{{item.name}}</text>
+              <text class="plate-tag">{{item.relationLabel}}</text>
+            </view>
+            <text class="plate-note" wx:if="{{item.note}}">{{item.note}}</text>
+            <text class="plate-meta">{{item.giftCountLabel}}</text>
+          </view>
+        </view>
+        <view class="plate-acts triple">
+          <view
+            class="act primary"
+            hover-class="act-primary-press"
+            hover-stay-time="80"
+            data-name="{{item.name}}"
+            data-scene="{{item.sceneKey}}"
+            data-contact-id="{{item.id}}"
+            bindtap="giftForContact"
+          >再送</view>
+          <view
+            class="act ghost"
+            hover-class="act-ghost-press"
+            hover-stay-time="80"
+            data-name="{{item.name}}"
+            bindtap="viewContactGifts"
+          >往来</view>
+          <view class="act ghost" hover-class="act-ghost-press" hover-stay-time="80" data-id="{{item.id}}" bindtap="editContact">编辑</view>
+        </view>
+      </view>
+    </view>
+    <view class="scroll-pad dock-pad"></view>
+  </scroll-view>
+
+  <!-- ===== 日子 ===== -->
+  <scroll-view
+    wx:elif="{{hubTab === 'dates'}}"
+    scroll-y
+    class="scroll alone pane show dates-pane"
+    style="{{scrollStyle}}"
+    enhanced
+    show-scrollbar="{{false}}"
+    refresher-enabled
+    refresher-default-style="white"
+    refresher-background="#1A1814"
+    refresher-triggered="{{refresherTriggered}}"
+    bindrefresherrefresh="onRefresherRefresh"
+  >
+    <view class="panel-head dates-head">
+      <view class="dates-head-paper" aria-hidden="true">
+        <view class="paper-fiber"></view>
+        <view class="paper-fiber fine"></view>
+        <view class="paper-emboss tight"></view>
+      </view>
+      <view class="panel-titles">
+        <view class="ph-over-row">
+          <text class="ph-over">DATES</text>
+          <view class="signal-light {{datesHeadSignalClass}}"></view>
+        </view>
+        <text class="ph-title">人情日子</text>
+        <text class="ph-hint">临近七日，角标会轻轻亮起</text>
+      </view>
+      <view class="ph-btn metal" hover-class="ph-btn-press" hover-stay-time="80" bindtap="openDateForm">
+        <text>添加</text>
+      </view>
+    </view>
+
+    <!-- 临近焦点条 -->
+    <view class="spotlight" wx:if="{{hotSpotlight}}">
+      <view class="spotlight-paper" aria-hidden="true">
+        <view class="paper-fiber"></view>
+      </view>
+      <view class="spotlight-left">
+        <view class="signal-light {{hotSpotlight.signalClass}}"></view>
+        <view class="spotlight-copy">
+          <text class="spotlight-until">{{hotSpotlight.untilText || '将近'}}</text>
+          <text class="spotlight-title">{{hotSpotlight.title}}</text>
+          <text class="spotlight-meta" wx:if="{{hotSpotlight.contactName}}">{{hotSpotlight.contactName}} · {{hotSpotlight.typeLabel}}</text>
+          <text class="spotlight-meta" wx:else>{{hotSpotlight.typeLabel}} · {{hotSpotlight.month}}月{{hotSpotlight.day}}日</text>
+        </view>
+      </view>
+      <view
+        class="spotlight-cta"
+        hover-class="spotlight-cta-press"
+        hover-stay-time="80"
+        data-name="{{hotSpotlight.contactName}}"
+        data-scene="{{hotSpotlight.sceneKey}}"
+        data-contact-id="{{hotSpotlight.contactId}}"
+        bindtap="giftForDate"
+      >选礼</view>
+    </view>
+
+    <view class="near-block" wx:if="{{upcomingDates.length}}">
+      <view class="section-label-row">
+        <text class="section-label">临近 30 日</text>
+        <view class="signal-light lamp-warn" wx:if="{{upcomingHotCount}}"></view>
+      </view>
+      <view
+        class="plate-card brass-plate date-plate {{item.urgency === 'hot' ? 'hot' : 'near'}}"
+        wx:for="{{upcomingDates}}"
+        wx:key="id"
+      >
+        <view class="paper-fiber" aria-hidden="true"></view>
+        <view class="plate-emboss" aria-hidden="true"></view>
+        <view class="specimen-wm sm dark" aria-hidden="true"></view>
+        <view class="plate-top" hover-class="plate-press" hover-stay-time="80" bindtap="editDate" data-id="{{item.id}}">
+          <view class="date-badge paper {{item.urgency}}">
+            <view class="date-badge-inner" aria-hidden="true"></view>
+            <view class="signal-light {{item.signalClass}}"></view>
+            <text class="date-badge-year" wx:if="{{item.year}}">{{item.year}}</text>
+            <text class="date-badge-md">{{item.month}}月{{item.day}}日</text>
+            <text class="date-badge-until {{item.urgency}}" wx:if="{{item.untilText}}">{{item.untilText}}</text>
+          </view>
+          <view class="plate-body">
+            <text class="plate-name">{{item.title}}</text>
+            <view class="plate-meta-row">
+              <text class="plate-tag">{{item.typeLabel}}</text>
+              <text class="plate-meta soft" wx:if="{{item.contactName}}">{{item.contactName}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="plate-acts">
+          <view
+            class="act primary metal"
+            hover-class="act-primary-press"
+            hover-stay-time="80"
+            data-name="{{item.contactName}}"
+            data-scene="{{item.sceneKey}}"
+            data-contact-id="{{item.contactId}}"
+            bindtap="giftForDate"
+          >为 TA 选礼</view>
+          <view class="act ghost" hover-class="act-ghost-press" hover-stay-time="80" data-id="{{item.id}}" bindtap="editDate">编辑</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="skel-list" wx:if="{{datesLoading && !dates.length}}">
+      <view class="skel-plate" wx:for="{{skelRows}}" wx:key="*this"></view>
+      <text class="skel-hint">正在翻开日历…</text>
+    </view>
+
+    <view class="list-error" wx:elif="{{datesError && !dates.length}}">
+      <view class="empty-mark paper-empty" aria-hidden="true">
+        <view class="paper-fiber"></view>
+        <view class="empty-ring emboss-ring"></view>
+        <view class="signal-light lamp-warn"></view>
+      </view>
+      <text class="muted">{{datesError}}</text>
+      <text class="link" bindtap="loadDates">再试一次</text>
+    </view>
+
+    <view class="empty dates-empty" wx:elif="{{!datesLoading && !dates.length}}">
+      <view class="empty-mark paper-empty dates-empty-mark" aria-hidden="true">
+        <view class="paper-fiber"></view>
+        <view class="empty-ring emboss-ring"></view>
+        <view class="specimen-wm sm"></view>
+        <view class="signal-light lamp-muted hollow"></view>
+      </view>
+      <text class="empty-title">还没有记下日子</text>
+      <text class="empty-desc">生日、纪念日、乔迁与节日，都可放在这里。临近七日时，信号灯会轻轻亮起。</text>
+      <view class="empty-actions">
+        <view class="btn-brass" hover-class="btn-brass-press" hover-stay-time="80" bindtap="openDateForm">添加日子</view>
+        <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="goEditProfile">完善个人生日</view>
+      </view>
+    </view>
+
+    <view class="dates-list {{softRefreshing ? 'dim' : ''}}" wx:elif="{{dates.length}}">
+      <text class="section-label" wx:if="{{upcomingDates.length}}">全部日子</text>
+      <view
+        class="plate-card brass-plate date-plate {{item.urgency === 'hot' ? 'hot' : (item.urgency === 'near' ? 'near' : '')}}"
+        wx:for="{{dates}}"
+        wx:key="id"
+      >
+        <view class="paper-fiber" aria-hidden="true"></view>
+        <view class="plate-emboss" aria-hidden="true"></view>
+        <view class="specimen-wm sm dark" aria-hidden="true"></view>
+        <view class="plate-top" hover-class="plate-press" hover-stay-time="80" bindtap="editDate" data-id="{{item.id}}">
+          <view class="date-badge paper {{item.urgency}}">
+            <view class="date-badge-inner" aria-hidden="true"></view>
+            <view class="signal-light {{item.signalClass}}"></view>
+            <text class="date-badge-year" wx:if="{{item.year}}">{{item.year}}</text>
+            <text class="date-badge-md">{{item.month}}月{{item.day}}日</text>
+            <text class="date-badge-until {{item.urgency}}" wx:if="{{item.untilText}}">{{item.untilText}}</text>
+          </view>
+          <view class="plate-body">
+            <text class="plate-name">{{item.title}}</text>
+            <view class="plate-meta-row">
+              <text class="plate-tag">{{item.typeLabel}}</text>
+              <text class="plate-meta soft" wx:if="{{item.contactName}}">{{item.contactName}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="plate-acts">
+          <view
+            class="act primary metal"
+            hover-class="act-primary-press"
+            hover-stay-time="80"
+            data-name="{{item.contactName}}"
+            data-scene="{{item.sceneKey}}"
+            data-contact-id="{{item.contactId}}"
+            bindtap="giftForDate"
+          >选礼</view>
+          <view class="act ghost" hover-class="act-ghost-press" hover-stay-time="80" data-id="{{item.id}}" bindtap="editDate">编辑</view>
+        </view>
+      </view>
+    </view>
+    <view class="scroll-pad dock-pad"></view>
+  </scroll-view>
+
+  <!-- 底部常驻选礼 -->
+  <view class="dock" wx:if="{{!sheetOpen}}">
+    <view class="dock-btn" hover-class="dock-btn-press" hover-stay-time="80" bindtap="goHub">
+      <text class="dock-over">CABINET</text>
+      <text class="dock-lbl">选一份山海</text>
+    </view>
+  </view>
+
+  <!-- 对象表单 -->
+  <view
+    class="sheet-mask {{showContactForm ? 'on' : ''}}"
+    wx:if="{{sheetContactMounted}}"
+    catchtouchmove="noop"
+    bindtap="closeContactForm"
+  ></view>
+  <view class="sheet {{showContactForm ? 'on' : ''}}" wx:if="{{sheetContactMounted}}" catchtouchmove="noop">
+    <view class="sheet-handle" aria-hidden="true"></view>
+    <text class="sheet-over">CONTACT</text>
+    <text class="sheet-title">{{contactForm.id ? '编辑对象' : '添加对象'}}</text>
+    <view class="field">
+      <text class="field-lbl">称呼</text>
+      <input class="field-input" maxlength="20" placeholder="如：阿宁" value="{{contactForm.name}}" bindinput="onContactName" />
+    </view>
+    <view class="field">
+      <text class="field-lbl">关系</text>
+      <scroll-view class="chip-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="chip-row">
+          <view
+            class="chip {{contactForm.relation === item.key ? 'on' : ''}}"
+            wx:for="{{relationOptions}}"
+            wx:key="key"
+            data-key="{{item.key}}"
+            hover-class="chip-press"
+            hover-stay-time="70"
+            bindtap="onContactRelation"
+          >{{item.label}}</view>
+        </view>
+      </scroll-view>
+    </view>
+    <view class="field">
+      <text class="field-lbl">备注</text>
+      <input class="field-input" maxlength="40" placeholder="可选，一句便笺" value="{{contactForm.note}}" bindinput="onContactNote" />
+    </view>
+    <view class="sheet-acts">
+      <view class="btn-brass {{formBusy ? 'disabled' : ''}}" hover-class="btn-brass-press" hover-stay-time="80" bindtap="saveContact">{{formBusy ? '记下…' : '保存'}}</view>
+      <view class="btn-ghost danger" wx:if="{{contactForm.id}}" data-id="{{contactForm.id}}" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="deleteContact">移出名单</view>
+      <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="closeContactForm">取消</view>
+    </view>
+    <view class="sheet-safe" aria-hidden="true"></view>
+  </view>
+
+  <!-- 日子表单 -->
+  <view
+    class="sheet-mask {{showDateForm ? 'on' : ''}}"
+    wx:if="{{sheetDateMounted}}"
+    catchtouchmove="noop"
+    bindtap="closeDateForm"
+  ></view>
+  <view class="sheet {{showDateForm ? 'on' : ''}}" wx:if="{{sheetDateMounted}}" catchtouchmove="noop">
+    <view class="sheet-handle" aria-hidden="true"></view>
+    <text class="sheet-over">DATE</text>
+    <text class="sheet-title">{{dateForm.id ? '编辑日子' : '添加日子'}}</text>
+    <view class="field">
+      <text class="field-lbl">类型</text>
+      <view class="chip-row wrap">
+        <view
+          class="chip {{dateForm.type === item.key ? 'on' : ''}}"
+          wx:for="{{dateTypeOptions}}"
+          wx:key="key"
+          data-key="{{item.key}}"
+          hover-class="chip-press"
+          hover-stay-time="70"
+          bindtap="onDateType"
+        >{{item.label}}</view>
+      </view>
+    </view>
+    <view class="field">
+      <text class="field-lbl">关联对象（可选）</text>
+      <view class="chip-row wrap">
+        <view
+          class="chip {{dateForm.contactId === '' ? 'on' : ''}}"
+          data-id=""
+          hover-class="chip-press"
+          hover-stay-time="70"
+          bindtap="onDateContact"
+        >不关联</view>
+        <view
+          class="chip {{dateForm.contactId === item.id ? 'on' : ''}}"
+          wx:for="{{contactPickList}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          data-name="{{item.name}}"
+          hover-class="chip-press"
+          hover-stay-time="70"
+          bindtap="onDateContact"
+        >{{item.name}}</view>
+      </view>
+    </view>
+    <view class="field">
+      <text class="field-lbl">标题</text>
+      <input class="field-input" maxlength="20" placeholder="{{dateForm.titlePlaceholder || '如：值得记得的一天'}}" value="{{dateForm.title}}" bindinput="onDateTitle" />
+    </view>
+    <view class="field">
+      <text class="field-lbl">日期</text>
+      <picker mode="date" value="{{dateForm.dateValue || datePickerEnd}}" end="{{datePickerEnd}}" bindchange="onDatePickerChange">
+        <view class="field-picker {{dateForm.dateDisplay ? '' : 'is-placeholder'}}">
+          <text>{{dateForm.dateDisplay || '选择年 / 月 / 日'}}</text>
+          <text class="field-picker-chev" aria-hidden="true"></text>
+        </view>
+      </picker>
+      <text class="field-hint">{{dateForm.dateHint}}</text>
+    </view>
+    <view class="field import-field" wx:if="{{dateForm.type === 'birthday'}}">
+      <view
+        class="import-row"
+        hover-class="import-row-press"
+        hover-stay-time="80"
+        bindtap="importProfileBirthday"
+      >
+        <view class="import-copy">
+          <text class="import-title">从个人信息导入</text>
+          <text class="import-sub" wx:if="{{profileBirthdayDisplay}}">资料生日 · {{profileBirthdayDisplay}}</text>
+          <text class="import-sub" wx:else>资料尚未填写生日时，将引导去完善</text>
+        </view>
+        <text class="import-cta">{{profileBirthdayDisplay ? '填入' : '去完善'}}</text>
+      </view>
+    </view>
+    <view class="sheet-acts">
+      <view class="btn-brass {{formBusy ? 'disabled' : ''}}" hover-class="btn-brass-press" hover-stay-time="80" bindtap="saveDate">{{formBusy ? '记下…' : '保存'}}</view>
+      <view class="btn-ghost danger" wx:if="{{dateForm.id}}" data-id="{{dateForm.id}}" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="deleteDate">删除</view>
+      <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="closeDateForm">取消</view>
+    </view>
+    <view class="sheet-safe" aria-hidden="true"></view>
+  </view>
+</view>
+
+<view class="page checking" wx:else>
+  <view class="state-block">
+    <view class="state-seal"></view>
+    <text class="muted">{{checking ? '柜门轻启…' : '礼赠暂未开放'}}</text>
+  </view>
+</view>

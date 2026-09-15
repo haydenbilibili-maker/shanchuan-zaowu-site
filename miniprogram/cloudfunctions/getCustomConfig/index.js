@@ -44,21 +44,22 @@ async function loadConfigsByType(type, defaults) {
 
 async function loadFramers() {
   try {
-    const res = await db.collection('framers').get()
-    if (res.data && res.data.length) {
-      return res.data
-        .filter((row) => row.active !== false)
-        .sort((a, b) => (b.sort || 0) - (a.sort || 0))
-        .map((row) => ({
-          id: row._id,
-          name: row.name,
-          title: row.title || '',
-          avatar: row.avatar || '',
-          type: row.type || 'store',
-          bio: row.bio || row.desc || '',
-          priceDelta: row.priceDelta || 0,
-          extraDays: row.extraDays || 0
-        }))
+    const _ = db.command
+    // Admin 隐藏写入 active:false；缺省/undefined 视为公开展示
+    const res = await db.collection('framers')
+      .where({ active: _.neq(false) })
+      .get()
+    const rows = (res.data || []).filter((row) => row && row.active !== false)
+    if (rows.length) {
+      return rows.map((row) => ({
+        id: row._id,
+        name: row.name,
+        avatar: row.avatar || '',
+        type: row.type || 'store',
+        bio: row.bio || '',
+        priceDelta: row.priceDelta || 0,
+        extraDays: row.extraDays || 0
+      }))
     }
   } catch (e) {
     console.warn('framers read failed:', e.message)

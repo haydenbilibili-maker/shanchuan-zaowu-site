@@ -1,0 +1,63 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "at": "2026-09-13T16:51:06.378Z",
+  "applyResults": [
+    {
+      "n": "store_ledger",
+      "ok": true
+    },
+    {
+      "n": "daily_revenues",
+      "ok": true
+    },
+    {
+      "n": "finance_records",
+      "ok": true
+    },
+    {
+      "n": "collections",
+      "ok": true
+    },
+    {
+      "n": "likes",
+      "ok": true
+    },
+    {
+      "n": "collection_folders",
+      "ok": true
+    }
+  ],
+  "verify": [
+    {
+      "collection": "store_ledger",
+      "matched": true,
+      "got": "{\"read\":\"auth != null\",\"write\":false}"
+    },
+    {
+      "collection": "daily_revenues",
+      "matched": true,
+      "got": "{\"read\":\"auth != null\",\"write\":false}"
+    },
+    {
+      "collection": "finance_records",
+      "matched": true,
+      "got": "{\"read\":\"auth != null\",\"write\":false}"
+    },
+    {
+      "collection": "collections",
+      "matched": true,
+      "got": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":\"auth != null && doc._openid == auth.openid\"}"
+    },
+    {
+      "collection": "likes",
+      "matched": true,
+      "got": "{\"read\":\"doc._openid == auth.openid\",\"write\":\"doc._openid == auth.openid\"}"
+    },
+    {
+      "collection": "collection_folders",
+      "matched": true,
+      "got": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":\"auth != null && doc._openid == auth.openid\"}"
+    }
+  ],
+  "appliedToCloud": true
+}

@@ -1,10 +1,44 @@
 // pages/booking/index.js
 const app = getApp();
 const db = wx.cloud.database();
-const { buildPreviewSummary, buildDraftTitle } = require('../../../utils/customHelper');
-const { buildSummaryLines } = require('../../../utils/petMemorialHelper');
+const { buildPreviewSummary, buildDraftTitle } = require('../utils/customHelper');
+const { buildSummaryLines } = require('../utils/petMemorialHelper');
 const { findStore, getPreferredStoreId, getWorkshopStore, enrichStore } = require('../../../utils/storeHelper');
 const { trackBehavior } = require('../../../utils/trackBehavior');
+const { drawMemberQr } = require('../utils/qrCanvas');
+
+const BOOKING_TYPE_CN = {
+  museum_visit: '到店参观',
+  handcraft_course: '手作课程',
+  course: '手作课程',
+  special_activity: '特别活动',
+  pet_intake: '伴宠交接',
+  custom_confirm: '定制确认'
+};
+
+/** 拆出 month / day 供票根左栏展示，与 my-bookings 的 decorateBooking 口径一致 */
+function splitBookingDate(dateStr) {
+  const s = String(dateStr || '');
+  const matched = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (matched) {
+    return { month: `${parseInt(matched[2], 10)}月`, day: String(parseInt(matched[3], 10)) };
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return { month: `${d.getMonth() + 1}月`, day: String(d.getDate()) };
+  }
+  return { month: '', day: '' };
+}
+
+function decorateBookingRow(item) {
+  return {
+    ...item,
+    ...splitBookingDate(item.date),
+    title: item.title || BOOKING_TYPE_CN[item.type] || '到店参观',
+    _id_short: (item.ticketCode && String(item.ticketCode).trim())
+      || (item._id ? String(item._id).slice(-6).toUpperCase() : '')
+  };
+}
 
 Page({
   data: {
@@ -41,6 +75,7 @@ Page({
     selectedActivityType: null, // 选中的类型：course 或 activity
     
     // 票据预览信息
+    ticketYear: new Date().getFullYear(),
     ticketInfo: {
       dateStr: '--.--',
       timeStr: '--:--',
@@ -77,41 +112,84 @@ Page({
     storeList: []
   },
 
+  async loadStoreCatalog(preferredStoreId) {
+    const { fetchStoreCatalog, findCatalogStore } = require('../../../utils/storeCatalog')
+    const { displayStoreName } = require('../../../utils/storeName')
+    try {
+      const stores = await fetchStoreCatalog()
+      const list = stores.map((s) => enrichStore(s))
+      const currentId = preferredStoreId || this.data.storeId
+      const store = findCatalogStore(currentId, list) || list[0]
+      if (!store) {
+        this.setData({ storeList: list })
+        return
+      }
+      this.setData({
+        storeList: list,
+        storeId: store.storeId,
+        storeName: displayStoreName(store),
+        storeLocationLabel: store.locationLabel || store.floor || '',
+        storeVisitTips: store.visitTips || this.data.storeVisitTips || []
+      })
+    } catch (e) {
+      console.warn('loadStoreCatalog', e)
+    }
+  },
+
   onLoad(options) {
     const sys = wx.getWindowInfo();
     const menu = wx.getMenuButtonBoundingClientRect();
-    const safeTop = menu.bottom + 20; 
+    // 与胶囊顶对齐，避免 menu.bottom + 额外 px 造成大块留白
+    const headerPaddingTop = (menu && menu.top > 0)
+      ? menu.top
+      : (sys.statusBarHeight || 20);
 
-    this.setData({ statusBarHeight: safeTop });
+    this.setData({ statusBarHeight: headerPaddingTop });
 
     let storeId = options.storeId || getPreferredStoreId()
     const fromWorkshop = options.from === 'pet' || options.from === 'custom'
     if (fromWorkshop && !options.storeId) {
-      storeId = getWorkshopStore().storeId
+      const workshop = getWorkshopStore()
+      storeId = (workshop && workshop.storeId) || storeId
     }
     const storeLocked = fromWorkshop
-    const store = enrichStore(findStore(storeId))
-    const { DEFAULT_STORES } = require('../../../utils/storeDefaults')
+    const { displayStoreName } = require('../../../utils/storeName')
+    const seedStore = enrichStore(findStore(storeId))
     const patch = {
-      storeId: store.storeId,
-      storeName: store.name,
-      storeLocationLabel: store.locationLabel || '',
-      storeVisitTips: store.visitTips || [],
+      storeId: seedStore.storeId,
+      storeName: displayStoreName(seedStore),
+      storeLocationLabel: seedStore.locationLabel || '',
+      storeVisitTips: seedStore.visitTips || [],
       storeLocked,
-      storeList: DEFAULT_STORES.map(enrichStore)
+      storeList: []
     }
-    if (options.from === 'custom' && options.draftId) {
-      patch.isCustomBooking = true
-      patch.customDraftId = options.draftId
-      patch.currentTab = 0
+    if (options.from === 'custom') {
+      if (!options.draftId) {
+        wx.showToast({ title: '定制方案缺失', icon: 'none' })
+        setTimeout(() => {
+          wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/atelier/index' }) })
+        }, 1200)
+      } else {
+        patch.isCustomBooking = true
+        patch.customDraftId = options.draftId
+        patch.currentTab = 0
+      }
     }
-    if (options.from === 'pet' && options.orderId) {
-      patch.isPetIntakeBooking = true
-      patch.petMemorialOrderId = options.orderId
-      patch.currentTab = 0
-      patch.bookCount = 1
+    if (options.from === 'pet') {
+      if (!options.orderId) {
+        wx.showToast({ title: '工单信息缺失', icon: 'none' })
+        setTimeout(() => {
+          wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/atelier/index' }) })
+        }, 1200)
+      } else {
+        patch.isPetIntakeBooking = true
+        patch.petMemorialOrderId = options.orderId
+        patch.currentTab = 0
+        patch.bookCount = 1
+      }
     }
     this.setData(patch)
+    this.loadStoreCatalog(storeId)
 
     const weekDays = this.initDate()
     this.loadActivities()
@@ -133,8 +211,15 @@ Page({
     })
 
     if (options.tab) {
-      const tabIndex = parseInt(options.tab);
-      this.setData({ currentTab: tabIndex });
+      const tabIndex = parseInt(options.tab, 10);
+      const patchTab = { currentTab: tabIndex };
+      if (options.historyTab != null && options.historyTab !== '') {
+        const histIdx = parseInt(options.historyTab, 10);
+        if (!isNaN(histIdx) && histIdx >= 0 && histIdx <= 1) {
+          patchTab.bookingHistoryTab = histIdx;
+        }
+      }
+      this.setData(patchTab);
       if (tabIndex === 3) {
         this.loadBookingHistory();
       }
@@ -158,10 +243,14 @@ Page({
       this.closeStorePicker()
       return
     }
-    const store = enrichStore(findStore(storeId))
+    const { fetchStoreCatalog, findCatalogStore } = require('../../../utils/storeCatalog')
+    const { displayStoreName } = require('../../../utils/storeName')
+    const stores = this.data.storeList || []
+    const raw = stores.find((s) => s.storeId === storeId) || findCatalogStore(storeId, stores) || findStore(storeId)
+    const store = enrichStore(raw)
     this.setData({
       storeId: store.storeId,
-      storeName: store.name,
+      storeName: displayStoreName(store),
       storeLocationLabel: store.locationLabel || '',
       storeVisitTips: store.visitTips || [],
       storePickerOpen: false,
@@ -273,7 +362,10 @@ Page({
         data: { action: 'get', draftId }
       });
       const draft = res.result && res.result.draft;
-      if (!draft || !draft.customMeta) return;
+      if (!draft || !draft.customMeta) {
+        wx.showToast({ title: '定制方案不存在', icon: 'none' });
+        return;
+      }
       this._customMeta = draft.customMeta;
       this.setData({
         customPlanTitle: draft.title || buildDraftTitle(draft.customMeta),
@@ -281,6 +373,7 @@ Page({
       });
     } catch (e) {
       console.error('loadCustomDraftForBooking', e);
+      wx.showToast({ title: '方案加载失败', icon: 'none' });
     }
   },
 
@@ -291,40 +384,56 @@ Page({
         data: { action: 'get', orderId }
       });
       const order = res.result && res.result.order;
-      if (!order) return;
+      if (!order) {
+        wx.showToast({ title: '工单不存在', icon: 'none' });
+        return;
+      }
       const pet = order.pet || {};
       const craft = order.craft || {};
       const contact = order.contact || {};
       this.setData({
-        petPlanTitle: `${pet.name || '伴宠'} · ${craft.craftName || '标本制作'}`,
+        petPlanTitle: `${pet.name || '伴宠'} · ${craft.craftName || '藏品制作'}`,
         petPlanLines: buildSummaryLines(order),
         contactName: contact.name || this.data.contactName,
         contactPhone: contact.phone || this.data.contactPhone
       });
     } catch (e) {
       console.error('loadPetOrderForBooking', e);
+      wx.showToast({ title: '工单加载失败', icon: 'none' });
     }
   },
 
   // 🟢 1. 通用预约提交 (Tab 0)
   async submitBooking() {
+    const dateObj = this.data.weekDays[this.data.selectedDateIndex];
+    const dateStr = dateObj && dateObj.fullDate;
+    if (dateStr && (this.data.unavailableDates || []).indexOf(dateStr) >= 0) {
+      wx.showToast({ title: '该日店休，暂不可预约', icon: 'none' });
+      return;
+    }
     if (this.data.selectedTimeIndex === -1) return wx.showToast({ title: '请选择时间', icon: 'none' });
-    if (!this.data.contactName || !this.data.contactPhone) return wx.showToast({ title: '请完善信息', icon: 'none' });
-    if (this.data.contactPhone.length < 11) return wx.showToast({ title: '手机号格式误', icon: 'none' });
-
     const { requirePhone } = require('../../../utils/userSession');
     const phoneOk = await requirePhone(getApp(), {
-      content: '预约需绑定手机号，以便接收预约确认与提醒。',
-      contactPhone: this.data.contactPhone,
+      content: '授权手机号即可预约；若尚未注册，将同步领取新客礼包。',
+      from: 'booking',
+      returnMode: 'back',
+      direct: true
     });
     if (!phoneOk) return;
+    if (!this.data.contactName || !this.data.contactPhone) return wx.showToast({ title: '请完善信息', icon: 'none' });
+    if (String(this.data.contactPhone || '').length < 11) return wx.showToast({ title: '手机号格式误', icon: 'none' });
 
     wx.vibrateShort({ type: 'heavy' }); 
-    wx.showLoading({ title: '请柬制作中...', mask: true });
+    wx.showLoading({ title: '请柬制作中…', mask: true });
 
     try {
       const dateObj = this.data.weekDays[this.data.selectedDateIndex];
       const timeObj = this.data.timeSlots[this.data.selectedTimeIndex];
+      if (!dateObj || !dateObj.fullDate || !timeObj || !timeObj.time) {
+        wx.hideLoading();
+        wx.showToast({ title: '请重新选择日期时段', icon: 'none' });
+        return;
+      }
       
       // 默认是参观预约；定制方案 / 伴宠交接
       let bookingType = 'museum_visit';
@@ -362,30 +471,31 @@ Page({
       const res = await wx.cloud.callFunction({ name: 'createBooking', data: bookingData });
       wx.hideLoading();
 
-      if (res.result.success) {
-        trackBehavior('booking_submit', 'booking', res.result.bookingId || bookingData.date, {
+      const result = (res && res.result) || {};
+      if (result.success) {
+        trackBehavior('booking_submit', 'booking', result.bookingId || bookingData.date, {
           storeId: bookingData.storeId,
           type: bookingType,
           from: this.data.isPetIntakeBooking ? 'pet' : (this.data.isCustomBooking ? 'custom' : 'visit')
         });
         // 🟢 发送预约成功提醒
-        this.sendBookingReminder('success', res.result.bookingId, bookingData);
+        this.sendBookingReminder('success', result.bookingId, bookingData);
 
         if (this.data.isPetIntakeBooking && this.data.petMemorialOrderId) {
           wx.showToast({ title: '交接预约成功', icon: 'success' });
           setTimeout(() => {
             wx.redirectTo({
-              url: `/pages/custom/pet/status/index?id=${this.data.petMemorialOrderId}`
+              url: `/subpackages/feature/custom/pet/status/index?id=${this.data.petMemorialOrderId}`
             });
           }, 1200);
           return;
         }
         
-        this.startMintAnimation(res.result.ticketCode);
+        this.startMintAnimation(result.ticketCode);
         this.setData({ selectedTimeIndex: -1 });
         this.updateTicketTime(-1);
       } else {
-        wx.showToast({ title: res.result.msg || '预约失败', icon: 'none' });
+        wx.showToast({ title: result.msg || '预约失败', icon: 'none' });
       }
     } catch (err) {
       console.error(err);
@@ -458,7 +568,7 @@ Page({
 
   // 🟢 4. 执行活动报名
   async doBookActivity(item) {
-    wx.showLoading({ title: '支付处理中...' });
+    wx.showLoading({ title: '支付处理中…' });
     
     try {
       const bookingData = {
@@ -481,15 +591,15 @@ Page({
       });
 
       wx.hideLoading();
-      
-      if(res.result.success) {
+      const result = (res && res.result) || {};
+      if (result.success) {
           // 🟢 发送预约成功提醒
-          this.sendBookingReminder('success', res.result.bookingId, bookingData);
+          this.sendBookingReminder('success', result.bookingId, bookingData);
           
           // 🟢 成功：触发动画
-          this.startMintAnimation(res.result.ticketCode);
+          this.startMintAnimation(result.ticketCode);
       } else {
-          wx.showToast({ title: res.result.msg || '报名失败', icon: 'none' });
+          wx.showToast({ title: result.msg || '报名失败', icon: 'none' });
       }
     } catch (err) { 
       wx.hideLoading(); 
@@ -504,6 +614,11 @@ Page({
       newTicketCode: code,
       mintAnimation: false,
       mintFinished: false
+    }, () => {
+      // 本地绘制核销码，避免依赖 api.qrserver.com
+      setTimeout(() => {
+        drawMemberQr('#mintQrCanvas', String(code || ''), this, 120).catch(() => {});
+      }, 80);
     });
 
     setTimeout(() => {
@@ -519,7 +634,60 @@ Page({
 
   goToMyBookings() {
     this.closeMintModal();
-    wx.navigateTo({ url: '/subpackages/business/my-bookings/index' });
+    this.setData({ currentTab: 3, bookingHistoryTab: 0 });
+    this.updateTicketType(3);
+    this.loadBookingHistory();
+  },
+
+  switchHistoryTab(e) {
+    const idx = parseInt(e.currentTarget.dataset.idx, 10);
+    if (isNaN(idx)) return;
+    wx.vibrateShort({ type: 'light' });
+    this.setData({ bookingHistoryTab: idx });
+  },
+
+  goToBookingDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) {
+      wx.showToast({ title: '预约信息缺失', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({
+      url: `/subpackages/business/ticket/index?id=${id}`,
+      fail: () => wx.showToast({ title: '无法打开票据', icon: 'none' })
+    });
+  },
+
+  /** 预约历史（Tab 3）：confirmed 归「待参加」，其余归「历史记录」 */
+  async loadBookingHistory() {
+    if (this.data.loadingBookings) return;
+    this.setData({ loadingBookings: true });
+    try {
+      const res = await db.collection('bookings')
+        .orderBy('date', 'desc')
+        .orderBy('time', 'asc')
+        .get();
+
+      const upcoming = [];
+      const history = [];
+      (res.data || []).forEach((raw) => {
+        const item = decorateBookingRow(raw);
+        if (item.status === 'confirmed') upcoming.push(item);
+        else history.push(item);
+      });
+
+      this.setData({ upcomingBookings: upcoming, historyBookings: history });
+    } catch (err) {
+      console.error('加载预约历史失败', err);
+      this.setData({ upcomingBookings: [], historyBookings: [] });
+      wx.showToast({ title: '预约记录加载失败', icon: 'none' });
+    } finally {
+      this.setData({ loadingBookings: false });
+    }
+  },
+
+  goBack() {
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) });
   },
 
   closeMintModal() {
@@ -568,6 +736,7 @@ Page({
     });
     this.updateTicketType(idx);
     this.updateTicketTime(-1);
+    if (idx === 3) this.loadBookingHistory();
   },
 
   selectDate(e) { 
@@ -657,7 +826,7 @@ Page({
           if (d && d.closed) unavailableDates.push(dateStr)
           else if (d && d.dayFull) fullDates.push(dateStr)
         } catch (e) {
-          if (date.getDay() === 0 || date.getDay() === 6) unavailableDates.push(dateStr)
+          // 可用性查询失败时不默认把周末标为店休（门店全年营业）
         }
       }
 
@@ -689,8 +858,12 @@ Page({
 
     const dateObj = this.data.weekDays[this.data.selectedDateIndex];
     const timeObj = this.data.timeSlots[this.data.selectedTimeIndex];
+    if (!dateObj || !dateObj.fullDate || !timeObj || !timeObj.time) {
+      wx.showToast({ title: '请重新选择日期时段', icon: 'none' });
+      return;
+    }
 
-    wx.showLoading({ title: '加入候补...' });
+    wx.showLoading({ title: '加入候补…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'addToWaitlist',
@@ -703,15 +876,16 @@ Page({
       });
 
       wx.hideLoading();
-      if (res.result.success) {
+      const result = (res && res.result) || {};
+      if (result.success) {
         wx.showModal({
           title: '加入成功',
-          content: res.result.msg,
+          content: result.msg || '已加入候补',
           showCancel: false,
           confirmColor: '#C4A76C'
         });
       } else {
-        wx.showToast({ title: res.result.msg || '加入失败', icon: 'none' });
+        wx.showToast({ title: result.msg || '加入失败', icon: 'none' });
       }
     } catch (err) {
       wx.hideLoading();

@@ -4,6 +4,6 @@
   "description": "店长发货并推送山海有信",
   "main": "index.js",
   "dependencies": {
-    "wx-server-sdk": "~2.6.3"
+    "wx-server-sdk": "~3.0.1"
   }
 }

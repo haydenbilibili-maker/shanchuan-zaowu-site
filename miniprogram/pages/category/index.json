@@ -2,5 +2,16 @@
   "navigationBarTitleText": "馆藏",
   "navigationStyle": "custom",
   "backgroundColor": "#1A1814",
-  "backgroundTextStyle": "light"
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundColorContent": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundTextStyle": "light",
+  "usingComponents": {
+    "easter-egg-note": "/components/EasterEggNote/index",
+    "product-filter-panel": "/components/ProductFilterPanel/index",
+    "protected-badge": "/components/ProtectedBadge/index",
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+  }
 }

@@ -1,0 +1,372 @@
+<view class="page {{entered ? 'entered' : ''}}">
+  <view class="page-boot" wx:if="{{!ready}}">
+    <view class="boot-mark"></view>
+    <text class="boot-en">SHAREHOLDER OBSERVATORY</text>
+    <text class="boot-cn">股东观测台</text>
+    <text class="boot-hint">{{bootHint}}</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header reveal r1">
+      <view class="brand-group">
+        <text class="en">SHAREHOLDER OBSERVATORY</text>
+        <text class="cn">股东观测台</text>
+      </view>
+      <view class="header-row">
+        <text class="greeting">{{staffName ? staffName + ' · ' : ''}}{{profile.storeName}} · 只读权益看板</text>
+        <view class="readonly-chip">
+          <view class="signal-light blink"></view>
+          <text class="readonly-text">只读</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="range-bar reveal r2">
+      <view
+        class="range-tab {{rangeKey===item.key?'on':''}}"
+        wx:for="{{rangeTabs}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="setRange"
+      >{{item.label}}</view>
+    </view>
+    <view class="month-bar reveal r2" wx:if="{{rangeType==='month'}}">
+      <view class="month-chip {{monthKey===monthCurrent?'on':''}}" data-preset="current" bindtap="setMonthPreset">本月</view>
+      <view class="month-chip {{monthKey===monthPrev?'on':''}}" data-preset="prev" bindtap="setMonthPreset">上月</view>
+      <picker mode="date" fields="month" value="{{monthKey}}" end="{{monthMax}}" bindchange="onMonthPick">
+        <view class="month-chip pick {{monthKey!==monthCurrent && monthKey!==monthPrev?'on':''}}">{{monthLabel}} ▾</view>
+      </picker>
+    </view>
+
+    <!-- ① 信号灯 -->
+    <view class="verdict-card reveal r3 {{numPulse ? 'pulse' : ''}}">
+      <view class="verdict-top">
+        <view class="verdict-left">
+          <view class="signal-light {{verdict.className}}"></view>
+          <view class="verdict-copy">
+            <text class="verdict-en">HEALTH · {{rangeLabel}}</text>
+            <text class="verdict-title {{verdict.tone}}">{{verdict.title}}</text>
+          </view>
+        </view>
+        <view class="verdict-badge {{verdict.tone}}">{{verdict.label}}</view>
+      </view>
+      <text class="verdict-insight">{{verdict.insight}}</text>
+      <view class="summary-chips" wx:if="{{signalBoard.summary.ok || signalBoard.summary.warn || signalBoard.summary.danger}}">
+        <text class="sum-chip ok" wx:if="{{signalBoard.summary.ok}}">正常 {{signalBoard.summary.ok}}</text>
+        <text class="sum-chip warn" wx:if="{{signalBoard.summary.warn}}">关注 {{signalBoard.summary.warn}}</text>
+        <text class="sum-chip danger" wx:if="{{signalBoard.summary.danger}}">告警 {{signalBoard.summary.danger}}</text>
+      </view>
+      <view class="verdict-foot">
+        <text class="verdict-meta">{{verdict.updatedAt ? '更新 ' + verdict.updatedAt : '下拉可刷新'}}{{loading ? ' · 刷新中' : ''}}</text>
+        <text class="legend-toggle" bindtap="toggleLegend">{{legendOpen ? '收起图例' : '信号图例'}}</text>
+      </view>
+      <view class="legend-box" wx:if="{{legendOpen}}">
+        <view class="legend-row"><view class="signal-light blink"></view><text class="legend-text">绿 · 正常 / 向好</text></view>
+        <view class="legend-row"><view class="signal-light warn"></view><text class="legend-text">黄 · 需关注</text></view>
+        <view class="legend-row"><view class="signal-light danger"></view><text class="legend-text">红 · 告警</text></view>
+        <view class="legend-row"><view class="signal-light lamp-muted"></view><text class="legend-text">灰 · 持平 / 样本不足</text></view>
+        <text class="legend-hint">{{signalBoard.rulesNote}}</text>
+      </view>
+    </view>
+
+    <view class="card signal-board reveal r3" wx:if="{{signalBoard.items.length}}">
+      <view class="card-top">
+        <text class="card-title">股东信号灯</text>
+        <text class="card-meta">点按跳转明细</text>
+      </view>
+      <view class="signal-grid">
+        <view
+          class="signal-item tap"
+          wx:for="{{signalBoard.items}}"
+          wx:key="id"
+          hover-class="signal-item-hover"
+          hover-stay-time="80"
+          data-target="{{item.target}}"
+          bindtap="onSignalTap"
+        >
+          <view class="signal-rail signal-rail--{{item.status}}"></view>
+          <view class="signal-light {{item.lampClass}}"></view>
+          <view class="signal-copy">
+            <text class="signal-name">{{item.name}}</text>
+            <text class="signal-val {{item.tone}}">{{item.value}}</text>
+            <text class="signal-status">{{item.statusLabel}}</text>
+            <text class="signal-reason" wx:if="{{item.reason}}">{{item.reason}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 绑定档案（紧凑） -->
+    <view class="profile-card reveal r3">
+      <view class="profile-row">
+        <text class="profile-label">绑定门店</text>
+        <text class="profile-value">{{profile.storeName}}</text>
+      </view>
+      <view class="profile-grid">
+        <view class="profile-cell">
+          <text class="cell-label">占股</text>
+          <text class="cell-value">{{profile.ownershipRatio}}%</text>
+        </view>
+        <view class="profile-cell">
+          <text class="cell-label">回本前分成</text>
+          <text class="cell-value">{{profile.dividendRatioBeforePayback}}%</text>
+        </view>
+        <view class="profile-cell">
+          <text class="cell-label">回本后分成</text>
+          <text class="cell-value">{{profile.dividendRatioAfterPayback}}%</text>
+        </view>
+        <view class="profile-cell">
+          <text class="cell-label">出资</text>
+          <text class="cell-value">¥{{profile.capitalContributionFmt}}</text>
+        </view>
+      </view>
+      <text class="profile-meta" wx:if="{{profile.effectiveDate}}">生效日 {{profile.effectiveDate}}</text>
+    </view>
+
+    <!-- ② 核心分成 / 回本 -->
+    <view class="card reveal r4 {{numPulse ? 'pulse' : ''}}" id="anchor-equity">
+      <view class="card-top">
+        <text class="card-title">股东权益与回报</text>
+        <view class="status-badge {{equity.statusTone}}">{{equity.statusLabel}}</view>
+      </view>
+      <view class="hero-metric">
+        <text class="hero-label">我的应得分成（累计）</text>
+        <text class="hero-value">¥{{equity.personalDividendFmt}}</text>
+      </view>
+      <view class="progress-block">
+        <view class="progress-head">
+          <text>个人回本进度</text>
+          <text>{{equity.personalRoiPct}}%</text>
+        </view>
+        <view class="progress-track"><view class="progress-fill" style="{{equity.personalRoiBar}}"></view></view>
+      </view>
+      <view class="progress-block">
+        <view class="progress-head">
+          <text>投资池回本进度</text>
+          <text>{{equity.poolRoiPct}}%</text>
+        </view>
+        <view class="progress-track muted"><view class="progress-fill brass" style="{{equity.poolRoiBar}}"></view></view>
+      </view>
+      <view class="stat-grid">
+        <view class="stat-cell">
+          <text class="stat-label">预计回本</text>
+          <text class="stat-value">{{equity.paybackDate}}</text>
+        </view>
+        <view class="stat-cell">
+          <text class="stat-label">个人剩余回款</text>
+          <text class="stat-value">¥{{equity.leftPersonalFmt}}</text>
+        </view>
+        <view class="stat-cell">
+          <text class="stat-label">我占分红池</text>
+          <text class="stat-value">{{equity.personalPoolSharePct}}%</text>
+        </view>
+        <view class="stat-cell">
+          <text class="stat-label">当前分红比</text>
+          <text class="stat-value">投{{equity.currentInvestorSharePct}} / 团{{equity.currentOpSharePct}}</text>
+        </view>
+      </view>
+      <view class="split-row">
+        <view class="split-item">
+          <text class="split-label">投资人分红池</text>
+          <text class="split-value">¥{{equity.poolDividendFmt}}</text>
+        </view>
+        <view class="split-item">
+          <text class="split-label">经营团队收益</text>
+          <text class="split-value">¥{{equity.opDividendFmt}}</text>
+        </view>
+      </view>
+      <text class="hint">投资人池：回本前 {{equity.earlySharePct}}% · 回本后 {{equity.lateSharePct}}%；我占池：回本前 {{equity.personalPoolShareBeforePct}}% · 回本后 {{equity.personalPoolShareAfterPct}}%（当前 {{equity.personalPoolSharePct}}%）</text>
+    </view>
+
+    <view class="card reveal r4" id="anchor-period">
+      <view class="card-top">
+        <text class="card-title">本期经营 · {{rangeLabel}}</text>
+        <text class="card-meta" wx:if="{{loading}}">刷新中</text>
+      </view>
+      <view class="stat-grid four">
+        <view class="stat-cell">
+          <text class="stat-label">营收</text>
+          <text class="stat-value">¥{{period.revenueFmt}}</text>
+        </view>
+        <view class="stat-cell">
+          <text class="stat-label">净利润</text>
+          <text class="stat-value">¥{{period.profitFmt}}</text>
+        </view>
+        <view class="stat-cell">
+          <text class="stat-label">净利率</text>
+          <text class="stat-value">{{period.marginPct}}%</text>
+        </view>
+        <view class="stat-cell">
+          <text class="stat-label">目标达成</text>
+          <text class="stat-value">{{period.targetPct}}%</text>
+        </view>
+      </view>
+      <view class="split-row">
+        <view class="split-item">
+          <text class="split-label">本期应得分成</text>
+          <text class="split-value brass">¥{{period.personalDividendFmt}}</text>
+        </view>
+        <view class="split-item">
+          <text class="split-label">商场超额分成</text>
+          <text class="split-value">¥{{period.mallShareFmt}}</text>
+        </view>
+      </view>
+      <view class="mall-panel" id="anchor-mall" wx:if="{{period.mall}}">
+        <view class="mall-grid">
+          <view class="mall-cell">
+            <text class="mall-l">抽成阈值</text>
+            <text class="mall-v">¥{{period.mall.thresholdFmt}}</text>
+          </view>
+          <view class="mall-cell">
+            <text class="mall-l">已达额度</text>
+            <text class="mall-v">¥{{period.mall.reachedFmt}}</text>
+          </view>
+          <view class="mall-cell">
+            <text class="mall-l">超额金额</text>
+            <text class="mall-v">¥{{period.mall.excessFmt}}</text>
+          </view>
+          <view class="mall-cell">
+            <text class="mall-l">抽成金额</text>
+            <text class="mall-v brass">¥{{period.mall.feeFmt}}</text>
+          </view>
+        </view>
+        <text class="mall-note">{{period.mall.formulaNote}}</text>
+      </view>
+    </view>
+
+    <!-- ③ 图表 -->
+    <view class="card reveal r5" id="anchor-charts">
+      <view class="card-top">
+        <text class="card-title">趋势与结构 · {{rangeLabel}}</text>
+        <text class="card-meta">自绘柱状</text>
+      </view>
+
+      <view class="chart-tabs">
+        <view
+          class="chart-tab {{chartTab===item.key?'on':''}}"
+          wx:for="{{chartTabs}}"
+          wx:key="key"
+          data-key="{{item.key}}"
+          bindtap="setChartTab"
+        >{{item.label}}</view>
+      </view>
+
+      <view class="trend-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{chartTab==='revenue' && !charts.revenueEmpty}}">
+        <view class="bar-col" wx:for="{{charts.revenue}}" wx:key="key">
+          <view class="bar-val-slot">
+            <text class="bar-val" style="{{chartLayout.valFontStyle}}" wx:if="{{item.showVal}}">{{item.valShort}}</text>
+          </view>
+          <view class="bar-track" style="{{chartLayout.barTrackStyle}}">
+            <view class="bar-fill gold {{item.negative?'neg':''}}" style="{{item.styleOnline}}"></view>
+          </view>
+          <text class="bar-lbl" style="{{chartLayout.lblFontStyle}}">{{item.day}}</text>
+        </view>
+      </view>
+      <view class="trend-bars" style="{{chartLayout.trendBarsStyle}}" wx:elif="{{chartTab==='profit' && !charts.profitEmpty}}">
+        <view class="bar-col" wx:for="{{charts.profit}}" wx:key="key">
+          <view class="bar-val-slot">
+            <text class="bar-val" style="{{chartLayout.valFontStyle}}" wx:if="{{item.showVal}}">{{item.valShort}}</text>
+          </view>
+          <view class="bar-track" style="{{chartLayout.barTrackStyle}}">
+            <view class="bar-fill forest {{item.negative?'neg':''}}" style="{{item.styleOnline}}"></view>
+          </view>
+          <text class="bar-lbl" style="{{chartLayout.lblFontStyle}}">{{item.day}}</text>
+        </view>
+      </view>
+      <view class="trend-bars" style="{{chartLayout.trendBarsStyle}}" wx:elif="{{chartTab==='personal' && !charts.personalEmpty}}">
+        <view class="bar-col" wx:for="{{charts.personal}}" wx:key="key">
+          <view class="bar-val-slot">
+            <text class="bar-val" style="{{chartLayout.valFontStyle}}" wx:if="{{item.showVal}}">{{item.valShort}}</text>
+          </view>
+          <view class="bar-track" style="{{chartLayout.barTrackStyle}}">
+            <view class="bar-fill brass {{item.negative?'neg':''}}" style="{{item.styleOnline}}"></view>
+          </view>
+          <text class="bar-lbl" style="{{chartLayout.lblFontStyle}}">{{item.day}}</text>
+        </view>
+      </view>
+      <text class="chart-empty" wx:else>该周期暂无{{chartTab==='revenue'?'营收':chartTab==='profit'?'净利':'个人分成'}}趋势</text>
+      <text class="hint" wx:if="{{charts.hint}}">{{charts.hint}}</text>
+
+      <view class="payback-chart">
+        <text class="subhead">回本进度</text>
+        <view class="progress-block">
+          <view class="progress-head">
+            <text>个人 · ¥{{charts.payback.personalDividendFmt}} / ¥{{charts.payback.personalCapitalFmt}}</text>
+            <text>{{charts.payback.personalPct}}%</text>
+          </view>
+          <view class="progress-track area"><view class="progress-fill" style="{{charts.payback.personalBar}}"></view></view>
+        </view>
+        <view class="progress-block">
+          <view class="progress-head">
+            <text>投资池</text>
+            <text>{{charts.payback.poolPct}}%</text>
+          </view>
+          <view class="progress-track area muted"><view class="progress-fill brass" style="{{charts.payback.poolBar}}"></view></view>
+        </view>
+        <text class="hint">剩余个人回款 ¥{{charts.payback.leftPersonalFmt}}</text>
+      </view>
+
+      <view class="structure-block" wx:if="{{charts.structure.length}}">
+        <text class="subhead">累计分成结构</text>
+        <view class="share-row" wx:for="{{charts.structure}}" wx:key="key">
+          <view class="share-head">
+            <text class="share-label">{{item.label}}</text>
+            <text class="share-pct">{{item.pct}}%</text>
+          </view>
+          <view class="share-track"><view class="share-fill {{item.tone}}" style="{{item.barStyle}}"></view></view>
+          <text class="share-val">¥{{item.valueFmt}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ④ 明细 / 口径 -->
+    <view class="card reveal r5">
+      <view class="card-top">
+        <text class="card-title">本店采购摘要 · {{rangeLabel}}</text>
+        <text class="card-meta">只读 · ops_purchases</text>
+      </view>
+      <view class="stat-grid">
+        <view class="stat-cell">
+          <text class="stat-label">采购笔数</text>
+          <text class="stat-value">{{purchases.count}}</text>
+        </view>
+        <view class="stat-cell">
+          <text class="stat-label">采购金额</text>
+          <text class="stat-value">¥{{purchases.amountFmt}}</text>
+        </view>
+      </view>
+      <view class="purchase-list" wx:if="{{purchases.recent.length}}">
+        <view class="purchase-row" wx:for="{{purchases.recent}}" wx:key="orderNo">
+          <view class="purchase-main">
+            <text class="purchase-name">{{item.itemName}}</text>
+            <text class="purchase-meta">{{item.purchaseDate || '—'}} · {{item.sourceLabel}} · {{item.statusLabel}}</text>
+          </view>
+          <text class="purchase-amt">¥{{item.amountFmt}}</text>
+        </view>
+      </view>
+      <view class="empty" wx:else>本期暂无绑定门店采购记录</view>
+    </view>
+
+    <view class="card reveal r6">
+      <view class="card-top">
+        <text class="card-title">{{reportTitle}}</text>
+        <view class="grade">{{health.grade}}</view>
+      </view>
+      <text class="health-text">{{health.text}}</text>
+      <view class="suggest-box">
+        <text class="suggest-label">一句话建议</text>
+        <text class="suggest-body">{{health.suggestion || '继续保持当前经营节奏，关注成本与回本进度。'}}</text>
+      </view>
+    </view>
+
+    <view class="notes reveal r7" wx:if="{{notes.length}}">
+      <view class="notes-head" bindtap="toggleNotes">
+        <text class="notes-title">口径说明</text>
+        <text class="notes-toggle">{{notesOpen ? '收起' : '展开'}}</text>
+      </view>
+      <block wx:if="{{notesOpen}}">
+        <text class="notes-item" wx:for="{{notes}}" wx:key="*this">· {{item}}</text>
+      </block>
+    </view>
+  </block>
+</view>

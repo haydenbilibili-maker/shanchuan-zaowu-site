@@ -1,0 +1,218 @@
+<view class="page">
+  <view class="hero">
+    <text class="hero-en">ATLAS VOL. I</text>
+    <text class="hero-cn">山海图鉴</text>
+    <text class="hero-sub">浏览目录 · 翻开卡片 · 回看足迹。馆里的世界，等你走过去。</text>
+  </view>
+
+  <view class="progress" wx:if="{{!loading}}">
+    <view class="progress-row">
+      <text class="progress-label">卷一完成度</text>
+      <text class="progress-num">{{stats.unlocked}} / {{stats.total}}</text>
+    </view>
+    <view class="bar">
+      <view class="bar-fill" style="width: {{stats.percent}}%;"></view>
+    </view>
+    <text class="progress-note" wx:if="{{offline}}">图鉴离线著录中。点亮需要连上云端。</text>
+    <text class="progress-note" wx:else>未点亮的一页只显示编号。点亮后可见名称、学名与那段话。</text>
+  </view>
+
+  <scroll-view scroll-x class="series" wx:if="{{stats.series.length && !loading}}" enable-flex show-scrollbar="{{false}}">
+    <view class="series-inner">
+      <view
+        class="series-chip {{seriesFilter === item.id ? 'on' : ''}}"
+        wx:for="{{stats.series}}"
+        wx:key="id"
+        bindtap="onSeries"
+        data-id="{{item.id}}"
+        hover-class="chip-press"
+        hover-stay-time="80"
+      >
+        <text class="series-name">{{item.name}}</text>
+        <text class="series-count">{{item.got}}/{{item.total}}</text>
+        <text class="series-done" wx:if="{{item.complete}}">已齐</text>
+      </view>
+    </view>
+  </scroll-view>
+  <text class="series-blurb" wx:if="{{seriesBlurb && !loading}}">{{seriesBlurb}}</text>
+
+  <view class="browse-head" wx:if="{{!loading}}">
+    <text class="browse-t">浏览目录</text>
+    <text class="browse-link" bindtap="goNotes">近期笔记</text>
+  </view>
+
+  <scroll-view scroll-x class="tabs" enable-flex show-scrollbar="{{false}}" wx:if="{{!loading}}">
+    <view class="tabs-inner">
+      <view
+        class="tab {{filter === item.id ? 'on' : ''}}"
+        wx:for="{{filters}}"
+        wx:key="id"
+        bindtap="onFilter"
+        data-id="{{item.id}}"
+        hover-class="chip-press"
+        hover-stay-time="80"
+      >{{item.label}}</view>
+    </view>
+  </scroll-view>
+
+  <view class="rarity-row" wx:if="{{!loading}}">
+    <view
+      class="rarity-chip {{rarityFilter === item.id ? 'on' : ''}}"
+      wx:for="{{rarityFilters}}"
+      wx:key="id"
+      bindtap="onRarity"
+      data-id="{{item.id}}"
+      hover-class="chip-press"
+      hover-stay-time="80"
+    >{{item.label}}</view>
+  </view>
+
+  <view class="notes" wx:if="{{recentNotes.length && !loading}}">
+    <view class="notes-head">
+      <text class="notes-t">近期笔记</text>
+      <text class="notes-more" bindtap="goNotes">全部</text>
+    </view>
+    <view
+      class="note {{item.wild ? 'wild' : ''}}"
+      wx:for="{{recentNotes}}"
+      wx:key="id"
+      bindtap="onOpenNote"
+      data-id="{{item.speciesId}}"
+      hover-class="note-press"
+      hover-stay-time="80"
+    >
+      <text class="note-title">{{item.title}}</text>
+      <text class="note-meta">{{item.metaText}}</text>
+    </view>
+  </view>
+
+  <!-- 骨架：用 data 数组，避免内联 {{[1,2,3]}} 在部分基础库/编译器上踩坑 -->
+  <view class="grid skel" wx:if="{{loading}}">
+    <view class="col">
+      <view class="card skel-card" wx:for="{{skelLeft}}" wx:key="*this">
+        <view class="skel-plate"></view>
+        <view class="skel-line"></view>
+        <view class="skel-line short"></view>
+      </view>
+    </view>
+    <view class="col">
+      <view class="card skel-card" wx:for="{{skelRight}}" wx:key="*this">
+        <view class="skel-plate"></view>
+        <view class="skel-line"></view>
+        <view class="skel-line short"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="error" wx:elif="{{loadError}}">
+    <text class="error-t">图鉴这一册还没打开</text>
+    <text class="error-s">请稍后重试。馆里的世界还在。</text>
+    <button class="btn-brass" bindtap="loadCatalog">再试一次</button>
+  </view>
+
+  <view class="empty" wx:elif="{{filterEmpty}}">
+    <text class="empty-t">这一格还是空的</text>
+    <text class="empty-s">换一个分类，或清空筛选后再看。</text>
+    <button class="btn-brass" bindtap="clearFilters">清空筛选</button>
+  </view>
+
+  <view class="empty" wx:elif="{{catalogEmpty}}">
+    <text class="empty-t">卷一尚未装订</text>
+    <text class="empty-s">稍后再来。也可先去馆里走走，或拍照采集。</text>
+    <view class="empty-actions">
+      <button class="btn-ghost" bindtap="onScan">发现印记</button>
+      <button class="btn-brass" bindtap="goIdentify" wx:if="{{showAiIdentify}}">拍照采集</button>
+    </view>
+  </view>
+
+  <view class="grid" wx:else>
+    <view class="col">
+      <view
+        class="card card-{{item.card}} {{item.toneClass}} {{item.unlocked ? 'lit' : 'dim'}}"
+        wx:for="{{leftCol}}"
+        wx:key="id"
+        bindtap="onOpen"
+        data-id="{{item.id}}"
+        hover-class="card-press"
+        hover-stay-time="80"
+      >
+        <view class="card-accent"></view>
+        <view class="card-plate">
+          <text class="card-no">No. {{item.no}}</text>
+          <view class="silhouette" wx:if="{{!item.unlocked}}">
+            <view class="silhouette-ring"></view>
+          </view>
+          <view class="plate-mark" wx:else>
+            <text class="plate-mark-en">SPECIMEN</text>
+          </view>
+          <text class="card-cat">{{item.unlocked ? item.category : '未记录'}}</text>
+          <text class="card-spot" wx:if="{{item.hasSpot}}">{{item.unlocked ? '印记' : '馆内'}}</text>
+        </view>
+        <view class="card-body">
+          <text class="card-name">{{item.nameZh}}</text>
+          <text class="card-latin" wx:if="{{item.unlocked && item.nameLatin}}">{{item.nameLatin}}</text>
+          <text class="card-origin" wx:if="{{item.unlocked && item.origin}}">{{item.origin}}</text>
+          <view class="card-foot">
+            <view class="dots">
+              <view class="dot {{m ? 'on' : ''}}" wx:for="{{item.marks}}" wx:for-item="m" wx:for-index="di" wx:key="di"></view>
+            </view>
+            <text class="card-rarity" wx:if="{{item.unlocked}}">{{item.rarityLabel}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="col">
+      <view
+        class="card card-{{item.card}} {{item.toneClass}} {{item.unlocked ? 'lit' : 'dim'}}"
+        wx:for="{{rightCol}}"
+        wx:key="id"
+        bindtap="onOpen"
+        data-id="{{item.id}}"
+        hover-class="card-press"
+        hover-stay-time="80"
+      >
+        <view class="card-accent"></view>
+        <view class="card-plate">
+          <text class="card-no">No. {{item.no}}</text>
+          <view class="silhouette" wx:if="{{!item.unlocked}}">
+            <view class="silhouette-ring"></view>
+          </view>
+          <view class="plate-mark" wx:else>
+            <text class="plate-mark-en">SPECIMEN</text>
+          </view>
+          <text class="card-cat">{{item.unlocked ? item.category : '未记录'}}</text>
+          <text class="card-spot" wx:if="{{item.hasSpot}}">{{item.unlocked ? '印记' : '馆内'}}</text>
+        </view>
+        <view class="card-body">
+          <text class="card-name">{{item.nameZh}}</text>
+          <text class="card-latin" wx:if="{{item.unlocked && item.nameLatin}}">{{item.nameLatin}}</text>
+          <text class="card-origin" wx:if="{{item.unlocked && item.origin}}">{{item.origin}}</text>
+          <view class="card-foot">
+            <view class="dots">
+              <view class="dot {{m ? 'on' : ''}}" wx:for="{{item.marks}}" wx:for-item="m" wx:for-index="di" wx:key="di"></view>
+            </view>
+            <text class="card-rarity" wx:if="{{item.unlocked}}">{{item.rarityLabel}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="dock">
+    <view class="dock-btn" bindtap="onScan" hover-class="dock-press" hover-stay-time="80">发现印记</view>
+    <view class="dock-btn primary" bindtap="goIdentify" hover-class="dock-press" hover-stay-time="80" wx:if="{{showAiIdentify}}">拍照采集</view>
+    <view class="dock-btn" bindtap="goLogs" hover-class="dock-press" hover-stay-time="80">采集日志</view>
+  </view>
+
+  <view class="unlock-mask" wx:if="{{unlockSheet.show}}" catchtouchmove="onUnlockStay">
+    <view class="unlock-sheet">
+      <text class="unlock-en">PAGE TURNED</text>
+      <text class="unlock-title">这一页被翻开了</text>
+      <text class="unlock-name">{{unlockSheet.nameZh}}</text>
+      <text class="unlock-latin" wx:if="{{unlockSheet.nameLatin}}">{{unlockSheet.nameLatin}}</text>
+      <text class="unlock-msg">{{unlockSheet.msg}}</text>
+      <view class="unlock-cta" bindtap="onUnlockOpen" hover-class="dock-press" hover-stay-time="80">去看这一页</view>
+      <text class="unlock-later" bindtap="onUnlockStay">先留在图鉴</text>
+    </view>
+  </view>
+</view>

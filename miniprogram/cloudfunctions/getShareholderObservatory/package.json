@@ -1,0 +1,9 @@
+{
+  "name": "getShareholderObservatory",
+  "version": "1.0.0",
+  "description": "股东观测台只读看板",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

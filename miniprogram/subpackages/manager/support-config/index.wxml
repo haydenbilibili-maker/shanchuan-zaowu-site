@@ -1,0 +1,138 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">加载中…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">SUPPORT CONFIG</text>
+        <text class="cn">客服入口配置</text>
+      </view>
+      <text class="header-note">电话 / FAQ / 主题 · 对齐 getSupportConfig · 仅超管</text>
+    </view>
+
+    <block wx:if="{{mode === 'list'}}">
+      <view class="hint-card info">
+        <text class="hint-text">C 端读取 status=active 且 priority 最高的一条；未配置时回退云函数默认。</text>
+      </view>
+
+      <view class="section" wx:for="{{list}}" wx:key="_id">
+        <view class="section-head">
+          <view>
+            <text class="section-title">{{item.name}}</text>
+            <text class="section-meta">优先级 {{item.priority}} · FAQ {{item.faqCount}} · 主题 {{item.topicCount}}</text>
+          </view>
+          <view class="toggle {{item.status === 'active' ? 'on' : ''}}" data-id="{{item._id}}" data-status="{{item.status}}" bindtap="toggleRow">
+            {{item.status === 'active' ? '启用' : '停用'}}
+          </view>
+        </view>
+        <view class="form-hint">{{item.phone || '无电话'}} · {{item.hours || '无营业时间'}}</view>
+        <view class="workbench-btn-outline sm list-edit" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
+      </view>
+
+      <view class="workbench-state" wx:if="{{loading && !list.length}}">列表加载中…</view>
+      <view class="form-hint" wx:elif="{{!loading && !list.length}}">暂无配置，可写入默认或新建。</view>
+
+      <view class="workbench-page-foot-spacer"></view>
+    </block>
+
+    <block wx:if="{{mode === 'edit'}}">
+      <view class="meta-line" wx:if="{{fromDefault}}">当前为代码默认预览，保存后写入 support_configs</view>
+
+      <view class="section">
+        <text class="form-label block">名称</text>
+        <input class="input full" value="{{form.name}}" data-field="name" bindinput="onText" />
+        <view class="form-row">
+          <text class="form-label">优先级</text>
+          <input class="input sm" type="number" value="{{form.priority}}" data-field="priority" bindinput="onNumber" />
+        </view>
+        <view class="form-row">
+          <text class="form-label">启用</text>
+          <switch checked="{{form.statusActive}}" color="#C4A76C" data-field="statusActive" bindchange="onSwitch" />
+        </view>
+        <view class="field-block">
+          <text class="form-label block">客服电话</text>
+          <input class="input full" value="{{form.phone}}" data-field="phone" bindinput="onText" />
+        </view>
+        <view class="field-block">
+          <text class="form-label block">营业时间</text>
+          <input class="input full" value="{{form.hours}}" data-field="hours" bindinput="onText" />
+        </view>
+        <view class="field-block">
+          <text class="form-label block">响应提示</text>
+          <textarea class="textarea" value="{{form.responseHint}}" data-field="responseHint" bindinput="onText" maxlength="120" />
+        </view>
+        <view class="field-block">
+          <text class="form-label block">地址</text>
+          <textarea class="textarea" value="{{form.address}}" data-field="address" bindinput="onText" />
+        </view>
+        <view class="form-row">
+          <text class="form-label">纬度</text>
+          <input class="input sm" value="{{form.latitude}}" data-field="latitude" bindinput="onText" />
+        </view>
+        <view class="form-row">
+          <text class="form-label">经度</text>
+          <input class="input sm" value="{{form.longitude}}" data-field="longitude" bindinput="onText" />
+        </view>
+        <view class="field-block">
+          <text class="form-label block">社群二维码路径</text>
+          <input class="input full" value="{{form.communityQr}}" data-field="communityQr" bindinput="onText" />
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="workbench-section-head">
+          <text class="section-title">咨询主题</text>
+          <view class="workbench-section-head-action">
+            <view class="workbench-btn-outline sm" bindtap="addTopic">添加</view>
+          </view>
+        </view>
+        <view class="row-card" wx:for="{{form.topics}}" wx:key="id">
+          <view class="row-card-head">
+            <text class="row-card-title">主题 {{index + 1}}</text>
+            <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeTopic">移除</view>
+          </view>
+          <view class="row-line">
+            <input class="input sm" placeholder="id" value="{{item.id}}" data-index="{{index}}" data-field="id" bindinput="onTopicField" />
+            <input class="input flex" placeholder="显示名" value="{{item.label}}" data-index="{{index}}" data-field="label" bindinput="onTopicField" />
+          </view>
+          <input class="input full block-input" placeholder="简述" value="{{item.desc}}" data-index="{{index}}" data-field="desc" bindinput="onTopicField" />
+          <input class="input full" placeholder="图标路径" value="{{item.icon}}" data-index="{{index}}" data-field="icon" bindinput="onTopicField" />
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="workbench-section-head">
+          <text class="section-title">FAQ</text>
+          <view class="workbench-section-head-action">
+            <view class="workbench-btn-outline sm" bindtap="addFaq">添加</view>
+          </view>
+        </view>
+        <view class="row-card" wx:for="{{form.faqs}}" wx:key="q">
+          <view class="row-card-head">
+            <text class="row-card-title">FAQ {{index + 1}}</text>
+            <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeFaq">移除</view>
+          </view>
+          <input class="input full block-input" placeholder="问题" value="{{item.q}}" data-index="{{index}}" data-field="q" bindinput="onFaqField" />
+          <textarea class="textarea" placeholder="回答" value="{{item.a}}" data-index="{{index}}" data-field="a" bindinput="onFaqField" />
+        </view>
+      </view>
+
+      <view class="workbench-page-foot-spacer"></view>
+    </block>
+  </view>
+
+  <view class="workbench-footer-bar" wx:if="{{mode === 'list'}}">
+    <view class="workbench-btn-primary" bindtap="openCreate">新建配置</view>
+    <view class="workbench-footer-secondary">
+      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="seedDefault">写入默认</view>
+      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadList">{{loading ? '刷新中…' : '刷新'}}</view>
+    </view>
+  </view>
+
+  <view class="workbench-footer-bar" wx:if="{{mode === 'edit'}}">
+    <view class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveConfig">{{saving ? '保存中…' : '保存客服配置'}}</view>
+    <view class="workbench-footer-secondary">
+      <view class="workbench-btn-outline {{saving ? 'is-disabled' : ''}}" bindtap="backList">返回列表</view>
+    </view>
+  </view>
+</view>

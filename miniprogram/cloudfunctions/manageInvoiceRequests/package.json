@@ -1,0 +1,9 @@
+{
+  "name": "manageInvoiceRequests",
+  "version": "1.0.0",
+  "description": "店长开票申请管理（列表 / 开具 / 驳回）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

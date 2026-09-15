@@ -12,7 +12,16 @@ page { background: #1A1814; color: #fff; }
   position: relative; z-index: 10;
 }
 
-.back-btn { font-size: 28rpx; color: #A09A90; width: 72rpx; }
+.back-btn {
+  width: 72rpx;
+  height: 72rpx;
+  min-width: 72rpx;
+  min-height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
 .title {
   flex: 1; font-size: 32rpx; font-weight: 600;

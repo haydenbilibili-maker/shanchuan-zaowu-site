@@ -3,16 +3,18 @@
  */
 
 const CATEGORY_META = {
-  INSECTA: { label: '神奇昆虫', overline: 'INSECTA', color: '#52B788' },
-  PLANTAE: { label: '植物探微', overline: 'PLANTAE', color: '#6DA34D' },
-  MARINE: { label: '无尽海洋', overline: 'MARINE', color: '#5B8FB9' },
-  MINERALS: { label: '群山回响', overline: 'MINERALS', color: '#7B68AE' },
+  INSECTA: { label: '蝴蝶昆虫', overline: 'INSECTA', color: '#52B788' },
+  ANIMALIA: { label: '动物世界', overline: 'ANIMALIA', color: '#8B6F47' },
+  PLANTAE: { label: '植物果实', overline: 'PLANTAE', color: '#6DA34D' },
+  MARINE: { label: '海洋标本', overline: 'MARINE', color: '#5B8FB9' },
+  MINERALS: { label: '矿石馆', overline: 'MINERALS', color: '#7B68AE' },
   GENERAL: { label: '通用安放', overline: 'GENERAL', color: '#C4A76C' },
   FRAMING: { label: '装裱养护', overline: 'FRAMING', color: '#C4A76C' }
 }
 
 const CATEGORY_CARDS = [
   { category: 'INSECTA', ...CATEGORY_META.INSECTA, desc: '框画与展柜昆虫标本' },
+  { category: 'ANIMALIA', ...CATEGORY_META.ANIMALIA, desc: '剥制、骨骼与皮张标本' },
   { category: 'PLANTAE', ...CATEGORY_META.PLANTAE, desc: '押花、干制与植物标本' },
   { category: 'MARINE', ...CATEGORY_META.MARINE, desc: '海洋干制与浸液标本' },
   { category: 'MINERALS', ...CATEGORY_META.MINERALS, desc: '矿物与晶洞陈列' },
@@ -72,7 +74,7 @@ const GUIDES = {
   INSECTA: {
     guideId: 'care_insecta_v1',
     category: 'INSECTA',
-    title: '神奇昆虫 · 框画与展柜标本',
+    title: '蝴蝶昆虫 · 框画与展柜标本',
     overline: 'INSECTA',
     summary: '少碰、避晒、干处安放',
     disclaimer: '不同物种与装裱方式可能存在差异，如有疑问请联系专员。',
@@ -113,10 +115,51 @@ const GUIDES = {
       { frameType: 'metal', extraTips: ['金属框导热较快，请勿靠近持续热源'] }
     ]
   },
+  ANIMALIA: {
+    guideId: 'care_animalia_v1',
+    category: 'ANIMALIA',
+    title: '动物世界 · 剥制与骨骼标本',
+    overline: 'ANIMALIA',
+    summary: '干燥防虫、避晒、不湿擦',
+    disclaimer: '剥制、骨骼与皮张的处理方式差异较大，具体请以随件说明或专员指引为准。',
+    sections: [
+      {
+        key: 'environment',
+        title: '适宜环境',
+        body: '皮毛与羽毛既怕潮也怕过干。长期高于 65% 的湿度容易招来皮蠹与霉斑，长期低于 35% 又可能让皮张变脆、开裂。骨骼标本相对稳定，但日晒久了同样会泛黄。',
+        tips: ['相对湿度维持在 45–55% 较为稳妥', '避免阳光与射灯长时间直射，光会让毛色与羽色变淡', '不要与卫生间、厨房共用同一面潮湿墙体']
+      },
+      {
+        key: 'placement',
+        title: '日常安放',
+        body: '带玻璃的展柜或钟罩是最省心的选择，同时挡尘、挡虫、挡触摸。开放式陈列请放在视线高度以上、人流较少的位置，避免宠物与幼童直接接触。',
+        tips: ['柜内可放防虫片或干燥剂，但不要与标本直接接触', '每季开柜通风一次，顺手检查底板与毛羽根部', '骨骼与姿态标本用底座固定重心，不要斜靠墙面']
+      },
+      {
+        key: 'cleaning',
+        title: '清洁与除尘',
+        body: '毛皮与羽毛只做干式清洁：用柔软的化妆刷或吹球，顺着毛向、羽向单向轻扫。湿擦会让毛羽结块变形，也可能把水分带进皮张内层。',
+        tips: ['禁止用湿巾、酒精、清洁剂擦拭皮毛与羽毛', '骨骼可用干燥软刷除尘，不要使用漂白剂或含氯清洁剂', '眼球、口鼻等塑形部位不要按压或拨动']
+      },
+      {
+        key: 'transport',
+        title: '运输',
+        body: '四肢、尾羽、耳廓与角是最容易折损的部位。搬运时托住躯干与底座，不要提拿肢体或颈部；装箱时把突出部位单独用软纸包裹后再填充缓冲。',
+        tips: ['原箱与内衬泡沫请保留复用', '姿态标本按站立方向固定，箱外标注「易碎·向上」', '夏季不要长时间存放在车辆后备箱']
+      },
+      {
+        key: 'warning',
+        title: '异常信号',
+        body: '虫蛀、异味与掉毛掉羽是三个需要尽早处理的信号。发现后请先把该件单独隔离，不要与其他藏品同柜，再联系门店专员。',
+        tips: ['底板出现细小粉末或褐色颗粒（多为皮蠹排遗）', '毛羽成片脱落或根部明显松动', '出现油耗味、腐味，或皮张表面渗油发亮']
+      }
+    ],
+    framingAddons: []
+  },
   PLANTAE: {
     guideId: 'care_plantae_v1',
     category: 'PLANTAE',
-    title: '植物探微 · 押花与干制标本',
+    title: '植物果实 · 押花与干制标本',
     overline: 'PLANTAE',
     summary: '防潮、避晒、轻拿轻放',
     disclaimer: '不同押花与干制工艺对湿度敏感度不同，请以实际藏品为准。',
@@ -157,7 +200,7 @@ const GUIDES = {
   MARINE: {
     guideId: 'care_marine_v1',
     category: 'MARINE',
-    title: '无尽海洋 · 海洋标本',
+    title: '海洋标本 · 湿标本与框画',
     overline: 'MARINE',
     summary: '干制避潮，浸液避晒避摔',
     disclaimer: '湿标本与干制标本养护方式不同，请以实际品类与随件说明为准。',
@@ -198,7 +241,7 @@ const GUIDES = {
   MINERALS: {
     guideId: 'care_minerals_v1',
     category: 'MINERALS',
-    title: '群山回响 · 矿物与晶洞',
+    title: '矿石馆 · 矿物与晶洞',
     overline: 'MINERALS',
     summary: '轻拿、防尘、避免酸碱与硬物碰撞',
     disclaimer: '不同矿物硬度与稳定性差异大，请以具体藏品说明为准。',
@@ -267,22 +310,246 @@ const GUIDES = {
   }
 }
 
-function normalizeCategory(raw) {
-  if (!raw) return 'GENERAL'
-  const s = String(raw).trim().toUpperCase()
-  if (GUIDES[s]) return s
-  const map = {
-    INSECT: 'INSECTA',
-    INSECTS: 'INSECTA',
-    PLANT: 'PLANTAE',
-    PLANTS: 'PLANTAE',
-    MARINE: 'MARINE',
-    OCEAN: 'MARINE',
-    MINERAL: 'MINERALS',
-    MINERALS: 'MINERALS',
-    CRYSTAL: 'MINERALS'
+/**
+ * 任意分类标识 → 养护品类
+ * 覆盖：一级馆名（含旧展示名/短名）、二级分类名（含旧别名与 categories 集合中的历史名）、
+ * enName、seed 固定 id（root_* / cat_*）。与 utils/categorySeed.js 的分类树保持对齐。
+ */
+const CARE_CATEGORY_ALIASES = {
+  // ── 一级馆 ──
+  INSECT: 'INSECTA',
+  INSECTS: 'INSECTA',
+  昆虫馆: 'INSECTA',
+  昆虫: 'INSECTA',
+  昆虫纲: 'INSECTA',
+  神奇昆虫: 'INSECTA',
+  蝴蝶昆虫: 'INSECTA',
+  ANIMAL: 'ANIMALIA',
+  ANIMALS: 'ANIMALIA',
+  'ANIMAL HALL': 'ANIMALIA',
+  动物馆: 'ANIMALIA',
+  动物: 'ANIMALIA',
+  动物类: 'ANIMALIA',
+  动物世界: 'ANIMALIA',
+  神奇动物: 'ANIMALIA',
+  PLANT: 'PLANTAE',
+  PLANTS: 'PLANTAE',
+  植物馆: 'PLANTAE',
+  植物: 'PLANTAE',
+  植物探微: 'PLANTAE',
+  植物果实: 'PLANTAE',
+  OCEAN: 'MARINE',
+  海洋馆: 'MARINE',
+  海洋: 'MARINE',
+  无尽海洋: 'MARINE',
+  海洋标本: 'MARINE',
+  MINERAL: 'MINERALS',
+  CRYSTAL: 'MINERALS',
+  矿石馆: 'MINERALS',
+  矿石: 'MINERALS',
+  矿物: 'MINERALS',
+  群山回响: 'MINERALS',
+  MERCHANDISE: 'GENERAL',
+  衍生品: 'GENERAL',
+
+  // ── 昆虫馆二级 ──
+  '鳞翅目 · 蝴蝶': 'INSECTA',
+  鳞翅目: 'INSECTA',
+  蝴蝶: 'INSECTA',
+  LEPIDOPTERA: 'INSECTA',
+  '鞘翅目 · 甲虫': 'INSECTA',
+  鞘翅目: 'INSECTA',
+  甲虫: 'INSECTA',
+  COLEOPTERA: 'INSECTA',
+  '螳螂目 · 螳螂': 'INSECTA',
+  螳螂目: 'INSECTA',
+  螳螂: 'INSECTA',
+  MANTODEA: 'INSECTA',
+  '半翅目 · 蝉与蚧': 'INSECTA',
+  '半翅目 · 蝉与蝽': 'INSECTA',
+  半翅目: 'INSECTA',
+  HEMIPTERA: 'INSECTA',
+  '膜翅目 · 蜂蚁': 'INSECTA',
+  膜翅目: 'INSECTA',
+  '蜻蜓目 · 蜻蜓': 'INSECTA',
+  蜻蜓目: 'INSECTA',
+  '直翅目 · 蝗螽': 'INSECTA',
+  直翅目: 'INSECTA',
+  '竹节虫目 · 竹节虫': 'INSECTA',
+  竹节虫目: 'INSECTA',
+  其他昆虫: 'INSECTA',
+  组合框画: 'INSECTA',
+  'FRAME SET': 'INSECTA',
+
+  // ── 动物馆二级 ──
+  哺乳纲: 'ANIMALIA',
+  哺乳类: 'ANIMALIA',
+  MAMMALIA: 'ANIMALIA',
+  鸟纲: 'ANIMALIA',
+  鸟类: 'ANIMALIA',
+  AVES: 'ANIMALIA',
+  爬行纲: 'ANIMALIA',
+  爬行类: 'ANIMALIA',
+  REPTILIA: 'ANIMALIA',
+  两栖纲: 'ANIMALIA',
+  两栖类: 'ANIMALIA',
+  AMPHIBIA: 'ANIMALIA',
+  辐鳍鱼纲: 'ANIMALIA',
+  ACTINOPTERYGII: 'ANIMALIA',
+
+  // ── 植物馆二级 ──
+  '被子植物 · 押花': 'PLANTAE',
+  被子植物: 'PLANTAE',
+  押花: 'PLANTAE',
+  干花标本: 'PLANTAE',
+  ANGIOSPERMAE: 'PLANTAE',
+  蕨类植物: 'PLANTAE',
+  PTERIDOPHYTA: 'PLANTAE',
+  苔藓与地衣: 'PLANTAE',
+  BRYOPHYTA: 'PLANTAE',
+  种子与果实: 'PLANTAE',
+  种子标本: 'PLANTAE',
+  种实库: 'PLANTAE',
+  'SEED FRUIT': 'PLANTAE',
+  树脂封存: 'PLANTAE',
+  菌物界: 'PLANTAE',
+  叶脉标本: 'PLANTAE',
+
+  // ── 海洋馆二级 ──
+  '腹足纲 · 贝壳': 'MARINE',
+  腹足纲: 'MARINE',
+  贝壳: 'MARINE',
+  GASTROPODA: 'MARINE',
+  '双壳纲 · 双壳贝': 'MARINE',
+  双壳纲: 'MARINE',
+  BIVALVIA: 'MARINE',
+  '珊瑚纲 · 珊瑚': 'MARINE',
+  珊瑚纲: 'MARINE',
+  珊瑚: 'MARINE',
+  ANTHOZOA: 'MARINE',
+  '头足纲 · 头足类': 'MARINE',
+  头足纲: 'MARINE',
+  头足类: 'MARINE',
+  CEPHALOPODA: 'MARINE',
+  CEPHALOPOD: 'MARINE',
+  '甲壳纲 · 蟹虾': 'MARINE',
+  甲壳纲: 'MARINE',
+  甲壳亚门: 'MARINE',
+  MALACOSTRACA: 'MARINE',
+  棘皮动物: 'MARINE',
+  棘皮动物门: 'MARINE',
+  '辐鳍鱼纲 · 鱼类': 'MARINE',
+  鱼类: 'MARINE',
+
+  // ── 矿石馆二级 ──
+  石英与水晶: 'MINERALS',
+  矿石晶体: 'MINERALS',
+  晶体矿: 'MINERALS',
+  QUARTZ: 'MINERALS',
+  紫水晶与晶洞: 'MINERALS',
+  晶洞: 'MINERALS',
+  AMETHYST: 'MINERALS',
+  方解石与碳酸盐: 'MINERALS',
+  CARBONATE: 'MINERALS',
+  化石标本: 'MINERALS',
+  化石: 'MINERALS',
+  FOSSIL: 'MINERALS',
+  岩石标本: 'MINERALS',
+  金属矿: 'MINERALS',
+
+  // ── 衍生品二级（无标本养护指南，落通用） ──
+  包装与礼盒: 'GENERAL',
+  PACKAGING: 'GENERAL',
+  物种科普卡片: 'GENERAL',
+  'SPECIES CARD': 'GENERAL',
+  书籍与画册: 'GENERAL',
+  书籍画册: 'GENERAL',
+  BOOKS: 'GENERAL',
+  标本工具耗材: 'GENERAL',
+  工具耗材: 'GENERAL',
+  TOOLS: 'GENERAL',
+  家居陈饰: 'GENERAL',
+  'HOME DECOR': 'GENERAL',
+  品牌联名周边: 'GENERAL',
+  周边文创: 'GENERAL',
+  COLLAB: 'GENERAL',
+
+  // ── categories 集合中的固定 id（哈希 id 走名称匹配） ──
+  ROOT_INSECT: 'INSECTA',
+  ROOT_ANIMAL: 'ANIMALIA',
+  ROOT_PLANT: 'PLANTAE',
+  ROOT_MARINE: 'MARINE',
+  ROOT_MINERAL: 'MINERALS',
+  ROOT_MERCH: 'GENERAL',
+  CAT_LEPIDOPTERA: 'INSECTA',
+  CAT_COLEOPTERA: 'INSECTA',
+  CAT_MANTODEA: 'INSECTA',
+  CAT_HYMENOPTERA: 'INSECTA',
+  CAT_ODONATA: 'INSECTA',
+  CAT_ORTHOPTERA: 'INSECTA',
+  CAT_PHASMATODEA: 'INSECTA',
+  CAT_INSECT_OTHERS: 'INSECTA',
+  CAT_RESIN: 'PLANTAE',
+  CAT_SEEDS: 'PLANTAE',
+  CAT_FUNGI: 'PLANTAE',
+  CAT_SKELETON: 'PLANTAE',
+  CAT_FERNS: 'PLANTAE',
+  CAT_GASTROPODA: 'MARINE',
+  CAT_BIVALVIA: 'MARINE',
+  CAT_CEPHALOPODA: 'MARINE',
+  CAT_ECHINODERMS: 'MARINE',
+  CAT_CRUSTACEANS: 'MARINE',
+  CAT_ROCKS: 'MINERALS',
+  CAT_FOSSILS: 'MINERALS',
+  CAT_CRYSTALS: 'MINERALS',
+  CAT_METALLIC: 'MINERALS'
+}
+
+/** 商品上可能承载分类信息的字段，按可信度从高到低 */
+const CARE_CATEGORY_FIELDS = [
+  'careCategory',
+  'rootCategoryName',
+  'rootCategoryId',
+  'rootCategory',
+  'category',
+  'categoryName',
+  'categoryId'
+]
+
+/** 命中则返回养护品类，未命中返回空串（便于调用方继续尝试下一个字段） */
+function lookupCareCategory(raw) {
+  if (raw == null || raw === '') return ''
+  const s = String(raw).trim()
+  if (!s) return ''
+  const upper = s.toUpperCase()
+  if (GUIDES[upper]) return upper
+  if (CARE_CATEGORY_ALIASES[s]) return CARE_CATEGORY_ALIASES[s]
+  if (CARE_CATEGORY_ALIASES[upper]) return CARE_CATEGORY_ALIASES[upper]
+  // 「鳞翅目 · 蝴蝶」这类复合名，退回分隔符前的主名
+  const head = s.split(/[·・‧∙•|/]/)[0].trim()
+  if (head && head !== s) {
+    return CARE_CATEGORY_ALIASES[head] || CARE_CATEGORY_ALIASES[head.toUpperCase()] || ''
   }
-  return map[s] || 'GENERAL'
+  return ''
+}
+
+function normalizeCategory(raw) {
+  return lookupCareCategory(raw) || 'GENERAL'
+}
+
+/**
+ * 商品对象 → 养护品类
+ * 商品的 category 字段多数存二级分类名（如「鸟纲」「腹足纲 · 贝壳」），
+ * 故优先取 rootCategoryName，再逐级退回，避免全部落到 GENERAL。
+ */
+function resolveCareCategory(product) {
+  if (!product) return 'GENERAL'
+  if (typeof product === 'string') return normalizeCategory(product)
+  for (const key of CARE_CATEGORY_FIELDS) {
+    const hit = lookupCareCategory(product[key])
+    if (hit) return hit
+  }
+  return 'GENERAL'
 }
 
 function getGuideByCategory(category) {
@@ -302,11 +569,11 @@ function buildGuideUrl(options = {}) {
   if (options.productId) q.push(`productId=${encodeURIComponent(options.productId)}`)
   if (options.from) q.push(`from=${encodeURIComponent(options.from)}`)
   const qs = q.length ? `?${q.join('&')}` : ''
-  return `/pages/care/guide/index${qs}`
+  return `/subpackages/feature/care/guide/index${qs}`
 }
 
 function buildHubUrl(from) {
-  return `/pages/care/index${from ? `?from=${encodeURIComponent(from)}` : ''}`
+  return `/subpackages/feature/care/index${from ? `?from=${encodeURIComponent(from)}` : ''}`
 }
 
 function isVoucherLikeProduct(product) {
@@ -340,7 +607,11 @@ module.exports = {
   CATEGORY_CARDS,
   GENERAL_TIPS,
   GUIDES,
+  CARE_CATEGORY_ALIASES,
+  CARE_CATEGORY_FIELDS,
+  lookupCareCategory,
   normalizeCategory,
+  resolveCareCategory,
   getGuideByCategory,
   getCategoryMeta,
   buildGuideUrl,

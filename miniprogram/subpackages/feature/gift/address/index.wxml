@@ -1,0 +1,42 @@
+<view class="page" wx:if="{{ready}}">
+  <view class="intro">
+    <text class="overline">DELIVER TO</text>
+    <text class="title">写下这份珍物的去处</text>
+    <text class="desc">仅用于寄送妥投；对方看不到你的手机全号。</text>
+  </view>
+
+  <view class="import-row" bindtap="importWxAddress">
+    <text class="import-lbl">从微信地址导入</text>
+    <text class="import-chev" aria-hidden="true"></text>
+  </view>
+
+  <view class="field">
+    <text class="label">收件姓名</text>
+    <input class="input" maxlength="20" placeholder="怎么称呼你" value="{{name}}" bindinput="onName" />
+  </view>
+  <view class="field">
+    <text class="label">手机号</text>
+    <input class="input" type="number" maxlength="11" placeholder="便于物流联系" value="{{phone}}" bindinput="onPhone" />
+  </view>
+  <picker mode="region" value="{{region}}" bindchange="onRegionChange">
+    <view class="field field-picker">
+      <text class="label">地区</text>
+      <text class="input {{regionText ? '' : 'placeholder'}}">{{regionText || '省 / 市 / 区'}}</text>
+    </view>
+  </picker>
+  <view class="field">
+    <text class="label">详细地址</text>
+    <textarea class="textarea" maxlength="120" placeholder="街道门牌等，写清楚即可" value="{{detail}}" bindinput="onDetail" />
+  </view>
+
+  <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="submit">确认收件去处</view>
+  <text class="foot-note">提交后馆员将备妥启程；你可随时在礼笺页查看进度。</text>
+</view>
+
+<view class="page checking" wx:else>
+  <view class="state-block">
+    <view class="state-seal" aria-hidden="true" wx:if="{{!errorMsg}}"></view>
+    <text class="muted">{{errorMsg || '正在铺开地址笺…'}}</text>
+    <view class="btn-ghost state-cta" wx:if="{{errorMsg}}" bindtap="goHome">回到首页</view>
+  </view>
+</view>

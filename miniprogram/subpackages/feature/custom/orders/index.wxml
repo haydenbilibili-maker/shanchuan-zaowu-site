@@ -1,0 +1,65 @@
+<!--subpackages/feature/custom/orders/index.wxml-->
+<view class="page-orders">
+  <view class="grain-overlay"></view>
+
+  <view class="header" >
+    <view class="brand">
+      <text class="title">定制订单</text>
+      <text class="sub">CUSTOM ORDERS</text>
+    </view>
+  </view>
+
+  <view class="intro">
+    <text class="intro-text">保存的方案草稿与已提交的标本定制订单，均可在此查看与继续。</text>
+  </view>
+
+  <view class="loading-wrap" wx:if="{{loading}}"><text>加载中…</text></view>
+
+  <block wx:else>
+    <view class="section" wx:if="{{drafts.length}}">
+      <text class="section-label">我的方案</text>
+      <view
+        class="item-card"
+        wx:for="{{drafts}}"
+        wx:key="_id"
+        bindtap="openDraft"
+        data-id="{{item._id}}"
+      >
+        <view class="item-main">
+          <text class="item-title">{{item.title}}</text>
+          <text class="item-sub">{{item.specimenTitle || '未选藏品'}}</text>
+        </view>
+        <text class="item-arrow">继续 →</text>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="section-label">定制订单</text>
+      <block wx:if="{{orders.length}}">
+        <view
+          class="item-card"
+          wx:for="{{orders}}"
+          wx:key="_id"
+          bindtap="openOrder"
+          data-id="{{item._id}}"
+        >
+          <view class="item-main">
+            <text class="item-title">{{item.title}}</text>
+            <text class="item-sub">{{item.orderNo}} · {{item.statusLabel}}</text>
+          </view>
+          <text class="item-meta">{{item.formatTime}}</text>
+        </view>
+      </block>
+      <view class="empty-inline" wx:else>
+        <text class="empty-text">暂无定制订单</text>
+        <text class="empty-hint">完成方案后可下单，订单将显示在这里</text>
+      </view>
+    </view>
+
+    <view class="empty-all" wx:if="{{!drafts.length && !orders.length}}">
+      <text class="empty-title">还没有定制记录</text>
+      <text class="empty-desc">{{showSpecimenCustom ? '从标本定制开始选配，或保存方案以便下次继续' : '标本定制暂未开放，开放后可在此查看订单'}}</text>
+      <button class="btn-primary" bindtap="goCustom" wx:if="{{showSpecimenCustom}}">开始标本定制</button>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,197 @@
+<wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
+<view class="page page-mode-{{pageMode}}">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-cn">{{pageTitle}}</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:if="{{ready}}">
+  <view class="mode-banner">
+    <text class="mode-tag">{{pageMode === 'jobs' ? 'JOBS' : 'WORKS'}}</text>
+    <text class="mode-title">{{pageTitle}}</text>
+    <text class="sub">{{pageSub}}</text>
+  </view>
+
+  <block wx:if="{{pageMode !== 'jobs'}}">
+    <view class="toolbar {{selectMode ? 'toolbar-batch' : ''}}">
+      <view class="workbench-btn-primary toolbar-primary" wx:if="{{!selectMode}}" bindtap="goNewProduct">上传藏品</view>
+      <view class="workbench-btn-ghost toolbar-side" wx:if="{{!selectMode && listAll.length}}" bindtap="toggleSelectMode">批量状态</view>
+      <view class="workbench-btn-outline toolbar-side" wx:if="{{selectMode}}" bindtap="toggleSelectMode">取消</view>
+      <view
+        class="workbench-btn-primary toolbar-side {{!selectedCount || batchBusy ? 'is-disabled' : ''}}"
+        wx:if="{{selectMode}}"
+        bindtap="batchToggleShelf"
+        data-on="{{true}}"
+      >申请上架 {{selectedCount}}</view>
+      <view
+        class="workbench-btn-ghost toolbar-side {{!selectedCount || batchBusy ? 'is-disabled' : ''}}"
+        wx:if="{{selectMode}}"
+        bindtap="batchToggleShelf"
+        data-on="{{false}}"
+      >下架</view>
+    </view>
+
+    <view class="filter-row wrap">
+      <view class="filter-chip {{shelfFilter === 'all' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="all">全部 {{filterCounts.all}}</view>
+      <view class="filter-chip {{shelfFilter === 'on' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="on">已上架 {{filterCounts.on}}</view>
+      <view class="filter-chip {{shelfFilter === 'pending' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="pending">待确认 {{filterCounts.pending}}</view>
+      <view class="filter-chip {{shelfFilter === 'rejected' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="rejected">已驳回 {{filterCounts.rejected}}</view>
+      <view class="filter-chip {{shelfFilter === 'off' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="off">未上架 {{filterCounts.off}}</view>
+    </view>
+
+    <view class="skeleton-list" wx:if="{{loading && !listAll.length}}">
+      <view class="skeleton-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="sk-cover"></view>
+        <view class="sk-lines">
+          <view class="sk-line wide"></view>
+          <view class="sk-line"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="workbench-state" wx:elif="{{loadError && !listAll.length}}">
+      <text>加载失败，请检查网络后重试。</text>
+      <view class="workbench-btn-primary retry-btn" bindtap="reload">重新加载</view>
+    </view>
+
+    <view class="workbench-state empty-state" wx:elif="{{!loading && !listAll.length}}">
+      <text wx:if="{{!hasProfile}}">还没有个人档案。先完善姓名与简介，再上传第一件藏品。</text>
+      <text wx:else>档案已就绪。上传第一件藏品后，可申请上架，并会出现在对外主页。</text>
+      <view class="empty-cta-row">
+        <view class="workbench-btn-outline empty-cta" wx:if="{{!hasProfile && canProfile}}" bindtap="goProfile">去完善档案</view>
+        <view class="workbench-btn-primary empty-cta" bindtap="goNewProduct">上传藏品</view>
+      </view>
+    </view>
+
+    <view class="work-list" wx:if="{{list.length}}">
+      <view
+        class="work-card {{item.selected ? 'is-selected' : ''}}"
+        wx:for="{{list}}"
+        wx:key="_id"
+        hover-class="work-card-press"
+        bindtap="onCardTap"
+        data-id="{{item._id}}"
+      >
+        <view class="select-mark {{item.selected ? 'on' : ''}}" wx:if="{{selectMode}}">
+          <text>{{item.selected ? '已选' : '选择'}}</text>
+        </view>
+        <view class="cover">
+          <image src="{{item.coverImage}}" mode="aspectFill" />
+        </view>
+        <view class="work-main">
+          <view class="work-head">
+            <text class="work-title">{{item.title || '未命名'}}</text>
+            <view class="work-meta-row">
+              <text class="shelf-tag {{item.shelfKey}}">{{item.shelfLabel}}</text>
+              <text class="work-price">¥{{item.priceDisplay}}</text>
+            </view>
+          </view>
+          <text class="work-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
+          <view class="work-action-row" wx:if="{{!selectMode}}">
+            <view class="workbench-btn-ghost action-btn" catchtap="editProduct" data-id="{{item._id}}">编辑</view>
+            <view
+              class="workbench-btn-outline action-btn {{shelfBusyId === item._id ? 'is-disabled' : ''}}"
+              catchtap="toggleShelf"
+              data-id="{{item._id}}"
+              data-on="{{item.isOffShelf !== false}}"
+            >{{item.isOffShelf === false ? '下架' : '申请上架'}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="workbench-state" wx:if="{{!loading && listAll.length && !list.length}}">
+      <text>当前筛选下暂无作品，试试切换筛选条件。</text>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="filter-row wrap">
+      <view class="filter-chip {{jobFilter === 'active' ? 'on' : ''}}" bindtap="setJobFilter" data-val="active">进行中 {{jobCounts.active}}</view>
+      <view class="filter-chip {{jobFilter === 'pending_make' ? 'on' : ''}}" bindtap="setJobFilter" data-val="pending_make">待制作 {{jobCounts.pending_make}}</view>
+      <view class="filter-chip {{jobFilter === 'framing' ? 'on' : ''}}" bindtap="setJobFilter" data-val="framing">装裱中 {{jobCounts.framing}}</view>
+      <view class="filter-chip {{jobFilter === 'packing' ? 'on' : ''}}" bindtap="setJobFilter" data-val="packing">待发货 {{jobCounts.packing}}</view>
+      <view class="filter-chip {{jobFilter === 'shipped' ? 'on' : ''}}" bindtap="setJobFilter" data-val="shipped">已发出 {{jobCounts.shipped}}</view>
+    </view>
+
+    <view class="skeleton-list" wx:if="{{loading && !jobsAll.length}}">
+      <view class="skeleton-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="sk-lines">
+          <view class="sk-line wide"></view>
+          <view class="sk-line"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="workbench-state" wx:elif="{{loadError && !jobsAll.length}}">
+      <text>工单加载失败，请检查网络后重试。</text>
+      <view class="workbench-btn-primary retry-btn" bindtap="reload">重新加载</view>
+    </view>
+
+    <view class="workbench-state empty-state" wx:elif="{{!loading && !jobsAll.length}}">
+      <text wx:if="{{!hasProfile}}">还没有标本师档案。完善档案并上传藏品后，历史定制单会按本人藏品匹配过来。</text>
+      <text wx:else>暂无制作工单。顾客指定你为标本师，或使用你的藏品下单后，会显示在这里。不会领走别人的单。</text>
+      <view class="empty-cta-row" wx:if="{{!hasProfile && canProfile}}">
+        <view class="workbench-btn-primary empty-cta" bindtap="goProfile">去完善档案</view>
+      </view>
+    </view>
+
+    <view class="work-list" wx:if="{{jobs.length}}">
+      <view class="job-card" wx:for="{{jobs}}" wx:key="_id">
+        <view class="job-top">
+          <text class="job-no">{{item.orderNo || '工单'}}</text>
+          <text class="shelf-tag {{item.productionStatus}}">{{item.productionLabel}}</text>
+        </view>
+        <text class="job-title">{{item.specimenTitle || '定制藏品'}}</text>
+        <text class="job-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
+        <text class="job-meta" wx:if="{{item.frameName || item.skuLabel}}">{{item.frameName}}{{item.frameName && item.skuLabel ? ' · ' : ''}}{{item.skuLabel}}</text>
+        <text class="job-meta" wx:if="{{item.formatTime}}">{{item.formatTime}}</text>
+        <text class="job-match" wx:if="{{item.matchViaLabel}}">匹配：{{item.matchViaLabel}}</text>
+        <view
+          class="workbench-btn-primary job-next {{jobBusyId === item._id ? 'is-disabled' : ''}}"
+          wx:if="{{item.nextAction}}"
+          bindtap="advanceJob"
+          data-id="{{item._id}}"
+          data-next="{{item.nextAction}}"
+        >{{item.nextLabel}}</view>
+      </view>
+    </view>
+
+    <view class="workbench-state" wx:if="{{!loading && jobsAll.length && !jobs.length}}">
+      <text>当前筛选下暂无工单，试试切换状态。</text>
+    </view>
+  </block>
+  </block>
+
+  <view class="detail-mask" wx:if="{{detailOpen && detailItem}}" catchtap="closeDetail">
+    <view class="detail-sheet" catchtap="noop">
+      <view class="detail-handle"></view>
+      <view class="detail-cover">
+        <image src="{{detailItem.coverImage}}" mode="aspectFill" />
+      </view>
+      <text class="detail-title">{{detailItem.title || '未命名'}}</text>
+      <view class="detail-meta">
+        <text class="shelf-tag {{detailItem.shelfKey}}">{{detailItem.shelfLabel}}</text>
+        <text class="work-price">¥{{detailItem.priceDisplay}}</text>
+      </view>
+      <view class="detail-facts" wx:if="{{detailItem.detailLines.length}}">
+        <view class="detail-fact" wx:for="{{detailItem.detailLines}}" wx:key="k">
+          <text class="fact-k">{{item.k}}</text>
+          <text class="fact-v">{{item.v}}</text>
+        </view>
+      </view>
+      <text class="detail-hint">上架需提交审核；下架立即生效。待确认期间请等待超管处理。</text>
+      <view class="detail-actions">
+        <view class="workbench-btn-ghost action-btn" bindtap="previewPublic">预览主页</view>
+        <view class="workbench-btn-outline action-btn" bindtap="editProduct" data-id="{{detailItem._id}}">编辑</view>
+      </view>
+      <view
+        class="workbench-btn-primary detail-shelf {{shelfBusyId === detailItem._id ? 'is-disabled' : ''}}"
+        bindtap="toggleShelf"
+        data-id="{{detailItem._id}}"
+        data-on="{{detailItem.isOffShelf !== false}}"
+      >{{detailItem.isOffShelf === false ? '下架' : '申请上架'}}</view>
+    </view>
+  </view>
+</view>

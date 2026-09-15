@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "影像内容",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#1A1814",
+  "backgroundTextStyle": "light",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white"
+}

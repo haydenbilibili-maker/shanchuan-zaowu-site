@@ -4,6 +4,6 @@
   "description": "导入山海社区 UGC 笔记与专题种子数据",
   "main": "index.js",
   "dependencies": {
-    "wx-server-sdk": "~2.6.3"
+    "wx-server-sdk": "~3.0.1"
   }
 }

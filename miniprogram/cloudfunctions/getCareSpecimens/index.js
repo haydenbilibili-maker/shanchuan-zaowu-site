@@ -3,15 +3,17 @@
  */
 const cloud = require('wx-server-sdk')
 const {
-  normalizeCategory,
+  resolveCareCategory,
+  CARE_CATEGORY_FIELDS,
   getCategoryMeta,
   getGuideByCategory,
   getCareSummary,
   isVoucherLikeProduct
-} = require('../getCareGuides/defaults')
+} = require('./defaults')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
+const _ = db.command
 
 function formatReceiveTime(ts) {
   if (!ts) return ''
@@ -29,9 +31,9 @@ function pickReceiveTime(order) {
 }
 
 function buildSpecimenItem(order, product, index) {
-  let category = normalizeCategory(product.category)
+  let category = resolveCareCategory(product)
   if (category === 'GENERAL' && order.customMeta && order.customMeta.specimen) {
-    category = normalizeCategory(order.customMeta.specimen.category)
+    category = resolveCareCategory(order.customMeta.specimen)
   }
   const meta = getCategoryMeta(category)
   const framingName = (order.customMeta && order.customMeta.frame && order.customMeta.frame.name) || ''
@@ -79,16 +81,67 @@ async function fetchReceivedOrders(openid, limit) {
   }
 }
 
-function buildSpecimenList(orders, limit) {
-  const list = []
+/** 早期订单快照未落 category/rootCategoryName，需回查 products 才能归类 */
+function lacksCategorySignal(product) {
+  if (!product) return true
+  return !CARE_CATEGORY_FIELDS.some((key) => product[key])
+}
+
+async function loadProductCategoryMap(ids) {
+  const map = {}
+  const unique = [...new Set(ids.filter(Boolean))]
+  if (!unique.length) return map
+  const CHUNK = 20
+  for (let i = 0; i < unique.length; i += CHUNK) {
+    const chunk = unique.slice(i, i + CHUNK)
+    try {
+      const res = await db.collection('products')
+        .where({ _id: _.in(chunk) })
+        .field({
+          category: true,
+          categoryName: true,
+          categoryId: true,
+          rootCategoryName: true,
+          rootCategoryId: true,
+          careCategory: true
+        })
+        .get()
+      ;(res.data || []).forEach((p) => { map[p._id] = p })
+    } catch (err) {
+      console.warn('getCareSpecimens loadProductCategoryMap', err)
+    }
+  }
+  return map
+}
+
+async function buildSpecimenList(orders, limit) {
+  const picked = []
   for (const order of orders) {
     const products = (order.products || []).filter((p) => !isVoucherLikeProduct(p))
-    products.forEach((p, i) => {
-      if (list.length >= limit) return
-      list.push(buildSpecimenItem(order, p, i))
+    for (let i = 0; i < products.length; i += 1) {
+      if (picked.length >= limit) break
+      picked.push({ order, product: products[i], index: i })
+    }
+    if (picked.length >= limit) break
+  }
+
+  const needBackfill = picked.filter((x) => lacksCategorySignal(x.product))
+  if (needBackfill.length) {
+    const categoryMap = await loadProductCategoryMap(
+      needBackfill.map((x) => x.product.id || x.product.productId)
+    )
+    needBackfill.forEach((x) => {
+      const doc = categoryMap[x.product.id || x.product.productId]
+      if (!doc) return
+      const patch = {}
+      CARE_CATEGORY_FIELDS.forEach((key) => {
+        if (doc[key]) patch[key] = doc[key]
+      })
+      x.product = { ...x.product, ...patch }
     })
   }
-  return list
+
+  return picked.map((x) => buildSpecimenItem(x.order, x.product, x.index))
 }
 
 async function loadSpecimenList(openid, limit) {
@@ -123,7 +176,7 @@ async function loadOrderContext(openid, orderId, productId) {
     framingName,
     isCustom: !!(order.customMeta && order.customMeta.isCustom),
     customCategory: order.customMeta && order.customMeta.specimen
-      ? normalizeCategory(order.customMeta.specimen.category)
+      ? resolveCareCategory(order.customMeta.specimen)
       : ''
   }
 }

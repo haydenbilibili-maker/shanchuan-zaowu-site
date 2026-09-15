@@ -1,12 +1,8 @@
 <!--pages/booking/index.wxml-->
 <view class="container">
-  
-  <!-- 背景氛围 -->
-  <image class="bg-image" src="https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?q=80&w=1000&auto=format&fit=crop" mode="aspectFill"></image>
-  <view class="bg-mask"></view>
 
   <!-- 1. 顶部：典藏票据预览 -->
-  <view class="ticket-header" style="padding-top: {{statusBarHeight + 10}}px">
+  <view class="ticket-header" >
     <view class="ticket-3d-container {{isFlipped ? 'flipped' : ''}}" bindtap="flipTicket">
       <!-- A面：黑金 -->
       <view class="ticket-face face-front">
@@ -14,7 +10,7 @@
         <view class="notch left"></view><view class="notch right"></view>
         <view class="tp-header">
           <view class="tp-brand"><text class="tp-logo">山海造物</text><text class="tp-tagline">把山海带回家</text><text class="tp-sub">NATURE'S CREATIONS</text></view>
-          <text class="tp-serial">NO.V-2025</text>
+          <text class="tp-serial">NO.V-{{ticketYear}}</text>
         </view>
         <view class="tp-body">
           <view class="info-row">
@@ -36,7 +32,7 @@
         <view class="notch left light"></view><view class="notch right light"></view>
         <view class="tp-header light">
           <view class="tp-brand"><text class="tp-logo light">山海造物</text><text class="tp-tagline light">把山海带回家</text><text class="tp-sub light">NATURE'S CREATIONS</text></view>
-          <text class="tp-serial light">NO.V-2025</text>
+          <text class="tp-serial light">NO.V-{{ticketYear}}</text>
         </view>
         <view class="tp-body">
           <view class="info-row">
@@ -61,7 +57,7 @@
         <view class="tab-item {{currentTab==0 ? 'active' : ''}}" bindtap="switchTab" data-idx="0">入店参观</view>
         <view class="tab-item {{currentTab==1 ? 'active' : ''}}" bindtap="switchTab" data-idx="1">手作课程</view>
         <view class="tab-item {{currentTab==2 ? 'active' : ''}}" bindtap="switchTab" data-idx="2">特别活动</view>
-        <view class="tab-item {{currentTab==3 ? 'active' : ''}}" bindtap="switchTab" data-idx="3">预约历史</view>
+        <view class="tab-item {{currentTab==3 ? 'active' : ''}}" bindtap="switchTab" data-idx="3">我的预约</view>
       </view>
 
       <!-- A: 参观表单 (仅 Tab 0 显示日期选择) -->
@@ -145,7 +141,7 @@
         
         <!-- 🟢 候补功能提示 -->
         <view class="waitlist-hint" wx:if="{{selectedTimeIndex !== -1 && timeSlots[selectedTimeIndex].status === 'full'}}">
-          <view class="hint-icon"><image src="/assets/icons/clock.png" mode="aspectFit" class="icon-gold"></image></view>
+          <view class="hint-icon"><image src="/subpackages/business/assets/icons/clock.png" mode="aspectFit" class="icon-gold"></image></view>
           <text class="hint-text">该时间段已满，可加入候补列表</text>
           <view class="waitlist-btn" bindtap="addToWaitlist">加入候补</view>
         </view>
@@ -190,7 +186,7 @@
         </view>
       </block>
 
-      <!-- D: 预约历史 -->
+      <!-- D: 我的预约（原预约历史） -->
       <block wx:if="{{currentTab == 3}}">
         <view class="booking-history-tabs">
           <view class="history-tab-item {{bookingHistoryTab==0 ? 'active' : ''}}" bindtap="switchHistoryTab" data-idx="0">待参加</view>
@@ -270,6 +266,7 @@
       </view>
 
     </view>
+    <view class="booking-scroll-safe" aria-hidden="true"></view>
   </scroll-view>
 
   <!-- 3. 底部：悬浮操作栏 (仅Tab 0, 1, 2显示) -->
@@ -292,7 +289,7 @@
   <view class="mint-modal {{showMintModal ? 'active' : ''}}" catchtouchmove="true">
     <view class="mint-content">
       <view class="mint-machine">
-        <view class="printer-light {{mintAnimation ? 'blink' : ''}}"></view>
+        <view class="signal-light printer-light {{mintAnimation ? 'blink' : ''}}"></view>
         <view class="printer-slot"></view>
       </view>
       <view class="ticket-paper {{mintAnimation ? 'printing' : ''}}">
@@ -308,7 +305,7 @@
           </view>
           <view class="tm-code-box">
             <view class="tm-qr">
-              <image src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{newTicketCode}}" mode="aspectFill"></image>
+              <canvas type="2d" id="mintQrCanvas" class="mint-qr-canvas" style="width: 240rpx; height: 240rpx;"></canvas>
               <view class="scan-bar"></view>
             </view>
             <text class="tm-val">{{newTicketCode}}</text>
@@ -318,7 +315,7 @@
       </view>
       <view class="mint-bottom-area">
         <block wx:if="{{!mintFinished}}">
-           <text class="mint-tip">正在打印您的专属通行证...</text>
+           <text class="mint-tip">正在打印您的专属通行证…</text>
            <view class="mint-progress"><view class="mp-bar"></view></view>
         </block>
         <view class="mint-actions {{mintFinished ? 'show' : ''}}">

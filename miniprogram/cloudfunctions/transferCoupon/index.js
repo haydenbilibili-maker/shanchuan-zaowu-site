@@ -51,7 +51,8 @@ exports.main = async (event, context) => {
     }
 
     // 3. 检查优惠券状态
-    if (userCoupon.status !== 'unused') {
+    const status = String(userCoupon.status || '').toLowerCase()
+    if (status !== 'unused' && status !== 'available') {
       return {
         success: false,
         msg: '只能转赠未使用的优惠券'
@@ -60,7 +61,8 @@ exports.main = async (event, context) => {
 
     // 4. 检查是否过期
     const now = new Date()
-    if (userCoupon.expireTime && new Date(userCoupon.expireTime) < now) {
+    const expireAt = userCoupon.expireTime || userCoupon.expire_time
+    if (expireAt && new Date(expireAt) < now) {
       return {
         success: false,
         msg: '优惠券已过期，无法转赠'

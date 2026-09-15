@@ -1,0 +1,9 @@
+{
+  "name": "manageDeposit",
+  "version": "1.0.0",
+  "main": "index.js",
+  "description": "售罄孤品定金规则与尾款窗口",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

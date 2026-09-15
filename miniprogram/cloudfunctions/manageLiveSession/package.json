@@ -1,0 +1,9 @@
+{
+  "name": "manageLiveSession",
+  "version": "1.0.0",
+  "description": "直播场次：创建/开播/结束/查询进行中（推流 URL 仅主播可见）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -1,0 +1,163 @@
+/* 核销成功结果卡 — 与券夹亮码动效同源（Museum Mode） */
+.pass-redeem-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36rpx 24rpx 32rpx;
+  margin-bottom: 8rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid #4D401A;
+  background: linear-gradient(165deg, rgba(196, 167, 108, 0.14) 0%, #1A1814 48%, #1F1D1A 100%);
+  box-sizing: border-box;
+}
+
+.pass-redeem-card.is-animating {
+  animation: passRedeemIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes passRedeemIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16rpx) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pass-redeem-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  margin-bottom: 20rpx;
+}
+
+.pass-redeem-status .signal-light {
+  width: 12rpx;
+  height: 12rpx;
+}
+
+.pass-redeem-status-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #52B788;
+  letter-spacing: 0.06em;
+}
+
+.pass-redeem-seal {
+  position: relative;
+  width: 88rpx;
+  height: 88rpx;
+  margin-bottom: 24rpx;
+}
+
+.pass-redeem-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3rpx solid #C4A76C;
+  background: rgba(196, 167, 108, 0.12);
+  box-sizing: border-box;
+}
+
+.pass-redeem-card.is-animating .pass-redeem-ring {
+  animation: passSealPulse 0.7s ease-out both;
+}
+
+@keyframes passSealPulse {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pass-redeem-check {
+  position: absolute;
+  left: 28rpx;
+  top: 34rpx;
+  width: 28rpx;
+  height: 14rpx;
+  border-left: 4rpx solid #C4A76C;
+  border-bottom: 4rpx solid #C4A76C;
+  transform: rotate(-45deg);
+  box-sizing: border-box;
+}
+
+.pass-redeem-card.is-animating .pass-redeem-check {
+  animation: passCheckDraw 0.45s 0.18s ease-out both;
+}
+
+@keyframes passCheckDraw {
+  0% {
+    opacity: 0;
+    transform: rotate(-45deg) scale(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-45deg) scale(1);
+  }
+}
+
+.pass-redeem-kicker {
+  font-size: 18rpx;
+  letter-spacing: 0.16em;
+  color: #6B6560;
+}
+
+.pass-redeem-title {
+  margin-top: 10rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  text-align: center;
+  line-height: 1.35;
+  max-width: 100%;
+}
+
+.pass-redeem-value {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: baseline;
+  color: #C4A76C;
+}
+
+.pass-redeem-currency {
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-right: 4rpx;
+}
+
+.pass-redeem-amount {
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-size: 64rpx;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.pass-redeem-badge {
+  margin-top: 24rpx;
+  padding: 10rpx 28rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid #4D401A;
+  background: rgba(196, 167, 108, 0.16);
+  color: #C4A76C;
+  font-size: 22rpx;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.pass-redeem-note {
+  margin-top: 16rpx;
+  font-size: 20rpx;
+  color: #6B6560;
+  letter-spacing: 0.04em;
+  text-align: center;
+}

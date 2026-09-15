@@ -1,0 +1,208 @@
+<view class="page-recruit">
+  <view class="grain-overlay"></view>
+
+  <scroll-view
+    scroll-y
+    class="recruit-scroll"
+    show-scrollbar="{{false}}"
+    scroll-into-view="{{scrollIntoView}}"
+    scroll-with-animation
+    style="top: {{headerBlockPx}}px; height: {{scrollHeightPx}}px;"
+  >
+    <view class="hero">
+      <image class="hero-img" src="{{heroImage}}" mode="aspectFill"></image>
+      <view class="hero-mask"></view>
+      <view class="hero-copy">
+        <text class="hero-kicker">NATURE'S CREATIONS</text>
+        <text class="hero-title">柜门后，需要更多双手</text>
+        <text class="hero-lead">若你已经在做藏品，或正把这门手艺学扎实——欢迎把作品带到柜门前，也带到更多城市。</text>
+      </view>
+    </view>
+
+    <view class="intro-card">
+      <text class="intro-overline">PHILOSOPHY</text>
+      <text class="intro-title">把山海带回家</text>
+      <text class="intro-body">山海造物在做一件事：把自然里值得停留的片刻，装裱好，送到愿意珍藏的人手里。合作不是把人招进流水线，而是把渠道、物流与合规包装摊开，让手艺可以走得更远。</text>
+    </view>
+
+    <view class="section">
+      <text class="section-overline">WHAT WE SHARE</text>
+      <text class="section-title">合作要点</text>
+
+      <view class="benefit-card" wx:for="{{benefits}}" wx:key="id">
+        <view class="benefit-index">{{item.index}}</view>
+        <view class="benefit-body">
+          <text class="benefit-overline">{{item.overline}}</text>
+          <text class="benefit-title">{{item.title}}</text>
+          <text class="benefit-desc">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="section-overline">HOW IT WORKS</text>
+      <text class="section-title">合作流程</text>
+      <view class="step-list">
+        <view class="step-row" wx:for="{{steps}}" wx:key="index">
+          <view class="step-mark">
+            <text class="step-num">{{item.index}}</text>
+            <view class="step-line" wx:if="{{index < steps.length - 1}}"></view>
+          </view>
+          <view class="step-body">
+            <text class="step-title">{{item.title}}</text>
+            <text class="step-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="note-card">
+      <text class="note-title">需要说明的几件事</text>
+      <text class="note-para">分成比例、结算周期、渠道费用与订单分配规则，均以双方签署的合作协议为准。本页只写合作原则，不预设尚未确认的数字。</text>
+      <text class="note-para">伴宠记忆等高度定制订单，仍按现有工坊流程：专员与标本师评估后承接，过程中确认方案，成品以保价方式寄出。</text>
+      <text class="note-para">藏品来源、制作工艺须符合现行法规。保护物种、来源不明或无法提供合规说明的作品，无法合作。</text>
+      <view class="note-link" hover-class="note-link-press" bindtap="goPetHub">了解伴宠记忆流程 →</view>
+    </view>
+
+    <view id="recruit-form" class="form-section">
+      <text class="section-overline">APPLY</text>
+      <text class="section-title">合作意向表单</text>
+      <text class="form-lead">留下联系方式与擅长方向，专员会在 1–3 个工作日内与你沟通。提交后无需支付。</text>
+
+      <view class="form-card" wx:if="{{!submitted}}">
+        <view class="form-row">
+          <text class="form-label">姓名 / 称呼 <text class="req">*</text></text>
+          <input
+            class="form-input"
+            placeholder="怎么称呼你"
+            maxlength="40"
+            value="{{form.contactName}}"
+            bindinput="onFormInput"
+            data-field="contactName"
+          />
+        </view>
+
+        <view class="form-row">
+          <text class="form-label">手机号 <text class="req">*</text></text>
+          <input
+            class="form-input"
+            type="number"
+            maxlength="11"
+            placeholder="便于专员联系"
+            value="{{form.phone}}"
+            bindinput="onFormInput"
+            data-field="phone"
+          />
+        </view>
+
+        <view class="form-row">
+          <text class="form-label">微信</text>
+          <input
+            class="form-input"
+            placeholder="选填"
+            maxlength="40"
+            value="{{form.wechat}}"
+            bindinput="onFormInput"
+            data-field="wechat"
+          />
+        </view>
+
+        <view class="form-row">
+          <text class="form-label">城市 / 所在地</text>
+          <input
+            class="form-input"
+            placeholder="选填，如杭州"
+            maxlength="40"
+            value="{{form.city}}"
+            bindinput="onFormInput"
+            data-field="city"
+          />
+        </view>
+
+        <view class="form-row block">
+          <text class="form-label">擅长品类 <text class="req">*</text></text>
+          <view class="chip-row">
+            <view
+              class="chip {{item.selected ? 'on' : ''}}"
+              wx:for="{{categoryOptions}}"
+              wx:key="id"
+              hover-class="chip-press"
+              hover-stay-time="80"
+              bindtap="toggleCategory"
+              data-id="{{item.id}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+
+        <view class="form-row block">
+          <text class="form-label">从业经验简述</text>
+          <textarea
+            class="form-textarea"
+            placeholder="选填：工艺方向、代表作品、可承接量等"
+            maxlength="500"
+            value="{{form.experience}}"
+            bindinput="onFormInput"
+            data-field="experience"
+          ></textarea>
+        </view>
+
+        <view class="form-row block">
+          <text class="form-label">合作意向 <text class="req">*</text></text>
+          <view class="chip-row">
+            <view
+              class="chip {{item.selected ? 'on' : ''}}"
+              wx:for="{{intentOptions}}"
+              wx:key="id"
+              hover-class="chip-press"
+              hover-stay-time="80"
+              bindtap="toggleIntent"
+              data-id="{{item.id}}"
+            >{{item.label}}</view>
+          </view>
+        </view>
+
+        <view class="form-row block">
+          <text class="form-label">备注</text>
+          <textarea
+            class="form-textarea short"
+            placeholder="选填"
+            maxlength="500"
+            value="{{form.note}}"
+            bindinput="onFormInput"
+            data-field="note"
+          ></textarea>
+        </view>
+      </view>
+
+      <view class="form-success" wx:else>
+        <text class="success-title">意向已收到</text>
+        <text class="success-desc">专员将按你留下的手机号联系。也可继续用微信或电话沟通细节。</text>
+        <view class="success-link" hover-class="note-link-press" bindtap="goSupport">去联系专员留言 →</view>
+      </view>
+    </view>
+
+    <view class="scroll-pad"></view>
+  </scroll-view>
+
+  <view class="cta-bar" style="padding-bottom: {{ctaPadBottom}}px;">
+    <view
+      class="cta-primary {{submitting || submitted ? 'cta-disabled' : ''}}"
+      hover-class="{{submitted || submitting ? '' : 'cta-primary-press'}}"
+      hover-stay-time="80"
+      bindtap="submitApplication"
+    >{{submitted ? '已提交合作意向' : (submitting ? '提交中…' : '提交合作意向')}}</view>
+    <view class="cta-row">
+      <button
+        class="cta-ghost"
+        open-type="contact"
+        session-from="{{sessionFrom}}"
+        send-message-title="{{sendMessageTitle}}"
+        send-message-path="{{sendMessagePath}}"
+        show-message-card="{{true}}"
+        bindcontact="onContactTap"
+      >微信咨询</button>
+      <view class="cta-ghost" wx:if="{{phone}}" hover-class="cta-ghost-press" bindtap="callPhone">电话沟通</view>
+      <view class="cta-ghost" hover-class="cta-ghost-press" bindtap="goSupport">联系专员</view>
+    </view>
+  </view>
+</view>

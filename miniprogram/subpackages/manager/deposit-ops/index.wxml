@@ -1,0 +1,95 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">加载中…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">SOLD-OUT UNIQUE · DEPOSIT</text>
+        <text class="cn">售罄孤品定金</text>
+      </view>
+      <text class="header-note">定金＝付费优先权；想要＝免费候补。规则仅超管可改。</text>
+    </view>
+
+    <view class="preview" wx:if="{{ruleText}}">
+      <text class="preview-label">当前规则</text>
+      <text class="preview-body">{{ruleText}}</text>
+      <text class="preview-badge" wx:if="{{fromDefault}}">默认值 · 未落库</text>
+    </view>
+
+    <view class="section">
+      <text class="section-title">规则配置</text>
+      <view class="form-row">
+        <text class="form-label">启用定金</text>
+        <switch checked="{{form.enabled}}" color="#C4A76C" data-field="enabled" bindchange="onSwitch" disabled="{{!canEdit}}" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">定金比例 %</text>
+        <input class="input sm" type="digit" value="{{form.depositRatioPct}}" data-field="depositRatioPct" bindinput="onNumber" disabled="{{!canEdit}}" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">尾款时限（天）</text>
+        <input class="input sm" type="number" value="{{form.balanceWindowDays}}" data-field="balanceWindowDays" bindinput="onNumber" disabled="{{!canEdit}}" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">定金下限 ¥</text>
+        <input class="input sm" type="number" value="{{form.minDepositAmount}}" data-field="minDepositAmount" bindinput="onNumber" disabled="{{!canEdit}}" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">定金上限 ¥</text>
+        <input class="input sm" type="number" value="{{form.maxDepositAmount}}" data-field="maxDepositAmount" bindinput="onNumber" disabled="{{!canEdit}}" />
+      </view>
+      <text class="form-hint">上架后须在时限内付尾款；逾期开放且定金不退。定金与尾款均走微信支付。</text>
+      <view class="btn-row" wx:if="{{canEdit}}">
+        <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveRules">{{saving ? '保存中…' : '保存规则'}}</view>
+        <view class="btn ghost {{sweeping ? 'disabled' : ''}}" bindtap="sweepNow">{{sweeping ? '清扫中…' : '清扫逾期'}}</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-head">
+        <text class="section-title">定金意向</text>
+        <text class="section-sub" wx:if="{{!loadingList}}">{{list.length}} 条</text>
+      </view>
+      <scroll-view class="tabs-scroll" scroll-x enable-flex>
+        <view class="tabs">
+          <view class="tab {{statusFilter==='all'?'on':''}}" data-status="all" bindtap="setStatusFilter">全部 {{countsTotal}}</view>
+          <view class="tab {{statusFilter==='pending_pay'?'on':''}}" data-status="pending_pay" bindtap="setStatusFilter">待付 {{counts.pending_pay || 0}}</view>
+          <view class="tab {{statusFilter==='deposit_paid'?'on':''}}" data-status="deposit_paid" bindtap="setStatusFilter">已付定金 {{counts.deposit_paid || 0}}</view>
+          <view class="tab {{statusFilter==='awaiting_balance'?'on':''}}" data-status="awaiting_balance" bindtap="setStatusFilter">待尾款 {{counts.awaiting_balance || 0}}</view>
+          <view class="tab {{statusFilter==='forfeited_open'?'on':''}}" data-status="forfeited_open" bindtap="setStatusFilter">已逾期 {{counts.forfeited_open || 0}}</view>
+          <view class="tab {{statusFilter==='settled'?'on':''}}" data-status="settled" bindtap="setStatusFilter">已付清 {{counts.settled || 0}}</view>
+          <view class="tab {{statusFilter==='intent'?'on':''}}" data-status="intent" bindtap="setStatusFilter">意向中 {{counts.intent || 0}}</view>
+        </view>
+      </scroll-view>
+
+      <view class="empty-tip" wx:if="{{loadingList}}">
+        <text class="empty-title">加载中</text>
+        <text class="empty-sub">正在拉取定金意向…</text>
+      </view>
+      <view class="empty-tip" wx:elif="{{!list.length}}">
+        <text class="empty-title">{{emptyHint}}</text>
+        <text class="empty-sub">下拉可刷新；售罄且开启定金的藏品会出现在此</text>
+      </view>
+
+      <block wx:for="{{list}}" wx:key="_id">
+        <view class="intent-card">
+          <view class="intent-top">
+            <text class="intent-title">{{item.title || '藏品'}}</text>
+            <text class="status-tag {{item.statusTone}}">{{item.statusLabel}}</text>
+          </view>
+          <text class="intent-meta">定金 ¥{{item.depositAmount}} · 尾款 ¥{{item.balanceAmount}} · 售价 ¥{{item.productPrice}}</text>
+          <text class="intent-meta" wx:if="{{item.depositOrderId}}">定金单 {{item.depositOrderNo || item.depositOrderId}}{{item.depositOrderStatusLabel ? ' · ' + item.depositOrderStatusLabel : ''}}</text>
+          <text class="intent-meta" wx:if="{{item.balanceOrderId}}">尾款单 {{item.balanceOrderNo || item.balanceOrderId}}{{item.balanceOrderStatusLabel ? ' · ' + item.balanceOrderStatusLabel : ''}}</text>
+          <text class="intent-meta {{item.overdue ? 'overdue' : ''}}" wx:if="{{item.balanceDueAtText}}">
+            尾款截止 {{item.balanceDueAtText}}{{item.overdue ? ' · 已逾期' : ''}}
+          </text>
+          <text class="intent-meta">会员 {{item.openidShort}}</text>
+          <view class="intent-actions">
+            <view class="chip-btn danger" wx:if="{{canEdit && item.canForfeit}}" data-id="{{item._id}}" bindtap="openExpired">逾期开放</view>
+            <view class="chip-btn" wx:if="{{item.showProduct}}" data-pid="{{item.productId}}" bindtap="goProduct">看藏品</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

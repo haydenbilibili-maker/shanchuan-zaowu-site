@@ -1,0 +1,183 @@
+<!--subpackages/feature/care/guide/index.wxml-->
+<view class="page-guide">
+  <view class="grain-overlay"></view>
+
+  <view class="header care-header" style=" padding-right: {{navPaddingRight}}px;">
+    <view class="care-nav-inner" style="min-height: {{navBarHeight}}px;">
+      <view class="care-brand">
+        <view class="care-title-row">
+          <image class="care-title-icon" src="/assets/icons/care.png" mode="aspectFit"></image>
+          <text class="care-title">养护指南</text>
+        </view>
+        <text class="care-sub">CARE GUIDE</text>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="main-scroll care-scroll"
+    show-scrollbar="{{false}}"
+    scroll-into-view="{{scrollIntoView}}"
+    scroll-with-animation="{{true}}"
+    style="top: {{scrollTopPx}}px; height: {{scrollHeightPx}}px;"
+  >
+    <view class="care-skeleton" wx:if="{{loading}}">
+      <view class="sk-block sk-hero"></view>
+      <view class="sk-block sk-plate"></view>
+      <view class="sk-block sk-section" wx:for="{{[1,2,3]}}" wx:key="*this"></view>
+    </view>
+
+    <view class="care-empty care-enter" wx:elif="{{loadError && !hasGuide}}">
+      <view class="care-empty-icon">
+        <image src="/assets/icons/care.png" mode="aspectFit"></image>
+      </view>
+      <text class="care-empty-title">指南暂不可用</text>
+      <text class="care-empty-desc">请检查网络后重试，或先返回养护页浏览品类要点</text>
+      <view class="care-empty-btn" hover-class="care-press" hover-stay-time="80" bindtap="retryLoad">重新加载</view>
+    </view>
+
+    <view class="care-content {{pageReady ? 'ready' : ''}}" wx:else>
+      <view class="sync-banner care-enter care-enter-d1" wx:if="{{loadError}}">
+        <text class="sync-text">未能同步最新指南，当前为门店底稿</text>
+        <view class="sync-retry" hover-class="care-press" hover-stay-time="80" bindtap="retryLoad">重试</view>
+      </view>
+
+      <view class="cat-hero care-enter care-enter-d1">
+        <view class="cat-hero-stripe" style="background: {{categoryColor}};"></view>
+        <view class="cat-hero-icon">
+          <image src="/assets/icons/care.png" mode="aspectFit"></image>
+        </view>
+        <view class="cat-hero-copy">
+          <text class="cat-hero-overline">{{categoryOverline}}</text>
+          <text class="cat-hero-title">{{categoryHeading}}</text>
+          <text class="cat-hero-lead" wx:if="{{categoryLead}}">{{categoryLead}}</text>
+        </view>
+      </view>
+
+      <view class="context-card care-enter care-enter-d2" wx:if="{{contextTitle || framingName}}">
+        <text class="context-overline">{{contextOverline}}</text>
+        <text class="context-label">{{contextLabelText}}</text>
+        <text class="context-title" wx:if="{{contextTitle}}">{{contextTitle}}</text>
+        <view class="context-tags">
+          <text class="ctx-tag" style="color: {{categoryColor}}; border-color: {{categoryColor}}33; background: {{categoryColor}}14;">{{categoryLabel}}</text>
+          <text class="ctx-tag brass" wx:if="{{isCustom}}">定制</text>
+          <text class="ctx-tag muted" wx:if="{{framingName}}">装裱 · {{framingName}}</text>
+        </view>
+        <view
+          class="context-cert"
+          wx:if="{{orderId}}"
+          hover-class="care-press"
+          hover-stay-time="80"
+          bindtap="goToCertificate"
+        >
+          <text>查看收藏证书</text>
+          <text class="context-cert-arrow">›</text>
+        </view>
+      </view>
+
+      <view class="summary-plate care-enter care-enter-d2">
+        <text class="plate-overline">CARE NOTES</text>
+        <text class="plate-kicker">养护摘要</text>
+        <text class="plate-summary">{{guide.summary}}</text>
+        <text class="plate-draft">{{guide.disclaimer || '以下为一般性安放建议，不构成保存保证，请以随件说明或专员指引为准。'}}</text>
+      </view>
+
+      <view class="toc-wrap care-enter care-enter-d3" wx:if="{{contentSections.length > 1}}">
+        <text class="toc-label">CHAPTERS</text>
+        <scroll-view scroll-x class="toc-scroll" enable-flex show-scrollbar="{{false}}">
+          <view class="toc-row">
+            <view
+              class="toc-chip {{activeSection === item.key ? 'active' : ''}}"
+              wx:for="{{contentSections}}"
+              wx:key="key"
+              bindtap="jumpToSection"
+              data-key="{{item.key}}"
+              hover-class="care-press"
+              hover-stay-time="80"
+            >{{item.title}}</view>
+            <view class="toc-pad"></view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view
+        class="section-block care-enter"
+        wx:for="{{contentSections}}"
+        wx:key="key"
+        id="section-{{item.key}}"
+        style="animation-delay: {{0.06 * index + 0.18}}s;"
+      >
+        <view
+          class="block-head"
+          bindtap="toggleSection"
+          data-key="{{item.key}}"
+          hover-class="care-card-hover"
+          hover-stay-time="80"
+        >
+          <text class="block-index">{{item.indexLabel}}</text>
+          <view class="block-head-copy">
+            <text class="block-overline">{{item.overline}}</text>
+            <text class="block-title">{{item.title}}</text>
+          </view>
+          <text class="block-toggle">{{collapsedSections[item.key] ? '+' : '−'}}</text>
+        </view>
+        <view class="block-content {{collapsedSections[item.key] ? 'collapsed' : ''}}">
+          <text class="block-body">{{item.body}}</text>
+          <view class="checklist" wx:if="{{item.tips && item.tips.length}}">
+            <view class="check-row" wx:for="{{item.tips}}" wx:for-item="tip" wx:key="*this">
+              <view class="check-mark"></view>
+              <text class="check-text">{{tip}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="warning-block care-enter care-enter-d4" wx:if="{{warningSection}}">
+        <text class="warning-overline">{{warningSection.overline}}</text>
+        <view class="warning-head">
+          <view class="warning-icon">!</view>
+          <text class="warning-label">{{warningSection.title || '异常信号'}}</text>
+        </view>
+        <text class="warning-body">{{warningSection.body}}</text>
+        <view class="warning-list" wx:if="{{warningSection.tips && warningSection.tips.length}}">
+          <view class="warning-item" wx:for="{{warningSection.tips}}" wx:key="*this">
+            <view class="warning-mark"></view>
+            <text class="warning-tip">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="framing-card care-enter care-enter-d5" wx:if="{{framingTips.length || isCustom}}">
+        <text class="framing-overline">FRAMING</text>
+        <view class="framing-head">
+          <text class="framing-title">装裱补充</text>
+          <text class="framing-badge" wx:if="{{isCustom}}">定制框</text>
+        </view>
+        <text class="framing-desc" wx:if="{{framingName}}">当前框型：{{framingName}}</text>
+        <text class="framing-desc" wx:elif="{{isCustom}}">定制框体请以工坊说明为准，异常时联系专员，不建议自行拆框。</text>
+        <view class="checklist" wx:if="{{framingTips.length}}">
+          <view class="check-row" wx:for="{{framingTips}}" wx:key="*this">
+            <view class="check-mark brass"></view>
+            <text class="check-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="footer-note care-enter care-enter-d6">
+        <text>内容为安放建议，不构成保存保证</text>
+        <text>山海造物 Nature's Creations</text>
+      </view>
+    </view>
+
+    <view class="care-scroll-pad footer-aware"></view>
+  </scroll-view>
+
+  <view class="care-footer-bar guide-footer">
+    <view class="care-footer-btn secondary" hover-class="care-press" hover-stay-time="80" bindtap="goToHub">回养护</view>
+    <view class="care-footer-btn primary" hover-class="care-press" hover-stay-time="80" bindtap="goToSupport">
+      <image class="care-footer-icon" src="/subpackages/feature/assets/icons/care-on-brass.png" mode="aspectFit"></image>
+      <text>联系专员</text>
+    </view>
+  </view>
+</view>

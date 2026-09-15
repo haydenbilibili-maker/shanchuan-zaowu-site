@@ -1,0 +1,361 @@
+/* 礼赠 Hub · Museum Mode · 场景双列扫选 */
+page {
+  background: #1A1814;
+  color: #FFFFFF;
+}
+
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.scroll {
+  height: 100vh;
+  /* 底留白用 .scroll-pad spacer，勿把 safe-area 写在 scroll-view padding-bottom */
+  padding: 40rpx 32rpx 0;
+  box-sizing: border-box;
+}
+
+.checking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx 40rpx;
+  min-height: 100vh;
+}
+
+.state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  text-align: center;
+}
+
+.state-seal {
+  width: 48rpx;
+  height: 48rpx;
+  border: 2px solid rgba(196, 167, 108, 0.45);
+  border-radius: 50%;
+}
+
+.muted {
+  color: #A09A90;
+  font-size: 26rpx;
+}
+
+.hero-plate {
+  padding: 36rpx 28rpx;
+  background: #F2EDE4;
+  border: 1px solid #E0CFA3;
+  border-radius: 16rpx;
+  margin-bottom: 36rpx;
+}
+
+.overline {
+  display: block;
+  font-size: 20rpx;
+  color: #8A7530;
+  letter-spacing: 0.14em;
+  margin-bottom: 12rpx;
+}
+
+.title {
+  display: block;
+  font-size: 44rpx;
+  font-weight: 600;
+  color: #8A7530;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  margin-bottom: 12rpx;
+}
+
+.desc {
+  display: block;
+  font-size: 26rpx;
+  color: #6B6560;
+  line-height: 1.65;
+}
+
+.section-overline {
+  display: block;
+  font-size: 20rpx;
+  color: #8A7530;
+  letter-spacing: 0.12em;
+  margin-bottom: 6rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  margin-bottom: 20rpx;
+}
+
+.section-title.tight {
+  margin-bottom: 0;
+}
+
+.scene-block {
+  margin-bottom: 28rpx;
+}
+
+.scene-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.scene-chip {
+  padding: 10rpx 20rpx;
+  border: 1px solid rgba(196, 167, 108, 0.4);
+  border-radius: 8rpx;
+  background: transparent;
+}
+
+.scene-chip text {
+  font-size: 24rpx;
+  color: #A09A90;
+  letter-spacing: 0.02em;
+}
+
+.scene-chip.on {
+  border-color: #C4A76C;
+  background: rgba(196, 167, 108, 0.12);
+}
+
+.scene-chip.on text {
+  color: #C4A76C;
+}
+
+.scene-guide {
+  display: block;
+  font-size: 24rpx;
+  color: #D5D1C8;
+  line-height: 1.55;
+}
+
+.match-block {
+  margin-bottom: 40rpx;
+  padding-top: 24rpx;
+  border-top: 1px solid rgba(38, 35, 32, 0.9);
+}
+
+.match-head {
+  margin-bottom: 4rpx;
+}
+
+.match-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-bottom: 12rpx;
+}
+
+.match-link {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: #C4A76C;
+  letter-spacing: 0.04em;
+  padding: 4rpx 0;
+  border-bottom: 1px solid rgba(196, 167, 108, 0.4);
+}
+
+.match-hint {
+  display: block;
+  font-size: 22rpx;
+  color: #6B6560;
+  margin-bottom: 16rpx;
+  line-height: 1.45;
+}
+
+.match-loading,
+.match-empty {
+  padding: 28rpx 0;
+}
+
+.match-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28rpx;
+  margin-top: 20rpx;
+}
+
+/* 双列：用 padding 分栏，避免 flex+gap 把 50% 撑成单列 */
+.product-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -8rpx;
+}
+
+.product-card {
+  width: 50%;
+  box-sizing: border-box;
+  padding: 0 8rpx 16rpx;
+}
+
+.product-card-inner {
+  background: #1F1D1A;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.product-cover-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  background: #262320;
+}
+
+.product-cover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.product-badge {
+  position: absolute;
+  left: 10rpx;
+  top: 10rpx;
+  font-size: 18rpx;
+  letter-spacing: 0.04em;
+  border-radius: 6rpx;
+  padding: 2rpx 10rpx;
+  line-height: 1.4;
+}
+
+.product-badge.scene {
+  color: #1A1814;
+  background: rgba(196, 167, 108, 0.92);
+  border: none;
+}
+
+.product-badge.fallback {
+  color: #A09A90;
+  background: rgba(26, 24, 20, 0.72);
+  border: 1px solid rgba(106, 101, 96, 0.55);
+}
+
+.product-body {
+  padding: 12rpx 14rpx 14rpx;
+}
+
+.product-title {
+  display: block;
+  font-size: 24rpx;
+  color: #FFFFFF;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-price {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #C4A76C;
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+}
+
+.steps {
+  margin-bottom: 40rpx;
+}
+
+.step {
+  display: flex;
+  gap: 24rpx;
+  padding: 24rpx 0;
+  border-bottom: 1px solid rgba(38, 35, 32, 0.85);
+}
+
+.step:last-child {
+  border-bottom: none;
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #C4A76C;
+  border: 1px solid rgba(196, 167, 108, 0.35);
+  border-radius: 12rpx;
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+}
+
+.step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  margin-bottom: 8rpx;
+}
+
+.step-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #A09A90;
+  line-height: 1.5;
+}
+
+.cta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-top: 8rpx;
+}
+
+.btn-primary {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #C4A76C;
+  color: #1A1814;
+  font-size: 30rpx;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  border-radius: 16rpx;
+}
+
+.btn-primary:active {
+  background: #A8903C;
+}
+
+.btn-secondary {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #C4A76C;
+  font-size: 28rpx;
+  border: 1px solid rgba(196, 167, 108, 0.45);
+  border-radius: 16rpx;
+}
+
+.btn-secondary:active {
+  opacity: 0.85;
+}
+
+.scroll-pad {
+  width: 100%;
+  height: calc(64rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}

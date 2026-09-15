@@ -1,24 +1,27 @@
 const cloud = require('wx-server-sdk')
+const { assertStaff } = require('./staffGuard')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-function getAdminOpenids() {
-  const env = process.env.MESSAGE_ADMIN_OPENIDS || ''
-  return env.split(',').map((s) => s.trim()).filter(Boolean)
-}
-
-function isAdmin(openid) {
-  const admins = getAdminOpenids()
-  if (!admins.length) return true
-  return admins.includes(openid)
-}
-
 function startOfLocalDayMs() {
   const d = new Date()
   d.setHours(0, 0, 0, 0)
   return d.getTime()
+}
+
+async function resolveStoreName(db, storeId, provided) {
+  const given = String(provided || '').trim()
+  if (given) return given
+  if (!storeId) return '门店'
+  try {
+    const res = await db.collection('stores').where({ storeId }).limit(1).get()
+    const row = res.data && res.data[0]
+    const fromDb = row && String(row.name || '').trim()
+    if (fromDb) return fromDb
+  } catch (e) {}
+  return '门店'
 }
 
 async function dispatchVisitThanks(openid, storeId, storeName) {
@@ -30,7 +33,7 @@ async function dispatchVisitThanks(openid, storeId, storeName) {
         eventType: 'store_visit_thanks',
         openid,
         relatedId: storeId,
-        vars: { storeName: storeName || '山海造物' }
+        vars: { storeName: storeName || '门店' }
       }
     })
   } catch (e) {
@@ -60,7 +63,11 @@ exports.main = async (event) => {
   }
 
   if (action === 'getTodayStats') {
-    if (!isAdmin(openid)) return { success: false, msg: '无管理权限' }
+    const guard = await assertStaff(db, openid, {
+      permission: 'viewStoreVisits',
+      storeId
+    })
+    if (!guard.ok) return { success: false, code: guard.code, msg: guard.msg }
     const since = startOfLocalDayMs()
     try {
       const res = await db.collection('store_visits').where({ visitAt: _.gte(since) }).get()
@@ -100,9 +107,22 @@ exports.main = async (event) => {
       }
     })
 
-    await dispatchVisitThanks(openid, storeId, storeName)
+    const resolvedName = await resolveStoreName(db, storeId, storeName)
+    await dispatchVisitThanks(openid, storeId, resolvedName)
 
-    return { success: true, already: false }
+    let atlas = null
+    try {
+      const ar = await cloud.callFunction({
+        name: 'manageAtlas',
+        data: { action: 'collectAfterVisit', openid, storeName: resolvedName }
+      })
+      const payload = (ar && ar.result) || {}
+      atlas = (payload.data && payload.data.encounter) || payload.encounter || null
+    } catch (e) {
+      console.warn('atlas after visit skipped', e.message)
+    }
+
+    return { success: true, already: false, atlas }
   } catch (e) {
     console.error('storeCheckIn', e)
     if (/collection|集合/.test(e.message || '')) {

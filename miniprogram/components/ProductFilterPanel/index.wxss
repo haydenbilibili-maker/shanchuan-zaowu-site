@@ -1,0 +1,351 @@
+/* Museum Mode 筛选面板 — 深色底 + 黄铜选中；布局兼容微信基础库 */
+
+.filter-root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 10050; /* 高于 custom-tab-bar(9999)，避免底栏被挡住 */
+}
+
+.filter-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(26, 24, 20, 0.78);
+}
+
+.filter-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 80vh;
+  max-height: 90vh;
+  background: #1A1814;
+  border-radius: 24rpx 24rpx 0 0;
+  border-top: 1px solid #4D401A;
+  overflow: hidden;
+  box-sizing: border-box;
+  /* 不用 flex 撑满：微信里 scroll-view + flex 易把 footer 挤出视口 */
+}
+
+.filter-head {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 96rpx;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1A1814;
+  border-bottom: 1px solid rgba(38, 35, 32, 0.8);
+  box-sizing: border-box;
+}
+
+.filter-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  letter-spacing: 0.06em;
+}
+
+.filter-close {
+  position: absolute;
+  right: 16rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+}
+
+.filter-close text {
+  font-size: 44rpx;
+  color: #A09A90;
+  line-height: 1;
+}
+
+.filter-close-press {
+  background: #262320;
+}
+
+/* 中间区：避开顶栏与底栏 */
+.filter-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 96rpx;
+  bottom: 128rpx;
+  bottom: calc(128rpx + constant(safe-area-inset-bottom));
+  bottom: calc(128rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+}
+
+.filter-left {
+  width: 180rpx;
+  flex-shrink: 0;
+  height: 100%;
+  background: #1F1D1A;
+  border-right: 1px solid rgba(38, 35, 32, 0.9);
+}
+
+.dim-item {
+  padding: 32rpx 12rpx;
+  text-align: center;
+  position: relative;
+}
+
+.dim-item text {
+  font-size: 26rpx;
+  color: #A09A90;
+}
+
+.dim-item.active {
+  background: #1A1814;
+}
+
+.dim-item.active text {
+  color: #C4A76C;
+  font-weight: 500;
+}
+
+.dim-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 24rpx;
+  bottom: 24rpx;
+  width: 4rpx;
+  background: #C4A76C;
+  border-radius: 2rpx;
+}
+
+.filter-right {
+  flex: 1;
+  width: 0; /* 配合 flex 占满剩余宽度，避免子项撑破 */
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.filter-right-inner {
+  padding: 24rpx 24rpx 32rpx;
+  box-sizing: border-box;
+}
+
+.section-title {
+  display: block;
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+  letter-spacing: 0.04em;
+}
+
+.section-hint {
+  display: block;
+  font-size: 22rpx;
+  color: #6B6560;
+  margin-bottom: 20rpx;
+  line-height: 1.4;
+}
+
+/* 2 列自适应：不用 gap/calc，兼容基础库 */
+.chip-grid {
+  width: 100%;
+  overflow: hidden;
+}
+
+.chip {
+  float: left;
+  width: 48%;
+  margin-right: 4%;
+  margin-bottom: 16rpx;
+  box-sizing: border-box;
+  min-height: 72rpx;
+  padding: 18rpx 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #262320;
+  border: 2rpx solid rgba(77, 64, 26, 0.45);
+  border-radius: 12rpx;
+}
+
+.chip:nth-child(2n) {
+  margin-right: 0;
+}
+
+.chip text {
+  font-size: 26rpx;
+  color: #D5D1C8;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.chip.on {
+  background: rgba(196, 167, 108, 0.18);
+  border-color: #C4A76C;
+}
+
+.chip.on text {
+  color: #C4A76C;
+  font-weight: 600;
+}
+
+.price-preset-grid {
+  width: 100%;
+  overflow: hidden;
+  margin-top: 12rpx;
+  margin-bottom: 28rpx;
+}
+
+.price-preset {
+  float: left;
+  width: 48%;
+  margin-right: 4%;
+  margin-bottom: 16rpx;
+  box-sizing: border-box;
+  min-height: 88rpx;
+  padding: 20rpx 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #262320;
+  border: 2rpx solid rgba(77, 64, 26, 0.45);
+  border-radius: 12rpx;
+}
+
+.price-preset:nth-child(2n) {
+  margin-right: 0;
+}
+
+.price-preset-label {
+  font-size: 26rpx;
+  color: #D5D1C8;
+  text-align: center;
+}
+
+.price-preset.on {
+  background: rgba(196, 167, 108, 0.18);
+  border-color: #C4A76C;
+}
+
+.price-preset.on .price-preset-label {
+  color: #C4A76C;
+  font-weight: 600;
+}
+
+.price-custom {
+  display: flex;
+  align-items: center;
+  clear: both;
+  gap: 0;
+}
+
+.price-input {
+  flex: 1;
+  height: 72rpx;
+  background: #1F1D1A;
+  border: 2rpx solid rgba(77, 64, 26, 0.55);
+  border-radius: 12rpx;
+  padding: 0 16rpx;
+  font-size: 26rpx;
+  color: #FFFFFF;
+  text-align: center;
+}
+
+.price-ph {
+  color: #6B6560;
+  font-size: 24rpx;
+}
+
+.price-dash {
+  color: #6B6560;
+  font-size: 28rpx;
+  padding: 0 12rpx;
+  flex-shrink: 0;
+}
+
+.empty-hint {
+  padding: 48rpx 16rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #6B6560;
+}
+
+/* 固定底栏：始终贴面板底部，不被 scroll 挤走 */
+.filter-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(77, 64, 26, 0.55);
+  background: #1A1814;
+}
+
+.btn-clear {
+  flex: 1;
+  height: 88rpx;
+  margin-right: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+  background: transparent;
+  border: 2rpx solid #C4A76C;
+  box-sizing: border-box;
+}
+
+.btn-clear text {
+  font-size: 28rpx;
+  color: #C4A76C;
+  font-weight: 500;
+}
+
+.btn-confirm {
+  flex: 1.35;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+  background: #C4A76C;
+  box-sizing: border-box;
+}
+
+.btn-confirm text {
+  font-size: 28rpx;
+  color: #1A1814;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.btn-press {
+  opacity: 0.88;
+  transform: scale(0.98);
+}
+
+.clearfix::after {
+  content: '';
+  display: table;
+  clear: both;
+}

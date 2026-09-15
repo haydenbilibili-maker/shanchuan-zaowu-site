@@ -1,0 +1,22 @@
+@import "./scene.wxss";
+
+page {
+  background: var(--color-bg);
+  color: var(--color-text-body);
+}
+
+.container {
+  min-height: 100vh;
+  padding: 0 var(--space-4) calc(120rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* 工作台首屏扫码 CTA：复用 field .scan-cta，略抬视觉权重 */
+.hub-scan-cta {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.hub-scan-cta .scan-cta-btn {
+  letter-spacing: 0.08em;
+}

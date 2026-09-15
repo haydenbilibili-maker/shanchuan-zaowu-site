@@ -1,0 +1,16 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "source": "manageStoreContent",
+  "dryRun": false,
+  "at": "2026-09-15T06:36:32.404Z",
+  "results": [
+    {
+      "name": "getStoreQRCode",
+      "status": "merged",
+      "keysBefore": [],
+      "keysAfter": [
+        "ADMIN_OPS_KEY"
+      ]
+    }
+  ]
+}

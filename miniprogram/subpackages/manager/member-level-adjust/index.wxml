@@ -1,0 +1,232 @@
+<view class="container" wx:if="{{ready}}">
+
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">MEMBER LEVEL ADJUST</text>
+      <text class="cn">会员等级调整</text>
+    </view>
+    <text class="header-note">搜会员 → 选档调级 · floor 保留自动升级 · 需授权密码 · 仅超管</text>
+  </view>
+
+  <view class="hint-card info">
+    <text class="hint-text">本页仅调 Lv1–Lv6。荣誉馆长请走「荣誉馆长名单」；从馆长调离会同步移出名单。</text>
+  </view>
+
+  <!-- ① 找会员（主操作） -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">① 找会员</text>
+      <text class="section-meta" wx:if="{{searched && !searching}}">{{members.length}} 人</text>
+    </view>
+    <view class="search-row">
+      <input
+        class="search-input"
+        placeholder="手机号 / openid / 昵称"
+        placeholder-class="field-placeholder"
+        value="{{keyword}}"
+        bindinput="onKeywordInput"
+        bindconfirm="doSearch"
+        confirm-type="search"
+        focus="{{false}}"
+      />
+      <view class="btn-primary search-btn {{searching ? 'disabled' : ''}}" bindtap="doSearch">{{searching ? '…' : '搜索'}}</view>
+      <view class="btn-outline search-btn" wx:if="{{keyword}}" bindtap="clearKeyword">清空</view>
+    </view>
+  </view>
+
+  <view class="loading-hint" wx:if="{{searching}}">搜索中…</view>
+
+  <view class="section empty-find" wx:elif="{{searched && !members.length}}">
+    <text class="empty-title">未找到匹配会员</text>
+    <text class="empty-desc">{{searchMsg || '试试完整手机号、openid 或昵称关键词'}}</text>
+  </view>
+
+  <view class="section" wx:elif="{{!searched && !searching}}">
+    <view class="empty-find soft">
+      <text class="empty-title">先搜索再调档</text>
+      <text class="empty-desc">找到会员后点「调整等级」，在弹层里选目标档与模式</text>
+    </view>
+  </view>
+
+  <!-- 会员结果 -->
+  <view class="section" wx:if="{{!searching && members.length}}">
+    <view class="section-head">
+      <text class="section-title">② 选择并调整</text>
+      <text class="section-meta">点卡片操作</text>
+    </view>
+
+    <view class="member-card" wx:for="{{members}}" wx:key="_id">
+      <view class="member-top">
+        <image wx:if="{{item.hasAvatar}}" class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+        <view wx:else class="avatar placeholder"><text>{{item.avatarInitial}}</text></view>
+        <view class="member-main">
+          <view class="member-name-row">
+            <text class="member-name">{{item.nickName || '藏家'}}</text>
+            <text class="tag {{item.overrideClass}}" wx:if="{{item.overrideLabel}}">{{item.overrideLabel}}</text>
+          </view>
+          <text class="mono">{{item.phoneMasked || '无手机号'}} · {{item.openidMasked}}</text>
+          <view class="level-pill-row">
+            <text class="level-pill">当前 {{item.levelName || ('Lv' + item.level)}}</text>
+            <text class="discount-pill">{{item.discountLabel || '无折扣'}}</text>
+          </view>
+          <text class="member-natural">{{item.naturalLine}}</text>
+        </view>
+      </view>
+      <view class="member-actions">
+        <view class="btn-primary act" data-index="{{index}}" bindtap="openAdjust">调整等级</view>
+        <view
+          class="btn-danger act"
+          wx:if="{{item.hasOverride}}"
+          data-index="{{index}}"
+          bindtap="openClear"
+        >清除覆盖</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 档位速览：横向芯片，非长文档 -->
+  <view class="section compact" wx:if="{{paidLevels.length}}">
+    <view class="section-head">
+      <text class="section-title">档位速览</text>
+      <text class="section-meta">{{levelsSource || 'member_levels'}}</text>
+    </view>
+    <scroll-view scroll-x class="chip-scroll" enable-flex="{{true}}" show-scrollbar="{{false}}">
+      <view class="chip-row">
+        <view class="level-chip" wx:for="{{paidLevels}}" wx:key="level">
+          <text class="chip-lv">Lv{{item.level}}</text>
+          <text class="chip-name">{{item.name}}</text>
+          <text class="chip-meta">{{item.discountLabel}} · {{item.threshold}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <text class="tip">调档时在弹层点选目标档；{{honoraryName || '荣誉馆长'}}请走专用名单页</text>
+  </view>
+
+  <!-- 操作日志 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">最近操作</text>
+      <view class="section-action" bindtap="loadOps">刷新</view>
+    </view>
+    <view class="loading-hint" wx:if="{{opsLoading && !opsList.length}}">加载中…</view>
+    <view class="ops-row" wx:for="{{opsList}}" wx:key="_id">
+      <view class="ops-left">
+        <text class="ops-action {{item.actionClass}}">{{item.actionLabel || item.action}}</text>
+        <text class="ops-change">{{item.changeText}}</text>
+        <text class="ops-who">{{item.nickName || item.phoneMasked || item.openidMasked || '—'}}</text>
+      </view>
+      <view class="ops-right">
+        <text class="ops-meta">{{item.operatorName || '—'}}</text>
+        <text class="ops-meta">{{item.timeText}}</text>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!opsLoading && !opsList.length}}">暂无操作日志</view>
+  </view>
+
+</view>
+
+<!-- 调整弹层：等级点选卡片 -->
+<view class="modal-mask" wx:if="{{showAdjustModal}}">
+  <view class="modal-backdrop" catchtouchmove="noop" bindtap="closeModals"></view>
+  <view class="modal-sheet" catchtap="noop">
+    <view class="modal-head">
+      <text class="modal-title">调整会员等级</text>
+      <text class="modal-sub" wx:if="{{adjustTarget}}">
+        {{adjustTarget.nickName}} · 当前 {{adjustTarget.levelName}} · {{adjustTarget.discountLabel}}
+      </text>
+      <text class="modal-sub warn" wx:if="{{adjustTarget.isHonorary}}">
+        当前为荣誉馆长；确认后将移出名单并写入目标付费档
+      </text>
+    </view>
+    <scroll-view scroll-y class="modal-body" show-scrollbar="{{false}}">
+      <view class="field">
+        <text class="field-label">目标等级（点选）</text>
+        <view class="pick-grid">
+          <view
+            class="pick-card {{adjustForm.targetLevel === item.level ? 'on' : ''}}"
+            wx:for="{{paidLevels}}"
+            wx:key="level"
+            data-level="{{item.level}}"
+            data-index="{{index}}"
+            bindtap="onLevelCardTap"
+          >
+            <text class="pick-lv">Lv{{item.level}}</text>
+            <text class="pick-name">{{item.name}}</text>
+            <text class="pick-meta">门槛 {{item.threshold}} · {{item.discountLabel}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="field">
+        <text class="field-label">调整模式</text>
+        <view class="mode-row">
+          <view class="mode-chip {{adjustForm.modeFloor ? 'on' : ''}}" bindtap="setModeFloor">成长下限</view>
+          <view class="mode-chip {{adjustForm.modeExact ? 'on' : ''}}" bindtap="setModeExact">强制锁定</view>
+        </view>
+        <text class="tip">下限：自然成长更高仍可升级。锁定：固定到目标档直至清除。</text>
+      </view>
+      <view class="field">
+        <text class="field-label">备注（可选）</text>
+        <textarea
+          class="field-textarea"
+          maxlength="200"
+          placeholder="如：客诉补偿 / 测试账号"
+          placeholder-class="field-placeholder"
+          value="{{adjustForm.note}}"
+          bindinput="onAdjustNoteInput"
+          auto-height="{{false}}"
+          show-confirm-bar="{{false}}"
+          adjust-position="{{true}}"
+        />
+      </view>
+      <view class="field">
+        <text class="field-label">授权密码（必填）</text>
+        <input
+          class="field-input"
+          password
+          placeholder="与荣誉馆长授权密码相同"
+          placeholder-class="field-placeholder"
+          value="{{adjustForm.password}}"
+          bindinput="onAdjustPasswordInput"
+          bindconfirm="confirmAdjust"
+          adjust-position="{{true}}"
+        />
+      </view>
+    </scroll-view>
+    <view class="modal-foot">
+      <view class="btn-outline" bindtap="closeModals">取消</view>
+      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmAdjust">确认调整</view>
+    </view>
+  </view>
+</view>
+
+<!-- 清除覆盖 -->
+<view class="modal-mask" wx:if="{{showClearModal}}">
+  <view class="modal-backdrop" catchtouchmove="noop" bindtap="closeModals"></view>
+  <view class="modal-sheet" catchtap="noop">
+    <view class="modal-head">
+      <text class="modal-title">清除等级覆盖</text>
+      <text class="modal-sub" wx:if="{{clearTarget}}">
+        将清除 {{clearTarget.nickName}} 的人工覆盖，等级按自然成长值恢复
+      </text>
+    </view>
+    <scroll-view scroll-y class="modal-body" show-scrollbar="{{false}}">
+      <view class="field">
+        <text class="field-label">授权密码（必填）</text>
+        <input
+          class="field-input"
+          password
+          placeholder="请输入授权密码"
+          placeholder-class="field-placeholder"
+          value="{{clearPassword}}"
+          bindinput="onClearPasswordInput"
+          bindconfirm="confirmClear"
+          adjust-position="{{true}}"
+        />
+      </view>
+    </scroll-view>
+    <view class="modal-foot">
+      <view class="btn-outline" bindtap="closeModals">取消</view>
+      <view class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmClear">确认清除</view>
+    </view>
+  </view>
+</view>

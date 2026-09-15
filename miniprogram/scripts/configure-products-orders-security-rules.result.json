@@ -1,0 +1,138 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "at": "2026-09-13T16:26:59.920Z",
+  "dryRun": true,
+  "mode": "collection-level-write-false",
+  "goal": {
+    "products": "客户端不可改 isOffShelf（集合级 write:false 覆盖）",
+    "orders": "客户端不可改退款态/金额（集合级 write:false 覆盖）"
+  },
+  "originalBeforeSnapshot": {
+    "products": {
+      "permission": "CUSTOM",
+      "securityRule": "{\n  \"read\": true,\n  \"write\": true\n}",
+      "securityRuleNormalized": "{\"read\":true,\"write\":true}"
+    },
+    "orders": {
+      "permission": "CUSTOM",
+      "securityRule": "{\n  \"read\": \"auth != null\",\n  \"write\": \"auth != null\"\n}",
+      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":\"auth != null\"}"
+    }
+  },
+  "desiredRules": {
+    "products": {
+      "read": true,
+      "write": false
+    },
+    "orders": {
+      "read": "auth != null",
+      "write": false
+    }
+  },
+  "fieldLevelDesiredNotApplied": {
+    "products": {
+      "read": true,
+      "create": "auth != null && request.data.isOffShelf == true",
+      "update": "auth != null && (request.data.isOffShelf == undefined || doc.isOffShelf == request.data.isOffShelf)",
+      "delete": false
+    },
+    "orders": {
+      "read": "auth != null",
+      "create": false,
+      "update": "auth != null && (request.data.status == undefined || request.data.status == doc.status || !(request.data.status in ['refunding','refunded','refund_approved','aftersales'])) && (request.data.refundTime == undefined || doc.refundTime == request.data.refundTime) && (request.data.refundNo == undefined || doc.refundNo == request.data.refundNo) && (request.data.refundFee == undefined || doc.refundFee == request.data.refundFee) && (request.data.refundDeduct == undefined || doc.refundDeduct == request.data.refundDeduct) && (request.data.refundDeductRate == undefined || doc.refundDeductRate == request.data.refundDeductRate) && (request.data.refundPolicyType == undefined || doc.refundPolicyType == request.data.refundPolicyType) && (request.data.refundMock == undefined || doc.refundMock == request.data.refundMock) && (request.data.wxRefundResult == undefined || doc.wxRefundResult == request.data.wxRefundResult) && (request.data.refundApprovalId == undefined || doc.refundApprovalId == request.data.refundApprovalId) && (request.data.refundPendingApproval == undefined || doc.refundPendingApproval == request.data.refundPendingApproval) && (request.data.refundRequestedAt == undefined || doc.refundRequestedAt == request.data.refundRequestedAt) && (request.data.refundRequestNote == undefined || doc.refundRequestNote == request.data.refundRequestNote) && (request.data.refundAmount == undefined || doc.refundAmount == request.data.refundAmount) && (request.data.refund == undefined || doc.refund == request.data.refund)",
+      "delete": false
+    }
+  },
+  "fieldLevelBlocker": {
+    "observed": "modifyResourcePermission(Success:true) + describe 不回显含 request.data 的规则",
+    "implication": "本环境无法用 API 落库字段级锁；已回退集合级 write:false",
+    "probedAt": "2026-09-10"
+  },
+  "beforeLive": {
+    "products": {
+      "permission": "CUSTOM",
+      "securityRule": "{\"read\":true,\"write\":false}",
+      "securityRuleNormalized": "{\"read\":true,\"write\":false}"
+    },
+    "orders": {
+      "permission": "CUSTOM",
+      "securityRule": "{\"read\":\"auth != null\",\"write\":false}",
+      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":false}"
+    }
+  },
+  "applyResults": [
+    {
+      "collection": "products",
+      "op": "modifyResourcePermission",
+      "result": "skipped",
+      "success": false,
+      "note": "dry-run"
+    },
+    {
+      "collection": "orders",
+      "op": "modifyResourcePermission",
+      "result": "skipped",
+      "success": false,
+      "note": "dry-run"
+    }
+  ],
+  "after": {
+    "products": {
+      "permission": "CUSTOM",
+      "securityRule": "{\"read\":true,\"write\":false}",
+      "securityRuleNormalized": "{\"read\":true,\"write\":false}"
+    },
+    "orders": {
+      "permission": "CUSTOM",
+      "securityRule": "{\"read\":\"auth != null\",\"write\":false}",
+      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":false}"
+    }
+  },
+  "verify": [
+    {
+      "collection": "products",
+      "matched": true,
+      "beforeLive": {
+        "permission": "CUSTOM",
+        "securityRule": "{\"read\":true,\"write\":false}",
+        "securityRuleNormalized": "{\"read\":true,\"write\":false}"
+      },
+      "after": {
+        "permission": "CUSTOM",
+        "securityRule": "{\"read\":true,\"write\":false}",
+        "securityRuleNormalized": "{\"read\":true,\"write\":false}"
+      },
+      "desiredNormalized": "{\"read\":true,\"write\":false}"
+    },
+    {
+      "collection": "orders",
+      "matched": true,
+      "beforeLive": {
+        "permission": "CUSTOM",
+        "securityRule": "{\"read\":\"auth != null\",\"write\":false}",
+        "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":false}"
+      },
+      "after": {
+        "permission": "CUSTOM",
+        "securityRule": "{\"read\":\"auth != null\",\"write\":false}",
+        "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":false}"
+      },
+      "desiredNormalized": "{\"read\":\"auth != null\",\"write\":false}"
+    }
+  ],
+  "appliedToCloud": false,
+  "configEchoMatchesDesired": false,
+  "cSideNotes": [
+    "商品读列表/详情：可用（products.read=true）",
+    "下单：可用（makeOrder 云函数；orders.write=false）",
+    "订单读：登录后可用（orders.read=auth!=null）",
+    "退款申请/执行：可用（refundOrder 云函数）",
+    "确认收货客户端直写 orders：会失败，需迁云函数",
+    "店长端商品/订单生产态客户端直写：会失败，需迁云函数"
+  ],
+  "notes": [
+    "云函数写不受客户端安全规则限制",
+    "字段级愿望稿见 database-rules/*.field-level.desired.json",
+    "勿把 Success:true 当作已落库；必须以 describe 回读为准"
+  ]
+}

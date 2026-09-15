@@ -2,5 +2,7 @@
   "name": "toggleCollection",
   "version": "1.0.0",
   "main": "index.js",
-  "dependencies": { "wx-server-sdk": "~2.6.3" }
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
 }

@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "山海有信",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "backgroundTextStyle": "light",
+  "disableScroll": true,
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814"
+}

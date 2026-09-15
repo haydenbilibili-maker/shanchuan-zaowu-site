@@ -1,0 +1,99 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">加载中…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">BOOKING RULES</text>
+        <text class="cn">预约规则</text>
+      </view>
+      <text class="header-note">时段 / 日上限 / 闭店日 · 与预约可用性同源 · 仅超管</text>
+    </view>
+
+    <view class="store-tabs">
+      <view
+        class="store-tab {{storeId === item.storeId ? 'on' : ''}}"
+        wx:for="{{stores}}"
+        wx:key="storeId"
+        data-id="{{item.storeId}}"
+        bindtap="switchStore"
+      >{{item.name}}</view>
+    </view>
+
+    <view class="preview" wx:if="{{ruleText}}">{{ruleText}}</view>
+    <view class="meta-line" wx:if="{{fromDefault}}">当前为代码默认，保存后写入 store_booking_rules</view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">预约窗口</text>
+      </view>
+      <view class="form-row">
+        <text class="form-label">每日总上限</text>
+        <input class="input sm" type="number" value="{{rules.maxPerDay}}" data-field="maxPerDay" bindinput="onNumber" />
+      </view>
+      <view class="form-hint">0 表示不限制日总人数</view>
+      <view class="form-row">
+        <text class="form-label">可提前天数</text>
+        <input class="input sm" type="number" value="{{rules.advanceDays}}" data-field="advanceDays" bindinput="onNumber" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">最少提前（小时）</text>
+        <input class="input sm" type="number" value="{{rules.minAdvanceHours}}" data-field="minAdvanceHours" bindinput="onNumber" />
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">时段模板</text>
+        <view class="workbench-section-head-action">
+          <view class="workbench-btn-outline sm" bindtap="addSlot">添加</view>
+        </view>
+      </view>
+      <view class="form-hint" wx:if="{{!rules.visitSlots.length}}">暂无时段，点击「添加」</view>
+      <view class="row-card" wx:for="{{rules.visitSlots}}" wx:key="start">
+        <view class="row-card-head">
+          <text class="row-card-title">时段 {{index + 1}}</text>
+          <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeSlot">移除</view>
+        </view>
+        <view class="row-line">
+          <view class="field"><text class="field-label">开始</text>
+            <input class="input sm" placeholder="10:00" value="{{item.start}}" data-index="{{index}}" data-field="start" bindinput="onSlotField" />
+          </view>
+          <view class="field"><text class="field-label">名额</text>
+            <input class="input sm" type="number" value="{{item.capacity}}" data-index="{{index}}" data-field="capacity" bindinput="onSlotField" />
+          </view>
+          <view class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="toggleSlot">{{item.enabled ? '启用' : '停用'}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">闭店日</text>
+      </view>
+      <view class="row-line closed-add">
+        <input class="input flex" placeholder="YYYY-MM-DD" value="{{newClosedDate}}" bindinput="onClosedDateInput" />
+        <view class="workbench-btn-outline sm" bindtap="addClosedDate">添加</view>
+      </view>
+      <view class="row-card" wx:for="{{rules.closedDates}}" wx:key="*this">
+        <view class="row-line">
+          <text class="form-label">{{item}}</text>
+          <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeClosedDate">移除</view>
+        </view>
+      </view>
+      <view class="form-hint" wx:if="{{!rules.closedDates.length}}">暂无闭店日；周末默认可约</view>
+    </view>
+
+    <view class="workbench-page-foot-spacer"></view>
+  </view>
+
+  <view class="workbench-footer-bar">
+    <view
+      class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}"
+      bindtap="saveConfig"
+    >{{saving ? '保存中…' : '保存预约规则'}}</view>
+    <view class="workbench-footer-secondary">
+      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadRules">{{loading ? '刷新中…' : '刷新'}}</view>
+    </view>
+  </view>
+</view>

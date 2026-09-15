@@ -1,7 +1,0 @@
-{
-  "navigationBarTitleText": "标本档案",
-  "navigationStyle": "custom",
-  "usingComponents": {
-    "mp-html": "/components/mp-html/index"
-  }
-}

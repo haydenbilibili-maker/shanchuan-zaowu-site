@@ -1,0 +1,1506 @@
+/* subpackages/feature/user/achievements/index.wxss — Museum Mode */
+page {
+  background: var(--color-bg, #1A1814);
+  color: var(--color-text-primary, #FFFFFF);
+}
+
+.page-achievements {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  background: var(--color-bg, #1A1814);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* —— 导航 —— */
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-sizing: border-box;
+  padding-left: 32rpx;
+  background: rgba(26, 24, 20, 0.96);
+  border-bottom: 1px solid rgba(38, 35, 32, 0.72);
+  backdrop-filter: blur(12px);
+  overflow: visible;
+}
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-height: 44px;
+}
+
+.share-btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.share-btn-press {
+  opacity: 0.7;
+}
+
+.nav-brand {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.nav-title {
+  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
+  font-size: 36rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text-primary, #FFFFFF);
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-sub {
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-style: italic;
+}
+
+.share-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+/* 分享引导气泡 */
+.share-tip {
+  position: absolute;
+  right: 24rpx;
+  top: 100%;
+  margin-top: 8rpx;
+  z-index: 120;
+  max-width: 420rpx;
+}
+
+.share-tip-arrow {
+  width: 0;
+  height: 0;
+  margin-left: auto;
+  margin-right: 18rpx;
+  border-left: 10rpx solid transparent;
+  border-right: 10rpx solid transparent;
+  border-bottom: 12rpx solid var(--color-bg-elevated, #262320);
+}
+
+.share-tip-body {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 14rpx 16rpx 14rpx 18rpx;
+  background: var(--color-bg-elevated, #262320);
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 12rpx;
+  box-sizing: border-box;
+}
+
+.share-tip-icon {
+  width: 22rpx;
+  height: 22rpx;
+  flex-shrink: 0;
+}
+
+.share-tip-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 22rpx;
+  color: var(--color-text-body, #D5D1C8);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.share-tip-close {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.share-tip-close-press {
+  opacity: 0.65;
+}
+
+.share-tip-close-icon {
+  width: 22rpx;
+  height: 22rpx;
+}
+
+.content {
+  height: 100vh;
+  box-sizing: border-box;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+/* —— 总览卡 —— */
+.overview-card {
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 24rpx;
+  padding: 28rpx 32rpx 28rpx;
+  margin-bottom: 28rpx;
+  box-sizing: border-box;
+}
+
+.overview-kicker {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.overview-kicker-line {
+  flex: 1;
+  height: 1px;
+  background: var(--brass-800, #4D401A);
+  opacity: 0.65;
+}
+
+.overview-kicker-meta {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.title-overline {
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-style: italic;
+  flex-shrink: 0;
+}
+
+.title-main {
+  display: block;
+  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
+  font-size: 40rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #FFFFFF);
+  letter-spacing: 0.06em;
+  margin-bottom: 24rpx;
+  line-height: 1.2;
+}
+
+.overview-stats {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 20rpx 4rpx 22rpx;
+  margin-bottom: 22rpx;
+  border-top: 1px solid var(--color-bg-elevated, #262320);
+  border-bottom: 1px solid var(--color-bg-elevated, #262320);
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.stat-val {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 40rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #FFFFFF);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.stat-val.muted {
+  color: var(--color-text-secondary, #A09A90);
+}
+
+.stat-val.accent {
+  color: var(--brass-400, #C4A76C);
+}
+
+.stat-label {
+  font-size: 22rpx;
+  color: var(--color-text-secondary, #A09A90);
+  letter-spacing: 0.04em;
+}
+
+.stat-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 8rpx 0;
+  background: var(--color-bg-elevated, #262320);
+}
+
+.overview-progress-wrapper {
+  margin-bottom: 20rpx;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12rpx;
+  gap: 16rpx;
+}
+
+.progress-label {
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+}
+
+.progress-percent {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--brass-400, #C4A76C);
+}
+
+.progress-track {
+  width: 100%;
+  height: 8rpx;
+  background: #33302C;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: 9999px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.progress-track.mini {
+  height: 6rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--brass-400, #C4A76C);
+  border-radius: 9999px;
+  transition: width 0.45s ease;
+}
+
+/* 累计积分：克制铭牌 */
+.overview-reward {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 16rpx 18rpx;
+  background: transparent;
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 12rpx;
+}
+
+.reward-icon-main {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+}
+
+.reward-label {
+  flex: 1;
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+  letter-spacing: 0.04em;
+}
+
+.reward-value {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--brass-400, #C4A76C);
+}
+
+/* —— 筛选条 —— */
+.filter-bar {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 28rpx;
+  padding: 6rpx;
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--color-bg-elevated, #262320);
+  border-radius: 16rpx;
+  box-sizing: border-box;
+}
+
+.filter-chip {
+  flex: 1;
+  min-height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 10rpx 12rpx;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12rpx;
+  box-sizing: border-box;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.filter-chip.active {
+  border-color: var(--brass-800, #4D401A);
+  background: rgba(196, 167, 108, 0.08);
+}
+
+.filter-chip-press {
+  opacity: 0.82;
+}
+
+.filter-chip-text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+  letter-spacing: 0.04em;
+}
+
+.filter-chip.active .filter-chip-text {
+  color: var(--brass-400, #C4A76C);
+  font-weight: 500;
+}
+
+.filter-chip-count {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 20rpx;
+  color: var(--color-text-muted, #6B6560);
+  line-height: 1;
+}
+
+.filter-chip.active .filter-chip-count {
+  color: var(--brass-400, #C4A76C);
+}
+
+.filter-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64rpx 32rpx 48rpx;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-action {
+  margin-top: 8rpx;
+  padding: 14rpx 28rpx;
+  border: 1px solid var(--brass-400, #C4A76C);
+  border-radius: 12rpx;
+}
+
+.empty-action-press {
+  opacity: 0.75;
+}
+
+.empty-action-text {
+  font-size: 24rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.04em;
+}
+
+/* —— 分区头 —— */
+.partition-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin: 4rpx 0 18rpx;
+}
+
+.partition-line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-bg-elevated, #262320);
+}
+
+.partition-label {
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.14em;
+  flex-shrink: 0;
+}
+
+.partition-label.muted {
+  color: var(--color-text-muted, #6B6560);
+}
+
+.partition-count {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  flex-shrink: 0;
+}
+
+.partition-count.muted {
+  color: var(--color-text-muted, #6B6560);
+}
+
+/* —— 分类头 —— */
+.achievements-section {
+  margin-bottom: 40rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 18rpx;
+  padding: 0 0 14rpx;
+  border-bottom: 1px solid var(--color-bg-elevated, #262320);
+}
+
+.section-icon {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.section-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.title-en {
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.title-cn {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: var(--color-text-primary, #FFFFFF);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 与「我的」页描边金角标气质一致 */
+.section-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2rpx;
+  min-height: 36rpx;
+  padding: 0 12rpx;
+  background: transparent;
+  border: 1px solid var(--brass-400, #C4A76C);
+  border-radius: 9999px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.count-unlocked {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--brass-400, #C4A76C);
+  line-height: 34rpx;
+}
+
+.count-separator,
+.count-total {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  opacity: 0.7;
+  line-height: 34rpx;
+}
+
+/* —— 成就卡（博物柜格 / 铜牌） —— */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+  margin-bottom: 12rpx;
+}
+
+.achievement-item {
+  position: relative;
+  background: #1C1A17;
+  border: 1px solid var(--color-bg-elevated, #262320);
+  border-radius: 16rpx;
+  padding: 32rpx 18rpx 22rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 已点亮：铜牌柜格 */
+.achievement-item.unlocked {
+  border-color: var(--brass-800, #4D401A);
+  background: #211E19;
+}
+
+.achievement-item.unlocked .plate-edge {
+  position: absolute;
+  left: 20rpx;
+  right: 20rpx;
+  top: 0;
+  height: 2rpx;
+  background: var(--brass-400, #C4A76C);
+  opacity: 0.55;
+}
+
+/* 未点亮：更沉、可读 */
+.achievement-item.locked {
+  opacity: 1;
+  background: var(--color-bg);
+  border-color: #2A2622;
+  border-style: dashed;
+}
+
+.achievement-item-press {
+  opacity: 0.88;
+}
+
+.badge-ring {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--brass-700, #6B5A24);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.badge-ring.dim {
+  border-color: #3A3530;
+  border-style: dashed;
+  background: transparent;
+}
+
+.achievement-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.achievement-item.locked .achievement-icon {
+  opacity: 0.45;
+}
+
+.lit-mark {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  z-index: 2;
+  width: 34rpx;
+  height: 34rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--brass-400, #C4A76C);
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.lit-mark.locked {
+  border-color: #3A3530;
+  background: transparent;
+}
+
+.status-icon {
+  width: 16rpx;
+  height: 16rpx;
+}
+
+.lit-mark.locked .status-icon {
+  opacity: 0.55;
+}
+
+.achievement-name {
+  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #FFFFFF);
+  text-align: center;
+  line-height: 1.3;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.achievement-item.locked .achievement-name {
+  font-weight: 500;
+  color: var(--color-text-body, #D5D1C8);
+}
+
+.achievement-desc {
+  font-size: 22rpx;
+  color: var(--color-text-secondary, #A09A90);
+  text-align: center;
+  line-height: 1.45;
+  min-height: 64rpx;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  width: 100%;
+  word-break: break-word;
+}
+
+.achievement-item.locked .achievement-desc {
+  color: var(--color-text-muted, #6B6560);
+}
+
+.achievement-progress {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-top: 2rpx;
+  padding: 12rpx;
+  background: transparent;
+  border: 1px solid #2A2622;
+  border-radius: 12rpx;
+  box-sizing: border-box;
+}
+
+.progress-header-mini {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  width: 100%;
+}
+
+.progress-label-mini {
+  font-size: 20rpx;
+  color: var(--color-text-muted, #6B6560);
+}
+
+.progress-percent-mini {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 20rpx;
+  font-weight: 600;
+  color: var(--brass-600, #8A7530);
+}
+
+.progress-text {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 20rpx;
+  color: var(--color-text-secondary, #A09A90);
+  text-align: center;
+}
+
+.remain-text {
+  font-size: 20rpx;
+  color: var(--brass-600, #8A7530);
+  text-align: center;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+}
+
+.achievement-reward {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 4rpx;
+}
+
+.reward-badge {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 14rpx;
+  background: transparent;
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 9999px;
+}
+
+.reward-icon {
+  width: 20rpx;
+  height: 20rpx;
+  flex-shrink: 0;
+}
+
+.reward-text {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--brass-400, #C4A76C);
+}
+
+/* —— 空状态 —— */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 32rpx;
+  gap: 16rpx;
+}
+
+.empty-icon-wrap {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.empty-icon {
+  width: 40rpx;
+  height: 40rpx;
+  opacity: 0.75;
+}
+
+.empty-title {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: var(--color-text-primary, #FFFFFF);
+}
+
+.empty-text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.retry-btn {
+  margin-top: 12rpx;
+  padding: 16rpx 36rpx;
+  background: transparent;
+  border: 1px solid var(--brass-400, #C4A76C);
+  border-radius: 16rpx;
+  color: var(--brass-400, #C4A76C);
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.retry-btn-press {
+  opacity: 0.75;
+}
+
+/* —— 骨架屏 —— */
+.skeleton-container {
+  width: 100%;
+}
+
+.skeleton-card {
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 24rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 28rpx;
+}
+
+.skeleton-kicker {
+  width: 40%;
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: var(--color-bg-elevated, #262320);
+  margin-bottom: 16rpx;
+}
+
+.skeleton-title-block {
+  width: 52%;
+  height: 36rpx;
+  border-radius: 8rpx;
+  background: var(--color-bg-elevated, #262320);
+  margin-bottom: 24rpx;
+}
+
+.skeleton-stats {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.skeleton-stat {
+  flex: 1;
+  height: 72rpx;
+  border-radius: 12rpx;
+  background: var(--color-bg-elevated, #262320);
+}
+
+.skeleton-progress {
+  height: 8rpx;
+  border-radius: 9999px;
+  background: var(--color-bg-elevated, #262320);
+  margin-bottom: 20rpx;
+}
+
+.skeleton-reward {
+  height: 64rpx;
+  border-radius: 12rpx;
+  background: var(--color-bg-elevated, #262320);
+}
+
+.skeleton-section {
+  margin-bottom: 32rpx;
+}
+
+.skeleton-section-header {
+  height: 48rpx;
+  border-radius: 12rpx;
+  background: var(--color-bg-elevated, #262320);
+  margin-bottom: 16rpx;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+}
+
+.skeleton-item {
+  height: 300rpx;
+  border-radius: 16rpx;
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--color-bg-elevated, #262320);
+}
+
+/* —— 详情弹窗（铜牌说明） —— */
+.achievement-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 24, 20, 0.88);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+.achievement-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  position: relative;
+  width: 86%;
+  max-width: 640rpx;
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 24rpx;
+  padding: 40rpx 28rpx 32rpx;
+  box-sizing: border-box;
+}
+
+.modal-content.dim {
+  border-color: var(--color-bg-elevated, #262320);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.modal-close-press {
+  opacity: 0.7;
+}
+
+.modal-close-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.modal-plate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12rpx 16rpx 24rpx;
+  margin-bottom: 8rpx;
+  border-bottom: 1px solid var(--color-bg-elevated, #262320);
+}
+
+.modal-icon-wrap {
+  width: 96rpx;
+  height: 96rpx;
+  margin: 12rpx auto 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--brass-700, #6B5A24);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.modal-icon-wrap.dim {
+  border-color: #3A3530;
+  border-style: dashed;
+}
+
+.modal-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.modal-overline {
+  display: block;
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.12em;
+  font-style: italic;
+}
+
+.modal-title {
+  display: block;
+  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
+  font-size: 40rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #FFFFFF);
+  text-align: center;
+  letter-spacing: 0.06em;
+  margin-bottom: 12rpx;
+}
+
+.modal-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.modal-type {
+  font-size: 22rpx;
+  color: var(--color-text-secondary, #A09A90);
+  letter-spacing: 0.06em;
+}
+
+.modal-status-pill {
+  padding: 4rpx 12rpx;
+  border-radius: 9999px;
+  border: 1px solid var(--brass-400, #C4A76C);
+  box-sizing: border-box;
+}
+
+.modal-status-pill text {
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.04em;
+}
+
+.modal-status-pill.off {
+  border-color: #3A3530;
+}
+
+.modal-status-pill.off text {
+  color: var(--color-text-muted, #6B6560);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding-top: 8rpx;
+}
+
+.modal-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 18rpx 20rpx;
+  background: transparent;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: 16rpx;
+  box-sizing: border-box;
+}
+
+.modal-block.reward {
+  border-color: var(--brass-800, #4D401A);
+}
+
+.block-label {
+  font-size: 22rpx;
+  color: var(--color-text-muted, #6B6560);
+  letter-spacing: 0.08em;
+}
+
+.block-text {
+  font-size: 26rpx;
+  color: var(--color-text-body, #D5D1C8);
+  line-height: 1.55;
+}
+
+.block-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.block-value,
+.modal-block .reward-value {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--brass-400, #C4A76C);
+}
+
+.block-hint {
+  font-size: 22rpx;
+  color: var(--color-text-secondary, #A09A90);
+  line-height: 1.45;
+}
+
+.block-hint.remain {
+  color: var(--brass-600, #8A7530);
+}
+
+.info-reward {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 28rpx;
+}
+
+.modal-share-btn,
+.modal-dismiss-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  min-width: 60%;
+  padding: 18rpx 32rpx;
+  border-radius: 16rpx;
+  box-sizing: border-box;
+}
+
+.modal-share-btn {
+  background: var(--brass-400, #C4A76C);
+}
+
+.modal-dismiss-btn {
+  background: transparent;
+  border: 1px solid var(--brass-400, #C4A76C);
+}
+
+.modal-share-press {
+  opacity: 0.85;
+}
+
+.share-icon-small {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.share-text {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--color-bg, #1A1814);
+}
+
+.dismiss-text {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--brass-400, #C4A76C);
+}
+
+.modal-share-btn .share-icon-small.icon-gold {
+  filter: brightness(0) saturate(100%) invert(8%) sepia(12%) saturate(600%) hue-rotate(358deg) brightness(95%) contrast(92%);
+}
+
+/* —— 解锁提示 —— */
+.unlock-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 24, 20, 0.92);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+.unlock-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.unlock-content {
+  width: 84%;
+  max-width: 600rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48rpx 32rpx 36rpx;
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 24rpx;
+  box-sizing: border-box;
+}
+
+.unlock-icon-wrap {
+  width: 104rpx;
+  height: 104rpx;
+  margin-bottom: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--brass-700, #6B5A24);
+  border-radius: 50%;
+}
+
+.unlock-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.unlock-overline {
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.12em;
+  font-style: italic;
+  margin-bottom: 8rpx;
+}
+
+.unlock-title {
+  font-size: 36rpx;
+  font-weight: 500;
+  color: var(--color-text-primary, #FFFFFF);
+  margin-bottom: 8rpx;
+}
+
+.unlock-name {
+  font-size: 28rpx;
+  color: var(--color-text-body, #D5D1C8);
+  text-align: center;
+  margin-bottom: 24rpx;
+}
+
+.unlock-reward {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 14rpx 24rpx;
+  background: transparent;
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.unlock-reward .reward-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.unlock-reward .reward-label {
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+}
+
+.unlock-reward .reward-value {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--brass-400, #C4A76C);
+}
+
+.unlock-hint {
+  font-size: 22rpx;
+  color: var(--color-text-muted, #6B6560);
+  margin-bottom: 28rpx;
+  letter-spacing: 0.02em;
+}
+
+.unlock-actions {
+  display: flex;
+  gap: 16rpx;
+  width: 100%;
+}
+
+.unlock-btn {
+  flex: 1;
+  padding: 18rpx 12rpx;
+  text-align: center;
+  background: transparent;
+  border: 1px solid var(--brass-400, #C4A76C);
+  border-radius: 16rpx;
+  color: var(--brass-400, #C4A76C);
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.unlock-btn.primary {
+  background: var(--brass-400, #C4A76C);
+  color: var(--color-bg, #1A1814);
+  border-color: var(--brass-400, #C4A76C);
+}
+
+.unlock-btn-press {
+  opacity: 0.82;
+}
+
+/* —— 山海拾遗 —— */
+.relics-card {
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 24rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 36rpx;
+  box-sizing: border-box;
+}
+
+.relics-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-bottom: 18rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1px solid var(--color-bg-elevated, #262320);
+}
+
+.relics-overline {
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-style: italic;
+}
+
+.relics-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.relics-title {
+  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
+  font-size: 36rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #FFFFFF);
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.relics-desc {
+  font-size: 22rpx;
+  line-height: 1.55;
+  color: var(--color-text-secondary, #A09A90);
+  margin-top: 4rpx;
+}
+
+.relics-plaque {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding: 16rpx 18rpx;
+  margin-bottom: 22rpx;
+  background: transparent;
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 12rpx;
+  box-sizing: border-box;
+}
+
+.relics-plaque-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  flex-wrap: wrap;
+}
+
+.relics-plaque-label {
+  font-size: 22rpx;
+  color: var(--color-text-secondary, #A09A90);
+  letter-spacing: 0.06em;
+}
+
+.relics-plaque-num {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--brass-400, #C4A76C);
+  letter-spacing: 0.02em;
+}
+
+.relics-plaque-dot {
+  font-size: 22rpx;
+  color: var(--brass-700, #6B5A24);
+  line-height: 1;
+}
+
+.relics-plaque-total {
+  font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
+  font-size: 22rpx;
+  color: var(--color-text-muted, #6B6560);
+  letter-spacing: 0.04em;
+}
+
+.progress-track.relics-track {
+  height: 8rpx;
+}
+
+.relics-cabinet {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.relic-plate {
+  position: relative;
+  min-height: 168rpx;
+  padding: 22rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  background: #1C1A17;
+  border: 1px solid var(--color-bg-elevated, #262320);
+  border-radius: 16rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.relic-plate.on {
+  background: #211E19;
+  border-color: var(--brass-800, #4D401A);
+}
+
+.relic-plate.off {
+  opacity: 0.78;
+  border-style: dashed;
+  border-color: #2A2622;
+}
+
+.relic-plate-press {
+  opacity: 0.88;
+}
+
+.relic-roman {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 20rpx;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  color: var(--brass-600, #8A7530);
+  line-height: 1;
+}
+
+.relic-plate.off .relic-roman {
+  color: var(--color-text-muted, #6B6560);
+}
+
+.relic-plate-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8rpx;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.relic-plate-title {
+  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #FFFFFF);
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relic-plate.off .relic-plate-title {
+  font-weight: 400;
+  font-size: 26rpx;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted, #6B6560);
+}
+
+.relic-plate-hint {
+  font-size: 20rpx;
+  color: var(--color-text-secondary, #A09A90);
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relic-plate.off .relic-plate-hint {
+  color: var(--color-text-muted, #6B6560);
+  letter-spacing: 0.1em;
+}
+
+.relic-plate-mark {
+  align-self: flex-start;
+  font-size: 18rpx;
+  letter-spacing: 0.12em;
+  color: var(--brass-400, #C4A76C);
+  padding: 4rpx 10rpx;
+  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: 8rpx;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.relic-veil {
+  position: absolute;
+  inset: 10rpx;
+  border: 1px dashed rgba(77, 64, 26, 0.45);
+  border-radius: 12rpx;
+  pointer-events: none;
+  z-index: 0;
+}

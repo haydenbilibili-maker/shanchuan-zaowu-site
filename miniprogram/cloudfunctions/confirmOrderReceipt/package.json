@@ -1,0 +1,9 @@
+{
+  "name": "confirmOrderReceipt",
+  "version": "1.0.0",
+  "description": "买家确认收货（orders 仅云函数可写）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -29,26 +29,22 @@ page {
 }
 
 .back-btn {
-  width: 64rpx;
-  height: 64rpx;
+  width: 72rpx;
+  height: 72rpx;
+  min-width: 72rpx;
+  min-height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  border: 1px solid rgba(196, 167, 108, 0.25);
-  background: rgba(31, 29, 26, 0.8);
-}
-
-.back-arrow {
-  font-size: 36rpx;
-  color: var(--gold);
-  line-height: 1;
+  border-radius: var(--radius-md, 16rpx);
+  border: 1px solid transparent;
+  background: transparent;
 }
 
 .page-title {
   font-size: 30rpx;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--color-text-primary);
   letter-spacing: 2rpx;
 }
 
@@ -56,11 +52,19 @@ page {
   width: 64rpx;
 }
 
-/* ===== 主体滚动区 ===== */
+/* ===== 主体滚动区
+   iPhone：不用 flex:1 + height:0；预留底栏高度 */
 .page-body {
-  flex: 1;
-  min-height: 0;
   width: 100%;
+  flex-shrink: 0;
+  height: calc(100vh - 140rpx - env(safe-area-inset-bottom));
+  max-height: calc(100vh - 140rpx - env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.ticket-body-safe {
+  width: 100%;
+  height: calc(32rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
 }
 
 .ticket-wrap {
@@ -68,11 +72,37 @@ page {
   box-sizing: border-box;
 }
 
+.ticket-empty {
+  padding: 120rpx 48rpx;
+  text-align: center;
+}
+.ticket-empty-title {
+  display: block;
+  font-size: 30rpx;
+  color: var(--color-text-body);
+  margin-bottom: 12rpx;
+}
+.ticket-empty-desc {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  margin-bottom: 40rpx;
+}
+.ticket-empty-cta {
+  display: inline-block;
+  padding: 16rpx 40rpx;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  border-radius: 16rpx;
+  font-size: 26rpx;
+}
+
 .ticket-box {
   width: 100%;
   max-width: 640rpx;
   margin: 0 auto;
-  background: linear-gradient(135deg, #1F1D1A 0%, #1A1814 50%, #1F1D1A 100%);
+  background: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-bg) 50%, var(--color-bg-card) 100%);
   border-radius: 24rpx;
   overflow: hidden;
   border: 1px solid rgba(196, 167, 108, 0.2);
@@ -81,14 +111,14 @@ page {
 }
 
 .ticket-header {
-  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
+  background: linear-gradient(135deg, #A8903C 0%, var(--gold) 100%);
   padding: 36rpx 32rpx;
   text-align: center;
 }
 
 .ticket-header text {
   display: block;
-  color: #1A1814;
+  color: var(--color-bg);
 }
 
 .header-main {
@@ -123,12 +153,28 @@ page {
   box-sizing: border-box;
 }
 
+.qr-live-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  margin-bottom: 8rpx;
+}
+
 .qr-tip {
   display: block;
   font-size: 24rpx;
   color: rgba(196, 167, 108, 0.9);
   margin-bottom: 8rpx;
   letter-spacing: 1rpx;
+}
+
+.qr-live-row .qr-tip {
+  margin-bottom: 0;
+}
+
+.qr-tip.muted {
+  color: var(--color-text-muted, #6B6560);
 }
 
 .qr-code {
@@ -169,7 +215,7 @@ page {
 
 .val {
   flex: 1;
-  color: #D5D1C8;
+  color: var(--color-text-body);
   font-weight: 600;
   font-size: 28rpx;
   text-align: right;
@@ -244,7 +290,7 @@ page {
 .footer-btn.primary {
   background: var(--gold);
   border: none;
-  color: #1A1814;
+  color: var(--color-bg);
 }
 
 .footer-btn:active {
@@ -310,7 +356,7 @@ page {
 .modal-content {
   width: 90%;
   max-width: 600rpx;
-  background: #1F1D1A;
+  background: var(--color-bg-card);
   border: 1px solid rgba(196, 167, 108, 0.25);
   border-radius: 24rpx;
   overflow: hidden;
@@ -367,7 +413,7 @@ page {
   justify-content: center;
   width: 96rpx;
   height: 112rpx;
-  background: #262320;
+  background: var(--color-bg-elevated);
   border-radius: 12rpx;
   margin-right: 12rpx;
   border: 1px solid rgba(196, 167, 108, 0.2);
@@ -381,18 +427,18 @@ page {
 
 .d-week {
   font-size: 20rpx;
-  color: #A09A90;
+  color: var(--color-text-secondary);
   margin-bottom: 6rpx;
 }
 
 .date-pill.active .d-week,
 .date-pill.active .d-day {
-  color: #1A1814;
+  color: var(--color-bg);
 }
 
 .d-day {
   font-size: 30rpx;
-  color: #FFFFFF;
+  color: var(--color-text-primary);
   font-weight: 700;
 }
 
@@ -404,20 +450,20 @@ page {
 
 .time-btn {
   height: 72rpx;
-  background: #262320;
+  background: var(--color-bg-elevated);
   border: 1px solid rgba(196, 167, 108, 0.2);
   border-radius: 12rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #D5D1C8;
+  color: var(--color-text-body);
   font-size: 26rpx;
 }
 
 .time-btn.active {
   background: var(--gold);
   border-color: var(--gold);
-  color: #1A1814;
+  color: var(--color-bg);
   font-weight: 600;
 }
 
@@ -440,12 +486,12 @@ page {
 }
 
 .modal-btn.cancel {
-  background: #262320;
+  background: var(--color-bg-elevated);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #A09A90;
+  color: var(--color-text-secondary);
 }
 
 .modal-btn.confirm {
   background: var(--gold);
-  color: #1A1814;
+  color: var(--color-bg);
 }

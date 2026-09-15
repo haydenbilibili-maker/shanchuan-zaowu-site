@@ -4,6 +4,6 @@
   "description": "山海有信运营推送",
   "main": "index.js",
   "dependencies": {
-    "wx-server-sdk": "~2.6.3"
+    "wx-server-sdk": "~3.0.1"
   }
 }

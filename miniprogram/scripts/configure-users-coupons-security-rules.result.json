@@ -1,0 +1,90 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "at": "2026-09-13T16:26:49.404Z",
+  "dryRun": false,
+  "mode": "owner-read-cloud-write",
+  "desiredRules": {
+    "users": {
+      "read": "auth != null && doc._openid == auth.openid",
+      "write": false
+    },
+    "user_coupons": {
+      "read": "auth != null && doc._openid == auth.openid",
+      "write": false
+    }
+  },
+  "beforeLive": {
+    "users": {
+      "permission": "CUSTOM",
+      "securityRule": "{\n  \"read\": \"auth != null\",\n  \"write\": \"auth != null\"\n}",
+      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":\"auth != null\"}"
+    },
+    "user_coupons": {
+      "permission": "CUSTOM",
+      "securityRule": "{\n  \"read\": \"doc._openid == auth.openid\",\n  \"write\": false\n}",
+      "securityRuleNormalized": "{\"read\":\"doc._openid == auth.openid\",\"write\":false}"
+    }
+  },
+  "applyResults": [
+    {
+      "collection": "users",
+      "op": "modifyResourcePermission",
+      "result": "ok",
+      "success": true,
+      "requestId": "bcb11137-f9b4-4e6a-819c-7e39573b20d2"
+    },
+    {
+      "collection": "user_coupons",
+      "op": "modifyResourcePermission",
+      "result": "ok",
+      "success": true,
+      "requestId": "f088f4a7-b92b-4287-b9ed-09f6c9b96862"
+    }
+  ],
+  "after": {
+    "users": {
+      "permission": "CUSTOM",
+      "securityRule": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}",
+      "securityRuleNormalized": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}"
+    },
+    "user_coupons": {
+      "permission": "CUSTOM",
+      "securityRule": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}",
+      "securityRuleNormalized": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}"
+    }
+  },
+  "verify": [
+    {
+      "collection": "users",
+      "matched": true,
+      "beforeLive": {
+        "permission": "CUSTOM",
+        "securityRule": "{\n  \"read\": \"auth != null\",\n  \"write\": \"auth != null\"\n}",
+        "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":\"auth != null\"}"
+      },
+      "after": {
+        "permission": "CUSTOM",
+        "securityRule": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}",
+        "securityRuleNormalized": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}"
+      },
+      "desiredNormalized": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}"
+    },
+    {
+      "collection": "user_coupons",
+      "matched": true,
+      "beforeLive": {
+        "permission": "CUSTOM",
+        "securityRule": "{\n  \"read\": \"doc._openid == auth.openid\",\n  \"write\": false\n}",
+        "securityRuleNormalized": "{\"read\":\"doc._openid == auth.openid\",\"write\":false}"
+      },
+      "after": {
+        "permission": "CUSTOM",
+        "securityRule": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}",
+        "securityRuleNormalized": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}"
+      },
+      "desiredNormalized": "{\"read\":\"auth != null && doc._openid == auth.openid\",\"write\":false}"
+    }
+  ],
+  "appliedToCloud": true,
+  "configEchoMatchesDesired": true
+}

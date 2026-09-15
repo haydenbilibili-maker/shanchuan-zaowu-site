@@ -1,0 +1,9 @@
+{
+  "name": "manageArtisanCommission",
+  "version": "1.0.0",
+  "description": "标本师销售提成规则与账目",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

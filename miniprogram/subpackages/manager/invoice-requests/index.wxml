@@ -1,0 +1,223 @@
+<view class="container" wx:if="{{ready}}">
+
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">INVOICE REQUESTS</text>
+      <text class="cn">发票管理</text>
+    </view>
+    <text class="header-note">一期半自动开票：核对后线下开具，再在此标记状态</text>
+  </view>
+
+  <view class="overview-panel">
+    <view class="overview-head">
+      <view class="overview-title-wrap">
+        <text class="overview-title">数据概览</text>
+        <text class="overview-sub" wx:if="{{overviewReady}}">待办采样 {{overview.totalLoaded}}{{overview.dataCapped ? '（已截断）' : ''}}</text>
+      </view>
+      <view class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
+    </view>
+
+    <view class="sub-tab-row overview-tabs">
+      <view
+        class="sub-tab {{overviewTab === item.key ? 'active' : ''}}"
+        wx:for="{{overviewTabs}}"
+        wx:key="key"
+        data-tab="{{item.key}}"
+        bindtap="switchOverviewTab"
+      >{{item.label}}</view>
+    </view>
+
+    <view class="overview-loading" wx:if="{{overviewLoading && !overviewReady}}">统计加载中…</view>
+
+    <block wx:elif="{{overviewReady && overview}}">
+      <text class="overview-hint">{{overviewHint}}</text>
+
+      <block wx:if="{{overviewTabPending}}">
+        <view class="ov-cards">
+          <view class="ov-card">
+            <text class="ov-val accent">{{overview.pending.count}}</text>
+            <text class="ov-lbl">待开具</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val">{{overview.pending.company}}</text>
+            <text class="ov-lbl">企业</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val muted">{{overview.pending.personal}}</text>
+            <text class="ov-lbl">个人</text>
+          </view>
+        </view>
+        <view class="ov-section">
+          <text class="ov-sec-title">待办抬头</text>
+          <view class="ov-bar-row" wx:for="{{overview.pending.typeBars}}" wx:key="key">
+            <text class="ov-bar-label">{{item.name}}</text>
+            <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+            <text class="ov-bar-count">{{item.count}}</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{overviewTabStatus}}">
+        <view class="ov-cards">
+          <view class="ov-card">
+            <text class="ov-val">{{overview.status.total}}</text>
+            <text class="ov-lbl">全部</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val accent">{{overview.status.issued}}</text>
+            <text class="ov-lbl">已开具</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val muted">{{overview.status.rejected}}</text>
+            <text class="ov-lbl">已驳回</text>
+          </view>
+        </view>
+        <view class="ov-section">
+          <text class="ov-sec-title">状态分布</text>
+          <view class="ov-bar-row" wx:for="{{overview.status.bars}}" wx:key="key">
+            <text class="ov-bar-label">{{item.name}}</text>
+            <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+            <text class="ov-bar-count">{{item.count}}</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{overviewTabType}}">
+        <view class="ov-section">
+          <text class="ov-sec-title">待开具类型</text>
+          <view class="ov-bar-row" wx:for="{{overview.type.bars}}" wx:key="key">
+            <text class="ov-bar-label">{{item.name}}</text>
+            <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+            <text class="ov-bar-count">{{item.count}}</text>
+          </view>
+          <view class="ov-empty" wx:if="{{!overview.type.bars.length}}">暂无待办</view>
+        </view>
+      </block>
+    </block>
+
+    <view class="ov-empty" wx:elif="{{!overviewLoading}}">暂无统计，点刷新重试</view>
+  </view>
+
+  <view class="section filter-section">
+    <picker mode="selector" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange">
+      <view class="picker-inner">
+        <text class="picker-label">状态</text>
+        <text class="picker-value">{{statusOptions[statusIndex]}}</text>
+        <text class="picker-arrow">切换</text>
+      </view>
+    </picker>
+    <text class="total-hint" wx:if="{{total > 0}}">共 {{total}} 条</text>
+  </view>
+
+  <view class="section" wx:if="{{list.length}}">
+    <view class="record" wx:for="{{list}}" wx:key="_id">
+      <view class="rec-top" bindtap="toggleExpand" data-id="{{item._id}}">
+        <view class="rec-main">
+          <text class="rec-order">{{item.orderNo}}</text>
+          <text class="rec-title">{{item.invoiceTypeLabel}} · {{item.title}}</text>
+        </view>
+        <text class="rec-status {{item.status}}">{{item.statusText}}</text>
+      </view>
+
+      <view class="rec-meta-row">
+        <text class="rec-meta" wx:if="{{item.taxNoMasked}}">税号 {{item.taxNoMasked}}</text>
+        <text class="rec-meta" wx:if="{{item.email}}">{{item.email}}</text>
+        <text class="rec-meta">{{item.timeText}}</text>
+      </view>
+
+      <view class="rec-detail" wx:if="{{expandedId === item._id}}">
+        <view class="detail-row" wx:if="{{item.taxNo}}" bindtap="copyText" data-text="{{item.taxNo}}">
+          <text class="detail-label">税号</text>
+          <text class="detail-val">{{item.taxNo}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.phone}}" bindtap="copyText" data-text="{{item.phone}}">
+          <text class="detail-label">电话</text>
+          <text class="detail-val">{{item.phone}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.email}}" bindtap="copyText" data-text="{{item.email}}">
+          <text class="detail-label">邮箱</text>
+          <text class="detail-val">{{item.email}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.remark}}">
+          <text class="detail-label">用户备注</text>
+          <text class="detail-val">{{item.remark}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.invoiceNo}}">
+          <text class="detail-label">发票号</text>
+          <text class="detail-val">{{item.invoiceNo}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.rejectReason}}">
+          <text class="detail-label">驳回原因</text>
+          <text class="detail-val warn">{{item.rejectReason}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.staffNote && item.status === 'issued'}}">
+          <text class="detail-label">开票备注</text>
+          <text class="detail-val">{{item.staffNote}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.handledText}}">
+          <text class="detail-label">处理</text>
+          <text class="detail-val">{{item.handledByName || '店长'}} · {{item.handledText}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.orderId}}" bindtap="copyText" data-text="{{item.orderId}}">
+          <text class="detail-label">订单 ID</text>
+          <text class="detail-val mono">{{item.orderId}}</text>
+        </view>
+      </view>
+
+      <view class="rec-actions" wx:if="{{item.status === 'pending'}}">
+        <view class="btn-outline" catchtap="toggleExpand" data-id="{{item._id}}">
+          {{expandedId === item._id ? '收起' : '详情'}}
+        </view>
+        <view class="btn-danger" catchtap="openReject" data-id="{{item._id}}">驳回</view>
+        <view class="btn-primary" catchtap="openIssue" data-id="{{item._id}}">标记已开具</view>
+      </view>
+      <view class="rec-actions" wx:else>
+        <view class="btn-outline" catchtap="toggleExpand" data-id="{{item._id}}">
+          {{expandedId === item._id ? '收起' : '详情'}}
+        </view>
+      </view>
+    </view>
+
+    <view class="btn-outline load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
+  </view>
+
+  <view class="empty" wx:if="{{!loading && list.length === 0}}">暂无开票申请</view>
+  <view class="loading-hint" wx:if="{{loading}}">加载中…</view>
+
+</view>
+
+<!-- 标记已开具 -->
+<view class="modal-mask" wx:if="{{showIssueModal}}" catchtouchmove="noop" bindtap="closeModals">
+  <view class="modal" catchtap="noop">
+    <text class="modal-title">标记已开具</text>
+    <text class="modal-sub" wx:if="{{actionTarget}}">订单 {{actionTarget.orderNo}} · {{actionTarget.title}}</text>
+    <view class="field">
+      <text class="field-label">发票号（可选）</text>
+      <input class="input" placeholder="电子发票号码 / 流水号" value="{{invoiceNo}}" bindinput="onInvoiceNoInput" />
+    </view>
+    <view class="field">
+      <text class="field-label">开票备注（可选）</text>
+      <textarea class="textarea" placeholder="如：已发至邮箱" value="{{staffNote}}" bindinput="onStaffNoteInput" maxlength="500" />
+    </view>
+    <view class="modal-actions">
+      <view class="btn-outline" bindtap="closeModals">取消</view>
+      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmIssue">确认开具</view>
+    </view>
+  </view>
+</view>
+
+<!-- 驳回 -->
+<view class="modal-mask" wx:if="{{showRejectModal}}" catchtouchmove="noop" bindtap="closeModals">
+  <view class="modal" catchtap="noop">
+    <text class="modal-title">驳回申请</text>
+    <text class="modal-sub" wx:if="{{actionTarget}}">订单 {{actionTarget.orderNo}} · {{actionTarget.title}}</text>
+    <view class="field">
+      <text class="field-label">驳回原因（必填）</text>
+      <textarea class="textarea" placeholder="如：税号有误、订单未完成支付" value="{{rejectReason}}" bindinput="onRejectReasonInput" maxlength="500" />
+    </view>
+    <view class="modal-actions">
+      <view class="btn-outline" bindtap="closeModals">取消</view>
+      <view class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmReject">确认驳回</view>
+    </view>
+  </view>
+</view>

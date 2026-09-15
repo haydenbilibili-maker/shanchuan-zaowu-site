@@ -1,0 +1,331 @@
+<view class="page">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-cn">个人页面维护</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:if="{{ready}}">
+  <view class="header">
+    <text class="title">个人页面维护</text>
+    <text class="sub">字段与 Admin「编辑标本师档案」对齐，保存后立刻写回本页并同步对外主页</text>
+  </view>
+
+  <view class="visibility-card {{form.active ? 'is-on' : 'is-off'}}">
+    <view class="visibility-head">
+      <view class="visibility-copy">
+        <text class="visibility-title">对外展示</text>
+        <text class="visibility-status">{{form.active ? '已公开' : '仅自己可见'}}</text>
+      </view>
+      <switch checked="{{form.active}}" color="#C4A76C" disabled="{{saving}}" bindchange="onActiveChange" />
+    </view>
+    <text class="visibility-desc" wx:if="{{form.active}}">访客可在定制与标本师主页看到你。关闭后仅自己可预览，改动需点保存。</text>
+    <text class="visibility-desc" wx:else>关闭后 C 端访客看不到此主页。打开主页仅自己可见。打开开关并保存后才会对外。</text>
+  </view>
+
+  <view class="group">
+    <view class="group-head">
+      <text class="group-en">IDENTITY</text>
+      <text class="group-cn">基础身份</text>
+    </view>
+
+    <view class="workbench-field">
+      <view class="field-head">
+        <text class="workbench-field-label">姓名 *</text>
+        <text class="char-count">{{nameCount}}</text>
+      </view>
+      <input
+        class="workbench-input {{focusField === 'name' ? 'is-focus' : ''}}"
+        value="{{form.name}}"
+        maxlength="{{nameMax}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="name"
+        placeholder="真名或对外署名"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+
+    <view class="workbench-field">
+      <view class="field-head">
+        <text class="workbench-field-label">艺名</text>
+        <text class="char-count">{{aliasCount}}</text>
+      </view>
+      <input
+        class="workbench-input {{focusField === 'alias' ? 'is-focus' : ''}}"
+        value="{{form.alias}}"
+        maxlength="{{aliasMax}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="alias"
+        placeholder="可选"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+
+    <view class="workbench-field">
+      <view class="field-head">
+        <text class="workbench-field-label">头衔</text>
+        <text class="char-count">{{titleCount}}</text>
+      </view>
+      <input
+        class="workbench-input {{focusField === 'title' ? 'is-focus' : ''}}"
+        value="{{form.title}}"
+        maxlength="{{titleMax}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="title"
+        placeholder="如：首席标本制作师"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+
+    <view class="workbench-field">
+      <text class="workbench-field-label">类型</text>
+      <view class="type-row">
+        <view
+          class="type-chip {{form.type === 'store' ? 'is-on' : ''}}"
+          bindtap="onTypeTap"
+          data-type="store"
+        >门店标本师</view>
+        <view
+          class="type-chip {{form.type === 'partner' ? 'is-on' : ''}}"
+          bindtap="onTypeTap"
+          data-type="partner"
+        >特邀合作</view>
+      </view>
+    </view>
+
+    <view class="workbench-field">
+      <text class="workbench-field-label">常驻城市</text>
+      <input
+        class="workbench-input {{focusField === 'city' ? 'is-focus' : ''}}"
+        value="{{form.city}}"
+        maxlength="{{cityMax}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="city"
+        placeholder="如：长春"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+
+    <view class="workbench-field">
+      <text class="workbench-field-label">从业年限</text>
+      <view class="years-row">
+        <view class="years-step" bindtap="onYearsStep" data-dir="minus">－</view>
+        <input
+          class="workbench-input years-input {{focusField === 'yearsExperience' ? 'is-focus' : ''}}"
+          type="number"
+          value="{{form.yearsExperience}}"
+          bindfocus="onFocus"
+          bindinput="onInput"
+          bindblur="onBlur"
+          data-field="yearsExperience"
+        />
+        <view class="years-step" bindtap="onYearsStep" data-dir="plus">＋</view>
+      </view>
+    </view>
+
+    <view class="workbench-field">
+      <text class="workbench-field-label">入驻日期</text>
+      <picker mode="date" value="{{form.joinedAt}}" bindchange="onJoinedChange">
+        <view class="workbench-picker">
+          <text class="workbench-picker-text {{form.joinedAt ? '' : 'is-ph'}}">{{form.joinedAt || '选择日期'}}</text>
+          <text class="workbench-picker-chevron">›</text>
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="group">
+    <view class="group-head">
+      <text class="group-en">PHOTOS</text>
+      <text class="group-cn">照片</text>
+    </view>
+
+    <view
+      class="avatar-row {{avatarUploading ? 'is-busy' : ''}} {{avatarError ? 'is-error' : ''}}"
+      hover-class="avatar-row-press"
+      bindtap="onAvatarTap"
+    >
+      <view class="avatar-wrap">
+        <image class="avatar" src="{{form.avatarDisplay || fallbackAvatar}}" mode="aspectFill" />
+        <view class="avatar-mask" wx:if="{{avatarUploading}}">
+          <text>上传中</text>
+        </view>
+      </view>
+      <view class="avatar-meta">
+        <text class="avatar-label">头像</text>
+        <text class="avatar-hint">{{avatarUploading ? '正在上传…' : (avatarError ? '上传失败，点此重试' : '点击上传或更换')}}</text>
+      </view>
+      <text class="avatar-chevron">›</text>
+    </view>
+
+    <view
+      class="cover-row {{coverUploading ? 'is-busy' : ''}} {{coverError ? 'is-error' : ''}}"
+      hover-class="avatar-row-press"
+      bindtap="onCoverTap"
+    >
+      <view class="cover-wrap">
+        <image wx:if="{{form.coverDisplay}}" class="cover-img" src="{{form.coverDisplay}}" mode="aspectFill" />
+        <view class="cover-empty" wx:else>
+          <text>上传封面</text>
+        </view>
+        <view class="avatar-mask" wx:if="{{coverUploading}}">
+          <text>上传中</text>
+        </view>
+      </view>
+      <view class="avatar-meta">
+        <text class="avatar-label">封面图</text>
+        <text class="avatar-hint">{{coverUploading ? '正在上传…' : (coverError ? '上传失败，点此重试' : '个人主页背景；不传则用默认 Banner')}}</text>
+      </view>
+    </view>
+
+    <view class="gallery-block">
+      <text class="workbench-field-label">作品照片</text>
+      <view class="gallery-grid">
+        <view class="gallery-cell" wx:for="{{form.galleryDisplay}}" wx:key="index">
+          <image class="gallery-img" src="{{item.url}}" mode="aspectFill" />
+          <view class="gallery-del" catchtap="removeGallery" data-index="{{index}}">删除</view>
+        </view>
+        <view
+          class="gallery-add {{galleryUploading || form.gallery.length >= 9 ? 'is-disabled' : ''}}"
+          wx:if="{{form.gallery.length < 9}}"
+          bindtap="chooseGallery"
+        >
+          <text class="gallery-plus">+</text>
+          <text class="gallery-add-hint">{{galleryUploading ? '上传中' : '添加'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="group">
+    <view class="group-head">
+      <text class="group-en">INTRODUCTION</text>
+      <text class="group-cn">对外介绍</text>
+    </view>
+
+    <view class="workbench-field">
+      <text class="workbench-field-label">擅长领域</text>
+      <view class="tag-row">
+        <view
+          class="tag-chip {{item.on ? 'is-on' : ''}}"
+          wx:for="{{tagChips}}"
+          wx:key="name"
+          bindtap="onTagTap"
+          data-tag="{{item.name}}"
+        >{{item.name}}</view>
+      </view>
+    </view>
+
+    <view class="workbench-field">
+      <view class="field-head">
+        <text class="workbench-field-label">技法 / 风格</text>
+        <text class="char-count">{{styleCount}}</text>
+      </view>
+      <input
+        class="workbench-input {{focusField === 'signatureStyle' ? 'is-focus' : ''}}"
+        value="{{form.signatureStyle}}"
+        maxlength="{{styleMax}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="signatureStyle"
+        placeholder="如：干制展翅、浸液封存、微距构图"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+
+    <view class="workbench-field">
+      <view class="field-head">
+        <text class="workbench-field-label">个人简介</text>
+        <text class="char-count">{{bioCount}}</text>
+      </view>
+      <textarea
+        class="workbench-textarea {{focusField === 'bio' ? 'is-focus' : ''}}"
+        value="{{form.bio}}"
+        maxlength="{{bioMax}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="bio"
+        placeholder="同步小程序名师页与定制选师"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+
+    <view class="workbench-field">
+      <view class="field-head">
+        <text class="workbench-field-label">工艺介绍</text>
+        <text class="char-count">{{craftCount}}</text>
+      </view>
+      <textarea
+        class="workbench-textarea tall {{focusField === 'craftIntro' ? 'is-focus' : ''}}"
+        value="{{form.craftIntro}}"
+        maxlength="{{craftMax}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="craftIntro"
+        placeholder="制作理念、擅长品类、代表作品简述"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+  </view>
+
+  <view class="group">
+    <view class="group-head">
+      <text class="group-en">CUSTOM</text>
+      <text class="group-cn">定制</text>
+    </view>
+
+    <view class="workbench-field">
+      <text class="workbench-field-label">装裱加价（元）</text>
+      <input
+        class="workbench-input {{focusField === 'priceDelta' ? 'is-focus' : ''}}"
+        type="digit"
+        value="{{form.priceDelta}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="priceDelta"
+        placeholder="0"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+
+    <view class="workbench-field">
+      <text class="workbench-field-label">额外工期（天）</text>
+      <input
+        class="workbench-input {{focusField === 'extraDays' ? 'is-focus' : ''}}"
+        type="number"
+        value="{{form.extraDays}}"
+        bindfocus="onFocus"
+        bindinput="onInput"
+        bindblur="onBlur"
+        data-field="extraDays"
+        placeholder="0"
+        placeholder-class="workbench-ph"
+      />
+    </view>
+  </view>
+
+  </block>
+
+  <view class="workbench-modal-foot profile-sticky-foot" wx:if="{{ready}}">
+    <view
+      class="workbench-btn-outline {{saving || mediaBusy ? 'is-disabled' : ''}}"
+      bindtap="previewPublic"
+    >打开主页</view>
+    <view
+      class="workbench-btn-primary {{saving || mediaBusy || !dirty ? 'is-disabled' : ''}}"
+      bindtap="save"
+    >{{saveLabel}}</view>
+  </view>
+</view>

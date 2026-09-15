@@ -1,0 +1,9 @@
+{
+  "name": "claimBirthdayGift",
+  "version": "1.0.0",
+  "description": "生日礼券发放（积分不计入成长值 + 满减券 + 站内信）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "managePurchaseOrder",
+  "version": "1.0.0",
+  "description": "超管采购管理（门店 + 工作室）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

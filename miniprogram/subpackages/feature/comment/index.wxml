@@ -1,0 +1,131 @@
+<!--subpackages/feature/comment/index.wxml-->
+<wxs src="../../../utils/latinDisplay.wxs" module="latin" />
+<view class="page-wrapper">
+  <view class="custom-navbar">
+    <view class="back-btn" bindtap="goBack" hover-class="back-btn-press">
+      <text class="back-arrow">‹</text>
+    </view>
+    <text class="nav-title">写下感受</text>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="scroll-container"
+    enable-flex="true"
+    style="padding-top: calc(88rpx + {{statusBarHeight}}px + env(safe-area-inset-top));">
+
+    <view class="content-wrapper">
+      <view class="gate-card" wx:if="{{loadingGate}}">
+        <text class="gate-text">正在确认评价资格…</text>
+      </view>
+
+      <view class="gate-card" wx:elif="{{!canReview}}">
+        <text class="gate-title">{{gateCode === 'NEED_ORDER' ? '签收后可评价' : '暂不可评价'}}</text>
+        <text class="gate-text">{{gateMsg}}</text>
+        <view class="gate-actions">
+          <view class="btn-secondary" wx:if="{{orderId}}" bindtap="goOrderDetail">返回订单</view>
+          <view class="btn-secondary" wx:else bindtap="goBack">返回</view>
+        </view>
+      </view>
+
+      <block wx:else>
+        <view class="header-section">
+          <view class="target-info" wx:if="{{targetInfo}}">
+            <image
+              class="target-image"
+              src="{{targetInfo.images && targetInfo.images[0] ? targetInfo.images[0] : targetInfo.image}}"
+              mode="aspectFill"
+            ></image>
+            <view class="target-details">
+              <text class="target-title">{{targetInfo.title || targetInfo.name}}</text>
+              <text class="target-subtitle" wx:if="{{latin.display(targetInfo.latinName)}}">{{latin.display(targetInfo.latinName)}}</text>
+              <text class="target-hint">分享你看到它时的第一印象</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="product-pick" wx:if="{{productOptions.length > 1}}">
+          <text class="section-label">选择藏品</text>
+          <scroll-view scroll-x class="product-pick-scroll" enable-flex="true">
+            <view
+              class="product-chip {{targetId === item.productId ? 'active' : ''}} {{item.canReview ? '' : 'done'}}"
+              wx:for="{{productOptions}}"
+              wx:key="productId"
+              bindtap="selectProduct"
+              data-id="{{item.productId}}"
+            >
+              <text class="chip-title">{{item.title}}</text>
+              <text class="chip-status">{{item.statusLabel}}</text>
+            </view>
+          </scroll-view>
+        </view>
+
+        <view class="rating-section">
+          <text class="section-label">评分</text>
+          <view class="rating-stars">
+            <block wx:for="{{[1,2,3,4,5]}}" wx:key="*this" wx:for-item="star">
+              <text
+                class="star {{rating >= star ? 'active' : ''}}"
+                bindtap="selectRating"
+                data-rating="{{star}}"
+              >★</text>
+            </block>
+          </view>
+          <text class="rating-hint" wx:if="{{rating > 0}}">
+            {{rating === 5 ? '很喜欢' : rating === 4 ? '满意' : rating === 3 ? '还行' : rating === 2 ? '有些失望' : '不太满意'}}
+          </text>
+        </view>
+
+        <view class="content-section">
+          <text class="section-label">感受</text>
+          <textarea
+            class="content-input"
+            placeholder="颜色、质感、摆放位置……写给同样喜欢它的人听。"
+            placeholder-class="input-placeholder"
+            value="{{content}}"
+            bindinput="onContentInput"
+            maxlength="500"
+            show-confirm-bar="{{false}}"
+          ></textarea>
+          <text class="char-count">{{content.length}}/500</text>
+        </view>
+
+        <view class="image-section">
+          <text class="section-label">图片（可选，最多 3 张）</text>
+          <view class="image-upload">
+            <view class="image-list">
+              <block wx:for="{{images}}" wx:key="*this" wx:for-index="index">
+                <view class="image-item">
+                  <image
+                    class="uploaded-image"
+                    src="{{item}}"
+                    mode="aspectFill"
+                    bindtap="previewImage"
+                    data-index="{{index}}"
+                  ></image>
+                  <view class="delete-btn" catchtap="deleteImage" data-index="{{index}}">×</view>
+                </view>
+              </block>
+              <view class="upload-btn" wx:if="{{images.length < 3}}" bindtap="chooseImage">
+                <text class="upload-icon">+</text>
+                <text class="upload-text">添加</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="bottom-spacer"></view>
+      </block>
+    </view>
+  </scroll-view>
+
+  <view class="submit-section safe-area" wx:if="{{canReview && !loadingGate}}">
+    <button
+      class="submit-btn {{submitting ? 'submitting' : ''}}"
+      bindtap="submitComment"
+      disabled="{{submitting}}"
+    >
+      {{submitting ? '提交中…' : '提交评价'}}
+    </button>
+  </view>
+</view>

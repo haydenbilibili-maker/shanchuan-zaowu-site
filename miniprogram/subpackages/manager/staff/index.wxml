@@ -1,0 +1,80 @@
+<view class="page-boot" wx:if="{{!ready}}">
+  <text class="boot-en">STAFF WORKSPACE</text>
+  <text class="boot-cn">店员工作台</text>
+  <text class="boot-hint">校验权限中…</text>
+</view>
+
+<view class="container" wx:elif="{{ready}}">
+  <view class="scene-header">
+    <view class="header-top">
+      <view class="brand-group">
+        <text class="en">STAFF WORKSPACE</text>
+        <text class="cn">店员工作台</text>
+      </view>
+      <view class="role-badge">
+        <text>{{roleText}}{{staffName ? ' · ' + staffName : ''}}</text>
+      </view>
+    </view>
+    <text class="scene-note">现场常用：核销、到店、班次与人事。</text>
+    <view class="signal-legend header-legend">
+      <view class="signal-legend-item"><view class="signal-light blink"></view><text class="signal-legend-text">绿 · 成功</text></view>
+      <view class="signal-legend-item"><view class="signal-light warn"></view><text class="signal-legend-text">黄 · 待核销</text></view>
+      <view class="signal-legend-item"><view class="signal-light danger"></view><text class="signal-legend-text">红 · 失败</text></view>
+      <view class="signal-legend-item"><view class="signal-light lamp-muted"></view><text class="signal-legend-text">灰 · 空闲</text></view>
+    </view>
+
+    <picker class="store-picker" mode="selector" range="{{storeNames}}" value="{{storeIndex}}" bindchange="onStoreChange">
+      <view class="picker-inner">
+        <text class="picker-label">默认门店</text>
+        <text class="picker-value">{{storeName}}</text>
+        <text class="picker-arrow">切换</text>
+      </view>
+    </picker>
+  </view>
+
+  <!-- 首屏主 CTA：立刻开相机，成功后再进现场服务 -->
+  <view class="scan-cta hub-scan-cta" wx:if="{{showScanCta}}">
+    <view
+      class="btn-primary big scan-cta-btn"
+      hover-class="btn-primary-press"
+      hover-stay-time="120"
+      bindtap="goScanMember"
+    >扫顾客会员码</view>
+    <text class="scan-cta-hint">核验权益 · 预约票 · 门店礼券 · 礼赠自提</text>
+  </view>
+
+  <block wx:if="{{hasScenes}}">
+    <view class="scene-group" wx:for="{{groups}}" wx:key="key">
+      <view class="panel-title sub">{{item.title}} / {{item.en}}</view>
+      <view class="link-row">
+        <view
+          class="link-btn"
+          wx:for="{{item.items}}"
+          wx:for-item="scene"
+          wx:key="key"
+          bindtap="openScene"
+          data-path="{{scene.path}}"
+        >
+          <view class="link-btn-head">
+            <view class="icon-box">
+              <image class="menu-icon-img" src="{{scene.icon}}" mode="aspectFit" />
+              <text class="scene-badge" wx:if="{{scene.badge}}">{{scene.badge}}</text>
+            </view>
+            <text class="lb-en">{{scene.en}}</text>
+          </view>
+          <text class="lb-cn">{{scene.title}}</text>
+          <text class="lb-desc">{{scene.desc}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+  <view class="empty scene-empty" wx:else>
+    <text>暂无可用来现场场景</text>
+    <text class="section-note">请联系店长或超管在权限配置中开通核销、考勤等能力</text>
+  </view>
+
+  <view class="footer">
+    <text class="cr-cn">山海造物</text>
+    <text class="cr-en">NATURE'S CREATIONS</text>
+  </view>
+</view>

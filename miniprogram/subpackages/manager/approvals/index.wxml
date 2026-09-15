@@ -1,0 +1,353 @@
+<view class="container" wx:if="{{ready}}">
+
+  <!-- 与 CRM / 核销一致：原生导航栏 + 系统左滑 navigateBack；勿自绘 NavBack / page-container -->
+  <view class="header">
+    <view class="brand-row">
+      <view class="brand-group">
+        <text class="en">APPROVALS</text>
+        <text class="cn">审批中心</text>
+      </view>
+    </view>
+    <text class="scope-sub" wx:if="{{scopeHint}}">{{scopeHint}}</text>
+    <text class="sla-warn" wx:if="{{!hubFlow && viewMode==='inbox' && overdueCount > 0}}">超时 {{overdueCount}} 条 · SLA {{slaHours}}h</text>
+  </view>
+
+  <!-- 数据概览：紧挨标题下方；默认收起，点标题行展开 -->
+  <view class="overview-panel {{overviewExpanded ? 'is-open' : 'is-collapsed'}}" wx:if="{{canDecideTabs}}">
+    <view
+      class="overview-head"
+      bindtap="toggleOverview"
+      hover-class="overview-head-press"
+      hover-stay-time="80"
+    >
+      <view class="overview-title-wrap">
+        <text class="overview-title">数据概览</text>
+        <text class="overview-sub" wx:if="{{!overviewExpanded && overviewReady}}">{{overviewSummary}}</text>
+        <text class="overview-sub" wx:elif="{{overviewExpanded && overviewReady}}">采样 {{overview.totalLoaded}} 条{{overview.dataCapped ? '（已截断）' : ''}}</text>
+        <text class="overview-sub" wx:elif="{{overviewLoading}}">统计加载中…</text>
+      </view>
+      <view class="overview-head-actions">
+        <view class="overview-refresh" catchtap="onRefreshOverview">刷新</view>
+        <text class="overview-fold">{{overviewExpanded ? '收起' : '展开'}}</text>
+      </view>
+    </view>
+
+    <view class="overview-body" wx:if="{{overviewExpanded}}">
+      <view class="sub-tab-row overview-tabs">
+        <view
+          class="sub-tab {{overviewTab === item.key ? 'active' : ''}}"
+          wx:for="{{overviewTabs}}"
+          wx:key="key"
+          data-tab="{{item.key}}"
+          bindtap="switchOverviewTab"
+        >{{item.label}}</view>
+      </view>
+
+      <view class="overview-loading" wx:if="{{overviewLoading && !overviewReady}}">统计加载中…</view>
+
+      <block wx:elif="{{overviewReady && overview}}">
+        <text class="overview-hint">{{overviewHint}}</text>
+
+        <block wx:if="{{overviewTabPending}}">
+          <view class="ov-cards">
+            <view class="ov-card">
+              <text class="ov-val accent">{{overview.pending.count}}</text>
+              <text class="ov-lbl">待我审</text>
+            </view>
+            <view class="ov-card">
+              <text class="ov-val warn">{{overview.pending.overdue}}</text>
+              <text class="ov-lbl">已超时</text>
+            </view>
+            <view class="ov-card">
+              <text class="ov-val muted">{{overview.pending.withinSla}}</text>
+              <text class="ov-lbl">SLA 内</text>
+            </view>
+          </view>
+          <view class="ov-section">
+            <text class="ov-sec-title">等待时长</text>
+            <view class="ov-bar-row" wx:for="{{overview.pending.ageBars}}" wx:key="key">
+              <text class="ov-bar-label">{{item.name}}</text>
+              <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+              <text class="ov-bar-count">{{item.count}}</text>
+            </view>
+          </view>
+        </block>
+
+        <block wx:if="{{overviewTabByType}}">
+          <view class="ov-section">
+            <text class="ov-sec-title">待办类型分布</text>
+            <view class="ov-bar-row" wx:for="{{overview.byType.bars}}" wx:key="key">
+              <text class="ov-bar-label">{{item.name}}</text>
+              <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+              <text class="ov-bar-count">{{item.count}}</text>
+            </view>
+            <view class="ov-empty" wx:if="{{!overview.byType.bars.length}}">暂无待办</view>
+          </view>
+        </block>
+
+        <block wx:if="{{overviewTabThroughput}}">
+          <view class="ov-cards">
+            <view class="ov-card">
+              <text class="ov-val accent">{{overview.throughput.approved}}</text>
+              <text class="ov-lbl">近{{overview.throughput.days}}日通过</text>
+            </view>
+            <view class="ov-card">
+              <text class="ov-val">{{overview.throughput.rejected}}</text>
+              <text class="ov-lbl">近{{overview.throughput.days}}日驳回</text>
+            </view>
+            <view class="ov-card">
+              <text class="ov-val muted">{{overview.throughput.minePending}}</text>
+              <text class="ov-lbl">我发起待审</text>
+            </view>
+          </view>
+          <view class="ov-section">
+            <text class="ov-sec-title">办结构成</text>
+            <view class="ov-bar-row" wx:for="{{overview.throughput.bars}}" wx:key="key">
+              <text class="ov-bar-label">{{item.name}}</text>
+              <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+              <text class="ov-bar-count">{{item.count}}</text>
+            </view>
+          </view>
+        </block>
+      </block>
+
+      <view class="ov-empty" wx:elif="{{!overviewLoading}}">暂无统计，点刷新重试</view>
+    </view>
+  </view>
+
+  <!-- 审核区入口：积分流水 → 小票认领 → 外部订单 -->
+  <view class="audit-hub" wx:if="{{canDecideTabs}}">
+    <text class="audit-hub-label">审核区</text>
+    <view class="audit-hub-row">
+      <view
+        class="audit-hub-chip {{hubMode === item.key ? 'active' : ''}}"
+        wx:for="{{auditHub}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="switchHub"
+      >{{item.label}}</view>
+    </view>
+  </view>
+
+  <!-- 积分流水（自门店积分管理迁入） -->
+  <block wx:if="{{hubFlow}}">
+    <picker class="store-picker" mode="selector" range="{{storeNames}}" value="{{storeIndex}}" bindchange="onFlowStoreChange">
+      <view class="picker-inner">
+        <text class="picker-label">门店</text>
+        <text class="picker-value">{{storeName}}</text>
+        <text class="picker-arrow">切换</text>
+      </view>
+    </picker>
+
+    <picker mode="selector" range="{{flowStatusOptions}}" value="{{flowStatusIndex}}" bindchange="onFlowStatusChange">
+      <view class="picker-inner filter-picker">
+        <text class="picker-label">状态筛选</text>
+        <text class="picker-value">{{flowStatusOptions[flowStatusIndex]}}</text>
+        <text class="picker-arrow">切换</text>
+      </view>
+    </picker>
+
+    <text class="flow-note">待审赠分请在「待我审」处理；本页用于全店流水查阅与撤销。</text>
+
+    <view class="flow-list">
+      <view class="record" wx:for="{{flowRecords}}" wx:key="_id">
+        <view class="rec-top">
+          <text class="rec-member">{{item.memberName || item.memberNo}}</text>
+          <text class="rec-points {{item.status === 'revoked' ? 'revoked' : 'gold'}}">+{{item.pointsGranted}}</text>
+        </view>
+        <view class="rec-bottom">
+          <text class="rec-meta">¥{{item.amount}} · {{item.timeText}}</text>
+          <text class="rec-status {{item.status}}">{{item.statusText}}</text>
+        </view>
+        <text class="rec-meta">经手 {{item.operatorName || '—'}}{{item.methodText ? ' · ' + item.methodText : ''}}{{item.receiptNo ? ' · ' + item.receiptNo : ''}}</text>
+        <text class="rec-meta warn" wx:if="{{item.revokedPoints > 0}}">已扣回 {{item.revokedPoints}} 分（¥{{item.revokedAmount}}）{{item.revokeReasonText ? ' · ' + item.revokeReasonText : ''}}</text>
+        <text class="rec-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
+        <view class="pending-row" wx:if="{{item.pendingHint}}" catchtap="jumpPendingGrant">
+          <text class="rec-meta warn">待店长审核 · 预计 +{{item.pointsGranted}} 分</text>
+          <text class="pending-link">去待我审 ›</text>
+        </view>
+        <view class="claim-thumbs" wx:if="{{item.attachmentImages && item.attachmentImages.length}}" catchtap="previewFlowImages" data-id="{{item._id}}">
+          <image
+            wx:for="{{item.attachmentImages}}"
+            wx:for-item="img"
+            wx:key="*this"
+            src="{{img}}"
+            mode="aspectFill"
+            class="claim-thumb"
+          ></image>
+        </view>
+        <view class="rec-actions" wx:if="{{item.canRevoke}}">
+          <view class="btn-danger-mini" catchtap="openRevoke" data-id="{{item._id}}">撤销</view>
+        </view>
+      </view>
+
+      <view class="empty flow-empty" wx:if="{{flowRecords.length === 0 && !flowLoading}}">
+        <text class="empty-title">暂无流水</text>
+        <text class="empty-hint">本店赠分记录会出现在这里</text>
+      </view>
+      <view class="load-more" wx:if="{{flowHasMore}}" bindtap="loadMoreFlow">加载更多</view>
+      <view class="footer-hint" wx:if="{{flowLoading}}">加载中…</view>
+    </view>
+  </block>
+
+  <block wx:else>
+  <view class="tab-bar">
+    <view class="tab {{viewMode==='inbox'?'active':''}}" wx:if="{{canDecideTabs}}" bindtap="switchView" data-mode="inbox">
+      待我审
+      <text class="badge-info badge-sm tab-badge badge-enter" wx:if="{{pendingBadge > 0}}">{{pendingBadge > 99 ? '99+' : pendingBadge}}</text>
+    </view>
+    <view class="tab {{viewMode==='done'?'active':''}}" wx:if="{{canDecideTabs}}" bindtap="switchView" data-mode="done">已办</view>
+    <view class="tab {{viewMode==='mine'?'active':''}}" bindtap="switchView" data-mode="mine">我发起的</view>
+  </view>
+
+  <view class="filter-bar">
+    <picker mode="selector" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange" wx:if="{{viewMode !== 'inbox'}}">
+      <view class="filter-pill">
+        <text class="pill-label">状态</text>
+        <text class="pill-value">{{statusOptions[statusIndex]}}</text>
+        <text class="pill-caret">▾</text>
+      </view>
+    </picker>
+    <view class="filter-pill locked" wx:else>
+      <text class="pill-label">状态</text>
+      <text class="pill-value">待审核</text>
+    </view>
+    <picker mode="selector" range="{{typeOptions}}" value="{{typeIndex}}" bindchange="onTypeChange">
+      <view class="filter-pill">
+        <text class="pill-label">类型</text>
+        <text class="pill-value">{{typeOptions[typeIndex]}}</text>
+        <text class="pill-caret">▾</text>
+      </view>
+    </picker>
+    <text class="filter-count" wx:if="{{total > 0}}">{{total}}</text>
+  </view>
+
+  <view class="card-list" wx:if="{{list.length}}">
+    <view
+      class="card {{item.status}} {{item.overdue?'overdue':''}} {{expandedId===item._id?'open':''}}"
+      wx:for="{{list}}"
+      wx:key="_id"
+      bindtap="toggleExpand"
+      data-id="{{item._id}}"
+    >
+      <view class="card-head">
+        <text class="card-title">{{item.title}}</text>
+        <text class="status-pill {{item.status}}">{{item.statusText}}</text>
+      </view>
+
+      <view class="card-tags">
+        <text class="type-tag">{{item.actionLabel}}</text>
+        <text class="sla-tag" wx:if="{{item.status==='pending' && item.overdueText}}">{{item.overdueText}}</text>
+      </view>
+
+      <text class="card-summary" wx:if="{{item.summary}}">{{item.summary}}</text>
+
+      <view class="attach-block" wx:if="{{item.showAttachmentBlock}}" catchtap="noop">
+        <view class="claim-thumbs" wx:if="{{item.hasAttachments}}">
+          <image
+            wx:for="{{item.attachmentImages}}"
+            wx:for-item="img"
+            wx:key="*this"
+            src="{{img}}"
+            mode="aspectFill"
+            class="claim-thumb"
+            catchtap="previewAttachment"
+            data-id="{{item._id}}"
+            data-url="{{img}}"
+          ></image>
+        </view>
+        <text class="attach-empty" wx:else>无附件</text>
+      </view>
+
+      <view class="card-meta-row">
+        <text class="card-meta">{{item.metaLine}}</text>
+        <text class="card-peek" wx:if="{{viewMode!=='inbox'}}">{{expandedId===item._id ? '收起' : '查看'}}</text>
+      </view>
+      <text class="card-meta subtle" wx:if="{{item.decidedLine}}">办理 {{item.decidedLine}}</text>
+
+      <view class="reject-bar" wx:if="{{item.rejectReason}}" catchtap="noop">
+        <text class="reject-label">驳回</text>
+        <text class="reject-text">{{item.rejectReason}}</text>
+      </view>
+
+      <view class="card-detail" wx:if="{{expandedId === item._id}}" catchtap="noop">
+        <view class="detail-row" wx:for="{{item.detailLines}}" wx:for-item="line" wx:key="*this">
+          <text class="detail-val">{{line}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.relatedId}}">
+          <text class="detail-label">关联</text>
+          <text class="detail-val mono">{{item.relatedId}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.source}}">
+          <text class="detail-label">来源</text>
+          <text class="detail-val">{{item.source}}</text>
+        </view>
+        <view class="detail-row" wx:if="{{item.executeResult && item.executeResult.msg}}">
+          <text class="detail-label">执行</text>
+          <text class="detail-val">{{item.executeResult.msg}}</text>
+        </view>
+        <text class="detail-hint" wx:if="{{!item.detailLines.length && !item.relatedId}}">暂无更多字段</text>
+      </view>
+
+      <view class="card-actions decide" wx:if="{{viewMode==='inbox' && item.canDecide}}" catchtap="noop">
+        <view class="btn-reject" catchtap="rejectItem" data-id="{{item._id}}" data-require="{{item.requireRejectReason ? '1' : '0'}}">驳回</view>
+        <view
+          class="btn-ignore"
+          wx:if="{{item.canIgnore}}"
+          catchtap="ignoreItem"
+          data-id="{{item._id}}"
+        >忽略</view>
+        <view class="btn-approve" catchtap="approveItem" data-id="{{item._id}}">通过</view>
+      </view>
+
+      <view class="card-actions mine" wx:elif="{{viewMode==='mine' && item.canNudge}}" catchtap="noop">
+        <view class="btn-nudge" catchtap="nudgeItem" data-id="{{item._id}}">催办</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty" wx:elif="{{!loading}}">
+    <text class="empty-title">{{emptyTitle}}</text>
+    <text class="empty-hint">{{emptyHint}}</text>
+  </view>
+
+  <view class="load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
+  <view class="footer-hint" wx:if="{{loading}}">加载中…</view>
+  </block>
+
+</view>
+
+<!-- 撤销弹窗（积分流水） -->
+<view class="mask" wx:if="{{showRevokeModal}}" bindtap="closeRevoke">
+  <view class="modal" catchtap="noop">
+    <view class="modal-head">
+      <text class="modal-title">撤销赠分</text>
+      <text class="modal-sub">{{revokeTarget.memberName || revokeTarget.memberNo}} · 原消费 ¥{{revokeTarget.amount}} / 赠 {{revokeTarget.pointsGranted}} 分</text>
+    </view>
+    <view class="modal-body">
+      <view class="field">
+        <text class="field-label">撤销原因</text>
+        <view class="seg-row wrap">
+          <view
+            class="seg-item {{revokeReasonIndex === index ? 'on' : ''}}"
+            wx:for="{{revokeReasonLabels}}"
+            wx:key="*this"
+            bindtap="onRevokeReasonTap"
+            data-idx="{{index}}"
+          >{{item}}</view>
+        </view>
+      </view>
+
+      <view class="field">
+        <text class="field-label">撤销金额（元，最多 {{revokeTarget.remainAmount}}）</text>
+        <input class="input" type="digit" value="{{revokeAmount}}" bindinput="onRevokeAmountInput" />
+      </view>
+
+      <text class="field-hint">按比例向上取整扣回。积分不足时记欠账，后续赠分自动抵扣。</text>
+    </view>
+    <view class="workbench-modal-foot">
+      <view class="workbench-btn-outline" bindtap="closeRevoke">取消</view>
+      <view class="workbench-btn-danger" bindtap="confirmRevoke">确认撤销</view>
+    </view>
+  </view>
+</view>

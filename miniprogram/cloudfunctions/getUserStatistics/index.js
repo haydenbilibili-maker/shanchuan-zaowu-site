@@ -3,9 +3,53 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+const SUPER_ADMIN_OPENIDS = [
+  'oa22s5ZcMY7xkQDlNW8X8jaYy46M',
+  'oa22s5RuZSXOCRQtXzdrVEiT1JuY'
+]
+
+async function isActiveStaff(openid) {
+  if (!openid) return false
+  let superList = SUPER_ADMIN_OPENIDS.slice()
+  try {
+    const acl = await db.collection('workspace_acl').doc('super_admins').get()
+    const fromDb = Array.isArray((acl.data || {}).openids) ? acl.data.openids : []
+    fromDb.forEach((id) => {
+      const v = String(id || '').trim()
+      if (v && superList.indexOf(v) === -1) superList.push(v)
+    })
+  } catch (e) { /* ignore */ }
+  if (superList.indexOf(openid) !== -1) return true
+  try {
+    const res = await db.collection('staff_members').where({ openid, status: 'active' }).limit(1).get()
+    if (res.data && res.data[0]) return true
+  } catch (e) { /* ignore */ }
+  try {
+    const userRes = await db.collection('users').where({ _openid: openid }).limit(1).get()
+    const user = userRes.data && userRes.data[0]
+    if (user && (user.isAdmin === true || user.staffRole === 'manager' || user.staffRole === 'staff')) {
+      return true
+    }
+  } catch (e) { /* ignore */ }
+  const admins = (process.env.MESSAGE_ADMIN_OPENIDS || '').split(',').map((s) => s.trim()).filter(Boolean)
+  return admins.includes(openid)
+}
+
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
-  const targetOpenId = event.targetOpenId || wxContext.OPENID
+  const callerOpenId = wxContext.OPENID || ''
+  const targetOpenId = event.targetOpenId || callerOpenId
+
+  if (!callerOpenId) {
+    return { success: false, msg: '未登录', data: null }
+  }
+
+  if (targetOpenId !== callerOpenId) {
+    const staff = await isActiveStaff(callerOpenId)
+    if (!staff) {
+      return { success: false, code: 'FORBIDDEN', msg: '仅可查看本人或店员查会员', data: null }
+    }
+  }
 
   try {
     // 1. 我的数据（浏览数、收藏数、分享数）

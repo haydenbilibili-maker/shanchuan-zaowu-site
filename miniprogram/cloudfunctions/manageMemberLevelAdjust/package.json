@@ -1,0 +1,9 @@
+{
+  "name": "manageMemberLevelAdjust",
+  "version": "1.0.0",
+  "description": "Admin 会员等级人工调整（含授权密码与审计）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

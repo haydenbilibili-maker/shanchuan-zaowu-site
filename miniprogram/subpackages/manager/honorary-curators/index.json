@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "荣誉馆长名单",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "enablePullDownRefresh": true,
+  "usingComponents": {}
+}

@@ -1,4 +1,11 @@
 const cloud = require('wx-server-sdk')
+const { normalizeCouponChannel } = require('./couponChannel')
+const {
+  validateCashCoupon,
+  validateDiscountCoupon,
+  defaultMinSpendForValue,
+  enforceCashMinSpend
+} = require('./couponDiscountRules')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
@@ -86,15 +93,21 @@ exports.main = async (event, context) => {
 
     // 5. 特殊类型检查
     if (coupon.type === 'newUser') {
-      // 新人券：检查用户是否为新用户（首次下单）
       const orderRes = await db.collection('orders')
         .where({
           _openid: openid,
           status: _.in(['paid', 'shipped', 'received'])
         })
-        .count()
+        .limit(100)
+        .get()
 
-      if (orderRes.total > 0) {
+      const hasPaidOrder = (orderRes.data || []).some((order) => {
+        if (order.source === 'exchange') return false
+        const price = parseFloat(String(order.totalPrice || 0).replace(/,/g, ''))
+        return !isNaN(price) && price > 0
+      })
+
+      if (hasPaidOrder) {
         return {
           success: false,
           msg: '新人券仅限新用户领取'
@@ -107,19 +120,61 @@ exports.main = async (event, context) => {
       ? new Date(Date.now() + coupon.expireDays * 24 * 60 * 60 * 1000)
       : (coupon.expireTime || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
 
+    const parseMinSpend = (coupon) => {
+      if (coupon.minSpend != null && coupon.minSpend !== '') {
+        const n = parseFloat(coupon.minSpend)
+        if (!isNaN(n)) return n
+      }
+      if (coupon.condition) {
+        const n = parseFloat(String(coupon.condition).replace(/[^0-9.]/g, ''))
+        if (!isNaN(n)) return n
+      }
+      return 0
+    }
+
+    const couponType = coupon.type || 'cash'
+    const couponValue = Number(coupon.value) || 0
+    let minSpend = parseMinSpend(coupon)
+
+    if (couponType === 'discount') {
+      const rateCheck = validateDiscountCoupon(couponValue)
+      if (!rateCheck.ok) {
+        return { success: false, msg: rateCheck.msg || '折扣券不得低于7.5折' }
+      }
+    } else if (couponType !== 'freeShipping') {
+      if (!(couponValue > 0)) {
+        return { success: false, msg: '代金券面额无效' }
+      }
+      if (!(minSpend > 0)) {
+        minSpend = defaultMinSpendForValue(couponValue)
+      }
+      const spendCheck = validateCashCoupon(couponValue, minSpend)
+      if (!spendCheck.ok) {
+        // 模板门槛过低时抬至地板后再发，避免运营误配阻断领取
+        minSpend = enforceCashMinSpend(couponValue, minSpend)
+        const again = validateCashCoupon(couponValue, minSpend)
+        if (!again.ok) {
+          return { success: false, msg: again.msg || '优惠券门槛配置违规' }
+        }
+      }
+    }
+
     const userCouponData = {
       _openid: openid,
       couponId: couponId,
       title: coupon.name || coupon.title,
-      type: coupon.type || 'cash',
+      type: couponType,
       value: coupon.value,
-      minSpend: coupon.condition ? parseFloat(coupon.condition.replace(/[^0-9.]/g, '')) || 0 : 0,
+      minSpend,
       status: 'unused',
       createTime: db.serverDate(),
       expireTime: expireTime,
       receiveType: receiveType,
       shareUserId: shareUserId || null,
-      image: coupon.image || null
+      image: coupon.image || null,
+      // 从 coupons 模板热读；缺省 all
+      channel: normalizeCouponChannel(coupon.channel),
+      stackable: coupon.stackable === true
     }
 
     const addRes = await db.collection('user_coupons').add({

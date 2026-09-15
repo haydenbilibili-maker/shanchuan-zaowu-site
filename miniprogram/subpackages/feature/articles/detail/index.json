@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "山海社区",
+  "backgroundColor": "#1A1814",
+  "usingComponents": {
+    "mp-html": "/subpackages/feature/components/mp-html/index",
+    "comment-list": "/subpackages/feature/components/CommentList/index"
+  },
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white"
+}

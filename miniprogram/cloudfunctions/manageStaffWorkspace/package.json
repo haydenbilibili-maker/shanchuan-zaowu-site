@@ -1,0 +1,9 @@
+{
+  "name": "manageStaffWorkspace",
+  "version": "1.0.0",
+  "description": "店员工作台：考勤、请假、清单、工资条、报销",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "manageApprovals",
+  "version": "1.0.0",
+  "description": "统一审批流：待审队列 / 通过驳回 / 商品上架",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

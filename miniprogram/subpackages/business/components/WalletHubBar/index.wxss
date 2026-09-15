@@ -1,0 +1,103 @@
+/* 钱包 | 券夹 分段（WalletHubBar · 钱包枢纽） */
+@import "../../../../styles/badges.wxss";
+
+.whb {
+  width: 100%;
+  padding: 16rpx 0 8rpx;
+  background: #1A1814;
+  box-sizing: border-box;
+}
+
+.whb-seg {
+  display: flex;
+  align-items: stretch;
+  background: #1F1D1A;
+  border: 1px solid #262320;
+  border-radius: 16rpx;
+  overflow: visible;
+}
+
+.whb-item {
+  flex: 1;
+  width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 96rpx;
+  padding: 20rpx 12rpx 24rpx;
+  box-sizing: border-box;
+}
+
+.whb-item-press {
+  opacity: 0.82;
+  transform: scale(0.98);
+}
+
+.whb-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.whb-cn-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34rpx;
+}
+
+.whb-cn {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #A09A90;
+  letter-spacing: 0.04em;
+  line-height: 34rpx;
+  text-align: center;
+}
+
+.whb-en {
+  margin-top: 4rpx;
+  font-size: 18rpx;
+  color: #6B6560;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.whb-item.is-on .whb-cn {
+  color: #C4A76C;
+}
+
+.whb-item.is-on .whb-en {
+  color: #8A7530;
+}
+
+.whb-badge-pos {
+  position: absolute;
+  top: -10rpx;
+  left: 100%;
+  margin-left: 2rpx;
+  z-index: 2;
+}
+
+.whb-ind {
+  position: absolute;
+  left: 28%;
+  right: 28%;
+  bottom: 0;
+  height: 4rpx;
+  background: #C4A76C;
+  border-radius: 4rpx 4rpx 0 0;
+}
+
+.whb-split {
+  width: 1px;
+  align-self: stretch;
+  margin: 16rpx 0;
+  background: #262320;
+  flex-shrink: 0;
+}

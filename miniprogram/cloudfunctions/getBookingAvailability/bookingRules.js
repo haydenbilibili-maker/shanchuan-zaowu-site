@@ -17,7 +17,7 @@ function getDefaultRules(storeId) {
     visitSlots: buildDefaultVisitSlots(storeId || MAIN_STORE_ID),
     closedDates: [],
     maxPerDay: storeId === WORKSHOP_STORE_ID ? 20 : 40,
-    weekendClosed: true,
+    weekendClosed: false,
     advanceDays: 7,
     minAdvanceHours: 2
   }

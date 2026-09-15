@@ -1,0 +1,355 @@
+<view class="container" wx:if="{{ready}}">
+
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">HONORARY CURATORS</text>
+      <text class="cn">荣誉馆长名单</text>
+    </view>
+    <text class="header-note">以手机号维护 Lv99 · 授予/移出均需授权密码 · 仅超管</text>
+  </view>
+
+  <view class="overview-panel">
+    <view class="overview-head">
+      <view class="overview-title-wrap">
+        <text class="overview-title">数据概览</text>
+        <text class="overview-sub" wx:if="{{overviewReady}}">生效采样 {{overview.totalLoaded}}{{overview.dataCapped ? '（已截断）' : ''}}</text>
+      </view>
+      <view class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
+    </view>
+
+    <view class="sub-tab-row overview-tabs">
+      <view
+        class="sub-tab {{overviewTab === item.key ? 'active' : ''}}"
+        wx:for="{{overviewTabs}}"
+        wx:key="key"
+        data-tab="{{item.key}}"
+        bindtap="switchOverviewTab"
+      >{{item.label}}</view>
+    </view>
+
+    <view class="overview-loading" wx:if="{{overviewLoading && !overviewReady}}">统计加载中…</view>
+
+    <block wx:elif="{{overviewReady && overview}}">
+      <text class="overview-hint">{{overviewHint}}</text>
+
+      <block wx:if="{{overviewTabActive}}">
+        <view class="ov-cards">
+          <view class="ov-card">
+            <text class="ov-val accent">{{overview.active.count}}</text>
+            <text class="ov-lbl">生效中</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val">{{overview.active.bound}}</text>
+            <text class="ov-lbl">已绑会员</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val muted">{{overview.active.unbound}}</text>
+            <text class="ov-lbl">仅名单</text>
+          </view>
+        </view>
+        <view class="ov-section">
+          <text class="ov-sec-title">绑定情况</text>
+          <view class="ov-bar-row" wx:for="{{overview.active.bindBars}}" wx:key="key">
+            <text class="ov-bar-label">{{item.name}}</text>
+            <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+            <text class="ov-bar-count">{{item.count}}</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{overviewTabRoster}}">
+        <view class="ov-cards">
+          <view class="ov-card wide">
+            <text class="ov-val">{{overview.roster.total}}</text>
+            <text class="ov-lbl">名单总量</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val muted">{{overview.roster.removed}}</text>
+            <text class="ov-lbl">已移出</text>
+          </view>
+        </view>
+        <view class="ov-section">
+          <text class="ov-sec-title">状态分布</text>
+          <view class="ov-bar-row" wx:for="{{overview.roster.bars}}" wx:key="key">
+            <text class="ov-bar-label">{{item.name}}</text>
+            <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+            <text class="ov-bar-count">{{item.count}}</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{overviewTabRecent}}">
+        <view class="ov-cards">
+          <view class="ov-card">
+            <text class="ov-val accent">{{overview.recent.grants}}</text>
+            <text class="ov-lbl">近{{overview.recent.days}}日授予</text>
+          </view>
+          <view class="ov-card wide">
+            <text class="ov-val">{{overview.recent.removals}}</text>
+            <text class="ov-lbl">近{{overview.recent.days}}日移出</text>
+          </view>
+        </view>
+        <view class="ov-section">
+          <text class="ov-sec-title">操作构成</text>
+          <view class="ov-bar-row" wx:for="{{overview.recent.bars}}" wx:key="key">
+            <text class="ov-bar-label">{{item.name}}</text>
+            <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+            <text class="ov-bar-count">{{item.count}}</text>
+          </view>
+        </view>
+      </block>
+    </block>
+
+    <view class="ov-empty" wx:elif="{{!overviewLoading}}">暂无统计，点刷新重试</view>
+  </view>
+
+  <view class="mode-tabs">
+    <view class="mode-tab {{modeFind ? 'on' : ''}}" data-mode="find" bindtap="switchMode">
+      <text class="mode-cn">找会员授予</text>
+      <text class="mode-en">查 users</text>
+    </view>
+    <view class="mode-tab {{modeRoster ? 'on' : ''}}" data-mode="roster" bindtap="switchMode">
+      <text class="mode-cn">筛选馆长名单</text>
+      <text class="mode-en">查名单库</text>
+    </view>
+  </view>
+
+  <!-- ========== 找会员授予 ========== -->
+  <block wx:if="{{modeFind}}">
+    <view class="hint-card info">
+      <text class="hint-text">在此搜索会员账号（完整号或后几位），预览后一键授予。搜不到人 ≠ 不能授：完整号仍可加入名单。</text>
+    </view>
+
+    <view class="section filter-section">
+      <view class="search-row">
+        <input
+          class="search-input"
+          type="number"
+          maxlength="11"
+          placeholder="手机号（完整或后几位，至少 3 位）"
+          value="{{findPhone}}"
+          bindinput="onFindPhoneInput"
+          bindconfirm="searchMembers"
+        />
+        <view class="btn-outline search-btn" bindtap="searchMembers">{{findLoading ? '…' : '搜索'}}</view>
+        <view class="btn-outline search-btn" wx:if="{{findPhone}}" bindtap="clearFind">清空</view>
+      </view>
+    </view>
+
+    <view class="section" wx:if="{{candidates.length}}">
+      <view class="section-head">
+        <text class="section-title">匹配会员</text>
+        <text class="section-meta">{{findMsg}}</text>
+      </view>
+      <view class="user-card" wx:for="{{candidates}}" wx:key="openid">
+        <view class="user-left">
+          <image wx:if="{{item.hasAvatar}}" class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+          <view wx:else class="avatar placeholder"><text>{{item.avatarInitial}}</text></view>
+          <view class="user-main">
+            <text class="user-name">{{item.nickName}}</text>
+            <text class="user-phone">{{item.phoneMasked}}</text>
+            <text class="user-level">当前：{{item.levelLabel}}</text>
+          </view>
+        </view>
+        <view class="user-right">
+          <text class="user-badge {{item.statusClass}}">{{item.statusLabel}}</text>
+          <view
+            class="btn-primary mini {{item.canGrant ? '' : 'disabled'}}"
+            wx:if="{{item.canGrant}}"
+            catchtap="openGrantFromCandidate"
+            data-phone="{{item.phone}}"
+          >授予</view>
+          <view class="btn-outline mini disabled" wx:else>已是馆长</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section empty-find" wx:if="{{findSearched && !findLoading && !candidates.length}}">
+      <text class="empty-title">未匹配到会员账号</text>
+      <text class="empty-desc">{{findMsg}}</text>
+      <view class="btn-primary grant-btn" wx:if="{{findCanGrantWithoutUser}}" bindtap="openGrantWithoutUser">
+        用 {{findPhoneMasked || '此号码'}} 授予
+      </view>
+      <view class="btn-outline grant-btn" wx:else bindtap="openManualAdd">手动输入完整号授予</view>
+    </view>
+
+    <view class="loading-hint" wx:if="{{findLoading}}">查找会员中…</view>
+
+    <view class="cta-row soft" wx:if="{{!findSearched}}">
+      <view class="btn-outline grant-btn" bindtap="openManualAdd">已知完整号，直接授予</view>
+    </view>
+  </block>
+
+  <!-- ========== 筛选馆长名单 ========== -->
+  <block wx:if="{{modeRoster}}">
+    <view class="hint-card">
+      <text class="hint-text">此处只筛选已在名单中的记录，不会查会员库。要找人授予请切到「找会员授予」。</text>
+    </view>
+
+    <view class="section filter-section">
+      <picker mode="selector" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange">
+        <view class="picker-inner">
+          <text class="picker-label">状态</text>
+          <text class="picker-value">{{statusOptions[statusIndex]}}</text>
+          <text class="picker-arrow">切换</text>
+        </view>
+      </picker>
+      <view class="search-row">
+        <input
+          class="search-input"
+          type="number"
+          maxlength="11"
+          placeholder="筛选名单手机号"
+          value="{{rosterPhone}}"
+          bindinput="onRosterPhoneInput"
+          bindconfirm="onRosterSearch"
+        />
+        <view class="btn-outline search-btn" bindtap="onRosterSearch">筛选</view>
+        <view class="btn-outline search-btn" wx:if="{{rosterPhone}}" bindtap="clearRosterSearch">清空</view>
+      </view>
+      <text class="total-hint" wx:if="{{total > 0}}">名单共 {{total}} 条</text>
+    </view>
+
+    <view class="section" wx:if="{{list.length}}">
+      <view class="record" wx:for="{{list}}" wx:key="_id">
+        <view class="rec-top">
+          <view class="rec-main">
+            <text class="rec-phone">{{item.phoneMasked || item.phone}}</text>
+            <text class="rec-meta" wx:if="{{item.matchedUserCount}}">绑定 {{item.matchedUserCount}} 人{{item.nickPreview ? ' · ' + item.nickPreview : ''}}</text>
+            <text class="rec-meta" wx:else>暂无绑定用户</text>
+          </view>
+          <text class="rec-status {{item.statusClass}}">{{item.statusLabel || (item.status === 'active' ? '生效中' : '已移出')}}</text>
+        </view>
+
+        <view class="rec-meta-row">
+          <text class="rec-meta" wx:if="{{item.timeText}}">加入 {{item.timeText}}</text>
+          <text class="rec-meta" wx:if="{{item.createdByName}}">{{item.createdByName}}</text>
+          <text class="rec-meta" wx:if="{{item.note}}">{{item.note}}</text>
+        </view>
+        <view class="rec-meta-row" wx:if="{{item.status === 'removed'}}">
+          <text class="rec-meta">移出 {{item.removedText || '—'}} · {{item.removedByName || item.removedBy || '—'}}</text>
+        </view>
+
+        <view class="rec-actions" wx:if="{{item.status === 'active'}}">
+          <view class="btn-danger" catchtap="openRemove" data-id="{{item._id}}">移出</view>
+        </view>
+      </view>
+
+      <view class="btn-outline load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
+    </view>
+
+    <view class="empty" wx:if="{{!loading && list.length === 0}}">名单中暂无匹配记录（不等于会员库搜不到人）</view>
+    <view class="loading-hint" wx:if="{{loading}}">加载名单中…</view>
+  </block>
+
+  <view class="section ops-section">
+    <view class="ops-head">
+      <text class="ops-title">最近操作</text>
+      <text class="ops-refresh" bindtap="loadOps">刷新</text>
+    </view>
+    <view class="ops-row" wx:for="{{opsList}}" wx:key="_id">
+      <view class="ops-left">
+        <text class="ops-action {{item.actionClass}}">{{item.actionLabel || item.action}}</text>
+        <text class="ops-phone">{{item.phoneMasked}}</text>
+      </view>
+      <view class="ops-right">
+        <text class="ops-meta">{{item.operatorName || '—'}}</text>
+        <text class="ops-meta">{{item.timeText}}</text>
+      </view>
+    </view>
+    <view class="empty-ops" wx:if="{{!opsLoading && opsList.length === 0}}">暂无操作日志</view>
+  </view>
+
+</view>
+
+<!-- 授予确认 -->
+<view class="modal-mask" wx:if="{{showAddModal}}">
+  <view class="modal-backdrop" catchtouchmove="noop" bindtap="closeModals"></view>
+  <view class="modal-sheet" catchtap="noop">
+    <view class="modal-head">
+      <text class="modal-title">授予荣誉馆长</text>
+      <text class="modal-sub" wx:if="{{addHint}}">{{addHint}}</text>
+      <text class="modal-sub" wx:else>加入名单后同步会员身份；已绑号用户将收到山海有信</text>
+    </view>
+    <scroll-view scroll-y class="modal-body" show-scrollbar="{{false}}">
+      <view class="field">
+        <text class="field-label">手机号（必填）</text>
+        <input
+          class="field-input"
+          type="number"
+          maxlength="11"
+          placeholder="11 位手机号"
+          placeholder-class="field-placeholder"
+          value="{{addForm.phone}}"
+          bindinput="onAddPhoneInput"
+          adjust-position="{{true}}"
+          hold-keyboard="{{true}}"
+        />
+      </view>
+      <view class="field">
+        <text class="field-label">备注（可选）</text>
+        <textarea
+          class="field-textarea"
+          maxlength="200"
+          placeholder="如：创始会员 / 活动赠予"
+          placeholder-class="field-placeholder"
+          value="{{addForm.note}}"
+          bindinput="onAddNoteInput"
+          auto-height="{{false}}"
+          show-confirm-bar="{{false}}"
+          adjust-position="{{true}}"
+          hold-keyboard="{{true}}"
+        />
+      </view>
+      <view class="field">
+        <text class="field-label">授权密码（必填）</text>
+        <input
+          class="field-input"
+          password
+          placeholder="荣誉馆长授权密码"
+          placeholder-class="field-placeholder"
+          value="{{addForm.password}}"
+          bindinput="onAddPasswordInput"
+          bindconfirm="confirmAdd"
+          adjust-position="{{true}}"
+          hold-keyboard="{{true}}"
+        />
+      </view>
+    </scroll-view>
+    <view class="modal-foot">
+      <view class="btn-outline" bindtap="closeModals">取消</view>
+      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmAdd">确认授予</view>
+    </view>
+  </view>
+</view>
+
+<!-- 移出 -->
+<view class="modal-mask" wx:if="{{showRemoveModal}}">
+  <view class="modal-backdrop" catchtouchmove="noop" bindtap="closeModals"></view>
+  <view class="modal-sheet" catchtap="noop">
+    <view class="modal-head">
+      <text class="modal-title">移出荣誉馆长</text>
+      <text class="modal-sub" wx:if="{{removeTarget}}">将移出 {{removeTarget.phoneMasked}}；isHonorary 清除，等级按成长值回落</text>
+    </view>
+    <scroll-view scroll-y class="modal-body" show-scrollbar="{{false}}">
+      <view class="field">
+        <text class="field-label">授权密码（必填）</text>
+        <input
+          class="field-input"
+          password
+          placeholder="荣誉馆长授权密码"
+          placeholder-class="field-placeholder"
+          value="{{removePassword}}"
+          bindinput="onRemovePasswordInput"
+          bindconfirm="confirmRemove"
+          adjust-position="{{true}}"
+          hold-keyboard="{{true}}"
+        />
+      </view>
+    </scroll-view>
+    <view class="modal-foot">
+      <view class="btn-outline" bindtap="closeModals">取消</view>
+      <view class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmRemove">确认移出</view>
+    </view>
+  </view>
+</view>

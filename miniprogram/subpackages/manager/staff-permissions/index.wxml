@@ -1,0 +1,214 @@
+<view class="container" wx:if="{{ready}}">
+
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">STAFF ACCESS</text>
+      <text class="cn">权限配置</text>
+    </view>
+    <view class="signal-legend header-legend">
+      <view class="signal-legend-item"><view class="signal-light lamp-forest"></view><text class="signal-legend-text">深绿 · 生效</text></view>
+      <view class="signal-legend-item"><view class="signal-light lamp-muted hollow"></view><text class="signal-legend-text">灰空心 · 停用</text></view>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">后台角色</text>
+    <text class="section-note">工作台能力仅在此由超管配置；店员报销、清单等现场审批由店长处理（超管可代审）。支持手机号查找或粘贴 openid。</text>
+    <view class="btn-primary" bindtap="openStaffModal">开通后台角色</view>
+    <text class="section-note link-note" bindtap="copyOpenidHint">不知道 openid？点此查看获取方式</text>
+  </view>
+
+  <view class="section">
+    <view class="row staff-row" wx:for="{{staffList}}" wx:key="_id">
+      <view class="row-main">
+        <view class="staff-title-line">
+          <view class="signal-light {{item.status === 'active' ? 'lamp-forest' : 'lamp-muted hollow'}}"></view>
+          <text class="row-title">{{item.name || '未命名'}} · {{item.roleText}}</text>
+          <text class="tag {{item.status}}">{{item.status === 'active' ? '生效' : '已停用'}}</text>
+        </view>
+        <text class="row-sub">…{{item.openidTail}}{{item.staffNo ? ' · ' + item.staffNo : ''}}</text>
+        <text class="row-sub" wx:if="{{item.showStoreScope}}">{{item.storeIds.length ? '限门店 ' + item.storeIds.length + ' 家' : '全部门店'}}{{item.dailyGrantCap > 0 ? ' · 日限 ' + item.dailyGrantCap + ' 分' : ''}}</text>
+        <text class="row-sub" wx:if="{{item.shareholderProfile && item.shareholderProfile.storeId}}">股东 · {{item.shareholderProfile.storeName || item.shareholderProfile.storeId}} · 占股 {{item.shareholderProfile.ownershipRatio || 0}}% · 回本前 {{item.shareholderProfile.dividendRatioBeforePayback != null ? item.shareholderProfile.dividendRatioBeforePayback : (item.shareholderProfile.dividendRatio || 0)}}% · 回本后 {{item.shareholderProfile.dividendRatioAfterPayback != null ? item.shareholderProfile.dividendRatioAfterPayback : (item.shareholderProfile.dividendRatio || 0)}}%</text>
+      </view>
+      <view class="staff-actions">
+        <view class="staff-btn edit" catchtap="openStaffModal" data-id="{{item._id}}">编辑</view>
+        <view
+          class="staff-btn danger"
+          wx:if="{{item.status === 'active'}}"
+          catchtap="disableStaff"
+          data-id="{{item._id}}"
+        >停用</view>
+        <view
+          class="staff-btn success"
+          wx:else
+          catchtap="enableStaff"
+          data-id="{{item._id}}"
+        >启用</view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{staffList.length === 0}}">还没有登记权限账号，可用手机号或 openid 开通角色</view>
+  </view>
+
+  <view class="section">
+    <text class="field-label">权限边界</text>
+    <text class="section-note">编辑人员时可按工作台勾选能力；超管工作台为全集（只读）。未勾选的能力在对应工作台入口不可见，云函数亦会拒绝。</text>
+  </view>
+</view>
+
+<view class="mask" wx:if="{{showStaffModal}}" bindtap="closeStaffModal">
+  <view class="modal" catchtap="noop">
+    <view class="modal-head">
+      <text class="modal-title">编辑权限</text>
+      <text class="modal-sub">手机号查找或粘贴 openid</text>
+    </view>
+
+    <view class="modal-body">
+      <view class="field">
+        <text class="field-label">手机号查找</text>
+        <view class="phone-toolbar">
+          <input class="input phone-input" type="number" maxlength="11"
+                 placeholder="对方已授权的 11 位手机号" placeholder-class="ph"
+                 value="{{staffForm.phone}}" bindinput="onStaffInput" data-field="phone" />
+          <view class="lookup-btn {{staffLookingUp ? 'disabled' : ''}}" bindtap="lookupStaffByPhone">
+            {{staffLookingUp ? '查找中' : '查找'}}
+          </view>
+        </view>
+        <text class="field-hint warn" wx:if="{{staffMatchHint && !staffMatched}}">{{staffMatchHint}}</text>
+        <view class="match-card" wx:if="{{staffMatched && staffMatched.openid}}">
+          <text class="match-badge">已匹配</text>
+          <text class="match-name">{{staffMatched.nickName || '藏家'}}</text>
+          <text class="match-meta" wx:if="{{staffMatched.phoneMasked}}">{{staffMatched.phoneMasked}} · …{{staffMatched.openidTail}}</text>
+          <text class="match-meta" wx:else>…{{staffMatched.openidTail}}</text>
+        </view>
+        <view class="candidate-list" wx:if="{{staffCandidates.length > 1}}">
+          <text class="field-hint">找到多个账号，点选其一</text>
+          <view class="candidate {{item.openid === staffForm.openid ? 'on' : ''}}"
+                wx:for="{{staffCandidates}}" wx:key="openid"
+                bindtap="selectStaffCandidate" data-openid="{{item.openid}}">
+            <text class="match-name">{{item.nickName || '藏家'}}</text>
+            <text class="match-meta">{{item.phoneMasked}} · …{{item.openidTail}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="field">
+        <text class="field-label">openid（用户 ID）</text>
+        <input class="input" placeholder="粘贴微信 openid / users._openid" placeholder-class="ph"
+               value="{{staffForm.openid}}" bindinput="onStaffInput" data-field="openid" />
+        <text class="field-hint" wx:if="{{staffForm.openid}}">当前 …{{staffForm.openidTail || staffForm.openid}}</text>
+        <text class="field-hint" wx:else>手机号查不到时，可直接粘贴 openid</text>
+      </view>
+
+      <view class="field">
+        <text class="field-label">姓名</text>
+        <input class="input" value="{{staffForm.name}}" bindinput="onStaffInput" data-field="name" placeholder="选填" placeholder-class="ph" />
+      </view>
+
+      <view class="field">
+        <text class="field-label">工号</text>
+        <input class="input" value="{{staffForm.staffNo}}" bindinput="onStaffInput" data-field="staffNo" placeholder="选填" placeholder-class="ph" />
+      </view>
+
+      <view class="field">
+        <text class="field-label">角色</text>
+        <view class="seg-row wrap">
+          <view
+            class="seg-item {{staffRoleSelected[staffRoleValues[index]] ? 'on' : ''}}"
+            wx:for="{{staffRoleLabels}}"
+            wx:key="*this"
+            bindtap="onStaffRoleTap"
+            data-idx="{{index}}"
+          >{{item}}</view>
+        </view>
+        <text class="field-hint">可同时担任多个角色，将在「我的」分别显示对应工作台</text>
+      </view>
+
+      <view class="field {{!showStoreScope ? 'last' : ''}}" wx:if="{{featureGroups.length}}">
+        <text class="field-label">工作台功能</text>
+        <view class="feature-group" wx:for="{{featureGroups}}" wx:for-index="gidx" wx:key="roleKey">
+          <view class="feature-group-head">
+            <text class="feature-group-title">{{item.title}}</text>
+            <text class="feature-group-en">{{item.en}}</text>
+          </view>
+          <text class="field-hint" wx:if="{{item.readOnly}}">超管工作台为全集，不可逐项关闭</text>
+          <view
+            class="feature-check {{feat.checked ? 'on' : ''}} {{item.readOnly || feat.disabled ? 'locked' : ''}}"
+            wx:for="{{item.items}}"
+            wx:for-item="feat"
+            wx:for-index="iidx"
+            wx:key="key"
+            bindtap="toggleFeature"
+            data-gidx="{{gidx}}"
+            data-iidx="{{iidx}}"
+          >
+            <text class="feature-check-label">{{feat.label}}</text>
+            <text class="feature-check-state">{{feat.checked ? '开' : '关'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="field" wx:if="{{showShareholderConfig}}">
+        <text class="field-label">股东配置</text>
+        <text class="field-hint">绑定门店；回本前/后分成占投资人分红池比重（与财务双阶段一致）。完整维护请用「股东配置」入口。</text>
+        <view class="store-check-list">
+          <view
+            class="store-check {{item.selected ? 'on' : ''}}"
+            wx:for="{{shareholderStoreChecks}}"
+            wx:key="key"
+            bindtap="toggleShareholderStore"
+            data-id="{{item.storeId}}"
+          >{{item.name}}</view>
+        </view>
+        <view class="shareholder-fields">
+          <view class="field">
+            <text class="field-label">占股比例 (%)</text>
+            <input class="input" type="digit" value="{{staffForm.ownershipRatio}}" bindinput="onStaffInput" data-field="ownershipRatio" placeholder="如 30" placeholder-class="ph" />
+          </view>
+          <view class="field">
+            <text class="field-label">回本前分成 (%)</text>
+            <input class="input" type="digit" value="{{staffForm.dividendRatioBeforePayback}}" bindinput="onStaffInput" data-field="dividendRatioBeforePayback" placeholder="占投资人分红池，如 50" placeholder-class="ph" />
+          </view>
+          <view class="field">
+            <text class="field-label">回本后分成 (%)</text>
+            <input class="input" type="digit" value="{{staffForm.dividendRatioAfterPayback}}" bindinput="onStaffInput" data-field="dividendRatioAfterPayback" placeholder="默认同回本前" placeholder-class="ph" />
+          </view>
+          <view class="field">
+            <text class="field-label">出资额 （元）</text>
+            <input class="input" type="digit" value="{{staffForm.capitalContribution}}" bindinput="onStaffInput" data-field="capitalContribution" placeholder="个人出资额" placeholder-class="ph" />
+          </view>
+          <view class="field last">
+            <text class="field-label">生效日</text>
+            <picker mode="date" value="{{staffForm.effectiveDate || '2024-01-01'}}" bindchange="onShareholderDateChange">
+              <view class="input picker-like">{{staffForm.effectiveDate || '选择生效日'}}</view>
+            </picker>
+          </view>
+        </view>
+      </view>
+
+      <view class="field" wx:if="{{showStoreScope}}">
+        <text class="field-label">可操作门店</text>
+        <view class="store-check-list">
+          <view
+            class="store-check {{item.selected ? 'on' : ''}}"
+            wx:for="{{staffStoreChecks}}"
+            wx:key="key"
+            bindtap="toggleStaffStore"
+            data-id="{{item.storeId}}"
+            data-all="{{item.isAll}}"
+          >{{item.name}}</view>
+        </view>
+        <text class="field-hint">未选或「全部门店」= 全部；勾选后仅限所选</text>
+      </view>
+
+      <view class="field last" wx:if="{{showStoreScope}}">
+        <text class="field-label">单日发放积分上限</text>
+        <input class="input" type="number" value="{{staffForm.dailyGrantCap}}" bindinput="onStaffInput" data-field="dailyGrantCap" placeholder="0 = 不额外限制" placeholder-class="ph" />
+      </view>
+    </view>
+
+    <view class="workbench-modal-foot">
+      <view class="workbench-btn-outline" bindtap="closeStaffModal">取消</view>
+      <view class="workbench-btn-primary {{staffSaving ? 'is-disabled' : ''}}" bindtap="saveStaff">保存</view>
+    </view>
+  </view>
+</view>

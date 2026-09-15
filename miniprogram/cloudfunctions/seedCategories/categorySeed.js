@@ -72,9 +72,20 @@ const DEFAULT_CATEGORY_TREE = [
         })
       },
       {
-        name: '半翅目 · 蝉与蚧',
-        enName: 'HEMIPTERA',
+        name: '膜翅目 · 蜂蚁',
+        enName: 'HYMENOPTERA',
         sortOrder: 4,
+        taxonomy: tax('动物界', '节肢动物门', '昆虫纲', '膜翅目', '', '', {
+          kingdom: 'Animalia',
+          phylum: 'Arthropoda',
+          class: 'Insecta',
+          order: 'Hymenoptera'
+        })
+      },
+      {
+        name: '半翅目 · 蝉与蝽',
+        enName: 'HEMIPTERA',
+        sortOrder: 5,
         taxonomy: tax('动物界', '节肢动物门', '昆虫纲', '半翅目', '', '', {
           kingdom: 'Animalia',
           phylum: 'Arthropoda',
@@ -83,9 +94,52 @@ const DEFAULT_CATEGORY_TREE = [
         })
       },
       {
+        name: '直翅目 · 蝗螽',
+        enName: 'ORTHOPTERA',
+        sortOrder: 6,
+        taxonomy: tax('动物界', '节肢动物门', '昆虫纲', '直翅目', '', '', {
+          kingdom: 'Animalia',
+          phylum: 'Arthropoda',
+          class: 'Insecta',
+          order: 'Orthoptera'
+        })
+      },
+      {
+        name: '蜻蜓目 · 蜻蜓',
+        enName: 'ODONATA',
+        sortOrder: 7,
+        taxonomy: tax('动物界', '节肢动物门', '昆虫纲', '蜻蜓目', '', '', {
+          kingdom: 'Animalia',
+          phylum: 'Arthropoda',
+          class: 'Insecta',
+          order: 'Odonata'
+        })
+      },
+      {
+        name: '竹节虫目 · 竹节虫',
+        enName: 'PHASMATODEA',
+        sortOrder: 8,
+        taxonomy: tax('动物界', '节肢动物门', '昆虫纲', '竹节虫目', '', '', {
+          kingdom: 'Animalia',
+          phylum: 'Arthropoda',
+          class: 'Insecta',
+          order: 'Phasmatodea'
+        })
+      },
+      {
+        name: '其他昆虫',
+        enName: 'INSECTA OTHER',
+        sortOrder: 9,
+        taxonomy: tax('动物界', '节肢动物门', '昆虫纲', '', '', '', {
+          kingdom: 'Animalia',
+          phylum: 'Arthropoda',
+          class: 'Insecta'
+        })
+      },
+      {
         name: '组合框画',
         enName: 'FRAME SET',
-        sortOrder: 5,
+        sortOrder: 10,
         categoryType: CATEGORY_TYPE.DISPLAY,
         taxonomy: tax('动物界', '节肢动物门', '昆虫纲', '', '', '', {
           kingdom: 'Animalia',
@@ -321,9 +375,53 @@ const DEFAULT_CATEGORY_TREE = [
     ]
   },
   {
+    name: '首饰馆',
+    enName: 'JEWELRY',
+    sortOrder: 6,
+    categoryType: CATEGORY_TYPE.MERCH,
+    taxonomy: tax('', '', '', '', '', '', {}),
+    children: [
+      {
+        name: '戒指与指环',
+        enName: 'RINGS',
+        sortOrder: 1,
+        categoryType: CATEGORY_TYPE.MERCH,
+        taxonomy: tax('', '', '', '', '', '', {})
+      },
+      {
+        name: '项链与吊坠',
+        enName: 'NECKLACE',
+        sortOrder: 2,
+        categoryType: CATEGORY_TYPE.MERCH,
+        taxonomy: tax('', '', '', '', '', '', {})
+      },
+      {
+        name: '手链与手镯',
+        enName: 'BRACELET',
+        sortOrder: 3,
+        categoryType: CATEGORY_TYPE.MERCH,
+        taxonomy: tax('', '', '', '', '', '', {})
+      },
+      {
+        name: '耳饰',
+        enName: 'EARRINGS',
+        sortOrder: 4,
+        categoryType: CATEGORY_TYPE.MERCH,
+        taxonomy: tax('', '', '', '', '', '', {})
+      },
+      {
+        name: '胸针与别针',
+        enName: 'BROOCH',
+        sortOrder: 5,
+        categoryType: CATEGORY_TYPE.MERCH,
+        taxonomy: tax('', '', '', '', '', '', {})
+      }
+    ]
+  },
+  {
     name: '衍生品',
     enName: 'MERCHANDISE',
-    sortOrder: 6,
+    sortOrder: 7,
     categoryType: CATEGORY_TYPE.MERCH,
     taxonomy: tax('', '', '', '', '', '', {}),
     children: [
@@ -376,21 +474,43 @@ const DEFAULT_CATEGORY_TREE = [
 /** 旧一级名 → 精简一级馆名（合并脏数据用） */
 const LEGACY_ROOT_ALIASES = {
   神奇昆虫: '昆虫馆',
+  神奇昆虫馆: '昆虫馆',
+  蝴蝶昆虫: '昆虫馆',
+  蝴蝶昆虫馆: '昆虫馆',
+  首饰: '首饰馆',
+  饰品馆: '首饰馆',
   群山回响: '矿石馆',
   植物探微: '植物馆',
+  植物果实: '植物馆',
   无尽海洋: '海洋馆',
+  海洋标本: '海洋馆',
   动物类: '动物馆',
+  动物世界: '动物馆',
   昆虫: '昆虫馆',
   植物: '植物馆',
   海洋: '海洋馆',
   矿石: '矿石馆',
-  矿物: '矿石馆'
+  矿物: '矿石馆',
+  动物: '动物馆'
 }
 
 /** 旧二级名 → 新二级名（便于 upsert 迁移） */
 const LEGACY_CHILD_ALIASES = {
   蝴蝶: '鳞翅目 · 蝴蝶',
   甲虫: '鞘翅目 · 甲虫',
+  螳螂: '螳螂目 · 螳螂',
+  膜翅目: '膜翅目 · 蜂蚁',
+  蜂蚁: '膜翅目 · 蜂蚁',
+  半翅目: '半翅目 · 蝉与蝽',
+  '半翅目 · 蝉与蚧': '半翅目 · 蝉与蝽',
+  蝉与蚧: '半翅目 · 蝉与蝽',
+  蝉与蝽: '半翅目 · 蝉与蝽',
+  直翅目: '直翅目 · 蝗螽',
+  蝗螽: '直翅目 · 蝗螽',
+  蜻蜓目: '蜻蜓目 · 蜻蜓',
+  蜻蜓: '蜻蜓目 · 蜻蜓',
+  竹节虫目: '竹节虫目 · 竹节虫',
+  竹节虫: '竹节虫目 · 竹节虫',
   矿石晶体: '石英与水晶',
   晶洞: '紫水晶与晶洞',
   干花标本: '被子植物 · 押花',
@@ -408,13 +528,173 @@ const LEGACY_CHILD_ALIASES = {
   工具耗材: '标本工具耗材'
 }
 
+/**
+ * 库内有、标准树未收录的二级：合理默认拉丁/英文（补齐用；不确定标 pending_review）
+ * latinName 为展示副标；enName 为大写标签
+ * 昆虫目级已进 DEFAULT_CATEGORY_TREE，此处仅保留其它馆临时项
+ */
+const EXTRA_L2_LATIN_DEFAULTS = {
+  树脂封存: { enName: 'RESIN CAST', latinName: 'Resin Cast', pendingReview: true },
+  菌物界: { enName: 'FUNGI', latinName: 'Fungi', pendingReview: false },
+  叶脉标本: { enName: 'LEAF SKELETON', latinName: 'Folia', pendingReview: true },
+  棘皮动物: { enName: 'ECHINODERMATA', latinName: 'Echinodermata', pendingReview: false },
+  岩石标本: { enName: 'ROCK', latinName: 'Petra', pendingReview: true },
+  晶体矿: { enName: 'CRYSTAL', latinName: 'Crystallum', pendingReview: true },
+  金属矿: { enName: 'METALLIC', latinName: 'Metallum', pendingReview: true }
+}
+
 /** 允许存在的一级馆白名单（顺序即 Picker 顺序） */
 const CANONICAL_ROOT_NAMES = DEFAULT_CATEGORY_TREE.map((r) => r.name)
+const CANONICAL_ROOT_SET = new Set(CANONICAL_ROOT_NAMES)
+
+/**
+ * 首页「博物标本室」灵动球 _id → 规范一级馆名
+ * 注意：旧版第二球曾映射矿石馆/群山回响，现为动物馆
+ */
+const HOME_ORB_ROOT = {
+  insect: '昆虫馆',
+  animal: '动物馆',
+  plant: '植物馆',
+  marine: '海洋馆'
+}
+
+/** 任意一级名 / 短名 / 旧展示名 → 规范馆名（如 动物 → 动物馆） */
+function toCanonicalRootName(raw) {
+  if (raw == null || raw === '') return ''
+  const s = String(raw).trim()
+  if (!s) return ''
+  if (CANONICAL_ROOT_SET.has(s)) return s
+  if (LEGACY_ROOT_ALIASES[s]) return LEGACY_ROOT_ALIASES[s]
+  if (!s.endsWith('馆')) {
+    const withHall = `${s}馆`
+    if (CANONICAL_ROOT_SET.has(withHall)) return withHall
+    if (LEGACY_ROOT_ALIASES[withHall]) return LEGACY_ROOT_ALIASES[withHall]
+  }
+  return ''
+}
+
+/**
+ * C 端馆藏一级展示名（与 Admin / 云库 name 对齐）
+ * 旧短名仍可通过 LEGACY_ROOT_ALIASES / toCanonicalRootName 解析匹配。
+ * ROOT_DISPLAY_NAMES 仅作可选覆盖；默认直接展示规范馆名（含「馆」）。
+ */
+const ROOT_DISPLAY_NAMES = {
+  昆虫馆: '蝴蝶昆虫馆'
+}
+
+/** 规范馆名 / 别名 → 馆藏 Tab 展示名（优先 Admin 云库 name，如 饰品馆、蝴蝶昆虫馆） */
+function toRootDisplayName(raw) {
+  if (raw == null || raw === '') return ''
+  const s = String(raw).trim()
+  if (!s || s === '全部') return s === '全部' ? '全部' : ''
+  const canonical = toCanonicalRootName(s)
+  if (canonical && s !== canonical) return s
+  const base = canonical || s
+  if (ROOT_DISPLAY_NAMES[base]) return ROOT_DISPLAY_NAMES[base]
+  return base
+}
+
+/**
+ * 二级缺注释时的展示兜底（云库 sync 重命名前仍可读）
+ * 正式名仍以 categories.name / seed 为准；此处仅 UI 拼接。
+ */
+const L2_DISPLAY_ANNOTATIONS = {
+  膜翅目: '蜂蚁',
+  直翅目: '蝗螽',
+  蜻蜓目: '蜻蜓',
+  竹节虫目: '竹节虫',
+  半翅目: '蝉与蝽',
+  鳞翅目: '蝴蝶',
+  鞘翅目: '甲虫',
+  螳螂目: '螳螂',
+  腹足纲: '贝壳',
+  双壳纲: '双壳贝',
+  珊瑚纲: '珊瑚',
+  头足纲: '头足类',
+  甲壳纲: '蟹虾',
+  辐鳍鱼纲: '鱼类',
+  被子植物: '押花'
+}
+
+/**
+ * 二级品类展示名：优先 name；若无「·」注释则用 alias / subtitle / commonName / 兜底表拼接
+ */
+function formatCategoryDisplayName(catOrName) {
+  if (catOrName == null) return ''
+  if (typeof catOrName === 'string') {
+    const name = String(catOrName).trim()
+    if (!name) return ''
+    if (/[·・]/.test(name)) return name
+    const note = L2_DISPLAY_ANNOTATIONS[name]
+    return note ? `${name} · ${note}` : name
+  }
+  const name = String(catOrName.name || '').trim()
+  if (!name) return ''
+  if (/[·・]/.test(name)) return name
+  const note = String(
+    catOrName.alias ||
+      catOrName.subtitle ||
+      catOrName.commonName ||
+      L2_DISPLAY_ANNOTATIONS[name] ||
+      ''
+  ).trim()
+  if (note && note !== name) return `${name} · ${note}`
+  return name
+}
+
+/**
+ * 商品 rootCategoryName / 仅写了一级名的 category 可能出现的全部别名
+ * 用于云库 _.in 精确匹配，避免用「海」「动物」等短词正则误伤 title/二级名
+ */
+function collectRootAliases(canonicalOrRaw) {
+  const canonical = toCanonicalRootName(canonicalOrRaw)
+  if (!canonical) return []
+  const names = new Set([canonical])
+  if (canonical.endsWith('馆')) names.add(canonical.slice(0, -1))
+  Object.entries(LEGACY_ROOT_ALIASES).forEach(([legacy, target]) => {
+    if (target !== canonical) return
+    names.add(legacy)
+    if (legacy.endsWith('馆')) names.add(legacy.slice(0, -1))
+  })
+  return [...names]
+}
+
+/** enName 规范为大写时转成拉丁展示：LEPIDOPTERA → Lepidoptera；多词保留 Title Case */
+function titleCaseEnName(en) {
+  const s = String(en || '').trim()
+  if (!s) return ''
+  if (/\s/.test(s)) {
+    return s
+      .split(/\s+/)
+      .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ''))
+      .join(' ')
+  }
+  if (s === s.toUpperCase() && /[A-Z]/.test(s)) {
+    return s.charAt(0) + s.slice(1).toLowerCase()
+  }
+  return s
+}
+
+/**
+ * 从种子节点推导拉丁名 / 副标题（优先 taxonomy 拉丁，其次 enName）
+ */
+function deriveLatinName(node = {}) {
+  const explicit = String(node.latinName || node.latin || '').trim()
+  if (explicit) return explicit
+  const t = node.taxonomy || {}
+  const fromTax =
+    t.genusLatin || t.familyLatin || t.orderLatin || t.classLatin || t.phylumLatin || t.kingdomLatin || ''
+  if (fromTax) return String(fromTax).trim()
+  return titleCaseEnName(node.enName)
+}
 
 function buildCategoryDoc(node, level, parentId) {
+  const latinName = deriveLatinName(node)
   const doc = {
     name: node.name,
     enName: node.enName || '',
+    latinName,
+    latin: latinName,
     level,
     sortOrder: node.sortOrder || 99,
     status: 'active',
@@ -431,6 +711,16 @@ module.exports = {
   CANONICAL_ROOT_NAMES,
   LEGACY_ROOT_ALIASES,
   LEGACY_CHILD_ALIASES,
+  EXTRA_L2_LATIN_DEFAULTS,
+  HOME_ORB_ROOT,
+  ROOT_DISPLAY_NAMES,
+  L2_DISPLAY_ANNOTATIONS,
+  toCanonicalRootName,
+  toRootDisplayName,
+  formatCategoryDisplayName,
+  collectRootAliases,
   buildCategoryDoc,
+  deriveLatinName,
+  titleCaseEnName,
   tax
 }

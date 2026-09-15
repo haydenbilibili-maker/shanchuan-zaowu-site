@@ -4,8 +4,10 @@
  */
 const cloud = require('wx-server-sdk')
 const https = require('https')
+const { assertStaff } = require('./staffGuard')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const db = cloud.database()
 
 const DASHSCOPE_HOST = 'dashscope.aliyuncs.com'
 const TEXT_PATH = '/api/v1/services/aigc/text-generation/generation'
@@ -73,7 +75,7 @@ async function callQwenText(prompt, apiKey) {
   const body = {
     model: 'qwen-plus',
     input: { messages: [{ role: 'user', content: prompt }] },
-    parameters: { result_format: 'message', temperature: 0.35 }
+    parameters: { result_format: 'message', temperature: 0.28 }
   }
   const res = await httpsPostJson(TEXT_PATH, body, { Authorization: `Bearer ${apiKey}` })
   return extractTextGen(res)
@@ -81,25 +83,32 @@ async function callQwenText(prompt, apiKey) {
 
 function buildPrompt(title, themeHint) {
   const hintLine = themeHint ? `\n【创作方向/关键词】${themeHint}` : ''
-  return `你是「山海造物 Nature's Creations」博物馆的专题策展文案助手。品牌调性：维多利亚博物学奇珍柜——克制、具体、有感官细节，禁止直播电商话术与 emoji。
+  return `你是「山海造物 Nature's Creations」博物馆的专题策展文案助手。品牌调性：维多利亚博物学奇珍柜——克制、具体、有感官与可核验的科学细节，禁止直播电商话术、浮夸推销与 emoji。
 
-【任务】为以下专题生成策展文案，输出 JSON。
+【任务】为以下专题生成科学策展文案，输出 JSON。
 
 【专题标题】${title}${hintLine}
 
 【硬性规则】
 1. latinName：英文副标题，2–5 个词，Title Case 或自然短语（如 Cretaceous Echo、Dinosauria）。
-2. brief：中文摘要 40–80 字，一句话说清专题价值与观看路径。
+2. brief：中文摘要 60–120 字，说清专题观看路径与科学切入点，不要口号。
 3. tags：3–5 个中文标签数组，必须包含「专题」，可含品类词（昆虫/矿物/植物/海洋/恐龙/白垩纪/博物学等）。
-4. content：HTML 正文，2–3 个板块。每板块用 <h2>标题</h2> 开头，正文用 <p>…</p>；可选 <ul><li>…</li></ul> 列 2–3 条观展提示。禁止外链与 script。不要插入图片标签。
-5. 内容须与标题「${title}」严格对应，禁止套用无关模板物种。
-6. 仅输出一个 JSON 对象，不要 markdown 代码围栏，不要解释文字。
+4. content：HTML 正文，必须包含 4–6 个栏目，每个栏目用 <h2>标题</h2> 开头，正文用 <p>…</p>；「观展与收藏」可另附 <ul><li>…</li></ul> 2–3 条提示。禁止外链、script、图片标签。栏目建议且须贴合标题：
+   - 策展说明
+   - 科学背景（地质年代/分类/形态/生态，视主题选择，写可核验的常识）
+   - 展品解读（至少 2 件典型标本/岩石/植物的观察要点）
+   - 观展与收藏（触感、光线、养护；非推销）
+   - 法规与伦理提示（只写原则：合法来源、勿编造保护等级；琥珀/象牙/活体等按主题谨慎）
+5. 科学准确：不确定的物种鉴定写成「待核」；禁止编造 IUCN、CITES、国家重点保护名录或其他保护等级。
+6. 品牌名只用「山海造物」。内容须与标题「${title}」严格对应，禁止套用无关模板物种。
+7. content 正文须充分展开（明显长于两三段导语），每个栏目至少一段完整说明。
+8. 仅输出一个 JSON 对象，不要 markdown 代码围栏，不要解释文字。
 
 {
   "latinName": "",
   "brief": "",
   "tags": ["专题"],
-  "content": "<h2>…</h2><p>…</p>"
+  "content": "<h2>策展说明</h2><p>…</p>"
 }`
 }
 
@@ -121,6 +130,13 @@ function sanitizeHtml(html) {
 }
 
 exports.main = async (event) => {
+  const wxContext = cloud.getWXContext()
+  const operatorOpenid = wxContext.OPENID || wxContext.FROM_OPENID || ''
+  const guard = await assertStaff(db, operatorOpenid, { permission: 'manageProducts' })
+  if (!guard.ok) {
+    return { success: false, code: guard.code, msg: guard.msg || '无权限' }
+  }
+
   const titleStr = String((event && event.title) || '').trim()
   const themeHint = String((event && event.themeHint) || '').trim()
 
@@ -148,11 +164,12 @@ exports.main = async (event) => {
     const content = sanitizeHtml(parsed.content)
     const tags = normalizeTags(parsed.tags)
 
-    if (!brief || brief.length < 12) {
+    if (!brief || brief.length < 40) {
       return { success: false, msg: 'AI 未生成有效摘要，请重试' }
     }
-    if (!content || content.length < 40) {
-      return { success: false, msg: 'AI 未生成有效正文，请重试' }
+    const h2Count = (content.match(/<h2/gi) || []).length
+    if (!content || content.length < 400 || h2Count < 4) {
+      return { success: false, msg: 'AI 正文偏短，请重试' }
     }
 
     return {

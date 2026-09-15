@@ -1,0 +1,218 @@
+<!-- C 端拉流观看 -->
+<view class="page">
+  <view class="status-bar" style="height: {{statusBarHeight}}px;"></view>
+  <view class="top-bar" style="height: {{navBarHeight}}px;">
+    <text class="title">{{session.title || upcoming.title || '馆内直播'}}</text>
+  </view>
+
+  <block wx:if="{{loading}}">
+    <view class="state-box">
+      <view class="signal idle"><view class="signal-dot"></view><text>CONNECTING</text></view>
+      <text class="state-title">正在接入直播间</text>
+      <text class="state-text">请稍候…</text>
+    </view>
+  </block>
+
+  <block wx:elif="{{closedMidway}}">
+    <view class="state-box">
+      <text class="state-kicker">PAUSED</text>
+      <text class="state-title">直播入口已关闭</text>
+      <text class="state-text">运营已关闭馆内直播入口，本场观看已结束。可返回首页稍后再试。</text>
+      <view class="ghost-btn" bindtap="onNavBack">返回</view>
+    </view>
+  </block>
+
+  <block wx:elif="{{blocked}}">
+    <view class="state-box">
+      <text class="state-kicker">CLOSED</text>
+      <text class="state-title">直播暂未开放</text>
+      <text class="state-text">{{blockedMsg || '内容开关已关闭，请稍后再来'}}</text>
+    </view>
+  </block>
+
+  <block wx:elif="{{viewState === 'ended'}}">
+    <view class="state-box replay">
+      <image
+        wx:if="{{endedReplay.coverUrl}}"
+        class="replay-cover"
+        src="{{endedReplay.coverUrl}}"
+        mode="aspectFill"
+      />
+      <text class="state-kicker">ENDED</text>
+      <text class="state-title">{{endedReplay.title || '主播已结束本场'}}</text>
+      <text class="state-text">{{endedReplay.replayHint || '回放筹备中。感谢收看，馆员再次开播后可从首页进入。'}}</text>
+      <view class="replay-badge">回看占位 · 录制未接入</view>
+      <view class="ghost-btn" bindtap="reload">刷新看看</view>
+    </view>
+  </block>
+
+  <block wx:elif="{{!session || !session.pullUrl}}">
+    <view class="state-box">
+      <image
+        wx:if="{{upcoming.coverUrl || endedReplay.coverUrl}}"
+        class="upcoming-cover"
+        src="{{upcoming.coverUrl || endedReplay.coverUrl}}"
+        mode="aspectFill"
+      />
+      <text class="state-kicker">{{emptyCode === 'NOT_CONFIGURED' ? 'SETUP' : (emptyCode === 'SCHEDULED' ? 'SOON' : 'OFF AIR')}}</text>
+      <text class="state-title">{{emptyTitle}}</text>
+      <text class="state-text">{{emptyMsg}}</text>
+      <view class="remind-hint" wx:if="{{remindSubscribe.hint && upcoming._id}}">{{remindSubscribe.hint}}</view>
+      <view class="ghost-btn" bindtap="reload">刷新</view>
+      <view
+        class="ghost-btn remind"
+        wx:if="{{upcoming._id && (emptyCode === 'SCHEDULED' || upcoming.scheduledLabel)}}"
+        bindtap="onRemindMe"
+      >{{remindBusy ? '…' : (reminded ? '已登记提醒 · 点按取消' : (remindSubscribe.configured ? '开播提醒我（可授权）' : '开播提醒我'))}}</view>
+      <button class="share-btn" open-type="share" wx:if="{{upcoming._id}}">分享预约</button>
+      <view class="ended-mini" wx:if="{{endedReplay._id && !upcoming._id}}" bindtap="noop">
+        <text class="ended-mini-kicker">最近一场</text>
+        <text class="ended-mini-title">{{endedReplay.title}}</text>
+        <text class="ended-mini-hint">{{endedReplay.replayHint}}</text>
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="orient-tip" wx:if="{{orientTip}}" bindtap="dismissOrientTip">
+      <text>{{orientTip}}</text>
+      <text class="orient-close">知道了</text>
+    </view>
+    <view class="player-wrap">
+      <live-player
+        id="livePlayer"
+        class="player"
+        src="{{session.pullUrl}}"
+        mode="live"
+        autoplay="{{true}}"
+        muted="{{muted}}"
+        object-fit="contain"
+        min-cache="1"
+        max-cache="3"
+        bindstatechange="onPlayerState"
+        binderror="onPlayerError"
+      />
+      <view class="live-badge {{signalOn ? 'on' : 'dim'}}">
+        <view class="dot"></view>
+        <text>{{signalLabel}}</text>
+      </view>
+      <view class="stats-bar">
+        <text class="stat">热度 {{likeCount}}</text>
+        <text class="stat">在线 {{viewerCount}}</text>
+      </view>
+      <view class="notice-bar pin" wx:if="{{session.notice}}">
+        <text class="notice-kicker">主播置顶</text>
+        <text class="notice-text">{{session.notice}}</text>
+      </view>
+      <scroll-view
+        class="msg-wall"
+        scroll-y
+        scroll-into-view="{{msgScrollInto}}"
+        scroll-with-animation
+      >
+        <view
+          wx:for="{{messages}}"
+          wx:key="_id"
+          id="msg-{{index}}"
+          class="msg-row"
+        >
+          <text class="msg-author">{{item.author}}</text>
+          <text class="msg-text">{{item.text}}</text>
+        </view>
+        <view wx:if="{{!messages.length}}" class="msg-empty">说一句你好，馆员会看到</view>
+      </scroll-view>
+      <view class="composer">
+        <input
+          class="composer-input"
+          maxlength="40"
+          value="{{draft}}"
+          bindinput="onDraftInput"
+          confirm-type="send"
+          bindconfirm="sendMessage"
+          placeholder="留言给主播（本场可见）"
+          placeholder-class="composer-ph"
+        />
+        <view class="composer-send {{msgBusy ? 'disabled' : ''}}" bindtap="sendMessage">{{msgBusy ? '…' : '发送'}}</view>
+      </view>
+      <view class="toolbar">
+        <view class="tool-btn secondary {{liked ? 'done' : ''}}" bindtap="onLike">{{liked ? '已赞' : '点赞'}}</view>
+        <view class="tool-btn secondary" bindtap="toggleMute">{{muted ? '取消静音' : '静音'}}</view>
+        <button class="tool-btn secondary share-plain" open-type="share">分享</button>
+        <view class="tool-btn" bindtap="reconnect">重连</view>
+      </view>
+
+      <view class="shelf-fab" wx:if="{{shelfCount}}" bindtap="openShelf">
+        <text class="shelf-fab-label">挂车</text>
+        <text class="shelf-fab-count">{{shelfCount}}</text>
+      </view>
+      <view class="spotlight-chip {{spotlightItem.soldOut ? 'sold' : 'pulse'}}" wx:if="{{spotlightItem}}" bindtap="openShelf">
+        <image class="spotlight-cover" wx:if="{{spotlightItem.cover}}" src="{{spotlightItem.cover}}" mode="aspectFill"/>
+        <view class="spotlight-cover ph" wx:else></view>
+        <view class="spotlight-body">
+          <text class="spotlight-kicker">{{spotlightItem.soldOut ? '讲解中 · 售罄' : '讲解中'}}</text>
+          <text class="spotlight-title">{{spotlightItem.title}}</text>
+          <text class="spotlight-price">{{spotlightItem.priceLabel || (spotlightItem.missingPrice ? '价格待核' : ('¥' + spotlightItem.price))}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="hint {{hintLevel}}" wx:if="{{playerHint || msgHint}}">{{playerHint || msgHint}}</view>
+
+    <view class="shelf-mask" wx:if="{{showShelf}}" catchtap="closeShelf"></view>
+    <view class="shelf-sheet {{showShelf ? 'open' : ''}}" wx:if="{{showShelf}}" catchtouchmove="noop">
+      <view class="shelf-sheet-hd">
+        <text class="shelf-sheet-title">本场挂车</text>
+        <text class="shelf-sheet-sub" wx:if="{{!shelfPurchasable}}">直播已结束，暂不可购</text>
+        <text class="shelf-sheet-close" bindtap="closeShelf">关闭</text>
+      </view>
+      <scroll-view class="shelf-list" scroll-y>
+        <view class="shelf-row {{item.spotlight ? 'spot' : ''}} {{item.soldOut || !item.onShelf ? 'disabled-row' : ''}}" wx:for="{{shelfItems}}" wx:key="_id">
+          <image class="shelf-cover" wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill" bindtap="onShelfDetail" data-id="{{item._id}}"/>
+          <view class="shelf-cover ph" wx:else bindtap="onShelfDetail" data-id="{{item._id}}"><text>缺图</text></view>
+          <view class="shelf-info" bindtap="onShelfDetail" data-id="{{item._id}}">
+            <text class="shelf-name">{{item.title}}</text>
+            <text class="shelf-meta" wx:if="{{item.spotlight}}">讲解中</text>
+            <text class="shelf-meta warn" wx:elif="{{item.soldOut}}">售罄</text>
+            <text class="shelf-meta warn" wx:elif="{{!item.onShelf}}">已下架</text>
+            <text class="shelf-meta warn" wx:elif="{{item.missingPrice}}">价格待核</text>
+            <text class="shelf-price">{{item.priceLabel || (item.missingPrice ? '价格待核' : ('¥' + item.price + (item.hasSku ? ' 起' : '')))}}</text>
+          </view>
+          <view class="shelf-actions">
+            <view class="shelf-btn ghost {{item.buyable ? '' : 'disabled'}}" bindtap="onShelfAddCart" data-id="{{item._id}}">加购</view>
+            <view class="shelf-btn solid {{item.buyable ? '' : 'disabled'}}" bindtap="onShelfBuyNow" data-id="{{item._id}}">{{item.soldOut ? '售罄' : '购买'}}</view>
+          </view>
+        </view>
+        <view wx:if="{{!shelfItems.length}}" class="shelf-empty">主播尚未挂品</view>
+      </scroll-view>
+    </view>
+
+    <view class="shelf-mask" wx:if="{{showSkuSheet}}" catchtap="closeSkuSheet"></view>
+    <view class="sku-sheet" wx:if="{{showSkuSheet}}" catchtouchmove="noop">
+      <view class="shelf-sheet-hd">
+        <text class="shelf-sheet-title">选择规格</text>
+        <text class="shelf-sheet-close" bindtap="closeSkuSheet">关闭</text>
+      </view>
+      <view class="sku-product" wx:if="{{skuProduct}}">
+        <image class="sku-cover" src="{{skuProduct.cover}}" mode="aspectFill"/>
+        <view class="sku-info">
+          <text class="sku-name">{{skuProduct.title}}</text>
+          <text class="sku-price">¥{{selectedSku.price || skuProduct.price}}</text>
+        </view>
+      </view>
+      <scroll-view class="sku-list" scroll-y>
+        <view
+          class="sku-pill {{selectedSkuId === item.id ? 'active' : ''}} {{item.stock <= 0 ? 'sold' : ''}}"
+          wx:for="{{skuOptions}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onSelectSku"
+        >
+          <text>{{item.specLabel || '默认规格'}}</text>
+          <text class="sku-pill-meta">¥{{item.price}}{{item.stock <= 0 ? ' · 售罄' : ''}}</text>
+        </view>
+      </scroll-view>
+      <view class="sku-confirm" bindtap="confirmSkuSheet">
+        {{skuAction === 'buy' ? '立即购买' : '加入购物车'}}
+      </view>
+    </view>
+  </block>
+</view>

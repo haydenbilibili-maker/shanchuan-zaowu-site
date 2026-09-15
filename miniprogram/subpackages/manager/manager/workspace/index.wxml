@@ -1,0 +1,9 @@
+<!-- 店长/超管功能模块：系统导航栏 + 原生返回（对标 member-crm） -->
+<view class="container workspace-leaf">
+  <view class="workbench-boot" wx:if="{{!workspaceReady}}">
+    <text class="workbench-boot-cn">加载中…</text>
+  </view>
+  <block wx:elif="{{workspaceReady && curTab !== 0}}">
+    <include src="_subviews.wxml" />
+  </block>
+</view>

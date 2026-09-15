@@ -1,0 +1,9 @@
+{
+  "name": "manageBookingRules",
+  "version": "1.0.0",
+  "description": "门店预约规则读写（store_booking_rules）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

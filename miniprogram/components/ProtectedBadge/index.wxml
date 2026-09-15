@@ -1,0 +1,8 @@
+<view
+  wx:if="{{visible}}"
+  class="prot-badge prot-badge--{{size}} prot-badge--{{corner}}"
+  aria-label="{{label}}"
+>
+  <text class="prot-badge-kicker">CERT</text>
+  <text class="prot-badge-text">{{label}}</text>
+</view>

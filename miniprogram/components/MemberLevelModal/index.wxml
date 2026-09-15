@@ -1,0 +1,130 @@
+<!-- 会员等级 · 奇珍柜：一张英雄牌 + 铜牌档位轨 + 单区权益
+     iPhone：sheet/body 高度由 JS 写死 px，避免 flex:1+height:0 塌成空白 -->
+<view class="level-mask {{visible ? 'active' : ''}}" bindtap="onClose" wx:if="{{visible}}">
+  <view class="level-sheet" style="{{sheetStyle}}" catchtap="noop">
+    <view class="level-header">
+      <view class="level-close" catchtap="onClose" aria-label="关闭">
+        <text class="close-icon">✕</text>
+      </view>
+      <text class="level-title">会员等级</text>
+      <text class="level-subtitle">MEMBERSHIP</text>
+    </view>
+
+    <scroll-view
+      scroll-y
+      class="level-body"
+      style="{{bodyStyle}}"
+      enhanced
+      show-scrollbar="{{false}}"
+    >
+      <!-- 1. 当前等级英雄卡（始终是用户当前档材质） -->
+      <view class="hero-card skin-lv{{level}} {{cardSkinClass}} {{cardToneClass}}">
+        <view class="card-grain" aria-hidden="true"></view>
+        <view class="card-thickness" aria-hidden="true"></view>
+        <view class="card-sheen" aria-hidden="true"></view>
+        <view class="hero-watermark" aria-hidden="true" wx:if="{{specimenEmoji}}">{{specimenEmoji}}</view>
+        <view class="hero-body">
+          <text class="hero-overline">CURRENT LEVEL</text>
+          <text class="hero-name">{{levelName}}</text>
+          <view class="hero-meta-row">
+            <text class="hero-badge">尊享会员</text>
+            <text class="hero-growth">成长值 {{growthValue}}</text>
+          </view>
+
+          <view class="hero-progress" wx:if="{{nextThreshold > 0}}">
+            <view class="hero-progress-track">
+              <view class="hero-progress-fill" style="width: {{progressWidth}}"></view>
+            </view>
+            <view class="hero-progress-row">
+              <text class="hero-progress-text">距下一级还需 {{nextThreshold - growthValue}}</text>
+              <text class="hero-progress-pct">{{progressPercent}}%</text>
+            </view>
+            <text class="hero-next" wx:if="{{nextLevelPreview}}">下一级 · {{nextLevelPreview.name}} · {{nextLevelPreview.discount}}</text>
+          </view>
+          <view class="hero-max" wx:else>
+            <image class="hero-max-icon icon-gold" src="/assets/icons/medal_gold.png" mode="aspectFit"></image>
+            <text class="hero-max-text">已达成最高等级</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 2. 等级体系 · 横向铜牌轨（不挂权益大方块） -->
+      <view class="rail-section">
+        <view class="section-label">
+          <text class="section-cn">等级体系</text>
+          <text class="section-en">LEVEL PLATES</text>
+        </view>
+        <scroll-view
+          scroll-x
+          class="plate-rail"
+          enhanced
+          show-scrollbar="{{false}}"
+          scroll-into-view="{{plateScrollInto}}"
+          scroll-with-animation
+        >
+          <view class="plate-rail-inner">
+            <view
+              wx:for="{{levelBenefits}}"
+              wx:key="level"
+              id="plate-{{item.level}}"
+              class="plate skin-lv{{item.level}} {{item.skinClass}} {{item.toneClass}} {{selectedLevel === item.level ? 'is-selected' : ''}} {{level === item.level ? 'is-mine' : ''}} {{level > item.level || level === 99 ? 'is-unlocked' : ''}} {{level < item.level && level !== 99 ? 'is-locked' : ''}}"
+              data-level="{{item.level}}"
+              bindtap="onSelectPlate"
+            >
+              <view class="card-grain" aria-hidden="true"></view>
+              <view class="card-thickness" aria-hidden="true"></view>
+              <view class="plate-top">
+                <text class="plate-lv">Lv{{item.level}}</text>
+                <text class="plate-discount">{{item.discount}}</text>
+              </view>
+              <text class="plate-name">{{item.name}}</text>
+              <text class="plate-threshold">≥ {{item.threshold}}</text>
+              <text class="plate-status" wx:if="{{level > item.level || level === 99}}">已达成</text>
+              <text class="plate-status is-current" wx:elif="{{level === item.level}}">当前</text>
+              <text class="plate-status is-locked" wx:else>未达成</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 3. 单区权益 · 随所选铜牌切换 -->
+      <view class="perk-section {{selectedToneClass}}" wx:if="{{selectedPlate}}">
+        <view class="perk-head">
+          <view class="perk-head-text">
+            <text class="perk-overline">本档权益</text>
+            <text class="perk-title">{{selectedPlate.name}}</text>
+          </view>
+          <view class="perk-status {{selectedStatus}}">
+            <text>{{selectedStatusLabel}}</text>
+          </view>
+        </view>
+        <view class="perk-meta">
+          <text>成长值 ≥ {{selectedPlate.threshold}}</text>
+          <text class="perk-meta-dot">·</text>
+          <text>{{selectedPlate.discount}}</text>
+        </view>
+
+        <view class="perk-list" wx:if="{{selectedPlate.perkItems.length}}">
+          <view class="perk-row" wx:for="{{selectedPlate.perkItems}}" wx:key="label" wx:for-item="perk">
+            <view class="perk-icon-wrap">
+              <image class="perk-icon icon-gold" src="{{perk.icon}}" mode="aspectFit"></image>
+            </view>
+            <text class="perk-label">{{perk.label}}</text>
+          </view>
+        </view>
+        <view class="perk-empty" wx:else>
+          <text>该档权益筹备中</text>
+        </view>
+        <text class="perk-locked-hint" wx:if="{{selectedStatus === 'locked'}}">达成后解锁本档权益</text>
+      </view>
+
+      <!-- 4. 成长值脚注（一行，非卡片墙） -->
+      <view class="growth-foot">
+        <text class="growth-foot-main">当前成长值 {{growthValue}}</text>
+        <text class="growth-foot-sub">每消费 ¥1 = 1 成长值</text>
+      </view>
+      <!-- scroll-view 的 padding-bottom 真机不可靠；spacer 高度由 JS（含 safe-area）写入 -->
+      <view class="level-body-safe" style="{{safeStyle}}" aria-hidden="true"></view>
+    </scroll-view>
+  </view>
+</view>

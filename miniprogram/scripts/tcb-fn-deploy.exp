@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+set timeout 600
+set fn [lindex $argv 0]
+set envId [lindex $argv 1]
+if {$envId eq ""} { set envId "cloud1-8gnkty5bfff9f0bf" }
+
+spawn tcb fn deploy $fn -e $envId --force
+expect {
+  -re {Continue deployment with default config} {
+    send "y\r"
+    exp_continue
+  }
+  -re {Please select an action} {
+    send "\r"
+    exp_continue
+  }
+  -re {部署成功|云函数部署成功|deployed successfully|Deploy success|更新成功|✔.*[Dd]eploy} {
+    puts "\n===DEPLOY_OK==="
+    exp_continue
+  }
+  -re {UpdateFailed|CreateFailed|部署失败|deploy failed} {
+    puts "\n===DEPLOY_FAIL==="
+    exit 1
+  }
+  timeout {
+    puts "\n===DEPLOY_TIMEOUT==="
+    exit 1
+  }
+  eof
+}
+catch wait result
+set code [lindex $result 3]
+if {$code == 0} {
+  puts "\n===EXIT_OK==="
+} else {
+  puts "\n===EXIT_$code==="
+}
+exit $code

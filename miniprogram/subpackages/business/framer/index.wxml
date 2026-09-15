@@ -3,34 +3,77 @@
   
   <!-- 🟢 1. 自定义返回按钮 (沉浸式必备) -->
   <view class="nav-bar" style="top: {{statusBarHeight}}px">
-    <view class="back-icon" bindtap="goBack">←</view>
   </view>
 
+  <view class="load-error-overlay" wx:if="{{loading}}">
+    <view class="skeleton" style="width: 240rpx; height: 240rpx; border-radius: 24rpx;"></view>
+    <text class="load-error-desc" style="margin-top: 24rpx;">同步档案…</text>
+  </view>
+
+  <view class="load-error-overlay" wx:elif="{{loadError}}">
+    <text class="load-error-title">{{loadErrorTitle || '标本师档案加载失败'}}</text>
+    <text class="load-error-desc">{{loadErrorDesc || '请检查网络后重试'}}</text>
+    <view class="load-error-actions">
+      <view class="load-error-btn primary" bindtap="retryLoad">重新加载</view>
+      <view class="load-error-btn" bindtap="goBack">返回</view>
+    </view>
+  </view>
+
+  <block wx:else>
   <!-- 2. 艺术家档案头部 -->
   <view class="framer-header">
     <!-- 🟢 背景图优化：使用一张更有质感的通用背景，而不是头像 -->
-    <image class="bg-layer" src="{{framer.cover || 'cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/banners/__-drz-__-CK7rdTauhDE-unsplash.jpg'}}" mode="aspectFill"></image>
+    <image class="bg-layer" src="{{framer.cover || bgImage}}" mode="aspectFill" binderror="onCoverError"></image>
     <!-- 渐变遮罩 -->
     <view class="mask"></view>
     
     <view class="content">
       <view class="avatar-box">
-        <image src="{{framer.avatar}}" mode="aspectFill"></image>
-        <!-- 认证标识 -->
+        <image src="{{framer.avatar || fallbackAvatar}}" mode="aspectFill" binderror="onAvatarError"></image>
         <view class="verified-badge" wx:if="{{framer.type === 'store'}}">✓</view>
       </view>
       
       <text class="name">{{framer.name}}</text>
+      <text class="alias" wx:if="{{framer.alias}}">{{framer.alias}}</text>
       
       <view class="tags">
-        <text class="tag">{{framer.title || (framer.type === 'store' ? '门店首席装裱师' : '特邀合作艺术家')}}</text>
+        <text class="tag">{{framer.typeLabel || (framer.type === 'store' ? '门店标本师' : '特邀合作')}}</text>
         <text class="tag" wx:if="{{framer.city}}">{{framer.city}}</text>
+        <text class="tag" wx:if="{{framer.yearsExperience > 0}}">从业 {{framer.yearsExperience}} 年</text>
         <text class="tag">收录 {{works.length}} 件作品</text>
       </view>
-
-      <text class="quote" wx:if="{{framer.quote}}">「{{framer.quote}}」</text>
-      <text class="bio">{{framer.bio || framer.desc || '暂无个人简介...'}}</text>
     </view>
+  </view>
+
+  <view class="intro-section" wx:if="{{framer.tags.length || framer.signatureStyle || framer.bio || framer.craftIntro}}">
+    <view class="skill-tags" wx:if="{{framer.tags.length}}">
+      <text class="skill-tag" wx:for="{{framer.tags}}" wx:key="*this">{{item}}</text>
+    </view>
+    <text class="style-line" wx:if="{{framer.signatureStyle}}">{{framer.signatureStyle}}</text>
+    <text class="bio" wx:if="{{framer.bio}}">{{framer.bio}}</text>
+    <text class="craft-intro" wx:if="{{framer.craftIntro}}">{{framer.craftIntro}}</text>
+  </view>
+
+  <view class="gallery-section" wx:if="{{framer.gallery.length}}">
+    <view class="section-header">
+      <view class="line"></view>
+      <view class="title-group">
+        <text class="en">GALLERY</text>
+        <text class="cn">作品照片</text>
+      </view>
+      <view class="line"></view>
+    </view>
+    <scroll-view class="gallery-scroll" scroll-x="true" enhanced="true" show-scrollbar="{{false}}">
+      <image
+        class="gallery-shot"
+        wx:for="{{framer.gallery}}"
+        wx:key="*this"
+        src="{{item}}"
+        mode="aspectFill"
+        bindtap="previewGallery"
+        data-index="{{index}}"
+      />
+    </scroll-view>
   </view>
 
   <!-- 3. 作品集 -->
@@ -46,9 +89,9 @@
 
     <view class="product-grid">
       <block wx:for="{{works}}" wx:key="_id">
-        <view class="product-card" bindtap="goToDetail" data-id="{{item._id}}">
+        <view class="product-card" hover-class="product-card-press" bindtap="goToDetail" data-id="{{item._id}}">
           <view class="img-box">
-            <image src="{{item.images[0]}}" mode="aspectFill" lazy-load="true"></image>
+            <image src="{{item.coverImage || fallbackCover}}" mode="aspectFill" lazy-load="true" binderror="onWorkCoverError" data-index="{{index}}"></image>
             <view class="status-badge" wx:if="{{item.stock <= 0}}">已藏</view>
           </view>
           <view class="info">
@@ -59,8 +102,9 @@
       </block>
     </view>
     
-    <view class="empty-tip" wx:if="{{works.length === 0}}">
+    <view class="empty-tip" wx:if="{{!loading && works.length === 0}}">
       该标本师暂无公开作品
     </view>
   </view>
+  </block>
 </view>

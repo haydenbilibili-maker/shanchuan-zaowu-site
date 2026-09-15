@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "我的钱包",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "wallet-hub-bar": "/subpackages/feature/components/WalletHubBar/index"
+  },
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundTextStyle": "light"
+}

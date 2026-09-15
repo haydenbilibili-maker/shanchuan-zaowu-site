@@ -2,12 +2,16 @@
 const app = getApp();
 const db = wx.cloud.database();
 const _ = db.command;
-const { formatPrice } = require('../../utils/util');
+const { formatPrice, getFirstImage } = require('../../utils/util');
+const { navigateToProductDetail } = require('../../utils/productDetailNav');
 const { navigateToConfirmOrder } = require('../../utils/checkout');
 const { trackBehavior } = require('../../utils/trackBehavior');
 const { ensureOpenId, markCartDirty, updateCartTabBadge } = require('../../utils/cartHelper');
-const { measureFixedScroll, estimateTabBarPx } = require('../../utils/scrollArea')
-const { enrichCoupon, isCouponExpired } = require('../../utils/couponHelper');
+const { measureFixedScroll, estimateTabBarPx, rpxToPx } = require('../../utils/scrollArea')
+const { couponDiscountMultiplier, clampCouponAgainstOriginal, MIN_PAY_RATIO } = require('../../utils/couponHelper')
+const { fetchMyCoupons } = require('../../utils/couponService')
+const shippingConfig = require('../../config/shipping')
+const { ensureShippingRules } = require('../../utils/shippingRulesSync')
 
 Page({
   data: {
@@ -17,16 +21,18 @@ Page({
     savedAmount: '0.00',
     vipSaved: 0,
     couponSaved: 0,
+    couponBaseAmount: 0,
+    shippingHint: shippingConfig.getRuleText(),
     discountRate: 1.0,
     levelName: '会员',
     selectedCount: 0,
     cartList: [], 
     loading: true,
+    loadError: false,
     invalidCount: 0,
     coupons: [],
     selectedCoupon: null,
     showCouponModal: false,
-    vipTotalNum: 0,
     startX: 0, startY: 0,
     
     // 🟢 成功动画控制
@@ -36,10 +42,6 @@ Page({
     currentFolder: 'all', // 当前选中的分类：all, product, activity, course, 或folderId
     currentFolderName: '全部', // 当前分类名称（用于显示）
     folders: [], // 用户创建的收藏夹列表
-    showFolderModal: false, // 显示收藏夹管理弹窗
-    showMoveModal: false, // 显示移动弹窗
-    selectedItems: [], // 选中的物品ID（用于批量操作）
-    editMode: false, // 编辑模式（批量操作）
     
     // 🟢 收藏推荐
     collectionRecommendations: [], // 基于收藏的推荐
@@ -48,7 +50,26 @@ Page({
     ,
     scrollTopPx: 140,
     scrollBottomPx: 200,
-    scrollHeightPx: 500
+    scrollHeightPx: 500,
+    statusBarHeight: 20
+  },
+
+  onLoad() {
+    try {
+      const { getWindowInfo } = require('../../utils/systemInfo');
+      const win = getWindowInfo();
+      let top = win.statusBarHeight || 20;
+      try {
+        const menu = wx.getMenuButtonBoundingClientRect();
+        if (menu && menu.bottom) top = Math.ceil(menu.bottom + 6);
+      } catch (e2) { /* ignore */ }
+      this.setData({ statusBarHeight: top });
+    } catch (e) {
+      const appInst = getApp();
+      this.setData({
+        statusBarHeight: (appInst.globalData && appInst.globalData.statusBarHeight) || 20
+      });
+    }
   },
 
   onReady() {
@@ -57,21 +78,25 @@ Page({
 
   async remeasureScroll() {
     const tabPx = estimateTabBarPx()
-    let bottomSelector = ''
-    if (this.data.cartList.length > 0 && !this.data.loading) {
-      bottomSelector = this.data.editMode ? '.edit-bar' : '.checkout-bar'
-    }
+    const hasCheckout = this.data.cartList.length > 0 && !this.data.loading
+    // 礼券 chip absolute top:-44rpx，测量底栏 top 时需额外避让
+    const bottomOverhangPx = hasCheckout ? rpxToPx(52) : 0
+    const statusPad = this.data.statusBarHeight || 20
     const area = await measureFixedScroll(this, {
       topSelector: '.cart-top',
-      bottomSelector,
-      bottomPx: bottomSelector ? 0 : tabPx,
-      fallbackTop: 140,
+      bottomSelector: hasCheckout ? '.checkout-bar' : '',
+      bottomPx: hasCheckout ? 0 : tabPx,
+      bottomOverhangPx,
+      fallbackTop: statusPad + 140,
       fallbackBottom: tabPx
     })
     this.setData(area)
   },
 
   onShow() {
+    try {
+      require('../../utils/museumPageChrome').applyMuseumPageChrome();
+    } catch (e) { /* ignore */ }
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 3 });
     }
@@ -79,6 +104,16 @@ Page({
     trackBehavior('cart_view', 'cart', 'main');
 
     this.setData({ showSuccessAnim: false });
+    // 自定义导航 + 底栏布局稳定后再量一次，避免顶/底错位
+    wx.nextTick(() => this.remeasureScroll())
+
+    ensureShippingRules().then(() => {
+      if (this.data.cartList && this.data.cartList.length) {
+        this.calculateTotal();
+      } else {
+        this.setData({ shippingHint: shippingConfig.getRuleText() });
+      }
+    }).catch(() => {});
 
     const now = Date.now();
     let force = !!app.globalData.refreshCart;
@@ -90,7 +125,7 @@ Page({
       this.loadUserDiscount();
       this.loadFolders();
       this.loadCollection();
-      this.loadUsableCoupons({ autoPick: true });
+      this.loadUsableCoupons();
     } else if (this.data.cartList.length === 0 && !this.data.loading) {
       this.loadCollection();
     }
@@ -108,36 +143,63 @@ Page({
       this.loadUserDiscount(),
       this.loadFolders(),
       this.loadCollection(),
-      this.loadUsableCoupons({ autoPick: true }),
+      this.loadUsableCoupons(),
       this.loadCollectionRecommendations()
     ]).finally(() => wx.stopPullDownRefresh());
   },
 
   touchstart: function (e) {
-    this.data.cartList.forEach(v => v.isTouchMove = false);
-    this.setData({ startX: e.changedTouches[0].clientX, startY: e.changedTouches[0].clientY, cartList: this.data.cartList });
+    this._swipeAxis = '';
+    this.data.cartList.forEach(v => { v.isTouchMove = false; });
+    this.setData({
+      startX: e.changedTouches[0].clientX,
+      startY: e.changedTouches[0].clientY,
+      cartList: this.data.cartList
+    });
   },
   touchmove: function (e) {
-    let idx = e.currentTarget.dataset.index, startX = this.data.startX, touchMoveX = e.changedTouches[0].clientX;
-    if (startX - touchMoveX > 30) this.data.cartList[idx].isTouchMove = true;
-    if (touchMoveX - startX > 30) this.data.cartList[idx].isTouchMove = false;
+    const idx = e.currentTarget.dataset.index;
+    const startX = this.data.startX;
+    const startY = this.data.startY;
+    const touchMoveX = e.changedTouches[0].clientX;
+    const touchMoveY = e.changedTouches[0].clientY;
+    const dx = startX - touchMoveX;
+    const dy = touchMoveY - startY;
+    if (!this._swipeAxis) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      this._swipeAxis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if (this._swipeAxis !== 'x') return;
+    const item = this.data.cartList[idx];
+    if (!item) return;
+    if (dx > 30) item.isTouchMove = true;
+    if (dx < -30) item.isTouchMove = false;
     this.setData({ cartList: this.data.cartList });
   },
 
   calculateTotal() {
     let total = 0; let count = 0; let allSel = true; let hasItem = false;
+    let discountedSubtotal = 0;
+    const selectedItems = [];
     this.data.cartList.forEach(item => {
       const unavailable = item.stock <= 0 || item.invalid;
       if (!unavailable) { hasItem = true; if (!item.selected) allSel = false; }
-      if (item.selected && !unavailable) { total += parseFloat(item.price) * item.count; count += item.count; }
+      if (item.selected && !unavailable) {
+        const line = parseFloat(item.price) * item.count;
+        total += line;
+        count += item.count;
+        if (item.memberDiscountEnabled !== false) discountedSubtotal += line;
+        selectedItems.push(item);
+      }
     });
     if (!hasItem) allSel = false;
 
-    const vipTotal = total * this.data.discountRate;
+    const nonDiscounted = total - discountedSubtotal;
+    const vipTotal = Math.round((discountedSubtotal * this.data.discountRate + nonDiscounted) * 100) / 100;
     const vipSavedAmount = total - vipTotal;
-    const vipTotalNum = parseFloat(vipTotal.toFixed(2));
 
     let currentCoupon = this.data.selectedCoupon;
+    const vipTotalNum = vipTotal;
     if (currentCoupon && vipTotalNum < (currentCoupon.minSpend || 0)) currentCoupon = null;
     
     let final = vipTotal;
@@ -146,19 +208,25 @@ Page({
       const couponType = currentCoupon.type || 'cash'
       switch (couponType) {
         case 'cash':
+          // 满减券：直接减固定金额
           couponSavedAmount = currentCoupon.value || 0
           final = vipTotal - couponSavedAmount
           break
-        case 'discount':
-          const discount = (currentCoupon.value || 0) / 10
+        case 'discount': {
+          const discount = Math.max(MIN_PAY_RATIO, couponDiscountMultiplier(currentCoupon.value))
           couponSavedAmount = vipTotal * (1 - discount)
           final = vipTotal * discount
           break
+        }
         case 'freeShipping':
-          couponSavedAmount = 10
-          final = vipTotal
+          // 按优惠前合计估算本应运费（已达包邮门槛则为 0）
+          couponSavedAmount = typeof shippingConfig.calcShippingFee === 'function'
+            ? shippingConfig.calcShippingFee(total, selectedItems)
+            : 0
+          final = vipTotal // 商品价格不变，只是免邮
           break
         case 'newUser':
+          // 新人券：通常也是满减
           couponSavedAmount = currentCoupon.value || 0
           final = vipTotal - couponSavedAmount
           break
@@ -166,34 +234,30 @@ Page({
           couponSavedAmount = currentCoupon.value || 0
           final = vipTotal - couponSavedAmount
       }
+      if (couponType !== 'freeShipping') {
+        const clamped = clampCouponAgainstOriginal(vipTotal, couponSavedAmount, total)
+        final = clamped.final
+        couponSavedAmount = clamped.couponValue
+      }
     }
     if (final < 0) final = 0;
     const totalSaved = total - final;
-
-    const coupons = (this.data.coupons || []).map((c) => enrichCoupon(c, vipTotalNum));
 
     this.setData({
       allSelected: allSel,
       selectedCount: count,
       selectedCoupon: currentCoupon,
-      vipTotalNum,
-      coupons,
       originalPrice: total > 0 ? formatPrice(total) : '0.00',
       finalPrice: formatPrice(final),
       savedAmount: formatPrice(totalSaved),
       vipSaved: vipSavedAmount > 0 ? parseFloat(vipSavedAmount.toFixed(2)) : 0,
-      couponSaved: couponSavedAmount > 0 ? parseFloat(couponSavedAmount.toFixed(2)) : 0
+      couponSaved: couponSavedAmount > 0 ? parseFloat(couponSavedAmount.toFixed(2)) : 0,
+      couponBaseAmount: Math.round(vipTotalNum * 100) / 100,
+      // 包邮门槛按优惠前合计（与确认页 / makeOrder 一致），勿传折后应付
+      shippingHint: count > 0 && typeof shippingConfig.getHint === 'function'
+        ? shippingConfig.getHint(total, selectedItems)
+        : shippingConfig.getRuleText()
     });
-  },
-
-  getVipTotalNum() {
-    let total = 0;
-    this.data.cartList.forEach((item) => {
-      if (item.selected && item.stock > 0 && !item.invalid) {
-        total += parseFloat(item.price) * item.count;
-      }
-    });
-    return parseFloat((total * this.data.discountRate).toFixed(2));
   },
 
   async loadUserDiscount() { wx.cloud.callFunction({ name: 'getUserStats', success: res => { if(res.result) { this.setData({ discountRate: res.result.discountRate || 1.0, levelName: res.result.levelName || '普通会员' }); if(this.data.cartList.length > 0) this.calculateTotal(); } } }); },
@@ -244,22 +308,27 @@ Page({
         id: item._id || item.productId || item.id
       }))
 
-      this.setData({ cartList: list, loading: false, invalidCount }, () => {
+      this.setData({ cartList: list, loading: false, loadError: false, invalidCount }, () => {
         this.updateTabBarBadge(list.length)
         this.calculateTotal()
-        this.remeasureScroll()
+        // 结算栏/运费文案渲染后再测，保证推荐区不被挡住
+        this.remeasureScroll().then(() => {
+          setTimeout(() => this.remeasureScroll(), 80)
+        })
       })
     } catch (err) {
       console.error('loadCollection', err);
-      this.setData({ loading: false });
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.setData({ loading: false, loadError: true, cartList: [] }, () => {
+        this.remeasureScroll()
+      });
+      wx.showToast({ title: '购物车加载失败', icon: 'none' });
     }
   },
 
   _filterCartByFolder(list, folder) {
     if (folder === 'all') {
       return list.filter((item) => {
-        if (!item || item.type === 'wishlist') return false;
+        if (!item || item.type === 'wishlist' || item.type === 'favorite') return false;
         return !item.type || item.type === 'product' || item.type === 'activity' || item.type === 'course';
       });
     }
@@ -300,7 +369,7 @@ Page({
           const chunk = ids.slice(i, i + 20);
           const stockRes = await db.collection('products')
             .where({ _id: _.in(chunk) })
-            .field({ _id: true, stock: true, hasSku: true, skus: true, price: true, title: true })
+            .field({ _id: true, stock: true, hasSku: true, skus: true, price: true, title: true, isTreasure: true, isUnique: true, memberDiscountEnabled: true, protectionType: true })
             .get();
           (stockRes.data || []).forEach((p) => { productMap[p._id] = p; });
         }
@@ -317,7 +386,7 @@ Page({
         if (!p) {
           if (hasProducts) {
             item.invalid = true;
-            item.invalidReason = '商品已下架';
+            item.invalidReason = '藏品已下架';
             item.stock = 0;
           } else {
             item.stock = parseInt(item.stock, 10);
@@ -343,6 +412,16 @@ Page({
           if (p.price != null) item.price = p.price;
         }
 
+          if (p) {
+            item.isTreasure = !!p.isTreasure;
+            item.isUnique = !!p.isUnique;
+            item.memberDiscountEnabled = p.memberDiscountEnabled !== false;
+            item.protectionType = p.protectionType || 'none';
+            item.isProtected = !!(p.protectionType && p.protectionType !== 'none');
+          } else if (item.memberDiscountEnabled == null) {
+            item.memberDiscountEnabled = true;
+          }
+
           if (!item.count) item.count = 1;
           item.selected = false;
           item.id = item._id || item.productId;
@@ -356,42 +435,23 @@ Page({
       invalidCount: list.filter((i) => i.invalid).length
     };
   },
-  async loadUsableCoupons(options = {}) {
-    const { autoPick = false } = options
-    try {
-      let rows = []
-      try {
-        const res = await db.collection('user_coupons')
-          .where({ status: 'unused' })
-          .orderBy('value', 'desc')
-          .get()
-        rows = res.data || []
-      } catch (indexErr) {
-        console.warn('user_coupons orderBy 索引缺失，降级为客户端排序', indexErr)
-        const res = await db.collection('user_coupons')
-          .where({ status: 'unused' })
-          .get()
-        rows = res.data || []
-      }
-
-      const vipTotal = this.getVipTotalNum()
-      const validList = rows
-        .filter((c) => !isCouponExpired(c))
-        .map((c) => enrichCoupon(c, vipTotal))
-        .sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
-
-      this.setData({ coupons: validList, vipTotalNum: vipTotal })
-
-      if (autoPick && validList.length > 0 && vipTotal > 0) {
-        await this.autoSelectBestCoupon()
+  async loadUsableCoupons() { 
+    try { 
+      const packed = await fetchMyCoupons({ usableOnly: true })
+      const validList = packed.list || []
+      
+      this.setData({ coupons: validList })
+      
+      // 自动匹配最优券
+      if (validList.length > 0 && parseFloat(String(this.data.originalPrice).replace(/,/g, '')) > 0) {
+        this.autoSelectBestCoupon()
       } else {
         this.calculateTotal()
       }
-    } catch (e) {
-      console.error('加载优惠券失败', e)
-      wx.showToast({ title: '礼券加载失败', icon: 'none' })
+    } catch (e) { 
+      console.error(e)
       this.calculateTotal()
-    }
+    } 
   },
   
   // 🟢 自动匹配最优优惠券
@@ -400,23 +460,29 @@ Page({
       this.calculateTotal()
       return
     }
-
-    const vipTotal = this.getVipTotalNum()
-    if (vipTotal <= 0) {
-      this.calculateTotal()
-      return
-    }
-
-    try {
+    
+      try {
+      // totalPrice = 会员折后应付（门槛）；originalPrice = 目录原价（75% 地板）
+      const vipTotal = Number(this.data.couponBaseAmount) || parseFloat(String(this.data.finalPrice).replace(/,/g, '')) || 0
+      const originalPrice = parseFloat(String(this.data.originalPrice).replace(/,/g, '')) || vipTotal
       const res = await wx.cloud.callFunction({
         name: 'getBestCoupon',
-        data: { totalPrice: vipTotal }
+        data: {
+          totalPrice: vipTotal > 0 ? vipTotal : originalPrice,
+          shippingBaseAmount: originalPrice,
+          originalPrice
+        }
       })
-
+      
       if (res.result && res.result.success && res.result.bestCoupon) {
-        this.setData({ selectedCoupon: enrichCoupon(res.result.bestCoupon, vipTotal) })
+        this.setData({ selectedCoupon: res.result.bestCoupon })
+        wx.showToast({
+          title: `已自动选择最优券`,
+          icon: 'none',
+          duration: 1500
+        })
       }
-
+      
       this.calculateTotal()
     } catch (err) {
       console.error('自动匹配优惠券失败:', err)
@@ -429,7 +495,7 @@ Page({
     const idx = e.currentTarget.dataset.index;
     const item = this.data.cartList[idx];
     if (item.invalid) {
-      wx.showToast({ title: item.invalidReason || '商品已失效', icon: 'none' });
+      wx.showToast({ title: item.invalidReason || '藏品已失效', icon: 'none' });
       return;
     }
     if (item.stock <= 0) {
@@ -439,10 +505,6 @@ Page({
     this.setData({ [`cartList[${idx}].selected`]: !item.selected }, () => this.calculateTotal());
   },
 
-  onCartCardTap(e) {
-    if (this.data.editMode) this.toggleItemSelect(e);
-    else this.toggleSelect(e);
-  },
   toggleSelectAll(forceVal) {
     wx.vibrateShort({ type: 'medium' });
     const newStatus = (typeof forceVal === 'boolean') ? forceVal : !this.data.allSelected;
@@ -453,41 +515,46 @@ Page({
     });
     this.setData({ cartList: newList, allSelected: newStatus }, () => this.calculateTotal());
   },
-  changeCount(e) { wx.vibrateShort({ type: 'light' }); const { index, type } = e.currentTarget.dataset; const item = this.data.cartList[index]; let newCount = item.count; if (type === 'add') { if (newCount >= item.stock) return wx.showToast({title:'库存不足',icon:'none'}); newCount++; } else { if (newCount <= 1) return; newCount--; } this.setData({ [`cartList[${index}].count`]: newCount }, () => this.calculateTotal()); db.collection('collections').doc(item._id).update({ data: { count: newCount } }); },
-  deleteItem(e) { wx.vibrateShort({ type: 'medium' }); const idx = e.currentTarget.dataset.index; const item = this.data.cartList[idx]; wx.showModal({ title: '移除商品', content: '确定将此商品移出购物车吗？', confirmColor: '#C4A76C', success: async (res) => { if (res.confirm) { await db.collection('collections').doc(item._id).remove(); this.loadCollection(); } else { this.data.cartList[idx].isTouchMove = false; this.setData({ cartList: this.data.cartList }); } } }); },
+  changeCount(e) { wx.vibrateShort({ type: 'light' }); const { index, type } = e.currentTarget.dataset; const item = this.data.cartList[index]; let newCount = item.count; if (type === 'add') { if (newCount >= item.stock) return wx.showToast({title:'库存不足',icon:'none'}); newCount++; } else { if (newCount <= 1) return; newCount--; } this.setData({ [`cartList[${index}].count`]: newCount }, () => this.calculateTotal());
+    wx.cloud.callFunction({
+      name: 'toggleCollection',
+      data: { engage: 'cartItem', action: 'updateCart', id: item._id, count: newCount }
+    }).catch((e) => console.warn('cart count sync', e)); },
+  deleteItem(e) { wx.vibrateShort({ type: 'medium' }); const idx = e.currentTarget.dataset.index; const item = this.data.cartList[idx]; wx.showModal({ title: '移除藏品', content: '确定将此藏品移出购物车吗？', confirmColor: '#C4A76C', success: async (res) => { if (res.confirm) { await wx.cloud.callFunction({
+            name: 'toggleCollection',
+            data: { engage: 'cartItem', action: 'removeCart', id: item._id }
+          });
+          this.loadCollection(); } else { this.data.cartList[idx].isTouchMove = false; this.setData({ cartList: this.data.cartList }); } } }); },
   
-  async openCouponModal() {
-    if (this.data.selectedCount === 0) {
-      return wx.showToast({ title: '请先勾选藏品', icon: 'none' })
-    }
-    await this.loadUsableCoupons({ autoPick: false })
-    this.setData({ showCouponModal: true })
-  },
+  openCouponModal() { if (this.data.selectedCount === 0) return wx.showToast({title:'请先勾选藏品', icon:'none'}); this.setData({ showCouponModal: true }); },
   closeCouponModal() { this.setData({ showCouponModal: false }); },
   selectCoupon(e) {
-    const idx = parseInt(e.currentTarget.dataset.index, 10)
+    const idx = parseInt(e.currentTarget.dataset.index, 10);
     if (idx === -1) {
-      this.setData({ selectedCoupon: null })
+      this.setData({ selectedCoupon: null });
     } else {
-      const coupon = this.data.coupons[idx]
-      if (!coupon) return
-      if (coupon._disabled) {
-        return wx.showToast({
-          title: `未满 ¥${coupon.minSpend} 不可用`,
-          icon: 'none',
-        })
+      const coupon = this.data.coupons[idx];
+      if (!coupon) return;
+      const base = this.data.couponBaseAmount || 0;
+      if (coupon.minSpend && base < coupon.minSpend) {
+        wx.showToast({ title: `满 ${coupon.minSpend} 可用`, icon: 'none' });
+        return;
       }
-      this.setData({ selectedCoupon: coupon })
+      this.setData({ selectedCoupon: coupon });
     }
-    this.calculateTotal()
-    this.closeCouponModal()
+    this.calculateTotal();
+    this.closeCouponModal();
   },
   
   handleCheckout() {
     if (this.data.selectedCount === 0) return wx.showToast({ title: '请先勾选', icon: 'none' });
     wx.vibrateShort({ type: 'heavy' });
 
-    const selectedItems = this.data.cartList.filter(i => i.selected && i.stock > 0 && !i.invalid);
+    const selectedItems = this.data.cartList.filter(i => i.selected && i.stock > 0 && !i.invalid && i.productId);
+    if (!selectedItems.length) {
+      wx.showToast({ title: '所选藏品无法结算', icon: 'none' });
+      return;
+    }
     const items = selectedItems.map(item => ({
       productId: item.productId,
       skuId: item.skuId || '',
@@ -497,7 +564,16 @@ Page({
       title: item.title,
       image: item.image,
       price: item.price,
-      latinName: item.latinName
+      latinName: item.latinName,
+      isTreasure: !!item.isTreasure,
+      isUnique: !!item.isUnique,
+      memberDiscountEnabled: item.memberDiscountEnabled !== false,
+      categoryType: item.categoryType || '',
+      rootCategoryName: item.rootCategoryName || '',
+      category: item.category || '',
+      shippingKind: item.shippingKind || '',
+      protectionType: item.protectionType || 'none',
+      isProtected: !!item.isProtected
     }));
 
     navigateToConfirmOrder(items, {
@@ -510,7 +586,10 @@ Page({
     if (!collectionIds || !collectionIds.length) return;
     try {
       await Promise.all(
-        collectionIds.map(id => db.collection('collections').doc(id).remove())
+        collectionIds.map(id => wx.cloud.callFunction({
+          name: 'toggleCollection',
+          data: { engage: 'cartItem', action: 'removeCart', id }
+        }).catch(() => null))
       );
     } catch (e) {
       console.warn('清理购物车失败', e);
@@ -523,7 +602,27 @@ Page({
     this.calculateTotal();
     this.updateTabBarBadge(leftItems.length);
   },
-  goToDetail(e) { wx.navigateTo({ url: `/pages/detail/index?id=${e.currentTarget.dataset.id}` }); },
+  goToDetail(e) {
+    const id = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id;
+    if (!id) {
+      wx.showToast({ title: '藏品不存在', icon: 'none' });
+      return;
+    }
+    const seed = (this.data.cartList || []).find((i) => i && (i.productId === id || i._id === id || i.targetId === id));
+    navigateToProductDetail(id, {
+      seed: seed
+        ? {
+            _id: id,
+            title: seed.title,
+            images: seed.image ? [seed.image] : [],
+            price: seed.price,
+            stock: seed.stock,
+            latinName: seed.latinName
+          }
+        : { _id: id },
+      failToast: '页面暂不可用'
+    });
+  },
   goHome() { wx.switchTab({ url: '/pages/index/index' }); },
   goCategory() { wx.switchTab({ url: '/pages/category/index' }); },
 
@@ -531,14 +630,17 @@ Page({
     const invalidItems = this.data.cartList.filter(i => i.invalid);
     if (!invalidItems.length) return;
     wx.showModal({
-      title: '清理失效商品',
-      content: `确定移除 ${invalidItems.length} 件已失效商品吗？`,
+      title: '清理失效藏品',
+      content: `确定移除 ${invalidItems.length} 件已失效藏品吗？`,
       confirmColor: '#C4A76C',
       success: async (res) => {
         if (!res.confirm) return;
-        wx.showLoading({ title: '清理中...' });
+        wx.showLoading({ title: '清理中…' });
         try {
-          await Promise.all(invalidItems.map(item => db.collection('collections').doc(item._id).remove()));
+          await Promise.all(invalidItems.map(item => wx.cloud.callFunction({
+            name: 'toggleCollection',
+            data: { engage: 'cartItem', action: 'removeCart', id: item._id }
+          }).catch(() => null)));
           wx.hideLoading();
           wx.showToast({ title: '已清理', icon: 'success' });
           this.loadCollection();
@@ -574,11 +676,9 @@ Page({
       folderName = folderObj ? folderObj.name : '收藏夹';
     }
     
-    this.setData({ 
-      currentFolder: folder, 
-      currentFolderName: folderName,
-      editMode: false, 
-      selectedItems: [] 
+    this.setData({
+      currentFolder: folder,
+      currentFolderName: folderName
     });
     this.loadCollection();
     // 🟢 切换分类时重新加载推荐（仅在全部分类时）
@@ -592,242 +692,105 @@ Page({
     this.switchFolder({ currentTarget: { dataset: { folder: 'all' } } });
   },
 
-  // 🟢 进入编辑模式
-  enterEditMode() {
-    wx.vibrateShort({ type: 'light' });
-    this.setData({ editMode: true, selectedItems: [] }, () => this.remeasureScroll());
-  },
-
-  // 🟢 退出编辑模式
-  exitEditMode() {
-    this.setData({ editMode: false, selectedItems: [] }, () => this.remeasureScroll());
-  },
-
-  // 🟢 切换物品选中状态（编辑模式）
-  toggleItemSelect(e) {
-    const itemId = e.currentTarget.dataset.id;
-    const selectedItems = [...this.data.selectedItems];
-    const index = selectedItems.indexOf(itemId);
-    
-    if (index > -1) {
-      selectedItems.splice(index, 1);
-    } else {
-      selectedItems.push(itemId);
+  _pickRecommendImage(item) {
+    if (!item) return '';
+    const fromArr = getFirstImage(item.images);
+    if (fromArr && String(fromArr).trim()) return String(fromArr).trim();
+    if (typeof item.images === 'string' && item.images.trim()) return item.images.trim();
+    const candidates = [
+      item.image,
+      item.httpImage,
+      item.cover,
+      item.coverImage,
+      item.mainImage,
+      item.thumb
+    ];
+    for (let i = 0; i < candidates.length; i++) {
+      const c = candidates[i];
+      if (typeof c === 'string' && c.trim()) return c.trim();
+      if (Array.isArray(c) && c[0]) return c[0];
     }
-    
-    this.setData({ selectedItems });
+    return '';
   },
 
-  // 🟢 全选/取消全选（编辑模式）
-  toggleSelectAllEdit() {
-    if (this.data.selectedItems.length === this.data.cartList.length) {
-      this.setData({ selectedItems: [] });
-    } else {
-      const allIds = this.data.cartList.map(item => item._id);
-      this.setData({ selectedItems: allIds });
-    }
-  },
-
-  // 🟢 显示收藏夹管理弹窗
-  showFolderManager() {
-    this.setData({ showFolderModal: true });
-    this.loadFolders();
-  },
-
-  // 🟢 关闭收藏夹管理弹窗
-  closeFolderModal() {
-    this.setData({ showFolderModal: false });
-  },
-
-  // 🟢 创建收藏夹
-  async createFolder() {
-    wx.showModal({
-      title: '创建收藏夹',
-      editable: true,
-      placeholderText: '请输入收藏夹名称',
-      confirmColor: '#C4A76C',
-      success: async (res) => {
-        if (res.confirm && res.content) {
-          wx.showLoading({ title: '创建中...' });
-          try {
-            const result = await wx.cloud.callFunction({
-              name: 'createCollectionFolder',
-              data: { name: res.content }
-            });
-            wx.hideLoading();
-            
-            if (result.result.success) {
-              wx.showToast({ title: '创建成功', icon: 'success' });
-              this.loadFolders();
-            } else {
-              wx.showToast({ title: result.result.msg || '创建失败', icon: 'none' });
-            }
-          } catch (err) {
-            wx.hideLoading();
-            wx.showToast({ title: '网络异常', icon: 'none' });
-          }
-        }
-      }
+  async _hydrateRecommendImages(list) {
+    const items = (list || []).map((item) => {
+      const raw = this._pickRecommendImage(item);
+      return { ...item, image: raw, httpImage: raw };
     });
-  },
+    const cloudIds = [...new Set(items.map((i) => i.image).filter((u) => u && String(u).startsWith('cloud://')))];
+    if (!cloudIds.length) return items;
 
-  // 🟢 显示移动弹窗
-  showMoveModal() {
-    if (this.data.selectedItems.length === 0) {
-      wx.showToast({ title: '请先选择物品', icon: 'none' });
-      return;
-    }
-    this.setData({ showMoveModal: true });
-  },
-
-  // 🟢 关闭移动弹窗
-  closeMoveModal() {
-    this.setData({ showMoveModal: false });
-  },
-
-  // 🟢 移动物品到收藏夹
-  async moveToFolder(e) {
-    const folderId = e.currentTarget.dataset.folder || null;
-    
-    wx.showLoading({ title: '移动中...' });
+    const urlMap = {};
     try {
-      const result = await wx.cloud.callFunction({
-        name: 'moveCollectionItems',
-        data: {
-          itemIds: this.data.selectedItems,
-          folderId: folderId
-        }
-      });
-      
-      wx.hideLoading();
-      if (result.result.success) {
-        wx.showToast({ title: '移动成功', icon: 'success' });
-        this.setData({ showMoveModal: false, editMode: false, selectedItems: [] });
-        this.loadFolders();
-        this.loadCollection();
-      } else {
-        wx.showToast({ title: result.result.msg || '移动失败', icon: 'none' });
+      for (let i = 0; i < cloudIds.length; i += 50) {
+        const chunk = cloudIds.slice(i, i + 50);
+        const res = await wx.cloud.getTempFileURL({ fileList: chunk });
+        (res.fileList || []).forEach((f) => {
+          if (f.fileID && f.tempFileURL) urlMap[f.fileID] = f.tempFileURL;
+        });
       }
-    } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: '网络异常', icon: 'none' });
-    }
-  },
-
-  // 🟢 批量删除
-  async batchDelete() {
-    if (this.data.selectedItems.length === 0) {
-      wx.showToast({ title: '请先选择物品', icon: 'none' });
-      return;
+    } catch (e) {
+      console.warn('recommend image hydrate failed', e);
     }
 
-    wx.showModal({
-      title: '确认删除',
-      content: `确定要删除选中的${this.data.selectedItems.length}件物品吗？`,
-      confirmColor: '#C4A76C',
-      success: async (res) => {
-        if (res.confirm) {
-          wx.showLoading({ title: '删除中...' });
-          try {
-            const tasks = this.data.selectedItems.map(id => 
-              db.collection('collections').doc(id).remove()
-            );
-            await Promise.all(tasks);
-            
-            wx.hideLoading();
-            wx.showToast({ title: '删除成功', icon: 'success' });
-            this.setData({ editMode: false, selectedItems: [] });
-            this.loadCollection();
-          } catch (err) {
-            wx.hideLoading();
-            wx.showToast({ title: '删除失败', icon: 'none' });
-          }
-        }
-      }
+    return items.map((item) => {
+      const next = urlMap[item.image] || item.image;
+      return { ...item, image: next, httpImage: next };
     });
   },
 
   async loadCollectionRecommendations() {
-    const openid = app.globalData.openid;
-    if (!openid || this.data.currentFolder !== 'all') {
+    if (this.data.currentFolder !== 'all') {
       this.setData({ collectionRecommendations: [], collectionTrend: null });
       return;
     }
 
     this.setData({ loadingRecommendations: true });
     try {
-      const res = await wx.cloud.callFunction({
-        name: 'getCollectionRecommendations',
-        data: { userId: openid, limit: 6 }
-      });
-      const payload = res.result || {};
-      if (payload.success) {
-        this.setData({
-          collectionRecommendations: payload.data || [],
-          collectionTrend: payload.trend || null,
-          loadingRecommendations: false
-        });
-      } else {
-        this.setData({ collectionRecommendations: [], loadingRecommendations: false });
+      let list = [];
+      let trend = null;
+      const openid = app.globalData.openid;
+      if (openid) {
+        try {
+          const res = await wx.cloud.callFunction({
+            name: 'getCollectionRecommendations',
+            data: { userId: openid, limit: 6 }
+          });
+          const payload = res.result || {};
+          if (payload.success) {
+            list = payload.data || [];
+            trend = payload.trend || null;
+          }
+        } catch (cfErr) {
+          console.warn('收藏推荐云函数失败', cfErr);
+        }
       }
+
+      const hydrated = await this._hydrateRecommendImages(list);
+      this.setData({
+        collectionRecommendations: hydrated,
+        collectionTrend: trend,
+        loadingRecommendations: false
+      });
     } catch (err) {
       console.warn('收藏推荐加载失败', err);
       this.setData({ loadingRecommendations: false });
     }
   },
 
-  renameFolder(e) {
-    const { id, name } = e.currentTarget.dataset;
-    wx.showModal({
-      title: '重命名收藏夹',
-      editable: true,
-      placeholderText: '请输入新名称',
-      content: name || '',
-      confirmColor: '#C4A76C',
-      success: async (res) => {
-        if (!res.confirm || !res.content || !res.content.trim()) return;
-        wx.showLoading({ title: '保存中...' });
-        try {
-          await db.collection('collection_folders').doc(id).update({
-            data: { name: res.content.trim(), updateTime: db.serverDate() }
-          });
-          wx.hideLoading();
-          wx.showToast({ title: '已更新', icon: 'success' });
-          this.loadFolders();
-        } catch (err) {
-          wx.hideLoading();
-          wx.showToast({ title: '更新失败', icon: 'none' });
-        }
-      }
+  onRecommendImageError(e) {
+    const idx = e.currentTarget.dataset.index;
+    if (idx == null || idx === '') return;
+    this.setData({
+      [`collectionRecommendations[${idx}].image`]: '',
+      [`collectionRecommendations[${idx}].httpImage`]: ''
     });
   },
 
-  deleteFolder(e) {
-    const folderId = e.currentTarget.dataset.id;
-    wx.showModal({
-      title: '删除收藏夹',
-      content: '删除后，该夹内藏品将移回「全部」列表',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '删除中...' });
-        try {
-          await db.collection('collections').where({ folderId }).update({
-            data: { folderId: null }
-          });
-          await db.collection('collection_folders').doc(folderId).remove();
-          wx.hideLoading();
-          wx.showToast({ title: '已删除', icon: 'success' });
-          if (this.data.currentFolder === folderId) {
-            this.setData({ currentFolder: 'all', currentFolderName: '全部' });
-          }
-          this.loadFolders();
-          this.loadCollection();
-        } catch (err) {
-          wx.hideLoading();
-          wx.showToast({ title: '删除失败', icon: 'none' });
-        }
-      }
-    });
+  onCartThumbError(e) {
+    const idx = e.currentTarget.dataset.index;
+    if (idx == null || idx === '') return;
+    this.setData({ [`cartList[${idx}].image`]: '' });
   }
 });

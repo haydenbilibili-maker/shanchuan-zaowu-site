@@ -1,0 +1,121 @@
+<view class="page-boot" wx:if="{{!ready}}">
+  <text class="boot-en">PAYSLIP</text>
+  <text class="boot-cn">工资条明细</text>
+  <text class="boot-hint">校验权限中…</text>
+</view>
+
+<view class="container" wx:elif="{{ready}}">
+  <view class="section sales-share-section" wx:if="{{showSalesShare}}">
+    <view class="section-head-row">
+      <view class="signal-light {{salesShare.shareAmountFmt !== '—' && !salesShare.error ? 'lamp-forest' : 'lamp-muted'}}"></view>
+      <text class="section-note">销售分成 · {{salesShare.storeScopeLabel || '门店经营额度'}} · {{salesShare.yearMonth || '本月'}}</text>
+    </view>
+    <view class="scene-card sales-share-card">
+      <view class="sales-share-head">
+        <text class="sales-share-en">SALES SHARE</text>
+        <text class="sales-share-title">实时销售分成</text>
+      </view>
+      <block wx:if="{{salesShare.loading}}">
+        <text class="section-note">正在汇总本月经营额度…</text>
+      </block>
+      <block wx:elif="{{salesShare.error}}">
+        <text class="section-note">{{salesShare.error}}</text>
+      </block>
+      <block wx:else>
+        <view class="row" wx:if="{{salesShare.storeScopeLabel}}">
+          <text class="row-sub">分成范围</text>
+          <text class="amount-row">{{salesShare.storeScopeLabel}}</text>
+        </view>
+        <view class="row">
+          <text class="row-sub">{{salesShare.revenueScopeLabel || '本月营业额'}}</text>
+          <text class="amount-row">¥{{salesShare.monthRevenueFmt}}</text>
+        </view>
+        <view class="row" wx:if="{{salesShare.mallFeeFmt}}">
+          <text class="row-sub">商场抽成</text>
+          <text class="amount-row">-¥{{salesShare.mallFeeFmt}}</text>
+        </view>
+        <view class="row" wx:if="{{salesShare.shareBaseFmt}}">
+          <text class="row-sub">分成基数（扣抽成后）</text>
+          <text class="amount-row">¥{{salesShare.shareBaseFmt}}</text>
+        </view>
+        <view class="row">
+          <text class="row-sub">分成比例</text>
+          <text class="amount-row">{{salesShare.rateLabel}}</text>
+        </view>
+        <view class="row divider">
+          <text class="row-sub">实时销售分成</text>
+          <text class="amount-row gold">¥{{salesShare.shareAmountFmt}}</text>
+        </view>
+        <text class="section-note sales-share-note" wx:if="{{salesShare.formulaNote}}">{{salesShare.formulaNote}}</text>
+        <text class="section-note sales-share-note" wx:if="{{salesShare.scopeNote}}">{{salesShare.scopeNote}}</text>
+      </block>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head-row">
+      <view class="signal-light {{list.length > 0 ? 'lamp-forest' : 'lamp-muted'}}"></view>
+      <text class="section-note" wx:if="{{roleHint}}">{{roleHint}} · 仅展示本人工资条</text>
+      <text class="section-note" wx:else>仅展示本人工资条；若为空，请联系店长或超管录入。</text>
+    </view>
+    <view class="list">
+      <view class="row" wx:for="{{list}}" wx:key="_id" bindtap="openDetail" data-id="{{item._id}}">
+        <view class="row-main">
+          <view class="row-title-line">
+            <view class="signal-light lamp-forest"></view>
+            <text class="row-title">{{item.month}}</text>
+          </view>
+          <text class="row-sub">实发 ¥{{item.net}}</text>
+        </view>
+        <text class="scene-tile-arrow">明细</text>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无工资条记录</view>
+  </view>
+</view>
+
+<view class="mask" wx:if="{{showDetail}}" bindtap="closeDetail">
+  <view class="modal" catchtap="noop">
+    <text class="modal-title">工资条 · {{detail.month}}</text>
+    <view class="scene-card" style="margin-top:24rpx;">
+      <block wx:if="{{detail.hasItems}}">
+        <view class="row" wx:for="{{detail.items}}" wx:key="name">
+          <text class="row-sub">{{item.name}}</text>
+          <text class="amount-row {{item.kind === 'deduct' ? 'deduct' : ''}}">{{item.kind === 'deduct' ? '-' : ''}}¥{{item.amount}}</text>
+        </view>
+        <view class="row divider">
+          <text class="row-sub">应发合计</text>
+          <text class="amount-row">¥{{detail.grossDisplay}}</text>
+        </view>
+        <view class="row">
+          <text class="row-sub">扣款合计</text>
+          <text class="amount-row deduct">¥{{detail.deductDisplay}}</text>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="row">
+          <text class="row-sub">基本工资</text>
+          <text class="amount-row">¥{{detail.base}}</text>
+        </view>
+        <view class="row">
+          <text class="row-sub">奖金 / 补贴</text>
+          <text class="amount-row">¥{{detail.bonus}}</text>
+        </view>
+        <view class="row">
+          <text class="row-sub">应发</text>
+          <text class="amount-row">¥{{detail.grossDisplay}}</text>
+        </view>
+        <view class="row">
+          <text class="row-sub">扣款</text>
+          <text class="amount-row deduct">¥{{detail.deduction}}</text>
+        </view>
+      </block>
+      <view class="row">
+        <text class="row-sub">实发</text>
+        <text class="amount-row gold">¥{{detail.net}}</text>
+      </view>
+      <text class="section-note" wx:if="{{detail.remark}}">{{detail.remark}}</text>
+    </view>
+    <view class="btn-primary" bindtap="closeDetail">关闭</view>
+  </view>
+</view>

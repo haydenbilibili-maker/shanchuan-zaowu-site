@@ -1,4 +1,7 @@
 {
-  "navigationStyle": "custom",
-  "usingComponents": {}
+  "navigationBarTitleText": "预约详情",
+  "usingComponents": {},
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814"
 }

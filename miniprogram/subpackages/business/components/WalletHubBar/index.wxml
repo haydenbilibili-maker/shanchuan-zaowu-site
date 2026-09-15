@@ -1,0 +1,40 @@
+<view class="whb" aria-label="钱包与礼券夹">
+  <view class="whb-seg">
+    <view
+      class="whb-item {{active === 'wallet' ? 'is-on' : ''}}"
+      hover-class="whb-item-press"
+      hover-stay-time="80"
+      bindtap="onTap"
+      data-tab="wallet"
+    >
+      <view class="whb-stack">
+        <view class="whb-cn-wrap">
+          <text class="whb-cn">钱包</text>
+        </view>
+        <text class="whb-en">WALLET</text>
+      </view>
+      <view class="whb-ind" wx:if="{{active === 'wallet'}}"></view>
+    </view>
+
+    <view class="whb-split" aria-hidden="true"></view>
+
+    <view
+      class="whb-item {{active === 'coupons' ? 'is-on' : ''}}"
+      hover-class="whb-item-press"
+      hover-stay-time="80"
+      bindtap="onTap"
+      data-tab="coupons"
+    >
+      <view class="whb-stack">
+        <view class="whb-cn-wrap">
+          <text class="whb-cn">礼券夹</text>
+          <view class="badge-outline-brass badge-sm whb-badge-pos badge-enter" wx:if="{{couponCount > 0}}">
+            <text>{{couponCount > 99 ? '99+' : couponCount}}</text>
+          </view>
+        </view>
+        <text class="whb-en">COUPONS</text>
+      </view>
+      <view class="whb-ind" wx:if="{{active === 'coupons'}}"></view>
+    </view>
+  </view>
+</view>

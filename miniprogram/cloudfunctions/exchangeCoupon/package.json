@@ -1,0 +1,9 @@
+{
+  "name": "exchangeCoupon",
+  "version": "1.0.0",
+  "description": "积分兑换代金券（幂等 + 流水 + 有效期配置化）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

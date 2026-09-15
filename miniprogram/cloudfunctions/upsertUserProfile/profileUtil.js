@@ -50,10 +50,17 @@ function sanitizeUser(user, openid) {
     mbti: user.mbti || '',
     zodiac: user.zodiac || '',
     bio: user.bio || '',
+    sensitiveBlurPref: user.sensitiveBlurPref === 'clear' || user.sensitiveDisplay === 'show' || user.sensitiveDisplay === 'clear'
+      ? 'clear'
+      : (user.sensitiveBlurPref === 'veil' || user.sensitiveDisplay === 'blur' || user.sensitiveDisplay === 'veil'
+        ? 'veil'
+        : ''),
     onboardingDone: !!user.onboardingDone,
     onboardingStep: user.onboardingStep || 0,
     profileScore: calcProfileScore(user),
     profileRewardClaimed: !!user.profileRewardClaimed,
+    registerGiftClaimed: !!user.registerGiftClaimed,
+    registerGiftIncomplete: !!user.registerGiftIncomplete,
     privacy: user.privacy || { showMbti: false, showZodiac: false, showBirthday: false },
     memberNo: buildMemberNo(openid),
     createTime: user.createTime

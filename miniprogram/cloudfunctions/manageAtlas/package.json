@@ -1,0 +1,9 @@
+{
+  "name": "manageAtlas",
+  "version": "1.0.0",
+  "description": "山海图鉴：目录、采集、日志",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

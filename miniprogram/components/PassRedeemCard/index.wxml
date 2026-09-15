@@ -1,0 +1,19 @@
+<!-- 核销成功结果卡：券夹 / 会员卡亮码共用 -->
+<view class="pass-redeem-card {{animating ? 'is-animating' : ''}}">
+  <view class="pass-redeem-status">
+    <view class="signal-light lamp-success blink"></view>
+    <text class="pass-redeem-status-text">已核销成功</text>
+  </view>
+  <view class="pass-redeem-seal" aria-hidden="true">
+    <view class="pass-redeem-ring"></view>
+    <view class="pass-redeem-check"></view>
+  </view>
+  <text class="pass-redeem-kicker">{{kicker || 'STORE VOUCHER'}}</text>
+  <text class="pass-redeem-title">{{title || '门店礼券'}}</text>
+  <view class="pass-redeem-value" wx:if="{{valueText}}">
+    <text class="pass-redeem-currency">¥</text>
+    <text class="pass-redeem-amount">{{valueText}}</text>
+  </view>
+  <text class="pass-redeem-badge">已核销</text>
+  <text class="pass-redeem-note" wx:if="{{note}}">{{note}}</text>
+</view>

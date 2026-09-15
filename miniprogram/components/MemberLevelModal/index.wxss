@@ -1,0 +1,860 @@
+/* ==========================================================================
+ * MemberLevelModal · 奇珍柜信息架构
+ * 一张英雄牌 + 横向铜牌轨 + 单区权益（告别每档卡墙堆叠）
+ * 材质与 UserVipCard 同源：纸 / 木 / 金属 / 黑蟒皮
+ * ========================================================================== */
+
+.level-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(26, 24, 20, 0.82);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+.level-mask.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.level-mask:not(.active) .level-sheet {
+  transform: translateY(100%);
+}
+
+.level-sheet {
+  width: 100%;
+  /* 明确高度：仅 max-height 时子级 flex:1+height:0 在部分 iPhone 会塌成 0 */
+  height: 88vh;
+  max-height: 88vh;
+  background: var(--color-bg);
+  border-radius: 32rpx 32rpx 0 0;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+}
+.level-mask.active .level-sheet {
+  transform: translateY(0);
+}
+
+.level-header {
+  position: relative;
+  flex-shrink: 0;
+  padding: 36rpx 40rpx 28rpx;
+  text-align: center;
+}
+.level-close {
+  position: absolute;
+  top: 28rpx;
+  right: 28rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.close-icon {
+  font-size: 28rpx;
+  color: var(--color-text-secondary);
+}
+.level-title {
+  display: block;
+  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.12em;
+}
+.level-subtitle {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 18rpx;
+  color: var(--gold);
+  letter-spacing: 0.22em;
+}
+
+.level-body {
+  /* 禁止 flex:1 + height:0（iPhone 真机 scroll-view 会高度为 0 → 正文空白）
+     高度由 inline style（JS 窗高 - header）写入；此处仅 CSS 兜底 */
+  width: 100%;
+  height: calc(88vh - 120rpx);
+  flex-shrink: 0;
+  /* 底部留白放在 .level-body-safe：scroll-view 自身 padding-bottom 真机常不计入可滚高度 */
+  padding: 8rpx 32rpx 0;
+  box-sizing: border-box;
+}
+
+/* —— 材质层几何 —— */
+.hero-card,
+.plate {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+}
+.hero-card .card-grain,
+.plate .card-grain,
+.hero-card .card-thickness,
+.plate .card-thickness,
+.hero-card .card-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.hero-card .card-grain,
+.plate .card-grain {
+  opacity: 0;
+}
+.hero-card .card-sheen {
+  opacity: 0;
+}
+
+/* ==========================================================================
+ * 1. 英雄卡
+ * ========================================================================== */
+.hero-card {
+  border-radius: 24rpx;
+  padding: 40rpx 36rpx 36rpx;
+  margin-bottom: 40rpx;
+  border: 1px solid rgba(77, 64, 26, 0.4);
+  box-sizing: border-box;
+}
+.hero-watermark {
+  position: absolute;
+  right: 8rpx;
+  bottom: 8rpx;
+  z-index: 0;
+  font-size: 160rpx;
+  line-height: 1;
+  opacity: 0.1;
+  transform: rotate(-12deg) scale(0.92);
+  filter: grayscale(1) contrast(1.15);
+  pointer-events: none;
+}
+.hero-body {
+  position: relative;
+  z-index: 1;
+}
+.hero-overline {
+  display: block;
+  font-size: 18rpx;
+  letter-spacing: 0.18em;
+  color: rgba(196, 167, 108, 0.75);
+  margin-bottom: 12rpx;
+}
+.hero-name {
+  display: block;
+  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
+  font-size: 44rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  margin-bottom: 20rpx;
+}
+.hero-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+  flex-wrap: wrap;
+}
+.hero-badge {
+  font-size: 20rpx;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+  background: rgba(196, 167, 108, 0.16);
+  border: 1px solid rgba(196, 167, 108, 0.35);
+  color: var(--gold);
+}
+.hero-growth {
+  font-family: var(--font-mono, monospace);
+  font-size: 22rpx;
+  color: rgba(213, 209, 200, 0.85);
+  letter-spacing: 0.04em;
+}
+.hero-progress-track {
+  height: 4rpx;
+  background: rgba(26, 24, 20, 0.35);
+  border-radius: 2rpx;
+  overflow: hidden;
+  margin-bottom: 12rpx;
+}
+.hero-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8A7530, var(--gold));
+}
+.hero-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16rpx;
+}
+.hero-progress-text {
+  font-size: 22rpx;
+  color: rgba(213, 209, 200, 0.8);
+}
+.hero-progress-pct {
+  font-family: var(--font-mono, monospace);
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--gold);
+}
+.hero-next {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 20rpx;
+  color: rgba(160, 154, 144, 0.95);
+  letter-spacing: 0.04em;
+}
+.hero-max {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.hero-max-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+.hero-max-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+}
+
+/* ==========================================================================
+ * 2. 铜牌轨
+ * ========================================================================== */
+.rail-section {
+  margin-bottom: 36rpx;
+}
+.section-label {
+  margin-bottom: 20rpx;
+  padding-bottom: 12rpx;
+  border-bottom: 1px solid rgba(77, 64, 26, 0.35);
+}
+.section-cn {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.08em;
+}
+.section-en {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 16rpx;
+  color: rgba(196, 167, 108, 0.7);
+  letter-spacing: 0.2em;
+}
+.plate-rail {
+  width: 100%;
+  /* 横向 scroll-view 也需明确高度，避免嵌套时塌缩；含选中上浮余量 */
+  height: 240rpx;
+  white-space: nowrap;
+}
+.plate-rail-inner {
+  display: inline-flex;
+  gap: 16rpx;
+  padding: 4rpx 4rpx 8rpx;
+}
+.plate {
+  flex-shrink: 0;
+  width: 220rpx;
+  padding: 22rpx 20rpx 20rpx;
+  border-radius: 16rpx;
+  border: 1px solid rgba(77, 64, 26, 0.4);
+  box-sizing: border-box;
+  white-space: normal;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.plate.is-selected {
+  border-width: 2px;
+  border-color: var(--gold);
+  transform: translateY(-2rpx);
+}
+.plate.is-locked {
+  opacity: 0.55;
+}
+.plate-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+.plate-lv {
+  font-family: var(--font-mono, monospace);
+  font-size: 20rpx;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(196, 167, 108, 0.9);
+}
+.plate-discount {
+  font-family: var(--font-mono, monospace);
+  font-size: 22rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.plate-name {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plate-threshold {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-size: 18rpx;
+  color: rgba(213, 209, 200, 0.72);
+  margin-bottom: 12rpx;
+  font-family: var(--font-mono, monospace);
+}
+.plate-status {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  font-size: 18rpx;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #52B788;
+}
+.plate-status.is-current {
+  color: var(--gold);
+}
+.plate-status.is-locked {
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+ * 3. 单区权益（非卡片墙）
+ * ========================================================================== */
+.perk-section {
+  margin-bottom: 40rpx;
+  padding-top: 8rpx;
+}
+.perk-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-bottom: 12rpx;
+}
+.perk-overline {
+  display: block;
+  font-size: 18rpx;
+  color: rgba(196, 167, 108, 0.75);
+  letter-spacing: 0.16em;
+  margin-bottom: 6rpx;
+}
+.perk-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.04em;
+}
+.perk-status {
+  flex-shrink: 0;
+  margin-top: 8rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  border: 1px solid rgba(196, 167, 108, 0.35);
+  color: var(--gold);
+  background: rgba(196, 167, 108, 0.1);
+}
+.perk-status.unlocked {
+  color: #52B788;
+  border-color: rgba(82, 183, 136, 0.4);
+  background: rgba(82, 183, 136, 0.1);
+}
+.perk-status.locked {
+  color: var(--color-text-muted);
+  border-color: rgba(107, 101, 96, 0.35);
+  background: rgba(38, 35, 32, 0.6);
+}
+.perk-meta {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+  margin-bottom: 24rpx;
+  font-family: var(--font-mono, monospace);
+}
+.perk-meta-dot {
+  color: rgba(196, 167, 108, 0.45);
+}
+.perk-list {
+  border-top: 1px solid rgba(77, 64, 26, 0.4);
+}
+.perk-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 0;
+  border-bottom: 1px solid rgba(38, 35, 32, 0.9);
+}
+.perk-icon-wrap {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(196, 167, 108, 0.1);
+  border: 1px solid rgba(77, 64, 26, 0.55);
+  flex-shrink: 0;
+}
+.perk-icon {
+  width: 22rpx;
+  height: 22rpx;
+}
+.perk-label {
+  font-size: 26rpx;
+  color: var(--color-text-body);
+  letter-spacing: 0.03em;
+}
+.perk-empty,
+.perk-locked-hint {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+ * 4. 成长脚注
+ * ========================================================================== */
+.growth-foot {
+  padding: 28rpx 0 20rpx;
+  border-top: 1px solid rgba(77, 64, 26, 0.28);
+  text-align: center;
+}
+.growth-foot-main {
+  display: block;
+  font-size: 24rpx;
+  color: var(--gold);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.04em;
+  margin-bottom: 6rpx;
+}
+.growth-foot-sub {
+  display: block;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+/* 内容末尾安全区：计入 scroll 内容高度；优先用 JS safeStyle，CSS 作无 JS 兜底 */
+.level-body-safe {
+  width: 100%;
+  flex-shrink: 0;
+  height: calc(48rpx + constant(safe-area-inset-bottom));
+  height: calc(48rpx + env(safe-area-inset-bottom));
+  min-height: 48rpx;
+}
+
+/* ==========================================================================
+ * 材质皮肤 · 英雄卡 + 铜牌（对齐 UserVipCard）
+ * 浅档深字 / 深档浅字
+ * ========================================================================== */
+.skin-lv1 {
+  --modal-accent: #8A7530;
+  --modal-border: rgba(160, 154, 144, 0.42);
+}
+.skin-lv2 {
+  --modal-accent: #8B6F47;
+  --modal-border: rgba(139, 111, 71, 0.38);
+}
+.skin-lv3 {
+  --modal-accent: #D4BC85;
+  --modal-border: rgba(44, 28, 12, 0.7);
+}
+.skin-lv4 {
+  --modal-accent: #CFC7B6;
+  --modal-border: rgba(12, 9, 7, 0.8);
+}
+.skin-lv5 {
+  --modal-accent: #302810;
+  --modal-border: rgba(48, 56, 64, 0.85);
+}
+.skin-lv6 {
+  --modal-accent: #4D401A;
+  --modal-border: rgba(120, 88, 24, 0.75);
+}
+.skin-lv99 {
+  --modal-accent: #C4A76C;
+  --modal-border: rgba(77, 64, 26, 0.55);
+}
+
+/* —— Lv1 道林纸 · 深字 —— */
+.hero-card.level-skin-1,
+.plate.level-skin-1 {
+  background:
+    linear-gradient(102deg, transparent 34%, rgba(255, 255, 255, 0.9) 36.2%, rgba(255, 255, 255, 0.9) 37%, rgba(160, 154, 144, 0.12) 37.6%, transparent 42%),
+    radial-gradient(ellipse 120% 100% at 30% 12%, rgba(255, 255, 255, 0.95) 0%, transparent 58%),
+    linear-gradient(170deg, #FFFEFB 0%, #F7F5F0 48%, #EEEBE4 100%);
+  border-color: rgba(160, 154, 144, 0.42);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.95);
+}
+.hero-card.level-skin-1 .card-grain,
+.plate.level-skin-1 .card-grain {
+  opacity: 1;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg stroke='%236B6560' stroke-width='0.45' stroke-linecap='round' fill='none'%3E%3Cpath d='M5 9l6 1' stroke-opacity='0.14'/%3E%3Cpath d='M18 5l5-1' stroke-opacity='0.11'/%3E%3Cpath d='M34 12l8 1' stroke-opacity='0.13'/%3E%3Cpath d='M50 7l6 2' stroke-opacity='0.1'/%3E%3Cpath d='M8 24l5 3' stroke-opacity='0.12'/%3E%3Cpath d='M26 22l7-2' stroke-opacity='0.13'/%3E%3Cpath d='M44 28l6 1' stroke-opacity='0.11'/%3E%3Cpath d='M4 40l7-2' stroke-opacity='0.12'/%3E%3Cpath d='M22 44l8 2' stroke-opacity='0.11'/%3E%3Cpath d='M40 39l6 3' stroke-opacity='0.12'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(rgba(107, 101, 96, 0.12) 0.4px, transparent 0.9px);
+  background-size: 96rpx 96rpx, 7rpx 7rpx;
+}
+.hero-card.level-skin-1 .card-thickness,
+.plate.level-skin-1 .card-thickness {
+  background: linear-gradient(152deg, rgba(255, 255, 255, 0.5) 0%, transparent 28%, transparent 72%, rgba(160, 154, 144, 0.08) 100%);
+}
+.hero-card.level-skin-1 .hero-name,
+.hero-card.level-skin-1 .hero-progress-pct,
+.hero-card.level-skin-1 .hero-max-text { color: #33302C; }
+.hero-card.level-skin-1 .hero-overline,
+.hero-card.level-skin-1 .hero-growth,
+.hero-card.level-skin-1 .hero-progress-text,
+.hero-card.level-skin-1 .hero-next { color: var(--color-text-muted); }
+.hero-card.level-skin-1 .hero-badge {
+  background: rgba(45, 90, 63, 0.1);
+  border-color: rgba(45, 90, 63, 0.32);
+  color: #2D5A3F;
+}
+.hero-card.level-skin-1 .hero-progress-track { background: rgba(160, 154, 144, 0.2); }
+.hero-card.level-skin-1 .hero-progress-fill { background: linear-gradient(90deg, #A8903C, var(--gold)); }
+.hero-card.level-skin-1 .hero-max-icon,
+.hero-card.level-skin-1 .hero-watermark {
+  filter: saturate(0.08) sepia(0.2) brightness(0.35) contrast(1.15);
+}
+.plate.level-skin-1 .plate-lv,
+.plate.level-skin-1 .plate-discount,
+.plate.level-skin-1 .plate-name { color: #33302C; }
+.plate.level-skin-1 .plate-threshold { color: var(--color-text-muted); }
+.plate.level-skin-1 .plate-status { color: #2D5A3F; }
+.plate.level-skin-1 .plate-status.is-current { color: #8A7530; }
+.plate.level-skin-1 .plate-status.is-locked { color: var(--color-text-muted); }
+
+/* —— Lv2 云龙纸 · 深字 —— */
+.hero-card.level-skin-2,
+.plate.level-skin-2 {
+  background:
+    radial-gradient(ellipse 65% 55% at 82% 28%, rgba(255, 252, 245, 0.65) 0%, transparent 65%),
+    linear-gradient(168deg, #F6F0E4 0%, #EBE3D2 46%, #DDD3BE 100%);
+  border-color: rgba(139, 111, 71, 0.36);
+  box-shadow: inset 0 1rpx 0 rgba(255, 252, 245, 0.8);
+}
+.hero-card.level-skin-2 .card-grain,
+.plate.level-skin-2 .card-grain {
+  opacity: 0.85;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(139, 111, 71, 0.08) 0, rgba(139, 111, 71, 0.08) 1.2rpx, transparent 1.2rpx, transparent 26rpx),
+    repeating-linear-gradient(0deg, rgba(139, 111, 71, 0.04) 0, rgba(139, 111, 71, 0.04) 1rpx, transparent 1rpx, transparent 4rpx);
+}
+.hero-card.level-skin-2 .card-thickness,
+.plate.level-skin-2 .card-thickness {
+  background: linear-gradient(152deg, rgba(255, 252, 245, 0.5) 0%, transparent 28%, transparent 72%, rgba(139, 111, 71, 0.09) 100%);
+}
+.hero-card.level-skin-2 .hero-name,
+.hero-card.level-skin-2 .hero-progress-pct,
+.hero-card.level-skin-2 .hero-max-text { color: #33302C; }
+.hero-card.level-skin-2 .hero-overline,
+.hero-card.level-skin-2 .hero-growth,
+.hero-card.level-skin-2 .hero-progress-text,
+.hero-card.level-skin-2 .hero-next { color: #6B5A3E; }
+.hero-card.level-skin-2 .hero-badge {
+  background: rgba(139, 111, 71, 0.12);
+  border-color: rgba(139, 111, 71, 0.34);
+  color: #8B6F47;
+}
+.hero-card.level-skin-2 .hero-progress-fill { background: linear-gradient(90deg, #8B6F47, var(--gold)); }
+.hero-card.level-skin-2 .hero-watermark {
+  filter: saturate(0.1) sepia(0.35) brightness(0.32) contrast(1.2);
+}
+.plate.level-skin-2 .plate-lv,
+.plate.level-skin-2 .plate-discount,
+.plate.level-skin-2 .plate-name { color: #33302C; }
+.plate.level-skin-2 .plate-threshold { color: #6B5A3E; }
+.plate.level-skin-2 .plate-status { color: #2D5A3F; }
+.plate.level-skin-2 .plate-status.is-current { color: #8B6F47; }
+
+/* —— Lv3 胡桃木 · 浅字 —— */
+.hero-card.level-skin-3,
+.plate.level-skin-3 {
+  background:
+    linear-gradient(96deg, rgba(255, 220, 170, 0.2) 0%, transparent 22%, transparent 64%, rgba(14, 8, 3, 0.55) 100%),
+    linear-gradient(178deg, #744F34 0%, #5E3C26 22%, #785438 46%, #4A2E1A 70%, #63402A 100%);
+  border-color: rgba(44, 28, 12, 0.7);
+  box-shadow: inset 0 1rpx 0 rgba(255, 232, 190, 0.2);
+}
+.hero-card.level-skin-3 .card-grain,
+.plate.level-skin-3 .card-grain {
+  opacity: 0.85;
+  background-image:
+    repeating-linear-gradient(178deg, rgba(255, 226, 178, 0.07) 0, rgba(255, 226, 178, 0.07) 1rpx, transparent 1rpx, transparent 5rpx),
+    repeating-linear-gradient(179deg, rgba(40, 24, 10, 0.16) 0, rgba(40, 24, 10, 0.16) 2rpx, transparent 2rpx, transparent 11rpx);
+}
+.hero-card.level-skin-3 .card-thickness,
+.plate.level-skin-3 .card-thickness {
+  background:
+    linear-gradient(180deg, rgba(255, 238, 205, 0.16) 0%, transparent 6%),
+    radial-gradient(ellipse 96% 84% at 46% 40%, transparent 52%, rgba(22, 13, 5, 0.22) 100%);
+}
+.hero-card.level-skin-3 .hero-name,
+.hero-card.level-skin-3 .hero-progress-pct,
+.hero-card.level-skin-3 .hero-max-text { color: #FFF6E6; }
+.hero-card.level-skin-3 .hero-overline,
+.hero-card.level-skin-3 .hero-growth,
+.hero-card.level-skin-3 .hero-progress-text,
+.hero-card.level-skin-3 .hero-next { color: #D4BE97; }
+.hero-card.level-skin-3 .hero-badge {
+  background: rgba(224, 207, 163, 0.18);
+  border-color: rgba(240, 220, 174, 0.42);
+  color: #F0DCAE;
+}
+.hero-card.level-skin-3 .hero-progress-track { background: rgba(24, 14, 6, 0.45); }
+.hero-card.level-skin-3 .hero-progress-fill { background: linear-gradient(90deg, #8A6A2C, #E7D2A0); }
+.hero-card.level-skin-3 .hero-watermark {
+  filter: grayscale(1) brightness(0.42) contrast(1.1);
+  opacity: 0.22;
+}
+.plate.level-skin-3 .plate-lv { color: #F0DCAE; }
+.plate.level-skin-3 .plate-discount,
+.plate.level-skin-3 .plate-name { color: #FFF6E6; }
+.plate.level-skin-3 .plate-threshold { color: #D4BE97; }
+.plate.level-skin-3 .plate-status { color: #E0CFA3; }
+.plate.level-skin-3 .plate-status.is-current { color: #F0DCAE; }
+
+/* —— Lv4 紫檀 · 浅字 —— */
+.hero-card.level-skin-4,
+.plate.level-skin-4 {
+  background:
+    linear-gradient(96deg, rgba(240, 170, 160, 0.14) 0%, transparent 20%, transparent 66%, rgba(10, 2, 6, 0.58) 100%),
+    linear-gradient(178deg, #5A2030 0%, #3A1522 22%, #4E1E2C 44%, #2A1018 70%, #421C28 100%);
+  border-color: rgba(12, 9, 7, 0.8);
+  box-shadow: inset 0 1rpx 0 rgba(226, 218, 204, 0.1);
+}
+.hero-card.level-skin-4 .card-grain,
+.plate.level-skin-4 .card-grain {
+  opacity: 0.8;
+  background-image:
+    repeating-linear-gradient(179.4deg, rgba(226, 218, 204, 0.05) 0, rgba(226, 218, 204, 0.05) 1rpx, transparent 1rpx, transparent 4rpx),
+    repeating-linear-gradient(180deg, rgba(8, 6, 4, 0.28) 0, rgba(8, 6, 4, 0.28) 2rpx, transparent 2rpx, transparent 9rpx);
+}
+.hero-card.level-skin-4 .card-thickness,
+.plate.level-skin-4 .card-thickness {
+  background:
+    linear-gradient(180deg, rgba(232, 226, 214, 0.1) 0%, transparent 6%),
+    radial-gradient(ellipse 96% 84% at 52% 38%, transparent 50%, rgba(6, 5, 4, 0.26) 100%);
+}
+.hero-card.level-skin-4 .hero-name,
+.hero-card.level-skin-4 .hero-progress-pct,
+.hero-card.level-skin-4 .hero-max-text { color: #F2EDE4; }
+.hero-card.level-skin-4 .hero-overline,
+.hero-card.level-skin-4 .hero-growth,
+.hero-card.level-skin-4 .hero-progress-text,
+.hero-card.level-skin-4 .hero-next { color: #A9A192; }
+.hero-card.level-skin-4 .hero-badge {
+  background: rgba(207, 199, 182, 0.12);
+  border-color: rgba(207, 199, 182, 0.32);
+  color: #CFC7B6;
+}
+.hero-card.level-skin-4 .hero-progress-track { background: rgba(6, 5, 4, 0.55); }
+.hero-card.level-skin-4 .hero-progress-fill { background: linear-gradient(90deg, #6B6255, #D3CCBD); }
+.hero-card.level-skin-4 .hero-watermark {
+  filter: grayscale(1) brightness(1.4) contrast(0.92);
+}
+.plate.level-skin-4 .plate-lv { color: #CFC7B6; }
+.plate.level-skin-4 .plate-discount,
+.plate.level-skin-4 .plate-name { color: #F2EDE4; }
+.plate.level-skin-4 .plate-threshold { color: #A9A192; }
+.plate.level-skin-4 .plate-status { color: #D3CCBD; }
+.plate.level-skin-4 .plate-status.is-current { color: #CFC7B6; }
+
+/* —— Lv5 白银 · 深字 —— */
+.hero-card.level-skin-5,
+.plate.level-skin-5 {
+  background: linear-gradient(100deg,
+    #8A929A 0%, #B0B8C0 12%, #9AA2AA 28%, #D0D6DC 44%,
+    #A8B0B8 58%, #E4E8EC 72%, #98A0A8 88%, #848C94 100%);
+  border-color: rgba(48, 56, 64, 0.85);
+  box-shadow: inset 0 1rpx 0 rgba(233, 241, 245, 0.45);
+}
+.hero-card.level-skin-5 .card-grain,
+.plate.level-skin-5 .card-grain {
+  opacity: 0.95;
+  background-image:
+    repeating-linear-gradient(58deg, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 1rpx, transparent 1rpx, transparent 22rpx),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 1rpx, rgba(20, 24, 28, 0.08) 1rpx, rgba(20, 24, 28, 0.08) 2rpx),
+    linear-gradient(100deg, transparent 28%, rgba(255, 255, 255, 0.22) 48%, transparent 66%);
+}
+.hero-card.level-skin-5 .card-thickness,
+.plate.level-skin-5 .card-thickness {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, transparent 16%),
+    linear-gradient(0deg, rgba(20, 24, 28, 0.14) 0%, transparent 18%);
+}
+.hero-card.level-skin-5 .card-sheen { opacity: 1; }
+.hero-card.level-skin-5 .hero-name,
+.hero-card.level-skin-5 .hero-progress-pct,
+.hero-card.level-skin-5 .hero-max-text { color: var(--color-bg); }
+.hero-card.level-skin-5 .hero-overline,
+.hero-card.level-skin-5 .hero-growth,
+.hero-card.level-skin-5 .hero-progress-text,
+.hero-card.level-skin-5 .hero-next { color: #4A4540; }
+.hero-card.level-skin-5 .hero-badge {
+  background: rgba(26, 24, 20, 0.1);
+  border-color: rgba(26, 24, 20, 0.32);
+  color: #302810;
+}
+.hero-card.level-skin-5 .hero-progress-track { background: rgba(26, 24, 20, 0.16); }
+.hero-card.level-skin-5 .hero-progress-fill { background: linear-gradient(90deg, var(--color-text-muted), #302810); }
+.hero-card.level-skin-5 .hero-max-icon {
+  filter: brightness(0) saturate(100%);
+  opacity: 0.72;
+}
+.hero-card.level-skin-5 .hero-watermark {
+  filter: grayscale(1) brightness(0.22) contrast(1.25);
+}
+.plate.level-skin-5 .plate-lv,
+.plate.level-skin-5 .plate-discount,
+.plate.level-skin-5 .plate-name { color: var(--color-bg); }
+.plate.level-skin-5 .plate-threshold { color: #4A4540; }
+.plate.level-skin-5 .plate-status { color: #2D5A3F; }
+.plate.level-skin-5 .plate-status.is-current { color: #302810; }
+.plate.level-skin-5 .plate-status.is-locked { color: var(--color-text-muted); }
+
+/* —— Lv6 黄金 · 深字 —— */
+.hero-card.level-skin-6,
+.plate.level-skin-6 {
+  background: linear-gradient(102deg,
+    #C9A24A 0%, #E8C86A 10%, #F5DEA0 20%, #FFF4C8 28%,
+    #E2C060 40%, #D4AE48 52%, #F0D88A 64%, #FFF0B8 76%,
+    #E6C45C 88%, #C49C3E 100%);
+  border-color: rgba(120, 88, 24, 0.75);
+  box-shadow: inset 0 1rpx 0 rgba(255, 246, 214, 0.55);
+}
+.hero-card.level-skin-6 .card-grain,
+.plate.level-skin-6 .card-grain {
+  opacity: 0.9;
+  background-image:
+    repeating-linear-gradient(100deg, rgba(255, 252, 230, 0.12) 0, rgba(255, 252, 230, 0.12) 1rpx, transparent 1rpx, transparent 8rpx),
+    linear-gradient(100deg, transparent 26%, rgba(255, 252, 230, 0.28) 46%, transparent 64%);
+}
+.hero-card.level-skin-6 .card-thickness,
+.plate.level-skin-6 .card-thickness {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 230, 0.35) 0%, transparent 16%),
+    linear-gradient(0deg, rgba(90, 60, 12, 0.14) 0%, transparent 18%);
+}
+.hero-card.level-skin-6 .card-sheen { opacity: 1; }
+.hero-card.level-skin-6 .hero-name,
+.hero-card.level-skin-6 .hero-progress-pct,
+.hero-card.level-skin-6 .hero-max-text { color: #302810; }
+.hero-card.level-skin-6 .hero-overline,
+.hero-card.level-skin-6 .hero-growth,
+.hero-card.level-skin-6 .hero-progress-text,
+.hero-card.level-skin-6 .hero-next { color: #6B5A24; }
+.hero-card.level-skin-6 .hero-badge {
+  background: rgba(48, 40, 16, 0.12);
+  border-color: rgba(48, 40, 16, 0.36);
+  color: #4D401A;
+}
+.hero-card.level-skin-6 .hero-progress-track { background: rgba(48, 40, 16, 0.16); }
+.hero-card.level-skin-6 .hero-progress-fill { background: linear-gradient(90deg, #6B5A24, #302810); }
+.hero-card.level-skin-6 .hero-max-icon {
+  filter: brightness(0) saturate(100%);
+  opacity: 0.7;
+}
+.hero-card.level-skin-6 .hero-watermark {
+  filter: grayscale(1) brightness(0.24) contrast(1.2);
+}
+.plate.level-skin-6 .plate-lv,
+.plate.level-skin-6 .plate-discount,
+.plate.level-skin-6 .plate-name { color: #302810; }
+.plate.level-skin-6 .plate-threshold { color: #6B5A24; }
+.plate.level-skin-6 .plate-status { color: #2D5A3F; }
+.plate.level-skin-6 .plate-status.is-current { color: #4D401A; }
+.plate.level-skin-6 .plate-status.is-locked { color: #8A7530; }
+
+/* —— Lv99 黑蟒皮 · 浅字 —— */
+.hero-card.level-skin-99,
+.plate.level-skin-99 {
+  background:
+    linear-gradient(108deg, rgba(196, 167, 108, 0.06) 0%, transparent 20%, transparent 70%, rgba(0, 0, 0, 0.4) 100%),
+    linear-gradient(175deg, #221E1A 0%, #161310 45%, #0F0D0B 100%);
+  border-color: rgba(77, 64, 26, 0.55);
+  box-shadow: inset 0 1rpx 0 rgba(196, 167, 108, 0.12);
+}
+.hero-card.level-skin-99 .card-grain,
+.plate.level-skin-99 .card-grain {
+  opacity: 0.95;
+  background-image:
+    repeating-linear-gradient(60deg, transparent 0, transparent 14rpx, rgba(255, 248, 230, 0.05) 14rpx, rgba(255, 248, 230, 0.05) 15.2rpx, transparent 15.2rpx, transparent 30rpx),
+    repeating-linear-gradient(-60deg, transparent 0, transparent 14rpx, rgba(0, 0, 0, 0.4) 14rpx, rgba(0, 0, 0, 0.4) 15.2rpx, transparent 15.2rpx, transparent 30rpx);
+}
+.hero-card.level-skin-99 .card-thickness,
+.plate.level-skin-99 .card-thickness {
+  background: linear-gradient(160deg, rgba(196, 167, 108, 0.07) 0%, transparent 24%, transparent 70%, rgba(0, 0, 0, 0.35) 100%);
+}
+.hero-card.level-skin-99 .card-sheen { opacity: 1; }
+.hero-card.level-skin-99 .hero-name,
+.hero-card.level-skin-99 .hero-progress-pct,
+.hero-card.level-skin-99 .hero-max-text { color: #F2EDE4; }
+.hero-card.level-skin-99 .hero-overline,
+.hero-card.level-skin-99 .hero-growth,
+.hero-card.level-skin-99 .hero-progress-text,
+.hero-card.level-skin-99 .hero-next { color: var(--color-text-secondary); }
+.hero-card.level-skin-99 .hero-badge {
+  background: rgba(196, 167, 108, 0.14);
+  border-color: rgba(196, 167, 108, 0.4);
+  color: var(--gold);
+}
+.hero-card.level-skin-99 .hero-progress-fill { background: linear-gradient(90deg, #8A7530, var(--gold)); }
+.hero-card.level-skin-99 .hero-watermark {
+  filter: grayscale(1) brightness(1.45) contrast(1.1);
+}
+.plate.level-skin-99 .plate-lv { color: var(--gold); }
+.plate.level-skin-99 .plate-discount,
+.plate.level-skin-99 .plate-name { color: #F2EDE4; }
+.plate.level-skin-99 .plate-threshold { color: var(--color-text-secondary); }
+.plate.level-skin-99 .plate-status { color: var(--gold); }
+
+/* 选中铜牌：黄铜描边压过材质边 */
+.plate.is-selected.level-skin-1,
+.plate.is-selected.level-skin-2,
+.plate.is-selected.level-skin-5,
+.plate.is-selected.level-skin-6 {
+  border-color: #8A7530;
+}
+.plate.is-selected.level-skin-3,
+.plate.is-selected.level-skin-4,
+.plate.is-selected.level-skin-99 {
+  border-color: var(--gold);
+}

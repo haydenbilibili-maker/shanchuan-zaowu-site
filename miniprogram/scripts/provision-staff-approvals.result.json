@@ -1,0 +1,122 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "collection": "staff_approvals",
+  "permission": "PRIVATE",
+  "securityRule": null,
+  "indexesPlanned": [
+    "status_1_approverRole_1_createTimeMs_-1",
+    "relatedId_1_actionType_1_status_1",
+    "applicantOpenid_1_createTimeMs_-1"
+  ],
+  "indexesObserved": [
+    {
+      "name": "_id_",
+      "unique": false,
+      "keys": [
+        {
+          "name": "_id",
+          "direction": "1"
+        }
+      ]
+    },
+    {
+      "name": "relatedId_1_actionType_1_status_1",
+      "unique": false,
+      "keys": [
+        {
+          "name": "relatedId",
+          "direction": "1"
+        },
+        {
+          "name": "actionType",
+          "direction": "1"
+        },
+        {
+          "name": "status",
+          "direction": "1"
+        }
+      ]
+    },
+    {
+      "name": "applicantOpenid_1_createTimeMs_-1",
+      "unique": false,
+      "keys": [
+        {
+          "name": "applicantOpenid",
+          "direction": "1"
+        },
+        {
+          "name": "createTimeMs",
+          "direction": "-1"
+        }
+      ]
+    },
+    {
+      "name": "status_1_approverRole_1_createTimeMs_-1",
+      "unique": false,
+      "keys": [
+        {
+          "name": "status",
+          "direction": "1"
+        },
+        {
+          "name": "approverRole",
+          "direction": "1"
+        },
+        {
+          "name": "createTimeMs",
+          "direction": "-1"
+        }
+      ]
+    },
+    {
+      "name": "_openid_1",
+      "unique": false,
+      "keys": [
+        {
+          "name": "_openid",
+          "direction": "1"
+        }
+      ]
+    }
+  ],
+  "at": "2026-09-10T04:08:50.116Z",
+  "results": [
+    {
+      "name": "staff_approvals",
+      "op": "建集合",
+      "result": "created",
+      "note": "createCollectionIfNotExists"
+    },
+    {
+      "name": "staff_approvals ACL",
+      "op": "设权限",
+      "result": "ok",
+      "note": "PRIVATE"
+    },
+    {
+      "name": "staff_approvals.status_1_approverRole_1_createTimeMs_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "staff_approvals.relatedId_1_actionType_1_status_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "staff_approvals.applicantOpenid_1_createTimeMs_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "staff_approvals",
+      "op": "校验",
+      "result": "ok",
+      "note": "indexes=_id_,relatedId_1_actionType_1_status_1,applicantOpenid_1_createTimeMs_-1,status_1_approverRole_1_createTimeMs_-1,_openid_1"
+    }
+  ]
+}

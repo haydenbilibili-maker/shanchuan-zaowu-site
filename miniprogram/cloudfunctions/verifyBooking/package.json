@@ -1,0 +1,9 @@
+{
+  "name": "verifyBooking",
+  "version": "1.0.0",
+  "description": "预约核销（店员/店长鉴权）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

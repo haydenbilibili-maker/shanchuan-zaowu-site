@@ -1,0 +1,9 @@
+{
+  "name": "getStudioDashboard",
+  "version": "1.0.0",
+  "description": "工作室仪表盘（采购预算指标，聚合 ops_purchases/库存/出货）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

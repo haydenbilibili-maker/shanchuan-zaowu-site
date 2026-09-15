@@ -1,0 +1,9 @@
+{
+  "name": "manageMemberLevels",
+  "version": "1.0.0",
+  "description": "会员等级体系读写（与 Admin member_levels 同源）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

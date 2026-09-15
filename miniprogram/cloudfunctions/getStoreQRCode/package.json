@@ -1,0 +1,9 @@
+{
+  "name": "getStoreQRCode",
+  "version": "1.0.0",
+  "description": "门店/运营物料小程序码生成（wxacode.getUnlimited，仅超管）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

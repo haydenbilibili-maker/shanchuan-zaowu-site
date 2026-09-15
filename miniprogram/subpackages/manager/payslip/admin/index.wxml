@@ -1,0 +1,88 @@
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">PAYROLL</text>
+        <text class="cn">工资维护</text>
+      </view>
+      <view class="section-head-row">
+        <view class="signal-light {{list.length > 0 ? 'lamp-forest' : 'lamp-muted'}}"></view>
+        <text class="section-note">超管录入或修正员工月度工资条；保存记录操作人 openid。</text>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="field-label">按员工筛选</text>
+      <picker mode="selector" range="{{staffNames}}" value="{{staffIndex}}" bindchange="onStaffFilterChange">
+        <view class="picker-row">{{staffNames[staffIndex] || '全部员工'}}</view>
+      </picker>
+    </view>
+
+    <view class="section">
+      <view class="row staff-row" wx:for="{{list}}" wx:key="_id">
+        <view class="row-main">
+          <view class="row-title-line">
+            <view class="signal-light lamp-forest"></view>
+            <text class="row-title">{{item.staffName || '员工'}} · {{item.month}}</text>
+          </view>
+          <text class="row-sub">实发 ¥{{item.net}} · …{{item.staffOpenid ? item.staffOpenid.slice(-6) : ''}}</text>
+          <text class="row-sub muted" wx:if="{{item.updatedByName || item.updatedBy}}">最近 {{item.updatedByName || item.updatedBy}}</text>
+        </view>
+        <view class="staff-actions">
+          <view class="staff-btn edit" catchtap="openEdit" data-id="{{item._id}}">编辑</view>
+          <view class="staff-btn danger" catchtap="removeRow" data-id="{{item._id}}">删除</view>
+        </view>
+      </view>
+      <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无工资条，可点底部「新建工资条」录入</view>
+    </view>
+
+    <view class="workbench-page-foot-spacer"></view>
+  </view>
+
+  <view class="workbench-footer-bar" wx:if="{{!showEditor}}">
+    <view class="workbench-btn-primary" bindtap="openCreate">新建工资条</view>
+    <view class="workbench-footer-secondary">
+      <view class="workbench-btn-ghost" bindtap="clearFilter">查看全部</view>
+    </view>
+  </view>
+</view>
+
+<view class="mask" wx:if="{{showEditor}}" bindtap="closeEditor">
+  <view class="modal" catchtap="noop">
+    <view class="modal-head">
+      <text class="modal-title">{{form.id ? '编辑' : '新建'}}工资条</text>
+    </view>
+    <view class="modal-body">
+      <view class="field">
+        <text class="field-label">员工</text>
+        <picker mode="selector" range="{{staffNames}}" bindchange="onFormStaffPick">
+          <view class="input picker-row">{{form.staffName || '选择员工'}}</view>
+        </picker>
+      </view>
+      <view class="field">
+        <text class="field-label">月份 YYYY-MM</text>
+        <input class="input" value="{{form.month}}" data-field="month" bindinput="onFormInput" />
+      </view>
+      <view class="field">
+        <text class="field-label">基本工资</text>
+        <input class="input" type="digit" value="{{form.base}}" data-field="base" bindinput="onFormInput" />
+      </view>
+      <view class="field">
+        <text class="field-label">奖金 / 补贴</text>
+        <input class="input" type="digit" value="{{form.bonus}}" data-field="bonus" bindinput="onFormInput" />
+      </view>
+      <view class="field">
+        <text class="field-label">扣款</text>
+        <input class="input" type="digit" value="{{form.deduction}}" data-field="deduction" bindinput="onFormInput" />
+      </view>
+      <view class="field">
+        <text class="field-label">备注</text>
+        <input class="input" value="{{form.remark}}" data-field="remark" bindinput="onFormInput" maxlength="200" />
+      </view>
+    </view>
+    <view class="workbench-modal-foot">
+      <view class="workbench-btn-outline" bindtap="closeEditor">取消</view>
+      <view class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中' : '保存'}}</view>
+    </view>
+  </view>
+</view>

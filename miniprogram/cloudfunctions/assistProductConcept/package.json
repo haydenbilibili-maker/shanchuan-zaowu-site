@@ -1,0 +1,9 @@
+{
+  "name": "assistProductConcept",
+  "version": "1.0.0",
+  "description": "爆品概念 AI 生成（标本师 / 藏品维护）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

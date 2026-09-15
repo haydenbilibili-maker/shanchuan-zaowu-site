@@ -1,3 +1,13 @@
 {
-  "usingComponents": {}
+  "navigationBarTitleText": "我的礼券夹",
+  "usingComponents": {
+    "wallet-hub-bar": "/subpackages/business/components/WalletHubBar/index",
+    "pass-redeem-card": "/components/PassRedeemCard/index"
+  },
+  "backgroundColor": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814",
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundTextStyle": "light",
+  "navigationBarTextStyle": "white"
 }

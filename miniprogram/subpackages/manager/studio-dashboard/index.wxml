@@ -1,0 +1,356 @@
+<view class="ops-boot" wx:if="{{!ready}}">柜门缓缓开启…</view>
+
+<view class="ops-page" wx:if="{{ready}}">
+  <view class="ops-container">
+    <view class="ops-header compact">
+      <text class="ops-eyebrow">STUDIO · DASHBOARD</text>
+      <view class="ops-title-row">
+        <text class="ops-title">工作室仪表盘</text>
+        <text class="ops-meta-chip" wx:if="{{loading}}">刷新中</text>
+      </view>
+      <view class="ops-source-toggle" bindtap="toggleSource">
+        <text class="ops-source-label">{{sourceOpen ? '收起数据说明' : '数据说明与映射'}}</text>
+        <text class="ops-source-chevron">{{sourceOpen ? '▴' : '▾'}}</text>
+      </view>
+      <view class="ops-source-panel" wx:if="{{sourceOpen}}">
+        <text class="ops-note">{{sourceNote}}</text>
+        <view class="ops-naming" wx:if="{{namingLines.length}}">
+          <text class="ops-naming-line" wx:for="{{namingLines}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="ops-skeleton" wx:if="{{loading && !kpis}}">
+      <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+        <view class="ops-sk-line wide"></view>
+        <view class="ops-sk-line"></view>
+      </view>
+    </view>
+
+    <block wx:if="{{kpis}}">
+      <!-- ① 综合研判 + 信号灯 -->
+      <view class="verdict-card" wx:if="{{verdict}}">
+        <view class="verdict-top">
+          <view class="verdict-left">
+            <view class="signal-light lg {{verdict.className}}"></view>
+            <view class="verdict-copy">
+              <text class="verdict-en">BUDGET · HEALTH</text>
+              <text class="verdict-title {{verdict.tone}}">{{verdict.title}}</text>
+            </view>
+          </view>
+          <view class="verdict-badge {{verdict.tone}}">{{verdict.label}}</view>
+        </view>
+        <text class="verdict-insight">{{verdict.insight}}</text>
+        <view class="summary-chips" wx:if="{{signalBoard.summary.ok || signalBoard.summary.warn || signalBoard.summary.danger}}">
+          <text class="sum-chip ok" wx:if="{{signalBoard.summary.ok}}">正常 {{signalBoard.summary.ok}}</text>
+          <text class="sum-chip warn" wx:if="{{signalBoard.summary.warn}}">关注 {{signalBoard.summary.warn}}</text>
+          <text class="sum-chip danger" wx:if="{{signalBoard.summary.danger}}">告警 {{signalBoard.summary.danger}}</text>
+        </view>
+        <view class="verdict-foot">
+          <text class="verdict-meta">{{verdict.updatedAt ? '更新 ' + verdict.updatedAt : '下拉可刷新'}}</text>
+          <text class="legend-toggle" bindtap="toggleLegend">{{legendOpen ? '收起图例' : '信号图例'}}</text>
+        </view>
+        <view class="legend-box" wx:if="{{legendOpen}}">
+          <view class="legend-row"><view class="signal-light blink"></view><text class="legend-text">绿 · 正常</text></view>
+          <view class="legend-row"><view class="signal-light warn"></view><text class="legend-text">黄 · 需关注</text></view>
+          <view class="legend-row"><view class="signal-light danger"></view><text class="legend-text">红 · 告警</text></view>
+          <view class="legend-row"><view class="signal-light lamp-muted"></view><text class="legend-text">灰 · 样本不足</text></view>
+          <text class="legend-hint">{{signalBoard.rulesNote}}</text>
+        </view>
+      </view>
+
+      <view class="card signal-board" wx:if="{{signalBoard.items.length}}">
+        <view class="card-top">
+          <text class="card-title">预算信号灯</text>
+          <text class="card-meta">六盏</text>
+        </view>
+        <view class="signal-grid">
+          <view class="signal-item" wx:for="{{signalBoard.items}}" wx:key="id">
+            <view class="signal-rail signal-rail--{{item.status}}"></view>
+            <view class="signal-light {{item.lampClass}}"></view>
+            <view class="signal-copy">
+              <text class="signal-name">{{item.name}}</text>
+              <text class="signal-val {{item.tone}}">{{item.value}}</text>
+              <text class="signal-status">{{item.statusLabel}}</text>
+              <text class="signal-reason" wx:if="{{item.reason}}">{{item.reason}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- ② 预算进度 -->
+      <view class="card" wx:if="{{progress}}">
+        <view class="card-top">
+          <text class="card-title">预算进度</text>
+          <text class="card-meta {{progress.tone}}">已用 {{progress.usagePctText}}</text>
+        </view>
+        <view class="progress-head">
+          <text class="progress-label">已使用 / 总预算</text>
+          <text class="progress-nums">¥{{progress.usedText}} / ¥{{progress.totalText}}</text>
+        </view>
+        <view class="progress-track">
+          <view class="progress-fill tone-{{progress.tone}}" style="width: {{progress.usageBar}}%;"></view>
+        </view>
+        <view class="hero-split">
+          <view class="hero-split-cell">
+            <text class="hero-split-l">剩余总预算</text>
+            <text class="hero-split-v {{progress.remainingTone}}">¥{{progress.remainingText}}</text>
+          </view>
+          <view class="hero-split-cell {{progress.purchasableTone === 'down' ? 'alert' : ''}}">
+            <text class="hero-split-l">可采购剩余</text>
+            <text class="hero-split-v {{progress.purchasableTone}}">¥{{progress.purchasableText}}</text>
+          </view>
+          <view class="hero-split-cell">
+            <text class="hero-split-l">安全储备{{progress.safetyTouched ? ' · 风险' : ''}}</text>
+            <text class="hero-split-v {{progress.safetyTouched ? 'warn' : 'flat'}}">¥{{progress.safetyText}}</text>
+          </view>
+        </view>
+        <text class="alert-banner" wx:if="{{progress.overspendText}}">可采购池超支 ¥{{progress.overspendText}}，请核对进货节奏</text>
+      </view>
+
+      <!-- ③ 结构占比 -->
+      <view class="card structure-card" wx:if="{{structure.length}}">
+        <view class="card-top">
+          <text class="card-title">预算结构</text>
+          <text class="card-meta">安全 · 房租 · 采购</text>
+        </view>
+        <view class="structure-track">
+          <view
+            class="structure-seg tone-{{item.tone}}"
+            wx:for="{{structure}}"
+            wx:key="key"
+            style="width: {{item.widthPct}}%;"
+          ></view>
+        </view>
+        <view class="structure-legend">
+          <view class="structure-row {{item.isDanger ? 'is-danger' : ''}}" wx:for="{{structure}}" wx:key="key">
+            <view class="structure-dot tone-{{item.tone}}"></view>
+            <text class="structure-label">{{item.label}}</text>
+            <text class="structure-pct">{{item.pct}}%</text>
+            <text class="structure-amt {{item.isDanger ? 'down' : ''}}">¥{{item.amountText}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- ④ 采购趋势 -->
+      <view class="card trend-card">
+        <view class="card-top">
+          <text class="card-title">采购趋势</text>
+          <text class="card-meta">{{trendMode === 'single' ? '单月样本' : '按月'}}</text>
+        </view>
+        <block wx:if="{{trendMode === 'single' && trendSingle}}">
+          <view class="trend-single">
+            <view class="trend-single-head">
+              <text class="trend-single-month">{{trendSingle.label}}</text>
+              <text class="trend-single-hint">近 12 月仅此一月有采购记录</text>
+            </view>
+            <text class="trend-single-value">¥{{trendSingle.amountText}}</text>
+            <text class="trend-single-count" wx:if="{{trendSingle.count}}">{{trendSingle.count}} 笔</text>
+            <view class="trend-single-track">
+              <view class="trend-single-fill"></view>
+            </view>
+          </view>
+        </block>
+        <block wx:elif="{{trendMode === 'multi'}}">
+          <view class="trend-multi">
+            <view class="dash-bar-row trend-row" wx:for="{{trend}}" wx:key="key">
+              <text class="dash-bar-label">{{item.label}}</text>
+              <view class="dash-bar-track tall">
+                <view class="dash-bar-fill" style="width: {{item.pct}}%;"></view>
+              </view>
+              <text class="dash-bar-val">{{item.amountText}}</text>
+            </view>
+          </view>
+        </block>
+        <text class="empty-hint" wx:else>{{trendNote || '暂无按月采购序列，趋势图暂缺。'}}</text>
+        <text class="trend-note" wx:if="{{trendMode !== 'empty' && trendNote}}">{{trendNote}}</text>
+      </view>
+
+      <!-- ⑤ 核心数字：两列紧凑 KPI -->
+      <view class="kpi-section">
+        <text class="ops-section-label">核心指标 / KPI</text>
+        <view class="kpi-grid">
+          <view class="dash-card accent-brass">
+            <view class="dash-accent"></view>
+            <text class="dash-label">总预算</text>
+            <text class="dash-value brass">{{kpis.totalBudgetText}}</text>
+          </view>
+          <view class="dash-card">
+            <text class="dash-label">已使用</text>
+            <text class="dash-value">{{kpis.usedBudgetText}}</text>
+          </view>
+          <view class="dash-card {{kpis.purchasableTone === 'down' ? 'alert-neg' : ''}}">
+            <text class="dash-label {{kpis.purchasableTone === 'down' ? 'alert-lab' : ''}}">可采购剩余</text>
+            <text class="dash-value {{kpis.purchasableTone === 'down' ? 'alert-num' : kpis.purchasableTone}}">{{kpis.purchasableRemainingText}}</text>
+          </view>
+          <view class="dash-card">
+            <text class="dash-label">安全储备</text>
+            <text class="dash-value">{{kpis.safetyReserveText}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="detail-toggle" bindtap="toggleDetail">
+        <text class="detail-toggle-main">{{detailOpen ? '收起采购 · 库存 · 占比明细' : '展开采购 · 库存 · 占比明细'}}</text>
+        <text class="detail-toggle-sub">不影响上方核心 KPI</text>
+      </view>
+
+      <view class="detail-panel" wx:if="{{detailOpen}}">
+        <!-- 采购 -->
+        <view class="detail-block">
+          <view class="detail-block-head" data-key="purchase" bindtap="toggleSection">
+            <view class="detail-block-titles">
+              <text class="detail-block-en">PURCHASE</text>
+              <text class="detail-block-cn">采购与固定成本</text>
+            </view>
+            <text class="detail-block-chevron">{{sectionOpen.purchase ? '收起' : '展开'}}</text>
+          </view>
+          <view class="metric-list" wx:if="{{sectionOpen.purchase}}">
+            <view class="metric-row" wx:for="{{purchaseRows}}" wx:key="label">
+              <text class="metric-label">{{item.label}}</text>
+              <text class="metric-value {{item.tone}}">{{item.value}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 库存出货 -->
+        <view class="detail-block">
+          <view class="detail-block-head" data-key="stock" bindtap="toggleSection">
+            <view class="detail-block-titles">
+              <text class="detail-block-en">STOCK · SHIP</text>
+              <text class="detail-block-cn">库存与出货</text>
+            </view>
+            <text class="detail-block-chevron">{{sectionOpen.stock ? '收起' : '展开'}}</text>
+          </view>
+          <view class="metric-list" wx:if="{{sectionOpen.stock}}">
+            <view class="metric-row {{item.tone === 'down' ? 'is-alert' : ''}}" wx:for="{{stockRows}}" wx:key="label">
+              <text class="metric-label">{{item.label}}</text>
+              <text class="metric-value {{item.tone}}">{{item.value}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 分类占比 -->
+        <view class="detail-block">
+          <view class="detail-block-head" data-key="share" bindtap="toggleSection">
+            <view class="detail-block-titles">
+              <text class="detail-block-en">SHARE</text>
+              <text class="detail-block-cn">预算类型与分类采购</text>
+            </view>
+            <text class="detail-block-chevron">{{sectionOpen.share ? '收起' : '展开'}}</text>
+          </view>
+          <block wx:if="{{sectionOpen.share}}">
+            <text class="detail-subhead">预算类型占比</text>
+            <view class="bar-stack" wx:if="{{charts.budgetTypeShareView.length}}">
+              <view class="bar-item" wx:for="{{charts.budgetTypeShareView}}" wx:key="key">
+                <view class="bar-meta">
+                  <text class="bar-label">{{item.label}}</text>
+                  <text class="bar-val">{{item.amountText}}</text>
+                </view>
+                <view class="bar-track">
+                  <view class="bar-fill" style="width: {{item.pct}}%;"></view>
+                </view>
+              </view>
+            </view>
+            <view
+              class="list-more"
+              wx:if="{{charts.budgetTypeShareMore > 0 || listMore.budgetType}}"
+              data-key="budgetType"
+              bindtap="toggleListMore"
+            >
+              <text>{{listMore.budgetType ? '收起类型列表' : '查看更多类型 · ' + charts.budgetTypeShareMore}}</text>
+            </view>
+
+            <text class="detail-subhead">分类采购金额</text>
+            <view class="bar-stack" wx:if="{{charts.purchaseByCategoryView.length}}">
+              <view class="bar-item" wx:for="{{charts.purchaseByCategoryView}}" wx:key="key">
+                <view class="bar-meta">
+                  <text class="bar-label">{{item.label}}</text>
+                  <text class="bar-val">{{item.amountText}}</text>
+                </view>
+                <view class="bar-track">
+                  <view class="bar-fill" style="width: {{item.pct}}%;"></view>
+                </view>
+              </view>
+            </view>
+            <view
+              class="list-more"
+              wx:if="{{charts.purchaseByCategoryMore > 0 || listMore.category}}"
+              data-key="category"
+              bindtap="toggleListMore"
+            >
+              <text>{{listMore.category ? '收起分类列表' : '查看更多分类 · ' + charts.purchaseByCategoryMore}}</text>
+            </view>
+          </block>
+        </view>
+
+        <!-- 客户出货：默认折叠 -->
+        <view class="detail-block">
+          <view class="detail-block-head" data-key="customers" bindtap="toggleSection">
+            <view class="detail-block-titles">
+              <text class="detail-block-en">CUSTOMERS</text>
+              <text class="detail-block-cn">各客户出货金额</text>
+            </view>
+            <text class="detail-block-chevron">{{sectionOpen.customers ? '收起' : '展开'}}</text>
+          </view>
+          <block wx:if="{{sectionOpen.customers}}">
+            <view class="bar-stack" wx:if="{{charts.shipmentByCustomerView.length}}">
+              <view class="bar-item" wx:for="{{charts.shipmentByCustomerView}}" wx:key="key">
+                <view class="bar-meta">
+                  <text class="bar-label">{{item.label}}</text>
+                  <text class="bar-val alt">{{item.amountText}}</text>
+                </view>
+                <view class="bar-track">
+                  <view class="bar-fill alt" style="width: {{item.pct}}%;"></view>
+                </view>
+              </view>
+            </view>
+            <text class="empty-hint" wx:else>暂无客户出货金额。</text>
+            <view
+              class="list-more"
+              wx:if="{{charts.shipmentByCustomerMore > 0 || listMore.customers}}"
+              data-key="customers"
+              bindtap="toggleListMore"
+            >
+              <text>{{listMore.customers ? '收起客户列表' : '查看更多客户 · ' + charts.shipmentByCustomerMore}}</text>
+            </view>
+          </block>
+        </view>
+
+        <!-- 预算池：默认折叠 -->
+        <view class="detail-block">
+          <view class="detail-block-head" data-key="pools" bindtap="toggleSection">
+            <view class="detail-block-titles">
+              <text class="detail-block-en">POOLS</text>
+              <text class="detail-block-cn">各预算池剩余</text>
+            </view>
+            <text class="detail-block-chevron">{{sectionOpen.pools ? '收起' : '展开'}}</text>
+          </view>
+          <block wx:if="{{sectionOpen.pools}}">
+            <view class="metric-list" wx:if="{{poolsView.length}}">
+              <view class="metric-row pool-row" wx:for="{{poolsView}}" wx:key="name">
+                <view class="pool-copy">
+                  <text class="metric-label">{{item.name}}</text>
+                  <text class="pool-meta">年度 {{item.annualText}} · 已用 {{item.usedText}}</text>
+                </view>
+                <text class="metric-value {{item.remainingTone}}">余 {{item.remainingText}}</text>
+              </view>
+            </view>
+            <view
+              class="list-more"
+              wx:if="{{poolsMore > 0 || listMore.pools}}"
+              data-key="pools"
+              bindtap="toggleListMore"
+            >
+              <text>{{listMore.pools ? '收起预算池' : '查看更多预算池 · ' + poolsMore}}</text>
+            </view>
+          </block>
+        </view>
+
+        <view class="detail-toggle secondary" bindtap="toggleDetail">
+          <text class="detail-toggle-main">收起全部明细</text>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

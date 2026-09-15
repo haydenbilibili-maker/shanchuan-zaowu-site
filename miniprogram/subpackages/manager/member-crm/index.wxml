@@ -1,0 +1,479 @@
+<view class="container" wx:if="{{ready}}">
+
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">MEMBER CRM</text>
+      <text class="cn">会员 CRM</text>
+    </view>
+    <text class="header-note">查会员 · RFM 分群 · 订单/积分摘要 · 仅超管</text>
+  </view>
+
+  <!-- 数据概览：对齐藏品库多 Tab + 条形图风格 -->
+  <view class="overview-panel">
+    <view class="overview-head">
+      <view class="overview-title-wrap">
+        <text class="overview-title">数据概览</text>
+        <text class="overview-sub" wx:if="{{overviewReady}}">采样 {{overview.totalLoaded}} 位{{overview.dataCapped ? '（已截断）' : ''}}</text>
+      </view>
+      <view class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
+    </view>
+
+    <view class="sub-tab-row overview-tabs">
+      <view
+        class="sub-tab {{overviewTab === item.key ? 'active' : ''}}"
+        wx:for="{{overviewTabs}}"
+        wx:key="key"
+        data-tab="{{item.key}}"
+        bindtap="switchOverviewTab"
+      >{{item.label}}</view>
+    </view>
+
+    <view class="overview-loading" wx:if="{{overviewLoading && !overviewReady}}">统计加载中…</view>
+
+    <block wx:elif="{{overviewReady && overview}}">
+      <text class="overview-hint">{{overviewHint}}</text>
+
+      <!-- 会员总数 -->
+      <block wx:if="{{overviewTabTotal}}">
+        <view class="ov-cards">
+          <view class="ov-card">
+            <text class="ov-val">{{overview.total.count}}</text>
+            <text class="ov-lbl">采样会员</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val accent">{{overview.total.buyerCount}}</text>
+            <text class="ov-lbl">已消费</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val muted">{{overview.total.neverPurchased}}</text>
+            <text class="ov-lbl">未消费</text>
+          </view>
+        </view>
+        <view class="ov-section">
+          <text class="ov-sec-title">分群分布</text>
+          <view class="ov-bar-row" wx:for="{{overview.total.segmentBars}}" wx:key="key">
+            <text class="ov-bar-label">{{item.name}}</text>
+            <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+            <text class="ov-bar-count">{{item.count}}</text>
+          </view>
+          <view class="ov-empty" wx:if="{{!overview.total.segmentBars.length}}">暂无分群数据</view>
+        </view>
+      </block>
+
+      <!-- 活跃会员 -->
+      <block wx:if="{{overviewTabActive}}">
+        <view class="ov-cards">
+          <view class="ov-card wide">
+            <text class="ov-val accent">{{overview.active.count}}</text>
+            <text class="ov-lbl">近 {{overview.active.recencyDays}} 日有单</text>
+          </view>
+          <view class="ov-card">
+            <text class="ov-val">{{overview.active.ratio}}%</text>
+            <text class="ov-lbl">占采样</text>
+          </view>
+        </view>
+        <view class="ov-section">
+          <text class="ov-sec-title">近度拆分</text>
+          <view class="ov-bar-row" wx:for="{{overview.active.buckets}}" wx:key="key">
+            <text class="ov-bar-label">{{item.name}}</text>
+            <view class="ov-bar-track"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+            <text class="ov-bar-count">{{item.count}}</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 高价值排名 -->
+      <block wx:if="{{overviewTabHighValue}}">
+        <view class="ov-cards">
+          <view class="ov-card">
+            <text class="ov-val accent">{{overview.highValue.segmentMemberCount}}</text>
+            <text class="ov-lbl">高价值分群</text>
+          </view>
+          <view class="ov-card wide">
+            <text class="ov-val">Top {{overview.highValue.topN}}</text>
+            <text class="ov-lbl">按累计消费</text>
+          </view>
+        </view>
+        <view class="ov-section">
+          <text class="ov-sec-title">消费排名</text>
+          <view
+            class="ov-rank-row"
+            wx:for="{{overview.highValue.rank}}"
+            wx:key="_id"
+            data-openid="{{item.openid}}"
+            data-id="{{item._id}}"
+            bindtap="openDetail"
+          >
+            <text class="ov-rank-no">{{item.rank}}</text>
+            <image wx:if="{{item.hasAvatar}}" class="ov-rank-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+            <view wx:else class="ov-rank-avatar placeholder"><text>{{item.avatarInitial}}</text></view>
+            <view class="ov-rank-main">
+              <view class="ov-rank-top">
+                <text class="ov-rank-name">{{item.nickName}}</text>
+                <text class="ov-rank-seg {{item.highValueSeg ? 'hv' : ''}}">{{item.segmentName}}</text>
+              </view>
+              <view class="ov-bar-track slim"><view class="ov-bar-fill" style="{{item.barStyle}}"></view></view>
+              <text class="ov-rank-meta">{{item.monetaryText}} · {{item.frequency}}单 · RFM {{item.rfm}} · {{item.recencyText}}</text>
+            </view>
+          </view>
+          <view class="ov-empty" wx:if="{{!overview.highValue.rank.length}}">暂无已消费会员</view>
+        </view>
+      </block>
+    </block>
+
+    <view class="ov-empty" wx:elif="{{!overviewLoading}}">暂无统计，点刷新重试</view>
+  </view>
+
+  <view class="hint-card info">
+    <text class="hint-text">与 Admin「会员 CRM」同源：users + orders + user_behaviors。兴趣标签为行为自动派生，非人工备注。</text>
+  </view>
+
+  <view class="section filter-section">
+    <view class="search-row">
+      <input
+        class="search-input"
+        placeholder="昵称 / openid / 手机号"
+        value="{{keyword}}"
+        bindinput="onKeywordInput"
+        bindconfirm="onSearch"
+      />
+      <view class="btn-outline search-btn" bindtap="onSearch">{{loading ? '…' : '搜索'}}</view>
+      <view class="btn-outline search-btn" wx:if="{{keyword}}" bindtap="clearKeyword">清空</view>
+    </view>
+  </view>
+
+  <scroll-view scroll-x class="seg-scroll" wx:if="{{topSegments.length}}">
+    <view class="seg-row">
+      <view
+        class="seg-pill {{segment === item.key ? 'on' : ''}}"
+        wx:for="{{topSegments}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="onSegmentTap"
+      >
+        <text class="seg-name">{{item.name}}</text>
+        <text class="seg-count">{{item.count}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="loading-hint" wx:if="{{loading}}">加载会员画像中…</view>
+
+  <view class="section" wx:if="{{!loading && list.length}}">
+    <view class="section-head">
+      <text class="section-title">会员列表</text>
+      <text class="section-meta">{{footerTip}}</text>
+    </view>
+
+    <view
+      class="member-plate"
+      wx:for="{{list}}"
+      wx:for-index="idx"
+      wx:key="_id"
+      hover-class="member-plate-pressed"
+      hover-stay-time="90"
+      data-openid="{{item.openid}}"
+      data-id="{{item._id}}"
+      bindtap="openDetail"
+    >
+      <!-- Beat 1：身份 -->
+      <view class="plate-beat plate-beat-identity">
+        <image wx:if="{{item.hasAvatar}}" class="plate-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+        <view wx:else class="plate-avatar placeholder"><text>{{item.avatarInitial}}</text></view>
+        <view class="plate-identity-text">
+          <view class="plate-name-row">
+            <text class="plate-name">{{item.nickName}}</text>
+            <view
+              class="btn-youxin-fill"
+              hover-class="btn-youxin-fill-pressed"
+              hover-stay-time="80"
+              catchtap="openYouxinFromCard"
+              data-index="{{idx}}"
+              data-openid="{{item.openid}}"
+            >有信</view>
+          </view>
+          <!-- Beat 2：状态带 -->
+          <view class="plate-ribbon">
+            <view class="plate-ribbon-seg">
+              <view
+                class="signal-lamp signal-sm {{item.signalClass}}{{item.signalPulse ? ' is-pulse' : ''}}"
+                aria-label="{{item.segmentName}}"
+              ></view>
+              <text class="plate-segment" style="color: {{item.segmentTone}};">{{item.segmentName}}</text>
+            </view>
+            <text wx:if="{{item.levelHonorary}}" class="plate-honor-chip">荣誉馆长</text>
+            <view wx:else class="plate-level-inline">
+              <text class="plate-level-lv">{{item.levelLvText}}</text>
+              <text class="plate-level-name" wx:if="{{item.levelNameText}}">{{item.levelNameText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="plate-hairline"></view>
+
+      <!-- Beat 3：参数铭牌 -->
+      <view class="spec-plate">
+        <view class="spec-row">
+          <text class="spec-label">注册</text>
+          <text class="spec-value">{{item.registerAtText || '—'}}</text>
+        </view>
+        <view class="spec-row">
+          <text class="spec-label">手机</text>
+          <view class="spec-value-wrap">
+            <text class="spec-value {{item.phoneCopyable ? '' : 'muted'}}">{{item.phoneLine}}</text>
+            <text
+              wx:if="{{item.phoneCopyable}}"
+              class="spec-copy"
+              hover-class="spec-copy-pressed"
+              catchtap="onCopyPhone"
+              bindlongpress="onCopyPhone"
+              data-phone="{{item.phone}}"
+            >复制</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Beat 4：指标 -->
+      <text wx:if="{{item.metricsSparse}}" class="plate-sparse-line">{{item.sparseSummary}}</text>
+      <view wx:else class="plate-metrics">
+        <view class="plate-metric">
+          <text class="plate-metric-cap">RFM</text>
+          <text class="plate-metric-val">{{item.rfmText}}</text>
+        </view>
+        <view class="plate-metric">
+          <text class="plate-metric-cap">累计</text>
+          <text class="plate-metric-val">{{item.monetaryText}}</text>
+        </view>
+        <view class="plate-metric">
+          <text class="plate-metric-cap">订单</text>
+          <text class="plate-metric-val">{{item.frequencyDisplay}}单</text>
+        </view>
+        <view class="plate-metric">
+          <text class="plate-metric-cap">积分</text>
+          <text class="plate-metric-val accent">{{item.pointsDisplay}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section empty-find" wx:if="{{!loading && !list.length}}">
+    <text class="empty-title">暂无匹配会员</text>
+    <text class="empty-desc">试试清空筛选，或换关键词（昵称 / openid / 手机号）</text>
+  </view>
+
+  <!-- 详情抽屉 -->
+  <view class="drawer-mask" wx:if="{{showDetail}}" bindtap="closeDetail">
+    <view class="drawer" catchtap="stopBubble">
+      <view class="drawer-head">
+        <text class="drawer-title">会员详情</text>
+        <view class="drawer-head-actions">
+          <view
+            wx:if="{{detail}}"
+            class="btn-youxin-fill compact"
+            hover-class="btn-youxin-fill-pressed"
+            catchtap="openYouxinFromCard"
+            data-openid="{{detail.openid}}"
+          >写一封</view>
+          <text class="drawer-close" bindtap="closeDetail">关闭</text>
+        </view>
+      </view>
+
+      <view class="loading-hint" wx:if="{{detailLoading}}">加载中…</view>
+
+      <scroll-view scroll-y class="drawer-body" wx:if="{{!detailLoading && detail}}">
+        <!-- 头卡：昵称/手机、等级、积分、累计、最近 -->
+        <view class="d-hero">
+          <view class="d-hero-top">
+            <image wx:if="{{detail.hasAvatar}}" class="avatar lg" src="{{detail.avatarUrl}}" mode="aspectFill" />
+            <view wx:else class="avatar lg placeholder"><text>{{detail.avatarInitial}}</text></view>
+            <view class="d-info">
+              <view class="d-name-row">
+                <text class="d-name">{{detail.nickName}}</text>
+                <text wx:if="{{detail.levelHonorary}}" class="d-level-chip honor">荣誉馆长</text>
+                <text wx:else class="d-level-chip">{{detail.levelLvText}}</text>
+              </view>
+              <view class="d-phone-row" wx:if="{{detail.hasPhone}}">
+                <text class="d-phone-label">手机</text>
+                <text
+                  class="d-phone-val copyable"
+                  catchtap="onCopyPhone"
+                  data-phone="{{detail.phone}}"
+                >{{detail.phoneLine}} · 复制</text>
+              </view>
+              <text class="d-phone-muted" wx:else>手机：未留手机</text>
+              <view class="d-segment-row">
+                <view class="signal-lamp {{detail.signalClass}}{{detail.signalPulse ? ' is-pulse' : ''}}"></view>
+                <text class="segment-name" style="color: {{detail.segmentTone}};">{{detail.segmentName}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="d-hero-metrics">
+            <view class="d-hero-metric">
+              <text class="d-hero-cap">可用积分</text>
+              <text class="d-hero-val gold">{{detail.heroPointsText}}</text>
+            </view>
+            <view class="d-hero-metric">
+              <text class="d-hero-cap">累计消费</text>
+              <text class="d-hero-val gold">{{detail.heroSpendText}}</text>
+            </view>
+            <view class="d-hero-metric">
+              <text class="d-hero-cap">最近消费</text>
+              <text class="d-hero-val">{{detail.heroRecencyText}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 基础 -->
+        <view class="block">
+          <text class="block-title">基础信息</text>
+          <view class="info-rows">
+            <view class="info-row">
+              <text class="info-label">注册时间</text>
+              <text class="info-value mono">{{detail.registerAtText || '—'}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">OpenID</text>
+              <text class="info-value mono muted" catchtap="onCopyOpenid" data-openid="{{detail.openid}}">{{detail.openidMasked || detail.openid}} · 复制</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- RFM / 指标 -->
+        <view class="block">
+          <text class="block-title">RFM / 指标</text>
+          <view class="stat-grid">
+            <view class="stat-cell"><text class="stat-label">R 近度</text><text class="stat-val">{{detail.R}}/5</text></view>
+            <view class="stat-cell"><text class="stat-label">F 频次</text><text class="stat-val">{{detail.F}}/5</text></view>
+            <view class="stat-cell"><text class="stat-label">M 消费</text><text class="stat-val">{{detail.M}}/5</text></view>
+            <view class="stat-cell"><text class="stat-label">累计消费</text><text class="stat-val gold">{{detail.monetaryText}}</text></view>
+            <view class="stat-cell"><text class="stat-label">订单数</text><text class="stat-val">{{detail.frequency}}</text></view>
+            <view class="stat-cell"><text class="stat-label">最近消费</text><text class="stat-val">{{detail.recencyLabel}}</text></view>
+          </view>
+        </view>
+
+        <!-- 等级成长 -->
+        <view class="block">
+          <text class="block-title">等级 / 成长值</text>
+          <text class="block-body">{{detail.levelLine}}</text>
+          <text class="block-sub" wx:if="{{detail.nextThreshold}}">下一档门槛：{{detail.nextThreshold}}</text>
+        </view>
+
+        <!-- 兴趣 -->
+        <view class="block" wx:if="{{detail.allTags.length}}">
+          <text class="block-title">兴趣标签（自动派生）</text>
+          <view class="tag-cloud">
+            <text class="interest-tag" wx:for="{{detail.visibleTags}}" wx:for-item="t" wx:key="key">{{t.label}}</text>
+          </view>
+          <view
+            class="tag-expand"
+            wx:if="{{detail.tagsOverflow > 0}}"
+            bindtap="toggleTagsExpand"
+          >{{detail.tagsExpanded ? '收起' : ('展开其余 ' + detail.tagsOverflow + ' 个')}}</view>
+        </view>
+
+        <!-- 建议 -->
+        <view class="block">
+          <text class="block-title">运营建议</text>
+          <text class="block-body">{{detail.segmentDesc}}</text>
+          <view class="tag-cloud" wx:if="{{detail.suggestions.length}}">
+            <text class="interest-tag soft" wx:for="{{detail.suggestions}}" wx:key="*this">{{item}}</text>
+          </view>
+        </view>
+
+        <!-- 订单 -->
+        <view class="block block-last" wx:if="{{recentOrders.length}}">
+          <text class="block-title">近期订单</text>
+          <view
+            class="order-card"
+            wx:for="{{recentOrders}}"
+            wx:key="_id"
+            hover-class="order-card-pressed"
+            hover-stay-time="80"
+            data-id="{{item._id}}"
+            bindtap="openOrderDetail"
+          >
+            <view class="order-card-top">
+              <text class="order-no">{{item.orderNo}}</text>
+              <text class="order-status">{{item.statusLabel}}</text>
+            </view>
+            <view class="order-card-meta">
+              <text class="order-price">{{item.priceText}}</text>
+              <text class="order-time">{{item.timeText}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="drawer-footer-spacer"></view>
+      </scroll-view>
+
+      <view class="drawer-footer" wx:if="{{!detailLoading && detail}}">
+        <view class="btn-primary drawer-cta" bindtap="openAdjust">调整积分</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 有信撰写（单人） -->
+  <view class="modal-mask" wx:if="{{showYouxin}}" bindtap="closeYouxin">
+    <view class="modal youxin-modal" catchtap="stopBubble">
+      <view class="youxin-head">
+        <text class="modal-title">山海有信</text>
+        <text class="youxin-sub">单人 · {{youxinTarget.nickName}}</text>
+      </view>
+      <view class="youxin-portrait" wx:if="{{youxinTarget}}">
+        <text class="youxin-portrait-line">{{youxinTarget.segmentName}} · {{youxinTarget.recencyText}} · RFM {{youxinTarget.rfmText}}</text>
+        <text class="youxin-portrait-line muted">{{youxinTarget.levelBadgeText}} · 手机 {{youxinTarget.phoneLine}}</text>
+      </view>
+      <input
+        class="modal-input"
+        placeholder="标题"
+        value="{{youxinTitle}}"
+        bindinput="onYouxinTitleInput"
+        maxlength="30"
+      />
+      <textarea
+        class="modal-textarea"
+        placeholder="正文"
+        value="{{youxinContent}}"
+        bindinput="onYouxinContentInput"
+        maxlength="200"
+        auto-height
+      />
+      <view class="youxin-ai-row">
+        <view
+          class="btn-outline mini {{youxinAiLoading ? 'disabled' : ''}}"
+          catchtap="retryYouxinAi"
+        >{{youxinAiLoading ? '撰写中…' : '重新 AI 撰写'}}</view>
+        <text class="youxin-campaign-hint">{{youxinCampaignType === 'recall' ? '召回' : youxinCampaignType === 'conversion' ? '转化' : '通用'}}</text>
+      </view>
+      <view class="modal-actions">
+        <view class="btn-outline" bindtap="closeYouxin">取消</view>
+        <view class="btn-primary {{youxinSending ? 'disabled' : ''}}" catchtap="submitYouxinPush">
+          {{youxinSending ? '发送中…' : '发往该会员'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 调整积分 -->
+  <view class="modal-mask" wx:if="{{showAdjust}}" bindtap="closeAdjust">
+    <view class="modal" catchtap="stopBubble">
+      <text class="modal-title">人工调整积分</text>
+      <text class="modal-desc">正数增加、负数扣除。写入 bonusPoints，并记 point_records（admin_adjust）。</text>
+      <input
+        class="modal-input"
+        type="number"
+        placeholder="如 100 或 -50"
+        value="{{adjustAmount}}"
+        bindinput="onAdjustInput"
+      />
+      <view class="modal-actions">
+        <view class="btn-outline" bindtap="closeAdjust">取消</view>
+        <view class="btn-primary {{adjustSubmitting ? 'disabled' : ''}}" bindtap="submitAdjust">
+          {{adjustSubmitting ? '提交中…' : '确认'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+</view>

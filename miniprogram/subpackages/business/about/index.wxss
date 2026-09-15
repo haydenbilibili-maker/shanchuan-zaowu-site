@@ -1,5 +1,5 @@
 /* pages/about/index.wxss */
-page { background-color: #1A1814; color: #fff; font-family: "PingFang SC", serif; height: 100%; overflow: hidden; }
+page { background-color: var(--color-bg); color: #fff; font-family: "PingFang SC", serif; height: 100%; overflow: hidden; }
 view, text, image, map { box-sizing: border-box; }
 
 .container { width: 100%; height: 100%; position: relative; }
@@ -20,31 +20,23 @@ view, text, image, map { box-sizing: border-box; }
   z-index: 100; 
 }
 .back-btn {
-  width: 64rpx; 
-  height: 64rpx; 
-  line-height: 60rpx; 
-  text-align: center;
-  background: linear-gradient(135deg, rgba(196, 167, 108,0.15), rgba(196, 167, 108,0.08));
-  backdrop-filter: blur(10px);
-  border-radius: 50%; 
-  color: var(--gold); 
-  border: 1.5px solid rgba(196, 167, 108,0.4); 
-  font-size: 32rpx;
-  box-shadow: 
-    0 4rpx 12rpx rgba(0,0,0,0.3),
-    0 0 16rpx rgba(196, 167, 108,0.2),
-    inset 0 1rpx 2rpx rgba(255,255,255,0.1);
-  transition: all 0.3s;
-  font-weight: 300;
+  width: 72rpx;
+  height: 72rpx;
+  min-width: 72rpx;
+  min-height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 24, 20, 0.4);
+  backdrop-filter: blur(8px);
+  border-radius: 50%;
+  border: 1px solid transparent;
 }
-.back-btn:active {
-  background: linear-gradient(135deg, rgba(196, 167, 108,0.25), rgba(196, 167, 108,0.15));
-  border-color: rgba(196, 167, 108,0.6);
-  transform: scale(0.95);
-  box-shadow: 
-    0 2rpx 8rpx rgba(0,0,0,0.4),
-    0 0 20rpx rgba(196, 167, 108,0.3),
-    inset 0 1rpx 2rpx rgba(255,255,255,0.15);
+.back-btn-press,
+.val-press,
+.map-box-press,
+.store-link-press {
+  opacity: 0.82;
 }
 
 .scroll-content { width: 100%; height: 100%; }
@@ -80,7 +72,7 @@ view, text, image, map { box-sizing: border-box; }
     rgba(0,0,0,0.4) 0%,
     rgba(0,0,0,0.5) 50%,
     rgba(0,0,0,0.7) 80%,
-    #1A1814 100%
+    var(--color-bg) 100%
   );
   z-index: 1;
 }
@@ -216,7 +208,7 @@ view, text, image, map { box-sizing: border-box; }
 
 /* 引用段落 */
 .para-quote {
-  margin-bottom: 80rpx;
+  margin-bottom: 40rpx;
   padding: 60rpx 40rpx;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.05), rgba(196, 167, 108,0.02));
   border-left: 4rpx solid var(--gold);
@@ -325,6 +317,63 @@ view, text, image, map { box-sizing: border-box; }
   text-shadow: 0 0 8rpx rgba(196, 167, 108,0.3);
   margin-top: 8rpx;
   font-family: 'DIN', sans-serif;
+}
+
+/* 1% 承诺：轻量脚注行，点开展开全文 */
+.para-pledge {
+  margin-top: 12rpx;
+  margin-bottom: 40rpx;
+  padding: 24rpx 0;
+  border-top: 1px solid rgba(77, 64, 26, 0.45);
+  border-bottom: 1px solid rgba(77, 64, 26, 0.45);
+  text-align: left;
+  align-items: flex-start;
+}
+.para-pledge-press {
+  opacity: 0.72;
+}
+.pledge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16rpx;
+  margin-bottom: 10rpx;
+}
+.pledge-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 20rpx;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+.pledge-chevron {
+  flex-shrink: 0;
+  font-size: 28rpx;
+  line-height: 1;
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+}
+.para-pledge.is-open .pledge-chevron {
+  transform: rotate(90deg);
+  color: var(--gold);
+}
+.pledge-summary {
+  display: block;
+  width: 100%;
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+}
+.pledge-body {
+  display: block;
+  width: 100%;
+  font-size: 26rpx;
+  color: var(--color-text-body);
+  line-height: 1.75;
+  letter-spacing: 0.02em;
 }
 
 /* 4. 信息卡片 - 黑金质感增强 */
@@ -493,12 +542,24 @@ view, text, image, map { box-sizing: border-box; }
   text-align: center;
   border: 1px solid rgba(196, 167, 108, 0.45);
   border-radius: 12rpx;
-  color: #C4A76C;
+  color: var(--gold);
   font-size: 26rpx;
   letter-spacing: 0.04em;
 }
 
 .store-link-btn:active { opacity: 0.88; }
+
+.recruit-link-btn {
+  margin-top: 16rpx;
+  padding: 24rpx;
+  text-align: center;
+  border: 1px solid rgba(38, 35, 32, 0.9);
+  background: rgba(196, 167, 108, 0.06);
+  border-radius: 12rpx;
+  color: var(--gold);
+  font-size: 26rpx;
+  letter-spacing: 0.04em;
+}
 
 .map-mask text { 
   color: var(--gold); 

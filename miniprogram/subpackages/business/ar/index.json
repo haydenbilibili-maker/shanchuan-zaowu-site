@@ -2,5 +2,9 @@
   "navigationBarTitleText": "AR 试摆",
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
-  "usingComponents": {}
+  "usingComponents": {},
+  "backgroundColor": "#1A1814",
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundTextStyle": "light"
 }

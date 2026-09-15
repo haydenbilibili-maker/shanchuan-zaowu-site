@@ -1,6 +1,0 @@
-{
-  "usingComponents": {
-    "mp-html": "/components/mp-html/index"
-  },
-  "navigationStyle": "custom"
-}

@@ -10,7 +10,9 @@ const _ = db.command
 const CART_TYPES = ['product', 'activity', 'course']
 
 function isCartItem(item) {
-  if (!item || item.type === 'wishlist') return false
+  if (!item) return false
+  // 收藏 / 售罄想要候补 不属于购物车
+  if (item.type === 'wishlist' || item.type === 'favorite') return false
   if (!item.type || CART_TYPES.includes(item.type)) return true
   return false
 }
@@ -59,7 +61,22 @@ async function fetchProductMap(productIds) {
     const chunk = ids.slice(i, i + 20)
     const res = await db.collection('products')
       .where({ _id: _.in(chunk) })
-      .field({ _id: true, stock: true, hasSku: true, skus: true, price: true, title: true })
+      .field({
+        _id: true,
+        stock: true,
+        hasSku: true,
+        skus: true,
+        price: true,
+        title: true,
+        isTreasure: true,
+        isUnique: true,
+        memberDiscountEnabled: true,
+        categoryType: true,
+        rootCategoryName: true,
+        category: true,
+        categoryName: true,
+        shippingKind: true
+      })
       .get()
     ;(res.data || []).forEach((p) => { map[p._id] = p })
   }
@@ -102,6 +119,18 @@ function enrichList(list, productMap) {
     } else {
       row.stock = parseInt(p.stock, 10) || 0
       if (p.price != null) row.price = p.price
+    }
+
+    if (p) {
+      row.isTreasure = !!p.isTreasure
+      row.isUnique = !!p.isUnique
+      row.memberDiscountEnabled = p.memberDiscountEnabled !== false
+      row.categoryType = p.categoryType || row.categoryType || ''
+      row.rootCategoryName = p.rootCategoryName || row.rootCategoryName || ''
+      row.category = p.category || p.categoryName || row.category || ''
+      row.shippingKind = p.shippingKind || row.shippingKind || ''
+    } else if (row.memberDiscountEnabled == null) {
+      row.memberDiscountEnabled = true
     }
 
     if (!row.count) row.count = 1

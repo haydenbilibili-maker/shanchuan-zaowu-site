@@ -1,34 +1,52 @@
 /* custom-tab-bar/index.wxss — 与 app 导航规范一致 */
+@import "../styles/badges.wxss";
+
+/* content-box：padding-bottom 的安全区不挤占图标+文字高度（app.wxss 默认 border-box） */
 .tab-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 100rpx;
-  background: rgba(26, 24, 20, 0.97);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  height: auto;
+  min-height: 88rpx;
+  box-sizing: content-box;
+  padding-top: 16rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
+  /* 实色博物黑：避免 iOS Tab 切换时半透明底透出系统白底 */
+  background: #1A1814;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   display: flex;
-  padding-bottom: env(safe-area-inset-bottom);
+  align-items: flex-start;
   z-index: 9999;
   border-top: 1px solid rgba(38, 35, 32, 0.55);
   box-shadow: none;
+  overflow: visible;
+}
+
+/* 业务层隐藏 TabBar（筛选面板等）：保持节点挂载，避免卸载闪白 */
+.tab-bar.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8rpx);
 }
 
 .tab-bar-item {
   flex: 1;
   text-align: center;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   flex-direction: column;
-  transition: all 0.2s ease-in-out;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   position: relative;
+  overflow: visible;
 }
 
 /* 选中态：轻微强调，无发光 */
 .tab-bar-item.active {
-  transform: scale(1.04);
+  transform: scale(1.02);
 }
 
 /* 点击反馈效果 */
@@ -37,15 +55,41 @@
   transform: scale(0.98);
 }
 
-.tab-icon {
+.tab-icon-wrap {
+  position: relative;
   width: 54rpx;
   height: 54rpx;
   margin-bottom: 6rpx;
-  transition: all 0.3s;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.tab-icon-wrap.center {
+  width: 60rpx;
+  height: 60rpx;
+  margin-top: -4rpx;
+}
+
+.tab-icon {
+  width: 54rpx;
+  height: 54rpx;
+  display: block;
+}
+
+.tab-icon.center {
+  width: 60rpx;
+  height: 60rpx;
+}
+
+.tab-bar-item.center .tab-text {
+  font-size: 18rpx;
+  letter-spacing: 0.02em;
 }
 
 .tab-text {
   font-size: 20rpx;
+  line-height: 1.2;
+  height: 24rpx;
   font-weight: 500;
   letter-spacing: 0.06em;
   transition: color 0.25s ease;
@@ -58,17 +102,9 @@
 
 .tab-badge {
   position: absolute;
-  top: 2rpx;
-  right: 50%;
-  margin-right: -42rpx;
-  min-width: 28rpx;
-  height: 28rpx;
+  top: -6rpx;
+  right: -14rpx;
+  /* 视觉走全局 .badge-solid-danger；此处只负责定位 */
   line-height: 28rpx;
-  padding: 0 6rpx;
-  border-radius: 9999px;
-  background: #D64045;
-  color: #fff;
-  font-size: 18rpx;
   text-align: center;
-  box-sizing: border-box;
 }

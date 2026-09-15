@@ -1,0 +1,61 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "collection": "deposit_intents",
+  "permission": "CUSTOM",
+  "securityRule": {
+    "read": "auth != null && doc._openid == auth.openid",
+    "write": false
+  },
+  "note": "客户端仅本人可读；写入经 createDepositIntent；云函数不受安全规则限制",
+  "at": "2026-09-14T10:26:25.337Z",
+  "results": [
+    {
+      "name": "deposit_intents.json",
+      "op": "规则文件",
+      "result": "exists",
+      "note": "/Users/hayden_lee/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens/database-rules/deposit_intents.json"
+    },
+    {
+      "name": "deposit_intents",
+      "op": "建集合",
+      "result": "created",
+      "note": "createCollectionIfNotExists"
+    },
+    {
+      "name": "deposit_intents ACL",
+      "op": "设权限",
+      "result": "ok",
+      "note": "CUSTOM read=own write=false"
+    },
+    {
+      "name": "deposit_intents ACL",
+      "op": "校验",
+      "result": "ok",
+      "note": "{\"permission\":\"CUSTOM\",\"securityRule\":\"{\\\"read\\\":\\\"auth != null && doc._openid == auth.openid\\\",\\\"write\\\":false}\"}"
+    },
+    {
+      "name": "deposit_intents._openid_1_productId_1_status_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "deposit_intents._openid_1_status_1_createTime_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "deposit_intents.status_1_createTime_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "deposit_intents",
+      "op": "校验",
+      "result": "ok",
+      "note": "indexes=_id_,_openid_1_productId_1_status_1,_openid_1_status_1_createTime_-1,status_1_createTime_-1,_openid_1"
+    }
+  ]
+}

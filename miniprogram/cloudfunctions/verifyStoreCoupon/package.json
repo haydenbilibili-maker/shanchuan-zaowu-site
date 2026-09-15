@@ -1,0 +1,9 @@
+{
+  "name": "verifyStoreCoupon",
+  "version": "1.0.0",
+  "description": "门店代金券核销（店员/店长鉴权，与预约核销分离）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

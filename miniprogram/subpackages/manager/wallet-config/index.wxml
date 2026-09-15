@@ -1,0 +1,108 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">加载中…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="container">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">STORED VALUE</text>
+        <text class="cn">我的钱包配置</text>
+      </view>
+      <text class="header-note">充值档位与说明文案 · 折扣走会员等级 · 仅超管</text>
+    </view>
+
+    <view class="hint-card info">
+      <text class="hint-text">{{benefitRule}}</text>
+    </view>
+
+    <view class="status-row">
+      <text class="status-label">C 端入口</text>
+      <text class="status-tag {{enabled ? 'on' : ''}}">{{enabled ? '已开（showStoredValue）' : '关闭（请到内容开关开启）'}}</text>
+    </view>
+    <view class="meta-line" wx:if="{{fromDefault}}">当前为代码默认，保存后写入云库</view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">C 端说明文案</text>
+      </view>
+      <textarea
+        class="textarea"
+        maxlength="200"
+        value="{{description}}"
+        placeholder="用钱包支付时的权益说明"
+        bindinput="onDescInput"
+      />
+    </view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">充值档位（元）</text>
+        <view class="workbench-section-head-action">
+          <view class="workbench-btn-outline sm" bindtap="addPackage">添加</view>
+        </view>
+      </view>
+
+      <view class="form-hint" wx:if="{{!packages.length}}">暂无档位，点击「添加」</view>
+
+      <view class="row-card" wx:for="{{packages}}" wx:key="id">
+        <view class="row-card-head">
+          <text class="row-card-title">档位 {{index + 1}}</text>
+          <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removePackage">移除</view>
+        </view>
+        <view class="row-line">
+          <input class="input sm" placeholder="ID" value="{{item.id}}" data-index="{{index}}" data-field="id" bindinput="onPkgField" />
+          <input class="input flex" placeholder="名称" value="{{item.name}}" data-index="{{index}}" data-field="name" bindinput="onPkgField" />
+        </view>
+        <view class="row-line">
+          <view class="field">
+            <text class="field-label">金额</text>
+            <input class="input sm" type="number" value="{{item.payYuan}}" data-index="{{index}}" data-field="payYuan" bindinput="onPkgField" />
+          </view>
+          <view class="field">
+            <text class="field-label">排序</text>
+            <input class="input sm" type="number" value="{{item.sort}}" data-index="{{index}}" data-field="sort" bindinput="onPkgField" />
+          </view>
+          <view class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="togglePkg">
+            {{item.enabled ? '启用' : '停用'}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">补单入账（支付回调缺失时）</text>
+      </view>
+      <view class="hint-card info">
+        <text class="hint-text">仅在微信商户平台确认该笔充值已收款后使用。服务端入账幂等（recharge:{outTradeNo}），重复执行不会重复加钱。</text>
+      </view>
+      <view class="row-line">
+        <input class="input flex" placeholder="充值单 ID（_id）" value="{{reconcileForm.orderId}}" data-field="orderId" bindinput="onReconcileInput" />
+      </view>
+      <view class="row-line">
+        <input class="input flex" placeholder="或 SV 开头的商户单号" value="{{reconcileForm.outTradeNo}}" data-field="outTradeNo" bindinput="onReconcileInput" />
+      </view>
+      <view class="row-line">
+        <input class="input flex" placeholder="微信交易号（选填，便于对账）" value="{{reconcileForm.transactionId}}" data-field="transactionId" bindinput="onReconcileInput" />
+      </view>
+      <view class="row-line">
+        <input class="input flex" placeholder="备注（选填）" value="{{reconcileForm.note}}" data-field="note" bindinput="onReconcileInput" />
+      </view>
+      <view class="workbench-btn-outline {{reconciling ? 'is-disabled' : ''}}" bindtap="reconcileRecharge">
+        {{reconciling ? '入账中…' : '确认补单入账'}}
+      </view>
+    </view>
+
+    <view class="workbench-page-foot-spacer"></view>
+  </view>
+
+  <view class="workbench-footer-bar">
+    <view
+      class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}"
+      bindtap="saveConfig"
+    >{{saving ? '保存中…' : '保存钱包配置'}}</view>
+    <view class="workbench-footer-secondary">
+      <view class="workbench-btn-outline {{saving || loading ? 'is-disabled' : ''}}" bindtap="resetDefaults">恢复默认</view>
+      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadConfig">{{loading ? '刷新中…' : '刷新'}}</view>
+    </view>
+  </view>
+</view>

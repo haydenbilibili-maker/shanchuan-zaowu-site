@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "标本师档案",
-  "navigationStyle": "custom",
-  "navigationBarTextStyle": "white"
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814"
 }

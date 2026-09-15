@@ -1,0 +1,57 @@
+<view class="page-boot" wx:if="{{!ready}}">
+  <text class="boot-en">ATTENDANCE</text>
+  <text class="boot-cn">考勤打卡</text>
+  <text class="boot-hint">校验权限中…</text>
+</view>
+
+<view class="container" wx:elif="{{ready}}">
+  <picker class="store-picker" mode="selector" range="{{storeNames}}" value="{{storeIndex}}" bindchange="onStoreChange">
+    <view class="picker-inner">
+      <text class="picker-label">打卡门店</text>
+      <text class="picker-value">{{storeName}}</text>
+      <text class="picker-arrow">切换</text>
+    </view>
+  </picker>
+
+  <view class="scene-card">
+    <view class="status-strip {{todayStatus}}">
+      <view class="status-strip-head" wx:if="{{onLeave}}">
+        <view class="signal-light lamp-info"></view>
+        <text class="status-strip-title">{{todayStatusLabel}}</text>
+      </view>
+      <text class="status-strip-title" wx:else>{{todayStatusLabel}}</text>
+      <text class="status-strip-hint">{{todayStatusHint}}</text>
+      <text class="status-strip-hint" wx:if="{{leaveHint}}">事由：{{leaveHint}}</text>
+    </view>
+    <text class="last-feedback" wx:if="{{lastClock}}">{{lastClock}}</text>
+    <view class="btn-row">
+      <view class="btn-primary {{canClockIn && !clocking ? '' : 'disabled'}}" bindtap="clock" data-type="in">上班打卡</view>
+      <view class="btn-ghost {{canClockOut && !clocking ? '' : 'disabled'}}" bindtap="clock" data-type="out">下班打卡</view>
+    </view>
+    <view class="btn-ghost leave-entry" bindtap="goLeave">申请请假</view>
+    <text class="section-note">上班 09:30 前记为准时；下班 21:00 及以后记为准时。已通过请假覆盖的日期不计异常缺勤。</text>
+    <view class="list" wx:if="{{today.length}}">
+      <view class="row" wx:for="{{today}}" wx:key="_id">
+        <view class="row-main">
+          <text class="row-title">{{item.typeLabel}} · {{item.statusLabel}}</text>
+          <text class="row-sub">{{item.timeText}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:elif="{{!loading && !onLeave}}">今日尚未打卡</view>
+    <view class="empty" wx:elif="{{!loading && onLeave && !today.length}}">今日请假中，无需打卡</view>
+  </view>
+
+  <view class="section">
+    <view class="section-title"><text class="st-cn">最近记录</text></view>
+    <view class="list">
+      <view class="row" wx:for="{{recent}}" wx:key="_id">
+        <view class="row-main">
+          <text class="row-title">{{item.storeName || item.storeId}} · {{item.typeLabel}}</text>
+          <text class="row-sub">{{item.timeText}} · {{item.statusLabel}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{recent.length === 0 && !loading}}">暂无历史记录</view>
+  </view>
+</view>

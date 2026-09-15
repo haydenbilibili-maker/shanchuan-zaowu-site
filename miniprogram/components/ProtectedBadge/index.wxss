@@ -1,0 +1,121 @@
+/* 合法带证 · Museum 铜牌角标 */
+:host {
+  display: contents;
+}
+
+.prot-badge {
+  --prot-brass: #C4A76C;
+  --prot-ink: #1A1814;
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2rpx;
+  z-index: 2;
+  pointer-events: none;
+  color: var(--prot-brass);
+  background: rgba(26, 24, 20, 0.9);
+  border: 1px solid rgba(196, 167, 108, 0.55);
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+}
+
+.prot-badge-kicker {
+  font-size: 14rpx;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: rgba(196, 167, 108, 0.72);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.prot-badge-text {
+  font-size: 18rpx;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--prot-brass);
+}
+
+/* 尺寸 */
+.prot-badge--xs {
+  padding: 4rpx 8rpx;
+  gap: 0;
+}
+.prot-badge--xs .prot-badge-kicker { display: none; }
+.prot-badge--xs .prot-badge-text {
+  font-size: 16rpx;
+  letter-spacing: 0.06em;
+}
+
+.prot-badge--sm {
+  padding: 6rpx 12rpx;
+}
+.prot-badge--sm .prot-badge-kicker { font-size: 12rpx; }
+.prot-badge--sm .prot-badge-text { font-size: 18rpx; }
+
+.prot-badge--md {
+  padding: 10rpx 18rpx;
+  gap: 4rpx;
+}
+.prot-badge--md .prot-badge-kicker { font-size: 16rpx; }
+.prot-badge--md .prot-badge-text {
+  font-size: 22rpx;
+  letter-spacing: 0.12em;
+}
+
+/* 锚点（父级 relative） */
+.prot-badge--tl,
+.prot-badge--tr,
+.prot-badge--bl,
+.prot-badge--br {
+  position: absolute;
+}
+
+.prot-badge--tl {
+  top: 0;
+  left: 0;
+  border-top: none;
+  border-left: none;
+  border-bottom-right-radius: 12rpx;
+}
+
+.prot-badge--tr {
+  top: 0;
+  right: 0;
+  border-top: none;
+  border-right: none;
+  border-bottom-left-radius: 12rpx;
+}
+
+.prot-badge--bl {
+  bottom: 0;
+  left: 0;
+  border-bottom: none;
+  border-left: none;
+  border-top-right-radius: 12rpx;
+}
+
+.prot-badge--br {
+  bottom: 0;
+  right: 0;
+  border-bottom: none;
+  border-right: none;
+  border-top-left-radius: 12rpx;
+}
+
+/* 文档流内联（详情标签行等） */
+.prot-badge--static {
+  position: relative;
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+}
+.prot-badge--static .prot-badge-kicker {
+  font-size: 16rpx;
+  line-height: 1;
+}
+.prot-badge--static .prot-badge-text {
+  font-size: 20rpx;
+}

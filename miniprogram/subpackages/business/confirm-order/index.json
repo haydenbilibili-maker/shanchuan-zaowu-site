@@ -1,4 +1,12 @@
 {
   "navigationBarTitleText": "确认订单",
-  "usingComponents": {}
+  "usingComponents": {
+    "protected-badge": "/components/ProtectedBadge/index"
+  },
+  "backgroundColor": "#1A1814",
+  "navigationBarBackgroundColor": "#1A1814",
+  "backgroundColorTop": "#1A1814",
+  "backgroundColorBottom": "#1A1814",
+  "backgroundTextStyle": "light",
+  "navigationBarTextStyle": "white"
 }

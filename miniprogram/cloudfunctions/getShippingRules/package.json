@@ -1,0 +1,9 @@
+{
+  "name": "getShippingRules",
+  "version": "1.0.0",
+  "description": "商城运费规则读取与配置",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

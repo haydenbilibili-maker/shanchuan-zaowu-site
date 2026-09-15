@@ -1,0 +1,9 @@
+{
+  "name": "grantStorePoints",
+  "version": "1.0.0",
+  "description": "门店消费赠积分（识别顾客 / 试算 / 赠分 / 撤销 / 流水）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

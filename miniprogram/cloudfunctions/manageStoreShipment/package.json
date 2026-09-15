@@ -1,0 +1,9 @@
+{
+  "name": "manageStoreShipment",
+  "version": "1.0.0",
+  "description": "门店出货单 SSOT（ops_shipments）：小程序主录入 / ERP 核对 / 飞书同步",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

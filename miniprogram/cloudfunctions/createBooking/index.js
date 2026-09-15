@@ -79,7 +79,9 @@ async function loadBookingRules(storeId) {
       return {
         ...defaults,
         ...row,
-        visitSlots: row.visitSlots && row.visitSlots.length ? row.visitSlots : defaults.visitSlots
+        visitSlots: row.visitSlots && row.visitSlots.length ? row.visitSlots : defaults.visitSlots,
+        // 全年不休：门店周末正常营业，忽略库内旧 weekendClosed
+        weekendClosed: false
       }
     }
   } catch (e) {

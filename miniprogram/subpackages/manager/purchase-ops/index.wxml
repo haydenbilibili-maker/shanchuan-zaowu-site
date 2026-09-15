@@ -1,0 +1,487 @@
+<view class="ops-boot" wx:if="{{!ready}}">柜门缓缓开启…</view>
+
+<view class="ops-page" wx:if="{{ready}}">
+  <view class="ops-container">
+    <view class="ops-header compact">
+      <text class="ops-eyebrow">PURCHASE · OPS</text>
+      <view class="ops-title-row">
+        <text class="ops-title">采购管理</text>
+        <text class="ops-meta-chip" wx:if="{{dashLoading || loading}}">刷新中</text>
+      </view>
+      <text class="ops-note">观测台看盘 · 单据录入。云库 ops_purchases 为唯一账本。{{canWrite ? '' : '当前为只读。'}}</text>
+    </view>
+
+    <view class="ops-tabs">
+      <view class="ops-tab {{activeTab === 'overview' ? 'on' : ''}}" data-tab="overview" bindtap="switchTab">总览</view>
+      <view class="ops-tab {{activeTab === 'list' ? 'on' : ''}}" data-tab="list" bindtap="switchTab">单据</view>
+    </view>
+
+    <!-- ========== 总览 ========== -->
+    <block wx:if="{{activeTab === 'overview'}}">
+      <view class="ops-source-toggle" bindtap="toggleSource">
+        <text class="ops-source-label">{{sourceOpen ? '收起数据说明' : '数据说明'}}</text>
+        <text class="ops-source-chevron">{{sourceOpen ? '▴' : '▾'}}</text>
+      </view>
+      <view class="ops-source-panel" wx:if="{{sourceOpen}}">
+        <text class="ops-note">{{sourceNote}}</text>
+      </view>
+
+      <view class="ops-scope-tabs">
+        <view class="ops-scope-tab {{scope==='store'?'on':''}}" data-scope="store" bindtap="setScope">门店</view>
+        <view class="ops-scope-tab {{scope==='studio'?'on':''}}" data-scope="studio" bindtap="setScope">工作室</view>
+      </view>
+      <picker mode="selector" range="{{entityFilterNames}}" value="{{entityFilterIndex}}" bindchange="onEntityFilter">
+        <view class="ops-filter-chip dash-store">{{entityFilterNames[entityFilterIndex]}}</view>
+      </picker>
+
+      <view class="ops-skeleton" wx:if="{{dashLoading && !kpis}}">
+        <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+          <view class="ops-sk-line wide"></view>
+          <view class="ops-sk-line"></view>
+        </view>
+      </view>
+
+      <block wx:if="{{kpis}}">
+        <view class="verdict-card" wx:if="{{verdict}}">
+          <view class="verdict-top">
+            <view class="verdict-left">
+              <view class="signal-light lg {{verdict.className}}"></view>
+              <view class="verdict-copy">
+                <text class="verdict-en">PURCHASE · HEALTH</text>
+                <text class="verdict-title {{verdict.tone}}">{{verdict.title}}</text>
+              </view>
+            </view>
+            <view class="verdict-badge {{verdict.tone}}">{{verdict.label}}</view>
+          </view>
+          <text class="verdict-insight">{{verdict.insight}}</text>
+          <view class="summary-chips" wx:if="{{signalBoard.summary.ok || signalBoard.summary.warn || signalBoard.summary.danger}}">
+            <text class="sum-chip ok" wx:if="{{signalBoard.summary.ok}}">正常 {{signalBoard.summary.ok}}</text>
+            <text class="sum-chip warn" wx:if="{{signalBoard.summary.warn}}">关注 {{signalBoard.summary.warn}}</text>
+            <text class="sum-chip danger" wx:if="{{signalBoard.summary.danger}}">告警 {{signalBoard.summary.danger}}</text>
+          </view>
+          <view class="verdict-foot">
+            <text class="verdict-meta">{{verdict.updatedAt ? '更新 ' + verdict.updatedAt : '下拉可刷新'}}</text>
+            <text class="legend-toggle" bindtap="toggleLegend">{{legendOpen ? '收起图例' : '信号图例'}}</text>
+          </view>
+          <view class="legend-box" wx:if="{{legendOpen}}">
+            <view class="legend-row"><view class="signal-light blink"></view><text class="legend-text">绿 · 正常</text></view>
+            <view class="legend-row"><view class="signal-light warn"></view><text class="legend-text">黄 · 需关注</text></view>
+            <view class="legend-row"><view class="signal-light danger"></view><text class="legend-text">红 · 告警</text></view>
+            <view class="legend-row"><view class="signal-light lamp-muted"></view><text class="legend-text">灰 · 样本不足</text></view>
+            <text class="legend-hint">{{signalBoard.rulesNote}}</text>
+          </view>
+        </view>
+
+        <view class="card signal-board" wx:if="{{signalBoard.items.length}}">
+          <view class="card-top">
+            <text class="card-title">采购信号灯</text>
+            <text class="card-meta">六盏</text>
+          </view>
+          <view class="signal-grid">
+            <view class="signal-item" wx:for="{{signalBoard.items}}" wx:key="id">
+              <view class="signal-rail signal-rail--{{item.status}}"></view>
+              <view class="signal-light {{item.lampClass}}"></view>
+              <view class="signal-copy">
+                <text class="signal-name">{{item.name}}</text>
+                <text class="signal-val {{item.tone}}">{{item.value}}</text>
+                <text class="signal-status">{{item.statusLabel}}</text>
+                <text class="signal-reason" wx:if="{{item.reason}}">{{item.reason}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="kpi-section">
+          <text class="ops-section-label">核心指标 / KPI</text>
+          <view class="kpi-grid">
+            <view class="dash-card accent-brass">
+              <view class="dash-accent"></view>
+              <text class="dash-label">采购笔数</text>
+              <text class="dash-value brass">{{kpis.purchaseCount}}</text>
+            </view>
+            <view class="dash-card">
+              <text class="dash-label">采购总额</text>
+              <text class="dash-value brass">¥{{kpis.purchaseTotalText}}</text>
+            </view>
+            <view class="dash-card">
+              <text class="dash-label">本月笔数{{kpis.monthDeltaText ? ' · ' + kpis.monthDeltaText : ''}}</text>
+              <text class="dash-value {{kpis.monthDeltaTone}}">{{kpis.monthCount}}</text>
+            </view>
+            <view class="dash-card {{kpis.purchasableTone === 'down' ? 'alert-neg' : ''}}">
+              <text class="dash-label">可采购剩余</text>
+              <text class="dash-value {{kpis.purchasableTone === 'down' ? 'alert-num' : 'flat'}}">¥{{kpis.purchasableText}}</text>
+            </view>
+          </view>
+          <view class="hero-split">
+            <view class="hero-split-cell">
+              <text class="hero-split-l">本月采购额</text>
+              <text class="hero-split-v brass">¥{{kpis.monthAmountText}}</text>
+            </view>
+            <view class="hero-split-cell">
+              <text class="hero-split-l">未标注类型</text>
+              <text class="hero-split-v flat">{{kpis.unlabeledPctText}}</text>
+            </view>
+            <view class="hero-split-cell">
+              <text class="hero-split-l">未闭环</text>
+              <text class="hero-split-v flat">{{kpis.openPctText}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="card" wx:if="{{progress}}">
+          <view class="card-top">
+            <text class="card-title">可采购池进度</text>
+            <text class="card-meta {{progress.tone}}">已用 {{progress.usagePctText}}</text>
+          </view>
+          <view class="progress-head">
+            <text class="progress-label">已采购 / 可采购池</text>
+            <text class="progress-nums">¥{{progress.usedText}} / ¥{{progress.totalText}}</text>
+          </view>
+          <view class="progress-track">
+            <view class="progress-fill tone-{{progress.tone}}" style="width: {{progress.usageBar}}%;"></view>
+          </view>
+          <text class="alert-banner" wx:if="{{progress.overspendText}}">可采购池超支 ¥{{progress.overspendText}}</text>
+        </view>
+
+        <view class="card structure-card" wx:if="{{structure.length}}">
+          <view class="card-top">
+            <text class="card-title">预算类型结构</text>
+            <text class="card-meta">金额占比</text>
+          </view>
+          <view class="structure-track">
+            <view
+              class="structure-seg tone-{{item.tone}}"
+              wx:for="{{structure}}"
+              wx:key="key"
+              style="width: {{item.widthPct}}%;"
+            ></view>
+          </view>
+          <view class="structure-legend">
+            <view class="structure-row" wx:for="{{structure}}" wx:key="key">
+              <view class="structure-dot tone-{{item.tone}}"></view>
+              <text class="structure-label">{{item.label}}</text>
+              <text class="structure-pct">{{item.pct}}%</text>
+              <text class="structure-amt">¥{{item.amountText}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="card trend-card">
+          <view class="card-top">
+            <text class="card-title">月度采购趋势</text>
+            <text class="card-meta">{{trendMode === 'single' ? '单月样本' : '金额'}}</text>
+          </view>
+          <block wx:if="{{trendMode === 'single' && trendSingle}}">
+            <view class="trend-single">
+              <view class="trend-single-head">
+                <text class="trend-single-month">{{trendSingle.label}}</text>
+                <text class="trend-single-hint">近 12 月仅此一月有记录</text>
+              </view>
+              <text class="trend-single-value">¥{{trendSingle.amountText}}</text>
+              <text class="trend-single-count" wx:if="{{trendSingle.count}}">{{trendSingle.count}} 笔</text>
+              <view class="trend-single-track"><view class="trend-single-fill"></view></view>
+            </view>
+          </block>
+          <block wx:elif="{{trendMode === 'multi'}}">
+            <view class="trend-multi">
+              <view class="dash-bar-row trend-row" wx:for="{{trend}}" wx:key="key">
+                <text class="dash-bar-label">{{item.label}}</text>
+                <view class="dash-bar-track tall">
+                  <view class="dash-bar-fill" style="width: {{item.pct}}%;"></view>
+                </view>
+                <text class="dash-bar-val">{{item.amountText}}</text>
+              </view>
+            </view>
+            <text class="ops-section-label" style="margin-top: 20rpx;">月度笔数</text>
+            <view class="trend-multi">
+              <view class="dash-bar-row trend-row" wx:for="{{trendCount}}" wx:key="key">
+                <text class="dash-bar-label">{{item.label}}</text>
+                <view class="dash-bar-track tall">
+                  <view class="dash-bar-fill alt" style="width: {{item.pct}}%;"></view>
+                </view>
+                <text class="dash-bar-val">{{item.count}}</text>
+              </view>
+            </view>
+          </block>
+          <text class="empty-hint" wx:else>{{trendNote || '暂无按月采购序列。'}}</text>
+        </view>
+
+        <view class="card" wx:if="{{charts.byCategory.length}}">
+          <view class="card-top">
+            <text class="card-title">分类采购</text>
+            <text class="card-meta">金额</text>
+          </view>
+          <view class="bar-stack">
+            <view class="bar-item" wx:for="{{charts.byCategory}}" wx:key="key">
+              <view class="bar-meta">
+                <text class="bar-label">{{item.label}}</text>
+                <text class="bar-val">¥{{item.amountText}}</text>
+              </view>
+              <view class="bar-track">
+                <view class="bar-fill" style="width: {{item.pct}}%;"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="detail-toggle" bindtap="toggleDetail">
+          <text class="detail-toggle-main">{{detailOpen ? '收起主体 · 状态 · TOP 明细' : '展开主体 · 状态 · TOP 明细'}}</text>
+          <text class="detail-toggle-sub">不影响上方核心 KPI</text>
+        </view>
+
+        <view class="detail-panel" wx:if="{{detailOpen}}">
+          <view class="detail-block">
+            <view class="detail-block-head" data-key="entity" bindtap="toggleSection">
+              <view class="detail-block-titles">
+                <text class="detail-block-en">ENTITY</text>
+                <text class="detail-block-cn">各主体采购额</text>
+              </view>
+              <text class="detail-block-chevron">{{sectionOpen.entity ? '收起' : '展开'}}</text>
+            </view>
+            <view class="bar-stack" wx:if="{{sectionOpen.entity}}">
+              <view class="bar-item" wx:for="{{charts.byEntity}}" wx:key="key">
+                <view class="bar-meta">
+                  <text class="bar-label">{{item.label}}</text>
+                  <text class="bar-val alt">¥{{item.amountText}}</text>
+                </view>
+                <view class="bar-track">
+                  <view class="bar-fill alt" style="width: {{item.pct}}%;"></view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view class="detail-block">
+            <view class="detail-block-head" data-key="status" bindtap="toggleSection">
+              <view class="detail-block-titles">
+                <text class="detail-block-en">STATUS</text>
+                <text class="detail-block-cn">状态笔数</text>
+              </view>
+              <text class="detail-block-chevron">{{sectionOpen.status ? '收起' : '展开'}}</text>
+            </view>
+            <view class="bar-stack" wx:if="{{sectionOpen.status}}">
+              <view class="bar-item" wx:for="{{charts.byStatus}}" wx:key="key">
+                <view class="bar-meta">
+                  <text class="bar-label">{{item.label}}</text>
+                  <text class="bar-val">{{item.count}} 笔</text>
+                </view>
+                <view class="bar-track">
+                  <view class="bar-fill" style="width: {{item.pct}}%;"></view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view class="detail-block">
+            <view class="detail-block-head" data-key="items" bindtap="toggleSection">
+              <view class="detail-block-titles">
+                <text class="detail-block-en">TOP ITEMS</text>
+                <text class="detail-block-cn">品名采购额</text>
+              </view>
+              <text class="detail-block-chevron">{{sectionOpen.items ? '收起' : '展开'}}</text>
+            </view>
+            <view class="bar-stack" wx:if="{{sectionOpen.items}}">
+              <view class="bar-item" wx:for="{{charts.byItemView}}" wx:key="key">
+                <view class="bar-meta">
+                  <text class="bar-label">{{item.label}}</text>
+                  <text class="bar-val">¥{{item.amountText}}</text>
+                </view>
+                <view class="bar-track">
+                  <view class="bar-fill" style="width: {{item.pct}}%;"></view>
+                </view>
+              </view>
+              <view
+                class="list-more"
+                wx:if="{{charts.byItemMore > 0 || listMore.items}}"
+                data-key="items"
+                bindtap="toggleListMore"
+              >
+                <text>{{listMore.items ? '收起品名列表' : '查看更多 · ' + charts.byItemMore}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="ops-goto-list" data-tab="list" bindtap="switchTab">
+          <text>前往单据列表 · 录入 / 流转</text>
+        </view>
+      </block>
+    </block>
+
+    <!-- ========== 单据 ========== -->
+    <block wx:if="{{activeTab === 'list'}}">
+      <view class="ops-scope-tabs">
+        <view class="ops-scope-tab {{scope==='store'?'on':''}}" data-scope="store" bindtap="setScope">门店采购</view>
+        <view class="ops-scope-tab {{scope==='studio'?'on':''}}" data-scope="studio" bindtap="setScope">工作室采购</view>
+      </view>
+
+      <view class="ops-summary" wx:if="{{!loading || list.length}}">
+        <view class="ops-summary-top">
+          <text class="ops-summary-label">本筛选采购额</text>
+          <text class="ops-summary-value">¥{{summary.totalAmountText}}</text>
+        </view>
+        <text class="ops-summary-meta">{{summary.count}} 笔 · 不含已取消</text>
+        <view class="ops-chips" wx:if="{{summary.byEntity.length}}">
+          <text class="ops-chip" wx:for="{{summary.byEntity}}" wx:key="entityId">
+            {{item.entityName}} ¥{{item.amountText}}
+          </text>
+        </view>
+      </view>
+
+      <view class="ops-search-row">
+        <input
+          class="ops-search-input"
+          value="{{keyword}}"
+          bindinput="onKeywordInput"
+          placeholder="搜品名 / 供应商 / 单号"
+          placeholder-class="ops-ph"
+          confirm-type="search"
+        />
+        <view class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
+      </view>
+
+      <view class="ops-filter-row">
+        <picker mode="selector" range="{{entityFilterNames}}" value="{{entityFilterIndex}}" bindchange="onEntityFilter">
+          <view class="ops-filter-chip">{{entityFilterNames[entityFilterIndex]}}</view>
+        </picker>
+        <picker mode="selector" range="{{statusFilterNames}}" value="{{statusFilterIndex}}" bindchange="onStatusFilter">
+          <view class="ops-filter-chip">{{statusFilterNames[statusFilterIndex]}}</view>
+        </picker>
+        <picker mode="selector" range="{{sourceFilterNames}}" value="{{sourceFilterIndex}}" bindchange="onSourceFilter">
+          <view class="ops-filter-chip">{{sourceFilterNames[sourceFilterIndex]}}</view>
+        </picker>
+      </view>
+
+      <view class="ops-filter-row">
+        <picker mode="date" value="{{dateFrom}}" bindchange="onDateFrom">
+          <view class="ops-filter-chip">{{dateFrom || '起始日'}}</view>
+        </picker>
+        <picker mode="date" value="{{dateTo}}" bindchange="onDateTo">
+          <view class="ops-filter-chip">{{dateTo || '截止日'}}</view>
+        </picker>
+        <view class="ops-filter-chip clear" wx:if="{{dateFrom || dateTo}}" bindtap="clearDates">清日期</view>
+        <view class="ops-filter-chip brass" wx:if="{{isSuper}}" bindtap="openSyncPanel">同步</view>
+        <view class="ops-filter-chip" wx:if="{{canWrite}}" bindtap="toggleSelectMode">{{selecting ? '取消勾选' : '批量'}}</view>
+        <view class="ops-btn-add" wx:if="{{canWrite}}" bindtap="openCreate">新增</view>
+      </view>
+
+      <view class="batch-bar" wx:if="{{selecting}}">
+        <text class="batch-hint">已选 {{selectedIds.length}} 笔</text>
+        <view class="chip-btn brass" bindtap="onBatchTransit">批量流转</view>
+      </view>
+
+      <view class="ops-skeleton" wx:if="{{loading && !list.length}}">
+        <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+          <view class="ops-sk-line wide"></view>
+          <view class="ops-sk-line"></view>
+          <view class="ops-sk-line mid"></view>
+        </view>
+      </view>
+
+      <view class="ops-empty" wx:elif="{{!loading && !list.length}}">
+        <text class="ops-empty-title">柜中暂无采购记录</text>
+        <text class="ops-empty-sub">点「新增」登记，或经 ERP 同步飞书表</text>
+      </view>
+
+      <block wx:for="{{list}}" wx:key="_id">
+        <view class="ops-card {{item.selected ? 'selected' : ''}}" data-id="{{item._id}}" bindtap="toggleSelect">
+          <view class="ops-card-top">
+            <text class="ops-card-title">{{item.itemName}}</text>
+            <text class="ops-status {{item.statusTone}}">{{item.statusLabel}}</text>
+          </view>
+          <view class="ops-card-tags">
+            <text class="ops-source {{item.sourceTone}}">{{item.sourceLabel || '手工'}}</text>
+            <text class="ops-meta-inline">{{item.orderNo}}</text>
+            <text class="ops-meta-inline">{{item.entityName}}</text>
+          </view>
+          <text class="ops-amount">¥{{item.amountText}} · {{item.qty}} {{item.unit}} · 单价 ¥{{item.unitPriceText}}</text>
+          <text class="ops-meta" wx:if="{{item.spec}}">规格 {{item.spec}}</text>
+          <text class="ops-meta" wx:if="{{item.supplier}}">供应商 {{item.supplier}}</text>
+          <text class="ops-meta">采购日 {{item.purchaseDate || '—'}} · 更新 {{item.updatedAtText}}</text>
+          <view class="ops-card-actions" catchtap="noop" wx:if="{{canWrite}}">
+            <view class="ops-chip-btn" data-id="{{item._id}}" catchtap="openEdit">编辑</view>
+            <view class="ops-chip-btn brass" wx:if="{{item.canTransit}}" data-id="{{item._id}}" catchtap="onTransit">流转</view>
+            <view class="ops-chip-btn danger" data-id="{{item._id}}" catchtap="onRemove">删除</view>
+          </view>
+        </view>
+      </block>
+    </block>
+  </view>
+</view>
+
+<!-- 同步面板 -->
+<view class="ops-mask" wx:if="{{showSyncPanel}}" bindtap="closeSyncPanel"></view>
+<view class="ops-sheet" wx:if="{{showSyncPanel}}">
+  <view class="ops-sheet-head">
+    <text class="ops-sheet-title">飞书同步</text>
+    <text class="ops-sheet-close" bindtap="closeSyncPanel">关闭</text>
+  </view>
+  <view class="ops-sheet-body sync-body">
+    <text class="sync-label">最近拉取</text>
+    <text class="sync-value">{{syncMeta.lastPullText}}</text>
+    <text class="sync-msg">{{syncMeta.lastPullMsg}}</text>
+    <text class="sync-note">拉取经 ERP「同步管理」写入 ops_purchases；此处可刷新状态与清单。</text>
+    <view class="ops-btn-primary {{syncing ? 'disabled' : ''}}" bindtap="refreshSyncAndList">
+      {{syncing ? '刷新中…' : '刷新状态与清单'}}
+    </view>
+  </view>
+</view>
+
+<!-- 表单 -->
+<view class="ops-mask" wx:if="{{showForm}}" bindtap="closeForm"></view>
+<view class="ops-sheet" wx:if="{{showForm}}">
+  <view class="ops-sheet-head">
+    <text class="ops-sheet-title">{{editingId ? '编辑采购' : '新增采购'}}</text>
+    <text class="ops-sheet-close" bindtap="closeForm">关闭</text>
+  </view>
+  <scroll-view scroll-y class="ops-sheet-body">
+    <view class="ops-field">
+      <text class="ops-field-label">归属主体</text>
+      <picker mode="selector" range="{{formEntityNames}}" value="{{formEntityIndex}}" bindchange="onFormEntity">
+        <view class="ops-field-input">{{formEntityNames[formEntityIndex] || '请选择'}}</view>
+      </picker>
+    </view>
+    <view class="ops-field">
+      <text class="ops-field-label">品名 / 物料</text>
+      <input class="ops-field-input" value="{{form.itemName}}" data-field="itemName" bindinput="onFormInput" placeholder="必填" placeholder-class="ops-ph" />
+    </view>
+    <view class="ops-field">
+      <text class="ops-field-label">规格</text>
+      <input class="ops-field-input" value="{{form.spec}}" data-field="spec" bindinput="onFormInput" placeholder="可选" placeholder-class="ops-ph" />
+    </view>
+    <view class="ops-field">
+      <text class="ops-field-label">数量</text>
+      <input class="ops-field-input" type="digit" value="{{form.qty}}" data-field="qty" bindinput="onFormInput" />
+    </view>
+    <view class="ops-field">
+      <text class="ops-field-label">单位</text>
+      <input class="ops-field-input" value="{{form.unit}}" data-field="unit" bindinput="onFormInput" />
+    </view>
+    <view class="ops-field">
+      <text class="ops-field-label">单价（元）</text>
+      <input class="ops-field-input" type="digit" value="{{form.unitPrice}}" data-field="unitPrice" bindinput="onFormInput" placeholder="0" placeholder-class="ops-ph" />
+    </view>
+    <text class="ops-summary-meta" style="margin-bottom: 16rpx;">合计预览 ¥{{formAmountPreview}}</text>
+    <view class="ops-field">
+      <text class="ops-field-label">供应商</text>
+      <input class="ops-field-input" value="{{form.supplier}}" data-field="supplier" bindinput="onFormInput" placeholder-class="ops-ph" />
+    </view>
+    <view class="ops-field">
+      <text class="ops-field-label">采购日期</text>
+      <picker mode="date" value="{{form.purchaseDate}}" bindchange="onFormDate">
+        <view class="ops-field-input">{{form.purchaseDate || '选择日期'}}</view>
+      </picker>
+    </view>
+    <view class="ops-field">
+      <text class="ops-field-label">状态</text>
+      <picker mode="selector" range="{{formStatusNames}}" value="{{formStatusIndex}}" bindchange="onFormStatus">
+        <view class="ops-field-input">{{formStatusNames[formStatusIndex] || '草稿'}}</view>
+      </picker>
+    </view>
+    <view class="ops-field">
+      <text class="ops-field-label">备注</text>
+      <input class="ops-field-input" value="{{form.note}}" data-field="note" bindinput="onFormInput" placeholder-class="ops-ph" />
+    </view>
+    <view class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
+  </scroll-view>
+</view>

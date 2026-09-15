@@ -16,11 +16,17 @@ view, text { box-sizing: border-box; }
 .addr-name { font-size: 32rpx; font-weight: 500; color: #fff; }
 .addr-phone { font-size: 28rpx; color: #A09A90; }
 .default-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  width: auto;
   font-size: 20rpx;
   color: #C4A76C;
   border: 1px solid rgba(196, 167, 108, 0.5);
-  padding: 2rpx 12rpx;
+  padding: 4rpx 12rpx;
   border-radius: 8rpx;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 .addr-detail { font-size: 26rpx; color: #D5D1C8; line-height: 1.5; display: block; }
 
@@ -30,6 +36,7 @@ view, text { box-sizing: border-box; }
 
 .empty { text-align: center; padding: 120rpx 0; color: #6B6560; }
 .empty-sub { display: block; font-size: 24rpx; margin-top: 12rpx; }
+.loading { text-align: center; padding: 120rpx 0; color: #6B6560; font-size: 26rpx; }
 
 .add-bar {
   position: fixed;
@@ -54,4 +61,124 @@ view, text { box-sizing: border-box; }
   background: #C4A76C;
   color: #1A1814;
   border: none;
+}
+
+.form-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+}
+.form-panel {
+  width: 100%;
+  height: auto;
+  max-height: 86vh;
+  background: #1F1D1A;
+  border-radius: 32rpx 32rpx 0 0;
+  border-top: 1px solid rgba(77, 64, 26, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 32rpx 16rpx;
+}
+.form-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+.form-close {
+  font-size: 32rpx;
+  color: #6B6560;
+  padding: 8rpx 12rpx;
+}
+.form-body {
+  flex-shrink: 0;
+  width: 100%;
+  height: calc(58vh);
+  max-height: 58vh;
+  min-height: 200rpx;
+  padding: 8rpx 32rpx 0;
+  box-sizing: border-box;
+}
+.form-body-safe {
+  width: 100%;
+  height: calc(24rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+.form-field { margin-bottom: 28rpx; }
+.form-label {
+  display: block;
+  font-size: 24rpx;
+  color: #A09A90;
+  margin-bottom: 12rpx;
+}
+.form-picker,
+.form-textarea {
+  width: 100%;
+  background: #262320;
+  border: 1px solid rgba(38, 35, 32, 0.8);
+  border-radius: 16rpx;
+  padding: 22rpx 24rpx;
+  font-size: 28rpx;
+  color: #D5D1C8;
+  box-sizing: border-box;
+}
+/* 原生 input：勿用上下 padding / line-height=height，易垂直裁切或压扁 */
+.form-input {
+  display: block;
+  width: 100%;
+  height: 80rpx;
+  min-height: 80rpx;
+  padding: 0 24rpx;
+  line-height: normal;
+  background: #262320;
+  border: 1px solid rgba(38, 35, 32, 0.8);
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #D5D1C8;
+  box-sizing: border-box;
+}
+.form-picker.placeholder { color: #6B6560; }
+.form-textarea {
+  min-height: 140rpx;
+  line-height: 1.5;
+}
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  color: #A09A90;
+  font-size: 26rpx;
+  padding: 8rpx 0 24rpx;
+}
+.check-box {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 8rpx;
+  border: 1px solid #6B6560;
+  box-sizing: border-box;
+}
+.check-box.on {
+  background: #C4A76C;
+  border-color: #C4A76C;
+}
+.form-foot {
+  padding: 16rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(38, 35, 32, 0.6);
+}
+.form-submit {
+  text-align: center;
+  background: #C4A76C;
+  color: #1A1814;
+  border-radius: 16rpx;
+  padding: 26rpx;
+  font-size: 30rpx;
+  font-weight: 500;
 }

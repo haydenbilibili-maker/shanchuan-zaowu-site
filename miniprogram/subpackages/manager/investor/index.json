@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "投资观测台",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "light",
+  "usingComponents": {},
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814"
+}

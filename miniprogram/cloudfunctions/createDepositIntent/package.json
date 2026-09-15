@@ -1,0 +1,9 @@
+{
+  "name": "createDepositIntent",
+  "version": "1.0.0",
+  "main": "index.js",
+  "description": "售罄藏品定金意向（骨架）",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

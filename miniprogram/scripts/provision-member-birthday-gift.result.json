@@ -1,0 +1,45 @@
+{
+  "envId": "cloud1-8gnkty5bfff9f0bf",
+  "collection": "member_birthday_gift",
+  "permission": "PRIVATE",
+  "defaultSummary": "enabled / 200pts excludeGrowth / 满100减20×3 / expireMode=end_of_month",
+  "at": "2026-09-12T17:55:45.026Z",
+  "results": [
+    {
+      "name": "member_birthday_gift",
+      "op": "建集合",
+      "result": "created",
+      "note": "createCollectionIfNotExists"
+    },
+    {
+      "name": "member_birthday_gift ACL",
+      "op": "设权限",
+      "result": "ok",
+      "note": "PRIVATE"
+    },
+    {
+      "name": "member_birthday_gift.priority_1_updateTime_-1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "member_birthday_gift.ruleId_1",
+      "op": "建索引",
+      "result": "created",
+      "note": "non-unique"
+    },
+    {
+      "name": "member_birthday_gift",
+      "op": "seed",
+      "result": "created",
+      "note": "默认配置已写入（enabled / 200积分不计成长 / 满100减20×3 / expireMode=end_of_month）"
+    },
+    {
+      "name": "member_birthday_gift",
+      "op": "校验",
+      "result": "ok",
+      "note": "indexes=ruleId_1,_openid_1,priority_1_updateTime_-1,_id_; docs=1; ruleId=member_birthday_gift_v1"
+    }
+  ]
+}
