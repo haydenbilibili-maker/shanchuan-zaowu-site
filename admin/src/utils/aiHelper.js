@@ -18,21 +18,19 @@ function isPlausibleApiKey(key) {
  * 会把**整个 import.meta.env 对象**内联进产物，导致所有 VITE_ 变量（含密钥、运维口令）
  * 随前端包公开发布——2026-09 的 ADMIN_OPS_KEY 泄露即由此产生。
  */
-const ENV_KEYS = {
-  VITE_GEMINI_API_KEYS: import.meta.env.VITE_GEMINI_API_KEYS,
-  VITE_GEMINI_API_KEY: import.meta.env.VITE_GEMINI_API_KEY,
-  VITE_OPENAI_API_KEYS: import.meta.env.VITE_OPENAI_API_KEYS,
-  VITE_OPENAI_API_KEY: import.meta.env.VITE_OPENAI_API_KEY,
-  VITE_DEEPSEEK_API_KEYS: import.meta.env.VITE_DEEPSEEK_API_KEYS,
-  VITE_DEEPSEEK_API_KEY: import.meta.env.VITE_DEEPSEEK_API_KEY,
-  VITE_BAILIAN_API_KEYS: import.meta.env.VITE_BAILIAN_API_KEYS,
-  VITE_BAILIAN_API_KEY: import.meta.env.VITE_BAILIAN_API_KEY,
-  VITE_DASHSCOPE_API_KEY: import.meta.env.VITE_DASHSCOPE_API_KEY,
-}
+/**
+ * 开发期 AI Key 来源。
+ *
+ * 关键：**绝不静态访问 import.meta.env.VITE_*_API_KEY** —— Vite 会在构建期把
+ * 它内联为字面量，密钥随之公开发布（2026-09-15 部署被密钥扫描阻断即此原因）。
+ * 开发环境由 admin/vite.config.js 注入 __AI_DEV_ENV__；生产环境为空对象，
+ * 全部 AI 请求走 Pages Function 网关 /api/ai（服务端持有密钥）。
+ */
+const DEV_AI_ENV = (typeof __AI_DEV_ENV__ !== 'undefined' && __AI_DEV_ENV__) || {}
 
 function readEnvList(...names) {
   return names
-    .flatMap((name) => String(ENV_KEYS[name] || '').split(','))
+    .flatMap((name) => String(DEV_AI_ENV[name] || '').split(','))
     .map((key) => key.trim())
     .filter(isPlausibleApiKey)
 }

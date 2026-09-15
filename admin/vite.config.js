@@ -76,7 +76,31 @@ function buildDevProxies(env = {}) {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const devProxy = buildDevProxies(env)
+  const isProd = mode === 'production'
+  /**
+   * 开发期 AI Key 注入。
+   *
+   * 为什么不用 import.meta.env.VITE_*_API_KEY：Vite 会在**构建期**把静态访问
+   * 内联为字面量，于是厂商密钥随前端包公开发布（2026-09-15 部署即因此被仓库的
+   * 密钥扫描阻断：VITE_DEEPSEEK_API_KEY 的值出现在 index-*.js）。
+   * 生产环境一律走 Pages Function 网关 /api/ai，前端不需要也不应持有任何 Key；
+   * 因此这里只在非 production 构建时注入 __AI_DEV_ENV__，生产包内不含任何密钥字面量。
+   */
+  const devAiEnv = isProd
+    ? undefined
+    : JSON.stringify({
+        VITE_DEEPSEEK_API_KEY: env.VITE_DEEPSEEK_API_KEY || '',
+        VITE_DEEPSEEK_API_KEYS: env.VITE_DEEPSEEK_API_KEYS || '',
+        VITE_BAILIAN_API_KEY: env.VITE_BAILIAN_API_KEY || '',
+        VITE_BAILIAN_API_KEYS: env.VITE_BAILIAN_API_KEYS || '',
+        VITE_OPENAI_API_KEY: env.VITE_OPENAI_API_KEY || '',
+        VITE_OPENAI_API_KEYS: env.VITE_OPENAI_API_KEYS || '',
+        VITE_GEMINI_API_KEY: env.VITE_GEMINI_API_KEY || '',
+        VITE_GEMINI_API_KEYS: env.VITE_GEMINI_API_KEYS || '',
+        VITE_DASHSCOPE_API_KEY: env.VITE_DASHSCOPE_API_KEY || ''
+      })
   return {
+    ...(devAiEnv ? { define: { __AI_DEV_ENV__: devAiEnv } } : {}),
     plugins: [
       vue(),
       viteAliyunNlsPlugin(env),
