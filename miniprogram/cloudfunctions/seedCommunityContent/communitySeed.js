@@ -2,8 +2,32 @@ const { MEDIA } = require('./cdn')
 const { sectionsToHtml } = require('./seedHelpers')
 const { applyExhibitionCopy } = require('./exhibitionCopy')
 const { EXTENDED_ARTICLES, EXTENDED_EXHIBITIONS } = require('./communitySeedExtended')
+const { REWRITE_ARTICLES, REWRITE_EXHIBITIONS } = require('./rewrite2026')
 
-const SEED_VERSION = 'community_seed_v3'
+const SEED_VERSION = 'community_seed_v4'
+
+/**
+ * 应用 AI 重写叠加层（rewrite2026.js）。
+ *
+ * 只覆盖 brief / tags / 正文；seedKey、封面与正文内配图、stats、author、createTime、
+ * 关联藏品与文章一律沿用原种子。传入的 rw 为 undefined 时原样返回，因此
+ * 删掉 rewrite2026.js 里的某个 key 即可单独回滚那一条。
+ */
+function applyRewrite(doc, rw, { topicTag = false } = {}) {
+  if (!rw) return doc
+  const next = { ...doc }
+  if (rw.brief) next.brief = rw.brief
+  if (Array.isArray(rw.tags) && rw.tags.length) {
+    const tags = rw.tags.slice()
+    // 沿用 assistExhibitionCopy 的约定：展览标签必须含「专题」
+    if (topicTag && !tags.includes('专题')) tags.unshift('专题')
+    next.tags = tags
+  }
+  if (Array.isArray(rw.sections) && rw.sections.length) {
+    next.content = sectionsToHtml(rw.sections)
+  }
+  return next
+}
 
 function articleDoc(seedKey, fields) {
   return {
@@ -159,12 +183,12 @@ const LEGACY_EXHIBITIONS = [
 const ARTICLES = [
   ...LEGACY_ARTICLES,
   ...EXTENDED_ARTICLES.map(({ _seedKey, ...rest }) => articleDoc(_seedKey, rest))
-]
+].map((doc) => applyRewrite(doc, REWRITE_ARTICLES[doc._seedKey]))
 
 const EXHIBITIONS = [
   ...LEGACY_EXHIBITIONS,
   ...EXTENDED_EXHIBITIONS.map(({ _seedKey, ...rest }) => exhibitionDoc(_seedKey, rest))
-]
+].map((doc) => applyRewrite(doc, REWRITE_EXHIBITIONS[doc._seedKey], { topicTag: true }))
 
 module.exports = {
   SEED_VERSION,

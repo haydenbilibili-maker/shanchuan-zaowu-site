@@ -1,8 +1,32 @@
 const { MEDIA } = require('./cdn')
 const { sectionsToHtml } = require('./seedHelpers')
 const { EXTENDED_ARTICLES, EXTENDED_EXHIBITIONS } = require('./communitySeedExtended')
+const { REWRITE_ARTICLES, REWRITE_EXHIBITIONS } = require('./rewrite2026')
 
-const SEED_VERSION = 'community_seed_v2'
+const SEED_VERSION = 'community_seed_v4'
+
+/**
+ * 应用 AI 重写叠加层（与 seedCommunityContent 共用同一份 rewrite2026.js）。
+ *
+ * 本函数的 communitySeed/communityClear 与 seedCommunityContent 写的是**同一批**
+ * 线上文档（都以 _seedSource: 'seedCommunityContent' 归集），若两边内容不一致，
+ * 谁后执行谁覆盖——所以两边必须应用同一份叠加层，否则会出现"跑一次 seedCategories
+ * 就把重写内容改回旧版"的静默回退。
+ */
+function applyRewrite(doc, rw, { topicTag = false } = {}) {
+  if (!rw) return doc
+  const next = { ...doc }
+  if (rw.brief) next.brief = rw.brief
+  if (Array.isArray(rw.tags) && rw.tags.length) {
+    const tags = rw.tags.slice()
+    if (topicTag && !tags.includes('专题')) tags.unshift('专题')
+    next.tags = tags
+  }
+  if (Array.isArray(rw.sections) && rw.sections.length) {
+    next.content = sectionsToHtml(rw.sections)
+  }
+  return next
+}
 
 function articleDoc(seedKey, fields) {
   return {
@@ -172,12 +196,12 @@ const LEGACY_EXHIBITIONS = [
 const ARTICLES = [
   ...LEGACY_ARTICLES,
   ...EXTENDED_ARTICLES.map(({ _seedKey, ...rest }) => articleDoc(_seedKey, rest))
-]
+].map((doc) => applyRewrite(doc, REWRITE_ARTICLES[doc._seedKey]))
 
 const EXHIBITIONS = [
   ...LEGACY_EXHIBITIONS,
   ...EXTENDED_EXHIBITIONS.map(({ _seedKey, ...rest }) => exhibitionDoc(_seedKey, rest))
-]
+].map((doc) => applyRewrite(doc, REWRITE_EXHIBITIONS[doc._seedKey], { topicTag: true }))
 
 module.exports = {
   SEED_VERSION,
