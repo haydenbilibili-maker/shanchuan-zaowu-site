@@ -231,12 +231,12 @@
         <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>
       </view>
 
-      <view class="privacy-row privacy-row-locked" wx:else>
+      <view class="privacy-row privacy-row-locked" wx:if="{{allowHidePriceToggle === false}}">
         <view class="check on"></view>
         <text class="privacy-txt">价格已隐藏（平台设定，不可更改）</text>
       </view>
 
-      <view class="privacy-row" bindtap="toggleHidePrice" wx:if="{{allowHidePriceToggle !== false}}">
+      <view class="privacy-row" bindtap="toggleHidePrice" wx:else>
         <view class="check {{hidePrice ? 'on' : ''}}"></view>
         <text class="privacy-text">对收礼人隐藏成交价（推荐）</text>
       </view>
