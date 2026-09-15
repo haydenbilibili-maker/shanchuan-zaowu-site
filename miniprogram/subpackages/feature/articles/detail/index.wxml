@@ -73,6 +73,24 @@
       />
     </view>
 
+    <!-- 转载来源与许可：仅转载类内容展示（末尾标注，符合署名要求） -->
+    <view class="source-block" wx:if="{{article.sourceName}}">
+      <text class="source-label">来源与许可</text>
+      <text class="source-title" wx:if="{{article.sourceTitle}}">《{{article.sourceTitle}}》</text>
+      <text class="source-line" wx:if="{{article.sourceAuthor}}">{{article.sourceAuthor}}</text>
+      <text class="source-line">
+        {{article.sourceName}}<text wx:if="{{article.sourceLicense}}"> · {{article.sourceLicense}}</text>
+      </text>
+      <text class="source-note">{{article.sourceNote || '本文为该文科学事实要点的中文改写，非逐句翻译。'}}</text>
+      <view
+        class="source-link"
+        wx:if="{{article.sourceUrl}}"
+        bindtap="copySourceUrl"
+        hover-class="source-link-press"
+        hover-stay-time="80"
+      >复制原文链接</view>
+    </view>
+
     <!-- 视频播放 -->
     <view class="video-container" wx:if="{{article.videoUrl}}">
       <video 

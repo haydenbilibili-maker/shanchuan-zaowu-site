@@ -402,3 +402,48 @@ page {
   height: 20rpx;
   opacity: 0.55;
 }
+
+/* ===== 转载来源与许可（末尾署名）===== */
+.source-block {
+  margin: 32rpx 32rpx 0;
+  padding: 24rpx 26rpx;
+  border-radius: var(--radius-md, 16rpx);
+  background: var(--color-bg-card, rgba(255, 255, 255, 0.03));
+  border: 1rpx solid var(--color-border, rgba(196, 167, 108, 0.18));
+  display: flex;
+  flex-direction: column;
+}
+.source-label {
+  font-size: 20rpx;
+  letter-spacing: 0.14em;
+  color: var(--gold, #C4A76C);
+  margin-bottom: 14rpx;
+}
+.source-title {
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: var(--color-text-primary, #E8E4DC);
+}
+.source-line {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #A8A29A);
+}
+.source-note {
+  margin-top: 14rpx;
+  font-size: 21rpx;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #A8A29A);
+  opacity: 0.85;
+}
+.source-link {
+  margin-top: 18rpx;
+  align-self: flex-start;
+  padding: 10rpx 26rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid var(--gold, #C4A76C);
+  font-size: 22rpx;
+  color: var(--gold, #C4A76C);
+}
+.source-link-press { opacity: .7; }

@@ -282,6 +282,17 @@ Page({
     }
   },
 
+  /** 转载内容：复制原文链接（小程序内不便直接外跳，复制后由用户自行打开） */
+  copySourceUrl() {
+    const url = (this.data.article && this.data.article.sourceUrl) || ''
+    if (!url) return
+    wx.setClipboardData({
+      data: url,
+      success: () => wx.showToast({ title: '原文链接已复制', icon: 'none' }),
+      fail: () => wx.showToast({ title: '复制失败，请长按选择', icon: 'none' })
+    })
+  },
+
   onCoverError() {
     if (this.data.article.coverImage !== FALLBACK_COVER) {
       this.setData({ 'article.coverImage': FALLBACK_COVER })

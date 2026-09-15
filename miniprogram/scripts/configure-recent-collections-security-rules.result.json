@@ -1,7 +1,7 @@
 {
   "envId": "cloud1-8gnkty5bfff9f0bf",
-  "at": "2026-09-15T15:13:01.009Z",
-  "dryRun": false,
+  "at": "2026-09-15T16:20:39.493Z",
+  "dryRun": true,
   "includeDeferred": false,
   "deferredNotApplied": [
     "store_point_rules",
@@ -411,247 +411,21 @@
     },
     "admin_login_logs": {
       "permission": "CUSTOM",
-      "securityRule": "{\n  \"read\": \"auth != null\",\n  \"write\": \"auth != null\"\n}",
-      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":\"auth != null\"}"
+      "securityRule": "{\"read\":\"auth != null\",\"write\":false}",
+      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":false}"
     },
     "admin_operation_logs": {
       "permission": "CUSTOM",
-      "securityRule": "{\n  \"read\": \"auth != null\",\n  \"write\": \"auth != null\"\n}",
-      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":\"auth != null\"}"
+      "securityRule": "{\"read\":\"auth != null\",\"write\":false}",
+      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":false}"
     },
     "points_rules": {
       "permission": "CUSTOM",
-      "securityRule": "{\n  \"read\": \"auth != null\",\n  \"write\": \"auth != null\"\n}",
-      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":\"auth != null\"}"
+      "securityRule": "{\"read\":\"auth != null\",\"write\":false}",
+      "securityRuleNormalized": "{\"read\":\"auth != null\",\"write\":false}"
     }
   },
-  "applyResults": [
-    {
-      "collection": "studio_inventory",
-      "success": true,
-      "requestId": "57556289-552a-4bba-9dac-5b8f96c49013"
-    },
-    {
-      "collection": "studio_inventory_snapshots",
-      "success": true,
-      "requestId": "294dc6e2-00de-4831-9b81-80fcf652509c"
-    },
-    {
-      "collection": "studio_raw_inventory",
-      "success": true,
-      "requestId": "f3036f3f-4a06-4789-ad39-006b671ec581"
-    },
-    {
-      "collection": "ops_purchases",
-      "success": true,
-      "requestId": "39a0a8d4-60ba-4060-a403-9148e03a80cc"
-    },
-    {
-      "collection": "ops_shipments",
-      "success": true,
-      "requestId": "7e898d70-4fab-41e5-b980-7c8e06f94bd0"
-    },
-    {
-      "collection": "store_purchases",
-      "success": true,
-      "requestId": "658bd866-ec08-4dd6-88fc-47957142e97d"
-    },
-    {
-      "collection": "store_receipt_claims",
-      "success": true,
-      "requestId": "4c064a2d-eb96-4618-b465-81f1056a4ab2"
-    },
-    {
-      "collection": "property_costs",
-      "success": true,
-      "requestId": "6f5478f5-bf7d-4921-8be6-3ab087afe455"
-    },
-    {
-      "collection": "staff_approvals",
-      "success": true,
-      "requestId": "12e45d2c-124e-4e64-8fc5-0f6e38107032"
-    },
-    {
-      "collection": "staff_attendance",
-      "success": true,
-      "requestId": "65c126ad-a09d-4d2d-aeca-a136ebbc0e32"
-    },
-    {
-      "collection": "staff_audit_logs",
-      "success": true,
-      "requestId": "a7e62b8b-4203-4207-9ced-414ec4889bd4"
-    },
-    {
-      "collection": "staff_leave_requests",
-      "success": true,
-      "requestId": "8af19347-ec9c-4a1e-80df-04709fda3583"
-    },
-    {
-      "collection": "staff_payslips",
-      "success": true,
-      "requestId": "b35eb566-550f-4487-8ea5-3750fc254f77"
-    },
-    {
-      "collection": "staff_reimbursements",
-      "success": true,
-      "requestId": "fa558a96-a1c4-4326-9253-5604235c9eb5"
-    },
-    {
-      "collection": "staff_store_todos",
-      "success": true,
-      "requestId": "a109cc42-ad69-4a8a-993b-c0697e5b998f"
-    },
-    {
-      "collection": "staff_members",
-      "success": true,
-      "requestId": "2cfed242-ab32-432c-861d-6cdfb90ea16d"
-    },
-    {
-      "collection": "honorary_curators",
-      "success": true,
-      "requestId": "bc5ef684-2abf-4f6b-8413-9be232e4e2b4"
-    },
-    {
-      "collection": "honorary_curator_ops",
-      "success": true,
-      "requestId": "fd26298e-5b54-44ff-bde0-b427c5327c2b"
-    },
-    {
-      "collection": "member_level_adjust_ops",
-      "success": true,
-      "requestId": "3687c4cc-63d0-4c93-9678-370a116877d5"
-    },
-    {
-      "collection": "gift_settings",
-      "success": true,
-      "requestId": "1b1adca4-3809-4128-9937-39f727b2c64b"
-    },
-    {
-      "collection": "invoice_requests",
-      "success": true,
-      "requestId": "876ea88f-7ab8-4cfe-ab3a-fb9ae23f7be7"
-    },
-    {
-      "collection": "message_templates",
-      "success": true,
-      "requestId": "c2bb344f-6a43-4d42-846e-f3b6c4930959"
-    },
-    {
-      "collection": "push_campaigns",
-      "success": true,
-      "requestId": "e7ddb00a-3d11-4661-9cd5-f152245de32d"
-    },
-    {
-      "collection": "care_reminder_queue",
-      "success": true,
-      "requestId": "ee33750b-002b-4e8e-96f3-1e339bf1c652"
-    },
-    {
-      "collection": "identification_cache",
-      "success": true,
-      "requestId": "a8ae2dc1-36fc-4567-993c-2df9e3780814"
-    },
-    {
-      "collection": "species_knowledge",
-      "success": true,
-      "requestId": "df196de4-29d6-44e9-b8e2-c706765c70de"
-    },
-    {
-      "collection": "species_product_map",
-      "success": true,
-      "requestId": "d0d3c4c3-ebbb-4f28-a765-4b63daf061e9"
-    },
-    {
-      "collection": "store_booking_rules",
-      "success": true,
-      "requestId": "7d3d1aaf-6261-4ed3-9fd7-162751a3abd5"
-    },
-    {
-      "collection": "store_visits",
-      "success": true,
-      "requestId": "a089da11-6e77-4073-a460-7fd7655930bd"
-    },
-    {
-      "collection": "user_addresses",
-      "success": true,
-      "requestId": "fe749fbb-3823-4cc6-94bf-3eee0b6764fa"
-    },
-    {
-      "collection": "user_atlas",
-      "success": true,
-      "requestId": "30996707-78a1-4955-8dc7-0f2148de086b"
-    },
-    {
-      "collection": "user_behaviors",
-      "success": true,
-      "requestId": "2bdd2678-d905-48ec-854c-ee09ea4c975f"
-    },
-    {
-      "collection": "user_messages",
-      "success": true,
-      "requestId": "383a0900-371f-4393-86c6-a3cb32af64e6"
-    },
-    {
-      "collection": "workspace_acl",
-      "success": true,
-      "requestId": "ac12172d-eff2-4e3a-8627-deaadccdbf68"
-    },
-    {
-      "collection": "artisan_commission_ledger",
-      "success": true,
-      "requestId": "8c29b78a-9772-4204-aeff-9ea77c1c5f88"
-    },
-    {
-      "collection": "member_pass_tokens",
-      "success": true,
-      "requestId": "eeb38603-9807-4057-ad0c-64a902266fc7"
-    },
-    {
-      "collection": "booking_reminders",
-      "success": true,
-      "requestId": "626a82eb-74c8-4c6c-93fa-b3591c6ff591"
-    },
-    {
-      "collection": "error_logs",
-      "success": true,
-      "requestId": "005f4c56-1df0-4dae-9868-403cd7de36a3"
-    },
-    {
-      "collection": "comments",
-      "success": true,
-      "requestId": "7a1ee8be-d446-47d4-9de9-a724ab996ca4"
-    },
-    {
-      "collection": "analytics_daily",
-      "success": true,
-      "requestId": "5da55bda-d1a6-4a09-adac-81806a743357"
-    },
-    {
-      "collection": "wikis",
-      "success": true,
-      "requestId": "b7958a8b-44f0-48f1-b5e7-9151628d4fb4"
-    },
-    {
-      "collection": "shipping_rules",
-      "success": true,
-      "requestId": "8717a149-683f-4530-b928-0e2e8de4c3b3"
-    },
-    {
-      "collection": "admin_login_logs",
-      "success": true,
-      "requestId": "b165a82d-e7d8-4454-90b6-457952a28970"
-    },
-    {
-      "collection": "admin_operation_logs",
-      "success": true,
-      "requestId": "4aefbb7c-cb7b-4483-abcc-0dc06b769a16"
-    },
-    {
-      "collection": "points_rules",
-      "success": true,
-      "requestId": "2be88209-13a7-4fcd-8749-d1ef3a8793d9"
-    }
-  ],
+  "applyResults": [],
   "verify": [
     {
       "collection": "studio_inventory",
@@ -1104,5 +878,5 @@
       "desiredNormalized": "{\"read\":\"auth != null\",\"write\":false}"
     }
   ],
-  "appliedToCloud": true
+  "appliedToCloud": false
 }
