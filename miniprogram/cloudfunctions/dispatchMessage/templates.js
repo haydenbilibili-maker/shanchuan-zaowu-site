@@ -84,7 +84,7 @@ const DEFAULT_TEMPLATES = {
     priority: 'P0',
     titleTemplate: '藏品已入账',
     contentTemplate:
-      '订单 {{orderNo}} 已收妥款项。\n实付 ¥{{totalPrice}}\n馆员将尽快备妥，启程时再信告你。',
+      '订单 {{orderNo}} 已收妥款项\n{{productLine}}\n实付 ¥{{totalPrice}}\n馆员将尽快备妥，启程时再信告你。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   staff_order_paid: {
@@ -208,7 +208,7 @@ const DEFAULT_TEMPLATES = {
     priority: 'P0',
     titleTemplate: '标本已启程',
     contentTemplate:
-      '这件标本已启程。经 {{carrier}} 运送。\n订单 {{orderNo}}\n运单号：{{trackingNo}}\n到柜时请轻取轻放。\n\n开箱与售后\n到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。\n\n入柜保养\n入柜后请避直射阳光，注意防潮；玻璃罩与镜框请尽量保持闭合。',
+      '这件标本已启程。经 {{carrier}} 运送。\n订单 {{orderNo}}\n{{productLine}}\n运单号：{{trackingNo}}\n到柜时请轻取轻放。\n\n开箱与售后\n到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。\n\n入柜保养\n入柜后请避直射阳光，注意防潮；玻璃罩与镜框请尽量保持闭合。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   order_received: {
@@ -222,7 +222,7 @@ const DEFAULT_TEMPLATES = {
     category: 'order',
     priority: 'P0',
     titleTemplate: '订单已释出',
-    contentTemplate: '订单 {{orderNo}} 已取消。\n{{reason}}',
+    contentTemplate: '订单 {{orderNo}} 已取消\n{{productLine}}\n{{reason}}',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   order_refunded: {
@@ -230,7 +230,7 @@ const DEFAULT_TEMPLATES = {
     priority: 'P0',
     titleTemplate: '款项已退回',
     contentTemplate:
-      '订单 {{orderNo}} 退款 ¥{{refundAmount}} 已办理。\n预计 1–3 个工作日回到原支付账户。',
+      '订单 {{orderNo}} 退款 ¥{{refundAmount}} 已办理\n{{productLine}}\n预计 1–3 个工作日回到原支付账户。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   gift_paid: {
@@ -239,7 +239,7 @@ const DEFAULT_TEMPLATES = {
     priority: 'P0',
     titleTemplate: '心意已备妥',
     contentTemplate:
-      '礼赠订单 {{orderNo}} 已收妥款项。\n实付 ¥{{totalPrice}}\n{{tip}}',
+      '礼赠订单 {{orderNo}} 已收妥款项\n{{productLine}}\n实付 ¥{{totalPrice}}\n{{tip}}',
     actionUrlTemplate: 'subpackages/feature/gift/success/index?orderId={{relatedId}}'
   },
   gift_awaiting_address: {
@@ -306,7 +306,7 @@ const DEFAULT_TEMPLATES = {
     priority: 'P0',
     titleTemplate: '标本已启程',
     contentTemplate:
-      '这份礼赠已启程。经 {{carrier}} 运送。\n订单 {{orderNo}}\n运单号：{{trackingNo}}\n到柜时请轻取轻放。\n\n开箱与售后\n到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。\n\n入柜保养\n入柜后请避直射阳光，注意防潮；玻璃罩与镜框请尽量保持闭合。',
+      '这份礼赠已启程。经 {{carrier}} 运送。\n订单 {{orderNo}}\n{{productLine}}\n运单号：{{trackingNo}}\n到柜时请轻取轻放。\n\n开箱与售后\n到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。\n\n入柜保养\n入柜后请避直射阳光，注意防潮；玻璃罩与镜框请尽量保持闭合。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   gift_address_submitted_receiver: {

@@ -2,6 +2,7 @@
  * 山海有信 — 云函数内可靠写入（dispatchMessage + 直写 fallback）
  */
 const cloud = require('wx-server-sdk')
+const { orderProductLine } = require('./orderSummary')
 
 const MINI_TEMPLATES = {
   order_created: {
@@ -13,25 +14,25 @@ const MINI_TEMPLATES = {
   order_paid: {
     category: 'order',
     title: '藏品已入账',
-    content: (v) => `订单 ${v.orderNo || ''} 已收妥款项。\n实付 ¥${v.totalPrice || '0.00'}\n馆员将尽快备妥，启程时再信告你`,
+    content: (v) => `订单 ${v.orderNo || ''} 已收妥款项\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}\n实付 ¥${v.totalPrice || '0.00'}\n馆员将尽快备妥，启程时再信告你`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_shipped: {
     category: 'order',
     title: '标本已启程',
-    content: (v) => `订单 ${v.orderNo || ''} 已启程，经 ${v.carrier || '快递'} 运送\n运单号：${v.trackingNo || ''}`,
+    content: (v) => `订单 ${v.orderNo || ''} 已启程\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}\n经 ${v.carrier || '快递'} 运送\n运单号：${v.trackingNo || ''}`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_cancelled: {
     category: 'order',
     title: '订单已释出',
-    content: (v) => `订单 ${v.orderNo || ''} 已取消\n${v.reason || ''}`,
+    content: (v) => `订单 ${v.orderNo || ''} 已取消\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}\n${v.reason || ''}`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_refunded: {
     category: 'order',
     title: '款项已退回',
-    content: (v) => `订单 ${v.orderNo || ''} 退款 ¥${v.refundAmount || '0.00'} 已办理。\n预计 1–3 个工作日回到原支付账户`,
+    content: (v) => `订单 ${v.orderNo || ''} 退款 ¥${v.refundAmount || '0.00'} 已办理\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}\n预计 1–3 个工作日回到原支付账户`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   gift_expired_refund: {

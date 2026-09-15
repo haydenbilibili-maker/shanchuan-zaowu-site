@@ -289,6 +289,7 @@ async function executeRefund(orderId, order, openid, actorMeta, options = {}) {
     relatedId: orderId,
     vars: {
       orderNo: order.orderNo || '',
+      products: order.products,
       refundAmount: String(split.refund.toFixed(2))
     }
   }).catch((err) => console.warn('order_refunded message failed:', err))

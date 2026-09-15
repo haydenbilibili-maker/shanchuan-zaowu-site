@@ -134,6 +134,7 @@ exports.main = async (event) => {
       relatedId: orderId,
       vars: {
         orderNo: order.orderNo || '',
+        products: order.products,
         reason: reason === 'expired' ? '支付超时自动取消' : '您已取消订单'
       }
     }).catch((err) => console.warn('order_cancelled message failed:', err))

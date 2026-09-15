@@ -1,3 +1,4 @@
+const { orderProductLine } = require('./orderSummary')
 const {
   DEFAULT_TEMPLATES,
   QUEUE_CUSTOMER,
@@ -150,6 +151,13 @@ async function dispatch(db, options) {
   }
 
   const mergedVars = { relatedId, ...vars }
+  // 订单类消息：由 order.products 自动派生「名称（规格·工艺·装裱）」摘要，
+  // 模板中用 {{productLine}} 引用；调用方只需把 order.products 传进 vars。
+  if (mergedVars.productLine === undefined && Array.isArray(vars.products)) {
+    mergedVars.productLine = orderProductLine(vars.products, {
+      fallback: vars.productNames || '藏品订单'
+    })
+  }
   const title = overrideTitle || renderTemplate(template.titleTemplate, mergedVars)
   const content = overrideContent !== undefined
     ? overrideContent

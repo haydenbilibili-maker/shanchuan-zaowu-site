@@ -384,6 +384,7 @@ async function fulfillOrder(db, _, orderId, openid) {
       relatedId: orderId,
       vars: {
         orderNo: order.orderNo || '',
+        products: order.products,
         totalPrice: order.totalPrice || '0.00',
         productNames,
         days: addressDays,
@@ -419,6 +420,7 @@ async function fulfillOrder(db, _, orderId, openid) {
       relatedId: orderId,
       vars: {
         orderNo: order.orderNo || '',
+        products: order.products,
         totalPrice: order.totalPrice || '0.00',
         productNames,
         tip,
@@ -432,6 +434,7 @@ async function fulfillOrder(db, _, orderId, openid) {
       relatedId: orderId,
       vars: {
         orderNo: order.orderNo || '',
+        products: order.products,
         totalPrice: order.totalPrice || '0.00',
         productNames
       }

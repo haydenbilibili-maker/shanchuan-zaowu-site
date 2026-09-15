@@ -2,6 +2,7 @@
  * 山海有信 — 云函数内可靠写入（dispatchMessage + 直写 fallback）
  */
 const cloud = require('wx-server-sdk')
+const { orderProductLine } = require('./orderSummary')
 
 /** 店长订单备注（随发货私信发送）上限，与前端输入框 maxlength 保持一致 */
 const NOTE_MAX = 100
@@ -48,14 +49,14 @@ const MINI_TEMPLATES = {
   order_paid: {
     category: 'order',
     title: '藏品已入账',
-    content: (v) => `订单 ${v.orderNo || ''} 已收妥款项。\n实付 ¥${v.totalPrice || '0.00'}\n馆员将尽快备妥，启程时再信告你`,
+    content: (v) => `订单 ${v.orderNo || ''} 已收妥款项\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}\n实付 ¥${v.totalPrice || '0.00'}\n馆员将尽快备妥，启程时再信告你`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_shipped: {
     category: 'order',
     title: '标本已启程',
     content: (v) =>
-      buildShippedContent(`这件标本已启程。经 ${v.carrier || '快递'} 运送。\n订单 ${v.orderNo || ''}`, v),
+      buildShippedContent(`这件标本已启程。经 ${v.carrier || '快递'} 运送。\n订单 ${v.orderNo || ''}\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}`, v),
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_received: {
@@ -87,20 +88,20 @@ const MINI_TEMPLATES = {
   order_cancelled: {
     category: 'order',
     title: '订单已释出',
-    content: (v) => `订单 ${v.orderNo || ''} 已取消\n${v.reason || ''}`,
+    content: (v) => `订单 ${v.orderNo || ''} 已取消\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}\n${v.reason || ''}`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   order_refunded: {
     category: 'order',
     title: '款项已退回',
-    content: (v) => `订单 ${v.orderNo || ''} 退款 ¥${v.refundAmount || '0.00'} 已办理。\n预计 1–3 个工作日回到原支付账户`,
+    content: (v) => `订单 ${v.orderNo || ''} 退款 ¥${v.refundAmount || '0.00'} 已办理\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}\n预计 1–3 个工作日回到原支付账户`,
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   gift_paid: {
     category: 'order',
     title: '心意已备妥',
     content: (v) => {
-      const head = `礼赠订单 ${v.orderNo || ''} 已收妥款项\n实付 ¥${v.totalPrice || '0.00'}`
+      const head = `礼赠订单 ${v.orderNo || ''} 已收妥款项\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}\n实付 ¥${v.totalPrice || '0.00'}`
       if (v.days) return `${head}\n请把礼笺交给 TA；${v.days} 日内未填址将自动退回`
       return `${head}\n${v.tip || v.productNames || '心意已备妥'}`
     },
@@ -140,7 +141,7 @@ const MINI_TEMPLATES = {
     category: 'order',
     title: '标本已启程',
     content: (v) =>
-      buildShippedContent(`这份礼赠已启程。经 ${v.carrier || '快递'} 运送。\n订单 ${v.orderNo || ''}`, v),
+      buildShippedContent(`这份礼赠已启程。经 ${v.carrier || '快递'} 运送。\n订单 ${v.orderNo || ''}\n${orderProductLine(v.products, { fallback: v.productNames || '藏品订单' })}`, v),
     actionUrl: (id) => `subpackages/business/order-detail/index?id=${id}`
   },
   gift_delivered: {

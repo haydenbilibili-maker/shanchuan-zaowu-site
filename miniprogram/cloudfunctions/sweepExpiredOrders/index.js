@@ -156,6 +156,7 @@ async function expireOneOrder(order) {
     relatedId: orderId,
     vars: {
       orderNo: order.orderNo || '',
+      products: order.products,
       reason: '支付超时自动取消'
     }
   }).catch((err) => console.warn('sweep message', err))

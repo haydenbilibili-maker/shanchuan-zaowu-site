@@ -1861,6 +1861,7 @@ exports.main = async (event) => {
 
     const shipVars = {
       orderNo: order.orderNo || '',
+      products: order.products,
       carrier: carrierName,
       trackingNo: tracking,
       note: shipNote
