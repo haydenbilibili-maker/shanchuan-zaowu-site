@@ -277,11 +277,19 @@ function buildRequestModal(order) {
   }
   const policy = check.policy
   if (check.aftersale) {
+    // 发货后的售后走举证流程；但镇店之宝/孤品同样要扣 30% 运输损耗，
+    // 此前该分支先于 treasure 分支返回且**完全没提扣款**，用户直到退款到账才发现少了钱。
+    const rate = Number(policy && policy.deductRate) || 0
+    let content =
+      '到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。\n请准备开箱视频与损坏部位特写后提交。'
+    if (rate > 0) {
+      const split = calcRefundSplit(order.totalPrice, rate)
+      content += `\n\n注意：本单为镇店之宝 / 孤品，退款将扣除货款 ${Math.round(rate * 100)}% 作为运输损耗。\n实付 ¥${formatYuan(split.paid)}，预计退回 ¥${formatYuan(split.refund)}（扣除 ¥${formatYuan(split.deduct)}）。`
+    }
     return {
       allowed: true,
       title: '申请售后',
-      content:
-        '到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。\n请准备开箱视频与损坏部位特写后提交。',
+      content,
       confirmText: '去上传举证',
       showCancel: true,
       needsEvidence: true,
