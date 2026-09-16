@@ -24,7 +24,11 @@ const crypto = require('crypto')
 const ROOT = path.join(__dirname, '..')
 const ENV_ID = 'cloud1-8gnkty5bfff9f0bf'
 const LOCAL = path.join(ROOT, 'miniprogram', 'cloudfunctions')
-const TMP = path.join(require('os').tmpdir(), 'dsh-fn-drift')
+// ⚠️ 必须**每次运行一个唯一目录**：此前是固定路径 `<tmp>/dsh-fn-drift`，
+// 两个进程并发跑（例如部署脚本与自己手动核对、或与并行工作流同时跑）会互相
+// rmSync 对方正在下载的目录 → 报 `ENOTEMPTY: directory not empty, rmdir ...`。
+// 这个失败看起来像「巡检坏了」，实际是被自己/对方踩掉了。mkdtemp 原子地给出唯一目录。
+const TMP = fs.mkdtempSync(path.join(require('os').tmpdir(), 'dsh-fn-drift-'))
 
 /** 云端会重写/与部署无关的文件，不参与比对 */
 const IGNORE = new Set(['package.json', 'package-lock.json', 'config.json', '.DS_Store', '.gitignore'])
@@ -73,9 +77,6 @@ async function main() {
     ? wanted
     : fs.readdirSync(LOCAL).filter((n) => fs.existsSync(path.join(LOCAL, n, 'index.js')))
 
-  fs.rmSync(TMP, { recursive: true, force: true })
-  fs.mkdirSync(TMP, { recursive: true })
-
   const rows = []
   for (const name of names) {
     const ldir = path.join(LOCAL, name)
@@ -103,7 +104,12 @@ async function main() {
       changed, onlyLocal, onlyCloud,
     })
   }
-  fs.rmSync(TMP, { recursive: true, force: true })
+  // 清理失败绝不能影响巡检结论（并发下偶发 ENOTEMPTY 是正常的）
+  try {
+    fs.rmSync(TMP, { recursive: true, force: true })
+  } catch (e) {
+    /* 忽略：临时目录残留无害 */
+  }
 
   const bad = rows.filter((r) => r.status !== '一致')
   if (asJson) {

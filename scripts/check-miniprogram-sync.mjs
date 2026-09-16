@@ -14,17 +14,25 @@
  *   node scripts/check-miniprogram-sync.mjs --fix       # 不一致时从主库覆盖到开发仓
  * 退出码：不一致为 1（--fix 修复成功则为 0）。
  */
-import { readFileSync, readdirSync, statSync, copyFileSync, mkdirSync, existsSync } from 'node:fs'
+import {
+  readFileSync, readdirSync, statSync, copyFileSync, mkdirSync, existsSync,
+  mkdtempSync, writeFileSync, rmSync
+} from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
 import { join, relative, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const SRC = join(ROOT, 'shanchuanzaowu', 'miniprogram')
-const DST = join(ROOT, 'WeChatProjects', 'shanchuanspecimens')
+// 可被环境变量覆盖：只为 --selftest 能在临时目录里证明"本检查会失败"。
+const SRC = process.env.SYNC_SRC || join(ROOT, 'shanchuanzaowu', 'miniprogram')
+const DST = process.env.SYNC_DST || join(ROOT, 'WeChatProjects', 'shanchuanspecimens')
 
 /** 允许两仓不同（开发仓专有配置） */
 const ALLOW_DIFF = new Set(['project.miniapp.json'])
-const IGNORE_DIRS = new Set(['node_modules', '.git', 'miniprogram_npm'])
+// .tmp = 部署/巡检的临时日志与中间 JSON（miniprogram/.gitignore 已忽略）。
+// 必须显式跳过：否则每次部署都会生成带时间戳的新文件，让本检查**不确定**地报不一致。
+const IGNORE_DIRS = new Set(['node_modules', '.git', 'miniprogram_npm', '.tmp'])
 const IGNORE_FILES = new Set(['.DS_Store'])
 
 function walk(base, dir = '', out = []) {
@@ -41,9 +49,15 @@ function walk(base, dir = '', out = []) {
 function main() {
   const fix = process.argv.includes('--fix')
 
-  if (!existsSync(SRC) || !existsSync(DST)) {
-    console.error(`✗ 找不到目录：\n  主库  ${SRC}\n  开发仓 ${DST}`)
+  if (!existsSync(SRC)) {
+    console.error(`✗ 找不到主库目录：${SRC}`)
     process.exit(1)
+  }
+  // 开发仓是**本机专有**目录（CI / 其他机器上没有）：不存在就没有"不同步"可言，跳过并说明 ——
+  // 这样本检查才敢挂进 check:admin，而不会把 CI 弄红。
+  if (!existsSync(DST)) {
+    console.log(`· 跳过：本机没有开发仓目录（${DST}）—— CI / 他人机器属正常情况`)
+    return
   }
 
   const srcFiles = new Set(walk(SRC))
@@ -92,4 +106,72 @@ function main() {
   process.exit(1)
 }
 
-main()
+/**
+ * 自检：在临时目录里造主库/开发仓，逐场景证明本检查**会失败**、且 --fix 真能修好。
+ *   A 两仓一致 → 0 ／ B 开发仓缺文件 → 1 ／ C 内容不一致 → 1
+ *   D C 跑 --fix → 0 且内容同步 ／ E 开发仓多出文件 → 1（且 --fix 不擅自删本机文件）
+ */
+function selftest() {
+  const base = mkdtempSync(join(tmpdir(), 'mp-sync-selftest-'))
+  const src = join(base, 'miniprogram')
+  const dst = join(base, 'devrepo')
+  const seed = () => {
+    rmSync(src, { recursive: true, force: true })
+    rmSync(dst, { recursive: true, force: true })
+    mkdirSync(join(src, 'sub'), { recursive: true })
+    mkdirSync(join(dst, 'sub'), { recursive: true })
+    writeFileSync(join(src, 'app.wxss'), 'same\n')
+    writeFileSync(join(dst, 'app.wxss'), 'same\n')
+    writeFileSync(join(src, 'sub/a.js'), 'A\n')
+    writeFileSync(join(dst, 'sub/a.js'), 'A\n')
+    // 真实情形：project.miniapp.json **两仓都有**但内容不同（唯一允许差异）
+    writeFileSync(join(src, 'project.miniapp.json'), '{"a":1}\n')
+    writeFileSync(join(dst, 'project.miniapp.json'), '{"a":2}\n')
+  }
+  const run = (fix) => spawnSync(
+    process.execPath,
+    [fileURLToPath(import.meta.url), ...(fix ? ['--fix'] : [])],
+    { env: { ...process.env, SYNC_SRC: src, SYNC_DST: dst }, encoding: 'utf8' }
+  )
+  let bad = 0
+  const expect = (name, cond, extra) => {
+    if (cond) console.log(`  ✓ ${name}`)
+    else { bad += 1; console.error(`  ✗ ${name}${extra ? ' — ' + extra : ''}`) }
+  }
+
+  seed()
+  expect('A 两仓一致 → 通过（且允许 project.miniapp.json 差异）', run(false).status === 0)
+
+  seed()
+  rmSync(join(dst, 'sub/a.js'))
+  expect('B 开发仓缺文件 → 检出', run(false).status === 1)
+
+  seed()
+  writeFileSync(join(dst, 'app.wxss'), 'stale\n')
+  const c = run(false)
+  expect('C 内容不一致 → 检出', c.status === 1)
+  expect('C 报出具体文件', /app\.wxss/.test(c.stdout + c.stderr))
+
+  const d = run(true)
+  expect('D --fix → 退出码 0', d.status === 0)
+  expect('D --fix 后内容已同步', readFileSync(join(dst, 'app.wxss'), 'utf8') === 'same\n')
+  expect('D --fix 后复跑通过', run(false).status === 0)
+
+  seed()
+  writeFileSync(join(dst, 'legacy.js'), 'old\n')
+  const e = run(false)
+  expect('E 开发仓多出文件 → 检出', e.status === 1)
+  run(true)
+  expect('E --fix 不擅自删除开发仓多出的文件', existsSync(join(dst, 'legacy.js')))
+
+  rmSync(base, { recursive: true, force: true })
+  if (bad) {
+    console.error(`\n✗ selftest 失败 ${bad} 项`)
+    process.exit(1)
+  }
+  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 五种情形都符合预期')
+  process.exit(0)
+}
+
+if (process.argv.includes('--selftest')) selftest()
+else main()
