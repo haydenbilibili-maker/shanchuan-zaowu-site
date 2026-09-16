@@ -7,6 +7,10 @@
 
     <el-card shadow="never">
       <el-table :data="banners" v-loading="loading" style="width: 100%">
+        <template #empty>
+          <ErpEmpty description="暂无轮播图" hint="新建后会出现在小程序首页轮播位。" />
+        </template>
+
         <el-table-column label="预览" width="180">
           <template #default="scope">
             <el-image 
@@ -127,6 +131,7 @@
 </template>
 
 <script setup>
+import ErpEmpty from './ErpEmpty.vue'
 import { ref, onMounted } from 'vue'
 import { getTempFileUrl, COLLECTIONS, fetchCollectionSorted } from '../cloud'
 import { cdnAdd, cdnUpdate, cdnRemove } from '../utils/cloudbaseCdnDb'

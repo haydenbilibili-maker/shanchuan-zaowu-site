@@ -41,6 +41,10 @@
 
     <el-card shadow="never">
       <el-table :data="filteredUsers" v-loading="loading" style="width: 100%" @row-click="openDetail">
+        <template #empty>
+          <ErpEmpty description="暂无会员" hint="会员在小程序完成注册后会自动同步到这里。" />
+        </template>
+
         <el-table-column label="用户档案" min-width="220">
           <template #default="scope">
             <div class="user-row">
@@ -195,6 +199,7 @@
 </template>
 
 <script setup>
+import ErpEmpty from './ErpEmpty.vue'
 import { ref, computed, onMounted } from 'vue'
 import { Search, MagicStick, InfoFilled } from '@element-plus/icons-vue'
 import { callCloudFunction } from '../cloud'

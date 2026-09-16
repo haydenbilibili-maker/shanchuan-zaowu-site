@@ -37,6 +37,9 @@
             style="margin-top: 20px;"
             row-key="_id"
           >
+            <template #empty>
+              <ErpEmpty description="暂无角色记录" hint="该表当前不参与鉴权，仅作记录（见页面顶部说明）。" />
+            </template>
             <el-table-column prop="name" label="角色名称" min-width="150" />
             <el-table-column prop="code" label="角色代码" width="150" />
             <el-table-column prop="description" label="描述" min-width="200" />
@@ -79,6 +82,9 @@
             style="margin-top: 20px;"
             row-key="_id"
           >
+            <template #empty>
+              <ErpEmpty description="暂无管理员用户记录" hint="该表当前不参与鉴权，仅作记录。" />
+            </template>
             <el-table-column prop="username" label="用户名" width="150" />
             <el-table-column prop="email" label="邮箱" width="200" />
             <el-table-column label="角色（仅记录）" width="200">
@@ -161,6 +167,9 @@
             style="margin-top: 20px;"
             max-height="600"
           >
+            <template #empty>
+              <ErpEmpty description="暂无操作日志" hint="操作审计目前只有部分云函数写入；筛选条件也可能过窄。" />
+            </template>
             <el-table-column prop="username" label="用户名" width="120" />
             <el-table-column prop="module" label="模块" width="150">
               <template #default="{ row }">
@@ -237,6 +246,9 @@
             style="margin-top: 20px;"
             max-height="600"
           >
+            <template #empty>
+              <ErpEmpty description="暂无登录记录" hint="服务端尚未写入登录日志（审计 P1），此表可能长期为空。" />
+            </template>
             <el-table-column prop="username" label="用户名" width="120" />
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
@@ -275,6 +287,7 @@
 </template>
 
 <script setup>
+import ErpEmpty from './ErpEmpty.vue'
 import { ref, onMounted, computed } from 'vue'
 import {
   fetchCollectionLimit,

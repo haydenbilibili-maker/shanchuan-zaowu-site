@@ -138,6 +138,9 @@
         </div>
 
         <el-table :data="records" v-loading="recordsLoading" style="margin-top: 20px;" max-height="400">
+          <template #empty>
+            <ErpEmpty description="暂无积分流水" hint="先确认筛选条件；人工调整积分会写入 admin_adjust 流水。" />
+          </template>
           <el-table-column prop="userName" label="用户" width="120" />
           <el-table-column prop="action" label="动作类型" width="120">
             <template #default="{ row }">
@@ -175,6 +178,7 @@
 </template>
 
 <script setup>
+import ErpEmpty from './ErpEmpty.vue'
 import { ref, reactive, computed, onMounted } from 'vue'
 import {
   fetchCollectionLimit,

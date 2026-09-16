@@ -28,6 +28,9 @@
             row-key="_id"
             :default-sort="{ prop: 'sortOrder', order: 'ascending' }"
           >
+            <template #empty>
+              <ErpEmpty description="暂无热门关键词" hint="可手动新增，或由搜索行为统计自动累积。" />
+            </template>
             <el-table-column type="index" label="排序" width="80" :index="indexMethod" />
             <el-table-column label="关键词" min-width="200">
               <template #default="{ row }">
@@ -122,6 +125,9 @@
             style="margin-top: 20px;"
             row-key="_id"
           >
+            <template #empty>
+              <ErpEmpty description="暂无屏蔽关键词" hint="被屏蔽的词不会出现在小程序搜索结果中。" />
+            </template>
             <el-table-column prop="keyword" label="屏蔽关键词" min-width="200" />
             <el-table-column prop="reason" label="屏蔽原因" min-width="200">
               <template #default="{ row }">
@@ -205,6 +211,9 @@
             style="margin-top: 20px;"
             :default-sort="{ prop: statsSortBy, order: 'descending' }"
           >
+            <template #empty>
+              <ErpEmpty description="暂无搜索统计" hint="统计来自 user_behaviors 埋点，需有真实搜索行为后才有数据。" />
+            </template>
             <el-table-column prop="keyword" label="关键词" min-width="200" />
             <el-table-column prop="searchCount" label="搜索次数" width="120" sortable>
               <template #default="{ row }">
@@ -278,6 +287,7 @@
 </template>
 
 <script setup>
+import ErpEmpty from './ErpEmpty.vue'
 import { ref, reactive, onMounted, computed } from 'vue'
 import {
   fetchCollectionSorted,

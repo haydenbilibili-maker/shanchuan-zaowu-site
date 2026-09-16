@@ -22,6 +22,10 @@
 
     <el-card shadow="never">
       <el-table :data="list" v-loading="loading" style="width: 100%">
+        <template #empty>
+          <ErpEmpty description="暂无内容" hint="可从「内容工厂」同步主题，或在此新建文章 / 专题。" />
+        </template>
+
         <el-table-column label="封面" width="100">
           <template #default="scope">
             <el-image 
@@ -171,6 +175,7 @@
 </template>
 
 <script setup>
+import ErpEmpty from './ErpEmpty.vue'
 import { ref, onMounted, computed } from 'vue'
 import { getTempFileUrl, COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'

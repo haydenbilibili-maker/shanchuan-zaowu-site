@@ -7,6 +7,10 @@
 
     <el-card shadow="never">
         <el-table :data="list" v-loading="loading" style="width: 100%">
+          <template #empty>
+            <ErpEmpty description="暂无活动" hint="新建活动后可排期并在小程序展示。" />
+          </template>
+
             <el-table-column label="活动主题" min-width="200">
                 <template #default="scope">
                     <div style="font-weight:bold; font-size:15px;">{{ scope.row.title }}</div>
@@ -98,6 +102,7 @@
 </template>
 
 <script setup>
+import ErpEmpty from './ErpEmpty.vue'
 import { ref, reactive, onMounted } from 'vue'
 import { fetchCollectionSorted, cdnAdd, cdnUpdate } from '../cloud'
 import { ElMessage } from 'element-plus'
