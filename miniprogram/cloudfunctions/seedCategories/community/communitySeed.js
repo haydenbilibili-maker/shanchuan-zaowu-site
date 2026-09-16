@@ -17,6 +17,7 @@ const SEED_VERSION = 'community_seed_v5'
 function applyRewrite(doc, rw, { topicTag = false } = {}) {
   if (!rw) return doc
   const next = { ...doc }
+  if (rw.title) next.title = rw.title
   if (rw.brief) next.brief = rw.brief
   if (Array.isArray(rw.tags) && rw.tags.length) {
     const tags = rw.tags.slice()
