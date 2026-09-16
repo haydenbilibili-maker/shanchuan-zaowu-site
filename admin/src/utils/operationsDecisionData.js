@@ -2,6 +2,7 @@ import { fetchStoreData } from './storeData'
 import { fetchFinancialData } from './financialData'
 import { loadStoreBundle, storeLicenseAlertLevel, sumStoreNetRevenueForMonth } from './storeStorage'
 import { loadPayrollBundle } from './payrollStorage'
+import { fetchStaffDirectory, staffCountDisplay } from './staffDirectory.js'
 
 export const OPS_LOW_STOCK_THRESHOLD = 5
 export const OPS_OVER_STOCK_THRESHOLD = 50
@@ -97,14 +98,20 @@ function buildPayrollMetrics(payrollBundle, yearMonth) {
   }
 }
 
-function buildRisks({ products, stores, finance, payroll }) {
+function buildRisks({ products, stores, finance, payroll, staff }) {
   const risks = []
   if (products.outOfStock > 0) risks.push({ level: 'high', title: '缺货风险', desc: `${products.outOfStock} 个商品缺货，可能影响成交转化。` })
   if (products.lowStock > 0) risks.push({ level: 'medium', title: '低库存预警', desc: `${products.lowStock} 个商品库存低于 ${OPS_LOW_STOCK_THRESHOLD} 件。` })
   if (stores.licenseExpired > 0) risks.push({ level: 'high', title: '证照过期', desc: `${stores.licenseExpired} 家门店存在当前证照过期。` })
   if (stores.licenseSoon > 0) risks.push({ level: 'medium', title: '证照将过期', desc: `${stores.licenseSoon} 家门店存在证照临期。` })
   if (finance.revenue <= 0) risks.push({ level: 'medium', title: '营收账本缺失', desc: '当前周期未读取到有效财务营收，AI 建议可信度会下降。' })
-  if (payroll.activeEmployees === 0) risks.push({ level: 'low', title: '人事数据缺失', desc: '未读取到在职员工，暂无法计算人效。' })
+  if (payroll.activeEmployees === 0) risks.push({ level: 'low', title: '薪酬花名册为空', desc: '未读取到薪酬花名册员工，暂无法计算人效（与小程序「员工」模块是两个来源）。' })
+  // 读不到员工通讯录必须与「确实没有员工」分开报 —— 两者都表现为 0，这正是原缺陷的形态
+  if (staff && !staff.ok) {
+    risks.push({ level: 'medium', title: '员工通讯录读取失败', desc: `未能从云函数 manageStaff 读取员工（${staff.error || '原因未知'}）。卡片显示「—」而非 0，请勿据此判断没有员工。` })
+  } else if (staff && staff.ok && staff.active === 0) {
+    risks.push({ level: 'low', title: '员工通讯录为空', desc: '小程序超管工作台「员工」模块里没有任何生效员工。' })
+  }
   return risks
 }
 
@@ -195,9 +202,11 @@ function buildFinanceTrend(records, limit = 14) {
 export async function buildOperationsDecisionData(options = {}) {
   const { products = [], orders = [], period = 'month' } = options
   const yearMonth = currentYearMonth()
-  const [storeData, financialData] = await Promise.all([
+  const [storeData, financialData, staff] = await Promise.all([
     fetchStoreData(false, { useFinancialData: true, period }),
     fetchFinancialData({ period }),
+    // 与小程序超管工作台「员工」模块同源（manageStaff → staff_members）
+    fetchStaffDirectory(),
   ])
   const productSource = products.length ? products : (storeData?.products?.items || [])
   const orderSource = orders.length ? orders : (storeData?.orders?.items || [])
@@ -225,9 +234,16 @@ export async function buildOperationsDecisionData(options = {}) {
     { key: 'aov', label: '客单价', value: `¥${finance.averageOrderValue.toFixed(0)}`, desc: '营收 / 订单数' },
     { key: 'profit', label: '估算毛利', value: `¥${finance.grossProfit.toLocaleString()}`, desc: finance.costStructure },
     { key: 'stockRisk', label: '库存风险', value: String(productMetrics.lowStock + productMetrics.outOfStock), desc: '低库存 + 缺货' },
-    { key: 'staff', label: '在职员工', value: String(payrollMetrics.activeEmployees), desc: '薪酬花名册' },
+    {
+      key: 'staff',
+      label: '在职员工',
+      value: staffCountDisplay(staff),
+      desc: staff.ok
+        ? `小程序超管工作台 · 员工（staff_members）${staff.truncated ? `，服务端上限 ${100} 条，实际可能更多` : ''}`
+        : '员工通讯录读取失败，非 0',
+    },
   ]
-  const risks = buildRisks({ products: productMetrics, stores: storeMetrics, finance, payroll: payrollMetrics })
+  const risks = buildRisks({ products: productMetrics, stores: storeMetrics, finance, payroll: payrollMetrics, staff })
   const opportunities = buildOpportunities({ products: productMetrics, stores: storeMetrics, finance })
   const inventoryViz = buildInventoryViz(productMetrics)
   const storeBars = buildStoreBars(storeMetrics.rankings, 6)
@@ -243,6 +259,7 @@ export async function buildOperationsDecisionData(options = {}) {
     finance,
     stores: storeMetrics,
     payroll: payrollMetrics,
+    staff: { ok: staff.ok, active: staff.active, disabled: staff.disabled, total: staff.total, truncated: staff.truncated, error: staff.error || null },
     risks,
     opportunities,
     inventoryViz,
@@ -253,7 +270,12 @@ export async function buildOperationsDecisionData(options = {}) {
       { name: '财务账本', status: finance.records.length > 0 ? 'ok' : 'empty', detail: `${finance.records.length} 条周期记录` },
       { name: '云商品/商品档案', status: productMetrics.total > 0 ? 'ok' : 'empty', detail: `${productMetrics.total} 个商品` },
       { name: '店铺本地包', status: storeMetrics.total > 0 ? 'ok' : 'empty', detail: `${storeMetrics.total} 家门店` },
-      { name: '薪酬花名册', status: payrollMetrics.activeEmployees > 0 ? 'ok' : 'empty', detail: `${payrollMetrics.activeEmployees} 名在职员工` },
+      {
+        name: '员工通讯录',
+        status: !staff.ok ? 'error' : (staff.active > 0 ? 'ok' : 'empty'),
+        detail: staff.ok ? `${staff.active} 名生效员工（staff_members）` : `读取失败：${staff.error || '未知原因'}`,
+      },
+      { name: '薪酬花名册', status: payrollMetrics.activeEmployees > 0 ? 'ok' : 'empty', detail: `${payrollMetrics.activeEmployees} 名在职员工（本地 HR 花名册）` },
     ],
   }
 }

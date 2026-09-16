@@ -962,7 +962,7 @@ onMounted(loadSnapshot)
   color: var(--light-text-primary);
 }
 
-.insight-item.risk.high { border-left-color: var(--semantic-error); }
+.insight-item.risk.high { border-left-color: var(--semantic-error-text); }
 .insight-item.risk.medium { border-left-color: var(--semantic-warning); }
 .insight-item.opportunity { border-left-color: var(--gold-400); }
 
@@ -1044,6 +1044,14 @@ onMounted(loadSnapshot)
 
 .source-pill.empty strong {
   color: var(--semantic-warning);
+}
+
+/* 读取失败必须比「空」更显眼：空是数据事实，失败是系统问题，不能看起来差不多 */
+.source-pill.error strong {
+  color: var(--semantic-error-text);
+}
+.source-pill.error span {
+  color: var(--semantic-error-text);
 }
 
 .decision-tabs {
