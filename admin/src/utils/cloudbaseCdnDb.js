@@ -165,6 +165,9 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'manageStoreShipment',
   // 2026-09-15：支付补履约（回调缺失时由超管人工核对微信流水后补单）
   'confirmPayment',
+  // 2026-09-16：新会员礼包（member_welcome_gift 已收紧为 PRIVATE）。ERP 与小程序超管工作台
+  // 共用同一云函数，不再 CDN 直写 —— 直写会漏掉 updatedBy 与「已发未使用券条款同步」
+  'manageWelcomeGift',
 ])
 
 /**

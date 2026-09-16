@@ -1,10 +1,14 @@
 /**
- * 新会员礼包默认配置（与小程序 upsertUserProfile/welcomeGiftDefaults.js 对齐）
- * 折扣纪律：不低于 7.5 折（value/minSpend ≤ 0.25）；默认约 8～9 折
+ * 新会员礼包 —— **仅用于 ERP 表单的展示归一与本地预校验**。
+ *
+ * ⚠️ 本文件**不再包含任何写库 payload / 集合名**：新会员礼包的唯一权威写入路径是小程序
+ * 超管工作台的云函数（ERP 经 /api/cloud-fn 代理调用同一个函数）。
+ * 历史形态（ERP 直写集合）会漏掉 `updatedBy` 与「已发未使用券条款同步」，
+ * 且与工作台形成两份实现 —— 2026-09-16 已收口。
+ * 权威校验/归一/摘要都在云函数 `manageWelcomeGift/welcomeGiftDefaults.js` 里。
+ * 折扣纪律：不低于 7.5 折（value/minSpend ≤ 0.25）；默认约 9 折
  */
 
-export const COLLECTION = 'member_welcome_gift'
-export const SOURCE = 'register_gift'
 export const MIN_PAY_RATIO = 0.75
 export const MAX_OFF_RATIO = 1 - MIN_PAY_RATIO
 
@@ -50,16 +54,17 @@ export function getDefaultWelcomeGiftConfig() {
     pointsEnabled: true,
     excludeGrowth: true,
     couponsEnabled: true,
-    expireDays: 30,
+    expireDays: 90,
     stackable: false,
     priority: 100,
+    // 与线上 member_welcome_gift、小程序 cloudfunctions/*/welcomeGiftDefaults.js 逐字对齐：
+    // 满49减5 / 满299减30 / 满499减50 / 满999减100（90 天）。
+    // 读不到集合时本默认值会被写入，故必须与线上权威档位一致，不能各写一套。
     coupons: [
-      // 首单友好档：门槛 49（折扣纪律下限 ceil(10/0.25)=40，合规）；与小程序 welcomeGiftDefaults 对齐
-      { id: 'c10s', enabled: true, value: 10, minSpend: 49, expireDays: 30, count: 1, title: '新会员礼券 · 满49减10', channel: 'all' },
-      { id: 'c10', enabled: true, value: 10, minSpend: 100, expireDays: 30, count: 1, title: '新会员礼券 · 满100减10', channel: 'all' },
-      { id: 'c30', enabled: true, value: 30, minSpend: 200, expireDays: 30, count: 1, title: '新会员礼券 · 满200减30', channel: 'all' },
-      { id: 'c50', enabled: true, value: 50, minSpend: 300, expireDays: 30, count: 1, title: '新会员礼券 · 满300减50', channel: 'all' },
-      { id: 'c100', enabled: true, value: 100, minSpend: 500, expireDays: 30, count: 1, title: '新会员礼券 · 满500减100', channel: 'all' }
+      { id: 'c5', enabled: true, value: 5, minSpend: 49, expireDays: 90, count: 1, title: '新会员礼券 · 5元', channel: 'all' },
+      { id: 'c30', enabled: true, value: 30, minSpend: 299, expireDays: 90, count: 1, title: '新会员礼券 · 30元', channel: 'all' },
+      { id: 'c50', enabled: true, value: 50, minSpend: 499, expireDays: 90, count: 1, title: '新会员礼券 · 50元', channel: 'all' },
+      { id: 'c100', enabled: true, value: 100, minSpend: 999, expireDays: 90, count: 1, title: '新会员礼券 · 100元', channel: 'all' }
     ]
   }
 }
@@ -132,7 +137,35 @@ export function validateWelcomeGiftCoupons(config) {
     const check = validateCashCoupon(value, minSpend)
     if (!check.ok) return check
   }
-  return { ok: true }
+  return validateWelcomeGiftActivatable(src, coupons)
+}
+
+/**
+ * 「礼券总开关开着，却没有任何启用中的券行」= 新用户静默收不到券。
+ *
+ * 真实事故（2026-09-15、2026-09-16 各一次）：保存时把券行全部存成 `enabled:false`
+ * 而 `couponsEnabled` 仍为 true；发券侧只取启用行 → 只到账 100 积分、礼券 0 张，
+ * 页面上完全看不出来。ERP 是**直写** member_welcome_gift 的（不经云函数），
+ * 所以这层拦截必须在这里独立存在，不能只依赖 manageWelcomeGift 的校验。
+ *
+ * 券行为空时不报错：normalizeWelcomeGiftConfig 会回落到代码兜底档位（非停发）。
+ */
+export function validateWelcomeGiftActivatable(config, coupons) {
+  const src = config && typeof config === 'object' ? config : {}
+  if (src.couponsEnabled === false) return { ok: true }
+  const list = Array.isArray(coupons) ? coupons : []
+  if (!list.length) return { ok: true }
+  const active = list.filter((row) => {
+    const r = row && typeof row === 'object' ? row : {}
+    if (r.enabled === false) return false
+    return toNumber(r.value, 0) > 0 && toNumber(r.count, 1) > 0
+  })
+  if (active.length) return { ok: true }
+  return {
+    ok: false,
+    code: 'COUPONS_ALL_DISABLED',
+    msg: '礼券总开关是开着的，但没有任何启用中的券行——保存后新用户将收不到礼券。请至少启用一条券行，或关闭「礼券」总开关。'
+  }
 }
 
 /**
@@ -191,53 +224,3 @@ export function normalizeWelcomeGiftConfig(raw) {
   return merged
 }
 
-/** 仅业务字段，供 update/add，避免 _id/_openid 导致写库失败或回读污染 */
-export function buildWelcomeGiftWritePayload(config) {
-  const normalized = normalizeWelcomeGiftConfig(config)
-  return {
-    ruleId: normalized.ruleId,
-    name: normalized.name,
-    status: normalized.enabled ? 'active' : 'inactive',
-    enabled: normalized.enabled,
-    title: normalized.title,
-    messageTitle: normalized.messageTitle,
-    points: normalized.points,
-    pointsEnabled: normalized.pointsEnabled,
-    excludeGrowth: normalized.excludeGrowth,
-    couponsEnabled: normalized.couponsEnabled,
-    expireDays: normalized.expireDays,
-    stackable: normalized.stackable,
-    priority: normalized.priority,
-    coupons: (normalized.coupons || []).map((c) => ({
-      id: c.id,
-      enabled: c.enabled !== false,
-      value: c.value,
-      minSpend: c.minSpend,
-      expireDays: c.expireDays,
-      count: c.count,
-      title: c.title,
-      channel: c.channel || 'all'
-    })),
-    updateTime: Date.now(),
-    _updateTime: Date.now()
-  }
-}
-
-export function describeWelcomeGift(config) {
-  const cfg = normalizeWelcomeGiftConfig(config)
-  if (!cfg.enabled) return '新会员礼包已关闭'
-  const parts = []
-  if (cfg.pointsEnabled && cfg.points > 0) parts.push(`${cfg.points} 积分`)
-  if (cfg.couponsEnabled) {
-    const active = (cfg.coupons || []).filter((c) => c.enabled && c.value > 0 && c.count > 0)
-    if (active.length) {
-      const sameDays = active.every((c) => Number(c.expireDays) === Number(cfg.expireDays))
-      const daysLabel = sameDays
-        ? `${cfg.expireDays} 天`
-        : `默认 ${cfg.expireDays} 天（各券可不同）`
-      parts.push(`礼券 ${active.map((c) => `满${c.minSpend}减${c.value}${c.count > 1 ? `×${c.count}` : ''}`).join(' / ')}（${daysLabel}）`)
-    }
-  }
-  if (!parts.length) return '已启用，但积分与礼券均为空'
-  return `${parts.join(' + ')}；${cfg.stackable ? '可叠加' : '不可叠加（一单一券）'}；折扣不低于7.5折`
-}

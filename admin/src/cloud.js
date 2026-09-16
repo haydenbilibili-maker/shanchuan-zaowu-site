@@ -504,7 +504,10 @@ export const COLLECTIONS = {
   MEMBER_LEVELS: 'member_levels',   // 会员等级体系配置
   POINTS_RULES: 'points_rules',      // 【遗留】旧积分规则，非线上赠分 SSOT
   STORE_POINT_RULES: 'store_point_rules', // 门店积分规则（线上 SSOT，¥10=1）
-  MEMBER_WELCOME_GIFT: 'member_welcome_gift', // 新会员礼包（完成注册发放，upsertUserProfile）
+  // 新会员礼包（member_welcome_gift）刻意**不在此登记**：该集合规则为 PRIVATE，
+  // ERP 一律经 /api/cloud-fn 调用云函数 manageWelcomeGift（与小程序超管工作台同一个函数）。
+  // 若在此写下集合名字面量，audit:collections 会判成「客户端在用 PRIVATE 集合」而误报；
+  // ERP 直连该集合也已被明确禁止（会漏 updatedBy 与已发券条款同步）。
   SHIPPING_RULES: 'shipping_rules',       // 商城运费/包邮规则（makeOrder SSOT）
   BOOKING_RULES: 'booking_rules',    // 预约规则配置
   ADMIN_ROLES: 'admin_roles',        // 管理员角色配置
@@ -536,6 +539,7 @@ export const COLLECTIONS = {
   WAITLIST: 'waitlist',                                   // 预约候补
   SUPPORT_CONFIGS: 'support_configs',                     // 客服入口（getSupportConfig）
   CONTENT_DISPLAY_FLAGS: 'content_display_flags',         // 内容展示开关（getContentDisplayFlags）
+  WISH_WALL_MESSAGES: 'wish_wall_messages',               // 马上有祈福弹幕（manageWishWall，需求 28）
 };
 
 // =================================================

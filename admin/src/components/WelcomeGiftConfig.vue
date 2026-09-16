@@ -3,8 +3,11 @@
     <div class="header-section">
       <h2>新会员礼包</h2>
       <p class="subtitle">
-        线上 SSOT 为集合 <code>member_welcome_gift</code>（与小程序
-        <code>upsertUserProfile</code> 完成注册时发放同源）。缺配置走代码默认：100 积分 + 10/30/50/100 元礼券各一张（30 天、不可叠加）。
+        唯一权威入口：与小程序「我的 → 超管工作台 → 新会员礼包」<strong>共用同一个云函数</strong>
+        <code>manageWelcomeGift</code> 与同一条记录（集合 <code>member_welcome_gift</code>，
+        注册时由 <code>upsertUserProfile</code> 发放同源）。本页已不再直写集合——
+        直写会漏掉「操作人归属」与「已发未使用券条款同步」。
+        缺配置走代码默认：100 积分 + 满49减5 / 满299减30 / 满499减50 / 满999减100（90 天、不可叠加）。
       </p>
       <el-alert
         type="info"
@@ -13,11 +16,21 @@
         style="margin-top: 12px;"
         title="同一 openid 整包只发一次（积分 + 礼券共用幂等键 register_gift:{openid}）。下单链路一单一券，与「不可叠加」一致。"
       />
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-top: 8px;"
+        title="礼券总开关必须至少启用一条券行：总开关开着但券行全停 = 新用户静默收不到券（保存会被服务端拒绝）。"
+      />
     </div>
 
     <div class="config-container">
       <el-card v-loading="loading" class="rules-card">
-        <p class="rule-preview">当前规则：{{ ruleText }}</p>
+        <p class="rule-preview">
+          当前规则：{{ ruleText }}
+          <span v-if="fromDefault" class="hint">（当前为代码默认，保存后写入 member_welcome_gift）</span>
+        </p>
         <el-form :model="form" label-width="160px">
           <el-form-item label="启用礼包">
             <el-switch v-model="form.enabled" active-text="开" inactive-text="关" />
@@ -142,33 +155,31 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
-import {
-  fetchCollectionLimit,
-  cdnUpsertSingleton,
-  cdnUpdate,
-  COLLECTIONS
-} from '../cloud'
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { callCloudFunction } from '../cloud'
 import {
   getDefaultWelcomeGiftConfig,
   normalizeWelcomeGiftConfig,
-  describeWelcomeGift,
   applyDefaultExpireDaysToCoupons,
   resolveExpireDays,
   coerceNumber,
-  buildWelcomeGiftWritePayload,
   validateWelcomeGiftCoupons
 } from '../utils/welcomeGift'
 import { ElMessage } from 'element-plus'
+
+/** 与小程序超管工作台同一个云函数（唯一权威写入路径；代理注入 ADMIN_OPS_KEY → 判为超管） */
+const FN = 'manageWelcomeGift'
 
 const loading = ref(false)
 const saving = ref(false)
 const hydrating = ref(false)
 const ruleDocId = ref('')
+const fromDefault = ref(false)
+/** 规则摘要由服务端 describeConfig 生成（含「券行全停」告警），不在前端另算一份 */
+const ruleText = ref('')
 /** 加载时的顶层默认天数；保存时用于同步「未单独改」的券行 */
 const loadedExpireDays = ref(30)
 const form = reactive(getDefaultWelcomeGiftConfig())
-const ruleText = computed(() => describeWelcomeGift(form))
 
 function applyForm(raw, docId = '') {
   hydrating.value = true
@@ -206,26 +217,25 @@ function applyForm(raw, docId = '') {
 async function loadRules() {
   loading.value = true
   try {
-    const rows = await fetchCollectionLimit(COLLECTIONS.MEMBER_WELCOME_GIFT, { limit: 10 })
-    const active = (rows || [])
-      .filter((r) => r.status !== 'inactive')
-      .sort((a, b) => (b.priority || 0) - (a.priority || 0))
-    const top = active[0]
-    if (top) {
-      applyForm(top, top._id)
-    } else {
-      applyForm(getDefaultWelcomeGiftConfig(), '')
-    }
+    const res = await callCloudFunction(FN, { action: 'get' })
+    if (!res || res.success === false) throw new Error((res && res.msg) || '加载失败')
+    applyForm(res.config, res.docId || '')
+    ruleText.value = res.ruleText || ''
+    fromDefault.value = !!res.fromDefault
   } catch (error) {
     console.error('加载新会员礼包失败:', error)
     applyForm(getDefaultWelcomeGiftConfig(), '')
-    ElMessage.warning('未读到 member_welcome_gift，已使用代码默认值（请确认已创建集合）')
+    ElMessage.warning(
+      (error && error.message) ||
+        '未读到新会员礼包配置，已使用代码默认值（请确认 manageWelcomeGift 已部署、ADMIN_OPS_KEY 已配置）'
+    )
   } finally {
     loading.value = false
   }
 }
 
-function buildPayload() {
+/** 提交前的纯表单整理（默认天数下发给「仍等于旧默认」的券行），不构造写库 payload */
+function prepareForm() {
   const days = resolveExpireDays(form.expireDays, null, 30)
   form.expireDays = days
   const loaded = resolveExpireDays(loadedExpireDays.value, null, 30)
@@ -237,43 +247,55 @@ function buildPayload() {
     const n = coerceNumber(row.expireDays)
     if (!Number.isFinite(n) || n < 1) row.expireDays = days
   })
-  return buildWelcomeGiftWritePayload(form)
+  return days
 }
 
 async function saveRules() {
   saving.value = true
   try {
+    // 前端只做「快速反馈」的预校验；权威校验、条款同步、操作人归属都在云函数里
     const couponCheck = validateWelcomeGiftCoupons(form)
     if (!couponCheck.ok) {
       throw new Error(couponCheck.msg || '礼券档位不符合折扣纪律')
     }
-    const payload = buildPayload()
-    if (!(payload.expireDays >= 1)) {
+    const days = prepareForm()
+    if (!(days >= 1)) {
       throw new Error('有效天数无效，请重新设置后再保存')
     }
-    if (ruleDocId.value) {
-      await cdnUpdate(COLLECTIONS.MEMBER_WELCOME_GIFT, ruleDocId.value, payload)
-    } else {
-      await cdnUpsertSingleton(COLLECTIONS.MEMBER_WELCOME_GIFT, {
-        ...payload,
-        ruleId: payload.ruleId || 'member_welcome_gift_v1',
-        _createTime: Date.now(),
-        createTime: Date.now()
-      })
-    }
-    ElMessage.success(`已写入 member_welcome_gift（默认 ${payload.expireDays} 天）`)
+    const res = await callCloudFunction(FN, {
+      action: 'save',
+      docId: ruleDocId.value,
+      config: { ...form }
+    })
+    if (!res || res.success === false) throw new Error((res && res.msg) || '保存失败')
+    ruleDocId.value = res.docId || ruleDocId.value
+    ruleText.value = res.ruleText || ruleText.value
+    fromDefault.value = false
+    const sync = res.couponSync
+    const syncMsg = sync && sync.updated ? `；已同步 ${sync.updated} 张未使用礼券门槛` : ''
+    ElMessage.success(`新会员礼包已保存（默认 ${days} 天）${syncMsg}`)
     await loadRules()
   } catch (error) {
     console.error('保存新会员礼包失败:', error)
-    ElMessage.error('保存失败：' + (error.message || '未知错误') + '（请确认已创建集合 member_welcome_gift）')
+    ElMessage.error('保存失败：' + ((error && error.message) || '未知错误'))
   } finally {
     saving.value = false
   }
 }
 
 function resetDefaults() {
-  applyForm(getDefaultWelcomeGiftConfig(), ruleDocId.value)
-  ElMessage.info('已恢复默认值，记得点保存')
+  // 与小程序超管工作台一致：服务端返回代码默认（不写库），需再点保存
+  callCloudFunction(FN, { action: 'resetDefaults' })
+    .then((res) => {
+      if (!res || res.success === false) throw new Error((res && res.msg) || '恢复默认失败')
+      applyForm(res.config, ruleDocId.value)
+      ruleText.value = res.ruleText || ''
+      fromDefault.value = true
+      ElMessage.info(res.msg || '已恢复代码默认，记得点保存')
+    })
+    .catch((error) => {
+      ElMessage.error('恢复默认失败：' + ((error && error.message) || '未知错误'))
+    })
 }
 
 function onDefaultExpireDaysChange(next, prev) {

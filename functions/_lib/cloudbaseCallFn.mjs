@@ -51,6 +51,9 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   'manageStoreShipment',
   // 2026-09-15：支付补履约（须与 admin ADMIN_PROXY_FUNCTIONS 对齐；注入 ADMIN_OPS_KEY）
   'confirmPayment',
+  // 2026-09-16：新会员礼包（member_welcome_gift 规则收紧为 PRIVATE 后 ERP 不可再直写；
+  // 与小程序超管工作台共用同一云函数 —— 同一份校验、同一份条款同步、同一份操作人归属）
+  'manageWelcomeGift',
 ])
 
 const ALLOWED = new Set(ALLOWED_FUNCTIONS)
