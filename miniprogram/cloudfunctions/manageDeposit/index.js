@@ -35,6 +35,8 @@ const {
   notifyDepositSettled,
   notifyWishlistAvailable
 } = require('./depositNotify')
+// 来源判定统一真源（负向子串判定对互调合并串会判反，详见 sourceOrigin.js 顶部说明）
+const { isNonClientSource } = require('./sourceOrigin')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -79,21 +81,6 @@ async function requireArtisanOrManager(event, openid) {
 function isTimerEvent(event) {
   const triggerType = (event && (event.Type || event.triggerType || event.triggerSource)) || ''
   return /timer/i.test(String(triggerType)) || !!(event && event.TriggerName)
-}
-
-/**
- * 是否「非客户端来源」。实测定时触发时 wxContext.SOURCE 为空字符串，
- * 而小程序客户端必带 wx_client / wx_devtools —— 因此该判定 C 端无法伪造。
- * event._internal / event.fromApproval / event.Type 等字段均由调用方控制，
- * **一律不得作为授权依据**（原实现让任意人传 _internal:true 即可跑全站尾款结算）。
- */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
 }
 
 function errorText(err) {

@@ -166,6 +166,19 @@
                             </ul>
                         </details>
                     </template>
+                    <!-- 写失败必须比「未匹配」更显眼：未匹配是数据问题，写失败是系统问题（集合只读） -->
+                    <template v-if="syncInventoryResult.failed && syncInventoryResult.failed.length > 0">
+                        <span class="result-err" style="margin-left:10px; color: var(--semantic-error-text);">
+                            <i class="fas fa-times-circle"></i> 写入失败 {{ syncInventoryResult.failed.length }} 条（products 集合为只读，库存未变更）
+                        </span>
+                        <details style="margin-top:6px;">
+                            <summary style="cursor:pointer; font-size:var(--text-sm); color: var(--semantic-error-text);">失败列表</summary>
+                            <ul style="margin:6px 0 0 0; padding-left:18px; font-size:var(--text-sm); color: var(--semantic-error-text);">
+                                <li v-for="(f, i) in syncInventoryResult.failed.slice(0, 20)" :key="i">{{ f.title || f.name }} → {{ f.qty }} 件（未落库）</li>
+                                <li v-if="syncInventoryResult.failed.length > 20">…共 {{ syncInventoryResult.failed.length }} 条</li>
+                            </ul>
+                        </details>
+                    </template>
                     <template v-if="syncInventoryResult.unmatched && syncInventoryResult.unmatched.length > 0">
                         <span class="result-warn" style="margin-left:10px;"><i class="fas fa-exclamation-triangle"></i> 未匹配 {{ syncInventoryResult.unmatched.length }} 条（档案库中无对应藏品名称）</span>
                         <details style="margin-top:6px;">
@@ -934,6 +947,7 @@
 
 <script setup>
 import { safeWarn } from '../utils/safeStorage.js'
+import { assertWriteApplied } from '../utils/cloudbaseCdnDb.js'
 import { onMounted, onUnmounted, reactive, ref, nextTick, computed } from 'vue'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
@@ -3789,8 +3803,27 @@ const app = reactive({
             });
             const normalize = (s) => String(s || '').replace(/\s+/g, '').replace(/[-－—]/g, '').trim();
 
+            /**
+             * 写库存 + 校验结果。
+             * `products` 线上规则 `{ read: true, write: false }` → 直写会被拒，
+             * 而权限被拒时 SDK **不抛错**（只 resolve 错误码）。原实现不看结果就
+             * push 进 updatedList，于是界面报「已更新 N 条藏品库存」而**一条都没写进去**。
+             * 现在写没生效就记入 failed，与「已更新」分开呈现。
+             */
+            const assertStockWrite = async (id, payload, name, qty, title) => {
+                const res = await cdnUpdate(COLLECTIONS.PRODUCTS, id, payload);
+                try {
+                    assertWriteApplied('products', res, '库存同步');
+                } catch (e) {
+                    failed.push({ name, qty, title, reason: e?.name || 'write-not-applied' });
+                    return;
+                }
+                updatedList.push({ name, qty, title, _id: id });
+            };
+
             const updatedList = [];
             const unmatched = [];
+            const failed = [];   // 写没进去的（products 线上只读 → 必须与「已更新」分开报）
 
             for (const { name, qty } of lines) {
                 const nName = normalize(name);
@@ -3802,8 +3835,7 @@ const app = reactive({
 
                 const exact = products.find(p => normalize(p.title) === nName);
                 if (exact) {
-                    await cdnUpdate(COLLECTIONS.PRODUCTS, exact._id, stockPayload);
-                    updatedList.push({ name, qty, title: exact.title, _id: exact._id });
+                    await assertStockWrite(exact._id, stockPayload, name, qty, exact.title);
                     continue;
                 }
                 const partial = products.filter(p => {
@@ -3812,25 +3844,28 @@ const app = reactive({
                 });
                 if (partial.length === 1) {
                     const p = partial[0];
-                    await cdnUpdate(COLLECTIONS.PRODUCTS, p._id, stockPayload);
-                    updatedList.push({ name, qty, title: p.title, _id: p._id });
+                    await assertStockWrite(p._id, stockPayload, name, qty, p.title);
                 } else if (partial.length > 1) {
                     const best = partial.sort((a, b) => Math.abs(normalize(a.title).length - nName.length) - Math.abs(normalize(b.title).length - nName.length))[0];
-                    await cdnUpdate(COLLECTIONS.PRODUCTS, best._id, stockPayload);
-                    updatedList.push({ name, qty, title: best.title, _id: best._id });
+                    await assertStockWrite(best._id, stockPayload, name, qty, best.title);
                 } else {
                     unmatched.push({ name, qty });
                 }
             }
 
-            syncInventoryResult.value = { updated: updatedList.length, updatedList, unmatched };
+            syncInventoryResult.value = { updated: updatedList.length, updatedList, unmatched, failed };
             if (unmatched.length) pendingInventoryLines.value = unmatched.map(u => ({ name: u.name, qty: u.qty }));
             else pendingInventoryLines.value = [];
-            ElMessage.success(`已同步 ${updatedList.length} 条库存到藏品档案库${unmatched.length ? `，${unmatched.length} 条未匹配` : ''}`);
+            if (failed.length) {
+                // 全失败却说「已同步 0 条」会让人以为操作正常
+                ElMessage.error(`库存同步：成功 ${updatedList.length} 条，失败 ${failed.length} 条 —— 失败项未落库（products 集合为只读，需服务端通道），未匹配 ${unmatched.length} 条`);
+            } else {
+                ElMessage.success(`已同步 ${updatedList.length} 条库存到藏品档案库${unmatched.length ? `，${unmatched.length} 条未匹配` : ''}`);
+            }
         } catch (err) {
             console.error('同步库存到档案库失败:', err);
             ElMessage.error('同步失败：' + (err.message || '未知错误'));
-            syncInventoryResult.value = { updated: 0, updatedList: [], unmatched: lines, error: err.message };
+            syncInventoryResult.value = { updated: 0, updatedList: [], unmatched: lines, failed: [], error: err.message };
         } finally {
             syncInventoryLoading.value = false;
         }

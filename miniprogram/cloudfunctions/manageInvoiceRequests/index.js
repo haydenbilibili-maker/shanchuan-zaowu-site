@@ -10,6 +10,8 @@ const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
 const { dispatchInAppMessage } = require('./inAppMessage')
 const { ACTION, resolveApproverRole, actorWorkspaceRole } = require('./approvalRules')
 const { enqueueApproval, markApprovalDecided } = require('./approvalBridge')
+// 来源判定统一真源（负向子串判定对互调合并串会判反，详见 sourceOrigin.js 顶部说明）
+const { isNonClientSource } = require('./sourceOrigin')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -27,20 +29,6 @@ const STATUS_LABELS = {
   pending: '待开具',
   issued: '已开具',
   rejected: '已驳回'
-}
-
-/**
- * 是否「非客户端来源」：小程序客户端调用必带 wx_client / wx_devtools，
- * 而云函数互调与定时触发不带该标记。用于确保「无 OPENID 时按请求字段
- * 声明身份」这一转发通道不会被 C 端伪造。
- */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
 }
 
 function fail(msg, extra) {

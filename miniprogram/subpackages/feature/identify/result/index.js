@@ -6,6 +6,18 @@ const { normalizeProfile, needsProfileEnrich } = require('../../utils/speciesPro
 const { callAtlas, emptyUnlockSheet } = require('../../utils/atlas')
 const db = wx.cloud.database()
 
+/**
+ * 由物种档案区块派生「鉴定百科」导航项。
+ * 只做浅映射（id + title），不克隆 profile 对象——避免把 blocks/mapState 等大字段重复塞进 setData。
+ * `source`（著录来源）区块在 wxml 中被 hidden，故不生成导航项。
+ */
+function buildArchiveNav(profile) {
+  const blocks = (profile && profile.blocks) || []
+  return blocks
+    .filter((b) => b && b.id && b.visible !== false && b.type !== 'source' && b.title)
+    .map((b) => ({ id: String(b.id), title: String(b.title) }))
+}
+
 Page({
   data: {
     loading: true,
@@ -28,6 +40,9 @@ Page({
     profileEnriching: false,
     profileEnrichError: false,
     sectionExpanded: {},
+    // 鉴定百科导航：由 speciesProfile.blocks 派生（此前 wxml 引用了但 js 从未定义 → 死 UI）
+    archiveNav: [],
+    activeArchiveId: '',
     showFallback: false,
     bookmarked: false,
     saving: false,
@@ -132,6 +147,7 @@ Page({
       const speciesInfo = doc.species_info || {}
       const showSpeciesArchive = speciesInfo.is_specimen !== false
       const speciesProfile = showSpeciesArchive ? normalizeProfile(doc.species_profile) : normalizeProfile(null)
+      const archiveNav = buildArchiveNav(speciesProfile)
 
       this.setData({
         speciesInfo,
@@ -148,6 +164,8 @@ Page({
         galleryCategory,
         speciesProfile,
         showSpeciesArchive,
+        archiveNav,
+        activeArchiveId: archiveNav.length ? archiveNav[0].id : '',
         loadError: false,
         showFallback: relatedProducts.length === 0 && relatedWiki.length === 0 && speciesInfo.is_specimen !== false
       })
@@ -238,6 +256,8 @@ Page({
         profileEnriching: false,
         profileEnrichError: false
       })
+      // 补全后区块可能变多：同步刷新百科导航
+      this.syncArchiveNav()
     } catch (e) {
       console.warn('物种档案补全跳过', e)
       this.setData({ profileEnriching: false, profileEnrichError: true })
@@ -254,6 +274,82 @@ Page({
     if (!id) return
     const key = `sectionExpanded.${id}`
     this.setData({ [key]: !this.data.sectionExpanded[id] })
+  },
+
+  /** 百科导航：点按滚到对应区块（区块已有 id="archive-<id>" 锚点） */
+  onArchiveNavTap(e) {
+    const id = (e.currentTarget.dataset && e.currentTarget.dataset.id) || ''
+    if (!id) return
+    this.setData({ activeArchiveId: id })
+    // 收起态下目标行数可能不足，先确保该区块展开，滚动位置更稳定
+    if (this.data.sectionExpanded[id] === false) {
+      this.setData({ [`sectionExpanded.${id}`]: true })
+    }
+    wx.pageScrollTo({
+      selector: `#archive-${id}`,
+      duration: 260,
+      fail: () => {
+        // 极少数机型不支持 selector，回退为按 query 取位置
+        wx.createSelectorQuery()
+          .select(`#archive-${id}`)
+          .boundingClientRect()
+          .selectViewport()
+          .scrollOffset()
+          .exec((res) => {
+            const rect = res && res[0]
+            const scroll = res && res[1]
+            if (!rect || !scroll) return
+            wx.pageScrollTo({
+              scrollTop: scroll.scrollTop + rect.top - 12,
+              duration: 260
+            })
+          })
+      }
+    })
+  },
+
+  /** 补全/换记录后重建导航项，并保持当前高亮有效 */
+  syncArchiveNav() {
+    const archiveNav = buildArchiveNav(this.data.speciesProfile)
+    const stillValid = archiveNav.some((n) => n.id === this.data.activeArchiveId)
+    this.setData({
+      archiveNav,
+      activeArchiveId: stillValid ? this.data.activeArchiveId : (archiveNav[0] ? archiveNav[0].id : '')
+    })
+  },
+
+  /** 滚动时同步导航高亮（节流 150ms，且仅在区块集合非空时工作） */
+  onPageScroll() {
+    if (!this.data.archiveNav.length || this._navSpyBusy) return
+    if (this._navSpyTimer) return
+    this._navSpyTimer = setTimeout(() => {
+      this._navSpyTimer = null
+      this.updateActiveArchiveByScroll()
+    }, 150)
+  },
+
+  updateActiveArchiveByScroll() {
+    if (this._navSpyBusy || !this.data.archiveNav.length) return
+    this._navSpyBusy = true
+    const ids = this.data.archiveNav.map((n) => n.id)
+    const query = wx.createSelectorQuery()
+    ids.forEach((id) => query.select(`#archive-${id}`).boundingClientRect())
+    query.selectViewport().scrollOffset()
+    query.exec((res) => {
+      this._navSpyBusy = false
+      if (!res || !res.length) return
+      const threshold = 140 // 视口顶部往下 140px 内视为「当前区块」
+      let current = ids[0]
+      for (let i = 0; i < ids.length; i++) {
+        const rect = res[i]
+        if (!rect) continue
+        if (rect.top - threshold <= 0) current = ids[i]
+        else break
+      }
+      if (current && current !== this.data.activeArchiveId) {
+        this.setData({ activeArchiveId: current })
+      }
+    })
   },
 
   retryLoad() {

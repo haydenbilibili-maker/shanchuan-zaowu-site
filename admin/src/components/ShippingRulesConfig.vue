@@ -77,9 +77,12 @@
           </el-form-item>
 
           <el-form-item>
+            <!-- 只有一个保存入口：shipping_rules 为只读集合，写必须经 getShippingRules 云函数。
+                 原先并排放着「直写集合」和「经云函数保存」两个按钮，前者必失败却显示成功
+                 （并误导用户去点它），属典型的「同一件事两个通道、其中一个是坏的」。 -->
             <el-button type="primary" :loading="saving" @click="saveRules">保存运费规则</el-button>
             <el-button @click="resetDefaults">重置为默认</el-button>
-            <el-button :loading="syncing" @click="saveViaCloud">经云函数保存（ops key）</el-button>
+            <span class="save-hint">经 <code>getShippingRules</code> 云函数写入（集合本身只读）</span>
           </el-form-item>
         </el-form>
       </el-card>
@@ -91,8 +94,6 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import {
   fetchCollectionLimit,
-  cdnUpsertSingleton,
-  cdnUpdate,
   COLLECTIONS,
   callCloudFunction
 } from '../cloud'
@@ -109,7 +110,6 @@ const carriers = ['顺丰速运', '京东物流', '中通快递', '圆通速递'
 
 const loading = ref(false)
 const saving = ref(false)
-const syncing = ref(false)
 const ruleDocId = ref('')
 const form = reactive(getDefaultShippingConfig())
 const ruleText = computed(() => describeShippingRule(form))
@@ -138,9 +138,22 @@ async function loadRules() {
       applyForm(getDefaultShippingConfig(), '')
     }
   } catch (error) {
-    console.error('加载运费规则失败:', error)
-    applyForm(getDefaultShippingConfig(), '')
-    ElMessage.warning('未读到 shipping_rules，已使用代码默认值')
+    // 直读失败（例如将来把 read 收紧为 false）时**先试云函数**，最后才回落代码默认值，
+    // 避免「读不到就静默用默认值」掩盖真实配置
+    console.error('直读 shipping_rules 失败，改试云函数:', error)
+    try {
+      const res = await callCloudFunction('getShippingRules', { action: 'get' })
+      if (res && res.success !== false && res.config) {
+        applyForm({ ...res.config, ruleId: res.config.ruleId || 'shipping_default_v1' }, res.ruleDocId || '')
+        ElMessage.info('运费规则经云函数读取（集合直读不可用）')
+        return
+      }
+      throw new Error(res?.msg || '云函数未返回配置')
+    } catch (e2) {
+      console.error('云函数读取运费规则也失败:', e2)
+      applyForm(getDefaultShippingConfig(), '')
+      ElMessage.warning('未读到运费规则，已使用代码默认值（保存仍可经云函数进行）')
+    }
   } finally {
     loading.value = false
   }
@@ -157,32 +170,17 @@ function buildPayload() {
   }
 }
 
+/**
+ * 保存运费规则 —— **唯一**写入通道：`getShippingRules` 云函数。
+ *
+ * 为什么不能直写：线上 `shipping_rules` 规则是 `{ read: true, write: false }`，
+ * 直写会被安全规则拒绝；而权限被拒时 SDK **不抛错**（只 resolve 错误码），
+ * 于是原来的直写分支会打出「已写入 shipping_rules」却零落库，
+ * 还把失败原因误导成「请确认已创建集合」。
+ * `getShippingRules` 已在代理白名单内，实测 `action:'get'` 返回 success（同函数同鉴权路径）。
+ */
 async function saveRules() {
   saving.value = true
-  try {
-    const payload = buildPayload()
-    if (ruleDocId.value) {
-      await cdnUpdate(COLLECTIONS.SHIPPING_RULES, ruleDocId.value, payload)
-    } else {
-      await cdnUpsertSingleton(COLLECTIONS.SHIPPING_RULES, {
-        ...payload,
-        ruleId: payload.ruleId || 'shipping_default_v1',
-        _createTime: Date.now(),
-        createTime: Date.now()
-      })
-    }
-    ElMessage.success('已写入 shipping_rules')
-    await loadRules()
-  } catch (error) {
-    console.error('保存运费规则失败:', error)
-    ElMessage.error('保存失败：' + (error.message || '未知错误') + '（请确认已创建集合 shipping_rules）')
-  } finally {
-    saving.value = false
-  }
-}
-
-async function saveViaCloud() {
-  syncing.value = true
   try {
     const payload = buildPayload()
     const res = await callCloudFunction('getShippingRules', {
@@ -191,15 +189,16 @@ async function saveViaCloud() {
       config: payload
     })
     if (!res || res.success === false) {
-      throw new Error(res?.msg || '云函数保存失败')
+      throw new Error(res?.msg || '云函数未返回成功')
     }
-    ElMessage.success('已通过 getShippingRules 保存')
+    ElMessage.success('运费规则已保存')
     await loadRules()
   } catch (error) {
-    console.error('云函数保存失败:', error)
-    ElMessage.error(error.message || '云函数保存失败（可改用上方「保存运费规则」直写集合）')
+    console.error('保存运费规则失败:', error)
+    // 不再把权限问题误诊为「集合未创建」，也不再引导用户去走已删除的直写通道
+    ElMessage.error('保存失败：' + (error.message || '未知错误') + '（运费规则必须经 getShippingRules 云函数写入，请确认该函数已部署且代理已配置 ADMIN_OPS_KEY）')
   } finally {
-    syncing.value = false
+    saving.value = false
   }
 }
 
@@ -214,6 +213,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.save-hint { margin-left: 8px; font-size: 12px; color: var(--light-text-secondary); }
 .shipping-rules-config {
   padding: 8px 4px 32px;
   color: #33302c;

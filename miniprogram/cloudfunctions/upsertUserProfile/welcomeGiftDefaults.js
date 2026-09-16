@@ -30,10 +30,10 @@ function getDefaultConfig() {
     stackable: false,
     priority: 100,
     // 与线上 member_welcome_gift（小程序-我的-超管工作台-新会员礼包）逐字对齐：
-    // 满49减10 / 满299减30 / 满499减50 / 满999减100
+    // 满49减5 / 满299减30 / 满499减50 / 满999减100
     // 各档门槛均高于折扣地板 ceil(value/0.25)，兜底配置也发不出穿底券
     coupons: [
-      { id: 'c10', enabled: true, value: 10, minSpend: 49, expireDays: 90, count: 1, title: '新会员礼券 · 10元', channel: 'all' },
+      { id: 'c5', enabled: true, value: 5, minSpend: 49, expireDays: 90, count: 1, title: '新会员礼券 · 5元', channel: 'all' },
       { id: 'c30', enabled: true, value: 30, minSpend: 299, expireDays: 90, count: 1, title: '新会员礼券 · 30元', channel: 'all' },
       { id: 'c50', enabled: true, value: 50, minSpend: 499, expireDays: 90, count: 1, title: '新会员礼券 · 50元', channel: 'all' },
       { id: 'c100', enabled: true, value: 100, minSpend: 999, expireDays: 90, count: 1, title: '新会员礼券 · 100元', channel: 'all' }

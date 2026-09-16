@@ -1478,11 +1478,20 @@ function classifyMineProgress(order, role) {
     }
   }
   if (status === 'paid') {
+    // 「待发货」对送礼人就是待办：label 一直写作待发货，却曾把 todo 置为 false，
+    // 导致送出方在收礼人已填址后角标不增加（需求 30：有礼赠订单却显示 0）。
+    // giftMeta.claimStatus === 'ready' 表示收礼人已填址、只差发货；
+    // 'none'（无需填址）或未设置时也由送礼人负责推进，故 giver 一律计入待办。
+    const needsShipByGiver = isGiver && (
+      meta.claimStatus === 'ready' ||
+      meta.claimStatus === 'none' ||
+      !meta.claimStatus
+    )
     return {
       key: 'awaiting_ship',
       label: '待发货',
-      todo: false,
-      todoKind: '',
+      todo: needsShipByGiver,
+      todoKind: needsShipByGiver ? 'ship' : '',
       segment: isGiver ? 'fulfillment' : 'shipping',
       attention: false
     }

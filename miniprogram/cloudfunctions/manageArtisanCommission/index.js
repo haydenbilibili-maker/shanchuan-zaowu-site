@@ -25,6 +25,8 @@ const {
   round2,
   clampPriority
 } = require('./commissionCore')
+// 来源判定统一真源（负向子串/全等判定对互调合并串会判反，详见 sourceOrigin.js 顶部说明）
+const { isNonClientSource, isInternalSource } = require('./sourceOrigin')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -53,21 +55,6 @@ const CRAFT_PROCESS_OPTIONS = [
   { value: 'other', label: '其它' }
 ]
 
-/**
- * 是否「非客户端来源」。实测定时触发时 wxContext.SOURCE 为空字符串，
- * 小程序客户端必带 wx_client / wx_devtools —— 该判定 C 端无法伪造。
- * event.Type / TriggerName / _internal / _fromApproval / _callerOpenid 等字段
- * 均由调用方控制，**不得单独作为授权依据**。
- */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
-}
-
 function fail(msg, code) {
   return { success: false, msg, code: code || 'FAIL' }
 }
@@ -94,7 +81,9 @@ function allowInternal(event) {
   }
   try {
     const wxContext = cloud.getWXContext()
-    if (wxContext && !wxContext.OPENID && (wxContext.SOURCE === 'scf' || wxContext.SOURCE === 'wx_cloud')) {
+    // 云函数互调时 SOURCE 可能是逗号合并串（如 "wx_client,scf"），全等比较会判反 →
+    // 统一走 sourceOrigin 的分段判定（详见该模块顶部事故说明）。
+    if (wxContext && !wxContext.OPENID && isInternalSource()) {
       return true
     }
   } catch (e) { /* ignore */ }
