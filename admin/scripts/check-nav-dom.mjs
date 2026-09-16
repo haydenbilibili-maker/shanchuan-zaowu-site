@@ -192,6 +192,29 @@ async function main() {
     check('未注册深链 #/m/999 → 告警文案包含 999', alertText.includes('999'), alertText.replace(/\s+/g, ' ').slice(0, 120))
     check('未注册深链 → 告警文案说明已回退驾驶舱', /回退/.test(alertText))
 
+    // ── 4b. 内联渲染的模块（藏品档案库 1）不得误报「未注册」──────────────────────
+    // 实测回归（本轮两个）：
+    //  a) id 1 由 App.vue 的 `v-if="currentTab === '1'"` 内联渲染，不在 TAB_COMPONENT_MAP
+    //     里，于是打开 ERP 最常用的藏品库会弹「未注册 / 已回退驾驶舱」，而页面其实正确；
+    //  b) 告警曾是会话级累计（`push`），从 #/m/999 切到任何正常模块后仍挂着 999 ——
+    //     告警一旦说谎就等于训练运营忽略它。
+    // 本步骤顺序在 #/m/999 之后，因此同时锁住「离开坏 id 后告警必须消失」。
+    await chrome.goto(`${BASE}#/m/1`)
+    await softWait('藏品档案库(1) 内联分支渲染', `document.querySelector('.breadcrumb .bc-item.current')?.innerText.includes('藏品档案库')`)
+    const tab1Crumb = await chrome.evaluate(`document.querySelector('.breadcrumb .bc-item.current')?.innerText || ''`)
+    check('深链 #/m/1 → 面包屑为「藏品档案库」', tab1Crumb === '藏品档案库', `实际「${tab1Crumb}」`)
+    const tab1Alert = await chrome.evaluate(`document.querySelector('.unknown-tabs-alert')?.innerText || ''`)
+    check(
+      '深链 #/m/1（内联模块）不弹「未注册」告警',
+      tab1Alert === '',
+      `实际：${tab1Alert.replace(/\s+/g, ' ').slice(0, 120)}`
+    )
+    check(
+      '离开未注册 id 后告警消失（告警只反映当前 tab，不是会话累计）',
+      tab1Alert === '' && !/999/.test(tab1Alert),
+      `残留：${tab1Alert.replace(/\s+/g, ' ').slice(0, 120)}`
+    )
+
     // ── 5. 七个导航大屏：标题/overline/条目名称必须与派生数据一致 ────────────────
     for (const g of groups) {
       const domain = nav.NAV_DOMAINS[g.navId]

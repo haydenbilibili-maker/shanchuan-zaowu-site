@@ -270,11 +270,11 @@
             show-icon
             :closable="false"
             class="unknown-tabs-alert"
-            :title="`有 ${unknownTabs.length} 个模块 id 未注册，已回退经营驾驶舱`"
+            :title="`当前模块 id「${unknownTabs[0]}」未注册，已回退经营驾驶舱`"
           >
             <template #default>
-              未注册 id：<b>{{ unknownTabs.join('、') }}</b>。
-              说明菜单注册表与组件映射表不同步，或该模块尚未接通 —— 当前展示的驾驶舱内容与该模块无关。
+              菜单注册表与组件映射表（`TAB_COMPONENT_MAP` / `INLINE_TAB_IDS`）不同步，或该模块尚未接通 ——
+              上面展示的是经营驾驶舱，与该模块无关。请改用命令面板 ⌘K 搜索，或联系技术确认。
             </template>
           </el-alert>
           <transition name="fade-slide" mode="out-in">
@@ -1532,11 +1532,31 @@ const TAB_COMPONENT_MAP = {
   '77': () => ({ comp: PropertyCostOps })
 }
 /**
- * 未注册 tab 的记录。原先未命中 TAB_COMPONENT_MAP 时**静默回退驾驶舱** ——
- * 这是最容易掩盖「模块未接通 / id 写错」的机制（审计 P2）。
- * 现在由 watch(currentTab) 记录并告警，模板据此渲染一条可见提示。
+ * 由模板**内联**渲染、天然不进 `TAB_COMPONENT_MAP` 的模块 id。
+ *
+ * 藏品档案库(1) 依赖 App.vue 里大量本地状态，因此走 `v-if="currentTab === '1'"` 分支。
+ * 「未注册告警」必须把它也算作已注册的渲染方，否则打开 ERP 最常用的藏品库会误报
+ * 「有 1 个模块 id 未注册，已回退经营驾驶舱」—— 而页面其实是正确的藏品库（实测踩过）。
+ *
+ * 新增内联模块时必须登记到这里；`npm run check:nav-sources` 会断言
+ * 「每个规范模块都能被 TAB_COMPONENT_MAP 或本集合渲染」，漏登记即失败。
  */
-const unknownTabs = ref([])
+const INLINE_TAB_IDS = new Set(['1'])
+
+/** 该 tab 是否有渲染方（组件映射表或内联分支） */
+const isRegisteredTab = (id) => !!TAB_COMPONENT_MAP[String(id)] || INLINE_TAB_IDS.has(String(id))
+
+/**
+ * **当前** tab 是否未注册。只反映眼前这一屏，不做会话级累计。
+ *
+ * 原实现是往 ref 里累计（`unknownTabs.value = [...unknownTabs.value, id]`）：先进过一个坏 id，
+ * 之后切到任何正常模块，告警都还挂着「未注册 id：999 …… 当前展示的驾驶舱内容与该模块无关」——
+ * 而眼前的页面其实完全正常。实测踩到（先进 #/m/999 再打开藏品档案库）。
+ * 告警一旦说谎，就等于训练运营忽略它。
+ */
+const unknownTabs = computed(() =>
+  isRegisteredTab(currentTab.value) ? [] : [String(currentTab.value)]
+)
 
 const activeModuleDef = computed(() => {
   const factory = TAB_COMPONENT_MAP[String(currentTab.value)]
@@ -2111,19 +2131,14 @@ watch(currentTab, (tab) => {
         recordRecent(tab)
         syncModuleHash(tab)
     }
-    // 未注册的模块 id：原先静默回退驾驶舱，现在留痕 + 可见提示（审计 P2）
+    // 未注册的模块 id：原先静默回退驾驶舱，现在留痕 + 可见提示（审计 P2）。
+    // 提示内容本身是 computed（只看当前 tab），这里只负责留痕，避免告警变成会话级累计。
     const id = String(tab || '')
-    if (id && !TAB_COMPONENT_MAP[id]) {
-        if (!unknownTabs.value.includes(id)) unknownTabs.value = [...unknownTabs.value, id]
+    if (id && !isRegisteredTab(id)) {
         console.error(
-            `[App] 未注册的模块 id "${id}"：TAB_COMPONENT_MAP 无对应组件，已回退经营驾驶舱。` +
+            `[App] 未注册的模块 id "${id}"：TAB_COMPONENT_MAP 与 INLINE_TAB_IDS 都没有渲染方，已回退经营驾驶舱。` +
             '请检查 modulesRegistry 与 TAB_COMPONENT_MAP 是否同步。'
         )
-    } else if (id) {
-        // 回到已注册模块时清掉提示
-        if (unknownTabs.value.includes(id)) {
-            unknownTabs.value = unknownTabs.value.filter((x) => x !== id)
-        }
     }
 }, { flush: 'post' })
 

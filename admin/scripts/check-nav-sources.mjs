@@ -131,6 +131,48 @@ export async function runChecks({ registryPath, navPath, appPath }) {
   check('App.vue 侧栏图标走 resolveEpIcon', /<component :is="resolveEpIcon\(item\.icon\)" \/>/.test(appSrc))
   check('App.vue HOME 项取自注册表（homeNavItem）', /homeNavItem/.test(appSrc))
 
+  // 8) 注册表 ↔ 渲染方一一对应（审计「重复实现对照」）
+  //    `MODULES` 是「有哪些模块」，`TAB_COMPONENT_MAP` + 内联分支是「哪些真能渲染」。
+  //    两者脱节有两个方向，都会骗人：
+  //      · 注册表有、渲染方无 → 打开就弹「未注册 / 已回退驾驶舱」（实测：藏品档案库 id 1 曾误报）
+  //      · 渲染方有、注册表无 → 命令面板搜不到，变成谁也发现不了的隐性功能
+  const mapBlock = appSrc.slice(
+    appSrc.indexOf('const TAB_COMPONENT_MAP = {'),
+    appSrc.indexOf('\n}', appSrc.indexOf('const TAB_COMPONENT_MAP = {'))
+  )
+  const mapKeys = [...mapBlock.matchAll(/^\s*'([^']+)':/gm)].map((m) => m[1])
+  const inlineBlock = appSrc.slice(
+    appSrc.indexOf('const INLINE_TAB_IDS = new Set('),
+    appSrc.indexOf(')', appSrc.indexOf('const INLINE_TAB_IDS = new Set('))
+  )
+  const inlineIds = [...inlineBlock.matchAll(/'([^']+)'/g)].map((m) => m[1])
+  check('解析到 TAB_COMPONENT_MAP 键', mapKeys.length > 0, `解析到 ${mapKeys.length} 个`)
+  check('解析到 INLINE_TAB_IDS', inlineIds.length > 0, `解析到 ${inlineIds.length} 个`)
+
+  const navModuleIdsList = [...navModuleIds]
+  const renderable = new Set([...mapKeys, ...inlineIds])
+  const noRenderer = MODULES_CANONICAL.map((m) => String(m.id))
+    .filter((id) => !renderable.has(id))
+  check(
+    '每个规范模块都有渲染方（TAB_COMPONENT_MAP ∪ INLINE_TAB_IDS）',
+    noRenderer.length === 0,
+    `无渲染方（打开会误报「未注册」）：${noRenderer.map((id) => `${id} ${MODULES_BY_ID[id]?.name || '?'}`).join('、')}`
+  )
+  const notInRegistry = mapKeys.filter((k) => !MODULES_BY_ID[k])
+  check(
+    'TAB_COMPONENT_MAP 的键都在注册表里（否则命令面板搜不到 → 隐性功能）',
+    notInRegistry.length === 0,
+    `孤儿键：${notInRegistry.join('、')}`
+  )
+  const aliasKeys = mapKeys.filter((k) => MODULE_ALIASES[k])
+  check(
+    'TAB_COMPONENT_MAP 不含「已并入」别名键',
+    aliasKeys.length === 0,
+    `含别名：${aliasKeys.map((k) => `${k}→${MODULE_ALIASES[k].hub}`).join('、')}`
+  )
+  const staleInline = inlineIds.filter((id) => !MODULES_BY_ID[id] && !navModuleIdsList.includes(id))
+  check('INLINE_TAB_IDS 的 id 都已注册', staleInline.length === 0, `未注册：${staleInline.join('、')}`)
+
   return { failures, pass, domainCount: NAV_DOMAIN_IDS.length, entryCount: seenEntry.size }
 }
 
@@ -185,6 +227,14 @@ if (argv.includes('--selftest')) {
       ],
       run: { registryPath: REGISTRY, navPath: NAVDOMAINS, appPath: TMP_APP },
       expect: /未手写 nav-\* 菜单项/,
+    },
+    {
+      label: '内联模块漏登记 INLINE_TAB_IDS（打开会误报「未注册/已回退驾驶舱」）',
+      files: [
+        [TMP_APP, appSrc.replace("const INLINE_TAB_IDS = new Set(['1'])", 'const INLINE_TAB_IDS = new Set([])')],
+      ],
+      run: { registryPath: REGISTRY, navPath: NAVDOMAINS, appPath: TMP_APP },
+      expect: /每个规范模块都有渲染方/,
     },
   ]
 
