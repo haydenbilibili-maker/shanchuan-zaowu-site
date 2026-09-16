@@ -2,15 +2,12 @@ const cloud = require('wx-server-sdk')
 const { fulfillOrder } = require('./fulfillOrder')
 const { creditRechargeOrder, RECHARGE_ORDERS } = require('./storedValueCredit')
 const { withCollectionRetry } = require('./storedValueCollections')
+const { isClientSource } = require('./sourceOrigin')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-function isClientSource(source) {
-  const s = String(source || '')
-  return s === 'wx_client' || s === 'wx_devtools'
-}
 
 /**
  * 拒绝小程序直调伪造回调。
@@ -34,7 +31,7 @@ function rejectClientForgery(event) {
       hasOpenid: !!wxContext.OPENID,
       outTradeNo: (event && (event.outTradeNo || event.out_trade_no)) || ''
     })
-    if (isClientSource(source)) {
+    if (isClientSource()) {
       console.warn('payCallback: rejected client/forged call', {
         source,
         hasOpenid: !!wxContext.OPENID

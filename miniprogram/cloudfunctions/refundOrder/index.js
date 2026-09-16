@@ -8,29 +8,12 @@ const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
 const { ACTION, resolveApproverRole, actorWorkspaceRole } = require('./approvalRules')
 const { enqueueApproval, markApprovalDecided } = require('./approvalBridge')
 const { reverseCommissionForOrder } = require('./artisanCommission')
+const { isNonClientSource, isClientSource, isInternalSource, sourceSegments, describeSource } = require('./sourceOrigin')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-/** 仅开发显式开启；生产禁止对非 mock 订单做本地假退款 */
-const ALLOW_MOCK_PAY = process.env.ALLOW_MOCK_PAY === '1'
-const WALLET_INTERNAL_KEY = process.env.STORED_VALUE_CALLBACK_KEY || process.env.PAY_CALLBACK_INTERNAL_KEY || ''
-
-/** 按原支付渠道拆分退款额（含损耗后的应退总额） */
-/**
- * 是否「非客户端来源」：小程序客户端调用必带 wx_client / wx_devtools，
- * 而云函数互调与定时触发不带该标记。用于确保「无 OPENID 时按请求字段
- * 声明身份」这一转发通道不会被 C 端伪造。
- */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
-}
 
 function resolveRefundChannels(order, refundYuan) {
   const totalFen = parseYuanToFen(order.totalPrice)

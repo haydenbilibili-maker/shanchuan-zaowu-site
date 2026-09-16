@@ -18,6 +18,7 @@ import {
   fetchCollectionLimit,
   fetchCollectionWhere,
 } from '../cloud'
+import { assertWriteApplied } from './cloudbaseCdnDb.js'
 
 const CONFIG_ID = 'feishu_bitable'
 const APP_TOKEN = 'WCs2bnIHsaty7vsjcnaczu0Wnod'
@@ -776,6 +777,8 @@ export async function runFeishuSync(action, extra = {}) {
         const rows = await fetchCollectionLimit(COLLECTIONS.FEISHU_INVENTORY, { limit: 400 })
         let applied = 0
         let skipped = 0
+        let failed = 0
+        const failures = []
         for (const row of rows) {
           if (!row.productId) {
             skipped += 1
@@ -793,7 +796,19 @@ export async function runFeishuSync(action, extra = {}) {
             skipped += 1
             continue
           }
-          await cdnUpdate('products', row.productId, { stock: target })
+          // ⚠ 必须先确认库存**真的写进去了**，再记台账。
+          //    `products` 线上规则是 write:false，而权限被拒时 SDK **不抛错**，只 resolve
+          //    `{code:'DATABASE_PERMISSION_DENIED'}` —— 原实现既不校验、又照样写一条
+          //    `stock_movements`（内容声称 current→target），于是台账会记录**一次并未发生的
+          //    库存变动**，还报 `applied: N`。台账与实际背离比「台账为空」更危险。
+          try {
+            const res = await cdnUpdate('products', row.productId, { stock: target })
+            assertWriteApplied('products', res, '飞书库存对齐')
+          } catch (e) {
+            failed += 1
+            if (failures.length < 5) failures.push(`${row.skuName || row.productId}: ${e?.name || ''}${e?.message || e}`)
+            continue // 库存没写进去 → 不记台账、不计入 applied
+          }
           await cdnAdd(COLLECTIONS.STOCK_MOVEMENTS, {
             warehouseId: 'hq',
             productId: row.productId,
@@ -810,7 +825,15 @@ export async function runFeishuSync(action, extra = {}) {
           })
           applied += 1
         }
-        result = { success: true, stats: { applied, skipped }, msg: `已应用 ${applied} 条，跳过 ${skipped} 条` }
+        result = {
+          // 有失败就是部分成功：如实返回 success:false，让调用方显示错误而不是「已完成」
+          success: failed === 0,
+          stats: { applied, skipped, failed },
+          msg: failed === 0
+            ? `已应用 ${applied} 条，跳过 ${skipped} 条`
+            : `已应用 ${applied} 条，跳过 ${skipped} 条，**失败 ${failed} 条**（库存未写入，台账已跳过）`,
+          ...(failures.length ? { failures } : {}),
+        }
         break
       }
       case 'pullShipments': {

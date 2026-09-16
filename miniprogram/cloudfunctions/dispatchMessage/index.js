@@ -6,20 +6,17 @@
 const cloud = require('wx-server-sdk')
 const { dispatch, DEFAULT_TEMPLATES, resolveMessageQueue } = require('./core')
 const { assertStaff, ROLE_STAFF } = require('./staffGuard')
+const { isClientSource } = require('./sourceOrigin')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
-function isClientSource(source) {
-  const s = String(source || '')
-  return s === 'wx_client' || s === 'wx_devtools'
-}
 
 exports.main = async (event) => {
   const { action = 'dispatch' } = event
   const wxContext = cloud.getWXContext()
 
-  if (isClientSource(wxContext.SOURCE)) {
+  if (isClientSource()) {
     const openid = wxContext.OPENID || ''
     const guard = await assertStaff(db, openid, { role: ROLE_STAFF })
     if (!guard.ok) {

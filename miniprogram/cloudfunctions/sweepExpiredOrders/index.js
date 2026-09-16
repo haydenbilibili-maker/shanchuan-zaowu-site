@@ -20,6 +20,7 @@
 const cloud = require('wx-server-sdk')
 const { dispatchInAppMessage } = require('./inAppMessage')
 const { releaseOrderStockHold } = require('./stockUtils')
+const { isNonClientSource } = require('./sourceOrigin')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -32,20 +33,6 @@ const SWEEP_INTERNAL_KEY =
 
 const BATCH_LIMIT = 40
 
-/**
- * 是否「非客户端来源」。实测定时触发时 wxContext.SOURCE 为空字符串，
- * 小程序客户端必带 wx_client / wx_devtools —— 该判定 C 端无法伪造。
- * event.Type / TriggerName / _internal / _fromApproval / _callerOpenid 等字段
- * 均由调用方控制，**不得单独作为授权依据**。
- */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
-}
 
 function isTimerEvent(event) {
   const triggerType = (event && (event.Type || eventTriggerType(event))) || ''

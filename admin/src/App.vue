@@ -1349,11 +1349,28 @@ import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchC
 import { toChineseTaxonomy } from './utils/taxonomyZh'
 import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
 import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
-import { establishAdminSession, clearAdminSession } from './utils/cloudbaseCdnDb'
+import { establishAdminSession, clearAdminSession, assertWriteApplied } from './utils/cloudbaseCdnDb'
 import { isActiveCategory } from './utils/categoryActive'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
 import ImageUploadField from './components/ImageUploadField.vue'
+
+/**
+ * 藏品写入守卫（products）。
+ *
+ * `products` 线上规则 `{ read: true, write: false }` → ERP **只读**。而权限被拒时
+ * CloudBase SDK **不抛错**，只 resolve `{code:'DATABASE_PERMISSION_DENIED'}` —— 于是
+ * 「批量下架 / 入档 / 调价 / 改库存 / 秒杀开关」这些操作原先都会打出
+ * 「已下架 N 个商品」而**零落库**（审计 P0-5 里 `products` 那一项）。
+ *
+ * 统一在这里断言：写没生效就抛 `WriteNotAppliedError`，由调用方**既有的** catch
+ * 如实报错，不再出现假成功。批量场景下 Promise.all 会因第一个失败而拒绝。
+ */
+async function updateProduct(id, patch, actionLabel = '藏品写入') {
+    const res = await cdnUpdate(COLLECTIONS.PRODUCTS, id, patch)
+    assertWriteApplied('products', res, actionLabel)
+    return res
+}
 
 /** 图标名（注册表里的字符串）→ 组件，避免字符串当文本叠字 */
 const resolveEpIcon = (name) => EpIcons[name] || EpIcons.Menu
@@ -2674,7 +2691,7 @@ const handleAddToArchive = async () => {
     try {
         loading.value = true
         const promises = selectedProducts.value.map(p =>
-            cdnUpdate(COLLECTIONS.PRODUCTS, p._id, {
+            updateProduct(p._id, {
                 inArchive: true,
                 updateTime: Date.now()
             })
@@ -2728,7 +2745,7 @@ const handleBatchToggleShelf = async (isOnShelf) => {
             loading.value = true
             if (!isOnShelf) {
                 const promises = selectedProducts.value.map(product =>
-                    cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
+                    updateProduct(product._id, {
                         isOffShelf: true,
                         updateTime: Date.now()
                     })
@@ -2801,10 +2818,10 @@ const handleBatchTogglePromo = async (kind, enabled) => {
         await Promise.all(targets.map((p) => {
             if (kind === 'seckill') {
                 const next = { ...(p.seckill || {}), enabled: !!enabled }
-                return cdnUpdate(COLLECTIONS.PRODUCTS, p._id, { seckill: next, updateTime: Date.now() })
+                return updateProduct(p._id, { seckill: next, updateTime: Date.now() })
             }
             const next = { ...(p.groupBuying || {}), enabled: !!enabled }
-            return cdnUpdate(COLLECTIONS.PRODUCTS, p._id, { groupBuying: next, updateTime: Date.now() })
+            return updateProduct(p._id, { groupBuying: next, updateTime: Date.now() })
         }))
         ElMessage.success(`已关闭 ${targets.length} 个商品的${label}`)
         clearProductSelection()
@@ -2845,7 +2862,7 @@ const handleBatchExtendSeckill = async () => {
             const cur = Number(p.seckill?.endTime) || 0
             const base = cur > now ? cur : now
             const next = { ...(p.seckill || {}), enabled: true, endTime: base + DAY }
-            return cdnUpdate(COLLECTIONS.PRODUCTS, p._id, { seckill: next, updateTime: Date.now() })
+            return updateProduct(p._id, { seckill: next, updateTime: Date.now() })
         }))
         ElMessage.success(`已延长 ${targets.length} 个商品的秒杀结束时间`)
         clearProductSelection()
@@ -2878,7 +2895,7 @@ const handleClearExpiredSeckill = async () => {
         loading.value = true
         await Promise.all(targets.map((p) => {
             const next = { ...(p.seckill || {}), enabled: false }
-            return cdnUpdate(COLLECTIONS.PRODUCTS, p._id, { seckill: next, updateTime: Date.now() })
+            return updateProduct(p._id, { seckill: next, updateTime: Date.now() })
         }))
         ElMessage.success(`已清理 ${targets.length} 个过期秒杀`)
         clearProductSelection()
@@ -2937,7 +2954,7 @@ const handleBatchPrice = async () => {
                     newPrice = Math.round((product.price || 0) * (batchPriceForm.value.discount / 100) * 100) / 100
                 }
 
-                return cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
+                return updateProduct(product._id, {
                     price: Math.max(0, newPrice),
                     updateTime: Date.now()
                 }).catch(err => {
@@ -2948,7 +2965,13 @@ const handleBatchPrice = async () => {
 
             const results = await Promise.all(promises)
             const successCount = results.filter(r => r !== null).length
-            ElMessage.success(`成功调整 ${successCount} 个商品价格`)
+            const failCount = results.length - successCount
+            if (failCount > 0) {
+                // 一个都没写进去还说「成功调整 0 个」会让人以为操作正常
+                ElMessage.error(`价格调整：成功 ${successCount} 个，失败 ${failCount} 个 —— 失败项未落库（products 集合为只读，需服务端通道）`)
+            } else {
+                ElMessage.success(`成功调整 ${successCount} 个商品价格`)
+            }
             showBatchPriceDialog.value = false
             batchPriceForm.value = { type: 'set', value: 0, discount: 0 }
             clearProductSelection()
@@ -3001,7 +3024,7 @@ const handleBatchStock = async () => {
                     newStock = Math.max(0, (product.stock || 0) - batchStockForm.value.value)
                 }
 
-                return cdnUpdate(COLLECTIONS.PRODUCTS, product._id, {
+                return updateProduct(product._id, {
                     stock: Math.max(0, newStock),
                     updateTime: Date.now()
                 })

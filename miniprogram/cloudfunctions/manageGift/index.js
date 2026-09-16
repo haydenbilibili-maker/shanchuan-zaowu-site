@@ -2,6 +2,8 @@
  * 礼赠履约：领取、填址、催填、自提核销、过期扫描
  */
 const cloud = require('wx-server-sdk')
+// 来源判定统一真源（负向子串判定对互调合并串会判反，详见 sourceOrigin.js 顶部说明）
+const { isNonClientSource } = require('./sourceOrigin')
 const { dispatchInAppMessage } = require('./inAppMessage')
 const { assertStaff } = require('./staffGuard')
 const {
@@ -2743,24 +2745,15 @@ async function getPublicDefaults() {
 }
 
 /**
- * 是否「非客户端来源」。
+ * 来源判定统一真源（见 sourceOrigin.js 顶部事故说明）。
  *
- * 实测（2026-09-15）：定时触发器调用时 wxContext.SOURCE 为 **空字符串**，
- * 而小程序客户端调用必定带 wx_client / wx_devtools。因此「SOURCE 不含客户端标记」
- * 是客户端**无法伪造**的可信信号，可用于放行定时任务，同时挡住 C 端用户。
+ * 历史教训：此处原为负向子串判定 `!/wx_client|wx_devtools/i.test(SOURCE)`，
+ * 对云函数互调继承而来的合并串（如 "wx_client,scf"）会判反 —— 与同仓
+ * `isInternalSource` 的分段判定互相矛盾。
  *
  * 注意：绝不能再用 `event.Type === 'Timer'` 或 `event.TriggerName` 作为授权依据
  * —— 这些字段由调用方完全控制。
  */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
-}
-
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID

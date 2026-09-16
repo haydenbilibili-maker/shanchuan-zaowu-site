@@ -29,35 +29,11 @@ const {
 } = require('./approvalRules')
 const { enqueueApproval, markApprovalDecided } = require('./approvalBridge')
 const { needsAddressBeforeShip, isGiftOrder } = require('./giftMeta')
+const { isNonClientSource, isClientSource, isInternalSource, sourceSegments, describeSource } = require('./sourceOrigin')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
-/** 买家补同步冷却：避免每次打开订单详情都打微信接口 */
-const ENSURE_RETRY_COOLDOWN_MS = 3 * 60 * 1000
-/** 礼赠物流签收轮询：同一运单状态查询冷却 */
-const GIFT_TRACE_CHECK_COOLDOWN_MS = 25 * 60 * 1000
-const GIFT_DELIVERY_POLL_LIMIT = 40
-
-/**
- * 门店自取完成后的线上赠分 — 与 confirmOrderReceipt 同源
- * 复用 grantStorePoints.grantOnlineOrder（store_point_rules + calcPoints，按订单幂等），
- * 因此与「买家确认收货」路径不会重复入账。best-effort，失败不阻塞核销。
- */
-/**
- * 是否「非客户端来源」。实测定时触发时 wxContext.SOURCE 为空字符串，
- * 小程序客户端必带 wx_client / wx_devtools —— 该判定 C 端无法伪造。
- * event.Type / TriggerName / _internal / _fromApproval / _callerOpenid 等字段
- * 均由调用方控制，**不得单独作为授权依据**。
- */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
-}
 
 async function grantPickupPoints(orderId) {
   try {

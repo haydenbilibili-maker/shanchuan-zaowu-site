@@ -1,5 +1,7 @@
 // cloudfunctions/sendBookingReminder/index.js
 const cloud = require('wx-server-sdk');
+// 来源判定统一真源（负向子串判定对互调合并串会判反，详见 sourceOrigin.js 顶部说明）
+const { isNonClientSource } = require('./sourceOrigin');
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -145,19 +147,6 @@ exports.main = async (event, context) => {
  * 发送站内消息
  * 与web后台的通知消息配置打通
  */
-/**
- * 是否「非客户端来源」：小程序客户端调用必带 wx_client / wx_devtools；
- * 云函数互调与定时触发不带该标记，C 端无法伪造。
- */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
-}
-
 async function sendInAppMessage(openid, message, booking, reminderType) {
   const typeMap = {
     success: 'booking_success',

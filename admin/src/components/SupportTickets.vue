@@ -8,6 +8,21 @@
       <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
     </div>
 
+    <!-- 写通道不可用必须前置告知：三个操作按钮当前都无法落库，不能让运营以为按钮坏了或以为成功了 -->
+    <el-alert
+      type="warning"
+      show-icon
+      :closable="false"
+      class="ticket-write-alert"
+      title="本页的回复 / 标记处理 / 归档当前不会生效"
+    >
+      <template #default>
+        <code>support_tickets</code> 集合线上为<b>只读</b>（<code>write: false</code>），
+        而服务端写通道尚未接入 ERP 代理。在接入之前，本页写操作会<b>明确报错</b>而不是假装成功；
+        工单处理请先在小程序端完成。
+      </template>
+    </el-alert>
+
     <div class="layout">
       <!-- 左侧分类 -->
       <div class="sidebar">
@@ -151,6 +166,7 @@ import { Refresh, Loading } from '@element-plus/icons-vue'
 import { fetchCollectionSorted, fetchCollectionWhere, cdnUpdate } from '../cloud'
 import { loadPortraitForOpenid } from '../utils/portraitDataLoad'
 import { ElMessage } from 'element-plus'
+import { assertWriteApplied } from '../utils/cloudbaseCdnDb.js'
 import { buildProfile } from '../utils/userSegmentation'
 import TalkingScriptCard from './TalkingScriptCard.vue'
 
@@ -274,43 +290,77 @@ const select = (t) => {
   loadCustomerProfile(t._openid)
 }
 
+/**
+ * 工单写操作守卫。
+ *
+ * `support_tickets` 线上规则 `{ read: "auth != null", write: false }` → ERP **只读**，
+ * 而权限被拒时 SDK **不抛错**，而是 resolve `{code:'DATABASE_PERMISSION_DENIED'}`。
+ * 于是原实现：`resolve()` / `archive()` 连 try/catch 都没有，直接弹「已标记处理 / 已归档」；
+ * `reply()` 的 catch 也永远不会触发 —— 三个按钮**全都在谎报成功**（实测确认）。
+ *
+ * 现在统一走 `assertWriteApplied`，写不进去就抛 `WriteNotAppliedError`，调用方如实报错。
+ * 真正的修复需要服务端写通道（见审计 C.3）。
+ */
+const SUPPORT_WRITE_BLOCKED_HINT = '工单写操作当前不可用：support_tickets 集合为只读，且服务端写通道尚未接入 ERP。请在小程序端处理，或联系技术接入后再用。'
+
+async function writeTicket(id, patch, actionLabel) {
+  const res = await cdnUpdate('support_tickets', id, patch)
+  assertWriteApplied('support_tickets', res, actionLabel)
+  return res
+}
+
 const reply = async () => {
   if (!current.value) return
   if (!replyText.value.trim()) return ElMessage.warning('请输入回复内容')
   try {
-    await cdnUpdate('support_tickets', current.value._id, {
+    await writeTicket(current.value._id, {
       reply: replyText.value.trim(),
       replyTime: Date.now(),
       status: 'replied'
-    })
+    }, '回复')
     ElMessage.success('已回复（注意：站内信推送需在云函数侧处理）')
     refresh()
   } catch (e) {
-    ElMessage.error('回复失败：' + e.message)
+    ElMessage.error(e?.name === 'WriteNotAppliedError'
+      ? `回复未生效：${SUPPORT_WRITE_BLOCKED_HINT}`
+      : '回复失败：' + (e?.message || '请重试'))
   }
 }
 
 const resolve = async () => {
   if (!current.value) return
-  await cdnUpdate('support_tickets', current.value._id, {
-    status: 'resolved',
-    resolveTime: Date.now()
-  })
-  ElMessage.success('已标记处理')
-  refresh()
+  try {
+    await writeTicket(current.value._id, {
+      status: 'resolved',
+      resolveTime: Date.now()
+    }, '标记处理')
+    ElMessage.success('已标记处理')
+    refresh()
+  } catch (e) {
+    ElMessage.error(e?.name === 'WriteNotAppliedError'
+      ? `标记未生效：${SUPPORT_WRITE_BLOCKED_HINT}`
+      : '操作失败：' + (e?.message || '请重试'))
+  }
 }
 
 const archive = async () => {
   if (!current.value) return
-  await cdnUpdate('support_tickets', current.value._id, { status: 'archived' })
-  ElMessage.success('已归档')
-  refresh()
+  try {
+    await writeTicket(current.value._id, { status: 'archived' }, '归档')
+    ElMessage.success('已归档')
+    refresh()
+  } catch (e) {
+    ElMessage.error(e?.name === 'WriteNotAppliedError'
+      ? `归档未生效：${SUPPORT_WRITE_BLOCKED_HINT}`
+      : '归档失败：' + (e?.message || '请重试'))
+  }
 }
 
 onMounted(refresh)
 </script>
 
 <style scoped>
+.ticket-write-alert { margin-bottom: 12px; }
 .support-container { padding: 10px; height: calc(100vh - 60px); display: flex; flex-direction: column; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid #d4af37; padding-left: 12px; font-weight: 800; }

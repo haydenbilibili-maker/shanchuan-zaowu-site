@@ -16,20 +16,12 @@ const { writeAuditLog, auditFromActor } = require('./auditLog')
 const { ACTION, APPROVER_MANAGER, APPROVER_SUPER, actorWorkspaceRole } = require('./approvalRules')
 const { enqueueApproval, markApprovalDecided } = require('./approvalBridge')
 const { checkImageBuffer, checkText } = require('./contentSecurity')
-
-/**
- * 是否「非客户端来源」：小程序客户端调用必带 wx_client / wx_devtools，
- * 而云函数互调与定时触发不带该标记。用于确保「无 OPENID 时按请求字段
- * 声明身份」这一转发通道不会被 C 端伪造。
- */
-function isNonClientSource() {
-  try {
-    const src = String((cloud.getWXContext() || {}).SOURCE || '')
-    return !/wx_client|wx_devtools/i.test(src)
-  } catch (e) {
-    return false
-  }
-}
+// 来源判定统一真源（含本函数「店员券核销报请先登录」事故说明）
+const {
+  isNonClientSource,
+  isInternalSource,
+  sourceSegments
+} = require('./sourceOrigin')
 
 function assertStaff(db, openid, options = {}) {
   const opts = { ...(options || {}) }
@@ -1220,23 +1212,6 @@ async function dailySummary(event, openid) {
 
 // ------------------------------------------------- 线上订单确认收货赠分（内部调用）
 
-/**
- * 云函数互调判定（confirmOrderReceipt → 本函数）
- * 以 SOURCE 为准：客户端调用为 wx_client / wx_devtools；服务端互调为 scf / wx_cloud。
- * 不依赖 OPENID 是否透传，避免因上下文差异误判或放行。
- */
-function isInternalSource() {
-  try {
-    const ctx = cloud.getWXContext()
-    const source = String((ctx && ctx.SOURCE) || '')
-    // 云函数互调时 SOURCE 可能是逗号分隔列表（实测为 ",scf"），需逐段精确匹配；
-    // 只认 scf（服务端互调），客户端来源不会包含该段。
-    return source.split(',').some((seg) => seg.trim() === 'scf')
-  } catch (e) {
-    return false
-  }
-}
-
 function onlineOrderDedupeKey(orderId) {
   return `online_order:${orderId}`
 }
@@ -1424,8 +1399,9 @@ async function grantOnlineOrderPoints(event) {
 exports.main = async (event) => {
   // 云函数互调无用户 OPENID 时，允许审批 / 券核销联动转发操作人身份
   let openid = cloud.getWXContext().OPENID || ''
-  if (!openid && isNonClientSource() && event && event._callerOpenid &&
-      (event._fromApproval || event._fromCouponRedeem)) {
+  const forwarded = !!(event && event._callerOpenid &&
+    (event._fromApproval || event._fromCouponRedeem))
+  if (!openid && isNonClientSource() && forwarded) {
     openid = String(event._callerOpenid).trim()
   }
   const action = (event && event.action) || 'preview'
@@ -1438,7 +1414,19 @@ exports.main = async (event) => {
   const internalCall = isOnlineGrantAction &&
     !!(event && event.__fromReceipt === true) &&
     isInternalSource()
-  if (!openid && !isAdminOps && !internalCall) return fail('请先登录')
+  if (!openid && !isAdminOps && !internalCall) {
+    // 诊断：区分「确实未登录」与「互调转发被拒」。前者 SOURCE 含客户端标记，
+    // 后者 SOURCE 为非客户端但未带 _callerOpenid/来源标记（历史事故即为转发被拒）。
+    console.warn('grantStorePoints reject no-identity', JSON.stringify({
+      action,
+      source: sourceSegments().join('|') || '(empty)',
+      hasCallerOpenid: !!(event && event._callerOpenid),
+      fromCouponRedeem: !!(event && event._fromCouponRedeem),
+      fromApproval: !!(event && event._fromApproval),
+      fromReceipt: !!(event && event.__fromReceipt)
+    }))
+    return fail('请先登录', 'NO_IDENTITY')
+  }
   globalThis.__grantStoreAdminOpsKey = isAdminOps ? adminOpsKey : ''
 
   // ---- 内容安全 openapi 自检（仅 adminOpsKey，供上线/改配置后验证权限是否生效）----

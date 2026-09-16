@@ -24,16 +24,13 @@ function assertStaff(db, openid, options = {}) {
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
-
-function isClientSource(source) {
-  const s = String(source || '');
-  return s === 'wx_client' || s === 'wx_devtools';
-}
+// 来源判定统一真源：修正「合并串（如 wx_client,scf）被当作非客户端 → 跳过店员权限校验」的绕过
+const { isClientSource } = require('./sourceOrigin');
 
 exports.main = async (event) => {
   globalThis.__adminOpsKey = (event && event.adminOpsKey) || ''
   const wxContext = cloud.getWXContext();
-  if (isClientSource(wxContext.SOURCE)) {
+  if (isClientSource()) {
     const operatorOpenid = wxContext.OPENID || '';
     const guard = await assertStaff(db, operatorOpenid, { role: ROLE_STAFF });
     if (!guard.ok) {
