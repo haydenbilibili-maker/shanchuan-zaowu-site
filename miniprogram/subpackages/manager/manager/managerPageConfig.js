@@ -28,13 +28,20 @@ const workNoticeVoice = require('../../../utils/workNoticeVoice');
  *
  * 顺带修掉一个不准确：原来 <12 点一律 Good Morning，凌晨 1 点问候「早上好」很怪；
  * 现在 0–4 点说「夜深了」。文案要调只改这一处。
+ *
+ * 用词取舍（2026-09-17 二次调整）：
+ *   - 「早安 / 午安」比「早上好 / 中午好」更口语、也更贴本仓「山海」的古雅调性；
+ *   - 傍晚一档**刻意不用「晚安」**——20 点还在工作台上，说「晚安」像赶人下班，
+ *     与「晚上好」相比也不准确；
+ *   - 「夜深了」对 23 点后还在岗的店员/超管是实话，比硬编一个时段问候更得体。
+ * 这句会拼成 `{{greeting}}，{{姓名}}`，所以每档都必须是能直接接逗号的短语。
  */
 function greetByHour(hour) {
   const h = Number(hour);
   if (!Number.isFinite(h)) return '你好';
-  if (h >= 5 && h < 9) return '早上好';
+  if (h >= 5 && h < 9) return '早安';
   if (h >= 9 && h < 12) return '上午好';
-  if (h >= 12 && h < 14) return '中午好';
+  if (h >= 12 && h < 14) return '午安';
   if (h >= 14 && h < 18) return '下午好';
   if (h >= 18 && h < 23) return '晚上好';
   return '夜深了'; // 23:00–04:59
