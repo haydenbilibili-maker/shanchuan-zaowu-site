@@ -227,7 +227,12 @@ function serializeProfile(p) {
     recencyDays,
     tags: mergeCrmTags(p.tags, p.interestTags),
     interestTags: Array.isArray(p.interestTags) ? p.interestTags : [],
-    suggestions: Array.isArray(p.suggestions) ? p.suggestions : []
+    suggestions: Array.isArray(p.suggestions) ? p.suggestions : [],
+    // 注销状态：serializeProfile 是**白名单**，漏了这三个字段会导致
+    // 列表徽标与详情页的「已注销/恢复」区永远不渲染（曾漏过一次）
+    status: p.status || 'active',
+    cancelMode: p.cancelMode || '',
+    cancelledAt: p.cancelledAt || null
   }
 }
 

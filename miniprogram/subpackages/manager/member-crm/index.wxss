@@ -1526,3 +1526,21 @@ page {
 
 .cancel-verify-title { margin-top: 6rpx; color: var(--gold, #C4A76C); }
 .cancel-verify-hint { display: block; margin: 10rpx 0 6rpx; font-size: 22rpx; color: var(--color-text-secondary, #A8A29A); }
+
+/* 已注销标记（列表项） */
+.cancel-badge {
+  flex-shrink: 0;
+  margin-left: 10rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  line-height: 1.6;
+  color: #D64045;
+  border: 1rpx solid rgba(214, 64, 69, 0.5);
+  background: rgba(214, 64, 69, 0.10);
+}
+.cancel-badge.is-anon {
+  color: var(--color-text-muted, #8A847C);
+  border-color: rgba(138, 132, 124, 0.5);
+  background: rgba(138, 132, 124, 0.12);
+}

@@ -183,6 +183,11 @@
         <view class="plate-identity-text">
           <view class="plate-name-row">
             <text class="plate-name">{{item.nickName}}</text>
+            <!-- 已注销标记：注销会员在列表中一眼可辨 -->
+            <text
+              class="cancel-badge {{item.cancelMode === 'anonymize' ? 'is-anon' : ''}}"
+              wx:if="{{item.status === 'cancelled'}}"
+            >{{item.cancelMode === 'anonymize' ? '已注销·匿名' : '已注销'}}</text>
             <view
               class="btn-youxin-fill"
               hover-class="btn-youxin-fill-pressed"
