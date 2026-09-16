@@ -2652,6 +2652,7 @@ const REWRITE_ARTICLES = {
 
 const REWRITE_EXHIBITIONS = {
   "exhibition_blue_morpho": {
+    "title": "一翼之蓝：闪蝶与结构色",
     "brief": "从一枚翅鳞的多层干涉讲起，把《蓝色闪蝶特展》拆成可核对的蓝：它由什么结构产生、在什么光下成立、离开展柜后又如何保存。",
     "tags": [
       "蓝色闪蝶",
@@ -2763,6 +2764,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_museum_night": {
+    "title": "闭馆之后：暖光里的标本柜",
     "brief": "闭馆后的暖光把标本柜变成一间可停留的夜场，本专题讨论光线尺度、材质对照与标本信息的读法，并给出可照做的观察与记录方法。",
     "tags": [
       "展览专题",
@@ -2874,6 +2876,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_cretaceous_echo": {
+    "title": "三个切片里的白垩纪末",
     "brief": "一块灰白色岩芯、一枚琥珀里的虫翅、一片红层中的蛋壳——三件可对照的切片，拼出约六千六百万年前白垩纪的多层世界。",
     "tags": [
       "白垩纪",
@@ -2979,6 +2982,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_dinosauria": {
+    "title": "恐龙世系：牙齿、爪与羽毛的证据链",
     "brief": "《恐龙世系》把电影里的恐龙拉回可检验的形态证据：齿列、爪、椎体与羽毛痕迹，逐件对照，看一棵仍包含鸟类的演化树。",
     "tags": [
       "恐龙世系",
@@ -3078,6 +3082,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_naturalist_desk": {
+    "title": "抽屉拉开：标本如何被记录与编号",
     "brief": "一张工作台的抽屉拉开，放大镜压着未写完的标签；本次专题从标本如何被记录、编号与保存说起。",
     "tags": [
       "博物学",
@@ -3173,6 +3178,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_plate_tectonics": {
+    "title": "从砾石到槽谷：地球的慢速运动",
     "brief": "《板块与山河》把岩石纹理当作可读的证据链，从一枚磨圆的砾石到一条冰川槽谷，让地球慢速运动在展厅里变得可核验、可对照、可追问。",
     "tags": [
       "板块构造",
@@ -3246,6 +3252,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_paleozoic_window": {
+    "title": "按时间刻度打开的古生代",
     "brief": "一扇按时间刻度打开的窗：从软躯体印痕到煤林与礁体，看古生代如何被岩层、化石与肉眼可见的结构记录。",
     "tags": [
       "古生代",
@@ -3355,6 +3362,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_specimen_atelier": {
+    "title": "铜牌与微暖纸：科学记录成为日常物",
     "brief": "《标本文创实验室》把铜牌、微暖纸、木头与黄铜放回同一张工作台，讨论科学记录如何成为可触摸的日常物，而不只是印在杯身上的图案。",
     "tags": [
       "展览专题",
@@ -3449,6 +3457,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_natgeo_light": {
+    "title": "光与野：先看清物证，再按快门",
     "brief": "从一枚侧光下才显形的矿物棱面切入，把野外拍摄与展柜陈列放进同一套光线伦理：先看清物证，再决定是否按下快门。",
     "tags": [
       "展览专题",
@@ -3558,6 +3567,7 @@ const REWRITE_EXHIBITIONS = {
     ]
   },
   "exhibition_plant_vertical": {
+    "title": "一墙海拔：从常绿阔叶到高山垫状",
     "brief": "一面墙把海拔画成可读的刻度：从常绿阔叶到高山垫状，用叶形、种子与押花对照气候切片，也对照我们采集与收藏的边界。",
     "tags": [
       "植物垂直剖面",
