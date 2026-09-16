@@ -11,6 +11,8 @@
  * - keywords  : 用于搜索的别名/英文/拼音首字母
  */
 
+import { MODULE_ALIASES } from './moduleAliases.js'
+
 export const GROUPS = {
   OVERVIEW: { key: 'OVERVIEW', name: '总览决策', icon: 'Odometer', submenuKey: null, navId: 'nav-overview' },
   BUSINESS: { key: 'BUSINESS', name: '业务运营', icon: 'Shop', submenuKey: null, navId: 'nav-business' },
@@ -137,18 +139,61 @@ export const MODULES = [
 /** id -> module 快查 */
 export const MODULES_BY_ID = MODULES.reduce((m, x) => (m[x.id] = x, m), {})
 
-/** 按 group key 聚合 */
+/** 按 group key 聚合。
+ *  浏览用列表**只列规范模块**（排除「已并入」的别名），否则同一屏会出现两次：
+ *  例如「经营数据大屏 · 看板」与「监控大屏」并列。别名仍可通过搜索命中（带落点提示）。 */
 export function modulesByGroup() {
   const map = {}
   Object.keys(GROUPS).forEach(k => { map[k] = [] })
-  MODULES.forEach(m => map[m.group]?.push(m))
+  MODULES.filter(m => !MODULE_ALIASES[String(m.id)]).forEach(m => map[m.group]?.push(m))
   return map
+}
+
+/** 规范模块（排除别名）——用于「共 N 个」这类计数，避免把别名算成独立功能 */
+export const MODULES_CANONICAL = MODULES.filter(m => !MODULE_ALIASES[String(m.id)])
+
+/**
+ * 模块的最终落点：别名 id → 合并后的 Hub id。
+ * 单一事实来源是 `moduleAliases.js`（那里同时给出 Hub 内的分区），此处只做查询用解析。
+ */
+export function resolveModuleTarget(id) {
+  const key = String(id || '')
+  const hit = MODULE_ALIASES[key]
+  return hit && hit.hub ? String(hit.hub) : key
+}
+
+/**
+ * 同一落点只保留一条结果。
+ *
+ * 背景（2026-09-16 审计 P2）：32 个「已并入 X」的旧模块仍在 MODULES 里（保留搜索别名），
+ * 于是命令面板对**同一屏给出两行** —— 例如搜「积分」会同时列出
+ * `15 门店积分规则`（别名 → 6）与 `6 权益与营销`，看着像两个不同功能。
+ *
+ * 保留**得分更高**的那条（而不是一律保留 Hub）：用户按旧名搜索时，
+ * 看到旧名更好认；同时把落点写进 `_aliasTargetName`，由面板提示「并入 X」。
+ */
+function dedupeByTarget(results) {
+  const best = new Map()
+  results.forEach((r) => {
+    const target = resolveModuleTarget(r.id)
+    const prev = best.get(target)
+    if (!prev || r._score > prev._score) best.set(target, r)
+  })
+  return [...best.values()].map((r) => {
+    const target = resolveModuleTarget(r.id)
+    if (target === String(r.id)) return r
+    const hub = MODULES_BY_ID[target]
+    return { ...r, _aliasTarget: target, _aliasTargetName: hub ? hub.name : target }
+  })
 }
 
 /** 模糊搜索（不依赖 fuse.js，简单字符匹配 + 关键词加分） */
 export function searchModules(query, limit = 15) {
   const q = String(query || '').trim().toLowerCase()
-  if (!q) return MODULES.slice(0, limit)
+  if (!q) {
+    // 空查询也要去重，否则「经营数据大屏·看板」与「监控大屏」会并列出现
+    return dedupeByTarget(MODULES.map((m) => ({ ...m, _score: 0 }))).slice(0, limit)
+  }
   const results = []
   MODULES.forEach(m => {
     const hay = `${m.name} ${m.keywords || ''} ${GROUPS[m.group]?.name || ''} ${m.subgroup || ''}`.toLowerCase()
@@ -166,7 +211,9 @@ export function searchModules(query, limit = 15) {
     if (pinyin) score += 40
     if (score > 0) results.push({ ...m, _score: score })
   })
-  return results.sort((a, b) => b._score - a._score).slice(0, limit)
+  return dedupeByTarget(results)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, limit)
 }
 
 /** id -> 父级 sub-menu key（用于自动展开） */

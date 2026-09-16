@@ -86,6 +86,8 @@
             >
               <el-icon class="cp-icon"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
               <span class="cp-name" v-html="highlight(m.name)"></span>
+              <!-- 别名模块：点进去其实落到合并后的 Hub，必须写清楚，否则像两个功能 -->
+              <span v-if="m._aliasTargetName" class="cp-alias">并入 {{ m._aliasTargetName }}</span>
               <span class="cp-group">{{ groupName(m.group) }}<span v-if="m.subgroup"> / {{ m.subgroup }}</span></span>
               <el-icon class="cp-pin" @click.stop="togglePin(m)" :class="{ pinned: isPinned(m.id) }"><Star /></el-icon>
             </div>
@@ -109,7 +111,7 @@
 
           <!-- 默认列表（按一级分类分组浏览） -->
           <div v-if="!query && !pinned.length && !recent.length" class="cp-section">
-            <div class="cp-section-title">📁 全部模块（共 {{ MODULES.length }} 个）</div>
+            <div class="cp-section-title">📁 全部模块（共 {{ MODULES_CANONICAL.length }} 个）</div>
             <div
               v-for="(grp, key) in groupedByGroup"
               :key="key"
@@ -150,7 +152,7 @@ import { safeLocalSet } from '../utils/safeStorage.js'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import * as EpIcons from '@element-plus/icons-vue'
 import { Search, Star } from '@element-plus/icons-vue'
-import { MODULES, MODULES_BY_ID, GROUPS, searchModules, modulesByGroup, ACTIONS, searchActions, runAction } from '../utils/modulesRegistry'
+import { MODULES, MODULES_CANONICAL, MODULES_BY_ID, GROUPS, searchModules, modulesByGroup, ACTIONS, searchActions, runAction } from '../utils/modulesRegistry'
 import { useRecentModules, RECENT_MODULES_KEY, RECENT_CHANGED_EVENT } from '../composables/useRecentModules'
 
 const resolveEpIcon = (name) => EpIcons[name] || EpIcons.Menu
@@ -377,6 +379,18 @@ onUnmounted(() => {
   max-width: 36%;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 别名模块的落点提示：让人一眼看出它并入了哪个 Hub */
+.cp-alias {
+  font-size: 11px;
+  color: var(--gold-700);
+  background: var(--gold-50);
+  border: 1px solid var(--gold-200);
+  border-radius: var(--radius-sm, 4px);
+  padding: 1px 6px;
+  margin-left: 6px;
   white-space: nowrap;
 }
 .cp-pin { color: #ddd; cursor: pointer; flex-shrink: 0; }

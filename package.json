@@ -32,6 +32,8 @@
     "check:silent-catch:selftest": "node admin/scripts/check-silent-catch.mjs --selftest",
     "test:module-hash": "node admin/scripts/test-module-hash.mjs",
     "test:module-hash:selftest": "node admin/scripts/test-module-hash.mjs --selftest",
+    "test:module-search": "node admin/scripts/test-module-search.mjs",
+    "test:module-search:selftest": "node admin/scripts/test-module-search.mjs --selftest",
     "test:coupon-floor": "node admin/scripts/test-coupon-floor.mjs",
     "test:coupon-floor:selftest": "node admin/scripts/test-coupon-floor.mjs --selftest",
     "pages:version": "true",
