@@ -45,13 +45,16 @@
         show-icon
         :closable="false"
         class="booking-write-alert"
-        title="本页的确认 / 取消 / 核销当前不会生效"
+        title="本页的确认 / 取消当前不会生效（核销已可用）"
       >
         <template #default>
-          `bookings` 集合线上为<b>只读</b>（<code>write: false</code>），而权威写通道是云函数
-          （<code>updateBooking</code> / <code>verifyBooking</code> / <code>cancelBooking</code>），
-          尚未接入 ERP 代理。因此在接入之前，本页的写按钮会<b>明确报错</b>而不是假装成功；
-          预约的确认与核销请先在小程序端完成。
+          <b>核销已接入</b>：走云函数 <code>verifyBooking</code>（与小程序扫码核销同一个函数、
+          同一份权限判定与操作人留痕）。<br />
+          但<b>确认 / 取消仍不可用</b>：<code>bookings</code> 集合线上为<b>只读</b>
+          （<code>write: false</code>），而 <code>updateBooking</code> / <code>cancelBooking</code>
+          是<b>顾客本人通道</b>（只认 <code>wxContext.OPENID</code>），ERP 走代理没有 openid，
+          接进来也会被拒 —— 这两个需要在服务端补一条 staff 侧分支，属待开发项。
+          在此之前，本页的确认/取消会<b>明确报错</b>而不是假装成功；请先在小程序端完成。
         </template>
       </el-alert>
 
@@ -266,6 +269,7 @@ import {
   fetchCollectionSorted,
   cdnUpdate,
   cdnDocGet,
+  callCloudFunction,
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -285,6 +289,25 @@ import { ElMessage, ElMessageBox } from 'element-plus'
  * 真正的修法是「部署后把预约写通道接进代理」（见审计 C.3），在此之前本页必须**说真话**。
  */
 const BOOKING_WRITE_BLOCKED_HINT = '预约写操作当前不可用：bookings 集合为只读，且服务端写通道尚未接入 ERP。请在小程序端处理，或联系技术接入后再用。'
+
+/**
+ * 预约**核销**走云函数 `verifyBooking`（经 /api/cloud-fn 代理）。
+ *
+ * 为什么不能像确认/取消那样直写：`bookings` 线上 `write:false`，直写必被拒。
+ * 为什么选 `verifyBooking`：三个候选里只有它接受代理注入的 `adminOpsKey`
+ * （`verifyBooking/index.js:244/254`）；`updateBooking`/`cancelBooking` 只认
+ * `wxContext.OPENID` 且校验 `booking._openid !== openid`，是**顾客本人通道**，ERP 没有 openid。
+ * 它与小程序扫码核销是同一个函数 → 同一份权限判定、同一份状态机、同一份操作人留痕。
+ */
+async function verifyBookingRemote(row) {
+  const res = await callCloudFunction('verifyBooking', { action: 'verify', bookingId: row._id })
+  if (!res || res.success === false) {
+    const err = new Error(res?.msg || '核销失败')
+    err.code = res?.code
+    throw err
+  }
+  return res
+}
 
 function writeBooking(id, patch, actionLabel) {
   return cdnUpdate('bookings', id, patch).then((res) => {
@@ -422,17 +445,13 @@ const checkIn = (row) => {
     type: 'warning'
   }).then(async () => {
     try {
-      await writeBooking(row._id, {
-        status: 'used',
-        usedTime: Date.now()
-      }, '核销')
+      await verifyBookingRemote(row)
       ElMessage.success('核销成功')
       refresh()
     } catch (e) {
-      // 区分「没写进去」与「网络/其它错误」，都如实报，不再出现「成功」假象
-      ElMessage.error(e?.name === 'WriteNotAppliedError'
-        ? `核销未生效：${BOOKING_WRITE_BLOCKED_HINT}`
-        : '核销失败：' + (e?.message || '请重试'))
+      // 核销现在走云函数：失败是**真实**失败（权限不足 / 状态机不允许 / 网络），
+      // 与「直写被规则拒绝」不是一回事，故不再套用 BOOKING_WRITE_BLOCKED_HINT
+      ElMessage.error('核销失败：' + (e?.message || '请重试'))
     }
   }).catch((e) => {
       if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
@@ -503,18 +522,14 @@ const verifyTicket = async () => {
     }).then(async () => {
       // 写操作单独 try/catch（同 cancelBooking：别让真实失败被「用户取消」吞掉）
       try {
-        await writeBooking(b._id, {
-          status: 'used',
-          usedTime: Date.now()
-        }, '票号核销')
+        // 与列表里的「核销」同一个云函数通道（见 verifyBookingRemote 的说明）
+        await verifyBookingRemote(b)
         ElMessage.success('核销成功')
         ticketInput.value = ''
         detailVisible.value = false
         refresh()
       } catch (e) {
-        ElMessage.error(e?.name === 'WriteNotAppliedError'
-          ? `核销未生效：${BOOKING_WRITE_BLOCKED_HINT}`
-          : '核销失败：' + (e?.message || '请重试'))
+        ElMessage.error('核销失败：' + (e?.message || '请重试'))
       }
     }).catch((e) => {
       if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)

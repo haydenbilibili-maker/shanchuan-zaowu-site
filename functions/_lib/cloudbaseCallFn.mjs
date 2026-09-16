@@ -54,6 +54,11 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   // 2026-09-16：新会员礼包（member_welcome_gift 规则收紧为 PRIVATE 后 ERP 不可再直写；
   // 与小程序超管工作台共用同一云函数 —— 同一份校验、同一份条款同步、同一份操作人归属）
   'manageWelcomeGift',
+  // 2026-09-16：预约**核销**。bookings 线上 write:false，ERP 直写必然被拒。
+  // 只加 verifyBooking 而不加 updateBooking/cancelBooking：只有它接受代理注入的
+  // adminOpsKey（`verifyBooking/index.js:244/254`）；那两个只认 wxContext.OPENID 且校验
+  // `booking._openid !== openid`，是**顾客本人通道** —— ERP 没有 openid，加进来也没用。
+  'verifyBooking',
 ])
 
 const ALLOWED = new Set(ALLOWED_FUNCTIONS)

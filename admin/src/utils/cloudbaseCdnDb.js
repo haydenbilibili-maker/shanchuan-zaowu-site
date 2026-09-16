@@ -168,6 +168,10 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   // 2026-09-16：新会员礼包（member_welcome_gift 已收紧为 PRIVATE）。ERP 与小程序超管工作台
   // 共用同一云函数，不再 CDN 直写 —— 直写会漏掉 updatedBy 与「已发未使用券条款同步」
   'manageWelcomeGift',
+  // 2026-09-16：预约核销（须与 functions/_lib/cloudbaseCallFn.mjs 的 ALLOWED_FUNCTIONS 对齐）。
+  // 只加 verifyBooking：updateBooking/cancelBooking 是顾客本人通道（认 wxContext.OPENID），
+  // ERP 走代理没有 openid，加进来也会被它们拒。
+  'verifyBooking',
 ])
 
 /**

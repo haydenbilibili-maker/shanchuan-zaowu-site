@@ -70,13 +70,15 @@
     "report:data-sources:strict": "node admin/scripts/report-data-sources.mjs --strict",
     "report:data-sources:update": "node admin/scripts/report-data-sources.mjs --update",
     "report:data-sources:selftest": "node admin/scripts/report-data-sources.mjs --selftest",
-    "check:admin": "npm run check:sfc-dev && npm run check:nav-sources && npm run check:silent-catch && npm run check:brand-contrast && npm run report:colors:strict && npm run report:data-sources:strict && npm run check:write-verify:strict && npm run check:welcome-gift && npm run check:store-points && npm run check:source-origin && npm run check:fn-integrity && npm run test:write-layer && npm run test:module-hash && npm run test:module-search && npm run test:coupon-floor && npm run test:staff-directory && npm run test:finance-read-path",
-    "check:admin:selftest": "npm run check:sfc-dev:selftest && npm run check:nav-sources:selftest && npm run check:silent-catch:selftest && npm run check:brand-contrast:selftest && npm run report:colors:selftest && npm run report:data-sources:selftest && npm run check:write-verify:selftest && npm run check:welcome-gift:selftest && npm run check:store-points:selftest && npm run check:source-origin:selftest && npm run check:fn-integrity:selftest && npm run test:write-layer:selftest && npm run test:module-hash:selftest && npm run test:module-search:selftest && npm run test:coupon-floor:selftest && npm run test:staff-directory:selftest && npm run test:finance-read-path:selftest",
+    "check:admin": "npm run check:sfc-dev && npm run check:nav-sources && npm run check:silent-catch && npm run check:brand-contrast && npm run report:colors:strict && npm run report:data-sources:strict && npm run check:write-verify:strict && npm run check:welcome-gift && npm run check:store-points && npm run check:source-origin && npm run check:fn-integrity && npm run test:write-layer && npm run test:module-hash && npm run test:module-search && npm run test:coupon-floor && npm run test:staff-directory && npm run test:finance-read-path && npm run check:proxy-allowlist",
+    "check:admin:selftest": "npm run check:sfc-dev:selftest && npm run check:nav-sources:selftest && npm run check:silent-catch:selftest && npm run check:brand-contrast:selftest && npm run report:colors:selftest && npm run report:data-sources:selftest && npm run check:write-verify:selftest && npm run check:welcome-gift:selftest && npm run check:store-points:selftest && npm run check:source-origin:selftest && npm run check:fn-integrity:selftest && npm run test:write-layer:selftest && npm run test:module-hash:selftest && npm run test:module-search:selftest && npm run test:coupon-floor:selftest && npm run test:staff-directory:selftest && npm run test:finance-read-path:selftest && npm run check:proxy-allowlist:selftest",
     "pages:version": "true",
     "preview": "astro preview",
     "astro": "astro",
     "test:finance-read-path": "node admin/scripts/test-finance-read-path.mjs",
-    "test:finance-read-path:selftest": "node admin/scripts/test-finance-read-path.mjs --selftest"
+    "test:finance-read-path:selftest": "node admin/scripts/test-finance-read-path.mjs --selftest",
+    "check:proxy-allowlist": "node admin/scripts/check-proxy-allowlist-sync.mjs",
+    "check:proxy-allowlist:selftest": "node admin/scripts/check-proxy-allowlist-sync.mjs --selftest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
