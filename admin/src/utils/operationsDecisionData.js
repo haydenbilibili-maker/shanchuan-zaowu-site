@@ -3,6 +3,47 @@ import { fetchFinancialData } from './financialData'
 import { loadStoreBundle, storeLicenseAlertLevel, sumStoreNetRevenueForMonth } from './storeStorage'
 import { loadPayrollBundle } from './payrollStorage'
 import { fetchStaffDirectory, staffCountDisplay } from './staffDirectory.js'
+import { callCloudFunction } from '../cloud.js'
+import { mapAnalyticsOrdersToAgg } from './dashboardMetrics.js'
+
+/**
+ * 经营口径的**权威来源**：`getAnalyticsDashboard`（全量订单，与小程序/驾驶舱同源）。
+ * 详见 `src/utils/dataSources.js` 的 `order_metrics` 概念与 `METRIC_DIVERGENCES`。
+ * 原实现用 `storeData` 的 `orders(limit:500)` 采样 + 本机财务账本，导致同一 ERP 里
+ * 驾驶舱与决策中心对「本月营收」给出不同数字（实测决策中心显示 ¥0/0 单）。
+ */
+async function fetchAnalyticsReport(period) {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth() - (period === 'month' ? 0 : 0), 1)
+  const pad = (n) => String(n).padStart(2, '0')
+  const startDate = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-01`
+  const endDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  try {
+    const res = await callCloudFunction('getAnalyticsDashboard', { action: 'report', startDate, endDate })
+    if (!res || res.success === false || !res.data?.orders) {
+      return { ok: false, error: res?.msg || 'getAnalyticsDashboard 未返回 orders', startDate, endDate }
+    }
+    const agg = mapAnalyticsOrdersToAgg(res.data.orders)
+    return { ok: true, agg, data: res.data, startDate, endDate }
+  } catch (e) {
+    return { ok: false, error: e?.message || '经营口径加载失败', startDate, endDate }
+  }
+}
+
+/**
+ * 门店的**权威来源**：云端 `stores` 集合（规则 read: auth != null，ERP 可直接读）。
+ * 原实现读本机 `sc_store_bundle_v1` → 决策中心显示「0 家门店」，而云端有店。
+ */
+async function fetchCloudStores() {
+  try {
+    const { fetchCollectionLimit } = await import('../cloud.js')
+    const rows = await fetchCollectionLimit('stores', { limit: 500 })
+    const list = Array.isArray(rows) ? rows : []
+    return { ok: true, list, active: list.filter((s) => (s?.status || 'active') !== 'closed' && s?.isActive !== false).length }
+  } catch (e) {
+    return { ok: false, list: [], active: 0, error: e?.message || '门店集合读取失败' }
+  }
+}
 
 export const OPS_LOW_STOCK_THRESHOLD = 5
 export const OPS_OVER_STOCK_THRESHOLD = 50
@@ -105,6 +146,12 @@ function buildRisks({ products, stores, finance, payroll, staff }) {
   if (stores.licenseExpired > 0) risks.push({ level: 'high', title: '证照过期', desc: `${stores.licenseExpired} 家门店存在当前证照过期。` })
   if (stores.licenseSoon > 0) risks.push({ level: 'medium', title: '证照将过期', desc: `${stores.licenseSoon} 家门店存在证照临期。` })
   if (finance.revenue <= 0) risks.push({ level: 'medium', title: '营收账本缺失', desc: '当前周期未读取到有效财务营收，AI 建议可信度会下降。' })
+  if (finance.authoritative === false) {
+    risks.push({ level: 'medium', title: '经营口径回退到本机账本', desc: `未取到全量云口径（${finance.fallbackError || '原因未知'}），当前营收/订单数来自本机财务账本，与其他页面的全量口径可能不一致。` })
+  }
+  if (stores.authoritative === false) {
+    risks.push({ level: 'medium', title: '门店数读取失败', desc: `未能读取云端 stores 集合（${stores.cloudError || '原因未知'}），门店数回落为本机档案包。` })
+  }
   if (payroll.activeEmployees === 0) risks.push({ level: 'low', title: '薪酬花名册为空', desc: '未读取到薪酬花名册员工，暂无法计算人效（与小程序「员工」模块是两个来源）。' })
   // 读不到员工通讯录必须与「确实没有员工」分开报 —— 两者都表现为 0，这正是原缺陷的形态
   if (staff && !staff.ok) {
@@ -202,11 +249,15 @@ function buildFinanceTrend(records, limit = 14) {
 export async function buildOperationsDecisionData(options = {}) {
   const { products = [], orders = [], period = 'month' } = options
   const yearMonth = currentYearMonth()
-  const [storeData, financialData, staff] = await Promise.all([
+  const [storeData, financialData, staff, analytics, cloudStores] = await Promise.all([
     fetchStoreData(false, { useFinancialData: true, period }),
     fetchFinancialData({ period }),
     // 与小程序超管工作台「员工」模块同源（manageStaff → staff_members）
     fetchStaffDirectory(),
+    // 经营口径权威源（全量订单），与经营驾驶舱同源
+    fetchAnalyticsReport(period),
+    // 门店权威源（云端集合），替代本机 bundle
+    fetchCloudStores(),
   ])
   const productSource = products.length ? products : (storeData?.products?.items || [])
   const orderSource = orders.length ? orders : (storeData?.orders?.items || [])
@@ -214,25 +265,51 @@ export async function buildOperationsDecisionData(options = {}) {
   const payrollBundle = loadPayrollBundle()
   const productMetrics = buildProductMetrics(productSource)
   const storeMetrics = buildStoreMetrics(storeBundle, payrollBundle, yearMonth)
+  // 门店「总数」以云端集合为准（权威）；本机 bundle 只用于 HR 侧字段（证照、提点等）
+  storeMetrics.cloudTotal = cloudStores.ok ? cloudStores.list.length : null
+  storeMetrics.cloudActive = cloudStores.ok ? cloudStores.active : null
+  storeMetrics.cloudError = cloudStores.ok ? null : cloudStores.error
+  storeMetrics.displayTotal = cloudStores.ok ? cloudStores.list.length : storeMetrics.total
+  storeMetrics.authoritative = cloudStores.ok
   const payrollMetrics = buildPayrollMetrics(payrollBundle, yearMonth)
-  const finance = {
-    revenue: money(storeData?.finance?.totalRevenue ?? financialData.revenue),
-    orderCount: Number(storeData?.finance?.weeklyOrdersCount ?? financialData.orderCount ?? orderSource.length) || 0,
-    averageOrderValue: money(storeData?.finance?.averageOrderValue ?? financialData.averageOrderValue),
-    totalCost: money(storeData?.finance?.totalCost),
-    grossProfit: money(storeData?.finance?.grossProfit),
-    profitMargin: money(storeData?.finance?.profitMargin),
-    trend: storeData?.finance?.trend || '暂无趋势',
-    costStructure: storeData?.finance?.costStructure || '暂无成本结构',
-    source: storeData?.finance?.source || 'finance_ledger',
-    sourceLabel: storeData?.finance?.sourceLabel || '财务账本',
-    records: financialData.records || [],
-  }
+  // 口径优先级：全量云口径 → 本机财务账本（明确标注「本机」，不再冒充权威）
+  const aggTotals = analytics.ok ? (analytics.agg?.totals || {}) : null
+  const finance = aggTotals
+    ? {
+        revenue: money(aggTotals.netOnline ?? aggTotals.gmvPaid),
+        orderCount: Number(aggTotals.paid) || 0,
+        averageOrderValue: money(aggTotals.aov),
+        totalCost: money(storeData?.finance?.totalCost),
+        grossProfit: money(storeData?.finance?.grossProfit),
+        profitMargin: money(storeData?.finance?.profitMargin),
+        trend: storeData?.finance?.trend || '暂无趋势',
+        costStructure: storeData?.finance?.costStructure || '暂无成本结构',
+        source: 'getAnalyticsDashboard',
+        sourceLabel: `全量口径 ${analytics.startDate}~${analytics.endDate}`,
+        records: financialData.records || [],
+        authoritative: true,
+      }
+    : {
+        revenue: money(storeData?.finance?.totalRevenue ?? financialData.revenue),
+        orderCount: Number(financialData.orderCount ?? orderSource.length) || 0,
+        averageOrderValue: money(storeData?.finance?.averageOrderValue ?? financialData.averageOrderValue),
+        totalCost: money(storeData?.finance?.totalCost),
+        grossProfit: money(storeData?.finance?.grossProfit),
+        profitMargin: money(storeData?.finance?.profitMargin),
+        trend: storeData?.finance?.trend || '暂无趋势',
+        costStructure: storeData?.finance?.costStructure || '暂无成本结构',
+        source: 'local_ledger',
+        // ⚠ 不再写死「财务账本」：本机账本 ≠ 云端财务账本，来源必须说清是本机
+        sourceLabel: '本机财务账本（未取到全量云口径）',
+        records: financialData.records || [],
+        authoritative: false,
+        fallbackError: analytics.error,
+      }
   const kpis = [
     { key: 'revenue', label: '本月营收', value: `¥${finance.revenue.toLocaleString()}`, desc: finance.sourceLabel },
-    { key: 'orders', label: '订单数', value: String(finance.orderCount), desc: '财务账本/云订单' },
+    { key: 'orders', label: '订单数', value: String(finance.orderCount), desc: finance.authoritative ? `全量口径（已付订单）${analytics.startDate}~${analytics.endDate}` : '本机财务账本（未取到全量云口径）' },
     { key: 'aov', label: '客单价', value: `¥${finance.averageOrderValue.toFixed(0)}`, desc: '营收 / 订单数' },
-    { key: 'profit', label: '估算毛利', value: `¥${finance.grossProfit.toLocaleString()}`, desc: finance.costStructure },
+    { key: 'profit', label: '估算毛利', value: `¥${finance.grossProfit.toLocaleString()}`, desc: `成本率口径：${finance.costStructure}` },
     { key: 'stockRisk', label: '库存风险', value: String(productMetrics.lowStock + productMetrics.outOfStock), desc: '低库存 + 缺货' },
     {
       key: 'staff',
@@ -269,7 +346,14 @@ export async function buildOperationsDecisionData(options = {}) {
     sourceHealth: [
       { name: '财务账本', status: finance.records.length > 0 ? 'ok' : 'empty', detail: `${finance.records.length} 条周期记录` },
       { name: '云商品/商品档案', status: productMetrics.total > 0 ? 'ok' : 'empty', detail: `${productMetrics.total} 个商品` },
-      { name: '店铺本地包', status: storeMetrics.total > 0 ? 'ok' : 'empty', detail: `${storeMetrics.total} 家门店` },
+      {
+        name: '门店（云端集合）',
+        status: !storeMetrics.authoritative ? 'error' : (storeMetrics.displayTotal > 0 ? 'ok' : 'empty'),
+        detail: storeMetrics.authoritative
+          ? `${storeMetrics.displayTotal} 家门店（stores 集合，${storeMetrics.cloudActive} 家生效）`
+          : `读取失败：${storeMetrics.cloudError || '未知原因'}`,
+      },
+      { name: '门店本地档案包', status: storeMetrics.total > 0 ? 'ok' : 'empty', detail: `${storeMetrics.total} 家（本机 HR 侧档案，非 C 端事实源）` },
       {
         name: '员工通讯录',
         status: !staff.ok ? 'error' : (staff.active > 0 ? 'ok' : 'empty'),

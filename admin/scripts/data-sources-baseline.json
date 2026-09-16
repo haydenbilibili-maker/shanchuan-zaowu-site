@@ -1,0 +1,8 @@
+{
+  "updatedAt": "2026-09-16",
+  "note": "未登记源应恒为 0；口径分歧数只能减少；本地权威概念数只能减少（要么上云，要么显式标注）",
+  "unregistered": [],
+  "duplicateRole": [],
+  "divergenceCount": 2,
+  "localAuthorityCount": 4
+}
