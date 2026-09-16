@@ -305,9 +305,19 @@ function describeConfig(config) {
     })
     parts.push(`礼券 ${labels.join(' / ')}（${cfg.expireDays} 天）`)
   }
-  if (!parts.length) return '新会员礼包已启用，但积分与礼券均为空'
+  // 显式告警：总开关开着但券行全停时，摘要原先只显示「100 积分」，
+  // 运营在 ERP/超管工作台完全看不出「新用户不会收到礼券」（2026-09-16 事故）。
+  const allCouponsOff = !!cfg.couponsEnabled
+    && Array.isArray(cfg.coupons) && cfg.coupons.length > 0
+    && !coupons.length
+  if (!parts.length) {
+    return allCouponsOff
+      ? '⚠️ 礼券总开关已开，但所有券行都停用了：新用户不会收到礼券'
+      : '新会员礼包已启用，但积分与礼券均为空'
+  }
   const stack = cfg.stackable ? '可叠加' : '不可叠加（一单一券）'
-  return `新会员礼包：${parts.join(' + ')}；${stack}；折扣不低于7.5折`
+  const warn = allCouponsOff ? '；⚠️ 礼券总开关已开但所有券行都停用，新用户不会收到礼券' : ''
+  return `新会员礼包：${parts.join(' + ')}；${stack}；折扣不低于7.5折${warn}`
 }
 
 function buildMessageContent(config, expireDateLabel) {

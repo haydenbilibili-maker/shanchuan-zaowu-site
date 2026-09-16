@@ -326,7 +326,7 @@ async function claimRegisterGift(openid, userDoc) {
         complete: false
       }
     }
-    const partialFlag = !couponMeta.complete && couponSlots.length > 0
+    const partialFlag = (!couponMeta.complete && couponSlots.length > 0) || couponsConfiguredButEmpty
     try {
       await db.collection('users').doc(userDoc._id).update({
         data: userDoc.registerGiftClaimed
@@ -348,7 +348,7 @@ async function claimRegisterGift(openid, userDoc) {
       couponExpected: couponMeta.expected || couponSlots.length,
       expireDate: couponMeta.expireDate,
       title: config.title,
-      msg: partialFlag ? '礼券尚未全部到账，请稍后重试补领' : ''
+      msg: partialFlag ? repairMsg : ''
     }
   }
 
@@ -453,7 +453,7 @@ async function claimRegisterGift(openid, userDoc) {
     }
   }
 
-  const partial = !couponMeta.complete && couponSlots.length > 0
+  const partial = (!couponMeta.complete && couponSlots.length > 0) || couponsConfiguredButEmpty
 
   try {
     await db.collection(POINT_RECORDS).doc(recordId).update({
@@ -494,7 +494,7 @@ async function claimRegisterGift(openid, userDoc) {
     expireDate: couponMeta.expireDate,
     stackable: !!config.stackable,
     title: config.title,
-    msg: partial ? '积分已到账，礼券未全部发放，请稍后补领' : ''
+    msg: partial ? repairMsg : ''
   }
 }
 
