@@ -408,7 +408,14 @@
       </scroll-view>
 
       <view class="drawer-footer" wx:if="{{!detailLoading && detail}}">
-        <view class="btn-primary drawer-cta" bindtap="openAdjust">调整积分</view>
+        <view class="cancel-state-bar" wx:if="{{detail.status === 'cancelled'}}">
+          <text class="cancel-state-txt">该会员已注销{{detail.cancelMode === 'anonymize' ? '（已匿名化）' : '（可恢复）'}}</text>
+          <view class="btn-outline danger-outline" wx:if="{{detail.cancelMode !== 'anonymize'}}" bindtap="restoreMember">恢复会员</view>
+        </view>
+        <view class="drawer-cta-row" wx:else>
+          <view class="btn-primary drawer-cta" bindtap="openAdjust">调整积分</view>
+          <view class="btn-outline danger-outline drawer-cta" bindtap="openCancelMember">注销此用户</view>
+        </view>
       </view>
     </view>
   </view>
@@ -450,6 +457,49 @@
         <view class="btn-outline" bindtap="closeYouxin">取消</view>
         <view class="btn-primary {{youxinSending ? 'disabled' : ''}}" catchtap="submitYouxinPush">
           {{youxinSending ? '发送中…' : '发往该会员'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 注销此用户（超管 · 双重验证：手机号 + 手输「注销」） -->
+  <view class="modal-mask" wx:if="{{showCancelMember}}" bindtap="closeCancelMember">
+    <view class="modal cancel-modal" catchtap="stopBubble">
+      <text class="modal-title danger-title">注销此用户</text>
+
+      <view class="cancel-target">
+        <text class="cancel-target-name">{{detail.nickName || '（未设置昵称）'}}</text>
+        <text class="cancel-target-sub">{{detail.memberNo || '—'}} · {{detail.phoneMasked || detail.phone || '未绑定手机号'}}</text>
+      </view>
+
+      <text class="modal-desc">选择处理方式（三种都保留操作日志）：</text>
+      <view class="cancel-modes">
+        <view class="cancel-mode {{cancelMode === 'soft' ? 'active' : ''}}" data-mode="soft" bindtap="onCancelModeTap">
+          <text class="cancel-mode-name">软注销</text>
+          <text class="cancel-mode-desc">标记停用、保留全部数据，可恢复</text>
+        </view>
+        <view class="cancel-mode {{cancelMode === 'anonymize' ? 'active' : ''}}" data-mode="anonymize" bindtap="onCancelModeTap">
+          <text class="cancel-mode-name">注销并匿名化</text>
+          <text class="cancel-mode-desc">抹除昵称/头像/手机号等身份信息，保留订单与积分流水；不可恢复</text>
+        </view>
+        <view class="cancel-mode danger-mode {{cancelMode === 'purge' ? 'active' : ''}}" data-mode="purge" bindtap="onCancelModeTap">
+          <text class="cancel-mode-name">硬删除</text>
+          <text class="cancel-mode-desc">直接删除会员记录，不可恢复</text>
+        </view>
+      </view>
+
+      <text class="modal-desc cancel-verify-title">双重验证</text>
+      <text class="cancel-verify-hint">① 输入该会员绑定的手机号</text>
+      <input class="modal-input" type="number" maxlength="11" placeholder="会员绑定手机号"
+             value="{{cancelPhoneInput}}" bindinput="onCancelPhoneInput" />
+      <text class="cancel-verify-hint">② 手动输入「注销」二字</text>
+      <input class="modal-input" placeholder="在此输入：注销"
+             value="{{cancelTextInput}}" bindinput="onCancelTextInput" />
+
+      <view class="modal-actions">
+        <view class="btn-outline" bindtap="closeCancelMember">取消</view>
+        <view class="btn-primary btn-danger {{cancelSubmitting ? 'disabled' : ''}}" bindtap="submitCancelMember">
+          {{cancelSubmitting ? '处理中…' : '确认注销'}}
         </view>
       </view>
     </view>

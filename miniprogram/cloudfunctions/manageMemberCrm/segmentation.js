@@ -389,6 +389,11 @@ function buildProfile({ users, orders, behaviors }) {
       nickName: u.nickName || u.name || '未授权用户',
       avatarUrl: u.avatarUrl || '',
       phone: u.phone || '',
+      phoneMasked: maskPhoneForProfile(u.phone),
+      // 注销状态（超管会员卡详情页据此展示徽标/恢复入口）
+      status: u.status || 'active',
+      cancelMode: u.cancelMode || '',
+      cancelledAt: u.cancelledAt || null,
       points: pointsApprox,
       isHonorary: u.isHonorary === true,
       createTime: resolveUserRegisteredMs(u),
@@ -402,6 +407,14 @@ function buildProfile({ users, orders, behaviors }) {
       suggestions: SUGGEST_MAP[rfm.segment] || []
     }
   })
+}
+
+/** 手机号脱敏（详情展示用；超管仍可用 onCopyPhone 复制原文） */
+function maskPhoneForProfile(phone) {
+  const v = String(phone || '').replace(/[^\d]/g, '')
+  if (!v) return ''
+  if (v.length < 7) return '****'
+  return `${v.slice(0, 3)}****${v.slice(-4)}`
 }
 
 function summarizeSegments(profiles) {

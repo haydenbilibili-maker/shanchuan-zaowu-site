@@ -1485,3 +1485,44 @@ page {
   font-size: 22rpx;
   color: var(--color-text-muted);
 }
+
+/* ===== 会员注销（超管）===== */
+.drawer-cta-row { display: flex; gap: 16rpx; align-items: center; }
+.drawer-cta-row .drawer-cta { flex: 1; }
+
+.danger-outline { border: 1rpx solid #D64045; color: #D64045; background: transparent; }
+.btn-primary.btn-danger { background: #D64045; border-color: #D64045; color: #fff; }
+
+.cancel-state-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16rpx; padding: 16rpx 20rpx; border-radius: 12rpx;
+  background: rgba(214, 64, 69, 0.10);
+  border: 1rpx solid rgba(214, 64, 69, 0.35);
+}
+.cancel-state-txt { font-size: 24rpx; color: #D64045; }
+
+.cancel-modal { max-height: 84vh; }
+.danger-title { color: #D64045; }
+.cancel-target {
+  margin: 8rpx 0 16rpx; padding: 16rpx 20rpx; border-radius: 12rpx;
+  background: var(--color-bg-card, rgba(255,255,255,0.04));
+  border: 1rpx solid var(--color-border, rgba(196,167,108,0.2));
+  display: flex; flex-direction: column;
+}
+.cancel-target-name { font-size: 30rpx; color: var(--color-text-primary, #E8E4DC); }
+.cancel-target-sub { margin-top: 6rpx; font-size: 22rpx; color: var(--color-text-secondary, #A8A29A); }
+
+.cancel-modes { display: flex; flex-direction: column; gap: 12rpx; margin: 10rpx 0 18rpx; }
+.cancel-mode {
+  padding: 16rpx 20rpx; border-radius: 12rpx;
+  border: 1rpx solid var(--color-border, rgba(196,167,108,0.25));
+  display: flex; flex-direction: column;
+}
+.cancel-mode.active { border-color: var(--gold, #C4A76C); background: rgba(196,167,108,0.10); }
+.cancel-mode.danger-mode.active { border-color: #D64045; background: rgba(214,64,69,0.12); }
+.cancel-mode-name { font-size: 26rpx; color: var(--color-text-primary, #E8E4DC); }
+.cancel-mode.danger-mode .cancel-mode-name { color: #D64045; }
+.cancel-mode-desc { margin-top: 6rpx; font-size: 21rpx; line-height: 1.5; color: var(--color-text-secondary, #A8A29A); }
+
+.cancel-verify-title { margin-top: 6rpx; color: var(--gold, #C4A76C); }
+.cancel-verify-hint { display: block; margin: 10rpx 0 6rpx; font-size: 22rpx; color: var(--color-text-secondary, #A8A29A); }

@@ -395,6 +395,12 @@ Page({
     showAdjust: false,
     adjustAmount: '',
     adjustSubmitting: false,
+    // 会员注销（超管，双重验证）
+    showCancelMember: false,
+    cancelMode: 'soft',
+    cancelPhoneInput: '',
+    cancelTextInput: '',
+    cancelSubmitting: false,
 
     showYouxin: false,
     youxinTarget: null,
@@ -523,6 +529,21 @@ Page({
     } catch (e) {
       this.setData({ loading: false, list: [] });
       wx.showToast({ title: formatCloudFnError(e, e.msg || '加载失败'), icon: 'none' });
+    }
+  },
+
+  /** 重新拉取当前详情（注销/恢复后刷新，不关闭抽屉） */
+  async reloadDetail() {
+    const d = this.data.detail;
+    if (!d) return;
+    try {
+      const result = await this.callFn({ action: 'getDetail', openid: d.openid, userId: d._id });
+      this.setData({
+        detail: mapDetail(result.detail),
+        recentOrders: (result.recentOrders || []).map(mapRecentOrder),
+      });
+    } catch (e) {
+      console.warn('reloadDetail', e && (e.msg || e.message));
     }
   },
 
@@ -822,6 +843,117 @@ Page({
     } catch (e) {
       this.setData({ adjustSubmitting: false });
       wx.showToast({ title: formatCloudFnError(e, e.msg || '调整失败'), icon: 'none' });
+    }
+  },
+
+  /* ===== 会员注销（超管）：双重验证 = ① 输入绑定手机号 ② 手动输入「注销」 ===== */
+
+  openCancelMember() {
+    if (!this.data.detail) return;
+    this.setData({
+      showCancelMember: true,
+      cancelMode: 'soft',
+      cancelPhoneInput: '',
+      cancelTextInput: '',
+    });
+  },
+
+  closeCancelMember() {
+    if (this.data.cancelSubmitting) return;
+    this.setData({ showCancelMember: false, cancelPhoneInput: '', cancelTextInput: '' });
+  },
+
+  onCancelModeTap(e) {
+    const mode = String((e.currentTarget.dataset && e.currentTarget.dataset.mode) || 'soft');
+    this.setData({ cancelMode: mode });
+  },
+
+  onCancelPhoneInput(e) {
+    this.setData({ cancelPhoneInput: String((e.detail && e.detail.value) || '') });
+  },
+
+  onCancelTextInput(e) {
+    this.setData({ cancelTextInput: String((e.detail && e.detail.value) || '') });
+  },
+
+  async submitCancelMember() {
+    if (this.data.cancelSubmitting) return;
+    const d = this.data.detail;
+    if (!d) return;
+    const mode = this.data.cancelMode;
+
+    // 客户端即时校验（服务端会再校验一次，这里只为即时反馈）
+    if (!String(this.data.cancelPhoneInput || '').replace(/\D/g, '')) {
+      wx.showToast({ title: '请输入该会员的手机号', icon: 'none' });
+      return;
+    }
+    if (String(this.data.cancelTextInput || '').trim() !== '注销') {
+      wx.showToast({ title: '请手动输入「注销」二字', icon: 'none' });
+      return;
+    }
+
+    const modeLabel =
+      mode === 'purge' ? '硬删除会员记录（不可恢复）'
+        : mode === 'anonymize' ? '注销并匿名化（不可恢复）'
+          : '软注销（可恢复）';
+    const confirmed = await new Promise((resolve) => {
+      wx.showModal({
+        title: '最终确认',
+        content: `将对「${d.nickName || d.memberNo || '该会员'}」执行：${modeLabel}。\n\n此操作会记入操作日志。`,
+        confirmText: '确认注销',
+        confirmColor: '#D64045',
+        cancelText: '再想想',
+        success: (r) => resolve(!!r.confirm),
+        fail: () => resolve(false),
+      });
+    });
+    if (!confirmed) return;
+
+    this.setData({ cancelSubmitting: true });
+    try {
+      const result = await this.callFn({
+        action: 'cancelMember',
+        userId: d._id,
+        openid: d.openid,
+        mode,
+        confirmPhone: this.data.cancelPhoneInput,
+        confirmText: this.data.cancelTextInput,
+      });
+      wx.showToast({ title: result.msg || '已注销', icon: 'none', duration: 2500 });
+      this.setData({ cancelSubmitting: false, showCancelMember: false, cancelPhoneInput: '', cancelTextInput: '' });
+      if (mode === 'purge') {
+        this.setData({ showDetail: false });
+      } else {
+        this.reloadDetail();
+      }
+      this.loadList();
+    } catch (e) {
+      this.setData({ cancelSubmitting: false });
+      wx.showToast({ title: formatCloudFnError(e, (e && e.msg) || '注销失败'), icon: 'none', duration: 3000 });
+    }
+  },
+
+  /** 恢复软注销会员 */
+  async restoreMember() {
+    const d = this.data.detail;
+    if (!d) return;
+    const confirmed = await new Promise((resolve) => {
+      wx.showModal({
+        title: '恢复会员',
+        content: `将「${d.nickName || d.memberNo || '该会员'}」恢复为正常状态？`,
+        confirmText: '确认恢复',
+        success: (r) => resolve(!!r.confirm),
+        fail: () => resolve(false),
+      });
+    });
+    if (!confirmed) return;
+    try {
+      const result = await this.callFn({ action: 'restoreMember', userId: d._id });
+      wx.showToast({ title: result.msg || '已恢复', icon: 'success' });
+      this.reloadDetail();
+      this.loadList();
+    } catch (e) {
+      wx.showToast({ title: formatCloudFnError(e, (e && e.msg) || '恢复失败'), icon: 'none' });
     }
   },
 

@@ -10,6 +10,7 @@
  *
  * 权限：仅 super_admin（含 Admin Web ADMIN_OPS_KEY）
  */
+const crypto = require('crypto')
 const cloud = require('wx-server-sdk')
 const { assertStaff, WORKSPACE_SUPER_ADMIN } = require('./staffGuard')
 const { loadBalance, ensureUserDoc } = require('./pointsBalance')
@@ -499,6 +500,235 @@ async function handleAdjustPoints(event, actor) {
   })
 }
 
+/* ============================================================
+ * 会员注销（超管）
+ *
+ * 三种方式，均需**双重验证**：① 输入该会员绑定手机号 ② 手动输入「注销」二字
+ *   soft      软注销：标记停用，保留全部数据，**可恢复**
+ *   anonymize 注销并匿名化：标记 + 抹除身份信息（保留订单/积分/成长值流水），不可恢复
+ *   purge     硬删除：删除 users 文档（留一条操作日志），不可恢复
+ *
+ * 与客户端的关系：客户端只负责收集与即时校验，**手机号与确认文案都由服务端再校验一次**
+ * （客户端校验只是体验，不构成鉴权）。
+ * ============================================================ */
+const CANCEL_MODES = ['soft', 'anonymize', 'purge']
+
+/** 归一化手机号：去掉非数字，并剥离 +86 / 86 前缀，便于与绑定号码比对 */
+function normalizePhone(raw) {
+  const digits = String(raw || '').replace(/[^\d]/g, '')
+  return digits.replace(/^86(?=1\d{10}$)/, '')
+}
+
+/** 匿名化时抹除的身份字段（交易类数据一律保留，便于对账与合规留存） */
+const ANON_SCRUB = {
+  nickName: '已注销会员',
+  avatarUrl: '',
+  bio: '',
+  phone: '',
+  gender: '',
+  birthday: '',
+  birthdayMonthDay: '',
+  zodiac: '',
+  mbti: '',
+  interests: [],
+  interestTags: []
+}
+
+async function writeCancelAudit(entry) {
+  try {
+    await db.collection('admin_operation_logs').add({
+      data: Object.assign({}, entry, { at: db.serverDate() })
+    })
+  } catch (e) {
+    // 审计写入失败不回滚主流程，但必须留痕到日志
+    console.error('cancel audit log failed', e && e.message)
+  }
+}
+
+/** 注销即让已发出的会员码立即失效：既置 revoked，也把 expiresAt 拨到当前（复用既有过期校验） */
+async function revokeMemberPassTokens(openid) {
+  if (!openid) return 0
+  let n = 0
+  try {
+    const res = await db
+      .collection('member_pass_tokens')
+      .where({ openid })
+      .limit(100)
+      .get()
+    const now = Date.now()
+    for (const rec of res.data || []) {
+      const exp = rec.expiresAt instanceof Date ? rec.expiresAt.getTime() : Number(rec.expiresAt) || 0
+      if (rec.revoked === true || exp <= now) continue
+      try {
+        await db.collection('member_pass_tokens').doc(rec._id).update({
+          data: { revoked: true, revokedAt: db.serverDate(), expiresAt: new Date(now) }
+        })
+        n += 1
+      } catch (e) { /* 单条失败继续 */ }
+    }
+  } catch (e) {
+    console.warn('revoke member pass tokens', e && e.message)
+  }
+  return n
+}
+
+async function handleCancelMember(event, actor) {
+  const userId = String((event && event.userId) || '').trim()
+  const openid = String((event && event.openid) || '').trim()
+  const mode = String((event && event.mode) || '').trim()
+  const confirmPhone = normalizePhone(event && event.confirmPhone)
+  const confirmText = String((event && event.confirmText) || '').trim()
+
+  // ---- 校验一：方式必须合法 ----
+  if (!CANCEL_MODES.includes(mode)) {
+    return fail('注销方式无效（soft / anonymize / purge）')
+  }
+  // ---- 校验二：手工输入「注销」二字 ----
+  if (confirmText !== '注销') {
+    return fail('请在确认框内手动输入「注销」二字')
+  }
+
+  // ---- 定位会员 ----
+  let user = null
+  if (userId) {
+    try {
+      const res = await db.collection('users').doc(userId).get()
+      user = res.data || null
+    } catch (e) {
+      return fail('会员不存在')
+    }
+  } else if (openid) {
+    const res = await db.collection('users').where({ _openid: openid }).limit(1).get()
+    user = (res.data && res.data[0]) || null
+  }
+  if (!user) return fail('会员不存在')
+
+  // ---- 校验三：手机号必须与该会员绑定号码一致 ----
+  const bound = normalizePhone(user.phone)
+  if (!bound) {
+    return fail('该会员未绑定手机号，无法通过手机号验证，请改用其他方式核实身份')
+  }
+  if (confirmPhone !== bound) {
+    return fail('手机号与该会员绑定号码不一致，已阻止注销')
+  }
+
+  const operator = (actor && (actor.name || actor.openid)) || 'Admin Web'
+  const operatorOpenid = (actor && actor.openid) || ''
+  const targetOpenid = user._openid || openid || ''
+  const phoneHash = crypto.createHash('sha256').update(bound, 'utf8').digest('hex').slice(0, 16)
+
+  if (user.status === 'cancelled' && mode !== 'purge') {
+    return fail('该会员已处于注销状态，无需重复操作')
+  }
+
+  const revoked = await revokeMemberPassTokens(targetOpenid)
+
+  if (mode === 'purge') {
+    // 硬删除：文档删除后无处留痕，故先写审计
+    await db.collection('users').doc(user._id).remove()
+    await writeCancelAudit({
+      action: 'member_cancel',
+      mode: 'purge',
+      targetOpenid,
+      targetUserId: user._id,
+      targetNick: String(user.nickName || ''),
+      phoneHash,
+      phoneMasked: maskPhone(bound),
+      operator,
+      operatorOpenid,
+      revokedTokens: revoked,
+      note: '硬删除会员文档（不可恢复）'
+    })
+    return {
+      success: true,
+      mode: 'purge',
+      msg: `已删除该会员记录（注销前手机号 ${maskPhone(bound)}）；已失效会员码 ${revoked} 张`,
+      revokedTokens: revoked,
+      deleted: true
+    }
+  }
+
+  const patch = {
+    status: 'cancelled',
+    cancelMode: mode,
+    cancelledAt: db.serverDate(),
+    cancelledBy: operator,
+    cancelledByOpenid: operatorOpenid,
+    phoneHash,
+    phoneAtCancelMasked: maskPhone(bound),
+    memberPassRevoked: revoked,
+    updateTime: db.serverDate()
+  }
+  if (mode === 'anonymize') {
+    Object.assign(patch, ANON_SCRUB, { anonymizedAt: db.serverDate() })
+  }
+
+  await db.collection('users').doc(user._id).update({ data: patch })
+
+  await writeCancelAudit({
+    action: 'member_cancel',
+    mode,
+    targetOpenid,
+    targetUserId: user._id,
+    targetNick: String(user.nickName || ''),
+    phoneHash,
+    phoneMasked: maskPhone(bound),
+    operator,
+    operatorOpenid,
+    revokedTokens: revoked,
+    note: mode === 'anonymize' ? '注销并匿名化（不可恢复）' : '软注销（可恢复）'
+  })
+
+  return {
+    success: true,
+    mode,
+    msg:
+      mode === 'anonymize'
+        ? `已注销并匿名化该会员；已失效会员码 ${revoked} 张`
+        : `已软注销该会员（可恢复）；已失效会员码 ${revoked} 张`,
+    revokedTokens: revoked,
+    status: 'cancelled'
+  }
+}
+
+/** 恢复：仅对软注销有意义（匿名化已抹除身份信息，无法还原） */
+async function handleRestoreMember(event, actor) {
+  const userId = String((event && event.userId) || '').trim()
+  if (!userId) return fail('缺少 userId')
+  let user = null
+  try {
+    const res = await db.collection('users').doc(userId).get()
+    user = res.data || null
+  } catch (e) {
+    return fail('会员不存在')
+  }
+  if (!user) return fail('会员不存在')
+  if (user.status !== 'cancelled') return fail('该会员当前不是注销状态')
+  if (user.cancelMode === 'anonymize') {
+    return fail('该会员已匿名化，身份信息不可还原，无法恢复')
+  }
+
+  const operator = (actor && (actor.name || actor.openid)) || 'Admin Web'
+  await db.collection('users').doc(userId).update({
+    data: {
+      status: 'active',
+      restoredAt: db.serverDate(),
+      restoredBy: operator,
+      updateTime: db.serverDate()
+    }
+  })
+  await writeCancelAudit({
+    action: 'member_restore',
+    targetOpenid: user._openid || '',
+    targetUserId: userId,
+    targetNick: String(user.nickName || ''),
+    operator,
+    operatorOpenid: (actor && actor.openid) || '',
+    note: '恢复软注销会员'
+  })
+  return { success: true, msg: '已恢复该会员', status: 'active' }
+}
+
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID || ''
@@ -514,6 +744,8 @@ exports.main = async (event) => {
     if (action === 'getDetail') return await handleGetDetail(event)
     if (action === 'overview') return await handleOverview(event)
     if (action === 'adjustPoints') return await handleAdjustPoints(event, guard.actor)
+    if (action === 'cancelMember') return await handleCancelMember(event, guard.actor)
+    if (action === 'restoreMember') return await handleRestoreMember(event, guard.actor)
 
     return fail('未知操作', { code: 'UNKNOWN_ACTION' })
   } catch (e) {
