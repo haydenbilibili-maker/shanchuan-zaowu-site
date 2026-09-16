@@ -1579,13 +1579,26 @@ const sidebarCollapsed = ref(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'
 const recentCollapsed = ref(localStorage.getItem(RECENT_COLLAPSED_KEY) === '1')
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
-  try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed.value ? '1' : '0') } catch (e) {}
+  safeLocalSet(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed.value ? '1' : '0')
   // 通知依赖布局宽度的图表/表格重算
   requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
 }
+/**
+ * localStorage 写入包装。
+ * 这类失败（隐私模式 / 配额满 / storage 被禁用）确实可忽略，
+ * 但**不能静默** —— 否则「侧栏折叠状态/置顶没保存」这类问题永远查不出来（审计 P1）。
+ */
+function safeLocalSet(key, value) {
+  try {
+    localStorage.setItem(key, value)
+  } catch (e) {
+    console.warn(`[App] localStorage 写入失败（已忽略）：${key}`, e?.message || e)
+  }
+}
+
 const toggleRecentCollapsed = () => {
   recentCollapsed.value = !recentCollapsed.value
-  try { localStorage.setItem(RECENT_COLLAPSED_KEY, recentCollapsed.value ? '1' : '0') } catch (e) {}
+  safeLocalSet(RECENT_COLLAPSED_KEY, recentCollapsed.value ? '1' : '0')
 }
 
 // ============ 全局动作监听（命令面板触发 / 快捷键触发） ============
@@ -1659,10 +1672,13 @@ const loadPinned = () => {
       const arr = JSON.parse(raw)
       if (Array.isArray(arr)) pinnedIds.value = arr
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    // 读取失败按「无置顶」处理是安全的；记录以便排查存储被禁用的情况
+    console.warn('[App] 读取置顶模块失败（按空处理）', e?.message || e)
+  }
 }
 const persistPinned = () => {
-  try { localStorage.setItem(PINNED_KEY, JSON.stringify(pinnedIds.value)) } catch (e) {}
+  safeLocalSet(PINNED_KEY, JSON.stringify(pinnedIds.value))
   // 同页内通知命令面板同步（storage 事件只派发给其它标签页）
   window.dispatchEvent(new CustomEvent('pinned-changed'))
 }
@@ -1692,13 +1708,15 @@ const loadOpeneds = () => {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed)) return parsed.filter(k => ALL_SUBMENUS.includes(k))
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    console.warn('[App] 读取侧栏展开组失败（回落默认）', e?.message || e)
+  }
   // 默认展开"业务运营"和"客户经营"
   return ['grp-business', 'grp-customer']
 }
 const defaultOpeneds = ref(loadOpeneds())
 const persistOpeneds = () => {
-  try { localStorage.setItem(SIDEBAR_OPENED_KEY, JSON.stringify(defaultOpeneds.value)) } catch (e) {}
+  safeLocalSet(SIDEBAR_OPENED_KEY, JSON.stringify(defaultOpeneds.value))
 }
 const handleSubMenuOpen = (key) => {
   if (!defaultOpeneds.value.includes(key)) {
@@ -1718,14 +1736,14 @@ const canToggleGroups = () => !(sidebarCollapsed.value && !isMobile.value)
 const collapseAllGroups = () => {
   if (!canToggleGroups()) return
   recentCollapsed.value = true
-  try { localStorage.setItem(RECENT_COLLAPSED_KEY, '1') } catch (e) {}
+  safeLocalSet(RECENT_COLLAPSED_KEY, '1')
 }
 
 /** 兼容命令面板：展开最近常用 */
 const expandAllGroups = () => {
   if (!canToggleGroups()) return
   recentCollapsed.value = false
-  try { localStorage.setItem(RECENT_COLLAPSED_KEY, '0') } catch (e) {}
+  safeLocalSet(RECENT_COLLAPSED_KEY, '0')
 }
 
 // --- 藏品模块状态 ---
@@ -1967,13 +1985,21 @@ const logout = () => {
         cancelButtonText: '取消',
         type: 'warning'
     }).then(async () => {
-        await clearAdminSession()
+        try {
+            await clearAdminSession()
+        } catch (e) {
+            // 会话清理失败不能静默：否则人以为已退出、实际服务端会话仍在
+            console.error('退出登录时清理服务端会话失败', e)
+            ElMessage.warning(`服务端会话清理失败（本地已退出）：${e?.message || '未知错误'}`)
+        }
         localStorage.removeItem('sc_admin_token')
         isLoggedIn.value = false
         password.value = ''
         setAdminHash(false)
         ElMessage.info('已安全退出')
-    }).catch(() => {})
+    }).catch((e) => {
+        if (e !== 'cancel' && e !== 'close') console.error('退出确认框异常', e)
+    })
 }
 
 const handleMenuSelect = (index) => {
@@ -1985,7 +2011,7 @@ const handleMenuSelect = (index) => {
             try {
                 productTableRef.value.clearSelection?.()
             } catch (e) {
-                // 忽略清除选择时的错误
+                console.warn('[App] 清除表格选择失败（已忽略）', e?.message || e)
             }
         }
     }
@@ -2015,7 +2041,9 @@ const handleMenuSelect = (index) => {
                 promoFilter.value = promo
                 sessionStorage.removeItem('sc_archive_promo_filter')
             }
-        } catch (_) { /* ignore */ }
+        } catch (e) {
+            console.warn('[App] 清理归档促销筛选标记失败（已忽略）', e?.message || e)
+        }
         // 使用nextTick确保组件已挂载后再加载数据
         nextTick(() => {
             // 再次检查是否仍在当前tab
@@ -2690,7 +2718,10 @@ const handleBatchToggleShelf = async (isOnShelf) => {
         } finally {
             loading.value = false
         }
-    }).catch(() => {})
+        }).catch((e) => {
+        // 只吞用户取消；意外异常必须留痕
+        if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 /** 批量关闭秒杀 / 拼团（保留历史字段，仅 enabled=false） */
@@ -2885,7 +2916,10 @@ const handleBatchPrice = async () => {
         } finally {
             loading.value = false
         }
-    }).catch(() => {})
+        }).catch((e) => {
+        // 只吞用户取消；意外异常必须留痕
+        if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 // 批量调库存
@@ -2939,7 +2973,10 @@ const handleBatchStock = async () => {
         } finally {
             loading.value = false
         }
-    }).catch(() => {})
+        }).catch((e) => {
+        // 只吞用户取消；意外异常必须留痕
+        if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 // 批量导出商品
@@ -3697,7 +3734,10 @@ const deleteItem = (row) => {
             console.error('删除失败', err)
             ElMessage.error('删除失败: ' + (err.message || '未知错误'))
         }
-    }).catch(() => {})
+        }).catch((e) => {
+        // 只吞用户取消；意外异常必须留痕
+        if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 const saveProduct = async () => {

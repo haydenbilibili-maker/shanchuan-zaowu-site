@@ -580,6 +580,28 @@ function persist() {
   saveStoreBundle(JSON.parse(JSON.stringify(bundle)))
 }
 
+/**
+ * 本地改动落盘统一收尾。
+ *
+ * `saveStoreBundle` 直接调 `localStorage.setItem`，配额满/隐私模式会**抛错**；
+ * 而这些删除流程原先都在 `ElMessageBox.confirm(...).then(() => {…}).catch(() => {})` 里，
+ * 同步 `.then` 抛出的错误会被那个空 catch 吞掉 —— 界面弹「已删除」，其实没存住（审计 §0 P1）。
+ */
+function commitLocalChange(mutate, successText = '已删除') {
+  try {
+    mutate()
+    persist()
+    ElMessage.success(successText)
+  } catch (e) {
+    console.error('本地保存失败', e)
+    // 回滚内存态，避免界面与已落盘数据不一致
+    Object.assign(bundle, loadStoreBundle())
+    ElMessage.error(
+      `保存失败：${e?.message || '本地存储写入失败'}。改动未生效（可能浏览器存储空间不足）。`
+    )
+  }
+}
+
 const currentStore = computed(() => bundle.stores.find((s) => s.id === drawerStoreId.value) || null)
 
 const licensesForStore = computed(() =>
@@ -663,11 +685,13 @@ function removeLicenseType(row) {
   }
   ElMessageBox.confirm(`确定删除证照类型「${row.name}」？`, '提示', { type: 'warning' })
     .then(() => {
-      bundle.licenseTypes = bundle.licenseTypes.filter((t) => t.id !== row.id)
-      persist()
-      ElMessage.success('已删除')
+      commitLocalChange(() => {
+        bundle.licenseTypes = bundle.licenseTypes.filter((t) => t.id !== row.id)
+      })
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 function normHeader(h) {
@@ -1000,17 +1024,19 @@ function removeStore(row) {
   ElMessageBox.confirm(`确定删除门店「${row.name}」？其子数据将一并删除。`, '提示', { type: 'warning' })
     .then(() => {
       const id = row.id
-      bundle.stores = bundle.stores.filter((s) => s.id !== id)
-      bundle.licenses = bundle.licenses.filter((l) => l.storeId !== id)
-      bundle.rentPayments = bundle.rentPayments.filter((r) => r.storeId !== id)
-      bundle.invoices = bundle.invoices.filter((i) => i.storeId !== id)
-      bundle.revenueEntries = bundle.revenueEntries.filter((r) => r.storeId !== id)
-      bundle.staff = bundle.staff.filter((s) => s.storeId !== id)
-      if (drawerStoreId.value === id) drawerVisible.value = false
-      persist()
-      ElMessage.success('已删除')
+      commitLocalChange(() => {
+        bundle.stores = bundle.stores.filter((s) => s.id !== id)
+        bundle.licenses = bundle.licenses.filter((l) => l.storeId !== id)
+        bundle.rentPayments = bundle.rentPayments.filter((r) => r.storeId !== id)
+        bundle.invoices = bundle.invoices.filter((i) => i.storeId !== id)
+        bundle.revenueEntries = bundle.revenueEntries.filter((r) => r.storeId !== id)
+        bundle.staff = bundle.staff.filter((s) => s.storeId !== id)
+        if (drawerStoreId.value === id) drawerVisible.value = false
+      })
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 function syncLicenseTypeName() {
@@ -1073,11 +1099,13 @@ function saveLicense() {
 function removeLicense(row) {
   ElMessageBox.confirm('确定删除该证照记录？附件元数据将一并删除（云文件需另行清理策略）。', '提示', { type: 'warning' })
     .then(() => {
-      bundle.licenses = bundle.licenses.filter((l) => l.id !== row.id)
-      persist()
-      ElMessage.success('已删除')
+      commitLocalChange(() => {
+        bundle.licenses = bundle.licenses.filter((l) => l.id !== row.id)
+      })
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 function openRentDialog() {
@@ -1123,11 +1151,13 @@ function saveRent() {
 function removeRent(row) {
   ElMessageBox.confirm('确定删除该租金记录？', '提示', { type: 'warning' })
     .then(() => {
-      bundle.rentPayments = bundle.rentPayments.filter((r) => r.id !== row.id)
-      persist()
-      ElMessage.success('已删除')
+      commitLocalChange(() => {
+        bundle.rentPayments = bundle.rentPayments.filter((r) => r.id !== row.id)
+      })
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 function openInvoiceDialog() {
@@ -1204,11 +1234,13 @@ function saveInvoice() {
 function removeInv(row) {
   ElMessageBox.confirm('确定删除该发票登记？', '提示', { type: 'warning' })
     .then(() => {
-      bundle.invoices = bundle.invoices.filter((i) => i.id !== row.id)
-      persist()
-      ElMessage.success('已删除')
+      commitLocalChange(() => {
+        bundle.invoices = bundle.invoices.filter((i) => i.id !== row.id)
+      })
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 function openRevenueDialog() {
@@ -1266,11 +1298,13 @@ function saveRevenue() {
 function removeRev(row) {
   ElMessageBox.confirm('确定删除该营收行？', '提示', { type: 'warning' })
     .then(() => {
-      bundle.revenueEntries = bundle.revenueEntries.filter((r) => r.id !== row.id)
-      persist()
-      ElMessage.success('已删除')
+      commitLocalChange(() => {
+        bundle.revenueEntries = bundle.revenueEntries.filter((r) => r.id !== row.id)
+      })
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 async function previewFile(fileId) {

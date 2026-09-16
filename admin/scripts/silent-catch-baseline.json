@@ -1,5 +1,4 @@
 {
- "admin/src/App.vue": 15,
  "admin/src/cloud.js": 1,
  "admin/src/components/AICenter.vue": 11,
  "admin/src/components/ApprovalQueue.vue": 2,
@@ -29,7 +28,6 @@
  "admin/src/components/PropertyEval.vue": 6,
  "admin/src/components/RealtimeMonitor.vue": 1,
  "admin/src/components/StoreFrontConfig.vue": 2,
- "admin/src/components/StoreManagement.vue": 6,
  "admin/src/components/StoreReceiptClaims.vue": 2,
  "admin/src/components/StrategyResearch.vue": 28,
  "admin/src/components/SupportConfigs.vue": 1,
