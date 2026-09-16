@@ -68,6 +68,11 @@ export const MODULES = [
   { id: '26', name: '监控大屏', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'monitor realtime sslg dashboard 告警刷新 经营数据大屏 看板' },
   { id: '49', name: '经营数据大屏 · 看板', group: 'OVERVIEW', subgroup: null, icon: 'DataBoard', keywords: 'bigscreen jydp dataviz cockpit screen 大屏 看板 已并入监控大屏' },
   { id: '25', name: '运营决策中心', group: 'OVERVIEW', subgroup: null, icon: 'Trophy', keywords: 'decision center yyjzzx ops' },
+  // AI 工作台（云端 Agent）：**外链条目**（`external`）—— 不在 ERP 内部渲染，
+  // 而是新标签打开独立部署的 DeepSeek Harness（agent.shanhaizaowu.com）。
+  // 见 App.vue 的 EXTERNAL_TAB_IDS / externalUrlOf：这类条目不占内部 tab，
+  // 深链也不会开出没有组件的白屏 tab（走「打开外链 + 回退驾驶舱」）。
+  { id: '80', name: 'AI 工作台', group: 'OVERVIEW', subgroup: null, icon: 'Cpu', keywords: 'agent dsh deepseek harness 云端 agent.shanhaizaowu.com AI 工作台 智能体', external: 'https://agent.shanhaizaowu.com/' },
 
   // 业务运营 — 货
   { id: '1',  name: '藏品档案库', group: 'BUSINESS', subgroup: '货', icon: 'Box', keywords: 'product collection archive cpdak sku 商品' },

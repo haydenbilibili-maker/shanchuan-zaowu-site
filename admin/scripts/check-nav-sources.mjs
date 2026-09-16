@@ -150,13 +150,34 @@ export async function runChecks({ registryPath, navPath, appPath }) {
   check('解析到 INLINE_TAB_IDS', inlineIds.length > 0, `解析到 ${inlineIds.length} 个`)
 
   const navModuleIdsList = [...navModuleIds]
-  const renderable = new Set([...mapKeys, ...inlineIds])
+  // 外链条目（注册表里带 `external`）：不在 ERP 内部渲染，而是新标签打开。
+  // 它们既没有组件映射也没有内联分支，但**仍算「有渲染方」** —— 否则守卫会误判成
+  // 「注册了但打不开」，而实际上它是能打开的（只是打开的是外站）。
+  const externalModules = MODULES_CANONICAL.filter((m) => m.external)
+  const externalIds = externalModules.map((m) => String(m.id))
+  const renderable = new Set([...mapKeys, ...inlineIds, ...externalIds])
   const noRenderer = MODULES_CANONICAL.map((m) => String(m.id))
     .filter((id) => !renderable.has(id))
   check(
-    '每个规范模块都有渲染方（TAB_COMPONENT_MAP ∪ INLINE_TAB_IDS）',
+    '每个规范模块都有渲染方（TAB_COMPONENT_MAP ∪ INLINE_TAB_IDS ∪ 外链）',
     noRenderer.length === 0,
     `无渲染方（打开会误报「未注册」）：${noRenderer.map((id) => `${id} ${MODULES_BY_ID[id]?.name || '?'}`).join('、')}`
+  )
+  // 外链条目的三条性质：URL 合法、不误挂内部组件、App.vue 真的实现了拦截。
+  // 最后一条最要紧：只加注册表而不实现拦截 → 点进去是一个没有组件的白屏 tab。
+  const badUrl = externalModules.filter((m) => !/^https:\/\//.test(String(m.external || '')))
+  check('外链条目都带 https URL', badUrl.length === 0, `异常：${badUrl.map((m) => `${m.id} ${m.name}`).join('、')}`)
+  const extWithComponent = externalModules.filter((m) => mapKeys.includes(String(m.id)))
+  check(
+    '外链条目不得进 TAB_COMPONENT_MAP（它不该被内部渲染）',
+    extWithComponent.length === 0,
+    `误挂组件：${extWithComponent.map((m) => String(m.id)).join('、')}`
+  )
+  const extCalls = (appSrc.match(/openExternalModule\(/g) || []).length
+  check(
+    'App.vue 实现了外链拦截（handleMenuSelect 与 applyHashModule 两个入口）',
+    /const openExternalModule = /.test(appSrc) && extCalls >= 2,
+    `openExternalModule 定义=${/const openExternalModule = /.test(appSrc)} 调用处=${extCalls}（需 ≥2）`
   )
   const notInRegistry = mapKeys.filter((k) => !MODULES_BY_ID[k])
   check(

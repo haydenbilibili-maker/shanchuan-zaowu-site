@@ -1543,8 +1543,38 @@ const TAB_COMPONENT_MAP = {
  */
 const INLINE_TAB_IDS = new Set(['1'])
 
-/** 该 tab 是否有渲染方（组件映射表或内联分支） */
-const isRegisteredTab = (id) => !!TAB_COMPONENT_MAP[String(id)] || INLINE_TAB_IDS.has(String(id))
+/**
+ * **外链条目**：注册表里带 `external` 的模块（如 80「AI 工作台」→ 云端 DSH）。
+ *
+ * 它们不在 ERP 内部渲染，而是 `window.open` 新标签打开 —— 所以既没有组件映射，
+ * 也没有内联分支。但仍要算作「已注册」，否则深链 `#/m/80` 会被判成未注册模块
+ * 并弹出「模块 id 未注册」告警（文案还是错的：它确实注册了，只是不在内部渲染）。
+ * `check:nav-sources` 会把本集合一并算作「有渲染方」。
+ *
+ * 为什么不做成 iframe/内嵌页：DSH 有自己的 Host 白名单与 `X-Frame-Options` 语义，
+ * 内嵌既可能被拒，也会让「打开的是哪个站」变得含糊。外链更诚实。
+ */
+const EXTERNAL_TAB_IDS = new Set(
+  Object.values(MODULES_BY_ID).filter((m) => m.external).map((m) => String(m.id))
+)
+
+/** 外链条目的 URL；不是外链条目则返回空串 */
+const externalUrlOf = (id) => {
+  const m = MODULES_BY_ID[String(id)]
+  return m && m.external ? m.external : ''
+}
+
+/** 该 tab 是否有渲染方（组件映射表、内联分支，或外链） */
+const isRegisteredTab = (id) =>
+  !!TAB_COMPONENT_MAP[String(id)] || INLINE_TAB_IDS.has(String(id)) || EXTERNAL_TAB_IDS.has(String(id))
+
+/** 打开外链条目（新标签；noopener,noreferrer 防反向控制与 referrer 泄漏） */
+const openExternalModule = (id) => {
+  const url = externalUrlOf(id)
+  if (!url) return false
+  window.open(url, '_blank', 'noopener,noreferrer')
+  return true
+}
 
 /**
  * **当前** tab 是否未注册。只反映眼前这一屏，不做会话级累计。
@@ -1963,6 +1993,12 @@ function syncModuleHash(moduleId) {
  */
 function applyHashModule(id) {
     const key = resolveModuleOpen(id)
+    // 外链条目：**不开内部 tab**（它没有渲染方，开出来就是白屏），
+    // 而是打开外链并把当前 tab 落回驾驶舱 —— 与「未注册」同一套「不静默、也不留白屏」的思路。
+    if (openExternalModule(key || id)) {
+        openTabAPI('0')
+        return
+    }
     if (MODULES_BY_ID[key]) openTabAPI(id)
     else activeTabId.value = String(id)
 }
@@ -2089,6 +2125,12 @@ const handleMenuSelect = (index) => {
 
     const raw = String(index)
     const resolved = resolveModuleOpen(raw)
+    // 外链条目（如 80「AI 工作台」）：**不开内部 tab**，直接新标签打开，然后就此返回。
+    // 这里是导航大屏与命令面板的共同枢纽，所以一处拦截即可覆盖两个入口。
+    if (openExternalModule(resolved || raw)) {
+        if (isMobile.value) mobileMenuVisible.value = false
+        return
+    }
     // 驾驶舱 / 命令面板 / Hub 进入功能页时统一记录返回域，保证「返回」可靠
     if (resolved && !resolved.startsWith('nav-') && resolved !== '0') {
         const from = String(currentTab.value || '')
