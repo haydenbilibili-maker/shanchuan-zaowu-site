@@ -408,6 +408,41 @@ export async function fetchCollectionLimit(collectionName, options = {}) {
   return all
 }
 
+/**
+ * 写结果判定 —— 把「没抛错但其实没写进去」识别出来。
+ *
+ * 为什么需要它：CloudBase 的 `update`/`remove` 对**不匹配的文档**返回 `{updated: 0}` 而**不抛错**，
+ * 安全规则拒绝时的表现也可能是空结果。于是 `await db.doc(id).update(...)` 后面接一句
+ * `ElMessage.success('已保存')` 就成了假成功（审计 §0 P0-5 / P1「写失败被当成成功」）。
+ */
+export function writeApplied(res) {
+  if (res == null) return true // 形状未知时不误判为失败
+  if (res.success === false) return false // 云函数代理路径
+  const stats = res.stats || {}
+  const updated = stats.updated != null ? stats.updated : res.updated
+  if (updated != null) return Number(updated) > 0
+  if (res._id || res.id || res.upsertedId) return true
+  return true
+}
+
+/** 写未生效错误：message 面向运营，detail 留给 console */
+export class WriteNotAppliedError extends Error {
+  constructor(collectionName, op, res) {
+    super(`保存未生效：${collectionName} 未发生任何变更（可能无权限或文档不存在）`)
+    this.name = 'WriteNotAppliedError'
+    this.collection = collectionName
+    this.op = op
+    this.detail = res
+  }
+}
+
+/** 断言写已生效；未生效则抛 WriteNotAppliedError（调用方不得吞掉） */
+export function assertWriteApplied(collectionName, res, op = 'write') {
+  if (writeApplied(res)) return res
+  console.error('[write-not-applied]', collectionName, op, res)
+  throw new WriteNotAppliedError(collectionName, op, res)
+}
+
 export async function cdnAdd(collectionName, data) {
   if (shouldProxyStoreContent(collectionName)) {
     return callStoreContentWrite({
@@ -515,43 +550,69 @@ export async function cdnQueryPage(collectionName, options = {}) {
   return res.data || []
 }
 
-/** 固定 docId upsert：先 update，失败则 add */
-export async function cdnUpsertDoc(collectionName, docId, data) {
+/**
+ * 固定 docId upsert。
+ *
+ * ⚠️ 原实现是 `try { update } catch { add }`，**首次保存会静默丢失**（审计 §0 P0-7）：
+ * CloudBase 的 `update` 对不存在的文档返回 `{updated: 0}` 而**不抛错**，`catch` 永不触发，
+ * `add` 永不执行，调用方随后照样弹「保存成功」。
+ * 现改为先看写结果：`updated === 0` 即视为「文档不存在」→ 转 add。
+ *
+ * `ops` 仅为可测试性预留（默认即真实实现），见 admin/scripts/test-write-layer.mjs。
+ */
+export async function cdnUpsertDoc(collectionName, docId, data, ops = {}) {
+  const update = ops.update || cdnUpdate
+  const add = ops.add || cdnAdd
   try {
-    await cdnUpdate(collectionName, docId, data)
-  } catch {
-    await cdnAdd(collectionName, {
+    const res = await update(collectionName, docId, data)
+    if (writeApplied(res)) return res
+  } catch (e) {
+    // 真错误（网络/权限）照抛；只有「像不存在」才转 add
+    if (!/not exist|不存在|no document|DOCUMENT_NOT_FOUND|-502001/i.test(e?.message || String(e))) {
+      throw e
+    }
+  }
+  return assertWriteApplied(
+    collectionName,
+    await add(collectionName, {
       ...data,
       _id: docId,
       _createTime: data._createTime ?? Date.now(),
-    })
-  }
+    }),
+    'add'
+  )
 }
 
 /** 集合仅一条配置时 upsert */
 export async function cdnUpsertSingleton(collectionName, data) {
   const rows = await fetchCollectionLimit(collectionName, { limit: 1 })
   if (rows.length > 0) {
-    await cdnUpdate(collectionName, rows[0]._id, data)
+    const res = await cdnUpdate(collectionName, rows[0]._id, data)
+    assertWriteApplied(collectionName, res, 'update')
     return rows[0]._id
   }
-  await cdnAdd(collectionName, {
+  const added = await cdnAdd(collectionName, {
     ...data,
     _createTime: data._createTime ?? Date.now(),
   })
+  assertWriteApplied(collectionName, added, 'add')
+  return added?._id || added?.id || ''
 }
 
 /** where 匹配 upsert（如 type: 'behavior_types'） */
 export async function cdnUpsertByWhere(collectionName, where, data) {
   const rows = await fetchCollectionWhere(collectionName, where, 1)
   if (rows.length > 0) {
-    await cdnUpdate(collectionName, rows[0]._id, data)
+    const res = await cdnUpdate(collectionName, rows[0]._id, data)
+    assertWriteApplied(collectionName, res, 'update')
     return rows[0]._id
   }
-  await cdnAdd(collectionName, {
+  const added = await cdnAdd(collectionName, {
     ...data,
     _createTime: data._createTime ?? Date.now(),
   })
+  assertWriteApplied(collectionName, added, 'add')
+  return added?._id || added?.id || ''
 }
 
 /** 分页拉全量，避免 limit(1000) 无排序漏掉近期记录 */

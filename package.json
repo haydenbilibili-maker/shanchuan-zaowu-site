@@ -25,6 +25,8 @@
     "check:store-points:selftest": "node miniprogram/scripts/check-store-point-rules-sync.cjs --selftest",
     "check:brand-contrast": "node admin/scripts/check-brand-contrast.mjs",
     "check:brand-contrast:selftest": "node admin/scripts/check-brand-contrast.mjs --selftest",
+    "test:write-layer": "node admin/scripts/test-write-layer.mjs",
+    "test:write-layer:selftest": "node admin/scripts/test-write-layer.mjs --selftest",
     "pages:version": "true",
     "preview": "astro preview",
     "astro": "astro"

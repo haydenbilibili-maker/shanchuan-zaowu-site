@@ -195,6 +195,7 @@ import {
   cdnUpdate,
   cdnAdd,
   callCloudFunction,
+  assertWriteApplied,
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -441,17 +442,33 @@ const approve = (row) => {
   )
     .then(async () => {
       const patch = { status: 'approved', approvedTime: Date.now() }
-      if (row._fromOrder && row.orderId) {
-        await cdnUpdate(COLLECTIONS.ORDERS, row.orderId, {
-          status: 'refund_approved',
-          refundApprovedTime: Date.now(),
-        })
+      try {
+        if (row._fromOrder && row.orderId) {
+          // orders 线上为 write:false：写不进去时必须报错，不能假装成功（审计 §0 P0-8）
+          const res = await cdnUpdate(COLLECTIONS.ORDERS, row.orderId, {
+            status: 'refund_approved',
+            refundApprovedTime: Date.now(),
+          })
+          assertWriteApplied(COLLECTIONS.ORDERS, res, 'update')
+        }
+        await ensureRefundDoc(row, patch)
+        ElMessage.success('已批准')
+      } catch (e) {
+        console.error('批准退款失败', e)
+        // 不再静默（原为 .catch(() => {})）：明确告知未生效 + 正确路径
+        ElMessageBox.alert(
+          `${e?.message || '批准未生效'}。ERP 无权限直接改订单状态（orders 仅允许云函数写入），`
+            + '本次审批未落库。请在云函数侧完成审批后再操作。',
+          '批准未生效',
+          { type: 'error' },
+        )
       }
-      await ensureRefundDoc(row, patch)
-      ElMessage.success('已批准')
       refresh()
     })
-    .catch(() => {})
+    .catch((e) => {
+      // 仅吞掉用户取消；其它异常记录到控制台
+      if (e !== 'cancel' && e !== 'close') console.error('批准退款确认框异常', e)
+    })
 }
 
 const reject = (row) => {
@@ -466,18 +483,31 @@ const reject = (row) => {
         rejectReason: value,
         rejectTime: Date.now(),
       }
-      if (row._fromOrder && row.orderId) {
-        await cdnUpdate(COLLECTIONS.ORDERS, row.orderId, {
-          status: 'refund_rejected',
-          refundRejectReason: value,
-          refundRejectTime: Date.now(),
-        })
+      try {
+        if (row._fromOrder && row.orderId) {
+          const res = await cdnUpdate(COLLECTIONS.ORDERS, row.orderId, {
+            status: 'refund_rejected',
+            refundRejectReason: value,
+            refundRejectTime: Date.now(),
+          })
+          assertWriteApplied(COLLECTIONS.ORDERS, res, 'update')
+        }
+        await ensureRefundDoc(row, patch)
+        ElMessage.success('已拒绝')
+      } catch (e) {
+        console.error('拒绝退款失败', e)
+        ElMessageBox.alert(
+          `${e?.message || '拒绝未生效'}。ERP 无权限直接改订单状态（orders 仅允许云函数写入），`
+            + '本次拒绝未落库。注意：订单可能仍停在退款中状态，请在小程序「店长后台 → 订单 → 退款」处理。',
+          '拒绝未生效',
+          { type: 'error' },
+        )
       }
-      await ensureRefundDoc(row, patch)
-      ElMessage.success('已拒绝')
       refresh()
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('拒绝退款确认框异常', e)
+    })
 }
 
 const execRefund = (row) => {

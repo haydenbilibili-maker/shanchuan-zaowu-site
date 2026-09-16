@@ -552,6 +552,10 @@ export {
   cdnUpsertSingleton,
   cdnUpsertByWhere,
   cdnCount,
+  // 写结果守卫：把「没抛错但其实没写进去」变成显式错误（审计 §0 P0-5 / P0-7）
+  writeApplied,
+  assertWriteApplied,
+  WriteNotAppliedError,
 } from './utils/cloudbaseCdnDb.js';
 
 /**
