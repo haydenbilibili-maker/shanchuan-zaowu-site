@@ -452,8 +452,7 @@ Page({
     const giftFlag = giftOk ? 1 : 0
     const points = Number(gift.points) || 0
     const couponCount = Number(gift.couponCount) || 0
-    const autoReturn = this.data.hasReturn ? 1 : 0
-    const autoBrowse = !this.data.hasReturn && giftOk && !giftPartial && !giftFailed ? 1 : 0
+    // 欢迎页已改为「不自动跳转、由用户选择」，故不再下发 autoBrowse / autoReturn
 
     const q = [
       `reward=${rewardFlag}`,
@@ -463,8 +462,6 @@ Page({
       `points=${points}`,
       `coupons=${couponCount}`,
       `msg=${encodeURIComponent(gift.msg || '')}`,
-      `autoBrowse=${autoBrowse}`,
-      `autoReturn=${autoReturn}`,
       `from=${encodeURIComponent(this.data.from || '')}`
     ].join('&')
 

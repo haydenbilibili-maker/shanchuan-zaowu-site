@@ -1,8 +1,7 @@
 @import '../user-account.wxss';
 
 page {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   background: var(--color-bg);
 }
 
@@ -10,61 +9,75 @@ page {
   min-height: 100vh;
   box-sizing: border-box;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
   position: relative;
 }
 
-.done-card {
-  width: 100%;
-  max-width: 640rpx;
-  padding: var(--space-6) var(--space-4);
-  background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  box-sizing: border-box;
+/* 入场动画（原 care-enter 只在 care 页作用域内定义，这里是空类，故自带一套） */
+.done-enter {
+  animation: doneRise 520ms cubic-bezier(0.22, 0.7, 0.24, 1) both;
+}
+.done-enter-d1 { animation-delay: 90ms; }
+.done-enter-d2 { animation-delay: 170ms; }
+
+@keyframes doneRise {
+  from { opacity: 0; transform: translateY(18rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.done-icon-ring {
-  width: 88rpx;
-  height: 88rpx;
+/* ===== 顶部欢迎 ===== */
+.done-hero {
+  text-align: center;
+  margin-bottom: var(--space-5);
+}
+
+.done-seal {
+  position: relative;
+  width: 132rpx;
+  height: 132rpx;
   margin: 0 auto var(--space-4);
-  border-radius: 50%;
-  border: 1px solid var(--brass-800);
-  background: rgba(196, 167, 108, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.done-icon-dot {
-  width: 18rpx;
-  height: 18rpx;
+.done-seal-ring {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  background: var(--brass-400);
+  border: 1px solid var(--brass-400);
+  opacity: 0.55;
+  animation: doneSealPulse 2600ms ease-in-out infinite;
 }
 
-.done-icon {
-  font-size: 36rpx;
+.done-seal-glyph {
+  font-family: var(--font-brand);
+  font-size: 46rpx;
   color: var(--brass-400);
+  letter-spacing: 0.04em;
+}
+
+@keyframes doneSealPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.06); opacity: 0.85; }
 }
 
 .done-overline {
   display: block;
   font-size: 20rpx;
   color: var(--brass-600);
-  letter-spacing: 0.16em;
-  margin-bottom: 16rpx;
+  letter-spacing: 0.18em;
+  margin-bottom: 14rpx;
 }
 
 .done-title {
   display: block;
-  font-size: 40rpx;
+  font-size: 44rpx;
   font-family: var(--font-brand);
   color: var(--color-text-primary);
-  margin-bottom: 14rpx;
   line-height: 1.35;
+  margin-bottom: 14rpx;
 }
 
 .done-desc {
@@ -72,97 +85,96 @@ page {
   font-size: 26rpx;
   color: var(--color-text-secondary);
   line-height: 1.65;
-  margin-bottom: var(--space-4);
+  padding: 0 var(--space-2);
 }
 
-.done-reward-plate {
+/* ===== 礼包两张卡 ===== */
+.done-gifts {
   display: flex;
-  align-items: baseline;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.gift-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius-md);
   background: rgba(196, 167, 108, 0.06);
   border: 1px solid var(--brass-800);
-  border-radius: var(--radius-md);
 }
 
-.done-reward-num {
-  font-size: 32rpx;
+.gift-card-tap {
+  border-color: rgba(196, 167, 108, 0.55);
+  background: rgba(196, 167, 108, 0.12);
+}
+
+.gift-card-press {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.gift-num {
+  font-size: 52rpx;
   font-family: var(--font-mono);
   font-weight: 600;
   color: var(--brass-400);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
-.done-reward-unit {
+.gift-unit {
+  margin-top: 6rpx;
   font-size: 22rpx;
   color: var(--color-text-muted);
-  margin-right: 4rpx;
 }
 
-.done-reward-sep {
-  font-size: 24rpx;
-  color: var(--brass-800);
-  margin: 0 4rpx;
-}
-
-.done-reward {
-  font-size: 24rpx;
-  color: var(--brass-300);
-  line-height: 1.55;
-  display: block;
-}
-
-.done-reward-sub {
-  display: block;
-  margin-top: 8rpx;
+.gift-foot {
+  margin-top: 12rpx;
   font-size: 22rpx;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
+  color: var(--brass-400);
 }
 
-.done-reward-warn {
-  border-color: rgba(233, 162, 59, 0.45);
+.gift-foot.muted {
+  color: var(--color-text-muted);
+}
+
+/* ===== 礼包异常 ===== */
+.done-warn {
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(233, 162, 59, 0.45);
   background: rgba(233, 162, 59, 0.08);
+  text-align: center;
 }
 
-.done-reward-warn .done-reward {
+.done-warn-title {
+  display: block;
+  font-size: 28rpx;
   color: var(--color-warning);
 }
 
-.done-next-tip {
-  text-align: left;
-  margin: 0 0 var(--space-4);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(196, 167, 108, 0.22);
-  background: rgba(196, 167, 108, 0.05);
-}
-
-.done-next-title {
+.done-warn-msg {
   display: block;
-  font-size: 22rpx;
-  color: var(--brass-400);
-  letter-spacing: 0.06em;
-  margin-bottom: 12rpx;
-}
-
-.done-next-item {
-  display: block;
-  font-size: 24rpx;
-  color: var(--color-text-body);
+  margin-top: 10rpx;
+  font-size: 23rpx;
   line-height: 1.55;
-  margin-bottom: 8rpx;
+  color: var(--color-text-secondary);
 }
 
-.done-next-item:last-child {
-  margin-bottom: 0;
+.done-warn-btn {
+  margin-top: var(--space-3);
+}
+
+/* ===== 明确选择 ===== */
+.done-choices {
+  margin-bottom: var(--space-4);
 }
 
 .done-btn {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .done-btn:last-child {
@@ -174,10 +186,23 @@ page {
   transform: scale(0.98);
 }
 
-.done-auto-hint {
+.done-sub-link {
+  margin-top: var(--space-3);
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  padding: 12rpx 0;
+}
+
+.done-sub-link-press {
+  opacity: 0.7;
+}
+
+.done-footnote {
   display: block;
-  margin: 0 0 var(--space-4);
-  font-size: 22rpx;
+  text-align: center;
+  font-size: 21rpx;
+  line-height: 1.6;
   color: var(--color-text-muted);
-  letter-spacing: 0.04em;
+  opacity: 0.85;
 }
