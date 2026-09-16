@@ -7,7 +7,7 @@
       </div>
       <div class="header-actions">
         <el-button @click="seedDefaults" :loading="seeding">同步默认 6 类</el-button>
-        <el-button type="primary" color="#2D6A4F" :icon="Plus" @click="openDialog()">新建指南</el-button>
+        <el-button type="primary" :icon="Plus" @click="openDialog()">新建指南</el-button>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
     </div>
@@ -53,7 +53,6 @@
         <template #default="{ row }">
           <el-switch
             :model-value="row.status === 'active'"
-            active-color="#2D6A4F"
             @change="(v) => toggleStatus(row, v)"
           />
         </template>
@@ -104,12 +103,12 @@
           <div class="form-hint">sections 数组；含 key / title / body / tips；warning 板块用于异常信号</div>
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="form.statusActive" active-text="active" inactive-text="inactive" active-color="#2D6A4F" />
+          <el-switch v-model="form.statusActive" active-text="active" inactive-text="inactive" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" color="#2D6A4F" :loading="saving" @click="save">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
       </template>
     </el-dialog>
   </div>

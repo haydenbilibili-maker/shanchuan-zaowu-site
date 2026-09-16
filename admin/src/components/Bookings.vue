@@ -15,7 +15,7 @@
             prefix-icon="Search"
             @keyup.enter="verifyTicket"
           />
-          <el-button type="primary" color="#d4af37" :icon="Stamp" @click="verifyTicket">核销</el-button>
+          <el-button type="primary" :icon="Stamp" @click="verifyTicket">核销</el-button>
         </template>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
@@ -125,7 +125,6 @@
                 v-if="row.status === 'confirmed'"
                 size="small"
                 type="primary"
-                color="#d4af37"
                 @click="checkIn(row)"
               >核销</el-button>
               <el-button
@@ -187,7 +186,6 @@
                 v-if="row.status === 'waiting'"
                 size="small"
                 type="primary"
-                color="#d4af37"
                 @click="notifyWait(row)"
               >标记已通知</el-button>
               <el-button

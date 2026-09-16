@@ -272,7 +272,7 @@
         <p>无数据时不展示假曲线；统一文案「所选时间段暂无埋点数据」。缺 page / sessionId 时另有专项提示。</p>
         <h4>文档</h4>
         <p>完整说明见仓库 <code>admin/docs/C端行为埋点说明.md</code>。</p>
-        <el-button type="primary" color="#2D6A4F" @click="guideVisible = false">知道了</el-button>
+        <el-button type="primary" @click="guideVisible = false">知道了</el-button>
       </div>
     </el-drawer>
   </div>
@@ -773,7 +773,7 @@ watch(rawEvents, () => recomputeTops(), { deep: true })
 .ma-bar { height: 100%; background: linear-gradient(90deg, #d4af37, #b7950b); border-radius: 4px; transition: width 0.4s; }
 .ma-num { text-align: right; font-weight: bold; color: #333; }
 
-.empty { padding: 40px; text-align: center; color: #ccc; }
+.empty { padding: 40px; text-align: center; color: var(--light-text-secondary); }
 .data-source-tip { background: #fdf6ec; padding: 10px 14px; border-radius: 8px; color: #b7950b; font-size: 12px; display: flex; align-items: center; gap: 8px; }
 .data-source-tip code { background: rgba(255,255,255,0.6); padding: 1px 6px; border-radius: 4px; font-family: monospace; }
 .guide-body { font-size: 13px; color: #444; line-height: 1.6; }

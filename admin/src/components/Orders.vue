@@ -732,7 +732,7 @@ onMounted(() => fetchOrders())
 .prod-row { display: flex; align-items: center; margin-bottom: 8px; }
 .prod-row:last-child { margin-bottom: 0; }
 .prod-img { width: 44px; height: 44px; border-radius: 4px; border: 1px solid #eee; flex-shrink: 0; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
-.img-err { color: #ccc; font-size: 16px; }
+.img-err { color: var(--light-text-secondary); font-size: 16px; }
 .prod-info { margin-left: 10px; overflow: hidden; }
 .prod-title { font-size: 13px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prod-sku { font-size: 12px; color: #999; margin-top: 2px; }

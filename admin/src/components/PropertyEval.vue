@@ -7,7 +7,7 @@
         <span class="subtitle">PROPERTY DEAL MODELING · v3</span>
       </div>
       <div class="header-actions">
-        <el-button :icon="Plus" type="primary" color="#d4af37" @click="createNew">新增物业</el-button>
+        <el-button :icon="Plus" type="primary" @click="createNew">新增物业</el-button>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
     </div>
@@ -65,7 +65,7 @@
             <el-button :icon="Setting" plain @click="resetToDefaults" :disabled="!current.isPreset">恢复默认</el-button>
             <el-button :icon="Document" plain @click="exportCSV">导出 CSV</el-button>
             <el-button :icon="Delete" type="danger" plain @click="deleteCurrent" :disabled="current.isPreset">删除</el-button>
-            <el-button type="primary" color="#d4af37" :icon="Check" @click="saveCurrent">保存</el-button>
+            <el-button type="primary" :icon="Check" @click="saveCurrent">保存</el-button>
           </div>
         </div>
 
@@ -755,7 +755,8 @@ onUnmounted(() => {
 .pc-result { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #f0f0f0; display: flex; justify-content: space-between; font-size: 11px; }
 .pc-result .lbl { color: #999; }
 .pc-result .val { color: #d4af37; font-weight: bold; }
-.empty-tip, .empty-detail { color: #ccc; text-align: center; padding: 60px 20px; font-size: 13px; }
+/* 空态提示是信息不是装饰：#ccc 白底 1.61:1 几乎看不见，改次级文字色 5.74:1 达 AA */
+.empty-tip, .empty-detail { color: var(--light-text-secondary); text-align: center; padding: 60px 20px; font-size: 13px; }
 
 .detail-pane { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 .detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #f0f0f0; }

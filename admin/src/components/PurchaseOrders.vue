@@ -65,7 +65,7 @@
         <el-button size="small" :loading="catalogPublishing" @click="publishCatalog">
           同步价目 ({{ catalogSource === 'configs' ? '云端' : '本地' }})
         </el-button>
-        <el-button size="small" type="primary" color="#d4af37" @click="openCreate">新建订货单</el-button>
+        <el-button size="small" type="primary" @click="openCreate">新建订货单</el-button>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
     </div>
@@ -133,7 +133,6 @@
               v-if="row.status === 'submitted'"
               size="small"
               type="primary"
-              color="#d4af37"
               @click.stop="confirmRow(row)"
             >确认</el-button>
             <el-button
@@ -208,7 +207,7 @@
         <div class="detail-actions">
           <el-button @click="copyOrder(current)">复制明细</el-button>
           <el-button v-if="canEditMeta(current)" @click="openEditMeta(current)">改地址/备注</el-button>
-          <el-button v-if="current.status === 'submitted'" type="primary" color="#d4af37" @click="confirmRow(current)">确认订货</el-button>
+          <el-button v-if="current.status === 'submitted'" type="primary" @click="confirmRow(current)">确认订货</el-button>
           <el-button v-if="current.status === 'confirmed' || current.status === 'shipping'" type="success" @click="openShip(current)">出货</el-button>
           <el-button v-if="current.status === 'shipped'" @click="receiveRow(current)">代收货</el-button>
           <el-button v-if="current.status === 'draft' || current.status === 'submitted'" @click="cancelRow(current)">取消</el-button>
@@ -359,7 +358,7 @@
       <template #footer>
         <el-button @click="createOpen = false">取消</el-button>
         <el-button :loading="saving" @click="saveCreate('draft')">存草稿</el-button>
-        <el-button type="primary" color="#d4af37" :loading="saving" @click="saveCreate('submitted')">提交订货</el-button>
+        <el-button type="primary" :loading="saving" @click="saveCreate('submitted')">提交订货</el-button>
       </template>
     </el-dialog>
 

@@ -66,7 +66,7 @@
           </el-table-column>
           <el-table-column label="操作" width="280" fixed="right">
             <template #default="{ row }">
-              <el-button v-if="row.status === 'pending'" size="small" type="primary" color="#d4af37" @click="quoteInquiry(row)">报价</el-button>
+              <el-button v-if="row.status === 'pending'" size="small" type="primary" @click="quoteInquiry(row)">报价</el-button>
               <el-button v-if="row.status === 'pending'" size="small" @click="markContacted(row)">已联系</el-button>
               <el-button v-if="row.status === 'quoted'" size="small" type="success" @click="acceptInquiry(row)">确认接单</el-button>
               <el-button size="small" link @click="viewInquiry(row)">详情</el-button>
@@ -104,7 +104,7 @@
           <el-table-column label="关联预约" width="160">
             <template #default="{ row }">
               <span v-if="row.linkedBookingId || row.bookingId" class="link-id">{{ (row.linkedBookingId || row.bookingId).slice(0, 8) }}</span>
-              <span v-else style="color:#ccc">未关联</span>
+              <span v-else style="color: var(--light-text-secondary)">未关联</span>
             </template>
           </el-table-column>
           <el-table-column label="更新时间" width="180">
@@ -157,7 +157,7 @@
           </el-table-column>
           <el-table-column label="操作" width="280" fixed="right">
             <template #default="{ row }">
-              <el-button size="small" type="primary" color="#d4af37" @click="advanceProduction(row)">推进</el-button>
+              <el-button size="small" type="primary" @click="advanceProduction(row)">推进</el-button>
               <el-button size="small" @click="assignFramer(row)">分配师傅</el-button>
               <el-button size="small" link @click="viewInquiry(row)">详情</el-button>
             </template>
@@ -174,7 +174,7 @@
           <el-option label="框型" value="frame" />
           <el-option label="包装" value="packaging" />
         </el-select>
-        <el-button size="small" type="primary" color="#d4af37" @click="openConfigForm()">新增选项</el-button>
+        <el-button size="small" type="primary" @click="openConfigForm()">新增选项</el-button>
       </div>
       <el-card shadow="never">
         <el-table :data="filteredConfigs" v-loading="loading" stripe>
@@ -241,7 +241,7 @@
       </el-form>
       <template #footer>
         <el-button @click="configDialog = false">取消</el-button>
-        <el-button type="primary" color="#d4af37" :loading="configSaving" @click="saveConfig">保存</el-button>
+        <el-button type="primary" :loading="configSaving" @click="saveConfig">保存</el-button>
       </template>
     </el-dialog>
 
@@ -263,7 +263,7 @@
       </el-form>
       <template #footer>
         <el-button @click="quoteDialog = false">取消</el-button>
-        <el-button type="primary" color="#d4af37" @click="submitQuote">发送报价</el-button>
+        <el-button type="primary" @click="submitQuote">发送报价</el-button>
       </template>
     </el-dialog>
 

@@ -283,6 +283,39 @@ async function main() {
     const couponAlert = await chrome.evaluate(`document.querySelector('.missing-collection-alert')?.innerText || ''`)
     check('「优惠券配置」页不出现集合缺失告警（避免狼来了）', couponAlert === '', `实际：${couponAlert.slice(0, 80)}`)
 
+    // ── 7. 对比度：正文可读性（本轮修复的类别，必须有浏览器级回归保护）──────────────
+    // 背景：审计点名 Categories.vue:899 对比度 1.5:1；实测更严重的是 40 个
+    // `type="primary" color="#d4af37"` 按钮（白字压亮金 = 2.1:1）与 18 处 `#ccc` 空态/表单标签
+    // （白底 1.61:1，几乎看不见）。静态分析判不出「哪条声明生效」，所以在这里量真实渲染值。
+    const measure = `(() => {
+      const parse = (s) => (String(s).match(/[\\d.]+/g) || []).slice(0, 3).map(Number)
+      const lum = (g) => { const f = (c) => { const t = c / 255; return t <= 0.03928 ? t / 12.92 : ((t + 0.055) / 1.055) ** 2.4 }; return 0.2126 * f(g[0]) + 0.7152 * f(g[1]) + 0.0722 * f(g[2]) }
+      const transparent = (c) => !c || c === 'rgba(0, 0, 0, 0)' || c === 'transparent'
+      const surfaceOf = (el) => { let n = el, bg = getComputedStyle(n).backgroundColor; while (n && transparent(bg)) { n = n.parentElement; if (n) bg = getComputedStyle(n).backgroundColor } return parse(bg) }
+      const out = []
+      for (const el of document.querySelectorAll('button.el-button--primary, .empty, .empty-tip, .empty-detail, .empty-cell')) {
+        const cs = getComputedStyle(el)
+        if (cs.display === 'none' || cs.visibility === 'hidden' || !(el.innerText || '').trim()) continue
+        const c = parse(cs.color), b = surfaceOf(el)
+        const [hi, lo] = [lum(c), lum(b)].sort((x, y) => y - x)
+        const fs = parseFloat(cs.fontSize), fw = Number(cs.fontWeight) || 400
+        const large = fs >= 24 || (fs >= 18.66 && fw >= 700)
+        out.push({ text: (el.innerText || '').trim().slice(0, 14), ratio: Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100, need: large ? 3 : 4.5, color: cs.color, bg: 'rgb(' + b.join(',') + ')' })
+      }
+      return out
+    })()`
+    for (const mod of ['43', '40', '4']) {
+      await chrome.goto(`${BASE}#/m/${mod}`)
+      await sleep(2500)
+      const rows = await chrome.evaluate(measure)
+      const bad = rows.filter((r) => r.ratio < r.need)
+      check(
+        `module ${mod}：主按钮/空态文字对比度全部达 AA（实测 ${rows.length} 个元素）`,
+        bad.length === 0,
+        bad.map((r) => `「${r.text}」${r.ratio}:1（需 ${r.need}）${r.color} on ${r.bg}`).join('；')
+      )
+    }
+
     check('运行期间无页面级异常', pageErrors.length === 0, pageErrors.map((e) => String(e).split('\n')[0]).join(' | '))
   } catch (e) {
     // 任何未预期的异常都记成失败项，绝不吞掉已收集的失败

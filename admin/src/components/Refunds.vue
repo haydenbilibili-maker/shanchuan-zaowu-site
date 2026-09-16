@@ -84,7 +84,7 @@
           <template #default="{ row }">
             <el-button v-if="row.status === 'pending'" size="small" type="success" @click="approve(row)">批准</el-button>
             <el-button v-if="row.status === 'pending'" size="small" type="danger" @click="reject(row)">拒绝</el-button>
-            <el-button v-if="row.status === 'approved'" size="small" type="primary" color="#d4af37" @click="execRefund(row)">执行退款</el-button>
+            <el-button v-if="row.status === 'approved'" size="small" type="primary" @click="execRefund(row)">执行退款</el-button>
             <el-button size="small" link @click="viewDetail(row)">详情</el-button>
           </template>
         </el-table-column>
@@ -189,7 +189,7 @@
         <div class="detail-actions" v-if="currentRow.status === 'pending' || currentRow.status === 'approved'">
           <el-button v-if="currentRow.status === 'pending'" type="success" @click="approve(currentRow)">批准</el-button>
           <el-button v-if="currentRow.status === 'pending'" type="danger" @click="reject(currentRow)">拒绝</el-button>
-          <el-button v-if="currentRow.status === 'approved'" type="primary" color="#d4af37" @click="execRefund(currentRow)">执行退款</el-button>
+          <el-button v-if="currentRow.status === 'approved'" type="primary" @click="execRefund(currentRow)">执行退款</el-button>
         </div>
 
         <el-collapse class="detail-raw-collapse">

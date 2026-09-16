@@ -6,7 +6,7 @@
         <span class="subtitle">SAVED COHORTS · CAMPAIGN TARGETS</span>
       </div>
       <div class="header-actions">
-        <el-button type="primary" color="#d4af37" :icon="Plus" @click="openCreator">新建人群包</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreator">新建人群包</el-button>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
     </div>
@@ -82,7 +82,7 @@
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-switch v-model="row.active" active-color="#d4af37" @change="toggleActive(row)" />
+            <el-switch v-model="row.active" @change="toggleActive(row)" />
           </template>
         </el-table-column>
         <el-table-column label="操作" width="320" fixed="right">
@@ -153,7 +153,7 @@
       </el-form>
       <template #footer>
         <el-button @click="creatorVisible = false">取消</el-button>
-        <el-button type="primary" color="#d4af37" @click="saveAudience" :disabled="!form.name || preview.length === 0">
+        <el-button type="primary" @click="saveAudience" :disabled="!form.name || preview.length === 0">
           保存人群包
         </el-button>
       </template>
@@ -199,7 +199,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dispatchVisible = false">取消</el-button>
-        <el-button type="primary" color="#d4af37" @click="executeDispatch" :loading="dispatching">
+        <el-button type="primary" @click="executeDispatch" :loading="dispatching">
           {{ dispatchType === 'coupon' ? '执行发券' : '触发推送' }}
         </el-button>
       </template>
@@ -520,7 +520,7 @@ onMounted(refresh)
 .aud-asof { font-size: 11px; color: #999; }
 .last-campaign { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .campaign-time { font-size: 11px; color: #999; }
-.empty-cell { color: #ccc; }
+.empty-cell { color: var(--light-text-secondary); }
 
 .dispatch-info { background: #fdf6ec; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #b7950b; }
 .preview-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }

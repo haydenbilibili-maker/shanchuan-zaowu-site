@@ -426,7 +426,7 @@ onUnmounted(() => {
 .pc-size { display: flex; gap: 6px; align-items: baseline; margin-top: 14px; padding-top: 10px; border-top: 1px dashed #e4e7ed; }
 .pc-label { color: #999; font-size: 12px; }
 .pc-num-big { font-size: 28px; font-weight: 800; }
-.empty-picker { grid-column: 1 / -1; padding: 40px; text-align: center; color: #ccc; }
+.empty-picker { grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--light-text-secondary); }
 
 .kpi-compare-card { margin-bottom: 20px; }
 .kpi-table { display: flex; flex-direction: column; }
@@ -455,7 +455,7 @@ onUnmounted(() => {
 .bh-rank { color: #999; font-weight: bold; width: 28px; }
 .bh-action { flex: 1; color: #333; }
 .bh-count { color: #d4af37; font-weight: bold; font-family: monospace; }
-.empty-bh { padding: 20px; color: #ccc; text-align: center; font-size: 12px; }
+.empty-bh { padding: 20px; color: var(--light-text-secondary); text-align: center; font-size: 12px; }
 
 .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 14px; }
 .data-source-tip { background: #fdf6ec; padding: 10px 14px; border-radius: 8px; color: #b7950b; font-size: 12px; display: flex; gap: 8px; align-items: center; }

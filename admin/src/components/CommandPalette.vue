@@ -339,7 +339,7 @@ onUnmounted(() => {
 .cp-body { flex: 1; overflow-y: auto; padding: 8px 0; }
 .cp-section { padding: 6px 0; }
 .cp-section-title { padding: 4px 18px; font-size: 11px; color: #999; letter-spacing: 1px; }
-.cp-empty { padding: 30px; text-align: center; color: #ccc; font-size: 13px; }
+.cp-empty { padding: 30px; text-align: center; color: var(--light-text-secondary); font-size: 13px; }
 
 .cp-item {
   display: flex; align-items: center; gap: 12px;

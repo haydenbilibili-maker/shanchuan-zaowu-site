@@ -36,7 +36,7 @@
     <div v-if="activeTab === 'stores'">
       <div class="action-bar">
         <span class="tip">小程序「这有店」读取 status=active 的门店；字段与 manageStoreConfig 对齐。</span>
-        <el-button type="primary" color="#2D6A4F" :icon="Plus" @click="openStoreDialog()">新建门店</el-button>
+        <el-button type="primary" :icon="Plus" @click="openStoreDialog()">新建门店</el-button>
       </div>
       <el-table :data="stores" v-loading="loading" stripe empty-text="暂无 C 端门店">
         <el-table-column label="排序" width="72" prop="sort" />
@@ -78,7 +78,7 @@
         <el-select v-model="zoneStoreFilter" placeholder="按门店筛选" clearable style="width: 220px" @change="loadZones">
           <el-option v-for="s in stores" :key="s.storeId" :label="s.name" :value="s.storeId" />
         </el-select>
-        <el-button type="primary" color="#2D6A4F" :icon="Plus" @click="openZoneDialog()">新建展区</el-button>
+        <el-button type="primary" :icon="Plus" @click="openZoneDialog()">新建展区</el-button>
       </div>
       <el-table :data="zones" v-loading="loading" stripe empty-text="暂无展区">
         <el-table-column label="排序" width="72" prop="sort" />
@@ -151,7 +151,7 @@
       </el-form>
       <template #footer>
         <el-button @click="storeDialog = false">取消</el-button>
-        <el-button type="primary" color="#2D6A4F" :loading="saving" @click="saveStore">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="saveStore">保存</el-button>
       </template>
     </el-dialog>
 
@@ -208,7 +208,7 @@
       </el-form>
       <template #footer>
         <el-button @click="zoneDialog = false">取消</el-button>
-        <el-button type="primary" color="#2D6A4F" :loading="saving" @click="saveZone">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="saveZone">保存</el-button>
       </template>
     </el-dialog>
   </div>

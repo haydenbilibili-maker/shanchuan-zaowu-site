@@ -93,7 +93,6 @@
               v-if="canConvert(row)"
               size="small"
               type="primary"
-              color="#d4af37"
               @click.stop="convertToOrder(row)"
             >转正式单</el-button>
             <el-button
@@ -163,7 +162,6 @@
           <el-button
             v-if="canConvert(current)"
             type="primary"
-            color="#d4af37"
             :loading="converting"
             @click="convertToOrder(current)"
           >转为正式订货单</el-button>

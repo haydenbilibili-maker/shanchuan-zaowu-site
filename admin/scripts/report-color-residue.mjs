@@ -339,7 +339,41 @@ function buildReport(occurrences, tokens) {
     .map((c) => ({ color: c.color, n: c.n, files: c.files.size, tokens: tokens.byValue.get(c.color) }))
     .sort((a, b) => b.n - a.n)
 
-  return { residue, greenRoles, goldRisks, tokenisable, total: occurrences.length }
+  // ⑤ 模板内联色残留：`type="primary"` 的 el-button 又带上内联 color ——
+  //    等于把品牌色写死成某个字面量。本轮清掉 57 处后应为 0，`--strict` 下非 0 即失败。
+  const inlineBrandAttrs = []
+  for (const o of occurrences) {
+    if (o.prop) continue // 只看模板属性（`color="..."` 没有 CSS 冒号，prop 为空）
+    if (/^\s*<el-(button|switch)/.test(o.text) || /<el-(button|switch)\b/.test(o.text)) {
+      inlineBrandAttrs.push(o)
+    }
+  }
+
+  // ⑥ 正文色不达 AA：浅色面上 < 4.5:1 的 `color:`。
+  //    诚实声明：判定用的是「白底」这一最常见浅色面；若该处实际用于深色面则不成立，
+  //    故只作「疑似」并配棘轮与 `--verify` 逐处实测（与 ③ 同一套纪律）。
+  // 先用同一套「深色语境」证据排掉明显误报：白字/金字在侧栏、深色卡片上本来就对。
+  const DARK_CONTAINER_RE = /aside|sidebar|\.erp-black|dark-|footer|\.el-menu|hero/i
+  const lowContrastText = []
+  let lowContrastExcludedDark = 0
+  for (const o of occurrences) {
+    if (o.prop !== 'color') continue
+    const r = contrast(o.color, '#ffffff')
+    if (r >= 4.5) continue
+    if (DARK_BG_RE.test(o.block) || DARK_CONTAINER_RE.test(o.selector)) { lowContrastExcludedDark += 1; continue }
+    lowContrastText.push({ ...o, ratioOnWhite: r })
+  }
+  const lowContrastByColor = {}
+  for (const o of lowContrastText) {
+    lowContrastByColor[o.color] = lowContrastByColor[o.color] || { color: o.color, n: 0, files: new Set(), ratio: o.ratioOnWhite }
+    lowContrastByColor[o.color].n += 1
+    lowContrastByColor[o.color].files.add(o.file)
+  }
+  const lowContrastList = Object.values(lowContrastByColor)
+    .map((x) => ({ color: x.color, n: x.n, files: x.files.size, ratioOnWhite: x.ratio }))
+    .sort((a, b) => b.n - a.n)
+
+  return { residue, greenRoles, goldRisks, tokenisable, inlineBrandAttrs, lowContrastList, lowContrastTotal: lowContrastText.length, lowContrastExcludedDark, total: occurrences.length }
 }
 
 function printReport(rep) {
@@ -368,6 +402,13 @@ function printReport(rep) {
   L()
   L('④ 有同值令牌但仍硬编码（可机械替换；改哪个令牌仍要看语义）')
   rep.tokenisable.slice(0, 12).forEach((r) => L(`   ${r.color.padEnd(9)} ${String(r.n).padStart(4)} 次 / ${String(r.files).padStart(3)} 文件  → ${r.tokens.join(' / ')}`))
+  L()
+  L(`⑤ 模板内联品牌色残留（type="primary" 的按钮/开关还写死 color="#hex"）：${rep.inlineBrandAttrs.length} 处 ${rep.inlineBrandAttrs.length ? '✗ 应为 0' : '✓'}`)
+  rep.inlineBrandAttrs.slice(0, 6).forEach((o) => L(`   ${o.file}:${o.line}  ${o.text}`))
+  L()
+  L(`⑥ 疑似正文色不达 AA（浅色面上 < 4.5:1，共 ${rep.lowContrastTotal} 处 / ${rep.lowContrastList.length} 色；已按同块深底/深色容器证据排除 ${rep.lowContrastExcludedDark} 处）`)
+  L('   ⚠ 仍是静态判定：被别处 !important 覆盖的情形需 --verify 实测')
+  rep.lowContrastList.slice(0, 12).forEach((r) => L(`   ${r.color.padEnd(9)} ${String(r.n).padStart(4)} 次 / ${String(r.files).padStart(3)} 文件  白底 ${r.ratioOnWhite}:1`))
 }
 
 // ─────────────────────────── 自检 ───────────────────────────
@@ -387,6 +428,7 @@ if (has('--selftest')) {
     ['交互态关键词 active 不算成功语义', () => greenRole({ selector: '.el-menu-item.is-active', line: 'color: #2d6a4f;' }).role === 'brand'],
     ['明亮金 + 弹层选择器 → 判弹层嫌疑', () => goldTextRisk({ selector: '.x :deep(.el-select-dropdown__item.selected)', block: 'color: #d4af37;' }).risk === 'popper'],
     ['本文件把弹层刷黑 → 弹层金字判安全（AIStrategicBrain 实测情形）', () => goldTextRisk({ selector: ':deep(.el-select-dropdown__item.selected)', block: 'color: #d4af37 !important;', popperPaintedDark: true }).risk === 'safe'],
+    ['对比度可复现：白底低对比正文色会被 ⑥ 判定（#999 2.85:1 < 4.5）', () => contrast('#999999', '#ffffff') < 4.5 && contrast('#6b665d', '#ffffff') >= 4.5],
     ['识别「本文件把弹层刷黑」这一事实（含 #000 简写）', () => filePaintsPopperDark('.a :deep(.el-select-dropdown__item) {\n  color: #fff !important;\n  background: #000 !important;\n}') === true],
     ['未刷黑的弹层文件不得误判为深色', () => filePaintsPopperDark('.a :deep(.el-select-dropdown__item) { color: #333; }') === false],
     ['明亮金 + 同块深底 → 判安全', () => goldTextRisk({ selector: '.foo', block: 'background: #1c1a17;\ncolor: #d4af37;' }).risk === 'safe'],
@@ -532,6 +574,8 @@ if (has('--json')) {
     tokenisable: rep.tokenisable,
     greenRoles: Object.fromEntries(Object.entries(rep.greenRoles).map(([k, v]) => [k, v.length])),
     goldRisks: { popper: rep.goldRisks.popper.length, sameBlock: rep.goldRisks['same-block'].length, safe: rep.goldRisks.safe.length, undecided: rep.goldRisks.undecided.length },
+    inlineBrandAttrs: rep.inlineBrandAttrs.map((o) => `${o.file}:${o.line}`),
+    lowContrast: { total: rep.lowContrastTotal, excludedDarkContext: rep.lowContrastExcludedDark, byColor: rep.lowContrastList },
     goldRiskDetail: rep.goldRisks,
   }, null, 2))
   process.exit(0)
@@ -548,7 +592,12 @@ const goldTextRiskCounts = {
   popper: rep.goldRisks.popper.length,
   sameBlock: rep.goldRisks['same-block'].length,
 }
-const snapshot = { residue: current, tokenisable: currentTokenisable, goldTextRisk: goldTextRiskCounts }
+// 内联品牌色必须恒为 0；低对比正文色的总量只能降
+const guardCounts = {
+  inlineBrandAttrs: rep.inlineBrandAttrs.length,
+  lowContrastText: rep.lowContrastTotal,
+}
+const snapshot = { residue: current, tokenisable: currentTokenisable, goldTextRisk: goldTextRiskCounts, guards: guardCounts }
 
 if (has('--update')) {
   writeFileSync(BASELINE_PATH, `${JSON.stringify({
@@ -576,8 +625,17 @@ if (has('--update')) {
     if (now > was) goldBad.push(`${k} ${was}→${now}`)
   }
   if (goldBad.length) console.log(`  ⚠ 明亮金当文字用的嫌疑变多：${goldBad.join('、')}`)
-  if (!grew.length && !appeared.length && !goldBad.length) console.log('  未增长。')
-  if (has('--strict') && (grew.length || appeared.length || goldBad.length)) {
+  const baseGuard = base.guards || {}
+  const guardBad = []
+  if (guardCounts.inlineBrandAttrs > (baseGuard.inlineBrandAttrs ?? 0)) {
+    guardBad.push(`模板内联品牌色 ${baseGuard.inlineBrandAttrs ?? 0}→${guardCounts.inlineBrandAttrs}（应为 0）`)
+  }
+  if (guardCounts.lowContrastText > (baseGuard.lowContrastText ?? Number.MAX_SAFE_INTEGER)) {
+    guardBad.push(`低对比正文色 ${baseGuard.lowContrastText}→${guardCounts.lowContrastText}`)
+  }
+  if (guardBad.length) console.log(`  ⚠ ${guardBad.join('、')}`)
+  if (!grew.length && !appeared.length && !goldBad.length && !guardBad.length) console.log('  未增长。')
+  if (has('--strict') && (grew.length || appeared.length || goldBad.length || guardBad.length)) {
     console.error('\n✗ --strict：色彩残留变多。要么改回，要么复核后执行 --update 收编。')
     process.exit(1)
   }

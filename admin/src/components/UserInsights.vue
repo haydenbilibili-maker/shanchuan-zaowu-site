@@ -156,7 +156,7 @@
                 >{{ v }}%</td>
               </tr>
               <tr v-if="!retentionCohorts.length">
-                <td colspan="10" style="text-align:center; padding: 40px; color: #ccc;">暂无 cohort 数据</td>
+                <td colspan="10" style="text-align:center; padding: 40px; color: var(--light-text-secondary);">暂无 cohort 数据</td>
               </tr>
             </tbody>
           </table>
@@ -286,7 +286,7 @@
               >
                 {{ t.icon }} {{ t.label }}
               </el-tag>
-              <span v-if="!row.tags?.length" style="color: #ccc; font-size: 11px;">—</span>
+              <span v-if="!row.tags?.length" style="color: var(--light-text-secondary); font-size: 11px;">—</span>
             </template>
           </el-table-column>
         </el-table>
@@ -581,7 +581,7 @@ onMounted(refresh)
 
 .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 14px; }
 .card-header .hint { font-size: 11px; color: #999; font-weight: normal; }
-.empty { color: #ccc; padding: 30px; text-align: center; width: 100%; }
+.empty { color: var(--light-text-secondary); padding: 30px; text-align: center; width: 100%; }
 .data-source-tip { background: #fdf6ec; padding: 10px 14px; border-radius: 8px; color: #b7950b; font-size: 12px; display: flex; align-items: center; gap: 8px; }
 .data-source-tip code { background: rgba(255,255,255,0.6); padding: 1px 6px; border-radius: 4px; }
 

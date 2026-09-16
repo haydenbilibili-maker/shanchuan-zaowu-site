@@ -134,7 +134,7 @@
             placeholder="输入回复内容（建议引导用户加官方微信群或拨打客服电话）"
           />
           <div class="action-row">
-            <el-button type="primary" color="#d4af37" @click="reply">发送回复</el-button>
+            <el-button type="primary" @click="reply">发送回复</el-button>
             <el-button v-if="current.status !== 'resolved'" type="success" @click="resolve">标记已处理</el-button>
             <el-button v-if="current.status !== 'archived'" type="info" plain @click="archive">归档</el-button>
           </div>
@@ -337,7 +337,8 @@ onMounted(refresh)
 .ti-meta { display: flex; justify-content: space-between; color: #999; font-size: 11px; margin-top: 6px; }
 
 .detail-pane { display: flex; flex-direction: column; }
-.empty-detail { display: flex; align-items: center; justify-content: center; color: #ccc; }
+/* 空态提示是信息不是装饰：#ccc 白底 1.61:1 几乎看不见，改次级文字色 5.74:1 达 AA */
+.empty-detail { display: flex; align-items: center; justify-content: center; color: var(--light-text-secondary); }
 .detail-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
 .d-topic { font-size: 18px; font-weight: bold; color: #333; }
 .d-time { font-size: 12px; color: #999; margin-top: 4px; }
@@ -349,7 +350,7 @@ onMounted(refresh)
 
 .actions { margin-top: auto; padding-top: 20px; }
 .action-row { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; }
-.empty { text-align: center; color: #ccc; padding: 60px; }
+.empty { text-align: center; color: var(--light-text-secondary); padding: 60px; }
 
 /* 客户画像卡 */
 .customer-profile-card { background: linear-gradient(135deg, #fafafa, #fff); border: 1px solid #f0f0f0; border-radius: 10px; padding: 12px 14px; margin-top: 14px; }

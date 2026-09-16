@@ -228,7 +228,7 @@
         </div>
 
         <div class="detail-actions">
-          <el-button type="primary" color="#d4af37" @click="openFramerDialog(current)">编辑档案</el-button>
+          <el-button type="primary" @click="openFramerDialog(current)">编辑档案</el-button>
         </div>
       </template>
     </el-drawer>

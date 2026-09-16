@@ -134,7 +134,7 @@
     </el-card>
 
     <div class="footer-actions">
-      <el-button type="primary" color="#2D6A4F" :loading="saving" @click="saveConfig">
+      <el-button type="primary" :loading="saving" @click="saveConfig">
         保存钱包配置
       </el-button>
       <el-button @click="resetDefaults">恢复默认</el-button>

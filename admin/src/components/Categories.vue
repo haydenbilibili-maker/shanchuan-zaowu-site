@@ -8,7 +8,7 @@
       <div class="header-actions">
         <el-button @click="fillLatinNames" :loading="fillingLatin">补齐二级拉丁名</el-button>
         <el-button @click="scanDuplicates" :loading="scanning">扫描重复二级</el-button>
-        <el-button type="primary" color="#d4af37" :icon="Plus" @click="openRootDialog">新增一级分类</el-button>
+        <el-button type="primary" :icon="Plus" @click="openRootDialog">新增一级分类</el-button>
       </div>
     </div>
 
@@ -54,7 +54,7 @@
       <div class="sub-pane">
         <div class="pane-title">
           <span>二级分类 (LEVEL 2)</span>
-          <el-button v-if="currentRoot" type="primary" color="#d4af37" :icon="Plus" size="small" @click="openSubDialog()">新增子分类</el-button>
+          <el-button v-if="currentRoot" type="primary" :icon="Plus" size="small" @click="openSubDialog()">新增子分类</el-button>
         </div>
         <div v-if="!currentRoot" class="empty-tip">请选择一级分类</div>
         <el-table v-else :data="subs" stripe>
@@ -91,7 +91,6 @@
                 :model-value="categorySwitchOn(row)"
                 :active-value="true"
                 :inactive-value="false"
-                active-color="#d4af37"
                 @change="(on) => toggleSubActive(row, on)"
               />
             </template>
@@ -130,7 +129,7 @@
       </el-form>
       <template #footer>
         <el-button @click="rootDialog = false">取消</el-button>
-        <el-button type="primary" color="#d4af37" @click="saveRoot">保存</el-button>
+        <el-button type="primary" @click="saveRoot">保存</el-button>
       </template>
     </el-dialog>
 
@@ -144,11 +143,11 @@
         <el-form-item label="英文 enName"><el-input v-model="subForm.enName" placeholder="如：LEPIDOPTERA" /></el-form-item>
         <el-form-item label="图标"><el-input v-model="subForm.icon" placeholder="emoji" /></el-form-item>
         <el-form-item label="简介"><el-input v-model="subForm.desc" type="textarea" :rows="2" /></el-form-item>
-        <el-form-item label="状态"><el-switch v-model="subForm.active" active-color="#d4af37" /></el-form-item>
+        <el-form-item label="状态"><el-switch v-model="subForm.active" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="subDialog = false">取消</el-button>
-        <el-button type="primary" color="#d4af37" @click="saveSub">保存</el-button>
+        <el-button type="primary" @click="saveSub">保存</el-button>
       </template>
     </el-dialog>
 
@@ -183,7 +182,7 @@
       </el-form>
       <template #footer>
         <el-button @click="previewMerge" :loading="mergeLoading">预览数量</el-button>
-        <el-button type="primary" color="#d4af37" @click="confirmMerge" :loading="mergeLoading">确认合并</el-button>
+        <el-button type="primary" @click="confirmMerge" :loading="mergeLoading">确认合并</el-button>
       </template>
     </el-dialog>
 
@@ -202,7 +201,6 @@
       <div class="link-toolbar">
         <el-button
           type="primary"
-          color="#2D5A3F"
           :loading="linkLoading && linkMode === 'auto'"
           @click="oneClickLink('auto')"
         >
@@ -210,7 +208,6 @@
         </el-button>
         <el-button
           type="primary"
-          color="#d4af37"
           :loading="linkLoading && linkMode === 'all'"
           @click="oneClickLink('all')"
         >
@@ -246,7 +243,6 @@
         <el-button
           v-if="linkSelectedIds.length"
           type="primary"
-          color="#d4af37"
           :loading="linkLoading"
           @click="confirmLinkSelected"
         >
@@ -896,6 +892,9 @@ onMounted(refresh)
 .r-sub { font-size: 11px; color: #999; }
 .more-icon { color: #999; cursor: pointer; }
 .sub-icon { font-size: 16px; margin-right: 6px; }
-.empty-tip { text-align: center; color: #ccc; padding: 40px; font-size: 13px; }
+/* 空态提示承载真实信息（如「还没有分类，先新增一级分类」），必须可读：
+   #ccc 在白底只有 1.61:1，实测几乎看不见；改次级文字色后 5.74:1 达 AA。
+   审计点名的 Categories.vue:899 1.5:1 就是这一处。 */
+.empty-tip { text-align: center; color: var(--light-text-secondary); padding: 40px; font-size: 13px; }
 .count-pending { color: #a09a90; }
 </style>

@@ -191,7 +191,7 @@
 
         <div class="d-actions">
           <el-button @click="openEdit(currentUser)">调整积分</el-button>
-          <el-button type="primary" color="#d4af37" @click="$emit('switch-tab', '45')">查看完整画像</el-button>
+          <el-button type="primary" @click="$emit('switch-tab', '45')">查看完整画像</el-button>
         </div>
       </div>
     </el-drawer>
@@ -384,7 +384,7 @@ onMounted(fetchUsers)
 .u-id { font-size: 11px; color: #999; font-family: monospace; }
 
 .rfm-badge { background: linear-gradient(135deg, #d4af37, #b7950b); color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 12px; }
-.rfm-empty { color: #ccc; font-size: 12px; }
+.rfm-empty { color: var(--light-text-secondary); font-size: 12px; }
 
 .amt { color: #d4af37; font-weight: bold; font-family: 'Segoe UI', sans-serif; }
 .points { color: #d4af37; font-weight: bold; font-size: 16px; }

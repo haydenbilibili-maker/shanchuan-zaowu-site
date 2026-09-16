@@ -66,9 +66,7 @@
         :class="{ active: mobileMenuVisible }"
         @click="mobileMenuVisible = false"
       ></div>
-      
       <el-container>
-        
         <el-aside
           :width="isMobile ? '0px' : (sidebarCollapsed ? '64px' : '256px')"
           class="aside"
@@ -122,7 +120,6 @@
               </el-button>
             </el-tooltip>
           </div>
-          
           <!-- 移动端抽屉菜单头部 -->
           <div v-if="isMobile" class="brand-header mobile-drawer-header">
             <div class="brand-logo">山</div>
@@ -211,7 +208,6 @@
             </el-menu-item-group>
 
           </el-menu>
-          
           <div class="sidebar-footer" :class="{ 'is-rail': sidebarCollapsed && !isMobile }">
              <el-tooltip
                :disabled="!(sidebarCollapsed && !isMobile)"
@@ -246,7 +242,6 @@
              </el-tooltip>
           </div>
         </el-aside>
-        
         <el-main class="main-content">
           <!-- 🟢 多标签条 + 面包屑 -->
           <MainTabsBar @open-palette="openCommandPalette" @reload="forceReloadCurrent" />
@@ -570,9 +565,7 @@
                     <el-table-column label="状态" width="100">
                          <template #default="scope">
                              <el-switch 
-                                v-model="scope.row.isOnShelf" 
-                                active-color="#52b788" 
-                                inactive-color="#d05450"
+                                v-model="scope.row.isOnShelf" active-color="var(--semantic-success-icon)" inactive-color="var(--semantic-error-icon)"
                                 inline-prompt
                                 active-text="上"
                                 inactive-text="下"
@@ -1127,7 +1120,6 @@
                 <el-switch v-model="form.supportsCustom" />
                 <span class="sku-hint-muted">与店长端 supportsCustom 同源</span>
             </el-form-item>
-            
             <!-- 🟢 限时秒杀设置 -->
             <el-divider content-position="left">限时秒杀</el-divider>
             <el-form-item label="启用秒杀">
@@ -1162,7 +1154,6 @@
                     <el-input-number v-model="form.seckillLimitPerUser" :min="1" style="width:100%" />
                 </el-form-item>
             </template>
-            
             <!-- 🟢 拼团设置 -->
             <el-divider content-position="left">拼团功能</el-divider>
             <el-form-item label="启用拼团">
@@ -1206,7 +1197,6 @@
           <el-icon :size="20" class="intro-icon"><InfoFilled /></el-icon>
           <span>使用手机浏览器扫描二维码或直接复制下方链接访问</span>
         </div>
-        
         <!-- 二维码区域 -->
         <div class="qr-code-wrapper">
           <div class="qr-code-container" v-if="accessUrl && accessUrl.startsWith('http')">
@@ -1220,14 +1210,12 @@
               :class="{ 'qr-ready': !qrLoading }"
             ></canvas>
           </div>
-          
           <div v-else class="qr-code-placeholder">
             <el-icon :size="64" class="placeholder-icon"><PictureFilled /></el-icon>
             <p class="placeholder-text">无法自动获取IP地址</p>
             <p class="placeholder-hint">请查看下方说明手动获取IP</p>
           </div>
         </div>
-        
         <!-- 访问链接区域 -->
         <div class="access-link-section">
           <div class="section-label">访问链接</div>
@@ -1255,7 +1243,6 @@
               <span>链接已复制</span>
             </div>
           </div>
-          
           <div v-else class="access-link-tip">
             <el-alert
               type="warning"
@@ -1273,13 +1260,11 @@
                   <div class="code-block">
                     Network: http://192.168.x.x:5173
                   </div>
-                  
                   <p style="margin-top: 12px;"><strong>方法二：命令行查询</strong></p>
                   <div class="code-block">
                     <span class="code-label">macOS/Linux:</span> ifconfig | grep "inet " | grep -v 127.0.0.1<br>
                     <span class="code-label">Windows:</span> ipconfig | findstr IPv4
                   </div>
-                  
                   <p style="margin-top: 12px; color: var(--brand-green-600);">
                     <el-icon><WarningFilled /></el-icon>
                     找到局域网IP后，手动构建链接：<code>http://你的IP:5173</code>
@@ -1289,7 +1274,6 @@
             </el-alert>
           </div>
         </div>
-        
         <!-- 使用说明 -->
         <div class="access-tips" v-if="accessUrl && accessUrl.startsWith('http')">
           <div class="tips-header">
@@ -1316,7 +1300,6 @@
           </ul>
         </div>
       </div>
-      
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="mobileAccessDialogVisible = false" size="large">关闭</el-button>
@@ -2199,12 +2182,10 @@ const getLocalIP = async () => {
                     resolve(null)
                     return
                 }
-                
                 const pc = new RTCPeerConnection({ iceServers: [] })
                 pc.createDataChannel('')
                 let resolved = false
                 const localIPs = [] // 收集所有局域网IP
-                
                 pc.onicecandidate = (e) => {
                     if (e.candidate && !resolved) {
                         const candidate = e.candidate.candidate
@@ -2225,14 +2206,12 @@ const getLocalIP = async () => {
                         }
                     }
                 }
-                
                 pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(() => {
                     if (!resolved) {
                         resolved = true
                         resolve(null)
                     }
                 })
-                
                 // 超时降级 - 增加到3秒
                 setTimeout(() => {
                     if (!resolved) {
@@ -2260,24 +2239,20 @@ const generateQRCode = (text) => {
         // 使用在线API生成二维码图片，增加尺寸提高清晰度
         const size = 240
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=2`
-        
         const canvas = qrCanvas.value
         if (!canvas) {
             console.warn('Canvas element not found')
             qrLoading.value = false
             return
         }
-        
         const ctx = canvas.getContext('2d')
         if (!ctx) {
             console.warn('Cannot get 2d context from canvas')
             qrLoading.value = false
             return
         }
-        
         canvas.width = size
         canvas.height = size
-        
         const img = new Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
@@ -2324,10 +2299,8 @@ const showMobileAccessDialog = async () => {
         const port = typeof window !== 'undefined' && window.location ? (window.location.port || '5173') : '5173'
         const protocol = typeof window !== 'undefined' && window.location ? window.location.protocol : 'http:'
         const currentHost = typeof window !== 'undefined' && window.location ? window.location.hostname : ''
-        
         // 首先尝试使用WebRTC获取IP
         let ip = await getLocalIP()
-        
         // 如果WebRTC失败，检查当前hostname
         if (!ip || ip === '127.0.0.1' || ip === 'localhost') {
             // 如果当前hostname是有效的IP地址（不是127.0.0.1或localhost），使用它
@@ -2335,7 +2308,6 @@ const showMobileAccessDialog = async () => {
                 ip = currentHost
             }
         }
-        
         // 构建访问URL
         if (ip && ip !== '127.0.0.1' && ip !== 'localhost') {
             // 成功获取到有效的IP地址
@@ -2349,7 +2321,6 @@ const showMobileAccessDialog = async () => {
                 accessUrl.value = `${protocol}//${currentHost}:${port}`
             }
         }
-        
         // 显示对话框
         mobileAccessDialogVisible.value = true
     } catch (e) {
@@ -2364,7 +2335,6 @@ const showMobileAccessDialog = async () => {
 const onDialogOpened = async () => {
     // 等待DOM更新后生成二维码
     await new Promise(resolve => setTimeout(resolve, 100))
-    
     // 只有在有有效URL时才生成二维码
     if (accessUrl.value && accessUrl.value.startsWith('http')) {
         if (qrCanvas.value) {
@@ -2382,15 +2352,12 @@ const onDialogOpened = async () => {
 
 const copyAccessUrl = async () => {
     if (!accessUrl.value) return
-    
     copying.value = true
     copySuccess.value = false
-    
     try {
         await navigator.clipboard.writeText(accessUrl.value)
         copySuccess.value = true
         ElMessage.success('链接已复制到剪贴板')
-        
         // 3秒后隐藏成功提示
         setTimeout(() => {
             copySuccess.value = false
@@ -2961,7 +2928,6 @@ const handleBatchPrice = async () => {
             loading.value = true
             const promises = validProducts.map(product => {
                 if (!product || !product._id) return Promise.resolve()
-                
                 let newPrice = product.price || 0
                 if (batchPriceForm.value.type === 'set') {
                     newPrice = batchPriceForm.value.value
@@ -3064,7 +3030,6 @@ const handleBatchExport = () => {
     const exportProducts = selectedProducts.value.length > 0 
         ? selectedProducts.value.filter(p => p && p._id)
         : products.value.filter(p => p && p._id)
-    
     if (exportProducts.length === 0) {
         ElMessage.warning('没有可导出的商品')
         return
@@ -3109,7 +3074,6 @@ const handleBatchExport = () => {
         link.click()
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
-        
         ElMessage.success(`已导出 ${exportProducts.length} 个商品`)
         if (selectedProducts.value.length > 0) {
             clearProductSelection()
@@ -3847,7 +3811,6 @@ const saveProduct = async () => {
         if (missingImg) return ElMessage.warning(`规格「${missingImg.specLabel}」请至少上传 1 张图`)
         hasSku = true
     }
-    
     try {
         // 🟢 处理秒杀数据
         let seckill = null
@@ -3861,7 +3824,6 @@ const saveProduct = async () => {
                 endTime: form.value.seckillEndTime ? new Date(form.value.seckillEndTime).getTime() : null
             }
         }
-        
         // 🟢 处理拼团数据
         let groupBuying = null
         if (form.value.groupBuyingEnabled) {
@@ -3871,7 +3833,6 @@ const saveProduct = async () => {
                 groupSize: form.value.groupBuyingSize
             }
         }
-        
         const blob = [form.value.rootCategoryName, form.value.category].filter(Boolean).join(' ')
         const channelOk = TAXONOMY_ELIGIBLE_RE.test(blob)
         const craftOk = channelOk
@@ -4926,7 +4887,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 .promo-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .promo-meta { font-size: 11px; color: #999; margin-top: 2px; }
 .promo-meta-expired { color: #E6A23C; }
-.promo-none { color: #ccc; }
+.promo-none { color: var(--light-text-secondary); }
 
 /* Element Plus 全局覆盖 —— 主色已转黑金（--primary = gold-700；白底 6.7:1 可读） */
 .el-button--primary { 

@@ -9,7 +9,7 @@
           <el-option label="召回沉睡" value="inactive" />
           <el-option label="新客承接" value="new_user" />
         </el-select>
-        <el-button size="small" :icon="MagicStick" type="primary" color="#d4af37" :loading="loading" @click="run">
+        <el-button size="small" :icon="MagicStick" type="primary" :loading="loading" @click="run">
           {{ data ? '重新生成' : '生成锦囊' }}
         </el-button>
       </div>

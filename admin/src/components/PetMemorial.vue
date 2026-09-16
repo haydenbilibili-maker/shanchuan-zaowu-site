@@ -6,7 +6,7 @@
         <span class="subtitle">PET MEMORIAL · 伴宠纪念订单与工艺配置</span>
       </div>
       <div class="header-actions">
-        <el-button v-if="activeTab === 'crafts'" type="primary" color="#d4af37" @click="openCraftDialog()">新建工艺</el-button>
+        <el-button v-if="activeTab === 'crafts'" type="primary" @click="openCraftDialog()">新建工艺</el-button>
         <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
       </div>
     </div>
@@ -72,7 +72,7 @@
           </div>
 
           <div class="card-actions">
-            <el-button v-if="row.status === 'pending_review'" size="small" type="primary" color="#d4af37" @click="quoteOrder(row)">报价并接单</el-button>
+            <el-button v-if="row.status === 'pending_review'" size="small" type="primary" @click="quoteOrder(row)">报价并接单</el-button>
             <el-button v-if="row.status === 'accepted'" size="small" type="success" @click="advance(row, 'awaiting_intake')">通知送件</el-button>
             <el-button v-if="row.status === 'awaiting_intake'" size="small" type="success" @click="advance(row, 'in_production')">开始制作</el-button>
             <el-button v-if="row.status === 'in_production'" size="small" type="success" @click="advance(row, 'completed')">标记完成</el-button>
@@ -124,7 +124,7 @@
       </el-form>
       <template #footer>
         <el-button @click="quoteDialog = false">取消</el-button>
-        <el-button type="primary" color="#d4af37" @click="submitQuote">发送报价并接单</el-button>
+        <el-button type="primary" @click="submitQuote">发送报价并接单</el-button>
       </template>
     </el-dialog>
 
@@ -146,7 +146,7 @@
       </el-form>
       <template #footer>
         <el-button @click="craftDialog = false">取消</el-button>
-        <el-button type="primary" color="#d4af37" @click="saveCraft">保存</el-button>
+        <el-button type="primary" @click="saveCraft">保存</el-button>
       </template>
     </el-dialog>
 
@@ -376,6 +376,6 @@ onMounted(refresh)
 
 .card-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 8px; border-top: 1px dashed #eee; flex-wrap: wrap; }
 
-.empty { text-align: center; color: #ccc; padding: 60px; grid-column: 1 / -1; }
+.empty { text-align: center; color: var(--light-text-secondary); padding: 60px; grid-column: 1 / -1; }
 .raw-json { background: #f5f5f5; padding: 16px; border-radius: 8px; font-size: 12px; max-height: 80vh; overflow: auto; }
 </style>

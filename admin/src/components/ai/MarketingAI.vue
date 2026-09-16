@@ -284,7 +284,7 @@ ${seoForm.value.currentTitle ? `当前标题：${seoForm.value.currentTitle}` : 
 }
 
 :deep(.el-form-item__label) {
-  color: #ccc;
+  color: var(--light-text-secondary);
 }
 
 :deep(.el-input__inner),

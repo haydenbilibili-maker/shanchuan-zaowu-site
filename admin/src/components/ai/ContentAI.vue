@@ -285,7 +285,7 @@ async function runConstitutionTest() {
 }
 
 :deep(.el-form-item__label) {
-  color: #ccc;
+  color: var(--light-text-secondary);
 }
 
 :deep(.el-input__inner),

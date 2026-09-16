@@ -131,7 +131,7 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" color="#2D6A4F" :loading="saving" @click="saveFlags">
+          <el-button type="primary" :loading="saving" @click="saveFlags">
             保存开关
           </el-button>
           <el-button @click="resetDefaults">恢复默认</el-button>

@@ -1,7 +1,6 @@
 <template>
   <div class="marketing-container">
     <el-row :gutter="30" style="height: calc(100vh - 120px);">
-      
       <el-col :span="16" class="editor-col">
         <div class="panel-header">
           <h2>权益与营销中心</h2>
@@ -52,7 +51,7 @@
             </el-table-column>
             <el-table-column label="状态" width="100">
               <template #default="{ row }">
-                <el-switch v-model="row.active" active-color="#27ae60" @change="toggleStatus(row, 'coupons')" />
+                <el-switch v-model="row.active" active-color="var(--semantic-success-icon)" @change="toggleStatus(row, 'coupons')" />
               </template>
             </el-table-column>
             <el-table-column label="操作" width="100">
@@ -107,8 +106,7 @@
             <el-table-column label="上架" width="90">
               <template #default="{ row }">
                 <el-switch
-                  :model-value="!row.isOffShelf"
-                  active-color="#27ae60"
+                  :model-value="!row.isOffShelf" active-color="var(--semantic-success-icon)"
                   @change="(v) => toggleRewardShelf(row, v)"
                 />
               </template>
@@ -191,9 +189,7 @@
               <span>9:41</span>
               <span><el-icon><Connection /></el-icon></span>
             </div>
-            
             <div class="preview-content">
-              
               <div v-if="activeModule === 'coupon'" class="preview-coupon-wrap">
                 <div class="p-title">优惠券预览</div>
                 <div class="coupon-ticket" :class="{ 'editing': isEditing }">
@@ -246,7 +242,6 @@
                   <div class="g-price">¥ <span style="font-size:24px">{{ previewItem.price || '0.00' }}</span></div>
                   <div class="g-title">{{ previewItem.title || '商品标题' }}</div>
                   <div class="g-sub">{{ previewItem.subTitle || '商品副标题/简介' }}</div>
-                  
                   <div class="g-tags">
                     <span class="g-tag">自动发货</span>
                     <span class="g-tag">随时退</span>
@@ -271,7 +266,6 @@
       :close-on-click-modal="false"
     >
       <el-form ref="moduleFormRef" :model="form" :rules="moduleFormRules" label-width="90px" label-position="left">
-        
         <template v-if="activeModule === 'coupon'">
           <el-form-item label="优惠券名"><el-input v-model="form.name" placeholder="如：新客立减券" /></el-form-item>
           <el-form-item label="类型">

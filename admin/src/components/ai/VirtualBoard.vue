@@ -614,7 +614,7 @@ watch(records, () => {
 }
 
 .record-content {
-  color: #ccc;
+  color: var(--light-text-secondary);
   line-height: 1.6;
 }
 

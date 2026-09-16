@@ -88,7 +88,6 @@
             <el-button
               size="small"
               :type="row.isPinned ? 'info' : 'primary'"
-              color="#d4af37"
               plain
               :loading="busyId === row._id"
               @click="togglePin(row)"
