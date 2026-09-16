@@ -299,10 +299,10 @@ watch(activeTabId, () => {
 .tab-chip:hover { background: #fff; color: #333; }
 .tab-chip.active {
   background: #fff;
-  color: #d4af37;
+  color: var(--gold-700);
   font-weight: 600;
   border-color: #f0f0f0;
-  box-shadow: 0 -2px 0 #d4af37;
+  box-shadow: 0 -2px 0 var(--gold-500);
   margin-bottom: -1px;
   z-index: 2;
 }
@@ -349,7 +349,7 @@ watch(activeTabId, () => {
   color: #999;
   transition: 0.15s;
 }
-.tab-action-btn:hover { background: #f0f0f0; color: #d4af37; }
+.tab-action-btn:hover { background: #f0f0f0; color: var(--gold-700); }
 
 /* 右键菜单 */
 .ctx-menu {
@@ -372,7 +372,7 @@ watch(activeTabId, () => {
   cursor: pointer;
   transition: 0.1s;
 }
-.ctx-item:hover { background: #fdf6ec; color: #d4af37; }
+.ctx-item:hover { background: #fdf6ec; color: var(--gold-700); }
 .ctx-item.disabled { color: #ccc; cursor: not-allowed; }
 .ctx-item.disabled:hover { background: transparent; }
 .ctx-divider { height: 1px; background: #f0f0f0; margin: 4px 0; }

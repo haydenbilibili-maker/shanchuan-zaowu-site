@@ -25,10 +25,14 @@
 - 验证：
   - `npm run check:admin`（10 条静态守卫，约 10s，含 dev 管线编译）；
   - `npm run dev:admin` 起验收环境后 `npm run check:nav-dom`（**真实浏览器 DOM**，唯一能证明界面真画出来的检查）；
-  - `npm run build`（ERP → `dist/admin/` + 官网 → `dist/`）。
+  - `npm run build`（ERP → `dist/admin/` + 官网 → `dist/`）；
+  - 改配色/主题前先跑 `npm run report:colors`（**只报告不改动**，禁止 find-replace），
+    对它的「嫌疑」用 `npm run report:colors -- --verify '<选择器>' --module <id>` 在浏览器实测再动手。
   **注意**：`build:admin` 通过**不代表**验收地址可用 —— 模板编译错误只在 dev 管线复现（见 `admin/docs/ERP系统专项审计_2026-09-16.md` §1.6），故 `check:sfc-dev` 不可省。
 - 部署走 GitHub Actions（Cloudflare Pages，main 分支），小程序不走 Pages。
 - 每条守卫都必须能证明自己会失败：新增检查要配 `--selftest`（注入回归 → 必须检出 → 还原源文件）。
+- **静态分析 ≠ 事实**：CSS 里「哪条声明生效」受 `!important`/特异性/teleport 影响，脚本判出的「问题」
+  必须在浏览器实测后才算数（本项目已被此坑过 3 次，见审计报告 §1.6、§1.7、§1.7.0）。
 
 ## 关键文档
 

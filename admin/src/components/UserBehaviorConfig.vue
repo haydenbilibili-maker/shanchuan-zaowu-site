@@ -652,9 +652,9 @@ onMounted(async () => {
 }
 
 :deep(.el-table th) {
-  background: #f5f7fa;
-  color: #d4af37;
-  border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+  background: var(--erp-table-head-bg);
+  color: var(--erp-table-head-fg);
+  border-bottom: 2px solid var(--erp-hairline-gold);
 }
 
 :deep(.el-table td) {

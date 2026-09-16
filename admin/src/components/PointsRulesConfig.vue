@@ -487,6 +487,6 @@ onMounted(() => {
 
 :deep(.el-divider__text) {
   background: #ffffff;
-  color: #d4af37;
+  color: var(--gold-700);
 }
 </style>

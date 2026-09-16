@@ -321,7 +321,7 @@ onMounted(refresh)
 .seg-title { font-size: 12px; color: #999; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; }
 .topic-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
 .topic-item:hover { background: #f9f9f9; }
-.topic-item.active { background: #fdf6ec; color: #d4af37; font-weight: bold; }
+.topic-item.active { background: #fdf6ec; color: var(--gold-700); font-weight: bold; }
 .topic-icon { font-size: 14px; }
 .topic-name { flex: 1; }
 .topic-count { background: #f56c6c; color: #fff; font-size: 11px; padding: 0 6px; border-radius: 8px; min-width: 18px; text-align: center; }
