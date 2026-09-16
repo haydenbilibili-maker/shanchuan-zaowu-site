@@ -5317,3 +5317,17 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   letter-spacing: 0.04em;
   margin-bottom: 4rpx;
 }
+
+/* 内容种子：正文长度与摘要（导入后据此确认内容确实被替换） */
+.seed-len { color: var(--gold, #C4A76C); }
+.seed-brief { display: block; }
+.seed-brief-text {
+  display: -webkit-box;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--color-text-muted, #8A847C);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}

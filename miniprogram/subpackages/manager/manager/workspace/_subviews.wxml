@@ -1355,6 +1355,11 @@
             <view class="m-row middle">
               <text class="tag-f">{{item.category==='knowledge'?'标本知识':item.category==='art'?'艺术鉴赏':item.category==='craft'?'制作工艺':'标本故事'}}</text>
               <text class="tag-f">{{item.status==='published'?'已发布':'草稿'}}</text>
+              <text class="tag-f seed-len" wx:if="{{item._textLen}}">正文 {{item._textLen}} 字</text>
+            </view>
+            <!-- 展示摘要：种子导入是更新正文、标题与统计不变，没这行操作者看不出内容已替换 -->
+            <view class="m-row seed-brief" wx:if="{{item.brief}}">
+              <text class="seed-brief-text">{{item.brief}}</text>
             </view>
             <view class="m-row bottom">
               <text class="m-price m-stats-line">阅 {{item.stats && item.stats.views ? item.stats.views : 0}} · 赞 {{item.stats && item.stats.likes ? item.stats.likes : 0}}</text>

@@ -8229,7 +8229,15 @@ bindSubCatChange(e) {
         .orderBy('_createTime', 'desc')
         .limit(100)
         .get(); 
-      this.setData({ articles: res.data }); 
+      // 种子导入是**更新**已有文档（title/统计不变），按 _createTime 排会看不出变化。
+      // 这里按最近写入时间重排，并补一个正文字数——导入后一眼能看出内容确实被替换了。
+      const rows = (res.data || []).map((a) => {
+        const text = String(a.content || '').replace(/<[^>]+>/g, '');
+        const len = text.replace(/\s/g, '').length;
+        return { ...a, _textLen: len, _writtenAt: Number(a.updateTime) || 0 };
+      });
+      rows.sort((a, b) => (b._writtenAt || 0) - (a._writtenAt || 0));
+      this.setData({ articles: rows }); 
       this.applyContentFilter();
     } catch(e) { 
       const msg = (e && (e.errMsg || e.message)) || ''
@@ -8269,7 +8277,14 @@ bindSubCatChange(e) {
         return
       }
       markCommunityContentStale()
-      wx.showToast({ title: '内容已导入', icon: 'success' })
+      const st = result.stats || {}
+      const artN = Number(st.articles) || 0
+      const exhN = Number(st.exhibitions) || 0
+      wx.showToast({
+        title: artN || exhN ? `已导入 ${artN} 篇 / ${exhN} 专题` : '内容已导入',
+        icon: 'none',
+        duration: 2500
+      })
       this.loadContent()
     } catch (e) {
       wx.hideLoading()
