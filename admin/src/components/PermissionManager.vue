@@ -1,18 +1,31 @@
 <template>
   <div class="permission-manager">
     <div class="header-section">
-      <h2>权限管理系统</h2>
-      <p class="subtitle">配置角色权限、查看操作日志和登录日志</p>
+      <h2>权限与审计日志</h2>
+      <p class="subtitle">仅查看：操作日志与登录日志</p>
     </div>
 
+    <el-alert
+      type="warning"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px;"
+      title="ERP 是单层控制台：本页的角色/用户配置不参与鉴权"
+    >
+      <template #default>
+        ERP 前端没有按角色过滤菜单的能力，真实授权全部由云函数
+        <code>staffGuard</code> 在服务端完成。因此「角色管理」「用户管理」两个页签已改为
+        <b>只读</b>——它们写入的 <code>admin_roles</code> / <code>admin_users</code>
+        目前没有任何消费方，改了对权限毫无影响（2026-09-16 审计 §0 P0-4 / §7.5 决策 B）。
+        按人账号落地后，才会重新评估是否真正实现 RBAC。
+      </template>
+    </el-alert>
+
     <el-tabs v-model="activeTab" type="card" class="config-tabs">
-      <!-- 角色管理 -->
-      <el-tab-pane label="👥 角色管理" name="roles">
+      <!-- 角色管理：决策 B 后改为只读（见 admin/docs/ERP系统专项审计_2026-09-16.md §7.5） -->
+      <el-tab-pane label="👥 角色（只读·不参与鉴权）" name="roles">
         <div class="roles-section">
           <div class="action-bar">
-            <el-button type="primary" @click="addRole">
-              <el-icon><Plus /></el-icon>新增角色
-            </el-button>
             <el-button @click="loadRoles">
               <el-icon><Refresh /></el-icon>刷新
             </el-button>
@@ -27,7 +40,7 @@
             <el-table-column prop="name" label="角色名称" min-width="150" />
             <el-table-column prop="code" label="角色代码" width="150" />
             <el-table-column prop="description" label="描述" min-width="200" />
-            <el-table-column label="模块权限" min-width="300">
+            <el-table-column label="模块权限（仅记录）" min-width="300">
               <template #default="{ row }">
                 <el-tag 
                   v-for="module in row.modulePermissions" 
@@ -38,18 +51,12 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
-              <template #default="{ row }">
-                <el-button link type="primary" @click="editRole(row)">编辑权限</el-button>
-                <el-button link type="danger" @click="deleteRole(row)">删除</el-button>
-              </template>
-            </el-table-column>
           </el-table>
         </div>
       </el-tab-pane>
 
-      <!-- 用户角色分配 -->
-      <el-tab-pane label="👤 用户管理" name="users">
+      <!-- 用户角色分配：决策 B 后改为只读（原先 el-select 的 @change 会直接写库） -->
+      <el-tab-pane label="👤 用户（只读·不参与鉴权）" name="users">
         <div class="users-section">
           <div class="action-bar">
             <el-input
@@ -74,21 +81,9 @@
           >
             <el-table-column prop="username" label="用户名" width="150" />
             <el-table-column prop="email" label="邮箱" width="200" />
-            <el-table-column label="角色" width="200">
+            <el-table-column label="角色（仅记录）" width="200">
               <template #default="{ row }">
-                <el-select 
-                  v-model="row.roleCode" 
-                  placeholder="选择角色"
-                  @change="updateUserRole(row)"
-                  size="small"
-                >
-                  <el-option 
-                    v-for="role in roles" 
-                    :key="role.code"
-                    :label="role.name"
-                    :value="role.code"
-                  />
-                </el-select>
+                <span class="readonly-role">{{ roleName(row.roleCode) }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="lastLoginTime" label="最后登录" width="180">
@@ -275,73 +270,28 @@
     </el-tabs>
 
     <!-- 角色编辑对话框 -->
-    <el-dialog
-      v-model="roleDialogVisible"
-      :title="isEditingRole ? '编辑角色' : '新增角色'"
-      width="700px"
-      :close-on-click-modal="false"
-    >
-      <el-form :model="roleForm" label-width="120px" ref="roleFormRef">
-        <el-form-item label="角色名称" prop="name" :rules="[{ required: true, message: '请输入角色名称' }]">
-          <el-input v-model="roleForm.name" placeholder="如：超级管理员" />
-        </el-form-item>
-        <el-form-item label="角色代码" prop="code" :rules="[{ required: true, message: '请输入角色代码' }]">
-          <el-input v-model="roleForm.code" placeholder="如：super_admin" />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="roleForm.description" type="textarea" :rows="2" placeholder="角色描述" />
-        </el-form-item>
-        <el-form-item label="模块权限">
-          <el-checkbox-group v-model="roleForm.modulePermissions">
-            <el-checkbox 
-              v-for="(name, code) in moduleNames" 
-              :key="code"
-              :label="code"
-            >
-              {{ name }}
-            </el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="roleDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveRole">保存</el-button>
-      </template>
-    </el-dialog>
+    <!-- 角色编辑弹窗已于 2026-09-16 随决策 B 移除（不再有任何触发入口） -->
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import {
   fetchCollectionLimit,
   fetchCollectionSorted,
-  cdnAdd,
-  cdnUpdate,
-  cdnRemove,
   cdnQueryPage,
   cdnCount,
   getCdnDatabase,
 } from '../cloud'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { Refresh, Search } from '@element-plus/icons-vue'
 
 // --- 状态定义 ---
 const activeTab = ref('roles')
 const loading = ref(false)
-const saving = ref(false)
-const roleDialogVisible = ref(false)
-const isEditingRole = ref(false)
 
-// 角色管理
+// 角色：只读列表（写入相关状态与处理函数随决策 B 于 2026-09-16 移除）
 const roles = ref([])
-const roleForm = reactive({
-  _id: null,
-  name: '',
-  code: '',
-  description: '',
-  modulePermissions: []
-})
 
 // 用户管理
 const users = ref([])
@@ -426,81 +376,10 @@ const loadRoles = async () => {
   }
 }
 
-const addRole = () => {
-  isEditingRole.value = false
-  Object.assign(roleForm, {
-    _id: null,
-    name: '',
-    code: '',
-    description: '',
-    modulePermissions: []
-  })
-  roleDialogVisible.value = true
-}
-
-const editRole = (row) => {
-  isEditingRole.value = true
-  Object.assign(roleForm, {
-    _id: row._id,
-    name: row.name,
-    code: row.code,
-    description: row.description || '',
-    modulePermissions: [...(row.modulePermissions || [])]
-  })
-  roleDialogVisible.value = true
-}
-
-const saveRole = async () => {
-  if (!roleForm.name || !roleForm.code) {
-    ElMessage.warning('请填写角色名称和代码')
-    return
-  }
-  
-  saving.value = true
-  try {
-    const data = {
-      name: roleForm.name,
-      code: roleForm.code,
-      description: roleForm.description,
-      modulePermissions: roleForm.modulePermissions,
-      _updateTime: new Date()
-    }
-    
-    if (isEditingRole.value && roleForm._id) {
-      await cdnUpdate('admin_roles', roleForm._id, data)
-      ElMessage.success('角色更新成功')
-    } else {
-      data._createTime = new Date()
-      await cdnAdd('admin_roles', data)
-      ElMessage.success('角色创建成功')
-    }
-    
-    roleDialogVisible.value = false
-    loadRoles()
-  } catch (err) {
-    console.error('保存角色失败', err)
-    ElMessage.error('保存角色失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-const deleteRole = async (row) => {
-  try {
-    await ElMessageBox.confirm(`确定要删除角色"${row.name}"吗？`, '确认删除', {
-      type: 'warning'
-    })
-    
-    await cdnRemove('admin_roles', row._id)
-    ElMessage.success('角色删除成功')
-    loadRoles()
-  } catch (err) {
-    if (err !== 'cancel') {
-      console.error('删除角色失败', err)
-      ElMessage.error('删除角色失败')
-    }
-  }
-}
+// 角色写入（addRole/editRole/saveRole/deleteRole）与 updateUserRole 已于 2026-09-16 移除：
+// 决策 B —— ERP 为单层控制台，admin_roles/admin_users 无任何消费方，
+// 保留这些写入只会制造「改了以为生效」的错觉（审计 §0 P0-4、§7.5）。
+// 待「按人账号 → 真实权限点 → 前端 RBAC」做完后，再连同正确的鉴权一起恢复。
 
 // --- 用户管理 ---
 const loadUsers = async () => {
@@ -516,22 +395,14 @@ const loadUsers = async () => {
   }
 }
 
-const updateUserRole = async (row) => {
-  try {
-    await cdnUpdate('admin_users', row._id, {
-      roleCode: row.roleCode,
-      _updateTime: new Date()
-    })
-    ElMessage.success('用户角色更新成功')
-  } catch (err) {
-    console.error('更新用户角色失败', err)
-    ElMessage.error('更新用户角色失败')
-    loadUsers()
-  }
-}
-
 const filterUsers = () => {
   // 使用computed自动过滤
+}
+
+/** 只读展示：把 roleCode 映射成角色名（本地映射，不回写） */
+const roleName = (code) => {
+  const hit = roles.value.find((r) => r.code === code)
+  return hit ? hit.name : (code || '—')
 }
 
 // --- 操作日志 ---
