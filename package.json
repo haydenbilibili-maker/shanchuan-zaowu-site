@@ -27,6 +27,9 @@
     "check:brand-contrast:selftest": "node admin/scripts/check-brand-contrast.mjs --selftest",
     "test:write-layer": "node admin/scripts/test-write-layer.mjs",
     "test:write-layer:selftest": "node admin/scripts/test-write-layer.mjs --selftest",
+    "check:silent-catch": "node admin/scripts/check-silent-catch.mjs",
+    "check:silent-catch:update": "node admin/scripts/check-silent-catch.mjs --update",
+    "check:silent-catch:selftest": "node admin/scripts/check-silent-catch.mjs --selftest",
     "pages:version": "true",
     "preview": "astro preview",
     "astro": "astro"

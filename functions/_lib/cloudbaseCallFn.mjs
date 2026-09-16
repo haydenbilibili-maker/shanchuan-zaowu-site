@@ -34,6 +34,9 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   // 2026-09-16：门店积分规则读写（store_point_rules write:false，ERP 须经此函数；
   // 与小程序超管工作台共用同一 SSOT 与同一写入逻辑，含审批队列）
   'getStorePointRules',
+  // 2026-09-16：会员 CRM 积分调整（users write:false；ERP 原先直写 users.points 必失败且无流水。
+  // 该函数写 bonusPoints（权威余额）+ point_records + 操作人归属，ERP 改走它）
+  'manageMemberCrm',
   // 2026-09-14 对齐：定金 / 直播 / 装裱师佣金 / 生日礼 / 审批
   'manageDeposit',
   'manageLiveSession',

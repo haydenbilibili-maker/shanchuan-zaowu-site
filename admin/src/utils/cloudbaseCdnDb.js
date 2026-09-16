@@ -148,6 +148,8 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'manageStoreContent',
   // 门店积分规则：ERP 与小程序超管工作台共用 getStorePointRules（含审批与校验）
   'getStorePointRules',
+  // 会员 CRM 积分调整：与小程序同一云函数（写 bonusPoints + 台账 + 操作人归属）
+  'manageMemberCrm',
   // 2026-09-14 对齐：定金 / 直播 / 装裱师佣金 / 生日礼 / 审批
   'manageDeposit',
   'manageLiveSession',

@@ -197,7 +197,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Search, MagicStick, InfoFilled } from '@element-plus/icons-vue'
-import { getCdnDatabase, cdnAdd } from '../cloud'
+import { callCloudFunction } from '../cloud'
 import { loadPortraitSourceData } from '../utils/portraitDataLoad'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { buildProfile, summarizeSegments, SEGMENTS } from '../utils/userSegmentation'
@@ -305,6 +305,17 @@ const recencyClass = (d) => {
 }
 
 // ====== 操作 ======
+/**
+ * 人工调整积分。
+ *
+ * ⚠️ 原实现是浏览器直写 `users.points`（`cdnDb.collection('users').doc().update`），
+ * 而线上 `users` 规则为 `{"read":"auth != null && doc._openid == auth.openid","write":false}`
+ * → 写入必被拒；写 `point_records` 的异常还被 `catch { /* 忽略 *\/ }` 吞掉，
+ * 于是「余额没变、台账也没记，界面却弹成功」（审计 §0 P0-3）。
+ *
+ * 现改为调用服务端 `manageMemberCrm.adjustPoints`（与小程序同一实现）：
+ * 它写 `bonusPoints`（权威可用积分口径）+ `points`（兼容 ERP 直读）+ 积分台账 + 操作人归属。
+ */
 const openEdit = (row) => {
   ElMessageBox.prompt('请输入变动积分（正数增加，负数扣除）', '人工调整积分', {
     confirmButtonText: '确认',
@@ -315,26 +326,37 @@ const openEdit = (row) => {
     const val = parseInt(value)
     if (val === 0) return
     try {
-      const cdnDb = await getCdnDatabase()
-      await cdnDb.collection('users').doc(row._id).update({ points: cdnDb.command.inc(val) })
-      try {
-        await cdnAdd('point_records', {
-          userId: row._id,
-          type: 'admin_adjust',
-          amount: val,
-          desc: '管理员后台调整',
-          createTime: Date.now()
-        })
-      } catch (e) { /* 忽略 */ }
-      ElMessage.success('积分调整成功')
-      row.points = (row.points || 0) + val
+      const res = await callCloudFunction('manageMemberCrm', {
+        action: 'adjustPoints',
+        userId: row._id,
+        amount: val,
+        desc: '管理员后台调整（ERP 会员 CRM）'
+      })
+      if (!res || res.success === false) {
+        throw new Error((res && res.msg) || '积分调整失败')
+      }
+      ElMessage.success(res.msg || '积分调整成功')
+      // ⚠️ 不要用 res.points 覆盖列表字段：那是「可用积分」口径（growth + bonus − used），
+      // 而 ERP 列表展示的是 users.points —— 两个不同指标（审计 §0 P1「积分口径三分裂」）。
+      // 服务端 adjustPoints 对 users.points 同样做了 inc(amount)，所以本地按 +val 更新才与列表一致。
+      row.points = (Number(row.points) || 0) + val
       if (currentUser.value && currentUser.value._id === row._id) {
         currentUser.value.points = row.points
       }
+      const authoritative = Number(res.points)
+      if (Number.isFinite(authoritative)) {
+        console.info(
+          `[CRM] 积分已调整 ${val}；可用积分（服务端口径）=${authoritative}，` +
+          `ERP 列表字段 users.points=${row.points}`
+        )
+      }
     } catch (e) {
-      ElMessage.error('操作失败：' + e.message)
+      console.error('积分调整失败', e)
+      ElMessage.error(`积分未调整：${e?.message || '未知错误'}`)
     }
-  }).catch(() => {})
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('积分调整输入框异常', e)
+  })
 }
 
 onMounted(fetchUsers)
