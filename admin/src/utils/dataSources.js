@@ -160,8 +160,11 @@ export const CONCEPTS = [
     authority: { kind: 'local', name: 'sc_finance_v12' },
     writeVia: 'Finance.vue',
     divergent: ['localStorage:sc_finance_settings_v1'],
-    note: '⚠ 两个键：sc_finance_v12.settings 被 financialData/staffOptimizeAI 当事实读；'
-      + 'sc_finance_settings_v1 是 Finance.vue 写并**回填表单**的镜像 —— 镜像过期会把旧值填回界面。',
+    note: '已修（2026-09-16）：原先 Finance.vue 表单只写 sc_finance_settings_v1，'
+      + '而**没有任何业务逻辑读它** —— 计算读 sc_finance_v12.settings（仅由 financeSync 云端合并写入），'
+      + '于是「用户在界面上改的成本率从未生效」，计算一直用 normalizeCostRate(undefined) 的 25% 兜底，'
+      + '界面却写着「按财务设置成本率」。现在表单同时写权威键（含 _raw 供回填），'
+      + 'restoreSettings 优先读权威键、旧键仅作一次性迁移。',
   },
   {
     key: 'content',
@@ -370,8 +373,9 @@ export const METRIC_DIVERGENCES = [
       { module: '0', page: 'Dashboard.vue', source: 'function:getAnalyticsDashboard', scope: '全量' },
       { module: '25', page: 'OperationsDecisionCenter.vue', source: 'collection:orders', scope: '采样 500' },
     ],
-    status: 'open',
-    note: '实测同一环境：驾驶舱读全量云口径；决策中心走 storeData 的 500 单采样 + 本地账本，显示 ¥0/0 单。',
+    status: 'fixed',
+    note: '已修（2026-09-16）：决策中心改走 getAnalyticsDashboard 全量口径。实测两页一致 —— '
+      + '决策中心「本月营收 ¥2,050.18」== 驾驶舱「线上净额 ¥2,050.18」。',
   },
   {
     concept: 'stores',
@@ -380,8 +384,9 @@ export const METRIC_DIVERGENCES = [
       { module: '25', page: 'OperationsDecisionCenter.vue', source: 'local:sc_store_bundle_v1', scope: '本机' },
       { module: '30', page: 'StoreManagement.vue', source: 'collection:stores', scope: '云端' },
     ],
-    status: 'open',
-    note: '实测决策中心显示「0 家门店」，而云端有店（驾驶舱注记「山川造物 + 星宸标本双店」）。',
+    status: 'fixed',
+    note: '已修（2026-09-16）：决策中心改读云端 stores 集合。实测「0 家 → 2 家（2 家生效）」，'
+      + '并把「门店本地档案包」单列为非 C 端事实源。',
   },
 ]
 
@@ -394,6 +399,28 @@ export function authoritySetOf(concept) {
   const list = [concept.authority, ...(concept.coAuthorities || [])]
   return list.map((a) => `${a.kind}:${a.name}`)
 }
+
+/**
+ * 已知的**静默兜底**（失败/缺数据时悄悄用默认值，与「真有这个值」不可区分）。
+ * 由人工确认后登记；每条都必须能指向具体代码位置。
+ */
+export const SILENT_FALLBACKS = [
+  {
+    id: 'finance-settings-dropped',
+    fixed: true,
+    where: 'utils/financialData.js fetchFinancialData 的「空账本」与 catch 分支',
+    note: '原先只在「有本地账本记录」的分支里返回 settings，空账本时 settings=undefined → '
+      + '下游 normalizeCostRate(undefined) 静默回落 25% 默认值。已修：与记录数无关地读取参数。',
+  },
+  {
+    id: 'ledger-empty-hides-cost',
+    fixed: false,
+    where: 'utils/dashboardMetrics.js loadLedgerRecords + financialData 的 shanhai_v12',
+    note: '财务账本仍以**本机 localStorage** 为事实来源（权威应为云端 finance_records）。'
+      + '本机为空时营收账本口径整体为 0 —— 现已由全量云口径覆盖营收 KPI，'
+      + '但「营收账本净额」等仍需账本本机有数据。属部署依赖项（见 C.3）。',
+  },
+]
 
 /** 权威源在本地（不跨设备）的概念 —— 展示层必须如实标注，否则会被误当云端事实 */
 export function localAuthorityConcepts() {

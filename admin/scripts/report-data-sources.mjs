@@ -66,10 +66,17 @@ export function scanSources(files) {
   const functions = new Set()
   const locals = new Set()
   const storages = new Set()
+  /** 每个文件用到了哪些源 —— D5「逐页核查」的依据 */
+  const perFile = new Map()
+  const fileOf = (rel) => {
+    if (!perFile.has(rel)) perFile.set(rel, { read: new Set(), write: new Set(), fn: new Set(), local: new Set(), storage: new Set() })
+    return perFile.get(rel)
+  }
   const touch = (name, kind, file) => {
     if (!collections.has(name)) collections.set(name, { read: [], write: [] })
     const rec = collections.get(name)
     if (!rec[kind].includes(file)) rec[kind].push(file)
+    fileOf(file)[kind].add(`collection:${name}`)
   }
   for (const p of files) {
     const txt = readFileSync(p, 'utf8')
@@ -81,12 +88,12 @@ export function scanSources(files) {
       for (const m of txt.matchAll(new RegExp(`\\b${h}\\(\\s*['"]([a-z][a-z0-9_]{2,})['"]`, 'g'))) touch(m[1], 'write', rel)
     }
     for (const m of txt.matchAll(/\.collection\(\s*['"]([a-z][a-z0-9_]{2,})['"]/g)) touch(m[1], 'read', rel)
-    for (const m of txt.matchAll(/(?:callCloudFunction|callCdnFunction)\(\s*['"]([A-Za-z][A-Za-z0-9_]+)['"]/g)) functions.add(m[1])
-    for (const m of txt.matchAll(/localStorage\.(?:get|set|remove)Item\(\s*['"]([^'"]+)['"]/g)) locals.add(m[1])
-    for (const m of txt.matchAll(/from\s+'\.\.?\/utils\/(\w+Storage)\.js'/g)) storages.add(m[1])
-    if (/data\/productConcept/.test(txt)) storages.add('productConcept(STORAGE_KEY)')
+    for (const m of txt.matchAll(/(?:callCloudFunction|callCdnFunction)\(\s*['"]([A-Za-z][A-Za-z0-9_]+)['"]/g)) { functions.add(m[1]); fileOf(rel).fn.add(`function:${m[1]}`) }
+    for (const m of txt.matchAll(/localStorage\.(?:get|set|remove)Item\(\s*['"]([^'"]+)['"]/g)) { locals.add(m[1]); fileOf(rel).local.add(`local:${m[1]}`) }
+    for (const m of txt.matchAll(/from\s+'\.\.?\/utils\/(\w+Storage)\.js'/g)) { storages.add(m[1]); fileOf(rel).storage.add(`storage:${m[1]}`) }
+    if (/data\/productConcept/.test(txt)) { storages.add('productConcept(STORAGE_KEY)'); fileOf(rel).storage.add('storage:productConcept(STORAGE_KEY)') }
   }
-  return { collections, functions, locals, storages }
+  return { collections, functions, locals, storages, perFile }
 }
 
 // ─────────────────────── 判定（纯函数，可离线自检）───────────────────────
@@ -143,7 +150,35 @@ export function judge(found, registry, ssot) {
 
   const localAuthority = ssot.localAuthorityConcepts().map((c) => `${c.key}（${c.label} → local:${c.authority.name}）`)
   const divergenceCount = (ssot.METRIC_DIVERGENCES || []).filter((d) => d.status !== 'fixed').length
-  return { unregistered, duplicateRole, localAuthority, divergenceCount, ids }
+
+  // D5：**逐页核查** —— 哪些页面/模块读了「非权威源」。
+  // 这是产品负责人「保证 ERP 各页面的数据源唯一有效」的正面检查：
+  // 读 authority / channel 是正常的；读 mirror（本机副本，可能过期）、
+  // local-only（不跨设备）、legacy（已废弃）则需要给出理由或改读权威源。
+  const RISKY = new Set(['mirror', 'local-only', 'legacy'])
+  const conceptOf = new Map(ssot.CONCEPTS.map((c) => [c.key, c]))
+  const authorityLabel = (conceptKey) => {
+    const c = conceptOf.get(conceptKey)
+    return c ? authoritySetOf(c).join(' + ') : '（未声明）'
+  }
+  const nonAuthorityReaders = []
+  for (const [file, used] of (found.perFile || new Map())) {
+    const all = [...used.read, ...used.local, ...used.storage]
+    for (const id of all) {
+      const meta = registry[id]
+      if (!meta || !RISKY.has(meta.role)) continue
+      nonAuthorityReaders.push({
+        file,
+        source: id,
+        role: meta.role,
+        concept: meta.concept,
+        authority: authorityLabel(meta.concept),
+        note: meta.note || '',
+      })
+    }
+  }
+  nonAuthorityReaders.sort((a, b) => a.file.localeCompare(b.file) || a.source.localeCompare(b.source))
+  return { unregistered, duplicateRole, localAuthority, divergenceCount, nonAuthorityReaders, ids }
 }
 
 // ─────────────────────── 自检 ───────────────────────
@@ -162,11 +197,12 @@ if (has('--selftest')) {
     'collection:a': { concept: 'a', role: 'authority' },
     'local:k_b': { concept: 'b', role: 'authority' },
   }
-  const mk = (collections = [], functions = [], locals = [], storages = []) => ({
+  const mk = (collections = [], functions = [], locals = [], storages = [], perFile = null) => ({
     collections: new Map(collections.map((c) => [c, { read: ['x.vue'], write: [] }])),
     functions: new Set(functions),
     locals: new Set(locals),
     storages: new Set(storages),
+    perFile: perFile || new Map(),
   })
   const cases = [
     ['D1 未登记集合被检出', () => judge(mk(['a', 'brand_new']), base, ssot).unregistered.includes('collection:brand_new')],
@@ -183,6 +219,18 @@ if (has('--selftest')) {
     }],
     ['D3 本地权威概念被列出', () => judge(mk(['a'], [], ['k_b']), base, ssot).localAuthority.some((s) => s.startsWith('b（'))],
     ['D4 只统计未修复的口径分歧', () => judge(mk(['a']), base, ssot).divergenceCount === 1],
+    ['D5 检出读「本机副本(mirror)」的页面并指出权威源', () => {
+      const reg = { ...base, 'local:k_mirror': { concept: 'a', role: 'mirror' } }
+      const ssot2 = { ...ssot, CONCEPTS: ssot.CONCEPTS.concat([{ key: 'a', label: '概念A', authority: { kind: 'collection', name: 'a' } }]) }
+      const pf = new Map([['p.vue', { read: new Set(), write: new Set(), fn: new Set(), local: new Set(['local:k_mirror']), storage: new Set() }]])
+      const r = judge(mk([], [], [], [], pf), reg, ssot2)
+      return r.nonAuthorityReaders.length === 1 && r.nonAuthorityReaders[0].authority === 'collection:a'
+    }],
+    ['D5 不把读权威源/通道的页面误报', () => {
+      const reg = { ...base, 'function:f_a': { concept: 'a', role: 'channel' } }
+      const pf = new Map([['p.vue', { read: new Set(['collection:a']), write: new Set(), fn: new Set(['function:f_a']), local: new Set(), storage: new Set() }]])
+      return judge(mk([], [], [], [], pf), reg, ssot).nonAuthorityReaders.length === 0
+    }],
   ]
   let bad = 0
   for (const [label, fn] of cases) {
@@ -205,7 +253,7 @@ if (has('--selftest')) {
 
 const ssot = await import(`file://${SSOT}?t=${Date.now()}`)
 const found = scanSources(walk(SRC))
-const { unregistered, duplicateRole, localAuthority, divergenceCount, ids } = judge(found, ssot.SOURCE_REGISTRY, ssot)
+const { unregistered, duplicateRole, localAuthority, divergenceCount, nonAuthorityReaders, ids } = judge(found, ssot.SOURCE_REGISTRY, ssot)
 
 if (has('--json')) {
   console.log(JSON.stringify({
@@ -215,6 +263,7 @@ if (has('--json')) {
     duplicateRole,
     localAuthority,
     divergenceCount,
+    nonAuthorityReaders,
     divergentConcepts: ssot.conceptsWithDivergence().map((c) => ({ key: c.key, label: c.label, divergent: c.divergent })),
     metricDivergences: ssot.METRIC_DIVERGENCES,
   }, null, 2))
@@ -238,11 +287,22 @@ console.log(`D4 未修复的口径分歧：${divergenceCount}`)
   d.pages.forEach((p) => console.log(`      module ${p.module}  ${p.page}  ← ${p.source}（${p.scope}）`))
 })
 console.log()
+console.log(`D5 读取「非权威源」的页面（读 mirror / local-only / legacy —— 可能过期或换设备即变）：${nonAuthorityReaders.length} 处`)
+const byFile = new Map()
+nonAuthorityReaders.forEach((r) => {
+  if (!byFile.has(r.file)) byFile.set(r.file, [])
+  byFile.get(r.file).push(r)
+})
+;[...byFile.entries()].sort((a, b) => b[1].length - a[1].length).forEach(([file, list]) => {
+  console.log(`   ${file}`)
+  list.forEach((r) => console.log(`      ${r.source}（${r.role}）→ 权威应为 ${r.authority}`))
+})
+console.log()
 console.log('声明了非权威同义源的概念（展示层须如实标注来源）：')
 ssot.conceptsWithDivergence().forEach((c) => console.log(`   ${c.label}: 权威 ${c.authority.kind}:${c.authority.name}；另有 ${c.divergent.join('、')}`))
 
 // 棘轮
-const current = { unregistered, duplicateRole, divergenceCount, localAuthorityCount: localAuthority.length }
+const current = { unregistered, duplicateRole, divergenceCount, localAuthorityCount: localAuthority.length, nonAuthorityReaderCount: nonAuthorityReaders.length }
 if (has('--update')) {
   writeFileSync(BASELINE, `${JSON.stringify({
     updatedAt: new Date().toISOString().slice(0, 10),
@@ -251,6 +311,8 @@ if (has('--update')) {
     duplicateRole: [],
     divergenceCount,
     localAuthorityCount: localAuthority.length,
+    nonAuthorityReaderCount: nonAuthorityReaders.length,
+    nonAuthorityReaders: nonAuthorityReaders.map((r) => `${r.file} ${r.source}`),
   }, null, 2)}\n`, 'utf8')
   console.log(`\n已写入基线：口径分歧 ${divergenceCount} / 本地权威概念 ${localAuthority.length}`)
 } else if (existsSync(BASELINE)) {
@@ -260,6 +322,9 @@ if (has('--update')) {
   if (duplicateRole.length > (base.duplicateRole || []).length) bad.push(`权威冲突 ${(base.duplicateRole || []).length}→${duplicateRole.length}`)
   if (divergenceCount > (base.divergenceCount ?? 0)) bad.push(`口径分歧 ${base.divergenceCount}→${divergenceCount}`)
   if (localAuthority.length > (base.localAuthorityCount ?? 0)) bad.push(`本地权威概念 ${base.localAuthorityCount}→${localAuthority.length}`)
+  if (nonAuthorityReaders.length > (base.nonAuthorityReaderCount ?? Number.MAX_SAFE_INTEGER)) {
+    bad.push(`读取非权威源的页面 ${base.nonAuthorityReaderCount}→${nonAuthorityReaders.length}`)
+  }
   console.log(`\n棘轮：${bad.length ? '⚠ ' + bad.join('、') : '未恶化。'}`)
   if (has('--strict') && (bad.length || unregistered.length || duplicateRole.length)) {
     console.error('\n✗ --strict：数据源治理退化。要么修回，要么复核后 --update 收编。')

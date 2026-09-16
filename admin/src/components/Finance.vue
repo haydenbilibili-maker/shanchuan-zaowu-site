@@ -1587,24 +1587,67 @@ const app = reactive({
         return settings;
     },
 
+    /**
+     * 持久化财务参数。
+     *
+     * ⚠ 2026-09-16 修（数据源核查发现）：原实现只写 `sc_finance_settings_v1`，
+     * 而**没有任何业务逻辑读这个键** —— 毛利/人效等计算读的是 `sc_finance_v12.settings`
+     * （由 financeSync 从云端合并写入）。结果是：**用户在界面上改的成本率从未生效**，
+     * 计算一直用 `normalizeCostRate(undefined)` 的 25% 兜底默认值，
+     * 而界面还写着「按财务设置成本率 25.0% 估算」，属于「标签指向一个并不存在的设置」。
+     *
+     * 现在同时写入权威键 `sc_finance_v12.settings`（与 financialData/financeSync 同形状），
+     * 并把表单用的 `_raw` 一起存进去供回填；旧键继续写一份以兼容回滚。
+     */
     persistSettings(settings) {
         if (!document.getElementById('setTarget')) return;
-        const raw = settings?._raw || this.getSettings()._raw;
+        const s = settings || this.getSettings();
+        const raw = s?._raw || this.getSettings()._raw;
         try {
             localStorage.setItem('sc_finance_settings_v1', JSON.stringify(raw));
-        } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
+        } catch (e) { safeWarn('Finance 本地设置快照写入失败（已忽略）', e) }
+        try {
+            // 权威键：保留既有字段（如云端同步来的其它参数），只覆盖本表单负责的那些
+            const prev = JSON.parse(localStorage.getItem('sc_finance_v12') || '{}');
+            const merged = { ...(prev.settings || {}) };
+            ['target','invest','investCount','costRate','earlyShare','lateShare','rent','mallThreshold','mallRate','utility','staffCount','staffSalary','commRate','tax']
+                .forEach((k) => { if (s[k] != null) merged[k] = s[k] });
+            localStorage.setItem('sc_finance_v12', JSON.stringify({
+                ...prev,
+                settings: merged,
+                // 表单用的是「显示单位」（成本率 25 而非 0.25），单独存一份供回填
+                _raw: raw,
+                _updateTime: Date.now(),
+            }));
+        } catch (e) { safeWarn('Finance 权威参数写入失败（已忽略）', e) }
     },
 
+    /**
+     * 用已保存的参数回填表单。
+     * 优先读**权威键** `sc_finance_v12._raw`；仅当权威里没有表单快照时，
+     * 才回退到旧键 `sc_finance_settings_v1`（一次性迁移用）。
+     */
     restoreSettings() {
         try {
-            const raw = localStorage.getItem('sc_finance_settings_v1');
-            if (!raw) return;
-            const cfg = JSON.parse(raw);
-            const values = Object.values(cfg).map(v => parseFloat(v) || 0);
-            if (values.length && values.every(v => v === 0)) {
-                localStorage.removeItem('sc_finance_settings_v1');
-                return;
+            let cfg = null;
+            try {
+                const auth = JSON.parse(localStorage.getItem('sc_finance_v12') || '{}');
+                if (auth && auth._raw && typeof auth._raw === 'object') cfg = auth._raw;
+            } catch (e) { console.warn('读取权威财务参数失败，回退旧键', e) }
+            if (!cfg) {
+                const legacy = localStorage.getItem('sc_finance_settings_v1');
+                if (legacy) {
+                    cfg = JSON.parse(legacy);
+                    // 迁移：把旧键里已有的值升格到权威键，避免下次又读旧的
+                    if (cfg) {
+                        const prev = JSON.parse(localStorage.getItem('sc_finance_v12') || '{}');
+                        localStorage.setItem('sc_finance_v12', JSON.stringify({ ...prev, _raw: cfg, _updateTime: Date.now() }));
+                    }
+                }
             }
+            if (!cfg) return;
+            const values = Object.values(cfg).map(v => parseFloat(v) || 0);
+            if (values.length && values.every(v => v === 0)) return;
             Object.entries(cfg).forEach(([id, v]) => {
                 const el = document.getElementById(id);
                 if (el && v != null && v !== '') el.value = v;

@@ -4,6 +4,7 @@ import { loadStoreBundle, storeLicenseAlertLevel, sumStoreNetRevenueForMonth } f
 import { loadPayrollBundle } from './payrollStorage'
 import { fetchStaffDirectory, staffCountDisplay } from './staffDirectory.js'
 import { callCloudFunction } from '../cloud.js'
+import { normalizeCostRate } from './storeData.js'
 import { mapAnalyticsOrdersToAgg } from './dashboardMetrics.js'
 
 /**
@@ -50,6 +51,11 @@ export const OPS_OVER_STOCK_THRESHOLD = 50
 
 function money(n) {
   return Number.isFinite(Number(n)) ? Number(n) : 0
+}
+
+/** 金额保留 2 位（KPI 上出现 ¥1,537.635 这种三位小数很难看，且与营收的位数不一致） */
+function round2(n) {
+  return Math.round(money(n) * 100) / 100
 }
 
 function currentYearMonth() {
@@ -274,16 +280,29 @@ export async function buildOperationsDecisionData(options = {}) {
   const payrollMetrics = buildPayrollMetrics(payrollBundle, yearMonth)
   // 口径优先级：全量云口径 → 本机财务账本（明确标注「本机」，不再冒充权威）
   const aggTotals = analytics.ok ? (analytics.agg?.totals || {}) : null
+  // 成本率来自财务参数（sc_finance_v12.settings）；与 storeData 共用同一个归一化函数
+  const costRate = normalizeCostRate(financialData?.settings?.costRate ?? financialData?.settings?.setCostRate)
+  // 权威营收下必须**自己**推算成本/毛利：原先直接取 storeData.finance.grossProfit，
+  // 而那份计算基于「本机账本营收」——账本为空时就会出现「营收 ¥2050、毛利 ¥0」这种同屏矛盾。
+  const authoritativeRevenue = aggTotals ? money(aggTotals.netOnline ?? aggTotals.gmvPaid) : 0
+  const authoritativeCost = authoritativeRevenue * costRate
   const finance = aggTotals
     ? {
-        revenue: money(aggTotals.netOnline ?? aggTotals.gmvPaid),
+        revenue: authoritativeRevenue,
         orderCount: Number(aggTotals.paid) || 0,
-        averageOrderValue: money(aggTotals.aov),
-        totalCost: money(storeData?.finance?.totalCost),
-        grossProfit: money(storeData?.finance?.grossProfit),
-        profitMargin: money(storeData?.finance?.profitMargin),
+        // 本 KPI 的说明是「营收 / 订单数」，就用这两个权威值现算 ——
+        // 原先取服务端 aov，而它的定义（毛 GMV/已付）与说明不一致，会出现
+        // 「说明写营收/订单数、数字却对不上」的情况（实测 ¥189 vs 2050.18/12=¥171）。
+        averageOrderValue: (Number(aggTotals.paid) || 0) > 0
+          ? round2(authoritativeRevenue / (Number(aggTotals.paid) || 1))
+          : money(aggTotals.aov),
+        totalCost: round2(authoritativeCost),
+        grossProfit: round2(authoritativeRevenue - authoritativeCost),
+        profitMargin: authoritativeRevenue > 0 ? ((authoritativeRevenue - authoritativeCost) / authoritativeRevenue) * 100 : 0,
+        costRate,
         trend: storeData?.finance?.trend || '暂无趋势',
-        costStructure: storeData?.finance?.costStructure || '暂无成本结构',
+        // 用**实际参与计算**的 costRate 生成文案：否则数字与口径说明可能各说各话
+        costStructure: `按财务设置成本率 ${(costRate * 100).toFixed(1)}% 估算`,
         source: 'getAnalyticsDashboard',
         sourceLabel: `全量口径 ${analytics.startDate}~${analytics.endDate}`,
         records: financialData.records || [],
@@ -298,6 +317,7 @@ export async function buildOperationsDecisionData(options = {}) {
         profitMargin: money(storeData?.finance?.profitMargin),
         trend: storeData?.finance?.trend || '暂无趋势',
         costStructure: storeData?.finance?.costStructure || '暂无成本结构',
+        costRate,
         source: 'local_ledger',
         // ⚠ 不再写死「财务账本」：本机账本 ≠ 云端财务账本，来源必须说清是本机
         sourceLabel: '本机财务账本（未取到全量云口径）',
@@ -309,7 +329,7 @@ export async function buildOperationsDecisionData(options = {}) {
     { key: 'revenue', label: '本月营收', value: `¥${finance.revenue.toLocaleString()}`, desc: finance.sourceLabel },
     { key: 'orders', label: '订单数', value: String(finance.orderCount), desc: finance.authoritative ? `全量口径（已付订单）${analytics.startDate}~${analytics.endDate}` : '本机财务账本（未取到全量云口径）' },
     { key: 'aov', label: '客单价', value: `¥${finance.averageOrderValue.toFixed(0)}`, desc: '营收 / 订单数' },
-    { key: 'profit', label: '估算毛利', value: `¥${finance.grossProfit.toLocaleString()}`, desc: `成本率口径：${finance.costStructure}` },
+    { key: 'profit', label: '估算毛利', value: `¥${finance.grossProfit.toLocaleString()}`, desc: finance.costStructure },
     { key: 'stockRisk', label: '库存风险', value: String(productMetrics.lowStock + productMetrics.outOfStock), desc: '低库存 + 缺货' },
     {
       key: 'staff',

@@ -8,6 +8,17 @@ import { fetchFinancialData } from './financialData'
 import { excludeExchangeOrders } from './orderFilters'
 import { safeWarn } from './safeStorage.js'
 
+/**
+ * 成本率归一化：`0.25` 与 `25` 都表示 25%；非法/负数回落 25% 默认值。
+ * 提到模块级并导出，避免别处再复制一份口径（`operationsDecisionData` 需要用它
+ * 从**权威营收**推算毛利，否则会出现「营收 ¥2050、毛利 ¥0」这种同屏自相矛盾）。
+ */
+export function normalizeCostRate(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n < 0) return 0.25
+  return n > 1 ? n / 100 : n
+}
+
 export async function fetchStoreData(showMessage = false, options = {}) {
   const { useFinancialData = true, period = 'week' } = options
   try {
@@ -49,12 +60,6 @@ export async function fetchStoreData(showMessage = false, options = {}) {
     const orders = excludeExchangeOrders(results[1].status === 'fulfilled' ? results[1].value : [])
     const users = results[2].status === 'fulfilled' ? results[2].value : []
     const activities = results[3].status === 'fulfilled' ? results[3].value : []
-
-    const normalizeCostRate = (value) => {
-      const n = Number(value)
-      if (!Number.isFinite(n) || n < 0) return 0.25
-      return n > 1 ? n / 100 : n
-    }
 
     const buildFinanceContract = (financialData, fallbackOrders = []) => {
       const records = Array.isArray(financialData?.records) ? financialData.records : []

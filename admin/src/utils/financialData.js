@@ -28,6 +28,20 @@ export async function fetchFinancialData(options = {}) {
       }
     }
     
+    // 财务参数（成本率/月薪等）**先读**：它与「本地账本有没有记录」无关，
+    // 而原先只在「有记录」的分支里读 → 本地账本为空时 settings 变 undefined，
+    // 调用方 `normalizeCostRate(undefined)` 静默回落 25% 默认值，
+    // 于是「用户在界面上设的成本率」永远不生效（且界面还写着「按财务设置成本率」）。
+    const readFinanceSettings = () => {
+      try {
+        const raw = localStorage.getItem('sc_finance_v12')
+        return raw ? (JSON.parse(raw).settings || {}) : {}
+      } catch (e) {
+        console.warn('读取财务参数失败', e)
+        return {}
+      }
+    }
+
     // 读取财务报表数据（优先从localStorage，已通过同步更新）
     const financeRaw = localStorage.getItem('shanhai_v12')
     const rawList = financeRaw ? JSON.parse(financeRaw) : []
@@ -42,7 +56,9 @@ export async function fetchFinancialData(options = {}) {
         revenue: 0,
         averageOrderValue: 0,
         records: [],
-        period: options.period || 'week'
+        period: options.period || 'week',
+        // 即使没有账本记录也要返回参数，否则下游只能拿到默认值
+        settings: readFinanceSettings()
       }
     }
 
@@ -102,9 +118,8 @@ export async function fetchFinancialData(options = {}) {
     const revenue = periodRecords.reduce((sum, r) => sum + (r.revenue || 0), 0)
     const averageOrderValue = orderCount > 0 ? (revenue / orderCount) : 0
 
-    // 读取财务系统设置
-    const settingsRaw = localStorage.getItem('sc_finance_v12')
-    const financeSettings = settingsRaw ? JSON.parse(settingsRaw).settings : {}
+    // 读取财务系统设置（与空账本分支同一实现，避免两处口径不一）
+    const financeSettings = readFinanceSettings()
 
     return {
       orderCount,
@@ -142,6 +157,7 @@ export async function fetchFinancialData(options = {}) {
       averageOrderValue: 0,
       records: [],
       period: options.period || 'week',
+      settings: readFinanceSettings(),
       error: error.message
     }
   }

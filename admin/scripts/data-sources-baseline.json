@@ -3,6 +3,18 @@
   "note": "未登记源应恒为 0；口径分歧数只能减少；本地权威概念数只能减少（要么上云，要么显式标注）",
   "unregistered": [],
   "duplicateRole": [],
-  "divergenceCount": 2,
-  "localAuthorityCount": 4
+  "divergenceCount": 0,
+  "localAuthorityCount": 4,
+  "nonAuthorityReaderCount": 9,
+  "nonAuthorityReaders": [
+    "src/components/ai/StaffOptimizeAI.vue local:shanhai_v12",
+    "src/components/AudienceManager.vue collection:user_audiences",
+    "src/components/Bookings.vue collection:bookings",
+    "src/components/CustomReportBuilder.vue collection:report_templates",
+    "src/components/Finance.vue local:sc_finance_settings_v1",
+    "src/components/PermissionManager.vue collection:admin_roles",
+    "src/components/PermissionManager.vue collection:admin_users",
+    "src/components/PropertyEval.vue collection:property_proposals",
+    "src/utils/financialData.js local:shanhai_v12"
+  ]
 }
