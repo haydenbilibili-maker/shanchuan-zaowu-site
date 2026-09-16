@@ -250,6 +250,39 @@ async function main() {
       }
     }
 
+    // ── 6. 权益与营销：死配置不得伪装成「暂无数据」（本轮只读核对发现的集合缺失）────
+    // 线上核对结论：`vip_cards` / `equity_goods` 在云开发里不存在（DescribeTable 报 not exist）。
+    // 这两个页签原来看起来完全正常（有新建按钮、空列表），只有点保存才报错 ——
+    // 等于把「环境未就绪」显示成「没有数据」。另外还删掉了一个空白且读错集合的「会员等级体系」页签。
+    await chrome.goto(`${BASE}#/m/6`)
+    await softWait('权益与营销页签渲染', `document.querySelectorAll('.tabs-wrapper .el-radio-button__inner').length >= 4`)
+    const tabLabels = await chrome.evaluate(`[...document.querySelectorAll('.tabs-wrapper .el-radio-button__inner')].map(e => e.innerText.trim())`)
+    check('权益与营销不再有空白/读错集合的「会员等级体系」页签', !tabLabels.some((t) => t.includes('会员等级')), `页签：${tabLabels.join('/')}`)
+    const panelSub = await chrome.evaluate(`document.querySelector('.panel-sub')?.innerText || ''`)
+    check('页面说明告知等级体系已并入会员经营', /会员等级体系已并入/.test(panelSub), `实际「${panelSub}」`)
+
+    const clickTab = async (name) => {
+      const ok = await chrome.evaluate(`(() => {
+        const el = [...document.querySelectorAll('.tabs-wrapper .el-radio-button__inner')].find(e => e.innerText.includes(${JSON.stringify(name)}))
+        if (!el) return false
+        el.click(); return true
+      })()`)
+      if (ok) await sleep(1200)
+      return ok
+    }
+    for (const [tabName, coll] of [['会员权益卡', 'vip_cards'], ['虚拟权益商品', 'equity_goods']]) {
+      check(`能切到「${tabName}」页签`, await clickTab(tabName))
+      const alert = await chrome.evaluate(`document.querySelector('.missing-collection-alert')?.innerText.replace(/\\s+/g, ' ').trim() || ''`)
+      check(`「${tabName}」页显示集合缺失告警且点名 ${coll}`, alert.includes(coll) && /不存在|未创建/.test(alert), `实际：${alert.slice(0, 100)}`)
+      check(`「${tabName}」页显式说明「不是没有数据」`, /不是没有数据/.test(alert), `实际：${alert.slice(0, 100)}`)
+      const newBtnDisabled = await chrome.evaluate(`!!document.querySelector('.list-area .el-button.is-disabled')`)
+      check(`「${tabName}」页的新建按钮已禁用`, newBtnDisabled)
+    }
+    // 反向：正常页签（优惠券，集合存在）不得出现该告警，否则就是狼来了
+    check('能切回「优惠券配置」页签', await clickTab('优惠券'))
+    const couponAlert = await chrome.evaluate(`document.querySelector('.missing-collection-alert')?.innerText || ''`)
+    check('「优惠券配置」页不出现集合缺失告警（避免狼来了）', couponAlert === '', `实际：${couponAlert.slice(0, 80)}`)
+
     check('运行期间无页面级异常', pageErrors.length === 0, pageErrors.map((e) => String(e).split('\n')[0]).join(' | '))
   } catch (e) {
     // 任何未预期的异常都记成失败项，绝不吞掉已收集的失败

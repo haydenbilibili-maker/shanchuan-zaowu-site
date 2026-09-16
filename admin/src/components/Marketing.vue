@@ -5,16 +5,31 @@
       <el-col :span="16" class="editor-col">
         <div class="panel-header">
           <h2>权益与营销中心</h2>
+          <p class="panel-sub">会员等级体系已并入「客户经营 → 会员经营 → 等级」，不在本页维护。</p>
           <div class="tabs-wrapper">
             <el-radio-group v-model="activeModule" fill="#2D6A4F" @change="refreshData">
               <el-radio-button label="coupon">优惠券配置</el-radio-button>
               <el-radio-button label="reward">积分兑换</el-radio-button>
               <el-radio-button label="vip">会员权益卡</el-radio-button>
-              <el-radio-button label="level">会员等级体系</el-radio-button>
               <el-radio-button label="virtual">虚拟权益商品</el-radio-button>
             </el-radio-group>
           </div>
         </div>
+
+        <!-- 集合缺失的诚实提示：不把「功能没接通」显示成「暂无数据」 -->
+        <el-alert
+          v-if="missingCollection"
+          type="warning"
+          show-icon
+          :closable="false"
+          class="missing-collection-alert"
+          :title="`集合「${missingCollection}」尚未在云开发创建，本页暂时不可用`"
+        >
+          <template #default>
+            经线上核对，该集合在云开发环境中不存在，因此<b>列表恒为空、新建与删除都不会生效</b>。
+            需要先由技术同学在云开发控制台创建集合并配置安全规则，再回来使用本页 —— 这是环境未就绪，不是没有数据。
+          </template>
+        </el-alert>
 
         <div v-if="activeModule === 'coupon'" class="list-area">
           <div class="action-bar">
@@ -115,7 +130,7 @@
         <div v-if="activeModule === 'vip'" class="list-area">
           <div class="action-bar">
             <span class="tip">定义 VIP 等级与权益，卡面将显示在用户中心。</span>
-            <el-button type="primary" icon="Plus" @click="openEditor('vip')">新建会员卡</el-button>
+            <el-button type="primary" icon="Plus" :disabled="!!missingCollection" @click="openEditor('vip')">新建会员卡</el-button>
           </div>
           <div class="vip-grid">
             <div 
@@ -140,7 +155,7 @@
         <div v-if="activeModule === 'virtual'" class="list-area">
           <div class="action-bar">
             <span class="tip">无需物流的权益商品（如课程兑换码、礼品卡）。</span>
-            <el-button type="primary" icon="Plus" @click="openEditor('virtual')">发布权益品</el-button>
+            <el-button type="primary" icon="Plus" :disabled="!!missingCollection" @click="openEditor('virtual')">发布权益品</el-button>
           </div>
           <el-table :data="listData" v-loading="loading" @row-click="setPreview" highlight-current-row>
             <el-table-column label="商品信息" min-width="200">
@@ -350,8 +365,8 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :disabled="imageUploading" :loading="imageUploading" @click="saveData">
-          {{ imageUploading ? '图片上传中…' : '保存配置' }}
+        <el-button type="primary" :disabled="imageUploading || !!missingCollection" :loading="imageUploading" @click="saveData">
+          {{ imageUploading ? '图片上传中…' : (missingCollection ? '集合未创建，无法保存' : '保存配置') }}
         </el-button>
       </template>
     </el-dialog>
@@ -432,19 +447,40 @@ const getCardStyle = (type) => {
 }
 
 // --- 数据加载 ---
-const getCollectionName = () => {
-  if (activeModule.value === 'coupon') return 'coupons'
-  if (activeModule.value === 'reward') return 'rewards'
-  if (activeModule.value === 'vip') return 'vip_cards' // 需在云开发创建此集合
-  if (activeModule.value === 'virtual') return 'equity_goods' // 需在云开发创建此集合
-  return 'coupons'
+/**
+ * tab → 集合的唯一映射。
+ *
+ * 2026-09-16 审计（只读线上核对发现）：
+ * ① 原实现末尾是 `return 'coupons'`，于是「会员等级体系」tab（`level`）会去**读优惠券集合**，
+ *    而模板里根本没有 `activeModule === 'level'` 的分支 → 点了只看到空白，数据却取错集合。
+ *    兜底成「某个具体集合」本身就是隐患：任何新 tab 漏配都会静默改错数据源。
+ * ② `vip_cards` / `equity_goods` 经线上核对**在云开发里根本不存在**（`DescribeTable` 报 Db or Table not exist），
+ *    所以这两个 tab 的新建/保存/删除必然失败。已在上方显式提示并禁用写入。
+ */
+const MODULE_COLLECTIONS = {
+  coupon: 'coupons',
+  reward: 'rewards',
+  vip: 'vip_cards',          // ⚠ 线上不存在，待创建
+  virtual: 'equity_goods',   // ⚠ 线上不存在，待创建
 }
+/** 线上尚未创建的集合：不做兜底、不假装成功，直接禁用写入并提示 */
+const MISSING_COLLECTIONS = { vip: 'vip_cards', virtual: 'equity_goods' }
+
+const getCollectionName = () => MODULE_COLLECTIONS[activeModule.value] || ''
+/** 当前 tab 的目标集合在云开发里是否还不存在 */
+const missingCollection = computed(() => MISSING_COLLECTIONS[activeModule.value] || '')
 
 const refreshData = async () => {
   loading.value = true
   previewItem.value = {}
+  const colName = getCollectionName()
+  if (!colName) {
+    // 未映射的 tab：宁可空着，也不去读一个「碰巧」的集合
+    listData.value = []
+    loading.value = false
+    return
+  }
   try {
-    const colName = getCollectionName()
     let rows = await fetchCollectionSorted(colName, {
       limit: 200,
       sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0)
@@ -635,6 +671,14 @@ const saveData = async () => {
   }
 
   const colName = getCollectionName()
+  if (!colName) {
+    ElMessage.error('该页签未配置数据集合，无法保存（这是配置缺失，不是网络问题）')
+    return
+  }
+  if (missingCollection.value) {
+    ElMessage.error(`集合「${missingCollection.value}」尚未在云开发创建，保存不会生效。请先在云开发控制台新建该集合与安全规则。`)
+    return
+  }
   let data = null
 
   // 内联校验优先：错误标在字段下方（兑换品的券面值/门槛关系资金口径）
@@ -740,8 +784,12 @@ onMounted(() => refreshData())
 .preview-col { display: flex; justify-content: center; align-items: center; background: #f9f9f9; border-radius: 20px; }
 
 /* 头部 */
-.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
 .panel-header h2 { margin: 0; color: #333; }
+/* 「等级体系已并入会员经营」的归属说明（勿去掉：本页曾有一个空白且读错集合的等级 tab） */
+.panel-sub { margin: 0; flex-basis: 100%; font-size: 12px; color: #909399; }
+/* 集合缺失告警：与错误态一样要显眼，避免被当成「暂无数据」 */
+.missing-collection-alert { margin-bottom: 16px; }
 .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
 .tip { font-size: 12px; color: #999; }
 .highlight { color: #d4af37; font-weight: bold; }
