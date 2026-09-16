@@ -9,9 +9,37 @@ const { buildCategoryDoc } = require('../utils/categoryDefaults');
 const { loadCategoryPickerTree, buildCategoryManageTree, resolveCanonicalRootName, fetchProductCountsByCategoryId } = require('../../../utils/categoryTree');
 const { parseTrackingFromScan, normalizeTrackingInput } = require('../utils/shipHelper');
 const { guardManagerPage } = require('../../../utils/managerAuth');
+// 需求 28：祈福墙的商品级开关。载入时用 isWishWallProduct 回填"当前实际是否挂墙"
+// （把「标题含马上有」的过渡兜底也算进去），否则运营一打开就保存会把在墙上的藏品摘下来。
+const { isWishWallProduct, normalizeProductKey } = require('../../../utils/wishWall');
 // 工作通知声音（#29）：语料清单 + 播放引擎；只播「相比上次新增」的待办
 const workNoticeCatalog = require('../../../utils/workNoticeCatalog');
 const workNoticeVoice = require('../../../utils/workNoticeVoice');
+
+/**
+ * 工作台抬头问候语（中文，按小时）。
+ *
+ * 为什么改中文：原来是 `Good Morning/Afternoon/Evening` + 员工姓名，
+ * 24rpx + 2rpx letter-spacing 的英文大写串很长（「GOOD MORNING，令狐冲大哥」），
+ * 窄屏上会**折成两行**，把「哥」孤字挤到第二行。同样一句问候，中文宽度只有一半。
+ *
+ * 为什么抽成函数：这段判断原先在 `updateTime` 与 `setToday` 里**各写了一份**，
+ * 改文案必须改两处、必然漂移。这里收敛成唯一出处（纯函数，便于断言）。
+ *
+ * 顺带修掉一个不准确：原来 <12 点一律 Good Morning，凌晨 1 点问候「早上好」很怪；
+ * 现在 0–4 点说「夜深了」。文案要调只改这一处。
+ */
+function greetByHour(hour) {
+  const h = Number(hour);
+  if (!Number.isFinite(h)) return '你好';
+  if (h >= 5 && h < 9) return '早上好';
+  if (h >= 9 && h < 12) return '上午好';
+  if (h >= 12 && h < 14) return '中午好';
+  if (h >= 14 && h < 18) return '下午好';
+  if (h >= 18 && h < 23) return '晚上好';
+  return '夜深了'; // 23:00–04:59
+}
+
 const { leaveWorkbench: leaveWorkspace, fallbackLeaveWorkbench } = require('../utils/workspaceBack');
 const { resolveDepositDisplay, isDepositOrder } = require('../utils/depositOrderDisplay');
 const {
@@ -1288,7 +1316,7 @@ const managerPageConfig = {
       topCats: [],
     },
     todayDate: '',
-    greeting: 'Good Day',
+    greeting: '你好',
 
     // 🟢 [新增] 发货弹窗相关数据
     showShipModal: false,
@@ -1887,9 +1915,7 @@ const managerPageConfig = {
     const str = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
     
     const hour = d.getHours();
-    let greet = 'Good Morning';
-    if(hour >= 12 && hour < 18) greet = 'Good Afternoon';
-    else if(hour >= 18) greet = 'Good Evening';
+    const greet = greetByHour(hour);
 
     this.setData({ todayDate: str, greeting: greet });
   },
@@ -1917,9 +1943,7 @@ const managerPageConfig = {
     const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
     const dbDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const hour = d.getHours();
-    let greet = 'Good Morning';
-    if(hour >= 12 && hour < 18) greet = 'Good Afternoon';
-    else if(hour >= 18) greet = 'Good Evening';
+    const greet = greetByHour(hour);
     
     const week = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
     const now = new Date();
@@ -4423,6 +4447,9 @@ const managerPageConfig = {
           protectionType,
           collectionCertificate: item.collectionCertificate || '',
           tempCertificate: '',
+          // 需求 28：按"当前实际是否挂墙"回填（含标题兜底），保存时再落成显式字段
+          wishWallEnabled: isWishWallProduct(item),
+          wishWallKey: String(item.wishWallKey || ''),
           taxonomy: toChineseTaxonomy(item.taxonomy || { kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' }),
           tags: sanitizeProductTags(item.tags),
           tagDraft: '',
@@ -4443,6 +4470,9 @@ const managerPageConfig = {
           protectionType: 'none',
           collectionCertificate: '',
           tempCertificate: '',
+          // 需求 28：新建藏品默认不挂祈福墙
+          wishWallEnabled: false,
+          wishWallKey: '',
           taxonomy: { kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' },
           tags: [],
           tagDraft: '',
@@ -4684,6 +4714,22 @@ const managerPageConfig = {
   bindPMemberDiscount(e) { this.setData({ 'tempProduct.memberDiscountEnabled': e.detail.value }); },
   bindPSupportsCustom(e) { this.setData({ 'tempProduct.supportsCustom': e.detail.value }); },
   bindPGiftEligible(e) { this.setData({ 'tempProduct.giftEligible': e.detail.value }); },
+  /**
+   * 需求 28：藏品是否挂祈福墙。
+   * 关掉时顺手清空作用域：留着一个不可见的值，下次开启会莫名其妙"挂到别的墙上"。
+   */
+  bindPWishWall(e) {
+    const on = !!e.detail.value;
+    this.setData({
+      'tempProduct.wishWallEnabled': on,
+      ...(on ? {} : { 'tempProduct.wishWallKey': '' })
+    });
+  },
+  /** 需求 28：祈福墙作用域。边输边净化成合法 key（与云函数/客户端同口径） */
+  bindPWishWallKey(e) {
+    const raw = String((e.detail && e.detail.value) || '');
+    this.setData({ 'tempProduct.wishWallKey': normalizeProductKey(raw, '') });
+  },
   bindPSensitiveBlur(e) {
     this.setData({
       'tempProduct.sensitiveBlur': !!e.detail.value,
@@ -5398,6 +5444,12 @@ const managerPageConfig = {
           : 'common',
         productRaritySetByUser: !!p.productRaritySetByUser,
         protectionType: p.protectionType || 'none',
+        // 需求 28：祈福墙。写成**显式**布尔，不再依赖"标题含马上有"的兜底 ——
+        // 载入时已按实际状态回填，所以"打开就保存"不会把原本在墙上的藏品摘下来。
+        // 作用域留空 → 由 resolveWishWallKey 回落到默认墙；**不在这里塞默认值**，
+        // 否则每条藏品都会被写上 'mashangyou'，以后改默认墙要批量刷数据。
+        wishWallEnabled: !!p.wishWallEnabled,
+        wishWallKey: p.wishWallEnabled ? normalizeProductKey(p.wishWallKey, '') : '',
         collectionCertificate,
         taxonomy: toChineseTaxonomy(p.taxonomy || {}),
         tags: sanitizeProductTags(p.tags),
