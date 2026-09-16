@@ -281,6 +281,9 @@
               <view class="cp-meta">
                 <text class="cp-name">{{item.title}}</text>
                 <text class="cp-cond">满 {{item.minSpend}} 可用</text>
+                <!-- 展示本单实际可省，而非券面额 -->
+                <text class="cp-save" wx:if="{{item._save > 0}}">本单可省 ¥{{item._save}}</text>
+                <text class="cp-save is-off" wx:elif="{{item._reason}}">{{item._reason}}</text>
               </view>
             </view>
             <view class="radio {{selectedCoupon._id === item._id ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{selectedCoupon._id === item._id}}"></view></view>

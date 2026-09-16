@@ -1249,6 +1249,9 @@ Page({
               // 本单实际节省额（用于本地选优，与 _disabled 同源计算）
               _save: Number(probe.couponSaved) || 0,
               _disabled: belowMin || freeShipUseless,
+              _reason: belowMin
+                ? `满 ¥${minSpend} 可用，本单未达门槛`
+                : (freeShipUseless ? '本单已免邮，免邮券无额外优惠' : ''),
               _noStack: false,
               _freeShipUseless: freeShipUseless
             }
@@ -1261,6 +1264,9 @@ Page({
             minSpend,
             _save: Number(probe.couponSaved) || 0,
             _disabled: belowMin || noStack,
+            _reason: belowMin
+              ? `满 ¥${minSpend} 可用，本单未达门槛`
+              : (noStack ? '会员价已达最低折扣，本单该券无额外优惠' : ''),
             _noStack: noStack,
             _freeShipUseless: false
           }

@@ -13,6 +13,47 @@ const { fetchMyCoupons } = require('../../utils/couponService')
 const shippingConfig = require('../../config/shipping')
 const { ensureShippingRules } = require('../../utils/shippingRulesSync')
 
+/**
+ * 单张券在本单的实际节省额（与 orderPricing/makeOrder 口径一致）。
+ * 抽成函数是为了让「计价」与「礼券列表展示」共用同一份逻辑——
+ * 此前列表只显示券面额，用户看到的数字与本单实减不一致。
+ * @returns {{saved:number, final:number, reason:string}}
+ */
+function couponSaveFor(coupon, vipTotal, originalTotal, selectedItems) {
+  if (!coupon) return { saved: 0, final: vipTotal, reason: '' }
+  const minSpend = Number(coupon.minSpend) || 0
+  if (vipTotal < minSpend) {
+    return { saved: 0, final: vipTotal, reason: `满 ¥${minSpend} 可用，本单未达门槛` }
+  }
+  const type = coupon.type || 'cash'
+  let saved = 0
+  let final = vipTotal
+  if (type === 'freeShipping') {
+    saved = typeof shippingConfig.calcShippingFee === 'function'
+      ? (shippingConfig.calcShippingFee(originalTotal, selectedItems) || 0)
+      : 0
+    final = vipTotal
+    if (!(saved > 0)) return { saved: 0, final, reason: '本单已免邮，免邮券无额外优惠' }
+  } else if (type === 'discount') {
+    const rate = Math.max(MIN_PAY_RATIO, couponDiscountMultiplier(coupon.value))
+    saved = vipTotal * (1 - rate)
+    final = vipTotal * rate
+  } else {
+    saved = coupon.value || 0
+    final = vipTotal - saved
+  }
+  if (final < 0) final = 0
+  if (type !== 'freeShipping') {
+    const clamped = clampCouponAgainstOriginal(vipTotal, saved, originalTotal)
+    final = clamped.final
+    saved = clamped.couponValue
+    if (!(saved > 0)) {
+      return { saved: 0, final, reason: '会员价已达最低折扣，本单该券无额外优惠' }
+    }
+  }
+  return { saved: Math.round(saved * 100) / 100, final, reason: '' }
+}
+
 Page({
   data: {
     allSelected: false,
@@ -205,40 +246,9 @@ Page({
     let final = vipTotal;
     let couponSavedAmount = 0;
     if (currentCoupon) {
-      const couponType = currentCoupon.type || 'cash'
-      switch (couponType) {
-        case 'cash':
-          // 满减券：直接减固定金额
-          couponSavedAmount = currentCoupon.value || 0
-          final = vipTotal - couponSavedAmount
-          break
-        case 'discount': {
-          const discount = Math.max(MIN_PAY_RATIO, couponDiscountMultiplier(currentCoupon.value))
-          couponSavedAmount = vipTotal * (1 - discount)
-          final = vipTotal * discount
-          break
-        }
-        case 'freeShipping':
-          // 按优惠前合计估算本应运费（已达包邮门槛则为 0）
-          couponSavedAmount = typeof shippingConfig.calcShippingFee === 'function'
-            ? shippingConfig.calcShippingFee(total, selectedItems)
-            : 0
-          final = vipTotal // 商品价格不变，只是免邮
-          break
-        case 'newUser':
-          // 新人券：通常也是满减
-          couponSavedAmount = currentCoupon.value || 0
-          final = vipTotal - couponSavedAmount
-          break
-        default:
-          couponSavedAmount = currentCoupon.value || 0
-          final = vipTotal - couponSavedAmount
-      }
-      if (couponType !== 'freeShipping') {
-        const clamped = clampCouponAgainstOriginal(vipTotal, couponSavedAmount, total)
-        final = clamped.final
-        couponSavedAmount = clamped.couponValue
-      }
+      const r = couponSaveFor(currentCoupon, vipTotal, total, selectedItems)
+      couponSavedAmount = r.saved
+      final = r.final
     }
     if (final < 0) final = 0;
     const totalSaved = total - final;
@@ -526,7 +536,27 @@ Page({
           });
           this.loadCollection(); } else { this.data.cartList[idx].isTouchMove = false; this.setData({ cartList: this.data.cartList }); } } }); },
   
-  openCouponModal() { if (this.data.selectedCount === 0) return wx.showToast({title:'请先勾选藏品', icon:'none'}); this.setData({ showCouponModal: true }); },
+  openCouponModal() {
+    if (this.data.selectedCount === 0) return wx.showToast({ title: '请先勾选藏品', icon: 'none' });
+    this.refreshCouponSaves();
+    this.setData({ showCouponModal: true });
+  },
+
+  /**
+   * 为券包里每张券标注**本单实际可省**与不可用原因。
+   * 面额是券的属性，与本单实减常常不等（门槛未达 / 会员价已触底），
+   * 只显示面额会让用户以为金额不对。
+   */
+  refreshCouponSaves() {
+    const vipTotal = Number(this.data.couponBaseAmount) || 0;
+    const originalTotal = parseFloat(String(this.data.originalPrice).replace(/,/g, '')) || 0;
+    const items = (this.data.cartList || []).filter((i) => i.selected !== false);
+    const list = (this.data.coupons || []).map((c) => {
+      const r = couponSaveFor(c, vipTotal, originalTotal, items);
+      return { ...c, _save: r.saved, _disabled: !(r.saved > 0), _reason: r.reason };
+    });
+    this.setData({ coupons: list });
+  },
   closeCouponModal() { this.setData({ showCouponModal: false }); },
   selectCoupon(e) {
     const idx = parseInt(e.currentTarget.dataset.index, 10);

@@ -846,3 +846,7 @@ page {
   border-radius: 50%;
   background: var(--brass-400);
 }
+
+/* 礼券项：本单实际可省 / 不可用原因 */
+.cp-save { margin-top: 4rpx; font-size: 21rpx; color: var(--gold, #C4A76C); }
+.cp-save.is-off { color: var(--color-text-muted, #8A847C); }

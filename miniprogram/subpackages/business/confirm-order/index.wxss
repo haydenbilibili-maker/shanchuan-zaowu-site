@@ -891,3 +891,14 @@ view, text, scroll-view { box-sizing: border-box; }
   color: #6B6560;
   line-height: 1.4;
 }
+
+/* 礼券项：本单实际可省 / 不可用原因（面额与本单实减常常不等，必须分开显示） */
+.coupon-opt .c-right { display: flex; flex-direction: column; align-items: flex-end; }
+.c-save {
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  color: var(--gold, #C4A76C);
+}
+.c-save.is-off {
+  color: var(--color-text-muted, #8A847C);
+}

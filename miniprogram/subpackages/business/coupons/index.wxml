@@ -15,7 +15,8 @@
             <text class="symbol" wx:if="{{!item.faceLabel}}">¥</text>
             <text class="amount">{{item.faceLabel || item.value}}</text>
           </view>
-          <text class="condition">满 {{item.minSpend || 0}} 可用</text>
+          <!-- 无门槛券不显示「满 0 可用」 -->
+          <text class="condition">{{item.minSpend > 0 ? '满 ' + item.minSpend + ' 可用' : '无门槛'}}</text>
         </view>
         <view class="split-line" aria-hidden="true">
           <view class="circle top"></view>

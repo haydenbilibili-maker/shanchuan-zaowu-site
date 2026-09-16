@@ -334,6 +334,9 @@
         </view>
         <view class="c-right">
           <text class="c-name">{{item.title || item.name || '礼券'}}</text>
+          <!-- 关键：展示**本单实际可省**（由本单金额算出），而非券面额；面额与本单实减常常不等 -->
+          <text class="c-save" wx:if="{{item._save > 0}}">本单可省 ¥{{item._save}}</text>
+          <text class="c-save is-off" wx:elif="{{item._reason}}">{{item._reason}}</text>
         </view>
         <view class="radio {{selectedCoupon && selectedCoupon._id === item._id ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{selectedCoupon && selectedCoupon._id === item._id}}"></view></view>
       </view>
