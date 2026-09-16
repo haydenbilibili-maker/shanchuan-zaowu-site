@@ -65,8 +65,8 @@ function proxyAllowsManageWelcomeGift(src) {
  * 展示面共 6 处，唯一合规的来源只有两种：① 云函数 preview/已发券；② 与配置同源的代码兜底。
  * 这条守卫钉住最容易回流的三种写法：注册页改回读死档位、完成页改回显示兜底张数、C 端出现第二份档位表。
  */
-const ONBOARDING_PAGE = path.join(ROOT, 'miniprogram', 'subpackages', 'feature', 'user', 'onboarding', 'index.js')
-const ONBOARDING_DONE = path.join(ROOT, 'miniprogram', 'subpackages', 'feature', 'user', 'onboarding', 'done.js')
+const ONBOARDING_PAGE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'index.js')
+const ONBOARDING_DONE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'done.js')
 
 /** 注册页「新客礼」预告必须来自云函数 preview（配置派生），而不是本地档位 */
 function previewIsSourceOfTruth(src) {

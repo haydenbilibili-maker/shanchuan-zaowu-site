@@ -1,0 +1,172 @@
+[
+  {
+    "source": "subpackages/feature/gift/giftShareCard.js",
+    "mirror": "subpackages/business/gift/giftShareCard.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/cacheInvalidate.js",
+    "mirror": "subpackages/extra/utils/cacheInvalidate.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/feature/utils/pageNav.js",
+    "mirror": "subpackages/extra/utils/pageNav.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/petMemorialDefaults.js",
+    "mirror": "subpackages/extra/utils/petMemorialDefaults.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/storePoints.js",
+    "mirror": "subpackages/extra/utils/storePoints.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/feature/utils/supportHelper.js",
+    "mirror": "subpackages/extra/utils/supportHelper.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/feature/care/care-common.wxss",
+    "mirror": "subpackages/extra/care/care-common.wxss",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/components/WorkNoticeVoice/index.js",
+    "mirror": "subpackages/extra/components/WorkNoticeVoice/index.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/components/WorkNoticeVoice/index.json",
+    "mirror": "subpackages/extra/components/WorkNoticeVoice/index.json",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/components/WorkNoticeVoice/index.wxml",
+    "mirror": "subpackages/extra/components/WorkNoticeVoice/index.wxml",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/components/WorkNoticeVoice/index.wxss",
+    "mirror": "subpackages/extra/components/WorkNoticeVoice/index.wxss",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/manager/moduleRoutes.js",
+    "mirror": "subpackages/extra/manager/moduleRoutes.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/extra/staff/field/index.wxss",
+    "mirror": "subpackages/manager/staff/field/index.wxss",
+    "identical": true
+  },
+  {
+    "source": "subpackages/extra/staff/scene.wxss",
+    "mirror": "subpackages/manager/staff/scene.wxss",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/staff/utils/pageSetup.js",
+    "mirror": "subpackages/extra/staff/utils/pageSetup.js",
+    "identical": false
+  },
+  {
+    "source": "subpackages/manager/staff-permissions/index.wxss",
+    "mirror": "subpackages/extra/staff-permissions/index.wxss",
+    "identical": false
+  },
+  {
+    "source": "subpackages/manager/utils/conceptStorage.js",
+    "mirror": "subpackages/extra/utils/conceptStorage.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/decodeQueryText.js",
+    "mirror": "subpackages/extra/utils/decodeQueryText.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/financeDailyParse.js",
+    "mirror": "subpackages/extra/utils/financeDailyParse.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/feature/utils/legalContent.js",
+    "mirror": "subpackages/extra/utils/legalContent.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/mallCommission.js",
+    "mirror": "subpackages/extra/utils/mallCommission.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/memberScan.js",
+    "mirror": "subpackages/extra/utils/memberScan.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/ops-dashboard.wxss",
+    "mirror": "subpackages/extra/utils/ops-dashboard.wxss",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/ops-museum.wxss",
+    "mirror": "subpackages/extra/utils/ops-museum.wxss",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/orderStatus.js",
+    "mirror": "subpackages/extra/utils/orderStatus.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/pledgeDue.js",
+    "mirror": "subpackages/extra/utils/pledgeDue.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/productConcept.js",
+    "mirror": "subpackages/extra/utils/productConcept.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/signalLamp.js",
+    "mirror": "subpackages/extra/utils/signalLamp.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/staffAuth.js",
+    "mirror": "subpackages/extra/utils/staffAuth.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/storeLedger.js",
+    "mirror": "subpackages/extra/utils/storeLedger.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/studioInventoryParse.js",
+    "mirror": "subpackages/extra/utils/studioInventoryParse.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/workbench-nav.wxss",
+    "mirror": "subpackages/extra/utils/workbench-nav.wxss",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/workspaceFeatures.js",
+    "mirror": "subpackages/extra/utils/workspaceFeatures.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/workspaceRoles.js",
+    "mirror": "subpackages/extra/utils/workspaceRoles.js",
+    "identical": true
+  }
+]

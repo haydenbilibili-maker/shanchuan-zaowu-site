@@ -21,7 +21,7 @@
  *      分类名 `化石标本` / `标本工具耗材`、伴宠保存方式 `浸液标本`/`剥制标本`/`骨骼标本`；
  *      与存量数据做等值比较的中文字面量（如 `<类别> === '标本'`）也自动跳过。
  *   5. 代金券 / 优惠券 → 礼券
- *   6. 店长 → 馆长（仅对客文案；`subpackages/manager/**` 员工侧不动）
+ *   6. 店长 → 专员（仅对客文案；`subpackages/manager/**` 员工侧仍称「店长」）
  *   7. 去支付 → 立即支付
  *
  * 颜色规则：与设计 token 同值的硬编码色 → var(--token)；
@@ -47,7 +47,7 @@ const MANIFEST = manifestArg ? manifestArg.slice('--manifest='.length) : ''
 const termArg = args.find((a) => a.startsWith('--product-term='))
 const PRODUCT_TERM = termArg ? termArg.slice('--product-term='.length) : '藏品'
 
-/** 文案目录（含员工侧；员工侧只跑商品名词，不跑「店长 → 馆长」） */
+/** 文案目录（含员工侧；员工侧只跑商品名词，不跑「店长 → 专员」） */
 const COPY_DIRS = ['pages', 'subpackages', 'components', 'custom-tab-bar', 'utils', 'config']
 const COLOR_DIRS = ['pages', 'subpackages', 'components', 'custom-tab-bar', 'styles']
 
@@ -335,7 +335,9 @@ function fixCopyText(text, opts = {}) {
     if (unified !== s) { hit('券 → 礼券（券夹 / 泛称）', n1 + n2); s = unified; notes.push('券 → 礼券（券夹 / 泛称）') }
     out = s
   }
-  if (!opts.staffSide && out.includes('店长') && !STAFF_ONLY.test(out)) { hit('店长 → 馆长', out.split('店长').length - 1); out = out.split('店长').join('馆长'); notes.push('店长 → 馆长') }
+  // 2026-09-16 口径：对客称「专员」（此前为品牌称谓「馆长」）。
+  // 若仍把 C 端「店长」写成「馆长」，会把已统一的术语改回去 —— 故目标词一并更新。
+  if (!opts.staffSide && out.includes('店长') && !STAFF_ONLY.test(out)) { hit('店长 → 专员', out.split('店长').length - 1); out = out.split('店长').join('专员'); notes.push('店长 → 专员') }
   if (out.includes('去支付')) { hit('去支付 → 立即支付', out.split('去支付').length - 1); out = out.split('去支付').join('立即支付'); notes.push('去支付 → 立即支付') }
   return { out, notes, counts }
 }

@@ -5,12 +5,12 @@
  * 模式 A（--via wechat）：直连微信开放平台（需 APPID + APPSECRET，一次性密钥）
  *   密钥来源：环境变量 QR_APPID / QR_APPSECRET，或 gitignored 文件 scripts/.env.qr（KEY=VALUE 每行）
  *   node scripts/generate-store-qr.js --via wechat --scene "from=store_qr" \
- *        --out assets/qrcode/identify-store-qr.png
+ *        --out scripts/qr-assets/identify-store-qr.png
  *
  * 模式 B（--via cloud）：调用已部署的 getStoreQRCode 云函数（无 AppSecret 泄露，可重复生成）
  *   前置：tcb login（微信扫码）→ 部署 getStoreQRCode；环境变量 STORE_QR_OPS_KEY = 云函数 ADMIN_OPS_KEY
  *   STORE_QR_OPS_KEY=xxx node scripts/generate-store-qr.js --via cloud --scene "from=store_qr" \
- *        --out assets/qrcode/identify-store-qr.png
+ *        --out scripts/qr-assets/identify-store-qr.png
  *
  * 默认参数：page=subpackages/feature/identify/index  scene=from=store_qr
  *           envVersion=release  width=430  hyaline=true  品牌黄铜色 #C4A76C
@@ -192,7 +192,7 @@ async function main() {
     envVersion: args.envVersion || 'release',
     width: Number(args.width) || 430,
     hyaline: args.hyaline !== 'false',
-    out: args.out || 'assets/qrcode/identify-store-qr.png',
+    out: args.out || 'scripts/qr-assets/identify-store-qr.png',
     appid: args.appid,
     appsecret: args.appsecret
   }

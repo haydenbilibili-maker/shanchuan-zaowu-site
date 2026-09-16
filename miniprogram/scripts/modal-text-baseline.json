@@ -1,0 +1,11 @@
+{
+  "note": "wx.showModal 的 confirmText/cancelText 最多 4 个字符；这里是已存在的超长写法（棘轮：只许减少）",
+  "generatedAt": "2026-09-16",
+  "offenders": [
+    "subpackages/business/order-detail/index.js#confirmText#先复制单号",
+    "subpackages/business/utils/refundPolicy.js#confirmText#去上传举证",
+    "subpackages/feature/utils/refundPolicy.js#confirmText#去上传举证",
+    "subpackages/manager/manager/managerPageConfig.js#confirmText#确认补履约",
+    "subpackages/manager/utils/refundPolicy.js#confirmText#去上传举证"
+  ]
+}
