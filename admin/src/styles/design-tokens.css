@@ -148,10 +148,10 @@
   --shadow-lg: 0 4px 16px rgba(26, 24, 21, 0.1);
 
   /* ---------- ERP 浅色模式语义（兼容旧变量名） ---------- */
-  --primary: var(--brand-green-500);
-  --primary-hover: var(--brand-green-600);
-  --primary-light: var(--brand-green-300);
-  --primary-dark: var(--brand-green-700);
+  --primary: var(--gold-700);
+  --primary-hover: var(--gold-800);
+  --primary-light: var(--gold-300);
+  --primary-dark: var(--gold-900);
 
   --accent: var(--semantic-error-icon);
   --accent-hover: #b8403c;
@@ -167,14 +167,14 @@
   --pink-light: var(--earth-100);
   --pink-dark: var(--earth-600);
 
-  /* Sidebar — dark green ramp */
-  --bg-dark: var(--brand-green-900);
-  --bg-dark-hover: rgba(27, 67, 50, 0.45);
-  --bg-dark-active: var(--brand-green-700);
-  --text-dark: rgba(255, 255, 255, 0.92);
-  --text-dark-secondary: rgba(245, 242, 236, 0.72);
-  --text-dark-muted: rgba(245, 242, 236, 0.48);
-  --border-dark: rgba(10, 31, 23, 0.35);
+  /* Sidebar — 黑金：近黑底 + 金饰（品牌决策 2026-09-16：ERP 走黑金，弃品牌绿） */
+  --bg-dark: #1c1a17;
+  --bg-dark-hover: rgba(212, 184, 106, 0.10);
+  --bg-dark-active: rgba(212, 184, 106, 0.16);
+  --text-dark: rgba(245, 242, 236, 0.94);
+  --text-dark-secondary: rgba(212, 184, 106, 0.78);
+  --text-dark-muted: rgba(245, 242, 236, 0.45);
+  --border-dark: rgba(168, 141, 66, 0.28);
 
   --bg-light: var(--light-bg-tertiary);
   --bg-light-card: var(--light-bg-elevated);
@@ -199,13 +199,13 @@
   --duration-fast: 140ms;
   --duration-normal: 220ms;
   --duration-slow: 320ms;
-  --focus-ring: 0 0 0 2px var(--light-bg-elevated), 0 0 0 4px rgba(45, 106, 79, 0.28);
+  --focus-ring: 0 0 0 2px var(--light-bg-elevated), 0 0 0 4px rgba(168, 141, 66, 0.32);
 
   /* 图表 / 可视化默认色（供 Chart.js 与看板对齐） */
   --viz-axis: var(--light-text-tertiary);
   --viz-grid: rgba(26, 24, 21, 0.07);
   --viz-surface: var(--light-bg-elevated);
-  --viz-series-1: var(--brand-green-500);
+  --viz-series-1: var(--gold-600);
   --viz-series-2: var(--gold-400);
   --viz-series-3: var(--cat-marine-mid);
   --viz-series-4: var(--cat-minerals-mid);
@@ -213,14 +213,40 @@
   --viz-tooltip-bg: rgba(26, 24, 21, 0.92);
   --viz-tooltip-fg: #f5f2ec;
 
-  /* Element Plus：主色与品牌绿对齐（链接、单选、填充型组件等） */
-  --el-color-primary: #2d6a4f;
-  --el-color-primary-light-3: #52b788;
-  --el-color-primary-light-5: #7ecbab;
-  --el-color-primary-light-7: #b3e0ce;
-  --el-color-primary-light-8: #d1ebe0;
-  --el-color-primary-light-9: #e8f5f0;
-  --el-color-primary-dark-2: #245a42;
+  /* Element Plus：主色与品牌金对齐（黑金，2026-09-16 决策；原为品牌绿 #2d6a4f）
+   *
+   * 为什么主色取 gold-700（#6e5b28）而不是更「像金」的 gold-400/500：
+   *   #d4af37 在白底仅 2.1:1、gold-500 #a88d42 仅 3.2:1，都过不了 AA；
+   *   gold-700 白底 6.7:1、白字压其上也是 6.7:1，是「在白底工作台上仍可读」的最亮金。
+   *   更亮的金（gold-300/400）只允许出现在**深色面**上（侧栏、表头、登录页），那里对比度 >7:1。
+   * 详见 admin/docs/ERP黑金品牌落地_2026-09-16.md */
+  --el-color-primary: #6e5b28;          /* gold-700 */
+  --el-color-primary-light-3: #8b7534;  /* gold-600 */
+  --el-color-primary-light-5: #a88d42;  /* gold-500 */
+  --el-color-primary-light-7: #d4b86a;  /* gold-300 */
+  --el-color-primary-light-8: #e3cf96;  /* gold-200 */
+  --el-color-primary-light-9: #faf5e8;  /* gold-50  */
+  --el-color-primary-dark-2: #52431e;   /* gold-800 */
+
+  /* ---------- ERP 黑金适配旋钮（2026-09-16） ----------
+   * 黑金是小程序的品牌色。ERP 是长时间处理密集数据的工具，因此做「适配」而非「复制」：
+   * 品牌放在外壳与点缀，工作台保持浅色以守住效率与视觉舒适度。
+   * 这三个旋钮是唯一需要调的开关，改这里即可整体换档，不必改组件。 */
+
+  /* 深色面（侧栏/表头/登录）上的亮金：对比 > 7:1 */
+  --erp-black: #1c1a17;                              /* 近黑，带暖调 */
+  --erp-black-soft: #2e2517;                         /* 次级深面（earth-900） */
+  --erp-gold-on-dark: #d4b86a;                       /* gold-300：深面上 7.8:1 */
+  --erp-hairline-gold: rgba(168, 141, 66, 0.28);     /* 发丝金线，用于分隔而非填充 */
+
+  /* 表头档位：dark = 黑金（品牌强）；light = 暖白 + 金下划线（舒适优先）。
+     改这一行即可在「品牌感」与「密集表格舒适度」之间换档。 */
+  --erp-table-head-bg: var(--erp-black-soft);
+  --erp-table-head-fg: var(--erp-gold-on-dark);
+  --erp-table-head-rule: transparent;
+
+  /* 白底工作台上可用的最亮金（AA 6.7:1）；更亮的金只许出现在深色面上 */
+  --erp-gold-on-light: #6e5b28;                      /* gold-700 */
 
   /* 响应式断点（与 JS matchMedia 一致） */
   --breakpoint-xs: 480px;

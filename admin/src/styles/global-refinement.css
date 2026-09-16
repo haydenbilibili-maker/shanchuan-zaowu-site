@@ -269,11 +269,17 @@ small, .text-muted {
   font-variant-numeric: tabular-nums;
 }
 
+/* 表头 —— 黑金适配：底色/字色由 --erp-table-head-* 旋钮控制（见 design-tokens.css）。
+   原先用 var(--brand-green-50) 绿底，与「黑金」注释矛盾（2026-09-16 审计 P0-14）。
+   想换成「暖白 + 金下划线」的舒适档：把 --erp-table-head-bg 改为 --light-bg-secondary、
+   --erp-table-head-fg 改为 --erp-gold-on-light、--erp-table-head-rule 改为 --gold-300。 */
 .el-table th.el-table__cell {
   font-weight: var(--weight-semibold);
-  color: var(--light-text-primary);
-  background: var(--brand-green-50) !important;
+  color: var(--erp-table-head-fg);
+  background: var(--erp-table-head-bg) !important;
+  box-shadow: inset 0 -1px 0 var(--erp-table-head-rule);
   font-size: var(--text-sm);
+  letter-spacing: 0.02em;
 }
 
 /* 表格行 */

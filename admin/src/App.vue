@@ -3895,7 +3895,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 /* --- 主布局样式 --- */
 .admin-container { height: 100vh; display: flex; background: var(--bg-light); }
 .aside { 
-    background: linear-gradient(180deg, var(--brand-green-900) 0%, var(--brand-green-700) 100%);
+    background: linear-gradient(180deg, #1c1a17 0%, #2e2517 100%);
     display: flex; flex-direction: column; 
     border-right: 1px solid var(--border-dark); 
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
@@ -3905,7 +3905,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     overflow-x: hidden;
 }
 
-/* 🟢 左侧菜单 - 黑金效果 */
+/* 左侧菜单 —— 黑金：近黑底 + 金饰（此注释原先写着「黑金」但底色是品牌绿，2026-09-16 已改为事实描述） */
 .aside::before {
     content: '';
     position: absolute;
@@ -3990,7 +3990,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     margin-top: 1px;
 }
 
-/* 菜单调整 - 黑金效果 */
+/* 左侧菜单 —— 近黑底 + 金饰（激活态为金色左侧条） */
 .el-menu { 
     border-right: none !important; 
     margin-top: 10px; 
@@ -4026,10 +4026,10 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     transform: translateX(2px);
 }
 .el-menu-item.is-active { 
-    background: var(--brand-green-500) !important; 
-    color: var(--light-bg-elevated) !important; 
+    background: var(--bg-dark-active) !important; 
+    color: var(--gold-300) !important; 
     font-weight: 600; 
-    box-shadow: none;
+    box-shadow: inset 2px 0 0 var(--gold-500);
     position: relative;
 }
 .el-menu-item.is-active .el-icon {
@@ -4284,7 +4284,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     margin-top: auto; 
     padding: 20px; 
     border-top: 1px solid var(--border-dark); 
-    background: rgba(10, 31, 23, 0.35);
+    background: rgba(28, 26, 23, 0.55);
     backdrop-filter: blur(10px);
 }
 .user-badge { 
@@ -4319,7 +4319,8 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     transform: translateX(2px);
 }
 
-/* 🟢 内容区 - 白色低饱和度 + 黑金效果 */
+/* 内容区 —— 浅色工作台。黑金刻意只放在外壳与点缀：
+   ERP 每天长时间处理密集表格，工作台保持浅色以守住效率与视觉舒适度（2026-09-16 品牌适配决策）。 */
 .main-content {
     padding: 0 !important;
     overflow: hidden;
@@ -4665,7 +4666,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     vertical-align: middle;
 }
 
-/* 🟢 表格卡片 - 白色低饱和度 + 黑金边框 */
+/* 表格卡片 —— 浅色卡面 + 金调描边/投影（原先注释写「黑金边框」但 hover 投影是品牌绿 rgba(45,106,79)） */
 .table-card { 
     border-radius: 12px; 
     border: 1px solid var(--border-light); 
@@ -4675,7 +4676,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     transition: all 0.3s ease;
 }
 .table-card:hover {
-    box-shadow: 0 4px 20px rgba(45, 106, 79, 0.1);
+    box-shadow: 0 4px 20px rgba(168, 141, 66, 0.16);
     border-color: var(--primary);
 }
 .prod-title { 
@@ -4746,7 +4747,7 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 .promo-meta-expired { color: #E6A23C; }
 .promo-none { color: #ccc; }
 
-/* 🟢 Element Plus 全局样式覆盖 - 黑金效果 */
+/* Element Plus 全局覆盖 —— 主色已转黑金（--primary = gold-700；白底 6.7:1 可读） */
 .el-button--primary { 
     --el-button-bg-color: var(--primary); 
     --el-button-border-color: var(--primary); 
