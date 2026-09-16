@@ -210,14 +210,16 @@
     </el-card>
 
     <el-dialog v-model="shipVisible" title="订单发货" width="400px" destroy-on-close>
-        <el-form label-position="top">
-            <el-form-item label="物流公司">
+        <!-- 校验必须落到字段上：原先只有一个会消失的 toast，
+             运营不知道要改哪个框（审计 P1：el-form 90 处但 :rules 仅 16 处） -->
+        <el-form ref="shipFormRef" :model="shipForm" :rules="shipRules" label-position="top">
+            <el-form-item label="物流公司" prop="carrier">
                 <el-select v-model="shipForm.carrier" style="width:100%">
                     <el-option value="顺丰速运"/><el-option value="中通快递"/><el-option value="圆通速递"/><el-option value="EMS"/><el-option value="京东物流"/>
                 </el-select>
             </el-form-item>
-            <el-form-item label="快递单号">
-                <el-input v-model="shipForm.trackingNumber" placeholder="请扫描或手动输入真实运单号" clearable />
+            <el-form-item label="快递单号" prop="trackingNumber">
+                <el-input v-model="shipForm.trackingNumber" placeholder="请扫描或手动输入真实运单号" clearable @keyup.enter="confirmShip" />
             </el-form-item>
         </el-form>
         <template #footer>
@@ -290,6 +292,15 @@ const searchKeyword = ref('')
 
 const shipVisible = ref(false)
 const shipForm = ref({ id: '', carrier: '顺丰速运', trackingNumber: '' })
+const shipFormRef = ref(null)
+/** 运单号至少 6 位（与批量发货弹窗的口径一致） */
+const shipRules = {
+    carrier: [{ required: true, message: '请选择物流公司', trigger: 'change' }],
+    trackingNumber: [
+        { required: true, message: '请填写运单号', trigger: 'blur' },
+        { min: 6, message: '运单号至少 6 位（禁止填假单号）', trigger: 'blur' }
+    ]
+}
 const batchShipVisible = ref(false)
 const batchShipCarrier = ref('顺丰速运')
 const batchShipRows = ref([])
@@ -516,7 +527,12 @@ const openShip = (row) => {
 }
 
 const confirmShip = async () => {
-    if(!shipForm.value.trackingNumber) return ElMessage.warning('请填写单号')
+    // 内联校验：错误显示在对应字段下方，而不是一个会消失的 toast
+    try {
+        await shipFormRef.value?.validate()
+    } catch (invalid) {
+        return // Element Plus 已在字段上标红
+    }
     submitting.value = true
     try {
         // SSOT 写路径：与小程序店长一致，走 managerShipOrder（站内信 + 物流字段）

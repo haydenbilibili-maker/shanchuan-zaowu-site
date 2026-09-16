@@ -255,7 +255,7 @@
       destroy-on-close
       :close-on-click-modal="false"
     >
-      <el-form :model="form" label-width="90px" label-position="left">
+      <el-form ref="moduleFormRef" :model="form" :rules="moduleFormRules" label-width="90px" label-position="left">
         
         <template v-if="activeModule === 'coupon'">
           <el-form-item label="优惠券名"><el-input v-model="form.name" placeholder="如：新客立减券" /></el-form-item>
@@ -283,7 +283,7 @@
         </template>
 
         <template v-if="activeModule === 'reward'">
-          <el-form-item label="标题"><el-input v-model="form.title" placeholder="如：50 元优惠券" /></el-form-item>
+          <el-form-item label="标题" prop="title"><el-input v-model="form.title" placeholder="如：50 元优惠券" /></el-form-item>
           <el-form-item label="类型">
             <el-radio-group v-model="form.type">
               <el-radio value="coupon">优惠券</el-radio>
@@ -291,10 +291,10 @@
               <el-radio value="virtual">虚拟核销</el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item label="所需积分"><el-input-number v-model="form.cost" :min="1" /></el-form-item>
+          <el-form-item label="所需积分" prop="cost"><el-input-number v-model="form.cost" :min="1" /></el-form-item>
           <el-form-item label="库存"><el-input-number v-model="form.stock" :min="0" /></el-form-item>
-          <el-form-item v-if="form.type === 'coupon'" label="券面值"><el-input-number v-model="form.value" :min="0" /></el-form-item>
-          <el-form-item v-if="form.type === 'coupon'" label="使用门槛"><el-input-number v-model="form.minSpend" :min="0" /></el-form-item>
+          <el-form-item v-if="form.type === 'coupon'" label="券面值" prop="value"><el-input-number v-model="form.value" :min="0" /></el-form-item>
+          <el-form-item v-if="form.type === 'coupon'" label="使用门槛" prop="minSpend"><el-input-number v-model="form.minSpend" :min="0" /></el-form-item>
           <el-form-item v-if="form.type === 'coupon'" label="有效天数"><el-input-number v-model="form.expireDays" :min="1" /></el-form-item>
           <el-form-item v-if="form.type === 'coupon'" label="每人限兑"><el-input-number v-model="form.limitPerUser" :min="0" /></el-form-item>
           <el-form-item v-if="form.type === 'coupon'" label="适用渠道">
@@ -585,6 +585,48 @@ function buildVirtualPayload() {
   }
 }
 
+// --- 表单校验（审计 P1：兑换品的券面值/门槛直接关系资金口径，不能只靠 toast） ---
+const moduleFormRef = ref(null)
+/** 7.5 折地板：value / minSpend ≤ 0.25（与 couponDiscountRules.validateCashCoupon 同一口径） */
+const MIN_SPEND_MAX_OFF = 0.25
+
+const rewardRules = computed(() => {
+  const rules = {
+    title: [{ required: true, message: '请填写兑换品标题', trigger: 'blur' }],
+    cost: [{
+      validator: (rule, value, callback) => (Number(value) >= 1 ? callback() : callback(new Error('所需积分须 ≥ 1'))),
+      trigger: 'change'
+    }]
+  }
+  if (form.type === 'coupon') {
+    rules.value = [{
+      validator: (rule, value, callback) => (Number(value) > 0 ? callback() : callback(new Error('券面值须大于 0'))),
+      trigger: 'change'
+    }]
+    rules.minSpend = [{
+      validator: (rule, value, callback) => {
+        const face = Number(form.value) || 0
+        if (!(face > 0)) return callback() // 面额本身已报错，避免重复提示
+        const floor = Math.ceil(face / MIN_SPEND_MAX_OFF)
+        if (Number(value) < floor) {
+          return callback(new Error(`门槛过低：满${Number(value)}减${face} 低于 7.5 折，门槛至少 ¥${floor}`))
+        }
+        callback()
+      },
+      trigger: 'change'
+    }]
+  }
+  return rules
+})
+
+const moduleFormRules = computed(() => {
+  if (activeModule.value === 'reward') return rewardRules.value
+  if (activeModule.value === 'coupon') {
+    return { name: [{ required: true, message: '请填写优惠券名', trigger: 'blur' }] }
+  }
+  return {}
+})
+
 // --- 核心 CRUD ---
 const saveData = async () => {
   if (imageUploading.value) {
@@ -594,6 +636,16 @@ const saveData = async () => {
 
   const colName = getCollectionName()
   let data = null
+
+  // 内联校验优先：错误标在字段下方（兑换品的券面值/门槛关系资金口径）
+  if (moduleFormRef.value && ['coupon', 'reward'].includes(activeModule.value)) {
+    try {
+      await moduleFormRef.value.validate()
+    } catch {
+      ElMessage.warning('请先修正表单中标红的必填项')
+      return
+    }
+  }
 
   if (activeModule.value === 'coupon') {
     data = buildCouponPayload()

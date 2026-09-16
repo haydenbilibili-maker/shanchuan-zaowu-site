@@ -653,8 +653,8 @@
         destroy-on-close
         class="product-archive-dialog"
     >
-        <el-form :model="form" label-width="90px" label-position="left">
-            <el-form-item label="藏品名称">
+        <el-form ref="productFormRef" :model="form" :rules="productRules" label-width="90px" label-position="left">
+            <el-form-item label="藏品名称" prop="title">
                 <div class="latin-name-row">
                     <el-input
                         v-model="form.title"
@@ -808,7 +808,7 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item :label="isMerchandiseForm ? '拉丁学名' : '拉丁学名 *'">
+                    <el-form-item :label="isMerchandiseForm ? '拉丁学名' : '拉丁学名 *'" prop="latinName">
                         <div class="latin-name-row">
                             <el-input
                                 v-model="form.latinName"
@@ -848,6 +848,7 @@
             <el-form-item
                 v-if="form.protectionType && form.protectionType !== 'none'"
                 label="收藏证书 *"
+                prop="collectionCertificate"
                 required
             >
                 <ImageUploadField
@@ -1792,6 +1793,39 @@ const categoryFlatMap = ref({}) // id -> category doc
 const framerOptions = ref([])
 
 const emptyTaxonomy = () => ({ kingdom: '', phylum: '', class: '', order: '', family: '', genus: '' })
+
+const productFormRef = ref(null)
+
+/**
+ * 藏品表单校验。
+ * 审计 P1：全仓 el-form 90 处但 `:rules` 仅 16 处，校验都靠会消失的 `ElMessage.warning`，
+ * 而这是一个 43 字段的弹窗 —— 报错后运营不知道该回去改哪个框。
+ * 这里把原有三条业务校验（名称 / 拉丁学名 / 收藏证书）改为字段内联错误。
+ */
+const productRules = computed(() => ({
+    title: [{ required: true, message: '请输入藏品名称', trigger: 'blur' }],
+    latinName: [{
+        validator: (rule, value, callback) => {
+            // 标本类必填；商品类（周边/文创）不要求
+            if (isMerchandiseProduct(form.value)) return callback()
+            if (!String(value || '').trim()) {
+                return callback(new Error('标本类藏品须填写拉丁学名（与店长端一致）'))
+            }
+            callback()
+        },
+        trigger: 'blur'
+    }],
+    collectionCertificate: [{
+        validator: (rule, value, callback) => {
+            const needs = form.value.protectionType && form.value.protectionType !== 'none'
+            if (needs && !String(value || '').trim()) {
+                return callback(new Error('请上传收藏证书（保护类标本必填）'))
+            }
+            callback()
+        },
+        trigger: 'change'
+    }]
+}))
 
 /** 科学分类展示/落库：拉丁层级名归一为中文 */
 const normalizeFormTaxonomy = (raw) => {
@@ -3760,13 +3794,18 @@ const deleteItem = (row) => {
 }
 
 const saveProduct = async () => {
-    if(!form.value.title) return ElMessage.warning('请输入藏品名称')
-    if (!isMerchandiseProduct(form.value) && !String(form.value.latinName || '').trim()) {
-        return ElMessage.warning('标本类藏品须填写拉丁学名（与店长端一致）')
-    }
-    const needsCert = form.value.protectionType && form.value.protectionType !== 'none'
-    if (needsCert && !String(form.value.collectionCertificate || '').trim()) {
-        return ElMessage.warning('请上传收藏证书（保护类标本必填）')
+    // 内联校验优先：错误直接标在对应字段下方（43 字段弹窗里 toast 会让人找不到北）
+    const formRef = productFormRef.value
+    if (formRef) {
+        try {
+            await formRef.validate()
+        } catch {
+            ElMessage.warning('请先修正表单中标红的必填项')
+            return
+        }
+    } else if (!form.value.title) {
+        // 兜底：表单未挂载时仍不能放过空名称
+        return ElMessage.warning('请输入藏品名称')
     }
 
     let hasSku = false
