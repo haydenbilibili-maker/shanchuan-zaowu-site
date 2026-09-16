@@ -50,6 +50,30 @@ function walk(target, out = []) {
   return out
 }
 
+/**
+ * 「位置型伪角标」检查：
+ * 曾出现 `<view class="op-rare-tag" wx:if="{{index % 3 === 0}}">珍稀</view>`——
+ * 角标与商品属性无关，纯粹按列表下标每 3 个打一次，等于给用户看假标签。
+ * 合法的奇偶错位布局（如 ProductList 两列 `index % 2 === 0`）类名不含角标语义，
+ * 因此只有「条件里出现 index % N」且「类名/样式带角标语义」才判为伪角标。
+ */
+const BADGE_NAME_RE = /(^|[-_])(tag|badge|corner|ribbon|mark|label|chip)([-_]|$)/i
+const POSITION_COND_RE = /\bindex\s*%\s*\d+/
+
+function checkPositionalBadge(attrs, rel, line, errors) {
+  const cond = attrs.match(/wx:(?:if|elif)\s*=\s*"([^"]*)"/)
+  if (!cond || !POSITION_COND_RE.test(cond[1])) return
+  const classAttr = attrs.match(/\bclass\s*=\s*"([^"]*)"/)
+  if (!classAttr) return
+  const names = classAttr[1].split(/\s+/).filter(Boolean)
+  const badge = names.find((n) => BADGE_NAME_RE.test(n))
+  if (!badge) return
+  errors.push(
+    `${rel}:${line}: 疑似「位置型伪角标」——class "${badge}" 由 \`${cond[1].trim()}\` 按下标打标，` +
+      `与数据属性无关（用户会看到随机/错误的标签）。请改为读取真实业务字段，并在录入端人工打标。`,
+  )
+}
+
 /** 用等长换行替换注释，保证行号不漂移 */
 const stripComments = (src) =>
   src.replace(/<!--[\s\S]*?-->/g, (m) => '\n'.repeat((m.match(/\n/g) || []).length))
@@ -83,6 +107,8 @@ export function checkSource(src, rel = '<inline>') {
       continue
     }
 
+    checkPositionalBadge(attrs, rel, line, errors)
+
     const kinds = new Set([...attrs.matchAll(ATTR_RE)].map((a) => a[1]))
     const hasIf = kinds.has('wx:if')
     const hasElif = kinds.has('wx:elif')
@@ -113,11 +139,23 @@ function selftest() {
   const good = `<view>\n  <view wx:if="{{a}}">x</view>\n  <view wx:else>y</view>\n</view>\n`
   const voidBoth = `<view>\n  <image src="a.png"></image>\n  <image src="b.png" />\n  <image src="c.png">\n</view>\n`
   const badTag = `<view>\n  <text>abc</view>\n</view>\n`
+  // 位置型伪角标（本次真实回归：珍稀角标按 index % 3 硬编码）
+  const fakeBadge =
+    `<view wx:for="{{list}}">\n  <view class="op-rare-tag" wx:if="{{index % 3 === 0}}">珍稀</view>\n</view>\n`
+  // 合法：两列错位布局，类名不含角标语义
+  const parityLayout =
+    `<view>\n  <block wx:for="{{list}}" wx:if="{{index % 2 === 0}}">a</block>\n  <block wx:for="{{list}}" wx:if="{{index % 2 !== 0}}">b</block>\n</view>\n`
+  // 合法：角标由真实业务字段驱动
+  const realBadge =
+    `<view wx:for="{{list}}">\n  <view class="op-rare-tag" wx:if="{{item.productRarity === 'rare'}}">珍稀</view>\n</view>\n`
   const cases = [
     ['孤立 wx:else 必须报错', bad, 1],
     ['正确的 if/else 不得报错', good, 0],
     ['空元素三种写法不得报错', voidBoth, 0],
     ['标签错配必须报错', badTag, 1],
+    ['位置型伪角标必须报错', fakeBadge, 1],
+    ['奇偶错位布局不得误报', parityLayout, 0],
+    ['真实字段驱动的角标不得误报', realBadge, 0],
   ]
   let failed = 0
   for (const [name, src, want] of cases) {

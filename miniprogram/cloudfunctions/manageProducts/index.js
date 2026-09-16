@@ -51,7 +51,9 @@ const ALLOWED_FIELDS = [
   'memberDiscountEnabled', 'supportsCustom', 'giftEligible', 'depositEligible', 'protectionType', 'collectionCertificate',
   'taxonomy', 'images', 'seckill', 'groupBuying', 'updateTime', 'createTime',
   'experienceStores', 'tags', 'giftScenes', 'coverImage', 'sort',
-  'sensitiveBlur', 'sensitiveBlurSetByUser'
+  'sensitiveBlur', 'sensitiveBlurSetByUser',
+  // 「珍稀」角标：商品级人工打标（勿与 manageAtlas 的物种 rarity 混用）
+  'productRarity', 'productRaritySetByUser'
 ]
 
 const PATCH_FIELDS = ALLOWED_FIELDS.filter((k) => k !== 'createTime')

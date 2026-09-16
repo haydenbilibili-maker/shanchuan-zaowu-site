@@ -150,7 +150,7 @@
                 <view class="op-card" catchtap="goToDetail" data-id="{{item._id}}" hover-class="op-card-press" hover-stay-time="80">
                    <view class="op-img-box">
                       <image class="op-img" src="{{item.image}}" mode="aspectFill" lazy-load></image>
-                      <view class="op-rare-tag" wx:if="{{index % 3 === 0}}">珍稀</view>
+                      <view class="op-rare-tag" wx:if="{{item.productRarity === 'rare' || item.productRarity === 'legendary'}}">珍稀</view>
                    </view>
                    <view class="op-info">
                       <text class="op-title text-cut">{{item.title}}</text>

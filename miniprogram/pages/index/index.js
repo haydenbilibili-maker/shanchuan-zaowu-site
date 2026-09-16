@@ -956,7 +956,11 @@ Page({
             return {
               ...item,
               uniqueId: item._id,
-              image: (img && urlMap[img]) || img
+              image: (img && urlMap[img]) || img,
+              // 「珍稀」角标只认人工打标字段，不随排序/分类变化
+              productRarity: (item.productRarity === 'rare' || item.productRarity === 'legendary')
+                ? item.productRarity
+                : 'common'
             };
           });
       }

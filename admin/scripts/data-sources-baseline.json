@@ -5,11 +5,10 @@
   "duplicateRole": [],
   "divergenceCount": 0,
   "localAuthorityCount": 4,
-  "nonAuthorityReaderCount": 9,
+  "nonAuthorityReaderCount": 8,
   "nonAuthorityReaders": [
     "src/components/ai/StaffOptimizeAI.vue local:shanhai_v12",
     "src/components/AudienceManager.vue collection:user_audiences",
-    "src/components/Bookings.vue collection:bookings",
     "src/components/CustomReportBuilder.vue collection:report_templates",
     "src/components/Finance.vue local:sc_finance_settings_v1",
     "src/components/PermissionManager.vue collection:admin_roles",

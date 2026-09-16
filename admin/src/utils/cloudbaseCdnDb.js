@@ -413,12 +413,34 @@ export async function fetchCollectionLimit(collectionName, options = {}) {
  * `ElMessage.success('已保存')` 就成了假成功（审计 §0 P0-5 / P1「写失败被当成成功」）。
  */
 export function writeApplied(res) {
-  if (res == null) return true // 形状未知时不误判为失败
+  if (res == null) return true // SDK 返回空 = 无操作发生，不误判为失败
   if (res.success === false) return false // 云函数代理路径
+
+  // ⚠ 2026-09-16 真实浏览器匿名会话实测：**权限被拒时 SDK 不抛错**，而是 resolve 一个
+  //    带错误码的对象：
+  //      { code: 'DATABASE_PERMISSION_DENIED', message: 'Permission denied …', requestId }
+  //    既不是 throw，也不是 {updated:0}。原先这里落到末尾 `return true` —— 于是
+  //    `assertWriteApplied` 会把「被安全规则拒绝」当成**写成功**，所有调用点继续弹「保存成功」。
+  //    这正好是审计 P0-5「写失败被当成成功」的最隐蔽形态。（同时回答了审计 §1.5 里
+  //    「匿名写 write:false 集合到底是抛错还是返回 updated:0」这个悬而未决的问题。）
+  const errCode = res.code || res.errorCode || (res.error && (res.error.code || res.error.errorCode))
+  if (errCode) return false
+  if (res.error) return false
+
   const stats = res.stats || {}
   const updated = stats.updated != null ? stats.updated : res.updated
   if (updated != null) return Number(updated) > 0
+  const deleted = stats.deleted != null ? stats.deleted : (res.deleted != null ? res.deleted : res.removed)
+  if (deleted != null) return Number(deleted) > 0
   if (res._id || res.id || res.upsertedId) return true
+
+  // 认不出的形状仍按「已生效」处理，但**打出形状**便于发现新的失败形态。
+  //
+  // 为什么这里不直接判失败：合法性未知，而 `set()` 等路径的返回形状没有稳定文档；
+  // 一刀切判失败会把这些**正常写入**变成假失败（用户看到「保存未生效」但其实写进去了）。
+  // 已验证的**失败**形态（错误码对象、updated:0、deleted:0）都已在上面显式拦截，
+  // 所以残留风险仅为「未知形状恰好是失败」—— 靠这行 warn 把它变成一个可发现的问题。
+  console.warn('[writeApplied] 未识别的写返回形状，按已生效处理（若实为失败请补形状判定）：', res)
   return true
 }
 

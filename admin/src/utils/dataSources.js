@@ -185,12 +185,24 @@ export const CONCEPTS = [
   },
   {
     key: 'bookings',
-    label: '预约',
+    label: '预约记录',
+    // 记录与规则是**两个概念**，初版把它们混成一个（把 bookings 当 legacy、把规则当记录权威），
+    // 那是建模错误：bookings 就是预约记录的事实源，只是**写通道**不在 ERP 手里。
+    authority: { kind: 'collection', name: 'bookings' },
+    writeVia: 'updateBooking / verifyBooking / cancelBooking（小程序云函数；未接入 ERP 代理）',
+    divergent: [],
+    note: '⚠ `bookings` 规则为 {read:"auth != null", write:false} → ERP **可读不可写**；'
+      + '权威写通道是云函数，且不在前端代理白名单内。因此 ERP 预约页的确认/取消/核销'
+      + '目前**没有任何可用通道**，已改为「明确报错 + 前置横幅告知」（见 C.3 待部署接通道）。',
+  },
+  {
+    key: 'booking_rules',
+    label: '预约规则（时段/人数等配置）',
     authority: { kind: 'collection', name: 'store_booking_rules' },
     writeVia: '小程序',
-    divergent: ['collection:bookings'],
-    note: '⚠ `bookings` 是线上 write:false 的死 schema（写入必失败，审计 P0-5），'
-      + '权威规则在 store_booking_rules。',
+    divergent: [],
+    note: '规则为 {read:false, write:false} → ERP 读不到也用不到；由小程序维护。'
+      + 'ERP 若将来要展示规则，需先接服务端读取通道。',
   },
   {
     key: 'support',
@@ -283,8 +295,8 @@ export const SOURCE_REGISTRY = {
   'collection:custom_drafts': { concept: 'content_factory', role: 'derived', confidence: 'low', note: '待确认归属：内容工厂草稿 or 定制草稿' },
   'collection:content_pieces': { concept: 'content_factory', role: 'authority', confidence: 'high' },
   'collection:configs': { concept: 'generic_config', role: 'authority', confidence: 'medium', note: '通用配置文档集合（键值型），各页面按 docId 读取' },
-  'collection:store_booking_rules': { concept: 'bookings', role: 'authority', confidence: 'medium' },
-  'collection:bookings': { concept: 'bookings', role: 'legacy', confidence: 'high', note: '线上 write:false，写入必失败（审计 P0-5）' },
+  'collection:store_booking_rules': { concept: 'booking_rules', role: 'authority', confidence: 'medium' },
+  'collection:bookings': { concept: 'bookings', role: 'authority', confidence: 'high', note: '规则 write:false → ERP 只读；写通道未接入' },
   'collection:support_tickets': { concept: 'support', role: 'authority', confidence: 'high' },
   'collection:support_configs': { concept: 'support', role: 'authority', confidence: 'medium' },
   'collection:gift_settings': { concept: 'gift', role: 'authority', confidence: 'medium' },
@@ -304,8 +316,8 @@ export const SOURCE_REGISTRY = {
   'collection:search_hot_keywords': { concept: 'home_config', role: 'derived', confidence: 'low' },
   'collection:search_blacklist': { concept: 'home_config', role: 'derived', confidence: 'low' },
   'collection:notification_logs': { concept: 'support', role: 'derived', confidence: 'low', note: '通知日志，待细分概念' },
-  'collection:admin_roles': { concept: 'staff', role: 'local-only', confidence: 'medium', note: '⚠ 全仓无消费方（审计 P0-4），属死数据' },
-  'collection:admin_users': { concept: 'staff', role: 'local-only', confidence: 'medium', note: '⚠ 全仓无消费方（审计 P0-4）' },
+  'collection:admin_roles': { concept: 'staff', role: 'local-only', confidence: 'medium', note: '⚠ 不参与鉴权（staffGuard 读的是 staff_members/workspace_acl）；PermissionManager 只读展示 —— 审计 P0-4 的「无任何消费方」说法不准确，已更正' },
+  'collection:admin_users': { concept: 'staff', role: 'local-only', confidence: 'medium', note: '⚠ 不参与鉴权；PermissionManager 只读展示（审计 P0-4「无消费方」说法已更正）' },
   'collection:admin_operation_logs': { concept: 'staff', role: 'derived', confidence: 'low' },
   'collection:admin_login_logs': { concept: 'staff', role: 'derived', confidence: 'low' },
   'collection:audience_campaigns': { concept: 'members', role: 'local-only', confidence: 'medium', note: '线上存在且 auth!=null 可读写但无仓库规则（审计 P0-11）' },
@@ -329,6 +341,9 @@ export const SOURCE_REGISTRY = {
   'function:refundOrder': { concept: 'refunds', role: 'channel', confidence: 'high' },
   'function:confirmPayment': { concept: 'orders', role: 'channel', confidence: 'medium', note: '支付补履约' },
   'function:getShippingRules': { concept: 'orders', role: 'derived', confidence: 'medium' },
+  'function:updateBooking': { concept: 'bookings', role: 'channel', confidence: 'high', note: '小程序侧写通道；**不在**前端代理白名单，ERP 暂不可用' },
+  'function:verifyBooking': { concept: 'bookings', role: 'channel', confidence: 'high', note: '同上（核销）' },
+  'function:cancelBooking': { concept: 'bookings', role: 'channel', confidence: 'high', note: '同上（取消）' },
   'function:manageGift': { concept: 'gift', role: 'channel', confidence: 'high' },
   'function:manageDeposit': { concept: 'orders', role: 'derived', confidence: 'medium', note: '定金' },
   'function:manageApprovals': { concept: 'staff', role: 'derived', confidence: 'medium' },

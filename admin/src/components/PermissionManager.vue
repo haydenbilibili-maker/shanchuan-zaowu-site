@@ -14,10 +14,12 @@
     >
       <template #default>
         ERP 前端没有按角色过滤菜单的能力，真实授权全部由云函数
-        <code>staffGuard</code> 在服务端完成。因此「角色管理」「用户管理」两个页签已改为
-        <b>只读</b>——它们写入的 <code>admin_roles</code> / <code>admin_users</code>
-        目前没有任何消费方，改了对权限毫无影响（2026-09-16 审计 §0 P0-4 / §7.5 决策 B）。
-        按人账号落地后，才会重新评估是否真正实现 RBAC。
+        <code>staffGuard</code> 在服务端完成，它读的是 <code>staff_members</code> 与
+        <code>workspace_acl</code>。因此「角色管理」「用户管理」两个页签已改为
+        <b>只读</b>：<code>admin_roles</code> / <code>admin_users</code> 这两个集合
+        <b>不参与任何鉴权判定</b>，改了对权限毫无影响。
+        （更正：审计 §0 P0-4 称其「全仓无任何消费方」并不准确 —— <b>本页就是消费方</b>，
+        只是仅作只读展示。结论不变：写它们不改变权限。见 §7.5 决策 B。）
       </template>
     </el-alert>
 

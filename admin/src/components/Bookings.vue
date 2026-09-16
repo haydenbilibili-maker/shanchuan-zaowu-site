@@ -39,6 +39,22 @@
     />
 
     <template v-if="activeTab === 'bookings'">
+      <!-- 写通道不可用必须前置告知：否则运营会以为按钮坏了／或以为操作成功了 -->
+      <el-alert
+        type="warning"
+        show-icon
+        :closable="false"
+        class="booking-write-alert"
+        title="本页的确认 / 取消 / 核销当前不会生效"
+      >
+        <template #default>
+          `bookings` 集合线上为<b>只读</b>（<code>write: false</code>），而权威写通道是云函数
+          （<code>updateBooking</code> / <code>verifyBooking</code> / <code>cancelBooking</code>），
+          尚未接入 ERP 代理。因此在接入之前，本页的写按钮会<b>明确报错</b>而不是假装成功；
+          预约的确认与核销请先在小程序端完成。
+        </template>
+      </el-alert>
+
       <div class="filter-bar">
         <el-radio-group v-model="statusFilter" fill="#d4af37" @change="refresh">
           <el-radio-button label="all">全部</el-radio-button>
@@ -243,6 +259,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Stamp, Refresh } from '@element-plus/icons-vue'
 import { safeWarn } from '../utils/safeStorage.js'
+import { assertWriteApplied } from '../utils/cloudbaseCdnDb.js'
 import {
   fetchCollectionLimit,
   fetchCollectionWhere,
@@ -251,6 +268,30 @@ import {
   cdnDocGet,
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+/**
+ * 预约写操作守卫。
+ *
+ * `bookings` 线上规则是 `{ read: "auth != null", write: false }` —— **ERP 直写必被拒**，
+ * 而权威写通道是云函数（`updateBooking` / `verifyBooking` / `cancelBooking`），
+ * 它们**不在**前端代理白名单里。也就是说本页所有写按钮当前**没有任何可用通道**。
+ *
+ * 更危险的是 CloudBase `update` 对不匹配/无权限的文档**返回 `{updated:0}` 而不抛错**
+ * （本仓已在 `test:write-layer` 里钉住这个语义），于是原实现会：
+ *   · `checkIn` / `confirmBooking` 打出「核销成功 / 已确认」而实际零落库；
+ *   · `cancelBooking` 连失败都不提示（错误被确认框的 catch 一起吞掉）。
+ * 现在统一走 `assertWriteApplied`：没写进去就抛 `WriteNotAppliedError`，调用方如实报错。
+ *
+ * 真正的修法是「部署后把预约写通道接进代理」（见审计 C.3），在此之前本页必须**说真话**。
+ */
+const BOOKING_WRITE_BLOCKED_HINT = '预约写操作当前不可用：bookings 集合为只读，且服务端写通道尚未接入 ERP。请在小程序端处理，或联系技术接入后再用。'
+
+function writeBooking(id, patch, actionLabel) {
+  return cdnUpdate('bookings', id, patch).then((res) => {
+    assertWriteApplied('bookings', res, actionLabel)
+    return res
+  })
+}
 
 const activeTab = ref('bookings')
 const loading = ref(false)
@@ -381,14 +422,17 @@ const checkIn = (row) => {
     type: 'warning'
   }).then(async () => {
     try {
-      await cdnUpdate('bookings', row._id, {
+      await writeBooking(row._id, {
         status: 'used',
         usedTime: Date.now()
-      })
+      }, '核销')
       ElMessage.success('核销成功')
       refresh()
     } catch (e) {
-      ElMessage.error('核销失败：' + e.message)
+      // 区分「没写进去」与「网络/其它错误」，都如实报，不再出现「成功」假象
+      ElMessage.error(e?.name === 'WriteNotAppliedError'
+        ? `核销未生效：${BOOKING_WRITE_BLOCKED_HINT}`
+        : '核销失败：' + (e?.message || '请重试'))
     }
   }).catch((e) => {
       if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
@@ -397,22 +441,31 @@ const checkIn = (row) => {
 
 const confirmBooking = async (row) => {
   try {
-    await cdnUpdate('bookings', row._id, { status: 'confirmed' })
+    await writeBooking(row._id, { status: 'confirmed' }, '确认预约')
     ElMessage.success('已确认')
     refresh()
   } catch (e) {
-    ElMessage.error('操作失败')
+    ElMessage.error(e?.name === 'WriteNotAppliedError'
+      ? `确认未生效：${BOOKING_WRITE_BLOCKED_HINT}`
+      : '操作失败：' + (e?.message || '请重试'))
   }
 }
 
 const cancelBooking = (row) => {
   ElMessageBox.confirm(`取消【${row.title}】的预约？`, '取消预约', { type: 'warning' }).then(async () => {
-    await cdnUpdate('bookings', row._id, {
-      status: 'cancelled',
-      cancelTime: Date.now()
-    })
-    ElMessage.success('已取消')
-    refresh()
+    // 写操作单独 try/catch：与「用户点取消」分开，否则真实失败会被当成取消静默吞掉
+    try {
+      await writeBooking(row._id, {
+        status: 'cancelled',
+        cancelTime: Date.now()
+      }, '取消预约')
+      ElMessage.success('已取消')
+      refresh()
+    } catch (e) {
+      ElMessage.error(e?.name === 'WriteNotAppliedError'
+        ? `取消失败：${BOOKING_WRITE_BLOCKED_HINT}`
+        : '取消失败：' + (e?.message || '请重试'))
+    }
   }).catch((e) => {
       if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
     })
@@ -448,14 +501,21 @@ const verifyTicket = async () => {
       confirmButtonText: '确认核销',
       type: 'success'
     }).then(async () => {
-      await cdnUpdate('bookings', b._id, {
-        status: 'used',
-        usedTime: Date.now()
-      })
-      ElMessage.success('核销成功')
-      ticketInput.value = ''
-      detailVisible.value = false
-      refresh()
+      // 写操作单独 try/catch（同 cancelBooking：别让真实失败被「用户取消」吞掉）
+      try {
+        await writeBooking(b._id, {
+          status: 'used',
+          usedTime: Date.now()
+        }, '票号核销')
+        ElMessage.success('核销成功')
+        ticketInput.value = ''
+        detailVisible.value = false
+        refresh()
+      } catch (e) {
+        ElMessage.error(e?.name === 'WriteNotAppliedError'
+          ? `核销未生效：${BOOKING_WRITE_BLOCKED_HINT}`
+          : '核销失败：' + (e?.message || '请重试'))
+      }
     }).catch((e) => {
       if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
     })
@@ -475,6 +535,7 @@ onMounted(refresh)
 </script>
 
 <style scoped>
+.booking-write-alert { margin-bottom: 12px; }
 .bookings-container { padding: 10px; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid #d4af37; padding-left: 12px; font-weight: 800; }

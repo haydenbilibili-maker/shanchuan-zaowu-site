@@ -2861,6 +2861,8 @@
           <view class="form-row"><text>参与会员折扣</text><switch checked="{{tempProduct.memberDiscountEnabled !== false}}" color="#C4A76C" bindchange="bindPMemberDiscount" style="transform:scale(0.7)"/></view>
           <view class="form-row"><text>支持定制</text><switch checked="{{tempProduct.supportsCustom}}" color="#C4A76C" bindchange="bindPSupportsCustom" style="transform:scale(0.7)"/></view>
           <view class="form-row"><text>支持礼赠</text><switch checked="{{tempProduct.giftEligible !== false}}" color="#C4A76C" bindchange="bindPGiftEligible" style="transform:scale(0.7)"/></view>
+          <view class="form-row"><text>珍稀角标</text><switch checked="{{tempProduct.productRarity === 'rare' || tempProduct.productRarity === 'legendary'}}" color="#C4A76C" bindchange="bindPProductRarity" style="transform:scale(0.7)"/></view>
+          <text class="latin-hint">开启后：藏品流卡片左上角展示「珍稀」角标。该标记仅由人工打标，不随列表顺序或分类变化；未开启的藏品不展示角标。</text>
           <view class="form-row"><text>敏感形态模糊</text><switch checked="{{tempProduct.sensitiveBlur}}" color="#C4A76C" bindchange="bindPSensitiveBlur" style="transform:scale(0.7)"/></view>
           <text class="latin-hint">开启后：藏品流与详情封面默认轻掩（模糊），用户点按启视后可见真容；适合蛇类等可能引起不适的藏品形态。</text>
           <view class="form-row tag-editor-row">

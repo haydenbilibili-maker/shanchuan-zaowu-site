@@ -4343,6 +4343,10 @@ const managerPageConfig = {
           giftEligible: item.giftEligible !== false,
           sensitiveBlur: !!(item.sensitiveBlur || item.contentWarning),
           sensitiveBlurSetByUser: !!item.sensitiveBlurSetByUser,
+          productRarity: item.productRarity === 'rare' || item.productRarity === 'legendary'
+            ? item.productRarity
+            : 'common',
+          productRaritySetByUser: !!item.productRaritySetByUser,
           memberDiscountEnabled: item.memberDiscountEnabled !== false,
           isOneOfAKind: !!item.isOneOfAKind,
           depositEligible: item.depositEligible != null
@@ -4370,7 +4374,7 @@ const managerPageConfig = {
           groupBuyingSize: groupBuying ? (groupBuying.groupSize || 2) : 2
         } : { 
           images: [],
-          tempImg: '', title: '', price: '', costPrice: '', stock: 1, category: '', categoryId: '', rootCategoryName: '', rootCategoryId: '', categoryType: '', framerName: '', framerId: '', description: '', origin: '', latinName: '', sizeL:'', sizeW:'', sizeH:'', collectDate: '', isTreasure: false, isOneOfAKind: true, depositEligible: true, inArchive: true, memberDiscountEnabled: true, supportsCustom: false, giftEligible: true, sensitiveBlur: false, sensitiveBlurSetByUser: false, hasSku: false, skus: [], skuDimensionsStr: '', detailImages: [], detailHtml: '',
+          tempImg: '', title: '', price: '', costPrice: '', stock: 1, category: '', categoryId: '', rootCategoryName: '', rootCategoryId: '', categoryType: '', framerName: '', framerId: '', description: '', origin: '', latinName: '', sizeL:'', sizeW:'', sizeH:'', collectDate: '', isTreasure: false, isOneOfAKind: true, depositEligible: true, inArchive: true, memberDiscountEnabled: true, supportsCustom: false, giftEligible: true, sensitiveBlur: false, sensitiveBlurSetByUser: false, productRarity: 'common', productRaritySetByUser: false, hasSku: false, skus: [], skuDimensionsStr: '', detailImages: [], detailHtml: '',
           channel: '', craftType: '', craftProcess: '',
           protectionType: 'none',
           collectionCertificate: '',
@@ -4599,6 +4603,13 @@ const managerPageConfig = {
     if (suggested === true) {
       this.setData({ 'tempProduct.sensitiveBlur': true });
     }
+  },
+  /** 「珍稀」角标：仅人工打标，不参与任何自动推断 */
+  bindPProductRarity(e) {
+    this.setData({
+      'tempProduct.productRarity': e.detail.value ? 'rare' : 'common',
+      'tempProduct.productRaritySetByUser': true
+    });
   },
   bindPSeckillEnabled(e) { this.setData({ 'tempProduct.seckillEnabled': e.detail.value }); },
   bindPGroupBuyingEnabled(e) { this.setData({ 'tempProduct.groupBuyingEnabled': e.detail.value }); },
@@ -5288,6 +5299,10 @@ const managerPageConfig = {
         giftEligible: p.giftEligible !== false,
         sensitiveBlur: !!p.sensitiveBlur,
         sensitiveBlurSetByUser: !!p.sensitiveBlurSetByUser,
+        productRarity: (p.productRarity === 'rare' || p.productRarity === 'legendary')
+          ? p.productRarity
+          : 'common',
+        productRaritySetByUser: !!p.productRaritySetByUser,
         protectionType: p.protectionType || 'none',
         collectionCertificate,
         taxonomy: toChineseTaxonomy(p.taxonomy || {}),

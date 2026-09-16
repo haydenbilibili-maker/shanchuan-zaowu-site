@@ -54,6 +54,13 @@ const SHAPES = [
   ['云函数代理成功：{success:true,id:"x"}', { success: true, id: 'x' }, true],
   ['云函数代理失败：{success:false,msg:"..."}', { success: false, msg: '集合未授权' }, false],
   ['set upsert：{upsertedId:"x"}', { upsertedId: 'x' }, true],
+  ['remove 成功：{deleted:1}', { deleted: 1 }, true],
+  ['remove 未命中：{deleted:0}', { deleted: 0 }, false],
+  // ★ 2026-09-16 真实浏览器匿名会话实测到的形状：权限被拒时 SDK **不抛错**，
+  //   而是 resolve 一个带错误码的对象。原实现落到 `return true` → 假成功。
+  ['权限被拒（实测形状）：{code:"DATABASE_PERMISSION_DENIED"}', { code: 'DATABASE_PERMISSION_DENIED', message: 'Permission denied', requestId: 'x' }, false],
+  ['嵌套错误：{error:{code:"X"}}', { error: { code: 'X' } }, false],
+  ['未识别形状按已生效但会 warn（不制造假失败）：{foo:1}', { foo: 1 }, true],
   ['形状未知：null', null, true]
 ]
 
