@@ -94,10 +94,40 @@ const getSafe = (obj, path, defaultValue = null) => {
   }
 }
 
+/**
+ * 分享卡片封面：把任意来源解析成微信**能渲染**的地址。
+ *
+ * 为什么必须走这一步（2026-09-16 实测）：微信分享卡片的 `imageUrl` **不支持 `cloud://` fileID**，
+ * 传 fileID 会渲染成**黑块**（用户反馈「分享到小程序，页面黑色无图片」）。它只接受
+ * 本地路径或 **https** 地址。
+ *
+ * 返回约定：
+ *   - 非 cloud://（https / 本地路径）→ 原样返回；
+ *   - cloud:// → 解析成 https；
+ *   - **解析失败返回 ''** —— 这一点是刻意的：`imageUrl` 为空时微信会退回「页面截图」作为封面，
+ *     而传一个加载不出来的地址则会显示黑块。**宁可截图，也不要黑块。**
+ *
+ * @param {string} src 原始地址（可能是 cloud:// fileID / https / 本地路径）
+ * @returns {Promise<string>} 可直接用于分享的地址，或 ''
+ */
+const resolveShareImage = async (src) => {
+  const raw = String(src || '').trim()
+  if (!raw) return ''
+  if (raw.indexOf('cloud://') !== 0) return raw
+  try {
+    const map = await batchTempFileURLs([raw])
+    return map[raw] || ''
+  } catch (e) {
+    console.warn('resolveShareImage', e)
+    return ''
+  }
+}
+
 module.exports = {
   formatTime,
   getFirstImage,
   batchTempFileURLs,
+  resolveShareImage,
   formatPrice,
   getSafe
 }

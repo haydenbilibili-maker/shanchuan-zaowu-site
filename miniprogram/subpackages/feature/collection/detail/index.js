@@ -23,7 +23,9 @@ Page({
     relatedProducts: [],
     facts: [],
     hasLogs: false,
-    shareImage: ''
+    shareImage: '',
+    /** 已解析成 https 的分享封面（微信分享卡片不支持 cloud://） */
+    shareImageUrl: ''
   },
 
   onLoad(options) {
@@ -70,6 +72,8 @@ Page({
       seriesText: (card.seriesNames || []).join(' · '),
       shareImage
     })
+    // 商品图是 cloud:// fileID → 预解析成 https，分享卡片才有封面（否则黑块）
+    this.hydrateShareImage(shareImage)
     this.justUnlocked = false
     wx.setNavigationBarTitle({
       title: card.unlocked && card.nameZh ? card.nameZh : '图鉴卡片'
@@ -234,6 +238,13 @@ Page({
     this.loadCard().then(() => wx.stopPullDownRefresh())
   },
 
+  /** 分享封面预解析：cloud:// → https；失败留空，让微信截图而不是显示黑块 */
+  async hydrateShareImage(src) {
+    const { resolveShareImage } = require('../../../utils/util')
+    const url = await resolveShareImage(src)
+    if (url) this.setData({ shareImageUrl: url })
+  },
+
   onShareAppMessage() {
     const card = this.data.card || {}
     let title = '山海图鉴里，还有没被翻开的一页'
@@ -259,7 +270,8 @@ Page({
     return {
       title,
       query: `id=${this.speciesId}`,
-      imageUrl: this.data.shareImage || undefined
+      // shareImage 来自商品图（cloud:// fileID），分享卡片渲染不了 → 用已解析的
+      imageUrl: this.data.shareImageUrl || undefined
     }
   }
 })

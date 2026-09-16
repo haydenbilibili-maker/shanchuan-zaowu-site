@@ -6,6 +6,7 @@ const { getDefaultStore } = require('../../../utils/storeHelper')
 const { BRAND_WEBSITE } = require('../../../config/brand')
 const { cdnPath } = require('../../../config/cloudEnv')
 const easterEggHost = require('../../../utils/easterEggHost')
+const { resolveShareImage } = require('../../../utils/util')
 const {
   ONE_PERCENT_PLEDGE_LABEL,
   ONE_PERCENT_PLEDGE_SUMMARY,
@@ -25,10 +26,17 @@ const STORE_INFO = {
 const ANIMATION_DELAY = 300;
 const HERO_IMAGE = cdnPath('banners/DSC00115.JPG')
 
+/**
+ * 分享卡片封面。
+ *
+ * ⚠ `HERO_IMAGE` 是 `cloud://` fileID，而微信分享卡片的 `imageUrl` **不支持 fileID** ——
+ * 直接传会渲染成**黑块**（用户反馈「分享到小程序，页面黑色无图片」就是这个原因）。
+ * 因此 onLoad 时先解析成 https 存进 data，分享时**同步**取用；解析失败则留空，
+ * 让微信退回「页面截图」而不是黑块。
+ */
 const SHARE_CONFIG = {
   title: '山海造物 · 把山海带回家',
-  path: '/subpackages/business/about/index',
-  imageUrl: HERO_IMAGE
+  path: '/subpackages/business/about/index'
 };
 
 Page({
@@ -36,6 +44,8 @@ Page({
   data: {
     statusBarHeight: 20,
     heroImage: HERO_IMAGE,
+    /** 解析成 https 后的分享封面；为空时微信会自动截图，不要塞 cloud:// */
+    shareImageUrl: '',
     isLoaded: false, // 控制入场动画
     onePercentPledgeLabel: ONE_PERCENT_PLEDGE_LABEL,
     onePercentPledgeSummary: ONE_PERCENT_PLEDGE_SUMMARY,
@@ -53,6 +63,12 @@ Page({
     }]
   },
 
+  /** 把 cloud:// 封面解析成 https；失败留空（微信会截图，好过黑块） */
+  async hydrateShareImage() {
+    const url = await resolveShareImage(HERO_IMAGE)
+    if (url) this.setData({ shareImageUrl: url })
+  },
+
   onLoad() {
     const { statusBarHeight } = wx.getSystemInfoSync();
     this.setData({
@@ -64,6 +80,7 @@ Page({
     });
     this.loadVisitStore();
     this.loadDisplayFlags();
+    this.hydrateShareImage();
     
     // 启动入场动画
     setTimeout(() => {
@@ -107,7 +124,16 @@ Page({
   },
 
   onShareAppMessage() {
-    return SHARE_CONFIG;
+    // 只带上「已解析成 https」的封面；没有就省略，让微信截图（黑块比不显示更糟）
+    const payload = { ...SHARE_CONFIG }
+    if (this.data.shareImageUrl) payload.imageUrl = this.data.shareImageUrl
+    return payload
+  },
+
+  onShareTimeline() {
+    const payload = { title: SHARE_CONFIG.title }
+    if (this.data.shareImageUrl) payload.imageUrl = this.data.shareImageUrl
+    return payload
   },
 
   togglePledgeNote() {

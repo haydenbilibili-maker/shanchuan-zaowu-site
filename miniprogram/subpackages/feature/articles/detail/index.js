@@ -36,6 +36,8 @@ Page({
     articleId: '',
     loadError: false,
     article: { stats: { views: 0, likes: 0, comments: 0 }, images: [], tags: [] },
+    /** 已解析成 https 的分享封面（coverImage 是 cloud:// fileID，分享卡片渲染不了） */
+    shareImageUrl: '',
     relatedArticles: [],
     isCollected: false,
     isLiked: false,
@@ -95,6 +97,8 @@ Page({
           categoryIcon: uiIcons.categoryIcon(article.category || 'knowledge'),
           loadError: false
         })
+        // 封面（含 FALLBACK_COVER）是 cloud:// → 预解析成 https，否则分享卡片是黑块
+        this.hydrateShareImage(article && article.coverImage)
       } else {
         this.setData({ loadError: true })
         wx.showToast({ title: (res.result && res.result.msg) || '加载失败', icon: 'none' })
@@ -305,12 +309,20 @@ Page({
     this.setData({ [`relatedArticles[${idx}].coverImage`]: FALLBACK_COVER })
   },
 
+  /** 分享封面预解析：cloud:// → https；失败留空，让微信截图而不是显示黑块 */
+  async hydrateShareImage(src) {
+    const { resolveShareImage } = require('../../../utils/util')
+    const url = await resolveShareImage(src)
+    if (url) this.setData({ shareImageUrl: url })
+  },
+
   onShareAppMessage() {
     const id = this.data.article && this.data.article._id
     return {
       title: (this.data.article && this.data.article.title) || '山海造物',
       path: id ? `/subpackages/feature/articles/detail/index?id=${id}` : '/subpackages/feature/articles/index',
-      imageUrl: this.data.article && this.data.article.coverImage
+      // coverImage（含 FALLBACK_COVER）是 cloud:// fileID，分享卡片渲染不了 → 用已解析的
+      imageUrl: this.data.shareImageUrl || undefined
     }
   },
 

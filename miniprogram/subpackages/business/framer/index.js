@@ -1,4 +1,5 @@
-const { cdnPath } = require('../../../config/cloudEnv');
+const { cdnPath } = require('../../../config/cloudEnv')
+const { resolveShareImage } = require('../../../utils/util');
 const { navigateToProductDetail } = require('../../../utils/productDetailNav');
 const { seedProductPreview } = require('../../../utils/productDetailCache');
 
@@ -8,6 +9,8 @@ const FALLBACK_COVER = cdnPath('stores/store_shanhaizaowu.png');
 Page({
   data: {
     statusBarHeight: 20,
+    /** 已解析成 https 的分享封面（cover/avatar 是 cloud:// fileID，微信分享卡片渲染不了） */
+    shareImageUrl: '',
     bgImage: cdnPath('banners/__-drz-__-CK7rdTauhDE-unsplash.jpg'),
     fallbackAvatar: FALLBACK_AVATAR,
     fallbackCover: FALLBACK_COVER,
@@ -40,14 +43,23 @@ Page({
     this.loadData(id, { silent: true });
   },
 
+  /** 分享封面预解析：cloud:// → https；失败留空，让微信截图而不是显示黑块 */
+  async hydrateShareImage(src) {
+    const { resolveShareImage } = require('../../../utils/util')
+    const url = await resolveShareImage(src)
+    if (url) this.setData({ shareImageUrl: url })
+  },
+
   onShareAppMessage() {
     const framer = this.data.framer || {};
     const id = framer._id || this.data.framerId || '';
-    return {
+    const payload = {
       title: framer.name ? `标本师 ${framer.name} 的个人主页` : '山海造物 · 标本师',
-      path: id ? `/subpackages/business/framer/index?id=${id}` : '/subpackages/business/about/index',
-      imageUrl: framer.cover || framer.avatar || this.data.bgImage
+      path: id ? `/subpackages/business/framer/index?id=${id}` : '/subpackages/business/about/index'
     };
+    // cover/avatar 是 cloud:// fileID，微信分享卡片渲染不了（黑块）→ 只传已解析成 https 的
+    if (this.data.shareImageUrl) payload.imageUrl = this.data.shareImageUrl;
+    return payload;
   },
 
   async loadData(id, options = {}) {
@@ -118,6 +130,8 @@ Page({
         loadErrorTitle: '标本师档案加载失败',
         loadErrorDesc: '请检查网络后重试'
       });
+      // cover/avatar 是 cloud:// → 预解析成 https，否则分享卡片是黑块
+      this.hydrateShareImage(framer.cover || framer.avatar || this.data.bgImage);
     } catch (err) {
       console.error(err);
       this.setData({ loadError: true, works: [] });
