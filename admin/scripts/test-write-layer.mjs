@@ -67,7 +67,7 @@ const SHAPES = [
 /** 针对被测模块跑全套断言；modulePath 可指向「改回 bug 的副本」用于自检 */
 async function runSuite(modulePath) {
   const mod = await import(`file://${modulePath}?t=${Date.now()}`)
-  const { writeApplied, assertWriteApplied, WriteNotAppliedError, cdnUpsertDoc } = mod
+  const { writeApplied, assertWriteApplied, assertNoWriteError, WriteNotAppliedError, cdnUpsertDoc } = mod
 
   const t = makeAsserter()
 
@@ -95,6 +95,22 @@ async function runSuite(modulePath) {
       }
     })()
   )
+
+  // ①b 集中错误码检查：权限被拒必须由**包装器自己**抛出（覆盖全部直写调用点）
+  //     真实形状 {code:'DATABASE_PERMISSION_DENIED'} —— 不抛错是审计 P1 的根因
+  t.eq('assertNoWriteError 正常结果原样返回', assertNoWriteError('c', { updated: 1 })?.updated, 1)
+  t.eq('assertNoWriteError null 不抛', assertNoWriteError('c', null), null)
+  let deniedThrew = false
+  try { assertNoWriteError('products', { code: 'DATABASE_PERMISSION_DENIED', message: 'Permission denied' }, 'update') }
+  catch (e) { deniedThrew = e instanceof WriteNotAppliedError }
+  t.eq('assertNoWriteError 权限被拒 → 抛 WriteNotAppliedError', deniedThrew, true)
+  let nestedThrew = false
+  try { assertNoWriteError('c', { error: { code: 'X' } }) } catch { nestedThrew = true }
+  t.eq('assertNoWriteError 嵌套错误码 → 抛', nestedThrew, true)
+  // 只有错误码才抛：updated:0 / deleted:0 属调用点语义，集中层不得制造假失败
+  let zeroThrew = false
+  try { assertNoWriteError('c', { updated: 0 }) } catch { zeroThrew = true }
+  t.eq('assertNoWriteError 不得因 updated:0 抛错（避免假失败）', zeroThrew, false)
 
   // ② P0-7 的核心：首次保存（update 返回 updated:0 且不抛错）必须转 add
   {

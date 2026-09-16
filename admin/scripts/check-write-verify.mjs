@@ -13,6 +13,15 @@
  *   · **CDN 直写路径**（其余集合）：可能静默 resolve 错误码 → **必须校验写结果**，
  *     否则就是假成功。
  *
+ * **2026-09-16 更新（本守卫的关切面已收窄）**：`cloudbaseCdnDb.js` 的四个直写包装器
+ * （`cdnAdd`/`cdnUpdate`/`cdnRemove`/`cdnSet`）现在**集中**调用 `assertNoWriteError()`，
+ * 权限被拒会**由包装器自己抛 `WriteNotAppliedError`** —— 也就是说「权限被拒却假成功」
+ * 这一类已经在**一个地方**根治，不再依赖每个调用点各自校验。
+ *
+ * 因此本守卫现在盯的是**残余关切**：`updated:0` / `deleted:0`（没有匹配到文档）——
+ * 这类不会被集中层拦（一刀切会制造假失败），仍需要调用点明确语义（用 upsert 或断言）。
+ * 基线里的历史项据此降级为「info」性质，但**棘轮照旧**：新增未校验直写仍会失败。
+ *
  * 本守卫对 CDN 直写调用点要求附近存在校验证据：
  *   `assertWriteApplied` / `writeApplied` / `WriteNotAppliedError` / `success === false`
  *
@@ -197,7 +206,7 @@ const keys = findings.map(key)
 console.log(`写结果校验守卫：扫描 ${files.length} 个文件`)
 console.log(`  走代理（天然安全，不要求校验）：约 ${proxiedWrites} 处`)
 console.log(`  集合名是变量、**静态不可判定**（本守卫覆盖不到）：${variableWrites} 处 —— 这是本守卫的已知盲区`)
-console.log(`  **CDN 直写但未校验结果**：${findings.length} 处`)
+console.log(`  CDN 直写但调用点未校验（残余关切：updated:0 类；权限被拒已由包装器集中抛出）：${findings.length} 处`)
 
 let fail = 0
 if (existsSync(BASELINE)) {

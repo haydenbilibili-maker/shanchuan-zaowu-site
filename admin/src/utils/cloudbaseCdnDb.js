@@ -462,6 +462,25 @@ export function assertWriteApplied(collectionName, res, op = 'write') {
   throw new WriteNotAppliedError(collectionName, op, res)
 }
 
+/**
+ * CDN 直写后的**错误码**检查（集中一层，避免每个调用点各写一遍）。
+ *
+ * 权限被拒时 SDK **不抛错**，只 resolve `{code:'DATABASE_PERMISSION_DENIED'}`。
+ * 这类错误**无歧义**，必须就地抛出 —— 实测全仓只有 3 处调用点校验过写结果
+ * （审计 P1「写失败被当成成功」），所以把这一层放在包装器里最有效：
+ * 一次覆盖全部直写调用点。
+ *
+ * 刻意**只判错误码**，不判 `updated:0` / `deleted:0`：
+ * 后者是「没有匹配到文档」，属调用点语义（新增可用 upsert、删除可幂等），
+ * 一刀切抛错会制造假失败。需要严格语义的调用点继续用 `assertWriteApplied`。
+ */
+export function assertNoWriteError(collectionName, res, op = 'write') {
+  const errCode = res && (res.code || res.errorCode || (res.error && (res.error.code || res.error.errorCode)))
+  if (!res || !errCode) return res
+  console.error('[write-denied]', collectionName, op, res)
+  throw new WriteNotAppliedError(collectionName, op, res)
+}
+
 export async function cdnAdd(collectionName, data) {
   if (shouldProxyStoreContent(collectionName)) {
     return callStoreContentWrite({
@@ -471,7 +490,7 @@ export async function cdnAdd(collectionName, data) {
     })
   }
   const db = await getCdnDatabase()
-  return db.collection(collectionName).add(data)
+  return assertNoWriteError(collectionName, await db.collection(collectionName).add(data), 'add')
 }
 
 export async function cdnUpdate(collectionName, docId, data) {
@@ -484,7 +503,7 @@ export async function cdnUpdate(collectionName, docId, data) {
     })
   }
   const db = await getCdnDatabase()
-  return db.collection(collectionName).doc(docId).update(data)
+  return assertNoWriteError(collectionName, await db.collection(collectionName).doc(docId).update(data), 'update')
 }
 
 export async function cdnRemove(collectionName, docId) {
@@ -496,7 +515,7 @@ export async function cdnRemove(collectionName, docId) {
     })
   }
   const db = await getCdnDatabase()
-  return db.collection(collectionName).doc(docId).remove()
+  return assertNoWriteError(collectionName, await db.collection(collectionName).doc(docId).remove(), 'remove')
 }
 
 export async function cdnDocGet(collectionName, docId) {
@@ -541,7 +560,7 @@ export async function cdnSet(collectionName, docId, data) {
     })
   }
   const db = await getCdnDatabase()
-  return db.collection(collectionName).doc(docId).set(data)
+  return assertNoWriteError(collectionName, await db.collection(collectionName).doc(docId).set(data), 'set')
 }
 
 export async function fetchCollectionWhere(collectionName, where, limit = 500) {
