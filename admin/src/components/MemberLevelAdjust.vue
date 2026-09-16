@@ -275,7 +275,7 @@ async function loadLevels() {
     levelsSource.value = res.source || ''
   } catch (e) {
     paidLevels.value = []
-    ElMessage.error(e?.message || '加载等级失败：请确认已部署 manageMemberLevelAdjust')
+    ElMessage.error(e?.message || '加载等级失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageMemberLevelAdjust */)
   } finally {
     levelsLoading.value = false
   }

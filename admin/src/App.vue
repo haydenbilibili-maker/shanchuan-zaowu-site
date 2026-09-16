@@ -614,6 +614,21 @@
                  keep-alive 只能缓存组件实例，之前包 keyed div 完全失效（切 tab 即销毁重建）；
                  现在切回标签时组件状态（表单/滚动/已加载数据）保留，:max=10 LRU 控制内存 -->
             <keep-alive v-else :max="10">
+              <!-- 未注册模块的可见提示：不再让「回退驾驶舱」看起来像正常页面 -->
+              <el-alert
+                v-if="unknownTabs.length"
+                type="warning"
+                show-icon
+                :closable="false"
+                style="margin: 8px 12px 0;"
+                :title="`有 ${unknownTabs.length} 个模块 id 未注册，已回退经营驾驶舱`"
+              >
+                <template #default>
+                  未注册 id：<b>{{ unknownTabs.join('、') }}</b>。
+                  说明菜单注册表与组件映射表不同步，或该模块尚未接通 —— 当前展示的驾驶舱内容与该模块无关。
+                </template>
+              </el-alert>
+
               <component
                 :is="activeModuleDef.comp"
                 v-bind="activeModuleDef.props"
@@ -1508,9 +1523,16 @@ const TAB_COMPONENT_MAP = {
   '78': () => ({ comp: FeishuSyncCenter }),
   '77': () => ({ comp: PropertyCostOps })
 }
+/**
+ * 未注册 tab 的记录。原先未命中 TAB_COMPONENT_MAP 时**静默回退驾驶舱** ——
+ * 这是最容易掩盖「模块未接通 / id 写错」的机制（审计 P2）。
+ * 现在由 watch(currentTab) 记录并告警，模板据此渲染一条可见提示。
+ */
+const unknownTabs = ref([])
+
 const activeModuleDef = computed(() => {
   const factory = TAB_COMPONENT_MAP[String(currentTab.value)]
-  if (!factory) return { comp: Dashboard, props: {} } // 未注册的 tab 回退驾驶舱
+  if (!factory) return { comp: Dashboard, props: {} } // 回退驾驶舱（告警见 watch(currentTab)）
   const def = factory()
   return { comp: def.comp, props: def.props || {} }
 })
@@ -1644,23 +1666,6 @@ const onSidebarKey = (e) => {
 // ============ 侧边栏分组展开持久化 ============
 // 6 大顶级分类：3 个是 flat（不需要 sub-menu key），4 个是折叠 sub-menu
 const ALL_SUBMENUS = ['grp-business', 'grp-customer', 'grp-miniapp', 'grp-governance']
-// 每个 currentTab 对应的子菜单 group（用于自动展开）
-const TAB_TO_GROUP = {
-  '1': 'grp-business', '3': 'grp-business', '5': 'grp-business', '6': 'grp-business',
-  '30': 'grp-business', '34': 'grp-business', '35': 'grp-business', '37': 'grp-business',
-  '38': 'grp-business', '39': 'grp-business', '42': 'grp-business', '43': 'grp-business',
-  '48': 'grp-business', '52': 'grp-business', '55': 'grp-business',
-  '57': 'grp-business', '60': 'grp-business', '61': 'grp-business', '64': 'grp-business', '65': 'grp-business', '67': 'grp-business',
-  '4': 'grp-customer', '40': 'grp-customer', '41': 'grp-customer', '44': 'grp-customer',
-  '45': 'grp-customer', '46': 'grp-customer', '47': 'grp-customer', '51': 'grp-customer', '59': 'grp-customer',
-  '8': 'grp-miniapp', '9': 'grp-miniapp', '13': 'grp-miniapp', '14': 'grp-miniapp',
-  '15': 'grp-miniapp', '16': 'grp-miniapp', '17': 'grp-miniapp', '18': 'grp-miniapp',
-  '19': 'grp-miniapp', '20': 'grp-miniapp', '21': 'grp-miniapp', '22': 'grp-miniapp',
-  '23': 'grp-miniapp', '24': 'grp-miniapp', '54': 'grp-miniapp', '56': 'grp-miniapp',
-  '62': 'grp-miniapp', '63': 'grp-miniapp', '66': 'grp-miniapp', '68': 'grp-miniapp', '69': 'grp-miniapp',
-  '2': 'grp-governance', '7': 'grp-governance', '27': 'grp-governance', '28': 'grp-governance',
-  '31': 'grp-governance', '32': 'grp-governance', '33': 'grp-governance', '36': 'grp-governance', '50': 'grp-governance', '53': 'grp-governance'
-}
 // ============ 置顶收藏夹（与 CommandPalette 共享 localStorage key） ============
 const PINNED_KEY = 'sc_admin_pinned_modules'
 const cmdPaletteRef = ref(null)
@@ -2059,6 +2064,20 @@ watch(currentTab, (tab) => {
     if (isLoggedIn.value) {
         recordRecent(tab)
         syncModuleHash(tab)
+    }
+    // 未注册的模块 id：原先静默回退驾驶舱，现在留痕 + 可见提示（审计 P2）
+    const id = String(tab || '')
+    if (id && !TAB_COMPONENT_MAP[id]) {
+        if (!unknownTabs.value.includes(id)) unknownTabs.value = [...unknownTabs.value, id]
+        console.error(
+            `[App] 未注册的模块 id "${id}"：TAB_COMPONENT_MAP 无对应组件，已回退经营驾驶舱。` +
+            '请检查 modulesRegistry 与 TAB_COMPONENT_MAP 是否同步。'
+        )
+    } else if (id) {
+        // 回到已注册模块时清掉提示
+        if (unknownTabs.value.includes(id)) {
+            unknownTabs.value = unknownTabs.value.filter((x) => x !== id)
+        }
     }
 }, { flush: 'post' })
 

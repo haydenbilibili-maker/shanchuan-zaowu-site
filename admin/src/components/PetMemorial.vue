@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>伴宠记忆 / PET MEMORIAL</h2>
-        <span class="subtitle">订单 · 工艺配置（getPetMemorialConfig）</span>
+        <span class="subtitle">PET MEMORIAL · 伴宠纪念订单与工艺配置</span>
       </div>
       <div class="header-actions">
         <el-button v-if="activeTab === 'crafts'" type="primary" color="#d4af37" @click="openCraftDialog()">新建工艺</el-button>

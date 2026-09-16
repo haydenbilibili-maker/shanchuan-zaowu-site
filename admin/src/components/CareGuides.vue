@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>养护指南 / CARE GUIDES</h2>
-        <span class="subtitle">对齐小程序 pages/care · 集合 care_guides</span>
+        <span class="subtitle">CARE GUIDES · 与小程序「养护指南」同源</span>
       </div>
       <div class="header-actions">
         <el-button @click="seedDefaults" :loading="seeding">同步默认 6 类</el-button>

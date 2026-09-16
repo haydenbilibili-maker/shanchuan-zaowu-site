@@ -279,7 +279,7 @@ async function loadList() {
     total.value = 0
     ElMessage.error(
       e?.message ||
-        '加载失败：请确认已部署 Pages 代理 /api/cloud-fn、云函数 bindPlatformOrder，以及 Cloudflare / 云函数环境变量 ADMIN_OPS_KEY、TCB_SECRET_*',
+        '加载失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 Pages 代理 /api/cloud-fn、云函数 bindPlatformOrder，以及 Cloudflare / 云函数环境变量 ADMIN_OPS_KEY、TCB_SECRET_* */,
     )
   } finally {
     loading.value = false

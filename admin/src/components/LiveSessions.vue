@@ -115,7 +115,7 @@ async function load() {
     sessions.value = res.list || []
   } catch (e) {
     sessions.value = []
-    ElMessage.warning(e?.message || '直播场次加载失败：请确认已部署 manageLiveSession')
+    ElMessage.warning(e?.message || '直播场次加载失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageLiveSession */)
   } finally {
     loading.value = false
   }

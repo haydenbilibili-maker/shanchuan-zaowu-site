@@ -398,7 +398,7 @@ const confirmBatchShip = async () => {
     fetchOrders()
   } catch (error) {
     console.error('批量发货失败:', error)
-    ElMessage.error(error?.message || '批量发货失败：请确认已部署 managerShipOrder 并配置 ADMIN_OPS_KEY')
+    ElMessage.error(error?.message || '批量发货失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 managerShipOrder 并配置 ADMIN_OPS_KEY */)
   } finally {
     submitting.value = false
   }
@@ -533,7 +533,7 @@ const confirmShip = async () => {
         fetchOrders()
     } catch(e) {
         console.error('发货失败', e)
-        ElMessage.error(e?.message || '操作失败：请确认已部署 managerShipOrder，且配置 ADMIN_OPS_KEY')
+        ElMessage.error(e?.message || '操作失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 managerShipOrder，且配置 ADMIN_OPS_KEY */)
     } finally {
         submitting.value = false
     }
@@ -641,7 +641,7 @@ const editOrderNote = (row) => {
                 row.managerNote = (res && res.note) || ''
                 ElMessage.success(note ? '备注已保存' : '备注已清空')
             } catch (e) {
-                ElMessage.error(e?.message || '保存失败：请确认已部署 managerShipOrder')
+                ElMessage.error(e?.message || '保存失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 managerShipOrder */)
             }
         })
         .catch(() => {})

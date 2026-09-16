@@ -179,7 +179,7 @@ async function loadRule() {
     ruleDocId.value = res.docId || ''
     ruleText.value = res.ruleText || ''
   } catch (e) {
-    ElMessage.warning(e?.message || '未读到佣金规则（请确认已部署 manageArtisanCommission）')
+    ElMessage.warning(e?.message || '未读到佣金规则（规则暂不可用，请刷新重试）' /* 技术排查：请确认已部署 manageArtisanCommission */)
   } finally {
     ruleLoading.value = false
   }
@@ -208,7 +208,7 @@ async function saveRule() {
     ruleText.value = res.ruleText || ruleText.value
     ElMessage.success('佣金规则已保存')
   } catch (e) {
-    ElMessage.error(e?.message || '保存失败：请确认 ADMIN_OPS_KEY 与云函数已部署')
+    ElMessage.error(e?.message || '保存失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认 ADMIN_OPS_KEY 与云函数已部署 */)
   } finally {
     ruleSaving.value = false
   }

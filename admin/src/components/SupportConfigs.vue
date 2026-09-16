@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>客服入口配置 / SUPPORT</h2>
-        <span class="subtitle">对齐 getSupportConfig · 集合 support_configs（联系专员页）</span>
+        <span class="subtitle">SUPPORT · 小程序「联系专员」页配置</span>
       </div>
       <div class="header-actions">
         <el-button @click="seedDefault" :loading="seeding">写入默认配置</el-button>

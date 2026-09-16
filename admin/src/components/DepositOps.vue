@@ -169,7 +169,7 @@ async function loadRules() {
       depositNonRefundableOnExpire: r.depositNonRefundableOnExpire !== false,
     })
   } catch (e) {
-    ElMessage.warning(e?.message || '未读到定金规则（请确认已部署 manageDeposit）')
+    ElMessage.warning(e?.message || '未读到定金规则（规则暂不可用，请刷新重试）' /* 技术排查：请确认已部署 manageDeposit */)
   } finally {
     rulesLoading.value = false
   }
@@ -192,7 +192,7 @@ async function saveRules() {
     if (!res || res.success === false) throw new Error((res && res.msg) || '保存失败')
     ElMessage.success('定金规则已保存')
   } catch (e) {
-    ElMessage.error(e?.message || '保存失败：请确认已部署 manageDeposit 并配置 ADMIN_OPS_KEY')
+    ElMessage.error(e?.message || '保存失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageDeposit 并配置 ADMIN_OPS_KEY */)
   } finally {
     rulesSaving.value = false
   }

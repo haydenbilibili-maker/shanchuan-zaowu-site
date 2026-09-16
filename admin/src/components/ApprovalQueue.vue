@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>待我审批 / APPROVALS</h2>
-        <span class="subtitle">超管队列 · 上架/退款/敏感发货/发票/逾期撤销/冲正 · manageApprovals · 积分族终审不到超管</span>
+        <span class="subtitle">SUPER-ADMIN QUEUE · 上架 / 退款 / 敏感发货 / 发票 / 逾期撤销 / 冲正</span>
       </div>
       <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
     </div>
@@ -164,7 +164,7 @@ async function loadList() {
     total.value = 0
     ElMessage.error(
       e?.message ||
-        '加载失败：请确认已部署 manageApprovals、集合 staff_approvals，以及 ADMIN_OPS_KEY'
+        '加载失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageApprovals、集合 staff_approvals，以及 ADMIN_OPS_KEY */
     )
   } finally {
     loading.value = false

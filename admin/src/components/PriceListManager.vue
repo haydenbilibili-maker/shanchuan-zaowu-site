@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>报价单配置 / PRICE LIST</h2>
-        <span class="subtitle">对齐官网 /price-list · 集合 price_list_items</span>
+        <span class="subtitle">PRICE LIST · 与官网报价单页同源</span>
       </div>
       <div class="header-actions">
         <el-checkbox v-model="forceOverwriteImages" style="margin-right: 4px">强制覆盖图片</el-checkbox>

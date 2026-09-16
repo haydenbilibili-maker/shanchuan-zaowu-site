@@ -405,7 +405,7 @@ const fillLatinNames = async () => {
     }
     await refresh()
   } catch (e) {
-    ElMessage.error(e?.message || '补齐失败：请确认已部署 seedCategories 与 ADMIN_OPS_KEY')
+    ElMessage.error(e?.message || '补齐失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 seedCategories 与 ADMIN_OPS_KEY */)
   } finally {
     fillingLatin.value = false
   }
@@ -419,7 +419,7 @@ const scanDuplicates = async () => {
     dupGroups.value = res.groups || []
     ElMessage.success(dupGroups.value.length ? `发现 ${dupGroups.value.length} 组重复` : '未发现重复二级')
   } catch (e) {
-    ElMessage.error(e?.message || '扫描失败：请确认已部署 seedCategories 与 ADMIN_OPS_KEY')
+    ElMessage.error(e?.message || '扫描失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 seedCategories 与 ADMIN_OPS_KEY */)
   } finally {
     scanning.value = false
   }

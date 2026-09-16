@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>开票申请台 / INVOICE REQUESTS</h2>
-        <span class="subtitle">C 端开票 · manageInvoiceRequests</span>
+        <span class="subtitle">INVOICE REQUESTS · 顾客在小程序提交的开票申请</span>
       </div>
       <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
     </div>
@@ -260,7 +260,7 @@ async function loadList() {
   } catch (e) {
     list.value = []
     total.value = 0
-    ElMessage.error(e?.message || '加载失败：请确认已部署 manageInvoiceRequests 并配置 ADMIN_OPS_KEY')
+    ElMessage.error(e?.message || '加载失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageInvoiceRequests 并配置 ADMIN_OPS_KEY */)
   } finally {
     loading.value = false
   }

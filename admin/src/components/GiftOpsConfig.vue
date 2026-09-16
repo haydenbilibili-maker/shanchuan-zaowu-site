@@ -168,7 +168,7 @@ async function load() {
     const res = await callFn({ action: 'getSettings' })
     apply(res)
   } catch (e) {
-    notifyCloudError(e, '加载失败：请确认已部署 manageGift 与 ADMIN_OPS_KEY 代理')
+    notifyCloudError(e, '加载失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageGift 与 ADMIN_OPS_KEY 代理 */)
   } finally {
     loading.value = false
   }

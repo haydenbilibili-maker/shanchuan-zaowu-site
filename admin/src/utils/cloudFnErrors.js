@@ -47,7 +47,10 @@ export function classifyCloudFnError(errOrRes) {
     return {
       kind: CloudFnErrorKind.OPS_KEY,
       code: code || 'OPS_KEY',
-      message: rawMsg || 'Admin 运维密钥未配置或不匹配，请检查 Cloudflare / 云函数 ADMIN_OPS_KEY',
+      // 面向运营：他能做的是刷新/重试/找技术，而不是去配环境变量（审计 P2）
+      message:
+        rawMsg ||
+        '操作未生效：管理会话或权限校验未通过。请刷新页面后重试；若持续失败请联系技术（技术排查：Cloudflare 与云函数的 ADMIN_OPS_KEY 是否一致）',
       silentToast: false
     }
   }
@@ -77,7 +80,7 @@ export function classifyCloudFnError(errOrRes) {
         kind: CloudFnErrorKind.OPS_KEY,
         code: code || 'NOT_LOGGED_IN',
         message:
-          '云端鉴权未通过（非「请先登录」）：Admin 口令已生效，但云函数未识别运维密钥或微信身份。请确认 Pages 与云函数 ADMIN_OPS_KEY 一致，或使用具备权限的店长/超管身份。',
+          '操作未生效：管理口令已通过，但云端未识别本次身份。请刷新页面后重试；若持续失败请联系技术（技术排查：Pages 与云函数的 ADMIN_OPS_KEY 是否一致）。',
         silentToast: false
       }
     }

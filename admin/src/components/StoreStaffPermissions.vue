@@ -446,7 +446,7 @@ async function loadList() {
     list.value = res.list || []
   } catch (e) {
     list.value = []
-    ElMessage.error(e?.message || '加载失败：请确认已部署 manageStaff 并配置 ADMIN_OPS_KEY')
+    ElMessage.error(e?.message || '加载失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageStaff 并配置 ADMIN_OPS_KEY */)
   } finally {
     loading.value = false
   }

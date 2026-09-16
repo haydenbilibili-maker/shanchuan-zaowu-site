@@ -661,7 +661,8 @@ const deleteItem = (row, colName) => {
       await refreshData()
     } catch (e) {
       console.error('删除失败', e)
-      ElMessage.error('删除失败：' + (e?.message || '请确认 manageStoreContent 已部署且 ADMIN_OPS_KEY 配置正确'))
+      // 运营话术；技术细节留在注释里（审计 P2：不要把环境变量名甩给运营）
+      ElMessage.error('删除失败：' + (e?.message || '请刷新重试；持续失败请联系技术')) /* 技术排查：manageStoreContent 是否已部署、ADMIN_OPS_KEY 是否正确 */
     }
   }).catch(() => {})
 }

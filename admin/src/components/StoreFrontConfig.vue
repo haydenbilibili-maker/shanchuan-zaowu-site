@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>C 端门店展区 / STORE FRONT</h2>
-        <span class="subtitle">对齐 getStoreConfig · 集合 stores / store_zones（非 ERP 店铺合规档案）</span>
+        <span class="subtitle">STOREFRONT · 小程序门店与展区展示配置（与「门店中心」的合规档案不同）</span>
       </div>
       <el-button :icon="Refresh" circle @click="refresh" title="刷新" />
     </div>

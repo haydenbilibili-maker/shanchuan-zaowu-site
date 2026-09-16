@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="title-box">
         <h2>HQ 成品流水</h2>
-        <span class="subtitle">warehouseId = hq · 出货扣库自动写入 · 飞书对齐记 feishu_pull</span>
+        <span class="subtitle">FULFILLMENT STOCK · 出货自动扣库 · 与飞书对齐后记录变动流水</span>
       </div>
       <div class="header-actions">
         <el-input

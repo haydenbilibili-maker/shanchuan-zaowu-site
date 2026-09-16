@@ -184,7 +184,7 @@ async function save() {
     ruleText.value = res.ruleText || ruleText.value
     ElMessage.success('生日礼配置已保存，小程序端刷新即生效')
   } catch (e) {
-    ElMessage.error(e?.message || '保存失败：请确认已部署 manageBirthdayGift，并配置 ADMIN_OPS_KEY')
+    ElMessage.error(e?.message || '保存失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageBirthdayGift，并配置 ADMIN_OPS_KEY */)
   } finally {
     saving.value = false
   }
