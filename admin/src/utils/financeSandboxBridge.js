@@ -312,6 +312,10 @@ export function readFinanceSnapshot() {
 
 /**
  * 与 Finance.vue 同源：先 autoSyncFinanceData（CloudBase finance_records → localStorage），再读快照
+ *
+ * `readOnly: true`：这是**读**入口，只把云端权威拉下来，绝不回写云端。
+ * 不传的话，一旦云端读取失败，`syncFinanceRecords` 会因「本机条数 > 云端条数」把本机账本推上去 ——
+ * 「读不到云端」不等于「云端为空」，读操作不该有这个副作用。
  */
 export async function readFinanceSnapshotAsync(options = {}) {
   const { skipCloudSync = false } = options
@@ -320,7 +324,7 @@ export async function readFinanceSnapshotAsync(options = {}) {
 
   if (!skipCloudSync) {
     try {
-      await autoSyncFinanceData()
+      await autoSyncFinanceData({ readOnly: true })
     } catch (error) {
       console.warn('[financeSandboxBridge] 云端财务同步失败，回退本地账本:', error)
     }

@@ -132,6 +132,9 @@ export const CONCEPTS = [
     key: 'payroll_roster',
     label: '薪酬花名册（HR 档案）',
     authority: { kind: 'storage', name: 'payrollStorage' },
+    // storage 模块与 local:<key> 是**同一份事实的两种写法**（模块只是键的访问器），
+    // 不是两个权威 —— 显式列成 coAuthorities，D2 才不会被这两种写法判成冲突。
+    coAuthorities: [{ kind: 'local', name: 'sc_payroll_bundle_v1' }],
     writeVia: 'payrollStorage',
     divergent: [],
     note: '⚠ 本地权威：与「员工/权限」(staff_members) **是不同概念**（HR 档案 vs 小程序账号），'
@@ -141,6 +144,7 @@ export const CONCEPTS = [
     key: 'store_bundle',
     label: '门店本地包（ERP 档案副本）',
     authority: { kind: 'storage', name: 'storeStorage' },
+    coAuthorities: [{ kind: 'local', name: 'sc_store_bundle_v1' }],
     writeVia: 'storeStorage',
     divergent: [],
     note: '⚠ 本地权威且与 stores 集合概念重叠，见 stores 条目。',
@@ -262,6 +266,46 @@ export const CONCEPTS = [
     divergent: [],
     note: '线上 home_configs 曾是 auth!=null 可写（审计 P0-11 相邻项），仓库规则 write:false。',
   },
+  // ── 以下 4 个概念是**本轮补的**：此前把它们各自的权威集合错挂到了别的概念上
+  //    （如 report_templates 挂给 analytics），于是 D5 把「读自己的权威」误报成「读非权威源」。
+  //    核对依据：这三个集合在 ERP 里都是**完整 CRUD**（增/改/删/查），即它们就是自己那件事的
+  //    权威持有者，不是任何别的概念的副本。
+  {
+    key: 'report_templates',
+    label: '报表模板',
+    authority: { kind: 'collection', name: 'report_templates' },
+    divergent: [],
+    note: 'CustomReportBuilder.vue 增删改查。**模板**是自有实体，与 `analytics`（分析结果）不是一回事。'
+      + '线上 auth!=null 可读写且无仓库规则（审计 P0-11，待收紧）。',
+  },
+  {
+    key: 'property_proposals',
+    label: '物业测算提案',
+    authority: { kind: 'collection', name: 'property_proposals' },
+    divergent: ['localStorage:sc_property_proposals_v3'],
+    note: 'PropertyEval.vue 增改查（另有本机草稿键 sc_property_proposals_v3）。'
+      + '**提案**是自有实体，不是 `stores`（门店主数据）的副本。线上 auth!=null 可读写且无仓库规则。',
+  },
+  {
+    key: 'user_audiences',
+    label: '人群圈选（受众包）',
+    authority: { kind: 'collection', name: 'user_audiences' },
+    divergent: [],
+    note: 'AudienceManager.vue 增删改查。**圈选规则**是自有实体；它引用 `users` 但不等同于 `users`。'
+      + '线上 auth!=null 可读写且无仓库规则（审计 P0-11）。',
+  },
+  {
+    key: 'admin_permission_records',
+    label: '后台角色 / 账号分配记录（不参与鉴权）',
+    authority: { kind: 'collection', name: 'admin_roles' },
+    coAuthorities: [{ kind: 'collection', name: 'admin_users' }],
+    divergent: [],
+    note: '⚠ **本概念不决定任何权限**：服务端 staffGuard 判的是 `staff_members` / `workspace_acl`，'
+      + '写这两个集合不会改变任何人的权限。PermissionManager.vue 只读展示它们。'
+      + '之所以单列成概念，是因为 D5 原先把它当成「读 staff 的非权威副本」——'
+      + '而它其实是一张**独立的、装饰性的**记录表，权威就是它自己。'
+      + '审计 P0-4 原称「全仓无任何消费方」，说法不准确（页面在只读展示），结论不变（不参与鉴权）。',
+  },
 ]
 
 /** 概念快查 */
@@ -290,6 +334,9 @@ export const SOURCE_REGISTRY = {
   'collection:stores': { concept: 'stores', role: 'authority', confidence: 'high' },
   'collection:store_zones': { concept: 'stores', role: 'authority', confidence: 'high' },
   'collection:finance_records': { concept: 'finance_records', role: 'authority', confidence: 'medium' },
+  // 本集合此前**未被登记**（D1 之所以是 0，是因为它在代码里写作 COLLECTIONS.FINANCE_SETTINGS，
+  // 正则匹配不到字面量集合名 —— 这是 D1 覆盖面的一个盲区，不是「它不存在」）。
+  'collection:finance_settings': { concept: 'finance_settings', role: 'channel', confidence: 'medium', note: '云端「财务设置（多端同步）」通道；**实测为空（0 行）** → 成本率实际只存在本机 sc_finance_v12，换设备即回落默认值。读路径已改为只读拉取它（见 financialData.ensureLedgerFresh），但云端没值可拉，属部署依赖项（审计 C.3）' },
   'collection:articles': { concept: 'content', role: 'authority', confidence: 'high' },
   'collection:care_guides': { concept: 'content', role: 'authority', confidence: 'medium' },
   'collection:custom_drafts': { concept: 'content_factory', role: 'derived', confidence: 'low', note: '待确认归属：内容工厂草稿 or 定制草稿' },
@@ -316,18 +363,20 @@ export const SOURCE_REGISTRY = {
   'collection:search_hot_keywords': { concept: 'home_config', role: 'derived', confidence: 'low' },
   'collection:search_blacklist': { concept: 'home_config', role: 'derived', confidence: 'low' },
   'collection:notification_logs': { concept: 'support', role: 'derived', confidence: 'low', note: '通知日志，待细分概念' },
-  'collection:admin_roles': { concept: 'staff', role: 'local-only', confidence: 'medium', note: '⚠ 不参与鉴权（staffGuard 读的是 staff_members/workspace_acl）；PermissionManager 只读展示 —— 审计 P0-4 的「无任何消费方」说法不准确，已更正' },
-  'collection:admin_users': { concept: 'staff', role: 'local-only', confidence: 'medium', note: '⚠ 不参与鉴权；PermissionManager 只读展示（审计 P0-4「无消费方」说法已更正）' },
+  'collection:admin_roles': { concept: 'admin_permission_records', role: 'authority', confidence: 'medium', note: '⚠ 不参与鉴权（staffGuard 读的是 staff_members/workspace_acl）；PermissionManager 只读展示 —— 审计 P0-4 的「无任何消费方」说法不准确，已更正' },
+  'collection:admin_users': { concept: 'admin_permission_records', role: 'authority', confidence: 'medium', note: '⚠ 不参与鉴权；与 admin_roles 同属「后台角色/账号分配记录」这一概念（coAuthorities）' },
   'collection:admin_operation_logs': { concept: 'staff', role: 'derived', confidence: 'low' },
   'collection:admin_login_logs': { concept: 'staff', role: 'derived', confidence: 'low' },
   'collection:audience_campaigns': { concept: 'members', role: 'local-only', confidence: 'medium', note: '线上存在且 auth!=null 可读写但无仓库规则（审计 P0-11）' },
-  'collection:user_audiences': { concept: 'members', role: 'local-only', confidence: 'medium', note: '同上' },
-  'collection:property_proposals': { concept: 'stores', role: 'local-only', confidence: 'medium', note: '同上（物业测算提案）' },
+  // 以下 4 条本轮改判：原先错挂到 members / stores / analytics，导致 D5 把「读自己的权威」误报为
+  // 「读非权威源」。依据见 CONCEPTS 里各自 note（三个集合在 ERP 侧都是完整 CRUD）。
+  'collection:user_audiences': { concept: 'user_audiences', role: 'authority', confidence: 'medium', note: 'AudienceManager 增删改查；圈选规则自有实体（线上 auth!=null 且无仓库规则）' },
+  'collection:property_proposals': { concept: 'property_proposals', role: 'authority', confidence: 'medium', note: 'PropertyEval 增改查；提案自有实体（线上 auth!=null 且无仓库规则）' },
   'collection:waitlist': { concept: 'members', role: 'derived', confidence: 'low', note: '候补名单' },
   'collection:pet_memorial_orders': { concept: 'orders', role: 'derived', confidence: 'medium', note: '伴宠记忆订单（独立业务线）' },
   'collection:pet_craft_configs': { concept: 'products', role: 'derived', confidence: 'low', note: '伴宠工艺配置' },
   'collection:custom_inquiries': { concept: 'content_factory', role: 'derived', confidence: 'low', note: '定制询单，待细分概念' },
-  'collection:report_templates': { concept: 'analytics', role: 'local-only', confidence: 'medium', note: '报表模板；线上 auth!=null 且无仓库规则（审计 P0-11）' },
+  'collection:report_templates': { concept: 'report_templates', role: 'authority', confidence: 'medium', note: 'CustomReportBuilder 增删改查；模板自有实体（线上 auth!=null 且无仓库规则，审计 P0-11）' },
 
   // ── 云函数（写入通道即权威通道）──────────────────────────────────────
   'function:manageProducts': { concept: 'products', role: 'channel', confidence: 'high' },
@@ -354,7 +403,20 @@ export const SOURCE_REGISTRY = {
   'function:seedCategories': { concept: 'categories', role: 'derived', confidence: 'medium' },
 
   // ── localStorage ─────────────────────────────────────────────────────
-  'local:shanhai_v12': { concept: 'finance_records', role: 'mirror', confidence: 'high', note: '⚠ 被当作事实读（Finance 页）' },
+  'local:shanhai_v12': {
+    concept: 'finance_records',
+    role: 'mirror',
+    confidence: 'high',
+    note: '云端 finance_records 的本机缓存（financeSync 写入）。'
+      + '实测：清空 localStorage 后本机为空而云端有 308 行 → 取数页曾显示「财务账本暂无记录」。'
+      + '已改为经 financialData.ensureLedgerFresh() 先只读拉取云端再读本键。',
+    // 允许在「保证先取新」的前提下直接读本镜像 —— 显式白名单，而不是把 role 改掉来消音。
+    readOkIn: [
+      { file: 'src/utils/financialData.js', reason: '全仓唯一的账本读取口，读前 await ensureLedgerFresh() 只读拉取云端 finance_records' },
+      { file: 'src/utils/financeLocalStorageKey.js', reason: '键名定义处 + 旧键一次性迁移（本文件不承载业务读取）' },
+      { file: 'src/utils/dashboardMetrics.js', reason: '共享账本读取函数；其调用方（Dashboard.refreshAll、StaffOptimizeAI.getFinancialData）读前都已 await ensureLedgerFresh() 只读拉取云端' },
+    ],
+  },
   'local:sc_finance_v12': { concept: 'finance_settings', role: 'authority', confidence: 'high' },
   'local:sc_finance_settings_v1': { concept: 'finance_settings', role: 'mirror', confidence: 'high', note: 'Finance.vue 回填表单用，过期即回填旧值' },
   'local:sc_admin_token': { concept: 'staff', role: 'ui-state', confidence: 'high', note: '口令门禁 token（审计 P0-2：前端假登录）' },
@@ -368,6 +430,48 @@ export const SOURCE_REGISTRY = {
   'local:robot_user_preferences': { concept: 'support', role: 'ui-state', confidence: 'medium' },
   'local:robot_reminders': { concept: 'support', role: 'ui-state', confidence: 'medium' },
   'local:robot_achievements': { concept: 'support', role: 'ui-state', confidence: 'medium' },
+
+  // ── 以下 2026-09-16 本轮补登记 ──────────────────────────────────────────
+  // 起因：`report-data-sources` 原先只认「localStorage 读取里**直接写引号键名**」这一种写法，
+  // **完全扫不到** `localStorage.getItem(SOME_KEY_CONST)` 这类写法。实测修正后
+  // D1 从「0（假绿）」变成「29 条未登记」—— 这份清单本来就是 SSOT 该覆盖的。
+  //
+  // 与既有 authority 同源的写法（storage 模块只是键的访问器）：
+  'local:sc_payroll_bundle_v1': { concept: 'payroll_roster', role: 'authority', confidence: 'high', note: 'payrollStorage 的原生键名（同一份事实的另一种写法，见 coAuthorities）' },
+  'local:sc_store_bundle_v1': { concept: 'store_bundle', role: 'authority', confidence: 'high', note: 'storeStorage 的原生键名（同一份事实的另一种写法，见 coAuthorities）' },
+
+  // 纯界面/会话状态（不承载业务事实，丢了不影响）：
+  'local:sc_admin_sidebar_collapsed': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
+  'local:sc_admin_sidebar_openeds': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
+  'local:sc_admin_nav_origin': { concept: 'generic_config', role: 'ui-state', confidence: 'high', note: '导航大屏的来源标记' },
+  'local:sc_admin_open_tabs': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
+  'local:sc_admin_tab_active': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
+  'local:sc_admin_pinned_modules': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
+  'local:sc_admin_recent_modules': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
+  'local:sc_admin_recent_collapsed': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
+  'local:ai_center_persona_panel': { concept: 'analytics', role: 'ui-state', confidence: 'medium' },
+  'local:ai_center_recent_features': { concept: 'analytics', role: 'ui-state', confidence: 'medium' },
+  'local:ai_center_recent_tasks': { concept: 'analytics', role: 'ui-state', confidence: 'medium' },
+  'local:sc_finance_unlocked_until': { concept: 'generic_config', role: 'ui-state', confidence: 'high', note: '财务页解锁时限（本地门禁，审计 P0-2 同类）' },
+  'local:sc_partner_destiny_unlocked': { concept: 'generic_config', role: 'ui-state', confidence: 'high', note: '本地门禁标记' },
+  'local:finance_sync_metadata': { concept: 'finance_records', role: 'derived', confidence: 'high', note: '同步水位（lastLocalUpdateTime 等），由账本派生' },
+
+  // 只存本机、云端尚无对应物的**业务数据**（不跨设备，展示层须如实标注）：
+  'local:shanhai_purchase_intents_v1': { concept: 'fulfillment', role: 'local-only', confidence: 'medium', note: '采购意向的本机副本；云端为 purchase_intents' },
+  'local:sc_property_proposals_v3': { concept: 'property_proposals', role: 'local-only', confidence: 'medium', note: '物业测算提案的本机草稿' },
+  'local:sc_franchise_bundle_v1': { concept: 'stores', role: 'local-only', confidence: 'medium', note: '加盟商档案（本机）' },
+  'local:sc_compliance_kb_v1': { concept: 'generic_config', role: 'local-only', confidence: 'medium', note: '合规知识库（本机）' },
+  'local:sc_finance_monthly_brief_v1': { concept: 'finance_records', role: 'local-only', confidence: 'medium', note: '财务月报摘要（本机生成物）' },
+  'local:sc_strategy_benchmark_zones_v1': { concept: 'generic_config', role: 'local-only', confidence: 'medium', note: '策略对标区（本机）' },
+  'local:sc_strategy_compliance_items_v1': { concept: 'generic_config', role: 'local-only', confidence: 'medium', note: '策略合规项（本机）' },
+  'local:sc_strategy_compliance_species_lists_v1': { concept: 'generic_config', role: 'local-only', confidence: 'medium', note: '策略合规物种清单（本机）' },
+  'local:openclaw_virtual_staff_v1': { concept: 'staff', role: 'local-only', confidence: 'medium', note: '虚拟员工（本机），与 staff_members 不是一回事' },
+  'local:sc_feishu_bitable_config_v1': { concept: 'generic_config', role: 'local-only', confidence: 'medium', note: '飞书多维表配置（本机，含凭据字段 → 敏感）' },
+  'local:sc_feishu_roster_mapping_v1': { concept: 'generic_config', role: 'local-only', confidence: 'medium', note: '飞书花名册字段映射（本机）' },
+
+  // ⚠ 安全项：AI 会话与运行时 Key 存在本机
+  'local:ai_center_chat_sessions_v1': { concept: 'analytics', role: 'local-only', confidence: 'medium', note: 'AI 会话记录（本机）' },
+  'local:ai_center_runtime_deepseek_key': { concept: 'analytics', role: 'local-only', confidence: 'high', note: '⚠ **API Key 存在 localStorage** —— 任何本机脚本/扩展都能读到，且换设备即失效。属安全待决项（审计 C.3）' },
 
   // ── 本地存储模块（封装后的 local: 键）──────────────────────────────────
   'storage:storeStorage': { concept: 'store_bundle', role: 'authority', confidence: 'high' },
@@ -391,6 +495,23 @@ export const METRIC_DIVERGENCES = [
     status: 'fixed',
     note: '已修（2026-09-16）：决策中心改走 getAnalyticsDashboard 全量口径。实测两页一致 —— '
       + '决策中心「本月营收 ¥2,050.18」== 驾驶舱「线上净额 ¥2,050.18」。',
+  },
+  {
+    concept: 'order_metrics',
+    label: '营收 / 订单数（自定义报表增强）',
+    pages: [
+      { module: '0', page: 'Dashboard.vue', source: 'function:getAnalyticsDashboard', scope: '全量（服务端聚合）' },
+      { module: '21', page: 'CustomReportBuilder.vue', source: 'collection:orders', scope: '逐单读取，上限 1000 笔' },
+    ],
+    // 状态为 fixed 的含义：**已处置**（不是「分歧已消除」——它是设计约束）。
+    // 处置方式 = 上限收敛到单一真源 + 逐单读取触顶时显式告警（不再静默给出偏低的营收）。
+    status: 'fixed',
+    note: '设计约束（永久）：模块 21 需要**逐单 costPrice** 才能算自定义分组的利润/成本，'
+      + '故无法改用聚合接口（getAnalyticsDashboard 只给不区分分组的聚合口径）。'
+      + '它全量分页读取 orders，上限 REPORT_ORDER_LIMIT=1000；**超出即截断**，'
+      + '此时其营收会低于权威值。已加「触顶告警」（describeTruncation + ElMessage.warning）避免静默。'
+      + '⚠️ 真实订单量未在本次验证（无 TCB 凭证），故不臆测当前是否已触顶；'
+      + '如需彻底消除该上限，应把自定义分组聚合下沉到云函数。',
   },
   {
     concept: 'stores',

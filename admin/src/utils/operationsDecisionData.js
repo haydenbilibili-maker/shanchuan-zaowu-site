@@ -4,7 +4,7 @@ import { loadStoreBundle, storeLicenseAlertLevel, sumStoreNetRevenueForMonth } f
 import { loadPayrollBundle } from './payrollStorage'
 import { fetchStaffDirectory, staffCountDisplay } from './staffDirectory.js'
 import { callCloudFunction } from '../cloud.js'
-import { normalizeCostRate } from './storeData.js'
+import { resolveCostRate } from './storeData.js'
 import { mapAnalyticsOrdersToAgg } from './dashboardMetrics.js'
 
 /**
@@ -155,6 +155,13 @@ function buildRisks({ products, stores, finance, payroll, staff }) {
   if (finance.authoritative === false) {
     risks.push({ level: 'medium', title: '经营口径回退到本机账本', desc: `未取到全量云口径（${finance.fallbackError || '原因未知'}），当前营收/订单数来自本机财务账本，与其他页面的全量口径可能不一致。` })
   }
+  // 毛利用的是兜底成本率，而不是用户配的值 —— 必须单独报，否则「毛利」看起来是权威数字。
+  // 注意用 `finance.costRate` 而不是外层 `costRate`：本函数是独立作用域，
+  // 拿不到 buildOperationsDecisionData 里的局部常量（写成 costRate 会直接 ReferenceError，
+  // 整个决策中心白屏 —— 这正是本轮 check:nav-dom 抓到的那次回归）。
+  if (finance.costRateSource === 'default') {
+    risks.push({ level: 'medium', title: '毛利用的是默认成本率', desc: `本机与云端都没有财务设置，毛利按默认成本率 ${(Number(finance.costRate || 0) * 100).toFixed(0)}% 粗估。请在财务模块设置成本率（设置仅存本机，换设备不会跟随）。` })
+  }
   if (stores.authoritative === false) {
     risks.push({ level: 'medium', title: '门店数读取失败', desc: `未能读取云端 stores 集合（${stores.cloudError || '原因未知'}），门店数回落为本机档案包。` })
   }
@@ -280,8 +287,14 @@ export async function buildOperationsDecisionData(options = {}) {
   const payrollMetrics = buildPayrollMetrics(payrollBundle, yearMonth)
   // 口径优先级：全量云口径 → 本机财务账本（明确标注「本机」，不再冒充权威）
   const aggTotals = analytics.ok ? (analytics.agg?.totals || {}) : null
-  // 成本率来自财务参数（sc_finance_v12.settings）；与 storeData 共用同一个归一化函数
-  const costRate = normalizeCostRate(financialData?.settings?.costRate ?? financialData?.settings?.setCostRate)
+  // 成本率来自财务参数（sc_finance_v12.settings / 云端 finance_settings）；与 storeData 共用同一个解析函数。
+  // 必须带出处：没有财务设置的设备上会回落默认 25%，若仍写「按财务设置成本率」，
+  // 用户读到的就是一个自己从未设置过、却被称作「财务设置」的数字（实测毛利差近一倍）。
+  const cost = resolveCostRate(financialData?.settings)
+  const costRate = cost.rate
+  const costLabel = cost.source === 'setting'
+    ? `按财务设置成本率 ${(costRate * 100).toFixed(1)}% 估算`
+    : `未取到财务设置，按默认成本率 ${(costRate * 100).toFixed(0)}% 粗估（换设备/清缓存后本机设置不会跟随）`
   // 权威营收下必须**自己**推算成本/毛利：原先直接取 storeData.finance.grossProfit，
   // 而那份计算基于「本机账本营收」——账本为空时就会出现「营收 ¥2050、毛利 ¥0」这种同屏矛盾。
   const authoritativeRevenue = aggTotals ? money(aggTotals.netOnline ?? aggTotals.gmvPaid) : 0
@@ -302,7 +315,8 @@ export async function buildOperationsDecisionData(options = {}) {
         costRate,
         trend: storeData?.finance?.trend || '暂无趋势',
         // 用**实际参与计算**的 costRate 生成文案：否则数字与口径说明可能各说各话
-        costStructure: `按财务设置成本率 ${(costRate * 100).toFixed(1)}% 估算`,
+        costStructure: costLabel,
+        costRateSource: cost.source,
         source: 'getAnalyticsDashboard',
         sourceLabel: `全量口径 ${analytics.startDate}~${analytics.endDate}`,
         records: financialData.records || [],
@@ -316,8 +330,9 @@ export async function buildOperationsDecisionData(options = {}) {
         grossProfit: money(storeData?.finance?.grossProfit),
         profitMargin: money(storeData?.finance?.profitMargin),
         trend: storeData?.finance?.trend || '暂无趋势',
-        costStructure: storeData?.finance?.costStructure || '暂无成本结构',
+        costStructure: storeData?.finance?.costStructure || costLabel,
         costRate,
+        costRateSource: cost.source,
         source: 'local_ledger',
         // ⚠ 不再写死「财务账本」：本机账本 ≠ 云端财务账本，来源必须说清是本机
         sourceLabel: '本机财务账本（未取到全量云口径）',

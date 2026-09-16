@@ -464,6 +464,8 @@ import {
   ORDER_SCAN_MAX,
   todayBizDate,
 } from '../utils/dashboardMetrics'
+// 读本机账本前先「只读取新」：见 refreshAll 里的说明
+import { ensureLedgerFresh } from '../utils/financialData.js'
 
 const emit = defineEmits(['switch-tab'])
 
@@ -1001,7 +1003,13 @@ const refreshAll = async () => {
     const range = resolveRangePreset(rangePreset.value)
     const storeId = storeFilter.value
 
-    // 1) 账本（本地）— 首屏即可先填壳，缩短空白感
+    // 读本机账本**之前**先做一次「只读取新」（云端 finance_records → 本机缓存）。
+    // 不做的话，来自本机账本的数字会停在过期/空的缓存上 —— 实测清空 localStorage 后
+    // 云端有 308 行账本，而本页「近7日趋势」显示「账本 ¥0」，同屏却又有云端口径的
+    // 「营收账本净额 ¥35,329.44」，两个数字互相矛盾。只读：绝不回写云端。
+    await ensureLedgerFresh()
+
+    // 1) 账本（本地）— 先填壳，缩短空白感
     const allLedger = loadLedgerRecords()
     const ledgerRows = filterLedgerByRange(allLedger, {
       startDate: range.startDate,

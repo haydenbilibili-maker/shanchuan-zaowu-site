@@ -216,7 +216,11 @@ export async function saveFinanceSettingsToCloud(settings) {
 }
 
 export async function syncFinanceRecords(options = {}) {
-  const { forceUpload = false, forceDownload = false } = options
+  // readOnly：给**读路径**（各页面取数）用 —— 只把云端权威拉进本机缓存，绝不回推云端。
+  // 为什么必须显式区分：云端读取失败时 cloudRecords 会是 []，而下面「回推」的条件
+  // `mergedRecords.length > cloudRecords.length` 恰好成立 → 一次读失败就会把本机账本
+  // 反向覆盖云端。「读不到云端」不等于「云端为空」，读页面也不应产生写副作用。
+  const { forceUpload = false, forceDownload = false, readOnly = false } = options
 
   try {
     const metadata = getSyncMetadata()
@@ -273,6 +277,7 @@ export async function syncFinanceRecords(options = {}) {
     metadata.lastLocalUpdateTime = Date.now()
 
     if (
+      !readOnly &&
       !forceDownload &&
       (forceUpload || localUpdateTime > cloudUpdateTime || mergedRecords.length > cloudRecords.length)
     ) {
@@ -300,7 +305,7 @@ export async function syncFinanceRecords(options = {}) {
 }
 
 export async function syncFinanceSettings(options = {}) {
-  const { forceUpload = false, forceDownload = false } = options
+  const { forceUpload = false, forceDownload = false, readOnly = false } = options
 
   try {
     const metadata = getSyncMetadata()
@@ -340,7 +345,7 @@ export async function syncFinanceSettings(options = {}) {
       metadata.lastLocalUpdateTime = Date.now()
     }
 
-    if (forceUpload || (localSettings && localUpdateTime > cloudUpdateTime)) {
+    if (!readOnly && (forceUpload || (localSettings && localUpdateTime > cloudUpdateTime))) {
       try {
         await saveFinanceSettingsToCloud(mergedSettings || localSettings)
         metadata.lastCloudUpdateTime = Date.now()

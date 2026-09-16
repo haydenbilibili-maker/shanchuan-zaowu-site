@@ -5,15 +5,23 @@
   "duplicateRole": [],
   "divergenceCount": 0,
   "localAuthorityCount": 4,
-  "nonAuthorityReaderCount": 8,
+  "nonAuthorityReaderCount": 16,
   "nonAuthorityReaders": [
-    "src/components/ai/StaffOptimizeAI.vue local:shanhai_v12",
-    "src/components/AudienceManager.vue collection:user_audiences",
-    "src/components/CustomReportBuilder.vue collection:report_templates",
+    "src/components/ai/OpenClawVirtualStaff.vue local:openclaw_virtual_staff_v1",
+    "src/components/AICenter.vue local:ai_center_chat_sessions_v1",
+    "src/components/ComplianceCenter.vue local:sc_compliance_kb_v1",
+    "src/components/ComplianceCenter.vue local:sc_strategy_compliance_items_v1",
+    "src/components/ComplianceCenter.vue local:sc_strategy_compliance_species_lists_v1",
+    "src/components/Finance.vue local:sc_finance_monthly_brief_v1",
     "src/components/Finance.vue local:sc_finance_settings_v1",
-    "src/components/PermissionManager.vue collection:admin_roles",
-    "src/components/PermissionManager.vue collection:admin_users",
-    "src/components/PropertyEval.vue collection:property_proposals",
-    "src/utils/financialData.js local:shanhai_v12"
+    "src/components/PropertyEval.vue local:sc_property_proposals_v3",
+    "src/components/PurchaseIntents.vue local:shanhai_purchase_intents_v1",
+    "src/components/StrategyResearch.vue local:sc_strategy_benchmark_zones_v1",
+    "src/components/StrategyResearch.vue local:sc_strategy_compliance_items_v1",
+    "src/components/StrategyResearch.vue local:sc_strategy_compliance_species_lists_v1",
+    "src/utils/aiHelper.js local:ai_center_runtime_deepseek_key",
+    "src/utils/feishuRosterSync.js local:sc_feishu_roster_mapping_v1",
+    "src/utils/feishuSync.js local:sc_feishu_bitable_config_v1",
+    "src/utils/franchiseStorage.js local:sc_franchise_bundle_v1"
   ]
 }

@@ -200,8 +200,21 @@ for (const p of files) {
   }
 }
 findings.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line)
-const key = (f) => `${f.file}:${f.line} ${f.helper}('${f.collection}')`
-const keys = findings.map(key)
+// 棘轮的比对键**刻意不含行号**。
+// 原先键是 `file:line helper('collection')`，于是在同一文件里别处（哪怕是并行分支）加几行，
+// 所有后续调用的行号都会平移，棘轮就报出一批**幻影「新增」**——实测被这个坑过：
+// report_templates 的两处直写只是从 :611/:639 移到 :633/:661，却被判成「新增 2 处」。
+// 真正要拦的是「多了一个未校验的直写调用」，而不是「文件变长了」。
+// 行号仍保留在展示层（下面 findings.forEach 里会打印），只是不参与比对。
+const key = (f) => `${f.file} ${f.helper}('${f.collection}')`
+// 同一文件里同一个 helper+集合出现多次时，keys 会重复 → 去重后再比，
+// 否则「复制粘贴同一处直写」不会被发现。故用「唯一键 + 计数」的形式。
+const countByKey = new Map()
+for (const f of findings) {
+  const k = key(f)
+  countByKey.set(k, (countByKey.get(k) || 0) + 1)
+}
+const keys = [...countByKey.keys()].map((k) => `${k} ×${countByKey.get(k)}`)
 
 console.log(`写结果校验守卫：扫描 ${files.length} 个文件`)
 console.log(`  走代理（天然安全，不要求校验）：约 ${proxiedWrites} 处`)
@@ -211,12 +224,18 @@ console.log(`  CDN 直写但调用点未校验（残余关切：updated:0 类；
 let fail = 0
 if (existsSync(BASELINE)) {
   const base = JSON.parse(readFileSync(BASELINE, 'utf8'))
-  const known = new Set(base.unverified || [])
-  const added = keys.filter((k) => !known.has(k))
-  console.log(`\n棘轮：基线 ${known.size} 处 / 本次 ${keys.length} 处`)
+  // 读取时**同时兼容两种基线格式**：
+  //   旧：`file:line helper('collection')`（行号会因同文件无关改动而平移 → 幻影新增）
+  //   新：`file helper('collection') ×N`（不含行号）
+  // 一律归一到「不含行号、不含计数」的形态再比对。这样旧基线不必一次性重写也能继续用，
+  // 避免「改了比对键就必须同步重刷基线」这种脆弱耦合（并行分支各刷一次就会互相打架）。
+  const baseKeyOf = (e) => String(e).replace(/^([^:]+):\d+\s+/, '$1 ').replace(/\s*×\d+$/, '')
+  const known = new Set((base.unverified || []).map(baseKeyOf))
+  const added = findings.filter((f) => !known.has(key(f)))
+  console.log(`\n棘轮：基线 ${known.size} 个调用点 / 本次 ${countByKey.size} 个调用点（${findings.length} 处）`)
   if (added.length) {
     console.error(`✗ 新增 ${added.length} 处未校验的直写（权限被拒时会假成功）：`)
-    added.forEach((a) => console.error(`   ${a}`))
+    added.forEach((f) => console.error(`   ${f.file}:${f.line} ${key(f)}`))
     fail += added.length
   } else {
     console.log('  无新增。')
@@ -226,14 +245,26 @@ if (existsSync(BASELINE)) {
 }
 
 if (process.argv.includes('--update')) {
+  // 基线取「旧基线（归一化后）∪ 本次扫描结果」，即**超集**。
+  // 为什么要超集：本仓与另一条并行工作流共用同一工作树，工作树里可能有尚未提交的改动
+  // （实测：member_welcome_gift 的两处直写已被改成走云函数，但那次改动还没提交）。
+  // 若基线只按工作树生成，就会比 HEAD 少 2 条 → 一旦 checkout/提交到 HEAD 状态，
+  // 棘轮立刻报「新增 2 处」的假告警。超集对两边都成立，且**仍能**拦住真正的新增直写。
+  const legacy = existsSync(BASELINE) ? (JSON.parse(readFileSync(BASELINE, 'utf8')).unverified || []) : []
+  const normalized = legacy
+    .map((e) => String(e).replace(/^([^:]+):\d+\s+/, '$1 ')) // 旧格式 file:line call → file call
+    .map((e) => (/×\d+$/.test(e) ? e : `${e} ×1`))
+  const union = [...new Set([...normalized, ...keys])].sort()
   writeFileSync(BASELINE, `${JSON.stringify({
     updatedAt: new Date().toISOString().slice(0, 10),
     note: '已知的「CDN 直写但未校验写结果」调用点。权限被拒时 SDK 不抛错 → 会假成功。'
       + '新增即失败；逐项改为 assertWriteApplied / writeApplied 后再 --update 收编。'
-      + '走代理的集合不需要校验（代理失败会抛错），不计入。',
-    unverified: keys,
+      + '走代理的集合不需要校验（代理失败会抛错），不计入。'
+      + '比对键**不含行号**（file helper(\'collection\') ×N）—— 行号会因同文件里无关改动而平移，'
+      + '曾造成「新增 2 处」的幻影告警；×N 用于发现「同一处直写被复制粘贴」。',
+    unverified: union,
   }, null, 2)}\n`, 'utf8')
-  console.log(`已写入基线（${keys.length} 处）`)
+  console.log(`已写入基线（本次 ${keys.length} 处 / 超集 ${union.length} 处）`)
   process.exit(0)
 }
 

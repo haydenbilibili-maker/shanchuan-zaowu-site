@@ -42,6 +42,8 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { callGeminiAPI } from '../../utils/aiHelper'
+import { ensureLedgerFresh } from '../../utils/financialData.js'
+import { loadLedgerRecords } from '../../utils/dashboardMetrics.js'
 import { marked } from 'marked'
 
 const props = defineProps({
@@ -59,11 +61,14 @@ const scheduleResult = ref('')
 const costResult = ref('')
 
 // 从财务报表获取订单数据
-const getFinancialData = () => {
+const getFinancialData = async () => {
   try {
-    // 读取财务报表数据
-    const financeRaw = localStorage.getItem('shanhai_v12')
-    const records = financeRaw ? JSON.parse(financeRaw) : []
+    // 与财务页/驾驶舱**同源**：先做一次「只读取新」（云端 finance_records → 本机缓存），
+    // 再用共享的账本读取函数。原先这里自己 JSON.parse localStorage，
+    // 于是本组件能不能看到数据，取决于本浏览器有没有先打开过财务页
+    // （实测清空 localStorage 后云端有 308 行账本，这里读到的是 0）。
+    await ensureLedgerFresh()
+    const records = loadLedgerRecords()
     
     if (!records || records.length === 0) {
       return {
@@ -129,7 +134,7 @@ const generateSchedule = async () => {
   generating.value = true
   try {
     // 从财务报表获取订单数据
-    const financialData = getFinancialData()
+    const financialData = await getFinancialData()
 
     if (!financialData) {
       ElMessage.error('获取财务报表数据失败')
@@ -180,7 +185,7 @@ const optimizeCost = async () => {
   optimizing.value = true
   try {
     // 从财务报表获取数据
-    const financialData = getFinancialData()
+    const financialData = await getFinancialData()
     
     // 读取财务系统设置，获取人力成本相关参数
     const settingsRaw = localStorage.getItem('sc_finance_v12')

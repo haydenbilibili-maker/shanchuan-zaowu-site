@@ -13,11 +13,8 @@ import { safeWarn } from './safeStorage.js'
  * 提到模块级并导出，避免别处再复制一份口径（`operationsDecisionData` 需要用它
  * 从**权威营收**推算毛利，否则会出现「营收 ¥2050、毛利 ¥0」这种同屏自相矛盾）。
  */
-export function normalizeCostRate(value) {
-  const n = Number(value)
-  if (!Number.isFinite(n) || n < 0) return 0.25
-  return n > 1 ? n / 100 : n
-}
+// 成本率解析下沉到零依赖模块 `costRate.js`（Node 可直接单测）；这里再导出以兼容既有导入。
+export { DEFAULT_COST_RATE, normalizeCostRate, resolveCostRate } from './costRate.js'
 
 export async function fetchStoreData(showMessage = false, options = {}) {
   const { useFinancialData = true, period = 'week' } = options
@@ -66,7 +63,8 @@ export async function fetchStoreData(showMessage = false, options = {}) {
       const revenue = Number(financialData?.revenue) || 0
       const orderCount = Number(financialData?.orderCount) || records.reduce((sum, r) => sum + (Number(r.orderCount) || 0), 0)
       const settings = financialData?.settings || {}
-      const costRate = normalizeCostRate(settings.costRate ?? settings.setCostRate)
+      const cost = resolveCostRate(settings)
+      const costRate = cost.rate
       const totalCost = revenue * costRate
       const grossProfit = revenue - totalCost
       const todayRevenue = Number(financialData?.today?.revenue) || 0
@@ -86,7 +84,9 @@ export async function fetchStoreData(showMessage = false, options = {}) {
         grossProfit,
         profitMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
         trend,
-        costStructure: `按财务设置成本率 ${(costRate * 100).toFixed(1)}% 估算`,
+        costStructure: cost.source === 'setting'
+          ? `按财务设置成本率 ${(costRate * 100).toFixed(1)}% 估算`
+          : `未取到财务设置，按默认成本率 ${(costRate * 100).toFixed(0)}% 粗估`,
         source: 'finance_ledger',
         sourceLabel: '财务账本',
         period: financialData?.period || period,

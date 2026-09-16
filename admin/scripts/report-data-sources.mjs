@@ -89,7 +89,24 @@ export function scanSources(files) {
     }
     for (const m of txt.matchAll(/\.collection\(\s*['"]([a-z][a-z0-9_]{2,})['"]/g)) touch(m[1], 'read', rel)
     for (const m of txt.matchAll(/(?:callCloudFunction|callCdnFunction)\(\s*['"]([A-Za-z][A-Za-z0-9_]+)['"]/g)) { functions.add(m[1]); fileOf(rel).fn.add(`function:${m[1]}`) }
-    for (const m of txt.matchAll(/localStorage\.(?:get|set|remove)Item\(\s*['"]([^'"]+)['"]/g)) { locals.add(m[1]); fileOf(rel).local.add(`local:${m[1]}`) }
+    // 先收集本文件的「键名常量」，再解析 localStorage 调用。
+    // 为什么必须这样：`localStorage.getItem(FINANCE_RECORDS_KEY)` 这类写法**原先完全扫不到**，
+    // 于是「本机账本到底有几个读取方」被系统性低估（实测：三个读取方只暴露出一个，
+    // 使 D5 看起来比真实情况干净）。这与 check-write-verify 里解析 COLLECTIONS.XXX 是同一类修正。
+    const keyConsts = new Map()
+    for (const m of txt.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(['"])([^'"]*)\2/g)) {
+      // 拼接出来的键（如 `'sh' + 'an' + 'chuan' + '_v12'`）解析不了明文，跳过，
+      // 否则会把拼接的第一段（`sh`）当成一个真实键名，制造假的未登记源。
+      if (/^\s*\+/.test(txt.slice(m.index + m[0].length))) continue
+      if (/KEY|STORAGE/i.test(m[1])) keyConsts.set(m[1], m[3])
+    }
+    for (const m of txt.matchAll(/localStorage\.(?:get|set|remove)Item\(\s*([A-Za-z_$][\w$]*|['"][^'"]+['"])\s*\)/g)) {
+      const raw = m[1]
+      const name = /^['"]/.test(raw) ? raw.slice(1, -1) : keyConsts.get(raw)
+      if (!name) continue // 解析不出的变量引用（跨文件常量/拼接），属本检查器已知盲区
+      locals.add(name)
+      fileOf(rel).local.add(`local:${name}`)
+    }
     for (const m of txt.matchAll(/from\s+'\.\.?\/utils\/(\w+Storage)\.js'/g)) { storages.add(m[1]); fileOf(rel).storage.add(`storage:${m[1]}`) }
     if (/data\/productConcept/.test(txt)) { storages.add('productConcept(STORAGE_KEY)'); fileOf(rel).storage.add('storage:productConcept(STORAGE_KEY)') }
   }
@@ -162,23 +179,30 @@ export function judge(found, registry, ssot) {
     return c ? authoritySetOf(c).join(' + ') : '（未声明）'
   }
   const nonAuthorityReaders = []
+  const allowedReaders = []
   for (const [file, used] of (found.perFile || new Map())) {
     const all = [...used.read, ...used.local, ...used.storage]
     for (const id of all) {
       const meta = registry[id]
       if (!meta || !RISKY.has(meta.role)) continue
-      nonAuthorityReaders.push({
+      const row = {
         file,
         source: id,
         role: meta.role,
         concept: meta.concept,
         authority: authorityLabel(meta.concept),
         note: meta.note || '',
-      })
+      }
+      // 显式白名单：源可以声明「在这些文件里读是**允许**的」，但必须给出理由。
+      // 这些**不计入** D5 计数，但会单独列出来 —— 白名单必须看得见，否则就是消音。
+      const allow = (meta.readOkIn || []).find((a) => a.file === file)
+      if (allow) allowedReaders.push({ ...row, reason: allow.reason || '（未写明理由）' })
+      else nonAuthorityReaders.push(row)
     }
   }
   nonAuthorityReaders.sort((a, b) => a.file.localeCompare(b.file) || a.source.localeCompare(b.source))
-  return { unregistered, duplicateRole, localAuthority, divergenceCount, nonAuthorityReaders, ids }
+  allowedReaders.sort((a, b) => a.file.localeCompare(b.file) || a.source.localeCompare(b.source))
+  return { unregistered, duplicateRole, localAuthority, divergenceCount, nonAuthorityReaders, allowedReaders, ids }
 }
 
 // ─────────────────────── 自检 ───────────────────────
@@ -253,7 +277,7 @@ if (has('--selftest')) {
 
 const ssot = await import(`file://${SSOT}?t=${Date.now()}`)
 const found = scanSources(walk(SRC))
-const { unregistered, duplicateRole, localAuthority, divergenceCount, nonAuthorityReaders, ids } = judge(found, ssot.SOURCE_REGISTRY, ssot)
+const { unregistered, duplicateRole, localAuthority, divergenceCount, nonAuthorityReaders, allowedReaders, ids } = judge(found, ssot.SOURCE_REGISTRY, ssot)
 
 if (has('--json')) {
   console.log(JSON.stringify({
@@ -264,6 +288,7 @@ if (has('--json')) {
     localAuthority,
     divergenceCount,
     nonAuthorityReaders,
+    allowedReaders,
     divergentConcepts: ssot.conceptsWithDivergence().map((c) => ({ key: c.key, label: c.label, divergent: c.divergent })),
     metricDivergences: ssot.METRIC_DIVERGENCES,
   }, null, 2))
@@ -297,6 +322,11 @@ nonAuthorityReaders.forEach((r) => {
   console.log(`   ${file}`)
   list.forEach((r) => console.log(`      ${r.source}（${r.role}）→ 权威应为 ${r.authority}`))
 })
+if (allowedReaders.length) {
+  console.log()
+  console.log(`D5b 已声明白名单（读非权威源但**有取新保证**，不计入 D5）：${allowedReaders.length} 处`)
+  allowedReaders.forEach((r) => console.log(`   ${r.file}  ${r.source}（${r.role}）—— ${r.reason}`))
+}
 console.log()
 console.log('声明了非权威同义源的概念（展示层须如实标注来源）：')
 ssot.conceptsWithDivergence().forEach((c) => console.log(`   ${c.label}: 权威 ${c.authority.kind}:${c.authority.name}；另有 ${c.divergent.join('、')}`))
