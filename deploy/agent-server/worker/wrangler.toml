@@ -1,0 +1,18 @@
+name = "dsh-agent-gate"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# 边缘网关：Basic Auth + 代注入 DSH 会话 cookie
+#
+# 路由（在 Cloudflare 面板或 wrangler 里配）：agent.shanhaizaowu.com/*
+# 源站主机名：见 README —— 必须是隧道挂的**第二个**主机名，
+# 否则 Worker 会 fetch 自己，形成 508 循环。
+
+[vars]
+GATE_USER = "admin"
+# ORIGIN_HOST 部署时替换成你为隧道挂的第二个主机名，例如：
+# ORIGIN_HOST = "agent-origin.shanhaizaowu.com"
+
+# secrets（不要写进本文件，用 `wrangler secret put`）：
+#   wrangler secret put GATE_PASS
+#   wrangler secret put DSH_COOKIE
