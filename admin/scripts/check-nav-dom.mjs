@@ -316,6 +316,104 @@ async function main() {
       )
     }
 
+    // ── 8. 命令面板：ARIA 语义 + 键盘可达性 ─────────────────────────────────────
+    // 这里既有无障碍缺口（原本 0 个 role/aria 属性），也有一个**真实功能缺口**：
+    // 没有置顶/最近时（新用户第一次打开就是这种状态），屏幕上是「常用动作 + 全部模块」，
+    // 而键盘只数「置顶+最近」→ `max = -1`，↓ 无反应、Enter 选不中任何东西，
+    // 面板底部却写着「↑↓ 移动 · Enter 进入」。
+    await chrome.goto(BASE)
+    await chrome.evaluate("localStorage.removeItem('sc_admin_pinned_modules'); localStorage.removeItem('sc_admin_recent_modules')")
+    await chrome.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))")
+    await sleep(900)
+    const cp = await chrome.evaluate(`(() => {
+      const panel = document.querySelector('.cp-panel')
+      const input = document.querySelector('.cp-input')
+      const box = document.querySelector('#cp-listbox')
+      const opts = [...document.querySelectorAll('.cp-item[role=option]')]
+      return {
+        open: !!panel,
+        role: panel && panel.getAttribute('role'),
+        modal: panel && panel.getAttribute('aria-modal'),
+        label: panel && panel.getAttribute('aria-label'),
+        inputRole: input && input.getAttribute('role'),
+        controls: input && input.getAttribute('aria-controls'),
+        expanded: input && input.getAttribute('aria-expanded'),
+        activeId: input && input.getAttribute('aria-activedescendant'),
+        inputFocused: document.activeElement === input,
+        listboxRole: box && box.getAttribute('role'),
+        controlsResolves: !!(input && document.getElementById(input.getAttribute('aria-controls'))),
+        activeResolves: !!(input && document.getElementById(input.getAttribute('aria-activedescendant') || '')),
+        options: opts.length,
+        allOptionsHaveIds: opts.every((o) => o.id.startsWith('cp-opt-')),
+        selectedCount: opts.filter((o) => o.getAttribute('aria-selected') === 'true').length,
+        status: (document.querySelector('.cp-sr-status') || {}).textContent || '',
+      }
+    })()`)
+    check('命令面板可打开', cp.open)
+    check('面板有 dialog 语义（role/aria-modal/aria-label）', cp.role === 'dialog' && cp.modal === 'true' && !!cp.label, JSON.stringify(cp))
+    check('输入框是 combobox 且 aria-controls 指向真实 listbox', cp.inputRole === 'combobox' && cp.controlsResolves && cp.listboxRole === 'listbox', `role=${cp.inputRole} controls=${cp.controls}→${cp.controlsResolves} listbox=${cp.listboxRole}`)
+    check('输入框自动获得焦点且 aria-expanded=true', cp.inputFocused && cp.expanded === 'true')
+    check('有可选项且每项都有 cp-opt- 前缀 id', cp.options > 0 && cp.allOptionsHaveIds, `options=${cp.options}`)
+    check('aria-activedescendant 指向真实存在的选项', cp.activeResolves, `activeId=${cp.activeId}`)
+    check('任一时刻恰有一项 aria-selected', cp.selectedCount === 1, `selectedCount=${cp.selectedCount}`)
+    check('有读屏播报区（role=status/aria-live）', /共 \d+ 个可选项|没有匹配项/.test(cp.status), `status=${JSON.stringify(cp.status)}`)
+
+    // 键盘可达性：连续 ↓ 必须覆盖全部选项且能回绕（顺序与渲染顺序一致）
+    const seen = []
+    for (let n = 0; n < cp.options + 1; n++) {
+      const id = await chrome.evaluate(`(() => {
+        const i = document.querySelector('.cp-input')
+        i.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }))
+        return i.getAttribute('aria-activedescendant')
+      })()`)
+      seen.push(id)
+      await sleep(25)
+    }
+    const distinct = new Set(seen).size
+    check(`↓ 能走遍全部 ${cp.options} 个选项（实际覆盖 ${distinct}）`, distinct === cp.options, `只覆盖到 ${distinct} 个`)
+    check('↓ 走到末尾能回绕到第一项', seen[0] === seen[cp.options], `第 1 项 ${seen[0]} vs 第 ${cp.options + 1} 项 ${seen[cp.options]}`)
+    const allResolve = await chrome.evaluate(`(${JSON.stringify(seen)}).every((id) => !!id && !!document.getElementById(id))`)
+    check('每一步 aria-activedescendant 都命中真实元素', allResolve)
+
+    // Enter 真的能进入模块（这是原缺口的核心：默认态按 Enter 没反应）
+    const beforeEnter = await chrome.evaluate(`document.querySelector('.breadcrumb .bc-item.current')?.innerText || ''`)
+    await chrome.evaluate(`(() => {
+      const i = document.querySelector('.cp-input')
+      i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+    })()`)
+    await sleep(2200)
+    const afterEnter = await chrome.evaluate(`({ open: !!document.querySelector('.cp-panel'), crumb: document.querySelector('.breadcrumb .bc-item.current')?.innerText || '' })`)
+    check('默认态按 Enter 能进入模块（修复前无反应）', !afterEnter.open && afterEnter.crumb !== beforeEnter, `面板关闭=${!afterEnter.open} 面包屑「${beforeEnter}」→「${afterEnter.crumb}」`)
+
+    // ── 9. 「在职员工」KPI 必须接小程序「员工」源，且与数据源健康表一致 ─────────────
+    // 原缺陷：该卡片读 ERP 本地的 payrollStorage 花名册，那份数据从未被填充 → 恒显示 0，
+    // 而 0 无法区分「没有员工」与「没读到」。现改读 manageStaff → staff_members
+    // （与小程序超管工作台「员工」模块同源）。这里断言**接线**与**一致性**，
+    // 不断言具体人数 —— 人数随环境而变，接线错了才是缺陷。
+    await chrome.goto(`${BASE}#/m/25`)
+    await sleep(6000)
+    const staffKpi = await chrome.evaluate(`(() => {
+      const card = [...document.querySelectorAll('.kpi-card')].find((c) => (c.querySelector('.kpi-label') || {}).innerText === '在职员工')
+      const health = [...document.querySelectorAll('.source-pill')].find((p) => (p.innerText || '').includes('员工通讯录'))
+      return {
+        found: !!card,
+        value: card ? (card.querySelector('.kpi-value') || {}).innerText : null,
+        desc: card ? (card.querySelector('.kpi-desc') || {}).innerText : null,
+        health: health ? { cls: health.className, text: health.innerText.replace(/\s+/g, ' ').trim() } : null,
+      }
+    })()`)
+    check('「在职员工」KPI 卡片存在', staffKpi.found)
+    check('KPI 说明写明来源为小程序超管工作台 · 员工（staff_members）', /staff_members/.test(staffKpi.desc || ''), `desc=${JSON.stringify(staffKpi.desc)}`)
+    check('数据源健康表有「员工通讯录」行', !!staffKpi.health, JSON.stringify(staffKpi.health))
+    const healthCount = (staffKpi.health?.text || '').match(/(\d+)\s*名生效员工/)
+    if (healthCount) {
+      check(`KPI 数值与健康表一致（健康表 ${healthCount[1]}）`, staffKpi.value === healthCount[1], `KPI=${staffKpi.value} 健康表=${healthCount[1]}`)
+      check('有员工时 KPI 不得显示 0 或「—」', Number(healthCount[1]) === 0 || (staffKpi.value !== '0' && staffKpi.value !== '—'), `KPI=${staffKpi.value}`)
+    } else {
+      check('健康表读不到时必须标 error（不能看起来像「空」）', /error/.test(staffKpi.health?.cls || ''), `cls=${staffKpi.health?.cls}`)
+      check('读取失败时 KPI 显示「—」而不是 0', staffKpi.value === '—', `KPI=${staffKpi.value}`)
+    }
+
     check('运行期间无页面级异常', pageErrors.length === 0, pageErrors.map((e) => String(e).split('\n')[0]).join(' | '))
   } catch (e) {
     // 任何未预期的异常都记成失败项，绝不吞掉已收集的失败

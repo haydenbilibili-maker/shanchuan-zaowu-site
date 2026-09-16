@@ -1,38 +1,57 @@
 <template>
   <transition name="cp-fade">
     <div v-if="visible" class="cp-mask" @click.self="close">
-      <div class="cp-panel">
+      <div
+        class="cp-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="命令面板：搜索模块与命令"
+      >
         <div class="cp-search">
-          <el-icon class="cp-search-icon"><Search /></el-icon>
+          <el-icon class="cp-search-icon" aria-hidden="true"><Search /></el-icon>
           <input
             ref="inputRef"
             v-model="query"
             class="cp-input"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="cp-listbox"
+            aria-autocomplete="list"
+            :aria-activedescendant="activeDescendantId || undefined"
+            aria-label="搜索模块或命令"
             placeholder="搜索模块 / 命令…（拼音、英文、关键词均可）"
             @keydown.down.prevent="moveActive(1)"
             @keydown.up.prevent="moveActive(-1)"
             @keydown.enter.prevent="select()"
             @keydown.esc.prevent="close"
           />
-          <div class="cp-hint"><kbd>↑</kbd><kbd>↓</kbd> 移动 · <kbd>Enter</kbd> 进入 · <kbd>Esc</kbd> 关闭</div>
+          <div class="cp-hint" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> 移动 · <kbd>Enter</kbd> 进入 · <kbd>Esc</kbd> 关闭</div>
         </div>
 
-        <div class="cp-body">
+        <!-- 读屏播报：结果数变化时告知，否则键盘用户不知道列表变了 -->
+        <div class="cp-sr-status" role="status" aria-live="polite">
+          {{ flatItems.length ? `共 ${flatItems.length} 个可选项` : '没有匹配项' }}
+        </div>
+
+        <div class="cp-body" id="cp-listbox" role="listbox" aria-label="命令面板结果">
           <!-- 置顶收藏 -->
           <div v-if="!query && pinned.length" class="cp-section">
             <div class="cp-section-title">⭐ 置顶</div>
             <div
-              v-for="(m, i) in pinned"
+              v-for="m in pinned"
               :key="'pin-' + m.id"
               class="cp-item"
-              :class="{ active: activeIndex === i }"
-              @mouseenter="activeIndex = i"
+              role="option"
+              :id="'cp-opt-' + m.id"
+              :aria-selected="activeIndex === flatIndexOf('module', m.id)"
+              :class="{ active: activeIndex === flatIndexOf('module', m.id) }"
+              @mouseenter="activeIndex = flatIndexOf('module', m.id)"
               @click="select(m)"
             >
-              <el-icon class="cp-icon"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
+              <el-icon class="cp-icon" aria-hidden="true"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
               <span class="cp-name">{{ m.name }}</span>
               <span class="cp-group">{{ groupName(m.group) }}</span>
-              <el-icon class="cp-pin" @click.stop="togglePin(m)"><Star /></el-icon>
+              <el-icon class="cp-pin" role="button" tabindex="-1" :aria-label="isPinned(m.id) ? '取消置顶' : '置顶'" @click.stop="togglePin(m)"><Star /></el-icon>
             </div>
           </div>
 
@@ -40,17 +59,20 @@
           <div v-if="!query && recent.length" class="cp-section">
             <div class="cp-section-title">⏱️ 最近</div>
             <div
-              v-for="(m, i) in recent"
+              v-for="m in recent"
               :key="'rec-' + m.id"
               class="cp-item"
-              :class="{ active: activeIndex === pinned.length + i }"
-              @mouseenter="activeIndex = pinned.length + i"
+              role="option"
+              :id="'cp-opt-' + m.id"
+              :aria-selected="activeIndex === flatIndexOf('module', m.id)"
+              :class="{ active: activeIndex === flatIndexOf('module', m.id) }"
+              @mouseenter="activeIndex = flatIndexOf('module', m.id)"
               @click="select(m)"
             >
-              <el-icon class="cp-icon"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
+              <el-icon class="cp-icon" aria-hidden="true"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
               <span class="cp-name">{{ m.name }}</span>
               <span class="cp-group">{{ groupName(m.group) }}</span>
-              <el-icon class="cp-pin" @click.stop="togglePin(m)" :class="{ pinned: isPinned(m.id) }"><Star /></el-icon>
+              <el-icon class="cp-pin" role="button" tabindex="-1" :aria-label="isPinned(m.id) ? '取消置顶' : '置顶'" @click.stop="togglePin(m)" :class="{ pinned: isPinned(m.id) }"><Star /></el-icon>
             </div>
           </div>
 
@@ -58,14 +80,17 @@
           <div v-if="query && actionResults.length" class="cp-section">
             <div class="cp-section-title">⚡ 动作 ({{ actionResults.length }})</div>
             <div
-              v-for="(a, i) in actionResults"
+              v-for="a in actionResults"
               :key="a.id"
               class="cp-item act"
-              :class="{ active: activeIndex === i }"
-              @mouseenter="activeIndex = i"
+              role="option"
+              :id="'cp-opt-' + a.id"
+              :aria-selected="activeIndex === flatIndexOf('action', a.id)"
+              :class="{ active: activeIndex === flatIndexOf('action', a.id) }"
+              @mouseenter="activeIndex = flatIndexOf('action', a.id)"
               @click="runActionItem(a)"
             >
-              <span class="cp-icon">{{ a.icon }}</span>
+              <span class="cp-icon" aria-hidden="true">{{ a.icon }}</span>
               <span class="cp-name" v-html="highlight(a.label)"></span>
               <span class="cp-hint-text">{{ a.hint }}</span>
               <kbd v-if="a.shortcut" class="cp-shortcut">{{ a.shortcut }}</kbd>
@@ -77,14 +102,17 @@
             <div class="cp-section-title">🔍 模块 ({{ results.length }})</div>
             <div v-if="!results.length && !actionResults.length" class="cp-empty">没有匹配的模块或动作</div>
             <div
-              v-for="(m, i) in results"
+              v-for="m in results"
               :key="m.id"
               class="cp-item"
-              :class="{ active: activeIndex === actionResults.length + i }"
-              @mouseenter="activeIndex = actionResults.length + i"
+              role="option"
+              :id="'cp-opt-' + m.id"
+              :aria-selected="activeIndex === flatIndexOf('module', m.id)"
+              :class="{ active: activeIndex === flatIndexOf('module', m.id) }"
+              @mouseenter="activeIndex = flatIndexOf('module', m.id)"
               @click="select(m)"
             >
-              <el-icon class="cp-icon"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
+              <el-icon class="cp-icon" aria-hidden="true"><component :is="resolveEpIcon(m.icon || groupIconName(m.group))" /></el-icon>
               <span class="cp-name" v-html="highlight(m.name)"></span>
               <!-- 别名模块：点进去其实落到合并后的 Hub，必须写清楚，否则像两个功能 -->
               <span v-if="m._aliasTargetName" class="cp-alias">并入 {{ m._aliasTargetName }}</span>
@@ -97,12 +125,17 @@
           <div v-if="!query" class="cp-section">
             <div class="cp-section-title">⚡ 常用动作</div>
             <div
-              v-for="(a, i) in ACTIONS.slice(0, 6)"
+              v-for="a in ACTIONS.slice(0, 6)"
               :key="a.id"
               class="cp-item act"
+              role="option"
+              :id="'cp-opt-' + a.id"
+              :aria-selected="activeIndex === flatIndexOf('action', a.id)"
+              :class="{ active: activeIndex === flatIndexOf('action', a.id) }"
+              @mouseenter="activeIndex = flatIndexOf('action', a.id)"
               @click="runActionItem(a)"
             >
-              <span class="cp-icon">{{ a.icon }}</span>
+              <span class="cp-icon" aria-hidden="true">{{ a.icon }}</span>
               <span class="cp-name">{{ a.label }}</span>
               <span class="cp-hint-text">{{ a.hint }}</span>
               <kbd v-if="a.shortcut" class="cp-shortcut">{{ a.shortcut }}</kbd>
@@ -118,19 +151,24 @@
               class="cp-grp"
             >
               <div class="cp-grp-name">
-                <el-icon class="cp-grp-ico"><component :is="resolveEpIcon(GROUPS[key].icon)" /></el-icon>
+                <el-icon class="cp-grp-ico" aria-hidden="true"><component :is="resolveEpIcon(GROUPS[key].icon)" /></el-icon>
                 {{ GROUPS[key].name }}
               </div>
               <div
                 v-for="m in grp"
                 :key="m.id"
                 class="cp-item"
+                role="option"
+                :id="'cp-opt-' + m.id"
+                :aria-selected="activeIndex === flatIndexOf('module', m.id)"
+                :class="{ active: activeIndex === flatIndexOf('module', m.id) }"
+                @mouseenter="activeIndex = flatIndexOf('module', m.id)"
                 @click="select(m)"
               >
-                <span class="cp-icon"></span>
+                <span class="cp-icon" aria-hidden="true"></span>
                 <span class="cp-name">{{ m.name }}</span>
                 <span class="cp-group">{{ m.subgroup || '' }}</span>
-                <el-icon class="cp-pin" @click.stop="togglePin(m)" :class="{ pinned: isPinned(m.id) }"><Star /></el-icon>
+                <el-icon class="cp-pin" role="button" tabindex="-1" :aria-label="isPinned(m.id) ? '取消置顶' : '置顶'" @click.stop="togglePin(m)" :class="{ pinned: isPinned(m.id) }"><Star /></el-icon>
               </div>
             </div>
           </div>
@@ -197,9 +235,43 @@ const runActionItem = (a) => {
 }
 const groupedByGroup = computed(() => modulesByGroup())
 
-const totalItems = computed(() => {
-  if (query.value) return results.value.length
-  return pinned.value.length + recent.value.length
+/** 无查询时展示的 6 个常用动作（与模板里那一节保持一致）*/
+const actionList = computed(() => (query.value ? actionResults.value : ACTIONS.slice(0, 6)))
+/** 无查询且无置顶/最近时，兜底展示的「全部模块」平铺列表 */
+const browseList = computed(() => {
+  if (query.value || pinned.value.length || recent.value.length) return []
+  return Object.values(groupedByGroup.value).flat()
+})
+
+/**
+ * **当前屏幕上真正渲染出来的条目，按视觉顺序平铺** —— 键盘导航的唯一事实来源。
+ *
+ * 这里修的是一个真实的功能缺口（不只是缺 aria）：原来 `totalItems` 只数「置顶 + 最近」，
+ * 而没有置顶/最近时（新用户第一次打开就是这种状态）屏幕上渲染的是
+ * 「常用动作 + 全部模块」，键盘却算出 `max = -1` → ↓ 无反应、Enter 也选不中任何东西。
+ * 面板底部明明写着「↑↓ 移动 · Enter 进入」，实际按不动。
+ */
+const flatItems = computed(() => {
+  const out = []
+  if (query.value) {
+    actionResults.value.forEach((item) => out.push({ kind: 'action', item }))
+    results.value.forEach((item) => out.push({ kind: 'module', item }))
+    return out
+  }
+  pinned.value.forEach((item) => out.push({ kind: 'module', item }))
+  recent.value.forEach((item) => out.push({ kind: 'module', item }))
+  actionList.value.forEach((item) => out.push({ kind: 'action', item }))
+  browseList.value.forEach((item) => out.push({ kind: 'module', item }))
+  return out
+})
+
+/** 某条渲染项在平铺顺序里的下标（模板据此标 active / aria-selected）*/
+const flatIndexOf = (kind, id) => flatItems.value.findIndex((x) => x.kind === kind && String(x.item.id) === String(id))
+
+/** aria-activedescendant 指向当前高亮项，读屏才知道光标停在哪一行 */
+const activeDescendantId = computed(() => {
+  const cur = flatItems.value[activeIndex.value]
+  return cur ? `cp-opt-${cur.item.id}` : null
 })
 
 watch(query, () => { activeIndex.value = 0 })
@@ -218,26 +290,17 @@ const togglePin = (m) => {
 }
 
 const moveActive = (dir) => {
-  const max = (query.value ? (results.value.length + actionResults.value.length) : totalItems.value) - 1
+  const max = flatItems.value.length - 1
   if (max < 0) return
   activeIndex.value = (activeIndex.value + dir + max + 1) % (max + 1)
 }
 
 const select = (m) => {
   if (!m) {
-    // 优先动作，其次模块
-    if (query.value) {
-      const idx = activeIndex.value
-      if (idx < actionResults.value.length) {
-        runActionItem(actionResults.value[idx])
-        return
-      }
-      const modIdx = idx - actionResults.value.length
-      m = results.value[modIdx]
-    } else {
-      const list = [...pinned.value, ...recent.value]
-      m = list[activeIndex.value]
-    }
+    const cur = flatItems.value[activeIndex.value]
+    if (!cur) return
+    if (cur.kind === 'action') { runActionItem(cur.item); return }
+    m = cur.item
   }
   if (!m) return
   emit('switch-tab', m.id)
@@ -255,6 +318,7 @@ const highlight = (text) => {
 }
 
 const open = () => {
+  lastFocused = (typeof document !== 'undefined' && document.activeElement) || null
   visible.value = true
   query.value = ''
   activeIndex.value = 0
@@ -263,7 +327,14 @@ const open = () => {
   loadRecent()
   nextTick(() => inputRef.value?.focus())
 }
-const close = () => { visible.value = false }
+/** 打开前记住焦点，关闭后还回去 —— 否则键盘用户的焦点会掉到 body 上，得重新 Tab 一大圈 */
+let lastFocused = null
+const close = () => {
+  visible.value = false
+  const el = lastFocused
+  lastFocused = null
+  if (el && typeof el.focus === 'function') nextTick(() => el.focus())
+}
 
 
 // ====== 全局快捷键 ======
@@ -339,6 +410,14 @@ onUnmounted(() => {
 .cp-body { flex: 1; overflow-y: auto; padding: 8px 0; }
 .cp-section { padding: 6px 0; }
 .cp-section-title { padding: 4px 18px; font-size: 11px; color: #999; letter-spacing: 1px; }
+/* 只给读屏用：结果数播报区（视觉上不占位） */
+.cp-sr-status {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
 .cp-empty { padding: 30px; text-align: center; color: var(--light-text-secondary); font-size: 13px; }
 
 .cp-item {
