@@ -585,7 +585,7 @@
       <div class="funnel-container">
         <div class="chart-card full-width">
           <h3 class="chart-title">全域流量转化漏斗</h3>
-          <p class="chart-note">柱状图为示意转化量级；分渠道卡片展示各环节人数与环比转化。</p>
+          <p class="chart-note">柱状图与分渠道卡片的<b>人数、环比转化、CAC、ROI 均为示意数据</b>（用于确立口径与阅读方式），非真实投放回收；接入真实渠道数据前请勿据此分配预算。</p>
           <div class="chart-container" style="height: min(500px, 50vh)">
             <canvas ref="funnelChartCanvas"></canvas>
           </div>
@@ -970,7 +970,11 @@
         <p class="section-text"><strong>市场格局：</strong>标本艺术市场呈「大市场、小品牌」；近场竞争者分为传统工艺品、新兴文创、专业标本三类。对标体系看「怎么长成」，本区看「怎么抢份额」。</p>
       </div>
       <div class="competitor-grid">
-        <div class="chart-card"><h3 class="chart-title">核心竞品多维对比</h3><div class="chart-container" style="height: 400px;"><canvas ref="competitorRadarCanvas"></canvas></div></div>
+        <div class="chart-card">
+          <h3 class="chart-title">核心竞品多维对比</h3>
+          <p class="chart-note">六维分值为<b>示意数据</b>（用于确立对比维度与阅读方式），非调研实测得分；替换为真实打分前请勿据此判断竞争位次。</p>
+          <div class="chart-container" style="height: 400px;"><canvas ref="competitorRadarCanvas"></canvas></div>
+        </div>
         <div class="competitor-list">
           <div class="competitor-card" v-for="competitor in competitors" :key="competitor.name">
             <div class="competitor-header"><h4>{{ competitor.name }}</h4><span class="competitor-tag" :class="competitor.category">{{ competitor.categoryText }}</span></div>
@@ -1929,8 +1933,10 @@ import {
 // Chart.js 不稳定支持 CSS var()，因此图表统一使用 hex 常量
 // -------------------------------------------------
 const VI = {
-  brandGreen: '#2d6a4f',
-  brandGreen600: '#245a42',
+  // 品牌系列色 = 金（2026-09-16 黑金决策后 --brand-green-* 已不是品牌主色；
+  // 此处原为 brandGreen '#2d6a4f'，会让图表与令牌/侧栏/主色不一致）
+  brandGold: '#8b7534',        // = --gold-600，与 --viz-series-1 对齐
+  gold400Soft: '#c4a55a',
   gold400: '#c4a55a',
   earth600: '#74603e',
   textSecondary: '#6b665d',
@@ -2956,7 +2962,7 @@ ${salesScript.value.expectedEffect}
 // 产业链价值分布数据
 const valueChainStages = [
   { name: '上游-原材料采集', icon: '🌿', valueShare: 15, profitMargin: 25, color: '#a88d42' },
-  { name: '中游-加工制造', icon: '🏭', valueShare: 35, profitMargin: 20, color: VI.brandGreen },
+  { name: '中游-加工制造', icon: '🏭', valueShare: 35, profitMargin: 20, color: VI.brandGold },
   { name: '下游-品牌零售', icon: '🏪', valueShare: 50, profitMargin: 45, color: VI.gold400 }
 ]
 
@@ -3593,7 +3599,7 @@ const planningKpiStrip = computed(() => {
   ]
 })
 
-const PLANNING_CAPEX_COLORS = [VI.brandGreen, VI.gold400, VI.info, VI.sage]
+const PLANNING_CAPEX_COLORS = [VI.brandGold, VI.gold400, VI.info, VI.sage]
 
 /** 与环形图一致的图例行（占比 + 金额） */
 const planningCapexLegend = computed(() => {
@@ -3676,16 +3682,16 @@ const initTrendChart = () => {
         {
           label: '自然装饰标本搜索指数',
           data: searchData,
-          borderColor: VI.brandGreen,
+          borderColor: VI.brandGold,
           backgroundColor: 'rgba(45, 106, 79, 0.14)',
           fill: true,
           tension: 0.42,
           pointBackgroundColor: '#ffffff',
-          pointBorderColor: VI.brandGreen,
+          pointBorderColor: VI.brandGold,
           pointBorderWidth: 2,
           pointRadius: 5,
           pointHoverRadius: 7,
-          pointHoverBackgroundColor: VI.brandGreen,
+          pointHoverBackgroundColor: VI.brandGold,
           pointHoverBorderColor: '#ffffff',
           pointHoverBorderWidth: 2,
           borderWidth: 2.5
@@ -3839,7 +3845,7 @@ const initSupplyChart = () => {
       datasets: [{
         label: '产业聚集度指数 (0-100)',
         data: data.data,
-        backgroundColor: [VI.brandGreen, '#e3cf96', VI.gold400, '#a88d42', VI.earth600],
+        backgroundColor: [VI.brandGold, '#e3cf96', VI.gold400, '#a88d42', VI.earth600],
         borderRadius: 4
       }]
     },
@@ -3858,7 +3864,7 @@ const initSupplyChart = () => {
           padding: 12,
           titleFont: { size: 14, weight: 'bold' },
           bodyFont: { size: 13 },
-          borderColor: VI.brandGreen,
+          borderColor: VI.brandGold,
           borderWidth: 1,
           callbacks: {
             label: function(context) {
@@ -3913,7 +3919,7 @@ const initProductRadar = () => {
       datasets: [{
         label: '🦋 原蝶画 (主力)',
         data: [80, 70, 60, 75, 60],
-        borderColor: VI.brandGreen,
+        borderColor: VI.brandGold,
         backgroundColor: 'rgba(45, 106, 79, 0.2)'
       }, {
         label: '💍 树脂饰品 (引流)',
@@ -3955,7 +3961,7 @@ const initChannelChart = () => {
       datasets: [
         {
           data: [40, 25, 20, 15],
-          backgroundColor: [VI.brandGreen, VI.gold400, '#a88d42', '#e3cf96'],
+          backgroundColor: [VI.brandGold, VI.gold400, '#a88d42', '#e3cf96'],
           borderWidth: 2,
           borderColor: '#fff',
           hoverOffset: 6
@@ -4034,7 +4040,7 @@ const initIndustryGrowthChart = () => {
         {
           label: '市场规模 (亿元)',
           data: [45, 52, 62, 75, 85, 92, 95, 120, 155, 200],
-          borderColor: VI.brandGreen,
+          borderColor: VI.brandGold,
           backgroundColor: 'rgba(45, 106, 79, 0.1)',
           fill: true,
           tension: 0.4,
@@ -4099,9 +4105,9 @@ const initCompetitorRadarChart = () => {
         {
           label: '山海造物',
           data: [75, 50, 90, 60, 85, 65],
-          borderColor: VI.brandGreen,
+          borderColor: VI.brandGold,
           backgroundColor: 'rgba(45, 106, 79, 0.2)',
-          pointBackgroundColor: VI.brandGreen
+          pointBackgroundColor: VI.brandGold
         },
         {
           label: '自然造物',
@@ -4161,7 +4167,7 @@ const initProfit3DChart = () => {
             'rgba(208, 84, 80, 0.55)',
             calculatedProfit.value > 0 ? 'rgba(82, 183, 136, 0.85)' : 'rgba(208, 84, 80, 0.85)'
           ],
-          borderColor: [VI.brandGreen, VI.error, calculatedProfit.value > 0 ? VI.success : VI.error],
+          borderColor: [VI.brandGold, VI.error, calculatedProfit.value > 0 ? VI.success : VI.error],
           borderWidth: 1,
           borderRadius: 8,
           maxBarThickness: 72
@@ -4225,7 +4231,7 @@ const updateProfitChart = () => {
     'rgba(208, 84, 80, 0.55)',
     p > 0 ? 'rgba(82, 183, 136, 0.85)' : 'rgba(208, 84, 80, 0.85)'
   ]
-  profit3DChart.data.datasets[0].borderColor = [VI.brandGreen, VI.error, p > 0 ? VI.success : VI.error]
+  profit3DChart.data.datasets[0].borderColor = [VI.brandGold, VI.error, p > 0 ? VI.success : VI.error]
   profit3DChart.update('none')
 }
 
@@ -4374,7 +4380,7 @@ const initPlanningChart = () => {
         {
           label: '年营收（万元）',
           data: [480, 960, 2000, 2400],
-          borderColor: VI.brandGreen,
+          borderColor: VI.brandGold,
           backgroundColor: 'rgba(45, 106, 79, 0.14)',
           fill: true,
           tension: 0.35,
@@ -4382,7 +4388,7 @@ const initPlanningChart = () => {
           pointRadius: 5,
           pointHoverRadius: 7,
           pointBackgroundColor: '#ffffff',
-          pointBorderColor: VI.brandGreen,
+          pointBorderColor: VI.brandGold,
           pointBorderWidth: 2
         },
         {

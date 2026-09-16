@@ -1732,14 +1732,16 @@ const getWeather = async () => {
     isAIResponse.value = true
     
     const city = '上海'
+    // ⚠️ 硬编码的模拟天气（审计 §0 P0-20）：原先以真实播报口吻输出，
+    // 会让人以为接了气象数据源。这里显式标注「模拟」，接入真实天气 API 后删除标注。
     const mockWeather = {
       temp: '22',
       description: '晴朗',
       humidity: '65',
       wind: '3级'
     }
-    
-    currentMessage.value = `🌤️ ${city}今日天气：${mockWeather.description}，温度${mockWeather.temp}°C，湿度${mockWeather.humidity}%，${mockWeather.wind}风`
+
+    currentMessage.value = `🌤️ ${city}今日天气（模拟数据）：${mockWeather.description}，温度${mockWeather.temp}°C，湿度${mockWeather.humidity}%，${mockWeather.wind}风`
     
     if (autoVoiceEnabled.value) {
       await speakTextEnhanced(currentMessage.value)

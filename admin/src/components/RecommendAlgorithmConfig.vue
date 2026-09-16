@@ -198,6 +198,19 @@
           </div>
         </template>
 
+        <el-alert
+          type="warning"
+          :closable="false"
+          show-icon
+          style="margin-bottom: 12px;"
+          title="下方为静态示意结果，不是真实算法输出"
+        >
+          <template #default>
+            推荐服务尚未接入后端：这里展示的是固定样例，用于确认表格与字段口径。
+            <b>请勿据此做运营决策。</b>（审计 §0 P0-20）
+          </template>
+        </el-alert>
+
         <div v-if="testResults.length > 0">
           <el-table :data="testResults" style="width: 100%">
             <el-table-column prop="rank" label="排名" width="80" />
@@ -329,10 +342,11 @@ const testAlgorithm = async () => {
   testResults.value = []
   
   try {
-    // 模拟算法测试结果
+    // ⚠️ 这里从未调用真实推荐服务：只是固定样例 + 假延迟。
+    // 之所以仍保留：表格字段与排序口径需要一个可视化载体。
+    // 接入真实算法后必须删掉 mockResults 并把下方提示改为真实数据源（审计 §0 P0-20）。
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // 这里应该调用实际的推荐算法或API
+
     // 目前使用模拟数据
     const mockResults = [
       { rank: 1, title: 'Morpho Didius 大蓝闪蝶', type: '藏品', score: 95.5, reason: '基于您的浏览历史和收藏偏好' },
@@ -343,7 +357,8 @@ const testAlgorithm = async () => {
     ]
     
     testResults.value = mockResults
-    ElMessage.success('算法测试完成')
+    // 不写「算法测试完成」——那会让人以为真的跑了算法（审计 P0-20）
+    ElMessage.warning('已载入示意样例（推荐服务未接入，非真实算法结果）')
   } catch (err) {
     console.error('算法测试失败', err)
     ElMessage.error('算法测试失败')

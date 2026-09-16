@@ -565,6 +565,14 @@
                 <span class="info-label">服务地址：</span>
                 <span class="info-value-small">http://localhost:8080</span>
               </div>
+              <!-- 开机/关机/重启目前是前端 setTimeout 模拟（审计 §0 P0-20）：
+                   不能让人以为真的拉起了本地模型服务。接入后端后删除本提示。 -->
+              <div class="compact-info-row">
+                <span class="info-label"></span>
+                <el-tag type="warning" size="small" effect="plain">
+                  前端模拟状态 · 未接入本地模型服务
+                </el-tag>
+              </div>
               <div class="compact-info-row">
                 <span class="info-label">当前模型：</span>
                 <span class="info-value-small model-name">{{ currentModel?.name || '未选择' }}</span>
@@ -1117,9 +1125,9 @@ const serviceUptime = computed(() => {
 const startService = async () => {
   try {
     backendServiceStatus.value = 'starting'
-    ElMessage.info('正在启动本地模型服务...')
+    ElMessage.info('（前端模拟）正在启动本地模型服务…')
     
-    // 模拟服务启动（实际应该调用后端API）
+    // ⚠️ 前端模拟：从未调用后端 API（审计 §0 P0-20）。真实的模型能力走 aiHelper 的网关/Ollama 兜底。
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     backendServiceStatus.value = 'online'
@@ -1129,7 +1137,7 @@ const startService = async () => {
     // 启动后自动加载模型列表
     await refreshModelList()
     
-    ElMessage.success('本地模型服务已启动')
+    ElMessage.warning('已切换为「在线」状态（前端模拟，未真正启动模型服务）')
   } catch (error) {
     console.error('启动服务失败:', error)
     backendServiceStatus.value = 'offline'
@@ -1152,7 +1160,7 @@ const stopService = async () => {
     )
     
     backendServiceStatus.value = 'stopping'
-    ElMessage.info('正在停止本地模型服务...')
+    ElMessage.info('（前端模拟）正在停止本地模型服务…')
     
     // 模拟服务停止（实际应该调用后端API）
     await new Promise(resolve => setTimeout(resolve, 1500))
@@ -1161,7 +1169,7 @@ const stopService = async () => {
     serviceStartTime.value = null
     stopUptimeCounter()
     
-    ElMessage.success('本地模型服务已停止')
+    ElMessage.warning('已切换为「离线」状态（前端模拟）')
   } catch (error) {
     if (error !== 'cancel') {
       console.error('停止服务失败:', error)
@@ -1188,7 +1196,7 @@ const restartService = async () => {
     )
     
     backendServiceStatus.value = 'stopping'
-    ElMessage.info('正在重启本地模型服务...')
+    ElMessage.info('（前端模拟）正在重启本地模型服务…')
     
     // 先停止服务
     await new Promise(resolve => setTimeout(resolve, 1500))
@@ -1201,7 +1209,7 @@ const restartService = async () => {
     serviceStartTime.value = Date.now()
     startUptimeCounter()
     
-    ElMessage.success('本地模型服务已重启')
+    ElMessage.warning('已切换为「在线」状态（前端模拟，未真正重启服务）')
   } catch (error) {
     if (error !== 'cancel') {
       console.error('重启服务失败:', error)
@@ -1243,7 +1251,7 @@ const refreshModelList = async () => {
     refreshingModels.value = true
     ElMessage.info('正在刷新模型列表...')
     
-    // 模拟API调用（实际应该调用后端API获取模型列表）
+    // ⚠️ 前端模拟：模型列表来自内置常量，非后端返回（审计 §0 P0-20）
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     // 这里应该从API获取模型列表
