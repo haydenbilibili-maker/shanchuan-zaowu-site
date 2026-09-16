@@ -288,6 +288,18 @@ async function claimRegisterGift(openid, userDoc) {
     return { claimed: false, empty: true, msg: '新会员礼包内容为空' }
   }
 
+  // 「礼券总开关开着，却一张都发不出」= 配置被改坏（2026-09-15 / 2026-09-16 两次同形事故）。
+  // 旧逻辑把「券位为 0」当成 complete:true，于是用户只到账积分、没有券，
+  // 页面也不出现补领横幅，问题完全静默。这里强制留痕：registerGiftIncomplete=true，
+  // 用户在「我的」页看到补领横幅，配置修好后一按即补齐（幂等，不重复发积分）。
+  const couponsConfiguredButEmpty = !!(config.couponsEnabled && !couponSlots.length)
+  if (couponsConfiguredButEmpty) {
+    console.warn('register gift anomaly: couponsEnabled=true but 0 active coupon slots — flagging user for repair')
+  }
+  const repairMsg = couponsConfiguredButEmpty
+    ? '礼券配置异常（总开关已开但无启用券行），已标记待补领'
+    : '礼券尚未全部到账，请稍后重试补领'
+
   const dedupeKey = registerGiftDedupeKey(openid)
   const existing = await findGiftRecord(dedupeKey)
 

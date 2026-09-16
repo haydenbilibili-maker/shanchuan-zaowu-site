@@ -30,10 +30,10 @@ function getDefaultConfig() {
     stackable: false,
     priority: 100,
     // 与线上 member_welcome_gift（小程序-我的-超管工作台-新会员礼包）逐字对齐：
-    // 满49减10 / 满299减30 / 满499减50 / 满999减100
+    // 满49减5 / 满299减30 / 满499减50 / 满999减100
     // 各档门槛均高于折扣地板 ceil(value/0.25)，兜底配置也发不出穿底券
     coupons: [
-      { id: 'c10', enabled: true, value: 10, minSpend: 49, expireDays: 90, count: 1, title: '新会员礼券 · 10元', channel: 'all' },
+      { id: 'c5', enabled: true, value: 5, minSpend: 49, expireDays: 90, count: 1, title: '新会员礼券 · 5元', channel: 'all' },
       { id: 'c30', enabled: true, value: 30, minSpend: 299, expireDays: 90, count: 1, title: '新会员礼券 · 30元', channel: 'all' },
       { id: 'c50', enabled: true, value: 50, minSpend: 499, expireDays: 90, count: 1, title: '新会员礼券 · 50元', channel: 'all' },
       { id: 'c100', enabled: true, value: 100, minSpend: 999, expireDays: 90, count: 1, title: '新会员礼券 · 100元', channel: 'all' }
@@ -112,7 +112,36 @@ function validateConfigCoupons(config) {
     const check = validateCashCoupon(value, minSpend)
     if (!check.ok) return check
   }
-  return { ok: true }
+  return validateCouponsActivatable(src, coupons)
+}
+
+/**
+ * 「礼券总开关开着，却没有任何启用中的券行」= 静默停发。
+ *
+ * 真实事故（2026-09-15 与 2026-09-16 各一次）：超管工作台/ERP 保存时把 4 条券行
+ * 全部存成 `enabled:false`，而 `couponsEnabled` 仍是 true。发券侧 `activeCoupons()`
+ * 只取启用行 → 新用户照发 100 积分、礼券 0 张，且 `describeConfig` 只显示积分，
+ * 界面完全看不出来；注册用户也拿不到「补领」入口（见 upsertUserProfile 的 anomaly 留痕）。
+ * 这里把「会静默停发的配置」挡在保存之前，而不是等用户反馈。
+ *
+ * 只拦「有券行但全部不可用」；券行为空时 normalizeConfig 会回落到代码兜底档位，
+ * 不是停发，故不在此报错。
+ */
+function validateCouponsActivatable(config, coupons) {
+  const src = config && typeof config === 'object' ? config : {}
+  if (src.couponsEnabled === false) return { ok: true }
+  if (!coupons.length) return { ok: true }
+  const active = coupons.filter((row) => {
+    const r = row && typeof row === 'object' ? row : {}
+    if (r.enabled === false) return false
+    return toNumber(r.value, 0) > 0 && toNumber(r.count, 1) > 0
+  })
+  if (active.length) return { ok: true }
+  return {
+    ok: false,
+    code: 'COUPONS_ALL_DISABLED',
+    msg: '礼券总开关是开着的，但没有任何启用中的券行——保存后新用户将收不到礼券。请至少启用一条券行，或关闭「礼券」总开关。'
+  }
 }
 
 /**
