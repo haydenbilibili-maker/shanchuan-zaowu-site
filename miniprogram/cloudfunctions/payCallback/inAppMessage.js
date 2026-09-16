@@ -33,7 +33,7 @@ const MINI_TEMPLATES = {
     title: '藏品已售出',
     content: (v) =>
       `订单 ${v.orderNo || ''}\n「${v.productNames || '藏品'}」已售出\n可在标本师工作台查看工单与提成。`,
-    actionUrl: () => 'subpackages/manager/artisan/works/index?mode=jobs'
+    actionUrl: () => 'subpackages/extra/artisan/works/index?mode=jobs'
   },
   wishlist_restock_request: {
     category: 'ops',
@@ -125,7 +125,7 @@ const MINI_TEMPLATES = {
     category: 'system',
     title: '留言已入册',
     content: (v) => `你的「${v.topicLabel || '留言'}」留言已提交，专员将尽快回复`,
-    actionUrl: () => 'subpackages/feature/user/messages/index'
+    actionUrl: () => 'subpackages/extra/user/messages/index'
   },
   custom_inquiry_received: {
     category: 'custom',

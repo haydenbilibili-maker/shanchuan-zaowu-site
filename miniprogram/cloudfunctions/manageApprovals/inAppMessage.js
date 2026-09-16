@@ -9,21 +9,21 @@ const MINI_TEMPLATES = {
     queue: 'workflow',
     title: '审批已提交',
     content: (v) => `${v.title || '申请'}已提交，等待${v.approverLabel || '上级'}审核。`,
-    actionUrl: () => 'subpackages/manager/approvals/index'
+    actionUrl: () => 'subpackages/extra/approvals/index'
   },
   approval_approved: {
     category: 'ops',
     queue: 'workflow',
     title: '审批已通过',
     content: (v) => `${v.title || '申请'}已通过${v.deciderName ? '（' + v.deciderName + '）' : ''}。`,
-    actionUrl: () => 'subpackages/manager/approvals/index'
+    actionUrl: () => 'subpackages/extra/approvals/index'
   },
   approval_rejected: {
     category: 'ops',
     queue: 'workflow',
     title: '审批未通过',
     content: (v) => `${v.title || '申请'}未通过。原因：${v.reason || '未通过'}`,
-    actionUrl: () => 'subpackages/manager/approvals/index'
+    actionUrl: () => 'subpackages/extra/approvals/index'
   }
 }
 

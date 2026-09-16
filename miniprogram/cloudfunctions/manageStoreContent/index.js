@@ -25,6 +25,12 @@ const ALLOWED_COLLECTIONS = {
   categories: { publicRead: true },
   activities: { publicRead: true },
   rewards: { publicRead: false, shelfField: 'isOffShelf' },
+  // 权益与营销（ERP「权益与营销」页签）：会员权益卡 / 虚拟权益商品
+  vip_cards: { publicRead: false, shelfField: 'isOffShelf' },
+  equity_goods: { publicRead: false, shelfField: 'isOffShelf' },
+  // 飞书出货镜像：逐条 upsert 的镜像集合（SSOT 是 ops_shipments）。
+  // 写入是 best-effort（调用方 try/catch 不阻断主库），故这里放行只为让镜像能真正落库。
+  feishu_shipments: { publicRead: false },
   framers: { publicRead: true },
   care_guides: { publicRead: false },
   custom_configs: { publicRead: false },

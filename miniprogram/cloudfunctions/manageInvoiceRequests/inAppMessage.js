@@ -11,14 +11,14 @@ const MINI_TEMPLATES = {
       `订单 ${v.orderNo || ''} 的发票已开具。\n抬头：${v.title || ''}${
         v.invoiceNo ? `\n发票号：${v.invoiceNo}` : ''
       }${v.email ? `\n将发送至：${v.email}` : ''}${v.staffNote ? `\n备注：${v.staffNote}` : ''}`,
-    actionUrl: () => 'subpackages/feature/user/messages/index'
+    actionUrl: () => 'subpackages/extra/user/messages/index'
   },
   invoice_request_rejected: {
     category: 'system',
     title: '开票申请未通过',
     content: (v) =>
       `订单 ${v.orderNo || ''} 的开票申请未通过。\n抬头：${v.title || ''}\n原因：${v.rejectReason || ''}`,
-    actionUrl: () => 'subpackages/feature/user/messages/index'
+    actionUrl: () => 'subpackages/extra/user/messages/index'
   }
 }
 

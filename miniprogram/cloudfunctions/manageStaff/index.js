@@ -1158,7 +1158,9 @@ function formatArtisanProfile(row, fallbackName) {
     yearsExperience: row.yearsExperience != null ? parseInt(row.yearsExperience, 10) || 0 : 0,
     joinedAt: row.joinedAt || '',
     priceDelta: row.priceDelta != null ? Number(row.priceDelta) : 0,
-    extraDays: row.extraDays != null ? parseInt(row.extraDays, 10) || 0 : 0
+    extraDays: row.extraDays != null ? parseInt(row.extraDays, 10) || 0 : 0,
+    // 需求 14：是否有资质接受伴宠工单
+    petOrderQualified: row.petOrderQualified === true
   }
 }
 
@@ -1257,6 +1259,11 @@ async function saveArtisanProfile(event, openid, adminOpsKey) {
   const type = normalizeFramerType(event && event.type)
   const priceDelta = Math.round((parseFloat(event && event.priceDelta) || 0) * 100) / 100
   const extraDays = Math.max(0, parseInt((event && event.extraDays) || 0, 10) || 0)
+  // 需求 14：是否有资质接受伴宠工单（由标本师本人在小程序工作台自行声明）。
+  // ⚠️ 刻意用「字段是否出现」判定，而不是 `=== true` 兜底成 false：
+  // 旧版小程序客户端不会带这个字段，若一律写 false，会把已声明的资质**静默清掉**。
+  const hasPetOrderQualified = !!(event && Object.prototype.hasOwnProperty.call(event, 'petOrderQualified'))
+  const petOrderQualified = (event && event.petOrderQualified) === true
 
   const data = {
     name,
@@ -1281,6 +1288,8 @@ async function saveArtisanProfile(event, openid, adminOpsKey) {
     updateTime: db.serverDate(),
     updatedAt: Date.now()
   }
+  // 只在客户端显式携带该字段时才写入，避免旧客户端把已声明的资质清成 false
+  if (hasPetOrderQualified) data.petOrderQualified = petOrderQualified
 
   try {
     const staffRow = await findStaffMemberByOpenid(openid)

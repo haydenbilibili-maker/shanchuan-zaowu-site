@@ -161,37 +161,83 @@ function flattenProperties(properties) {
   return flat
 }
 
+/**
+ * 日汇总写入：dateKey + action 维度。
+ *
+ * 修复（真实报表缺陷 2026-09-16）：原实现是「先 where().limit(1).get() 再 add/update」的
+ * **无锁读改写**。并发首次写入时两个调用都读不到、都执行 add → 同一 `dateKey+action`
+ * 产生**多份文档**，而看板/Dashboard 对该维度求和或取 uv 并集 → **重复计数**。
+ *
+ * 现在用确定性 `_id`（`<dateKey>::<action>`）：
+ *   - 首次 add 由主键唯一性保证只有一份文档落库；
+ *   - 并发下第二个 add 抛 duplicate → 回落到原子 `update`（count/uv 都是原子算子）；
+ *   - 与既有「先查后写」相比去掉了竞态窗口，且不再需要预读。
+ *
+ * ⚠️ 历史数据：修复前可能已存在重复文档，需一次性归并（见
+ * `miniprogram/scripts/dedupe-analytics-daily.mjs`），否则历史口径仍偏大。
+ */
+function dailyRollupId(dateKey, action) {
+  // 云库 _id 不允许 '/' 等特殊字符；'::' 安全且可读
+  return `${String(dateKey)}::${String(action)}`
+}
+
+function isDuplicateKeyError(e) {
+  const msg = String((e && (e.message || e.errMsg || e.errCode)) || '')
+  return /duplicate|E11000|already exist|_id.*exist/i.test(msg)
+}
+
 async function bumpDailyRollup(event) {
   const { dateKey, action, module, userId } = event
   if (!dateKey || !action) return
 
-  try {
-    const coll = db.collection('analytics_daily')
-    const found = await coll.where({ dateKey, action }).limit(1).get()
+  const coll = db.collection('analytics_daily')
+  const docId = dailyRollupId(dateKey, action)
+  const now = new Date()
 
-    if (found.data && found.data.length) {
-      await coll.doc(found.data[0]._id).update({
-        data: {
-          count: _.inc(1),
-          uv: _.addToSet(userId),
-          updatedAt: new Date()
-        }
-      })
-    } else {
-      await coll.add({
-        data: {
-          dateKey,
-          action,
-          module: module || 'system',
-          count: 1,
-          uv: [userId],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      })
-    }
+  try {
+    await coll.add({
+      data: {
+        _id: docId,
+        dateKey,
+        action,
+        module: module || 'system',
+        count: 1,
+        uv: userId ? [userId] : [],
+        uvCount: userId ? 1 : 0,
+        createdAt: now,
+        updatedAt: now
+      }
+    })
+    return
   } catch (e) {
-    console.warn('analytics_daily rollup skip', e.message)
+    if (!isDuplicateKeyError(e)) {
+      console.warn('analytics_daily rollup add skip', e && e.message)
+      return
+    }
+  }
+
+  // 文档已存在：count 用原子算子；uv 用 addToSet 保证幂等。
+  // uvCount 需「确认该用户此前不在 uv 中」才自增——这会多一次读，但与 count 不同：
+  // 重复上报同一用户若用 _.inc 会持续放大，反而制造新的口径错误。
+  // 残余风险：同一用户的**首次并发**两条上报可能都读到「不在」，使 uvCount 偏大 ≤1；
+  // 已有读方（Dashboard/RealtimeMonitor）都直接对 uv 去重，故不影响现有报表。
+  try {
+    const patch = { count: _.inc(1), updatedAt: now }
+    if (userId) {
+      let isNewUser = false
+      try {
+        const seen = await coll.doc(docId).field({ uv: true }).get()
+        const arr = (seen && seen.data && seen.data.uv) || []
+        isNewUser = !arr.includes(userId)
+      } catch (e) {
+        isNewUser = false
+      }
+      patch.uv = _.addToSet(userId)
+      patch.uvCount = isNewUser ? _.inc(1) : _.inc(0)
+    }
+    await coll.doc(docId).update({ data: patch })
+  } catch (e) {
+    console.warn('analytics_daily rollup update skip', e && e.message)
   }
 }
 

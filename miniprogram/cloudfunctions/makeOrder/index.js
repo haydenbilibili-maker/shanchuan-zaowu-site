@@ -426,6 +426,8 @@ exports.main = async (event, context) => {
       openid,
       relatedId: orderRes._id,
       vars: {
+        // 需求 10：productNames 只够做正文摘要；products 供信件渲染「名称+图片+规格」商品卡
+        products: pricing.products,
         productNames: productNames || '藏品订单',
         totalPrice: pricing.totalPrice
       }

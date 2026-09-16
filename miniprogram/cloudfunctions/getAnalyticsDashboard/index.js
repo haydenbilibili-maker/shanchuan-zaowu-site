@@ -53,15 +53,99 @@ const REPORT_STORES = [
     aliases: []
   }
 ]
-const BEHAVIOR_SAMPLE = 4000
-const ORDER_SCAN_MAX = 4000
-const PRODUCT_SCAN_MAX = 3000
-const DEPOSIT_SCAN_MAX = 1500
-const COMMISSION_SCAN_MAX = 1500
-const USER_SCAN_MAX = 3000
+// 采样上限一律来自单一真源（#26：此前各函数就地写数字，同一指标两个口径）
+const {
+  BEHAVIOR_SAMPLE_LIMIT,
+  DAILY_ROLLUP_LIMIT,
+  ORDER_SCAN_MAX,
+  PRODUCT_SCAN_MAX,
+  DEPOSIT_SCAN_MAX,
+  COMMISSION_SCAN_MAX,
+  USER_SCAN_MAX,
+  ERROR_SCAN_MAX
+} = require('./analyticsLimits')
+const BEHAVIOR_SAMPLE = BEHAVIOR_SAMPLE_LIMIT
 const LOW_STOCK_THRESHOLD = 3
 const MS_DAY = 24 * 60 * 60 * 1000
 const TZ_SHANGHAI = 8 * 60 * 60 * 1000
+
+/**
+ * C 端错误日志聚合（#26-B）。
+ *
+ * 背景：`logError` → `error_logs` 规则为 `read:false`（仅云函数可读写），
+ * 且 `admin/src` 全目录**零引用** → C 端 JS 错误率在 ERP 完全不可见。
+ * 本函数作为**只读代理**把聚合结果交给 ERP；`getAnalyticsDashboard` 已在 admin 代理白名单内，
+ * 故**不新开云函数、不触发三处同步**，且鉴权口径与其它报表一致（staffGuard）。
+ *
+ * 只返回**聚合 + 少量样本**，不回传全量 stack（避免把日志集合当明细表拉爆带宽）。
+ */
+async function errorMetrics(event) {
+  const startDate = normalizeDateStr(event.startDate)
+  const endDate = normalizeDateStr(event.endDate)
+  const notes = []
+  let rows = []
+  try {
+    let query = db.collection('error_logs')
+    if (startDate || endDate) {
+      const startMs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : 0
+      const endMs = endDate ? new Date(`${endDate}T23:59:59`).getTime() : Date.now()
+      query = query.where({ timestamp: _.gte(startMs).and(_.lte(endMs)) })
+    }
+    const res = await query.orderBy('timestamp', 'desc').limit(ERROR_SCAN_MAX).get()
+    rows = res.data || []
+    if (rows.length >= ERROR_SCAN_MAX) notes.push(`错误日志已采样最近 ${ERROR_SCAN_MAX} 条`)
+  } catch (e) {
+    // 集合不存在 / 权限问题 → 明确报错，**不返回 0**（否则会被误读成「很健康」）
+    return {
+      available: false,
+      error: (e && e.message) || 'error_logs 读取失败',
+      notes: ['error_logs 不可读：请确认集合存在且云函数可访问']
+    }
+  }
+
+  const byType = {}
+  const byDate = {}
+  const byPage = {}
+  const byMessage = {}
+  const users = new Set()
+  rows.forEach((r) => {
+    const type = String((r && r.type) || 'unknown')
+    byType[type] = (byType[type] || 0) + 1
+    const d = toBizDate(r && r.timestamp)
+    if (d) byDate[d] = (byDate[d] || 0) + 1
+    const page = String((r && r.page) || '').trim()
+    if (page) byPage[page] = (byPage[page] || 0) + 1
+    const msg = String((r && r.message) || '').slice(0, 120)
+    if (msg) byMessage[msg] = (byMessage[msg] || 0) + 1
+    if (r && r._openid) users.add(String(r._openid))
+  })
+
+  const sortDesc = (obj, n) =>
+    Object.keys(obj)
+      .map((k) => ({ key: k, count: obj[k] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, n)
+
+  return {
+    available: true,
+    total: rows.length,
+    affectedUsers: users.size,
+    byType: sortDesc(byType, 10),
+    byDate: Object.keys(byDate)
+      .sort()
+      .map((d) => ({ date: d, count: byDate[d] })),
+    topPages: sortDesc(byPage, 10),
+    topMessages: sortDesc(byMessage, 10),
+    samples: rows.slice(0, 10).map((r) => ({
+      type: r.type || '',
+      message: String(r.message || '').slice(0, 200),
+      page: r.page || '',
+      stack: String(r.stack || '').slice(0, 300),
+      time: r.timestamp || 0
+    })),
+    notes
+  }
+}
 
 /**
  * 数据信号灯阈值（可解释、避免假精确）
@@ -518,14 +602,22 @@ async function loadBehaviors(startTs, endTs, limit = BEHAVIOR_SAMPLE) {
   return res.data || []
 }
 
+/**
+ * 读取日汇总。
+ *
+ * ⚠️ 这里此前硬编码 `limit(500)`：`analytics_daily` 是「一日 × 一 action」一行，
+ * 30 天区间在事件类型多时**会超过 500 行 → 静默丢行 → 看板日趋势偏低**。
+ * 现改为真源常量，并在触顶时把截断写进 notes（不静默）。
+ */
 async function loadDailyRollup(dateKeys) {
   if (!dateKeys.length) return []
   try {
     const res = await db
       .collection('analytics_daily')
       .where({ dateKey: _.in(dateKeys) })
-      .limit(500)
+      .limit(DAILY_ROLLUP_LIMIT)
       .get()
+    // 截断与否交给调用方用 rows.length 判定（不引入跨调用的可变状态）
     return res.data || []
   } catch (e) {
     return []
@@ -804,6 +896,9 @@ async function usersMetrics(event) {
     notes.push('DAU 来自行为表最近采样，非全量 UV')
   } else if (dauSource === 'analytics_daily') {
     notes.push('DAU：各事件 UV 合并去重，可能略高于真实独立访客')
+  }
+  if (Array.isArray(dailyRollup) && dailyRollup.length >= DAILY_ROLLUP_LIMIT) {
+    notes.push(`日汇总读取上限 ${DAILY_ROLLUP_LIMIT} 行，日趋势可能略低估`)
   }
   if (behaviorSampled) {
     notes.push(`行为事件已采样最近 ${BEHAVIOR_SAMPLE} 条`)
@@ -1672,14 +1767,19 @@ async function overview(event) {
     summary: agg,
     funnel,
     dailyTrend,
-    sampled: rows.length >= BEHAVIOR_SAMPLE,
-    note: rows.length >= BEHAVIOR_SAMPLE ? `数据已采样最近 ${BEHAVIOR_SAMPLE} 条，UV 为采样内估算` : ''
+    sampled: rows.length >= BEHAVIOR_SAMPLE || daily.length >= DAILY_ROLLUP_LIMIT,
+    note: [
+      rows.length >= BEHAVIOR_SAMPLE ? `行为数据已采样最近 ${BEHAVIOR_SAMPLE} 条，UV 为采样内估算` : '',
+      daily.length >= DAILY_ROLLUP_LIMIT ? `日汇总读取上限 ${DAILY_ROLLUP_LIMIT} 行，日趋势可能略低估` : ''
+    ].filter(Boolean).join('；')
   }
 }
 
 async function topEvents(event) {
   const { startTs, endTs } = parseRange(event)
-  const rows = await loadBehaviors(startTs, endTs, 3000)
+  // 这里此前写死 3000 —— 与 BEHAVIOR_SAMPLE(4000) / BEHAVIOR_PULSE(1000) 都不相等，
+  // 是「同一集合第三种口径」。收敛到共享采样上限（#26）。
+  const rows = await loadBehaviors(startTs, endTs, BEHAVIOR_SAMPLE_LIMIT)
   return { events: aggregateRows(rows).byAction }
 }
 
@@ -2167,6 +2267,10 @@ exports.main = async (event = {}) => {
         break
       case 'report':
         data = await report(event, guard.actor)
+        break
+      case 'errors':
+        // #26-B：C 端 JS 错误聚合（error_logs 只读代理）
+        data = await errorMetrics(event)
         break
       case 'topEvents':
         data = await topEvents(event)

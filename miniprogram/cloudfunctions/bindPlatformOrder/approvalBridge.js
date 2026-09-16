@@ -75,6 +75,25 @@ async function enqueueApproval(db, input = {}) {
 
   try {
     const added = await db.collection(COLLECTION).add({ data: doc })
+    // 需求 16：审批创建后尽力下发「服务通知」（微信订阅消息）给审批人 —— 此前只有站内信，
+    // 审批人离开小程序就收不到。**不 await**：通知失败绝不能影响审批单创建这条主链路。
+    // 模板未配置时 dispatchMessage 会优雅跳过（TMPL_PENDING），故可先行上线。
+    try {
+      const { notifyApproversSubscribe } = require('./workOrderNotify')
+      const cloud = require('wx-server-sdk')
+      Promise.resolve(
+        notifyApproversSubscribe(cloud, db, {
+          actionType,
+          approvalId: added._id,
+          title: doc.title,
+          applicantName: doc.applicantName,
+          approverRole,
+          applicantOpenid: doc.applicantOpenid
+        })
+      ).catch(() => {})
+    } catch (e) {
+      console.warn('enqueueApproval notify subscribe skip', e && e.message)
+    }
     return { ok: true, approvalId: added._id, approverRole }
   } catch (e) {
     console.warn('enqueueApproval', e && e.message)

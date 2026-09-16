@@ -1,5 +1,5 @@
 /**
- * 内容展示开关（馆藏标本档案 / 我的山海社区 / 预约入口 / 标本定制 / 伴宠记忆 / 馆内直播 / 储值卡 / AI 鉴定 / 这有店 / 门店自取 / 礼赠）
+ * 内容展示开关（馆藏标本档案 / 我的山海社区 / 预约入口 / 标本定制 / 伴宠记忆 / 馆内直播 / 储值卡 / AI 鉴定 / 这有店 / 门店自取 / 礼赠 / 马上有祈福）
  * - get（默认）：任意端可读；缺配置时标本档案/社区/标本定制/直播/储值/礼赠关闭、预约 / 伴宠记忆 / AI 鉴定 / 这有店 / 门店自取开启
  * - save：超管 / Admin Web（adminOpsKey）写入 content_display_flags
  */
@@ -29,7 +29,20 @@ function getDefaultFlags() {
     // 门店自取为在售能力；缺配置默认开启，仅显式 false 关闭
     showStorePickup: true,
     // 礼赠为新能力；缺配置默认关闭，由超管显式开启
-    showGift: false
+    showGift: false,
+    // iOS 储值充值：缺配置默认**开启**（2026-09-16 恢复）。
+    // 原「iOS 一律禁止充值」是 2026-09-15 提审前自审加入的约束（platform.js 当时新建，
+    // 依据条款未经核实），并非平台已确认的硬规则；此处改为超管可控开关，
+    // 若后续合规复核确认需限制，可在工作台一键关闭而无需改代码。
+    allowIosStoredValue: true,
+    // 列表缩略图：缺配置默认**开启**（能力不支持时会自动回落原图）
+    imageThumbEnabled: true,
+    // 山海图鉴 / 我的成就（需求 22/23）：现网已开放 → 缺配置默认**开启**（关掉会让现有入口消失，属回归）
+    showAtlas: true,
+    showAchievements: true,
+    // 需求 28：「马上有」祈福弹幕。UGC 从零开发的**新**能力 → 缺配置默认**关闭**，
+    // 由超管在内容模块显式开启；出事时一键关闭写入与展示，无需发版。
+    showMaShangYou: false
   }
 }
 
@@ -55,7 +68,16 @@ function normalizeFlags(doc) {
     // 缺字段 / undefined → true；门店自取在售，仅显式 false 关闭
     showStorePickup: src.showStorePickup !== false,
     // 缺字段 / undefined → false；礼赠默认关闭
-    showGift: src.showGift === true
+    showGift: src.showGift === true,
+    // 缺字段 / undefined → true；仅显式 false 关闭 iOS 储值充值
+    allowIosStoredValue: src.allowIosStoredValue !== false,
+    // 缺字段 / undefined → true；仅显式 false 关闭
+    imageThumbEnabled: src.imageThumbEnabled !== false,
+    // 需求 22/23：缺字段 / undefined → true；仅显式 false 关闭
+    showAtlas: src.showAtlas !== false,
+    showAchievements: src.showAchievements !== false,
+    // 需求 28：缺字段 / undefined → false；UGC 新能力默认关闭
+    showMaShangYou: src.showMaShangYou === true
   }
 }
 
@@ -126,7 +148,12 @@ async function saveFlags(event, openid) {
     showAiIdentify: incoming.showAiIdentify,
     showStore: incoming.showStore,
     showStorePickup: incoming.showStorePickup,
-    showGift: incoming.showGift
+    showGift: incoming.showGift,
+    allowIosStoredValue: incoming.allowIosStoredValue,
+    imageThumbEnabled: incoming.imageThumbEnabled,
+    showAtlas: incoming.showAtlas,
+    showAchievements: incoming.showAchievements,
+    showMaShangYou: incoming.showMaShangYou
   })
 
   const docId = String((event && event.docId) || '').trim()

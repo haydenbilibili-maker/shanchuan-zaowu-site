@@ -37,6 +37,23 @@ exports.main = async (event) => {
     return seedTemplates(event || {})
   }
 
+  // 需求 16：工单类「服务通知」（微信订阅消息）统一入口。
+  // 为什么放在这里而不是各调用方：dispatchMessage 已是全仓唯一写 user_messages/notification_logs
+  // 的地方，且本函数刚刚获得 subscribeMessage.send 权限；放这里可避免在 9 个
+  // approvalBridge 副本里各写一遍。
+  // 未配置模板环境变量时**优雅跳过**（不报错、不阻断），模板审批通过后加环境变量即生效。
+  if (action === 'notifyWorkOrder') {
+    const { category, openid: woOpenid, relatedId: woRelatedId, vars: woVars } = event
+    const { notifyWorkOrder } = require('./workOrderSubscribe')
+    const result = await notifyWorkOrder(cloud, db, {
+      category,
+      openid: woOpenid,
+      relatedId: woRelatedId,
+      vars: woVars
+    })
+    return { success: true, ...result }
+  }
+
   if (action === 'dispatch') {
     const {
       eventType,

@@ -327,7 +327,7 @@ async function checkAndNotifyGiftDelivered(order, { force = false, simulateStatu
     eventType: 'gift_delivered',
     openid: giver,
     relatedId: order._id,
-    vars: { orderNo, productTitle }
+    vars: { orderNo, productTitle, products: order.products }
   }).catch((err) => {
     console.warn('gift_delivered message failed:', err)
     return { success: false, msg: (err && err.message) || 'send_failed' }
@@ -1184,7 +1184,8 @@ async function advanceProduction(orderId, productionStatus, access, openid, opti
       eventType,
       openid: buyerOpenid,
       relatedId: orderId,
-      vars: { orderNo: order.orderNo || '' }
+      // 需求 10：定制制作类信件原先只写订单号，用户看不出做的是哪件 —— 补商品信息
+      vars: { orderNo: order.orderNo || '', products: order.products }
     }).catch((err) => console.warn('advanceProduction message', err))
   }
 
@@ -1403,6 +1404,7 @@ exports.main = async (event) => {
           relatedId: oid,
           vars: {
             orderNo: order.orderNo || '',
+            products: order.products,
             productNames: productNames || '藏品',
             tip: '门店自取已完成'
           }
@@ -1547,6 +1549,7 @@ exports.main = async (event) => {
         relatedId: order._id,
         vars: {
           orderNo: order.orderNo || '',
+          products: order.products,
           productNames: summary.title,
           tip: '门店自取已完成'
         }

@@ -9,7 +9,7 @@ const MINI_TEMPLATES = {
     title: '开票申请已入册',
     content: (v) =>
       `订单 ${v.orderNo || ''} 的开票申请已提交\n抬头：${v.title || ''}\n专员核对后将开具电子发票并发送`,
-    actionUrl: () => 'subpackages/feature/user/messages/index'
+    actionUrl: () => 'subpackages/extra/user/messages/index'
   },
   invoice_request_staff: {
     category: 'ops',

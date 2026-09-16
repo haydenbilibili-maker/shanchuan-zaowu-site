@@ -46,7 +46,7 @@ const MINI_TEMPLATES = {
     category: 'system',
     title: '留言已入册',
     content: (v) => `你的「${v.topicLabel || '留言'}」留言已提交，专员将尽快回复`,
-    actionUrl: () => 'subpackages/feature/user/messages/index'
+    actionUrl: () => 'subpackages/extra/user/messages/index'
   },
   custom_inquiry_received: {
     category: 'custom',

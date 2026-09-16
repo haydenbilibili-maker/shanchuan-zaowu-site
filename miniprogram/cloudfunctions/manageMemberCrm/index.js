@@ -12,6 +12,8 @@
  */
 const crypto = require('crypto')
 const cloud = require('wx-server-sdk')
+// #26：CRM 拉取上限来自真源（此前就地写死 1000，与其它页口径无从比较）
+const { CRM_FETCH_CAP } = require('./analyticsLimits')
 const { assertStaff, WORKSPACE_SUPER_ADMIN } = require('./staffGuard')
 const { loadBalance, ensureUserDoc } = require('./pointsBalance')
 const { loadMemberLevels, resolveMemberLevel } = require('./memberLevels')
@@ -122,7 +124,7 @@ function round2(value) {
 }
 const _ = db.command
 
-const FETCH_CAP = 1000
+const FETCH_CAP = CRM_FETCH_CAP
 const LIST_RETURN_CAP = 200
 const POINT_RECORDS = 'point_records'
 

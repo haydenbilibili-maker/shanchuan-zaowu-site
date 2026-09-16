@@ -511,7 +511,7 @@ async function acceptGift(event, openid) {
     eventType: 'gift_accepted',
     openid: giver,
     relatedId: order._id,
-    vars: { orderNo: order.orderNo || '' }
+    vars: { orderNo: order.orderNo || '', products: order.products }
   }).catch(() => {})
 
   order.giftMeta = {
@@ -677,7 +677,7 @@ async function submitAddress(event, openid) {
 
   const giver = String(order._openid || order.openid || '').trim()
   const receiver = String(openid || '').trim()
-  const addrVars = { orderNo: order.orderNo || '' }
+  const addrVars = { orderNo: order.orderNo || '', products: order.products }
 
   // 赠予者：TA 已留下地址（dedupe: gift_address_submitted:orderId:openid）
   if (giver) {
@@ -744,7 +744,7 @@ async function nudge(event, openid) {
     eventType: 'gift_nudge',
     openid,
     relatedId: orderId,
-    vars: { orderNo: order.orderNo || '' }
+    vars: { orderNo: order.orderNo || '', products: order.products }
   }).catch(() => {})
 
   if (meta.receiverOpenid) {
@@ -838,7 +838,7 @@ async function expireSweep(event, openid) {
             eventType: 'gift_expired_refund',
             openid: giver,
             relatedId: order._id,
-            vars: { orderNo: order.orderNo || '' }
+            vars: { orderNo: order.orderNo || '', products: order.products }
           }).catch(() => {})
           await notifyGiftSubscribe(cloud, 'expire', {
             openid: giver,
@@ -986,7 +986,7 @@ async function nudgeSweep(event, openid) {
           eventType: 'gift_nudge',
           openid: giver,
           relatedId: order._id,
-          vars: { orderNo: order.orderNo || '' }
+          vars: { orderNo: order.orderNo || '', products: order.products }
         }).catch(() => {})
         const tip =
           dayIndex === 6
@@ -1051,7 +1051,7 @@ async function nudgeSweep(event, openid) {
             eventType: 'gift_nudge',
             openid: giver,
             relatedId: order._id,
-            vars: { orderNo: order.orderNo || '' }
+            vars: { orderNo: order.orderNo || '', products: order.products }
           }).catch(() => {})
           await notifyGiftSubscribe(cloud, dayIndex === 6 ? 'expire' : 'nudge', {
             openid: giver,

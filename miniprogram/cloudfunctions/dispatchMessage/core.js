@@ -1,4 +1,4 @@
-const { orderProductLine } = require('./orderSummary')
+const { orderProductLine, pickMessageProducts } = require('./orderSummary')
 const {
   DEFAULT_TEMPLATES,
   QUEUE_CUSTOMER,
@@ -67,7 +67,9 @@ async function writeMessage(db, payload) {
     templateCode = '',
     dedupeKey = '',
     campaignId = '',
-    queue = QUEUE_CUSTOMER
+    queue = QUEUE_CUSTOMER,
+    // 需求 10：商品卡（名称 + 图片 + 规格）
+    products = []
   } = payload
 
   const resolvedQueue = resolveMessageQueue({
@@ -96,6 +98,9 @@ async function writeMessage(db, payload) {
     _createTime: db.serverDate()
   }
   if (campaignId) data.campaignId = campaignId
+  // 需求 10：信件里按「名称 + 图片 + 规格」展示商品。空数组不落字段，
+  // 让「没有商品的信」与「有商品的信」在文档层面可区分（前端据 hasProducts 渲染）。
+  if (Array.isArray(products) && products.length) data.products = products
 
   const addRes = await db.collection('user_messages').add({ data })
 
@@ -158,6 +163,9 @@ async function dispatch(db, options) {
       fallback: vars.productNames || '藏品订单'
     })
   }
+  // 需求 10：同步裁出「名称 + 图片 + 规格」商品卡并落库，供信件详情页渲染。
+  // 放在 dispatch 里统一做，各调用方只需把 order.products 传进 vars，无需各自裁剪。
+  const messageProducts = pickMessageProducts(vars.products)
   const title = overrideTitle || renderTemplate(template.titleTemplate, mergedVars)
   const content = overrideContent !== undefined
     ? overrideContent
@@ -200,7 +208,9 @@ async function dispatch(db, options) {
     actionUrl,
     templateCode: eventType,
     dedupeKey,
-    campaignId
+    campaignId,
+    // 需求 10：商品卡随信落库
+    products: messageProducts
   })
 
   return { success: true, messageId, dedupeKey, queue }

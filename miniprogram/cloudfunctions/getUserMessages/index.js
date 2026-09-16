@@ -231,6 +231,9 @@ function normalizeMessage(doc, source = 'user_messages') {
     channel: doc.channel || (campaignId ? 'inapp_campaign' : 'inapp'),
     actionUrl: inferActionUrl(type, relatedId, doc.actionUrl || ''),
     icon: doc.icon || '',
+    // 需求 10：信件商品卡（名称 + 图片 + 规格）。历史消息没有该字段 → 返回 []，
+    // 前端据此决定是否渲染卡片；不在这里补默认图，以免给旧信凭空造出商品。
+    products: normalizeProducts(doc.products),
     read: doc.read === true,
     createTime: doc.createTime || doc.sentAt || doc._createTime,
     _createTime: doc._createTime || doc.sentAt || doc.createTime,
@@ -238,6 +241,30 @@ function normalizeMessage(doc, source = 'user_messages') {
     _source: source,
     _altId: ''
   }
+}
+
+/**
+ * 需求 10：把商品卡裁成前端只需要的四项（名称/图片/规格/数量）。
+ * 云库文档可能是历史版本或被人工改过，故这里再做一次防御性收敛，
+ * 顺带把图片限制为「非空字符串」，避免前端渲染出破图占位。
+ */
+function normalizeProducts(raw) {
+  const list = Array.isArray(raw) ? raw : []
+  const out = []
+  for (const item of list.slice(0, 5)) {
+    if (!item || typeof item !== 'object') continue
+    const title = String(item.title || '').trim().slice(0, 60)
+    const image = String(item.image || '').trim().slice(0, 512)
+    if (!title && !image) continue
+    out.push({
+      id: String(item.id || '').trim().slice(0, 64),
+      title: title || '藏品',
+      image,
+      skuLabel: String(item.skuLabel || '').trim().slice(0, 40),
+      count: Math.max(1, parseInt(item.count, 10) || 1)
+    })
+  }
+  return out
 }
 
 function eventDedupeKey(item) {
@@ -262,6 +289,9 @@ function mergePair(prev, item) {
     queue: primary.queue || secondary.queue || resolveMessageQueue(primary),
     content: primary.content || secondary.content,
     title: primary.title || secondary.title,
+    // 需求 10：通知日志行永远没有商品卡（只有 user_messages 有），
+    // 若让它按 primary 覆盖，会把另一侧真实商品的卡抹成空数组。
+    products: (primary.products && primary.products.length) ? primary.products : (secondary.products || []),
     _id: primary._id,
     _altId: secondary._id && secondary._id !== primary._id ? secondary._id : (primary._altId || ''),
     _source: primary._source

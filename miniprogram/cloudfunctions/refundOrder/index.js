@@ -720,7 +720,7 @@ async function giftExpireRefund(orderId, openid, event) {
       eventType: 'gift_expired_refund',
       openid: order._openid,
       relatedId: orderId,
-      vars: { orderNo: order.orderNo || '' }
+      vars: { orderNo: order.orderNo || '', products: order.products }
     }).catch(() => {})
   }
 

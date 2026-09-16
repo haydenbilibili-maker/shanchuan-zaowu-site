@@ -68,4 +68,58 @@ function orderProductLine(products, options = {}) {
   return merged.length > max ? `${head}\n等 ${merged.length} 件` : head
 }
 
-module.exports = { orderProductLine, formatOrderItem, DEFAULT_MAX_ITEMS }
+/** 站内信商品卡上限：超出只留前 N 件，避免私信文档与渲染都过长 */
+const DEFAULT_CARD_MAX = 5
+
+/**
+ * 站内信商品卡（需求 10：信件里的商品展示粒度 = **名称 + 图片 + 规格**）。
+ *
+ * 为什么不直接存 order.products：它带着 price / craftType / framerName / tags 等
+ * **内部字段**——私信文档没必要、也不该带上（读到一封信就能反推成本与内部枚举码）。
+ * 所以这里单独裁一遍，只留可展示口径。
+ *
+ * 同款同规格（title+skuLabel+image 相同）合并计数，避免 SKU 被拆行时出现重复卡片。
+ *
+ * @param {Array} products order.products
+ * @param {{max?: number}} [options]
+ * @returns {Array<{id:string,title:string,image:string,skuLabel:string,count:number}>}
+ */
+function pickMessageProducts(products, options = {}) {
+  const max = Number(options.max) > 0 ? Number(options.max) : DEFAULT_CARD_MAX
+  const list = (Array.isArray(products) ? products : []).filter(Boolean)
+  const merged = []
+  for (const item of list) {
+    if (!item || typeof item !== 'object') continue
+    const p = item
+    const title = clean(p.title) || clean(p.name)
+    const image = clean(p.image) || clean(p.cover)
+    const skuLabel = clean(p.skuLabel)
+    // 名称与图片都没有的条目对用户毫无信息量，直接丢
+    if (!title && !image) continue
+    const id = clean(p.id) || clean(p.productId)
+    const key = `${title}|${skuLabel}|${image}`
+    const hit = merged.find((m) => m.key === key)
+    if (hit) {
+      hit.count += Math.max(1, parseInt(p.count, 10) || 1)
+      continue
+    }
+    merged.push({
+      key,
+      id: id.slice(0, 64),
+      title: (title || '藏品').slice(0, 60),
+      image: image.slice(0, 512),
+      skuLabel: skuLabel.slice(0, 40),
+      count: Math.max(1, parseInt(p.count, 10) || 1)
+    })
+    if (merged.length >= max) break
+  }
+  return merged.map(({ key, ...rest }) => rest)
+}
+
+module.exports = {
+  orderProductLine,
+  formatOrderItem,
+  pickMessageProducts,
+  DEFAULT_MAX_ITEMS,
+  DEFAULT_CARD_MAX
+}

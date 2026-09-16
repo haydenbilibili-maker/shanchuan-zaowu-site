@@ -362,6 +362,9 @@ function productProtectionFromList(products) {
   return { type: hit.protectionType, title: hit.title || '' }
 }
 
+// 需求 1：同物种去重键（canonical 真源，回填脚本共用同一实现，避免判定漂移）
+const { buildSpeciesDedupKey } = require('./speciesDedupKey')
+
 function confidenceToLevel(conf, isSpecimen) {
   if (!isSpecimen) return 'low'
   if (typeof conf !== 'number') return 'medium'
@@ -524,9 +527,104 @@ async function fetchRelatedWikiArchive(species) {
   }
 }
 
+/**
+ * 需求 1 存量回填：为缺少 `species_dedup_key` 的历史记录补键。
+ *
+ * 为什么必须回填：该键只在**建记录时**写入，存量记录没有它 → 同物种去重对旧数据不生效。
+ *
+ * 设计：
+ *   - **默认 dry-run**（只统计与抽样，不写库）；需显式 `apply: true` 才写
+ *   - 分批扫描（`limit`，默认 100/批；`cursor` 传上一批最后一个 `_id` 做翻页）
+ *   - 幂等：已有 `species_dedup_key` 的记录跳过
+ *   - 统计命中情况，便于判断「存量里有多少条本该被合并」
+ *
+ * @returns {{success:boolean, mode:string, scanned:number, updated:number, skipped:number,
+ *            keyed:number, unkeyable:number, nextCursor:string|null, hasMore:boolean, samples:Array}}
+ */
+async function backfillSpeciesDedup(event) {
+  const apply = event && event.apply === true
+  const limit = Math.min(Math.max(parseInt((event && event.limit) || 100, 10) || 100, 1), 200)
+  const cursor = String((event && event.cursor) || '').trim()
+
+  try {
+    let query = db.collection('identification_records')
+    if (cursor) query = query.where({ _id: _.gt(cursor) })
+    const res = await query.orderBy('_id', 'asc').limit(limit).get()
+    const rows = res.data || []
+
+    let updated = 0
+    let skipped = 0
+    let keyed = 0
+    let unkeyable = 0
+    const samples = []
+
+    for (const row of rows) {
+      if (!row || !row._id) continue
+      const info = row.species_info || {}
+      if (row.species_dedup_key) {
+        skipped += 1
+        continue
+      }
+      const key = buildSpeciesDedupKey(info)
+      if (!key) {
+        // 非标本 / 未知物种 / 缺名 —— 正确地不参与去重
+        unkeyable += 1
+        if (samples.length < 5) {
+          samples.push({ _id: row._id, key: '', zh: info.species_name_zh || '', reason: 'unkeyable' })
+        }
+        continue
+      }
+      keyed += 1
+      if (samples.length < 5) {
+        samples.push({ _id: row._id, key, zh: info.species_name_zh || '', latin: info.species_name_latin || '' })
+      }
+      if (apply) {
+        try {
+          await db.collection('identification_records').doc(row._id).update({
+            data: { species_dedup_key: key }
+          })
+          updated += 1
+        } catch (e) {
+          console.warn('回填 species_dedup_key 失败', row._id, e && e.message)
+        }
+      }
+    }
+
+    const last = rows.length ? rows[rows.length - 1] : null
+    const nextCursor = last ? String(last._id) : null
+    return {
+      success: true,
+      mode: apply ? 'APPLY' : 'DRY-RUN',
+      scanned: rows.length,
+      updated,
+      skipped,
+      keyed,
+      unkeyable,
+      nextCursor,
+      hasMore: rows.length >= limit,
+      samples
+    }
+  } catch (e) {
+    console.error('backfillSpeciesDedup', e)
+    return { success: false, msg: (e && e.message) || '回填失败' }
+  }
+}
+
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { action, image_file_id, use_mock, category_hint, entry_source } = event
+
+  // ── 运维/回填入口：必须持 ADMIN_OPS_KEY，且默认 dry-run ────────────────────
+  // 需求 1 的 `species_dedup_key` 只在建记录时写入，**存量记录没有该键**，
+  // 故需要一个一次性回填把历史记录纳入同物种去重（否则旧数据不受该决策影响）。
+  if (action === 'backfill_species_dedup') {
+    const opsKey = String(process.env.ADMIN_OPS_KEY || '')
+    const given = String(event.adminOpsKey || '')
+    if (!opsKey || given !== opsKey) {
+      return { success: false, code: 'FORBIDDEN', msg: '需要运维口令' }
+    }
+    return backfillSpeciesDedup(event)
+  }
 
   if (action === 'list_recent') {
     const limit = Math.min(Math.max(parseInt(event.limit, 10) || 5, 1), 50)
@@ -790,8 +888,24 @@ exports.main = async (event, context) => {
           .where({ _openid: wxContext.OPENID, content_hash: contentHash })
           .limit(1)
           .get()
-        if (cached.data && cached.data.length) {
-          const sourceId = cached.data[0].record_id
+        // 需求 1 兜底：identification_cache 的写入失败是被吞掉的，此时改从记录自身
+        // 的 content_hash 匹配，避免「缓存缺失 → 每次重跑大模型 + 重复建记录」。
+        let cachedRecordId = (cached.data && cached.data[0] && cached.data[0].record_id) || ''
+        if (!cachedRecordId) {
+          try {
+            const byHash = await db
+              .collection('identification_records')
+              .where({ _openid: wxContext.OPENID, content_hash: contentHash })
+              .orderBy('created_at', 'desc')
+              .limit(1)
+              .get()
+            cachedRecordId = (byHash.data && byHash.data[0] && byHash.data[0]._id) || ''
+          } catch (e) {
+            console.warn('按 content_hash 回查记录失败', e.message)
+          }
+        }
+        if (cachedRecordId) {
+          const sourceId = cachedRecordId
           const prev = await db.collection('identification_records').doc(sourceId).get()
           if (prev.data && prev.data.species_info) {
             const now = Date.now()
@@ -810,33 +924,24 @@ exports.main = async (event, context) => {
                 species_profile = null
               }
             }
-            const addDup = await db.collection('identification_records').add({
+            // 需求 1：同图**复用既有记录**，不再每次 add 一条。
+            // 原实现命中缓存后仍 add 新记录（仅标记 from_image_cache），于是
+            // 「同一张图识别 10 次」会留下 10 条 identification_records，
+            // 但只消耗 1 次大模型调用 —— 记录、图鉴、站内信全部重复。
+            // 复用是安全的：save_atlas 本就按 {_openid, record_id} 幂等，
+            // 分享 / 反馈 / 图鉴日志都以该 record_id 为外键，指向同一份识别结果。
+            await db.collection('identification_records').doc(sourceId).update({
               data: {
-                _openid: wxContext.OPENID,
-                image_url: image_file_id,
-                species_info: prev.data.species_info,
-                ai_content: prev.data.ai_content,
-                species_profile,
-                is_bookmarked: false,
-        // 内容安全留痕；未通过检测的记录不允许公开分享
-        secCheck: { imageChecked },
-        is_shared: false,
-                related_products_snapshot: snap,
-                related_wiki_snapshot: wikiSnap,
-                confidence_level: prev.data.confidence_level,
-                from_image_cache: true,
-                cache_source_record_id: sourceId,
-                entry_source: entrySource || prev.data.entry_source || '',
-                category_hint: categoryHint || prev.data.category_hint || '',
-                created_at: now,
+                // 记录「最近一次同图识别」，便于统计复用率与排查
+                last_reused_at: now,
+                reuse_count: _.inc(1),
                 updated_at: now
               }
             })
-            await sendIdentifyNotification(wxContext.OPENID, addDup._id, prev.data.species_info)
             return {
               success: true,
               data: {
-                record_id: addDup._id,
+                record_id: sourceId,
                 species_info: prev.data.species_info,
                 ai_content: prev.data.ai_content,
                 species_profile,
@@ -904,6 +1009,52 @@ exports.main = async (event, context) => {
       }
     }
 
+    // ── 需求 1（业务决策 2026-09-16：**同物种去重**）────────────────────────────
+    // 「同一物种只保留一条鉴定记录 / 一个图鉴」：换角度重拍同一件标本（图片指纹不同）
+    // 或上传同物种的另一件，都复用该用户对**该物种**的首条记录，不再新建。
+    //
+    // 去重键选 `species_name_latin`（学名）优先、中文名兜底：
+    //   - 学名是跨语言稳定标识，避免「大蓝闪蝶 / 蓝闪蝶」这类中文别名各建一条
+    //   - `is_specimen === false`（未识别出标本）**不参与物种去重** ——
+    //     否则用户拍任意非标本照片都会被并进同一条「未知」记录
+    // 命中即返回既有记录（record_id 与首条相同），客户端会提示「已跳过重复识别」。
+    const speciesDedupKey = buildSpeciesDedupKey(species_info)
+    if (speciesDedupKey) {
+      try {
+        const hit = await db
+          .collection('identification_records')
+          .where({ _openid: wxContext.OPENID, species_dedup_key: speciesDedupKey })
+          .orderBy('created_at', 'desc')
+          .limit(1)
+          .get()
+        const prev = hit.data && hit.data[0]
+        if (prev && prev.species_info) {
+          const now = Date.now()
+          await db.collection('identification_records').doc(prev._id).update({
+            data: { last_reused_at: now, reuse_count: _.inc(1), updated_at: now }
+          })
+          return {
+            success: true,
+            data: {
+              record_id: prev._id,
+              species_info: prev.species_info,
+              ai_content: prev.ai_content,
+              species_profile: prev.species_profile || null,
+              related_products: prev.related_products_snapshot || [],
+              related_wiki: prev.related_wiki_snapshot || [],
+              confidence_level: prev.confidence_level,
+              from_cache: true,
+              // 区分两种复用来源，便于埋点区分「同图」与「同物种」
+              reuse_reason: 'same_species',
+              species_dedup_key: speciesDedupKey
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('species_dedup_key 查询失败，继续建新记录', e.message)
+      }
+    }
+
     const confidence_level = confidenceToLevel(species_info.confidence, species_info.is_specimen !== false)
     const [related_products, related_wiki] = await Promise.all([
       fetchAllRelatedProducts(species_info),
@@ -928,6 +1079,8 @@ exports.main = async (event, context) => {
         _openid: wxContext.OPENID,
         image_url: image_file_id,
         species_info,
+        // 需求 1：同物种去重键（学名优先），后续同物种识别直接命中本记录
+        species_dedup_key: speciesDedupKey,
         ai_content,
         species_profile,
         is_bookmarked: false,
@@ -943,6 +1096,16 @@ exports.main = async (event, context) => {
 
     if (!forceMock) {
       await sendIdentifyNotification(wxContext.OPENID, addRes._id, species_info)
+      // 需求 1：把 contentHash 落到记录上，作为 identification_cache 的兜底索引。
+      // 原实现只写 identification_cache，而那次写入失败是被吞掉的（"可忽略"），
+      // 一旦失败，同一张图之后每次都会重新调用大模型并再建记录 —— 去重形同失效。
+      try {
+        await db.collection('identification_records').doc(addRes._id).update({
+          data: { content_hash: contentHash }
+        })
+      } catch (e) {
+        console.warn('回写 content_hash 失败', e.message)
+      }
       try {
         await db.collection('identification_cache').add({
           data: {

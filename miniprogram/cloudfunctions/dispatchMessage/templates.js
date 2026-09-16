@@ -75,7 +75,8 @@ const DEFAULT_TEMPLATES = {
     priority: 'P0',
     titleTemplate: '订单待落定',
     contentTemplate:
-      '柜中这几件标本已为你预留。\n{{productNames}}\n应付 ¥{{totalPrice}}\n请在 30 分钟内完成支付，逾期将自动释出。',
+      // 需求 10：{{productNames}} 只有名称；改用 {{productLine}} 带出规格
+      '柜中这几件标本已为你预留。\n{{productLine}}\n应付 ¥{{totalPrice}}\n请在 30 分钟内完成支付，逾期将自动释出。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   order_paid: {
@@ -103,7 +104,7 @@ const DEFAULT_TEMPLATES = {
     titleTemplate: '藏品已售出',
     contentTemplate:
       '订单 {{orderNo}}\n「{{productNames}}」已售出。\n可在标本师工作台查看工单与提成。',
-    actionUrlTemplate: 'subpackages/manager/artisan/works/index?mode=jobs'
+    actionUrlTemplate: 'subpackages/extra/artisan/works/index?mode=jobs'
   },
   wishlist_restock_request: {
     category: 'ops',
@@ -138,7 +139,7 @@ const DEFAULT_TEMPLATES = {
     titleTemplate: '孤品定金已付',
     contentTemplate:
       '「{{productTitle}}」有人已付定金{{stockHint}}\n请优先制作并上架；上架后对方将进入尾款窗口。',
-    actionUrlTemplate: 'subpackages/manager/artisan/index'
+    actionUrlTemplate: 'subpackages/extra/artisan/index'
   },
   deposit_paid_confirm: {
     category: 'order',
@@ -215,7 +216,8 @@ const DEFAULT_TEMPLATES = {
     category: 'order',
     priority: 'P0',
     titleTemplate: '藏品已入柜',
-    contentTemplate: '订单 {{orderNo}} 已确认签收。\n收藏证书已生成；{{careNote}}',
+    // 需求 10：签收信补商品行，用户才知道签收的是哪件
+    contentTemplate: '订单 {{orderNo}} 已确认签收。\n{{productLine}}\n收藏证书已生成；{{careNote}}',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   order_cancelled: {
@@ -247,8 +249,9 @@ const DEFAULT_TEMPLATES = {
     queue: QUEUE_CUSTOMER,
     priority: 'P0',
     titleTemplate: '正等 TA 留下地址',
+    // 需求 10：去掉书名号包裹（多件时会换行），改用商品行
     contentTemplate:
-      '「{{productNames}}」已备妥。\n正等 TA 开启礼笺，留下收件去处。',
+      '{{productLine}}\n已备妥，正等 TA 开启礼笺，留下收件去处。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   gift_accepted: {
@@ -257,14 +260,14 @@ const DEFAULT_TEMPLATES = {
     priority: 'P0',
     titleTemplate: 'TA 已开启礼笺',
     contentTemplate:
-      '礼赠订单 {{orderNo}}：TA 已收下这份山海，正待留下地址。',
+      '礼赠订单 {{orderNo}}：TA 已收下这份山海，正待留下地址。\n{{productLine}}',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   gift_address_submitted: {
     category: 'order',
     priority: 'P0',
     titleTemplate: 'TA 已留下去处',
-    contentTemplate: '礼赠订单 {{orderNo}}：去处已确认，馆员即将备妥启程。',
+    contentTemplate: '礼赠订单 {{orderNo}}：去处已确认，馆员即将备妥启程。\n{{productLine}}',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   gift_nudge: {
@@ -273,7 +276,7 @@ const DEFAULT_TEMPLATES = {
     priority: 'P1',
     titleTemplate: '不妨再提醒一声',
     contentTemplate:
-      '礼赠订单 {{orderNo}} 仍在等待 TA 留下地址。\n可再次分享礼笺卡片。',
+      '礼赠订单 {{orderNo}} 仍在等待 TA 留下地址。\n{{productLine}}\n可再次分享礼笺卡片。',
     actionUrlTemplate: 'subpackages/feature/gift/success/index?orderId={{relatedId}}'
   },
   gift_nudge_receiver: {
@@ -289,7 +292,7 @@ const DEFAULT_TEMPLATES = {
     queue: QUEUE_CUSTOMER,
     priority: 'P0',
     titleTemplate: '礼物已到柜',
-    contentTemplate: '礼赠订单 {{orderNo}}：「{{productTitle}}」已妥投到柜。',
+    contentTemplate: '礼赠订单 {{orderNo}} 已妥投到柜。\n{{productLine}}',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   gift_received: {
@@ -383,14 +386,15 @@ const DEFAULT_TEMPLATES = {
     category: 'custom',
     priority: 'P1',
     titleTemplate: '开始装裱',
-    contentTemplate: '订单 {{orderNo}} 的定制藏品已进入装裱。\n标本师正细细为你处理。',
+    // 需求 10：制作类三封信原先只有订单号，用户看不出做的是哪件
+    contentTemplate: '订单 {{orderNo}} 的定制藏品已进入装裱。\n{{productLine}}\n标本师正细细为你处理。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   custom_production_packing: {
     category: 'custom',
     priority: 'P1',
     titleTemplate: '装裱完成',
-    contentTemplate: '订单 {{orderNo}} 装裱已完成，正在包装。\n即将启程。',
+    contentTemplate: '订单 {{orderNo}} 装裱已完成，正在包装。\n{{productLine}}\n即将启程。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   custom_production_shipped: {
@@ -398,15 +402,16 @@ const DEFAULT_TEMPLATES = {
     priority: 'P1',
     titleTemplate: '定制藏品已启程',
     contentTemplate:
-      '订单 {{orderNo}} 定制藏品已启程。\n感谢你的耐心等候。\n\n开箱与售后\n到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。\n\n入柜保养\n入柜后请避直射阳光，注意防潮；玻璃罩与镜框请尽量保持闭合。',
+      '订单 {{orderNo}} 定制藏品已启程。\n{{productLine}}\n感谢你的耐心等候。\n\n开箱与售后\n到柜时请全程录制开箱影像——无开箱影像将难以受理售后。蝶类触须不在包损之列；其余部位若有损毁，可按售后约定处理。\n\n入柜保养\n入柜后请避直射阳光，注意防潮；玻璃罩与镜框请尽量保持闭合。',
     actionUrlTemplate: 'subpackages/business/order-detail/index?id={{relatedId}}'
   },
   pet_memorial_received: {
     category: 'custom',
     priority: 'P1',
     titleTemplate: '伴宠记忆意向已入册',
+    // 需求 15：补明联络方式（电话/微信）与用户该做的动作（注意接听/查看）
     contentTemplate:
-      '「{{petName}}」的纪念工单已提交（{{orderNo}}）。\n标本师将评估是否承接，请留意后续来信。',
+      '「{{petName}}」的纪念工单已提交（{{orderNo}}）。\n标本师将通过电话或微信与您联络，请您注意接听或查看。',
     actionUrlTemplate: 'subpackages/feature/custom/pet/status/index?id={{relatedId}}'
   },
   pet_memorial_need_info: {
@@ -463,14 +468,14 @@ const DEFAULT_TEMPLATES = {
     priority: 'P1',
     titleTemplate: '留言已入册',
     contentTemplate: '你的「{{topicLabel}}」留言已提交，专员将尽快回复。',
-    actionUrlTemplate: 'subpackages/feature/user/messages/index'
+    actionUrlTemplate: 'subpackages/extra/user/messages/index'
   },
   support_ticket_replied: {
     category: 'system',
     priority: 'P1',
     titleTemplate: '专员已回复',
     contentTemplate: '{{replyContent}}',
-    actionUrlTemplate: 'subpackages/feature/user/support/index'
+    actionUrlTemplate: 'subpackages/extra/user/support/index'
   },
   invoice_request_received: {
     category: 'system',
@@ -478,7 +483,7 @@ const DEFAULT_TEMPLATES = {
     titleTemplate: '开票申请已入册',
     contentTemplate:
       '订单 {{orderNo}} 的开票申请已提交。\n抬头：{{title}}\n专员核对后将开具电子发票并发送。',
-    actionUrlTemplate: 'subpackages/feature/user/messages/index'
+    actionUrlTemplate: 'subpackages/extra/user/messages/index'
   },
   invoice_request_staff: {
     category: 'ops',
@@ -494,7 +499,7 @@ const DEFAULT_TEMPLATES = {
     priority: 'P1',
     titleTemplate: '审批已提交',
     contentTemplate: '{{title}}已提交，等待{{approverLabel}}审核。',
-    actionUrlTemplate: 'subpackages/manager/approvals/index'
+    actionUrlTemplate: 'subpackages/extra/approvals/index'
   },
   approval_approved: {
     category: 'ops',
@@ -502,7 +507,7 @@ const DEFAULT_TEMPLATES = {
     priority: 'P1',
     titleTemplate: '审批已通过',
     contentTemplate: '{{title}}已通过{{deciderHint}}。',
-    actionUrlTemplate: 'subpackages/manager/approvals/index'
+    actionUrlTemplate: 'subpackages/extra/approvals/index'
   },
   approval_rejected: {
     category: 'ops',
@@ -510,21 +515,21 @@ const DEFAULT_TEMPLATES = {
     priority: 'P1',
     titleTemplate: '审批未通过',
     contentTemplate: '{{title}}未通过。原因：{{reason}}',
-    actionUrlTemplate: 'subpackages/manager/approvals/index'
+    actionUrlTemplate: 'subpackages/extra/approvals/index'
   },
   invoice_request_issued: {
     category: 'system',
     priority: 'P1',
     titleTemplate: '电子发票已开具',
     contentTemplate: '订单 {{orderNo}} 的发票已开具。\n抬头：{{title}}',
-    actionUrlTemplate: 'subpackages/feature/user/messages/index'
+    actionUrlTemplate: 'subpackages/extra/user/messages/index'
   },
   invoice_request_rejected: {
     category: 'system',
     priority: 'P1',
     titleTemplate: '开票申请未通过',
     contentTemplate: '订单 {{orderNo}} 的开票申请未通过。\n抬头：{{title}}\n原因：{{rejectReason}}',
-    actionUrlTemplate: 'subpackages/feature/user/messages/index'
+    actionUrlTemplate: 'subpackages/extra/user/messages/index'
   },
   identify_result: {
     category: 'activity',

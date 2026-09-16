@@ -613,7 +613,7 @@ async function claimProfileReward(openid, userDoc) {
         relatedId: PROFILE_REWARD_SOURCE,
         title: '藏家档案已建立',
         content: `欢迎加入山海造物。完善资料奖励 ${pointsToGrant} 积分已到账（不计成长值），愿你的标本被好好安放。`,
-        actionUrl: '/subpackages/feature/user/profile/index'
+        actionUrl: '/subpackages/extra/user/profile/index'
       }
     })
   } catch (e) {

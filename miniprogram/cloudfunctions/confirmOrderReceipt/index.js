@@ -134,7 +134,7 @@ exports.main = async (event) => {
       eventType: 'order_received',
       openid,
       relatedId: orderId,
-      vars: { orderNo, careNote }
+      vars: { orderNo, products: order.products, careNote }
     }).catch((err) => console.warn('order_received message failed:', err))
 
     // 礼赠兜底：物流未通知过时，手动签收仍告知送礼人（dedupe: gift_delivered:orderId:giver）
@@ -145,7 +145,7 @@ exports.main = async (event) => {
           eventType: 'gift_delivered',
           openid: giver,
           relatedId: orderId,
-          vars: { orderNo, productTitle }
+          vars: { orderNo, productTitle, products: order.products }
         }).catch((err) => console.warn('gift_delivered message failed:', err))
       }
     }

@@ -2,7 +2,7 @@
  * 山海有信 — 云函数内可靠写入（dispatchMessage + 直写 fallback）
  */
 const cloud = require('wx-server-sdk')
-const { orderProductLine } = require('./orderSummary')
+const { orderProductLine, pickMessageProducts } = require('./orderSummary')
 
 /** 店长订单备注（随发货私信发送）上限，与前端输入框 maxlength 保持一致 */
 const NOTE_MAX = 100
@@ -168,7 +168,7 @@ const MINI_TEMPLATES = {
     category: 'system',
     title: '留言已入册',
     content: (v) => `你的「${v.topicLabel || '留言'}」留言已提交，专员将尽快回复`,
-    actionUrl: () => 'subpackages/feature/user/messages/index'
+    actionUrl: () => 'subpackages/extra/user/messages/index'
   },
   custom_inquiry_received: {
     category: 'custom',
@@ -191,7 +191,10 @@ function renderMini(eventType, relatedId, vars = {}) {
     category: t.category,
     title: t.title,
     content: typeof t.content === 'function' ? t.content(vars) : t.content,
-    actionUrl: typeof t.actionUrl === 'function' ? t.actionUrl(relatedId) : (t.actionUrl || '')
+    actionUrl: typeof t.actionUrl === 'function' ? t.actionUrl(relatedId) : (t.actionUrl || ''),
+    // 需求 10：fallback 直写路径同样要带「名称 + 图片 + 规格」商品卡，
+    // 否则 dispatchMessage 调用失败时信件就退回「只有订单号」的旧形态。
+    products: pickMessageProducts(vars.products)
   }
 }
 
@@ -199,7 +202,7 @@ function renderMini(eventType, relatedId, vars = {}) {
 const renderMiniMessage = renderMini
 
 async function writeDirect(db, payload) {
-  const { eventType, openid, relatedId, title, content, category, actionUrl } = payload
+  const { eventType, openid, relatedId, title, content, category, actionUrl, products } = payload
   if (!openid || !title) {
     return { success: false, msg: '缺少 openid 或 title' }
   }
@@ -233,6 +236,8 @@ async function writeDirect(db, payload) {
     createTime: db.serverDate(),
     _createTime: db.serverDate()
   }
+  // 需求 10：商品卡（名称 + 图片 + 规格）
+  if (Array.isArray(products) && products.length) data.products = products
 
   try {
     await db.collection('user_messages').add({ data })
@@ -301,7 +306,8 @@ async function dispatchInAppMessage(db, { eventType, openid, relatedId, vars = {
     title: rendered.title,
     content: rendered.content,
     category: rendered.category,
-    actionUrl: rendered.actionUrl
+    actionUrl: rendered.actionUrl,
+    products: rendered.products
   })
 }
 
