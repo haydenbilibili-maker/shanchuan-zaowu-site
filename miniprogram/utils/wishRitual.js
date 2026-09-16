@@ -35,6 +35,30 @@ const LAMP_LINES = [
   '一灯不灭，一事可期。'
 ]
 
+/**
+ * 节气灯语：**节气当天**优先于上面那句通用灯语。
+ *
+ * 为什么按"季"而不是给 24 个节气各写一句：24 条每年只用一次，写完没人记得住，
+ * 也远超"一句话"的体量；真正有体感差异的是四季。所以节气名照实显示（立春/霜降…），
+ * 句子按季给 —— 既保留了"今天是个日子"的仪式，又不至于堆 24 条近乎重复的文案。
+ */
+const SOLAR_LINES = {
+  spring: '春气一动，草木总比人先知道。',
+  summer: '天长，慢慢来也来得及。',
+  autumn: '收成不必满仓，够用就好。',
+  winter: '天冷了，先把灯留着。'
+}
+
+/**
+ * 灯位文案：连续点灯到第 3 / 7 天时那句反馈。
+ * 与 `utils/wishWall.lampTier` 的 tier 一一对应（1 初见 / 2 守夜 / 3 长明）。
+ */
+const LAMP_TIER_NOTES = {
+  1: '今天来过，记下了。',
+  2: '连着来，灯就稳了。',
+  3: '这盏灯，已经长明。'
+}
+
 function emptyState() {
   return { version: VERSION, days: {} }
 }
@@ -107,6 +131,8 @@ module.exports = {
   STORAGE_KEY,
   KEEP_DAYS,
   LAMP_LINES,
+  SOLAR_LINES,
+  LAMP_TIER_NOTES,
   readState,
   pruneDays,
   getLamp,

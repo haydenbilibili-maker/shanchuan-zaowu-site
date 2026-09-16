@@ -2913,6 +2913,19 @@
           </view>
           <text class="latin-hint">多选；写入 giftScenes，与兴趣标签分离。无标签也可礼赠，场景选品时优先匹配有标签藏品。</text>
 
+          <view class="form-section-label">祈福墙</view>
+          <!-- 需求 28：本藏品是否挂祈福墙，以及挂在**哪面**墙。
+               注意：这里保存的是**显式**商品字段（wishWallEnabled/wishWallKey），
+               会压过「标题含马上有」的过渡兜底 —— 所以载入时按"当前实际是否挂墙"回填，
+               避免运营打开就保存、把原本在墙上的藏品悄悄摘下来。 -->
+          <view class="form-row"><text>挂祈福墙</text><switch checked="{{tempProduct.wishWallEnabled}}" color="#C4A76C" bindchange="bindPWishWall" style="transform:scale(0.7)"/></view>
+          <text class="latin-hint">开启后：该藏品详情页出现「祈福墙」入口（还受内容开关「马上有祈福」总闸控制）。关闭则即使标题含「马上有」也不展示。</text>
+          <view class="form-row" wx:if="{{tempProduct.wishWallEnabled}}">
+            <text>墙的作用域</text>
+            <input value="{{tempProduct.wishWallKey}}" bindinput="bindPWishWallKey" placeholder="留空 = 马上有这面墙"/>
+          </view>
+          <text class="latin-hint" wx:if="{{tempProduct.wishWallEnabled}}">留空即挂在「马上有」那面墙；填别的 key（只留 a-z 0-9 _ -，≤40 字）则开一面新墙 —— **同一个 key 的藏品共用一面墙**，这就是全站拓展的方式。</text>
+
           <view class="form-section-label">合规标识</view>
           <view class="form-row">
             <text>三有/保护物种</text>

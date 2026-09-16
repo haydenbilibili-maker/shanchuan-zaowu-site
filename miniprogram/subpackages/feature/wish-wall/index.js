@@ -26,6 +26,12 @@ const {
   shanghaiDayKey,
   pickDailyLine,
   lampStreak,
+  lampTier,
+  solarTermOn,
+  solarTermGap,
+  markMine,
+  decorateMineRows,
+  mineSummary,
   PRODUCT_KEY,
   TEXT_MAX,
   LIST_LIMIT,
@@ -68,8 +74,20 @@ Page({
     draft: '',
     loadError: '',
     myHidden: 0,
-    // 点灯仪式：lit 为当日是否已点，line 为当日那句，streak 为连续天数
-    lamp: { dayKey: '', lit: false, litAt: 0, line: '', streak: 0 },
+    /**
+     * 点灯仪式：lit 为当日是否已点，line 为当日那句，streak 为连续天数。
+     * `tier`/`lamps`/`label`/`tierNote` 是**灯位层级**（1/3/7 天 → 1/3/5 盏，见 wishWall.lampTier），
+     * `solar` 是当天节气（不是节气日则为 null）—— 两者都是纯函数算出来的，页面只负责接线。
+     */
+    lamp: { dayKey: '', lit: false, litAt: 0, line: '', streak: 0, tier: 0, lamps: 0, label: '', tierNote: '', solar: null },
+    /** 愿签墙 / 我的心愿 两个视图（后者含被馆方收起的） */
+    viewMode: 'wall',
+    mineRows: [],
+    mine: { total: 0, visible: 0, hidden: 0 },
+    /** 心愿笺（点愿签弹出的那张纸）：null = 未打开 */
+    card: null,
+    /** 博物笔记进度（彩蛋图鉴入口用） */
+    relics: { found: 0, total: 0 },
     /**
      * 弹幕轮次。进 rows 的 key，从而让 DOM 重建、动画重播 ——
      * 弹幕只播一轮（forwards）：若用 CSS 无限循环，第二轮起同轨又会叠在一起
@@ -99,6 +117,42 @@ Page({
 
   /* ----------------------------- 点灯仪式 ----------------------------- */
 
+  /**
+   * 组装灯位状态（纯计算，initRitual 与 onLampTap 共用，避免两处各算一遍）。
+   *
+   * 灯语优先级：**节气当天**用节气句（并显示节气名），否则用通用每日一句 ——
+   * 这样"今天是个日子"能被看见，而平时也不会天天重复同一句。
+   */
+  buildLampState(dayKey, lit, litAt, days) {
+    const streak = lit ? lampStreak(days || [], dayKey) : 0
+    const tier = lampTier(streak)
+    const solar = solarTermOn(dayKey)
+    const line = lit
+      ? (solar ? String(wishRitual.SOLAR_LINES[solar.season] || '') : pickDailyLine(wishRitual.LAMP_LINES, dayKey))
+      : ''
+    // 不是节气日时，给"下一个节气还有几天"——给一个"过几天再来"的理由。
+    // 只在 7 天内显示：更远的日子说出来只是噪音。
+    const gap = solar ? null : solarTermGap(dayKey)
+    const solarNext = gap && gap.inDays > 0 && gap.inDays <= 7
+      ? { name: gap.name, inDays: gap.inDays }
+      : null
+    return {
+      dayKey,
+      lit,
+      litAt: litAt || 0,
+      line,
+      streak,
+      tier: tier.tier,
+      lamps: tier.lamps,
+      // 盏数渲染成小灯：WXML 里 wx:for 传数组最稳（传数字在不同基础库上语义不一致）
+      lampDots: Array.from({ length: tier.lamps }, (_, i) => i + 1),
+      label: tier.label,
+      tierNote: lit ? String(wishRitual.LAMP_TIER_NOTES[tier.tier] || '') : '',
+      solar,
+      solarNext
+    }
+  },
+
   /** 读取当日点灯状态（纯本地；失败即视为未点灯，绝不阻断页面） */
   initRitual() {
     const dayKey = shanghaiDayKey(Date.now())
@@ -109,15 +163,7 @@ Page({
       console.warn('wish wall ritual read failed', e)
     }
     const lit = state.lit === true
-    this.setData({
-      lamp: {
-        dayKey,
-        lit,
-        litAt: state.litAt || 0,
-        line: lit ? pickDailyLine(wishRitual.LAMP_LINES, dayKey) : '',
-        streak: lit ? lampStreak(state.days || [], dayKey) : 0
-      }
-    })
+    this.setData({ lamp: this.buildLampState(dayKey, lit, state.litAt, state.days) })
   },
 
   onLampTap() {
@@ -135,17 +181,22 @@ Page({
       console.warn('wish wall ritual write failed', e)
     }
     const days = saved.days && saved.days.length ? saved.days : [dayKey]
-    this.setData({
-      lamp: {
-        dayKey,
-        lit: true,
-        litAt: saved.litAt || Date.now(),
-        line: pickDailyLine(wishRitual.LAMP_LINES, dayKey),
-        streak: lampStreak(days, dayKey)
-      }
-    })
+    const next = this.buildLampState(dayKey, true, saved.litAt, days)
+    this.setData({ lamp: next })
     try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
     trackBehavior('wish_wall_lamp', 'day', dayKey)
+    // 连续点灯彩蛋：门槛（几天算数）在注册表里，页面只报事实
+    this.fireLampStreakEgg(next.streak)
+  },
+
+  /** 连续点灯彩蛋（如「騊駼」要求连续 3 天） */
+  fireLampStreakEgg(streak) {
+    try {
+      const res = easterEgg.tryLampStreak({ page: this, source: 'wishWallLamp', streak })
+      if (res && res.firstTime && res.egg) trackBehavior('wish_wall_egg', 'egg', res.egg.id)
+    } catch (e) {
+      console.warn('wish wall lamp egg failed', e)
+    }
   },
 
   /* ----------------------------- 彩蛋 ----------------------------- */
@@ -244,6 +295,8 @@ Page({
       official: row.source === 'ai' || row.source === 'seed',
       timeText: formatWishTime(row.createTime, now)
     }))
+    // 墙面数据留一份原始副本：`mine` 回来之后要按 _id 给它补 `isMine`
+    this._wallItems = items
     this.setData({
       items,
       // 两列瀑布与「是否打到上限」都是纯函数（见 utils/wishWall.js），页面只负责接线
@@ -254,11 +307,34 @@ Page({
         .map((t) => normalizeWishText(t))
         .filter(Boolean)
         .slice(0, INSPIRATION_MAX),
-      // 弹幕层与静态列表同源：弹幕好看，静态列表可读、可复制、无障碍
+      // 弹幕永远取自**墙面**（不是我的心愿视图）：弹幕是"这面墙在流动"的观感
       rows: buildDanmakuRows(items, { cycle: this.data.danmakuCycle || 0 }),
       loading: false
     })
     this.scheduleDanmakuCycle(this.data.rows)
+  },
+
+  /**
+   * 把「当前视图」的数据铺进 tagColumns。
+   * 墙面 / 我的心愿共用同一套渲染（两列瀑布、愿签样式），只有数据源不同。
+   */
+  applyView() {
+    const src = this.data.viewMode === 'mine' ? (this._mineRows || []) : (this._wallItems || [])
+    this.setData({
+      items: src,
+      tagColumns: splitTagColumns(src),
+      // 服务端一面墙只回 LIST_LIMIT 条：到底了必须说清是"最近 N 条"，不能装作全量
+      tagCapped: isTagListCapped(src.length)
+    })
+  },
+
+  /** 切换「墙上的愿签 / 我的心愿」 */
+  switchView(e) {
+    const mode = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.mode) || '')
+    const next = mode === 'mine' ? 'mine' : 'wall'
+    if (next === this.data.viewMode) return
+    this.setData({ viewMode: next })
+    this.applyView()
   },
 
   /* ----------------------------- 弹幕轮播 ----------------------------- */
@@ -307,14 +383,107 @@ Page({
     }
   },
 
-  /** 自己发的（含被隐藏的），让用户理解「我发的去哪了」 */
+  /**
+   * 自己发的（含被隐藏的）：既让用户理解「我发的去哪了」，也是「我的心愿」视图的数据源。
+   *
+   * ⚠️ 为什么用 `mine` 而不是让公开列表回 openid：公开列表**刻意不返回 openid**（最小暴露）。
+   * 用我自己记录的 `_id` 集合去标记"哪条是我的"，就不必为了一句"我的"把身份铺到公开数据里。
+   */
   async loadMine() {
     try {
       const result = await this.callFn({ action: 'mine', productKey: this.data.productKey })
       const list = (result && result.list) || []
-      this.setData({ myHidden: list.filter((r) => r.status === 'hidden').length })
+      const summary = mineSummary(list)
+      this._mineRows = decorateMineRows(list, Date.now())
+      // 标记并回写当前视图（viewMode 可能是 mine，也可能还是 wall）
+      this._wallItems = markMine(this._wallItems || [], list)
+      this.setData({ myHidden: summary.hidden, mine: summary, mineRows: this._mineRows })
+      this.applyView()
+      this.recordRelics()
+      // 我的心愿条数彩蛋：门槛（几条算数）在注册表里，页面只报事实
+      this.fireWishCountEgg(summary.total)
     } catch (e) {
       this.setData({ myHidden: 0 })
+    }
+  },
+
+  /** 我的心愿条数彩蛋（如「鹿蜀」要求满 3 条） */
+  fireWishCountEgg(wishCount) {
+    try {
+      const res = easterEgg.tryWishCount({ page: this, source: 'wishWallMine', wishCount })
+      if (res && res.firstTime && res.egg) trackBehavior('wish_wall_egg', 'egg', res.egg.id)
+    } catch (e) {
+      console.warn('wish wall count egg failed', e)
+    }
+  },
+
+  /* ----------------------------- 博物笔记（彩蛋图鉴） ----------------------------- */
+
+  /**
+   * 把彩蛋进度显示在墙上 —— 拾到的笔记本来就"收入博物笔记"，
+   * 但祈福墙上一直没有任何入口指向它，用户不知道去哪儿看。这里补上（失败静默）。
+   */
+  recordRelics() {
+    try {
+      const progress = easterEgg.getProgress()
+      const found = Number(progress && progress.found) || 0
+      const total = Number(progress && progress.total) || 0
+      if (found === this.data.relics.found && total === this.data.relics.total) return
+      this.setData({ relics: { found, total } })
+    } catch (e) {
+      // 图鉴是锦上添花，读不到就不显示（不影响祈福墙）
+    }
+  },
+
+  /** 进博物笔记（彩蛋图鉴）。图鉴在成就页的「遗物」区，用锚点参数直接定位。 */
+  goRelics() {
+    wx.navigateTo({
+      url: '/subpackages/extra/user/achievements/index?focus=relics',
+      fail: () => wx.showToast({ title: '博物笔记暂不可用', icon: 'none' })
+    })
+  },
+
+  /* ----------------------------- 心愿笺 ----------------------------- */
+
+  /** 点愿签 → 展开那张纸（弹幕看得快，愿签看得清，笺看得住） */
+  openWishCard(e) {
+    const id = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
+    if (!id) return
+    const src = (this._mineRows || []).concat(this._wallItems || [])
+    const hit = src.find((it) => String(it._id) === id)
+    if (!hit) return
+    this.setData({ card: Object.assign({}, hit) })
+  },
+
+  closeWishCard() {
+    if (!this.data.card) return
+    this.setData({ card: null })
+  },
+
+  /** 抄一句：把别人的心愿填进输入框（仍可改，不直接发布） */
+  borrowWishText() {
+    const card = this.data.card
+    if (!card) return
+    this.setData({ draft: normalizeWishText(card.text).slice(0, TEXT_MAX), card: null })
+    wx.showToast({ title: '已填进输入框，可再改', icon: 'none' })
+  },
+
+  copyWishText() {
+    const card = this.data.card
+    if (!card) return
+    wx.setClipboardData({
+      data: normalizeWishText(card.text),
+      success: () => wx.showToast({ title: '已复制', icon: 'none' })
+    })
+  },
+
+  /** 分享这张心愿笺（转发标题就是那句心愿） */
+  onShareAppMessage() {
+    const card = this.data.card
+    const text = card ? normalizeWishText(card.text) : ''
+    return {
+      title: text || '马上有 · 祈福墙',
+      path: `/subpackages/feature/wish-wall/index?productKey=${encodeURIComponent(this.data.productKey)}`
     }
   },
 
@@ -370,5 +539,8 @@ Page({
 
   goBack() {
     wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) })
-  }
+  },
+
+  /** 浮层内层的空处理器：`catchtap`/`catchtouchmove` 需要一个存在的目标，防穿透 */
+  noop() {}
 })

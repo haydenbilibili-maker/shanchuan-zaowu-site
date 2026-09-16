@@ -139,7 +139,7 @@ Page({
     emptyFilterHint: ''
   },
 
-  onLoad() {
+  onLoad(options) {
     try {
       const nav = getPageNavInsets({ headerExtraRpx: 112, nativeNav: true });
       this.setData({
@@ -149,6 +149,13 @@ Page({
       });
     } catch (e) {
       console.warn('获取系统信息失败:', e);
+    }
+
+    // 需求 28：从祈福墙的「博物笔记」入口进来时直接落到遗物区。
+    // 遗物卡片只在「全部」筛选下渲染，所以先确保筛选是 all，再滚动。
+    if (String((options && options.focus) || '').trim() === 'relics') {
+      this._focusRelics = true;
+      if (this.data.viewFilter !== 'all') this.setData({ viewFilter: 'all' });
     }
 
     this.loadAchievements();
@@ -511,6 +518,19 @@ Page({
       relicsUnlocked: progress.achievementUnlocked,
       relicsName: progress.achievementName
     });
+
+    // 带 focus=relics 进来：数据铺完后定位到遗物卡片（只做一次）。
+    // setData 之后元素才存在，故放在这里而不是 onLoad。
+    if (this._focusRelics) {
+      this._focusRelics = false;
+      setTimeout(() => {
+        wx.pageScrollTo({
+          selector: '.relics-card',
+          duration: 300,
+          fail: () => { /* 定位失败不影响页面本身 */ }
+        });
+      }, 120);
+    }
   },
 
   openRelic(e) {

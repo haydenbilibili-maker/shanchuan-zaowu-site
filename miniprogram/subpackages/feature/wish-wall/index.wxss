@@ -905,3 +905,248 @@ page {
   background: rgba(196, 167, 108, 0.12);
   opacity: 0.9;
 }
+
+/* ==================== 灯位层级 / 节气（仪式升级） ==================== */
+
+.ww-lantern-head {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.ww-lantern-tier,
+.ww-lantern-solar {
+  padding: 2rpx 10rpx;
+  font-size: 18rpx;
+  line-height: 1.5;
+  border-radius: 6rpx;
+}
+
+/* 灯位称号：铜色实心 —— 它是"连着来"攒出来的，要比节气更实 */
+.ww-lantern-tier {
+  color: var(--color-bg);
+  background: var(--brass-400);
+}
+
+/* 节气：描边，只在当天出现 */
+.ww-lantern-solar {
+  color: var(--brass-300);
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+}
+
+/* 距下一个节气：与节气同日出现时被 wx:elif 挡掉，所以两者不会同屏 */
+.ww-lantern-next {
+  font-size: 18rpx;
+  color: var(--color-text-muted);
+}
+
+.ww-lantern-note {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+}
+
+/* 连续点灯的小灯排：盏数由 lampTier 决定（1/3/5） */
+.ww-lamps {
+  display: flex;
+  gap: 4rpx;
+  margin-bottom: 4rpx;
+}
+
+.ww-lamp-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: var(--brass-300);
+  box-shadow: 0 0 8rpx rgba(233, 190, 110, 0.7);
+}
+
+/* ==================== 视图切换（墙上 / 我的心愿） ==================== */
+
+.ww-head-label {
+  padding-bottom: 4rpx;
+  border-bottom: 2rpx solid transparent;
+}
+
+.ww-head-label.is-mine {
+  color: var(--color-text-muted);
+}
+
+/* 选中态：铜字 + 下划线。两个 tab 共用"选中"这一条规则，避免各写一份 */
+.ww-head-label.is-on {
+  color: var(--brass-300);
+  border-bottom-color: var(--brass-400);
+}
+
+/* ==================== 愿签印记（已收起 / 我的） ==================== */
+
+.ww-tag-press {
+  opacity: 0.86;
+}
+
+.ww-tag-seal.is-mine {
+  color: var(--color-bg);
+  background: var(--brass-400);
+  border-color: var(--brass-400);
+}
+
+.ww-tag-seal.is-hidden {
+  color: #E9A23B;
+  border-color: rgba(233, 162, 59, 0.5);
+  background: rgba(233, 162, 59, 0.1);
+}
+
+/* ==================== 博物笔记入口 ==================== */
+
+.ww-relics {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: var(--space-4);
+  padding: 20rpx 24rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-md);
+}
+
+.ww-relics-press {
+  opacity: 0.9;
+}
+
+.ww-relics-text {
+  flex: 1;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.ww-relics-chevron {
+  color: var(--brass-400);
+}
+
+/* ==================== 心愿笺浮层 ==================== */
+
+/* z-index 9980 < 彩蛋浮层 9990：彩蛋永远在最上层，不能被心愿笺压住 */
+.ww-card-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 9980;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 56rpx;
+  background: rgba(10, 9, 8, 0.72);
+}
+
+/* 笺是浅纸：与牌匾/墙面同一套"纸"的语言 */
+.ww-card {
+  position: relative;
+  width: 100%;
+  padding: 44rpx 36rpx 32rpx;
+  background: linear-gradient(168deg, #F5F0E6 0%, #EFE8DA 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.5);
+}
+
+.ww-card-pin {
+  position: absolute;
+  left: 50%;
+  top: -10rpx;
+  width: 72rpx;
+  height: 20rpx;
+  margin-left: -36rpx;
+  border-radius: 999rpx;
+  background: rgba(196, 167, 108, 0.55);
+}
+
+.ww-card-over {
+  display: block;
+  font-size: 18rpx;
+  letter-spacing: 0.3em;
+  color: #8C7A50;
+}
+
+.ww-card-text {
+  display: block;
+  margin-top: 18rpx;
+  font-family: var(--font-brand);
+  font-size: 42rpx;
+  line-height: 1.5;
+  color: #241F18;
+  word-break: break-all;
+}
+
+.ww-card-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-top: 22rpx;
+}
+
+.ww-card-who {
+  font-size: 22rpx;
+  color: #5C5347;
+}
+
+.ww-card-time {
+  font-size: 20rpx;
+  color: #8C857A;
+}
+
+.ww-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+
+.ww-card-tag {
+  padding: 2rpx 10rpx;
+  font-size: 18rpx;
+  color: #6E5B28;
+  border: 1rpx solid rgba(110, 91, 40, 0.35);
+  border-radius: 6rpx;
+}
+
+.ww-card-tag.is-warn {
+  color: #A8541C;
+  border-color: rgba(168, 84, 28, 0.4);
+}
+
+.ww-card-acts {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 28rpx;
+}
+
+.ww-card-act {
+  flex: 1;
+  height: 76rpx;
+  line-height: 76rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #241F18;
+  border: 1rpx solid rgba(110, 91, 40, 0.4);
+  border-radius: 999rpx;
+}
+
+.ww-card-act-press {
+  background: rgba(110, 91, 40, 0.08);
+}
+
+/* button 自带默认样式与 ::after 边框，必须显式重置，否则三个动作高度不齐 */
+.ww-card-act.is-share {
+  padding: 0;
+  margin: 0;
+  background: #6E5B28;
+  color: #F7F3EA;
+  border-color: #6E5B28;
+  font-size: 26rpx;
+  font-weight: 400;
+}
+
+.ww-card-act.is-share::after {
+  border: none;
+}

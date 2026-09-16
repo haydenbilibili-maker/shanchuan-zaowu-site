@@ -284,6 +284,56 @@ const INJECTIONS = {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
     from: '  scheduleDanmakuCycle(rows) {',
     to: '  scheduleDanmakuCycleRemoved(rows) {'
+  },
+  // ===== 升级第一期（仪式/祈福/彩蛋）=====
+  // 灯位不再分层 → 连续 7 天和第一天得到同一档反馈，坚持失去累积感
+  'lamp-tier-flat': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: '  const hit = LAMP_TIERS.find((t) => n >= t.min)',
+    to: '  const hit = LAMP_TIERS[LAMP_TIERS.length - 1]'
+  },
+  // 节气判定永远不命中 → 节气灯语与节气名成了死代码
+  'solar-term-off': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: '  const i = SOLAR_TERMS.findIndex((t) => t.month === month && t.day === day)',
+    to: '  const i = -1'
+  },
+  // 门槛型彩蛋不看门槛 → 刚点第一次灯就弹出「连续三天」的彩蛋
+  'egg-streak-ignores-threshold': {
+    file: 'miniprogram/utils/easterEgg.js',
+    from: '    if (!(Number(c.streak) >= need)) return false',
+    to: '    if (false) return false'
+  },
+  // 不标记「我的」→ 「我的心愿」视图与愿签上的印记全失效（而且看不出错）
+  'mine-not-marked': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '      this._wallItems = markMine(this._wallItems || [], list)',
+    to: '      this._wallItems = this._wallItems || []'
+  },
+  // 博物笔记入口丢掉定位参数 → 从祈福墙点进去落在成就页顶部，找不到那一片
+  'relics-focus-dropped': {
+    file: 'miniprogram/subpackages/extra/user/achievements/index.js',
+    from: ".trim() === 'relics'",
+    to: ".trim() === '__never__'"
+  },
+  // ===== 多面墙可运营 =====
+  // 商品字段没进 manageProducts 白名单 → 保存时被静默丢弃，界面还提示"已保存"
+  'product-field-not-allowlisted': {
+    file: 'miniprogram/cloudfunctions/manageProducts/index.js',
+    from: "  'wishWallEnabled', 'wishWallKey'\n",
+    to: ''
+  },
+  // 载入时不按"实际是否挂墙"回填 → 打开任意藏品保存一次就把墙摘了
+  'wishwall-preset-off': {
+    file: 'miniprogram/subpackages/manager/manager/managerPageConfig.js',
+    from: '          wishWallEnabled: isWishWallProduct(item),',
+    to: '          wishWallEnabled: false,'
+  },
+  // 「距下一个节气」不接线 → solarTermGap 变成只在测试里存在的死代码
+  'solar-gap-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    const gap = solar ? null : solarTermGap(dayKey)',
+    to: '    const gap = null'
   }
 }
 
@@ -1011,7 +1061,11 @@ check(
   'triggerMatches：类型不符不命中',
   egg.triggerMatches({ type: 'wishPosted', pages: ['a'] }, { type: 'pageEnter', route: 'a' }) === false
 )
-eq('pageEnter / wishPosted 属于「自动触发」', egg.AUTO_TRIGGER_TYPES.join(','), 'pageEnter,wishPosted')
+eq(
+  'pageEnter / wishPosted / lampStreak / wishCount 属于「自动触发」',
+  egg.AUTO_TRIGGER_TYPES.join(','),
+  'pageEnter,wishPosted,lampStreak,wishCount'
+)
 
 // —— 进页彩蛋：首次弹，第二次不弹 ——
 const firstEnter = egg.tryPageEnter({})
@@ -1454,6 +1508,149 @@ check(
 ;['section-detail', 'section-archive', 'section-review'].forEach((id) => {
   check(`页签锚点 ${id} 仍在`, detWxml.includes(`id="${id}"`))
 })
+
+/* ================================================================== *
+ * 7) 升级第一期：仪式（灯位/节气）· 祈福（心愿笺/我的心愿）· 彩蛋（门槛型）
+ *
+ * 这一期加的都是"没有也能用"的东西，所以最容易悄悄失效：
+ * 灯位不分层、节气永远不命中、门槛型彩蛋不看门槛、我的心愿不标记 —— 全都不报错。
+ * 每条断言都配了一个注入（见 INJECTIONS 末尾 5 条）。
+ * ================================================================== */
+
+// —— 灯位层级：把"连着来"变成看得见的东西 ——
+const wallWxml2 = readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')
+eq('0 天未点亮', wish.lampTier(0).tier, 0)
+eq('1 天 → 1 盏 · 初见', `${wish.lampTier(1).tier}/${wish.lampTier(1).lamps}/${wish.lampTier(1).label}`, '1/1/初见')
+eq('3 天 → 3 盏 · 守夜', `${wish.lampTier(3).tier}/${wish.lampTier(3).lamps}/${wish.lampTier(3).label}`, '2/3/守夜')
+eq('7 天 → 5 盏 · 长明', `${wish.lampTier(7).tier}/${wish.lampTier(7).lamps}/${wish.lampTier(7).label}`, '3/5/长明')
+eq('到顶后不再升级', wish.lampTier(99).tier, 3)
+eq('未到下一层时给出还差几天', wish.lampTier(2).daysToNext, 1)
+eq('到顶后 daysToNext 归零', wish.lampTier(7).daysToNext, 0)
+check(
+  '★ 灯位单调不减（天数多了等级不能倒挂）',
+  [0, 1, 2, 3, 6, 7, 30].every((n, i, arr) => i === 0 || wish.lampTier(n).tier >= wish.lampTier(arr[i - 1]).tier)
+)
+check('三个灯位都有反馈句（否则升了级却无话可说）', [1, 2, 3].every((t) => !!ritual.LAMP_TIER_NOTES[t]))
+check('四季都有节气灯语', ['spring', 'summer', 'autumn', 'winter'].every((s) => !!ritual.SOLAR_LINES[s]))
+
+// —— 二十四节气：确定性 + 边界 ——
+eq('节气表 24 条', wish.SOLAR_TERMS.length, 24)
+eq('立春当天命中', wish.solarTermOn('2026-02-04').name, '立春')
+eq('★ 非节气日不命中（不能天天说今天是节气）', wish.solarTermOn('2026-02-05'), null)
+eq('节气带季节归属', wish.solarTermOn('2026-12-22').season, 'winter')
+eq('非法日期不命中', wish.solarTermOn('bad'), null)
+eq('每条节气都能被自己的日期命中', wish.SOLAR_TERMS.filter((t) => wish.solarTermIndex(`2026-${String(t.month).padStart(2, '0')}-${String(t.day).padStart(2, '0')}`) === 0).length, 0)
+const solarGap = wish.solarTermGap('2026-02-02')
+eq('下一个节气是立春', solarGap.name, '立春')
+eq('距下一个节气 2 天', solarGap.inDays, 2)
+eq('节气当天 inDays 归零且标记 on', wish.solarTermGap('2026-02-04').on, true)
+
+// —— 我的心愿：不靠 openid，靠 mine 的 _id 标记 ——
+const markSrc = [{ _id: 'a' }, { _id: 'b' }, { _id: 'c' }]
+const markedNow = wish.markMine(markSrc, [{ _id: 'b' }])
+eq('★ 用 mine 的 _id 标记「我的」', markedNow.filter((r) => r.isMine).map((r) => r._id).join(','), 'b')
+check('标记不改原对象（否则会污染墙面缓存）', markSrc.every((it) => !('isMine' in it)))
+check('markMine 接受 Set 形式', wish.markMine([{ _id: 'a' }], new Set(['a']))[0].isMine === true)
+const mineRow = wish.decorateMineRows(
+  [{ _id: 'x', text: '  马上有 光 ', status: 'hidden', createTime: new Date(1000000).toISOString() }],
+  1000000 + 1000
+)[0]
+eq('我的心愿行标 isMine', mineRow.isMine, true)
+eq('我的心愿行标 hidden（被馆方收起的要能看见）', mineRow.hidden, true)
+eq('我的心愿文案已归一化', mineRow.text, '马上有 光')
+eq('我的心愿时间形态', mineRow.timeText, '刚刚')
+eq(
+  '我的心愿计数（共/上墙/收起）',
+  JSON.stringify(wish.mineSummary([{ status: 'hidden' }, { status: 'visible' }, { status: 'visible' }])),
+  JSON.stringify({ total: 3, visible: 2, hidden: 1 })
+)
+
+// —— 门槛型彩蛋：门槛在注册表里，页面只报事实 ——
+check('门槛：连续天数不够不命中', egg.triggerMatches({ type: 'lampStreak', minStreak: 3 }, { type: 'lampStreak', streak: 2 }) === false)
+check('★ 门槛：连续天数够才命中', egg.triggerMatches({ type: 'lampStreak', minStreak: 3 }, { type: 'lampStreak', streak: 3 }) === true)
+check('门槛：心愿数不够不命中', egg.triggerMatches({ type: 'wishCount', minCount: 3 }, { type: 'wishCount', wishCount: 2 }) === false)
+check('★ 门槛：心愿数够才命中', egg.triggerMatches({ type: 'wishCount', minCount: 3 }, { type: 'wishCount', wishCount: 5 }) === true)
+check('门槛条件不会串台（类型不符直接不命中）', egg.triggerMatches({ type: 'lampStreak', minStreak: 1 }, { type: 'pageEnter', streak: 9 }) === false)
+eq('门槛未到时「騊駼」不给（连续 2 天）', egg.tryLampStreak({ streak: 2 }), null)
+const gotTaotu = egg.tryLampStreak({ streak: 3 })
+eq('★ 连续 3 天触发「騊駼」', gotTaotu && gotTaotu.egg.id, 'taotu')
+eq('门槛型彩蛋同样只弹一次', egg.tryLampStreak({ streak: 5 }), null)
+eq('门槛未到时「鹿蜀」不给（2 条心愿）', egg.tryWishCount({ wishCount: 2 }), null)
+const gotLushu = egg.tryWishCount({ wishCount: 3 })
+eq('★ 心愿满 3 条触发「鹿蜀」', gotLushu && gotLushu.egg.id, 'lushu')
+const taotuEgg = eggConfig.EGGS.find((e) => e.id === 'taotu')
+const lushuEgg = eggConfig.EGGS.find((e) => e.id === 'lushu')
+check('騊駼挂在祈福墙且门槛为 3 天', !!taotuEgg && taotuEgg.triggers[0].pages.indexOf(WALL_ROUTE) !== -1 && taotuEgg.triggers[0].minStreak === 3)
+check('鹿蜀挂在祈福墙且门槛为 3 条', !!lushuEgg && lushuEgg.triggers[0].pages.indexOf(WALL_ROUTE) !== -1 && lushuEgg.triggers[0].minCount === 3)
+check(
+  '新彩蛋同样不挂支付/下单/退款路径',
+  ['taotu', 'lushu'].every((id) => {
+    const e = eggConfig.EGGS.find((x) => x.id === id)
+    return (e.triggers || []).every((t) => (t.pages || []).every((p) => !/pay|order|checkout|refund/.test(p)))
+  })
+)
+eq('图鉴收录 12 页（10 + 本期 2）', egg.listCatalog().length, 12)
+
+// —— 页面接线：机制要在页面上真的被调用，否则等于没做 ——
+check('灯位/节气收在 buildLampState 一处', /buildLampState\(/.test(wallPageSrc))
+check('★ 节气灯语优先于通用灯语', /SOLAR_LINES\[solar\.season\]/.test(wallPageSrc))
+check(
+  '★ 距下一个节气已接线（否则 solarTermGap 只是测试里的死代码）',
+  /solarTermGap\(dayKey\)/.test(wallPageSrc) && /ww-lantern-next/.test(wallWxml2)
+)
+check('★ 连续点灯彩蛋已接线', /tryLampStreak\(/.test(wallPageSrc))
+check('★ 心愿数彩蛋已接线', /tryWishCount\(/.test(wallPageSrc))
+check('我的心愿用 markMine 标记（而不是让公开列表回 openid）', /markMine\(this\._wallItems/.test(wallPageSrc))
+check('两个视图共用 applyView（不各写一份渲染）', /applyView\(\)/.test(wallPageSrc))
+check('我的心愿视图可切换且条目可点开', /switchView\(/.test(wallPageSrc) && /data-mode="mine"/.test(wallWxml2) && /bindtap="openWishCard"/.test(wallWxml2))
+check(
+  '心愿笺四件事齐备（开 / 关 / 抄一句 / 复制）',
+  ['openWishCard', 'closeWishCard', 'borrowWishText', 'copyWishText'].every((m) => wallPageSrc.indexOf(m) !== -1)
+)
+check('分享标题取自心愿笺', /onShareAppMessage\(\)[\s\S]{0,320}?title: text/.test(wallPageSrc))
+check('浮层防穿透的空处理器存在（catchtap 指向它）', /noop\(\)\s*\{\s*\}/.test(wallPageSrc))
+check('★ 博物笔记入口把彩蛋进度显示出来', /goRelics\(\)/.test(wallPageSrc) && /getProgress\(\)/.test(wallPageSrc))
+
+check('灯位/节气 UI 已上墙', /ww-lantern-tier/.test(wallWxml2) && /ww-lantern-solar/.test(wallWxml2))
+check('灯位盏数按数组渲染（wx:for 传数字语义不一致）', /lampDots/.test(wallWxml2) && /lampDots/.test(wallPageSrc))
+check('心愿笺浮层已上墙', /ww-card-mask/.test(wallWxml2) && /bindtap="borrowWishText"/.test(wallWxml2))
+check('我的心愿 tab 已上墙', /data-mode="mine"/.test(wallWxml2))
+check('博物笔记入口已上墙', /bindtap="goRelics"/.test(wallWxml2))
+check('愿签可点开（bindtap + data-id）', /bindtap="openWishCard"/.test(wallWxml2) && /data-id="\{\{item\._id\}\}"/.test(wallWxml2))
+
+const achSrc = readSrc('miniprogram/subpackages/extra/user/achievements/index.js')
+check('★ 博物笔记支持 focus 定位', /\.trim\(\) === 'relics'/.test(achSrc))
+check('定位用容器选择器（不是写死 scrollTop）', /selector: '\.relics-card'/.test(achSrc))
+check('定位只做一次（不在 onShow 反复滚）', /if \(this\._focusRelics\)/.test(achSrc))
+
+/* ================================================================== *
+ * 8) 多面墙可运营：商品级开关必须**端到端**通
+ *
+ * 「全站拓展」此前只差一步：藏品档案里没有 wishWallEnabled / wishWallKey。
+ * 补这一步时最容易漏的是 **manageProducts 的字段白名单** —— 它是静默的：
+ * 没登记 = 保存时字段被丢掉，界面照样提示"已保存"（与 flags-field-dropped 同一类）。
+ * ================================================================== */
+
+const mpSrc = readSrc('miniprogram/cloudfunctions/manageProducts/index.js')
+check('★ 白名单放行 wishWallEnabled', /'wishWallEnabled'/.test(mpSrc))
+check('★ 白名单放行 wishWallKey', /'wishWallKey'/.test(mpSrc))
+check(
+  '★ 表单载入按「实际是否挂墙」回填（否则打开任意藏品保存一次就把墙摘了）',
+  /wishWallEnabled: isWishWallProduct\(item\)/.test(managerSrc)
+)
+check(
+  '★ 保存时落成显式布尔并净化作用域',
+  /wishWallEnabled: !!p\.wishWallEnabled/.test(managerSrc) && /wishWallKey: p\.wishWallEnabled \? normalizeProductKey/.test(managerSrc)
+)
+check('新建藏品默认不挂墙', /wishWallEnabled: false,/.test(managerSrc))
+check('关掉开关时清空作用域（不留幽灵值，免得下次开启挂到别的墙上）', /bindPWishWall\(e\)[\s\S]{0,360}?wishWallKey': ''/.test(managerSrc))
+check('作用域边输边净化（与云函数同口径）', /bindPWishWallKey\(e\)[\s\S]{0,220}?normalizeProductKey\(raw, ''\)/.test(managerSrc))
+check('标识页有这两个控件', /bindchange="bindPWishWall"/.test(subviews) && /bindinput="bindPWishWallKey"/.test(subviews))
+check('表单写明口径（同一个 key 共用一面墙）', /同一个 key 的藏品共用一面墙/.test(subviews))
+const detFetchSrc = readSrc('miniprogram/subpackages/feature/detail/index.js')
+check('★ C 端直读 products 文档（新增字段无需再登记读取侧白名单）', /db\.collection\('products'\)\.doc\(id\)\.get\(\)/.test(detFetchSrc))
+check('入口组件把作用域带进墙页', /resolveWishWallKey/.test(readSrc('miniprogram/components/WishWallEntry/index.js')))
+
 
 if (process.argv.includes('--selftest') && !INJECT) {
   const { spawnSync } = await import('node:child_process')

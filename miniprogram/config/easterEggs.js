@@ -159,6 +159,32 @@ const EGGS = [
     triggers: [
       { type: 'wishPosted', pages: ['subpackages/feature/wish-wall/index'] }
     ]
+  },
+  {
+    // 需求 28 升级：**连续三天**来点灯才遇得到 —— 门槛型彩蛋，奖励"坚持"而不是"来过"
+    id: 'taotu',
+    title: '騊駼',
+    latin: 'Taotu',
+    source: '《山海经·海外北经》',
+    excerpt: '北海内有兽，其状如马，名曰騊駼。它不认路，只认常来的脚印——你连着三天替自己点灯，它就从北边慢慢走回来了。',
+    once: true,
+    rewardNote: '收入博物笔记',
+    triggers: [
+      { type: 'lampStreak', minStreak: 3, pages: ['subpackages/feature/wish-wall/index'] }
+    ]
+  },
+  {
+    // 需求 28 升级：写下第三条心愿时触发。鹿蜀「佩之宜子孙」是《山海经》里少见的吉语
+    id: 'lushu',
+    title: '鹿蜀',
+    latin: 'Lushu',
+    source: '《山海经·南山经》',
+    excerpt: '杻阳之山有兽焉，其状如马而白首，其文如虎而赤尾，其音如谣，其名曰鹿蜀，佩之宜子孙。写到第三条，你大概已经知道自己真正想要什么了。',
+    once: true,
+    rewardNote: '收入博物笔记',
+    triggers: [
+      { type: 'wishCount', minCount: 3, pages: ['subpackages/feature/wish-wall/index'] }
+    ]
   }
 ]
 

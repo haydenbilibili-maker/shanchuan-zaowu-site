@@ -179,6 +179,169 @@ function lampStreak(litDays, todayKey) {
   return count
 }
 
+/* ============================ 仪式升级：灯位层级 ============================ */
+
+/**
+ * 灯位层级：连续点灯天数 → 点亮的盏数与称号。
+ *
+ * 为什么要有层级：只有"点亮/没点亮"两种状态时，连续多天来的人得到的反馈和第一天一模一样，
+ * 仪式就没有累积感。层级把"坚持"变成看得见的东西（1 盏 → 3 盏 → 5 盏长明）。
+ *
+ * 阈值刻意低（1/3/7 天）：祈福墙不是养成游戏，第 7 天就该给到顶格反馈。
+ */
+const LAMP_TIERS = [
+  { min: 7, tier: 3, lamps: 5, label: '长明' },
+  { min: 3, tier: 2, lamps: 3, label: '守夜' },
+  { min: 1, tier: 1, lamps: 1, label: '初见' }
+]
+
+/**
+ * @param {number} streak 连续点灯天数（0 = 今日未点灯）
+ * @returns {{tier:number, lamps:number, label:string, nextAt:number, daysToNext:number}}
+ *   `nextAt` = 下一层级所需天数（0 = 已到顶格），`daysToNext` = 还差几天
+ */
+function lampTier(streak) {
+  const n = Math.max(0, parseInt(streak, 10) || 0)
+  const hit = LAMP_TIERS.find((t) => n >= t.min)
+  if (!hit) return { tier: 0, lamps: 0, label: '未点', nextAt: 1, daysToNext: 1 }
+  // 升序取下一条门槛（LAMP_TIERS 是降序，故取比当前 min 大的最小者）
+  const higher = LAMP_TIERS.filter((t) => t.min > n).sort((a, b) => a.min - b.min)[0]
+  return {
+    tier: hit.tier,
+    lamps: hit.lamps,
+    label: hit.label,
+    nextAt: higher ? higher.min : 0,
+    daysToNext: higher ? higher.min - n : 0
+  }
+}
+
+/* ============================ 仪式升级：二十四节气 ============================ */
+
+/**
+ * 二十四节气（常用日期表）。
+ *
+ * ⚠️ 这是**公历近似日**（每年可能差 ±1 天，精确值需天文历）。用途是"今天是不是节气"的
+ * 仪式提示，不是历法计算 —— 所以固定表就够，且**确定性**（可在测试里断言）。
+ * 逐条写出来而不是算：节气算法（太阳黄经）在这个量级上得不偿失。
+ */
+const SOLAR_TERMS = [
+  { name: '小寒', month: 1, day: 5, season: 'winter' },
+  { name: '大寒', month: 1, day: 20, season: 'winter' },
+  { name: '立春', month: 2, day: 4, season: 'spring' },
+  { name: '雨水', month: 2, day: 19, season: 'spring' },
+  { name: '惊蛰', month: 3, day: 5, season: 'spring' },
+  { name: '春分', month: 3, day: 20, season: 'spring' },
+  { name: '清明', month: 4, day: 4, season: 'spring' },
+  { name: '谷雨', month: 4, day: 20, season: 'spring' },
+  { name: '立夏', month: 5, day: 5, season: 'summer' },
+  { name: '小满', month: 5, day: 21, season: 'summer' },
+  { name: '芒种', month: 6, day: 5, season: 'summer' },
+  { name: '夏至', month: 6, day: 21, season: 'summer' },
+  { name: '小暑', month: 7, day: 7, season: 'summer' },
+  { name: '大暑', month: 7, day: 22, season: 'summer' },
+  { name: '立秋', month: 8, day: 7, season: 'autumn' },
+  { name: '处暑', month: 8, day: 23, season: 'autumn' },
+  { name: '白露', month: 9, day: 7, season: 'autumn' },
+  { name: '秋分', month: 9, day: 23, season: 'autumn' },
+  { name: '寒露', month: 10, day: 8, season: 'autumn' },
+  { name: '霜降', month: 10, day: 23, season: 'autumn' },
+  { name: '立冬', month: 11, day: 7, season: 'winter' },
+  { name: '小雪', month: 11, day: 22, season: 'winter' },
+  { name: '大雪', month: 12, day: 7, season: 'winter' },
+  { name: '冬至', month: 12, day: 22, season: 'winter' }
+]
+
+/** 节气名 → 索引（1..24，0 = 不是节气日） */
+function solarTermIndex(dayKey) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dayKey == null ? '' : dayKey))
+  if (!m) return 0
+  const month = Number(m[2])
+  const day = Number(m[3])
+  const i = SOLAR_TERMS.findIndex((t) => t.month === month && t.day === day)
+  return i < 0 ? 0 : i + 1
+}
+
+/**
+ * 当天是不是节气日。
+ * @returns {{name:string, index:number, season:string}|null}
+ */
+function solarTermOn(dayKey) {
+  const index = solarTermIndex(dayKey)
+  if (!index) return null
+  const term = SOLAR_TERMS[index - 1]
+  return { name: term.name, index, season: term.season }
+}
+
+/** 距离当天最近的一个节气（含当天；用于"下一个节气还有几天"这类文案） */
+function solarTermGap(dayKey) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dayKey == null ? '' : dayKey))
+  if (!m) return null
+  const base = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  let best = null
+  for (let i = 0; i < SOLAR_TERMS.length; i += 1) {
+    const t = SOLAR_TERMS[i]
+    for (const yearOffset of [0, 1]) {
+      const at = Date.UTC(Number(m[1]) + yearOffset, t.month - 1, t.day)
+      const diffDays = Math.round((at - base) / 86400000)
+      if (diffDays < 0) continue
+      if (!best || diffDays < best.inDays) best = { name: t.name, index: i + 1, season: t.season, inDays: diffDays, on: diffDays === 0 }
+    }
+  }
+  return best
+}
+
+/* ============================ 祈福升级：我的心愿 ============================ */
+
+/**
+ * 用「我的心愿」（`mine` 接口）给公开列表打标。
+ *
+ * 为什么要这样做：公开列表**刻意不返回 openid**（最小暴露），所以 C 端无法自己判断
+ * 「哪条是我写的」。`mine` 返回的是我自己的记录（含 `_id`），用 `_id` 集合去标记就够了 ——
+ * 不必为了一句"我的"把 openid 暴露到公开列表里。
+ *
+ * @param {Array<object>} items 公开列表（已装饰）
+ * @param {Array<object>|Set<string>} mine 我的记录数组，或我的 _id 集合
+ * @returns {Array<object>} 带 `isMine` 的新数组（不改原对象）
+ */
+function markMine(items, mine) {
+  const ids = mine instanceof Set
+    ? mine
+    : new Set((Array.isArray(mine) ? mine : []).map((r) => String((r && r._id) || '')).filter(Boolean))
+  return (Array.isArray(items) ? items : []).map((it) => Object.assign({}, it, {
+    isMine: !!it && ids.has(String(it._id || ''))
+  }))
+}
+
+/**
+ * 「我的心愿」视图的数据：把 `mine` 的记录装饰成与公开列表同构的形状。
+ * 含被馆方收起的（`status === 'hidden'`），这样用户能看见"我的哪条没公开"。
+ */
+function decorateMineRows(mine, now) {
+  const base = Number.isFinite(now) ? now : Date.now()
+  return (Array.isArray(mine) ? mine : []).map((row) => ({
+    _id: String((row && row._id) || ''),
+    text: normalizeWishText(row && row.text),
+    nickname: String((row && row.nickname) || '我'),
+    avatar: String((row && row.avatar) || ''),
+    pinned: !!(row && row.pinned === true),
+    official: false,
+    isMine: true,
+    hidden: !!(row && row.status === 'hidden'),
+    timeText: formatWishTime(row && row.createTime, base)
+  }))
+}
+
+/** 我的心愿里「已上墙 / 被收起 / 共几条」的计数（文案要用，避免页面各算一遍） */
+function mineSummary(mine) {
+  const rows = Array.isArray(mine) ? mine : []
+  const hidden = rows.filter((r) => r && r.status === 'hidden').length
+  return {
+    total: rows.length,
+    visible: rows.length - hidden,
+    hidden
+  }
+}
+
 /**
  * 客户端预校验。
  * @returns {{ok:boolean, text?:string, msg?:string}}
@@ -349,6 +512,15 @@ module.exports = {
   pickDailyLine,
   previousDayKey,
   lampStreak,
+  LAMP_TIERS,
+  lampTier,
+  SOLAR_TERMS,
+  solarTermIndex,
+  solarTermOn,
+  solarTermGap,
+  markMine,
+  decorateMineRows,
+  mineSummary,
   validateWishText,
   isWishWallProduct,
   danmakuDurationMs,

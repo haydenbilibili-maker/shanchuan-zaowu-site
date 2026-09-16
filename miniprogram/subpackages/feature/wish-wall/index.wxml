@@ -52,11 +52,23 @@
         <view class="ww-lantern-core"></view>
       </view>
       <view class="ww-lantern-copy">
-        <text class="ww-lantern-title">{{lamp.lit ? '今日灯已点' : '点一盏灯'}}</text>
+        <view class="ww-lantern-head">
+          <text class="ww-lantern-title">{{lamp.lit ? '今日灯已点' : '点一盏灯'}}</text>
+          <!-- 灯位：连续点灯攒出来的层级（1/3/7 天 → 1/3/5 盏）。称号来自 wishWall.lampTier -->
+          <text class="ww-lantern-tier" wx:if="{{lamp.lit && lamp.label}}">{{lamp.label}}</text>
+          <!-- 今天是个节气就直说 —— 节气灯语优先于通用灯语 -->
+          <text class="ww-lantern-solar" wx:if="{{lamp.solar}}">{{lamp.solar.name}}</text>
+          <!-- 不是节气日时给"还差几天"：一个"过几天再来"的理由（>7 天不显示，免得成噪音） -->
+          <text class="ww-lantern-next" wx:elif="{{lamp.solarNext}}">距{{lamp.solarNext.name}} {{lamp.solarNext.inDays}} 天</text>
+        </view>
         <text class="ww-lantern-line" wx:if="{{lamp.lit}}">{{lamp.line}}</text>
         <text class="ww-lantern-line is-idle" wx:else>点一下，替今天留个记号</text>
+        <text class="ww-lantern-note" wx:if="{{lamp.lit && lamp.tierNote}}">{{lamp.tierNote}}</text>
       </view>
       <view class="ww-streak" wx:if="{{lamp.streak > 1}}">
+        <view class="ww-lamps" aria-hidden="true">
+          <view class="ww-lamp-dot" wx:for="{{lamp.lampDots}}" wx:key="*this"></view>
+        </view>
         <text class="ww-streak-n">{{lamp.streak}}</text>
         <text class="ww-streak-l">天</text>
       </view>
@@ -150,7 +162,17 @@
 
     <!-- 愿签列表：弹幕看得快，愿签看得清，也便于复制与无障碍阅读 -->
     <view class="ww-head">
-      <text class="ww-head-label">墙上的愿签</text>
+      <!-- 两个视图共用一套愿签渲染，只有数据源不同（见页面 applyView） -->
+      <text
+        class="ww-head-label {{viewMode === 'wall' ? 'is-on' : ''}}"
+        bindtap="switchView"
+        data-mode="wall"
+      >墙上的愿签</text>
+      <text
+        class="ww-head-label is-mine {{viewMode === 'mine' ? 'is-on' : ''}}"
+        bindtap="switchView"
+        data-mode="mine"
+      >我的心愿{{mine.total ? ' ' + mine.total : ''}}</text>
       <text class="ww-head-n">{{items.length}} 条</text>
       <view class="ww-head-rule" aria-hidden="true"></view>
     </view>
@@ -183,9 +205,21 @@
            拆两列后滚动长度减半，也更像"一面贴满愿签的墙" -->
       <view class="ww-tag-cols">
         <view class="ww-tag-col" wx:for="{{tagColumns}}" wx:for-item="col" wx:for-index="ci" wx:key="ci">
-          <view class="ww-tag" wx:for="{{col}}" wx:for-item="item" wx:key="_id">
+          <view
+            class="ww-tag"
+            wx:for="{{col}}"
+            wx:for-item="item"
+            wx:key="_id"
+            bindtap="openWishCard"
+            data-id="{{item._id}}"
+            hover-class="ww-tag-press"
+            hover-stay-time="80"
+          >
             <view class="ww-tag-pin" aria-hidden="true"></view>
-            <text class="ww-tag-seal is-official" wx:if="{{item.official}}">馆方</text>
+            <!-- 印记优先级：已收起 > 馆方 > 我的 > 置顶（前三者都是"你需要先知道"的信息） -->
+            <text class="ww-tag-seal is-hidden" wx:if="{{item.hidden}}">已收起</text>
+            <text class="ww-tag-seal is-official" wx:elif="{{item.official}}">馆方</text>
+            <text class="ww-tag-seal is-mine" wx:elif="{{item.isMine}}">我的</text>
             <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>
             <text class="ww-tag-text">{{item.text}}</text>
             <view class="ww-tag-foot">
@@ -195,7 +229,7 @@
           </view>
         </view>
       </view>
-      <view class="ww-tags-empty" wx:if="{{!items.length}}">还没有人许愿</view>
+      <view class="ww-tags-empty" wx:if="{{!items.length}}">{{viewMode === 'mine' ? '你还没在这面墙上写过心愿' : '还没有人许愿'}}</view>
       <!-- 明确收尾：服务端一面墙只回 30 条，到底了要如实说 -->
       <view class="ww-end" wx:if="{{items.length}}">
         <view class="ww-end-rule" aria-hidden="true"></view>
@@ -204,8 +238,50 @@
       </view>
       </block>
     </view>
+
+    <!-- 博物笔记：彩蛋拾得的去处。此前墙上没有任何入口指向它，用户不知道去哪儿看 -->
+    <view
+      class="ww-relics"
+      wx:if="{{relics.total}}"
+      bindtap="goRelics"
+      hover-class="ww-relics-press"
+      hover-stay-time="80"
+    >
+      <view class="signal-light lamp-brass"></view>
+      <text class="ww-relics-text">博物笔记 · 已拾 {{relics.found}} / {{relics.total}} 页</text>
+      <text class="ww-relics-chevron">›</text>
+    </view>
   </block>
 
-  <!-- 彩蛋浮层：进页（吉量）/ 落愿（驳）彩蛋由注册表驱动，页面只提供这个挂点 -->
+  <!-- 心愿笺：点愿签展开的那张纸。弹幕看得快、愿签看得清、笺看得住 -->
+  <view
+    class="ww-card-mask"
+    wx:if="{{card}}"
+    bindtap="closeWishCard"
+    catchtouchmove="noop"
+  >
+    <view class="ww-card" catchtap="noop">
+      <view class="ww-card-pin" aria-hidden="true"></view>
+      <text class="ww-card-over">愿签</text>
+      <text class="ww-card-text">{{card.text}}</text>
+      <view class="ww-card-meta">
+        <text class="ww-card-who">{{card.nickname}}</text>
+        <text class="ww-card-time">{{card.timeText}}</text>
+      </view>
+      <view class="ww-card-tags">
+        <text class="ww-card-tag is-warn" wx:if="{{card.hidden}}">已被馆方收起</text>
+        <text class="ww-card-tag" wx:if="{{card.official}}">馆方</text>
+        <text class="ww-card-tag" wx:if="{{card.isMine}}">我的</text>
+        <text class="ww-card-tag" wx:if="{{card.pinned}}">置顶</text>
+      </view>
+      <view class="ww-card-acts">
+        <view class="ww-card-act" bindtap="borrowWishText" hover-class="ww-card-act-press" hover-stay-time="80">抄一句</view>
+        <view class="ww-card-act" bindtap="copyWishText" hover-class="ww-card-act-press" hover-stay-time="80">复制</view>
+        <button class="ww-card-act is-share" open-type="share">祈一份</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 彩蛋浮层：进页（吉量）/ 落愿（驳）/ 连点灯（騊駼）/ 心愿数（鹿蜀）由注册表驱动，页面只提供这个挂点 -->
   <easter-egg-note id="easterEggNote" />
 </view>
