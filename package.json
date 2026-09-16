@@ -19,6 +19,10 @@
     "sync:miniprogram:check": "node scripts/check-miniprogram-sync.mjs",
     "lint:wxml": "node miniprogram/scripts/check-wxml.mjs miniprogram",
     "lint:wxml:selftest": "node miniprogram/scripts/check-wxml.mjs --selftest",
+    "check:welcome-gift": "node miniprogram/scripts/check-welcome-gift-config.cjs",
+    "check:welcome-gift:selftest": "node miniprogram/scripts/check-welcome-gift-config.cjs --selftest",
+    "check:store-points": "node miniprogram/scripts/check-store-point-rules-sync.cjs",
+    "check:store-points:selftest": "node miniprogram/scripts/check-store-point-rules-sync.cjs --selftest",
     "pages:version": "true",
     "preview": "astro preview",
     "astro": "astro"

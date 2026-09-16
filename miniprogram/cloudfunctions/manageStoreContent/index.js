@@ -24,7 +24,7 @@ const ALLOWED_COLLECTIONS = {
   banners: { publicRead: true },
   categories: { publicRead: true },
   activities: { publicRead: true },
-  rewards: { publicRead: false },
+  rewards: { publicRead: false, shelfField: 'isOffShelf' },
   framers: { publicRead: true },
   care_guides: { publicRead: false },
   custom_configs: { publicRead: false },
@@ -85,11 +85,19 @@ async function handleUpsert(event) {
   const data = sanitizeData(event.data)
   if (!Object.keys(data).length) return fail('缺少 data')
   const id = String(event.id || '').trim()
+  const now = Date.now()
   if (id) {
-    await db.collection(col.name).doc(id).update({ data })
+    // 更新：补齐 updateTime（ERP 靠它判断「是否被改过」）；
+    // 不在更新时改写 createTime，避免打乱 ERP 的 createTime desc 排序。
+    await db.collection(col.name).doc(id).update({ data: { ...data, updateTime: now } })
     return { success: true, id, op: 'update' }
   }
-  const addRes = await db.collection(col.name).add({ data })
+  // 新增：必须自带 createTime，否则 ERP 按 createTime 排序时该行会沉底/乱序。
+  const addData = { ...data, createTime: data.createTime || now, updateTime: now }
+  // 上架状态由集合声明兜底；小程序端无上架开关，不应因为改个库存就被强制重新上架。
+  const shelfField = col.meta && col.meta.shelfField
+  if (shelfField && addData[shelfField] === undefined) addData[shelfField] = false
+  const addRes = await db.collection(col.name).add({ data: addData })
   return { success: true, id: addRes._id, op: 'add' }
 }
 

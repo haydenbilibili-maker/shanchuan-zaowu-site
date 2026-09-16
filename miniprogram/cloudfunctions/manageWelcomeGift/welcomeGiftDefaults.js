@@ -26,16 +26,17 @@ function getDefaultConfig() {
     pointsEnabled: true,
     excludeGrowth: true,
     couponsEnabled: true,
-    expireDays: 30,
+    expireDays: 90,
     stackable: false,
     priority: 100,
+    // 与线上 member_welcome_gift（小程序-我的-超管工作台-新会员礼包）逐字对齐：
+    // 满49减10 / 满299减30 / 满499减50 / 满999减100
+    // 各档门槛均高于折扣地板 ceil(value/0.25)，兜底配置也发不出穿底券
     coupons: [
-      // 与 upsertUserProfile/welcomeGiftDefaults 同源；首单友好档门槛 49
-      { id: 'c10s', enabled: true, value: 10, minSpend: 49, expireDays: 30, count: 1, title: '新会员礼券 · 满49减10', channel: 'all' },
-      { id: 'c10', enabled: true, value: 10, minSpend: 100, expireDays: 30, count: 1, title: '新会员礼券 · 满100减10', channel: 'all' },
-      { id: 'c30', enabled: true, value: 30, minSpend: 200, expireDays: 30, count: 1, title: '新会员礼券 · 满200减30', channel: 'all' },
-      { id: 'c50', enabled: true, value: 50, minSpend: 300, expireDays: 30, count: 1, title: '新会员礼券 · 满300减50', channel: 'all' },
-      { id: 'c100', enabled: true, value: 100, minSpend: 500, expireDays: 30, count: 1, title: '新会员礼券 · 满500减100', channel: 'all' }
+      { id: 'c10', enabled: true, value: 10, minSpend: 49, expireDays: 90, count: 1, title: '新会员礼券 · 10元', channel: 'all' },
+      { id: 'c30', enabled: true, value: 30, minSpend: 299, expireDays: 90, count: 1, title: '新会员礼券 · 30元', channel: 'all' },
+      { id: 'c50', enabled: true, value: 50, minSpend: 499, expireDays: 90, count: 1, title: '新会员礼券 · 50元', channel: 'all' },
+      { id: 'c100', enabled: true, value: 100, minSpend: 999, expireDays: 90, count: 1, title: '新会员礼券 · 100元', channel: 'all' }
     ]
   }
 }
@@ -152,6 +153,79 @@ function activeCoupons(config) {
   return cfg.coupons.filter((c) => c.enabled && c.value > 0 && c.count > 0)
 }
 
+/** 展开券档位为逐张槽位；slotKey 唯一标识「应发的一张券」 */
+function expandSlots(config) {
+  const slots = []
+  activeCoupons(config).forEach((coupon) => {
+    const n = Math.max(0, Math.floor(coerceNumber(coupon.count)) || 0)
+    for (let i = 0; i < n; i += 1) {
+      slots.push({ ...coupon, slotKey: `${coupon.id || coupon.value}:${i}` })
+    }
+  })
+  return slots
+}
+
+/**
+ * 已发券条款对齐计划（礼包配置 = 唯一真源）。
+ *
+ * 背景：超管工作台是礼包配置的最高频写入场景，门槛/标题/渠道属热更新字段；
+ * 但券在发放时把条款拍成了快照，且旧逻辑在「券已齐」时直接 return，
+ * 导致改配置后老会员永远停留在旧门槛（历史事故：配置满49，页面仍显示满50）。
+ *
+ * 安全边界（宁可不动，不可改错）：
+ *  - 只对齐未使用券；used / expired / locked 是历史凭证与退款依据，一律不动。
+ *  - 优先按 slotKey 精确匹配；无 slotKey 时仅在该面额只对应唯一天然档位时才回退匹配。
+ *  - 档位被删除 → 保留原条款，不猜。
+ *  - 档位 id 被复用于不同面额 → 视为另一张券，跳过（面额 value 绝不改写）。
+ *
+ * @returns {{ items: Array<{_id: string, slotKey: string, patch: object}>, skipped: number, unchanged: number }}
+ */
+function buildCouponAlignPlan(config, coupons) {
+  const slots = expandSlots(config)
+  const bySlotKey = new Map()
+  const valueCount = new Map()
+  slots.forEach((slot) => {
+    bySlotKey.set(String(slot.slotKey), slot)
+    const key = String(slot.value)
+    valueCount.set(key, (valueCount.get(key) || 0) + 1)
+  })
+  // 仅当某面额在配置中唯一时才允许「无 slotKey」回退匹配，避免 c10s/c10 同类歧义
+  const uniqueByValue = new Map()
+  slots.forEach((slot) => {
+    if (valueCount.get(String(slot.value)) === 1) uniqueByValue.set(String(slot.value), slot)
+  })
+
+  const items = []
+  let skipped = 0
+  let unchanged = 0
+  ;(coupons || []).forEach((coupon) => {
+    if (!coupon || !coupon._id) return
+    const src = String(coupon.source || coupon.couponSource || '')
+    if (src !== SOURCE) { skipped += 1; return }
+    const status = String(coupon.status || 'unused')
+    if (status !== 'unused' && status !== 'available') { skipped += 1; return }
+    let slot = coupon.slotKey != null && coupon.slotKey !== ''
+      ? bySlotKey.get(String(coupon.slotKey))
+      : null
+    if (!slot) slot = uniqueByValue.get(String(coupon.value))
+    if (!slot) { skipped += 1; return }
+    if (Number(slot.value) !== Number(coupon.value)) { skipped += 1; return }
+
+    const patch = {}
+    if (Number(coupon.minSpend) !== Number(slot.minSpend)) patch.minSpend = slot.minSpend
+    if (String(coupon.title || '') !== String(slot.title || '')) patch.title = slot.title
+    // 缺 channel 的旧券语义上等同 'all'，不要为它产生无意义的写入；
+    // 但若配置收窄为 store/online，仍需把它纠正过来。
+    const couponChannel = String(coupon.channel || 'all').trim().toLowerCase() || 'all'
+    const slotChannel = String(slot.channel || 'all').trim().toLowerCase() || 'all'
+    if (couponChannel !== slotChannel) patch.channel = slot.channel
+    if (!Object.keys(patch).length) { unchanged += 1; return }
+    patch.termsSyncedAt = Date.now()
+    items.push({ _id: coupon._id, slotKey: String(slot.slotKey), patch })
+  })
+  return { items, skipped, unchanged }
+}
+
 /** C 端注册页预览：仅安全展示字段（积分 + 展开后的礼券卡） */
 function buildPreview(config) {
   const cfg = normalizeConfig(config)
@@ -242,6 +316,8 @@ module.exports = {
   normalizeConfig,
   resolveExpireDays,
   activeCoupons,
+  expandSlots,
+  buildCouponAlignPlan,
   buildPreview,
   describeConfig,
   buildMessageContent,

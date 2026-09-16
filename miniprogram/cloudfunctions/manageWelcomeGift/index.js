@@ -2,8 +2,9 @@
  * 新会员礼包 — 超管读写（集合 member_welcome_gift）
  * 与 Admin WelcomeGiftConfig / upsertUserProfile 同源
  *
- * action: get | save | resetDefaults | listIncomplete | preview
+ * action: get | save | resetDefaults | listIncomplete | preview | alignCoupons
  * preview：C 端公开只读预览（无敏感字段），无需超管
+ * alignCoupons：把已发未使用礼券条款对齐到当前配置（幂等纠偏；save 时自动执行一次）
  */
 const cloud = require('wx-server-sdk')
 const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
@@ -13,11 +14,19 @@ const {
   normalizeConfig,
   describeConfig,
   buildPreview,
+  buildCouponAlignPlan,
   validateConfigCoupons
 } = require('./welcomeGiftDefaults')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
+const _ = db.command
+
+const USER_COUPONS = 'user_coupons'
+const REGISTER_GIFT_SOURCE = 'register_gift'
+/** 条款同步单次扫描上限，避免超管保存被大表拖垮 */
+const ALIGN_SCAN_CAP = 2000
+const ALIGN_WRITE_BATCH = 50
 
 function fail(msg, code) {
   return { success: false, msg, code: code || 'FAIL' }
@@ -105,6 +114,79 @@ async function previewConfig() {
   }
 }
 
+function updateCount(res) {
+  const stats = (res && res.stats) || {}
+  const n = stats.updated != null ? stats.updated : (res && res.updated)
+  const num = Number(n)
+  return Number.isFinite(num) ? num : 0
+}
+
+/** 已发未使用礼券（含 available 兼容态），分页扫描 */
+async function scanIssuedCoupons() {
+  const out = []
+  for (let skip = 0; skip < ALIGN_SCAN_CAP; skip += 100) {
+    const res = await db.collection(USER_COUPONS)
+      .where({ source: REGISTER_GIFT_SOURCE, status: _.in(['unused', 'available']) })
+      .skip(skip)
+      .limit(100)
+      .get()
+    const rows = res.data || []
+    out.push(...rows)
+    if (rows.length < 100) break
+  }
+  return out
+}
+
+/**
+ * 把已发「未使用」礼券的条款同步为当前配置（幂等）。
+ * 配置是唯一真源：超管工作台保存后立即生效，不再等会员下次打开小程序；
+ * used / expired 券是历史凭证，一律不动（由 buildCouponAlignPlan 保证）。
+ */
+async function syncIssuedCouponTerms(config) {
+  try {
+    const rows = await scanIssuedCoupons()
+    const plan = buildCouponAlignPlan(config, rows)
+    // 同条款归并成一次写，减少写放大
+    const groups = new Map()
+    plan.items.forEach((item) => {
+      const key = `${item.slotKey}|${item.patch.minSpend}|${item.patch.title}|${item.patch.channel}`
+      if (!groups.has(key)) groups.set(key, { ids: [], patch: item.patch })
+      groups.get(key).ids.push(item._id)
+    })
+    let updated = 0
+    for (const group of groups.values()) {
+      for (let i = 0; i < group.ids.length; i += ALIGN_WRITE_BATCH) {
+        const ids = group.ids.slice(i, i + ALIGN_WRITE_BATCH)
+        try {
+          const res = await db.collection(USER_COUPONS)
+            .where({ _id: _.in(ids) })
+            .update({ data: group.patch })
+          updated += updateCount(res)
+        } catch (e) {
+          console.warn('welcomeGift align batch', e.message)
+        }
+      }
+    }
+    return {
+      scanned: rows.length,
+      updated,
+      pending: plan.items.length,
+      skipped: plan.skipped,
+      unchanged: plan.unchanged,
+      truncated: rows.length >= ALIGN_SCAN_CAP
+    }
+  } catch (e) {
+    console.warn('welcomeGift align coupons', e.message)
+    return { scanned: 0, updated: 0, pending: 0, error: String(e.message || e) }
+  }
+}
+
+function alignSuffix(sync) {
+  if (!sync || sync.error) return ''
+  if (!sync.updated) return '；已发礼券条款本已一致'
+  return `；已同步 ${sync.updated} 张未使用礼券门槛`
+}
+
 async function saveConfig(event, openid) {
   const auth = await requireSuperAdmin(event, openid)
   if (!auth.ok) return auth.res
@@ -117,41 +199,25 @@ async function saveConfig(event, openid) {
   payload.updatedBy = openid || (auth.actor && auth.actor.openid) || 'admin'
   const docId = String((event && event.docId) || '').trim()
 
+  let savedDocId = docId
   try {
     if (docId) {
       await db.collection(COLLECTION).doc(docId).update({ data: payload })
-      return {
-        success: true,
-        docId,
-        config: normalizeConfig(payload),
-        ruleText: describeConfig(payload),
-        msg: '新会员礼包已保存'
+    } else {
+      const existing = await loadDoc()
+      if (existing && existing._id) {
+        savedDocId = existing._id
+        await db.collection(COLLECTION).doc(existing._id).update({ data: payload })
+      } else {
+        const added = await db.collection(COLLECTION).add({
+          data: {
+            ...payload,
+            createTime: Date.now(),
+            createdBy: openid || 'admin'
+          }
+        })
+        savedDocId = added._id
       }
-    }
-    const existing = await loadDoc()
-    if (existing && existing._id) {
-      await db.collection(COLLECTION).doc(existing._id).update({ data: payload })
-      return {
-        success: true,
-        docId: existing._id,
-        config: normalizeConfig(payload),
-        ruleText: describeConfig(payload),
-        msg: '新会员礼包已保存'
-      }
-    }
-    const added = await db.collection(COLLECTION).add({
-      data: {
-        ...payload,
-        createTime: Date.now(),
-        createdBy: openid || 'admin'
-      }
-    })
-    return {
-      success: true,
-      docId: added._id,
-      config: normalizeConfig(payload),
-      ruleText: describeConfig(payload),
-      msg: '新会员礼包已保存'
     }
   } catch (e) {
     console.error('manageWelcomeGift save', e)
@@ -159,6 +225,18 @@ async function saveConfig(event, openid) {
       return fail(`请先在云开发控制台创建集合 ${COLLECTION}`)
     }
     return fail(e.message || '保存失败')
+  }
+
+  // 保存成功即把新条款下发给已发未使用券，避免「配置改了、老会员仍显示旧门槛」
+  const couponSync = await syncIssuedCouponTerms(payload)
+
+  return {
+    success: true,
+    docId: savedDocId,
+    config: normalizeConfig(payload),
+    ruleText: describeConfig(payload),
+    couponSync,
+    msg: `新会员礼包已保存${alignSuffix(couponSync)}`
   }
 }
 
@@ -218,6 +296,21 @@ exports.main = async (event) => {
     if (action === 'save') return await saveConfig(event, openid)
     if (action === 'resetDefaults') return await resetDefaults(event, openid)
     if (action === 'listIncomplete') return await listIncomplete(event, openid)
+    if (action === 'alignCoupons') {
+      // 人工纠偏入口：把已发未使用礼券条款强制对齐到当前配置（幂等）
+      const auth = await requireSuperAdmin(event, openid)
+      if (!auth.ok) return auth.res
+      const current = await getConfig()
+      const couponSync = await syncIssuedCouponTerms(current.config)
+      return {
+        success: true,
+        couponSync,
+        config: current.config,
+        msg: couponSync.updated
+          ? `已同步 ${couponSync.updated} 张未使用礼券门槛`
+          : '已发未使用礼券条款与当前配置一致'
+      }
+    }
     // 读：需登录后台，避免顾客直调探完整配置
     const auth = await requireSuperAdmin(event, openid)
     if (!auth.ok) return auth.res

@@ -1,7 +1,9 @@
 /**
  * 与小程序 cloudfunctions/getStorePointRules/defaults.js 对齐。
  * 线上积分 SSOT：集合 store_point_rules（非旧 points_rules）。
- * v3 默认：每满 ¥10 赠 1 积分。
+ * v4 默认：每满 ¥1 赠 1 积分与 1 成长值。
+ * ⚠ 本文件是云端 defaults.js 的手工平行副本，改动必须两边同步；
+ *   守卫见 miniprogram/scripts/check-store-point-rules-sync.cjs
  */
 
 export const MODE_FIXED = 'fixed'
@@ -15,16 +17,18 @@ export const DEFAULT_MODULES = {
   review: true,
   checkIn: true,
   browse: true,
-  orderBind: true
+  orderBind: true,
+  receiptClaim: true
 }
 
 export const MODULE_LABELS = {
   storePurchase: '门店消费赠分',
   share: '分享奖励',
   review: '评价奖励',
-  checkIn: '签到奖励',
-  browse: '浏览奖励',
-  orderBind: '外部订单绑定'
+  checkIn: '每日签到',
+  browse: '鉴赏藏品',
+  orderBind: '外部订单绑定',
+  receiptClaim: '门店小票兑积分'
 }
 
 export const DEFAULT_MODULE_REWARDS = {
@@ -49,16 +53,17 @@ function toNumber(value, fallback) {
 
 export function getDefaultStorePointConfig() {
   return {
-    ruleId: 'store_points_default_v3',
+    // v4：每满 ¥1 赠 1 积分与 1 成长值
+    ruleId: 'store_points_default_v4',
     name: '门店消费赠分 · 默认规则',
     status: 'active',
     priority: 100,
     storeIds: [],
     mode: MODE_PER_THRESHOLD,
-    threshold: 10,
+    threshold: 1,
     pointsPerThreshold: 1,
-    ratio: 0.1,
-    minAmount: 10,
+    ratio: 1,
+    minAmount: 1,
     maxAmountPerRecord: 50000,
     roundMode: 'floor',
     applyMemberMultiplier: false,

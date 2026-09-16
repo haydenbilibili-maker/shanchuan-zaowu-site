@@ -31,6 +31,9 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   'manageGift',
   // 运营内容写库（banners/categories/rewards/framers 等 write:false → 须经此函数）
   'manageStoreContent',
+  // 2026-09-16：门店积分规则读写（store_point_rules write:false，ERP 须经此函数；
+  // 与小程序超管工作台共用同一 SSOT 与同一写入逻辑，含审批队列）
+  'getStorePointRules',
   // 2026-09-14 对齐：定金 / 直播 / 装裱师佣金 / 生日礼 / 审批
   'manageDeposit',
   'manageLiveSession',

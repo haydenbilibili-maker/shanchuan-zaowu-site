@@ -124,18 +124,18 @@ const LEVEL_BENEFITS = [
 
 /**
  * 完成注册礼包展示兜底（权威在云库 member_welcome_gift / manageWelcomeGift preview）
- * 默认与 upsertUserProfile welcomeGiftDefaults 对齐：100 积分 + 满49减10 / 满100减10 / 满200减30 / 满300减50 / 满500减100
+ * 与线上「超管工作台-新会员礼包」逐字对齐：100 积分 + 满49减10 / 满299减30 / 满499减50 / 满999减100
+ * 网络失败时注册页会退回这份数据，务必随配置页同步，否则断网即显示错误门槛
  */
 const REGISTER_GIFT = {
   points: 100,
   coupons: [
     { value: 10, minSpend: 49 },
-    { value: 10, minSpend: 100 },
-    { value: 30, minSpend: 200 },
-    { value: 50, minSpend: 300 },
-    { value: 100, minSpend: 500 }
+    { value: 30, minSpend: 299 },
+    { value: 50, minSpend: 499 },
+    { value: 100, minSpend: 999 }
   ],
-  expireDays: 30,
+  expireDays: 90,
   stackable: false
 }
 /** 完善资料奖励（与云函数 upsertUserProfile 对齐；默认 0，注册净入账仅礼包） */

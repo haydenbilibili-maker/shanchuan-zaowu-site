@@ -146,6 +146,8 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'manageGift',
   // 运营内容写库（集合 write:false 后 ERP 不可 CDN 直写）
   'manageStoreContent',
+  // 门店积分规则：ERP 与小程序超管工作台共用 getStorePointRules（含审批与校验）
+  'getStorePointRules',
   // 2026-09-14 对齐：定金 / 直播 / 装裱师佣金 / 生日礼 / 审批
   'manageDeposit',
   'manageLiveSession',

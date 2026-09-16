@@ -128,17 +128,40 @@ async function listExistingGiftCoupons(openid) {
   }
 }
 
+/** 槽位展开统一由 welcomeGiftDefaults 定义，避免与管理端副本漂移 */
 function expandCouponSlots(config) {
-  const slots = []
-  welcomeDefaults.activeCoupons(config).forEach((coupon) => {
-    for (let i = 0; i < coupon.count; i += 1) {
-      slots.push({
-        ...coupon,
-        slotKey: `${coupon.id || coupon.value}:${i}`
-      })
+  return welcomeDefaults.expandSlots(config)
+}
+
+/**
+ * 把已发「未使用」礼券的条款对齐到当前配置（幂等，可反复执行）。
+ * 配置是唯一真源：超管工作台改门槛后，老会员不应永远停留在旧门槛。
+ * @returns {Promise<number>} 实际改写的券数
+ */
+async function alignExistingGiftCouponTerms(config, existingCoupons) {
+  let plan
+  try {
+    plan = welcomeDefaults.buildCouponAlignPlan(config, existingCoupons)
+  } catch (e) {
+    console.warn('register gift align plan', e.message)
+    return 0
+  }
+  let aligned = 0
+  for (const item of plan.items) {
+    try {
+      await db.collection(USER_COUPONS).doc(item._id).update({ data: item.patch })
+      const hit = (existingCoupons || []).find((c) => c && c._id === item._id)
+      if (hit) {
+        if (item.patch.minSpend !== undefined) hit.minSpend = item.patch.minSpend
+        if (item.patch.title !== undefined) hit.title = item.patch.title
+        if (item.patch.channel !== undefined) hit.channel = item.patch.channel
+      }
+      aligned += 1
+    } catch (e) {
+      console.warn('register gift coupon align', item._id, e.message)
     }
-  })
-  return slots
+  }
+  return aligned
 }
 
 async function grantWelcomeCoupons(openid, config, recordId) {
@@ -148,6 +171,11 @@ async function grantWelcomeCoupons(openid, config, recordId) {
   }
 
   const existing = await listExistingGiftCoupons(openid)
+
+  // 自愈：无论券是否已齐，都先把「未使用」券的条款对齐到当前配置。
+  // 历史事故：旧逻辑在券已齐时直接 return，改配置后老会员永远显示旧门槛（配置满49、页面仍为满50）。
+  const aligned = await alignExistingGiftCouponTerms(config, existing)
+
   if (existing.length >= slots.length) {
     const expireTimes = existing.map((c) => c.expireTime).filter(Boolean)
     const latest = expireTimes.sort((a, b) => new Date(b) - new Date(a))[0]
@@ -156,6 +184,7 @@ async function grantWelcomeCoupons(openid, config, recordId) {
       expireDate: latest ? formatDateLabel(latest) : '',
       expected: slots.length,
       failed: 0,
+      aligned,
       complete: true
     }
   }

@@ -3,7 +3,7 @@
     <div class="header-section">
       <h2>门店积分规则</h2>
       <p class="subtitle">
-        线上 SSOT 为集合 <code>store_point_rules</code>（与小程序 / 云函数同源）。默认：每满 ¥10 赠 1 分。
+        线上 SSOT 为集合 <code>store_point_rules</code>（与小程序超管工作台共用 <code>getStorePointRules</code> 云函数）。默认：每满 ¥1 赠 1 分。
         旧集合 <code>points_rules</code> 仅作历史遗留，不再作为线上赠分来源。
       </p>
       <el-alert
@@ -33,7 +33,7 @@
             </el-form-item>
             <el-form-item v-if="storeRules.mode !== 'ratio'" label="金额门槛（元）">
               <el-input-number v-model="storeRules.threshold" :min="0.01" :step="1" :precision="2" />
-              <span class="hint">默认 10（¥10 = 1 分）</span>
+              <span class="hint">默认 1（¥1 = 1 分）</span>
             </el-form-item>
             <el-form-item v-if="storeRules.mode !== 'ratio'" label="每档赠分">
               <el-input-number v-model="storeRules.pointsPerThreshold" :min="0" :precision="0" />
@@ -179,9 +179,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import {
   fetchCollectionLimit,
   fetchCollectionWhere,
-  cdnUpsertSingleton,
-  cdnUpdate,
   getCdnDatabase,
+  callCloudFunction,
   COLLECTIONS
 } from '../cloud'
 import {
@@ -244,23 +243,37 @@ const applyStoreConfig = (raw, docId = '') => {
   ruleDocId.value = docId || ''
 }
 
+/**
+ * 读规则：优先走云函数（与小程序超管工作台同一 SSOT、同一取文档逻辑），
+ * 云函数不可用（如当前账号非超管）再退回 CDN 直读。
+ */
 const loadStoreRules = async () => {
   loading.value = true
   try {
-    const rows = await fetchCollectionLimit(COLLECTIONS.STORE_POINT_RULES, { limit: 20 })
-    const active = (rows || [])
-      .filter((r) => r.status !== 'inactive')
-      .sort((a, b) => (b.priority || 0) - (a.priority || 0))
-    const global = active.find((r) => !Array.isArray(r.storeIds) || !r.storeIds.length) || active[0]
-    if (global) {
-      applyStoreConfig(global, global._id)
-    } else {
-      applyStoreConfig(getDefaultStorePointConfig(), '')
+    const res = await callCloudFunction('getStorePointRules', { action: 'get' })
+    if (res && res.success && res.config) {
+      applyStoreConfig(res.config, res.ruleDocId || '')
+      return
     }
+    throw new Error((res && res.msg) || '云函数未返回规则')
   } catch (error) {
-    console.error('加载门店积分规则失败:', error)
-    applyStoreConfig(getDefaultStorePointConfig(), '')
-    ElMessage.warning('未读到 store_point_rules，已使用 v3 默认（¥10=1）')
+    console.warn('云函数读取积分规则失败，退回 CDN 直读:', error?.message || error)
+    try {
+      const rows = await fetchCollectionLimit(COLLECTIONS.STORE_POINT_RULES, { limit: 20 })
+      const active = (rows || [])
+        .filter((r) => r.status !== 'inactive')
+        .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+      const global = active.find((r) => !Array.isArray(r.storeIds) || !r.storeIds.length) || active[0]
+      if (global) {
+        applyStoreConfig(global, global._id)
+      } else {
+        applyStoreConfig(getDefaultStorePointConfig(), '')
+      }
+    } catch (cdnError) {
+      console.error('加载门店积分规则失败:', cdnError)
+      applyStoreConfig(getDefaultStorePointConfig(), '')
+      ElMessage.warning('未读到 store_point_rules，已使用 v4 默认（每满 ¥1 赠 1 分）')
+    }
   } finally {
     loading.value = false
   }
@@ -275,6 +288,11 @@ const loadLegacyRules = async () => {
   }
 }
 
+/**
+ * 写规则：必须经云函数。store_point_rules 的安全规则是 write:false，
+ * 早前用 CDN 直写会被静默丢弃（页面提示「已写入」但数据未变，ERP 看起来一直是老数据）。
+ * 云函数同时承载字段白名单、店长改规则的审批队列与校验。
+ */
 const saveStoreRules = async () => {
   saving.value = true
   try {
@@ -289,21 +307,21 @@ const saveStoreRules = async () => {
         platforms: (platformOrderBind.platforms || []).slice()
       },
       status: 'active',
-      applyMemberMultiplier: false,
-      _updateTime: Date.now(),
-      updateTime: Date.now()
+      applyMemberMultiplier: false
     }
-    if (ruleDocId.value) {
-      await cdnUpdate(COLLECTIONS.STORE_POINT_RULES, ruleDocId.value, payload)
+    const res = await callCloudFunction('getStorePointRules', {
+      action: 'save',
+      ruleDocId: ruleDocId.value || '',
+      config: payload
+    })
+    if (!res || res.success === false) {
+      throw new Error((res && res.msg) || '云函数保存失败')
+    }
+    if (res.pendingApproval) {
+      ElMessage.warning(res.msg || '已提交超管审核，通过后规则生效')
     } else {
-      await cdnUpsertSingleton(COLLECTIONS.STORE_POINT_RULES, {
-        ...payload,
-        ruleId: payload.ruleId || 'store_points_default_v3',
-        _createTime: Date.now(),
-        createTime: Date.now()
-      })
+      ElMessage.success('规则已保存到 store_point_rules')
     }
-    ElMessage.success('已写入 store_point_rules')
     await loadStoreRules()
   } catch (error) {
     console.error('保存门店积分规则失败:', error)
@@ -315,7 +333,7 @@ const saveStoreRules = async () => {
 
 const resetStoreRules = () => {
   applyStoreConfig(getDefaultStorePointConfig(), ruleDocId.value)
-  ElMessage.info('已重置为 v3 默认（每满 ¥10 赠 1 分）')
+  ElMessage.info('已重置为 v4 默认（每满 ¥1 赠 1 分，含门店小票兑积分）')
 }
 
 const loadRecords = async () => {

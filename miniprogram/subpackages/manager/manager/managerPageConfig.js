@@ -7206,6 +7206,12 @@ parseRevenueText(e) {
         const up = await wx.cloud.uploadFile({ cloudPath: `rewards/${Date.now()}.png`, filePath: img });
         img = up.fileID;
       }
+      const toNum = (v) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+      };
+      // 不再下发 isOffShelf：小程序端没有上架开关，交由服务端保留既有状态，
+      // 否则每次在超管工作台改库存/文案都会把 ERP 下架的兑换品静默重新上架。
       const data = {
         title: String(r.title).trim(),
         cost: parseInt(r.cost, 10) || 0,
@@ -7213,14 +7219,13 @@ parseRevenueText(e) {
         type: r.type || 'virtual',
         description: r.description || '',
         image: img,
-        value: r.value,
-        minSpend: r.minSpend,
+        value: toNum(r.value),
+        minSpend: toNum(r.minSpend),
         expireDays: parseInt(r.expireDays, 10) || 0,
         limitPerUser: parseInt(r.limitPerUser, 10) || 0,
         channel: ['online', 'store', 'all'].indexOf(String(r.channel || '')) !== -1
           ? String(r.channel)
-          : 'all',
-        isOffShelf: false
+          : 'all'
       };
       if (this.data.isEditing && this.data.editId) {
         await callStoreContent({ action: 'upsert', collection: 'rewards', id: this.data.editId, data });
