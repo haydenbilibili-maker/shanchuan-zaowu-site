@@ -3,10 +3,19 @@
  *
  * 加新彩蛋：
  * 1. 在 EGGS 追加一条（id 稳定、勿复用）
- * 2. 配 triggers（secretKeyword 会在搜索提交时自动匹配；longPress / tapCount 需在目标页留钩子）
- * 3. 目标页放入 <easter-egg-note id="easterEggNote" />，longPress 用 data-egg-id + onEasterEggLongPress
+ * 2. 配 triggers：
+ *    - `secretKeyword` 搜索提交时自动匹配（无需页面配合）
+ *    - `longPress` / `tapCount` 需在目标页留钩子（data-egg-id + onEasterEggLongPress）
+ *    - `pageEnter` / `wishPosted` **自动触发**：页面调用
+ *      `easterEgg.tryPageEnter({ page: this })` / `tryWishPosted({ page: this })`，
+ *      由本表的 `pages` 决定命中。自动触发**只弹一次**（已拾得不再重复），
+ *      用户主动触发则允许重看。
+ * 3. 目标页放入 <easter-egg-note id="easterEggNote" />，并挂 `easterEggHost` behavior
  *
  * 不要把彩蛋挂到支付、下单、退款路径。
+ *
+ * 之所以让注册表（而不是页面）持有 `pages`：全站拓展时新页面只要在自己的
+ * onLoad/onShow 里报一次事件即可，不必回到 easterEgg.js 改匹配逻辑。
  */
 const STORAGE_KEY = 'shanhai_easter_eggs_v1'
 
@@ -121,6 +130,34 @@ const EGGS = [
     rewardNote: '收入博物笔记',
     triggers: [
       { type: 'longPress', pages: ['subpackages/feature/identify/index'] }
+    ]
+  },
+  {
+    // 需求 28：「马上有」祈福墙 · 进页彩蛋
+    // 选吉量而非"天马"：吉量是《山海经》里"乘之寿千岁"的文马，与"祈福"同义，
+    // 且与藏品（黑马标本）同科，进这面墙的人第一眼就能把彩蛋和藏品连起来。
+    id: 'jiliang',
+    title: '吉量',
+    latin: 'Jiliang',
+    source: '《山海经·海内北经》',
+    excerpt: '犬戎国有文马，缟身朱鬣，目若黄金，名曰吉量，乘之寿千岁。你把心愿挂上墙，像替它系一根缰绳——不必立刻应验，先让它有个去处。',
+    once: true,
+    rewardNote: '收入博物笔记',
+    triggers: [
+      { type: 'pageEnter', pages: ['subpackages/feature/wish-wall/index'] }
+    ]
+  },
+  {
+    // 需求 28：祈福成功后的第二个彩蛋，形成「进门—落愿」两段式仪式
+    id: 'bo',
+    title: '驳',
+    latin: 'Bo',
+    source: '《山海经·西山经》',
+    excerpt: '中曲之山有兽焉，其状如马而白身黑尾，一角，虎牙爪，音如鼓音，其名曰驳，是食虎豹，可以御兵。第一句心愿写下去，是替自己挡开一点什么。',
+    once: true,
+    rewardNote: '收入博物笔记',
+    triggers: [
+      { type: 'wishPosted', pages: ['subpackages/feature/wish-wall/index'] }
     ]
   }
 ]

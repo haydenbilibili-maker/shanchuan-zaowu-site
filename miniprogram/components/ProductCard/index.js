@@ -73,6 +73,12 @@ Component({
         tags: info.tags || []
       })
     },
-    onImgError() { this.setData({ imgBroken: true }) }
+    onImgError() {
+      // 需求 17：加载失败时让缩略图能力自我降级（避免整屏破图），并回落占位。
+      try {
+        require('../../utils/imageUrl').onImageError()
+      } catch (e) { /* 工具缺失不影响占位降级 */ }
+      this.setData({ imgBroken: true })
+    }
   }
 })

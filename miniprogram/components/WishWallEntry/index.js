@@ -1,0 +1,67 @@
+/**
+ * 需求 28：「马上有」祈福墙 · **可复用入口组件**
+ *
+ * 为什么做成组件而不是留在详情页里的一小段 wxml：
+ *   需求要求「为后续此入口的**全站拓展**做好长线预留」。入口的判定逻辑是
+ *   「内容开关 开 **且** 当前藏品命中」，两处条件、两处会漂：
+ *   详情页写一遍，下一个页面再抄一遍，早晚出现"开关关了但某个页面还亮着"。
+ *   收成一个组件后，全站拓展 = 在新页面的 json 里注册 + 一行标签，判定只有一份。
+ *
+ * 组件只负责「是否显示 + 点进去」；**开关值仍由宿主页面传入**（`enabled`），
+ * 因为开关是页面级 SWR 缓存的产物，组件自己再拉一次会多打一次云函数。
+ */
+const { isWishWallProduct, resolveWishWallKey, buildWishWallUrl } = require('../../utils/wishWall')
+
+Component({
+  /**
+   * 宿主可传类名控制外间距：入口从「藏品参数之后」搬到「主图正下方」后，
+   * 上下间距由宿主页面决定（组件自己只管内容）。惯例同 components/NavBack 的 ext-class。
+   */
+  externalClasses: ['ext-class'],
+
+  properties: {
+    /** 宿主页面读到的 `content_display_flags.showMaShangYou` */
+    enabled: { type: Boolean, value: false },
+    /** 藏品对象：优先读 `wishWallEnabled` / `wishWallKey`，标题子串只作过渡兜底 */
+    product: { type: null, value: null },
+    /** 来源标识，写进跳转 URL，供页面埋点区分入口 */
+    from: { type: String, value: '' },
+    /** 品牌署名：需求 28 所指的「马上有」互动组件，入口上要认得出来 */
+    brand: { type: String, value: '马上有' },
+    title: { type: String, value: '祈福墙' },
+    desc: { type: String, value: '把心愿挂上墙，让「马上有」替你记着' },
+    /**
+     * 紧凑单行版：主图正下方是"首屏最贵的一块地"，
+     * 三行卡片会把价格卡挤出首屏 —— 故首屏位只用一行（灯 + 品牌 + 标题 + 箭头），不显示 desc。
+     */
+    compact: { type: Boolean, value: false }
+  },
+
+  data: {
+    visible: false,
+    productKey: ''
+  },
+
+  observers: {
+    'enabled, product'(enabled, product) {
+      const visible = enabled === true && isWishWallProduct(product)
+      const productKey = visible ? resolveWishWallKey(product) : ''
+      if (visible !== this.data.visible || productKey !== this.data.productKey) {
+        this.setData({ visible, productKey })
+      }
+    }
+  },
+
+  methods: {
+    onTap() {
+      if (!this.data.visible) return
+      const url = buildWishWallUrl(this.data.product, { from: this.data.from || 'entry' })
+      // 先抛事件再跳转：宿主可据此埋点/埋点失败也不影响跳转
+      this.triggerEvent('enter', { productKey: this.data.productKey, url })
+      wx.navigateTo({
+        url,
+        fail: () => wx.showToast({ title: '祈福墙暂不可用', icon: 'none' })
+      })
+    }
+  }
+})

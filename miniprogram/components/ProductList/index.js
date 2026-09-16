@@ -386,12 +386,22 @@ Component({
     async hydrateProducts(rawList, sortKey) {
       const imgs = rawList.map((item) => getFirstImage(item.images))
       const urlMap = await batchTempFileURLs(imgs)
-      return rawList.map((item, i) => {
+      const imageUrl = require('../../utils/imageUrl')
+      // 需求 17：列表用缩略图。能力未确认时 thumbUrl 返回原图（不冒破图风险），
+      // 首张图加载成功后再探测参数是否可用，可用则后续列表整体瘦身。
+      const listOrigin = rawList.map((item, i) => {
         const img = imgs[i]
+        return (img && urlMap[img]) || img || ''
+      })
+      if (imageUrl.getState() === 'unknown' && listOrigin[0]) {
+        imageUrl.probeSupport(listOrigin[0])
+      }
+      return rawList.map((item, i) => {
+        const origin = listOrigin[i]
         return {
           ...item,
           latinName: sanitizeLatinName(item.latinName || item.latin || item.scientificName),
-          httpImage: (img && urlMap[img]) || img,
+          httpImage: origin ? imageUrl.thumbUrl(origin) : origin,
           isNew: sortKey === 'new'
         }
       })

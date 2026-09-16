@@ -953,14 +953,18 @@ Page({
           if (gen !== (this._orbGen || 0)) return;
           batch = res.data.map((item, i) => {
             const img = imgs[i];
+            const origin = (img && urlMap[img]) || img || '';
             return {
               ...item,
               uniqueId: item._id,
-              image: (img && urlMap[img]) || img,
+              // 需求 17：首页横滑卡用缩略图（能力未确认时 thumbUrl 返回原图）
+              image: origin ? require('../../utils/imageUrl').thumbUrl(origin) : origin,
               // 「珍稀」角标只认人工打标字段，不随排序/分类变化
               productRarity: (item.productRarity === 'rare' || item.productRarity === 'legendary')
                 ? item.productRarity
-                : 'common'
+                : 'common',
+              // 需求 11：首页横滑卡此前封面直出
+              sensitiveEnabled: require('../../utils/sensitiveBlurCard').sensitiveEnabledOf(item)
             };
           });
       }

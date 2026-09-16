@@ -1,11 +1,22 @@
 /**
  * 山海经彩蛋：发现、持久化、触发。
  * 云同步预留 getSyncPayload / syncToCloud，不改积分账。
+ *
+ * 触发类型（`config/easterEggs.js` 的 triggers[].type）：
+ *   - `longPress` / `secretKeyword` / `tapCount`：**用户主动**动作，已拾得的彩蛋可反复重看；
+ *   - `pageEnter` / `wishPosted`：**页面自动**触发（进页即判定）。
+ *     自动触发必须"只弹一次" —— 否则每次进同一页都会弹窗，
+ *     彩蛋就从惊喜变成骚扰。故自动类型走 `skipIfDiscovered`（见 discover）。
  */
 const { STORAGE_KEY, LOCAL_ACHIEVEMENT, EGGS } = require('../config/easterEggs')
 
 const tapBuckets = Object.create(null)
 const TAP_GUARD_MS = 700
+
+/** 自动触发类型：命中后若已拾得则不再弹出 */
+const AUTO_TRIGGER_TYPES = ['pageEnter', 'wishPosted']
+const PAGE_ENTER = 'pageEnter'
+const WISH_POSTED = 'wishPosted'
 
 function normalizeKeyword(s) {
   return String(s || '').trim().toLowerCase()
@@ -17,6 +28,22 @@ function getEgg(id) {
 
 function listEggs() {
   return EGGS.slice()
+}
+
+/**
+ * 当前页面路由（`pageEnter` 类触发靠它匹配）。
+ * 组件/behavior 里 `this.route` 可能取不到，故回落到 getCurrentPages() 栈顶。
+ */
+function currentRoute(page) {
+  const target = resolvePage(page)
+  if (target && target.route) return String(target.route)
+  try {
+    const pages = getCurrentPages()
+    const last = pages && pages.length ? pages[pages.length - 1] : null
+    return (last && last.route) || ''
+  } catch (e) {
+    return ''
+  }
 }
 
 function readStore() {
@@ -160,6 +187,9 @@ function discover(id, extras = {}) {
   if (!egg) return null
 
   const firstTime = !isDiscovered(id)
+  // 自动触发（进页/首次许愿）只弹一次；用户主动触发（长按/关键词/连点）允许重看
+  if (!firstTime && extras.skipIfDiscovered) return null
+
   let achievementJustUnlocked = false
 
   if (firstTime) {
@@ -183,6 +213,54 @@ function discover(id, extras = {}) {
 
 function tryTrigger(id, extras = {}) {
   return discover(id, extras)
+}
+
+/**
+ * 单条 trigger 是否命中当前上下文。
+ * @param {{type?:string,pages?:string[]}} trigger
+ * @param {{type?:string,route?:string}} ctx
+ */
+function triggerMatches(trigger, ctx) {
+  const t = trigger || {}
+  const c = ctx || {}
+  if (c.type && t.type !== c.type) return false
+  if (Array.isArray(t.pages) && t.pages.length) {
+    if (t.pages.indexOf(String(c.route || '')) === -1) return false
+  }
+  return true
+}
+
+/**
+ * 按**触发类型**批量判定（彩蛋注册表驱动，页面只报事件、不认 egg id）。
+ *
+ * 「全站拓展」就靠这里：新页面接彩蛋 = 在注册表里加一条 trigger，
+ * 页面侧只需 `tryPageEnter({ page: this })` 一行，不必改 easterEgg.js。
+ *
+ * @param {string} type 见 AUTO_TRIGGER_TYPES
+ * @param {object} [extras] 透传给 present/discover，如 { page, source }
+ * @returns {object|null} 最后一个被触发的记录
+ */
+function tryTriggerType(type, extras = {}) {
+  const ctx = { type: String(type || ''), route: extras.route || currentRoute(extras.page) }
+  const skipIfDiscovered = AUTO_TRIGGER_TYPES.indexOf(ctx.type) !== -1
+  let last = null
+  EGGS.forEach((egg) => {
+    const hit = (egg.triggers || []).some((t) => triggerMatches(t, ctx))
+    if (!hit) return
+    const res = discover(egg.id, { ...extras, triggerType: ctx.type, skipIfDiscovered })
+    if (res) last = res
+  })
+  return last
+}
+
+/** 进入页面时判定（自动触发，已拾得的不再重复弹出） */
+function tryPageEnter(extras = {}) {
+  return tryTriggerType(PAGE_ENTER, extras)
+}
+
+/** 首次/每次成功许愿后判定（自动触发，已拾得的不再重复弹出） */
+function tryWishPosted(extras = {}) {
+  return tryTriggerType(WISH_POSTED, extras)
 }
 
 function tryKeyword(keyword, extras = {}) {
@@ -268,9 +346,17 @@ module.exports = {
   tryTrigger,
   tryKeyword,
   tryTapCount,
+  tryTriggerType,
+  tryPageEnter,
+  tryWishPosted,
+  triggerMatches,
+  currentRoute,
   markTapGuard,
   shouldIgnoreTap,
   getSyncPayload,
   syncToCloud,
-  LOCAL_ACHIEVEMENT
+  LOCAL_ACHIEVEMENT,
+  AUTO_TRIGGER_TYPES,
+  PAGE_ENTER,
+  WISH_POSTED
 }

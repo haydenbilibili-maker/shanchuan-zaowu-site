@@ -9,6 +9,7 @@ const MODULE = {
   IDENTIFY: 'identify',
   ATLAS: 'atlas',
   CUSTOM: 'custom',
+  GIFT: 'gift',
   CARE: 'care',
   MESSAGE: 'message',
   SUPPORT: 'support',
@@ -34,6 +35,9 @@ const ACTION_PREFIX_MODULE = [
   ['atlas_', MODULE.ATLAS],
   ['custom_', MODULE.CUSTOM],
   ['pet_', MODULE.CUSTOM],
+  // 礼赠：15 个 gift_* 事件此前无前缀映射，被 inferModule 兜底成 system，污染模块分布
+  // （由 check-analytics-schema.mjs 守卫防回归）
+  ['gift_', MODULE.GIFT],
   ['care_', MODULE.CARE],
   ['message_', MODULE.MESSAGE],
   ['support_', MODULE.SUPPORT],

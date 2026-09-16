@@ -9,16 +9,16 @@ const STORAGE_KEY = 'manager_auth_trust_v3';
 const DEVICE_KEY = 'manager_device_id_v1';
 const TRUST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MANAGER_PATH = '/subpackages/manager/manager/index';
-const STAFF_PATH = '/subpackages/manager/staff/index';
-const ARTISAN_PATH = '/subpackages/manager/artisan/index';
-const LIVE_BROADCAST_PATH = '/subpackages/manager/live/broadcast/index';
-const LIVE_STUDIO_PATH = '/subpackages/manager/live/studio/index';
-const INVESTOR_PATH = '/subpackages/manager/investor/index';
-const SHAREHOLDER_PATH = '/subpackages/manager/shareholder/index';
+const STAFF_PATH = '/subpackages/extra/staff/index';
+const ARTISAN_PATH = '/subpackages/extra/artisan/index';
+const LIVE_BROADCAST_PATH = '/subpackages/extra/live/broadcast/index';
+const LIVE_STUDIO_PATH = '/subpackages/extra/live/studio/index';
+const INVESTOR_PATH = '/subpackages/extra/investor/index';
+const SHAREHOLDER_PATH = '/subpackages/extra/shareholder/index';
 
 const WORKSPACE_KIND_MAP = {
   super_admin: { title: '超管验证', go: () => goManagerPage('super_admin') },
-  manager: { title: '馆长验证', go: () => goManagerPage('store_manager') },
+  manager: { title: '店长验证', go: () => goManagerPage('store_manager') },
   staff: { title: '店员验证', go: goStaffPage },
   artisan: { title: '标本师验证', go: goArtisanPage },
   live_host: { title: '主播验证', go: goLiveHostStudioPage },
@@ -383,7 +383,7 @@ function guardManagerPage() {
       touchManagerTrust(openid);
       return true;
     }
-    wx.showToast({ title: '请先完成馆长验证', icon: 'none' });
+    wx.showToast({ title: '请先完成店长验证', icon: 'none' });
     setTimeout(() => {
       wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) });
     }, 400);

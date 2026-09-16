@@ -13,7 +13,7 @@
       </view>
       <view class="hero-copy">
         <text class="hero-tagline">把山海带回家</text>
-        <text class="hero-desc">星宸标本工作室 · 装裱、定制与伴宠记忆，在同一盏暖光下完成</text>
+        <text class="hero-desc">星宸标本工作室 · 鉴定、定制、礼赠与伴宠记忆，在同一盏暖光下完成</text>
       </view>
     </view>
   </view>
@@ -21,38 +21,31 @@
   <view class="body">
     <view class="intro">
       <text class="intro-overline">CHOOSE YOUR PATH</text>
-      <text class="intro-text">{{showSpecimenCustom && showPetMemorial ? '选一条适合你的路径。标本定制即时选配；伴宠记忆需专员评估后承接。' : (showPetMemorial ? '伴宠记忆需专员评估后承接。标本定制将在开放后于此承接。' : (showSpecimenCustom ? '标本定制即时选配。伴宠记忆将在开放后于此承接。' : '工坊服务逐步开放，敬请留意。'))}}</text>
+      <text class="intro-text">{{introText}}</text>
     </view>
 
-    <view class="fork-card" bindtap="goGift" wx:if="{{showGift}}">
-      <view class="fork-icon">01</view>
-      <view class="fork-body">
-        <text class="fork-overline">GIFT</text>
-        <text class="fork-title">礼赠</text>
-        <text class="fork-desc">从柜中取出一件山海，封笺赠予——先备妥再请 TA 留下去处</text>
+    <!-- 四功能宫格：编号固定（01 礼赠 / 02 定制 / 03 鉴定 / 04 伴宠），
+         某一格开关关闭只是不渲染，其余编号不漂移 -->
+    <view class="feature-grid">
+      <view
+        class="feature-tile {{item.highlight ? 'highlight' : ''}}"
+        wx:for="{{tiles}}"
+        wx:key="key"
+        hover-class="tile-press"
+        hover-stay-time="80"
+        bindtap="onFeatureTap"
+        data-key="{{item.key}}"
+      >
+        <view class="tile-head">
+          <text class="tile-no">{{item.no}}</text>
+          <text class="tile-overline">{{item.overline}}</text>
+        </view>
+        <text class="tile-title">{{item.title}}</text>
+        <text class="tile-desc">{{item.desc}}</text>
+        <text class="tile-arrow">→</text>
       </view>
-      <text class="fork-arrow">→</text>
     </view>
-
-    <view class="fork-card" bindtap="goStandard" wx:if="{{showSpecimenCustom}}">
-      <view class="fork-icon">{{showGift ? '02' : '01'}}</view>
-      <view class="fork-body">
-        <text class="fork-overline">SPECIMEN CUSTOM</text>
-        <text class="fork-title">标本定制</text>
-        <text class="fork-desc">从馆藏藏品选型，配框、配盒、写卡片，线上下单</text>
-      </view>
-      <text class="fork-arrow">→</text>
-    </view>
-
-    <view class="fork-card highlight" bindtap="goPet" wx:if="{{showPetMemorial}}">
-      <view class="fork-icon">{{showGift && showSpecimenCustom ? '03' : (showGift || showSpecimenCustom ? '02' : '01')}}</view>
-      <view class="fork-body">
-        <text class="fork-overline">PET MEMORIAL</text>
-        <text class="fork-title">伴宠记忆</text>
-        <text class="fork-desc">为已逝伙伴申请藏品制作，提交意向后由工坊评估工艺与周期</text>
-      </view>
-      <text class="fork-arrow">→</text>
-    </view>
+    <view class="feature-empty" wx:if="{{!tiles.length}}">工坊服务逐步开放，敬请留意。</view>
 
     <view class="orders-section">
       <text class="section-overline">MY ORDERS</text>
@@ -69,6 +62,7 @@
           <text class="order-tile-arrow">→</text>
         </view>
       </view>
+      <text class="orders-empty" wx:if="{{!showPetMemorial && !showSpecimenCustom}}">暂无可查询的工单</text>
     </view>
 
     <!-- 标本师招募统一入口：我的 → 联系专员 → 标本师招募 -->

@@ -67,6 +67,8 @@
     specimen-name="{{specimenName}}"
     specimen-latin="{{specimenLatin}}"
     card-pending="{{cardPending}}"
+    card-guest="{{cardGuest}}"
+    guest-logged-out="{{guestLoggedOut}}"
     bind:toggleflip="toggleCardFlip"
     bind:checkin="doCheckIn"
     bind:showmembercode="showMemberCode"
@@ -74,6 +76,7 @@
     bind:goprofile="goToProfile"
     bind:showlevelbenefits="showLevelBenefits"
     bind:goprofilefromback="goToProfileFromCardBack"
+    bind:guestcta="onGuestCardCta"
     bind:easteregg="onVipCardEasterEgg"
   />
 
@@ -236,6 +239,16 @@
       <text class="ph-en">SERVICES</text>
     </view>
     <view class="service-list">
+      <!-- 需求 21：藏家档案独立入口（卡片异常 / 未注册时的兜底动线，不再只能从卡面进） -->
+      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="profile">
+        <image class="m-img gold" src="/assets/icons/user.png"></image>
+        <view class="m-info">
+          <text class="m-cn">藏家档案</text>
+          <text class="m-en">COLLECTOR PROFILE · 资料 / 生日 / 偏好</text>
+        </view>
+        <text class="meta-progress badge-inline" wx:if="{{!cardPending && !cardGuest}}">{{profileScore}}%</text>
+        <text class="m-arr">→</text>
+      </view>
       <!-- 履约与消息（订单/积分/钱包已在上方资产区）；预约与快捷行互斥，仅钱包占快捷位时下沉至此 -->
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="visitBooking" wx:if="{{showBookingEntry && showStoredValue}}">
         <image class="m-img gold" src="/assets/icons/calendar_gold.png"></image>
@@ -270,7 +283,7 @@
       </view>
 
       <!-- 馆藏与内容 -->
-      <view class="menu-row section-start" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="collection">
+      <view class="menu-row section-start" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="collection" wx:if="{{showAtlas}}">
         <image class="m-img native" src="/assets/icons/atlas.png" mode="aspectFit"></image>
         <view class="m-info"><text class="m-cn">我的山海图鉴</text><text class="m-en">MY ATLAS</text></view>
         <text class="meta-progress badge-inline" wx:if="{{atlasStats.total}}">{{atlasStats.unlocked}}/{{atlasStats.total}}</text>
@@ -281,7 +294,7 @@
         <view class="m-info"><text class="m-cn">收藏与候补</text><text class="m-en">SAVED & WAITLIST</text></view>
         <text class="m-arr">→</text>
       </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToAchievements">
+      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToAchievements" wx:if="{{showAchievements}}">
         <image class="m-img gold" src="/assets/icons/medal_gold.png"></image>
         <view class="m-info">
           <text class="m-cn">我的成就</text>
@@ -413,9 +426,9 @@
             <view class="pass-perk-empty" wx:if="{{currentLevelPerkItems.length === 0}}">暂无已解锁权益</view>
           </view>
           <view class="pass-level-link" catchtap="openLevelFromPass">查看等级详情</view>
-          <view class="qr-tips">{{passCouponHint ? '请馆长扫码核销礼券' : '出示此码以享受门店权益'}}</view>
+          <view class="qr-tips">{{passCouponHint ? '请专员扫码核销礼券' : '出示此码以享受门店权益'}}</view>
           <view class="qr-tips sub">动态验证码，请勿截图转发</view>
-          <view class="qr-tips sub" wx:if="{{passCouponHint}}">馆长核销后，本页将自动提示成功</view>
+          <view class="qr-tips sub" wx:if="{{passCouponHint}}">专员核销后，本页将自动提示成功</view>
         </scroll-view>
       </block>
 

@@ -430,6 +430,13 @@
       "installDependency": true
     },
     {
+      "name": "manageWishWall",
+      "timeout": 40,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "manageLiveSession",
       "timeout": 20,
       "runtime": "Nodejs16.13",

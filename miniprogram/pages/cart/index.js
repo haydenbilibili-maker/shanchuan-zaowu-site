@@ -798,6 +798,8 @@ Page({
       }
 
       const hydrated = await this._hydrateRecommendImages(list);
+      // 需求 11：补 sensitiveEnabled（推荐位此前封面直出）
+      require('../../utils/sensitiveBlurCard').attachSensitiveFlags(hydrated);
       this.setData({
         collectionRecommendations: hydrated,
         collectionTrend: trend,

@@ -61,6 +61,12 @@ page {
   --font-heading: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", sans-serif;
   --font-body: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", sans-serif;
   --font-mono: "JetBrains Mono", "DIN", "DIN Alternate", monospace;
+  /* 手写体（毛笔 / 签字笔感）：只给「用户亲手写下」的内容用 —— 祈福墙弹幕与愿签。
+     与站点其余字体一样走**系统字体栈**，不下载 webfont（无网络依赖、无首屏闪烁、不新增 CDN 资产）：
+       iOS/macOS 命中汉仪手写体与签笔（HanziPen SC / Hannotate SC）；Android 无楷体系列，
+       落到思源宋体再落 serif。故手写感在 iOS 最足，Android 是衬线兜底，两端可读性都成立。 */
+  --font-hand: "HanziPen SC", "Hannotate SC", "Weibei SC", "STKaiti", "Kaiti SC", "KaiTi", "楷体",
+    "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
   --space-1: 8rpx;
   --space-2: 16rpx;
   --space-3: 24rpx;

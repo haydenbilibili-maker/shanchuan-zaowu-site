@@ -4,7 +4,7 @@
  */
 const { fetchMyCoupons } = require('./couponService')
 
-const WALLET_URL = '/subpackages/feature/user/stored-value/index'
+const WALLET_URL = '/subpackages/extra/user/stored-value/index'
 const COUPONS_URL = '/subpackages/business/coupons/index'
 const POINTS_URL = '/subpackages/business/points/index'
 const REWARDS_URL = '/subpackages/business/rewards/index'

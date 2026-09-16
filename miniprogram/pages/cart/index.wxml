@@ -135,18 +135,25 @@
         <scroll-view scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
           <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
             <view class="rec-img-wrap">
-              <image
-                class="rec-img"
-                wx:if="{{item.image || item.httpImage}}"
-                src="{{item.image || item.httpImage}}"
-                mode="aspectFill"
-                lazy-load
-                binderror="onRecommendImageError"
-                data-index="{{index}}"
-              ></image>
-              <view class="rec-img-ph" wx:else>
-                <image class="rec-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
-              </view>
+              <!-- 需求 11：敏感形态模糊（收藏推荐位此前封面直出） -->
+              <sensitive-blur-gate
+                enabled="{{item.sensitiveEnabled}}"
+                product-id="{{item._id}}"
+                size="card"
+              >
+                <image
+                  class="rec-img"
+                  wx:if="{{item.image || item.httpImage}}"
+                  src="{{item.image || item.httpImage}}"
+                  mode="aspectFill"
+                  lazy-load
+                  binderror="onRecommendImageError"
+                  data-index="{{index}}"
+                ></image>
+                <view class="rec-img-ph" wx:else>
+                  <image class="rec-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+                </view>
+              </sensitive-blur-gate>
             </view>
             <view class="rec-body">
               <text class="rec-title">{{item.title}}</text>

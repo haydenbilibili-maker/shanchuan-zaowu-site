@@ -458,13 +458,37 @@
   line-height: 1.3;
 }
 
-.profile-edit-hint {
-  font-size: 32rpx;
-  color: var(--brass-400);
-  opacity: 0.7;
-  margin-left: 8rpx;
+/* 档案入口 chip（需求 21）：把裸「›」换成带完成度的显式入口；
+ * 配色由各 level-skin 段的 color 统一驱动（子元素 color: inherit）。 */
+.profile-entry-chip {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
   flex-shrink: 0;
+  margin-left: 8rpx;
+  padding: 6rpx 12rpx;
+  border: 1rpx solid currentColor;
+  border-radius: 999rpx;
+  color: var(--brass-400);
+  opacity: 0.82;
   line-height: 1;
+}
+.profile-entry-chip-press {
+  opacity: 1;
+}
+.pec-label {
+  font-size: 20rpx;
+  letter-spacing: 0.06em;
+  color: inherit;
+}
+.pec-score {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: inherit;
+}
+.pec-arr {
+  font-size: 22rpx;
+  color: inherit;
 }
 
 /* 身份区 / 成长区细轨：纯 view，避免安卓 border-top / 近白 pill 被看成 SeekBar */
@@ -1125,7 +1149,7 @@
 }
 .vip-card.level-skin-1 .org-name .en,
 .vip-card.level-skin-1 .growth-link-hint,
-.vip-card.level-skin-1 .profile-edit-hint,
+.vip-card.level-skin-1 .profile-entry-chip,
 .vip-card.level-skin-1 .ap-text,
 .vip-card.level-skin-1 .cb-overline,
 .vip-card.level-skin-1 .cb-row-link { color: #8A7530; }
@@ -1255,7 +1279,7 @@
 }
 .vip-card.level-skin-2 .org-name .en,
 .vip-card.level-skin-2 .growth-link-hint,
-.vip-card.level-skin-2 .profile-edit-hint,
+.vip-card.level-skin-2 .profile-entry-chip,
 .vip-card.level-skin-2 .ap-text,
 .vip-card.level-skin-2 .cb-overline,
 .vip-card.level-skin-2 .cb-row-link { color: #8A7530; }
@@ -1470,7 +1494,7 @@
 }
 .vip-card.level-skin-3 .org-name .en,
 .vip-card.level-skin-3 .growth-link-hint,
-.vip-card.level-skin-3 .profile-edit-hint,
+.vip-card.level-skin-3 .profile-entry-chip,
 .vip-card.level-skin-3 .ap-text,
 .vip-card.level-skin-3 .cb-overline,
 .vip-card.level-skin-3 .cb-row-link,
@@ -1639,7 +1663,7 @@
 }
 .vip-card.level-skin-4 .org-name .en,
 .vip-card.level-skin-4 .growth-link-hint,
-.vip-card.level-skin-4 .profile-edit-hint,
+.vip-card.level-skin-4 .profile-entry-chip,
 .vip-card.level-skin-4 .ap-text,
 .vip-card.level-skin-4 .cb-overline,
 .vip-card.level-skin-4 .cb-row-link { color: #D4B0B0; }
@@ -1831,7 +1855,7 @@
 }
 .vip-card.level-skin-5 .org-name .en,
 .vip-card.level-skin-5 .growth-link-hint,
-.vip-card.level-skin-5 .profile-edit-hint,
+.vip-card.level-skin-5 .profile-entry-chip,
 .vip-card.level-skin-5 .ap-text,
 .vip-card.level-skin-5 .cb-overline,
 .vip-card.level-skin-5 .cb-row-link { color: #E3EAEF; }
@@ -2052,7 +2076,7 @@
 }
 .vip-card.level-skin-6 .org-name .en,
 .vip-card.level-skin-6 .growth-link-hint,
-.vip-card.level-skin-6 .profile-edit-hint,
+.vip-card.level-skin-6 .profile-entry-chip,
 .vip-card.level-skin-6 .ap-text,
 .vip-card.level-skin-6 .cb-overline,
 .vip-card.level-skin-6 .cb-row-link,
@@ -2269,7 +2293,7 @@
 }
 .vip-card.level-skin-99 .org-name .en,
 .vip-card.level-skin-99 .growth-link-hint,
-.vip-card.level-skin-99 .profile-edit-hint,
+.vip-card.level-skin-99 .profile-entry-chip,
 .vip-card.level-skin-99 .ap-text,
 .vip-card.level-skin-99 .cb-overline,
 .vip-card.level-skin-99 .cb-row-link,
@@ -2730,4 +2754,580 @@
 
 .progress-bar.vip-skel-bar {
   opacity: 0.55;
+}
+
+/* === 需求 21：背板常驻档案入口（生日 / 标签是否填写都可用） === */
+.cb-tags-link {
+  display: block;
+  font-size: 20rpx;
+  color: var(--brass-400);
+  margin-top: 8rpx;
+}
+.cb-profile-cta {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
+  font-size: 20rpx;
+  color: var(--brass-300);
+}
+.cb-profile-cta-press {
+  background: rgba(196, 167, 108, 0.18);
+}
+
+/* === 需求 20：未注册 · 本机退出登录 —— 信封卡（沿用礼赠启封的样式与交互） ===
+ * 与六档等级卡的三点硬区分（静态可核对）：
+ *   ① 材质：深墨卡纸（#2C2822→#191612）vs Lv1/Lv2 的浅纸木卡；
+ *   ② 结构：无等级章 / 无成长轨 / 无标本水印 / 不参与翻转，只有「袋身 + 封盖 + 铜印 + 信纸」；
+ *   ③ 交互：轻触启封（裂蜡 rotateX(-118deg) 展信 → 进入）/ 长按跳过 / 蝴蝶停驻与飞离 —— 与礼赠启封同一套节拍。
+ * 卡容器沿用 .vip-card-container（同 448rpx 高与上下留白），页面不跳版。 */
+.guest-card-wrap {
+  position: relative;
+}
+
+.guest-envelope {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: var(--radius-lg);
+  /* 封盖掀起时不越出卡位（卡槽高度固定）；投影走 box-shadow，不受 overflow 裁切 */
+  overflow: hidden;
+  perspective: 1400rpx;
+  transform-style: preserve-3d;
+  box-shadow:
+    0 14rpx 34rpx rgba(10, 8, 6, 0.5),
+    0 2rpx 8rpx rgba(10, 8, 6, 0.32);
+  transition: opacity 0.2s ease;
+}
+.guest-envelope-press {
+  opacity: 0.96;
+}
+
+/* —— 场景暖光（对齐礼赠 .box-glow 的呼吸） —— */
+.ge-glow {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 520rpx;
+  height: 320rpx;
+  margin: -160rpx 0 0 -260rpx;
+  z-index: 1;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(196, 167, 108, 0.16) 0%,
+    rgba(138, 117, 48, 0.06) 44%,
+    transparent 74%
+  );
+  animation: ge-glow-breathe 4.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ge-glow-breathe {
+  0%, 100% { opacity: 0.66; }
+  50% { opacity: 1; }
+}
+.phase-lid .ge-glow,
+.phase-done .ge-glow {
+  animation: none;
+  opacity: 0.85;
+}
+
+/* 袋内底部阴影（信纸升起处的落影，纯氛围） */
+.ge-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 14rpx;
+  width: 460rpx;
+  height: 54rpx;
+  margin-left: -230rpx;
+  z-index: 3;
+  background: radial-gradient(ellipse at center, rgba(10, 8, 6, 0.6) 0%, transparent 74%);
+  transition: transform 0.7s ease, opacity 0.7s ease;
+  pointer-events: none;
+}
+.phase-lid .ge-shadow,
+.phase-done .ge-shadow {
+  transform: scaleX(1.08);
+  opacity: 0.5;
+}
+
+/* —— 袋身：卡纸厚度的三层（外沿冷边 / 纸面 / 内沿暗角），对齐礼赠 .box-body 的 bevel+edge —— */
+.ge-pocket {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(96, 78, 52, 0.85);
+  overflow: hidden;
+  box-sizing: border-box;
+  background:
+    linear-gradient(118deg, rgba(224, 207, 163, 0.16) 0%, rgba(224, 207, 163, 0.03) 26%, transparent 52%),
+    linear-gradient(168deg, #2E2A23 0%, #221F1A 46%, #171410 100%);
+  box-shadow:
+    inset 0 2rpx 0 rgba(224, 207, 163, 0.2),
+    inset 0 0 0 1rpx rgba(10, 8, 6, 0.4),
+    inset 18rpx 0 30rpx rgba(10, 8, 6, 0.32),
+    inset -18rpx 0 30rpx rgba(10, 8, 6, 0.32),
+    inset 0 -18rpx 30rpx rgba(10, 8, 6, 0.42);
+}
+/* 纸纹：横竖两向细纤维（比比单向右更「纸」） + 顶部受光 */
+.ge-pocket-paper {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  opacity: 0.75;
+  background:
+    repeating-linear-gradient(90deg, rgba(242, 237, 228, 0.026) 0, rgba(242, 237, 228, 0.026) 1rpx, transparent 1rpx, transparent 3rpx),
+    repeating-linear-gradient(180deg, rgba(242, 237, 228, 0.042) 0, rgba(242, 237, 228, 0.042) 1rpx, transparent 1rpx, transparent 4rpx),
+    radial-gradient(120% 66% at 50% 0%, rgba(196, 167, 108, 0.13) 0%, transparent 62%);
+  pointer-events: none;
+}
+/* 底部折角：从左右下角向中心收的**折痕线**（真实信封背面那道 Λ），不是两片色块 */
+.ge-pocket-seam-l {
+  position: absolute;
+  left: 0;
+  top: 366rpx;
+  width: 48%;
+  height: 2rpx;
+  transform: rotate(-19deg);
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(224, 207, 163, 0) 0%, rgba(224, 207, 163, 0.16) 42%, rgba(224, 207, 163, 0.04) 100%);
+  box-shadow: 0 1rpx 0 rgba(8, 6, 4, 0.4);
+  pointer-events: none;
+}
+.ge-pocket-seam-r {
+  position: absolute;
+  right: 0;
+  top: 366rpx;
+  width: 48%;
+  height: 2rpx;
+  transform: rotate(19deg);
+  transform-origin: right center;
+  background: linear-gradient(270deg, rgba(224, 207, 163, 0) 0%, rgba(224, 207, 163, 0.16) 42%, rgba(224, 207, 163, 0.04) 100%);
+  box-shadow: 0 -1rpx 0 rgba(8, 6, 4, 0.34);
+  pointer-events: none;
+}
+/* 启封后露出的信封口铜边 */
+.ge-flap-lip {
+  position: absolute;
+  top: 0;
+  left: 22rpx;
+  right: 22rpx;
+  height: 2rpx;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(224, 207, 163, 0.7), transparent);
+  transition: opacity 0.3s ease 0.2s;
+}
+.phase-lid .ge-flap-lip,
+.phase-done .ge-flap-lip {
+  opacity: 0.9;
+}
+
+/* —— 封缄态文案（启封后交给升起的信纸） —— */
+.ge-face {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 292rpx;
+  z-index: 3;
+  padding: 10rpx 0 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  text-align: center;
+  /* 文案落在底部折痕之上：给一层柔和压暗，别让折痕与字互相干扰（边界是渐变，无硬框） */
+  background: radial-gradient(ellipse 62% 130% at 50% 50%, rgba(9, 7, 5, 0.52) 0%, rgba(9, 7, 5, 0) 76%);
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.phase-lid .ge-face,
+.phase-done .ge-face {
+  opacity: 0;
+}
+
+/* —— 信纸：启封后自袋中升起 —— */
+.ge-letter {
+  position: absolute;
+  left: 44rpx;
+  right: 44rpx;
+  top: 76rpx;
+  height: 296rpx;
+  z-index: 4;
+  box-sizing: border-box;
+  padding: 22rpx 26rpx;
+  border-radius: 10rpx;
+  border: 1px solid rgba(139, 111, 71, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, transparent 34%),
+    linear-gradient(180deg, #F6F1E4 0%, #E9E1CF 100%);
+  box-shadow: 0 10rpx 24rpx rgba(10, 8, 6, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(196rpx);
+  transition: opacity 0.42s ease, transform 0.72s cubic-bezier(0.22, 0.61, 0.36, 1);
+  pointer-events: none;
+}
+.phase-lid .ge-letter,
+.phase-done .ge-letter {
+  opacity: 1;
+  transform: translateY(0);
+}
+.ge-letter-deco {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 10rpx;
+}
+.ge-letter-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.ge-letter-line {
+  height: 4rpx;
+  border-radius: 2rpx;
+  background: rgba(92, 74, 48, 0.24);
+}
+.ge-letter-line.short {
+  width: 58%;
+}
+.ge-letter-seal {
+  flex-shrink: 0;
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  border: 1rpx solid rgba(168, 144, 60, 0.6);
+  background: radial-gradient(circle at 38% 32%, rgba(196, 167, 108, 0.5) 0%, rgba(196, 167, 108, 0.12) 72%);
+}
+.ge-letter-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  text-align: center;
+}
+
+/* —— 文案排印（两套底色：封皮浅字 / 信纸深字） —— */
+.ge-overline {
+  font-family: var(--font-mono);
+  font-size: 18rpx;
+  letter-spacing: 0.22em;
+}
+.ge-title {
+  font-family: var(--font-brand);
+  font-size: 32rpx;
+  letter-spacing: 0.03em;
+}
+.ge-desc {
+  font-size: 21rpx;
+  line-height: 1.5;
+}
+.ge-note {
+  font-size: 18rpx;
+}
+.ge-face .ge-overline { color: rgba(196, 167, 108, 0.7); }
+.ge-face .ge-title { color: var(--brass-100); }
+.ge-letter .ge-overline { color: rgba(138, 117, 48, 0.85); }
+.ge-letter .ge-title { color: #33302C; }
+.ge-letter .ge-desc { color: #5B544A; }
+.ge-letter .ge-note { color: #857C6E; }
+
+.ge-cta {
+  margin-top: 12rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 34rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(138, 117, 48, 0.5);
+  background: rgba(196, 167, 108, 0.18);
+}
+.ge-cta-text {
+  font-size: 24rpx;
+  letter-spacing: 0.08em;
+  color: #4A3F22;
+}
+.ge-cta-arr {
+  font-size: 22rpx;
+  color: #4A3F22;
+}
+
+/* —— 封盖：沿顶边掀起（与礼盒盖同一 transform / 时长） —— */
+.ge-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* 封盖三角的高：从顶边（y=0）斜落到中心 V 尖 ≈224rpx */
+  height: 240rpx;
+  z-index: 6;
+  transform-origin: top center;
+  transform: translateZ(0) rotateX(0deg);
+  transition: transform 0.72s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+/* 关键：两片**不能**用「上边贴顶、斜边当底」的画法 —— 那样斜掉的会变成上边，
+ * 顶部中心会漏出一条楔形袋身（真机看着像帐篷/屋顶，而不是信封盖）。
+ * 正确画法：把斜边做成**下沿**（即折口），并让矩形主体伸到卡面之上被 overflow 裁掉，
+ * 于是可见部分正好是「顶边 + 折口斜边」围成的三角形封盖。 */
+.ge-flap-half {
+  position: absolute;
+  top: -240rpx;
+  width: 51%;
+  height: 240rpx;
+  box-sizing: border-box;
+  backface-visibility: hidden;
+  /* 封盖是「另一块纸板」：比袋身高一档（此前只差 10 余阶，真机几乎看不出封盖），
+   * 纸纹与袋身同一套 —— 同一种纸，只是另一层（对齐礼赠 lid 的木纹与盒身同源） */
+  background:
+    repeating-linear-gradient(90deg, rgba(242, 237, 228, 0.016) 0, rgba(242, 237, 228, 0.016) 1rpx, transparent 1rpx, transparent 3rpx),
+    repeating-linear-gradient(180deg, rgba(242, 237, 228, 0.024) 0, rgba(242, 237, 228, 0.024) 1rpx, transparent 1rpx, transparent 4rpx),
+    linear-gradient(168deg, rgba(224, 207, 163, 0.14) 0%, rgba(224, 207, 163, 0.03) 28%, transparent 54%),
+    /* 注意：元素盒从卡面上方 240rpx 起，可见部分只占 local 11..240 —— 所以亮端要压在
+     * 前 60% 并把暗端收在折口附近，否则可见的封盖会落在渐变暗端（看着和袋身一样深，
+     * 断言算的是 CSS 首停靠点、渲染看的是可见段，两者会不一致）。 */
+    linear-gradient(180deg, #4E4638 0%, #4A4236 60%, #2C271F 100%);
+  /* 斜切下沿：亮折口 + 紧随其后的暗线，构成真实折痕（缺一就只是色块交界） */
+  border-bottom: 2rpx solid rgba(232, 216, 180, 0.3);
+  /* 折痕暗线 + 封盖压在袋身上的投影（box-shadow 随 skew 一起倾斜；
+   * 不用 filter:drop-shadow —— 小程序端 filter 支持度不稳，静态检查也看不出来） */
+  box-shadow:
+    0 3rpx 0 rgba(20, 16, 12, 0.55),
+    0 12rpx 16rpx rgba(6, 4, 3, 0.5);
+}
+/* 折口内侧的黄铜细线：对齐礼赠 .lid-brass-line —— 一条边太单薄，两条才像「折过的纸」 */
+.ge-flap-half::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 11rpx;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(232, 216, 180, 0) 0%, rgba(232, 216, 180, 0.42) 50%, rgba(232, 216, 180, 0) 100%);
+}
+/* 斜角 = atan(224 / 343) ≈ 33.1°，使折口正好穿过卡片左上 / 右上角并汇聚到中心 V 尖 */
+.ge-flap-l {
+  left: 0;
+  transform: skewY(33.1deg);
+  transform-origin: left bottom;
+}
+.ge-flap-r {
+  right: 0;
+  /* 原点在右边 → 左侧点 local x 为负，要让它往下走必须用**负角**（两片镜像） */
+  transform: skewY(-33.1deg);
+  transform-origin: right bottom;
+}
+.ge-flap-crease {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 200rpx;
+  width: 56rpx;
+  margin-left: -28rpx;
+  /* 信封背面没有中线折痕：这里只留纸面受光，不能出现 1px 亮线（真机会读成裂缝） */
+  background: linear-gradient(180deg, rgba(255, 246, 226, 0.05) 0%, rgba(255, 246, 226, 0) 72%);
+}
+.phase-lid .ge-flap,
+.phase-done .ge-flap {
+  transform: translateZ(24rpx) rotateX(-118deg);
+}
+
+/* —— 封缄红蜡：钉在封盖尖端（红蜡压印，非金属铜印） ——
+ * 真实封蜡的四件事，缺一件就变「红圆片」：
+ *   ① 蜡体是**厚料**：中心受光上浮、边缘沉下去（多段径向渐变，不是单色填充）；
+ *   ② 边缘有**冷蜡硬边**（0 0 0 2rpx 暗红描边）+ 蜡块落影（蜡是凸出纸面的实物）；
+ *   ③ 压印是**凹槽**：暗线 + 紧邻的亮边（双色），不是一条浅色描边；
+ *   ④ 溢蜡必须**与主体融成一坨**：偏移量小于自身尺寸的一半，只露一角（早期版本两个正圆漂在下缘 → 真机像两颗红珠子）。 */
+.ge-seal {
+  position: absolute;
+  top: 152rpx;
+  left: 50%;
+  width: 116rpx;
+  height: 116rpx;
+  margin-left: -58rpx;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 蜡块不规整：椭圆半径拼出不规则边 */
+  border-radius: 46% 54% 51% 49% / 52% 48% 54% 46%;
+  background:
+    radial-gradient(24% 18% at 34% 22%, rgba(255, 244, 238, 0.5) 0%, rgba(255, 244, 238, 0) 100%),
+    radial-gradient(20% 16% at 74% 74%, rgba(255, 178, 168, 0.2) 0%, rgba(255, 178, 168, 0) 100%),
+    radial-gradient(70% 70% at 42% 34%, #BE3038 0%, #961E29 40%, #70121B 74%, #47070D 100%);
+  box-shadow:
+    0 10rpx 20rpx rgba(6, 4, 3, 0.6),
+    0 0 0 3rpx rgba(74, 9, 15, 0.75),
+    0 0 0 7rpx rgba(8, 5, 4, 0.3),
+    inset 0 3rpx 5rpx rgba(255, 216, 206, 0.34),
+    inset 0 -9rpx 14rpx rgba(42, 3, 7, 0.68);
+  transition: opacity 0.32s ease, transform 0.32s ease;
+  pointer-events: none;
+}
+/* 溢蜡：与主体大面积重叠（只露一角），读成一坨蜡而不是两颗珠子 */
+.ge-seal::before,
+.ge-seal::after {
+  content: '';
+  position: absolute;
+  background: radial-gradient(58% 58% at 40% 30%, #B62C36 0%, #8A1A24 54%, #620F18 100%);
+  box-shadow:
+    inset 0 2rpx 3rpx rgba(255, 216, 206, 0.3),
+    0 5rpx 10rpx rgba(6, 4, 3, 0.45);
+}
+.ge-seal::before {
+  left: 2rpx;
+  bottom: -14rpx;
+  width: 62rpx;
+  height: 48rpx;
+  border-radius: 54% 46% 45% 55% / 64% 58% 42% 36%;
+}
+.ge-seal::after {
+  right: 10rpx;
+  bottom: -7rpx;
+  width: 34rpx;
+  height: 28rpx;
+  border-radius: 56% 44% 50% 50% / 62% 54% 46% 38%;
+}
+/* 压印圈：凹槽（暗线 + 下缘亮边），不是浅色描边 */
+.ge-seal-ring {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  bottom: 12rpx;
+  left: 12rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(62, 6, 10, 0.55);
+  box-shadow:
+    0 1rpx 0 rgba(255, 214, 204, 0.22),
+    inset 0 1rpx 1rpx rgba(255, 214, 204, 0.18);
+}
+/* 蜡面阴刻「山海」：上缘压痕 + 下缘受光（凹刻与浮雕的区别就在这两条阴影的先后） */
+.ge-seal-glyph {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-brand);
+  font-size: 32rpx;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: rgba(255, 232, 224, 0.92);
+  text-shadow:
+    0 1rpx 0 rgba(255, 236, 228, 0.34),
+    0 -1rpx 2rpx rgba(56, 4, 8, 0.72),
+    0 2rpx 3rpx rgba(56, 4, 8, 0.45);
+}
+.phase-seal .ge-seal,
+.phase-lid .ge-seal,
+.phase-done .ge-seal {
+  opacity: 0;
+  transform: scale(1.16) rotate(-14deg);
+}
+
+/* —— 停驻蝴蝶：落在红蜡「山海」上（与蜡印同一中轴，翼尖搭在蜡面） —— */
+.ge-butterfly {
+  position: absolute;
+  top: 56rpx;
+  left: 50%;
+  width: 168rpx;
+  height: 168rpx;
+  margin-left: -84rpx;
+  z-index: 8;
+  pointer-events: none;
+  animation: ge-butterfly-float 5.2s ease-in-out infinite;
+  transition: opacity 0.35s ease, transform 0.45s ease;
+}
+.ge-butterfly-img {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 62%;
+  animation: ge-butterfly-wing 1.7s ease-in-out infinite;
+}
+.ge-butterfly-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 208rpx;
+  height: 168rpx;
+  margin: -84rpx 0 0 -104rpx;
+  border-radius: 50%;
+  background:
+    /* 落在蜡面上的接触影（没有它，蝴蝶像贴在屏幕上而不是停在蜡上） */
+    radial-gradient(ellipse 44% 18% at 50% 76%, rgba(6, 4, 3, 0.5) 0%, rgba(6, 4, 3, 0) 72%),
+    radial-gradient(ellipse, rgba(238, 150, 186, 0.3) 0%, rgba(238, 150, 186, 0) 72%);
+  animation: ge-butterfly-glow 5.2s ease-in-out infinite;
+}
+/* 手指按住：当场加速振翅（松手自动回到常态） */
+.ge-butterfly.is-alert {
+  animation-duration: 1.2s;
+}
+.ge-butterfly.is-alert .ge-butterfly-img {
+  animation-duration: 0.42s;
+}
+.ge-butterfly.is-alert .ge-butterfly-glow {
+  animation-duration: 1.2s;
+}
+/* 启封后振翅飞离（与礼赠 brass-butterfly 的 phase-seal/lid/done 一致） */
+.phase-seal .ge-butterfly,
+.phase-lid .ge-butterfly,
+.phase-done .ge-butterfly {
+  animation: none;
+  opacity: 0;
+  transform: translate3d(18rpx, -58rpx, 0) scale(1.06) rotate(9deg);
+}
+@keyframes ge-butterfly-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+  50% { transform: translate3d(-10rpx, -14rpx, 0) rotate(4deg); }
+}
+@keyframes ge-butterfly-wing {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.86); }
+}
+@keyframes ge-butterfly-glow {
+  0%, 100% { opacity: 0.34; }
+  50% { opacity: 0.62; }
+}
+
+/* —— 封缄态手势提示（对齐礼赠「轻触开盒 · 长按可跳过」） —— */
+.ge-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16rpx;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.phase-seal .ge-hint,
+.phase-lid .ge-hint,
+.phase-done .ge-hint {
+  opacity: 0;
+}
+.ge-hint-over {
+  font-family: var(--font-mono);
+  font-size: 16rpx;
+  letter-spacing: 0.24em;
+  color: rgba(196, 167, 108, 0.62);
+}
+.ge-hint-line {
+  font-size: 20rpx;
+  color: var(--color-text-muted);
 }

@@ -146,10 +146,17 @@
               <view class="orb-empty" wx:if="{{orbProducts.length === 0}}">
                 <text>该品类暂无上架藏品</text>
               </view>
-              <block wx:for="{{orbProducts}}" wx:key="_id">
+              <!-- 需求 11：横滑容器是 flex 行，故用包裹层承载 flex-shrink:0（不能直接用 block） -->
+              <view class="orb-item" wx:for="{{orbProducts}}" wx:key="_id">
                 <view class="op-card" catchtap="goToDetail" data-id="{{item._id}}" hover-class="op-card-press" hover-stay-time="80">
                    <view class="op-img-box">
-                      <image class="op-img" src="{{item.image}}" mode="aspectFill" lazy-load></image>
+                      <sensitive-blur-gate
+                        enabled="{{item.sensitiveEnabled}}"
+                        product-id="{{item._id}}"
+                        size="card"
+                      >
+                        <image class="op-img" src="{{item.image}}" mode="aspectFill" lazy-load></image>
+                      </sensitive-blur-gate>
                       <view class="op-rare-tag" wx:if="{{item.productRarity === 'rare' || item.productRarity === 'legendary'}}">珍稀</view>
                    </view>
                    <view class="op-info">
@@ -161,7 +168,7 @@
                       </view>
                    </view>
                 </view>
-              </block>
+              </view>
               <view class="orb-loading-more" wx:if="{{orbLoadingMore}}">加载中</view>
               <view class="op-more-card" catchtap="goToCategory" data-id="{{currentOrbId}}" hover-class="op-card-press" hover-stay-time="80">
                  <text class="txt">查看全部</text><text class="arr">→</text>

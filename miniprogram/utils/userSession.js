@@ -254,7 +254,7 @@ function buildOnboardingUrl(options = {}) {
   if (options.phoneOnly) {
     parts.push('phoneOnly=1')
   }
-  return `/subpackages/feature/user/onboarding/index?${parts.join('&')}`
+  return `/subpackages/extra/user/onboarding/index?${parts.join('&')}`
 }
 
 function navigateToOnboarding(options = {}) {

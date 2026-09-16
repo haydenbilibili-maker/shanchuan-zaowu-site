@@ -13,6 +13,7 @@ const CLOSED_AI_IDENTIFY_TOAST = 'AI 鉴定暂未开放'
 const CLOSED_STORE_TOAST = '这有店暂未开放'
 const CLOSED_STORE_PICKUP_TOAST = '门店自取暂未开放'
 const CLOSED_GIFT_TOAST = '礼赠暂未开放，柜门稍后再启'
+const CLOSED_WISH_WALL_TOAST = '祈福墙暂未开放'
 
 const CACHE_KEY = 'CONTENT_FLAGS'
 
@@ -37,12 +38,38 @@ function normalizeContentDisplayFlags(raw) {
     // 缺字段 / undefined → 开启；门店自取在售，仅显式 false 关闭
     showStorePickup: src.showStorePickup !== false,
     // 缺字段 / undefined → 关闭；礼赠默认不展示
-    showGift: src.showGift === true
+    showGift: src.showGift === true,
+    // 缺字段 / undefined → 开启；iOS 储值充值默认允许（仅显式 false 关闭）
+    allowIosStoredValue: src.allowIosStoredValue !== false,
+    // 缺字段 / undefined → 开启；列表缩略图默认开
+    imageThumbEnabled: src.imageThumbEnabled !== false,
+    // 需求 22/23：山海图鉴 / 我的成就；缺字段 → 开启（现网已开放，仅显式 false 关闭）
+    showAtlas: src.showAtlas !== false,
+    showAchievements: src.showAchievements !== false,
+    // 需求 28：「马上有」祈福弹幕；缺字段 → **关闭**（UGC 新能力由超管显式开启）
+    showMaShangYou: src.showMaShangYou === true
   }
+}
+
+/** 需求 28：祈福墙关闭时的统一提示 */
+function toastWishWallClosed() {
+  wx.showToast({ title: CLOSED_WISH_WALL_TOAST, icon: 'none' })
 }
 
 function toastLiveClosed() {
   wx.showToast({ title: CLOSED_LIVE_TOAST, icon: 'none' })
+}
+
+/**
+ * 把「列表缩略图」开关同步给 utils/imageUrl（需求 17）。
+ * 放在这里的原因：所有页面都经由 fetchContentDisplayFlags 拿开关，一处生效全局跟随；
+ * 工具缺失或异常时静默忽略，绝不因埋点/图片优化影响主流程。
+ */
+function applyImageThumbFlag(rawFlags) {
+  try {
+    const { setThumbFlag } = require('./imageUrl')
+    setThumbFlag(!rawFlags || rawFlags.imageThumbEnabled !== false)
+  } catch (e) { /* ignore */ }
 }
 
 function toastStoredValueClosed() {
@@ -118,6 +145,7 @@ async function fetchContentDisplayFlags(options) {
       revalidate: !!opts.revalidate,
       onUpdate: opts.onUpdate
         ? (data, meta) => {
+          applyImageThumbFlag(data.flags || data)
           opts.onUpdate(wrapPayload(data.flags || data, {
             docId: data.docId || '',
             default: !!data.default
@@ -128,6 +156,8 @@ async function fetchContentDisplayFlags(options) {
     if (!payload) {
       return wrapPayload({}, { success: false, default: true, fallback: true })
     }
+    // 需求 17：把列表缩略图开关同步给 imageUrl（一处生效，全局跟随）
+    applyImageThumbFlag(payload.flags || payload)
     return wrapPayload(payload.flags || payload, {
       success: payload.success !== false,
       docId: payload.docId || '',
@@ -160,6 +190,7 @@ module.exports = {
   CLOSED_STORE_TOAST,
   CLOSED_STORE_PICKUP_TOAST,
   CLOSED_GIFT_TOAST,
+  CLOSED_WISH_WALL_TOAST,
   normalizeContentDisplayFlags,
   fetchContentDisplayFlags,
   getCachedContentDisplayFlags,
@@ -171,5 +202,6 @@ module.exports = {
   toastAiIdentifyClosed,
   toastStoreClosed,
   toastStorePickupClosed,
-  toastGiftClosed
+  toastGiftClosed,
+  toastWishWallClosed
 }

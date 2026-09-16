@@ -1,0 +1,109 @@
+/* components/WishWallEntry/index.wxss 需求 28：祈福墙入口
+ * 与祈福墙页的「牌匾」同一语言：浅纸 + 铜字 + 纸纤维；箭头用 CSS 折角而不是字符 › */
+.wish-wall-entry {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 24rpx);
+  /* ⚠️ 根节点不留任何外边距：外间距 100% 归宿主的 ext-class。
+     同一元素上组件样式与宿主样式都设 margin 时，谁生效取决于样式表先后 ——
+     实测（切片渲染）宿主的 margin-top 会被组件样式吃掉。职责分离才不会有这种隐性覆盖。 */
+  margin: 0;
+  padding: 24rpx;
+  overflow: hidden;
+  background: linear-gradient(165deg, #FAF6ED 0%, #F2EDE4 50%, #EDE6DA 100%);
+  border: 1px solid #E0CFA3;
+  border-radius: var(--radius-md, 16rpx);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.85);
+}
+
+/* 纸纤维：浅底用 multiply 才像纸 */
+.wish-wall-entry::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.1;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.35' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+
+.wish-wall-entry--press {
+  opacity: 0.9;
+}
+
+.wish-wall-entry-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 品牌与标题同行：比两行更省竖向空间，也让"马上有 · 祈福墙"读成一个整体 */
+.wish-wall-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+/* 浅纸上的信号灯：#C4A76C on #FAF6ED 几乎看不见，需加深铜描边（同祈福墙页的牌匾）。
+   ⚠️ 必须用三层选择器：全局是 `.signal-light.lamp-brass`（两个类），
+   单类选择器会被它按特异性压过，灯就退回成空心铜圈。 */
+.wish-wall-entry .wish-wall-entry-row .wish-wall-entry-lamp {
+  flex-shrink: 0;
+  box-shadow: none;
+  border-color: rgba(107, 90, 36, 0.55);
+  background: #A8903C;
+}
+
+.wish-wall-entry-brand {
+  flex-shrink: 0;
+  font-size: 18rpx;
+  line-height: 1.3;
+  letter-spacing: 0.16em;
+  color: #A8903C;
+}
+
+.wish-wall-entry-title {
+  min-width: 0;
+  font-family: var(--font-brand, 'Source Han Serif SC', serif);
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  color: #6B5A24;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 首屏一行版：只有灯 + 品牌 + 标题 + 箭头 */
+.wish-wall-entry.is-compact {
+  /* 26rpx×2 + 标题行 ≈ 45px：一行版仍满足触控最小高度（≥44px） */
+  padding: 26rpx 24rpx;
+}
+
+.wish-wall-entry.is-compact .wish-wall-entry-title {
+  font-size: 30rpx;
+}
+
+.wish-wall-entry-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #7A6E58;
+}
+
+/* 折角箭头：右 + 下描边旋转 45° */
+.wish-wall-entry-chevron {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 16rpx;
+  height: 16rpx;
+  border-right: 3rpx solid #A8903C;
+  border-bottom: 3rpx solid #A8903C;
+  transform: rotate(-45deg);
+}

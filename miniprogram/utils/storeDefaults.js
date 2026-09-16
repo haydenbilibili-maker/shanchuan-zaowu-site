@@ -208,7 +208,7 @@ const STORE_SERVICES = [
   { id: 'activity', label: '特别活动', tab: 2, storeRoles: ['main', 'workshop'] },
   { id: 'custom', label: '定制到店确认', tab: 0, storeRoles: ['workshop'], path: 'custom' },
   { id: 'hub', label: '标本工坊', tab: -1, storeRoles: ['workshop'], path: '/pages/atelier/index' },
-  { id: 'support', label: '联系专员', tab: -1, storeRoles: ['main', 'workshop'], path: '/subpackages/feature/user/support/index' }
+  { id: 'support', label: '联系专员', tab: -1, storeRoles: ['main', 'workshop'], path: '/subpackages/extra/user/support/index' }
 ]
 
 module.exports = {

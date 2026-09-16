@@ -5,7 +5,7 @@
 Admin → 小程序配置 → 会员/营销规则 → **会员等级调整**（模块 id `69`）
 
 超管工作台（小程序）→ 快捷「调档」或现场区 **会员等级调整**
-路径：`/subpackages/manager/member-level-adjust/index`（仅 `super_admin`）
+路径：`/subpackages/extra/member-level-adjust/index`（仅 `super_admin`）
 
 云函数：`manageMemberLevelAdjust`（Admin 须经 `/api/cloud-fn` 代理；小程序直调 callFunction）
 

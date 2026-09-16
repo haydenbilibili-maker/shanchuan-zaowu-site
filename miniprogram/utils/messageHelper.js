@@ -182,21 +182,12 @@ function pickRelatedId(msg) {
 
 function isInboxSelfUrl(url) {
   const path = String(url || '').split('?')[0].replace(/^\//, '');
-  return path === 'subpackages/feature/user/messages/index'
+  return path === 'subpackages/extra/user/messages/index'
     || path === 'pages/user/messages/index';
 }
 
 const FEATURE_LEGACY_PREFIXES = [
   '/pages/collection-detail',
-  '/pages/user/onboarding',
-  '/pages/user/profile',
-  '/pages/user/achievements',
-  '/pages/user/messages',
-  '/pages/user/support',
-  '/pages/user/legal',
-  '/pages/user/feedback',
-  '/pages/user/certificates',
-  '/pages/user/invoice-request',
   '/pages/community',
   '/pages/custom',
   '/pages/care',
@@ -207,6 +198,45 @@ const FEATURE_LEGACY_PREFIXES = [
   '/pages/collection',
   '/pages/articles',
   '/pages/videos'
+].sort((a, b) => b.length - a.length);
+
+/**
+ * 个人中心整棵子树（原 `subpackages/feature/user/*`）已于 2026-09-16 迁入
+ * `subpackages/extra/user/*`（feature 分包逼近 2M 上限，见包体优化记录）。
+ *
+ * 旧站内信 / 已发出的订阅消息 / 历史分享里存的仍是 `/pages/user/*`，
+ * 它们靠本表重映射到现在的页面。**必须单独一张表**：如果继续留在
+ * FEATURE_LEGACY_PREFIXES 里，拼接结果会是已不存在的 `subpackages/feature/user/*`，
+ * 用户点通知直接跳空 —— 这类断链静态扫不到（目标是拼出来的，不是字面量），
+ * 由 `npm run test:legacy-remap` 兜住。
+ */
+const EXTRA_LEGACY_PREFIXES = [
+  '/pages/user/onboarding',
+  '/pages/user/profile',
+  '/pages/user/achievements',
+  '/pages/user/messages',
+  '/pages/user/support',
+  '/pages/user/legal',
+  '/pages/user/feedback',
+  '/pages/user/certificates',
+  '/pages/user/invoice-request',
+  // 店员工作台整棵子树也迁到了 extra（原 subpackages/manager/staff/*）：
+  // 站内信里的 `/pages/staff`、`/pages/staff/field` 等同样要落到 extra。
+  '/pages/staff'
+].sort((a, b) => b.length - a.length);
+
+/**
+ * 店长 / 员工管理页（`/pages/manager`、`/pages/store-points`、`/pages/invoice-requests`）
+ * 实际在 `subpackages/manager/*`，**不在 business**。
+ *
+ * 这四条曾被错放在 BUSINESS_LEGACY_PREFIXES 里，于是拼成
+ * `/subpackages/business/staff/index` 这种从不存在的路径 —— 员工点「新单待发」
+ * 之类的通知直接跳空。实测由 `npm run test:legacy-remap` 抓出（4 条真实断链）。
+ */
+const MANAGER_LEGACY_PREFIXES = [
+  '/pages/manager',
+  '/pages/store-points',
+  '/pages/invoice-requests'
 ].sort((a, b) => b.length - a.length);
 
 /** 业务页迁入 subpackages/business 后的旧 path（站内信 / 分享历史） */
@@ -221,10 +251,6 @@ const BUSINESS_LEGACY_PREFIXES = [
   '/pages/order-claim',
   '/pages/coupons',
   '/pages/certificate',
-  '/pages/manager',
-  '/pages/staff',
-  '/pages/store-points',
-  '/pages/invoice-requests',
   '/pages/framer-recruit',
   '/pages/framer',
   '/pages/about',
@@ -294,6 +320,26 @@ function remapLegacyPageUrl(raw) {
         const prefix = FEATURE_LEGACY_PREFIXES[i];
         if (url === prefix || url.indexOf(`${prefix}/`) === 0 || url.indexOf(`${prefix}?`) === 0) {
           mapped = `/subpackages/feature${url.slice('/pages'.length)}`;
+          remapped = true;
+          break;
+        }
+      }
+    }
+    if (!remapped) {
+      for (let i = 0; i < MANAGER_LEGACY_PREFIXES.length; i++) {
+        const prefix = MANAGER_LEGACY_PREFIXES[i];
+        if (url === prefix || url.indexOf(`${prefix}/`) === 0 || url.indexOf(`${prefix}?`) === 0) {
+          mapped = `/subpackages/manager${url.slice('/pages'.length)}`;
+          remapped = true;
+          break;
+        }
+      }
+    }
+    if (!remapped) {
+      for (let i = 0; i < EXTRA_LEGACY_PREFIXES.length; i++) {
+        const prefix = EXTRA_LEGACY_PREFIXES[i];
+        if (url === prefix || url.indexOf(`${prefix}/`) === 0 || url.indexOf(`${prefix}?`) === 0) {
+          mapped = `/subpackages/extra${url.slice('/pages'.length)}`;
           break;
         }
       }
@@ -346,7 +392,7 @@ function inferActionUrl(msg = {}) {
     return 'subpackages/feature/custom/orders/index';
   }
   if (type === 'support_ticket_replied') {
-    return 'subpackages/feature/user/support/index';
+    return 'subpackages/extra/user/support/index';
   }
   if (type === 'support_ticket_received') {
     return '';
@@ -702,6 +748,31 @@ function resolveStatus(type, hasAction, isCampaign) {
   };
 }
 
+/**
+ * 需求 10：信件商品卡。
+ * 粒度口径由业务确认为「名称 + 图片 + 规格」（图片缺省时不占位，名称/规格始终显示）。
+ * 商品卡是**附件式**展示：正文照旧，卡片补上「买的是什么」，不重复正文句子。
+ */
+function buildProductCards(raw) {
+  const list = Array.isArray(raw) ? raw : []
+  return list
+    .filter((item) => item && (item.title || item.image))
+    .slice(0, 5)
+    .map((item, i) => {
+      const count = Math.max(1, parseInt(item.count, 10) || 1)
+      return {
+        id: String(item.id || `pc${i}`),
+        title: String(item.title || '藏品'),
+        image: String(item.image || ''),
+        hasImage: !!item.image,
+        skuLabel: String(item.skuLabel || ''),
+        hasSku: !!item.skuLabel,
+        count,
+        countText: count > 1 ? `×${count}` : ''
+      }
+    })
+}
+
 function enrichMessage(msg) {
   const typeMeta = getTypeMeta(msg.type);
   const category = msg.category || (typeMeta && typeMeta.category) || 'other';
@@ -711,6 +782,8 @@ function enrichMessage(msg) {
   const content = msg.content || '';
   const paragraphs = splitParagraphs(content);
   const { bodyBlocks, summaries } = parseLetterContent(content);
+  // 需求 10：商品卡（名称 + 图片 + 规格）
+  const productCards = buildProductCards(msg.products);
   const preview = makePreview(content);
   const isCampaign = isCampaignMessage(msg);
   const isPaper = true;
@@ -746,6 +819,15 @@ function enrichMessage(msg) {
     })),
     bodyBlocks,
     summaries,
+    productCards,
+    hasProductCards: productCards.length > 0,
+    // 需求 10：列表页用的紧凑摘要（最多 3 张缩略图 + 「首件 等 N 项」）
+    productThumbs: productCards.filter((c) => c.hasImage).slice(0, 3).map((c) => ({ id: c.id, image: c.image })),
+    productSummary: productCards.length
+      ? (productCards.length > 1
+          ? `${productCards[0].title} 等 ${productCards.length} 项`
+          : productCards[0].title)
+      : '',
     preview,
     isCampaign,
     isPaper,

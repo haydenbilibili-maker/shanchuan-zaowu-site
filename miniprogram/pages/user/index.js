@@ -43,7 +43,8 @@ const {
   mergeLevelLadderWithDefaults,
   buildGrowthMilestoneHint,
   formatDiscount,
-  isPlaceholderLevelName
+  isPlaceholderLevelName,
+  resolveAuthState
 } = require('../../utils/profileHelper');
 const { fetchMyCoupons } = require('../../utils/couponService');
 const { pickAvatarImage, avatarExtFromPath, toastAvatarPickError } = require('../../utils/pickAvatar');
@@ -282,6 +283,8 @@ function specimenFieldsFor(level) {
 function guestMemberCardFields() {
   return {
     cardPending: false,
+    /** 需求 20：未注册 / 本机退出 !== Lv1 等级卡，走信封卡（见 UserVipCard） */
+    cardGuest: true,
     userInfo: { avatarUrl: '', nickName: GUEST_NICK },
     level: 1,
     cardSkinClass: 'level-skin-1',
@@ -310,6 +313,8 @@ function guestMemberCardFields() {
 function pendingMemberCardFields() {
   return {
     cardPending: true,
+    /** 骨架态不画信封（还不知道是不是未注册），避免闪一下又换成等级卡 */
+    cardGuest: false,
     userInfo: { avatarUrl: '', nickName: '' },
     level: PENDING_SKIN_LEVEL,
     cardSkinClass: resolveSkinClass(PENDING_SKIN_LEVEL),
@@ -359,6 +364,8 @@ function snapshotToPageFields(snap) {
   const specimen = specimenFieldsFor(level);
   return {
     cardPending: false,
+    /** 有快照 = 已建立档案（快照只在有正式代号时写入），不是信封态 */
+    cardGuest: false,
     isLocalLoggedOut: false,
     userInfo: {
       avatarUrl: snap.avatarUrl || '',
@@ -442,6 +449,10 @@ Page({
     progressPercent: _bootCard.progressPercent,
     /** 无快照且可能已登录：黄金骨架中；有快照或已退出则为 false */
     cardPending: !!_bootCard.cardPending,
+    /** 需求 20：未注册 / 本机退出 → 信封卡（与 Lv1 等级卡区分） */
+    cardGuest: !!_bootCard.cardGuest,
+    /** 本机已退出（信封卡文案与未注册不同：重新进入 vs 开启档案） */
+    guestLoggedOut: !!_bootCard.isLocalLoggedOut,
 
     // 状态
     hasCheckedIn: false,
@@ -477,6 +488,10 @@ Page({
     showStoredValue: false,
     /** 礼赠入口；缺配置默认关闭（与商详送礼一致） */
     showGift: false,
+    /** 山海图鉴入口（需求 22）；缺配置默认开启（现网已开放） */
+    showAtlas: true,
+    /** 我的成就入口（需求 23）；缺配置默认开启（现网已开放） */
+    showAchievements: true,
     /** 礼赠角标：往来待办 + 近 7 日日子（对齐 manageGift.badgeCount） */
     giftTodoCount: 0,
     /** 往来待办（todo+attention），用于深链 hub=flow */
@@ -672,6 +687,9 @@ Page({
           showBookingEntry: flags.showBookingEntry !== false,
           showStoredValue: flags.showStoredValue === true,
           showAiIdentify: flags.showAiIdentify !== false,
+          // 需求 22/23：缺字段 → 开启；仅显式 false 关闭
+          showAtlas: flags.showAtlas !== false,
+          showAchievements: flags.showAchievements !== false,
           showStore: flags.showStore !== false,
           showGift,
           giftTodoCount: showGift ? this.data.giftTodoCount : 0,
@@ -832,7 +850,7 @@ Page({
       this.resumeLogin({ thenOnboarding: true });
       return;
     }
-    wx.navigateTo({ url: '/subpackages/feature/user/onboarding/index?from=hub' });
+    wx.navigateTo({ url: '/subpackages/extra/user/onboarding/index?from=hub' });
   },
 
   applyLoggedOutState() {
@@ -848,6 +866,8 @@ Page({
       isLocalLoggedOut: true,
       showOnboardingBanner: false,
       ...guestMemberCardFields(),
+      /** 信封卡文案分流：本机退出是「重新进入」，未注册是「开启档案」 */
+      guestLoggedOut: true,
       isAdmin: false,
       staffRole: '',
       workspaceRole: '',
@@ -960,10 +980,10 @@ Page({
       wx.hideLoading();
       try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
       if (options.thenOnboarding) {
-        wx.navigateTo({ url: '/subpackages/feature/user/onboarding/index?from=hub' });
+        wx.navigateTo({ url: '/subpackages/extra/user/onboarding/index?from=hub' });
       } else if (options.thenProfile) {
         wx.navigateTo({
-          url: '/subpackages/feature/user/profile/index',
+          url: '/subpackages/extra/user/profile/index',
           fail: () => wx.showToast({ title: '无法打开藏家档案', icon: 'none' })
         });
       } else {
@@ -1109,6 +1129,11 @@ Page({
       if (session.success) {
         if (session.memberNo) this.setData({ memberNo: session.memberNo });
         if (session.user) {
+          // 需求 20：未完成注册 ≠ 等级卡 → 信封卡。
+          // 判定取两侧并集：未绑手机（注册的完成标志，见 onboarding「授权手机号即可完成注册」）
+          // 或 resolveAuthState 判为 guest（无有效代号）。
+          const sessionAuthState = resolveAuthState(session.user);
+          const notRegistered = !session.user.phone || sessionAuthState === 'guest';
           this.setData({
             userInfo: session.user,
             profileScore: session.profileScore || 0,
@@ -1121,7 +1146,9 @@ Page({
                 || session.user.registerGiftIncomplete === true
               )
             ),
-            cardPending: false
+            cardPending: false,
+            cardGuest: notRegistered,
+            guestLoggedOut: false
           });
           this.syncCardBackPanel(session.user);
           app.globalData.userInfo = session.user;
@@ -1412,9 +1439,21 @@ Page({
       return;
     }
     wx.navigateTo({
-      url: '/subpackages/feature/user/profile/index',
+      url: '/subpackages/extra/user/profile/index',
       fail: () => wx.showToast({ title: '无法打开藏家档案', icon: 'none' })
     });
+  },
+
+  /**
+   * 需求 20：信封卡主 CTA —— 未注册 → 注册引导（领新客礼）；
+   * 本机已退出 → 重新进入（恢复会话后可继续建档）。
+   */
+  onGuestCardCta() {
+    if (isLocalLoggedOut()) {
+      this.onResumeLoginTap();
+      return;
+    }
+    this.startOnboarding();
   },
 
   applyLevelLadder(ladder) {
@@ -1620,7 +1659,7 @@ Page({
         go('/subpackages/business/points/index');
         break;
       case 'storedValue':
-        go('/subpackages/feature/user/stored-value/index');
+        go('/subpackages/extra/user/stored-value/index');
         break;
       case 'rewards': {
         // 旧「积分与券」入口 → 钱包枢纽（有券优先券夹）
@@ -1630,6 +1669,10 @@ Page({
       }
       case 'orderClaim':
         go('/subpackages/business/order-claim/index');
+        break;
+      case 'profile':
+        // 需求 21：卡片异常时的兜底入口（此前「我的」页无独立档案入口）
+        this.goToProfile();
         break;
       case 'booking': // 旧「我的预约」别名 → 合并预约页
       case 'visitBooking': {
@@ -1649,7 +1692,7 @@ Page({
         break;
       }
       case 'certificate':
-        go('/subpackages/feature/user/certificates/index');
+        go('/subpackages/extra/user/certificates/index');
         break;
       case 'orders':
         go('/subpackages/business/orders/index');
@@ -1664,7 +1707,7 @@ Page({
         go('/subpackages/business/about/index');
         break;
       case 'feedback':
-        go('/subpackages/feature/user/feedback/index');
+        go('/subpackages/extra/user/feedback/index');
         break;
       case 'coupons':
         go('/subpackages/business/coupons/index');
@@ -1690,10 +1733,15 @@ Page({
         go('/subpackages/feature/identify/index');
         break;
       case 'collection':
+        // 需求 22：开关关闭时不放行（UI 已隐藏，此处兜底，避免深链/旧缓存进入）
+        if (this.data.showAtlas === false) {
+          wx.showToast({ title: '山海图鉴暂未开放', icon: 'none' });
+          return;
+        }
         go('/subpackages/feature/collection/index');
         break;
       case 'wishlist':
-        go('/subpackages/feature/user/wishlist/index');
+        go('/subpackages/extra/user/wishlist/index');
         break;
       case 'contact': /* wxml中已通过 button open-type 实现 */ break;
       default:
@@ -2165,14 +2213,14 @@ Page({
       return;
     }
     wx.navigateTo({
-      url: '/subpackages/feature/user/profile/index',
+      url: '/subpackages/extra/user/profile/index',
       fail: () => wx.showToast({ title: '无法打开藏家档案', icon: 'none' })
     });
   },
 
   goToFeedback() {
     wx.navigateTo({
-      url: '/subpackages/feature/user/feedback/index',
+      url: '/subpackages/extra/user/feedback/index',
       fail: () => wx.showToast({ title: '无法打开反馈', icon: 'none' })
     });
   },
@@ -2180,7 +2228,7 @@ Page({
   goToLegal(e) {
     const type = (e.currentTarget.dataset.type === 'privacy') ? 'privacy' : 'terms';
     wx.navigateTo({
-      url: `/subpackages/feature/user/legal/index?type=${type}`,
+      url: `/subpackages/extra/user/legal/index?type=${type}`,
       fail: () => wx.showToast({ title: '无法打开协议', icon: 'none' })
     });
   },
@@ -2416,7 +2464,7 @@ Page({
       if (app.globalData) app.globalData.forceWorkbenchBadgeRefresh = true;
     } catch (e) { /* ignore */ }
     wx.navigateTo({
-      url: '/subpackages/feature/user/messages/index?queue=workflow&from=workbench',
+      url: '/subpackages/extra/user/messages/index?queue=workflow&from=workbench',
       success: () => {
         setTimeout(() => {
           this.loadUnreadMessageCount();
@@ -2430,7 +2478,7 @@ Page({
   goStaffConsole() {
     wx.vibrateShort({ type: 'light' });
     wx.navigateTo({
-      url: '/subpackages/manager/staff/index',
+      url: '/subpackages/extra/staff/index',
       fail: () => wx.showToast({ title: '店员工作台暂不可用', icon: 'none' })
     });
   },
@@ -2567,10 +2615,15 @@ Page({
 
   // 🟢 跳转到成就页面
   goToAchievements() {
+    // 需求 23：开关关闭时不放行（UI 已隐藏，此处兜底，避免深链/旧缓存进入）
+    if (this.data.showAchievements === false) {
+      wx.showToast({ title: '我的成就暂未开放', icon: 'none' });
+      return;
+    }
     try {
       wx.vibrateShort({ type: 'medium' });
       wx.navigateTo({
-        url: '/subpackages/feature/user/achievements/index',
+        url: '/subpackages/extra/user/achievements/index',
         success: () => {
           this._clearAchievementBadge();
         },
@@ -2954,7 +3007,7 @@ Page({
     try {
       wx.vibrateShort({ type: 'medium' });
       wx.navigateTo({
-        url: '/subpackages/feature/user/support/index',
+        url: '/subpackages/extra/user/support/index',
         fail: (err) => {
           console.error('跳转联系专员失败:', err);
           wx.showToast({ title: '页面加载失败', icon: 'none' });
@@ -2973,7 +3026,7 @@ Page({
         if (app.globalData) app.globalData.forceWorkbenchBadgeRefresh = true;
       } catch (e) { /* ignore */ }
       wx.navigateTo({
-        url: '/subpackages/feature/user/messages/index',
+        url: '/subpackages/extra/user/messages/index',
         success: () => {
           setTimeout(() => {
             this.loadUnreadMessageCount();
