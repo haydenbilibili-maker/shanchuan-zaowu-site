@@ -376,7 +376,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
-import { fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, getTempFileUrls } from '../cloud'
+import { COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, getTempFileUrls } from '../cloud.js'
 import { Plus, Edit, Delete, Ticket, Connection, Select, Picture, Minus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ImageUploadField from './ImageUploadField.vue'
@@ -458,13 +458,13 @@ const getCardStyle = (type) => {
  *    所以这两个 tab 的新建/保存/删除必然失败。已在上方显式提示并禁用写入。
  */
 const MODULE_COLLECTIONS = {
-  coupon: 'coupons',
-  reward: 'rewards',
-  vip: 'vip_cards',          // ⚠ 线上不存在，待创建
-  virtual: 'equity_goods',   // ⚠ 线上不存在，待创建
+  coupon: COLLECTIONS.COUPONS,
+  reward: COLLECTIONS.REWARDS,
+  vip: COLLECTIONS.VIP_CARDS,          // ⚠ 线上不存在，待创建（声明集中在 cloud.js 的 COLLECTIONS）
+  virtual: COLLECTIONS.EQUITY_GOODS,   // ⚠ 线上不存在，待创建
 }
 /** 线上尚未创建的集合：不做兜底、不假装成功，直接禁用写入并提示 */
-const MISSING_COLLECTIONS = { vip: 'vip_cards', virtual: 'equity_goods' }
+const MISSING_COLLECTIONS = { vip: COLLECTIONS.VIP_CARDS, virtual: COLLECTIONS.EQUITY_GOODS }
 
 const getCollectionName = () => MODULE_COLLECTIONS[activeModule.value] || ''
 /** 当前 tab 的目标集合在云开发里是否还不存在 */

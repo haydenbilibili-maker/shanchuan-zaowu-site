@@ -1,0 +1,26 @@
+{
+  "updatedAt": "2026-09-16",
+  "note": "已知问题基线：新增需复核；若本次未发现基线中的名字，说明扫描覆盖面退化",
+  "names": [
+    "audience_campaigns",
+    "curated_collections",
+    "equity_goods",
+    "feishu_shipments",
+    "home_configs",
+    "likes",
+    "notification_logs",
+    "pet_craft_configs",
+    "property_proposals",
+    "refunds",
+    "report_templates",
+    "store_design_materials",
+    "store_design_versions",
+    "store_zones",
+    "stores",
+    "strategy_research",
+    "user_audiences",
+    "vip_cards",
+    "vip_levels",
+    "waitlist"
+  ]
+}

@@ -13,7 +13,17 @@
  * 用法：
  *   node admin/scripts/audit-live-collections.mjs            # 人类可读报告
  *   node admin/scripts/audit-live-collections.mjs --json     # 机器可读（stdout 仅 JSON）
+ *   node admin/scripts/audit-live-collections.mjs --strict   # 出现基线之外的新问题即 exit 1（CI 用）
+ *   node admin/scripts/audit-live-collections.mjs --update   # 复核后把当前问题名单写回基线
  *   node admin/scripts/audit-live-collections.mjs --selftest # 用合成数据证明判定逻辑会失败
+ *
+ * **覆盖面棘轮**：`collection-audit-baseline.json` 记录已知问题名单，双向卡 ——
+ *   · 出现基线之外的新问题 → `--strict` 下失败（需复核后 --update 收编）；
+ *   · 基线里的名字本次**没被发现** → **一律失败**，因为这几乎总是「扫描逻辑退化 / 换了写法」，
+ *     而不是问题真的消失了。本工具刚写完就踩过一次：`getCollectionName()` 从
+ *     `return 'vip_cards' // 需在云开发创建` 重构成映射表后，`vip_cards` / `equity_goods`
+ *     不再被任何模式命中，F 分区从 3 项悄悄变成 1 项 —— 报告看起来更「干净」了。
+ *     报告变干净有两种可能：问题真的修了，或者检查器瞎了。棘轮就是为了区分这两者。
  *
  * 输出分区：
  *   A. 线上开放但仓库无规则      —— 未纳管，且线上是 `auth != null` / `read:true`（安全面）
@@ -24,7 +34,7 @@
  */
 'use strict'
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -36,6 +46,9 @@ const ENV_ID = 'cloud1-8gnkty5bfff9f0bf'
 
 const argv = process.argv.slice(2)
 const jsonMode = argv.includes('--json')
+const strict = argv.includes('--strict')
+const updateBaseline = argv.includes('--update')
+const BASELINE_PATH = resolve(HERE, 'collection-audit-baseline.json')
 
 // ─────────────────────────── 纯逻辑（可被 selftest 直接喂合成数据）───────────────────────────
 
@@ -190,6 +203,50 @@ export function classify({ repoRules, declared = [], liveCollections, livePerms,
     F.push({ name: n, refs: refsOf(n), declared: declaredSet.has(n) })
   }
   return { A, B, B2, C, D, E, F, repoCount: repo.length, liveCount: liveCollections.length }
+}
+
+// ─────────────────────────── 覆盖面棘轮 ───────────────────────────
+//
+// 为什么需要：本工具刚写完就踩过一次 —— 把 `getCollectionName()` 里的
+// `return 'vip_cards' // 需在云开发创建` 重构成一张映射表之后，**发现能力静默退化**：
+// `vip_cards` / `equity_goods` 不再被任何扫描模式命中，F 分区从 3 项悄悄变成 1 项，
+// 报告看起来「更干净」了，实际是瞎了。
+// 所以基线要双向卡：既拦新增问题，也拦「已知问题不再被发现」。
+
+/** 本次实际发现的问题名单（按分区）*/
+export function actionableNames(out) {
+  const names = new Set()
+  for (const k of ['A', 'B', 'B2', 'C', 'E', 'F']) for (const x of out[k] || []) names.add(x.name)
+  return [...names].sort()
+}
+
+function readBaseline() {
+  try {
+    const j = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'))
+    return Array.isArray(j.names) ? j.names : []
+  } catch {
+    return null
+  }
+}
+
+function reportRatchet(out) {
+  const current = actionableNames(out)
+  const base = readBaseline()
+  if (base === null) {
+    console.log(`\n（未找到基线 ${BASELINE_PATH.replace(ROOT + '/', '')}，用 --update 生成）`)
+    return { current, added: [], lost: [], hasBaseline: false }
+  }
+  const added = current.filter((n) => !base.includes(n))
+  const lost = base.filter((n) => !current.includes(n))
+  console.log(`\n覆盖面棘轮：基线 ${base.length} 项 / 本次 ${current.length} 项`)
+  if (added.length) {
+    console.log(`  新增（需复核后 --update 收编）：${added.join('、')}`)
+  }
+  if (lost.length) {
+    console.log(`  ⚠ 基线里有、本次没发现（**发现能力退化**，不是问题消失了）：${lost.join('、')}`)
+  }
+  if (!added.length && !lost.length) console.log('  与基线一致。')
+  return { current, added, lost, hasBaseline: true }
 }
 
 // ─────────────────────────── 采集层 ───────────────────────────
@@ -456,4 +513,15 @@ if (jsonMode) {
   console.log(`小结：A 线上开放但无规则 ${out.A.length}；B 自定义规则漂移 ${out.B.length}；B2 预设权限待判断 ${out.B2.length}；C 规则空转 ${out.C.length}；D 历史残留 ${out.D.length}；E PRIVATE 但在用 ${out.E.length}；F 引用了但线上不存在 ${out.F.length}。`)
   const broken = out.F.filter((x) => totalRefs(x.refs) > 0).map((x) => x.name)
   if (broken.length) console.log(`其中 F 里「代码在引用」的 ${broken.length} 个（${broken.join('、')}）意味着对应功能现在就在失败。`)
+
+  const ratchet = reportRatchet(out)
+  if (updateBaseline) {
+    writeFileSync(BASELINE_PATH, `${JSON.stringify({ updatedAt: new Date().toISOString().slice(0, 10), note: '已知问题基线：新增需复核；若本次未发现基线中的名字，说明扫描覆盖面退化', names: ratchet.current }, null, 2)}\n`, 'utf8')
+    console.log(`  已写入基线（${ratchet.current.length} 项）`)
+  } else if (ratchet.hasBaseline && (ratchet.lost.length || (strict && ratchet.added.length))) {
+    console.log()
+    if (ratchet.lost.length) console.error('✗ 发现能力退化：基线中的集合本次未被发现，先修扫描逻辑，不要直接改基线。')
+    if (strict && ratchet.added.length) console.error('✗ --strict：出现基线之外的新问题，请复核后执行 --update 收编。')
+    process.exit(1)
+  }
 }

@@ -44,6 +44,8 @@
     "check:nav-dom:selftest": "node admin/scripts/check-nav-dom.mjs --selftest",
     "audit:collections": "node admin/scripts/audit-live-collections.mjs",
     "audit:collections:json": "node admin/scripts/audit-live-collections.mjs --json",
+    "audit:collections:strict": "node admin/scripts/audit-live-collections.mjs --strict",
+    "audit:collections:update": "node admin/scripts/audit-live-collections.mjs --update",
     "audit:collections:selftest": "node admin/scripts/audit-live-collections.mjs --selftest",
     "check:admin": "npm run check:sfc-dev && npm run check:nav-sources && npm run check:silent-catch && npm run check:brand-contrast && npm run check:welcome-gift && npm run check:store-points && npm run test:write-layer && npm run test:module-hash && npm run test:module-search && npm run test:coupon-floor",
     "check:admin:selftest": "npm run check:sfc-dev:selftest && npm run check:nav-sources:selftest && npm run check:silent-catch:selftest && npm run check:brand-contrast:selftest && npm run check:welcome-gift:selftest && npm run check:store-points:selftest && npm run test:write-layer:selftest && npm run test:module-hash:selftest && npm run test:module-search:selftest && npm run test:coupon-floor:selftest",

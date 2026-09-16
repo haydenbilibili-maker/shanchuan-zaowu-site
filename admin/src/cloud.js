@@ -522,6 +522,11 @@ export const COLLECTIONS = {
   NOTIFICATION_TEMPLATES: 'notification_templates',        // 通知消息模板配置
   STORE_DESIGN_VERSIONS: 'store_design_versions',          // 门店设计中心：设计版本（Web 端沉淀）
   STORE_DESIGN_MATERIALS: 'store_design_materials',         // 门店设计中心：标准物料库（可选）
+  // ⚠ 下面两个集合经线上核对（checkCollectionExists / DescribeTable）**在云开发里尚未创建**：
+  // 列表恒为空、新建与删除都不会生效。Marketing.vue 已按「集合缺失」显式提示并禁用写入。
+  // 建集合 + 补 `cloudbase/rules/` 后，`npm run audit:collections` 的 F 分区才会清空。
+  VIP_CARDS: 'vip_cards',                                 // 权益与营销：会员权益卡（未创建）
+  EQUITY_GOODS: 'equity_goods',                           // 权益与营销：虚拟权益商品（未创建）
   CUSTOM_CONFIGS: 'custom_configs',                       // 标本定制选项（框型/包装，getCustomConfig）
   CARE_GUIDES: 'care_guides',                             // 养护指南（getCareGuides）
   STORES: 'stores',                                       // C 端门店主数据（getStoreConfig）
