@@ -394,8 +394,9 @@ const refresh = async () => {
     } else if (activeTab.value === 'production') {
       // 询单接单 + 小程序定制订单（source=custom）合并
       const [acceptedInquiries, customOrders] = await Promise.all([
-        fetchCollectionWhere('custom_inquiries', { status: 'accepted' }, 200).catch(() => []),
-        fetchCollectionWhere(COLLECTIONS.ORDERS, { source: 'custom' }, 200).catch(() => []),
+        // 不吞错：任一查询失败原会静默变空数组，看板显示「没有在制订单」——运营会误判
+        fetchCollectionWhere('custom_inquiries', { status: 'accepted' }, 200),
+        fetchCollectionWhere(COLLECTIONS.ORDERS, { source: 'custom' }, 200),
       ])
       const merged = [
         ...(acceptedInquiries || []).map((r) => ({ ...r, _source: 'inquiry', _collection: 'custom_inquiries' })),
@@ -467,23 +468,37 @@ const submitQuote = async () => {
 
 const acceptInquiry = (row) => {
   ElMessageBox.confirm('确认接单后将进入生产工单跟踪。', '接单确认', { type: 'warning' }).then(async () => {
-    await cdnUpdate('custom_inquiries', row._id, {
-      status: 'accepted',
-      productionStatus: 'pending_make',
-      acceptedAt: Date.now(),
-      updateTime: Date.now()
-    })
-    ElMessage.success('已接单')
+        try {
+  await cdnUpdate('custom_inquiries', row._id, {
+        status: 'accepted',
+        productionStatus: 'pending_make',
+        acceptedAt: Date.now(),
+        updateTime: Date.now()
+      })
+      ElMessage.success('已接单')
+    } catch (e) {
+      console.error('接单失败', e)
+      ElMessage.error(`接单未生效：${e?.message || '未知错误'}`)
+    }
     refresh()
-  }).catch(() => {})
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('接单确认框异常', e)
+  })
 }
 
 const closeInquiry = (row) => {
   ElMessageBox.confirm('关闭询单？关闭后无法继续报价。', '关闭确认', { type: 'warning' }).then(async () => {
-    await cdnUpdate('custom_inquiries', row._id, { status: 'closed', updateTime: Date.now() })
-    ElMessage.success('已关闭')
+        try {
+  await cdnUpdate('custom_inquiries', row._id, { status: 'closed', updateTime: Date.now() })
+      ElMessage.success('已关闭')
+    } catch (e) {
+      console.error('关闭询单失败', e)
+      ElMessage.error(`关闭询单未生效：${e?.message || '未知错误'}`)
+    }
     refresh()
-  }).catch(() => {})
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('关闭询单确认框异常', e)
+  })
 }
 
 const advanceProduction = (row) => {
@@ -493,24 +508,38 @@ const advanceProduction = (row) => {
   const next = order[Math.min(idx + 1, order.length - 1)]
   const collection = row._collection || 'custom_inquiries'
   ElMessageBox.confirm(`推进至【${productionStatusLabel(next)}】？`, '阶段推进', { type: 'warning' }).then(async () => {
-    await cdnUpdate(collection, row._id, {
-      productionStatus: next,
-      [`stageTime.${next}`]: Date.now(),
-      updateTime: Date.now()
-    })
-    ElMessage.success('已推进')
+        try {
+  await cdnUpdate(collection, row._id, {
+        productionStatus: next,
+        [`stageTime.${next}`]: Date.now(),
+        updateTime: Date.now()
+      })
+      ElMessage.success('已推进')
+    } catch (e) {
+      console.error('阶段推进失败', e)
+      ElMessage.error(`阶段推进未生效：${e?.message || '未知错误'}`)
+    }
     refresh()
-  }).catch(() => {})
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('阶段推进确认框异常', e)
+  })
 }
 
 const assignFramer = (row) => {
   ElMessageBox.prompt('请输入师傅姓名 / ID', '分配标本师', { inputPlaceholder: '例如：王师傅' }).then(async ({ value }) => {
     if (!value) return
     const collection = row._collection || 'custom_inquiries'
-    await cdnUpdate(collection, row._id, { framerName: value, updateTime: Date.now() })
-    ElMessage.success('已分配')
+        try {
+  await cdnUpdate(collection, row._id, { framerName: value, updateTime: Date.now() })
+      ElMessage.success('已分配')
+    } catch (e) {
+      console.error('分配标本师失败', e)
+      ElMessage.error(`分配标本师未生效：${e?.message || '未知错误'}`)
+    }
     refresh()
-  }).catch(() => {})
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('分配标本师确认框异常', e)
+  })
 }
 
 const viewInquiry = (row) => {
@@ -570,11 +599,18 @@ const saveConfig = async () => {
 const deleteConfig = (row) => {
   ElMessageBox.confirm(`删除「${row.name}」？小程序定制页将不再展示。`, '删除确认', { type: 'warning' })
     .then(async () => {
+    try {
       await cdnRemove(COLLECTIONS.CUSTOM_CONFIGS, row._id)
       ElMessage.success('已删除')
-      refresh()
-    })
-    .catch(() => {})
+    } catch (e) {
+      console.error('删除工艺失败', e)
+      ElMessage.error(`删除未生效：${e?.message || '未知错误'}`)
+    }
+    refresh()
+  })
+  .catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('删除工艺确认框异常', e)
+  })
 }
 
 onMounted(refresh)
