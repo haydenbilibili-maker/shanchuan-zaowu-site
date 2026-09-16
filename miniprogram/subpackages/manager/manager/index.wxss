@@ -89,10 +89,14 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .dashboard-view { padding: 16rpx 30rpx 30rpx; }
 
 .dashboard-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16rpx; }
-/* 右侧：工作通知声音 chip（#29）+ 日期徽标 */
-.header-right { display: flex; align-items: center; gap: 12rpx; }
-.welcome { font-size: 24rpx; color: var(--gold); letter-spacing: 2rpx; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 8rpx; }
-.sub-welcome { font-size: 48rpx; color: #fff; font-weight: 900; }
+/* 左侧：问候 + 工作台名。必须 min-width:0（flex 子项默认 min-width:auto），
+   否则长昵称（如「令狐冲大哥」）会把容器撑到超过可用宽度，"GOOD MORNING，xx" 折成两行。
+   配合右下的 .welcome nowrap+ellipsis：宁可在问候语尾部省略，也不换行、不挤压右侧通知/日期。 */
+.header-left { flex: 1 1 auto; min-width: 0; }
+/* 右侧：工作通知声音 chip（#29）+ 日期徽标。不允许被左侧挤扁 */
+.header-right { display: flex; align-items: center; gap: 12rpx; flex-shrink: 0; }
+.welcome { font-size: 24rpx; color: var(--gold); letter-spacing: 2rpx; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 8rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.sub-welcome { font-size: 48rpx; color: #fff; font-weight: 900; white-space: nowrap; }
 .date-badge { font-family: var(--font-din); color: #666; font-size: 24rpx; border: 1px solid rgba(255,255,255,0.1); padding: 6rpx 16rpx; border-radius: 30rpx; }
 
 /* 金卡 KPI */
