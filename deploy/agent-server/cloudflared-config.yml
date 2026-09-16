@@ -1,0 +1,41 @@
+# Cloudflare Tunnel 配置模板（agent.shanhaizaowu.com → 服务器 127.0.0.1:3080）
+#
+# 为什么用隧道而不是 A 记录直连：
+#   · cloudflared 由服务器**主动外连** Cloudflare → 不需要公网 IP、不需要开放任何入站端口
+#     （阿里云轻量防火墙保持默认即可），也不需要自己管 TLS 证书。
+#   · 可以在隧道前面叠加 Cloudflare Access 做**真正的登录鉴权** —— 这一点是必需的，理由见下。
+#
+# ⚠ 安全前提（实测得出，务必理解）：
+#   DSH 的 `--trusted-host` 与 `/api` 的 browser-trust fence 是**同源/CSRF 防护，不是用户登录**。
+#   实测：伪造 Host → 403；但同源请求仍只回到 401（需会话）。也就是说，
+#   只要攻击者能让浏览器从"被信任的 authority"发出请求，就绕过了这层。
+#   而 agent 在服务器上**能执行任意命令**、能读仓库与 `~/.dsh/.credentials.yaml`（模型 key）。
+#   ⇒ 必须用 Cloudflare Access（邮箱 OTP / GitHub / Google）挡在前面，把它当管理后台对待。
+#
+# 用法（二选一）：
+#   A) 令牌方式（推荐，免交互、便于 systemd）：
+#        cloudflared tunnel create dsh-agent          # 或直接在控制台建隧道拿 token
+#        sudo cloudflared service install <TOKEN>     # 令牌已含 tunnel id 与凭据
+#        然后在 Cloudflare 控制台 → 该隧道的 Public Hostname 里填下面的 hostname/service
+#   B) 配置文件方式（本地凭据文件）：
+#        cloudflared tunnel login
+#        cloudflared tunnel create dsh-agent
+#        cloudflared tunnel route dns dsh-agent agent.shanhaizaowu.com
+#        sudo cp cloudflared-config.yml /etc/cloudflared/config.yml
+#        sudo cloudflared service install
+
+tunnel: dsh-agent
+credentials-file: /etc/cloudflared/<TUNNEL-ID>.json
+
+ingress:
+  # 子域名 → 本机 DSH。注意 service 指向**回环**，与 dsh-web.service 的 --host 127.0.0.1 对应。
+  - hostname: agent.shanhaizaowu.com
+    service: http://127.0.0.1:3080
+    originRequest:
+      # DSH 的 UI 有长连接（SSE/WebSocket）用于流式输出，别让隧道提前掐断
+      noTLSVerify: false
+      connectTimeout: 30s
+      # 不要在此设置 disableChunkedEncoding —— 会破坏流式响应
+
+  # 兜底：其余一律拒绝（避免隧道被当成任意反代）
+  - service: http_status:404
