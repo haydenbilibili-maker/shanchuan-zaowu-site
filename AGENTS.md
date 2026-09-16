@@ -15,10 +15,20 @@
 
 ## 改动规范
 
-- ERP：新增菜单 = `admin/src/App.vue` 的 `el-menu` + 主区 `component :is`；新模块先落 `admin/docs/` 蓝图再实现。
+- ERP 新增模块 = **三处**（顺序即依赖）：
+  1. `admin/src/utils/modulesRegistry.js` 的 `MODULES` 加一条（域 = `group`，一级域的 id/名称/图标只在 `GROUPS` 定义）；
+  2. `admin/src/config/adminNavDomains.js` 的 `NAV_CURATION` 里把它策展进某个域的分区（只写 `id` + 一句话 `desc`，**不要再写 `title`/`icon`**）；
+  3. `admin/src/App.vue` 的 `TAB_COMPONENT_MAP` 挂组件。
+  侧栏与导航大屏都由数据派生，**不要手写 `el-menu-item`**；漏第 2 步会被 `npm run check:nav-sources` 拦住。
+  新模块先落 `admin/docs/` 蓝图再实现；上线模块后登记到对应 `docs/README.md` 索引。
 - 新增云集合：`admin/src/cloud.js` 的 `COLLECTIONS` ↔ `cloudbase/rules/<name>.json` ↔ `cloudbase/schema/<name>.md` 三处同步。
-- 文档：上线模块后补说明并登记到对应 `docs/README.md` 索引。
-- 构建验证：`npm run build`（ERP → `dist/admin/` + 官网 → `dist/`）；部署走 GitHub Actions（Cloudflare Pages，main 分支），小程序不走 Pages。
+- 验证：
+  - `npm run check:admin`（10 条静态守卫，约 10s，含 dev 管线编译）；
+  - `npm run dev:admin` 起验收环境后 `npm run check:nav-dom`（**真实浏览器 DOM**，唯一能证明界面真画出来的检查）；
+  - `npm run build`（ERP → `dist/admin/` + 官网 → `dist/`）。
+  **注意**：`build:admin` 通过**不代表**验收地址可用 —— 模板编译错误只在 dev 管线复现（见 `admin/docs/ERP系统专项审计_2026-09-16.md` §1.6），故 `check:sfc-dev` 不可省。
+- 部署走 GitHub Actions（Cloudflare Pages，main 分支），小程序不走 Pages。
+- 每条守卫都必须能证明自己会失败：新增检查要配 `--selftest`（注入回归 → 必须检出 → 还原源文件）。
 
 ## 关键文档
 

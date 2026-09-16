@@ -13,15 +13,39 @@
 
 import { MODULE_ALIASES } from './moduleAliases.js'
 
+/**
+ * 七个一级业务域 = 导航大屏（AdminNavHub）的域。
+ *
+ * 这是**域身份的单一事实来源**：域 id(`navId`) / 名称 / 图标 / 英文 overline 都在这里，
+ * 侧栏、导航大屏、面包屑、`adminNavDomains.js` 一律从这里派生，不再各自重抄一份。
+ *
+ * 两个图标字段是**有意的区分**，不要合并：
+ * - `icon`    ：分组列表里的图标（`CommandPalette` 分组标题用）
+ * - `navIcon` ：导航大屏 / 侧栏一级入口的图标
+ *   两者仅在 OVERVIEW 不同（Odometer vs Monitor），属既有视觉，本次整合保持原样。
+ */
 export const GROUPS = {
-  OVERVIEW: { key: 'OVERVIEW', name: '总览决策', icon: 'Odometer', submenuKey: null, navId: 'nav-overview' },
-  BUSINESS: { key: 'BUSINESS', name: '业务运营', icon: 'Shop', submenuKey: null, navId: 'nav-business' },
-  STUDIO: { key: 'STUDIO', name: '工作室', icon: 'Box', submenuKey: null, navId: 'nav-studio' },
-  CUSTOMER: { key: 'CUSTOMER', name: '客户经营', icon: 'UserFilled', submenuKey: null, navId: 'nav-customer' },
-  MINIAPP:  { key: 'MINIAPP',  name: '小程序配置', icon: 'Iphone', submenuKey: null, navId: 'nav-miniapp' },
-  GOVERNANCE: { key: 'GOVERNANCE', name: '组织治理', icon: 'OfficeBuilding', submenuKey: null, navId: 'nav-governance' },
-  INTELLIGENCE: { key: 'INTELLIGENCE', name: '战略与知识', icon: 'MagicStick', submenuKey: null, navId: 'nav-intelligence' }
+  OVERVIEW: { key: 'OVERVIEW', name: '总览决策', icon: 'Odometer', navIcon: 'Monitor', overline: 'OVERVIEW', submenuKey: null, navId: 'nav-overview' },
+  BUSINESS: { key: 'BUSINESS', name: '业务运营', icon: 'Shop', navIcon: 'Shop', overline: 'OPERATIONS', submenuKey: null, navId: 'nav-business' },
+  STUDIO: { key: 'STUDIO', name: '工作室', icon: 'Box', navIcon: 'Box', overline: 'STUDIO', submenuKey: null, navId: 'nav-studio' },
+  CUSTOMER: { key: 'CUSTOMER', name: '客户经营', icon: 'UserFilled', navIcon: 'UserFilled', overline: 'CUSTOMERS', submenuKey: null, navId: 'nav-customer' },
+  MINIAPP:  { key: 'MINIAPP',  name: '小程序配置', icon: 'Iphone', navIcon: 'Iphone', overline: 'MINIAPP', submenuKey: null, navId: 'nav-miniapp' },
+  GOVERNANCE: { key: 'GOVERNANCE', name: '组织治理', icon: 'OfficeBuilding', navIcon: 'OfficeBuilding', overline: 'GOVERNANCE', submenuKey: null, navId: 'nav-governance' },
+  INTELLIGENCE: { key: 'INTELLIGENCE', name: '战略与知识', icon: 'MagicStick', navIcon: 'MagicStick', overline: 'INTELLIGENCE', submenuKey: null, navId: 'nav-intelligence' }
 }
+
+/**
+ * 七个导航域本身也是可打开的 Tab（主区渲染 `AdminNavHub`），所以要注册成模块；
+ * 但字段全部由 `GROUPS` 派生 —— 早前这里是 7 行手抄，与 `GROUPS` 重复。
+ */
+const NAV_MODULES = Object.values(GROUPS).map((g) => ({
+  id: g.navId,
+  name: g.name,
+  group: g.key,
+  subgroup: null,
+  icon: g.navIcon,
+  keywords: `nav ${g.key.toLowerCase()} ${g.name} 导航大屏`
+}))
 
 export const MODULES = [
   // ── 工作室（与小程序店长/超管「工作室」模块对齐：物业 / 采购 / 出货 / 库存同步）──
@@ -36,14 +60,8 @@ export const MODULES = [
   { id: '73', name: '直播管理', group: 'BUSINESS', subgroup: '场', icon: 'VideoCamera', keywords: 'live zhibo 直播 场次 主播 开播' },
   { id: '74', name: '装裱师佣金', group: 'GOVERNANCE', subgroup: '人才组织', icon: 'Wallet', keywords: 'commission yongjin 佣金 装裱师 提成 台账' },
   { id: '75', name: '生日礼配置', group: 'CUSTOMER', subgroup: '会员资产', icon: 'Present', keywords: 'birthday shengri 生日礼 礼包 礼券' },
-  // 导航大屏（侧栏一级）
-  { id: 'nav-overview', name: '总览决策', group: 'OVERVIEW', subgroup: null, icon: 'Monitor', keywords: 'nav overview 总览 导航大屏' },
-  { id: 'nav-business', name: '业务运营', group: 'BUSINESS', subgroup: null, icon: 'Shop', keywords: 'nav business 业务运营 导航大屏' },
-  { id: 'nav-studio', name: '工作室', group: 'STUDIO', subgroup: null, icon: 'Box', keywords: 'nav studio 工作室 采购 出货 物业 库存' },
-  { id: 'nav-customer', name: '客户经营', group: 'CUSTOMER', subgroup: null, icon: 'UserFilled', keywords: 'nav customer 客户 导航大屏' },
-  { id: 'nav-miniapp', name: '小程序配置', group: 'MINIAPP', subgroup: null, icon: 'Iphone', keywords: 'nav miniapp 小程序 导航大屏' },
-  { id: 'nav-governance', name: '组织治理', group: 'GOVERNANCE', subgroup: null, icon: 'OfficeBuilding', keywords: 'nav governance 组织 治理 导航大屏' },
-  { id: 'nav-intelligence', name: '战略与知识', group: 'INTELLIGENCE', subgroup: null, icon: 'MagicStick', keywords: 'nav intelligence 战略 知识 导航大屏' },
+  // 导航大屏（侧栏一级）—— 由 GROUPS 派生，勿手抄
+  ...NAV_MODULES,
 
   // 总览决策
   { id: '0',  name: '经营驾驶舱', group: 'OVERVIEW', subgroup: null, icon: 'Odometer', keywords: 'dashboard cockpit jyjsc ovw 首页' },

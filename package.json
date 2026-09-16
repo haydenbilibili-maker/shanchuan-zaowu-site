@@ -36,6 +36,13 @@
     "test:module-search:selftest": "node admin/scripts/test-module-search.mjs --selftest",
     "test:coupon-floor": "node admin/scripts/test-coupon-floor.mjs",
     "test:coupon-floor:selftest": "node admin/scripts/test-coupon-floor.mjs --selftest",
+    "check:nav-sources": "node admin/scripts/check-nav-sources.mjs",
+    "check:nav-sources:selftest": "node admin/scripts/check-nav-sources.mjs --selftest",
+    "check:sfc-dev": "node admin/scripts/check-sfc-dev-transform.mjs",
+    "check:sfc-dev:selftest": "node admin/scripts/check-sfc-dev-transform.mjs --selftest",
+    "check:nav-dom": "node admin/scripts/check-nav-dom.mjs",
+    "check:nav-dom:selftest": "node admin/scripts/check-nav-dom.mjs --selftest",
+    "check:admin": "npm run check:sfc-dev && npm run check:nav-sources && npm run check:silent-catch && npm run check:brand-contrast && npm run check:welcome-gift && npm run check:store-points && npm run test:write-layer && npm run test:module-hash && npm run test:module-search && npm run test:coupon-floor",
     "pages:version": "true",
     "preview": "astro preview",
     "astro": "astro"

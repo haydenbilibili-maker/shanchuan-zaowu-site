@@ -184,7 +184,7 @@
               :class="{ active: currentTab === m.id }"
               @click="handleMenuSelect(m.id)"
             >
-              <el-icon v-if="m.icon" class="recent-ico"><component :is="resolveRecentIcon(m.icon)" /></el-icon>
+              <el-icon v-if="m.icon" class="recent-ico"><component :is="resolveEpIcon(m.icon)" /></el-icon>
               <span class="recent-name">{{ m.name }}</span>
             </div>
           </div>
@@ -200,17 +200,14 @@
             @select="handleMenuSelect">
 
             <el-menu-item-group title="HOME">
-                <el-menu-item index="0"><el-icon><Odometer /></el-icon><span>经营驾驶舱</span></el-menu-item>
+                <el-menu-item :index="homeNavItem.id"><el-icon><component :is="resolveEpIcon(homeNavItem.icon)" /></el-icon><span>{{ homeNavItem.title }}</span></el-menu-item>
             </el-menu-item-group>
 
+            <!-- 一级导航域：由 GROUPS 派生（config/adminNavDomains.js → NAV_SIDEBAR_ITEMS），勿在此手写 -->
             <el-menu-item-group title="DOMAINS">
-                <el-menu-item index="nav-overview"><el-icon><Monitor /></el-icon><span>总览决策</span></el-menu-item>
-                <el-menu-item index="nav-business"><el-icon><Shop /></el-icon><span>业务运营</span></el-menu-item>
-                <el-menu-item index="nav-studio"><el-icon><Box /></el-icon><span>工作室</span></el-menu-item>
-                <el-menu-item index="nav-customer"><el-icon><UserFilled /></el-icon><span>客户经营</span></el-menu-item>
-                <el-menu-item index="nav-miniapp"><el-icon><Iphone /></el-icon><span>小程序配置</span></el-menu-item>
-                <el-menu-item index="nav-governance"><el-icon><OfficeBuilding /></el-icon><span>组织治理</span></el-menu-item>
-                <el-menu-item index="nav-intelligence"><el-icon><MagicStick /></el-icon><span>战略与知识</span></el-menu-item>
+                <el-menu-item v-for="item in NAV_SIDEBAR_ITEMS" :key="item.id" :index="item.id">
+                  <el-icon><component :is="resolveEpIcon(item.icon)" /></el-icon><span>{{ item.title }}</span>
+                </el-menu-item>
             </el-menu-item-group>
 
           </el-menu>
@@ -263,6 +260,23 @@
             <span class="domain-sep" aria-hidden="true">/</span>
             <span class="domain-current">{{ domainContextBar.moduleName }}</span>
           </div>
+          <!-- 未注册模块的可见提示：不再让「回退驾驶舱」看起来像正常页面。
+               注意：必须放在 <transition> / <keep-alive> **外面** ——
+               两者都只接受恰好一个子节点（v-if/v-else 视为一个），塞进去会让模板编译直接失败
+               （dev 下 App.vue 返回 500、整页只剩「加载中…」）。 -->
+          <el-alert
+            v-if="unknownTabs.length"
+            type="warning"
+            show-icon
+            :closable="false"
+            class="unknown-tabs-alert"
+            :title="`有 ${unknownTabs.length} 个模块 id 未注册，已回退经营驾驶舱`"
+          >
+            <template #default>
+              未注册 id：<b>{{ unknownTabs.join('、') }}</b>。
+              说明菜单注册表与组件映射表不同步，或该模块尚未接通 —— 当前展示的驾驶舱内容与该模块无关。
+            </template>
+          </el-alert>
           <transition name="fade-slide" mode="out-in">
             <!-- tab 1 藏品库为内联模块（依赖 App.vue 大量本地状态），不参与 keep-alive -->
             <div v-if="currentTab === '1'" :key="'1-' + reloadKey" class="module-wrapper">
@@ -614,21 +628,6 @@
                  keep-alive 只能缓存组件实例，之前包 keyed div 完全失效（切 tab 即销毁重建）；
                  现在切回标签时组件状态（表单/滚动/已加载数据）保留，:max=10 LRU 控制内存 -->
             <keep-alive v-else :max="10">
-              <!-- 未注册模块的可见提示：不再让「回退驾驶舱」看起来像正常页面 -->
-              <el-alert
-                v-if="unknownTabs.length"
-                type="warning"
-                show-icon
-                :closable="false"
-                style="margin: 8px 12px 0;"
-                :title="`有 ${unknownTabs.length} 个模块 id 未注册，已回退经营驾驶舱`"
-              >
-                <template #default>
-                  未注册 id：<b>{{ unknownTabs.join('、') }}</b>。
-                  说明菜单注册表与组件映射表不同步，或该模块尚未接通 —— 当前展示的驾驶舱内容与该模块无关。
-                </template>
-              </el-alert>
-
               <component
                 :is="activeModuleDef.comp"
                 v-bind="activeModuleDef.props"
@@ -1346,9 +1345,9 @@ const asyncWith = (loader) => defineAsyncComponent({
 })
 // 导入图标库
 import {
-  Plus, Edit, Delete, Box, List, Lock, Money, Odometer, FolderAdd,
-  UserFilled, Picture, PictureFilled, UploadFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View, Present, Sort,
-  InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Shop, Wallet, Brush, User, OfficeBuilding, Promotion,
+  Plus, Edit, Delete, Box, List, Lock, Money, FolderAdd,
+  Picture, PictureFilled, UploadFilled, Collection, Calendar, Ticket, SwitchButton, DataAnalysis, ChatDotRound, Setting, MagicStick, Search, Trophy, Iphone, DocumentCopy, Menu, View, Present, Sort,
+  InfoFilled, Loading, SuccessFilled, WarningFilled, QuestionFilled, Connection, Monitor, CircleCheck, CircleClose, Notebook, Wallet, Brush, User, Promotion,
   DataBoard, TrendCharts, VideoCamera, Van,
   // 🟢 小程序对齐补充图标
   Stamp, Avatar, Message, Refresh, Document, ShoppingCart, Phone,
@@ -1373,8 +1372,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
 import ImageUploadField from './components/ImageUploadField.vue'
 
-/** 侧栏「最近常用」：把 modulesRegistry 的图标名解析为组件，避免字符串当文本叠字 */
-const resolveRecentIcon = (name) => EpIcons[name] || EpIcons.Menu
+/** 图标名（注册表里的字符串）→ 组件，避免字符串当文本叠字 */
+const resolveEpIcon = (name) => EpIcons[name] || EpIcons.Menu
 
 // --- 动态组件引入（同步加载，保证各 Tab 稳定渲染） ---
 const FinanceDashboard = asyncWith(() => import('./components/Finance.vue'))
@@ -1424,7 +1423,7 @@ import BookingOpsHub from './components/BookingOpsHub.vue'
 import MonitorOpsHub from './components/MonitorOpsHub.vue'
 import AdminNavHub from './components/AdminNavHub.vue'
 import { hubSections, resolveModuleOpen } from './utils/moduleAliases'
-import { getNavDomain, MODULE_TO_NAV_DOMAIN, NAV_DOMAIN_IDS } from './config/adminNavDomains'
+import { getNavDomain, MODULE_TO_NAV_DOMAIN, NAV_DOMAIN_IDS, NAV_SIDEBAR_ITEMS } from './config/adminNavDomains.js'
 import { setNavOrigin, getNavOrigin } from './utils/navOrigin'
 
 // 🟢 对齐小程序能力的模块
@@ -1447,6 +1446,13 @@ import PropertyEval from './components/PropertyEval.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import MainTabsBar from './components/MainTabsBar.vue'
 import { MODULES_BY_ID } from './utils/modulesRegistry'
+
+/** 侧栏 HOME 项：名称/图标同样取自注册表，避免「经营驾驶舱」再手抄一遍 */
+const homeNavItem = {
+  id: '0',
+  title: MODULES_BY_ID['0']?.name || '经营驾驶舱',
+  icon: MODULES_BY_ID['0']?.icon || 'Odometer',
+}
 import { parseModuleHash, buildModuleHash } from './utils/moduleHash'
 import { safeLocalSet } from './utils/safeStorage.js'
 import { useTabsManager } from './composables/useTabsManager'
@@ -1923,11 +1929,29 @@ function syncModuleHash(moduleId) {
     )
 }
 
+/**
+ * 把 hash 里的模块 id 应用为当前标签。
+ *
+ * 2026-09-16 审计（浏览器实测发现）：这里原先直接 `activeTabId.value = id`，
+ * 绕过了 `useTabsManager.openTab()`，于是 `activeTabId` 变了而 `openTabs` 没变 ——
+ * 实测粘 `#/m/42` 打开退款审核：面包屑/主区/域返回条都已切到「退款审核」，
+ * 但**标签栏仍只显示「经营驾驶舱」且无 42 号标签**，用户看着标签栏找不到自己在哪。
+ * 另外别名深链（`#/m/16`）未归一化，会被 `watch(currentTab)` 误报为「未注册模块」。
+ *
+ * 现在：已注册（含别名归一化）→ 走 openTab，主区与标签栏必然一致；
+ * 未注册 → 仍然切过去，交给 `watch(currentTab)` 记录并渲染可见告警（不静默无反应）。
+ */
+function applyHashModule(id) {
+    const key = resolveModuleOpen(id)
+    if (MODULES_BY_ID[key]) openTabAPI(id)
+    else activeTabId.value = String(id)
+}
+
 /** 登录后首次应用深链；没有深链就把当前默认模块写进去，便于直接收藏当前页 */
 function applyModuleHashOnce() {
     const id = readModuleFromHash()
     if (id && id !== String(currentTab.value || '')) {
-        activeTabId.value = id
+        applyHashModule(id)
     } else {
         syncModuleHash(currentTab.value)
     }
@@ -1937,7 +1961,7 @@ function applyModuleHashOnce() {
 function onModuleHashChange() {
     const id = readModuleFromHash()
     if (id && id !== String(currentTab.value || '')) {
-        activeTabId.value = id
+        applyHashModule(id)
     }
 }
 
@@ -4472,6 +4496,10 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
     flex: 1;
     overflow-y: auto;
     padding: 24px 30px;
+}
+/* 未注册模块告警：transition/keep-alive 的同级兄弟（不能放进两者内部） */
+.unknown-tabs-alert {
+    margin: 0 0 14px;
 }
 .content-scroll-wrap.is-nav-hub {
     padding: 0;

@@ -126,4 +126,4 @@ if (failures.length) {
 }
 console.log('全部通过：解析严格、生成去空格、往返一致、前缀契约固定。')
 console.log('\n注意：本测试只覆盖 format 层。App.vue 里的 watch / hashchange / replaceState')
-console.log('接线需在浏览器中验证（本轮未做，已在报告中标注）。')
+console.log('接线已由浏览器 DOM 守卫覆盖：`npm run dev:admin` 后执行 `npm run check:nav-dom`。')

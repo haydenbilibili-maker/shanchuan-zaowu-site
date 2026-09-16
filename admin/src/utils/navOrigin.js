@@ -2,7 +2,7 @@
  * 记录「从哪个导航大屏进入功能页」，用于返回 Hub。
  */
 import { ref } from 'vue'
-import { MODULE_TO_NAV_DOMAIN, getNavDomain } from '../config/adminNavDomains'
+import { MODULE_TO_NAV_DOMAIN, getNavDomain } from '../config/adminNavDomains.js'
 
 const STORAGE_KEY = 'sc_admin_nav_origin'
 const originByModule = ref(loadMap())
