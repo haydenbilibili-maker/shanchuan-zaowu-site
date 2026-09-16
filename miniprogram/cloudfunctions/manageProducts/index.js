@@ -53,7 +53,11 @@ const ALLOWED_FIELDS = [
   'experienceStores', 'tags', 'giftScenes', 'coverImage', 'sort',
   'sensitiveBlur', 'sensitiveBlurSetByUser',
   // 「珍稀」角标：商品级人工打标（勿与 manageAtlas 的物种 rarity 混用）
-  'productRarity', 'productRaritySetByUser'
+  'productRarity', 'productRaritySetByUser',
+  // 需求 28：祈福墙的两件套（全站拓展的开关）。
+  // ⚠️ 这个白名单是**静默**的：没登记 = 保存时字段被丢掉、界面还提示"已保存"。
+  // 所以每加一个商品级字段，这里与小程序藏品表单必须同时改（守卫有结构断言）。
+  'wishWallEnabled', 'wishWallKey'
 ]
 
 const PATCH_FIELDS = ALLOWED_FIELDS.filter((k) => k !== 'createTime')

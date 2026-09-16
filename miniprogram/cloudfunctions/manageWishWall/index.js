@@ -397,6 +397,89 @@ async function staffStats(event, openid) {
   }
 }
 
+/* ------------------- 所有祈福墙作用域（管理端，多面墙落地） ------------------- */
+
+/** 一面墙最多列出多少个作用域：超管要的是"知道还有哪些墙"，不是无穷列表 */
+const WALL_LIST_MAX = 20
+
+/** 作用域 → 运营看得懂的名字：反查挂了这面墙的藏品标题，查不到就用 key 本身 */
+async function wallLabel(productKey) {
+  if (productKey === DEFAULT_PRODUCT_KEY) return '马上有'
+  try {
+    const res = await db.collection('products').where({ wishWallKey: productKey }).limit(1).get()
+    const row = (res.data || [])[0]
+    const title = row && String(row.title || '').trim()
+    return title ? title.slice(0, 12) : productKey
+  } catch (e) {
+    return productKey
+  }
+}
+
+/**
+ * 列出**全部**祈福墙作用域（超管/店长）。
+ *
+ * 为什么必须有这个 action：多面墙落地后，治理页若只认默认墙，第二面墙的弹幕就
+ * **无人可治** —— 而「不接 UGC 审核 + 治理收敛在超管内容模块」正是这个功能的安全底座。
+ * 治理面必须覆盖全部作用域，否则"不接审核"这个决定就只对第一面墙成立。
+ *
+ * 计数优先用聚合（一次查询）；聚合不可用则退回扫一页内存计数 —— 宁可慢，
+ * 也不能让运营看不到"还有哪些墙"。
+ */
+async function staffWalls(event, openid) {
+  const guard = await requireManager(event, openid)
+  if (!guard.ok) return { success: false, code: guard.code, msg: guard.msg || '无权限' }
+
+  const counts = Object.create(null)
+  const agg = db.command && db.command.aggregate
+  if (agg) {
+    try {
+      const res = await db.collection(COLLECTION)
+        .aggregate()
+        .group({ _id: '$productKey', n: agg.sum(1) })
+        .limit(WALL_LIST_MAX)
+        .end()
+      ;((res && res.list) || []).forEach((row) => {
+        const key = normalizeProductKey(row && row._id)
+        counts[key] = (counts[key] || 0) + (Number(row && row.n) || 0)
+      })
+    } catch (e) {
+      console.warn('wish wall staffWalls aggregate failed:', e && e.message)
+    }
+  }
+  if (!Object.keys(counts).length) {
+    try {
+      const res = await db.collection(COLLECTION).limit(200).get()
+      ;((res && res.data) || []).forEach((doc) => {
+        const key = normalizeProductKey(doc && doc.productKey)
+        counts[key] = (counts[key] || 0) + 1
+      })
+    } catch (e) {
+      console.warn('wish wall staffWalls fallback failed:', e && e.message)
+    }
+  }
+
+  // 默认墙永远在列表里（哪怕 0 条：运营要能看出"这面墙还没内容"）
+  if (counts[DEFAULT_PRODUCT_KEY] == null) counts[DEFAULT_PRODUCT_KEY] = 0
+
+  const keys = Object.keys(counts)
+    .sort((a, b) => (counts[b] - counts[a]) || a.localeCompare(b))
+    .slice(0, WALL_LIST_MAX)
+  if (keys.indexOf(DEFAULT_PRODUCT_KEY) === -1) keys.push(DEFAULT_PRODUCT_KEY)
+
+  const walls = []
+  for (const key of keys) {
+    walls.push({
+      productKey: key,
+      count: counts[key],
+      label: await wallLabel(key),
+      isDefault: key === DEFAULT_PRODUCT_KEY
+    })
+  }
+  // 默认墙排第一（运营最常回到它），其余按条数降序
+  walls.sort((a, b) => (a.isDefault === b.isDefault ? b.count - a.count : (a.isDefault ? -1 : 1)))
+  return { success: true, walls, defaultKey: DEFAULT_PRODUCT_KEY }
+}
+
 /* ------------------- 基础内容：AI 创作一批「马上有XX」 ------------------- */
 
 /**
@@ -527,6 +610,7 @@ exports.main = async (event) => {
       case 'staffSetStatus': return await staffSetStatus(event, openid)
       case 'staffRemove': return await staffRemove(event, openid)
       case 'staffStats': return await staffStats(event, openid)
+      case 'staffWalls': return await staffWalls(event, openid)
       case 'staffSeedAi': return await staffSeedAi(event, openid)
       default: return { success: false, msg: `未知 action: ${action}` }
     }
@@ -548,6 +632,7 @@ module.exports.DAILY_LIMIT = DAILY_LIMIT
 module.exports.DEFAULT_PRODUCT_KEY = DEFAULT_PRODUCT_KEY
 module.exports.INSPIRATION_COUNT = INSPIRATION_COUNT
 module.exports.AI_SEED_DEFAULT = AI_SEED_DEFAULT
+module.exports.WALL_LIST_MAX = WALL_LIST_MAX
 module.exports.SOURCE_USER = SOURCE_USER
 module.exports.SOURCE_AI = SOURCE_AI
 module.exports.SOURCE_SEED = SOURCE_SEED
