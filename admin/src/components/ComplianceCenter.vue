@@ -6,7 +6,6 @@
         <span class="subtitle">COMPLIANCE CENTER</span>
       </div>
       <div class="actions">
-        <el-button size="small" @click="resetAll">重置默认</el-button>
         <el-button size="small" type="primary" @click="saveAll">保存</el-button>
       </div>
     </div>
@@ -367,11 +366,45 @@
         </div>
       </div>
     </div>
+    <!-- 危险区：全局重置已从页头移到这里（原先紧贴「保存」，同为 24px 高、间距 12px、
+         无确认无撤销 —— 误点即清空 5 类台账并立即落盘。审计 §0 P0-15） -->
+    <div class="info-card danger-zone">
+      <h3 class="danger-title">危险操作</h3>
+      <p class="danger-text">
+        「重置为默认」会清空并覆盖：合规事项清单、物种清单、相关知识库、大型标本台账、采购证据链记录，
+        且<b>立即写入云端、不可撤销</b>。需要输入确认字样后才会执行。
+      </p>
+      <el-button size="small" type="danger" plain @click="resetAll">重置为默认（需二次确认）</el-button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+/**
+ * 破坏性操作二次确认：必须输入指定字样才继续。
+ * 本模块的「重置默认」会**立即落盘且不可撤销**（deep watch + 显式 save），
+ * 因此不能用普通 confirm —— 参考 HonoraryCurators.vue 的口令确认做法。
+ */
+const confirmDestructive = async (title, message, word = '重置') => {
+  try {
+    await ElMessageBox.prompt(message, title, {
+      confirmButtonText: '确认执行',
+      cancelButtonText: '取消',
+      inputPlaceholder: `请输入「${word}」`,
+      inputPattern: new RegExp(`^${word}$`),
+      inputErrorMessage: `请输入「${word}」两个字以确认`,
+      type: 'warning',
+      confirmButtonClass: 'el-button--danger'
+    })
+    return true
+  } catch (e) {
+    if (e !== 'cancel' && e !== 'close') console.error('破坏性操作确认异常', e)
+    return false
+  }
+}
 
 const COMPLIANCE_STORAGE_KEY = 'sc_strategy_compliance_items_v1'
 const SPECIES_LIST_STORAGE_KEY = 'sc_strategy_compliance_species_lists_v1'
@@ -414,7 +447,20 @@ const complianceStats = computed(() => {
   const coverage = total === 0 ? 0 : (done / total) * 100
   return { total, done, highOpen, coverage }
 })
-const resetCompliance = () => { complianceItems.value = defaultComplianceItems(); saveCompliance() }
+/** 纯执行：不做确认（供 resetCompliance / resetAll 复用，避免嵌套多次弹窗） */
+const applyResetCompliance = () => {
+  complianceItems.value = defaultComplianceItems()
+  saveCompliance()
+}
+const resetCompliance = async () => {
+  const ok = await confirmDestructive(
+    '重置合规事项清单',
+    '将把合规事项清单恢复为默认内容并立即写入云端，当前修改会丢失。'
+  )
+  if (!ok) return
+  applyResetCompliance()
+  ElMessage.success('合规事项清单已重置为默认')
+}
 
 const defaultSpeciesLists = () => ({
   version: SPECIES_LIST_VERSION,
@@ -443,7 +489,19 @@ const loadSpeciesLists = () => {
 const speciesLists = ref(loadSpeciesLists() || defaultSpeciesLists())
 const saveSpeciesLists = () => { try { localStorage.setItem(SPECIES_LIST_STORAGE_KEY, JSON.stringify(speciesLists.value)) } catch {} }
 watch(speciesLists, () => Promise.resolve().then(() => saveSpeciesLists()), { deep: true })
-const resetSpeciesLists = () => { speciesLists.value = defaultSpeciesLists(); saveSpeciesLists() }
+const applyResetSpeciesLists = () => {
+  speciesLists.value = defaultSpeciesLists()
+  saveSpeciesLists()
+}
+const resetSpeciesLists = async () => {
+  const ok = await confirmDestructive(
+    '重置物种清单',
+    '将把物种清单恢复为默认内容并立即写入云端，当前修改会丢失。'
+  )
+  if (!ok) return
+  applyResetSpeciesLists()
+  ElMessage.success('物种清单已重置为默认')
+}
 
 const speciesTab = ref('banned')
 const speciesSearch = ref('')
@@ -543,11 +601,20 @@ if (JSON.stringify(_loadedKb) !== JSON.stringify(_mergedKb)) {
 
 watch(kbEntries, () => Promise.resolve().then(() => saveKb()), { deep: true })
 
-const resetKb = () => {
+const applyResetKb = () => {
   kbEntries.value = defaultKb()
   selectedKbId.value = kbEntries.value[0]?.id || ''
   kbTagsInput.value = ''
   saveKb()
+}
+const resetKb = async () => {
+  const ok = await confirmDestructive(
+    '重置相关知识库',
+    '将把知识库恢复为默认条目并立即写入云端，当前条目会丢失。'
+  )
+  if (!ok) return
+  applyResetKb()
+  ElMessage.success('知识库已重置为默认')
 }
 
 const filteredKbEntries = computed(() => {
@@ -664,7 +731,26 @@ const upsertProcurement = (p) => {
 const removeProcurement = (id) => { procurements.value = procurements.value.filter(x => x.id !== id) }
 
 const saveAll = () => { saveCompliance(); saveSpeciesLists(); saveKb(); saveJsonArray(SPECIMEN_STORAGE_KEY, specimens.value); saveJsonArray(PROCUREMENT_STORAGE_KEY, procurements.value) }
-const resetAll = () => { resetCompliance(); resetSpeciesLists(); resetKb(); specimens.value = []; procurements.value = []; newSpecimen(); newProcurement(); saveAll() }
+/**
+ * 全局重置：清空并覆盖 5 类台账，立即落盘、不可撤销。
+ * 已从页头移入页底「危险操作」区，并要求输入「重置」二次确认（审计 §0 P0-15）。
+ */
+const resetAll = async () => {
+  const ok = await confirmDestructive(
+    '重置为默认（不可撤销）',
+    '将清空并覆盖：合规事项清单、物种清单、相关知识库、大型标本台账、采购证据链记录，并立即写入云端。此操作不可撤销。'
+  )
+  if (!ok) return
+  applyResetCompliance()
+  applyResetSpeciesLists()
+  applyResetKb()
+  specimens.value = []
+  procurements.value = []
+  newSpecimen()
+  newProcurement()
+  saveAll()
+  ElMessage.success('已重置为默认内容并写入云端')
+}
 </script>
 
 <style scoped>
@@ -675,6 +761,25 @@ const resetAll = () => { resetCompliance(); resetSpeciesLists(); resetKb(); spec
 .actions {
   display: inline-flex;
   gap: var(--space-3);
+}
+
+/* 危险区：与常规操作在空间上隔离，降低误点概率（审计 §0 P0-15） */
+.danger-zone {
+  margin-top: var(--space-6);
+  border: 1px solid var(--semantic-error-icon);
+  background: var(--semantic-error-bg);
+}
+.danger-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--semantic-error-text);
+}
+.danger-text {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--light-text-secondary);
 }
 
 .info-card {

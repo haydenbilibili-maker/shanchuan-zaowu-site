@@ -24,9 +24,26 @@
     </div>
 
     <el-card shadow="never">
+      <!-- 取数失败必须显式呈现，不能退化成「暂无待审退款」（审计 P1） -->
+      <el-alert
+        v-if="loadError"
+        type="error"
+        show-icon
+        :closable="false"
+        style="margin-bottom: 12px;"
+        :title="'退款数据加载失败：' + loadError"
+      >
+        <template #default>
+          <span>列表为空是因为<b>请求失败</b>，不代表没有待审退款。</span>
+          <el-button link type="primary" @click="refresh">重试</el-button>
+        </template>
+      </el-alert>
       <el-table :data="list" v-loading="loading" stripe height="calc(100vh - 290px)">
         <template #empty>
-          <el-empty :description="emptyHint" :image-size="88" />
+          <el-empty
+            :description="loadError ? '加载失败，请点击上方「重试」' : emptyHint"
+            :image-size="88"
+          />
         </template>
         <el-table-column label="申请编号" width="180">
           <template #default="{ row }">
@@ -215,6 +232,8 @@ const statusFilter = ref('all')
 const detailDrawer = ref(false)
 const currentRow = ref(null)
 const loadMeta = ref({ refunds: 0, orders: 0 })
+/** 取数失败信息；非空时列表区显示错误态而不是空态（审计 P1） */
+const loadError = ref('')
 
 const STATUS = {
   pending: { text: '待审核', type: 'warning' },
@@ -371,7 +390,8 @@ function mergeRefundRows(refundDocs, orderDocs) {
 async function loadOrderRefunds() {
   const chunks = await Promise.all(
     ORDER_REFUND_STATUSES.map((status) =>
-      fetchCollectionWhere(COLLECTIONS.ORDERS, { status }, 100).catch(() => []),
+      // 不吞错：某个状态查询失败会让该状态的退款单在列表里凭空消失
+      fetchCollectionWhere(COLLECTIONS.ORDERS, { status }, 100),
     ),
   )
   const map = new Map()
@@ -387,10 +407,11 @@ const refresh = async () => {
   loading.value = true
   try {
     const [refundDocs, orderDocs] = await Promise.all([
+      // 不再 .catch(() => [])：静默吞错会让接口挂掉时显示成「今天没有退款要审」（审计 P1）
       fetchCollectionSorted(COLLECTIONS.REFUNDS, {
         limit: 300,
         sortFn: sortByTimeDesc,
-      }).catch(() => []),
+      }),
       loadOrderRefunds(),
     ])
 
@@ -404,8 +425,11 @@ const refresh = async () => {
       rows = rows.filter((r) => r.status === statusFilter.value)
     }
     list.value = rows
+    loadError.value = ''
   } catch (e) {
     list.value = []
+    // 错误态与空态互斥：否则「加载失败」会被读成「无待审退款」
+    loadError.value = e?.message || '加载失败'
     ElMessage.error('加载失败：' + (e?.message || e))
   } finally {
     loading.value = false
@@ -544,7 +568,9 @@ const execRefund = (row) => {
         ElMessage.error(e?.message || '退款失败')
       }
     })
-    .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('执行退款确认框异常', e)
+    })
 }
 
 const viewDetail = (row) => {

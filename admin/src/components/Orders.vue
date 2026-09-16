@@ -70,6 +70,21 @@
             </div>
         </div>
 
+        <!-- 错误态优先于空态渲染：取数失败时不再显示「暂无符合条件的订单」 -->
+        <el-alert
+            v-if="loadError"
+            type="error"
+            show-icon
+            :closable="false"
+            style="margin-bottom: 12px;"
+            :title="'订单数据加载失败：' + loadError"
+        >
+            <template #default>
+                <span>列表当前为空是因为<b>请求失败</b>，不代表没有订单。</span>
+                <el-button link type="primary" @click="fetchOrders">重试</el-button>
+            </template>
+        </el-alert>
+
         <el-table 
             ref="orderTableRef"
             :data="orderList" 
@@ -169,7 +184,16 @@
             </el-table-column>
             
             <template #empty>
-                <el-empty description="暂无符合条件的订单" :image-size="100" />
+                <el-empty
+                    v-if="!loadError"
+                    description="暂无符合条件的订单"
+                    :image-size="100"
+                />
+                <el-empty
+                    v-else
+                    description="加载失败，请点击上方「重试」"
+                    :image-size="100"
+                />
             </template>
         </el-table>
 
@@ -254,6 +278,8 @@ const loading = ref(false)
 const submitting = ref(false)
 const activeTab = ref('paid')
 const orderList = ref([])
+/** 取数失败信息；非空时列表区显示错误态而不是空态（审计 P1：错误被伪装成「无数据」） */
+const loadError = ref('')
 const paidCount = ref(0) 
 
 // 分页与搜索
@@ -464,10 +490,13 @@ const fetchOrders = async () => {
             return item
         }))
         orderList.value = list
+        loadError.value = ''
         updateBadge()
     } catch(e) {
         console.error(e)
         orderList.value = []
+        // 错误态与空态必须互斥：否则取数失败会显示「暂无符合条件的订单」，运营会判断成「今天没单」
+        loadError.value = e?.message || '数据加载失败，请检查网络'
         ElMessage.error('数据加载失败，请检查网络')
     } finally {
         loading.value = false

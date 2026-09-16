@@ -29,13 +29,17 @@ const REPO = resolve(HERE, '..', '..')
 const DEFAULT_ROOT = resolve(REPO, 'admin', 'src')
 const DEFAULT_BASELINE = resolve(HERE, 'silent-catch-baseline.json')
 
-/** 被判定为「静默吞错」的写法 */
+/**
+ * 被判定为「静默吞错」的写法。
+ *
+ * 注意：**必须在 stripComments 之后匹配**，且三种形态互斥，不能重叠 ——
+ * 否则同一个 `catch (e) { /* 忽略 *\/ }` 会被多条正则同时命中而重复计数（第一版就这样，实测 134 vs 151）。
+ * 过滤注释后，「仅注释的空块」自然退化成「空块」，所以不再需要单独一条。
+ */
 const PATTERNS = [
-  ['catch 返回空数组', /\.catch\(\s*\(\s*\)\s*=>\s*\[\s*\]\s*\)/g],
-  ['catch 空箭头块', /\.catch\(\s*\(\s*\)\s*=>\s*\{\s*\}\s*\)/g],
-  ['catch 忽略入参的空块', /\.catch\(\s*\(\s*[a-zA-Z_$][\w$]*\s*\)\s*=>\s*\{\s*\}\s*\)/g],
-  ['catch 仅注释的空块', /\.catch\(\s*\(\s*[a-zA-Z_$][\w$]*\s*\)\s*=>\s*\{\s*\/\*[^*]*\*\/\s*\}\s*\)/g],
-  ['try/catch 完全空块', /catch\s*\(\s*[a-zA-Z_$]?[\w$]*\s*\)\s*\{\s*\}/g],
+  ['箭头 catch 空块', /\.catch\(\s*\([^)]*\)\s*=>\s*\{\s*\}\s*\)/g],
+  ['try/catch 空块', /\bcatch\s*\(\s*[^)]*\)\s*\{\s*\}/g],
+  ['箭头 catch 返回空数组', /\.catch\(\s*\([^)]*\)\s*=>\s*\[\s*\]\s*\)/g],
 ]
 
 function listSourceFiles(root) {
@@ -52,11 +56,24 @@ function listSourceFiles(root) {
   return out
 }
 
+/**
+ * 去掉注释后再匹配。
+ *
+ * ⚠️ 不过滤注释会造假阳性：本仓有大量「不再 .catch(() => {})：……」这类说明性注释，
+ * 它们描述历史写法，并不是真的静默吞错。第一版没过滤，导致基线把注释算进去（当天实测）。
+ * 先用等长空白替换注释，保持字符偏移不变，便于以后要定位行号。
+ */
+function stripComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length))
+}
+
 /** 返回 { '相对路径': 处数 } */
 export function scanSilentCatches(root) {
   const counts = {}
   for (const file of listSourceFiles(root)) {
-    const src = readFileSync(file, 'utf8')
+    const src = stripComments(readFileSync(file, 'utf8'))
     let n = 0
     for (const [, re] of PATTERNS) n += (src.match(re) || []).length
     if (n > 0) counts[relative(REPO, file)] = n
