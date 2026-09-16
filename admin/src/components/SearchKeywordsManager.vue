@@ -298,6 +298,8 @@ import {
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Search, Check } from '@element-plus/icons-vue'
+// 采样上限单一真源（原实现写死 2000 ×2）
+import { KEYWORD_SAMPLE_LIMIT } from '../utils/analyticsLimits'
 
 // --- 状态定义 ---
 const activeTab = ref('hot')
@@ -562,8 +564,8 @@ const loadSearchStats = async () => {
       timeEnd.setHours(23, 59, 59, 999)
     }
 
-    const searchRows = await fetchCollectionWhere('user_behaviors', { action: 'search' }, 2000)
-    const clickRows = await fetchCollectionWhere('user_behaviors', { action: 'click', source: 'search' }, 2000)
+    const searchRows = await fetchCollectionWhere('user_behaviors', { action: 'search' }, KEYWORD_SAMPLE_LIMIT)
+    const clickRows = await fetchCollectionWhere('user_behaviors', { action: 'click', source: 'search' }, KEYWORD_SAMPLE_LIMIT)
 
     const keywordMap = new Map()
 

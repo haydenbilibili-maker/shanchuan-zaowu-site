@@ -233,6 +233,13 @@ import { Plus, Refresh, Download, Document } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
 import { fetchFinancialData } from '../utils/financialData'
 import { excludeExchangeOrders } from '../utils/orderFilters'
+// 逐单读取上限与「触顶提示」单一真源（见 #26；此处原写死 1000 ×3）
+import {
+  REPORT_ORDER_LIMIT,
+  REPORT_USER_LIMIT,
+  REPORT_PRODUCT_LIMIT,
+  describeTruncation
+} from '../utils/analyticsLimits'
 
 // --- 状态定义 ---
 const activeTab = ref('builder')
@@ -349,6 +356,11 @@ const generateReport = async () => {
     } else {
       ElMessage.success(`报表生成成功（${rows.length} 行，来自云库聚合）`)
     }
+    // 不静默：逐单读取触顶时明确告警（营收可能被截断，与权威口径有差）
+    const notes = Array.isArray(rows && rows.truncationNotes) ? rows.truncationNotes : []
+    if (notes.length) {
+      ElMessage.warning({ message: notes.join('；'), duration: 8000, showClose: true })
+    }
   } catch (err) {
     console.error('生成报表失败', err)
     reportData.value = []
@@ -382,18 +394,25 @@ const buildRealReportData = async (startDate, endDate) => {
 
   const [orders, users, products, finance] = await Promise.all([
     needOrders
-      ? excludeExchangeOrders(await fetchCollectionLimit('orders', { limit: 1000 }))
+      ? excludeExchangeOrders(await fetchCollectionLimit('orders', { limit: REPORT_ORDER_LIMIT }))
       : Promise.resolve([]),
     needUsers
-      ? fetchCollectionLimit('users', { limit: 1000 })
+      ? fetchCollectionLimit('users', { limit: REPORT_USER_LIMIT })
       : Promise.resolve([]),
     needProducts
-      ? fetchCollectionLimit('products', { limit: 1000 })
+      ? fetchCollectionLimit('products', { limit: REPORT_PRODUCT_LIMIT })
       : Promise.resolve([]),
     needFinance
       ? fetchFinancialData({ startDate, endDate })
       : Promise.resolve({ records: [], settings: {} }),
   ])
+
+  // 逐单读取触顶提示（若有）——不静默：让使用者知道数字可能被截断
+  const truncationNotes = [
+    describeTruncation(orders.length, REPORT_ORDER_LIMIT, '笔订单'),
+    describeTruncation(users.length, REPORT_USER_LIMIT, '位用户'),
+    describeTruncation(products.length, REPORT_PRODUCT_LIMIT, '件商品')
+  ].filter(Boolean)
 
   const costRate = (() => {
     const s = finance?.settings || {}
@@ -557,6 +576,9 @@ const buildRealReportData = async (startDate, endDate) => {
 
   // 默认按日期排序
   rows.sort((a, b) => String(a.date || a.status || a.user || '').localeCompare(String(b.date || b.status || b.user || '')))
+  // 把「读取触顶」提示随结果带回（数组上挂属性，调用方转成可见提示）。
+  // 不用 try/catch：普通数组挂属性不会抛错，而静默吞错是本仓明令禁止的（check-silent-catch）。
+  rows.truncationNotes = truncationNotes
   return rows
 }
 

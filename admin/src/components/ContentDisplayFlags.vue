@@ -100,6 +100,66 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="钱包 · iOS 充值">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.allowIosStoredValue"
+              active-text="允许"
+              inactive-text="限制"
+              inline-prompt
+            />
+            <span class="hint">
+              缺配置默认<b>允许</b>。原「iOS 一律禁止充值」是 2026-09-15 提审前自审加入的约束，
+              其依据条款未经核实，已按业务决策恢复充值能力并改为本开关。
+              若合规复核确认虚拟支付需限制，可在此一键关闭（无需发版）。
+            </span>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="我的 · 山海图鉴">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.showAtlas"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              缺配置默认<b>展示</b>（现网已开放，关掉会让现有入口消失）。关闭后「我的」页隐藏
+              「我的山海图鉴」入口，并拦截深链进入。
+            </span>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="我的 · 我的成就">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.showAchievements"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              缺配置默认<b>展示</b>（现网已开放）。关闭后「我的」页隐藏「我的成就」入口，并拦截深链进入。
+            </span>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="全站 · 列表缩略图">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.imageThumbEnabled"
+              active-text="开启"
+              inactive-text="关闭"
+              inline-prompt
+            />
+            <span class="hint">
+              缺配置默认<b>开启</b>。开启后列表卡片加载缩略图（width 480）而非原图，
+              显著降低首屏流量与耗时；若环境不支持图像处理参数，客户端会自动回落原图（不会破图）。
+            </span>
+          </div>
+        </el-form-item>
+
         <el-form-item label="AI · 标本鉴定">
           <div class="switch-row">
             <el-switch
@@ -162,6 +222,13 @@ const DEFAULT_FLAGS = {
   showSpecimenCustom: false,
   showPetMemorial: true,
   showStoredValue: false,
+  // 默认允许 iOS 储值充值（缺配置不限制）；仅显式 false 关闭
+  allowIosStoredValue: true,
+  // 缺配置默认开启列表缩略图
+  imageThumbEnabled: true,
+  // 需求 22/23：现网已开放 → 默认展示
+  showAtlas: true,
+  showAchievements: true,
   showAiIdentify: true,
   showStorePickup: true
 }
@@ -186,6 +253,10 @@ function applyFlags(raw = {}, id = '') {
   form.showSpecimenCustom = raw.showSpecimenCustom === true
   form.showPetMemorial = raw.showPetMemorial !== false
   form.showStoredValue = raw.showStoredValue === true
+  form.allowIosStoredValue = raw.allowIosStoredValue !== false
+  form.imageThumbEnabled = raw.imageThumbEnabled !== false
+  form.showAtlas = raw.showAtlas !== false
+  form.showAchievements = raw.showAchievements !== false
   form.showAiIdentify = raw.showAiIdentify !== false
   form.showStorePickup = raw.showStorePickup !== false
   docId.value = id || ''
@@ -227,6 +298,10 @@ function buildPayload() {
     showSpecimenCustom: form.showSpecimenCustom === true,
     showPetMemorial: form.showPetMemorial !== false,
     showStoredValue: form.showStoredValue === true,
+    allowIosStoredValue: form.allowIosStoredValue !== false,
+    imageThumbEnabled: form.imageThumbEnabled !== false,
+    showAtlas: form.showAtlas !== false,
+    showAchievements: form.showAchievements !== false,
     showAiIdentify: form.showAiIdentify !== false,
     showStorePickup: form.showStorePickup !== false,
     updateTime: Date.now(),
@@ -265,6 +340,10 @@ function resetDefaults() {
   form.showSpecimenCustom = DEFAULT_FLAGS.showSpecimenCustom
   form.showPetMemorial = DEFAULT_FLAGS.showPetMemorial
   form.showStoredValue = DEFAULT_FLAGS.showStoredValue
+  form.allowIosStoredValue = DEFAULT_FLAGS.allowIosStoredValue
+  form.imageThumbEnabled = DEFAULT_FLAGS.imageThumbEnabled
+  form.showAtlas = DEFAULT_FLAGS.showAtlas
+  form.showAchievements = DEFAULT_FLAGS.showAchievements
   form.showAiIdentify = DEFAULT_FLAGS.showAiIdentify
   form.showStorePickup = DEFAULT_FLAGS.showStorePickup
   ElMessage.info('已恢复本地默认值，点击「保存开关」写入云库')

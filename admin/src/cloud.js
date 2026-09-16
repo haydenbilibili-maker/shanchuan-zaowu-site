@@ -474,6 +474,7 @@ export const COLLECTIONS = {
   CATEGORIES: 'categories',           // 分类
   CMS_WIKIS: 'cms_wikis',            // 百科内容/专题策展
   ARTICLES: 'articles',              // 知识文章
+  LIKES: 'likes',                    // 文章点赞（toggleCollection；计数落在 articles.stats.likes）
   CURATED_COLLECTIONS: 'curated_collections', // 专题展览（兼容）
   FRAMERS: 'framers',                // 名师手作
   BANNERS: 'banners',                // 轮播图
@@ -528,8 +529,8 @@ export const COLLECTIONS = {
   // ⚠ 下面两个集合经线上核对（checkCollectionExists / DescribeTable）**在云开发里尚未创建**：
   // 列表恒为空、新建与删除都不会生效。Marketing.vue 已按「集合缺失」显式提示并禁用写入。
   // 建集合 + 补 `cloudbase/rules/` 后，`npm run audit:collections` 的 F 分区才会清空。
-  VIP_CARDS: 'vip_cards',                                 // 权益与营销：会员权益卡（未创建）
-  EQUITY_GOODS: 'equity_goods',                           // 权益与营销：虚拟权益商品（未创建）
+  VIP_CARDS: 'vip_cards',                                 // 权益与营销：会员权益卡（2026-09-16 已创建）
+  EQUITY_GOODS: 'equity_goods',                           // 权益与营销：虚拟权益商品（2026-09-16 已创建）
   CUSTOM_CONFIGS: 'custom_configs',                       // 标本定制选项（框型/包装，getCustomConfig）
   CARE_GUIDES: 'care_guides',                             // 养护指南（getCareGuides）
   STORES: 'stores',                                       // C 端门店主数据（getStoreConfig）

@@ -207,6 +207,8 @@ import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { COLLECTIONS, fetchCollectionWhere, fetchCollectionLimit, cdnUpsertByWhere, getCdnDatabase } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Download } from '@element-plus/icons-vue'
+// 采样上限单一真源（原实现写死 1000）
+import { BEHAVIOR_PULSE_LIMIT } from '../utils/analyticsLimits'
 import Chart from 'chart.js/auto'
 
 // --- 状态定义 ---
@@ -436,7 +438,7 @@ const loadStatistics = async () => {
     const _ = cdnDb.command
     const rows = await fetchCollectionWhere('user_behaviors', {
       timestamp: _.gte(startDate).and(_.lte(endDate))
-    }, 1000)
+    }, BEHAVIOR_PULSE_LIMIT)
     
     // 统计数据
     const summary = {}

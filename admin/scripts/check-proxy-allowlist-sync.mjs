@@ -27,6 +27,9 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
 const SERVER = resolve(ROOT, 'functions', '_lib', 'cloudbaseCallFn.mjs')
 const CLIENT = resolve(ROOT, 'admin', 'src', 'utils', 'cloudbaseCdnDb.js')
+/** 集合级允许名单（第二对，与函数级名单同一类风险） */
+const COLL_SERVER = resolve(ROOT, 'miniprogram', 'cloudfunctions', 'manageStoreContent', 'index.js')
+const COLL_CLIENT = CLIENT
 
 /**
  * 从源码里取出某个 `const NAME = ...([ ... ])`（或 Object.freeze([...])）里的字符串项。
@@ -49,6 +52,48 @@ export function extractList(src, constName) {
 export function diffAllowlists(serverSrc, clientSrc) {
   const s = extractList(serverSrc, 'ALLOWED_FUNCTIONS')
   const c = extractList(clientSrc, 'ADMIN_PROXY_FUNCTIONS')
+  if (!s || !c) return null
+  const S = new Set(s)
+  const C = new Set(c)
+  return {
+    server: s,
+    client: c,
+    onlyServer: [...S].filter((x) => !C.has(x)).sort(),
+    onlyClient: [...C].filter((x) => !S.has(x)).sort(),
+  }
+}
+
+/**
+ * 纯函数：取出对象字面量的**顶层**键名（缩进 2 空格那一层）。
+ * 只取顶层是因为 `configs` 这种键下面还嵌着 allowSetDocIds 等子对象，
+ * 递归抓会把子键也当成集合名。
+ */
+export function extractObjectKeys(src, constName) {
+  const start = src.indexOf(`const ${constName} = {`)
+  if (start < 0) return null
+  let depth = 0
+  let end = -1
+  for (let i = src.indexOf('{', start); i < src.length; i += 1) {
+    if (src[i] === '{') depth += 1
+    else if (src[i] === '}') {
+      depth -= 1
+      if (depth === 0) { end = i; break }
+    }
+  }
+  if (end < 0) return null
+  const body = src.slice(start, end)
+  const keys = []
+  for (const line of body.split('\n')) {
+    const m = line.match(/^\s{2}([a-z][a-z0-9_]*)\s*:/)
+    if (m) keys.push(m[1])
+  }
+  return keys
+}
+
+/** 返回集合级名单的 { onlyServer, onlyClient } */
+export function diffCollectionAllowlists(serverSrc, clientSrc) {
+  const s = extractObjectKeys(serverSrc, 'ALLOWED_COLLECTIONS')
+  const c = extractList(clientSrc, 'STORE_CONTENT_WRITE_COLLECTIONS')
   if (!s || !c) return null
   const S = new Set(s)
   const C = new Set(c)
@@ -84,8 +129,29 @@ if (!selftest) {
     console.error('\n✗ 两侧白名单漂移。补齐后重跑；确属有意为之请在注释里写明理由。')
     process.exit(1)
   }
+  // 第二对：集合级允许名单（前端决定走不走代理 / 服务端真正执法）
+  const collServerSrc = readFileSync(COLL_SERVER, 'utf8')
+  const cd = diffCollectionAllowlists(collServerSrc, clientSrc)
+  if (!cd) {
+    console.error('✗ 无法解析集合级允许名单（常量名被改名了？）')
+    process.exit(1)
+  }
+  console.log(`集合级名单：服务端 ${cd.server.length} 项 / 前端 ${cd.client.length} 项`)
+  if (cd.onlyServer.length) {
+    bad += cd.onlyServer.length
+    console.error(`✗ 只在服务端集合名单里（前端走 CDN 直写 → 被集合规则拒绝）：${cd.onlyServer.join('、')}`)
+  }
+  if (cd.onlyClient.length) {
+    bad += cd.onlyClient.length
+    console.error(`✗ 只在前端集合名单里（服务端会拒绝该集合）：${cd.onlyClient.join('、')}`)
+  }
+
+  if (bad) {
+    console.error('\n✗ 两侧白名单漂移。补齐后重跑；确属有意为之请在注释里写明理由。')
+    process.exit(1)
+  }
   const shared = d.server.filter((x) => d.client.includes(x))
-  console.log(`全部通过：两侧逐项一致（交集 ${shared.length} 项，无单边条目）。`)
+  console.log(`全部通过：函数级两侧逐项一致（交集 ${shared.length} 项）；集合级两侧逐项一致（${cd.server.length} 项）。`)
   process.exit(0)
 }
 

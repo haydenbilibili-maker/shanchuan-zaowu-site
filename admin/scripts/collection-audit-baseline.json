@@ -4,10 +4,7 @@
   "names": [
     "audience_campaigns",
     "curated_collections",
-    "equity_goods",
-    "feishu_shipments",
     "home_configs",
-    "likes",
     "notification_logs",
     "pet_craft_configs",
     "property_proposals",
@@ -19,7 +16,6 @@
     "stores",
     "strategy_research",
     "user_audiences",
-    "vip_cards",
     "vip_levels",
     "waitlist"
   ]

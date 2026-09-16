@@ -448,6 +448,8 @@ import Chart from 'chart.js/auto'
 import CompanionRobot from './CompanionRobot.vue'
 import { ElMessage } from 'element-plus'
 import { setHubSection } from '../utils/moduleAliases'
+// 采样上限单一真源：驾驶舱与行为看板此前上限不一致（200/500 vs 1000/4000）
+import { DAILY_ROLLUP_LIMIT, BEHAVIOR_PULSE_LIMIT } from '../utils/analyticsLimits'
 import { loadStoreBundle } from '../utils/storeStorage'
 import {
   resolveRangePreset,
@@ -841,7 +843,7 @@ async function loadMiniappPulse() {
   }
 
   try {
-    const rows = await fetchCollectionWhere('analytics_daily', { dateKey: todayStr }, 200)
+    const rows = await fetchCollectionWhere('analytics_daily', { dateKey: todayStr }, DAILY_ROLLUP_LIMIT)
     if (rows.length) {
       applyPulseFromRows(rows)
       return
@@ -851,7 +853,7 @@ async function loadMiniappPulse() {
   }
 
   try {
-    const events = await fetchCollectionWhere('user_behaviors', { timestamp: _.gte(startMs) }, 500)
+    const events = await fetchCollectionWhere('user_behaviors', { timestamp: _.gte(startMs) }, BEHAVIOR_PULSE_LIMIT)
     const cnt = (action) => events.filter((e) => e.action === action).length
     miniapp.eventsToday = events.length
     miniapp.uvToday = new Set(events.map((e) => e.userId).filter(Boolean)).size

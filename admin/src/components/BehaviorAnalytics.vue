@@ -71,6 +71,15 @@
       :title="loadError"
     />
     <el-alert
+      v-else-if="sourceNote"
+      type="warning"
+      :closable="true"
+      show-icon
+      class="ba-alert"
+      title="口径已降级：数字与权威口径不一致"
+      :description="sourceNote"
+    />
+    <el-alert
       v-else-if="!loading && !hasEventData"
       type="info"
       :closable="false"
@@ -275,6 +284,9 @@
         <el-button type="primary" @click="guideVisible = false">知道了</el-button>
       </div>
     </el-drawer>
+
+    <!-- #26-B：C 端错误监控（error_logs 只读代理）。放在模板末尾以避免上移既有行号 -->
+    <error-monitor :start-date="resolvedStart" :end-date="resolvedEnd" />
   </div>
 </template>
 
@@ -285,6 +297,9 @@ import { getCdnDatabase, fetchCollectionWhere } from '../cloud'
 import { ElMessage } from 'element-plus'
 import Chart from 'chart.js/auto'
 import { MODULE, MODULE_META, EVENTS, FUNNELS, getEventMeta, ACTION_NAMES } from '../utils/analyticsSchema'
+// 采样上限单一真源：避免同一指标在不同页面取样上限不一致（原实现此处写死 1000）
+import { BEHAVIOR_SAMPLE_LIMIT, DAILY_ROLLUP_LIMIT } from '../utils/analyticsLimits'
+import ErrorMonitor from './ErrorMonitor.vue'
 
 const EMPTY_TRACKING = '所选时间段暂无埋点数据'
 
@@ -294,6 +309,18 @@ const loadError = ref('')
 const guideVisible = ref(false)
 const rangePreset = ref('7d')
 const dateRange = ref([])
+/**
+ * #26-B：把当前生效的起止日期暴露给子组件（ErrorMonitor）。
+ * 优先用自定义区间；否则留空由子组件自己决定（不传 = 服务端按「至今」处理）。
+ */
+const resolvedStart = computed(() => {
+  const r = dateRange.value
+  return Array.isArray(r) && r.length === 2 && r[0] ? String(r[0]).slice(0, 10) : ''
+})
+const resolvedEnd = computed(() => {
+  const r = dateRange.value
+  return Array.isArray(r) && r.length === 2 && r[1] ? String(r[1]).slice(0, 10) : ''
+})
 const trendMetric = ref('count')
 const topMetric = ref('count')
 const selectedModule = ref(MODULE.IDENTIFY)
@@ -303,6 +330,15 @@ const rawEvents = ref([])           // 每日聚合行：{ dateKey, action, modu
 const sessionIds = ref([])          // 真实 sessionId 列表（来自 user_behaviors）
 const pageAgg = ref([])             // { page, pv, uv }
 const pageStatsNote = ref('')
+/**
+ * 口径降级说明（#26）。
+ *
+ * 为什么需要：`analytics_daily`（权威聚合）读失败时，原实现只是 `console.warn` 后把 rawEvents 置空，
+ * 随后 `aggregateLocal(behaviorRows)` 会**静默改用 user_behaviors 明细推算** ——
+ * 用户看到的仍是数字，但口径已经换了，**无从察觉**。这与仓库「禁止静默兜底」原则冲突。
+ * 现在把降级显式呈现出来。
+ */
+const sourceNote = ref('')
 const totalActions = ACTION_NAMES.length
 const totalModules = Object.keys(MODULE).length
 const hasEventData = computed(() => rawEvents.value.length > 0)
@@ -348,6 +384,7 @@ const refresh = async () => {
   loading.value = true
   loadError.value = ''
   pageStatsNote.value = ''
+  sourceNote.value = ''
   sessionIds.value = []
   pageAgg.value = []
   try {
@@ -359,12 +396,17 @@ const refresh = async () => {
       dailyRows = await fetchCollectionWhere(
         'analytics_daily',
         { dateKey: _.gte(start).and(_.lte(end)) },
-        1000
+        DAILY_ROLLUP_LIMIT
       )
       rawEvents.value = dailyRows || []
     } catch (e) {
-      console.warn('analytics_daily 不可读，降级 user_behaviors', e?.message)
+      // #26：不再静默。透出真实原因（含 RUNTIME 场合的 code/堆栈摘要），并标注口径已降级。
+      const detail = [e?.message, e?.code, e?.runtime].filter(Boolean).join(' · ')
+      console.warn('analytics_daily 不可读，降级 user_behaviors', detail)
       rawEvents.value = []
+      sourceNote.value =
+        'analytics_daily（权威日汇总）读取失败，本页数字已退回「user_behaviors 明细现场推算」，'
+        + '口径与权威不一致，仅供参考。原因：' + (detail || '未知')
     }
 
     // 页面 / 会话级明细：从 user_behaviors 聚合（analytics_daily 无 page/sessionId）
@@ -375,13 +417,14 @@ const refresh = async () => {
       behaviorRows = await fetchCollectionWhere(
         'user_behaviors',
         { timestamp: _.gte(ms).and(_.lte(me)) },
-        1000
+        BEHAVIOR_SAMPLE_LIMIT
       )
       applyBehaviorExtras(behaviorRows)
-      appendGateStepRows(behaviorRows)
+      // 先确定 rawEvents 基线，再合并合成行 —— 原实现顺序相反，导致被覆盖后漏斗恒 0
       if (!rawEvents.value.length) {
         rawEvents.value = aggregateLocal(behaviorRows)
       }
+      mergeSyntheticRows(buildGateStepRows(behaviorRows))
     } catch (e) {
       console.warn('user_behaviors 不可读', e?.message)
       if (!rawEvents.value.length) {
@@ -427,14 +470,22 @@ const aggregateLocal = (events) => {
  * 注册钩子漏斗：把 identify_save_atlas_gate 按 step 展开成合成 action
  * （identify_save_atlas_gate:show / :go_register / :dismiss / :resume_success），
  * 追加进 rawEvents 后即可复用通用 FUNNELS 渲染。
+ *
  * 注：analytics_daily 是动作级汇总、不含 step，故此处必须从 user_behaviors 明细派生。
+ *
+ * ⚠️ 调用时序（真实缺陷修复 2026-09-16）：本函数返回**合成行数组**，由调用方在
+ * `rawEvents` 最终确定之后合并。原实现直接 `rawEvents.value = rawEvents.value.concat(rows)`，
+ * 但它在 `rawEvents.value = aggregateLocal(behaviorRows)` **之前**执行 —— 当 analytics_daily
+ * 不可读（`rawEvents` 为空）时，紧随其后的赋值会**整体覆盖**，合成行被丢弃，
+ * 于是「AI 识别 · 注册钩子」漏斗恒为 0。改为返回数组 + 合并去重，彻底消除顺序依赖。
  */
-const appendGateStepRows = (events = []) => {
+const buildGateStepRows = (events = []) => {
   const GATE_ACTION = 'identify_save_atlas_gate'
   const map = {}
   events.forEach((ev) => {
     if (ev.action !== GATE_ACTION) return
-    const step = String(ev.step || '').trim()
+    // step 由客户端 properties 展开到顶层（云端 flattenProperties），两种位置都兼容
+    const step = String(ev.step || (ev.properties && ev.properties.step) || '').trim()
     if (!step) return
     const dateKey = (new Date(ev.timestamp || Date.now())).toISOString().split('T')[0]
     const action = `${GATE_ACTION}:${step}`
@@ -452,8 +503,27 @@ const appendGateStepRows = (events = []) => {
     const uid = ev.userId || ev._openid
     if (uid) map[key].uv.add(uid)
   })
-  const rows = Object.values(map).map((r) => ({ ...r, uv: Array.from(r.uv) }))
-  if (rows.length) rawEvents.value = rawEvents.value.concat(rows)
+  return Object.values(map).map((r) => ({ ...r, uv: Array.from(r.uv) }))
+}
+
+/** 把合成行并入 rawEvents（同 dateKey+action 相加，避免与明细重复计数） */
+const mergeSyntheticRows = (rows = []) => {
+  if (!rows.length) return
+  const merged = rawEvents.value.slice()
+  const index = new Map(merged.map((r, i) => [`${r.dateKey}|${r.action}`, i]))
+  rows.forEach((row) => {
+    const key = `${row.dateKey}|${row.action}`
+    const at = index.get(key)
+    if (at == null) {
+      index.set(key, merged.length)
+      merged.push(row)
+      return
+    }
+    const prev = merged[at]
+    const uvSet = new Set([...(Array.isArray(prev.uv) ? prev.uv : []), ...(row.uv || [])])
+    merged[at] = { ...prev, count: (prev.count || 0) + (row.count || 0), uv: Array.from(uvSet) }
+  })
+  rawEvents.value = merged
 }
 
 const applyBehaviorExtras = (events = []) => {

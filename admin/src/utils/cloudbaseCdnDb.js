@@ -193,6 +193,10 @@ const STORE_CONTENT_WRITE_COLLECTIONS = new Set([
   'articles',
   'cms_wikis',
   'configs',
+  // 与 manageStoreContent.ALLOWED_COLLECTIONS 必须逐项一致（缺客户端 → 走 CDN 直写被规则拒）
+  'vip_cards',
+  'equity_goods',
+  'feishu_shipments',
 ])
 
 /** manageStoreContent.setDoc 白名单（须与云函数 allowSetDocIds 一致；未列入的 configs id 降级为 update） */

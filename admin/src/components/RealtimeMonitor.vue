@@ -339,6 +339,8 @@ import {
 import { fetchStoreData } from '../utils/storeData'
 import { fetchFinancialData } from '../utils/financialData'
 import { fetchCollectionWhere, getCdnDatabase } from '../cloud'
+// 采样上限单一真源（原实现 200/500，与行为看板 1000/4000 不一致）
+import { DAILY_ROLLUP_LIMIT, BEHAVIOR_PULSE_LIMIT } from '../utils/analyticsLimits'
 
 /** live=菜单「实时监控」；business=菜单「经营数据大屏」——同一组件，文案入口不同 */
 const props = defineProps({
@@ -562,7 +564,7 @@ const refreshData = async () => {
       const startMs = new Date(todayStr + 'T00:00:00').getTime()
       const cdnDb = await getCdnDatabase()
       const _ = cdnDb.command
-      const daily = await fetchCollectionWhere('analytics_daily', { dateKey: todayStr }, 200)
+      const daily = await fetchCollectionWhere('analytics_daily', { dateKey: todayStr }, DAILY_ROLLUP_LIMIT)
       if (daily.length) {
         const uvSet = new Set()
         daily.forEach((r) => (Array.isArray(r.uv) ? r.uv : []).forEach((u) => uvSet.add(u)))
@@ -572,7 +574,7 @@ const refreshData = async () => {
         const behaviors = await fetchCollectionWhere(
           'user_behaviors',
           { timestamp: _.gte(startMs) },
-          500
+          BEHAVIOR_PULSE_LIMIT
         )
         if (behaviors.length) {
           const uvSet = new Set()
