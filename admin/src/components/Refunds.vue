@@ -45,7 +45,7 @@
             :image-size="88"
           />
         </template>
-        <el-table-column label="申请编号" width="180">
+        <el-table-column label="申请编号" width="180" fixed="left">
           <template #default="{ row }">
             <div class="ticket-no">{{ displayId(row) }}</div>
             <div class="ts">{{ fmt(row.createTime) }}</div>
@@ -58,7 +58,7 @@
             <div class="ts" v-if="row.relatedOrder">¥{{ Number(row.relatedOrder.totalPrice || 0).toFixed(2) }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="申请退款金额" width="140">
+        <el-table-column label="申请退款金额" width="140" sortable>
           <template #default="{ row }">
             <span class="price-tag">¥{{ Number(row.amount || row.refundAmount || 0).toFixed(2) }}</span>
           </template>

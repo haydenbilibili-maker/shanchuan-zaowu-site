@@ -13,8 +13,8 @@
 
     <el-card class="table-card" shadow="never">
       <el-table v-loading="loading" :data="bundle.stores" stripe empty-text="暂无门店，请点击「新建门店」">
-        <el-table-column prop="code" label="编码" width="120" />
-        <el-table-column prop="name" label="门店名称" min-width="140" />
+        <el-table-column prop="code" label="编码" width="120" fixed="left" sortable />
+        <el-table-column prop="name" label="门店名称" min-width="140" sortable />
         <el-table-column prop="city" label="城市" width="100" />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">

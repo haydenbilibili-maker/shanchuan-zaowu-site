@@ -30,6 +30,8 @@
     "check:silent-catch": "node admin/scripts/check-silent-catch.mjs",
     "check:silent-catch:update": "node admin/scripts/check-silent-catch.mjs --update",
     "check:silent-catch:selftest": "node admin/scripts/check-silent-catch.mjs --selftest",
+    "test:module-hash": "node admin/scripts/test-module-hash.mjs",
+    "test:module-hash:selftest": "node admin/scripts/test-module-hash.mjs --selftest",
     "pages:version": "true",
     "preview": "astro preview",
     "astro": "astro"

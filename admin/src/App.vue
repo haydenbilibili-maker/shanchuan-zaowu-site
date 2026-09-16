@@ -1431,6 +1431,7 @@ import PropertyEval from './components/PropertyEval.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import MainTabsBar from './components/MainTabsBar.vue'
 import { MODULES_BY_ID } from './utils/modulesRegistry'
+import { parseModuleHash, buildModuleHash } from './utils/moduleHash'
 import { useTabsManager } from './composables/useTabsManager'
 import { useRecentModules, RECENT_MODULES_KEY, RECENT_CHANGED_EVENT } from './composables/useRecentModules'
 
@@ -1855,9 +1856,54 @@ const productsServerFiltered = ref(false)
 // 🔐 认证与会话管理
 // =================================================
 
+// =================================================
+// 🔗 模块级深链（#/m/<moduleId>）—— 审计 §0 P0-16
+// 目的：任何模块都能直达、分享、收藏；刷新后停在原模块（此前 101 个模块都必须
+//       「域大屏 → 找卡片」，且全仓只处理 #admin 一个 hash）。
+// 约定：登录后 hash 一律为 #/m/<id>；#admin 保留为「已登录但未选模块」的兼容写法。
+// =================================================
+function readModuleFromHash() {
+    return parseModuleHash(window.location.hash)
+}
+
+/** 把模块写进 hash。用 replaceState：切模块不塞历史记录，否则「返回」要按很多次 */
+function syncModuleHash(moduleId) {
+    if (!isLoggedIn.value) return
+    const next = buildModuleHash(moduleId)
+    if (!next) return
+    if (window.location.hash === next) return
+    window.history.replaceState(
+        null, '',
+        `${window.location.pathname}${window.location.search}${next}`
+    )
+}
+
+/** 登录后首次应用深链；没有深链就把当前默认模块写进去，便于直接收藏当前页 */
+function applyModuleHashOnce() {
+    const id = readModuleFromHash()
+    if (id && id !== String(currentTab.value || '')) {
+        activeTabId.value = id
+    } else {
+        syncModuleHash(currentTab.value)
+    }
+}
+
+/** 外部改 hash（粘贴链接 / 前进后退）时同步模块 */
+function onModuleHashChange() {
+    const id = readModuleFromHash()
+    if (id && id !== String(currentTab.value || '')) {
+        activeTabId.value = id
+    }
+}
+
 function setAdminHash(on) {
     const path = `${window.location.pathname}${window.location.search}`
     if (on) {
+        // 已有模块深链时不要覆盖成 #admin（否则分享出去的链接会丢模块）
+        if (readModuleFromHash()) {
+            syncModuleHash(currentTab.value)
+            return
+        }
         if (window.location.hash.replace(/^#\/?/, '') !== 'admin') {
             window.history.replaceState(null, '', `${path}#admin`)
         }
@@ -1878,6 +1924,7 @@ const checkSession = () => {
     if (localStorage.getItem('sc_admin_token') === 'verified_888') {
         isLoggedIn.value = true
         setAdminHash(true)
+        applyModuleHashOnce()
         if (currentTab.value === '1') loadProducts()
     }
 }
@@ -1909,6 +1956,7 @@ const handleLogin = async () => {
     isLoggedIn.value = true
     localStorage.setItem('sc_admin_token', 'verified_888')
     setAdminHash(true)
+    applyModuleHashOnce()
     ElMessage.success({ message: '身份验证通过，欢迎回来', duration: 2000 })
     loggingIn.value = false
 }
@@ -1980,7 +2028,10 @@ const handleMenuSelect = (index) => {
 
 // 记录最近常用；侧栏已无二级 submenu，不再自动 open 分组
 watch(currentTab, (tab) => {
-    if (isLoggedIn.value) recordRecent(tab)
+    if (isLoggedIn.value) {
+        recordRecent(tab)
+        syncModuleHash(tab)
+    }
 }, { flush: 'post' })
 
 const MOBILE_MQ = typeof window !== 'undefined'
@@ -3815,6 +3866,7 @@ const cleanupMobileDetection = () => {
 
 function onHashLegacyCleanup() {
     stripLegacyBrandHashes()
+    onModuleHashChange()
 }
 
 onMounted(() => {

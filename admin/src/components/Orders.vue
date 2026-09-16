@@ -94,8 +94,8 @@
             height="calc(100vh - 240px)"
             @selection-change="handleSelectionChange"
         >
-            <el-table-column type="selection" width="55" :selectable="checkSelectable" />
-            <el-table-column label="商品信息" min-width="280">
+            <el-table-column type="selection" width="55" fixed="left" :selectable="checkSelectable" />
+            <el-table-column label="商品信息" min-width="280" fixed="left">
                 <template #default="scope">
                     <div v-for="(p, i) in scope.row.products" :key="i" class="prod-row">
                        <el-image :src="p.httpImage" class="prod-img" fit="cover" loading="lazy">
@@ -109,7 +109,7 @@
                 </template>
             </el-table-column>
             
-            <el-table-column label="实付金额" width="120">
+            <el-table-column label="实付金额" width="120" sortable>
                 <template #default="scope">
                     <div class="price-cell">
                         <span class="currency">¥</span>

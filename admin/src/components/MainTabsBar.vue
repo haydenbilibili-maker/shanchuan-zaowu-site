@@ -43,6 +43,11 @@
       </div>
 
       <div class="tabs-actions">
+        <el-tooltip content="复制当前模块链接（可直接分享/收藏）" placement="bottom">
+          <button class="tab-action-btn" @click="copyModuleLink">
+            <el-icon><Link /></el-icon>
+          </button>
+        </el-tooltip>
         <el-tooltip content="新建（命令面板 ⌘K）" placement="bottom">
           <button class="tab-action-btn" @click="$emit('open-palette')">
             <el-icon><Plus /></el-icon>
@@ -96,9 +101,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import {
-  HomeFilled, Star, Close, Plus, MoreFilled, CloseBold, Delete, RefreshRight
+  HomeFilled, Star, Close, Plus, MoreFilled, CloseBold, Delete, RefreshRight, Link
 } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { MODULES_BY_ID, GROUPS } from '../utils/modulesRegistry'
 import { useTabsManager } from '../composables/useTabsManager'
 
@@ -110,6 +115,35 @@ const scrollerRef = ref(null)
 const ctxMenu = ref({ show: false, x: 0, y: 0, tab: null })
 
 const moduleName = (id) => MODULES_BY_ID[id]?.name || id
+
+/**
+ * 复制当前模块的深链（#/m/<id>）。
+ * 2026-09-16 审计 P0-16：此前 101 个模块都无法分享/收藏，只能「域大屏 → 找卡片」。
+ * 这里直接读 window.location.href —— hash 已由 App.vue 与 currentTab 双向同步。
+ */
+const copyModuleLink = async () => {
+  const url = window.location.href
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url)
+    } else {
+      // 非 HTTPS / 旧浏览器降级：临时 textarea + execCommand
+      const ta = document.createElement('textarea')
+      ta.value = url
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    ElMessage.success(`已复制：${moduleName(activeTabId.value)} 的链接`)
+  } catch (e) {
+    console.error('复制模块链接失败', e)
+    // 复制失败时把链接显示出来，让用户能手动复制（不静默失败）
+    ElMessageBox.alert(url, '复制失败，请手动复制以下链接', { type: 'warning' })
+  }
+}
 
 const activeBreadcrumb = computed(() => {
   const m = MODULES_BY_ID[activeTabId.value]
