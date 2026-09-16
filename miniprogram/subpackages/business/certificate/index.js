@@ -289,7 +289,7 @@ Page({
   goBack() {
     wx.navigateBack({
       fail: () => wx.redirectTo({
-        url: '/subpackages/feature/user/certificates/index',
+        url: '/subpackages/extra/user/certificates/index',
         fail: () => wx.switchTab({ url: '/pages/user/index' })
       })
     });

@@ -22,7 +22,7 @@ Component({
 
       const url = tab === 'coupons'
         ? '/subpackages/business/coupons/index'
-        : '/subpackages/feature/user/stored-value/index'
+        : '/subpackages/extra/user/stored-value/index'
 
       wx.redirectTo({
         url,

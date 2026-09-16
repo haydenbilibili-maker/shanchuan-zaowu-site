@@ -68,9 +68,12 @@ Page({
       const alternativeProducts = result.alternativeProducts || [];
       const usingAlternative = !!result.usingAlternative;
       const relatedArticles = result.relatedArticles || [];
+      // 需求 11：补 sensitiveEnabled（关联藏品此前封面直出）
+      const { sensitiveEnabledOf } = require('../../../../utils/sensitiveBlurCard');
       const displayProducts = (usingAlternative ? alternativeProducts : relatedProducts).map((p) => ({
         ...p,
         craftTags: buildCraftDisplayTags(p),
+        sensitiveEnabled: sensitiveEnabledOf(p),
         _relatedKey: p._relatedKey || `${p._id}::${p.relatedSkuId || ''}`
       }));
 

@@ -40,7 +40,7 @@
       class="claim-qr"
       style="width: 320rpx; height: 320rpx;"
     ></canvas>
-    <text class="claim-payload" wx:if="{{claimStatus !== 'claimed'}}">馆长扫码 GIFT:{{claimCode}}</text>
+    <text class="claim-payload" wx:if="{{claimStatus !== 'claimed'}}">专员扫码 GIFT:{{claimCode}}</text>
   </view>
 
   <view class="card-preview" wx:if="{{cardBody || hasVoice}}">

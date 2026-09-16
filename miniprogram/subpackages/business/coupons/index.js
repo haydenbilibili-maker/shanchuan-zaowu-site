@@ -1,4 +1,5 @@
 const { fetchMyCoupons } = require('../../../utils/couponService')
+const { couponTimeMs } = require('../../../utils/couponHelper')
 const { ensureOpenId } = require('../../../utils/orderScope')
 const {
   isLocalLoggedOut,
@@ -31,6 +32,67 @@ function useLabelForChannel(item) {
   return '线上使用'
 }
 
+/**
+ * 需求 7：券夹三分组口径 —— 可用 / 占用中 / 已失效。
+ *
+ * ⚠️ 为什么单独拆「占用中」：`locked`（下单占用）**是进行时，不是终态**。
+ *    上一版把 `!canUse` 一律折叠成「已失效礼券」，等于对顾客谎报一张还会回来的券。
+ *    「已失效」只收真正结束的券：`used`（已核销）/ `expired`（已过期）。
+ */
+const DEAD_STATUS = { used: 1, expired: 1 }
+const VOID_LABELS = { used: '已核销', expired: '已过期' }
+/** 到期提醒窗口：≤ 该天数在券面加临期标 */
+const EXPIRING_SOON_DAYS = 7
+const DAY_MS = 86400000
+
+function splitCouponGroups(list) {
+  const usable = []
+  const locked = []
+  const dead = []
+  ;(list || []).forEach((item) => {
+    if (!item) return
+    if (item.canUse === true) {
+      usable.push(item)
+      return
+    }
+    if (DEAD_STATUS[item.status]) {
+      dead.push(item)
+      return
+    }
+    // locked / occupied 及任何未知状态：既不谎报可用，也不谎报失效
+    locked.push(item)
+  })
+  return { usable, locked, dead }
+}
+
+/** 临期提示：只在可用券且 ≤ EXPIRING_SOON_DAYS 天时给文案，其余返回空串（不占位） */
+function couponExpiryHint(item, now) {
+  if (!item || !item.canUse) return ''
+  const at = couponTimeMs(item.expireTime)
+  if (!at) return ''
+  const base = now instanceof Date ? now.getTime() : Number(now) || Date.now()
+  const diff = at - base
+  if (diff <= 0) return '今日到期'
+  const days = Math.ceil(diff / DAY_MS)
+  if (days <= 1) return '明日到期'
+  if (days <= EXPIRING_SOON_DAYS) return `${days} 天后过期`
+  return ''
+}
+
+/** 券面派生字段：临期提示 / 打眼章文案 / 失效类型（决定章的颜色） */
+function decorateCoupon(item, now) {
+  const status = String((item && item.status) || '')
+  const isDead = !!DEAD_STATUS[status]
+  const hint = couponExpiryHint(item, now)
+  return {
+    ...item,
+    expiryHint: hint,
+    expiringSoon: !!hint,
+    voidLabel: isDead ? VOID_LABELS[status] : '',
+    voidKind: isDead && status === 'used' ? 'is-used' : 'is-expired'
+  }
+}
+
 Page({
   data: {
     coupons: [],
@@ -40,6 +102,16 @@ Page({
     emptyCtaText: '去积分中心兑换',
     needOnboarding: false,
     needLogin: false,
+
+    // 需求 7：三分组 —— 可用平铺 / 占用中单列 / 已失效收入券包折叠
+    // （沿用 closedCoupons / closedCount / closedExpanded 命名，文档与礼赠页同口径）
+    lockedCoupons: [],
+    lockedCount: 0,
+    closedCoupons: [],
+    closedCount: 0,
+    closedExpanded: false,
+    expiringCount: 0,
+    expiringDays: EXPIRING_SOON_DAYS,
 
     // 双渠道选择底栏
     showUseSheet: false,
@@ -84,6 +156,12 @@ Page({
       emptyCtaText: '重新进入',
       coupons: [],
       usableCouponCount: 0,
+      lockedCoupons: [],
+      lockedCount: 0,
+      closedCoupons: [],
+      closedCount: 0,
+      closedExpanded: false,
+      expiringCount: 0,
       loading: false,
       loadError: false,
       memberNo: '',
@@ -157,20 +235,46 @@ Page({
         costPoints: item.costPoints || item.cost || 0,
         useLabel: useLabelForChannel(item)
       }))
+      const now = new Date()
+      const decorated = list.map((item) => decorateCoupon(item, now))
+      const groups = splitCouponGroups(decorated)
 
       this.setData({
-        coupons: list,
-        usableCouponCount: list.filter((c) => c && c.canUse).length,
+        coupons: decorated,
+        usableCouponCount: groups.usable.length,
+        // 需求 7：占用中单独成组（进行时，不折叠、不标失效）
+        lockedCoupons: groups.locked,
+        lockedCount: groups.locked.length,
+        // 需求 7：已核销 / 已过期收入券包，默认收起
+        closedCoupons: groups.dead,
+        closedCount: groups.dead.length,
+        expiringCount: groups.usable.filter((c) => c.expiringSoon).length,
         loading: false,
         loadError: !result.ok,
         needLogin: false
       })
     } catch (err) {
       console.error('加载优惠券失败', err)
-      this.setData({ coupons: [], usableCouponCount: 0, loading: false, loadError: true })
+      this.setData({
+        coupons: [],
+        usableCouponCount: 0,
+        lockedCoupons: [],
+        lockedCount: 0,
+        closedCoupons: [],
+        closedCount: 0,
+        expiringCount: 0,
+        loading: false,
+        loadError: true
+      })
     } finally {
       this._loadingCoupons = false
     }
+  },
+
+  /** 需求 7：展开/收起失效券券包 */
+  toggleClosedCoupons() {
+    softVibrate('light')
+    this.setData({ closedExpanded: !this.data.closedExpanded })
   },
 
   useCoupon(e) {

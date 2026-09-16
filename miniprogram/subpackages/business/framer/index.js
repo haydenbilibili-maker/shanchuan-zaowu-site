@@ -88,11 +88,13 @@ Page({
 
       const framer = result.framer;
       const rows = Array.isArray(result.works) ? result.works : [];
-      const works = rows.map((item) => ({
+      // 需求 11：补 sensitiveEnabled，供 <sensitive-blur-gate> 决定是否轻掩封面
+      const { attachSensitiveFlags } = require('../../../utils/sensitiveBlurCard');
+      const works = attachSensitiveFlags(rows.map((item) => ({
         ...item,
         coverImage: item.coverImage || FALLBACK_COVER,
         title: item.title || '未命名作品'
-      }));
+      })));
 
       works.forEach((w) => {
         try {

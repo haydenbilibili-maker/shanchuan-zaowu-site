@@ -1,3 +1,81 @@
+<template name="gift-card">
+      <view
+        class="card metal-card {{item.attention || item.todo ? 'card-attention' : ''}} {{item.expireUrgent ? 'card-urgent' : ''}} {{item.inactive ? 'card-inactive' : ''}}"
+        hover-class="card-press"
+        hover-stay-time="80"
+      >
+        <view class="metal-edge" aria-hidden="true"></view>
+        <view class="cover-wrap">
+          <image class="cover" src="{{item.productImage}}" mode="aspectFill" lazy-load wx:if="{{item.productImage}}"></image>
+          <view class="cover placeholder" wx:else>
+            <view class="cover-plate"></view>
+          </view>
+          <view class="role-chip {{item.flowTab}}">{{item.roleLabel}}</view>
+          <view class="voice-badge" wx:if="{{item.hasVoice}}">
+            <image class="voice-icon" src="/subpackages/feature/assets/icons/audio.png" mode="aspectFit"></image>
+          </view>
+        </view>
+        <view class="body">
+          <view class="row-top">
+            <view class="status-plate">
+              <view class="signal-light {{item.signalClass}}"></view>
+              <text class="status {{item.todo || item.attention ? 'hot' : ''}}">{{item.progressLabel}}</text>
+            </view>
+            <text class="expire {{item.expireUrgent ? 'urgent' : ''}}" wx:if="{{item.expireHint}}">{{item.expireHint}}</text>
+          </view>
+          <text class="title">{{item.productTitle}}</text>
+          <!-- 送出侧：受赠人是这张卡的身份，**不因为有礼笺摘句就不显示**（原来摘句把「致 XX」顶掉了） -->
+          <text class="meta recipient" wx:if="{{item.flowTab === 'sent' && item.recipientName}}">致 {{item.recipientName}}</text>
+          <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>
+          <block wx:elif="{{item.flowTab !== 'sent'}}">
+            <text class="meta" wx:if="{{item.storeName}}">{{item.storeName}}</text>
+            <text class="meta" wx:else>{{item.deliveryLabel}}</text>
+          </block>
+
+          <!-- 履约微轨 -->
+          <view class="prog-rail" wx:if="{{item.showRail}}" aria-hidden="true">
+            <view
+              class="prog-step {{step.state}}"
+              wx:for="{{item.progressSteps.steps}}"
+              wx:for-item="step"
+              wx:key="label"
+            >
+              <view class="prog-dot"></view>
+              <text class="prog-lbl">{{step.label}}</text>
+            </view>
+          </view>
+
+          <view class="row-bottom">
+            <text class="time">{{item.paidText || '—'}}</text>
+            <text class="price" wx:if="{{item.totalPrice != null}}">¥{{item.totalPrice}}</text>
+          </view>
+          <view class="actions" wx:if="{{item.primaryAction}}" catchtap="noop">
+            <view
+              class="act primary"
+              hover-class="act-primary-press"
+              hover-stay-time="80"
+              data-order-id="{{item.orderId}}"
+              data-action-key="{{item.primaryAction.key}}"
+              data-action-type="{{item.primaryAction.type}}"
+              data-action-path="{{item.primaryAction.path}}"
+              bindtap="onActionTap"
+            >{{item.primaryAction.label}}</view>
+            <view
+              class="act ghost"
+              hover-class="act-ghost-press"
+              hover-stay-time="80"
+              wx:if="{{item.secondaryAction}}"
+              data-order-id="{{item.orderId}}"
+              data-action-key="{{item.secondaryAction.key}}"
+              data-action-type="{{item.secondaryAction.type}}"
+              data-action-path="{{item.secondaryAction.path}}"
+              bindtap="onActionTap"
+            >{{item.secondaryAction.label}}</view>
+          </view>
+        </view>
+      </view>
+</template>
+
 <!-- 我的礼赠 · 人情账本 · Museum 完整体验 -->
 <page-edge-back bind:back="onEdgeBack" disabled="{{sheetOpen}}" />
 
@@ -192,82 +270,68 @@
       </view>
 
       <view class="list {{softRefreshing ? 'dim' : ''}}" wx:else>
-        <view
-          class="card metal-card {{item.attention || item.todo ? 'card-attention' : ''}} {{item.expireUrgent ? 'card-urgent' : ''}} {{item.inactive ? 'card-inactive' : ''}}"
-          wx:for="{{list}}"
-          wx:key="orderId"
-          data-link="{{item.deepLink}}"
-          bindtap="onItemTap"
-          hover-class="card-press"
-          hover-stay-time="80"
-        >
-          <view class="metal-edge" aria-hidden="true"></view>
-          <view class="cover-wrap">
-            <image class="cover" src="{{item.productImage}}" mode="aspectFill" lazy-load wx:if="{{item.productImage}}"></image>
-            <view class="cover placeholder" wx:else>
-              <view class="cover-plate"></view>
-            </view>
-            <view class="role-chip {{flowTab}}">{{item.roleLabel}}</view>
-            <view class="voice-badge" wx:if="{{item.hasVoice}}">
-              <image class="voice-icon" src="/subpackages/feature/assets/icons/audio.png" mode="aspectFit"></image>
-            </view>
+        <!-- 在途与失效的分层：只在真的存在失效礼赠时才起小标题，避免平白多一行 -->
+        <view class="flow-section-head" wx:if="{{foldedCount && activeList.length}}">
+          <text class="flow-section-label">在途礼赠</text>
+          <text class="flow-section-n">{{activeList.length}} 笔</text>
+          <view class="flow-section-rule" aria-hidden="true"></view>
+        </view>
+
+        <block wx:for="{{activeList}}" wx:key="orderId">
+          <view class="card-hit" data-link="{{item.deepLink}}" bindtap="onItemTap" hover-class="card-press" hover-stay-time="80">
+            <template is="gift-card" data="{{item}}" />
           </view>
-          <view class="body">
-            <view class="row-top">
-              <view class="status-plate">
-                <view class="signal-light {{item.signalClass}}"></view>
-                <text class="status {{item.todo || item.attention ? 'hot' : ''}}">{{item.progressLabel}}</text>
-              </view>
-              <text class="expire {{item.expireUrgent ? 'urgent' : ''}}" wx:if="{{item.expireHint}}">{{item.expireHint}}</text>
-            </view>
-            <text class="title">{{item.productTitle}}</text>
-            <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>
-            <text class="meta" wx:elif="{{item.recipientName && flowTab === 'sent'}}">致 {{item.recipientName}}</text>
-            <text class="meta" wx:elif="{{item.storeName}}">{{item.storeName}}</text>
-            <text class="meta" wx:else>{{item.deliveryLabel}}</text>
+        </block>
 
-            <!-- 履约微轨 -->
-            <view class="prog-rail" wx:if="{{item.showRail}}" aria-hidden="true">
-              <view
-                class="prog-step {{step.state}}"
-                wx:for="{{item.progressSteps.steps}}"
-                wx:for-item="step"
-                wx:key="label"
-              >
-                <view class="prog-dot"></view>
-                <text class="prog-lbl">{{step.label}}</text>
+        <!-- 在途清空、只剩失效：不留「空白 + 券包」的困惑 -->
+        <view class="flow-empty-note" wx:if="{{!activeList.length && foldedCount}}">
+          <text class="flow-empty-note-main">在途礼赠已清空</text>
+          <text class="flow-empty-note-sub">已退款与已取消的往来收在下方，可展开回看</text>
+        </view>
+
+        <!-- 需求 31：已退款 / 已取消折叠进券包（与礼券夹 #7 同一套语言） -->
+        <view class="pouch" wx:if="{{foldedCount}}">
+          <view
+            class="pouch-head {{foldedExpanded ? 'is-open' : ''}}"
+            bindtap="toggleFolded"
+            hover-class="pouch-head-press"
+            hover-stay-time="80"
+            aria-role="button"
+            aria-expanded="{{foldedExpanded}}"
+            aria-label="已退款已取消 {{foldedCount}} 笔，{{foldedExpanded ? '收起' : '展开查看'}}"
+          >
+            <view class="pouch-stack" aria-hidden="true">
+              <view class="pouch-ticket t3"></view>
+              <view class="pouch-ticket t2"></view>
+              <view class="pouch-ticket t1">
+                <view class="pouch-hole"></view>
+                <view class="pouch-hole"></view>
+                <view class="pouch-hole"></view>
               </view>
             </view>
+            <view class="pouch-copy">
+              <text class="pouch-title">已退款 · 已取消</text>
+              <text class="pouch-sub">{{foldedCap}} · {{foldedExpanded ? '收起' : '展开查看'}}</text>
+            </view>
+            <view class="pouch-arrow {{foldedExpanded ? 'open' : ''}}" aria-hidden="true"></view>
+          </view>
 
-            <view class="row-bottom">
-              <text class="time">{{item.paidText || '—'}}</text>
-              <text class="price" wx:if="{{item.totalPrice != null}}">¥{{item.totalPrice}}</text>
+          <view class="pouch-body" wx:if="{{foldedExpanded}}">
+            <view
+              class="card-hit is-folded"
+              wx:for="{{foldedList}}"
+              wx:key="orderId"
+              data-link="{{item.deepLink}}"
+              bindtap="onItemTap"
+              hover-class="card-press"
+              hover-stay-time="80"
+            >
+              <template is="gift-card" data="{{item}}" />
             </view>
-            <view class="actions" wx:if="{{item.primaryAction}}" catchtap="noop">
-              <view
-                class="act primary"
-                hover-class="act-primary-press"
-                hover-stay-time="80"
-                data-order-id="{{item.orderId}}"
-                data-action-key="{{item.primaryAction.key}}"
-                data-action-type="{{item.primaryAction.type}}"
-                data-action-path="{{item.primaryAction.path}}"
-                bindtap="onActionTap"
-              >{{item.primaryAction.label}}</view>
-              <view
-                class="act ghost"
-                hover-class="act-ghost-press"
-                hover-stay-time="80"
-                wx:if="{{item.secondaryAction}}"
-                data-order-id="{{item.orderId}}"
-                data-action-key="{{item.secondaryAction.key}}"
-                data-action-type="{{item.secondaryAction.type}}"
-                data-action-path="{{item.secondaryAction.path}}"
-                bindtap="onActionTap"
-              >{{item.secondaryAction.label}}</view>
-            </view>
+            <text class="pouch-foot">已结束的往来仅作记录 · 可点开查看订单</text>
           </view>
         </view>
+
         <view class="list-foot" wx:if="{{list.length}}">
           <text class="muted">{{hasMore ? (loadingMore ? '继续翻阅…' : '上拉查看更多') : '— 礼簿至此 —'}}</text>
         </view>

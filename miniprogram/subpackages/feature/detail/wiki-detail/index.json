@@ -1,7 +1,8 @@
 {
   "navigationBarTitleText": "标本档案",
   "usingComponents": {
-    "mp-html": "/subpackages/feature/components/mp-html/index"
+    "mp-html": "/subpackages/feature/components/mp-html/index",
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
   },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",

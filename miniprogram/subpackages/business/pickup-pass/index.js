@@ -5,6 +5,8 @@
  * - 进页面即把屏幕调到最亮（柜台扫码场景），离开自动恢复
  * - 自取码 / 订单号可由 query 直接带入 → 秒出二维码，不等待网络
  * - 订单数据仅用于补状态、领取门店与核销时间；读取失败不影响出示凭证
+ * - **核销联动**：待领取期间静默轮询自己的订单（顾客直读 orders，无需新云函数），
+ *   店员核销成功后顾客端自动收口为「本次自取已完成」并给二维码盖上「已自提」水印
  */
 const app = getApp();
 const db = wx.cloud.database();
@@ -13,6 +15,13 @@ const { drawMemberQr } = require('../utils/qrCanvas');
 const { fetchStoreCatalog, findCatalogStore } = require('../../../utils/storeCatalog');
 const { ensureOpenId, canAccessOrder, denyOrderAccess } = require('../../../utils/orderScope');
 const { canUserRequestRefund } = require('../utils/refundPolicy');
+
+/** 店员核销后顾客端不必手动下拉：待领取期间每 3s 静默核对一次订单状态 */
+const PASS_POLL_MS = 3000;
+/** 轮询上限（15 分钟）：顾客把页面晾在柜台后不再空耗，超时回落下拉刷新 / 重新进入 */
+const PASS_POLL_MAX_MS = 15 * 60 * 1000;
+/** 回到本页时的静默补拉节流：避开 onLoad 后的首个 onShow，防止同一动作拉两次 */
+const PASS_RESUME_MS = 1500;
 
 Page({
   data: {
@@ -39,6 +48,13 @@ Page({
     const code = String((options && options.code) || '').replace(/\s+/g, '').toUpperCase();
     this._prevBrightness = null;
     this._lastLoadAt = 0;
+    /** 核销联动：轮询定时器 / 读库去重 / 状态跃迁标记 */
+    this._pollTimer = null;
+    this._pollStartedAt = 0;
+    this._loadingOrder = null;
+    this._sawPending = false;
+    this._announced = false;
+    this._hydratedStoreId = '';
 
     // 凭证带自取码：关闭转发入口，避免自取码被转发给他人到店冒领
     if (wx.hideShareMenu) wx.hideShareMenu();
@@ -53,7 +69,7 @@ Page({
       code,
       codeText: code,
       pass: buildPickupPass({ pickupCode: code, status: 'paid' }),
-      // 只有自取码、没有订单号时无法核对状态：状态交由馆长现场核实
+      // 只有自取码、没有订单号时无法核对状态：状态交由专员现场核实
       statusUnknown: !orderId
     });
 
@@ -73,8 +89,8 @@ Page({
     // 从柜台走回、或核销后回到本页：静默核对一次最新状态
     const id = this.data.orderId;
     if (!id) return;
-    if (Date.now() - this._lastLoadAt < 15000) return;
-    this.loadOrder(id, { silent: true });
+    if (Date.now() - this._lastLoadAt >= PASS_RESUME_MS) this.loadOrder(id, { silent: true });
+    this.startWatching();
   },
 
   onPullDownRefresh() {
@@ -90,15 +106,79 @@ Page({
   },
 
   onHide() {
+    this.stopWatching();
     this.restoreBrightness();
   },
 
   onUnload() {
+    this.stopWatching();
     this.restoreBrightness();
   },
 
-  /** 订单详情：补齐状态 / 领取门店 / 核销时间（失败不阻塞出示） */
-  async loadOrder(orderId, options) {
+  // ------------------------------------------------------------ 核销联动（自动刷新）
+
+  /**
+   * 待领取期间轮询自己的订单：店员扫顾客自取码核销后（orders.status → received /
+   * pickupStatus → claimed），顾客端自动收口成「已自提」，不要求手动下拉。
+   * 无订单号（只有历史自取码）、已交付、已失效时都不轮询。
+   */
+  startWatching() {
+    if (this._pollTimer) return;
+    if (!this.data.orderId || !this.canWatch()) return;
+    this._pollStartedAt = Date.now();
+    this._pollTimer = setInterval(() => this.pollOrderStatus(), PASS_POLL_MS);
+  },
+
+  stopWatching() {
+    if (this._pollTimer) {
+      clearInterval(this._pollTimer);
+      this._pollTimer = null;
+    }
+  },
+
+  /** 只有「待领取」值得盯：已交付 / 已退款取消都无需再查 */
+  canWatch() {
+    const tone = this.data.pass && this.data.pass.statusTone;
+    return tone !== 'done' && tone !== 'closed';
+  },
+
+  pollOrderStatus() {
+    if (!this.data.orderId || !this.canWatch()) {
+      this.stopWatching();
+      return;
+    }
+    if (Date.now() - this._pollStartedAt > PASS_POLL_MAX_MS) {
+      this.stopWatching();
+      return;
+    }
+    this.loadOrder(this.data.orderId, { silent: true });
+  },
+
+  /** 现场核销成功的顾客端反馈：震动 + 轻提示，并停止维持最亮屏（凭证已无需出示） */
+  announceClaimed() {
+    try {
+      wx.vibrateShort({ type: 'medium' });
+    } catch (e) { /* 旧基础库 */ }
+    wx.showToast({ title: '门店自取已完成', icon: 'success', duration: 1800 });
+    this.restoreBrightness();
+  },
+
+  /**
+   * 订单详情：补齐状态 / 领取门店 / 核销时间（失败不阻塞出示）
+   * 轮询 / onShow / 下拉刷新可能同时到达：同一时刻只保留一次读库。
+   */
+  loadOrder(orderId, options) {
+    if (this._loadingOrder) return this._loadingOrder;
+    const task = this.runLoadOrder(orderId, options);
+    this._loadingOrder = task;
+    const release = () => {
+      if (this._loadingOrder === task) this._loadingOrder = null;
+    };
+    task.then(release, release);
+    return task;
+  },
+
+  async runLoadOrder(orderId, options) {
     const silent = !!(options && options.silent);
     this._lastLoadAt = Date.now();
     try {
@@ -122,6 +202,8 @@ Page({
       this._order = order;
       const code = pass.code || this.data.code;
       const claimedAt = order.pickupClaimedAt || order.receiveTime || null;
+      const claimedNow = pass.statusTone === 'done';
+      const closedNow = pass.statusTone === 'closed';
       this.setData({
         orderNo: order.orderNo || '',
         code,
@@ -138,8 +220,26 @@ Page({
           (order.status === 'paid' || order.status === 'ready_pickup')
       });
 
+      // 状态跃迁：待领取 → 已交付 = 店员刚在柜台核销，停轮询并给顾客明确回执
+      if (claimedNow) {
+        this.stopWatching();
+        if (this._sawPending && !this._announced) {
+          this._announced = true;
+          this.announceClaimed();
+        }
+      } else if (closedNow) {
+        this.stopWatching();
+      } else {
+        this._sawPending = true;
+      }
+
       if (!this.data.qrReady && code) this.drawQr();
-      this.hydrateStore(order.storeId || '');
+      // 轮询每 3s 都会走到这里：门店信息只补一次（同店不重复查目录缓存）
+      const storeId = order.storeId || '';
+      if (this._hydratedStoreId !== storeId) {
+        this._hydratedStoreId = storeId;
+        this.hydrateStore(storeId);
+      }
     } catch (e) {
       console.warn('[pickup-pass] 订单读取失败', e);
       // 静默刷新失败：保留上一次已核对的状态，不打断出示
@@ -264,7 +364,7 @@ Page({
   goSupport() {
     const { buildSupportQuery } = require('../utils/supportHelper');
     const url =
-      '/subpackages/feature/user/support/index' +
+      '/subpackages/extra/user/support/index' +
       buildSupportQuery({
         topic: 'order',
         orderId: this.data.orderId,
@@ -273,7 +373,7 @@ Page({
       });
     wx.navigateTo({
       url,
-      fail: () => wx.showToast({ title: '无法打开联系馆长', icon: 'none' })
+      fail: () => wx.showToast({ title: '无法打开联系专员', icon: 'none' })
     });
   },
 

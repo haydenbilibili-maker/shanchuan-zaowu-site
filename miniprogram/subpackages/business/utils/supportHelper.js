@@ -134,7 +134,7 @@ function buildSendMessage(ctx = {}) {
   }
   return {
     title: '联系专员 · 山海造物',
-    path: '/subpackages/feature/user/support/index',
+    path: '/subpackages/extra/user/support/index',
     img: ''
   };
 }

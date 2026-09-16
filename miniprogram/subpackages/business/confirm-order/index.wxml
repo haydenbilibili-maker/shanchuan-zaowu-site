@@ -74,7 +74,7 @@
     <view class="pickup-hint" wx:if="{{storePickup}}">
       <text class="pickup-hint-title">{{pickupStoreName || '山川造物主店'}}</text>
       <text class="pickup-hint-addr" wx:if="{{pickupStoreAddress}}">{{pickupStoreAddress}}</text>
-      <text class="pickup-hint-body">支付后馆长备妥；到店出示订单，由馆长核销后交付。</text>
+      <text class="pickup-hint-body">支付后专员备妥；到店出示订单，由专员核销后交付。</text>
     </view>
   </view>
 

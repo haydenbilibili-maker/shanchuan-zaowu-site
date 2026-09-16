@@ -4,10 +4,10 @@
 Page({
   onLoad() {
     wx.redirectTo({
-      url: '/subpackages/manager/inventory-ops/index?tab=raw',
+      url: '/subpackages/extra/inventory-ops/index?tab=raw',
       fail: () => {
         wx.navigateTo({
-          url: '/subpackages/manager/inventory-ops/index?tab=raw',
+          url: '/subpackages/extra/inventory-ops/index?tab=raw',
           fail: () => wx.showToast({ title: '库存管理暂不可用', icon: 'none' })
         })
       }

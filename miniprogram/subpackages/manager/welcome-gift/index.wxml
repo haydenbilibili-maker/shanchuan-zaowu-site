@@ -103,7 +103,7 @@
             <text class="field-label">张数</text>
             <input class="input sm" type="number" value="{{item.count}}" data-index="{{index}}" data-field="count" bindinput="onCouponField" />
           </view>
-          <view class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="toggleCoupon">{{item.enabled ? '启用' : '停用'}}</view>
+          <view class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="toggleCoupon">{{item.enabled ? '启用中 · 点此停用' : '已停用 · 点此启用'}}</view>
         </view>
       </view>
     </view>

@@ -4,7 +4,7 @@ const {
   printPhaseLamp,
   couponChannelLamp,
   couponExpireLamp
-} = require('../../../../utils/couponPrintLamp')
+} = require('../../utils/couponPrintLamp')
 
 Component({
   // 与 UserVipCard 等一致：允许 app.wxss 的 .signal-light / lamp-* 渗入

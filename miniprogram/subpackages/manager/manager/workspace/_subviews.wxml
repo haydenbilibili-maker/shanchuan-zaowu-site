@@ -1311,6 +1311,15 @@
       <view class="sub-tab {{contentType==='comment'?'active':''}}" bindtap="switchContentType" data-type="comment">用户评价</view>
       <view class="sub-tab {{contentType==='care'?'active':''}}" bindtap="switchContentType" data-type="care">标本养护</view>
     </view>
+    <!-- 需求 28：祈福墙弹幕同属 C 端展示内容，故「内容管理」里也放一个直达入口。
+         开关行本体在「内容开关」(tab 16) —— 两处共用同一个 goWishWallManage，
+         不复制判定。原先只有 tab 16 有入口，按「内容模块」直觉找的人会找不到（实测反馈）。 -->
+    <view class="content-seed-bar" bindtap="goWishWallManage">
+      <text class="seed-hint">马上有祈福弹幕</text>
+      <view class="seed-actions">
+        <view class="seed-btn outline">弹幕复核 ›</view>
+      </view>
+    </view>
     <view class="content-seed-bar" wx:if="{{contentType!=='care' && contentType!=='comment'}}">
       <text class="seed-hint">社区内容种子</text>
       <view class="seed-actions">
@@ -1538,6 +1547,9 @@
             <text class="p-name">{{item.petTitle}}</text>
             <text class="p-name" wx:if="{{item.craft}}">工艺：{{item.craft.craftName}}</text>
             <text class="p-name" wx:if="{{item.intake}}">交接：{{item.intake.methodLabel}}</text>
+            <!-- 需求 14：客户指定标本师时的指派与接单状态 -->
+            <text class="p-name gold" wx:if="{{item.artisan && item.artisan.framerName}}">指定标本师：{{item.artisan.framerName}}{{item.artisan.acceptedAt ? '（已接单）' : '（待接单）'}}</text>
+            <text class="p-name" wx:else>指定标本师：未指定（平台指派）</text>
             <text class="p-name">{{item.contact.name}} · {{item.contact.phone}}</text>
             <text class="p-name" wx:if="{{item.contact.note}}">补充：{{item.contact.note}}</text>
             <text class="p-name gold" wx:if="{{item.quoteText}}">报价：{{item.quoteText}}</text>
@@ -2518,7 +2530,25 @@
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showGift}}" data-field="showGift" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
+          <!-- 需求 28：马上有祈福弹幕。UGC 新能力 → 缺配置默认关；关闭后 C 端入口消失且不发请求 -->
+          <view class="cfg-row cfg-row-switch">
+            <view class="cfg-label-block">
+              <text class="cfg-label cfg-label-wide">马上有祈福</text>
+              <text class="cfg-switch-hint {{contentFlags.showMaShangYou ? 'on' : ''}}">{{contentFlags.showMaShangYou ? '展示中' : '已隐藏'}}</text>
+            </view>
+            <switch class="cfg-switch" checked="{{contentFlags.showMaShangYou}}" data-field="showMaShangYou" color="#C4A76C" bindchange="onContentFlagToggle"/>
+          </view>
+          <!-- 需求 28：弹幕治理入口。不接审核 → 必须能在此复核全部内容（含已隐藏） -->
+          <view class="cfg-row cfg-row-link" bindtap="goWishWallManage">
+            <view class="cfg-label-block">
+              <text class="cfg-label cfg-label-wide">祈福墙内容管理</text>
+              <text class="cfg-switch-hint">查看全部弹幕 · 隐藏 / 恢复 / 置顶 / 删除</text>
+            </view>
+            <text class="cfg-chevron">›</text>
+          </view>
         </view>
+        <!-- 未保存提示：开关是「先改本地、点保存才写云端」，没有这句超管会以为已经生效 -->
+        <view class="cfg-dirty" wx:if="{{contentFlagsDirty}}">有未保存的改动 —— 点下方「保存开关」后 C 端才会生效</view>
         <view class="cfg-cta {{contentFlagsSaving ? 'disabled' : ''}}" bindtap="saveContentDisplayFlags">{{contentFlagsSaving ? '保存中…' : '保存开关'}}</view>
       </view>
     </block>

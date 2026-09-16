@@ -61,7 +61,14 @@
         >
           <view class="product-card-inner">
             <view class="product-cover-wrap">
-              <image class="product-cover" src="{{item.cover}}" mode="aspectFill"></image>
+              <!-- 需求 11：敏感形态模糊 -->
+              <sensitive-blur-gate
+                enabled="{{item.sensitiveEnabled}}"
+                product-id="{{item._id}}"
+                size="card"
+              >
+                <image class="product-cover" src="{{item.cover}}" mode="aspectFill"></image>
+              </sensitive-blur-gate>
               <text class="product-badge scene" wx:if="{{item.matchSource === 'scene'}}">场景</text>
               <text class="product-badge fallback" wx:else>荐</text>
               <protected-badge

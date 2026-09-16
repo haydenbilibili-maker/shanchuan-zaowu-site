@@ -582,10 +582,10 @@ Page({
       store_pickup: '门店自提代赠'
     }
     const giftDeliveryHints = {
-      invite_address: '礼笺已备妥。支付后交给 TA——对方启封并写下收件去处后，馆长再启程。默认隐价。',
-      ship_to_receiver: '请填写 TA 的收货地址。支付后馆长即按址妥投；仍可分享礼笺让对方先读到你的话。',
+      invite_address: '礼笺已备妥。支付后交给 TA——对方启封并写下收件去处后，专员再启程。默认隐价。',
+      ship_to_receiver: '请填写 TA 的收货地址。支付后专员即按址妥投；仍可分享礼笺让对方先读到你的话。',
       ship_to_self: '请填写你的收货地址。藏品先到你处，再当面转交这份山海。',
-      store_pickup: `门店「${(this._giftMeta && this._giftMeta.storeName) || '已选门店'}」将备妥。支付后出示妥投码，由馆长核销交予 TA。`
+      store_pickup: `门店「${(this._giftMeta && this._giftMeta.storeName) || '已选门店'}」将备妥。支付后出示妥投码，由专员核销交予 TA。`
     }
     const giftDeliveryLabel = giftDeliveryLabels[deliveryType] || deliveryType || ''
     const giftDeliveryHint = giftDeliveryHints[deliveryType] || ''
@@ -1674,7 +1674,7 @@ Page({
     const productId = p0.productId || p0.id || p0._id || ''
     const productName = p0.title || p0.name || ''
     const url =
-      '/subpackages/feature/user/support/index' +
+      '/subpackages/extra/user/support/index' +
       buildSupportQuery({
         topic: productId ? 'product' : 'order',
         productId,

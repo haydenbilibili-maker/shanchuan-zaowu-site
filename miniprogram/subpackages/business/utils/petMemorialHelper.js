@@ -66,7 +66,16 @@ function buildOrderPayload(form) {
     consent: {
       version: form.consentVersion,
       agreedAt: form.consentAgreedAt || new Date().toISOString()
-    }
+    },
+    // 需求 14：指定标本师（选填）。
+    // framerName 仅供下单前预览显示；**权威姓名与 openid 一律由云端按 framers 档案重解析**，
+    // 客户端传什么都不影响落库与投递目标。
+    artisan: form.artisanId
+      ? {
+          framerId: String(form.artisanId).trim(),
+          framerName: String(form.artisanName || '').trim()
+        }
+      : null
   }
 }
 
@@ -85,6 +94,9 @@ function buildSummaryLines(payload) {
   }
   if (payload.intake) {
     lines.push({ label: '交接', value: payload.intake.methodLabel })
+  }
+  if (payload.artisan && payload.artisan.framerName) {
+    lines.push({ label: '指定标本师', value: payload.artisan.framerName })
   }
   if (payload.contact) {
     const rel = relationLabelOf(payload.contact.relation, payload.contact.relationLabel)
@@ -115,6 +127,7 @@ function buildStaffCopyText(order) {
     c.plaqueText ? `纪念牌：${c.plaqueText}` : '',
     `交接：${i.methodLabel || ''}`,
     i.preferredDate ? `期望日期：${i.preferredDate}` : '',
+    order.artisan && order.artisan.framerName ? `指定标本师：${order.artisan.framerName}` : '',
     `联系人：${ct.name || ''} ${ct.phone || ''}`,
     (() => {
       const rel = relationLabelOf(ct.relation, ct.relationLabel)

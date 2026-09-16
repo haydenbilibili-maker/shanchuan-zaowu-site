@@ -176,12 +176,16 @@ Page({
 
   normalizeProduct(p) {
     const imgs = p.images || []
+    // 需求 11：本函数是白名单映射，必须显式带上敏感形态字段，否则 gate 永远收到 false。
+    // 传**原始商品对象**给判定函数（它兼容 sensitiveBlur / contentWarning 两种字段名）。
+    const { sensitiveEnabledOf } = require('../../../utils/sensitiveBlurCard')
     return {
       _id: p._id,
       title: p.title || '',
       latinName: p.latinName || '',
       price: p.price || 0,
-      image: getFirstImage(imgs) || p.cover || ''
+      image: getFirstImage(imgs) || p.cover || '',
+      sensitiveEnabled: sensitiveEnabledOf(p)
     }
   },
 

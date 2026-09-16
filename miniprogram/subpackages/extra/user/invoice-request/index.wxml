@@ -1,0 +1,188 @@
+<!--subpackages/extra/user/invoice-request/index.wxml-->
+<view class="page-invoice">
+  <view class="grain-overlay"></view>
+
+  <view class="sticky-header" style=" padding-right: {{navPaddingRight}}px;">
+    <view class="nav-row">
+      <view class="nav-brand">
+        <text class="nav-title">开票申请</text>
+        <text class="nav-sub">INVOICE</text>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="main-scroll" style="top: {{headerHeight}}px;">
+    <view class="intro-card">
+      <text class="intro-title">电子发票申请</text>
+      <text class="intro-body">选择已支付订单并填写抬头信息。专员核对后开具电子发票，发送至邮箱或微信。</text>
+    </view>
+
+    <view class="section">
+      <text class="section-title">开票信息</text>
+      <view class="form-card invoice-form">
+        <view class="field-row">
+          <text class="field-label">选择订单 <text class="req">*</text></text>
+          <view
+            class="order-picker {{orderNo ? 'has-value' : ''}}"
+            hover-class="order-picker-press"
+            bindtap="openOrderSheet"
+          >
+            <block wx:if="{{orderNo}}">
+              <text class="order-picker-no">{{orderNo}}</text>
+              <text class="order-picker-meta" wx:if="{{orderSummary}}">{{orderSummary}}</text>
+              <view class="order-picker-sub" wx:if="{{orderAmount || orderTimeStr || orderStatusStr}}">
+                <text wx:if="{{orderAmount}}">¥{{orderAmount}}</text>
+                <text wx:if="{{orderStatusStr}}" class="dot-sep">·</text>
+                <text wx:if="{{orderStatusStr}}">{{orderStatusStr}}</text>
+                <text wx:if="{{orderTimeStr}}" class="dot-sep">·</text>
+                <text wx:if="{{orderTimeStr}}">{{orderTimeStr}}</text>
+              </view>
+            </block>
+            <text class="order-picker-placeholder" wx:else>点击选择可开票订单</text>
+            <text class="order-picker-arrow">选择 →</text>
+          </view>
+        </view>
+
+        <view class="field-row">
+          <text class="field-label">抬头类型 <text class="req">*</text></text>
+          <view class="type-pills">
+            <view
+              class="type-pill {{invoiceType === 'personal' ? 'active' : ''}}"
+              hover-class="type-pill-press"
+              bindtap="selectInvoiceType"
+              data-type="personal"
+            >个人</view>
+            <view
+              class="type-pill {{invoiceType === 'company' ? 'active' : ''}}"
+              hover-class="type-pill-press"
+              bindtap="selectInvoiceType"
+              data-type="company"
+            >企业</view>
+          </view>
+        </view>
+
+        <view class="field-row">
+          <text class="field-label">发票抬头 <text class="req">*</text></text>
+          <input
+            class="field-input"
+            placeholder="个人姓名或企业全称"
+            placeholder-class="ph"
+            maxlength="80"
+            value="{{invoiceTitle}}"
+            data-field="invoiceTitle"
+            bindinput="onFieldInput"
+          />
+        </view>
+
+        <view class="field-row" wx:if="{{invoiceType === 'company'}}">
+          <text class="field-label">纳税人识别号 <text class="req">*</text></text>
+          <input
+            class="field-input"
+            placeholder="企业统一社会信用代码"
+            placeholder-class="ph"
+            maxlength="32"
+            value="{{invoiceTaxNo}}"
+            data-field="invoiceTaxNo"
+            bindinput="onFieldInput"
+          />
+        </view>
+
+        <view class="field-row">
+          <text class="field-label">接收邮箱 <text class="field-hint-inline">建议填写</text></text>
+          <input
+            class="field-input"
+            placeholder="电子发票发送至此邮箱"
+            placeholder-class="ph"
+            maxlength="80"
+            value="{{invoiceEmail}}"
+            data-field="invoiceEmail"
+            bindinput="onFieldInput"
+          />
+        </view>
+
+        <view class="field-row">
+          <text class="field-label">联系电话 <text class="field-hint-inline">选填</text></text>
+          <input
+            class="field-input"
+            type="number"
+            maxlength="11"
+            placeholder="便于专员回拨"
+            placeholder-class="ph"
+            value="{{invoicePhone}}"
+            data-field="invoicePhone"
+            bindinput="onFieldInput"
+          />
+        </view>
+
+        <view class="field-row field-row-last">
+          <text class="field-label">备注 <text class="field-hint-inline">选填</text></text>
+          <textarea
+            class="field-textarea"
+            placeholder="补充说明，如多订单合并开票等"
+            placeholder-class="ph"
+            maxlength="300"
+            value="{{invoiceRemark}}"
+            data-field="invoiceRemark"
+            bindinput="onFieldInput"
+          ></textarea>
+        </view>
+
+        <view class="form-actions">
+          <button
+            class="submit-btn {{submitting ? 'is-loading' : ''}}"
+            hover-class="submit-btn-press"
+            hover-stay-time="80"
+            bindtap="submitInvoiceRequest"
+            loading="{{submitting}}"
+            disabled="{{submitting}}"
+          >{{submitting ? '提交中…' : '提交开票申请'}}</button>
+        </view>
+      </view>
+    </view>
+
+    <view class="footer-pad"></view>
+  </scroll-view>
+
+  <!-- 订单选择 sheet -->
+  <view class="sheet-mask {{showOrderSheet ? 'active' : ''}}" bindtap="closeOrderSheet" wx:if="{{showOrderSheet}}">
+    <view class="order-sheet" catchtap="noop">
+      <view class="sheet-handle"></view>
+      <view class="sheet-head">
+        <text class="sheet-title">选择订单</text>
+        <text class="sheet-close" bindtap="closeOrderSheet">✕</text>
+      </view>
+      <text class="sheet-hint">仅展示已支付 / 已发货 / 已完成的订单</text>
+
+      <view class="sheet-loading" wx:if="{{ordersLoading}}">
+        <text>加载中…</text>
+      </view>
+
+      <scroll-view scroll-y class="order-list" enhanced show-scrollbar="{{false}}" enable-flex="{{true}}" wx:elif="{{orders.length}}">
+        <view
+          class="order-item {{item.orderNo === orderNo ? 'selected' : ''}}"
+          wx:for="{{orders}}"
+          wx:key="_id"
+          hover-class="order-item-press"
+          bindtap="selectOrderFromSheet"
+          data-index="{{index}}"
+        >
+          <view class="order-item-top">
+            <text class="order-item-no">{{item.orderNo}}</text>
+            <text class="order-item-status">{{item.statusStr}}</text>
+          </view>
+          <text class="order-item-summary">{{item.productSummary}}</text>
+          <view class="order-item-bottom">
+            <text class="order-item-amount">¥{{item.amountStr}}</text>
+            <text class="order-item-time">{{item.createTimeStr}}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-empty" wx:else>
+        <text class="empty-title">暂无可开票订单</text>
+        <text class="empty-desc">支付完成后的订单会出现在这里</text>
+        <button class="empty-btn" hover-class="submit-btn-press" bindtap="goOrders">去我的订单</button>
+      </view>
+    </view>
+  </view>
+</view>

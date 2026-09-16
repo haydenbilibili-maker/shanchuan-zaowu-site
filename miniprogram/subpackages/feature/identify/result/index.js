@@ -181,6 +181,10 @@ Page({
         })
       }
 
+      // 需求 3（业务决策 2026-09-16：**先识别后解锁**）：
+      // 结果已经渲染出来（识别成本已花），再以「一键注册」弹窗把查看结果转成注册。
+      this.maybeGateResultForRegistration()
+
       this.autoCollectPhoto(speciesInfo, this.data.recordId)
     } catch (e) {
       console.error(e)
@@ -449,6 +453,76 @@ Page({
 
   onShow() {
     this.resumeSaveAfterRegister()
+    this.resumeResultGateAfterRegister()
+  },
+
+  /**
+   * 需求 3（决策：先识别后解锁）：结果渲染完成后，用「一键注册」把查看结果转成注册。
+   *
+   * 设计要点：
+   *   - **结果已经渲染**（识别成本已花）→ 弹窗只是转化钩子，不是内容门禁；
+   *     关闭弹窗后用户仍能查看结果（不阻断体验，也不制造「看不到」的差评）
+   *   - **仅本人**触发（`isOwner`）：别人通过分享进来不该被要求注册
+   *   - **每个页面实例只弹一次**（`_resultGateShown`）：onShow 回流不重复打扰
+   *   - 已注册用户直接跳过（不浪费一次弹窗）
+   */
+  async maybeGateResultForRegistration() {
+    if (this._resultGateShown) return
+    if (!this.data.recordId || !this.data.isOwner) return
+    this._resultGateShown = true
+    try {
+      const { ensureSession, promptPhoneBind, peekOnboardingReturn } = require('../../../../utils/userSession')
+      const { resolveAuthState } = require('../../../../utils/profileHelper')
+      const session = await ensureSession(app)
+      const state = session.authState || resolveAuthState(session.user)
+      if (state !== 'guest') return
+
+      trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'show' })
+      await promptPhoneBind({
+        title: '注册后收藏这份鉴定',
+        content: '一键注册即可把这次鉴定收进山海图鉴，新客礼包将自动到账。',
+        confirmText: '一键注册',
+        cancelText: '先看看',
+        from: 'identify_result',
+        returnMode: 'back',
+        resumeSubmit: true
+      })
+      const intent = peekOnboardingReturn()
+      trackBehavior('identify_result_gate', 'identification', this.data.recordId, {
+        step: intent && intent.from === 'identify_result' ? 'go_register' : 'dismiss'
+      })
+    } catch (e) {
+      console.warn('maybeGateResultForRegistration', e)
+    }
+  },
+
+  /** 注册回流（from=identify_result）：标记漏斗闭环，并刷新会话态 */
+  async resumeResultGateAfterRegister() {
+    if (this._resumingResultGate) return
+    const {
+      peekOnboardingReturn,
+      consumeOnboardingReturn,
+      refreshSessionAfterAuth,
+      hasPhone
+    } = require('../../../../utils/userSession')
+    const intent = peekOnboardingReturn()
+    if (!intent || intent.from !== 'identify_result') return
+    this._resumingResultGate = true
+    try {
+      const session = await refreshSessionAfterAuth(getApp())
+      consumeOnboardingReturn()
+      if (!hasPhone(session)) {
+        wx.showToast({ title: '授权未完成，请再试一次', icon: 'none' })
+        return
+      }
+      if (this.data.recordId) {
+        trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'resume_success' })
+      }
+    } catch (e) {
+      console.warn('resumeResultGateAfterRegister', e)
+    } finally {
+      this._resumingResultGate = false
+    }
   },
 
   /** 注册完成后回流：自动续写图鉴（onboarding 'back' 模式标记 pendingResume） */
@@ -629,7 +703,7 @@ Page({
 
   onExpertHelp() {
     trackBehavior('identify_expert_cta', 'identification', this.data.recordId || '', { type: 'support' })
-    wx.navigateTo({ url: '/subpackages/feature/user/support/index?topic=identify' })
+    wx.navigateTo({ url: '/subpackages/extra/user/support/index?topic=identify' })
   },
 
   onViewProducts() {

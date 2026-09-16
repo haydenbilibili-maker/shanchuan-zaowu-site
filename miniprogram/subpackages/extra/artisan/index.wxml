@@ -1,0 +1,290 @@
+<view class="page">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">ARTISAN STUDIO</text>
+    <text class="boot-cn">标本师工作台</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">ARTISAN STUDIO</text>
+        <text class="cn">标本师工作台</text>
+      </view>
+      <text class="greeting">{{artisanDisplayName ? artisanDisplayName + '，' : ''}}欢迎回到工作室</text>
+      <text class="header-note">先处理待办，再维护作品库与个人档案。不含门店经营配置。</text>
+      <!-- 工作通知声音（#29）：点=开关，长按=试听 -->
+      <view class="header-voice">
+        <work-notice-voice />
+      </view>
+      <view class="signal-legend header-legend">
+        <view class="signal-legend-item"><view class="signal-light warn"></view><text class="signal-legend-text">黄 · 待办</text></view>
+        <view class="signal-legend-item"><view class="signal-light lamp-info"></view><text class="signal-legend-text">蓝 · 装裱中</text></view>
+        <view class="signal-legend-item"><view class="signal-light lamp-forest"></view><text class="signal-legend-text">绿深 · 已上架</text></view>
+        <view class="signal-legend-item"><view class="signal-light lamp-muted"></view><text class="signal-legend-text">灰 · 空闲</text></view>
+      </view>
+    </view>
+
+    <view class="group" wx:if="{{canProducts || canWorks}}">
+      <view class="group-head">
+        <text class="group-en">TODAY</text>
+        <text class="group-cn">今日待办</text>
+      </view>
+      <view class="todo-grid">
+        <view
+          class="todo-chip {{workPendingShelf > 0 ? 'hot' : ''}}"
+          hover-class="todo-chip-press"
+          bindtap="goWorks"
+          data-filter="pending"
+        >
+          <view class="todo-chip-head">
+            <view class="signal-light {{todoLamps.pending}}"></view>
+            <text class="todo-val">{{statsLoading ? '—' : workPendingShelf}}</text>
+          </view>
+          <text class="todo-lbl">待确认作品</text>
+        </view>
+        <view
+          class="todo-chip {{jobPendingMake > 0 ? 'hot' : ''}}"
+          hover-class="todo-chip-press"
+          bindtap="goJobs"
+          data-filter="pending_make"
+        >
+          <view class="todo-chip-head">
+            <view class="signal-light {{todoLamps.make}}"></view>
+            <text class="todo-val">{{statsLoading ? '—' : jobPendingMake}}</text>
+          </view>
+          <text class="todo-lbl">待制作</text>
+        </view>
+        <view
+          class="todo-chip {{jobPendingShip > 0 ? 'hot' : ''}}"
+          hover-class="todo-chip-press"
+          bindtap="goJobs"
+          data-filter="packing"
+        >
+          <view class="todo-chip-head">
+            <view class="signal-light {{todoLamps.ship}}"></view>
+            <text class="todo-val">{{statsLoading ? '—' : jobPendingShip}}</text>
+          </view>
+          <text class="todo-lbl">待发货</text>
+        </view>
+        <view
+          class="todo-chip {{jobInProgress > 0 ? 'hot' : ''}}"
+          hover-class="todo-chip-press"
+          bindtap="goJobs"
+          data-filter="framing"
+        >
+          <view class="todo-chip-head">
+            <view class="signal-light {{todoLamps.framing}}"></view>
+            <text class="todo-val">{{statsLoading ? '—' : jobInProgress}}</text>
+          </view>
+          <text class="todo-lbl">装裱中</text>
+        </view>
+        <view
+          class="todo-chip {{depositTodo > 0 ? 'hot' : ''}}"
+          hover-class="todo-chip-press"
+          bindtap="goDeposit"
+        >
+          <view class="todo-chip-head">
+            <view class="signal-light {{todoLamps.deposit}}"></view>
+            <text class="todo-val">{{statsLoading ? '—' : depositTodo}}</text>
+          </view>
+          <text class="todo-lbl">定金待办</text>
+        </view>
+      </view>
+      <view class="todo-empty" wx:if="{{!statsLoading && todoTotal === 0}}">
+        <text>暂无待办。下拉可刷新。新工单、定金与上架审核会显示在这里。</text>
+      </view>
+      <view class="job-preview" wx:elif="{{depositPreview.length || jobPreview.length}}">
+        <view
+          class="job-preview-row"
+          wx:for="{{depositPreview}}"
+          wx:key="_id"
+          hover-class="job-preview-press"
+          bindtap="goDeposit"
+          data-pid="{{item.productId}}"
+        >
+          <view class="job-preview-main">
+            <text class="job-preview-title">{{item.title || '孤品定金'}}</text>
+            <text class="job-preview-meta">{{item.previewMeta}} · ¥{{item.depositAmount}}</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+        <view
+          class="job-preview-row"
+          wx:for="{{jobPreview}}"
+          wx:key="_id"
+          hover-class="job-preview-press"
+          bindtap="goJobs"
+          data-filter="{{item.productionStatus}}"
+        >
+          <view class="job-preview-main">
+            <text class="job-preview-title">{{item.specimenTitle || item.orderNo || '定制工单'}}</text>
+            <text class="job-preview-meta">{{item.orderNo}} · {{item.productionLabel}}</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="group" wx:if="{{canProducts || canWorks}}">
+      <view class="group-head">
+        <text class="group-en">WORKS</text>
+        <text class="group-cn">作品库</text>
+      </view>
+      <view
+        class="module-card"
+        wx:if="{{canProducts}}"
+        hover-class="module-card-press"
+        bindtap="goUpload"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/assets/icons/camera.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <text class="module-title">上传藏品</text>
+          <text class="module-desc">新建藏品并关联本人，提交后走上架审核</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+      <view
+        class="module-card"
+        wx:if="{{canConcept}}"
+        hover-class="module-card-press"
+        bindtap="goConcept"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/assets/icons/knowledge.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <text class="module-title">藏品概念生成</text>
+          <text class="module-desc">AI 新品 SKU 概念，与 Admin 爆品生成器同源，可带入上传</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+      <view
+        class="module-card"
+        wx:if="{{canWorks}}"
+        hover-class="module-card-press"
+        bindtap="goWorks"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/assets/icons/tab-collection.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <view class="module-title-row">
+            <view class="signal-light {{todoLamps.display}}"></view>
+            <text class="module-title">作品库</text>
+          </view>
+          <text class="module-desc">{{statsLoading ? '封面、状态与上下架' : ('共 ' + workTotal + ' 件 · 已上架 ' + workOnShelf)}}</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+      <view
+        class="module-card"
+        wx:if="{{canWorks}}"
+        hover-class="module-card-press"
+        bindtap="goJobs"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/assets/icons/gift.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <text class="module-title">制作工单</text>
+          <text class="module-desc">待制作、装裱与待发货，按状态推进</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+      <!-- 需求 14：伴宠工单入口（客户在宠物纪念定制页指定本人时出现在这里） -->
+      <view
+        class="module-card"
+        wx:if="{{canPetOrders}}"
+        hover-class="module-card-press"
+        bindtap="goPetOrders"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/assets/icons/gift.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <view class="module-title-row">
+            <view class="signal-light {{petOrderLamp}}"></view>
+            <text class="module-title">伴宠工单</text>
+          </view>
+          <text class="module-desc">{{statsLoading ? '客户指定你后的定向工单' : (petOrderTodo > 0 ? (petOrderTodo + ' 张待确认接单') : '暂无待确认工单')}}</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+    </view>
+
+    <view class="group" wx:if="{{canProfile || canPayslip || canAttendance}}">
+      <view class="group-head">
+        <text class="group-en">STUDIO</text>
+        <text class="group-cn">档案与薪酬</text>
+      </view>
+      <view
+        class="module-card"
+        wx:if="{{canProfile}}"
+        hover-class="module-card-press"
+        bindtap="goProfile"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/assets/icons/user.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <text class="module-title">个人档案</text>
+          <text class="module-desc">姓名、头像、工艺介绍与装裱参数</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+      <view
+        class="module-card"
+        wx:if="{{canAttendance}}"
+        hover-class="module-card-press"
+        bindtap="goAttendance"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/subpackages/manager/assets/icons/clock.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <text class="module-title">考勤与请假</text>
+          <text class="module-desc">打卡、申请请假，与店员共用考勤模块</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+      <view
+        class="module-card"
+        wx:if="{{canPayslip}}"
+        hover-class="module-card-press"
+        bindtap="goCommission"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/assets/icons/coin_gold.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <text class="module-title">销售提成</text>
+          <text class="module-desc">{{commissionLoaded ? ('净提成 ¥' + commissionNet + ' · 点此看明细') : '蝶翅画等创作类售出分成'}}</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+      <view
+        class="module-card"
+        wx:if="{{canPayslip}}"
+        hover-class="module-card-press"
+        bindtap="goPayslip"
+      >
+        <view class="module-icon icon-gold">
+          <image src="/assets/icons/coin_gold.png" mode="aspectFit" />
+        </view>
+        <view class="module-card-body">
+          <text class="module-title">工资条</text>
+          <text class="module-desc">查看本人月度应发、扣款与实发</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+    </view>
+
+    <view class="empty-hint" wx:if="{{!canProducts && !canProfile && !canWorks}}">
+      <text>当前账号未开通标本师能力，请联系超管在权限配置中开通。</text>
+    </view>
+  </block>
+</view>

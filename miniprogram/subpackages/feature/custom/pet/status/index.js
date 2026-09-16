@@ -152,7 +152,7 @@ Page({
 
   goSupport() {
     wx.navigateTo({
-      url: '/subpackages/feature/user/support/index?topic=pet_memorial',
+      url: '/subpackages/extra/user/support/index?topic=pet_memorial',
       fail: () => wx.showToast({ title: '客服页暂不可用', icon: 'none' })
     })
   },

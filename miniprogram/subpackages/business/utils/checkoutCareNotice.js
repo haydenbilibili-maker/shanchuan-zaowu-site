@@ -5,8 +5,17 @@
  */
 
 const CARE_NOTICE_TITLE = '启程前须知'
-/** 引导句：连接「落定前」与日后发货私信 */
-const CARE_NOTICE_INTRO = '落定前，先与你说清这几件小事——到柜时也会再信告你。'
+/**
+ * 引导句：连接「落定前」与日后发货私信。
+ *
+ * 需求 12 两处修正：
+ *   1. 「到柜时也会再信告**你**」→「再信告**知**」（原措辞寓意不佳）
+ *   2. 「落定前一段修正为不折行段落」—— 弹窗面板可用宽度约 622rpx、字号 24rpx，
+ *      原文案（含破折号与句末句号）必然折成两行；此处压缩到可单行容纳，
+ *      并与 `.notice-intro { white-space: nowrap }` 配套（见 confirm-order/index.wxss）。
+ *      ⚠️ 日后加长本文案必须同步复核该 nowrap，否则会溢出面板。
+ */
+const CARE_NOTICE_INTRO = '落定前，先说清这几件小事——到柜时再信告知'
 
 const CARE_SECTION_UNBOX_LABEL = '开箱与售后'
 const CARE_SECTION_CARE_LABEL = '入柜保养'

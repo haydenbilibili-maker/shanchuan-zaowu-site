@@ -75,11 +75,11 @@ Page({
 
     // 旧深链：1=流水 → 审批中心积分流水；3=审核 → 审批中心；2=规则 → 新 Tab 1
     if (Number.isFinite(tabRaw) && tabRaw === 1) {
-      wx.redirectTo({ url: '/subpackages/manager/approvals/index?hub=flow' });
+      wx.redirectTo({ url: '/subpackages/extra/approvals/index?hub=flow' });
       return;
     }
     if (Number.isFinite(tabRaw) && tabRaw === 3) {
-      wx.redirectTo({ url: '/subpackages/manager/approvals/index' });
+      wx.redirectTo({ url: '/subpackages/extra/approvals/index' });
       return;
     }
 

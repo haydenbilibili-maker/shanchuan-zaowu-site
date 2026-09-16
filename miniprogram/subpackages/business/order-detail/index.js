@@ -168,7 +168,7 @@ Page({
 
   onShow() {
     const order = this.data.order || {};
-    // 从自取凭证页返回：状态可能刚被馆长核销，主动拉一次最新订单
+    // 从自取凭证页返回：状态可能刚被专员核销，主动拉一次最新订单
     if (this._refreshOnShow) {
       this._refreshOnShow = false;
       if (this.data.orderId) this.loadOrderDetail(this.data.orderId);
@@ -1117,14 +1117,14 @@ Page({
     const order = this.data.order || {};
     if (!order._id) {
       wx.navigateTo({
-        url: '/subpackages/feature/user/support/index?topic=order',
+        url: '/subpackages/extra/user/support/index?topic=order',
         fail: () => wx.showToast({ title: '无法打开联系专员', icon: 'none' })
       });
       return;
     }
     const picked = pickProductFromOrder(order);
     const url =
-      '/subpackages/feature/user/support/index' +
+      '/subpackages/extra/user/support/index' +
       buildSupportQuery({
         topic: 'order',
         orderId: order._id,
@@ -1141,7 +1141,7 @@ Page({
 
   async _prepareGiftShareImage() {
     try {
-      const { renderGiftShareImage } = require('../../feature/gift/giftShareCard');
+      const { renderGiftShareImage } = require('../gift/giftShareCard');
       const order = this.data.order || {};
       const products = order.products || [];
       const p0 = products[0] || {};

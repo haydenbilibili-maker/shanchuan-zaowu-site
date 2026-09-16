@@ -83,7 +83,7 @@ const PURCHASE_STATUS_TEXT = {
   granted: '已赠分',
   partial_revoked: '部分撤销',
   revoked: '已撤销',
-  // 受众差异（有意保留）：员工端称审批人为「店长」，C 端用品牌称谓「馆长」
+  // 受众差异（有意保留）：员工端称审批人为「店长」，C 端统一称「专员」（2026-09-16 口径）
   pending_approval: '待店长审核',
   pending_claim: '待认领',
   rejected: '已驳回'

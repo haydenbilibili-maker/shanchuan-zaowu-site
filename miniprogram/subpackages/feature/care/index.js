@@ -130,7 +130,7 @@ Page({
 
   goToSupport() {
     wx.navigateTo({
-      url: '/subpackages/feature/user/support/index?topic=specimen_care',
+      url: '/subpackages/extra/user/support/index?topic=specimen_care',
       fail: () => wx.showToast({ title: '客服页暂不可用', icon: 'none' })
     })
   },

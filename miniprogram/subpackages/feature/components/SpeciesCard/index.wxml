@@ -54,7 +54,7 @@
       <text class="pt-title">重拍建议</text>
       <text class="pt-line">正对藏品主体，减少倾斜</text>
       <text class="pt-line">避开强反光，选择均匀柔光</text>
-      <text class="pt-line">可近距离补拍翅脉、纹理等细节</text>
+      <text class="pt-line">若需看清翅脉、纹理等细节，请让主体占满画面后重新拍摄</text>
     </view>
 
     <view class="section science" wx:if="{{aiContent.content}}">

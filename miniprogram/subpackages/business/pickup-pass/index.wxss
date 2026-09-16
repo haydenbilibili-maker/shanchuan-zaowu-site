@@ -91,6 +91,7 @@ view, text, canvas { box-sizing: border-box; }
 }
 /* 白底 + 内边距 = 二维码静区，柜台扫一次成功 */
 .pass-qr-frame {
+  position: relative;
   padding: 24rpx;
   border-radius: var(--radius-md);
   background: var(--brass-50);
@@ -107,6 +108,29 @@ view, text, canvas { box-sizing: border-box; }
   font-size: 22rpx;
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
+}
+
+/* 已交付：二维码留在票面上但码面变灰 + 盖「已自提」水印，既联动告知也阻止二次出示 */
+.pass-qr-used .pass-qr {
+  opacity: 0.2;
+}
+.pass-qr-stamp {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  padding: 12rpx 34rpx;
+  border: 4rpx solid rgba(82, 183, 136, 0.85);
+  border-radius: 12rpx;
+  background: rgba(250, 247, 240, 0.72);
+  color: var(--color-success);
+  font-family: var(--font-brand);
+  font-size: 64rpx;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* 撕票线 */

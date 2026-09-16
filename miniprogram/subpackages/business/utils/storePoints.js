@@ -83,7 +83,7 @@ const PURCHASE_STATUS_TEXT = {
   granted: '已赠分',
   partial_revoked: '部分撤销',
   revoked: '已撤销',
-  pending_approval: '待馆长审核',
+  pending_approval: '待专员审核',
   pending_claim: '待认领',
   rejected: '已驳回'
 };

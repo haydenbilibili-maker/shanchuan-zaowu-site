@@ -200,7 +200,7 @@ Page({
   goSupport() {
     trackBehavior('framer_recruit_cta', 'channel', 'support')
     wx.navigateTo({
-      url: `/subpackages/feature/user/support/index?topic=${SUPPORT_TOPIC}&from=framer_recruit`,
+      url: `/subpackages/extra/user/support/index?topic=${SUPPORT_TOPIC}&from=framer_recruit`,
       fail: () => wx.showToast({ title: '无法打开联系专员', icon: 'none' })
     })
   },

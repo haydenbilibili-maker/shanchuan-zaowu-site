@@ -3,7 +3,7 @@
  * 会员码由 getMemberPass issue 生成，TTL 60 秒，格式为 JSON 或自定义 scheme URI
  */
 
-const FIELD_PATH = '/subpackages/manager/staff/field/index';
+const FIELD_PATH = '/subpackages/extra/staff/field/index';
 const PENDING_TTL_MS = 60 * 1000;
 
 /** 工作台直扫后交给 field 处理的挂起结果（二维码原文可能含 JSON/特殊字符，不宜塞 URL） */
@@ -56,6 +56,15 @@ function formatCloudFnError(e, fallback) {
     if (code === 'FORBIDDEN') return e.msg || '无操作权限';
     if (code === 'ADMIN_UNCONFIGURED') return e.msg || '管理员尚未配置';
     if (code === 'NOT_LOGGED_IN') return '请先登录';
+    // 云函数**版本落后于客户端**：新增的 action 在线上那份里还不存在。
+    // 这是最隐蔽的一种"变哑巴"——云函数没坏、客户端也没坏，只是两边不是同一版。
+    // 实例：点「AI 生成一批心愿」报 "未知 action: staffSeedAi"（线上是旧构建）。
+    // 排查/修复：node scripts/check-cloud-functions-sync.cjs <函数名>
+    //            bash miniprogram/scripts/deploy-drifted.sh <函数名>
+    if (/未知 action/.test(String(e.msg || ''))) {
+      console.error('[cloud-fn] 线上云函数缺少该 action（版本过旧）：', e.msg);
+      return '云函数版本过旧，请重新部署';
+    }
     if (e.msg) return String(e.msg).slice(0, 64);
   }
   const msg = (e && (e.errMsg || e.message)) || '';

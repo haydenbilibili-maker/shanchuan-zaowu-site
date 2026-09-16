@@ -623,6 +623,10 @@ view, text, scroll-view { box-sizing: border-box; }
   line-height: 1.55;
   margin-bottom: 28rpx;
   text-align: left;
+  /* 需求 12：引导句要求「不折行」——与 checkoutCareNotice.js 的文案长度配套。
+     面板可用宽度约 622rpx，当前文案 18 字 × 24rpx ≈ 432rpx，留有余量。
+     ⚠️ 若日后加长文案，必须同步复核这里，否则会溢出面板。 */
+  white-space: nowrap;
 }
 .specimen-body {
   display: block;

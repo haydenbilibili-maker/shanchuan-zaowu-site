@@ -55,7 +55,7 @@ function buildPickupPass(order) {
 
   let statusLabel = '备妥中';
   let statusTone = 'wait';
-  let headline = '馆长正在备妥';
+  let headline = '专员正在备妥';
   let hint = '备好后此凭证会转为可领取，届时到店出示即可。';
   if (claimed) {
     statusLabel = '已交付';
@@ -66,7 +66,7 @@ function buildPickupPass(order) {
     statusLabel = '可领取';
     statusTone = 'ready';
     headline = '已备妥，请到店领取';
-    hint = '到店出示此凭证，由馆长扫码核销后交付。';
+    hint = '到店出示此凭证，由专员扫码核销后交付。';
   } else if (CLOSED_PICKUP_STATUSES.has(o.status)) {
     // 终态/退款中：订单已不可交付，继续出示二维码只会让顾客白跑一趟
     statusLabel = CLOSED_LABELS[o.status] || '已关闭';

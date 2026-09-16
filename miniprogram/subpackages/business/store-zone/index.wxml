@@ -61,7 +61,14 @@
           bindtap="goProduct"
           data-id="{{item._id}}"
         >
-          <image class="product-img" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+          <!-- 需求 11：敏感形态模糊 -->
+          <sensitive-blur-gate
+            enabled="{{item.sensitiveEnabled}}"
+            product-id="{{item._id}}"
+            size="card"
+          >
+            <image class="product-img" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+          </sensitive-blur-gate>
           <view class="product-body">
             <text class="product-title text-cut">{{item.title}}</text>
             <text class="product-latin text-cut" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>

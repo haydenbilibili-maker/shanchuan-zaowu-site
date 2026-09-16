@@ -1,0 +1,211 @@
+<!--subpackages/feature/wish-wall/index.wxml
+  需求 28：马上有 · 弹幕祈福墙
+  ⚠️ 类名一律 ww- 前缀：本页曾把点灯卡片命名为 .lamp，与 app.wxss 的全局信号灯基类
+  .lamp（12rpx 圆点、flex-shrink:0）撞车 —— 卡片被压成 6px 宽竖条，文案一字一行被裁切。
+  页面类名不得与全局撞车，已由 npm run test:wish-wall 的全仓守卫钉住。 -->
+<view class="ww-page">
+  <view class="ww-grain" aria-hidden="true"></view>
+
+  <!-- 牌匾式纸质页头：浅纸 + 铜字，与礼赠页的标本纸页头同一语言 -->
+  <view class="ww-hero">
+    <view class="ww-fiber" aria-hidden="true"></view>
+    <view class="ww-emboss" aria-hidden="true"></view>
+    <view class="ww-wm" aria-hidden="true"></view>
+    <view class="ww-hero-body">
+      <view class="ww-hero-top">
+        <text class="ww-over">WISH WALL · 马上有愿</text>
+        <!-- 灯的状态直接写进页头：今日已点 = 铜灯亮，未点 = 空心 -->
+        <view class="signal-light {{lamp.lit ? 'lamp-brass on' : 'lamp-muted hollow'}}"></view>
+        <view class="ww-seal" aria-hidden="true"><view class="ww-seal-inner"></view></view>
+      </view>
+      <text class="ww-brand">山海造物</text>
+      <!-- 主标题固定「祈福墙」：入口传进来的 title 本身就是「马上有」，
+           写「{{productTitle}} · 祈福墙」会变成「马上有 · 祈福墙」重复两遍 -->
+      <text class="ww-title">祈福墙</text>
+      <text class="ww-scope" wx:if="{{productTitle}}">{{productTitle}}</text>
+      <text class="ww-hint">把想成真的心愿挂上墙。轻一点写，短一点说。</text>
+    </view>
+  </view>
+
+  <!-- 未开放：不发任何请求，只给一句解释 -->
+  <view class="ww-closed" wx:if="{{flagChecked && !allowed}}">
+    <view class="ww-closed-lamp" aria-hidden="true">
+      <view class="signal-light lamp-muted hollow"></view>
+    </view>
+    <text class="ww-closed-title">祈福墙暂未开放</text>
+    <text class="ww-closed-desc">馆方正在准备这块墙面，稍后再来看看。</text>
+  </view>
+
+  <block wx:else>
+    <!-- 灯龛：零门槛的入场动作。点完亮出当天那一句，同一天复现同一句。
+         光晕是灯座盒子的子元素（不再用行内绝对定位），文案列 flex:1 —— 布局不会被压塌 -->
+    <view
+      class="ww-lantern {{lamp.lit ? 'is-lit' : ''}}"
+      bindtap="onLampTap"
+      hover-class="ww-lantern-press"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="{{lamp.lit ? '今日灯已点' : '点一盏灯'}}"
+    >
+      <view class="ww-lantern-box" aria-hidden="true">
+        <view class="ww-lantern-halo"></view>
+        <view class="ww-lantern-core"></view>
+      </view>
+      <view class="ww-lantern-copy">
+        <text class="ww-lantern-title">{{lamp.lit ? '今日灯已点' : '点一盏灯'}}</text>
+        <text class="ww-lantern-line" wx:if="{{lamp.lit}}">{{lamp.line}}</text>
+        <text class="ww-lantern-line is-idle" wx:else>点一下，替今天留个记号</text>
+      </view>
+      <view class="ww-streak" wx:if="{{lamp.streak > 1}}">
+        <text class="ww-streak-n">{{lamp.streak}}</text>
+        <text class="ww-streak-l">天</text>
+      </view>
+    </view>
+
+    <!-- 墙面：浅纸墙 + 轨道化弹幕。同轨严格不重叠（排期见 utils/wishWall.buildDanmakuRows） -->
+    <view class="ww-wall">
+      <view class="ww-wall-fiber" aria-hidden="true"></view>
+      <view class="ww-wall-inner">
+        <!-- 刻度必须和内层同坐标系：挂在整面墙上会因底部页脚高度而逐轨错开 -->
+        <view class="ww-wall-rail rail-1" aria-hidden="true"></view>
+        <view class="ww-wall-rail rail-2" aria-hidden="true"></view>
+        <view class="ww-wall-rail rail-3" aria-hidden="true"></view>
+        <view class="ww-wall-rail rail-4" aria-hidden="true"></view>
+        <!-- 加载中：四条轨道各出一条浅纸微光条（全站约定是骨架，不是一行字） -->
+        <block wx:if="{{loading}}">
+          <view class="ww-wall-skel skel-1" aria-hidden="true"></view>
+          <view class="ww-wall-skel skel-2" aria-hidden="true"></view>
+          <view class="ww-wall-skel skel-3" aria-hidden="true"></view>
+          <view class="ww-wall-skel skel-4" aria-hidden="true"></view>
+        </block>
+        <block wx:else>
+          <view
+            class="ww-danmaku"
+            wx:for="{{rows}}"
+            wx:key="key"
+            style="top:{{item.topPercent}}%; animation-duration:{{item.durationMs}}ms; animation-delay:{{item.delayMs}}ms;"
+          >{{item.text}}</view>
+          <!-- ⚠️ 失败时不得说「墙面还是空的」——那是把加载失败谎报成没人许愿 -->
+          <view class="ww-wall-empty" wx:if="{{!rows.length}}">
+            <view class="ww-wall-empty-mark" aria-hidden="true"></view>
+            <text class="ww-wall-empty-title">{{loadError ? '墙面未展开' : '墙面还是空的'}}</text>
+            <text class="ww-wall-empty-desc">{{loadError ? '网络或权限异常，可在下方重试' : '做第一个许愿的人'}}</text>
+          </view>
+        </block>
+      </view>
+      <view class="ww-wall-foot" wx:if="{{rows.length}}">
+        <view class="signal-light lamp-brass"></view>
+        <text class="ww-wall-foot-text">{{items.length}} 条心愿正在墙上流动</text>
+      </view>
+      <view class="ww-wall-foot is-loading" wx:elif="{{loading}}">
+        <view class="signal-light lamp-muted"></view>
+        <text class="ww-wall-foot-text">正在展开墙面…</text>
+      </view>
+    </view>
+
+    <!-- 写愿签 -->
+    <view class="ww-write">
+      <view class="ww-inspo" wx:if="{{inspiration.length}}">
+        <text class="ww-inspo-label">灵感</text>
+        <view class="ww-inspo-row">
+          <view
+            class="ww-inspo-chip"
+            wx:for="{{inspiration}}"
+            wx:key="*this"
+            bindtap="useInspiration"
+            data-text="{{item}}"
+            hover-class="ww-inspo-press"
+            hover-stay-time="70"
+          >{{item}}</view>
+        </view>
+      </view>
+
+      <view class="ww-composer">
+        <input
+          class="ww-input"
+          value="{{draft}}"
+          maxlength="{{textMax}}"
+          confirm-type="send"
+          placeholder="例如：马上有闲，马上有缘"
+          placeholder-class="ww-input-ph"
+          bindinput="onDraftInput"
+          bindconfirm="submitWish"
+        />
+        <view
+          class="ww-send {{posting || !draft ? 'is-off' : ''}}"
+          bindtap="submitWish"
+          hover-class="ww-send-press"
+          hover-stay-time="80"
+        >{{posting ? '挂上…' : '挂上墙'}}</view>
+      </view>
+      <view class="ww-write-foot">
+        <text class="ww-count">{{draft.length}}/{{textMax}}</text>
+      </view>
+
+      <view class="ww-notice" wx:if="{{myHidden > 0}}">
+        <view class="signal-light lamp-warn"></view>
+        <text class="ww-notice-text">你有 {{myHidden}} 条心愿被馆方暂时收起，未公开展示。</text>
+      </view>
+    </view>
+
+    <!-- 愿签列表：弹幕看得快，愿签看得清，也便于复制与无障碍阅读 -->
+    <view class="ww-head">
+      <text class="ww-head-label">墙上的愿签</text>
+      <text class="ww-head-n">{{items.length}} 条</text>
+      <view class="ww-head-rule" aria-hidden="true"></view>
+    </view>
+    <view class="ww-tags">
+      <!-- 加载中：愿签骨架（与站点同款铜色微光） -->
+      <!-- ⚠️ wx:if 必须放在外层 block 上，**不能与 wx:for 同标签**：
+           `wx:for` 与 `wx:if` 写在同一元素上时，编译器不会把它当成
+           `wx:elif`/`wx:else` 链的起点，下面的 `wx:elif="{{loadError}}"` 会直接报
+           「Bad attr `wx:elif` … `wx:if not found`」——这是 **WXML 编译错误**，
+           会让**整个 feature 分包**编译失败，表现为该分包所有页面
+           `navigateTo:fail timeout`（2026-09-17 实测定位）。 -->
+      <block wx:if="{{loading}}">
+      <view class="ww-tag-skel" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+        <view class="ww-tag-skel-pin" aria-hidden="true"></view>
+        <view class="ww-tag-skel-avatar wallet-skel"></view>
+        <view class="ww-tag-skel-main">
+          <view class="ww-tag-skel-line is-w1 wallet-skel"></view>
+          <view class="ww-tag-skel-line is-w2 wallet-skel"></view>
+        </view>
+      </view>
+      </block>
+      <!-- ⚠️ 失败必须给重试入口，且不得与「还没有人许愿」同时出现 -->
+      <view class="ww-error" wx:elif="{{loadError}}">
+        <view class="signal-light lamp-warn"></view>
+        <text class="ww-error-text">{{loadError}}</text>
+        <view class="ww-error-retry" wx:if="{{allowed}}" bindtap="refresh" hover-class="ww-error-retry-press" hover-stay-time="80">再试一次</view>
+      </view>
+      <block wx:else>
+      <!-- 两列瀑布：30 条全宽卡片会拉出一条看不到头的列表；
+           拆两列后滚动长度减半，也更像"一面贴满愿签的墙" -->
+      <view class="ww-tag-cols">
+        <view class="ww-tag-col" wx:for="{{tagColumns}}" wx:for-item="col" wx:for-index="ci" wx:key="ci">
+          <view class="ww-tag" wx:for="{{col}}" wx:for-item="item" wx:key="_id">
+            <view class="ww-tag-pin" aria-hidden="true"></view>
+            <text class="ww-tag-seal is-official" wx:if="{{item.official}}">馆方</text>
+            <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>
+            <text class="ww-tag-text">{{item.text}}</text>
+            <view class="ww-tag-foot">
+              <image wx:if="{{item.avatar}}" class="ww-tag-avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load></image>
+              <text class="ww-tag-meta">{{item.nickname}} · {{item.timeText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="ww-tags-empty" wx:if="{{!items.length}}">还没有人许愿</view>
+      <!-- 明确收尾：服务端一面墙只回 30 条，到底了要如实说 -->
+      <view class="ww-end" wx:if="{{items.length}}">
+        <view class="ww-end-rule" aria-hidden="true"></view>
+        <text class="ww-end-text">{{tagCapped ? '已到墙底 · 仅展示最近 ' + items.length + ' 条' : '已到墙底 · 共 ' + items.length + ' 条'}}</text>
+        <view class="ww-end-rule" aria-hidden="true"></view>
+      </view>
+      </block>
+    </view>
+  </block>
+
+  <!-- 彩蛋浮层：进页（吉量）/ 落愿（驳）彩蛋由注册表驱动，页面只提供这个挂点 -->
+  <easter-egg-note id="easterEggNote" />
+</view>

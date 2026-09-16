@@ -1,0 +1,51 @@
+<view class="workbench-state loading" wx:if="{{!ready}}">加载中…</view>
+
+<view class="page" wx:if="{{ready}}">
+  <view class="header">
+    <view class="brand-group">
+      <text class="en">PET MEMORIAL</text>
+      <text class="cn">伴宠工单</text>
+    </view>
+    <text class="header-note">客户在宠物纪念定制页指定你为标本师时，工单会出现在这里，并通过微信服务通知提醒。报价与状态流转由店长 / 超管工作台完成。</text>
+  </view>
+
+  <view class="summary-card">
+    <text class="summary-label">待确认接单</text>
+    <view class="summary-value">{{pendingCount}}</view>
+    <view class="summary-sub">共 {{list.length}} 张指派给我的工单</view>
+  </view>
+
+  <view class="section-title">工单</view>
+  <view class="empty" wx:if="{{loading}}">同步中…</view>
+  <view class="empty" wx:if="{{!loading && !list.length}}">暂无指派给你的伴宠工单</view>
+
+  <view class="pet-card" wx:for="{{list}}" wx:key="_id">
+    <view class="pet-top">
+      <text class="pet-no" bindtap="copyOrder" data-no="{{item.orderNo}}">{{item.orderNo}}</text>
+      <text class="pet-status {{item.accepted ? '' : 'is-todo'}}">{{item.accepted ? item.statusLabel : '待确认接单'}}</text>
+    </view>
+
+    <view class="pet-title">{{item.petTitle || '伴宠'}}</view>
+    <view class="pet-meta">工艺：{{item.craftName || '待沟通'}}</view>
+    <view class="pet-meta" wx:if="{{item.intakeText}}">交接：{{item.intakeText}}</view>
+    <view class="pet-meta" wx:if="{{item.contactText}}">客户：{{item.contactText}}</view>
+    <view class="pet-meta" wx:if="{{item.quoteText}}">已报价：{{item.quoteText}}</view>
+    <view class="pet-meta" wx:if="{{item.accepted}}">接单时间：{{item.acceptedAt}}</view>
+
+    <view class="pet-actions">
+      <view
+        class="btn-ghost"
+        wx:if="{{item.contactPhone}}"
+        bindtap="callCustomer"
+        data-phone="{{item.contactPhone}}"
+      >拨打电话</view>
+      <view
+        class="btn-primary"
+        wx:if="{{!item.accepted}}"
+        bindtap="acceptAssignment"
+        data-id="{{item._id}}"
+      >确认接单</view>
+      <text class="pet-done" wx:else>已接单</text>
+    </view>
+  </view>
+</view>

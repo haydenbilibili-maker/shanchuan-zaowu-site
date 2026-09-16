@@ -127,14 +127,6 @@
       {
         "type": "folder",
         "value": "/minitest"
-      },
-      {
-        "value": "assets/qrcode/identify-store-qr",
-        "type": "prefix"
-      },
-      {
-        "value": "assets/qrcode/register-counter-qr",
-        "type": "prefix"
       }
     ],
     "include": []

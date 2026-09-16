@@ -605,7 +605,7 @@ Page({
   },
 
   goToSupport() {
-    wx.navigateTo({ url: '/subpackages/feature/user/support/index?topic=custom' })
+    wx.navigateTo({ url: '/subpackages/extra/user/support/index?topic=custom' })
   },
 
   goARPreview(e) {

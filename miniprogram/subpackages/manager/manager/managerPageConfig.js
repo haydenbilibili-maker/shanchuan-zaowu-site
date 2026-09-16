@@ -9,6 +9,9 @@ const { buildCategoryDoc } = require('../utils/categoryDefaults');
 const { loadCategoryPickerTree, buildCategoryManageTree, resolveCanonicalRootName, fetchProductCountsByCategoryId } = require('../../../utils/categoryTree');
 const { parseTrackingFromScan, normalizeTrackingInput } = require('../utils/shipHelper');
 const { guardManagerPage } = require('../../../utils/managerAuth');
+// 工作通知声音（#29）：语料清单 + 播放引擎；只播「相比上次新增」的待办
+const workNoticeCatalog = require('../../../utils/workNoticeCatalog');
+const workNoticeVoice = require('../../../utils/workNoticeVoice');
 const { leaveWorkbench: leaveWorkspace, fallbackLeaveWorkbench } = require('../utils/workspaceBack');
 const { resolveDepositDisplay, isDepositOrder } = require('../utils/depositOrderDisplay');
 const {
@@ -93,14 +96,14 @@ const {
 const { toChineseTaxonomy } = require('../utils/taxonomyZh');
 const { sanitizeProductTags } = require('../utils/productTags');
 const { PREFILL_KEY } = require('../utils/productConcept');
-const { suggestSensitiveBlurOnForm } = require('../../../utils/sensitiveMorphology');
+const { suggestSensitiveBlurOnForm } = require('../utils/sensitiveMorphology');
 const {
   GIFT_SCENES,
   sanitizeGiftScenes,
   readGiftScenes
 } = require('../utils/giftScenes');
 const { SCHEME_PRESETS, buildBannerLinkForSave, validateSchemePath } = require('../../../utils/bannerNav');
-const { requestStaffOrderSubscribe } = require('../../../utils/staffOrderSubscribe');
+const { requestStaffOrderSubscribe, requestStaffAllSubscribe } = require('../../../utils/staffOrderSubscribe');
 const {
   getSkuSizeFields,
   normalizeSkuSizeForSave,
@@ -1100,6 +1103,8 @@ const managerPageConfig = {
     invoicePendingCount: 0,
     /** 新订单未读角标（staff_order_paid） */
     newOrderUnreadCount: 0,
+    /** 新订单未读消息 id（工作通知声音用它做「读了1条又来1条」的精确判断） */
+    newOrderUnreadIds: [],
     /** 心愿补货未读（wishlist_restock_request，信息流用） */
     wishlistUnreadCount: 0,
     /** 菜单可见性（按三级角色裁剪，不删代码） */
@@ -1387,6 +1392,9 @@ const managerPageConfig = {
     // 内容展示开关（curTab 16）
     contentFlagsLoading: false,
     contentFlagsSaving: false,
+    // 有未保存的改动：开关是「先改本地、点保存才写云端」的，
+    // 没有这个提示时，超管拨完开关就会以为已经生效（实测踩过：C 端一直没变化）
+    contentFlagsDirty: false,
     contentFlagsDocId: '',
     contentFlagsFromDefault: true,
     contentFlags: {
@@ -1400,7 +1408,17 @@ const managerPageConfig = {
       showAiIdentify: true,
       showStore: true,
       showStorePickup: true,
-      showGift: false
+      showGift: false,
+      // 需求 28：马上有祈福弹幕（缺配置默认关）
+      showMaShangYou: false,
+      // 以下四项本面板**没有渲染开关**（编辑入口在 ERP 内容开关页），但必须随状态一起携带：
+      // 云函数 saveFlags 是按固定字段表整体写入的，本端不带上它们 = 保存时把它们重置为默认值，
+      // 于是「ERP 关掉的图鉴/成就/缩略图/iOS 储值」会被这里一次保存静默打开（跨端互抹）。
+      // 带上是"原值回传"，面板不改它们，保存后仍等于原值。守卫有「字段必须齐」的结构断言。
+      allowIosStoredValue: true,
+      imageThumbEnabled: true,
+      showAtlas: true,
+      showAchievements: true
     },
 
     analyticsDays: 7,
@@ -2267,7 +2285,7 @@ const managerPageConfig = {
       return;
     }
     wx.navigateTo({
-      url: '/subpackages/manager/live/studio/index',
+      url: '/subpackages/extra/live/studio/index',
       fail: () => wx.showToast({ title: '主播工作台暂不可用', icon: 'none' })
     });
   },
@@ -2278,7 +2296,7 @@ const managerPageConfig = {
       return;
     }
     wx.navigateTo({
-      url: '/subpackages/manager/live/broadcast/index',
+      url: '/subpackages/extra/live/broadcast/index',
       fail: () => wx.showToast({ title: '开播页暂不可用', icon: 'none' })
     });
   },
@@ -2436,7 +2454,7 @@ const managerPageConfig = {
     const qs = [`tab=${encodeURIComponent(tab)}`];
     if (autoScan) qs.push('autoScan=1');
     wx.navigateTo({
-      url: `/subpackages/manager/staff/field/index?${qs.join('&')}`,
+      url: `/subpackages/extra/staff/field/index?${qs.join('&')}`,
       fail: () => goStaffConsole()
     });
   },
@@ -2520,6 +2538,8 @@ const managerPageConfig = {
     const run = Promise.all(jobs).finally(() => {
       if (this._hubBadgeInflight === run) this._hubBadgeInflight = null;
       this.refreshOpsSignals();
+      // 所有待办计数都到齐后才做声音判断：否则先到的单项会被当成「新增」误播（#29）
+      this.syncWorkNoticeVoice();
     });
     this._hubBadgeInflight = run;
     return run;
@@ -3109,6 +3129,32 @@ const managerPageConfig = {
   },
 
   /** 经营信号灯：履约 / 风险待办 / 环比 / 库存（只读展示，不改权限） */
+  /**
+   * 工作通知声音（#29）：把当前待办计数快照交给引擎，只播「相比上次新增」的类型。
+   *
+   * 为什么只在 `prefetchHubTodoBadges` 全部落地后调一次：
+   * 各 loader 各自 `refreshOpsSignals()`，若在那里判断声音，先到的单项（其余还是 0）
+   * 会在后续计数补齐时被误判成「新增」，每次进工作台都要响一遍。
+   *
+   * 首次进入只建立基线不出声（见 `utils/workNoticeVoice.js` 的设计要点 1）。
+   */
+  syncWorkNoticeVoice() {
+    try {
+      if (!this.data.workspaceReady) return { announced: [], reason: 'not-ready' }
+      const role = this.data.workspaceRole || ''
+      if (!role) return { announced: [], reason: 'no-role' }
+      const snapshot = workNoticeCatalog.buildSnapshot(this.data, role)
+      const res = workNoticeVoice.announce(snapshot, role)
+      if (res && res.announced && res.announced.length) {
+        this._lastVoiceAnnounced = res.announced
+      }
+      return res
+    } catch (e) {
+      console.warn('syncWorkNoticeVoice', e)
+      return { announced: [], reason: 'error' }
+    }
+  },
+
   refreshOpsSignals() {
     const momClass = (this.data.stats && this.data.stats.momClass) || 'flat';
     const stock = this.data.dashStock || {};
@@ -3271,7 +3317,7 @@ const managerPageConfig = {
 
   async loadNewOrderAlerts(options = {}) {
     if (!this.canReceiveNewOrderAlerts() || !(this.data.menu && this.data.menu.orders)) {
-      this.setData({ newOrderUnreadCount: 0 });
+      this.setData({ newOrderUnreadCount: 0, newOrderUnreadIds: [] });
       this.refreshOpsSignals();
       return;
     }
@@ -3295,7 +3341,10 @@ const managerPageConfig = {
       const messages = Array.isArray(result.messages) ? result.messages : [];
       const unread = messages.filter((m) => m && m.read !== true);
       const count = unread.length;
-      this.setData({ newOrderUnreadCount: count });
+      this.setData({
+        newOrderUnreadCount: count,
+        newOrderUnreadIds: unread.map((m) => String((m && (m._id || m.id)) || '')).filter(Boolean)
+      });
       this.refreshOpsSignals();
       if (options.showPopup && count > 0) {
         this.maybeShowNewOrderPopup(unread);
@@ -3422,10 +3471,22 @@ const managerPageConfig = {
     goManagerModule(idx, title);
   },
 
-  /** 工作台显式入口：开启/续订新订单微信服务通知 */
+  /**
+   * 工作台显式入口：开启/续订「订单 + 工单」微信服务通知（需求 16）。
+   * 用 requestStaffAllSubscribe 一次攒齐全部模板额度，避免为每个工单类别各弹一次授权。
+   */
   enableStaffOrderWxNotify() {
     wx.vibrateShort({ type: 'light' });
-    requestStaffOrderSubscribe({ showTip: true }).catch(() => null);
+    requestStaffAllSubscribe({ showTip: true }).catch(() => null);
+  },
+
+  /**
+   * 需求 16：进入「工作信息」时才补攒工单类额度。
+   * 刻意不放在 onShow / 异步回调里 —— 微信要求 requestSubscribeMessage 在用户点击同步栈内。
+   */
+  enableWorkOrderWxNotify() {
+    wx.vibrateShort({ type: 'light' });
+    requestStaffAllSubscribe({ showTip: true }).catch(() => null);
   },
 
   async loadWishlistAlerts() {
@@ -3505,6 +3566,9 @@ const managerPageConfig = {
         return;
       }
       wx.vibrateShort({ type: 'light' });
+      // 需求 16：进入工单的自然入口，就地在用户点击同步栈内攒工单类服务通知额度。
+      // 与订单类共用一次授权（requestStaffAllSubscribe），避免用户被多次弹窗。
+      requestStaffAllSubscribe().catch(() => null);
       goManagerModule(10, '工单');
       return;
     }
@@ -4464,12 +4528,42 @@ const managerPageConfig = {
     if (remain <= 0) return wx.showToast({ title: '最多 12 张轮播图', icon: 'none' });
     wx.chooseImage({
       count: remain,
-      success: (res) => {
-        const next = current.concat(res.tempFilePaths || []);
-        this.setData({
-          'tempProduct.images': next,
-          'tempProduct.tempImg': next[0] || ''
-        });
+      success: async (res) => {
+        const picked = res.tempFilePaths || [];
+        if (!picked.length) return;
+        // 需求 17：上传前做尺寸/体积核验（原实现把手机原图直接入队，4000px 级原图直传云存储）
+        wx.showLoading({ title: '校验中…', mask: true });
+        try {
+          const { prepareUploadImages } = require('../utils/imageUploadGuard');
+          const { accepted, rejected } = await prepareUploadImages(picked, { label: '藏品图' });
+          wx.hideLoading();
+          if (rejected.length) {
+            wx.showModal({
+              title: '部分图片未通过校验',
+              content: rejected
+                .slice(0, 3)
+                .map((r) => `· ${r.reason}`)
+                .join('\n') + (rejected.length > 3 ? `\n（共 ${rejected.length} 张未通过）` : ''),
+              showCancel: false,
+              confirmText: '知道了'
+            });
+          }
+          if (!accepted.length) return;
+          const next = current.concat(accepted);
+          this.setData({
+            'tempProduct.images': next,
+            'tempProduct.tempImg': next[0] || ''
+          });
+        } catch (e) {
+          wx.hideLoading();
+          console.warn('prepareUploadImages', e);
+          // 校验工具异常时降级放行，不阻塞上架
+          const next = current.concat(picked);
+          this.setData({
+            'tempProduct.images': next,
+            'tempProduct.tempImg': next[0] || ''
+          });
+        }
       }
     });
   },
@@ -5334,7 +5428,7 @@ const managerPageConfig = {
       wx.showToast({ title: '已保存', icon: 'success' });
       this.setData({ showProductModal: false });
       if (this.data.artisanEmbed) {
-        const worksUrl = '/subpackages/manager/artisan/works/index'
+        const worksUrl = '/subpackages/extra/artisan/works/index'
         const stack = typeof getCurrentPages === 'function' ? getCurrentPages() : []
         if (stack && stack.length > 1) {
           wx.navigateBack({
@@ -10099,6 +10193,7 @@ bindSubCatChange(e) {
       const flags = result.flags || {}
       this.setData({
         contentFlagsLoading: false,
+        contentFlagsDirty: false,
         contentFlagsDocId: result.docId || '',
         contentFlagsFromDefault: !!result.default,
         contentFlags: {
@@ -10112,7 +10207,14 @@ bindSubCatChange(e) {
           showAiIdentify: flags.showAiIdentify !== false,
           showStore: flags.showStore !== false,
           showStorePickup: flags.showStorePickup !== false,
-          showGift: flags.showGift === true
+          showGift: flags.showGift === true,
+          showMaShangYou: flags.showMaShangYou === true,
+          // 与 data 默认值同样必须齐全：这四项本面板不渲染开关，但保存时要原值回传，
+          // 否则云函数按固定字段表整体写入时会它们重置为默认（见 data 处的说明）
+          allowIosStoredValue: flags.allowIosStoredValue !== false,
+          imageThumbEnabled: flags.imageThumbEnabled !== false,
+          showAtlas: flags.showAtlas !== false,
+          showAchievements: flags.showAchievements !== false
         }
       })
     } catch (e) {
@@ -10125,7 +10227,21 @@ bindSubCatChange(e) {
   onContentFlagToggle(e) {
     const field = e.currentTarget.dataset.field
     if (!field) return
-    this.setData({ [`contentFlags.${field}`]: !!(e.detail && e.detail.value) })
+    // 只改本地：必须点「保存开关」才写云端。标脏以免用户以为已经生效
+    this.setData({ [`contentFlags.${field}`]: !!(e.detail && e.detail.value), contentFlagsDirty: true })
+  },
+
+  /**
+   * 需求 28：祈福墙内容管理入口。
+   * 弹幕不接审核 → 治理只能落在这里，故入口就放在内容开关同一面板内，
+   * 让「开关 + 治理」在一次操作动线里闭合。
+   */
+  goWishWallManage() {
+    wx.vibrateShort({ type: 'light' })
+    wx.navigateTo({
+      url: '/subpackages/manager/wish-wall/index',
+      fail: () => wx.showToast({ title: '页面暂不可用', icon: 'none' })
+    })
   },
 
   async saveContentDisplayFlags() {
@@ -10156,8 +10272,19 @@ bindSubCatChange(e) {
       this.setData({
         contentFlagsDocId: result.docId || this.data.contentFlagsDocId,
         contentFlagsFromDefault: false,
+        contentFlagsDirty: false,
         contentFlags: result.flags || this.data.contentFlags
       })
+      // 需求 28：开关改了，**本机的 C 端缓存必须立刻失效**。
+      // contentFlags 走 SWR（TTL 10 分钟 / 陈旧窗口 24 小时），且缓存是落 storage 的：
+      // 不失效的话，本机打开详情页最长 24 小时看不到变化
+      // （实测反馈「开关开了但马上有详情页没有入口」就是这么来的）。
+      // 这里只管本机；其它设备靠详情页/祈福墙页接住 SWR 的 onUpdate 收敛。
+      try {
+        require('../../../utils/contentDisplayFlags').invalidateContentDisplayFlags()
+      } catch (e) {
+        console.warn('invalidate content flags cache', e)
+      }
     } catch (e) {
       wx.hideLoading()
       this.setData({ contentFlagsSaving: false })

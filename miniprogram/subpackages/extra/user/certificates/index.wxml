@@ -1,0 +1,34 @@
+<!--subpackages/extra/user/certificates/index.wxml-->
+<view class="container">
+
+  <scroll-view scroll-y class="content" style="padding-top: {{headerBlockPx}}px">
+
+    <view class="header-text">
+      <text class="page-overline">证书收藏夹｜MY CERTIFICATES</text>
+      <text class="h1">荣誉档案</text>
+      <text class="h2">共收藏 {{certificates.length}} 件珍品</text>
+    </view>
+
+    <view class="cert-grid" wx:if="{{certificates.length}}">
+      <block wx:for="{{certificates}}" wx:key="_id">
+        <view class="cert-item stagger-item" style="animation-delay: {{index * 0.1}}s" hover-class="cert-item-press" bindtap="viewCert" data-id="{{item._id}}">
+          <view class="cert-frame">
+            <image src="{{item.displayImage}}" mode="aspectFill" class="c-img" binderror="onThumbError" data-index="{{index}}"></image>
+             <view class="c-overlay">
+               <text class="c-no">{{item.orderNo}}</text>
+             </view>
+             <view class="c-seal">CERTIFIED</view>
+          </view>
+          <text class="c-name">{{item.displayTitle}}</text>
+          <text class="c-date" wx:if="{{item.dateStr}}">{{item.dateStr}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="empty-state" wx:if="{{certificates.length === 0 && !loading}}">
+       <text>{{loadError ? '档案暂时无法读取' : '暂无收藏证书'}}</text>
+       <view class="btn-go" hover-class="btn-go-press" bindtap="onEmptyAction">{{loadError ? '重试' : '去探索'}}</view>
+    </view>
+
+  </scroll-view>
+</view>

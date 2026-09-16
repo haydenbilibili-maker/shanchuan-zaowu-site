@@ -67,7 +67,7 @@ module.exports.calcVip = calcVip;
       <swiper class="hero-swiper" indicator-dots="{{imageTotal > 1}}" indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#C4A76C" circular="true" bindchange="onSwiperChange">
         <block wx:for="{{product.images}}" wx:key="*this">
           <swiper-item>
-            <image src="{{item}}" mode="aspectFill" class="slide-image" bindtap="previewImage" data-current="{{item}}" lazy-load="{{index > 0}}"></image>
+            <image src="{{imgView[item] || item}}" mode="aspectFill" class="slide-image" bindtap="previewImage" data-current="{{item}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
           </swiper-item>
         </block>
       </swiper>
@@ -83,6 +83,21 @@ module.exports.calcVip = calcVip;
 
   <!-- 核心内容区 -->
   <view class="content-body">
+    <!-- 需求 28：马上有祈福墙入口 —— 头部主 SKU 商品图正下方。
+         原来埋在「藏品参数之后、图文详情之前」，等于没人看得到。
+         用 compact 一行版：三行卡片会把价格卡挤出首屏（本页 24rpx 侧边距由 content-body 提供）；
+         间距由**宿主自己的包裹 view**给，不用组件的 ext-class —— 同一元素上组件样式与宿主样式
+         撞 margin 时谁生效不保证（切片实测宿主会被组件样式吃掉）；ext-class 只留给"改皮肤"。
+         判定与跳转仍收在组件里，全站拓展 = 别处再放一行同名标签。 -->
+    <view class="wish-wall-slot">
+      <wish-wall-entry
+        enabled="{{wishWallEnabled}}"
+        product="{{product}}"
+        from="detail"
+        compact="{{true}}"
+      />
+    </view>
+
     <!-- 价格与标题 -->
     <view class="commerce-card {{isOneOfAKind ? 'commerce-card-unique' : ''}}" id="section-detail">
       <view class="price-block">
@@ -316,13 +331,14 @@ module.exports.calcVip = calcVip;
           <swiper-item wx:for="{{activeDetailImages}}" wx:key="*this">
             <image
               class="detail-spec-slide"
-              src="{{item}}"
+              src="{{imgView[item] || item}}"
               mode="aspectFill"
               lazy-load
               hover-class="detail-img-press"
               hover-stay-time="80"
               bindtap="previewDetailImage"
               data-current="{{item}}"
+              binderror="onImageDegrade"
             ></image>
           </swiper-item>
         </swiper>
@@ -340,13 +356,14 @@ module.exports.calcVip = calcVip;
               class="detail-shared-thumb"
               wx:for="{{sharedDetailImages}}"
               wx:key="*this"
-              src="{{item}}"
+              src="{{imgThumbView[item] || item}}"
               mode="aspectFill"
               lazy-load
               hover-class="detail-img-press"
               hover-stay-time="80"
               bindtap="previewSharedDetailImage"
               data-current="{{item}}"
+              binderror="onImageDegrade"
             ></image>
           </scroll-view>
         </view>
@@ -356,13 +373,14 @@ module.exports.calcVip = calcVip;
         <image
           wx:for="{{detailImages}}"
           wx:key="*this"
-          src="{{item}}"
+          src="{{imgView[item] || item}}"
           mode="widthFix"
           class="detail-img"
           hover-class="detail-img-press"
           hover-stay-time="80"
           bindtap="previewDetailImage"
           data-current="{{item}}"
+          binderror="onImageDegrade"
         ></image>
       </view>
     </view>
@@ -443,7 +461,7 @@ module.exports.calcVip = calcVip;
                 product-id="{{item._id}}"
                 size="thumb"
               >
-                <image src="{{item.images[0] || item.image || item.httpImage}}" mode="aspectFill" lazy-load></image>
+                <image src="{{imgThumbView[item.images[0] || item.image || item.httpImage] || item.images[0] || item.image || item.httpImage}}" mode="aspectFill" lazy-load binderror="onImageDegrade"></image>
               </sensitive-blur-gate>
               <protected-badge product="{{item}}" size="xs" corner="bl" />
             </view>

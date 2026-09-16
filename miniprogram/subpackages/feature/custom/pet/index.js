@@ -32,6 +32,10 @@ Page({
     submitting: false,
     serviceNoticePlates: SERVICE_NOTICE_PLATES,
     crafts: [],
+    // 需求 14：具备伴宠资质且可投递的标本师（getPetMemorialConfig 返回）
+    artisans: [],
+    artisanId: '',
+    artisanName: '',
     speciesOptions: SPECIES_OPTIONS,
     weightRanges: WEIGHT_RANGES,
     storageOptions: STORAGE_OPTIONS,
@@ -136,12 +140,30 @@ Page({
     }
     try {
       const res = await wx.cloud.callFunction({ name: 'getPetMemorialConfig' })
-      const crafts = (res.result && res.result.config && res.result.config.crafts) || []
-      applyCrafts(crafts)
+      const config = (res.result && res.result.config) || {}
+      applyCrafts(config.crafts || [])
+      // 需求 14：无可用标本师时保持空数组 —— 前端整块不渲染，且不阻塞提交
+      const artisans = Array.isArray(config.artisans) ? config.artisans : []
+      this.setData({ artisans })
     } catch (e) {
       console.warn('getPetMemorialConfig failed, use defaults:', e)
       applyCrafts(DEFAULT_CRAFTS)
     }
+  },
+
+  /**
+   * 需求 14：指定/取消标本师。再点一次取消（与标品定制 selectFramer 一致），
+   * 取消后回到「平台指派」。
+   */
+  selectArtisan(e) {
+    const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
+    if (!id) return
+    if (id === this.data.artisanId) {
+      this.setData({ artisanId: '', artisanName: '' })
+      return
+    }
+    const hit = (this.data.artisans || []).find((a) => a && a.id === id)
+    this.setData({ artisanId: id, artisanName: (hit && hit.name) || '' })
   },
 
   updateStepUi(step) {
@@ -173,9 +195,25 @@ Page({
     this.setData({ preferredDate: e.detail.value })
   },
 
+  /**
+   * 需求 13：未上线选项（comingSoon）被点击时的提示。
+   * UI 置灰只是视觉，必须同时拦截选择，否则等于没置灰。
+   */
+  onSoonOptionTap(e) {
+    const label = (e.currentTarget.dataset && e.currentTarget.dataset.label) || '该方式'
+    wx.showToast({ title: `${label}即将上线`, icon: 'none' })
+  },
+
   selectOption(e) {
     const field = e.currentTarget.dataset.field
     const value = e.currentTarget.dataset.value
+    // 需求 13：兜底拦截 —— 禁止选中未上线的交接方式（含旧客户端 / 直接构造 payload）
+    const optionList = field === 'intakeMethod' ? (this.data.intakeMethods || []) : []
+    const hit = optionList.find((o) => o && o.id === value)
+    if (hit && hit.comingSoon) {
+      wx.showToast({ title: `${hit.label}即将上线`, icon: 'none' })
+      return
+    }
     this.setData({ [field]: value })
     if (field === 'craftId') {
       const craft = this.data.crafts.find((c) => c.craftId === value)
@@ -264,6 +302,14 @@ Page({
       wx.showToast({ title: '请选择交接方式', icon: 'none' })
       return false
     }
+    // 需求 13：交接方式已选但仍指向未上线项（例如历史草稿/回填）时，拦在提交之前
+    if (step === 4) {
+      const chosen = (this.data.intakeMethods || []).find((o) => o && o.id === this.data.intakeMethod)
+      if (chosen && chosen.comingSoon) {
+        wx.showToast({ title: `${chosen.label}即将上线，请改选`, icon: 'none' })
+        return false
+      }
+    }
     if (step === 5) {
       if (!String(this.data.contactName || '').trim()) {
         wx.showToast({ title: '请填写联系人姓名', icon: 'none' })
@@ -336,7 +382,7 @@ Page({
 
   goToSupport() {
     wx.navigateTo({
-      url: '/subpackages/feature/user/support/index?topic=pet_memorial',
+      url: '/subpackages/extra/user/support/index?topic=pet_memorial',
       fail: () => wx.showToast({ title: '客服页暂不可用', icon: 'none' })
     })
   },

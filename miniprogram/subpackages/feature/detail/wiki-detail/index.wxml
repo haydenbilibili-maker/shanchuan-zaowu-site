@@ -90,7 +90,14 @@
 
     <block wx:for="{{displayProducts}}" wx:key="_relatedKey">
       <view class="product-card-mini" bindtap="goToProduct" data-id="{{item._id}}" data-skuid="{{item.relatedSkuId}}" hover-class="product-card-mini-press" hover-stay-time="80">
-        <image src="{{item.images[0] || item.image || item.httpImage}}" mode="aspectFill" class="p-thumb" lazy-load></image>
+        <!-- 需求 11：敏感形态模糊 -->
+        <sensitive-blur-gate
+          enabled="{{item.sensitiveEnabled}}"
+          product-id="{{item._id}}"
+          size="thumb"
+        >
+          <image src="{{item.images[0] || item.image || item.httpImage}}" mode="aspectFill" class="p-thumb" lazy-load></image>
+        </sensitive-blur-gate>
         <view class="p-info">
           <text class="p-name">{{item.title}}</text>
           <text class="p-sku" wx:if="{{item.relatedSkuLabel}}">{{item.relatedSkuLabel}}</text>

@@ -162,7 +162,9 @@ Page({
           cover,
           priceLabel: Number.isFinite(price) ? price.toFixed(2) : '—',
           matchSource: p.matchSource === 'fallback' ? 'fallback' : 'scene',
-          isProtected: isProtectedProduct(p)
+          isProtected: isProtectedProduct(p),
+          // 需求 11：白名单映射需显式带上敏感形态判定
+          sensitiveEnabled: require('../../../../utils/sensitiveBlurCard').sensitiveEnabledOf(p)
         }
       })
 

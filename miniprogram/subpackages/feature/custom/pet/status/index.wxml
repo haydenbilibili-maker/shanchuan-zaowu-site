@@ -21,7 +21,7 @@
       <text class="overline">PET MEMORIAL</text>
       <text class="order-no">工单号 {{order.orderNo}}</text>
       <text class="status-badge">{{statusLabel}}</text>
-      <text class="status-hint" wx:if="{{order.status === 'pending_review' || order.status === 'need_info'}}">专员将主动与您联系，请留意山海有信通知与电话。</text>
+      <text class="status-hint" wx:if="{{order.status === 'pending_review' || order.status === 'need_info'}}">意向已收到。标本师将通过电话或微信与您联络，请您注意接听或查看。</text>
       <text class="status-hint" wx:elif="{{order.status === 'quoted'}}">请确认下方报价；确认后我们将安排遗体交接。</text>
       <text class="status-hint" wx:elif="{{canBookIntake}}">请预约到店交接时间，标本师将当面确认。</text>
       <text class="status-hint" wx:elif="{{hasBooking}}">交接已预约：{{bookingText}}</text>

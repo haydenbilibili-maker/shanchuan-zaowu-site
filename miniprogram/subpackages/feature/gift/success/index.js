@@ -88,7 +88,7 @@ Page({
       let canShare = true
       if (deliveryType === 'invite_address') {
         heroTitle = '礼已备好，等你送出'
-        heroDesc = '正等 TA 启封并留下去处。把礼笺交出去——对方写下收件信息后，馆长再启程。'
+        heroDesc = '正等 TA 启封并留下去处。把礼笺交出去——对方写下收件信息后，专员再启程。'
         shareCta = '把这份心意交给 TA'
         if (gift.expireAt) {
           try {
@@ -109,7 +109,7 @@ Page({
       } else if (deliveryType === 'store_pickup') {
         heroOverline = 'STORE HOLD'
         heroTitle = '门店正在备妥'
-        heroDesc = '到店出示下方妥投码，由馆长核销后交予 TA。'
+        heroDesc = '到店出示下方妥投码，由专员核销后交予 TA。'
         shareCta = '把领取邀请交给 TA'
       }
 
@@ -145,7 +145,7 @@ Page({
         storeName: gift.storeName || '',
         claimHint: claimed
           ? '已到店领取'
-          : (gift.storeName ? `请到「${gift.storeName}」出示此码，妥投一件珍物` : '到店出示此码，由馆长扫码妥投')
+          : (gift.storeName ? `请到「${gift.storeName}」出示此码，妥投一件珍物` : '到店出示此码，由专员扫码妥投')
       }, () => {
         if (showPickupClaim && !claimed && this.data.claimQrPayload) {
           drawMemberQr('#giftClaimQr', this.data.claimQrPayload, this, 160).catch(() => {})

@@ -1,0 +1,270 @@
+<!--subpackages/extra/user/stored-value/index.wxml-->
+<view class="account-page page-stored-value">
+  <view class="grain-overlay"></view>
+
+  <view
+    class="account-nav"
+    style=" padding-right: {{navPaddingRight}}px;"
+  >
+    <view class="account-nav-row">
+      <view class="account-nav-brand">
+        <text class="account-nav-title">我的钱包</text>
+        <text class="account-nav-sub">WALLET</text>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view
+    scroll-y
+    class="account-scroll"
+    show-scrollbar="{{false}}"
+    scroll-into-view="{{scrollIntoView}}"
+    scroll-with-animation="{{true}}"
+    bindscrolltolower="onLoadMoreLedgers"
+    lower-threshold="160"
+    style="top: {{headerBlockPx}}px; height: {{scrollHeightPx}}px;"
+  >
+    <view id="sv-top" class="sv-anchor"></view>
+
+    <view class="sv-hub-wrap">
+      <wallet-hub-bar active="wallet" coupon-count="{{usableCouponCount}}"></wallet-hub-bar>
+    </view>
+
+    <block wx:if="{{needLogin}}">
+      <view class="account-section-card sv-guest-card">
+        <text class="account-section-label">本机已退出</text>
+        <text class="sv-guest-title">钱包余额与会员号不会在此展示</text>
+        <text class="sv-muted">重新进入后可查看可用余额、充值与账单流水。</text>
+        <view
+          class="account-btn-primary sv-pay-btn"
+          bindtap="goResumeLogin"
+          hover-class="sv-pay-press"
+        >重新进入</view>
+      </view>
+    </block>
+
+    <block wx:elif="{{allowed || checking}}">
+      <!-- 需求 8：支付权益从卡外独立区块移到**卡背面**（参考积分卡/预约卡的翻转交互）。
+           正面=余额（原皮质卡样式原样保留），背面=支付权益 + 积分规则。 -->
+      <view
+        class="wallet-flip {{cardFlipped ? 'flipped' : ''}}"
+        bindtap="toggleWalletCard"
+        hover-class="wallet-flip-press"
+        hover-stay-time="80"
+      >
+        <!-- 正面：皮质钱包余额卡 -->
+        <view class="wallet-leather-card sv-wallet-hero wallet-flip__face wallet-flip__front">
+          <view class="wallet-leather-card__inner">
+            <view class="wallet-leather-card__head">
+              <text class="wallet-leather-brand">山海造物</text>
+              <text class="wallet-leather-tag">WALLET</text>
+            </view>
+            <text class="wallet-leather-overline">可用余额</text>
+            <view class="wallet-leather-balance-row">
+              <block wx:if="{{accountReady}}">
+                <text class="wallet-leather-currency">¥</text>
+                <text class="wallet-leather-balance">{{account.availableYuan}}</text>
+              </block>
+              <view wx:else class="wallet-leather-balance-skel wallet-leather-skel"></view>
+            </view>
+            <view class="wallet-leather-meta">
+              <text class="wallet-leather-member" wx:if="{{account.memberNo}}">会员号 {{account.memberNo}}</text>
+              <view wx:else class="wallet-leather-member-skel wallet-leather-skel"></view>
+            </view>
+            <view class="wallet-leather-plate">
+              <text class="wallet-leather-plate-text">{{walletPlateFooter}}</text>
+            </view>
+          </view>
+          <text class="wallet-flip-hint">轻触查看支付权益</text>
+        </view>
+
+        <!-- 背面：支付权益 -->
+        <view class="wallet-flip__face wallet-flip__back">
+          <text class="wallet-back-overline">PAYMENT BENEFITS</text>
+          <text class="wallet-back-title">支付权益</text>
+          <block wx:if="{{benefitText}}">
+            <text class="wallet-back-benefit">{{benefitText}}</text>
+            <text class="wallet-back-sub">{{pointsRuleText}}</text>
+          </block>
+          <text class="wallet-back-empty" wx:else>权益说明加载中…</text>
+          <text class="wallet-flip-hint">轻触返回余额</text>
+        </view>
+      </view>
+    </block>
+
+    <block wx:if="{{allowed && !needLogin}}">
+      <view class="sv-flash" wx:if="{{flashSuccess}}">
+        <text class="sv-flash-text">{{flashSuccess}}</text>
+      </view>
+
+      <view class="account-section-card sv-recharge-card" wx:if="{{!iosBlocked}}">
+        <text class="account-section-label">充值</text>
+        <text class="sv-recharge-lead">{{walletRechargeLead}}</text>
+
+        <view class="sv-pkg-grid" wx:if="{{packages.length}}">
+          <view
+            class="sv-pkg-tile {{rechargeMode === 'package' && selectedPackageId === item.id ? 'is-on' : ''}}"
+            wx:for="{{packages}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="onSelectPackage"
+            hover-class="sv-pkg-press"
+            hover-stay-time="80"
+          >
+            <view class="sv-pkg-tile-top">
+              <text class="sv-pkg-level" wx:if="{{item.levelBadge}}">{{item.levelBadge}}</text>
+              <text class="sv-pkg-points" wx:if="{{item.pointsLine}}">{{item.pointsLine}}</text>
+            </view>
+            <view class="sv-pkg-amt-row">
+              <text class="sv-pkg-tile-yen">¥</text>
+              <text class="sv-pkg-tile-amt">{{item.displayPayYuan}}</text>
+            </view>
+            <text class="sv-pkg-tile-name" wx:if="{{item.levelName}}">{{item.levelName}}</text>
+            <text class="sv-pkg-tile-hint" wx:if="{{item.discountLine}}">{{item.discountLine}}</text>
+            <text class="sv-pkg-tile-hint" wx:else>到账同额</text>
+          </view>
+        </view>
+
+        <view class="sv-pkg-empty" wx:elif="{{!allowCustom}}">
+          <text class="sv-muted">暂无可用充值档位，请稍后再试或联系专员。</text>
+        </view>
+
+        <view class="sv-custom" wx:if="{{allowCustom}}">
+          <view
+            class="sv-custom-head {{rechargeMode === 'custom' ? 'is-on' : ''}}"
+            bindtap="onSelectCustom"
+            hover-class="sv-pkg-press"
+          >
+            <text class="sv-custom-label">自定义金额</text>
+            <text class="sv-custom-range">¥{{recharge.minCustomYuan}} – ¥{{recharge.maxCustomYuan}}</text>
+          </view>
+          <view class="sv-custom-input-wrap {{rechargeMode === 'custom' ? 'is-focus' : ''}}">
+            <text class="sv-custom-prefix">¥</text>
+            <input
+              class="sv-custom-input"
+              type="digit"
+              placeholder="输入金额"
+              value="{{customAmount}}"
+              bindinput="onCustomAmountInput"
+              bindfocus="onSelectCustom"
+              maxlength="8"
+            />
+          </view>
+          <text class="sv-custom-hint" wx:if="{{customHint}}">{{customHint}}</text>
+        </view>
+
+        <view class="sv-pay-summary" wx:if="{{paySummaryLabel}}">
+          <text class="sv-pay-summary-k">本次充值</text>
+          <text class="sv-pay-summary-v">{{paySummaryLabel}}</text>
+        </view>
+        <text class="sv-selected-hint" wx:if="{{selectedBenefitHint}}">{{selectedBenefitHint}}</text>
+
+        <view
+          class="account-btn-primary sv-pay-btn {{paying || !canPay ? 'is-disabled' : ''}}"
+          bindtap="onRechargeTap"
+          hover-class="sv-pay-press"
+        >{{paying ? '处理中…' : payBtnLabel}}</view>
+        <text class="sv-pay-hint">{{walletRechargeHint}}</text>
+      </view>
+
+      <!-- 充值受限态：由超管开关控制（默认不限制，见 content_display_flags.allowIosStoredValue） -->
+      <view class="account-section-card sv-ios-note" wx:if="{{iosBlocked}}">
+        <text class="account-section-label">充值</text>
+        <text class="sv-recharge-lead">当前设备暂不支持在线充值</text>
+        <text class="sv-muted">该端暂未开放购买储值余额；余额与账单流水仍可正常查看。如需充值可前往门店由店员协助。</text>
+      </view>
+
+      <view class="account-section-card sv-ledger-card">
+        <view class="sv-ledger-head">
+          <text class="account-section-label">账单流水</text>
+          <text class="sv-ledger-cap" wx:if="{{ledgerCap}}">{{ledgerCap}}</text>
+        </view>
+
+        <!-- 首屏：骨架。旧实现此时直接进「暂无流水」空态，会先闪一下再出流水 -->
+        <view class="sv-ledger-skel" wx:if="{{ledgerLoading}}">
+          <view class="sv-ledger-skel-row" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+            <view class="sv-ledger-skel-dot wallet-leather-skel"></view>
+            <view class="sv-ledger-skel-main">
+              <view class="sv-ledger-skel-line is-w1 wallet-leather-skel"></view>
+              <view class="sv-ledger-skel-line is-w2 wallet-leather-skel"></view>
+            </view>
+            <view class="sv-ledger-skel-amt wallet-leather-skel"></view>
+          </view>
+        </view>
+
+        <view wx:elif="{{ledgerEmpty}}" class="sv-empty">
+          <view class="sv-empty-mark"></view>
+          <text class="sv-empty-title">暂无流水</text>
+          <text class="sv-muted">完成充值或用钱包支付后，将在此展示充值、消费与回账记录。</text>
+        </view>
+
+        <!-- 时间轴：月带 + 日组（组内是当天全部已加载流水，按时间倒序） -->
+        <view class="sv-ledger-timeline" wx:else>
+          <block wx:for="{{ledgerTimeline}}" wx:key="key">
+            <view class="sv-ledger-month" wx:if="{{item.kind === 'month'}}">
+              <text class="sv-ledger-month-text">{{item.label}}</text>
+              <view class="sv-ledger-month-rule"></view>
+            </view>
+
+            <view class="sv-ledger-day" wx:else>
+              <view class="sv-ledger-day-head">
+                <text class="sv-ledger-day-label">{{item.label}}</text>
+                <text class="sv-ledger-day-week" wx:if="{{item.week}}">{{item.week}}</text>
+                <view class="sv-ledger-day-spacer"></view>
+                <text class="sv-ledger-day-net {{item.netTone}}" wx:if="{{item.netText}}">{{item.netText}}</text>
+                <!-- 分页未完的那一天：当日净额算不出来，宁可不给，也不谎报 -->
+                <text class="sv-ledger-day-net is-open" wx:elif="{{!item.complete}}">未完</text>
+              </view>
+
+              <view class="sv-ledger-rows">
+                <view
+                  class="sv-ledger-row {{row.tappable ? 'is-tappable' : ''}}"
+                  wx:for="{{item.rows}}"
+                  wx:for-item="row"
+                  wx:key="id"
+                  data-order-id="{{row.orderId}}"
+                  bindtap="onLedgerTap"
+                  hover-class="{{row.tappable ? 'sv-ledger-row-press' : 'none'}}"
+                  hover-stay-time="80"
+                >
+                  <view class="sv-ledger-rail" aria-hidden="true">
+                    <view class="sv-ledger-dot {{row.toneClass}}"></view>
+                    <view class="sv-ledger-line" wx:if="{{!row.isLast}}"></view>
+                  </view>
+                  <view class="sv-ledger-main">
+                    <view class="sv-ledger-top">
+                      <text class="sv-ledger-type">{{row.typeLabel}}</text>
+                      <text class="sv-ledger-clock">{{row.clockText}}</text>
+                    </view>
+                    <text class="sv-ledger-sub" wx:if="{{row.subtitle}}">{{row.subtitle}}</text>
+                  </view>
+                  <view class="sv-ledger-side">
+                    <text class="sv-ledger-amt {{row.isCredit ? 'is-plus' : 'is-minus'}}">{{row.amountSign}}¥{{row.amountYuan}}</text>
+                    <text class="sv-ledger-bal" wx:if="{{row.balanceAfterYuan}}">余 ¥{{row.balanceAfterYuan}}</text>
+                  </view>
+                  <view class="sv-ledger-chevron" wx:if="{{row.tappable}}" aria-hidden="true"></view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+
+        <view
+          class="sv-ledger-more"
+          wx:if="{{ledgerHasMore}}"
+          bindtap="onLoadMoreLedgers"
+          hover-class="sv-link-press"
+        >{{ledgerLoadingMore ? '加载中…' : '加载更多'}}</view>
+        <text class="sv-ledger-fin" wx:elif="{{!ledgerLoading && !ledgerEmpty}}">· 已到最早一笔 ·</text>
+      </view>
+
+      <view class="account-section-card sv-note">
+        <text class="account-section-label">安全提示</text>
+        <text class="sv-note-text">{{walletSecurityNote}}</text>
+        <view class="sv-link" hover-class="sv-link-press" bindtap="goSupport">联系专员 →</view>
+      </view>
+    </block>
+
+    <view class="account-scroll-pad"></view>
+  </scroll-view>
+</view>

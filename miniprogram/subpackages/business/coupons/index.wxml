@@ -1,56 +1,137 @@
-<!-- 我的券夹 · Museum Mode（归属钱包枢纽） -->
+<!-- 我的礼券夹 · Museum Mode（归属钱包枢纽） -->
+<!-- 券卡模板：可用券 / 占用中 / 失效券共用，避免三份标记漂移（需求 7） -->
+<template name="coupon-card">
+  <view class="coupon-card {{item.canUse ? '' : (item.voidLabel ? 'is-void' : 'is-locked')}} {{item.expiringSoon ? 'is-soon' : ''}}">
+    <view class="c-left">
+      <view class="val-box">
+        <text class="symbol" wx:if="{{!item.faceLabel}}">¥</text>
+        <text class="amount">{{item.faceLabel || item.value}}</text>
+      </view>
+      <!-- 无门槛券不显示「满 0 可用」 -->
+      <text class="condition">{{item.minSpend > 0 ? '满 ' + item.minSpend + ' 可用' : '无门槛'}}</text>
+    </view>
+    <view class="split-line" aria-hidden="true">
+      <view class="circle top"></view>
+      <view class="line"></view>
+      <view class="circle bottom"></view>
+      <!-- 需求 7：失效券的骑缝虚线换成打眼孔（7 个定孔，自适应卡高均分） -->
+      <view class="punch-line" wx:if="{{item.voidLabel}}">
+        <view class="punch-hole"></view>
+        <view class="punch-hole"></view>
+        <view class="punch-hole"></view>
+        <view class="punch-hole"></view>
+        <view class="punch-hole"></view>
+        <view class="punch-hole"></view>
+        <view class="punch-hole"></view>
+      </view>
+    </view>
+    <view class="c-right">
+      <view class="info">
+        <text class="c-name">{{item.title}}</text>
+        <!-- 第一行保持原样：渠道 + 有效期。临期标必须另起一行，否则会把日期挤到第二行 -->
+        <view class="c-meta-row">
+          <text class="c-tag {{item.channel}}" wx:if="{{item.channelLabel}}">{{item.channelLabel}}</text>
+          <text class="c-date">{{item.expireDate ? '至 ' + item.expireDate : ''}}</text>
+        </view>
+        <view class="c-sub-row" wx:if="{{item.sourceLabel || item.expiryHint}}">
+          <text class="c-hint" wx:if="{{item.expiryHint}}">{{item.expiryHint}}</text>
+          <text class="c-source" wx:if="{{item.sourceLabel}}">{{item.sourceLabel}}{{item.costPoints > 0 ? ' · ' + item.costPoints + ' 积分' : ''}}</text>
+        </view>
+      </view>
+      <view
+        class="c-status {{item.canUse ? 'clickable' : ''}}"
+        wx:if="{{item.canUse}}"
+        bindtap="useCoupon"
+        hover-class="c-status-press"
+        hover-stay-time="80"
+        data-id="{{item._id}}"
+        data-title="{{item.title}}"
+        data-value="{{item.value}}"
+        data-min="{{item.minSpend}}"
+        data-channel="{{item.channel}}"
+        data-can-online="{{item.canUseOnline}}"
+        data-can-store="{{item.canUseStore}}"
+      >{{item.useLabel || '去使用'}}</view>
+      <view class="c-status muted" wx:elif="{{item.status === 'locked'}}">占用中</view>
+    </view>
+    <!-- 需求 7：已核销 / 已过期 → 券面盖斜章（失效券不再出状态胶囊，避免与章重叠） -->
+    <view class="void-stamp {{item.voidKind}}" wx:if="{{item.voidLabel}}">{{item.voidLabel}}</view>
+    <view class="texture" aria-hidden="true"></view>
+  </view>
+</template>
+
 <view class="container">
   <wallet-hub-bar active="coupons" coupon-count="{{usableCouponCount}}"></wallet-hub-bar>
 
   <view class="header">
     <text class="title">MY VOUCHERS</text>
-    <text class="sub">我的礼券夹 · {{coupons.length}}</text>
+    <text class="sub">我的礼券夹 · 可用 {{usableCouponCount}}{{closedCount ? ' · 已失效 ' + closedCount : ''}}</text>
+    <text class="sub-warn" wx:if="{{expiringCount}}">{{expiringCount}} 张礼券 {{expiringDays}} 天内到期，请尽快使用</text>
   </view>
 
-  <view class="coupon-list" wx:if="{{coupons.length}}">
+  <!-- 可用券：平铺 -->
+  <view class="coupon-list" wx:if="{{usableCouponCount}}">
     <block wx:for="{{coupons}}" wx:key="_id">
-      <view class="coupon-card {{item.canUse ? '' : 'disabled'}}">
-        <view class="c-left">
-          <view class="val-box">
-            <text class="symbol" wx:if="{{!item.faceLabel}}">¥</text>
-            <text class="amount">{{item.faceLabel || item.value}}</text>
-          </view>
-          <!-- 无门槛券不显示「满 0 可用」 -->
-          <text class="condition">{{item.minSpend > 0 ? '满 ' + item.minSpend + ' 可用' : '无门槛'}}</text>
-        </view>
-        <view class="split-line" aria-hidden="true">
-          <view class="circle top"></view>
-          <view class="line"></view>
-          <view class="circle bottom"></view>
-        </view>
-        <view class="c-right">
-          <view class="info">
-            <text class="c-name">{{item.title}}</text>
-            <view class="c-meta-row">
-              <text class="c-tag {{item.channel}}" wx:if="{{item.channelLabel}}">{{item.channelLabel}}</text>
-              <text class="c-date">{{item.expireDate ? '至 ' + item.expireDate : ''}}</text>
-            </view>
-            <text class="c-source" wx:if="{{item.sourceLabel}}">{{item.sourceLabel}}{{item.costPoints > 0 ? ' · ' + item.costPoints + ' 积分' : ''}}</text>
-          </view>
-          <view
-            class="c-status {{item.canUse ? 'clickable' : ''}}"
-            wx:if="{{item.canUse}}"
-            bindtap="useCoupon"
-            data-id="{{item._id}}"
-            data-title="{{item.title}}"
-            data-value="{{item.value}}"
-            data-min="{{item.minSpend}}"
-            data-channel="{{item.channel}}"
-            data-can-online="{{item.canUseOnline}}"
-            data-can-store="{{item.canUseStore}}"
-          >{{item.useLabel || '去使用'}}</view>
-          <view class="c-status muted" wx:elif="{{item.status === 'used'}}">已使用</view>
-          <view class="c-status muted" wx:elif="{{item.status === 'locked'}}">占用中</view>
-          <view class="c-status muted" wx:else>已过期</view>
-        </view>
-        <view class="texture" aria-hidden="true"></view>
-      </view>
+      <template wx:if="{{item.canUse}}" is="coupon-card" data="{{item}}" />
     </block>
+  </view>
+
+  <!-- 一张可用券都没有时，不留死胡同：给一个直达出口 -->
+  <view class="inline-cta" wx:if="{{!usableCouponCount && closedCount}}">
+    <text class="inline-cta-text">当前没有可用礼券</text>
+    <view class="inline-cta-btn" hover-class="inline-cta-btn-press" bindtap="goWelcomeOrPoints">{{emptyCtaText}}</view>
+  </view>
+
+  <!-- 需求 7：占用中（进行时）单列，不折叠、不标失效 -->
+  <view class="locked-block" wx:if="{{lockedCount}}">
+    <view class="group-head">
+      <text class="group-dot" aria-hidden="true"></text>
+      <text class="group-title">使用中</text>
+      <text class="group-sub">{{lockedCount}} 张 · 正在被未完成订单占用</text>
+    </view>
+    <view class="coupon-list">
+      <block wx:for="{{lockedCoupons}}" wx:key="_id">
+        <template is="coupon-card" data="{{item}}" />
+      </block>
+    </view>
+    <text class="group-foot">订单支付或取消后，占用中的礼券会自动回到可用</text>
+  </view>
+
+  <!-- 需求 7：失效券折叠进券包（卡券券包堆叠 + 打眼） -->
+  <view class="pouch" wx:if="{{closedCount}}">
+    <view
+      class="pouch-head {{closedExpanded ? 'is-open' : ''}}"
+      bindtap="toggleClosedCoupons"
+      hover-class="pouch-head-press"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-expanded="{{closedExpanded}}"
+      aria-label="已失效礼券 {{closedCount}} 张，{{closedExpanded ? '收起' : '展开查看'}}"
+    >
+      <view class="pouch-stack" aria-hidden="true">
+        <view class="pouch-ticket t3"></view>
+        <view class="pouch-ticket t2"></view>
+        <view class="pouch-ticket t1">
+          <view class="pouch-hole"></view>
+          <view class="pouch-hole"></view>
+          <view class="pouch-hole"></view>
+        </view>
+      </view>
+      <view class="pouch-copy">
+        <text class="pouch-title">已失效礼券</text>
+        <text class="pouch-sub">{{closedCount}} 张 · {{closedExpanded ? '收起' : '展开查看'}}</text>
+      </view>
+      <view class="pouch-arrow {{closedExpanded ? 'open' : ''}}" aria-hidden="true"></view>
+    </view>
+
+    <view class="pouch-body" wx:if="{{closedExpanded}}">
+      <view class="coupon-list pouch-list">
+        <block wx:for="{{closedCoupons}}" wx:key="_id">
+          <template is="coupon-card" data="{{item}}" />
+        </block>
+      </view>
+      <text class="pouch-foot">已失效礼券仅作记录，不可再使用</text>
+    </view>
   </view>
 
   <view class="empty" wx:if="{{coupons.length === 0 && !loading}}">

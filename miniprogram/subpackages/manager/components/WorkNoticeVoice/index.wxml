@@ -1,0 +1,14 @@
+<!-- 工作通知声音：纯图标小铃铛（点=开关，长按=试听）
+     不放文字：头部右侧空间紧，两个字会被挤成竖排并把日期徽标顶下去（2026-09-16 实测） -->
+<view
+  class="wnv {{enabled ? 'is-on' : 'is-off'}} {{supported ? '' : 'is-unsupported'}}"
+  hover-class="wnv-press"
+  hover-stay-time="80"
+  bindtap="onToggle"
+  bindlongpress="onPreview"
+  aria-role="switch"
+  aria-checked="{{enabled}}"
+  aria-label="{{enabled ? '工作通知声音已开启，点击关闭，长按试听' : '工作通知声音已关闭，点击开启，长按试听'}}"
+>
+  <text class="wnv-icon">{{enabled ? '🔔' : '🔕'}}</text>
+</view>

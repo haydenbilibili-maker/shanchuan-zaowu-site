@@ -274,7 +274,7 @@ Page({
       }
       wx.showModal({
         title: '已提交',
-        content: result.msg || '等待馆长审核，通常 3 个工作日内完成。',
+        content: result.msg || '等待专员审核，通常 3 个工作日内完成。',
         showCancel: false,
         confirmColor: '#C4A76C'
       });
@@ -389,7 +389,7 @@ Page({
       const preview = result.previewPoints != null ? `\n预估 +${result.previewPoints} 分` : '';
       wx.showModal({
         title: '已提交',
-        content: (result.msg || '等待馆长审核') + preview + '\n通常 3 个工作日内完成核对。',
+        content: (result.msg || '等待专员审核') + preview + '\n通常 3 个工作日内完成核对。',
         showCancel: false,
         confirmColor: '#C4A76C'
       });

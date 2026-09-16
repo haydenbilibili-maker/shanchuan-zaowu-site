@@ -1,0 +1,427 @@
+@import '../index.wxss';
+@import '../../utils/workbench-nav.wxss';
+
+.page {
+  /* 双按钮底栏：padding + 88rpx 按钮 + safe-area */
+  padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
+}
+
+.profile-sticky-foot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 110;
+  background: var(--color-bg);
+}
+
+.header .title {
+  font-size: 36rpx;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.header .sub {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.visibility-card {
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.visibility-card.is-on {
+  border-color: var(--brass-800);
+}
+
+.visibility-card.is-off {
+  border-color: rgba(233, 162, 59, 0.45);
+}
+
+.visibility-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.visibility-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.visibility-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.visibility-status {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  letter-spacing: 0.04em;
+  color: var(--brass-400);
+}
+
+.visibility-card.is-off .visibility-status {
+  color: var(--color-warning);
+}
+
+.visibility-desc {
+  display: block;
+  margin-top: var(--space-3);
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* 需求 14：伴宠工单资质卡片。沿用「对外展示」卡片的语义色，但收在 group 内不额外占底距 */
+.qualify-card {
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.qualify-card.is-on {
+  border-color: var(--brass-800);
+}
+
+.qualify-card.is-off {
+  border-color: rgba(233, 162, 59, 0.45);
+}
+
+.qualify-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.qualify-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.qualify-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.qualify-status {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  letter-spacing: 0.04em;
+  color: var(--brass-400);
+}
+
+.qualify-card.is-off .qualify-status {
+  color: var(--color-warning);
+}
+
+.qualify-desc {
+  display: block;
+  margin-top: var(--space-3);
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.field-head .workbench-field-label {
+  margin-bottom: var(--space-2);
+}
+
+.char-count {
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}
+
+.workbench-input.is-focus,
+.workbench-textarea.is-focus {
+  border-color: var(--brass-400);
+}
+
+.avatar-wrap {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+  flex-shrink: 0;
+}
+
+.avatar-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 24, 20, 0.55);
+  border-radius: var(--radius-md);
+}
+
+.avatar-mask text {
+  font-size: 22rpx;
+  color: var(--brass-200);
+}
+
+.avatar-row.is-busy {
+  opacity: 0.72;
+}
+
+.avatar-row.is-error {
+  border-color: var(--color-warning);
+}
+
+.type-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.type-chip {
+  flex: 1;
+  height: 72rpx;
+  line-height: 72rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.type-chip.is-on {
+  color: var(--color-bg);
+  background: var(--brass-400);
+  border-color: var(--brass-400);
+}
+
+.years-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.years-step {
+  width: 72rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  text-align: center;
+  font-size: 36rpx;
+  color: var(--brass-400);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-md);
+}
+
+.years-input {
+  flex: 1;
+  text-align: center;
+}
+
+.workbench-picker-text.is-ph {
+  color: var(--color-text-muted);
+}
+
+.cover-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.cover-row.is-busy {
+  opacity: 0.72;
+}
+
+.cover-row.is-error {
+  border-color: var(--color-warning);
+}
+
+.cover-wrap {
+  position: relative;
+  width: 240rpx;
+  height: 120rpx;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+  border: 1rpx solid var(--brass-800);
+}
+
+.cover-img,
+.cover-empty {
+  width: 100%;
+  height: 100%;
+}
+
+.cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover-empty text {
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}
+
+.gallery-block {
+  margin-top: var(--space-4);
+}
+
+.gallery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.gallery-cell,
+.gallery-add {
+  width: 210rpx;
+  height: 210rpx;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.gallery-cell {
+  position: relative;
+  background: var(--color-bg-elevated);
+  border: 1rpx solid var(--color-border);
+}
+
+.gallery-img {
+  width: 100%;
+  height: 100%;
+}
+
+.gallery-del {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48rpx;
+  line-height: 48rpx;
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--color-text-body);
+  background: rgba(26, 24, 20, 0.72);
+}
+
+.gallery-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx dashed var(--brass-800);
+  background: var(--color-bg-card);
+}
+
+.gallery-add.is-disabled {
+  opacity: 0.5;
+}
+
+.gallery-plus {
+  font-size: 48rpx;
+  line-height: 1;
+  color: var(--brass-400);
+}
+
+.gallery-add-hint {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tag-chip {
+  padding: 8rpx 20rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.tag-chip.is-on {
+  color: var(--brass-400);
+  border-color: var(--brass-400);
+  background: rgba(196, 167, 108, 0.12);
+}
+
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 200rpx;
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-lg);
+}
+
+.avatar-row-press {
+  border-color: var(--brass-400);
+  background: var(--color-bg-elevated);
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md);
+  border: 1rpx solid var(--brass-800);
+  background: var(--color-bg-elevated);
+}
+
+.avatar-meta {
+  flex: 1;
+}
+
+.avatar-label {
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+}
+
+.avatar-hint {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.avatar-chevron {
+  flex-shrink: 0;
+  font-size: 40rpx;
+  color: var(--brass-400);
+}
+

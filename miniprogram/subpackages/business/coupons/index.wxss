@@ -33,6 +33,14 @@ view, text { box-sizing: border-box; }
   display: block;
   letter-spacing: 0.06em;
 }
+/* 临期提醒：只在真有 ≤7 天到期的券时出现 */
+.sub-warn {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: #E9A23B;
+  letter-spacing: 0.04em;
+}
 
 .coupon-list {
   display: flex;
@@ -48,10 +56,6 @@ view, text { box-sizing: border-box; }
   border-radius: 16rpx;
   position: relative;
   overflow: hidden;
-}
-.coupon-card.disabled {
-  opacity: 0.48;
-  border-color: #262320;
 }
 
 .c-left {
@@ -137,7 +141,7 @@ view, text { box-sizing: border-box; }
   align-items: center;
   gap: 12rpx;
   flex-wrap: wrap;
-  margin-bottom: 6rpx;
+  margin-bottom: 10rpx;
 }
 .c-tag {
   font-size: 18rpx;
@@ -169,8 +173,16 @@ view, text { box-sizing: border-box; }
   color: #6B6560;
   font-family: 'JetBrains Mono', monospace;
 }
+/* 第二行：临期标与来源同属「状态」层级，放一起；第一行只留渠道 + 有效期 */
+.c-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
 .c-source {
-  margin-top: 4rpx;
+  flex: 1;
+  min-width: 0;
   font-size: 18rpx;
   color: #8A7530;
   letter-spacing: 0.04em;
@@ -202,9 +214,10 @@ view, text { box-sizing: border-box; }
   background: #A8903C;
   opacity: 0.92;
 }
-.coupon-card.disabled .c-status {
-  background: #262320;
-  color: #6B6560;
+/* 主操作按钮：用 hover-class 而不是只靠 :active（部分机型 :active 不触发，点了没反馈） */
+.c-status-press {
+  background: #A8903C;
+  opacity: 0.92;
 }
 
 .texture {
@@ -563,4 +576,320 @@ view, text { box-sizing: border-box; }
 .pass-qr-stage.is-spent {
   opacity: 0.42;
   filter: grayscale(0.35);
+}
+
+/* ── 需求 7：礼券夹分组（可用 / 占用中 / 已失效）+ 券包堆叠 + 打眼核销 ──
+ *
+ * 视觉口径：
+ *   · 可用券 = 满血（金色描边 + 金色面额 + 实心金按钮）
+ *   · 占用中 = 虚线描边（进行时，会回来，不降调、不盖戳）
+ *   · 已失效 = 骑缝虚线换打眼孔 + 券面盖斜章 + 整体压到 .8（结束态，不抢注意力）
+ *   · 失效券不再渲染状态胶囊 —— 章就是状态，两者并存会在券面右侧打成一片
+ */
+
+/* 小组抬头（使用中） */
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 0 4rpx;
+  margin-bottom: 16rpx;
+}
+
+.group-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #C4A76C;
+  flex-shrink: 0;
+}
+
+.group-title {
+  font-size: 24rpx;
+  color: #C4A76C;
+  letter-spacing: 0.08em;
+}
+
+.group-sub {
+  font-size: 20rpx;
+  color: #6B6560;
+}
+
+.group-foot {
+  display: block;
+  margin-top: 14rpx;
+  padding: 0 4rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: #5A544E;
+}
+
+.locked-block {
+  margin-top: 34rpx;
+}
+
+/* 占用中：虚线描边 = 临时、会被收回 */
+.coupon-card.is-locked {
+  border-style: dashed;
+  border-color: #4D401A;
+}
+
+/* 已失效：整体压调，但章要清晰可读（不做重度灰度，避免糊成一团） */
+.coupon-card.is-void {
+  opacity: 0.8;
+  background: #1C1A17;
+  border-color: #262320;
+}
+
+.coupon-card.is-void .c-left {
+  background: rgba(196, 167, 108, 0.04);
+}
+
+.coupon-card.is-void .amount {
+  color: #8A7530;
+}
+
+.coupon-card.is-void .c-name {
+  color: #A09A90;
+}
+
+/* 临期券：只剩描边提示，按钮照常满血（还能用就别吓人） */
+.coupon-card.is-soon {
+  border-color: rgba(233, 162, 59, 0.45);
+}
+
+.c-hint {
+  flex-shrink: 0;
+  font-size: 18rpx;
+  line-height: 1;
+  padding: 6rpx 10rpx;
+  border-radius: 8rpx;
+  color: #E9A23B;
+  border: 1rpx solid rgba(233, 162, 59, 0.4);
+  background: rgba(233, 162, 59, 0.1);
+}
+
+/* 骑缝打眼孔：沿骑缝均分的 7 个孔，孔 = 页面底色（真的像被打穿） */
+.punch-line {
+  position: absolute;
+  left: -6rpx;
+  top: 30rpx;
+  bottom: 30rpx;
+  width: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 3;
+}
+
+.punch-hole {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #12100D;
+  box-shadow: inset 0 2rpx 2rpx rgba(0, 0, 0, 0.55), 0 1rpx 0 rgba(196, 167, 108, 0.06);
+}
+
+/* 失效券的骑缝虚线让位给打眼孔 */
+.coupon-card.is-void .line {
+  opacity: 0.35;
+}
+
+/* 斜章：盖在券面右侧，与打孔缺口同一套「机械标记」语言 */
+.void-stamp {
+  position: absolute;
+  right: 24rpx;
+  top: 50%;
+  transform: translateY(-50%) rotate(-11deg);
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 4rpx;
+  border: 2rpx dashed rgba(196, 167, 108, 0.5);
+  border-radius: 8rpx;
+  color: rgba(196, 167, 108, 0.78);
+  background: rgba(196, 167, 108, 0.05);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.void-stamp.is-expired {
+  color: rgba(160, 154, 144, 0.72);
+  border-color: rgba(160, 154, 144, 0.4);
+  background: rgba(160, 154, 144, 0.04);
+}
+
+/* 让出章的位置：失效券的文字区右侧留白，避免日期被章压住 */
+.coupon-card.is-void .c-right {
+  padding-right: 168rpx;
+}
+
+/* 券包：把「已核销 / 已过期」收起来，避免与可用券混排抢注意力 */
+.pouch {
+  margin: 36rpx 0 8rpx;
+}
+
+.pouch-head {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 22rpx 24rpx;
+  background: #1F1D1A;
+  border: 1rpx solid #262320;
+  border-radius: 16rpx;
+  transition: border-color 0.24s ease;
+}
+
+.pouch-head.is-open {
+  border-color: #3A342A;
+}
+
+.pouch-head-press {
+  background: #232120;
+}
+
+/* 券包堆叠：三张错位迷你券，最前一张带打眼 —— 一眼看出「这里压着一叠废券」 */
+.pouch-stack {
+  position: relative;
+  width: 68rpx;
+  height: 52rpx;
+  flex-shrink: 0;
+}
+
+.pouch-ticket {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 52rpx;
+  height: 36rpx;
+  box-sizing: border-box;
+  border: 1rpx solid #3A342A;
+  border-radius: 6rpx;
+  background: #2A2724;
+  transform-origin: 50% 100%;
+}
+
+.pouch-ticket.t3 {
+  transform: translate(8rpx, -12rpx) rotate(7deg);
+  opacity: 0.5;
+}
+
+.pouch-ticket.t2 {
+  transform: translate(4rpx, -6rpx) rotate(-4deg);
+  opacity: 0.78;
+}
+
+/* 最前一张提亮一档：小尺寸下若和前两张同色，整叠会糊成一块 */
+.pouch-ticket.t1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5rpx;
+  border-color: #4A4232;
+  background: #363128;
+}
+
+.pouch-hole {
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: #12100D;
+}
+
+.pouch-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.pouch-title {
+  font-size: 26rpx;
+  color: #D5D1C8;
+  letter-spacing: 0.02em;
+}
+
+.pouch-sub {
+  font-size: 22rpx;
+  color: #6B6560;
+}
+
+/* 折叠箭头：CSS 折角（比字符箭头转动更可控），收起朝下 / 展开朝上 */
+.pouch-arrow {
+  flex-shrink: 0;
+  width: 16rpx;
+  height: 16rpx;
+  margin-right: 6rpx;
+  border-right: 2rpx solid #6B6560;
+  border-bottom: 2rpx solid #6B6560;
+  transform: rotate(45deg) translate(-4rpx, -4rpx);
+  transition: transform 0.24s ease, border-color 0.24s ease;
+}
+
+.pouch-arrow.open {
+  transform: rotate(-135deg) translate(-4rpx, -4rpx);
+  border-color: #C4A76C;
+}
+
+.pouch-body {
+  animation: pouch-in 0.26s ease both;
+}
+
+@keyframes pouch-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 展开后的失效券与可用券保持同一排版节奏 */
+.pouch-list {
+  margin-top: 22rpx;
+}
+
+.pouch-foot {
+  display: block;
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: 20rpx;
+  letter-spacing: 0.04em;
+  color: #4F4A45;
+}
+
+/* 无可券可用时的内联出口（避免页面只剩一个券包） */
+.inline-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 22rpx 24rpx;
+  background: #1F1D1A;
+  border: 1rpx dashed #3A342A;
+  border-radius: 16rpx;
+}
+
+.inline-cta-text {
+  font-size: 24rpx;
+  color: #A09A90;
+}
+
+.inline-cta-btn {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: #C4A76C;
+  border: 1rpx solid #4D401A;
+  border-radius: 12rpx;
+  padding: 12rpx 24rpx;
+}
+
+.inline-cta-btn-press {
+  opacity: 0.82;
+  background: #262320;
 }

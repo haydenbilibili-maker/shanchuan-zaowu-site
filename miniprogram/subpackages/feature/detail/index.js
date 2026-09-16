@@ -458,6 +458,9 @@ Page({
     pointTipText: '',
     recommends: [],
     craftTags: [],
+    // 需求 17：详情页分级图 —— 按显示宽度取图，原图只留给全屏查看器
+    imgView: {},
+    imgThumbView: {},
 
     hasSku: false,
     /** null = 未知，勿用 0 冒充售罄 */
@@ -559,7 +562,9 @@ Page({
     onePercentPledgeSummary: ONE_PERCENT_PLEDGE_SUMMARY,
     onePercentPledgeNote: ONE_PERCENT_PLEDGE_NOTE,
     showSpecimenCustom: false,
-    showGift: false
+    showGift: false,
+    // 需求 28：祈福墙开关（是否显示由 <wish-wall-entry> 组件按开关 + 藏品命中判定）
+    wishWallEnabled: false
   },
 
   sectionTops: { detail: 0, archive: 0, review: 0 },
@@ -604,18 +609,63 @@ Page({
     }
   },
 
+  /**
+   * 把「内容展示开关」应用到本页（单一入口，缓存值与新鲜值都走这里）。
+   * 用签名挡掉重复应用：SWR 会把陈旧值先给一次、新鲜值再给一次，
+   * 两次结果相同时不该白跑一遍 setData 与建图。
+   */
+  applyDisplayFlags(flags) {
+    const f = flags || {};
+    const sig = [f.showSpecimenCustom === true, f.showGift === true, f.showMaShangYou === true].join('|');
+    if (sig === this._displayFlagsSig) return;
+    this._displayFlagsSig = sig;
+    this.setData({
+      showSpecimenCustom: f.showSpecimenCustom === true,
+      showGift: f.showGift === true,
+      // 需求 28：祈福墙开关（缺配置默认关）。命中判定与跳转收在 <wish-wall-entry> 组件里，
+      // 本页只负责把开关与藏品喂给它 —— 全站拓展时别的页面照抄这一行即可。
+      wishWallEnabled: f.showMaShangYou === true
+    });
+    // 需求 17：开关可能刚把缩略图能力打开/关闭，重建分级图
+    this.buildImageView();
+    // 需求 28：祈福墙入口就在主图正下方 —— 开关一翻转，三个页签锚点整体位移一个入口的高度，
+    // 必须重测（否则「藏品/档案/评价」会跳到错位处）。
+    setTimeout(() => this.computeSectionTops(), 120);
+  },
+
+  /**
+   * 读内容展示开关。
+   *
+   * ⚠️ 必须接住 SWR 的**后台刷新**：`fetchContentDisplayFlags` 缓存命中时**立刻返回缓存值**，
+   * 新鲜值只在后台回填（缓存 TTL 10 分钟，陈旧窗口 24 小时）。
+   * 只读一次返回值的话，超管刚把「马上有祈福」打开，本页最长 ~24 小时看不到入口 ——
+   * 实测反馈「开关开了但详情页没有入口」就是这个。传 onUpdate 后：缓存值先上屏，
+   * 新鲜值一到自动重放，既不额外发请求，也不会把新值丢掉。
+   */
   async loadDisplayFlags() {
     try {
       const { fetchContentDisplayFlags } = require('../../../utils/contentDisplayFlags');
-      const { flags } = await fetchContentDisplayFlags();
-      this.setData({
-        showSpecimenCustom: flags.showSpecimenCustom === true,
-        showGift: flags.showGift === true
+      const { flags } = await fetchContentDisplayFlags({
+        onUpdate: (payload) => {
+          try {
+            this.applyDisplayFlags(payload && payload.flags);
+          } catch (e) {
+            console.warn('apply refreshed display flags', e);
+          }
+        }
       });
+      this.applyDisplayFlags(flags);
     } catch (e) {
-      this.setData({ showSpecimenCustom: false, showGift: false });
+      // 开关读不到 → 保守关闭（UGC 新能力，读不到就当没开）
+      this.applyDisplayFlags({});
     }
   },
+
+  /**
+   * 需求 28：祈福墙入口的「是否显示」与「点进去」都已收进 <wish-wall-entry> 组件
+   * （见 `components/WishWallEntry`）。此处曾有一份 refreshWishWallEntry / goWishWall 副本，
+   * 已删除：入口判定只留一处的意义就是不让每个宿主页面各判一次、各漂一次。
+   */
 
   onShow() {
     this.loadCartCount();
@@ -1037,6 +1087,10 @@ Page({
       this.loadCommentStats(data._id);
       this.saveHistory(data);
       this.loadEngagementState(data._id);
+      // 需求 28：商品落定后无需手动重算入口 —— <wish-wall-entry product="{{product}}"> 的
+      // observers 会在 product 变化时自行判定（开关于商品先后到达也能正确收敛）
+      // 需求 17：商品图/详情图就位后建立「显示宽度 → 取图 URL」映射
+      this.buildImageView();
       if (displayPrice != null) this.loadProductCoupons(displayPrice);
       this.loadCarePreview(data);
 
@@ -1456,7 +1510,7 @@ Page({
       const p = this.data.product || {};
       const id = p._id || p.id || '';
       const url =
-        '/subpackages/feature/user/support/index' +
+        '/subpackages/extra/user/support/index' +
         buildSupportQuery({
           topic: 'product',
           productId: id,
@@ -2363,6 +2417,7 @@ Page({
         || (res.result && res.result.recommendations)
         || [];
       this.setData({ recommends: hydrateRecommendSensitive(dedupeRecommendList(list)) });
+      this.buildImageView();
     } catch (e) {
       try {
         const _ = db.command;
@@ -2371,6 +2426,7 @@ Page({
           .limit(12)
           .get();
         this.setData({ recommends: hydrateRecommendSensitive(dedupeRecommendList(fb.data || [])) });
+        this.buildImageView();
       } catch (err) {
         console.warn('相关推荐加载失败', err);
       }
@@ -2402,6 +2458,78 @@ Page({
       sensitiveVeiled: true,
       sensitiveBadgeLabel: getSensitiveBlurPref() === PREF_CLEAR ? '掩上' : COPY.badge
     });
+  },
+
+  /**
+   * 需求 17：详情页分级取图。
+   *
+   * 为什么是「一个 URL→URL 的映射」而不是给每个列表各存一份视图数组：
+   * 页面上要显示图的槽位有 5 处（主图 swiper / 规格细节 swiper / 更多细节 / 长图文 / 相关推荐），
+   * 其中前 4 处的数据都是 `product.images`、`product.detailImages`、`sku.images` 的**派生子集**
+   * （见 buildDetailLayout / buildDetailSelectionPatch / selectDetailGroup）。
+   * 只要把**源列表**映射好，所有派生子集自动命中；漏掉某个派生槽位也只会回落原图，不会破图。
+   *
+   * 尺寸口径：
+   *   - 大槽位（主图/细节/长图文）→ detailUrl(750)：显示宽度 750rpx ≈ 375 CSS px，750 恰好覆盖 2 倍屏
+   *   - 小槽位（更多细节缩略/相关推荐）→ thumbUrl(480)
+   *   - **全屏查看器（wx.previewImage）刻意仍用原图** —— 用户会双指放大，750px 会糊
+   */
+  buildImageView() {
+    const { detailUrl, thumbUrl, isThumbUsable } = require('../../../utils/imageUrl');
+    if (!isThumbUsable()) {
+      // 能力未确认 / 已降级：清空映射 = 全部回落原图（与改动前行为完全一致）
+      if (Object.keys(this.data.imgView || {}).length || Object.keys(this.data.imgThumbView || {}).length) {
+        this.setData({ imgView: {}, imgThumbView: {} });
+      }
+      return;
+    }
+    const product = this.data.product || {};
+    const big = [];
+    const small = [];
+    (product.images || []).forEach((u) => big.push(u));
+    (product.detailImages || []).forEach((u) => big.push(u));
+    (product.skus || []).forEach((sku) => {
+      skuImageList(sku).forEach((u) => big.push(u));
+      (sku && sku.detailImages || []).forEach((u) => big.push(u));
+    });
+    (this.data.detailImages || []).forEach((u) => big.push(u));
+    (this.data.activeDetailImages || []).forEach((u) => big.push(u));
+    (this.data.sharedDetailImages || []).forEach((u) => small.push(u));
+    (this.data.recommends || []).forEach((r) => {
+      const u = r && ((r.images && r.images[0]) || r.image || r.httpImage);
+      if (u) small.push(u);
+    });
+
+    // 合并而非替换：商品与推荐是两次异步加载，先到的映射不能被后到的清掉
+    const imgView = { ...(this.data.imgView || {}) };
+    const imgThumbView = { ...(this.data.imgThumbView || {}) };
+    let added = 0;
+    big.forEach((u) => {
+      if (!u || imgView[u]) return;
+      const v = detailUrl(u);
+      if (v && v !== u) { imgView[u] = v; added += 1; }
+    });
+    small.forEach((u) => {
+      if (!u || imgThumbView[u]) return;
+      const v = thumbUrl(u);
+      if (v && v !== u) { imgThumbView[u] = v; added += 1; }
+    });
+    if (added || this.data.imgView || this.data.imgThumbView) {
+      this.setData({ imgView, imgThumbView });
+    }
+  },
+
+  /**
+   * 需求 17：任一分级图加载失败 → 让能力自我降级，并立刻把映射清空回原图。
+   * 这样「能力其实不可用」的最坏情况只表现为一次多余的失败请求，不会整页破图。
+   */
+  onImageDegrade() {
+    try {
+      require('../../../utils/imageUrl').onImageError();
+    } catch (e) { /* 工具缺失不影响降级 */ }
+    if (Object.keys(this.data.imgView || {}).length || Object.keys(this.data.imgThumbView || {}).length) {
+      this.setData({ imgView: {}, imgThumbView: {} });
+    }
   },
 
   previewImage(e) {

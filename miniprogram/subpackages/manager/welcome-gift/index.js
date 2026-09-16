@@ -168,6 +168,21 @@ Page({
 
   async saveConfig() {
     if (this.data.saving) return
+    // 前置拦截：「礼券总开关开着，却没有任何启用中的券行」= 新用户静默收不到券。
+    // 云函数 manageWelcomeGift 也会拦一次；这里先拦是为了把原因说清楚（不是「保存失败」）。
+    if (this.data.form.couponsEnabled) {
+      const active = (this.data.form.coupons || []).filter(
+        (c) => c && c.enabled !== false && Number(c.value) > 0 && Number(c.count) > 0
+      )
+      if ((this.data.form.coupons || []).length > 0 && !active.length) {
+        wx.showToast({
+          title: '礼券总开关开着，但四条券行都停用了：新用户将收不到券。请启用至少一条，或关掉礼券总开关',
+          icon: 'none',
+          duration: 3500
+        })
+        return
+      }
+    }
     this.setData({ saving: true })
     try {
       const result = await this.callFn({

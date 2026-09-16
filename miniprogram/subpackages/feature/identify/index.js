@@ -23,7 +23,9 @@ const CATEGORY_HINTS = [
 const PHOTO_TIPS = [
   '尽量正对藏品主体，避免倾斜过大',
   '选择均匀柔光，减少玻璃罩与强反光',
-  '可再拍一张细节图（翅脉、纹理、晶体面）',
+  // 需求 2：原为「可再拍一张细节图（翅脉、纹理、晶体面）」——拍摄与相册均只支持**一张图**，
+  // 该引导与能力矛盾（还会诱发多拍/重复上传）。改为单图内可执行的构图建议。
+  '若需看清翅脉或纹理，请让主体占满画面后重新拍摄',
   '背景尽量简洁，让主体占画面 60% 以上'
 ]
 
@@ -274,6 +276,14 @@ Page({
         species: (result.data.species_info && result.data.species_info.species_name_zh) || '',
         source: this.data.entrySource
       })
+      // 需求 1：单独上报「同图复用」，用于度量重复拍摄/重复上传的拦截效果
+      // （identify_start 仍是「尝试」口径，reused / start 即复用率）
+      if (result.data.from_cache) {
+        trackBehavior('identify_reused', 'identification', result.data.record_id, {
+          species: (result.data.species_info && result.data.species_info.species_name_zh) || '',
+          source: this.data.entrySource
+        })
+      }
 
       let url = `/subpackages/feature/identify/result/index?record_id=${result.data.record_id}`
       if (result.data.from_cache) {

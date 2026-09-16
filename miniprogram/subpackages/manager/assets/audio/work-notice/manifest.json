@@ -1,0 +1,139 @@
+{
+  "catalogVersion": 1,
+  "backend": "macos",
+  "voice": "Tingting",
+  "rate": 190,
+  "sampleRate": 22050,
+  "bitrate": "48k",
+  "generatedAt": "2026-09-16T13:36:32.093Z",
+  "entries": {
+    "order": {
+      "file": "order.mp3",
+      "text": "您有新的订单，请及时处理",
+      "textHash": "0b139cb56a5a5c81",
+      "bytes": 16056,
+      "durationMs": 2562,
+      "path": "/subpackages/manager/assets/audio/work-notice/order.mp3"
+    },
+    "aftersale": {
+      "file": "aftersale.mp3",
+      "text": "您有新的售后申请，请及时处理",
+      "textHash": "28a59d3da325c40a",
+      "bytes": 19191,
+      "durationMs": 3096,
+      "path": "/subpackages/manager/assets/audio/work-notice/aftersale.mp3"
+    },
+    "workOrder": {
+      "file": "work-order.mp3",
+      "text": "您有新的工单需要处理",
+      "textHash": "decb96ad83e2f046",
+      "bytes": 12294,
+      "durationMs": 1958,
+      "path": "/subpackages/manager/assets/audio/work-notice/work-order.mp3"
+    },
+    "customOrder": {
+      "file": "custom-order.mp3",
+      "text": "您有新的定制需求，请查看工单",
+      "textHash": "cb5db9abc0ff578b",
+      "bytes": 19661,
+      "durationMs": 3177,
+      "path": "/subpackages/manager/assets/audio/work-notice/custom-order.mp3"
+    },
+    "artisanMake": {
+      "file": "artisan-make.mp3",
+      "text": "您有新的制作任务，请及时处理",
+      "textHash": "bf119705846a2e1d",
+      "bytes": 18094,
+      "durationMs": 2910,
+      "path": "/subpackages/manager/assets/audio/work-notice/artisan-make.mp3"
+    },
+    "artisanShelf": {
+      "file": "artisan-shelf.mp3",
+      "text": "有藏品等待上架审核，请及时处理",
+      "textHash": "45d795cf11d0aea6",
+      "bytes": 21698,
+      "durationMs": 3511,
+      "path": "/subpackages/manager/assets/audio/work-notice/artisan-shelf.mp3"
+    },
+    "artisanShip": {
+      "file": "artisan-ship.mp3",
+      "text": "您有成品等待发货，请及时处理",
+      "textHash": "0555ffb21c7cc45c",
+      "bytes": 19504,
+      "durationMs": 3142,
+      "path": "/subpackages/manager/assets/audio/work-notice/artisan-ship.mp3"
+    },
+    "petOrder": {
+      "file": "pet-order.mp3",
+      "text": "您有新的伴宠订单，请及时处理",
+      "textHash": "6b9bdb9fca6d0d52",
+      "bytes": 18877,
+      "durationMs": 3037,
+      "path": "/subpackages/manager/assets/audio/work-notice/pet-order.mp3"
+    },
+    "artisanDeposit": {
+      "file": "artisan-deposit.mp3",
+      "text": "您有新的定金单待处理",
+      "textHash": "cfc3645ecd38bb5c",
+      "bytes": 12451,
+      "durationMs": 1969,
+      "path": "/subpackages/manager/assets/audio/work-notice/artisan-deposit.mp3"
+    },
+    "booking": {
+      "file": "booking.mp3",
+      "text": "您有新的预约需要确认",
+      "textHash": "189e0688cc733f90",
+      "bytes": 12451,
+      "durationMs": 1969,
+      "path": "/subpackages/manager/assets/audio/work-notice/booking.mp3"
+    },
+    "invoice": {
+      "file": "invoice.mp3",
+      "text": "您有新的开票申请，请及时处理",
+      "textHash": "288230a713298284",
+      "bytes": 19504,
+      "durationMs": 3142,
+      "path": "/subpackages/manager/assets/audio/work-notice/invoice.mp3"
+    },
+    "approval": {
+      "file": "approval.mp3",
+      "text": "您有新的审批待办，请及时处理",
+      "textHash": "f85bfcfe95adb704",
+      "bytes": 18564,
+      "durationMs": 3003,
+      "path": "/subpackages/manager/assets/audio/work-notice/approval.mp3"
+    },
+    "gift": {
+      "file": "gift.mp3",
+      "text": "您有新的礼赠待办，请及时处理",
+      "textHash": "1d1ee6b9b76f3e93",
+      "bytes": 18407,
+      "durationMs": 2956,
+      "path": "/subpackages/manager/assets/audio/work-notice/gift.mp3"
+    },
+    "wishlist": {
+      "file": "wishlist.mp3",
+      "text": "有藏家在等货，请查看心愿补货",
+      "textHash": "c8692e533ba8e2cb",
+      "bytes": 20288,
+      "durationMs": 3279,
+      "path": "/subpackages/manager/assets/audio/work-notice/wishlist.mp3"
+    },
+    "recruit": {
+      "file": "recruit.mp3",
+      "text": "您有新的合作申请，请及时处理",
+      "textHash": "3de6a3ba55c0c4e9",
+      "bytes": 19034,
+      "durationMs": 3061,
+      "path": "/subpackages/manager/assets/audio/work-notice/recruit.mp3"
+    },
+    "sample": {
+      "file": "sample.mp3",
+      "text": "您有新的工作信息，请查看工作台",
+      "textHash": "5f50fbba2a777c05",
+      "bytes": 21385,
+      "durationMs": 3467,
+      "path": "/subpackages/manager/assets/audio/work-notice/sample.mp3"
+    }
+  }
+}

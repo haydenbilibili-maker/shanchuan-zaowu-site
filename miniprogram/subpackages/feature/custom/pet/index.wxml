@@ -167,6 +167,33 @@
           <text class="craft-card-desc">{{item.desc}}</text>
           <text class="craft-card-weeks">{{item.estimatedWeeks}}</text>
         </view>
+
+        <!-- 需求 14：指定标本师（可选）。与标品定制「指定标本师」同一交互：再点一次取消 -->
+        <view class="form-group" wx:if="{{artisans.length}}">
+          <text class="form-label">指定标本师（选填）</text>
+          <text class="form-hint">不选则由平台指派；指定特邀标本师可能加价并延长交期。提交后由该标本师与您直接沟通</text>
+          <view
+            class="artisan-card {{artisanId === item.id ? 'active' : ''}}"
+            hover-class="card-press"
+            wx:for="{{artisans}}"
+            wx:key="id"
+            bindtap="selectArtisan"
+            data-id="{{item.id}}"
+          >
+            <image wx:if="{{item.avatar}}" class="artisan-avatar" src="{{item.avatar}}" mode="aspectFill"></image>
+            <view class="artisan-main">
+              <text class="artisan-name">{{item.name}}</text>
+              <text class="artisan-desc">{{item.bio || (item.type === 'partner' ? '特邀标本师' : '门店制作')}}</text>
+            </view>
+            <view class="artisan-meta">
+              <text class="artisan-price" wx:if="{{item.priceDelta > 0}}">+¥{{item.priceDelta}}</text>
+              <text class="artisan-price" wx:else>标准</text>
+              <text class="artisan-days" wx:if="{{item.extraDays > 0}}">+{{item.extraDays}}天</text>
+            </view>
+          </view>
+          <text class="artisan-chosen" wx:if="{{artisanId}}">已指定 {{artisanName}}</text>
+        </view>
+
         <view class="form-group" wx:if="{{craftId === 'taxidermy' || craftId === 'skeletal'}}">
           <text class="form-label">姿态意向</text>
           <view class="option-pills">
@@ -200,17 +227,21 @@
       <!-- Step 4 交接 -->
       <view class="step-panel step-enter" wx:if="{{currentStep === 4}}">
         <view
-          class="intake-card {{intakeMethod === item.id ? 'active' : ''}}"
-          hover-class="card-press"
+          class="intake-card {{intakeMethod === item.id ? 'active' : ''}} {{item.comingSoon ? 'is-soon' : ''}}"
+          hover-class="{{item.comingSoon ? 'none' : 'card-press'}}"
           wx:for="{{intakeMethods}}"
           wx:key="id"
-          bindtap="selectOption"
+          bindtap="{{item.comingSoon ? 'onSoonOptionTap' : 'selectOption'}}"
           data-field="intakeMethod"
           data-value="{{item.id}}"
+          data-label="{{item.label}}"
+          aria-disabled="{{item.comingSoon ? 'true' : 'false'}}"
         >
           <view class="intake-card-head">
             <text class="intake-name">{{item.label}}</text>
-            <text class="intake-check" wx:if="{{intakeMethod === item.id}}">已选</text>
+            <!-- 需求 13：暂无合作医院代交 → 标注「即将上线」，不再可选 -->
+            <text class="intake-soon" wx:if="{{item.comingSoon}}">{{item.soonNote || '即将上线'}}</text>
+            <text class="intake-check" wx:elif="{{intakeMethod === item.id}}">已选</text>
           </view>
           <text class="intake-desc">{{item.desc}}</text>
         </view>

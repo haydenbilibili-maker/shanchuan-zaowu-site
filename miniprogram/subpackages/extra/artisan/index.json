@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "标本师工作台",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "work-notice-voice": "/subpackages/extra/components/WorkNoticeVoice/index"
+  },
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814"
+}

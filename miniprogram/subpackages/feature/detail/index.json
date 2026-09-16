@@ -7,7 +7,9 @@
     "mp-html": "/subpackages/feature/components/mp-html/index",
     "coupon-print-mint": "/subpackages/feature/components/CouponPrintMint/index",
     "protected-badge": "/components/ProtectedBadge/index",
-    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
+    "wish-wall-entry": "/components/WishWallEntry/index",
+    "nav-back": "/components/NavBack/index"
   },
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",

@@ -320,6 +320,15 @@ button.nav-share-btn::after { display: none; border: none; }
   width: 100%;
 }
 
+/* 需求 28：祈福墙入口（头部主图下方）。
+   间距作用在**宿主自己的包裹 view** 上（不是组件的 ext-class）：同一元素上组件样式与
+   宿主样式都设 margin 时谁生效不保证 —— 切片实测宿主的 margin-top 会被组件样式吃掉。
+   一条规则同时给上下间距；主图底部有 30% 高的渐隐（.hero-overlay），
+   24rpx 的落点正好在"图化入背景"那一段的下方。 */
+.wish-wall-slot {
+  margin: 24rpx 0;
+}
+
 /* 电商主卡片 */
 .commerce-card {
   background: var(--color-bg-card);
@@ -1750,3 +1759,5 @@ button.nav-share-btn::after { display: none; border: none; }
   font-size: 28rpx;
   font-weight: 500;
 }
+/* 需求 28：祈福墙入口的样式已随组件迁到 components/WishWallEntry/index.wxss
+   （小程序自定义组件默认样式隔离，留在本页既失效又会让人误以为改这里有用） */

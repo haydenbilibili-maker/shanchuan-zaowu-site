@@ -521,3 +521,84 @@
 .btn-primary-press {
   background: #A8903C;
 }
+
+/* 需求 13：未上线交接方式置灰（comingSoon）—— 视觉禁用 + 不可点按反馈 */
+.intake-card.is-soon {
+  opacity: 0.5;
+  background: #1B1917;
+  border-style: dashed;
+}
+
+.intake-card.is-soon .intake-name,
+.intake-card.is-soon .intake-desc {
+  color: #6B6560;
+}
+
+.intake-soon {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  line-height: 1;
+  padding: 6rpx 12rpx;
+  color: #6B6560;
+  border: 1rpx solid #3A342A;
+  border-radius: 999rpx;
+}
+
+/* 需求 14：指定标本师（可选）—— 与标品定制 framer-card 视觉对齐 */
+.artisan-card {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  background: #1F1D1A;
+  border: 1px solid rgba(38, 35, 32, 0.9);
+  border-radius: 16rpx;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.artisan-card.active {
+  border-color: rgba(196, 167, 108, 0.45);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 4rpx 0 0 #C4A76C;
+}
+
+.artisan-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #262320;
+}
+
+.artisan-main { flex: 1; min-width: 0; }
+
+.artisan-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.artisan-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #A09A90;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.artisan-meta { text-align: right; flex-shrink: 0; }
+
+.artisan-price { display: block; font-size: 24rpx; color: #C4A76C; }
+
+.artisan-days { display: block; font-size: 20rpx; color: #A09A90; margin-top: 4rpx; }
+
+.artisan-chosen {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #C4A76C;
+}

@@ -1,5 +1,5 @@
 /* 权限配置 — Museum Mode（与门店积分页共用视觉） */
-@import '../utils/workbench-nav.wxss';
+@import '../../manager/utils/workbench-nav.wxss';
 
 page {
   background: var(--color-bg);

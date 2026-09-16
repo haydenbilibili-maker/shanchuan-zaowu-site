@@ -45,7 +45,15 @@ const POSE_OPTIONS = [
 const INTAKE_METHODS = [
   { id: 'store', label: '到店交接', desc: '按预约时间送至门店，标本师当面确认' },
   { id: 'pickup', label: '上门收运', desc: '同城范围内专员安排收运（需评估）' },
-  { id: 'partner_clinic', label: '合作医院代交', desc: '由合作宠物医院代为交接' }
+  // 需求 13：暂无合作医院代交，置灰并标注「即将上线」。
+  // comingSoon 的选项在 UI 上禁用、选择时拦截，且云函数侧有 method 白名单兜底。
+  {
+    id: 'partner_clinic',
+    label: '合作医院代交',
+    desc: '由合作宠物医院代为交接',
+    comingSoon: true,
+    soonNote: '即将上线'
+  }
 ]
 
 const RELATION_OPTIONS = [

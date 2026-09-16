@@ -27,36 +27,36 @@ const CACHE_TTL_MS = 10 * 60 * 1000
 
 const MANAGER_PATH = '/subpackages/manager/manager/index'
 const MANAGER_WORKSPACE_PATH = '/subpackages/manager/manager/workspace/index'
-const ARTISAN_PATH = '/subpackages/manager/artisan/index'
-const LIVE_STUDIO_PATH = '/subpackages/manager/live/studio/index'
-const LIVE_BROADCAST_PATH = '/subpackages/manager/live/broadcast/index'
-const INVESTOR_PATH = '/subpackages/manager/investor/index'
-const SHAREHOLDER_PATH = '/subpackages/manager/shareholder/index'
-const STAFF_PATH = '/subpackages/manager/staff/index'
-const STAFF_FIELD_PATH = '/subpackages/manager/staff/field/index'
+const ARTISAN_PATH = '/subpackages/extra/artisan/index'
+const LIVE_STUDIO_PATH = '/subpackages/extra/live/studio/index'
+const LIVE_BROADCAST_PATH = '/subpackages/extra/live/broadcast/index'
+const INVESTOR_PATH = '/subpackages/extra/investor/index'
+const SHAREHOLDER_PATH = '/subpackages/extra/shareholder/index'
+const STAFF_PATH = '/subpackages/extra/staff/index'
+const STAFF_FIELD_PATH = '/subpackages/extra/staff/field/index'
 const STORE_POINTS_PATH = '/subpackages/manager/store-points/index'
 const STAFF_DIRECTORY_PATH = '/subpackages/manager/staff-directory/index'
-const STAFF_PERMISSIONS_PATH = '/subpackages/manager/staff-permissions/index'
-const SHAREHOLDER_CONFIG_PATH = '/subpackages/manager/shareholder-config/index'
+const STAFF_PERMISSIONS_PATH = '/subpackages/extra/staff-permissions/index'
+const SHAREHOLDER_CONFIG_PATH = '/subpackages/extra/shareholder-config/index'
 const INVOICE_REQUESTS_PATH = '/subpackages/manager/invoice-requests/index'
 const GIFT_OPS_PATH = '/subpackages/manager/gift-ops/index'
 const GIFT_MANAGE_PATH = '/subpackages/manager/gift-manage/index'
-const APPROVALS_PATH = '/subpackages/manager/approvals/index'
-const HONORARY_CURATORS_PATH = '/subpackages/manager/honorary-curators/index'
-const MEMBER_CRM_PATH = '/subpackages/manager/member-crm/index'
-const MEMBER_LEVEL_ADJUST_PATH = '/subpackages/manager/member-level-adjust/index'
+const APPROVALS_PATH = '/subpackages/extra/approvals/index'
+const HONORARY_CURATORS_PATH = '/subpackages/extra/honorary-curators/index'
+const MEMBER_CRM_PATH = '/subpackages/extra/member-crm/index'
+const MEMBER_LEVEL_ADJUST_PATH = '/subpackages/extra/member-level-adjust/index'
 const WALLET_CONFIG_PATH = '/subpackages/manager/wallet-config/index'
 const WELCOME_GIFT_PATH = '/subpackages/manager/welcome-gift/index'
 const BIRTHDAY_GIFT_PATH = '/subpackages/manager/birthday-gift/index'
 const DEPOSIT_OPS_PATH = '/subpackages/manager/deposit-ops/index'
-const PURCHASE_OPS_PATH = '/subpackages/manager/purchase-ops/index'
-const SHIPMENT_OPS_PATH = '/subpackages/manager/shipment-ops/index'
-const INVENTORY_OPS_PATH = '/subpackages/manager/inventory-ops/index'
+const PURCHASE_OPS_PATH = '/subpackages/extra/purchase-ops/index'
+const SHIPMENT_OPS_PATH = '/subpackages/extra/shipment-ops/index'
+const INVENTORY_OPS_PATH = '/subpackages/extra/inventory-ops/index'
 const RAW_INVENTORY_OPS_PATH = '/subpackages/manager/raw-inventory-ops/index'
 const STUDIO_DASHBOARD_PATH = '/subpackages/manager/studio-dashboard/index'
-const PROPERTY_COST_PATH = '/subpackages/manager/property-cost/index'
-const ARTISAN_COMMISSION_PATH = '/subpackages/manager/artisan-commission/index'
-const ARTISAN_COMMISSION_MINE_PATH = '/subpackages/manager/artisan/commission/index'
+const PROPERTY_COST_PATH = '/subpackages/extra/property-cost/index'
+const ARTISAN_COMMISSION_PATH = '/subpackages/extra/artisan-commission/index'
+const ARTISAN_COMMISSION_MINE_PATH = '/subpackages/extra/artisan/commission/index'
 const BOOKING_RULES_PATH = '/subpackages/manager/booking-rules/index'
 const SUPPORT_CONFIG_PATH = '/subpackages/manager/support-config/index'
 const PAYSLIP_PATH = '/subpackages/manager/payslip/index'
@@ -515,14 +515,14 @@ function goArtisanProductCreate() {
 
 function goArtisanConcept() {
   wx.navigateTo({
-    url: '/subpackages/manager/artisan/concept/index',
+    url: '/subpackages/extra/artisan/concept/index',
     fail: () => wx.showToast({ title: '概念生成暂不可用', icon: 'none' })
   })
 }
 
 function goArtisanManageProducts() {
   wx.navigateTo({
-    url: '/subpackages/manager/artisan/works/index',
+    url: '/subpackages/extra/artisan/works/index',
     fail: () => wx.showToast({ title: '作品库暂不可用', icon: 'none' })
   })
 }
@@ -531,7 +531,7 @@ function goArtisanJobs(filter) {
   const f = String(filter || '').trim()
   const q = f ? `?mode=jobs&filter=${encodeURIComponent(f)}` : '?mode=jobs'
   wx.navigateTo({
-    url: `/subpackages/manager/artisan/works/index${q}`,
+    url: `/subpackages/extra/artisan/works/index${q}`,
     fail: () => wx.showToast({ title: '工单暂不可用', icon: 'none' })
   })
 }

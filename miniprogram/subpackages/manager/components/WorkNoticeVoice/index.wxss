@@ -1,0 +1,32 @@
+/* 工作通知声音 chip：纯图标，贴齐工作台黑金配色
+   尺寸固定为正方形圆钮 —— 不带文字，避免头部右侧被挤成竖排/串行 */
+.wnv {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  background: rgba(196, 167, 108, 0.10);
+  transition: background-color 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+}
+
+.wnv.is-off {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 0.72;
+}
+
+.wnv.is-unsupported {
+  opacity: 0.5;
+}
+
+.wnv-press {
+  background: rgba(196, 167, 108, 0.22);
+}
+
+.wnv-icon {
+  font-size: 26rpx;
+  line-height: 1;
+}

@@ -14,7 +14,19 @@ const {
 } = require('../../utils/giftSignalLamp')
 
 const PAGE_SIZE = 20
-const PROFILE_PATH = '/subpackages/feature/user/profile/index'
+const PROFILE_PATH = '/subpackages/extra/user/profile/index'
+
+/**
+ * ⚠️ WXML `<template>` 的作用域是**隔离**的：只能读到 `data="{{...}}"` 传进去的值，
+ *    读不到页面 data。本仓同类用法见 `feature/components/mp-html`（它连组件自己的
+ *    `opts` / `ctrl` 都要显式写进 `data`，正是这条规则的证据）。
+ *
+ *    历史缺陷：卡片模板里写 `{{flowTab}}`（页面 data）→ 永远解析成 undefined，
+ *    于是「我送出的」卡片上「致 XX」那一行**从不显示**、收到侧角标也不变色；
+ *    因为 WXML 对未定义标识符不报错，这个 bug 不会以任何形式报出来。
+ *    修法：`flowTab` 随 item 一起进模板（`decorateFlowItem` 落 `flowTab` 字段），
+ *    模板改用 `{{item.flowTab}}` —— 不依赖作用域是否隔离，两种语义下都对。
+ */
 
 /** iPhone：scroll-view 需明确 px 高度，避免 flex:1+height:0 塌成空白 */
 function getWindowHeight() {
@@ -257,14 +269,40 @@ function decorateFlowItem(item, flowTab) {
     progressKey === 'cancelled' ||
     progressKey === 'refunded' ||
     progressSteps.mode === 'terminal'
+  const actions = Array.isArray(item.actions) ? item.actions : []
+  /**
+   * 失效终态的兜底出口：
+   * 云端 `buildMineActions` 对 refunded / cancelled **不派发任何动作**，
+   * 于是折叠区里的卡片一个按钮都没有，只能靠"点卡片"这一条隐晦路径。
+   * 这里仅在服务端确实没给动作时补一个「订单详情」（与云端 done 态同词），不覆盖服务端口径。
+   */
+  const fallback = inactive && !actions.length && item.deepLink
+    ? [{ key: 'order', label: '订单详情', type: 'nav', path: item.deepLink }]
+    : []
   return {
     ...item,
+    // flowTab 必须随 item 一起传给模板：WXML 模板作用域是隔离的（见文件头注释）
+    flowTab,
     roleLabel,
     progressSteps,
     signalClass: giftFlowSignal(item),
     showRail: progressSteps.mode === 'rail' && (progressSteps.steps || []).length > 0,
-    inactive
+    inactive,
+    actions: actions.length ? actions : fallback,
+    primaryAction: item.primaryAction || fallback[0] || null,
+    secondaryAction: item.secondaryAction || null
   }
+}
+
+/**
+ * 折叠计数口径：分页未到底时，已加载页里的失效笔数**不等于**总笔数，
+ * 所以只说「已加载 N 笔」；到底了才说「共 N 笔」。
+ * （与钱包账单流水 `ledgerCapText` 同一口径，避免"加载一页就报总数"。）
+ */
+function foldedCapText(count, hasMore) {
+  const n = Number(count) || 0
+  if (!n) return ''
+  return hasMore ? `已加载 ${n} 笔` : `共 ${n} 笔`
 }
 
 Page({
@@ -280,6 +318,13 @@ Page({
     activeSegment: 'all',
     segments: SENT_SEGMENTS.map((s) => ({ ...s, count: 0 })),
     list: [],
+    // 需求 31：按失效终态拆分渲染（activeList 在途 / foldedList 已退款·已取消）
+    activeList: [],
+    foldedList: [],
+    foldedCount: 0,
+    /** 折叠计数口径文案：分页未到底时只说「已加载 N 笔」 */
+    foldedCap: '',
+    foldedExpanded: false,
     loading: false,
     loadingMore: false,
     softRefreshing: false,
@@ -541,6 +586,29 @@ Page({
     }
   },
 
+  /** 需求 31：展开/收起「已退款 · 已取消」 */
+  toggleFolded() {
+    try {
+      wx.vibrateShort({ type: 'light' })
+    } catch (e) { /* 部分机型不支持 */ }
+    this.setData({ foldedExpanded: !this.data.foldedExpanded })
+  },
+
+  /**
+   * 需求 31：折叠区的复位补丁。
+   * 换分栏 / 换段位 / 清筛选都会换掉整批数据，折叠区必须跟着收回 ——
+   * 三处共用一个补丁，避免将来只在其中一处补而漏掉另一处。
+   */
+  foldedResetPatch() {
+    return {
+      activeList: [],
+      foldedList: [],
+      foldedCount: 0,
+      foldedCap: '',
+      foldedExpanded: false
+    }
+  },
+
   buildSegments(tab, counts) {
     const base = tab === 'received' ? RECEIVED_SEGMENTS : SENT_SEGMENTS
     const src = counts || {}
@@ -569,6 +637,8 @@ Page({
       activeSegment: 'all',
       segments: this.buildSegments(tab, {}),
       list: [],
+      // 需求 31：切换分栏/筛选时收起折叠区，避免保留上一次的展开态
+      ...this.foldedResetPatch(),
       page: 1,
       hasMore: false,
       errorMsg: '',
@@ -586,6 +656,8 @@ Page({
     this.setData({
       activeSegment: key,
       list: [],
+      // 需求 31：换段位等于换了一批数据，折叠区必须一起收回（否则会保留上一次的展开态）
+      ...this.foldedResetPatch(),
       page: 1,
       hasMore: false,
       errorMsg: '',
@@ -598,6 +670,8 @@ Page({
     this.setData({
       recipientFilter: '',
       filterLabel: '',
+      // 需求 31：清筛选同样换了一批数据 → 折叠区收回
+      ...this.foldedResetPatch(),
       ...this.emptyCopy(this.data.flowTab, this.data.activeSegment, '')
     })
     this.loadList(true)
@@ -685,6 +759,10 @@ Page({
       })
 
       const list = reset ? mapped : (this.data.list || []).concat(mapped)
+      // 需求 31：已退款 / 已取消（失效终态）折叠展示，不再与在途礼赠混排。
+      // 仅拆出用于渲染的两个子列表，`list` 本体保持不变（分页 concat 依赖它）。
+      const activeList = list.filter((it) => !it.inactive)
+      const foldedList = list.filter((it) => it.inactive)
       const copy = this.emptyCopy(tab, segment)
       const flowBadge = Number(result.todoCount || 0) + Number(result.attentionCount || 0)
       const upcomingHotCount =
@@ -693,6 +771,10 @@ Page({
           : this.data.upcomingHotCount
       this.setData({
         list,
+        activeList,
+        foldedList,
+        foldedCount: foldedList.length,
+        foldedCap: foldedCapText(foldedList.length, !!result.hasMore),
         page,
         hasMore: !!result.hasMore,
         loading: false,

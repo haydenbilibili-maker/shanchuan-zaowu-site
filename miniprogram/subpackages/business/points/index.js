@@ -263,7 +263,7 @@ Page({
       openWalletHub({});
     } catch (e) {
       wx.navigateTo({
-        url: '/subpackages/feature/user/stored-value/index',
+        url: '/subpackages/extra/user/stored-value/index',
         fail: () => this.goToWallet()
       });
     }

@@ -6,12 +6,12 @@
     <text class="pass-title">门店自取凭证</text>
     <view class="pass-chip pass-chip-{{pass.statusTone}}" wx:if="{{!loading && !statusUnknown}}">{{pass.statusLabel}}</view>
     <text class="pass-headline" wx:if="{{loading}}">正在核对订单…</text>
-    <text class="pass-headline" wx:elif="{{statusUnknown}}">状态以馆长核实为准</text>
+    <text class="pass-headline" wx:elif="{{statusUnknown}}">状态以专员核实为准</text>
     <text class="pass-headline" wx:else>{{pass.headline}}</text>
     <text class="pass-orderno" wx:if="{{orderNo}}">订单编号 {{orderNo}}</text>
   </view>
 
-  <!-- 凭证主体：已交付 → 核销回执；待领取 → 二维码 + 自取码 + 进度 -->
+  <!-- 凭证主体：已交付 → 二维码盖「已自提」水印；待领取 → 二维码 + 自取码 + 进度 -->
   <view class="pass-card">
     <view class="pass-sealed" wx:if="{{pass.statusTone === 'closed'}}">
       <view class="pass-sealed-tick">!</view>
@@ -23,33 +23,39 @@
       </view>
     </view>
 
-    <view class="pass-sealed" wx:elif="{{pass.statusTone === 'done'}}">
-      <view class="pass-sealed-tick">✓</view>
-      <text class="pass-sealed-title">本次自取已完成</text>
-      <text class="pass-sealed-sub">{{claimedAtText ? claimedAtText + ' · 已由馆长核销交付' : '已由馆长核销交付'}}</text>
-    </view>
-
     <block wx:else>
-      <view class="pass-qr-wrap">
+      <!-- 已交付：凭证收成回执（不再出示自取码） -->
+      <view class="pass-sealed" wx:if="{{pass.statusTone === 'done'}}">
+        <view class="pass-sealed-tick">✓</view>
+        <text class="pass-sealed-title">本次自取已完成</text>
+        <text class="pass-sealed-sub">{{claimedAtText ? claimedAtText + ' · 已由专员核销交付' : '已由专员核销交付'}}</text>
+      </view>
+
+      <view class="pass-qr-wrap {{pass.statusTone === 'done' ? 'pass-qr-used' : ''}}">
         <view class="pass-qr-frame">
           <canvas type="2d" id="passQrCanvas" class="pass-qr"></canvas>
+          <!-- 核销联动：店员核销成功后二维码压上「已自提」水印，码面变灰不可再扫 -->
+          <view class="pass-qr-stamp" wx:if="{{pass.statusTone === 'done'}}" aria-hidden="true">已自提</view>
         </view>
-        <text class="pass-qr-hint">{{qrFailed ? '二维码未生成，请向馆长口报下方自取码' : '屏幕已调至最亮，请交予馆长扫码'}}</text>
+        <text class="pass-qr-hint" wx:if="{{pass.statusTone === 'done'}}">此自取码已核销，请勿再次出示</text>
+        <text class="pass-qr-hint" wx:else>{{qrFailed ? '二维码未生成，请向专员口报下方自取码' : '屏幕已调至最亮，请交予专员扫码'}}</text>
       </view>
 
-      <view class="pass-perf">
-        <view class="pass-notch pass-notch-l"></view>
-        <view class="pass-dash"></view>
-        <view class="pass-notch pass-notch-r"></view>
-      </view>
-
-      <view class="pass-code-row" bindtap="copyCode" hover-class="pass-press" hover-stay-time="80">
-        <view class="pass-code-main">
-          <text class="pass-code-label">自取码</text>
-          <text class="pass-code-value" selectable="true">{{pass.codeText || codeText}}</text>
+      <block wx:if="{{pass.statusTone !== 'done'}}">
+        <view class="pass-perf">
+          <view class="pass-notch pass-notch-l"></view>
+          <view class="pass-dash"></view>
+          <view class="pass-notch pass-notch-r"></view>
         </view>
-        <text class="pass-copy">复制</text>
-      </view>
+
+        <view class="pass-code-row" bindtap="copyCode" hover-class="pass-press" hover-stay-time="80">
+          <view class="pass-code-main">
+            <text class="pass-code-label">自取码</text>
+            <text class="pass-code-value" selectable="true">{{pass.codeText || codeText}}</text>
+          </view>
+          <text class="pass-copy">复制</text>
+        </view>
+      </block>
     </block>
 
     <view class="pass-steps" wx:if="{{!statusUnknown && pass.steps.length}}">
@@ -82,10 +88,10 @@
   </view>
 
   <!-- 提示 -->
-  <text class="pass-hint" wx:if="{{statusUnknown}}">状态暂未同步，到店以馆长核实为准；此自取码仍可用于核销。</text>
+  <text class="pass-hint" wx:if="{{statusUnknown}}">状态暂未同步，到店以专员核实为准；此自取码仍可用于核销。</text>
   <text class="pass-hint" wx:elif="{{pass.statusTone !== 'done'}}">{{pass.hint}}</text>
   <text class="pass-guard" wx:if="{{pass.statusTone !== 'done'}}">自取码仅限本人到店使用，请勿截图或转发。</text>
-  <text class="pass-refresh" wx:if="{{pass.statusTone !== 'done'}}">状态未更新？下拉页面即可刷新。</text>
+  <text class="pass-refresh" wx:if="{{pass.statusTone !== 'done'}}">店员核销后本页自动更新；也可下拉刷新。</text>
 
   <view class="pass-error" wx:if="{{error}}">
     <text>{{error}}</text>
@@ -95,6 +101,6 @@
     <view class="pass-btn ghost" wx:if="{{showRefundEntry}}" bindtap="requestRefund" hover-class="pass-press" hover-stay-time="80">申请退款</view>
     <view class="pass-btn primary" bindtap="goOrderDetail" hover-class="pass-press" hover-stay-time="80">订单详情</view>
   </view>
-  <view class="pass-support" bindtap="goSupport" hover-class="pass-press" hover-stay-time="80">需要帮助？联系馆长 →</view>
+  <view class="pass-support" bindtap="goSupport" hover-class="pass-press" hover-stay-time="80">需要帮助？联系专员 →</view>
 
 </view>

@@ -311,7 +311,7 @@ Page({
 
   /** 分享封面预解析：cloud:// → https；失败留空，让微信截图而不是显示黑块 */
   async hydrateShareImage(src) {
-    const { resolveShareImage } = require('../../../utils/util')
+    const { resolveShareImage } = require('../../../../utils/util')
     const url = await resolveShareImage(src)
     if (url) this.setData({ shareImageUrl: url })
   },

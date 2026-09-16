@@ -128,7 +128,9 @@ Page({
           wiki: wikiData,
           articleContent: data.content || `<p>${data.brief || data.description || '暂无详细内容'}</p>`,
           galleryImages: galleryImages,
-          relatedProducts: res.result.relatedProducts || [],
+          // 需求 11：补 sensitiveEnabled（关联藏品此前封面直出）
+          relatedProducts: require('../../../utils/sensitiveBlurCard')
+            .attachSensitiveFlags(res.result.relatedProducts || []),
           isLoading: false
         })
         wx.setNavigationBarTitle({ title: wikiData.cn_name || '图鉴详情' })

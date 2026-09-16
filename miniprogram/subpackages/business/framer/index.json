@@ -2,5 +2,8 @@
   "navigationBarTitleText": "标本师档案",
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814",
-  "navigationBarBackgroundColor": "#1A1814"
+  "navigationBarBackgroundColor": "#1A1814",
+  "usingComponents": {
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+  }
 }

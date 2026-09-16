@@ -90,7 +90,7 @@
         <text class="sl-user">{{pickupStoreName || orderPickupStoreName || '山川造物'}}</text>
         <text class="sl-addr" wx:if="{{pickupStoreInfo.floor || pickupStoreInfo.hours}}">{{pickupStoreInfo.floor}}{{pickupStoreInfo.floor && pickupStoreInfo.hours ? ' · ' : ''}}{{pickupStoreInfo.hours ? '营业 ' + pickupStoreInfo.hours : ''}}</text>
         <text class="sl-addr" wx:if="{{pickupStoreInfo.address}}">{{pickupStoreInfo.address}}</text>
-        <text class="sl-addr">支付后馆长备妥；到店后点下方「自取凭证」出示二维码，由馆长核销后交付。</text>
+        <text class="sl-addr">支付后专员备妥；到店后点下方「自取凭证」出示二维码，由专员核销后交付。</text>
       </view>
     </view>
 
@@ -100,7 +100,7 @@
         <text class="pd-tick">✓</text>
         <view class="pd-main">
           <text class="pd-title">门店自取已完成</text>
-          <text class="pd-sub">{{pickupDoneInfo.claimedAtText ? pickupDoneInfo.claimedAtText + ' · 已由馆长核销交付' : '已由馆长核销交付'}}</text>
+          <text class="pd-sub">{{pickupDoneInfo.claimedAtText ? pickupDoneInfo.claimedAtText + ' · 已由专员核销交付' : '已由专员核销交付'}}</text>
         </view>
       </view>
     </view>

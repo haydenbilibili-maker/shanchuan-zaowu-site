@@ -15,7 +15,7 @@ const { trackBehavior } = require('../../../utils/trackBehavior')
 const { navigateToProductDetail } = require('../../../utils/productDetailNav')
 const { STORE_COVER } = require('../../../config/storeMediaCdn')
 const { normalizeStoreImageUrl, normalizeStoreImageList, hydrateStoresMedia, hydrateStoreMedia } = require('../../../utils/storeMedia')
-const { BRAND_WEBSITE } = require('../../../config/brand')
+const { BRAND_WEBSITE } = require('../utils/brand')
 const { findNearestStore, formatDistance } = require('../../../utils/storeGeo')
 const { getFirstImage, formatPrice } = require('../../../utils/util')
 const { getAuthorizedLocation } = require('../../../utils/locationAuth')
@@ -679,7 +679,7 @@ Page({
     const { path, tab } = e.currentTarget.dataset
     const storeId = this.data.store ? this.data.store.storeId : DEFAULT_STORE_ID
     if (path && path.startsWith('/')) {
-      if (path.indexOf('/subpackages/feature/user/support/index') === 0) {
+      if (path.indexOf('/subpackages/extra/user/support/index') === 0) {
         wx.navigateTo({
           url: `${path}?topic=booking&storeId=${storeId}`,
           fail: () => wx.showToast({ title: '无法打开页面', icon: 'none' })

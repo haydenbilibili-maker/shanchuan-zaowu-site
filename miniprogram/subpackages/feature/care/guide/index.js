@@ -269,7 +269,7 @@ Page({
     const q = ['topic=specimen_care']
     if (this.data.orderId) q.push(`orderId=${this.data.orderId}`)
     wx.navigateTo({
-      url: `/subpackages/feature/user/support/index?${q.join('&')}`,
+      url: `/subpackages/extra/user/support/index?${q.join('&')}`,
       fail: () => wx.showToast({ title: '客服页暂不可用', icon: 'none' })
     })
     trackBehavior('care_escalation_support', 'category', this.data.category)

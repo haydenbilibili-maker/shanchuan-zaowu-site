@@ -91,7 +91,14 @@
       <block wx:for="{{works}}" wx:key="_id">
         <view class="product-card" hover-class="product-card-press" bindtap="goToDetail" data-id="{{item._id}}">
           <view class="img-box">
-            <image src="{{item.coverImage || fallbackCover}}" mode="aspectFill" lazy-load="true" binderror="onWorkCoverError" data-index="{{index}}"></image>
+            <!-- 需求 11：敏感形态模糊（此前标本师个人页封面直出） -->
+            <sensitive-blur-gate
+              enabled="{{item.sensitiveEnabled}}"
+              product-id="{{item._id}}"
+              size="card"
+            >
+              <image src="{{item.coverImage || fallbackCover}}" mode="aspectFill" lazy-load="true" binderror="onWorkCoverError" data-index="{{index}}"></image>
+            </sensitive-blur-gate>
             <view class="status-badge" wx:if="{{item.stock <= 0}}">已藏</view>
           </view>
           <view class="info">
