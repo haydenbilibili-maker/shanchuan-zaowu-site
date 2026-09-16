@@ -613,7 +613,7 @@ function removeLead(row) {
       persist()
       ElMessage.success('已删除')
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 function openLeadDrawer(row) {
@@ -825,7 +825,7 @@ function removeCity(row) {
       persist()
       ElMessage.success('已删除')
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 function openCityDrawer(row) {
@@ -931,7 +931,7 @@ function removeResource(row) {
       persist()
       ElMessage.success('已删除')
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 </script>
 

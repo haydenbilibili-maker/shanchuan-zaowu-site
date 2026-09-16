@@ -211,7 +211,7 @@ function resetDefaults() {
         ElMessage.warning(e?.message || '恢复默认失败，已载入本地默认值')
       }
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 onMounted(load)

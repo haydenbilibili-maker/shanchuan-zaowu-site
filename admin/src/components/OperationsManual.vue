@@ -155,6 +155,7 @@
 </template>
 
 <script setup>
+import { safeWarn } from '../utils/safeStorage.js'
 import { ref, computed, onMounted } from 'vue'
 import { STORAGE_KEY, DATA_VERSION, initialData } from '../data/operationsManualData.js'
 
@@ -228,16 +229,12 @@ function loadData() {
         return
       }
     }
-  } catch (_) {
-    /* ignore */
-  }
+  } catch (_) { safeWarn('OperationsManual 非关键操作失败（已忽略）', _) }
   const fresh = { ...initialData, _v: DATA_VERSION }
   data.value = fresh
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh))
-  } catch (_) {
-    /* ignore */
-  }
+  } catch (_) { safeWarn('OperationsManual 非关键操作失败（已忽略）', _) }
   loading.value = false
 }
 

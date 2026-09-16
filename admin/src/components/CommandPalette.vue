@@ -146,6 +146,7 @@
 </template>
 
 <script setup>
+import { safeLocalSet } from '../utils/safeStorage.js'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import * as EpIcons from '@element-plus/icons-vue'
 import { Search, Star } from '@element-plus/icons-vue'
@@ -175,7 +176,7 @@ function loadIds(key) {
   } catch (e) { return [] }
 }
 function persistPinnedIds(arr) {
-  try { localStorage.setItem(PIN_KEY, JSON.stringify(arr)) } catch (e) {}
+  safeLocalSet(PIN_KEY, JSON.stringify(arr))
   // storage 事件只派发给其它标签页；同页内用自定义事件通知 App.vue 侧栏刷新
   window.dispatchEvent(new CustomEvent('pinned-changed'))
 }

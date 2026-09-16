@@ -1,4 +1,5 @@
 import cloudbase from "@cloudbase/js-sdk";
+import { safeWarn } from './utils/safeStorage.js'
 import {
   fetchCollectionLimit,
   isCloudbasePromiseBug,
@@ -89,9 +90,7 @@ export const loginToCloud = async (retryCount = 0) => {
           loginSuccess = true;
           console.log("✅ 已存在登录状态");
         }
-      } catch (e) {
-        // 忽略检查错误，继续尝试登录
-      }
+      } catch (e) { safeWarn('cloud 非关键操作失败（已忽略）', e) }
       
       // 步骤2：如果未登录，尝试匿名登录
       if (!loginSuccess) {

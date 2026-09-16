@@ -425,7 +425,7 @@ const removeStore = (row) => {
     await cdnRemove('stores', row._id)
     ElMessage.success('已删除')
     loadStores()
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const parseImages = (str) => String(str || '')
@@ -496,7 +496,7 @@ const removeZone = (row) => {
     await cdnRemove('store_zones', row._id)
     ElMessage.success('已删除')
     loadZones()
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 onMounted(refresh)

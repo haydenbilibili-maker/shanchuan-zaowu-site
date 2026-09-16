@@ -933,6 +933,7 @@
 </template>
 
 <script setup>
+import { safeWarn } from '../utils/safeStorage.js'
 import { onMounted, onUnmounted, reactive, ref, nextTick, computed } from 'vue'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
@@ -1371,14 +1372,14 @@ const restoreFinanceSession = () => {
             isUnlocked.value = true
             return true
         }
-    } catch (e) { /* ignore */ }
+    } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
     return false
 }
 
 const handleUnlock = () => {
     if (securityKey.value === FINANCE_SECRET) {
         isUnlocked.value = true
-        try { localStorage.setItem(FINANCE_SESSION_KEY, String(Date.now() + FINANCE_SESSION_TTL)) } catch (e) {}
+        try { localStorage.setItem(FINANCE_SESSION_KEY, String(Date.now() + FINANCE_SESSION_TTL)) } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
         ensureDefaultFinanceStoreInLocalBundle()
         financeRecordStoreId.value = findDefaultFinanceStoreId(loadStoreBundle()) || ''
         // 关键：解锁后，DOM才会被渲染，此时再初始化图表和数据
@@ -1395,9 +1396,9 @@ const handleUnlock = () => {
 const handleFinanceLogout = () => {
     isUnlocked.value = false
     securityKey.value = ''
-    try { app.clearTimers() } catch (e) {}
-    try { app.destroyAllCharts() } catch (e) {}
-    try { localStorage.removeItem(FINANCE_SESSION_KEY) } catch (e) {}
+    try { app.clearTimers() } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
+    try { app.destroyAllCharts() } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
+    try { localStorage.removeItem(FINANCE_SESSION_KEY) } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
     ElMessage.info('已退出财务模块')
 }
 
@@ -1591,7 +1592,7 @@ const app = reactive({
         const raw = settings?._raw || this.getSettings()._raw;
         try {
             localStorage.setItem('sc_finance_settings_v1', JSON.stringify(raw));
-        } catch (e) { /* 配额满则忽略 */ }
+        } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
     },
 
     restoreSettings() {
@@ -5683,8 +5684,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    try { app.clearTimers() } catch (e) {}
-    try { app.destroyAllCharts() } catch (e) {}
+    try { app.clearTimers() } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
+    try { app.destroyAllCharts() } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
 })
 </script>
 

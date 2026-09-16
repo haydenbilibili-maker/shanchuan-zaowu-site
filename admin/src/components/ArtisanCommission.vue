@@ -230,7 +230,7 @@ function resetRule() {
         ElMessage.warning(e?.message || '恢复默认失败')
       }
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 async function loadSummary() {

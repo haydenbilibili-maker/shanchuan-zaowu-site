@@ -271,7 +271,7 @@ const removeCraft = (row) => {
     await cdnRemove('pet_craft_configs', row._id)
     ElMessage.success('已删除')
     refresh()
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const quoteOrder = (row) => {
@@ -328,7 +328,7 @@ const advance = (row, nextStatus) => {
     })
     ElMessage.success('已推进')
     refresh()
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const viewDetail = (row) => {

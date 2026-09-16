@@ -82,6 +82,7 @@
 </template>
 
 <script setup>
+import { safeWarn } from '../utils/safeStorage.js'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
@@ -316,7 +317,7 @@ const unlock = async () => {
 const lock = () => {
   try {
     localStorage.removeItem(STORAGE_KEY)
-  } catch (_) {}
+  } catch (_) { safeWarn('PartnerDestinyCenter 非关键操作失败（已忽略）', _) }
   unlocked.value = false
   password.value = ''
   clearEmbedState()

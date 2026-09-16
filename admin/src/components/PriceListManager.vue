@@ -477,7 +477,7 @@ const refresh = async () => {
         }
       }),
     )
-    loadB2bMeta().catch(() => {})
+    loadB2bMeta().catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
   } catch (e) {
     list.value = []
     loadError.value = '加载失败：' + (e.message || e)
@@ -670,7 +670,7 @@ const remove = (row) => {
       ElMessage.success('已删除')
       refresh()
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const seedDefaults = async () => {

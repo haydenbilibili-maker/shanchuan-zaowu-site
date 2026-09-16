@@ -244,6 +244,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Stamp, Refresh } from '@element-plus/icons-vue'
+import { safeWarn } from '../utils/safeStorage.js'
 import {
   fetchCollectionLimit,
   fetchCollectionWhere,
@@ -371,7 +372,9 @@ const cancelWait = (row) => {
     await cdnUpdate('waitlist', row._id, { status: 'cancelled', cancelTime: Date.now() })
     ElMessage.success('已取消')
     refresh()
-  }).catch(() => {})
+  }).catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 const checkIn = (row) => {
@@ -389,7 +392,9 @@ const checkIn = (row) => {
     } catch (e) {
       ElMessage.error('核销失败：' + e.message)
     }
-  }).catch(() => {})
+  }).catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 const confirmBooking = async (row) => {
@@ -410,7 +415,9 @@ const cancelBooking = (row) => {
     })
     ElMessage.success('已取消')
     refresh()
-  }).catch(() => {})
+  }).catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 const verifyTicket = async () => {
@@ -451,7 +458,9 @@ const verifyTicket = async () => {
       ticketInput.value = ''
       detailVisible.value = false
       refresh()
-    }).catch(() => {})
+    }).catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
   } catch (e) {
     ElMessage.error('查询失败：' + e.message)
   } finally {

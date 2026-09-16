@@ -716,7 +716,7 @@ const deleteItem = (row, colName) => {
       // 运营话术；技术细节留在注释里（审计 P2：不要把环境变量名甩给运营）
       ElMessage.error('删除失败：' + (e?.message || '请刷新重试；持续失败请联系技术')) /* 技术排查：manageStoreContent 是否已部署、ADMIN_OPS_KEY 是否正确 */
     }
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const toggleStatus = async (row, colName) => {

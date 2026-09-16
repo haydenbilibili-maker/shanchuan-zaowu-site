@@ -148,7 +148,7 @@ function forceEnd(row) {
         ElMessage.error(e?.message || '结束失败')
       }
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 onMounted(load)

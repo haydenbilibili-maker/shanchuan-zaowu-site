@@ -336,7 +336,7 @@ function approve(row) {
         ElMessage.error(e?.message || '通过失败')
       }
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 function reject(row) {
@@ -361,7 +361,7 @@ function reject(row) {
         ElMessage.error(e?.message || '驳回失败')
       }
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 onMounted(refresh)

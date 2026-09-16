@@ -1,3 +1,4 @@
+import { safeWarn } from '../utils/safeStorage.js'
 /**
  * AI 全局辅助工具
  * 提供统一的AI调用接口、缓存、错误处理等功能
@@ -85,9 +86,7 @@ export async function fetchAIGatewayStatus() {
       if (data && data.ok && data.configured && typeof data.configured === 'object') {
         return data.configured
       }
-    } catch (e) {
-      /* 试下一个地址 */
-    }
+    } catch (e) { safeWarn('aiHelper 非关键操作失败（已忽略）', e) }
   }
   return null
 }

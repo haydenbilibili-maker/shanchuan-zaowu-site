@@ -1094,7 +1094,7 @@ const checkAlerts = () => {
         try {
           const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSyBzvLYiTcIGWi77+efTRAOUKfj8LZjHAY4kdfyzHksBSR3x/DdkEAKFF606euoVRQKRp/g8r5sIQUsgc7y2Ik3CBlou+/nn00QDlCn4/C2YxwGOJHX8sx5LAUkd8fw3ZBACg==')
           audio.volume = 0.3
-          audio.play().catch(() => {}) // 忽略错误
+          audio.play().catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) }) // 忽略错误
         } catch (e) {
           console.warn('无法播放提示音:', e)
         }

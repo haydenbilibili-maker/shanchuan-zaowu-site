@@ -411,7 +411,7 @@ const result = computed(() => {
 const propSummaries = computed(() => {
   const map = {}
   properties.value.forEach(p => {
-    try { map[p.id] = computeProposal(p).summary } catch (e) { /* 忽略坏数据 */ }
+    try { map[p.id] = computeProposal(p).summary } catch (e) { safeWarn('PropertyEval 测算某项失败（已忽略该行）', e) }
   })
   return map
 })
@@ -435,7 +435,9 @@ const resetToDefaults = () => {
         ElMessage.success('已恢复默认参数')
       }
     }
-  }).catch(() => {})
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+  })
 }
 
 const relativeTime = (ts) => {
@@ -478,6 +480,7 @@ const revenueRows = computed(() => {
 
 // ====== 内联子组件（用 el-input-number 解决输入丢失问题） ======
 import { ElInputNumber } from 'element-plus'
+import { safeWarn } from '../utils/safeStorage.js'
 const ParamInput = {
   props: {
     modelValue: { type: [Number, String], default: 0 },
@@ -537,7 +540,7 @@ function loadFromLocal() {
       const arr = JSON.parse(raw)
       if (Array.isArray(arr) && arr.length) return arr
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) { safeWarn('PropertyEval 本地缓存读取失败（回落预置案例）', e) }
   return null
 }
 function persistLocal() {
@@ -589,7 +592,8 @@ const saveCurrent = async () => {
     const payload = JSON.parse(JSON.stringify(current.value))
     payload.snapshot = result.value
     payload.updateTime = Date.now()
-    const exist = await fetchCollectionWhere('property_proposals', { id: current.value.id }, 1).catch(() => [])
+    // 不吞错：查重失败若被当成「不存在」，会走新建分支产生重复提案
+    const exist = await fetchCollectionWhere('property_proposals', { id: current.value.id }, 1)
     if (exist?.length) {
       await cdnUpdate('property_proposals', exist[0]._id, payload)
     } else {
@@ -598,7 +602,9 @@ const saveCurrent = async () => {
     }
     ElMessage.success('已同步到云端')
   } catch (e) {
-    console.warn('云端保存失败', e)
+    // 不再只 console.warn：本地已存不会丢数据，但云端没同步上必须让用户知道
+    console.error('云端保存失败', e)
+    ElMessage.warning(`已保存到本机，但云端同步失败：${e?.message || '未知错误'}`)
   }
 }
 
@@ -611,7 +617,9 @@ const deleteCurrent = () => {
     currentId.value = properties.value[0]?.id || ''
     persistLocal()
     ElMessage.success('已删除')
-  }).catch(() => {})
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+  })
 }
 
 const exportCSV = () => {
@@ -722,7 +730,7 @@ onMounted(() => {
   nextTick(renderCharts)
 })
 onUnmounted(() => {
-  ;[revChart, structChart, senseChart].forEach(c => { try { c?.destroy() } catch (e) {} })
+  ;[revChart, structChart, senseChart].forEach(c => { try { c?.destroy() } catch (e) { safeWarn('PropertyEval 图表销毁失败（已忽略）', e) } })
   if (flashTimer) clearTimeout(flashTimer)
 })
 </script>

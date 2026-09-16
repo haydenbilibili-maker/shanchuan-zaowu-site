@@ -291,7 +291,7 @@ const remove = (row) => {
     await cdnRemove('care_guides', row._id)
     ElMessage.success('已删除')
     refresh()
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const seedDefaults = async () => {

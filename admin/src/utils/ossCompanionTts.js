@@ -157,7 +157,7 @@ async function playPcm16Queue(pcmBuf, opts) {
     }, 100)
     try {
       source.start(0)
-      if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+      if (ctx.state === 'suspended') ctx.resume().catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
     } catch {
       cleanup()
     }

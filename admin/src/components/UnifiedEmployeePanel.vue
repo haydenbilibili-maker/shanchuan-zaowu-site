@@ -470,7 +470,7 @@ function removeEmployee(row) {
       persistPayrollAndSyncStores()
       ElMessage.success('已删除')
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 async function probeFields() {

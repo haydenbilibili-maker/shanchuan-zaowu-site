@@ -415,7 +415,7 @@ const del = (row) => {
     await cdnRemove('user_audiences', row._id)
     ElMessage.success('已删除')
     refresh()
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const viewMembers = (row) => {

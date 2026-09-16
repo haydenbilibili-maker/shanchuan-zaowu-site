@@ -7,6 +7,7 @@
  * 与 modulesRegistry / App.vue 配合使用
  */
 import { ref, watch } from 'vue'
+import { safeLocalSet } from '../utils/safeStorage.js'
 import { MODULES_BY_ID } from '../utils/modulesRegistry'
 import { resolveModuleOpen } from '../utils/moduleAliases'
 
@@ -47,14 +48,16 @@ function loadActive() {
   try {
     const v = normalizeTabId(localStorage.getItem(ACTIVE_KEY))
     if (v) return v
-  } catch (e) {}
+  } catch (e) {
+    safeWarn('useTabsManager 读取当前标签失败（回落 0）', e)
+  }
   return '0'
 }
 function persistTabs() {
-  try { localStorage.setItem(TABS_KEY, JSON.stringify(openTabs.value)) } catch (e) {}
+  safeLocalSet(TABS_KEY, JSON.stringify(openTabs.value))
 }
 function persistActive() {
-  try { localStorage.setItem(ACTIVE_KEY, activeTabId.value) } catch (e) {}
+  safeLocalSet(ACTIVE_KEY, activeTabId.value)
 }
 
 // 单例 state（多个组件共享）

@@ -1904,6 +1904,7 @@
 </template>
 
 <script setup>
+import { safeWarn } from '../utils/safeStorage.js'
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
 import { callGeminiAPI, extractJSON } from '../utils/aiHelper'
@@ -2101,7 +2102,7 @@ const loadSpeciesLists = () => {
 const saveSpeciesLists = () => {
   try {
     localStorage.setItem(SPECIES_LIST_STORAGE_KEY, JSON.stringify(speciesLists.value))
-  } catch (_) {}
+  } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
 }
 
 const resetSpeciesLists = () => {
@@ -2159,7 +2160,7 @@ const loadCompliance = () => {
 const saveCompliance = () => {
   try {
     localStorage.setItem(COMPLIANCE_STORAGE_KEY, JSON.stringify(complianceItems.value))
-  } catch (_) {}
+  } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
 }
 
 // 保存时顺带保存物种清单（减少漏保存概率）
@@ -2230,7 +2231,7 @@ const loadJsonArray = (key) => {
 const saveJsonArray = (key, value) => {
   try {
     localStorage.setItem(key, JSON.stringify(value))
-  } catch (_) {}
+  } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
 }
 
 const specimens = ref(loadJsonArray(SPECIMEN_STORAGE_KEY))
@@ -2609,7 +2610,7 @@ const exportBoardSummary = (format = 'md') => {
 const goToAIStrategyResearch = (featureId = 'strategy-research') => {
   try {
     localStorage.setItem('ai_center_pending_feature', featureId)
-  } catch (_) {}
+  } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   window.dispatchEvent(new CustomEvent('switch-tab', { detail: '12' }))
   setTimeout(() => {
     window.dispatchEvent(new CustomEvent('open-ai-feature', { detail: { featureId } }))
@@ -2674,7 +2675,7 @@ const goToProductConceptGenerator = () => {
 const bridgedConcept = ref(null)
 const dismissBridgedConcept = () => {
   bridgedConcept.value = null
-  try { localStorage.removeItem('sc_product_concept_for_strategy') } catch (_) {}
+  try { localStorage.removeItem('sc_product_concept_for_strategy') } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
 }
 const loadBridgedConcept = () => {
   try {
@@ -3032,7 +3033,7 @@ const loadEditableZones = () => {
 }
 const editableZones = ref(loadEditableZones())
 const persistEditableZones = () => {
-  try { localStorage.setItem(ZONE_STORAGE_KEY, JSON.stringify(editableZones.value.map((z) => ({ id: z.id, samples: z.samples })))) } catch (_) {}
+  try { localStorage.setItem(ZONE_STORAGE_KEY, JSON.stringify(editableZones.value.map((z) => ({ id: z.id, samples: z.samples })))) } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
 }
 const addZoneSample = (zoneId) => {
   const zone = editableZones.value.find((z) => z.id === zoneId)
@@ -3814,7 +3815,7 @@ const initTrendChart = () => {
   nextTick(() => {
     try {
       trendChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -3900,7 +3901,7 @@ const initSupplyChart = () => {
   nextTick(() => {
     try {
       supplyChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -3943,7 +3944,7 @@ const initProductRadar = () => {
   nextTick(() => {
     try {
       productRadar?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4000,7 +4001,7 @@ const initChannelChart = () => {
   nextTick(() => {
     try {
       channelChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4086,7 +4087,7 @@ const initIndustryGrowthChart = () => {
   nextTick(() => {
     try {
       industryGrowthChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4142,7 +4143,7 @@ const initCompetitorRadarChart = () => {
   nextTick(() => {
     try {
       competitorRadarChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4218,7 +4219,7 @@ const initProfit3DChart = () => {
   nextTick(() => {
     try {
       profit3DChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4302,7 +4303,7 @@ const initFunnelChart = () => {
   nextTick(() => {
     try {
       funnelChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4361,7 +4362,7 @@ const initHeatmapChart = () => {
   nextTick(() => {
     try {
       heatmapChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4463,7 +4464,7 @@ const initPlanningChart = () => {
   nextTick(() => {
     try {
       planningChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4521,7 +4522,7 @@ const initPlanningCapexChart = () => {
   nextTick(() => {
     try {
       planningCapexChart?.resize()
-    } catch (_) {}
+    } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
   })
 }
 
@@ -4531,7 +4532,7 @@ watch(currentView, (newView, oldView) => {
     if (trendChart) {
       try {
         trendChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       trendChart = null
     }
   }
@@ -4539,13 +4540,13 @@ watch(currentView, (newView, oldView) => {
     if (supplyChart) {
       try {
         supplyChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       supplyChart = null
     }
     if (industryGrowthChart) {
       try {
         industryGrowthChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       industryGrowthChart = null
     }
   }
@@ -4553,7 +4554,7 @@ watch(currentView, (newView, oldView) => {
     if (productRadar) {
       try {
         productRadar.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       productRadar = null
     }
   }
@@ -4561,7 +4562,7 @@ watch(currentView, (newView, oldView) => {
     if (profit3DChart) {
       try {
         profit3DChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       profit3DChart = null
     }
   }
@@ -4569,13 +4570,13 @@ watch(currentView, (newView, oldView) => {
     if (channelChart) {
       try {
         channelChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       channelChart = null
     }
     if (funnelChart) {
       try {
         funnelChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       funnelChart = null
     }
   }
@@ -4583,7 +4584,7 @@ watch(currentView, (newView, oldView) => {
     if (competitorRadarChart) {
       try {
         competitorRadarChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       competitorRadarChart = null
     }
   }
@@ -4591,7 +4592,7 @@ watch(currentView, (newView, oldView) => {
     if (heatmapChart) {
       try {
         heatmapChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       heatmapChart = null
     }
   }
@@ -4599,13 +4600,13 @@ watch(currentView, (newView, oldView) => {
     if (planningChart) {
       try {
         planningChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       planningChart = null
     }
     if (planningCapexChart) {
       try {
         planningCapexChart.destroy()
-      } catch (_) {}
+      } catch (e) { safeWarn('StrategyResearch 图表或本地存储操作失败（已忽略）', e) }
       planningCapexChart = null
     }
   }

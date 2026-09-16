@@ -1,3 +1,4 @@
+import { safeWarn } from '../utils/safeStorage.js'
 /**
  * CloudBase 数据库（CDN SDK）
  * bundle 内 @cloudbase/js-sdk 的 db.get() 存在 setting 'promise' bug；
@@ -284,23 +285,17 @@ export async function clearAdminSession() {
   try {
     // 与 establishAdminSession 同理：必须是站点根路径
     await fetch('/api/admin-session', { method: 'DELETE', credentials: 'same-origin' })
-  } catch (e) {
-    /* 忽略：退出登录不因网络失败而阻塞 */
-  }
+  } catch (e) { safeWarn('cloudbaseCdnDb 非关键操作失败（已忽略）', e) }
 }
 
 /** 会话失效时清掉前端登录标记，让口令门禁重新出现 */
 function clearAdminSessionLocal() {
   try {
     localStorage.removeItem('sc_admin_token')
-  } catch (e) {
-    /* ignore */
-  }
+  } catch (e) { safeWarn('cloudbaseCdnDb 非关键操作失败（已忽略）', e) }
   try {
     window.dispatchEvent(new CustomEvent('sc-admin-session-expired'))
-  } catch (e) {
-    /* ignore */
-  }
+  } catch (e) { safeWarn('cloudbaseCdnDb 非关键操作失败（已忽略）', e) }
 }
 
 async function callViaCloudFnProxy(name, data = {}) {

@@ -685,7 +685,7 @@ const deleteFramer = (row) => {
       console.error('删除失败', e)
       ElMessage.error('删除失败')
     }
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const toggleFramerStatus = async (row) => {

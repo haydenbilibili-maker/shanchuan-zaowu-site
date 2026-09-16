@@ -430,6 +430,7 @@
 </template>
 
 <script setup>
+import { safeWarn } from '../utils/safeStorage.js'
 import { reactive, ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import {
   Clock,
@@ -693,7 +694,7 @@ function openGiftBoard() {
 function openPromoArchive(filter) {
   try {
     sessionStorage.setItem('sc_archive_promo_filter', filter)
-  } catch (_) { /* ignore */ }
+  } catch (e) { safeWarn('Dashboard 会话存储写入失败（已忽略）', e) }
   go('1')
 }
 

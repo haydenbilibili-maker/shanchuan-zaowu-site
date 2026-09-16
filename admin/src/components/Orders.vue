@@ -272,6 +272,7 @@ import { ref, onMounted, reactive, computed, nextTick } from 'vue'
 import { Refresh, Search, Picture, MagicStick, Box, DocumentCopy } from '@element-plus/icons-vue'
 import { getTempFileUrl, cdnUpdate, cdnCount, fetchCollectionLimit, callCloudFunction } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { safeWarn } from '../utils/safeStorage.js'
 import { excludeExchangeOrders } from '../utils/orderFilters'
 import OrderAI from './ai/OrderAI.vue'
 
@@ -517,7 +518,9 @@ const fetchOrders = async () => {
 const updateBadge = async () => {
     try {
         paidCount.value = await cdnCount('orders', { status: 'paid' })
-    } catch(e){}
+    } catch(e){
+        safeWarn('订单角标计数失败（已忽略，角标可能滞后）', e)
+    }
 }
 
 // --- 业务操作 ---
@@ -591,7 +594,9 @@ const handleRefund = (row) => {
             ElMessage.error(e?.message || '退款失败')
             fetchOrders()
         }
-    }).catch(() => {})
+    }).catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 // --- 工具函数 ---
@@ -622,7 +627,9 @@ const confirmPickupReturn = (row) => {
             ElMessage.error(e?.message || '确认失败')
             fetchOrders()
         }
-    }).catch(() => {})
+    }).catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 const formatPrice = (p) => parseFloat(p).toLocaleString('en-US', {minimumFractionDigits: 2})
@@ -660,7 +667,9 @@ const editOrderNote = (row) => {
                 ElMessage.error(e?.message || '保存失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 managerShipOrder */)
             }
         })
-        .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 /**
@@ -700,7 +709,9 @@ const adminFulfill = (row) => {
                 ElMessage.error(e?.message || '补履约失败：请确认云函数 confirmPayment 已部署')
             }
         })
-        .catch(() => {})
+    .catch((e) => {
+      if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
+    })
 }
 
 const copyText = (text) => {

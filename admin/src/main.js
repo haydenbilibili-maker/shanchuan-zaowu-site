@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { safeWarn } from './utils/safeStorage.js'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { ElMessage } from 'element-plus'
@@ -28,7 +29,7 @@ app.config.errorHandler = (err, instance, info) => {
   console.error('[App error]', info, err)
   try {
     ElMessage.error(err?.message || '页面发生错误，请刷新重试')
-  } catch (_) {}
+  } catch (_) { safeWarn('main 非关键操作失败（已忽略）', _) }
 }
 
 // 未处理的 Promise rejection（如接口失败未 catch）
@@ -38,7 +39,7 @@ window.addEventListener('unhandledrejection', (e) => {
     console.error('[Unhandled rejection]', e.reason)
     try {
       ElMessage.warning(msg.length > 60 ? msg.slice(0, 60) + '…' : msg)
-    } catch (_) {}
+    } catch (_) { safeWarn('main 非关键操作失败（已忽略）', _) }
   }
 })
 

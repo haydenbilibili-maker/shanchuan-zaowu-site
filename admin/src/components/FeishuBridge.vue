@@ -682,14 +682,19 @@ const confirmApply = async () => {
 const refreshMirrors = async () => {
   loadingMirrors.value = true
   try {
+    // 不吞错：原先任何一路失败都静默变空数组，三个镜像表看起来「本来就是空的」
     const [p, i, l] = await Promise.all([
-      fetchCollectionLimit(COLLECTIONS.FEISHU_PURCHASES, { limit: 200 }).catch(() => []),
-      fetchCollectionLimit(COLLECTIONS.FEISHU_INVENTORY, { limit: 200 }).catch(() => []),
-      fetchCollectionLimit(COLLECTIONS.FEISHU_SYNC_LOGS, { limit: 40 }).catch(() => []),
+      fetchCollectionLimit(COLLECTIONS.FEISHU_PURCHASES, { limit: 200 }),
+      fetchCollectionLimit(COLLECTIONS.FEISHU_INVENTORY, { limit: 200 }),
+      fetchCollectionLimit(COLLECTIONS.FEISHU_SYNC_LOGS, { limit: 40 }),
     ])
     purchases.value = p || []
     inventory.value = i || []
     logs.value = (l || []).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+  } catch (e) {
+    // 原实现是 try/finally（无 catch）→ 去掉内层吞错后会变成未处理拒绝，这里补上显式处理
+    console.error('飞书镜像读取失败', e)
+    ElMessage.error(`镜像数据加载失败：${e?.message || '未知错误'}。上方列表为空是**请求失败**，不代表没有数据。`)
   } finally {
     loadingMirrors.value = false
   }

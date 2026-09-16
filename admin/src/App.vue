@@ -1448,6 +1448,7 @@ import CommandPalette from './components/CommandPalette.vue'
 import MainTabsBar from './components/MainTabsBar.vue'
 import { MODULES_BY_ID } from './utils/modulesRegistry'
 import { parseModuleHash, buildModuleHash } from './utils/moduleHash'
+import { safeLocalSet } from './utils/safeStorage.js'
 import { useTabsManager } from './composables/useTabsManager'
 import { useRecentModules, RECENT_MODULES_KEY, RECENT_CHANGED_EVENT } from './composables/useRecentModules'
 
@@ -1606,19 +1607,6 @@ const toggleSidebar = () => {
   // 通知依赖布局宽度的图表/表格重算
   requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
 }
-/**
- * localStorage 写入包装。
- * 这类失败（隐私模式 / 配额满 / storage 被禁用）确实可忽略，
- * 但**不能静默** —— 否则「侧栏折叠状态/置顶没保存」这类问题永远查不出来（审计 P1）。
- */
-function safeLocalSet(key, value) {
-  try {
-    localStorage.setItem(key, value)
-  } catch (e) {
-    console.warn(`[App] localStorage 写入失败（已忽略）：${key}`, e?.message || e)
-  }
-}
-
 const toggleRecentCollapsed = () => {
   recentCollapsed.value = !recentCollapsed.value
   safeLocalSet(RECENT_COLLAPSED_KEY, recentCollapsed.value ? '1' : '0')

@@ -235,7 +235,7 @@ function openExpired(row) {
         ElMessage.error(e?.message || '操作失败')
       }
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 function sweepOverdue() {
@@ -257,7 +257,7 @@ function sweepOverdue() {
         sweeping.value = false
       }
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 onMounted(() => {

@@ -164,6 +164,7 @@
 </template>
 
 <script setup>
+import { safeWarn } from '../../utils/safeStorage.js'
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { callGeminiAPI } from '../../utils/aiHelper'
@@ -353,7 +354,7 @@ const saveToResearchBoard = async (silent = false) => {
     await cdnAdd(COLLECTIONS.STRATEGY_RESEARCH, researchData)
     try {
       window.dispatchEvent(new CustomEvent('strategy-research-synced'))
-    } catch (_) {}
+    } catch (_) { safeWarn('StrategyResearchAI 非关键操作失败（已忽略）', _) }
     if (!silent) {
       ElMessage.success({
         message: '✅ 已同步到调研看板，可在战略调研看板中查看',
@@ -441,8 +442,8 @@ const clearHistory = () => {
       console.error('清空失败:', error)
       ElMessage.error('清空失败：' + (error.message || '未知错误'))
     }
-  }).catch(() => {
-    // 用户取消
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
   })
 }
 
@@ -465,8 +466,8 @@ const deleteHistoryItem = async (id) => {
       console.error('删除失败:', error)
       ElMessage.error('删除失败：' + (error.message || '未知错误'))
     }
-  }).catch(() => {
-    // 用户取消
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
   })
 }
 

@@ -6,6 +6,7 @@
 import { getCollectionData, countCollection, COLLECTIONS } from '../cloud'
 import { fetchFinancialData } from './financialData'
 import { excludeExchangeOrders } from './orderFilters'
+import { safeWarn } from './safeStorage.js'
 
 export async function fetchStoreData(showMessage = false, options = {}) {
   const { useFinancialData = true, period = 'week' } = options
@@ -17,15 +18,31 @@ export async function fetchStoreData(showMessage = false, options = {}) {
     const weekAgo = new Date(now)
     weekAgo.setDate(now.getDate() - 7)
 
+    // 内层原先还有 .catch(() => [])，但外层已是 allSettled —— 那个 catch 纯属冗余，
+    // 真正的问题是「失败被当成空数组/0」，于是看板把「没查到」显示成「确实是 0」。
+    // 现记录失败来源，随返回值一起抛出，让消费方能区分「没有」与「没拿到」。
+    const SOURCE_LABELS = [
+      'products', 'orders', 'users', 'activities',
+      'productCount', 'orderCount', 'userCount'
+    ]
     const results = await Promise.allSettled([
-      getCollectionData(COLLECTIONS.PRODUCTS, { limit: 1000 }).catch(() => []),
-      getCollectionData(COLLECTIONS.ORDERS, { limit: 500 }).catch(() => []),
-      getCollectionData(COLLECTIONS.USERS, { limit: 1000 }).catch(() => []),
-      getCollectionData(COLLECTIONS.ACTIVITIES, { limit: 100 }).catch(() => []),
-      countCollection(COLLECTIONS.PRODUCTS).catch(() => 0),
-      countCollection(COLLECTIONS.ORDERS).catch(() => 0),
-      countCollection(COLLECTIONS.USERS).catch(() => 0)
+      getCollectionData(COLLECTIONS.PRODUCTS, { limit: 1000 }),
+      getCollectionData(COLLECTIONS.ORDERS, { limit: 500 }),
+      getCollectionData(COLLECTIONS.USERS, { limit: 1000 }),
+      getCollectionData(COLLECTIONS.ACTIVITIES, { limit: 100 }),
+      countCollection(COLLECTIONS.PRODUCTS),
+      countCollection(COLLECTIONS.ORDERS),
+      countCollection(COLLECTIONS.USERS)
     ])
+    const degradedSources = results
+      .map((r, i) => (r.status === 'rejected' ? SOURCE_LABELS[i] : null))
+      .filter(Boolean)
+    if (degradedSources.length) {
+      safeWarn(
+        `门店数据部分来源不可用（这些指标会显示为 0）：${degradedSources.join('、')}`,
+        results.find((r) => r.status === 'rejected')?.reason
+      )
+    }
 
     const products = results[0].status === 'fulfilled' ? results[0].value : []
     // 兑换单（source=exchange）不是藏品订单：AI/监控的订单口径统一排除
@@ -161,7 +178,10 @@ export async function fetchStoreData(showMessage = false, options = {}) {
         weeklyNew: weeklyUsers.length,
         active: users.length, // 简化处理
         activeRate: 100
-      }
+      },
+      // 数据完整性标记：非空表示有来源取数失败，相关指标不可信（不可当成 0）
+      degraded: degradedSources.length > 0,
+      degradedSources
     }
   } catch (error) {
     console.error('获取门店数据失败:', error)

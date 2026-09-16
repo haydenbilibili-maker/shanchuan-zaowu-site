@@ -802,6 +802,7 @@
 </template>
 
 <script setup>
+import { safeWarn } from '../utils/safeStorage.js'
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor, SwitchButton, Refresh, Box, Check, Cpu, Connection, Cloudy, Setting, Plus, Edit, Delete, Link, Key, InfoFilled } from '@element-plus/icons-vue'
@@ -965,7 +966,7 @@ function pushRecentFeature(feature) {
   recentFeatureIds.value = next
   try {
     localStorage.setItem(RECENT_FEATURES_KEY, JSON.stringify(next))
-  } catch (_) {}
+  } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
 }
 
 function pushRecentTask(text) {
@@ -975,7 +976,7 @@ function pushRecentTask(text) {
   recentTasks.value = next
   try {
     localStorage.setItem(RECENT_TASKS_KEY, JSON.stringify(next))
-  } catch (_) {}
+  } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
 }
 
 const recentFeatures = computed(() =>
@@ -1740,7 +1741,7 @@ const persistSessionsNow = () => {
         sessions: sessions.value
       })
     )
-  } catch (_) {}
+  } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
 }
 
 const schedulePersistSessions = () => {
@@ -1791,7 +1792,7 @@ const loadSessionsFromStorage = () => {
       hydrateFromSession(cur)
       return
     }
-  } catch (_) {}
+  } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
   const fresh = createEmptySession(personaMode.value)
   sessions.value = [fresh]
   hydrateFromSession(fresh)
@@ -2669,7 +2670,7 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
   }
   
   if (chatAbortController) {
-    try { chatAbortController.abort() } catch (_) {}
+    try { chatAbortController.abort() } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
   }
   chatAbortController = new AbortController()
   isAiThinking.value = true
@@ -2790,7 +2791,7 @@ const sendAI = async (retryCount = 0, useBackup = false, prompt = null, specific
 
 const stopGeneration = () => {
   if (chatAbortController) {
-    try { chatAbortController.abort() } catch (_) {}
+    try { chatAbortController.abort() } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
     chatAbortController = null
   }
   const wasBusy = isAiThinking.value || isDebating.value || hasStreamingMessage.value
@@ -2903,7 +2904,7 @@ const startDebate = async () => {
 const stopDebate = () => {
   isDebating.value = false
   if (chatAbortController) {
-    try { chatAbortController.abort() } catch (_) {}
+    try { chatAbortController.abort() } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
     chatAbortController = null
   }
   isAiThinking.value = false
@@ -2961,8 +2962,8 @@ const clearHistory = () => {
     messages.value = [createWelcomeMessage()]
     syncCurrentSessionToStore()
     ElMessage.success('对话历史已清空')
-  }).catch(() => {
-    // 用户取消
+  }).catch((e) => {
+    if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)
   })
 }
 
@@ -3052,14 +3053,14 @@ onMounted(() => {
     if (Array.isArray(rf)) recentFeatureIds.value = rf.filter((id) => typeof id === 'string').slice(0, 6)
     const rt = JSON.parse(localStorage.getItem(RECENT_TASKS_KEY) || '[]')
     if (Array.isArray(rt)) recentTasks.value = rt.filter((t) => typeof t === 'string').slice(0, 5)
-  } catch (_) {}
+  } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
 })
 
 // 记忆角色/快捷指令展开收起偏好
 watch(showPersonaPanel, (val) => {
   try {
     localStorage.setItem(PERSONA_PANEL_KEY, String(val))
-  } catch (_) {}
+  } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
 })
 
 watch(personaMode, () => {
@@ -3071,7 +3072,7 @@ onUnmounted(() => {
   window.removeEventListener('open-ai-feature', handleOpenAiFeature)
   if (persistSessionsTimer) clearTimeout(persistSessionsTimer)
   if (chatAbortController) {
-    try { chatAbortController.abort() } catch (_) {}
+    try { chatAbortController.abort() } catch (e) { safeWarn('AICenter 图表或本地存储操作失败（已忽略）', e) }
     chatAbortController = null
   }
   stopUptimeCounter()

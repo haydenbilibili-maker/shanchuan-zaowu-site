@@ -756,7 +756,7 @@ const delRoot = (r) => {
     ElMessage.success('已删除')
     currentRoot.value = null
     refresh()
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const openSubDialog = (s) => {
@@ -819,7 +819,7 @@ const saveSub = async () => {
         dryRun: false,
         force: false,
         categoryIds: [savedId],
-      }).catch(() => {})
+      }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
     }
     ElMessage.success('已保存')
     subDialog.value = false
@@ -853,7 +853,7 @@ const delSub = (row) => {
     await cdnRemove('categories', row._id)
     ElMessage.success('已删除')
     refresh()
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const moveSub = async (row, dir) => {

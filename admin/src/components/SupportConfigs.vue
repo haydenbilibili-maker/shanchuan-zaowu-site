@@ -482,7 +482,7 @@ const remove = (row) => {
     } catch (e) {
       ElMessage.error('删除失败：' + (e.message || e))
     }
-  }).catch(() => {})
+  }).catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 const writeDefaultDoc = async () => {

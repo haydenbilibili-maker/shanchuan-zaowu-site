@@ -755,6 +755,8 @@ const previewConfig = () => {
 const resetConfig = async () => {
   if (!selectedConfig.value) return
   
+  // 原先 confirm 与实际操作共用同一个 catch，注释写「用户取消」，
+  // 但真实错误也会被当成「用户取消」静默丢弃（审计 P1）
   try {
     await ElMessageBox.confirm(
       '重置后将恢复所有模块到默认配置，是否继续？',
@@ -765,12 +767,17 @@ const resetConfig = async () => {
         cancelButtonText: '取消'
       }
     )
-    
+  } catch (e) {
+    if (e !== 'cancel' && e !== 'close') console.error('重置确认框异常', e)
+    return
+  }
+  try {
     // 🔧 优化：使用深拷贝避免引用问题
     selectedConfig.value.modules = JSON.parse(JSON.stringify(getDefaultModules()))
     ElMessage.success('配置已重置为默认值')
-  } catch (error) {
-    // 用户取消，不执行操作
+  } catch (e) {
+    console.error('重置配置失败', e)
+    ElMessage.error(`重置失败：${e?.message || '未知错误'}`)
   }
 }
 

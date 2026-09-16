@@ -231,7 +231,7 @@ const del = (row) => {
         busyId.value = ''
       }
     })
-    .catch(() => {})
+    .catch((e) => { if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e) })
 }
 
 onMounted(refresh)
