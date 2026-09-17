@@ -7,7 +7,11 @@
  * 就是旧代码**——曾经就因此让一整轮 toast 修复（icon:success → none）没有生效，
  * 而且本地静态检查全绿、完全看不出来。
  *
- * 唯一允许不同：project.miniapp.json（开发仓专有，含本地 DevTools 配置）。
+ * 允许不同的只有两处，且都是「本机/身份」信息，不参与编译语义：
+ *   · project.miniapp.json —— 开发仓专有，含本地 DevTools 配置；
+ *   · project.config.json 的 **projectname** —— 两仓显示名，用来在开发者工具里分清
+ *     「哪个是施工仓、哪个是开发仓」（2026-09-17 加：两仓内容一致后，工具里同名无法区分）。
+ *     注意是**按字段**例外：project.config.json 的其余字段（appid / setting / packOptions …）仍须逐字一致。
  *
  * 用法：
  *   node scripts/check-miniprogram-sync.mjs             # 检查
@@ -28,8 +32,30 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const SRC = process.env.SYNC_SRC || join(ROOT, 'shanchuanzaowu', 'miniprogram')
 const DST = process.env.SYNC_DST || join(ROOT, 'WeChatProjects', 'shanchuanspecimens')
 
-/** 允许两仓不同（开发仓专有配置） */
+/** 允许整文件不同（开发仓专有配置） */
 const ALLOW_DIFF = new Set(['project.miniapp.json'])
+/** 允许按**字段**不同：只是显示名，不参与编译。其余字段仍逐字比对。 */
+const ALLOW_DIFF_FIELDS = { 'project.config.json': ['projectname'] }
+
+/**
+ * 同一路径的内容是否视为一致。
+ * 只对 ALLOW_DIFF_FIELDS 里登记的 JSON 做「删掉这些键再比」；解析失败一律退回逐字比对
+ * （宁可报不一致，也不要因为解析异常而漏掉真实漂移）。
+ */
+function sameContent(rel, a, b) {
+  const drop = ALLOW_DIFF_FIELDS[rel]
+  if (!drop) return a.equals(b)
+  try {
+    const norm = (buf) => {
+      const o = JSON.parse(buf.toString('utf8'))
+      for (const k of drop) delete o[k]
+      return JSON.stringify(o)
+    }
+    return norm(a) === norm(b)
+  } catch (e) {
+    return a.equals(b)
+  }
+}
 // .tmp = 部署/巡检的临时日志与中间 JSON（miniprogram/.gitignore 已忽略）。
 // 必须显式跳过：否则每次部署都会生成带时间戳的新文件，让本检查**不确定**地报不一致。
 const IGNORE_DIRS = new Set(['node_modules', '.git', 'miniprogram_npm', '.tmp'])
@@ -69,7 +95,7 @@ function main() {
     const b = join(DST, rel)
     if (!existsSync(b)) {
       problems.push({ rel, kind: '开发仓缺失' })
-    } else if (!readFileSync(a).equals(readFileSync(b))) {
+    } else if (!sameContent(rel, readFileSync(a), readFileSync(b))) {
       problems.push({ rel, kind: ALLOW_DIFF.has(rel) ? '允许差异' : '内容不一致' })
     }
   }
@@ -124,9 +150,14 @@ function selftest() {
     writeFileSync(join(dst, 'app.wxss'), 'same\n')
     writeFileSync(join(src, 'sub/a.js'), 'A\n')
     writeFileSync(join(dst, 'sub/a.js'), 'A\n')
-    // 真实情形：project.miniapp.json **两仓都有**但内容不同（唯一允许差异）
+    // 真实情形：project.miniapp.json **两仓都有**但内容不同（允许整文件差异）
     writeFileSync(join(src, 'project.miniapp.json'), '{"a":1}\n')
     writeFileSync(join(dst, 'project.miniapp.json'), '{"a":2}\n')
+    // 真实情形：project.config.json 只有 projectname 不同（施工仓 / 开发仓 显示名）
+    writeFileSync(join(src, 'project.config.json'),
+      JSON.stringify({ appid: 'wxSAME', projectname: '山海造物·施工仓', setting: { es6: true } }, null, 2) + '\n')
+    writeFileSync(join(dst, 'project.config.json'),
+      JSON.stringify({ appid: 'wxSAME', projectname: '山海造物·开发仓', setting: { es6: true } }, null, 2) + '\n')
   }
   const run = (fix) => spawnSync(
     process.execPath,
@@ -164,12 +195,23 @@ function selftest() {
   run(true)
   expect('E --fix 不擅自删除开发仓多出的文件', existsSync(join(dst, 'legacy.js')))
 
+  seed()
+  const f = run(false)
+  expect('F 仅 projectname 不同 → 视为一致（两仓显示名各自保留）', f.status === 0, f.stdout + f.stderr)
+
+  seed()
+  writeFileSync(join(dst, 'project.config.json'),
+    JSON.stringify({ appid: 'wxDIFFERENT', projectname: '山海造物·开发仓', setting: { es6: true } }, null, 2) + '\n')
+  const g = run(false)
+  expect('G project.config.json 的 appid 不同 → 仍检出（例外是窄的，只放过 projectname）', g.status === 1)
+  expect('G 报出 project.config.json', /project\.config\.json/.test(g.stdout + g.stderr))
+
   rmSync(base, { recursive: true, force: true })
   if (bad) {
     console.error(`\n✗ selftest 失败 ${bad} 项`)
     process.exit(1)
   }
-  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 五种情形都符合预期')
+  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致')
   process.exit(0)
 }
 
