@@ -20,6 +20,9 @@
  *   P7 /api/feishu-sync 响应体不得出现 FEISHU_APP_TOKEN 的值
  *   P8 /api/cloud-fn：GET 探活免会话（200），POST 无会话 → 401
  *   P9 未授权响应不得带 `Access-Control-Allow-Origin: *`
+ *   P10 `GET /api/admin-session` 是**会话探活**（不再是登出）：无 Cookie → active:false，且不下发清 Cookie
+ *   P11 同一 GET 带合法 Cookie → active:true（前端登录态据此判定，审计 A4）
+ *   P12 同一 GET 带过期 Cookie → active:false
  *   N1 换掉签名密钥后，同一 Cookie 必须失效（证明 HMAC 校验是真的，不是形状检查）
  *   N2 不带 Origin 且不带 Cookie → 仍是 401（证明 401 由会话导致，不是来源逻辑）
  *
@@ -47,6 +50,7 @@ const { guardAdminRequest, issueSessionToken, SESSION_COOKIE } = await import('.
 const ai = await import('../functions/api/ai.js');
 const feishu = await import('../functions/api/feishu-sync.js');
 const cloudFn = await import('../functions/api/cloud-fn.js');
+const adminSession = await import('../functions/api/admin-session.js');
 
 function req(path, { method = 'GET', cookie = '', origin = '', body: payload = '' } = {}) {
   const headers = {};
@@ -154,6 +158,33 @@ export async function runChecks() {
     const res = await ai.onRequest({ request: req('/api/ai', { origin: 'https://evil.example' }), env: ENV });
     const acao = res.headers.get('Access-Control-Allow-Origin');
     t('P9 未授权/非白名单来源不返回 Access-Control-Allow-Origin: *', acao !== '*', `acao=${acao}`);
+  }
+
+  // P10 GET /api/admin-session = 探活（已不是登出）
+  {
+    const res = await adminSession.onRequest({ request: req('/api/admin-session'), env: ENV });
+    const b = await body(res);
+    const setCookie = res.headers.get('Set-Cookie') || '';
+    t('P10 会话探活：无 Cookie → active:false 且不下发清 Cookie',
+      res.status === 200 && b.active === false && !/Max-Age=0/.test(setCookie),
+      `status=${res.status} active=${b.active} setCookie=${setCookie.slice(0, 40)}`);
+  }
+
+  // P11 探活：合法 Cookie → active:true
+  {
+    const res = await adminSession.onRequest({ request: req('/api/admin-session', { cookie: good }), env: ENV });
+    const b = await body(res);
+    t('P11 会话探活：合法 Cookie → active:true', res.status === 200 && b.active === true, `status=${res.status} active=${b.active}`);
+  }
+
+  // P12 探活：过期 Cookie → active:false
+  {
+    const res = await adminSession.onRequest({
+      request: req('/api/admin-session', { cookie: await expiredCookie(ENV.ADMIN_PROXY_SECRET) }),
+      env: ENV,
+    });
+    const b = await body(res);
+    t('P12 会话探活：过期 Cookie → active:false', res.status === 200 && b.active === false, `status=${res.status} active=${b.active}`);
   }
 
   // N1 换签名密钥 → 同一 Cookie 失效（证明 HMAC 校验是真的）

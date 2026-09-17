@@ -114,6 +114,11 @@ if (!process.env.SKIP_SECRET_SCAN) {
     [/sk-[A-Za-z0-9]{20,}/, '疑似大模型厂商密钥（sk- 前缀）'],
     [/adminOpsKey\s*[:=]\s*['"][^'"\s]{8,}['"]/, '前端硬编码 adminOpsKey'],
     [/VITE_ADMIN_OPS_KEY/, '前端仍引用 VITE_ADMIN_OPS_KEY'],
+    // 2026-09-17 审计 A4：这三个历史上都是「前端明文口令」，任何人下载 /admin 的 JS 即可读到。
+    // 现已全部 DEV 门控（生产构建由 Vite 死代码消除移除）；这里加闸门，谁写回去谁构建失败。
+    [/\badmin888\b/, '前端明文旧管理口令 admin888（须 DEV 门控：import.meta.env.DEV ? … : \'\'）'],
+    [/\bmoney888\b/, '前端明文旧财务口令 money888（同上）'],
+    [/verified_888/, '前端登录态魔法串 verified_888（已由服务端会话探活 probeAdminSession 取代）'],
   ];
   for (const [re, label] of patterns) {
     for (const { name, text } of scanText) {

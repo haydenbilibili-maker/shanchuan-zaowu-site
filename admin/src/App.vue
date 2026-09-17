@@ -1349,7 +1349,8 @@ import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchC
 import { toChineseTaxonomy } from './utils/taxonomyZh'
 import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
 import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
-import { establishAdminSession, clearAdminSession, assertWriteApplied } from './utils/cloudbaseCdnDb'
+import { establishAdminSession, clearAdminSession, probeAdminSession, assertWriteApplied } from './utils/cloudbaseCdnDb'
+import { ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE } from './utils/cloudFnErrors'
 import { isActiveCategory } from './utils/categoryActive'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RichHtmlEditor from './components/RichHtmlEditor.vue'
@@ -2052,9 +2053,29 @@ function stripLegacyBrandHashes() {
     }
 }
 
-const checkSession = () => {
-    // 检查本地存储的Token
-    if (localStorage.getItem('sc_admin_token') === 'verified_888') {
+const checkSession = async () => {
+    // 2026-09-17 审计 A4：登录态**以服务端会话为准**，不再看 localStorage 里的固定串。
+    // 本地记忆只在「探活接口不可达」（本地开发未部署 Pages Functions）时作为降级依据。
+    const localRemembered = (() => {
+        try { return localStorage.getItem(ADMIN_TOKEN_KEY) === ADMIN_TOKEN_VALUE } catch { return false }
+    })()
+    const probe = await probeAdminSession()
+
+    if (probe.reachable && !probe.active) {
+        // 服务端明确说没有有效会话（过期 / 被清 / 曾用过旧的固定串）→ 清掉本地记忆，回登录页
+        try { localStorage.removeItem(ADMIN_TOKEN_KEY) } catch (e) { safeWarn('清理登录态失败（已忽略）', e) }
+        isLoggedIn.value = false
+        return
+    }
+    if (probe.reachable && probe.active) {
+        isLoggedIn.value = true
+        setAdminHash(true)
+        applyModuleHashOnce()
+        if (currentTab.value === '1') loadProducts()
+        return
+    }
+    // 接口不可达：开发环境降级
+    if (localRemembered) {
         isLoggedIn.value = true
         setAdminHash(true)
         applyModuleHashOnce()
@@ -2087,7 +2108,7 @@ const handleLogin = async () => {
     }
 
     isLoggedIn.value = true
-    localStorage.setItem('sc_admin_token', 'verified_888')
+    try { localStorage.setItem(ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE) } catch (e) { safeWarn('记录登录态失败（已忽略）', e) }
     setAdminHash(true)
     applyModuleHashOnce()
     ElMessage.success({ message: '身份验证通过，欢迎回来', duration: 2000 })
@@ -2107,7 +2128,7 @@ const logout = () => {
             console.error('退出登录时清理服务端会话失败', e)
             ElMessage.warning(`服务端会话清理失败（本地已退出）：${e?.message || '未知错误'}`)
         }
-        localStorage.removeItem('sc_admin_token')
+        try { localStorage.removeItem(ADMIN_TOKEN_KEY) } catch (e) { safeWarn('清理登录态失败（已忽略）', e) }
         isLoggedIn.value = false
         password.value = ''
         setAdminHash(false)

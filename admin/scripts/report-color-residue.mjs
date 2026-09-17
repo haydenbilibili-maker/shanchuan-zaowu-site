@@ -33,6 +33,8 @@
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+// 登录态标记的唯一事实源（2026-09-17 审计 A4）
+import { ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE } from '../src/utils/cloudFnErrors.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ADMIN = resolve(HERE, '..')
@@ -523,7 +525,8 @@ if (verifySelector) {
   const chrome = await launchChrome({})
   try {
     await chrome.goto(base)
-    await chrome.evaluate("localStorage.setItem('sc_admin_token','verified_888')")
+    // 登录态标记的唯一事实源（2026-09-17 审计 A4）
+    await chrome.evaluate(`localStorage.setItem(${JSON.stringify(ADMIN_TOKEN_KEY)}, ${JSON.stringify(ADMIN_TOKEN_VALUE)})`)
     await chrome.reload()
     await chrome.waitFor("!document.querySelector('.login-mask')", { label: '进入控制台' })
     await chrome.goto(`${base}#/m/${moduleId}`)

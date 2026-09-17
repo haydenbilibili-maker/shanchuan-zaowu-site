@@ -292,6 +292,35 @@ function isLocalDevHost() {
   }
 }
 
+/**
+ * 会话探活：GET /api/admin-session 只回答「当前浏览器是否持有有效的服务端管理会话」。
+ *
+ * 2026-09-17 审计 A4：前端登录态不再靠 localStorage 里的魔法串，而是问服务端。
+ * 返回 `{ reachable, active }`：
+ *   · reachable=false → 接口不可达（本地开发未部署 Pages Functions / 网络异常）
+ *     → 调用方**沿用**本地记忆，避免把开发环境锁死；
+ *   · reachable=true && active=false → 服务端明确说没有有效会话（过期/被清）
+ *     → 调用方清掉本地记忆并回登录页。
+ */
+export async function probeAdminSession() {
+  try {
+    const res = await fetch('/api/admin-session', {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+    })
+    const ctype = res.headers.get('content-type') || ''
+    if (res.status === 404 || res.status === 405 || ctype.includes('text/html')) {
+      return { reachable: false, active: false }
+    }
+    const data = await res.json().catch(() => null)
+    if (!res.ok || !data || data.success === false) return { reachable: false, active: false }
+    return { reachable: true, active: data.active === true }
+  } catch {
+    return { reachable: false, active: false }
+  }
+}
+
 export async function clearAdminSession() {
   try {
     // 与 establishAdminSession 同理：必须是站点根路径

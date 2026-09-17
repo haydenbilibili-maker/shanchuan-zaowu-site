@@ -13,8 +13,11 @@ import {
   corsHeaders,
   issueSessionToken,
   originAllowed,
+  parseCookies,
   passwordConfigured,
+  SESSION_COOKIE,
   SESSION_TTL_SEC,
+  verifySessionToken,
 } from '../_lib/proxySession.mjs'
 
 function json(data, status = 200, extraHeaders = {}) {
@@ -37,6 +40,16 @@ export async function onRequest(context) {
     return json({ success: false, msg: '来源不被允许' }, 403, headers)
   }
 
+  // ── 会话探活（2026-09-17 审计 A4）──────────────────────────────
+  // 只回答「当前浏览器是否持有有效会话」，不要求任何输入、不回显任何配置。
+  // ⚠️ 原先 `GET` 与 `DELETE` 同义（= 登出）—— 那是个隐患：任何预取/直链/爬虫命中都会把
+  // 运营踢下线；而前端从未用 GET 登出（clearAdminSession 用的是 DELETE）。故改为探活。
+  if (request.method === 'GET') {
+    const cookies = parseCookies(request)
+    const session = await verifySessionToken(env, cookies[SESSION_COOKIE] || '')
+    return json({ success: true, active: session.ok === true }, 200, headers)
+  }
+
   if (!passwordConfigured(env)) {
     return json(
       {
@@ -49,7 +62,7 @@ export async function onRequest(context) {
     )
   }
 
-  if (request.method === 'DELETE' || request.method === 'GET') {
+  if (request.method === 'DELETE') {
     return json({ success: true, msg: '已退出管理会话' }, 200, {
       ...headers,
       'Set-Cookie': buildClearCookie(),

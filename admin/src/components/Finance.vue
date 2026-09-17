@@ -42,6 +42,9 @@
             <div class="finance-header-title">
                 <h1><i class="fas fa-chart-line"></i> 财务管理系统</h1>
                 <p>双阶段分红 · 投资回报追踪 · 终极运营版</p>
+                <p v-if="financeGateDisabled" class="finance-gate-note">
+                    本页当前随管理会话开放（未配置独立的股东口令）
+                </p>
             </div>
             <div class="header-actions">
                 <el-button class="finance-header-sandbox-btn" @click="goCapitalSandbox">
@@ -1373,11 +1376,36 @@ const handleDownload = async () => {
   }
 }
 
-/** 股东口令：优先读 .env 的 VITE_FINANCE_PASSWORD，缺省时沿用旧值（开发体验不变） */
-const FINANCE_SECRET = import.meta.env.VITE_FINANCE_PASSWORD || 'money888'
-/** 24 小时免登记忆：通过则后续打开模块直接进入 */
+/**
+ * 股东口令 —— **仅开发环境**的降级值；生产构建里整个字面量会被 Vite 移除。
+ *
+ * 2026-09-17 审计 A4 + 产品决策 A：`VITE_*` 前缀的变量**本身就会内联进公开包**，
+ * 拿它当口令等于没有门（原 `money888` 就能在生产包里被任何人读到）。现在：
+ *   · 生产构建 `FINANCE_SECRET` 恒为 ''（`import.meta.env.DEV` 为 false → 死代码消除）；
+ *   · 未配置时本页**随管理会话直接开放**（安全等价 —— 口令此前就公开在包里），
+ *     并在页面上如实标注，而不是假装有一道门；
+ *   · 想要真正的二次门（服务端校验 + 独立作用域 Cookie）见审计报告 A4 选项 B。
+ */
+const FINANCE_SECRET = import.meta.env.DEV ? (import.meta.env.VITE_FINANCE_PASSWORD || 'money888') : ''
+/** 二次门是否可用：未配置（生产默认）即视为不该有门 */
+const financeGateDisabled = !FINANCE_SECRET
+/** 24 小时免登记忆：通过则后续打开模块直接进入（仅在二次门可用时有意义） */
 const FINANCE_SESSION_KEY = 'sc_finance_unlocked_until'
 const FINANCE_SESSION_TTL = 24 * 60 * 60 * 1000
+
+/** 解锁后要做的事（口令解锁 与 「未配置二次门」 两条路径共用） */
+const afterFinanceUnlock = (remember) => {
+    isUnlocked.value = true
+    if (remember) {
+        try { localStorage.setItem(FINANCE_SESSION_KEY, String(Date.now() + FINANCE_SESSION_TTL)) } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
+    }
+    ensureDefaultFinanceStoreInLocalBundle()
+    financeRecordStoreId.value = findDefaultFinanceStoreId(loadStoreBundle()) || ''
+    // 关键：解锁后，DOM才会被渲染，此时再初始化图表和数据
+    nextTick(async () => {
+        await app.init()
+    })
+}
 
 const restoreFinanceSession = () => {
     try {
@@ -1391,15 +1419,9 @@ const restoreFinanceSession = () => {
 }
 
 const handleUnlock = () => {
-    if (securityKey.value === FINANCE_SECRET) {
-        isUnlocked.value = true
-        try { localStorage.setItem(FINANCE_SESSION_KEY, String(Date.now() + FINANCE_SESSION_TTL)) } catch (e) { safeWarn('Finance 本地存储或图表清理失败（已忽略）', e) }
-        ensureDefaultFinanceStoreInLocalBundle()
-        financeRecordStoreId.value = findDefaultFinanceStoreId(loadStoreBundle()) || ''
-        // 关键：解锁后，DOM才会被渲染，此时再初始化图表和数据
-        nextTick(async () => {
-            await app.init()
-        })
+    // 二次门口令可能是 ''（生产未配置）——空值绝不能当口令比对，否则空输入即解锁
+    if (FINANCE_SECRET && securityKey.value === FINANCE_SECRET) {
+        afterFinanceUnlock(true)
         ElMessage.success('身份验证通过')
     } else {
         ElMessage.error('口令错误，拒绝访问')
@@ -5752,12 +5774,10 @@ const app = reactive({
 
 // 🟢 组件挂载：尝试恢复 24h 内的解锁会话，若成功则直接进入并初始化
 onMounted(() => {
-    if (restoreFinanceSession()) {
-        ensureDefaultFinanceStoreInLocalBundle()
-        financeRecordStoreId.value = findDefaultFinanceStoreId(loadStoreBundle()) || ''
-        nextTick(async () => {
-            try { await app.init() } catch (e) { console.warn('app.init 失败', e) }
-        })
+    // 2026-09-17 审计 A4 + 决策 A：未配置二次门（生产默认）→ 直接开放；
+    // 配了门（本地开发）→ 沿用 24h 免登记忆。两条路径共用 afterFinanceUnlock，避免三份拷贝。
+    if (financeGateDisabled || restoreFinanceSession()) {
+        afterFinanceUnlock(false)
     }
 })
 
@@ -9623,4 +9643,7 @@ details.settings-panel[open] summary { border-bottom: none; border-radius: 8px 8
         transform: none;
     }
 }
+
+/* 2026-09-17 审计 A4：未配置二次门时的如实标注 */
+.finance-gate-note { color: var(--light-text-secondary); font-size: 12px; margin-top: 4px; letter-spacing: 0.02em; }
 </style>

@@ -47,6 +47,7 @@
         </div>
 
         <div v-else class="destiny-embed" ref="scrollRoot">
+          <p v-if="gateDisabled" class="destiny-gate-note">本页当前随管理会话开放（未配置独立的访问口令）</p>
           <div v-if="heroHtml" class="destiny-hero" v-html="heroHtml" />
 
           <nav class="pnav" aria-label="人员切换">
@@ -88,11 +89,20 @@ import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 
 const STORAGE_KEY = 'sc_partner_destiny_unlocked'
-const DEFAULT_PASSWORD = 'admin888'
+/**
+ * 访问口令 —— **仅开发环境**的降级值；生产构建里整个字面量会被 Vite 移除。
+ *
+ * 2026-09-17 审计 A4 + 产品决策 A：`VITE_*` 前缀会内联进公开包，拿它当口令等于没有门
+ * （原 `admin888` 在生产包里可被任何人读到）。现在未配置时本页**随管理会话直接开放**，
+ * 并在页面上如实标注；想要真正的二次门见审计报告 A4 选项 B。
+ */
+const DEFAULT_PASSWORD = import.meta.env.DEV ? (import.meta.env.VITE_PARTNER_PASSWORD || 'admin888') : ''
+/** 二次门是否可用：未配置（生产默认）即视为不该有门 */
+const gateDisabled = !DEFAULT_PASSWORD
 const EXPECTED_IDS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'hcx', 'wh', 'lel', 'xt', 'fam', 'z']
 const BASE = import.meta.env.BASE_URL || '/admin/'
 
-const unlocked = ref(typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY) === '1')
+const unlocked = ref(typeof window !== 'undefined' && (gateDisabled || localStorage.getItem(STORAGE_KEY) === '1'))
 const password = ref('')
 const unlocking = ref(false)
 const loading = ref(false)
@@ -300,7 +310,8 @@ const unlock = async () => {
   if (unlocking.value) return
   unlocking.value = true
   try {
-    if ((password.value || '').trim() !== DEFAULT_PASSWORD) {
+    // 口令可能是 ''（生产未配置）—— 空值绝不能当口令比对，否则空输入即解锁
+    if (!DEFAULT_PASSWORD || (password.value || '').trim() !== DEFAULT_PASSWORD) {
       ElMessage.error('密码错误')
       return
     }
@@ -489,4 +500,7 @@ onBeforeUnmount(() => {
     overflow: visible !important;
   }
 }
+
+/* 2026-09-17 审计 A4：未配置二次门时的如实标注 */
+.destiny-gate-note { margin: 0 0 12px; padding: 6px 10px 6px 8px; font-size: 12px; color: var(--light-text-secondary); border-left: 3px solid var(--gold-500); }
 </style>

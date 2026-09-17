@@ -3,6 +3,18 @@
  * Admin SPA 的「主理人·在线」只是口令门禁，不等于云函数已鉴权通过。
  */
 
+/**
+ * 前端「本次已登录」的记忆（localStorage）。
+ *
+ * 2026-09-17 审计 A4：原先用的是一串写死在源码里的固定魔法值（见 git 历史），
+ * 在控制台敲一行就能把界面骗过去（数据访问本来就被服务端 Cookie 拦，所以它只骗 UI）。
+ * 现在它的值只是 `'1'`（不再像一个「口令」），且**界面登录态以服务端会话探活为准**
+ * （见 cloudbaseCdnDb.probeAdminSession / App.vue checkSession）：本地标记只在
+ * 「探活接口不可达」（本地开发未部署 Pages Functions）时才作为降级依据。
+ */
+export const ADMIN_TOKEN_KEY = 'sc_admin_token'
+export const ADMIN_TOKEN_VALUE = '1'
+
 export const CloudFnErrorKind = Object.freeze({
   ADMIN_SESSION: 'ADMIN_SESSION',
   NEED_LOGIN: 'NEED_LOGIN',
@@ -14,7 +26,7 @@ export const CloudFnErrorKind = Object.freeze({
 
 function adminSpaLoggedIn() {
   try {
-    return localStorage.getItem('sc_admin_token') === 'verified_888'
+    return localStorage.getItem(ADMIN_TOKEN_KEY) === ADMIN_TOKEN_VALUE
   } catch {
     return false
   }

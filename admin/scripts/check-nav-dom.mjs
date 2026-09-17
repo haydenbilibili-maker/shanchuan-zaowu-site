@@ -34,7 +34,10 @@ const argOf = (name, fallback) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : fallback
 }
 const BASE = argOf('--base', process.env.ADMIN_BASE_URL || 'http://localhost:5178/admin/')
-const TOKEN = 'verified_888'
+// 登录态标记的唯一事实源（2026-09-17 审计 A4：魔法串已废，值改为 '1'；
+// 真正的门是服务端会话；本守卫在 dev server 下靠「探活不可达 → 沿用本地记忆」进入）
+import { ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE } from '../src/utils/cloudFnErrors.js'
+const TOKEN = ADMIN_TOKEN_VALUE
 
 /**
  * 冻结快照：一级导航的**用户可见名称与顺序**。
@@ -136,7 +139,7 @@ async function main() {
   try {
     // ── 0. 登录（预置口令门禁 token 后真刷新，走的是用户真实路径）────────────────
     await chrome.goto(BASE)
-    await chrome.evaluate(`localStorage.setItem('sc_admin_token', ${JSON.stringify(TOKEN)})`)
+    await chrome.evaluate(`localStorage.setItem(${JSON.stringify(ADMIN_TOKEN_KEY)}, ${JSON.stringify(TOKEN)})`)
     await chrome.reload()
     const loggedIn = await softWait('登录后进入控制台（无登录遮罩）', `!document.querySelector('.login-mask')`)
     if (!loggedIn) {
