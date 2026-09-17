@@ -1,7 +1,7 @@
 /**
  * 店长小程序账本 ↔ Web 财务桥接（store_ledger 集合）
  */
-import { getCdnDatabase, fetchAllFromCollection } from './cloudbaseCdnDb.js'
+import { getCdnDatabase, fetchAllFromCollection, cdnAdd, cdnUpdate, cdnRemove, assertWriteApplied } from './cloudbaseCdnDb.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
 
 export const STORE_LEDGER = 'store_ledger'
@@ -235,7 +235,8 @@ export async function pushStoreLedger(records) {
     if (docs.length <= 1) continue
     docs.sort((a, b) => (b._updateTime || b.syncedAt || 0) - (a._updateTime || a.syncedAt || 0))
     for (const stale of docs.slice(1)) {
-      if (stale._id) pruneOps.push(db.collection(STORE_LEDGER).doc(stale._id).remove())
+      // 幂等删除：并发下 deleted:0 属良性无操作，刻意不断言（否则制造假失败）
+      if (stale._id) pruneOps.push(cdnRemove(STORE_LEDGER, stale._id))
     }
   }
   if (pruneOps.length) await Promise.all(pruneOps)
@@ -254,17 +255,17 @@ export async function pushStoreLedger(records) {
     const prev = byKey.get(key)
     if (prev?._id) {
       ops.push(
-        db.collection(STORE_LEDGER).doc(prev._id).update({
+        cdnUpdate(STORE_LEDGER, prev._id, {
           ...doc,
           _updateTime: Date.now(),
-        }),
+        }).then((r) => assertWriteApplied(STORE_LEDGER, r, 'update')),
       )
     } else {
       ops.push(
-        db.collection(STORE_LEDGER).add({
+        cdnAdd(STORE_LEDGER, {
           ...doc,
           _createTime: Date.now(),
-        }),
+        }).then((r) => assertWriteApplied(STORE_LEDGER, r, 'add')),
       )
     }
   }

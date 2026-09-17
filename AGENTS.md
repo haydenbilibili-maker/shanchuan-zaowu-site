@@ -27,7 +27,7 @@
   `scripts/build-admin.mjs` 构建后剔除、`scripts/verify-admin-dist.mjs` 部署前拦截、`npm run check:publish-dir` 守卫。
   （2026-09-17 前该目录曾被公开部署至生产站，见 `docs/全面审计_2026-09-17/README.md` §7）
 - 验证：
-  - `npm run check:admin`（**52 条**静态守卫，含 dev 管线编译）。它是 `node scripts/run-guards.mjs`：
+  - `npm run check:admin`（**68 条**静态守卫，含 dev 管线编译）。它是 `node scripts/run-guards.mjs`：
     **逐条独立执行、全部跑完再汇总**（不再短路），清单唯一事实源是 `package.json` 的 `check:admin:guards`
     —— **新增守卫追加到该键**；
   - `npm run check:admin:selftest`（逐条跑守卫自检，证明每条都能失败）；`npm run check:admin:runner-selftest`

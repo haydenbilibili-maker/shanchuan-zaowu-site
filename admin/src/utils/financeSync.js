@@ -3,7 +3,7 @@
  * Web 管理后台 ↔ 云数据库 ↔ 店长小程序账本（store_ledger）
  */
 import { COLLECTIONS } from '../cloud'
-import { getCdnDatabase, fetchAllFromCollection } from './cloudbaseCdnDb.js'
+import { getCdnDatabase, fetchAllFromCollection, cdnAdd, cdnUpdate, cdnRemove, assertWriteApplied } from './cloudbaseCdnDb.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
 import {
   ledgerKey,
@@ -116,7 +116,8 @@ export async function saveFinanceRecordsToCloud(records) {
       docs.sort((a, b) => (b._updateTime || b.syncedAt || 0) - (a._updateTime || a.syncedAt || 0))
       for (const stale of docs.slice(1)) {
         if (stale._id) {
-          pruneOps.push(db.collection(COLLECTIONS.FINANCE_RECORDS).doc(stale._id).remove())
+          // 幂等删除：并发下 deleted:0 属良性无操作，刻意不断言（否则制造假失败）
+          pruneOps.push(cdnRemove(COLLECTIONS.FINANCE_RECORDS, stale._id))
         }
       }
     }
@@ -134,20 +135,20 @@ export async function saveFinanceRecordsToCloud(records) {
       const prev = byKey.get(key)
       if (prev?._id) {
         ops.push(
-          db.collection(COLLECTIONS.FINANCE_RECORDS).doc(prev._id).update({
+          cdnUpdate(COLLECTIONS.FINANCE_RECORDS, prev._id, {
             ...payload,
             _updateTime: Date.now(),
             syncedAt: Date.now(),
-          }),
+          }).then((r) => assertWriteApplied(COLLECTIONS.FINANCE_RECORDS, r, 'update')),
         )
       } else {
         ops.push(
-          db.collection(COLLECTIONS.FINANCE_RECORDS).add({
+          cdnAdd(COLLECTIONS.FINANCE_RECORDS, {
             ...payload,
             _createTime: Date.now(),
             _updateTime: Date.now(),
             syncedAt: Date.now(),
-          }),
+          }).then((r) => assertWriteApplied(COLLECTIONS.FINANCE_RECORDS, r, 'add')),
         )
       }
     }
@@ -200,12 +201,12 @@ export async function saveFinanceSettingsToCloud(settings) {
     }
 
     if (rows.length > 0) {
-      await db.collection(COLLECTIONS.FINANCE_SETTINGS).doc(rows[0]._id).update(payload)
+      assertWriteApplied(COLLECTIONS.FINANCE_SETTINGS, await cdnUpdate(COLLECTIONS.FINANCE_SETTINGS, rows[0]._id, payload), 'update')
     } else {
-      await db.collection(COLLECTIONS.FINANCE_SETTINGS).add({
+      assertWriteApplied(COLLECTIONS.FINANCE_SETTINGS, await cdnAdd(COLLECTIONS.FINANCE_SETTINGS, {
         ...payload,
         _createTime: Date.now(),
-      })
+      }), 'add')
     }
 
     return { success: true, message: '财务设置同步成功' }

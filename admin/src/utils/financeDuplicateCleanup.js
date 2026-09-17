@@ -3,7 +3,7 @@
  * 规则：canonical 门店 + 日期 唯一；保留 canonical storeId → 较新 _updateTime → 金额较大
  */
 import { COLLECTIONS } from '../cloud.js'
-import { getCdnDatabase, fetchAllFromCollection } from './cloudbaseCdnDb.js'
+import { getCdnDatabase, fetchAllFromCollection, cdnRemove } from './cloudbaseCdnDb.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
 import { touchLocalFinanceUpdateTime, saveFinanceRecordsToCloud } from './financeSync.js'
 import { ledgerKey } from './storeLedgerSync.js'
@@ -203,7 +203,8 @@ export async function cleanupDuplicateFinanceRecords(options = {}) {
       for (const group of cloudPreview.groups) {
         for (const rec of group.remove) {
           if (rec._id) {
-            await db.collection(COLLECTIONS.FINANCE_RECORDS).doc(rec._id).remove()
+            // 幂等删除：并发下 deleted:0 属良性无操作，刻意不断言（否则制造假失败）
+            await cdnRemove(COLLECTIONS.FINANCE_RECORDS, rec._id)
             cloudRemoved++
           }
         }
