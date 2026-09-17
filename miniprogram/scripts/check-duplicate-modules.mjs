@@ -72,7 +72,9 @@ export const SUBPACKAGE_ONLY_LEAF_UTILS = new Set([
   'animalEthicsNotice.js', 'careDefaults.js', 'customDefaults.js', 'depositOrderDisplay.js',
   'financeDailyParse.js', 'giftScenes.js', 'legalContent.js', 'mallCommission.js',
   'onePercentPledge.js', 'payment.js', 'pledgeDue.js', 'productConcept.js', 'productTags.js',
-  'qrcodeGen.js', 'signalLamp.js', 'studioInventoryParse.js', 'taxonomyZh.js', 'workspaceFeatures.js'
+  'qrcodeGen.js', 'signalLamp.js', 'studioInventoryParse.js', 'taxonomyZh.js', 'workspaceFeatures.js',
+  // 第二批（2026-09-18）：主包未使用、零外部依赖的叶子工具，按分包各自持有
+  'skuSize.js'
 ])
 
 /**

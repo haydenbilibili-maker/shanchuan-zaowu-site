@@ -2,7 +2,7 @@
  * 尺寸规范化的「跨端同口径」守卫
  *
  * 同一件事（把 sizeL/sizeW/sizeH 拼成规范尺寸串）在三处存在实现，必须逐例一致：
- *   1. 小程序 C 端展示/店长端保存：`miniprogram/utils/skuSize.js`
+ *   1. 小程序 C 端展示/店长端保存：`miniprogram/subpackages/manager/utils/skuSize.js`
  *   2. ERP 保存（admin/src/App.vue → `admin/src/utils/sizeCanonical.js`）
  *   3. 云函数入库：`cloudfunctions/manageProducts` 的 trimSizeNumber + 重建
  *
@@ -24,7 +24,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../..')
 
-const MP_UTIL = 'miniprogram/utils/skuSize.js'
+const MP_UTIL = 'miniprogram/subpackages/manager/utils/skuSize.js'
 const ERP_MODULE = 'admin/src/utils/sizeCanonical.js'
 const ERP_VIEW = 'admin/src/App.vue'
 const CLOUD = 'miniprogram/cloudfunctions/manageProducts/index.js'

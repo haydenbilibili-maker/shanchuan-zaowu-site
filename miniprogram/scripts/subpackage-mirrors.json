@@ -243,5 +243,10 @@
     "source": "subpackages/manager/utils/taxonomyZh.js",
     "mirror": "subpackages/feature/utils/taxonomyZh.js",
     "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/skuSize.js",
+    "mirror": "subpackages/feature/utils/skuSize.js",
+    "identical": true
   }
 ]

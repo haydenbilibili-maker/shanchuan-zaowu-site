@@ -316,7 +316,8 @@ Page({
       const { renderGiftPrintImage } = require('../../../utils/giftShareCard')
       const path = await renderGiftPrintImage('#giftPrintCanvas', this, {
         cardBody, cardSignature, themeName, themeNote, specimenFileID,
-        recipientName: item.recipientName || item.toName || '',
+        // 详情（mapBoardItem）不含 recipientName（那是列表侧客户端派生的）→ 以 address.name 为准
+        recipientName: item.recipientName || item.toName || (item.address && item.address.name) || '',
     })
       if (!path) throw new Error('生成失败，请重试')
       try {

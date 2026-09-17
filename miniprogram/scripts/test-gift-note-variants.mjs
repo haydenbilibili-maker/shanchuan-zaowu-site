@@ -144,9 +144,16 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
 {
   const card = readFileSync(resolve(ROOT, 'miniprogram/utils/giftShareCard.js'), 'utf8')
   check('★ 印刷版渲染器存在且导出', /function paintGiftPrintCard\(/.test(card) && /renderGiftPrintImage,/.test(card))
-  check('★ 规格为 **A5** 竖版 @300dpi（1748 × 2480 = A4 对半，一张印两张）',
-    /const PRINT_W = 1748/.test(card) && /const PRINT_H = 2480/.test(card),
-    'A4 对半是 A5（148×210mm），不是 A6')
+  check('★ 规格为 **A6** 竖版 @300dpi（1240 × 1748 = 105 × 148 mm）',
+    /const PRINT_W = 1240/.test(card) && /const PRINT_H = 1748/.test(card))
+  const printBody = (function () {
+    const i = card.indexOf('function paintGiftPrintCard(')
+    return i < 0 ? '' : card.slice(i, i + 9000)
+  })()
+  check('★ **满幅无黑边**（印刷用；不做深色外框）', printBody.length > 0 && !/#1A1814/.test(printBody),
+    '印刷卡不该有博物黑外框（打印/裁切不便）')
+  check('★ 正文在题记与署名之间**垂直居中**（短笺不空、长笺不挤）',
+    /freeBottom - freeTop - bodyBlockH/.test(card))
   check('★ 改纸张只改常量：绘制按设计稿等比放大（setTransform(S,…)）',
     /const S = PRINT_W \/ PRINT_DESIGN_W/.test(card) && /ctx\.setTransform\(S, 0, 0, S, 0, 0\)/.test(card))
   check('★ 印刷卡**必须**画题记带（分享卡不画，这是两者的关键区别）',

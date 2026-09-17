@@ -298,10 +298,10 @@ function renderGiftShareImage(selector, page, opts) {
  *   而分享卡正被订单详情 / 礼赠成功页真实使用 → 不动它，印刷版单独实现。
  * 用法：canvas 尺寸即输出像素（无需 destWidth）→ canvasToTempFilePath → 存相册 / 传云存储
  * ───────────────────────────────────────────────────────────────────────── */
-// A5 竖版 @300dpi = 1748 × 2480 px（148 × 210 mm）—— A4 对半，一张 A4 可排两张（拼版由印刷厂做）
-// 版式坐标仍按 A6 设计稿（1240 宽）书写，绘制前统一等比放大 → 改规格只改这两个常量
-const PRINT_W = 1748
-const PRINT_H = 2480
+// A6 竖版 @300dpi = 1240 × 1748 px（105 × 148 mm）—— 印刷用，**满幅无黑边**（打印/裁切方便）
+// 版式坐标按 1240 宽的设计稿书写，绘制前统一等比缩放 → 改纸张只改这两个常量
+const PRINT_W = 1240
+const PRINT_H = 1748
 const PRINT_DESIGN_W = 1240
 
 function paintGiftPrintCard(canvas, opts) {
@@ -310,7 +310,7 @@ function paintGiftPrintCard(canvas, opts) {
   const o = opts || {}
   const MM = 11.811
   const margin = Math.round(10 * MM)
-  const pad = Math.round(10 * MM)
+  const pad = Math.round(14 * MM)
   canvas.width = PRINT_W
   canvas.height = PRINT_H
   const ctx = canvas.getContext('2d')
@@ -320,18 +320,17 @@ function paintGiftPrintCard(canvas, opts) {
   const LH = PRINT_H / S
   ctx.setTransform(S, 0, 0, S, 0, 0)
 
-  ctx.fillStyle = '#1A1814'
+  // 满幅米白：印刷要出血/裁切方便，不做「深色桌面上的卡片」那种展示框（黑边打印不便）
+  ctx.fillStyle = '#F2EDE4'
   ctx.fillRect(0, 0, LW, LH)
   const cardX = margin
   const cardY = margin
   const cardW = LW - margin * 2
   const cardH = LH - margin * 2
-  ctx.fillStyle = '#F2EDE4'
-  ctx.strokeStyle = '#E0CFA3'
-  ctx.lineWidth = 2
-  roundRect(ctx, cardX, cardY, cardW, cardH, 24)
-  ctx.fill()
-  ctx.stroke()
+  // 内嵌细铜金框（印刷级留白内的一条静线，替代原来的深色外框）
+  ctx.strokeStyle = 'rgba(196, 167, 108, 0.45)'
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(cardX, cardY, cardW, cardH)
 
   const axisX = cardX + pad
   const axisRight = cardX + cardW - pad
@@ -392,7 +391,11 @@ function paintGiftPrintCard(canvas, opts) {
   ctx.font = '400 34px ' + HAND
   const maxLines = Math.max(1, Math.floor((signTop - y - Math.round(8 * MM)) / lineH))
   const bodyLines = wrapLines(ctx, String(o.cardBody || ''), axisRight - axisX, maxLines)
-  const bodyY = y + Math.round(12 * MM)
+  // 垂直居中：短笺不再「贴着题记、下留大片空」；长笺自然填满
+  const bodyBlockH = bodyLines.length * lineH
+  const freeTop = y + Math.round(6 * MM)
+  const freeBottom = signTop - Math.round(4 * MM)
+  const bodyY = freeTop + Math.max(0, Math.round((freeBottom - freeTop - bodyBlockH) / 2)) + Math.round(9 * MM)
   for (let i = 0; i < bodyLines.length; i += 1) {
     ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
   }

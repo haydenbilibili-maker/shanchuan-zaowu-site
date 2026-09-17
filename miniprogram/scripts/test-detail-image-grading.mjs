@@ -47,25 +47,25 @@ const INJECTIONS = {
   },
   // 尺寸空值判定退回旧口径（只剥 cm$）→「0×0×厚度 0 厘米」又被当成有效尺寸显示出来
   'size-empty-old-scope': {
-    file: 'miniprogram/utils/skuSize.js',
+    file: 'miniprogram/subpackages/manager/utils/skuSize.js',
     from: "    .replace(/(厚度|长度|宽度|高度|尺寸|长|宽|高|直径)/g, 'x')\n",
     to: ''
   },
   // 单值也当空 → 合法的单值尺寸（如 "0"）会被吞成「—」
   'size-single-value-empty': {
-    file: 'miniprogram/utils/skuSize.js',
+    file: 'miniprogram/subpackages/manager/utils/skuSize.js',
     from: '  if (parts.length < 2) return false;\n',
     to: ''
   },
   // 数值尾零不再归一 →「29.7×21.0×厚度 4.5 厘米」这类原始值又直接上屏
   'size-number-tail-zeros': {
-    file: 'miniprogram/utils/skuSize.js',
+    file: 'miniprogram/subpackages/manager/utils/skuSize.js',
     from: "  return s.replace(/\.?0+$/, '') || '0';\n",
     to: '  return s;\n'
   },
   // 展示出口不再兜底 → 全零尺寸又从 SKU 尺寸行/规格说明漏上屏
   'size-display-no-exit-guard': {
-    file: 'miniprogram/utils/skuSize.js',
+    file: 'miniprogram/subpackages/manager/utils/skuSize.js',
     from: '  return isEmptySizeValue(s) ? \'\' : s;\n',
     to: '  return s;\n'
   },
@@ -175,7 +175,7 @@ eq('reset 后回到 unknown（诊断用）', imgUrl.isThumbUsable(), false)
  * 现在统一到 utils/skuSize.js：C 端展示、超管录入保存都走它。
  * ------------------------------------------------------------------ */
 
-const skuSizeSrc = readSrc('miniprogram/utils/skuSize.js')
+const skuSizeSrc = readSrc('miniprogram/subpackages/manager/utils/skuSize.js')
 const skuSize = (() => {
   const module = { exports: {} }
   // eslint-disable-next-line no-new-func
