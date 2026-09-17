@@ -541,6 +541,18 @@ export const COLLECTIONS = {
   SUPPORT_CONFIGS: 'support_configs',                     // 客服入口（getSupportConfig）
   CONTENT_DISPLAY_FLAGS: 'content_display_flags',         // 内容展示开关（getContentDisplayFlags）
   WISH_WALL_MESSAGES: 'wish_wall_messages',               // 马上有祈福弹幕（manageWishWall，需求 28）
+  // ── 2026-09-17 全面审计补齐：以下集合此前只在云函数里以**常量名**被引用，
+  //    既不在 COLLECTIONS、也没有 rules/schema（字面量扫描扫不到常量 → 长期盲区）。
+  //    客户端 0 引用，权限均为「仅云函数可读写」。
+  PLATFORM_ORDER_BINDS: 'platform_order_binds',                 // 外部平台订单绑定（bindPlatformOrder）
+  STORE_COUPON_REDEEMS: 'store_coupon_redeems',                 // 门店券核销流水（verifyStoreCoupon）
+  ATLAS_LOGS: 'atlas_logs',                                     // 山海图鉴行为日志（manageAtlas）
+  GIFT_CONTACTS: 'gift_contacts',                               // 礼赠联系人（manageGift）
+  GIFT_DATES: 'gift_dates',                                     // 礼赠关键日期（manageGift）
+  STORE_LEDGER_DELETIONS: 'store_ledger_deletions',             // 店长账本删除审计（syncFinanceData）
+  STORED_VALUE_ACCOUNTS: 'stored_value_accounts',               // 储值账户（makeOrder）
+  STORED_VALUE_LEDGERS: 'stored_value_ledgers',                 // 储值流水台账（manageStoredValue）
+  STORED_VALUE_RECHARGE_ORDERS: 'stored_value_recharge_orders', // 储值充值订单（manageStoredValue）
 };
 
 // =================================================
