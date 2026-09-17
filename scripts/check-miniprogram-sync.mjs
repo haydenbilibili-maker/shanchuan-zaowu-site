@@ -48,6 +48,25 @@ const ALLOW_DIFF_FIELDS = {
 /** 脚本产物（故意写到开发仓的结果 JSON，打包已忽略）—— 不参与双仓比对 */
 const IGNORE_REL = /^scripts\/.*\.result\.json$/
 
+/** 读 JSON（失败给 null，调用方自行回落） */
+function readJson(file) {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'))
+  } catch (e) {
+    return null
+  }
+}
+
+/** 取出目标端某些字段的现有值（文件不存在/不可解析则为 null） */
+function pickFields(file, fields) {
+  if (!existsSync(file)) return null
+  const o = readJson(file)
+  if (!o) return null
+  const out = {}
+  for (const k of fields) if (Object.prototype.hasOwnProperty.call(o, k)) out[k] = o[k]
+  return Object.keys(out).length ? out : null
+}
+
 /**
  * 同一路径的内容是否视为一致。
  * 只对 ALLOW_DIFF_FIELDS 里登记的 JSON 做「删掉这些键再比」；解析失败一律退回逐字比对
@@ -146,9 +165,16 @@ function main() {
     let copied = 0
     for (const p of real) {
       if (p.kind === '主库缺失（开发仓多出）') continue
+      const a = join(SRC, p.rel)
       const b = join(DST, p.rel)
       mkdirSync(dirname(b), { recursive: true })
-      copyFileSync(join(SRC, p.rel), b)
+      const kept = ALLOW_DIFF_FIELDS[p.rel] ? pickFields(b, ALLOW_DIFF_FIELDS[p.rel]) : null
+      copyFileSync(a, b)
+      if (kept) {
+        // ⚠️ 整文件复制会把「本机身份」也带过去：projectname 必须保留目标端的值，
+        // 否则一次同步就把开发仓的名字改成施工仓的（2026-09-17 实际踩到过）。
+        writeFileSync(b, `${JSON.stringify({ ...readJson(b), ...kept }, null, 2)}\n`)
+      }
       copied += 1
     }
     console.log(`\n已从主库覆盖 ${copied} 个文件到开发仓；请复跑本脚本确认。`)
@@ -232,6 +258,19 @@ function selftest() {
     h.status === 0, h.stdout + h.stderr)
 
   seed()
+  // 源与目标既差 setting（应同步）又差 projectname（必须保留目标端）
+  writeFileSync(join(src, 'project.config.json'),
+    JSON.stringify({ appid: 'wxSAME', projectname: '山海造物·施工仓', setting: { es6: true, minified: true } }, null, 2) + '\n')
+  writeFileSync(join(dst, 'project.config.json'),
+    JSON.stringify({ appid: 'wxSAME', projectname: '山海造物·开发仓', setting: { es6: true, minified: false } }, null, 2) + '\n')
+  const i1 = run(true)
+  const dstCfg = JSON.parse(readFileSync(join(dst, 'project.config.json'), 'utf8'))
+  expect('I --fix 同步其它字段（setting.minified 跟随主库）', i1.status === 0 && dstCfg.setting.minified === true,
+    JSON.stringify(dstCfg))
+  expect('I --fix 保留开发仓自己的 projectname（不被主库覆盖）', dstCfg.projectname === '山海造物·开发仓',
+    `实际 ${dstCfg.projectname}`)
+
+  seed()
   const f = run(false)
   expect('F 仅 projectname 不同 → 视为一致（两仓显示名各自保留）', f.status === 0, f.stdout + f.stderr)
 
@@ -247,7 +286,7 @@ function selftest() {
     console.error(`\n✗ selftest 失败 ${bad} 项`)
     process.exit(1)
   }
-  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致 / 产物 JSON 被忽略')
+  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致 / 产物 JSON 被忽略 / --fix 保留本机显示名')
   process.exit(0)
 }
 
