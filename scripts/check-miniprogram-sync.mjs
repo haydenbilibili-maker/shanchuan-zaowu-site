@@ -103,6 +103,16 @@ function main() {
     if (!srcFiles.has(rel)) problems.push({ rel, kind: '主库缺失（开发仓多出）' })
   }
 
+  // 提示（不参与退出码）：两仓显示名若被改成一样，工具里又会分不清 —— 当场说出来。
+  try {
+    const nameOf = (base) => JSON.parse(readFileSync(join(base, 'project.config.json'), 'utf8')).projectname
+    const a = nameOf(SRC), b = nameOf(DST)
+    if (a && b && a === b) {
+      console.log(`· 提示：两仓 projectname 相同（${a}）—— 在开发者工具里会分不清施工仓 / 开发仓；` +
+        '建议各自设为不同名字（见 docs/施工与发布流程.md「两仓在开发者工具里怎么分」）。')
+    }
+  } catch (e) { /* 缺文件/解析失败不在这里报，交给上面的比对 */ }
+
   const real = problems.filter((p) => p.kind !== '允许差异')
   for (const p of problems) {
     const tag = p.kind === '允许差异' ? '·' : '✗'
