@@ -197,6 +197,7 @@ async function feishuApi(body) {
     try {
       const res = await fetch(url, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
@@ -228,7 +229,7 @@ async function feishuApi(body) {
 export async function feishuProxyStatus() {
   for (const url of candidateUrls()) {
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { credentials: 'include' })
       const ctype = res.headers.get('content-type') || ''
       if (ctype.includes('text/html')) continue
       const json = await res.json()

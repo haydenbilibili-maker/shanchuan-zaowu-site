@@ -23,11 +23,7 @@
 import { handleCloudFnAction } from '../_lib/cloudbaseCallFn.mjs'
 import {
   corsHeaders,
-  originAllowed,
-  parseCookies,
-  passwordConfigured,
-  SESSION_COOKIE,
-  verifySessionToken,
+  guardAdminRequest,
 } from '../_lib/proxySession.mjs'
 
 function json(data, status = 200, extraHeaders = {}) {
@@ -57,46 +53,13 @@ export async function onRequest(context) {
   const tcbEnv = cloudEnv(env)
 
   try {
-    if (!originAllowed(request, env)) {
-      return json({ success: false, msg: '来源不被允许' }, 403, headers)
-    }
+    // 统一入口闸（来源 → 口令已配置 → 会话）。GET 探活允许不带会话，但不回显任何配置细节。
+    const gate = await guardAdminRequest(request, env, { allowProbeWithoutSession: true })
+    if (!gate.ok) return json(gate.body, gate.status, headers)
+    if (gate.probe) return json({ success: true, msg: 'admin proxy online' }, 200, headers)
 
-    if (!passwordConfigured(env)) {
-      return json(
-        {
-          success: false,
-          code: 'PROXY_PASSWORD_NOT_CONFIGURED',
-          msg: '服务端未配置 ADMIN_PROXY_PASSWORD，管理代理已拒绝服务（fail-closed）。',
-        },
-        503,
-        headers,
-      )
-    }
-
-    // 探活：GET 不再回显白名单与密钥状态，避免信息暴露
-    if (request.method === 'GET') {
-      return json({ success: true, msg: 'admin proxy online' }, 200, headers)
-    }
     if (request.method !== 'POST') {
       return json({ success: false, msg: '仅支持 GET/POST' }, 405, headers)
-    }
-
-    // ---- 会话校验（唯一入口凭证）----
-    const cookies = parseCookies(request)
-    const session = await verifySessionToken(env, cookies[SESSION_COOKIE] || '')
-    if (!session.ok) {
-      const expired = session.reason === 'expired'
-      return json(
-        {
-          success: false,
-          code: expired ? 'SESSION_EXPIRED' : 'UNAUTHORIZED',
-          msg: expired
-            ? '管理会话已过期，请重新输入口令登录'
-            : '未登录管理会话：请先在 ERP 登录页完成口令验证',
-        },
-        401,
-        headers,
-      )
     }
 
     const payload = await request.json().catch(() => ({}))

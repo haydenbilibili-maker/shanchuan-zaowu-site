@@ -149,3 +149,56 @@ export function corsHeaders(request, env = {}) {
   if (origin && originAllowed(request, env)) headers['Access-Control-Allow-Origin'] = origin
   return headers
 }
+
+/**
+ * 管理端点的**统一入口闸**（来源 → 配置 → 会话）。
+ *
+ * 为什么要有它（2026-09-17 全面审计 A2/A3）：
+ *   `/api/cloud-fn` 早已按这套语义校验，但同目录的 `/api/ai` 与 `/api/feishu-sync`
+ *   **完全无鉴权**（线上实测：任何人 GET 就能拿到飞书 appToken、并盗刷 AI 额度）。
+ *   把闸收成一个函数，三个端点共用一份实现，避免再出现「新端点忘了加门」。
+ *
+ * 顺序固定：来源不被允许(403) → 未配置口令即拒绝服务(503, fail-closed) → 会话(401)。
+ *
+ * @param {Request} request
+ * @param {object} env
+ * @param {{ allowProbeWithoutSession?: boolean }} [opts]
+ *   allowProbeWithoutSession：仅 `/api/cloud-fn` 的 GET 探活用（不回显任何配置细节）。
+ * @returns {Promise<{ ok: boolean, probe?: boolean, status?: number, body?: object }>}
+ */
+export async function guardAdminRequest(request, env = {}, opts = {}) {
+  if (!originAllowed(request, env)) {
+    return { ok: false, status: 403, body: { success: false, msg: '来源不被允许' } }
+  }
+  if (!passwordConfigured(env)) {
+    return {
+      ok: false,
+      status: 503,
+      body: {
+        success: false,
+        code: 'PROXY_PASSWORD_NOT_CONFIGURED',
+        msg: '服务端未配置 ADMIN_PROXY_PASSWORD，管理代理已拒绝服务（fail-closed）。',
+      },
+    }
+  }
+  if (opts.allowProbeWithoutSession && request.method === 'GET') {
+    return { ok: true, probe: true }
+  }
+  const cookies = parseCookies(request)
+  const session = await verifySessionToken(env, cookies[SESSION_COOKIE] || '')
+  if (!session.ok) {
+    const expired = session.reason === 'expired'
+    return {
+      ok: false,
+      status: 401,
+      body: {
+        success: false,
+        code: expired ? 'SESSION_EXPIRED' : 'UNAUTHORIZED',
+        msg: expired
+          ? '管理会话已过期，请重新输入口令登录'
+          : '未登录管理会话：请先在 ERP 登录页完成口令验证',
+      },
+    }
+  }
+  return { ok: true, probe: false }
+}

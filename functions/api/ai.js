@@ -13,7 +13,16 @@
  * 请求：POST { provider: 'deepseek'|'bailian'|'openai'|'gemini', payload: {...} }
  * 响应：原样透传厂商返回体（状态码随之透传），便于前端沿用既有解析逻辑。
  * GET：返回各厂商密钥是否已配置（不泄露任何值）。
+ *
+ * ⚠️ 鉴权（2026-09-17 全面审计 A3）：本端点此前**完全无鉴权、CORS `*`** —— 线上实测任何人
+ * 都能拿它当免费 LLM 代理，盗刷 DEEPSEEK_API_KEY 额度。现与 /api/cloud-fn 同一道门：
+ * 来源校验 → ADMIN_PROXY_PASSWORD 未配置即拒绝服务（fail-closed）→ 校验 /api/admin-session
+ * 下发的 HttpOnly 签名 Cookie。CORS 不再用 `*`，只回显本站来源并允许携带凭证。
  */
+import {
+  corsHeaders,
+  guardAdminRequest,
+} from '../_lib/proxySession.mjs'
 
 const VENDORS = {
   deepseek: {
@@ -39,16 +48,10 @@ const VENDORS = {
   },
 }
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-}
-
-function json(data, status = 200) {
+function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...cors, 'Content-Type': 'application/json; charset=utf-8' },
+    headers: { 'Content-Type': 'application/json; charset=utf-8', ...extraHeaders },
   })
 }
 
@@ -82,32 +85,38 @@ export async function onRequest(context) {
   const { request, env } = context
 
   if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: cors })
+    return new Response(null, { status: 204, headers: corsHeaders(request, env) })
   }
+
+  const headers = corsHeaders(request, env)
+
+  // 统一入口闸：来源 → 口令已配置 → 会话。未登录一律 401，GET 也不再对公网开放。
+  const gate = await guardAdminRequest(request, env)
+  if (!gate.ok) return json(gate.body, gate.status, headers)
 
   if (request.method === 'GET') {
     const configured = {}
     for (const [name, vendor] of Object.entries(VENDORS)) {
       configured[name] = Boolean(resolveKey(vendor, env))
     }
-    return json({ ok: true, configured })
+    return json({ ok: true, configured }, 200, headers)
   }
 
   if (request.method !== 'POST') {
-    return json({ error: { message: '仅支持 GET/POST' } }, 405)
+    return json({ error: { message: '仅支持 GET/POST' } }, 405, headers)
   }
 
   let body
   try {
     body = await request.json()
   } catch {
-    return json({ error: { message: '请求体不是合法 JSON' } }, 400)
+    return json({ error: { message: '请求体不是合法 JSON' } }, 400, headers)
   }
 
   const provider = String(body?.provider || '').trim().toLowerCase()
   const vendor = VENDORS[provider]
   if (!vendor) {
-    return json({ error: { message: `不支持的 provider：${provider || '(空)'}` } }, 400)
+    return json({ error: { message: `不支持的 provider：${provider || '(空)'}` } }, 400, headers)
   }
 
   const apiKey = resolveKey(vendor, env)
@@ -120,6 +129,7 @@ export async function onRequest(context) {
         code: 'AI_KEY_NOT_CONFIGURED',
       },
       503,
+      headers,
     )
   }
 
@@ -130,24 +140,25 @@ export async function onRequest(context) {
       ? `${vendor.base}${upstreamPath}?key=${encodeURIComponent(apiKey)}`
       : `${vendor.base}${upstreamPath}`
 
-  const headers = { 'Content-Type': 'application/json' }
-  if (vendor.style === 'openai') headers.Authorization = `Bearer ${apiKey}`
+  // 注意：CORS 响应头叫 headers（见 onRequest 顶部），上游请求头另起名避免遮蔽
+  const upstreamHeaders = { 'Content-Type': 'application/json' }
+  if (vendor.style === 'openai') upstreamHeaders.Authorization = `Bearer ${apiKey}`
 
   try {
     const upstream = await fetch(url, {
       method: 'POST',
-      headers,
+      headers: upstreamHeaders,
       body: JSON.stringify(payload),
     })
     const text = await upstream.text()
     return new Response(text, {
       status: upstream.status,
       headers: {
-        ...cors,
+        ...headers,
         'Content-Type': upstream.headers.get('content-type') || 'application/json; charset=utf-8',
       },
     })
   } catch (e) {
-    return json({ error: { message: `上游调用失败：${e.message || e}` } }, 502)
+    return json({ error: { message: `上游调用失败：${e.message || e}` } }, 502, headers)
   }
 }

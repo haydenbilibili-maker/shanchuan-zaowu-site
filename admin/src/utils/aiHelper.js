@@ -79,7 +79,8 @@ function aiGatewayUrls() {
 export async function fetchAIGatewayStatus() {
   for (const url of aiGatewayUrls()) {
     try {
-      const res = await fetch(url, { method: 'GET', cache: 'no-store' })
+      // credentials: 'include' —— 网关现在校验 /api/admin-session 的 Cookie（审计 A2/A3）
+      const res = await fetch(url, { method: 'GET', cache: 'no-store', credentials: 'include' })
       const ctype = res.headers.get('content-type') || ''
       if (ctype.includes('text/html')) continue // SPA 回退页 = 网关未部署
       const data = await res.json().catch(() => null)
@@ -98,6 +99,7 @@ async function fetchViaAiGateway(provider, payload, signal) {
     try {
       const res = await fetch(url, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider, payload }),
         ...(signal ? { signal } : {}),
