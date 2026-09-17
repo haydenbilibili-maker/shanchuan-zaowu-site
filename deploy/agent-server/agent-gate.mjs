@@ -149,30 +149,46 @@ function proxy(req, res) {
 }
 
 // ── 登录尝试限速（简单内存计数，防暴力破解）──────────────────────────
+// ⚠ 两个必须避开的坑（第一版都踩了）：
+//   1. **不能用 req.socket.remoteAddress 作为键**：请求经 cloudflared 进来时，
+//      所有设备看到的都是 127.0.0.1 → 限速退化成**全局共享的一个桶**，
+//      任何人失败若干次就会把所有设备（包括你自己）一起锁掉。
+//      真实客户端 IP 在 `cf-connecting-ip`（Cloudflare 注入、cloudflared 转发）。
+//   2. **不能把成功也计入失败次数**，否则正常使用也会累积到锁死。
+//      改为：只在密码错误时记一次，成功即清零。
 const attempts = new Map()
 const WINDOW_MS = 10 * 60 * 1000
-const MAX_TRIES = 12
-function tooMany(ip) {
+const MAX_TRIES = 20
+const clientIp = (req) =>
+  String(
+    req.headers['cf-connecting-ip'] ||
+      (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+      req.socket.remoteAddress ||
+      '?',
+  )
+function isLocked(ip) {
   const now = Date.now()
   const rec = attempts.get(ip)
-  if (!rec || now - rec.t0 > WINDOW_MS) {
-    attempts.set(ip, { t0: now, n: 1 })
-    return false
-  }
-  rec.n += 1
-  return rec.n > MAX_TRIES
+  if (!rec || now - rec.t0 > WINDOW_MS) return false
+  return rec.n >= MAX_TRIES
+}
+function recordFailure(ip) {
+  const now = Date.now()
+  const rec = attempts.get(ip)
+  if (!rec || now - rec.t0 > WINDOW_MS) attempts.set(ip, { t0: now, n: 1 })
+  else rec.n += 1
 }
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${PUBLIC_HOST}`)
-  const ip = req.socket.remoteAddress || '?'
+  const ip = clientIp(req)
 
   if (url.pathname === '/__gate/login' && req.method === 'GET') {
     return sendHtml(res, 200, LOGIN_HTML())
   }
 
   if (url.pathname === '/__gate/login' && req.method === 'POST') {
-    if (tooMany(ip)) return sendHtml(res, 429, LOGIN_HTML('尝试过于频繁，请 10 分钟后再试。'))
+    if (isLocked(ip)) return sendHtml(res, 429, LOGIN_HTML('尝试过于频繁，请 10 分钟后再试（或重启 agent-gate 服务立即解锁）。'))
     let body = ''
     req.on('data', (c) => {
       body += c
@@ -180,7 +196,10 @@ const server = http.createServer((req, res) => {
     })
     req.on('end', () => {
       const pw = new URLSearchParams(body).get('password') || ''
-      if (!safeEqual(pw, PASSWORD)) return sendHtml(res, 401, LOGIN_HTML('密码不正确。'))
+      if (!safeEqual(pw, PASSWORD)) {
+        recordFailure(ip)   // 只有失败才计数；成功会清零
+        return sendHtml(res, 401, LOGIN_HTML('密码不正确。'))
+      }
       attempts.delete(ip)
       res.writeHead(302, {
         location: '/',
