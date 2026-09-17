@@ -27,15 +27,18 @@ apply() {  # apply <unit> <high> <max>
 	if ! systemctl cat "$unit" >/dev/null 2>&1; then
 		echo "  跳过 $unit（未安装）"; return 0
 	fi
-	mkdir -p "/etc/systemd/system/${unit}.d"
-	cat > "/etc/systemd/system/${unit}.d/10-memory.conf" <<CONF
+	# ⚠ drop-in 目录必须是 <unit>.service.d —— 写成 <unit>.d 会被 systemd **静默忽略**
+	#（本脚本第一版就踩了这个坑：复核时 MemoryHigh/Max 全是 infinity，才暴露出来）。
+	# 这也是为什么本脚本最后一定要**回读生效值**，而不是「写完就算成功」。
+	mkdir -p "/etc/systemd/system/${unit}.service.d"
+	cat > "/etc/systemd/system/${unit}.service.d/10-memory.conf" <<CONF
 # 由 harden-memory.sh 生成：防止单个服务失控拖死整机（见脚本头部的事故说明）
 [Service]
 MemoryAccounting=yes
 MemoryHigh=${high}
 MemoryMax=${max}
 CONF
-	echo "  $unit → MemoryHigh=${high} MemoryMax=${max}"
+	echo "  $unit → MemoryHigh=${high} MemoryMax=${max}  (/etc/systemd/system/${unit}.service.d/)"
 }
 
 echo "==> 1/3 给各服务设内存上限"
@@ -69,7 +72,38 @@ for u in dsh-web caddy cloudflared; do
 		"$(systemctl show -p MemoryMax  --value $u 2>/dev/null || echo -)"
 done
 echo
-echo "完成。现在任何单个服务失控都只会牺牲自己（systemd 会自动拉起），不会再让整机失联。"
+echo "==> 4/4 journald 加固 —— **本次事故的真凶**"
+# 取证（journalctl -b -1）显示：
+#   02:26:52 systemd-journald.service: Watchdog timeout (limit 3min)!
+#   02:36:55 systemd-logind: Failed to get load state of poweroff.target: Connection timed out
+#   02:37:03 Failed to execute poweroff operation: Connection timed out   ← 控制台卡「停止中」
+#   02:35:53 pam_systemd(sshd:session): Failed to release session: Transport endpoint is not connected
+#   全程**没有任何 OOM 记录**
+# ⇒ 不是内存不足被 OOM，而是 **journald 卡死**：日志服务一挂，写日志的进程全部阻塞，
+#   于是 cloudflared 起不来、logind 的 poweroff 超时（表现为控制台「停止中」）、
+#   sshd 无法释放会话（表现为 SSH 拿不到 banner）。整机看似死了，其实是日志管道断了。
+mkdir -p /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/10-cap.conf <<'CONF'
+# 由 harden-memory.sh 生成：给 journald 设硬上限，避免它自己成为不可控占用并卡死
+[Journal]
+SystemMaxUse=64M
+RuntimeMaxUse=16M
+MaxRetentionSec=1week
+# 限速：防止某个服务刷日志把 journald 拖垮（cloudflared 的 QUIC 重试循环就刷过）
+RateLimitIntervalSec=30s
+RateLimitBurst=2000
+CONF
+apply systemd-journald 48M 128M
+systemctl restart systemd-journald
+sleep 2
+printf "  journald → %s，磁盘占用 %s\n" "$(systemctl is-active systemd-journald)" "$(journalctl --disk-usage 2>/dev/null | grep -oE '[0-9.]+[KMG]' | head -1)"
+
+echo
+echo "完成。三层护栏：① 服务内存上限（失控者牺牲自己）② sshd 不可被 OOM ③ journald 有硬上限与限速。"
 echo
 echo "⚠ 仍要记住：1.58 GiB 不足以在服务器上跑 npm install / vite build。"
 echo "   重构建请放本地或 CI；若要让 agent 在服务器上跑构建，请把实例升配到 4 GiB。"
+echo
+echo "⚠ 运维习惯（我自己的教训）：不要反复跑「读整份 journal 再 grep」的命令"
+echo "   （如 journalctl --no-pager | grep …）。那会整份解码日志，在小内存机器上是"
+echo "   额外负担。请用 -n/--since 限定范围。"
