@@ -38,9 +38,9 @@ function eq(name, got, want) {
   check(name, got === want, `got ${JSON.stringify(got)} want ${JSON.stringify(want)}`)
 }
 
-const MODULE = 'miniprogram/subpackages/extra/user/stored-value/wallet-ledger.js'
-const PAGE = 'miniprogram/subpackages/extra/user/stored-value/index.js'
-const WXML = 'miniprogram/subpackages/extra/user/stored-value/index.wxml'
+const MODULE = 'miniprogram/subpackages/business/components/WalletPanelWallet/wallet-ledger.js'
+const PAGE = 'miniprogram/subpackages/business/components/WalletPanelWallet/index.js'
+const WXML = 'miniprogram/subpackages/business/components/WalletPanelWallet/index.wxml'
 
 const INJECTIONS = {
   // 退回旧实现：不认 {$date} → 每行时间静默变空
@@ -313,7 +313,7 @@ const page = (() => {
   const captured = { config: null }
   const src = readSrc(PAGE)
   // eslint-disable-next-line no-new-func
-  new Function('module', 'exports', 'require', 'Page', 'wx', 'getApp', src)(
+  new Function('module', 'exports', 'require', 'Page', 'Component', 'wx', 'getApp', src)(
     { exports: {} },
     {},
     (id) => {
@@ -329,6 +329,7 @@ const page = (() => {
       throw new Error('unstubbed require ' + id)
     },
     (cfg) => { captured.config = cfg },
+    (cfg) => { captured.config = cfg },   // 2026-09-17：面板已改由 Component({...}) 承载
     {
       vibrateShort: noop,
       showToast: noop,
@@ -345,7 +346,7 @@ const page = (() => {
     },
     () => ({ globalData: { openid: 'o1' } })
   )
-  return { config: captured.config }
+  return { config: { ...captured.config, ...(captured.config.methods || {}) } }
 })()
 
 function makeCtx(initial) {
@@ -390,7 +391,7 @@ function makeCtx(initial) {
   const src = readSrc(PAGE)
   const captured = { config: null }
   // eslint-disable-next-line no-new-func
-  new Function('module', 'exports', 'require', 'Page', 'wx', 'getApp', src)(
+  new Function('module', 'exports', 'require', 'Page', 'Component', 'wx', 'getApp', src)(
     { exports: {} },
     {},
     (id) => {
@@ -406,18 +407,20 @@ function makeCtx(initial) {
       throw new Error('unstubbed require ' + id)
     },
     (cfg) => { captured.config = cfg },
+    (cfg) => { captured.config = cfg },   // 2026-09-17：面板已改由 Component({...}) 承载
     stubWx,
     () => ({ globalData: { openid: 'o1' } })
   )
 
+  const cfgFlat = { ...captured.config, ...(captured.config.methods || {}) }
   const ctx2 = { data: { ...captured.config.data } }
   ctx2.data.ledgers = day1
   ctx2.data.ledgerOffset = 20
   ctx2.data.ledgerHasMore = true
   ctx2.data.ledgerLoading = false
   ctx2.setData = function (patch) { Object.assign(this.data, patch) }
-  Object.keys(captured.config).forEach((k) => {
-    if (typeof captured.config[k] === 'function') ctx2[k] = captured.config[k]
+  Object.keys(cfgFlat).forEach((k) => {
+    if (typeof cfgFlat[k] === 'function') ctx2[k] = cfgFlat[k]
   })
 
   await ctx2.onLoadMoreLedgers()
@@ -451,7 +454,12 @@ check('分页去重按 id', /new Set\(this\.data\.ledgers\.map\(\(r\) => r && r\
 check('★ 点行开订单详情（带 encode）', /order-detail\/index\?id=\$\{encodeURIComponent\(orderId\)\}/.test(pageSrc))
 check('不可点时不跳转（onLedgerTap 有守卫）', /const orderId = String\(ds\.orderId \|\| ''\)\.trim\(\)\s*\n\s*if \(!orderId\) return/.test(pageSrc))
 
-check('★ scroll-view 支持滚到底自动加载', /bindscrolltolower="onLoadMoreLedgers"/.test(wxml))
+// 2026-09-17：钱包页并入枢纽后不再用内部 scroll-view（改为普通内容流，滚动交给页面本身），
+// 触底分页因此从 bindscrolltolower 换成**宿主页 onReachBottom 转发** → 面板必须暴露 onReachBottom。
+// 两条一起断言：面板侧有入口、且不再残留内部滚动容器（残留会与页面滚动打架）。
+check('★ 触底分页入口存在（宿主转发 onReachBottom → onLoadMoreLedgers）',
+  /onReachBottom\(\)\s*\{[^}]*onLoadMoreLedgers/.test(pageSrc))
+check('★ 不再保留内部滚动容器（滚动统一交给页面）', !/<scroll-view/.test(wxml))
 check('保留「加载更多」兜底按钮', /class="sv-ledger-more"/.test(wxml))
 {
   const skelIdx = wxml.indexOf('wx:if="{{ledgerLoading}}"')
@@ -466,7 +474,7 @@ check('轨道线以 isLast 收口', /sv-ledger-line" wx:if="\{\{!row\.isLast\}\}
 check('★ 行内不再重复完整日期', !/class="sv-ledger-time"/.test(wxml) && /sv-ledger-clock/.test(wxml))
 check('可点行带 data-order-id', /data-order-id="\{\{row\.orderId\}\}"/.test(wxml))
 check('★ 箭头只在可点行渲染（不给假入口）', /class="sv-ledger-chevron" wx:if="\{\{row\.tappable\}\}"/.test(wxml))
-eq('旧的 sv-ledger-time 样式已清掉', (readFileSync(resolve(ROOT, 'miniprogram/subpackages/extra/user/stored-value/index.wxss'), 'utf8').match(/\.sv-ledger-time/g) || []).length, 0)
+eq('旧的 sv-ledger-time 样式已清掉', (readFileSync(resolve(ROOT, 'miniprogram/subpackages/business/components/WalletPanelWallet/index.wxss'), 'utf8').match(/\.sv-ledger-time/g) || []).length, 0)
 
 /* ------------------------------------------------------------------ */
 

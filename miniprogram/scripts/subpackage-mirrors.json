@@ -168,5 +168,15 @@
     "source": "subpackages/manager/utils/workspaceRoles.js",
     "mirror": "subpackages/extra/utils/workspaceRoles.js",
     "identical": true
+  },
+  {
+    "source": "subpackages/extra/user/user-account.wxss",
+    "mirror": "subpackages/business/components/WalletPanelWallet/styles/user/user-account.wxss",
+    "identical": true
+  },
+  {
+    "source": "subpackages/extra/care/care-common.wxss",
+    "mirror": "subpackages/business/components/WalletPanelWallet/styles/care/care-common.wxss",
+    "identical": true
   }
 ]

@@ -1,21 +1,13 @@
 /**
  * 钱包枢纽（宿主页）—— 钱包 / 礼券夹 / 积分 三面板，页内切 tab（不做页面跳转，因此丝滑无感）
  *
- * 进度：批 1 已并入积分、批 2 已并入礼券夹；钱包（批 3）随后。
+ * 三批已全部并入：批 1 积分、批 2 礼券夹、批 3 钱包。旧三页均保留为薄跳转壳（站内信/收藏/历史链接不失效）。
  * 页面级能力由本页统一承接并按当前 tab 转发给面板（组件里没有 onPullDownRefresh / onHide）。
  */
 const PANELS = {
   points: { id: 'panel-points', title: '我的积分', overline: 'POINTS' },
-  coupons: { id: 'panel-coupons', title: '我的礼券夹', overline: 'COUPONS' }
-}
-
-/**
- * 尚未并入枢纽的面板 → 仍按**原页面跳转**处理（就是这批之前三页互相跳的行为）。
- * 这样任何一批单独验收时，三个 tab 都不会「点了没反应」；并入后本条自动失效。
- * 已并入 PANELS 的 tab 不在此表中。
- */
-const PENDING_TAB_URL = {
-  wallet: '/subpackages/extra/user/stored-value/index'
+  coupons: { id: 'panel-coupons', title: '我的礼券夹', overline: 'COUPONS' },
+  wallet: { id: 'panel-wallet', title: '我的钱包', overline: 'WALLET' }
 }
 
 Page({
@@ -23,7 +15,7 @@ Page({
     curTab: 'points',
     barTitle: '我的积分',
     barOverline: 'POINTS',
-    /** 顶栏「礼券夹」角标：由礼券夹面板回传（面板加载过之后才有值；与旧积分页一样不预取） */
+    /** 顶栏「礼券夹」角标：由礼券夹/钱包面板回传（面板加载过之后才有值；与旧积分页一样不预取） */
     couponCount: 0
   },
 
@@ -42,17 +34,11 @@ Page({
     try { wx.setNavigationBarTitle({ title: meta.title }) } catch (e) { /* ignore */ }
   },
 
-  /** hub 条派发的切 tab：已并入的页内切面板，未并入的退回原页面跳转 */
+  /** hub 条派发的切 tab：页内切面板（无转场） */
   onTabChange(e) {
     const tab = (e.detail && e.detail.tab) || 'points'
     if (tab === this.data.curTab) return
-    if (!PANELS[tab]) {
-      const url = PENDING_TAB_URL[tab]
-      if (url) {
-        wx.redirectTo({ url, fail: () => wx.showToast({ title: '页面暂不可用', icon: 'none' }) })
-      }
-      return
-    }
+    if (!PANELS[tab]) return   // 未登记的 tab（不该出现）：不动，避免把页面切空
     this.applyTab(tab)
   },
 

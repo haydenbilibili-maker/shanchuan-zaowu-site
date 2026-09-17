@@ -51,7 +51,17 @@ const BAR_WXML = 'miniprogram/subpackages/business/components/WalletHubBar/index
 /** 已并入枢纽的面板（宿主 PANELS 的键必须在这里有落点，A3/A1 逐面板核对） */
 const PANEL_FILES = {
   points: 'miniprogram/subpackages/business/components/WalletPanelPoints/index.js',
-  coupons: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.js'
+  coupons: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.js',
+  wallet: 'miniprogram/subpackages/business/components/WalletPanelWallet/index.js'
+}
+const WALLET_DIR = 'miniprogram/subpackages/business/components/WalletPanelWallet'
+const PANEL_WXSS = { wallet: `${WALLET_DIR}/index.wxss` }
+const PANEL_WXML = { wallet: `${WALLET_DIR}/index.wxml` }
+/** 每个面板「取数」用哪些方法（本体是各页自己的，这里只数调用次数） */
+const LOAD_METHODS = {
+  points: ['refreshAll'],
+  coupons: ['loadCoupons'],
+  wallet: ['bootstrap', 'refreshAccount', 'loadUsableCouponCount']
 }
 
 let passed = 0
@@ -120,6 +130,9 @@ const DEPS = {
   qrCanvas: { drawMemberQr: () => {} },
   cacheInvalidate: { invalidateAfterCoupon: () => {} }
 }
+// 钱包面板的两个同目录纯模块：无 require、无副作用 → 直接用真源码（比打桩更接近真实）
+DEPS['walletCopy'] = loadCjs(`${WALLET_DIR}/walletCopy.js`)
+DEPS['wallet-ledger'] = loadCjs(`${WALLET_DIR}/wallet-ledger.js`)
 
 function loadCjs(file, globals = {}) {
   const src = readFileSync(resolve(ROOT, file), 'utf8')
@@ -250,6 +263,25 @@ check('A6 宿主不转发 onUnload（清理只在 detached，避免双重清理�
   !/onUnload\(\)\s*\{/.test(hostSrc))
 check('A7 宿主把 couponCount 喂给顶栏', /coupon-count="\{\{couponCount\}\}"/.test(hostWxml))
 
+{
+  // 钱包页原来是「整页 + 固定头部 + 内部 scroll-view」，而共享的 user-account.wxss 是逐字镜像
+  // （extra/user 下还有 6 个页面在用，改不得）→ 必须由**面板自己**把两条覆盖回普通流。
+  // 少这段的后果是「内容被裁 + 整页滚不动」，静态扫描与单页测试都看不出来。
+  const walletWxss = readFileSync(resolve(ROOT, PANEL_WXSS.wallet), 'utf8')
+  const walletWxml = readFileSync(resolve(ROOT, PANEL_WXML.wallet), 'utf8')
+  // 断言的是**代码**不是注释（包装器注释里正好提到 pageNav 这个名字）
+  const stripComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+  const walletJs = stripComments(readFileSync(resolve(ROOT, PANEL_FILES.wallet), 'utf8'))
+  check('A8 钱包面板把 .account-page 覆盖回普通流（height:auto + overflow:visible）',
+    /\.account-page\s*\{[^}]*height:\s*auto/.test(walletWxss) && /\.account-page\s*\{[^}]*overflow:\s*visible/.test(walletWxss))
+  check('A8 钱包面板把 .account-scroll 覆盖回普通流（position:static）',
+    /\.account-scroll\s*\{[^}]*position:\s*static/.test(walletWxss))
+  check('A8 钱包面板不再有内部滚动容器 / 固定头部',
+    !/<scroll-view/.test(walletWxml) && !/account-nav\b/.test(walletWxml))
+  check('A8 钱包面板不再引用跨分包的 pageNav / 已删的滚动数学',
+    !/pageNav/.test(walletJs) && !/measureFixedScroll/.test(walletJs))
+}
+
 // ── 时序模拟器 ────────────────────────────────────────────────────────────────
 const HOST_PANEL_ID = PANELS.points && PANELS.points.id
 
@@ -264,11 +296,11 @@ function makeWorld(tab = 'points') {
   const cfg = panelCfgs[tab]
   const panel = instantiate(cfg)
   panel.__refresh = 0
-  if (typeof panel.refreshAll === 'function') {
-    panel.refreshAll = function () { this.__refresh += 1; return Promise.resolve() }
-  }
-  if (typeof panel.loadCoupons === 'function') {
-    panel.loadCoupons = function () { this.__refresh += 1; return Promise.resolve() }
+  const loads = {}
+  for (const name of LOAD_METHODS[tab] || []) {
+    if (typeof panel[name] !== 'function') continue
+    loads[name] = 0
+    panel[name] = function () { loads[name] += 1; this.__refresh += 1; return Promise.resolve() }
   }
 
   const host = instantiate(hostCfg)
@@ -279,6 +311,7 @@ function makeWorld(tab = 'points') {
     host,
     panel,
     cfg,
+    loads,
     get attached() { return attached },
     attach() {
       attached = true
@@ -383,24 +416,27 @@ function makeWorld(tab = 'points') {
       setNavigationBarTitle: () => {}
     })
 
-    // 已并入：页内切，绝不跳页面
-    const w = makeWorld('coupons')
-    w.pageLoad({ tab: 'points' })
-    w.pageShow()
-    w.attach()
-    w.host.onTabChange.call(w.host, { detail: { tab: 'coupons' } })
-    eq('S6 已并入的 tab 页内切换（curTab 跟着变）', w.host.data.curTab, 'coupons')
-    eq('S6 已并入的 tab 不产生页面跳转', redirects.length, 0)
-    eq('S6 切过去后顶栏标题跟着变', w.host.data.barTitle, '我的礼券夹')
+    // 三个 tab 全部页内切，绝不跳页面
+    for (const tab of Object.keys(PANELS)) {
+      if (tab === 'points') continue
+      const w = makeWorld(tab)
+      w.pageLoad({ tab: 'points' })
+      w.pageShow()
+      w.attach()
+      w.host.onTabChange.call(w.host, { detail: { tab } })
+      eq(`S6 切到 ${tab} 页内生效（curTab 跟着变）`, w.host.data.curTab, tab)
+      check(`S6 切到 ${tab} 顶栏标题跟着变`, !!w.host.data.barTitle && w.host.data.barTitle !== '我的积分', w.host.data.barTitle)
+    }
+    eq('S6 已并入的 tab 一律不产生页面跳转', redirects.length, 0)
 
-    // 未并入：退回原页面，且当前面板不动
+    // 未登记的 tab（不该出现）→ 不跳页、不切空
     const w2 = makeWorld('points')
     w2.pageLoad({ tab: 'points' })
     w2.pageShow()
     w2.attach()
-    w2.host.onTabChange.call(w2.host, { detail: { tab: 'wallet' } })
-    eq('S6 未并入的 tab 退回原页面（不会点了没反应）', redirects[0], PENDING_TAB_URL.wallet)
-    eq('S6 未并入的 tab 不改当前面板', w2.host.data.curTab, 'points')
+    w2.host.onTabChange.call(w2.host, { detail: { tab: 'nope' } })
+    eq('S6 未登记的 tab 不产生页面跳转', redirects.length, 0)
+    eq('S6 未登记的 tab 不改当前面板', w2.host.data.curTab, 'points')
 
     // 深链写错 tab
     const w3 = makeWorld('points')
@@ -459,6 +495,41 @@ function makeWorld(tab = 'points') {
   w2.panel.setData({ usableCouponCount: 0 })
   w2.host.onCouponCount.call(w2.host, w2.panel.__events[w2.panel.__events.length - 1])
   eq('S8 券数归零也会同步（角标不会停在旧值）', w2.host.data.couponCount, 0)
+}
+
+// ── S8b 钱包：onLoad 只随 ready 跑一次、触底分页转发、券数回传、充值成功回顶 ──
+{
+  const w = makeWorld('wallet')
+  w.pageLoad({ tab: 'wallet' })
+  w.pageShow()
+  w.attach()
+  eq('S8b 钱包首次进入：原 onLoad 跑了（bootstrap 1 次）', w.loads.bootstrap, 1)
+  eq('S8b 钱包首次进入：原 onShow 跑了（loadUsableCouponCount 1 次）', w.loads.loadUsableCouponCount, 1)
+  // 首屏 refreshAccount 受 allowed/checking 门控（初值 false/true，等 bootstrap 回填）→ 本就不该跑
+  eq('S8b 首屏未校验完就不拉账户（凭据门控按原样保留）', w.loads.refreshAccount, 0)
+  w.pageShow()
+  eq('S8b 重新显示：onLoad 不再跑（bootstrap 仍 1 次）', w.loads.bootstrap, 1)
+  eq('S8b 重新显示：onShow 再跑一次（loadUsableCouponCount 2 次）', w.loads.loadUsableCouponCount, 2)
+
+  let more = 0
+  w.panel.onLoadMoreLedgers = function () { more += 1; return Promise.resolve() }
+  w.panel.onReachBottom.call(w.panel)
+  eq('S8b 触底分页转发到 onLoadMoreLedgers（原本是 scroll-view 的 scrolltolower）', more, 1)
+
+  w.panel.setData({ usableCouponCount: 2 })
+  const ev = w.panel.__events.find((e) => e.name === 'couponcount')
+  check('S8b 钱包也回传券数（钱包 tab 上顶栏角标要有值）', !!ev, JSON.stringify(w.panel.__events))
+
+  const savedWx = Object.prototype.hasOwnProperty.call(globalThis, 'wx') ? globalThis.wx : undefined
+  let scrolled = 0
+  try {
+    globalThis.wx = wxStub({ pageScrollTo: () => { scrolled += 1 } })
+    w.panel.setData({ scrollIntoView: 'sv-top' })
+  } finally {
+    if (savedWx === undefined) delete globalThis.wx
+    else globalThis.wx = savedWx
+  }
+  eq('S8b 充值成功回顶（原 scroll-into-view）改由 pageScrollTo 承接', scrolled, 1)
 }
 
 // ── 输出 / 自检 ───────────────────────────────────────────────────────────────
@@ -535,16 +606,28 @@ function selftest() {
       to: ''
     },
     {
-      name: '退回表被清空（未并入的 tab 点了没反应）',
-      file: HOST_JS,
-      from: "const PENDING_TAB_URL = {\n  wallet: '/subpackages/extra/user/stored-value/index'\n}\n",
-      to: 'const PENDING_TAB_URL = {}\n'
+      name: '钱包面板丢掉 .account-scroll 的普通流覆盖（滚动与定位打架）',
+      file: PANEL_WXSS.wallet,
+      from: '  position: static;\n',
+      to: '  position: fixed;\n'
     },
     {
-      name: '退回页路径拼错（点 tab 直接跳失败）',
-      file: HOST_JS,
-      from: "  wallet: '/subpackages/extra/user/stored-value/index'",
-      to: "  wallet: '/subpackages/extra/user/stored-value/index2'"
+      name: '钱包面板丢掉 .account-page 的普通流覆盖（内容被裁 + 整页滚不动）',
+      file: PANEL_WXSS.wallet,
+      from: '  height: auto;\n  min-height: 100%;\n  overflow: visible;\n',
+      to: '  height: 100vh;\n  overflow: hidden;\n'
+    },
+    {
+      name: '钱包面板触底分页不再转发（翻不到下一页）',
+      file: PANEL_FILES.wallet,
+      from: "      if (typeof this.onLoadMoreLedgers === 'function') this.onLoadMoreLedgers()\n",
+      to: ''
+    },
+    {
+      name: '钱包面板 ready 不再跑 onLoad（首次进入不 bootstrap）',
+      file: PANEL_FILES.wallet,
+      from: "      if (typeof _methods.onLoad === 'function') _methods.onLoad.call(this)\n",
+      to: ''
     },
     {
       name: 'applyTab 不再校验登记（curTab 可被切成不存在的面板）',
