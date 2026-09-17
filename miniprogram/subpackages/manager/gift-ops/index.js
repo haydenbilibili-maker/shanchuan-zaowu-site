@@ -295,13 +295,19 @@ Page({
       if (!cardBody) throw new Error('这一单没有礼笺正文')
       const item = d.item || {}
       const productTitle = String(item.productTitle || '').trim()
-      // 题记 + 藏品图：按标准名回查商品（订单看板项不含商品 id）
+      const productId = String(d.productId || '').trim()
+      // 题记 + 藏品图：**优先按 productId 精确取**（getBoardDetail 已返回）；
+      // 云函数未部署新版时（无 productId）回退按标题回查 —— 兼容部署窗口
       let themeName = ''; let themeNote = ''; let specimenFileID = ''
-      if (productTitle) {
+      if (productId || productTitle) {
         try {
-          const pr = await db.collection('products').where({ title: productTitle }).limit(1)
-            .field({ themeName: true, themeNote: true, images: true, image: true }).get()
-          const row = (pr && pr.data && pr.data[0]) || {}
+          const q = productId
+            ? db.collection('products').doc(productId)
+            : db.collection('products').where({ title: productTitle }).limit(1)
+          const pr = await q
+            .field({ themeName: true, themeNote: true, images: true, image: true })
+            .get()
+          const row = productId ? ((pr && pr.data) || {}) : ((pr && pr.data && pr.data[0]) || {})
           themeName = String(row.themeName || '').trim()
           themeNote = String(row.themeNote || '').trim()
           specimenFileID = (row.images && row.images[0]) || row.image || ''

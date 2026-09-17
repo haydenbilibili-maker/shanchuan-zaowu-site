@@ -166,8 +166,13 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
     '跨分包 require 微信会拦')
   check('★ 离屏画布挂在页面上（canvas 2d 取 node 要求已渲染）', /id="giftPrintCanvas"/.test(opsWxml))
   check('★ 礼笺正文/署名取自 getBoardDetail', /action: 'getBoardDetail'/.test(opsJs) && /d\.cardBody/.test(opsJs))
-  check('★ 题记与藏品图按标准名回查 products（订单看板项无商品 id）',
-    /collection\('products'\)\.where\(\{ title: productTitle \}\)/.test(opsJs) && /themeNote: true/.test(opsJs))
+  check('★ 云函数 getBoardDetail 回传 productId（消除按标题回查的重复标题风险）',
+    /productId: \(order\.products && order\.products\[0\]/.test(readFileSync(resolve(ROOT, 'miniprogram/cloudfunctions/manageGift/index.js'), 'utf8')))
+  check('★ 客户端**优先**按 productId 精确取题记/配图',
+    /const productId = String\(d\.productId \|\| ''\)/.test(opsJs)
+    && /db\.collection\('products'\)\.doc\(productId\)/.test(opsJs), '仍只按标题回查')
+  check('★ 保留标题回退（兼容云函数未部署新版）',
+    /where\(\{ title: productTitle \}\)/.test(opsJs) && /themeNote: true/.test(opsJs))
   check('★ 落盘：存相册 + 上传云存储（印刷厂取件）',
     /saveImageToPhotosAlbum/.test(opsJs) && /wx\.cloud\.uploadFile/.test(opsJs) && /gift-print\//.test(opsJs))
   check('★ 数据库句柄已就位（履约页原不直连库，漏了会运行时报错）', /const db = wx\.cloud\.database\(\)/.test(opsJs))

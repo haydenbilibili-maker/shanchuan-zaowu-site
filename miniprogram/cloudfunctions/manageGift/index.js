@@ -1340,7 +1340,9 @@ async function getBoardDetail(event, openid) {
     success: true,
     item: mapBoardItem(order, { includeFullAddress: true }),
     cardBody: (order.giftMeta && order.giftMeta.cardBody) || '',
-    cardSignature: (order.giftMeta && order.giftMeta.cardSignature) || ''
+    cardSignature: (order.giftMeta && order.giftMeta.cardSignature) || '',
+    // 印刷版礼笺导出需要按 id 取题记/配图（此前履约页只能按标题回查，库里有重复标题的风险）
+    productId: (order.products && order.products[0] && (order.products[0]._id || order.products[0].productId)) || ''
   }
 }
 
