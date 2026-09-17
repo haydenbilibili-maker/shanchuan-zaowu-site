@@ -128,29 +128,33 @@
             <text class="card-epigraph-note">{{product.themeNote}}</text>
           </view>
 
-          <!-- 落笔动画：纸面展示 + 可点打断；手改走下方 textarea -->
+          <!-- 落笔动画：**整段文本**渲染（逐字 span 会让 iOS 每帧重播动画 → 回跳闪白 ✗）+ 可点打断 -->
           <view
             wx:if="{{noteWriting}}"
             class="card-write-view"
             bindtap="onCardAreaTap"
           >
-            <text class="card-write-text"><text
-              class="card-write-char"
-              wx:for="{{writeChars}}"
-              wx:key="index"
-            >{{item}}</text></text><text
+            <text class="card-write-text">{{cardBody}}</text><text
               class="card-write-cursor {{showWriteCursor ? 'on' : ''}}"
             >|</text>
           </view>
+          <!-- 未聚焦：用手写体 text 展示（textarea 在 iOS 不支持 font-family，只能聚焦时用） -->
+          <text
+            wx:elif="{{!cardFocused}}"
+            class="card-write-text card-note-display"
+            bindtap="focusCardInput"
+          >{{cardBody || placeholderNote}}</text>
           <textarea
             wx:else
             class="card-input"
+            focus="{{cardFocused}}"
             maxlength="200"
             placeholder="这段日子里你帮了太多。柜中挑了一件安静的藏品……"
             placeholder-class="card-placeholder"
             value="{{cardBody}}"
             bindinput="onCardInput"
             bindfocus="onCardFocus"
+            bindblur="onCardBlur"
           />
           <view class="card-foot">
             <text class="card-count">{{cardBody.length}}/200</text>

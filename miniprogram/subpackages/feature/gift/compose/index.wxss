@@ -1094,11 +1094,12 @@ page {
 }
 
 
-/* 逐字落笔：新落的那个字轻微淡入 + 纸上微倾；wx:key=index 复用旧节点，故只有新字播一次 */
-.card-write-char {
-  animation: handWriteIn 0.22s ease-out both;
+/* 落笔/展示态：整段文本渲染（不用逐字 span —— iOS 会逐帧重播动画导致回跳闪白） */
+.card-note-display {
+  display: block;
+  min-height: 200rpx;
+  white-space: pre-wrap;   /* 保留换行：textarea 里换行，展示时也要换行 */
+  color: #33302C;
 }
-@keyframes handWriteIn {
-  from { opacity: 0; transform: translateY(3rpx) rotate(-3deg); }
   to { opacity: 1; transform: translateY(0) rotate(0); }
 }

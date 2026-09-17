@@ -134,11 +134,6 @@ check('★ 礼笺「用户亲手写」的内容用手写体令牌 var(--font-han
 check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
   /--font-hand:[^;]*HanziPen SC/.test(readFileSync(resolve(ROOT, 'miniprogram/app.wxss'), 'utf8')),
   '改成了 webfont 就会引入下载与首屏闪烁')
-check('★ 逐字落笔：wxml 按字渲染（wx:for=writeChars）', /wx:for="\{\{writeChars\}\}"/.test(composeWxml) || composeWxml.indexOf('writeChars') !== -1)
-check('★ 逐字落笔：新字播一次动画（card-write-char + keyframes）',
-  /\.card-write-char\s*\{/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8'))
-  && /@keyframes handWriteIn/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
-check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: target\.slice\(0, i\)\.split\(''\)/.test(composeJs))
 
 /* ── 印刷版礼笺卡（A6@300dpi，礼赠履约导出用；2026-09-17）─────────────────── */
 {
@@ -267,6 +262,17 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
     /saveImageToPhotosAlbum/.test(opsJs) && /wx\.cloud\.uploadFile/.test(opsJs) && /gift-print\//.test(opsJs))
   check('★ 数据库句柄已就位（履约页原不直连库，漏了会运行时报错）', /const db = wx\.cloud\.database\(\)/.test(opsJs))
 }
+
+// 2026-09-19 iOS 真机修复两条：① 逐字 span + animation:both → 每帧重播动画 = 回跳闪白 ✗；
+//   ② iOS 的 textarea 不支持 font-family（原生组件样式白名单内没有）→ 未聚焦时必须用 text 展示手写体。
+check('★ 落笔用**整段文本**渲染，不得再用逐字 span（iOS 回跳闪白根因）',
+  !/writeChars/.test(composeJs) && !/writeChars/.test(composeWxml) && !/card-write-char/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
+check('★ 未聚焦时用**手写体 text 展示**（wx:elif=!cardFocused + card-note-display）',
+  /wx:elif="\{\{!cardFocused\}\}"/.test(composeWxml) && /card-note-display/.test(composeWxml))
+check('★ 只有聚焦时才用 textarea（focus 受 cardFocused 控制）',
+  /focus="\{\{cardFocused\}\}"/.test(composeWxml) && /onCardBlur\(\)/.test(composeJs) && /focusCardInput\(\)/.test(composeJs))
+check('★ 展示态保留换行（white-space: pre-wrap）',
+  /white-space: pre-wrap/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
 
 check('埋点带上句序（便于回看哪一句更常用）',
   /label: preset\.label,\s*\n\s*variant: index \+ 1/.test(composeJs))

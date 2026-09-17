@@ -103,7 +103,8 @@ Page({
     packagingLabel: GIFT_PACKAGING_LABEL,
     packagingNote: GIFT_PACKAGING_NOTE,
     cardBody: '',
-    writeChars: [],
+    cardFocused: false,          // iOS：textarea 不支持 font-family → 未聚焦时用手写体 text 展示
+    placeholderNote: '这段日子里你帮了太多。柜中挑了一件安静的藏品……',
     cardSignature: '',
     recipientName: '',
     recipientEditing: false,
@@ -771,7 +772,18 @@ Page({
     this.setData(patch)
   },
 
+  /** 点「手写体展示」区 → 唤起输入（textarea 只在聚焦时使用，见 wxml 注释） */
+  focusCardInput() {
+    this.setData({ cardFocused: true })
+  },
+
+  /** 失焦 → 回到手写体展示（iOS 的 textarea 不支持 font-family） */
+  onCardBlur() {
+    this.setData({ cardFocused: false })
+  },
+
   onCardFocus() {
+    if (!this.data.cardFocused) this.setData({ cardFocused: true })
     if (this.data.noteWriting) this.finishNoteWrite()
   },
 
@@ -861,7 +873,6 @@ Page({
     }
     this.setData({
       cardBody: target,
-      writeChars: target.split(''),
       noteWriting: false,
       showWriteCursor: false
     })
@@ -912,11 +923,7 @@ Page({
     }
     i += step
     this._noteWriteIndex = i
-    this.setData({
-      cardBody: target.slice(0, i),
-      // 逐字落笔：暴露字符数组，让新落的那个字单独播一次「手写落笔」动画（wx:key=index 复用旧节点）
-      writeChars: target.slice(0, i).split('')
-    })
+    this.setData({ cardBody: target.slice(0, i) })
 
     const delay = this._delayForChar(ch)
     this._noteWriteTimer = setTimeout(() => this._tickNoteWrite(), delay)
