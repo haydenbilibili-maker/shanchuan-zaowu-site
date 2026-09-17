@@ -1841,3 +1841,42 @@ button.nav-share-btn::after { display: none; border: none; }
 /* 行距收紧：主题名/题记/标准名/学名四行之间的呼吸再小一点 */
 .title-theme-note { margin: 4rpx 0 10rpx; }
 .latin-sub { margin-top: 4rpx; }
+
+/* ── 身份块层级（2026-09-17 美学调整）──────────────────────────────────
+ * 主题名(最大·衬线) / 标准名(次大) 同属「主视觉」；题记是评注（金线缩进）；学名最弱。
+ * 之前四行同权 → 题记把"名字"与"是什么"劈开，读起来断裂。 */
+.title-main {                                  /* 标准名：次视觉，比题记更实 */
+  font-size: 34rpx;
+  font-weight: 500;
+  color: var(--color-text-primary, #F5F2EC);
+  letter-spacing: 0.5rpx;
+}
+.title-main.is-sub {                           /* 有主题名时：它是"是什么"，仍要看得清 */
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #CFC9BF;
+}
+.title-theme { margin-bottom: 6rpx; }          /* 与标准名贴紧：同一视线块 */
+.title-theme-note {                            /* 评注：缩进 + 金线，与上面留一口气 */
+  margin: 12rpx 0 4rpx;
+  font-size: 24rpx;
+}
+.latin-sub {                                   /* 学名：最弱，离上一行远一点 */
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  opacity: 0.72;
+}
+/* ── 价格行右侧：与价格基线对齐；折扣改为更强的铜金实心标签 ───────────── */
+.price-row { align-items: flex-end; }
+.price-side { align-items: flex-end; gap: 8rpx; }
+.discount-chip {
+  padding: 3rpx 14rpx;
+  border: none;
+  border-radius: 8rpx;
+  background: linear-gradient(90deg, #C4A76C 0%, #D9BE86 100%);
+  color: #1A1814;
+  font-size: 21rpx;
+  font-weight: 600;
+  letter-spacing: 0.5rpx;
+}
+.side-stock { font-size: 21rpx; opacity: 0.9; }

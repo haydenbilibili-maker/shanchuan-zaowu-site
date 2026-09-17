@@ -179,8 +179,8 @@ module.exports.discountLabel = discountLabel;
         </view>
         <text class="title-theme" wx:if="{{product.themeName}}">{{product.themeName}}</text>
         <!-- 题记：与主题名配套的一句话（送礼时它比四字名更打动人） -->
-        <text class="title-theme-note" wx:if="{{product.themeName && product.themeNote}}">{{product.themeNote}}</text>
         <text class="title-main {{product.themeName ? 'is-sub' : ''}}">{{product.title}}</text>
+        <text class="title-theme-note" wx:if="{{product.themeName && product.themeNote}}">{{product.themeNote}}</text>
         <text class="latin-sub" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
         </block>
       </view>
