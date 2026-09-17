@@ -6,6 +6,16 @@
  */
 const PANELS = { points: { id: 'panel-points', title: '我的积分', overline: 'POINTS' } }
 
+/**
+ * 尚未并入枢纽的面板 → 仍按**原页面跳转**处理（就是这批之前三页互相跳的行为）。
+ * 这样任何一批单独验收时，三个 tab 都不会「点了没反应」；并入后本条自动失效。
+ * `points` 已在 PANELS 里，故不在此表中。
+ */
+const PENDING_TAB_URL = {
+  coupons: '/subpackages/business/coupons/index',
+  wallet: '/subpackages/extra/user/stored-value/index'
+}
+
 Page({
   data: {
     curTab: 'points',
@@ -17,21 +27,28 @@ Page({
     // 页生命周期是 onLoad → onShow → onReady，首屏那次 onShow 早于面板 ready：
     // 首屏取数交给面板自己的 lifetimes.ready，这里把第一次 onShow 丢掉，避免重复取数。
     this._skipFirstShow = true
-    const tab = (options && options.tab) || 'points'
-    this.applyTab(PANELS[tab] ? tab : 'points')
+    this.applyTab(options && options.tab)
   },
 
+  /** 切到某个**已登记**面板；未登记（含深链里写错的 tab）一律落回积分，curTab 恒为 PANELS 的键 */
   applyTab(tab) {
-    const meta = PANELS[tab] || PANELS.points
-    this.setData({ curTab: tab, barTitle: meta.title, barOverline: meta.overline })
+    const key = PANELS[tab] ? tab : 'points'
+    const meta = PANELS[key]
+    this.setData({ curTab: key, barTitle: meta.title, barOverline: meta.overline })
     try { wx.setNavigationBarTitle({ title: meta.title }) } catch (e) { /* ignore */ }
   },
 
-  /** hub 条派发的切 tab（页内切换，无转场） */
+  /** hub 条派发的切 tab：已并入的页内切面板，未并入的退回原页面跳转 */
   onTabChange(e) {
     const tab = (e.detail && e.detail.tab) || 'points'
     if (tab === this.data.curTab) return
-    if (!PANELS[tab]) return   // 未并入的面板：hub 条自身会退回跳转（见 WalletHubBar.onTap）
+    if (!PANELS[tab]) {
+      const url = PENDING_TAB_URL[tab]
+      if (url) {
+        wx.redirectTo({ url, fail: () => wx.showToast({ title: '页面暂不可用', icon: 'none' }) })
+      }
+      return
+    }
     this.applyTab(tab)
   },
 

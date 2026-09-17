@@ -261,15 +261,69 @@ check('A4 面板 onShow 保持原语义（只有 refreshAll，无私加去重/�
   }
 }
 
-// ── S6 未并入的平台 ───────────────────────────────────────────────────────────
+// ── S6 未并入的平台：不能「点了没反应」────────────────────────────────────────
+/** 尚未并入枢纽的 tab → 原页面（app.json 里必须真注册过，否则点了直接失败） */
+const PENDING_TAB_URL = (() => {
+  const block = /const PENDING_TAB_URL = \{([\s\S]*?)\n\}/.exec(hostSrc)
+  if (!block) return {}
+  const out = {}
+  for (const m of block[1].matchAll(/(\w+):\s*'([^']+)'/g)) out[m[1]] = m[2]
+  return out
+})()
+
+/** app.json 注册过的全部页面路径（主包 + 分包） */
+const REGISTERED_PAGES = (() => {
+  const app = JSON.parse(readFileSync(resolve(ROOT, 'miniprogram/app.json'), 'utf8'))
+  const out = new Set(app.pages || [])
+  for (const sub of app.subpackages || []) {
+    for (const p of sub.pages || []) out.add(`${sub.root}/${p}`)
+  }
+  return out
+})()
+
+check('A5 未并入的 tab 都有原页面可退回', Object.keys(PENDING_TAB_URL).length >= 2, JSON.stringify(PENDING_TAB_URL))
+for (const [tab, url] of Object.entries(PENDING_TAB_URL)) {
+  check(`A5 退回页已注册（${tab} → ${url}）`, REGISTERED_PAGES.has(url.replace(/^\//, '')), url)
+}
+
+/** 宿主已登记的面板 key（curTab 必须是其中之一，否则页面会切到一个不存在的面板） */
+const PANEL_TABS = (() => {
+  const m = /const PANELS = \{([\s\S]*?)\n\}/.exec(hostSrc) || /const PANELS = \{([^\n]*)\}/.exec(hostSrc)
+  return m ? [...m[1].matchAll(/(\w+):\s*\{/g)].map((x) => x[1]) : []
+})()
+check('A6 已登记积分面板', PANEL_TABS.includes('points'), JSON.stringify(PANEL_TABS))
 {
   const w = makeWorld()
-  w.pageLoad({ tab: 'points' })
-  w.pageShow()
-  w.attach()
-  const before = w.host.data.curTab
-  w.host.onTabChange.call(w.host, { detail: { tab: 'coupons' } })
-  eq('S6 未并入的平台被忽略（页面不会被切空）', w.host.data.curTab, before)
+  w.pageLoad({ tab: 'nope' })   // 深链里把 tab 写错
+  check('S7 深链 tab 写错 → 落回已登记面板（curTab 不会变成不存在的面板）',
+    PANEL_TABS.includes(w.host.data.curTab), `curTab=${w.host.data.curTab}`)
+}
+
+{
+  const savedWx = Object.prototype.hasOwnProperty.call(globalThis, 'wx') ? globalThis.wx : undefined
+  try {
+    const w = makeWorld()
+    w.pageLoad({ tab: 'points' })
+    w.pageShow()
+    w.attach()
+    const before = w.host.data.curTab
+    const redirects = []
+    globalThis.wx = wxStub({
+      redirectTo: (o) => { redirects.push(o.url) },
+      showToast: () => {},
+      setNavigationBarTitle: () => {}
+    })
+    w.host.onTabChange.call(w.host, { detail: { tab: 'coupons' } })
+    eq('S6 未并入的 tab 不改当前面板（curTab 不变）', w.host.data.curTab, before)
+    eq('S6 未并入的 tab 退回原页面（不会点了没反应）', redirects[0], PENDING_TAB_URL.coupons)
+    // 已并入的 tab 必须是页内切换，绝不跳页面
+    redirects.length = 0
+    w.host.onTabChange.call(w.host, { detail: { tab: 'points' } })
+    eq('S6 已并入的 tab 不产生页面跳转', redirects.length, 0)
+  } finally {
+    if (savedWx === undefined) delete globalThis.wx
+    else globalThis.wx = savedWx
+  }
 }
 
 // ── 输出 / 自检 ───────────────────────────────────────────────────────────────
@@ -313,6 +367,24 @@ function selftest() {
       file: HOST_JS,
       from: "    if (p && typeof p.onShow === 'function') p.onShow()\n",
       to: ''
+    },
+    {
+      name: '退回表被清空（未并入的 tab 点了没反应）',
+      file: HOST_JS,
+      from: "const PENDING_TAB_URL = {\n  coupons: '/subpackages/business/coupons/index',\n  wallet: '/subpackages/extra/user/stored-value/index'\n}\n",
+      to: 'const PENDING_TAB_URL = {}\n'
+    },
+    {
+      name: '退回页路径拼错（点 tab 直接跳失败）',
+      file: HOST_JS,
+      from: "  coupons: '/subpackages/business/coupons/index',",
+      to: "  coupons: '/subpackages/business/coupon/index',"
+    },
+    {
+      name: 'applyTab 不再校验登记（curTab 可被切成不存在的面板）',
+      file: HOST_JS,
+      from: '    const key = PANELS[tab] ? tab : \'points\'\n',
+      to: "    const key = tab || 'points'\n"
     }
   ]
   const controls = [
