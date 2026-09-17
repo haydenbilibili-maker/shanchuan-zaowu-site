@@ -25,7 +25,7 @@ echo
 apply() {  # apply <unit> <high> <max>
 	local unit="$1" high="$2" max="$3"
 	if ! systemctl cat "$unit" >/dev/null 2>&1; then
-		echo "  跳过 $unit（未安装）"; return 0
+		echo "  跳过 ${unit}（未安装）"; return 0
 	fi
 	# ⚠ drop-in 目录必须是 <unit>.service.d —— 写成 <unit>.d 会被 systemd **静默忽略**
 	#（本脚本第一版就踩了这个坑：复核时 MemoryHigh/Max 全是 infinity，才暴露出来）。
