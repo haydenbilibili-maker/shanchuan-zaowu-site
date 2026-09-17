@@ -1,7 +1,12 @@
 /**
  * 报价页 → 采购意向提交
  * 主路径：CloudBase 集合 purchase_intents（匿名登录写入）
- * 回退：同域 localStorage（本地演示 / 云库未建时）
+ * 回退：同域 localStorage —— ⚠️ 这是**访客自己浏览器**的草稿，公司看不到它。
+ *
+ * 2026-09-17 全面审计 B3：原实现在云写失败时回退 localStorage 却仍返回 `ok:true`，
+ * 前端于是显示「已提交，我们会尽快联系」—— 线索其实从未送达，用户也不会再联系。
+ * 现在：回退分支返回 `ok:false` + `delivered:false`，由调用方**如实告知未送达**并让用户重试；
+ * 本地草稿只作为「刷新后还能找回填写内容」的便利，绝不当作已提交。
  *
  * 线上需：CloudBase 匿名登录 + Web 安全域名 + 集合 purchase_intents + 规则
  * 见 cloudbase/rules/purchase_intents.json、docs/cloudbase-collections.md
@@ -52,6 +57,8 @@ export interface SubmitResult {
   ok: boolean;
   id?: string;
   mode?: 'cloudbase' | 'local';
+  /** 线索是否**真的送达**公司（云库写入成功）。ok:true 必然 delivered:true。 */
+  delivered?: boolean;
   error?: string;
 }
 
@@ -186,26 +193,25 @@ export async function submitPurchaseIntent(payload: PurchaseIntentPayload): Prom
     const id = res?.id || res?._id || localId;
     // 同域镜像，便于本地 admin 在云库未就绪时也能看到
     saveLocal({ ...record, _id: id, persistedVia: 'cloudbase' });
-    return { ok: true, id: String(id), mode: 'cloudbase' };
+    return { ok: true, id: String(id), mode: 'cloudbase', delivered: true };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    console.warn('[purchaseIntent] CloudBase 写入失败，回退 localStorage', message);
+    console.warn('[purchaseIntent] CloudBase 写入失败，未送达；已在本机留一份草稿', message);
+    // 本机草稿：只为「刷新后还能找回填写内容」，**不是**提交成功
     try {
-      const record = toRecord(payload, localId, 'local');
-      saveLocal(record);
-      return {
-        ok: true,
-        id: localId,
-        mode: 'local',
-        error: `云端暂不可用，已暂存在本机（${message.slice(0, 80)}）`,
-      };
+      saveLocal(toRecord(payload, localId, 'local'));
     } catch {
-      return { ok: false, error: message || '提交失败，请稍后重试' };
+      /* 草稿写不进去不影响结论：本来就没送达 */
     }
+    return {
+      ok: false,
+      id: localId,
+      mode: 'local',
+      delivered: false,
+      // 面向访客的话：说清「没收到」并给出下一步。技术原因只进 console，不甩给用户。
+      error: '提交未送达：网络或服务暂时不可用，我们没有收到您的采购意向。'
+        + '您的填写已保留在本页，可直接重试；若仍失败，请通过页面联系方式直接联系我们。',
+    };
   }
 }
 
-/** 管理端合并读取本地镜像（同源 /admin 可访问） */
-export function listLocalPurchaseIntents(): PurchaseIntentRecord[] {
-  return readLocal().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-}

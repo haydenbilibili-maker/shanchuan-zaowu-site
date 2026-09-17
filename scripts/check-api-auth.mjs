@@ -15,6 +15,10 @@
  *   A2 任何 `functions/api/*.js` 都不得使用 `Access-Control-Allow-Origin: '*'`
  *   A3 `_lib/proxySession.mjs` 必须导出 `guardAdminRequest`（契约）
  *   A4 `functions/api/feishu-sync.js` 不得回显 `appToken`
+ *   A5 本地 dev 代理 `admin/scripts/viteCloudFnPlugin.mjs` 必须做来源校验
+ *      —— 它会**无条件注入 ADMIN_OPS_KEY**（= 超管），原先跨源 POST 即可打穿（审计 B5）
+ *   A6 `admin/vite.config.js` 不得把 `server.host` 硬编码成 `0.0.0.0`
+ *      —— 局域网任何人可拿超管身份；应默认 127.0.0.1，需显式 ADMIN_DEV_HOST 才开放
  *
  * 用法：
  *   node scripts/check-api-auth.mjs
@@ -28,6 +32,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const API_DIR = join(ROOT, 'functions', 'api');
 const SESSION_LIB = join(ROOT, 'functions', '_lib', 'proxySession.mjs');
+const DEV_PLUGIN = join(ROOT, 'admin', 'scripts', 'viteCloudFnPlugin.mjs');
+const VITE_CONFIG = join(ROOT, 'admin', 'vite.config.js');
 /** 发门的端点本身不需要过门 */
 const EXEMPT = new Set(['admin-session.js']);
 
@@ -69,6 +75,18 @@ export function checkEndpoint(name, src) {
   return problems;
 }
 
+/** 本地 dev 代理的两条不变式（审计 B5） */
+export function checkDevProxy(pluginSrc, configSrc) {
+  const problems = [];
+  if (!/devOriginAllowed\s*\(/.test(pluginSrc)) {
+    problems.push('admin/scripts/viteCloudFnPlugin.mjs 未做来源校验 —— 该中间件会无条件注入 ADMIN_OPS_KEY（超管），必须拒绝跨源请求');
+  }
+  if (/host\s*:\s*['"]0\.0\.0\.0['"]/.test(configSrc)) {
+    problems.push("admin/vite.config.js 的 server.host 硬编码 '0.0.0.0' —— 同局域网任何人可拿超管身份；应默认 127.0.0.1，需显式 ADMIN_DEV_HOST 才开放");
+  }
+  return problems;
+}
+
 function readEndpoints() {
   return readdirSync(API_DIR, { withFileTypes: true })
     .filter((e) => e.isFile() && e.name.endsWith('.js'))
@@ -84,6 +102,9 @@ function scanRepo() {
   const files = readEndpoints();
   for (const name of files) {
     problems.push(...checkEndpoint(name, readFileSync(join(API_DIR, name), 'utf8')));
+  }
+  if (existsSync(DEV_PLUGIN) && existsSync(VITE_CONFIG)) {
+    problems.push(...checkDevProxy(readFileSync(DEV_PLUGIN, 'utf8'), readFileSync(VITE_CONFIG, 'utf8')));
   }
   return { problems, files };
 }
@@ -114,6 +135,13 @@ function selftest() {
   t('  feishu-sync 剥离 appToken 后通过',
     checkEndpoint('feishu-sync.js', `${GATED}return json(withoutAppToken(await handleFeishuAction(payload, env)))\n`).length === 0);
 
+  t('★ 本地 dev 代理无来源校验必须被检出（审计 B5 形态）',
+    checkDevProxy('export function viteCloudFnPlugin() {}', "host: '127.0.0.1'").some((p) => /未做来源校验/.test(p)));
+  t('★ server.host 硬编码 0.0.0.0 必须被检出',
+    checkDevProxy('devOriginAllowed(req)', "host: '0.0.0.0'").some((p) => /硬编码/.test(p)));
+  t('  本地代理合规写法通过',
+    checkDevProxy('if (!devOriginAllowed(req)) return 403', "host: env.ADMIN_DEV_HOST || '127.0.0.1'").length === 0);
+
   if (bad) {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`);
     process.exit(1);
@@ -131,5 +159,5 @@ if (process.argv.includes('--selftest')) {
     console.error('\n修法：`const gate = await guardAdminRequest(request, env); if (!gate.ok) return json(gate.body, gate.status, headers)`');
     process.exit(1);
   }
-  console.log(`✓ Pages Functions 鉴权闸齐全（${files.length} 个端点，${files.filter((f) => !EXEMPT.has(f)).length} 个需鉴权）`);
+  console.log(`✓ 管理代理鉴权闸齐全（Pages Functions ${files.length} 个端点，${files.filter((f) => !EXEMPT.has(f)).length} 个需鉴权；本地 dev 代理已校验来源且默认只绑本机）`);
 }

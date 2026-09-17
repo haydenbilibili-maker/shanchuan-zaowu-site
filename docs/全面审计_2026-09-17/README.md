@@ -317,6 +317,22 @@ D schema 有、rules 无: content_factory（索引页，非集合）
 | 提交者身份 | 本机未配置 git 身份，为免冒用，本次提交署名为 `DSH Agent <dsh-agent@users.noreply.github.com>`。如需归到本人：`git commit --amend --author="Hadyen <hayden.bilibili@gmail.com>"` |
 | 🔎 **远端已部分解决本报告的问题** | rebase 后发现 `25462bf` 已把 `check:admin` 从 **19 条扩到 49 条**（自检链 47 条），并且：**D5 的「漏网守卫」已收敛**——`lint:wxml`、`check:miniprogram-sync` 现在都在链内；**D4 的死入口已修**（新增 `check:miniprogram-sync:selftest`）；**D8 的 `docs/README.md` 缺失已由本次提交补上**。**D1（CI 不跑守卫、无 PR 触发）与 D2（`&&` 单链）在 `25462bf` 上是否仍成立，本次未复核** —— 需在 `25462bf` 上重新执行 §2.3 的命令集。 |
 
+### 第二批整改（2026-09-17 18:00 后，提交 `fa3742b` / `4310858` / 本批）
+
+| 项 | 状态 | 证据（可复跑） |
+|----|------|----------------|
+| **A2 `/api/feishu-sync` 无鉴权** | ✅ **已修，线上验证** | 修前 `GET` 返回 `{success:true,configured:true,appToken:"WCs2…"}`；修后 **HTTP 401** UNAUTHORIZED、响应体不再含 `appToken`；非白名单 `Origin` → **403**。改动：接入统一闸 `guardAdminRequest`（`_lib/proxySession.mjs` 新增）、CORS 从 `*` 改为 `corsHeaders()`、`withoutAppToken()` 剥离文档标识 |
+| **A3 `/api/ai` 无鉴权（开放付费 LLM 网关）** | ✅ **已修，线上验证** | 修前 `GET` 返回 `{ok:true,configured:{deepseek:true}}`；修后 **HTTP 401**。`/api/cloud-fn` 同步改用同一实现（保留 GET 探活免会话语义，仍不回显配置细节） |
+| **B5 本地代理无条件注入超管密钥 + `host 0.0.0.0`** | ✅ **已修，起真 dev server 实测** | 修后：监听地址只剩 `127.0.0.1:5178`（`ss -ltnp` 实测）；跨源 `POST/GET /api/cloud-fn` → **403**；同源 POST 放行并落到业务错误。改动：`viteCloudFnPlugin.mjs` 加 `devOriginAllowed()`（语义同生产 `originAllowed`）、`vite.config.js` 的 `host` 默认 `127.0.0.1`（要局域网调试须显式 `ADMIN_DEV_HOST=0.0.0.0`） |
+| **B3 转化链路谎报送达（P0 静默丢单）** | ✅ **已修，产物级验证** | 回退分支由 `ok:true` 改为 **`ok:false` + `delivered:false`**，本机草稿不再被当作已提交；页面文案去掉「本机暂存；云端就绪后可同步」的假承诺；新的诚实文案已出现在构建产物 `dist/_astro/price-list.astro_astro_type_script_index_0_lang.*.js`；死代码 `listLocalPurchaseIntents` 删除 |
+| **A4 前端假登录 + 明文口令（`admin888`/`money888`/`verified_888`）** | ⏳ **未动，待决策** | 不能只删兜底：`VITE_*` 前缀本身就会把口令内联进公开包，且直接置空会把所有人锁在门外。需在「按人账号 + 服务端会话成为唯一门禁」与「保留口令门禁但改由服务端校验」之间拍板（下一批给两个可落地方案） |
+| **新增守卫 4 条（52 → 55）** | ✅ | `check:api-auth`（静态，11 项自检，含本地 dev 代理两条不变式）、`test:api-auth`（**行为**：真跑三个 `onRequest`，11 项断言 + 摘闸自检）、`check:site-fallbacks`（6 项自检）、以及此前的 `check:caller-openid-gate`。`npm run check:admin` **55 条全绿**；`npm run build` EXIT 0 |
+
+> **验证方式说明**：`test:api-auth` 在 Node 里直接 import 三个 `onRequest` 并用真实 `Request` 驱动
+> （Node 22 原生具备 Web Crypto/Request/Response），断言「无 Cookie / 过期 / 伪造签名 / 未配置口令 /
+> 非白名单来源全部被拒」且「合法会话可过闸走到 503 AI_KEY_NOT_CONFIGURED」，
+> 另含两条**负向对照**（换签名密钥即失效、无 Origin 无 Cookie 仍 401）证明断言不是空转。
+
 ---
 
 *本报告为 2026-09-17 的快照。凡「子审计」级结论，原文都有 `file:line`；凡「线上实测」级结论，本轮均可直接复跑。

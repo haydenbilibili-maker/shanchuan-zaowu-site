@@ -129,7 +129,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      host: '0.0.0.0',
+      // 2026-09-17 审计 B5：默认只绑本机。此前 0.0.0.0 + 代理无条件注入 ADMIN_OPS_KEY
+      // = 同局域网任何人拿到超管身份。要手机/局域网调试请显式 ADMIN_DEV_HOST=0.0.0.0。
+      host: env.ADMIN_DEV_HOST || '127.0.0.1',
       port: 5178,
       strictPort: false,
       proxy: devProxy,

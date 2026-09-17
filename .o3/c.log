@@ -1,0 +1,867 @@
+
+> shanhai-zaowu-site@0.2.0 check:admin
+> node scripts/run-guards.mjs
+
+
+════ 守卫批量执行：共 55 条（逐条独立，不短路）════
+
+
+──── [1/55] lint:wxml ────────────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 lint:wxml
+> node miniprogram/scripts/check-wxml.mjs miniprogram
+
+✓ WXML 检查通过（149 个文件）
+✓ lint:wxml（exit 0，1.9s）
+
+──── [2/55] check:sfc-dev ────────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:sfc-dev
+> node admin/scripts/check-sfc-dev-transform.mjs
+
+验收环境编译守卫（dev 管线）：207/207 个 src 文件编译通过，0 个失败
+（另有 42 条 @vue/compiler-sfc 弃用提示，如 ::v-deep，不影响编译）
+全部通过：src 下所有 .js/.vue 都能被 dev server 编译，且静态 import 均可解析。
+npm notice
+npm notice New major version of npm available! 10.9.8 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
+✓ check:sfc-dev（exit 0，16.1s）
+
+──── [3/55] check:nav-sources ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:nav-sources
+> node admin/scripts/check-nav-sources.mjs
+
+导航事实来源守卫：518 项通过，0 项失败（7 个域 / 59 个条目）
+全部通过：域身份仅来自 GROUPS、条目名称/图标仅来自 MODULES、侧栏数据驱动、模块无遗漏。
+✓ check:nav-sources（exit 0，0.9s）
+
+──── [4/55] check:silent-catch ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:silent-catch
+> node admin/scripts/check-silent-catch.mjs
+
+静默吞错守卫：当前 0 处 / 基线 0 处（0 个文件）
+通过：没有新增静默吞错。
+✓ check:silent-catch（exit 0，0.7s）
+
+──── [5/55] check:brand-contrast ─────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:brand-contrast
+> node admin/scripts/check-brand-contrast.mjs
+
+ERP 黑金配色对比度检查：14 项通过，0 项失败
+全部通过：黑金配色在浅色面与深色面均满足 AA，旋钮令牌齐备。
+✓ check:brand-contrast（exit 0，0.6s）
+
+──── [6/55] report:colors:strict ─────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 report:colors:strict
+> node admin/scripts/report-color-residue.mjs --strict
+
+扫描 3142 处颜色字面量
+
+① 残留字面量（出现 ≥3 次且**无同值令牌**）—— 按出现次数排序
+   颜色      次数  文件  色相家族   白底对比度  最近令牌
+   #d4af37    277    62  金/土          2.1:1   --gold-400 (#c4a55a, Δ40)
+   #999999    168    39  中性-灰        2.85:1   --light-text-tertiary (#9b968d, Δ13)
+   #333333    146    32  中性-近黑      12.63:1   --dark-border-subtle (#3a3733, Δ8)
+   #5a6c7d     74    15  蓝           5.42:1   --cat-minerals-dark (#534a87, Δ36)
+   #2c3e50     65    15  蓝          10.98:1   --brand-green-600 (#245a42, Δ32)
+   #000000     62    15  中性-近黑         21:1   --dark-bg-primary (#0e0d0b, Δ22)
+   #666666     53    28  中性-灰        5.74:1   --light-text-secondary (#6b665d, Δ10)
+   #e0e0e0     52    21  中性-灰        1.32:1   --light-border-subtle (#e5e2db, Δ7)
+   #6b6560     49    23  中性-灰        5.74:1   --light-text-secondary (#6b665d, Δ3)
+   #e8e5de     47    16  中性-灰        1.26:1   --light-border-subtle (#e5e2db, Δ5)
+   #33302c     44    19  中性-近黑      13.13:1   --dark-bg-elevated (#302d28, Δ6)
+   #eeeeee     42     9  中性-近白       1.16:1   --dark-text-primary (#f5f2ec, Δ8)
+   #fafafa     41    14  中性-近白       1.04:1   --light-bg-primary (#fafaf5, Δ5)
+   #888888     40    25  中性-灰        3.54:1   --light-text-tertiary (#9b968d, Δ24)
+   #c4a76c     34    12  金/土         2.31:1   --gold-400 (#c4a55a, Δ18)
+   #a09a90     33    15  中性-灰        2.79:1   --light-text-tertiary (#9b968d, Δ7)
+   #f0f0f0     32    12  中性-近白       1.14:1   --dark-text-primary (#f5f2ec, Δ7)
+   #fafbfc     31    17  中性-近白       1.04:1   --light-bg-primary (#fafaf5, Δ7)
+   #e2e8f0     31     1  中性-近白       1.23:1   --cat-marine-light (#e4eef5, Δ8)
+   #27ae60     29     7  绿           2.87:1   --brand-green-400 (#3a9d6e, Δ29)
+   #faf6ed     25    15  中性-近白       1.08:1   --earth-50 (#f7f3ed, Δ4)
+   #f8f9fa     24     1  中性-近白       1.05:1   --light-bg-primary (#fafaf5, Δ5)
+   #909399     23    13  中性-灰        3.08:1   --light-text-tertiary (#9b968d, Δ17)
+   #b7950b     23    11  金/土         2.87:1   —
+   #f5f5f5     23    12  中性-近白       1.09:1   --light-bg-primary (#fafaf5, Δ7)
+   #2d5a3f     21     8  绿           7.94:1   --brand-green-600 (#245a42, Δ9)
+   #f56c6c     20    12  红            2.9:1   —
+   #f0f2f5     17    15  中性-近白       1.12:1   --light-bg-secondary (#f5f3ed, Δ9)
+   #718096     17     1  蓝           4.02:1   —
+   #4a5568     16     1  蓝           7.53:1   --dark-border-strong (#5a5650, Δ29)
+   …另有 90 种
+
+② 绿色家族语义角色（品牌色该改金 / 成功色必须留绿）—— 审计点名的不可 find-replace 之处
+   success 7   brand 62   viz 40   待定 234
+   [success] src/components/AICenter.vue:4137 #6ee7b7 — 命中成功语义关键词「success」
+   [success] src/components/Finance.vue:6651 #27ae60 — 命中成功语义关键词「positive」
+   [success] src/components/Finance.vue:6801 #27ae60 — 命中成功语义关键词「success」
+   [success] src/components/Finance.vue:8699 #27ae60 — 命中成功语义关键词「positive」
+   [success] src/components/Finance.vue:8998 #059669 — 命中成功语义关键词「positive」
+   [brand]   src/App.vue:4576 #1b4332 — 命中品牌/交互关键词「hover」
+   [brand]   src/components/AICenter.vue:2437 #2d6a4f — 命中品牌/交互关键词「brand」
+   [brand]   src/components/AICenter.vue:3463 #059669 — 命中品牌/交互关键词「hover」
+   [brand]   src/components/AICenter.vue:3463 #047857 — 命中品牌/交互关键词「hover」
+   [brand]   src/components/AICenter.vue:3571 #2d6a4f — 命中品牌/交互关键词「active」
+
+③ 明亮金用作文字色：对比度嫌疑（白底 <3:1 即不可读）
+   弹层证据 0   同块浅底（可能是死代码）0   静态判安全 8   无证据 141
+   ⚠ 静态分析不知道哪条声明生效：实测 el-table th 的「浅底 + 金字」被全局 !important 压掉，
+     真实渲染是金字深底 7.8:1。同块浅底类必须用 `--verify` 在浏览器量一次再定。
+
+④ 有同值令牌但仍硬编码（可机械替换；改哪个令牌仍要看语义）
+   #ffffff    320 次 /  63 文件  → --light-bg-elevated
+   #2d6a4f    176 次 /  20 文件  → --brand-green-500 / --cat-insecta-dark / --semantic-success-text / --tier-jade
+   #e74c3c     31 次 /   5 文件  → --accent-light
+   #1b4332     22 次 /   5 文件  → --brand-green-700
+   #6b665d     18 次 /   5 文件  → --light-text-secondary
+   #c4a55a     18 次 /   4 文件  → --gold-400 / --semantic-warning-icon / --tier-amber
+   #52b788     14 次 /   6 文件  → --brand-green-300 / --semantic-success-icon
+   #9b968d     14 次 /   5 文件  → --light-text-tertiary
+   #6e5b28     12 次 /   2 文件  → --gold-700 / --semantic-warning-text / --el-color-primary / --erp-gold-on-light
+   #8b6f47     10 次 /   6 文件  → --earth-500
+   #fafaf5     10 次 /   6 文件  → --light-bg-primary
+   #a88d42      9 次 /   3 文件  → --gold-500 / --el-color-primary-light-5
+
+⑤ 模板内联品牌色残留（type="primary" 的按钮/开关还写死 color="#hex"）：0 处 ✓
+
+⑥ 疑似正文色不达 AA（浅色面上 < 4.5:1，共 674 处 / 64 色；已按同块深底/深色容器证据排除 60 处）
+   ⚠ 仍是静态判定：被别处 !important 覆盖的情形需 --verify 实测
+   #999999    164 次 /  39 文件  白底 2.85:1
+   #d4af37    131 次 /  50 文件  白底 2.1:1
+   #ffffff     60 次 /  22 文件  白底 1:1
+   #888888     39 次 /  25 文件  白底 3.54:1
+   #a09a90     32 次 /  15 文件  白底 2.79:1
+   #e0e0e0     25 次 /  13 文件  白底 1.32:1
+   #27ae60     17 次 /   7 文件  白底 2.87:1
+   #b7950b     16 次 /   8 文件  白底 2.87:1
+   #718096     15 次 /   1 文件  白底 4.02:1
+   #8a8279     14 次 /   4 文件  白底 3.78:1
+   #f56c6c     13 次 /   9 文件  白底 2.9:1
+   #909399     13 次 /   8 文件  白底 3.08:1
+
+残留棘轮：基线 120 种 / 本次 120 种
+  未增长。
+✓ report:colors:strict（exit 0，1.1s）
+
+──── [7/55] report:data-sources:strict ───────────────────────────
+
+> shanhai-zaowu-site@0.2.0 report:data-sources:strict
+> node admin/scripts/report-data-sources.mjs --strict
+
+数据源审计：代码中出现 102 个源，SSOT 已登记 119 个
+
+D1 未登记的源：0 ✓
+
+D2 权威源唯一性冲突：0
+
+D3 权威源在本地的概念（不跨设备，展示层必须标注）：4
+   payroll_roster（薪酬花名册（HR 档案） → local:payrollStorage）
+   store_bundle（门店本地包（ERP 档案副本） → local:storeStorage）
+   finance_settings（财务参数（成本率 / 月薪等） → local:sc_finance_v12）
+   product_concept_draft（爆品概念草稿 → local:productConcept(STORAGE_KEY)）
+
+D4 未修复的口径分歧：0
+
+D5 读取「非权威源」的页面（读 mirror / local-only / legacy —— 可能过期或换设备即变）：16 处
+   src/components/ComplianceCenter.vue
+      local:sc_compliance_kb_v1（local-only）→ 权威应为 collection:configs
+      local:sc_strategy_compliance_items_v1（local-only）→ 权威应为 collection:configs
+      local:sc_strategy_compliance_species_lists_v1（local-only）→ 权威应为 collection:configs
+   src/components/StrategyResearch.vue
+      local:sc_strategy_benchmark_zones_v1（local-only）→ 权威应为 collection:configs
+      local:sc_strategy_compliance_items_v1（local-only）→ 权威应为 collection:configs
+      local:sc_strategy_compliance_species_lists_v1（local-only）→ 权威应为 collection:configs
+   src/components/Finance.vue
+      local:sc_finance_monthly_brief_v1（local-only）→ 权威应为 collection:finance_records
+      local:sc_finance_settings_v1（mirror）→ 权威应为 local:sc_finance_v12
+   src/components/ai/OpenClawVirtualStaff.vue
+      local:openclaw_virtual_staff_v1（local-only）→ 权威应为 collection:staff_members
+   src/components/AICenter.vue
+      local:ai_center_chat_sessions_v1（local-only）→ 权威应为 collection:analytics_daily
+   src/components/PropertyEval.vue
+      local:sc_property_proposals_v3（local-only）→ 权威应为 collection:property_proposals
+   src/components/PurchaseIntents.vue
+      local:shanhai_purchase_intents_v1（local-only）→ 权威应为 collection:ops_purchases + collection:ops_shipments
+   src/utils/aiHelper.js
+      local:ai_center_runtime_deepseek_key（local-only）→ 权威应为 collection:analytics_daily
+   src/utils/feishuRosterSync.js
+      local:sc_feishu_roster_mapping_v1（local-only）→ 权威应为 collection:configs
+   src/utils/feishuSync.js
+      local:sc_feishu_bitable_config_v1（local-only）→ 权威应为 collection:configs
+   src/utils/franchiseStorage.js
+      local:sc_franchise_bundle_v1（local-only）→ 权威应为 collection:stores + collection:store_zones
+
+D5b 已声明白名单（读非权威源但**有取新保证**，不计入 D5）：2 处
+   src/utils/financeLocalStorageKey.js  local:shanhai_v12（mirror）—— 键名定义处 + 旧键一次性迁移（本文件不承载业务读取）
+   src/utils/financialData.js  local:shanhai_v12（mirror）—— 全仓唯一的账本读取口，读前 await ensureLedgerFresh() 只读拉取云端 finance_records
+
+声明了非权威同义源的概念（展示层须如实标注来源）：
+   门店 / 展区: 权威 collection:stores；另有 localStorage:sc_store_bundle_v1
+   财务账本: 权威 collection:finance_records；另有 localStorage:shanhai_v12
+   财务参数（成本率 / 月薪等）: 权威 local:sc_finance_v12；另有 localStorage:sc_finance_settings_v1
+   订货履约: 权威 collection:ops_purchases；另有 collection:feishu_purchases、collection:feishu_shipments
+   行为 / 经营分析: 权威 collection:analytics_daily；另有 collection:user_behaviors
+   物业测算提案: 权威 collection:property_proposals；另有 localStorage:sc_property_proposals_v3
+
+棘轮：未恶化。
+✓ report:data-sources:strict（exit 0，0.7s）
+
+──── [8/55] check:write-verify:strict ────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:write-verify:strict
+> node admin/scripts/check-write-verify.mjs --strict
+
+写结果校验守卫：扫描 205 个文件
+  走代理（天然安全，不要求校验）：约 35 处
+  集合名是变量、**静态不可判定**（本守卫覆盖不到）：37 处 —— 这是本守卫的已知盲区
+  CDN 直写但调用点未校验（残余关切：updated:0 类；权限被拒已由包装器集中抛出）：66 处
+
+棘轮：基线 53 个调用点 / 本次 51 个调用点（66 处）
+  无新增。
+
+当前未校验的调用点（按文件）：
+   src/components/HomeConfigManager.vue  (6)
+      517  cdnUpdate('home_configs')
+      522  cdnAdd('home_configs')
+      564  cdnUpdate('home_configs')
+      …另有 3 处
+   src/components/NotificationConfig.vue  (6)
+      550  cdnAdd('notification_templates')
+      572  cdnUpsertByWhere('notification_templates')
+      642  cdnUpdate('notification_templates')
+      …另有 3 处
+   src/components/SearchKeywordsManager.vue  (6)
+      410  cdnAdd('search_hot_keywords')
+      421  cdnUpdate('search_hot_keywords')
+      458  cdnRemove('search_hot_keywords')
+      …另有 3 处
+   src/components/StoreFrontConfig.vue  (6)
+      411  cdnUpdate('stores')
+      412  cdnAdd('stores')
+      425  cdnRemove('stores')
+      …另有 3 处
+   src/components/AudienceManager.vue  (5)
+      394  cdnAdd('user_audiences')
+      405  cdnUpdate('user_audiences')
+      415  cdnRemove('user_audiences')
+      …另有 2 处
+   src/components/SupportConfigs.vue  (5)
+      447  cdnUpdate('support_configs')
+      450  cdnAdd('support_configs')
+      464  cdnUpdate('support_configs')
+      …另有 2 处
+   src/components/AchievementConfig.vue  (4)
+      395  cdnUpdate('achievement_configs')
+      410  cdnAdd('achievement_configs')
+      444  cdnUpdate('achievement_configs')
+      …另有 1 处
+   src/components/ai/StrategyResearchAI.vue  (3)
+      354  cdnAdd('strategy_research')
+      437  cdnRemove('strategy_research')
+      462  cdnRemove('strategy_research')
+   src/components/Bookings.vue  (3)
+      414  cdnUpdate('waitlist')
+      424  cdnUpdate('waitlist')
+      434  cdnUpdate('waitlist')
+   src/components/MarketingRulesConfig.vue  (3)
+      389  cdnUpsertDoc('marketing_rules_config')
+      405  cdnUpsertDoc('marketing_rules_config')
+      421  cdnUpsertDoc('marketing_rules_config')
+   src/components/MemberLevelConfig.vue  (3)
+      235  cdnUpdate('member_levels')
+      240  cdnAdd('member_levels')
+      320  cdnRemove('member_levels')
+   src/components/PetMemorial.vue  (3)
+      259  cdnUpdate('pet_craft_configs')
+      260  cdnAdd('pet_craft_configs')
+      271  cdnRemove('pet_craft_configs')
+   src/components/ContentDisplayFlags.vue  (2)
+      317  cdnUpdate('content_display_flags')
+      319  cdnUpsertSingleton('content_display_flags')
+   src/components/CustomReportBuilder.vue  (2)
+      633  cdnAdd('report_templates')
+      661  cdnRemove('report_templates')
+   src/components/PropertyEval.vue  (2)
+      598  cdnUpdate('property_proposals')
+      601  cdnAdd('property_proposals')
+   src/components/UserBehaviorConfig.vue  (2)
+      334  cdnUpsertByWhere('user_behavior_config')
+      347  cdnUpsertByWhere('user_behavior_config')
+   src/utils/storeDesignStorage.js  (2)
+      95  cdnAdd('store_design_versions')
+      103  cdnUpdate('store_design_versions')
+   src/components/BookingRulesConfig.vue  (1)
+      384  cdnUpsertSingleton('booking_rules')
+   src/components/RecommendAlgorithmConfig.vue  (1)
+      327  cdnUpsertDoc('recommend_algorithm_config')
+   src/utils/feishuSync.js  (1)
+      487  cdnAdd('feishu_sync_logs')
+
+通过（仍有待收编的历史项，见基线）。
+✓ check:write-verify:strict（exit 0，0.8s）
+
+──── [9/55] check:welcome-gift ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:welcome-gift
+> node miniprogram/scripts/check-welcome-gift-config.cjs
+
+新会员礼包配置检查：40 项通过，0 项失败
+全部通过：兜底档位、客户端兜底、折扣地板、对齐安全边界均一致。
+✓ check:welcome-gift（exit 0，0.7s）
+
+──── [10/55] check:work-notice ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:work-notice
+> node miniprogram/scripts/check-work-notice-voice.cjs
+
+工作通知声音检查：13 项通过，0 项失败
+全部通过：语料、音频资产、页面接线、增量判定、无平台降级均一致。
+✓ check:work-notice（exit 0，0.6s）
+
+──── [11/55] check:store-points ──────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:store-points
+> node miniprogram/scripts/check-store-point-rules-sync.cjs
+
+门店积分规则默认值检查：10 项通过，0 项失败
+
+待人工决策：
+  ⚠ 【需人工决策】earnPoints/defaults.js 的 modules.share: true vs false —— 合规动机关闭分享奖励，未同步到其他 5 份
+全部通过：ERP 平行副本与云端 defaults 结构一致，6 份副本无结构性漂移。
+✓ check:store-points（exit 0，0.6s）
+
+──── [12/55] check:source-origin ─────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:source-origin
+> bash miniprogram/scripts/sync-source-origin.sh --check
+
+✓ sourceOrigin.js 全部副本与真源一致
+✓ sourceOrigin 行为断言通过（8/8，含合并串回归用例）
+✓ check:source-origin（exit 0，0.6s）
+
+──── [13/55] check:fn-integrity ──────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:fn-integrity
+> node miniprogram/scripts/check-cloud-functions-integrity.mjs
+
+✓ 云函数入口完整性通过（130 个函数：均有 exports.main / cloud.init / db 定义与可用依赖）
+✓ check:fn-integrity（exit 0，0.7s）
+
+──── [14/55] check:analytics-schema ──────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:analytics-schema
+> node miniprogram/scripts/check-analytics-schema.mjs
+
+✓ 埋点 schema 一致（小程序 130 事件 / ERP 130 事件 / 模块 15 个）
+✓ check:analytics-schema（exit 0，0.8s）
+
+──── [15/55] check:analytics-limits ──────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:analytics-limits
+> node admin/scripts/check-analytics-limits.mjs
+
+✓ 埋点采样上限一致（ERP 207 个文件 + 云函数 8 个文件均引用常量；4 个同名常量两侧逐字相等；副本 3 份一致）
+✓ check:analytics-limits（exit 0，0.7s）
+
+──── [16/55] check:work-order-notify ─────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:work-order-notify
+> bash miniprogram/scripts/sync-work-order-notify.sh --check
+
+✓ 工单通知共享模块全部副本与真源一致
+✓ check:work-order-notify（exit 0，0.6s）
+
+──── [17/55] check:species-dedup ─────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:species-dedup
+> bash miniprogram/scripts/sync-species-dedup.sh --check
+
+✓ speciesDedupKey 行为断言通过（11/11）
+✓ speciesDedupKey.js 副本与真源一致
+✓ check:species-dedup（exit 0，0.6s）
+
+──── [18/55] test:write-layer ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:write-layer
+> node admin/scripts/test-write-layer.mjs
+
+[writeApplied] 未识别的写返回形状，按已生效处理（若实为失败请补形状判定）： { foo: 1 }
+[write-not-applied] c update { updated: 0 }
+[write-denied] products update { code: 'DATABASE_PERMISSION_DENIED', message: 'Permission denied' }
+[write-denied] c write { error: { code: 'X' } }
+[write-not-applied] c add { updated: 0 }
+写层回归测试：29 项通过，0 项失败
+全部通过：写结果判定与 upsert 决策（含「update 返回 updated:0 不抛错」这一关键语义）均正确。
+✓ test:write-layer（exit 0，0.6s）
+
+──── [19/55] test:module-hash ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:module-hash
+> node admin/scripts/test-module-hash.mjs
+
+模块深链格式测试：30 项通过，0 项失败
+全部通过：解析严格、生成去空格、往返一致、前缀契约固定。
+
+注意：本测试只覆盖 format 层。App.vue 里的 watch / hashchange / replaceState
+接线已由浏览器 DOM 守卫覆盖：`npm run dev:admin` 后执行 `npm run check:nav-dom`。
+✓ test:module-hash（exit 0，0.6s）
+
+──── [20/55] test:module-search ──────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:module-search
+> node admin/scripts/test-module-search.mjs
+
+命令面板去重测试：49 项通过，0 项失败（注册表 87 个模块）
+全部通过：别名解析正确、任何查询都无重复落点、旧名仍能命中、别名行带落点提示。
+✓ test:module-search（exit 0，0.9s）
+
+──── [21/55] test:coupon-floor ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:coupon-floor
+> node admin/scripts/test-coupon-floor.mjs
+
+券门槛地板一致性：30 项通过，0 项失败
+全部通过：ERP 内联地板与云函数 couponDiscountRules 同口径，且常量确实被引用。
+✓ test:coupon-floor（exit 0，0.6s）
+
+──── [22/55] test:staff-directory ────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:staff-directory
+> node admin/scripts/test-staff-directory.mjs
+
+「在职员工」数据源测试：9 项通过，0 项失败
+全部通过：计数正确、截断可辨、失败显示「—」而不是 0。
+✓ test:staff-directory（exit 0，0.6s）
+
+──── [23/55] test:finance-read-path ──────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:finance-read-path
+> node admin/scripts/test-finance-read-path.mjs
+
+财务读路径守卫（成本率出处 + 读路径不回写）：11 项通过，0 项失败
+全部通过：默认成本率可辨、读路径只读拉取、写入口白名单唯一。
+✓ test:finance-read-path（exit 0，0.7s）
+
+──── [24/55] test:pet-artisan ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:pet-artisan
+> node miniprogram/scripts/test-pet-artisan-flow.mjs
+
+getPetMemorialConfig: 有伴宠资质但缺 staffOpenid 的档案数 = 1
+
+需求 14 行为断言：通过 57 / 57
+✓ 需求 14 全链路断言通过（名单门槛 / 越权投放 / 归属校验 / 模板字段）
+✓ test:pet-artisan（exit 0，0.6s）
+
+──── [25/55] test:message-products ───────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:message-products
+> node miniprogram/scripts/test-message-products.mjs
+
+
+需求 10 行为断言：通过 72 / 72
+✓ 需求 10 全链路断言通过（名称+图片+规格粒度 / 内部字段不外泄 / 模板商品行 / 合并不丢卡）
+✓ test:message-products（exit 0，0.6s）
+
+──── [26/55] check:order-summary ─────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:order-summary
+> bash miniprogram/scripts/sync-order-summary.sh --check
+
+✓ orderSummary 行为断言通过（名称/规格/图片粒度 + 内部字段不外泄 + 截断）
+✓ orderSummary.js 全部副本与真源一致
+✓ check:order-summary（exit 0，0.6s）
+
+──── [27/55] check:modal-text ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:modal-text
+> node miniprogram/scripts/check-modal-text.mjs
+
+· 现存超长按钮文案 5 处（基线 5 处）
+    subpackages/business/order-detail/index.js#confirmText#先复制单号
+    subpackages/business/utils/refundPolicy.js#confirmText#去上传举证
+    subpackages/feature/utils/refundPolicy.js#confirmText#去上传举证
+    subpackages/manager/manager/managerPageConfig.js#confirmText#确认补履约
+    subpackages/manager/utils/refundPolicy.js#confirmText#去上传举证
+
+✓ 未新增超长弹窗按钮文案
+✓ check:modal-text（exit 0，0.7s）
+
+──── [28/55] test:wish-wall ──────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:wish-wall
+> node miniprogram/scripts/test-wish-wall.mjs
+
+wish wall seed ai failed: AI 调用失败（桩）
+
+需求 28 行为断言：通过 347 / 347
+✓ 需求 28 全链路断言通过（集合只读 / 服务端昵称 / 频控与长度 / 状态可见性 / 开关闸门 / 弹幕布局 / AI 基础内容 / 进页彩蛋 / 点灯仪式 / 全站拓展预留）
+✓ test:wish-wall（exit 0，0.8s）
+
+──── [29/55] test:analytics-limits ───────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:analytics-limits
+> node miniprogram/scripts/test-analytics-limit-convergence.mjs
+
+
+#26 采样上限收敛断言：通过 31 / 31
+✓ 采样上限在云函数侧已收敛（实际发出的 limit 值 / 触顶标注 / 两端常量与文案一致 / 副本同步）
+✓ test:analytics-limits（exit 0，0.6s）
+
+──── [30/55] test:detail-image ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:detail-image
+> node miniprogram/scripts/test-detail-image-grading.mjs
+
+imageUrl: 图片加载失败，回落原图
+imageUrl: 环境不支持图片处理参数，本次会话回落原图（功能不受影响，仅无缩略图收益）
+imageUrl: 图片加载失败，回落原图
+
+#17 详情页分级取图断言：通过 31 / 31
+✓ 详情页分级取图通过（未确认用原图 / 源列表映射覆盖派生槽位 / 失败即回落 / 5 槽位均挂 error）
+✓ test:detail-image（exit 0，0.6s）
+
+──── [31/55] test:atelier-grid ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:atelier-grid
+> node miniprogram/scripts/test-atelier-grid.mjs
+
+
+工坊宫格断言：通过 47 / 47
+✓ 工坊四功能宫格通过（编号稳定 / 开关口径正确 / 鉴定入口不重复埋点 / 守卫与跳转保持原行为）
+✓ test:atelier-grid（exit 0，0.6s）
+
+──── [32/55] test:pickup-pass ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:pickup-pass
+> node miniprogram/scripts/test-pickup-pass-refresh.mjs
+
+
+#6 门店自取核销联动断言：通过 44 / 44
+✓ 核销联动通过（自动收口 / 已自提水印 / 历史核销不误报 / 停表与去重 / 术语守卫）
+✓ test:pickup-pass（exit 0，0.7s）
+
+──── [33/55] test:coupon-fold ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:coupon-fold
+> node miniprogram/scripts/test-coupon-fold.mjs
+
+
+礼券夹分组/折叠断言：通过 66 / 66
+✓ 礼券夹通过（占用中不被谎报失效 / 角标口径 / 打眼章不重叠 / 折叠件与 a11y 齐备）
+✓ test:coupon-fold（exit 0，0.6s）
+
+──── [34/55] test:wallet-ledger ──────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:wallet-ledger
+> node miniprogram/scripts/test-wallet-ledger.mjs
+
+
+钱包账单流水断言：通过 98 / 98
+✓ 账单流水通过（时间形态 / 日组与月带 / 边界日不谎报 / 去重与游标 / 首屏骨架 / 点行开订单）
+✓ test:wallet-ledger（exit 0，0.6s）
+
+──── [35/55] test:gift-mygifts ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:gift-mygifts
+> node miniprogram/scripts/test-gift-mygifts.mjs
+
+
+我的礼赠「我送出的」断言：通过 75 / 75
+✓ 我的礼赠通过（模板作用域 / 失效口径 / 折叠计数 / 失效卡出口 / 折叠态重置 / v2 券包结构）
+✓ test:gift-mygifts（exit 0，0.7s）
+
+──── [36/55] check:miniprogram-sync ──────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:miniprogram-sync
+> node scripts/check-miniprogram-sync.mjs
+
+· 跳过：本机没有开发仓目录（/home/admin/WeChatProjects/shanchuanspecimens）—— CI / 他人机器属正常情况
+✓ check:miniprogram-sync（exit 0，0.6s）
+
+──── [37/55] check:audit-matrix ──────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:audit-matrix
+> node miniprogram/scripts/check-audit-matrix.mjs
+
+✓ 状态矩阵一致（主分区互斥且覆盖 33/33 条；各分区计数与列表相符）
+✓ check:audit-matrix（exit 0，0.6s）
+
+──── [38/55] test:member-card-guest ──────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:member-card-guest
+> node miniprogram/scripts/test-member-card-guest.mjs
+
+
+#20 / #21 会员卡信封态与档案动线断言：通过 125 / 125
+✓ 通过（未注册/退出=信封+动态蝴蝶 / 等级卡互斥 / 档案入口可达 / 清单与完成度同源）
+✓ test:member-card-guest（exit 0，0.6s）
+
+──── [39/55] check:shared-modules ────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:shared-modules
+> node miniprogram/scripts/check-shared-modules.mjs
+
+真共享家族 7 个 · 副本合计 100 份
+
+  ✓ staffGuard.js         56 份 
+  ✓ approvalRules.js       9 份 
+  ✓ approvalBridge.js      9 份 
+  ✓ auditLog.js            8 份 
+  ✓ pointsBalance.js       6 份 
+  ✓ contentSecurity.js     5 份 
+  ✓ memberLevels.js        7 份 （超集：允许插入）
+
+有意分歧（不纳入，已登记原因）：
+  · refundPolicy.js（2 份）—— 同名不同模块：refundOrder=算退款金额；makeOrder=下单时快照退款规则。不是漂移。
+
+已由其它守卫覆盖：
+  · orderSummary.js（check:order-summary）
+  · sourceOrigin.js（check:source-origin）
+  · speciesDedupKey.js（check:sync-species-dedup）
+  · workOrderNotify.js（check:work-order-notify）
+
+✓ 真共享模块全部一致（含超集家族的共享部分）
+✓ check:shared-modules（exit 0，0.7s）
+
+──── [40/55] check:proxy-allowlist ───────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:proxy-allowlist
+> node admin/scripts/check-proxy-allowlist-sync.mjs
+
+代理白名单对齐守卫：服务端 30 项 / 前端 30 项
+集合级名单：服务端 16 项 / 前端 16 项
+全部通过：函数级两侧逐项一致（交集 30 项）；集合级两侧逐项一致（16 项）。
+✓ check:proxy-allowlist（exit 0，0.6s）
+
+──── [41/55] check:require-paths ─────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:require-paths
+> node miniprogram/scripts/check-require-paths.mjs
+
+✓ 相对 require 路径全部可解析（802 处）
+✓ check:require-paths（exit 0，0.7s）
+
+──── [42/55] check:page-paths ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:page-paths
+> node miniprogram/scripts/check-page-paths.mjs
+
+✓ 页面路径全部有效（注册 123 个页面 · 扫描 755 个文件 · 467 处路径引用）
+✓ check:page-paths（exit 0，0.7s）
+
+──── [43/55] check:asset-refs ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:asset-refs
+> node miniprogram/scripts/check-asset-refs.mjs
+
+✓ 相对资源引用全部可解析（223 处）
+✓ check:asset-refs（exit 0，0.7s）
+
+──── [44/55] test:legacy-remap ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:legacy-remap
+> node miniprogram/scripts/test-legacy-remap.mjs
+
+✓ 旧路径重映射全部落到注册页（68 个旧前缀 · 注册页 123 个）
+✓ test:legacy-remap（exit 0，0.6s）
+
+──── [45/55] check:shell-vars ────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:shell-vars
+> node miniprogram/scripts/check-shell-var-names.mjs
+
+✓ shell 变量名无粘连（23 个脚本）
+✓ check:shell-vars（exit 0，0.7s）
+
+──── [46/55] check:subpackage-refs ───────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:subpackage-refs
+> node miniprogram/scripts/check-subpackage-refs.mjs
+
+✓ 无跨分包引用（检查 891 处 · 分包 4 个）
+✓ check:subpackage-refs（exit 0，0.8s）
+
+──── [47/55] check:wxml-conditions ───────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:wxml-conditions
+> node miniprogram/scripts/check-wxml-conditions.mjs
+
+· components/ProductList/index.wxml:16  <block> 同时带 wx:for 与 wx:if（编译器接受，但一旦后面跟 wx:elif/wx:else 就会**编译报错**）。建议：把 wx:if 提到外层 <block wx:if>
+· components/ProductList/index.wxml:21  <block> 同时带 wx:for 与 wx:if（编译器接受，但一旦后面跟 wx:elif/wx:else 就会**编译报错**）。建议：把 wx:if 提到外层 <block wx:if>
+· subpackages/business/orders/index.wxml:56  <block> 同时带 wx:for 与 wx:if（编译器接受，但一旦后面跟 wx:elif/wx:else 就会**编译报错**）。建议：把 wx:if 提到外层 <block wx:if>
+· subpackages/feature/identify/result/index.wxml:149  <view> 同时带 wx:for 与 wx:if（编译器接受，但一旦后面跟 wx:elif/wx:else 就会**编译报错**）。建议：把 wx:if 提到外层 <block wx:if>
+· subpackages/manager/store-points/index.wxml:71  <view> 同时带 wx:for 与 wx:if（编译器接受，但一旦后面跟 wx:elif/wx:else 就会**编译报错**）。建议：把 wx:if 提到外层 <block wx:if>
+✓ WXML 条件链无编译级问题（149 个文件；另有 5 处 for+if 建议项）
+✓ check:wxml-conditions（exit 0，1.7s）
+
+──── [48/55] test:register-gate ──────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:register-gate
+> node miniprogram/scripts/test-register-gate.mjs
+
+✓ 注册链路 util 存在
+✓ 链路按序调用 authPhone
+✓ 链路用 finishRegistration:true（与注册页同语义）
+✓ 链路在 finished 之外会补 upsertUserProfile
+✓ 链路在两处分支都调用 refreshSessionAfterAuth（否则 ensureSession 一直是 guest）
+✓ 弹窗组件四件套齐全
+✓ ★ 授权按钮是 button open-type="getPhoneNumber"（唯一合法触发方式）
+✓ ★ 弹窗复用唯一链路，而不是自己拼一遍云函数
+✓ ★ 弹窗不再跳注册页（不出现 navigateToOnboarding / onboarding 路径）
+✓ ★ 关闭入口受 closable 控制（门禁场景不渲染）
+✓ 弹窗样式使用全站设计令牌（--gold / 博物黑），不是系统默认样式
+✓ ★ 百科详情页注册了注册弹窗组件
+✓ ★ 百科详情页对 guest 置 registerGated
+✓ ★ 门禁弹窗 closable=false（不给「再看看」）
+✓ ★ 百科详情页门禁路径不含「再看看」「先看看」文案
+✓ ★ 整页灰色模糊（filter blur + grayscale）且挡点击
+✓ ★ 注册成功后解除门禁
+✓ 门禁判定失败时不拦（宁可少拦，不锁死档案）
+✓ ★ 结果页注册了注册弹窗组件
+✓ ★ 结果页改为原地弹窗（不再 navigate 注册页）
+✓ ★ 结果页门禁也不提供「先看看」（closable=false + 文案不含先看看）
+✓ ★ 结果页正文整页灰色模糊（blur + grayscale + 挡点击）
+✓ ★ 结果页门禁位与模糊层联动（置位与解除成对）
+✓ ★ 模糊层不包裹 fixed 浮层（否则 filter 会创建包含块、带偏 fixed 定位）
+✓ 结果页有成功回调与关闭回调
+
+✓ 注册门禁与一键注册断言全部通过
+✓ test:register-gate（exit 0，0.6s）
+
+──── [49/55] check:publish-dir ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:publish-dir
+> node admin/scripts/check-publish-dir.mjs
+
+  · admin/public/governance-assets/ 保留 33 个文件（本地/私有环境可用）
+✓ 发布目录守卫通过（内部资料不在发布路径，单一事实源完好）
+✓ check:publish-dir（exit 0，0.6s）
+
+──── [50/55] check:modal-style ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:modal-style
+> node miniprogram/scripts/check-modal-style.mjs
+
+✓ 弹窗视觉一致性通过（原生弹窗 164 处 ≤ 棘轮 164；已迁移 1 页）
+  待迁移最多的页面：subpackages/manager/manager/managerPageConfig.js(30)、subpackages/extra/staff/field/index.js(14)、subpackages/extra/live/broadcast/index.js(9)、subpackages/feature/detail/index.js(9)、subpackages/business/order-detail/index.js(6)
+✓ check:modal-style（exit 0，0.7s）
+
+──── [51/55] check:share-image ───────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:share-image
+> node miniprogram/scripts/check-share-image.mjs
+
+分享卡片封面守卫：扫描 355 个文件，命中分享处理 6 处 imageUrl
+
+✓ 没有把 cloud:// / cdnPath() 直接当分享封面
+
+待复核（静态无法确认来源，可能已在别处解析）：基线 5 处 / 本次 5 处（键不含行号）
+  无新增。
+
+通过。注意：本守卫只保证「不再传 cloud://」；卡片实际观感仍需真机分享一次确认。
+✓ check:share-image（exit 0，0.7s）
+
+──── [52/55] check:caller-openid-gate ────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:caller-openid-gate
+> node miniprogram/scripts/check-caller-openid-gate.mjs
+
+✓ 身份透传来源门齐全（10 个函数、16 处消费点）
+✓ check:caller-openid-gate（exit 0，0.7s）
+
+──── [53/55] check:api-auth ──────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:api-auth
+> node scripts/check-api-auth.mjs
+
+✓ 管理代理鉴权闸齐全（Pages Functions 4 个端点，3 个需鉴权；本地 dev 代理已校验来源且默认只绑本机）
+✓ check:api-auth（exit 0，0.6s）
+
+──── [54/55] test:api-auth ───────────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 test:api-auth
+> node scripts/test-api-auth-behavior.mjs
+
+Pages Functions 鉴权行为测试：11 项通过，0 项失败
+全部通过：无会话/过期/伪造签名/未配置口令/非白名单来源全部被拒，合法会话可过闸，且响应不回显 appToken。
+✓ test:api-auth（exit 0，0.7s）
+
+──── [55/55] check:site-fallbacks ────────────────────────────────
+
+> shanhai-zaowu-site@0.2.0 check:site-fallbacks
+> node scripts/check-site-fallbacks.mjs
+
+✓ 转化链路诚实：回退分支不谎报送达（ok:false + delivered:false），官网无「会同步到云端」的假承诺
+✓ check:site-fallbacks（exit 0，0.6s）
+
+════ 守卫汇总 ════
+  ✓ lint:wxml                   exit 0  1.9s
+  ✓ check:sfc-dev               exit 0  16.1s
+  ✓ check:nav-sources           exit 0  0.9s
+  ✓ check:silent-catch          exit 0  0.7s
+  ✓ check:brand-contrast        exit 0  0.6s
+  ✓ report:colors:strict        exit 0  1.1s
+  ✓ report:data-sources:strict  exit 0  0.7s
+  ✓ check:write-verify:strict   exit 0  0.8s
+  ✓ check:welcome-gift          exit 0  0.7s
+  ✓ check:work-notice           exit 0  0.6s
+  ✓ check:store-points          exit 0  0.6s
+  ✓ check:source-origin         exit 0  0.6s
+  ✓ check:fn-integrity          exit 0  0.7s
+  ✓ check:analytics-schema      exit 0  0.8s
+  ✓ check:analytics-limits      exit 0  0.7s
+  ✓ check:work-order-notify     exit 0  0.6s
+  ✓ check:species-dedup         exit 0  0.6s
+  ✓ test:write-layer            exit 0  0.6s
+  ✓ test:module-hash            exit 0  0.6s
+  ✓ test:module-search          exit 0  0.9s
+  ✓ test:coupon-floor           exit 0  0.6s
+  ✓ test:staff-directory        exit 0  0.6s
+  ✓ test:finance-read-path      exit 0  0.7s
+  ✓ test:pet-artisan            exit 0  0.6s
+  ✓ test:message-products       exit 0  0.6s
+  ✓ check:order-summary         exit 0  0.6s
+  ✓ check:modal-text            exit 0  0.7s
+  ✓ test:wish-wall              exit 0  0.8s
+  ✓ test:analytics-limits       exit 0  0.6s
+  ✓ test:detail-image           exit 0  0.6s
+  ✓ test:atelier-grid           exit 0  0.6s
+  ✓ test:pickup-pass            exit 0  0.7s
+  ✓ test:coupon-fold            exit 0  0.6s
+  ✓ test:wallet-ledger          exit 0  0.6s
+  ✓ test:gift-mygifts           exit 0  0.7s
+  ✓ check:miniprogram-sync      exit 0  0.6s
+  ✓ check:audit-matrix          exit 0  0.6s
+  ✓ test:member-card-guest      exit 0  0.6s
+  ✓ check:shared-modules        exit 0  0.7s
+  ✓ check:proxy-allowlist       exit 0  0.6s
+  ✓ check:require-paths         exit 0  0.7s
+  ✓ check:page-paths            exit 0  0.7s
+  ✓ check:asset-refs            exit 0  0.7s
+  ✓ test:legacy-remap           exit 0  0.6s
+  ✓ check:shell-vars            exit 0  0.7s
+  ✓ check:subpackage-refs       exit 0  0.8s
+  ✓ check:wxml-conditions       exit 0  1.7s
+  ✓ test:register-gate          exit 0  0.6s
+  ✓ check:publish-dir           exit 0  0.6s
+  ✓ check:modal-style           exit 0  0.7s
+  ✓ check:share-image           exit 0  0.7s
+  ✓ check:caller-openid-gate    exit 0  0.7s
+  ✓ check:api-auth              exit 0  0.6s
+  ✓ test:api-auth               exit 0  0.7s
+  ✓ check:site-fallbacks        exit 0  0.6s
+
+✓ 全部通过（55 条）
+npm notice
+npm notice New major version of npm available! 10.9.8 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice

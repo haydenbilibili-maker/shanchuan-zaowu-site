@@ -1250,10 +1250,9 @@ const rows = priceListItems.map(renderRow);
         });
         successMode = true;
         if (successNote) {
-          successNote.textContent =
-            result.mode === 'local'
-              ? '已本机暂存；云端就绪后可同步写入采购意向库'
-              : '采购意向已进入后台清单';
+          // 只有真送达（delivered）才会走到这里；回退分支现在返回 ok:false，
+          // 由上面的 setMsg(result.error) 如实告知「未送达」（2026-09-17 审计 B3）
+          successNote.textContent = '采购意向已进入后台清单';
         }
         setMsg('');
         render();
