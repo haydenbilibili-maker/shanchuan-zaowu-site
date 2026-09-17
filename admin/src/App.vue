@@ -1595,8 +1595,16 @@ const activeModuleDef = computed(() => {
   return { comp: def.comp, props: def.props || {} }
 })
 
-/** 生产环境可在 .env.production 中设置 VITE_ADMIN_PASSWORD；未设置时沿用开发默认口令 */
-const ADMIN_SECRET = import.meta.env.VITE_ADMIN_PASSWORD || 'admin888'
+/**
+ * 开发环境的降级口令（**仅**在 /api/admin-session 未部署且 host 为 localhost 时可达）。
+ *
+ * 2026-09-17 审计 A4：原写法 `import.meta.env.VITE_ADMIN_PASSWORD || 'admin888'` 会让
+ * `admin888` 被内联进**生产包**（任何人下载 /admin 的 JS 就能读到）。用 `import.meta.env.DEV`
+ * 包住后，生产构建会把它静态替换为 false，整个字面量被 dead-code elimination 移除。
+ * 生产语义**完全不变**：使用它的那行前面有 `session.skipped &&`，而 skipped 仅在本地开发
+ * 返回（见 cloudbaseCdnDb.establishAdminSession 的 isLocalDevHost 分支）。
+ */
+const ADMIN_SECRET = import.meta.env.DEV ? (import.meta.env.VITE_ADMIN_PASSWORD || 'admin888') : ''
 
 // --- 全局状态 ---
 /** 默认进入数智化中台登录；登录成功后可带 #admin 便于收藏 */
