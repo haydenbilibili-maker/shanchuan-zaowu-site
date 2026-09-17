@@ -4866,7 +4866,9 @@ const managerPageConfig = {
           title: p.title,
           category: p.category || '',
           rootCategory: p.rootCategoryName || '',
-          origin: p.origin || ''
+          origin: p.origin || '',
+          // 礼赠场景标签规则需要价格档位（见 scripts/giftSceneRules.mjs）
+          price: Number(p.price) || 0
         }
       });
       const result = res.result || {};
@@ -4906,7 +4908,11 @@ const managerPageConfig = {
         'tempProduct.taxonomy.family': tax.family || afterCat.taxonomy?.family || '',
         'tempProduct.taxonomy.genus': tax.genus || afterCat.taxonomy?.genus || '',
         ...protectionPatch,
-        'tempProduct.tags': this.mergeProductTagsFromAi(afterCat.tags, d.tags)
+        'tempProduct.tags': this.mergeProductTagsFromAi(afterCat.tags, d.tags),
+        // 礼赠场景标签：随一键补齐一起打（云函数按规则算出）
+        'tempProduct.giftScenes': (Array.isArray(d.giftScenes) && d.giftScenes.length)
+          ? d.giftScenes
+          : (this.data.tempProduct.giftScenes || [])
       });
       syncProductLatinRequired(this);
       syncProductTaxonomyFlags(this);

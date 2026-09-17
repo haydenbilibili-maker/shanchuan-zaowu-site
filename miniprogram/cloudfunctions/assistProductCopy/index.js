@@ -6,6 +6,7 @@ const cloud = require('wx-server-sdk')
 const https = require('https')
 const { assertStaff: _assertStaff } = require('./staffGuard')
 const { SPECIES_PAIR_RULE, ensureSpeciesPairInText } = require('./speciesLabel')
+const { proposeScenes } = require('./giftScenes')
 
 /**
  * 鉴权包装（2026-09-15 修复）：Admin Web 经 /api/cloud-fn 调用时，代理会把密钥注入
@@ -482,9 +483,17 @@ exports.main = async (event) => {
         })
       ])
 
+    // 礼赠场景标签：并入一键补齐（规则与 scripts/giftSceneRules.mjs 同源，非 AI 猜测）
+    const giftScenes = proposeScenes({
+      price: Number(event && event.price) || 0,
+      rootCategoryName: (categoryResult && categoryResult.rootCategoryName) || (event && event.rootCategory) || '',
+      isOffShelf: false
+    })
+
     return {
       success: true,
       data: {
+        giftScenes,
         latinName,
         speciesZh,
         description,
