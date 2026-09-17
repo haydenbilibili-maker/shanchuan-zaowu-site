@@ -817,6 +817,28 @@ page {
   }
 }
 
+/* 题记层：藏品题记（四字主题名 + 一句话），与正文叠加 —— 它是礼笺的「题」，不占正文 */
+.card-epigraph {
+  margin: 0 0 18rpx;
+  padding: 14rpx 18rpx;
+  border-left: 5rpx solid var(--brass-400, #C4A76C);
+  background: rgba(196, 167, 108, 0.06);
+  border-radius: 0 var(--radius-sm, 8rpx) var(--radius-sm, 8rpx) 0;
+}
+.card-epigraph-name {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  color: var(--brass-400, #C4A76C);
+  margin-bottom: 6rpx;
+}
+.card-epigraph-note {
+  display: block;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #A09A90);
+}
 .card-input {
   width: 100%;
   min-height: 200rpx;

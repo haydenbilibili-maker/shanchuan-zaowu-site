@@ -122,6 +122,12 @@
               <text class="wax-seal-text">山海</text>
             </view>
           </view>
+          <!-- 题记层：为该藏品写的固定一句，与正文（场景/关系/手写）**叠加**展示，互不替换 -->
+          <view class="card-epigraph" wx:if="{{product.themeName && product.themeNote}}">
+            <text class="card-epigraph-name">{{product.themeName}}</text>
+            <text class="card-epigraph-note">{{product.themeNote}}</text>
+          </view>
+
           <!-- 落笔动画：纸面展示 + 可点打断；手改走下方 textarea -->
           <view
             wx:if="{{noteWriting}}"

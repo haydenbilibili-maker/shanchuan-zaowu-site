@@ -663,34 +663,14 @@ Page({
       })
       // 主内容挂载后再量一次高度（allowed&&product 分支刚出现）
       setTimeout(() => this.syncScrollPane(), 40)
-      // 礼笺预填（优先级：用户已写 > 藏品题记 > 场景默认；都不碰录音）
-      if (!this._maybeApplyThemeNote()) this._maybeApplySceneNote()
+      // 场景选中后默认礼笺语向（正文为空时自动落笔；不碰录音）。题记另作叠加层，不占正文
+      this._maybeApplySceneNote()
     } catch (e) {
       console.warn('gift compose loadProduct', e)
       this.setData({ loading: false, loadError: '柜中片刻未应，请稍后再试' })
     }
   },
 
-  /**
-   * 礼笺预填：把**藏品题记**（themeNote）作为默认文案。
-   *
-   * 为什么用题记而不是场景默认：题记是为这件藏品写的（四字主题名 + 一句话），与礼物严丝合缝；
-   * 场景默认只是「按场合」的通用句。三条底线：① 用户已写 → 绝不覆盖；② 正在落笔动画 → 不打断；
-   * ③ 不碰录音礼笺。复用与场景默认同一套 applyNotePreset 机制。
-   */
-  _maybeApplyThemeNote() {
-    const product = this.data.product || {}
-    const note = String(product.themeNote || '').trim()
-    if (!note) return false
-    if (String(this.data.cardBody || '').trim()) return false
-    if (this.data.noteWriting) return false
-    this.applyNotePreset({
-      id: `theme_${product._id || 'x'}`,
-      label: 'TA',
-      body: note
-    })
-    return true
-  },
 
   _maybeApplySceneNote() {
     const hint = String(this.data.sceneNoteHint || '').trim()

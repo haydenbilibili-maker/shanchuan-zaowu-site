@@ -28,6 +28,7 @@ const ROOT = resolve(HERE, '../..')
 const PRESETS = 'miniprogram/subpackages/feature/gift/giftNotePresets.js'
 const COMPOSE_JS = 'miniprogram/subpackages/feature/gift/compose/index.js'
 const COMPOSE_WXML = 'miniprogram/subpackages/feature/gift/compose/index.wxml'
+const COMPOSE_WXSS = 'miniprogram/subpackages/feature/gift/compose/index.wxss'
 
 let passed = 0
 let failed = 0
@@ -113,17 +114,18 @@ check('落笔仍走同一条 startNoteWrite 路径（不禁用落笔动画）',
 check('替换前仍会确认（手写内容不被静默覆盖）',
   /requestNoteReplace\(preset, variant, '用推荐文案替换当前内容？'\)/.test(composeJs)
   && /替换礼笺？/.test(composeJs))
-/* ── 藏品题记预填（2026-09-17）：优先级 用户已写 > 题记 > 场景默认 ─────────── */
-check('★ 礼笺预填用藏品题记 themeNote', /_maybeApplyThemeNote\(\)/.test(composeJs) && /product\.themeNote/.test(composeJs))
-check('★ 题记优先于场景默认（调用顺序）',
-  composeJs.indexOf('_maybeApplyThemeNote()') < composeJs.lastIndexOf('_maybeApplySceneNote()'),
-  '顺序反了 → 场景通用句会盖掉为这件藏品写的题记')
-check('★ 用户已写绝不覆盖（正文非空直接返回）',
-  /if \(String\(this\.data\.cardBody \|\| ''\)\.trim\(\)\) return false/.test(composeJs))
-check('★ 落笔动画中不打断（noteWriting 直接返回）', /if \(this\.data\.noteWriting\) return false/.test(composeJs))
-check('商品为整文档读取（题记字段随文档到达，无需额外透传）',
-  /db\.collection\('products'\)\.doc\(id\)\.get\(\)/.test(composeJs) && !/\.field\(/.test(composeJs.slice(composeJs.indexOf('loadProduct'), composeJs.indexOf('loadProduct') + 900)),
-  '若加了 field 投影，themeNote 可能不在结果里')
+/* ── 藏品题记：**叠加层**（2026-09-17 按产品负责人口径修正） ───────────────
+ * 题记不占正文：它与场景文案/关系标签/手写正文**叠加展示**，互不替换。
+ */
+check('★ 礼笺页有题记层（card-epigraph），且读的是 产品 的 themeName+themeNote',
+  /class="card-epigraph"/.test(composeWxml) && /\{\{product\.themeNote\}\}/.test(composeWxml))
+check('★ 题记**不与正文互斥**：题记层与正文控件同时存在（不再是二选一）',
+  composeWxml.indexOf('card-epigraph') < composeWxml.indexOf('bindinput="onCardInput"'),
+  '题记应在正文控件之前叠加展示')
+check('★ 题记不写进正文（不再预填 cardBody）',
+  !/_maybeApplyThemeNote/.test(composeJs) && /_maybeApplySceneNote\(\)/.test(composeJs),
+  '预填会把题记占用为正文 → 与场景/身份文案互斥（本次要改掉的行为）')
+check('★ 题记层样式存在（铜金左线，区分于正文）', /\.card-epigraph\s*\{/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
 
 check('埋点带上句序（便于回看哪一句更常用）',
   /label: preset\.label,\s*\n\s*variant: index \+ 1/.test(composeJs))
@@ -143,10 +145,10 @@ if (process.argv.includes('--selftest')) {
 function selftest() {
   const injections = [
     {
-      name: '礼笺预填改成无条件覆盖（会盖掉用户写的话）',
-      file: COMPOSE_JS,
-      from: "    if (String(this.data.cardBody || '').trim()) return false\n",
-      to: ''
+      name: '题记层被删掉（回到「题记占正文」的旧口径）',
+      file: COMPOSE_WXML,
+      from: '<view class="card-epigraph" wx:if="{{product.themeName && product.themeNote}}">',
+      to: '<view class="card-epigraph-off">'
     },
     {
       name: '候选数被算成 1（换句机制失去依据）',
