@@ -1,7 +1,21 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "src/pages/foundation/_old-monolith.bak.astro"],
+  // 2026-09-17 审计 E8：原 `**/*` 会把 admin/(Vue ERP)、miniprogram/、functions/、scripts/
+  // 一起拉进来类型检查 —— `astro check` 因此去找 @astrojs/vue（ERP 不是 Astro 站点）并超时。
+  // 官网的类型检查只应覆盖官网自身；ERP 是独立的 Vite 应用，不该由 Astro 检查。
+  "include": [".astro/types.d.ts", "src/**/*", "*.mjs", "*.ts"],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "admin",
+    "miniprogram",
+    "cloudbase",
+    "functions",
+    "scripts",
+    "public",
+    "src/pages/foundation/_old-monolith.bak.astro",
+    "src/pages/what.v0.1.astro.bak"
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {

@@ -654,8 +654,15 @@ const rows = priceListItems.map(renderRow);
     chip.classList.toggle('text-text-soft', !on);
   }
 
+  /**
+   * 非空断言（`!`）说明（2026-09-17 审计 E8）：
+   * 这些 `querySelector` 结果在紧随其后的 `if (!x || …) return;` 里已做过守卫，
+   * 但 TS **不把外层函数的收窄带进内部闭包**（本文件大量在闭包里使用这些引用），
+   * 于是 `astro check` 报了 27 处 ts(18047)。这里补 `!`：**纯类型断言、零运行时行为变化**，
+   * 守卫与早退逻辑原样保留。
+   */
   function initPriceFilters() {
-    const root = document.querySelector('[data-price-list]');
+    const root = document.querySelector<HTMLElement>('[data-price-list]')!;
     if (!root) return;
     if ((root as HTMLElement).dataset.filtersBound === 'true') return;
     (root as HTMLElement).dataset.filtersBound = 'true';
@@ -796,12 +803,12 @@ const rows = priceListItems.map(renderRow);
   }
 
   function initPriceZoom() {
-    const dialog = document.querySelector<HTMLDialogElement>('[data-price-zoom-dialog]');
-    const dialogImg = document.querySelector<HTMLImageElement>('[data-price-zoom-img]');
-    const dialogCap = document.querySelector<HTMLElement>('[data-price-zoom-cap]');
-    const dialogCount = document.querySelector<HTMLElement>('[data-price-zoom-count]');
-    const prevBtn = document.querySelector<HTMLButtonElement>('[data-price-zoom-prev]');
-    const nextBtn = document.querySelector<HTMLButtonElement>('[data-price-zoom-next]');
+    const dialog = document.querySelector<HTMLDialogElement>('[data-price-zoom-dialog]')!;
+    const dialogImg = document.querySelector<HTMLImageElement>('[data-price-zoom-img]')!;
+    const dialogCap = document.querySelector<HTMLElement>('[data-price-zoom-cap]')!;
+    const dialogCount = document.querySelector<HTMLElement>('[data-price-zoom-count]')!;
+    const prevBtn = document.querySelector<HTMLButtonElement>('[data-price-zoom-prev]')!;
+    const nextBtn = document.querySelector<HTMLButtonElement>('[data-price-zoom-next]')!;
     if (!dialog || !dialogImg || !dialogCap || !dialogCount || !prevBtn || !nextBtn) return;
 
     if (dialog.dataset.bound === 'true') return;
@@ -931,9 +938,9 @@ const rows = priceListItems.map(renderRow);
   }
 
   function initPurchaseCart() {
-    const root = document.querySelector('[data-price-list]');
-    const drawer = document.querySelector<HTMLElement>('[data-cart-drawer]');
-    const backdrop = document.querySelector<HTMLElement>('[data-cart-backdrop]');
+    const root = document.querySelector<HTMLElement>('[data-price-list]')!;
+    const drawer = document.querySelector<HTMLElement>('[data-cart-drawer]')!;
+    const backdrop = document.querySelector<HTMLElement>('[data-cart-backdrop]')!;
     if (!root || !drawer || !backdrop) return;
     if (drawer.dataset.bound === 'true') return;
     drawer.dataset.bound = 'true';
