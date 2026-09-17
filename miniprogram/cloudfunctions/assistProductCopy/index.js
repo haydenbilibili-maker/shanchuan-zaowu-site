@@ -5,6 +5,7 @@
 const cloud = require('wx-server-sdk')
 const https = require('https')
 const { assertStaff: _assertStaff } = require('./staffGuard')
+const { SPECIES_PAIR_RULE, ensureSpeciesPairInText } = require('./speciesLabel')
 
 /**
  * 鉴权包装（2026-09-15 修复）：Admin Web 经 /api/cloud-fn 调用时，代理会把密钥注入
@@ -294,16 +295,19 @@ ${catalogText || '（目录暂缺）'}
     ? '若判定为衍生品/文创类，latinName 可留空 ""，taxonomy 各字段留空 ""，description 写产品描述。'
     : 'latinName 为必填：标准拉丁学名（双名法；矿物可用公认学名）。禁止中文作 latinName。'}
 3. description：80-150 字，维基百科式简要介绍，事实向、有感官细节，必须体现「${title}」。
-4. taxonomy：必须用中文生物/矿物分类（界门纲目科属），禁止填拉丁文。示例：动物界/节肢动物门/昆虫纲/鳞翅目；不确定的字段留空 ""。
-5. protectionType 只能是：none / sanyou / protected_plant / protected_animal。不确定时用 none，禁止夸大保护等级。
-6. rootCategoryName、category 必须选自上方目录；${hasCategory ? '若已指定所属馆/分类，优先沿用，仅在明显错误时纠正。' : '根据物种归属给出最合适的一级馆与二级分类。'}
-7. tags：必须输出 4–8 个可搜索短词（中文为主，可夹拉丁属名）。覆盖俗名/物种、品类、材质或封装（如玻璃罩/相框/晶簇）、使用场景（如客厅/礼品）。禁止句子、禁止重复标题全文、禁止 emoji、每词不超过 12 字。
-8. 仅输出一个 JSON 对象，不要 markdown 代码围栏，不要任何解释文字。
+   ${SPECIES_PAIR_RULE}（2026-09-17 业务反馈：此前这里只写拉丁文，顾客读不懂、与站点其余文案也不一致）
+4. speciesZh：该藏品对应的**中文物种名**（如「蓝闪蝶」；衍生品/文创类留空 ""）。必须与 latinName 指同一物种。
+5. taxonomy：必须用中文生物/矿物分类（界门纲目科属），禁止填拉丁文。示例：动物界/节肢动物门/昆虫纲/鳞翅目；不确定的字段留空 ""。
+6. protectionType 只能是：none / sanyou / protected_plant / protected_animal。不确定时用 none，禁止夸大保护等级。
+7. rootCategoryName、category 必须选自上方目录；${hasCategory ? '若已指定所属馆/分类，优先沿用，仅在明显错误时纠正。' : '根据物种归属给出最合适的一级馆与二级分类。'}
+8. tags：必须输出 4–8 个可搜索短词（中文为主，可夹拉丁属名）。覆盖俗名/物种、品类、材质或封装（如玻璃罩/相框/晶簇）、使用场景（如客厅/礼品）。禁止句子、禁止重复标题全文、禁止 emoji、每词不超过 12 字。
+9. 仅输出一个 JSON 对象，不要 markdown 代码围栏，不要任何解释文字。
 
 {
   "rootCategoryName": "",
   "category": "",
   "latinName": "",
+  "speciesZh": "",
   "description": "",
   "protectionType": "none",
   "tags": [],
@@ -408,7 +412,13 @@ exports.main = async (event) => {
     }
 
     let latinName = normalizeLatinName(parsed.latinName)
-    const description = String(parsed.description || '').trim()
+    const speciesZh = String(parsed.speciesZh || '').trim()
+    // 模型没按「中文名 + 拉丁学名」写时做一次确定性兜底（见 speciesLabel.js）
+    const description = ensureSpeciesPairInText(
+      String(parsed.description || '').trim(),
+      speciesZh,
+      latinName
+    )
     const taxonomy = normalizeTaxonomy(parsed.taxonomy)
     const protectionType = normalizeProtectionType(parsed.protectionType)
 
@@ -476,6 +486,7 @@ exports.main = async (event) => {
       success: true,
       data: {
         latinName,
+        speciesZh,
         description,
         taxonomy: taxonomy || emptyTaxonomy(),
         protectionType,
