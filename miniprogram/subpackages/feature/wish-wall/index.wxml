@@ -75,7 +75,10 @@
     </view>
 
     <!-- 墙面：浅纸墙 + 轨道化弹幕。同轨严格不重叠（排期见 utils/wishWall.buildDanmakuRows） -->
-    <view class="ww-wall">
+    <view
+      class="ww-wall"
+      aria-label="{{rows.length ? rows.length + ' 条心愿在墙上流动，轻点一条可展开愿签' : '祈福墙'}}"
+    >
       <view class="ww-wall-fiber" aria-hidden="true"></view>
       <view class="ww-wall-inner">
         <!-- 刻度必须和内层同坐标系：挂在整面墙上会因底部页脚高度而逐轨错开 -->
@@ -96,7 +99,21 @@
             wx:for="{{rows}}"
             wx:key="key"
             style="top:{{item.topPercent}}%; animation-duration:{{item.durationMs}}ms; animation-delay:{{item.delayMs}}ms;"
-          >{{item.text}}</view>
+            bindtap="openWishCard"
+          data-id="{{item.id}}"
+          hover-class="ww-danmaku-press"
+          hover-stay-time="70"
+          aria-role="button"
+          aria-label="{{item.text}}"
+        >
+          <!-- 墙面也承担信任信号：置顶/馆方在墙上就有标记（此前只有愿签列表里有） -->
+          <view
+            class="ww-dm-mark {{item.pinned ? 'is-pinned' : (item.official ? 'is-official' : '')}}"
+            wx:if="{{item.pinned || item.official}}"
+            aria-hidden="true"
+          ></view>
+          <text class="ww-dm-text {{item.id === freshId ? 'is-fresh' : ''}}">{{item.text}}</text>
+        </view>
           <!-- ⚠️ 失败时不得说「墙面还是空的」——那是把加载失败谎报成没人许愿 -->
           <view class="ww-wall-empty" wx:if="{{!rows.length}}">
             <view class="ww-wall-empty-mark" aria-hidden="true"></view>
@@ -144,13 +161,17 @@
           bindconfirm="submitWish"
         />
         <view
-          class="ww-send {{posting || !draft ? 'is-off' : ''}}"
+          class="ww-send {{posting || !draft || quota.exhausted ? 'is-off' : ''}}"
           bindtap="submitWish"
           hover-class="ww-send-press"
           hover-stay-time="80"
-        >{{posting ? '挂上…' : '挂上墙'}}</view>
+        >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
       </view>
       <view class="ww-write-foot">
+        <!-- 额度如实预告（上限与云函数 DAILY_LIMIT 同源）：写了才被拒的体验最差 -->
+        <text class="ww-quota {{quota.exhausted ? 'is-done' : ''}}" wx:if="{{quota.cap}}">
+          {{quota.exhausted ? '今日 ' + quota.cap + ' 条额度已用完，明天再来' : '今日还可写 ' + quota.left + ' 条'}}
+        </text>
         <text class="ww-count">{{draft.length}}/{{textMax}}</text>
       </view>
 
@@ -162,19 +183,32 @@
 
     <!-- 愿签列表：弹幕看得快，愿签看得清，也便于复制与无障碍阅读 -->
     <view class="ww-head">
-      <!-- 两个视图共用一套愿签渲染，只有数据源不同（见页面 applyView） -->
-      <text
-        class="ww-head-label {{viewMode === 'wall' ? 'is-on' : ''}}"
-        bindtap="switchView"
-        data-mode="wall"
-      >墙上的愿签</text>
-      <text
-        class="ww-head-label is-mine {{viewMode === 'mine' ? 'is-on' : ''}}"
-        bindtap="switchView"
-        data-mode="mine"
-      >我的心愿{{mine.total ? ' ' + mine.total : ''}}</text>
+      <!-- 两个视图共用一套愿签渲染，只有数据源不同（见页面 applyView）。
+           本轮把它从"两个像标题的文字"改成**分段控件**：切换意图要一眼看得出来 -->
+      <view class="ww-seg" aria-role="tablist">
+        <view
+          class="ww-seg-item {{viewMode === 'wall' ? 'is-on' : ''}}"
+          bindtap="switchView"
+          data-mode="wall"
+          hover-class="ww-seg-press"
+          hover-stay-time="70"
+          aria-role="tab"
+          aria-selected="{{viewMode === 'wall'}}"
+        ><text class="ww-seg-label">墙上的愿签</text></view>
+        <view
+          class="ww-seg-item {{viewMode === 'mine' ? 'is-on' : ''}}"
+          bindtap="switchView"
+          data-mode="mine"
+          hover-class="ww-seg-press"
+          hover-stay-time="70"
+          aria-role="tab"
+          aria-selected="{{viewMode === 'mine'}}"
+        >
+          <text class="ww-seg-label">我的心愿</text>
+          <text class="ww-seg-n" wx:if="{{mine.total}}">{{mine.total}}</text>
+        </view>
+      </view>
       <text class="ww-head-n">{{items.length}} 条</text>
-      <view class="ww-head-rule" aria-hidden="true"></view>
     </view>
     <view class="ww-tags">
       <!-- 加载中：愿签骨架（与站点同款铜色微光） -->
@@ -206,7 +240,7 @@
       <view class="ww-tag-cols">
         <view class="ww-tag-col" wx:for="{{tagColumns}}" wx:for-item="col" wx:for-index="ci" wx:key="ci">
           <view
-            class="ww-tag"
+            class="ww-tag {{item.isFresh ? 'is-fresh' : ''}}"
             wx:for="{{col}}"
             wx:for-item="item"
             wx:key="_id"
@@ -260,7 +294,15 @@
     bindtap="closeWishCard"
     catchtouchmove="noop"
   >
-    <view class="ww-card" catchtap="noop">
+    <view
+      class="ww-card"
+      catchtap="noop"
+      aria-role="dialog"
+      aria-label="心愿笺"
+    >
+      <!-- 笺是"最近看"的一层，给它与牌匾/纸墙同一套纸质材料 -->
+      <view class="ww-card-fiber" aria-hidden="true"></view>
+      <view class="ww-card-emboss" aria-hidden="true"></view>
       <view class="ww-card-pin" aria-hidden="true"></view>
       <text class="ww-card-over">愿签</text>
       <text class="ww-card-text">{{card.text}}</text>

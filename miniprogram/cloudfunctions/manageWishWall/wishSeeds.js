@@ -64,10 +64,28 @@ const SEED_WISHES = [
   { text: '马上有好事', theme: '念想' }
 ]
 
-/** 句式前缀：基础内容必须是「马上有XX」，否则就不是这面墙的内容 */
+/**
+ * 句式前缀：基础内容默认是「马上有XX」。
+ *
+ * ⚠️ 多面墙（2026-09-17）：祈福墙不止一面，第二面墙的句式前缀不一定是「马上有」。
+ * 所以前缀是**参数**（`normalizePrefix` + 各处 `prefix`），默认值才走「马上有」——
+ * 否则给「月兔」那面墙生成的会是「马上有XX」，那是别的墙的话。
+ */
 const SEED_PREFIX = '马上有'
+/** 前缀长度上限：前缀太长，句式就只剩前缀了（正文至少要有 2 个字） */
+const PREFIX_MAX = 6
 const TEXT_MIN = 2
 const TEXT_MAX = 30
+
+/**
+ * 归一化句式前缀。
+ * 折叠空白/控制字符（弹幕是单行），截到 6 字；空则回落默认前缀。
+ */
+function normalizePrefix(raw) {
+  const t = normalizeSeedText(raw).replace(/\s+/g, '')
+  if (!t) return SEED_PREFIX
+  return t.slice(0, PREFIX_MAX)
+}
 
 /**
  * 归一化：与 index.js `normalizeWishText` / utils/wishWall.js **必须同口径**。
@@ -91,15 +109,18 @@ function stripDecoration(text) {
 }
 
 /**
- * 是否是合法的「马上有XX」基础内容。
+ * 是否是合法的「<prefix>XX」基础内容。
+ * @param {string} text
+ * @param {string} [prefix] 句式前缀，默认「马上有」
  * @returns {boolean}
  */
-function isSeedPhrase(text) {
+function isSeedPhrase(text, prefix) {
+  const p = normalizePrefix(prefix)
   const t = normalizeSeedText(text)
   if (!t) return false
   if (t.length < TEXT_MIN || t.length > TEXT_MAX) return false
-  if (t.indexOf(SEED_PREFIX) !== 0) return false
-  if (t.length <= SEED_PREFIX.length) return false
+  if (t.indexOf(p) !== 0) return false
+  if (t.length <= p.length) return false
   return true
 }
 
@@ -168,19 +189,21 @@ function parseSeedTexts(raw) {
  * 从候选里筛出**可上墙的新内容**。
  *
  * 四道闸，每一道都对应一种真实缺陷：
- *   ① 句式闸：非「马上有XX」直接丢（否则 AI 写"祝你幸福"也上墙，整面墙不成句式）；
+ *   ① 句式闸：不是「<prefix>XX」直接丢（否则 AI 写"祝你幸福"也上墙，整面墙不成句式）；
  *   ② 长度闸：与 index.js 同口径（2–30 字）；
  *   ③ 已存在闸：与墙上**全部**状态（含 hidden）比对 —— 只比 visible 的话，
  *      被隐藏的内容会被重新种一遍，等于绕过人工治理；
  *   ④ 批内闸：同一批里 AI 自我重复。
  *
- * @param {{candidates?:string[], existing?:string[], limit?:number, normalize?:Function, requirePrefix?:boolean}} opts
+ * @param {{candidates?:string[], existing?:string[], limit?:number, normalize?:Function,
+ *          requirePrefix?:boolean, prefix?:string}} opts
  * @returns {string[]}
  */
 function selectNewSeeds(opts) {
   const o = opts || {}
   const normalize = typeof o.normalize === 'function' ? o.normalize : normalizeSeedText
   const requirePrefix = o.requirePrefix !== false
+  const prefix = normalizePrefix(o.prefix)
   const limit = Math.max(0, parseInt(o.limit, 10) || 0)
 
   const taken = Object.create(null)
@@ -195,7 +218,7 @@ function selectNewSeeds(opts) {
     const text = normalize(stripDecoration(candidate))
     if (!text) continue
     if (text.length < TEXT_MIN || text.length > TEXT_MAX) continue
-    if (requirePrefix && (text.indexOf(SEED_PREFIX) !== 0 || text.length <= SEED_PREFIX.length)) continue
+    if (requirePrefix && (text.indexOf(prefix) !== 0 || text.length <= prefix.length)) continue
     if (taken[text]) continue
     taken[text] = true
     out.push(text)
@@ -242,26 +265,36 @@ function baselineTexts() {
  *
  * 关键三件事：
  *   1. 给足**风格样本**（基线文案）—— 只说"有仪式感"模型会写成语录体；
+ *      ⚠️ 样本只在**默认前缀**下给：它们都是「马上有XX」，套到别的墙上会把句式带偏；
  *   2. 给**已存在清单**并要求不得重复 —— 否则每批都在产出"马上有钱"；
  *   3. 明确**禁止项**（emoji / 推销话术 / 长句 / 解释），并要求只输出 JSON。
+ *
+ * @param {{count?:number, avoid?:string[], prefix?:string}} [opts]
  */
 function buildSeedPrompt(opts) {
   const o = opts || {}
   const count = Math.max(1, parseInt(o.count, 10) || SEED_MAX)
-  const samples = baselineTexts().slice(0, 12).join('、')
+  const prefix = normalizePrefix(o.prefix)
+  const isDefault = prefix === SEED_PREFIX
   const avoid = (o.avoid || []).map(normalizeSeedText).filter(Boolean).slice(0, 60)
 
-  return `你是「山海造物 Nature's Creations」的祈福文案助手。这面墙叫「马上有」，藏品是一匹黑马标本。
+  const wallLine = isDefault
+    ? '你是「山海造物 Nature\'s Creations」的祈福文案助手。这面墙叫「马上有」，藏品是一匹黑马标本。'
+    : `你是「山海造物 Nature\'s Creations」的祈福文案助手。这面墙的句式前缀是「${prefix}」。`
+  const sampleBlock = isDefault
+    ? `\n【风格样本】${baselineTexts().slice(0, 12).join('、')}`
+    : ''
+
+  return `${wallLine}
 品牌调性：朋友式分享，克制、具体、有感官细节，句子短；把心愿落在日子里的具体处（闲、光、眠、热汤、回音），
 而不是对结果的索取。
 
-【句式】必须是「马上有 + 2–6 个字的具象名词或状态」，总长 4–12 字。
-【风格样本】${samples}
+【句式】必须是「${prefix} + 2–6 个字的具象名词或状态」，总长 4–12 字。每一条都必须以「${prefix}」开头。${sampleBlock}
 【必须避免】${avoid.length ? avoid.join('、') : '（无）'}
 【禁止】emoji、感叹号堆叠、促销与直播话术（家人们/秒杀/冲鸭/暴富/躺赢）、英文、标点结尾、任何解释文字。
 
 生成 ${count} 条**不与样本和避免清单重复**的新句子。
-只输出 JSON 数组，形如：["马上有X","马上有Y"]`
+只输出 JSON 数组，形如：["${prefix}X","${prefix}Y"]`
 }
 
 module.exports = {
@@ -269,9 +302,11 @@ module.exports = {
   SEED_AUTHOR,
   SEED_MAX,
   SEED_PREFIX,
+  PREFIX_MAX,
   SEED_WISHES,
   TEXT_MIN,
   TEXT_MAX,
+  normalizePrefix,
   normalizeSeedText,
   stripDecoration,
   isSeedPhrase,

@@ -30,6 +30,30 @@ const LIST_LIMIT = 30
 /** 愿签墙列数：两列瀑布，把 30 条的无尽滚动砍掉一半 */
 const TAG_COLUMNS = 2
 
+/**
+ * 每人每日可写条数（与云函数 `manageWishWall` 的 `DAILY_LIMIT` **必须相等**）。
+ * 客户端只用它做「还能写几条」的预告，**不做拦截** —— 最终判定始终在服务端。
+ * 守卫会直接读云函数源码比对，防漂移。
+ */
+const DAILY_LIMIT = 5
+
+/**
+ * 今日额度：服务端按 **Asia/Shanghai 自然日 + 本面墙** 统计该 openid 的条数，
+ * 且**不分可见 / 已收起**（被馆方收起的也算当天用量）。客户端按同一口径预告。
+ */
+function dailyQuota(rows, nowMs, limit) {
+  // ⚠️ 不能写 `Number(limit) || DAILY_LIMIT`：显式传 0（"今日不可写"）会被 falsy 吞掉变成 5
+  const raw = limit == null ? DAILY_LIMIT : Number(limit)
+  const cap = Math.max(0, Number.isFinite(raw) ? raw : DAILY_LIMIT)
+  const dayKey = shanghaiDayKey(Number.isFinite(nowMs) ? nowMs : Date.now())
+  const used = (Array.isArray(rows) ? rows : []).filter((r) => {
+    const t = wishTimeMs(r && r.createTime)
+    return t > 0 && shanghaiDayKey(t) === dayKey
+  }).length
+  const left = Math.max(0, cap - used)
+  return { used, left, cap, exhausted: used >= cap }
+}
+
 /** 视觉速度：rpx/秒。时长 = (屏宽 + 文案宽) / 速度 */
 const SPEED_RPX_PER_SEC = 90
 const SCREEN_RPX = 750
@@ -434,6 +458,12 @@ function buildDanmakuRows(items, opts) {
     laneNextAt[lane] = delayMs + clearMs + gapMs
     rows.push({
       key: `${String(raw._id || `w${i}`)}#${cycle}`,
+      // 墙面不只是装饰：带上身份与状态，弹幕才能标注记、点开愿签
+      id: String(raw._id || ''),
+      pinned: raw.pinned === true,
+      official: !!raw.official,
+      isMine: !!raw.isMine,
+      hidden: !!raw.hidden,
       text,
       lane,
       // 轨道垂直分布：顶部 8% 起，末轨落在 84%（26rpx 字高约再占 6%，仍留安全区）
@@ -476,11 +506,39 @@ function isTagListCapped(count, limit) {
   return n >= (Number(limit) || LIST_LIMIT)
 }
 
+/**
+ * 时间解析：兼容云函数回包里出现过的全部形态。
+ *
+ * ⚠️ 历史缺陷：这里原本直接 `new Date(value)`，而云函数回包的日期可能是 `{ $date: … }`
+ * （本仓已有 4 处按此兼容：couponHelper / storeLedger / member-crm / live studio）。
+ * 该形态下 `new Date(obj)` = Invalid Date → **愿签的时间静默变成空串**，
+ * 且「今日额度」会数成 0（明明写满了还提示"还可写 5 条"）——
+ * 后者是本轮新增能力，故必须先把这个口径修对。
+ */
+function wishTimeMs(value) {
+  if (value == null || value === '') return 0
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  if (value instanceof Date) {
+    const t = value.getTime()
+    return Number.isNaN(t) ? 0 : t
+  }
+  if (typeof value === 'object') {
+    if (value.$date != null) return wishTimeMs(value.$date)
+    if (typeof value.getTime === 'function') {
+      const t = value.getTime()
+      return Number.isNaN(t) ? 0 : t
+    }
+    return 0
+  }
+  const t = new Date(value).getTime()
+  return Number.isNaN(t) ? 0 : t
+}
+
 /** 相对时间：弹幕墙只关心「刚刚 / n 分钟前 / n 小时前 / 日期」 */
 function formatWishTime(value, now) {
   if (!value) return ''
-  const t = new Date(value).getTime()
-  if (!t || Number.isNaN(t)) return ''
+  const t = wishTimeMs(value)
+  if (!t) return ''
   const base = Number.isFinite(now) ? now : Date.now()
   const diff = Math.max(0, base - t)
   const min = Math.floor(diff / 60000)
@@ -501,6 +559,7 @@ module.exports = {
   LANES,
   CYCLE_PAUSE_MS,
   LIST_LIMIT,
+  DAILY_LIMIT,
   TAG_COLUMNS,
   PRODUCT_KEY,
   normalizeWishText,
@@ -530,5 +589,7 @@ module.exports = {
   danmakuCycleEndMs,
   splitTagColumns,
   isTagListCapped,
-  formatWishTime
+  formatWishTime,
+  wishTimeMs,
+  dailyQuota
 }

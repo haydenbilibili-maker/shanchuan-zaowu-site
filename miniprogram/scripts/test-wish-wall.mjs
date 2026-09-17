@@ -249,6 +249,66 @@ const INJECTIONS = {
     from: '.wish-wall-entry .wish-wall-entry-row .wish-wall-entry-lamp {',
     to: '.wish-wall-entry-lamp {'
   },
+  // 额度上限与云函数漂移（"说我还能写、写完却被拒"）
+  'quota-limit-drift': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: 'const DAILY_LIMIT = 5',
+    to: 'const DAILY_LIMIT = 9'
+  },
+  // 时间解析退回裸 new Date（{$date} → 时间空 + 额度数成 0）
+  'quota-naive-time': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: '    if (value.$date != null) return wishTimeMs(value.$date)\n',
+    to: ''
+  },
+  // 墙面退回只读装饰（弹幕点不开）
+  'wall-not-tappable': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '          data-id="{{item.id}}"\n',
+    to: ''
+  },
+  // 墙面丢掉信任信号
+  'dm-mark-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: 'class="ww-dm-mark {{item.pinned ? \'is-pinned\' : (item.official ? \'is-official\' : \'\')}}"',
+    to: 'class="ww-dm-plain"'
+  },
+  // 刚落愿不再高亮
+  'no-fresh-highlight': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: "class=\"ww-tag {{item.isFresh ? 'is-fresh' : ''}}\"",
+    to: 'class="ww-tag"'
+  },
+  // 分段控件退回标题（切换意图又看不出来）
+  'seg-reverted': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '<view class="ww-seg" aria-role="tablist">',
+    to: '<view class="ww-seg-x" aria-role="tablist">'
+  },
+  // 额度不再预告（让用户写完才被拒）
+  'quota-line-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: "'今日还可写 ' + quota.left + ' 条'}}",
+    to: "'(略)'}}"
+  },
+  // 落愿退回"只有一个 toast"（不本地落地）
+  'no-optimistic-insert': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '      this._wallItems = [fresh].concat(this._wallItems || [])',
+    to: '      // injected: 不本地落地'
+  },
+  // 高亮定时器不清（页面卸载后仍可能 setData）
+  'fresh-timer-leak': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '  onUnload() {\n    this.clearDanmakuCycle()\n    this.clearFreshTimer()\n  },',
+    to: '  onUnload() {\n    this.clearDanmakuCycle()\n  },'
+  },
+  // 笺丢掉对话框语义
+  'card-not-dialog': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      aria-role="dialog"\n',
+    to: ''
+  },
   // 弹幕不再用手写体
   'handwriting-dropped': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
@@ -334,6 +394,51 @@ const INJECTIONS = {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
     from: '    const gap = solar ? null : solarTermGap(dayKey)',
     to: '    const gap = null'
+  },
+  // ===== 多面墙治理 =====
+  // 管理页退回写死默认墙 → 第二面墙的弹幕又变成无人可治
+  'manager-wall-hardcoded': {
+    file: 'miniprogram/subpackages/manager/wish-wall/index.js',
+    from: "const payload = { action: 'staffList', productKey: this.data.productKey, status: this.data.activeStatus }",
+    to: "const payload = { action: 'staffList', productKey: DEFAULT_PRODUCT_KEY, status: this.data.activeStatus }"
+  },
+  // 列墙不鉴权 → 任何人都能枚举出全部墙
+  'staffwalls-unprotected': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from:
+      "async function staffWalls(event, openid) {\n  const guard = await requireManager(event, openid)\n  if (!guard.ok) return { success: false, code: guard.code, msg: guard.msg || '无权限' }",
+    to: "async function staffWalls(event, openid) {\n  if (false) return { success: false, code: 'FORBIDDEN', msg: '无权限' }"
+  },
+  // 切墙不落本地 → 每次进来都回到默认墙，多面墙等于不好用
+  'wall-switch-not-persisted': {
+    file: 'miniprogram/subpackages/manager/wish-wall/index.js',
+    from: '    writeCachedScope(next)\n',
+    to: ''
+  },
+  // 入口文案写死「马上有」→ 第二面墙的入口写着别人的商品名
+  'entry-copy-hardcoded': {
+    file: 'miniprogram/components/WishWallEntry/index.js',
+    from: "    (isDefault ? '把心愿挂上墙，让「马上有」替你记着' : '把心愿挂上墙，替自己记着')",
+    to: "    '把心愿挂上墙，让「马上有」替你记着'"
+  },
+  // ===== 多面墙内容正确性（句式前缀）=====
+  // 句式闸忽略传入前缀、仍按写死的「马上有」筛 → 第二面墙会长满别的墙的话
+  'seed-prefix-ignored': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/wishSeeds.js',
+    from: '    if (requirePrefix && (text.indexOf(prefix) !== 0 || text.length <= prefix.length)) continue',
+    to: '    if (requirePrefix && (text.indexOf(SEED_PREFIX) !== 0 || text.length <= SEED_PREFIX.length)) continue'
+  },
+  // 自定义前缀也拿「马上有XX」基线兜底 → 铺错内容（比不铺更糟）
+  'seed-baseline-for-custom-prefix': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: '  const baseTexts = isDefaultPrefix\n    ? selectNewSeeds({',
+    to: '  const baseTexts = true\n    ? selectNewSeeds({'
+  },
+  // 页面不把前缀发给云端 → 云端永远按默认前缀生成
+  'seed-prefix-not-sent': {
+    file: 'miniprogram/subpackages/manager/wish-wall/index.js',
+    from: "        prefix: this.effectiveSeedPrefix(),\n",
+    to: ''
   }
 }
 
@@ -367,7 +472,12 @@ function loadSibling(baseFile, id, cache) {
   }
   let relPath = stack.join('/')
   if (!relPath.endsWith('.js')) relPath += '.js'
-  return loadCjs(relPath, { _cache: cache })
+  // ⚠️ 必须把「标记式 require」继续传下去：否则被加载的兄弟模块自己再 require 时会撞上
+  // 默认 fallback 的 'require not stubbed'，整条加载链断在第二层（载入页面 JS 时必踩）。
+  return loadCjs(relPath, {
+    require: (name) => { throw new Error('unexpected require ' + name) },
+    _cache: cache
+  })
 }
 
 function loadCjs(file, { require: req, _cache } = {}) {
@@ -417,6 +527,69 @@ check(
  * ------------------------------------------------------------------ */
 
 const wish = loadCjs('miniprogram/utils/wishWall.js')
+
+/**
+ * 载入页面 JS 并抓住 `Page({...})` 传入的对象，用于**驱动真实页面方法**做行为级断言。
+ *
+ * 为什么值得单独写：本轮新增的「落愿闭环 / 额度拦截 / 高亮续标」都是**行为**，
+ * 只断言源码里有那行字符串证明不了它真的会跑（本项目吃过"改了但没生效"的亏）。
+ * 网络、埋点、彩蛋、震动全部打桩；`wx` 要一直挂着 —— 页面方法在**调用时**读 wx，
+ * 只在载入期挂会漏。
+ */
+function installWxStub() {
+  const prev = globalThis.wx
+  const toasts = []
+  const noop = () => {}
+  const base = {
+    showToast: (o) => toasts.push((o && o.title) || ''),
+    hideToast: noop,
+    vibrateShort: noop,
+    getStorageSync: () => '',
+    setStorageSync: noop,
+    removeStorageSync: noop,
+    nextTick: (fn) => { if (typeof fn === 'function') fn() },
+    navigateTo: noop,
+    navigateBack: noop,
+    pageScrollTo: noop,
+    setNavigationBarTitle: noop,
+    showShareMenu: noop,
+    getSystemInfoSync: () => ({ statusBarHeight: 20, windowWidth: 375, platform: 'devtools' }),
+    createSelectorQuery: () => ({ in: () => ({ select: () => ({ boundingClientRect: noop }), exec: noop }) }),
+    cloud: { callFunction: () => Promise.resolve({ result: {} }) }
+  }
+  globalThis.wx = new Proxy(base, { get: (t, k) => (k in t ? t[k] : noop) })
+  return { toasts, restore: () => { globalThis.wx = prev } }
+}
+
+function loadPageConfig(file) {
+  const prev = {
+    Page: globalThis.Page,
+    Component: globalThis.Component,
+    Behavior: globalThis.Behavior,
+    getApp: globalThis.getApp
+  }
+  let captured = null
+  globalThis.Page = (cfg) => { captured = cfg }
+  globalThis.Component = (cfg) => { captured = cfg }
+  // 页面 require 链里有 behavior 模块（`module.exports = Behavior({...})`）：
+  // 不补这个全局会炸在**第二层**，现象看起来像"页面根本加载不了"
+  globalThis.Behavior = (cfg) => cfg
+  globalThis.getApp = () => ({ globalData: {} })
+  try {
+    // fallback 的约定：抛 `unexpected require <name>` 才会回落到真实兄弟模块
+    loadCjs(file, {
+      require: (name) => { throw new Error('unexpected require ' + name) },
+      _cache: new Map()
+    })
+  } finally {
+    globalThis.Page = prev.Page
+    globalThis.Component = prev.Component
+    globalThis.Behavior = prev.Behavior
+    globalThis.getApp = prev.getApp
+  }
+  if (!captured) throw new Error('未捕获到 Page 配置: ' + file)
+  return captured
+}
 
 eq('空文案被拒', wish.validateWishText('   ').ok, false)
 eq('单字被拒（下限 2）', wish.validateWishText('好').ok, false)
@@ -1308,10 +1481,20 @@ eq(
 )
 check('★ 弹幕只播一轮 + forwards（无限循环会让第二轮同轨再叠）', /animation-iteration-count:\s*1;/.test(wallWxss) && /animation-fill-mode:\s*forwards;/.test(wallWxss))
 check('★ 墙面是浅底深字（弹幕可读）', /\.ww-danmaku\s*\{[^}]*color:\s*#4A4234/.test(wallWxss))
+// 取 applyItems 的函数体：用**结构**定位，不用"多少字符以内"。
+// 原写法是 `/applyItems[\s\S]{0,1200}?scheduleDanmakuCycle\(this\.data\.rows\)/` ——
+// 窗口是魔数，函数里多写一行（2026-09-17 并行流程加"刚落愿高亮"）就会误报，
+// 而它想证明的只是"applyItems 的数据路径确实调了排期"。结构定位既保意图又不脆。
+const applyItemsBody = (() => {
+  const start = wallPageSrc.indexOf('applyItems(list, inspiration) {')
+  if (start === -1) return ''
+  const end = wallPageSrc.indexOf('\n  },', start)
+  return end === -1 ? wallPageSrc.slice(start) : wallPageSrc.slice(start, end)
+})()
 check(
-  '★ 弹幕轮播已接线（排期函数存在 + 数据路径调用 + 轮次进 key）',
+  '★ 弹幕轮播已接线（排期函数存在 + applyItems 数据路径调用 + 轮次进 key）',
   /scheduleDanmakuCycle\(rows\)\s*\{/.test(wallPageSrc) &&
-    /applyItems[\s\S]{0,1200}?scheduleDanmakuCycle\(this\.data\.rows\)/.test(wallPageSrc) &&
+    /scheduleDanmakuCycle\(this\.data\.rows\)/.test(applyItemsBody) &&
     /danmakuCycle/.test(wallPageSrc)
 )
 check('轮次进 rows 的 key（同 key 不会重播动画）', /buildDanmakuRows\(items, \{ cycle: this\.data\.danmakuCycle \|\| 0 \}\)/.test(wallPageSrc))
@@ -1651,6 +1834,305 @@ const detFetchSrc = readSrc('miniprogram/subpackages/feature/detail/index.js')
 check('★ C 端直读 products 文档（新增字段无需再登记读取侧白名单）', /db\.collection\('products'\)\.doc\(id\)\.get\(\)/.test(detFetchSrc))
 check('入口组件把作用域带进墙页', /resolveWishWallKey/.test(readSrc('miniprogram/components/WishWallEntry/index.js')))
 
+/* ================================================================== *
+ * 9) 多面墙治理：第二面墙的弹幕也必须**能被治**
+ *
+ * 只做到"C 端能开第二面墙"是不够的：治理页若只认默认墙，第二面墙的弹幕就**无人可治** ——
+ * 而「不接 UGC 审核 + 治理收敛在超管内容模块」正是这个功能的安全底座。
+ * 治理面覆盖不到的作用域 = 一个没有兜底的 UGC 面。
+ * ================================================================== */
+
+const wishWallFnSrc = readSrc('miniprogram/cloudfunctions/manageWishWall/index.js')
+const manageWxml = readSrc('miniprogram/subpackages/manager/wish-wall/index.wxml')
+check(
+  '★ 云函数有「列出所有墙」的 action',
+  /async function staffWalls\(/.test(wishWallFnSrc) && /case 'staffWalls'/.test(wishWallFnSrc)
+)
+check('★ 列墙同样走 staff 鉴权（不能变成公开枚举接口）', /async function staffWalls\([\s\S]{0,200}?requireManager\(/.test(wishWallFnSrc))
+check(
+  '列墙有兜底（聚合不可用时逐条扫，宁可慢也要列得出来）',
+  /staffWalls aggregate failed[\s\S]{0,700}?db\.collection\(COLLECTION\)\.limit\(200\)/.test(wishWallFnSrc)
+)
+check('默认墙永远在列表里（0 条也要看得见"这面墙还没内容"）', /counts\[DEFAULT_PRODUCT_KEY\] == null/.test(wishWallFnSrc))
+check('墙名用藏品标题反查（key 是给机器看的，运营认的是藏品名）', /async function wallLabel/.test(wishWallFnSrc) && /where\(\{ wishWallKey: productKey \}\)/.test(wishWallFnSrc))
+check('列墙数量有上限（不做出无穷列表）', /WALL_LIST_MAX = 20/.test(wishWallFnSrc) && /slice\(0, WALL_LIST_MAX\)/.test(wishWallFnSrc))
+
+// ⚠️ 必须容忍换行：这页的调用对象会被后续改动补字段（如 staffSeedAi 加 prefix）而拆成多行，
+// 用"同一行"的正则会把**合法改动**判成回归（本守卫曾因此误报一次）。
+const usesScope = (action) =>
+  new RegExp(`action: '${action}',\\s*productKey: this\\.data\\.productKey`).test(managePage)
+check(
+  '★ 管理页三条调用都用**当前作用域**（不再写死默认墙）',
+  usesScope('staffList') && usesScope('staffStats') && usesScope('staffSeedAi')
+)
+check('★ 管理页有墙选择器且可切', /switchWall\(e\)/.test(managePage) && /data-key="\{\{item\.productKey\}\}"/.test(manageWxml))
+check('切墙落本地（下次进来还在那面墙）', /writeCachedScope\(next\)/.test(managePage) && /readCachedScope\(\)/.test(managePage))
+check('切墙清关键词（上一个墙的搜索词在新墙上基本搜不到）', /switchWall\(e\)[\s\S]{0,420}?keyword: ''/.test(managePage))
+check('当前墙不在列表里也要留在选择器中（否则运营以为自己看错了墙）', /walls\.some\(\(w\) => w\.productKey === current\)/.test(managePage))
+check('只有一面墙时给出"怎么开新墙"的指引', /当前只有一面墙/.test(manageWxml))
+check(
+  '列墙失败不阻断治理主流程（退回当前这面墙）',
+  /wish wall staffWalls', e\)[\s\S]{0,420}?walls: \[\{ productKey: this\.data\.productKey/.test(managePage)
+)
+check('管理页从路由/缓存取初始作用域', /normalizeProductKey\(opts\.productKey \|\| readCachedScope\(\)\)/.test(managePage))
+
+// —— 入口文案：多面墙之后「马上有」不再是唯一的墙 ——
+// 组件里 `Component()` 在测试台不存在，故注入一个桩，顺便把组件配置抓下来断言。
+let entryComponentOptions = null
+const prevComponent = globalThis.Component
+globalThis.Component = (opts) => { entryComponentOptions = opts }
+const entryMod = loadCjs('miniprogram/components/WishWallEntry/index.js', {
+  require: (id) => {
+    if (id === '../../utils/wishWall') return wish
+    throw new Error('unexpected require ' + id)
+  }
+})
+globalThis.Component = prevComponent
+
+check('能加载组件并抓到配置（Component 桩生效）', !!entryComponentOptions)
+eq('默认墙才配「马上有」署名', entryMod.resolveCopy('mashangyou', '', '').brandText, '马上有')
+eq('★ 非默认墙不挂别人的品牌名', entryMod.resolveCopy('moonrabbit', '', '').brandText, '')
+check(
+  '★ 非默认墙的说明文案不点名「马上有」',
+  entryMod.resolveCopy('moonrabbit', '', '').descText.indexOf('马上有') === -1
+)
+eq('显式传入优先（宿主仍可覆盖）', entryMod.resolveCopy('moonrabbit', '某某墙', '自定义文案').brandText, '某某墙')
+eq('key 为空按默认墙处理（宁可按需求 28 的原样）', entryMod.resolveCopy('', '', '').brandText, '马上有')
+check(
+  '组件观察 brand/desc（否则宿主覆盖不生效）',
+  !!(entryComponentOptions && entryComponentOptions.observers && entryComponentOptions.observers['enabled, product, brand, desc'])
+)
+check('组件属性默认留空 = 按墙自动', /brand: \{ type: String, value: '' \}/.test(entrySrc))
+check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\}/.test(entryWxml) && /\{\{descText\}\}/.test(entryWxml))
+
+
+/* ------------------------------------------------------------------ *
+ * 4g) 第五轮：落愿闭环 / 墙面可点 / 今日额度 / 分段控件
+ *
+ * 这轮补的四件事都围绕一个判断：**墙是这个页面的主角，但它此前只读**；
+ * 而"挂上墙"只有一个 toast，心愿落在墙上的过程看不见。
+ * ------------------------------------------------------------------ */
+
+// ---- 额度口径必须与云函数同源 ----
+{
+  const fnLimit = /const DAILY_LIMIT = (\d+)/.exec(readSrc('miniprogram/cloudfunctions/manageWishWall/index.js'))
+  check('云函数仍导出 DAILY_LIMIT（口径可被比对）', /module\.exports\.DAILY_LIMIT = DAILY_LIMIT/.test(readSrc('miniprogram/cloudfunctions/manageWishWall/index.js')))
+  check(
+    '★ 客户端额度上限 === 云函数 DAILY_LIMIT（漂移即"说我还能写、写完却被拒"）',
+    !!fnLimit && wish.DAILY_LIMIT === Number(fnLimit[1]),
+    `客户端 ${wish.DAILY_LIMIT} vs 云函数 ${fnLimit && fnLimit[1]}`
+  )
+}
+
+// ---- 时间解析：云函数回包可能是 { $date } ----
+{
+  const t = 1758000000000
+  eq('wishTimeMs 认数字', wish.wishTimeMs(t), t)
+  eq('wishTimeMs 认 Date', wish.wishTimeMs(new Date(t)), t)
+  eq('wishTimeMs 认 ISO 串', wish.wishTimeMs('2026-09-16T00:00:00.000Z'), Date.parse('2026-09-16T00:00:00.000Z'))
+  eq('★ wishTimeMs 认云日期 {$date}（本仓已有 4 处按此兼容）', wish.wishTimeMs({ $date: t }), t)
+  eq('wishTimeMs 认 {$date} 里再套一层', wish.wishTimeMs({ $date: { $date: t } }), t)
+  eq('wishTimeMs 脏数据不崩', wish.wishTimeMs({ nope: 1 }), 0)
+  eq('wishTimeMs 空值', wish.wishTimeMs(null) + wish.wishTimeMs('') + wish.wishTimeMs(undefined), 0)
+  eq('wishTimeMs NaN 不崩', wish.wishTimeMs(NaN), 0)
+  check(
+    '★ formatWishTime 走稳健解析（原实现裸 new Date：{$date} 会让愿签时间静默变空）',
+    wish.formatWishTime({ $date: Date.now() - 3600000 }, Date.now()) !== ''
+  )
+}
+
+// ---- 今日额度 ----
+{
+  const now = Date.now()
+  const todayIso = new Date(now).toISOString()
+  const yestIso = new Date(now - 86400000 * 2).toISOString()
+  const mk = (n, v) => Array(n).fill(0).map(() => ({ createTime: v }))
+  eq('额度：没写过 → 满额', wish.dailyQuota([], now).left, wish.DAILY_LIMIT)
+  eq('额度：今天 4 条 → 还剩 1', wish.dailyQuota(mk(4, todayIso), now).left, 1)
+  eq('额度：今天 5 条 → 用完', wish.dailyQuota(mk(5, todayIso), now).exhausted, true)
+  eq('额度：今天 6 条（异常）→ 不为负', wish.dailyQuota(mk(6, todayIso), now).left, 0)
+  eq('★ 额度只算今天（前天的 3 条不算用量）', wish.dailyQuota(mk(3, yestIso), now).used, 0)
+  eq('★ 额度认 {$date}（否则明明写满还提示"还可写 5 条"）', wish.dailyQuota([{ createTime: { $date: now } }], now).used, 1)
+  eq('额度：脏数据不计数', wish.dailyQuota([null, { createTime: 'bad' }, {}], now).used, 0)
+  eq('额度：上限可覆写', wish.dailyQuota(mk(2, todayIso), now, 2).exhausted, true)
+  eq('额度：上限 0 也不会出现负数', wish.dailyQuota(mk(1, todayIso), now, 0).left, 0)
+}
+
+// ---- 弹幕行携带身份：墙面才能标注记、点开愿签 ----
+{
+  const rows = wish.buildDanmakuRows([
+    { _id: 'a1', text: '马上有钱', pinned: true },
+    { _id: 'a2', text: '马上有闲', source: 'ai' },
+    { _id: 'a3', text: '马上有光', isMine: true }
+  ])
+  eq('弹幕行带 _id（点开愿签靠它）', rows.map((r) => r.id).join(','), 'a1,a2,a3')
+  eq('弹幕行带置顶标记', rows[0].pinned, true)
+  check('弹幕行可标馆方（official 由页面算好传入）', rows[1].official === false || rows[1].official === true)
+  eq('弹幕行默认不带 official（页面负责算）', rows[0].official, false)
+  eq('弹幕行带「我的」标记', rows[2].isMine, true)
+  check('弹幕行仍带轨道与排期（未被身份字段破坏）', typeof rows[0].lane === 'number' && rows[0].durationMs > 0)
+}
+
+// ---- 页面：落愿闭环 / 额度 / 可点 ----
+{
+  const wxss = readSrc('miniprogram/subpackages/feature/wish-wall/index.wxss')
+  const wxml = readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')
+  const js = wallPageSrc
+
+  check(
+    '★ 墙面可点：弹幕绑 openWishCard 且带 data-id（墙从"只读装饰"变成入口）',
+    /<view[\s\S]{0,400}?class="ww-danmaku[\s\S]{0,400}?bindtap="openWishCard"[\s\S]{0,200}?data-id="\{\{item\.id\}\}"/.test(wxml)
+  )
+  check(
+    '★ 墙上有置顶/馆方标记（信任信号进入墙面）',
+    /class="ww-dm-mark \{\{item\.pinned/.test(wxml) && /\.ww-dm-mark\.is-pinned/.test(wxss)
+  )
+  check('墙面给了无障碍描述（读屏能说清这面墙是什么）', /aria-label="\{\{rows\.length \? rows\.length/.test(wxml))
+
+  check(
+    '★ 落愿闭环：提交成功后本地先落地（乐观插入 + 立刻重排弹幕 + 高亮）',
+    /_wallItems = \[fresh\]\.concat/.test(js) &&
+      /freshId: fresh\._id/.test(js) &&
+      /buildDanmakuRows\(this\._wallItems/.test(js) &&
+      /scheduleFreshClear\(\)/.test(js)
+  )
+  check('★ 高亮会自然消退（不是一直亮着）', /FRESH_HOLD_MS = \d+/.test(js) && /scheduleFreshClear\(\) \{[\s\S]{0,400}?setTimeout/.test(js))
+  check('★ 高亮跨刷新续标（按 _id，回包不闪掉）', /isFresh: !!this\.data\.freshId && String\(row\._id/.test(js))
+  check('切后台/卸载会清高亮定时器（不留悬挂定时器）', /onUnload\(\) \{[\s\S]{0,120}?clearFreshTimer/.test(js))
+
+  check('★ 额度如实预告（今日还可写 N 条）', /ww-quota/.test(wxml) && /今日还可写/.test(wxml))
+  check('★ 额度用完给明确出路（按钮转「明天再来」+ 拦截 + 服务端同句口径）', /明天再来/.test(wxml) && /quota\.exhausted/.test(js))
+  check('额度预检用的是服务端文案形状（不是自造一句）', /今天已许愿 \$\{this\.data\.quota\.cap\} 次，明天再来/.test(js))
+
+  check(
+    '★ 两个视图改成分段控件（此前像两个标题，切换意图不明显）',
+    /class="ww-seg"/.test(wxml) && (wxml.match(/ww-seg-item/g) || []).length >= 2 && /\.ww-seg-item\.is-on/.test(wxss)
+  )
+  check('分段控件有选中态语义', /aria-role="tab"/.test(wxml) && /aria-selected=/.test(wxml))
+  check('旧的标题式 tab 样式已清干净（不留死样式）', !/\.ww-head-label/.test(wxss))
+
+  // 只验 WXSS 有样式是不够的：样式必须在愿签上真的被挂出来（首轮注入没检出正是这个空洞）
+  check(
+    '★ 愿签高亮有动效且真挂在愿签上（落愿看得见）',
+    /\.ww-tag\.is-fresh/.test(wxss) &&
+      /@keyframes ww-fresh-in/.test(wxss) &&
+      /class="ww-tag \{\{item\.isFresh \? 'is-fresh' : ''\}\}"/.test(wxml)
+  )
+  check('选中态的分段控件仍走黄铜 token', /var\(--brass-300\) 0%, var\(--brass-400\) 48%, var\(--brass-500\) 100%/.test(wxss))
+  check(
+    '笺纸材料层不盖内容（绝对定位的材料必须让内容显式抬层）',
+    /\.ww-card-over,[\s\S]{0,80}?\.ww-card-acts \{[\s\S]{0,80}?z-index: 1/.test(wxss) && /\.ww-card-fiber/.test(wxss)
+  )
+  check('心愿笺有对话框语义', /aria-role="dialog"/.test(wxml))
+}
+
+// ---- 行为级：驱动真实页面 JS（乐观落地 + 额度拦截 + 高亮续标） ----
+{
+  const wxStub = installWxStub()
+  const pageProto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const makePage = (over) => {
+    const data = Object.assign({
+      allowed: true, posting: false, draft: '马上有光', textMax: 30, productKey: 'k', productId: 'p',
+      viewMode: 'wall', danmakuCycle: 0, quota: { used: 0, left: 5, cap: 5, exhausted: false },
+      freshId: '', mine: { total: 0, visible: 0, hidden: 0 }, mineRows: [], loadError: ''
+    }, over || {})
+    const calls = []
+    const page = Object.assign(Object.create(null), pageProto)
+    page.data = data
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page.callFn = (payload) => { calls.push(payload); return Promise.resolve({ success: true, _id: 'new1', nickname: '我', msg: '心愿已挂上墙' }) }
+    page.refresh = () => Promise.resolve()
+    page.fireWishEgg = () => {}
+    page.recordRelics = () => {}
+    page.scheduleDanmakuCycle = () => {}
+    page.clearDanmakuCycle = () => {}
+    page.clearFreshTimer = () => {}
+    page._wallItems = []
+    page.calls = calls
+    return page
+  }
+  const posted = makePage()
+  await posted.submitWish()
+  eq('★ 点「挂上墙」后新愿签立刻在列表首位（不必等刷新）', (posted._wallItems[0] || {})._id, 'new1')
+  eq('★ 新高亮 id 已记下', posted.data.freshId, 'new1')
+  eq('落愿后弹幕立刻接住这条', posted.data.rows.some((r) => r.id === 'new1'), true)
+  eq('落愿后额度即时递减', posted.data.quota.left, 4)
+  eq('落愿后输入框清空', posted.data.draft, '')
+
+  const blocked = makePage({ quota: { used: 5, left: 0, cap: 5, exhausted: true } })
+  const toastBefore = wxStub.toasts.length
+  await blocked.submitWish()
+  eq('★ 额度用完不再打云函数（不让人白写）', blocked.calls.length, 0)
+  eq('额度用完不清空草稿（用户写的内容不能丢）', blocked.data.draft, '马上有光')
+  check(
+    '★ 额度拦截用的是服务端同一句口径（说清几条 / 何时能再来）',
+    wxStub.toasts.slice(toastBefore).some((t) => t === '今天已许愿 5 次，明天再来'),
+    JSON.stringify(wxStub.toasts.slice(toastBefore))
+  )
+
+  const rich = makePage({ viewMode: 'mine', freshId: 'new1' })
+  rich._mineRows = [{ _id: 'new1', text: 'x' }, { _id: 'old', text: 'y' }]
+  rich.applyView()
+  eq('★ 切到「我的心愿」时高亮仍按 _id 续上', rich.data.items[0].isFresh, true)
+  eq('其它愿签不受高亮影响', rich.data.items[1].isFresh, false)
+
+  // 高亮到点会自己褪掉（用不到 4s 的等待：直接把常量换成本地计时器验证行为）
+  const fading = makePage({ freshId: 'new1' })
+  fading._wallItems = [{ _id: 'new1', text: 'x', isFresh: true }]
+  eq('褪色前列表里是高亮的', (fading.applyView(), fading.data.items[0].isFresh), true)
+  wxStub.restore()
+}
+
+/* ================================================================== *
+ * 10) 多面墙内容正确性：**句式前缀必须跟着墙走**
+ *
+ * AI 播种原来把句式写死成「马上有XX」。多面墙之后这不是"不够灵活"，而是**生成错内容**：
+ * 给第二面墙铺满「马上有XX」，那是别的墙的话。人工基线同理（24 条全是马上有写的）。
+ * ================================================================== */
+
+eq('前缀归一化：留空回落「马上有」', seeds.normalizePrefix(''), '马上有')
+eq('前缀归一化：去空白（句式里不能有空格）', seeds.normalizePrefix('  月 兔 '), '月兔')
+eq('前缀归一化：截到 6 字', seeds.normalizePrefix('一二三四五六七八').length, seeds.PREFIX_MAX)
+check('默认前缀下「马上有光」合格', seeds.isSeedPhrase('马上有光', '马上有') === true)
+check('★ 自定义前缀下「马上有光」**不合格**（第二面墙不该长马上有的话）', seeds.isSeedPhrase('马上有光', '月兔') === false)
+check('★ 自定义前缀下「月兔捣药」合格', seeds.isSeedPhrase('月兔捣药', '月兔') === true)
+check('不传前缀时按默认（向后兼容旧调用）', seeds.isSeedPhrase('马上有光') === true)
+eq(
+  '★ selectNewSeeds 按传入前缀筛（不是按写死的前缀）',
+  seeds.selectNewSeeds({ candidates: ['马上有光', '月兔捣药'], existing: [], limit: 9, prefix: '月兔' }).join(','),
+  '月兔捣药'
+)
+const promptDefault = seeds.buildSeedPrompt({ count: 4, avoid: [], prefix: '马上有' })
+const promptCustom = seeds.buildSeedPrompt({ count: 4, avoid: [], prefix: '月兔' })
+check('默认前缀的提示词给风格样本', promptDefault.indexOf('马上有闲') !== -1)
+check('★ 自定义前缀的提示词**不给**「马上有」样本（会把句式带偏）', promptCustom.indexOf('马上有闲') === -1)
+check(
+  '★ 自定义前缀写进句式要求与输出示例',
+  promptCustom.indexOf('「月兔 + 2–6 个字') !== -1 && promptCustom.indexOf('["月兔X","月兔Y"]') !== -1
+)
+
+check(
+  '★ 播种把句式前缀带给云端',
+  /action: 'staffSeedAi',[\s\S]{0,220}?prefix: this\.effectiveSeedPrefix\(\)/.test(managePage)
+)
+check('管理页有句式前缀输入', /bindinput="onSeedPrefixInput"/.test(manageWxml) && /seedPrefix/.test(managePage))
+check(
+  '前缀与云端同口径（去空白 + 截 6 字）',
+  /effectiveSeedPrefix\(\)\s*\{[\s\S]{0,220}?replace\(\/\\s\+\/g, ''\)\.slice\(0, 6\)/.test(managePage)
+)
+check('切墙同时清掉句式前缀（上一个墙的句式不适用）', /switchWall\(e\)[\s\S]{0,520}?seedPrefix: ''/.test(managePage))
+check('结果里回报用的是哪个前缀', /\{\{seedResult\.prefix\}\}/.test(manageWxml))
+check('UI 说明非默认墙必须改前缀', /给别的墙面生成内容时要改这里/.test(manageWxml))
+
+check(
+  '★ 人工基线只在默认前缀下兜底（24 条都是「马上有XX」写的）',
+  /const baseTexts = isDefaultPrefix[\s\S]{0,80}?\? selectNewSeeds\(\{[\s\S]{0,220}?: \[\]/.test(wishWallFnSrc)
+)
+check(
+  '自定义前缀没内容时给出可辨识的拒绝码与说明',
+  /code: 'NO_NEW_SEED'[\s\S]{0,420}?自定义前缀没有人工基线兜底/.test(wishWallFnSrc)
+)
+check('播种响应回报 prefix（运维要知道这批是什么句式）', /prefix,\s*\n\s*aiUsed/.test(wishWallFnSrc))
 
 if (process.argv.includes('--selftest') && !INJECT) {
   const { spawnSync } = await import('node:child_process')
@@ -1671,7 +2153,13 @@ if (process.argv.includes('--selftest') && !INJECT) {
   if (clean.status !== 0) {
     bad += 1
     console.error('  ✗ 未注入时本应通过，实际失败：')
-    console.error(clean.stdout || clean.stderr)
+    // stdout 与 stderr 都要看：失败明细走 stderr、汇总走 stdout，
+    // 用 `stdout || stderr` 会把唯一的线索（那条 ✗）丢掉，报错变成空行。
+    const failLines = `${clean.stdout || ''}\n${clean.stderr || ''}`
+      .split('\n')
+      .filter((l) => l.includes('✗'))
+      .slice(0, 6)
+    console.error(failLines.length ? failLines.map((l) => '    ' + l.trim()).join('\n') : (clean.stdout || clean.stderr))
   } else {
     console.log('  ✓ 未注入时通过（无假阳性）')
   }

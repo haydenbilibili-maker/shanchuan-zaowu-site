@@ -416,6 +416,9 @@ page {
 .ww-danmaku {
   position: absolute;
   left: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
   white-space: nowrap;
   /* 手写体：心愿是"写"上去的。字号比原来的无衬线大一号 —— 手写体笔画细，移动中要认得出 */
   font-family: var(--font-hand);
@@ -433,6 +436,33 @@ page {
 @keyframes ww-danmaku-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(calc(-100vw - 100%)); }
+}
+
+/* 墙面 → 心愿笺：弹幕不是装饰，点一条能展开那张纸（与愿签同一交互） */
+.ww-danmaku-press {
+  opacity: 0.55;
+}
+
+/* 墙上也承担信任信号：置顶=铜钉、馆方=灰钉（此前只有愿签列表里有印记） */
+.ww-dm-mark {
+  flex-shrink: 0;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+}
+
+.ww-dm-mark.is-pinned {
+  background: radial-gradient(circle at 36% 34%, var(--brass-200) 0%, var(--brass-500) 70%);
+}
+
+.ww-dm-mark.is-official {
+  background: rgba(120, 110, 96, 0.75);
+}
+
+/* 刚落愿那一句在墙上先亮一下，随后随高亮一起褪回 */
+.ww-dm-text.is-fresh {
+  color: var(--brass-700);
+  text-shadow: 0 0 10rpx rgba(233, 190, 110, 0.8);
 }
 
 .ww-wall-empty,
@@ -587,8 +617,22 @@ page {
 
 .ww-write-foot {
   display: flex;
-  justify-content: flex-end;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
   margin-top: 10rpx;
+}
+
+/* 今日额度：如实预告（上限与云函数 DAILY_LIMIT 同源），别让用户写完才被拒 */
+.ww-quota {
+  flex: 1;
+  min-width: 0;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+}
+
+.ww-quota.is-done {
+  color: var(--color-warning);
 }
 
 .ww-count {
@@ -630,10 +674,38 @@ page {
   margin: var(--space-4) 0 16rpx;
 }
 
-.ww-head-label {
+/* 分段控件：两个视图是"切换"，不是"两个标题" —— 容器给底、选中给铜底 */
+.ww-seg {
+  display: flex;
+  align-items: center;
+  padding: 4rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.28);
+  border-radius: 999rpx;
+  background: rgba(196, 167, 108, 0.06);
+}
+
+.ww-seg-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+}
+
+.ww-seg-press {
+  opacity: 0.75;
+}
+
+.ww-seg-label {
   font-size: 24rpx;
-  letter-spacing: 0.08em;
-  color: var(--brass-400);
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.ww-seg-n {
+  font-size: 18rpx;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
 }
 
 .ww-head-n {
@@ -964,22 +1036,33 @@ page {
 
 /* ==================== 视图切换（墙上 / 我的心愿） ==================== */
 
-.ww-head-label {
-  padding-bottom: 4rpx;
-  border-bottom: 2rpx solid transparent;
+/* 选中态：铜底 + 深字，一眼看出"当前在哪一栏" */
+.ww-seg-item.is-on {
+  background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.35);
 }
 
-.ww-head-label.is-mine {
-  color: var(--color-text-muted);
+.ww-seg-item.is-on .ww-seg-label {
+  color: #1A1814;
 }
 
-/* 选中态：铜字 + 下划线。两个 tab 共用"选中"这一条规则，避免各写一份 */
-.ww-head-label.is-on {
-  color: var(--brass-300);
-  border-bottom-color: var(--brass-400);
+.ww-seg-item.is-on .ww-seg-n {
+  color: rgba(26, 24, 20, 0.7);
 }
 
 /* ==================== 愿签印记（已收起 / 我的） ==================== */
+
+/* 刚落愿的愿签：铜光呼吸一下，把"它落在墙上了"说清楚 */
+.ww-tag.is-fresh {
+  border-color: rgba(196, 167, 108, 0.85);
+  box-shadow: 0 0 0 1rpx rgba(196, 167, 108, 0.35), 0 6rpx 24rpx rgba(233, 190, 110, 0.18);
+  animation: ww-fresh-in 0.5s ease both;
+}
+
+@keyframes ww-fresh-in {
+  from { opacity: 0; transform: translateY(-12rpx) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 .ww-tag-press {
   opacity: 0.86;
@@ -1048,6 +1131,43 @@ page {
   background: linear-gradient(168deg, #F5F0E6 0%, #EFE8DA 100%);
   border-radius: var(--radius-lg);
   box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.5);
+}
+
+/* 纸纤维：与牌匾（.ww-fiber）、纸墙（.ww-wall-fiber）同一纹理语言 */
+.ww-card-fiber {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  border-radius: var(--radius-lg);
+  opacity: 0.5;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(94deg, rgba(120, 104, 70, 0.05) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(4deg, rgba(120, 104, 70, 0.04) 0 1px, transparent 1px 6px);
+}
+
+/* 压印：四周内阴影，纸才有厚度 */
+.ww-card-emboss {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1rpx rgba(120, 104, 70, 0.16), inset 0 18rpx 36rpx rgba(120, 104, 70, 0.08);
+}
+
+/* 材料层是绝对定位的，会盖在静态内容上 —— 内容必须显式抬层 */
+.ww-card-over,
+.ww-card-tags,
+.ww-card-acts {
+  position: relative;
+  z-index: 1;
 }
 
 .ww-card-pin {

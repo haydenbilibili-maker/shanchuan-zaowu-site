@@ -33,6 +33,8 @@ const {
   SEED_BATCH,
   SEED_AUTHOR,
   SEED_MAX,
+  SEED_PREFIX,
+  normalizePrefix,
   baselineTexts,
   buildSeedPrompt,
   parseSeedTexts,
@@ -519,6 +521,9 @@ async function staffSeedAi(event, openid) {
     Math.max(1, parseInt((event && event.count) || AI_SEED_DEFAULT, 10) || AI_SEED_DEFAULT)
   )
   const useAi = !(event && event.useAi === false)
+  // 多面墙：句式前缀由调用方给（默认「马上有」）。第二面墙不该长满「马上有XX」。
+  const prefix = normalizePrefix(event && event.prefix)
+  const isDefaultPrefix = prefix === SEED_PREFIX
 
   const existing = await loadExistingTexts(productKey)
 
@@ -532,22 +537,34 @@ async function staffSeedAi(event, openid) {
   } else {
     try {
       // 多要一倍：模型总会有几条不合句式，留给句式闸门筛
-      const raw = await callQwenText(buildSeedPrompt({ count: want * 2, avoid: existing }), apiKey)
-      aiTexts = selectNewSeeds({ candidates: parseSeedTexts(raw), existing, limit: want })
+      const raw = await callQwenText(buildSeedPrompt({ count: want * 2, avoid: existing, prefix }), apiKey)
+      aiTexts = selectNewSeeds({ candidates: parseSeedTexts(raw), existing, limit: want, prefix })
     } catch (e) {
       aiError = (e && e.message) || 'AI 调用失败'
       console.warn('wish wall seed ai failed:', aiError)
     }
   }
 
-  const baseTexts = selectNewSeeds({
-    candidates: baselineTexts(),
-    existing: existing.concat(aiTexts),
-    limit: want - aiTexts.length
-  })
+  // 人工基线只在**默认前缀**下兜底：那 24 条都是「马上有XX」写的，
+  // 套到别的墙上是"别的墙的话"，宁可不铺也不能铺错。
+  const baseTexts = isDefaultPrefix
+    ? selectNewSeeds({
+      candidates: baselineTexts(),
+      existing: existing.concat(aiTexts),
+      limit: want - aiTexts.length
+    })
+    : []
 
   if (!aiTexts.length && !baseTexts.length) {
-    return { success: false, code: 'NO_NEW_SEED', msg: '这批心愿与墙上已有的重复了', aiError }
+    return {
+      success: false,
+      code: 'NO_NEW_SEED',
+      msg: isDefaultPrefix
+        ? '这批心愿与墙上已有的重复了'
+        : `未能生成「${prefix}XX」句式的新内容（自定义前缀没有人工基线兜底，可稍后重试）`,
+      aiError,
+      prefix
+    }
   }
 
   const now = db.serverDate()
@@ -590,6 +607,7 @@ async function staffSeedAi(event, openid) {
     success: true,
     batch: SEED_BATCH,
     productKey,
+    prefix,
     aiUsed: aiCount > 0,
     counts: { total: inserted.length, ai: aiCount, baseline: inserted.length - aiCount },
     texts: inserted,
@@ -633,6 +651,8 @@ module.exports.DEFAULT_PRODUCT_KEY = DEFAULT_PRODUCT_KEY
 module.exports.INSPIRATION_COUNT = INSPIRATION_COUNT
 module.exports.AI_SEED_DEFAULT = AI_SEED_DEFAULT
 module.exports.WALL_LIST_MAX = WALL_LIST_MAX
+module.exports.SEED_PREFIX = SEED_PREFIX
+module.exports.normalizePrefix = normalizePrefix
 module.exports.SOURCE_USER = SOURCE_USER
 module.exports.SOURCE_AI = SOURCE_AI
 module.exports.SOURCE_SEED = SOURCE_SEED

@@ -10,7 +10,24 @@
  * 组件只负责「是否显示 + 点进去」；**开关值仍由宿主页面传入**（`enabled`），
  * 因为开关是页面级 SWR 缓存的产物，组件自己再拉一次会多打一次云函数。
  */
-const { isWishWallProduct, resolveWishWallKey, buildWishWallUrl } = require('../../utils/wishWall')
+const { isWishWallProduct, resolveWishWallKey, buildWishWallUrl, PRODUCT_KEY } = require('../../utils/wishWall')
+
+/**
+ * 入口文案：显式传入优先，留空则按**这面墙**自动。
+ *
+ * 默认墙（`mashangyou`）才配得上「马上有」这个署名；别的墙用别人的商品名是错的，
+ * 所以非默认墙不显示品牌署名，说明文案也不点名。
+ * 纯函数，便于断言（组件内联判断在测试台里跑不起来）。
+ */
+function resolveCopy(productKey, brand, desc) {
+  const key = String(productKey || '')
+  const isDefault = !key || key === PRODUCT_KEY
+  const brandText = String(brand == null ? '' : brand).trim() || (isDefault ? '马上有' : '')
+  const descText =
+    String(desc == null ? '' : desc).trim() ||
+    (isDefault ? '把心愿挂上墙，让「马上有」替你记着' : '把心愿挂上墙，替自己记着')
+  return { brandText, descText, isDefault }
+}
 
 Component({
   /**
@@ -26,10 +43,14 @@ Component({
     product: { type: null, value: null },
     /** 来源标识，写进跳转 URL，供页面埋点区分入口 */
     from: { type: String, value: '' },
-    /** 品牌署名：需求 28 所指的「马上有」互动组件，入口上要认得出来 */
-    brand: { type: String, value: '马上有' },
+    /**
+     * 品牌署名 / 说明文案：**留空 = 按这面墙自动**（见下方 resolveCopy）。
+     * 多面墙之后「马上有」不再是唯一的墙 —— 把品牌写死在组件里，
+     * 第二面墙的入口会写着别人的商品名，那是错的。
+     */
+    brand: { type: String, value: '' },
     title: { type: String, value: '祈福墙' },
-    desc: { type: String, value: '把心愿挂上墙，让「马上有」替你记着' },
+    desc: { type: String, value: '' },
     /**
      * 紧凑单行版：主图正下方是"首屏最贵的一块地"，
      * 三行卡片会把价格卡挤出首屏 —— 故首屏位只用一行（灯 + 品牌 + 标题 + 箭头），不显示 desc。
@@ -39,15 +60,23 @@ Component({
 
   data: {
     visible: false,
-    productKey: ''
+    productKey: '',
+    brandText: '',
+    descText: ''
   },
 
   observers: {
-    'enabled, product'(enabled, product) {
+    'enabled, product, brand, desc'(enabled, product, brand, desc) {
       const visible = enabled === true && isWishWallProduct(product)
       const productKey = visible ? resolveWishWallKey(product) : ''
-      if (visible !== this.data.visible || productKey !== this.data.productKey) {
-        this.setData({ visible, productKey })
+      const copy = resolveCopy(productKey, brand, desc)
+      if (
+        visible !== this.data.visible ||
+        productKey !== this.data.productKey ||
+        copy.brandText !== this.data.brandText ||
+        copy.descText !== this.data.descText
+      ) {
+        this.setData({ visible, productKey, brandText: copy.brandText, descText: copy.descText })
       }
     }
   },
@@ -65,3 +94,6 @@ Component({
     }
   }
 })
+
+// 供行为测试直接引用纯函数（组件运行时不会用到）
+module.exports.resolveCopy = resolveCopy

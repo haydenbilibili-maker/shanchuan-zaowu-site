@@ -10,10 +10,10 @@
   <view class="wish-wall-entry-main">
     <view class="wish-wall-entry-row">
       <view class="signal-light lamp-brass wish-wall-entry-lamp"></view>
-      <text class="wish-wall-entry-brand" wx:if="{{brand}}">{{brand}}</text>
+      <text class="wish-wall-entry-brand" wx:if="{{brandText}}">{{brandText}}</text>
       <text class="wish-wall-entry-title">{{title}}</text>
     </view>
-    <text class="wish-wall-entry-desc" wx:if="{{!compact}}">{{desc}}</text>
+    <text class="wish-wall-entry-desc" wx:if="{{!compact}}">{{descText}}</text>
   </view>
   <view class="wish-wall-entry-chevron" aria-hidden="true"></view>
 </view>

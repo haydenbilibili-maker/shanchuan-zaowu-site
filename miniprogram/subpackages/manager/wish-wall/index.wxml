@@ -10,16 +10,44 @@
     <text class="header-note">弹幕不接内容审核，治理由本页承载：全部弹幕（含已隐藏）都可在这里查看、隐藏、恢复、置顶或删除。C 端展示由「内容开关 → 马上有祈福」统一控制。</text>
   </view>
 
+  <!-- 需求 28：多面墙。祈福墙按作用域隔离，可能不止一面 —— 治理必须覆盖全部，
+       否则第二面墙的弹幕无人可治，「不接审核」就只对第一面墙成立。 -->
+  <view class="wall-bar" wx:if="{{walls.length > 1}}">
+    <text class="wall-bar-label">墙面</text>
+    <scroll-view class="wall-bar-scroll" scroll-x enable-flex>
+      <view
+        class="wall-chip {{item.productKey === productKey ? 'on' : ''}}"
+        wx:for="{{walls}}"
+        wx:key="productKey"
+        bindtap="switchWall"
+        data-key="{{item.productKey}}"
+      >{{item.label}}<text class="wall-chip-n" wx:if="{{item.count}}"> {{item.count}}</text></view>
+    </scroll-view>
+  </view>
+  <text class="wall-bar-hint" wx:elif="{{ready}}">当前只有一面墙（{{productKey}}）。在藏品库给别的藏品设「祈福墙作用域」即可开新墙。</text>
+
   <!-- 需求 28：第一批基础内容。祈福墙上线第一天不能是空墙 —— 空墙没人愿意第一个写 -->
   <view class="seed-card">
     <view class="seed-head">
       <text class="seed-title">基础内容</text>
       <text class="seed-badge" wx:if="{{seedResult}}">{{seedResult.counts.total}} 条已上墙</text>
     </view>
-    <text class="seed-desc">用 AI 创作一批「马上有XX」句式铺上墙。未配置 AI 密钥或调用失败时，自动改用人工审校过的基线文案，不会生成不了。上墙后与用户弹幕同一套治理，可在这里隐藏或删除。</text>
+    <text class="seed-desc">用 AI 创作一批祈福句铺上墙：每条都以「句式前缀」开头（默认「马上有」，即「马上有XX」句式）。未配置 AI 密钥或调用失败时，默认前缀会自动改用人工审校过的基线文案。上墙后与用户弹幕同一套治理，可在这里隐藏或删除。</text>
+    <view class="seed-prefix-row">
+      <text class="seed-prefix-label">句式前缀</text>
+      <input
+        class="seed-prefix-input"
+        value="{{seedPrefix}}"
+        maxlength="6"
+        placeholder="留空 = 马上有"
+        placeholder-class="seed-prefix-ph"
+        bindinput="onSeedPrefixInput"
+      />
+    </view>
+    <text class="seed-prefix-hint">给别的墙面生成内容时要改这里 —— 否则第二面墙长出来的是「马上有XX」，那是别的墙的话。自定义前缀没有人工基线兜底，AI 失败时不会自动补。</text>
     <view class="seed-actions">
       <view class="seed-btn {{seeding ? 'is-disabled' : ''}}" bindtap="seedAi">{{seeding ? '生成中…' : 'AI 生成一批心愿'}}</view>
-      <text class="seed-note" wx:if="{{seedResult}}">AI {{seedResult.counts.ai}} 条 · 基线 {{seedResult.counts.baseline}} 条</text>
+      <text class="seed-note" wx:if="{{seedResult}}">{{seedResult.prefix}} 句式 · AI {{seedResult.counts.ai}} 条 · 基线 {{seedResult.counts.baseline}} 条</text>
     </view>
     <text class="seed-warn" wx:if="{{seedResult && seedResult.aiError}}">AI 未生效：{{seedResult.aiError}}</text>
     <view class="seed-chips" wx:if="{{seedResult && seedResult.texts.length}}">

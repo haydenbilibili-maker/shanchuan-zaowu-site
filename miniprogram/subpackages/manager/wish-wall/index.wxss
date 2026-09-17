@@ -272,3 +272,92 @@ page {
   border-radius: 999rpx;
 }
 
+/* ---------- 需求 28：多面墙选择器 ---------- */
+.wall-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.wall-bar-label {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}
+
+.wall-bar-scroll {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.wall-chip {
+  display: inline-block;
+  padding: 10rpx 22rpx;
+  margin-right: 12rpx;
+  font-size: 22rpx;
+  color: var(--color-text-body);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--brass-800);
+  border-radius: 999rpx;
+}
+
+/* 选中态：铜底深字 —— 一眼看出"我现在治的是哪面墙" */
+.wall-chip.on {
+  color: var(--color-bg);
+  background: var(--brass-400);
+  border-color: var(--brass-400);
+}
+
+.wall-chip-n {
+  font-size: 18rpx;
+  opacity: 0.75;
+}
+
+.wall-bar-hint {
+  display: block;
+  margin-bottom: var(--space-3);
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* ---------- 需求 28：AI 播种的句式前缀（多面墙） ---------- */
+
+.seed-prefix-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.seed-prefix-label {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}
+
+.seed-prefix-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12rpx 20rpx;
+  font-size: 24rpx;
+  color: var(--color-text-primary);
+  background: var(--color-bg-elevated, rgba(255, 255, 255, 0.04));
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-sm);
+}
+
+.seed-prefix-ph {
+  color: var(--color-text-muted);
+}
+
+.seed-prefix-hint {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+

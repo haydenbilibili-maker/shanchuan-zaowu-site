@@ -35,6 +35,8 @@ const {
   PRODUCT_KEY,
   TEXT_MAX,
   LIST_LIMIT,
+  DAILY_LIMIT,
+  dailyQuota,
   splitTagColumns,
   isTagListCapped,
   CYCLE_PAUSE_MS
@@ -51,6 +53,9 @@ const {
 const FN = 'manageWishWall'
 /** 灵感 chip 展示条数（与服务端 `INSPIRATION_COUNT` 对齐，多取的截掉） */
 const INSPIRATION_MAX = 4
+
+/** 刚落愿高亮保持时长（毫秒）：够"看见它落上去"，又不至于变成噪音 */
+const FRESH_HOLD_MS = 3200
 
 Page({
   behaviors: [easterEggHost],
@@ -86,6 +91,16 @@ Page({
     mine: { total: 0, visible: 0, hidden: 0 },
     /** 心愿笺（点愿签弹出的那张纸）：null = 未打开 */
     card: null,
+    /**
+     * 今日额度（诚实预告；拦截始终在服务端）：口径见 utils/wishWall.dailyQuota，
+     * 上限与云函数 DAILY_LIMIT 同源（守卫直接读云函数源码比对）。
+     */
+    quota: { used: 0, left: DAILY_LIMIT, cap: DAILY_LIMIT, exhausted: false },
+    /**
+     * 刚落愿那条的 _id：愿签与弹幕高亮 ~3.2s。
+     * 「挂上墙」此前只有一个 toast —— 心愿落在墙上的**落地感**是这轮补的。
+     */
+    freshId: '',
     /** 博物笔记进度（彩蛋图鉴入口用） */
     relics: { found: 0, total: 0 },
     /**
@@ -293,7 +308,9 @@ Page({
       pinned: row.pinned === true,
       // 馆方/AI 创作的内容标一下，用户才知道这条不是别人写的
       official: row.source === 'ai' || row.source === 'seed',
-      timeText: formatWishTime(row.createTime, now)
+      timeText: formatWishTime(row.createTime, now),
+      // 刚落愿那条：提交时乐观插入，刷新回包后按 _id 续上高亮
+      isFresh: !!this.data.freshId && String(row._id || '') === this.data.freshId
     }))
     // 墙面数据留一份原始副本：`mine` 回来之后要按 _id 给它补 `isMine`
     this._wallItems = items
@@ -319,7 +336,12 @@ Page({
    * 墙面 / 我的心愿共用同一套渲染（两列瀑布、愿签样式），只有数据源不同。
    */
   applyView() {
-    const src = this.data.viewMode === 'mine' ? (this._mineRows || []) : (this._wallItems || [])
+    const freshId = this.data.freshId
+    const raw = this.data.viewMode === 'mine' ? (this._mineRows || []) : (this._wallItems || [])
+    // 刚落愿那条要一直亮着：视图切换、刷新回包都不能把它闪掉，故按 _id 续标
+    const src = raw.map((it) => (it && it.isFresh === undefined
+      ? Object.assign({}, it, { isFresh: !!freshId && String(it._id) === freshId })
+      : it))
     this.setData({
       items: src,
       tagColumns: splitTagColumns(src),
@@ -367,6 +389,31 @@ Page({
     }
   },
 
+  /**
+   * 刚落愿高亮 ~3.2s 后自然消退。
+   * 不做成"一直亮着"：心愿挂上去就算数，长时间高亮会变成噪音。
+   */
+  scheduleFreshClear() {
+    this.clearFreshTimer()
+    if (!this.data.freshId) return
+    this._freshTimer = setTimeout(() => {
+      this._freshTimer = null
+      if (!this.data.freshId) return
+      const strip = (rows) => (rows || []).map((it) => (it && it.isFresh ? Object.assign({}, it, { isFresh: false }) : it))
+      this._wallItems = strip(this._wallItems)
+      this._mineRows = strip(this._mineRows)
+      this.setData({ freshId: '' })
+      this.applyView()
+    }, FRESH_HOLD_MS)
+  },
+
+  clearFreshTimer() {
+    if (this._freshTimer) {
+      clearTimeout(this._freshTimer)
+      this._freshTimer = null
+    }
+  },
+
   onHide() {
     // 切后台不必继续排期；回前台时 onShow 会按当前 rows 重排
     this.clearDanmakuCycle()
@@ -374,6 +421,7 @@ Page({
 
   onUnload() {
     this.clearDanmakuCycle()
+    this.clearFreshTimer()
   },
 
   onShow() {
@@ -397,7 +445,9 @@ Page({
       this._mineRows = decorateMineRows(list, Date.now())
       // 标记并回写当前视图（viewMode 可能是 mine，也可能还是 wall）
       this._wallItems = markMine(this._wallItems || [], list)
-      this.setData({ myHidden: summary.hidden, mine: summary, mineRows: this._mineRows })
+      // 今日额度：只陈述事实（今天写了几条），上限与云函数 DAILY_LIMIT 同源
+      const quota = dailyQuota(list, Date.now())
+      this.setData({ myHidden: summary.hidden, mine: summary, mineRows: this._mineRows, quota })
       this.applyView()
       this.recordRelics()
       // 我的心愿条数彩蛋：门槛（几条算数）在注册表里，页面只报事实
@@ -506,6 +556,15 @@ Page({
       toastWishWallClosed()
       return
     }
+    // 额度用完就地拦住，并**用服务端同一句口径**说明（服务端仍会独立判定，这里只是别让人白写）
+    if (this.data.quota && this.data.quota.exhausted) {
+      wx.showToast({
+        title: `今天已许愿 ${this.data.quota.cap} 次，明天再来`,
+        icon: 'none',
+        duration: 2500
+      })
+      return
+    }
     const checked = validateWishText(this.data.draft)
     if (!checked.ok) {
       wx.showToast({ title: checked.msg, icon: 'none' })
@@ -523,7 +582,34 @@ Page({
         wx.showToast({ title: result.msg || '发布失败', icon: 'none', duration: 2500 })
         return
       }
-      this.setData({ draft: '' })
+      // 落愿闭环：先本地落地（愿签插到墙首 + 弹幕立即接住 + 高亮），再等权威数据回来对齐。
+      // 这样「挂上墙」不再只是一个 toast —— 而是**看得见心愿落在墙上**。
+      const fresh = {
+        _id: String(result._id || ''),
+        text: checked.text,
+        nickname: result.nickname || '我',
+        avatar: '',
+        pinned: false,
+        official: false,
+        isMine: true,
+        isFresh: true,
+        timeText: '刚刚'
+      }
+      this._wallItems = [fresh].concat(this._wallItems || [])
+      this.setData({
+        draft: '',
+        freshId: fresh._id,
+        // 额度即时递减（诚实：以本地事实为准，服务端刷新会再校准）
+        quota: Object.assign({}, this.data.quota, {
+          used: (this.data.quota.used || 0) + 1,
+          left: Math.max(0, (this.data.quota.left || 0) - 1),
+          exhausted: (this.data.quota.used || 0) + 1 >= (this.data.quota.cap || DAILY_LIMIT)
+        })
+      })
+      if (this.data.viewMode === 'wall') this.applyView()
+      this.setData({ rows: buildDanmakuRows(this._wallItems, { cycle: (this.data.danmakuCycle || 0) + 1 }) })
+      this.scheduleDanmakuCycle(this.data.rows)
+      this.scheduleFreshClear()
       wx.showToast({ title: result.msg || '心愿已挂上墙', icon: 'none' })
       try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
       trackBehavior('wish_wall_post', 'ok', '1')
