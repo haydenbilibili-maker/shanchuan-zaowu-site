@@ -33,6 +33,7 @@ const WIKI_JS = 'miniprogram/subpackages/feature/detail/wiki-detail/index.js'
 const CUSTOM_JS = 'miniprogram/subpackages/feature/custom/index.js'
 const MANAGER_JS = 'miniprogram/subpackages/manager/manager/managerPageConfig.js'
 const DETAIL_WXML = 'miniprogram/subpackages/feature/detail/index.wxml'
+const GATE_WXSS = 'miniprogram/components/SensitiveBlurGate/index.wxss'
 
 let passed = 0
 let failed = 0
@@ -107,6 +108,23 @@ check('★ 详情页 360°/SKU 两处改用 imgView 映射（不再直绑 cloud:
   && /imgView\[selectedSku\.image \|\| product\.images\[0\]\]/.test(read(DETAIL_WXML)),
   '详情页还有直绑云文件 ID 的 <image>')
 
+/* ── 1.7) 敏感门控组件必须自己撑开父级（否则卡图被裁成空白） ───────────────── */
+// 2026-09-17 真机：礼赠 hub / 标本师作品的图全空，而没被门控包住的头图正常。
+// 根因：卡片外层是 `padding-top:100%` 比例盒（content 高度为 0），自定义组件宿主默认 inline
+// 不被拉伸 → `.sb-wrap{height:100%}` 算成 0，叠加 overflow:hidden 把绝对定位的图片裁没了。
+// ProductCard 之前是靠页面级 `.img-box .sb-wrap{position:absolute}` 局部绕过的；这里在组件内修掉。
+{
+  const gate = stripComments(read(GATE_WXSS))
+  check('★ 门控组件声明 :host（宿主不被拉伸是空白卡的根因）', /:host\s*\{/.test(gate), '缺 :host')
+  check('★ :host 铺满父级 padding box（position:absolute + 100% 宽高）',
+    /:host\s*\{[^}]*position:\s*absolute/.test(gate)
+    && /:host\s*\{[^}]*width:\s*100%/.test(gate)
+    && /:host\s*\{[^}]*height:\s*100%/.test(gate),
+    ':host 未铺满 → 比例盒内高度仍为 0')
+  check('★ :host 是块级（display:block）', /:host\s*\{[^}]*display:\s*block/.test(gate))
+  check('门控容器仍裁切（罩层与模糊不外溢）', /\.sb-wrap\s*\{[^}]*overflow:\s*hidden/.test(gate))
+}
+
 /* ── 2) 礼赠 hub ─────────────────────────────────────────────────────────── */
 check('★ hub 封面走共享取值链', /imageUrl\.firstImageOf\(/.test(hubJs))
 check('★ hub 不再为封面做临时链转换（会过期、失败即丢空）',
@@ -160,6 +178,12 @@ function selftest() {
       file: IMAGE_URL,
       from: 'function thumbUrl(url) {\n  const u = cloudIdToHttps(url)',
       to: 'function thumbUrl(url) {\n  const u = url'
+    },
+    {
+      name: '门控组件丢掉 :host（卡片图又被裁成空白）',
+      file: GATE_WXSS,
+      from: ':host {\n  display: block;\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n',
+      to: ''
     },
     {
       name: '详情页 360° 又直绑 images[0]',
