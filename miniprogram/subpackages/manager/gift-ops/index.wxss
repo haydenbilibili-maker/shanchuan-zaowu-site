@@ -402,3 +402,14 @@ page {
 .foot-btn {
   flex: 1;
 }
+
+/* 印刷版礼笺卡：离屏但**必须参与布局**（canvas 2d 取 node 要求已渲染，display:none 取不到）；
+   像素缓冲由 JS 设为 A6@300dpi，元素尺寸与此无关。 */
+.print-canvas {
+  position: fixed;
+  left: -2000rpx;
+  top: 0;
+  width: 200rpx;
+  height: 290rpx;
+  pointer-events: none;
+}

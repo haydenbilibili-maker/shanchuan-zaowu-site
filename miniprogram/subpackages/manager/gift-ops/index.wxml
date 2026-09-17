@@ -100,6 +100,8 @@
           <view class="mini-btn primary" wx:if="{{item.canShip}}" data-id="{{item.orderId}}" catchtap="goOrderManage">去发货</view>
           <view class="mini-btn primary" wx:if="{{bucket === 'pickup_verify'}}" catchtap="goVerify">去核销</view>
           <view class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
+          <!-- 印刷用：导出 A6@300dpi 礼笺卡（含题记带） -->
+          <view class="mini-btn" data-id="{{item.orderId}}" catchtap="onExportGiftCard">导出礼笺图</view>
         </view>
       </view>
 
@@ -141,3 +143,7 @@
   </view>
   <text class="muted" wx:else>校验权限…</text>
 </view>
+
+
+<!-- 印刷版礼笺卡离屏画布（A6 竖版 @300dpi，1240×1795 由 JS 设定像素缓冲） -->
+<canvas type="2d" id="giftPrintCanvas" class="print-canvas"></canvas>

@@ -153,6 +153,26 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   check('印刷卡复用共享换行/圆角工具（不另造）', /wrapLines\(ctx, String\(o\.cardBody/.test(card) && /roundRect\(ctx, cardX/.test(card))
 }
 
+/* ── 礼赠履约页「导出礼笺图」接线（印刷用；2026-09-17）────────────────── */
+{
+  const OPS_JS = 'miniprogram/subpackages/manager/gift-ops/index.js'
+  const OPS_WXML = 'miniprogram/subpackages/manager/gift-ops/index.wxml'
+  const opsJs = stripComments(readFileSync(resolve(ROOT, OPS_JS), 'utf8'))
+  const opsWxml = readFileSync(resolve(ROOT, OPS_WXML), 'utf8')
+  check('★ 履约页有「导出礼笺图」入口', /导出礼笺图/.test(opsWxml) && /onExportGiftCard/.test(opsWxml))
+  check('★ 用共享印刷渲染器（不另造画布逻辑）', /renderGiftPrintImage\('#giftPrintCanvas', this, \{/.test(opsJs))
+  check('★ 引主包实现（分包之间不得互相 require）',
+    opsJs.indexOf("require('../../../utils/giftShareCard')") !== -1 && opsJs.indexOf("require('../../feature/") === -1,
+    '跨分包 require 微信会拦')
+  check('★ 离屏画布挂在页面上（canvas 2d 取 node 要求已渲染）', /id="giftPrintCanvas"/.test(opsWxml))
+  check('★ 礼笺正文/署名取自 getBoardDetail', /action: 'getBoardDetail'/.test(opsJs) && /d\.cardBody/.test(opsJs))
+  check('★ 题记与藏品图按标准名回查 products（订单看板项无商品 id）',
+    /collection\('products'\)\.where\(\{ title: productTitle \}\)/.test(opsJs) && /themeNote: true/.test(opsJs))
+  check('★ 落盘：存相册 + 上传云存储（印刷厂取件）',
+    /saveImageToPhotosAlbum/.test(opsJs) && /wx\.cloud\.uploadFile/.test(opsJs) && /gift-print\//.test(opsJs))
+  check('★ 数据库句柄已就位（履约页原不直连库，漏了会运行时报错）', /const db = wx\.cloud\.database\(\)/.test(opsJs))
+}
+
 check('埋点带上句序（便于回看哪一句更常用）',
   /label: preset\.label,\s*\n\s*variant: index \+ 1/.test(composeJs))
 
@@ -170,6 +190,12 @@ if (process.argv.includes('--selftest')) {
 
 function selftest() {
   const injections = [
+    {
+      name: '履约页漏掉 db 定义（导出时运行时报错）',
+      file: 'miniprogram/subpackages/manager/gift-ops/index.js',
+      from: 'const db = wx.cloud.database()',
+      to: 'const db = null'
+    },
     {
       name: '印刷卡丢掉题记带（印出来少主题名）',
       file: 'miniprogram/utils/giftShareCard.js',

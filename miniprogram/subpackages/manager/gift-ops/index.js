@@ -5,6 +5,9 @@
 const { guardStaffPage, goStaffConsole } = require('../utils/staffAuth')
 const { formatCloudFnError } = require('../utils/memberScan')
 
+// 印刷版礼笺导出需按标题回查 products（题记/藏品图）；履约页此前不直连数据库
+const db = wx.cloud.database()
+
 const BUCKETS = [
   { key: 'awaiting_address', label: '待填址' },
   { key: 'awaiting_ship', label: '待发货' },
@@ -271,6 +274,66 @@ Page({
 
   goVerify() {
     goStaffConsole('verify')
+  },
+
+  /**
+   * 导出印刷版礼笺卡（A6 竖版 @300dpi，含题记带）—— 供礼赠卡印刷使用。
+   * 礼笺正文/署名取自 getBoardDetail；题记与藏品图按标题回查 products（订单看板项不含商品 id）。
+   * 落盘：先存相册（便于当场核对），再上传云存储（印刷厂取件）。
+   */
+  async onExportGiftCard(e) {
+    const orderId = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '').trim()
+    if (!orderId || this._exportingCard) return
+    this._exportingCard = true
+    wx.showLoading({ title: '生成中…', mask: true })
+    try {
+      const res = await wx.cloud.callFunction({ name: 'manageGift', data: { action: 'getBoardDetail', orderId } })
+      const d = (res && res.result) || {}
+      if (!d.success) throw new Error(d.msg || '读取礼笺失败')
+      const cardBody = String(d.cardBody || '').trim()
+      const cardSignature = String(d.cardSignature || '').trim()
+      if (!cardBody) throw new Error('这一单没有礼笺正文')
+      const item = d.item || {}
+      const productTitle = String(item.productTitle || '').trim()
+      // 题记 + 藏品图：按标准名回查商品（订单看板项不含商品 id）
+      let themeName = ''; let themeNote = ''; let specimenFileID = ''
+      if (productTitle) {
+        try {
+          const pr = await db.collection('products').where({ title: productTitle }).limit(1)
+            .field({ themeName: true, themeNote: true, images: true, image: true }).get()
+          const row = (pr && pr.data && pr.data[0]) || {}
+          themeName = String(row.themeName || '').trim()
+          themeNote = String(row.themeNote || '').trim()
+          specimenFileID = (row.images && row.images[0]) || row.image || ''
+        } catch (err) { /* 回查失败不阻断出卡 */ }
+      }
+      const { renderGiftPrintImage } = require('../../../utils/giftShareCard')
+      const path = await renderGiftPrintImage('#giftPrintCanvas', this, {
+        cardBody, cardSignature, themeName, themeNote, specimenFileID
+      })
+      if (!path) throw new Error('生成失败，请重试')
+      try {
+        await new Promise((ok, no) => wx.saveImageToPhotosAlbum({ filePath: path, success: ok, fail: no }))
+        wx.showToast({ title: '已存相册', icon: 'none' })
+      } catch (err) {
+        wx.showToast({ title: '未存相册（可检查相册权限）', icon: 'none' })
+      }
+      try {
+        const up = await wx.cloud.uploadFile({
+          cloudPath: `gift-print/${orderId}-${Date.now()}.png`,
+          filePath: path
+        })
+        wx.showToast({ title: '已上传印刷文件', icon: 'none', duration: 2500 })
+        console.log('gift print uploaded', up && up.fileID)
+      } catch (err) {
+        wx.showToast({ title: '上传失败（相册里已有原图）', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: (err && err.message) || '导出失败', icon: 'none' })
+    } finally {
+      wx.hideLoading()
+      this._exportingCard = false
+    }
   },
 
   copyOrderNo(e) {
