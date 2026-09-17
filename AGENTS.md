@@ -54,8 +54,9 @@
 - `admin/docs/内容工厂_Phase1_技术蓝图.md`（内容工厂，已落地）
 - `admin/docs/订货履约与成品库存_Phase1_技术蓝图.md` · `admin/docs/飞书多维表对接_技术蓝图.md`（进行中模块）
 - `admin/docs/ERP系统专项审计_2026-09-16.md`（ERP 滚动台账，ERP 侧改动第一参考）
-- `miniprogram/docs/README.md`（小程序文档索引；代码同 `WeChatProjects/shanchuanspecimens`，2026-09-14 已回灌对齐；
-  该外部路径**并非每个环境都存在**，`npm run sync:miniprogram:check` 会因此 exit 1）
+- `miniprogram/docs/README.md`（小程序文档索引；代码同 `WeChatProjects/shanchuanspecimens-只上传`，2026-09-14 已回灌对齐；
+  该外部路径**并非每个环境都存在**：`npm run sync:miniprogram:check` 在开发仓不存在时会**安全跳过**
+  （CI / 他人机器属正常情况，不会把 `check:admin` 弄红）。两仓显示名的区分方式见 `docs/施工与发布流程.md`）
 
 ## 环境
 

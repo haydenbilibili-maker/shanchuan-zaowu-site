@@ -1,6 +1,7 @@
 # 小程序文档索引
 
-> 仓库：`shanchuanspecimens`（微信小程序 · Museum Mode）  
+> 仓库：施工仓 `shanchuanzaowu/miniprogram`（微信小程序 · Museum Mode）；开发仓（只上传）为
+> `WeChatProjects/shanchuanspecimens-只上传`  
 > 本索引对应审计报告 P2 / P1-6「文档缺索引」；**不替代**各文档正文。  
 > 维护约定：新增 `docs/*.md` 时在本表补一行；封板 PRD 标「封板」，过程稿标「过程」。
 

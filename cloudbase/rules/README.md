@@ -37,6 +37,6 @@ node scripts/apply-database-rules.mjs --probe orders   # 探查某集合权限�
 | `staff_members.json` / `workspace_acl.json` | **read/write 均 false**（RBAC 数据源，仅云函数 `manageStaff` 可访问） |
 | 2026-09-15 批量补齐（35 份） | 31 份**仅云函数访问**的业务集合 → `false/false`（工作室库存、采购/出货、员工域、法人/内容/消息等）；4 份 ERP 客户端只读 → `read: auth != null` + `write: false`（`analytics_daily` / `custom_drafts` / `support_tickets` / `user_behaviors`）。分类依据：全仓客户端代码（小程序 4 个目录 + `admin/src`）真实数据调用扫描 |
 
-小程序侧权威副本与应用脚本：`WeChatProjects/shanchuanspecimens/database-rules/`。
+小程序侧权威副本与应用脚本：`WeChatProjects/shanchuanspecimens-只上传/database-rules/`。
 
 完整集合清单见 [docs/cloudbase-collections.md](../../docs/cloudbase-collections.md)。

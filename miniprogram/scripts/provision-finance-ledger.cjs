@@ -222,7 +222,7 @@ async function main() {
   }
 
   // 写一份结果到 scripts 便于留存（不进 git 也可）
-  const outDir = '/Users/hayden_lee/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens/scripts'
+  const outDir = '/Users/hayden_lee/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens-只上传/scripts'
   try {
     fs.writeFileSync(path.join(outDir, 'provision-finance-ledger.result.json'), JSON.stringify({ envId: ENV_ID, at: new Date().toISOString(), results }, null, 2))
   } catch (_) {}

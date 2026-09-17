@@ -12,7 +12,7 @@
 set -eu
 
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
-DEST="${DEVTOOLS_DIR:-/Users/hayden_lee/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens}"
+DEST="${DEVTOOLS_DIR:-/Users/hayden_lee/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens-只上传}"
 
 if [[ ! -d "$DEST" ]]; then
   echo "✖ 目标目录不存在：$DEST" >&2

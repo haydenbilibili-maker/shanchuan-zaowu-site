@@ -172,7 +172,7 @@ async function main() {
   }
 
   const outPath = path.join(
-    '/Users/hayden_lee/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens/scripts',
+    '/Users/hayden_lee/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens-只上传/scripts',
     'provision-store-receipt-claims.result.json'
   )
   fs.writeFileSync(

@@ -9,9 +9,14 @@
  *
  * 允许不同的只有两处，且都是「本机/身份」信息，不参与编译语义：
  *   · project.miniapp.json —— 开发仓专有，含本地 DevTools 配置；
- *   · project.config.json 的 **projectname** —— 两仓显示名，用来在开发者工具里分清
- *     「哪个是施工仓、哪个是开发仓」（2026-09-17 加：两仓内容一致后，工具里同名无法区分）。
- *     注意是**按字段**例外：project.config.json 的其余字段（appid / setting / packOptions …）仍须逐字一致。
+ *   · project.config.json / project.private.config.json 的 **projectname** —— 两仓显示名，
+ *     用来在开发者工具里分清「哪个是施工仓、哪个是开发仓」（2026-09-17 加：两仓内容一致后同名无法区分）。
+ *     **两份都要写**：DevTools 里私有配置的字段会覆盖公共配置（文件自带的说明就是这么写的），
+ *     只改公共配置不会生效。注意是**按字段**例外，其余字段（appid / setting / packOptions …）仍须逐字一致。
+ *
+ * 另外忽略 `scripts/*.result.json`：provision / migrate 脚本**故意把结果写到开发仓**（见
+ * provision-finance-ledger.cjs 的 outDir），主库不会有它们；打包也已被 packOptions.ignore 排除。
+ * 不忽略的话本检查会永远红，反而掩盖真实漂移。
  *
  * 用法：
  *   node scripts/check-miniprogram-sync.mjs             # 检查
@@ -30,12 +35,18 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 // 可被环境变量覆盖：只为 --selftest 能在临时目录里证明"本检查会失败"。
 const SRC = process.env.SYNC_SRC || join(ROOT, 'shanchuanzaowu', 'miniprogram')
-const DST = process.env.SYNC_DST || join(ROOT, 'WeChatProjects', 'shanchuanspecimens')
+const DST = process.env.SYNC_DST || join(ROOT, 'WeChatProjects', 'shanchuanspecimens-只上传')
 
 /** 允许整文件不同（开发仓专有配置） */
 const ALLOW_DIFF = new Set(['project.miniapp.json'])
 /** 允许按**字段**不同：只是显示名，不参与编译。其余字段仍逐字比对。 */
-const ALLOW_DIFF_FIELDS = { 'project.config.json': ['projectname'] }
+const ALLOW_DIFF_FIELDS = {
+  'project.config.json': ['projectname'],
+  'project.private.config.json': ['projectname']
+}
+
+/** 脚本产物（故意写到开发仓的结果 JSON，打包已忽略）—— 不参与双仓比对 */
+const IGNORE_REL = /^scripts\/.*\.result\.json$/
 
 /**
  * 同一路径的内容是否视为一致。
@@ -67,7 +78,7 @@ function walk(base, dir = '', out = []) {
     if (IGNORE_DIRS.has(name) || IGNORE_FILES.has(name)) continue
     const rel = dir ? `${dir}/${name}` : name
     if (statSync(join(abs, name)).isDirectory()) walk(base, rel, out)
-    else out.push(rel)
+    else if (!IGNORE_REL.test(rel)) out.push(rel)
   }
   return out
 }
@@ -105,8 +116,14 @@ function main() {
 
   // 提示（不参与退出码）：两仓显示名若被改成一样，工具里又会分不清 —— 当场说出来。
   try {
-    const nameOf = (base) => JSON.parse(readFileSync(join(base, 'project.config.json'), 'utf8')).projectname
-    const a = nameOf(SRC), b = nameOf(DST)
+    const nameOf = (base) => {
+      const pub = JSON.parse(readFileSync(join(base, 'project.config.json'), 'utf8')).projectname
+      let priv = ''
+      try { priv = JSON.parse(readFileSync(join(base, 'project.private.config.json'), 'utf8')).projectname || '' } catch (e) { /* 可选文件 */ }
+      return { pub, priv }
+    }
+    const na = nameOf(SRC), nb = nameOf(DST)
+    const a = na.priv || na.pub, b = nb.priv || nb.pub
     if (a && b && a === b) {
       console.log(`· 提示：两仓 projectname 相同（${a}）—— 在开发者工具里会分不清施工仓 / 开发仓；` +
         '建议各自设为不同名字（见 docs/施工与发布流程.md「两仓在开发者工具里怎么分」）。')
@@ -206,6 +223,15 @@ function selftest() {
   expect('E --fix 不擅自删除开发仓多出的文件', existsSync(join(dst, 'legacy.js')))
 
   seed()
+  writeFileSync(join(dst, 'scripts'), '')  // 占位，下面会删掉重建为目录
+  rmSync(join(dst, 'scripts'))
+  mkdirSync(join(dst, 'scripts'), { recursive: true })
+  writeFileSync(join(dst, 'scripts/provision-x.result.json'), '{"ok":true}\n')
+  const h = run(false)
+  expect('H 开发仓多出的 scripts/*.result.json → 按约定忽略（脚本故意写到开发仓的产物）',
+    h.status === 0, h.stdout + h.stderr)
+
+  seed()
   const f = run(false)
   expect('F 仅 projectname 不同 → 视为一致（两仓显示名各自保留）', f.status === 0, f.stdout + f.stderr)
 
@@ -221,7 +247,7 @@ function selftest() {
     console.error(`\n✗ selftest 失败 ${bad} 项`)
     process.exit(1)
   }
-  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致')
+  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致 / 产物 JSON 被忽略')
   process.exit(0)
 }
 

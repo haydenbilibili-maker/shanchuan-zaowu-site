@@ -7,7 +7,7 @@ shanchuanzaowu/
 ├── src/                 # Astro 官网页面与组件
 ├── public/admin/        # ERP 构建产物 → 部署到 /admin/
 ├── admin/               # ERP 源码（原 shanchuan-admin）
-├── miniprogram/         # 小程序源码（原 shanchuanspecimens）
+├── miniprogram/         # 小程序源码（施工仓；原 shanchuanspecimens）
 ├── cloudbase/           # 云开发集合 schema / 安全规则
 └── docs/                # 运维与配置文档
 ```
@@ -46,7 +46,7 @@ Cloudflare Pages 仍只部署 **`dist/`**（含 `dist/admin/`）。
 源码自以下路径 **rsync 复制**（不含 `node_modules`、`.git`）：
 
 - ERP：`Business_Projects/shanchuan-admin` → `admin/`
-- 小程序：`WeChatProjects/shanchuanspecimens` → `miniprogram/`
+- 小程序：`WeChatProjects/shanchuanspecimens-只上传`（开发仓）→ `miniprogram/`（施工仓）
 
 原独立仓库可保留作归档；后续以本 monorepo 为准。
 
@@ -55,7 +55,7 @@ Cloudflare Pages 仍只部署 **`dist/`**（含 `dist/admin/`）。
 ### 2026-09-14 · 小程序安全修复回灌
 
 小程序侧的安全加固（云端口令 `manageStaff.verifyUiGate`、`staffGuard` 角色鉴权、客户端写操作全部收回云函数、
-`database-rules/`、三个分包重构）先在 `WeChatProjects/shanchuanspecimens` 落地，本仓 `miniprogram/` 当时仍是旧版镜像，
+`database-rules/`、三个分包重构）先在 `WeChatProjects/shanchuanspecimens-只上传` 落地，本仓 `miniprogram/` 当时仍是旧版镜像，
 形成「规则是新的、代码是旧的」矛盾，故执行一次完整回灌。
 
 回灌命令（在仓库根执行，`--delete` 保证镜像一致，不复制依赖与 Git 元数据）：
@@ -63,7 +63,7 @@ Cloudflare Pages 仍只部署 **`dist/`**（含 `dist/admin/`）。
 ```bash
 rsync -a --delete \
   --exclude='node_modules/' --exclude='.git/' --exclude='.DS_Store' \
-  ~/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens/ \
+  ~/LifeOS_Workspace/Business_Projects/WeChatProjects/shanchuanspecimens-只上传/ \
   miniprogram/
 ```
 
