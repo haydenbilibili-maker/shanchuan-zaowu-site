@@ -22,8 +22,13 @@
   侧栏与导航大屏都由数据派生，**不要手写 `el-menu-item`**；漏第 2 步会被 `npm run check:nav-sources` 拦住。
   新模块先落 `admin/docs/` 蓝图再实现；上线模块后登记到对应 `docs/README.md` 索引。
 - 新增云集合：`admin/src/cloud.js` 的 `COLLECTIONS` ↔ `cloudbase/rules/<name>.json` ↔ `cloudbase/schema/<name>.md` 三处同步。
+- **内部资料不得进发布路径**：`public/`（Astro 静态目录）与 `admin/public/`（Vite publicDir）**都会被公开部署**。
+  劳动合同/保密竞业/投资人 BP/股权架构等内部文档只存 `admin/public/governance-assets/`，由
+  `scripts/build-admin.mjs` 构建后剔除、`scripts/verify-admin-dist.mjs` 部署前拦截、`npm run check:publish-dir` 守卫。
+  （2026-09-17 前该目录曾被公开部署至生产站，见 `docs/全面审计_2026-09-17/README.md` §7）
 - 验证：
-  - `npm run check:admin`（10 条静态守卫，约 10s，含 dev 管线编译）；
+  - `npm run check:admin`（**49 条**静态守卫，含 dev 管线编译；注意它是单条 `&&` 链，**第一条失败会静默跳过其余**，
+    失败时逐条单跑；不是所有守卫都在链内 —— `check:share-image`、`check:nav-dom`、`audit:collections` 等需手动跑）；
   - `npm run dev:admin` 起验收环境后 `npm run check:nav-dom`（**真实浏览器 DOM**，唯一能证明界面真画出来的检查）；
   - `npm run build`（ERP → `dist/admin/` + 官网 → `dist/`）；
   - 改配色/主题前先跑 `npm run report:colors`（**只报告不改动**，禁止 find-replace），
@@ -36,14 +41,25 @@
 
 ## 关键文档
 
-- `docs/项目定位与开发基座.md`（全仓定位 + 现状地图 + 改动规范，开发前先读）
+- **`docs/全面审计_2026-09-17/README.md`**（最新全仓审计：P0/P1 + 线上实测的公网暴露 + 基线事实）、
+  **`docs/全面审计_2026-09-17/后续工作基座.md`**（标准命令 / 守卫地图 / 改动落点 / 完成定义）—— **开工前先读这两份**
+- `docs/README.md`（仓库级文档索引与登记规则）
+- `docs/项目定位与开发基座.md`（全仓定位 + 现状地图 + 改动规范）
 - `docs/monorepo.md` · `docs/cloudbase-collections.md` · `docs/项目总览与后续工作框架.md`
 - `admin/docs/PLATFORM_CAPABILITIES.md`（ERP 能力边界，勿将演示当生产）
 - `admin/docs/内容工厂_Phase1_技术蓝图.md`（内容工厂，已落地）
 - `admin/docs/订货履约与成品库存_Phase1_技术蓝图.md` · `admin/docs/飞书多维表对接_技术蓝图.md`（进行中模块）
-- `miniprogram/docs/README.md`（小程序文档索引；代码同 `WeChatProjects/shanchuanspecimens`，2026-09-14 已回灌对齐）
+- `admin/docs/ERP系统专项审计_2026-09-16.md`（ERP 滚动台账，ERP 侧改动第一参考）
+- `miniprogram/docs/README.md`（小程序文档索引；代码同 `WeChatProjects/shanchuanspecimens`，2026-09-14 已回灌对齐；
+  该外部路径**并非每个环境都存在**，`npm run sync:miniprogram:check` 会因此 exit 1）
 
 ## 环境
 
 - CloudBase envId：`cloud1-8gnkty5bfff9f0bf`（上海）；Web 匿名登录 + 安全域名白名单。
 - 小程序 AppID：`wxf2550373b010b447`。
+- **装依赖必须 `npm ci --include=dev`**：本机/CI 若预设 `NODE_ENV=production`，`npm ci` 会**静默省略全部 devDependencies**
+  （缺 `vite`/`@vitejs/plugin-vue`/`wrangler` → `build`、`dev:admin`、`check:sfc-dev` 全报「找不到 vite」）。
+- 沙箱/容器里 `astro build` 可能因 telemetry 写 `$HOME` 失败（`EACCES ... .config/astro`）→ 设 `ASTRO_TELEMETRY_DISABLED=1`；
+  npm 缓存目录不可写时加 `--cache <可写目录>`。
+- **CI 目前不跑任何守卫、也没有 PR 触发**（`.github/workflows/deploy-pages.yml` 只有 `npm ci` + `npm run build`）
+  → 合并前必须**人工**跑守卫并把输出贴进提交说明。
