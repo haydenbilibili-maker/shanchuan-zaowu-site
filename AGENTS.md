@@ -27,8 +27,12 @@
   `scripts/build-admin.mjs` 构建后剔除、`scripts/verify-admin-dist.mjs` 部署前拦截、`npm run check:publish-dir` 守卫。
   （2026-09-17 前该目录曾被公开部署至生产站，见 `docs/全面审计_2026-09-17/README.md` §7）
 - 验证：
-  - `npm run check:admin`（**49 条**静态守卫，含 dev 管线编译；注意它是单条 `&&` 链，**第一条失败会静默跳过其余**，
-    失败时逐条单跑；不是所有守卫都在链内 —— `check:share-image`、`check:nav-dom`、`audit:collections` 等需手动跑）；
+  - `npm run check:admin`（**52 条**静态守卫，含 dev 管线编译）。它是 `node scripts/run-guards.mjs`：
+    **逐条独立执行、全部跑完再汇总**（不再短路），清单唯一事实源是 `package.json` 的 `check:admin:guards`
+    —— **新增守卫追加到该键**；
+  - `npm run check:admin:selftest`（逐条跑守卫自检，证明每条都能失败）；`npm run check:admin:runner-selftest`
+    （证明执行器不短路、缺自检会被点名）；
+  - **不在清单内**的守卫（需浏览器/凭据，按需手动跑）：`check:nav-dom`、`audit:collections`、`check:cloud-files`、`check:fn-sync`；
   - `npm run dev:admin` 起验收环境后 `npm run check:nav-dom`（**真实浏览器 DOM**，唯一能证明界面真画出来的检查）；
   - `npm run build`（ERP → `dist/admin/` + 官网 → `dist/`）；
   - 改配色/主题前先跑 `npm run report:colors`（**只报告不改动**，禁止 find-replace），
@@ -61,5 +65,20 @@
   （缺 `vite`/`@vitejs/plugin-vue`/`wrangler` → `build`、`dev:admin`、`check:sfc-dev` 全报「找不到 vite」）。
 - 沙箱/容器里 `astro build` 可能因 telemetry 写 `$HOME` 失败（`EACCES ... .config/astro`）→ 设 `ASTRO_TELEMETRY_DISABLED=1`；
   npm 缓存目录不可写时加 `--cache <可写目录>`。
-- **CI 目前不跑任何守卫、也没有 PR 触发**（`.github/workflows/deploy-pages.yml` 只有 `npm ci` + `npm run build`）
-  → 合并前必须**人工**跑守卫并把输出贴进提交说明。
+- **CI 已跑守卫（2026-09-17 修 D1）**：`.github/workflows/deploy-pages.yml` 有三个 job ——
+  `verify`（push/PR/dispatch：`npm ci --include=dev` + `check:admin` + `build`，并上传 dist artifact）、
+  `guards-can-fail`（PR/dispatch：`check:admin:selftest`）、`deploy`（仅 main，复用 artifact 部署）。
+  合并前仍建议本地跑一遍 `check:admin`，但**不再依赖人工把关**。
+
+## 工作时段（成本约束，2026-09-17 起）
+
+**只在下列北京时间窗口内推进工作**（含调用模型），目的是避开 DeepSeek API 高峰计价：
+
+| 窗口 | 时段 |
+|------|------|
+| A | 周一至周五 **12:00–14:00** |
+| B | 起点为周一至周五的 **18:00**，到**次日 09:00** |
+
+- 窗口外：不开始新的工作项；停在一个**可恢复**的状态（改动已提交或已写进文档），并说明下次继续的时间。
+- 窗口 B 按字面含「周五 18:00 → 周六 09:00」这一段的尾；周六、周日不再起新的时段。
+- 若与你的本意不符（例如周末完全不工作、或窗口起止另有规定），改这一节即可 —— 它是唯一事实源。

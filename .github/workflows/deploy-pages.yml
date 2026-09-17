@@ -1,28 +1,67 @@
-name: Deploy to Cloudflare Pages
+name: Verify & Deploy to Cloudflare Pages
 
+# 2026-09-17 全面审计 D1：此前本工作流**只在 push: main 上跑 npm ci + build，零守卫、无 PR 触发**
+# —— 全部 check:*/report:*/test:* 在合并路径上形同虚设。现改为：
+#   · verify（阻断，push/PR/dispatch）→ 51 条静态守卫 + 完整构建
+#   · guards-can-fail（阻断，仅 PR/dispatch）→ 逐条跑守卫自检，证明「守卫自己会失败」
+#   · deploy（仅 main）→ 复用 verify 的产物部署，不重复构建
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 concurrency:
-  group: pages-deploy
+  # 按 ref 分组：PR 的检查不会取消 main 的部署
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # 非敏感构建配置（可进前端包）
+  VITE_DEEPSEEK_BASE_URL: ${{ secrets.VITE_DEEPSEEK_BASE_URL }}
+  VITE_DEEPSEEK_MODEL: ${{ secrets.VITE_DEEPSEEK_MODEL }}
+  VITE_AI_DEFAULT_PROVIDER: deepseek
+  # ⚠️ 不要再注入 VITE_*_API_KEY：VITE_ 前缀会被内联进前端包公开发布。
+  #    AI 密钥走服务端网关 /api/ai，请在 Cloudflare Pages → Settings →
+  #    Environment variables 配置 DEEPSEEK_API_KEY / BAILIAN_API_KEY。
+
 jobs:
-  deploy:
+  verify:
+    name: 静态守卫 + 构建
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-    env:
-      # 非敏感构建配置（可进前端包）
-      VITE_DEEPSEEK_BASE_URL: ${{ secrets.VITE_DEEPSEEK_BASE_URL }}
-      VITE_DEEPSEEK_MODEL: ${{ secrets.VITE_DEEPSEEK_MODEL }}
-      VITE_AI_DEFAULT_PROVIDER: deepseek
-      # ⚠️ 不要再注入 VITE_*_API_KEY：VITE_ 前缀会被内联进前端包公开发布。
-      #    AI 密钥走服务端网关 /api/ai，请在 Cloudflare Pages → Settings →
-      #    Environment variables 配置 DEEPSEEK_API_KEY / BAILIAN_API_KEY。
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # --include=dev：runner 若预设 NODE_ENV=production，devDependencies 会被静默省略，
+      # 导致 vite/@vitejs/plugin-vue 缺失、build 与 check:sfc-dev 直接报「找不到 vite」。
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: 静态守卫（check:admin）
+        run: npm run check:admin
+
+      - name: Build site (admin + astro)
+        run: npm run build
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  guards-can-fail:
+    name: 守卫自检（证明会失败）
+    # 只在 PR / 手动触发时跑：main 的部署链路保持轻快，但合并前必须证明守卫可信
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -32,10 +71,37 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=dev
 
-      - name: Build site (admin + astro)
-        run: npm run build
+      - name: 逐条守卫自检（注入回归 → 必须检出 → 还原源文件）
+        run: npm run check:admin:selftest
+
+  deploy:
+    name: 部署到 Cloudflare Pages
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # 装依赖只为拿到与本地一致的 wrangler（devDependency）；构建产物用上面 verify 的 artifact
+      - name: Install dependencies (for wrangler)
+        run: npm ci --include=dev
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
 
       - name: Require Cloudflare secrets
         env:

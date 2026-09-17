@@ -222,18 +222,41 @@ async function fulfillOrder(db, _, orderId, openid) {
     order = reclaim.order
     } else {
       // 订单已被超时清扫为 void 等终态，但回调带流水号 → 钱已收、单不可履约。
-      // 标记为待人工退款并返回成功（停止微信无限重试），由后台按标记处理。
+      // 标记为待人工退款后返回成功（停止微信无限重试），由后台按标记处理。
+      //
+      // ⚠️ 2026-09-17 审计 C3：**只有标记真的落库了才可以返回成功**。
+      // 原实现 `.catch(() => {})` 把写失败吞掉后照样 return success:true ——
+      // 结果是「钱收了 / 单没履约 / 标记没写 / 微信停止重试」，这笔钱连一条可追溯记录都没有。
+      // 现在：写失败或没写进去 → 抛错（微信会重试；本分支只写标记，重入是幂等的）。
       const evidence = String(order.wxTransactionId || '').trim()
       if (evidence) {
         console.error('[payCallback] 已付款但订单不可履约，需人工退款', orderId, order.status, evidence)
-        await db.collection('orders').doc(orderId).update({
-          data: {
-            paidAfterVoid: true,
-            paidAfterVoidAt: db.serverDate(),
-            manualRefundRequired: true,
-            paidAfterVoidNote: `支付回调到达时订单状态为 ${order.status}；微信流水号 ${evidence}，需人工退款`
+        let marked = false
+        const marker = {
+          paidAfterVoid: true,
+          paidAfterVoidAt: db.serverDate(),
+          manualRefundRequired: true,
+          paidAfterVoidNote: `支付回调到达时订单状态为 ${order.status}；微信流水号 ${evidence}，需人工退款`
+        }
+        try {
+          const res = await db.collection('orders').doc(orderId).update({ data: marker })
+          marked = updatedCount(res) > 0
+          if (!marked) {
+            // SDK 变体兜底：不信任返回值形状，回读一次确认标记真的在库里
+            const again = await db.collection('orders').doc(orderId).get().catch(() => null)
+            const doc = again && again.data
+            marked = !!(doc && doc.paidAfterVoid === true)
           }
-        }).catch(() => {})
+        } catch (e) {
+          console.error(
+            '[payCallback] 待人工退款标记写入失败 —— 本次不返回成功，交给微信重试',
+            orderId,
+            (e && (e.message || e.errMsg)) || e
+          )
+        }
+        if (!marked) {
+          throw new Error('待人工退款标记写入失败，请重试')
+        }
         return { success: true, orderId, manualRefundRequired: true, msg: '订单不可履约，已标记待人工退款' }
       }
       throw new Error('订单状态不可支付')

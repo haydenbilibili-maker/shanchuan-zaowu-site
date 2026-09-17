@@ -71,33 +71,74 @@ function loadHelper() {
   return mod.exports
 }
 
+/** 从 bannerNav（小程序或 ERP）源码里取出 { id, label, path } 预设三元组 */
+export function parsePresets(src) {
+  const out = []
+  const RE = /id:\s*'([^']+)'\s*,\s*label:\s*'([^']*)'\s*,\s*path:\s*'([^']*)'/g
+  let m
+  while ((m = RE.exec(src))) out.push({ id: m[1], label: m[2], path: m[3] })
+  return out
+}
+
 /**
- * ERP 侧「轮播预设」的 path 也必须落在注册页上。
+ * ERP 预设的 path 必须**原样**是 app.json 的注册页。
+ *
+ * 为什么不用「重映射后再判」（2026-09-17 审计 E3 修正）：
+ *   旧实现先跑 `remapLegacyPageUrl()` 再核对，等于把「ERP 写了一个不存在的页面」也算通过 ——
+ *   实测 `/pages/store/index` 正是靠 remap 兜住的（真实页在 `subpackages/business/store`）。
+ *   但 ERP 是**编辑面**，不能依赖下游的历史 remap：
+ *     · ERP 侧 `matchSchemePresetId` 反查（拿存量 path 找预设）不走 remap →
+ *       与小程序预设路径不一致时反查失配，页面显示「自定义」而非对应预设；
+ *     · 运营在 ERP 里看到的就是这条 path，写错只会被下游掩盖，不会有人报错。
+ *   所以口径收紧为：**ERP 预设必须是注册页原样**。
+ */
+export function checkErpPresetDirect(p, registered) {
+  if (!p) return null // { id:'custom', path:'' } 是「自定义路径」占位，允许为空
+  return pageOf(p, registered)
+    ? null
+    : `[ERP 轮播预设] ${p}（不是 app.json 的注册页；ERP 侧反查会失配，勿依赖小程序 remap 兜底）`
+}
+
+/** ERP 预设必须是「小程序预设」的子集：同 id 必须同 path，否则两端会持续漂移 */
+export function comparePresets(adminList, mpList) {
+  const problems = []
+  const byId = new Map((mpList || []).map((x) => [x.id, x]))
+  for (const a of adminList || []) {
+    if (!a.path) continue
+    const m = byId.get(a.id)
+    if (!m) { problems.push(`[ERP 预设] ${a.id} 在小程序预设里不存在`); continue }
+    if (m.path !== a.path) {
+      problems.push(`[ERP 预设] ${a.id} path 漂移：ERP ${a.path} ≠ 小程序 ${m.path}`)
+    }
+  }
+  return problems
+}
+
+/**
+ * ERP 侧「轮播预设」的 path 必须落在注册页上，且与小程序预设逐条一致。
  *
  * 为什么放在这个守卫里：运营在 ERP 里选预设 → 存进 `banners.link` → 小程序
  * `openBannerItem()` 直接 navigateTo。这条链**跨了两个仓库目录**，
- * 任何一侧改路径都不会有人报错 —— 实测 `admin/src/utils/bannerNav.js` 有 6 条
- * 预设仍指向 `subpackages/feature/user/*`（个人中心已迁到 extra/user），
- * 运营一旦选中就是「点了没反应」。这里把它并进同一条守卫：
- * **「凡是会被 navigateTo 的路径，都必须在 app.json 里」**。
+ * 任何一侧改路径都不会有人报错。
  */
-export function scanErpBannerPresets(registered, helper) {
-  const file = resolve(MP, '..', 'admin/src/utils/bannerNav.js')
+export function scanErpBannerPresets(registered) {
+  const adminFile = resolve(MP, '..', 'admin/src/utils/bannerNav.js')
+  const mpFile = resolve(MP, 'utils/bannerNav.js')
   const problems = []
   let checked = 0
-  let src
-  try { src = readFileSync(file, 'utf8') } catch { return { checked, problems } }
-  for (const m of src.matchAll(/path:\s*'([^']*)'/g)) {
-    const p = m[1]
-    if (!p) continue // { id:'custom', path:'' } 是「自定义路径」占位
+  let adminSrc
+  try { adminSrc = readFileSync(adminFile, 'utf8') } catch { return { checked, problems } }
+  const adminList = parsePresets(adminSrc)
+  for (const p of adminList) {
+    if (!p.path) continue
     checked += 1
-    // 关键：预设是**旧路径也没关系** —— 小程序 openBannerItem() 会先跑 remapLegacyPageUrl()
-    // 再 navigateTo。所以按「运行时真实落点」判定：先重映射，再核对注册页。
-    const mapped = helper ? helper.remapLegacyPageUrl(p) : p
-    if (!pageOf(mapped, registered)) {
-      problems.push(`[ERP 轮播预设] ${p} → ${mapped}（重映射后仍不在注册页，运营选中后点击无效）`)
-    }
+    const bad = checkErpPresetDirect(p.path, registered)
+    if (bad) problems.push(bad)
   }
+  try {
+    const mpList = parsePresets(readFileSync(mpFile, 'utf8'))
+    problems.push(...comparePresets(adminList, mpList))
+  } catch { /* 小程序侧文件缺失则跳过一致性比对 */ }
   return { checked, problems }
 }
 
@@ -128,7 +169,7 @@ export function scan() {
       problems.push(`[子路径] ${t} → ${helper.remapLegacyPageUrl(t)}（不在注册页里）`)
     }
   }
-  const erp = scanErpBannerPresets(registered, helper)
+  const erp = scanErpBannerPresets(registered)
   checked += erp.checked
   problems.push(...erp.problems)
   return { checked, problems, registered }
@@ -160,12 +201,27 @@ function selftest() {
 
   // ERP 轮播预设：同一条「必须落在注册页」的口径
   {
-    const erp = scanErpBannerPresets(registered, helper)
+    const erp = scanErpBannerPresets(registered)
     t('ERP 轮播预设被扫到（>0）', erp.checked > 0)
     t('★ ERP 轮播预设全部落在注册页', erp.problems.length === 0, erp.problems.slice(0, 3).join(' | '))
     t('★ 旧形态的 ERP 预设必须被判失效（守卫真的会失败）',
       pageOf('/subpackages/feature/user/profile/index', registered) === null)
   }
+
+  // ★ E3（2026-09-17 审计）：ERP 预设必须是注册页**原样**，不接受「靠 remap 兜住」
+  t('★ ERP 预设直判：旧路径 /pages/store/index 必须被判失效',
+    checkErpPresetDirect('/pages/store/index', registered) !== null)
+  t('  └ 对照：真实落点 /subpackages/business/store/index 通过',
+    checkErpPresetDirect('/subpackages/business/store/index', registered) === null)
+  t('  自定义路径占位（空串）不报错', checkErpPresetDirect('', registered) === null)
+  t('★ 两端预设漂移（同 id 不同 path）会被检出',
+    comparePresets([{ id: 'a', path: '/x' }], [{ id: 'a', path: '/y' }]).length === 1)
+  t('  两端完全一致时不报错',
+    comparePresets([{ id: 'a', path: '/x' }], [{ id: 'a', path: '/x' }]).length === 0)
+  t('★ ERP 多出的 id（小程序没有）会被检出',
+    comparePresets([{ id: 'zzz', path: '/x' }], [{ id: 'a', path: '/y' }]).length === 1)
+  t('  预设解析器能读出真实条目（>20）', parsePresets(
+    readFileSync(resolve(MP, '..', 'admin/src/utils/bannerNav.js'), 'utf8')).length > 20)
 
   // 前缀表读取
   const src = readFileSync(join(MP, 'utils/messageHelper.js'), 'utf8')

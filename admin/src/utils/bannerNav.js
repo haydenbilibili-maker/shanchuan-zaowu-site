@@ -11,7 +11,7 @@ export const SCHEME_PRESETS = [
   { id: 'cart', label: '购物车', path: '/pages/cart/index' },
   { id: 'user', label: '我的', path: '/pages/user/index' },
   { id: 'atlas', label: '山海图鉴', path: '/subpackages/feature/collection/index' },
-  { id: 'store', label: '线下门店', path: '/pages/store/index' },
+  { id: 'store', label: '线下门店', path: '/subpackages/business/store/index' },
   { id: 'booking', label: '预约到店', path: '/subpackages/business/booking/index' },
   { id: 'my-bookings', label: '我的预约', path: '/subpackages/business/my-bookings/index' },
   { id: 'points', label: '积分中心', path: '/subpackages/business/points/index' },

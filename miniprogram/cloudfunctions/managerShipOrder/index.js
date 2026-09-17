@@ -1209,7 +1209,7 @@ async function advanceProduction(orderId, productionStatus, access, openid, opti
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext()
   let openid = wxContext.OPENID || ''
-  if (!openid && event && event._fromApproval && event._callerOpenid) {
+  if (!openid && isNonClientSource() && event && event._fromApproval && event._callerOpenid) {
     openid = String(event._callerOpenid).trim()
   }
 

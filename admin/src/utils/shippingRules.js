@@ -32,7 +32,9 @@ export function getDefaultShippingConfig() {
     mixCartStrategy: MIX_SPECIMEN_WINS,
     freeShippingCampaign: {
       enabled: false,
-      label: '限时免费邮寄',
+      // 与云函数 getShippingRules/defaults.js、makeOrder/shipping.js 及
+      // 小程序 config/shipping.js 的默认文案保持一致（2026-09-17 审计 E-运费文案三方不一致）
+      label: '当前全场免邮',
       startAt: '',
       endAt: ''
     }

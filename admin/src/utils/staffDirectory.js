@@ -12,11 +12,18 @@
  * —— 浏览器端匿名会话读不到，必须经云函数代理（代理会注入 ADMIN_OPS_KEY）。
  */
 import { callCloudFunction } from '../cloud.js'
+import {
+  STAFF_LIST_LIMIT,
+  staffDirectoryFailure,
+  staffCountDisplay,
+  summarizeStaffList,
+} from './staffDirectoryCore.js'
 
 export const MANAGE_STAFF_FN = 'manageStaff'
 
-/** `manageStaff.listStaff` 的服务端硬上限：`.limit(100)`，没有分页参数 */
-export const STAFF_LIST_LIMIT = 100
+// 纯逻辑下沉到零依赖的 staffDirectoryCore.js —— 生产实现与单测读同一份代码
+// （2026-09-17 审计 D6：原先测试内联了一份副本，生产改坏测试不会红）
+export { STAFF_LIST_LIMIT, staffCountDisplay }
 
 /**
  * 拉取员工通讯录。
@@ -30,27 +37,8 @@ export const STAFF_LIST_LIMIT = 100
 export async function fetchStaffDirectory() {
   try {
     const res = await callCloudFunction(MANAGE_STAFF_FN, { action: 'list', status: 'all' })
-    if (!res || res.success === false) {
-      return { ok: false, list: [], active: 0, disabled: 0, total: 0, truncated: false, error: res?.msg || '员工列表返回失败' }
-    }
-    const list = Array.isArray(res.list) ? res.list : []
-    const active = list.filter((r) => (r?.status || 'active') !== 'disabled').length
-    return {
-      ok: true,
-      list,
-      active,
-      disabled: list.length - active,
-      total: list.length,
-      // 服务端 limit(100) 且无分页：正好 100 条时可能被截断，必须如实标出，不能当作精确值
-      truncated: list.length >= STAFF_LIST_LIMIT,
-    }
+    return summarizeStaffList(res)
   } catch (e) {
-    return { ok: false, list: [], active: 0, disabled: 0, total: 0, truncated: false, error: e?.message || '员工列表加载失败' }
+    return staffDirectoryFailure(e && e.message ? e.message : '员工列表加载失败')
   }
-}
-
-/** KPI 展示值：读不到时给「—」而不是 0 —— 0 会被误读成「没有员工」 */
-export function staffCountDisplay(staff) {
-  if (!staff || !staff.ok) return '—'
-  return staff.truncated ? `${staff.active}+` : String(staff.active)
 }

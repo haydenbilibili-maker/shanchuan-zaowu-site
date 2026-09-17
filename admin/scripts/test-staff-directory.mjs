@@ -6,9 +6,13 @@
  * `payrollStorage` 的 localStorage 花名册 —— 那份数据 ERP 侧从未被填充，于是卡片恒显示 **0**。
  * 而 0 无法区分「确实没有员工」与「没读到数据」，运营会据此得出错误结论。
  *
- * 修法：改读小程序超管工作台「员工」模块的同一数据源（`manageStaff` → `staff_members`，
- * 见 `miniprogram/subpackages/manager/staff-directory/index.js` 头部注释「聚合 staff_members」），
+ * 修法：改读小程序超管工作台「员工」模块的同一数据源（`manageStaff` → `staff_members`），
  * 并且**读不到时显示「—」而不是 0**。
+ *
+ * ⚠️ 2026-09-17 全面审计 D6：本测试原先在文件里**内联了一份同构实现**，
+ * 从不读生产代码 —— 生产实现改坏测试照样绿（守卫空转，比没有守卫更糟）。
+ * 现在 S/D 直接 import 生产实现（`src/utils/staffDirectoryCore.js`，纯逻辑零依赖），
+ * `--selftest` 里还会**临时改坏那个生产文件**再跑子进程，证明「生产代码坏了本测试一定红」。
  *
  * 本测试钉住三件事：
  *   ① 生效/停用计数正确（status 缺省视为生效，与服务端 `row.status || 'active'` 一致）；
@@ -19,22 +23,24 @@
  */
 'use strict'
 
-const STAFF_LIST_LIMIT = 100
+import { readFileSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import {
+  STAFF_LIST_LIMIT,
+  staffCountDisplay,
+  summarizeStaffList,
+} from '../src/utils/staffDirectoryCore.js'
 
-/** 生产实现（与 src/utils/staffDirectory.js 同构，此处以注入形式便于自检替换）*/
+const HERE = dirname(fileURLToPath(import.meta.url))
+const CORE = resolve(HERE, '..', 'src', 'utils', 'staffDirectoryCore.js')
+const SELF = fileURLToPath(import.meta.url)
+
+/** 生产实现（直接引用，不再内联副本） */
 export const impl = {
-  summarize(res) {
-    if (!res || res.success === false) {
-      return { ok: false, list: [], active: 0, disabled: 0, total: 0, truncated: false, error: res?.msg || '员工列表返回失败' }
-    }
-    const list = Array.isArray(res.list) ? res.list : []
-    const active = list.filter((r) => (r?.status || 'active') !== 'disabled').length
-    return { ok: true, list, active, disabled: list.length - active, total: list.length, truncated: list.length >= STAFF_LIST_LIMIT }
-  },
-  display(staff) {
-    if (!staff || !staff.ok) return '—'
-    return staff.truncated ? `${staff.active}+` : String(staff.active)
-  },
+  summarize: summarizeStaffList,
+  display: staffCountDisplay,
 }
 
 const rows = (n, status) => Array.from({ length: n }, (_, i) => ({ _id: 's' + i, name: '员工' + i, ...(status ? { status } : {}) }))
@@ -76,7 +82,10 @@ export function runChecks(implOverride = impl) {
 }
 
 if (process.argv.includes('--selftest')) {
-  console.log('自检：分别破坏「计数」「截断标记」「失败不显示 0」三处，测试必须各自失败\n')
+  console.log('自检：① 三条关键性质可被破坏检出；② 本测试确实读生产实现（改坏生产文件必须红）\n')
+  let bad = 0
+
+  // ── ① 性质级破坏（内存中替换实现） ──
   const mutations = [
     ['把停用行也算作生效（计数错）', {
       ...impl,
@@ -91,21 +100,45 @@ if (process.argv.includes('--selftest')) {
       display: (staff) => (staff && staff.ok ? String(staff.active) : '0'),
     }, '★ 失败时显示'],
   ]
-  let bad = 0
   for (const [label, broken, expectCase] of mutations) {
     const { failures } = runChecks(broken)
     const hit = failures.find((f) => f.startsWith(expectCase))
-    const detected = !!hit
-    console.log(`${detected ? '✓' : '✗'} ${label} → ${detected ? '已检出' : '【漏检】'}`)
+    console.log(`${hit ? '✓' : '✗'} ${label} → ${hit ? '已检出' : '【漏检】'}`)
     if (hit) console.log(`    · ${hit}`)
-    if (!detected) bad += 1
+    if (!hit) bad += 1
   }
+
+  // ── ② 证明「读的是生产实现」：改坏生产核心文件 → 子进程必须红 → 按字节还原 ──
+  const original = readFileSync(CORE, 'utf8')
+  const NEEDLE = 'truncated: list.length >= limit,'
+  if (!original.includes(NEEDLE)) {
+    console.error(`✗ 自检无法注入：生产文件里找不到锚点 \`${NEEDLE}\``)
+    console.error('   （说明 staffDirectoryCore.js 的截断判定被改写，请同步本自检）')
+    bad += 1
+  } else {
+    try {
+      writeFileSync(CORE, original.replace(NEEDLE, 'truncated: false,'))
+      const r = spawnSync(process.execPath, [SELF], { encoding: 'utf8' })
+      const out = `${r.stdout || ''}${r.stderr || ''}`
+      const detected = r.status === 1 && /✗ 取满 100 条/.test(out)
+      console.log(`${detected ? '✓' : '✗'} 改坏生产实现 staffDirectoryCore.js → 本测试必须变红`
+        + `（${detected ? '已检出' : '【漏检】'}，子进程 exit ${r.status}）`)
+      if (!detected) bad += 1
+    } finally {
+      writeFileSync(CORE, original) // 按字节还原
+    }
+    const restored = readFileSync(CORE, 'utf8') === original
+    console.log(`${restored ? '✓' : '✗'} 生产文件已按字节还原`)
+    if (!restored) bad += 1
+  }
+
   console.log()
   if (bad) {
-    console.error(`自检失败：${bad} 项破坏未被检出，测试不可信。`)
+    console.error(`自检失败：${bad} 项未被检出，测试不可信。`)
     process.exit(1)
   }
-  console.log('自检通过：三条关键性质都能被破坏检出。\n')
+  console.log('自检通过：三条关键性质可被破坏检出，且测试确实读生产实现。\n')
+  process.exit(0)
 }
 
 const { pass, failures } = runChecks()

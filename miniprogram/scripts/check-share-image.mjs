@@ -144,11 +144,20 @@ const CASES = [
   onShareTimeline() { return { imageUrl: b } }`)
     return r.review.length === 2
   }],
+  ['棘轮键不含行号：旧格式 `x.js:641 expr` 归一化后等于 `x.js expr`', (c) =>
+    c.normalizeRatchetKey("subpackages/feature/x/index.js:641 this.data.displayImage || ''")
+    === "subpackages/feature/x/index.js this.data.displayImage || ''"],
+  ['棘轮键不含行号：同一处行号平移不得被判成「新增」', (c) => {
+    const at = (line) => c.normalizeRatchetKey(`subpackages/feature/x/index.js:${line} expr`)
+    return at(641) === at(737) && at(641) === 'subpackages/feature/x/index.js expr'
+  }],
+  ['棘轮键不含行号：已归一化的新格式键保持幂等', (c) =>
+    c.normalizeRatchetKey('a/b.js expr') === 'a/b.js expr'],
 ]
 
 if (process.argv.includes('--selftest')) {
   console.log('自检：证明「拦不住的」与「误报的」两类都会出现\n')
-  const mod = { checkSource }
+  const mod = { checkSource, normalizeRatchetKey }
   // 1) 九条判定必须全部成立
   let bad = 0
   for (const [label, fn] of CASES) {
@@ -178,7 +187,21 @@ for (const p of scanned) {
   r.hard.forEach((f) => hard.push({ file: rel, ...f }))
   r.review.forEach((f) => review.push({ file: rel, ...f }))
 }
-const key = (f) => `${f.file}:${f.line} ${f.imageUrl}`
+/**
+ * 棘轮键：**不含行号**。
+ *
+ * 为什么（2026-09-17 全面审计 D3 实测）：原键是 `${file}:${line} ${expr}`，而行号会随任何
+ * 无关改动平移 —— `identify/result/index.js` 的分享函数从 :641 挪到 :737 后，同一条**已收编**
+ * 的表达式被判成「新增 1 处未复核」，守卫无缘无故变红（幻影新增）。同一坑在
+ * `check-write-verify` 已修过一次（见 admin/docs/ERP系统专项审计_2026-09-16.md 附录 C.1）。
+ * 现改为「文件 + 表达式」，并保留对旧格式（含 `:行号`）的兼容读取，避免「改键就必须重刷基线」。
+ */
+const key = (f) => `${f.file} ${f.imageUrl}`
+
+/** 旧格式棘轮键 `path.js:123 expr` → 新格式 `path.js expr`；已是新格式则原样返回 */
+export function normalizeRatchetKey(k) {
+  return String(k || '').replace(/\.js:\d+ /, '.js ')
+}
 
 const BASELINE = join(HERE, 'share-image-baseline.json')
 console.log(`分享卡片封面守卫：扫描 ${scanned.length} 个文件，命中分享处理 ${hard.length + review.length} 处 imageUrl`)
@@ -200,14 +223,14 @@ if (hard.length) {
   console.log('✓ 没有把 cloud:// / cdnPath() 直接当分享封面')
 }
 
-// 待复核：棘轮（只拦新增）
+// 待复核：棘轮（只拦新增）。键不含行号 → 行号平移不再制造幻影新增
 review.sort((a, b) => key(a).localeCompare(key(b)))
-const reviewKeys = review.map(key)
+const reviewKeys = [...new Set(review.map(key))].sort()
 if (existsSync(BASELINE)) {
   const base = JSON.parse(readFileSync(BASELINE, 'utf8'))
-  const known = new Set(base.reviewed || [])
+  const known = new Set((base.reviewed || []).map(normalizeRatchetKey))
   const added = reviewKeys.filter((k) => !known.has(k))
-  console.log(`\n待复核（静态无法确认来源，可能已在别处解析）：基线 ${known.size} 处 / 本次 ${reviewKeys.length} 处`)
+  console.log(`\n待复核（静态无法确认来源，可能已在别处解析）：基线 ${known.size} 处 / 本次 ${reviewKeys.length} 处（键不含行号）`)
   if (added.length) {
     console.error(`✗ 新增 ${added.length} 处未复核的分享封面：`)
     added.forEach((a) => console.error(`   ${a}`))
