@@ -69,8 +69,17 @@ function walkJsFiles(base, dir = '', out = []) {
   return out
 }
 
+/**
+ * 棘轮键：**不含文件路径**。
+ *
+ * 2026-09-17 全面审计 E2 实测：原键是 `${file}#${field}#${text}`，而文件会因重构移动
+ * （例如 `refundPolicy.js` 三份分包副本下沉为主包 `utils/refundPolicy.js`）→ 同一条已收编的
+ * 超长文案被判成「新增」，守卫无缘无故变红。同一坑在 `check:share-image` 与
+ * `check-write-verify` 都修过。这里只保留「哪个字段 + 什么文案」——那才是真正的不变式；
+ * 文件位置属于展示信息，不进键。
+ */
 function keyOf(o) {
-  return `${o.file}#${o.field}#${o.text}`
+  return `${o.field}#${o.text}`
 }
 
 function readBaseline() {

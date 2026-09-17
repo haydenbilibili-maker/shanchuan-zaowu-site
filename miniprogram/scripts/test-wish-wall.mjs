@@ -13,7 +13,7 @@
  *   node miniprogram/scripts/test-wish-wall.mjs
  *   node miniprogram/scripts/test-wish-wall.mjs --selftest
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join as join2, relative as relative2, resolve } from 'node:path'
 import { createRequire, isBuiltin } from 'node:module'
 import { fileURLToPath } from 'node:url'
@@ -443,6 +443,46 @@ const INJECTIONS = {
 }
 
 const INJECT = String(process.env.WISH_WALL_INJECT || '').trim()
+
+/**
+ * 若该文件是「共享模块再导出」shim，则返回其真实实现所在路径。
+ *
+ * 2026-09-17 全面审计 E2：分包内的重复工具已下沉到主包 `utils/`，分包里只留一句
+ * `module.exports = require('…')`。断言必须读**实现**，否则会因「源码里没有那段代码」而假失败。
+ */
+function resolveReexport(absPath) {
+  let cur = absPath
+  for (let i = 0; i < 5; i += 1) {
+    let src
+    try { src = readFileSync(cur, 'utf8') } catch { return cur }
+    const m = src.match(/^\s*module\.exports\s*=\s*require\((['"])(.+?)\1\)\s*;?\s*$/m)
+    if (!m) return cur
+    const next = resolve(dirname(cur), m[2])
+    if (existsSync(next)) { cur = next; continue }
+    if (existsSync(`${next}.js`)) { cur = `${next}.js`; continue }
+    return cur
+  }
+  return cur
+}
+
+/**
+ * 读「实现源码」：若目标是再导出 shim 则跟随到主包实现（用在**只做正则断言**的地方）。
+ * 注入同样要生效，否则 `--selftest` 会出现「断言无法失败 = 守卫无效」的假绿。
+ */
+function readImplSource(file) {
+  const requested = resolve(ROOT, file)
+  const resolved = resolveReexport(requested)
+  const raw = readFileSync(resolved, 'utf8')
+  if (!INJECT) return raw
+  const inj = INJECTIONS[INJECT]
+  if (!inj) throw new Error('unknown injection ' + INJECT)
+  const injAbs = resolve(ROOT, inj.file)
+  // 注入声明的可能是「分包 shim 路径」或「主包实现路径」，两者都接受
+  if (injAbs !== requested && injAbs !== resolved) return raw
+  if (raw.indexOf(inj.from) === -1) throw new Error('injection anchor missing: ' + INJECT)
+  return raw.replace(inj.from, inj.to)
+}
+
 function readSrc(file) {
   const raw = readFileSync(resolve(ROOT, file), 'utf8')
   if (!INJECT) return raw
@@ -1166,7 +1206,8 @@ check(
  * 断言按**代码里的正则字面量**匹配：注释里也写着 "未知 action"，只搜裸词会假通过。
  * ------------------------------------------------------------------ */
 
-const memberScanSrc = readSrc('miniprogram/subpackages/manager/utils/memberScan.js')
+// 2026-09-17 E2：该模块已下沉主包，分包只留再导出 shim → 断言要读实现
+const memberScanSrc = readImplSource('miniprogram/subpackages/manager/utils/memberScan.js')
 check(
   '★「未知 action」映射为「云函数版本过旧」（不把原始文案丢给运营）',
   /\/未知 action\/\.test\([\s\S]{0,120}云函数版本过旧/.test(memberScanSrc)

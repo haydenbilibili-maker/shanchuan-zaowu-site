@@ -1,41 +1,8 @@
 /**
- * 店长/超管账本 · 小程序 GMV 1% 应捐（与 C 端 onePercentPledge 分位口径一致）
- * 基数仅限小程序净 GMV = mpOnline − mpRefund；不含 POS / 现金 / 遗留线上。
+ * 共享模块再导出 —— 唯一实现在主包 utils/pledgeDue.js（2026-09-17 全面审计 E2：去重复）
+ *
+ * 为什么保留这个同名文件：分包里已有大量 require 调用点（'./pledgeDue' 或 '../utils/pledgeDue'），
+ * 保留同名 re-export 可以**零调用点改动**地完成下沉，同时把实现从分包移走（分包体积约 -1143 B）。
+ * 改实现请只改 utils/pledgeDue.js；不要在这里加逻辑。
  */
-
-/**
- * @param {number|string} amountYuan
- * @returns {number}
- */
-function calcOnePercentYuan(amountYuan) {
-  const yuan = Number(amountYuan)
-  const safe = Number.isFinite(yuan) && yuan > 0 ? yuan : 0
-  const fen = Math.round(safe * 100)
-  return Math.round(fen * 0.01) / 100
-}
-
-/**
- * @param {number|string} mpOnline
- * @param {number|string} [mpRefund=0]
- * @returns {{ mpNet: number, base: number, amount: number, amountText: string }}
- */
-function calcPledgeDueFromMp(mpOnline, mpRefund) {
-  const mpO = Number(mpOnline)
-  const mpR = Number(mpRefund)
-  const online = Number.isFinite(mpO) ? mpO : 0
-  const refund = Number.isFinite(mpR) ? mpR : 0
-  const mpNet = Math.round((online - refund) * 100) / 100
-  const base = Math.max(0, mpNet)
-  const amount = calcOnePercentYuan(base)
-  return {
-    mpNet,
-    base,
-    amount,
-    amountText: amount.toFixed(2)
-  }
-}
-
-module.exports = {
-  calcOnePercentYuan,
-  calcPledgeDueFromMp
-}
+module.exports = require('../../../utils/pledgeDue')

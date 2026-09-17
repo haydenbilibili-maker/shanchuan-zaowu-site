@@ -1,55 +1,8 @@
 /**
- * 商品标签：短词、中文为主，供录入 / 搜索 / 推荐 / 画像共用。
+ * 共享模块再导出 —— 唯一实现在主包 utils/productTags.js（2026-09-17 全面审计 E2：去重复）
+ *
+ * 为什么保留这个同名文件：分包里已有大量 require 调用点（'./productTags' 或 '../utils/productTags'），
+ * 保留同名 re-export 可以**零调用点改动**地完成下沉，同时把实现从分包移走（分包体积约 -1527 B）。
+ * 改实现请只改 utils/productTags.js；不要在这里加逻辑。
  */
-const MAX_TAGS = 10
-const MAX_TAG_LEN = 12
-
-function sanitizeProductTags(input) {
-  const raw = Array.isArray(input)
-    ? input
-    : String(input || '').split(/[,，、;；\s]+/)
-  const seen = new Set()
-  const out = []
-  for (const item of raw) {
-    let tag = String(item || '').trim().replace(/\s+/g, '')
-    if (!tag) continue
-    tag = tag.replace(/[\u0000-\u001F\u007F]/g, '')
-    if (!tag || tag.length > MAX_TAG_LEN) continue
-    if (/[\uD800-\uDFFF]/.test(tag)) continue
-    const key = tag.toLowerCase()
-    if (seen.has(key)) continue
-    seen.add(key)
-    out.push(tag)
-    if (out.length >= MAX_TAGS) break
-  }
-  return out
-}
-
-function topInterestTagNames(map, limit) {
-  const cap = Math.max(1, limit || 8)
-  if (Array.isArray(map)) {
-    return sanitizeProductTags(map).slice(0, cap)
-  }
-  if (!map || typeof map !== 'object') return []
-  return Object.entries(map)
-    .filter(([key, weight]) => key && Number(weight) > 0)
-    .sort((a, b) => Number(b[1]) - Number(a[1]))
-    .slice(0, cap)
-    .map(([key]) => key)
-}
-
-function overlapTagScore(itemTags, wanted) {
-  const have = new Set(sanitizeProductTags(itemTags).map((t) => t.toLowerCase()))
-  if (!have.size) return 0
-  return sanitizeProductTags(wanted).reduce((sum, tag) => (
-    have.has(String(tag).toLowerCase()) ? sum + 1 : sum
-  ), 0)
-}
-
-module.exports = {
-  MAX_TAGS,
-  MAX_TAG_LEN,
-  sanitizeProductTags,
-  topInterestTagNames,
-  overlapTagScore
-}
+module.exports = require('../../../utils/productTags')

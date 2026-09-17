@@ -1,0 +1,15 @@
+{
+  "updatedAt": "2026-09-17",
+  "note": "分包内逐字节相同的重复工具：可省字节数只许减少（棘轮）。--update 收紧后不得再放宽。",
+  "savableBytes": 96700,
+  "groups": [
+    "storeLedger.js ×2",
+    "staffAuth.js ×2",
+    "customHelper.js ×3",
+    "petMemorialHelper.js ×3",
+    "cacheInvalidate.js ×3",
+    "qrCanvas.js ×2",
+    "couponPrintLamp.js ×2",
+    "conceptStorage.js ×2"
+  ]
+}
