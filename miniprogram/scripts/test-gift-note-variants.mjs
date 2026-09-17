@@ -140,6 +140,19 @@ check('★ 逐字落笔：新字播一次动画（card-write-char + keyframes）
   && /@keyframes handWriteIn/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
 check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: target\.slice\(0, i\)\.split\(''\)/.test(composeJs))
 
+/* ── 印刷版礼笺卡（A6@300dpi，礼赠履约导出用；2026-09-17）─────────────────── */
+{
+  const card = readFileSync(resolve(ROOT, 'miniprogram/utils/giftShareCard.js'), 'utf8')
+  check('★ 印刷版渲染器存在且导出', /function paintGiftPrintCard\(/.test(card) && /renderGiftPrintImage,/.test(card))
+  check('★ 规格为 A6 竖版 @300dpi（1240 × 1795）', /const PRINT_W = 1240/.test(card) && /const PRINT_H = 1795/.test(card))
+  check('★ 印刷卡**必须**画题记带（分享卡不画，这是两者的关键区别）',
+    /const themeName = String\(o\.themeName/.test(card) && /const themeNote = String\(o\.themeNote/.test(card),
+    '印刷卡缺题记 → 印出来会少掉主题名与那句话')
+  check('★ 分享卡未被改动（分享卡绘制函数仍在、未被印刷版替换）',
+    /function paintGiftShareCard\(canvas, opts\)/.test(card) && /SHARE_CARD_W: W,/.test(card))
+  check('印刷卡复用共享换行/圆角工具（不另造）', /wrapLines\(ctx, String\(o\.cardBody/.test(card) && /roundRect\(ctx, cardX/.test(card))
+}
+
 check('埋点带上句序（便于回看哪一句更常用）',
   /label: preset\.label,\s*\n\s*variant: index \+ 1/.test(composeJs))
 
@@ -157,6 +170,12 @@ if (process.argv.includes('--selftest')) {
 
 function selftest() {
   const injections = [
+    {
+      name: '印刷卡丢掉题记带（印出来少主题名）',
+      file: 'miniprogram/utils/giftShareCard.js',
+      from: "  const themeName = String(o.themeName || '').trim()",
+      to: "  const themeName = ''"
+    },
     {
       name: '礼笺退回衬线（手写体被去掉）',
       file: COMPOSE_WXSS,
