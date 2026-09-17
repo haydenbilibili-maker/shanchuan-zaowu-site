@@ -32,6 +32,8 @@ Page({
     protectionTags: [],
     archiveRows: [],
     fallbackImg: cdnPath('stores/store_shanhaizaowu.png'),
+    // 注册门禁（2026-09-17）：未登录/未注册态整页灰色模糊 + 原地授权弹窗（无「再看看」）
+    registerGated: false,
     tagStyle: {
       p: 'margin-bottom: 20px; line-height: 1.8; color: #D5D1C8; text-align: justify;',
       h2: 'font-size: 18px; font-weight: bold; color: #C4A76C; margin: 30px 0 15px; border-bottom: 1px solid #262320; padding-bottom: 8px;',
@@ -44,11 +46,47 @@ Page({
   onLoad(options) {
     const { statusBarHeight } = wx.getSystemInfoSync();
     this.setData({ statusBarHeight, wikiId: options.id || '' });
+    this.evaluateRegisterGate();
     if (options.id) {
       this.loadDetail(options.id);
     } else {
       this.setData({ loading: false, loadError: true });
     }
+  },
+
+  /**
+   * 注册门禁判定：只有「本人 + 未注册」才拦。
+   *
+   * 为什么不拦别人：从分享链接进来的访客没有注册义务，拦他们只会把内容变成
+   * 「看不到」，与需求 3 的原决策（不制造看不到的差评）冲突。
+   * 为什么整页模糊而不是弹个可关的框：见 index.wxml 注释 —— 只是提示就不是门禁。
+   */
+  async evaluateRegisterGate() {
+    try {
+      const { ensureSession } = require('../../../../utils/userSession');
+      const { resolveAuthState } = require('../../../../utils/profileHelper');
+      const session = await ensureSession(app);
+      const state = session.authState || resolveAuthState(session.user);
+      if (state === 'guest') {
+        this.setData({ registerGated: true });
+        trackBehavior('wiki_register_gate', 'wiki', this.data.wikiId, { step: 'show' });
+      }
+    } catch (e) {
+      // 判定失败**不拦**：宁可少拦一次，也不要因为一次网络抖动把档案锁死
+      console.warn('evaluateRegisterGate', e);
+    }
+  },
+
+  /** 原地注册成功：解模糊 + 刷新会话相关数据（不跳注册页、不 navigateBack） */
+  async onRegisterSuccess() {
+    this.setData({ registerGated: false });
+    trackBehavior('wiki_register_gate', 'wiki', this.data.wikiId, { step: 'success' });
+    try {
+      const { invalidateAfterProfile } = require('../../utils/cacheInvalidate');
+      invalidateAfterProfile();
+    } catch (e) { /* 分包各有副本，取不到也不影响主流程 */ }
+    wx.showToast({ title: '注册成功', icon: 'success' });
+    if (this.data.wikiId) this.loadDetail(this.data.wikiId);
   },
 
   async loadDetail(id) {

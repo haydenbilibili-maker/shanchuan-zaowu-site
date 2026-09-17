@@ -56,6 +56,8 @@ export const EVENTS = {
   encyclopedia_content_click: { module: MODULE.ENCYCLOPEDIA, desc: '百科内容点击', targetType: 'wiki' },
   encyclopedia_product_click: { module: MODULE.ENCYCLOPEDIA, desc: '百科关联商品点击', targetType: 'product' },
   wiki_to_product: { module: MODULE.ENCYCLOPEDIA, desc: '百科跳商详', targetType: 'product' },
+  // 2026-09-17 注册门禁：百科详情页未登录态整页模糊 + 原地一键注册（step: show/success）
+  wiki_register_gate: { module: MODULE.ENCYCLOPEDIA, desc: '百科注册门禁漏斗（step: show/success）', targetType: 'wiki' },
   // 电商（含 legacy）
   view: { module: MODULE.COMMERCE, desc: '商品浏览(legacy)', targetType: 'product' },
   collect: { module: MODULE.COMMERCE, desc: '收藏(legacy)', targetType: 'product' },

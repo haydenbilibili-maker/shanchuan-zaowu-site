@@ -16,6 +16,13 @@
   </view>
 
   <block wx:else>
+  <!--
+    注册门禁（2026-09-17）：未登录/未注册态**整页灰色模糊**，且**不提供「再看看」**。
+    为什么在页面上模糊而不是只弹窗：内容在弹窗后面已经可见时，弹窗只是「提示」；
+    摸清后才算门禁。模糊用 filter（与 sensitive-blur-gate 同一手法），
+    并 pointer-events:none 防止隔着模糊层点到商品/购买。
+  -->
+  <view class="wd-gate {{registerGated ? 'is-gated' : ''}}">
   <!-- 1. 沉浸式 Header -->
   <view class="hero-area">
     <image class="hero-img" src="{{wiki.coverImage || fallbackImg}}" mode="aspectFill"></image>
@@ -142,5 +149,18 @@
   </view>
 
   <view style="height: 140rpx;"></view>
+  </view>
+
+  <!-- 门禁弹窗：closable=false → 组件内部不渲染关闭入口 -->
+  <register-auth-dialog
+    show="{{registerGated}}"
+    overline="SPECIES ARCHIVE"
+    title="注册后查看完整档案"
+    desc="这是为收藏者准备的物种档案。一键注册即可解锁全文，并把它存进你的山海图鉴。"
+    cta="同意并一键注册"
+    closable="{{false}}"
+    from="wiki_detail"
+    bind:success="onRegisterSuccess"
+  />
   </block>
 </view>

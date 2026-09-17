@@ -4,6 +4,7 @@
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814",
   "usingComponents": {
-    "species-card": "/subpackages/feature/components/SpeciesCard/index"
+    "species-card": "/subpackages/feature/components/SpeciesCard/index",
+    "register-auth-dialog": "/components/RegisterAuthDialog/index"
   }
 }

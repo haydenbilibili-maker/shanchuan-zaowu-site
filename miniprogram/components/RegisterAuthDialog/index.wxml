@@ -1,0 +1,53 @@
+<!-- 注册引导 / 一键注册弹窗：博物黑 + 铜金铭牌，自带 getPhoneNumber 授权按钮 -->
+<view
+  class="rad-mask {{show ? 'is-on' : 'is-off'}}"
+  wx:if="{{show}}"
+  catchtouchmove="noop"
+  catchtap="{{closable ? 'onClose' : 'noop'}}"
+>
+  <view class="rad-plate" catchtap="noop">
+    <!-- 铭牌四角：与敏感形态罩层同一套博物柜语言 -->
+    <view class="rad-corner is-tl"></view>
+    <view class="rad-corner is-tr"></view>
+    <view class="rad-corner is-bl"></view>
+    <view class="rad-corner is-br"></view>
+
+    <text class="rad-overline">{{overline}}</text>
+    <text class="rad-title">{{title}}</text>
+    <text class="rad-desc">{{desc}}</text>
+
+    <!-- 权益点：一句话说清「注册能得到什么」，降低授权抗拒 -->
+    <view class="rad-perks">
+      <view class="rad-perk"><text class="rad-dot"></text><text class="rad-perk-t">鉴定结果自动存进山海图鉴</text></view>
+      <view class="rad-perk"><text class="rad-dot"></text><text class="rad-perk-t">新客礼包自动到账</text></view>
+      <view class="rad-perk"><text class="rad-dot"></text><text class="rad-perk-t">订单与门店通知可达</text></view>
+    </view>
+
+    <!-- 授权必须是 button open-type 触发；文案即同意（与注册页口径一致） -->
+    <button
+      class="rad-cta"
+      open-type="{{saving ? '' : 'getPhoneNumber'}}"
+      bindgetphonenumber="onGetPhoneNumber"
+      disabled="{{saving}}"
+      loading="{{saving}}"
+      hover-class="rad-cta-press"
+      hover-stay-time="60"
+    >{{saving ? '正在注册…' : cta}}</button>
+
+    <view class="rad-fineprint">
+      <text>点击即表示同意</text>
+      <text class="rad-link" data-kind="terms" catchtap="onAgreementTap">《用户协议》</text>
+      <text>与</text>
+      <text class="rad-link" data-kind="privacy" catchtap="onAgreementTap">《隐私政策》</text>
+    </view>
+
+    <!-- 门禁场景不渲染关闭：不给「再看看」 -->
+    <view
+      wx:if="{{closable}}"
+      class="rad-close"
+      bindtap="onClose"
+      hover-class="rad-close-press"
+      hover-stay-time="60"
+    >{{closeText}}</view>
+  </view>
+</view>

@@ -1,0 +1,207 @@
+#!/usr/bin/env node
+/**
+ * 注册门禁与一键注册 行为守卫（2026-09-17）
+ *
+ * 需求：
+ *   ① 未登录/注册态：**百科详情页整页灰色模糊**，且**不提供「再看看」**；
+ *   ② 不跳注册页：在页面**原地**弹授权弹窗，授权成功即默认注册成功；
+ *   ③ 弹窗样式与全站视觉对齐（博物黑 + 铜金铭牌）。
+ *
+ * 为什么必须有这个守卫：
+ *   - 「门禁」最容易被改坏成「只弹个可关的框」—— 内容照样能看，门禁形同不存在，
+ *     而静态截图/肉眼一时看不出来（本次就是用户指出「不提供再看看」才发现口径要收紧）。
+ *   - `getPhoneNumber` **只能**由 `<button open-type="getPhoneNumber">` 触发，
+ *     一旦有人图省事改用 `wx.showModal` 或程序化调用，授权会**静默失效**（拿不到 code），
+ *     表现是「点了没反应」，而不是报错。
+ *   - 注册链路如果被复制出第二份，两份必然漂移（新客礼、finishRegistration 语义都在链上）。
+ *
+ * 用法：
+ *   node miniprogram/scripts/test-register-gate.mjs
+ *   node miniprogram/scripts/test-register-gate.mjs --selftest
+ * 退出码：任一断言失败为 1。
+ */
+import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { join, dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createHash } from 'node:crypto'
+
+const HERE = dirname(fileURLToPath(import.meta.url))
+const MP = resolve(HERE, '..')
+
+const F = {
+  chain: 'utils/registerPhone.js',
+  dialogJs: 'components/RegisterAuthDialog/index.js',
+  dialogWxml: 'components/RegisterAuthDialog/index.wxml',
+  dialogWxss: 'components/RegisterAuthDialog/index.wxss',
+  dialogJson: 'components/RegisterAuthDialog/index.json',
+  wikiJs: 'subpackages/feature/detail/wiki-detail/index.js',
+  wikiWxml: 'subpackages/feature/detail/wiki-detail/index.wxml',
+  wikiWxss: 'subpackages/feature/detail/wiki-detail/index.wxss',
+  wikiJson: 'subpackages/feature/detail/wiki-detail/index.json',
+  resultJs: 'subpackages/feature/identify/result/index.js',
+  resultWxml: 'subpackages/feature/identify/result/index.wxml',
+  resultJson: 'subpackages/feature/identify/result/index.json'
+}
+
+const read = (rel) => {
+  const p = join(MP, rel)
+  return existsSync(p) ? readFileSync(p, 'utf8') : ''
+}
+
+/**
+ * 剥掉注释再断言。
+ * 为什么要：第一版守卫用「注释里提到的字面量」把自己判失败了 ——
+ * 我的注释里写了「不再跳 extra/user/onboarding」「不提供『再看看』」，
+ * 负向断言立刻命中。**守卫必须查代码，不查注释**（同 check:require-paths 的做法）。
+ */
+const stripJs = (s) => String(s)
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+const stripWxml = (s) => String(s).replace(/<!--[\s\S]*?-->/g, ' ')
+
+let failures = 0
+const eq = (name, got, want) => {
+  const ok = got === want
+  if (!ok) { failures++; console.error(`✗ ${name}\n    got  ${JSON.stringify(got)}\n    want ${JSON.stringify(want)}`) }
+  else console.log(`✓ ${name}`)
+}
+const check = (name, ok, detail) => {
+  if (!ok) { failures++; console.error(`✗ ${name}${detail ? `\n    ${detail}` : ''}`) }
+  else console.log(`✓ ${name}`)
+}
+
+function runChecks(r) {
+  // ── 链路唯一出处 ───────────────────────────────────────────────
+  check('注册链路 util 存在', r.chain.length > 0)
+  check('链路按序调用 authPhone', /name:\s*'authPhone'/.test(r.chain))
+  check('链路用 finishRegistration:true（与注册页同语义）', /finishRegistration:\s*true/.test(r.chain))
+  check('链路在 finished 之外会补 upsertUserProfile', /name:\s*'upsertUserProfile'/.test(r.chain))
+  // ⚠️ 必须断言**调用**而非「出现过这个名字」：第一版只匹配了标识符，
+  // 注入把两处 `await refreshSessionAfterAuth(app)` 全删掉后仍然通过（假阴性，自检抓出）。
+  // 两条分支（finished / 需补 upsert）都要 refresh，所以要求 ≥2 次调用。
+  {
+    const calls = (r.chain.match(/await\s+refreshSessionAfterAuth\(/g) || []).length
+    check('链路在两处分支都调用 refreshSessionAfterAuth（否则 ensureSession 一直是 guest）',
+      calls >= 2, `实际调用 ${calls} 次（需 ≥2）`)
+  }
+
+  // ── 弹窗组件 ──────────────────────────────────────────────────
+  check('弹窗组件四件套齐全', !!(r.dialogJs && r.dialogWxml && r.dialogWxss && r.dialogJson))
+  check('★ 授权按钮是 button open-type="getPhoneNumber"（唯一合法触发方式）',
+    /open-type=/.test(r.dialogWxml) && /getPhoneNumber/.test(r.dialogWxml) && /<button/.test(r.dialogWxml))
+  check('★ 弹窗复用唯一链路，而不是自己拼一遍云函数',
+    /require\(['"][^'"]*registerPhone['"]\)/.test(r.dialogJs) && !/name:\s*'authPhone'/.test(r.dialogJs))
+  check('★ 弹窗不再跳注册页（不出现 navigateToOnboarding / onboarding 路径）',
+    !/navigateToOnboarding/.test(stripJs(r.dialogJs)) && !/user\/onboarding/.test(stripJs(r.dialogJs)))
+  check('★ 关闭入口受 closable 控制（门禁场景不渲染）',
+    /wx:if="\{\{closable\}\}"/.test(r.dialogWxml) && /closable/.test(r.dialogJs))
+  check('弹窗样式使用全站设计令牌（--gold / 博物黑），不是系统默认样式',
+    /var\(--gold/.test(r.dialogWxss) && /#1A1814|--color-bg|--bg-root/.test(r.dialogWxss))
+
+  // ── 百科详情页：整页模糊门禁 + 无「再看看」────────────────────
+  check('★ 百科详情页注册了注册弹窗组件', /register-auth-dialog/.test(stripJs(r.wikiJson)))
+  check('★ 百科详情页对 guest 置 registerGated', /registerGated:\s*true/.test(r.wikiJs))
+  check('★ 门禁弹窗 closable=false（不给「再看看」）',
+    /show="\{\{registerGated\}\}"/.test(stripWxml(r.wikiWxml)) && /closable="\{\{false\}\}"/.test(stripWxml(r.wikiWxml)))
+  check('★ 百科详情页门禁路径不含「再看看」「先看看」文案',
+    !/再看看|先看看/.test(stripWxml(r.wikiWxml)))
+  check('★ 整页灰色模糊（filter blur + grayscale）且挡点击',
+    /\.wd-gate\.is-gated/.test(r.wikiWxss) && /blur\(/.test(r.wikiWxss)
+    && /grayscale\(/.test(r.wikiWxss) && /pointer-events:\s*none/.test(r.wikiWxss))
+  check('★ 注册成功后解除门禁', /onRegisterSuccess/.test(r.wikiJs) && /registerGated:\s*false/.test(r.wikiJs))
+  check('门禁判定失败时不拦（宁可少拦，不锁死档案）',
+    /catch[\s\S]{0,220}evaluateRegisterGate/.test(r.wikiJs))
+
+  // ── 鉴定结果页：原地授权 ───────────────────────────────────────
+  check('★ 结果页注册了注册弹窗组件', /register-auth-dialog/.test(stripJs(r.resultJson)))
+  check('★ 结果页改为原地弹窗（不再 navigate 注册页）', /showRegisterDialog:\s*true/.test(r.resultJs))
+  check('★ 结果页保留可关闭（需求 3 原决策：该弹窗是转化钩子，不是内容门禁）',
+    /closable="\{\{true\}\}"/.test(stripWxml(r.resultWxml)))
+  check('结果页有成功回调与关闭回调', /onRegisterSuccess/.test(r.resultJs) && /onRegisterDialogClose/.test(r.resultJs))
+
+  return failures === 0
+}
+
+const snapshot = () => {
+  const r = {}
+  for (const [k, rel] of Object.entries(F)) r[k] = read(rel)
+  return r
+}
+
+function selftest() {
+  const files = snapshot()
+  const sha = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12)
+  let bad = 0
+  const t = (name, ok) => { if (!ok) { bad++; console.error(`✗ ${name}`) } else console.log(`✓ ${name}`) }
+
+  // 基线必须通过
+  failures = 0
+  t('基线：当前仓库通过全部断言', runChecks(files))
+
+  // 逐个注入回归：必须被检出，且还原后字节一致
+  const injections = [
+    ['把授权按钮改成普通 view（授权静默失效）', F.dialogWxml,
+      (s) => s.replace(/<button/, '<view').replace(/bindgetphonenumber="onGetPhoneNumber"/, '')],
+    ['弹窗自己拼云函数（绕过唯一链路）', F.dialogJs,
+      (s) => s.replace(/require\(['"][^'"]*registerPhone['"]\)/, "require('../../utils/noop')")
+        .replace('const res = await registerWithPhone({ app, phoneCode: detail.code })',
+          "const res = await wx.cloud.callFunction({ name: 'authPhone', data: { code: detail.code } })")],
+    ['门禁弹窗改成可关闭（门禁形同不存在）', F.wikiWxml,
+      (s) => s.replace(/closable="\{\{false\}\}"/, 'closable="{{true}}"')],
+    ['去掉整页模糊（只弹窗不门禁）', F.wikiWxss,
+      (s) => s.replace(/\.wd-gate\.is-gated \{[\s\S]*?\}/, '.wd-gate.is-gated { opacity: 1; }')],
+    ['链路丢掉 refreshSessionAfterAuth（注册后仍判为 guest）', F.chain,
+      (s) => s.replace(/await refreshSessionAfterAuth\(app\)/g, '')],
+    ['结果页改回跳注册页', F.resultJs,
+      (s) => s.replace(/showRegisterDialog:\s*true/, "require('../../../../utils/userSession').navigateToOnboarding({ from: 'x' })")],
+    ['百科详情页忘记给 guest 置门禁', F.wikiJs,
+      (s) => s.replace(/registerGated:\s*true/, 'registerGated: false')]
+  ]
+
+  const paths = Object.values(F)
+  const before = {}
+  for (const p of paths) before[p] = read(p)
+
+  for (const [label, target, mut] of injections) {
+    const orig = read(target)
+    const mutated = mut(orig)
+    t(`注入可生效：${label}`, mutated !== orig)
+    writeFileSync(join(MP, target), mutated)
+    failures = 0
+    const quietLog = console.log
+    const quietErr = console.error
+    console.log = () => {}
+    console.error = () => {}
+    let detected = false
+    try { detected = !runChecks(snapshot()) } finally { console.log = quietLog; console.error = quietErr }
+    failures = 0
+    writeFileSync(join(MP, target), orig)
+    t(`★ 被检出：${label}`, detected)
+  }
+
+  // 还原字节一致性
+  let same = true
+  for (const p of paths) if (sha(read(p)) !== sha(before[p])) same = false
+  t('★ 全部还原为注入前字节', same)
+
+  failures = 0
+  const quietLog2 = console.log
+  const quietErr2 = console.error
+  console.log = () => {}
+  console.error = () => {}
+  let clean = false
+  try { clean = runChecks(snapshot()) } finally { console.log = quietLog2; console.error = quietErr2 }
+  failures = 0
+  t('★ 还原后守卫恢复通过', clean)
+
+  if (bad) { console.error(`\n自检失败 ${bad} 项——守卫不可信`); process.exit(1) }
+  console.log(`\n自检通过：${injections.length} 个回归注入全部被检出，且还原字节一致`)
+}
+
+if (process.argv.includes('--selftest')) {
+  selftest()
+} else {
+  const ok = runChecks(snapshot())
+  if (!ok) { console.error('\n注册门禁断言失败：见上'); process.exit(1) }
+  console.log('\n✓ 注册门禁与一键注册断言全部通过')
+}

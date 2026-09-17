@@ -49,6 +49,8 @@ Page({
     /** 是否为本人记录（他人经分享海报查看时为 false） */
     isOwner: true,
     showFeedback: false,
+    // 注册引导（2026-09-17）：改为**原地授权弹窗**，不再跳 extra/user/onboarding
+    showRegisterDialog: false,
     feedbackZh: '',
     feedbackNote: '',
     feedbackSubmitting: false,
@@ -471,29 +473,40 @@ Page({
     if (!this.data.recordId || !this.data.isOwner) return
     this._resultGateShown = true
     try {
-      const { ensureSession, promptPhoneBind, peekOnboardingReturn } = require('../../../../utils/userSession')
+      const { ensureSession } = require('../../../../utils/userSession')
       const { resolveAuthState } = require('../../../../utils/profileHelper')
       const session = await ensureSession(app)
       const state = session.authState || resolveAuthState(session.user)
       if (state !== 'guest') return
 
       trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'show' })
-      await promptPhoneBind({
-        title: '注册后收藏这份鉴定',
-        content: '一键注册即可把这次鉴定收进山海图鉴，新客礼包将自动到账。',
-        confirmText: '一键注册',
-        cancelText: '先看看',
-        from: 'identify_result',
-        returnMode: 'back',
-        resumeSubmit: true
-      })
-      const intent = peekOnboardingReturn()
-      trackBehavior('identify_result_gate', 'identification', this.data.recordId, {
-        step: intent && intent.from === 'identify_result' ? 'go_register' : 'dismiss'
-      })
+      // 2026-09-17：不再 navigateTo 注册页 —— 原地弹「一键注册」授权弹窗并默认注册成功。
+      // 保留可关闭（closable=true）：需求 3 的原决策是「弹窗只是转化钩子，不是内容门禁」，
+      // 关掉后仍能看结果；真正的**内容门禁**在百科详情页（整页灰色模糊、不给「再看看」）。
+      this.setData({ showRegisterDialog: true })
     } catch (e) {
       console.warn('maybeGateResultForRegistration', e)
     }
+  },
+
+  /** 原地注册成功：刷新会话态 + 收口漏斗（不再依赖 onboarding 回流 intent） */
+  async onRegisterSuccess() {
+    this.setData({ showRegisterDialog: false })
+    trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'resume_success' })
+    try {
+      const { refreshSessionAfterAuth } = require('../../../../utils/userSession')
+      await refreshSessionAfterAuth(app)
+    } catch (e) { /* 会话刷新失败不影响「已注册成功」这个事实 */ }
+    try {
+      const { invalidateAfterProfile } = require('../../utils/cacheInvalidate')
+      invalidateAfterProfile()
+    } catch (e) { /* ignore */ }
+    wx.showToast({ title: '注册成功', icon: 'success' })
+  },
+
+  onRegisterDialogClose() {
+    this.setData({ showRegisterDialog: false })
+    trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'dismiss' })
   },
 
   /** 注册回流（from=identify_result）：标记漏斗闭环，并刷新会话态 */
