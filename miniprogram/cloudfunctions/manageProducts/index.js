@@ -57,7 +57,9 @@ const ALLOWED_FIELDS = [
   // 需求 28：祈福墙的两件套（全站拓展的开关）。
   // ⚠️ 这个白名单是**静默**的：没登记 = 保存时字段被丢掉、界面还提示"已保存"。
   // 所以每加一个商品级字段，这里与小程序藏品表单必须同时改（守卫有结构断言）。
-  'wishWallEnabled', 'wishWallKey'
+  'wishWallEnabled', 'wishWallKey',
+  // 需求：主题名（双层命名 —— title 仍是标准名，用于检索/识别/对账；themeName 是文艺主题名）
+  'themeName', 'themeNote'
 ]
 
 const PATCH_FIELDS = ALLOWED_FIELDS.filter((k) => k !== 'createTime')
@@ -243,6 +245,15 @@ function prepareProductData(raw) {
   }
   if (Object.prototype.hasOwnProperty.call(data, 'giftScenes')) {
     data.giftScenes = sanitizeGiftScenes(data.giftScenes)
+
+    // 主题名纪律（与 scripts/productThemeName.mjs 同源）：2–8 个汉字；不合规**丢弃**（宁可不写脏名字）
+    if (Object.prototype.hasOwnProperty.call(data, 'themeName')) {
+      const tName = String(data.themeName || '').trim()
+      data.themeName = /^[\u4e00-\u9fa5]{2,8}$/.test(tName) ? tName : ''
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'themeNote')) {
+      data.themeNote = String(data.themeNote || '').trim().slice(0, 40)
+    }
   }
   if (Object.prototype.hasOwnProperty.call(data, 'latinName')) {
     const latin = String(data.latinName == null ? '' : data.latinName).trim()

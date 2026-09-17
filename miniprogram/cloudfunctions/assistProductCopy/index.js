@@ -297,7 +297,13 @@ ${catalogText || '（目录暂缺）'}
     : 'latinName 为必填：标准拉丁学名（双名法；矿物可用公认学名）。禁止中文作 latinName。'}
 3. description：80-150 字，维基百科式简要介绍，事实向、有感官细节，必须体现「${title}」。
    ${SPECIES_PAIR_RULE}（2026-09-17 业务反馈：此前这里只写拉丁文，顾客读不懂、与站点其余文案也不一致）
-4. speciesZh：该藏品对应的**中文物种名**（如「蓝闪蝶」；衍生品/文创类留空 ""）。必须与 latinName 指同一物种。
+4. nameCandidates：3–5 个**主题名**候选（文艺、有意象、贴合送礼场景）：
+   每项 {themeName: 2–8 个汉字（无标点/字母/数字）, note: 一句话点题≤40字,
+   scenes: 适合的礼赠场景 key 数组（housewarming/wedding/birthday/anniversary/enrollment/graduation/new_job/gratitude）}。
+   意象取自时间/自然/器物/成对关系；禁网络流行语、品牌、名人及在世人物、谐音低俗；不得与「${title}」重复。
+   例：两件蝴蝶标本 → {themeName:'双宿双飞',note:'两蝶成对，像把两个人的日子并在一处',scenes:['wedding','anniversary']}；
+       蝴蝶贝壳钟表 → {themeName:'时间的守卫者',note:'钟面朝前，时间向后',scenes:['anniversary','birthday']}。
+5. speciesZh：该藏品对应的**中文物种名**（如「蓝闪蝶」；衍生品/文创类留空 ""）。必须与 latinName 指同一物种。
 5. taxonomy：必须用中文生物/矿物分类（界门纲目科属），禁止填拉丁文。示例：动物界/节肢动物门/昆虫纲/鳞翅目；不确定的字段留空 ""。
 6. protectionType 只能是：none / sanyou / protected_plant / protected_animal。不确定时用 none，禁止夸大保护等级。
 7. rootCategoryName、category 必须选自上方目录；${hasCategory ? '若已指定所属馆/分类，优先沿用，仅在明显错误时纠正。' : '根据物种归属给出最合适的一级馆与二级分类。'}
@@ -308,6 +314,7 @@ ${catalogText || '（目录暂缺）'}
   "rootCategoryName": "",
   "category": "",
   "latinName": "",
+  "nameCandidates": [{"themeName":"","note":"","scenes":[]}],
   "speciesZh": "",
   "description": "",
   "protectionType": "none",
@@ -361,6 +368,36 @@ async function resolveLatinName(titleStr, rootCategory, category, origin, apiKey
     }
   }
   return ''
+}
+
+/**
+ * 主题名纪律（与 scripts/productThemeName.mjs **同源**；云函数只能 require 自己目录内的文件，故内联）
+ *   · 形：2–8 个汉字（无标点/字母/数字）
+ *   · 禁：网络流行语 / 品牌 / 名人及在世人物 / 谐音低俗 / 与标准名重复
+ *   · 量：最多 5 个，批内去重
+ */
+const THEME_NAME_BANNED = ['网红', '爆款', '绝绝子', '爱豆', '明星', '同款', '平替', '秒杀', '限量抢']
+function isValidThemeName(name) {
+  const t = String(name || '').trim()
+  if (!/^[\u4e00-\u9fa5]{2,8}$/.test(t)) return false
+  return !THEME_NAME_BANNED.some((w) => t.indexOf(w) !== -1)
+}
+function normalizeThemeCandidates(list, title) {
+  const out = []
+  const seen = new Set()
+  for (const raw of Array.isArray(list) ? list : []) {
+    const name = String((raw && raw.themeName) || '').trim()
+    if (!isValidThemeName(name) || seen.has(name)) continue
+    if (title && String(title).indexOf(name) !== -1) continue
+    seen.add(name)
+    out.push({
+      themeName: name,
+      note: String((raw && raw.note) || '').trim().slice(0, 40),
+      scenes: Array.isArray(raw && raw.scenes) ? raw.scenes.slice(0, 4) : []
+    })
+    if (out.length >= 5) break
+  }
+  return out
 }
 
 exports.main = async (event) => {
@@ -493,6 +530,8 @@ exports.main = async (event) => {
     return {
       success: true,
       data: {
+        // 主题名候选：只给候选、**绝不自动覆盖 title**（由录入者挑选/改写）
+        nameCandidates: normalizeThemeCandidates(parsed && parsed.nameCandidates, title),
         giftScenes,
         latinName,
         speciesZh,
