@@ -57,18 +57,26 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'pending'"
-              size="small"
-              type="success"
-              @click="approve(row)"
-            >通过</el-button>
-            <el-button
-              v-if="row.status === 'pending'"
-              size="small"
-              type="danger"
-              @click="reject(row)"
-            >驳回</el-button>
+            <template v-if="row.status === 'pending' && row.canDecide">
+              <el-button
+                size="small"
+                type="success"
+                @click="approve(row)"
+              >通过</el-button>
+              <el-button
+                size="small"
+                type="danger"
+                @click="reject(row)"
+              >驳回</el-button>
+            </template>
+            <!-- 不是当前身份的审级：按钮点了服务端也会拒，直接说清原因（审计 P0-18） -->
+            <el-tooltip
+              v-else-if="row.status === 'pending'"
+              content="该单据不属于你的审级，需对应审级的人处理"
+              placement="top"
+            >
+              <el-tag type="info" effect="plain" size="small">非本审级</el-tag>
+            </el-tooltip>
           </template>
         </el-table-column>
       </el-table>
@@ -154,11 +162,16 @@ async function loadList() {
       status: statusFilter.value === 'all' ? 'all' : statusFilter.value,
       page: page.value,
       pageSize,
-      scope: 'super_admin'
+      // 2026-09-17 审计 P0-18：原先硬编码 scope:'super_admin' → **店长审级**的单据在 ERP 永久不可见
+      // （`points_store_grant` 等没有任何 ERP 替代入口，只能永久挂起）。
+      // 改传 'all'：服务端 `manageApprovals` 对非超管 workspace 会自动降级为 store_manager，
+      // 所以这里只是「请求全站」的提示，真正的可见范围仍由服务端按 actor 判定。
+      scope: 'all'
     })
     list.value = res.list || []
     total.value = res.total || 0
-    scope.value = res.scope || 'super_admin'
+    // 服务端未回 scope 时不要假装是超管审级（页头会显示「—」），避免给出错误的可见范围暗示
+    scope.value = res.scope || ''
   } catch (e) {
     list.value = []
     total.value = 0
