@@ -177,6 +177,12 @@ function rootIdentifiers(fragment) {
 {
   // 组件目录豁免：组件 WXML 的作用域含自身 data，与页面模板不是一回事
   const files = walkWxml(join(ROOT, 'miniprogram')).filter((f) => !/[/\\]components[/\\]/.test(f))
+  // 2026-09-17：钱包枢纽把三个**页面**搬进了 subpackages/business/components/WalletPanel*/（组件目录）。
+  // 它们承载的是页面模板（券卡 template 与调用点同文件），上面那句通用排除会静默丢掉这份覆盖
+  // —— 原来这个检查能挡住「模板调用点少传了字段」，正是靠券页那份模板。故显式纳入。
+  for (const extra of walkWxml(join(ROOT, 'miniprogram/subpackages/business/components'))) {
+    if (/WalletPanel/.test(extra) && !files.includes(extra)) files.push(extra)
+  }
   check('扫描到非组件 WXML', files.length > 100, `${files.length} 个文件`)
   const violations = []
   let tplCount = 0

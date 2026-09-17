@@ -7,9 +7,18 @@
       active="{{curTab}}"
       title="{{barTitle}}"
       overline="{{barOverline}}"
+      coupon-count="{{couponCount}}"
       bind:tabchange="onTabChange"
     ></wallet-hub-bar>
   </view>
 
-  <wallet-panel-points wx:if="{{curTab === 'points'}}" id="panel-points"></wallet-panel-points>
+  <!-- 面板区占满剩余高度：礼券夹的空态靠 .empty{flex:1} 垂直居中，需要这一层给出确定高度 -->
+  <view class="hub-panel">
+    <wallet-panel-points wx:if="{{curTab === 'points'}}" id="panel-points"></wallet-panel-points>
+    <wallet-panel-coupons
+      wx:if="{{curTab === 'coupons'}}"
+      id="panel-coupons"
+      bind:couponcount="onCouponCount"
+    ></wallet-panel-coupons>
+  </view>
 </view>

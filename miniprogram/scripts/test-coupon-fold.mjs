@@ -66,37 +66,37 @@ function eq(name, got, want) {
 const INJECTIONS = {
   // 退回上一版口径：`!canUse` 全折叠 → 占用中的券被谎报成「已失效」
   'fold-everything-not-usable': {
-    file: 'miniprogram/subpackages/business/coupons/index.js',
+    file: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.js',
     from: "    if (DEAD_STATUS[item.status]) {\n      dead.push(item)\n      return\n    }",
     to: "    dead.push(item)\n    if (true) return"
   },
   // 把 locked 也算成可用 → 角标虚高、用户点进去用不了
   'locked-counted-usable': {
-    file: 'miniprogram/subpackages/business/coupons/index.js',
+    file: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.js',
     from: '    if (item.canUse === true) {',
     to: "    if (item.canUse === true || item.status === 'locked') {"
   },
   // 临期窗口写反 → 所有券都挂临期标（或都不挂）
   'expiry-hint-always': {
-    file: 'miniprogram/subpackages/business/coupons/index.js',
+    file: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.js',
     from: "  if (days <= EXPIRING_SOON_DAYS) return `${days} 天后过期`\n  return ''",
     to: "  return `${days} 天后过期`"
   },
   // 失效券又补回状态胶囊 → 与斜章在券面右侧重叠（原草稿缺陷）
   'stamp-and-chip': {
-    file: 'miniprogram/subpackages/business/coupons/index.wxml',
+    file: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.wxml',
     from: '      <view class="c-status muted" wx:elif="{{item.status === \'locked\'}}">占用中</view>',
     to: '      <view class="c-status muted" wx:else>{{item.voidLabel || \'已失效\'}}</view>'
   },
   // 临期标塞回「渠道 + 有效期」那一行 → 日期被挤到第二行（浏览器实测抓到的真实回归）
   'hint-into-meta-row': {
-    file: 'miniprogram/subpackages/business/coupons/index.wxml',
+    file: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.wxml',
     from: '        <view class="c-sub-row" wx:if="{{item.sourceLabel || item.expiryHint}}">',
     to: '        <view class="c-meta-row" wx:if="{{item.sourceLabel || item.expiryHint}}">'
   },
   // 券包折叠丢失 aria / 只看文案 → 收起态与展开态在可访问性上不可辨
   'drop-pouch-aria': {
-    file: 'miniprogram/subpackages/business/coupons/index.wxml',
+    file: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.wxml',
     from: '      aria-expanded="{{closedExpanded}}"',
     to: '      aria-expanded="true"'
   }
@@ -118,7 +118,7 @@ function readSrc(file) {
  * 加载真源码：捕获 Page 配置 + 取出模块级纯函数
  * ------------------------------------------------------------------ */
 
-const pageSrc = readSrc('miniprogram/subpackages/business/coupons/index.js')
+const pageSrc = readSrc('miniprogram/subpackages/business/components/WalletPanelCoupons/index.js')
 const captured = { config: null }
 const noop = () => {}
 const wxStub = {
@@ -165,11 +165,20 @@ const requireStub = (id) => {
 // eslint-disable-next-line no-new-func
 const factory = new Function(
   'Page',
+  'Component',
   'require',
   'wx',
   `${pageSrc}\n;return { SOURCE_LABELS, EXPIRING_SOON_DAYS, splitCouponGroups, couponExpiryHint, decorateCoupon, useLabelForChannel }`
 )
-const exported = factory((cfg) => { captured.config = cfg }, requireStub, wxStub)
+// 2026-09-17：券页已并入钱包枢纽（PanelCoupons 组件）—— 配置改由 Component({...}) 承载，
+// methods 摊平回页面顶层形态，断言口径不变。
+const exported = factory(
+  (cfg) => { captured.config = cfg },
+  (cfg) => { captured.config = cfg },
+  requireStub,
+  wxStub
+)
+const pageConfig = { ...captured.config, ...(captured.config.methods || {}) }
 const {
   EXPIRING_SOON_DAYS,
   splitCouponGroups,
@@ -320,8 +329,8 @@ eq('不可用 → 空串（不渲染按钮）', useLabelForChannel({ canUse: fal
  * 6) WXML / WXSS 结构：折叠件、打眼、章不重叠、无死样式
  * ------------------------------------------------------------------ */
 
-const wxml = readSrc('miniprogram/subpackages/business/coupons/index.wxml')
-const wxss = readFileSync(resolve(ROOT, 'miniprogram/subpackages/business/coupons/index.wxss'), 'utf8')
+const wxml = readSrc('miniprogram/subpackages/business/components/WalletPanelCoupons/index.wxml')
+const wxss = readFileSync(resolve(ROOT, 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.wxss'), 'utf8')
 
 check('券卡抽为 template，可用/占用/失效共用一份标记', /<template name="coupon-card">/.test(wxml))
 check('失效券走打眼孔', /class="punch-line"/.test(wxml))
@@ -368,9 +377,9 @@ check('占用中为虚线描边（进行时而非终态）', /\.coupon-card\.is-
     data: { closedExpanded: false },
     setData(patch) { Object.assign(this.data, patch) }
   }
-  captured.config.toggleClosedCoupons.call(ctx)
+  pageConfig.toggleClosedCoupons.call(ctx)
   eq('展开', ctx.data.closedExpanded, true)
-  captured.config.toggleClosedCoupons.call(ctx)
+  pageConfig.toggleClosedCoupons.call(ctx)
   eq('再点收起', ctx.data.closedExpanded, false)
 }
 
@@ -383,7 +392,7 @@ check('占用中为虚线描边（进行时而非终态）', /\.coupon-card\.is-
     stopRedeemPoll: noop,
     restorePassBrightness: noop
   }
-  captured.config.applyGuestCouponsState.call(ctx)
+  pageConfig.applyGuestCouponsState.call(ctx)
   eq('游客态清空可用数', ctx.data.usableCouponCount, 0)
   eq('游客态清空占用中', ctx.data.lockedCount, 0)
   eq('游客态清空失效券包', ctx.data.closedCount, 0)

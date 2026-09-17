@@ -3,7 +3,8 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "wallet-hub-bar": "/subpackages/business/components/WalletHubBar/index",
-    "wallet-panel-points": "/subpackages/business/components/WalletPanelPoints/index"
+    "wallet-panel-points": "/subpackages/business/components/WalletPanelPoints/index",
+    "wallet-panel-coupons": "/subpackages/business/components/WalletPanelCoupons/index"
   },
   "backgroundColor": "#1A1814",
   "backgroundTextStyle": "light"

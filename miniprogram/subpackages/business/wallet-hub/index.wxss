@@ -14,4 +14,16 @@
   top: 0;
   z-index: 30;
   width: 100%;
+  flex: none;
+}
+
+/* 面板区：占满顶栏之外的剩余高度。
+   礼券夹的 `.empty{flex:1}`（空态垂直居中）需要一条确定高度链：
+   .hub-page(min-height:100%) → .hub-panel(flex:1) → 面板 :host(flex:1) → .container(flex:1)。
+   少任何一段，空态就会从「垂直居中」退化成「贴顶」（静默的视觉回归）。 */
+.hub-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
