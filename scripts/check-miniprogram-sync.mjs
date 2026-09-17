@@ -21,10 +21,17 @@
  * 用法：
  *   node scripts/check-miniprogram-sync.mjs             # 检查
  *   node scripts/check-miniprogram-sync.mjs --fix       # 不一致时从主库覆盖到开发仓
+ *   node scripts/check-miniprogram-sync.mjs --prune     # 【删除类改动的收尾】删掉开发仓里「主库已不存在」的残留文件
+ *
+ * ⚠️ 为什么需要 --prune：--fix 只做「复制」，从不删除（默认不擅自删本机文件，见自检 E）。
+ *   于是「主库删掉某个文件」这类改动会在开发仓留下残骸（2026-09-17 实际踩到：18 个主包工具删了
+ *   但开发仓还在，微信「主包未使用」告警不消失、包体也没瘦）。--prune 专门收尾，且**双保险**：
+ *   只处理代码/资源后缀、并显式排除 node_modules / .git / DS_Store / project.miniapp.json /
+ *   scripts/.tmp / *.result.json / *.log / *.env*；删除清单会写入报告文件备查。
  * 退出码：不一致为 1（--fix 修复成功则为 0）。
  */
 import {
-  readFileSync, readdirSync, statSync, copyFileSync, mkdirSync, existsSync,
+  readFileSync, readdirSync, statSync, copyFileSync, mkdirSync, existsSync, unlinkSync,
   mkdtempSync, writeFileSync, rmSync
 } from 'node:fs'
 import { spawnSync } from 'node:child_process'
@@ -47,6 +54,28 @@ const ALLOW_DIFF_FIELDS = {
 
 /** 脚本产物（故意写到开发仓的结果 JSON，打包已忽略）—— 不参与双仓比对 */
 const IGNORE_REL = /^scripts\/.*\.result\.json$/
+
+/**
+ * --prune 的可删范围（双保险，越窄越好）：
+ *   ① 只处理「主库会管理的代码/资源后缀」；
+ *   ② 显式排除本机产物与身份文件 —— 这些在开发仓本来就该存在，删了会出事。
+ */
+const PRUNE_SAFE_EXT = /\.(js|json|wxml|wxss|wxs|ts|png|jpe?g|gif|svg|webp|mp3|mp4|ttf|otf|woff2?)$/i
+const PRUNE_EXCLUDE_REL = [
+  /(^|\/)node_modules\//,
+  /(^|\/)\.git\//,
+  /(^|\/)\.DS_Store$/,
+  /^project\.miniapp\.json$/,
+  /^scripts\/\.tmp\//,
+  /^scripts\/.*\.result\.json$/,
+  /\.(log|env|local)$/i,
+  /(^|\/)\.env/
+]
+function isPrunable(rel) {
+  if (!PRUNE_SAFE_EXT.test(rel)) return false
+  return !PRUNE_EXCLUDE_REL.some((re) => re.test(rel))
+}
+const PRUNE_REPORT = 'scripts/miniprogram-sync-prune.result.json'
 
 /** 读 JSON（失败给 null，调用方自行回落） */
 function readJson(file) {
@@ -104,6 +133,7 @@ function walk(base, dir = '', out = []) {
 
 function main() {
   const fix = process.argv.includes('--fix')
+  const prune = process.argv.includes('--prune')
 
   if (!existsSync(SRC)) {
     console.error(`✗ 找不到主库目录：${SRC}`)
@@ -161,6 +191,36 @@ function main() {
     return
   }
 
+  // --prune：删除开发仓里「主库已不存在」的残留（--fix 不做这件事，见文件头说明）
+  if (prune) {
+    const strays = real.filter((p) => p.kind === '主库缺失（开发仓多出）')
+    const prunable = strays.filter((p) => isPrunable(p.rel))
+    const skipped = strays.filter((p) => !isPrunable(p.rel)).map((p) => p.rel)
+    const removed = []
+    for (const p of prunable) {
+      try {
+        unlinkSync(join(DST, p.rel))
+        removed.push(p.rel)
+      } catch (e) { /* 删不掉就跳过，下面汇总 */ }
+    }
+    mkdirSync(dirname(join(SRC, PRUNE_REPORT)), { recursive: true })
+    writeFileSync(join(SRC, PRUNE_REPORT), `${JSON.stringify({
+      at: new Date().toISOString(),
+      removed,
+      skippedByPolicy: skipped
+    }, null, 2)}\n`)
+    console.log(`\n--prune：删除 ${removed.length} 个残留文件${skipped.length ? `；按策略跳过 ${skipped.length} 个（本机产物/身份文件）` : ''}`)
+    for (const r of removed.slice(0, 20)) console.log(`  - ${r}`)
+    if (skipped.length) for (const r of skipped.slice(0, 10)) console.log(`  · 跳过 ${r}`)
+    console.log(`  报告：${PRUNE_REPORT}`)
+    const left = real.filter((p) => p.kind !== '主库缺失（开发仓多出）')
+    if (left.length) {
+      console.error(`\n仍有 ${left.length} 处内容/缺失问题，请再跑 --fix。`)
+      process.exit(1)
+    }
+    process.exit(0)
+  }
+
   if (fix) {
     let copied = 0
     for (const p of real) {
@@ -212,9 +272,9 @@ function selftest() {
     writeFileSync(join(dst, 'project.config.json'),
       JSON.stringify({ appid: 'wxSAME', projectname: '山海造物·开发仓', setting: { es6: true } }, null, 2) + '\n')
   }
-  const run = (fix) => spawnSync(
+  const run = (fix, extra = []) => spawnSync(
     process.execPath,
-    [fileURLToPath(import.meta.url), ...(fix ? ['--fix'] : [])],
+    [fileURLToPath(import.meta.url), ...(fix ? ['--fix'] : []), ...extra],
     { env: { ...process.env, SYNC_SRC: src, SYNC_DST: dst }, encoding: 'utf8' }
   )
   let bad = 0
@@ -247,6 +307,24 @@ function selftest() {
   expect('E 开发仓多出文件 → 检出', e.status === 1)
   run(true)
   expect('E --fix 不擅自删除开发仓多出的文件', existsSync(join(dst, 'legacy.js')))
+
+    // J/K：--prune 专门收尾「删除类改动」留下的残骸，且只删该删的
+    seed()
+    writeFileSync(join(dst, 'legacy.js'), 'old\n')
+    writeFileSync(join(dst, 'sub-legacy.wxml'), '<view/>\n')
+    const j = run(false, ['--prune'])
+    expect('J --prune 删除开发仓残留代码文件 → 0', j.status === 0, j.stderr)
+    expect('J 残留 js 已删', !existsSync(join(dst, 'legacy.js')))
+    expect('J 残留 wxml 已删', !existsSync(join(dst, 'sub-legacy.wxml')))
+    expect('J 复跑检查通过', run(false).status === 0)
+
+    seed()
+    mkdirSync(join(dst, 'scripts'), { recursive: true })
+    writeFileSync(join(dst, 'scripts/keep.result.json'), '{}\n')
+    writeFileSync(join(dst, 'scripts/notes.log'), 'x\n')
+    run(false, ['--prune'])
+    expect('K --prune 不碰本机产物：*.result.json 保留', existsSync(join(dst, 'scripts/keep.result.json')))
+    expect('K --prune 不碰本机产物：*.log 保留', existsSync(join(dst, 'scripts/notes.log')))
 
   seed()
   writeFileSync(join(dst, 'scripts'), '')  // 占位，下面会删掉重建为目录
