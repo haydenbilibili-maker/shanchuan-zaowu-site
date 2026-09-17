@@ -1,6 +1,10 @@
 Component({
   properties: {
-    /** wallet | coupons */
+    /** 页头大标题（三页共用同一份几何：标题在 tab 条之上，tab 条位置由构造保证一致） */
+    title: { type: String, value: '我的钱包' },
+    /** 页头小字（WALLET / COUPONS / POINTS） */
+    overline: { type: String, value: 'WALLET' },
+    /** wallet | coupons | points */
     active: {
       type: String,
       value: 'wallet'
@@ -20,9 +24,12 @@ Component({
         wx.vibrateShort({ type: 'light' })
       } catch (err) { /* ignore */ }
 
+      // 三个并列 tab：钱包 / 礼券夹 / 积分
       const url = tab === 'coupons'
         ? '/subpackages/business/coupons/index'
-        : '/subpackages/extra/user/stored-value/index'
+        : (tab === 'points'
+          ? '/subpackages/business/points/index'
+          : '/subpackages/extra/user/stored-value/index')
 
       wx.redirectTo({
         url,

@@ -61,7 +61,10 @@
 </template>
 
 <view class="container">
-  <wallet-hub-bar active="coupons" coupon-count="{{usableCouponCount}}"></wallet-hub-bar>
+  <!-- 2026-09-17：与钱包页对齐 —— tab 条满宽（抵消 .container 的 32rpx 内缩）且**吸顶**不随内容滚走 -->
+  <view class="hub-bar-bleed">
+    <wallet-hub-bar active="coupons" title="我的礼券夹" overline="COUPONS" coupon-count="{{usableCouponCount}}"></wallet-hub-bar>
+  </view>
 
   <view class="header">
     <text class="title">MY VOUCHERS</text>

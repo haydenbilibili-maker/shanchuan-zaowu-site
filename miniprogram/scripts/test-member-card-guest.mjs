@@ -679,8 +679,8 @@ check('★ 背板标签区常驻档案入口', /class="cb-tags-link"[\s\S]*?管�
 check('★ 背板页脚常驻「完善藏家档案」', /class="cb-profile-cta"[\s\S]*?完善藏家档案 →/.test(cardWxml))
 
 check('★「我的」新增藏家档案入口（2026-09-17：从服务列表上移到资产位，原「我的积分」位置）', /asset-item[\s\S]*?data-path="profile"[\s\S]*?<text class="as-lbl">我的档案<\/text>/.test(userWxml))
-check('入口显示完成度', /data-path="profile"[\s\S]*?as-val[\s\S]*?profileScore/.test(userWxml))
-check('入口未注册/骨架态不显示百分比', /data-path="profile"[\s\S]*?cardPending \|\| cardGuest\) \? '—'/.test(userWxml))
+check('入口显示完成度（角标形式）', /data-path="profile"[\s\S]*?as-badge-pos[\s\S]*?profileScore/.test(userWxml))
+check('入口未注册/骨架态不显示百分比（角标 wx:if 挡住）', /data-path="profile"[\s\S]*?!cardPending && !cardGuest/.test(userWxml))
 check('★ 页面把 cardGuest / guestLoggedOut / guestcta 接到组件', /card-guest="\{\{cardGuest\}\}"/.test(userWxml) && /guest-logged-out="\{\{guestLoggedOut\}\}"/.test(userWxml) && /bind:guestcta="onGuestCardCta"/.test(userWxml))
 check('★ handleMenuClick 有 profile 分支（兜底入口），不再依赖卡面', /case 'profile':[\s\S]*?this\.goToProfile\(\)/.test(userPageSrc))
 

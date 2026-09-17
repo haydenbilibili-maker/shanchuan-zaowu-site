@@ -257,18 +257,6 @@ Page({
     });
   },
 
-  goWalletHub() {
-    try {
-      const { openWalletHub } = require('../../../utils/rewardsNav');
-      openWalletHub({});
-    } catch (e) {
-      wx.navigateTo({
-        url: '/subpackages/extra/user/stored-value/index',
-        fail: () => this.goToWallet()
-      });
-    }
-  },
-
   closeCouponPrint() {
     this.setData({ showCouponPrint: false });
   },

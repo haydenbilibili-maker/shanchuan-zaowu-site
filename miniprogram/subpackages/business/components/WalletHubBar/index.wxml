@@ -1,4 +1,10 @@
-<view class="whb" aria-label="钱包与礼券夹">
+<view class="whb" aria-label="钱包、礼券夹与积分">
+  <!-- 2026-09-17：标题行收进组件 —— 三页共用同一份几何，tab 条位置不再靠手调对齐 -->
+  <view class="whb-head" wx:if="{{title}}">
+    <text class="whb-title">{{title}}</text>
+    <text class="whb-overline" wx:if="{{overline}}">{{overline}}</text>
+  </view>
+
   <view class="whb-seg">
     <view
       class="whb-item {{active === 'wallet' ? 'is-on' : ''}}"

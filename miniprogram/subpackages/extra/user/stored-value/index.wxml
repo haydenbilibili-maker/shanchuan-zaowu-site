@@ -6,11 +6,12 @@
     class="account-nav"
     style=" padding-right: {{navPaddingRight}}px;"
   >
-    <view class="account-nav-row">
-      <view class="account-nav-brand">
-        <text class="account-nav-title">我的钱包</text>
-        <text class="account-nav-sub">WALLET</text>
-      </view>
+    <!-- 方案 A（2026-09-17）：枢纽 tab 移入**固定头部** —— 与礼券夹/积分页同一位、且不随内容滚走。
+         此前它在滚动区内、又在标题之下，点 tab 跳转时 tab 条会上下跳一截。
+         负边距抵消头部为胶囊预留的 left/right padding，使 tab 条与头部同宽。
+         headerBlockPx 由 remeasureScroll() 量 .account-nav 的**底边**得到 → 自动包含本条高度，无需改 JS。 -->
+    <view class="account-nav-tabs" style="margin-right: -{{navPaddingRight}}px;">
+      <wallet-hub-bar active="wallet" title="我的钱包" overline="WALLET" coupon-count="{{usableCouponCount}}"></wallet-hub-bar>
     </view>
   </view>
 
@@ -25,10 +26,6 @@
     style="top: {{headerBlockPx}}px; height: {{scrollHeightPx}}px;"
   >
     <view id="sv-top" class="sv-anchor"></view>
-
-    <view class="sv-hub-wrap">
-      <wallet-hub-bar active="wallet" coupon-count="{{usableCouponCount}}"></wallet-hub-bar>
-    </view>
 
     <block wx:if="{{needLogin}}">
       <view class="account-section-card sv-guest-card">

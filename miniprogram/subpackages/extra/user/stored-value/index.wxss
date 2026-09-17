@@ -11,8 +11,9 @@ page {
   margin: 0 0 var(--space-4);
 }
 
-.sv-hub-wrap {
-  margin: 0 0 var(--space-3);
+/* 方案 A：tab 条在固定头部内，负边距抵消头部为胶囊预留的 padding，使其与头部同宽 */
+.account-nav-tabs {
+  margin-left: calc(-1 * var(--space-4));
 }
 
 /* 卡面内骨架：深底黄铜微光，高度与正式行对齐，避免 Material 灰条 */

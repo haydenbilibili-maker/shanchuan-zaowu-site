@@ -95,20 +95,28 @@
             <text>{{couponBadgeText}}</text>
           </view>
         </view>
-        <text class="as-val">¥</text>
         <text class="as-lbl">我的钱包</text>
       </view>
       <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="visitBooking" wx:elif="{{showBookingEntry}}">
-        <image class="as-icon" src="/assets/icons/calendar_gold.png"></image>
-        <text class="as-val">{{bookingCount}}</text>
+        <view class="as-icon-wrap">
+          <image class="as-icon" src="/assets/icons/calendar_gold.png"></image>
+          <view class="badge-outline-brass badge-sm as-badge-pos badge-enter" wx:if="{{bookingCount > 0}}">
+            <text>{{bookingCount > 99 ? '99+' : bookingCount}}</text>
+          </view>
+        </view>
         <text class="as-lbl">预约</text>
       </view>
 
       <view class="v-divider" wx:if="{{showStoredValue || showBookingEntry}}"></view>
 
       <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="certificate">
-        <image class="as-icon" src="/assets/icons/medal_gold.png"></image>
-        <text class="as-val">{{certificateCount || 0}}</text>
+        <!-- 2026-09-17：证书数量搬到 icon 右上角角标（原为 icon 与文案之间的数字） -->
+        <view class="as-icon-wrap">
+          <image class="as-icon" src="/assets/icons/medal_gold.png"></image>
+          <view class="badge-outline-brass badge-sm as-badge-pos badge-enter" wx:if="{{certificateCount > 0}}">
+            <text>{{certificateCount > 99 ? '99+' : certificateCount}}</text>
+          </view>
+        </view>
         <text class="as-lbl">我的证书</text>
       </view>
 
@@ -117,16 +125,29 @@
       <!-- 2026-09-17：积分已并入「我的钱包」（钱包/礼券夹/积分 三 tab），
            此处改为「我的档案」（原藏家档案入口上移，避免同一入口出现两次） -->
       <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="profile">
-        <image class="as-icon" src="/assets/icons/user.png"></image>
-        <text class="as-val">{{(cardPending || cardGuest) ? '—' : (profileScore + '%')}}</text>
+        <view class="as-icon-wrap">
+          <!-- user.png 是白灰版、无 _gold 变体：用本页调好的金色配方（.as-icon.is-gold）与金图统一 -->
+          <image class="as-icon is-gold" src="/assets/icons/user.png"></image>
+          <!-- 宽角标：容纳「100%」；未注册/骨架态不显示（不谎报 0%） -->
+          <view
+            class="badge-outline-brass badge-sm badge-wide as-badge-pos badge-enter"
+            wx:if="{{!cardPending && !cardGuest}}"
+          >
+            <text>{{profileScore}}%</text>
+          </view>
+        </view>
         <text class="as-lbl">我的档案</text>
       </view>
 
       <block wx:if="{{showGift}}">
         <view class="v-divider"></view>
         <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="myGifts">
+          <view class="as-icon-wrap">
           <image class="as-icon" src="/assets/icons/gift.png"></image>
-          <text class="as-val">{{giftTodoCount || 0}}</text>
+          <view class="badge-outline-brass badge-sm as-badge-pos badge-enter" wx:if="{{giftTodoCount > 0}}">
+            <text>{{giftTodoCount > 99 ? '99+' : giftTodoCount}}</text>
+          </view>
+          </view>
           <text class="as-lbl">我的礼赠</text>
         </view>
       </block>

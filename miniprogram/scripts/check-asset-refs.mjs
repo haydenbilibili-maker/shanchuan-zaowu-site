@@ -137,6 +137,16 @@ export function crossPackageProblems(rel, usingComponents) {
  */
 export const DUPLICATED_COMPONENTS = [
   {
+    // 2026-09-17 实测踩到：给 WalletHubBar 加第三个 tab 时只改了 business 那份，
+    // extra 那份仍是旧的两 tab → 同一个组件在两个页面渲染出不同结果。
+    // 分包之间不能互相引用组件，所以副本必须存在；既然存在就必须**逐字节锁死**。
+    name: 'WalletHubBar',
+    copies: [
+      'subpackages/business/components/WalletHubBar',
+      'subpackages/extra/components/WalletHubBar'
+    ]
+  },
+  {
     name: 'WorkNoticeVoice',
     copies: [
       'subpackages/manager/components/WorkNoticeVoice',

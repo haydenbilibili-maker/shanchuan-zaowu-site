@@ -1,5 +1,35 @@
+/* 组件宿主：自定义组件默认 inline，父容器 align-items:center 时不会被拉伸，
+   内部 .whb{width:100%} 会失去参照 → 三个 tab 塌缩重叠（积分页实测踩到）。
+   显式声明块级 + 100% 宽，保证任何父容器下都占满一行。 */
+:host {
+  display: block;
+  width: 100%;
+}
+
 /* 钱包 | 券夹 分段（WalletHubBar · 钱包枢纽） */
 @import "../../../../styles/badges.wxss";
+
+/* 页头：字号与钱包页原 .account-nav-title / -sub 完全一致（34rpx/600 + 18rpx 铜金） */
+.whb-head {
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: var(--space-4);
+  box-sizing: border-box;
+}
+.whb-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  font-family: var(--font-brand);
+  color: var(--color-text-primary);
+}
+.whb-overline {
+  font-size: 18rpx;
+  color: var(--brass-400);
+  letter-spacing: 0.12em;
+  margin-top: 4rpx;
+}
 
 .whb {
   width: 100%;

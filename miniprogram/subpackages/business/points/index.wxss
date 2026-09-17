@@ -1,6 +1,18 @@
 /* pages/points/index.wxss */
 /* 继承 app.wxss */
 
+.hub-bar-bleed {
+  /* 该页容器是 align-items: center：不会被拉伸，必须显式满宽
+     = 100%（内容盒）+ 两侧各 30rpx（由负边距抵消的回内缩）；写 width:100% 会少 60rpx */
+  width: calc(100% + 60rpx);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  /* 抵消 .container 的 padding 0 30rpx：满宽，与钱包页一致 */
+  margin: 0 -30rpx;
+  background: #1A1814;
+}
+
 .container { padding: 0 30rpx; width: 100%; display: flex; flex-direction: column; align-items: center; }
 
 /* 1. 资产卡 · 黑金翻转（正面=积分余额，背面=积分规则；与预约票据卡同一交互） */

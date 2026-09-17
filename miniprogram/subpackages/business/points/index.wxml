@@ -2,7 +2,10 @@
 <view class="container">
 
   <!-- 2026-09-17：钱包 / 礼券夹 / 积分 三个并列 tab（与礼券夹页同构） -->
-  <wallet-hub-bar active="points"></wallet-hub-bar>
+  <!-- 2026-09-17：与钱包页对齐 —— tab 条满宽（抵消 .container 的 30rpx 内缩）且**吸顶** -->
+  <view class="hub-bar-bleed">
+    <wallet-hub-bar active="points" title="我的积分" overline="POINTS"></wallet-hub-bar>
+  </view>
 
   <!-- 1. 顶部资产卡 · 黑金翻转：正面=积分余额（原样式），背面=积分规则 -->
   <view
@@ -102,16 +105,6 @@
       <text class="claim-entry-en">ORDER CLAIM</text>
       <text class="claim-entry-cn">去订单认领</text>
       <text class="claim-entry-desc">门店小票 / 外部平台订单兑积分</text>
-    </view>
-    <text class="claim-entry-arr">→</text>
-  </view>
-
-  <!-- 钱包枢纽（储值 + 券夹）与积分并列，不并入本页 Tab -->
-  <view class="claim-entry wallet-entry" hover-class="claim-entry-press" hover-stay-time="80" bindtap="goWalletHub">
-    <view class="claim-entry-text">
-      <text class="claim-entry-en">WALLET & COUPONS</text>
-      <text class="claim-entry-cn">钱包与礼券夹</text>
-      <text class="claim-entry-desc">储值余额 · 兑换礼券到账后在此查看</text>
     </view>
     <text class="claim-entry-arr">→</text>
   </view>

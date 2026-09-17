@@ -6,6 +6,17 @@ page {
 }
 view, text { box-sizing: border-box; }
 
+.hub-bar-bleed {
+  /* 该页容器是 align-items: stretch：**不要写 width** —— 外边距盒被拉伸，
+     两侧负边距正好补成满宽（写死 100% 会少两侧各 32rpx，成了内缩卡片） */
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  /* 抵消 .container 的 padding（40rpx 32rpx）：满宽 + 顶到最上，与钱包页一致 */
+  margin: -40rpx -32rpx 0;
+  background: #1A1814;   /* 吸顶时不透出下方内容 */
+}
+
 .container {
   min-height: 100%;
   display: flex;

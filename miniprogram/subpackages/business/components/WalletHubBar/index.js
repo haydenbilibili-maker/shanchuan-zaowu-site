@@ -1,5 +1,9 @@
 Component({
   properties: {
+    /** 页头大标题（三页共用同一份几何：标题在 tab 条之上，tab 条位置由构造保证一致） */
+    title: { type: String, value: '我的钱包' },
+    /** 页头小字（WALLET / COUPONS / POINTS） */
+    overline: { type: String, value: 'WALLET' },
     /** wallet | coupons | points */
     active: {
       type: String,

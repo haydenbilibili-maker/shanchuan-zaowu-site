@@ -1,4 +1,10 @@
-<view class="whb" aria-label="钱包与礼券夹">
+<view class="whb" aria-label="钱包、礼券夹与积分">
+  <!-- 2026-09-17：标题行收进组件 —— 三页共用同一份几何，tab 条位置不再靠手调对齐 -->
+  <view class="whb-head" wx:if="{{title}}">
+    <text class="whb-title">{{title}}</text>
+    <text class="whb-overline" wx:if="{{overline}}">{{overline}}</text>
+  </view>
+
   <view class="whb-seg">
     <view
       class="whb-item {{active === 'wallet' ? 'is-on' : ''}}"
@@ -35,6 +41,25 @@
         <text class="whb-en">COUPONS</text>
       </view>
       <view class="whb-ind" wx:if="{{active === 'coupons'}}"></view>
+    </view>
+
+    <view class="whb-split" aria-hidden="true"></view>
+
+    <!-- 2026-09-17：积分并入钱包，作为第三个并列 tab（与礼券夹同构，交互与样式不变） -->
+    <view
+      class="whb-item {{active === 'points' ? 'is-on' : ''}}"
+      hover-class="whb-item-press"
+      hover-stay-time="80"
+      bindtap="onTap"
+      data-tab="points"
+    >
+      <view class="whb-stack">
+        <view class="whb-cn-wrap">
+          <text class="whb-cn">积分</text>
+        </view>
+        <text class="whb-en">POINTS</text>
+      </view>
+      <view class="whb-ind" wx:if="{{active === 'points'}}"></view>
     </view>
   </view>
 </view>

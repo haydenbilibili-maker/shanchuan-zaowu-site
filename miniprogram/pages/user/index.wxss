@@ -74,16 +74,25 @@ page {
 /* 预留顶/右出血，角标不伸出格子外缘被父级裁切 */
 .as-icon-wrap {
   position: relative;
-  width: 56rpx;
-  height: 52rpx;
+  width: 64rpx;
+  height: 58rpx;
   margin-bottom: 4rpx;
   flex-shrink: 0;
   overflow: visible;
   box-sizing: border-box;
 }
+/* 白灰图标 → 铜金：与 .m-img.gold 用同一组滤镜值（本页既有配方，避免与金图有色差）；
+   必须显式 opacity:1 —— .as-icon 默认 0.8 会把滤镜结果再压暗一档，正是上一版色差的成因。 */
+.as-icon.is-gold {
+  filter: brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%);
+  opacity: 1;
+}
+
 .as-icon-wrap .as-icon {
   position: absolute;
-  left: 4rpx;
+  /* wrap 加宽到 64rpx 后，left:4rpx 会让图标比下方文案偏左 8rpx —— 改为水平居中 */
+  left: 50%;
+  margin-left: -20rpx;
   bottom: 0;
   width: 40rpx;
   height: 40rpx;
@@ -98,10 +107,12 @@ page {
   flex-shrink: 0;
 }
 /* 资产角：定位由本页负责，视觉走全局 .badge-outline-brass */
+/* 角标向外上偏移 + wrap 加大出血：避免数字压住图标主体（证书「6」与档案「100%」实测被压） */
 .as-badge-pos {
   position: absolute;
-  top: 0;
-  right: 0;
+  /* 抬到图标顶边之上：badge 底边正好贴住图标上沿 → 数字完全不压图标主体 */
+  top: -10rpx;
+  right: -6rpx;
   z-index: 2;
 }
 .as-val {
