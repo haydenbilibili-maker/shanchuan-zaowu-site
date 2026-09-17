@@ -144,7 +144,11 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
 {
   const card = readFileSync(resolve(ROOT, 'miniprogram/utils/giftShareCard.js'), 'utf8')
   check('★ 印刷版渲染器存在且导出', /function paintGiftPrintCard\(/.test(card) && /renderGiftPrintImage,/.test(card))
-  check('★ 规格为 A6 竖版 @300dpi（1240 × 1795）', /const PRINT_W = 1240/.test(card) && /const PRINT_H = 1795/.test(card))
+  check('★ 规格为 **A5** 竖版 @300dpi（1748 × 2480 = A4 对半，一张印两张）',
+    /const PRINT_W = 1748/.test(card) && /const PRINT_H = 2480/.test(card),
+    'A4 对半是 A5（148×210mm），不是 A6')
+  check('★ 改纸张只改常量：绘制按设计稿等比放大（setTransform(S,…)）',
+    /const S = PRINT_W \/ PRINT_DESIGN_W/.test(card) && /ctx\.setTransform\(S, 0, 0, S, 0, 0\)/.test(card))
   check('★ 印刷卡**必须**画题记带（分享卡不画，这是两者的关键区别）',
     /const themeName = String\(o\.themeName/.test(card) && /const themeNote = String\(o\.themeNote/.test(card),
     '印刷卡缺题记 → 印出来会少掉主题名与那句话')
@@ -152,14 +156,27 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
     /function paintGiftShareCard\(canvas, opts\)/.test(card) && /SHARE_CARD_W: W,/.test(card))
   check('印刷卡复用共享换行/圆角工具（不另造）', /wrapLines\(ctx, String\(o\.cardBody/.test(card) && /roundRect\(ctx, cardX/.test(card))
   // 2026-09-17 真图暴露的两个重叠 bug → 钉成不变量
-  check('★ 印章在左、署名在右（此前署名压在圆印里）',
-    /const sealCx = axisX \+ sealR/.test(card) && /ctx\.fillText\(sig, axisRight, sy\)/.test(card),
-    '署名的 x 必须是右轴，印章在左轴 → 永不相撞')
-  check('★ 题记带在藏品图**之下**整宽（此前右端被图盖住）',
-    /blockTop = Math\.max\(blockTop, imgY \+ imgSize/.test(card) && /const bandW = axisRight - axisX/.test(card),
-    '题记带必须整宽且起于图之下')
+  // 版式按前端礼笺卡定稿（2026-09-18）：印章在右上、署名在左下 → 分区不相撞
+  check('★ 印章与署名**分区**且不相撞（印章右上 / 署名左下）',
+    /const sealCy = topY - Math\.round\(8 \* MM\)/.test(card)
+    && /const baseY = cardY \+ cardH - Math\.round\(22 \* MM\)/.test(card),
+    '印章与署名必须在不同分区，否则会叠在一起')
+  check('★ 题记带整宽（axisX → axisRight）', /const bandW = axisRight - axisX/.test(card))
+  // 作用域限定在**印刷卡**函数体内（分享卡里本来就有 drawImage，不能一起判）
+  const printFn = (function () {
+    const i = card.indexOf('function paintGiftPrintCard(')
+    return i < 0 ? '' : card.slice(i, i + 9000)
+  })()
+  check('版式对齐前端：印刷卡不放藏品图（前端那张卡也没有，避免图压题记）',
+    printFn.length > 0 && !/drawImage/.test(printFn), '若加回图片，必须重新处理与题记带的重叠')
   check('★ 题记与正文共用同一左轴', /const axisX = cardX \+ pad/.test(card) && /ctx\.fillText\(bodyLines\[i\], axisX,/.test(card))
   check('底部有落款日期（填住下半版空白）', /padStart\(2, '0'\)/.test(card) && /ctx\.fillText\(dateText/.test(card))
+  // 2026-09-18：印刷卡版式**学习前端礼笺卡**（compose 的 .card-*）
+  check('★ 印刷卡首行是「写给 · TA」（学前端 .card-*）', /写给 · /.test(card) && /o\.recipientName/.test(card))
+  check('★ 印章移到**右上**（与前端一致；此前在左下）', /const sealCx = axisRight - sealR/.test(card) && /const sealCy = topY - Math\.round\(8 \* MM\)/.test(card))
+  check('★ 正文用**手写体**（与前端同一系统字体栈，零体积）',
+    /HanziPen SC/.test(card) && /34px ' \+ HAND/.test(card))
+  check('★ 右下有淡「山海」水印（前端那张卡的收尾笔触）', /globalAlpha = 0\.06/.test(card) && /fillText\('山海'/.test(card))
 }
 
 /* ── 礼赠履约页「导出礼笺图」接线（印刷用；2026-09-17）────────────────── */
@@ -170,6 +187,8 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   const opsWxml = readFileSync(resolve(ROOT, OPS_WXML), 'utf8')
   check('★ 履约页有「导出礼笺图」入口', /导出礼笺图/.test(opsWxml) && /onExportGiftCard/.test(opsWxml))
   check('★ 用共享印刷渲染器（不另造画布逻辑）', /renderGiftPrintImage\('#giftPrintCanvas', this, \{/.test(opsJs))
+  check('★ 导出侧传入 recipientName（印刷卡首行「写给 · TA」）',
+    /recipientName: item\.recipientName/.test(opsJs))
   check('★ 引主包实现（分包之间不得互相 require）',
     opsJs.indexOf("require('../../../utils/giftShareCard')") !== -1 && opsJs.indexOf("require('../../feature/") === -1,
     '跨分包 require 微信会拦')

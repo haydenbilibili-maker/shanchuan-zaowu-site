@@ -298,10 +298,15 @@ function renderGiftShareImage(selector, page, opts) {
  *   而分享卡正被订单详情 / 礼赠成功页真实使用 → 不动它，印刷版单独实现。
  * 用法：canvas 尺寸即输出像素（无需 destWidth）→ canvasToTempFilePath → 存相册 / 传云存储
  * ───────────────────────────────────────────────────────────────────────── */
-const PRINT_W = 1240
-const PRINT_H = 1795
+// A5 竖版 @300dpi = 1748 × 2480 px（148 × 210 mm）—— A4 对半，一张 A4 可排两张（拼版由印刷厂做）
+// 版式坐标仍按 A6 设计稿（1240 宽）书写，绘制前统一等比放大 → 改规格只改这两个常量
+const PRINT_W = 1748
+const PRINT_H = 2480
+const PRINT_DESIGN_W = 1240
 
 function paintGiftPrintCard(canvas, opts) {
+  // 版式学习前端礼笺卡（compose 的 .card-* ）：写给 TA + 右上印章 → 题记带 → 手写体正文
+  //   → 署名(左, 铜金下划线) + 日期(右, 弱化) → 右下淡「山海」水印
   const o = opts || {}
   const MM = 11.811
   const margin = Math.round(10 * MM)
@@ -309,14 +314,18 @@ function paintGiftPrintCard(canvas, opts) {
   canvas.width = PRINT_W
   canvas.height = PRINT_H
   const ctx = canvas.getContext('2d')
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  // 等比放大：之后所有坐标按 A6 设计稿写（改纸张规格不动版式）
+  const S = PRINT_W / PRINT_DESIGN_W
+  const LW = PRINT_W / S
+  const LH = PRINT_H / S
+  ctx.setTransform(S, 0, 0, S, 0, 0)
 
   ctx.fillStyle = '#1A1814'
-  ctx.fillRect(0, 0, PRINT_W, PRINT_H)
+  ctx.fillRect(0, 0, LW, LH)
   const cardX = margin
   const cardY = margin
-  const cardW = PRINT_W - margin * 2
-  const cardH = PRINT_H - margin * 2
+  const cardW = LW - margin * 2
+  const cardH = LH - margin * 2
   ctx.fillStyle = '#F2EDE4'
   ctx.strokeStyle = '#E0CFA3'
   ctx.lineWidth = 2
@@ -324,44 +333,34 @@ function paintGiftPrintCard(canvas, opts) {
   ctx.fill()
   ctx.stroke()
 
-  // 版心左右轴：正文与题记文字共用同一条左轴（对齐才成版面）
   const axisX = cardX + pad
   const axisRight = cardX + cardW - pad
+  // 手写体：与前端同一套系统字体栈（iOS 命中汉仪手写体/签笔，Android 落衬线兜底）
+  const HAND = '"HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", "KaiTi", serif'
 
-  // 顶部：SEALED LETTER + 细线
-  ctx.fillStyle = '#8A7530'
-  ctx.font = '500 26px sans-serif'
+  // ── 顶行：写给 · TA（左）＋「山海」印章（右）—— 学前端那张卡的首行
+  const topY = cardY + Math.round(16 * MM)
+  const toName = String(o.recipientName || '').trim()
   ctx.textAlign = 'left'
-  ctx.fillText('SEALED LETTER', axisX, cardY + Math.round(14 * MM))
-  ctx.strokeStyle = 'rgba(196, 167, 108, 0.35)'
-  ctx.lineWidth = 1
+  ctx.fillStyle = '#8A7530'
+  ctx.font = '400 28px serif'
+  ctx.fillText(toName ? ('写给 · ' + toName) : '写给 · 收礼的人', axisX, topY)
+
+  const sealR = Math.round(11 * MM)
+  const sealCx = axisRight - sealR
+  const sealCy = topY - Math.round(8 * MM)
+  ctx.strokeStyle = 'rgba(196, 167, 108, 0.9)'
+  ctx.lineWidth = 3
   ctx.beginPath()
-  ctx.moveTo(axisX, cardY + Math.round(18 * MM))
-  ctx.lineTo(axisRight, cardY + Math.round(18 * MM))
+  ctx.arc(sealCx, sealCy, sealR, 0, Math.PI * 2)
   ctx.stroke()
+  ctx.fillStyle = '#C76A4A'
+  ctx.font = '600 34px serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('山海', sealCx, sealCy + 12)
 
-  // 标题（左上）
-  const titleY = cardY + Math.round(30 * MM)
-  ctx.fillStyle = '#2B2723'
-  ctx.font = '600 46px serif'
-  ctx.fillText('山海造物 · 礼笺', axisX, titleY)
-
-  // 藏品图（右上）：整块落在标题行右侧，题记带从**图之下**开始 → 永不重叠
-  let blockTop = titleY + Math.round(4 * MM)
-  if (o.specimenImage) {
-    const imgSize = Math.round(40 * MM)
-    const imgX = axisRight - imgSize
-    const imgY = titleY - Math.round(24 * MM)
-    ctx.save()
-    roundRect(ctx, imgX, imgY, imgSize, imgSize, 12)
-    ctx.clip()
-    try { ctx.drawImage(o.specimenImage, imgX, imgY, imgSize, imgSize) } catch (e) { /* 图挂留白 */ }
-    ctx.restore()
-    blockTop = Math.max(blockTop, imgY + imgSize + Math.round(5 * MM))
-  }
-
-  // 题记带：**整宽**（图已在其上方，不再被盖）
-  let y = blockTop
+  // ── 题记带（整宽；学习前端 .card-epigraph：铜金左线 + 暖底 + 金主题名 + 灰题记）
+  let y = topY + Math.round(14 * MM)
   const themeName = String(o.themeName || '').trim()
   const themeNote = String(o.themeNote || '').trim()
   if (themeName) {
@@ -369,73 +368,66 @@ function paintGiftPrintCard(canvas, opts) {
     const innerPad = Math.round(6 * MM)
     const noteLines = themeNote ? wrapLines(ctx, themeNote, bandW - innerPad * 2, 3) : []
     const bandH = Math.round(15 * MM) + noteLines.length * 32
-    ctx.fillStyle = 'rgba(196, 167, 108, 0.08)'
-    roundRect(ctx, axisX, y, bandW, bandH, 8)
+    ctx.fillStyle = 'rgba(196, 167, 108, 0.10)'
+    roundRect(ctx, axisX, y, bandW, bandH, 10)
     ctx.fill()
     ctx.fillStyle = '#C4A76C'
     ctx.fillRect(axisX, y, 6, bandH)
     ctx.textAlign = 'left'
     ctx.fillStyle = '#B08A3E'
-    ctx.font = '600 36px serif'
+    ctx.font = '600 38px serif'
     ctx.fillText(themeName, axisX + innerPad, y + Math.round(10 * MM))
-    ctx.fillStyle = '#5A544C'
-    ctx.font = '400 27px serif'
+    ctx.fillStyle = '#6A6258'
+    ctx.font = '400 28px serif'
     for (let i = 0; i < noteLines.length; i += 1) {
-      ctx.fillText(noteLines[i], axisX + innerPad, y + Math.round(15 * MM) + i * 32)
+      ctx.fillText(noteLines[i], axisX + innerPad, y + Math.round(15.5 * MM) + i * 34)
     }
-    y += bandH + Math.round(6 * MM)
+    y += bandH + Math.round(8 * MM)
   }
 
-  // 正文：与题记同一左轴；行高放宽，让笺面读起来有呼吸
-  const lineH = 54
-  const footerTop = cardY + cardH - Math.round(34 * MM)
+  // ── 正文（手写体、大字距宽行距；前端那张卡的正文观感）
+  const lineH = 62
+  const signTop = cardY + cardH - Math.round(38 * MM)
   ctx.fillStyle = '#2B2723'
-  ctx.font = '400 31px serif'
-  const maxLines = Math.max(1, Math.floor((footerTop - y - Math.round(6 * MM)) / lineH))
+  ctx.font = '400 34px ' + HAND
+  const maxLines = Math.max(1, Math.floor((signTop - y - Math.round(8 * MM)) / lineH))
   const bodyLines = wrapLines(ctx, String(o.cardBody || ''), axisRight - axisX, maxLines)
-  const bodyY = y + Math.round(10 * MM)
+  const bodyY = y + Math.round(12 * MM)
   for (let i = 0; i < bodyLines.length; i += 1) {
     ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
   }
 
-  // 底部落款：**印章在左、署名在右**，两者永不相撞（此前署名压在圆印里）
-  const sealR = Math.round(10 * MM)
-  const sealCx = axisX + sealR
-  const sealCy = cardY + cardH - Math.round(19 * MM)
-  ctx.strokeStyle = 'rgba(196, 167, 108, 0.85)'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.arc(sealCx, sealCy, sealR, 0, Math.PI * 2)
-  ctx.stroke()
-  ctx.fillStyle = '#C76A4A'
-  ctx.font = '600 32px serif'
-  ctx.textAlign = 'center'
-  ctx.fillText('山海', sealCx, sealCy + 11)
-
-  // 日期（印章右侧，弱化）—— 让下半版有落点，不再空荡
-  ctx.textAlign = 'left'
-  ctx.fillStyle = '#B4AC9F'
-  ctx.font = '400 26px serif'
-  const d = new Date()
-  const dateText = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0')
-  ctx.fillText(dateText, sealCx + sealR + Math.round(6 * MM), sealCy + 9)
-
-  // 署名（右下，带铜金下划线）
+  // ── 署名（左，带铜金下划线）+ 日期（右，弱化）
+  const baseY = cardY + cardH - Math.round(22 * MM)
   const sig = String(o.cardSignature || '').trim()
   if (sig) {
-    ctx.textAlign = 'right'
+    ctx.textAlign = 'left'
     ctx.fillStyle = '#2B2723'
-    ctx.font = '500 31px serif'
-    const sy = sealCy + 10
-    ctx.fillText(sig, axisRight, sy)
+    ctx.font = '500 38px ' + HAND
+    ctx.fillText(sig, axisX, baseY)
     const sw = ctx.measureText(sig).width
     ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(axisRight - sw - 8, sy + 12)
-    ctx.lineTo(axisRight, sy + 12)
+    ctx.moveTo(axisX, baseY + 14)
+    ctx.lineTo(axisX + Math.max(sw, Math.round(40 * MM)), baseY + 14)
     ctx.stroke()
   }
+  const d = new Date()
+  const dateText = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0')
+  ctx.textAlign = 'right'
+  ctx.fillStyle = '#B4AC9F'
+  ctx.font = '400 26px serif'
+  ctx.fillText(dateText, axisRight, baseY)
+
+  // ── 右下淡「山海」水印（前端那张卡的收尾笔触）
+  ctx.save()
+  ctx.globalAlpha = 0.06
+  ctx.fillStyle = '#8A7530'
+  ctx.font = '700 220px serif'
+  ctx.textAlign = 'right'
+  ctx.fillText('山海', axisRight + Math.round(4 * MM), cardY + cardH - Math.round(6 * MM))
+  ctx.restore()
   ctx.textAlign = 'left'
 }
 

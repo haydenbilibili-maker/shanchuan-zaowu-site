@@ -315,8 +315,9 @@ Page({
       }
       const { renderGiftPrintImage } = require('../../../utils/giftShareCard')
       const path = await renderGiftPrintImage('#giftPrintCanvas', this, {
-        cardBody, cardSignature, themeName, themeNote, specimenFileID
-      })
+        cardBody, cardSignature, themeName, themeNote, specimenFileID,
+        recipientName: item.recipientName || item.toName || '',
+    })
       if (!path) throw new Error('生成失败，请重试')
       try {
         await new Promise((ok, no) => wx.saveImageToPhotosAlbum({ filePath: path, success: ok, fail: no }))
