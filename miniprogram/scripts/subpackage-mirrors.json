@@ -178,5 +178,70 @@
     "source": "subpackages/extra/care/care-common.wxss",
     "mirror": "subpackages/business/components/WalletPanelWallet/styles/care/care-common.wxss",
     "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/animalEthicsNotice.js",
+    "mirror": "subpackages/feature/utils/animalEthicsNotice.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/careDefaults.js",
+    "mirror": "subpackages/manager/utils/careDefaults.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/careDefaults.js",
+    "mirror": "subpackages/feature/utils/careDefaults.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/customDefaults.js",
+    "mirror": "subpackages/manager/utils/customDefaults.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/customDefaults.js",
+    "mirror": "subpackages/feature/utils/customDefaults.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/depositOrderDisplay.js",
+    "mirror": "subpackages/manager/utils/depositOrderDisplay.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/giftScenes.js",
+    "mirror": "subpackages/feature/utils/giftScenes.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/extra/utils/legalContent.js",
+    "mirror": "subpackages/feature/utils/legalContent.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/onePercentPledge.js",
+    "mirror": "subpackages/feature/utils/onePercentPledge.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/payment.js",
+    "mirror": "subpackages/feature/utils/payment.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/productTags.js",
+    "mirror": "subpackages/feature/utils/productTags.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/qrcodeGen.js",
+    "mirror": "subpackages/feature/utils/qrcodeGen.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/taxonomyZh.js",
+    "mirror": "subpackages/feature/utils/taxonomyZh.js",
+    "identical": true
   }
 ]

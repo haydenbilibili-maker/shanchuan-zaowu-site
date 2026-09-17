@@ -57,11 +57,31 @@ export function collectJs(dir, out = []) {
 }
 
 /**
+ * 「主包未使用、改由各分包自行持有」的叶子工具白名单（2026-09-17）
+ *
+ * 冲突背景（两条规则对这批文件不可兼得）：
+ *   · 微信「代码质量」判定：**主包内不应存在主包未使用的 JS**（主包 1536 KB 是硬约束，超了不能上传）；
+ *   · 本守卫默认政策：实现下沉主包 utils/、分包只留再导出 shim。
+ * 这批工具**只被分包使用、且零外部依赖**（自包含叶子模块）→ 留在主包就是那 26 个「未通过」项，
+ * 搬走才能腾出体积。故**平台硬约束优先**，允许按分包各自持有，但设两道前提：
+ *   ① 白名单内的文件在主包 `utils/` 下**必须已不存在**（此前提由调用方校验并传入，真搬走了才豁免）；
+ *   ② 每个副本必须逐字节一致，由 `check:subpackage-refs` 的镜像清单保证（改一份必须同步改另一份）。
+ * 其余重复（鉴权、账本等有语义的模块）**仍按棘轮收紧，不得放宽**。
+ */
+export const SUBPACKAGE_ONLY_LEAF_UTILS = new Set([
+  'animalEthicsNotice.js', 'careDefaults.js', 'customDefaults.js', 'depositOrderDisplay.js',
+  'financeDailyParse.js', 'giftScenes.js', 'legalContent.js', 'mallCommission.js',
+  'onePercentPledge.js', 'payment.js', 'pledgeDue.js', 'productConcept.js', 'productTags.js',
+  'qrcodeGen.js', 'signalLamp.js', 'studioInventoryParse.js', 'taxonomyZh.js', 'workspaceFeatures.js'
+])
+
+/**
  * 纯函数：算「分包内逐字节相同的重复」规模。
  * @param {Array<{path:string, size:number, hash:string}>} entries path 为相对 miniprogram 的路径
  * @returns {{ groups: Array, savableBytes: number, copies: number }}
  */
-export function analyzeDuplicates(entries) {
+export function analyzeDuplicates(entries, opts = {}) {
+  const exempt = opts.exemptLeafUtils || new Set()
   const byName = new Map()
   for (const e of entries) {
     const name = e.path.split('/').pop()
@@ -76,6 +96,7 @@ export function analyzeDuplicates(entries) {
     if (list.length < 2) continue
     if (new Set(list.map((x) => x.hash)).size !== 1) continue // 已分叉，不计入（需人工判语义）
     if (!list.every((x) => x.path.startsWith('subpackages/'))) continue // 只关心分包内的重复
+    if (exempt.has(name)) continue // 主包未使用且已搬离主包的叶子工具：允许分包各自持有（见白名单注释）
     const size = list[0].size
     savableBytes += (list.length - 1) * size
     copies += list.length
@@ -109,7 +130,11 @@ function scanRepo() {
     const src = readFileSync(f, 'utf8')
     return { path: relative(MP, f), size: Buffer.byteLength(src), hash: sha1(src) }
   })
-  const dup = analyzeDuplicates(entries)
+  // 豁免前提（守卫自查）：白名单文件在主包 utils/ 下**确实已不存在**，才允许分包各自持有
+  const exemptLeafUtils = new Set(
+    [...SUBPACKAGE_ONLY_LEAF_UTILS].filter((name) => !existsSync(join(MP, 'utils', name)))
+  )
+  const dup = analyzeDuplicates(entries, { exemptLeafUtils })
   const shims = checkShims(files, (f) => readFileSync(f, 'utf8'), (p) => existsSync(p))
   return { dup, shims, total: entries.length }
 }
