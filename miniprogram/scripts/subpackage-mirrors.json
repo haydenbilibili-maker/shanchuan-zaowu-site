@@ -248,5 +248,15 @@
     "source": "subpackages/manager/utils/skuSize.js",
     "mirror": "subpackages/feature/utils/skuSize.js",
     "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/refundPolicy.js",
+    "mirror": "subpackages/manager/utils/refundPolicy.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/business/utils/refundPolicy.js",
+    "mirror": "subpackages/feature/utils/refundPolicy.js",
+    "identical": true
   }
 ]

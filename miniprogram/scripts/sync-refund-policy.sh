@@ -5,7 +5,7 @@
 # 孤品售后未披露 30% 扣款）。
 set -e
 cd "$(dirname "$0")/.."
-SRC="subpackages/business/utils/refundPolicy.js"
+SRC="subpackages/business/utils/refundPolicy.js"   # canonical（batch2 起实现落在分包）
 for f in subpackages/manager/utils/refundPolicy.js subpackages/feature/utils/refundPolicy.js; do
   cp "$SRC" "$f"
 done
