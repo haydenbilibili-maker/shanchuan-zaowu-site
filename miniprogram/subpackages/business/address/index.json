@@ -1,7 +1,8 @@
 {
   "navigationBarTitleText": "收货地址",
   "usingComponents": {
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "app-toast": "/components/AppToast/index"
   },
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",

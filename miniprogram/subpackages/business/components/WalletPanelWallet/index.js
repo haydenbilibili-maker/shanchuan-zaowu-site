@@ -866,7 +866,8 @@ const _pageCfg = {
       wx.hideLoading()
       this.setData({ needLogin: false })
       await this.bootstrap()
-      wx.showToast({ title: '已重新进入', icon: 'none' })
+      // 主视觉铭牌提示（原生 toast 与界面脱节）；失败分支仍是原样 toast
+      this.showWelcomeBack('余额与账单已恢复')
     } catch (e) {
       wx.hideLoading()
       wx.showToast({ title: '进入失败，请重试', icon: 'none' })
@@ -907,8 +908,24 @@ Object.keys(_pageCfg).forEach((k) => { if (k !== 'data') _methods[k] = _pageCfg[
  */
 Component({
   options: { addGlobalClass: true },
-  data: _pageCfg.data,
+  data: Object.assign({}, _pageCfg.data, {
+    toastShow: false,
+    toastOverline: 'WELCOME BACK',
+    toastTitle: '',
+    toastDesc: ''
+  }),
   methods: Object.assign({
+    showWelcomeBack(desc) {
+      this.setData({
+        toastShow: true,
+        toastOverline: 'WELCOME BACK',
+        toastTitle: '欢迎回来',
+        toastDesc: desc || '账号已恢复'
+      })
+    },
+    onToastClose() {
+      this.setData({ toastShow: false })
+    },
     onReachBottom() {
       // 用实例方法派发（而非闭包里的 _methods）：语义上就是组件自己处理触底，
       // 也让它可被替换/观测（守卫就靠这一点验证「宿主转发确实到了分页」）

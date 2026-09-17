@@ -243,4 +243,12 @@
 
     <view class="account-scroll-pad"></view>
   </view>
+  <!-- 统一主视觉提示（欢迎回来等）：原生 toast 与本产品视觉脱节，见 components/AppToast -->
+  <app-toast
+    show="{{toastShow}}"
+    overline="{{toastOverline}}"
+    title="{{toastTitle}}"
+    desc="{{toastDesc}}"
+    bind:close="onToastClose"
+  />
 </view>

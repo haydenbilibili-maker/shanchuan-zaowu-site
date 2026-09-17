@@ -13,6 +13,11 @@ const { withAppModal } = require('../../../utils/appModal')
 Page(withAppModal({
   data: {
     addresses: [],
+    // 统一主视觉提示（欢迎回来等）
+    toastShow: false,
+    toastOverline: 'WELCOME BACK',
+    toastTitle: '',
+    toastDesc: '',
     mode: 'manage',
     loading: true,
     needLogin: false,
@@ -108,6 +113,24 @@ Page(withAppModal({
     }
   },
 
+  /** 「欢迎回来」提示：与主视觉一致的铭牌轻提示，取代原生 toast 的「已重新进入」 */
+  showWelcomeBack(desc) {
+    let nick = String(this.data.nickName || '').trim()
+    if (!nick) {
+      try { nick = String((getApp().globalData.userInfo || {}).nickName || '').trim() } catch (e) { /* ignore */ }
+    }
+    this.setData({
+      toastShow: true,
+      toastOverline: 'WELCOME BACK',
+      toastTitle: nick ? `欢迎回来，${nick}` : '欢迎回来',
+      toastDesc: desc || '账号已恢复'
+    })
+  },
+
+  onToastClose() {
+    this.setData({ toastShow: false })
+  },
+
   async goResumeLogin() {
     if (this._resumingLogin) return
     this._resumingLogin = true
@@ -119,7 +142,8 @@ Page(withAppModal({
       wx.hideLoading()
       this.setData({ needLogin: false })
       await this.loadAddresses()
-      wx.showToast({ title: '已重新进入', icon: 'none' })
+      // 主视觉铭牌提示（原生 toast 与界面脱节）；失败分支仍是原样 toast
+      this.showWelcomeBack('收货地址已恢复')
     } catch (e) {
       wx.hideLoading()
       wx.showToast({ title: '进入失败，请重试', icon: 'none' })

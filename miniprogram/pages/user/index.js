@@ -413,6 +413,12 @@ const _bootCard = buildBootMemberCardState();
 Page({
   behaviors: [easterEggHost],
   data: {
+    // 统一主视觉轻提示（铭牌 + 铜金）——取代原生 toast，见 components/AppToast
+    toastShow: false,
+    toastOverline: '',
+    toastTitle: '',
+    toastDesc: '',
+    toastDuration: 2200,
     // 微信助手个人名片码（相对长期有效）；替换 assets/qrcode/wechat-assistant-qr.png 即可
     communityQrUrl: '/assets/qrcode/wechat-assistant-qr.png',
     userInfo: _bootCard.userInfo,
@@ -826,7 +832,11 @@ Page({
       await this.initUserData();
       this.refreshOnboardingBanner();
       if (ok) {
-        wx.showToast({ title: '新客礼已放入账户', icon: 'none' });
+        this.showAppToast({
+          overline: 'GIFT',
+          title: '新客礼已放入账户',
+          desc: '可在「我的钱包 → 礼券夹」查看'
+        });
         this.setData({ showGiftRepairBanner: false });
       } else if (gift.partial) {
         wx.showToast({ title: gift.msg || '礼券仍未齐，请稍后再试', icon: 'none' });
@@ -965,6 +975,34 @@ Page({
     } catch (e) { /* ignore */ }
   },
 
+  /**
+   * 统一主视觉轻提示（铭牌 + 铜金 + 衬线标题）—— 取代原生 toast。
+   * 原生 toast 是系统样式，出现在博物黑界面里最不像本产品（见 components/AppToast）。
+   */
+  showAppToast({ overline = '', title = '', desc = '', duration = 0 } = {}) {
+    if (!title) return
+    this.setData({
+      toastOverline: overline,
+      toastTitle: title,
+      toastDesc: desc,
+      toastDuration: duration || 2200,
+      toastShow: true
+    })
+  },
+
+  /** 「欢迎回来」：重新进入成功后的道候（原先是原生 toast「已重新进入」） */
+  showWelcomeBack(desc) {
+    const nick = String((this.data.userInfo && this.data.userInfo.nickName) || this.data.nickName || '').trim()
+    this.showAppToast({
+      overline: 'WELCOME BACK',
+      title: nick ? `欢迎回来，${nick}` : '欢迎回来',
+      desc: desc || '账号与礼券已恢复'
+    })
+  },
+
+  onToastClose() {
+    this.setData({ toastShow: false })
+  },
   async resumeLogin(options = {}) {
     if (this._resumingLogin) return;
     this._resumingLogin = true;
@@ -987,7 +1025,8 @@ Page({
           fail: () => wx.showToast({ title: '无法打开藏家档案', icon: 'none' })
         });
       } else {
-        wx.showToast({ title: '已重新进入', icon: 'none' });
+        // 用主视觉铭牌提示「欢迎回来」，替代原生 toast（系统样式与博物黑界面脱节）
+        this.showWelcomeBack();
       }
     } catch (e) {
       wx.hideLoading();
