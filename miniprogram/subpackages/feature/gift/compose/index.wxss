@@ -1101,5 +1101,3 @@ page {
   white-space: pre-wrap;   /* 保留换行：textarea 里换行，展示时也要换行 */
   color: #33302C;
 }
-  to { opacity: 1; transform: translateY(0) rotate(0); }
-}
