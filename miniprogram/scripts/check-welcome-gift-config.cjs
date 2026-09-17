@@ -117,6 +117,7 @@ function upsertAnomalySignature(src) {
 /** 线上权威档位（小程序-我的-超管工作台-新会员礼包）——变更须同步改此断言 */
 const SSOT_LADDER = [
   { value: 5, minSpend: 49 },
+  { value: 10, minSpend: 99 },
   { value: 30, minSpend: 299 },
   { value: 50, minSpend: 499 },
   { value: 100, minSpend: 999 }

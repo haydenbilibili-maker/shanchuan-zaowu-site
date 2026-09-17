@@ -32,11 +32,11 @@
           <text class="reward-plate-title">新客礼</text>
         </view>
         <view class="reward-plate-stats">
-          <view class="reward-stat">
+          <view class="reward-stat" wx:if="{{showPoints}}">
             <text class="reward-stat-value">+{{rewardPoints}}</text>
             <text class="reward-stat-label">积分</text>
           </view>
-          <view class="reward-stat-rule" aria-hidden="true"></view>
+          <view class="reward-stat-rule" wx:if="{{showPoints}}" aria-hidden="true"></view>
           <view class="reward-stat">
             <text class="reward-stat-value">{{rewardCouponCount}}</text>
             <text class="reward-stat-label">张礼券</text>

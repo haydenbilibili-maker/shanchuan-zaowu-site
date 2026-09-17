@@ -22,18 +22,20 @@ function getDefaultConfig() {
     enabled: true,
     title: '新会员礼包',
     messageTitle: '新会员礼包已到账',
-    points: 100,
-    pointsEnabled: true,
+    // 2026-09-17 口径：新客不再发积分（改为一张真实的「满99减10」券，见下）
+    points: 0,
+    pointsEnabled: false,
     excludeGrowth: true,
     couponsEnabled: true,
     expireDays: 90,
     stackable: false,
     priority: 100,
     // 与线上 member_welcome_gift（小程序-我的-超管工作台-新会员礼包）逐字对齐：
-    // 满49减5 / 满299减30 / 满499减50 / 满999减100
+    // 满49减5 / 满99减10 / 满299减30 / 满499减50 / 满999减100（共 5 张）
     // 各档门槛均高于折扣地板 ceil(value/0.25)，兜底配置也发不出穿底券
     coupons: [
       { id: 'c5', enabled: true, value: 5, minSpend: 49, expireDays: 90, count: 1, title: '新会员礼券 · 5元', channel: 'all' },
+      { id: 'c10', enabled: true, value: 10, minSpend: 99, expireDays: 90, count: 1, title: '新会员礼券 · 10元', channel: 'all' },
       { id: 'c30', enabled: true, value: 30, minSpend: 299, expireDays: 90, count: 1, title: '新会员礼券 · 30元', channel: 'all' },
       { id: 'c50', enabled: true, value: 50, minSpend: 499, expireDays: 90, count: 1, title: '新会员礼券 · 50元', channel: 'all' },
       { id: 'c100', enabled: true, value: 100, minSpend: 999, expireDays: 90, count: 1, title: '新会员礼券 · 100元', channel: 'all' }

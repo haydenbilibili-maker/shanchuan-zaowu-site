@@ -19,8 +19,9 @@ Page({
       name: '新会员礼包',
       title: '新会员礼包',
       messageTitle: '新会员礼包已到账',
-      pointsEnabled: true,
-      points: 100,
+      // 2026-09-17 口径：新客不再发积分
+      pointsEnabled: false,
+      points: 0,
       excludeGrowth: true,
       couponsEnabled: true,
       expireDays: 30,

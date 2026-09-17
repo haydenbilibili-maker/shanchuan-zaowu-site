@@ -41,6 +41,8 @@ function giftViewFromCoupons(points, coupons) {
   const cards = mapGiftCouponCards(coupons)
   return {
     rewardPoints: Number(points) >= 0 ? Number(points) : (REGISTER_GIFT.points || 0),
+    // 2026-09-17 起新客礼包不再含积分 → 归零就别渲染那一格（否则出现「+0 积分」）
+    showPoints: Number(points) > 0,
     rewardCouponCount: cards.length,
     rewardCouponLines: cards.map((c) => (c.minSpend ? `满 ${c.minSpend} 减 ${c.value}` : c.label)),
     rewardCouponCards: cards

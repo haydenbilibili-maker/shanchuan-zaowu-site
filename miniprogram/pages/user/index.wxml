@@ -33,7 +33,7 @@
     <view class="onboard-banner-body" bindtap="repairWelcomeGift">
       <view class="onboard-banner-text">
         <text class="onboard-banner-title">新客礼待放入</text>
-        <text class="onboard-banner-desc">积分与礼券可一键补领，不会重复发放</text>
+        <text class="onboard-banner-desc">礼券可一键补领，不会重复发放</text>
       </view>
       <text class="onboard-banner-cta">{{giftRepairing ? '补领中' : '补领'}}</text>
     </view>

@@ -32,7 +32,8 @@
       <text class="gift-unit">张礼券</text>
       <text class="gift-foot">去核销 ›</text>
     </view>
-    <view class="gift-card">
+    <!-- 2026-09-17 起新客礼包不再含积分 → 为 0 时不渲染这张卡（否则「0 积分 已入账」） -->
+    <view class="gift-card" wx:if="{{giftPoints > 0}}">
       <text class="gift-num">{{giftPoints}}</text>
       <text class="gift-unit">积分</text>
       <text class="gift-foot muted">已入账</text>
