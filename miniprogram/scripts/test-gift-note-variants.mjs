@@ -113,6 +113,18 @@ check('落笔仍走同一条 startNoteWrite 路径（不禁用落笔动画）',
 check('替换前仍会确认（手写内容不被静默覆盖）',
   /requestNoteReplace\(preset, variant, '用推荐文案替换当前内容？'\)/.test(composeJs)
   && /替换礼笺？/.test(composeJs))
+/* ── 藏品题记预填（2026-09-17）：优先级 用户已写 > 题记 > 场景默认 ─────────── */
+check('★ 礼笺预填用藏品题记 themeNote', /_maybeApplyThemeNote\(\)/.test(composeJs) && /product\.themeNote/.test(composeJs))
+check('★ 题记优先于场景默认（调用顺序）',
+  composeJs.indexOf('_maybeApplyThemeNote()') < composeJs.lastIndexOf('_maybeApplySceneNote()'),
+  '顺序反了 → 场景通用句会盖掉为这件藏品写的题记')
+check('★ 用户已写绝不覆盖（正文非空直接返回）',
+  /if \(String\(this\.data\.cardBody \|\| ''\)\.trim\(\)\) return false/.test(composeJs))
+check('★ 落笔动画中不打断（noteWriting 直接返回）', /if \(this\.data\.noteWriting\) return false/.test(composeJs))
+check('商品为整文档读取（题记字段随文档到达，无需额外透传）',
+  /db\.collection\('products'\)\.doc\(id\)\.get\(\)/.test(composeJs) && !/\.field\(/.test(composeJs.slice(composeJs.indexOf('loadProduct'), composeJs.indexOf('loadProduct') + 900)),
+  '若加了 field 投影，themeNote 可能不在结果里')
+
 check('埋点带上句序（便于回看哪一句更常用）',
   /label: preset\.label,\s*\n\s*variant: index \+ 1/.test(composeJs))
 
@@ -130,6 +142,12 @@ if (process.argv.includes('--selftest')) {
 
 function selftest() {
   const injections = [
+    {
+      name: '礼笺预填改成无条件覆盖（会盖掉用户写的话）',
+      file: COMPOSE_JS,
+      from: "    if (String(this.data.cardBody || '').trim()) return false\n",
+      to: ''
+    },
     {
       name: '候选数被算成 1（换句机制失去依据）',
       file: PRESETS,
