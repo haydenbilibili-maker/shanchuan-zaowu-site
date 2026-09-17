@@ -1817,3 +1817,27 @@ button.nav-share-btn::after { display: none; border: none; }
   color: #1A1814; font-size: 28rpx; font-weight: 600; letter-spacing: 2rpx;
 }
 .gift-cta-press { opacity: 0.86; }
+
+/* ── 价格行右侧：折扣 + 库存（合并原独立库存行，提升信息密度）────────────── */
+.price-side {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
+}
+.discount-chip {
+  padding: 2rpx 12rpx;
+  border: 1rpx solid var(--brass-800, rgba(196, 167, 108, 0.5));
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  color: var(--brass-400, #C4A76C);
+  line-height: 1.5;
+}
+.side-stock { font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
+.side-stock.warn { color: #E9A23B; }
+.side-stock.soldout { color: #D64045; }
+.side-stock.unique { color: var(--gold, #C4A76C); letter-spacing: 0.04em; }
+/* 行距收紧：主题名/题记/标准名/学名四行之间的呼吸再小一点 */
+.title-theme-note { margin: 4rpx 0 10rpx; }
+.latin-sub { margin-top: 4rpx; }

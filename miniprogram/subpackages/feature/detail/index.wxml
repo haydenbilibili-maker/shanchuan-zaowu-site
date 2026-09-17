@@ -21,6 +21,14 @@ var sceneChips = function(list) {
   return out;
 };
 module.exports.sceneChips = sceneChips;
+// 折扣标签：0.7 → 「7 折」，0.85 → 「8.5 折」（模板层算，不动 js）
+var discountLabel = function(rate) {
+  var r = parseFloat(rate);
+  if (!r || r >= 1) return '';
+  var z = Math.round(r * 100) / 10;
+  return (z % 1 === 0 ? z.toFixed(0) : z.toFixed(1)) + ' 折';
+};
+module.exports.discountLabel = discountLabel;
 </wxs>
 <wxs src="../../../utils/latinDisplay.wxs" module="latin" />
 
@@ -134,14 +142,14 @@ module.exports.sceneChips = sceneChips;
             <text class="num">{{displayPrice}}</text>
             <text class="price-from" wx:if="{{priceFrom}}">起</text>
           </block>
-        </view>
-        <view class="stock-row" wx:if="{{isOneOfAKind}}">
-          <text class="stock-label unique">{{uniqueStockLabel}}</text>
-        </view>
-        <view class="stock-row" wx:elif="{{displayStock != null}}">
-          <text class="stock-label soldout" wx:if="{{displayStock <= 0}}">已售罄</text>
-          <text class="stock-label warn" wx:elif="{{displayStock <= 2}}">仅剩 {{displayStock}} 件</text>
-          <text class="stock-label" wx:else>现货 {{displayStock}} 件</text>
+          <!-- 右侧：折扣 + 库存（原先各自占行，合并后消掉两处留白） -->
+          <view class="price-side">
+            <text class="discount-chip" wx:if="{{discountRate < 1}}">{{tool.discountLabel(discountRate)}}</text>
+            <text class="side-stock unique" wx:if="{{isOneOfAKind}}">{{uniqueStockLabel}}</text>
+            <text class="side-stock soldout" wx:elif="{{displayStock <= 0}}">已售罄</text>
+            <text class="side-stock warn" wx:elif="{{displayStock <= 2}}">仅剩 {{displayStock}} 件</text>
+            <text class="side-stock" wx:elif="{{displayStock != null}}">现货 {{displayStock}} 件</text>
+          </view>
         </view>
         </block>
       </view>
