@@ -51,6 +51,44 @@ function giftViewFromCoupons(points, coupons) {
 
 const FALLBACK_GIFT_VIEW = giftViewFromCoupons(REGISTER_GIFT.points, GIFT_COUPONS)
 
+/**
+ * 登录态兜底文案（2026-09-17）
+ *
+ * 背景：本页此前只有一套「注册」文案，而实际有两种人进来 —— 新号（要注册、能领新客礼）
+ * 与老号（只需确认手机号）。老号看到「注册即领新客礼」是**承诺了给不出的东西**。
+ * 口径：授权前先问会话（`getUserSession.isRegistered`），老号一律走登录态文案，且不出现
+ * 「注册」「新客礼」字样；礼包卡另由 `showGiftPack`（已领则 false）控制。
+ */
+const LOGIN_DEFAULT = {
+  navTitle: '欢迎回来',
+  navSub: 'WELCOME BACK',
+  overline: 'ONE STEP',
+  title: '欢迎回来',
+  desc: '该微信已完成注册，授权手机号即可确认身份继续。',
+  ctaPhone: '授权手机号 · 继续',
+  ctaFinish: '完成确认',
+  loading: '正在确认身份'
+}
+
+/** 首屏中性态：会话未返回前**不承诺**注册与新客礼（消除「先显示注册、再翻成绑定」的竞态） */
+const NEUTRAL_COPY = {
+  navTitle: '确认手机号',
+  navSub: 'VERIFY',
+  overline: 'ONE STEP',
+  title: '授权手机号即可继续',
+  desc: '正在确认账号…',
+  ctaPhone: '授权手机号 · 继续',
+  ctaFinish: '完成',
+  loading: '正在确认'
+}
+
+/** 按「是否已注册」选文案：入口自带 login 覆盖则优先，否则用 LOGIN_DEFAULT */
+function resolveCopy(from, isRegistered) {
+  const base = COPY_BY_FROM[from] || COPY_BY_FROM.default
+  if (!isRegistered) return base
+  return Object.assign({}, base, LOGIN_DEFAULT, base.login || {})
+}
+
 const COPY_BY_FROM = {
   checkout: {
     navTitle: '授权后继续',
@@ -60,7 +98,11 @@ const COPY_BY_FROM = {
     desc: '勾选协议并授权即可。未注册将同步建档，新客礼放入账户；已注册仅需确认手机号。',
     ctaPhone: '授权手机号 · 继续下单',
     ctaFinish: '完成并继续下单',
-    loading: '正在写入档案'
+    loading: '正在写入档案',
+    login: {
+      title: '欢迎回来，继续下单',
+      desc: '该微信已完成注册，授权手机号即可确认身份并继续下单。'
+    }
   },
   phone: {
     navTitle: '绑定手机号',
@@ -80,7 +122,11 @@ const COPY_BY_FROM = {
     desc: '勾选协议并授权手机号即可预约；新客礼若未领取将同步放入账户。',
     ctaPhone: '授权手机号 · 继续预约',
     ctaFinish: '完成并继续预约',
-    loading: '正在写入档案'
+    loading: '正在写入档案',
+    login: {
+      title: '欢迎回来，继续预约',
+      desc: '该微信已完成注册，授权手机号即可继续预约。'
+    }
   },
   gift: {
     navTitle: '授权后继续',
@@ -90,7 +136,11 @@ const COPY_BY_FROM = {
     desc: '勾选协议并授权即可继续；新客礼若未领取将同步放入账户。',
     ctaPhone: '授权手机号 · 继续',
     ctaFinish: '完成并继续',
-    loading: '正在写入档案'
+    loading: '正在写入档案',
+    login: {
+      title: '欢迎回来',
+      desc: '该微信已完成注册，授权手机号即可继续。'
+    }
   },
   counter_qr: {
     navTitle: '注册领新客礼',
@@ -100,7 +150,13 @@ const COPY_BY_FROM = {
     desc: '勾选协议并授权手机号，即可完成注册。新客礼券即时放入账户，结账可直接使用。',
     ctaPhone: '授权手机号 · 领取新客礼',
     ctaFinish: '完成注册 · 领取新客礼',
-    loading: '正在放入礼包'
+    loading: '正在放入礼包',
+    login: {
+      navTitle: '确认手机号',
+      title: '欢迎回来',
+      desc: '该微信已完成注册，授权手机号即可确认身份。',
+      loading: '正在确认身份'
+    }
   },
   atlas: {
     navTitle: '收进山海图鉴',
@@ -110,7 +166,12 @@ const COPY_BY_FROM = {
     desc: '勾选协议并授权手机号，即可完成注册并把本次鉴定写入山海图鉴；新客礼同步放入账户。',
     ctaPhone: '授权手机号 · 写入图鉴',
     ctaFinish: '完成并写入图鉴',
-    loading: '正在写入档案'
+    loading: '正在写入档案',
+    login: {
+      navTitle: '确认手机号',
+      title: '欢迎回来，写入图鉴',
+      desc: '该微信已完成注册，授权后可把本次鉴定写入山海图鉴。'
+    }
   },
   default: {
     navTitle: '加入山海造物',
@@ -120,7 +181,12 @@ const COPY_BY_FROM = {
     desc: '勾选协议并授权手机号，即可完成注册。新客礼即时放入账户；昵称与头像选填。',
     ctaPhone: '授权手机号 · 领取新客礼',
     ctaFinish: '完成注册 · 领取新客礼',
-    loading: '正在放入礼包'
+    loading: '正在放入礼包',
+    login: {
+      title: '欢迎回来',
+      desc: '该微信已完成注册，授权手机号即可继续。',
+      loading: '正在确认身份'
+    }
   }
 }
 
@@ -137,14 +203,18 @@ Page({
     hasReturn: false,
     showGiftPack: true,
     showProfileExtras: true,
-    navTitle: COPY_BY_FROM.default.navTitle,
-    navSub: COPY_BY_FROM.default.navSub,
-    heroOverline: COPY_BY_FROM.default.overline,
-    heroTitle: COPY_BY_FROM.default.title,
-    heroDesc: COPY_BY_FROM.default.desc,
-    ctaPhoneText: COPY_BY_FROM.default.ctaPhone,
-    ctaFinishText: COPY_BY_FROM.default.ctaFinish,
-    loadingText: COPY_BY_FROM.default.loading,
+    /** 会话是否已返回：未返回前用中性文案，且不渲染新客礼卡（详见 NEUTRAL_COPY） */
+    accountReady: false,
+    /** 该微信是否已注册（老号走登录态文案，不承诺新客礼） */
+    isRegistered: false,
+    navTitle: NEUTRAL_COPY.navTitle,
+    navSub: NEUTRAL_COPY.navSub,
+    heroOverline: NEUTRAL_COPY.overline,
+    heroTitle: NEUTRAL_COPY.title,
+    heroDesc: NEUTRAL_COPY.desc,
+    ctaPhoneText: NEUTRAL_COPY.ctaPhone,
+    ctaFinishText: NEUTRAL_COPY.ctaFinish,
+    loadingText: NEUTRAL_COPY.loading,
     agreed: false,
     avatarUrl: '',
     nickName: '',
@@ -191,27 +261,17 @@ Page({
       })
     }
 
-    const copy = COPY_BY_FROM[resolvedFrom] || COPY_BY_FROM.default
-    const isCheckoutLike = ['checkout', 'phone', 'booking', 'gift', 'counter_qr'].indexOf(resolvedFrom) >= 0
-
+    // 2026-09-17：这里此前**同步**套用入口的「注册」文案，而会话是异步的 →
+    // 老用户会先看到「注册即领新客礼」再翻成「绑定手机号」。现在首屏只给中性文案，
+    // 由 loadSession() 按 isRegistered 落定（见 NEUTRAL_COPY / resolveCopy）。
     this.setData({
       from: resolvedFrom,
       returnUrl: resolvedReturnUrl,
       returnMode: resolvedReturnMode,
-      phoneOnly,
       hasReturn: !!(resolvedReturnUrl || resolvedReturnMode === 'back'),
-      showGiftPack: !phoneOnly,
-      showProfileExtras: !phoneOnly && !isCheckoutLike,
-      navTitle: phoneOnly ? '绑定手机号' : copy.navTitle,
-      navSub: phoneOnly ? 'VERIFY' : copy.navSub,
-      heroOverline: phoneOnly ? 'VERIFY' : copy.overline,
-      heroTitle: phoneOnly ? '确认联系手机' : copy.title,
-      heroDesc: phoneOnly
-        ? '绑定后即可返回继续。若尚未领取新客礼，将在绑定后自动补发。'
-        : copy.desc,
-      ctaPhoneText: phoneOnly ? '授权手机号' : copy.ctaPhone,
-      ctaFinishText: phoneOnly ? '完成绑定' : copy.ctaFinish,
-      loadingText: copy.loading
+      showGiftPack: !phoneOnly && this.data.showGiftPack,
+      // 资料补充区也等会话回来再决定（老号的资料已存在，不该再让填一遍）
+      showProfileExtras: false
     })
     trackBehavior('onboarding_start', 'from', resolvedFrom || 'direct')
     this.initLayout()
@@ -309,17 +369,43 @@ Page({
     const onboardingDone = !!session.onboardingDone
     const giftClaimed = !!u.registerGiftClaimed && !u.registerGiftIncomplete
     const phoneOnly = this.data.phoneOnly || (onboardingDone && !phoneBound)
+    // 已注册判据优先用服务端下发的 isRegistered；老服务端未下发时回退到「已完成 onboarding / 已绑手机号」
+    const isRegistered = session.isRegistered !== undefined
+      ? !!session.isRegistered
+      : !!(onboardingDone || phoneBound)
+    const copy = phoneOnly
+      ? null
+      : resolveCopy(this.data.from, isRegistered)
 
-    this.setData({
+    this.setData(Object.assign({
       avatarUrl: u.avatarUrl || '',
       nickName,
       phoneBound,
       phoneMasked: u.phoneMasked || '',
       agreed: !!(u.agreedTermsAt || u.phone || onboardingDone),
       phoneOnly,
+      accountReady: true,
+      isRegistered,
       showGiftPack: !phoneOnly && !giftClaimed,
       showProfileExtras: !phoneOnly && !this.data.hasReturn
-    })
+    }, copy ? {
+      navTitle: copy.navTitle,
+      navSub: copy.navSub,
+      heroOverline: copy.overline,
+      heroTitle: copy.title,
+      heroDesc: copy.desc,
+      ctaPhoneText: copy.ctaPhone,
+      ctaFinishText: copy.ctaFinish,
+      loadingText: copy.loading
+    } : (phoneOnly ? {
+      navTitle: '绑定手机号',
+      navSub: 'VERIFY',
+      heroOverline: 'VERIFY',
+      heroTitle: '确认联系手机',
+      heroDesc: '绑定后即可返回继续。若尚未领取新客礼，将在绑定后自动补发。',
+      ctaPhoneText: '授权手机号',
+      ctaFinishText: '完成绑定'
+    } : {})))
 
     if (onboardingDone && phoneBound) {
       if (this.data.hasReturn) {
@@ -456,8 +542,13 @@ Page({
     const couponCount = Number(gift.couponCount) || 0
     // 欢迎页已改为「不自动跳转、由用户选择」，故不再下发 autoBrowse / autoReturn
 
+    // 新号 / 老号：完成页据此选「注册完成」还是「欢迎回来」，且老号不该被承诺新客礼
+    const isNewUser = payload && payload.isNewUser !== undefined
+      ? !!payload.isNewUser
+      : !this.data.isRegistered
     const q = [
       `reward=${rewardFlag}`,
+      `isNew=${isNewUser ? 1 : 0}`,
       `gift=${giftFlag}`,
       `giftPartial=${giftPartial ? 1 : 0}`,
       `giftFail=${giftFailed ? 1 : 0}`,
@@ -502,6 +593,12 @@ Page({
         nickName: patch.nickName
       })
       trackBehavior('phone_bind_success', 'from', this.data.from || 'onboarding')
+      // 2026-09-17：新老分开埋点 —— 此前只有 onboarding_* 一条线，注册与登录不可度量
+      trackBehavior(
+        payload.isNewUser === false ? 'auth_login_success' : 'auth_register_success',
+        'from',
+        this.data.from || 'onboarding'
+      )
 
       if (!payload.finished) {
         const upsert = await wx.cloud.callFunction({

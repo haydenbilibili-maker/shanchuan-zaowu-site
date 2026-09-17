@@ -16,6 +16,7 @@
  * 事件：`bind:success`（已注册成功，event.detail = payload）/ `bind:fail` / `bind:close`
  */
 const { registerWithPhone } = require('../../utils/registerPhone')
+const { ensureSession } = require('../../utils/userSession')
 
 Component({
   options: { addGlobalClass: true },
@@ -32,10 +33,31 @@ Component({
     /** 关闭按钮文案（closable 为 true 时才显示） */
     closeText: { type: String, value: '先看看' },
     /** 埋点用来源 */
-    from: { type: String, value: 'register_dialog' }
+    from: { type: String, value: 'register_dialog' },
+    /** 老号（已注册）时替换的文案：不再承诺「新客礼包自动到账」 */
+    loginOverline: { type: String, value: 'ONE STEP' },
+    loginTitle: { type: String, value: '确认手机号继续' },
+    loginDesc: { type: String, value: '该微信已完成注册，授权手机号即可确认身份继续。' },
+    loginCta: { type: String, value: '授权手机号 · 继续' }
   },
 
-  data: { saving: false },
+  data: { saving: false, isRegistered: false },
+
+  lifetimes: {
+    /**
+     * 2026-09-17：弹窗自己问一次会话，据此决定是否展示「新客礼包自动到账」。
+     * 此前无论新老都承诺新客礼 —— 老用户（尤其已注册但资料空、被门禁拦下的人）会以为还能再领。
+     */
+    attached() {
+      ensureSession(null).then((session) => {
+        if (!session || !session.success) return
+        const registered = session.isRegistered !== undefined
+          ? !!session.isRegistered
+          : !!(session.onboardingDone || (session.user && session.user.phone))
+        if (registered) this.setData({ isRegistered: true })
+      }).catch(() => { /* 会话不可用时保持注册态文案（首访是多数） */ })
+    }
+  },
 
   methods: {
     noop() {},
@@ -58,7 +80,7 @@ Component({
       }
 
       this.setData({ saving: true })
-      wx.showLoading({ title: '正在注册…', mask: true })
+      wx.showLoading({ title: this.data.isRegistered ? '正在确认…' : '正在注册…', mask: true })
       try {
         let app = null
         try { app = getApp() } catch (err) { /* ignore */ }

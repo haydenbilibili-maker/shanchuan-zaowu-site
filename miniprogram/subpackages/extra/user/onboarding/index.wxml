@@ -26,7 +26,9 @@
         <text class="step-desc">{{heroDesc}}</text>
       </view>
 
-      <view class="reward-plate" wx:if="{{showGiftPack}}">
+      <!-- 2026-09-17：accountReady 之前不渲染 —— 会话未返回时无法判断这是新号还是老号，
+           先亮出「新客礼」就是对老用户的空承诺（首屏竞态的老问题） -->
+      <view class="reward-plate" wx:if="{{accountReady && showGiftPack}}">
         <view class="reward-plate-head">
           <text class="reward-plate-overline">WELCOME GIFT</text>
           <text class="reward-plate-title">新客礼</text>

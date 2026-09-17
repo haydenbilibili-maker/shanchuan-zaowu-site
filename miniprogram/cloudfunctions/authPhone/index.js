@@ -124,6 +124,10 @@ exports.main = async (event) => {
     }
 
     const selfRes = await db.collection('users').where({ _openid: openid }).limit(1).get()
+    // 2026-09-17：这个函数**本来就分新老**（add 建号 / update 补手机号），但此前不告诉调用方，
+    // 于是注册页只能靠猜 → 老用户会被承诺新客礼。现在如实回传，供文案与完成页分支使用。
+    const isNewUser = !(selfRes.data && selfRes.data.length > 0)
+    const existingNickName = isNewUser ? '' : String((selfRes.data[0] || {}).nickName || '').trim()
     const payload = {
       phone: normalizedPhone,
       phoneVerifiedAt: db.serverDate(),
@@ -185,6 +189,8 @@ exports.main = async (event) => {
         return {
           success: true,
           phoneMasked,
+          isNewUser,
+          existingNickName,
           finished: true,
           user: finished.user || null,
           registerGift: finished.registerGift || {},
@@ -195,6 +201,8 @@ exports.main = async (event) => {
         return {
           success: true,
           phoneMasked,
+          isNewUser,
+          existingNickName,
           finished: false,
           finishError: finishErr.message || '建档发券异常',
           registerGift: { error: true, msg: '礼包稍后可在「我的」补领' }
@@ -202,7 +210,7 @@ exports.main = async (event) => {
       }
     }
 
-    return { success: true, phoneMasked, finished: false }
+    return { success: true, phoneMasked, isNewUser, existingNickName, finished: false }
   } catch (e) {
     console.error('authPhone', e)
     return { success: false, msg: e.message || '绑定失败' }

@@ -12,14 +12,15 @@
     <view class="rad-corner is-bl"></view>
     <view class="rad-corner is-br"></view>
 
-    <text class="rad-overline">{{overline}}</text>
-    <text class="rad-title">{{title}}</text>
-    <text class="rad-desc">{{desc}}</text>
+    <text class="rad-overline">{{isRegistered ? loginOverline : overline}}</text>
+    <text class="rad-title">{{isRegistered ? loginTitle : title}}</text>
+    <text class="rad-desc">{{isRegistered ? loginDesc : desc}}</text>
 
     <!-- 权益点：一句话说清「注册能得到什么」，降低授权抗拒 -->
     <view class="rad-perks">
       <view class="rad-perk"><text class="rad-dot"></text><text class="rad-perk-t">鉴定结果自动存进山海图鉴</text></view>
-      <view class="rad-perk"><text class="rad-dot"></text><text class="rad-perk-t">新客礼包自动到账</text></view>
+      <!-- 老号不承诺新客礼（礼包按 openid 幂等，重复注册不会重发） -->
+      <view class="rad-perk" wx:if="{{!isRegistered}}"><text class="rad-dot"></text><text class="rad-perk-t">新客礼包自动到账</text></view>
       <view class="rad-perk"><text class="rad-dot"></text><text class="rad-perk-t">订单与门店通知可达</text></view>
     </view>
 
@@ -32,7 +33,7 @@
       loading="{{saving}}"
       hover-class="rad-cta-press"
       hover-stay-time="60"
-    >{{saving ? '正在注册…' : cta}}</button>
+    >{{saving ? (isRegistered ? '正在确认…' : '正在注册…') : (isRegistered ? loginCta : cta)}}</button>
 
     <view class="rad-fineprint">
       <text>点击即表示同意</text>

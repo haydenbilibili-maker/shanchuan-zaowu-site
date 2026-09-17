@@ -329,11 +329,16 @@ exports.main = async (event) => {
     const profileScore = user ? user.profileScore : 0
     const authState = resolveAuthState(rawUser || {})
     const onboardingDone = !!(rawUser && rawUser.onboardingDone)
+    // 2026-09-17：明确区分「是否已注册」与「资料完善度」。
+    // authState（guest/registered/verified_phone/enriched）是**完善度**口径：
+    // 已注册但没填昵称的人会被判成 guest —— 拿它当登录态用，就会把人again 引去注册（见 requireRegistered）。
+    const isRegistered = !!rawUser
 
     return {
       success: true,
       openid,
       authState,
+      isRegistered,
       onboardingDone,
       profileScore,
       memberNo: buildMemberNo(openid),

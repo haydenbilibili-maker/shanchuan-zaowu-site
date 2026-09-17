@@ -12,15 +12,18 @@
       <text class="done-seal-glyph">{{hasReturn ? '续' : '山'}}</text>
     </view>
     <text class="done-overline">{{hasReturn ? 'CONTINUE' : 'WELCOME'}}</text>
-    <text class="done-title">{{giftFail ? '档案已建立' : (hasReturn ? '可以继续了' : '欢迎，' + nickName)}}</text>
-    <text class="done-desc" wx:if="{{giftFail}}">注册已完成。礼包可一键补领，不影响继续使用。</text>
-    <text class="done-desc" wx:elif="{{giftPartial}}">积分可能已到账，部分礼券待补齐。</text>
-    <text class="done-desc" wx:elif="{{hasReturn}}">新客礼已放入账户，接着走完刚才那一步即可。</text>
+    <!-- 2026-09-17：按「新号/老号」分支 —— 老号确认手机号不该被说成刚注册、也不该承诺新客礼 -->
+    <text class="done-title">{{giftFail ? (isNewUser ? '档案已建立' : '手机号已确认') : (hasReturn ? '可以继续了' : (welcomeBack ? '欢迎回来，' + nickName : '欢迎，' + nickName))}}</text>
+    <text class="done-desc" wx:if="{{giftFail}}">{{isNewUser ? '注册已完成。礼包可一键补领，不影响继续使用。' : '手机号已确认。礼包可一键补领，不影响继续使用。'}}</text>
+    <text class="done-desc" wx:elif="{{giftPartial}}">部分礼券待补齐，稍后可在「我的」补领。</text>
+    <text class="done-desc" wx:elif="{{hasReturn}}">{{isNewUser ? '新客礼已放入账户，接着走完刚才那一步即可。' : '手机号已确认，接着走完刚才那一步即可。'}}</text>
+    <text class="done-desc" wx:elif="{{welcomeBack}}">手机号已确认，账号里的礼券与记录都还在。</text>
     <text class="done-desc" wx:else>新客礼已放入账户，接下来去哪由你决定。</text>
   </view>
 
   <!-- 礼包明细：两张卡（券卡可点，直达礼券夹） -->
-  <view class="done-gifts done-enter done-enter-d1" wx:if="{{hasRegisterGift && !giftFail && !giftPartial}}">
+  <!-- 老号只在确实补到券时才展示礼包明细（否则会出现「0 张礼券」） -->
+  <view class="done-gifts done-enter done-enter-d1" wx:if="{{hasRegisterGift && !giftFail && !giftPartial && (isNewUser || giftCoupons > 0)}}">
     <view
       class="gift-card gift-card-tap"
       hover-class="gift-card-press"

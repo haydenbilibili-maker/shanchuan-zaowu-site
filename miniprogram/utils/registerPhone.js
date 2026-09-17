@@ -45,6 +45,8 @@ async function registerWithPhone(opts) {
         ok: true,
         payload: {
           success: true,
+          // 新号 / 老号：由 authPhone 如实回传（完成页文案与埋点据此分支）
+          isNewUser: payload.isNewUser !== false,
           registerGift: payload.registerGift || {},
           reward: payload.reward || {},
           user: payload.user

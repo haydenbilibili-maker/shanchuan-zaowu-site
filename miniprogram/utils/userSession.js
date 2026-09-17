@@ -429,8 +429,13 @@ async function requirePhone(app, options = {}) {
 
 async function requireRegistered(app, options = {}) {
   const session = await ensureSession(app)
-  const state = session.authState || resolveAuthState(session.user)
-  if (state !== 'guest' && session.user && session.user.nickName) return true
+  // 判据用「是否已注册」，**不要**用 authState —— 那是资料完善度：
+  // 已注册但没填昵称的人 authState 会是 guest，于是被反复要求「注册领新客礼包」。
+  // isRegistered 由 getUserSession 下发；老服务端未下发时回退到 onboardingDone / 已绑手机号。
+  const registered = session.isRegistered !== undefined
+    ? !!session.isRegistered
+    : !!(session.onboardingDone || (session.user && session.user.phone))
+  if (registered) return true
 
   await promptPhoneBind({
     title: options.title || '领取新客礼包',

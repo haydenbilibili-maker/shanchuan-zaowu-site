@@ -27,6 +27,9 @@ Page({
     giftPoints: REGISTER_GIFT.points || 0,
     giftCoupons: (REGISTER_GIFT.coupons || []).length,
     giftMsg: '',
+    /** 本次是「新号注册」还是「老号确认手机号」——文案据此分支，老号不该被承诺新客礼 */
+    isNewUser: true,
+    welcomeBack: false,
     repairing: false,
     hasReturn: false,
     primaryCta: '开始逛馆',
@@ -47,6 +50,8 @@ Page({
     } catch (e) {
       giftMsg = options.msg || ''
     }
+    // 新号 / 老号：由注册页透传（缺省按新号处理，兼容旧链接）
+    const isNewUser = options.isNew !== '0'
     const stored = peekOnboardingReturn() || {}
     // 注意：不再读取 autoBrowse / autoReturn —— 旧链接仍可能带这两个参数，忽略即可
     const hasReturn = !!(stored.returnUrl || stored.returnMode === 'back')
@@ -71,6 +76,8 @@ Page({
 
     this.setData({
       nickName: String(nick || '').trim() || '藏家',
+      isNewUser,
+      welcomeBack: !isNewUser && !hasReturn,
       hasReward: options.reward === '1',
       hasRegisterGift: options.gift === '1',
       giftPartial: options.giftPartial === '1',
@@ -81,7 +88,8 @@ Page({
       hasReturn,
       primaryCta,
       // 有券才给「去礼券夹核销」入口；异常态下用「补领」按钮替代
-      showCouponsEntry: (giftOk && giftCoupons > 0) || (options.gift === '1' && options.giftFail !== '1'),
+      // 老号只有真的补到券才给入口（否则不该出现「0 张礼券」）
+      showCouponsEntry: (giftOk && giftCoupons > 0) || (isNewUser && options.gift === '1' && options.giftFail !== '1'),
       pagePadTop: nav.headerBlockPx + rpxToPx(48, win.windowWidth),
       pagePadBottom: nav.safeBottom + rpxToPx(32, win.windowWidth),
       pagePadX: rpxToPx(32, win.windowWidth)
