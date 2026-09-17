@@ -1,3 +1,25 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * 详情页信息卡 · 三级视觉规范（2026-09-17 定稿）
+ *
+ * 背景：此前每加一项信息就**再占一行** → 四行同权、留白零散、金色通胀。
+ * 规则：新增信息先问「它属于哪一级」，而不是「再放一行」。
+ *
+ *   L1 主视觉（最亮，一屏只允许两处金）
+ *       .title-theme（主题名 46rpx 衬线）/ .num + .symbol（价格，金）
+ *       .gift-cta（一键送礼，金色实心）
+ *   L2 支撑（次亮，常规字重）
+ *       .title-main.is-sub（标准名 30rpx · #CFC9BF）
+ *       .title-theme-note（题记 24rpx + 细弱金线）
+ *       .gift-scene-chip（场景 chips —— **中性描边**，不得用品牌金）
+ *       .discount-chip（省钱标签，金色实心小标签：价格区唯一的金）
+ *   L3 弱化（最小/最灰）
+ *       .latin-sub（学名，opacity .72）/ .side-stock（库存）/ .service-item（服务承诺）
+ *       .tag-item（品类角标）
+ *
+ * 黄金规则：**L1 之外不得出现品牌亮金（#C4A76C / var(--brass-400)）**；
+ *   否则金色通胀 → 页面没有重点。由 check:detail-visual-tiers 守卫钉住。
+ * ═══════════════════════════════════════════════════════════════════════ */
+
 /* subpackages/feature/detail/index.wxss */
 @import "../../../styles/badges.wxss";
 
@@ -1880,3 +1902,19 @@ button.nav-share-btn::after { display: none; border: none; }
   letter-spacing: 0.5rpx;
 }
 .side-stock { font-size: 21rpx; opacity: 0.9; }
+
+/* ── 分隔线与金色收敛（2026-09-17 美学第二轮）────────────────────────────
+ * 金色通胀问题：价格 + 折扣标签 + 题记线 + 场景 chips + CTA 曾同时用亮金 ✗
+ * 收敛后：**价格与 CTA 最亮**，chips 退为中性描边，题记线保持细弱金。
+ */
+.card-divider {
+  height: 1rpx;
+  margin: 18rpx 0 16rpx;
+  background: linear-gradient(90deg, rgba(196,167,108,0) 0%, rgba(196,167,108,0.22) 50%, rgba(196,167,108,0) 100%);
+}
+.gift-scene-chip {
+  border-color: rgba(196, 167, 108, 0.26);
+  color: #B9B2A6;
+  background: rgba(255, 255, 255, 0.02);
+}
+.gift-scene-chip-press { background: rgba(196, 167, 108, 0.12); }

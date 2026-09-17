@@ -29,6 +29,14 @@ var discountLabel = function(rate) {
   return (z % 1 === 0 ? z.toFixed(0) : z.toFixed(1)) + ' 折';
 };
 module.exports.discountLabel = discountLabel;
+// 省钱标签：原价 - 会员价（具体金额比折扣率更有说服力）；无折扣返回空串
+var saveLabel = function(price, rate) {
+  var p = parseFloat(price); var r = parseFloat(rate);
+  if (!p || !r || r >= 1) return '';
+  var save = Math.round(p - p * r);
+  return save > 0 ? ('省 ¥' + save) : '';
+};
+module.exports.saveLabel = saveLabel;
 </wxs>
 <wxs src="../../../utils/latinDisplay.wxs" module="latin" />
 
@@ -144,7 +152,7 @@ module.exports.discountLabel = discountLabel;
           </block>
           <!-- 右侧：折扣 + 库存（原先各自占行，合并后消掉两处留白） -->
           <view class="price-side">
-            <text class="discount-chip" wx:if="{{discountRate < 1}}">{{tool.discountLabel(discountRate)}}</text>
+            <text class="discount-chip" wx:if="{{discountRate < 1}}">{{tool.saveLabel(displayPrice, discountRate)}}</text>
             <text class="side-stock unique" wx:if="{{isOneOfAKind}}">{{uniqueStockLabel}}</text>
             <text class="side-stock soldout" wx:elif="{{displayStock <= 0}}">已售罄</text>
             <text class="side-stock warn" wx:elif="{{displayStock <= 2}}">仅剩 {{displayStock}} 件</text>
@@ -186,6 +194,8 @@ module.exports.discountLabel = discountLabel;
       </view>
 
       <!-- 礼赠面板（坪效位）：把「这是什么」变成「适合送什么场合」+ 一键送礼 -->
+      <!-- 极细分隔：信息卡与礼赠面板是两块气场，靠间距会糊在一起 -->
+      <view class="card-divider" aria-hidden="true"></view>
       <view class="gift-panel" wx:if="{{product.giftEligible !== false}}">
         <view class="gift-panel-head">
           <text class="gift-panel-title">作为礼物</text>
