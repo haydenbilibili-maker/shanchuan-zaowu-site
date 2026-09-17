@@ -540,21 +540,23 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 .care-strip-overline {
   display: block;
-  font-size: 18rpx;
+  font-size: 24rpx;
   color: var(--gold);
   letter-spacing: 0.1em;
   margin-bottom: 8rpx;
 }
 .care-strip-summary {
   display: block;
-  font-size: 26rpx;
+  /* 养护提醒是顾客最关心的部分（NPS 投诉重点）→ 与区块标题同级，并加重字重 */
+  font-size: 30rpx;
+  font-weight: 500;
   color: var(--color-text-body);
   line-height: 1.5;
   margin-bottom: 10rpx;
 }
 .care-strip-tag {
   display: inline-block;
-  font-size: 20rpx;
+  font-size: 22rpx;
   letter-spacing: 0.04em;
 }
 .care-strip-cta {
@@ -1058,13 +1060,13 @@ button.nav-share-btn::after { display: none; border: none; }
 .stock-label.active { color: #E9A23B; }
 .price-from { font-size: 24rpx; color: var(--color-text-secondary); margin-left: 4rpx; }
 
-.section-title { font-size: 24rpx; color: var(--color-text-secondary); font-weight: 600; letter-spacing: 0.08em; margin-bottom: 24rpx; padding-left: 16rpx; border-left: 4rpx solid var(--gold); }
+.section-title { font-size: 30rpx; color: var(--color-text-secondary); font-weight: 600; letter-spacing: 0.06em; margin-bottom: 24rpx; padding-left: 16rpx; border-left: 6rpx solid var(--gold); }
 .section-title.inline { margin-bottom: 0; }
 .archive-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24rpx; margin-bottom: 60rpx; width: 100%; }
 .archive-item { background: var(--color-bg-card); padding: 24rpx; border-radius: 16rpx; border: 1px solid rgba(38, 35, 32, 0.8); display: flex; flex-direction: column; overflow: hidden; }
 .archive-item.clickable:active,
 .archive-item-press { background: var(--color-bg-elevated); }
-.lbl { font-size: 20rpx; color: var(--color-text-muted); margin-bottom: 12rpx; letter-spacing: 1rpx; }
+.lbl { font-size: 22rpx; color: var(--color-text-muted); margin-bottom: 12rpx; letter-spacing: 1rpx; }
 .val { 
   font-size: 26rpx; color: var(--color-text-body); font-weight: 600; 
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 

@@ -45,6 +45,18 @@ const INJECTIONS = {
     from: "function onImageError() {\n  if (state !== 'unsupported') {\n    state = 'unsupported'",
     to: "function onImageError() {\n  if (false) {\n    state = 'unsupported'"
   },
+  // 尺寸兜底退回旧口径（只剥 cm$）→「0×0×厚度 0 厘米」又被当成有效尺寸显示出来
+  'archive-size-old-regex': {
+    file: 'miniprogram/subpackages/feature/detail/index.js',
+    from: "    .replace(/(厚度|长度|宽度|高度|尺寸|长|宽|高)/g, 'x')\n",
+    to: ''
+  },
+  // 单值也当空 → 合法的单值尺寸（如 "0"）会被吞成「—」
+  'archive-size-single-value-empty': {
+    file: 'miniprogram/subpackages/feature/detail/index.js',
+    from: '  if (parts.length < 2) return false;\n',
+    to: ''
+  },
   // 详情页忘记挂 error 处理 → 映射不会回落
   'detail-missing-degrade': {
     file: 'miniprogram/subpackages/feature/detail/index.js',
@@ -124,6 +136,40 @@ eq('空值安全', imgUrl.detailUrl(''), '')
 eq('cloud:// 不拼参数（必须先换临时链）', imgUrl.detailUrl('cloud://env.abc/products/a.png'), 'cloud://env.abc/products/a.png')
 imgUrl.__resetProbe()
 eq('reset 后回到 unknown（诊断用）', imgUrl.isThumbUsable(), false)
+
+/* ------------------------------------------------------------------ *
+ * 1.5) 档案「装裱尺寸」空值判定：后台落库形态五花八门，全零一律当未著录
+ *
+ * 为什么单独钉：真机截图里出现过「0×0×厚度 0 厘米」被当成有效尺寸显示在档案卡上，
+ * 而旧实现只剥 `cm$`、只认 `0x0x0` 形态 → 带「厚度…厘米」的写法全部漏过去。
+ * 这类值顾客一眼就看出是坏的（比显示「—」更糟），且此前没有任何守卫覆盖。
+ * ------------------------------------------------------------------ */
+
+const detailSrc = readSrc('miniprogram/subpackages/feature/detail/index.js')
+const blankFn = /function isBlankArchiveText\([\s\S]*?\n}\n/.exec(detailSrc)
+const emptySizeFn = /function isEmptyArchiveSize\([\s\S]*?\n}\n/.exec(detailSrc)
+check('能从详情页源码取出 isEmptyArchiveSize（守卫不是空转）', !!blankFn && !!emptySizeFn)
+const isEmptyArchiveSize = new Function(
+  `${blankFn ? blankFn[0] : ''}\n${emptySizeFn ? emptySizeFn[0] : ''}\nreturn isEmptyArchiveSize`
+)()
+
+const SIZE_CASES = [
+  ['0×0×厚度 0 厘米', true, '★ 真机截图里的形态：全零 + 中文单位'],
+  ['0x0x0', true, '经典全零'],
+  ['0×0×0 cm', true, '带 cm'],
+  ['0×0', true, '两维全零'],
+  ['长0 宽0 高0', true, '中文维度词'],
+  ['20×30×厚度 5 厘米', false, '有非零维度 → 真实尺寸'],
+  ['20×30', false, '两维正常值'],
+  ['30', false, '单值不当空'],
+  ['0', false, '单值 0 语义不明 → 不当空（宁可显示也不静默吞掉）'],
+  ['A4', false, '非数字尺寸（如 A4）→ 不当空'],
+  ['', true, '空串'],
+  ['   ', true, '纯空白']
+]
+for (const [raw, want, label] of SIZE_CASES) {
+  eq(`装裱尺寸「${raw || '(空)'}」→ ${want ? '视为未著录' : '视为有效'}：${label}`, isEmptyArchiveSize(raw), want)
+}
 
 /* ------------------------------------------------------------------ *
  * 2) 详情页：映射建立与回落（真源码 + 桩 Page）

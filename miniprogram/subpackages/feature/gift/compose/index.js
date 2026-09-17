@@ -15,7 +15,9 @@ const {
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const {
   GIFT_NOTE_PRESETS,
-  getPresetById
+  getPresetById,
+  presetBodyCount,
+  pickPresetBody
 } = require('../giftNotePresets')
 const {
   GIFT_PACKAGING_LABEL,
@@ -106,6 +108,10 @@ Page({
     recipientEditing: false,
     notePresets: GIFT_NOTE_PRESETS,
     activeNotePresetId: '',
+    /** 当前关系选到第几句（0 基）与候选总数 —— 给「换一句」与「第 n/N 句」标用 */
+    noteVariantIndex: 0,
+    noteVariantTotal: 0,
+    noteVariantLabel: '',
     /** 来自 hub 的场景（仅影响导语/场景语向，不改交付与录音） */
     activeScene: '',
     sceneLabel: '',
@@ -754,7 +760,11 @@ Page({
     const activeId = this.data.activeNotePresetId
     if (activeId) {
       const preset = getPresetById(activeId)
-      if (!preset || cardBody !== preset.body) patch.activeNotePresetId = ''
+      // 与**任一句候选**相同都算仍在使用该关系文案（多句候选后不能只比第一句）
+      const bodies = (preset && Array.isArray(preset.bodies) && preset.bodies.length)
+        ? preset.bodies
+        : (preset ? [preset.body] : [])
+      if (!preset || bodies.indexOf(cardBody) === -1) patch.activeNotePresetId = ''
     }
     this.setData(patch)
   },
@@ -941,34 +951,63 @@ Page({
   onNotePresetTap(e) {
     const id = e.currentTarget.dataset.id
     const preset = getPresetById(id)
-    if (!preset || !preset.body) return
+    if (!preset) return
+    const total = presetBodyCount(preset) || 1
+    // 同一个关系再点一次 = 换一句（原来一关系只有一句，点几次都是同一段）
+    const variant = (id === this.data.activeNotePresetId) ? (this.data.noteVariantIndex + 1) % total : 0
+    this.requestNoteReplace(preset, variant, '用推荐文案替换当前内容？')
+  },
 
-    // 动画中点其它关系：以已写出的全文为「当前内容」再确认
+  /** 「换一句」：在当前关系里往后翻一句（顾客原话：没有更新的标 → 现在既有按钮也有句序） */
+  onNoteShuffle() {
+    const preset = getPresetById(this.data.activeNotePresetId)
+    if (!preset) {
+      wx.showToast({ title: '先选一个关系', icon: 'none' })
+      return
+    }
+    const total = presetBodyCount(preset) || 1
+    if (total < 2) return
+    this.requestNoteReplace(preset, (this.data.noteVariantIndex + 1) % total, '换一句新的推荐文案？')
+  },
+
+  /** 统一的「是否替换」判定：内容为空或与目标句相同 → 直接落笔；否则先确认 */
+  requestNoteReplace(preset, variant, confirmContent) {
+    if (!preset) return
+    const body = pickPresetBody(preset, variant)
+    if (!body) return
     const current = this.data.noteWriting && this._noteWriteTarget != null
       ? String(this._noteWriteTarget)
       : String(this.data.cardBody || '')
-    const trimmed = current.trim()
-    if (!trimmed || current === preset.body) {
-      this.applyNotePreset(preset)
+    if (!current.trim() || current === body) {
+      this.applyNotePreset(preset, variant)
       return
     }
-
     wx.showModal({
       title: '替换礼笺？',
-      content: '用推荐文案替换当前内容？',
+      content: confirmContent,
       confirmText: '替换',
       cancelText: '取消',
       success: (res) => {
-        if (res.confirm) this.applyNotePreset(preset)
+        if (res.confirm) this.applyNotePreset(preset, variant)
       }
     })
   },
 
-  applyNotePreset(preset) {
-    if (!preset || !preset.body) return
-    this.startNoteWrite(preset)
+  applyNotePreset(preset, variant) {
+    if (!preset) return
+    const total = presetBodyCount(preset) || 1
+    const index = (((Number(variant) || 0) % total) + total) % total
+    const body = pickPresetBody(preset, index)
+    if (!body) return
+    this.setData({
+      noteVariantIndex: index,
+      noteVariantTotal: total,
+      noteVariantLabel: total > 1 ? `${index + 1}/${total}` : ''
+    })
+    this.startNoteWrite(Object.assign({}, preset, { body }))
     trackBehavior('gift_note_preset', 'gift', preset.id, {
-      label: preset.label
+      label: preset.label,
+      variant: index + 1
     })
   },
 

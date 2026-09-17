@@ -89,6 +89,13 @@
         </view>
       </scroll-view>
 
+      <!-- 2026-09-17：一个关系现在有多句候选 —— 这里给出「换一句」与句序（第 2/3 句）。
+           顾客原话：「点进去好几次都是同样一段话，也没有更新的标」。 -->
+      <view class="note-shuffle-row" wx:if="{{activeNotePresetId && noteVariantTotal > 1}}">
+        <text class="note-shuffle-count">第 {{noteVariantLabel}} 句</text>
+        <text class="note-shuffle" bindtap="onNoteShuffle">换一句 ↻</text>
+      </view>
+
       <view class="envelope-shell">
         <view class="envelope-flap"></view>
         <view class="card-plate {{noteWriting ? 'writing' : ''}}">
@@ -231,12 +238,13 @@
         <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>
       </view>
 
-      <view class="privacy-row privacy-row-locked" wx:if="{{allowHidePriceToggle === false}}">
+      <view class="privacy-row privacy-row-locked is-on" wx:if="{{allowHidePriceToggle === false}}">
         <view class="check on"></view>
         <text class="privacy-txt">价格已隐藏（平台设定，不可更改）</text>
       </view>
 
-      <view class="privacy-row" bindtap="toggleHidePrice" wx:else>
+      <!-- 2026-09-17：整行加 is-on 点亮（勾选框太小、只有填色很难看出「已隐藏」是开着的） -->
+      <view class="privacy-row {{hidePrice ? 'is-on' : ''}}" bindtap="toggleHidePrice" wx:else>
         <view class="check {{hidePrice ? 'on' : ''}}"></view>
         <text class="privacy-text">对收礼人隐藏成交价（推荐）</text>
       </view>
