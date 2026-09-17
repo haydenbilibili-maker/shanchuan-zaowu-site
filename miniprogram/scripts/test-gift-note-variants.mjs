@@ -157,6 +157,11 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
     '印刷卡不该有博物黑外框（打印/裁切不便）')
   check('★ 正文在题记与署名之间**垂直居中**（短笺不空、长笺不挤）',
     /freeBottom - freeTop - bodyBlockH/.test(card))
+  check('★ 页脚带独立、正文区让位（真图曾出现两枚码压住署名）',
+    /const FOOTER_H = Math\.round\(44 \* MM\)/.test(card)
+    && /const signTop = footerTop - Math\.round\(10 \* MM\)/.test(card),
+    '码的高度必须从正文可用高度里扣掉，否则会压住正文与署名')
+  check('★ 页脚带内排布：码的 y 从 footerTop 起（不再向上顶）', /const y = footerTop \+ Math\.round\(2 \* MM\)/.test(card))
   check('★ 改纸张只改常量：绘制按设计稿等比放大（setTransform(S,…)）',
     /const S = PRINT_W \/ PRINT_DESIGN_W/.test(card) && /ctx\.setTransform\(S, 0, 0, S, 0, 0\)/.test(card))
   check('★ 印刷卡**必须**画题记带（分享卡不画，这是两者的关键区别）',
@@ -169,7 +174,7 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   // 版式按前端礼笺卡定稿（2026-09-18）：印章在右上、署名在左下 → 分区不相撞
   check('★ 印章与署名**分区**且不相撞（印章右上 / 署名左下）',
     /const sealCy = topY - Math\.round\(9 \* MM\)/.test(card)
-    && /const footerBase = cardY \+ cardH - Math\.round\(30 \* MM\)/.test(card),
+    && /const footBase = footerTop \+ Math\.round\(20 \* MM\)/.test(card),
     '印章与署名必须在不同分区，否则会叠在一起')
   check('★ 题记带整宽（axisX → axisRight）', /const bandW = axisRight - axisX/.test(card))
   // 作用域限定在**印刷卡**函数体内（分享卡里本来就有 drawImage，不能一起判）

@@ -401,7 +401,10 @@ function paintGiftPrintCard(canvas, opts) {
 
   // ── 正文（手写体、大字距宽行距；前端那张卡的正文观感）
   const lineH = 62
-  const signTop = cardY + cardH - Math.round(38 * MM)
+  // 页脚区带：两枚码（各 22mm）+ 各自小字 ≈ 30mm，上方再留 10mm 呼吸 → 正文区必须让位
+  const FOOTER_H = Math.round(44 * MM)
+  const footerTop = cardY + cardH - FOOTER_H
+  const signTop = footerTop - Math.round(10 * MM)
   ctx.fillStyle = '#2B2723'
   ctx.font = '400 34px ' + HAND
   const maxLines = Math.max(1, Math.floor((signTop - y - Math.round(8 * MM)) / lineH))
@@ -415,41 +418,41 @@ function paintGiftPrintCard(canvas, opts) {
     ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
   }
 
-  // ── 底部：左＝署名 + 日期；右＝两枚码（小程序码进店 + 客服微信）—— 印刷卡的引流闭环
-  const footerBase = cardY + cardH - Math.round(30 * MM)
+  // ── 页脚带：左＝署名 + 日期；右＝两枚码（都在带内，永不压正文）
+  const footBase = footerTop + Math.round(20 * MM)     // 码的基线：带内偏上
   const sig = String(o.cardSignature || '').trim()
   if (sig) {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#2B2723'
-    ctx.font = '500 38px ' + HAND
-    ctx.fillText(sig, axisX, footerBase)
+    ctx.font = '500 36px ' + HAND
+    ctx.fillText(sig, axisX, footBase)
     const sw = ctx.measureText(sig).width
     ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(axisX, footerBase + 14)
-    ctx.lineTo(axisX + Math.max(sw, Math.round(34 * MM)), footerBase + 14)
+    ctx.moveTo(axisX, footBase + 12)
+    ctx.lineTo(axisX + Math.max(sw, Math.round(28 * MM)), footBase + 12)
     ctx.stroke()
   }
   const d = new Date()
   const dateText = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0')
   ctx.textAlign = 'left'
   ctx.fillStyle = '#B4AC9F'
-  ctx.font = '400 24px serif'
-  ctx.fillText(dateText, axisX, footerBase + Math.round(12 * MM))
+  ctx.font = '400 22px serif'
+  ctx.fillText(dateText, axisX, footBase + Math.round(11 * MM))
 
-  // 两枚码：从右往左排（小程序码在右、客服微信在其左），素材缺失则各自静默跳过
+  // 两枚码：从右往左排（小程序码在最右），各自带小字；素材缺失各自静默跳过
   const codes = []
-  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店', size: Math.round(24 * MM) })
-  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信', size: Math.round(20 * MM) })
+  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店', size: Math.round(22 * MM) })
+  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信', size: Math.round(22 * MM) })
   let cx = axisRight
   for (let i = 0; i < codes.length; i += 1) {
     const c = codes[i]
     const x = cx - c.size
-    const y = footerBase - c.size + Math.round(6 * MM)
+    const y = footerTop + Math.round(2 * MM)
     ctx.save()
     ctx.fillStyle = '#FFFFFF'
-    roundRect(ctx, x - 4, y - 4, c.size + 8, c.size + 8, 8)
+    roundRect(ctx, x - 3, y - 3, c.size + 6, c.size + 6, 6)
     ctx.fill()
     try { ctx.drawImage(c.img, x, y, c.size, c.size) } catch (e) { /* 码挂跳过 */ }
     ctx.restore()
@@ -457,19 +460,11 @@ function paintGiftPrintCard(canvas, opts) {
     ctx.font = '400 20px serif'
     ctx.textAlign = 'center'
     ctx.fillText(c.caption, x + c.size / 2, y + c.size + Math.round(6 * MM))
-    cx = x - Math.round(6 * MM)
+    cx = x - Math.round(8 * MM)
   }
   ctx.textAlign = 'left'
 
-  // 极淡水印（居右下，不与两枚码争位置）
-  ctx.save()
-  ctx.globalAlpha = 0.04
-  ctx.fillStyle = '#8A7530'
-  ctx.font = '700 130px serif'
-  ctx.textAlign = 'right'
-  ctx.fillText('山海', axisRight, cardY + cardH - Math.round(4 * MM))
-  ctx.restore()
-  ctx.textAlign = 'left'
+ctx.textAlign = 'left'
 }
 
 /** 印刷版导出：canvas 尺寸即输出像素（A6@300dpi），返回临时图片路径 */
