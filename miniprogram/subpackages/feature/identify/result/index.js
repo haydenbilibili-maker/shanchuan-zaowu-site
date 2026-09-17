@@ -49,8 +49,9 @@ Page({
     /** 是否为本人记录（他人经分享海报查看时为 false） */
     isOwner: true,
     showFeedback: false,
-    // 注册引导（2026-09-17）：改为**原地授权弹窗**，不再跳 extra/user/onboarding
+    // 注册引导（2026-09-17）：原地授权弹窗 + **整页正文灰色模糊**，不再跳注册页
     showRegisterDialog: false,
+    registerGated: false,
     feedbackZh: '',
     feedbackNote: '',
     feedbackSubmitting: false,
@@ -480,10 +481,11 @@ Page({
       if (state !== 'guest') return
 
       trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'show' })
-      // 2026-09-17：不再 navigateTo 注册页 —— 原地弹「一键注册」授权弹窗并默认注册成功。
-      // 保留可关闭（closable=true）：需求 3 的原决策是「弹窗只是转化钩子，不是内容门禁」，
-      // 关掉后仍能看结果；真正的**内容门禁**在百科详情页（整页灰色模糊、不给「再看看」）。
-      this.setData({ showRegisterDialog: true })
+      // 2026-09-17（已按产品口径收紧）：不再 navigateTo 注册页 —— 原地弹授权弹窗并默认注册成功；
+      // 同时**整页正文灰色模糊**且**不提供「先看看」**。
+      // 说明：这与需求 3 早期「弹窗只是转化钩子、可关闭」的决策不同，是本次明确改为内容门禁；
+      // 由 test:register-gate 守住（closable=false + .rg-gate.is-gated 必须在）。
+      this.setData({ showRegisterDialog: true, registerGated: true })
     } catch (e) {
       console.warn('maybeGateResultForRegistration', e)
     }
@@ -491,7 +493,7 @@ Page({
 
   /** 原地注册成功：刷新会话态 + 收口漏斗（不再依赖 onboarding 回流 intent） */
   async onRegisterSuccess() {
-    this.setData({ showRegisterDialog: false })
+    this.setData({ showRegisterDialog: false, registerGated: false })
     trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'resume_success' })
     try {
       const { refreshSessionAfterAuth } = require('../../../../utils/userSession')
@@ -505,7 +507,8 @@ Page({
   },
 
   onRegisterDialogClose() {
-    this.setData({ showRegisterDialog: false })
+    // closable=false 时组件不会派发 close；保留此分支仅为兜底（例如未来放开可关闭）
+    this.setData({ showRegisterDialog: false, registerGated: false })
     trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'dismiss' })
   },
 

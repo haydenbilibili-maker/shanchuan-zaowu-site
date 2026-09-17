@@ -1132,3 +1132,18 @@
   color: var(--color-text-muted);
   text-align: center;
 }
+
+
+/* ================= 注册门禁（2026-09-17） ================= */
+/* 未登录/未注册：整页正文灰色模糊 + 挡点击；不提供「先看看」。
+   与百科详情页 wiki-detail 的 .wd-gate.is-gated 同一口径。 */
+.rg-gate {
+  transition: filter 0.42s ease, transform 0.42s ease;
+  will-change: filter, transform;
+}
+.rg-gate.is-gated {
+  filter: blur(10px) grayscale(0.55) brightness(0.66);
+  transform: scale(1.02);
+  pointer-events: none;
+  user-select: none;
+}

@@ -25,6 +25,12 @@
   </view>
 
   <block wx:else>
+  <!--
+    注册门禁（2026-09-17）：未登录/未注册态**整页正文灰色模糊**，且**不提供「先看看」**。
+    只包正文：下面两个 fixed 浮层（纠错/翻页）与弹窗都在本 block 之外 ——
+    否则 filter 会为它们创建新的包含块，fixed 定位会被带偏、浮层本身也会被模糊。
+  -->
+  <view class="rg-gate {{registerGated ? 'is-gated' : ''}}">
     <view class="guest-share-banner" wx:if="{{!isOwner}}" bindtap="goIdentifyHome" hover-class="guest-share-press" hover-stay-time="80">
       <view class="guest-share-copy">
         <text class="guest-share-en">FROM A FRIEND</text>
@@ -335,6 +341,7 @@
         </block>
       </view>
     </view>
+  </view>
   </block>
 
   <view class="fb-mask" wx:if="{{showFeedback}}" catchtap="closeFeedback">
@@ -375,14 +382,14 @@
   </view>
 </view>
 
-<!-- 注册引导：原地授权（不再跳注册页）；closable=true 保留「先看看」 -->
+<!-- 注册引导：原地授权 + 整页模糊门禁；closable=false → 不提供「先看看」 -->
 <register-auth-dialog
   show="{{showRegisterDialog}}"
   overline="SPECIMEN ARCHIVE"
   title="注册后收藏这份鉴定"
   desc="一键注册即可把这次鉴定收进山海图鉴，新客礼包将自动到账。"
   cta="同意并一键注册"
-  closable="{{true}}"
+  closable="{{false}}"
   from="identify_result"
   bind:success="onRegisterSuccess"
   bind:close="onRegisterDialogClose"

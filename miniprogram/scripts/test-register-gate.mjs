@@ -40,6 +40,7 @@ const F = {
   wikiJson: 'subpackages/feature/detail/wiki-detail/index.json',
   resultJs: 'subpackages/feature/identify/result/index.js',
   resultWxml: 'subpackages/feature/identify/result/index.wxml',
+  resultWxss: 'subpackages/feature/identify/result/index.wxss',
   resultJson: 'subpackages/feature/identify/result/index.json'
 }
 
@@ -115,8 +116,18 @@ function runChecks(r) {
   // ── 鉴定结果页：原地授权 ───────────────────────────────────────
   check('★ 结果页注册了注册弹窗组件', /register-auth-dialog/.test(stripJs(r.resultJson)))
   check('★ 结果页改为原地弹窗（不再 navigate 注册页）', /showRegisterDialog:\s*true/.test(r.resultJs))
-  check('★ 结果页保留可关闭（需求 3 原决策：该弹窗是转化钩子，不是内容门禁）',
-    /closable="\{\{true\}\}"/.test(stripWxml(r.resultWxml)))
+  check('★ 结果页门禁也不提供「先看看」（closable=false + 文案不含先看看）',
+    /closable="\{\{false\}\}"/.test(stripWxml(r.resultWxml))
+    && !/再看看|先看看/.test(stripWxml(r.resultWxml)))
+  check('★ 结果页正文整页灰色模糊（blur + grayscale + 挡点击）',
+    /\.rg-gate\.is-gated/.test(r.resultWxss) && /blur\(/.test(r.resultWxss)
+    && /grayscale\(/.test(r.resultWxss) && /pointer-events:\s*none/.test(r.resultWxss))
+  check('★ 结果页门禁位与模糊层联动（置位与解除成对）',
+    /registerGated:\s*true/.test(r.resultJs) && /registerGated:\s*false/.test(r.resultJs)
+    && /rg-gate \{\{registerGated/.test(stripWxml(r.resultWxml)))
+  check('★ 模糊层不包裹 fixed 浮层（否则 filter 会创建包含块、带偏 fixed 定位）',
+    /rg-gate[\s\S]*?fb-mask/.test(stripWxml(r.resultWxml))
+    && stripWxml(r.resultWxml).indexOf('</view>\n  </block>') > 0)
   check('结果页有成功回调与关闭回调', /onRegisterSuccess/.test(r.resultJs) && /onRegisterDialogClose/.test(r.resultJs))
 
   return failures === 0
@@ -152,8 +163,10 @@ function selftest() {
       (s) => s.replace(/\.wd-gate\.is-gated \{[\s\S]*?\}/, '.wd-gate.is-gated { opacity: 1; }')],
     ['链路丢掉 refreshSessionAfterAuth（注册后仍判为 guest）', F.chain,
       (s) => s.replace(/await refreshSessionAfterAuth\(app\)/g, '')],
-    ['结果页改回跳注册页', F.resultJs,
-      (s) => s.replace(/showRegisterDialog:\s*true/, "require('../../../../utils/userSession').navigateToOnboarding({ from: 'x' })")],
+    ['结果页又放开「先看看」', F.resultWxml,
+      (s) => s.replace(/closable="\{\{false\}\}"/, 'closable="{{true}}"')],
+    ['结果页去掉整页模糊（只弹窗不门禁）', F.resultWxss,
+      (s) => s.replace(/\.rg-gate\.is-gated \{[\s\S]*?\}/, '.rg-gate.is-gated { opacity: 1; }')],
     ['百科详情页忘记给 guest 置门禁', F.wikiJs,
       (s) => s.replace(/registerGated:\s*true/, 'registerGated: false')]
   ]
