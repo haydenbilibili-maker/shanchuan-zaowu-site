@@ -24,10 +24,15 @@ npm install
 npm run dev    # http://localhost:4321/
 
 # 3. 主要 routes（v0.4 信息架构 · 价值底座为「六观」：含合规观）
-#    /what /who /why /how /foundation
-#    /how/senses /how/space /how/operations /how/tech
-#    /for-properties /for-franchise /for-investors
-#    /talent /notes /benchmarks /digital-ops /hardcore-tech /sound-manual
+#    ⚠️ 唯一真相是 src/pages/**（当前 31 条）；下面只是入口级清单，改页面请以目录为准
+#    /            /what  /who  /why  /how  /foundation
+#    /how/senses  /how/space  /how/operations  /how/tech
+#    /foundation/conservation  /foundation/strategy
+#    /foundation/{nature,space,content,talent,pledge,compliance}   ← [view].astro 动态段（六观）
+#    /for-properties  /for-franchise  /for-investors  /partner/brand
+#    /talent  /notes  /notes/founders-letter  /notes/rename-notice-insiders
+#    /benchmarks  /digital-ops  /hardcore-tech  /sound-manual
+#    /price-list   ← 报价单 + 采购意向提交（→ CloudBase purchase_intents）
 #    旧 URL → 新 URL：见 public/_redirects（301，Cloudflare Pages）
 ```
 
@@ -61,22 +66,17 @@ shanhaizaowu/
 │   └── audio/             # 30s 环境音（待录制）
 └── src/
     ├── styles/global.css      # 设计系统 + token + paper-texture
-    ├── components/            # 15 个组件
+    ├── components/            # 23 个顶层 .astro（含 consumption/ who/ 等子目录共 38 个）
+    │                          # ⚠️ 完整清单以 `src/components/` 目录为唯一真相。
+    │                          # 2026-09-17 审计 D7：原树列出 4 个已删组件（AudienceCard/
+    │                          # CommitmentBar/FoundationFiveViews/WIPNotice）且组件数写成 15，
+    │                          # 故只保留骨架级条目，不再逐个人肉维护。
     │   ├── Layout.astro           # 全站骨架（含 IntersectionObserver 淡入）
     │   ├── Header.astro           # 极简导航（含移动端抽屉）
     │   ├── Footer.astro           # paper 米白 + VI 色页脚（4 列）
-    │   ├── PageHero.astro         # 通用页头（居中）
-    │   ├── SectionHeader.astro    # 段落头（左/居中可选）
-    │   ├── SenseSpread.astro      # 五感单元（图/文左右切换）
-    │   ├── AudienceCard.astro     # 受众入口卡（首页 4 张）
-    │   ├── CommitmentBar.astro    # 承诺导航条（中心句 + 五观 + 科技观链 + → /foundation#one-percent）
-    │   ├── ContactBlock.astro     # 通用联系块（mailto）
-    │   ├── PullQuote.astro        # 大字引文
-    │   ├── Principle.astro        # 罗马数字 + 标题 + 实践清单（战略原则用）
-    │   ├── NoListItem.astro       # × 不做项（红线清单用）
-    │   ├── PledgeBlock.astro      # 承诺方框（positive / negative 两种 variant）
-    │   ├── FoundationFiveViews.astro  # /foundation 五观正文（v0.3 五观文案）
-    │   └── WIPNotice.astro        # 占位通知（v0.2 升级前的 dignified 占位）
+    │   ├── PageHero.astro / SectionHeader.astro / ViewBlock.astro / ViewTransition.astro
+    │   ├── ContactBlock.astro / PullQuote.astro / Principle.astro / PledgeBlock.astro
+    │   └── SenseSpread.astro / NoListItem.astro / SixViewsPyramid.astro / SevenValuesMatrix.astro …
     └── pages/                 # 静态路由见上文「主要 routes」
         ├── index.astro            # 首页（Hero + What/Who/Why/How 四卡 + 角色四卡 + Foundation/五感/笔记入口）
         ├── what.astro / who.astro / why.astro / foundation.astro

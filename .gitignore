@@ -3,8 +3,15 @@ dist/
 .output/
 
 # ERP 构建产物（由 npm run build 生成；历史曾把 ADMIN_OPS_KEY 带进这些文件并入库发布）
-public/admin/assets/
-public/admin/index.html
+# 2026-09-17 审计 D7：原规则只挡了 assets/ 与 index.html，导致 brand/、*.html、*.pdf、*.svg
+# 等 7 项「admin/public → public/admin」的副本被双份入库（约 2.9MB）。现在整目录忽略，
+# 只保留两个手写文件；构建时其余会重新生成。
+/public/admin/*
+!/public/admin/README.md
+!/public/admin/cloud-check.html
+
+# 脚本运行产物：14/23 份含真实 _openid（PII），一律不入库（2026-09-17 审计 D7）
+/miniprogram/scripts/*.result.json
 
 # local snapshots（审计/备份快照，不入版本库）
 backups/
