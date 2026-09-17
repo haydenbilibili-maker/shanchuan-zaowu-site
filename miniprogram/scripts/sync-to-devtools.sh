@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 把本仓库 miniprogram/ 回灌到微信开发者工具实际打开的目录
 #
-# 背景：微信开发者工具打开的是历史副本 WeChatProjects/shanchuanspecimens，
+# 背景：微信开发者工具打开的是开发仓 WeChatProjects/shanchuanspecimens-只上传，
 #       本仓库（shanchuanzaowu/miniprogram）是唯一权威源。改完代码必须同步，否则工具里看不到改动。
 #
 # 用法：
