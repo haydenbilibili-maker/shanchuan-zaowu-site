@@ -125,6 +125,38 @@ check('★ 详情页 360°/SKU 两处改用 imgView 映射（不再直绑 cloud:
   check('门控容器仍裁切（罩层与模糊不外溢）', /\.sb-wrap\s*\{[^}]*overflow:\s*hidden/.test(gate))
 }
 
+/* ── 1.8) 组件宿主尺寸棘轮（同类风险逐个核实后的制度化） ───────────────────── */
+// 2026-09-17 逐个核实结论：全仓「overflow:hidden + height:100%」的组件里，**只有 SensitiveBlurGate**
+// 真的依赖宿主高度（它在比例盒与绝对定位图片之间插了一个 0 高的定位容器）→ 已用 :host 修掉。
+// 其余（ProductFilterPanel / ProductCard / MemberLevelModal / UserVipCard / WalletPanelPoints /
+// WalletPanelWallet / CouponPrintMint×2 / SpeciesCard）都是「自撑开」：根或图盒有 fixed/inset、
+// 显式 rpx 高度、vh、aspect-ratio 或 padding-top 比例盒，与宿主高度无关。
+// 本棘轮：**新出现**一个既无 :host、又不自撑开的此类组件时，守卫报错要求复核（不允许静默长出来）。
+{
+  const COMPONENT_DIRS = [
+    'components/ProductFilterPanel', 'components/ProductCard', 'components/MemberLevelModal',
+    'components/UserVipCard', 'components/SensitiveBlurGate',
+    'subpackages/business/components/WalletPanelPoints', 'subpackages/business/components/WalletPanelWallet',
+    'subpackages/business/components/WalletPanelCoupons', 'subpackages/business/components/CouponPrintMint',
+    'subpackages/feature/components/SpeciesCard', 'subpackages/feature/components/CouponPrintMint'
+  ]
+  const risky = []
+  for (const dir of COMPONENT_DIRS) {
+    const wxss = stripComments(read('miniprogram/' + dir + '/index.wxss'))
+    if (!/overflow:\s*hidden/.test(wxss)) continue
+    if (!/height:\s*100%/.test(wxss)) continue
+    const hasHost = /:host\s*\{/.test(wxss)
+    const selfContained =
+      /position:\s*fixed/.test(wxss) ||
+      /height:\s*\d+(rpx|px|vh|vw)/.test(wxss) ||
+      /aspect-ratio/.test(wxss) ||
+      /padding-top:\s*100%/.test(wxss)
+    if (!hasHost && !selfContained) risky.push(dir)
+  }
+  check('★ 无「既没有 :host 又不自撑开」的组件（否则卡片图会被裁成空白）',
+    risky.length === 0, risky.join(', '))
+}
+
 /* ── 2) 礼赠 hub ─────────────────────────────────────────────────────────── */
 check('★ hub 封面走共享取值链', /imageUrl\.firstImageOf\(/.test(hubJs))
 check('★ hub 不再为封面做临时链转换（会过期、失败即丢空）',
