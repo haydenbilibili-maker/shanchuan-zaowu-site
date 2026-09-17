@@ -2,6 +2,14 @@
  * 新会员礼包（仅超管）— manageWelcomeGift · member_welcome_gift
  */
 const { guardStaffPage } = require('../utils/staffAuth')
+const {
+  ensureCouponKeys,
+  stripCouponKeys,
+  sortCouponsByThreshold,
+  insertCouponByThreshold,
+  moveCoupon,
+  findFloorViolations
+} = require('./couponOrder')
 const { formatCloudFnError } = require('../utils/memberScan')
 
 const FN = 'manageWelcomeGift'
@@ -66,7 +74,8 @@ Page({
         couponsEnabled: cfg.couponsEnabled !== false,
         expireDays: Number(cfg.expireDays) || 30,
         stackable: cfg.stackable === true,
-        coupons: (cfg.coupons || []).map((c) => ({
+        // _key 供 wx:key 用（id 可编辑，不能当 key —— 否则改一个字符整行重建、输入框失焦）
+        coupons: ensureCouponKeys((cfg.coupons || []).map((c) => ({
           id: c.id,
           enabled: c.enabled !== false,
           value: Number(c.value) || 0,
@@ -74,7 +83,7 @@ Page({
           expireDays: Number(c.expireDays) || 30,
           count: Number(c.count) || 1,
           title: c.title || ''
-        }))
+        })))
       },
       ...(extra || {})
     })
@@ -126,15 +135,14 @@ Page({
     this.setData({ [`form.coupons[${index}].${field}`]: value })
   },
 
-  toggleCoupon(e) {
+  /** 券行启用开关（原来的「启用中 · 点此停用」按钮文案太长会溢出按钮 → 改开关） */
+  onCouponEnable(e) {
     const index = Number(e.currentTarget.dataset.index)
-    const row = this.data.form.coupons[index]
-    if (!row) return
-    this.setData({ [`form.coupons[${index}].enabled`]: !row.enabled })
+    this.setData({ [`form.coupons[${index}].enabled`]: !!(e.detail && e.detail.value) })
   },
 
   addCoupon() {
-    const coupons = this.data.form.coupons.concat([{
+    const row = ensureCouponKeys([{
       id: `c${Date.now() % 10000}`,
       enabled: true,
       value: 20,
@@ -142,8 +150,32 @@ Page({
       expireDays: this.data.form.expireDays || 30,
       count: 1,
       title: '新会员礼券'
-    }])
-    this.setData({ 'form.coupons': coupons })
+    }])[0]
+    // 按门槛插入合适位置（不是一律追加）——新券才符合「面额/门槛递增」的读法
+    this.setData({ 'form.coupons': insertCouponByThreshold(this.data.form.coupons, row) })
+  },
+
+  /** 上移 / 下移：顺序即顾客在各处看到的顺序 */
+  moveCouponUp(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    this.setData({ 'form.coupons': moveCoupon(this.data.form.coupons, index, index - 1) })
+  },
+
+  moveCouponDown(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    this.setData({ 'form.coupons': moveCoupon(this.data.form.coupons, index, index + 1) })
+  },
+
+  /** 一键按门槛升序（满49/99/299/499/999 这类「符合逻辑」的顺序） */
+  sortCoupons() {
+    const before = this.data.form.coupons || []
+    const after = sortCouponsByThreshold(before)
+    const changed = after.some((row, i) => row !== before[i])
+    this.setData({ 'form.coupons': after })
+    wx.showToast({
+      title: changed ? '已按门槛升序整理，记得保存' : '顺序已符合门槛升序',
+      icon: 'none'
+    })
   },
 
   removeCoupon(e) {
@@ -184,12 +216,42 @@ Page({
         return
       }
     }
+    // 折扣地板（与云函数 couponDiscountRules 同口径：门槛 ≥ ceil(面额 / 0.25)）：
+    // 云函数也会拒，但这里先拦能把「哪一行」说清楚（运营最常问的就是这个）
+    const floorBad = findFloorViolations(this.data.form.coupons, 0.25)
+    if (floorBad.length) {
+      const first = floorBad[0]
+      wx.showToast({
+        title: `第 ${first.index + 1} 行门槛过低（满${first.row.minSpend}减${first.row.value}）：折扣不得低于 7.5 折，门槛需 ≥ ${first.need}`,
+        icon: 'none',
+        duration: 3600
+      })
+      return
+    }
+    // 券 id 重复会让「已发券条款对齐」按 slotKey 匹配错行 → 保存前先拦
+    const dupIds = (() => {
+      const seen = new Set()
+      for (const row of this.data.form.coupons || []) {
+        const id = String((row && row.id) || '').trim()
+        if (!id) continue
+        if (seen.has(id)) return id
+        seen.add(id)
+      }
+      return ''
+    })()
+    if (dupIds) {
+      wx.showToast({ title: `券 id「${dupIds}」重复：请改成唯一值（已发券靠它对齐条款）`, icon: 'none', duration: 3200 })
+      return
+    }
     this.setData({ saving: true })
     try {
       const result = await this.callFn({
         action: 'save',
         docId: this.data.docId,
-        config: this.data.form
+        // 行内稳定 key（_key）不上行
+        config: Object.assign({}, this.data.form, {
+          coupons: stripCouponKeys(this.data.form.coupons)
+        })
       })
       this.setData({
         docId: result.docId || this.data.docId,

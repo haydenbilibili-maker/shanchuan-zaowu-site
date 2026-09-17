@@ -56,6 +56,7 @@
       <view class="workbench-section-head">
         <text class="section-title">礼券</text>
         <view class="workbench-section-head-action">
+          <view class="workbench-btn-outline sm" bindtap="sortCoupons">按门槛排序</view>
           <view class="workbench-btn-outline sm" bindtap="addCoupon">添加礼券</view>
         </view>
       </view>
@@ -72,13 +73,30 @@
         <switch checked="{{form.stackable}}" color="#C4A76C" data-field="stackable" bindchange="onSwitch" />
       </view>
       <view class="form-hint">即使打开叠加，下单仍只接单张礼券</view>
+      <view class="form-hint">
+        顺序即顾客看到的顺序（注册页预览 / 发放 / 站内信都按此顺序）。建议按门槛升序：满49 → 满99 → 满299 → 满499 → 满999。
+      </view>
 
       <view class="form-hint empty-coupons" wx:if="{{form.couponsEnabled && !form.coupons.length}}">尚未添加礼券，可点击「添加礼券」</view>
 
-      <view class="row-card" wx:for="{{form.coupons}}" wx:key="id">
+      <!-- wx:key 必须用不可编辑的 _key：id 可编辑，用它当 key 时每敲一个字符都会重建整行
+           → 输入框失焦、键盘重弹（真机反馈「每编辑一个字母就自动弹出」的根因） -->
+      <view class="row-card" wx:for="{{form.coupons}}" wx:key="_key">
         <view class="row-card-head">
           <text class="row-card-title">礼券 {{index + 1}}</text>
-          <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeCoupon">移除</view>
+          <view class="row-actions">
+            <view
+              class="workbench-btn-outline sm {{index === 0 ? 'is-disabled' : ''}}"
+              data-index="{{index}}"
+              bindtap="moveCouponUp"
+            >上移</view>
+            <view
+              class="workbench-btn-outline sm {{index === form.coupons.length - 1 ? 'is-disabled' : ''}}"
+              data-index="{{index}}"
+              bindtap="moveCouponDown"
+            >下移</view>
+            <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeCoupon">移除</view>
+          </view>
         </view>
         <view class="row-line">
           <input class="input sm" placeholder="id" value="{{item.id}}" data-index="{{index}}" data-field="id" bindinput="onCouponField" />
@@ -103,7 +121,14 @@
             <text class="field-label">张数</text>
             <input class="input sm" type="number" value="{{item.count}}" data-index="{{index}}" data-field="count" bindinput="onCouponField" />
           </view>
-          <view class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="toggleCoupon">{{item.enabled ? '启用中 · 点此停用' : '已停用 · 点此启用'}}</view>
+          <view class="field switch-field">
+            <text class="field-label">启用</text>
+            <switch checked="{{item.enabled}}" color="#C4A76C" data-index="{{index}}" bindchange="onCouponEnable" />
+          </view>
+        </view>
+        <!-- 顾客视角预览（与发放/注册页预览同口径）：门槛为 0 时不写「满 0」 -->
+        <view class="coupon-preview">
+          {{item.minSpend > 0 ? '满 ' + item.minSpend + ' 减 ' + item.value : item.value + ' 元无门槛'}} · {{item.expireDays}} 天 · {{item.count}} 张{{item.enabled ? '' : ' · 已停用'}}
         </view>
       </view>
     </view>

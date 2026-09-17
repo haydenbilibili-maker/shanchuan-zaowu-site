@@ -196,18 +196,26 @@ page {
 .field { display: flex; align-items: center; gap: 8rpx; }
 .field-label { font-size: 22rpx; color: var(--color-text-muted); }
 
-.toggle {
-  padding: 0 16rpx;
-  height: 56rpx;
-  line-height: 56rpx;
-  border-radius: var(--radius-sm);
-  border: 1rpx solid var(--color-border);
-  color: var(--color-text-muted);
-  font-size: 22rpx;
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
 }
-.toggle.on {
-  border-color: var(--brass-400);
-  color: var(--brass-400);
+
+.switch-field {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* 顾客视角预览：一行说清这张券在顾客那里是什么样 */
+.coupon-preview {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1rpx dashed var(--color-border);
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
 }
 
 .workbench-btn-outline.is-disabled {
