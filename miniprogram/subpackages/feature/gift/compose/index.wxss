@@ -772,7 +772,8 @@ page {
   font-size: 28rpx;
   line-height: 1.65;
   color: #33302C;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  /* 用户亲手写下的内容 → 手写体令牌（系统字体栈、零体积；iOS 汉仪手写体/签笔，Android 落衬线兜底） */
+  font-family: var(--font-hand);
   /* 墨色由浅入深：整段落笔过程中缓缓沉着 */
   animation: ink-deepen 2.4s ease-out forwards;
 }
@@ -846,7 +847,7 @@ page {
   color: #33302C;
   line-height: 1.65;
   background: transparent;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-hand);
   position: relative;
   z-index: 2;
 }
@@ -1090,4 +1091,14 @@ page {
   font-size: 26rpx;
   color: var(--color-text-primary, #FFFFFF);
   font-weight: 500;
+}
+
+
+/* 逐字落笔：新落的那个字轻微淡入 + 纸上微倾；wx:key=index 复用旧节点，故只有新字播一次 */
+.card-write-char {
+  animation: handWriteIn 0.22s ease-out both;
+}
+@keyframes handWriteIn {
+  from { opacity: 0; transform: translateY(3rpx) rotate(-3deg); }
+  to { opacity: 1; transform: translateY(0) rotate(0); }
 }

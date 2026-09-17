@@ -127,6 +127,19 @@ check('★ 题记不写进正文（不再预填 cardBody）',
   '预填会把题记占用为正文 → 与场景/身份文案互斥（本次要改掉的行为）')
 check('★ 题记层样式存在（铜金左线，区分于正文）', /\.card-epigraph\s*\{/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
 
+/* ── 手写体与逐字落笔（2026-09-17，方案 B：系统楷体栈 + 落笔增强，零体积） ───── */
+check('★ 礼笺「用户亲手写」的内容用手写体令牌 var(--font-hand)',
+  (readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8').match(/font-family: var\(--font-hand\)/g) || []).length >= 2,
+  '落笔展示与正文输入都该用手写体（题记是品牌字，不换）')
+check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
+  /--font-hand:[^;]*HanziPen SC/.test(readFileSync(resolve(ROOT, 'miniprogram/app.wxss'), 'utf8')),
+  '改成了 webfont 就会引入下载与首屏闪烁')
+check('★ 逐字落笔：wxml 按字渲染（wx:for=writeChars）', /wx:for="\{\{writeChars\}\}"/.test(composeWxml) || composeWxml.indexOf('writeChars') !== -1)
+check('★ 逐字落笔：新字播一次动画（card-write-char + keyframes）',
+  /\.card-write-char\s*\{/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8'))
+  && /@keyframes handWriteIn/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
+check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: target\.slice\(0, i\)\.split\(''\)/.test(composeJs))
+
 check('埋点带上句序（便于回看哪一句更常用）',
   /label: preset\.label,\s*\n\s*variant: index \+ 1/.test(composeJs))
 
@@ -144,6 +157,12 @@ if (process.argv.includes('--selftest')) {
 
 function selftest() {
   const injections = [
+    {
+      name: '礼笺退回衬线（手写体被去掉）',
+      file: COMPOSE_WXSS,
+      from: '  /* 用户亲手写下的内容 → 手写体令牌（系统字体栈、零体积；iOS 汉仪手写体/签笔，Android 落衬线兜底） */\n  font-family: var(--font-hand);',
+      to: "  font-family: 'Source Han Serif SC', serif;"
+    },
     {
       name: '题记层被删掉（回到「题记占正文」的旧口径）',
       file: COMPOSE_WXML,

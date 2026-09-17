@@ -103,6 +103,7 @@ Page({
     packagingLabel: GIFT_PACKAGING_LABEL,
     packagingNote: GIFT_PACKAGING_NOTE,
     cardBody: '',
+    writeChars: [],
     cardSignature: '',
     recipientName: '',
     recipientEditing: false,
@@ -860,6 +861,7 @@ Page({
     }
     this.setData({
       cardBody: target,
+      writeChars: target.split(''),
       noteWriting: false,
       showWriteCursor: false
     })
@@ -910,7 +912,11 @@ Page({
     }
     i += step
     this._noteWriteIndex = i
-    this.setData({ cardBody: target.slice(0, i) })
+    this.setData({
+      cardBody: target.slice(0, i),
+      // 逐字落笔：暴露字符数组，让新落的那个字单独播一次「手写落笔」动画（wx:key=index 复用旧节点）
+      writeChars: target.slice(0, i).split('')
+    })
 
     const delay = this._delayForChar(ch)
     this._noteWriteTimer = setTimeout(() => this._tickNoteWrite(), delay)

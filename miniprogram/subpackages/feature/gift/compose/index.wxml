@@ -134,7 +134,11 @@
             class="card-write-view"
             bindtap="onCardAreaTap"
           >
-            <text class="card-write-text">{{cardBody}}</text><text
+            <text class="card-write-text"><text
+              class="card-write-char"
+              wx:for="{{writeChars}}"
+              wx:key="index"
+            >{{item}}</text></text><text
               class="card-write-cursor {{showWriteCursor ? 'on' : ''}}"
             >|</text>
           </view>
