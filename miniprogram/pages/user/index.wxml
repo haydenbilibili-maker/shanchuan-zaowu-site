@@ -126,8 +126,10 @@
            此处改为「我的档案」（原藏家档案入口上移，避免同一入口出现两次） -->
       <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="profile">
         <view class="as-icon-wrap">
-          <!-- user.png 是白灰版、无 _gold 变体：用本页调好的金色配方（.as-icon.is-gold）与金图统一 -->
-          <image class="as-icon is-gold" src="/assets/icons/user.png"></image>
+          <!-- 2026-09-17：改用真金素材 user_gold.png（与 wallet_gold/medal_gold/gift 同为 #D4AF37）。
+               原做法是白灰 user.png + 滤镜，且滤镜那条例外把 opacity 提到 1，而 .as-icon 统一是 0.8
+               → 同屏对比必然有色差（真机实测确认）。真素材 + 同一 opacity 才是同色值。 -->
+          <image class="as-icon" src="/assets/icons/user_gold.png"></image>
           <!-- 宽角标：容纳「100%」；未注册/骨架态不显示（不谎报 0%） -->
           <view
             class="badge-outline-brass badge-sm badge-wide as-badge-pos badge-enter"

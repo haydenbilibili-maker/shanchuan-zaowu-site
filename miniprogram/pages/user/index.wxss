@@ -81,13 +81,6 @@ page {
   overflow: visible;
   box-sizing: border-box;
 }
-/* 白灰图标 → 铜金：与 .m-img.gold 用同一组滤镜值（本页既有配方，避免与金图有色差）；
-   必须显式 opacity:1 —— .as-icon 默认 0.8 会把滤镜结果再压暗一档，正是上一版色差的成因。 */
-.as-icon.is-gold {
-  filter: brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%);
-  opacity: 1;
-}
-
 .as-icon-wrap .as-icon {
   position: absolute;
   /* wrap 加宽到 64rpx 后，left:4rpx 会让图标比下方文案偏左 8rpx —— 改为水平居中 */

@@ -15,6 +15,7 @@
  *   node miniprogram/scripts/test-member-card-guest.mjs --selftest
  */
 import { readFileSync, statSync } from 'node:fs'
+import zlib from 'node:zlib'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -23,6 +24,7 @@ const ROOT = resolve(HERE, '../..')
 
 const PAGE_USER_JS = 'miniprogram/pages/user/index.js'
 const PAGE_USER_WXML = 'miniprogram/pages/user/index.wxml'
+const PAGE_USER_WXSS = 'miniprogram/pages/user/index.wxss'
 const CARD_JS = 'miniprogram/components/UserVipCard/index.js'
 const CARD_WXML = 'miniprogram/components/UserVipCard/index.wxml'
 const CARD_WXSS = 'miniprogram/components/UserVipCard/index.wxss'
@@ -77,6 +79,16 @@ const INJECTIONS = {
     file: CARD_WXML,
     from: 'class="vip-card-container {{cardFlipped ? \'is-flipped\' : \'\'}}" wx:else>',
     to: 'class="vip-card-container {{cardFlipped ? \'is-flipped\' : \'\'}}">'
+  },
+  'asset-icon-back-to-gray': {
+    file: PAGE_USER_WXML,
+    from: 'src="/assets/icons/user_gold.png"',
+    to: 'src="/assets/icons/user.png"'
+  },
+  'asset-icon-opacity-override': {
+    file: PAGE_USER_WXML,
+    from: '<image class="as-icon" src="/assets/icons/user_gold.png">',
+    to: '<image class="as-icon is-gold" src="/assets/icons/user_gold.png">'
   },
   'butterfly-wrong-asset': {
     file: CARD_WXML,
@@ -662,11 +674,75 @@ check('启封相位选择器齐备（seal/lid/done 三档）', /\.phase-lid \.ge
 check('信纸启封后可见（opacity 1 + 归位）', /\.phase-lid \.ge-letter,[\s\S]*?opacity: 1;\n\s*transform: translateY\(0\);/.test(cardWxss))
 check('封缄态文案在启封后淡出（不与信纸文字重叠）', /\.phase-lid \.ge-face,[\s\S]*?opacity: 0;/.test(cardWxss))
 
+
+/* ------------------------------------------------------------------ *
+ * 资产行图标「同色值」检查（2026-09-17）
+ *
+ * 为什么必须读像素：这一行的四个入口必须同色，而历史做法是「白灰 user.png + 滤镜配方」——
+ * 滤镜是近似，且那条例外还把 opacity 提到 1（.as-icon 统一是 0.8）→ 同屏对比必然有色差，
+ * 真机一眼可见，而**任何静态文本检查都看不出来**。所以这里直接解 PNG 像素取主体色，做同色断言。
+ * 零依赖：这些图标都是 8bit RGBA 非隔行 PNG（IHDR 已断言），用 node:zlib 反滤波即可。
+ * ------------------------------------------------------------------ */
+function pngDominantColor(abs) {
+  const buf = readFileSync(abs)
+  if (buf.subarray(0, 8).toString('binary') !== '\x89PNG\r\n\x1a\n') throw new Error(`不是 PNG：${abs}`)
+  let off = 8
+  let w = 0, h = 0, depth = 0, colorType = 0, interlace = 0
+  const idat = []
+  while (off < buf.length) {
+    const len = buf.readUInt32BE(off)
+    const type = buf.subarray(off + 4, off + 8).toString('ascii')
+    const data = buf.subarray(off + 8, off + 8 + len)
+    if (type === 'IHDR') {
+      w = data.readUInt32BE(0); h = data.readUInt32BE(4)
+      depth = data[8]; colorType = data[9]; interlace = data[12]
+    } else if (type === 'IDAT') idat.push(data)
+    else if (type === 'IEND') break
+    off += 12 + len
+  }
+  if (depth !== 8 || colorType !== 6 || interlace !== 0) {
+    throw new Error(`只支持 8bit RGBA 非隔行 PNG：${abs}（depth=${depth} type=${colorType} interlace=${interlace}）`)
+  }
+  const raw = zlib.inflateSync(Buffer.concat(idat))
+  const bpp = 4, stride = w * bpp
+  const out = Buffer.alloc(h * stride)
+  for (let y = 0; y < h; y += 1) {
+    const ft = raw[y * (stride + 1)]
+    const line = raw.subarray(y * (stride + 1) + 1, y * (stride + 1) + 1 + stride)
+    for (let x = 0; x < stride; x += 1) {
+      const a = x >= bpp ? out[y * stride + x - bpp] : 0
+      const b = y > 0 ? out[(y - 1) * stride + x] : 0
+      const c = x >= bpp && y > 0 ? out[(y - 1) * stride + x - bpp] : 0
+      let v = line[x]
+      if (ft === 1) v += a
+      else if (ft === 2) v += b
+      else if (ft === 3) v += (a + b) >> 1
+      else if (ft === 4) {
+        const p0 = a + b - c
+        const pa = Math.abs(p0 - a), pb = Math.abs(p0 - b), pc = Math.abs(p0 - c)
+        v += (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c)
+      }
+      out[y * stride + x] = v & 0xff
+    }
+  }
+  const tally = new Map()
+  for (let i = 0; i < out.length; i += 4) {
+    if (out[i + 3] <= 200) continue
+    const key = `${out[i]},${out[i + 1]},${out[i + 2]}`
+    tally.set(key, (tally.get(key) || 0) + 1)
+  }
+  if (!tally.size) return null
+  const [rgb] = [...tally.entries()].sort((x, y) => y[1] - x[1])[0]
+  const [r, g, b] = rgb.split(',').map(Number)
+  return `#${[r, g, b].map((n) => n.toString(16).padStart(2, '0').toUpperCase()).join('')}`
+}
+
 /* ------------------------------------------------------------------ *
  * 4) #21 档案入口与动线
  * ------------------------------------------------------------------ */
 
 const userWxml = readSrc(PAGE_USER_WXML)
+const userWxss = readSrc(PAGE_USER_WXSS)
 
 check(
   '★ 卡面档案入口带完成度（不再是一个裸「›」）',
@@ -683,6 +759,27 @@ check('入口显示完成度（角标形式）', /data-path="profile"[\s\S]*?as-
 check('入口未注册/骨架态不显示百分比（角标 wx:if 挡住）', /data-path="profile"[\s\S]*?!cardPending && !cardGuest/.test(userWxml))
 check('★ 页面把 cardGuest / guestLoggedOut / guestcta 接到组件', /card-guest="\{\{cardGuest\}\}"/.test(userWxml) && /guest-logged-out="\{\{guestLoggedOut\}\}"/.test(userWxml) && /bind:guestcta="onGuestCardCta"/.test(userWxml))
 check('★ handleMenuClick 有 profile 分支（兜底入口），不再依赖卡面', /case 'profile':[\s\S]*?this\.goToProfile\(\)/.test(userPageSrc))
+
+check('★ 资产行图标不带滤镜/透明度覆盖类（同色靠素材，不靠配方）',
+  !/class="as-icon\s+[^"]+"/.test(userWxml) && !/\.as-icon\.is-/.test(userWxss),
+  '资产行出现 .as-icon + 覆盖类 → 与其余图标不再同口径（.as-icon 统一 opacity 0.8）')
+
+{
+  // class="as-icon" 全页只出现在资产行（5 处：钱包/预约/证书/档案/礼赠，其中钱包与预约互斥渲染）
+  const icons = [...userWxml.matchAll(/<image class="as-icon"\s+src="\/assets\/icons\/([^"]+)"/g)].map((m) => m[1])
+  check('资产行图标可解析（≥4 个）', icons.length >= 4, `解析到 ${icons.length} 个：${icons.join(', ')}`)
+  const colors = new Map()
+  for (const f of icons) {
+    let c = null
+    try { c = pngDominantColor(resolve(ROOT, 'miniprogram/assets/icons', f)) } catch (e) { check(`解码 ${f}`, false, e.message) }
+    if (c) colors.set(f, c)
+  }
+  const uniq = [...new Set(colors.values())]
+  check('★ 资产行图标主体色完全一致（同色值）', uniq.length === 1,
+    `实际：${[...colors.entries()].map(([f, c]) => `${f}=${c}`).join(' / ')}`)
+  console.log(`  · 资产行图标同色值：${uniq[0] || '（未取到）'}（${[...colors.keys()].join(', ')}）`)
+}
+
 
 /* ------------------------------------------------------------------ *
  * 5) #21 档案页「下一步」清单：分值与 calcProfileScore 同源、anchor 必须真实存在
