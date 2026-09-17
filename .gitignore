@@ -54,3 +54,9 @@ miniprogram/project.private.config.json
 miniprogram/cloudfunctions/*/node_modules/
 miniprogram/cloudfunctions/*/.env
 miniprogram/**/.DS_Store
+
+# 审计/验证过程的临时目录与日志（2026-09-17：我自己的 git add -A 误提交过 .o3/.o9/.oi）
+.audit-tmp/
+.o[0-9a-z]*/
+.o[0-9a-z]*
+.run-guards-selftest.json

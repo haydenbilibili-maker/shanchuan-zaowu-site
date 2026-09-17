@@ -1,14 +1,0 @@
-
-> shanhai-zaowu-site@0.2.0 build
-> npm run build:admin && astro build && node scripts/verify-admin-dist.mjs
-
-
-> shanhai-zaowu-site@0.2.0 build:admin
-> node scripts/build-admin.mjs
-
-
-> shanhai-admin@0.2.0 build
-> vite build
-
-rolldown-vite v7.2.5 building client environment for production...
-[2Ktransforming...
