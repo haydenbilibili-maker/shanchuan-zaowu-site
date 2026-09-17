@@ -400,21 +400,34 @@ function paintGiftPrintCard(canvas, opts) {
   }
 
   // ── 正文（手写体、大字距宽行距；前端那张卡的正文观感）
-  const lineH = 62
-  // 页脚区带：两枚码（各 22mm）+ 各自小字 ≈ 30mm，上方再留 10mm 呼吸 → 正文区必须让位
-  const FOOTER_H = Math.round(44 * MM)
+  // 页脚区带：两枚码（各 22mm）+ 各自小字 ≈ 30mm → 36mm 足够，正文拿回空间
+  const FOOTER_H = Math.round(36 * MM)
   const footerTop = cardY + cardH - FOOTER_H
-  const signTop = footerTop - Math.round(10 * MM)
+  const signTop = footerTop - Math.round(8 * MM)
+
+  // 正文：**自适应缩放，永不截断**（印刷卡不能丢字 —— 真图曾因 maxLines 截断丢了一整行）
+  const text = String(o.cardBody || '')
+  const availH = signTop - y - Math.round(6 * MM)
+  let fontPx = 34
+  let lineH = 62
   ctx.fillStyle = '#2B2723'
-  ctx.font = '400 34px ' + HAND
-  const maxLines = Math.max(1, Math.floor((signTop - y - Math.round(8 * MM)) / lineH))
-  const bodyLines = wrapLines(ctx, String(o.cardBody || ''), axisRight - axisX, maxLines)
-  // 垂直居中：短笺不再「贴着题记、下留大片空」；长笺自然填满
+  ctx.font = '400 ' + fontPx + 'px ' + HAND
+  let bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
+  if (bodyLines.length * lineH > availH && availH > 0) {
+    // 逐档缩小字号与行高，直到装得下（下限 24px，仍装不下才截断并告警）
+    while (fontPx > 24 && bodyLines.length * lineH > availH) {
+      fontPx -= 2
+      lineH = Math.round(fontPx * 1.8)
+      ctx.font = '400 ' + fontPx + 'px ' + HAND
+      bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
+    }
+    if (bodyLines.length * lineH > availH) console.warn('giftPrint: 礼笺过长，已按可用高度截断')
+  }
   const bodyBlockH = bodyLines.length * lineH
   const freeTop = y + Math.round(6 * MM)
   const freeBottom = signTop - Math.round(4 * MM)
   const bodyY = freeTop + Math.max(0, Math.round((freeBottom - freeTop - bodyBlockH) / 2)) + Math.round(9 * MM)
-  for (let i = 0; i < bodyLines.length; i += 1) {
+  for (let i = 0; i < bodyLines.length && (i + 1) * lineH <= availH + lineH; i += 1) {
     ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
   }
 
@@ -431,7 +444,7 @@ function paintGiftPrintCard(canvas, opts) {
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(axisX, footBase + 12)
-    ctx.lineTo(axisX + Math.max(sw, Math.round(28 * MM)), footBase + 12)
+    ctx.lineTo(axisX + Math.max(sw, Math.round(14 * MM)), footBase + 12)  // 只到字宽附近，避免越过右侧两枚码
     ctx.stroke()
   }
   const d = new Date()
@@ -450,12 +463,8 @@ function paintGiftPrintCard(canvas, opts) {
     const c = codes[i]
     const x = cx - c.size
     const y = footerTop + Math.round(2 * MM)
-    ctx.save()
-    ctx.fillStyle = '#FFFFFF'
-    roundRect(ctx, x - 3, y - 3, c.size + 6, c.size + 6, 6)
-    ctx.fill()
+    // 码已是**透明 PNG**（白底已抠掉）→ 不再画白色底托，让码直接落在米白卡面上
     try { ctx.drawImage(c.img, x, y, c.size, c.size) } catch (e) { /* 码挂跳过 */ }
-    ctx.restore()
     ctx.fillStyle = '#8A7530'
     ctx.font = '400 20px serif'
     ctx.textAlign = 'center'

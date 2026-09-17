@@ -158,10 +158,18 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   check('★ 正文在题记与署名之间**垂直居中**（短笺不空、长笺不挤）',
     /freeBottom - freeTop - bodyBlockH/.test(card))
   check('★ 页脚带独立、正文区让位（真图曾出现两枚码压住署名）',
-    /const FOOTER_H = Math\.round\(44 \* MM\)/.test(card)
-    && /const signTop = footerTop - Math\.round\(10 \* MM\)/.test(card),
+    /const FOOTER_H = Math\.round\(36 \* MM\)/.test(card)
+    && /const signTop = footerTop - Math\.round\(8 \* MM\)/.test(card),
     '码的高度必须从正文可用高度里扣掉，否则会压住正文与署名')
   check('★ 页脚带内排布：码的 y 从 footerTop 起（不再向上顶）', /const y = footerTop \+ Math\.round\(2 \* MM\)/.test(card))
+  // 真图曾因 maxLines 截断**丢了一整行正文** ✗ → 内容安全必须钉死
+  check('★★ 正文**自适应缩放、永不截断**（印刷卡不能丢字）',
+    /while \(fontPx > 24 && bodyLines\.length \* lineH > availH\)/.test(card)
+    && /wrapLines\(ctx, text, axisRight - axisX, 999\)/.test(card)
+    && !/wrapLines\(ctx, String\(o\.cardBody \|\| ''\), axisRight - axisX, maxLines\)/.test(card),
+    '按 maxLines 截断会在卡上丢字（真图已发生）')
+  check('★ 署名下划线不超过字宽附近（免得越过右侧两枚码）',
+    /Math\.max\(sw, Math\.round\(14 \* MM\)\)/.test(card))
   check('★ 改纸张只改常量：绘制按设计稿等比放大（setTransform(S,…)）',
     /const S = PRINT_W \/ PRINT_DESIGN_W/.test(card) && /ctx\.setTransform\(S, 0, 0, S, 0, 0\)/.test(card))
   check('★ 印刷卡**必须**画题记带（分享卡不画，这是两者的关键区别）',
@@ -169,7 +177,7 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
     '印刷卡缺题记 → 印出来会少掉主题名与那句话')
   check('★ 分享卡未被改动（分享卡绘制函数仍在、未被印刷版替换）',
     /function paintGiftShareCard\(canvas, opts\)/.test(card) && /SHARE_CARD_W: W,/.test(card))
-  check('印刷卡复用共享换行/圆角工具（不另造）', /wrapLines\(ctx, String\(o\.cardBody/.test(card) && /roundRect\(ctx, cardX/.test(card))
+  check('印刷卡复用共享换行/圆角工具（不另造）', /wrapLines\(ctx, text, axisRight - axisX/.test(card) && /roundRect\(ctx, cardX/.test(card))
   // 2026-09-17 真图暴露的两个重叠 bug → 钉成不变量
   // 版式按前端礼笺卡定稿（2026-09-18）：印章在右上、署名在左下 → 分区不相撞
   check('★ 印章与署名**分区**且不相撞（印章右上 / 署名左下）',
@@ -193,7 +201,7 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   check('★ 印刷卡首行是「写给 · TA」（学前端 .card-*）', /写给 · /.test(card) && /o\.recipientName/.test(card))
   check('★ 印章在**右上**（与前端一致）', /const sealCx = axisRight - sealSize \/ 2/.test(card) && /const sealCy = topY - Math\.round\(9 \* MM\)/.test(card))
   check('★ 正文用**手写体**（与前端同一系统字体栈，零体积）',
-    /HanziPen SC/.test(card) && /34px ' \+ HAND/.test(card))
+    /HanziPen SC/.test(card) && /fontPx \+ 'px ' \+ HAND/.test(card))
   check('★ 右下有淡「山海」水印（前端那张卡的收尾笔触）', /globalAlpha = 0\.06/.test(card) && /fillText\('山海'/.test(card))
 }
 
@@ -206,9 +214,21 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   const opsWxml = readFileSync(resolve(ROOT, OPS_WXML), 'utf8')
   check('★ 履约页有「导出礼笺图」入口', /导出礼笺图/.test(opsWxml) && /onExportGiftCard/.test(opsWxml))
   check('★ 用共享印刷渲染器（不另造画布逻辑）', /renderGiftPrintImage\('#giftPrintCanvas', this, \{/.test(opsJs))
-  check('★ 导出侧传两枚码路径（分包素材 + 主包客服码，均已确认未被打包忽略）',
-    /qrcodePath: '\/subpackages\/manager\/assets\/qrcode\/miniprogram-code\.jpg'/.test(opsJs)
-    && /serviceQrPath: '\/assets\/qrcode\/wechat-assistant-qr\.png'/.test(opsJs))
+  check('★ 导出侧传两枚码路径（打印专用**透明 PNG**，均已确认未被打包忽略）',
+    /qrcodePath: '\/subpackages\/manager\/assets\/qrcode\/miniprogram-code-print\.png'/.test(opsJs)
+    && /serviceQrPath: '\/assets\/qrcode\/wechat-assistant-qr-print\.png'/.test(opsJs))
+  // 透明 PNG 必须真的透明：索引色 PNG 靠 tRNS 块承载 alpha（只看 IHDR 颜色类型会误判）
+  ;['miniprogram/subpackages/manager/assets/qrcode/miniprogram-code-print.png',
+    'miniprogram/assets/qrcode/wechat-assistant-qr-print.png'].forEach((rel) => {
+    const buf = readFileSync(resolve(ROOT, rel))
+    const isPng = buf.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+    const ct = buf[25]
+    const hasAlpha = ct === 4 || ct === 6 || buf.includes(Buffer.from('tRNS'))
+    check(`★ ${rel.split('/').pop()} 是**透明** PNG（alpha 或 tRNS）`, isPng && hasAlpha,
+      '两枚码要求透明底，否则贴在米白卡面上会露出白方块')
+  })
+  check('★ 卡上不再给码画白色底托（否则透明无意义）',
+    !/fillStyle = '#FFFFFF'/.test(card.slice(card.indexOf('// 两枚码：从右往左排'), card.indexOf('// 两枚码：从右往左排') + 1200)))
   check('★ 导出侧传入 recipientName（多来源：recipientName/salutation/toName/address.name）',
     /recipientName: item\.recipientName \|\| item\.salutation \|\| item\.toName/.test(opsJs),
     '只取一个字段会在别的单子上落空（实名制印刷卡不能印错）')

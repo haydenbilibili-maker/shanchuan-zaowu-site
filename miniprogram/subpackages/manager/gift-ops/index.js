@@ -322,8 +322,8 @@ Page({
       // 依次回退 salutation → toName → address.name；为空则卡上**不印**「写给」行。
       recipientName: item.recipientName || item.salutation || item.toName || (item.address && item.address.name) || '',
       // 两枚码：小程序码（分包内素材）+ 客服微信（仓库现有主包素材）；缺失各自静默跳过
-      qrcodePath: '/subpackages/manager/assets/qrcode/miniprogram-code.jpg',
-      serviceQrPath: '/assets/qrcode/wechat-assistant-qr.png',
+      qrcodePath: '/subpackages/manager/assets/qrcode/miniprogram-code-print.png',
+      serviceQrPath: '/assets/qrcode/wechat-assistant-qr-print.png',
     })
       if (!path) throw new Error('生成失败，请重试')
       try {
