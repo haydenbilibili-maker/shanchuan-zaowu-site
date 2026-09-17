@@ -37,6 +37,8 @@ Page({
       .slice(0, 40)
     this._contactId = decodeQueryText((options && options.contactId) || '').trim()
     const preset = decodeQueryText((options && options.scene) || '').trim()
+    // 详情页「适合的场景」深链：显式进入某场景（与礼笺预设 scene 区分）
+    this._enterScene = decodeQueryText((options && options.enterScene) || '').trim()
     if (!this._toName || !this._contactId) {
       try {
         const pref = wx.getStorageSync('gift_compose_prefills') || null
@@ -67,6 +69,7 @@ Page({
         return
       }
       this.setData({ checking: false, allowed: true })
+      if (this._enterScene) this.selectScene(this._enterScene, true)
       trackBehavior('gift_hub_enter', 'from', this._from)
       if (presetScene && getSceneByKey(presetScene)) {
         this.selectScene(presetScene, true)

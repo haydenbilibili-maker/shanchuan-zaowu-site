@@ -106,6 +106,22 @@ check('★ 规则需要价格档 → 客户端 payload 必须带 price',
   /price: Number\(p\.price\) \|\| 0/.test(managerJs),
   '漏传 price 会把收藏级当轻礼送（一键补齐时）')
 
+
+/* ── 场景体系在「详情页 → 礼赠」链路上的露出（2026-09-17 坪效位）─────────── */
+const DETAIL_WXML = 'miniprogram/subpackages/feature/detail/index.wxml'
+const DETAIL_JS = 'miniprogram/subpackages/feature/detail/index.js'
+const HUB_JS = 'miniprogram/subpackages/feature/gift/hub/index.js'
+{
+  const dw = read(DETAIL_WXML); const dj = stripComments(read(DETAIL_JS)); const hj = stripComments(read(HUB_JS))
+  check('★ 详情页有礼赠面板（把场景标签暴露给顾客）', /class="gift-panel"/.test(dw))
+  check('★ 面板的 chips 由 giftScenes 映射而来（模板层 WXS，不动数据流）',
+    /tool\.sceneChips\(product\.giftScenes\)/.test(dw) && /SCENE_LABELS/.test(dw))
+  check('★ 点场景 chip 跳 hub 并带 enterScene', /goGiftScene\(e\)/.test(dj) && /enterScene=\$\{encodeURIComponent\(key\)\}/.test(dj))
+  check('★ hub 识别 enterScene 并复用 selectScene 进入该场景',
+    /this\._enterScene = decodeQueryText/.test(hj) && /if \(this\._enterScene\) this\.selectScene\(this\._enterScene, true\)/.test(hj))
+  check('★ 一键送礼直达该藏品礼笺页', /goGiftCompose\(\)/.test(dj) && /gift\/compose\/index\?productId=/.test(dj))
+}
+
 /* ── 输出 / 自检 ───────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
   selftest()
@@ -137,6 +153,12 @@ function selftest() {
       file: SCRIPT_RULES,
       from: "const DISPLAY_ROOTS = ['昆虫馆', '动物馆', '海洋馆', '植物馆', '矿石馆', '衍生品']",
       to: "const DISPLAY_ROOTS = ['昆虫馆', '动物馆', '海洋馆', '植物馆']"
+    },
+    {
+      name: 'hub 不再识别 enterScene（点场景 chip 失去目标）',
+      file: HUB_JS,
+      from: 'if (this._enterScene) this.selectScene(this._enterScene, true)',
+      to: ''
     },
     {
       name: '云函数不再计算 giftScenes（接线断）',

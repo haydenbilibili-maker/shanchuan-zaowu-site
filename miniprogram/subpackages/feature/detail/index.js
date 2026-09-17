@@ -2573,6 +2573,26 @@ Page({
     wx.navigateTo({ url: `/subpackages/business/ar/index?productId=${id}` });
   },
 
+  /** 礼赠面板：点场景 chip → 礼赠 hub 并直接进入该场景（复用 hub 的 selectScene 深链） */
+  goGiftScene(e) {
+    const key = String((e.currentTarget.dataset && e.currentTarget.dataset.key) || '').trim()
+    if (!key) return
+    wx.navigateTo({
+      url: `/subpackages/feature/gift/hub/index?enterScene=${encodeURIComponent(key)}&from=detail_scene`,
+      fail: () => wx.showToast({ title: '礼赠暂不可用', icon: 'none' })
+    })
+  },
+
+  /** 礼赠面板：一键送礼 → 直接进这件藏品的礼笺页 */
+  goGiftCompose() {
+    const id = String((this.data.product && this.data.product._id) || '').trim()
+    if (!id) return
+    wx.navigateTo({
+      url: `/subpackages/feature/gift/compose/index?productId=${encodeURIComponent(id)}&from=detail_gift`,
+      fail: () => wx.showToast({ title: '礼赠暂不可用', icon: 'none' })
+    })
+  },
+
   goToFramer(e) {
     if (this.data.archiveDisplay && this.data.archiveDisplay.framerEmpty) return;
     const id = e.currentTarget.dataset.id || (this.data.product && this.data.product.framerId);

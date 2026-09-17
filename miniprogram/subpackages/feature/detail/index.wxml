@@ -6,6 +6,21 @@ var calcVip = function(price, rate) {
   return (p * rate).toFixed(0);
 }
 module.exports.calcVip = calcVip;
+// 礼赠场景 key → 中文（与 cloudfunctions/getGiftSceneProducts/giftScenes.js 同源）
+var SCENE_LABELS = {
+  housewarming: '乔迁', wedding: '新婚', birthday: '生日', anniversary: '纪念日',
+  enrollment: '升学', graduation: '毕业', new_job: '新工作', gratitude: '致谢'
+};
+var sceneChips = function(list) {
+  if (!list || !list.length) return [];
+  var out = [];
+  for (var i = 0; i < list.length && out.length < 4; i++) {
+    var k = list[i];
+    if (SCENE_LABELS[k]) out.push({ key: k, label: SCENE_LABELS[k] });
+  }
+  return out;
+};
+module.exports.sceneChips = sceneChips;
 </wxs>
 <wxs src="../../../utils/latinDisplay.wxs" module="latin" />
 
@@ -160,6 +175,26 @@ module.exports.calcVip = calcVip;
         <text class="title-main {{product.themeName ? 'is-sub' : ''}}">{{product.title}}</text>
         <text class="latin-sub" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
         </block>
+      </view>
+
+      <!-- 礼赠面板（坪效位）：把「这是什么」变成「适合送什么场合」+ 一键送礼 -->
+      <view class="gift-panel" wx:if="{{product.giftEligible !== false}}">
+        <view class="gift-panel-head">
+          <text class="gift-panel-title">作为礼物</text>
+          <text class="gift-panel-sub">可写礼笺 · 可附礼盒 · 可指定送达日</text>
+        </view>
+        <view class="gift-scene-row" wx:if="{{tool.sceneChips(product.giftScenes).length}}">
+          <text class="gift-scene-label">适合</text>
+          <view
+            class="gift-scene-chip"
+            wx:for="{{tool.sceneChips(product.giftScenes)}}"
+            wx:key="key"
+            data-key="{{item.key}}"
+            bindtap="goGiftScene"
+            hover-class="gift-scene-chip-press"
+          >{{item.label}}</view>
+        </view>
+        <view class="gift-cta" bindtap="goGiftCompose" hover-class="gift-cta-press">一键送礼 · 写礼笺</view>
       </view>
 
       <!-- 服务保障 -->

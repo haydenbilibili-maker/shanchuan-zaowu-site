@@ -1788,3 +1788,32 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 /* 需求 28：祈福墙入口的样式已随组件迁到 components/WishWallEntry/index.wxss
    （小程序自定义组件默认样式隔离，留在本页既失效又会让人误以为改这里有用） */
+
+/* ── 礼赠面板（头图下方的坪效位）───────────────────────────────────────── */
+.gift-panel {
+  margin: 8rpx 0 4rpx;
+  padding: 22rpx 24rpx;
+  border: 1rpx solid var(--brass-800, rgba(196, 167, 108, 0.35));
+  border-radius: var(--radius-md, 16rpx);
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.06) 0%, rgba(196, 167, 108, 0.02) 100%);
+}
+.gift-panel-head { display: flex; align-items: baseline; gap: 14rpx; flex-wrap: wrap; }
+.gift-panel-title { font-size: 28rpx; font-weight: 600; letter-spacing: 2rpx; color: var(--brass-400, #C4A76C); }
+.gift-panel-sub { font-size: 22rpx; color: var(--color-text-muted, #8A857C); }
+.gift-scene-row { display: flex; align-items: center; gap: 12rpx; flex-wrap: wrap; margin-top: 16rpx; }
+.gift-scene-label { font-size: 22rpx; color: var(--color-text-muted, #8A857C); }
+.gift-scene-chip {
+  padding: 6rpx 18rpx;
+  border: 1rpx solid var(--brass-800, rgba(196, 167, 108, 0.45));
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: var(--brass-400, #C4A76C);
+}
+.gift-scene-chip-press { background: rgba(196, 167, 108, 0.14); }
+.gift-cta {
+  margin-top: 20rpx; height: 76rpx; line-height: 76rpx; text-align: center;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #C4A76C 0%, #D9BE86 100%);
+  color: #1A1814; font-size: 28rpx; font-weight: 600; letter-spacing: 2rpx;
+}
+.gift-cta-press { opacity: 0.86; }
