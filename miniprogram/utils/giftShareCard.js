@@ -305,7 +305,7 @@ const PRINT_H = 1748
 const PRINT_DESIGN_W = 1240
 
 function paintGiftPrintCard(canvas, opts) {
-  // 版式学习前端礼笺卡（compose 的 .card-* ）：写给 TA + 右上印章 → 题记带 → 手写体正文
+  // 版式学习前端礼笺卡（compose 的 .card-* ）：写给 TA → 题记带 → 手写体正文
   //   → 署名(左, 铜金下划线) + 日期(右, 弱化) → 右下淡「山海」水印
   const o = opts || {}
   const MM = 11.811
@@ -337,7 +337,7 @@ function paintGiftPrintCard(canvas, opts) {
   // 手写体：与前端同一套系统字体栈（iOS 命中汉仪手写体/签笔，Android 落衬线兜底）
   const HAND = '"HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", "KaiTi", serif'
 
-  // ── 顶行：写给 · TA（左）＋「山海」印章（右）—— 学前端那张卡的首行
+  // ── 顶行：写给 · TA（左上）—— 原「山海」印章已去掉
   const topY = cardY + Math.round(16 * MM)
   const toName = String(o.recipientName || '').trim()
   ctx.textAlign = 'left'
@@ -347,31 +347,7 @@ function paintGiftPrintCard(canvas, opts) {
     ctx.fillText('写给 · ' + toName, axisX, topY)
   }
 
-  // 印章：朱红实心圆角方印（白文 = 字为米色挖空）+ 轻微倾斜 —— 学真印章的形制
-  const sealSize = Math.round(20 * MM)
-  const sealCx = axisRight - sealSize / 2
-  const sealCy = topY - Math.round(9 * MM)
-  ctx.save()
-  ctx.translate(sealCx, sealCy)
-  ctx.rotate(-0.055)                                  // 略斜，像手盖上去的
-  const half = sealSize / 2
-  ctx.fillStyle = '#B23A2E'                            // 朱砂红（比之前的砖红更正）
-  roundRect(ctx, -half, -half, sealSize, sealSize, Math.round(3 * MM))
-  ctx.fill()
-  ctx.globalAlpha = 0.06                               // 印泥的斑驳（轻）
-  ctx.fillStyle = '#F2EDE4'
-  for (let i = 0; i < 26; i += 1) {
-    const px = -half + ((i * 37) % sealSize)
-    const py = -half + ((i * 61) % sealSize)
-    ctx.fillRect(px, py, 3, 3)
-  }
-  ctx.globalAlpha = 1
-  ctx.fillStyle = '#F2EDE4'                            // 白文：字挖空
-  ctx.font = '600 44px serif'
-  ctx.textAlign = 'center'
-  ctx.fillText('山', -Math.round(4.6 * MM), Math.round(6 * MM))
-  ctx.fillText('海', Math.round(4.6 * MM), Math.round(6 * MM))
-  ctx.restore()
+  // （原右上「山海」朱红印章已按产品负责人要求去掉 —— 卡面留白更干净）
 
   // ── 题记带（整宽；学习前端 .card-epigraph：铜金左线 + 暖底 + 金主题名 + 灰题记）
   let y = topY + Math.round(14 * MM)
@@ -401,7 +377,7 @@ function paintGiftPrintCard(canvas, opts) {
 
   // ── 正文（手写体、大字距宽行距；前端那张卡的正文观感）
   // 页脚区带：两枚码（各 22mm）+ 各自小字 ≈ 30mm → 36mm 足够，正文拿回空间
-  const FOOTER_H = Math.round(36 * MM)
+  const FOOTER_H = Math.round(32 * MM)
   const footerTop = cardY + cardH - FOOTER_H
   const signTop = footerTop - Math.round(8 * MM)
 
@@ -456,8 +432,8 @@ function paintGiftPrintCard(canvas, opts) {
 
   // 两枚码：从右往左排（小程序码在最右），各自带小字；素材缺失各自静默跳过
   const codes = []
-  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店', size: Math.round(22 * MM) })
-  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信', size: Math.round(22 * MM) })
+  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店', size: Math.round(18 * MM) })
+  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信', size: Math.round(18 * MM) })
   let cx = axisRight
   for (let i = 0; i < codes.length; i += 1) {
     const c = codes[i]
@@ -469,7 +445,7 @@ function paintGiftPrintCard(canvas, opts) {
     ctx.font = '400 20px serif'
     ctx.textAlign = 'center'
     ctx.fillText(c.caption, x + c.size / 2, y + c.size + Math.round(6 * MM))
-    cx = x - Math.round(8 * MM)
+    cx = x - Math.round(6 * MM)
   }
   ctx.textAlign = 'left'
 
