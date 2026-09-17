@@ -158,13 +158,13 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   check('★ 正文在题记与署名之间**垂直居中**（短笺不空、长笺不挤）',
     /freeBottom - freeTop - bodyBlockH/.test(card))
   check('★ 页脚带独立、正文区让位（真图曾出现两枚码压住署名）',
-    /const FOOTER_H = Math\.round\(32 \* MM\)/.test(card)
+    /const FOOTER_H = Math\.round\(30 \* MM\)/.test(card)
     && /const signTop = footerTop - Math\.round\(8 \* MM\)/.test(card),
     '码的高度必须从正文可用高度里扣掉，否则会压住正文与署名')
   check('★ 页脚带内排布：码的 y 从 footerTop 起（不再向上顶）', /const y = footerTop \+ Math\.round\(2 \* MM\)/.test(card))
   // 真图曾因 maxLines 截断**丢了一整行正文** ✗ → 内容安全必须钉死
   check('★★ 正文**自适应缩放、永不截断**（印刷卡不能丢字）',
-    /while \(fontPx > 24 && bodyLines\.length \* lineH > availH\)/.test(card)
+    /while \(fontPx > 28 && bodyLines\.length \* lineH > availH\)/.test(card)
     && /wrapLines\(ctx, text, axisRight - axisX, 999\)/.test(card)
     && !/wrapLines\(ctx, String\(o\.cardBody \|\| ''\), axisRight - axisX, maxLines\)/.test(card),
     '按 maxLines 截断会在卡上丢字（真图已发生）')
@@ -181,7 +181,7 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   // 2026-09-17 真图暴露的两个重叠 bug → 钉成不变量
   // 版式按前端礼笺卡定稿（2026-09-18）：印章在右上、署名在左下 → 分区不相撞
   check('★ 署名与两枚码**分区**不相撞（署名左 / 码右）',
-    /let cx = axisRight/.test(card)
+    /let cx = qrRight/.test(card)
     && /const footBase = footerTop \+ Math\.round\(20 \* MM\)/.test(card),
     '印章与署名必须在不同分区，否则会叠在一起')
   check('★ 题记带整宽（axisX → axisRight）', /const bandW = axisRight - axisX/.test(card))
@@ -199,12 +199,14 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   check('底部有落款日期（填住下半版空白）', /padStart\(2, '0'\)/.test(card) && /ctx\.fillText\(dateText/.test(card))
   // 2026-09-18：印刷卡版式**学习前端礼笺卡**（compose 的 .card-*）
   check('★ 印刷卡首行是「写给 · TA」（学前端 .card-*）', /写给 · /.test(card) && /o\.recipientName/.test(card))
-  check('★ 两枚码各 **18mm** 且右对齐（缩小右移，避开署名）',
-    /caption: '扫码进店', size: Math\.round\(18 \* MM\)/.test(card)
-    && /caption: '客服微信', size: Math\.round\(18 \* MM\)/.test(card)
-    && /let cx = axisRight/.test(card))
-  check('★ 正文用**手写体**（与前端同一系统字体栈，零体积）',
-    /HanziPen SC/.test(card) && /fontPx \+ 'px ' \+ HAND/.test(card))
+  check('★ 两枚码各 **15mm**，右边界贴**内框内侧 4mm**（不再误用文字轴，右移约 10mm）',
+    /caption: '扫码进店', size: Math\.round\(15 \* MM\)/.test(card)
+    && /caption: '客服微信', size: Math\.round\(15 \* MM\)/.test(card)
+    && /const qrRight = cardX \+ cardW - Math\.round\(4 \* MM\)/.test(card)
+    && /let cx = qrRight/.test(card),
+    '码的右边界若用 axisRight，等于把左内边距算两次 → 离纸边过远')
+  check('★ 正文用**手写体**且基线 **40px**（自适应下限 28px；产品负责人要求放大）',
+    /HanziPen SC/.test(card) && /fontPx \+ 'px ' \+ HAND/.test(card) && /let fontPx = 40/.test(card) && /while \(fontPx > 28/.test(card))
   check('★ 卡上**不得有**「山海」水印（定稿：页脚已被署名+两枚码占满，再叠会糊）',
     !/globalAlpha = 0\.0[0-9]/.test(card.slice(card.indexOf('// 页脚带：左＝署名'), card.indexOf('// 页脚带：左＝署名') + 2600)))
 }

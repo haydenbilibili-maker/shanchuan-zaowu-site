@@ -343,14 +343,14 @@ function paintGiftPrintCard(canvas, opts) {
   ctx.textAlign = 'left'
   if (toName) {
     ctx.fillStyle = '#8A7530'
-    ctx.font = '400 28px serif'
+    ctx.font = '400 30px serif'
     ctx.fillText('写给 · ' + toName, axisX, topY)
   }
 
   // （原右上「山海」朱红印章已按产品负责人要求去掉 —— 卡面留白更干净）
 
   // ── 题记带（整宽；学习前端 .card-epigraph：铜金左线 + 暖底 + 金主题名 + 灰题记）
-  let y = topY + Math.round(14 * MM)
+  let y = topY + Math.round(12 * MM)
   const themeName = String(o.themeName || '').trim()
   const themeNote = String(o.themeNote || '').trim()
   if (themeName) {
@@ -365,7 +365,7 @@ function paintGiftPrintCard(canvas, opts) {
     ctx.fillRect(axisX, y, 6, bandH)
     ctx.textAlign = 'left'
     ctx.fillStyle = '#B08A3E'
-    ctx.font = '600 38px serif'
+    ctx.font = '600 40px serif'
     ctx.fillText(themeName, axisX + innerPad, y + Math.round(10 * MM))
     ctx.fillStyle = '#6A6258'
     ctx.font = '400 28px serif'
@@ -377,21 +377,21 @@ function paintGiftPrintCard(canvas, opts) {
 
   // ── 正文（手写体、大字距宽行距；前端那张卡的正文观感）
   // 页脚区带：两枚码（各 22mm）+ 各自小字 ≈ 30mm → 36mm 足够，正文拿回空间
-  const FOOTER_H = Math.round(32 * MM)
+  const FOOTER_H = Math.round(30 * MM)
   const footerTop = cardY + cardH - FOOTER_H
   const signTop = footerTop - Math.round(8 * MM)
 
   // 正文：**自适应缩放，永不截断**（印刷卡不能丢字 —— 真图曾因 maxLines 截断丢了一整行）
   const text = String(o.cardBody || '')
   const availH = signTop - y - Math.round(6 * MM)
-  let fontPx = 34
-  let lineH = 62
+  let fontPx = 40
+  let lineH = 72
   ctx.fillStyle = '#2B2723'
   ctx.font = '400 ' + fontPx + 'px ' + HAND
   let bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
   if (bodyLines.length * lineH > availH && availH > 0) {
     // 逐档缩小字号与行高，直到装得下（下限 24px，仍装不下才截断并告警）
-    while (fontPx > 24 && bodyLines.length * lineH > availH) {
+    while (fontPx > 28 && bodyLines.length * lineH > availH) {
       fontPx -= 2
       lineH = Math.round(fontPx * 1.8)
       ctx.font = '400 ' + fontPx + 'px ' + HAND
@@ -413,7 +413,7 @@ function paintGiftPrintCard(canvas, opts) {
   if (sig) {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#2B2723'
-    ctx.font = '500 36px ' + HAND
+    ctx.font = '500 40px ' + HAND
     ctx.fillText(sig, axisX, footBase)
     const sw = ctx.measureText(sig).width
     ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'
@@ -432,9 +432,11 @@ function paintGiftPrintCard(canvas, opts) {
 
   // 两枚码：从右往左排（小程序码在最右），各自带小字；素材缺失各自静默跳过
   const codes = []
-  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店', size: Math.round(18 * MM) })
-  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信', size: Math.round(18 * MM) })
-  let cx = axisRight
+  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店', size: Math.round(15 * MM) })
+  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信', size: Math.round(15 * MM) })
+  // 右边界贴内框内侧 4mm（此前误用文字轴 axisRight，等于把左内边距算两次 → 离纸边 24mm ✗）
+  const qrRight = cardX + cardW - Math.round(4 * MM)
+  let cx = qrRight
   for (let i = 0; i < codes.length; i += 1) {
     const c = codes[i]
     const x = cx - c.size
