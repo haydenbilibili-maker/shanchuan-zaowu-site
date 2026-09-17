@@ -2725,6 +2725,9 @@
             <text>名称</text>
             <view class="ai-field-wrap">
               <input value="{{tempProduct.title}}" bindinput="bindPInput" data-field="title" placeholder="请输入藏品名称"/>
+              <!-- 双层命名：title 是标准名（检索/识别/对账），主题名是文艺名（详情/礼赠做主视觉） -->
+              <input value="{{tempProduct.themeName}}" bindinput="bindPInput" data-field="themeName" placeholder="主题名（2–8 字，如「时间的守卫者」）"/>
+              <input value="{{tempProduct.themeNote}}" bindinput="bindPInput" data-field="themeNote" placeholder="一句话点题（选填，如「钟面朝前，时间向后」）"/>
               <view class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistProductFillAll">一键补齐</view>
             </view>
           </view>

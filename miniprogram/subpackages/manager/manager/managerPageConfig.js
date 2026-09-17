@@ -4851,6 +4851,35 @@ const managerPageConfig = {
     syncProductTaxonomyFlags(this);
     return true;
   },
+  /**
+   * 主题名候选选择器：列出 AI 给的候选（主题名 · 适合场景 · 一句话点题），点选写入 themeName/themeNote。
+   * 原则：**只建议、不自动覆盖** —— title 是标准名（检索/识别/对账），主题名是另一层。
+   */
+  pickThemeNameCandidate(candidates) {
+    const list = (candidates || []).filter((c) => c && c.themeName)
+    if (!list.length) return
+    const SCENE_LABEL = {
+      housewarming: '乔迁', wedding: '新婚', birthday: '生日', anniversary: '纪念日',
+      enrollment: '升学', graduation: '毕业', new_job: '新工作', gratitude: '致谢'
+    }
+    wx.showActionSheet({
+      itemList: list.slice(0, 6).map((c) => {
+        const sc = (c.scenes || []).map((k) => SCENE_LABEL[k] || k).join('/')
+        return `${c.themeName}${sc ? ' · ' + sc : ''}${c.note ? ' · ' + c.note : ''}`
+      }),
+      success: (res) => {
+        const picked = list[res.tapIndex]
+        if (!picked) return
+        this.setData({
+          'tempProduct.themeName': picked.themeName,
+          'tempProduct.themeNote': picked.note || ''
+        })
+        wx.showToast({ title: `主题名：${picked.themeName}`, icon: 'none' })
+      },
+      fail: () => { /* 取消：保持原值 */ }
+    })
+  },
+
   /** 一键补齐：仅需名称；补分类/描述/保护物种/taxonomy/学名（与 Admin 同源） */
   async assistProductFillAll() {
     const p = this.data.tempProduct || {};
@@ -4917,6 +4946,8 @@ const managerPageConfig = {
       syncProductLatinRequired(this);
       syncProductTaxonomyFlags(this);
       this.applySensitiveBlurSuggestionFromForm(this.data.tempProduct);
+      // 主题名候选：只给候选、由录入者挑选（title 仍是标准名，AI 不直接改写）
+      this.pickThemeNameCandidate(Array.isArray(d.nameCandidates) ? d.nameCandidates : []);
       wx.showToast({ title: latinName ? '一键补齐完成' : '描述/分类已补齐', icon: 'none' });
     } catch (e) {
       wx.showToast({ title: e.message || '一键补齐失败', icon: 'none' });

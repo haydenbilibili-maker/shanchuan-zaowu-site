@@ -154,7 +154,8 @@ module.exports.calcVip = calcVip;
           <text class="tag-item" wx:if="{{product.category}}">{{product.category}}</text>
           <text class="tag-item" wx:for="{{craftTags}}" wx:key="key">{{item.label}}</text>
         </view>
-        <text class="title-main">{{product.title}}</text>
+        <text class="title-theme" wx:if="{{product.themeName}}">{{product.themeName}}</text>
+        <text class="title-main {{product.themeName ? 'is-sub' : ''}}">{{product.title}}</text>
         <text class="latin-sub" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
         </block>
       </view>

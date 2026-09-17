@@ -88,7 +88,8 @@
               />
             </view>
             <view class="product-body">
-              <text class="product-title">{{item.title}}</text>
+              <text class="product-theme" wx:if="{{item.themeName}}">{{item.themeName}}</text>
+              <text class="product-title {{item.themeName ? 'is-sub' : ''}}">{{item.title}}</text>
               <text class="product-price">¥{{item.priceLabel}}</text>
             </view>
           </view>

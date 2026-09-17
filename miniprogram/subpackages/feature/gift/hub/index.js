@@ -152,6 +152,8 @@ Page({
         return {
           _id: p._id,
           title: p.title || '',
+          themeName: p.themeName || '',
+          themeNote: p.themeNote || '',
           latinName: p.latinName || '',
           cover,
           priceLabel: Number.isFinite(price) ? price.toFixed(2) : '—',

@@ -246,6 +246,18 @@ page {
   padding: 12rpx 14rpx 14rpx;
 }
 
+/* 主题名（双层命名）：礼赠卡主视觉，标准名降为副行 —— 送礼时「这句话」比物种名更打动人 */
+.product-theme {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #F5F2EC);
+  letter-spacing: 1rpx;
+}
+.product-title.is-sub {
+  font-size: 22rpx;
+  color: var(--color-text-secondary, #A09A90);
+}
 .product-title {
   display: block;
   font-size: 24rpx;

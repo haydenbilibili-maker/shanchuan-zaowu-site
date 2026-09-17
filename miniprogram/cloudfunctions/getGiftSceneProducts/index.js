@@ -51,6 +51,9 @@ function leanProduct(row, matchSource) {
   return {
     _id: row._id,
     title: row.title || row.name || '',
+    // 双层命名：主题名（文艺）/ 一句话点题 —— 礼赠卡做主视觉
+    themeName: row.themeName || '',
+    themeNote: row.themeNote || '',
     latinName: row.latinName || '',
     price: row.price,
     images: Array.isArray(row.images) ? row.images.slice(0, 3) : [],
