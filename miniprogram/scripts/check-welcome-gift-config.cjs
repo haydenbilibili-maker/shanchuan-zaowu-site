@@ -67,6 +67,27 @@ function proxyAllowsManageWelcomeGift(src) {
  */
 const ONBOARDING_PAGE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'index.js')
 const ONBOARDING_DONE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'done.js')
+const ONBOARDING_WXML = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'index.wxml')
+const ONBOARDING_DONE_WXML = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'done.wxml')
+const PROFILE_PAGE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'profile', 'index.js')
+
+/**
+ * 「礼包不再含积分」后的展示口径（2026-09-17）：
+ * 数值是数据驱动的（preview / 实发结果），所以积分归零时**不能再渲染那一格** ——
+ * 否则注册页会出现「+0 积分」、完成页会出现「0 积分 已入账」，比不显示更糟。
+ * 这两条与「档案页仍承诺礼包含积分」一起钉住：口径改一次，展示面必须同步。
+ */
+function onboardingPointsGated(js, wxml) {
+  return /showPoints:\s*Number\(points\)\s*>\s*0/.test(js)
+    && /class="reward-stat"\s+wx:if="\{\{showPoints\}\}"/.test(wxml)
+}
+function donePointsGated(wxml) {
+  return /class="gift-card"\s+wx:if="\{\{giftPoints\s*>\s*0\}\}"/.test(wxml)
+}
+/** 档案页奖励提示必须说的是礼券（不再是「新客礼包积分」） */
+function profileHintSaysCoupons(src) {
+  return /新客礼券可在我的礼券夹查看/.test(src) && !/新客礼包积分/.test(src)
+}
 
 /** 注册页「新客礼」预告必须来自云函数 preview（配置派生），而不是本地档位 */
 function previewIsSourceOfTruth(src) {
@@ -334,6 +355,17 @@ function runChecks(defaults) {
   ])
   check('C 端只有一份档位兜底（profileConstants.REGISTER_GIFT）', ladders.length === 1,
     `实际 ${ladders.length} 份：${ladders.join(', ')}`)
+
+  // 15. 「礼包不再含积分」的展示口径（数值驱动 → 归零时必须不渲染）
+  check('注册页积分格受 showPoints 门控（不再出现「+0 积分」）',
+    onboardingPointsGated(fs.readFileSync(ONBOARDING_PAGE, 'utf8'), fs.readFileSync(ONBOARDING_WXML, 'utf8')),
+    '积分格无条件渲染 → 礼包不含积分时会显示「+0 积分」')
+  check('完成页积分卡受 giftPoints > 0 门控（不再出现「0 积分 已入账」）',
+    donePointsGated(fs.readFileSync(ONBOARDING_DONE_WXML, 'utf8')),
+    '积分卡无条件渲染 → 会显示「0 积分 已入账」')
+  check('档案页奖励提示说的是礼券（不再承诺礼包含积分）',
+    profileHintSaysCoupons(fs.readFileSync(PROFILE_PAGE, 'utf8')),
+    '仍在说「新客礼包积分可在积分明细查看」')
 }
 
 function collect(dir) {
@@ -399,7 +431,19 @@ function runSelfTest() {
     ['注册页预告改回读本地档位（不再问配置）',
       () => previewIsSourceOfTruth("const GIFT_COUPONS = REGISTER_GIFT.coupons || []")],
     ['完成页改回只显示兜底张数（不消费实发结果）',
-      () => doneShowsActualGrant("giftCoupons: (REGISTER_GIFT.coupons || []).length")]
+      () => doneShowsActualGrant("giftCoupons: (REGISTER_GIFT.coupons || []).length")],
+    ['注册页积分格去掉门控（礼包不含积分时会显示 +0 积分）',
+      () => onboardingPointsGated(
+        "showPoints: Number(points) > 0",
+        '<view class="reward-stat">')],
+    ['注册页 showPoints 口径被改成恒真',
+      () => onboardingPointsGated(
+        "showPoints: true",
+        '<view class="reward-stat" wx:if="{{showPoints}}">')],
+    ['完成页积分卡去掉门控（会显示 0 积分 已入账）',
+      () => donePointsGated('<view class="gift-card">')],
+    ['档案页又承诺礼包含积分',
+      () => profileHintSaysCoupons("return '基础注册已完成。新客礼包积分可在积分明细查看。'")]
   ]
   for (const [label, probe] of signatureCases) {
     const detected = probe() === false

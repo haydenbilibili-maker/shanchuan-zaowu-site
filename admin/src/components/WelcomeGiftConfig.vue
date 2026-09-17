@@ -7,14 +7,14 @@
         <code>manageWelcomeGift</code> 与同一条记录（集合 <code>member_welcome_gift</code>，
         注册时由 <code>upsertUserProfile</code> 发放同源）。本页已不再直写集合——
         直写会漏掉「操作人归属」与「已发未使用券条款同步」。
-        缺配置走代码默认：100 积分 + 满49减5 / 满299减30 / 满499减50 / 满999减100（90 天、不可叠加）。
+        缺配置走代码默认：无积分 + 满49减5 / 满99减10 / 满299减30 / 满499减50 / 满999减100（共 5 张，90 天、不可叠加）。
       </p>
       <el-alert
         type="info"
         :closable="false"
         show-icon
         style="margin-top: 12px;"
-        title="同一 openid 整包只发一次（积分 + 礼券共用幂等键 register_gift:{openid}）。下单链路一单一券，与「不可叠加」一致。"
+        title="同一 openid 整包只发一次（幂等键 register_gift:{openid}；2026-09-17 起礼包只含礼券、不再发积分）。下单链路一单一券，与「不可叠加」一致。"
       />
       <el-alert
         type="warning"

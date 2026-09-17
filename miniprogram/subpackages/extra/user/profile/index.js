@@ -63,7 +63,7 @@ function buildRewardHint(user) {
     return '填写生日后，生日当天可领取生日礼券与祝福。兴趣偏好可帮助馆藏推荐。'
   }
   if (user.profileRewardClaimed || user.onboardingDone) {
-    return '基础注册已完成。新客礼包积分可在积分明细查看，不计入等级成长值。'
+    return '基础注册已完成。新客礼券可在我的礼券夹查看；礼包不含积分。'
   }
   return '完成昵称与手机号绑定后发放新客礼包；头像、生日、兴趣可随时补充。'
 }
