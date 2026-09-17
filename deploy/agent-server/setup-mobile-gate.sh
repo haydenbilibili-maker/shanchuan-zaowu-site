@@ -70,7 +70,21 @@ cat > /etc/caddy/Caddyfile <<CADDY
 	admin off
 }
 
-127.0.0.1:${GATE_PORT} {
+# ⚠ 三个必须这样写的理由（每一个都踩过，见下）
+# 1) site address 用 **catch-all `:端口`**，不能写 `127.0.0.1:端口`：
+#    Caddy 用 site address 的**主机名做 Host 匹配**。隧道转发进来的是
+#    `Host: agent.shanhaizaowu.com`，而 `127.0.0.1:8080` 只匹配 Host=127.0.0.1，
+#    于是经隧道的请求**匹配不到任何 site → 返回空的 200**（实测 0 字节）。
+#    症状是浏览器**白屏**（标题空、正文 0、零 script、零报错）。
+#    我踩过这个坑：本地 `curl http://127.0.0.1:8080/` 得到 200 + 27724 字节，
+#    因为 curl 恰好发的 Host 就是 127.0.0.1 —— **用错的 Host 验证等于没验证**。
+# 2) 必须显式 `bind 127.0.0.1`：site address 的主机名只用于路由匹配、**不用于绑定**，
+#    不加时 Caddy 会监听在 `*:8080` 全网卡（实测如此，属安全隐患）。
+# 3) 必须写 `http://` 前缀或像这里用纯端口：写成 `域名:端口` 会让 Caddy **默认启用 TLS**，
+#    明文请求会得到 `Client sent an HTTP request to an HTTPS server.`（实测）。
+:${GATE_PORT} {
+	bind 127.0.0.1
+
 	# Caddy 2.6 的指令名是 basicauth（2.7+ 才叫 basic_auth）
 	basicauth {
 		admin ${HASH}
@@ -104,12 +118,24 @@ sleep 5
 systemctl is-active --quiet cloudflared && echo "    cloudflared: active" || echo "    ⚠ cloudflared 状态: $(systemctl is-active cloudflared)"
 
 echo "==> 6/6 自检"
-printf "  无密码        → %s（期望 401，由 Caddy 拒绝）\n" \
-  "$(curl -s -o /dev/null -w '%{http_code}' -m 15 "http://127.0.0.1:${GATE_PORT}/")"
-printf "  错误密码      → %s（期望 401）\n" \
-  "$(curl -s -o /dev/null -w '%{http_code}' -m 15 -u "admin:wrong" "http://127.0.0.1:${GATE_PORT}/")"
-printf "  正确密码      → %s（期望 200 = 直接进 DSH，无需 token）\n" \
-  "$(curl -s -o /dev/null -w '%{http_code}' -m 20 -u "admin:${PW}" "http://127.0.0.1:${GATE_PORT}/")"
+# ⚠ 必须带 **公网 Host** 请求。这是本脚本自检的关键：
+#   只用 127.0.0.1 验证会得到「200 + 完整 HTML」，从而**掩盖**「经隧道时 Host 不匹配
+#   → 空 200 → 白屏」这个真实故障（我正是这样误判过一次）。
+H="Host: ${PUBLIC_HOST}"
+printf "  无密码（公网 Host）→ %s（期望 401，由 Caddy 拒绝）\n" \
+  "$(curl -s -o /dev/null -w '%{http_code}' -m 15 -H "$H" "http://127.0.0.1:${GATE_PORT}/")"
+printf "  错误密码（公网 Host）→ %s（期望 401）\n" \
+  "$(curl -s -o /dev/null -w '%{http_code}' -m 15 -u "admin:wrong" -H "$H" "http://127.0.0.1:${GATE_PORT}/")"
+CODE=$(curl -s -o /tmp/gate-idx.html -w '%{http_code}' -m 20 -u "admin:${PW}" -H "$H" "http://127.0.0.1:${GATE_PORT}/")
+BYTES=$(wc -c < /tmp/gate-idx.html | tr -d ' ')
+printf "  正确密码（公网 Host）→ %s，正文 %s 字节\n" "$CODE" "$BYTES"
+if [ "$CODE" = "200" ] && [ "$BYTES" -gt 1000 ]; then
+	echo "    ✓ 非空响应，说明 site 匹配正确（若为 0 字节 = Host 匹配失败，会白屏）"
+else
+	echo "    ✗ 响应为空或异常 —— 检查 site address 是否为 catch-all ':${GATE_PORT}'（见脚本顶部注释）"
+	exit 1
+fi
+printf "  正文含 DSH 标记: %s\n" "$(grep -c 'DeepSeek Harness' /tmp/gate-idx.html)"
 echo
 echo "完成。任意设备打开 https://${PUBLIC_HOST}/ ，输入 用户名 admin / 你设的密码 即可。"
 echo "注意：本脚本用当期 launch token 铸造 cookie；若日后跑过 rotate-agent-token.sh"
