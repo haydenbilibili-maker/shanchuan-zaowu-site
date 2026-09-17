@@ -1347,6 +1347,7 @@ import * as EpIcons from '@element-plus/icons-vue'
 // 导入云开发工具
 import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnUpdate, callCloudFunction, getCdnDatabase, cdnCount, cdnQueryPage } from './cloud'
 import { toChineseTaxonomy } from './utils/taxonomyZh'
+import { buildCanonicalSize, parseCanonicalSize } from './utils/sizeCanonical'
 import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
 import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
 import { establishAdminSession, clearAdminSession, probeAdminSession, assertWriteApplied } from './utils/cloudbaseCdnDb'
@@ -1893,19 +1894,8 @@ const normalizeFormTaxonomy = (raw) => {
     }
 }
 
-const parseProductSize = (sizeStr) => {
-    let sizeL = '', sizeW = '', sizeH = ''
-    if (sizeStr) {
-        const cleanSize = String(sizeStr).replace(/cm/gi, '').trim()
-        const p = cleanSize.split(/[xX×]/)
-        if (p.length >= 3) {
-            sizeL = p[0].trim()
-            sizeW = p[1].trim()
-            sizeH = p[2].trim()
-        }
-    }
-    return { sizeL, sizeW, sizeH }
-}
+// 解析交给共享模块（与小程序 parseSizeParts 同口径）：旧数据里带「厚度/厘米」的写法也能正确落进三个输入框
+const parseProductSize = (sizeStr) => parseCanonicalSize(sizeStr)
 
 const CHANNEL_LABEL_MAP = {
     import: '进口',
@@ -3949,7 +3939,8 @@ const saveProduct = async () => {
             }
         }
 
-        const sizeStr = `${form.value.sizeL || 0}x${form.value.sizeW || 0}x${form.value.sizeH || 0} cm`
+        // 与小程序 / 店长端同口径：空维度不占位、去小数尾零；全空给空串（不再写出 0x0x0 cm）
+        const sizeStr = buildCanonicalSize(form.value.sizeL, form.value.sizeW, form.value.sizeH)
         const tax = normalizeFormTaxonomy(form.value.taxonomy || emptyTaxonomy())
         form.value.taxonomy = tax
         let collectionCertificate = String(form.value.collectionCertificate || '').trim()

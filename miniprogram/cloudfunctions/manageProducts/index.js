@@ -121,6 +121,16 @@ function parseSkuSizeParts(sizeStr) {
   return { sizeL, sizeW, sizeH }
 }
 
+/**
+ * 尺寸数值归一：去掉小数尾零（21.0 → 21、4.50 → 4.5）。只处理纯「数字.数字」，A4 这类不动。
+ * 与小程序 utils/skuSize.trimSizeNumber / ERP admin/src/utils/sizeCanonical.js 同口径。
+ */
+function trimSizeNumber(value) {
+  const v = String(value == null ? '' : value).trim()
+  if (!/^\d+\.\d+$/.test(v)) return v
+  return v.replace(/\.?0+$/, '') || '0'
+}
+
 function normalizeSkuSizeFields(s) {
   const sizeText = String(s.sizeText || '').trim().slice(0, 120)
   let sizeL = String(s.sizeL != null ? s.sizeL : '').trim().slice(0, 16)
@@ -133,12 +143,11 @@ function normalizeSkuSizeFields(s) {
     sizeW = parsed.sizeW
     sizeH = parsed.sizeH
   }
-  if (!size && (sizeL || sizeW || sizeH)) {
-    const parts = []
-    if (sizeL) parts.push(sizeL)
-    if (sizeW) parts.push(sizeW)
-    if (sizeH) parts.push(sizeH)
-    if (parts.length) size = `${parts.join('x')} cm`
+  // 结构化字段存在时**以它们为权威重建** size（旧实现是 `if (!size && ...)`：调用方传来的脏 size
+  // 会原样入库 —— ERP 曾写进 `0x0x0 cm` 与带尾零的值，C 端因此显示过「0×0×厚度 0 厘米」）
+  if (sizeL || sizeW || sizeH) {
+    const parts = [sizeL, sizeW, sizeH].map(trimSizeNumber).filter(Boolean)
+    size = parts.length ? `${parts.join('x')} cm` : ''
   }
   const sizeNorm = String(size || '')
     .replace(/\s+/g, '')
