@@ -16,9 +16,18 @@ npm run build          # admin + Astro → dist/
 
 **勿**再手动从外部 `shanchuan-admin/dist/` 覆盖。保留本目录的 `README.md`、`cloud-check.html`；构建脚本不会删除它们。
 
-3. **勿部署** `governance-assets/`（内部治理文档，仅本地 / 私有环境保留）
-4. 确认 `index.html` 含 `<meta name="robots" content="noindex, nofollow" />`（`admin/index.html` 模板已内置）
-5. 提交并推送主站仓库
+## 发布前检查（其中内部资料一项已机制化）
+
+1. **内部治理资料不得上线**：`admin/public/governance-assets/`（劳动合同、保密与竞业协议、投资人 BP、股权架构方案…）
+   是内部文档的**单一事实源**，仅用于本地/私有环境；它**不得**出现在 `public/admin/governance-assets/`。
+   该禁令现已由机制执行，不再是口头约定：
+   - `scripts/build-admin.mjs` 在 Vite 构建后**强制剔除** `public/admin/governance-assets/`；
+   - `scripts/verify-admin-dist.mjs` 在部署前再拦一道（`dist/admin/governance-assets` 存在即 fail）；
+   - `npm run check:publish-dir` 守卫发布目录（含 `--selftest`）；
+   - `public/_redirects` 对 `/admin/governance-assets/*` 返回 404。
+   **背景**：2026-09-16 前该目录曾被公开部署，可直链下载（见 `docs/全面审计_2026-09-17/README.md` A1）。
+2. 确认 `index.html` 含 `<meta name="robots" content="noindex, nofollow" />`（`admin/index.html` 模板已内置）
+3. 提交并推送主站仓库
 
 ## 路由
 

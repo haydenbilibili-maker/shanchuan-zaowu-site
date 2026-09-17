@@ -46,6 +46,20 @@ if (!fulfillment.length || !fulfillment.every((n) => assetSet.has(n))) {
   process.exit(1);
 }
 
+// ── 内部资料闸门 ────────────────────────────────────────────
+// `admin/public/**` 会被 Vite 原样复制进发布产物。公司内部治理文档
+// （劳动合同、保密与竞业协议、投资人 BP、股权架构方案…）不得上线，
+// 由 scripts/build-admin.mjs 在构建后剔除；这里在部署前再兜一道。
+// 见 docs/全面审计_2026-09-17/README.md A1。
+const PRIVATE_PUBLISH_DIRS = ['governance-assets'];
+const leakedPrivate = PRIVATE_PUBLISH_DIRS.filter((name) => existsSync(join(adminDir, name)));
+if (leakedPrivate.length) {
+  console.error('✗ dist/admin 含内部治理资料，已阻断部署：');
+  for (const name of leakedPrivate) console.error(`  - dist/admin/${name}/`);
+  console.error('  修复：把该目录移出 admin/public/ 与 public/admin/（内部资料只存仓库内非发布目录）。');
+  process.exit(1);
+}
+
 // ── 密钥泄露闸门 ─────────────────────────────────────────────
 // 任何 VITE_ 前缀变量都会被打进前端包；历史上 ADMIN_OPS_KEY 就是这样泄露到
 // public/admin 产物与线上 JS 的。这里在部署前扫一遍：只要构建环境里的密钥值

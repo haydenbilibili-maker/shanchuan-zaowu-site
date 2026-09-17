@@ -2,6 +2,10 @@
 /admin /admin/ 301
 # 缺失的 hashed chunk 必须 404，禁止回退官网 index.html（否则 MIME=text/html → 模块加载失败）
 /admin/assets/* /404.html 404
+# 内部治理资料（劳动合同/保密竞业/投资人 BP/股权架构…）永不公开：
+# 文件已从 public/ 移出，并由 scripts/build-admin.mjs + admin/scripts/check-publish-dir.mjs 守住；
+# 这里再兜一道，防止历史残留或误加回来被直链下载。见 docs/全面审计_2026-09-17/README.md A1。
+/admin/governance-assets/* /404.html 404
 /products /what 301
 /about /who 301
 /senses /how/senses 301

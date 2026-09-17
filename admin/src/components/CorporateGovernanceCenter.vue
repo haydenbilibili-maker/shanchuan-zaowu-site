@@ -9,6 +9,15 @@
       </div>
     </header>
 
+    <el-alert
+      type="warning"
+      show-icon
+      :closable="false"
+      class="gov-advisory"
+      title="内部资料不在公开站点提供"
+      description="劳动合同、保密与竞业协议、投资人 BP、股权架构等属公司内部文档，已从公开部署中移除（见 docs/全面审计_2026-09-17/README.md A1）。本页在本地 / 私有环境可正常预览与下载；公开站点上「打开 / 下载 / 内化预览」会失败，这属于预期行为，不是数据丢失。"
+    />
+
     <div class="gov-embed-legend">
       <span class="gov-legend-title">内化进度</span>
       <el-tag size="small" type="success" effect="plain">第一批</el-tag>
