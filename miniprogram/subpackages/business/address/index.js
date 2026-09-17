@@ -8,7 +8,9 @@ const EMPTY_FORM = {
   setAsDefault: false
 }
 
-Page({
+const { withAppModal } = require('../../../utils/appModal')
+
+Page(withAppModal({
   data: {
     addresses: [],
     mode: 'manage',
@@ -182,16 +184,14 @@ Page({
         const msg = (err && err.errMsg) || ''
         if (msg.includes('cancel')) return
         if (msg.includes('auth deny') || msg.includes('authorize')) {
-          wx.showModal({
+          // 2026-09-17 起改用全站样式化弹窗（行为等价；见 utils/appModal.js）
+          this.modal({
             title: '需要地址权限',
+            overline: 'WECHAT ADDRESS',
             content: '请允许获取微信收货地址，或改用「手动新增」填写。',
             confirmText: '手动新增',
-            cancelText: '取消',
-            confirmColor: '#C4A76C',
-            success: (r) => {
-              if (r.confirm) this.openManualForm()
-            }
-          })
+            cancelText: '取消'
+          }).then((r) => { if (r.confirm) this.openManualForm() })
           return
         }
         wx.showToast({ title: '获取地址失败', icon: 'none' })
@@ -353,24 +353,25 @@ Page({
       wx.showToast({ title: '地址信息缺失', icon: 'none' })
       return
     }
-    wx.showModal({
+    this.modal({
       title: '删除地址',
-      content: '确定删除该收货地址？',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          const result = await this.callManageAddress({ action: 'delete', addressId: id })
-          if (result.success) {
-            wx.showToast({ title: '已删除', icon: 'success' })
-            this.loadAddresses()
-          } else {
-            wx.showToast({ title: result.msg || '删除失败', icon: 'none' })
-          }
-        } catch (err) {
-          wx.showToast({ title: '删除失败', icon: 'none' })
+      overline: 'REMOVE ADDRESS',
+      content: '确定删除该收货地址？删除后不可恢复。',
+      confirmText: '删除',
+      danger: true
+    }).then(async (res) => {
+      if (!res.confirm) return
+      try {
+        const result = await this.callManageAddress({ action: 'delete', addressId: id })
+        if (result.success) {
+          wx.showToast({ title: '已删除', icon: 'success' })
+          this.loadAddresses()
+        } else {
+          wx.showToast({ title: result.msg || '删除失败', icon: 'none' })
         }
+      } catch (err) {
+        wx.showToast({ title: '删除失败', icon: 'none' })
       }
     })
   }
-})
+}))

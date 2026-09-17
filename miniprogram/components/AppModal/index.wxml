@@ -1,0 +1,33 @@
+<!-- 全站样式化弹窗：确认 / 仅提示两态，博物黑 + 铜金铭牌 -->
+<view
+  class="am-mask {{visible ? 'is-on' : 'is-off'}}"
+  wx:if="{{visible}}"
+  catchtouchmove="noop"
+>
+  <view class="am-plate" catchtap="noop">
+    <view class="am-corner is-tl"></view>
+    <view class="am-corner is-tr"></view>
+    <view class="am-corner is-bl"></view>
+    <view class="am-corner is-br"></view>
+
+    <text class="am-overline" wx:if="{{overline}}">{{overline}}</text>
+    <text class="am-title">{{title}}</text>
+    <text class="am-content" wx:if="{{content}}" user-select>{{content}}</text>
+
+    <view class="am-actions">
+      <view
+        wx:if="{{showCancel}}"
+        class="am-btn is-ghost"
+        bindtap="onCancel"
+        hover-class="am-btn-press"
+        hover-stay-time="60"
+      >{{cancelText}}</view>
+      <view
+        class="am-btn is-primary {{danger ? 'is-danger' : ''}}"
+        bindtap="onConfirm"
+        hover-class="am-btn-press"
+        hover-stay-time="60"
+      >{{confirmText}}</view>
+    </view>
+  </view>
+</view>
