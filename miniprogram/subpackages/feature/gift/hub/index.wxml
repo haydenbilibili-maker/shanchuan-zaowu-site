@@ -67,7 +67,16 @@
                 product-id="{{item._id}}"
                 size="card"
               >
-                <image class="product-cover" src="{{item.cover}}" mode="aspectFill"></image>
+                <!-- 封面：云文件 ID 或缩略链都直接给 <image>；加载失败就让它露出深色占位底，不留破图 -->
+                <image
+                  wx:if="{{item.cover && !item.coverBroken}}"
+                  class="product-cover"
+                  src="{{item.cover}}"
+                  mode="aspectFill"
+                  lazy-load
+                  binderror="onCoverError"
+                  data-index="{{index}}"
+                ></image>
               </sensitive-blur-gate>
               <text class="product-badge scene" wx:if="{{item.matchSource === 'scene'}}">场景</text>
               <text class="product-badge fallback" wx:else>荐</text>

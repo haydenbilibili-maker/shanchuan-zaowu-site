@@ -116,7 +116,28 @@ function __resetProbe() {
   flagEnabled = true
 }
 
+/**
+ * 商品/作品封面取值链：`images[0] → image → coverImage → cover → httpImage`。
+ *
+ * 为什么集中在这里（2026-09-17 真机反馈）：
+ *   礼赠 hub 与标本师主页各自写了一套封面逻辑，一个把 `cloud://` 转临时链、失败后**丢成空串**
+ *   （封面全空），另一个只认 `coverImage`。而实测这些商品的 `images[0]` 就是 `cloud://` 云文件 ID，
+ *   本仓既有口径（首页 / 馆藏 ProductList）是**直接交给 <image>**（云文件 ID 可直接渲染、且不会过期），
+ *   需要缩略时才用 thumbUrl()。这里把取值链收成一处，页面只管 `thumbUrl(firstImageOf(item))`。
+ */
+function firstImageOf(item) {
+  if (!item) return ''
+  const imgs = Array.isArray(item.images) ? item.images : []
+  const candidates = [imgs[0], item.image, item.coverImage, item.cover, item.httpImage]
+  for (const c of candidates) {
+    const v = String(c == null ? '' : c).trim()
+    if (v) return v
+  }
+  return ''
+}
+
 module.exports = {
+  firstImageOf,
   THUMB_WIDTH_LIST,
   THUMB_WIDTH_DETAIL,
   PROBE_WIDTH,

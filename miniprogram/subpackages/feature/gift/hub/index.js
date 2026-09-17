@@ -1,5 +1,5 @@
 // 礼赠主入口 · 场景选礼（与 compose 落笔/录音并行改动隔离）
-const { getFirstImage, batchTempFileURLs } = require('../../../../utils/util')
+const imageUrl = require('../../../../utils/imageUrl')
 const {
   fetchContentDisplayFlags,
   toastGiftClosed
@@ -142,18 +142,12 @@ Page({
         return ma - mb
       })
 
-      const fileIds = []
-      rows.forEach((p) => {
-        const img = getFirstImage(p.images)
-        if (img && String(img).startsWith('cloud://')) fileIds.push(img)
-      })
-      const urlMap = await batchTempFileURLs(fileIds)
+      // 2026-09-17 修复：此前把 cloud:// 转临时链，转换失败（或没命中）时**把值丢成空串** → 封面全空。
+      // 实测这些商品的 images[0] 就是云文件 ID，而云文件 ID 可直接给 <image>（首页/馆藏都这么做），
+      // 且不像临时链那样会过期；要缩略图时交给 thumbUrl()（不可用时它回落原值）。
       const products = rows.map((p) => {
-        const raw = getFirstImage(p.images)
-        const cover =
-          (raw && urlMap[raw]) ||
-          (raw && !String(raw).startsWith('cloud://') ? raw : '') ||
-          ''
+        const raw = imageUrl.firstImageOf(p)
+        const cover = raw ? imageUrl.thumbUrl(raw) : ''
         const price = Number(p.price)
         return {
           _id: p._id,
@@ -191,6 +185,13 @@ Page({
         productsError: '柜中片刻未应，请换一批或稍后再试'
       })
     }
+  },
+
+  /** 封面加载失败：置破图标记，露出占位底（避免长期显示裂图） */
+  onCoverError(e) {
+    const index = Number(e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.index)
+    if (!Number.isInteger(index) || index < 0) return
+    this.setData({ [`products[${index}].coverBroken`]: true })
   },
 
   onRefreshBatch() {

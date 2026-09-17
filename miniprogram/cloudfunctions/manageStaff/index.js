@@ -1730,7 +1730,10 @@ async function getPublicFramer(event, openid) {
       return {
         _id: item._id,
         title: item.title || '未命名作品',
+        // coverImage 是**临时链**（会过期）；同时给出原始云文件 ID，让客户端优先用它
         coverImage: urlMap[raw] || raw,
+        coverFileId: raw,
+        images: Array.isArray(item.images) ? item.images.slice(0, 3) : [],
         stock: item.stock,
         collectDate: item.collectDate || ''
       }

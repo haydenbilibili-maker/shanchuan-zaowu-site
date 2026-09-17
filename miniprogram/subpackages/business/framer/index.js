@@ -1,4 +1,5 @@
 const { cdnPath } = require('../../../config/cloudEnv')
+const imageUrl = require('../../../utils/imageUrl')
 const { resolveShareImage } = require('../../../utils/util');
 const { navigateToProductDetail } = require('../../../utils/productDetailNav');
 const { seedProductPreview } = require('../../../utils/productDetailCache');
@@ -90,11 +91,16 @@ Page({
       const rows = Array.isArray(result.works) ? result.works : [];
       // 需求 11：补 sensitiveEnabled，供 <sensitive-blur-gate> 决定是否轻掩封面
       const { attachSensitiveFlags } = require('../../../utils/sensitiveBlurCard');
-      const works = attachSensitiveFlags(rows.map((item) => ({
-        ...item,
-        coverImage: item.coverImage || FALLBACK_COVER,
-        title: item.title || '未命名作品'
-      })));
+      // 2026-09-17 修复：优先用**不会过期**的云文件 ID（images[0] / coverFileId），
+      // 再回落服务端临时链（会过期）；都没有才用兜底图。此前只认 coverImage（临时链）。
+      const works = attachSensitiveFlags(rows.map((item) => {
+        const raw = imageUrl.firstImageOf(item) || item.coverFileId || ''
+        return {
+          ...item,
+          coverImage: raw ? imageUrl.thumbUrl(raw) : FALLBACK_COVER,
+          title: item.title || '未命名作品'
+        }
+      }));
 
       works.forEach((w) => {
         try {
