@@ -305,7 +305,7 @@ function paintGiftPrintCard(canvas, opts) {
   const o = opts || {}
   const MM = 11.811
   const margin = Math.round(10 * MM)
-  const pad = Math.round(9 * MM)
+  const pad = Math.round(10 * MM)
   canvas.width = PRINT_W
   canvas.height = PRINT_H
   const ctx = canvas.getContext('2d')
@@ -324,100 +324,118 @@ function paintGiftPrintCard(canvas, opts) {
   ctx.fill()
   ctx.stroke()
 
-  ctx.strokeStyle = 'rgba(196, 167, 108, 0.35)'
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(cardX + pad, cardY + Math.round(18 * MM))
-  ctx.lineTo(cardX + cardW - pad, cardY + Math.round(18 * MM))
-  ctx.stroke()
+  // 版心左右轴：正文与题记文字共用同一条左轴（对齐才成版面）
+  const axisX = cardX + pad
+  const axisRight = cardX + cardW - pad
+
+  // 顶部：SEALED LETTER + 细线
   ctx.fillStyle = '#8A7530'
   ctx.font = '500 26px sans-serif'
   ctx.textAlign = 'left'
-  ctx.fillText('SEALED LETTER', cardX + pad, cardY + Math.round(14 * MM))
+  ctx.fillText('SEALED LETTER', axisX, cardY + Math.round(14 * MM))
+  ctx.strokeStyle = 'rgba(196, 167, 108, 0.35)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(axisX, cardY + Math.round(18 * MM))
+  ctx.lineTo(axisRight, cardY + Math.round(18 * MM))
+  ctx.stroke()
 
-  let y = cardY + Math.round(30 * MM)
+  // 标题（左上）
+  const titleY = cardY + Math.round(30 * MM)
   ctx.fillStyle = '#2B2723'
   ctx.font = '600 46px serif'
-  ctx.fillText('山海造物 · 礼笺', cardX + pad, y)
-  y += Math.round(6 * MM)
+  ctx.fillText('山海造物 · 礼笺', axisX, titleY)
 
+  // 藏品图（右上）：整块落在标题行右侧，题记带从**图之下**开始 → 永不重叠
+  let blockTop = titleY + Math.round(4 * MM)
+  if (o.specimenImage) {
+    const imgSize = Math.round(40 * MM)
+    const imgX = axisRight - imgSize
+    const imgY = titleY - Math.round(24 * MM)
+    ctx.save()
+    roundRect(ctx, imgX, imgY, imgSize, imgSize, 12)
+    ctx.clip()
+    try { ctx.drawImage(o.specimenImage, imgX, imgY, imgSize, imgSize) } catch (e) { /* 图挂留白 */ }
+    ctx.restore()
+    blockTop = Math.max(blockTop, imgY + imgSize + Math.round(5 * MM))
+  }
+
+  // 题记带：**整宽**（图已在其上方，不再被盖）
+  let y = blockTop
   const themeName = String(o.themeName || '').trim()
   const themeNote = String(o.themeNote || '').trim()
   if (themeName) {
-    const bandX = cardX + pad
-    const bandW = cardW - pad * 2
-    const bandTop = y + Math.round(3 * MM)
-    const noteLines = themeNote ? wrapLines(ctx, themeNote, bandW - Math.round(12 * MM), 3) : []
-    const bandH = Math.round(14 * MM) + noteLines.length * 30
+    const bandW = axisRight - axisX
+    const innerPad = Math.round(6 * MM)
+    const noteLines = themeNote ? wrapLines(ctx, themeNote, bandW - innerPad * 2, 3) : []
+    const bandH = Math.round(15 * MM) + noteLines.length * 32
     ctx.fillStyle = 'rgba(196, 167, 108, 0.08)'
-    roundRect(ctx, bandX, bandTop, bandW, bandH, 8)
+    roundRect(ctx, axisX, y, bandW, bandH, 8)
     ctx.fill()
     ctx.fillStyle = '#C4A76C'
-    ctx.fillRect(bandX, bandTop, 6, bandH)
-    ctx.font = '600 34px serif'
+    ctx.fillRect(axisX, y, 6, bandH)
     ctx.textAlign = 'left'
-    ctx.fillText(themeName, bandX + Math.round(6 * MM), bandTop + Math.round(9 * MM))
-    ctx.font = '400 26px serif'
+    ctx.fillStyle = '#B08A3E'
+    ctx.font = '600 36px serif'
+    ctx.fillText(themeName, axisX + innerPad, y + Math.round(10 * MM))
     ctx.fillStyle = '#5A544C'
+    ctx.font = '400 27px serif'
     for (let i = 0; i < noteLines.length; i += 1) {
-      ctx.fillText(noteLines[i], bandX + Math.round(6 * MM), bandTop + Math.round(13.5 * MM) + i * 30)
+      ctx.fillText(noteLines[i], axisX + innerPad, y + Math.round(15 * MM) + i * 32)
     }
-    y = bandTop + bandH + Math.round(4 * MM)
+    y += bandH + Math.round(6 * MM)
   }
 
-  const bodyLeft = cardX + pad
-  let bodyWidth = cardW - pad * 2
-  if (o.specimenImage) {
-    const thumb = Math.round(34 * MM)
-    const ix = cardX + cardW - pad - thumb
-    const iy = cardY + Math.round(26 * MM)
-    ctx.save()
-    roundRect(ctx, ix, iy, thumb, thumb, 12)
-    ctx.clip()
-    try { ctx.drawImage(o.specimenImage, ix, iy, thumb, thumb) } catch (e) { /* 图挂留白 */ }
-    ctx.restore()
-    bodyWidth = ix - Math.round(6 * MM) - bodyLeft
-  }
-
+  // 正文：与题记同一左轴；行高放宽，让笺面读起来有呼吸
+  const lineH = 54
+  const footerTop = cardY + cardH - Math.round(34 * MM)
   ctx.fillStyle = '#2B2723'
-  ctx.font = '400 30px serif'
-  const lineH = 48
-  const maxLines = Math.max(1, Math.floor((cardY + cardH - Math.round(38 * MM) - y) / lineH))
-  const lines = wrapLines(ctx, String(o.cardBody || ''), bodyWidth, maxLines)
-  for (let i = 0; i < lines.length; i += 1) {
-    ctx.fillText(lines[i], bodyLeft, y + Math.round(6 * MM) + i * lineH)
+  ctx.font = '400 31px serif'
+  const maxLines = Math.max(1, Math.floor((footerTop - y - Math.round(6 * MM)) / lineH))
+  const bodyLines = wrapLines(ctx, String(o.cardBody || ''), axisRight - axisX, maxLines)
+  const bodyY = y + Math.round(10 * MM)
+  for (let i = 0; i < bodyLines.length; i += 1) {
+    ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
   }
 
+  // 底部落款：**印章在左、署名在右**，两者永不相撞（此前署名压在圆印里）
+  const sealR = Math.round(10 * MM)
+  const sealCx = axisX + sealR
+  const sealCy = cardY + cardH - Math.round(19 * MM)
+  ctx.strokeStyle = 'rgba(196, 167, 108, 0.85)'
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.arc(sealCx, sealCy, sealR, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.fillStyle = '#C76A4A'
+  ctx.font = '600 32px serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('山海', sealCx, sealCy + 11)
+
+  // 日期（印章右侧，弱化）—— 让下半版有落点，不再空荡
+  ctx.textAlign = 'left'
+  ctx.fillStyle = '#B4AC9F'
+  ctx.font = '400 26px serif'
+  const d = new Date()
+  const dateText = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0')
+  ctx.fillText(dateText, sealCx + sealR + Math.round(6 * MM), sealCy + 9)
+
+  // 署名（右下，带铜金下划线）
   const sig = String(o.cardSignature || '').trim()
   if (sig) {
     ctx.textAlign = 'right'
     ctx.fillStyle = '#2B2723'
-    ctx.font = '500 30px serif'
-    const sx = cardX + cardW - pad
-    const sy = cardY + cardH - Math.round(26 * MM)
-    ctx.fillText(sig, sx, sy)
+    ctx.font = '500 31px serif'
+    const sy = sealCy + 10
+    ctx.fillText(sig, axisRight, sy)
     const sw = ctx.measureText(sig).width
     ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(sx - sw - 8, sy + 10)
-    ctx.lineTo(sx, sy + 10)
+    ctx.moveTo(axisRight - sw - 8, sy + 12)
+    ctx.lineTo(axisRight, sy + 12)
     ctx.stroke()
-    ctx.textAlign = 'left'
   }
-
-  const sealR = Math.round(11 * MM)
-  const cx = cardX + cardW - pad - sealR
-  const cy = cardY + cardH - Math.round(20 * MM)
-  ctx.strokeStyle = '#C4A76C'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.arc(cx, cy, sealR, 0, Math.PI * 2)
-  ctx.stroke()
-  ctx.fillStyle = '#C76A4A'
-  ctx.font = '600 34px serif'
-  ctx.textAlign = 'center'
-  ctx.fillText('山海', cx, cy + 12)
   ctx.textAlign = 'left'
 }
 

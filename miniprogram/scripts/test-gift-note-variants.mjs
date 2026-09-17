@@ -151,6 +151,15 @@ check('★ writeChars 随落笔推进（与 cardBody 同步）', /writeChars: ta
   check('★ 分享卡未被改动（分享卡绘制函数仍在、未被印刷版替换）',
     /function paintGiftShareCard\(canvas, opts\)/.test(card) && /SHARE_CARD_W: W,/.test(card))
   check('印刷卡复用共享换行/圆角工具（不另造）', /wrapLines\(ctx, String\(o\.cardBody/.test(card) && /roundRect\(ctx, cardX/.test(card))
+  // 2026-09-17 真图暴露的两个重叠 bug → 钉成不变量
+  check('★ 印章在左、署名在右（此前署名压在圆印里）',
+    /const sealCx = axisX \+ sealR/.test(card) && /ctx\.fillText\(sig, axisRight, sy\)/.test(card),
+    '署名的 x 必须是右轴，印章在左轴 → 永不相撞')
+  check('★ 题记带在藏品图**之下**整宽（此前右端被图盖住）',
+    /blockTop = Math\.max\(blockTop, imgY \+ imgSize/.test(card) && /const bandW = axisRight - axisX/.test(card),
+    '题记带必须整宽且起于图之下')
+  check('★ 题记与正文共用同一左轴', /const axisX = cardX \+ pad/.test(card) && /ctx\.fillText\(bodyLines\[i\], axisX,/.test(card))
+  check('底部有落款日期（填住下半版空白）', /padStart\(2, '0'\)/.test(card) && /ctx\.fillText\(dateText/.test(card))
 }
 
 /* ── 礼赠履约页「导出礼笺图」接线（印刷用；2026-09-17）────────────────── */
