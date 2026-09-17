@@ -149,9 +149,19 @@ eq('未探测时 isThumbUsable 为假', imgUrl.isThumbUsable(), false)
   eq('★ 探测失败后一律原图', bad.detailUrl(ORIG), ORIG)
 }
 
-// 非 http(s)（cloud:// 或空）绝不拼参数
+// 2026-09-17 口径修正（真机封面全空的根因）：`<image src="cloud://…">` **渲染不出来**，
+// 而 appendThumbParam 只认 http(s) —— 所以 thumbUrl/detailUrl 必须**自己**把云文件 ID 换成 https
+// 静态地址（`https://<bucket>.tcb.qcloud.la/<path>`，实测无签名、不过期），再决定挂不挂缩略参数。
 eq('空值安全', imgUrl.detailUrl(''), '')
-eq('cloud:// 不拼参数（必须先换临时链）', imgUrl.detailUrl('cloud://env.abc/products/a.png'), 'cloud://env.abc/products/a.png')
+eq('★ 云文件 ID 换算成 https（不是原样返回）',
+  imgUrl.cloudIdToHttps('cloud://env.abc/products/a.png'), 'https://abc.tcb.qcloud.la/products/a.png')
+eq('★ detailUrl(cloud://) 必须给出可渲染的 https',
+  imgUrl.detailUrl('cloud://env.abc/products/a.png'), 'https://abc.tcb.qcloud.la/products/a.png')
+eq('★ thumbUrl(cloud://) 同理', imgUrl.thumbUrl('cloud://env.abc/products/a.png'), 'https://abc.tcb.qcloud.la/products/a.png')
+eq('已是 https 原样（幂等）',
+  imgUrl.cloudIdToHttps('https://abc.tcb.qcloud.la/products/a.png'), 'https://abc.tcb.qcloud.la/products/a.png')
+eq('appendThumbParam 自身仍只认 http(s)',
+  imgUrl.appendThumbParam('cloud://env.abc/products/a.png', 480), 'cloud://env.abc/products/a.png')
 imgUrl.__resetProbe()
 eq('reset 后回到 unknown（诊断用）', imgUrl.isThumbUsable(), false)
 

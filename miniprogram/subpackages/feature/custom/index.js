@@ -1,4 +1,5 @@
 // subpackages/feature/custom/index.js
+const imageUrl = require('../../../utils/imageUrl')
 const db = wx.cloud.database()
 const _ = db.command
 const { STEPS, CATEGORY_PILLS } = require('../utils/customDefaults')
@@ -282,9 +283,14 @@ Page({
         .limit(40)
         .get()
       const products = res.data || []
+      // 缩略图：云文件 ID 必须换 https（custom 的 wxml 直绑 images[0]）
+      const withCover = products.map((p) => (p ? {
+        ...p,
+        images: (Array.isArray(p.images) ? p.images : []).map((u) => imageUrl.thumbUrl(u))
+      } : p))
       this.setData({
-        products,
-        filteredProducts: this.applyProductFilter(products, this.data.searchKeyword)
+        products: withCover,
+        filteredProducts: this.applyProductFilter(withCover, this.data.searchKeyword)
       })
     } catch (e) {
       console.error('loadProducts', e)

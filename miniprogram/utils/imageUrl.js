@@ -47,6 +47,31 @@ function getState() {
   return flagEnabled ? state : 'disabled'
 }
 
+/**
+ * `cloud://<envId>.<bucket>/<path>` → `https://<bucket>.tcb.qcloud.la/<path>`
+ *
+ * 2026-09-17 实测（只读 CLI）：`tcb storage url products/cover_0_….png` 返回的临时访问地址就是
+ * `https://636c-cloud1-8gnkty5bfff9f0bf-1387508856.tcb.qcloud.la/products/cover_0_….png`
+ * —— **不带签名 query**，即云文件 ID 可以**纯字符串**换成这个 https 地址。
+ *
+ * 为什么要这一步：`<image src="cloud://…">` **不能**直接渲染（真机封面全空），而
+ * `appendThumbParam` 只对 http(s) 生效（`!^https?:` 直接原样返回）→ 所以云文件 ID 必须先换 https，
+ * 缩略参数才挂得上。换完还顺带解决两件事：**不过期**（不像 getTempFileURL 的临时链）、**少一次网络往返**。
+ */
+function cloudIdToHttps(fileID) {
+  const s = String(fileID == null ? '' : fileID).trim()
+  if (!s || s.indexOf('cloud://') !== 0) return s
+  const rest = s.slice('cloud://'.length)
+  const slash = rest.indexOf('/')
+  if (slash <= 0) return s
+  const host = rest.slice(0, slash)          // <envId>.<bucket>
+  const path = rest.slice(slash + 1)
+  const dot = host.indexOf('.')
+  const bucket = dot === -1 ? '' : host.slice(dot + 1)
+  if (!bucket || !path) return s
+  return `https://${bucket}.tcb.qcloud.la/${path}`
+}
+
 /** 给 URL 追加尺寸处理参数；非 http(s) / 已带参数 / 空值 原样返回 */
 function appendThumbParam(url, width) {
   const u = String(url || '')
@@ -58,16 +83,21 @@ function appendThumbParam(url, width) {
   return `${u}${sep}imageMogr2/thumbnail/${w}x`
 }
 
-/** 列表卡片用图（未确认能力时返回原图） */
+/**
+ * 列表卡片用图。**云文件 ID 一律先换 https**（否则 <image> 渲染不出来），
+ * 未确认图像处理能力时不挂缩略参数（行为与改造前一致，但至少能显示）。
+ */
 function thumbUrl(url) {
-  if (!isThumbUsable()) return String(url || '')
-  return appendThumbParam(url, THUMB_WIDTH_LIST)
+  const u = cloudIdToHttps(url)
+  if (!isThumbUsable()) return u
+  return appendThumbParam(u, THUMB_WIDTH_LIST)
 }
 
-/** 详情/大图用图 */
+/** 详情/大图用图（同上：先换 https） */
 function detailUrl(url) {
-  if (!isThumbUsable()) return String(url || '')
-  return appendThumbParam(url, THUMB_WIDTH_DETAIL)
+  const u = cloudIdToHttps(url)
+  if (!isThumbUsable()) return u
+  return appendThumbParam(u, THUMB_WIDTH_DETAIL)
 }
 
 /**
@@ -78,14 +108,15 @@ function detailUrl(url) {
 function probeSupport(sampleUrl) {
   if (state !== 'unknown') return Promise.resolve(state === 'supported')
   if (!flagEnabled) return Promise.resolve(false)
-  if (!sampleUrl || !/^https?:\/\//i.test(String(sampleUrl))) return Promise.resolve(false)
+  const probeSrc = cloudIdToHttps(sampleUrl)
+  if (!probeSrc || !/^https?:\/\//i.test(String(probeSrc))) return Promise.resolve(false)
   if (typeof wx === 'undefined' || typeof wx.getImageInfo !== 'function') {
     state = 'unsupported'
     return Promise.resolve(false)
   }
   return new Promise((resolve) => {
     wx.getImageInfo({
-      src: appendThumbParam(sampleUrl, PROBE_WIDTH),
+      src: appendThumbParam(probeSrc, PROBE_WIDTH),
       success: () => {
         state = 'supported'
         resolve(true)
@@ -137,6 +168,7 @@ function firstImageOf(item) {
 }
 
 module.exports = {
+  cloudIdToHttps,
   firstImageOf,
   THUMB_WIDTH_LIST,
   THUMB_WIDTH_DETAIL,

@@ -604,7 +604,8 @@ module.exports.calcVip = calcVip;
       <view class="tip-360">360° INTERACTIVE</view>
       <view class="spinner-3d"
             style="transform: rotateX({{rotateX}}deg) rotateY({{rotateY}}deg); transition: {{transition}};">
-        <image src="{{product.images[0]}}" mode="aspectFill"></image>
+        <!-- 走 imgView 映射：映射值 = 追加 imageMogr2 的 https 链（此前直绑 cloud:// 渲染不出） -->
+        <image src="{{imgView[product.images[0]] || product.images[0]}}" mode="aspectFill"></image>
         <view class="spinner-back"></view>
       </view>
       <view class="hint-360">左右/上下滑动以鉴赏细节</view>
@@ -616,7 +617,7 @@ module.exports.calcVip = calcVip;
     <view class="sku-panel" catchtap="true">
       <view class="sku-head">
         <view class="sku-img-wrap" catchtap="previewSkuImage">
-          <image class="sku-img" src="{{selectedSku.image || product.images[0]}}" mode="aspectFill"></image>
+          <image class="sku-img" src="{{imgView[selectedSku.image || product.images[0]] || selectedSku.image || product.images[0]}}" mode="aspectFill"></image>
           <view class="sku-img-hint" aria-hidden="true">
             <image class="sku-img-hint-icon" src="/subpackages/feature/detail/assets/sku-zoom.png" mode="aspectFit"></image>
           </view>

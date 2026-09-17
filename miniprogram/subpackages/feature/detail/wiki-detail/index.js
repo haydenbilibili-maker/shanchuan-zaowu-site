@@ -245,7 +245,7 @@ Page({
       skuLabel: '',
       count: 1,
       title: p.title,
-      image: getFirstImage(p.images),
+      image: require('../../../../utils/imageUrl').thumbUrl(getFirstImage(p.images)),
       price: p.price,
       latinName: p.latinName,
       memberDiscountEnabled: p.memberDiscountEnabled !== false

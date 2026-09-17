@@ -28,6 +28,11 @@ const HUB_JS = 'miniprogram/subpackages/feature/gift/hub/index.js'
 const HUB_WXML = 'miniprogram/subpackages/feature/gift/hub/index.wxml'
 const FRAMER_JS = 'miniprogram/subpackages/business/framer/index.js'
 const STAFF_FN = 'miniprogram/cloudfunctions/manageStaff/index.js'
+const PAGE_INDEX = 'miniprogram/pages/index/index.js'
+const WIKI_JS = 'miniprogram/subpackages/feature/detail/wiki-detail/index.js'
+const CUSTOM_JS = 'miniprogram/subpackages/feature/custom/index.js'
+const MANAGER_JS = 'miniprogram/subpackages/manager/manager/managerPageConfig.js'
+const DETAIL_WXML = 'miniprogram/subpackages/feature/detail/index.wxml'
 
 let passed = 0
 let failed = 0
@@ -71,6 +76,36 @@ eq('回落 httpImage', imageUrl.firstImageOf({ httpImage: 'e' }), 'e')
 eq('全空 → 空串', imageUrl.firstImageOf({ images: [] }), '')
 eq('null 安全', imageUrl.firstImageOf(null), '')
 eq('空白字符串不算有效值', imageUrl.firstImageOf({ image: '   ', cover: 'd' }), 'd')
+
+/* ── 1.5) 云文件 ID → https（这次真正的修复点） ───────────────────────────── */
+// 实测（tcb storage url products/cover_0_….png）返回：
+//   https://636c-cloud1-8gnkty5bfff9f0bf-1387508856.tcb.qcloud.la/products/cover_0_….png
+// 即 cloud://<envId>.<bucket>/<path> 可纯字符串换成该 https 地址（无签名、不过期）。
+const REAL_ID = 'cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/products/cover_0_1789641420527_tkogaj.png'
+const REAL_HTTPS = 'https://636c-cloud1-8gnkty5bfff9f0bf-1387508856.tcb.qcloud.la/products/cover_0_1789641420527_tkogaj.png'
+eq('★ 真实云文件 ID 换算出与 CLI 实测一致的 https 地址', imageUrl.cloudIdToHttps(REAL_ID), REAL_HTTPS)
+eq('★ thumbUrl(cloud://) 必须给出可渲染的 https（<image> 渲染不了 cloud://）',
+  imageUrl.thumbUrl(REAL_ID), REAL_HTTPS)
+eq('★ detailUrl(cloud://) 同理', imageUrl.detailUrl(REAL_ID), REAL_HTTPS)
+eq('幂等：已是 https 原样', imageUrl.cloudIdToHttps(REAL_HTTPS), REAL_HTTPS)
+eq('空值/非云文件安全', imageUrl.cloudIdToHttps('') + '|' + imageUrl.cloudIdToHttps('/local/a.png'), '|/local/a.png')
+eq('畸形 cloud:// 不炸（无路径）', imageUrl.cloudIdToHttps('cloud://env.bucket'), 'cloud://env.bucket')
+eq('firstImageOf + thumbUrl 串起来就是可渲染地址',
+  imageUrl.thumbUrl(imageUrl.firstImageOf({ images: [REAL_ID] })), REAL_HTTPS)
+
+/* ── 1.6) 其余直绑 images[0] 的页面（同一类 bug，一并收口） ───────────────── */
+check('★ 首页推荐位封面走 thumbUrl', /thumbUrl\(getFirstImage\(item\.images\)/.test(stripComments(read(PAGE_INDEX))),
+  '首页又把原始 cloud:// 塞给 <image>')
+check('★ 物种百科缩略走 thumbUrl', /thumbUrl\(getFirstImage\(p\.images\)\)/.test(stripComments(read(WIKI_JS))))
+check('★ 定制页商品 images 经 thumbUrl 换算',
+  /images: \(Array\.isArray\(p\.images\) \? p\.images : \[\]\)\.map\(\(u\) => imageUrl\.thumbUrl\(u\)\)/.test(stripComments(read(CUSTOM_JS))))
+check('★ 超管商品列表 images 经 thumbUrl 换算',
+  /images: \(Array\.isArray\(it\.images\) \? it\.images : \[\]\)\.map\(\(u\) => imageUrl\.thumbUrl\(u\)\)/.test(stripComments(read(MANAGER_JS))))
+check('★ 详情页 360°/SKU 两处改用 imgView 映射（不再直绑 cloud://）',
+  !/src="\{\{product\.images\[0\]\}\}"/.test(read(DETAIL_WXML))
+  && /imgView\[product\.images\[0\]\]/.test(read(DETAIL_WXML))
+  && /imgView\[selectedSku\.image \|\| product\.images\[0\]\]/.test(read(DETAIL_WXML)),
+  '详情页还有直绑云文件 ID 的 <image>')
 
 /* ── 2) 礼赠 hub ─────────────────────────────────────────────────────────── */
 check('★ hub 封面走共享取值链', /imageUrl\.firstImageOf\(/.test(hubJs))
@@ -119,6 +154,24 @@ function selftest() {
       file: HUB_JS,
       from: '        const raw = imageUrl.firstImageOf(p)\n        const cover = raw ? imageUrl.thumbUrl(raw) : \'\'',
       to: '        const raw = imageUrl.firstImageOf(p)\n        const urlMap = await batchTempFileURLs([raw])\n        const cover = (raw && urlMap[raw]) || (raw && !String(raw).startsWith(\'cloud://\') ? raw : \'\') || \'\''
+    },
+    {
+      name: 'thumbUrl 不再把云文件 ID 换 https（封面又会全空）',
+      file: IMAGE_URL,
+      from: 'function thumbUrl(url) {\n  const u = cloudIdToHttps(url)',
+      to: 'function thumbUrl(url) {\n  const u = url'
+    },
+    {
+      name: '详情页 360° 又直绑 images[0]',
+      file: DETAIL_WXML,
+      from: '<image src="{{imgView[product.images[0]] || product.images[0]}}" mode="aspectFill"></image>',
+      to: '<image src="{{product.images[0]}}" mode="aspectFill"></image>'
+    },
+    {
+      name: '首页推荐位又直绑原始值',
+      file: PAGE_INDEX,
+      from: 'image: require(\'../../utils/imageUrl\').thumbUrl(getFirstImage(item.images) || item.httpImage || \'\'),',
+      to: "image: getFirstImage(item.images) || item.httpImage || '',"
     },
     {
       name: 'hub 去掉封面错误回落',

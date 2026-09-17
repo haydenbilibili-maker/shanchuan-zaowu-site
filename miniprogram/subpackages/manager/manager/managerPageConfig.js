@@ -1,4 +1,5 @@
 // pages/manager/index.js
+const imageUrl = require('../../../utils/imageUrl')
 const db = wx.cloud.database();
 const _ = db.command;
 const { PRODUCTION_STATUS_LABELS } = require('../utils/customDefaults');
@@ -4177,7 +4178,11 @@ const managerPageConfig = {
       const hasMore = products.length < total;
 
       const patch = {
-        products,
+        // 缩略图：云文件 ID 必须换 https（_subviews.wxml 直绑 images[0]，否则全部渲染不出）
+        products: products.map((it) => (it ? {
+          ...it,
+          images: (Array.isArray(it.images) ? it.images : []).map((u) => imageUrl.thumbUrl(u))
+        } : it)),
         productPage: page,
         productTotal: total,
         productHasMore: hasMore

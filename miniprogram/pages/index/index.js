@@ -1280,7 +1280,8 @@ Page({
       if (res.result && res.result.success) {
         const recommendations = (res.result.data || []).map(item => ({
           ...item,
-          image: getFirstImage(item.images) || item.httpImage || '',
+          // 云文件 ID 必须换 https（thumbUrl 内部换算），否则 <image> 渲染不出
+          image: require('../../utils/imageUrl').thumbUrl(getFirstImage(item.images) || item.httpImage || ''),
           reason: item.reason || '为你推荐',
           sensitiveBlur: isSensitiveBlurProduct(item)
         }));
