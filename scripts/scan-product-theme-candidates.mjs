@@ -18,6 +18,7 @@ import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { normalizeThemeCandidates, THEME_PROMPT_RULES } from './productThemeName.mjs'
+import { proposeScenes } from './giftSceneRules.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
@@ -89,7 +90,7 @@ async function askAi(p) {
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: '你是山海造物（自然标本藏品店）的命名编辑，擅长把博物藏品写成有场景感、有留白的短名。只输出 JSON。' },
-      { role: 'user', content: `藏品标准名：${p.title}\n品类：${p.rootCategoryName || ''} / ${p.category || ''}\n价格：¥${p.price || 0}\n\n${THEME_PROMPT_RULES}\n\n只输出 JSON：{"nameCandidates":[{"themeName":"","note":"","scenes":[]}]}` }
+      { role: 'user', content: `藏品标准名：${p.title}\n品类：${p.rootCategoryName || ''} / ${p.category || ''}\n价格：¥${p.price || 0}\n该商品按门店规则**只适合**这些礼赠场景：${[...new Set(proposeScenes({ price: Number(p.price) || 0, rootCategoryName: p.rootCategoryName || '', isOffShelf: false }))].join('/')}（scenes 只能从中选）\n\n${THEME_PROMPT_RULES}\n\n只输出 JSON：{"nameCandidates":[{"themeName":"","note":"","scenes":[]}]}` }
     ]
   }
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -103,7 +104,12 @@ async function askAi(p) {
       const json = await res.json()
       const text = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content
       const parsed = JSON.parse(String(text || '{}').replace(/^```(?:json)?|```$/g, '').trim())
-      return normalizeThemeCandidates(parsed.nameCandidates, p.title)
+      const allowed = new Set(proposeScenes({ price: Number(p.price) || 0, rootCategoryName: p.rootCategoryName || '', isOffShelf: false }))
+      return normalizeThemeCandidates(parsed.nameCandidates, p.title).map((c) => {
+        // 一致性：AI 自拟的场景必须落在「这件商品按 R0–R5 规则允许的场景」内
+        const keep = (c.scenes || []).filter((k) => allowed.has(k))
+        return { ...c, scenes: keep.length ? keep : [...allowed].slice(0, 3) }
+      })
     } catch (e) {
       if (attempt === 1) { console.warn(`  ✗ ${String(p.title).slice(0, 16)}: ${e.message}`); return null }
       await new Promise((r) => setTimeout(r, 1200))
