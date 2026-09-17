@@ -175,19 +175,9 @@
                 </block>
               </view>
             </view>
-            <!-- 需求 21：档案入口从「一个 ›」升级为带完成度的显式入口（免去猜「›」去哪） -->
-            <view
-              class="profile-entry-chip"
-              catchtap="onGoProfile"
-              hover-class="profile-entry-chip-press"
-              hover-stay-time="80"
-              aria-label="进入藏家档案"
-              wx:if="{{!cardPending}}"
-            >
-              <text class="pec-label">档案</text>
-              <text class="pec-score">{{profileScore}}%</text>
-              <text class="pec-arr">›</text>
-            </view>
+            <!-- 2026-09-17：移除卡面「档案 xx% ›」入口 —— 资产区已有「我的档案」（带完成度角标），
+                 同一入口两处既重复又抢卡片留白；点名字/称号区（.text-meta）仍可进档案，
+                 成长细轨（card-section-rule-fill）继续承担「档案未满」的进度暗示。 -->
           </view>
 
         </view>

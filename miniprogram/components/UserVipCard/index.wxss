@@ -458,39 +458,6 @@
   line-height: 1.3;
 }
 
-/* 档案入口 chip（需求 21）：把裸「›」换成带完成度的显式入口；
- * 配色由各 level-skin 段的 color 统一驱动（子元素 color: inherit）。 */
-.profile-entry-chip {
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  flex-shrink: 0;
-  margin-left: 8rpx;
-  padding: 6rpx 12rpx;
-  border: 1rpx solid currentColor;
-  border-radius: 999rpx;
-  color: var(--brass-400);
-  opacity: 0.82;
-  line-height: 1;
-}
-.profile-entry-chip-press {
-  opacity: 1;
-}
-.pec-label {
-  font-size: 20rpx;
-  letter-spacing: 0.06em;
-  color: inherit;
-}
-.pec-score {
-  font-size: 22rpx;
-  font-weight: 600;
-  color: inherit;
-}
-.pec-arr {
-  font-size: 22rpx;
-  color: inherit;
-}
-
 /* 身份区 / 成长区细轨：纯 view，避免安卓 border-top / 近白 pill 被看成 SeekBar */
 .card-section-rule {
   position: relative;
@@ -1149,8 +1116,7 @@
 }
 .vip-card.level-skin-1 .org-name .en,
 .vip-card.level-skin-1 .growth-link-hint,
-.vip-card.level-skin-1 .profile-entry-chip,
-.vip-card.level-skin-1 .ap-text,
+.vip-card.level-skin-1 .vip-card.level-skin-1 .ap-text,
 .vip-card.level-skin-1 .cb-overline,
 .vip-card.level-skin-1 .cb-row-link { color: #8A7530; }
 .vip-card.level-skin-1 .org-name .tagline,
@@ -1279,8 +1245,7 @@
 }
 .vip-card.level-skin-2 .org-name .en,
 .vip-card.level-skin-2 .growth-link-hint,
-.vip-card.level-skin-2 .profile-entry-chip,
-.vip-card.level-skin-2 .ap-text,
+.vip-card.level-skin-2 .vip-card.level-skin-2 .ap-text,
 .vip-card.level-skin-2 .cb-overline,
 .vip-card.level-skin-2 .cb-row-link { color: #8A7530; }
 .vip-card.level-skin-2 .org-name .tagline,
@@ -1494,8 +1459,7 @@
 }
 .vip-card.level-skin-3 .org-name .en,
 .vip-card.level-skin-3 .growth-link-hint,
-.vip-card.level-skin-3 .profile-entry-chip,
-.vip-card.level-skin-3 .ap-text,
+.vip-card.level-skin-3 .vip-card.level-skin-3 .ap-text,
 .vip-card.level-skin-3 .cb-overline,
 .vip-card.level-skin-3 .cb-row-link,
 .vip-card.level-skin-3 .cb-specimen-latin { color: #F0DCAE; }
@@ -1663,8 +1627,7 @@
 }
 .vip-card.level-skin-4 .org-name .en,
 .vip-card.level-skin-4 .growth-link-hint,
-.vip-card.level-skin-4 .profile-entry-chip,
-.vip-card.level-skin-4 .ap-text,
+.vip-card.level-skin-4 .vip-card.level-skin-4 .ap-text,
 .vip-card.level-skin-4 .cb-overline,
 .vip-card.level-skin-4 .cb-row-link { color: #D4B0B0; }
 .vip-card.level-skin-4 .org-name .tagline,
@@ -1855,8 +1818,7 @@
 }
 .vip-card.level-skin-5 .org-name .en,
 .vip-card.level-skin-5 .growth-link-hint,
-.vip-card.level-skin-5 .profile-entry-chip,
-.vip-card.level-skin-5 .ap-text,
+.vip-card.level-skin-5 .vip-card.level-skin-5 .ap-text,
 .vip-card.level-skin-5 .cb-overline,
 .vip-card.level-skin-5 .cb-row-link { color: #E3EAEF; }
 .vip-card.level-skin-5 .org-name .tagline,
@@ -2076,8 +2038,7 @@
 }
 .vip-card.level-skin-6 .org-name .en,
 .vip-card.level-skin-6 .growth-link-hint,
-.vip-card.level-skin-6 .profile-entry-chip,
-.vip-card.level-skin-6 .ap-text,
+.vip-card.level-skin-6 .vip-card.level-skin-6 .ap-text,
 .vip-card.level-skin-6 .cb-overline,
 .vip-card.level-skin-6 .cb-row-link,
 .vip-card.level-skin-6 .cb-specimen-latin { color: #F2E4B8; }
@@ -2293,8 +2254,7 @@
 }
 .vip-card.level-skin-99 .org-name .en,
 .vip-card.level-skin-99 .growth-link-hint,
-.vip-card.level-skin-99 .profile-entry-chip,
-.vip-card.level-skin-99 .ap-text,
+.vip-card.level-skin-99 .vip-card.level-skin-99 .ap-text,
 .vip-card.level-skin-99 .cb-overline,
 .vip-card.level-skin-99 .cb-row-link,
 .vip-card.level-skin-99 .cb-specimen-latin { color: var(--gold); }

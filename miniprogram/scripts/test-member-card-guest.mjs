@@ -211,9 +211,15 @@ const INJECTIONS = {
     to: '  opacity: 0;\n  transform: translateY(0);'
   },
   'chip-back-to-arrow': {
+    // 模拟退回「裸 ›」那版：档案入口只剩一个无完成度的提示样式
     file: CARD_WXML,
-    from: 'class="profile-entry-chip"',
-    to: 'class="profile-edit-hint"'
+    from: '              class="text-meta"',
+    to: '              class="profile-edit-hint"'
+  },
+  'card-chip-returns': {
+    file: CARD_WXML,
+    from: '            <view\n              class="text-meta"',
+    to: '            <view class="profile-entry-chip"><text class="pec-label">档案</text></view>\n            <view\n              class="text-meta"'
   },
   'back-link-conditional': {
     file: CARD_WXML,
@@ -744,10 +750,20 @@ function pngDominantColor(abs) {
 const userWxml = readSrc(PAGE_USER_WXML)
 const userWxss = readSrc(PAGE_USER_WXSS)
 
+// 2026-09-17：卡面档案入口已按业务要求移除（资产区「我的档案」已有带完成度角标的同一入口）
 check(
-  '★ 卡面档案入口带完成度（不再是一个裸「›」）',
-  /class="profile-entry-chip"[\s\S]*?catchtap="onGoProfile"[\s\S]*?\{\{profileScore\}\}%/.test(cardWxml)
+  '★ 卡面不再有档案入口 chip（与资产区「我的档案」重复）',
+  !/profile-entry-chip/.test(cardWxml),
+  '卡面又长出档案入口'
 )
+check(
+  '★ chip 的死样式已清干净（含 level-skin 配色列表）',
+  !/profile-entry-chip|pec-label|pec-score|pec-arr/.test(cardWxss),
+  '样式残留 → 死样式'
+)
+check('★ 点名字/称号区仍可进档案（入口没丢）',
+  /catchtap="onGoProfile"/.test(cardWxml),
+  '移除 chip 时把 .text-meta 的档案入口也删了')
 check('裸「›」入口已移除', !/class="profile-edit-hint"/.test(cardWxml))
 check('死样式 profile-edit-hint 已清理', !/profile-edit-hint/.test(cardWxss))
 check('★ 背板生日行常驻档案入口', /wx:if="\{\{cardBirthday\.hasBirthday\}\}" catchtap="onGoProfileFromCardBack">档案 →/.test(cardWxml))
