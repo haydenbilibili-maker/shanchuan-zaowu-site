@@ -293,18 +293,16 @@ D schema 有、rules 无: content_factory（索引页，非集合）
 | **做了什么** | ① `git rm -r public/admin/governance-assets`（33 份发布副本移出仓库）；② `scripts/build-admin.mjs` 在 Vite 构建后**强制剔除** `public/admin/governance-assets/` 并断言剔除成功；③ `scripts/verify-admin-dist.mjs` 新增「内部资料闸门」（`dist/admin/governance-assets` 存在即阻断部署）；④ 新增守卫 `npm run check:publish-dir`（R1 发布目录不得含内部资料 / R2 单一事实源必须完好 / R3 已构建 dist 不得含内部资料 / R4 `public/**` 不得出现 Office 二进制），带 `--selftest` 并接入 `check:admin`；⑤ `public/_redirects` 对 `/admin/governance-assets/*` 返回 404；⑥ ERP「公司治理」页加**诚实横幅**（说明公开站点上预览/下载会失败，属预期行为） |
 | **单一事实源** | `admin/public/governance-assets/`（33 份，保留；本地/私有环境可用）→ 但它在 `admin/public/`（Vite publicDir）里，靠 ② 的构建期剔除保证不上线 |
 | **验证** | `npm run build` **EXIT 0**；构建日志 `✓ admin 已构建到 public/admin/（已剔除内部资料：governance-assets）`；`public/admin/governance-assets` = **0**；`dist/admin/governance-assets` = **0**；`admin/public/governance-assets` = **33**（事实源完好）；`npm run check:publish-dir` ✅；`npm run check:publish-dir:selftest` ✅（2 项注入全部检出、探针无残留）；`npm run check:admin` **19 条全绿** |
-| ⚠️ **仍未止血的部分** | **生产站仍可下载**：本轮对 HEAD 中 33 个路径逐个 `curl`，**32 个返回 HTTP 200**、1 个 308。仓库改动**必须重新部署**才会生效。当前环境**无法部署**：`npx wrangler whoami` → *You are not authenticated*，且无 `CLOUDFLARE_API_TOKEN`/`admin/.env` |
+| ✅ **线上处置结果（已部署）** | 提交 `fce46ae` + `5bc3d22` 已 rebase 到 `origin/main` 并推送（`25462bf..5bc3d22`），CI 已部署。**线上确认**：入口 chunk 变为本次构建的 `assets/index-If-Tq7rL.js`，且该 bundle 内含本次新增的横幅文案 → 部署确属本次提交。<br>**源站已彻底干净**：对 33 个路径逐个带 cache-buster 请求 → **33/33 全部 HTTP 404**。<br>**方法学对照**（排除「加查询串导致假 404」）：`/admin/robot-icon.svg`、`/admin/vite.svg`、`/admin/assets/index-If-Tq7rL.js` 加同样的 `?cb=…` 均仍为 200；目标文件则 `无参数=200`、`?cb=audit1/audit2/?v=1=404` ⇒ 残留确为缓存 |
+| ⏳ **仍需你执行的一步：清除 Cloudflare 边缘缓存** | 无参数请求仍命中**部署前的旧副本**（部分 POP：`cf-cache-status: REVALIDATED`，`cache-control: public, max-age=14400`），**源站已无该文件**。清除方式（任选其一，均需 Cloudflare 凭据，本环境没有）：<br>· 控制台：Caching → Configuration → **Purge Cache → Custom Purge → by prefix** = `shanhaizaowu.com/admin/governance-assets/`（或 Purge Everything）；<br>· API：`POST /zones/{zone_id}/purge_cache`，body `{"prefixes":["shanhaizaowu.com/admin/governance-assets/"]}`；<br>· 不操作的话，`max-age=14400` 过期后也会自然失效（最坏约 4 小时），但**期间仍可下载**，建议主动 purge。<br>另注：被缓存的响应对**带查询串**的请求早已 404，因此「贴到别处的链接」已失效，只剩直链精确 URL 还能取到旧副本 |
 | ⚠️ **基线已漂移（重要）** | 处置过程中发现：**远端 `origin/main` 已从本报告的基线 `2db36dc` 前进到 `25462bf`（远端领先 33 个提交，本地领先 0）** —— 并行工作流在此期间推进了部署基建（登录网关替代 Caddy、边缘网关 Worker、内存护栏、祈福墙、百科注册门禁等）。**本报告的其余结论均以 `2db36dc` 为准，尚未在 `25462bf` 上复测。** 好消息：这 33 个提交**没有**动 `governance-assets`、`scripts/build-admin.mjs`、`scripts/verify-admin-dist.mjs`、`public/_redirects`；只有 `package.json` 被改过 2 次（rebase 时可能需处理）。 |
 | ⚠️ **旁证（好消息）** | `https://api.github.com/repos/haydenbilibili-maker/shanchuan-zaowu-site` → **HTTP 404**（对未认证请求即私有仓）→ 这些文档未通过公开 Git 仓库泄露 |
 | ⚠️ **顺带确认** | 线上入口 chunk `assets/index-LrrilMxJ.js` 中 `admin888` 命中 **2 次**、`verified_888` 命中 **2 次**（`money888` 在懒加载 chunk 中，本轮未取）→ **A4 在线上已经成立**，不是「部署后才会发生」。因此「为 A1 部署一次」不会新引入 A4；但反过来，A4 需要在部署前或部署后单独收口 |
 
-**仍需人工执行（三选一）**：
-1. **最小改动上线**：把本次 A1 修复 **rebase 到最新 `origin/main`（`25462bf`）** 后推送 → GitHub Actions 部署 → 36 个文件立即从生产站消失
-   （`package.json` 远端改过 2 次，rebase 时可能需处理；其余 6 个文件远端未动）；
-2. **不改代码、先断链**：在 Cloudflare 控制台对 `/admin/governance-assets/*` 加 **Access 策略或 WAF 阻断规则**（立即生效，无需部署）。
-   ⚠️ 注意远端新增了**边缘网关 Worker / 登录网关**（`3d623c2`、`a46fbe4`、`efaf920`）——若它已是统一入口，**阻断规则应加在那里**，
-   比静态 `_redirects` 更彻底；
-3. **删除当前部署中的文件**：Cloudflare Pages 的部署是不可变的，无法单文件删除 → 实际等价于方案 1。
+**处置进度**：
+1. ✅ **已完成**：A1 修复已 rebase 到最新 `origin/main` 并推送（`25462bf..5bc3d22`），CI 已部署，**源站 33/33 返回 404**；
+2. ⏳ **待执行（唯一剩余步骤）**：**清除 Cloudflare 边缘缓存** —— 见上表「仍需你执行的一步」。这一步需要 Cloudflare 凭据（控制台或 API），本环境没有；
+3. 📌 **后续可选加固**：对该前缀加 Access 策略 / WAF 阻断规则，或在边缘网关统一拦截（远端已新增登录网关与边缘 Worker，`3d623c2`/`a46fbe4`/`efaf920`）—— 避免同类路径再次被静态发布。
 
 **建议同时评估**：`admin/public/` 里另外几个**也被公开发布**的文件 —— `sanyou-minglu.pdf`（2.1 MB）、`shanhai-capital-architecture-sandbox.html`（123 KB）、`shanhai-studio-startup-cost-model.html`（41 KB）、`partner-destiny-center.html`（529 KB）。它们各自被 ERP 代码引用 1 次（经 `embeddedPageUrl` 作为内嵌演示页），**不是误放**，但「资本架构沙盘 / 创业成本模型 / 三友名录」是否适合公网需要产品判断；本轮**未改动**它们。
 
