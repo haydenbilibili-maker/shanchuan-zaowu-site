@@ -89,6 +89,7 @@
             </view>
             <view class="product-body">
               <text class="product-theme" wx:if="{{item.themeName}}">{{item.themeName}}</text>
+              <text class="product-theme-note" wx:if="{{item.themeName && item.themeNote}}">{{item.themeNote}}</text>
               <text class="product-title {{item.themeName ? 'is-sub' : ''}}">{{item.title}}</text>
               <text class="product-price">¥{{item.priceLabel}}</text>
             </view>

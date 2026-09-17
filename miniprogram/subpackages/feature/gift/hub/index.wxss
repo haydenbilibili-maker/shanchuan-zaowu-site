@@ -254,6 +254,17 @@ page {
   color: var(--color-text-primary, #F5F2EC);
   letter-spacing: 1rpx;
 }
+/* 题记：两行截断（卡片窄，长句不撑破） */
+.product-theme-note {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 4rpx 0 6rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: var(--color-text-muted, #8A857C);
+}
 .product-title.is-sub {
   font-size: 22rpx;
   color: var(--color-text-secondary, #A09A90);

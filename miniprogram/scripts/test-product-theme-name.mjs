@@ -120,6 +120,9 @@ check('★ 详情页：themeName 主视觉 + title 降为副行',
 check('★ 礼赠卡：themeName 主视觉 + title 副行',
   /class="product-theme"[\s\S]{0,80}item\.themeName/.test(hubWxml)
   && /class="product-title \{\{item\.themeName \? 'is-sub' : ''\}\}"/.test(hubWxml))
+check('★ 详情页展示题记 themeNote（带主题名时才显示）',
+  /class="title-theme-note"[^>]*product\.themeNote/.test(detailWxml))
+check('★ 礼赠卡展示题记 themeNote', /class="product-theme-note"[^>]*item\.themeNote/.test(hubWxml))
 check('★ 礼赠链路透传 themeName（云函数 leanProduct）', /themeName: row\.themeName \|\| ''/.test(giftFn))
 check('★ 礼赠页映射带上 themeName', /themeName: p\.themeName \|\| ''/.test(hubJs))
 
@@ -165,8 +168,16 @@ function selftest() {
       name: '详情页退回只显示标准名',
       file: DETAIL_WXML,
       from: `        <text class="title-theme" wx:if="{{product.themeName}}">{{product.themeName}}</text>
+        <!-- 题记：与主题名配套的一句话（送礼时它比四字名更打动人） -->
+        <text class="title-theme-note" wx:if="{{product.themeName && product.themeNote}}">{{product.themeNote}}</text>
         <text class="title-main {{product.themeName ? 'is-sub' : ''}}">{{product.title}}</text>`,
       to: `        <text class="title-main">{{product.title}}</text>`
+    },
+    {
+      name: '详情页丢掉题记（只剩四字名）',
+      file: DETAIL_WXML,
+      from: `        <text class="title-theme-note" wx:if="{{product.themeName && product.themeNote}}">{{product.themeNote}}</text>`,
+      to: ''
     },
     {
       name: '礼赠链路不再透传 themeName',
