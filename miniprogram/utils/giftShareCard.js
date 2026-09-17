@@ -341,22 +341,37 @@ function paintGiftPrintCard(canvas, opts) {
   const topY = cardY + Math.round(16 * MM)
   const toName = String(o.recipientName || '').trim()
   ctx.textAlign = 'left'
-  ctx.fillStyle = '#8A7530'
-  ctx.font = '400 28px serif'
-  ctx.fillText(toName ? ('写给 · ' + toName) : '写给 · 收礼的人', axisX, topY)
+  if (toName) {
+    ctx.fillStyle = '#8A7530'
+    ctx.font = '400 28px serif'
+    ctx.fillText('写给 · ' + toName, axisX, topY)
+  }
 
-  const sealR = Math.round(11 * MM)
-  const sealCx = axisRight - sealR
-  const sealCy = topY - Math.round(8 * MM)
-  ctx.strokeStyle = 'rgba(196, 167, 108, 0.9)'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.arc(sealCx, sealCy, sealR, 0, Math.PI * 2)
-  ctx.stroke()
-  ctx.fillStyle = '#C76A4A'
-  ctx.font = '600 34px serif'
+  // 印章：朱红实心圆角方印（白文 = 字为米色挖空）+ 轻微倾斜 —— 学真印章的形制
+  const sealSize = Math.round(20 * MM)
+  const sealCx = axisRight - sealSize / 2
+  const sealCy = topY - Math.round(9 * MM)
+  ctx.save()
+  ctx.translate(sealCx, sealCy)
+  ctx.rotate(-0.055)                                  // 略斜，像手盖上去的
+  const half = sealSize / 2
+  ctx.fillStyle = '#B23A2E'                            // 朱砂红（比之前的砖红更正）
+  roundRect(ctx, -half, -half, sealSize, sealSize, Math.round(3 * MM))
+  ctx.fill()
+  ctx.globalAlpha = 0.06                               // 印泥的斑驳（轻）
+  ctx.fillStyle = '#F2EDE4'
+  for (let i = 0; i < 26; i += 1) {
+    const px = -half + ((i * 37) % sealSize)
+    const py = -half + ((i * 61) % sealSize)
+    ctx.fillRect(px, py, 3, 3)
+  }
+  ctx.globalAlpha = 1
+  ctx.fillStyle = '#F2EDE4'                            // 白文：字挖空
+  ctx.font = '600 44px serif'
   ctx.textAlign = 'center'
-  ctx.fillText('山海', sealCx, sealCy + 12)
+  ctx.fillText('山', -Math.round(4.6 * MM), Math.round(6 * MM))
+  ctx.fillText('海', Math.round(4.6 * MM), Math.round(6 * MM))
+  ctx.restore()
 
   // ── 题记带（整宽；学习前端 .card-epigraph：铜金左线 + 暖底 + 金主题名 + 灰题记）
   let y = topY + Math.round(14 * MM)
@@ -400,36 +415,59 @@ function paintGiftPrintCard(canvas, opts) {
     ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
   }
 
-  // ── 署名（左，带铜金下划线）+ 日期（右，弱化）
-  const baseY = cardY + cardH - Math.round(22 * MM)
+  // ── 底部：左＝署名 + 日期；右＝两枚码（小程序码进店 + 客服微信）—— 印刷卡的引流闭环
+  const footerBase = cardY + cardH - Math.round(30 * MM)
   const sig = String(o.cardSignature || '').trim()
   if (sig) {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#2B2723'
     ctx.font = '500 38px ' + HAND
-    ctx.fillText(sig, axisX, baseY)
+    ctx.fillText(sig, axisX, footerBase)
     const sw = ctx.measureText(sig).width
     ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(axisX, baseY + 14)
-    ctx.lineTo(axisX + Math.max(sw, Math.round(40 * MM)), baseY + 14)
+    ctx.moveTo(axisX, footerBase + 14)
+    ctx.lineTo(axisX + Math.max(sw, Math.round(34 * MM)), footerBase + 14)
     ctx.stroke()
   }
   const d = new Date()
   const dateText = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0')
-  ctx.textAlign = 'right'
+  ctx.textAlign = 'left'
   ctx.fillStyle = '#B4AC9F'
-  ctx.font = '400 26px serif'
-  ctx.fillText(dateText, axisRight, baseY)
+  ctx.font = '400 24px serif'
+  ctx.fillText(dateText, axisX, footerBase + Math.round(12 * MM))
 
-  // ── 右下淡「山海」水印（前端那张卡的收尾笔触）
+  // 两枚码：从右往左排（小程序码在右、客服微信在其左），素材缺失则各自静默跳过
+  const codes = []
+  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店', size: Math.round(24 * MM) })
+  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信', size: Math.round(20 * MM) })
+  let cx = axisRight
+  for (let i = 0; i < codes.length; i += 1) {
+    const c = codes[i]
+    const x = cx - c.size
+    const y = footerBase - c.size + Math.round(6 * MM)
+    ctx.save()
+    ctx.fillStyle = '#FFFFFF'
+    roundRect(ctx, x - 4, y - 4, c.size + 8, c.size + 8, 8)
+    ctx.fill()
+    try { ctx.drawImage(c.img, x, y, c.size, c.size) } catch (e) { /* 码挂跳过 */ }
+    ctx.restore()
+    ctx.fillStyle = '#8A7530'
+    ctx.font = '400 20px serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(c.caption, x + c.size / 2, y + c.size + Math.round(6 * MM))
+    cx = x - Math.round(6 * MM)
+  }
+  ctx.textAlign = 'left'
+
+  // 极淡水印（居右下，不与两枚码争位置）
   ctx.save()
-  ctx.globalAlpha = 0.06
+  ctx.globalAlpha = 0.04
   ctx.fillStyle = '#8A7530'
-  ctx.font = '700 220px serif'
+  ctx.font = '700 130px serif'
   ctx.textAlign = 'right'
-  ctx.fillText('山海', axisRight + Math.round(4 * MM), cardY + cardH - Math.round(6 * MM))
+  ctx.fillText('山海', axisRight, cardY + cardH - Math.round(4 * MM))
   ctx.restore()
   ctx.textAlign = 'left'
 }
@@ -446,21 +484,24 @@ function renderGiftPrintImage(selector, page, opts) {
         .exec(async (res) => {
           const canvas = res && res[0] && res[0].node
           if (!canvas) { resolve(''); return }
-          const remote = options.specimenFileID || options.specimenUrl || ''
-          let specimenImage = null
-          if (remote) {
-            try {
-              const local = await resolveLocalImage(remote)
-              if (local) specimenImage = await loadCanvasImage(canvas, local)
-            } catch (e) { /* 图挂不影响出卡 */ }
-          }
+          // 印刷卡不画藏品图（版式对齐前端礼笺卡）→ 不再下载云文件，省一次 IO
           try {
+            let qrcodeImage = null
+            let serviceQrImage = null
+            if (options.qrcodePath) {
+              try { qrcodeImage = await loadCanvasImage(canvas, options.qrcodePath) } catch (e) { /* 素材缺失跳过 */ }
+            }
+            if (options.serviceQrPath) {
+              try { serviceQrImage = await loadCanvasImage(canvas, options.serviceQrPath) } catch (e) { /* 素材缺失跳过 */ }
+            }
             paintGiftPrintCard(canvas, {
               cardBody: options.cardBody,
               cardSignature: options.cardSignature,
               themeName: options.themeName,
               themeNote: options.themeNote,
-              specimenImage
+              recipientName: options.recipientName,
+              qrcodeImage,
+              serviceQrImage
             })
           } catch (e) {
             console.warn('giftShareCard print paint', e)

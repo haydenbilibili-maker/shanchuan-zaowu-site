@@ -317,7 +317,13 @@ Page({
       const path = await renderGiftPrintImage('#giftPrintCanvas', this, {
         cardBody, cardSignature, themeName, themeNote, specimenFileID,
         // 详情（mapBoardItem）不含 recipientName（那是列表侧客户端派生的）→ 以 address.name 为准
-        recipientName: item.recipientName || item.toName || (item.address && item.address.name) || '',
+        // 受礼人姓名：**以 giftMeta.recipientName 为准**（实测 ORDMU5HRWP4829：
+      //   recipientName/salutation = 「虞博阳&王瑛」；而 address.name 只是收件人「王瑛」✗ 会印错）。
+      // 依次回退 salutation → toName → address.name；为空则卡上**不印**「写给」行。
+      recipientName: item.recipientName || item.salutation || item.toName || (item.address && item.address.name) || '',
+      // 两枚码：小程序码（分包内素材）+ 客服微信（仓库现有主包素材）；缺失各自静默跳过
+      qrcodePath: '/subpackages/manager/assets/qrcode/miniprogram-code.jpg',
+      serviceQrPath: '/assets/qrcode/wechat-assistant-qr.png',
     })
       if (!path) throw new Error('生成失败，请重试')
       try {
