@@ -14,7 +14,10 @@ interface Props {
 const {
   title,
   description = '把山海带回家——让自然博物美学进入日常生活',
-  image = '/images/hero/home-hero.jpg',
+  // 2026-09-17 审计 E5：原默认值 `/images/hero/home-hero.jpg` 是**占位目录里并不存在**的文件，
+  // 导致 14 个构建页面（未覆写 image 的全部页面）的 og:image / twitter:image 指向 404。
+  // 改指向真实存在、且本来就被首页当分享图的标本主图（207KB，站点里已随构建发布）。
+  image = '/specimens/hero-specimen.jpg',
   preloadImage,
 } = Astro.props;
 
@@ -119,6 +122,12 @@ const jsonLd =
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageURL.href} />
     {jsonLd ? <script is:inline type="application/ld+json" set:html={jsonLd} /> : null}
+    {/* 2026-09-17 审计 E6：`.fade-in` 默认 opacity:0，只靠 JS 揭示 —— JS 失败/被禁用时
+        整块内容永久不可见。这里给无 JS 场景一个强制可见的兜底（用 !important 压过
+        Tailwind 的 @apply opacity-0，且不依赖样式表顺序）。 */}
+    <noscript>
+      <style>{`.fade-in{opacity:1 !important;transform:none !important}`}</style>
+    </noscript>
   </head>
 
   <body class="bg-ink text-cream">

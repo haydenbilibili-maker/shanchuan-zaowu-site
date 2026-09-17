@@ -1,3 +1,12 @@
+# 2026-09-17 全面审计 E9：此前只有 referrer-policy（Cloudflare 默认加），
+# 缺 nosniff / 点击劫持防护 / 权限策略。这里显式声明（CSP 另议：需先 report-only 观测，
+# 站点有内联脚本与第三方字体，直接上 CSP 容易白屏）。
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
 # Cloudflare Pages · 减少 HTML 长期边缘缓存导致「已部署仍像旧版」
 # 文档：https://developers.cloudflare.com/pages/configuration/headers/
 /how/senses
