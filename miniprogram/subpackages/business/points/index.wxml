@@ -1,6 +1,9 @@
 <!--pages/points/index.wxml-->
 <view class="container">
 
+  <!-- 2026-09-17：钱包 / 礼券夹 / 积分 三个并列 tab（与礼券夹页同构） -->
+  <wallet-hub-bar active="points"></wallet-hub-bar>
+
   <!-- 1. 顶部资产卡 · 黑金翻转：正面=积分余额（原样式），背面=积分规则 -->
   <view
     class="asset-flip {{cardFlipped ? 'flipped' : ''}}"

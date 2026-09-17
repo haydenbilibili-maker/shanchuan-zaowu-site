@@ -134,26 +134,29 @@ eq('定制缺配置默认关', FEATURES[1].defaultOn, false)
 eq('伴宠缺配置默认开', FEATURES[3].defaultOn, true)
 
 /* ------------------------------------------------------------------ *
- * 2) buildTiles：可见性与**编号稳定性**
+ * 2) buildTiles：可见性（2026-09-17 起**取消 01–04 序号展示**）
  * ------------------------------------------------------------------ */
 
 const ALL = { showGift: true, showSpecimenCustom: true, showAiIdentify: true, showPetMemorial: true }
 
 eq('四开 → 四格', buildTiles(ALL).length, 4)
-eq('四开 → 编号 01/02/03/04', buildTiles(ALL).map((t) => t.no).join(','), '01,02,03,04')
 eq('四开 → 顺序', buildTiles(ALL).map((t) => t.key).join(','), 'gift,custom,identify,pet')
 
-// ★ 核心断言：任意组合下，同一功能的编号恒定
+// ★ 新口径：不再有 01–04 序号 —— 功能可开关，跳号会被误读成页面 bug。
+//   （原口径是「编号必须稳定」，现按产品决定整条去掉；断言改为「任何组合下都不产生序号」）
+eq('★ FEATURES 不再带 no 字段', FEATURES.every((f) => f.no === undefined), true)
+eq('★ buildTiles 输出不含 no 字段', buildTiles(ALL).every((t) => t.no === undefined), true)
 const combos = [
-  { showGift: false, showSpecimenCustom: true, showAiIdentify: true, showPetMemorial: true, expect: 'custom:02,identify:03,pet:04' },
-  { showGift: true, showSpecimenCustom: false, showAiIdentify: true, showPetMemorial: true, expect: 'gift:01,identify:03,pet:04' },
-  { showGift: true, showSpecimenCustom: true, showAiIdentify: false, showPetMemorial: true, expect: 'gift:01,custom:02,pet:04' },
-  { showGift: true, showSpecimenCustom: true, showAiIdentify: true, showPetMemorial: false, expect: 'gift:01,custom:02,identify:03' },
+  { showGift: false, showSpecimenCustom: true, showAiIdentify: true, showPetMemorial: true, expect: 'custom,identify,pet' },
+  { showGift: true, showSpecimenCustom: false, showAiIdentify: true, showPetMemorial: true, expect: 'gift,identify,pet' },
+  { showGift: true, showSpecimenCustom: true, showAiIdentify: false, showPetMemorial: true, expect: 'gift,custom,pet' },
+  { showGift: true, showSpecimenCustom: true, showAiIdentify: true, showPetMemorial: false, expect: 'gift,custom,identify' },
   { showGift: false, showSpecimenCustom: false, showAiIdentify: false, showPetMemorial: false, expect: '' }
 ]
 combos.forEach((c) => {
-  const got = buildTiles(c).map((t) => `${t.key}:${t.no}`).join(',')
-  eq(`★ 编号不随可见性漂移（${c.expect || '全关'}）`, got, c.expect)
+  const tiles = buildTiles(c)
+  eq(`★ 任意组合都不含序号（${c.expect || '全关'}）`, tiles.every((t) => t.no === undefined), true)
+  eq(`可见顺序稳定（${c.expect || '全关'}）`, tiles.map((t) => t.key).join(','), c.expect)
 })
 
 // 注意：只给部分字段时，未给的是「缺配置」语义 —— 伴宠/鉴定默认开，礼赠/定制默认关。
@@ -294,4 +297,4 @@ if (failed) {
   console.error(`✗ 失败 ${failed} 项`)
   process.exit(1)
 }
-console.log('✓ 工坊四功能宫格通过（编号稳定 / 开关口径正确 / 鉴定入口不重复埋点 / 守卫与跳转保持原行为）')
+console.log('✓ 工坊四功能宫格通过（已取消序号 / 开关口径正确 / 鉴定入口不重复埋点 / 守卫与跳转保持原行为）')

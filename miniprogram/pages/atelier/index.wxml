@@ -24,8 +24,8 @@
       <text class="intro-text">{{introText}}</text>
     </view>
 
-    <!-- 四功能宫格：编号固定（01 礼赠 / 02 定制 / 03 鉴定 / 04 伴宠），
-         某一格开关关闭只是不渲染，其余编号不漂移 -->
+    <!-- 四功能宫格：礼赠 / 定制 / 鉴定 / 伴宠。某一格开关关闭只是不渲染
+         （不再有 01–04 序号，避免跳号被误读为 bug） -->
     <view class="feature-grid">
       <view
         class="feature-tile {{item.highlight ? 'highlight' : ''}}"
@@ -37,7 +37,7 @@
         data-key="{{item.key}}"
       >
         <view class="tile-head">
-          <text class="tile-no">{{item.no}}</text>
+          <!-- 2026-09-17：不再展示 01–04 序号（功能可开关，跳号会被误读为 bug） -->
           <text class="tile-overline">{{item.overline}}</text>
         </view>
         <text class="tile-title">{{item.title}}</text>

@@ -8,7 +8,7 @@
 //      任何一格开关变化，后面所有编号都会跟着漂移（01/02/03 不再对应同一个功能）；
 //   2. 四格各有各的守卫、跳转与埋点，散在 WXML 里必然重复四遍；
 //   3. 宫格布局要求同一份数据既驱动渲染也驱动守卫，单一真源最省心。
-// 现在编号按**固定顺序**分配（01 礼赠 / 02 定制 / 03 鉴定 / 04 伴宠），
+// 2026-09-17：**取消 01–04 序号展示** —— 功能可开关，跳号会被误读成页面 bug；
 // 某一格关闭只是不渲染，其余编号不变。
 const { trackBehavior } = require('../../utils/trackBehavior')
 const { xingchenCover } = require('../../config/storeMediaCdn')
@@ -30,7 +30,6 @@ const {
 const FEATURES = [
   {
     key: 'gift',
-    no: '01',
     overline: 'GIFT',
     title: '礼赠',
     desc: '取一件山海封笺赠予，先备妥再请 TA 留下去处',
@@ -43,7 +42,6 @@ const FEATURES = [
   },
   {
     key: 'custom',
-    no: '02',
     overline: 'SPECIMEN CUSTOM',
     title: '标本定制',
     desc: '从馆藏选型，配框配盒写卡片，线上下单',
@@ -56,7 +54,6 @@ const FEATURES = [
   },
   {
     key: 'identify',
-    no: '03',
     overline: 'AI IDENTIFY',
     title: 'AI 鉴定',
     desc: '拍一张照片，识别物种并生成收藏图鉴',
@@ -71,10 +68,9 @@ const FEATURES = [
   },
   {
     key: 'pet',
-    no: '04',
     overline: 'PET MEMORIAL',
     title: '伴宠记忆',
-    desc: '为已逝伙伴申请纪念藏品，专员评估工艺与周期',
+    desc: '为陪伴过你的伙伴留存纪念藏品，专员评估工艺与周期',
     flag: 'showPetMemorial',
     defaultOn: true,
     toast: 'pet',

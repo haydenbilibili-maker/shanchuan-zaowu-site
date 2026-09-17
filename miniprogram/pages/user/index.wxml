@@ -114,10 +114,12 @@
 
       <view class="v-divider"></view>
 
-      <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="points">
-        <image class="as-icon" src="/assets/icons/coin_gold.png"></image>
-        <text class="as-val">{{points}}</text>
-        <text class="as-lbl">我的积分</text>
+      <!-- 2026-09-17：积分已并入「我的钱包」（钱包/礼券夹/积分 三 tab），
+           此处改为「我的档案」（原藏家档案入口上移，避免同一入口出现两次） -->
+      <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="profile">
+        <image class="as-icon" src="/assets/icons/user.png"></image>
+        <text class="as-val">{{(cardPending || cardGuest) ? '—' : (profileScore + '%')}}</text>
+        <text class="as-lbl">我的档案</text>
       </view>
 
       <block wx:if="{{showGift}}">
@@ -239,16 +241,8 @@
       <text class="ph-en">SERVICES</text>
     </view>
     <view class="service-list">
-      <!-- 需求 21：藏家档案独立入口（卡片异常 / 未注册时的兜底动线，不再只能从卡面进） -->
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="profile">
-        <image class="m-img gold" src="/assets/icons/user.png"></image>
-        <view class="m-info">
-          <text class="m-cn">藏家档案</text>
-          <text class="m-en">COLLECTOR PROFILE · 资料 / 生日 / 偏好</text>
-        </view>
-        <text class="meta-progress badge-inline" wx:if="{{!cardPending && !cardGuest}}">{{profileScore}}%</text>
-        <text class="m-arr">→</text>
-      </view>
+      <!-- 需求 21 / 2026-09-17：藏家档案入口已上移到资产区（原「我的积分」位置），
+           此处不再重复渲染同一入口 -->
       <!-- 履约与消息（订单/积分/钱包已在上方资产区）；预约与快捷行互斥，仅钱包占快捷位时下沉至此 -->
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="visitBooking" wx:if="{{showBookingEntry && showStoredValue}}">
         <image class="m-img gold" src="/assets/icons/calendar_gold.png"></image>

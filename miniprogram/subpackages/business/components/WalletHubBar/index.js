@@ -1,6 +1,6 @@
 Component({
   properties: {
-    /** wallet | coupons */
+    /** wallet | coupons | points */
     active: {
       type: String,
       value: 'wallet'
@@ -20,9 +20,12 @@ Component({
         wx.vibrateShort({ type: 'light' })
       } catch (err) { /* ignore */ }
 
+      // 三个并列 tab：钱包 / 礼券夹 / 积分
       const url = tab === 'coupons'
         ? '/subpackages/business/coupons/index'
-        : '/subpackages/extra/user/stored-value/index'
+        : (tab === 'points'
+          ? '/subpackages/business/points/index'
+          : '/subpackages/extra/user/stored-value/index')
 
       wx.redirectTo({
         url,

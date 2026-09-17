@@ -36,5 +36,24 @@
       </view>
       <view class="whb-ind" wx:if="{{active === 'coupons'}}"></view>
     </view>
+
+    <view class="whb-split" aria-hidden="true"></view>
+
+    <!-- 2026-09-17：积分并入钱包，作为第三个并列 tab（与礼券夹同构，交互与样式不变） -->
+    <view
+      class="whb-item {{active === 'points' ? 'is-on' : ''}}"
+      hover-class="whb-item-press"
+      hover-stay-time="80"
+      bindtap="onTap"
+      data-tab="points"
+    >
+      <view class="whb-stack">
+        <view class="whb-cn-wrap">
+          <text class="whb-cn">积分</text>
+        </view>
+        <text class="whb-en">POINTS</text>
+      </view>
+      <view class="whb-ind" wx:if="{{active === 'points'}}"></view>
+    </view>
   </view>
 </view>
