@@ -1,7 +1,9 @@
 {
   "permissions": {
     "openapi": [
-      "security.imgSecCheck"
+      "security.imgSecCheck",
+      "security.msgSecCheck",
+      "security.mediaCheckAsync"
     ]
   },
   "timeout": 60
