@@ -1,0 +1,17 @@
+/* 宿主页只负责 hub 条与面板的排布；面板自带内边距（沿用各自页面原有样式） */
+.hub-page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg, #1A1814);
+}
+
+/* 顶栏吸顶（沿用原各页 .hub-bar-bleed 的 sticky/z-index 口径）。
+   各页原来的负边距是为了抵消各自 .container 的横向内缩；宿主没有内缩，故只需 sticky。
+   背景由组件内 .whb 自己铺满（#1A1814），这里不重复画，避免出现双层色。 */
+.hub-bar-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  width: 100%;
+}

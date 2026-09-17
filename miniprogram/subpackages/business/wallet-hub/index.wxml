@@ -1,0 +1,15 @@
+<!-- 钱包枢纽：顶部 hub 条（唯一来源）+ 按 tab 渲染面板 -->
+<view class="hub-page">
+  <!-- 吸顶一层沿用原各页的 .hub-bar-bleed；宿主没有横向内缩，故不再需要负边距补偿 -->
+  <view class="hub-bar-sticky">
+    <wallet-hub-bar
+      inline="{{true}}"
+      active="{{curTab}}"
+      title="{{barTitle}}"
+      overline="{{barOverline}}"
+      bind:tabchange="onTabChange"
+    ></wallet-hub-bar>
+  </view>
+
+  <wallet-panel-points wx:if="{{curTab === 'points'}}" id="panel-points"></wallet-panel-points>
+</view>

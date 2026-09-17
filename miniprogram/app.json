@@ -97,7 +97,8 @@
         "ar/index",
         "booking/index",
         "store/index",
-        "store-zone/index"
+        "store-zone/index",
+        "wallet-hub/index"
       ]
     },
     {
