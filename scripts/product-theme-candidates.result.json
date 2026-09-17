@@ -1,0 +1,9248 @@
+{
+ "at": "2026-09-17T15:59:15.289Z",
+ "items": {
+  "7794572a6a11c6b00055f2e50cbeaf64": {
+   "title": "黑马标本·马上有",
+   "root": "动物馆",
+   "price": 58888,
+   "candidates": [
+    {
+     "themeName": "岁序并肩",
+     "note": "以马之静立，定格岁月中并肩同行的温柔。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "蹄声入暮",
+     "note": "暮色里共听远去的蹄声，是相守的仪式感。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "木马同鞍",
+     "note": "如一对旧木马，沉默而坚定地共负一鞍。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "流年驻影",
+     "note": "黑马驻影，让奔逝的流年在标本中停驻。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "并辔无声",
+     "note": "并辔而行却无需言语，是时间给出的默契。",
+     "scenes": [
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "e8a9f9876a11c6e20056f4ed42a62890": {
+   "title": "自然小匣",
+   "root": "",
+   "price": 158,
+   "candidates": [
+    {
+     "themeName": "岁稔小藏",
+     "note": "把一年的收成封进匣中，愿岁岁丰足，前程可期。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "启程有籽",
+     "note": "种子随行，一如启程的人，带着生机去往远方。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "光阴拾穗",
+     "note": "拾取草木遗落的果实，把时光的馈赠赠予重要的人。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "满匣秋实",
+     "note": "一匣秋实，寓意耕耘之后终有所得。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "新芽之约",
+     "note": "入学习业皆如新芽破土，此匣是提灯，也是约定。",
+     "scenes": [
+      "enrollment",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "7794572a6a11c70e005604d27ee2e1d6": {
+   "title": "新西兰鲍鱼壳标签本（贝壳本）",
+   "root": "海洋馆",
+   "price": 78,
+   "candidates": [
+    {
+     "themeName": "潮汐书页",
+     "note": "鲍鱼壳内壁映着潮光，翻页时像听见南太平洋退潮。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "开学拾贝",
+     "note": "把海边捡到的第一枚虹彩，夹进新学期的课本。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "一壳一世界",
+     "note": "掌心里的贝壳标签本，替收礼人留住细碎日常。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "蓝湾小记",
+     "note": "新西兰的冷海色泽，写进每一页便签与心愿。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "成双潮声",
+     "note": "两枚贝壳相叠如合掌，适合把祝福成对送出去。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "5290ec146a11c73c0054ac6713a828b7": {
+   "title": "蒲公英玻璃罩",
+   "root": "",
+   "price": 88,
+   "candidates": [
+    {
+     "themeName": "风中约定",
+     "note": "蒲公英的种子随风出发，像一份轻轻许下的承诺。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "远行的祝福",
+     "note": "每一粒绒毛都是一句道别，也是一句前程似锦。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "启程的种子",
+     "note": "把根留在玻璃里，把远方交给风。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "一岁轻羽",
+     "note": "生日不过是一年一度，替愿望长出翅膀。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "玻璃里的风",
+     "note": "风被留住了，那天的谢意也一起留住了。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "518b5f1c6a11c7c200569add77b045d6": {
+   "title": "大王具足虫标本",
+   "root": "海洋馆",
+   "price": 2300,
+   "candidates": [
+    {
+     "themeName": "深海守护",
+     "note": "来自深海的古老甲胄，静默守护家的安宁。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "时光之铠",
+     "note": "亿万年的演化铠甲，铭刻永恒时光。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "渊默之礼",
+     "note": "深渊沉默的馈赠，献给特别的时刻。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "偕老之壳",
+     "note": "坚硬外壳象征长久相伴，共度岁月。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "古海遗珍",
+     "note": "远古海洋的遗存，见证生命奇迹。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "518b5f1c6a11c7e800569c85720e6779": {
+   "title": "孔雀标本",
+   "root": "动物馆",
+   "price": 4500,
+   "candidates": [
+    {
+     "themeName": "屏开锦程",
+     "note": "孔雀开屏，寓意新居前程似锦",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "翠羽良缘",
+     "note": "翠色羽翼，见证良缘缔结",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "翎光映岁",
+     "note": "翎羽流光，庆贺生辰岁月",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "栖羽谢知",
+     "note": "栖止羽间，谢君相知相伴",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "华羽同辉",
+     "note": "华羽相映，共赴岁月同辉",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "669eebf36a11c81200533656504ccce2": {
+   "title": "玫瑰俏眼蝶闹钟",
+   "root": "昆虫馆",
+   "price": 299,
+   "candidates": [
+    {
+     "themeName": "晨翅报时",
+     "note": "玫瑰俏眼蝶停驻钟面，替你数着新一岁的晨光。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "时光蝶语",
+     "note": "翅上眼斑如年轮，把师长的叮咛织进每一秒。",
+     "scenes": [
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "启程之翼",
+     "note": "蝴蝶振翅即出发，为远行的你敲响第一声。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "双栖花信",
+     "note": "花与蝶成对相依，正如心与心意彼此应答。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "岁序轻停",
+     "note": "钟摆温柔，蝴蝶静栖，替你把此刻好好留住。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "669eebf36a11c85600534b517b065ed3": {
+   "title": "气鼓鼓的河豚",
+   "root": "动物馆",
+   "price": 599,
+   "candidates": [
+    {
+     "themeName": "一团和气",
+     "note": "圆滚滚的河豚，鼓起的肚皮像把和气裹成一团。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "河海相逢",
+     "note": "河豚鼓腹如满月，是潮汐与河流的温柔相遇。",
+     "scenes": [
+      "anniversary",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "圆满成器",
+     "note": "鼓起肚皮像瓷瓶初成，寓意新程圆满、学业有成。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "护身圆甲",
+     "note": "河豚遇险即鼓，把这份警觉化作护佑新居与远行的底气。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双气成双",
+     "note": "成对河豚相对鼓气，像两颗心慢慢靠近，圆满成双。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2cd873a46a11c89e0055ae6c2a8dc682": {
+   "title": "螃蟹合集",
+   "root": "海洋馆",
+   "price": 1800,
+   "candidates": [
+    {
+     "themeName": "潮信归壳",
+     "note": "潮起潮落，终有一处安身之壳，贺新居初定。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "执手拾贝",
+     "note": "并肩走过海岸，一枚一枚攒下岁月与誓言。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "螺声贺岁",
+     "note": "把海螺贴在耳边，听见生日那天的浪与祝福。",
+     "scenes": [
+      "birthday",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "沧海遗珍",
+     "note": "大海淘洗多年，留下的皆是值得珍重的人与事。",
+     "scenes": [
+      "gratitude",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "潮汐成双",
+     "note": "涨落之间本是一对，恰如两人相守的节奏。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "e8a9f9876a126c7d0066a86f32a6986c": {
+   "title": "大蓝闪蝶八珠项链",
+   "root": "首饰馆",
+   "price": 398,
+   "candidates": [
+    {
+     "themeName": "八蓝入梦",
+     "note": "八只闪蝶栖于颈间，像把好梦戴在身上。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蓝闪成双",
+     "note": "蝶翅成对，寓意相伴同行，岁岁相依。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "翅间流年",
+     "note": "幽蓝鳞光如时间碎影，献给每个成长节点。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "八羽知恩",
+     "note": "八片蝶羽轻垂，道一声迟来的谢谢。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "南林蝶信",
+     "note": "雨林深处的蓝闪，化作一封无声的贺信。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "7794572a6a126cbd00650e393c25f77a": {
+   "title": "大蓝闪蝶贝壳钟表",
+   "root": "衍生品",
+   "price": 799,
+   "candidates": [
+    {
+     "themeName": "壳中光阴",
+     "note": "贝壳环抱钟盘，让每一次回眸都是沧海桑田。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "蝶舞晨昏",
+     "note": "蓝闪蝶停驻表盘，见证朝夕相伴的细水长流。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "沧海计时",
+     "note": "自然造物的表盘，铭刻人生每一个重要节点。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "闪蝶归时",
+     "note": "蓝光轻闪，像在提醒珍惜每次相聚的时辰。",
+     "scenes": [
+      "birthday",
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "贝阙藏时",
+     "note": "贝壳如宫阙，收藏时间馈赠与生活新章。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "9e779e646a1329a2007a89105cc6cc18": {
+   "title": "海洋小集·贝壳相框",
+   "root": "海洋馆",
+   "price": 59,
+   "candidates": [
+    {
+     "themeName": "潮汐来信",
+     "note": "每一枚贝壳都是大海写给陆地的心事，装进相框，留住潮声。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "拾光入框",
+     "note": "把海边的拾贝时光装裱起来，成为书桌上的一小片潮间带。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "螺号轻响",
+     "note": "螺壳里藏着远航的号角，为新旅程吹响第一声祝福。",
+     "scenes": [
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "潮间小筑",
+     "note": "退潮后留下无数微小的居所，是海洋赠予的温柔纪念。",
+     "scenes": [
+      "birthday",
+      "gratitude",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "c5c2a88a6a1329f4007b7aae230ad60e": {
+   "title": "罗氏虾标本",
+   "root": "动物馆",
+   "price": 1200,
+   "candidates": [
+    {
+     "themeName": "春水长钳",
+     "note": "虾臂如剪，裁开一室新居的春水长流。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "对钳成双",
+     "note": "两臂相向如誓，红壳里藏着一句同心。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁壳新红",
+     "note": "年年脱壳年年红，寿辰如新。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "择水而居",
+     "note": "它曾择水而栖，如今择一室而安。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "同游两臂",
+     "note": "两钳一展，像把手伸向同行的日子。",
+     "scenes": [
+      "anniversary",
+      "wedding",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "c9a02d0d6a132a47007d69df74d928d8": {
+   "title": "雅灰蝶手镯",
+   "root": "昆虫馆",
+   "price": 328,
+   "candidates": [
+    {
+     "themeName": "微光之约",
+     "note": "灰蓝翅羽藏起一捧微光，像新居里第一盏灯。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "共翅同栖",
+     "note": "两片柔翅合成一环，日常也可并肩停落。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "破茧之礼",
+     "note": "从茧到翅，愿你每一次新生都被温柔接住。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "翅间时分",
+     "note": "翅脉记下晨昏，戴它的人自有自己的节奏。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "一匣谢意",
+     "note": "标本盒里的安静翅影，替你说一句多谢。",
+     "scenes": [
+      "gratitude",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "9e779e646a132aeb007aa7f608bf3e51": {
+   "title": "水母浸液标本",
+   "root": "海洋馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "浮游星尘",
+     "note": "半透明的水母如海中星子，替你把祝福放进会呼吸的微光里。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "液态时间",
+     "note": "亿万年的软体停在瓶中，时间不再是刻度，而是一汪可以凝望的海。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "海中灯盏",
+     "note": "它自带柔光悬于瓶中，像一盏永不熄灭的小灯，陪你走更远的路。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "无声旅者",
+     "note": "一生漂流从不靠岸，愿收到它的人，也有向深海出发的勇气。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "同游一隅",
+     "note": "把海的一角装进玻璃瓶，送出去的时候，像递出一句一起看见的邀请。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "8d4183e26a14664800a283197c6c88d0": {
+   "title": "暹罗鳄标本",
+   "root": "动物馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "静水藏鳞",
+     "note": "鳄伏如石，静水深处藏着时光的鳞甲与安然。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "千年甲衣",
+     "note": "一身硬甲穿越千年，愿新居新程都披坚执稳。",
+     "scenes": [
+      "housewarming",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁月伏波",
+     "note": "伏于波光里的守望者，把漫长岁月磨成一件礼物。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "鳞光启程",
+     "note": "鳞光如星，为毕业与入职的第一程压住阵脚。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "长守不移",
+     "note": "静伏不动，是长久相守与情谊不移的隐喻。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "7d17c2c66a14694700a31ef537c38300": {
+   "title": "大粉翅足节虫",
+   "root": "昆虫馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "翠枝轻候",
+     "note": "翠绿翅足静伏粉枝，像在等一阵风，也等一个人。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "粉羽安居",
+     "note": "粉翅如新居第一缕柔光，安顿下来便自成风景。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "枝上光阴",
+     "note": "虫栖一枝，凝住时间流动的瞬间，赠予珍藏岁月的人。",
+     "scenes": [
+      "anniversary",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "双翅同枝",
+     "note": "两片粉翅共栖一茎，愿同行的日子也这样稳稳相依。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "新程微光",
+     "note": "小小粉翅映着晨光，为启程的人送上一枚自然祝礼。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "853d22036a9e87200221d9d264533edd": {
+   "title": "日本拟人面蟹",
+   "root": "海洋馆",
+   "price": 899,
+   "candidates": [
+    {
+     "themeName": "海若之面",
+     "note": "如海神低眉，凝视新居的第一缕晨光，护佑安宁。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "潮生对望",
+     "note": "潮起潮落，两两相望，恰似新人从此并肩看海。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁痕如甲",
+     "note": "每一道甲纹都是海的时间，愿生日也慢慢长成故事。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "相守一壳",
+     "note": "蟹居一壳，人守一屋，乔迁与相伴都在这方寸之内。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "海镜照年",
+     "note": "以海为镜，照见旧岁与新岁，赠予沉静而长久的谢意。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9e877301af5a98230ebcc3": {
+   "title": "蝎子螺",
+   "root": "海洋馆",
+   "price": 88,
+   "candidates": [
+    {
+     "themeName": "螺旋日历",
+     "note": "每一圈螺纹都是一页被海风掀动的时光，生日即启新章。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "潮汐信物",
+     "note": "把海的声音封进贝壳，寄给感谢的人，潮汐会替你回响。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "入学小海螺",
+     "note": "背起螺旋的小书包，把整片海洋的祝福带去新课堂。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "新程螺号",
+     "note": "吹响新工作的第一声螺号，向更远的海域出发。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "掌中海图",
+     "note": "掌心的螺纹如航海图，标记每一次出发与感谢。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9e880a02bb2b27033c72ed": {
+   "title": "贝壳杯垫",
+   "root": "海洋馆",
+   "price": 39,
+   "candidates": [
+    {
+     "themeName": "初生日",
+     "note": "贝壳捧起一汪海，映着新生第一缕光。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "启航帖",
+     "note": "从潮间带出发，每一道纹路都是远行的祝福。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "潮声谢",
+     "note": "把整片海的回响，垫在一杯茶下，说声谢谢。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "年轮湾",
+     "note": "贝壳记下潮汐的年轮，也记下你迈出的新一步。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9e891e01af88fc3eea15b5": {
+   "title": "巨扁竹节虫",
+   "root": "昆虫馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "节节高升",
+     "note": "竹节形态暗合步步登高，赠事业起步或新居落成，寓意向上生长。",
+     "scenes": [
+      "new_job",
+      "housewarming",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "竹报平安",
+     "note": "古有竹报平安之说，标本静陈一隅，是乔迁新居最含蓄的守护。",
+     "scenes": [
+      "housewarming",
+      "gratitude",
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "岁寒清供",
+     "note": "取竹之耐寒常青，置于案头，为生日或周年寄一份不凋的文人清趣。",
+     "scenes": [
+      "birthday",
+      "anniversary",
+      "gratitude",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "青节良缘",
+     "note": "以竹节喻情，一节一节相扣不散，是婚礼与周年里最安静的盟约。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "一叶知秋",
+     "note": "竹节虫拟态如叶，一叶悬停，赠别与启程皆藏时间停顿的意味。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "birthday",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9e895702bbb7f52a0441ae": {
+   "title": "狼鳍鱼化石",
+   "root": "矿石馆",
+   "price": 59,
+   "candidates": [
+    {
+     "themeName": "万年一瞬",
+     "note": "一尾游鱼定格成岩，把远古的瞬间赠予此刻的你。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "石中游影",
+     "note": "鱼影游在白石里，像一段沉睡了亿年的旧时光。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "鳞光如初",
+     "note": "鳞纹犹在，愿你去往新程时也保有最初的微光。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "溯流成岩",
+     "note": "逆流而上的姿态凝固成石，赠给每一次出发的人。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "远古问候",
+     "note": "来自亿万年前的一尾小鱼，替你说一句生日快乐。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9e89d201af9c8454c50754": {
+   "title": "三叶虫化石",
+   "root": "矿石馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "远古的凝视",
+     "note": "凝望五亿年前的时光，见证生命之初的坚韧。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "石上光阴",
+     "note": "石纹如年轮，记录地球的呼吸与你的重要时刻。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "初生之痕",
+     "note": "三叶虫的印记，是生命启程的祝福。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "亿年之约",
+     "note": "跨越亿年与你相遇，守护每一段成长旅程。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "凝固的时光",
+     "note": "将远古的一瞬凝固成礼，赠你恒久勇气。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9e8a0f02bbf7ac526c45f0": {
+   "title": "马达加斯加菊螺化石切片",
+   "root": "矿石馆",
+   "price": 398,
+   "candidates": [
+    {
+     "themeName": "螺旋岁月",
+     "note": "菊螺旋纹如年轮，切片定格远古时光，适合新居与升迁。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "菊石同心",
+     "note": "螺旋由心而外，象征两人同心的沉淀，适合婚庆与纪念。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "沧海一纹",
+     "note": "一枚切片藏着古海波纹，寓意成长的漫长与珍贵。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "亿年切片",
+     "note": "把亿万年收进薄片，送给开启新章的人最合适。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "谢意如层",
+     "note": "远古沉积层层叠叠，如谢意深积，适合致谢与乔迁。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6a9e8a9c01cd83597a280973": {
+   "title": "黑天鹅标本",
+   "root": "动物馆",
+   "price": 3000,
+   "candidates": [
+    {
+     "themeName": "玄羽映波",
+     "note": "黑羽如夜，栖于水波之间，为居所添一隅静水深流。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "墨羽长依",
+     "note": "墨色双羽相依，寓意缱绻不渝，岁月同游。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "夜湖幽客",
+     "note": "如夜湖上悄然停驻的幽客，为生辰带来一泓沉静。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "玄湾静栖",
+     "note": "玄色湾流间静静栖落，贺乔迁新居的别样风景。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "黑羽流光",
+     "note": "黑羽泛着岁月流光，见证并蒂同行的纪念时刻。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "853d22036a9e8ae00222437036e1e32e": {
+   "title": "中药药材标本集合框",
+   "root": "植物馆",
+   "price": 399,
+   "candidates": [
+    {
+     "themeName": "枝上光阴",
+     "note": "一盒草木标本，把时间的片段收在枝头。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "本草无言",
+     "note": "草药不语，却把自然的祝福藏进字里行间。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "种子来信",
+     "note": "每一粒种子都是大地写给人间的一封信。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "草木结缘",
+     "note": "因草木而结缘，把四季的祝愿送给重要的人。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "时光入匣",
+     "note": "打开标本匣，就看见自然走过的痕迹。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9e8b6b01afdfd81797a964": {
+   "title": "双叉犀金龟幼虫",
+   "root": "昆虫馆",
+   "price": 699,
+   "candidates": [
+    {
+     "themeName": "甲藏佳期",
+     "note": "把甲虫的成长藏进礼盒，纪念人生每一个重要阶段。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "林间馈赠",
+     "note": "来自森林的成长礼，寓意厚积薄发，前程似锦。",
+     "scenes": [
+      "housewarming",
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蜕壳成金",
+     "note": "幼虫蜕壳化金甲，祝福每一次转身都闪耀。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "双叉祥瑞",
+     "note": "双叉如冠，祥瑞相伴，新居新程皆可镇宅。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "育时成铠",
+     "note": "时光养育，终成铠甲，赠你一份耐心的礼物。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6a9e8c0e01cda57a4435e40a": {
+   "title": "小蓝闪蝶贝壳钟表",
+   "root": "衍生品",
+   "price": 899,
+   "candidates": [
+    {
+     "themeName": "蓝时贝语",
+     "note": "蓝闪蝶与贝壳低语，时光在波纹间停驻。",
+     "scenes": [
+      "housewarming",
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蝶栖贝漏",
+     "note": "蝶栖贝漏，分秒皆成潮汐，只赠珍重之人。",
+     "scenes": [
+      "anniversary",
+      "wedding",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "扇贝藏辰",
+     "note": "扇贝微启，藏住蝶翅下的一段辰光。",
+     "scenes": [
+      "birthday",
+      "housewarming",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "潮汐之眼",
+     "note": "如潮汐往复，为新房添一汪深邃凝视。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双翼流光",
+     "note": "双翼掠出流光，纪念共度的晨曦。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9e8c4901b005280b884c30": {
+   "title": "逍遥馒头蟹",
+   "root": "海洋馆",
+   "price": 268,
+   "candidates": [
+    {
+     "themeName": "甲光向新",
+     "note": "蟹壳映着初升的光，把逍遥送成新程的底气。",
+     "scenes": [
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "潮生一岁",
+     "note": "潮水涨落一岁，愿逍遥的步调被岁月记住。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "壳上自在",
+     "note": "藏一片海的悠然在壳上，赠予启程前的从容。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "谢海之礼",
+     "note": "以海所生的逍遥为谢，回赠一段不慌的时光。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "橙壳如约",
+     "note": "橙壳如旧约，在成长与新程之间准时抵达。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9e8c9d02bce7c6394b3fe8": {
+   "title": "幽白布鲁克王蛇",
+   "root": "动物馆",
+   "price": 1500,
+   "candidates": [
+    {
+     "themeName": "白夜行",
+     "note": "幽白如月光游走，守护新居长夜安宁。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "银链",
+     "note": "银白环纹如链，象征情谊环环相扣，永结同心。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "静水",
+     "note": "静水深流，岁月无声，赠予生辰的沉静祝福。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "月影",
+     "note": "月下幽影，陪伴每一个重要时刻的宁静。",
+     "scenes": [
+      "anniversary",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "环纹",
+     "note": "自然勾勒的环纹，如时间年轮，圈住温暖记忆。",
+     "scenes": [
+      "birthday",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9e8d1502bd0d246a6aa0c5": {
+   "title": "贵妇鸽",
+   "root": "动物馆",
+   "price": 1200,
+   "candidates": [
+    {
+     "themeName": "冠羽流光",
+     "note": "羽冠如一束停驻的光，为新居或生日添一份温润雅致",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "双影同枝",
+     "note": "成对栖枝的意象，寄寓携手共度的情意",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "华羽承谢",
+     "note": "以华美羽色承载一份郑重的谢意",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "一羽春信",
+     "note": "如春信落羽，为生日与周年带来鲜活祝福",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "栖庭之礼",
+     "note": "安然栖于庭院的姿态，宜作乔迁与谢礼",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9e8d6902bd2a17033f7e3f": {
+   "title": "鬃狮蜥标本",
+   "root": "动物馆",
+   "price": 1000,
+   "candidates": [
+    {
+     "themeName": "迁居守宫",
+     "note": "远古守宫守望新居，为日暮点灯",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "鬣鳞朝冠",
+     "note": "鬃鬣如冠，冠礼之日赠少年",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "暖石旧友",
+     "note": "趴卧暖石，如多年老友静静相伴",
+     "scenes": [
+      "anniversary",
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "沙丘双栖",
+     "note": "来自沙漠的成双生灵，见证婚约",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "鳞光岁礼",
+     "note": "鳞片折射岁月微光，为生辰添一岁",
+     "scenes": [
+      "birthday",
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9e8dce02bd4ae64868616a": {
+   "title": "蜜袋鼬",
+   "root": "动物馆",
+   "price": 1000,
+   "candidates": [
+    {
+     "themeName": "暖巢小友",
+     "note": "新居里多一双软爪，往后的日子便有了温度。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "同心绒语",
+     "note": "成对的小生灵，把两颗心的细语藏进绒毛里。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁月轻握",
+     "note": "它把一年的温柔收在掌心，等你轻轻打开。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "衔叶谢礼",
+     "note": "像它衔回一片叶子，把谢意安放在你案头。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "新居小夜灯",
+     "note": "夜里它伏在你窗边，替新家守一盏不灭的暖。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9e8dff01b048fd089d494e": {
+   "title": "小鸭子标本",
+   "root": "动物馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "破壳新生",
+     "note": "毛绒团子破壳而出，送给初来世界的生命一份温柔注视。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "初羽迎风",
+     "note": "羽翼未丰却已向往天空，愿新程一路顺风。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "小满初盈",
+     "note": "万物小得盈满，掌心这只正盛着刚刚好的欢喜。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "掌心暖绒",
+     "note": "把一团毛茸茸的暖意放在掌心，道一句多谢。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "稚羽成行",
+     "note": "从蹒跚到列队远行，赠他一段长成自己的旅程。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9e8ef301b067a30905d33e": {
+   "title": "西瓜招潮蟹",
+   "root": "海洋馆",
+   "price": 699,
+   "candidates": [
+    {
+     "themeName": "潮间交响",
+     "note": "红螯如指挥棒，在潮间带奏响招潮之曲。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "挥螯邀月",
+     "note": "巨螯如扇，向月挥动，招来潮汐也招来圆满。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "赤甲潮生",
+     "note": "赤色甲壳映着潮涨潮落，寓意新篇如潮涌。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蟹语盟约",
+     "note": "一对挥螯如誓约，见证共同生活的潮起潮落。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "夏滨印记",
+     "note": "西瓜纹般的甲壳，封存夏日海滨的相遇与感谢。",
+     "scenes": [
+      "graduation",
+      "gratitude",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6a9e8f4101cdec3a166b94a5": {
+   "title": "侏儒兔标本",
+   "root": "动物馆",
+   "price": 1000,
+   "candidates": [
+    {
+     "themeName": "月下团绒",
+     "note": "兔形温润，如月下团雪；赠新居一隅，安静守候。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "同穴共暖",
+     "note": "兔有双栖之性，成对相守；贺新婚与周年，绵长如穴中恒温。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "静岁垂耳",
+     "note": "垂耳敛声，如时光慢下来；生日或谢意，赠一份不喧哗的长久。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "归巢小兽",
+     "note": "像从自然归来的小客，为新居与生日增添柔软的陪伴感。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "白露团影",
+     "note": "取白露凝形之意，兔影成团；适合周年与谢礼，清浅而久远。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6a9e8fd101cdf7c952572763": {
+   "title": "银光螺酒杯",
+   "root": "海洋馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "银海生辉",
+     "note": "螺壳映着海光，为生日与入学点亮前路",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "岁礼藏涛",
+     "note": "把海涛藏进杯中，庆贺每一次启程与抵达",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "杯承潮汐",
+     "note": "潮汐入杯，化作感恩时刻的一盏温柔",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "螺影流光",
+     "note": "银光流转如海之记忆，映照成长每一步",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "一盏归海",
+     "note": "以螺为盏，向新程与旧恩轻轻致意",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9e930201b1042b17b261fb": {
+   "title": "爱神凤蝶相框",
+   "root": "昆虫馆",
+   "price": 268,
+   "candidates": [
+    {
+     "themeName": "蝶恋花间",
+     "note": "爱神凤蝶停驻相框，仿若花间起舞，定格生命最美的瞬间。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "时光之翼",
+     "note": "蝴蝶翅膀轻托时光，将美好时刻凝固成永恒礼物。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破茧成蝶",
+     "note": "从蛹到蝶的蜕变，是成长与进阶的优雅见证。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "爱神之约",
+     "note": "以爱神凤蝶为信，赴一场关于感恩与祝福的约定。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "羽化流光",
+     "note": "羽化后的翅膀流转着岁月光泽，赠予启程之人。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "853d22036a9fdfd20243024d3a325707": {
+   "title": "印尼彩蝠金属框装饰画",
+   "root": "动物馆",
+   "price": 1580,
+   "candidates": [
+    {
+     "themeName": "金翼衔福",
+     "note": "彩蝠展翼入框，如福气临门，点亮新居。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "比翼归宅",
+     "note": "双翼相依，似伴侣归家，寓意相伴一生。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁月鎏金",
+     "note": "时光凝于框内，金边映蝠影，贺寿辰之喜。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "蝠至谢礼",
+     "note": "蝠来福至，感谢有你，珍藏这份自然心意。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "853d22036a9fe5280243b3e6198a7520": {
+   "title": "雨林蝎",
+   "root": "动物馆",
+   "price": 1200,
+   "candidates": [
+    {
+     "themeName": "雨林守望者",
+     "note": "雨林深处的沉默守护，为家注入一份野性生机",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "暗夜铠甲",
+     "note": "月光下披甲的古老行者，见证长久与坚定",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "雨中红钳",
+     "note": "雨声里一抹红钳，是生命赠予的热烈祝福",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "甲壳的诺言",
+     "note": "坚硬甲壳下藏着温柔，象征不轻易动摇的约定",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "热土新生",
+     "note": "入住新土，如雨林之蝎舒展甲壳，开启新章",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9fe5d901c9ef4c773284d4": {
+   "title": "蓝舌石龙子",
+   "root": "动物馆",
+   "price": 1200,
+   "candidates": [
+    {
+     "themeName": "蓝尾衔石",
+     "note": "蓝舌轻吐如衔来一枚温石，静守新居的晨昏。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "林下蓝影",
+     "note": "枯叶间一抹蓝影伏石而眠，像把雨林的安静搬进家。",
+     "scenes": [
+      "birthday",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "石上霜蓝",
+     "note": "冷石生暖意，蓝鳞如霜后初晴的光，宜赠相伴之人。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "慢暖守石",
+     "note": "慢热的生灵守着温石，像长久的陪伴不喧哗。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蓝鳞成双",
+     "note": "两条蓝鳞各安一石，成对伏息，恰是并肩的日常。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "853d22036a9fe7230243ed805d0b7bf7": {
+   "title": "大蓝闪蝶实木底座定制玻璃罩",
+   "root": "昆虫馆",
+   "price": 2300,
+   "candidates": [
+    {
+     "themeName": "蓝栖新居",
+     "note": "一抹深蓝落进新家，愿日子自此有光可栖。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "双栖成约",
+     "note": "两片蓝翼相对而栖，如两人以一生相许。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "翼上有晴",
+     "note": "展翅的蓝，像把晴朗的祝福压在生日这页。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "流光谢意",
+     "note": "时间停在翅面流光里，替你说一句深深的谢谢。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "岁久同栖",
+     "note": "木与玻璃守着一对蓝翼，愿年月越久越相守。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6a9fe7cd01e535ee4f77b6b6": {
+   "title": "植物与蝴蝶组合相框",
+   "root": "昆虫馆",
+   "price": 799,
+   "candidates": [
+    {
+     "themeName": "双栖花信",
+     "note": "蝶恋花间，共栖一枝，风来传信，岁月含香。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "春信入框",
+     "note": "把春天第一封来信，收进一方相框，赠人长留。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "四时同框",
+     "note": "花与蝶锁住四季一瞬，新居新程皆有生机相伴。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蝶梦栖枝",
+     "note": "一梦栖于枝头，赠你安稳与浪漫共生的时刻。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "岁华共影",
+     "note": "植物与蝶共影，纪念共同走过的年华与启程。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9fe8470301b56d3c295a75": {
+   "title": "鸟翼凤蝶与蓝闪蝶植物果实组合相框",
+   "root": "昆虫馆",
+   "price": 3600,
+   "candidates": [
+    {
+     "themeName": "蝶果同枝",
+     "note": "蝶翼与果实共栖一枝，寓意新居有根有果。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双翼衔实",
+     "note": "两翼相向衔住同一枚果实，如两人共守收获。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "蓝翼承露",
+     "note": "蓝闪蝶翼上凝着露光，恰似岁月新添一岁。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "林间结庐",
+     "note": "蝶栖林间、果落成屋，把自然安宁送进新居。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "同框异羽",
+     "note": "异羽同框而各美，如并肩岁月里彼此不同又相守。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "e04f59456a9fee2c0303b5c3686f1407": {
+   "title": "爱神凤蝶植物标本框",
+   "root": "昆虫馆",
+   "price": 1580,
+   "candidates": [
+    {
+     "themeName": "花间同栖",
+     "note": "凤蝶停驻于植物之间，如两人共筑一隅安身之所。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "展翅成双",
+     "note": "双翅舒展相对，寓意相伴而行、比翼不分离。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁月留芳",
+     "note": "花草与蝶皆被时光定格，把美好一刻长久留存。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "蝶恋芳丛",
+     "note": "蝶与花相依成景，喻情意深种、温柔常伴。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "春信入框",
+     "note": "封存一季春暖花开，送给新居与新生的祝福。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6a9fee9901e5bd81074791b2": {
+   "title": "自然小集·植物与蝴蝶组合框",
+   "root": "昆虫馆",
+   "price": 158,
+   "candidates": [
+    {
+     "themeName": "开学小景",
+     "note": "植物与蝴蝶同框，一静一动，如新课堂上的好奇与生长。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "生日花园",
+     "note": "标本框里藏着一座不凋谢的小花园，为生日添一处风景。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "感恩花期",
+     "note": "花开有时，谢意长存，蝴蝶停驻如一句未说出口的谢谢。",
+     "scenes": [
+      "gratitude",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蜕变礼赞",
+     "note": "从枝叶到蝶翼，是成长也是启程，适合新阶段的祝愿。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "初叶新生",
+     "note": "初生的叶脉与蝴蝶相伴，寓意新工作新生活悄然展开。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6a9feef801e5c3ca15bb0854": {
+   "title": "馒头蟹叠罗汉",
+   "root": "海洋馆",
+   "price": 1280,
+   "candidates": [
+    {
+     "themeName": "叠影双栖",
+     "note": "蟹影层叠，如双栖之约，寓意相伴不离。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "层叠港湾",
+     "note": "甲壳层层围拢，像家一样安稳的港湾。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "甲光映岁",
+     "note": "甲壳光泽映照岁月，适合生日与纪念的祝愿。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "双钳抱月",
+     "note": "蟹钳轻拥如抱月，暗合花好月圆的心意。",
+     "scenes": [
+      "wedding",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "磊落同舟",
+     "note": "甲壳磊落相依，似同舟共济，感恩相伴。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9fefbb01cac3d92aedaa0d": {
+   "title": "鬃狮蜥",
+   "root": "动物馆",
+   "price": 1000,
+   "candidates": [
+    {
+     "themeName": "荆冠小骑士",
+     "note": "鬃鬣如冠，静守一隅，为它披上小小骑士的披风。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "荒岩守望者",
+     "note": "来自澳洲红土的鳞甲旅人，替你在新居守一盏灯。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "日鬣书简",
+     "note": "晨光落在颈鬣上，像一封写给长久日子的信。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "砂色长生冠",
+     "note": "荒漠把寿命写成王冠，愿赠者与被赠者都安然长久。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "荆棘与朝阳",
+     "note": "披着荆棘的鳞，向着朝阳抬头，是生日最好的祝愿。",
+     "scenes": [
+      "birthday",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "853d22036a9ff0290244ecc575dca191": {
+   "title": "复古实木蛇骨标本摆件",
+   "root": "动物馆",
+   "price": 1800,
+   "candidates": [
+    {
+     "themeName": "岁月静好",
+     "note": "蛇骨静卧，时光在此安然停驻，适合生日或乔迁时的温柔祝福。",
+     "scenes": [
+      "birthday",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "时光宝盒",
+     "note": "木盒轻启，珍藏岁月痕迹，作为新婚或周年礼物寓意永恒。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "自然礼赞",
+     "note": "自然造物之美，致敬生命奇迹，适合感谢师友或周年纪念。",
+     "scenes": [
+      "gratitude",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "木骨流光",
+     "note": "木质温润，骨纹如流年，为新居或生日添一份静谧雅致。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9ff0d701cad96c41648984": {
+   "title": "越南黄须巨人蜈蚣",
+   "root": "动物馆",
+   "price": 1200,
+   "candidates": [
+    {
+     "themeName": "赤须守宅",
+     "note": "红须如烛，静伏一隅，为乔迁新居守一方生气。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "百节同途",
+     "note": "百节身躯蜿蜒共行，似两人岁月并肩，长路同往。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "须影流光",
+     "note": "黄须轻扬，如时光流转的细纹，见证一年一岁的相伴。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "金须献瑞",
+     "note": "金须如穗，静卧盒中，是道贺时分最沉静的一份心意。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "长身栖木",
+     "note": "长身盘于枯木，如家宅有了自己的脉搏与根。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036a9ff1cd024515a72845687d": {
+   "title": "蓝舌石龙子",
+   "root": "动物馆",
+   "price": 1500,
+   "candidates": [
+    {
+     "themeName": "蓝尾栖石",
+     "note": "蓝舌蜷伏暖石，如新居初安，静守一方。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双栖石语",
+     "note": "成对栖石，鳞光相映，寓意婚约绵长。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "暖石长眠",
+     "note": "恒温石上安眠，纪念日里岁月静好。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "石上凝蓝",
+     "note": "石上凝一抹蓝，贺生辰如自然造物般独特。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蓝鳞守岁",
+     "note": "蓝鳞守石而居，温居赠礼，年年有余。",
+     "scenes": [
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "a8add1456a9ffe7701cbff357141d515": {
+   "title": "迷你鳄鱼标本",
+   "root": "动物馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "静默鳞光",
+     "note": "鳄鱼鳞甲在灯下闪微光，安静如时光凝固。",
+     "scenes": [
+      "housewarming",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "小沼遗珍",
+     "note": "似从远古沼泽截取一瞬，赠与新居或新生。",
+     "scenes": [
+      "housewarming",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "寸鳞山河",
+     "note": "方寸标本藏山河气势，适合启程新程。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "凝时伴侣",
+     "note": "时间停驻的伴侣，见证长久情谊。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "微渊守岁",
+     "note": "微小深渊中的守护，贺寿或入学皆宜。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6a9fff3c01e726f4365b42bf": {
+   "title": "枯叶螳螂与鬼鞭蛛战斗姿态复原",
+   "root": "昆虫馆",
+   "price": 1980,
+   "candidates": [
+    {
+     "themeName": "秋刃对影",
+     "note": "枯叶为刃，蛛影为鞭，一静一动，互守成局。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "枯荣相峙",
+     "note": "叶落如枯，蛛行若荣，相对而生，成趣成礼。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "叶下双雄",
+     "note": "叶脉藏刀，鞭影守夜，双双如约，同贺新程。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "执鞭护叶",
+     "note": "蛛鞭轻扬，护此一叶，赠与知己，谢意长存。",
+     "scenes": [
+      "gratitude",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "双生静默",
+     "note": "枯叶与鬼鞭，默然成对，似岁月里并肩的盟约。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "853d22036a9fffff0246b24935516be6": {
+   "title": "巨人恐蚁生态小盒",
+   "root": "昆虫馆",
+   "price": 299,
+   "candidates": [
+    {
+     "themeName": "微宇藏锋",
+     "note": "巴掌大的生态盒里，藏着巨蚁的锋利与温柔，送给初入新境的人。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "破茧而立",
+     "note": "从茧到蚁，一场沉默的成年礼，祝贺每一次重要的站立。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "寸土江山",
+     "note": "一捧土、一株苔、一只巨蚁，自有疆域，赠你掌中的天地。",
+     "scenes": [
+      "birthday",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "谢君同行",
+     "note": "蚁群从不独行，以微小的共生，谢你一路并肩。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "启程之匣",
+     "note": "盖上是一枚标本，打开是一段远行，适合每个出发的时刻。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "853d22036aa000c50246d19a36f487e4": {
+   "title": "丽冠蠊",
+   "root": "昆虫馆",
+   "price": 399,
+   "candidates": [
+    {
+     "themeName": "华冠流光",
+     "note": "丽冠如冕，流转时光中，为新居增添不息生机。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "瑞丽之冠",
+     "note": "瑞气凝聚成冠，献给人生重要时刻的加冕。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "生辰之冕",
+     "note": "一顶自然之冕，为生辰点亮生命的华彩。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "冠藏珍意",
+     "note": "珍藏一冠，寄寓深厚情谊与无声谢意。",
+     "scenes": [
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0018301cc3a396bba9e6a": {
+   "title": "夜明珠闪蝶权杖",
+   "root": "昆虫馆",
+   "price": 980,
+   "candidates": [
+    {
+     "themeName": "林间双翼",
+     "note": "蝶翼成对，寓意新居安宁、爱意相伴",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "珠光流年",
+     "note": "夜明珠光流转，照亮岁岁年年",
+     "scenes": [
+      "birthday",
+      "anniversary",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "星夜蝶使",
+     "note": "夜色中的蝶使，传递感恩与祝福",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "光阴权杖",
+     "note": "权杖握时，铭记相伴的每一刻",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "栖羽同心",
+     "note": "双羽栖居，新居同心永结",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa001fc0308dead6b2e16c0": {
+   "title": "雅灰碟手表",
+   "root": "首饰馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "灰蝶刻度",
+     "note": "翅膀轻停，把时光走成细碎刻度。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "静落腕间",
+     "note": "蝶落腕间，静好时分常伴。",
+     "scenes": [
+      "birthday",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "回翼指针",
+     "note": "每圈回翼，都是重逢的刻度。",
+     "scenes": [
+      "anniversary",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "时分灰羽",
+     "note": "灰羽一片，掠过时分两界。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "轻停朝夕",
+     "note": "朝夕之间，蝶影轻停如约。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa0027a0308fde709fcf95f": {
+   "title": "绿灰碟吊坠",
+   "root": "首饰馆",
+   "price": 298,
+   "candidates": [
+    {
+     "themeName": "一叶知秋",
+     "note": "碟形吊坠如飘落秋叶，佩于颈间，静观时光流转。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "林间晨露",
+     "note": "绿灰如林间晨露，清新自然，适合新旅程的祝福。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁月静好",
+     "note": "绿灰碟影似岁月沉淀，赠予珍视之人，愿时光温柔。",
+     "scenes": [
+      "anniversary",
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "青碟栖心",
+     "note": "如一只青碟停驻心口，蕴藏自然灵性，适合纪念时刻。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "新生之翼",
+     "note": "绿灰碟形如初展翅膀，寓意毕业启程，拥抱新篇。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "853d22036aa002c60247063c6ed97bbf": {
+   "title": "绿灰碟戒指",
+   "root": "昆虫馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "化茧成蝶时",
+     "note": "从蛹到翅，恰似升学或初入职场的那一步蜕变。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "灰绿流光",
+     "note": "翅面灰绿如林间透下的光，安静地陪在生日案头。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "一叶知春",
+     "note": "蝶栖指上，像把一整个春天收进小小的戒指里。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "轻翼纪年",
+     "note": "轻薄的翅纹记着时间，适合送给翻开新页的人。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "衔谢而来",
+     "note": "蝶不言语，却把一句谢谢送到赠礼人手中。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "853d22036aa0032a02471124236d832b": {
+   "title": "绿灰碟手链",
+   "root": "昆虫馆",
+   "price": 268,
+   "candidates": [
+    {
+     "themeName": "春信如约",
+     "note": "蝶至花开，祝福像春天一样准时抵达。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "轻翼远行",
+     "note": "薄翼展开，愿前路辽阔，步步有风。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "素光微舞",
+     "note": "柔翅轻颤，记一段安静的相伴与谢意。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "启扉之翼",
+     "note": "一翅轻扬，推开新程的门。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁羽常青",
+     "note": "翅影不老，愿情谊与期许年年常新。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa003eb01e789eb72c851b7": {
+   "title": "绿灰碟K金手镯",
+   "root": "首饰馆",
+   "price": 328,
+   "candidates": [
+    {
+     "themeName": "春藤缠腕",
+     "note": "藤蔓初生绕腕间，绿意萌动祝新生。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "碟栖翠金",
+     "note": "绿灰碟停驻K金上，如时光凝成永恒誓约。",
+     "scenes": [
+      "anniversary",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "碧碟栖金",
+     "note": "碧色碟影栖于金镯，赠你一段静谧时光。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "翠影环心",
+     "note": "翠影环绕手腕，心意如初，伴你前行。",
+     "scenes": [
+      "new_job",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "金碟衔春",
+     "note": "金镯托起绿碟，衔来一整个春天予你。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa0046701e7987641b1370f": {
+   "title": "雅灰碟k金手镯",
+   "root": "首饰馆",
+   "price": 328,
+   "candidates": [
+    {
+     "themeName": "灰羽绕腕",
+     "note": "像一片落羽停在腕间，把从容与祝福轻轻圈住。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "云出岫时",
+     "note": "雅灰如远山云色，愿她此去学业或新职，皆从容出岫。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "金痕记岁",
+     "note": "一圈金痕，替你们记住一起走过的那些年。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "素瓷环月",
+     "note": "如素瓷托月，含蓄的圆，是谢意最稳妥的形状。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "初霜之约",
+     "note": "薄霜落在腕上，纪念一个新起点的清白与勇气。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa004cf03097e1f267165f5": {
+   "title": "雅灰碟戒指",
+   "root": "昆虫馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "初翅成灰",
+     "note": "新翅初展，灰韵沉静，祝福人生新篇开启。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "岁月蝶安",
+     "note": "蝶翼凝灰，岁月静好，愿所赠之人平安顺遂。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "生辰落灰",
+     "note": "灰蝶停驻如时光轻落，为生日献上一份恒久祝愿。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "师恩化蝶",
+     "note": "蝶翼轻展，承载感念，赠予指引过你的人。",
+     "scenes": [
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "新程一羽",
+     "note": "一羽蝶色相伴，愿新途如翅般轻盈而坚定。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa0050b01e7a7a87a5a397a": {
+   "title": "雅灰碟手链",
+   "root": "首饰馆",
+   "price": 298,
+   "candidates": [
+    {
+     "themeName": "灰蓝之约",
+     "note": "雅灰碟双翼相叠，像一场沉静的约定。",
+     "scenes": [
+      "anniversary",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "翅间流年",
+     "note": "蝶翼轻合，把相识的光阴收成腕间一瞬。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "新栖之翼",
+     "note": "换一处枝头，灰翅依然稳稳托住出发的心。",
+     "scenes": [
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "停云手信",
+     "note": "像一片云停驻腕上，替不便说出口的谢意落款。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "双碟映灰",
+     "note": "两只灰碟相对成纹，安静记下并肩的岁岁年年。",
+     "scenes": [
+      "anniversary",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "853d22036aa0058402474e052785ff7a": {
+   "title": "繁花似锦",
+   "root": "昆虫馆",
+   "price": 2800,
+   "candidates": [
+    {
+     "themeName": "春信满堂",
+     "note": "蝶翅如春日来信，落满新居，寓意花开满堂。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "花间合欢",
+     "note": "两两蝶影栖于花间，取成双合欢之意，宜贺婚。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁华锦时",
+     "note": "斑斓蝶色如流年锦缎，愿重要日子被时光珍藏。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "谢君一枝",
+     "note": "以满幅蝶花作答，谢意不止一枝，浓淡皆真心。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "破茧晨光",
+     "note": "从茧到翅，如新生第一缕光，适合启程与新生。",
+     "scenes": [
+      "birthday",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "853d22036aa005d3024755b814cd1e97": {
+   "title": "蒲公英标本",
+   "root": "植物馆",
+   "price": 88,
+   "candidates": [
+    {
+     "themeName": "风托远行",
+     "note": "绒球借风启程，愿求学新程皆有温柔相送。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "一岁一绒",
+     "note": "年年结绒，年年许愿，把生辰交给旷野。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "轻伞寄谢",
+     "note": "千把小伞载不动谢意，却能替我说一声珍重。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "落地成春",
+     "note": "从飘散到生根，把新起点写进一枚种子。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "拾光予你",
+     "note": "俯身拾起一束微光，赠给同行与初启的人。",
+     "scenes": [
+      "graduation",
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0067201cc993f378a9dc5": {
+   "title": "印尼彩蝠",
+   "root": "动物馆",
+   "price": 1980,
+   "candidates": [
+    {
+     "themeName": "檐下彩衣",
+     "note": "夜色栖于檐下，一身彩衣如新居第一盏暖灯。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "霞帔双栖",
+     "note": "彩翼相依如霞帔，寓意两心同栖一枝。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "生日锦翼",
+     "note": "斑斓双翼收拢祝福，年年如期展开。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "岁彩长依",
+     "note": "岁月流转，彩衣不改，长久相伴的温柔凭证。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "谢君彩羽",
+     "note": "以一抹自然彩羽，答谢一路相照的深情。",
+     "scenes": [
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa006f0024776c10b4fbd15": {
+   "title": "多重大蓝闪蝶框",
+   "root": "昆虫馆",
+   "price": 6800,
+   "candidates": [
+    {
+     "themeName": "新居栖蝶",
+     "note": "蝶翼栖新居，满室生辉",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "比翼双栖",
+     "note": "双蝶相依，如良缘比翼",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁岁蝶盟",
+     "note": "岁岁年年，蝶影见证深情",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "谢君如蝶",
+     "note": "蝶舞翩跹，聊表谢意",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双翼流光",
+     "note": "蓝闪双翼，摇曳时光之美",
+     "scenes": [
+      "birthday",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0076801ccb38a566d8764": {
+   "title": "晶眼碟组合",
+   "root": "昆虫馆",
+   "price": 1100,
+   "candidates": [
+    {
+     "themeName": "双瞳记春",
+     "note": "两枚晶眼如新瞳，替收礼人留住新婚的第一个春天。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "新居蝶眼",
+     "note": "入宅之日，蝶眼朝窗，替屋主人看住每一缕新光。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "并翅流光",
+     "note": "双翅相并，光在晶眼里慢慢走，适合长久的纪念日。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "生辰凝露",
+     "note": "蝶眼如晨露凝住，祝对方岁岁都有新鲜一岁。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "感君一顾",
+     "note": "晶眼微亮，如回眸致意，把谢意托付给一对翅膀。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa007e701e7e03c6ffafdfc": {
+   "title": "大王具足虫",
+   "root": "海洋馆",
+   "price": 2300,
+   "candidates": [
+    {
+     "themeName": "深海的馈赠",
+     "note": "来自幽暗海底的古老甲客，为谢意与生辰添一份沉静惊喜。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "新居守夜者",
+     "note": "披甲静伏如远古门神，替新家守住一方深海般的安宁。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "万年之约",
+     "note": "亿年未改的古老形态，恰似相守如初的长久之诺。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "甲胄长明",
+     "note": "层叠甲胄如灯下旧器，为纪念日留存一份恒久的守护。",
+     "scenes": [
+      "anniversary",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "海渊贺礼",
+     "note": "从深渊捧出的甲壳生灵，作谢礼或寿礼皆显郑重心意。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa00826030a4eb21009498b": {
+   "title": "七彩文鸟",
+   "root": "动物馆",
+   "price": 1580,
+   "candidates": [
+    {
+     "themeName": "七色衔春",
+     "note": "七彩文鸟衔来春意，为新生之家添一抹灵动生机。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双飞锦羽",
+     "note": "成对文鸟比翼，锦羽翻飞，恰似良缘相守的温柔注脚。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁岁彩翎",
+     "note": "彩翎岁岁相伴，把生日的欢喜藏进羽色里。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "栖霞小羽",
+     "note": "如栖晚霞的小羽，栖在礼盒里，道一声感谢有你。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa0089601e7eb7c676a64b7": {
+   "title": "澳洲宽腹螳螂",
+   "root": "昆虫馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "绿衣举臂",
+     "note": "一身绿衣如新叶，举臂似在贺喜，送给开启新程的人。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁初试镰",
+     "note": "初生螳螂试挥前足，像新岁第一刀，勉励人勇敢开场。",
+     "scenes": [
+      "birthday",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "静候佳音",
+     "note": "螳螂静伏枝头，似在等一场好消息，赠予有恩之人。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "宽怀守绿",
+     "note": "宽腹稳立，守着一片绿意，愿人心宽步稳。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "秋枝小将",
+     "note": "秋枝上一员小将，独立而机敏，祝君新程自有锋芒。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa0090f01e7f6346c87eaa7": {
+   "title": "塑化黄环林蛇",
+   "root": "动物馆",
+   "price": 2580,
+   "candidates": [
+    {
+     "themeName": "环翠生辉",
+     "note": "翠环映新居，愿日日生机流转。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "金环缔缘",
+     "note": "一环相扣如誓，赠相守之人。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "环中岁月",
+     "note": "盘环如年轮，记每一次相伴。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "林间一环",
+     "note": "静栖林影，把自然之美留在家中。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "环语长青",
+     "note": "金环蜿蜒，寓长久感激与祝福。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa00a0a030ab6d64db202b3": {
+   "title": "绿蛱锥尾鹦鹉",
+   "root": "动物馆",
+   "price": 1800,
+   "candidates": [
+    {
+     "themeName": "翠羽栖春",
+     "note": "绿羽如新叶栖枝，寓意新居纳生气。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "比翼长青",
+     "note": "双鸟依枝，愿长久相伴如常青。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "羽岁添喜",
+     "note": "一羽绿意入画，为生辰添一抹自然贺礼。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "枝间双影",
+     "note": "两影相偎枝头，暗喻相守与感谢。",
+     "scenes": [
+      "anniversary",
+      "wedding",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "春羽贺迁",
+     "note": "绿羽携春意，为乔迁新居送上生机。",
+     "scenes": [
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa00a7e01e81bcf5bb18572": {
+   "title": "玉米蛇蛇骨",
+   "root": "动物馆",
+   "price": 2300,
+   "candidates": [
+    {
+     "themeName": "盘骨藏瑞",
+     "note": "玉米蛇盘绕成骨，如家宅安宁的隐秘守护。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蜕影成双",
+     "note": "旧影蜕去，新骨相依，见证两人同行的年岁。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁鳞有痕",
+     "note": "每一圈鳞骨都是时间留下的刻度，伴你长一岁。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "骨络承家",
+     "note": "细骨如脉络，静静承托一间屋子的温度与记忆。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "谢君留痕",
+     "note": "以自然之骨，谢你曾在我生命里留下纹路。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa00ac301ccf100093b7005": {
+   "title": "贝壳组合造景",
+   "root": "海洋馆",
+   "price": 1200,
+   "candidates": [
+    {
+     "themeName": "海屋添筹",
+     "note": "贝壳垒成屋形，寓意新居长久，岁月添福。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "涛声共枕",
+     "note": "两枚螺壳相依如耳语，纪念同眠的潮汐。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "潮汐生辰",
+     "note": "螺旋纹路记下年岁，像大海为生日刻下的潮痕。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "拾贝归庭",
+     "note": "把海岸的旧梦收进新家，入宅即入海。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "螺杯对饮",
+     "note": "两枚螺壳如杯，敬相伴的每一道年轮。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "853d22036aa00b330247f36c1db46fa7": {
+   "title": "玫瑰俏眼碟贝壳表",
+   "root": "昆虫馆",
+   "price": 399,
+   "candidates": [
+    {
+     "themeName": "玫瑰时光",
+     "note": "玫瑰与蝶定格时光，是感谢岁月里每一次温柔相伴。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蝶舞新居",
+     "note": "蝴蝶翩跹入新居，愿生活如玫瑰般盛放。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "成双入画",
+     "note": "玫瑰与蝶成双入画，见证良缘与长久相伴。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "启程之礼",
+     "note": "蝶翼轻振启新程，祝愿毕业升学一路芬芳。",
+     "scenes": [
+      "graduation",
+      "enrollment",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "自然馈赠",
+     "note": "把自然的奇妙装进礼物，致谢每一份相遇。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "853d22036aa00c5f02480e580e68662f": {
+   "title": "蝶翅画鹦鹉",
+   "root": "昆虫馆",
+   "price": 2580,
+   "candidates": [
+    {
+     "themeName": "合羽成画",
+     "note": "蝶翅轻叠成画，恰似新居落成，点滴拼出温馨。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "比翼留芳",
+     "note": "双翼交叠，芬芳永驻，愿新人如蝶比翼，岁岁同心。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "破茧时光",
+     "note": "破茧而出的一刻，化作生日里最轻盈的祝愿。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "谢礼成蝶",
+     "note": "每片鳞羽都是谢意，汇成一只斑斓的蝴蝶。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双宿画屏",
+     "note": "双蝶栖于画屏，静守光阴，为相识相守留念。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "853d22036aa00ca902481419308965f7": {
+   "title": "白条天牛",
+   "root": "昆虫馆",
+   "price": 268,
+   "candidates": [
+    {
+     "themeName": "新程初鸣",
+     "note": "白条如新枝，天牛振翅似启程第一声，贺入学与入职。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁月刻痕",
+     "note": "鞘翅上的白条如年轮细刻，见证成长每一道印记。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "枝头报喜",
+     "note": "天牛栖枝，白纹如信，把喜讯与谢意一并捎去。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "长空一痕",
+     "note": "翅上白条似天际线，留白处寓意前路辽阔。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "同窗共甲",
+     "note": "甲虫成对之姿，象征同窗并肩，毕业各赴前程。",
+     "scenes": [
+      "graduation",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa00d1802481df07f3bf393": {
+   "title": "奇亚德苹果蜗牛壳",
+   "root": "动物馆",
+   "price": 699,
+   "candidates": [
+    {
+     "themeName": "螺影藏珍",
+     "note": "螺旋如藏宝小径，愿新居安放每份珍藏",
+     "scenes": [
+      "housewarming",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "螺钿生辉",
+     "note": "壳光如贝母镶嵌，贺新婚岁月温润有光",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "螺旋年轮",
+     "note": "每一圈螺纹皆是时间赠予的成长印记",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "海螺启程",
+     "note": "壳名奇亚德，如远航号角伴你踏上新途",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "螺语谢君",
+     "note": "静默的螺纹，替你说出难以言表的感谢",
+     "scenes": [
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa00d7601cd251c1db8486b": {
+   "title": "芦丁鸡蛋复古展示玻璃罩",
+   "root": "动物馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "破晓新生",
+     "note": "蛋壳裂开微光，寓新阶段启程，新生之喜。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "檐下归巢",
+     "note": "玻璃罩如暖巢，为搬进新居的人留一盏安顿的光。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "时光凝壳",
+     "note": "把一年一季的蛋壳封存，纪念相守的年年岁岁。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "圆满如卵",
+     "note": "卵形天成的圆，恰好盛住生日与谢意的祝福。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破壳人",
+     "note": "曾经蜷在蛋里，如今走出校园与起点，向前一步。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa00ddc01cd2b9411e957e0": {
+   "title": "倒垂仿休憩状印尼彩蝠复古玻璃罩",
+   "root": "动物馆",
+   "price": 1980,
+   "candidates": [
+    {
+     "themeName": "悬榻听风",
+     "note": "倒垂如小榻，似在风里歇脚，为家留一处无声角落。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双栖琥珀",
+     "note": "一对彩蝠相依入罩，像被时间凝成琥珀的双影。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "晚安彩翼",
+     "note": "合翅倒悬，像道一句安静的晚安，适合生日与感恩。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "静夜倒影",
+     "note": "夜幕倒垂成影，罩中一景，把安静送进新居。",
+     "scenes": [
+      "housewarming",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa00e6f030bbb313750320d": {
+   "title": "巴普洛夫菊石装饰框",
+   "root": "矿石馆",
+   "price": 599,
+   "candidates": [
+    {
+     "themeName": "螺旋纪年",
+     "note": "菊石螺纹如岁月年轮，封存远古时光，赠新居或新程，寓意岁月静好。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "石上春秋",
+     "note": "一枚化石藏亿万年春秋，贺挚友新职启程，愿时间长河从容而行。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "沧海遗盘",
+     "note": "远古沧海凝成石中螺旋，如时光罗盘，见证乔迁与共度的重要时刻。",
+     "scenes": [
+      "housewarming",
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "岁月螺旋",
+     "note": "菊石螺纹一圈圈收纳光阴，适合生日与纪念日，愿你我被时间温柔包裹。",
+     "scenes": [
+      "birthday",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "远古星轮",
+     "note": "化石螺纹如星轨旋转，赠入学新生，愿求知如螺旋，步步向光而去。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa00f9901cd4ca75a784938": {
+   "title": "皱甲螽斯",
+   "root": "昆虫馆",
+   "price": 599,
+   "candidates": [
+    {
+     "themeName": "微小甲胄",
+     "note": "褶皱如旧甲，藏一枚山川的呼吸",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "褶皱时光",
+     "note": "每一道纹路，都是它走过的年岁",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "甲光初启",
+     "note": "硬壳之下，藏着新程的勇气",
+     "scenes": [
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "一甲生辉",
+     "note": "古称甲第登科，赠此祝捷",
+     "scenes": [
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "轻甲守岁",
+     "note": "以微小之坚，守你岁岁安稳",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa00fe9030c0cfd1b446f71": {
+   "title": "海马塑化标本",
+   "root": "海洋馆",
+   "price": 1800,
+   "candidates": [
+    {
+     "themeName": "逐浪归海",
+     "note": "海马踏浪而栖，愿新居如潮汐温柔，日日有归处。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "一诺成双",
+     "note": "成对海马相守海隅，见证携手之约，岁岁不离。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "海隅一岁",
+     "note": "如海马静候潮生，为生日添一隅海的奇想。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "潮生有信",
+     "note": "海马守约而来，答谢知遇，如潮汐从不误期。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "衔尾长生",
+     "note": "海马衔浪成环，寓长久相伴，赠予珍重的时刻。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa01044030c28fb0ac19f1b": {
+   "title": "海百合塑化标本",
+   "root": "海洋馆",
+   "price": 3900,
+   "candidates": [
+    {
+     "themeName": "石上花",
+     "note": "珊瑚如花，盛开于时光之石，见证新居初暖。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "岁岁生花",
+     "note": "海百合藏岁月，花开不败，愿年年欢喜。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "共生纪",
+     "note": "珊瑚与海百合共生，如两人相守成纪。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "一壶春",
+     "note": "以器纳海，一壶之中盛满春意与谢意。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "时间的枝",
+     "note": "枝状珊瑚凝住古老时光，适合纪念与新生。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "853d22036aa010a002487b8924758d86": {
+   "title": "南洋大兜虫造景",
+   "root": "昆虫馆",
+   "price": 2500,
+   "candidates": [
+    {
+     "themeName": "甲光向日",
+     "note": "甲虫金属光泽如日光洒落，为空间注入阳刚之气。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "星辉甲胄",
+     "note": "暗夜中甲虫的微光如星，守护新居的每个夜晚。",
+     "scenes": [
+      "housewarming",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "永恒之铠",
+     "note": "坚硬甲壳铭刻永恒，见证婚姻与岁月的坚韧。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "时光琥珀",
+     "note": "甲虫静驻，如琥珀封存时光，作为生日礼物寓意珍藏。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "赠君一甲",
+     "note": "以自然之甲为礼，表达感谢与祝福，相伴前行。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "853d22036aa010d6024882fc19f230ec": {
+   "title": "海百合化石",
+   "root": "矿石馆",
+   "price": 2500,
+   "candidates": [
+    {
+     "themeName": "沧海遗花",
+     "note": "远古海洋凝成石上花，为家添一份沉静的时光之美",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "石中生花",
+     "note": "坚石里开出海的花，愿新居新岁皆有生机",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "万年同枝",
+     "note": "海百合如枝头相拥，喻两人久长如石",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "海枯石上",
+     "note": "沧海已成石，情意却仍在绽放",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "岁华成石",
+     "note": "岁月把海花铸成石，愿贺礼长存时光",
+     "scenes": [
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0113a01cd65a80727599a": {
+   "title": "彩虹长臂天牛",
+   "root": "昆虫馆",
+   "price": 2300,
+   "candidates": [
+    {
+     "themeName": "虹桥初架",
+     "note": "彩虹天牛似桥，寓意迁居新程、新婚连理。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "流光入户",
+     "note": "甲壳流转虹彩，如时光入室，贺新居生辰。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "七色之约",
+     "note": "七彩长臂，见证年岁相伴的约定。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "长臂衔虹",
+     "note": "长臂轻衔虹色，谢意如光，赠予所敬之人。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "岁华虹藏",
+     "note": "把一季虹彩藏进标本，纪念日里静静发光。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa0118001e8b4e94c92cee4": {
+   "title": "大蓝闪蝶相框",
+   "root": "昆虫馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "蓝闪双栖",
+     "note": "一对大蓝闪蝶相依，寓意新婚燕尔、新居和鸣。",
+     "scenes": [
+      "wedding",
+      "housewarming",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "破茧成光",
+     "note": "蝴蝶破茧而出，为毕业、升学与新职点亮前程。",
+     "scenes": [
+      "graduation",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁蓝如初",
+     "note": "蓝色翅纹如初遇，适合生日与纪念日的恒久祝福。",
+     "scenes": [
+      "birthday",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "栖蓝谢礼",
+     "note": "一只蓝闪蝶静栖画框，替你说出无声的感谢。",
+     "scenes": [
+      "gratitude",
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蓝翼新程",
+     "note": "振翅蓝翼，伴随升学、毕业与入职的崭新起点。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa011d8030cb0cd4770f276": {
+   "title": "天堂凤蝶爱神凤蝶组合",
+   "root": "昆虫馆",
+   "price": 599,
+   "candidates": [
+    {
+     "themeName": "双翼同辉",
+     "note": "一对凤蝶并展，如两心相照，光落成双。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "花间双影",
+     "note": "蝶影成对栖于花下，把陪伴写成无声的祝福。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破茧成双",
+     "note": "从茧到翼，双双破出，恰似人生新程与庆祝。",
+     "scenes": [
+      "graduation",
+      "enrollment",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "比翼齐飞",
+     "note": "两翼同向，天地皆宽，适合祝福并肩前行的人。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "岁月成对",
+     "note": "时光把两只蝶收进同一框，赠一段长久的相伴。",
+     "scenes": [
+      "anniversary",
+      "housewarming",
+      "gratitude",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "853d22036aa0121d0248a64f0fa1c097": {
+   "title": "夜明珠闪蝶",
+   "root": "昆虫馆",
+   "price": 699,
+   "candidates": [
+    {
+     "themeName": "夜航明珠",
+     "note": "暗夜中引路的明珠，如蝴蝶般轻盈，适合启程时刻。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "星辰眷侣",
+     "note": "成对闪蝶如星辰相伴，见证相守的誓言。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "月下珠光",
+     "note": "月光沁入蝶翼，映出温润珠光，点亮新居的静谧。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "生日星蝶",
+     "note": "一岁一辰，闪蝶衔星而来，贺你如珠如宝。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破茧成珠",
+     "note": "破茧化蝶，凝炼成珠，贺新生与蜕变。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "853d22036aa012c00248b3ec5ae30fe3": {
+   "title": "天堂凤蝶",
+   "root": "昆虫馆",
+   "price": 268,
+   "candidates": [
+    {
+     "themeName": "破茧初见",
+     "note": "恰如新生的第一次振翅，献给所有刚刚启程的人。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "扇动春风",
+     "note": "蝶翼轻扇，把心意吹到对方身边。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "羽化登程",
+     "note": "从蛹到蝶的转身，正配学业或事业的新章。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "林间来信",
+     "note": "一封夹着蝶影的信，写满不常说的谢意。",
+     "scenes": [
+      "gratitude",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "展翅时分",
+     "note": "人生值得纪念的一刻，就让蝴蝶替你定格。",
+     "scenes": [
+      "graduation",
+      "birthday",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "853d22036aa012ee0248b83c78eaf1e2": {
+   "title": "爱神凤蝶",
+   "root": "昆虫馆",
+   "price": 268,
+   "candidates": [
+    {
+     "themeName": "破茧新生",
+     "note": "从茧中挣脱的翅膀，送给人生每一次启程。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "岁岁翩然",
+     "note": "一年一度振翅，像生日里被记住的心意。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "赠君羽翼",
+     "note": "把翅膀递给远行的人，愿一路有风相送。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "春风簿上",
+     "note": "春册轻翻，一页花开一页蝶来。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "锦书托风",
+     "note": "托风寄出的谢意，落款是一只蝶。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "853d22036aa013290248bd4f5e95896b": {
+   "title": "黄伞竹节虫",
+   "root": "昆虫馆",
+   "price": 599,
+   "candidates": [
+    {
+     "themeName": "金枝玉叶",
+     "note": "黄伞如金，竹节似叶，摆进新居便是案头清贵。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "灯火阑珊",
+     "note": "暖黄鞘翅像迟归时亮着的一盏灯，赠予并肩前行的人。",
+     "scenes": [
+      "new_job",
+      "gratitude",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "竹报平安",
+     "note": "竹节身形取竹意，黄伞点点报平安，愿入学远行皆顺遂。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "岁岁金黄",
+     "note": "一节一岁，金黄如秋收，生辰与乔迁皆可作长久祝愿。",
+     "scenes": [
+      "birthday",
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "良辰在野",
+     "note": "山野小虫入匣成景，把自然的良辰留在赠礼人的案头。",
+     "scenes": [
+      "housewarming",
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa0136b030d1778552c54e7": {
+   "title": "蚕蛹标本",
+   "root": "昆虫馆",
+   "price": 68,
+   "candidates": [
+    {
+     "themeName": "破茧初时",
+     "note": "蛹中藏着尚未展开的翅膀，适合送给正要启程的人。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "静待生光",
+     "note": "沉默的蛹裹住时间，等一场属于自己的破晓。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "一室春眠",
+     "note": "像把一段春天收进匣中，赠给值得感谢的陪伴。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "寸阴藏羽",
+     "note": "微小蛹壳里收着一整个夏天将开的翅膀。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa013d2030d38a470f43d78": {
+   "title": "长戟大兜虫",
+   "root": "昆虫馆",
+   "price": 3999,
+   "candidates": [
+    {
+     "themeName": "甲光向日",
+     "note": "长戟如光，守护新居，寓意家宅生辉。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双戟连理",
+     "note": "成对长戟，象征永结同心，白头偕老。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "戟寿千年",
+     "note": "甲虫寿长，愿生辰如戟，岁月长青。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "鎏金岁月",
+     "note": "甲壳鎏金，铭刻携手走过的每寸光阴。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa0143b0248d6c915528231": {
+   "title": "敬礼鳄鱼",
+   "root": "动物馆",
+   "price": 1800,
+   "candidates": [
+    {
+     "themeName": "守礼",
+     "note": "鳄鱼昂首如行古礼，寓家宅有序、相敬如宾。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "立岸听潮",
+     "note": "静立水岸似候潮声，赠新居一份沉静的守候。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "鳞甲春秋",
+     "note": "鳞甲如岁月刻痕，记一年一岁同行的敬意。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "披甲赴约",
+     "note": "披甲而待，为每一场重要相聚保持庄重姿态。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa01478030d5e7d022a30a0": {
+   "title": "小羊羔",
+   "root": "动物馆",
+   "price": 1800,
+   "candidates": [
+    {
+     "themeName": "初雪落肩",
+     "note": "像新家第一场雪轻轻落在肩头，柔软而值得纪念。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双星伴月",
+     "note": "两只小羊依偎成双，愿新婚与长久相伴的温柔呼应。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "掌上春日",
+     "note": "掌心大小的生命，是生日里最柔软的春天。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "归途灯暖",
+     "note": "新居夜归时的一盏暖灯，也是感谢的温柔表达。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "岁月小房客",
+     "note": "住进岁月的软萌房客，见证纪念日里的微小幸福。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa014e001e8f7ff0c67ed5a": {
+   "title": "色蟌合集",
+   "root": "昆虫馆",
+   "price": 2300,
+   "candidates": [
+    {
+     "themeName": "流光点水",
+     "note": "蜻蜓掠过水面，流转的微光在翅上停住，送新居最轻盈的自然礼。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "并翅同辉",
+     "note": "成对色蟌并肩收翅，像两枚相守的光，见证结发与周年。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "碧玉簪影",
+     "note": "细长如簪，碧色微光收在匣中，为生辰添一抹安静的灵秀。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "镜水初栖",
+     "note": "如初落镜水的一瞬，把新生活的第一个早晨送给入宅的人。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "岁月双双",
+     "note": "时间让一对翅膀靠得更近，适合纪念日与并肩走过的日常。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa0160701e919aa73876b45": {
+   "title": "昆虫标本合集",
+   "root": "昆虫馆",
+   "price": 15800,
+   "candidates": [
+    {
+     "themeName": "甲光年月",
+     "note": "鞘翅折射时光，纪念共度的年岁。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "双栖甲影",
+     "note": "成对甲虫如影，守候并肩的岁月。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "年轮镌甲",
+     "note": "每一道鞘纹，铭刻相守的印记。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "朝暮相对",
+     "note": "晨昏间，鞘翅映照彼此的目光。",
+     "scenes": [
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "藏时于鞘",
+     "note": "把共度的时光，收进甲虫的鞘翅。",
+     "scenes": [
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa01679030dd1e64ca056a6": {
+   "title": "小浣熊标本",
+   "root": "动物馆",
+   "price": 6000,
+   "candidates": [
+    {
+     "themeName": "洗月",
+     "note": "浣熊洗食如捞月，新居有水有光，日子清澈。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "枕溪而眠",
+     "note": "小兽酣睡如枕着溪水，愿新家夜夜安眠。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "圆尾同枝",
+     "note": "环尾相依似两枝相交，见证并肩成双的誓约。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "晨露归巢",
+     "note": "夜色褪去小兽归巢，纪念相伴走过的每个清晨。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "岁暖如握",
+     "note": "一只小爪似掌心余温，愿岁月长久温柔相握。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa016fe030df8b5693e3a6a": {
+   "title": "苏卡达陆龟塑化标本",
+   "root": "动物馆",
+   "price": 9800,
+   "candidates": [
+    {
+     "themeName": "甲光向日",
+     "note": "龟甲纹路如鎏金铠甲，凝住一段小院暖阳时光。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "背山而行",
+     "note": "以龟为山，笃定前行，贺新居安稳、生辰从容成长。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "静守流年",
+     "note": "爬行者的节奏慢过时间，恰如相守中柔软的长久。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "甲子同春",
+     "note": "龟甲纪岁，与年节同春，是感谢与祝福的温和落款。",
+     "scenes": [
+      "gratitude",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0175d01cddcf42ca311a0": {
+   "title": "苏卡达龟壳",
+   "root": "动物馆",
+   "price": 2500,
+   "candidates": [
+    {
+     "themeName": "甲光向日",
+     "note": "龟甲如铠，承光而生，喻新居向阳，岁岁安稳。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "壳藏春秋",
+     "note": "一方龟壳静卧，刻录时光流转，赠人共守长岁。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "背甲上的山河",
+     "note": "纹理如山河微缩，置于案头，贺新婚共赴辽阔。",
+     "scenes": [
+      "wedding",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "长寿纹章",
+     "note": "龟甲自古为寿征，愿受赠者生辰有龟龄之祝。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "入宅安甲",
+     "note": "甲片温润，入宅为安，贺新居有灵物镇守。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa017b001e93b5512a44c7b": {
+   "title": "始祖鹿下颚骨化石",
+   "root": "矿石馆",
+   "price": 2600,
+   "candidates": [
+    {
+     "themeName": "远古之息",
+     "note": "亿万年前的一次呼吸，凝成此刻安家的底气。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "时光为证",
+     "note": "从鹿群初生到执手白头，时间替我们记下答案。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁首初鹿",
+     "note": "新生如初鹿落地，第一声心跳便向未来奔去。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "长伴此间",
+     "note": "它守着旧日的山河，也守着你新搬进的光。",
+     "scenes": [
+      "housewarming",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "谢君同行",
+     "note": "一枚化石，替岁月谢过一路与你并肩的人。",
+     "scenes": [
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0181e01cded085c91732c": {
+   "title": "双叉犀金龟",
+   "root": "昆虫馆",
+   "price": 268,
+   "candidates": [
+    {
+     "themeName": "金甲初冠",
+     "note": "破土而出的瞬间，新程也为自己加冕。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "双叉岁月",
+     "note": "叉角剖开时间，把成长凝固成一枚琥珀。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "鞘藏谢意",
+     "note": "小小鞘翅，替你把说不出口的谢谢收好。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "独角启程",
+     "note": "像甲虫顶开木屑，你也要顶开自己的路。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "长生甲客",
+     "note": "从上一轮生辰到下一轮，它替你记得岁岁。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0186801cdf21c14b07e6d": {
+   "title": "扩头深山锹甲",
+   "root": "昆虫馆",
+   "price": 258,
+   "candidates": [
+    {
+     "themeName": "甲第开篇",
+     "note": "扩头如承大任，愿新程第一步便显赫有力",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "双锹之志",
+     "note": "天生一对大颚，像两笔并行的前程，彼此印证",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "披甲向学",
+     "note": "鞘翅如书匣微启，把山野的沉默压成一颗探索心",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "启程之甲",
+     "note": "角冠向前，似号角未响，适合送远行的人",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "甲子情深",
+     "note": "岁月在壳上留下纹路，而谢意如初，稳而长",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa018ea01cdfc5f09e3f622": {
+   "title": "中华巨齿蛉",
+   "root": "昆虫馆",
+   "price": 358,
+   "candidates": [
+    {
+     "themeName": "齿月流光",
+     "note": "巨齿如月牙，定格山林里的一寸时光，适合纪念日与新生。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "林深客至",
+     "note": "它自幽深林间而来，为乔迁新居或新职启程添一段野趣。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "长夏有鸣",
+     "note": "夏日溪畔的振翅声被收进方寸，赠人如赠一季蝉鸣。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "成双入画",
+     "note": "巨齿相对如画中一对，宜贺婚嫁与相守之年。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "谢师一羽",
+     "note": "一羽薄翼承谢意，谢师恩、贺升学皆相宜。",
+     "scenes": [
+      "gratitude",
+      "enrollment",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0191c01cdff933545f6f1": {
+   "title": "绿色蝴蝶合集",
+   "root": "昆虫馆",
+   "price": 899,
+   "candidates": [
+    {
+     "themeName": "绿意成双",
+     "note": "多只绿蝶同框，如林间新叶层叠，成双成对更显圆满。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "林间信使",
+     "note": "翅脉载来远山绿意，是自然托付给新居的一封温柔口信。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "四时蝶信",
+     "note": "不同绿蝶聚于一匣，恰如四季轮转中不断抵达的祝福。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "碧羽相随",
+     "note": "一片碧色羽翼彼此呼应，适合赠予相伴已久或同行的人。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "双绿栖枝",
+     "note": "两只绿蝶停驻枝头，寓有同栖同息、共度光阴之意。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "853d22036aa01948024958e63e21bea0": {
+   "title": "橙色蝴蝶合集",
+   "root": "昆虫馆",
+   "price": 899,
+   "candidates": [
+    {
+     "themeName": "橘光盈室",
+     "note": "暖橙蝶光落进新居，像一盏不灭的小灯。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双翼同心",
+     "note": "两翅相合成圆，恰如两人并肩过日子的模样。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "暖阳振翅",
+     "note": "一只蝶停在最亮的光里，替你说新年岁安康。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "橙时相守",
+     "note": "日影斜过翅脉，把共度的年月轻轻收拢。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "翅下清辉",
+     "note": "薄翅盛着夕光，谢意从此有了形状。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa0197e01ce06e70821c64b": {
+   "title": "吉丁虫合集",
+   "root": "昆虫馆",
+   "price": 799,
+   "candidates": [
+    {
+     "themeName": "金甲夜藏",
+     "note": "吉丁虫如散落林间的金屑，收于一匣，赠友人藏住一片暗夜微光。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "微光成双",
+     "note": "两两相映的鞘翅光泽，见证并肩而立的情谊与承诺。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "新程虫语",
+     "note": "鞘翅轻响如启程的足音，愿此匣伴人生新章开启。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "岁华斑驳",
+     "note": "时间在虫甲上留下虹彩，赠一匣岁月，贺新生日又一年。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "乔迁虫鸣",
+     "note": "旧屋新舍之间，一匣虫鸣般的自然低语，安顿新居之心。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa019bc024963900c818f69": {
+   "title": "幽灵雪蝉",
+   "root": "昆虫馆",
+   "price": 258,
+   "candidates": [
+    {
+     "themeName": "夏末空壳",
+     "note": "蝉蜕留形，如雪落无声，把一季喧哗收进礼物。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "半生清白",
+     "note": "半翅凝霜，似清白岁月，赠予启程或转身的人。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蜕时寄",
+     "note": "蜕壳为笺，将旧日时光封存，寄给下一程。",
+     "scenes": [
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "寒蝉候雪",
+     "note": "蝉栖寒枝，等一场雪，如等一个新生。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "谢礼如蝉",
+     "note": "蝉鸣谢夏，薄翅承情，恰是一句无声的感谢。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa01a1101e9a9684364c0ea": {
+   "title": "南洋大兜虫",
+   "root": "昆虫馆",
+   "price": 1200,
+   "candidates": [
+    {
+     "themeName": "甲光映户",
+     "note": "南洋大兜虫的铠甲光泽，为乔迁新居增添自然贵气。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "双角连理",
+     "note": "雄虫双角如连理枝，寓意婚姻相依相守。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁稔角藏",
+     "note": "昆虫标本定格生命华彩，见证成长与丰盛之年。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "时鞘凝辉",
+     "note": "甲虫鞘翅封存时光，是感恩赠礼的永恒纪念。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa01a4f01e9b495146a08f9": {
+   "title": "长牙彩虹锹甲",
+   "root": "昆虫馆",
+   "price": 599,
+   "candidates": [
+    {
+     "themeName": "彩虹拾穗",
+     "note": "长牙如弯穗，彩虹光泽是岁月拾起的微小惊喜",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "甲光映户",
+     "note": "鞘翅折射虹彩，为乔迁新居添一抹自然辉光",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "长牙守约",
+     "note": "长牙如契，虹彩为证，守护每一份漫长情谊",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "虹藏寸木",
+     "note": "标本框内藏彩虹，赠学子以微小而坚定的自然奇遇",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "新程有甲",
+     "note": "甲虫披虹，寓意新程有备而来、步步生辉",
+     "scenes": [
+      "new_job",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa01afc01ce228737a411e9": {
+   "title": "玫瑰玛异脩",
+   "root": "昆虫馆",
+   "price": 599,
+   "candidates": [
+    {
+     "themeName": "玫色时间",
+     "note": "玫色螳螂凝住琥珀一刻，时间也温柔。",
+     "scenes": [
+      "anniversary",
+      "birthday",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "粉黛守望",
+     "note": "粉黛如妆，守望新居的静好岁月。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "玫影双栖",
+     "note": "玫影成双，栖于爱的枝头。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "翘首新生",
+     "note": "举臂如祈，迎接每一次启程。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "花间清供",
+     "note": "案头花间一清供，谢君知遇。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa01b39030f0f760bedad54": {
+   "title": "大王花金龟",
+   "root": "昆虫馆",
+   "price": 680,
+   "candidates": [
+    {
+     "themeName": "甲光金甲",
+     "note": "鞘翅如披金甲，为新生添一分沉着的护佑之气。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "林间寿星",
+     "note": "巨甲自雨林而来，静立案头，祝寿也祝日常长久。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "金背迁庭",
+     "note": "金背甲虫随新居落定，像把一小片雨林搬进家门。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "双甲同辉",
+     "note": "成对成虫相守，寓意伴侣并肩，光阴亦生辉。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "默然成章",
+     "note": "甲虫不语，鞘翅纹理却把岁月写成无声的祝词。",
+     "scenes": [
+      "graduation",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa01b9e030f21546139cd87": {
+   "title": "越南巨人黄须蜈蚣",
+   "root": "动物馆",
+   "price": 1300,
+   "candidates": [
+    {
+     "themeName": "千足承家",
+     "note": "百足蜿蜒如溪，入宅寓意根基绵长、家业稳行。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "金须贺岁",
+     "note": "灿黄触须似烛光，为生辰添一缕野性的祝福。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "长依百足",
+     "note": "百足相随，象征岁月里并肩不离的陪伴。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "黄须谢礼",
+     "note": "异域虫客静立案头，以自然之奇答谢知遇。",
+     "scenes": [
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa01bd501e9ea0c41ac7565": {
+   "title": "火山蚰蜒",
+   "root": "动物馆",
+   "price": 1680,
+   "candidates": [
+    {
+     "themeName": "赤焰盘龙",
+     "note": "盘绕如龙，赤色似焰，为空间注入炽热生机。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "千足映辉",
+     "note": "千足踏光，辉映新居，愿前路步步生辉。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "红玉环丝",
+     "note": "红玉之色，环丝之形，见证缠绵岁月的珍贵。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岩心赤绦",
+     "note": "岩心所化，赤绦轻绕，一份来自地火的深情。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa01bf902499e5a3751d75b": {
+   "title": "长尾大蚕蛾",
+   "root": "昆虫馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "月下长裾",
+     "note": "长尾如曳地的礼服下摆，月华一披便有了静气。",
+     "scenes": [
+      "housewarming",
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "一寸晚霞",
+     "note": "尾突拖住黄昏最后一缕光，封存进一纸标本。",
+     "scenes": [
+      "birthday",
+      "gratitude",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "双蝶同尘",
+     "note": "翅上双影并栖，像两个人把日子过得细水长流。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "落羽成笺",
+     "note": "鳞翅薄如素笺，替你说一句说不出口的谢。",
+     "scenes": [
+      "gratitude",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "破茧青云",
+     "note": "自茧中挣出，尾羽高曳——送一程新去的远方。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa01c3501ea06a84596bb7e": {
+   "title": "巴拉望巨扁锹甲",
+   "root": "昆虫馆",
+   "price": 980,
+   "candidates": [
+    {
+     "themeName": "迁居铠甲",
+     "note": "新居如甲，守护每一寸安宁。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "成双之诺",
+     "note": "甲虫成对，寓意婚姻坚不可摧。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "时光甲胄",
+     "note": "岁月为甲，纪念日里温润如初。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "铠甲赠礼",
+     "note": "以甲为礼，谢你一路守护。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "新生之甲",
+     "note": "破土新生，铠甲见证成长。",
+     "scenes": [
+      "birthday",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa01c67030f533c1b4624d4": {
+   "title": "白条花金龟",
+   "root": "昆虫馆",
+   "price": 299,
+   "candidates": [
+    {
+     "themeName": "白露金栖",
+     "note": "白露时节，金色甲虫栖于叶间，如晨露般短暂而珍贵。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "鎏光小驻",
+     "note": "流转的光泽在此小驻，见证成长与启程的瞬间。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "素甲藏秋",
+     "note": "素雅的甲壳里，藏着一整个秋天的丰收与谢意。",
+     "scenes": [
+      "birthday",
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "轻金启程",
+     "note": "轻如金箔的甲虫，伴你踏上新的人生旅程。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "岁华一甲",
+     "note": "岁月精华凝于一甲，是生日与感恩的隽永赠礼。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa01caa01ea48723f48bbe3": {
+   "title": "粗角美西白兜",
+   "root": "昆虫馆",
+   "price": 1200,
+   "candidates": [
+    {
+     "themeName": "甲光向日",
+     "note": "粗角如金甲披身，把一份硬朗的守护安放进新居。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "一壳千金",
+     "note": "甲壳温润生辉，愿此礼如结发之诺，牢固而珍贵。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "长生久视",
+     "note": "鞘翅封存时光，祝岁岁安好，生辰如甲虫般静笃。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "角角相对",
+     "note": "双角相向如拱手致意，适合答谢与贺喜的时刻。",
+     "scenes": [
+      "gratitude",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "披甲入宅",
+     "note": "披甲而来，镇宅纳吉，为乔迁之人守住一方安宁。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa01d09030f79af16f3da93": {
+   "title": "乌干达花金龟（蓝色）",
+   "root": "昆虫馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "蓝珀初凝",
+     "note": "如远古树脂凝住一抹蓝，为新生时刻封存祝福。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "星蓝归巢",
+     "note": "甲虫的蓝是夜空碎片，安居之日带它回家。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "青蓝之契",
+     "note": "青蓝相叠如两人轨迹，纪念日里静守承诺。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "破壳蓝光",
+     "note": "鞘翅初展的蓝，恰似毕业启程那一瞬。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "谢蓝于匣",
+     "note": "将蓝色甲虫安放匣中，答谢一路相助之人。",
+     "scenes": [
+      "gratitude",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa01d3c01ea52925ea40d6b": {
+   "title": "乌干达花金龟（红色）",
+   "root": "昆虫馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "赤铜映日",
+     "note": "红金龟如熔铜小盾，为新生居所映来第一缕暖光。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "朱壳藏喜",
+     "note": "一枚朱红甲壳封存时光，赠喜事之人作长久祝祷。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "小满红玉",
+     "note": "取节令将满之意，红虫静卧如案头温润小玉。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "赤甲归途",
+     "note": "甲虫负红而行，愿远行人携一身赤诚启程。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "丹心一叶",
+     "note": "红壳若秋叶凝丹，谢君相惜如拾叶藏珍。",
+     "scenes": [
+      "gratitude",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa01d7c01ce53ad1aa655c4": {
+   "title": "小鸭子标本",
+   "root": "动物馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "初羽",
+     "note": "第一片绒毛还带着蛋壳的温度，适合祝愿新生与起步。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "春塘小影",
+     "note": "一池春水倒映着稚嫩身影，愿新阶段亦有温柔相伴。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "衔光而游",
+     "note": "小鸭衔起第一缕晨光，赠予即将远行的人。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "暖水之礼",
+     "note": "把一捧暖水般的谢意，交付给曾照拂过你的人。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "从零学步",
+     "note": "摇摇晃晃的第一步，也值得被郑重纪念。",
+     "scenes": [
+      "birthday",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "853d22036aa01dc70249d15623096111": {
+   "title": "阿富汗大角山羊灯",
+   "root": "动物馆",
+   "price": 1800,
+   "candidates": [
+    {
+     "themeName": "高原晨光",
+     "note": "似晨光洒落高原，点亮新居每个清晨。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双角同辉",
+     "note": "双角相映，寓意伴侣并肩，光辉同行。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁月守望",
+     "note": "静默守望，陪伴生日与纪念的每一刻。",
+     "scenes": [
+      "birthday",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "山居暖灯",
+     "note": "山居一盏暖灯，为乔迁新居带来自然温度。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "生辰之光",
+     "note": "高原生灵化作柔光，庆贺每个生辰。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa01eb401ea956441d03786": {
+   "title": "四方蝶安",
+   "root": "昆虫馆",
+   "price": 899,
+   "candidates": [
+    {
+     "themeName": "四时同栖",
+     "note": "四季停于一方，两人共栖，家宅生温。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "双翼合欢",
+     "note": "两翅相合如约，贺新婚，也贺岁月绵长。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "花间旧岁",
+     "note": "蝶停旧年花影，赠生辰，愿时光停留此刻。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "窗下四季",
+     "note": "一框收尽春秋，迁居新窗，风物从此有主。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "翅上光阴",
+     "note": "薄翼托住时间，谢君相伴，纪念日里最静的回礼。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa01f73030ff92a26d2b98d": {
+   "title": "大蓝闪蝶玻璃罩",
+   "root": "昆虫馆",
+   "price": 549,
+   "candidates": [
+    {
+     "themeName": "破晓之翼",
+     "note": "蓝闪如晨光初绽，愿新居新程皆迎破晓。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "长夏不落",
+     "note": "把盛夏的蓝闪锁进玻璃，让幸福停驻此刻。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "蓝闪流光",
+     "note": "鳞光如河，映照岁月里每一程同行的幸运。",
+     "scenes": [
+      "anniversary",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "新生之礼",
+     "note": "破茧成蝶的勇气，贺升学、乔迁与新生。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "珍藏一瞬",
+     "note": "将相遇的蓝光定格，致谢每一份珍贵情谊。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "853d22036aa01fc80249f9e514c40378": {
+   "title": "海百合塑化标本",
+   "root": "海洋馆",
+   "price": 2800,
+   "candidates": [
+    {
+     "themeName": "沧海旧梦",
+     "note": "海百合化石凝住远古海床，如一场未醒的梦。",
+     "scenes": [
+      "housewarming",
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "石上生花",
+     "note": "棘皮动物在石中绽放，寓意新居生根、情谊开花。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "海镜长明",
+     "note": "如镜的冠部映照深海时光，祝福岁岁平安、常伴左右。",
+     "scenes": [
+      "birthday",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "潮汐成双",
+     "note": "两亿年潮汐雕出对称之美，恰似相守的默契。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "远古归来",
+     "note": "从海底到案头，一枚活化石见证长久陪伴。",
+     "scenes": [
+      "housewarming",
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa0204d01eb4796417e029f": {
+   "title": "霸王叶春蜓",
+   "root": "昆虫馆",
+   "price": 299,
+   "candidates": [
+    {
+     "themeName": "夏空巡者",
+     "note": "盛夏水边疾飞的大蜻蜓，像替少年巡视整片晴空。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "青翼凌云",
+     "note": "薄翼如青锋，愿你新程一路高飞、眼前开阔。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "一池风信",
+     "note": "蜻蜓点水而过，把夏风与好消息一同送来。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "百叶成双",
+     "note": "四翼舒展如书页，记下生命中值得庆贺的一天。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "停云之约",
+     "note": "它停驻枝头，如一段被郑重留住的谢意与回望。",
+     "scenes": [
+      "gratitude",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "853d22036aa13e2a0264770501df4be0": {
+   "title": "红锯蛱蝶（雌蝶）",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "木叶新章",
+     "note": "红锯轻落木叶，如人生新页展开。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "红绡一瞥",
+     "note": "红翼如绡，定格青春一瞬。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "赤翅传笺",
+     "note": "赤翅为笺，写满无声的谢意。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "朝颜映红",
+     "note": "晨光中红翅微展，开启新程。",
+     "scenes": [
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "镂月裁云",
+     "note": "翅纹如镂月裁云，贺成长之礼。",
+     "scenes": [
+      "graduation",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "853d22036aa1534702677cf07ec924dc": {
+   "title": "白带锯蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "白驹过隙",
+     "note": "蝶翼白带似流光，赠惜时之人，贺新程如约。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "素带轻云",
+     "note": "素带如云，轻托新愿，适合启程与感恩时刻。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "尺素寸心",
+     "note": "白带如素笺，寸心寄远，毕业生辰皆可赠。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "长风万里",
+     "note": "蝶携长风，贺入学、新职、毕业，前程开阔。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "一羽知秋",
+     "note": "一羽标本藏时节，赠生日与感恩，静美长存。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa153b6026787393246e9d6": {
+   "title": "金凤蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "破茧成蝶",
+     "note": "翅上聚光，每一次蜕变都被温柔收藏。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "金翅流光",
+     "note": "一脉金粉流转，愿前路始终明亮。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "振翅云起",
+     "note": "轻振双翼，风就来了，为新程送行。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "不负春花",
+     "note": "采尽春光的蝶，是无声的谢意。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "向阳一舞",
+     "note": "朝着光飞的一舞，把祝福别在衣襟。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa1540601e3ff4326647251": {
+   "title": "大紫蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "紫气东来",
+     "note": "紫翼如霞，愿新程一路生辉。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "一瞬华年",
+     "note": "翅上流光，定格最好的年纪。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破茧成诗",
+     "note": "从茧到翼，写给每一次蜕变。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "林间紫笺",
+     "note": "一封来自林间的紫色问候。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "振翅凌云",
+     "note": "薄翼亦能乘风，愿你飞得更远。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa1544201e4049409186be2": {
+   "title": "鹤顶粉蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "出尘记",
+     "note": "粉翅轻扬，像刚翻过一页新生的白纸。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "鹤鸣九霄",
+     "note": "鹤字为名，愿前路高远，一飞冲天。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "粉翼初展",
+     "note": "新生的翅，正好祝生日快乐与新程开启。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "霞栖一枝",
+     "note": "粉霞停在枝头，像把温柔谢意稳稳收藏。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "飞白痕",
+     "note": "翅上白脉如墨迹留白，记一场蜕变的开端。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa154df034e4bc475cf2dd9": {
+   "title": "玉斑凤蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "玉斑栖春",
+     "note": "玉色斑纹落于春枝，像把一段好时节收进盒中。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "斑影初飞",
+     "note": "斑影初展，赠给正要启程的人，愿前路有风有光。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "一叶知谢",
+     "note": "蝶栖一叶，记下受过的照拂，也记下想说未说的谢意。",
+     "scenes": [
+      "gratitude",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "玉翅衔光",
+     "note": "玉翅拢住一点光，适合贺生日与升学的新起点。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "双羽留白",
+     "note": "两翅之间留一处空，像给未来的日子留余地。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa154e20267abef61bb52b5": {
+   "title": "丽蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "初翅",
+     "note": "第一片翅膀展开时，新的路也跟着亮起来。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "破晓之翼",
+     "note": "从暗处飞出，赶在光铺满之前抵达。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "谢师羽",
+     "note": "像翅尖轻轻一点，把谢意留在出发的清晨。",
+     "scenes": [
+      "gratitude",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "丽日归程",
+     "note": "晴朗日子里的一枚小翅，随信带回温柔。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "新程有蝶",
+     "note": "人生换页时，有蝶停在开篇第一行。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "853d22036aa155250267b0fb77b262fb": {
+   "title": "绿带翠凤蝶（春型）",
+   "root": "昆虫馆",
+   "price": 128,
+   "candidates": [
+    {
+     "themeName": "春信初启",
+     "note": "绿带如春天寄来的信，适合开启人生新篇章。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "翠翼乘风",
+     "note": "翠色双翼乘风而起，寓意毕业或新职扬帆。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "一寸春光",
+     "note": "蝶翼收拢一寸春光，是生日与感恩的小心意。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破茧时分",
+     "note": "破茧成蝶的瞬间，定格每一次蜕变与成长。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "林间来信",
+     "note": "从林间寄来的绿意，适合表达感谢与祝福。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa15594034e7f5c47eaafb8": {
+   "title": "白斑迷蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "初翅破晓",
+     "note": "白斑如晨曦落上初展的翅，适合送给人生新程的开启。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "雪落青枝",
+     "note": "翅上白斑似雪停驻叶脉，愿这段时光温柔而清澈。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "一纸新程",
+     "note": "蝴蝶轻落如信笺寄来远方，祝一路顺遂启新章。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "白驹过隙",
+     "note": "标本定格了短暂一生，把飞逝的时光郑重收好。",
+     "scenes": [
+      "graduation",
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "赠你一叶秋",
+     "note": "白斑蝶停在旧叶上，像把静谧的季节交到对方手里。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa1566101e430037f2d0fe9": {
+   "title": "蓝带荣蛱蝶",
+   "root": "昆虫馆",
+   "price": 158,
+   "candidates": [
+    {
+     "themeName": "蓝绶新程",
+     "note": "蓝带如绶，贺学子启程、新职扬帆。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "春信如期",
+     "note": "蝶翅捎来花期，生日与谢意皆如期。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "荣光小驻",
+     "note": "将一份荣光凝入标本，静守岁月。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蓝缕之心",
+     "note": "蓝带似线，感恩之心细细系成结。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "一翼启程",
+     "note": "借蝶翼轻扬，愿新途顺遂、学涯初启。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa156b201e435360583f968": {
+   "title": "青斑蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "青衿之贺",
+     "note": "以青斑蝶翅上青衿之色，贺少年初入学堂。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "斑衣贺岁",
+     "note": "斑衣如彩，为生日与新生添一岁之礼。",
+     "scenes": [
+      "birthday",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "青斑寄意",
+     "note": "将青斑蝶的宁静与谢意，寄给重要之人。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蜕羽成诗",
+     "note": "蝶由蛹化，如毕业启程，一纸诗篇待写。",
+     "scenes": [
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "林间青使",
+     "note": "青斑蝶是林间信使，带来入职与生日的祝福。",
+     "scenes": [
+      "new_job",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa15745020220bd68631da2": {
+   "title": "红翅尖粉蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "初飞如愿",
+     "note": "翅尖一抹红，像首次展翅的心愿，轻盈落地。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "一点丹心",
+     "note": "小小红翅如落款，把谢意写在标本旁。",
+     "scenes": [
+      "gratitude",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "翅载新程",
+     "note": "斑斓薄翅似请柬，祝远行与上任皆顺风。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "红袖轻舞",
+     "note": "红翅如袖随光轻动，为生辰添一分雅趣。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破茧之礼",
+     "note": "从茧到蝶的一刻被封存，送给每段崭新的开始。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "853d22036aa157be0267fe8d7aa75281": {
+   "title": "锯粉蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "初翼",
+     "note": "破茧后的第一对翅膀，适合开启人生新阶段的礼物。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "前程似锦",
+     "note": "翅膀上的粉彩如锦绣前程，祝愿步步生辉。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "谢礼",
+     "note": "一份来自自然的谢意，轻盈如蝶翼。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "振翅",
+     "note": "振翅一刻，正是出发的好时节。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa1581802022e882ab5d516": {
+   "title": "大二尾蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "尺素双痕",
+     "note": "古以尺素寄远，双尾如信笺折痕，落笔即念。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "破茧逢春",
+     "note": "蝶自茧出，恰似踏入新程，春信正好。",
+     "scenes": [
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "青简流光",
+     "note": "青简载岁月，蝶翼映流光，记一段成长。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "并尾归舟",
+     "note": "两尾相并如归舟泊岸，愿劳碌后重聚安然。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁华双栖",
+     "note": "一年光景双栖蝶上，送生日的温柔停顿。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa1587f02023c16016d8544": {
+   "title": "锦瑟蛱蝶（反裱）",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "破茧成蝶",
+     "note": "从蛹到翅的蜕变，愿新程如蝶破茧，款款高飞。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "锦时书签",
+     "note": "夹在人生页边的一枚蝶，标记所有值得的闪耀时刻。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "花间谢礼",
+     "note": "以一朵花的姿态道谢，锦瑟无声，情意有痕。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "岁华蛱影",
+     "note": "时光如锦，蝶影翩跹，适合开启人生新篇的祝愿。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "生辰羽化",
+     "note": "生日如蝶羽化，愿每岁都有新翼可展。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa158e601e464a974259e69": {
+   "title": "玫瑰绡眼蝶",
+   "root": "昆虫馆",
+   "price": 258,
+   "candidates": [
+    {
+     "themeName": "初飞",
+     "note": "新翅初展，像人生第一次离巢远行。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "花信风",
+     "note": "玫瑰色翅纹，捎来一年里最准时的祝愿。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "粉翅微光",
+     "note": "薄翼映光，替沉默的心意说一句谢谢。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "破茧时",
+     "note": "茧破成蝶，贺你换羽新生的一刻。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "寄一枝春",
+     "note": "把整季花期折进翅间，赠予心上之人。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa1591f01e46a432aa19207": {
+   "title": "金斑蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "破茧成光",
+     "note": "金色斑纹如晨光落翼，适合为新启程的人点一盏自然之灯。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁岁金翼",
+     "note": "蝶翼上的金斑像年轮里藏着的祝福，年年相见，年年明亮。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "初飞记",
+     "note": "第一程振翅总值得纪念，它是勇气最轻盈的样子。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "金斑落纸",
+     "note": "一枚标本停在纸面，像无名氏写给成长的一行小注。",
+     "scenes": [
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "翅上星辰",
+     "note": "细碎金点如远星，愿收到的人在自己的天空里辨认方向。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa1594b034fb20b2e5d0344": {
+   "title": "虎斑蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "橙翅知秋",
+     "note": "虎斑橙纹如秋叶初染，适合送给开启新阶段的人。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "生辰翼语",
+     "note": "翅上斑纹像一段被记住的时光，生日里替你说声珍重。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破茧成行",
+     "note": "从蛹中挣出，恰好为毕业与入职的人留一页注脚。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "斑纹成诗",
+     "note": "虎斑点点如短句，写给陪你走过一段路的人。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "新程初羽",
+     "note": "翅脉初展，正合入学、入职这类刚刚打开的夏天。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa1654801e566b514946481": {
+   "title": "扩头深山锹甲",
+   "root": "昆虫馆",
+   "price": 158,
+   "candidates": [
+    {
+     "themeName": "甲光破晓",
+     "note": "晨光里盾甲微亮，愿新程如破晓般有劲",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "成长期许",
+     "note": "它一生蜕甲数次，把长大这件事认真完成",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "山河小将",
+     "note": "方寸鞘翅里藏着一片山野，送敢想敢行的少年",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "共甲前行",
+     "note": "披甲的人不孤单，赠同路者一份并肩的心意",
+     "scenes": [
+      "gratitude",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "甲士初程",
+     "note": "岩甲离山，第一次走向自己的原野",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa16587020365bb1f25522b": {
+   "title": "黄鞘深山锹甲",
+   "root": "昆虫馆",
+   "price": 158,
+   "candidates": [
+    {
+     "themeName": "金鞘启程",
+     "note": "黄鞘如鎏金护甲，寓意新程披坚执锐，稳步向前。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "甲光向学",
+     "note": "鞘翅映光似书页微芒，愿少年持甲之志，勤学不辍。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "金甲贺辰",
+     "note": "自然馈赠的金色甲士，为生辰添一份山野的祝福。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "谢君如甲",
+     "note": "坚硬甲壳里藏柔软心意，致谢一路守护与陪伴。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "山深有甲",
+     "note": "深山幽处得此金甲，赠远行者，愿前路有光有护。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa165c7035422c03ec92639": {
+   "title": "双叉犀金龟",
+   "root": "昆虫馆",
+   "price": 168,
+   "candidates": [
+    {
+     "themeName": "破晓之力",
+     "note": "甲虫破土而出，恰如人生新程的第一道光。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "双角擎天",
+     "note": "两叉高举如冠，愿受礼者执甲登高、所向皆坦途。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "甲光向晨",
+     "note": "鞘翅映晨光，像少年背起行囊赴远方。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "执角而行",
+     "note": "以双叉为记，陪他走一段需要勇气的新路。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "微光成冠",
+     "note": "一寸甲虫也有自己的冠冕，贺他昨日所成。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa1661703543ba326aab62f": {
+   "title": "印尼金锹",
+   "root": "昆虫馆",
+   "price": 168,
+   "candidates": [
+    {
+     "themeName": "甲光映日",
+     "note": "金锹甲壳如鎏金，愿前程似朝日初升。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "自然金甲",
+     "note": "披一身自然馈赠的金色铠衣，守护人生新程。",
+     "scenes": [
+      "birthday",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "岁镀金锹",
+     "note": "岁月为锹镀上恒久金光，是谢师亦是贺生。",
+     "scenes": [
+      "graduation",
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "壳藏寸金",
+     "note": "小小甲壳藏寸金光阴，赠你一份向上的力量。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "向阳金铠",
+     "note": "鞘翅时时映着向阳的光，祝君征途常熙。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa166aa03546ea9001f44e4": {
+   "title": "扇角花金龟",
+   "root": "昆虫馆",
+   "price": 168,
+   "candidates": [
+    {
+     "themeName": "星扇启程",
+     "note": "扇角如星轨初展，寄寓新程开启，愿前路光明。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "花甲巡礼",
+     "note": "甲虫披花如礼，为生辰与感恩时刻添一份自然贺仪。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "扇舞流光",
+     "note": "扇角轻展，流光驻足，致敬成长与蜕变的重要时分。",
+     "scenes": [
+      "graduation",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "角羽清辉",
+     "note": "角羽之间自有清辉，伴学子远行，亦为职场新人祝福。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa2146d020b9be11df78b3d": {
+   "title": "华艳色蟌",
+   "root": "昆虫馆",
+   "price": 158,
+   "candidates": [
+    {
+     "themeName": "翠色流光",
+     "note": "蜻蜓翅上的翠色如流光一转，赠予初启新程的人。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "晴空点翠",
+     "note": "晴空里一点翠色停驻，适合道贺升学与新生之日。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "薄翼承光",
+     "note": "薄翅承住一寸天光，像有人默默接住你的心愿。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "水畔翠影",
+     "note": "水畔翠影一闪而过，是夏日正盛时的礼物。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "碧玉蜻蜓",
+     "note": "碧玉般的蜻蜓停成胸针模样，贺人新职新生。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa214d401ed930b7d821b33": {
+   "title": "红腋星蛱蝶",
+   "root": "昆虫馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "红袖添光",
+     "note": "翅间一抹红，如添灯夜读的温柔陪伴。",
+     "scenes": [
+      "enrollment",
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破晓星芒",
+     "note": "蛱蝶初展，像新程第一缕光，照向远方。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "振翅新程",
+     "note": "翅展如帆，赠远行的人一身勇气。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "生辰蝶信",
+     "note": "一只蝶，替你说出生日未言的祝福。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "长夏留影",
+     "note": "把夏日精魂凝成翅上朱砂，可长久相伴。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa21618020bb35956c51cea": {
+   "title": "巴黎翠凤蝶",
+   "root": "昆虫馆",
+   "price": 128,
+   "candidates": [
+    {
+     "themeName": "巴黎来信",
+     "note": "远方翩然而至的祝语，适合开启人生新篇。",
+     "scenes": [
+      "birthday",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "翠色流光",
+     "note": "凝固一瞬的绿光，愿时光善待你。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "破晓之翼",
+     "note": "新程如晨光初展，振翅即是远方。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "蓝翼微光",
+     "note": "一点微光藏于翼间，谢你一路同行。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "振翅新程",
+     "note": "以蝶为信，贺你启程奔赴山海。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "853d22036aa216820276f61318c114b3": {
+   "title": "五斑翠凤蝶",
+   "root": "昆虫馆",
+   "price": 158,
+   "candidates": [
+    {
+     "themeName": "五色春信",
+     "note": "翅上五斑如春的来信，愿人生新章温暖开启。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "锦时启程",
+     "note": "斑斓翅纹铺成锦路，祝毕业远行一路芳华。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "翠羽谢礼",
+     "note": "翠色羽翼轻展，把没说出口的谢谢别在心上。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "斑斓入新篇",
+     "note": "每一道斑纹都是新篇的注脚，祝入职顺遂。",
+     "scenes": [
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "一期一翠",
+     "note": "一期一会的翠色，纪念此刻不可复制的相遇。",
+     "scenes": [
+      "graduation",
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa216d601edc58930e38617": {
+   "title": "青凤蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "初翅",
+     "note": "第一片展开的翅，像刚拆开的人生新页。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "青纹入夏",
+     "note": "凤纹般的青脉，落在夏日的祝福里。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "破蛹书",
+     "note": "从茧中起身的那一刻，写给自己的新篇章。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "谢时青",
+     "note": "把受过的善意，化作翅上不褪的青。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "一岁一蝶",
+     "note": "每年生日，都有一次安静的蜕变。",
+     "scenes": [
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa21708020bc7c142e4590f": {
+   "title": "美它利弗细身赤锹甲",
+   "root": "昆虫馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "甲光向晨",
+     "note": "鞘翅映着晨光，像初入新程的少年，步步生辉。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "铁甲藏春",
+     "note": "坚硬外壳里藏着柔软生机，赠君以沉静的勇气。",
+     "scenes": [
+      "birthday",
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "细身如誓",
+     "note": "身形细长如郑重许诺，愿此去前程，一诺千金。",
+     "scenes": [
+      "graduation",
+      "enrollment",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "栖木成器",
+     "note": "自林间朽木而生的甲胄，终将磨成案头清供。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "双影同枝",
+     "note": "一对钳角同栖一枝，恰似并肩出发的两个人。",
+     "scenes": [
+      "graduation",
+      "enrollment",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa21798020bd20f52afc74d": {
+   "title": "熊蜂（蜂王）",
+   "root": "昆虫馆",
+   "price": 128,
+   "candidates": [
+    {
+     "themeName": "春信初启",
+     "note": "蜂王自冬眠中醒来，为生日与升学送上一封自然的开头信。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "一王当先",
+     "note": "蜂群随王而动，寓意毕业与入职时那一步率先落下的勇气。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "琥珀盟约",
+     "note": "黑黄相间如凝固的琥珀，记一段感谢，也记一段长久结盟。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "携香赴约",
+     "note": "花间采撷者把香气收进标本，像生日里赴一场温柔的约。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "秋实授冕",
+     "note": "群蜂以蜜封巢，如学业终章加冕，适合毕业与开学之赠。",
+     "scenes": [
+      "graduation",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa3a99d020e04ce41286b3c": {
+   "title": "蓝闪蝶翅膀吊坠",
+   "root": "首饰馆",
+   "price": 698,
+   "candidates": [
+    {
+     "themeName": "振翅时分",
+     "note": "把新起点的勇气，折成一道蓝光",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蓝闪映岁",
+     "note": "一羽蓝光，纪念一年一次的心动",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "破茧相赠",
+     "note": "破茧的力量，献给助你飞翔的人",
+     "scenes": [
+      "gratitude",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "翼上生辰",
+     "note": "将雨林的蓝，停在生日这页",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "双翼轻许",
+     "note": "两片蓝翼，替你说出感谢的轻语",
+     "scenes": [
+      "gratitude",
+      "anniversary"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa3ac0103cc279b6587f933": {
+   "title": "大蓝闪蝶耳钉",
+   "root": "首饰馆",
+   "price": 228,
+   "candidates": [
+    {
+     "themeName": "蓝翼初展",
+     "note": "愿每一次振翅都落在新起点，祝生日与开学的新程。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "双蓝对影",
+     "note": "一对蓝闪停在耳畔，如相伴的岁月静静发光。",
+     "scenes": [
+      "anniversary",
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "毕业时的一抹蓝",
+     "note": "把校园最后的天空收进耳钉，走向远方仍带光。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "谢你如蓝",
+     "note": "说不出口的感谢，托一只蓝蝶轻轻带到耳边。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "新程之翼",
+     "note": "入职与升学的路口，以一翼蓝光作伴启程。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa3ae9b03cd51f3442afd95": {
+   "title": "蓝闪蝶吊坠",
+   "root": "首饰馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "蓝翼流光",
+     "note": "蝶翼如蓝色星河流淌，为特别的日子定格闪耀时刻。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "新生之翼",
+     "note": "振翅破茧的蓝闪蝶，寓意人生新程启航，展翅高飞。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蓝蝶谢礼",
+     "note": "以自然之美承载谢意，无声却闪耀的感激之心。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "振翅启程",
+     "note": "每一次振翅都是新起点，伴你勇敢飞向远方。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "岁月蓝印",
+     "note": "时间沉淀的蓝，是纪念日里最温柔的烙印。",
+     "scenes": [
+      "anniversary",
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa3dd1103e28b854b4a10d1": {
+   "title": "雅灰蝶项链",
+   "root": "首饰馆",
+   "price": 328,
+   "candidates": [
+    {
+     "themeName": "灰羽流光",
+     "note": "雅灰蝶翼如时光羽衣，佩戴一缕流动光芒。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "蝶梦初启",
+     "note": "蝴蝶振翅，愿每一个新起点都轻盈而坚定。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "静栖时光",
+     "note": "让一只蝴蝶安静栖息在颈间，纪念相遇与陪伴。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双翼轻许",
+     "note": "两片羽翼如轻声许诺，把珍惜的人留在身边。",
+     "scenes": [
+      "birthday",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "自然之吻",
+     "note": "以蝶为印，把自然的温柔印在颈间，感谢一路有你。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa3dd73022d91c7656c166e": {
+   "title": "雅灰蝶胸针K金",
+   "root": "首饰馆",
+   "price": 228,
+   "candidates": [
+    {
+     "themeName": "灰羽轻停",
+     "note": "灰调翅纹如一片薄羽，停在衣襟上，替你说一句轻轻的记得。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "初程微光",
+     "note": "翅面浅光像刚启程的清晨，陪他走进新校门或新工位。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "多年一瞬",
+     "note": "蝴蝶的定格恰似纪念日那刻，时间慢下来，只留一枚灰蓝。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "别后消息",
+     "note": "灰翅收拢如一封未寄的信，把谢意别在离别的衣领上。",
+     "scenes": [
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "肩畔小停",
+     "note": "它不声不响停在肩头，像一句随身的祝福，轻盈又长久。",
+     "scenes": [
+      "new_job",
+      "enrollment",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa5116c02435b2f0c3a976e": {
+   "title": "科氏蛛螽",
+   "root": "昆虫馆",
+   "price": 1280,
+   "candidates": [
+    {
+     "themeName": "绿荫长鸣",
+     "note": "像把夏日树荫里不间断的鸣声，装进新居的安静角落。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "秋声入匣",
+     "note": "一只直翅目旧客，替你把季节的声响收进木匣，赠予知音。",
+     "scenes": [
+      "gratitude",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "双翅同枝",
+     "note": "两片薄翅停在同一根枝上，寓意并肩而立的相伴。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁岁如歌",
+     "note": "年年此时都有鸣声如约，适合庆生与道谢的隽永心意。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa75ac802fb0b105ca28518": {
+   "title": "翠蓝眼蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "翠翎初展",
+     "note": "如新羽初展，赠初入学堂或初入职场之人。",
+     "scenes": [
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "为君留蓝",
+     "note": "把一捧晴空蓝留在框里，谢你一路相照。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "一页晴蓝",
+     "note": "像翻到书页间的一角晴天，贺你生辰。",
+     "scenes": [
+      "birthday",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "蓝翅乘风",
+     "note": "愿它载着翅上的光，送你奔赴新程。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "框间小满",
+     "note": "小小一框蓝，把将满未满的心意送出去。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa75d6d0256c56d6fe0cb00": {
+   "title": "青斑蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "破茧成蝶",
+     "note": "青斑蝶破茧而出，寓意成长与蜕变，适合人生新阶段。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "青蓝羽衣",
+     "note": "青蓝斑纹如轻羽衣裳，自然之美，适合生日与感恩赠礼。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "春信使",
+     "note": "蝴蝶是春天的信使，带来希望与新生，适合入学与入职。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "时光之翼",
+     "note": "蝶翼定格时光，纪念成长与陪伴，适合毕业与感恩。",
+     "scenes": [
+      "graduation",
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa75ffa049c12261851e8d4": {
+   "title": "黑脉圆粉蝶（反裱）",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "破茧成蝶",
+     "note": "从蜕变到飞翔，见证成长时刻。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "墨羽凝香",
+     "note": "黑脉如墨，翅羽凝驻岁月芬芳。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "初翼启程",
+     "note": "新翼初展，祝愿前路光明。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "时光标本",
+     "note": "将美好瞬间定格成永恒。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "轻翅载情",
+     "note": "以蝶为信，轻托感恩与祝福。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "853d22036aa760e502fbca490a630027": {
+   "title": "暗绿无螯蛱蝶（反裱）",
+   "root": "昆虫馆",
+   "price": 158,
+   "candidates": [
+    {
+     "themeName": "绿影流光",
+     "note": "暗绿翅影里，藏着时光的碎金。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "暗夜林语",
+     "note": "反裱的蝶，像夜里森林的低语。",
+     "scenes": [
+      "graduation",
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "逆羽之诗",
+     "note": "反向装裱，成一首未完的自然诗。",
+     "scenes": [
+      "enrollment",
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "双翼信笺",
+     "note": "把祝愿折进蝶翼，寄往新程。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa7620c049c4676778dd5cf": {
+   "title": "荨麻蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "花间信使",
+     "note": "荨麻蛱蝶穿行花间，像一封带来祝福的信。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "荨麻轻舞",
+     "note": "定格荨麻上的轻盈舞姿，愿新程翩然起飞。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "振翅新程",
+     "note": "蝴蝶振翅，寓意新工作新天地自此展开。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "时光鳞影",
+     "note": "鳞翅斑纹如时光印记，适合纪念特别日子。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "生日蝶语",
+     "note": "蛱蝶停驻，替你说出心底的生日快乐。",
+     "scenes": [
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa76304026a83a300da5960": {
+   "title": "兰姬尖粉蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "破晓之翼",
+     "note": "粉翅拨开晨雾，新程如朝光初启。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "兰亭微光",
+     "note": "半抹幽蓝栖于素笺，写给成长的优雅注脚。",
+     "scenes": [
+      "graduation",
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "时光粉迹",
+     "note": "鳞粉如水彩晕染，收藏一帧静好片刻。",
+     "scenes": [
+      "birthday",
+      "gratitude",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "春信轻舞",
+     "note": "一纸春讯随风至，为奔赴远方的人壮行。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "谢礼藏蓝",
+     "note": "蓝翼敛于礼匣，道一声珍重谢意。",
+     "scenes": [
+      "gratitude",
+      "birthday",
+      "graduation"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa76376026a8b1e3bf6bac1": {
+   "title": "血漪蛱蝶",
+   "root": "昆虫馆",
+   "price": 198,
+   "candidates": [
+    {
+     "themeName": "朱砂一点",
+     "note": "翅上红漪似心口朱砂，落笔成记，赠予初启程的人。",
+     "scenes": [
+      "enrollment",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "涟漪初生",
+     "note": "血纹轻荡如新水初开，愿生辰如波澜，渐起渐阔。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "绯色流年",
+     "note": "一抹绯红封存岁月，答谢同行时光，静好如初。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "春信一叶",
+     "note": "蝶翼如春信，自远方来，贺毕业、入学皆宜。",
+     "scenes": [
+      "graduation",
+      "enrollment",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "成双印记",
+     "note": "红漪成对如印，记下人生新章的落款。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa76418025768aa39e2808e": {
+   "title": "网丝蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "新生之翼",
+     "note": "愿每一次破茧，都飞向崭新的天空。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "丝语晨曦",
+     "note": "晨光织网，丝语轻诉成长的诗行。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "感念如织",
+     "note": "细密如网，织就每一份谢意与陪伴。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "启程微光",
+     "note": "翅上微光，照亮新程的第一步。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "破茧时刻",
+     "note": "留驻蜕变瞬间，见证生命的重要节点。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa764a5026aa27420564669": {
+   "title": "孔雀眼蛱蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "生辰翠羽",
+     "note": "翠羽开屏如庆生，愿岁岁有今日。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "启程之翼",
+     "note": "展翅如远行，贺新程初启。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "青眼有加",
+     "note": "孔雀目纹寄知遇，谢君青眼。",
+     "scenes": [
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "目成新章",
+     "note": "眸点成篇，贺人生新页。",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa76548025780693311a14d": {
+   "title": "橙粉蝶",
+   "root": "昆虫馆",
+   "price": 98,
+   "candidates": [
+    {
+     "themeName": "春信初启",
+     "note": "橙粉如晨光初透，是生命里每一次崭新的开始。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "破茧成约",
+     "note": "积蓄一冬的沉默，只为化作这抹暖色与你相逢。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "向暖而栖",
+     "note": "橙粉是追光的颜色，愿此去前程，皆是暖意。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "一瓣橙心",
+     "note": "像一枚薄羽落在掌心，记着某人生日的温柔。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "羽化成笺",
+     "note": "把漫长蜕变写成信，献给一路陪伴的师长与友。",
+     "scenes": [
+      "graduation",
+      "gratitude",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa78f68026d8dd1593c97c4": {
+   "title": "爱神凤蝶造景玻璃罩",
+   "root": "昆虫馆",
+   "price": 399,
+   "candidates": [
+    {
+     "themeName": "破茧成蝶",
+     "note": "见证一路蜕变，终迎振翅高飞的时刻。",
+     "scenes": [
+      "graduation",
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "化羽为约",
+     "note": "以羽翼封存誓言，愿相守如蝶般轻盈长久。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "入室生翅",
+     "note": "新居安放一蝶，日子便有了翩然起舞的念头。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "时光之翼",
+     "note": "把一段光阴收进玻璃，翅膀替它慢慢呼吸。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "有蝶来仪",
+     "note": "蝶至如客来，愿所有相逢都值得被珍藏。",
+     "scenes": [
+      "housewarming",
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa79073026da35f2a81b47e": {
+   "title": "爱神凤蝶玻璃罩",
+   "root": "昆虫馆",
+   "price": 299,
+   "candidates": [
+    {
+     "themeName": "破茧新生",
+     "note": "蝴蝶破茧而出，寓意新程启封、展翅向前。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "翅间韶光",
+     "note": "把少年苦读的晨昏，收进一对轻翅里。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "一岁一礼",
+     "note": "每一圈年轮都值得被郑重收藏成礼物。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "逐风而上",
+     "note": "蝶不恋旧枝，乘风即启程。",
+     "scenes": [
+      "new_job",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "谢你同行",
+     "note": "将一路相伴的暖意，停在翅上送你。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "2feda4ef6aa791ac026db964796f26cd": {
+   "title": "蝶翅画/翠鸟与花",
+   "root": "昆虫馆",
+   "price": 2580,
+   "candidates": [
+    {
+     "themeName": "衔春双影",
+     "note": "蝶翅与翠鸟同衔一枝春色，恰似两人共筑新巢的吉兆。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "花间岁锦",
+     "note": "翠鸟栖花丛，蝶翅织华年，如记忆里不褪色的锦时。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "羽翼相栖",
+     "note": "翠鸟停驻花枝，羽翼如护；蝶翅成画，寓意情谊相依。",
+     "scenes": [
+      "wedding",
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "飞花片语",
+     "note": "蝶翅裁作飞花，翠鸟衔来片语，是无声胜有声的谢意。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "栖羽生花",
+     "note": "羽翼落处，蝶翅生花，愿新居日子如画舒展。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa7929e04a8c1ca6d6859eb": {
+   "title": "蝶翅画/羽毛",
+   "root": "昆虫馆",
+   "price": 680,
+   "candidates": [
+    {
+     "themeName": "化羽成双",
+     "note": "蝶翅拼作羽，成对而栖，寓两人同心。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "拾翅记年",
+     "note": "一片翅收一段时光，纪念日里重拾初遇。",
+     "scenes": [
+      "anniversary",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "翅落新居",
+     "note": "轻羽栖上新居墙面，替自然道一声安顿。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "破茧之礼",
+     "note": "蝶已破茧，翅展成画，贺启程与新生。",
+     "scenes": [
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "谢君如羽",
+     "note": "以一枚轻盈翅羽，谢你一路托举与温柔。",
+     "scenes": [
+      "gratitude",
+      "birthday"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa792d904a8cdb15c310acf": {
+   "title": "蝶翅画/龟背竹",
+   "root": "昆虫馆",
+   "price": 680,
+   "candidates": [
+    {
+     "themeName": "叶间栖光",
+     "note": "蝶翅停驻龟背竹影，把新居照出一角温热。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "两心同叶",
+     "note": "蝶与叶脉相生相依，如两心共结一处。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "破茧生绿",
+     "note": "蝶出茧、叶抽新，愿你每程都向上生长。",
+     "scenes": [
+      "graduation",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "岁岁长青",
+     "note": "龟背叶不谢，蝶翅凝固时光里的祝愿。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "一叶知恩",
+     "note": "以叶为笺、以蝶为字，谢意藏进标本里。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa7932204a8da2d1766f9b9": {
+   "title": "蝶翅画/鸢尾花",
+   "root": "昆虫馆",
+   "price": 980,
+   "candidates": [
+    {
+     "themeName": "蓝蝶栖鸢尾",
+     "note": "蝶翅拼出鸢尾，如微型花园，为家添生气。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "翅上花期",
+     "note": "蝶翅封存鸢尾花期，愿生日如花绽放。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "赠君一萼",
+     "note": "蝶翅画中鸢尾一萼，谢意如花常开。",
+     "scenes": [
+      "gratitude",
+      "wedding"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa793e404a9044d1b374a52": {
+   "title": "天堂凤蝶造景玻璃罩",
+   "root": "昆虫馆",
+   "price": 399,
+   "candidates": [
+    {
+     "themeName": "振翅新程",
+     "note": "蝴蝶破茧振翅，寓意新生活启程、新居新职皆向上。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "双栖流光",
+     "note": "双蝶栖于光中，象征并肩相守，时光共度。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "破晓之翼",
+     "note": "晨光中翅膀渐开，祝学业如破晓般明朗上升。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "岁华凝蝶",
+     "note": "把一季芳华凝成蝴蝶，赠人岁岁常新。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "轻盈祝愿",
+     "note": "蝶翼轻盈不惊，一份安静的谢意与祝福。",
+     "scenes": [
+      "gratitude",
+      "housewarming",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "853d22036aa7942b03018bef7063ac86": {
+   "title": "天堂凤蝶玻璃罩",
+   "root": "昆虫馆",
+   "price": 299,
+   "candidates": [
+    {
+     "themeName": "破茧成蝶",
+     "note": "从茧中挣脱的那一刻，所有等待都值得被祝福。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "振翅启程",
+     "note": "翅一展开，就是新旅途的第一阵风。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "天堂来使",
+     "note": "一只自远方而来的信使，把心意轻轻放下。",
+     "scenes": [
+      "birthday",
+      "gratitude",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "薄翼流光",
+     "note": "玻璃罩里停着一束光，也停着一句谢谢。",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "向阳而飞",
+     "note": "朝着光的方向飞，每一步都是新的开始。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa80dec04c2709b3fe7c740": {
+   "title": "雪狐幼崽",
+   "root": "动物馆",
+   "price": 399,
+   "candidates": [
+    {
+     "themeName": "初雪降临",
+     "note": "洁白幼狐如初雪般纯净，寓意新生活的美好开端。",
+     "scenes": [
+      "housewarming",
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "雪伴成长",
+     "note": "雪狐幼崽相伴，象征求学路上温暖与成长。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "永恒雪誓",
+     "note": "雪狐成对，象征爱情纯洁永恒，适合婚庆与纪念。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "雪中启程",
+     "note": "雪狐幼崽迎向新职，寓意在新岗位踏出坚定一步。",
+     "scenes": [
+      "new_job",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "暖雪谢礼",
+     "note": "以雪狐的温柔传递感恩，适合表达真挚谢意。",
+     "scenes": [
+      "gratitude",
+      "housewarming"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa812330269a3f47d591163": {
+   "title": "黑色雪狐",
+   "root": "动物馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "墨玉凝霜",
+     "note": "黑色雪狐如墨玉凝霜，置于新居，添一份清雅贵气。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "玄冬暖意",
+     "note": "玄冬之狐，目光温暖，为生日或新程送上陪伴。",
+     "scenes": [
+      "birthday",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "归途静守",
+     "note": "雪狐静守归途，毕业或感恩时刻，寓意始终如一。",
+     "scenes": [
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "岁寒同心",
+     "note": "岁寒中相依，如同心结，纪念日与入学皆可寄情。",
+     "scenes": [
+      "anniversary",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "极夜星辰",
+     "note": "极夜中的星辰，照亮新家与人生新篇。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa812e90269af2b70e69645": {
+   "title": "猪鼻蛇",
+   "root": "动物馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "沃土小隐",
+     "note": "猪鼻蛇喜掘土，入住新居如隐于沃土，暖居贴心。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "拱珠纳吉",
+     "note": "鼻端拱沙如寻宝，颗颗沙粒皆吉兆，贺新婚添喜。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "岁岁拱辰",
+     "note": "拱土向前，岁岁不息，愿君每岁如星拱北辰。",
+     "scenes": [
+      "birthday",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "入穴启程",
+     "note": "掘穴是新生的第一课，贺入学或新职，前路自辟。",
+     "scenes": [
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "蛰居谢礼",
+     "note": "静守一隅如蛰居君子，以默然陪伴谢君深恩。",
+     "scenes": [
+      "gratitude",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa8134304c3549b74a67461": {
+   "title": "白化束带蛇",
+   "root": "动物馆",
+   "price": 560,
+   "candidates": [
+    {
+     "themeName": "素鳞映雪",
+     "note": "雪白鳞纹如冬日落雪，为新居添一份清静灵动的生气。",
+     "scenes": [
+      "housewarming",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "白蛇衔珠",
+     "note": "如白蛇守护明珠，寓意相伴长久、情意如初。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "蜕影新生",
+     "note": "每一次蜕皮都是新生，愿寿星岁岁有今日。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "静水流年",
+     "note": "白鳞静伏如时光轻流，感谢你一路无声的守护。",
+     "scenes": [
+      "gratitude",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "启程之环",
+     "note": "盘绕如环，似为新征程系上一道柔韧的祝福。",
+     "scenes": [
+      "new_job",
+      "enrollment"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa813960269bdc0136c16e4": {
+   "title": "白化猪鼻蛇（双蛇）",
+   "root": "动物馆",
+   "price": 520,
+   "candidates": [
+    {
+     "themeName": "白首相依",
+     "note": "通体素白的一对蛇，静卧成双，恰似白首之约。",
+     "scenes": [
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "雪线双痕",
+     "note": "如高原雪线并行的两道痕迹，清冷而长伴。",
+     "scenes": [
+      "housewarming",
+      "gratitude",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "双栖素影",
+     "note": "素色双影栖于一处，寓两人同檐而居、安稳相伴。",
+     "scenes": [
+      "housewarming",
+      "wedding",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "同途共岁",
+     "note": "一对同途的生灵，见证又一年成长与誓言。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "并守静室",
+     "note": "两尾静守一室，是赠予新家与新程的无声祝语。",
+     "scenes": [
+      "housewarming",
+      "new_job",
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa813db04c36b8c6d6593a5": {
+   "title": "白化猪鼻蛇",
+   "root": "动物馆",
+   "price": 299,
+   "candidates": [
+    {
+     "themeName": "白鳞初雪",
+     "note": "雪落春山，新生之始——愿每次启程都有纯净勇气",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "蜕影成珠",
+     "note": "褪去旧壳，磨砺成珠，前路自有温润光芒",
+     "scenes": [
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "亘古微光",
+     "note": "从远古爬行至今的一缕白，赠你不灭的坚韧",
+     "scenes": [
+      "birthday",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "素鳞承光",
+     "note": "以一身素净承接恩泽，谢你曾为我挡过风雨",
+     "scenes": [
+      "gratitude",
+      "graduation"
+     ]
+    },
+    {
+     "themeName": "岁白石信",
+     "note": "岁月磨出一枚白石，恰如你始终如一的回信",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "a8add1456aa814130269c57266028cd3": {
+   "title": "白化猪鼻蛇",
+   "root": "动物馆",
+   "price": 499,
+   "candidates": [
+    {
+     "themeName": "白鳞贺辰",
+     "note": "白鳞映烛，为新生辰光添一份自然界的温柔贺礼。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "温盘入宅",
+     "note": "一器温盘，静卧新居，守着爬宠世界的安暖与归属。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "蜕影相随",
+     "note": "蜕变之影，仿佛时光里彼此褪去旧岁，共赴新程。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "启程小鳞",
+     "note": "小鳞轻蜷，如一枚安静徽章，陪你踏上新岗位的远路。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "静守谢礼",
+     "note": "无言静守，把心意托付给一枚来自自然的小小生灵。",
+     "scenes": [
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "853d22036aa814ff031135b81b35e48b": {
+   "title": "猪鼻蛇",
+   "root": "动物馆",
+   "price": 599,
+   "candidates": [
+    {
+     "themeName": "安家小憨",
+     "note": "暖居之日，添一个憨态可掬的小守家。",
+     "scenes": [
+      "housewarming"
+     ]
+    },
+    {
+     "themeName": "静守流年",
+     "note": "岁月无声，它静卧角落，替你看守时光。",
+     "scenes": [
+      "anniversary",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "启程伴行",
+     "note": "新阶段如蛇蜕皮，携一份勇气与好奇前行。",
+     "scenes": [
+      "new_job",
+      "graduation",
+      "enrollment"
+     ]
+    },
+    {
+     "themeName": "生辰小奇",
+     "note": "生日最妙的礼物，是一点独特的小惊奇。",
+     "scenes": [
+      "birthday"
+     ]
+    },
+    {
+     "themeName": "谢意长存",
+     "note": "感恩不必喧哗，像它安静地陪在身旁。",
+     "scenes": [
+      "gratitude"
+     ]
+    }
+   ]
+  },
+  "e04f59456aa81e1404c4c32909ccebf4": {
+   "title": "幸运四叶草标本",
+   "root": "植物馆",
+   "price": 4,
+   "candidates": [
+    {
+     "themeName": "四叶成诗",
+     "note": "把一份小小的运气，夹进书页送给明天。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    },
+    {
+     "themeName": "幸运的偏旁",
+     "note": "万物皆有偏旁，这一枚是幸运的那个。",
+     "scenes": [
+      "enrollment",
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "页间藏春",
+     "note": "翻开书时，春天与好运一同落下。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "一叶寄愿",
+     "note": "薄薄一叶，替你把心愿寄给远方的人。",
+     "scenes": [
+      "birthday",
+      "graduation",
+      "new_job",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "掌心小幸",
+     "note": "摊开手掌，刚好接住一整个春天。",
+     "scenes": [
+      "birthday",
+      "enrollment",
+      "graduation",
+      "new_job"
+     ]
+    }
+   ]
+  },
+  "88ac97826aabc2cd0030f43c63736fcd": {
+   "title": "小蓝闪蝶植物标本框",
+   "root": "植物馆",
+   "price": 899,
+   "candidates": [
+    {
+     "themeName": "双宿双飞",
+     "note": "蝴蝶成双，如影随形，安家与相伴的温柔祝愿。",
+     "scenes": [
+      "housewarming",
+      "wedding"
+     ]
+    },
+    {
+     "themeName": "岁月留蓝",
+     "note": "以蓝闪的静谧定格时光，谢你赠我一段不褪色的记忆。",
+     "scenes": [
+      "birthday",
+      "anniversary"
+     ]
+    },
+    {
+     "themeName": "时光的标本",
+     "note": "把共度的季节钉进木框，每一次凝视都是重逢。",
+     "scenes": [
+      "anniversary",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "窗前旧梦",
+     "note": "蓝翅悬于新居窗畔，像一封写给未来的慢信。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    },
+    {
+     "themeName": "蝶栖新居",
+     "note": "一只蓝蝶停驻门厅，为新家衔来自然的祝福。",
+     "scenes": [
+      "housewarming",
+      "gratitude"
+     ]
+    }
+   ]
+  }
+ }
+}
