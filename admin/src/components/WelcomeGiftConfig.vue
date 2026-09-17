@@ -89,7 +89,14 @@
             <span class="hint">默认关。即使打开，下单仍只接单张 couponId（与现网一致）</span>
           </el-form-item>
 
-          <el-table :data="form.coupons" border size="small" style="margin-bottom: 16px;" empty-text="暂无礼券档位">
+          <el-table
+            :data="form.coupons"
+            row-key="_key"
+            border
+            size="small"
+            style="margin-bottom: 16px;"
+            empty-text="暂无礼券档位"
+          >
             <el-table-column label="启用" width="70" align="center">
               <template #default="{ row }">
                 <el-switch v-model="row.enabled" :disabled="!form.couponsEnabled" />
@@ -129,6 +136,21 @@
                 <el-input v-model="row.title" size="small" :disabled="!form.couponsEnabled" />
               </template>
             </el-table-column>
+            <!-- 顾客视角预览：与注册页预览 / 发放口径一致（门槛 0 时不写「满 0」） -->
+            <el-table-column label="顾客视角" min-width="170">
+              <template #default="{ row }">
+                <span class="coupon-preview">
+                  {{ row.minSpend > 0 ? `满 ${row.minSpend} 减 ${row.value}` : `${row.value} 元无门槛` }}
+                  · {{ row.expireDays }} 天 · {{ row.count }} 张{{ row.enabled === false ? ' · 已停用' : '' }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="顺序" width="150" fixed="right">
+              <template #default="{ $index }">
+                <el-button link :disabled="$index === 0" @click="moveCouponUp($index)">上移</el-button>
+                <el-button link :disabled="$index === form.coupons.length - 1" @click="moveCouponDown($index)">下移</el-button>
+              </template>
+            </el-table-column>
             <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ $index }">
                 <el-button link type="danger" :disabled="!form.couponsEnabled" @click="removeCoupon($index)">删除</el-button>
@@ -142,6 +164,15 @@
             style="margin-bottom: 20px;"
             @click="addCoupon"
           >新增券档</el-button>
+          <el-button
+            plain
+            :disabled="!form.couponsEnabled || !(form.coupons || []).length"
+            style="margin-bottom: 20px;"
+            @click="sortCoupons"
+          >按门槛排序</el-button>
+          <div class="coupon-order-hint">
+            顺序即顾客看到的顺序（注册页预览 / 发放 / 站内信都按此顺序）。建议按门槛升序：满49 → 满99 → 满299 → 满499 → 满999。
+          </div>
 
           <el-form-item>
             <el-button type="primary" :loading="saving" @click="saveRules">保存新会员礼包</el-button>
@@ -165,6 +196,13 @@ import {
   coerceNumber,
   validateWelcomeGiftCoupons
 } from '../utils/welcomeGift'
+import {
+  ensureCouponKeys,
+  stripCouponKeys,
+  sortCouponsByThreshold,
+  insertCouponByThreshold,
+  moveCoupon
+} from '../utils/couponOrder'
 import { ElMessage } from 'element-plus'
 
 /** 与小程序超管工作台同一个云函数（唯一权威写入路径；代理注入 ADMIN_OPS_KEY → 判为超管） */
@@ -199,7 +237,8 @@ function applyForm(raw, docId = '') {
     expireDays: normalized.expireDays,
     stackable: normalized.stackable,
     priority: normalized.priority,
-    coupons: (normalized.coupons || []).map((c) => ({ ...c }))
+    // _key 供 el-table 的 row-key 用（顺序可编辑 → 没有稳定 key 行会串）
+    coupons: ensureCouponKeys((normalized.coupons || []).map((c) => ({ ...c })))
   })
   ruleDocId.value = docId || ''
   const topDays = resolveExpireDays(normalized.expireDays, null, 30)
@@ -254,9 +293,20 @@ async function saveRules() {
   saving.value = true
   try {
     // 前端只做「快速反馈」的预校验；权威校验、条款同步、操作人归属都在云函数里
+    // 券 id 重复会让「已发券条款对齐」按 slotKey 匹配错行
+    const seenIds = new Set()
+    for (let i = 0; i < (form.coupons || []).length; i += 1) {
+      const id = String((form.coupons[i] && form.coupons[i].id) || '').trim()
+      if (!id) continue
+      if (seenIds.has(id)) {
+        throw new Error(`第 ${i + 1} 行券 id「${id}」与前面重复：请改成唯一值（已发券靠它对齐条款）`)
+      }
+      seenIds.add(id)
+    }
     const couponCheck = validateWelcomeGiftCoupons(form)
     if (!couponCheck.ok) {
-      throw new Error(couponCheck.msg || '礼券档位不符合折扣纪律')
+      const at = Number.isInteger(couponCheck.index) ? `第 ${couponCheck.index + 1} 行：` : ''
+      throw new Error(`${at}${couponCheck.msg || '礼券档位不符合折扣纪律'}`)
     }
     const days = prepareForm()
     if (!(days >= 1)) {
@@ -265,7 +315,8 @@ async function saveRules() {
     const res = await callCloudFunction(FN, {
       action: 'save',
       docId: ruleDocId.value,
-      config: { ...form }
+      // 行内稳定 key（_key）不上行
+      config: { ...form, coupons: stripCouponKeys(form.coupons) }
     })
     if (!res || res.success === false) throw new Error((res && res.msg) || '保存失败')
     ruleDocId.value = res.docId || ruleDocId.value
@@ -319,7 +370,7 @@ function applyExpireDaysToAll() {
 
 function addCoupon() {
   const days = resolveExpireDays(form.expireDays, null, 30)
-  form.coupons.push({
+  const [row] = ensureCouponKeys([{
     id: `c${Date.now()}`,
     enabled: true,
     value: 10,
@@ -328,7 +379,26 @@ function addCoupon() {
     count: 1,
     title: '新会员礼券',
     channel: 'all'
-  })
+  }])
+  // 按门槛插位（不是一律追加）——新增的低门槛券不会排到最后
+  form.coupons = insertCouponByThreshold(form.coupons, row)
+}
+
+/** 上移 / 下移：顺序即顾客在各处看到的顺序 */
+function moveCouponUp(index) {
+  form.coupons = moveCoupon(form.coupons, index, index - 1)
+}
+
+function moveCouponDown(index) {
+  form.coupons = moveCoupon(form.coupons, index, index + 1)
+}
+
+function sortCoupons() {
+  const before = form.coupons || []
+  const after = sortCouponsByThreshold(before)
+  const changed = after.some((row, i) => row !== before[i])
+  form.coupons = after
+  ElMessage.info(changed ? '已按门槛升序整理，记得保存' : '顺序已符合门槛升序')
 }
 
 function removeCoupon(index) {
@@ -350,6 +420,21 @@ onMounted(() => {
 
 .header-section {
   margin-bottom: 24px;
+}
+
+/* 顾客视角预览：一行说清这张券在顾客那里是什么样（与注册页预览/发放同口径） */
+.coupon-preview {
+  font-size: 12px;
+  /* 用 Element Plus 的文本色令牌（= 这两处的既有灰阶），不新增字面色值 */
+  color: var(--el-text-color-regular);
+}
+
+/* 顺序说明：顺序 = 顾客在各处看到的顺序 */
+.coupon-order-hint {
+  margin: -8px 0 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .header-section h2 {

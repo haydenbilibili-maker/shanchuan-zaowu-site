@@ -17,7 +17,7 @@
 import { spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { pathToFileURL, fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../..')
@@ -26,6 +26,9 @@ const ORDER = 'miniprogram/subpackages/manager/welcome-gift/couponOrder.js'
 const PAGE_JS = 'miniprogram/subpackages/manager/welcome-gift/index.js'
 const PAGE_WXML = 'miniprogram/subpackages/manager/welcome-gift/index.wxml'
 const PAGE_WXSS = 'miniprogram/subpackages/manager/welcome-gift/index.wxss'
+const ERP_ORDER = 'admin/src/utils/couponOrder.js'
+const ERP_VIEW = 'admin/src/components/WelcomeGiftConfig.vue'
+const ERP_UTIL = 'admin/src/utils/welcomeGift.js'
 
 let passed = 0
 let failed = 0
@@ -50,6 +53,10 @@ function loadCjs(file) {
 }
 
 const order = loadCjs(ORDER)
+// ERP 是 ESM（Vite）→ 动态 import 真源码，做跨端同口径比对
+const erpOrder = await import(pathToFileURL(resolve(ROOT, ERP_ORDER)).href)
+const erpView = stripComments(read(ERP_VIEW))
+const erpUtil = stripComments(read(ERP_UTIL))
 const pageJs = stripComments(read(PAGE_JS))
 const pageWxml = read(PAGE_WXML)
 const pageWxss = stripComments(read(PAGE_WXSS))
@@ -130,6 +137,38 @@ check('地板口径与云函数同源（0.25）',
 check('★ 会溢出的 .toggle 死样式已清', !/\.toggle\b/.test(pageWxss))
 check('顾客视角预览存在（与发放/预览同口径）', /class="coupon-preview"/.test(pageWxml))
 
+/* ── 4) ERP 端（同一套规则，两边必须同口径） ─────────────────────────────── */
+{
+  const a = order.sortCouponsByThreshold(LIVE).map((c) => c.id).join(',')
+  const b = erpOrder.sortCouponsByThreshold(LIVE).map((c) => c.id).join(',')
+  eq('★ ERP ↔ 小程序：按门槛排序结果一致', b, a)
+  eq('★ ERP ↔ 小程序：新增插位结果一致',
+    erpOrder.insertCouponByThreshold(LIVE.slice(0, 4), { id: 'c10', minSpend: 99, value: 10 }).map((c) => c.id).join(','),
+    order.insertCouponByThreshold(LIVE.slice(0, 4), { id: 'c10', minSpend: 99, value: 10 }).map((c) => c.id).join(','))
+  eq('★ ERP ↔ 小程序：上移结果一致',
+    erpOrder.moveCoupon(LIVE, 2, 1).map((c) => c.id).join(','), order.moveCoupon(LIVE, 2, 1).map((c) => c.id).join(','))
+  eq('ERP ↔ 小程序：越界行为一致',
+    erpOrder.moveCoupon(LIVE, 4, 5).map((c) => c.id).join(','), order.moveCoupon(LIVE, 4, 5).map((c) => c.id).join(','))
+  const erpKeys = erpOrder.ensureCouponKeys([{ id: 'a' }, { id: 'b' }])
+  eq('ERP：_key 唯一', new Set(erpKeys.map((r) => r._key)).size, 2)
+  eq('ERP：strip 后不含 _key', erpOrder.stripCouponKeys(erpKeys).every((r) => !('_key' in r)), true)
+
+  check('★ ERP 表格用 row-key="_key"（顺序可编辑需要稳定 key）',
+    /row-key="_key"/.test(erpView), 'ERP 表格没有稳定 row-key → 重排后行会串')
+  check('★ ERP 有上移/下移/按门槛排序（顺序可编辑）',
+    /moveCouponUp\(index\)/.test(erpView) && /moveCouponDown\(index\)/.test(erpView) && /sortCoupons\(\)/.test(erpView)
+    && /@click="moveCouponUp\(\$index\)"/.test(erpView) && /@click="sortCoupons"/.test(erpView))
+  check('★ ERP 新增券按门槛插位（不再一律 push 到末尾）',
+    /insertCouponByThreshold\(form\.coupons, row\)/.test(erpView) && !/form\.coupons\.push\(/.test(erpView))
+  check('★ ERP 保存前剥掉 _key', /coupons: stripCouponKeys\(form\.coupons\)/.test(erpView))
+  check('★ ERP 保存前拦重复 id（并指出行号）', /与前面重复/.test(read(ERP_VIEW)))
+  check('★ ERP 地板校验带行号（单一出处仍是 welcomeGift.js）',
+    /index: i, value, minSpend/.test(erpUtil) && /couponCheck\.index/.test(erpView),
+    '地板校验没带行号 → 两端提示口径不一致')
+  check('ERP 有顾客视角预览列', /class="coupon-preview"/.test(erpView))
+  check('ERP 订单顺序说明存在', /class="coupon-order-hint"/.test(erpView))
+}
+
 /* ── 输出 / 自检 ─────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
   selftest()
@@ -185,6 +224,30 @@ function selftest() {
       file: PAGE_JS,
       from: '    const floorBad = findFloorViolations(this.data.form.coupons, 0.25)',
       to: '    const floorBad = []'
+    },
+    {
+      name: 'ERP 表格丢掉稳定 row-key',
+      file: ERP_VIEW,
+      from: '            row-key="_key"\n',
+      to: ''
+    },
+    {
+      name: 'ERP 又退回「一律 push 到末尾」',
+      file: ERP_VIEW,
+      from: '  form.coupons = insertCouponByThreshold(form.coupons, row)',
+      to: '  form.coupons.push(row)'
+    },
+    {
+      name: 'ERP 保存时不再剥 _key',
+      file: ERP_VIEW,
+      from: '      config: { ...form, coupons: stripCouponKeys(form.coupons) }',
+      to: '      config: { ...form }'
+    },
+    {
+      name: 'ERP 地板校验丢掉行号',
+      file: ERP_UTIL,
+      from: '    if (!check.ok) return { ...check, index: i, value, minSpend }',
+      to: '    if (!check.ok) return check'
     },
     {
       name: '重复 id 拦截被摘掉',

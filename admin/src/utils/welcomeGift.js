@@ -137,7 +137,8 @@ export function validateWelcomeGiftCoupons(config) {
       ? Math.max(0, Math.floor(toNumber(row.minSpend, 0)))
       : 0
     const check = validateCashCoupon(value, minSpend)
-    if (!check.ok) return check
+    // 带上行号与原始数值：ERP/小程序都要能说清「第几行、门槛至少要多少」
+    if (!check.ok) return { ...check, index: i, value, minSpend }
   }
   return validateWelcomeGiftActivatable(src, coupons)
 }
