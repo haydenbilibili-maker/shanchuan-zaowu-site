@@ -41,11 +41,18 @@ CONF
 	echo "  $unit → MemoryHigh=${high} MemoryMax=${max}  (/etc/systemd/system/${unit}.service.d/)"
 }
 
-echo "==> 1/3 给各服务设内存上限"
-# DSH 是主要占用者，但仍要给 agent 干活留出余量；超了让它自己重启，而不是拖垮机器。
-apply dsh-web    750M 1000M
-apply caddy      48M  128M
-apply cloudflared 64M 192M
+echo "==> 1/3 给各服务设内存上限（按实际内存自适应）"
+# 为什么不写死数字：这台实例从 2 GiB「标称」升到过 4 GiB，写死的上限会把升级后的内存
+# 白白卡掉。更关键的是 —— **agent 干活时 spawn 的 node/npm/git 子进程也在 dsh-web 的
+# cgroup 里**，所以 dsh-web 的上限必须能容纳「DSH 本体 + agent 跑起来的东西」。
+# 按 RAM 比例给，才能既防失控、又不掐死正常工作。
+MEM_MB=$(awk '/MemTotal/{printf "%d", $2/1024}' /proc/meminfo)
+DSH_HIGH="$(( MEM_MB * 50 / 100 ))M"
+DSH_MAX="$(( MEM_MB * 65 / 100 ))M"
+echo "  实测 MemTotal = ${MEM_MB} MB → dsh-web ${DSH_HIGH}/${DSH_MAX}"
+apply dsh-web    "$DSH_HIGH" "$DSH_MAX"
+apply caddy      96M  256M
+apply cloudflared 96M 256M
 # sshd 不设上限 —— 它必须永远能起得来，这是我们唯一的救援通道。
 
 echo
