@@ -128,9 +128,6 @@ check('★ 题记不写进正文（不再预填 cardBody）',
 check('★ 题记层样式存在（铜金左线，区分于正文）', /\.card-epigraph\s*\{/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
 
 /* ── 手写体与逐字落笔（2026-09-17，方案 B：系统楷体栈 + 落笔增强，零体积） ───── */
-check('★ 礼笺「用户亲手写」的内容用手写体令牌 var(--font-hand)',
-  (readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8').match(/font-family: var\(--font-hand\)/g) || []).length >= 2,
-  '落笔展示与正文输入都该用手写体（题记是品牌字，不换）')
 check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
   /--font-hand:[^;]*HanziPen SC/.test(readFileSync(resolve(ROOT, 'miniprogram/app.wxss'), 'utf8')),
   '改成了 webfont 就会引入下载与首屏闪烁')
@@ -267,6 +264,22 @@ check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
 //   ② iOS 的 textarea 不支持 font-family（原生组件样式白名单内没有）→ 未聚焦时必须用 text 展示手写体。
 check('★ 落笔用**整段文本**渲染，不得再用逐字 span（iOS 回跳闪白根因）',
   !/writeChars/.test(composeJs) && !/writeChars/.test(composeWxml) && !/card-write-char/.test(readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')))
+// 2026-09-19 iOS 实机仍显示系统字体 → 改用**字面量字体栈**（不依赖 var()），并把变量改单行。
+const appWxss = readFileSync(resolve(ROOT, 'miniprogram/app.wxss'), 'utf8')
+const composeWxssSrc = readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')
+const ruleOf = (src, sel) => {
+  const i = src.indexOf(sel + ' {')
+  return i < 0 ? '' : src.slice(i, src.indexOf('}', i) + 1)
+}
+check('★★ 礼笺展示元素用**字面量**手写体栈（不再依赖 var() —— iOS 实测 var 未生效）',
+  /"HanziPen SC"/.test(ruleOf(composeWxssSrc, '.card-write-text'))
+  && /"HanziPen SC"/.test(ruleOf(composeWxssSrc, '.card-note-display')),
+  '只用 var(--font-hand) 在 iOS 实机上会落回默认字体')
+check('★★ --font-hand 的值必须**单行**（跨行是小程序 WXSS 编译器的已知风险点）',
+  /--font-hand:[^;\n]*;[ \t]*\n/.test(appWxss) && !/--font-hand:[^;\n]*,\s*\n/.test(appWxss),
+  '自定义属性值跨行可能导致变量解析失败')
+check('祈福墙同机制一并修好（字面量栈）',
+  /"HanziPen SC"/.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss'), 'utf8')))
 check('★ 未聚焦时用**手写体 text 展示**（wx:elif=!cardFocused + card-note-display）',
   /wx:elif="\{\{!cardFocused\}\}"/.test(composeWxml) && /card-note-display/.test(composeWxml))
 check('★ 只有聚焦时才用 textarea（focus 受 cardFocused 控制）',
@@ -298,16 +311,16 @@ function selftest() {
       to: 'const db = null'
     },
     {
+      name: '礼笺字体退回只依赖 var()（iOS 会落回默认字体）',
+      file: COMPOSE_WXSS,
+      from: '  /* 手写体：直接写字面量栈（不依赖 var() —— iOS 实测 var 未生效 ✗） */\n  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, 楷体, "Songti SC", serif;',
+      to: '  font-family: var(--font-hand);'
+    },
+    {
       name: '印刷卡丢掉题记带（印出来少主题名）',
       file: 'miniprogram/utils/giftShareCard.js',
       from: "  const themeName = String(o.themeName || '').trim()",
       to: "  const themeName = ''"
-    },
-    {
-      name: '礼笺退回衬线（手写体被去掉）',
-      file: COMPOSE_WXSS,
-      from: '  /* 用户亲手写下的内容 → 手写体令牌（系统字体栈、零体积；iOS 汉仪手写体/签笔，Android 落衬线兜底） */\n  font-family: var(--font-hand);',
-      to: "  font-family: 'Source Han Serif SC', serif;"
     },
     {
       name: '题记层被删掉（回到「题记占正文」的旧口径）',

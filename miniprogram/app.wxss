@@ -65,8 +65,8 @@ page {
      与站点其余字体一样走**系统字体栈**，不下载 webfont（无网络依赖、无首屏闪烁、不新增 CDN 资产）：
        iOS/macOS 命中汉仪手写体与签笔（HanziPen SC / Hannotate SC）；Android 无楷体系列，
        落到思源宋体再落 serif。故手写感在 iOS 最足，Android 是衬线兜底，两端可读性都成立。 */
-  --font-hand: "HanziPen SC", "Hannotate SC", "Weibei SC", "STKaiti", "Kaiti SC", "KaiTi", "楷体",
-    "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  /* ⚠️ 必须**单行**：自定义属性值跨行在小程序 WXSS 编译器上是已知风险点（2026-09-19 iOS 实测踩坑） */
+  --font-hand: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, 楷体, "Songti SC", serif;
   --space-1: 8rpx;
   --space-2: 16rpx;
   --space-3: 24rpx;

@@ -312,7 +312,7 @@ const INJECTIONS = {
   // 弹幕不再用手写体
   'handwriting-dropped': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  font-family: var(--font-hand);\n  font-size: 28rpx;',
+    from: '  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, 楷体, "Songti SC", serif;\n  font-size: 28rpx;',
     to: '  font-size: 28rpx;'
   },
   // 客户端请求上限与云函数漂移
@@ -1648,8 +1648,10 @@ check(
   '★ 设计系统新增手写体 token --font-hand（走系统字体栈，不下载 webfont）',
   /--font-hand:/.test(appWxss) && /HanziPen SC/.test(appWxss) && /Kaiti/.test(appWxss)
 )
-check('★ 弹幕用手写体（心愿是"写"上去的）', /\.ww-danmaku\s*\{[^}]*font-family:\s*var\(--font-hand\)/.test(wallWxssCode))
-check('★ 愿签正文也用手写体', /\.ww-tag-text\s*\{[^}]*font-family:\s*var\(--font-hand\)/.test(wallWxssCode))
+check('★ 弹幕用手写体（心愿是"写"上去的）',
+  /\.ww-danmaku\s*\{[^}]*font-family:\s*(var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
+check('★ 愿签正文也用手写体',
+  /\.ww-tag-text\s*\{[^}]*font-family:\s*(var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
 check('★ 弹幕字号提到 28rpx（手写体笔画细，移动中要认得出）', /\.ww-danmaku\s*\{[^}]*font-size:\s*28rpx/.test(wallWxssCode))
 
 // —— 结构 ——
