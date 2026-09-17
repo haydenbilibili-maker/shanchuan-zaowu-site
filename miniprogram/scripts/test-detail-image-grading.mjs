@@ -45,17 +45,35 @@ const INJECTIONS = {
     from: "function onImageError() {\n  if (state !== 'unsupported') {\n    state = 'unsupported'",
     to: "function onImageError() {\n  if (false) {\n    state = 'unsupported'"
   },
-  // 尺寸兜底退回旧口径（只剥 cm$）→「0×0×厚度 0 厘米」又被当成有效尺寸显示出来
-  'archive-size-old-regex': {
-    file: 'miniprogram/subpackages/feature/detail/index.js',
-    from: "    .replace(/(厚度|长度|宽度|高度|尺寸|长|宽|高)/g, 'x')\n",
+  // 尺寸空值判定退回旧口径（只剥 cm$）→「0×0×厚度 0 厘米」又被当成有效尺寸显示出来
+  'size-empty-old-scope': {
+    file: 'miniprogram/utils/skuSize.js',
+    from: "    .replace(/(厚度|长度|宽度|高度|尺寸|长|宽|高|直径)/g, 'x')\n",
     to: ''
   },
   // 单值也当空 → 合法的单值尺寸（如 "0"）会被吞成「—」
-  'archive-size-single-value-empty': {
-    file: 'miniprogram/subpackages/feature/detail/index.js',
+  'size-single-value-empty': {
+    file: 'miniprogram/utils/skuSize.js',
     from: '  if (parts.length < 2) return false;\n',
     to: ''
+  },
+  // 数值尾零不再归一 →「29.7×21.0×厚度 4.5 厘米」这类原始值又直接上屏
+  'size-number-tail-zeros': {
+    file: 'miniprogram/utils/skuSize.js',
+    from: "  return s.replace(/\.?0+$/, '') || '0';\n",
+    to: '  return s;\n'
+  },
+  // 展示出口不再兜底 → 全零尺寸又从 SKU 尺寸行/规格说明漏上屏
+  'size-display-no-exit-guard': {
+    file: 'miniprogram/utils/skuSize.js',
+    from: '  return isEmptySizeValue(s) ? \'\' : s;\n',
+    to: '  return s;\n'
+  },
+  // 详情页又自留一份实现（两份口径必然会再漂移）
+  'detail-reimplements-size-empty': {
+    file: 'miniprogram/subpackages/feature/detail/index.js',
+    from: '    : isEmptySizeValue(p.size);',
+    to: '    : isEmptySizeValueLegacy(p.size);'
   },
   // 详情页忘记挂 error 处理 → 映射不会回落
   'detail-missing-degrade': {
@@ -138,27 +156,38 @@ imgUrl.__resetProbe()
 eq('reset 后回到 unknown（诊断用）', imgUrl.isThumbUsable(), false)
 
 /* ------------------------------------------------------------------ *
- * 1.5) 档案「装裱尺寸」空值判定：后台落库形态五花八门，全零一律当未著录
+ * 1.5) 装裱尺寸：数值形态 + 空值判定 + 展示文案（唯一实现在 utils/skuSize.js）
  *
- * 为什么单独钉：真机截图里出现过「0×0×厚度 0 厘米」被当成有效尺寸显示在档案卡上，
- * 而旧实现只剥 `cm$`、只认 `0x0x0` 形态 → 带「厚度…厘米」的写法全部漏过去。
- * 这类值顾客一眼就看出是坏的（比显示「—」更糟），且此前没有任何守卫覆盖。
+ * 为什么单独钉（真机反馈两次）：
+ *   ① 「0×0×厚度 0 厘米」被当成有效尺寸显示出来（旧口径只剥 cm$、只认 0x0x0）；
+ *   ② 「29.7×21.0×厚度 4.5 厘米」里 21.0 的原样上屏 —— 与相邻数字形态不一致。
+ * 另外这份判定原先在详情页里还自留了一份实现（口径已经漂移），
+ * 现在统一到 utils/skuSize.js：C 端展示、超管录入保存都走它。
  * ------------------------------------------------------------------ */
 
-const detailSrc = readSrc('miniprogram/subpackages/feature/detail/index.js')
-const blankFn = /function isBlankArchiveText\([\s\S]*?\n}\n/.exec(detailSrc)
-const emptySizeFn = /function isEmptyArchiveSize\([\s\S]*?\n}\n/.exec(detailSrc)
-check('能从详情页源码取出 isEmptyArchiveSize（守卫不是空转）', !!blankFn && !!emptySizeFn)
-const isEmptyArchiveSize = new Function(
-  `${blankFn ? blankFn[0] : ''}\n${emptySizeFn ? emptySizeFn[0] : ''}\nreturn isEmptyArchiveSize`
-)()
+const skuSizeSrc = readSrc('miniprogram/utils/skuSize.js')
+const skuSize = (() => {
+  const module = { exports: {} }
+  // eslint-disable-next-line no-new-func
+  new Function('module', 'exports', skuSizeSrc)(module, module.exports)
+  return module.exports
+})()
 
-const SIZE_CASES = [
+eq('trimSizeNumber：21.0 → 21', skuSize.trimSizeNumber('21.0'), '21')
+eq('trimSizeNumber：4.50 → 4.5', skuSize.trimSizeNumber('4.50'), '4.5')
+eq('trimSizeNumber：20.00 → 20', skuSize.trimSizeNumber('20.00'), '20')
+eq('trimSizeNumber：0.0 → 0', skuSize.trimSizeNumber('0.0'), '0')
+eq('trimSizeNumber：29.7 原样', skuSize.trimSizeNumber('29.7'), '29.7')
+eq('trimSizeNumber：A4 原样（不是数值）', skuSize.trimSizeNumber('A4'), 'A4')
+eq('trimSizeNumber：空 → 空', skuSize.trimSizeNumber('  '), '')
+
+const SIZE_EMPTY_CASES = [
   ['0×0×厚度 0 厘米', true, '★ 真机截图里的形态：全零 + 中文单位'],
   ['0x0x0', true, '经典全零'],
   ['0×0×0 cm', true, '带 cm'],
   ['0×0', true, '两维全零'],
   ['长0 宽0 高0', true, '中文维度词'],
+  ['直径0 高度0', true, '直径/高度写法'],
   ['20×30×厚度 5 厘米', false, '有非零维度 → 真实尺寸'],
   ['20×30', false, '两维正常值'],
   ['30', false, '单值不当空'],
@@ -167,9 +196,49 @@ const SIZE_CASES = [
   ['', true, '空串'],
   ['   ', true, '纯空白']
 ]
-for (const [raw, want, label] of SIZE_CASES) {
-  eq(`装裱尺寸「${raw || '(空)'}」→ ${want ? '视为未著录' : '视为有效'}：${label}`, isEmptyArchiveSize(raw), want)
+for (const [raw, want, label] of SIZE_EMPTY_CASES) {
+  eq(`尺寸「${raw || '(空)'}」→ ${want ? '未著录' : '有效'}：${label}`, skuSize.isEmptySizeValue(raw), want)
 }
+
+// 展示文案：相框（长×宽×厚度）是设计口径，但数值必须归一
+eq('★ 相框展示：数值尾零归一并保留「厚度」说明',
+  skuSize.formatSizeFromParts('29.7', '21.0', '4.50', 'frame'),
+  `29.7×21×厚度 4.5${String.fromCharCode(0xa0)}厘米`)
+eq('方形罩展示：长×宽', skuSize.formatSizeFromParts('20', '30', '', 'box'),
+  `20×30${String.fromCharCode(0xa0)}厘米`)
+eq('圆形罩展示：仅直径', skuSize.formatSizeFromParts('8', '', '', 'diameter'),
+  `直径 8${String.fromCharCode(0xa0)}厘米`)
+eq('圆柱罩展示：直径×高度', skuSize.formatSizeFromParts('8', '', '12.0', 'diameter_height'),
+  `直径 8×高度 12${String.fromCharCode(0xa0)}厘米`)
+eq('★ 原始文本形态也归一（报告里的那条字符串）',
+  skuSize.beautifySizeString('29.7×21.0×厚度 4.5 厘米'),
+  `29.7×21×厚度 4.5${String.fromCharCode(0xa0)}厘米`)
+// 库里只有自由文本、且没有装裱方式 → 按默认方罩（长×宽×高）展示；数值仍须归一
+eq('★ 端到端：只有自由文本（无装裱方式）→ 默认方罩口径 + 数值归一',
+  skuSize.resolveDisplaySize({ size: '29.7×21.0×厚度 4.5 厘米' }, null),
+  `29.7×21×4.5${String.fromCharCode(0xa0)}厘米`)
+// 真实数据形态：有装裱方式（相框）+ 库里只有自由文本 → 必须保留「厚度」说明且数值归一
+eq('★ 端到端：相框 + 库内自由文本（报告里那条商品的真实形态）',
+  skuSize.resolveDisplaySize({ size: '29.7×21.0×厚度 4.5 厘米', craftType: 'frame', title: '天堂凤蝶爱神凤蝶组合' }, null),
+  `29.7×21×厚度 4.5${String.fromCharCode(0xa0)}厘米`)
+eq('★ 保存侧产物归一（超管编辑后落库不再带尾零）',
+  skuSize.normalizeSkuSizeForSave({ sizeL: '29.7', sizeW: '21.0', sizeH: '4.50' }, { craftType: 'frame' }).size,
+  '29.7x21x4.5 cm')
+eq('★ 端到端：结构化字段（相框）展示正确',
+  skuSize.resolveDisplaySize({ sizeL: '29.7', sizeW: '21.0', sizeH: '4.5', craftType: 'frame', title: '天堂凤蝶' }, null),
+  `29.7×21×厚度 4.5${String.fromCharCode(0xa0)}厘米`)
+
+// 出口兜底：selectedSkuSizeText 在详情页有 3 处直接上屏，未著录必须给空串
+eq('★ 端到端：全零自由文本 → 空串（不显示 0×0×厚度 0 厘米）',
+  skuSize.resolveDisplaySize({ size: '0×0×厚度 0 厘米', craftType: 'frame', title: 'x' }, null), '')
+eq('★ 端到端：全零结构化字段 → 空串',
+  skuSize.resolveDisplaySize({ sizeL: '0', sizeW: '0', sizeH: '0', craftType: 'frame', title: 'x' }, null), '')
+
+// 详情页不得再自留一份实现（两份口径必然再漂移）
+const detailSrcForSize = readSrc('miniprogram/subpackages/feature/detail/index.js')
+check('★ 详情页复用共享判定，不再自留 isEmptyArchiveSize',
+  /isEmptySizeValue\(/.test(detailSrcForSize) && !/function isEmptyArchiveSize/.test(detailSrcForSize),
+  '详情页又自留了一份尺寸空值判定 → 与 utils/skuSize.js 口径会漂移')
 
 /* ------------------------------------------------------------------ *
  * 2) 详情页：映射建立与回落（真源码 + 桩 Page）

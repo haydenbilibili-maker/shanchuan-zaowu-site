@@ -41,16 +41,41 @@ function isBlank(value) {
   return !String(value == null ? '' : value).trim();
 }
 
-/** 空尺寸或 0x0x0 / 0×0×0 cm 等视为未著录 */
+/**
+ * 尺寸数值统一：去掉小数尾零（21.0 → 21、4.50 → 4.5、20.00 → 20）。
+ * 只处理纯「数字.数字」形态 —— A4 / 29.7 / 直径 8 这类保持原样。
+ * 真机截图出现过「29.7×21.0×厚度 4.5 厘米」：21.0 是库里原始值直接上屏。
+ */
+function trimSizeNumber(value) {
+  const s = String(value == null ? '' : value).trim();
+  if (!s) return '';
+  if (!/^\d+\.\d+$/.test(s)) return s;
+  return s.replace(/\.?0+$/, '') || '0';
+}
+
+/**
+ * 空尺寸视为未著录：空串 / `0x0x0` / `0×0×0 cm` / `0×0×厚度 0 厘米` / `长0 宽0 高0` 等。
+ *
+ * 2026-09-17：原先只剥 `cm$`、只认 `0x0x0`，带「厚度…厘米」的写法会漏过去，
+ * 真机上就把「0×0×厚度 0 厘米」当成有效尺寸显示出来了。现在把「单位」与「维度词」
+ * 统一归一成 x，再判「多值且全为 0」。
+ */
 function isEmptySizeValue(size) {
   if (isBlank(size)) return true;
   const normalized = String(size)
     .trim()
     .replace(/\s+/g, '')
     .replace(/[×✕✖*]/g, 'x')
-    .replace(/厘米/gi, '')
-    .replace(/cm$/i, '');
-  return /^(0+(?:\.0+)?)(?:x(?:0+(?:\.0+)?))+$/i.test(normalized);
+    .replace(/(厘米|cm|毫米|mm)$/i, '')
+    .replace(/(厚度|长度|宽度|高度|尺寸|长|宽|高|直径)/g, 'x')
+    .replace(/x+/g, 'x')
+    .replace(/^x|x$/g, '');
+  // 仍有非数字非分隔符的字符（如 `A4`）→ 不当空
+  if (!/^[0-9.x]+$/.test(normalized)) return false;
+  const parts = normalized.split('x').filter((v) => v !== '');
+  // 单值语义不明（如 `30`）→ 不当空
+  if (parts.length < 2) return false;
+  return parts.every((v) => Number(v) === 0);
 }
 
 function parseSizeParts(sizeStr) {
@@ -128,9 +153,10 @@ function applySizeFormConstraints(sizeL, sizeW, sizeH, mode) {
 
 function formatSizeFromParts(sizeL, sizeW, sizeH, mode) {
   const constrained = applySizeFormConstraints(sizeL, sizeW, sizeH, mode || 'box');
-  const L = constrained.sizeL;
-  const W = constrained.sizeW;
-  const H = constrained.sizeH;
+  // 展示前统一数值形态：库里可能存着 21.0 / 4.50 这类原始串
+  const L = trimSizeNumber(constrained.sizeL);
+  const W = trimSizeNumber(constrained.sizeW);
+  const H = trimSizeNumber(constrained.sizeH);
   const formMode = mode || 'box';
 
   if (formMode === 'diameter') {
@@ -164,9 +190,9 @@ function formatSizeFromParts(sizeL, sizeW, sizeH, mode) {
 }
 
 function formatSizeCanonical(sizeL, sizeW, sizeH) {
-  const L = String(sizeL || '').trim();
-  const W = String(sizeW || '').trim();
-  const H = String(sizeH || '').trim();
+  const L = trimSizeNumber(sizeL);
+  const W = trimSizeNumber(sizeW);
+  const H = trimSizeNumber(sizeH);
   if (!L && !W && !H) return '';
   const parts = [];
   if (L) parts.push(L);
@@ -182,9 +208,12 @@ function beautifySizeString(raw) {
   s = s
     .replace(/[xX×✕✖*]/g, '×')
     .replace(/\s*×\s*/g, '×')
+    .replace(/\d+\.\d+/g, (m) => trimSizeNumber(m))
+    // 先归一空白，再补不换行空格 —— 顺序反了的话 NBSP 会被 \s+ 当成空白吃掉
+    // （JS 的 \s 包含 \u00a0），两条展示路径就会出现「一个 NBSP、一个普通空格」的细微不一致
+    .replace(/\s+/g, ' ')
     .replace(/\s*cm\b/gi, `${NBSP}厘米`)
     .replace(/\s*厘米/g, `${NBSP}厘米`)
-    .replace(/\s+/g, ' ')
     .trim();
   return s;
 }
@@ -259,13 +288,13 @@ function resolveDisplaySize(product, sku) {
     craftType,
     hintText: `${title} ${(sku && sku.specLabel) || ''}`
   });
-  if (fromSku) return fromSku;
+  if (fromSku) return finishDisplaySize(fromSku);
   if (sku && sku.specLabel) {
     const fromDesc = extractSkuSizeFromDescription(
       product && product.description,
       sku.specLabel
     );
-    if (fromDesc) return fromDesc;
+    if (fromDesc) return finishDisplaySize(fromDesc);
   }
   if (product && (product.sizeL || product.sizeW || product.sizeH || product.size)) {
     const mode = resolveSizeFormMode(
@@ -279,12 +308,25 @@ function resolveDisplaySize(product, sku) {
       fields.sizeH,
       mode
     );
-    if (fromProductParts) return fromProductParts;
+    if (fromProductParts) return finishDisplaySize(fromProductParts);
   }
   if (product && product.size && !isEmptySizeValue(product.size)) {
-    return beautifySizeString(product.size);
+    return finishDisplaySize(beautifySizeString(product.size));
   }
   return '';
+}
+
+/**
+ * 展示出口统一兜底：未著录/全零一律给空串。
+ *
+ * 为什么放在出口：`selectedSkuSizeText` 在详情页有 3 处直接上屏（规格说明、SKU 尺寸行），
+ * 只在某一处做空值判断，其余入口照样会把「0×0×厚度 0 厘米」显示出来
+ * （真机反馈过一模一样的现象）。
+ */
+function finishDisplaySize(text) {
+  const s = String(text || '').trim();
+  if (!s) return '';
+  return isEmptySizeValue(s) ? '' : s;
 }
 
 /** 多规格尺寸被堆在一段描述里的段落（应隐藏，改按规格展示） */
@@ -370,6 +412,7 @@ function normalizeSkuSizeForSave(s, opts) {
 
 module.exports = {
   SIZE_FORM_META,
+  trimSizeNumber,
   isEmptySizeValue,
   parseSizeParts,
   resolveSizeFormMode,

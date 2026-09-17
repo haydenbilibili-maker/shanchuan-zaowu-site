@@ -36,7 +36,8 @@ const {
 } = require('../utils/sku');
 const {
   resolveDisplaySize,
-  filterMultiSkuSizeDumpText
+  filterMultiSkuSizeDumpText,
+  isEmptySizeValue
 } = require('../utils/skuSize');
 const { craftTypeLabel, craftProcessLabel, buildCraftDisplayTags } = require('../../../config/productTaxonomy');
 const { trackBehavior } = require('../../../utils/trackBehavior');
@@ -201,28 +202,6 @@ function isBlankArchiveText(value) {
   return !String(value == null ? '' : value).trim();
 }
 
-/** 空尺寸或后台落库的 0x0x0 / 0×0×0 cm 等视为未著录 */
-function isEmptyArchiveSize(size) {
-  if (isBlankArchiveText(size)) return true;
-  // 后台落库形态五花八门：`0x0x0`、`0×0×0 cm`、`0×0×厚度 0 厘米`、`长0 宽0 高0`…
-  // 一律把「单位」与「维度词」归一成 x，再看是不是**全部数值都为 0**（真机截图里出现过
-  // 「0×0×厚度 0 厘米」被当成有效尺寸显示出来）。
-  const normalized = String(size)
-    .trim()
-    .replace(/\s+/g, '')
-    .replace(/[×✕✖*]/g, 'x')
-    .replace(/(厘米|cm|毫米|mm)$/i, '')
-    .replace(/(厚度|长度|宽度|高度|尺寸|长|宽|高)/g, 'x')
-    .replace(/x+/g, 'x')
-    .replace(/^x|x$/g, '');
-  // 仍有非数字非分隔符的字符（如 `A4`）→ 不当空
-  if (!/^[0-9.x]+$/.test(normalized)) return false;
-  const parts = normalized.split('x').filter((v) => v !== '');
-  // 单值语义不明（如 `30`）→ 不当空；多值且全为 0 才算未著录
-  if (parts.length < 2) return false;
-  return parts.every((v) => Number(v) === 0);
-}
-
 /** 无标本师，或后台默认写入的 NATURE（且无 framerId） */
 function isEmptyArchiveFramer(product) {
   const name = String((product && product.framerName) || '').trim();
@@ -241,7 +220,7 @@ function buildArchiveDisplay(product, sizeOverride) {
   const sizeRaw = override || p.size;
   const sizeEmpty = override
     ? !override
-    : isEmptyArchiveSize(p.size);
+    : isEmptySizeValue(p.size);
   const framerEmpty = isEmptyArchiveFramer(p);
   const framingLabel = craftTypeLabel(p.craftType) || '';
   const processLabel = craftProcessLabel(p.craftProcess) || '';
