@@ -1,0 +1,9 @@
+{
+  "page": "subpackages/feature/wish-wall/index",
+  "scene": "from=store_qr&k=mashangyou",
+  "envVersion": "release",
+  "width": 430,
+  "hyaline": true,
+  "out": "scripts/qr-assets/wish-wall-store-qr.png",
+  "generatedAt": "2026-09-18T12:12:53.401Z"
+}

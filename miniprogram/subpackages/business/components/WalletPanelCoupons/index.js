@@ -16,6 +16,12 @@ const {
   shouldAcceptRedeem,
   formatRedeemValueText
 } = require('../../../../utils/passRedeemFeedback')
+// 同分包模块一律**同步** require（分包异步化只用于跨包；且见下方 drawPassQr 的事故注释）
+const { drawMemberQr } = require('../../utils/qrCanvas')
+
+/** 二维码绘制重试：失败要有限次，且**用尽后必须落到可见的 error 态** */
+const DRAW_RETRY_MAX = 4
+const DRAW_RETRY_MS = 180
 
 const SOURCE_LABELS = {
   points_exchange: '积分兑换',
@@ -608,38 +614,34 @@ const _pageCfg = {
     }
   },
 
+  /**
+   * 绘制「到店亮码」二维码。
+   *
+   * ⚠️ 2026-09-18 真机事故复盘（症状：二维码区一片空白、编号与倒计时都在、零报错）：
+   *   这里原本是 `require.async('../utils/qrCanvas.js')` ——
+   *   ① 该路径解析到**不存在的** `subpackages/business/components/utils/qrCanvas.js`
+   *      （正确路径是 `../../utils/qrCanvas`，同目录兄弟组件 WalletPanelPoints 用的就是它），模块加载必然失败；
+   *   ② 失败后的 `.catch()` **只重试、不置失败态**，重试 4 次后彻底静默 → 用户看到的就是空白框。
+   *   现在：同分包模块一律同步 require（不存在加载竞态）；失败用尽重试后**必须**落到 error 态，
+   *   error 态在 wxml 里会渲染「二维码绘制失败，可出示下方编号 + 重新获取」。
+   */
   drawPassQr(payload, attempt = 0) {
     if (!payload || !this.data.showPassModal || this.data.passState === 'redeemed') return
-    const runDraw = (drawMemberQr) => {
-      drawMemberQr('#couponPassQrCanvas', payload, this, 300, {
-        bg: '#F2EDE4',
-        fg: '#1A1814',
-        margin: 14
-      }).then((ok) => {
-        if (ok || !this.data.showPassModal || this.data.passState === 'redeemed') return
-        if (attempt < 4) {
-          setTimeout(() => this.drawPassQr(payload, attempt + 1), 180)
-          return
-        }
-        this.setData({
-          passState: 'error',
-          passErrorMsg: '二维码绘制失败，可出示下方编号'
-        })
+    drawMemberQr('#couponPassQrCanvas', payload, this, 300, {
+      bg: '#F2EDE4',
+      fg: '#1A1814',
+      margin: 14
+    }).then((ok) => {
+      if (ok || !this.data.showPassModal || this.data.passState === 'redeemed') return
+      if (attempt < DRAW_RETRY_MAX) {
+        setTimeout(() => this.drawPassQr(payload, attempt + 1), DRAW_RETRY_MS)
+        return
+      }
+      this.setData({
+        passState: 'error',
+        passErrorMsg: '二维码绘制失败，可出示下方编号'
       })
-    }
-    if (this._drawMemberQr) {
-      runDraw(this._drawMemberQr)
-      return
-    }
-    require
-      .async('../utils/qrCanvas.js')
-      .then((mod) => {
-        this._drawMemberQr = mod.drawMemberQr
-        runDraw(this._drawMemberQr)
-      })
-      .catch(() => {
-        if (attempt < 4) setTimeout(() => this.drawPassQr(payload, attempt + 1), 180)
-      })
+    })
   },
 
   closePassModal() {

@@ -4,5 +4,7 @@
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814",
   "enablePullDownRefresh": true,
-  "usingComponents": {}
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  }
 }

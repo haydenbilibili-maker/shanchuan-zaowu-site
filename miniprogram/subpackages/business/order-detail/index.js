@@ -1,6 +1,7 @@
 // pages/order-detail/index.js
 const app = getApp();
 const db = wx.cloud.database();
+const { withAppModal } = require('../../../utils/appModal');
 
 // 物流查询插件：仅 business 分包 plugins.logisticsPlugin（provider wx9ad912bf20548d92；同 provider 不可多分包/根级重复声明）
 // 官方：requirePlugin + openWaybillTracking({ waybillToken })
@@ -74,7 +75,7 @@ function buildTrackHint({ canOpenWxTrack, trackingNumber, logistics, ensureResul
   return '暂无法打开官方轨迹，可复制单号查询';
 }
 
-Page({
+Page(withAppModal({
   data: {
     // 页面数据容器
     order: {},
@@ -637,11 +638,11 @@ Page({
     // 上一次支付后仍在确认中（回调延迟）：短时间内禁止再次发起支付，避免重复扣款
     if (this._payCooldownUntil && Date.now() < this._payCooldownUntil) {
       const secs = Math.ceil((this._payCooldownUntil - Date.now()) / 1000);
-      wx.showModal({
+      this.modal({
         title: '支付结果确认中',
+        overline: 'PAYMENT PENDING',
         content: `这笔订单的支付结果仍在确认（约 ${secs} 秒后可重试）。请勿重复支付；确认后下拉刷新即可看到最新状态。`,
-        showCancel: false,
-        confirmColor: '#C4A76C'
+        showCancel: false
       });
       return;
     }
@@ -671,11 +672,11 @@ Page({
       if (err.message === '已取消支付') return;
       const msg = err.message || '支付失败';
       if (/支付未开通|暂不可用|支付服务不可用|支付参数|预支付/.test(msg)) {
-        wx.showModal({
+        this.modal({
           title: '暂无法支付',
+          overline: 'PAYMENT UNAVAILABLE',
           content: msg.replace(/^requestPayment:fail\s*/i, ''),
-          showCancel: false,
-          confirmColor: '#C4A76C'
+          showCancel: false
         });
       } else {
         wx.showToast({ title: msg.replace(/^requestPayment:fail\s*/i, '').slice(0, 40), icon: 'none' });
@@ -698,29 +699,30 @@ Page({
     const orderId = this.data.order._id;
     if (!orderId) return;
 
-    wx.showModal({
+    this.modal({
       title: '取消订单',
+      overline: 'CANCEL ORDER',
       content: '确定取消该待付款订单？',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '取消中…' });
-        try {
-          const result = await wx.cloud.callFunction({
-            name: 'cancelOrder',
-            data: { orderId, reason: 'user' }
-          });
-          wx.hideLoading();
-          if (result.result && result.result.success) {
-            wx.showToast({ title: '已取消', icon: 'success' });
-            this.loadOrderDetail(orderId);
-          } else {
-            wx.showToast({ title: (result.result && result.result.msg) || '取消失败', icon: 'none' });
-          }
-        } catch (e) {
-          wx.hideLoading();
-          wx.showToast({ title: '网络异常', icon: 'none' });
+      confirmText: '取消订单',
+      danger: true
+    }).then(async (res) => {
+      if (!res.confirm) return;
+      wx.showLoading({ title: '取消中…' });
+      try {
+        const result = await wx.cloud.callFunction({
+          name: 'cancelOrder',
+          data: { orderId, reason: 'user' }
+        });
+        wx.hideLoading();
+        if (result.result && result.result.success) {
+          wx.showToast({ title: '已取消', icon: 'success' });
+          this.loadOrderDetail(orderId);
+        } else {
+          wx.showToast({ title: (result.result && result.result.msg) || '取消失败', icon: 'none' });
         }
+      } catch (e) {
+        wx.hideLoading();
+        wx.showToast({ title: '网络异常', icon: 'none' });
       }
     });
   },
@@ -836,8 +838,9 @@ Page({
       }
 
       if (token && !logisticsPlugin) {
-        wx.showModal({
+        this.modal({
           title: '轨迹组件未加载',
+          overline: 'PLUGIN MISSING',
           content:
             '该订单已开通官方轨迹，但当前小程序未加载物流查询插件。请用微信开发者工具重新编译预览，或等待体验版/正式版更新后再试。',
           showCancel: false,
@@ -871,35 +874,32 @@ Page({
   confirmReceipt() {
     wx.vibrateShort({ type: 'heavy' }); // 重震动提醒重要性
     
-    wx.showModal({
+    this.modal({
       title: '确认签收',
+      overline: 'CONFIRM RECEIPT',
       content: '确认已收到藏品？\n签收后将生成收藏证书，并可写下感受与查看养护指南。',
-      confirmText: '确认签收',
-      confirmColor: '#C4A76C',
-      cancelColor: '#999999',
-      success: async (res) => {
-        if (res.confirm) {
-          wx.showLoading({ title: '确认签收…', mask: true });
-          
-          try {
-            const orderSnapshot = { ...this.data.order };
-            const care = await confirmReceiptOnOrder(this.data.order._id, orderSnapshot);
-            await this.loadOrderDetail(this.data.order._id);
-            // 确认收货赠分提示（与门店同规则，按订单幂等）
-            if (care && care.pointsGranted > 0) {
-              wx.showToast({
-                title: `已签收，获赠 ${care.pointsGranted} 积分`,
-                icon: 'none',
-                duration: 2600
-              });
-            }
-          } catch (err) {
-            console.error(err);
-            wx.showToast({ title: '操作失败，请重试', icon: 'none' });
-          } finally {
-            wx.hideLoading();
-          }
+      confirmText: '确认签收'
+    }).then(async (res) => {
+      if (!res.confirm) return;
+      wx.showLoading({ title: '确认签收…', mask: true });
+
+      try {
+        const orderSnapshot = { ...this.data.order };
+        const care = await confirmReceiptOnOrder(this.data.order._id, orderSnapshot);
+        await this.loadOrderDetail(this.data.order._id);
+        // 确认收货赠分提示（与门店同规则，按订单幂等）
+        if (care && care.pointsGranted > 0) {
+          wx.showToast({
+            title: `已签收，获赠 ${care.pointsGranted} 积分`,
+            icon: 'none',
+            duration: 2600
+          });
         }
+      } catch (err) {
+        console.error(err);
+        wx.showToast({ title: '操作失败，请重试', icon: 'none' });
+      } finally {
+        wx.hideLoading();
       }
     });
   },
@@ -910,14 +910,13 @@ Page({
     const order = this.data.order || {};
     const check = canUserRequestRefund(order);
     if (!check.ok) {
-      wx.showModal({
+      this.modal({
         title: needsUnboxEvidence(order) ? '无法申请售后' : '无法申请退款',
+        overline: 'NOT AVAILABLE',
         content: check.reason || '当前不可申请',
-        confirmText: '联系专员',
-        confirmColor: '#C4A76C',
-        success: (res) => {
-          if (res.confirm) this.goToSupport();
-        }
+        confirmText: '联系专员'
+      }).then((res) => {
+        if (res.confirm) this.goToSupport();
       });
       return;
     }
@@ -1268,4 +1267,4 @@ Page({
   goHome() { 
     wx.switchTab({ url: '/pages/index/index' }); 
   }
-});
+}));

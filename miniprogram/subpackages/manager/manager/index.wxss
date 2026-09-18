@@ -3866,6 +3866,14 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 
 .label-required { color: var(--gold); }
+/* 多规格「总库存」入口：原来是 disabled 输入框，店长以为库存根本改不了（2026-09-18 反馈） */
+.stock-jump {
+  flex: 1;
+  text-align: right;
+  font-size: 24rpx;
+  color: var(--gold);
+  line-height: 1.4;
+}
 .latin-hint {
   display: block;
   font-size: 20rpx;
