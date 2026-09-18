@@ -27,11 +27,20 @@
   `scripts/build-admin.mjs` 构建后剔除、`scripts/verify-admin-dist.mjs` 部署前拦截、`npm run check:publish-dir` 守卫。
   （2026-09-17 前该目录曾被公开部署至生产站，见 `docs/全面审计_2026-09-17/README.md` §7）
 - 验证：
-  - `npm run check:admin`（**68 条**静态守卫，含 dev 管线编译）。它是 `node scripts/run-guards.mjs`：
-    **逐条独立执行、全部跑完再汇总**（不再短路），清单唯一事实源是 `package.json` 的 `check:admin:guards`
-    —— **新增守卫追加到该键**；
+  - `npm run check:admin`（跑 `guards/` 下的**全部域**，含 dev 管线编译）。它是 `node scripts/run-guards.mjs`：
+    **逐条独立执行、全部跑完再汇总**（不再短路）。
+    **守卫清单的唯一事实源是 `guards/_meta.json` + `guards/<NN>-<域>.txt`**（一行一条，一文件一域）
+    —— **新增守卫只改「你自己那条流」的域文件**（域归属见 `docs/并发工作流注册表.json`），
+    跨流加守卫走变更请求。**不要把清单写回 `package.json`**：
+    旧形态是一行 2690 字符的 `check:admin:guards`，而 `package.json` 在近 200 次提交里被改过 **49 次（全仓第一）**
+    —— 两条流同时加守卫 = 100% 文本冲突。拆成一文件一域后跨流零冲突（2026-09-18 P1-1）；
+  - `npm run check:domain -- <域>`（只跑该域 + `cross`，开发内循环；例：`-- pay` 从 80 条降到 59 条）
+    与 `npm run check:guards:list` / `--domains`（看清单与域归属）；
+  - `npm run check:guards-coverage`（**守清单本身**：不丢条目 / 不重复 / 脚本与自检齐全 / 总数棘轮只许多不许少）；
   - `npm run check:admin:selftest`（逐条跑守卫自检，证明每条都能失败）；`npm run check:admin:runner-selftest`
-    （证明执行器不短路、缺自检会被点名）；
+    （证明执行器不短路、缺自检与死脚本名会被点名）；
+    ⚠️ **`check:admin` 只跑守卫、不跑自检** —— 改了任何「被某条自检注入」的文件后，
+    必须**在隔离 worktree 里**跑 `check:admin:selftest`（它会对源码注入→还原，在共享工作区跑会覆盖别人的在写内容）；
   - **不在清单内**的守卫（需浏览器/凭据，按需手动跑）：`check:nav-dom`、`audit:collections`、`check:cloud-files`、`check:fn-sync`；
   - `npm run dev:admin` 起验收环境后 `npm run check:nav-dom`（**真实浏览器 DOM**，唯一能证明界面真画出来的检查）；
   - `npm run build`（ERP → `dist/admin/` + 官网 → `dist/`）；
