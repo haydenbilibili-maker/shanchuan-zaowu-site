@@ -242,7 +242,9 @@
     "check:order-transition-guard:selftest": "node miniprogram/scripts/check-order-transition-guard.mjs --selftest",
     "check:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs",
     "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
-    "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report"
+    "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report",
+    "test:ritual-profile": "node miniprogram/scripts/test-ritual-profile.mjs",
+    "test:ritual-profile:selftest": "node miniprogram/scripts/test-ritual-profile.mjs --selftest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

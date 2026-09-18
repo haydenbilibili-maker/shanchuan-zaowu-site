@@ -5,3 +5,4 @@ npm run test:wish-wall
 npm run check:bless-tags-sync
 npm run check:wall-qr
 npm run check:wall-monitor
+npm run test:ritual-profile
