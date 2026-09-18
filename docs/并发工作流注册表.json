@@ -139,7 +139,8 @@
         "check:detail-visual-tiers",
         "check:dialog-ratchet",
         "check:brand-contrast",
-        "report:colors"
+        "report:colors",
+        "check:mp-contrast"
       ],
       "invariants": [
         "原生弹窗棘轮只许降不许涨（dialog-ratchet 基线 --update 必须在 PR 说明理由）",
