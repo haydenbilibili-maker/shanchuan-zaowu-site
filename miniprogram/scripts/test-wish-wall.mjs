@@ -809,6 +809,30 @@ const INJECTIONS = {
     file: 'miniprogram/utils/ritualPlay.js',
     from: "    share: `${play.name}：${(play.needs || []).length ? '' : (body.overline ? String(body.overline) + ' · ' : '')}${String(body.title || '')}",
     to: "    share: `${play.name}：${body.overline ? String(body.overline) + ' · ' : ''}${String(body.title || '')}"
+  },
+  // ── 手写体接线（W6 交接不变量 5）────────────────────────────────────────
+  // 这页的字全靠 app.js → utils/handFont.js 的网络字体；下面四条任一断掉，iOS 真机上整页
+  // 静默落回系统字体（页面照样渲染、不报错）。2026-09-19 接手盘点实测：加这四条注入时
+  // 654 条断言**全部照绿** —— 说明当时这条不变量没有任何判据（详见交付记录 §41）。
+  'handfont-not-loaded': {
+    file: 'miniprogram/app.js',
+    from: '      this.ensureHandFontWithRetry()',
+    to: '      // 手写体加载被关掉（自检注入）'
+  },
+  'handfont-not-global': {
+    file: 'miniprogram/utils/handFont.js',
+    from: '      global: true,',
+    to: '      global: false,'
+  },
+  'handfont-scopes-dropped': {
+    file: 'miniprogram/utils/handFont.js',
+    from: "      scopes: ['webview', 'native'],",
+    to: "      scopes: ['webview'],"
+  },
+  'handfont-family-mismatch': {
+    file: 'miniprogram/utils/handFont.js',
+    from: "const FONT_FAMILY = 'ShanhaiHand'",
+    to: "const FONT_FAMILY = 'ShanhaiHandX'"
   }
 }
 
@@ -2037,6 +2061,46 @@ check(
   '★ 设计系统新增手写体 token --font-hand（走系统字体栈，不下载 webfont）',
   /--font-hand:/.test(appWxss) && /HanziPen SC/.test(appWxss) && /Kaiti/.test(appWxss)
 )
+/**
+ * 手写体的**接线**（施工总纲 W6 交接不变量 5）—— 2026-09-19 接手盘点补上。
+ *
+ * 洞是怎么发现的：本页 WXSS 写的是 `font-family: 'ShanhaiHand', <系统兜底>`，而**真正把字体
+ * 加载起来的是** `app.js onLaunch → utils/handFont.js` 的 `wx.loadFontFace`。上面那条断言只看着
+ * app.wxss 的 token，一条断言都没读这两个文件（实测：把 `scopes` 的 'native' 删掉、把 `global`
+ * 关掉、把 `FONT_FAMILY` 改名、甚至**根本不调用加载器**，654 条断言全部照绿，exit=0）。
+ * 这四种断法在真机上的表现都一样：**不报错、不告警，整页静默落回系统字体** —— 正是
+ * 「守卫全绿但真机是错的」（错题本 E8）里最难被发现的一类，所以必须钉住。
+ *
+ * 契约：`loadFontFace` + `global: true`（页面无需各自注册）+ `scopes: ['webview','native']`
+ *      （少了 native，iOS 的 <text> 原生层看不到效果）+ **页面用的族名 = 加载的族名**。
+ * ⚠️ 断言前必须剥注释：handFont.js 的文档注释里就写着 `global: true` 与 `scopes: [...]`，
+ *    不剥就会把「注释里提到过」判成「代码里生效了」（错题本 E7 的假通过）。
+ */
+{
+  const handFontCode = stripComments(readSrc('miniprogram/utils/handFont.js'))
+  const appCode = stripComments(readSrc('miniprogram/app.js'))
+  check(
+    '★ 手写体走网络字体：wx.loadFontFace + global:true（否则每个页面都得自己注册）',
+    /wx\.loadFontFace\(\{/.test(handFontCode) && /global:\s*true/.test(handFontCode)
+  )
+  check(
+    "★★ loadFontFace 的 scopes 必须同时含 webview 与 native（少了 native，iOS 的 <text> 原生层看不到效果）",
+    /scopes:\s*\[\s*'webview'\s*,\s*'native'\s*\]/.test(handFontCode)
+  )
+  check(
+    '★ app.js 启动时真的调了加载器（否则页面写着 ShanhaiHand 也没人加载）',
+    /this\.ensureHandFontWithRetry\(\)/.test(appCode) && /require\(['"]\.\/utils\/handFont['"]\)/.test(appCode),
+    'onLaunch → ensureHandFontWithRetry → ensureHandFont'
+  )
+  const handFamily = (/const FONT_FAMILY = '([^']+)'/.exec(handFontCode) || [])[1]
+  check(
+    '★★ 页面手写体族名与加载器加载的族名逐字相同（不同 = 加载了也用不上，真机静默回落）',
+    !!handFamily &&
+      new RegExp(`\\.ww-danmaku\\s*\\{[^}]*font-family:\\s*'${handFamily}'`).test(wallWxssCode) &&
+      new RegExp(`\\.ww-tag-text\\s*\\{[^}]*font-family:\\s*'${handFamily}'`).test(wallWxssCode),
+    `FONT_FAMILY=${handFamily}`
+  )
+}
 // 2026-09-19 弹幕丰富样式：配色/emoji 必须**确定性**（按 id 用已有 FNV-1a 哈希取），
 // 禁用随机 —— 否则每次 setData 跳色，且与「确定性布局」铁律冲突 ✗。
 const wallJsSrc = readFileSync(resolve(ROOT, 'miniprogram/utils/wishWall.js'), 'utf8')
