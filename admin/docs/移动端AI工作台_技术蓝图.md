@@ -168,9 +168,9 @@ DSH 的 `CENTER_MIN = 400px` 在 web-view 里**同样存在**（web-view 内容�
 
 手机浏览器打开 `https://agent.shanhaizaowu.com/` → 登录一次（365 天免登录）→ 分享/菜单 → **添加到主屏幕**。
 
-**待用户实测**：添加后**是否有浏览器地址栏**（取决于 manifest 的 `display` 是否 `standalone`）。
-我**未能复验**该字段（被网关登录门拦住：未登录访问 `manifest.webmanifest` 得 302；带 cookie 复验时连接失败）。
-若出现地址栏，可在网关侧注入 `display: standalone`（小改动）—— **本次冻结不包含它**。
+**✅ 用户实测通过（2026-09-18）**：添加到主屏幕后**没有浏览器地址栏** ⇒ 即 App 式全屏体验。
+说明 DSH 自带的 `manifest.webmanifest` 已包含 `display: standalone`，**无需**在网关侧注入任何样式补丁。
+该实测同时关闭了本流程的最后一个待验证项。
 
 ### 如何恢复本流程
 
