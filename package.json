@@ -235,7 +235,11 @@
     "check:wall-monitor": "node miniprogram/scripts/check-wall-monitor.mjs",
     "check:wall-monitor:selftest": "node miniprogram/scripts/check-wall-monitor.mjs --selftest",
     "check:workstream-ownership": "node scripts/check-workstream-ownership.mjs",
-    "check:workstream-ownership:selftest": "node scripts/check-workstream-ownership.mjs --selftest"
+    "check:workstream-ownership:selftest": "node scripts/check-workstream-ownership.mjs --selftest",
+    "check:order-status-enum": "node miniprogram/scripts/check-order-status-enum.mjs",
+    "check:order-status-enum:selftest": "node miniprogram/scripts/check-order-status-enum.mjs --selftest",
+    "check:order-transition-guard": "node miniprogram/scripts/check-order-transition-guard.mjs",
+    "check:order-transition-guard:selftest": "node miniprogram/scripts/check-order-transition-guard.mjs --selftest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

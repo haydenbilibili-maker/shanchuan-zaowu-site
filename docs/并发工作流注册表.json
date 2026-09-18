@@ -280,7 +280,9 @@
       "guards": [
         "test:pickup-pass",
         "check:order-summary",
-        "test:checkout-addon"
+        "test:checkout-addon",
+        "check:order-status-enum",
+        "check:order-transition-guard"
       ],
       "invariants": [
         "订单状态机全枚举是契约 C3：改动必须与支付流对齐（支付回调会写状态）",

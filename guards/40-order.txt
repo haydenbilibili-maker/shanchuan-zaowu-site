@@ -4,3 +4,5 @@
 npm run check:order-summary
 npm run test:pickup-pass
 npm run test:checkout-addon
+npm run check:order-status-enum
+npm run check:order-transition-guard
