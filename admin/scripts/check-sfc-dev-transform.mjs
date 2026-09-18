@@ -93,23 +93,18 @@ export async function runChecks({ extraFiles = [] } = {}) {
 }
 
 if (argv.includes('--selftest')) {
-  console.log('自检：注入「keep-alive 两个子节点」的真实故障，守卫必须检出\n')
+  // 2026-09-19 实测：旧样本注入的是「<keep-alive> 里放两个子节点」，但当前工具链下
+  // @vue/compiler-sfc 已不再把它当编译错误 —— transformRequest 正常返回 code，
+  // runChecks 里一条 failure 都没有，自检因此恒假绿。这是注入样本过时，不是守卫能力退化。
+  // 故换成当前工具链确实会在编译期拒绝的「元素未闭合」（真实开发中最常见的模板手误）。
+  // 不要再改回 keep-alive：它不会红。本仓库错题本 E7：不许为了变绿放宽/删掉判据。
+  console.log('自检：注入「元素未闭合」的真实故障，守卫必须检出\n')
   const broken = `<template>
-  <div>
-    <transition name="fade-slide" mode="out-in">
-      <div v-if="a">one</div>
-      <keep-alive v-else :max="10">
-        <el-alert v-if="b" title="自检" />
-        <component :is="c" />
-      </keep-alive>
-    </transition>
-  </div>
+  <div class="selftest-root">
+    <span>自检样本</span>
 </template>
 <script setup>
-import { ref } from 'vue'
-const a = ref(1)
-const b = ref(true)
-const c = ref('div')
+const n = 1
 </script>
 `
   let detected = false
@@ -117,7 +112,9 @@ const c = ref('div')
   try {
     writeFileSync(SELFTEST_FILE, broken, 'utf8')
     const { failures } = await runChecks({ extraFiles: [SELFTEST_FILE] })
-    const hit = failures.find((f) => /__selftest_broken\.vue/.test(f.file) && /KeepAlive/i.test(f.message))
+    // 判据必须盯住本次注入缺陷对应的报错，而不是「有失败项就行」——
+    // 否则将来任何别的文件编译失败都会让自检假绿。
+    const hit = failures.find((f) => /__selftest_broken\.vue/.test(f.file) && /Element is missing end tag/i.test(f.message))
     detected = !!hit
     reason = hit ? `${hit.file} → ${hit.message}` : (failures[0] ? `${failures[0].file} → ${failures[0].message}` : '(无失败项)')
   } catch (e) {
@@ -125,7 +122,7 @@ const c = ref('div')
   } finally {
     try { unlinkSync(SELFTEST_FILE) } catch { /* ignore */ }
   }
-  console.log(`${detected ? '✓' : '✗'} 损坏的 keep-alive → ${detected ? '已检出' : '【漏检】'}`)
+  console.log(`${detected ? '✓' : '✗'} 未闭合的元素 → ${detected ? '已检出' : '【漏检】'}`)
   console.log(`    · ${reason}`)
   console.log()
   if (!detected) {
