@@ -396,6 +396,21 @@
         "deploy/agent-server/**"
       ],
       "note": "2026-09-18 经产品负责人授权新建。owns 刻意最小：只含网关侧产物（deploy/agent-server/**，已存在且无他人认领）。admin/docs/移动端AI工作台_技术蓝图.md 归 erp（实测守卫报互斥冲突），故不重复认领 —— 该蓝图是跨流产物。miniprogram/subpackages/manager/agent-workbench/** 待页面目录真正创建后再追加（守卫要求 owns 必须匹配到已存在文件）。miniprogram/app.json（owner=integration）与 managerPageConfig.js 不在范围内，跨流改动另行走章程流程。 2026-09-18 **已冻结**：web-view 内嵌被微信业务域名的 ICP 备案硬门槛阻断（非代码问题），产品负责人决定改用「添加到主屏幕」方案并收尾。已完成且仍有价值：一次性票据；死代码（待备案域名时启用）：微信校验文件路由。细节见 admin/docs/移动端AI工作台_技术蓝图.md §8。"
+    },
+    {
+      "id": "theme-name-save-fix",
+      "name": "藏品主题名保存修复 + 补「白名单·表单·载荷」结构守卫",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-20 立。真机反馈「一键补齐后主题名保存不生效」：云函数白名单有、表单绑了、**载荷漏了**。修 payload 两行 + 新增 check:product-save-fields（跨 cross 域）。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/subpackages/manager/manager/managerPageConfig.js",
+        "miniprogram/scripts/check-product-save-fields.mjs"
+      ],
+      "guards": [
+        "check:product-save-fields"
+      ]
     }
   ],
   "frozen": [
