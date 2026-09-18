@@ -441,6 +441,19 @@
       "guards": [
         "test:ritual-profile"
       ]
+    },
+    {
+      "id": "night-batch",
+      "name": "夜间批次合并态（仅供产品负责人审阅，解冻后按此合回）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立：验收冻结期把当晚所有 feat/* 合到一条分支，供早上一次审阅。它**不是**某条流的域，而是集成官做的合并态 —— owns 刻意留空（不与其他流抢文件），guards 列出它合并进来的新守卫以便追溯。解冻后由集成官按此分支合回 main。",
+      "owns": [],
+      "guards": [
+        "check:mp-contrast",
+        "check:docs-index",
+        "test:ritual-profile"
+      ]
     }
   ],
   "frozen": [
