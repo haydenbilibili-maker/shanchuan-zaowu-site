@@ -20,6 +20,7 @@
  *   node miniprogram/scripts/ensure-dedupe-indexes.cjs                # 只预检
  *   node miniprogram/scripts/ensure-dedupe-indexes.cjs --execute      # 预检通过后创建
  *   node miniprogram/scripts/ensure-dedupe-indexes.cjs --json         # 预检结果输出 JSON
+ *   node miniprogram/scripts/check-dedupe-index-live.mjs              # 只读预检（复用本文件的 preflight，只查不建）
  *
  * 密钥：admin/.env 的 TCB_SECRET_ID / TCB_SECRET_KEY（与其它 provision 脚本同源）
  * 说明：腾讯云管理端 API 的部分返回结构文档不全，本脚本对「读不懂的返回」**一律拒绝创建**
@@ -37,14 +38,27 @@ const ENV_ID = 'cloud1-8gnkty5bfff9f0bf'
  * 需要唯一索引的幂等键。
  *
  * 新增任何 `dedupeKey` 写入点时**必须**在这里登记（守卫 `check:dedupe-index-coverage` 会拦）。
- * 实测写入点（2026-09-17，逐行核对 `^\s*dedupeKey\s*[,:]` 且排除 `X.dedupeKey` 读取）：
+ * 实测写入点（2026-09-18 修订：**递归**扫云函数目录下全部 `*.js`，不再只看 `index.js`；
+ * 判据仍是 `^\s*dedupeKey\s*[,:]` 且排除 `X.dedupeKey` 读取）：
  *   point_records          bindPlatformOrder:343 / claimBirthdayGift:269 / claimStoreReceipt:412
  *                          / exchangeCoupon:141 / grantStorePoints:448,940,1326
  *                          / redeemReward:118 / refundOrder:323 / upsertUserProfile:385,559
+ *                          / **manageStoredValue: rechargeRewards.js:98（充值返积分）**
+ *                          / **payCallback: rechargeRewards.js:98（支付回调 → 充值返积分，payCallback 内的副本）**
  *   store_purchases        grantStorePoints:615
  *   platform_order_binds   bindPlatformOrder:139
- *   user_messages          toggleCollection:65          （authPhone 只读它做查重）
+ *   user_messages          每个云函数自带的 inAppMessage.js / messageWrite.js / dispatchMessage core.js
+ *                          **共 24 个函数**（原先只登记了 toggleCollection —— 判据只扫 index.js 时看不见这些）
  *   store_coupon_redeems   verifyStoreCoupon:524
+ *
+ * ⚠️ 已发现但**尚未 provision**（不在 SPECS 里，属显式待办，见守卫输出）：
+ *   artisan_commission_ledger  师傅分账流水防重，4 份副本各自写入：
+ *                              confirmPayment|payCallback|refundOrder 的 artisanCommission.js:670,789
+ *                              + manageArtisanCommission/commissionCore.js:670,789
+ *                              （同文件 `posted.push({ dedupeKey })` 是回显，不是写库）
+ *   notification_logs          dispatchMessage/core.js:120（**该副本的 notification_logs 文档带 dedupeKey**；
+ *                              其它 inAppMessage.js 的 notification_logs 写入不带，故只此一处）
+ *   是否给这两个集合建唯一索引需产品负责人拍板（裁决 §6 步骤 2 未包含它们）。
  *
  * ⚠️ 历史数据里 `point_records` 等集合**很可能有大量文档没有 dedupeKey** —— 此时直接建唯一索引
  * 要么建不上，要么建完阻断新写入（MongoDB 把缺失当 null，只允许一条）。所以本脚本默认只预检。
@@ -54,8 +68,8 @@ const SPECS = [
     collection: 'point_records',
     field: 'dedupeKey',
     indexName: 'dedupeKey_1',
-    reason: '积分/成长值台账防重（生日礼、门店小票、门店赠分、订单退款冲销、兑换、平台单绑定）',
-    usedBy: ['bindPlatformOrder', 'claimBirthdayGift', 'claimStoreReceipt', 'exchangeCoupon', 'grantStorePoints', 'redeemReward', 'refundOrder', 'upsertUserProfile'],
+    reason: '积分/成长值台账防重（生日礼、门店小票、门店赠分、订单退款冲销、兑换、平台单绑定、充值返积分）',
+    usedBy: ['bindPlatformOrder', 'claimBirthdayGift', 'claimStoreReceipt', 'exchangeCoupon', 'grantStorePoints', 'manageStoredValue', 'payCallback', 'redeemReward', 'refundOrder', 'upsertUserProfile'],
   },
   {
     collection: 'store_purchases',
@@ -75,8 +89,14 @@ const SPECS = [
     collection: 'user_messages',
     field: 'dedupeKey',
     indexName: 'dedupeKey_1',
-    reason: '站内信/到货提醒防重（toggleCollection 写入；authPhone 以它查重）',
-    usedBy: ['toggleCollection'],
+    reason: '站内信/到货提醒防重（24 个云函数各自的 inAppMessage.js / messageWrite.js / dispatchMessage core.js 写入；authPhone 以它查重）',
+    usedBy: [
+      'authPhone', 'bindPlatformOrder', 'cancelOrder', 'claimBirthdayGift', 'claimStoreReceipt',
+      'confirmOrderReceipt', 'confirmPayment', 'createBooking', 'dispatchMessage', 'exchangeCoupon',
+      'grantStorePoints', 'makeOrder', 'manageApprovals', 'manageGift', 'manageHonoraryCurators',
+      'manageInvoiceRequests', 'managerShipOrder', 'payCallback', 'refundOrder', 'submitCustomInquiry',
+      'submitInvoiceRequest', 'submitSupportTicket', 'sweepExpiredOrders', 'toggleCollection',
+    ],
   },
   {
     collection: 'store_coupon_redeems',
@@ -118,29 +138,60 @@ function normalizeIndex(idx) {
     name: idx.Name || idx.name,
     keys: keys.map((k) => ({ name: k.Name || k.name, direction: String(k.Direction || k.direction || '') })),
     unique: !!(idx.Unique || (idx.MgoKeySchema && idx.MgoKeySchema.MgoIsUnique)),
+    // Sparse 决定「缺字段的文档会不会占唯一槽位」——实测线上 point_records.dedupeKey_1 就是 Sparse=true
+    sparse: !!(idx.Sparse || (idx.MgoKeySchema && idx.MgoKeySchema.MgoIsSparse)),
   }
 }
 
-/** 从 runCommands 的返回里尽力取数值；取不到返回 null（**不猜**） */
-function pickCount(res) {
-  const dig = (v) => {
-    if (v == null) return null
-    if (typeof v === 'number') return v
-    if (Array.isArray(v)) {
-      for (const it of v) { const r = dig(it); if (r != null) return r }
-      return null
+/**
+ * runCommands 的返回是 `Data: string[]`，元素是「JSON 字符串里再套 JSON 字符串」（实测 2026-09-18），
+ * 且数值是 MongoDB Extended JSON（`{ $numberInt: "48" }`）。这里逐层解开并拍平成对象数组。
+ */
+function parseMgoData(res) {
+  const out = []
+  const push = (v, depth = 0) => {
+    if (v == null || depth > 4) return
+    if (Array.isArray(v)) { v.forEach((x) => push(x, depth + 1)); return }
+    if (typeof v === 'string') {
+      const t = v.trim()
+      if (!t) return
+      try { push(JSON.parse(t), depth + 1) } catch (e) { /* 非 JSON 字符串：忽略 */ }
+      return
     }
-    if (typeof v === 'object') {
-      for (const k of ['n', 'count', 'Count', 'total', 'Total']) {
-        if (typeof v[k] === 'number') return v[k]
-      }
-      for (const k of ['Data', 'data', 'Results', 'results', 'Result', 'result', 'MgoResults']) {
-        const r = dig(v[k]); if (r != null) return r
-      }
-    }
-    return null
+    if (typeof v === 'object') out.push(v)
   }
-  return dig(res)
+  push(res && res.Data)
+  return out
+}
+
+/** Extended JSON / 数字 / 数字字符串 → number；取不到返回 null（**不猜**） */
+function numOf(v) {
+  if (v == null) return null
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null
+  if (typeof v === 'string') return /^-?\d+$/.test(v.trim()) ? Number(v.trim()) : null
+  if (typeof v === 'object') {
+    for (const k of ['$numberInt', '$numberLong', '$numberDouble', '$numberDecimal']) {
+      if (v[k] != null) return numOf(v[k])
+    }
+  }
+  return null
+}
+
+/**
+ * 执行一条**只读** MongoDB 命令（count / aggregate）。
+ *
+ * ⚠️ 2026-09-18 修：旧实现写的是 `{ MgoCommands: [{ count: … }] }` —— **这个形状服务端不认**
+ *    （实测报 `The parameter MgoCommands.0.count is not recognized`），于是
+ *    「缺字段数 / 重复键样本」这两个数字**从来没真正取到过**（一直是「读不到」）。
+ *    正确形状（manager-node `types/database/index.d.ts:19-26` + 实测）：
+ *      `{ TableName, CommandType: 'COMMAND', Command: <JSON 字符串> }`，`count`/`aggregate` 放在 Command 里。
+ *    本函数只发读命令，没有写入路径。
+ */
+async function runMgo(database, collection, command) {
+  const r = await database.runCommands({
+    MgoCommands: [{ TableName: collection, CommandType: 'COMMAND', Command: JSON.stringify(command) }],
+  })
+  return parseMgoData(r)
 }
 
 async function preflight(database, spec) {
@@ -149,7 +200,9 @@ async function preflight(database, spec) {
     const desc = await database.describeCollection(spec.collection)
     out.exists = true
     out.indexes = (desc.Indexes || []).map(normalizeIndex)
-    out.hasUniqueDedupe = out.indexes.some((i) => i.unique && i.keys.length === 1 && i.keys[0].name === spec.field)
+    const uni = out.indexes.find((i) => i.unique && i.keys.length === 1 && i.keys[0].name === spec.field)
+    out.hasUniqueDedupe = !!uni
+    out.dedupeIndexSparse = uni ? uni.sparse : null
   } catch (e) {
     out.exists = false
     out.error = (e && e.message) || String(e)
@@ -158,10 +211,13 @@ async function preflight(database, spec) {
 
   // 缺字段数：唯一索引把缺失视为 null，只允许一条 → 必须为 0
   try {
-    const r = await database.runCommands({
-      MgoCommands: [{ count: spec.collection, query: { [spec.field]: { $exists: false } } }],
+    const docs = await runMgo(database, spec.collection, {
+      count: spec.collection,
+      query: { [spec.field]: { $exists: false } },
     })
-    out.missingField = pickCount(r)
+    const hit = docs.find((d) => d && d.n != null)
+    out.missingField = hit ? numOf(hit.n) : null
+    if (out.missingField === null) out.countError = `返回读不懂：${JSON.stringify(docs).slice(0, 160)}`
   } catch (e) {
     out.missingField = null
     out.countError = (e && e.message) || String(e)
@@ -169,33 +225,43 @@ async function preflight(database, spec) {
 
   // 重复键（取前几个样本）
   try {
-    const r = await database.runCommands({
-      MgoCommands: [{
-        aggregate: spec.collection,
-        pipeline: [
-          { $match: { [spec.field]: { $exists: true, $ne: null } } },
-          { $group: { _id: `$${spec.field}`, n: { $sum: 1 } } },
-          { $match: { n: { $gt: 1 } } },
-          { $limit: 5 },
-        ],
-        cursor: {},
-      }],
+    const docs = await runMgo(database, spec.collection, {
+      aggregate: spec.collection,
+      pipeline: [
+        { $match: { [spec.field]: { $exists: true, $ne: null } } },
+        { $group: { _id: `$${spec.field}`, n: { $sum: 1 } } },
+        { $match: { n: { $gt: 1 } } },
+        { $limit: 5 },
+      ],
+      cursor: {},
     })
-    const found = []
-    const walk = (v) => {
-      if (!v) return
-      if (Array.isArray(v)) { v.forEach(walk); return }
-      if (typeof v === 'object') {
-        if (v._id !== undefined && typeof v.n === 'number') found.push({ key: String(v._id), n: v.n })
-        for (const k of ['Data', 'data', 'Results', 'results', 'Result', 'result', 'cursor', 'firstBatch']) walk(v[k])
-      }
-    }
-    walk(r)
+    const found = docs
+      .filter((d) => d && d._id !== undefined && d.n != null)
+      .map((d) => ({ key: String(d._id), n: numOf(d.n) }))
     out.samples = found
-    out.duplicateKeys = found.length ? found.length : 0
+    out.duplicateKeys = found.length
   } catch (e) {
     out.duplicateKeys = null
     out.dupError = (e && e.message) || String(e)
+  }
+
+  // 重复键的**确切组数**（样本列表被 $limit 5 截断，真实值可能更大 → 单独数一次，不靠样本推断）
+  try {
+    const grp = await runMgo(database, spec.collection, {
+      aggregate: spec.collection,
+      pipeline: [
+        { $match: { [spec.field]: { $exists: true, $ne: null } } },
+        { $group: { _id: `$${spec.field}`, n: { $sum: 1 } } },
+        { $match: { n: { $gt: 1 } } },
+        { $count: 'total' },
+      ],
+      cursor: {},
+    })
+    const hit = grp.find((d) => d && d.total != null)
+    out.duplicateGroupCount = hit ? numOf(hit.total) : 0
+  } catch (e) {
+    out.duplicateGroupCount = null
+    out.dupCountError = (e && e.message) || String(e)
   }
   return out
 }
@@ -243,9 +309,9 @@ async function main() {
         console.log(`   ✗ 集合不存在或读不到：${pre.error || ''}`)
         continue
       }
-      console.log(`   已有唯一幂等索引：${pre.hasUniqueDedupe ? '是' : '否'}`)
+      console.log(`   已有唯一幂等索引：${pre.hasUniqueDedupe ? `是（Sparse=${pre.dedupeIndexSparse === true ? '是' : pre.dedupeIndexSparse === false ? '否' : '未知'}）` : '否'}`)
       console.log(`   缺 ${spec.field} 的文档数：${pre.missingField === null ? '读不到（' + (pre.countError || '') + '）' : pre.missingField}`)
-      console.log(`   重复键样本：${pre.duplicateKeys === null ? '读不到（' + (pre.dupError || '') + '）' : (pre.samples.length ? pre.samples.map((s) => `${s.key}×${s.n}`).join(', ') : '无')}`)
+      console.log(`   重复键：${pre.duplicateKeys === null ? '读不到（' + (pre.dupError || '') + '）' : `样本 ${pre.samples.length ? pre.samples.map((s) => `${s.key}×${s.n}`).join(', ') : '无'}；确切重复组数 ${pre.duplicateGroupCount === null ? '读不到' : pre.duplicateGroupCount}`}`)
     }
     console.log('\n判据：**缺字段数必须为 0 且无重复键** 才能建唯一索引')
     console.log('（唯一索引把缺失当 null，只允许一条 null —— 否则建不上或建完阻断写入）')
@@ -307,3 +373,11 @@ if (require.main === module) {
     process.exit(1)
   })
 }
+
+// 供**只读**预检脚本 `check-dedupe-index-live.mjs` 复用（同一个预检实现，避免两套判据漂移）。
+// 只导出函数，不改变本脚本默认行为（默认仍是「只预检」，--execute 才写库）。
+module.exports.loadDotEnv = loadDotEnv
+module.exports.normalizeIndex = normalizeIndex
+module.exports.parseMgoData = parseMgoData
+module.exports.numOf = numOf
+module.exports.preflight = preflight
