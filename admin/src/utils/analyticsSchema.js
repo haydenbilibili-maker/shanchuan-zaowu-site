@@ -66,6 +66,7 @@ export const EVENTS = {
   product_view: { module: MODULE.COMMERCE, desc: '商详浏览', targetType: 'product' },
   product_add_cart: { module: MODULE.COMMERCE, desc: '加入购物车', targetType: 'product' },
   cart_view: { module: MODULE.COMMERCE, desc: '购物车浏览', targetType: 'cart' },
+  checkout_extra_add: { module: MODULE.COMMERCE, desc: '结账台加购（顺手件/凑单）', targetType: 'product' },
   order_submit: { module: MODULE.COMMERCE, desc: '提交订单', targetType: 'order' },
   // 门店
   store_tab_enter: { module: MODULE.STORE, desc: '进入这有店 Tab', targetType: 'store_tab' },
@@ -179,6 +180,10 @@ export const EVENTS = {
   wish_wall_post: { module: MODULE.COMMUNITY, desc: '祈福弹幕发布', targetType: 'ok' },
   wish_wall_egg: { module: MODULE.COMMUNITY, desc: '祈福墙彩蛋触发', targetType: 'egg' },
   wish_wall_lamp: { module: MODULE.COMMUNITY, desc: '祈福墙点灯仪式', targetType: 'day' },
+  wish_wall_sound: { module: MODULE.COMMUNITY, desc: '祈福墙仪式音效开关', targetType: 'on' },
+  wish_wall_play: { module: MODULE.COMMUNITY, desc: '祈福墙玩法（targetType=玩法 id：qian/cookie/zodiac/mbti）', targetType: 'play' },
+  wish_wall_reco: { module: MODULE.COMMUNITY, desc: '祈福墙祈运弱推（targetType=祈运标签 key）', targetType: 'reco' },
+  wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
   // —— 补登记（2026-09-16 与小程序 eventSchema 对齐）· USER ——
   member_card_flip: { module: MODULE.USER, desc: '会员卡翻面', targetType: 'member_card' },
   member_code_show: { module: MODULE.USER, desc: '展示会员码', targetType: 'member_card' },
@@ -241,6 +246,19 @@ export const FUNNELS = [
       { action: 'identify_result_gate:show', label: '看结果引导曝光' },
       { action: 'identify_result_gate:go_register', label: '去注册' },
       { action: 'identify_result_gate:resume_success', label: '注册完成并解锁结果', endpoint: true }
+    ]
+  },
+  {
+    key: 'wish_wall_register_gate',
+    name: '祈福墙 · 落愿注册钩子',
+    module: MODULE.COMMUNITY,
+    icon: '🕯️',
+    color: '#C4A76C',
+    steps: [
+      { action: 'wish_wall_register_gate:show', label: '落愿时注册引导曝光' },
+      { action: 'wish_wall_register_gate:go_register', label: '点「去注册」' },
+      { action: 'wish_wall_register_gate:dismiss', label: '先不挂' },
+      { action: 'wish_wall_register_gate:resume_success', label: '注册完成并自动续发心愿', endpoint: true }
     ]
   },
   {

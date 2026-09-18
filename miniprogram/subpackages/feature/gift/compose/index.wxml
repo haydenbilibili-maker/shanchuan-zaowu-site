@@ -108,7 +108,7 @@
               <input
                 class="card-to-input"
                 maxlength="20"
-                placeholder="TA 的名字"
+                placeholder="{{recipientPlaceholder}}"
                 placeholder-class="card-to-placeholder"
                 value="{{recipientName}}"
                 focus="{{recipientEditing}}"

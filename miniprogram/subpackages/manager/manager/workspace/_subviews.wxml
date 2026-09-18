@@ -2767,9 +2767,13 @@
             <view class="form-row half" wx:if="{{!artisanEmbed}}"><text>进货价</text><input type="digit" value="{{tempProduct.costPrice}}" bindinput="bindPInput" data-field="costPrice" placeholder="0.00"/></view>
             <view class="form-row {{artisanEmbed ? '' : 'half'}}"><text>销售价</text><input type="digit" value="{{tempProduct.price}}" bindinput="bindPInput" data-field="price" placeholder="0.00"/></view>
           </view>
-          <view class="form-row"><text>库存</text><input type="number" value="{{tempProduct.stock}}" bindinput="bindPInput" data-field="stock" placeholder="1" disabled="{{tempProduct.hasSku}}"/></view>
+          <view class="form-row"><text>库存</text>
+            <input wx:if="{{!tempProduct.hasSku}}" type="number" value="{{tempProduct.stock}}" bindinput="bindPInput" data-field="stock" placeholder="1"/>
+            <!-- 多规格时总库存由规格汇总：不给「灰掉改不动」的输入框，给明确入口（2026-09-18 反馈「库存无法编辑」） -->
+            <view wx:else class="stock-jump" bindtap="goSkuStockTab">总库存 {{tempProduct.stock || 0}} · {{tempProduct.skus.length}} 个规格汇总 · 去改规格库存 ›</view>
+          </view>
           <text class="latin-hint" wx:if="{{!tempProduct.hasSku}}">库存为 1 时默认标记孤品；手动关掉后不再强开</text>
-          <text class="latin-hint" wx:else>多规格开启后，总库存由各规格汇总</text>
+          <text class="latin-hint" wx:else>多规格的总库存 = 各规格库存之和，改库存请到「规格」页逐规格填写</text>
 
           <view class="form-row" wx:if="{{productChannelEligible}}">
             <text>渠道</text>
@@ -2797,6 +2801,9 @@
         <view class="product-tab-pane">
         <view class="form-group">
           <view class="form-row"><text>多规格</text><switch checked="{{tempProduct.hasSku}}" color="#C4A76C" bindchange="bindPHasSku" style="transform:scale(0.7)"/></view>
+          <!-- 合计实时可见：改完成员能当场看到总数变化，不必保存后才发现「没生效」 -->
+          <text class="latin-hint" wx:if="{{tempProduct.hasSku}}">规格库存合计 {{skuStockTotal}} 件 · 保存后即本藏品总库存</text>
+          <text class="latin-hint" wx:if="{{tempProduct.hasSku}}">「批量工具」里的统一价/统一库存填完要生效，保存时也会自动套用，无需先点按钮</text>
           <block wx:if="{{tempProduct.hasSku}}">
             <view class="sku-builder">
               <text class="sku-section-title">维度生成</text>

@@ -39,10 +39,17 @@ import { tmpdir } from 'node:os'
 import { join, relative, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+// 本仓根：脚本就在 `<仓库根>/scripts/` 下，所以**向上只一层**。
+// ⚠️ 2026-09-18 修：这里原本是 `'..', '..'` 再用 `join(ROOT, 'shanchuanzaowu', 'miniprogram')`
+//    拼主库 —— 那等于**硬编码了仓库目录名**。在 git worktree 里（目录名 = 流 id，如 `integration`）
+//    主库路径会算成 `<worktrees 基目录>/shanchuanzaowu/miniprogram`，直接报"找不到主库目录"，
+//    于是**任何 worktree 出来的 PR 都会在这条守卫上判红**，等于废掉隔离开发。
+const REPO = join(dirname(fileURLToPath(import.meta.url)), '..')
+// 开发仓放在**本仓的兄弟目录**里：基线是本机专有布局，worktree 下这个路径自然不存在 → 安全跳过（见下方逻辑）
+const WORKSPACE = join(REPO, '..')
 // 可被环境变量覆盖：只为 --selftest 能在临时目录里证明"本检查会失败"。
-const SRC = process.env.SYNC_SRC || join(ROOT, 'shanchuanzaowu', 'miniprogram')
-const DST = process.env.SYNC_DST || join(ROOT, 'WeChatProjects', 'shanchuanspecimens-只上传')
+const SRC = process.env.SYNC_SRC || join(REPO, 'miniprogram')
+const DST = process.env.SYNC_DST || join(WORKSPACE, 'WeChatProjects', 'shanchuanspecimens-只上传')
 
 /** 允许整文件不同（开发仓专有配置） */
 const ALLOW_DIFF = new Set(['project.miniapp.json'])

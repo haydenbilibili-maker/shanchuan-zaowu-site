@@ -30,6 +30,7 @@ const EVENTS = {
   product_view: { module: MODULE.COMMERCE, desc: '商详浏览', targetType: 'product' },
   product_add_cart: { module: MODULE.COMMERCE, desc: '加入购物车', targetType: 'product' },
   cart_view: { module: MODULE.COMMERCE, desc: '购物车页浏览', targetType: 'cart' },
+  checkout_extra_add: { module: MODULE.COMMERCE, desc: '结账台加购（顺手件/凑单）', targetType: 'product' },
   order_submit: { module: MODULE.COMMERCE, desc: '提交订单', targetType: 'order' },
 
   // —— 门店 ——
@@ -150,6 +151,12 @@ const EVENTS = {
   // 仪式与彩蛋：彩蛋 id / 日期键写在 targetId 上，用来判断"哪类彩蛋真的会被偶遇"
   wish_wall_egg: { module: MODULE.COMMUNITY, desc: '祈福墙彩蛋触发', targetType: 'egg' },
   wish_wall_lamp: { module: MODULE.COMMUNITY, desc: '祈福墙点灯仪式', targetType: 'day' },
+  wish_wall_sound: { module: MODULE.COMMUNITY, desc: '祈福墙仪式音效开关', targetType: 'on' },
+  wish_wall_play: { module: MODULE.COMMUNITY, desc: '祈福墙玩法（targetType=玩法 id：qian/cookie/zodiac/mbti）', targetType: 'play' },
+  wish_wall_reco: { module: MODULE.COMMUNITY, desc: '祈福墙祈运弱推（targetType=祈运标签 key）', targetType: 'reco' },
+  // 注册转化漏斗（2026-09-18 产品口径：祈福墙是注册转化路径，对齐 AI 识别）：
+  // step = show（落愿时弹注册）/ dismiss（先不挂）/ resume_success（注册完成并自动续发）/ fail_*
+  wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
 
   // —— 用户 / 会员 ——
   member_card_flip: { module: MODULE.USER, desc: '会员卡翻面', targetType: 'member_card' },

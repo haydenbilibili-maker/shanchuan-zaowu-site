@@ -4,6 +4,7 @@ const { hydrateZoneMedia } = require('../../../utils/storeMedia')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const { getFirstImage } = require('../../../utils/util')
 const { navigateToProductDetail } = require('../../../utils/productDetailNav')
+const { withAppModal } = require('../../../utils/appModal')
 
 const db = wx.cloud.database()
 const _ = db.command
@@ -15,7 +16,7 @@ const CATEGORY_KEYWORDS = {
   MARINE: '海洋'
 }
 
-Page({
+Page(withAppModal({
   data: {
     statusBarHeight: 0,
     zone: null,
@@ -69,19 +70,18 @@ Page({
       // 会把偶发故障说成内容没了，用户也无法重试
       console.warn('store-zone getStoreConfig', e)
       this.setData({ loading: false, loadError: true, zone: null })
-      wx.showModal({
+      this.modal({
         title: '展陈加载失败',
+        overline: 'LOAD FAILED',
         content: '网络或服务暂时不可用，请稍后重试。',
         confirmText: '重试',
-        cancelText: '返回',
-        confirmColor: '#C4A76C',
-        success: (r) => {
-          if (r.confirm) {
-            this.setData({ loadError: false, loading: true })
-            this.onLoad(this._zoneOptions || {})
-          } else {
-            wx.navigateBack({ fail: () => wx.navigateTo({ url: '/subpackages/business/store/index' }) })
-          }
+        cancelText: '返回'
+      }).then((r) => {
+        if (r.confirm) {
+          this.setData({ loadError: false, loading: true })
+          this.onLoad(this._zoneOptions || {})
+        } else {
+          wx.navigateBack({ fail: () => wx.navigateTo({ url: '/subpackages/business/store/index' }) })
         }
       })
       return
@@ -296,4 +296,4 @@ Page({
     if (!src || !urls.length) return
     wx.previewImage({ current: src, urls })
   }
-})
+}))
