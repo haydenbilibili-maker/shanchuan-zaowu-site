@@ -1,6 +1,6 @@
 {
- "at": "2026-09-18T05:12:59.613Z",
- "total": 1990,
+ "at": "2026-09-18T05:18:54.149Z",
+ "total": 1984,
  "counts": {
   "miniprogram/components/ProductList/index.js": 4,
   "miniprogram/components/RegisterAuthDialog/index.js": 4,
@@ -27,7 +27,7 @@
   "miniprogram/subpackages/business/framer-recruit/index.js": 10,
   "miniprogram/subpackages/business/logistics-track/index.js": 2,
   "miniprogram/subpackages/business/order-claim/index.js": 9,
-  "miniprogram/subpackages/business/order-detail/index.js": 38,
+  "miniprogram/subpackages/business/order-detail/index.js": 32,
   "miniprogram/subpackages/business/orders/index.js": 14,
   "miniprogram/subpackages/business/pickup-pass/index.js": 7,
   "miniprogram/subpackages/business/points/index.js": 1,
