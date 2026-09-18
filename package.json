@@ -246,7 +246,9 @@
     "test:ritual-profile": "node miniprogram/scripts/test-ritual-profile.mjs",
     "test:ritual-profile:selftest": "node miniprogram/scripts/test-ritual-profile.mjs --selftest",
     "check:docs-index": "node scripts/check-docs-index.mjs",
-    "check:docs-index:selftest": "node scripts/check-docs-index.mjs --selftest"
+    "check:docs-index:selftest": "node scripts/check-docs-index.mjs --selftest",
+    "check:product-save-fields": "node miniprogram/scripts/check-product-save-fields.mjs",
+    "check:product-save-fields:selftest": "node miniprogram/scripts/check-product-save-fields.mjs --selftest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

@@ -506,6 +506,21 @@
       "guards": [
         "test:list-cover-images"
       ]
+    },
+    {
+      "id": "theme-name-save-fix",
+      "name": "藏品主题名保存修复 + 补「白名单·表单·载荷」结构守卫",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-20 立。真机反馈「一键补齐后主题名保存不生效」：云函数白名单有、表单绑了、**载荷漏了**。修 payload 两行 + 新增 check:product-save-fields（跨 cross 域）。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/subpackages/manager/manager/managerPageConfig.js",
+        "miniprogram/scripts/check-product-save-fields.mjs"
+      ],
+      "guards": [
+        "check:product-save-fields"
+      ]
     }
   ],
   "frozen": [
