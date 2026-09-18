@@ -44,6 +44,28 @@ const scriptNameOf = (cmd) => {
   return m ? m[1] : null
 }
 
+/**
+ * 守卫名 → 它真正执行的脚本文件（用于判「是否依赖凭据」）。
+ * `npm run X` 的值形如 `node <path>` / `bash <path>`；
+ * 复合命令（含 `&&`、`test:` 之类）一律返回 null —— 不猜。
+ */
+export function scriptFileOf(scripts, name) {
+  const raw = String(scripts[name] || '')
+  if (!raw || raw.includes('&&') || raw.includes('||')) return null
+  const m = /^\s*(?:node|bash)\s+([^\s]+\.(?:mjs|cjs|js|sh))\s*$/.exec(raw)
+  return m ? m[1] : null
+}
+
+/** 依赖 TCB 凭据的守卫：无凭据时它只能"无法验证"，而**无法验证 ≠ 通过**（错题本 E16） */
+const CRED_RE = /TCB_SECRET_(?:ID|KEY)/
+export function needsCredentials(scripts, name, root = ROOT) {
+  const p = scriptFileOf(scripts, name)
+  if (!p) return false
+  const abs = join(root, p)
+  if (!existsSync(abs)) return false
+  try { return CRED_RE.test(readFileSync(abs, 'utf8')) } catch { return false }
+}
+
 /** 域文件命名：`<NN>-<域>.txt`；返回 { domain -> 文件名 } */
 export function domainFiles(dir = GUARDS_DIR) {
   const map = new Map()
@@ -92,6 +114,12 @@ export function runChecks(meta, scripts, dir = GUARDS_DIR) {
       if (!scripts[name]) fail.push(`域 ${d}：package.json 里没有脚本 ${name}`)
       else if (!scripts[selftestNameOf(name)]) {
         fail.push(`域 ${d}：${name} 缺少 ${selftestNameOf(name)}（AGENTS.md：每条守卫都必须能证明自己会失败）`)
+      } else if (needsCredentials(scripts, name)) {
+        // E16「无法验证 ≠ 通过」：依赖凭据的守卫在 CI 上只能报"跳过/未验证"，
+        // 一旦它进了链，汇总里就是一行 ✓，而它什么都没验证 —— 这正是本仓反复吃亏的形态。
+        // 约定：这类守卫 exit 2 且**留在链外**（同 check:fn-sync / audit:collections）。
+        fail.push(`域 ${d}：${name} **依赖 TCB 凭据**，不得进守卫链 —— 无凭据时它只能"无法验证"，`
+          + `而"无法验证 ≠ 通过"（错题本 E16）。\n      请把它移出 guards/*.txt，按需手动跑（约定：exit 2、链外）`)
       }
     }
   }
@@ -194,6 +222,19 @@ function selftest() {
   for (const [label, mut] of inj) {
     const res = withMutatedDomain(targetFile, mut)
     t(`★ 被检出：${label}`, res.fail.length > 0)
+  }
+
+  // E16：凭据依赖的守卫不得进链 —— 断言**判据专属的报错文本**，
+  // 否则任何一条别的失败都能让这个用例"通过"（假通过）。
+  {
+    const res = withMutatedDomain(targetFile, (s) => s + 'npm run audit:collections\n')
+    t('★ 被检出：E16 把「依赖 TCB 凭据」的守卫塞进守卫链（无凭据时它只能"无法验证"）',
+      res.fail.some((f) => /依赖 TCB 凭据/.test(f)))
+  }
+  // 反例：凭据守卫留在链外 → 不该报
+  {
+    const res = quiet(() => runChecks(readJson(META_FILE), scripts))
+    t('★ 反例：凭据依赖的守卫留在链外时不报（判据是窄的）', !res.fail.some((f) => /依赖 TCB 凭据/.test(f)))
   }
 
   // domainOrder 里加一个没有文件的域
