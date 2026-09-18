@@ -244,7 +244,9 @@
     "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
     "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report",
     "test:ritual-profile": "node miniprogram/scripts/test-ritual-profile.mjs",
-    "test:ritual-profile:selftest": "node miniprogram/scripts/test-ritual-profile.mjs --selftest"
+    "test:ritual-profile:selftest": "node miniprogram/scripts/test-ritual-profile.mjs --selftest",
+    "check:docs-index": "node scripts/check-docs-index.mjs",
+    "check:docs-index:selftest": "node scripts/check-docs-index.mjs --selftest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
