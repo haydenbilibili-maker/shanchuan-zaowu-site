@@ -193,6 +193,7 @@ async function main() {
     width: Number(args.width) || 430,
     hyaline: args.hyaline !== 'false',
     out: args.out || 'scripts/qr-assets/identify-store-qr.png',
+    manifest: args.manifest || '',
     appid: args.appid,
     appsecret: args.appsecret
   }
@@ -205,6 +206,23 @@ async function main() {
   const outPath = path.resolve(ROOT, opts.out)
   fs.mkdirSync(path.dirname(outPath), { recursive: true })
   fs.writeFileSync(outPath, buf)
+  // 清单：这张码印出去就改不了，得留下"它指向哪、scene 是什么"的可核对记录。
+  // 守卫 scripts/check-wall-qr.mjs 会把 manifest.scene 直接喂给页面的解析器做端到端断言。
+  if (opts.manifest) {
+    // ⚠️ 与 --out 同一基准（都相对 miniprogram/）：第一版这里相对仓库根，结果 --out 写成
+    // `miniprogram/scripts/...` 时两个文件落到不同层级（生成物跑到 miniprogram/miniprogram/ 下）
+    const manifestPath = path.isAbsolute(opts.manifest) ? opts.manifest : path.resolve(ROOT, opts.manifest)
+    fs.mkdirSync(path.dirname(manifestPath), { recursive: true })
+    fs.writeFileSync(manifestPath, JSON.stringify({
+      page: opts.page,
+      scene: opts.scene,
+      envVersion: opts.envVersion,
+      width: opts.width,
+      hyaline: opts.hyaline,
+      out: path.relative(ROOT, outPath).replace(/\\/g, '/'),
+      generatedAt: new Date().toISOString()
+    }, null, 2) + '\n')
+  }
   console.log(`已保存：${outPath}（${(buf.length / 1024).toFixed(1)} KB）`)
 }
 
