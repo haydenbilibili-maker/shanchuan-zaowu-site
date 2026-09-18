@@ -604,7 +604,11 @@ function buildFunnel(rows) {
         failRate: pct(wallFail, wallGateShow),
         completeRate: pct(wallGateResume, wallGateShow),
         resumeRate: pct(wallGateResume, wallGateGo)
-      }
+      },
+      // 祈福墙「连续记录云保存」注册钩子（2026-09-20）：action 是 wish_ritual_gate，
+      // 与落愿钩子共用 gateBlock 的同一套口径（曝光/去注册/放弃/完成 + 四个比率）。
+      // 不在这里分桶 = 埋点发了、报表恒 0（祈福墙 2026-09-18 已栽过一次）
+      ritualGate: gateBlock('wish_ritual_gate')
     },
     store: {
       tabEnter: count('store_tab_enter'),

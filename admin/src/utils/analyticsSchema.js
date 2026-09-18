@@ -184,6 +184,7 @@ export const EVENTS = {
   wish_wall_play: { module: MODULE.COMMUNITY, desc: '祈福墙玩法（targetType=玩法 id：qian/cookie/zodiac/mbti）', targetType: 'play' },
   wish_wall_reco: { module: MODULE.COMMUNITY, desc: '祈福墙祈运弱推（targetType=祈运标签 key）', targetType: 'reco' },
   wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
+  wish_ritual_gate: { module: MODULE.COMMUNITY, desc: '祈福墙连续记录云存注册漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
   // —— 补登记（2026-09-16 与小程序 eventSchema 对齐）· USER ——
   member_card_flip: { module: MODULE.USER, desc: '会员卡翻面', targetType: 'member_card' },
   member_code_show: { module: MODULE.USER, desc: '展示会员码', targetType: 'member_card' },
@@ -259,6 +260,19 @@ export const FUNNELS = [
       { action: 'wish_wall_register_gate:go_register', label: '点「去注册」' },
       { action: 'wish_wall_register_gate:dismiss', label: '先不挂' },
       { action: 'wish_wall_register_gate:resume_success', label: '注册完成并自动续发心愿', endpoint: true }
+    ]
+  },
+  {
+    key: 'wish_ritual_gate',
+    name: '祈福墙 · 连灯记录云存钩子',
+    module: MODULE.COMMUNITY,
+    icon: '🏮',
+    color: '#8D6E63',
+    steps: [
+      { action: 'wish_ritual_gate:show', label: '有可丢进展时曝光' },
+      { action: 'wish_ritual_gate:go_register', label: '点「同意并一键注册」' },
+      { action: 'wish_ritual_gate:dismiss', label: '先存着' },
+      { action: 'wish_ritual_gate:resume_success', label: '注册完成并同步上云', endpoint: true }
     ]
   },
   {

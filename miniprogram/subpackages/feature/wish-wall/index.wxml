@@ -486,6 +486,37 @@
     bind:close="onRegisterDialogClose"
     bind:fail="onRegisterDialogFail"
   />
+
+  <!-- 「连续记录云保存」注册钩子（开关 showRitualProfile，缺配置默认关）。
+       同一个 RegisterAuthDialog 组件、同一条 cta→success 链，只有文案与来源不同 ——
+       只在用户真有可丢的进展（连灯 ≥2 天 / 木鱼 ≥21 下）且未注册时才由 JS 打开。
+       closable=true：拒绝的是"现在注册"，不是"删掉我的连灯"，所以给「先存着」，
+       关掉之后本地记录一个字都不动。 -->
+  <register-auth-dialog
+    show="{{showRitualDialog}}"
+    overline="RITUAL BACKUP"
+    title="注册后连灯记录不丢"
+    desc="{{ritualGateDesc}}"
+    cta="同意并一键注册"
+    closable="{{true}}"
+    close-text="先存着"
+    from="wish_ritual"
+    bind:cta="onRitualDialogCta"
+    bind:success="onRitualRegisterSuccess"
+    bind:close="onRitualDialogClose"
+    bind:fail="onRitualDialogFail"
+  />
+
+  <!-- 统一轻提示（AppToast）：钩子的结果反馈（「已存到云端」/「记录仍在本机」）走这里。
+       为什么不用 wx.showToast：本页原生调用数被 check:dialog-ratchet 冻结（只许降不许涨）。 -->
+  <app-toast
+    show="{{toastShow}}"
+    overline="{{toastOverline}}"
+    title="{{toastTitle}}"
+    desc="{{toastDesc}}"
+    duration="{{toastDuration}}"
+    bind:close="onToastClose"
+  />
   <!-- 纸签弹层（遮罩 + 从底部升起的签）：与发送条一样，**必须是 .ww-page 的直接子节点** ——
        它原本挂在 .ww-plays 里，而 .ww-plays 是 z-index:1 的层叠上下文，于是弹层的 z-index:41
        只在那个上下文内有效，吸底发送条（页面级 z-index:30）反而画到它上面（渲染图里实测到）。
