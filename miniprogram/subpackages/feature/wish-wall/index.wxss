@@ -1313,3 +1313,84 @@ page {
   18%  { opacity: 0.95; }
   100% { opacity: 0; transform: translate(-50%, -120rpx) scale(1.12); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 祈福动作区（2026-09-19 版式重构 · 第一批）
+ * ① 点灯 + 安心木鱼 **并列**：row 包裹两个卡片，各自 flex:1（不改点灯卡自身规则）
+ * ② 弹幕墙**视觉强化**：只加描边/内光/标题字重 —— 不动轨道结构与高度
+ *    （轨道刻度与 topPercent 由 test-wish-wall 钉住，动高度有风险 ✗）
+ * ═══════════════════════════════════════════════════════════════════ */
+.ww-ritual-row {
+  display: flex;
+  align-items: stretch;
+  gap: 16rpx;
+}
+.ww-ritual-row .ww-lantern { flex: 1; min-width: 0; }
+
+.ww-ritual-card {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  min-width: 0;
+  padding: 22rpx 20rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.34);
+  border-radius: 16rpx;
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.10) 0%, rgba(196, 167, 108, 0.03) 100%);
+}
+.ww-muyu-press { opacity: 0.86; }
+
+/* 木鱼：纯 CSS 造型（暖木色圆身 + 深色鱼口），不引素材 */
+.ww-muyu {
+  position: relative;
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 56rpx;
+  border-radius: 50% 50% 46% 46%;
+  background: radial-gradient(120% 120% at 32% 26%, #C89A63 0%, #A97B45 58%, #7E5A31 100%);
+  box-shadow: inset 0 -4rpx 8rpx rgba(0, 0, 0, 0.28), 0 4rpx 10rpx rgba(0, 0, 0, 0.22);
+  transition: transform 0.12s ease-out;
+}
+.ww-muyu.is-beat { transform: scale(0.9); }
+.ww-muyu-slit {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 46%;
+  height: 6rpx;
+  border-radius: 6rpx;
+  background: rgba(38, 26, 14, 0.72);
+}
+.ww-muyu-copy { display: flex; flex-direction: column; gap: 4rpx; min-width: 0; }
+.ww-muyu-title { font-size: 26rpx; color: #EFE6D2; letter-spacing: 1rpx; }
+.ww-muyu-line { font-size: 20rpx; color: var(--color-text-muted, #8A857C); }
+.ww-muyu-count { font-size: 20rpx; color: #D9BE86; }
+.ww-muyu-plus {
+  position: absolute;
+  right: 20rpx;
+  top: 14rpx;
+  font-size: 22rpx;
+  color: #D9BE86;
+  animation: ww-muyu-plus 0.42s ease-out forwards;
+}
+@keyframes ww-muyu-plus {
+  0% { opacity: 0; transform: translateY(6rpx); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-22rpx); }
+}
+
+/* 说明：一行说完，不占版面 */
+.ww-foot-note {
+  display: block;
+  margin: 18rpx 4rpx 4rpx;
+  font-size: 20rpx;
+  line-height: 1.6;
+  color: var(--color-text-muted, #8A857C);
+}
+
+/* 弹幕墙视觉强化：更实的描边 + 内光 + 标题层次（不动轨道与高度） */
+.ww-wall {
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  box-shadow: inset 0 0 40rpx rgba(196, 167, 108, 0.10), 0 8rpx 24rpx rgba(0, 0, 0, 0.18);
+}

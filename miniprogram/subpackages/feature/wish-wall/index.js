@@ -109,7 +109,10 @@ Page({
      * （旧实现就是这么叠成灾难现场的）。整批重排由 scheduleDanmakuCycle 定时触发。
      */
     danmakuCycle: 0,
-    heartBurst: false
+    heartBurst: false,
+    muyuCount: 0,     // 安心木鱼：本地功德计数（不上云，纯陪伴）
+    muyuBeat: false,
+    muyuPlus: false
   },
 
   onLoad(options) {
@@ -180,6 +183,16 @@ Page({
     }
     const lit = state.lit === true
     this.setData({ lamp: this.buildLampState(dayKey, lit, state.litAt, state.days) })
+  },
+
+  /** 安心木鱼：敲一下 +1（本地存档，不联网、不上榜 —— 只是给自己一个静下来的动作） */
+  onMuyuTap() {
+    const next = (this.data.muyuCount || 0) + 1
+    this.setData({ muyuCount: next, muyuBeat: true, muyuPlus: true })
+    try { wx.setStorageSync('wish_muyu_v1', next) } catch (e) { /* 存档失败不影响计数 */ }
+    try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* 部分机型不支持 */ }
+    clearTimeout(this._muyuTimer)
+    this._muyuTimer = setTimeout(() => this.setData({ muyuBeat: false, muyuPlus: false }), 420)
   },
 
   onLampTap() {

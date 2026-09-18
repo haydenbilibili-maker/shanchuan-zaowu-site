@@ -37,6 +37,8 @@
   </view>
 
   <block wx:else>
+    <!-- 祈福动作区：点灯 + 木鱼并列（产品负责人 2026-09-19 版式） -->
+    <view class="ww-ritual-row">
     <!-- 灯龛：零门槛的入场动作。点完亮出当天那一句，同一天复现同一句。
          光晕是灯座盒子的子元素（不再用行内绝对定位），文案列 flex:1 —— 布局不会被压塌 -->
     <view
@@ -82,6 +84,21 @@
       </view>
     </view>
 
+    <view class="ww-ritual-card" bindtap="onMuyuTap" hover-class="ww-muyu-press" hover-stay-time="60"
+      aria-role="button" aria-label="安心木鱼，敲一下静一分">
+      <view class="ww-muyu {{muyuBeat ? 'is-beat' : ''}}" aria-hidden="true">
+        <view class="ww-muyu-slit"></view>
+      </view>
+      <view class="ww-muyu-copy">
+        <text class="ww-muyu-title">安心木鱼</text>
+        <text class="ww-muyu-line">敲一下，静一分</text>
+        <text class="ww-muyu-count" wx:if="{{muyuCount}}">功德 {{muyuCount}}</text>
+      </view>
+      <text class="ww-muyu-plus" wx:if="{{muyuPlus}}">+1</text>
+    </view>
+    </view>
+    <!-- 说明：一行说清玩法，不占版面（原长说明已收进页头一句） -->
+    <text class="ww-foot-note">点一盏灯、敲一下木鱼，心愿挂上墙就会一直流动。</text>
     <!-- 墙面：浅纸墙 + 轨道化弹幕。同轨严格不重叠（排期见 utils/wishWall.buildDanmakuRows） -->
     <view
       class="ww-wall"
