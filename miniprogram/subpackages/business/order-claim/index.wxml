@@ -216,3 +216,6 @@
     <text class="footer-en">NATURE'S CREATIONS</text>
   </view>
 </view>
+
+<!-- 全站样式化弹窗宿主（替代 wx.showModal）；详见 utils/appModal.js -->
+<app-modal id="appModal" />

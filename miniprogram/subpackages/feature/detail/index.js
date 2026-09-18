@@ -11,6 +11,7 @@ const {
   DETAIL_TTL
 } = require('../../../utils/productDetailCache');
 const { sanitizeLatinName } = require('../../../utils/latinDisplay');
+const { withAppModal } = require('../../../utils/appModal');
 const {
   isSensitiveBlurProduct,
   shouldVeilSensitive,
@@ -394,7 +395,7 @@ function pickKnowledgeCardCaption(product, remote) {
   return '';
 }
 
-Page({
+Page(withAppModal({
   data: {
     statusBarHeight: 20,
     navBarHeight: 44,
@@ -1525,12 +1526,12 @@ Page({
     const p = this.data.product || {};
     const id = p._id || p.id || '';
     if (id && p.supportsCustom === false) {
-      wx.showModal({
+      this.modal({
         title: '暂不支持定制',
+        overline: 'CUSTOM UNAVAILABLE',
         content: '该件为成品藏品，暂不提供工坊定制服务。如需咨询，请联系门店专员。',
         showCancel: false,
-        confirmText: '知道了',
-        confirmColor: '#C4A76C'
+        confirmText: '知道了'
       });
       return;
     }
@@ -1614,11 +1615,11 @@ Page({
     }
     await this.ensureFreshCommerce();
     if ((this.data.displayStock == null) || this.data.displayStock <= 0) {
-      wx.showModal({
+      this.modal({
         title: '遗憾通知',
+        overline: 'SOLD OUT',
         content: '该藏品已被其他收藏家珍藏。',
-        showCancel: false,
-        confirmColor: '#C4A76C'
+        showCancel: false
       });
       return;
     }
@@ -1645,11 +1646,11 @@ Page({
     }
     await this.ensureFreshCommerce();
     if ((this.data.displayStock == null) || this.data.displayStock <= 0) {
-      wx.showModal({
+      this.modal({
         title: '遗憾通知',
+        overline: 'UNAVAILABLE',
         content: '该藏品暂不可购。',
-        showCancel: false,
-        confirmColor: '#C4A76C'
+        showCancel: false
       });
       return;
     }
@@ -2102,8 +2103,9 @@ Page({
 
     // 已付定金等待上架
     if (this.data.depositStatus === 'deposit_paid') {
-      wx.showModal({
+      this.modal({
         title: '定金已支付',
+        overline: 'DEPOSIT PAID',
         content: this.data.depositAmountHint
           ? `已支付定金 ¥${this.data.depositAmountHint}。上架后请在时限内付尾款；逾期开放且定金不退。`
           : '定金已支付。上架后请在时限内付尾款；逾期开放且定金不退。',
@@ -2140,16 +2142,13 @@ Page({
     const suggest = Math.max(50, Math.min(500, Math.round(price * 0.1) || 50));
 
     try {
-      const confirm = await new Promise((resolve) => {
-        wx.showModal({
-          title: '支付定金',
-          content: `参考定金约 ¥${suggest}（售价约 10%，以实际为准）。\n\n支付后获得优先制作权；上架后请在时限内付尾款。逾期未付则开放给他人，定金不退。`,
-          confirmText: '立即支付',
-          cancelText: '再看看',
-          success: (r) => resolve(!!r.confirm),
-          fail: () => resolve(false)
-        });
-      });
+      const confirm = await this.modal({
+        title: '支付定金',
+        overline: 'DEPOSIT',
+        content: `参考定金约 ¥${suggest}（售价约 10%，以实际为准）。\n\n支付后获得优先制作权；上架后请在时限内付尾款。逾期未付则开放给他人，定金不退。`,
+        confirmText: '立即支付',
+        cancelText: '再看看'
+      }).then((r) => !!r.confirm);
       if (!confirm) return;
 
       wx.showLoading({ title: '创建定金单…', mask: true });
@@ -2216,8 +2215,9 @@ Page({
       }
 
       if (!result.needPay || !result.orderId) {
-        wx.showModal({
+        this.modal({
           title: result.already ? '定金状态' : '已登记',
+          overline: 'DEPOSIT STATUS',
           content: result.msg || '请查看定金状态',
           showCancel: false,
           confirmText: '好的'
@@ -2282,18 +2282,15 @@ Page({
       return;
     }
     const balance = this.data.depositBalanceHint || '';
-    const ok = await new Promise((resolve) => {
-      wx.showModal({
-        title: '支付尾款',
-        content: balance
-          ? `已付定金将自动抵扣，约应付 ¥${balance}（结算页为准）。请确认收货信息后支付。`
-          : '已付定金将自动抵扣，请在结算页确认应付金额后支付。',
-        confirmText: '去结算',
-        cancelText: '取消',
-        success: (r) => resolve(!!r.confirm),
-        fail: () => resolve(false)
-      });
-    });
+    const ok = await this.modal({
+      title: '支付尾款',
+      overline: 'BALANCE DUE',
+      content: balance
+        ? `已付定金将自动抵扣，约应付 ¥${balance}（结算页为准）。请确认收货信息后支付。`
+        : '已付定金将自动抵扣，请在结算页确认应付金额后支付。',
+      confirmText: '去结算',
+      cancelText: '取消'
+    }).then((r) => !!r.confirm);
     if (!ok) return;
 
     const sku = this.data.selectedSku;
@@ -2951,13 +2948,12 @@ Page({
       fail: (err) => {
         const msg = (err && err.errMsg) || '';
         if (/auth|authorize|permission/i.test(msg)) {
-          wx.showModal({
+          this.modal({
             title: '需要相册权限',
+            overline: 'ALBUM ACCESS',
             content: '请在设置中允许保存到相册，以便收藏知识卡。',
-            confirmText: '去设置',
-            confirmColor: '#C4A76C',
-            success: (r) => { if (r.confirm) wx.openSetting({}); }
-          });
+            confirmText: '去设置'
+          }).then((r) => { if (r.confirm) wx.openSetting({}); });
           return;
         }
         wx.showToast({ title: '保存失败', icon: 'none' });
@@ -3068,20 +3064,19 @@ Page({
 
   // 商品评价需绑定已签收订单；详情页仅展示，引导至订单
   goToComment() {
-    wx.showModal({
+    this.modal({
       title: '写下感受',
+      overline: 'WRITE A NOTE',
       content: '确认签收后，可在「我的订单」详情页评价这件藏品。',
       confirmText: '查看订单',
-      confirmColor: '#C4A76C',
-      cancelText: '知道了',
-      success: (res) => {
-        if (res.confirm) {
-          wx.navigateTo({
-            url: '/subpackages/business/orders/index',
-            fail: () => wx.showToast({ title: '请从「我的」进入订单', icon: 'none' })
-          })
-        }
+      cancelText: '知道了'
+    }).then((res) => {
+      if (res.confirm) {
+        wx.navigateTo({
+          url: '/subpackages/business/orders/index',
+          fail: () => wx.showToast({ title: '请从「我的」进入订单', icon: 'none' })
+        })
       }
     })
   }
-});
+}));

@@ -4,6 +4,7 @@ const {
 } = require('../utils/storePoints');
 const { fetchStoreCatalog, mapStoreOptions } = require('../../../utils/storeCatalog');
 const { ensureOpenId } = require('../../../utils/orderScope');
+const { withAppModal } = require('../../../utils/appModal');
 const app = getApp();
 
 const STATUS_SHORT = {
@@ -29,7 +30,7 @@ function mapClaimRow(row, statusMap) {
   };
 }
 
-Page({
+Page(withAppModal({
   data: {
     mode: 'receipt',
 
@@ -117,14 +118,13 @@ Page({
     }
     if (mode === 'order' && !this.data.orderBindEnabled) {
       if (this.data.orderBindLoadError) {
-        wx.showModal({
+        this.modal({
           title: '外部订单认领加载失败',
+          overline: 'LOAD FAILED',
           content: '网络或服务暂时不可用，请稍后重试。',
           confirmText: '重试',
-          cancelText: '取消',
-          confirmColor: '#C4A76C',
-          success: (r) => { if (r.confirm) this.loadOrderBindOptions(); }
-        });
+          cancelText: '取消'
+        }).then((r) => { if (r.confirm) this.loadOrderBindOptions(); });
         return;
       }
       wx.showToast({ title: '外部订单认领暂未开放', icon: 'none' });
@@ -264,19 +264,19 @@ Page({
       this.setData({ receiptSubmitting: false });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showModal({
+        this.modal({
           title: '提交失败',
+          overline: 'SUBMIT FAILED',
           content: result.msg || '请稍后重试',
-          showCancel: false,
-          confirmColor: '#C4A76C'
+          showCancel: false
         });
         return;
       }
-      wx.showModal({
+      this.modal({
         title: '已提交',
+        overline: 'SUBMITTED',
         content: result.msg || '等待专员审核，通常 3 个工作日内完成。',
-        showCancel: false,
-        confirmColor: '#C4A76C'
+        showCancel: false
       });
       this.setData({
         receiptForm: { amount: '', remark: '' },
@@ -378,20 +378,20 @@ Page({
       this.setData({ orderBindSubmitting: false });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showModal({
+        this.modal({
           title: '提交失败',
+          overline: 'SUBMIT FAILED',
           content: result.msg || '请稍后重试',
-          showCancel: false,
-          confirmColor: '#C4A76C'
+          showCancel: false
         });
         return;
       }
       const preview = result.previewPoints != null ? `\n预估 +${result.previewPoints} 分` : '';
-      wx.showModal({
+      this.modal({
         title: '已提交',
+        overline: 'SUBMITTED',
         content: (result.msg || '等待专员审核') + preview + '\n通常 3 个工作日内完成核对。',
-        showCancel: false,
-        confirmColor: '#C4A76C'
+        showCancel: false
       });
       this.setData({ orderBindForm: { orderNo: '', amount: '', remark: '' } });
       this.loadOrderBindMine();
@@ -401,4 +401,4 @@ Page({
       wx.showToast({ title: '网络错误', icon: 'none' });
     }
   }
-});
+}));

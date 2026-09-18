@@ -7,5 +7,8 @@
   "backgroundColorBottom": "#1A1814",
   "backgroundColorContent": "#1A1814",
   "backgroundTextStyle": "light",
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  },
   "enablePullDownRefresh": true
 }

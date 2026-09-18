@@ -108,7 +108,7 @@
               <input
                 class="card-to-input"
                 maxlength="20"
-                placeholder="TA 的名字"
+                placeholder="{{recipientPlaceholder}}"
                 placeholder-class="card-to-placeholder"
                 value="{{recipientName}}"
                 focus="{{recipientEditing}}"
@@ -349,3 +349,13 @@
     <view class="btn-ghost state-cta" bindtap="goBrowseFromError">去馆藏看看</view>
   </view>
 </view>
+
+<!-- 统一主视觉轻提示宿主：放最外层容器之外，避免被任何 filter/transform 影响定位 -->
+<app-toast
+  show="{{toastShow}}"
+  overline="{{toastOverline}}"
+  title="{{toastTitle}}"
+  desc="{{toastDesc}}"
+  duration="{{toastDuration}}"
+  bind:close="onToastClose"
+/>
