@@ -90,7 +90,14 @@ const SKIP = (why) => {
   console.log('   这不是「通过」—— 唯一索引是否真的存在**仍未证实**，')
   console.log('   契约 C2 裁决 §2 的红线（索引未证实前不得改钱路径代码）继续生效。')
   console.log('   要拿到数字：把 TCB_SECRET_ID / TCB_SECRET_KEY 写进 admin/.env 后重跑本脚本。')
-  process.exit(0)
+  // ⚠️ 2026-09-18 集成官改（原本 exit 0）：
+  //    无凭据时**必须非 0 退出**，否则一旦有人把它接进 `check:admin`（守卫链），
+  //    汇总里它就是一行 `✓` —— 而它其实什么都没验证。这正是本仓反复吃亏的
+  //    「空头承诺」形态（check:dedupe-index-coverage 曾报 `✓ 覆盖齐全` 却只扫了 10/29 个函数；
+  //    check:species-dedup 的"副本一致"曾是 `cmp A A` 恒真）。
+  //    仓库既有约定：需要凭据的守卫 exit 2 并**留在链外**（见 check:fn-sync / audit:collections）。
+  //    所以本脚本：**不进任何域文件**，只按需手动跑；无凭据时 exit 2。
+  process.exit(2)
 }
 
 async function main() {
