@@ -421,7 +421,7 @@ page {
   gap: 10rpx;
   white-space: nowrap;
   /* 手写体：心愿是"写"上去的。字号比原来的无衬线大一号 —— 手写体笔画细，移动中要认得出 */
-  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, 楷体, "Songti SC", serif;
+  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
   font-size: 28rpx;
   line-height: 1.3;
   color: #4A4234;
@@ -772,7 +772,7 @@ page {
 
 .ww-tag-text {
   display: block;
-  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, 楷体, "Songti SC", serif;
+  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
   font-size: 30rpx;
   line-height: 1.5;
   color: var(--brass-100);

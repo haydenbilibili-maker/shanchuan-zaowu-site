@@ -42,6 +42,16 @@ function inspect(abs) {
   const open = (src.match(/\{/g) || []).length
   const close = (src.match(/\}/g) || []).length
   if (open !== close) problems.push(`花括号不配平：{ ${open} vs } ${close}（多半是删规则时残留了片段）`)
+  // font-family 里**未加引号的中文族名**：WXSS 编译器容忍度低，可能整条声明失效
+  //   （2026-09-19 iOS 事故：`KaiTi, 楷体, "Songti SC"` → 手写体全线落回系统默认）
+  src.split('\n').forEach((l, i) => {
+    if (!/font-family/.test(l)) return
+    const val = l.split('font-family:')[1] || ''
+    const noQuoted = val.replace(/"[^"]*"/g, '').replace(/'/g, '')
+    if (/[\u4e00-\u9fa5]/.test(noQuoted)) {
+      problems.push(`第 ${i + 1} 行 font-family 含**未加引号的中文族名**（请写成 "楷体" 这类带引号形式）：${l.trim().slice(0, 48)}`)
+    }
+  })
   // 孤儿 from/to/N%：关键帧块必须**直接在** @keyframes 里（按花括号深度判定，避免把
   // `from { … }` 的收尾 `}` 误当成退出 keyframes —— 那样会产生大量误报 ✗）
   const lines = src.split('\n')
@@ -73,7 +83,8 @@ if (process.argv.includes('--selftest')) {
   let bad = 0
   const cases = [
     { name: '残留孤儿 to{…}（本次真事故）', inject: '\nto { opacity: 1; transform: translateY(0) rotate(0); }\n}\n' },
-    { name: '少一个收尾 }', inject: '\n.x-orphan { color: red;\n' }
+    { name: '少一个收尾 }', inject: '\n.x-orphan { color: red;\n' },
+    { name: 'font-family 里未加引号的中文族名', inject: '\n.x-font { font-family: KaiTi, 楷体, serif; }\n' }
   ]
   for (const c of cases) {
     writeFileSync(target, orig + c.inject)
