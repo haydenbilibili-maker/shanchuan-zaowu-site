@@ -491,6 +491,21 @@
         "check:analytics-schema",
         "check:wall-monitor"
       ]
+    },
+    {
+      "id": "cart-image-fix",
+      "name": "购物车封面显示修复（真机反馈：你可能也喜欢三张卡是深色空块）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-20 立。根因：本页漏了共享封面链的最后一步 thumbUrl()，临时链一失败 src 上留下的 cloud:// 永远渲染不出来；且占位块深底+45%透明图标≈不可见。修法：走共享 thumbUrl + 抬高占位可见度 + 给缩略图补 wx:else 占位；并把本页纳入 test-list-cover-images（+5 判据 / +3 注入）。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/pages/cart/**",
+        "miniprogram/scripts/test-list-cover-images.mjs"
+      ],
+      "guards": [
+        "test:list-cover-images"
+      ]
     }
   ],
   "frozen": [

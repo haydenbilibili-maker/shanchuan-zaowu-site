@@ -943,29 +943,56 @@ Page(withAppModal({
     return '';
   },
 
+  /**
+   * 推荐位封面定链。
+   *
+   * ⚠️ 2026-09-20 真机反馈「你可能也喜欢图片展示错误」（三张卡是**深色空块**，标题价格正常）
+   * —— 根因是本页**漏了共享链的最后一步**：
+   *
+   *   本仓既有口径（首页 / 馆藏 ProductList / 礼赠 hub，见 `test-list-cover-images` 头注）：
+   *     云文件 ID → 批量临时链 → **`imageUrl.thumbUrl()`** → 可渲染地址。
+   *   而本页此前只做到「批量临时链」，**没有走 `thumbUrl()`** ——
+   *   于是当 `getTempFileURL` 失败/超时/某些文件解析不到时，src 上留下的是 `cloud://`，
+   *   而 `<image>` **渲染不了 `cloud://`**（该守卫的断言 `:88` 已把这条钉死），
+   *   于是 `binderror` → 清空字段 → 走占位块；而占位块又是深底 + 45% 透明图标 ≈ 看不见
+   *   → 用户看到的就是「深色空块」。
+   *
+   * 修法：① 回落原值（**绝不丢空**，与 ProductList 同口径）；② **再走 `thumbUrl()`** ——
+   * `cloud://` 在那里被**确定性**换成 https，即使临时链调用整个失败，图仍能渲染；
+   * ③ 首次成功即 `probeSupport` 探测缩略参数（与 ProductList 一致）。
+   */
   async _hydrateRecommendImages(list) {
+    const imageUrl = require('../../utils/imageUrl');
     const items = (list || []).map((item) => {
       const raw = this._pickRecommendImage(item);
       return { ...item, image: raw, httpImage: raw };
     });
     const cloudIds = [...new Set(items.map((i) => i.image).filter((u) => u && String(u).startsWith('cloud://')))];
-    if (!cloudIds.length) return items;
 
     const urlMap = {};
-    try {
-      for (let i = 0; i < cloudIds.length; i += 50) {
-        const chunk = cloudIds.slice(i, i + 50);
-        const res = await wx.cloud.getTempFileURL({ fileList: chunk });
-        (res.fileList || []).forEach((f) => {
-          if (f.fileID && f.tempFileURL) urlMap[f.fileID] = f.tempFileURL;
-        });
+    if (cloudIds.length) {
+      try {
+        for (let i = 0; i < cloudIds.length; i += 50) {
+          const chunk = cloudIds.slice(i, i + 50);
+          const res = await wx.cloud.getTempFileURL({ fileList: chunk });
+          (res.fileList || []).forEach((f) => {
+            if (f.fileID && f.tempFileURL) urlMap[f.fileID] = f.tempFileURL;
+          });
+        }
+      } catch (e) {
+        console.warn('recommend image hydrate failed', e);
       }
-    } catch (e) {
-      console.warn('recommend image hydrate failed', e);
     }
 
-    return items.map((item) => {
-      const next = urlMap[item.image] || item.image;
+    // 先定「原图」：临时链命中就用它，否则**回落原值**（云文件 ID 本身，绝不丢空）
+    const origins = items.map((item) => (item.image && urlMap[item.image]) || item.image || '');
+    if (imageUrl.getState() === 'unknown' && origins[0]) {
+      // 首张图加载成功后再探测缩略参数是否可用（不可用时 thumbUrl 返回原图，不冒破图风险）
+      imageUrl.probeSupport(origins[0]);
+    }
+    return items.map((item, i) => {
+      const origin = origins[i];
+      const next = origin ? imageUrl.thumbUrl(origin) : origin;
       return { ...item, image: next, httpImage: next };
     });
   },
