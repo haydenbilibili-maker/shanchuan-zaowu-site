@@ -226,19 +226,71 @@
       </view>
     </block>
 
-    <!-- Tab 2: 积分明细 -->
+    <!-- Tab 2: 积分明细（2026-09-18 需求 8：筛选 + 时间轴 + 分页）-->
     <block wx:if="{{curTab===2}}">
-      <view class="ledger">
-        <view class="ledger-row" wx:for="{{records}}" wx:key="_id">
-          <view class="lr-main">
-            <text class="lr-title">{{item.title}}</text>
-            <text class="lr-meta">{{item.timeText}}{{item.typeText ? ' · ' + item.typeText : ''}}{{item.status === 'pending' ? ' · 处理中' : ''}}</text>
+      <view class="pt-ledger">
+        <!-- 口径 + 筛选：全部 / 获得 / 消耗（服务端过滤，计数才准） -->
+        <view class="pt-ledger-head">
+          <view class="pt-ledger-filters">
+            <view class="pt-filter {{recordsFilter===''?'is-on':''}}" bindtap="setRecordsFilter" data-type="">全部</view>
+            <view class="pt-filter {{recordsFilter==='earn'?'is-on':''}}" bindtap="setRecordsFilter" data-type="earn">获得</view>
+            <view class="pt-filter {{recordsFilter==='spend'?'is-on':''}}" bindtap="setRecordsFilter" data-type="spend">消耗</view>
           </view>
-          <view class="lr-side">
-            <text class="lr-points {{item.points < 0 ? 'minus' : 'plus'}}">{{item.pointsText}}</text>
-            <text class="lr-balance" wx:if="{{item.balanceAfter !== null}}">余 {{item.balanceAfter}}</text>
-          </view>
+          <text class="pt-ledger-cap" wx:if="{{recordsCap}}">{{recordsCap}}</text>
         </view>
+        <view class="pt-ledger-sums" wx:if="{{records.length}}">
+          <text class="pt-sum is-plus">获得 +{{recordsEarn}}</text>
+          <text class="pt-sum is-minus" wx:if="{{recordsSpend}}">消耗 −{{recordsSpend}}</text>
+          <text class="pt-sum is-hint">仅统计已加载部分</text>
+        </view>
+
+        <!-- 时间轴：月带 + 日组（组头为当日净积分） -->
+        <view class="pt-ledger-timeline" wx:if="{{records.length}}">
+          <block wx:for="{{recordsTimeline}}" wx:key="key">
+            <view class="pt-ledger-month" wx:if="{{item.kind === 'month'}}">
+              <text class="pt-ledger-month-text">{{item.label}}</text>
+              <view class="pt-ledger-month-rule"></view>
+            </view>
+
+            <view class="pt-ledger-day" wx:else>
+              <view class="pt-ledger-day-head">
+                <text class="pt-ledger-day-label">{{item.label}}</text>
+                <text class="pt-ledger-day-week" wx:if="{{item.week}}">{{item.week}}</text>
+                <view class="pt-ledger-day-spacer"></view>
+                <text class="pt-ledger-day-net {{item.netTone}}" wx:if="{{item.netText}}">{{item.netText}}</text>
+                <!-- 分页未完的那一天：当日净额算不出来，宁可不给也不谎报 -->
+                <text class="pt-ledger-day-net is-open" wx:elif="{{!item.complete}}">未完</text>
+              </view>
+
+              <view class="pt-ledger-rows">
+                <view class="pt-ledger-row" wx:for="{{item.rows}}" wx:for-item="row" wx:key="_id">
+                  <view class="pt-ledger-rail" aria-hidden="true">
+                    <view class="pt-ledger-dot {{row.toneClass}}"></view>
+                  </view>
+                  <view class="pt-ledger-main">
+                    <view class="pt-ledger-top">
+                      <text class="pt-ledger-title">{{row.title}}</text>
+                      <text class="pt-ledger-clock">{{row.clockText}}</text>
+                    </view>
+                    <view class="pt-ledger-meta">
+                      <text class="pt-ledger-tag" wx:if="{{row.typeText}}">{{row.typeText}}</text>
+                      <text class="pt-ledger-pending" wx:if="{{row.statusText}}">{{row.statusText}}</text>
+                    </view>
+                  </view>
+                  <view class="pt-ledger-side">
+                    <text class="pt-ledger-points {{row.toneClass}}">{{row.pointsText}}</text>
+                    <text class="pt-ledger-balance" wx:if="{{row.balanceText}}">{{row.balanceText}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+
+        <view class="pt-ledger-more" wx:if="{{recordsHasMore}}" bindtap="loadMoreRecords" hover-class="pt-ledger-more-press">
+          {{recordsLoadingMore ? '加载中…' : '加载更多'}}
+        </view>
+        <text class="pt-ledger-fin" wx:elif="{{records.length && !recordsLoading}}">· 已到最早一笔 ·</text>
 
         <view class="empty-tip" wx:if="{{records.length === 0 && !recordsLoading}}">
           <text>{{recordsError ? '明细加载失败' : '暂无积分变动'}}</text>
