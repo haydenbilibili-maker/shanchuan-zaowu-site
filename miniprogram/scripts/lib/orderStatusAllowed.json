@@ -1,0 +1,134 @@
+{
+  "_doc": "orders.status 枚举的**唯一事实源**（契约 C3《契约C3_订单状态机_2026-09-18.md》§1/§2/§4 的机器可读形态）。",
+  "_reader": "miniprogram/scripts/check-order-status-enum.mjs（npm run check:order-status-enum）",
+  "_judging_rule": [
+    "本文件声明「哪些值是状态」，但**不要求读者相信声明**：守卫会用 miniprogram/cloudfunctions/** 的源码独立重算写入方，做双向对账——",
+    "  · in_use 里的每个值必须至少有一个已证实的服务端写入方（否则它其实是幽灵 → 红）；",
+    "  · ghosts / suspected_ghosts / typo_relics 里的每个值必须**零写入方**（否则它其实在用 → 红）；",
+    "  · 服务端写出的每个值必须落在本文件的某个分组里（否则是新造/漂移的值 → 红）。",
+    "这条对账就是「幽灵删对了且没删漏」的可证明形态（错题本 E7：次数不是判据，文件:行号才是）。"
+  ],
+  "_evidence_note": "本文件只放**值**，不放行号——行号会随他流改动漂移而守卫必须稳定。行号由守卫每次实跑从源码现算并打印。",
+  "in_use": [
+    "aftersales",
+    "exchanged",
+    "expired_refunding",
+    "fulfilling",
+    "paid",
+    "paid_awaiting_address",
+    "pending_pay",
+    "ready_pickup",
+    "received",
+    "refunded",
+    "refunding",
+    "shipped",
+    "unverified",
+    "void"
+  ],
+  "ghosts": [
+    "cancelled",
+    "closed",
+    "refund_approved",
+    "refund_rejected"
+  ],
+  "suspected_ghosts": [
+    "signed"
+  ],
+  "typo_relics": [
+    "refund_reject"
+  ],
+  "_reconciliation": {
+    "contract_claim": "契约 C3 §0 结论 1 与 §1.3 括注写「真实在用 16 个值」+「4 幽灵 = 20 个字面量」。",
+    "source_fact": "本轮逐处实测：服务端云函数写出的 orders.status 字面量**只有 14 个不同值**（见 in_use）。契约 §1.1 表 A 的 16 行 = 12 行在用 + 4 行幽灵；再补上表 C 承认被遗漏的 exchanged / unverified = 14 行在用。契约的「16 个在用值」是把「表 A 的 16 行（含 4 幽灵）」误当成「在用 16 个」。",
+    "resolution": "本文件以**源码逐处实测**为准取 14；契约 §0 的「16」若当作判据会与 §1.1 表 A 自相矛盾（表 A 第 13–16 行自己标了幽灵）。此差异已在交付报告里单列，待集成官/契约作者裁决——守卫不做「16」的断言。",
+    "contract_line_drift": [
+      "契约 §1.1 表 A「void」列 payCallback/fulfillOrder.js:229 —— 实测 :229 是**注释行**，真实写入在 :181。",
+      "契约 §1.1 表 A「received」列漏 manageGift/index.js:343（已证实写入方）。",
+      "契约 §1.1 表 A「paid」列漏 confirmPayment/depositFulfill.js:39 与 payCallback/depositFulfill.js:39（两支同构）。",
+      "契约 §1.1 表 A「paid」列漏 manageGift/index.js:531 / :613 / :647（填址后强制 status→paid）。",
+      "契约 §1.1 表 A「pending_pay」列漏 createDepositIntent/index.js:208（add 建单）。",
+      "契约 §2.2 R1 用 `refundOrder:421-463` 指 updateData 的构造区间（update 调用在 :463），实际 status 字面量在 :444。",
+      "契约 §2.1 T13/T14/T17 的行号整体偏 1–3 行（managerShipOrder :1745/:1178/:1379/:1522）；本守卫按实测行号登记。"
+    ]
+  },
+  "order_status_module_copies": [
+    "miniprogram/subpackages/extra/utils/orderStatus.js",
+    "miniprogram/subpackages/extra/utils/orderStatus__from-feature.js",
+    "miniprogram/subpackages/feature/utils/orderStatus.js",
+    "miniprogram/subpackages/manager/utils/orderStatus.js"
+  ],
+  "_order_status_module_copies_note": "4 份 orderStatus.js：**从 `const ORDER_STATUS = {` 到文件末尾逐字节相同**（实跑 md5 一致），但两份的**文件头注释不同**（extra/manager 版写「与 feature 保持同步」，feature 版写 SSOT 说明）。守卫比对的是**枚举内容**（ORDER_STATUS / ORDER_STATUS_LABEL 键集 / GMV_STATUSES），不是字节——注释漂移只报告、不判红（判红属 E7 过严）。",
+  "valid_order_status_copies": [
+    "miniprogram/cloudfunctions/manageMemberCrm/segmentation.js",
+    "miniprogram/cloudfunctions/assistYouxinCopy/segmentation.js",
+    "miniprogram/cloudfunctions/pushMessage/segmentation.js"
+  ],
+  "client_status_enum_files": [
+    "miniprogram/subpackages/business/utils/pickupPass.js",
+    "miniprogram/subpackages/business/utils/refundPolicy.js",
+    "miniprogram/subpackages/business/orders/index.js",
+    "miniprogram/subpackages/business/order-detail/index.js"
+  ],
+  "_client_status_enum_files_note": "这 4 个文件里所有 `status` 比较/集合字面量都属本域（无 coupon.status 等异域 status），故可整体抽取；云函数**不能**整体抽取（coupon.status / approval status / 评论审核 status 混在一起，必须只抽具名容器与 orders 链），见守卫实现。",
+  "ghost_reference_ratchet": {
+    "_doc": "「幽灵/拼写残留不得出现（新处）」的棘轮：按 value → 文件 → 出现次数记基线。**只许减不许增**：新文件出现该值 = 红；已有文件次数变多 = 红；变少 = 绿（清理是允许的，清完请用 `--print-ghost-baseline` 抬低基线）。删除动作见契约 C3 §4.2 M1–M13，其中 M12/M13 属 erp 流、M1–M3 需集成官裁决（§8.2 Q5）——所以本棘轮当前是**冻结既存**而不是判红。",
+    "by_value": {
+      "cancelled": {
+        "miniprogram/cloudfunctions/manageStoredValue/index.js": 2,
+        "miniprogram/subpackages/business/utils/pickupPass.js": 1,
+        "miniprogram/subpackages/business/order-detail/index.js": 1,
+        "miniprogram/subpackages/extra/utils/orderStatus.js": 2,
+        "miniprogram/subpackages/extra/utils/orderStatus__from-feature.js": 2,
+        "miniprogram/subpackages/feature/utils/orderStatus.js": 2,
+        "miniprogram/subpackages/manager/utils/orderStatus.js": 2
+      },
+      "closed": {
+        "miniprogram/cloudfunctions/manageStoredValue/index.js": 2
+      },
+      "signed": {
+        "miniprogram/subpackages/business/utils/pickupPass.js": 1,
+        "miniprogram/subpackages/business/order-detail/index.js": 3
+      },
+      "refund_approved": {
+        "miniprogram/subpackages/business/utils/pickupPass.js": 1,
+        "miniprogram/subpackages/business/order-detail/index.js": 1,
+        "miniprogram/cloudfunctions/refundOrder/index.js": 3
+      },
+      "refund_rejected": {
+        "miniprogram/subpackages/business/utils/pickupPass.js": 1,
+        "miniprogram/subpackages/business/utils/refundPolicy.js": 1,
+        "miniprogram/subpackages/business/order-detail/index.js": 2
+      },
+      "refund_reject": {
+        "miniprogram/subpackages/business/utils/pickupPass.js": 1
+      }
+    }
+  },
+  "erp_claimed_writes_out_of_scope": {
+    "_doc": "ERP 直写 orders 的「声称迁移」。它们**会被集合级 write:false 拒绝**（契约 §1.4），且修复归 erp 流（契约 §7.4 CR-3）——本守卫只登记、只报告，不判红（判红会与 CR-3 重复且基线必红）。",
+    "sites": [
+      "admin/src/components/Refunds.vue:473",
+      "admin/src/components/Refunds.vue:513",
+      "admin/src/components/Refunds.vue:552",
+      "admin/src/components/Orders.vue:574"
+    ]
+  },
+  "undecidable": {
+    "_doc": "契约 §6.3 已列的诚实边界。守卫**不猜**：这些不进静态判据，也不假装通过。",
+    "items": [
+      "线上 orders 规则是否真为 write:false（需 TCB_SECRET_* 只读凭据；仓库内无手段）",
+      "历史数据里 cancelled/closed/signed/refund_approved/refund_rejected 各有多少条（需查库）",
+      "signed 是否曾是 received 的历史别名（无 git 历史 + 无线上数据）",
+      "contract §8.2 Q1/Q2/Q3/Q4/Q5 —— 需产品负责人/集成官拍板，守卫不替其决定"
+    ]
+  },
+  "named_status_containers": [
+    "miniprogram/cloudfunctions/confirmPayment/fulfillOrder.js",
+    "miniprogram/cloudfunctions/payCallback/fulfillOrder.js",
+    "miniprogram/cloudfunctions/refundOrder/index.js",
+    "miniprogram/cloudfunctions/manageGift/index.js",
+    "miniprogram/cloudfunctions/managerShipOrder/index.js"
+  ],
+  "_named_status_containers_note": "具名状态容器（`const NAME = [...]` / `new Set([...])`，NAME 含 status 或为 allowFrom/allowStatus）。这里列的是**云函数侧**的副本；客户端侧的具名容器已由 client_status_enum_files 抽取覆盖。",
+  "_ratchet_scope_note": "棘轮口径 = ① orders 链的 where/写载荷状态副本；② 声明的客户端枚举文件；③ 声明的具名状态容器；④ orderStatus.js 家族；⑤ **订单域云函数**（真的触碰 `db.collection('orders')` 的文件）里含幽灵值的内联数组。**不含**异域同名 status（采购单/发货单/预约的 cancelled/closed）——那样他流改自己域会弄红本守卫（E7 假失败）。云函数里 `order.status === 'signed'` 这类**比较**不在棘轮内，仅由 A/B（零写入）与契约 §1.3 的读点清单覆盖。"
+}
