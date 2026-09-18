@@ -2457,12 +2457,13 @@ Page(withAppModal({
    * 只要把**源列表**映射好，所有派生子集自动命中；漏掉某个派生槽位也只会回落原图，不会破图。
    *
    * 尺寸口径：
-   *   - 大槽位（主图/细节/长图文）→ detailUrl(750)：显示宽度 750rpx ≈ 375 CSS px，750 恰好覆盖 2 倍屏
-   *   - 小槽位（更多细节缩略/相关推荐）→ thumbUrl(480)
+   *   - 大槽位（主图/细节/长图文）→ detailUrl()：宽度 = windowWidth × pixelRatio（夹在 750–1600）。
+   *     ⚠️ 原口径写死 750（按"2 倍屏"），3 倍屏上是 1170 → 等于放大 1.5 倍显示，是"图不清晰"的直接来源
+   *   - 小槽位（更多细节缩略 200rpx / 相关推荐 200rpx）→ railUrl(360)：3 倍屏只需 300
    *   - **全屏查看器（wx.previewImage）刻意仍用原图** —— 用户会双指放大，750px 会糊
    */
   buildImageView() {
-    const { detailUrl, thumbUrl, isThumbUsable } = require('../../../utils/imageUrl');
+    const { detailUrl, railUrl, isThumbUsable } = require('../../../utils/imageUrl');
     if (!isThumbUsable()) {
       // 能力未确认 / 已降级：清空映射 = 全部回落原图（与改动前行为完全一致）
       if (Object.keys(this.data.imgView || {}).length || Object.keys(this.data.imgThumbView || {}).length) {
@@ -2498,7 +2499,7 @@ Page(withAppModal({
     });
     small.forEach((u) => {
       if (!u || imgThumbView[u]) return;
-      const v = thumbUrl(u);
+      const v = railUrl(u);
       if (v && v !== u) { imgThumbView[u] = v; added += 1; }
     });
     if (added || this.data.imgView || this.data.imgThumbView) {
