@@ -4,7 +4,8 @@
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814",
   "usingComponents": {
-    "protected-badge": "/components/ProtectedBadge/index"
+    "protected-badge": "/components/ProtectedBadge/index",
+    "app-toast": "/components/AppToast/index"
   },
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",

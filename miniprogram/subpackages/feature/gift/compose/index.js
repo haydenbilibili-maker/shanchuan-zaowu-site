@@ -82,6 +82,12 @@ const OTHER_DELIVERIES = [
 
 Page({
   data: {
+    /** 统一主视觉轻提示（AppToast）：原生 toast 与本产品视觉脱节（V1.1.2·W2 棘轮不得新增原生调用） */
+    toastShow: false,
+    toastOverline: '',
+    toastTitle: '',
+    toastDesc: '',
+    toastDuration: 2200,
     checking: true,
     allowed: false,
     loading: false,
@@ -148,6 +154,23 @@ Page({
     /** 主滚动区高度（iOS 显式 px） */
     scrollHeightPx: 0,
     scrollStyle: ''
+  },
+
+  /** 统一主视觉轻提示（铭牌 + 铜金 + 衬线标题）—— 取代原生 toast。
+   *  与 pages/cart/index.js 的 showAppToast 同形（原生 toast 在博物黑界面里最不像本产品）。 */
+  showAppToast({ overline = '', title = '', desc = '', duration = 0 } = {}) {
+    if (!title) return
+    this.setData({
+      toastOverline: overline,
+      toastTitle: title,
+      toastDesc: desc,
+      toastDuration: duration || 2200,
+      toastShow: true
+    })
+  },
+
+  onToastClose() {
+    this.setData({ toastShow: false })
   },
 
   onReady() {
@@ -1113,7 +1136,7 @@ Page({
     }
     if (!String(this.data.recipientName || '').trim()) {
       this.setData({ recipientEditing: true })
-      wx.showToast({ title: '请先填写写给谁的名字', icon: 'none' })
+      this.showAppToast({ overline: 'RECIPIENT', title: '请先填写写给谁的名字' })
       return
     }
     const deliveryType = this.data.deliveryType || 'invite_address'
