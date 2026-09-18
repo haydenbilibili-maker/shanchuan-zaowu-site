@@ -160,6 +160,71 @@
       </div>
     </el-card>
 
+    <!-- 祈福墙 · 注册转化监测表（需求 28）：表格式看板 —— 每行口径都来自真实埋点，
+         门店码来源单独拆出来（现场转化是这一期的重点） -->
+    <el-card shadow="never" class="wall-monitor-card">
+      <template #header>
+        <div class="card-header">
+          <span>🕯️ 祈福墙 · 注册转化监测表</span>
+          <span class="hint">
+            数据源 user_behaviors 明细（analytics_daily 无 step/来源维度）；「—」= 该环节没有曝光，不是 0%
+          </span>
+        </div>
+      </template>
+      <template v-if="wallMonitor.hasData">
+        <el-table :data="wallMonitor.steps" size="small" v-loading="loading" class="wall-monitor-table">
+          <el-table-column label="环节" min-width="220">
+            <template #default="{ row }">
+              <span :class="{ 'wm-indent': row.indent }">{{ row.label }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="次数" width="90" align="right">
+            <template #default="{ row }">{{ formatNum(row.count) }}</template>
+          </el-table-column>
+          <el-table-column label="独立用户" width="100" align="right">
+            <template #default="{ row }">{{ formatNum(row.uv) }}</template>
+          </el-table-column>
+          <el-table-column label="转化率" width="110" align="right">
+            <template #default="{ row }">
+              <span v-if="row.rate === null" class="wm-empty">—</span>
+              <b v-else :class="convClass(row.rate)">{{ row.rate }}%</b>
+            </template>
+          </el-table-column>
+          <el-table-column label="口径" min-width="260">
+            <template #default="{ row }">
+              <span class="wm-desc">{{ row.desc }}</span>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="wall-source-title">按入口来源拆分（门店现场 vs 线上）</div>
+        <el-table :data="wallMonitor.sources" size="small" v-loading="loading" class="wall-monitor-table">
+          <el-table-column label="来源" min-width="200">
+            <template #default="{ row }">
+              <div>{{ row.label }}</div>
+              <div class="wm-desc">{{ row.hint }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="进墙次数" width="100" align="right">
+            <template #default="{ row }">{{ formatNum(row.enter) }}</template>
+          </el-table-column>
+          <el-table-column label="进墙人数" width="100" align="right">
+            <template #default="{ row }">{{ formatNum(row.enterUv) }}</template>
+          </el-table-column>
+          <el-table-column label="落愿成功" width="100" align="right">
+            <template #default="{ row }">{{ formatNum(row.post) }}</template>
+          </el-table-column>
+          <el-table-column label="转化率" width="110" align="right">
+            <template #default="{ row }">
+              <span v-if="row.rate === null" class="wm-empty">—</span>
+              <b v-else :class="convClass(row.rate)">{{ row.rate }}%</b>
+            </template>
+          </el-table-column>
+        </el-table>
+      </template>
+      <el-empty v-else :description="wallMonitorEmptyHint" :image-size="60" />
+    </el-card>
+
     <!-- Top 表格区 -->
     <div class="tables-grid">
       <el-card shadow="never">
@@ -297,6 +362,7 @@ import { getCdnDatabase, fetchCollectionWhere } from '../cloud'
 import { ElMessage } from 'element-plus'
 import Chart from 'chart.js/auto'
 import { MODULE, MODULE_META, EVENTS, FUNNELS, getEventMeta, ACTION_NAMES } from '../utils/analyticsSchema'
+import { buildWallMonitor } from '../utils/wishWallMonitor'
 // 采样上限单一真源：避免同一指标在不同页面取样上限不一致（原实现此处写死 1000）
 import { BEHAVIOR_SAMPLE_LIMIT, DAILY_ROLLUP_LIMIT } from '../utils/analyticsLimits'
 import ErrorMonitor from './ErrorMonitor.vue'
@@ -329,6 +395,7 @@ const selectedModule = ref(MODULE.IDENTIFY)
 const rawEvents = ref([])           // 每日聚合行：{ dateKey, action, module, count, uv:[] }
 const sessionIds = ref([])          // 真实 sessionId 列表（来自 user_behaviors）
 const pageAgg = ref([])             // { page, pv, uv }
+const wallRows = ref([])            // 祈福墙监测表用的 user_behaviors 明细（与漏斗同源，口径一致）
 const pageStatsNote = ref('')
 /**
  * 口径降级说明（#26）。
@@ -420,6 +487,8 @@ const refresh = async () => {
         BEHAVIOR_SAMPLE_LIMIT
       )
       applyBehaviorExtras(behaviorRows)
+      // 监测表与漏斗**同源**（同一批明细）：两处数字不一致会被当成"报表坏了"
+      wallRows.value = behaviorRows
       // 先确定 rawEvents 基线，再合并合成行 —— 原实现顺序相反，导致被覆盖后漏斗恒 0
       if (!rawEvents.value.length) {
         rawEvents.value = aggregateLocal(behaviorRows)
@@ -467,8 +536,24 @@ const aggregateLocal = (events) => {
 }
 
 /**
- * 注册钩子漏斗：把 identify_save_atlas_gate 按 step 展开成合成 action
- * （identify_save_atlas_gate:show / :go_register / :dismiss / :resume_success），
+ * 带 step 的漏斗事件集合：**从 analyticsSchema 的 FUNNELS 派生**，不再写死单个 action。
+ *
+ * ⚠️ 2026-09-18 真缺陷：这里原来硬编码 `identify_save_atlas_gate`，
+ * 于是**祈福墙**的 `wish_wall_register_gate:show/dismiss/resume_success` 从来没被展开 →
+ * 「祈福墙 · 落愿注册钩子」漏斗**恒为 0**（与 identify 当初那个"恒为 0"是同一个坑，只是换了个 action）。
+ * 现在任何在 FUNNELS 里声明了 `action:step` 的漏斗都会自动展开 —— 新增漏斗不必回来改这里。
+ */
+const STEP_GATE_ACTIONS = Array.from(new Set(
+  FUNNELS
+    .flatMap((f) => (f.steps || []))
+    .map((s) => /^([^:]+):([^:]+)$/.exec(String((s && s.action) || '')))
+    .filter(Boolean)
+    .map((m) => m[1])
+))
+
+/**
+ * 注册钩子漏斗：把**带 step 的漏斗事件**按 step 展开成合成 action
+ * （identify_save_atlas_gate:show / :go_register / …；wish_wall_register_gate:show / :dismiss / :resume_success / :fail_*），
  * 追加进 rawEvents 后即可复用通用 FUNNELS 渲染。
  *
  * 注：analytics_daily 是动作级汇总、不含 step，故此处必须从 user_behaviors 明细派生。
@@ -480,10 +565,9 @@ const aggregateLocal = (events) => {
  * 于是「AI 识别 · 注册钩子」漏斗恒为 0。改为返回数组 + 合并去重，彻底消除顺序依赖。
  */
 const buildGateStepRows = (events = []) => {
-  const GATE_ACTION = 'identify_save_atlas_gate'
   const map = {}
   events.forEach((ev) => {
-    if (ev.action !== GATE_ACTION) return
+    if (!STEP_GATE_ACTIONS.includes(ev.action)) return
     // step 由客户端 properties 展开到顶层（云端 flattenProperties），两种位置都兼容
     const step = String(ev.step || (ev.properties && ev.properties.step) || '').trim()
     if (!step) return
@@ -494,7 +578,7 @@ const buildGateStepRows = (events = []) => {
       map[key] = {
         dateKey,
         action,
-        module: ev.module || getEventMeta(GATE_ACTION)?.module,
+        module: ev.module || getEventMeta(ev.action)?.module,
         count: 0,
         uv: new Set()
       }
@@ -802,6 +886,23 @@ watch(rawEvents, () => recomputeTops(), { deep: true })
 .lg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
 .lg-dot { width: 8px; height: 8px; border-radius: 50%; }
 .lg-num { color: #333; font-weight: 600; margin-left: 2px; }
+
+/** 祈福墙监测表：纯函数在 utils/wishWallMonitor.js（口径与聚合都能单测/守卫） */
+const wallMonitor = computed(() => buildWallMonitor(wallRows.value))
+const wallMonitorEmptyHint = computed(() =>
+  wallRows.value.length
+    ? '所选区间内没有祈福墙埋点'
+    : '所选区间内没有 user_behaviors 明细（监测表不读 analytics_daily：它没有 step 与来源维度）'
+)
+
+.wall-monitor-card { margin-bottom: 20px; }
+.wall-monitor-table { margin-bottom: 8px; }
+/* ⚠️ 不写死颜色：report:colors:strict 是**棘轮**，新增硬编码色会直接把守卫弄红。
+   这里用设计 token（浅色面正文/次级），既合规范也不会让残留计数变多。 */
+.wall-source-title { margin: 10px 0 6px; font-size: 13px; color: var(--light-text-tertiary); }
+.wm-indent { padding-left: 14px; color: var(--light-text-tertiary); }
+.wm-desc { font-size: 12px; color: var(--light-text-secondary); }
+.wm-empty { color: var(--light-text-tertiary); }
 
 /* 漏斗区 */
 .funnels-card { margin-bottom: 20px; }

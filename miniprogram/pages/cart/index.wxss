@@ -850,3 +850,186 @@ page {
 /* 礼券项：本单实际可省 / 不可用原因 */
 .cp-save { margin-top: 4rpx; font-size: 21rpx; color: var(--gold, #C4A76C); }
 .cp-save.is-off { color: var(--color-text-muted, #8A847C); }
+
+/* === 需求 1：结账台「顺手带走一件」（吧台口香糖位） ===
+ * 放在 .checkout-bar 内部 → 随结算栏一起固定在底部，不随清单滚走；
+ * 配色沿用馆藏铜金语言（与礼券 chip / 结算按钮同一层），不复用推荐位卡片以免混淆「推荐」与「顺手件」。 */
+.addon-strip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 14rpx;
+  padding: 14rpx 16rpx;
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(196, 167, 108, 0.12) 0%, rgba(196, 167, 108, 0.03) 100%);
+  box-sizing: border-box;
+}
+
+.addon-press {
+  opacity: 0.72;
+}
+
+.addon-thumb-wrap {
+  flex-shrink: 0;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 8rpx;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.addon-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.addon-thumb-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.addon-thumb-ph-icon {
+  width: 40rpx;
+  height: 40rpx;
+  opacity: 0.5;
+}
+
+.addon-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.addon-title {
+  font-size: 25rpx;
+  color: var(--color-text-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.addon-reason {
+  font-size: 19rpx;
+  color: var(--brass-300);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.addon-price {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 26rpx;
+  color: var(--gold);
+}
+
+.addon-cta {
+  flex-shrink: 0;
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--gold);
+  color: #1A1814;
+  font-size: 23rpx;
+  font-weight: 500;
+}
+
+.addon-cta-press {
+  opacity: 0.82;
+}
+
+.addon-close {
+  flex-shrink: 0;
+  padding: 0 6rpx 0 2rpx;
+  font-size: 32rpx;
+  line-height: 1;
+  color: var(--color-text-muted);
+}
+
+/* === 需求 2/3：免邮凑单行（未达包邮门槛时替代纯规则文案） === */
+.freeship-row {
+  margin-top: 10rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.freeship-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.freeship-gap {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+
+.freeship-rule {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 19rpx;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 进度轨：复用成长里程的语言（细轨 + 铜金填充），不用原生 progress */
+.freeship-track {
+  position: relative;
+  width: 100%;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: rgba(196, 167, 108, 0.16);
+  overflow: hidden;
+}
+
+.freeship-fill {
+  height: 100%;
+  border-radius: 3rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.6) 0%, var(--gold) 100%);
+  transition: width 0.28s ease;
+}
+
+.freeship-filler {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 12rpx 16rpx;
+  border: 1rpx dashed rgba(196, 167, 108, 0.45);
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.06);
+}
+
+.freeship-filler-press {
+  background: rgba(196, 167, 108, 0.16);
+}
+
+.freeship-filler-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.freeship-filler-cta {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--brass-300);
+}

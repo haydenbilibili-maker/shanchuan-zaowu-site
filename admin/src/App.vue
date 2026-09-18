@@ -713,6 +713,16 @@
                 </el-checkbox-group>
                 <span class="sku-hint-muted">写入 products.giftScenes（英文 key）；与兴趣标签 tags 分离，用于礼赠场景选品</span>
             </el-form-item>
+            <el-form-item label="祈运标签">
+                <el-checkbox-group v-model="form.blessTags" class="gift-scene-checks">
+                    <el-checkbox
+                        v-for="bt in blessTagOptions"
+                        :key="bt.key"
+                        :label="bt.key"
+                    >{{ bt.label }}</el-checkbox>
+                </el-checkbox-group>
+                <span class="sku-hint-muted">写入 products.blessTags（最多 {{ maxBlessTags }} 个，英文 key）；用于祈福墙玩法推荐与墙面文案，与 tags / giftScenes 分离</span>
+            </el-form-item>
             <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="渠道">
@@ -1350,6 +1360,7 @@ import { toChineseTaxonomy } from './utils/taxonomyZh'
 import { buildCanonicalSize, parseCanonicalSize } from './utils/sizeCanonical'
 import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
 import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
+import { BLESS_TAGS, MAX_BLESS_TAGS, sanitizeBlessTags, readBlessTags } from './utils/blessTags'
 import { establishAdminSession, clearAdminSession, probeAdminSession, assertWriteApplied } from './utils/cloudbaseCdnDb'
 import { ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE } from './utils/cloudFnErrors'
 import { isActiveCategory } from './utils/categoryActive'
@@ -1823,7 +1834,7 @@ const form = ref({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '', craftProcess: '',
-    latinName: '', description: '', tags: [], tagDraft: '', giftScenes: [], isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
+    latinName: '', description: '', tags: [], tagDraft: '', giftScenes: [], blessTags: [], isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
@@ -1837,6 +1848,8 @@ const form = ref({
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
 })
 const giftSceneOptions = GIFT_SCENES
+const blessTagOptions = BLESS_TAGS
+const maxBlessTags = MAX_BLESS_TAGS
 const productMediaUploading = ref(false)
 const latinAiLoading = ref(false)
 const productAiFillLoading = ref(false)
@@ -2493,6 +2506,7 @@ const enrichProductRows = async (rows) => {
                 tags: readProductTags(item),
                 displayTags: readProductTags(item).slice(0, 4),
                 giftScenes: readGiftScenes(item),
+                blessTags: readBlessTags(item),
                 httpImage: img,
                 isOnShelf: !item.isOffShelf,
                 profitRate: (() => {
@@ -3233,7 +3247,7 @@ const blankProductForm = () => ({
     title: '', price: 0, costPrice: 0, stock: 1, category: '',
     categoryId: '', rootCategoryId: '', rootCategoryName: '', categoryType: '', categoryPath: [],
     channel: '', craftType: '', craftProcess: '',
-    latinName: '', description: '', tags: [], tagDraft: '', giftScenes: [], isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
+    latinName: '', description: '', tags: [], tagDraft: '', giftScenes: [], blessTags: [], isTreasure: false, isOneOfAKind: true, inArchive: true, memberDiscountEnabled: true,
     supportsCustom: false,
     protectionType: 'none', collectionCertificate: '',
     origin: '', collectDate: '', framerName: 'NATURE', framerId: null,
@@ -3970,6 +3984,7 @@ const saveProduct = async () => {
             description: form.value.description || '',
             tags: sanitizeProductTags(form.value.tags),
             giftScenes: sanitizeGiftScenes(form.value.giftScenes),
+            blessTags: sanitizeBlessTags(form.value.blessTags),
             images,
             detailImages,
             detailHtml,

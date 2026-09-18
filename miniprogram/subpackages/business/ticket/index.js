@@ -1,7 +1,8 @@
 // pages/ticket/index.js
 const db = wx.cloud.database();
 const { drawMemberQr } = require('../utils/qrCanvas');
-Page({
+const { withAppModal } = require('../../../utils/appModal');
+Page(withAppModal({
   data: { 
     statusBarHeight: 20,
     booking: {},
@@ -125,17 +126,17 @@ Page({
     const hoursDiff = (bookingDateTime - now) / (1000 * 60 * 60);
     const canFreeCancel = hoursDiff >= 24;
 
-    wx.showModal({
+    this.modal({
       title: '确认取消',
+      overline: 'CANCEL BOOKING',
       content: canFreeCancel
         ? '提前 24 小时取消，不收取任何费用'
         : '距预约时间不足 24 小时，如需取消请联系专员协助',
       confirmText: '确认取消',
-      confirmColor: '#C4A76C',
-      success: (res) => {
-        if (res.confirm) {
-          this.doCancel();
-        }
+      danger: true
+    }).then((res) => {
+      if (res.confirm) {
+        this.doCancel();
       }
     });
   },
@@ -220,4 +221,4 @@ Page({
   stopPropagation() {
     // 空函数，用于阻止事件冒泡
   }
-});
+}));

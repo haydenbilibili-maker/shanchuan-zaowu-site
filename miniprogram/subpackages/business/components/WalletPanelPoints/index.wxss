@@ -245,20 +245,147 @@
 .qr-code-img { width: 400rpx; height: 400rpx; border: 10rpx solid #fff; }
 .hint { margin-top: 30rpx; color: #666; font-size: 22rpx; }
 /* 积分明细 */
-.ledger { display: flex; flex-direction: column; }
-.ledger-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 26rpx 0; border-bottom: 1rpx solid var(--color-border);
+/* 积分明细（2026-09-18 需求 8：筛选 + 时间轴 + 分页）
+   视觉与储值账单的 .sv-ledger-* 同一套语言：月带 / 日头（当日净额）/ 轨道行。
+   ⚠️ 只用既有色变量，避免 report:colors:strict 报「新色残留」。 */
+.pt-ledger { display: flex; flex-direction: column; }
+.pt-ledger-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 4rpx 0 12rpx;
 }
-.ledger-row:last-child { border-bottom: none; }
-.lr-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.lr-title { font-size: 28rpx; color: var(--color-text-primary); }
-.lr-meta { margin-top: 6rpx; font-size: 20rpx; color: var(--color-text-muted); }
-.lr-side { display: flex; flex-direction: column; align-items: flex-end; margin-left: 24rpx; }
-.lr-points { font-family: var(--font-mono); font-size: 30rpx; }
-.lr-points.plus { color: var(--brass-400); }
-.lr-points.minus { color: var(--color-text-secondary); }
-.lr-balance { margin-top: 4rpx; font-size: 20rpx; color: var(--color-text-muted); }
+.pt-ledger-filters { display: flex; align-items: center; gap: 12rpx; }
+.pt-filter {
+  padding: 8rpx 22rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}
+.pt-filter.is-on {
+  border-color: var(--brass-600);
+  color: var(--gold);
+}
+.pt-ledger-cap {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+.pt-ledger-sums { display: flex; align-items: center; gap: 18rpx; padding-bottom: 10rpx; }
+.pt-sum { font-size: 20rpx; font-family: var(--font-mono); }
+.pt-sum.is-plus { color: var(--brass-400); }
+.pt-sum.is-minus { color: var(--color-text-secondary); }
+.pt-sum.is-hint { color: var(--color-text-muted); font-family: var(--font-brand); }
+
+.pt-ledger-timeline { display: flex; flex-direction: column; }
+.pt-ledger-month {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin: 22rpx 0 6rpx;
+}
+.pt-ledger-month:first-child { margin-top: 6rpx; }
+.pt-ledger-month-text {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: var(--brass-600);
+  letter-spacing: 0.14em;
+  font-family: var(--font-mono);
+}
+.pt-ledger-month-rule { flex: 1; height: 1px; background: rgba(196, 167, 108, 0.16); }
+
+/* 日头：日期 + 星期在左，当日净积分在右 */
+.pt-ledger-day-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  padding: 12rpx 0 4rpx;
+}
+.pt-ledger-day + .pt-ledger-day .pt-ledger-day-head {
+  border-top: 1px solid var(--color-border);
+  margin-top: 12rpx;
+  padding-top: 20rpx;
+}
+.pt-ledger-day-label { font-size: 24rpx; color: var(--color-text-body); }
+.pt-ledger-day-week { font-size: 20rpx; color: var(--color-text-muted); }
+.pt-ledger-day-spacer { flex: 1; }
+.pt-ledger-day-net { font-size: 22rpx; font-family: var(--font-mono); }
+.pt-ledger-day-net.is-plus { color: var(--brass-400); }
+.pt-ledger-day-net.is-minus { color: var(--color-text-secondary); }
+.pt-ledger-day-net.is-flat,
+.pt-ledger-day-net.is-open { color: var(--color-text-muted); }
+
+/* 行：轨道圆点 + 标题/时分 + 分值/余额；行内不重复日期 */
+.pt-ledger-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 18rpx 0 18rpx 30rpx;
+}
+.pt-ledger-rail { position: absolute; left: 0; top: 0; bottom: 0; width: 12rpx; }
+.pt-ledger-dot {
+  position: absolute;
+  left: 0;
+  top: 30rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+.pt-ledger-dot.is-plus { background: var(--brass-400); }
+.pt-ledger-dot.is-minus { background: var(--color-text-secondary); }
+.pt-ledger-dot.is-flat { background: var(--color-text-muted); }
+.pt-ledger-main { flex: 1; min-width: 0; }
+.pt-ledger-top { display: flex; align-items: baseline; gap: 12rpx; }
+.pt-ledger-title {
+  min-width: 0;
+  font-size: 26rpx;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-ledger-clock {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+.pt-ledger-meta { display: flex; align-items: center; gap: 12rpx; margin-top: 6rpx; }
+.pt-ledger-tag { font-size: 20rpx; color: var(--color-text-muted); }
+.pt-ledger-pending { font-size: 20rpx; color: var(--brass-600); }
+.pt-ledger-side { flex-shrink: 0; min-width: 150rpx; text-align: right; }
+.pt-ledger-points { display: block; font-family: var(--font-mono); font-size: 30rpx; }
+.pt-ledger-points.is-plus { color: var(--brass-400); }
+.pt-ledger-points.is-minus { color: var(--color-text-secondary); }
+.pt-ledger-points.is-flat { color: var(--color-text-muted); }
+.pt-ledger-balance {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+}
+.pt-ledger-more {
+  margin-top: 26rpx;
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--gold);
+  border-top: 1px solid var(--color-border);
+}
+.pt-ledger-more-press { opacity: 0.7; }
+.pt-ledger-fin {
+  display: block;
+  margin-top: 24rpx;
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+}
 
 /* 订单认领轻量入口 */
 .claim-entry {

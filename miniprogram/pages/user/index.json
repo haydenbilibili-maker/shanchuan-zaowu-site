@@ -4,7 +4,8 @@
     "member-level-modal": "/components/MemberLevelModal/index",
     "pass-redeem-card": "/components/PassRedeemCard/index",
     "easter-egg-note": "/components/EasterEggNote/index",
-    "app-toast": "/components/AppToast/index"
+    "app-toast": "/components/AppToast/index",
+    "app-modal": "/components/AppModal/index"
   },
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,

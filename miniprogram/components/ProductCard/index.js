@@ -1,4 +1,4 @@
-const { getDisplaySoldCount, isOneOfAKindProduct } = require('../../utils/productStats')
+const { getSoldDisplay, isNewArrival, isOneOfAKindProduct } = require('../../utils/productStats')
 const { sanitizeLatinName } = require('../../utils/latinDisplay')
 const { isSensitiveBlurProduct, productIdKey } = require('../../utils/sensitiveBlur')
 const { buildCraftDisplayTags } = require('../../config/productTaxonomy')
@@ -18,8 +18,15 @@ Component({
   data: {
     priceText: '',
     priceFrom: false,
-    soldCount: 0,
-    showSold: false,
+    /** 销量位文案：'已售 N' / '馆方新藏' / ''（空则不渲染）——唯一出口见 productStats.getSoldDisplay */
+    soldText: '',
+    /** 是否「馆方新藏」标（样式不同：铜色小标 vs 次要文字） */
+    soldIsNew: false,
+    /**
+     * 是否新品：NEW 角标与「馆方新藏」**共用这一个判据**（同一个 isNewArrival）。
+     * 两者以前各有一套定义 → 实测出现过"有 NEW 角标却没有馆方新藏"。
+     */
+    isNewArrival: false,
     isOneOfAKind: false,
     soldOut: false,
     imgBroken: false,
@@ -39,14 +46,17 @@ Component({
       }
       const priceNum = parseFloat(price)
       const oneOfAKind = isOneOfAKindProduct(info)
-      const sold = getDisplaySoldCount(info)
+      // 真实销量为 0 时**不显示「已售 0」**：新建档打「馆方新藏」，否则整条不显示（含孤品）
+      const soldDisplay = getSoldDisplay(info)
+      const newArrival = isNewArrival(info)
       const stock = getTotalStock(info)
       const soldOut = info.soldOut === true || (stock != null && stock <= 0)
       this.setData({
         priceText: Number.isFinite(priceNum) ? priceNum : '--',
         priceFrom: hasSku && (info.skus || []).length > 1,
-        soldCount: sold == null ? 0 : sold,
-        showSold: !oneOfAKind && sold != null,
+        soldText: soldDisplay.text,
+        soldIsNew: soldDisplay.kind === 'new',
+        isNewArrival: newArrival,
         isOneOfAKind: oneOfAKind,
         soldOut,
         imgBroken: !info.httpImage,

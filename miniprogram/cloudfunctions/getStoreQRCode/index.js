@@ -18,6 +18,7 @@ const BRAND_BRASS = { r: 196, g: 167, b: 108 } // #C4A76C
 // 允许生成码的页面白名单（新增页面须先在此登记）
 const ALLOWED_PAGES = {
   'subpackages/feature/identify/index': true, // AI 识别主页（门店新客转化）
+  'subpackages/feature/wish-wall/index': true, // 祈福墙（门店现场扫码落愿；scene: from=store_qr&k=<墙key>）
   'subpackages/business/store/index': true, // 这有店门店页
   'pages/index/index': true // 探索首页
 }

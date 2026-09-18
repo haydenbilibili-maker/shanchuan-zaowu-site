@@ -15,7 +15,8 @@
       />
       <view class="p-img-ph" wx:else></view>
     </sensitive-blur-gate>
-    <view wx:if="{{info.isNew}}" class="tag-new">NEW</view>
+    <!-- NEW 角标与「馆方新藏」同源（isNewArrival）：两者必须一起出现/一起不出现 -->
+    <view wx:if="{{isNewArrival}}" class="tag-new">NEW</view>
     <view wx:if="{{isOneOfAKind}}" class="tag-unique">孤品</view>
     <protected-badge product="{{info}}" size="sm" corner="bl" />
     <view class="soldout-veil" wx:if="{{soldOut}}"></view>
@@ -32,7 +33,7 @@
     <view class="p-bot">
       <view class="p-price-wrap">
         <text class="p-price font-num">¥{{priceText}}<text wx:if="{{priceFrom}}" class="p-from">起</text></text>
-        <text class="p-sold" wx:if="{{showSold}}">已售 {{soldCount}}</text>
+        <text class="p-sold {{soldIsNew ? 'is-new' : ''}}" wx:if="{{soldText}}">{{soldText}}</text>
       </view>
       <view class="btn-add {{soldOut ? 'disabled' : ''}}">{{soldOut ? '罄' : '+'}}</view>
     </view>

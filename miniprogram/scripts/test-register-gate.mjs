@@ -41,7 +41,11 @@ const F = {
   resultJs: 'subpackages/feature/identify/result/index.js',
   resultWxml: 'subpackages/feature/identify/result/index.wxml',
   resultWxss: 'subpackages/feature/identify/result/index.wxss',
-  resultJson: 'subpackages/feature/identify/result/index.json'
+  resultJson: 'subpackages/feature/identify/result/index.json',
+  // 祈福墙：注册**软钩子**（口径与上面两处硬门禁相反，见需求28 玩法专项 §1 与 §4）
+  wallJs: 'subpackages/feature/wish-wall/index.js',
+  wallWxml: 'subpackages/feature/wish-wall/index.wxml',
+  wallJson: 'subpackages/feature/wish-wall/index.json'
 }
 
 const read = (rel) => {
@@ -59,6 +63,25 @@ const stripJs = (s) => String(s)
   .replace(/\/\*[\s\S]*?\*\//g, ' ')
   .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
 const stripWxml = (s) => String(s).replace(/<!--[\s\S]*?-->/g, ' ')
+
+/**
+ * 按**括号配平**取一个函数的函数体。
+ * 为什么要：断言"关掉弹窗有没有清空草稿"这类事必须限定在**那个函数内部**，
+ * 用固定长度切片会越界到下一个函数、用正则到第一个 `}` 又会截断（错题本 E7）。
+ */
+const fnBody = (src, name) => {
+  const i = String(src).indexOf(name)
+  if (i < 0) return ''
+  const open = String(src).indexOf('{', i)
+  if (open < 0) return ''
+  let d = 0
+  for (let j = open; j < String(src).length; j++) {
+    const c = src[j]
+    if (c === '{') d++
+    else if (c === '}') { d--; if (d === 0) return String(src).slice(open + 1, j) }
+  }
+  return ''
+}
 
 let failures = 0
 const eq = (name, got, want) => {
@@ -130,6 +153,44 @@ function runChecks(r) {
     && stripWxml(r.resultWxml).indexOf('</view>\n  </block>') > 0)
   check('结果页有成功回调与关闭回调', /onRegisterSuccess/.test(r.resultJs) && /onRegisterDialogClose/.test(r.resultJs))
 
+  // ── 祈福墙：注册**软钩子**（口径与上面两处硬门禁相反）──────────────────
+  // 产品口径（2026-09-18）：祈福墙是**注册转化路径**，但「浏览与仪式免费（价值先行），
+  // 落愿这一步才要身份」。所以本页刻意**不**整页模糊、**closable=true**、**关掉保草稿**、
+  // 注册成功后**自动续发**那条心愿。
+  // 断言必须按本页自己的口径写 —— 照抄百科页的 closable=false 就是断言错口径（错题本 E7）。
+  const wallJs = stripJs(r.wallJs)
+  const wallWxml = stripWxml(r.wallWxml)
+  check('★ 祈福墙注册了注册弹窗组件', /register-auth-dialog/.test(stripJs(r.wallJson)))
+  {
+    const submit = fnBody(wallJs, 'submitWish')
+    check('★ 祈福墙落愿路径：未注册就地弹注册（不让用户跳走）',
+      /showRegisterDialog:\s*true/.test(submit))
+    check('★ 落愿路径记漏斗 step=show（曝光可量化，否则漏斗第一环缺失）',
+      /wish_wall_register_gate[\s\S]{0,160}step:\s*'show'/.test(submit))
+    check('★ 防死循环：续发时跳过门禁（否则会话未刷新 → 又弹一次 → 死循环）',
+      /if\s*\(\s*!resumingAfterRegister\s*&&\s*await\s+this\.isGuestUser\(\)\s*\)/.test(submit)
+      && /_resumeAfterRegister\s*=\s*false/.test(submit))
+  }
+  check('★ 祈福墙弹窗是**软钩子**：closable=true（与硬门禁刻意相反，不困住用户）',
+    /show="\{\{showRegisterDialog\}\}"/.test(wallWxml)
+    && /closable="\{\{true\}\}"/.test(wallWxml))
+  {
+    const ok = fnBody(wallJs, 'onRegisterSuccess')
+    check('★ 注册成功后自动续发那条心愿（意图不该丢）',
+      /_resumeAfterRegister\s*=\s*true/.test(ok) && /draft:\s*text/.test(ok)
+      && /this\.submitWish\(\)/.test(ok))
+    check('★ 注册成功记 step=resume_success', /step:\s*'resume_success'/.test(ok))
+  }
+  {
+    const close = fnBody(wallJs, 'onRegisterDialogClose')
+    check('★ 关掉弹窗只丢「待发」，**草稿保留**（回来还是那句话）',
+      /_pendingWish\s*=\s*''/.test(close) && !/draft\s*:/.test(close))
+    check('★ 关掉弹窗记 step=dismiss', /step:\s*'dismiss'/.test(close))
+  }
+  check('★ 祈福墙漏斗四环齐全（show / go_register / dismiss / fail_*）',
+    ['show', 'go_register', 'dismiss'].every((s) => wallJs.includes(`step: '${s}'`))
+    && /step:\s*`fail_/.test(wallJs))
+
   return failures === 0
 }
 
@@ -168,7 +229,18 @@ function selftest() {
     ['结果页去掉整页模糊（只弹窗不门禁）', F.resultWxss,
       (s) => s.replace(/\.rg-gate\.is-gated \{[\s\S]*?\}/, '.rg-gate.is-gated { opacity: 1; }')],
     ['百科详情页忘记给 guest 置门禁', F.wikiJs,
-      (s) => s.replace(/registerGated:\s*true/, 'registerGated: false')]
+      (s) => s.replace(/registerGated:\s*true/, 'registerGated: false')],
+    // 祈福墙软钩子：口径与硬门禁相反，这几条注入证明「本页口径」也被钉住了
+    ['祈福墙弹窗被改成硬门禁（closable=false，把用户困住）', F.wallWxml,
+      (s) => s.replace(/closable="\{\{true\}\}"/, 'closable="{{false}}"')],
+    ['祈福墙落愿不再弹注册（转化链路断掉）', F.wallJs,
+      (s) => s.replace(/this\.setData\(\{ showRegisterDialog: true \}\)/, 'void 0')],
+    ['祈福墙丢掉防死循环（会话未刷新 → 注册后又弹一次）', F.wallJs,
+      (s) => s.replace(/if \(!resumingAfterRegister && await this\.isGuestUser\(\)\)/,
+        'if (await this.isGuestUser())')],
+    ['祈福墙关掉弹窗时清空草稿（制造白写的挫败）', F.wallJs,
+      (s) => s.replace(/onRegisterDialogClose\(\) \{\n/,
+        "onRegisterDialogClose() {\n    this.setData({ draft: '' })\n")]
   ]
 
   const paths = Object.values(F)

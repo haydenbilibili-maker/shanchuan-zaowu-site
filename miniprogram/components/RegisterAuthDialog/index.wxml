@@ -28,6 +28,7 @@
     <button
       class="rad-cta"
       open-type="{{saving ? '' : 'getPhoneNumber'}}"
+      bindtap="onCtaTap"
       bindgetphonenumber="onGetPhoneNumber"
       disabled="{{saving}}"
       loading="{{saving}}"

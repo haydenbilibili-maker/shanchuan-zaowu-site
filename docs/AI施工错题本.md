@@ -88,6 +88,24 @@
 - **规矩**：每个批次结束跑 **`npm run check:admin`**（逐条独立执行、全部跑完再汇总）。
   常态红只有 2 条（`check:miniprogram-sync` 待同步、`verify:site-dist` 官网缺图），其余必须绿。
 
+### E14 · 画布/资源「加载失败只重试、不报错」→ 界面静默空白
+- **症状**（2026-09-18 真机截图）：礼券夹「到店亮码」弹层里**二维码一片空白**，
+  而编号与 58s 倒计时都在，**零报错、无重试入口**。用户只能看到一块空白色块。
+- **根因（三层叠加，缺一层都不会这么难查）**：
+  1. `require.async('../utils/qrCanvas.js')` —— **少退一层**，解析到不存在的
+     `components/utils/qrCanvas.js`（正确是 `../../utils/qrCanvas`，同目录兄弟组件就写对了）；
+     而旧 `check:require-paths` 的正则**既不认 `.async` 也不认跨行**，这类路径从未被检查过；
+  2. 失败后的 `.catch()` **只重试、不置失败态** → 重试 4 次后彻底静默；
+  3. `qrCanvas.js` 用 `new Promise(async (resolve) => …)`：异步 executor 抛错被吞，
+     **Promise 永不 settle** → 上层「重试 + 失败提示」永远不触发。
+- **规矩**：
+  - **异步加载失败必须落到可见状态**（错误文案 + 重试入口），只重试不报错 = 静默空白；
+  - **同分包用同步 `require`**，`require.async` 只用于跨包；
+  - 画布类函数**必须始终 settle**（兜底超时 + 失败 `resolve(false)`），
+    并且**回读像素**确认真的落墨（防「画到已分离节点却返回成功」）；
+  - 禁止 `new Promise(async …)`（swallow 异常的经典形态）。
+- **防复发**：`check:qr-draw`（新增，含 4 条注入自检）+ `check:require-paths` 扩面（`.async`/跨行/回调形态）。
+
 ---
 
 ## 四、事实核查类
@@ -152,13 +170,14 @@
 | E1 锚点错 | 部分 | 行号定位约定 + `node --check`/`lint:wxml` |
 | E2 多行标签 | ✅ | `lint:wxml` |
 | E3 孤儿片段/括号 | ✅ | **`check:wxss-syntax`**（2026-09-19 新增） |
-| E4 盲改路径 | ✅ | `check:require-paths` / `check:subpackage-refs` |
+| E4 盲改路径 | ✅ | `check:require-paths` / `check:subpackage-refs`（2026-09-18 扩：`.async`/跨行/回调形态） |
 | E5 二次前缀 | 部分 | 同上 + 「改完实跑」约定 |
 | E6 一次做太多 | 约定 | 一件一验（用户偏好） |
 | E7 守卫语义错 | ✅ | `--selftest` + `check:admin:selftest` |
 | E8 只看静态分析 | 约定 | 真机/真图复核（用户真图为最高证据） |
-| E9 不跑全量 | ✅ | `check:admin`（74 条，逐条独立跑） |
+| E9 不跑全量 | ✅ | `check:admin`（77 条，逐条独立跑） |
 | E10 没实测字段 | 部分 | 只读审计脚本范式 |
 | E11 占位当内容 | ✅ | 学名审计 + 写回带回滚 |
 | E12 删除未提交 | 部分 | `git status` 复核 + `--prune` |
 | E13 同步方向 | ✅ | `check:miniprogram-sync.mjs` |
+| E14 加载失败只重试不报错（静默空白） | ✅ | **`check:qr-draw`**（2026-09-18 新增）+ `check:require-paths` 扩面 |
