@@ -30,6 +30,11 @@ pnpm-debug.log*
 .env.production
 .env.local
 .env.*.local
+# 小程序码/物料生成用的一次性密钥（scripts/generate-store-qr.js 读它）
+# ⚠️ 2026-09-18：脚本注释里一直写着"该文件已 gitignore"，但实际**没有** ——
+# 照注释把 AppSecret 写进去就会被提交。补上，并由 check:wall-qr 守卫钉住。
+scripts/.env.qr
+miniprogram/scripts/.env.qr
 
 # macOS
 .DS_Store
