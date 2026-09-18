@@ -5,6 +5,7 @@ const { buildPreviewSummary, buildDraftTitle } = require('../utils/customHelper'
 const { buildSummaryLines } = require('../utils/petMemorialHelper');
 const { findStore, getPreferredStoreId, getWorkshopStore, enrichStore } = require('../../../utils/storeHelper');
 const { trackBehavior } = require('../../../utils/trackBehavior');
+const { withAppModal } = require('../../../utils/appModal');
 const { drawMemberQr } = require('../utils/qrCanvas');
 
 const BOOKING_TYPE_CN = {
@@ -40,7 +41,7 @@ function decorateBookingRow(item) {
   };
 }
 
-Page({
+Page(withAppModal({
   data: {
     statusBarHeight: 10,
     currentTab: 0, 
@@ -553,15 +554,14 @@ Page({
     wx.vibrateShort({ type: 'heavy' });
     
     // 弹出支付确认
-    wx.showModal({
+    this.modal({
       title: '确认报名',
+      overline: 'CONFIRM BOOKING',
       content: `项目：${item.title}\n时间：${item.date} ${item.time || item.location}\n价格：¥${item.price}`,
-      confirmText: '支付',
-      confirmColor: '#C4A76C',
-      success: async (res) => {
-        if (res.confirm) {
-          this.doBookActivity(item);
-        }
+      confirmText: '支付'
+    }).then((res) => {
+      if (res.confirm) {
+        this.doBookActivity(item);
       }
     });
   },
@@ -878,11 +878,11 @@ Page({
       wx.hideLoading();
       const result = (res && res.result) || {};
       if (result.success) {
-        wx.showModal({
+        this.modal({
           title: '加入成功',
+          overline: 'WAITLISTED',
           content: result.msg || '已加入候补',
-          showCancel: false,
-          confirmColor: '#C4A76C'
+          showCancel: false
         });
       } else {
         wx.showToast({ title: result.msg || '加入失败', icon: 'none' });
@@ -930,4 +930,4 @@ Page({
       // 不阻塞主流程，静默失败
     }
   }
-});
+}));

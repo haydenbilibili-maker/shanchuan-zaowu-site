@@ -1,6 +1,6 @@
 {
- "at": "2026-09-18T05:35:26.384Z",
- "total": 1965,
+ "at": "2026-09-18T05:38:54.728Z",
+ "total": 1963,
  "counts": {
   "miniprogram/components/ProductList/index.js": 4,
   "miniprogram/components/RegisterAuthDialog/index.js": 4,
@@ -15,7 +15,7 @@
   "miniprogram/subpackages/business/address/index.js": 17,
   "miniprogram/subpackages/business/aftersale-apply/index.js": 9,
   "miniprogram/subpackages/business/ar/index.js": 4,
-  "miniprogram/subpackages/business/booking/index.js": 32,
+  "miniprogram/subpackages/business/booking/index.js": 30,
   "miniprogram/subpackages/business/certificate/index.js": 8,
   "miniprogram/subpackages/business/components/WalletHubBar/index.js": 1,
   "miniprogram/subpackages/business/components/WalletPanelCoupons/index.js": 6,

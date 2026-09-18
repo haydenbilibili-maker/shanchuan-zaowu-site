@@ -27,7 +27,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MP = resolve(HERE, '..')
 
 /** 棘轮基线：只许降不许升。每迁移一页就把这个数字改小（并同步 MIGRATED）。 */
-export const BASELINE = 132
+export const BASELINE = 130
 /** 已迁移到样式化弹窗的页面：不得再出现 wx.showModal */
 export const MIGRATED = [
   'subpackages/business/address/index.js',
@@ -37,7 +37,8 @@ export const MIGRATED = [
   'subpackages/feature/detail/index.js',
   'pages/user/index.js',
   'subpackages/business/confirm-order/index.js',
-  'subpackages/business/orders/index.js'
+  'subpackages/business/orders/index.js',
+  'subpackages/business/booking/index.js'
 ]
 const SKIP_DIRS = new Set(['node_modules', 'cloudfunctions', 'scripts', 'docs', '.git'])
 
