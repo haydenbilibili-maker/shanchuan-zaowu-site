@@ -41,10 +41,25 @@ export function stripComments(src) {
     .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
 }
 
-/** 纯函数：取出所有相对 require 的路径字面量 */
+/** 纯函数：取出所有相对 require 的路径字面量
+ *
+ * 覆盖面（2026-09-18 扩）：
+ *   · `require('./a')`         —— 普通同步 require
+ *   · `require('./a', cb)`     —— 分包异步化的 **callback 形态**
+ *   · `require.async('./a')`   —— 分包异步化的 Promise 形态，**允许跨行书写**
+ *
+ * 为什么必须扩：礼券夹「到店亮码」二维码真机空白事故的真因，就是
+ * `require.async('../utils/qrCanvas.js')`（少退一层、目标不存在）；
+ * 而旧正则只认 `require('...')` 且要求右括号紧跟字符串，**既不认 `.async` 也不认跨行**，
+ * 于是这类写错的路径从来没被检查过。
+ */
 export function collectRelativeRequires(src) {
   const out = []
-  for (const m of stripComments(src).matchAll(/require\(\s*['"](\.[^'"]+)['"]\s*\)/g)) {
+  const code = stripComments(src)
+  for (const m of code.matchAll(/require\s*\(\s*['"](\.[^'"]+)['"]/g)) {
+    out.push(m[1])
+  }
+  for (const m of code.matchAll(/require\s*\.\s*async\s*\(\s*['"](\.[^'"]+)['"]/g)) {
     out.push(m[1])
   }
   return out
@@ -103,6 +118,24 @@ function selftest() {
     collectRelativeRequires("require('wx-server-sdk')").length === 0)
   t('真实相对 require 被抓到',
     collectRelativeRequires("require('../../utils/util')").length === 1)
+
+  // ★ 2026-09-18 扩面：分包异步化的两种形态（含跨行）必须一起检查
+  t('★ require.async 路径被抓到（Promise 形态）',
+    collectRelativeRequires("require.async('../utils/qrCanvas.js')").length === 1)
+  t('★ require.async **跨行**写法同样被抓到（事故现场就是这么写的）',
+    collectRelativeRequires("require\n      .async('../utils/qrCanvas.js')\n      .then(() => {})").length === 1)
+  t('★ require(path, cb) 回调形态被抓到',
+    collectRelativeRequires("require('../../utils/util', (mod) => mod)").length === 1)
+
+  // ★ 事故断言：组件里那张 canvas 的模块路径 —— 正确写法可解析、写错一层必须解析失败
+  const couponComp = join(MP, 'subpackages/business/components/WalletPanelCoupons/index.js')
+  t('★ 礼券亮码组件：正确路径 ../../utils/qrCanvas 可解析',
+    !!resolveRequire(couponComp, '../../utils/qrCanvas'))
+  t('★ 礼券亮码组件：事故路径 ../utils/qrCanvas 必须解析失败（少退一层）',
+    !resolveRequire(couponComp, '../utils/qrCanvas'))
+  t('★ 礼券亮码组件：源码里已改成同步 require（未被改回 require.async）',
+    /require\('\.\.\/\.\.\/utils\/qrCanvas'\)/.test(readFileSync(couponComp, 'utf8'))
+      && !/require\s*\.\s*async\s*\(/.test(stripComments(readFileSync(couponComp, 'utf8'))))
 
   // 解析：用一个真实的**小程序 .js** 文件做基准（本守卫只针对 .js）
   const probe = join(MP, 'subpackages/feature/collection/detail/index.js')

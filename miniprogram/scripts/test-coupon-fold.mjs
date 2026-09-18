@@ -159,6 +159,9 @@ const requireStub = (id) => {
       formatRedeemValueText: () => ''
     }
   }
+  // 2026-09-18：到店亮码改为**同步** require 同分包的 qrCanvas（事故前写的是
+  // require.async('../utils/qrCanvas.js')，路径还不存在 —— 见 check:qr-draw）
+  if (key.includes('qrCanvas')) return { drawMemberQr: () => Promise.resolve(true) }
   throw new Error('unexpected require ' + id)
 }
 
