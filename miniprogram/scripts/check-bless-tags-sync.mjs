@@ -13,7 +13,9 @@
  *
  * 本守卫做四件事：
  *   ① **逐例比对**四个副本的 `sanitizeBlessTags` 输出（含脏值 / 逗号串 / 顺序 / 超限）；
- *   ② 枚举本体一致（key/label/plays/上限，逐字比对）；
+ *   ② 枚举本体一致（key/label/plays/上限，逐字比对）；**且 `plays` 里每个 id 必须真实存在于
+ *      `config/ritualPlays.js` 的玩法注册表**（合法集合从注册表现读，不硬编码 ——
+ *      写死的 id 列表会在新增玩法时假失败、改名时假通过，本仓 E7 教训）；
  *   ③ 云函数接线：白名单登记 + 写入归一化 + 查询过滤；
  *   ④ 两端表单与 C 端接线：ERP 复选框、小程序 chips、入口带 `bless`、页面按标签重排 + 提示。
  *
@@ -42,6 +44,8 @@ const ERP_FORM = 'admin/src/App.vue'
 const URL_BUILDER = 'miniprogram/utils/wishWall.js'
 const WALL_PAGE = 'miniprogram/subpackages/feature/wish-wall/index.js'
 const WALL_VIEW = 'miniprogram/subpackages/feature/wish-wall/index.wxml'
+// 玩法注册表：`plays` 的合法 id 集合**唯一事实源**（本文件不写死任何一个 id）
+const PLAYS = 'miniprogram/config/ritualPlays.js'
 
 let passed = 0
 let failed = 0
@@ -156,6 +160,65 @@ check(
   ssot.BLESS_TAGS.every((t) => Array.isArray(t.plays) && t.plays.length > 0)
 )
 
+/* ── ②b plays 的每个 id 都必须是注册表里真实存在的玩法 ────────────────────
+ * 为什么单列一条：`plays` 是**真实消费者**的输入 ——
+ * `subpackages/feature/wish-wall/index.js` 的 `blessPlayIds(tags)` 拿它给玩法瓦片排序；
+ * 命中不了的 id 会让 `rank()` 恒等于"未命中"，"这条标签先玩哪个"的产品意图**静默失效**
+ * （木鱼就是例子：它是页面常驻卡片、根本不是玩法瓦片，放进 plays 结构上永远不可达）。
+ *
+ * 合法 id 集合从 `config/ritualPlays.js` **现读**，不硬编码：
+ * 新增玩法自动合法；玩法改名/删除，这里立即报红。硬编码 `['qian','cookie','zodiac','mbti']`
+ * 会在新增玩法时假失败、在改名时假通过（本仓 E7 教训）。
+ */
+const ritualPlays = loadCjs(PLAYS)
+const PLAY_IDS = (ritualPlays.RITUAL_PLAYS || []).map((p) => p.id)
+check(
+  '玩法注册表可读且非空（plays 判据的事实源；读不到就无从判定）',
+  PLAY_IDS.length > 0,
+  `RITUAL_PLAYS=${JSON.stringify(PLAY_IDS)}`
+)
+const badPlayIds = (tags) => {
+  const bad = []
+  ;(tags || []).forEach((t) => {
+    ;(t.plays || []).forEach((id) => {
+      if (!PLAY_IDS.includes(id)) bad.push(`${t.key}:${id}`)
+    })
+  })
+  return bad
+}
+const playSources = [['SSOT', ssot], ...Object.entries(copies).map(([name, mod]) => [`${name}副本`, mod])]
+playSources.forEach(([label, mod]) => {
+  const bad = badPlayIds(mod.BLESS_TAGS)
+  check(
+    `plays 里的玩法 id 都存在于玩法注册表（${label}）`,
+    bad.length === 0,
+    bad.length ? `非法 id: ${bad.join(', ')}（注册表：${PLAY_IDS.join(', ')}）` : ''
+  )
+})
+// ERP 副本是 ESM（不能 require），按既有形态用正则取 plays 字面量
+const adminPlays = [...adminSrc.matchAll(/plays:\s*\[([^\]]*)\]/g)].map((m) =>
+  [...m[1].matchAll(/'([^']*)'/g)].map((x) => x[1])
+)
+check(
+  'ERP 副本 plays 条数与标签数一致（缺一条会让下面逐条校验错位）',
+  adminPlays.length === ssot.BLESS_TAGS.length,
+  `ERP=${adminPlays.length} 标签=${ssot.BLESS_TAGS.length}`
+)
+{
+  const bad = []
+  adminPlays.forEach((ids, i) => {
+    const key = ssot.BLESS_TAG_KEYS[i] || `#${i}`
+    ids.forEach((id) => {
+      if (!PLAY_IDS.includes(id)) bad.push(`${key}:${id}`)
+    })
+  })
+  check(
+    'plays 里的玩法 id 都存在于玩法注册表（ERP 副本）',
+    bad.length === 0,
+    bad.length ? `非法 id: ${bad.join(', ')}（注册表：${PLAY_IDS.join(', ')}）` : ''
+  )
+}
+
 /* ── ③ 云函数接线 ────────────────────────────────────────────────────── */
 const cloudFn = stripComments(read(CLOUD_FN))
 check('云函数副本被真正 require（不是躺在目录里没人用）', /require\('\.\/blessTags'\)/.test(cloudFn))
@@ -221,27 +284,66 @@ check('页面显示祈运 chip + 商品入口',
 
 /* ── 汇总 ───────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
-  // 注入漂移：改 SSOT 的一个 label → 副本一致性必须红
-  const target = resolve(ROOT, SSOT)
-  const original = readFileSync(target, 'utf8')
-  const drifted = original.replace("label: '求安'", "label: '求宁'")
-  if (drifted === original) {
-    console.error('✗ selftest 无法注入（锚点没找到）')
-    process.exit(1)
+  const runGuard = () => spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
+  // 每轮：注入 → 子进程跑守卫必须红（且红在指定判据上）→ 还原 → **逐字节**比对
+  const INJECTIONS = [
+    {
+      name: '副本漂移（SSOT 的 label 改一个字）',
+      file: SSOT,
+      from: "label: '求安'",
+      to: "label: '求宁'",
+      expect: '枚举本体一致', // 原有判据：副本比对接上即可
+      expectAny: false
+    },
+    {
+      name: 'SSOT 的 plays 塞入不存在的玩法 id',
+      file: SSOT,
+      from: "plays: ['qian', 'cookie']",
+      to: "plays: ['not_a_play', 'cookie']",
+      expect: 'plays 里的玩法 id 都存在于玩法注册表（SSOT） — 非法 id: fortune:not_a_play'
+    },
+    {
+      // 只改 ERP 副本：它不参与 shape() 逐字比对，所以**只有新判据**能抓到它
+      // （这是新判据真的独立生效、而不是被既有副本比对兜住的证明）
+      name: 'ERP 副本的 plays 塞入不存在的玩法 id（只有新判据能抓到）',
+      file: ADMIN,
+      from: "plays: ['qian', 'cookie']",
+      to: "plays: ['not_a_play', 'cookie']",
+      expect: 'plays 里的玩法 id 都存在于玩法注册表（ERP 副本） — 非法 id: fortune:not_a_play'
+    }
+  ]
+  let allCaught = true
+  for (const inj of INJECTIONS) {
+    const target = resolve(ROOT, inj.file)
+    const original = readFileSync(target, 'utf8')
+    const drifted = original.replace(inj.from, inj.to)
+    if (drifted === original) {
+      console.error(`✗ selftest 无法注入（锚点没找到）：${inj.name}`)
+      process.exit(1)
+    }
+    let run
+    try {
+      writeFileSync(target, drifted)
+      run = runGuard()
+    } finally {
+      writeFileSync(target, original)
+    }
+    const output = `${run.stdout || ''}${run.stderr || ''}`
+    const detected = run.status !== 0 && (inj.expectAny || output.includes(inj.expect))
+    const restored = readFileSync(target, 'utf8') === original
+    if (!detected || !restored) {
+      allCaught = false
+      console.error(
+        `✗ selftest 失败：${inj.name}` +
+          (detected ? '（注入被检出，但源文件还原后与原字节不一致）' : '（注入没有被守卫检出）')
+      )
+      console.error(output.split('\n').filter(Boolean).slice(0, 8).map((l) => '    ' + l).join('\n'))
+    } else {
+      console.log(`✓ selftest：${inj.name} → 已检出且逐字节还原`)
+    }
   }
-  let caught = false
-  try {
-    writeFileSync(target, drifted)
-    const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
-    caught = run.status !== 0
-  } finally {
-    writeFileSync(target, original)
-  }
-  if (!caught) {
-    console.error('✗ selftest 失败：改了一处 label，守卫居然没红（判据没接上副本比对）')
-    process.exit(1)
-  }
-  console.log('✓ selftest 通过：注入副本漂移被检出，且已还原源文件')
+  if (!allCaught) process.exit(1)
+  console.log(`✓ selftest 通过：${INJECTIONS.length} 类注入全部被检出，源文件逐字节还原`)
   process.exit(0)
 }
 

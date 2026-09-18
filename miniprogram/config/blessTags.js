@@ -35,7 +35,7 @@ const BLESS_TAGS = [
     key: 'peace',
     label: '求安',
     guide: '这面墙偏「求安」：敲一下木鱼，把心先放下来。',
-    plays: ['muyu', 'qian']
+    plays: ['qian']
   },
   {
     key: 'study',
