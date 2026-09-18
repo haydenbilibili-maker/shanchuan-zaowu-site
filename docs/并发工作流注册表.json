@@ -121,6 +121,23 @@
       ]
     },
     {
+      "id": "wish-wall-polish",
+      "name": "祈夆墙质感批次（字阶/间距令牌化 · 对比度清零 · 微交互与无障碍收敛）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立：验收冻结期在 feat/* 上推进的质感批次。owns 刻意最小（只本页新增的守卫改动不涉及新文件）；⚠️ 与 feat/wish-wall-contrast-fix **重复修了同一处** .ww-scope 对比度（同值），合并时去重。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/subpackages/feature/wish-wall/**",
+        "miniprogram/scripts/test-wish-wall.mjs",
+        "miniprogram/scripts/mp-contrast-baseline.json"
+      ],
+      "guards": [
+        "test:wish-wall",
+        "check:mp-contrast"
+      ]
+    },
+    {
       "id": "visual",
       "name": "视觉设计专项（令牌 / 弹窗 / 字号 / 文案）",
       "owner": "agent:visual",
