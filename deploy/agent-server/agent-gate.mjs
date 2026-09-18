@@ -22,6 +22,25 @@ import http from 'node:http'
 import crypto from 'node:crypto'
 import { timingSafeEqual as nodeTSE } from 'node:crypto'
 
+// 环境变量缺失时**自己载入 env 文件**。
+// 为什么需要：systemd 由 EnvironmentFile 注入，但手工/CLI 调用（如 `--ticket`）不会 —— 实测就是因此
+// 让 `--ticket` 静默输出空值（配置检查在最前面 exit(1)，错误还被 2>/dev/null 吞掉）。
+// 只做「补齐」，不覆盖已存在的环境变量。
+if (!process.env.COOKIE_SECRET) {
+  try {
+    const fs = await import('node:fs')
+    const f = process.env.GATE_ENV_FILE || '/etc/agent-gate.env'
+    if (fs.existsSync(f)) {
+      for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+        const m = /^([A-Z_][A-Z0-9_]*)=(.*)$/.exec(line.trim())
+        if (m && !process.env[m[1]]) process.env[m[1]] = m[2]
+      }
+    }
+  } catch (e) {
+    console.error('[agent-gate] 载入 env 文件失败:', e.message)
+  }
+}
+
 const PORT = Number(process.env.GATE_PORT || 8080)
 const DSH_PORT = Number(process.env.DSH_PORT || 3080)
 const PUBLIC_HOST = process.env.PUBLIC_HOST || 'agent.shanhaizaowu.com'
@@ -179,9 +198,95 @@ function recordFailure(ip) {
   else rec.n += 1
 }
 
+// ── 一次性登录票据（小程序 web-view 免二次输密码用）─────────────────────
+// 协议：ticket = base64url(exp) + "." + HMAC_SHA256(SECRET, "ticket." + exp)
+//   · 短时效（默认 120s）：够小程序跳转，泄露窗口极小
+//   · 一次性：内存记录已用过的 exp（TTL 到过期为止），重放直接 401
+//   · **失败一律落到登录页**（不是 401 白屏）⇒ 票据坏了不影响可用性，这是关键的降级设计
+const TICKET_TTL_SEC = Number(process.env.TICKET_TTL_SEC || 120)
+const usedTickets = new Map() // exp -> 首次使用时间
+function makeTicket(ttlSec = TICKET_TTL_SEC) {
+  const exp = Date.now() + ttlSec * 1000
+  const payload = Buffer.from(String(exp)).toString('base64url')
+  return `${payload}.${sign(`ticket.${payload}`)}`
+}
+/** @returns {'ok'|'bad'|'used'} */
+function consumeTicket(ticket) {
+  if (!ticket) return 'bad'
+  const i = ticket.lastIndexOf('.')
+  if (i < 0) return 'bad'
+  const payload = ticket.slice(0, i)
+  const mac = ticket.slice(i + 1)
+  if (!safeEqual(mac, sign(`ticket.${payload}`))) return 'bad'
+  let exp
+  try {
+    exp = Number(Buffer.from(payload, 'base64url').toString())
+  } catch {
+    return 'bad'
+  }
+  if (!Number.isFinite(exp) || exp <= Date.now()) return 'bad'
+  // 清理过期记录，避免 Map 无界增长
+  for (const [k] of usedTickets) if (Number(k) <= Date.now()) usedTickets.delete(k)
+  if (usedTickets.has(payload)) return 'used'
+  usedTickets.set(payload, Date.now())
+  return 'ok'
+}
+
+// CLI：生成票据（与网关**同一份实现**，不另写第二份 —— 重复实现会漂移）
+//   node agent-gate.mjs --ticket [ttl秒]
+if (process.argv.includes('--ticket')) {
+  const i = process.argv.indexOf('--ticket')
+  const ttl = Number(process.argv[i + 1]) || TICKET_TTL_SEC
+  console.log(makeTicket(ttl))
+  process.exit(0)
+}
+
+// ── 微信业务域名校验文件 ────────────────────────────────────────────────
+// 微信要求把 mp 后台生成的校验文件放到域名根（如 /MP_verify_xxx.txt）。
+// 该路由**必须在鉴权判断之前**，否则微信抓不到 → 业务域名配置失败。
+// 安全约束：**只精确匹配 `MP_verify_<字母数字>.txt`**，不做通配、不拼路径、不走目录遍历。
+const WECHAT_VERIFY_FILE = process.env.WECHAT_VERIFY_FILE || '/opt/agent-gate/wechat-verify.txt'
+let wechatVerifyBody = null
+try {
+  const fs = await import('node:fs')
+  if (fs.existsSync(WECHAT_VERIFY_FILE)) {
+    wechatVerifyBody = fs.readFileSync(WECHAT_VERIFY_FILE, 'utf8').trim()
+    console.log(`[agent-gate] 已载入微信校验文件（${wechatVerifyBody.length} 字节）`)
+  } else {
+    console.log(`[agent-gate] 未配置微信校验文件（${WECHAT_VERIFY_FILE}）—— 业务域名路由将返回 404`)
+  }
+} catch (e) {
+  console.error('[agent-gate] 读取微信校验文件失败:', e.message)
+}
+const WECHAT_PATH_RE = /^\/MP_verify_[A-Za-z0-9_-]+\.txt$/
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${PUBLIC_HOST}`)
   const ip = clientIp(req)
+
+  // ① 微信业务域名校验：**免鉴权**，且必须在所有鉴权判断之前
+  if (req.method === 'GET' && WECHAT_PATH_RE.test(url.pathname)) {
+    if (!wechatVerifyBody) return sendHtml(res, 404, 'not configured')
+    res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' })
+    return res.end(wechatVerifyBody)
+  }
+
+  // ② 一次性票据：校验通过即下发与普通登录**完全相同**的 gate cookie，
+  //    并 302 到 `/`（URL 里不留票据）。失败则**落到登录页**（降级可用）。
+  if (req.method === 'GET' && url.searchParams.has('ticket')) {
+    const r = consumeTicket(url.searchParams.get('ticket'))
+    if (r !== 'ok') {
+      console.warn(`[agent-gate] 票据被拒（${r}）→ 落到登录页`)
+      res.writeHead(302, { location: '/__gate/login', 'cache-control': 'no-store' })
+      return res.end()
+    }
+    res.writeHead(302, {
+      location: '/',
+      'cache-control': 'no-store',
+      'set-cookie': `${COOKIE}=${makeToken()}; Max-Age=${MAX_AGE_DAYS * 86400}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+    })
+    return res.end()
+  }
 
   if (url.pathname === '/__gate/login' && req.method === 'GET') {
     return sendHtml(res, 200, LOGIN_HTML())
