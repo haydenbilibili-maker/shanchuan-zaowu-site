@@ -178,7 +178,7 @@ function publicGiftView(order, { role = 'receiver', includeVoiceMeta = true } = 
   }
 
   if (meta.addressStatus === 'submitted' && order.address) {
-    // 收礼人展示层脱敏；送礼人履约可见完整（C11）
+    // 受礼人展示层脱敏；送礼人履约可见完整（C11）
     view.addressMasked = maskAddress(order.address)
     if (!view.receiverPhoneMasked) {
       view.receiverPhoneMasked = maskPhone(order.address.phone)
@@ -202,7 +202,7 @@ function publicGiftView(order, { role = 'receiver', includeVoiceMeta = true } = 
   return view
 }
 
-/** 礼笺语音：仅送礼人 / 有效 shareToken / 已绑定收礼人可听 */
+/** 礼笺语音：仅送礼人 / 有效 shareToken / 已绑定受礼人可听 */
 function canAccessGiftVoice(order, openid, token) {
   const meta = (order && order.giftMeta) || {}
   if (!meta.voiceFileID) return false
@@ -1481,8 +1481,8 @@ function classifyMineProgress(order, role) {
   }
   if (status === 'paid') {
     // 「待发货」对送礼人就是待办：label 一直写作待发货，却曾把 todo 置为 false，
-    // 导致送出方在收礼人已填址后角标不增加（需求 30：有礼赠订单却显示 0）。
-    // giftMeta.claimStatus === 'ready' 表示收礼人已填址、只差发货；
+    // 导致送出方在受礼人已填址后角标不增加（需求 30：有礼赠订单却显示 0）。
+    // giftMeta.claimStatus === 'ready' 表示受礼人已填址、只差发货；
     // 'none'（无需填址）或未设置时也由送礼人负责推进，故 giver 一律计入待办。
     const needsShipByGiver = isGiver && (
       meta.claimStatus === 'ready' ||

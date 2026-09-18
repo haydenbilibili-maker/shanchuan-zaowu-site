@@ -261,7 +261,7 @@
       <!-- 2026-09-17：整行加 is-on 点亮（勾选框太小、只有填色很难看出「已隐藏」是开着的） -->
       <view class="privacy-row {{hidePrice ? 'is-on' : ''}}" bindtap="toggleHidePrice" wx:else>
         <view class="check {{hidePrice ? 'on' : ''}}"></view>
-        <text class="privacy-text">对收礼人隐藏成交价（推荐）</text>
+        <text class="privacy-text">对受礼人隐藏成交价（推荐）</text>
       </view>
     </view>
 

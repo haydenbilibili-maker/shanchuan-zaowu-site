@@ -1760,7 +1760,7 @@ exports.main = async (event) => {
       return {
         success: false,
         code: 'GIFT_AWAITING_ADDRESS',
-        msg: '礼赠待填址，收礼人提交地址后方可发货'
+        msg: '礼赠待填址，受礼人提交地址后方可发货'
       }
     }
 

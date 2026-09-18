@@ -134,7 +134,7 @@ const EVENTS = {
   gift_mine_select: { module: MODULE.GIFT, desc: '我的礼赠筛选', targetType: 'segment' },
   gift_mine_open: { module: MODULE.GIFT, desc: '我的礼赠打开详情', targetType: 'gift' },
   gift_mine_action: { module: MODULE.GIFT, desc: '我的礼赠主操作', targetType: 'gift' },
-  gift_mine_contact_flow: { module: MODULE.GIFT, desc: '我的礼赠联系收礼人', targetType: 'gift' },
+  gift_mine_contact_flow: { module: MODULE.GIFT, desc: '我的礼赠联系受礼人', targetType: 'gift' },
 
   // —— 山海社区 ——
   community_entry_click: { module: MODULE.COMMUNITY, desc: '社区入口点击', targetType: 'community' },
