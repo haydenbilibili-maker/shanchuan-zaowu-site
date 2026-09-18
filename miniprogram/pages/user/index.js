@@ -86,6 +86,11 @@ const WORKBENCH_BADGE_SOFT_TTL_MS = 90 * 1000;
 const GUEST_NICK = '未登录用户';
 /** 无快照时用黄金结构骨架（Lv6），避免浅色纸卡「未登录」闪屏 */
 const PENDING_SKIN_LEVEL = 6;
+/** 会员码/礼券码二维码：加载与绘制失败的重试预算；用尽后必须落到可见的 error 态 */
+const QR_DRAW_RETRY_MAX = 4;
+const QR_DRAW_RETRY_MS = 180;
+/** require.async 跨分包加载二维码模块的兜底超时（不回调也要有结论，否则就是空白框） */
+const QR_DRAWER_TIMEOUT_MS = 2500;
 
 function currentOpenid() {
   try {
@@ -2033,8 +2038,61 @@ Page(withAppModal({
     }, REDEEM_ANIM_MS);
   },
 
+  /**
+   * 加载二维码绘制器：主包 → business 分包，**必须**用 require.async（分包异步化）。
+   *
+   * 2026-09-18（礼券夹亮码真机空白事故）：这类「异步加载 + 失败只重试不置错」的写法
+   * 会让二维码区永远空白且毫无提示。这里做三件事：
+   *   ① 两种 API 形态都兼容（返回 thenable / 第二参回调），不赌平台的返回值约定；
+   *   ② 加载失败或超时都 reject → 调用方落到可见的 error 态；
+   *   ③ 失败不缓存，下次亮码还能再试。
+   */
+  loadQrDrawer() {
+    if (this._qrDrawerPromise) return this._qrDrawerPromise;
+    this._qrDrawerPromise = new Promise((resolve, reject) => {
+      let done = false;
+      let timer = null;
+      const fail = (e) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(e || new Error('qrCanvas 加载失败'));
+      };
+      const succeed = (mod) => {
+        if (done) return;
+        if (mod && typeof mod.drawMemberQr === 'function') {
+          done = true;
+          clearTimeout(timer);
+          this._drawMemberQr = mod.drawMemberQr;
+          resolve(mod.drawMemberQr);
+        } else {
+          fail(new Error('qrCanvas 未导出 drawMemberQr'));
+        }
+      };
+      timer = setTimeout(() => fail(new Error('qrCanvas 加载超时')), QR_DRAWER_TIMEOUT_MS);
+      try {
+        const ret = require.async('../../subpackages/business/utils/qrCanvas.js', succeed);
+        if (ret && typeof ret.then === 'function') ret.then(succeed).catch(fail);
+      } catch (e) {
+        fail(e);
+      }
+    });
+    this._qrDrawerPromise.catch(() => { this._qrDrawerPromise = null; });
+    return this._qrDrawerPromise;
+  },
+
   drawPassQr(payload, attempt = 0) {
     if (!payload || !this.data.showQrModal || this.data.passState === 'redeemed') return;
+    const failDraw = () => {
+      if (attempt < QR_DRAW_RETRY_MAX) {
+        setTimeout(() => this.drawPassQr(payload, attempt + 1), QR_DRAW_RETRY_MS);
+        return;
+      }
+      this.setData({
+        passState: 'error',
+        passErrorMsg: '二维码绘制失败，可出示下方编号'
+      });
+    };
     const runDraw = (drawMemberQr) => {
       drawMemberQr('#memberPassQrCanvas', payload, this, 264, {
         bg: '#F2EDE4',
@@ -2042,36 +2100,14 @@ Page(withAppModal({
         margin: 12
       }).then((ok) => {
         if (ok || !this.data.showQrModal || this.data.passState === 'redeemed') return;
-        if (attempt < 4) {
-          setTimeout(() => this.drawPassQr(payload, attempt + 1), 180);
-          return;
-        }
-        this.setData({
-          passState: 'error',
-          passErrorMsg: '二维码绘制失败，可出示下方编号'
-        });
-      });
+        failDraw();
+      }).catch(failDraw);
     };
     if (this._drawMemberQr) {
       runDraw(this._drawMemberQr);
       return;
     }
-    require
-      .async('../../subpackages/business/utils/qrCanvas.js')
-      .then((mod) => {
-        this._drawMemberQr = mod.drawMemberQr;
-        runDraw(this._drawMemberQr);
-      })
-      .catch(() => {
-        if (attempt < 4) {
-          setTimeout(() => this.drawPassQr(payload, attempt + 1), 180);
-          return;
-        }
-        this.setData({
-          passState: 'error',
-          passErrorMsg: '二维码绘制失败，可出示下方编号'
-        });
-      });
+    this.loadQrDrawer().then(runDraw).catch(failDraw);
   },
 
   async refreshMemberPass() {
