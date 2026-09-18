@@ -833,6 +833,15 @@ const INJECTIONS = {
     file: 'miniprogram/utils/handFont.js',
     from: "const FONT_FAMILY = 'ShanhaiHand'",
     to: "const FONT_FAMILY = 'ShanhaiHandX'"
+  },
+  // ── 「写成心愿」不收弹层（2026-09-19 真机反馈的缺陷本体）───────────────────
+  // 纸签弹层 `.ww-sheet` 与吸底发送条 `.ww-composer` 都是 fixed bottom:0，
+  // 而弹层 z-index 41 > 发送条 z-index 30 —— 不收弹层就会永久盖住发送条。
+  // 真机现象：「页面滚下去了，但看不到输入框」。本条注入把修复撤掉，新判据必须变红。
+  'play-wish-keeps-sheet': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    // 先收弹层，露出吸底发送条；再滚一下（保留既有行为，对非 fixed 落点仍有效）\n    this.closePlayResult()',
+    to: '    // 注入：不收弹层（回归注入）'
   }
 }
 
@@ -3634,12 +3643,18 @@ check(
   p3.usePlayWish()
   check('★ 结果卡「写成心愿」把心愿词预填进写愿签', p3.data.draft === '马上有回音')
   check(
+    '★ 点「写成心愿」必须收掉纸签弹层（弹层 z-index 41 高于吸底发送条 z-index 30；不收就会永久盖住它 —— 2026-09-19 真机反馈「滚下去了但看不到输入框」的根因）',
+    p3.data.playResult === null,
+    `playResult=${JSON.stringify(p3.data.playResult)}`
+  )
+  check(
     '预填后滚到输入框（selector 必须是输入框上真实存在的 id）',
     scrolled.length >= 1 && scrolled[scrolled.length - 1].selector === '#wishInput' && /id="wishInput"/.test(wallWxml2)
   )
   const p4 = mkPlayPage({ playResult: { id: 'cookie', wish: '' }, playNeed: { field: 'mbti' } })
   p4.usePlayWish()
   check('没有可用的心愿词时，只给「马上有」开头（不硬拼一个废话）', p4.data.draft === '马上有')
+  check('★ 无心愿词那条路径同样要收弹层（两条分支不能只修一条）', p4.data.playResult === null)
   const navigated = []
   globalThis.wx.navigateTo = (o) => navigated.push(o && o.url)
   p4.goProfileField()

@@ -289,12 +289,24 @@ Page({
     }
   },
 
-  /** 结果卡 → 写成心愿：预填心愿词（没有可用的就只给「马上有」开头），并滚到写愿签那里 */
+  /**
+   * 结果卡 → 写成心愿：预填心愿词（没有可用的就只给「马上有」开头），并滚到写愿签那里。
+   *
+   * ⚠️ **必须收掉纸签弹层**（2026-09-19 修）：`.ww-sheet` 与 `.ww-composer` 都是
+   * `position: fixed; bottom: 0`，而弹层 `z-index: 41` **高于**发送条 `z-index: 30` ——
+   * 点「写下我的心愿」若只填草稿、不收弹层，弹层会**一直盖住发送条**，用户看到的现象是
+   * 「页面滚下去了，但看不到输入框」。而且本页发送条是吸底的、本来就常驻可见，
+   * **不是靠滚动才能看到** —— 此前想用 `pageScrollTo` 修这件事属于改错了地方
+   * （`pageScrollTo` 对 `position: fixed` 元素本来就无效，它不在文档流里）。
+   * 判据：`test:wish-wall` 钉住「调用后 `playResult === null`（弹层已收）」。
+   */
   usePlayWish() {
     const r = this.data.playResult
     if (!r) return
     this.setData({ draft: r.wish || '马上有' })
     trackBehavior('wish_wall_play', 'to_wish', r.id)
+    // 先收弹层，露出吸底发送条；再滚一下（保留既有行为，对非 fixed 落点仍有效）
+    this.closePlayResult()
     try {
       wx.pageScrollTo({ selector: '#wishInput', duration: 260, fail: () => {} })
     } catch (e) { /* 低版本基础库不支持 selector，忽略 */ }
