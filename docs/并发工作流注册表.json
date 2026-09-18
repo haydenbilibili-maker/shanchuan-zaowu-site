@@ -386,6 +386,16 @@
         "注册门禁口径分两种：硬门禁（wiki-detail / identify-result，closable=false + 整页模糊）与软钩子（wish-wall 落愿，closable=true + 保草稿 + 自动续发）"
       ],
       "handoffNote": "祈福墙注册钩子改的是 wish-wall 的文件（见该流 owns）——本流只消费该页，不得直接改动；结构性变更向 wish-wall 流提交请求。"
+    },
+    {
+      "id": "mobile-agent",
+      "name": "移动端 AI 工作台（小程序内嵌 DSH）",
+      "owner": "lead",
+      "phase": 1,
+      "owns": [
+        "deploy/agent-server/**"
+      ],
+      "note": "2026-09-18 经产品负责人授权新建。owns 刻意最小：只含网关侧产物（deploy/agent-server/**，已存在且无他人认领）。admin/docs/移动端AI工作台_技术蓝图.md 归 erp（实测守卫报互斥冲突），故不重复认领 —— 该蓝图是跨流产物。miniprogram/subpackages/manager/agent-workbench/** 待页面目录真正创建后再追加（守卫要求 owns 必须匹配到已存在文件）。miniprogram/app.json（owner=integration）与 managerPageConfig.js 不在范围内，跨流改动另行走章程流程。"
     }
   ],
   "frozen": [
