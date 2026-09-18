@@ -27,14 +27,15 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MP = resolve(HERE, '..')
 
 /** 棘轮基线：只许降不许升。每迁移一页就把这个数字改小（并同步 MIGRATED）。 */
-export const BASELINE = 142
+export const BASELINE = 138
 /** 已迁移到样式化弹窗的页面：不得再出现 wx.showModal */
 export const MIGRATED = [
   'subpackages/business/address/index.js',
   'pages/cart/index.js',
   'subpackages/business/order-claim/index.js',
   'subpackages/business/order-detail/index.js',
-  'subpackages/feature/detail/index.js'
+  'subpackages/feature/detail/index.js',
+  'pages/user/index.js'
 ]
 const SKIP_DIRS = new Set(['node_modules', 'cloudfunctions', 'scripts', 'docs', '.git'])
 

@@ -1,6 +1,6 @@
 {
- "at": "2026-09-18T05:25:22.237Z",
- "total": 1975,
+ "at": "2026-09-18T05:28:48.699Z",
+ "total": 1971,
  "counts": {
   "miniprogram/components/ProductList/index.js": 4,
   "miniprogram/components/RegisterAuthDialog/index.js": 4,
@@ -10,7 +10,7 @@
   "miniprogram/pages/cart/index.js": 12,
   "miniprogram/pages/category/index.js": 7,
   "miniprogram/pages/index/index.js": 12,
-  "miniprogram/pages/user/index.js": 45,
+  "miniprogram/pages/user/index.js": 41,
   "miniprogram/subpackages/business/about/index.js": 9,
   "miniprogram/subpackages/business/address/index.js": 17,
   "miniprogram/subpackages/business/aftersale-apply/index.js": 9,

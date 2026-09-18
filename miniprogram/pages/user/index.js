@@ -4,6 +4,7 @@ const db = wx.cloud.database();
 const { trackBehavior } = require('../../utils/trackBehavior');
 const { requestManagerAccess, requestWorkspaceAccess } = require('../../utils/managerAuth');
 const { requestStaffOrderSubscribe } = require('../../utils/staffOrderSubscribe');
+const { withAppModal } = require('../../utils/appModal');
 const {
   workbenchEntries,
   resolveWorkspaceRole,
@@ -410,7 +411,7 @@ function buildBootMemberCardState() {
 
 const _bootCard = buildBootMemberCardState();
 
-Page({
+Page(withAppModal({
   behaviors: [easterEggHost],
   data: {
     // 统一主视觉轻提示（铭牌 + 铜金）——取代原生 toast，见 components/AppToast
@@ -1605,26 +1606,26 @@ Page({
   // 🟢 签到逻辑
   async doCheckIn() {
     if (isLocalLoggedOut()) {
-      wx.showModal({
+      this.modal({
         title: '先重新进入',
+        overline: 'RE-ENTER',
         content: '退出登录后需重新进入，方可签到领取积分。',
         confirmText: '重新进入',
-        cancelText: '稍后',
-        success: (res) => {
-          if (res.confirm) this.resumeLogin();
-        }
+        cancelText: '稍后'
+      }).then((res) => {
+        if (res.confirm) this.resumeLogin();
       });
       return;
     }
     if (!this.data.onboardingDone) {
-      wx.showModal({
+      this.modal({
         title: '领取新客礼包',
+        overline: 'WELCOME GIFT',
         content: '授权手机号即可完成注册并签到领积分。',
         confirmText: '去领取',
-        cancelText: '稍后',
-        success: (res) => {
-          if (res.confirm) this.startOnboarding();
-        }
+        cancelText: '稍后'
+      }).then((res) => {
+        if (res.confirm) this.startOnboarding();
       });
       return;
     }
@@ -1860,14 +1861,14 @@ Page({
   async showMemberCode(options) {
     softVibrate('medium');
     if (isLocalLoggedOut()) {
-      wx.showModal({
+      this.modal({
         title: '先重新进入',
+        overline: 'RE-ENTER',
         content: '退出登录后需重新进入，方可出示会员码。',
         confirmText: '重新进入',
-        cancelText: '稍后',
-        success: (res) => {
-          if (res.confirm) this.resumeLogin();
-        }
+        cancelText: '稍后'
+      }).then((res) => {
+        if (res.confirm) this.resumeLogin();
       });
       return;
     }
@@ -2972,29 +2973,28 @@ Page({
       // ignore
     }
 
-    wx.showModal({
+    this.modal({
       title,
+      overline: 'NEW ORDER',
       content: String(content).slice(0, 160),
       confirmText: '去处理',
-      cancelText: '稍后',
-      confirmColor: '#C4A76C',
-      success: (r) => {
-        this._newOrderPopupShowing = false;
-        // showModal 确认为用户手势，可攒订阅额度
-        requestStaffOrderSubscribe().catch(() => null);
-        if (r.confirm) {
-          const mgr = entries.find(
-            (e) => e && (e.kind === 'super_admin' || e.kind === 'manager')
-          );
-          requestWorkspaceAccess(
-            (mgr && mgr.kind) || 'manager',
-            (mgr && mgr.workspace) || ''
-          );
-        }
-      },
-      fail: () => {
-        this._newOrderPopupShowing = false;
+      cancelText: '稍后'
+    }).then((r) => {
+      this._newOrderPopupShowing = false;
+      // 自定义弹窗的确认同样是用户手势，可攒订阅额度
+      requestStaffOrderSubscribe().catch(() => null);
+      if (r.confirm) {
+        const mgr = entries.find(
+          (e) => e && (e.kind === 'super_admin' || e.kind === 'manager')
+        );
+        requestWorkspaceAccess(
+          (mgr && mgr.kind) || 'manager',
+          (mgr && mgr.workspace) || ''
+        );
       }
+    }).catch(() => {
+      // 弹窗未正常结算时也要解除「正在展示」标记，否则后续新订单提醒会被吞掉
+      this._newOrderPopupShowing = false;
     });
   },
 
@@ -3090,4 +3090,4 @@ Page({
       });
     }
   }
-});
+}));
