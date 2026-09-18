@@ -53,11 +53,11 @@ export function loadSpecs() {
  * ⚠️ 这张表是「人工核对过的事实」，**必须**覆盖 `scanFunctionFiles()` 扫出的每一个函数 ——
  *    守卫里有一条判据专门校验这件事（否则它又会退化成 2026-09-17 那种「✓ 覆盖齐全」的空头承诺）。
  *
- * 已知**未 provision** 的集合（写了 dedupeKey 但 SPECS 里没有索引登记）：
- *   · `artisan_commission_ledger` —— 师傅分账流水，4 份副本各自写入（confirmPayment/payCallback/
- *     refundOrder 的 artisanCommission.js:670,789 + manageArtisanCommission/commissionCore.js:670,789）
+ * 2026-09-18 第二轮：原先列在这里、**未 provision** 的两个集合已补进 SPECS（集成官裁决「补 spec 让它真绿」）：
+ *   · `artisan_commission_ledger` —— 师傅分账流水，4 个函数各一份**逐字节相同**的副本
+ *     （artisanCommission.js ×3 + manageArtisanCommission/commissionCore.js；写入点 :670 / :789）
  *   · `notification_logs` —— 仅 `dispatchMessage/core.js:120` 那份副本带 dedupeKey
- *   这两个是**显式待办**（不是「通过」）：建不建唯一索引需产品负责人拍板（裁决记录 §6 步骤 2 未含它们）。
+ * 现在这两条是**正常登记**，不再是待办；`UNPROVISIONED_NOTE` 因此为空（见该常量处的说明）。
  */
 export const OBSERVED_WRITERS = {
   point_records: ['bindPlatformOrder', 'claimBirthdayGift', 'claimStoreReceipt', 'exchangeCoupon', 'grantStorePoints', 'manageStoredValue', 'payCallback', 'redeemReward', 'refundOrder', 'upsertUserProfile'],
@@ -71,16 +71,19 @@ export const OBSERVED_WRITERS = {
     'submitInvoiceRequest', 'submitSupportTicket', 'sweepExpiredOrders', 'toggleCollection',
   ],
   store_coupon_redeems: ['verifyStoreCoupon'],
-  // ↓ 写了 dedupeKey、但 provision 脚本尚未登记索引（显式待办，仍判失败 —— 真信号，不许为变绿而删）
   artisan_commission_ledger: ['confirmPayment', 'manageArtisanCommission', 'payCallback', 'refundOrder'],
   notification_logs: ['dispatchMessage'],
 }
 
-/** 未 provision 集合的待办说明（进失败输出，便于一眼看懂「要谁拍板」） */
-export const UNPROVISIONED_NOTE = {
-  artisan_commission_ledger: '师傅分账流水防重（4 份副本 artisanCommission.js/commissionCore.js 各写一次）—— 建不建唯一索引需产品负责人拍板',
-  notification_logs: '仅 dispatchMessage/core.js:120 的副本带 dedupeKey（其它 inAppMessage.js 不带）—— 是否需要唯一索引需产品负责人拍板',
-}
+/**
+ * 「已知未 provision」白名单 —— **当前为空，这是有意的**。
+ *
+ * 曾经有两条（artisan_commission_ledger / notification_logs），2026-09-18 已按集成官裁决补进 SPECS，
+ * 所以真信号清零、判据必须真绿。**不要再往里塞东西来换绿**：往这里加一条等于把真信号降级成
+ * 「公示的例外」，只有在产品负责人明确拍板「这个集合不建唯一索引」并写清理由时才允许。
+ * 自检里有一条断言钉住「当前为空」，防止悄悄加项。
+ */
+export const UNPROVISIONED_NOTE = {}
 
 /** 是否是 dedupeKey 的**写入**行（排除 `dedupeKey: found.dedupeKey` 这类读取） */
 export function isWriteLine(line) {
@@ -248,11 +251,13 @@ function selftest() {
   t('★ 实测写入方不在人工核对表里 → 检出',
     checkCoverage(goodSpecs, { c1: ['f1'] }, ['f1', 'fGhost'], rulesOk, fnOk)
       .some((p) => /不在 OBSERVED_WRITERS 里/.test(p)))
-  t('★ 未 provision 集合 → 检出（并带待办说明，不是「通过」）',
+  t('★ 未 provision 集合 → 检出（不是「通过」）',
     checkCoverage([], { ledger_x: ['f1'] }, ['f1'], rulesOk, fnOk)
-      .some((p) => /缺少集合 ledger_x 的索引登记/.test(p))
-    && checkCoverage([], { artisan_commission_ledger: ['f1'] }, ['f1'], rulesOk, fnOk)
-      .some((p) => /⏳ 待 provision/.test(p)))
+      .some((p) => /缺少集合 ledger_x 的索引登记/.test(p)))
+  t('★ 「已知未 provision」白名单必须为空（补 spec 换成真绿，不许把真信号降级成公示例外）',
+    Object.keys(UNPROVISIONED_NOTE).length === 0)
+  t('★ 已补齐的两个集合确实进了 SPECS（否则上一轮的真信号会以假绿回归）',
+    ['artisan_commission_ledger', 'notification_logs'].every((c) => loadSpecs().some((s) => s.collection === c)))
 
   if (bad) {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`)

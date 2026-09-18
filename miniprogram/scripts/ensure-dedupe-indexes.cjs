@@ -51,23 +51,34 @@ const ENV_ID = 'cloud1-8gnkty5bfff9f0bf'
  *                          **共 24 个函数**（原先只登记了 toggleCollection —— 判据只扫 index.js 时看不见这些）
  *   store_coupon_redeems   verifyStoreCoupon:524
  *
- * ⚠️ 已发现但**尚未 provision**（不在 SPECS 里，属显式待办，见守卫输出）：
- *   artisan_commission_ledger  师傅分账流水防重，4 份副本各自写入：
- *                              confirmPayment|payCallback|refundOrder 的 artisanCommission.js:670,789
- *                              + manageArtisanCommission/commissionCore.js:670,789
- *                              （同文件 `posted.push({ dedupeKey })` 是回显，不是写库）
- *   notification_logs          dispatchMessage/core.js:120（**该副本的 notification_logs 文档带 dedupeKey**；
- *                              其它 inAppMessage.js 的 notification_logs 写入不带，故只此一处）
- *   是否给这两个集合建唯一索引需产品负责人拍板（裁决 §6 步骤 2 未包含它们）。
+ * 2026-09-18 第二轮（集成官裁决：补 spec 让 `check:dedupe-index-coverage` 真绿）新增三个集合：
+ *   artisan_commission_ledger  dedupeKey，4 个函数各自一份**逐字节相同**的副本
+ *                              （sha256 b5715c25…：confirmPayment|payCallback|refundOrder 的
+ *                              artisanCommission.js + manageArtisanCommission/commissionCore.js；
+ *                              写入点 :670 与 :789，同文件 `posted.push({ dedupeKey })` 是回显不是写库）
+ *   notification_logs          dedupeKey，只有 dispatchMessage/core.js:120 那份副本写它
+ *                              （其它 inAppMessage.js 的 notification_logs 文档不带 dedupeKey）
+ *   stored_value_ledgers       **idempotencyKey**（字段名不同！）钱包储值账本回账防重，两个写入方：
+ *                              `manageStoredValue/account.js`（835 行，全量：recharge: / recharge_bonus:
+ *                              / order_pay:<orderId>:<attempt> / order_pay_refund:<oid>:<attempt>
+ *                              / order_refund_credit:<oid>）与
+ *                              `payCallback/storedValueCredit.js`（412 行，**是前者的裁剪副本**：
+ *                              只含 recharge: / recharge_bonus:，require 的 collections 模块名也不同）
  *
- * ⚠️ 历史数据里 `point_records` 等集合**很可能有大量文档没有 dedupeKey** —— 此时直接建唯一索引
- * 要么建不上，要么建完阻断新写入（MongoDB 把缺失当 null，只允许一条）。所以本脚本默认只预检。
+ * ⚠️ 历史数据里 `point_records` 等集合**可能有大量文档没有 dedupeKey**。是否阻断建索引取决于
+ *    **Sparse**（实测线上 point_records.dedupeKey_1 就是 Sparse=true → 缺字段不占唯一槽位）：
+ *    · 非 Sparse 唯一索引：缺失字段视作 null，**只允许一条** → 缺字段数必须为 0；
+ *    · Sparse 唯一索引：缺字段的文档不进索引 → 缺字段数随意，但**重复键照样阻断**。
+ *    所以 `sparse: true` 的 spec（point_records / notification_logs）由持凭据者在**控制台**建：
+ *    本脚本的 SDK 没有声明 Sparse 参数，**不猜**（宁可拒绝自动建，也不盲建一个语义不同的索引）。
  */
 const SPECS = [
   {
     collection: 'point_records',
     field: 'dedupeKey',
     indexName: 'dedupeKey_1',
+    // 实测线上该索引 Sparse=true（缺字段文档 48 篇却不阻断）→ 把既有事实写进 spec，供预检比对
+    sparse: true,
     reason: '积分/成长值台账防重（生日礼、门店小票、门店赠分、订单退款冲销、兑换、平台单绑定、充值返积分）',
     usedBy: ['bindPlatformOrder', 'claimBirthdayGift', 'claimStoreReceipt', 'exchangeCoupon', 'grantStorePoints', 'manageStoredValue', 'payCallback', 'redeemReward', 'refundOrder', 'upsertUserProfile'],
   },
@@ -104,6 +115,29 @@ const SPECS = [
     indexName: 'dedupeKey_1',
     reason: '门店券核销防重（客户端带 clientRequestId）',
     usedBy: ['verifyStoreCoupon'],
+  },
+  {
+    collection: 'artisan_commission_ledger',
+    field: 'dedupeKey',
+    indexName: 'dedupeKey_1',
+    reason: '师傅分账流水防重（4 份逐字节相同副本：confirmPayment|payCallback|refundOrder 的 artisanCommission.js + manageArtisanCommission/commissionCore.js）',
+    usedBy: ['confirmPayment', 'manageArtisanCommission', 'payCallback', 'refundOrder'],
+  },
+  {
+    collection: 'notification_logs',
+    field: 'dedupeKey',
+    indexName: 'dedupeKey_1',
+    // 实测 112 篇历史文档没有 dedupeKey（只有 dispatchMessage 的活动信带 key）→ 必须 Sparse
+    sparse: true,
+    reason: '站内信**投递台账**防重（仅 dispatchMessage/core.js:120 写入 dedupeKey；大量历史文档无该字段 → 只能建 Sparse 唯一索引）',
+    usedBy: ['dispatchMessage'],
+  },
+  {
+    collection: 'stored_value_ledgers',
+    field: 'idempotencyKey',
+    indexName: 'idempotencyKey_1',
+    reason: '钱包储值账本回账防重（充值 recharge: / 赠送 recharge_bonus: / 订单支付 order_pay:<orderId>:<attempt> / 支付失败回账 order_pay_refund / 订单退款回账 order_refund_credit）',
+    usedBy: ['manageStoredValue', 'payCallback'],
   },
 ]
 
@@ -271,14 +305,14 @@ async function main() {
   const execute = argv.includes('--execute')
   const asJson = argv.includes('--json')
 
-  if (!loadDotEnv()) {
-    console.error('✗ 未找到 admin/.env 或 admin/.env.local（需要 TCB_SECRET_ID / TCB_SECRET_KEY）')
-    process.exit(2)
-  }
+  // 判据是「凭据在不在」，不是「.env 文件在不在」——
+  // worktree 常常没有 admin/.env（被 gitignore，不随 worktree 复制），
+  // 此时只要环境变量里有 TCB_SECRET_* 就应该能跑（否则被迫只能去主库跑，容易踩到别人的工作区）。
+  const envFiles = loadDotEnv()
   const secretId = process.env.TCB_SECRET_ID
   const secretKey = process.env.TCB_SECRET_KEY
   if (!secretId || !secretKey) {
-    console.error('✗ 缺少 TCB_SECRET_ID / TCB_SECRET_KEY')
+    console.error(`✗ 缺少 TCB_SECRET_ID / TCB_SECRET_KEY${envFiles ? '' : '（未找到 admin/.env 或 admin/.env.local，环境变量里也没有）'}`)
     process.exit(2)
   }
 
@@ -310,15 +344,24 @@ async function main() {
         continue
       }
       console.log(`   已有唯一幂等索引：${pre.hasUniqueDedupe ? `是（Sparse=${pre.dedupeIndexSparse === true ? '是' : pre.dedupeIndexSparse === false ? '否' : '未知'}）` : '否'}`)
+      if (spec.sparse && pre.hasUniqueDedupe && pre.dedupeIndexSparse === false) {
+        console.log('   ⚠️ Sparse 不一致：spec 期望 Sparse 唯一索引，线上这一条**不是** Sparse')
+      }
       console.log(`   缺 ${spec.field} 的文档数：${pre.missingField === null ? '读不到（' + (pre.countError || '') + '）' : pre.missingField}`)
       console.log(`   重复键：${pre.duplicateKeys === null ? '读不到（' + (pre.dupError || '') + '）' : `样本 ${pre.samples.length ? pre.samples.map((s) => `${s.key}×${s.n}`).join(', ') : '无'}；确切重复组数 ${pre.duplicateGroupCount === null ? '读不到' : pre.duplicateGroupCount}`}`)
     }
-    console.log('\n判据：**缺字段数必须为 0 且无重复键** 才能建唯一索引')
-    console.log('（唯一索引把缺失当 null，只允许一条 null —— 否则建不上或建完阻断写入）')
+    console.log('\n判据：**无重复键** 才能建唯一索引；按**非 Sparse** 建时还要求缺字段数为 0')
+    console.log('（非 Sparse 唯一索引把缺失当 null，只允许一条 null；Sparse 唯一索引不索引缺失字段）')
+    const sparseSpecs = SPECS.filter((s) => s.sparse)
+    if (sparseSpecs.length) {
+      console.log(`\n其中 ${sparseSpecs.length} 个 spec 标记了 sparse:true（${sparseSpecs.map((s) => s.collection).join(', ')}）：`)
+      console.log('  本脚本的 SDK 未声明 Sparse 参数 → **不自动建**，请在控制台按「唯一 + Sparse」建（照 point_records 先例）。')
+    }
   }
 
   if (!execute) {
-    console.log('\n这是预检。确认上面两项为 0 后，用 --execute 创建。')
+    console.log('\n这是预检。确认上面两项为 0 后，用 --execute 创建')
+    console.log('（标了 sparse:true 的集合本脚本**拒绝自动建** —— 见上，请在控制台按「唯一 + Sparse」建）。')
     return
   }
 
@@ -326,6 +369,14 @@ async function main() {
   for (const { spec, pre } of reports) {
     if (!pre.exists) { console.error(`✗ ${spec.collection}：集合不存在，跳过`); fail += 1; continue }
     if (pre.hasUniqueDedupe) { console.log(`✓ ${spec.collection}：唯一幂等索引已存在，跳过`); continue }
+    if (spec.sparse) {
+      // 不猜 SDK 的 Sparse 参数名：宁可在控制台手动建，也不自动建一个**语义不同**的非 Sparse 索引
+      console.error(`✗ ${spec.collection}：spec 要求 Sparse 唯一索引，本脚本的 SDK 未声明 Sparse 参数 → 拒绝自动创建`)
+      console.error(`   请在控制台建：字段 ${spec.field}，唯一=是，Sparse=是（索引名 ${spec.indexName}）`)
+      console.error(`   注意：即使 Sparse，也要求**无重复键**（当前重复组数=${pre.duplicateGroupCount === null ? '读不到' : pre.duplicateGroupCount}）`)
+      fail += 1
+      continue
+    }
     if (pre.missingField !== 0 || pre.duplicateKeys !== 0) {
       console.error(`✗ ${spec.collection}：预检未通过（缺字段=${pre.missingField} 重复=${pre.duplicateKeys}）`)
       console.error('   拒绝创建 —— 请先在控制台补齐 dedupeKey / 清理重复，或在控制台确认该集合的历史数据情况。')

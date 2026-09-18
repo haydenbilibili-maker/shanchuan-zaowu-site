@@ -36,21 +36,30 @@ const require = createRequire(import.meta.url)
  * 「读不到」一律算**不通过**（不许把 null 当成 0 —— 那是 E10 的变体：没实测就写数字）。
  */
 export function summarize(reports) {
-  // 「集合不存在/读不到」的项不进两个汇总数字（它们单独列出，避免把 null 摊进总数）
+  // 「集合不存在/读不到」的项不进汇总数字（它们单独列出，避免把 null 摊进总数）
   const readable = reports.filter((r) => r.pre.exists)
-  const missing = readable.map((r) => r.pre.missingField)
+  const sum = (arr) => (arr.some((v) => v === null || v === undefined) ? null : arr.reduce((a, b) => a + b, 0))
+  // 缺字段数：**报告用**全量；**判失败用**只算非 Sparse 的 spec ——
+  // Sparse 唯一索引不索引缺失字段（实测线上 point_records 就是 Sparse 且带 48 篇缺字段文档），
+  // 所以缺字段只对「非 Sparse」创建构成阻断，对 Sparse 只是数据质量信号。
+  const missingSum = sum(readable.map((r) => r.pre.missingField))
+  const missingBlockingSum = sum(readable.filter((r) => r.spec.sparse !== true).map((r) => r.pre.missingField))
   const dups = readable.map((r) => r.pre.duplicateKeys)
   const groups = readable.map((r) => r.pre.duplicateGroupCount)
-  const sum = (arr) => (arr.some((v) => v === null || v === undefined) ? null : arr.reduce((a, b) => a + b, 0))
-  const missingSum = sum(missing)
   const dupSum = sum(dups)
   const dupGroupSum = sum(groups)
   const notExists = reports.filter((r) => !r.pre.exists).map((r) => r.spec.collection)
   const noIndex = reports.filter((r) => r.pre.exists && !r.pre.hasUniqueDedupe).map((r) => r.spec.collection)
+  // spec 声明 sparse:true（缺字段不占槽位）却装了非 Sparse 索引 → 语义不一致，单独列出并判失败
+  const sparseMismatch = reports
+    .filter((r) => r.spec.sparse === true && r.pre.exists && r.pre.hasUniqueDedupe && r.pre.dedupeIndexSparse === false)
+    .map((r) => r.spec.collection)
   return {
-    missingSum, dupSum, dupGroupSum, notExists, noIndex,
+    missingSum, missingBlockingSum, dupSum, dupGroupSum, notExists, noIndex, sparseMismatch,
     readableCount: readable.length,
-    bad: !!(notExists.length || noIndex.length || missingSum !== 0 || dupSum !== 0 || dupGroupSum !== 0),
+    // 重复键对 Sparse / 非 Sparse **都**阻断（实测 user_messages 9 组、notification_logs 13 组）
+    bad: !!(notExists.length || noIndex.length || sparseMismatch.length
+      || missingBlockingSum !== 0 || dupSum !== 0 || dupGroupSum !== 0),
   }
 }
 
@@ -74,6 +83,18 @@ function selftest() {
   t('两个数字会求和（3+0 / 2+0）', summarize([dirty, ok]).missingSum === 3 && summarize([dirty, ok]).dupSum === 2)
   t('★ 重复键确切组数参与判定（样本被 limit 5 截断也不漏）',
     summarize([{ spec: { collection: 'c' }, pre: { exists: true, hasUniqueDedupe: false, missingField: 0, duplicateKeys: 0, duplicateGroupCount: 9 } }]).bad === true)
+  // Sparse 语义：spec 要 Sparse（缺字段不占槽位），线上却装了非 Sparse → 必须报出来
+  const sparseSpecNonSparseLive = { spec: { collection: 'c', sparse: true }, pre: { exists: true, hasUniqueDedupe: true, dedupeIndexSparse: false, missingField: 5, duplicateKeys: 0, duplicateGroupCount: 0 } }
+  const sparseSpecOkLive = { spec: { collection: 'c', sparse: true }, pre: { exists: true, hasUniqueDedupe: true, dedupeIndexSparse: true, missingField: 5, duplicateKeys: 0, duplicateGroupCount: 0 } }
+  const noSparseSpec = { spec: { collection: 'c' }, pre: { exists: true, hasUniqueDedupe: true, dedupeIndexSparse: false, missingField: 5, duplicateKeys: 0, duplicateGroupCount: 0 } }
+  t('★ spec 要 Sparse 但线上是非 Sparse → 不通过',
+    summarize([sparseSpecNonSparseLive]).bad === true && summarize([sparseSpecNonSparseLive]).sparseMismatch.includes('c'))
+  t('  spec 要 Sparse、线上也是 Sparse → 通过（缺字段 5 不阻断）', summarize([sparseSpecOkLive]).bad === false)
+  t('  没声明 sparse 的 spec 不做 Sparse 比对', summarize([noSparseSpec]).sparseMismatch.length === 0)
+  t('★ 非 Sparse spec 缺字段 5 → 不通过（缺字段只对非 Sparse 构成阻断）',
+    summarize([noSparseSpec]).bad === true && summarize([noSparseSpec]).missingBlockingSum === 5)
+  t('  Sparse spec 的缺字段仍进「报告用」总数（不当 0 吞掉）',
+    summarize([sparseSpecOkLive]).missingSum === 5 && summarize([sparseSpecOkLive]).missingBlockingSum === 0)
 
   if (bad) {
     console.error(`\n自检失败 ${bad} 项 —— 判据不可信`)
@@ -147,25 +168,29 @@ async function main() {
         continue
       }
       console.log(`   已有唯一幂等索引：${pre.hasUniqueDedupe ? `是（Sparse=${pre.dedupeIndexSparse === true ? '是' : pre.dedupeIndexSparse === false ? '否' : '未知'}）` : '**否**'}`)
+      if (spec.sparse && pre.hasUniqueDedupe && pre.dedupeIndexSparse === false) {
+        console.log('   ⚠️ Sparse 不一致：spec 要求 Sparse 唯一索引（缺字段不占槽位），线上这条**不是** Sparse')
+      }
       console.log(`   缺 ${spec.field} 的文档数：${pre.missingField === null ? '读不到（' + (pre.countError || '') + '）' : pre.missingField}`)
       console.log(`   重复键：${pre.duplicateKeys === null ? '读不到（' + (pre.dupError || '') + '）' : `样本 ${pre.samples.length ? pre.samples.map((s) => `${s.key}×${s.n}`).join(', ') : '无'}；确切重复组数 ${pre.duplicateGroupCount === null ? '读不到' : pre.duplicateGroupCount}`}`)
     }
   }
 
   // 两个汇总数字（裁决 §6 步骤 1 明确要的两个数）
-  const { missingSum, dupSum, dupGroupSum, notExists, noIndex, readableCount, bad } = summarize(reports)
+  const { missingSum, missingBlockingSum, dupSum, dupGroupSum, notExists, noIndex, sparseMismatch, readableCount, bad } = summarize(reports)
 
   if (!asJson) {
     console.log(`\n汇总（只统计能读到的 ${readableCount} 个集合；集合不存在的见上，不摊进总数）：`)
-    console.log(`  · 缺 dedupeKey 的文档数：${missingSum === null ? '读不到（见上）' : missingSum}`)
+    console.log(`  · 缺幂等键（dedupeKey / idempotencyKey）的文档数：${missingSum === null ? '读不到（见上）' : missingSum}`)
+    console.log(`    （其中会**阻断创建**的只有非 Sparse spec：${missingBlockingSum === null ? '读不到' : missingBlockingSum}；Sparse 的缺字段不占唯一槽位）`)
     console.log(`  · 重复键样本数：${dupSum === null ? '读不到（见上）' : dupSum}（每集合最多取 5 个样本）`)
     console.log(`  · 重复键**确切组数**：${dupGroupSum === null ? '读不到（见上）' : dupGroupSum}`)
     console.log(`  · 尚缺唯一索引的集合（${noIndex.length}）：${noIndex.length ? noIndex.join(', ') : '无'}`)
     if (notExists.length) console.log(`  · 读不到的集合（${notExists.length}）：${notExists.join(', ')}`)
-    console.log('\n注意 Sparse：线上 point_records.dedupeKey_1 实测 Sparse=true —— 缺字段的文档**不占唯一槽位**，')
-    console.log('      所以「缺字段数」只在按**非 Sparse** 建索引时才会阻断创建；真正会卡住建索引的是「重复键」。')
-    console.log('未覆盖：stored_value_ledgers.idempotencyKey 没有 spec（ensure-dedupe-indexes.cjs 只管 dedupeKey）')
-    console.log('        —— 裁决 §2 的第二个要件要查它，需先补 spec 才能用本脚本预检。')
+    if (sparseMismatch.length) console.log(`  · Sparse 与 spec 期望不一致（${sparseMismatch.length}）：${sparseMismatch.join(', ')}`)
+    console.log('\n注意 Sparse：spec 标了 sparse:true 的集合（point_records / notification_logs）要求「唯一 + Sparse」——')
+    console.log('      缺字段的文档**不占唯一槽位**，所以缺字段数只在按**非 Sparse** 建时才会阻断创建。')
+    console.log('已覆盖：本脚本按 SPECS 检查，现已含 stored_value_ledgers.idempotencyKey（裁决 §2 第二个要件）。')
     console.log('判据：**无重复键** 才能建唯一索引（若按非 Sparse 建，还要求缺字段数为 0）。')
   }
 
