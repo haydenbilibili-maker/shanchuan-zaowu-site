@@ -22,40 +22,58 @@ const FONT_FAMILY = 'ShanhaiHand'
 let loaded = false
 let inflight = null
 
-function loadFrom(src, resolve) {
-  wx.loadFontFace({
-    family: FONT_FAMILY,
-    source: 'url("' + src + '")',
-    global: true,
-    scopes: ['webview', 'native'],
-    success: () => { loaded = true; resolve(true) },
-    fail: (err) => {
-      console.warn('[handFont] loadFontFace failed:', src.slice(0, 48), err && err.errMsg)
-      resolve(false)
-    }
+function tryLoad(src, label) {
+  return new Promise((resolve) => {
+    wx.loadFontFace({
+      family: FONT_FAMILY,
+      source: 'url("' + src + '")',
+      global: true,
+      scopes: ['webview', 'native'],
+      success: () => { loaded = true; console.log('[handFont] loaded via ' + label); resolve(true) },
+      fail: (err) => {
+        console.warn('[handFont] fail via ' + label + ':', (err && err.errMsg) || err)
+        resolve(false)
+      }
+    })
+  })
+}
+
+function downloadViaCloud() {
+  return new Promise((resolve) => {
+    try {
+      wx.cloud.downloadFile({
+        fileID: FONT_FILE_ID,
+        success: (r) => resolve((r && r.tempFilePath) || ''),
+        fail: () => resolve('')
+      })
+    } catch (e) { resolve('') }
   })
 }
 
 /**
- * 确保手写体已加载（幂等、并发合并）。
- * 优先走 `wx.cloud.downloadFile` 取本地临时文件 —— **cloud API 不受 downloadFile 合法域名限制**；
- * 失败再兜底用静态 https（该路径需要在小程序后台把 tcb.qcloud.la 加入 downloadFile 白名单）。
- * @returns {Promise<boolean>} 是否加载成功（失败不抛错，页面按系统兜底字体渲染即可）
+ * 按**多源链**逐个尝试，任一成功即止（幂等、并发合并）。
+ *
+ * ⚠️ 教训（2026-09-19 真机）：`wx.loadFontFace` 的 source **只接受网络 URL**（https），
+ *   传 `wxfile://` 本地路径**不生效** ✗ —— 我最初的实现是「downloadFile 成功 → 用本地路径」，
+ *   且该分支失败后**没有再试 https** ✗ → 字体永远加载不上。
+ *   现在：**https（公开可读，实测 HTTP 200）优先** → cloud 下载（取临时网络路径用不了，仅作探测）
+ *   → 1.5s 后整体重试一次。
  */
 function ensureHandFont() {
   if (loaded) return Promise.resolve(true)
   if (inflight) return inflight
-  inflight = new Promise((resolve) => {
-    try {
-      wx.cloud.downloadFile({
-        fileID: FONT_FILE_ID,
-        success: (r) => loadFrom((r && r.tempFilePath) || FONT_HTTPS, resolve),
-        fail: () => loadFrom(FONT_HTTPS, resolve)
-      })
-    } catch (e) {
-      loadFrom(FONT_HTTPS, resolve)
-    }
-  })
+  inflight = (async () => {
+    // ① 静态 https（实测公开可读；不依赖 cloud.init）
+    if (await tryLoad(FONT_HTTPS, 'https')) return true
+    // ② 试一次云下载（若失败仅说明云侧不可用，不再用其本地路径 —— loadFontFace 不接受本地路径）
+    const local = await downloadViaCloud()
+    console.log('[handFont] cloud downloadFile ->', local ? 'ok(但本地路径不可用于 loadFontFace)' : 'failed')
+    // ③ 整体重试一次（网络抖动 / 首次启动）
+    await new Promise((r) => setTimeout(r, 1500))
+    if (await tryLoad(FONT_HTTPS, 'https-retry')) return true
+    console.warn('[handFont] 全部来源失败：请在 miniprogram 后台把 636c-cloud1-8gnkty5bfff9f0bf-1387508856.tcb.qcloud.la 加入 downloadFile 合法域名')
+    return false
+  })()
   return inflight
 }
 

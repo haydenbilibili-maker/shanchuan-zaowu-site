@@ -288,8 +288,11 @@ check('★★ loadFontFace 必须 global:true 且 scopes 含 native（否则 iOS
     iInit >= 0 && iHand > iInit,
     '写在模块求值期会早于 cloud.init → 真机上字体加载不上（模拟器会因系统字体而误判为正常）')
 }
-check('★ 首选 cloud.downloadFile（cloud API 不受合法域名限制），静态 https 为兜底',
-  /wx\.cloud\.downloadFile\(/.test(handFontJs) && /FONT_HTTPS/.test(handFontJs))
+check('★★ 多源链：**https 优先**（实测公开可读、不依赖 cloud.init）→ 云探测 → 1.5s 重试',
+  /tryLoad\(FONT_HTTPS, 'https'\)/.test(handFontJs) && /https-retry/.test(handFontJs),
+  '真机事故：原先只在 downloadFile 失败时才试 https，而 loadFontFace 不接受本地路径 → 永不加载')
+check('★★ 不得把本地临时路径直接交给 loadFontFace（它只接受网络 URL）',
+  !/loadFontFace\(\{[^}]*tempFilePath/s.test(handFontJs))
 check('★ WXSS 里自定义族名 **ShanhaiHand 置首**（系统名仅作兜底）',
   /font-family: 'ShanhaiHand', /.test(composeWxssSrc) && /font-family: 'ShanhaiHand', /.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss'), 'utf8')))
 check('★ OFL 许可与托管已记录（许可要求保留版权声明）', /OFL-1\.1/.test(readFileSync(resolve(ROOT, 'miniprogram/docs/手写体字体_许可与托管.md'), 'utf8')))
