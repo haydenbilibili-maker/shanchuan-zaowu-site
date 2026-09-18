@@ -1,6 +1,6 @@
 {
- "at": "2026-09-18T05:38:54.728Z",
- "total": 1963,
+ "at": "2026-09-18T05:44:20.876Z",
+ "total": 1960,
  "counts": {
   "miniprogram/components/ProductList/index.js": 4,
   "miniprogram/components/RegisterAuthDialog/index.js": 4,
@@ -32,9 +32,9 @@
   "miniprogram/subpackages/business/pickup-pass/index.js": 7,
   "miniprogram/subpackages/business/points/index.js": 1,
   "miniprogram/subpackages/business/rewards/index.js": 1,
-  "miniprogram/subpackages/business/store/index.js": 24,
-  "miniprogram/subpackages/business/store-zone/index.js": 8,
-  "miniprogram/subpackages/business/ticket/index.js": 13,
+  "miniprogram/subpackages/business/store/index.js": 23,
+  "miniprogram/subpackages/business/store-zone/index.js": 7,
+  "miniprogram/subpackages/business/ticket/index.js": 12,
   "miniprogram/subpackages/business/utils/careHelper.js": 5,
   "miniprogram/subpackages/extra/approvals/index.js": 25,
   "miniprogram/subpackages/extra/artisan/commission/index.js": 2,

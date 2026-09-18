@@ -16,6 +16,7 @@ const { navigateToProductDetail } = require('../../../utils/productDetailNav')
 const { STORE_COVER } = require('../../../config/storeMediaCdn')
 const { normalizeStoreImageUrl, normalizeStoreImageList, hydrateStoresMedia, hydrateStoreMedia } = require('../../../utils/storeMedia')
 const { BRAND_WEBSITE } = require('../utils/brand')
+const { withAppModal } = require('../../../utils/appModal')
 const { findNearestStore, formatDistance } = require('../../../utils/storeGeo')
 const { getFirstImage, formatPrice } = require('../../../utils/util')
 const { getAuthorizedLocation } = require('../../../utils/locationAuth')
@@ -23,7 +24,7 @@ const { getAuthorizedLocation } = require('../../../utils/locationAuth')
 const db = wx.cloud.database()
 const LBS_SWITCH_KM = 1
 
-Page({
+Page(withAppModal({
   data: {
     statusBarHeight: 0,
     scrollTop: 112,
@@ -460,16 +461,12 @@ Page({
     }
     // 多店时确认当前选中店，避免签错门店
     if (this.data.stores.length > 1 && source !== 'scan') {
-      const ok = await new Promise((resolve) => {
-        wx.showModal({
-          title: '确认到店',
-          content: `将为「${s.name}」签到，请确认您已到达该店。`,
-          confirmText: '确认到店',
-          confirmColor: '#C4A76C',
-          success: (r) => resolve(!!r.confirm),
-          fail: () => resolve(false)
-        })
-      })
+      const ok = await this.modal({
+        title: '确认到店',
+        overline: 'STORE CHECK-IN',
+        content: `将为「${s.name}」签到，请确认您已到达该店。`,
+        confirmText: '确认到店'
+      }).then((r) => !!r.confirm)
       if (!ok) return
     }
     const checkSource = source === 'scan' ? 'scan' : 'manual'
@@ -757,4 +754,4 @@ Page({
       failToast: '无法打开藏品'
     })
   }
-})
+}))
