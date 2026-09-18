@@ -67,16 +67,58 @@ function collect() {
 
 const d = collect()
 
+/**
+ * `--strict` 的唯一判定出口 —— **必须被所有输出路径调用**。
+ *
+ * 为什么抽成函数（2026-09-18 修，错题本 E16：「无法验证」被当成「通过」）：
+ *   原实现在 `--json` 分支里 `process.exit(0)` 后就再也走不到 `--strict` 的判定，
+ *   于是 `--json --strict` **静默绿**；同理 `TYPE_ORPHAN_MAX=abc` 使 Number() = NaN，
+ *   `n > NaN` 恒为 false —— **非法阈值也静默绿**。两者都是"棘轮看起来在，其实没查"。
+ *   ⚠️ 本次修复**不改阈值数值**（仍为 22），只堵住"绕过判定"的路径。
+ */
+function strictExitCode() {
+  if (!process.argv.includes('--strict')) return 0
+  const raw = process.env.TYPE_ORPHAN_MAX
+  const max = raw === undefined || raw === '' ? 22 : Number(raw)
+  if (!Number.isFinite(max) || max < 0) {
+    console.error(`✗ TYPE_ORPHAN_MAX=${raw} 不是有效阈值（需 ≥0 的有限数）`
+      + ' —— 阈值无效时不得给出绿色结论（错题本 E16）；请修正环境变量或去掉它')
+    return 2
+  }
+  if (d.orphans.length > max) {
+    console.error(`✗ --strict：离群字号 ${d.orphans.length} 种 > 阈值 ${max}`)
+    return 1
+  }
+  return 0
+}
+
 if (process.argv.includes('--selftest')) {
+  const self = fileURLToPath(import.meta.url)
   const target = join(MP, 'app.wxss')
   const orig = readFileSync(target, 'utf8')
-  writeFileSync(target, orig + '\n.wx-probe { font-size: 237rpx; }\n')
-  const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--json'], { encoding: 'utf8' })
-  writeFileSync(target, orig)
-  if (readFileSync(target, 'utf8') !== orig) { console.log('✗ 未能逐字还原'); process.exit(1) }
-  const probe = (() => { try { return JSON.parse(r.stdout).orphans.find((o) => o[0] === '237') } catch (e) { return null } })()
-  if (!probe) { console.log('✗ 注入的离群字号未被报告检出'); process.exit(1) }
-  console.log('✓ 自检通过：注入 237rpx 离群字号被检出、源文件逐字还原')
+  let bad = 0
+  const t = (label, ok) => { if (ok) console.log(`✓ ${label}`); else { bad += 1; console.error(`✗ ${label}`) } }
+  try {
+    writeFileSync(target, orig + '\n.wx-probe { font-size: 237rpx; }\n')
+    const r = spawnSync(process.execPath, [self, '--json'], { encoding: 'utf8' })
+    const probe = (() => { try { return JSON.parse(r.stdout).orphans.find((o) => o[0] === '237') } catch (e) { return null } })()
+    t('注入 237rpx 离群字号被报告检出', !!probe)
+    // 判据自检（E16）：组合 flag / 非法阈值**都不得绕过硬失败**。
+    // 注入的 237rpx 保证 orphans ≥ 1，故阈值 0 必然该红 —— 不依赖仓内当前离群数。
+    const rJsonStrict = spawnSync(process.execPath, [self, '--json', '--strict'], {
+      encoding: 'utf8', env: { ...process.env, TYPE_ORPHAN_MAX: '0' }
+    })
+    t('--json --strict 组合仍生效（阈值 0 → exit 1，不得静默绿）', rJsonStrict.status === 1)
+    const rBadEnv = spawnSync(process.execPath, [self, '--strict'], {
+      encoding: 'utf8', env: { ...process.env, TYPE_ORPHAN_MAX: 'not-a-number' }
+    })
+    t('非法 TYPE_ORPHAN_MAX 不得静默绿（exit 2）', rBadEnv.status === 2)
+  } finally {
+    writeFileSync(target, orig)
+  }
+  t('源文件逐字还原', readFileSync(target, 'utf8') === orig)
+  if (bad) { console.error(`✗ report:type 自检失败 ${bad} 项`); process.exit(1) }
+  console.log('✓ 自检通过：离群检出 + --json 不绕过棘轮 + 非法阈值不静默放行 + 源文件逐字还原')
   process.exit(0)
 }
 
@@ -88,7 +130,7 @@ if (process.argv.includes('--json')) {
     orphans: d.orphans.sort((a, b) => Number(a[0]) - Number(b[0])),
     topFiles: d.perFileArr.slice(0, 20)
   }, null, 1))
-  process.exit(0)
+  process.exit(strictExitCode())
 }
 
 console.log(`字号分布：${d.total} 处 font-size / ${d.fs.size} 种取值（建议字阶 = 出现 ≥${TOKEN_MIN} 次的值）`)
@@ -111,8 +153,4 @@ for (const f of d.perFileArr.slice(0, 12)) {
 }
 console.log('\n（只报告不改动 —— 收敛按页分批进行，见 docs/v1.1.2_全局细节雕刻_施工总纲.md · W1）')
 
-const strictFail = process.argv.includes('--strict') && d.orphans.length > Number(process.env.TYPE_ORPHAN_MAX || 22)
-if (strictFail) {
-  console.log(`\n✗ --strict：离群字号 ${d.orphans.length} 种 > 阈值 ${process.env.TYPE_ORPHAN_MAX || 22}`)
-  process.exit(1)
-}
+process.exit(strictExitCode())
