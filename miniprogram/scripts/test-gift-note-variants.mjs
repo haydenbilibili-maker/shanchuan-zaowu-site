@@ -30,6 +30,22 @@ const COMPOSE_JS = 'miniprogram/subpackages/feature/gift/compose/index.js'
 const COMPOSE_WXML = 'miniprogram/subpackages/feature/gift/compose/index.wxml'
 const COMPOSE_WXSS = 'miniprogram/subpackages/feature/gift/compose/index.wxss'
 
+/**
+ * 受礼人姓名必填的提示文案 —— **必须只写这一份**。
+ *
+ * 它在断言 3 处 + 自检注入锚点 1 处被引用。此前 4 处各自硬编码字面量，
+ * 于是改一次文案要同时改 4 个地方，而**漏掉注入锚点**的后果不是报错，是：
+ * 锚点命中 0 次 → 自检恒失败 → 该守卫再也"证明不了自己会失败"（**假绿**）。
+ *
+ * 这不是假想：同一个文件下面那条 `去掉必填拦截` 注入，2026-09-18 就因为弹窗迁到 AppToast
+ * 而让旧锚点命中 0 次（见本文件 selftest 内注释）；`test-wallet-hub-lifecycle.mjs` 也留了
+ * 同形态的记录（旧锚点 `'  methods: _methods,\n'` 命中 0 次）。
+ * 故本次直接让锚点引用常量：**文案与锚点同源，改文案不可能只改一半**。
+ *
+ * 产品负责人 2026-09-19 验收口径：用**受礼人**（不是「写给谁」），并加「务必」。
+ */
+const RECIPIENT_REQUIRED_TOAST = '请务必填写受礼人姓名'
+
 let passed = 0
 let failed = 0
 const failures = []
@@ -322,15 +338,15 @@ check('★ 展示态保留换行（white-space: pre-wrap）',
 check('埋点带上句序（便于回看哪一句更常用）',
   /label: preset\.label,\s*\n\s*variant: index \+ 1/.test(composeJs))
 
-/* ── 需求 9：写给谁必填 + 犒劳自己默认账号昵称（2026-09-18）────────────────── */
+/* ── 需求 9：受礼人姓名必填 + 犒劳自己默认账号昵称（2026-09-18；文案口径 2026-09-19）────── */
 const composeJsRaw = readFileSync(resolve(ROOT, COMPOSE_JS), 'utf8')
 check('★ 必填：goPay 里空名字会拦下并提示（不再静默带去空受礼人）',
-  /请先填写写给谁的名字/.test(composeJs)
+  new RegExp(RECIPIENT_REQUIRED_TOAST).test(composeJs)
   && /if \(!String\(this\.data\.recipientName \|\| ''\)\.trim\(\)\) \{[\s\S]{0,200}?return/.test(composeJs))
 check('★ 必填拦截发生在进入确认订单之前',
-  composeJs.indexOf('请先填写写给谁的名字') < composeJs.indexOf('navigateToConfirmOrder(['))
+  composeJs.indexOf(RECIPIENT_REQUIRED_TOAST) < composeJs.indexOf('navigateToConfirmOrder(['))
 check('★ 空名字时聚焦回输入框（用户知道要改哪里）',
-  /if \(!String\(this\.data\.recipientName \|\| ''\)\.trim\(\)\) \{[\s\S]{0,160}?recipientEditing: true[\s\S]{0,160}?请先填写写给谁的名字/.test(composeJs))
+  new RegExp(`if \\(!String\\(this\\.data\\.recipientName \\|\\| ''\\)\\.trim\\(\\)\\) \\{[\\s\\S]{0,160}?recipientEditing: true[\\s\\S]{0,160}?${RECIPIENT_REQUIRED_TOAST}`).test(composeJs))
 check('★ 犒劳自己（self）默认写账号昵称：落笔入口统一处理',
   /if \(preset\.id === 'self'\) this\.applyToSelfRecipientDefault\(\)/.test(composeJs))
 check('★ 默认值只在空的时候补，不覆盖用户已填的名字',
@@ -420,12 +436,13 @@ function selftest() {
       to: "      if (!preset || cardBody !== preset.body) patch.activeNotePresetId = ''"
     },
     {
-      name: '去掉「写给谁」必填拦截（空名字也能进确认订单）——《需求 9》',
+      name: '去掉「受礼人姓名」必填拦截（空名字也能进确认订单）——《需求 9》',
       file: COMPOSE_JS,
       // 2026-09-18：注入锚点原本是那一行 `wx.showToast(...)`。该处已按 V1.1.2·W2 弹窗统一
       // 迁到统一组件 `this.showAppToast(...)`（修 check:dialog-ratchet 的既存红），
       // 于是旧锚点命中 0 次、自检恒失败。语义不变，只把锚点跟到新写法。
-      from: "      this.showAppToast({ overline: 'RECIPIENT', title: '请先填写写给谁的名字' })\n      return\n",
+      // 2026-09-19：锚点里的文案改为引用 `RECIPIENT_REQUIRED_TOAST` 常量 —— 文案再变也不会漏这一处。
+      from: `      this.showAppToast({ overline: 'RECIPIENT', title: '${RECIPIENT_REQUIRED_TOAST}' })\n      return\n`,
       to: ''
     },
     {

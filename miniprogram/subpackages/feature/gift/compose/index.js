@@ -1129,14 +1129,15 @@ Page({
       wx.showToast({ title: '藏品信息异常', icon: 'none' })
       return
     }
-    // 需求 9：「写给 TA 的名字」必填。空则**不进入**确认订单，并当场聚焦到该输入框给提示。
+    // 需求 9：**受礼人姓名**必填。空则**不进入**确认订单，并当场聚焦到该输入框给提示。
+    // 文案口径（产品负责人 2026-09-19 验收）：用「受礼人姓名」，不用「写给谁的名字」——与术语表「受礼人」一致。
     // 犒劳自己（self）时这里再兜一次默认昵称（用户可能没走关系点击的路径）。
     if (!String(this.data.recipientName || '').trim() && this.data.activeNotePresetId === 'self') {
       this.applyToSelfRecipientDefault()
     }
     if (!String(this.data.recipientName || '').trim()) {
       this.setData({ recipientEditing: true })
-      this.showAppToast({ overline: 'RECIPIENT', title: '请先填写写给谁的名字' })
+      this.showAppToast({ overline: 'RECIPIENT', title: '请务必填写受礼人姓名' })
       return
     }
     const deliveryType = this.data.deliveryType || 'invite_address'
