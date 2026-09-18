@@ -89,7 +89,8 @@
         "test:wish-wall",
         "check:bless-tags-sync",
         "check:wall-qr",
-        "check:wall-monitor"
+        "check:wall-monitor",
+        "test:ritual-profile"
       ],
       "switch": "showMaShangYou",
       "invariants": [
@@ -98,6 +99,43 @@
         "点灯/木鱼图标必须是内联 SVG data-URI（外链要域名白名单，iOS 有坑）",
         "玩法结果每日确定性（seed = 用户 + 日期 + 玩法 id）",
         "注册钩子是软钩子：落愿才要身份、closable=true、关闭保草稿、成功后自动续发"
+      ]
+    },
+    {
+      "id": "wish-wall-refine",
+      "name": "祈福墙优化批（验收期在 feat/* 上推进，解冻后合回）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立：验收冻结期（交接页 §12）禁止改 guard-registration 的代码，故本批优化走 feat/wish-wall-refine。内容：① 发送条吸底→顺流（弹幕墙下方，产品口径变更）+ 判据同步；② check:mp-contrast 入链。解冻后由集成官合回，并按 §12-④ 列出相对 057ed66 的新增提交，供产品负责人判断是否需补充验收。",
+      "owns": [
+        "miniprogram/scripts/check-mp-contrast.mjs",
+        "miniprogram/scripts/mp-contrast-baseline.json"
+      ],
+      "guards": [
+        "test:wish-wall",
+        "check:mp-contrast"
+      ],
+      "consumes": [
+        "miniprogram/subpackages/feature/wish-wall/**",
+        "package.json",
+        "guards/10-visual.txt"
+      ]
+    },
+    {
+      "id": "wish-wall-polish",
+      "name": "祈夆墙质感批次（字阶/间距令牌化 · 对比度清零 · 微交互与无障碍收敛）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立：验收冻结期在 feat/* 上推进的质感批次。owns 刻意最小（只本页新增的守卫改动不涉及新文件）；⚠️ 与 feat/wish-wall-contrast-fix **重复修了同一处** .ww-scope 对比度（同值），合并时去重。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/subpackages/feature/wish-wall/**",
+        "miniprogram/scripts/test-wish-wall.mjs",
+        "miniprogram/scripts/mp-contrast-baseline.json"
+      ],
+      "guards": [
+        "test:wish-wall",
+        "check:mp-contrast"
       ]
     },
     {
@@ -139,7 +177,8 @@
         "check:detail-visual-tiers",
         "check:dialog-ratchet",
         "check:brand-contrast",
-        "report:colors"
+        "report:colors",
+        "check:mp-contrast"
       ],
       "invariants": [
         "原生弹窗棘轮只许降不许涨（dialog-ratchet 基线 --update 必须在 PR 说明理由）",
@@ -396,6 +435,92 @@
         "deploy/agent-server/**"
       ],
       "note": "2026-09-18 经产品负责人授权新建。owns 刻意最小：只含网关侧产物（deploy/agent-server/**，已存在且无他人认领）。admin/docs/移动端AI工作台_技术蓝图.md 归 erp（实测守卫报互斥冲突），故不重复认领 —— 该蓝图是跨流产物。miniprogram/subpackages/manager/agent-workbench/** 待页面目录真正创建后再追加（守卫要求 owns 必须匹配到已存在文件）。miniprogram/app.json（owner=integration）与 managerPageConfig.js 不在范围内，跨流改动另行走章程流程。 2026-09-18 **已冻结**：web-view 内嵌被微信业务域名的 ICP 备案硬门槛阻断（非代码问题），产品负责人决定改用「添加到主屏幕」方案并收尾。已完成且仍有价值：一次性票据；死代码（待备案域名时启用）：微信校验文件路由。细节见 admin/docs/移动端AI工作台_技术蓝图.md §8。"
+    },
+    {
+      "id": "ritual-cloud-store",
+      "name": "仪式档案云存储（验收冻结期在 feat/* 上推进，解冻后合回）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立：为「注册换真实价值」钩子提供连续点灯/木鱼功德的云端档案。⚠️ 越界声明：本流修改了 admin/src/cloud.js（C9 集合登记，归 integration）—— 集成官本人已批准该一次性越界，理由是 C9 三处同步必须同批落，否则集合无规则。",
+      "owns": [
+        "miniprogram/cloudfunctions/wishRitualProfile/**",
+        "miniprogram/utils/ritualProfile.js",
+        "miniprogram/utils/ritualProfileCore.js",
+        "miniprogram/scripts/test-ritual-profile.mjs"
+      ],
+      "consumes": [
+        "admin/src/cloud.js",
+        "cloudbase/rules/wish_ritual_profiles.json",
+        "cloudbase/schema/wish_ritual_profiles.md",
+        "docs/并发工作流注册表.json",
+        "miniprogram/cloudbaserc.json"
+      ],
+      "guards": [
+        "test:ritual-profile"
+      ]
+    },
+    {
+      "id": "night-batch",
+      "name": "夜间批次合并态（仅供产品负责人审阅，解冻后按此合回）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立：验收冻结期把当晚所有 feat/* 合到一条分支，供早上一次审阅。它**不是**某条流的域，而是集成官做的合并态 —— owns 刻意留空（不与其他流抢文件），guards 列出它合并进来的新守卫以便追溯。解冻后由集成官按此分支合回 main。",
+      "owns": [],
+      "guards": [
+        "check:mp-contrast",
+        "check:docs-index",
+        "test:ritual-profile"
+      ]
+    },
+    {
+      "id": "ritual-register-gate",
+      "name": "连续记录云保存 · 注册钩子（开关 showRitualProfile + 门禁 + 双端埋点）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立。**依赖 ritual-cloud-store**（要先合云存分支，否则 check:require-paths 红）。开关入口二选一选了**店长端工作台**（与 showMaShangYou 同处），ERP 表单有意未加。⚠️ C4 契约面（双端埋点镜像）已同步。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/subpackages/feature/wish-wall/**",
+        "miniprogram/utils/contentDisplayFlags.js",
+        "miniprogram/cloudfunctions/getContentDisplayFlags/index.js",
+        "miniprogram/scripts/test-wish-wall.mjs",
+        "miniprogram/scripts/check-wall-monitor.mjs"
+      ],
+      "guards": [
+        "test:wish-wall",
+        "check:analytics-schema",
+        "check:wall-monitor"
+      ]
+    },
+    {
+      "id": "cart-image-fix",
+      "name": "购物车封面显示修复（真机反馈：你可能也喜欢三张卡是深色空块）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-20 立。根因：本页漏了共享封面链的最后一步 thumbUrl()，临时链一失败 src 上留下的 cloud:// 永远渲染不出来；且占位块深底+45%透明图标≈不可见。修法：走共享 thumbUrl + 抬高占位可见度 + 给缩略图补 wx:else 占位；并把本页纳入 test-list-cover-images（+5 判据 / +3 注入）。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/pages/cart/**",
+        "miniprogram/scripts/test-list-cover-images.mjs"
+      ],
+      "guards": [
+        "test:list-cover-images"
+      ]
+    },
+    {
+      "id": "theme-name-save-fix",
+      "name": "藏品主题名保存修复 + 补「白名单·表单·载荷」结构守卫",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-20 立。真机反馈「一键补齐后主题名保存不生效」：云函数白名单有、表单绑了、**载荷漏了**。修 payload 两行 + 新增 check:product-save-fields（跨 cross 域）。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/subpackages/manager/manager/managerPageConfig.js",
+        "miniprogram/scripts/check-product-save-fields.mjs"
+      ],
+      "guards": [
+        "check:product-save-fields"
+      ]
     }
   ],
   "frozen": [

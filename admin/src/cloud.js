@@ -541,6 +541,7 @@ export const COLLECTIONS = {
   SUPPORT_CONFIGS: 'support_configs',                     // 客服入口（getSupportConfig）
   CONTENT_DISPLAY_FLAGS: 'content_display_flags',         // 内容展示开关（getContentDisplayFlags）
   WISH_WALL_MESSAGES: 'wish_wall_messages',               // 马上有祈福弹幕（manageWishWall，需求 28）
+  WISH_RITUAL_PROFILES: 'wish_ritual_profiles',           // 祈福墙仪式档案：连续点灯 + 木鱼功德（wishRitualProfile）
   // ── 2026-09-17 全面审计补齐：以下集合此前只在云函数里以**常量名**被引用，
   //    既不在 COLLECTIONS、也没有 rules/schema（字面量扫描扫不到常量 → 长期盲区）。
   //    客户端 0 引用，权限均为「仅云函数可读写」。

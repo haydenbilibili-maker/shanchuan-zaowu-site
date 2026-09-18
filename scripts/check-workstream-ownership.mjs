@@ -50,14 +50,19 @@ const APP_JSON = join(ROOT, 'miniprogram', 'app.json')
 const PKG = join(ROOT, 'package.json')
 
 /**
- * 所有 `git diff --name-only` 必须带这三个开关：
+ * 所有 git 调用必须带的开关：
  *   · `-c core.quotepath=false` —— 默认 true 时非 ASCII 路径被转义成 `"docs/\344\272..."`，
- *     于是中文名文件匹配不上任何 `owns` glob，被误报成「无主的改动」（本仓文档大量中文名）；
- *   · `--no-renames` —— 否则重命名会输出 `old => new` 这种**不是路径**的行，永远匹配不上；
- *   · `--diff-filter=ACDMRTUXB` 由 git 默认给出全部状态，无需另加。
- * 少任何一个都会把「检出落后」或编码问题误报成「越界」—— 正是 E7「守卫判据自身错误」那一类。
+ *     于是中文名文件匹配不上任何 `owns` glob，被误报成「无主的改动」（本仓文档大量中文名）。
+ *
+ * ⚠️ **`--no-renames` 不能放进这里**（2026-09-19 实测踩到，是**假绿级**的错）：
+ *   它**不是 git 顶层选项**，而是 `diff` 的子命令选项。放在这里会让 `git` 直接报
+ *   `unknown option: --no-renames`，于是**所有 diff 调用失败并恒返回空数组** ——
+ *   冻结判定与分支范围判定就变成「静默比对 0 个文件」，永远通过。
+ *   而 `--selftest` 是直接注入判定函数、**绕过 git 命令行**的，所以抓不到它。
+ *   正确写法是把 `--no-renames` 放在子命令之后：
+ *     git -c core.quotepath=false diff --no-renames --name-only …
  */
-const GIT_SAFE = ['-c', 'core.quotepath=false', '--no-renames']
+const GIT_SAFE = ['-c', 'core.quotepath=false']
 
 /** 不在扫描范围的目录：构建产物 / 依赖 / 归档，扫描它们只会变慢且引入假阳性 */
 const SKIP_DIRS = new Set([
@@ -94,7 +99,7 @@ function appPages() {
 
 /** 当前改动的文件（工作区 + 暂存区），用于冻结判定 */
 function changedFiles() {
-  const r = spawnSync('git', [...GIT_SAFE, 'diff', '--name-only', 'HEAD'], { cwd: ROOT, encoding: 'utf8' })
+  const r = spawnSync('git', [...GIT_SAFE, 'diff', '--no-renames', '--name-only', 'HEAD'], { cwd: ROOT, encoding: 'utf8' })
   if (r.status !== 0) return []
   return String(r.stdout || '').split('\n').map((s) => s.trim()).filter(Boolean)
 }
@@ -103,9 +108,9 @@ function changedFiles() {
 function branchChangedFiles(base = 'main') {
   const out = new Set()
   for (const args of [
-    ['diff', '--name-only', `${base}...HEAD`],
-    ['diff', '--name-only', 'HEAD'],
-    ['diff', '--name-only', '--cached'],
+    ['diff', '--no-renames', '--name-only', `${base}...HEAD`],
+    ['diff', '--no-renames', '--name-only', 'HEAD'],
+    ['diff', '--no-renames', '--name-only', '--cached'],
   ]) {
     const r = spawnSync('git', [...GIT_SAFE, ...args], { cwd: ROOT, encoding: 'utf8' })
     if (r.status !== 0) continue
@@ -325,6 +330,38 @@ function selftest() {
     writeFileSync(REGISTRY, before)
     return res
   }
+
+  // ★ 判据自身：**真实 git 命令行必须能跑通**（2026-09-19 补，实测踩过）
+  //
+  // 为什么单独要有这一条：本脚本其余自检都是**直接注入 `branchChanged: [...]`** 调 `audit()`，
+  // **绕过 git 命令行** —— 于是「git 参数写错 → 命令失败 → diff 恒返回空数组 →
+  // 冻结判定与分支范围判定静默判过」这类**假绿**，19 项自检全绿也照样抓不到。
+  // 实测事故：`--no-renames` 被放进 `GIT_SAFE`（它是 `diff` 的**子命令选项**，不是 git 顶层选项）
+  // → git 报 `unknown option: --no-renames` → 三个 diff 全失败 → 守卫长期「比对 0 个改动文件」。
+  // 所以这里必须**走真实命令行**，把「参数是否合法」纳入判据。
+  const gitOk = (args) => spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' }).status === 0
+  const realGitArgs = [
+    [...GIT_SAFE, 'diff', '--no-renames', '--name-only', 'HEAD'],
+    [...GIT_SAFE, 'diff', '--no-renames', '--name-only', 'main...HEAD'],
+    [...GIT_SAFE, 'diff', '--no-renames', '--name-only', '--cached'],
+    [...GIT_SAFE, 'ls-files'],
+  ]
+  t(
+    '★ 真实 git 调用全部可执行（防「参数写错→恒返回空→假绿」；其余自检都绕过 git，抓不到这类）',
+    realGitArgs.every(gitOk)
+  )
+  // 而且「能跑通」还不够：**脏树时 changedFiles() 必须真的返回东西** ——
+  // 否则命令 exit 0 但输出被解析没了，同样是假绿。
+  // 这里只断言「解析结果与 git status 对得上」，不注入任何文件（自检不得改业务文件）。
+  t(
+    '★ changedFiles() 的解析不为空（有未提交改动时）或与 git status 一致（干净时）',
+    (() => {
+      const porcelain = spawnSync('git', ['status', '--porcelain'], { cwd: ROOT, encoding: 'utf8' })
+      const dirty = String(porcelain.stdout || '').trim().length > 0
+      const got = changedFiles()
+      return dirty ? got.length > 0 : got.length === 0
+    })()
+  )
 
   // 基线：**必须把「检出落后」与「真缺陷」分开**
   // 注册表的 owns 可能引用尚未落到**本分支**的文件（例：某流的改动还在它自己的 PR 里）——

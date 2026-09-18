@@ -34,6 +34,10 @@ const CUSTOM_JS = 'miniprogram/subpackages/feature/custom/index.js'
 const MANAGER_JS = 'miniprogram/subpackages/manager/manager/managerPageConfig.js'
 const DETAIL_WXML = 'miniprogram/subpackages/feature/detail/index.wxml'
 const GATE_WXSS = 'miniprogram/components/SensitiveBlurGate/index.wxss'
+// 2026-09-20 真机反馈「你可能也喜欢图片展示错误」（三张卡是深色空块）→ 本页也纳入本守卫
+const CART_JS = 'miniprogram/pages/cart/index.js'
+const CART_WXML = 'miniprogram/pages/cart/index.wxml'
+const CART_WXSS = 'miniprogram/pages/cart/index.wxss'
 
 let passed = 0
 let failed = 0
@@ -65,6 +69,9 @@ const hubJs = stripComments(read(HUB_JS))
 const hubWxml = read(HUB_WXML)
 const framerJs = stripComments(read(FRAMER_JS))
 const staffFn = stripComments(read(STAFF_FN))
+const cartJs = stripComments(read(CART_JS))
+const cartWxml = read(CART_WXML)
+const cartWxss = stripComments(read(CART_WXSS))
 
 /* ── 1) 取值链（纯函数，真源码） ─────────────────────────────────────────── */
 eq('★ images[0] 优先（即使它是 cloud:// 也不能丢）',
@@ -169,6 +176,24 @@ check('★ 详情页 360°/SKU 两处改用 imgView 映射（不再直绑 cloud:
 }
 
 /* ── 2) 礼赠 hub ─────────────────────────────────────────────────────────── */
+// ── 购物车（2026-09-20 真机反馈：你可能也喜欢三张卡是深色空块）────────────────
+// 根因：本页**漏了共享链的最后一步 thumbUrl()** —— 于是临时链一失败，src 上留下的
+// `cloud://` 就永远渲染不出来（本守卫 :88 已钉死「<image> 渲染不了 cloud://」），
+// 走 binderror → 清空 → 占位块；而占位块是深底 + 45% 透明图标 ≈ 看不见。
+check('★ 购物车推荐封面走共享 thumbUrl（cloud:// 在这里被确定性换成可渲染 https）',
+  /imageUrl\.thumbUrl\(/.test(cartJs))
+check('★ 购物车推荐封面绝不把 cloud:// 丢空（临时链未命中回落原值）',
+  /urlMap\[item\.image\]\)\s*\|\|\s*item\.image/.test(cartJs))
+check('★ 购物车推荐封面失败有回落，且占位**看得见**（不透明度 ≥ 0.7；原 0.45 深底上≈不可见）',
+  (() => {
+    const m = /\.rec-img-ph-icon\s*\{[^}]*opacity:\s*([0-9.]+)/.exec(cartWxss)
+    return !!m && Number(m[1]) >= 0.7
+  })())
+check('★ 购物车缩略图有缺图占位分支（此前 onCartThumbError 清空 src 后模板没有 wx:else → 空白）',
+  /class="thumb-ph"/.test(cartWxml) && /class="thumb-ph-icon"/.test(cartWxml))
+check('★ 购物车占位文案用可读的次要色（不是深面上 2.7~3.1 的 muted）',
+  /\.rec-img-ph-text\s*\{[^}]*var\(--color-text-secondary\)/.test(cartWxss))
+
 check('★ hub 封面走共享取值链', /imageUrl\.firstImageOf\(/.test(hubJs))
 check('★ hub 不再为封面做临时链转换（会过期、失败即丢空）',
   !/batchTempFileURLs\s*\(/.test(hubJs), '又回去转临时链 → 转换失败时封面会全空')
@@ -204,6 +229,24 @@ if (process.argv.includes('--selftest')) {
 
 function selftest() {
   const injections = [
+    {
+      name: '购物车推荐又漏掉 thumbUrl（临时链一失败就永远出不来）',
+      file: CART_JS,
+      from: '      const next = origin ? imageUrl.thumbUrl(origin) : origin;',
+      to: '      const next = origin;'
+    },
+    {
+      name: '购物车占位图标又调回不可见的 0.45',
+      file: CART_WXSS,
+      from: '  width: 56rpx;\n  height: 56rpx;\n  opacity: 0.8;',
+      to: '  width: 56rpx;\n  height: 56rpx;\n  opacity: 0.45;'
+    },
+    {
+      name: '购物车缩略图占位分支被删（清空 src 后直接空白）',
+      file: CART_WXML,
+      from: '                    <view class="thumb-ph" wx:else>\n                      <image class="thumb-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>\n                    </view>',
+      to: ''
+    },
     {
       name: '取值链不再看 images（回到只认 coverImage）',
       file: IMAGE_URL,

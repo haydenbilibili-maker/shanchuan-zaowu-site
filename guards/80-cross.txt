@@ -56,3 +56,6 @@ npm run check:manager-sku-stock
 npm run test:image-upload
 npm run test:sold-display
 npm run test:banner-presets
+npm run check:docs-index
+
+npm run check:product-save-fields

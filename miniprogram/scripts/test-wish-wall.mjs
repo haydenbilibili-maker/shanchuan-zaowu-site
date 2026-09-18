@@ -177,6 +177,12 @@ const INJECTIONS = {
     from: '  animation-iteration-count: 1;',
     to: '  animation-iteration-count: infinite;'
   },
+  // 首屏预填被关掉 → 墙面在加载后 2–3 秒内是空的（只有刻度线），产品真机截图里的"空框"
+  'danmaku-no-prefill': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: '    const prefill = i < lanes',
+    to: '    const prefill = false'
+  },
   // 点灯卡片重新撞上全局信号灯基类 → 卡片被压成 12rpx 竖条
   'lamp-class-collision': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
@@ -495,8 +501,8 @@ const INJECTIONS = {
   // 木鱼卡跟着灯卡改成顶对齐 → 等高之后底部留一大片空白（真图上很明显）
   'muyu-align-top-again': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  align-items: center;\n  gap: 16rpx;\n  min-width: 0;\n  /* ⚠️ 必须与 .ww-lantern 同值（守卫 `两卡内边距一致` 钉住）：改一边就是"两张卡不像一对" */\n  padding: 26rpx 20rpx;\n  border: 1rpx solid rgba(196, 167, 108, 0.34);',
-    to: '  align-items: flex-start;\n  gap: 16rpx;\n  min-width: 0;\n  /* ⚠️ 必须与 .ww-lantern 同值（守卫 `两卡内边距一致` 钉住）：改一边就是"两张卡不像一对" */\n  padding: 26rpx 20rpx;\n  border: 1rpx solid rgba(196, 167, 108, 0.34);'
+    from: '  align-items: center;\n  gap: var(--space-2);\n  min-width: 0;',
+    to: '  align-items: flex-start;\n  gap: var(--space-2);\n  min-width: 0;'
   },
   // 条数又飘出段外 → 读起来像"我的心愿 26 条"
   'seg-count-orphan-again': {
@@ -531,7 +537,7 @@ const INJECTIONS = {
   // 间距/层级又压紧 → 回到真图上那个"三行小字贴着"的状态
   'lamp-spacing-tight-again': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  margin-top: 8rpx;\n  font-size: 19rpx;\n  line-height: 1.5;',
+    from: '  margin-top: var(--space-1);\n  font-size: 19rpx;\n  line-height: 1.5;',
     to: '  margin-top: 2rpx;\n  font-size: 21rpx;\n  line-height: 1.2;'
   },
   // 音效默认关 → 用户永远听不到（产品口径是"默认开但可关"）
@@ -738,29 +744,23 @@ const INJECTIONS = {
     from: '      <view class="ww-play-grid">',
     to: '      <view class="ww-plays-guide"><text class="ww-plays-guide-text">这面墙偏「求成」：摇一签。</text></view>\n      <view class="ww-play-grid">'
   },
-  // 发送条不再吸底 → 主操作又沉到首屏之外
-  'composer-not-sticky': {
+  // ── 发送条：**顺流**设计（2026-09-19 产品口径变更，原为吸底）────────────────
+  // 旧吸底版的三条判据与四条注入随设计一并退役（详见下方断言处的说明）。
+  // 新注入测的是顺流设计的三条边界：又变回 fixed / 丢了输入框 id / 被挪到墙之外。
+  'composer-fixed-again': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  position: fixed;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  z-index: 20;',
-    to: '  position: relative;'
+    from: '.ww-composer {\n  display: flex;\n  align-items: center;\n  gap: 14rpx;\n  margin: 20rpx 0 4rpx;',
+    to: '.ww-composer {\n  position: fixed;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  z-index: 30;\n  display: flex;\n  align-items: center;\n  gap: 14rpx;\n  margin: 20rpx 0 4rpx;'
   },
-  // 底部预留被收回 → 吸底条盖住最后一张愿签
-  'composer-bottom-space-dropped': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  padding: 0 var(--space-4) calc(180rpx + env(safe-area-inset-bottom));',
-    to: '  padding: 0 var(--space-4) calc(72rpx + env(safe-area-inset-bottom));'
-  },
-  // 条子又被塞回 .ww-write 的层叠上下文里 → 真机上与分段控件/愿签卡互相遮挡
-  'composer-back-inside-write': {
+  'composer-input-id-dropped': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '  <view class="ww-composer">',
-    to: '  <view class="ww-write"><view class="ww-composer">'
+    from: '        id="wishInput"',
+    to: '        id="wishInputMoved"'
   },
-  // 条子背景又变半透明 → 愿签从条子底下透上来
-  'composer-translucent-again': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  background: var(--color-bg, #14120F);\n  border-top: 1rpx solid rgba(196, 167, 108, 0.28);',
-    to: '  background: rgba(20, 18, 15, 0.94);\n  border-top: 1rpx solid rgba(196, 167, 108, 0.28);'
+  'composer-duplicated': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '    <view class="ww-composer">',
+    to: '    <view class="ww-composer"></view>\n    <view class="ww-composer">'
   },
   // 弹层退回"内联亮色卡"（遮罩/把手都没了）→ 又变回产品说的"与页面割裂"
   'sheet-identity-dropped': {
@@ -842,6 +842,99 @@ const INJECTIONS = {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
     from: '    // 先收弹层，露出吸底发送条；再滚一下（保留既有行为，对非 fixed 落点仍有效）\n    this.closePlayResult()',
     to: '    // 注入：不收弹层（回归注入）'
+  },
+  // ── 「连续记录云保存」注册钩子（2026-09-20）────────────────────────────────
+  // 三条注入分别对应三类"看起来做了、其实没做"的缺陷：
+  //   ① 不看开关 → 超管关不掉，未注册用户照样被弹注册；
+  //   ② 不同步就报成功 → 空承诺（钩子成立与否的关键就在这一步）；
+  //   ③ 云函数 saveFlags 漏字段 → 后台保存成功但设置被静默重置为默认关。
+  'ritual-gate-ignores-flag': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '      flagOn: this.data.showRitualProfile === true,',
+    to: '      flagOn: true,'
+  },
+  'ritual-gate-skips-sync': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    const ok = await this.syncRitualToCloud()',
+    to: '    const ok = true'
+  },
+  'ritual-save-drops-field': {
+    file: 'miniprogram/cloudfunctions/getContentDisplayFlags/index.js',
+    from: '    // ⚠️ 漏这一行 = 超管在后台保存成功、但 showRitualProfile 被静默重置为默认（关）\n    showRitualProfile: incoming.showRitualProfile\n',
+    to: ''
+  },
+  // ── 质感批次（2026-09-19）：令牌化 / 按压反馈 / 无障碍 ──────────────────────
+  // 字号令牌写回裸值（30rpx 是 --fs-30 在册值；写回后"本页字号一律走 --fs-*"必须变红）
+  'wishwall-fontsize-literal-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-lantern-title {\n  display: block;\n  font-size: var(--fs-30);',
+    to: '.ww-lantern-title {\n  display: block;\n  font-size: 30rpx;'
+  },
+  // 新增一处**非登记**的非令牌字号（25rpx 在册；注入 23rpx → 白名单比对必须变红）
+  'wishwall-fontsize-unregistered': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-streak-l {\n  margin-top: 2rpx;\n  font-size: var(--fs-18);',
+    to: '.ww-streak-l {\n  margin-top: 2rpx;\n  font-size: 23rpx;'
+  },
+  // 与 --space-* 同值的间距写回裸数字（.ww-head 的下间距 16rpx == --space-2）
+  'wishwall-space-literal-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  gap: 12rpx;\n  margin: var(--space-4) 0 var(--space-2);',
+    to: '  gap: 12rpx;\n  margin: var(--space-4) 0 16rpx;'
+  },
+  // 灯卡按压反馈与木鱼卡分叉（0.86 → 0.9，回到本批修掉的那个离群值）
+  'press-opacity-diverge': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-lantern-press {\n  opacity: 0.86;\n}',
+    to: '.ww-lantern-press {\n  opacity: 0.9;\n}'
+  },
+  // hover-class 指到一个不存在的类 → 点了没反馈（WXSS 不报错，只有这条判据能发现）
+  'hover-class-orphan': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: 'hover-class="ww-tag-press"',
+    to: 'hover-class="ww-tag-press-typo"'
+  },
+  // hover-stay-time 又分叉（木鱼卡回到 60）
+  'hover-stay-diverge': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: 'bindtap="onMuyuTap" hover-class="ww-muyu-press" hover-stay-time="70"',
+    to: 'bindtap="onMuyuTap" hover-class="ww-muyu-press" hover-stay-time="60"'
+  },
+  // 可点元素丢掉 aria-role（博物笔记入口）
+  'aria-role-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      hover-class="ww-relics-press"\n      hover-stay-time="70"\n      aria-role="button"\n    >',
+    to: '      hover-class="ww-relics-press"\n      hover-stay-time="70"\n    >'
+  },
+  // 装饰圆点不再 aria-hidden（读屏会把纯色圆点当内容念）
+  'decorative-not-hidden': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: 'class="signal-light {{lamp.lit ? \'lamp-brass on\' : \'lamp-muted hollow\'}}" aria-hidden="true"',
+    to: 'class="signal-light {{lamp.lit ? \'lamp-brass on\' : \'lamp-muted hollow\'}}"'
+  },
+  // aria-hidden 反而盖到文案上（把 CTA「看看这件 ›」隐藏 —— 读屏用户丢掉主路出口）
+  'aria-hidden-over-text': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '<text class="ww-sheet-product-go">看看这件 ›</text>',
+    to: '<text class="ww-sheet-product-go" aria-hidden="true">看看这件 ›</text>'
+  },
+  // .ww-wall 又被拆成两块（后一块静默吃掉前一块的 border/box-shadow）
+  'wall-rule-resplit': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '/* ── 点灯 / 木鱼 图标替换（2026-09-19，产品负责人提供 SVG）',
+    to: '.ww-wall {\n  border: 1rpx solid rgba(196, 167, 108, 0.9);\n}\n\n/* ── 点灯 / 木鱼 图标替换（2026-09-19，产品负责人提供 SVG）'
+  },
+  // 死选择器 .ww-wall-loading 复活（wxss 有定义、wxml/js 零引用）
+  'dead-selector-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-wall-empty {\n  position: absolute;',
+    to: '.ww-wall-empty,\n.ww-wall-loading {\n  position: absolute;'
+  },
+  // 愿签骨架的底面漂回浅一档（骨架→真卡替换那一帧会跳色）
+  'tag-skel-color-drift': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  padding: 20rpx 22rpx 20rpx 26rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);',
+    to: '  padding: 20rpx 22rpx 20rpx 26rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
   }
 }
 
@@ -1105,6 +1198,30 @@ eq(
 )
 eq('空轮轮末为 0', wish.danmakuCycleEndMs([]), 0)
 eq('不传 opts 也不崩', wish.buildDanmakuRows(null).length, 0)
+
+/**
+ * ★ 首屏预填（2026-09-19 产品真机反馈「墙面像个空框」的根因判据）
+ *
+ * 根因：弹幕是 `left:100%` + 全屏横穿 + **正 delay**（原为 `i*260ms`），
+ * 所以 t=0 时墙面**必然是空的**，之后逐条从右侧入场 —— 首屏前 2–3 秒只有 6 条刻度线。
+ * 修法：前 `LANES` 条（每条轨道恰好一条）用**负 delay** 预填，加载瞬间屏内已有内容。
+ *
+ * 判据钉两件事：① 恰有 LANES 条负 delay；② 它们落在**不同轨道**（否则叠成一行更难看）。
+ * 注入 `danmaku-no-prefill` 会把 prefill 关掉 —— 本条必须变红（自检里跑）。
+ */
+const prefillRows = wish.buildDanmakuRows(
+  Array.from({ length: wish.LANES * 2 }, (_, i) => ({ _id: 'p' + i, text: '马上有预填' + i }))
+)
+const prefilled = prefillRows.filter((r) => r.delayMs < 0)
+eq('★ 首屏预填：恰有 LANES 条负 delay（加载瞬间屏内已有内容，不再是空墙）', prefilled.length, wish.LANES)
+eq('★ 首屏预填：每条落在不同轨道（否则叠成一行）', new Set(prefilled.map((r) => r.lane)).size, wish.LANES)
+check(
+  '★ 首屏预填不破坏「同轨不重叠」（预填只取每轨第一条）',
+  prefillRows.every((r, i) => {
+    const prev = prefillRows.slice(0, i).filter((p) => p.lane === r.lane).pop()
+    return !prev || r.delayMs >= prev.delayMs + prev.clearMs
+  })
+)
 
 // 轮次进 key：否则整批重排时同 key 不重播动画
 const cyc0 = wish.buildDanmakuRows([{ _id: 'a', text: '马上有钱' }], { cycle: 0 })
@@ -1972,6 +2089,27 @@ check('弹幕舞台高度固定（布局不随内容抖动）', /\.ww-wall\s*\{[
  * ------------------------------------------------------------------ */
 
 const wallWxssCode = stripCssComments(wallWxss)
+
+/* ── 长度/数值解析：字面量 `30rpx` / `1.6` 或令牌 `var(--fs-30)` / `var(--space-3)` ──
+   为什么必须这样读（2026-09-19）：本页把 `font-size` / 间距换成设计令牌后，原先直接抓
+   `(\d+)rpx` 的判据会读到 NaN —— 而 NaN 参与 `<` / `>` 比较**恒为 false**，
+   于是「字号层级不倒挂」「灯卡纵向节奏」这两条会**假红**（NaN > NaN 为假）；
+   若判据写成 `!(a < b)` 就会反过来**假绿**。两种都是"改了源码、守卫静默失效"的形态。
+   所以判据跟着令牌走：`--fs-*` / `--space-*` 一律从 app.wxss 的定义实读，不写死第二份数字。 */
+const RPX_TOKENS = (() => {
+  const map = {}
+  const src = readFileSync(resolve(ROOT, 'miniprogram/app.wxss'), 'utf8')
+  for (const m of src.matchAll(/--([a-z0-9-]+):\s*(-?\d+(?:\.\d+)?)rpx/g)) map[m[1]] = Number(m[2])
+  return map
+})()
+const numOf = (expr) => {
+  const s = String(expr == null ? '' : expr).trim()
+  const lit = /^(-?\d+(?:\.\d+)?)(?:rpx)?$/.exec(s)
+  if (lit) return Number(lit[1])
+  const varRef = /^var\(\s*--([a-z0-9-]+)\s*(?:,[^)]*)?\)$/.exec(s)
+  if (varRef && RPX_TOKENS[varRef[1]] !== undefined) return RPX_TOKENS[varRef[1]]
+  return NaN
+}
 check(
   '★ 页面底色用设计 token（本页曾是全仓唯一写 #14120F 的页面，json 却写 #1A1814）',
   /background:\s*var\(--color-bg\)/.test(wallWxssCode) && !/#14120F/.test(wallWxssCode)
@@ -2146,7 +2284,7 @@ check('★ 愿签正文也用手写体',
 // 字号与 CHAR_RPX 是**一对**：CHAR_RPX 是同轨不重叠的宽度估算依据，
 // 只改字号不改它 → 后一条会在前一条尾部还在屏内时进场（叠字）。判据按"字号 ×1.03 ≈ CHAR_RPX"实算，
 // 既保住原来的下限（≥28rpx：手写体笔画细，移动中要认得出），又让两个数不再各自漂移。
-const danmakuFontRpx = Number((/\.ww-danmaku\s*\{[^}]*font-size:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
+const danmakuFontRpx = numOf((/\.ww-danmaku\s*\{[^}]*font-size:\s*([^;}]+)/.exec(wallWxssCode) || [])[1])
 const charRpxConst = Number((/const CHAR_RPX = (\d+)/.exec(readSrc('miniprogram/utils/wishWall.js')) || [])[1])
 check(
   '★ 弹幕字号 ≥ 28rpx（手写体笔画细，移动中要认得出）',
@@ -2908,8 +3046,8 @@ check(
 
 // 判据是"关系"而不是字面值：字号层级（标题 > 灯语 > 灯位说明）+ 段间距/行距下限
 const numIn = (sel, prop) => {
-  const m = new RegExp(`\\${sel}\\s*\\{[^}]*${prop}:\\s*([\\d.]+)`).exec(wallWxssCode)
-  return m ? Number(m[1]) : NaN
+  const m = new RegExp(`\\${sel}\\s*\\{[^}]*${prop}:\\s*([^;}]+)`).exec(wallWxssCode)
+  return numOf(m && m[1])
 }
 const metaGap = numIn('.ww-lantern-meta', 'margin-top')
 const noteGap = numIn('.ww-lantern-note', 'margin-top')
@@ -2976,6 +3114,153 @@ check(
 check(
   '段外游离条数移除后不留死样式（.ww-head-n / .ww-head-rule）',
   !/\.ww-head-n\s*\{/.test(wallWxssCode) && !/\.ww-head-rule\s*\{/.test(wallWxssCode)
+)
+
+/* ================================================================== *
+ * 设计令牌落地 / 按压反馈一致性 / 无障碍可达性（2026-09-19 质感批次）
+ *
+ * 为什么这几条必须单独守：
+ *   ① 字阶令牌（契约 C7 的 14 档）在本页此前**一次都没被引用**（全仓引用率 7/4403 ≈ 0.16%）。
+ *      本批把本页 71 处 `font-size: Nrpx` 换成 `var(--fs-N)`；判据必须钉住"不许再写回裸值"，
+ *      否则下一轮改版又会静默长出 22rpx / 26rpx —— 这是"令牌定义了但没人用"的复发路径。
+ *   ② 同值间距：`--space-*` 只有 7 档，本页原来把 24rpx / 32rpx 这类**正好等于令牌**的值写成裸数字。
+ *      判据不是"间距必须等于令牌"（本页大量 20/22rpx 是版式需要），而是"与令牌同值的必须写令牌"。
+ *   ③ `hover-class` 是"点了有没有反馈"的唯一证据：类名写错 = 无反馈，且 WXSS 不会报错。
+ *      既要"每个 hover-class 都有同名规则"，也要"同族控件同值"。
+ *   ④ `aria-role` 是读屏能不能把 <view> 当按钮读出来的唯一开关；装饰圆点必须 aria-hidden。
+ * ------------------------------------------------------------------ */
+
+// —— ① 字号：只允许 var(--fs-*) ，或登记在册的非令牌值 ——
+// 非令牌白名单（每条给理由，禁止"因为红了就加"；依据 docs/字阶令牌冻结提案_2026-09-19.md §5.2）：
+//   19rpx×4 / 21rpx×2 —— **缺档值**（在 18/20 与 20/22 正中间）。补这两档要把契约 C7 的"14 档"
+//                        改成 16 档（属产品/契约决定）；改值 1rpx 等于在两档正中间替产品选边。
+//   25rpx×1（.ww-sheet-line）—— 距 --fs-24 仅 1rpx；
+//   42rpx×1（.ww-card-text） —— 距 --fs-40 2rpx。
+//   后两条**改值会真的改观感**（字号是硬几何），静态判据证不了"同值可替代"，故本批不动、只登记；
+//   真机确认过再动，届时同步下调本表（本判据会强制这一步）。
+const FS_NON_TOKEN_OK = { 19: 4, 21: 2, 25: 1, 42: 1 }
+const fsDecls = [...wallWxssCode.matchAll(/font-size:\s*([^;}]+)/g)].map((m) => m[1].trim())
+const fsTokens = fsDecls.filter((v) => /^var\(--fs-\d+\)$/.test(v))
+const fsLiterals = fsDecls.filter((v) => /^[\d.]+rpx$/.test(v)).map((v) => Number.parseFloat(v))
+const fsOther = fsDecls.filter((v) => !/^var\(--fs-\d+\)$/.test(v) && !/^[\d.]+rpx$/.test(v))
+// ①-a 写法退化：**在册值**（= --fs-* 的 14 个值）一律不许再写裸字面量 —— 本页已全部令牌化
+const fsOnScaleLiteral = fsLiterals.filter((v) => RPX_TOKENS[`fs-${v}`] !== undefined)
+check(
+  '★ 本页在册字号一律走 --fs-* 令牌（30rpx 这类在册值不得再写回裸字面量）',
+  fsOnScaleLiteral.length === 0 && fsOther.length === 0 && fsTokens.length >= 60,
+  `令牌 ${fsTokens.length} 处 / 写回裸值的在册值 ${JSON.stringify(fsOnScaleLiteral)} / 其它写法 ${JSON.stringify(fsOther.slice(0, 3))}`
+)
+// ①-b 非令牌值：按**白名单 + 处数**判（提案 D1/D2 —— 不按出现次数判，否则 3~9 次的噪声会静默逃逸）
+const fsOffScale = fsLiterals.filter((v) => RPX_TOKENS[`fs-${v}`] === undefined)
+const fsTally = {}
+fsOffScale.forEach((v) => { fsTally[v] = (fsTally[v] || 0) + 1 })
+check(
+  '★ 非令牌字号逐值登记且处数只许减（19×4 / 21×2 / 25×1 / 42×1）',
+  JSON.stringify(fsTally) === JSON.stringify(FS_NON_TOKEN_OK),
+  `非令牌实测 ${JSON.stringify(fsTally)} / 登记 ${JSON.stringify(FS_NON_TOKEN_OK)}`
+)
+
+// —— ② 间距：与 --space-* 同值的分量必须写令牌（同值判据，不改版式）——
+const SPACE_TOKEN_RPX = new Set([8, 16, 24, 32, 40, 48, 64])
+const spaceDeclRe = /(?:^|[;{\s])((?:padding|margin)(?:-(?:top|right|bottom|left))?|gap|row-gap|column-gap):\s*([^;}]+)/g
+const spaceNoise = []
+for (const m of wallWxssCode.matchAll(spaceDeclRe)) {
+  if (/calc\(/.test(m[2])) continue // calc 里的分量不是间距节奏，跳过（本页 .ww-page 的 72rpx 就在这里）
+  for (const part of m[2].trim().split(/\s+/)) {
+    const lit = /^-?(\d+)rpx$/.exec(part)
+    if (lit && SPACE_TOKEN_RPX.has(Number(lit[1]))) spaceNoise.push(`${m[1]}: ${m[2].trim()}`)
+  }
+}
+check(
+  '★ 与 --space-* 同值的间距一律写成令牌（同值替换，不改版式；防"随手 24rpx"长回来）',
+  spaceNoise.length === 0,
+  spaceNoise.slice(0, 4).join(' / ')
+)
+
+// —— ③ 按压反馈一致性 ——
+const pressOpacity = (sel) => {
+  const m = new RegExp(`\\${sel}\\s*\\{[^}]*opacity:\\s*([\\d.]+)`).exec(wallWxssCode)
+  return m ? Number(m[1]) : NaN
+}
+const lanternPress = pressOpacity('.ww-lantern-press')
+const muyuPress = pressOpacity('.ww-muyu-press')
+check(
+  '★ 灯卡与木鱼卡按压反馈同值（两卡是显式定义的"一对"，内边距已被上一条守卫钉住）',
+  Number.isFinite(lanternPress) && lanternPress === muyuPress,
+  `灯卡=${lanternPress} 木鱼卡=${muyuPress}`
+)
+const playPress = pressOpacity('.ww-play-press')
+const playNeedPress = pressOpacity('.ww-play-need-press')
+check(
+  '★ 玩法瓦片与"去补资料"行按压反馈同值（同在玩法区、同族可点面）',
+  Number.isFinite(playPress) && playPress === playNeedPress,
+  `玩法瓦片=${playPress} 补资料行=${playNeedPress}`
+)
+const hoverClasses = [...new Set([...wallWxml2.matchAll(/hover-class="([^"{}]+)"/g)].map((m) => m[1]))]
+const hoverMissing = hoverClasses.filter((c) => !new RegExp(`\\.${c}\\s*[,{]`).test(wallWxssCode))
+check(
+  '★ 每个 hover-class 都有同名规则（类名写错 = 点了没反馈，且 WXSS 不报错）',
+  hoverClasses.length >= 15 && hoverMissing.length === 0,
+  `引用 ${hoverClasses.length} 个 / 无规则: ${hoverMissing.join(',') || '无'}`
+)
+const stayTimes = [...wallWxml2.matchAll(/hover-stay-time="(\d+)"/g)].map((m) => Number(m[1]))
+check(
+  '★ 页面内 hover-stay-time 统一为 70ms（原 70/80/60 三种混用）',
+  stayTimes.length >= 15 && new Set(stayTimes).size === 1 && stayTimes[0] === 70,
+  `取值=${JSON.stringify([...new Set(stayTimes)])} / 处数=${stayTimes.length}`
+)
+
+// —— ④ 无障碍：可点元素必须有 role；装饰圆点必须 aria-hidden ——
+const wxmlTagsAll = wallWxml2.match(/<[a-zA-Z-]+[^>]*>/g) || []
+const tapTags = wxmlTagsAll.filter((t) => /bindtap\s*=/.test(t))
+const tapNoRole = tapTags.filter((t) => !/aria-role\s*=/.test(t))
+check(
+  '★ 每个可点元素（bindtap）都有 aria-role（否则读屏只念文字、不说"这是按钮"）',
+  tapTags.length >= 15 && tapNoRole.length === 0,
+  `可点 ${tapTags.length} 个 / 缺 role: ${tapNoRole.map((t) => t.replace(/\s+/g, ' ').slice(0, 60)).join(' | ') || '无'}`
+)
+const lightTags = wxmlTagsAll.filter((t) => /class="signal-light/.test(t))
+const lightNoHidden = lightTags.filter((t) => !/aria-hidden="true"/.test(t))
+check(
+  '★ 装饰性信号灯一律 aria-hidden（纯色圆点、零文本，读屏不该念它）',
+  lightTags.length >= 5 && lightNoHidden.length === 0,
+  `信号灯 ${lightTags.length} 个 / 未隐藏: ${lightNoHidden.length} 个`
+)
+// 反向：aria-hidden **不许盖住文案**。
+// 起因（本批自查发现）：给 `.ww-sheet-product-go`（"看看这件 ›"）顺手加了 aria-hidden —— 它是 CTA 文案，
+// 一隐藏就等于对读屏用户砍掉了"抽一句 → 看藏品"这条主路的出口。装饰与文案的边界必须由判据兜住。
+const hiddenInlineText = [...wallWxml2.matchAll(/aria-hidden="true"[^>]*>([^<]+)</g)]
+  .map((m) => m[1].trim())
+  .filter(Boolean)
+const hiddenCjk = hiddenInlineText.filter((t) => /[\u4e00-\u9fa5]/.test(t))
+check(
+  '★ aria-hidden 不许盖住中文文案（装饰才可隐藏；"看看这件"这类 CTA 不是装饰）',
+  hiddenCjk.length === 0,
+  `被隐藏的带字元素: ${JSON.stringify(hiddenCjk)}`
+)
+
+// —— ⑤ 死选择器 / 重复声明 ——
+check(
+  '★ 本页不留死选择器 .ww-wall-loading（wxss 有定义、wxml/js 零引用）',
+  !/\.ww-wall-loading\b/.test(wallWxssCode) && !/ww-wall-loading/.test(wallWxml2)
+)
+check(
+  '★ .ww-wall 的描边/阴影只声明一处（同选择器后者静默吃掉前者 —— 合并前 base 的 border/box-shadow 是死声明）',
+  (wallWxssCode.match(/\.ww-wall\s*\{/g) || []).length === 1,
+  `\.ww-wall{ 块数=${(wallWxssCode.match(/\.ww-wall\s*\{/g) || []).length}`
+)
+
+// —— ⑥ 愿签卡 / 骨架的底面一致（换卡那一帧不许跳色）——
+const surfaceGradient = (sel) => {
+  const m = new RegExp(`\\${sel}\\s*\\{[^}]*background:\\s*(linear-gradient\\([^;]+);`).exec(wallWxssCode)
+  return m ? m[1].replace(/\s+/g, '') : ''
+}
+const tagSurface = surfaceGradient('.ww-tag')
+const tagSkelSurface = surfaceGradient('.ww-tag-skel')
+check(
+  '★ 愿签骨架与愿签卡同底同渐变（骨架被真卡替换时不许跳色）',
+  tagSurface.length > 0 && tagSurface === tagSkelSurface,
+  `真卡=${tagSurface} 骨架=${tagSkelSurface}`
 )
 // —— 灯芯图标（2026-09-18 产品指定：用附件里的灯泡 SVG）——
 // data URI 的两种 encoding 都算数（percent-encoded / ;base64），只要它是**内联矢量图**：
@@ -4091,15 +4376,51 @@ check(
   '★ 祈运提示已从玩法区挪走（不留死结构：.ww-plays-guide 的 DOM 与样式都不许复活）',
   !/ww-plays-guide/.test(wallWxml2) && !/\.ww-plays-guide\s*\{/.test(wallWxssCode)
 )
-// 吸底不变量：页面底部预留 ≥ 条高（84 输入 + 12×2 内边距）。用 CSS 里的数**实算**，不写死 180
+// 发送条位置：**按设计模式分支**（2026-09-19 产品口径变更：吸底 → 顺流，弹幕墙下方）。
+//
+// 为什么要分支而不是直接删掉旧判据：旧判据保护的是「吸底条被别的块盖住 / 盖住最后一张愿签」
+// 这个失败模式。**顺流后它不再盖任何东西，该模式不存在**；但若日后有人改回 fixed，
+// 旧判据必须自动复活 —— 写成裸删除就会留下假绿（本仓错题本 E7 那类）。
+// 设计意图（原话见 index.wxss 的 .ww-composer 注释）：顺流时它落在 .ww-write 内部。
 const composerPadY = Number((/\.ww-composer\s*\{[^}]*padding:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
 const composerInputH = Number((/\.ww-input\s*\{[^}]*height:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
 const pagePadBottom = Number((/\.ww-page\s*\{[^}]*padding:\s*0\s+[^;]*?calc\((\d+)rpx/.exec(wallWxssCode) || [])[1])
+const composerInline = /\.ww-composer\s*\{[^}]*position:\s*static/.test(wallWxssCode)
+const composerFixed = /\.ww-composer\s*\{[^}]*position:\s*fixed/.test(wallWxssCode)
+// 顺流时**位置本身**也是设计要求（产品原话：「放在更醒目位置如弹幕墙下方」）——
+// 必须被钉住，否则下次有人把它挪到页尾/页首，判据只会说「它是 static」而放过去。
 check(
-  '★ 发送条吸底，且页面底部预留 ≥ 条高（否则最后一张愿签会被盖住）',
-  /\.ww-composer\s*\{[^}]*position:\s*fixed/.test(wallWxssCode) &&
-    composerPadY > 0 && composerInputH > 0 && pagePadBottom >= composerInputH + composerPadY * 2,
-  `条高≈${composerInputH + composerPadY * 2}rpx / 预留 ${pagePadBottom}rpx`
+  '★ 顺流发送条的位置：在弹幕墙之后、玩法区之前（产品口径：弹幕墙下方），且只有一个',
+  (() => {
+    const wallIdx = wallWxml2.indexOf('class="ww-wall ')
+    const composerIdx = wallWxml2.indexOf('class="ww-composer"')
+    const playsIdx = wallWxml2.indexOf('class="ww-plays"')
+    const composerCount = (wallWxml2.match(/class="ww-composer"/g) || []).length
+    if (composerFixed) return true // 吸底时位置由 fixed 定位决定，本条不适用
+    return wallIdx >= 0 && composerIdx > wallIdx && playsIdx > composerIdx && composerCount === 1
+  })(),
+  (() => {
+    const w = wallWxml2.indexOf('class="ww-wall "')
+    const c = wallWxml2.indexOf('class="ww-composer"')
+    const p = wallWxml2.indexOf('class="ww-plays"')
+    return `wall@${w} composer@${c} plays@${p}（要求 wall < composer < plays）`
+  })()
+)
+check(
+  '发送条位置与设计意图一致（顺流：static + 输入框 id 仍在 + 不再通栏铺底；若改回吸底：见下两条）',
+  composerInline &&
+    /id="wishInput"/.test(wallWxml2) &&
+    composerInputH > 0 &&
+    // ⚠️ 顺流时**不得**再要求「页面底部预留 ≥ 条高」—— 那条约束是为「fixed 条盖住内容」服务的，
+    // 顺流后内容自己占位。若沿用旧约束（72 < 84）就会把正确的新设计判红（本轮实测踩过）。
+    !/\.ww-composer\s*\{[^}]*position:\s*fixed/.test(wallWxssCode),
+  `position=${composerInline ? 'static' : composerFixed ? 'fixed' : '未声明'} / 输入 ${composerInputH}rpx / 页面底部预留 ${pagePadBottom}rpx`
+)
+// 吸底专属不变量：只在**仍是 fixed** 时要求「底部预留 ≥ 条高」（顺流不需要，别硬留 180rpx）
+check(
+  '（吸底时）页面底部预留 ≥ 条高，否则最后一张愿签会被盖住',
+  !composerFixed || (composerPadY > 0 && composerInputH > 0 && pagePadBottom >= composerInputH + composerPadY * 2),
+  `position=${composerFixed ? 'fixed' : 'static（本条不适用）'} / 预留 ${pagePadBottom}rpx`
 )
 // ⚠️ 真机反馈「向下滑到愿签时与发送条互相遮挡」的根因：条子在 .ww-write（position:relative; z-index:1）
 // 这个层叠上下文里，自己的 z-index 只在该上下文内有效 → 页面其余 z-index≥1 的块画到它上面。
@@ -4133,19 +4454,24 @@ const isDirectChildOfPage = (innerMarker, ownClassPattern) => {
   const st = viewAncestorsAt(wallWxml2, innerMarker)
   return Array.isArray(st) && st.length >= 2 && /ww-page/.test(st[0]) && ownClassPattern.test(st[1])
 }
+// 顺流后发送条不再是覆盖层 —— 只有**仍是 fixed** 时才要求它是 .ww-page 直接子节点。
+// 纸签弹层始终是 fixed 覆盖层，这一条对它**始终**成立（与设计变更无关）。
 check(
-  '★ fixed 覆盖层必须是 .ww-page 的直接子节点（发送条 / 纸签弹层）—— "互相遮挡"的根因',
-  isDirectChildOfPage('class="ww-input"', /ww-composer/) &&
-    isDirectChildOfPage('class="ww-sheet-overline"', /ww-sheet/),
-  `composer 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-input"'))} sheet 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-sheet-overline"'))}`
+  '★ fixed 覆盖层必须是 .ww-page 的直接子节点（纸签弹层；发送条仅在吸底设计下适用）—— "互相遮挡"的根因',
+  isDirectChildOfPage('class="ww-sheet-overline"', /ww-sheet/) &&
+    (!composerFixed || isDirectChildOfPage('class="ww-input"', /ww-composer/)),
+  `composer(position=${composerFixed ? 'fixed' : 'static'}) 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-input"'))} sheet 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-sheet-overline"'))}`
 )
+// 层级可比性只在**两者都是覆盖层**（发送条吸底）时才要求；顺流时二者不重叠。
 check(
-  '纸签弹层盖在吸底发送条之上（层级：弹层 41 > 发送条 30）',
-  (() => {
-    const sheetZ = Number((/\.ww-sheet\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
-    const barZ = Number((/\.ww-composer\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
-    return sheetZ > barZ && barZ > 0
-  })()
+  '（吸底时）纸签弹层须盖在发送条之上（弹层 41 > 发送条 30）',
+  !composerFixed ||
+    (() => {
+      const sheetZ = Number((/\.ww-sheet\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
+      const barZ = Number((/\.ww-composer\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
+      return sheetZ > barZ && barZ > 0
+    })(),
+  `position=${composerFixed ? 'fixed' : 'static（本条不适用）'}`
 )
 check(
   '★ 遮罩在深色页面上压得动（浓度 ≥ 0.72；62% 在博物黑上实测"看不出被压暗"）',
@@ -4154,11 +4480,15 @@ check(
     return alpha >= 0.72
   })()
 )
+// 顺流时不铺底（不该出现一条通栏色带）；仍吸底时必须不透明（否则愿签透上来）。
 check(
-  '★ 吸底条背景不透明（半透明时愿签会透上来，与"遮挡"叠在一起更难读）',
-  /\.ww-composer\s*\{[^}]*background:\s*var\(--color-bg\)/.test(wallWxssCode) &&
-    !/\.ww-composer\s*\{[^}]*background:\s*rgba\(/.test(wallWxssCode) &&
-    /\.ww-composer\s*\{[^}]*z-index:\s*30/.test(wallWxssCode)
+  '发送条底色与设计一致（顺流：透明无通栏底；吸底：不透明 var(--color-bg) + z-index 30）',
+  composerFixed
+    ? /\.ww-composer\s*\{[^}]*background:\s*var\(--color-bg\)/.test(wallWxssCode) &&
+        !/\.ww-composer\s*\{[^}]*background:\s*rgba\(/.test(wallWxssCode) &&
+        /\.ww-composer\s*\{[^}]*z-index:\s*30/.test(wallWxssCode)
+    : /\.ww-composer\s*\{[^}]*background:\s*transparent/.test(wallWxssCode),
+  `position=${composerFixed ? 'fixed' : 'static'}`
 )
 {
   const stub = installWxStub()
@@ -4177,10 +4507,325 @@ check(
   stub.restore()
 }
 
+/* ================================================================== *
+ * 14)「连续记录云保存」注册钩子（2026-09-20）
+ *
+ * 产品逻辑：连灯天数与木鱼功德只存本地，换手机/清缓存即丢。
+ * 钩子话术 = 「注册后连续记录存云端，不会丢，且断签前会提醒你」。
+ *
+ * 这一节钉四件事（每一条都对应一种"看起来做了、其实没做"的缺陷）：
+ *   ① 门槛与判定是**纯函数**：连灯 ≥2 天 / 木鱼 ≥21 下才谈，否则就是骚扰；
+ *   ② 开关 `showRitualProfile` 缺字段默认关，且**六处链路齐全** ——
+ *      漏一处就是"超管在后台保存成功、但字段被静默重置"（本仓已发生过）；
+ *   ③ 注册成功后**真的调 `syncToCloud()`** 并把结果如实告诉用户
+ *      （只弹"成功"却什么都没存 = 空承诺，所以漏斗终点只在同步成功后上报）；
+ *   ④ 三条降级（开关读失败 / 云存模块缺失 / 用户拒绝授权）都不得影响点灯与木鱼。
+ * ================================================================== */
+{
+  const stub = installWxStub()
+  const hookProto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  // 钩子是 Promise 链（不阻塞主流程），测试要 await 一次宏任务才能观察结果
+  const flushMacro = () => new Promise((r) => setTimeout(r, 0))
+
+  const mkHookPage = (o) => {
+    const opts = o || {}
+    const page = Object.assign(Object.create(null), hookProto)
+    page.data = Object.assign({
+      allowed: true, flagChecked: true, productKey: 'wall1', productId: 'p1',
+      showRegisterDialog: false, showRitualProfile: true,
+      showRitualDialog: false, ritualGateDesc: '',
+      lamp: { dayKey: '2026-09-20', lit: false, litAt: 0, line: '', streak: 0 },
+      muyuCount: 0, soundOn: true, quota: { used: 0, left: 5, cap: 5, exhausted: false },
+      viewMode: 'wall', danmakuCycle: 0, freshId: '', mine: { total: 0, visible: 0, hidden: 0 },
+      mineRows: [], loadError: '', draft: '', posting: false
+    }, opts.data || {})
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page._ritualGateOffered = false
+    page._soundPlayer = null
+    page.pushEcho = () => null
+    page.isGuestUser = () => Promise.resolve(opts.guest !== false)
+    page.tracked = []
+    page.trackRitualGate = function (step, extra) { this.tracked.push({ step, extra: extra || {} }) }
+    return page
+  }
+  const stepsOf = (p) => p.tracked.map((t) => t.step).join(',')
+
+  /* —— ① 纯函数：门槛 ——
+     两个阈值都是"低于它就别谈"：1 天的灯与 3~5 下的木鱼都还没有会心疼的投入。 */
+  eq('门槛：连灯 1 天不谈（还没有会心疼的记录）', hookProto.ritualGateProgress({ streak: 1, muyuCount: 0 }), '')
+  eq('门槛：木鱼 20 下不谈（随手玩不算投入）', hookProto.ritualGateProgress({ streak: 0, muyuCount: 20 }), '')
+  eq('门槛：连灯 2 天即谈（昨天来过 + 今天又来）', hookProto.ritualGateProgress({ streak: 2, muyuCount: 0 }), 'streak')
+  eq('门槛：木鱼 21 下即谈', hookProto.ritualGateProgress({ streak: 0, muyuCount: 21 }), 'muyu')
+  eq('门槛：两条都过时以连灯为准（文案更具体）', hookProto.ritualGateProgress({ streak: 3, muyuCount: 99 }), 'streak')
+  eq('门槛：空状态不谈（不崩）', hookProto.ritualGateProgress(null), '')
+
+  const okState = {
+    allowed: true, flagOn: true, alreadyOffered: false,
+    registerDialogOpen: false, isGuest: true, streak: 2, muyuCount: 0
+  }
+  check('判定：条件齐备时该谈', hookProto.shouldOfferRitualGate(okState) === true)
+  check('★ 开关关着（缺省）不谈 —— 超管没显式开就不该有注册弹窗', hookProto.shouldOfferRitualGate({ ...okState, flagOn: false }) === false)
+  check('墙没开放不谈', hookProto.shouldOfferRitualGate({ ...okState, allowed: false }) === false)
+  check('已注册用户不谈（没有"注册后"这回事）', hookProto.shouldOfferRitualGate({ ...okState, isGuest: false }) === false)
+  check('★ 一次访问只谈一次（否则连敲木鱼会弹到吐）', hookProto.shouldOfferRitualGate({ ...okState, alreadyOffered: true }) === false)
+  check('★ 落愿注册门禁正开着时不抢同一个弹窗（主转化优先）', hookProto.shouldOfferRitualGate({ ...okState, registerDialogOpen: true }) === false)
+  check('没有任何进展不谈', hookProto.shouldOfferRitualGate({ ...okState, streak: 1, muyuCount: 0 }) === false)
+  // 预筛不变量：预筛（零成本）不得比正式判定**更宽**，否则木鱼连点会白问会话、甚至多弹
+  const probeStates = [
+    okState, { ...okState, streak: 1 }, { ...okState, flagOn: false }, { ...okState, allowed: false },
+    { ...okState, isGuest: false }, { ...okState, registerDialogOpen: true }, { ...okState, alreadyOffered: true },
+    { ...okState, streak: 0, muyuCount: 21 }
+  ]
+  check(
+    '★ 预筛不变量：ritualGateProgress 判"没有进展"时，正式判定必须也为 false',
+    probeStates.every((s) => hookProto.ritualGateProgress(s) !== '' || hookProto.shouldOfferRitualGate(s) === false)
+  )
+  check('文案报出真实连灯天数（不编数字）', hookProto.buildRitualGateDesc('streak', { streak: 3 }).indexOf('3 天') !== -1)
+  check('文案报出真实木鱼功德', hookProto.buildRitualGateDesc('muyu', { muyuCount: 21 }).indexOf('21 下') !== -1)
+  check(
+    '★ 文案承诺的正是产品口径三件事（存云端 / 换手机还在 / 断签提醒），不是空话',
+    ['存到云端', '换手机', '断签前'].every((k) => hookProto.buildRitualGateDesc('streak', { streak: 2 }).indexOf(k) !== -1),
+    hookProto.buildRitualGateDesc('streak', { streak: 2 })
+  )
+
+  /* —— ② 行为：木鱼敲到门槛 → 弹一次；连敲不再弹 —— */
+  {
+    const p = mkHookPage({ data: { muyuCount: 20 } })
+    p.onMuyuTap()
+    await flushMacro()
+    eq('★ 木鱼敲到第 21 下弹钩子', p.data.showRitualDialog, true)
+    eq('★ 木鱼主功能不受影响（计数照常 +1）', p.data.muyuCount, 21)
+    eq('埋点 show 只报一次，且带原因是"木鱼"', stepsOf(p) + '|' + JSON.stringify((p.tracked[0] || {}).extra), 'show|{"reason":"muyu"}')
+    check('弹窗文案带真实功德数', String(p.data.ritualGateDesc).indexOf('21 下') !== -1, p.data.ritualGateDesc)
+    p.setData({ showRitualDialog: false })
+    p.onMuyuTap()
+    await flushMacro()
+    eq('★ 同一次访问里再敲不再弹（一次访问只谈一次）', p.data.showRitualDialog, false)
+    eq('show 仍然只有一次', p.tracked.filter((t) => t.step === 'show').length, 1)
+    eq('第二下木鱼照样计数（钩子不拦主功能）', p.data.muyuCount, 22)
+
+    // ★ 开关真的能关：关掉后门槛满足也不弹 —— 这一条同时钉住"超管关得掉"与"降级不影响主功能"
+    const offPage = mkHookPage({ data: { showRitualProfile: false, muyuCount: 21 } })
+    offPage.onMuyuTap()
+    await flushMacro()
+    eq('★ 开关关着时不弹（超管关得掉）', offPage.data.showRitualDialog, false)
+    eq('…且不报 show（报表里不该出现没曝光的曝光）', offPage.tracked.length, 0)
+    eq('…但木鱼照常计数（降级不影响主功能）', offPage.data.muyuCount, 22)
+
+    const regPage = mkHookPage({ guest: false, data: { muyuCount: 21 } })
+    regPage.onMuyuTap()
+    await flushMacro()
+    eq('★ 已注册用户不弹（没有"注册后"这回事，不打扰老用户）', regPage.data.showRitualDialog, false)
+  }
+
+  /* —— ② 行为：点灯路径。只有"今天这一盏刚点亮"才评估；已亮的灯再点不评估 —— */
+  {
+    const store = new Map()
+    globalThis.wx.getStorageSync = (k) => (store.has(k) ? store.get(k) : '')
+    globalThis.wx.setStorageSync = (k, v) => { store.set(k, v) }
+    // 昨天点过灯 → 今天再点就是连续第 2 天
+    store.set('shanhai_wish_ritual_v1', { version: 1, days: { '2026-09-19': { litAt: 1 } } })
+    const litPage = mkHookPage({ data: { lamp: { dayKey: '2026-09-20', lit: false, litAt: 0, line: '', streak: 0 } } })
+    litPage.onLampTap()
+    await flushMacro()
+    eq('★ 连续第 2 天点亮 → 弹钩子（连灯进度刚变长的那一刻）', litPage.data.showRitualDialog, true)
+    eq('★ 点灯主功能不受影响（当日已记点亮 + 天数算对）', `${litPage.data.lamp.lit}/${litPage.data.lamp.streak}`, 'true/2')
+    const againPage = mkHookPage({ data: { lamp: { dayKey: '2026-09-20', lit: true, litAt: 1, line: 'x', streak: 3 } } })
+    let assessed = 0
+    againPage.maybeOfferRitualGate = () => { assessed += 1 }
+    againPage.onLampTap()
+    eq('★ 再点已亮的灯只是想再看一眼，不该被拦注册（不评估钩子）', assessed, 0)
+  }
+
+  /* —— ③ 行为：注册成功 → 真的同步上云 + 如实反馈 —— */
+  {
+    const okPage = mkHookPage({ data: { showRitualDialog: true } })
+    okPage.syncRitualToCloud = () => Promise.resolve(true)
+    await okPage.onRitualRegisterSuccess()
+    eq('注册成功后弹窗关闭', okPage.data.showRitualDialog, false)
+    eq('★ 同步成功才上报漏斗终点 resume_success', stepsOf(okPage), 'resume_success')
+    eq('★ 同步成功如实告诉用户「已存到云端」', `${okPage.data.toastShow}/${okPage.data.toastTitle}`, 'true/已存到云端')
+    check('…并说清存的是什么（连灯 + 功德）', /连灯/.test(okPage.data.toastDesc) && /功德/.test(okPage.data.toastDesc), okPage.data.toastDesc)
+
+    const missPage = mkHookPage({})
+    eq('★ 云存模块缺失时 syncRitualToCloud 返回 false 且不抛（降级）', await missPage.syncRitualToCloud(), false)
+    await missPage.onRitualRegisterSuccess()
+    eq('★ 同步失败走 fail_sync（不把"完成"记进漏斗）', stepsOf(missPage), 'fail_sync')
+    eq('★ 同步失败说真话（记录仍在本机），不假装成功', missPage.data.toastTitle, '记录仍在本机')
+    check('…并安抚"本地记录没有丢"', /本地记录没有丢/.test(missPage.data.toastDesc), missPage.data.toastDesc)
+
+    const revokedPage = mkHookPage({ data: { showRitualProfile: false } })
+    let synced = 0
+    revokedPage.syncRitualToCloud = () => { synced += 1; return Promise.resolve(true) }
+    await revokedPage.onRitualRegisterSuccess()
+    eq('★ 开关在授权期间被关掉：不同步（不假装存上云）', synced, 0)
+    eq('…并如实记 fail_flag_off', stepsOf(revokedPage), 'fail_flag_off')
+    check('…并明确提示「暂未开放」', /暂未开放/.test(revokedPage.data.toastTitle), revokedPage.data.toastTitle)
+  }
+
+  /* —— ② 行为：CTA / dismiss / 拒绝授权 —— */
+  {
+    const d = mkHookPage({ data: { showRitualDialog: true, muyuCount: 7, lamp: { dayKey: '2026-09-20', lit: true, streak: 2 } } })
+    d.onRitualDialogCta()
+    d.onRitualDialogClose()
+    eq('弹窗链路 step 齐（go_register / dismiss）', stepsOf(d), 'go_register,dismiss')
+    eq('★「先存着」不动本地木鱼功德', d.data.muyuCount, 7)
+    eq('★「先存着」不动本地连灯天数', d.data.lamp.streak, 2)
+    eq('弹窗已关', d.data.showRitualDialog, false)
+    const f = mkHookPage({})
+    f.onRitualDialogFail({ detail: { reason: 'denied' } })
+    eq('★ 用户拒绝授权：只记一笔，不打断主功能', stepsOf(f), 'fail_denied')
+  }
+
+  /* —— ④ 降级：钩子内部抛错，绝不影响木鱼 —— */
+  {
+    const boom = mkHookPage({ data: { muyuCount: 20 } })
+    boom.evaluateRitualGate = () => { throw new Error('boom') }
+    boom.onMuyuTap()
+    await flushMacro()
+    eq('★ 钩子抛错时木鱼照常计数（降级不得影响主功能）', boom.data.muyuCount, 21)
+    eq('…且不弹窗', boom.data.showRitualDialog, false)
+  }
+
+  /* —— ② 降级：开关读失败 / 缺字段 → 按关处理；显式 true 才开 —— */
+  {
+    const noFlagPage = mkHookPage({ data: { allowed: false, showRitualProfile: false, muyuCount: 21 } })
+    await noFlagPage.evaluateRitualGate()
+    eq('★ 开关读取失败（allowed=false / showRitualProfile 缺省）时不弹', noFlagPage.data.showRitualDialog, false)
+
+    const gatePage = mkHookPage({ data: { allowed: false, flagChecked: false, showRitualProfile: false } })
+    gatePage.refresh = () => Promise.resolve()
+    gatePage.fireEntryEgg = () => {}
+    await gatePage.applyGate({ showMaShangYou: false })
+    eq('★ 云函数回包缺 showRitualProfile → 按关处理', gatePage.data.showRitualProfile, false)
+    await gatePage.applyGate({ showMaShangYou: false, showRitualProfile: true })
+    eq('★ 显式 true 时开关才开（证明这个开关真的能开关）', gatePage.data.showRitualProfile, true)
+    await gatePage.applyGate({ showMaShangYou: false, showRitualProfile: false })
+    eq('★ 显式 false 时关回去（出事时一键关，无需发版）', gatePage.data.showRitualProfile, false)
+  }
+  stub.restore()
+
+  /* —— 静态：复用组件 / 真的调 syncToCloud / 双端登记 / 六处开关链路 —— */
+  const hookPageSrc = readSrc('miniprogram/subpackages/feature/wish-wall/index.js')
+  check(
+    '钩子复用既有 RegisterAuthDialog（不另造弹窗），走 bind:cta → bind:success 同一条链',
+    /show="\{\{showRitualDialog\}\}"/.test(wallWxml2) &&
+      /bind:cta="onRitualDialogCta"/.test(wallWxml2) &&
+      /bind:success="onRitualRegisterSuccess"/.test(wallWxml2) &&
+      /bind:close="onRitualDialogClose"/.test(wallWxml2)
+  )
+  check(
+    '★ 注册成功后真的调用 syncToCloud()（不是只弹个"成功"）',
+    /this\.syncRitualToCloud\(\)/.test(hookPageSrc) &&
+      /const ok = await this\.syncRitualToCloud\(\)/.test(hookPageSrc) &&
+      /ritualProfile\.syncToCloud\(\)/.test(hookPageSrc)
+  )
+  check(
+    '★ 动态 require + try/catch 降级（云存模块缺失不得让祈夆墙不可用）',
+    /const ritualProfile = require\('\.\.\/\.\.\/\.\.\/utils\/ritualProfile'\)/.test(hookPageSrc) &&
+      /catch \(e\) \{\s*\n\s*console\.warn\('wish wall ritual sync failed'/.test(hookPageSrc)
+  )
+
+  const flagClient = readSrc('miniprogram/utils/contentDisplayFlags.js')
+  const flagFn = readSrc('miniprogram/cloudfunctions/getContentDisplayFlags/index.js')
+  const mgrCfg = readSrc('miniprogram/subpackages/manager/manager/managerPageConfig.js')
+  // 后台入口**只选店长端工作台**（与 showMaShangYou 同处，见交付说明）：
+  // ERP 内容开关页维持原样（它用 cdnUpdate 局部更新，不携带该字段也不会抹掉它）
+  const subv = readSrc('miniprogram/subpackages/manager/manager/workspace/_subviews.wxml')
+  check('关闭提示函数（统一文案来源）已定义并导出', /function toastRitualProfileClosed\(/.test(flagClient) && /toastRitualProfileClosed\b/.test(flagClient.slice(flagClient.indexOf('module.exports'))))
+  check(
+    '★ 关闭提示函数不新增原生 wx.showToast（dialog-ratchet 只许降不许涨），把文案交给宿主展示',
+    (() => {
+      const i = flagClient.indexOf('function toastRitualProfileClosed')
+      const body = i < 0 ? '' : flagClient.slice(i, flagClient.indexOf('\n}', i))
+      return body.length > 0 && !/wx\.showToast/.test(body) && /CLOSED_RITUAL_PROFILE_TOAST/.test(body)
+    })()
+  )
+  check(
+    '★ 钩子结果反馈走 AppToast（原生 toast 棘轮下唯一合规通道）',
+    /showAppToast\(\{/.test(hookPageSrc) &&
+      /"app-toast": "\/components\/AppToast\/index"/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.json')) &&
+      /<app-toast/.test(wallWxml2)
+  )
+  check('① 客户端 normalize 缺字段默认关（=== true）', /showRitualProfile: src\.showRitualProfile === true/.test(flagClient))
+  check('★ 页面把开关作为判定输入（不看开关 = 超管关不掉）', /flagOn: this\.data\.showRitualProfile === true/.test(hookPageSrc))
+  check('② 云函数 getDefaultFlags 缺省 false', /showRitualProfile: false/.test(flagFn))
+  check('③ 云函数 normalizeFlags 同口径（=== true）', /showRitualProfile: src\.showRitualProfile === true/.test(flagFn))
+  check('④ ★ 云函数 saveFlags 显式透传（漏了 = 后台保存成功但字段被静默丢）', /showRitualProfile: incoming\.showRitualProfile/.test(flagFn))
+  check(
+    '⑤ ★ 店长端工作台（tab16 开关面板）：有该行 + load 归一 + data 默认（缺一个就会被保存抹掉）',
+    /data-field="showRitualProfile"/.test(subv) &&
+      /showRitualProfile: flags\.showRitualProfile === true/.test(mgrCfg) &&
+      /showRitualProfile: false,/.test(mgrCfg)
+  )
+  check(
+    '埋点双端登记 + ERP FUNNELS 有卡（否则"埋了但报表看不到"）',
+    /wish_ritual_gate:/.test(readSrc('miniprogram/utils/analytics/eventSchema.js')) &&
+      /wish_ritual_gate:/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+      /key: 'wish_ritual_gate'/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+      /wish_ritual_gate:resume_success/.test(readSrc('admin/src/utils/analyticsSchema.js'))
+  )
+  check(
+    '★ 小程序数据报表也算了这一块（云函数分桶 + 报表页卡片，否则恒 0/看不到）',
+    /ritualGate: gateBlock\('wish_ritual_gate'\)/.test(readSrc('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')) &&
+      /funnel\.wishWall\.ritualGate\.show/.test(subv)
+  )
+  check('漏斗 step 都从 trackRitualGate 一处发出（action 名只有一个事实源）', (hookPageSrc.match(/trackRitualGate\(/g) || []).length >= 6)
+}
+
 if (process.argv.includes('--selftest') && !INJECT) {
   const { spawnSync } = await import('node:child_process')
+  /* ⚠️ 先验「注入锚点还在不在」（2026-09-19 补，起因见 docs/AI施工错题本.md 的「守卫判据自身错误」）：
+     注入的 `from` 在源码里找不到时，子进程会**抛错退出**（status ≠ 0），
+     而下面的判据只看 status ≠ 0 → 会把「锚点失效」误报成「注入被检出」= **假绿**。
+     2026-09-19 实测：132 个注入里有 **11 个**锚点已随历史改动消失 —— 也就是说这 11 条
+     在历次自检里都显示「✓ 被检出」，实际**一次都没有验证过**。
+     处理：把「已确认失效」的锚点显式登记（债务留痕，不许装作没有），并要求名单**只许变小** ——
+     哪条锚点哪天恢复了却还留在名单里，直接失败，逼人删登记、让它回到真防线里。 */
+  const KNOWN_DEAD_ANCHORS = new Set([
+    'seed-allows-off-pattern',      // wishSeeds.js：句式闸写法已变
+    'fresh-timer-leak',             // wish-wall/index.js：onUnload 结构已变
+    'card-not-dialog',              // wxml：.ww-card 属性序已变
+    'handwriting-dropped',          // wxss：手写体栈改为 var(--font-hand) 接线
+    'product-field-not-allowlisted',// manageProducts：白名单数组已重构
+    'bless-guide-dom-dropped',      // wxml：ww-plays-guide 已下线
+    'reco-dom-dropped',             // wxml：ww-play-reco 已重构
+    'reco-label-hardcoded',         // blessProducts.js：文案已改
+    'composer-fixed-again',         // wxss：.ww-composer 注释/属性序已变（顺流改造）
+    'sheet-identity-dropped',       // wxml：.ww-sheet-mask 属性序已变
+    'product-path-split-again'      // wxml：产品链路已合并为一条主路
+  ])
+  const anchorAlive = (inj) => {
+    const abs = resolve(ROOT, inj.file)
+    const resolved = resolveReexport(abs)
+    const raw = existsSync(resolved) ? readFileSync(resolved, 'utf8') : ''
+    if (raw.indexOf(inj.from) !== -1) return true
+    if (resolved !== abs && existsSync(abs) && readFileSync(abs, 'utf8').indexOf(inj.from) !== -1) return true
+    return false
+  }
+  const deadNow = Object.entries(INJECTIONS).filter(([, inj]) => !anchorAlive(inj)).map(([n]) => n)
+  const deadSet = new Set(deadNow)
+  const newlyDead = deadNow.filter((n) => !KNOWN_DEAD_ANCHORS.has(n))
+  const revived = [...KNOWN_DEAD_ANCHORS].filter((n) => !deadSet.has(n))
+  if (newlyDead.length) {
+    console.error(`  ✗ 有 ${newlyDead.length} 个注入锚点在源码里已失效（锚点失效会让「被检出」变成假绿，必须修锚点或登记）：`)
+    newlyDead.forEach((n) => console.error(`      - ${n}（${INJECTIONS[n].file}）`))
+  }
+  if (revived.length) {
+    console.error(`  ✗ 有 ${revived.length} 个锚点已恢复，但仍留在 KNOWN_DEAD_ANCHORS 里 —— 请从名单删掉，让它回到真防线：`)
+    revived.forEach((n) => console.error(`      - ${n}`))
+  }
+  if (newlyDead.length || revived.length) {
+    console.error('\n✗ selftest 失败：注入锚点清单与实际源码不一致')
+    process.exit(1)
+  }
+  console.log(`  ✓ 注入锚点：有效 ${Object.keys(INJECTIONS).length - deadSet.size} 条；已登记失效并跳过 ${deadSet.size} 条`)
+
   let bad = 0
+  let ran = 0
   for (const name of Object.keys(INJECTIONS)) {
+    if (deadSet.has(name)) continue // 锚点失效的注入证明不了任何事，跳过（上面已登记留痕）
+    ran += 1
     const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], {
       env: { ...process.env, WISH_WALL_INJECT: name },
       encoding: 'utf8'
@@ -4210,7 +4855,7 @@ if (process.argv.includes('--selftest') && !INJECT) {
     console.error(`\n✗ selftest 失败 ${bad} 项`)
     process.exit(1)
   }
-  console.log(`\n✓ selftest 通过：${Object.keys(INJECTIONS).length} 个回归注入全部被检出，且无假阳性`)
+  console.log(`\n✓ selftest 通过：${ran} 个有效回归注入全部被检出（另 ${deadSet.size} 条锚点失效已登记跳过），且无假阳性`)
   process.exit(0)
 }
 

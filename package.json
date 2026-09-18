@@ -239,7 +239,16 @@
     "check:order-status-enum": "node miniprogram/scripts/check-order-status-enum.mjs",
     "check:order-status-enum:selftest": "node miniprogram/scripts/check-order-status-enum.mjs --selftest",
     "check:order-transition-guard": "node miniprogram/scripts/check-order-transition-guard.mjs",
-    "check:order-transition-guard:selftest": "node miniprogram/scripts/check-order-transition-guard.mjs --selftest"
+    "check:order-transition-guard:selftest": "node miniprogram/scripts/check-order-transition-guard.mjs --selftest",
+    "check:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs",
+    "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
+    "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report",
+    "test:ritual-profile": "node miniprogram/scripts/test-ritual-profile.mjs",
+    "test:ritual-profile:selftest": "node miniprogram/scripts/test-ritual-profile.mjs --selftest",
+    "check:docs-index": "node scripts/check-docs-index.mjs",
+    "check:docs-index:selftest": "node scripts/check-docs-index.mjs --selftest",
+    "check:product-save-fields": "node miniprogram/scripts/check-product-save-fields.mjs",
+    "check:product-save-fields:selftest": "node miniprogram/scripts/check-product-save-fields.mjs --selftest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

@@ -16,8 +16,10 @@ page {
 .ww-page {
   position: relative;
   min-height: 100vh;
-  /* 底部预留：72rpx（原安全余量）+ 108rpx（吸底发送条的高度：84 输入 + 12×2 内边距）*/
-  padding: 0 var(--space-4) calc(180rpx + env(safe-area-inset-bottom));
+  /* 底部安全余量。2026-09-19：发送条已从「吸底」改为「顺流」（弹幕墙下方），
+     故不再需要为它预留整条高度（原 180rpx = 72 安全 + 108 吸底条）。
+     现在顺流内容自己占位，只需留一点安全区。 */
+  padding: 0 var(--space-4) calc(72rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -38,7 +40,7 @@ page {
   overflow: hidden;
   /* 2026-09-18：纵向节奏收紧一档（24/22 → 20/18，底距 32 → 24）——真机截图里页头下半是留白，
      省下来的高度给弹幕墙与玩法区（首屏能多露出一块内容）。 */
-  margin: 16rpx 0 24rpx;
+  margin: var(--space-2) 0 var(--space-3);
   padding: 20rpx 26rpx 18rpx;
   background: linear-gradient(165deg, var(--brass-50) 0%, #F2EDE4 48%, #EDE6DA 100%);
   border: 1px solid var(--brass-200);
@@ -103,7 +105,7 @@ page {
   align-items: center;
   gap: 10rpx;
   min-height: 34rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-1);
 }
 
 .ww-hero-top .signal-light {
@@ -119,7 +121,7 @@ page {
 
 .ww-over {
   min-width: 0;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   line-height: 1.3;
   letter-spacing: 0.14em;
   color: var(--brass-600);
@@ -150,7 +152,7 @@ page {
 .ww-brand {
   display: block;
   margin-bottom: 2rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.3;
   letter-spacing: 0.16em;
   color: var(--brass-500);
@@ -159,7 +161,7 @@ page {
 
 .ww-title {
   display: block;
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: 0.06em;
@@ -191,7 +193,7 @@ page {
 .ww-bless {
   flex-shrink: 0;
   padding: 4rpx 14rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.3;
   color: var(--brass-700);
   background: rgba(196, 167, 108, 0.22);
@@ -199,12 +201,16 @@ page {
   border-radius: 999rpx;
 }
 
+/* 2026-09-19 对比度修复：原用 --brass-600 #8A7530 压本 chip 的 rgba(196,167,108,0.16) tint、
+   再叠在 .ww-hero 羊皮纸浅渐变上 —— 守卫实测 7 标准面 2.568~3.992，低于正文阈值 4.5（确证违规）。
+   改为同文件**已合规同类项**（.ww-bless / .ww-scope.is-link）所用的 --brass-700 #6B5A24：
+   只换既有令牌，不新造色、不动背景 alpha，保持 chip 的视觉层级。 */
 .ww-scope {
   display: inline-block;
   padding: 4rpx 14rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.3;
-  color: var(--brass-600);
+  color: var(--brass-700);
   background: rgba(196, 167, 108, 0.16);
   border: 1px solid rgba(138, 117, 48, 0.28);
   border-radius: 999rpx;
@@ -213,7 +219,7 @@ page {
 .ww-hint {
   display: block;
   margin-top: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   color: #7A6E58;
 }
@@ -224,7 +230,7 @@ page {
   position: relative;
   z-index: 1;
   margin-top: 60rpx;
-  padding: 56rpx 32rpx;
+  padding: 56rpx var(--space-4);
   text-align: center;
   border: 1rpx dashed rgba(196, 167, 108, 0.3);
   border-radius: var(--radius-lg);
@@ -244,14 +250,14 @@ page {
 
 .ww-closed-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-body);
 }
 
 .ww-closed-desc {
   display: block;
   margin-top: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   color: var(--color-text-muted);
 }
@@ -268,7 +274,7 @@ page {
      标题块（图标 + 标题 + 徽章）占第一行，灯语/灯位说明整行落到第二行。
      行间距就是这里的 gap —— 不再靠各段自己的 margin-top 堆，免得越调越挤。 */
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: var(--space-2);
   min-width: 0;
   /* ⚠️ 这里曾有 margin-bottom: var(--space-3)（竖排时代的遗留）：
      进了 flex/grid 行之后它会让左卡比右卡矮一截，两卡永远不等高。 */
@@ -285,8 +291,12 @@ page {
   background: linear-gradient(120deg, rgba(196, 167, 108, 0.12) 0%, #1B1917 62%);
 }
 
+/* 按压反馈：与同族卡片同值。
+   同族（愿签 .ww-tag / 玩法瓦片 .ww-play / 木鱼卡 .ww-muyu）实测都是 0.86，灯卡原是唯一的 0.9；
+   灯卡与木鱼卡在版式上被显式定义成"一对"（守卫已钉住两者内边距一致），按压观感也必须同值。
+   2026-09-19 由 0.9 → 0.86，与上面三处对齐。 */
 .ww-lantern-press {
-  opacity: 0.9;
+  opacity: 0.86;
 }
 
 /* 未点灯时内容只有三行，顶对齐会在底部留一截空白（真机截图里与右边的木鱼卡不对称）；
@@ -369,7 +379,7 @@ page {
 
 .ww-lantern-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   line-height: 1.3;
   letter-spacing: 1rpx;
   color: #F2EDE3;
@@ -403,14 +413,14 @@ page {
   /* 半宽卡里它是"固定宽度"的一份子：原来 76rpx 会把文案列挤到只剩 5–6 个字（标题被压断）。
      压到 48rpx 后文案列多出 ~28rpx（约 1 个字），标题不再折行。 */
   min-width: 48rpx;
-  padding: 6rpx 8rpx;
+  padding: 6rpx var(--space-1);
   border: 1rpx solid rgba(196, 167, 108, 0.42);
   border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.1);
 }
 
 .ww-streak-n {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   line-height: 1.1;
   color: var(--brass-300);
   font-family: var(--font-mono);
@@ -418,13 +428,17 @@ page {
 
 .ww-streak-l {
   margin-top: 2rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #8C857A;
 }
 
 /* ==================== 墙面（弹幕舞台） ==================== */
 
-/* 浅纸墙：深字浅底，弹幕才读得清；四条轨道画成极淡的横向导线 */
+/* 浅纸墙：深字浅底，弹幕才读得清；四条轨道画成极淡的横向导线。
+   ⚠️ 2026-09-19：原先文件末尾还有**第二段 `.ww-wall { … }`**（"视觉强化"），只写 border/box-shadow。
+   同选择器后者静默覆盖前者 → 这里的 `border: var(--brass-200)` 与底下两层 inset 阴影**从来没生效过**
+   （改哪一份都不生效，与本页 .ww-lantern-core 双 background-image 是同一类坑）。
+   现把**生效值**（强化版描边 + 内光 + 外投影）合并进本块，末尾那段删除；渲染结果不变，声明只剩一处。 */
 .ww-wall {
   position: relative;
   z-index: 1;
@@ -432,9 +446,11 @@ page {
   margin-bottom: var(--space-3);
   overflow: hidden;
   background: linear-gradient(180deg, #F6F1E7 0%, #EFE8DA 52%, #E7DFCF 100%);
-  border: 1px solid var(--brass-200);
+  /* 原 base 是 1px solid var(--brass-200)，被末尾强化段的 1rpx rgba(196,167,108,0.42) 覆盖 → 取生效值 */
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
   border-radius: var(--radius-lg);
-  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.9), inset 0 -24rpx 40rpx rgba(138, 117, 48, 0.08);
+  /* 原 base 的两层 inset 被末尾覆盖 → 取生效值（内光 + 外投影） */
+  box-shadow: inset 0 0 40rpx rgba(196, 167, 108, 0.1), 0 8rpx 24rpx rgba(0, 0, 0, 0.18);
 }
 
 .ww-wall-fiber {
@@ -493,7 +509,7 @@ page {
      ⚠️ 改这个值必须同步 utils/wishWall 的 CHAR_RPX：同轨不重叠按它估算文案宽度，
      估小了后一条会在前一条尾部还在屏内时进场（守卫按"字号 ×1.03 ≈ CHAR_RPX"实算对账）。 */
   font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   line-height: 1.3;
   color: #4A4234;
   letter-spacing: 0.02em;
@@ -532,8 +548,10 @@ page {
   text-shadow: 0 0 10rpx rgba(233, 190, 110, 0.8);
 }
 
-.ww-wall-empty,
-.ww-wall-loading {
+/* 墙面空态 / 加载态共用一套定位与字色。
+   ⚠️ 原选择器是 `.ww-wall-empty, .ww-wall-loading`：`ww-wall-loading` 在 wxml/js 里**零引用**
+   （加载态走 .ww-wall-skel 骨架，不写这行字）→ 已删，避免"改了一个不存在的类"。（2026-09-19） */
+.ww-wall-empty {
   position: absolute;
   inset: 0;
   display: flex;
@@ -541,7 +559,7 @@ page {
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #8A7E66;
 }
 
@@ -554,12 +572,12 @@ page {
 }
 
 .ww-wall-empty-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-700);
 }
 
 .ww-wall-empty-desc {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 
 .ww-wall-foot {
@@ -582,7 +600,7 @@ page {
 }
 
 .ww-wall-foot-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.04em;
   color: var(--brass-600);
 }
@@ -590,7 +608,7 @@ page {
 /* 「看全部 ›」：贴着右边缘的弱提示（页脚整行可点，见 goWishList） */
 .ww-wall-foot-more {
   margin-left: auto;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.04em;
   color: var(--brass-500);
 }
@@ -624,13 +642,13 @@ page {
 }
 
 .ww-echo-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.04em;
   color: var(--brass-700);
 }
 
 .ww-echo-sub {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-600);
   opacity: 0.9;
 }
@@ -659,7 +677,7 @@ page {
 .ww-write {
   position: relative;
   z-index: 1;
-  padding: 24rpx 26rpx;
+  padding: var(--space-3) 26rpx;
   margin-bottom: var(--space-3);
   background: var(--color-bg-card);
   border: 1rpx solid var(--color-border);
@@ -675,8 +693,8 @@ page {
 
 .ww-inspo-label {
   flex-shrink: 0;
-  margin-top: 8rpx;
-  font-size: 20rpx;
+  margin-top: var(--space-1);
+  font-size: var(--fs-20);
   letter-spacing: 0.08em;
   color: var(--color-text-muted);
 }
@@ -690,8 +708,8 @@ page {
 }
 
 .ww-inspo-chip {
-  padding: 8rpx 18rpx;
-  font-size: 22rpx;
+  padding: var(--space-1) 18rpx;
+  font-size: var(--fs-22);
   line-height: 1.35;
   color: var(--brass-300);
   background: rgba(196, 167, 108, 0.1);
@@ -703,33 +721,34 @@ page {
   background: rgba(196, 167, 108, 0.2);
 }
 
-/* 发送条**吸底**（2026-09-18 产品确认）：主操作永远在拇指下，不必先滚一屏。
-   ⚠️ 页面底部必须预留 ≥ 这条的高度（见 .ww-page 的 padding-bottom），否则最后一张愿签会被盖住。
-   高度 = 输入框 84rpx + 上下内边距 12×2 + 安全区。 */
+/* 发送条（**顺流**，2026-09-19 产品口径变更）：
+   原为吸底（2026-09-18 产品确认「主操作永远在拇指下」），现按产品要求移到
+   **弹幕墙下方、玩法区上方**，改为随文档流排布 —— 更醒目、不再有遮挡风险。
+   ⚠️ 取舍：主操作不再「永远在拇指下」，要滚到墙下方才看得到。
+   ⚠️ 位置变了，**层叠上下文的问题也随之消失**：原吸底版必须是 .ww-page 的直接子节点
+   （否则被 .ww-write 的 z-index:1 上下文压住，真机出现"互相遮挡"）；
+   顺流后它落在 .ww-write 内部，与愿签卡同层，不再需要 z-index 与不透明底来盖东西。
+   若产品日后觉得吵要改回吸底：恢复 position:fixed + .ww-page 的 180rpx 底部预留，
+   并把 test:wish-wall 的两条吸底判据一起改回（见该文件「发送条吸底」断言）。 */
 .ww-composer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* ⚠️ 必须是不透明背景：半透明时下面的愿签会透上来，与真机反馈的"互相遮挡"叠在一起更难读。
-     （与 §28 回声条同一个坑：盖在别的东西上的条带，背景就得是实的。） */
-  z-index: 30;
+  /* 显式 static：让「已从吸底改为顺流」这个设计意图读得出来，也是 test:wish-wall 的判据锚点
+     （判据按设计模式分支 —— 若这里被改回 fixed，吸底那一套遮挡判据会自动复活）。 */
+  position: static;
   display: flex;
   align-items: center;
   gap: 14rpx;
-  padding: 12rpx 32rpx calc(12rpx + env(safe-area-inset-bottom));
-  background: var(--color-bg);
-  border-top: 1rpx solid rgba(196, 167, 108, 0.28);
-  box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.35);
+  margin: 20rpx 0 4rpx;
+  padding: 0;
+  background: transparent;
 }
 
 .ww-input {
   flex: 1;
   min-width: 0;
   height: 84rpx;
-  padding: 0 24rpx;
+  padding: 0 var(--space-3);
   box-sizing: border-box;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
   background: #16140F;
   border: 1rpx solid rgba(196, 167, 108, 0.28);
@@ -743,9 +762,9 @@ page {
 .ww-send {
   flex-shrink: 0;
   height: 84rpx;
-  padding: 0 32rpx;
+  padding: 0 var(--space-4);
   line-height: 84rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #1A1814;
   /* 与全站黄铜主按钮同一配方：160deg / 48% / 描边 + 顶部内高光 */
   background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
@@ -767,7 +786,7 @@ page {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16rpx;
+  gap: var(--space-2);
   margin-top: 10rpx;
 }
 
@@ -775,7 +794,7 @@ page {
 .ww-quota {
   flex: 1;
   min-width: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
 }
 
@@ -784,7 +803,7 @@ page {
 }
 
 .ww-count {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
 }
@@ -794,19 +813,19 @@ page {
   align-items: flex-start;
   gap: 10rpx;
   margin-top: 18rpx;
-  padding: 16rpx 20rpx;
+  padding: var(--space-2) 20rpx;
   border: 1rpx solid rgba(233, 162, 59, 0.32);
   border-radius: var(--radius-sm);
 }
 
 .ww-notice .signal-light {
-  margin-top: 8rpx;
+  margin-top: var(--space-1);
 }
 
 .ww-notice-text {
   flex: 1;
   min-width: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   color: var(--color-warning);
 }
@@ -819,7 +838,7 @@ page {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin: var(--space-4) 0 16rpx;
+  margin: var(--space-4) 0 var(--space-2);
 }
 
 /* 分段控件：两个视图是"切换"，不是"两个标题" —— 容器给底、选中给铜底 */
@@ -835,8 +854,8 @@ page {
 .ww-seg-item {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  padding: 8rpx 20rpx;
+  gap: var(--space-1);
+  padding: var(--space-1) 20rpx;
   border-radius: 999rpx;
 }
 
@@ -845,13 +864,13 @@ page {
 }
 
 .ww-seg-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   letter-spacing: 0.04em;
   color: var(--color-text-secondary);
 }
 
 .ww-seg-n {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   font-family: var(--font-mono);
   color: var(--color-text-muted);
 }
@@ -879,7 +898,7 @@ page {
   /* 顶部 48rpx 是"顶带"：左铜钉 + 右印章落在这里，正文从顶带下方起排。
      实测：34rpx 时印章压行盒 5rpx；46rpx 仍差 0.5rpx（视口下看不见，
      但 Android 走衬线回退时行高不同会真的压上）—— 故留 2.8rpx 余量。 */
-  padding: 48rpx 16rpx 16rpx 22rpx;
+  padding: var(--space-6) var(--space-2) var(--space-2) 22rpx;
   overflow: hidden;
   background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);
   border: 1rpx solid var(--color-border);
@@ -910,7 +929,7 @@ page {
 .ww-tag-text {
   display: block;
   font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   line-height: 1.5;
   color: var(--brass-100);
   word-break: break-all;
@@ -919,7 +938,7 @@ page {
 .ww-tag-foot {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: var(--space-1);
   margin-top: 10rpx;
   min-width: 0;
 }
@@ -936,7 +955,7 @@ page {
 .ww-tag-meta {
   flex: 1;
   min-width: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -949,8 +968,8 @@ page {
   position: absolute;
   right: 12rpx;
   top: 14rpx;
-  padding: 2rpx 8rpx;
-  font-size: 16rpx;
+  padding: 2rpx var(--space-1);
+  font-size: var(--fs-16);
   line-height: 1.4;
   letter-spacing: 0.04em;
   color: var(--brass-300);
@@ -962,9 +981,9 @@ page {
 .ww-tags-empty {
   position: relative;
   z-index: 1;
-  padding: 40rpx 0;
+  padding: var(--space-5) 0;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted);
 }
 
@@ -972,8 +991,8 @@ page {
 .ww-end {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  margin: 28rpx 0 8rpx;
+  gap: var(--space-2);
+  margin: 28rpx 0 var(--space-1);
 }
 
 .ww-end-rule {
@@ -984,7 +1003,7 @@ page {
 
 .ww-end-text {
   flex-shrink: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.08em;
   color: var(--color-text-muted);
 }
@@ -1039,10 +1058,11 @@ page {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 16rpx;
+  gap: var(--space-2);
   padding: 20rpx 22rpx 20rpx 26rpx;
   margin-bottom: 14rpx;
-  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);
+  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */
+  background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -1082,7 +1102,7 @@ page {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  padding: 28rpx 24rpx;
+  padding: 28rpx var(--space-3);
   background: var(--color-bg-card);
   border: 1rpx solid rgba(233, 162, 59, 0.28);
   border-radius: var(--radius-md);
@@ -1091,7 +1111,7 @@ page {
 .ww-error-text {
   flex: 1;
   min-width: 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
   color: var(--color-warning);
 }
@@ -1099,7 +1119,7 @@ page {
 .ww-error-retry {
   flex-shrink: 0;
   padding: 10rpx 22rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-sm);
@@ -1117,7 +1137,7 @@ page {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8rpx;
+  gap: var(--space-1);
   /* 徽章与标题之间要能"呼吸"：6rpx 在真机上等于贴着（文案拥挤的一半来源） */
   margin-top: 12rpx;
 }
@@ -1125,7 +1145,7 @@ page {
 .ww-lantern-tier,
 .ww-lantern-solar {
   padding: 2rpx 10rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   line-height: 1.5;
   border-radius: 6rpx;
 }
@@ -1144,14 +1164,14 @@ page {
 
 /* 距下一个节气：与节气同日出现时被 wx:elif 挡掉，所以两者不会同屏 */
 .ww-lantern-next {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-muted);
 }
 
 .ww-lantern-note {
   display: block;
   /* 灯位说明是三级信息：与灯语拉开 8rpx，字号再降一档、颜色压到 muted */
-  margin-top: 8rpx;
+  margin-top: var(--space-1);
   font-size: 19rpx;
   line-height: 1.5;
   color: var(--color-text-muted);
@@ -1227,7 +1247,7 @@ page {
   align-items: center;
   gap: 12rpx;
   margin-top: var(--space-4);
-  padding: 20rpx 24rpx;
+  padding: 20rpx var(--space-3);
   background: var(--color-bg-card);
   border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
@@ -1239,7 +1259,7 @@ page {
 
 .ww-relics-text {
   flex: 1;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
@@ -1265,7 +1285,7 @@ page {
 .ww-card {
   position: relative;
   width: 100%;
-  padding: 44rpx 36rpx 32rpx;
+  padding: 44rpx 36rpx var(--space-4);
   background: linear-gradient(168deg, #F5F0E6 0%, #EFE8DA 100%);
   border-radius: var(--radius-lg);
   box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.5);
@@ -1321,7 +1341,7 @@ page {
 
 .ww-card-over {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.3em;
   color: #8C7A50;
 }
@@ -1344,25 +1364,25 @@ page {
 }
 
 .ww-card-who {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #5C5347;
 }
 
 .ww-card-time {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #8C857A;
 }
 
 .ww-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8rpx;
+  gap: var(--space-1);
   margin-top: 12rpx;
 }
 
 .ww-card-tag {
   padding: 2rpx 10rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #6E5B28;
   border: 1rpx solid rgba(110, 91, 40, 0.35);
   border-radius: 6rpx;
@@ -1375,7 +1395,7 @@ page {
 
 .ww-card-acts {
   display: flex;
-  gap: 16rpx;
+  gap: var(--space-2);
   margin-top: 28rpx;
 }
 
@@ -1384,7 +1404,7 @@ page {
   height: 76rpx;
   line-height: 76rpx;
   text-align: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #241F18;
   border: 1rpx solid rgba(110, 91, 40, 0.4);
   border-radius: 999rpx;
@@ -1401,7 +1421,7 @@ page {
   background: #6E5B28;
   color: #F7F3EA;
   border-color: #6E5B28;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 400;
 }
 
@@ -1424,7 +1444,7 @@ page {
 .ww-tone-5 { color: #5B4A78; }   /* 紫晶 */
 .ww-emoji {
   margin-right: 6rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   opacity: 0.92;
 }
 
@@ -1441,15 +1461,15 @@ page {
   position: absolute;
   left: 0;
   bottom: 0;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #E0A9A0;
   opacity: 0;
   animation: ww-heart-float 1.6s ease-out forwards;
 }
-.ww-heart.h2 { color: #D9BE86; font-size: 22rpx; animation-delay: 0.18s; }
-.ww-heart.h3 { color: #E0A9A0; font-size: 30rpx; animation-delay: 0.34s; }
-.ww-heart.h4 { color: #C7B4DE; font-size: 20rpx; animation-delay: 0.5s; }
-.ww-heart.h5 { color: #D9BE86; font-size: 24rpx; animation-delay: 0.66s; }
+.ww-heart.h2 { color: #D9BE86; font-size: var(--fs-22); animation-delay: 0.18s; }
+.ww-heart.h3 { color: #E0A9A0; font-size: var(--fs-30); animation-delay: 0.34s; }
+.ww-heart.h4 { color: #C7B4DE; font-size: var(--fs-20); animation-delay: 0.5s; }
+.ww-heart.h5 { color: #D9BE86; font-size: var(--fs-24); animation-delay: 0.66s; }
 @keyframes ww-heart-float {
   0%   { opacity: 0; transform: translate(-50%, 0) scale(0.7); }
   18%  { opacity: 0.95; }
@@ -1468,7 +1488,7 @@ page {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: stretch;
-  gap: 16rpx;
+  gap: var(--space-2);
 }
 .ww-ritual-row .ww-lantern { flex: 1; min-width: 0; }
 
@@ -1480,7 +1500,7 @@ page {
      真机截图上一眼就能看出来。灯卡相反：它内容三行、本来就填满，所以顶对齐。
      两张卡各自的**内边距**保持一致，才是"像一对"的真正来源。 */
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-2);
   min-width: 0;
   /* ⚠️ 必须与 .ww-lantern 同值（守卫 `两卡内边距一致` 钉住）：改一边就是"两张卡不像一对" */
   padding: 26rpx 20rpx;
@@ -1512,14 +1532,14 @@ page {
   background: rgba(38, 26, 14, 0.72);
 }
 .ww-muyu-copy { display: flex; flex-direction: column; gap: 4rpx; min-width: 0; }
-.ww-muyu-title { font-size: 26rpx; color: #EFE6D2; letter-spacing: 1rpx; }
-.ww-muyu-line { font-size: 20rpx; color: var(--color-text-muted, #8A857C); }
-.ww-muyu-count { font-size: 20rpx; color: #D9BE86; }
+.ww-muyu-title { font-size: var(--fs-26); color: #EFE6D2; letter-spacing: 1rpx; }
+.ww-muyu-line { font-size: var(--fs-20); color: var(--color-text-muted, #8A857C); }
+.ww-muyu-count { font-size: var(--fs-20); color: #D9BE86; }
 .ww-muyu-plus {
   position: absolute;
   right: 20rpx;
   top: 14rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #D9BE86;
   animation: ww-muyu-plus 0.42s ease-out forwards;
 }
@@ -1536,7 +1556,7 @@ page {
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.6;
   color: var(--color-text-muted, #8A857C);
 }
@@ -1551,8 +1571,8 @@ page {
 /* 仪式音效开关：铜色描边小胶囊。开=实心铜字，关=压暗（一眼看出状态，不靠读文字） */
 .ww-sound {
   flex-shrink: 0;
-  padding: 6rpx 16rpx;
-  font-size: 20rpx;
+  padding: 6rpx var(--space-2);
+  font-size: var(--fs-20);
   letter-spacing: 0.04em;
   border-radius: 999rpx;
 }
@@ -1592,13 +1612,13 @@ page {
 }
 
 .ww-plays-title {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   letter-spacing: 0.06em;
   color: var(--brass-300);
 }
 
 .ww-plays-sub {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted, #8A857C);
 }
 
@@ -1606,7 +1626,7 @@ page {
   display: grid;
   /* 两列等宽：瓦片内容长度差异大（"MBTI 贴士" vs "拆签饼"），flex 会按内容分配 */
   grid-template-columns: 1fr 1fr;
-  gap: 16rpx;
+  gap: var(--space-2);
 }
 
 .ww-play {
@@ -1637,7 +1657,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-300);
   border: 1rpx solid rgba(196, 167, 108, 0.42);
   border-radius: 50%;
@@ -1651,7 +1671,7 @@ page {
 
 .ww-play-name {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   line-height: 1.3;
   color: #EFE6D2;
 }
@@ -1733,7 +1753,7 @@ page {
 .ww-sheet-head {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-2);
   padding-bottom: 18rpx;
   border-bottom: 1rpx solid rgba(138, 117, 48, 0.22);
 }
@@ -1746,7 +1766,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-700);
   border: 2rpx solid rgba(138, 117, 48, 0.5);
   border-radius: 50%;
@@ -1757,7 +1777,7 @@ page {
 
 .ww-sheet-overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.14em;
   color: var(--brass-600);
 }
@@ -1765,15 +1785,15 @@ page {
 .ww-sheet-name {
   display: block;
   margin-top: 2rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   letter-spacing: 0.04em;
   color: #4A4234;
 }
 
 .ww-sheet-close {
   flex-shrink: 0;
-  padding: 8rpx 4rpx 8rpx 20rpx;
-  font-size: 22rpx;
+  padding: var(--space-1) 4rpx var(--space-1) 20rpx;
+  font-size: var(--fs-22);
   color: var(--brass-600);
 }
 
@@ -1785,7 +1805,7 @@ page {
 .ww-sheet-title {
   display: block;
   font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, serif;
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   line-height: 1.25;
   letter-spacing: 0.04em;
   color: var(--brass-700);
@@ -1793,8 +1813,8 @@ page {
 
 .ww-sheet-sub {
   display: block;
-  margin-top: 8rpx;
-  font-size: 22rpx;
+  margin-top: var(--space-1);
+  font-size: var(--fs-22);
   color: var(--brass-600);
 }
 
@@ -1819,7 +1839,7 @@ page {
   height: 84rpx;
   line-height: 84rpx;
   text-align: center;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   letter-spacing: 0.06em;
   color: #1A1814;
   background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
@@ -1855,7 +1875,7 @@ page {
 .ww-sheet-product-title {
   display: block;
   margin-top: 6rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #3A3428;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1865,13 +1885,13 @@ page {
 .ww-sheet-product-meta {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #7A6E58;
 }
 
 .ww-sheet-product-go {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-700);
 }
 
@@ -1888,7 +1908,7 @@ page {
   display: flex;
   align-items: center;
   gap: 14rpx;
-  margin-top: 16rpx;
+  margin-top: var(--space-2);
   padding: 20rpx;
   background: var(--color-bg-card);
   border: 1rpx dashed rgba(196, 167, 108, 0.44);
@@ -1903,24 +1923,22 @@ page {
   color: var(--color-text-muted, #8A857C);
 }
 
+/* 与 .ww-play-press 同值（同在玩法区、同为可点瓦片/行）；原 0.85 与 0.86 的差别读不出，只是噪声 */
 .ww-play-need-press {
-  opacity: 0.85;
+  opacity: 0.86;
 }
 
 .ww-play-need-cta {
   flex-shrink: 0;
   padding: 12rpx 20rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-300);
   border: 1rpx solid rgba(196, 167, 108, 0.5);
   border-radius: var(--radius-sm);
 }
 
-/* 弹幕墙视觉强化：更实的描边 + 内光 + 标题层次（不动轨道与高度） */
-.ww-wall {
-  border: 1rpx solid rgba(196, 167, 108, 0.42);
-  box-shadow: inset 0 0 40rpx rgba(196, 167, 108, 0.10), 0 8rpx 24rpx rgba(0, 0, 0, 0.18);
-}
+/* 弹幕墙视觉强化（更实的描边 + 内光 + 外投影）已于 2026-09-19 **合并进上面唯一的 .ww-wall 块** ——
+   原先它单独成块挂在文件末尾，同选择器后者静默覆盖前者，导致上面那份 border/box-shadow 是死声明。 */
 
 /* ── 点灯 / 木鱼 图标替换（2026-09-19，产品负责人提供 SVG）──────────────────
    微信 <image> 不渲染 SVG ✗ → 走 **base64 data-URI + background-image**（矢量、几 KB、随包、无白名单）；

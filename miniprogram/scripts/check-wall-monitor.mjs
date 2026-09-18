@@ -119,7 +119,7 @@ check('能读出登记在案的注册钩子事件（判据的输入必须真实�
  * ⚠️ 判据是"schema 里每个 gate 必须落在两者之一"：**新登记一个钩子却忘了进报表，这里立刻红** ——
  * 这正是"漏一个漏斗面"这类错误的棘轮（ERP 恒 0、报表少卡片，已经发生过两次）。
  */
-const REPORT_COVERED_GATES = ['identify_save_atlas_gate', 'identify_result_gate', 'wish_wall_register_gate']
+const REPORT_COVERED_GATES = ['identify_save_atlas_gate', 'identify_result_gate', 'wish_wall_register_gate', 'wish_ritual_gate']
 const REPORT_EXCLUDED_GATES = {
   wiki_register_gate: '百科注册门禁未进本期数据报表（另立需求；它有独立入口与口径）'
 }
@@ -136,7 +136,10 @@ check(
 const COVERED_PAIRS = [
   { gate: 'identify_save_atlas_gate', payload: /identify:\s*\{[\s\S]{0,1400}?gate:\s*\{/, view: /\.funnel\.identify\.gate\.show/ },
   { gate: 'identify_result_gate', payload: /resultGate:\s*gateBlock\('identify_result_gate'\)/, view: /\.funnel\.identify\.resultGate\.show/ },
-  { gate: 'wish_wall_register_gate', payload: /wishWall:\s*\{[\s\S]{0,800}?gate:\s*\{/, view: /\.funnel\.wishWall\.gate\.show/ }
+  { gate: 'wish_wall_register_gate', payload: /wishWall:\s*\{[\s\S]{0,800}?gate:\s*\{/, view: /\.funnel\.wishWall\.gate\.show/ },
+  // 2026-09-20 新增：连灯记录云存钩子。ratchet 的作用就在这条 ——
+  // 新登记一个 *_gate 若忘了进报表，上面的 unclassified 立刻红
+  { gate: 'wish_ritual_gate', payload: /ritualGate:\s*gateBlock\('wish_ritual_gate'\)/, view: /\.funnel\.wishWall\.ritualGate\.show/ }
 ]
 COVERED_PAIRS.forEach(({ gate, payload, view }) => {
   check(
@@ -231,6 +234,19 @@ if (process.argv.includes('--selftest')) {
       file: MONITOR_UTIL,
       from: "  { key: 'gateOk', label: '注册成功并自动续发', actions: ['wish_wall_register_gate'], step: 'resume_success'",
       to: "  { key: 'gateOk', label: '注册成功并自动续发', actions: ['wish_wall_register_gate'], step: 'resume_succes'"
+    },
+    // 2026-09-20 新增：连灯记录云存钩子同样要"进报表"（否则就是第三次"埋点发了、报表没有"）
+    {
+      name: '连灯云存钩子又漏出报表（与祈福墙同一类漏）',
+      file: 'miniprogram/cloudfunctions/getAnalyticsDashboard/index.js',
+      from: "      ritualGate: gateBlock('wish_ritual_gate')",
+      to: "      ritualGateOff: gateBlock('wish_ritual_gate')"
+    },
+    {
+      name: '数据报表页读错连灯云存钩子的键（卡片永远不渲染）',
+      file: MP_REPORT,
+      from: '{{analyticsReport.behavior.funnel.wishWall.ritualGate.show || 0}}',
+      to: '{{analyticsReport.behavior.funnel.wishWall.ritualGateOff.show || 0}}'
     }
   ]
   let bad = 0
