@@ -1663,6 +1663,20 @@ check('★ 点灯爱心动效：一次性（heartBurst 为真才挂载 + js 定�
   /ww-hearts" wx:if="\{\{heartBurst\}\}"/.test(wallWxmlCode)
   && /setTimeout\(\(\) => this\.setData\(\{ heartBurst: false \}\)/.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.js'), 'utf8'))
   && /@keyframes ww-heart-float/.test(wallWxssCode))
+// 2026-09-19 点灯/木鱼图标替换（产品负责人提供 SVG）：微信 <image> 不渲染 SVG ✗
+// → 走 base64 data-URI + background-image（矢量、随包、**无外链** → 不需要任何域名白名单 ✓）
+{
+  const uris = [...wallWxssCode.matchAll(/url\("(data:image\/svg\+xml;base64,[^"]+)"\)/g)].map((m) => m[1])
+  check('★ 点灯与木鱼图标均已内联为 SVG data-URI', uris.length >= 2)
+  check('★ 图标**不得**走外链（外链就要域名白名单，且 iOS 上有过坑）',
+    !/url\("https?:/.test(wallWxssCode) || uris.length >= 2)
+  // 图标原文件无 fill（默认黑）→ 深色页面上会看不见；守卫**解码**校验已注入品牌色
+  const decoded = uris.map((u) => Buffer.from(u.split(',')[1], 'base64').toString('utf8'))
+  check('★★ 内联 SVG 必须带 fill（否则深色墙面上是黑的，等于没显示）',
+    decoded.every((d) => /fill="#[0-9A-Fa-f]{3,8}"/.test(d) || /fill="var\(/.test(d)),
+    '原图标无 fill，必须注入品牌色')
+  check('★ 替换后保留动效：木鱼敲击缩放 + 灯晕', /\.ww-muyu\.is-beat \{ transform: scale/.test(wallWxssCode) && /\.ww-lantern-halo/.test(wallWxssCode))
+}
 check('★ 弹幕用手写体（心愿是"写"上去的）',
   /\.ww-danmaku\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
 check('★ 愿签正文也用手写体',
