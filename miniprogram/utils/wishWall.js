@@ -518,8 +518,23 @@ function buildDanmakuRows(items, opts) {
     const lane = i % lanes
     const durationMs = danmakuDurationMs(text)
     const clearMs = danmakuClearMs(text)
-    // 首屏错开：第 i 条至少等 i*260ms，避免整批同时冲进来（不替代轨道占用约束）
-    const delayMs = Math.max(laneNextAt[lane], Math.round(i * 260))
+    // ── 首屏预填（2026-09-19）────────────────────────────────────────────
+    // 真机问题：弹幕是 `left:100%` + 全屏横穿 + **正 delay**，所以 t=0 时墙面**必然是空的**，
+    // 之后按 `i*260ms` 逐条从右侧入场 —— 首屏前 2–3 秒只有 6 条刻度线，看着像一个空框
+    // （产品截图里正是这个）。整轮飞完重建时也会再现同样的空窗。
+    //
+    // 修法：让**前 `lanes` 条**（每条轨道恰好一条）用**负 delay** 预填 ——
+    // 它们在页面加载的瞬间就已经处于屏内不同位置，墙面立刻是"满"的，再自然续播。
+    // 负 delay 在 CSS 动画里就是"从中间开始播"，无需改 keyframes、不改速度、不改轨道规则。
+    //
+    // 为什么不破坏「同轨不重叠」：同一轨道只有**第一条**被预填，`laneNextAt` 从它的
+    // （负）delay 起算，后续条目仍满足 `delay >= prev.delay + prev.clearMs` ——
+    // 这个不变量由下面同一行公式保证，守卫在跑（`test:wish-wall`「同轨相邻两条不重叠」）。
+    const prefill = i < lanes
+    // 0.85 → 0.15：把首屏这批从左到右铺开，不叠成一坨
+    const delayMs = prefill
+      ? -Math.round(durationMs * (0.85 - 0.14 * i))
+      : Math.max(laneNextAt[lane], Math.round(i * 260))
     laneNextAt[lane] = delayMs + clearMs + gapMs
     const seedId = String(raw._id || `w${i}`)
     rows.push({

@@ -177,6 +177,12 @@ const INJECTIONS = {
     from: '  animation-iteration-count: 1;',
     to: '  animation-iteration-count: infinite;'
   },
+  // 首屏预填被关掉 → 墙面在加载后 2–3 秒内是空的（只有刻度线），产品真机截图里的"空框"
+  'danmaku-no-prefill': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: '    const prefill = i < lanes',
+    to: '    const prefill = false'
+  },
   // 点灯卡片重新撞上全局信号灯基类 → 卡片被压成 12rpx 竖条
   'lamp-class-collision': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
@@ -1099,6 +1105,30 @@ eq(
 )
 eq('空轮轮末为 0', wish.danmakuCycleEndMs([]), 0)
 eq('不传 opts 也不崩', wish.buildDanmakuRows(null).length, 0)
+
+/**
+ * ★ 首屏预填（2026-09-19 产品真机反馈「墙面像个空框」的根因判据）
+ *
+ * 根因：弹幕是 `left:100%` + 全屏横穿 + **正 delay**（原为 `i*260ms`），
+ * 所以 t=0 时墙面**必然是空的**，之后逐条从右侧入场 —— 首屏前 2–3 秒只有 6 条刻度线。
+ * 修法：前 `LANES` 条（每条轨道恰好一条）用**负 delay** 预填，加载瞬间屏内已有内容。
+ *
+ * 判据钉两件事：① 恰有 LANES 条负 delay；② 它们落在**不同轨道**（否则叠成一行更难看）。
+ * 注入 `danmaku-no-prefill` 会把 prefill 关掉 —— 本条必须变红（自检里跑）。
+ */
+const prefillRows = wish.buildDanmakuRows(
+  Array.from({ length: wish.LANES * 2 }, (_, i) => ({ _id: 'p' + i, text: '马上有预填' + i }))
+)
+const prefilled = prefillRows.filter((r) => r.delayMs < 0)
+eq('★ 首屏预填：恰有 LANES 条负 delay（加载瞬间屏内已有内容，不再是空墙）', prefilled.length, wish.LANES)
+eq('★ 首屏预填：每条落在不同轨道（否则叠成一行）', new Set(prefilled.map((r) => r.lane)).size, wish.LANES)
+check(
+  '★ 首屏预填不破坏「同轨不重叠」（预填只取每轨第一条）',
+  prefillRows.every((r, i) => {
+    const prev = prefillRows.slice(0, i).filter((p) => p.lane === r.lane).pop()
+    return !prev || r.delayMs >= prev.delayMs + prev.clearMs
+  })
+)
 
 // 轮次进 key：否则整批重排时同 key 不重播动画
 const cyc0 = wish.buildDanmakuRows([{ _id: 'a', text: '马上有钱' }], { cycle: 0 })
