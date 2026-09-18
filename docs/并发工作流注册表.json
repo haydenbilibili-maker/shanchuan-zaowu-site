@@ -454,6 +454,26 @@
         "check:docs-index",
         "test:ritual-profile"
       ]
+    },
+    {
+      "id": "ritual-register-gate",
+      "name": "连续记录云保存 · 注册钩子（开关 showRitualProfile + 门禁 + 双端埋点）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立。**依赖 ritual-cloud-store**（要先合云存分支，否则 check:require-paths 红）。开关入口二选一选了**店长端工作台**（与 showMaShangYou 同处），ERP 表单有意未加。⚠️ C4 契约面（双端埋点镜像）已同步。",
+      "owns": [],
+      "consumes": [
+        "miniprogram/subpackages/feature/wish-wall/**",
+        "miniprogram/utils/contentDisplayFlags.js",
+        "miniprogram/cloudfunctions/getContentDisplayFlags/index.js",
+        "miniprogram/scripts/test-wish-wall.mjs",
+        "miniprogram/scripts/check-wall-monitor.mjs"
+      ],
+      "guards": [
+        "test:wish-wall",
+        "check:analytics-schema",
+        "check:wall-monitor"
+      ]
     }
   ],
   "frozen": [

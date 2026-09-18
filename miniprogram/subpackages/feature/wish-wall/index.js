@@ -53,7 +53,8 @@ const easterEggHost = require('../../../utils/easterEggHost')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const {
   fetchContentDisplayFlags,
-  toastWishWallClosed
+  toastWishWallClosed,
+  toastRitualProfileClosed
 } = require('../../../utils/contentDisplayFlags')
 
 /**
@@ -63,6 +64,62 @@ const {
 const SHEET_CLOSE_DRAG_PX = 88
 function sheetDragShouldClose(dy) {
   return (Number(dy) || 0) >= SHEET_CLOSE_DRAG_PX
+}
+
+/**
+ * 「连续记录云保存」注册钩子的阈值 —— **只在用户真的有可丢的进展时**才谈注册。
+ *
+ * 定这两个数的理由（写死在这里，免得以后有人"为了能弹"悄悄调低）：
+ *   · 连续点灯 ≥ 2 天：1 天只是"今天随手点了"，还没有形成任何会心疼的记录，
+ *     此刻谈"记录会丢"是空话；第 2 天意味着他**昨天来过、今天又来**，这两天的灯
+ *     本身就是"丢了会可惜"的第一份投入，也是"断签"这个概念成立的最小天数。
+ *   · 木鱼 ≥ 21 下：木鱼是连点动作，3~5 下是随手玩，拿它谈"功德会丢"属于骚扰级；
+ *     21 下是一次认真静坐能敲到的量，够得上"我攒了点东西"；再往上（如 108）
+ *     门槛会高到近乎永不触发 —— 那就是假功能。
+ * 两条满足一条即可（有人只点灯不敲木鱼，反之亦然）。
+ */
+const RITUAL_GATE_MIN_STREAK = 2
+const RITUAL_GATE_MIN_MUYU = 21
+
+/**
+ * 已产生的「可丢进展」类型（纯函数）：'' = 还没有值得谈的进展。
+ * 单独抽出来是为了让页面能做**零成本预筛**：木鱼可连点，门槛不满足时不该去问一次会话。
+ * 不变量：本函数判"没有进展"时，shouldOfferRitualGate 必须也为 false（预筛不得比正式判定更宽）。
+ */
+function ritualGateProgress(state) {
+  const s = state || {}
+  if ((Number(s.streak) || 0) >= RITUAL_GATE_MIN_STREAK) return 'streak'
+  if ((Number(s.muyuCount) || 0) >= RITUAL_GATE_MIN_MUYU) return 'muyu'
+  return ''
+}
+
+/**
+ * 是否该弹「连续记录云保存」注册钩子（纯函数，便于单测）。
+ * 每一条都是"否则就是骚扰 / 就是骗人"的否定条件：
+ *   allowed=false       —— 墙没开放，别去谈墙里的记录；
+ *   flagOn=false        —— `showRitualProfile` 缺省关（超管没显式打开 = 这能力还没上线）；
+ *   alreadyOffered=true —— 一次访问只谈一次（否则同一次访问每敲一下木鱼都弹）；
+ *   registerDialogOpen  —— 落愿门禁正开着：同一时刻只允许一个注册弹窗，落愿优先（那是主转化）；
+ *   isGuest=false       —— 已注册用户没有"注册后"这回事；
+ *   没有进展            —— 见 RITUAL_GATE_MIN_*。
+ */
+function shouldOfferRitualGate(state) {
+  const s = state || {}
+  if (s.allowed !== true) return false
+  if (s.flagOn !== true) return false
+  if (s.alreadyOffered === true) return false
+  if (s.registerDialogOpen === true) return false
+  if (s.isGuest !== true) return false
+  return ritualGateProgress(s) !== ''
+}
+
+/** 钩子弹窗的 desc（纯函数）：说清"存什么 + 换手机还在 + 断签提醒"三件事，且报出真实进度 */
+function buildRitualGateDesc(reason, state) {
+  const s = state || {}
+  if (reason === 'streak') {
+    return `已连续点灯 ${Number(s.streak) || 0} 天。注册后这份记录存到云端，换手机、清缓存都还在，断签前还会提醒你。`
+  }
+  return `已敲了 ${Number(s.muyuCount) || 0} 下木鱼。注册后功德与连灯记录存到云端，换手机、清缓存都还在，断签前还会提醒你。`
 }
 
 const FN = 'manageWishWall'
@@ -159,7 +216,25 @@ Page({
      */
     reco: null,
     /** 注册转化：落愿时未注册 → 就地弹注册（见 submitWish / onRegisterSuccess） */
-    showRegisterDialog: false
+    showRegisterDialog: false,
+    /**
+     * 「连续记录云保存」注册钩子（2026-09-20）：
+     * `showRitualProfile` 是开关（`content_display_flags.showRitualProfile`，缺配置默认关），
+     * `showRitualDialog` 是弹窗态，`ritualGateDesc` 是带真实进度的文案。
+     * 本钩子只**新增**：不改点灯/木鱼/落愿/弹幕任何既有语义。
+     */
+    showRitualProfile: false,
+    showRitualDialog: false,
+    ritualGateDesc: '',
+    /**
+     * 统一轻提示（AppToast）。本页是**原生 toast 棘轮**（`check:dialog-ratchet`）盯着的文件：
+     * 新增一处 `wx.showToast` 会把守卫弄红，故钩子的结果反馈走 AppToast 铭牌轻提示。
+     */
+    toastShow: false,
+    toastOverline: '',
+    toastTitle: '',
+    toastDesc: '',
+    toastDuration: 2200
   },
 
   onLoad(options) {
@@ -513,6 +588,8 @@ Page({
     this.pushEcho('muyu')
     clearTimeout(this._muyuTimer)
     this._muyuTimer = setTimeout(() => this.setData({ muyuBeat: false, muyuPlus: false }), 420)
+    // 「连续记录云保存」钩子：功德刚被创造出来的这一刻才谈（门槛与判定见 ritualGateProgress）
+    this.maybeOfferRitualGate()
   },
 
   onLampTap() {
@@ -548,6 +625,9 @@ Page({
     trackBehavior('wish_wall_lamp', 'day', dayKey)
     // 连续点灯彩蛋：门槛（几天算数）在注册表里，页面只报事实
     this.fireLampStreakEgg(next.streak)
+    // 「连续记录云保存」钩子：只在**今天这一盏刚点亮**时谈（连灯天数就是在这一刻变长的；
+    // 点已经亮着的灯只是想再看一眼，不该被拦一个注册弹窗）
+    this.maybeOfferRitualGate()
   },
 
   /** 连续点灯彩蛋（如「騊駼」要求连续 3 天） */
@@ -614,6 +694,11 @@ Page({
   /** 门禁收敛：未开放时**提前返回，不发起任何网络请求** */
   async applyGate(flags) {
     const allowed = !!(flags && flags.showMaShangYou === true)
+    // 「连续记录云保存」钩子的开关：单独同步，**不动**原来的门禁控制流
+    // （合并进下面的 early-return 会让"只改了这一个开关"也走一遍 refresh + 进页彩蛋）。
+    // 读不到 / 缺字段一律当关（normalizeContentDisplayFlags 已保证，这里是第二道）。
+    const showRitualProfile = !!(flags && flags.showRitualProfile === true)
+    if (showRitualProfile !== this.data.showRitualProfile) this.setData({ showRitualProfile })
     if (allowed === this.data.allowed && this.data.flagChecked) return
     this.setData({ allowed, flagChecked: true, loading: allowed })
     if (!allowed) return
@@ -1069,6 +1154,162 @@ Page({
   onRegisterDialogFail(e) {
     const reason = (e && e.detail && e.detail.reason) || 'unknown'
     trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: `fail_${reason}` })
+  },
+
+  /* ----------------------------- 连续记录云保存（注册钩子，2026-09-20） ----------------------------- */
+  /**
+   * 纯函数转接：判定逻辑都写在模块作用域（`shouldOfferRitualGate` / `ritualGateProgress` /
+   * `buildRitualGateDesc`），这里只是让页面与测试都能直接调到同一份实现 ——
+   * 判定做成纯函数的意义就在于「能被断言」，藏在闭包里就白抽了。
+   */
+  shouldOfferRitualGate,
+  ritualGateProgress,
+  buildRitualGateDesc,
+  /**
+   * 产品逻辑：连灯天数与木鱼功德都只存本地，换手机/清缓存即丢。
+   * 钩子话术 = 「注册后连续记录存云端，不会丢，且断签前会提醒你」。
+   *
+   * 为什么是**动作触发**而不是进页就弹：进页弹窗是拦截；动作之后弹才是
+   * 「我刚做完这件事，现在告诉你怎么把它留住」。而且本页的连续天数只在"今天点了灯"
+   * 时才有意义（`lamp.streak` 未点灯恒为 0），动作点正是它刚被创造出来的那一刻。
+   *
+   * 三条边界（与既有纪律一致）：
+   *   1) 只在真有可丢进展时谈（`ritualGateProgress` 的阈值）；
+   *   2) 一次访问最多谈一次（`_ritualGateOffered`），不跟着木鱼连点反复弹；
+   *   3) 钩子失败/开关关闭/用户拒绝，都**不得影响**点灯 / 木鱼 / 落愿（下面全部 catch）。
+   */
+  maybeOfferRitualGate() {
+    // 不 await、不返回给调用方（onLampTap / onMuyuTap 的主流程一步都不该被钩子拖住）；
+    // 但**返回这个 promise**，测试才能 await 它来断言"到底弹没弹"。
+    return Promise.resolve()
+      .then(() => this.evaluateRitualGate())
+      .catch((e) => {
+        console.warn('wish wall ritual gate failed', e)
+      })
+  },
+
+  /**
+   * 埋点收口（纯转发）：`wish_ritual_gate` 这个 action 只在这里出现一次 ——
+   * 既避免五处各写一遍 action 名（改名漏一处就多一条恒 0 的漏斗），
+   * 也让测试可以替换它来断言"哪一步真的上报了"。
+   */
+  trackRitualGate(step, extra) {
+    trackBehavior('wish_ritual_gate', 'wish_wall', this.data.productKey, Object.assign({ step }, extra || {}))
+  },
+
+  async evaluateRitualGate() {
+    const state = {
+      allowed: this.data.allowed === true,
+      flagOn: this.data.showRitualProfile === true,
+      alreadyOffered: this._ritualGateOffered === true,
+      registerDialogOpen: this.data.showRegisterDialog === true,
+      // 会话要异步问；先按"未知"（非 true）走预筛
+      isGuest: false,
+      streak: (this.data.lamp && this.data.lamp.streak) || 0,
+      muyuCount: this.data.muyuCount || 0
+    }
+    // 零成本预筛：门槛不满足就不必为一次点击去问会话（木鱼可连点，别每下都走一次 ensureSession）
+    const reason = ritualGateProgress(state)
+    if (!reason) return
+    state.isGuest = await this.isGuestUser()
+    if (!shouldOfferRitualGate(state)) return
+    // 先占位再弹：`isGuestUser` 是异步的，占位放在后面会让连续两下木鱼各弹一次
+    this._ritualGateOffered = true
+    this.trackRitualGate('show', { reason })
+    this.setData({ showRitualDialog: true, ritualGateDesc: buildRitualGateDesc(reason, state) })
+  },
+
+  /**
+   * 统一主视觉轻提示（AppToast）—— 取代原生 toast，见 components/AppToast。
+   * 与 pages/cart/index.js 的 showAppToast 同形（原生 toast 在博物黑界面里最不像本产品），
+   * 且本页被 `check:dialog-ratchet` 冻结了原生调用数（只许降不许涨）。
+   */
+  showAppToast({ overline = '', title = '', desc = '', duration = 0 } = {}) {
+    if (!title) return
+    this.setData({
+      toastOverline: overline,
+      toastTitle: title,
+      toastDesc: desc,
+      toastDuration: duration || 2200,
+      toastShow: true
+    })
+  },
+
+  onToastClose() {
+    this.setData({ toastShow: false })
+  },
+
+  /**
+   * 把本地仪式记录同步上云（注册成功后的**真正兑现**那一步）。
+   *
+   * ⚠️ `require` 必须**在函数内 + try/catch**：`utils/ritualProfile.js` 与 `wishRitualProfile`
+   * 云函数由并行流程落地，本页可能先于它们上线。模块缺失 / 云函数未部署 / 网络失败
+   * 一律**只返回 false**（调用方据此说真话），绝不让祈夆墙不可用 ——
+   * 这页有「降级不得影响主功能」的既有纪律。
+   * 接口契约（不在此实现）：`syncToCloud(): Promise<boolean>`，成功 true、失败 false。
+   */
+  async syncRitualToCloud() {
+    try {
+      const ritualProfile = require('../../../utils/ritualProfile')
+      if (!ritualProfile || typeof ritualProfile.syncToCloud !== 'function') return false
+      const ok = await ritualProfile.syncToCloud()
+      return ok === true
+    } catch (e) {
+      console.warn('wish wall ritual sync failed', e)
+      return false
+    }
+  },
+
+  /**
+   * 注册成功。**必须真的同步**：只弹个"成功"却什么都没存，这个钩子就是空承诺
+   * （所以漏斗的终点 `resume_success` 只在同步成功后上报，失败走 `fail_sync`）。
+   * 同步结果如实告诉用户：成功「已存到云端」，失败「记录仍在本机」——不假装。
+   */
+  async onRitualRegisterSuccess() {
+    this.setData({ showRitualDialog: false })
+    // 会话刷新不阻塞同步（与落愿门禁同一口径）
+    try {
+      const { refreshSessionAfterAuth } = require('../../../utils/userSession')
+      Promise.resolve(refreshSessionAfterAuth()).catch(() => {})
+    } catch (e) {
+      console.warn('wish wall refresh session failed', e)
+    }
+    // 开关在授权期间被关掉（SWR 回填 / 超管改动）：能力不可用就明说，别假装存上了
+    if (this.data.showRitualProfile !== true) {
+      toastRitualProfileClosed((text) => this.showAppToast({ overline: 'RITUAL BACKUP', title: text }))
+      this.trackRitualGate('fail_flag_off')
+      return
+    }
+    const ok = await this.syncRitualToCloud()
+    // 终点只在**真的存上云**时上报：失败走 fail_sync，否则漏斗数字会是假的
+    if (ok) this.trackRitualGate('resume_success')
+    else this.trackRitualGate('fail_sync')
+    // 结果如实告诉用户：成功「已存到云端」，失败说清"还在本机"（不假装）
+    this.showAppToast({
+      overline: 'RITUAL BACKUP',
+      title: ok ? '已存到云端' : '记录仍在本机',
+      desc: ok ? '连灯天数与木鱼功德已同步到云端' : '云端暂不可用，本地记录没有丢'
+    })
+  },
+
+  /** 弹窗里的「去注册」被点（还没拿到手机号）：单独立一个漏斗环节，区分"曝光多没人点"与"点了授权失败" */
+  onRitualDialogCta() {
+    this.trackRitualGate('go_register')
+  },
+
+  /**
+   * 「先存着」（关掉弹窗）：只收弹窗，**本地记录一个字都不动**
+   * （用户拒绝的是"现在注册"，不是"删掉我的连灯"）。
+   */
+  onRitualDialogClose() {
+    if (this.data.showRitualDialog) this.setData({ showRitualDialog: false })
+    this.trackRitualGate('dismiss')
+  },
+
+  /** 授权失败/被拒：只收口 + 记一笔，不打断主功能（用户可再点一次 CTA 重试） */
+  onRitualDialogFail(e) {
+    const reason = (e && e.detail && e.detail.reason) || 'unknown'
+    this.trackRitualGate('fail_' + reason)
   },
 
   /** 浮层内层的空处理器：`catchtap`/`catchtouchmove` 需要一个存在的目标，防穿透 */

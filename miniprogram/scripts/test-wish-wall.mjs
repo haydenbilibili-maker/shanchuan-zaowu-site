@@ -842,6 +842,26 @@ const INJECTIONS = {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
     from: '    // 先收弹层，露出吸底发送条；再滚一下（保留既有行为，对非 fixed 落点仍有效）\n    this.closePlayResult()',
     to: '    // 注入：不收弹层（回归注入）'
+  },
+  // ── 「连续记录云保存」注册钩子（2026-09-20）────────────────────────────────
+  // 三条注入分别对应三类"看起来做了、其实没做"的缺陷：
+  //   ① 不看开关 → 超管关不掉，未注册用户照样被弹注册；
+  //   ② 不同步就报成功 → 空承诺（钩子成立与否的关键就在这一步）；
+  //   ③ 云函数 saveFlags 漏字段 → 后台保存成功但设置被静默重置为默认关。
+  'ritual-gate-ignores-flag': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '      flagOn: this.data.showRitualProfile === true,',
+    to: '      flagOn: true,'
+  },
+  'ritual-gate-skips-sync': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    const ok = await this.syncRitualToCloud()',
+    to: '    const ok = true'
+  },
+  'ritual-save-drops-field': {
+    file: 'miniprogram/cloudfunctions/getContentDisplayFlags/index.js',
+    from: '    // ⚠️ 漏这一行 = 超管在后台保存成功、但 showRitualProfile 被静默重置为默认（关）\n    showRitualProfile: incoming.showRitualProfile\n',
+    to: ''
   }
 }
 
@@ -4244,6 +4264,272 @@ check(
   p.applyBlessScope('')
   check('没有祈运标签时页头不显示那颗 chip（不留空标签）', p.data.blessLabelText === '')
   stub.restore()
+}
+
+/* ================================================================== *
+ * 14)「连续记录云保存」注册钩子（2026-09-20）
+ *
+ * 产品逻辑：连灯天数与木鱼功德只存本地，换手机/清缓存即丢。
+ * 钩子话术 = 「注册后连续记录存云端，不会丢，且断签前会提醒你」。
+ *
+ * 这一节钉四件事（每一条都对应一种"看起来做了、其实没做"的缺陷）：
+ *   ① 门槛与判定是**纯函数**：连灯 ≥2 天 / 木鱼 ≥21 下才谈，否则就是骚扰；
+ *   ② 开关 `showRitualProfile` 缺字段默认关，且**六处链路齐全** ——
+ *      漏一处就是"超管在后台保存成功、但字段被静默重置"（本仓已发生过）；
+ *   ③ 注册成功后**真的调 `syncToCloud()`** 并把结果如实告诉用户
+ *      （只弹"成功"却什么都没存 = 空承诺，所以漏斗终点只在同步成功后上报）；
+ *   ④ 三条降级（开关读失败 / 云存模块缺失 / 用户拒绝授权）都不得影响点灯与木鱼。
+ * ================================================================== */
+{
+  const stub = installWxStub()
+  const hookProto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  // 钩子是 Promise 链（不阻塞主流程），测试要 await 一次宏任务才能观察结果
+  const flushMacro = () => new Promise((r) => setTimeout(r, 0))
+
+  const mkHookPage = (o) => {
+    const opts = o || {}
+    const page = Object.assign(Object.create(null), hookProto)
+    page.data = Object.assign({
+      allowed: true, flagChecked: true, productKey: 'wall1', productId: 'p1',
+      showRegisterDialog: false, showRitualProfile: true,
+      showRitualDialog: false, ritualGateDesc: '',
+      lamp: { dayKey: '2026-09-20', lit: false, litAt: 0, line: '', streak: 0 },
+      muyuCount: 0, soundOn: true, quota: { used: 0, left: 5, cap: 5, exhausted: false },
+      viewMode: 'wall', danmakuCycle: 0, freshId: '', mine: { total: 0, visible: 0, hidden: 0 },
+      mineRows: [], loadError: '', draft: '', posting: false
+    }, opts.data || {})
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page._ritualGateOffered = false
+    page._soundPlayer = null
+    page.pushEcho = () => null
+    page.isGuestUser = () => Promise.resolve(opts.guest !== false)
+    page.tracked = []
+    page.trackRitualGate = function (step, extra) { this.tracked.push({ step, extra: extra || {} }) }
+    return page
+  }
+  const stepsOf = (p) => p.tracked.map((t) => t.step).join(',')
+
+  /* —— ① 纯函数：门槛 ——
+     两个阈值都是"低于它就别谈"：1 天的灯与 3~5 下的木鱼都还没有会心疼的投入。 */
+  eq('门槛：连灯 1 天不谈（还没有会心疼的记录）', hookProto.ritualGateProgress({ streak: 1, muyuCount: 0 }), '')
+  eq('门槛：木鱼 20 下不谈（随手玩不算投入）', hookProto.ritualGateProgress({ streak: 0, muyuCount: 20 }), '')
+  eq('门槛：连灯 2 天即谈（昨天来过 + 今天又来）', hookProto.ritualGateProgress({ streak: 2, muyuCount: 0 }), 'streak')
+  eq('门槛：木鱼 21 下即谈', hookProto.ritualGateProgress({ streak: 0, muyuCount: 21 }), 'muyu')
+  eq('门槛：两条都过时以连灯为准（文案更具体）', hookProto.ritualGateProgress({ streak: 3, muyuCount: 99 }), 'streak')
+  eq('门槛：空状态不谈（不崩）', hookProto.ritualGateProgress(null), '')
+
+  const okState = {
+    allowed: true, flagOn: true, alreadyOffered: false,
+    registerDialogOpen: false, isGuest: true, streak: 2, muyuCount: 0
+  }
+  check('判定：条件齐备时该谈', hookProto.shouldOfferRitualGate(okState) === true)
+  check('★ 开关关着（缺省）不谈 —— 超管没显式开就不该有注册弹窗', hookProto.shouldOfferRitualGate({ ...okState, flagOn: false }) === false)
+  check('墙没开放不谈', hookProto.shouldOfferRitualGate({ ...okState, allowed: false }) === false)
+  check('已注册用户不谈（没有"注册后"这回事）', hookProto.shouldOfferRitualGate({ ...okState, isGuest: false }) === false)
+  check('★ 一次访问只谈一次（否则连敲木鱼会弹到吐）', hookProto.shouldOfferRitualGate({ ...okState, alreadyOffered: true }) === false)
+  check('★ 落愿注册门禁正开着时不抢同一个弹窗（主转化优先）', hookProto.shouldOfferRitualGate({ ...okState, registerDialogOpen: true }) === false)
+  check('没有任何进展不谈', hookProto.shouldOfferRitualGate({ ...okState, streak: 1, muyuCount: 0 }) === false)
+  // 预筛不变量：预筛（零成本）不得比正式判定**更宽**，否则木鱼连点会白问会话、甚至多弹
+  const probeStates = [
+    okState, { ...okState, streak: 1 }, { ...okState, flagOn: false }, { ...okState, allowed: false },
+    { ...okState, isGuest: false }, { ...okState, registerDialogOpen: true }, { ...okState, alreadyOffered: true },
+    { ...okState, streak: 0, muyuCount: 21 }
+  ]
+  check(
+    '★ 预筛不变量：ritualGateProgress 判"没有进展"时，正式判定必须也为 false',
+    probeStates.every((s) => hookProto.ritualGateProgress(s) !== '' || hookProto.shouldOfferRitualGate(s) === false)
+  )
+  check('文案报出真实连灯天数（不编数字）', hookProto.buildRitualGateDesc('streak', { streak: 3 }).indexOf('3 天') !== -1)
+  check('文案报出真实木鱼功德', hookProto.buildRitualGateDesc('muyu', { muyuCount: 21 }).indexOf('21 下') !== -1)
+  check(
+    '★ 文案承诺的正是产品口径三件事（存云端 / 换手机还在 / 断签提醒），不是空话',
+    ['存到云端', '换手机', '断签前'].every((k) => hookProto.buildRitualGateDesc('streak', { streak: 2 }).indexOf(k) !== -1),
+    hookProto.buildRitualGateDesc('streak', { streak: 2 })
+  )
+
+  /* —— ② 行为：木鱼敲到门槛 → 弹一次；连敲不再弹 —— */
+  {
+    const p = mkHookPage({ data: { muyuCount: 20 } })
+    p.onMuyuTap()
+    await flushMacro()
+    eq('★ 木鱼敲到第 21 下弹钩子', p.data.showRitualDialog, true)
+    eq('★ 木鱼主功能不受影响（计数照常 +1）', p.data.muyuCount, 21)
+    eq('埋点 show 只报一次，且带原因是"木鱼"', stepsOf(p) + '|' + JSON.stringify((p.tracked[0] || {}).extra), 'show|{"reason":"muyu"}')
+    check('弹窗文案带真实功德数', String(p.data.ritualGateDesc).indexOf('21 下') !== -1, p.data.ritualGateDesc)
+    p.setData({ showRitualDialog: false })
+    p.onMuyuTap()
+    await flushMacro()
+    eq('★ 同一次访问里再敲不再弹（一次访问只谈一次）', p.data.showRitualDialog, false)
+    eq('show 仍然只有一次', p.tracked.filter((t) => t.step === 'show').length, 1)
+    eq('第二下木鱼照样计数（钩子不拦主功能）', p.data.muyuCount, 22)
+
+    // ★ 开关真的能关：关掉后门槛满足也不弹 —— 这一条同时钉住"超管关得掉"与"降级不影响主功能"
+    const offPage = mkHookPage({ data: { showRitualProfile: false, muyuCount: 21 } })
+    offPage.onMuyuTap()
+    await flushMacro()
+    eq('★ 开关关着时不弹（超管关得掉）', offPage.data.showRitualDialog, false)
+    eq('…且不报 show（报表里不该出现没曝光的曝光）', offPage.tracked.length, 0)
+    eq('…但木鱼照常计数（降级不影响主功能）', offPage.data.muyuCount, 22)
+
+    const regPage = mkHookPage({ guest: false, data: { muyuCount: 21 } })
+    regPage.onMuyuTap()
+    await flushMacro()
+    eq('★ 已注册用户不弹（没有"注册后"这回事，不打扰老用户）', regPage.data.showRitualDialog, false)
+  }
+
+  /* —— ② 行为：点灯路径。只有"今天这一盏刚点亮"才评估；已亮的灯再点不评估 —— */
+  {
+    const store = new Map()
+    globalThis.wx.getStorageSync = (k) => (store.has(k) ? store.get(k) : '')
+    globalThis.wx.setStorageSync = (k, v) => { store.set(k, v) }
+    // 昨天点过灯 → 今天再点就是连续第 2 天
+    store.set('shanhai_wish_ritual_v1', { version: 1, days: { '2026-09-19': { litAt: 1 } } })
+    const litPage = mkHookPage({ data: { lamp: { dayKey: '2026-09-20', lit: false, litAt: 0, line: '', streak: 0 } } })
+    litPage.onLampTap()
+    await flushMacro()
+    eq('★ 连续第 2 天点亮 → 弹钩子（连灯进度刚变长的那一刻）', litPage.data.showRitualDialog, true)
+    eq('★ 点灯主功能不受影响（当日已记点亮 + 天数算对）', `${litPage.data.lamp.lit}/${litPage.data.lamp.streak}`, 'true/2')
+    const againPage = mkHookPage({ data: { lamp: { dayKey: '2026-09-20', lit: true, litAt: 1, line: 'x', streak: 3 } } })
+    let assessed = 0
+    againPage.maybeOfferRitualGate = () => { assessed += 1 }
+    againPage.onLampTap()
+    eq('★ 再点已亮的灯只是想再看一眼，不该被拦注册（不评估钩子）', assessed, 0)
+  }
+
+  /* —— ③ 行为：注册成功 → 真的同步上云 + 如实反馈 —— */
+  {
+    const okPage = mkHookPage({ data: { showRitualDialog: true } })
+    okPage.syncRitualToCloud = () => Promise.resolve(true)
+    await okPage.onRitualRegisterSuccess()
+    eq('注册成功后弹窗关闭', okPage.data.showRitualDialog, false)
+    eq('★ 同步成功才上报漏斗终点 resume_success', stepsOf(okPage), 'resume_success')
+    eq('★ 同步成功如实告诉用户「已存到云端」', `${okPage.data.toastShow}/${okPage.data.toastTitle}`, 'true/已存到云端')
+    check('…并说清存的是什么（连灯 + 功德）', /连灯/.test(okPage.data.toastDesc) && /功德/.test(okPage.data.toastDesc), okPage.data.toastDesc)
+
+    const missPage = mkHookPage({})
+    eq('★ 云存模块缺失时 syncRitualToCloud 返回 false 且不抛（降级）', await missPage.syncRitualToCloud(), false)
+    await missPage.onRitualRegisterSuccess()
+    eq('★ 同步失败走 fail_sync（不把"完成"记进漏斗）', stepsOf(missPage), 'fail_sync')
+    eq('★ 同步失败说真话（记录仍在本机），不假装成功', missPage.data.toastTitle, '记录仍在本机')
+    check('…并安抚"本地记录没有丢"', /本地记录没有丢/.test(missPage.data.toastDesc), missPage.data.toastDesc)
+
+    const revokedPage = mkHookPage({ data: { showRitualProfile: false } })
+    let synced = 0
+    revokedPage.syncRitualToCloud = () => { synced += 1; return Promise.resolve(true) }
+    await revokedPage.onRitualRegisterSuccess()
+    eq('★ 开关在授权期间被关掉：不同步（不假装存上云）', synced, 0)
+    eq('…并如实记 fail_flag_off', stepsOf(revokedPage), 'fail_flag_off')
+    check('…并明确提示「暂未开放」', /暂未开放/.test(revokedPage.data.toastTitle), revokedPage.data.toastTitle)
+  }
+
+  /* —— ② 行为：CTA / dismiss / 拒绝授权 —— */
+  {
+    const d = mkHookPage({ data: { showRitualDialog: true, muyuCount: 7, lamp: { dayKey: '2026-09-20', lit: true, streak: 2 } } })
+    d.onRitualDialogCta()
+    d.onRitualDialogClose()
+    eq('弹窗链路 step 齐（go_register / dismiss）', stepsOf(d), 'go_register,dismiss')
+    eq('★「先存着」不动本地木鱼功德', d.data.muyuCount, 7)
+    eq('★「先存着」不动本地连灯天数', d.data.lamp.streak, 2)
+    eq('弹窗已关', d.data.showRitualDialog, false)
+    const f = mkHookPage({})
+    f.onRitualDialogFail({ detail: { reason: 'denied' } })
+    eq('★ 用户拒绝授权：只记一笔，不打断主功能', stepsOf(f), 'fail_denied')
+  }
+
+  /* —— ④ 降级：钩子内部抛错，绝不影响木鱼 —— */
+  {
+    const boom = mkHookPage({ data: { muyuCount: 20 } })
+    boom.evaluateRitualGate = () => { throw new Error('boom') }
+    boom.onMuyuTap()
+    await flushMacro()
+    eq('★ 钩子抛错时木鱼照常计数（降级不得影响主功能）', boom.data.muyuCount, 21)
+    eq('…且不弹窗', boom.data.showRitualDialog, false)
+  }
+
+  /* —— ② 降级：开关读失败 / 缺字段 → 按关处理；显式 true 才开 —— */
+  {
+    const noFlagPage = mkHookPage({ data: { allowed: false, showRitualProfile: false, muyuCount: 21 } })
+    await noFlagPage.evaluateRitualGate()
+    eq('★ 开关读取失败（allowed=false / showRitualProfile 缺省）时不弹', noFlagPage.data.showRitualDialog, false)
+
+    const gatePage = mkHookPage({ data: { allowed: false, flagChecked: false, showRitualProfile: false } })
+    gatePage.refresh = () => Promise.resolve()
+    gatePage.fireEntryEgg = () => {}
+    await gatePage.applyGate({ showMaShangYou: false })
+    eq('★ 云函数回包缺 showRitualProfile → 按关处理', gatePage.data.showRitualProfile, false)
+    await gatePage.applyGate({ showMaShangYou: false, showRitualProfile: true })
+    eq('★ 显式 true 时开关才开（证明这个开关真的能开关）', gatePage.data.showRitualProfile, true)
+    await gatePage.applyGate({ showMaShangYou: false, showRitualProfile: false })
+    eq('★ 显式 false 时关回去（出事时一键关，无需发版）', gatePage.data.showRitualProfile, false)
+  }
+  stub.restore()
+
+  /* —— 静态：复用组件 / 真的调 syncToCloud / 双端登记 / 六处开关链路 —— */
+  const hookPageSrc = readSrc('miniprogram/subpackages/feature/wish-wall/index.js')
+  check(
+    '钩子复用既有 RegisterAuthDialog（不另造弹窗），走 bind:cta → bind:success 同一条链',
+    /show="\{\{showRitualDialog\}\}"/.test(wallWxml2) &&
+      /bind:cta="onRitualDialogCta"/.test(wallWxml2) &&
+      /bind:success="onRitualRegisterSuccess"/.test(wallWxml2) &&
+      /bind:close="onRitualDialogClose"/.test(wallWxml2)
+  )
+  check(
+    '★ 注册成功后真的调用 syncToCloud()（不是只弹个"成功"）',
+    /this\.syncRitualToCloud\(\)/.test(hookPageSrc) &&
+      /const ok = await this\.syncRitualToCloud\(\)/.test(hookPageSrc) &&
+      /ritualProfile\.syncToCloud\(\)/.test(hookPageSrc)
+  )
+  check(
+    '★ 动态 require + try/catch 降级（云存模块缺失不得让祈夆墙不可用）',
+    /const ritualProfile = require\('\.\.\/\.\.\/\.\.\/utils\/ritualProfile'\)/.test(hookPageSrc) &&
+      /catch \(e\) \{\s*\n\s*console\.warn\('wish wall ritual sync failed'/.test(hookPageSrc)
+  )
+
+  const flagClient = readSrc('miniprogram/utils/contentDisplayFlags.js')
+  const flagFn = readSrc('miniprogram/cloudfunctions/getContentDisplayFlags/index.js')
+  const mgrCfg = readSrc('miniprogram/subpackages/manager/manager/managerPageConfig.js')
+  // 后台入口**只选店长端工作台**（与 showMaShangYou 同处，见交付说明）：
+  // ERP 内容开关页维持原样（它用 cdnUpdate 局部更新，不携带该字段也不会抹掉它）
+  const subv = readSrc('miniprogram/subpackages/manager/manager/workspace/_subviews.wxml')
+  check('关闭提示函数（统一文案来源）已定义并导出', /function toastRitualProfileClosed\(/.test(flagClient) && /toastRitualProfileClosed\b/.test(flagClient.slice(flagClient.indexOf('module.exports'))))
+  check(
+    '★ 关闭提示函数不新增原生 wx.showToast（dialog-ratchet 只许降不许涨），把文案交给宿主展示',
+    (() => {
+      const i = flagClient.indexOf('function toastRitualProfileClosed')
+      const body = i < 0 ? '' : flagClient.slice(i, flagClient.indexOf('\n}', i))
+      return body.length > 0 && !/wx\.showToast/.test(body) && /CLOSED_RITUAL_PROFILE_TOAST/.test(body)
+    })()
+  )
+  check(
+    '★ 钩子结果反馈走 AppToast（原生 toast 棘轮下唯一合规通道）',
+    /showAppToast\(\{/.test(hookPageSrc) &&
+      /"app-toast": "\/components\/AppToast\/index"/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.json')) &&
+      /<app-toast/.test(wallWxml2)
+  )
+  check('① 客户端 normalize 缺字段默认关（=== true）', /showRitualProfile: src\.showRitualProfile === true/.test(flagClient))
+  check('★ 页面把开关作为判定输入（不看开关 = 超管关不掉）', /flagOn: this\.data\.showRitualProfile === true/.test(hookPageSrc))
+  check('② 云函数 getDefaultFlags 缺省 false', /showRitualProfile: false/.test(flagFn))
+  check('③ 云函数 normalizeFlags 同口径（=== true）', /showRitualProfile: src\.showRitualProfile === true/.test(flagFn))
+  check('④ ★ 云函数 saveFlags 显式透传（漏了 = 后台保存成功但字段被静默丢）', /showRitualProfile: incoming\.showRitualProfile/.test(flagFn))
+  check(
+    '⑤ ★ 店长端工作台（tab16 开关面板）：有该行 + load 归一 + data 默认（缺一个就会被保存抹掉）',
+    /data-field="showRitualProfile"/.test(subv) &&
+      /showRitualProfile: flags\.showRitualProfile === true/.test(mgrCfg) &&
+      /showRitualProfile: false,/.test(mgrCfg)
+  )
+  check(
+    '埋点双端登记 + ERP FUNNELS 有卡（否则"埋了但报表看不到"）',
+    /wish_ritual_gate:/.test(readSrc('miniprogram/utils/analytics/eventSchema.js')) &&
+      /wish_ritual_gate:/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+      /key: 'wish_ritual_gate'/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+      /wish_ritual_gate:resume_success/.test(readSrc('admin/src/utils/analyticsSchema.js'))
+  )
+  check(
+    '★ 小程序数据报表也算了这一块（云函数分桶 + 报表页卡片，否则恒 0/看不到）',
+    /ritualGate: gateBlock\('wish_ritual_gate'\)/.test(readSrc('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')) &&
+      /funnel\.wishWall\.ritualGate\.show/.test(subv)
+  )
+  check('漏斗 step 都从 trackRitualGate 一处发出（action 名只有一个事实源）', (hookPageSrc.match(/trackRitualGate\(/g) || []).length >= 6)
 }
 
 if (process.argv.includes('--selftest') && !INJECT) {
