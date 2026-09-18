@@ -31,6 +31,9 @@ App({
         env: CLOUD_ENV,
         traceUser: true,
       });
+      // 手写体（网络字体）：必须在 cloud.init **之后**加载（downloadFile 依赖 cloud 初始化）
+      // iOS 的 WeChat WebView 不暴露中文手写族 → 只能走 loadFontFace（见 utils/handFont.js）
+      this.ensureHandFontWithRetry()
       // 启动自检：云函数 / 数据库不可达时给出可见提示（避免静默空白）
       checkCloudHealth().then(notifyCloudHealthFailure).catch(() => {});
       // 运费规则：先用水合缓存，再异步拉云端 shipping_rules
@@ -97,6 +100,14 @@ App({
       analytics.track('app_launch', 'app', 'launch', { module: 'system' });
     }
   },
+      /** 加载手写体（幂等；失败重试一次 —— cloud 初始化可能略滞后） */
+      ensureHandFontWithRetry() {
+        const { ensureHandFont } = require('./utils/handFont')
+        ensureHandFont().then((ok) => {
+          if (ok) { console.log('[handFont] loaded'); return }
+          setTimeout(() => ensureHandFont().then((again) => console.log('[handFont] retry', again)), 1500)
+        }).catch(() => {})
+      },
 
   onShow(options) {
     try {
@@ -277,11 +288,3 @@ App({
     forceWorkbenchBadgeRefresh: false
   }
 });
-
-// 手写体（网络字体）：iOS 的 WeChat WebView 不暴露中文手写族 → 必须 loadFontFace 注册自定义族名
-// （见 utils/handFont.js；失败不抛错，页面按系统兜底字体渲染）
-try {
-  require('./utils/handFont').ensureHandFont()
-} catch (e) {
-  console.warn('[handFont] bootstrap failed', e)
-}

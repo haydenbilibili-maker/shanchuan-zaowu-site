@@ -277,6 +277,17 @@ check('★★ 手写体走 loadFontFace（iOS 系统字体栈取不到手写族�
 check('★★ loadFontFace 必须 global:true 且 scopes 含 native（否则 iOS 的 text 用不上）',
   /global: true/.test(handFontJs) && /scopes: \['webview', 'native'\]/.test(handFontJs),
   '缺 native scope 时 iOS 上 <text> 不会应用该字体')
+{
+  // 顺序不变量：loadFontFace 的首选路径依赖 cloud.init —— 必须在 init **之后**调用
+  //（2026-09-19 真机事故：写在 app.js 模块求值期 → 早于 onLaunch 里的 cloud.init → downloadFile 必失败，
+  //  真机上 https 兜底又没白名单 → 字体永远加载不上；模拟器因 macOS 有系统手写族而"看起来正常"）
+  const appJs = readFileSync(resolve(ROOT, 'miniprogram/app.js'), 'utf8')
+  const iInit = appJs.indexOf('wx.cloud.init(')
+  const iHand = appJs.indexOf('ensureHandFont')
+  check('★★ app.js 里手写体加载必须在 cloud.init **之后**（否则 downloadFile 必失败）',
+    iInit >= 0 && iHand > iInit,
+    '写在模块求值期会早于 cloud.init → 真机上字体加载不上（模拟器会因系统字体而误判为正常）')
+}
 check('★ 首选 cloud.downloadFile（cloud API 不受合法域名限制），静态 https 为兜底',
   /wx\.cloud\.downloadFile\(/.test(handFontJs) && /FONT_HTTPS/.test(handFontJs))
 check('★ WXSS 里自定义族名 **ShanhaiHand 置首**（系统名仅作兜底）',
