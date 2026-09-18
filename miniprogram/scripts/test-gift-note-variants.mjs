@@ -302,6 +302,13 @@ check('★★ --font-hand 的值必须**单行**（跨行是小程序 WXSS 编�
   '自定义属性值跨行可能导致变量解析失败')
 check('祈福墙同机制一并修好（字面量栈）',
   /"HanziPen SC"/.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss'), 'utf8')))
+// 2026-09-19 署名默认带出账号昵称：函数原本只在 onLoad 调一次，而那时 globalData.userSession
+// 尚未灌入 → 昵称取不到（看起来像"没有自动带出"）。修法：onShow 再调 + 空则 800ms 重试 + 输入框启用微信昵称填写。
+check('★ 署名默认带昵称：**onLoad 与 onShow 两处都调**（后者修时序）',
+  (composeJs.match(/this\._hydrateSenderSignature\(\)/g) || []).length >= 2,
+  '只在 onLoad 调会在会话就绪前取不到昵称（本次真机反馈的根因）')
+check('★ 昵称未就绪时**延迟重试**', /_sigHydrateTimer = setTimeout\(\(\) => this\._hydrateSenderSignature\(\)/.test(composeJs))
+check('★ 署名输入框启用微信「昵称填写」能力（账号无昵称时一键填）', /type="nickname"/.test(composeWxml))
 check('★ 未聚焦时用**手写体 text 展示**（wx:elif=!cardFocused + card-note-display）',
   /wx:elif="\{\{!cardFocused\}\}"/.test(composeWxml) && /card-note-display/.test(composeWxml))
 check('★ 只有聚焦时才用 textarea（focus 受 cardFocused 控制）',

@@ -163,6 +163,7 @@
           <view class="card-sig-wrap {{sigFocused ? 'focused' : ''}} {{sigJustSigned ? 'just-signed' : ''}}">
             <input
               class="card-sig"
+              type="nickname"
               maxlength="20"
               placeholder="你的署名"
               placeholder-class="card-placeholder"

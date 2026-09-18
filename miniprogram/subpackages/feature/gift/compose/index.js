@@ -153,6 +153,13 @@ Page({
   },
 
   onShow() {
+    // 署名默认带出账号昵称（此前该函数是**死代码**：定义了却从未调用 ✗）
+    this._hydrateSenderSignature()
+    // 昵称可能晚于本页就绪（全局 userSession 异步灌入）→ 空则 800ms 后再试一次
+    clearTimeout(this._sigHydrateTimer)
+    if (!String(this.data.cardSignature || '').trim()) {
+      this._sigHydrateTimer = setTimeout(() => this._hydrateSenderSignature(), 800)
+    }
     this.syncScrollPane()
   },
 
