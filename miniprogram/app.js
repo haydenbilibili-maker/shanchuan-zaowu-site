@@ -277,3 +277,11 @@ App({
     forceWorkbenchBadgeRefresh: false
   }
 });
+
+// 手写体（网络字体）：iOS 的 WeChat WebView 不暴露中文手写族 → 必须 loadFontFace 注册自定义族名
+// （见 utils/handFont.js；失败不抛错，页面按系统兜底字体渲染）
+try {
+  require('./utils/handFont').ensureHandFont()
+} catch (e) {
+  console.warn('[handFont] bootstrap failed', e)
+}

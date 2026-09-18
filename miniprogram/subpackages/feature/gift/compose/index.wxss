@@ -770,7 +770,7 @@ page {
 
 .card-write-text {
   /* 手写体：直接写字面量栈（不依赖 var() —— iOS 实测 var 未生效 ✗） */
-  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
+  font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
   font-size: 28rpx;
   line-height: 1.65;
   color: #33302C;
@@ -1097,7 +1097,7 @@ page {
 /* 落笔/展示态：整段文本渲染（不用逐字 span —— iOS 会逐帧重播动画导致回跳闪白） */
 .card-note-display {
   display: block;
-  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
+  font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
   min-height: 200rpx;
   white-space: pre-wrap;   /* 保留换行：textarea 里换行，展示时也要换行 */
   color: #33302C;

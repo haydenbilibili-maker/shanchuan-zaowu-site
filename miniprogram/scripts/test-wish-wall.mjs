@@ -1649,9 +1649,9 @@ check(
   /--font-hand:/.test(appWxss) && /HanziPen SC/.test(appWxss) && /Kaiti/.test(appWxss)
 )
 check('★ 弹幕用手写体（心愿是"写"上去的）',
-  /\.ww-danmaku\s*\{[^}]*font-family:\s*(var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
+  /\.ww-danmaku\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
 check('★ 愿签正文也用手写体',
-  /\.ww-tag-text\s*\{[^}]*font-family:\s*(var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
+  /\.ww-tag-text\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
 check('★ 弹幕字号提到 28rpx（手写体笔画细，移动中要认得出）', /\.ww-danmaku\s*\{[^}]*font-size:\s*28rpx/.test(wallWxssCode))
 
 // —— 结构 ——

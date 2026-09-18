@@ -271,6 +271,17 @@ const ruleOf = (src, sel) => {
   const i = src.indexOf(sel + ' {')
   return i < 0 ? '' : src.slice(i, src.indexOf('}', i) + 1)
 }
+// 2026-09-19 结论：iOS 的 WebView 取不到中文手写族 → 改用 loadFontFace + 网络字体（自定义族名 ShanhaiHand）
+const handFontJs = readFileSync(resolve(ROOT, 'miniprogram/utils/handFont.js'), 'utf8')
+check('★★ 手写体走 loadFontFace（iOS 系统字体栈取不到手写族）', /wx\.loadFontFace\(/.test(handFontJs))
+check('★★ loadFontFace 必须 global:true 且 scopes 含 native（否则 iOS 的 text 用不上）',
+  /global: true/.test(handFontJs) && /scopes: \['webview', 'native'\]/.test(handFontJs),
+  '缺 native scope 时 iOS 上 <text> 不会应用该字体')
+check('★ 首选 cloud.downloadFile（cloud API 不受合法域名限制），静态 https 为兜底',
+  /wx\.cloud\.downloadFile\(/.test(handFontJs) && /FONT_HTTPS/.test(handFontJs))
+check('★ WXSS 里自定义族名 **ShanhaiHand 置首**（系统名仅作兜底）',
+  /font-family: 'ShanhaiHand', /.test(composeWxssSrc) && /font-family: 'ShanhaiHand', /.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss'), 'utf8')))
+check('★ OFL 许可与托管已记录（许可要求保留版权声明）', /OFL-1\.1/.test(readFileSync(resolve(ROOT, 'miniprogram/docs/手写体字体_许可与托管.md'), 'utf8')))
 check('★★ 礼笺展示元素用**字面量**手写体栈（不再依赖 var() —— iOS 实测 var 未生效）',
   /"HanziPen SC"/.test(ruleOf(composeWxssSrc, '.card-write-text'))
   && /"HanziPen SC"/.test(ruleOf(composeWxssSrc, '.card-note-display')),
@@ -313,8 +324,8 @@ function selftest() {
     {
       name: '礼笺字体退回只依赖 var()（iOS 会落回默认字体）',
       file: COMPOSE_WXSS,
-      from: '  /* 手写体：直接写字面量栈（不依赖 var() —— iOS 实测 var 未生效 ✗） */\n  font-family: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, 楷体, "Songti SC", serif;',
-      to: '  font-family: var(--font-hand);'
+      from: "  font-family: 'ShanhaiHand', \"HanziPen SC\", \"Hannotate SC\", \"STKaiti\", \"Kaiti SC\", KaiTi, \"\u6977\u4f53\", \"Songti SC\", serif;\n  font-size: 28rpx;",
+      to: "  font-family: var(--font-hand);\n  font-size: 28rpx;"
     },
     {
       name: '印刷卡丢掉题记带（印出来少主题名）',
