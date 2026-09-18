@@ -53,7 +53,12 @@ function normalizeContentDisplayFlags(raw) {
     // 与 showMaShangYou 同一先例：这是**身份/UGC 相关的新能力**（会让未注册用户看到注册弹窗），
     // 必须由超管在开关面板显式打开；缺配置（含云函数读开关失败）一律当"没开"，
     // 免得配置面没跟上时，用户先被一个没人认领的注册弹窗拦住。
-    showRitualProfile: src.showRitualProfile === true
+    showRitualProfile: src.showRitualProfile === true,
+    // 祈福墙「功德证」次级入口（创新钩子 H2，2026-09-20）；缺字段 → **关闭**。
+    // 与 showRitualProfile / showMaShangYou 同一先例：这是**身份相关的新能力**
+    // （领证要身份，未注册用户会被引到注册门禁），必须由超管在开关面板显式打开；
+    // 缺配置（含云函数读开关失败）一律当"没开"，免得配置面没跟上时先对用户放出一个没人认领的入口。
+    showMuyuCertificate: src.showMuyuCertificate === true
   }
 }
 

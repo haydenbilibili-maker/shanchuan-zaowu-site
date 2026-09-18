@@ -206,6 +206,24 @@
       <text class="ww-muyu-plus" wx:if="{{muyuPlus}}">+1</text>
     </view>
     </view>
+    <!-- 创新钩子 H2「功德证」次级入口（开关 showMuyuCertificate，缺字段默认关）。
+         为什么是**一整行**放在木鱼动作区下方，而不是塞进半宽的木鱼卡里：
+         卡宽约 330rpx，中文标签 + 「领证 ›」在 20~22rpx 字号下已接近一行上限，塞进去会折行；
+         而且方案 §H2 明确要求"两个证书/记录入口不要与木鱼/点灯视觉并列"（仪式区不许变成功能区）。
+         它是**次级**入口：只在里程点出现（阈值在 utils/muyuCertificate.CERT_MILESTONES），
+         且不拦截主流程 —— 不点它，木鱼照敲。 -->
+    <view
+      class="ww-cert-entry"
+      wx:if="{{certEntry}}"
+      bindtap="onCertEntryTap"
+      hover-class="ww-cert-entry-press"
+      hover-stay-time="70"
+      aria-role="button"
+      aria-label="{{certEntry.mode === 'claim' ? '领取功德证' : '回看功德证'}}"
+    >
+      <text class="ww-cert-entry-tag">{{certEntry.tag}}</text>
+      <text class="ww-cert-entry-go">{{certEntry.action}}</text>
+    </view>
     <!-- 说明：一行说清玩法，不占版面（原长说明已收进页头一句）+ 音效开关 -->
     <view class="ww-foot-row">
       <text class="ww-foot-note">点一盏灯、敲一下木鱼，心愿挂上墙就会一直流动。</text>
@@ -514,6 +532,25 @@
     bind:fail="onRitualDialogFail"
   />
 
+  <!-- 创新钩子 H2「功德证」的领证注册门禁（开关 showMuyuCertificate，缺字段默认关）。
+       同一个 RegisterAuthDialog 组件、同一条 cta→success 链，只有文案与来源不同 ——
+       只在用户**点了「领证」且未注册**时才由 JS 打开（入口本身不拦主流程）。
+       closable=true：拒绝的是"现在注册"，不是"删掉我的功德"，关掉之后本地计数与已发的证一个字都不动。 -->
+  <register-auth-dialog
+    show="{{showCertDialog}}"
+    overline="MUYU CERTIFICATE"
+    title="注册后功德证存得住"
+    desc="{{certGateDesc}}"
+    cta="同意并一键注册"
+    closable="{{true}}"
+    close-text="先不领"
+    from="muyu_cert"
+    bind:cta="onCertDialogCta"
+    bind:success="onCertRegisterSuccess"
+    bind:close="onCertDialogClose"
+    bind:fail="onCertDialogFail"
+  />
+
   <!-- 统一轻提示（AppToast）：钩子的结果反馈（「已存到云端」/「记录仍在本机」）走这里。
        为什么不用 wx.showToast：本页原生调用数被 check:dialog-ratchet 冻结（只许降不许涨）。 -->
   <app-toast
@@ -597,6 +634,43 @@
     </view>
 
     <text class="ww-sheet-note">今日这一句一天一支，明天会换新的。</text>
+  </view>
+
+  <!-- 创新钩子 H2「功德证」本体（可保管、可回看）：与纸签弹层同一套纸张语言与层叠纪律 ——
+       同样是 .ww-page 的直接子节点（fixed 覆盖层不许待在带 z-index 的祖先里，见上面那段注释）。
+       文字**只有计数与日期**（合规口径：文化娱乐向、不涉命理改运），见 utils/muyuCertificate。
+       ⚠️ 字宽/折行属本仓「静态检查盲区」，只能真机验；本轮**没有真机验证**，交付说明已如实标注。 -->
+  <view
+    class="ww-sheet-mask"
+    wx:if="{{certCard}}"
+    bindtap="closeCertCard"
+    aria-role="button"
+    aria-label="收起"
+  ></view>
+  <view
+    class="ww-sheet"
+    wx:if="{{certCard}}"
+    aria-role="dialog"
+    aria-label="功德证"
+  >
+    <view class="ww-sheet-grip"><view class="ww-sheet-grip-bar" aria-hidden="true"></view></view>
+
+    <view class="ww-sheet-head">
+      <view class="ww-sheet-head-copy">
+        <text class="ww-sheet-overline">MUYU MERIT</text>
+        <text class="ww-sheet-name">功德证</text>
+      </view>
+      <text class="ww-sheet-close" bindtap="closeCertCard" hover-class="ww-sheet-close-press" hover-stay-time="70" aria-role="button">收起</text>
+    </view>
+
+    <view class="ww-sheet-body">
+      <!-- 只写计数与日期：不写运势、不写改运、不写"心愿应验" -->
+      <text class="ww-sheet-title">功德 {{certCard.muyuCount}}</text>
+      <text class="ww-sheet-sub">里程 {{certCard.milestone}}</text>
+      <text class="ww-sheet-line">领取日期 {{certCard.dayKey}}</text>
+    </view>
+
+    <text class="ww-sheet-note">{{certNote}}</text>
   </view>
 
   <!-- 发送条：**弹幕墙下方**（2026-09-19 产品口径变更）。
