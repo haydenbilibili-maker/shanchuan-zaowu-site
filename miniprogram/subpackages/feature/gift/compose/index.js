@@ -108,6 +108,8 @@ Page({
     cardSignature: '',
     recipientName: '',
     recipientEditing: false,
+    /** 需求 9：必填项要在界面上看得出来；选「犒劳自己」时改成「你的昵称」 */
+    recipientPlaceholder: 'TA 的名字（必填）',
     notePresets: GIFT_NOTE_PRESETS,
     activeNotePresetId: '',
     /** 当前关系选到第几句（0 基）与候选总数 —— 给「换一句」与「第 n/N 句」标用 */
@@ -956,8 +958,15 @@ Page({
       cardBody: '',
       activeNotePresetId: preset.id,
       noteWriting: true,
-      showWriteCursor: true
+      showWriteCursor: true,
+      // 必填提示随关系走：犒劳自己时占位文案指向「你的昵称」，其余关系是「TA 的名字」（需求 9）
+      recipientPlaceholder: preset.id === 'self' ? '你的昵称（也可改）' : 'TA 的名字（必填）'
     })
+
+    // 需求 9：关系落到「犒劳自己」（self）→ 写给谁默认带出账号昵称。
+    // 放在这里是因为**所有**落笔入口都走 startNoteWrite（点关系、换一句、场景语向之外的一致路径），
+    // 只补空值、不覆盖用户已填的名字（沿用上面「关系标签不覆盖已填受赠人名」的既有规则）。
+    if (preset.id === 'self') this.applyToSelfRecipientDefault()
 
     // 落笔前短停：铺纸、想好第一句
     this._noteWriteTimer = setTimeout(() => {
@@ -1032,6 +1041,18 @@ Page({
     })
   },
 
+  /**
+   * 「犒劳自己」时把受礼人默认写成账号昵称（需求 9）。
+   * 一律不覆盖用户已经填过的名字 —— 默认值只在空的时候补。
+   */
+  applyToSelfRecipientDefault() {
+    const current = String(this.data.recipientName || '').trim()
+    if (current) return
+    const nick = this._resolveAccountNickName()
+    if (!nick) return
+    this.setData({ recipientName: nick })
+  },
+
   /** 场景语向：与关系预设并存，复用同一落笔路径，不改录音逻辑 */
   onSceneNoteTap() {
     const hint = String(this.data.sceneNoteHint || '').trim()
@@ -1083,6 +1104,16 @@ Page({
     const p = this.data.product
     if (!p || !p._id) {
       wx.showToast({ title: '藏品信息异常', icon: 'none' })
+      return
+    }
+    // 需求 9：「写给 TA 的名字」必填。空则**不进入**确认订单，并当场聚焦到该输入框给提示。
+    // 犒劳自己（self）时这里再兜一次默认昵称（用户可能没走关系点击的路径）。
+    if (!String(this.data.recipientName || '').trim() && this.data.activeNotePresetId === 'self') {
+      this.applyToSelfRecipientDefault()
+    }
+    if (!String(this.data.recipientName || '').trim()) {
+      this.setData({ recipientEditing: true })
+      wx.showToast({ title: '请先填写写给谁的名字', icon: 'none' })
       return
     }
     const deliveryType = this.data.deliveryType || 'invite_address'
