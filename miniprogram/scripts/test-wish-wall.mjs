@@ -863,6 +863,12 @@ const INJECTIONS = {
     from: '    // ⚠️ 漏这一行 = 超管在后台保存成功、但 showRitualProfile 被静默重置为默认（关）\n    showRitualProfile: incoming.showRitualProfile\n',
     to: ''
   },
+  // 「取」这一半被摘掉（只存不取）→ 换机/清缓存后本地仍是 0，而文案仍承诺「记录不丢」
+  'ritual-recover-unwired': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    this.restoreRitualFromCloud()',
+    to: ''
+  },
   // ── 质感批次（2026-09-19）：令牌化 / 按压反馈 / 无障碍 ──────────────────────
   // 字号令牌写回裸值（30rpx 是 --fs-30 在册值；写回后"本页字号一律走 --fs-*"必须变红）
   'wishwall-fontsize-literal-back': {
@@ -3490,7 +3496,11 @@ const fbPageSrc = readSrc('miniprogram/subpackages/feature/wish-wall/index.js')
 check('★ 木鱼计数键名收在 utils（页面不得出现字面量存储键）', !/wish_muyu_v1/.test(fbPageSrc))
 check(
   '★ 木鱼计数进页读回存档（曾经的缺陷：只写不读 → 每次进来都归零）',
-  /muyuCount:\s*wishRitual\.readMuyuCount\(\)/.test(fbPageSrc) && /wishRitual\.writeMuyuCount\(/.test(fbPageSrc)
+  // ⚠️ 2026-09-20 收紧：必须钉**进页那一处**（onLoad 的 setData 同时设 soundOn 与 muyuCount）。
+  // 原先用宽松的 /muyuCount:\s*readMuyuCount()/ —— 新增的「换机恢复」路径里也有一处读取，
+  // 于是宽松版会被**另一条代码路径**满足，从而放行「onLoad 不读」这个真缺陷
+  // （注入 `muyu-count-write-only-again` 不再被检出，本仓自检实测抓到）。
+  /soundOn:[^}]*muyuCount:\s*wishRitual\.readMuyuCount\(\)/.test(fbPageSrc) && /wishRitual\.writeMuyuCount\(/.test(fbPageSrc)
 )
 check(
   '★ 点灯与落愿都接进反馈层（不是只有木鱼有反馈）',
@@ -4771,6 +4781,30 @@ check(
       /funnel\.wishWall\.ritualGate\.show/.test(subv)
   )
   check('漏斗 step 都从 trackRitualGate 一处发出（action 名只有一个事实源）', (hookPageSrc.match(/trackRitualGate\(/g) || []).length >= 6)
+
+  /* —— ⑤ 「取」这一半：云端档案必须真的被拉回来（2026-09-20 自查发现的缺口）——
+     此前只接了 `syncToCloud`（存），`loadFromCloud`（取）**只定义、只导出、没有任何页面调用**，
+     于是「注册后记录不丢、换手机也在」只成立一半：云端有档案，新设备打开仍是 0。
+     这一条钉住「页面确实调了它」+「降级时不动本地」。 */
+  check(
+    '★ 页面在 onLoad 里调 loadFromCloud（H1 钩子的「取」这一半，此前只接了「存」）',
+    /loadFromCloud/.test(hookPageSrc) && /this\.restoreRitualFromCloud\(\)/.test(hookPageSrc)
+  )
+  check(
+    '★ 恢复只在 ok===true 时刷新显示（失败/降级不得改动本地值）',
+    /if \(!res \|\| res\.ok !== true\) return/.test(hookPageSrc)
+  )
+  // 真跑一遍：云存模块缺失 → 页面不该抛、也不该改动功德计数
+  {
+    const noMod = mkHookPage({ data: { muyuCount: 7 } })
+    let threw = false
+    try {
+      await noMod.restoreRitualFromCloud()
+    } catch (e) {
+      threw = true
+    }
+    check('★ 云存模块缺失时 restoreRitualFromCloud 不抛、且功德计数不变（降级）', !threw && noMod.data.muyuCount === 7)
+  }
 }
 
 if (process.argv.includes('--selftest') && !INJECT) {

@@ -184,7 +184,9 @@ Page({
      */
     danmakuCycle: 0,
     heartBurst: false,
-    muyuCount: 0,     // 安心木鱼：本地功德计数（不上云，纯陪伴）
+    // 安心木鱼功德。**本地是权威**；注册后可同步到云端（`wishRitualProfile`）并在换机时恢复。
+    // ⚠️ 原注释写「不上云，纯陪伴」—— 自 H1 钩子（连续记录云保存）起已不成立，勿再引用。
+    muyuCount: 0,
     muyuBeat: false,
     muyuPlus: false,
     /**
@@ -260,6 +262,9 @@ Page({
     this.setData({ soundOn: ritualFeedback.isSoundEnabled(), muyuCount: wishRitual.readMuyuCount() })
     this.initRitual()
     this.bootstrap()
+    // H1 钩子的「取」这一半：换机 / 清缓存后把云端档案拉回来并刷新显示。
+    // 刻意 fire-and-forget（不 await）：它是补强，不该拖慢首屏；失败已在内部静默降级。
+    this.restoreRitualFromCloud()
   },
 
   onPullDownRefresh() {
@@ -575,6 +580,37 @@ Page({
     }
     const lit = state.lit === true
     this.setData({ lamp: this.buildLampState(dayKey, lit, state.litAt, state.days) })
+  },
+
+  /**
+   * 把云端仪式档案拉回来（H1 钩子「记录不丢」的**取**这一半）。
+   *
+   * 为什么需要（2026-09-20 自查发现，不是新功能）：
+   *   `utils/ritualProfile.loadFromCloud()` 早已实现 —— 拉云端 → 与本地按
+   *   **max / 更晚日**合并（`core.mergeProfiles`）→ `applyProfileToLocal()` 回填本地存储。
+   *   但**从来没有页面调用它**：全仓只有注释提到它，实际接线的只有 `syncToCloud`（存）。
+   *   于是「注册后记录存云端、换手机不丢」这句承诺**只成立一半** ——
+   *   云端有档案，新设备却没人去拉，用户看到的还是 0。
+   *
+   * 语义与降级（都来自既有实现，这里不重复造）：
+   *   · 云能力不可用 / 云函数未部署 / 网络失败 → `loadFromCloud` 内部已返回
+   *     `{ ok:false, degraded:true }`，**本地一个字都不动**，页面照常用本地值；
+   *   · 成功 → 本地存储已被回填，这里只需把**页面显示**同步过来
+   *     （功德计数 + 灯态/连续天数），否则会「数据回来了、界面还是 0」；
+   *   · **fire-and-forget**，不阻塞首屏；任何异常只 warn，绝不影响仪式主功能。
+   */
+  async restoreRitualFromCloud() {
+    try {
+      const mod = require('../../../utils/ritualProfile')
+      if (!mod || typeof mod.loadFromCloud !== 'function') return
+      const res = await mod.loadFromCloud()
+      if (!res || res.ok !== true) return // 降级：本地值不动（保住既有行为）
+      // 回填后刷新显示：与 onLoad 同一读取口径，不另写一套
+      this.setData({ muyuCount: wishRitual.readMuyuCount() })
+      this.initRitual()
+    } catch (e) {
+      console.warn('wish wall ritual restore failed', e)
+    }
   },
 
   /** 安心木鱼：敲一下 +1（本地存档，不联网、不上榜 —— 只是给自己一个静下来的动作） */
