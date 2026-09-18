@@ -13,6 +13,8 @@ const { fetchMyCoupons } = require('../../utils/couponService')
 const shippingConfig = require('../../config/shipping')
 const { ensureShippingRules } = require('../../utils/shippingRulesSync')
 const { withAppModal } = require('../../utils/appModal')
+// 需求 1：结账台「顺手带走一件」（¥10 以下优先 → ¥50 以下）——纯逻辑见 utils/checkoutAddon.js
+const checkoutAddon = require('../../utils/checkoutAddon')
 
 /**
  * 单张券在本单的实际节省额（与 orderPricing/makeOrder 口径一致）。
@@ -90,6 +92,19 @@ Page(withAppModal({
     loadingRecommendations: false, // 推荐加载状态
     collectionTrend: null // 收藏趋势数据
     ,
+    /** 需求 1：结账台顺手件（pick = 选中商品，text = 文案，dismissed = 本次会话内用户关掉了） */
+    addonPick: null,
+    addonText: null,
+    addonTierLabel: '',
+    addonDismissed: false,
+    /** 需求 2/3：免邮凑单（缺口 / 进度 / 可凑的那一件），null = 运费配置不可用 */
+    freeShip: null,
+    /** 统一主视觉轻提示（AppToast）：原生 wx.showToast 与本产品视觉脱节 */
+    toastShow: false,
+    toastOverline: '',
+    toastTitle: '',
+    toastDesc: '',
+    toastDuration: 2200,
     scrollTopPx: 140,
     scrollBottomPx: 200,
     scrollHeightPx: 500,
@@ -254,6 +269,16 @@ Page(withAppModal({
     if (final < 0) final = 0;
     const totalSaved = total - final;
 
+    // 需求 2/3：免邮凑单（门槛按优惠前合计，与确认页 / makeOrder 同口径）
+    const freeShipBase = checkoutAddon.computeFreeShipping({
+      goodsAmount: total,
+      selectedItems,
+      shipping: shippingConfig,
+      // 已选免邮券时不再劝「再买 ¥x 免运费」（券的节省额就是运费，两个提示会打架）
+      shippingCoveredByCoupon: !!(currentCoupon && currentCoupon.type === 'freeShipping')
+    })
+    const freeShip = checkoutAddon.attachGapFiller(freeShipBase, this._addonCandidates || [])
+
     this.setData({
       allSelected: allSel,
       selectedCount: count,
@@ -264,6 +289,7 @@ Page(withAppModal({
       vipSaved: vipSavedAmount > 0 ? parseFloat(vipSavedAmount.toFixed(2)) : 0,
       couponSaved: couponSavedAmount > 0 ? parseFloat(couponSavedAmount.toFixed(2)) : 0,
       couponBaseAmount: Math.round(vipTotalNum * 100) / 100,
+      freeShip,
       // 包邮门槛按优惠前合计（与确认页 / makeOrder 一致），勿传折后应付
       shippingHint: count > 0 && typeof shippingConfig.getHint === 'function'
         ? shippingConfig.getHint(total, selectedItems)
@@ -326,6 +352,8 @@ Page(withAppModal({
         this.remeasureScroll().then(() => {
           setTimeout(() => this.remeasureScroll(), 80)
         })
+        // 需求 1：清单就绪后再挑「顺手带走一件」（依赖 cartList 做排除）
+        this.loadCheckoutAddon()
       })
     } catch (err) {
       console.error('loadCollection', err);
@@ -333,6 +361,158 @@ Page(withAppModal({
         this.remeasureScroll()
       });
       wx.showToast({ title: '购物车加载失败', icon: 'none' });
+    }
+  },
+
+  /**
+   * 需求 1：结账台「顺手带走一件」
+   *
+   * 像超市吧台的口香糖：**一次点按就能带走**。候选池只拉低价品（≤ 最后一档上界），
+   * 具体优先级（¥10 以下 → ¥50 以下、同档取最便宜）在 utils/checkoutAddon.js 里，
+   * 由 test-checkout-addon.mjs 逐条钉住，页面这里只负责取数与渲染。
+   *
+   * 失败静默降级：推荐位不该影响结算主链路，拉不到就整块不显示。
+   */
+  async loadCheckoutAddon() {
+    const items = this.data.cartList || []
+    if (!items.length || this.data.addonDismissed) {
+      if (this.data.addonPick) this.setData({ addonPick: null, addonText: null, addonTierLabel: '' })
+      return
+    }
+    if (this._addonLoading) return
+    this._addonLoading = true
+    try {
+      const excludeIds = items.map((i) => i.productId).filter(Boolean)
+      const res = await db.collection('products')
+        .where(_.and([
+          // 与既有 C 端列表同口径：下架不出现
+          { isOffShelf: _.neq(true) },
+          // 多规格必须选规格 → 不是「一次点按」的顺手件，且加车不带 skuId 会留下无效项
+          { hasSku: _.neq(true) },
+          // 价格带下推到 DB（不拉全量目录）。实测价格在写入侧就是数字：
+          // manageProducts:182 `price: Math.max(0, finiteNumber(s.price, 0))`、后台 `Number(p.price)`，
+          // 故数值区间查询成立；历史脏数据若是字符串，只会「不被推荐」，不会误推。
+          { price: _.lte(checkoutAddon.ADDON_MAX_PRICE) }
+        ]))
+        .field({
+          _id: true, title: true, price: true, images: true, stock: true,
+          latinName: true, rootCategoryName: true, category: true
+        })
+        .limit(20)
+        .get()
+      const candidates = checkoutAddon.listCandidates(res.data || [], { excludeIds })
+      const pick = checkoutAddon.pickAddon(candidates)
+      this._addonCandidates = candidates
+      this.setData({
+        addonPick: pick ? pick.item : null,
+        addonTierLabel: pick && pick.tier ? pick.tier.label : '',
+        addonText: checkoutAddon.buildAddonText(pick)
+      }, () => {
+        // 候选就绪后重算一次：免邮凑单的「那一件」要从候选池里挑
+        this.calculateTotal()
+        this.remeasureScroll()
+      })
+    } catch (e) {
+      console.warn('[cart] 顺手带走候选加载失败', e)
+      if (this.data.addonPick) this.setData({ addonPick: null, addonText: null, addonTierLabel: '' })
+    } finally {
+      this._addonLoading = false
+    }
+  },
+
+  /**
+   * 统一主视觉轻提示（铭牌 + 铜金 + 衬线标题）—— 取代原生 toast。
+   * 与 pages/user/index.js 的 showAppToast 同形（原生 toast 在博物黑界面里最不像本产品）。
+   */
+  showAppToast({ overline = '', title = '', desc = '', duration = 0 } = {}) {
+    if (!title) return
+    this.setData({
+      toastOverline: overline,
+      toastTitle: title,
+      toastDesc: desc,
+      toastDuration: duration || 2200,
+      toastShow: true
+    })
+  },
+
+  onToastClose() {
+    this.setData({ toastShow: false })
+  },
+
+  /** 关掉本次结账的顺手件（不落库：下次进购物车还会按优先级重新挑） */
+  dismissCheckoutAddon() {
+    this.setData(
+      { addonDismissed: true, addonPick: null, addonText: null, addonTierLabel: '' },
+      () => this.remeasureScroll()
+    )
+  },
+
+  /** 需求 1：顺手件（结账台吧台位） */
+  async takeCheckoutAddon() {
+    await this._addCheapItem(this.data.addonPick, 'addon')
+  },
+
+  /** 需求 2/3：凑单件（为免邮加的那一件） */
+  async takeGapFiller() {
+    const filler = this.data.freeShip && this.data.freeShip.filler
+    await this._addCheapItem(filler, 'gap')
+  },
+
+  /**
+   * 低价品一次点按加车 —— 顺手件与凑单件共用同一条写路径。
+   * 复用既有 toggleCollection（不新开直写）；成功后重载购物车，顺手件会顺位换成下一件。
+   */
+  async _addCheapItem(item, source) {
+    if (!item || this._addonTaking) return
+    this._addonTaking = true
+    try { wx.vibrateShort({ type: 'medium' }) } catch (e) { /* 旧基础库 */ }
+    try {
+      const openid = await ensureOpenId(app)
+      if (!openid) {
+        this.showAppToast({ overline: 'SIGN IN', title: '登录中，请稍后重试' })
+        return
+      }
+      wx.showLoading({ title: '加入中…', mask: true })
+      const res = await wx.cloud.callFunction({
+        name: 'toggleCollection',
+        data: {
+          targetId: item.id,
+          type: 'product',
+          action: 'add',
+          skuId: '',
+          snapshot: {
+            title: item.title,
+            image: item.image,
+            price: item.price,
+            latinName: item.latinName,
+            count: 1
+          }
+        }
+      })
+      wx.hideLoading()
+      const payload = res.result || {}
+      if (!payload.success) {
+        this.showAppToast({ overline: 'FAILED', title: payload.msg || '加入失败' })
+        return
+      }
+      markCartDirty(app)
+      trackBehavior('checkout_extra_add', 'product', item.id, {
+        price: item.price,
+        source: source || 'addon',
+        tier: this.data.addonTierLabel
+      })
+      this.showAppToast({
+        overline: source === 'gap' ? 'FREE SHIPPING' : 'ADD ONE',
+        title: '已加入购物车',
+        desc: item.title
+      })
+      await this.loadCollection()
+    } catch (e) {
+      wx.hideLoading()
+      console.warn('[cart] 结账台加购失败', e)
+      this.showAppToast({ overline: 'FAILED', title: '加入失败，请重试' })
+    } finally {
+      this._addonTaking = false
     }
   },
 

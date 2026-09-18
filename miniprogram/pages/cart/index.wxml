@@ -229,6 +229,24 @@
 
   <!-- 底部结算栏 -->
   <view class="checkout-bar safe-area" wx:if="{{!loading && cartList.length > 0}}">
+    <!-- 需求 1：结账台「顺手带走一件」——像吧台口香糖，一次点按带走（¥10 以下优先，其次 ¥50 以下） -->
+    <view class="addon-strip" wx:if="{{addonPick && addonText}}">
+      <view class="addon-thumb-wrap" bindtap="goToDetail" data-id="{{addonPick.id}}" hover-class="addon-press" hover-stay-time="80">
+        <image class="addon-thumb" wx:if="{{addonPick.image}}" src="{{addonPick.image}}" mode="aspectFill" lazy-load></image>
+        <view class="addon-thumb-ph" wx:else>
+          <image class="addon-thumb-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+        </view>
+      </view>
+      <view class="addon-copy" bindtap="goToDetail" data-id="{{addonPick.id}}" hover-class="addon-press" hover-stay-time="80">
+        <text class="addon-title">{{addonText.title}}</text>
+        <text class="addon-reason">{{addonText.reason}}</text>
+      </view>
+      <text class="addon-price">{{addonText.priceText}}</text>
+      <view class="addon-cta" catchtap="takeCheckoutAddon" hover-class="addon-cta-press" hover-stay-time="80">
+        <text>{{addonText.cta}}</text>
+      </view>
+      <view class="addon-close" catchtap="dismissCheckoutAddon" hover-class="addon-press" hover-stay-time="80">×</view>
+    </view>
     <view class="coupon-chip" bindtap="openCouponModal" hover-class="coupon-chip-press">
       <image class="coupon-icon" src="/assets/icons/coupon.png" mode="aspectFit"></image>
       <text wx:if="{{selectedCoupon && selectedCoupon.type === 'freeShipping'}}">免邮券</text>
@@ -261,7 +279,27 @@
         <text class="checkout-count" wx:if="{{selectedCount > 0}}">({{selectedCount}})</text>
       </view>
     </view>
-    <view class="shipping-hint-row" wx:if="{{shippingHint}}">
+    <!-- 需求 2/3：免邮凑单 —— 未达包邮门槛时把「还差多少 + 加哪一件」说清；已包邮则回落到规则文案 -->
+    <view class="freeship-row" wx:if="{{freeShip && !freeShip.reached}}">
+      <view class="freeship-head">
+        <text class="freeship-gap">{{freeShip.gapTitle}}</text>
+        <text class="freeship-rule">{{freeShip.detailText}}</text>
+      </view>
+      <view class="freeship-track">
+        <view class="freeship-fill" style="width: {{freeShip.progress}}%;"></view>
+      </view>
+      <view
+        class="freeship-filler"
+        wx:if="{{freeShip.filler}}"
+        catchtap="takeGapFiller"
+        hover-class="freeship-filler-press"
+        hover-stay-time="80"
+      >
+        <text class="freeship-filler-text">{{freeShip.fillerText}}</text>
+        <text class="freeship-filler-cta">加购 →</text>
+      </view>
+    </view>
+    <view class="shipping-hint-row" wx:elif="{{shippingHint}}">
       <text class="shipping-hint">{{shippingHint}}</text>
     </view>
   </view>
@@ -301,6 +339,16 @@
   </view>
 
 </view>
+
+<!-- 全站样式化轻提示（替代 wx.showToast）；详见 components/AppToast -->
+<app-toast
+  show="{{toastShow}}"
+  overline="{{toastOverline}}"
+  title="{{toastTitle}}"
+  desc="{{toastDesc}}"
+  duration="{{toastDuration}}"
+  bind:close="onToastClose"
+/>
 
 <!-- 全站样式化弹窗宿主（替代 wx.showModal）；详见 utils/appModal.js -->
 <app-modal id="appModal" />

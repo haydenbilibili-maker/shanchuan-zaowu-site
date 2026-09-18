@@ -2,7 +2,8 @@
   "usingComponents": {
     "protected-badge": "/components/ProtectedBadge/index",
     "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "app-toast": "/components/AppToast/index"
   },
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,
