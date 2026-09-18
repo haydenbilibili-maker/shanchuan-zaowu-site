@@ -65,6 +65,22 @@ const stripJs = (s) => String(s)
 const stripWxml = (s) => String(s).replace(/<!--[\s\S]*?-->/g, ' ')
 
 /**
+ * 取**某个注册弹窗自己的标签**（`<register-auth-dialog … >`，按 `show` 表达式定位）。
+ *
+ * 为什么要：祈福墙这一页现在有 **3 个** `<register-auth-dialog>`（注册弹窗 / 连灯门禁 / 功德证门禁），
+ * 三个都写 `closable="{{true}}"`。早先的断言写成 `/closable="\{\{true\}\}"/.test(整页)` ——
+ * 它只要求"整页某处有 closable=true"，**判据与对象脱钩**：把注册弹窗改成硬门禁，
+ * 另外两个弹窗的 closable 照样让它绿（2026-09-19 自检注入实测到的假绿，错题本 E7）。
+ * 断言必须绑到**那个弹窗自己的标签**上。
+ */
+const dialogTag = (src, showExpr) => {
+  const m = String(src).match(
+    new RegExp(`<register-auth-dialog\\b[^>]*show="\\{\\{${showExpr}\\}\\}"[^>]*>`)
+  )
+  return m ? m[0] : ''
+}
+
+/**
  * 按**括号配平**取一个函数的函数体。
  * 为什么要：断言"关掉弹窗有没有清空草稿"这类事必须限定在**那个函数内部**，
  * 用固定长度切片会越界到下一个函数、用正则到第一个 `}` 又会截断（错题本 E7）。
@@ -171,9 +187,17 @@ function runChecks(r) {
       /if\s*\(\s*!resumingAfterRegister\s*&&\s*await\s+this\.isGuestUser\(\)\s*\)/.test(submit)
       && /_resumeAfterRegister\s*=\s*false/.test(submit))
   }
+  const wishDialog = dialogTag(wallWxml, 'showRegisterDialog')
   check('★ 祈福墙弹窗是**软钩子**：closable=true（与硬门禁刻意相反，不困住用户）',
-    /show="\{\{showRegisterDialog\}\}"/.test(wallWxml)
-    && /closable="\{\{true\}\}"/.test(wallWxml))
+    wishDialog.length > 0 && /closable="\{\{true\}\}"/.test(wishDialog))
+  {
+    // 「同类错误第二次」的补丁：只钉住注册弹窗时，同页另外两个门禁弹窗（连灯 / 功德证）
+    // 被谁改成闭不掉的硬门禁**没有任何断言会发现** —— 而本页口径是"三个都是软钩子"
+    // （每个弹窗自己的注释都写明 closable=true 的理由）。所以这里断言**整页所有**注册弹窗都是软的。
+    const dialogs = wallWxml.match(/<register-auth-dialog\b[^>]*>/g) || []
+    check('★ 祈福墙三个注册弹窗**全部**是软钩子（一个都不许变成闭不掉的硬门禁）',
+      dialogs.length >= 3 && dialogs.every((tag) => /closable="\{\{true\}\}"/.test(tag)))
+  }
   {
     const ok = fnBody(wallJs, 'onRegisterSuccess')
     check('★ 注册成功后自动续发那条心愿（意图不该丢）',
@@ -231,8 +255,14 @@ function selftest() {
     ['百科详情页忘记给 guest 置门禁', F.wikiJs,
       (s) => s.replace(/registerGated:\s*true/, 'registerGated: false')],
     // 祈福墙软钩子：口径与硬门禁相反，这几条注入证明「本页口径」也被钉住了
-    ['祈福墙弹窗被改成硬门禁（closable=false，把用户困住）', F.wallWxml,
-      (s) => s.replace(/closable="\{\{true\}\}"/, 'closable="{{false}}"')],
+    ['祈福墙注册弹窗被改成硬门禁（closable=false，把用户困住）', F.wallWxml,
+      (s) => s.replace(/<register-auth-dialog\b[^>]*show="\{\{showRegisterDialog\}\}"[^>]*>/,
+        (tag) => tag.replace(/closable="\{\{true\}\}"/, 'closable="{{false}}"'))],
+    // 只改**第三个**弹窗（功德证门禁），前两个仍是 closable=true：
+    // 旧判据「整页某处有 closable=true」在这条注入下**必然假绿** —— 这就是它当年漏掉的那类错。
+    ['祈福墙功德证门禁弹窗被改成硬门禁（注册弹窗仍为软，旧判据会假绿）', F.wallWxml,
+      (s) => s.replace(/<register-auth-dialog\b[^>]*show="\{\{showCertDialog\}\}"[^>]*>/,
+        (tag) => tag.replace(/closable="\{\{true\}\}"/, 'closable="{{false}}"'))],
     ['祈福墙落愿不再弹注册（转化链路断掉）', F.wallJs,
       (s) => s.replace(/this\.setData\(\{ showRegisterDialog: true \}\)/, 'void 0')],
     ['祈福墙丢掉防死循环（会话未刷新 → 注册后又弹一次）', F.wallJs,
