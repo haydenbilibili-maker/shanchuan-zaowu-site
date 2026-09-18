@@ -68,6 +68,20 @@ Component({
       this.triggerEvent('close')
     },
 
+    /**
+     * 授权按钮**被点**（还没拿到手机号）时上报一次 `cta`。
+     *
+     * 为什么要单独一个事件：`getPhoneNumber` 的成败只能告诉你"授权成功/被拒"，
+     * 而漏斗真正要区分的是三段：**曝光 → 去注册（点了按钮）→ 完成**。
+     * 少了中间这段，就无法判断"曝光多但没人点"（文案/位置问题）与
+     * "点了但授权失败"（流程问题）—— 两者该做的是完全不同的事。
+     * 加法事件：既有 success / fail / close 语义不变。
+     */
+    onCtaTap() {
+      if (this.data.saving) return
+      this.triggerEvent('cta')
+    },
+
     /** `getPhoneNumber` 回调：拿 code → 走唯一注册链路 */
     async onGetPhoneNumber(e) {
       if (this.data.saving) return

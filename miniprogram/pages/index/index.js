@@ -957,8 +957,9 @@ Page({
             return {
               ...item,
               uniqueId: item._id,
-              // 需求 17：首页横滑卡用缩略图（能力未确认时 thumbUrl 返回原图）
-              image: origin ? require('../../utils/imageUrl').thumbUrl(origin) : origin,
+              // 需求 17：首页横滑卡用缩略图（能力未确认时返回原图）。
+              // 2026-09-18 分档：横滑卡实测 220rpx=110pt → 3 倍屏只需 330px，用 rail 档（原 480 属过采样）
+              image: origin ? require('../../utils/imageUrl').railUrl(origin) : origin,
               // 「珍稀」角标只认人工打标字段，不随排序/分类变化
               productRarity: (item.productRarity === 'rare' || item.productRarity === 'legendary')
                 ? item.productRarity
@@ -1280,8 +1281,9 @@ Page({
       if (res.result && res.result.success) {
         const recommendations = (res.result.data || []).map(item => ({
           ...item,
-          // 云文件 ID 必须换 https（thumbUrl 内部换算），否则 <image> 渲染不出
-          image: require('../../utils/imageUrl').thumbUrl(getFirstImage(item.images) || item.httpImage || ''),
+          // 云文件 ID 必须换 https（内部换算），否则 <image> 渲染不出。
+          // 2026-09-18 分档：为你推荐卡实测 280rpx=140pt → 3 倍屏需 420px，用 mid 档
+          image: require('../../utils/imageUrl').midUrl(getFirstImage(item.images) || item.httpImage || ''),
           reason: item.reason || '为你推荐',
           sensitiveBlur: isSensitiveBlurProduct(item)
         }));

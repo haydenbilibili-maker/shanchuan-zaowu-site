@@ -1,5 +1,5 @@
 /**
- * 图片 URL 尺寸处理（列表缩略图）
+ * 图片 URL 尺寸处理（列表缩略图 / 详情大图）
  *
  * 为什么需要（需求 17）：全仓**没有任何缩略图链路**（`grep imageMogr2|imageView2|thumbnail`
  * 零命中），列表卡片直接加载云存储原图。手机原图常见 4000×3000，首屏要下载十几张
@@ -15,14 +15,38 @@
  *   2. 首次成功加载带参数的小图 → `supported` → 之后全部使用缩略图
  *   3. 带参数加载失败 / 探测失败 → `unsupported` → 本次会话永久回落原图
  * 即：能力可用时立刻拿到带宽收益；不可用时行为与改动前**完全一致**。
+ *
+ * ── 2026-09-18 口径修正：宽度必须按**设备物理像素**算，不能按"两倍屏"写死 ──
+ *
+ * 原实现：`THUMB_WIDTH_DETAIL = 750`，注释写「750rpx ≈ 375 CSS px，750 恰好覆盖 **2 倍屏**」。
+ * 问题：现代主流机型 DPR = **3**（iPhone 6 Plus 起；Android 2.75–3.5），iPad 满宽更是 1536 物理 px。
+ * 满宽元素需要 `windowWidth × pixelRatio` 像素 —— 3 倍屏上是 **1170**，给它 750 等于
+ * **把图放大 1.5 倍显示**，这正是"图片不够清晰"的直接来源。
+ *
+ * 现口径：
+ *   · 详情大图 → `detailTargetWidth()`：`clamp(windowWidth × pixelRatio, 750, 1600)`，随设备自适应
+ *   · 列表卡按**实测渲染宽度**分三档（不再一个 480 打天下）：
+ *       rail 360（横滑小卡 100–110pt）/ mid 480（横向中卡 140pt）/ list 560（两列栅格 ≈170pt）
+ *   · 统一附 `quality/90`（清晰优先；`thumbnail` 只按宽缩放、不变形，大比例缩小后偏软）
  */
 
-/** 列表卡片宽（rpx→px 约 480 内足够覆盖 2 列卡片） */
-const THUMB_WIDTH_LIST = 480
-/** 详情页大图 */
-const THUMB_WIDTH_DETAIL = 750
+/** 横滑小卡：详情「更多细节」/「相关推荐」200rpx、首页横滑卡 220rpx → 3 倍屏需 300–330 */
+const THUMB_WIDTH_RAIL = 360
+/** 横向中卡：首页「为你推荐」280rpx → 3 倍屏需 420 */
+const THUMB_WIDTH_MID = 480
+/** 两列栅格卡：ProductList `.col{flex:1}` ≈341rpx → 3 倍屏需 ≈511 */
+const THUMB_WIDTH_LIST = 560
+/** 详情大图下限：老 2 倍屏机型（320–375pt）够用 */
+const DETAIL_MIN = 750
+/** 详情大图上限：源图极少超过这个宽度，再要只是白花流量 */
+const DETAIL_MAX = 1600
 /** 探测图宽度：越小越快，仅用于判定能力 */
 const PROBE_WIDTH = 64
+/** JPEG 质量：清晰优先（默认质量约 85，且大比例缩小后更需要高质量兜住细节） */
+const QUALITY = 90
+/** 取不到设备信息时的兜底（与旧行为一致：375pt × 2） */
+const FALLBACK_DPR = 2
+const FALLBACK_VIEWPORT = 375
 
 /** 会话状态：unknown（先用原图）| supported | unsupported */
 let state = 'unknown'
@@ -45,6 +69,58 @@ function isThumbUsable() {
 
 function getState() {
   return flagEnabled ? state : 'disabled'
+}
+
+/** 设备像素比（取不到按 2；这里**不缓存**：测试要能换桩设备） */
+function devicePixelRatio() {
+  try {
+    if (typeof wx !== 'undefined' && wx) {
+      if (typeof wx.getWindowInfo === 'function') {
+        const info = wx.getWindowInfo() || {}
+        const r = Number(info.pixelRatio)
+        if (r > 0) return r
+      }
+      if (typeof wx.getSystemInfoSync === 'function') {
+        const info = wx.getSystemInfoSync() || {}
+        const r = Number(info.pixelRatio)
+        if (r > 0) return r
+      }
+    }
+  } catch (e) {
+    /* 取不到就用兜底，绝不让"取设备信息失败"影响出图 */
+  }
+  return FALLBACK_DPR
+}
+
+/** 视口宽度（CSS px，取不到按 375） */
+function viewportWidth() {
+  try {
+    if (typeof wx !== 'undefined' && wx) {
+      if (typeof wx.getWindowInfo === 'function') {
+        const w = Number((wx.getWindowInfo() || {}).windowWidth)
+        if (w > 0) return w
+      }
+      if (typeof wx.getSystemInfoSync === 'function') {
+        const w = Number((wx.getSystemInfoSync() || {}).windowWidth)
+        if (w > 0) return w
+      }
+    }
+  } catch (e) {
+    /* 同上 */
+  }
+  return FALLBACK_VIEWPORT
+}
+
+/** 满宽元素需要的物理像素 = windowWidth × pixelRatio（rpx 与视口等比，故满宽即此值） */
+function screenPhysicalWidth() {
+  return Math.round(viewportWidth() * devicePixelRatio())
+}
+
+/** 详情大图目标宽度：随设备 DPR 自适应，并夹在 [DETAIL_MIN, DETAIL_MAX] 内 */
+function detailTargetWidth() {
+  const need = screenPhysicalWidth()
+  if (!Number.isFinite(need) || need <= 0) return DETAIL_MIN
+  return Math.min(DETAIL_MAX, Math.max(DETAIL_MIN, need))
 }
 
 /**
@@ -72,7 +148,7 @@ function cloudIdToHttps(fileID) {
   return `https://${bucket}.tcb.qcloud.la/${path}`
 }
 
-/** 给 URL 追加尺寸处理参数；非 http(s) / 已带参数 / 空值 原样返回 */
+/** 给 URL 追加尺寸与质量处理参数；非 http(s) / 已带参数 / 空值 原样返回 */
 function appendThumbParam(url, width) {
   const u = String(url || '')
   if (!/^https?:\/\//i.test(u)) return u
@@ -80,24 +156,38 @@ function appendThumbParam(url, width) {
   const w = Number(width) > 0 ? Math.round(Number(width)) : THUMB_WIDTH_LIST
   // 临时链必带 query（?sign=...&t=...），故用 &；无 query 时用 ?
   const sep = u.indexOf('?') === -1 ? '?' : '&'
-  return `${u}${sep}imageMogr2/thumbnail/${w}x`
+  // `>` = 只缩不放（Tencent CI 语义）：实测源图 1024px 时 `thumbnail/1600x` 会**放大**到 1600
+  // 并多花 83% 字节，而 `1600x>` 稳定返回 1024×684（不放大）→ 所有槽位都必须带 `>`
+  return `${u}${sep}imageMogr2/thumbnail/${w}x>/quality/${QUALITY}`
 }
 
 /**
- * 列表卡片用图。**云文件 ID 一律先换 https**（否则 <image> 渲染不出来），
+ * 列表卡用图。**云文件 ID 一律先换 https**（否则 <image> 渲染不出来），
  * 未确认图像处理能力时不挂缩略参数（行为与改造前一致，但至少能显示）。
+ * @param {string} url 原图（cloud:// 或 https）
+ * @param {number} [width] 目标宽（物理 px）；不传用两列栅格档 560
  */
-function thumbUrl(url) {
+function thumbUrl(url, width) {
   const u = cloudIdToHttps(url)
   if (!isThumbUsable()) return u
-  return appendThumbParam(u, THUMB_WIDTH_LIST)
+  return appendThumbParam(u, width)
 }
 
-/** 详情/大图用图（同上：先换 https） */
+/** 横滑小卡用图（详情「更多细节」/「相关推荐」、首页横滑卡） */
+function railUrl(url) {
+  return thumbUrl(url, THUMB_WIDTH_RAIL)
+}
+
+/** 横向中卡用图（首页「为你推荐」） */
+function midUrl(url) {
+  return thumbUrl(url, THUMB_WIDTH_MID)
+}
+
+/** 详情/大图用图（宽度按设备 DPR 自适应；同上先换 https） */
 function detailUrl(url) {
   const u = cloudIdToHttps(url)
   if (!isThumbUsable()) return u
-  return appendThumbParam(u, THUMB_WIDTH_DETAIL)
+  return appendThumbParam(u, detailTargetWidth())
 }
 
 /**
@@ -170,15 +260,25 @@ function firstImageOf(item) {
 module.exports = {
   cloudIdToHttps,
   firstImageOf,
+  THUMB_WIDTH_RAIL,
+  THUMB_WIDTH_MID,
   THUMB_WIDTH_LIST,
-  THUMB_WIDTH_DETAIL,
+  DETAIL_MIN,
+  DETAIL_MAX,
+  QUALITY,
   PROBE_WIDTH,
+  devicePixelRatio,
+  viewportWidth,
+  screenPhysicalWidth,
+  detailTargetWidth,
   setThumbFlag,
   isThumbFlagEnabled,
   isThumbUsable,
   getState,
   appendThumbParam,
   thumbUrl,
+  railUrl,
+  midUrl,
   detailUrl,
   probeSupport,
   onImageError,

@@ -5,29 +5,38 @@
  * 系统样式就是一个裸的深色圆角框，在博物黑 + 铜金的界面里非常突兀。
  * 这类反馈恰恰出现在顾客注意力最集中的一刻，必须与主视觉一致。
  *
- * 本守卫钉住三件事：
+ * 本守卫钉住四件事：
  *   ① 视觉同源：`components/AppToast` 的关键令牌必须与 `components/AppModal` **逐字相同**
  *      （铜金描边 / 渐变黑底 / 圆角），否则「一致」会随时间漂移；
  *   ② 非阻塞：轻提示不得拦点击或滚动（`pointer-events: none`，且不 catchtouchmove）——
  *      提示归提示，不能挡住用户手里的动作；
  *   ③ 接线：四个「重新进入」入口（我的页 / 券夹 / 钱包 / 地址）都走 AppToast，
  *      且全仓不再出现原生「已重新进入」文案。
+ *   ④ **字阶令牌（契约 C7 §1）**：`app.wxss` 必须定义全部 14 档 `--fs-*`，
+ *      且两个统一组件（AppModal / AppToast）的 `font-size` **必须**引用在册令牌、不得写字面量。
+ *      为什么钉在这里：这两个组件是全站弹层/提示的母版，它们自己带离群字号（27rpx/29rpx）
+ *      会被 124 个页面照抄 —— 令牌落地必须先钉住母版（契约 C7 §0 冻结项 ①）。
  *
  * 用法：
  *   node miniprogram/scripts/check-toast-style.mjs
  *   node miniprogram/scripts/check-toast-style.mjs --selftest
  */
-import { spawnSync } from 'node:child_process'
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawn, spawnSync } from 'node:child_process'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../..')
 
+const APP_WXSS = 'miniprogram/app.wxss'
 const TOAST_WXSS = 'miniprogram/components/AppToast/index.wxss'
 const TOAST_WXML = 'miniprogram/components/AppToast/index.wxml'
 const MODAL_WXSS = 'miniprogram/components/AppModal/index.wxss'
+
+/** 契约 C7 §1.1 的字阶令牌（命名即尺寸；改这套必须同步改契约文档与这里） */
+export const FS_TOKENS = [16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 40, 44, 48]
 const SITES = [
   { name: '我的页', js: 'miniprogram/pages/user/index.js', wxml: 'miniprogram/pages/user/index.wxml', json: 'miniprogram/pages/user/index.json' },
   { name: '券夹面板', js: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.js', wxml: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.wxml', json: 'miniprogram/subpackages/business/components/WalletPanelCoupons/index.json' },
@@ -69,6 +78,33 @@ for (const [label, re] of TOKENS) {
 check('AppToast 用品牌衬线字体做标题', /font-family:\s*var\(--font-brand\)/.test(toastWxss))
 check('AppToast 有铭牌四角元素', (toastWxml.match(/class="at-corner/g) || []).length === 4)
 
+/* ── 1b) 字阶令牌（契约 C7 §1）：母版不得自带离群字号 ─────────────────────── */
+{
+  const appWxss = read(APP_WXSS)
+  const appNoComment = stripComments(appWxss)
+  const missing = FS_TOKENS.filter((n) => !new RegExp(`--fs-${n}\\s*:\\s*${n}rpx\\s*;`).test(appNoComment))
+  check('★ app.wxss 定义了全部 14 档 --fs-* 字阶令牌（契约 C7 §1.1）', missing.length === 0,
+    missing.length ? `缺 ${missing.map((n) => `--fs-${n}`).join(' / ')}` : '')
+
+  for (const [label, file, wxss] of [
+    ['AppModal', MODAL_WXSS, modalWxss],
+    ['AppToast', TOAST_WXSS, toastWxss]
+  ]) {
+    const body = stripComments(wxss)
+    // 判据一：不得出现字面量字号（这是「差 1rpx 噪音」的唯一入口）
+    const literals = body.match(/font-size:\s*[0-9][^;]*;/g) || []
+    check(`★ ${label} 不得使用字面量 font-size（只许 var(--fs-*)）`, literals.length === 0,
+      literals.join(' '))
+    // 判据二：引用的令牌必须**在册**（防 --fs-27 这类幻影令牌绕过上一条）
+    const used = [...body.matchAll(/var\((--fs-[0-9]+)\)/g)].map((m) => m[1])
+    const phantom = used.filter((t) => !FS_TOKENS.includes(Number(t.slice(5))))
+    check(`★ ${label} 引用的 --fs-* 全部在册（契约 C7 §1.1 的 14 档）`, phantom.length === 0,
+      phantom.join(' '))
+    // 判据三：真的用上了（防「删掉所有字号」也算通过）
+    check(`${label} 至少引用了 3 处 --fs-* 令牌`, used.length >= 3, `实际 ${used.length} 处`)
+  }
+}
+
 /* ── 2) 非阻塞 ───────────────────────────────────────────────────────────── */
 check('★ 轻提示不拦点击（pointer-events: none）', /pointer-events:\s*none/.test(toastWxss),
   '缺少 pointer-events: none → 提示会挡住整屏操作')
@@ -109,16 +145,18 @@ for (const site of SITES) {
   check('★ 全仓不再出现原生「已重新进入」提示', hits.length === 0, hits.join(', '))
 }
 
-/* ── 输出 / 自检 ─────────────────────────────────────────────────────────── */
+/* ── 输出 / 自检 / 渲染证据 ─────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
   selftest()
+} else if (process.argv.includes('--render')) {
+  await renderPreview()
 } else if (failed) {
   console.log('✗ 提示主视觉检查失败：')
   for (const f of failures) console.log(`  - ${f}`)
   console.log(`✗ ${failed} 项失败 / ${passed} 项通过`)
   process.exit(1)
 } else {
-  console.log(`✓ 提示主视觉：${passed} 项通过（令牌与 AppModal 同源 / 非阻塞 / 四处接线走 AppToast）`)
+  console.log(`✓ 提示主视觉：${passed} 项通过（令牌与 AppModal 同源 / 非阻塞 / 四处接线走 AppToast / 字阶令牌已钉住母版）`)
 }
 
 function selftest() {
@@ -152,6 +190,24 @@ function selftest() {
       file: SITES[1].json,
       from: '    "app-toast": "/components/AppToast/index"',
       to: '    "app-toast-x": "/components/AppToast/index"'
+    },
+    {
+      name: 'app.wxss 丢掉一档字阶令牌（--fs-26）',
+      file: APP_WXSS,
+      from: '  --fs-26: 26rpx;\n',
+      to: ''
+    },
+    {
+      name: '母版开始写死字面量字号（AppToast 25rpx）',
+      file: TOAST_WXSS,
+      from: '  font-size: var(--fs-24);',
+      to: '  font-size: 25rpx;'
+    },
+    {
+      name: '母版引用幻影令牌（AppModal 用不在册的 --fs-27）',
+      file: MODAL_WXSS,
+      from: '  font-size: var(--fs-26);',
+      to: '  font-size: var(--fs-27);'
     }
   ]
   let bad = 0
@@ -184,4 +240,105 @@ function selftest() {
     process.exit(1)
   }
   console.log(`✓ 自检通过：${injections.length} 条注入全部被检出、源文件逐字还原`)
+}
+
+/**
+ * 渲染证据（E8：视觉/版式类必须真机或真图）—— **开发工具，不在 check:admin 里**
+ *
+ * 为什么挂在守卫里而不是另建一个 render-*.mjs：本流 owns 的文件只有这一批
+ * （见 `docs/并发工作流注册表.json` 的 `visual.owns`），新建文件就越界。
+ * 把真源码（真 WXSS + 真 WXML，rpx 按 1:1 当 px）转成 HTML，再用本机无头 Chrome 截图。
+ *
+ * 用法：
+ *   node miniprogram/scripts/check-toast-style.mjs --render                 # → /tmp/app-toast-modal-render.png
+ *   node miniprogram/scripts/check-toast-style.mjs --render /tmp/x.png
+ *   CHROME_PATH=/path/to/chrome node … --render
+ */
+async function renderPreview() {
+  const outIdx = process.argv.indexOf('--render')
+  const out = (process.argv[outIdx + 1] && !process.argv[outIdx + 1].startsWith('--'))
+    ? process.argv[outIdx + 1]
+    : join(tmpdir(), 'app-toast-modal-render.png')
+  const chrome = [
+    process.env.CHROME_PATH,
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/usr/bin/google-chrome', '/usr/bin/chromium'
+  ].filter(Boolean).find((p) => existsSync(p))
+  if (!chrome) {
+    console.error('✗ 未找到 Chrome（可用 CHROME_PATH 指定）—— --render 只做证据，不参与守门')
+    process.exit(1)
+  }
+
+  const toPx = (s) => s.replace(/(\d*\.?\d+)rpx/g, '$1px')  // rpx 在浏览器里非法：**令牌值也必须转**
+  const pageBlock = (read(APP_WXSS).match(/page\s*\{([\s\S]*?)\n\}/) || [, ''])[1]
+  const rootVars = toPx([...pageBlock.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)]
+    .map((m) => `  ${m[1]}: ${m[2].trim()};`).join('\n'))
+
+  const toHtml = (wxml, binds) => {
+    let s = wxml.replace(/<!--[\s\S]*?-->/g, '')
+    for (const [k, v] of Object.entries(binds)) s = s.split(k).join(v)
+    return s
+      .replace(/\swx:if="\{\{[^}]*\}\}"/g, '')
+      .replace(/\s(?:bind|catch)[a-z]*="[^"]*"/g, '')
+      .replace(/\shover-[a-z-]+="[^"]*"/g, '')
+      .replace(/\suser-select\b/g, '')
+      .replace(/<view/g, '<div').replace(/<\/view>/g, '</div>')
+      .replace(/<text/g, '<span').replace(/<\/text>/g, '</span>')
+  }
+
+  const modal = toHtml(read('miniprogram/components/AppModal/index.wxml'), {
+    "{{visible ? 'is-on' : 'is-off'}}": 'is-on',
+    '{{overline}}': 'COMPLIMENTARY GIFT',
+    '{{title}}': '删除这条收货地址？',
+    '{{content}}': '删除后不可恢复。\n如需再次使用，请重新填写。',  // 真换行：证明 pre-wrap
+    '{{cancelText}}': '取消',
+    '{{confirmText}}': '删除',
+    "{{danger ? 'is-danger' : ''}}": 'is-danger'
+  })
+  const toast = toHtml(read(TOAST_WXML), {
+    "{{leaving ? 'is-out' : 'is-in'}}": 'is-in',
+    '{{overline}}': 'WELCOME BACK',
+    '{{title}}': '欢迎回来，林淑',
+    '{{desc}}': '礼券、积分与成长值都还在'
+  })
+
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+:root {\n${rootVars}\n}
+html, body { margin: 0; padding: 0; background: #12100E; }
+.stage { display: flex; gap: 26px; padding: 26px; align-items: flex-start; }
+/* 750rpx 设计宽 == 750px：字号才与真机同比例 */
+.pane { position: relative; width: 750px; height: 560px; background: #151311; border-radius: 8px; overflow: hidden; }
+.pane-label { position: absolute; left: 10px; top: 6px; z-index: 9999; color: #C4A76C; font: 11px/1.4 -apple-system, sans-serif; letter-spacing: .08em; }
+.pane .am-mask, .pane .at-mask { position: absolute; padding: 16px; }
+.pane .am-plate, .pane .at-plate { max-width: none; }
+${toPx(read(MODAL_WXSS))}
+${toPx(read(TOAST_WXSS))}
+</style></head><body><div class="stage">
+<div class="pane"><div class="pane-label">AppModal · danger（点遮罩不关）</div>${modal}</div>
+<div class="pane"><div class="pane-label">AppToast · 非阻塞</div>${toast}</div>
+</div></body></html>`
+
+  const htmlPath = join(tmpdir(), `app-toast-modal-${process.pid}.html`)
+  writeFileSync(htmlPath, html)
+  const profile = mkdtempSync(join(tmpdir(), 'sc-toast-render-'))
+  if (existsSync(out)) rmSync(out)
+  const child = spawn(chrome, [
+    '--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', '--no-default-browser-check',
+    `--user-data-dir=${profile}`, '--hide-scrollbars', '--force-device-scale-factor=1',
+    '--window-size=1580,620', `--screenshot=${out}`, `file://${htmlPath}`
+  ], { stdio: 'ignore' })
+  const deadline = Date.now() + 20000
+  while (Date.now() < deadline) {
+    if (existsSync(out) && statSync(out).size > 1000) break
+    await new Promise((r) => setTimeout(r, 250))
+  }
+  try { child.kill('SIGKILL') } catch { /* ignore */ }
+  try { rmSync(profile, { recursive: true, force: true }) } catch { /* ignore */ }
+  if (!existsSync(out)) {
+    console.error('✗ 截图未生成（Chrome 可能被沙箱拦截）')
+    process.exit(1)
+  }
+  console.log(`✓ 渲染证据 → ${out}（${Math.round(statSync(out).size / 1024)}KB）`)
+  console.log('  这是「真源码 + 无头 Chrome」的图，**不等于微信渲染引擎** —— 版式类改动仍需真机验收（E8）')
 }

@@ -20,7 +20,13 @@ else
 fi
 
 # 2) 注入漂移（把真源里的 scf 判定改坏）必须被检出
-sed -i '' "s/seg === 'scf'/seg === 'SCF_BROKEN'/" "$VICTIM"
+# ⚠️ 2026-09-18 修：这里原本是 `sed -i '' "s/…/…/" "$VICTIM"` —— **BSD/macOS 专有写法**。
+#    GNU sed（CI / ubuntu-latest）不认它，会去读一个叫 "s/seg === 'scf'/…" 的文件并报
+#    `can't read …: No such file or directory` → 在 `set -e` 下让本自检 exit 2。
+#    后果：本机（macOS）绿、**CI 上 guards-can-fail job 恒红**，而且守卫其实从未被真正测到。
+#    改用 `perl -pi -e`：macOS 与 ubuntu CI 都自带，两边语义一致（本机已实测：
+#    替换生效 / 未命中不改文件 / 未命中仍 exit 0 不会触发 set -e / 文件权限保持）。
+perl -pi -e "s/seg === 'scf'/seg === 'SCF_BROKEN'/" "$VICTIM"
 if bash "$GUARD" --check >/dev/null 2>&1; then
   echo "✗ 注入漂移后仍通过——守卫抓不到回归"; fail=1
 else

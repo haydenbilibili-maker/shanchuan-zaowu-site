@@ -32,6 +32,7 @@ const {
 } = require('./fuzzySearch')
 const { sanitizeProductTags, readProductTags } = require('./productTags')
 const { sanitizeGiftScenes, readGiftScenes } = require('./giftScenes')
+const { sanitizeBlessTags } = require('./blessTags')
 const { backfillProductTags } = require('./backfillTags')
 const {
   normalizeChannel,
@@ -59,7 +60,9 @@ const ALLOWED_FIELDS = [
   // 所以每加一个商品级字段，这里与小程序藏品表单必须同时改（守卫有结构断言）。
   'wishWallEnabled', 'wishWallKey',
   // 需求：主题名（双层命名 —— title 仍是标准名，用于检索/识别/对账；themeName 是文艺主题名）
-  'themeName', 'themeNote'
+  'themeName', 'themeNote',
+  // 需求 28 · item 6：商品祈运标签（受控枚举，见 blessTags.js）—— 玩法推荐与祈福墙文案的匹配依据之一
+  'blessTags'
 ]
 
 const PATCH_FIELDS = ALLOWED_FIELDS.filter((k) => k !== 'createTime')
@@ -243,6 +246,10 @@ function prepareProductData(raw) {
       data.tags = readProductTags(raw)
     }
   }
+  if (Object.prototype.hasOwnProperty.call(data, 'blessTags')) {
+    // 受控枚举：非法 key 直接丢弃（与 tags/giftScenes 同口径：宁可不写，不写脏值）
+    data.blessTags = sanitizeBlessTags(data.blessTags)
+  }
   if (Object.prototype.hasOwnProperty.call(data, 'giftScenes')) {
     data.giftScenes = sanitizeGiftScenes(data.giftScenes)
 
@@ -416,18 +423,35 @@ async function upsert(event, actor) {
     const own = await assertCanEditProduct(productId, actor)
     if (!own.ok) return fail(own.msg, own.code)
     let existingRow = null
+    let docMissing = false
     try {
       const doc = await db.collection('products').doc(productId).get()
       existingRow = doc.data || null
+      // 解析成功却没有数据 = 明确不存在（而不是偶发读失败）
+      if (!existingRow) docMissing = true
     } catch (e) {
-      existingRow = null
+      const msg = String((e && (e.errMsg || e.message)) || '')
+      if (/not exist|does not exist|DOCUMENT_NOT_FOUND|-501004/i.test(msg)) docMissing = true
+    }
+    // 文档不存在时 update 会命中 0 条却**不报错** → 客户端显示「已保存」但什么都没写。
+    // 这正是「多规格库存改完保存没生效」的一种静默形态（2026-09-18 排查）。
+    if (docMissing) {
+      return fail('保存未生效：藏品不存在或已被删除，请刷新后重试', 'NOT_FOUND')
     }
     applySensitiveBlurDefaults(data, raw, existingRow, false)
     await applyArtisanOwnershipFields(data, actor, existingRow)
     // 上下架仅 manageApprovals；保存时禁止改 isOffShelf
     delete data.isOffShelf
     delete data.createTime
-    await db.collection('products').doc(productId).update({ data })
+    const upd = await db.collection('products').doc(productId).update({ data })
+    // 二次防线：命中的文档数若为 0，说明这次保存**什么都没写**（并发删除等），
+    // 必须报失败，不能报「已保存」——「写失败被当成成功」在本仓库已有前科（见 714a1bf）。
+    const updated = Number(
+      (upd && upd.stats && (upd.stats.updated != null ? upd.stats.updated : upd.stats.updatedCount)) || 0
+    )
+    if (updated === 0) {
+      return fail('保存未生效：写入未命中任何记录，请刷新后重试', 'NOT_APPLIED')
+    }
     await writeAuditLog(db, auditFromActor(actor, {
       action: 'product_upsert',
       relatedId: productId,
@@ -441,7 +465,18 @@ async function upsert(event, actor) {
       },
       source: 'manageProducts'
     })).catch(() => {})
-    return { success: true, productId, mode: 'update', hasSku: !!data.hasSku }
+    return {
+      success: true,
+      productId,
+      mode: 'update',
+      hasSku: !!data.hasSku,
+      // 回带回写后的库存口径：客户端据此核对「我提交的规格库存有没有被服务端保留」
+      // （2026-09-18：让「多规格库存保存没生效」这类问题在客户端就能当场发现）
+      stock: typeof data.stock === 'number' ? data.stock : undefined,
+      skus: Array.isArray(data.skus)
+        ? data.skus.map((s) => ({ id: String(s.id || ''), stock: Number(s.stock) || 0 }))
+        : undefined
+    }
   }
 
   // 新建：默认下架；仅超管/Admin Web 可显式指定上架
@@ -658,6 +693,7 @@ function buildListWhere(event, actor, verifiedFramerId) {
   const archiveFilter = String((event && event.archiveFilter) || 'all').trim()
   const promoFilter = String((event && event.promoFilter) || 'all').trim()
   const giftScene = sanitizeGiftScenes([(event && (event.giftScene || event.giftScenes)) || ''])[0] || ''
+  const blessTag = sanitizeBlessTags([(event && (event.blessTag || event.blessTags)) || ''])[0] || ''
   const conditions = []
 
   const mineOnly = !!(event && (event.mineOnly || event.scope === 'mine'))
@@ -677,14 +713,15 @@ function buildListWhere(event, actor, verifiedFramerId) {
   }
 
   if (giftScene) conditions.push({ giftScenes: giftScene })
+  if (blessTag) conditions.push({ blessTags: blessTag })
 
   if (keyword) {
     const kwCond = buildKeywordCondition(db, _, keyword, PRODUCT_FIELDS)
     if (kwCond) conditions.push(kwCond)
   }
 
-  if (!conditions.length) return { where: null, keyword, archiveFilter, promoFilter, giftScene }
-  if (conditions.length === 1) return { where: conditions[0], keyword, archiveFilter, promoFilter, giftScene }
+  if (!conditions.length) return { where: null, keyword, archiveFilter, promoFilter, giftScene, blessTag }
+  if (conditions.length === 1) return { where: conditions[0], keyword, archiveFilter, promoFilter, giftScene, blessTag }
   return { where: _.and(conditions), keyword, archiveFilter, promoFilter, giftScene }
 }
 

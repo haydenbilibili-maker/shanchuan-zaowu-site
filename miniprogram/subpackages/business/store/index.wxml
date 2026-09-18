@@ -366,3 +366,6 @@
     <view class="empty-retry" bindtap="loadStores" hover-class="empty-retry-press" hover-stay-time="80">重新加载</view>
   </view>
 </view>
+
+<!-- 全站样式化弹窗宿主（替代 wx.showModal）；详见 utils/appModal.js -->
+<app-modal id="appModal" />

@@ -23,6 +23,10 @@ const SCHEME_PRESETS = [
   { id: 'atelier', label: '标本工坊', path: '/pages/atelier/index' },
   { id: 'cart', label: '购物车', path: '/pages/cart/index' },
   { id: 'user', label: '我的', path: '/pages/user/index' },
+  // 核心互动（新增核心功能优先放这里，海报/物料要能直接指向）
+  // ⚠️ 祈福墙是**多面墙**：不带参数 = 默认墙；要指向某一面墙请在路径后补 `?productKey=<藏品键>`
+  //    （页面 onLoad 对非法/缺失的 key 一律回落默认墙，不会跳出空白页）
+  { id: 'wish-wall', label: '祈福墙', path: '/subpackages/feature/wish-wall/index' },
   // 常用功能
   { id: 'atlas', label: '山海图鉴', path: '/subpackages/feature/collection/index' },
   { id: 'store', label: '线下门店', path: '/subpackages/business/store/index' },
@@ -48,6 +52,7 @@ const SCHEME_PRESETS = [
   { id: 'framer-recruit', label: '标本师招募', path: '/subpackages/business/framer-recruit/index' },
   { id: 'community', label: '社区', path: '/subpackages/feature/community/index' },
   { id: 'care', label: '养护指南', path: '/subpackages/feature/care/index' },
+  { id: 'care-mine', label: '我的标本养护', path: '/subpackages/feature/care/my/index' },
   { id: 'identify', label: 'AI 鉴定', path: '/subpackages/feature/identify/index' },
   { id: 'messages', label: '站内消息', path: '/subpackages/extra/user/messages/index' },
   { id: 'achievements', label: '成就中心', path: '/subpackages/extra/user/achievements/index' },
@@ -55,6 +60,12 @@ const SCHEME_PRESETS = [
   { id: 'search', label: '搜索', path: '/subpackages/feature/search/index' },
   { id: 'custom-service', label: '定制服务', path: '/subpackages/feature/custom/index' },
   { id: 'about', label: '关于山海', path: '/subpackages/business/about/index' },
+  // 工具与合规（同一页靠 query 区分两份文档）
+  { id: 'wishlist', label: '收藏与候补', path: '/subpackages/extra/user/wishlist/index' },
+  { id: 'ar', label: 'AR 试摆', path: '/subpackages/business/ar/index' },
+  { id: 'feedback', label: '反馈与建议', path: '/subpackages/extra/user/feedback/index' },
+  { id: 'terms', label: '用户协议', path: '/subpackages/extra/user/legal/index?type=terms' },
+  { id: 'privacy', label: '隐私政策', path: '/subpackages/extra/user/legal/index?type=privacy' },
   // 保留末项
   { id: 'custom', label: '自定义路径', path: '' }
 ];

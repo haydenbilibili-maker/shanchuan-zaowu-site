@@ -45,14 +45,14 @@
 .at-corner.is-br { right: 12rpx; bottom: 12rpx; border-right-width: 2rpx; border-bottom-width: 2rpx; }
 
 .at-overline {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 4rpx;
   color: rgba(196, 167, 108, 0.75);
   margin-bottom: 10rpx;
 }
 
 .at-title {
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-text-primary, #FFFFFF);
@@ -61,7 +61,7 @@
 
 .at-desc {
   margin-top: 10rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }

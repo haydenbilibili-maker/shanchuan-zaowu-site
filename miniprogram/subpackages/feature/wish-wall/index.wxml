@@ -22,7 +22,21 @@
       <!-- 主标题固定「祈福墙」：入口传进来的 title 本身就是「马上有」，
            写「{{productTitle}} · 祈福墙」会变成「马上有 · 祈福墙」重复两遍 -->
       <text class="ww-title">祈福墙</text>
-      <text class="ww-scope" wx:if="{{productTitle}}">{{productTitle}}</text>
+      <!-- 这一行右侧原本空着（印泥/水印之外没有任何内容）。祈运标签挪上来：
+           ① 第一屏就能看到"这面墙求什么"（不必滚到玩法区）② 玩法区因此省下一条提示的高度 -->
+      <view class="ww-scope-row">
+        <!-- 产品 chip 本身就是**产品链路的常驻入口**（第一屏就能到详情页）。
+             以前只有抽完玩法才在结果卡里出现「看这件藏品」，链路藏得太深。 -->
+        <text
+          class="ww-scope {{productId ? 'is-link' : ''}}"
+          wx:if="{{productTitle}}"
+          bindtap="goProduct"
+          hover-class="ww-scope-press"
+          hover-stay-time="70"
+          aria-role="{{productId ? 'link' : 'text'}}"
+        >{{productTitle}}{{productId ? ' ›' : ''}}</text>
+        <text class="ww-bless" wx:if="{{blessLabelText}}">偏「{{blessLabelText}}」</text>
+      </view>
       <text class="ww-hint">把想成真的心愿挂上墙。轻一点写，短一点说。</text>
     </view>
   </view>
@@ -39,7 +53,7 @@
   <block wx:else>
     <!-- 墙面：浅纸墙 + 轨道化弹幕。同轨严格不重叠（排期见 utils/wishWall.buildDanmakuRows） -->
     <view
-      class="ww-wall"
+      class="ww-wall {{echoRows.length ? 'is-echo' : ''}}"
       aria-label="{{rows.length ? rows.length + ' 条心愿在墙上流动，轻点一条可展开愿签' : '祈福墙'}}"
     >
       <view class="ww-wall-fiber" aria-hidden="true"></view>
@@ -49,6 +63,8 @@
         <view class="ww-wall-rail rail-2" aria-hidden="true"></view>
         <view class="ww-wall-rail rail-3" aria-hidden="true"></view>
         <view class="ww-wall-rail rail-4" aria-hidden="true"></view>
+        <view class="ww-wall-rail rail-5" aria-hidden="true"></view>
+        <view class="ww-wall-rail rail-6" aria-hidden="true"></view>
         <!-- 加载中：四条轨道各出一条浅纸微光条（全站约定是骨架，不是一行字） -->
         <block wx:if="{{loading}}">
           <view class="ww-wall-skel skel-1" aria-hidden="true"></view>
@@ -70,10 +86,10 @@
           aria-label="{{item.text}}"
         >
               <text class="ww-emoji" wx:if="{{item.emoji}}">{{item.emoji}}</text>
-          <!-- 墙面也承担信任信号：置顶/馆方在墙上就有标记（此前只有愿签列表里有） -->
+          <!-- 墙面只保留**置顶**标记（铜钉）；「馆方」与愿签卡一起下线（2026-09-18 产品决定） -->
           <view
-            class="ww-dm-mark {{item.pinned ? 'is-pinned' : (item.official ? 'is-official' : '')}}"
-            wx:if="{{item.pinned || item.official}}"
+            class="ww-dm-mark {{item.pinned ? 'is-pinned' : ''}}"
+            wx:if="{{item.pinned}}"
             aria-hidden="true"
           ></view>
           <text class="ww-dm-text {{item.id === freshId ? 'is-fresh' : ''}}">{{item.text}}</text>
@@ -86,13 +102,40 @@
           </view>
         </block>
       </view>
-      <view class="ww-wall-foot" wx:if="{{rows.length}}">
+      <!-- 墙页脚＝「墙面 → 愿签列表」的快捷入口：弹幕看得快、愿签看得清，
+           看完流动的手指自然会想"有没有一条是我的/我想细看"。这行文字是可点的，
+           省掉"手动往下滚一屏"这一步（交互优化，2026-09-18） -->
+      <view
+        class="ww-wall-foot"
+        wx:if="{{rows.length}}"
+        bindtap="goWishList"
+        hover-class="ww-wall-foot-press"
+        hover-stay-time="70"
+        aria-role="button"
+        aria-label="{{items.length}} 条心愿，点击查看愿签列表"
+      >
         <view class="signal-light lamp-brass"></view>
         <text class="ww-wall-foot-text">{{items.length}} 条心愿正在墙上流动</text>
+        <text class="ww-wall-foot-more">看全部 ›</text>
       </view>
       <view class="ww-wall-foot is-loading" wx:elif="{{loading}}">
         <view class="signal-light lamp-muted"></view>
         <text class="ww-wall-foot-text">正在展开墙面…</text>
+      </view>
+      <!-- 即时反馈回声：点灯 / 木鱼 / 落愿（以及后续玩法）之后，墙的页脚回一句、边框亮一下。
+           为什么放页脚这一条 44rpx 带里：四条弹幕轨道的第 4 条落在 84%，轨下只剩 ~17rpx，
+           塞不下任何东西；页脚是墙内**唯一**不会被弹幕穿过的位置（overflow:hidden 已裁好）。
+           为什么是数组 + wx:key：连点要**重播**动画，同 key 不会重播（与弹幕轮播同一手法）。 -->
+      <view
+        class="ww-echo"
+        wx:for="{{echoRows}}"
+        wx:key="key"
+        aria-label="{{item.text}}{{item.sub ? ' ' + item.sub : ''}}"
+        aria-role="alert"
+      >
+        <view class="signal-light lamp-brass"></view>
+        <text class="ww-echo-text">{{item.text}}</text>
+        <text class="ww-echo-sub" wx:if="{{item.sub}}">{{item.sub}}</text>
       </view>
     </view>
     <!-- 祈福动作区：点灯 + 木鱼并列（产品负责人 2026-09-19 版式） -->
@@ -100,7 +143,7 @@
     <!-- 灯龛：零门槛的入场动作。点完亮出当天那一句，同一天复现同一句。
          光晕是灯座盒子的子元素（不再用行内绝对定位），文案列 flex:1 —— 布局不会被压塌 -->
     <view
-      class="ww-lantern {{lamp.lit ? 'is-lit' : ''}}"
+      class="ww-lantern {{lamp.lit ? 'is-lit' : 'is-idle'}}"
       bindtap="onLampTap"
       hover-class="ww-lantern-press"
       hover-stay-time="80"
@@ -120,8 +163,10 @@
         <text class="ww-heart h5">♥</text>
       </view>
       <view class="ww-lantern-copy">
-        <view class="ww-lantern-head">
-          <text class="ww-lantern-title">{{lamp.lit ? '今日灯已点' : '点一盏灯'}}</text>
+        <!-- 标题独占一行：标题与徽章同排时，半宽卡里「今日灯已点」会被挤成两行 -->
+        <text class="ww-lantern-title">{{lamp.lit ? '今日灯已点' : '点一盏灯'}}</text>
+        <!-- 徽章另起一行且允许折行（窄卡里宁可折行，也不要把标题挤断） -->
+        <view class="ww-lantern-meta">
           <!-- 灯位：连续点灯攒出来的层级（1/3/7 天 → 1/3/5 盏）。称号来自 wishWall.lampTier -->
           <text class="ww-lantern-tier" wx:if="{{lamp.lit && lamp.label}}">{{lamp.label}}</text>
           <!-- 今天是个节气就直说 —— 节气灯语优先于通用灯语 -->
@@ -129,9 +174,6 @@
           <!-- 不是节气日时给"还差几天"：一个"过几天再来"的理由（>7 天不显示，免得成噪音） -->
           <text class="ww-lantern-next" wx:elif="{{lamp.solarNext}}">距{{lamp.solarNext.name}} {{lamp.solarNext.inDays}} 天</text>
         </view>
-        <text class="ww-lantern-line" wx:if="{{lamp.lit}}">{{lamp.line}}</text>
-        <text class="ww-lantern-line is-idle" wx:else>点一下，替今天留个记号</text>
-        <text class="ww-lantern-note" wx:if="{{lamp.lit && lamp.tierNote}}">{{lamp.tierNote}}</text>
       </view>
       <view class="ww-streak" wx:if="{{lamp.streak > 1}}">
         <view class="ww-lamps" aria-hidden="true">
@@ -139,6 +181,15 @@
         </view>
         <text class="ww-streak-n">{{lamp.streak}}</text>
         <text class="ww-streak-l">天</text>
+      </view>
+      <!-- 灯语 / 灯位说明整行落在标题块下面（flex-basis:100%）：
+           留在文案列里时它只有 ~220rpx 宽，「灯亮着，就还有没说完的心愿。」的第二行只剩
+           3 个字（真机截图里的"的心愿。"孤字）—— 产品反馈的「文案过于拥挤」就是从这来的。
+           整行之后 13 字以内一行装得下（文案池也按这个上限收过，见 utils/wishRitual.js）。 -->
+      <view class="ww-lantern-tail">
+        <text class="ww-lantern-line" wx:if="{{lamp.lit}}">{{lamp.line}}</text>
+        <text class="ww-lantern-line is-idle" wx:else>点一下，替今天留个记号</text>
+        <text class="ww-lantern-note" wx:if="{{lamp.lit && lamp.tierNote}}">{{lamp.tierNote}}</text>
       </view>
     </view>
 
@@ -155,8 +206,61 @@
       <text class="ww-muyu-plus" wx:if="{{muyuPlus}}">+1</text>
     </view>
     </view>
-    <!-- 说明：一行说清玩法，不占版面（原长说明已收进页头一句） -->
-    <text class="ww-foot-note">点一盏灯、敲一下木鱼，心愿挂上墙就会一直流动。</text>
+    <!-- 说明：一行说清玩法，不占版面（原长说明已收进页头一句）+ 音效开关 -->
+    <view class="ww-foot-row">
+      <text class="ww-foot-note">点一盏灯、敲一下木鱼，心愿挂上墙就会一直流动。</text>
+      <view
+        class="ww-sound {{soundOn ? 'is-on' : 'is-off'}}"
+        bindtap="onToggleSound"
+        hover-class="ww-sound-press"
+        hover-stay-time="70"
+        aria-role="switch"
+        aria-checked="{{soundOn}}"
+        aria-label="仪式音效"
+      >{{soundOn ? '音效 开' : '音效 关'}}</view>
+    </view>
+
+    <!-- 玩法区（注册表驱动，2026-09-18 需求 5 第一批）：
+         点灯 / 木鱼是"动作"，这里是"抽一句" —— 抽到的结果由页尾的**纸签弹层**呈现，
+         看完能直接「写成心愿」，形成"抽 → 写 → 上墙"的一条路。
+         ⚠️ 瓦片一律 wx:for 注册表，页面不写死玩法名（加玩法只改 config/ritualPlays.js）。 -->
+    <view class="ww-plays">
+      <view class="ww-plays-head">
+        <text class="ww-plays-title">今天的玩法</text>
+        <text class="ww-plays-sub">抽一句，顺手写下来</text>
+      </view>
+      <view class="ww-play-grid">
+        <view
+          class="ww-play {{playResult && playResult.id === item.id ? 'is-open' : ''}}"
+          wx:for="{{plays}}"
+          wx:key="id"
+          bindtap="onPlayTap"
+          data-id="{{item.id}}"
+          hover-class="ww-play-press"
+          hover-stay-time="70"
+          aria-role="button"
+          aria-label="{{item.name}}：{{item.hint}}"
+        >
+          <view class="ww-play-mark" aria-hidden="true">{{item.mark}}</view>
+          <view class="ww-play-copy">
+            <text class="ww-play-name">{{item.name}}</text>
+            <text class="ww-play-hint">{{item.hint}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 纸签弹层（2026-09-18 细节雕刻）：
+           结果以前是"就地展开的一张亮色卡"，夹在深色瓦片下既不像卡也不像弹窗 —— 产品反馈"与页面割裂"。
+           现在明确身份：**一张签从底部递上来**（遮罩 + 铜色把手 + 印章字标），纸面语言与牌匾/愿签同源。
+           标题/正文仍全部来自 utils/ritualPlay 的纯函数（页面零判断）。 -->
+      <!-- 需要星座/MBTI 但资料里没有 → 引导去补（不给一个编出来的结果） -->
+      <view class="ww-play-need" wx:if="{{playNeed}}">
+        <text class="ww-play-need-text">这个玩法要用到你的「{{playNeed.fieldLabel}}」，资料页填一下就好（{{playNeed.gain}}）。</text>
+        <view class="ww-play-need-cta" bindtap="goProfileField" hover-class="ww-play-need-press" hover-stay-time="70">
+          去填{{playNeed.fieldLabel}}
+        </view>
+      </view>
+    </view>
 
     <!-- 写愿签 -->
     <view class="ww-write">
@@ -175,24 +279,7 @@
         </view>
       </view>
 
-      <view class="ww-composer">
-        <input
-          class="ww-input"
-          value="{{draft}}"
-          maxlength="{{textMax}}"
-          confirm-type="send"
-          placeholder="例如：马上有闲，马上有缘"
-          placeholder-class="ww-input-ph"
-          bindinput="onDraftInput"
-          bindconfirm="submitWish"
-        />
-        <view
-          class="ww-send {{posting || !draft || quota.exhausted ? 'is-off' : ''}}"
-          bindtap="submitWish"
-          hover-class="ww-send-press"
-          hover-stay-time="80"
-        >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
-      </view>
+
       <view class="ww-write-foot">
         <!-- 额度如实预告（上限与云函数 DAILY_LIMIT 同源）：写了才被拒的体验最差 -->
         <text class="ww-quota {{quota.exhausted ? 'is-done' : ''}}" wx:if="{{quota.cap}}">
@@ -207,8 +294,9 @@
       </view>
     </view>
 
-    <!-- 愿签列表：弹幕看得快，愿签看得清，也便于复制与无障碍阅读 -->
-    <view class="ww-head">
+    <!-- 愿签列表：弹幕看得快，愿签看得清，也便于复制与无障碍阅读。
+         id 是墙页脚「看全部 ›」的落点（wx.pageScrollTo 的 selector），改名要同步 goWishList -->
+    <view class="ww-head" id="wishList">
       <!-- 两个视图共用一套愿签渲染，只有数据源不同（见页面 applyView）。
            本轮把它从"两个像标题的文字"改成**分段控件**：切换意图要一眼看得出来 -->
       <view class="ww-seg" aria-role="tablist">
@@ -220,7 +308,12 @@
           hover-stay-time="70"
           aria-role="tab"
           aria-selected="{{viewMode === 'wall'}}"
-        ><text class="ww-seg-label">墙上的愿签</text></view>
+        >
+          <text class="ww-seg-label">墙上的愿签</text>
+          <!-- 条数必须挂进**它所属的那一段**：此前它游离在段外、紧挨「我的心愿」，
+               看着像在说"我的心愿有 26 条"（真图复核发现）。两段各自带自己的数，语义才自明 -->
+          <text class="ww-seg-n" wx:if="{{viewMode === 'wall' && items.length}}">{{items.length}}</text>
+        </view>
         <view
           class="ww-seg-item {{viewMode === 'mine' ? 'is-on' : ''}}"
           bindtap="switchView"
@@ -234,7 +327,6 @@
           <text class="ww-seg-n" wx:if="{{mine.total}}">{{mine.total}}</text>
         </view>
       </view>
-      <text class="ww-head-n">{{items.length}} 条</text>
     </view>
     <view class="ww-tags">
       <!-- 加载中：愿签骨架（与站点同款铜色微光） -->
@@ -276,9 +368,12 @@
             hover-stay-time="80"
           >
             <view class="ww-tag-pin" aria-hidden="true"></view>
-            <!-- 印记优先级：已收起 > 馆方 > 我的 > 置顶（前三者都是"你需要先知道"的信息） -->
+            <!-- 印记优先级：已收起 > 我的 > 置顶（都是"你需要先知道"的信息）。
+                 ⚠️ 2026-09-18 产品决定：**去掉「馆方」章** —— 首批基线内容全是馆方发的，
+                 26 条愿签里 24 条盖章 = 这个章不再传递任何信息，只是噪音。
+                 `official` 字段**保留在数据与行模型里**（见 utils/wishWall.js 的注释），
+                 以后若要区分"真人馆方回复"与"AI 基线"，不必做数据迁移就能挂回来。 -->
             <text class="ww-tag-seal is-hidden" wx:if="{{item.hidden}}">已收起</text>
-            <text class="ww-tag-seal is-official" wx:elif="{{item.official}}">馆方</text>
             <text class="ww-tag-seal is-mine" wx:elif="{{item.isMine}}">我的</text>
             <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>
             <text class="ww-tag-text">{{item.text}}</text>
@@ -338,7 +433,6 @@
       </view>
       <view class="ww-card-tags">
         <text class="ww-card-tag is-warn" wx:if="{{card.hidden}}">已被馆方收起</text>
-        <text class="ww-card-tag" wx:if="{{card.official}}">馆方</text>
         <text class="ww-card-tag" wx:if="{{card.isMine}}">我的</text>
         <text class="ww-card-tag" wx:if="{{card.pinned}}">置顶</text>
       </view>
@@ -352,4 +446,116 @@
 
   <!-- 彩蛋浮层：进页（吉量）/ 落愿（驳）/ 连点灯（騊駼）/ 心愿数（鹿蜀）由注册表驱动，页面只提供这个挂点 -->
   <easter-egg-note id="easterEggNote" />
+
+  <!-- 注册转化：浏览与仪式免费（价值先行），**落愿这一步才要身份**。
+       closable=true → 不把用户困在弹窗里；关掉后草稿还在，回来还能接着挂。 -->
+  <register-auth-dialog
+    show="{{showRegisterDialog}}"
+    overline="WISH WALL"
+    title="注册后心愿才挂得住"
+    desc="一键注册即可把这条心愿挂上墙、收进「我的心愿」，以后每天回来都看得到它。"
+    cta="同意并一键注册"
+    closable="{{true}}"
+    close-text="先不挂"
+    from="wish_wall"
+    bind:cta="onRegisterDialogCta"
+      bind:success="onRegisterSuccess"
+    bind:close="onRegisterDialogClose"
+    bind:fail="onRegisterDialogFail"
+  />
+  <!-- 纸签弹层（遮罩 + 从底部升起的签）：与发送条一样，**必须是 .ww-page 的直接子节点** ——
+       它原本挂在 .ww-plays 里，而 .ww-plays 是 z-index:1 的层叠上下文，于是弹层的 z-index:41
+       只在那个上下文内有效，吸底发送条（页面级 z-index:30）反而画到它上面（渲染图里实测到）。
+       规则：**凡是 fixed 覆盖层，不许待在任何一个带 z-index 的祖先里**。 -->
+  <view
+    class="ww-sheet-mask"
+    wx:if="{{playResult}}"
+    bindtap="closePlayResult"
+    aria-role="button"
+    aria-label="收起"
+  ></view>
+  <view
+    class="ww-sheet"
+    wx:if="{{playResult}}"
+    style="transform: translateY({{sheetDragY}}px);"
+    aria-role="dialog"
+    aria-label="{{playResult.name}}结果"
+  >
+    <view
+      class="ww-sheet-grip"
+      bindtouchstart="onSheetGripStart"
+      bindtouchmove="onSheetGripMove"
+      bindtouchend="onSheetGripEnd"
+      bindtouchcancel="onSheetGripEnd"
+    ><view class="ww-sheet-grip-bar" aria-hidden="true"></view></view>
+
+    <view class="ww-sheet-head">
+      <view class="ww-sheet-mark" aria-hidden="true">{{playResult.mark}}</view>
+      <view class="ww-sheet-head-copy">
+        <text class="ww-sheet-overline" wx:if="{{playResult.overline}}">{{playResult.overline}}</text>
+        <text class="ww-sheet-name">{{playResult.name}}</text>
+      </view>
+      <text class="ww-sheet-close" bindtap="closePlayResult" hover-class="ww-sheet-close-press" hover-stay-time="70">收起</text>
+    </view>
+
+    <view class="ww-sheet-body">
+      <text class="ww-sheet-title">{{playResult.title}}</text>
+      <text class="ww-sheet-sub" wx:if="{{playResult.sub}}">{{playResult.sub}}</text>
+      <text
+        class="ww-sheet-line"
+        wx:for="{{playResult.lines}}"
+        wx:key="*this"
+        style="animation-delay: {{120 + index * 60}}ms;"
+      >{{item}}</text>
+    </view>
+
+    <view class="ww-sheet-cta-row">
+      <view class="ww-sheet-cta" bindtap="usePlayWish" hover-class="ww-sheet-cta-press" hover-stay-time="70">
+        {{playResult.wish ? '写成心愿' : '写下我的心愿'}}
+      </view>
+    </view>
+
+    <!-- 产品链路：**只留一条主路**（以前同时有"推荐卡"和"看这件藏品"两行，谁主谁次看不出来）。
+         有祈运推荐就用推荐，没有就用这面墙自己的藏品。 -->
+    <view
+      class="ww-sheet-product"
+      wx:if="{{reco || productId}}"
+      bindtap="{{reco ? 'goRecoProduct' : 'goProduct'}}"
+      hover-class="ww-sheet-product-press"
+      hover-stay-time="70"
+    >
+      <view class="ww-sheet-product-copy">
+        <text class="ww-sheet-product-label">{{reco ? reco.label : ('这面墙的藏品' + (productTitle ? ' · ' + productTitle : ''))}}</text>
+        <text class="ww-sheet-product-title" wx:if="{{reco}}">{{reco.title}}</text>
+        <text class="ww-sheet-product-meta" wx:if="{{reco && (reco.latinName || reco.priceText)}}">{{reco.latinName}}{{reco.latinName && reco.priceText ? ' · ' : ''}}{{reco.priceText}}</text>
+      </view>
+      <text class="ww-sheet-product-go">看看这件 ›</text>
+    </view>
+
+    <text class="ww-sheet-note">今日这一句一天一支，明天会换新的。</text>
+  </view>
+
+  <!-- 吸底发送条：必须是 .ww-page 的**直接子节点**。
+       此前它放在 .ww-write 里，而 .ww-write 是 `position:relative; z-index:1` 的层叠上下文 ——
+       条子自己的 z-index:20 只在这个上下文里有效，页面其余 z-index≥1 的块（分段控件/愿签卡）
+       就会画到它**上面**，真机截图里表现为"互相遮挡"。 -->
+  <view class="ww-composer">
+    <input
+      class="ww-input"
+      id="wishInput"
+      value="{{draft}}"
+      maxlength="{{textMax}}"
+      confirm-type="send"
+      placeholder="例如：马上有闲，马上有缘"
+      placeholder-class="ww-input-ph"
+      bindinput="onDraftInput"
+      bindconfirm="submitWish"
+    />
+    <view
+      class="ww-send {{posting || !draft || quota.exhausted ? 'is-off' : ''}}"
+      bindtap="submitWish"
+      hover-class="ww-send-press"
+      hover-stay-time="80"
+    >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
+    </view>
 </view>

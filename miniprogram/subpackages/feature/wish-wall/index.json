@@ -8,6 +8,7 @@
   "backgroundTextStyle": "light",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "easter-egg-note": "/components/EasterEggNote/index"
+    "easter-egg-note": "/components/EasterEggNote/index",
+    "register-auth-dialog": "/components/RegisterAuthDialog/index"
   }
 }

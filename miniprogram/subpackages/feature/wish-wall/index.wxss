@@ -16,7 +16,8 @@ page {
 .ww-page {
   position: relative;
   min-height: 100vh;
-  padding: 0 var(--space-4) calc(72rpx + env(safe-area-inset-bottom));
+  /* 底部预留：72rpx（原安全余量）+ 108rpx（吸底发送条的高度：84 输入 + 12×2 内边距）*/
+  padding: 0 var(--space-4) calc(180rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -35,8 +36,10 @@ page {
   position: relative;
   z-index: 1;
   overflow: hidden;
-  margin: 20rpx 0 var(--space-4);
-  padding: 24rpx 26rpx 22rpx;
+  /* 2026-09-18：纵向节奏收紧一档（24/22 → 20/18，底距 32 → 24）——真机截图里页头下半是留白，
+     省下来的高度给弹幕墙与玩法区（首屏能多露出一块内容）。 */
+  margin: 16rpx 0 24rpx;
+  padding: 20rpx 26rpx 18rpx;
   background: linear-gradient(165deg, var(--brass-50) 0%, #F2EDE4 48%, #EDE6DA 100%);
   border: 1px solid var(--brass-200);
   border-radius: var(--radius-md);
@@ -165,9 +168,39 @@ page {
 }
 
 /* 作用域（入口传进来的藏品名）：铜色小字，与主标题拉开层级，避免重复 */
+/* 产品名 + 祈运标签同一行：左侧产品名、右侧祈运（把页头右侧的空白用起来） */
+.ww-scope-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-top: 10rpx;
+}
+
+/* 产品 chip 作为入口时：铜色加深 + 细描边，一眼看出"这个能点" */
+.ww-scope.is-link {
+  color: var(--brass-700);
+  border-color: rgba(138, 117, 48, 0.5);
+  background: rgba(196, 167, 108, 0.22);
+}
+
+.ww-scope-press {
+  opacity: 0.72;
+}
+
+.ww-bless {
+  flex-shrink: 0;
+  padding: 4rpx 14rpx;
+  font-size: 20rpx;
+  line-height: 1.3;
+  color: var(--brass-700);
+  background: rgba(196, 167, 108, 0.22);
+  border: 1px solid rgba(138, 117, 48, 0.34);
+  border-radius: 999rpx;
+}
+
 .ww-scope {
   display: inline-block;
-  margin-top: 10rpx;
   padding: 4rpx 14rpx;
   font-size: 20rpx;
   line-height: 1.3;
@@ -229,10 +262,19 @@ page {
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: center;
-  gap: 20rpx;
-  margin-bottom: var(--space-3);
-  padding: 24rpx 26rpx;
+  /* 顶对齐：图标与第一行文字齐，两张卡的内容线也就在同一水平线上 */
+  align-items: flex-start;
+  /* ⚠️ 允许折行只为灯语那一行（`.ww-lantern-tail { flex: 0 0 100% }`）：
+     标题块（图标 + 标题 + 徽章）占第一行，灯语/灯位说明整行落到第二行。
+     行间距就是这里的 gap —— 不再靠各段自己的 margin-top 堆，免得越调越挤。 */
+  flex-wrap: wrap;
+  gap: 16rpx;
+  min-width: 0;
+  /* ⚠️ 这里曾有 margin-bottom: var(--space-3)（竖排时代的遗留）：
+     进了 flex/grid 行之后它会让左卡比右卡矮一截，两卡永远不等高。 */
+  /* 纵向 22 → 26rpx：文案变整行之后卡片不高了，多出来的高度给上下留白。
+     横向保持 20rpx（半宽卡里再收就把徽章行挤折行了）。木鱼卡必须同值（守卫钉住）。 */
+  padding: 26rpx 20rpx;
   background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);
   border: 1rpx solid rgba(196, 167, 108, 0.24);
   border-radius: var(--radius-lg);
@@ -245,6 +287,12 @@ page {
 
 .ww-lantern-press {
   opacity: 0.9;
+}
+
+/* 未点灯时内容只有三行，顶对齐会在底部留一截空白（真机截图里与右边的木鱼卡不对称）；
+   点亮后是四行、本来就填满，所以只在 is-idle 时居中 —— 不改点亮态的对齐（那是真图确认过的）。 */
+.ww-lantern.is-idle {
+  align-items: center;
 }
 
 /* 灯座：固定 56rpx 方盒，光晕与灯芯都在盒内定位 —— 行内绝不放绝对定位元素，
@@ -286,20 +334,25 @@ page {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 44rpx;
-  height: 44rpx;
-  margin: -22rpx 0 0 -22rpx;
-  box-sizing: border-box;
-  border: 1rpx solid rgba(196, 167, 108, 0.4);
-  border-radius: 50%;
-  background: #2A2723;
-  transition: background 0.4s ease, box-shadow 0.4s ease;
+  width: 46rpx;
+  height: 46rpx;
+  margin: -23rpx 0 0 -23rpx;
+  /* 灯芯 = 附件里的「灯泡」SVG（2026-09-18 产品指定）。
+     ⚠️ 图的声明**只有一处**：本文件末尾「点灯 / 木鱼 图标替换」段（连 encoding 也只在那里改）。
+     同一个选择器出现两份 background-image 时，后一份会静默吃掉前一份 —— 改哪份都不生效、还看不出来。
+     这里只负责**几何 + 两态**；图是单色单路径，所以「未点灯」不另做一张，直接把同一枚调暗。 */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.38;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .ww-lantern.is-lit .ww-lantern-core {
-  background: radial-gradient(circle at 40% 34%, #F6DFAE 0%, #E9BE6E 52%, #C9963C 100%);
-  border-color: rgba(246, 223, 174, 0.7);
-  box-shadow: 0 0 26rpx rgba(233, 190, 110, 0.7);
+  /* 点亮 = 同一枚灯泡回到全亮 + 微微放大；光晕交给 .ww-lantern-halo
+     （不用 box-shadow：方形盒子上的阴影会在灯泡背后露出一圈方角） */
+  opacity: 1;
+  transform: scale(1.06);
 }
 
 .ww-lantern-copy {
@@ -307,10 +360,18 @@ page {
   min-width: 0;
 }
 
+/* 灯语 + 灯位说明：整行（不跟标题抢那 ~220rpx 的窄列）。
+   整行可用宽 = 卡宽 - 左右 padding = 295rpx；灯语 21rpx × 13 字 = 273rpx，一行装得下。 */
+.ww-lantern-tail {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
 .ww-lantern-title {
   display: block;
-  font-size: 28rpx;
-  line-height: 1.35;
+  font-size: 30rpx;
+  line-height: 1.3;
+  letter-spacing: 1rpx;
   color: #F2EDE3;
 }
 
@@ -320,9 +381,11 @@ page {
 
 .ww-lantern-line {
   display: block;
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  line-height: 1.45;
+  /* 整行的第一行，段间距交给 .ww-lantern 的 gap，不再叠 margin */
+  margin-top: 0;
+  font-size: 21rpx;
+  /* 中文正文行距 1.45 偏挤（真图反馈）；1.6 是这套字号下的舒适值 */
+  line-height: 1.6;
   color: var(--brass-400);
 }
 
@@ -337,15 +400,17 @@ page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 76rpx;
-  padding: 10rpx 12rpx;
+  /* 半宽卡里它是"固定宽度"的一份子：原来 76rpx 会把文案列挤到只剩 5–6 个字（标题被压断）。
+     压到 48rpx 后文案列多出 ~28rpx（约 1 个字），标题不再折行。 */
+  min-width: 48rpx;
+  padding: 6rpx 8rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.42);
   border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.1);
 }
 
 .ww-streak-n {
-  font-size: 30rpx;
+  font-size: 26rpx;
   line-height: 1.1;
   color: var(--brass-300);
   font-family: var(--font-mono);
@@ -382,10 +447,11 @@ page {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.1' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
 }
 
-/* 轨道刻度：与 buildDanmakuRows 的 topPercent(8/33.3/58.7/84) 对齐，写死四条。
+/* 轨道刻度：与 buildDanmakuRows 的 topPercent 对齐（6 轨 → 8/23.2/38.4/53.6/68.8/84）。
    只画左侧一小段 —— 整条横线会像表格线，且弹幕文字正好压在线上，越读越乱。
    ⚠️ 刻度挂在 .ww-wall-inner 里：它的高度不含底部页脚，与弹幕同一坐标系；
-      挂到 .ww-wall 上会因页脚高度（44rpx）逐轨错开，第 4 条能差 18px。 */
+      挂到 .ww-wall 上会因页脚高度（44rpx）逐轨错开，第 4 条能差 18px。
+   ⚠️ 条数必须等于 utils/wishWall 的 LANES（守卫对账）。 */
 .ww-wall-rail {
   position: absolute;
   left: 18rpx;
@@ -398,9 +464,11 @@ page {
 }
 
 .ww-wall-rail.rail-1 { top: 8%; }
-.ww-wall-rail.rail-2 { top: 33.3%; }
-.ww-wall-rail.rail-3 { top: 58.7%; }
-.ww-wall-rail.rail-4 { top: 84%; }
+.ww-wall-rail.rail-2 { top: 23.2%; }
+.ww-wall-rail.rail-3 { top: 38.4%; }
+.ww-wall-rail.rail-4 { top: 53.6%; }
+.ww-wall-rail.rail-5 { top: 68.8%; }
+.ww-wall-rail.rail-6 { top: 84%; }
 
 .ww-wall-inner {
   position: absolute;
@@ -420,9 +488,12 @@ page {
   align-items: center;
   gap: 10rpx;
   white-space: nowrap;
-  /* 手写体：心愿是"写"上去的。字号比原来的无衬线大一号 —— 手写体笔画细，移动中要认得出 */
+  /* 手写体：心愿是"写"上去的。字号比原来的无衬线大一号 —— 手写体笔画细，移动中要认得出。
+     2026-09-18 真机截图：28 → 32rpx（380rpx 的浅纸墙上 4 轨小字显得空且小）。
+     ⚠️ 改这个值必须同步 utils/wishWall 的 CHAR_RPX：同轨不重叠按它估算文案宽度，
+     估小了后一条会在前一条尾部还在屏内时进场（守卫按"字号 ×1.03 ≈ CHAR_RPX"实算对账）。 */
   font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
-  font-size: 28rpx;
+  font-size: 32rpx;
   line-height: 1.3;
   color: #4A4234;
   letter-spacing: 0.02em;
@@ -443,7 +514,7 @@ page {
   opacity: 0.55;
 }
 
-/* 墙上也承担信任信号：置顶=铜钉、馆方=灰钉（此前只有愿签列表里有印记） */
+/* 墙上只留置顶的铜钉（「馆方」灰钉已随徽章一起下线） */
 .ww-dm-mark {
   flex-shrink: 0;
   width: 8rpx;
@@ -453,10 +524,6 @@ page {
 
 .ww-dm-mark.is-pinned {
   background: radial-gradient(circle at 36% 34%, var(--brass-200) 0%, var(--brass-500) 70%);
-}
-
-.ww-dm-mark.is-official {
-  background: rgba(120, 110, 96, 0.75);
 }
 
 /* 刚落愿那一句在墙上先亮一下，随后随高亮一起褪回 */
@@ -520,6 +587,73 @@ page {
   color: var(--brass-600);
 }
 
+/* 「看全部 ›」：贴着右边缘的弱提示（页脚整行可点，见 goWishList） */
+.ww-wall-foot-more {
+  margin-left: auto;
+  font-size: 20rpx;
+  letter-spacing: 0.04em;
+  color: var(--brass-500);
+}
+
+.ww-wall-foot-press {
+  background: rgba(233, 190, 110, 0.28);
+}
+
+/* ── 即时反馈回声（需求 28 · 玩法动作 → 墙的回应）──────────────────────
+   位置：与页脚同一条 44rpx 带（z-index 在页脚之上覆盖它），因为这是墙内唯一不会被
+   弹幕穿过的横向条带（第 4 轨在 84%，轨下只剩 ~17rpx）。
+   时长的唯一事实源是 utils/ritualFeedback.ECHO_HOLD_MS（1800ms），
+   页面那个计时器负责移除 DOM，这里只负责"进-停-出"的观感，两处必须同值。 */
+.ww-echo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 0 20rpx;
+  /* ⚠️ 必须**不透明**：2026-09-18 真机截图里，半透明的这条带让下面的页脚文字透上来，
+     「我拆开了今天的签饼」与「26 条心愿正在墙上流动」叠成两行字（看着像渲染错乱）。
+     带子整条盖住页脚是**故意的** —— 回声期间不需要同时读页脚。 */
+  background: linear-gradient(90deg, #E6D6AE 0%, #EFE8DA 62%, #E7DFCF 100%);
+  border-top: 1px solid rgba(138, 117, 48, 0.34);
+  animation: ww-echo-life 1800ms ease-out forwards;
+}
+
+.ww-echo-text {
+  font-size: 20rpx;
+  letter-spacing: 0.04em;
+  color: var(--brass-700);
+}
+
+.ww-echo-sub {
+  font-size: 18rpx;
+  color: var(--brass-600);
+  opacity: 0.9;
+}
+
+/* 8% 处淡入（快，手感是即时的）、82% 起淡出（慢，不留残影到下一轮） */
+@keyframes ww-echo-life {
+  0% { opacity: 0; transform: translateY(8rpx); }
+  8% { opacity: 1; transform: translateY(0); }
+  82% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4rpx); }
+}
+
+/* 墙本身也"吸一口气"：只有边框与内光闪一下，不动尺寸、不动轨道（改几何会牵动弹幕布局） */
+.ww-wall.is-echo {
+  animation: ww-echo-wall 900ms ease-out 1;
+}
+
+@keyframes ww-echo-wall {
+  0% { box-shadow: inset 0 0 0 rgba(233, 190, 110, 0); }
+  35% { box-shadow: inset 0 0 54rpx rgba(233, 190, 110, 0.34); }
+  100% { box-shadow: inset 0 0 0 rgba(233, 190, 110, 0); }
+}
+
 /* ==================== 写愿签 ==================== */
 
 .ww-write {
@@ -569,10 +703,24 @@ page {
   background: rgba(196, 167, 108, 0.2);
 }
 
+/* 发送条**吸底**（2026-09-18 产品确认）：主操作永远在拇指下，不必先滚一屏。
+   ⚠️ 页面底部必须预留 ≥ 这条的高度（见 .ww-page 的 padding-bottom），否则最后一张愿签会被盖住。
+   高度 = 输入框 84rpx + 上下内边距 12×2 + 安全区。 */
 .ww-composer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* ⚠️ 必须是不透明背景：半透明时下面的愿签会透上来，与真机反馈的"互相遮挡"叠在一起更难读。
+     （与 §28 回声条同一个坑：盖在别的东西上的条带，背景就得是实的。） */
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 14rpx;
+  padding: 12rpx 32rpx calc(12rpx + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.28);
+  box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.35);
 }
 
 .ww-input {
@@ -708,17 +856,6 @@ page {
   color: var(--color-text-muted);
 }
 
-.ww-head-n {
-  font-size: 20rpx;
-  color: var(--color-text-muted);
-}
-
-.ww-head-rule {
-  flex: 1;
-  height: 1px;
-  background: rgba(196, 167, 108, 0.16);
-}
-
 /* 两列瀑布：列内纵向堆叠，列间等宽；文案 2–30 字差异大，按行对齐会留空洞 */
 .ww-tag-cols {
   position: relative;
@@ -806,7 +943,8 @@ page {
   white-space: nowrap;
 }
 
-/* 馆方 / 置顶：贴在签右上角的印章（与正文错开，靠 padding-top 预留的顶带） */
+/* 印记（已收起 / 我的 / 置顶）：贴在签右上角（与正文错开，靠 padding-top 预留的顶带）。
+   「馆方」印章已下线（2026-09-18 产品决定），它的 .is-official 样式一并删除 —— 不留死样式 */
 .ww-tag-seal {
   position: absolute;
   right: 12rpx;
@@ -819,12 +957,6 @@ page {
   border: 1rpx solid rgba(196, 167, 108, 0.5);
   border-radius: 6rpx;
   background: rgba(196, 167, 108, 0.08);
-}
-
-.ww-tag-seal.is-official {
-  color: var(--color-text-secondary);
-  border-color: rgba(160, 154, 144, 0.45);
-  background: rgba(160, 154, 144, 0.06);
 }
 
 .ww-tags-empty {
@@ -980,10 +1112,14 @@ page {
 
 /* ==================== 灯位层级 / 节气（仪式升级） ==================== */
 
-.ww-lantern-head {
+/* 徽章行：独立于标题，允许折行（半宽卡里挤不下时折行，而不是把标题压断） */
+.ww-lantern-meta {
   display: flex;
   align-items: center;
-  gap: 10rpx;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  /* 徽章与标题之间要能"呼吸"：6rpx 在真机上等于贴着（文案拥挤的一半来源） */
+  margin-top: 12rpx;
 }
 
 .ww-lantern-tier,
@@ -1014,8 +1150,10 @@ page {
 
 .ww-lantern-note {
   display: block;
-  margin-top: 6rpx;
-  font-size: 20rpx;
+  /* 灯位说明是三级信息：与灯语拉开 8rpx，字号再降一档、颜色压到 muted */
+  margin-top: 8rpx;
+  font-size: 19rpx;
+  line-height: 1.5;
   color: var(--color-text-muted);
 }
 
@@ -1271,15 +1409,19 @@ page {
   border: none;
 }
 
-/* ── 弹幕丰富样式（2026-09-19）：6 档配色 + emoji ─────────────────────────
-   取色偏「展签/矿物/草木」，统一在中高明度，保证深色墙面上可读；
-   配色由 utils/wishWall.js 按 id 稳定分配（确定性，非随机）。 */
-.ww-tone-0 { color: #EFE6D2; }   /* 素笺 */
-.ww-tone-1 { color: #D9BE86; }   /* 铜金 */
-.ww-tone-2 { color: #A9C6A0; }   /* 苔绿 */
-.ww-tone-3 { color: #9FC0D6; }   /* 远海 */
-.ww-tone-4 { color: #E0A9A0; }   /* 珊瑚 */
-.ww-tone-5 { color: #C7B4DE; }   /* 紫晶 */
+/* ── 弹幕 6 档配色（2026-09-18 重做：按**浅纸**墙面配色） ──────────────────
+   ⚠️ 上一版取的是「中高明度、保证**深色墙面**上可读」的色 —— 可墙面后来改成了浅纸
+   （`linear-gradient(#F6F1E7 → #E7DFCF)`），于是 6 档在纸上只有 **1.0–1.8:1**：
+   最浅的「素笺」几乎隐形（实测截图里那几条"发虚"的弹幕就是它）。
+   现在按浅纸重做：统一**深墨/矿物色**，对墙面的三个渐变停靠点最差 **5.23:1**（AA 需 4.5:1）。
+   配色仍由 utils/wishWall.js 按 id 稳定分配（确定性，非随机）。
+   守卫：test:wish-wall 里**真的算对比度**（读本文件的色值 × 墙面渐变），低于 4.5 即失败。 */
+.ww-tone-0 { color: #4A4234; }   /* 素笺（墨） */
+.ww-tone-1 { color: #6E5019; }   /* 铜金 */
+.ww-tone-2 { color: #38602F; }   /* 苔绿 */
+.ww-tone-3 { color: #2F5D78; }   /* 远海 */
+.ww-tone-4 { color: #8A4640; }   /* 珊瑚 */
+.ww-tone-5 { color: #5B4A78; }   /* 紫晶 */
 .ww-emoji {
   margin-right: 6rpx;
   font-size: 26rpx;
@@ -1321,22 +1463,29 @@ page {
  *    （轨道刻度与 topPercent 由 test-wish-wall 钉住，动高度有风险 ✗）
  * ═══════════════════════════════════════════════════════════════════ */
 .ww-ritual-row {
-  display: flex;
+  /* 用 grid 而不是 flex：两张卡**严格等宽**（flex 会按内容分配，左卡文案长就比右卡宽）；
+     `align-items: stretch` 让两张卡等高 —— 前提是卡片自身没有多余 margin（见 .ww-lantern）。 */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: stretch;
   gap: 16rpx;
 }
 .ww-ritual-row .ww-lantern { flex: 1; min-width: 0; }
 
 .ww-ritual-card {
-  flex: 1;
   position: relative;
   display: flex;
+  /* ⚠️ 这里必须**垂直居中**，不能跟着灯卡改成 flex-start：
+     木鱼卡只有两行，等高（grid stretch）之后顶部对齐会在底部留一大片空白 ——
+     真机截图上一眼就能看出来。灯卡相反：它内容三行、本来就填满，所以顶对齐。
+     两张卡各自的**内边距**保持一致，才是"像一对"的真正来源。 */
   align-items: center;
-  gap: 18rpx;
+  gap: 16rpx;
   min-width: 0;
-  padding: 22rpx 20rpx;
+  /* ⚠️ 必须与 .ww-lantern 同值（守卫 `两卡内边距一致` 钉住）：改一边就是"两张卡不像一对" */
+  padding: 26rpx 20rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.34);
-  border-radius: 16rpx;
+  border-radius: var(--radius-lg);
   background: linear-gradient(180deg, rgba(196, 167, 108, 0.10) 0%, rgba(196, 167, 108, 0.03) 100%);
 }
 .ww-muyu-press { opacity: 0.86; }
@@ -1383,10 +1532,388 @@ page {
 /* 说明：一行说完，不占版面 */
 .ww-foot-note {
   display: block;
-  margin: 18rpx 4rpx 4rpx;
+  /* 与音效开关同行（见 .ww-foot-row）：说明占满剩余宽度，开关固定宽度贴右 */
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-size: 20rpx;
   line-height: 1.6;
   color: var(--color-text-muted, #8A857C);
+}
+
+.ww-foot-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 18rpx 4rpx 4rpx;
+}
+
+/* 仪式音效开关：铜色描边小胶囊。开=实心铜字，关=压暗（一眼看出状态，不靠读文字） */
+.ww-sound {
+  flex-shrink: 0;
+  padding: 6rpx 16rpx;
+  font-size: 20rpx;
+  letter-spacing: 0.04em;
+  border-radius: 999rpx;
+}
+
+.ww-sound.is-on {
+  color: var(--brass-300);
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+  background: rgba(196, 167, 108, 0.12);
+}
+
+.ww-sound.is-off {
+  color: var(--color-text-muted, #8A857C);
+  border: 1rpx solid rgba(138, 133, 124, 0.34);
+  background: transparent;
+}
+
+.ww-sound-press {
+  opacity: 0.72;
+}
+
+/* ==================== 玩法区（今日一签 / 签饼 / 星座 / MBTI） ====================
+   与点灯/木鱼那两张卡**刻意不同族**：那两张是"动作卡"（有状态、有计数、会一直亮），
+   这里是"抽一句"的入口瓦片（无状态、点开就地展开结果）。所以：
+   - 瓦片矮、不带边框发光，只留纸面与字标；
+   - 结果卡用与愿签同一套"纸面 + 铜边"语言，展开在瓦片下方。 */
+.ww-plays {
+  position: relative;
+  z-index: 1;
+  margin-bottom: var(--space-3);
+}
+
+.ww-plays-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin: 4rpx 4rpx 14rpx;
+}
+
+.ww-plays-title {
+  font-size: 26rpx;
+  letter-spacing: 0.06em;
+  color: var(--brass-300);
+}
+
+.ww-plays-sub {
+  font-size: 20rpx;
+  color: var(--color-text-muted, #8A857C);
+}
+
+.ww-play-grid {
+  display: grid;
+  /* 两列等宽：瓦片内容长度差异大（"MBTI 贴士" vs "拆签饼"），flex 会按内容分配 */
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+}
+
+.ww-play {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  min-width: 0;
+  padding: 20rpx 18rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.ww-play-press {
+  opacity: 0.86;
+}
+
+/* 展开中的瓦片：铜边亮起来，和下方结果卡连成一组 */
+.ww-play.is-open {
+  border-color: rgba(196, 167, 108, 0.62);
+  background: rgba(196, 167, 108, 0.1);
+}
+
+.ww-play-mark {
+  flex-shrink: 0;
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: var(--brass-300);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  border-radius: 50%;
+  background: rgba(196, 167, 108, 0.08);
+}
+
+.ww-play-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.ww-play-name {
+  display: block;
+  font-size: 26rpx;
+  line-height: 1.3;
+  color: #EFE6D2;
+}
+
+.ww-play-hint {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 19rpx;
+  line-height: 1.4;
+  color: var(--color-text-muted, #8A857C);
+}
+
+/* ── 纸签弹层（2026-09-18 细节雕刻）──────────────────────────────────
+   身份明确：遮罩 + 从底部升起的纸签 + 铜色把手 + 印章字标。
+   纸面语言与牌匾/愿签同源（浅纸 + 铜边 + 内高光 + 四角铭牌），所以"亮色块"不再是突兀，
+   而是**同一套纸张语言里递上来的一张签**。 */
+.ww-sheet-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  /* 暖黑而不是纯黑：与博物黑同色系，压暗但不发蓝。
+     ⚠️ 浓度 62% 在浅色页面上够，但本页是博物黑 —— 实测"根本看不出被压暗"，
+     于是弹层没有"盖住页面"的重量感。调到 78%（仍看得见轮廓，但页面明显退后）。 */
+  background: rgba(10, 9, 7, 0.78);
+  animation: ww-sheet-mask-in 200ms ease-out 1 forwards;
+}
+
+@keyframes ww-sheet-mask-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.ww-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 84vh;
+  overflow-y: auto;
+  padding: 0 30rpx calc(28rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, #F8F4EB 0%, #F1EADD 60%, #EBE3D4 100%);
+  border-radius: 28rpx 28rpx 0 0;
+  box-shadow: 0 -12rpx 40rpx rgba(0, 0, 0, 0.45), inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  animation: ww-sheet-up 300ms cubic-bezier(0.22, 0.9, 0.24, 1) 1 forwards;
+  transition: transform 160ms ease-out;
+}
+
+/* 四角铭牌：与 AppModal / 注册弹窗同一套"牌"的语言 */
+.ww-sheet::before,
+.ww-sheet::after {
+  content: '';
+  position: absolute;
+  width: 22rpx;
+  height: 22rpx;
+  border: 2rpx solid rgba(138, 117, 48, 0.42);
+}
+.ww-sheet::before { left: 16rpx; top: 16rpx; border-right: 0; border-bottom: 0; border-radius: 6rpx 0 0 0; }
+.ww-sheet::after { right: 16rpx; top: 16rpx; border-left: 0; border-bottom: 0; border-radius: 0 6rpx 0 0; }
+
+@keyframes ww-sheet-up {
+  0% { transform: translateY(102%); }
+  100% { transform: translateY(0); }
+}
+
+.ww-sheet-grip {
+  padding: 18rpx 0 10rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.ww-sheet-grip-bar {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: rgba(138, 117, 48, 0.32);
+}
+
+.ww-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding-bottom: 18rpx;
+  border-bottom: 1rpx solid rgba(138, 117, 48, 0.22);
+}
+
+/* 印章式字标：与玩法瓦片上的铜圈同形，签与"抽签那一按"在视觉上连起来 */
+.ww-sheet-mark {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: var(--brass-700);
+  border: 2rpx solid rgba(138, 117, 48, 0.5);
+  border-radius: 50%;
+  background: rgba(196, 167, 108, 0.18);
+}
+
+.ww-sheet-head-copy { flex: 1; min-width: 0; }
+
+.ww-sheet-overline {
+  display: block;
+  font-size: 20rpx;
+  letter-spacing: 0.14em;
+  color: var(--brass-600);
+}
+
+.ww-sheet-name {
+  display: block;
+  margin-top: 2rpx;
+  font-size: 26rpx;
+  letter-spacing: 0.04em;
+  color: #4A4234;
+}
+
+.ww-sheet-close {
+  flex-shrink: 0;
+  padding: 8rpx 4rpx 8rpx 20rpx;
+  font-size: 22rpx;
+  color: var(--brass-600);
+}
+
+.ww-sheet-close-press { opacity: 0.6; }
+
+.ww-sheet-body { padding: 22rpx 2rpx 0; }
+
+/* 签文：本页最大的一行字，用书法体 + 加宽字距，标题就是"签"本身 */
+.ww-sheet-title {
+  display: block;
+  font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, serif;
+  font-size: 44rpx;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  color: var(--brass-700);
+}
+
+.ww-sheet-sub {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--brass-600);
+}
+
+.ww-sheet-line {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 25rpx;
+  line-height: 1.72;
+  color: #4A4234;
+  opacity: 0;
+  animation: ww-sheet-line-in 260ms ease-out 1 forwards;
+}
+
+@keyframes ww-sheet-line-in {
+  0% { opacity: 0; transform: translateY(10rpx); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.ww-sheet-cta-row { margin-top: 26rpx; }
+
+.ww-sheet-cta {
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  font-size: 28rpx;
+  letter-spacing: 0.06em;
+  color: #1A1814;
+  background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
+  border-radius: 12rpx;
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.6);
+}
+
+.ww-sheet-cta-press { opacity: 0.9; }
+
+/* 产品链路：一条主路。左侧说明"为什么是它"，右侧是唯一的出口动作 */
+.ww-sheet-product {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 18rpx;
+  padding: 20rpx 22rpx;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1rpx solid rgba(138, 117, 48, 0.3);
+  border-radius: 12rpx;
+}
+
+.ww-sheet-product-press { opacity: 0.82; }
+
+.ww-sheet-product-copy { flex: 1; min-width: 0; }
+
+.ww-sheet-product-label {
+  display: block;
+  font-size: 19rpx;
+  letter-spacing: 0.06em;
+  color: var(--brass-600);
+}
+
+.ww-sheet-product-title {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 28rpx;
+  color: #3A3428;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ww-sheet-product-meta {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #7A6E58;
+}
+
+.ww-sheet-product-go {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--brass-700);
+}
+
+.ww-sheet-note {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 19rpx;
+  text-align: center;
+  color: #8A7E66;
+}
+
+/* 需要补资料：说清"要哪个字段、填了有什么好处"，只给一条去填的路 */
+.ww-play-need {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 16rpx;
+  padding: 20rpx;
+  background: var(--color-bg-card);
+  border: 1rpx dashed rgba(196, 167, 108, 0.44);
+  border-radius: var(--radius-md);
+}
+
+.ww-play-need-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 21rpx;
+  line-height: 1.5;
+  color: var(--color-text-muted, #8A857C);
+}
+
+.ww-play-need-press {
+  opacity: 0.85;
+}
+
+.ww-play-need-cta {
+  flex-shrink: 0;
+  padding: 12rpx 20rpx;
+  font-size: 22rpx;
+  color: var(--brass-300);
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+  border-radius: var(--radius-sm);
 }
 
 /* 弹幕墙视觉强化：更实的描边 + 内光 + 标题层次（不动轨道与高度） */

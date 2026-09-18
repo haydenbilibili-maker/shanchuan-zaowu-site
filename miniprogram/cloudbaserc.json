@@ -668,6 +668,13 @@
       "installDependency": true
     },
     {
+      "name": "getBlessProducts",
+      "timeout": 15,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "getHomeConfig",
       "timeout": 20,
       "runtime": "Nodejs16.13",

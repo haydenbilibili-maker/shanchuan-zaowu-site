@@ -1,0 +1,73 @@
+# CODEOWNERS · 只覆盖**高风险路径**（2026-09-18 立）
+#
+# 依据：docs/协作章程_单一接口与合并权_2026-09-18.md §6.1
+#
+# ⚠️ 本文件**单独存在不会卡任何人**。它只在同时打开分支保护里的
+#    「Require review from Code Owners」时才产生强制力；在那之前，
+#    它的唯一效果是：匹配到的 PR 自动把 owner 加成 reviewer（= 给你通知）。
+#
+# ⚠️ **启用前必读（未核实的风险）**：GitHub 禁止自己批准自己的 PR。
+#    若 agent 与 owner **共用同一个 GitHub 账号**推送，则开启该开关后
+#    「作者 = code owner」的 PR 可能**无人可批准 → 永久卡死**。
+#    本环境无法访问 docs.github.com 逐字核实该豁免规则（沙箱内 github.com 解析到非公网 IP），故：
+#    **先只开 ①（Require PR + 禁 force push + 禁删除 + 禁绕过）与 ③（Require status checks），
+#    用一个无关紧要的 PR 验证「你能批准 agent 的 PR」，再回来决定是否勾 ②。**
+#
+# 设计口径：**故意不覆盖全仓**。Code Owners 开满会把人变成每条改动的瓶颈。
+# 这里只覆盖三类「一旦改错、代价不可逆」的面：
+#   ① 契约面  —— 改了等于单方面改口径（C1–C9，见治理基线 §3.2）
+#   ② 钱路径  —— 改动会真的发错券 / 发错分 / 退错款
+#   ③ 发布与密级 —— 内部资料进公开路径（2026-09-17 曾真实发生过，见审计 §7）
+#
+# **故意不覆盖**（附理由，避免以后有人"顺手补全"）：
+#   · `/package.json` —— 守卫清单是集成官的日常工作面；纳入 Code Owners 会让
+#     "加一条守卫"都要人批。它的真实风险是**文本冲突**（靠清单外置解决，P1-1），
+#     不是正确性；正确性由 check:admin + check:admin:selftest 兜。
+#   · 各业务页面/组件 —— 那是各流自己的 owns 范围，归属守卫已经在管。
+
+# 注意：**故意不写 `*` 兜底行**。
+# 写了它 = 全仓每条 PR 都需要人批准 = 人变成瓶颈 —— 与上面的设计口径自相矛盾。
+# 未被下面 pattern 命中的路径 = 无 owner = 不需要人工批准。
+
+# ── ① 契约面（改了等于单方面改口径） ────────────────────────────
+/docs/并发工作流注册表.json      @haydenbilibili-maker
+/docs/契约*.md                   @haydenbilibili-maker
+/AGENTS.md                       @haydenbilibili-maker
+/miniprogram/app.json            @haydenbilibili-maker
+/miniprogram/utils/analytics/eventSchema.js   @haydenbilibili-maker
+/miniprogram/utils/analytics/constants.js     @haydenbilibili-maker
+/admin/src/utils/analyticsSchema.js           @haydenbilibili-maker
+/admin/src/cloud.js              @haydenbilibili-maker
+/cloudbase/rules/                @haydenbilibili-maker
+/cloudbase/schema/               @haydenbilibili-maker
+/miniprogram/database-rules/     @haydenbilibili-maker
+/functions/_lib/cloudbaseCallFn.mjs           @haydenbilibili-maker
+/admin/src/utils/cloudbaseCdnDb.js            @haydenbilibili-maker
+/admin/src/utils/modulesRegistry.js           @haydenbilibili-maker
+/admin/src/config/adminNavDomains.js          @haydenbilibili-maker
+
+# ── ② 钱路径（会真出钱的） ──────────────────────────────────────
+/miniprogram/cloudfunctions/earnPoints/       @haydenbilibili-maker
+/miniprogram/cloudfunctions/receiveCoupon/    @haydenbilibili-maker
+/miniprogram/cloudfunctions/transferCoupon/   @haydenbilibili-maker
+/miniprogram/cloudfunctions/exchangeCoupon/   @haydenbilibili-maker
+/miniprogram/cloudfunctions/grantStorePoints/ @haydenbilibili-maker
+/miniprogram/cloudfunctions/getPointRecords/  @haydenbilibili-maker
+/miniprogram/cloudfunctions/refundOrder/      @haydenbilibili-maker
+/miniprogram/cloudfunctions/confirmPayment/   @haydenbilibili-maker
+/miniprogram/cloudfunctions/payOrder/         @haydenbilibili-maker
+/miniprogram/cloudfunctions/payCallback/      @haydenbilibili-maker
+/miniprogram/cloudfunctions/manageStoredValue/ @haydenbilibili-maker
+/miniprogram/cloudfunctions/createDepositIntent/ @haydenbilibili-maker
+/miniprogram/subpackages/business/wallet-hub/ @haydenbilibili-maker
+/miniprogram/subpackages/business/coupons/    @haydenbilibili-maker
+
+# ── ③ 发布路径与密级（内部资料不得进公开部署目录） ────────────────
+/public/                         @haydenbilibili-maker
+/admin/public/                   @haydenbilibili-maker
+/scripts/build-admin.mjs         @haydenbilibili-maker
+/scripts/verify-admin-dist.mjs   @haydenbilibili-maker
+/admin/scripts/check-publish-dir.mjs          @haydenbilibili-maker
+
+# ── ④ CI 门禁本身（改它等于改闸门） ────────────────────────────
+/.github/                        @haydenbilibili-maker

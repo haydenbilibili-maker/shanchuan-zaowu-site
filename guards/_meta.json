@@ -1,0 +1,30 @@
+{
+  "_doc": "守卫清单的**唯一事实源**（2026-09-18 P1-1：从 package.json 的 2690 字符单行 check:admin:guards 外置）。",
+  "_why": "旧形态下 7 条流加守卫都改同一行 → 两条流同时加 = 100% 冲突（package.json 曾在近 200 次提交里被改 49 次，全仓第一）。现在按域拆成一文件一域，每条流只改自己的域文件 → 跨流零冲突。",
+  "_usage": {
+    "npm run check:admin": "跑全部域（= CI 的 verify job）",
+    "npm run check:domain -- pay": "只跑 pay 域 + cross（开发内循环，大幅缩时）",
+    "npm run check:guards:list": "打印清单与域归属"
+  },
+  "minGuards": 80,
+  "crossWith": [
+    "visual",
+    "wish-wall",
+    "pay",
+    "order",
+    "onboarding",
+    "av",
+    "erp"
+  ],
+  "domainOrder": [
+    "meta",
+    "visual",
+    "wish-wall",
+    "pay",
+    "order",
+    "onboarding",
+    "av",
+    "erp",
+    "cross"
+  ]
+}

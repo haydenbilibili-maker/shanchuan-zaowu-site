@@ -102,6 +102,14 @@
 }
 .p-price { font-size: 32rpx; color: var(--primary); font-family: var(--font-mono); letter-spacing: 0.02em; }
 .p-sold { font-size: 20rpx; color: var(--color-text-secondary); letter-spacing: 0.02em; white-space: nowrap; }
+/* 「馆方新藏」：真实成立的状态标（新品 30 天内），做成铜色小标而不是销量文字 */
+.p-sold.is-new {
+  padding: 0 8rpx;
+  color: var(--brass-300);
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  border-radius: 4rpx;
+  letter-spacing: 0.04em;
+}
 .p-from { font-size: 20rpx; color: var(--color-text-latin); margin-left: 2rpx; }
 .btn-add {
   width: 40rpx; height: 40rpx; border-radius: 50%;

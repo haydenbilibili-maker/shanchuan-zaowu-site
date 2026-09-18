@@ -167,10 +167,13 @@ function selftest() {
     {
       name: '详情页退回只显示标准名',
       file: DETAIL_WXML,
+      // ⚠️ 2026-09-18 锚点随源码更新：详情页把「题记」挪到了标准名**之后**
+      // （原来是 主题名 → 题记 → 标准名，现在 主题名 → 标准名 → 题记）。
+      // 注入的**意图不变**：去掉主题名与题记，只剩标准名 —— 若页面还能显示主题名，说明它另有来源。
       from: `        <text class="title-theme" wx:if="{{product.themeName}}">{{product.themeName}}</text>
         <!-- 题记：与主题名配套的一句话（送礼时它比四字名更打动人） -->
-        <text class="title-theme-note" wx:if="{{product.themeName && product.themeNote}}">{{product.themeNote}}</text>
-        <text class="title-main {{product.themeName ? 'is-sub' : ''}}">{{product.title}}</text>`,
+        <text class="title-main {{product.themeName ? 'is-sub' : ''}}">{{product.title}}</text>
+        <text class="title-theme-note" wx:if="{{product.themeName && product.themeNote}}">{{product.themeNote}}</text>`,
       to: `        <text class="title-main">{{product.title}}</text>`
     },
     {

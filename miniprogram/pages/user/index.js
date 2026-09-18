@@ -4,6 +4,7 @@ const db = wx.cloud.database();
 const { trackBehavior } = require('../../utils/trackBehavior');
 const { requestManagerAccess, requestWorkspaceAccess } = require('../../utils/managerAuth');
 const { requestStaffOrderSubscribe } = require('../../utils/staffOrderSubscribe');
+const { withAppModal } = require('../../utils/appModal');
 const {
   workbenchEntries,
   resolveWorkspaceRole,
@@ -85,6 +86,11 @@ const WORKBENCH_BADGE_SOFT_TTL_MS = 90 * 1000;
 const GUEST_NICK = '未登录用户';
 /** 无快照时用黄金结构骨架（Lv6），避免浅色纸卡「未登录」闪屏 */
 const PENDING_SKIN_LEVEL = 6;
+/** 会员码/礼券码二维码：加载与绘制失败的重试预算；用尽后必须落到可见的 error 态 */
+const QR_DRAW_RETRY_MAX = 4;
+const QR_DRAW_RETRY_MS = 180;
+/** require.async 跨分包加载二维码模块的兜底超时（不回调也要有结论，否则就是空白框） */
+const QR_DRAWER_TIMEOUT_MS = 2500;
 
 function currentOpenid() {
   try {
@@ -410,7 +416,7 @@ function buildBootMemberCardState() {
 
 const _bootCard = buildBootMemberCardState();
 
-Page({
+Page(withAppModal({
   behaviors: [easterEggHost],
   data: {
     // 统一主视觉轻提示（铭牌 + 铜金）——取代原生 toast，见 components/AppToast
@@ -1605,26 +1611,26 @@ Page({
   // 🟢 签到逻辑
   async doCheckIn() {
     if (isLocalLoggedOut()) {
-      wx.showModal({
+      this.modal({
         title: '先重新进入',
+        overline: 'RE-ENTER',
         content: '退出登录后需重新进入，方可签到领取积分。',
         confirmText: '重新进入',
-        cancelText: '稍后',
-        success: (res) => {
-          if (res.confirm) this.resumeLogin();
-        }
+        cancelText: '稍后'
+      }).then((res) => {
+        if (res.confirm) this.resumeLogin();
       });
       return;
     }
     if (!this.data.onboardingDone) {
-      wx.showModal({
+      this.modal({
         title: '领取新客礼包',
+        overline: 'WELCOME GIFT',
         content: '授权手机号即可完成注册并签到领积分。',
         confirmText: '去领取',
-        cancelText: '稍后',
-        success: (res) => {
-          if (res.confirm) this.startOnboarding();
-        }
+        cancelText: '稍后'
+      }).then((res) => {
+        if (res.confirm) this.startOnboarding();
       });
       return;
     }
@@ -1860,14 +1866,14 @@ Page({
   async showMemberCode(options) {
     softVibrate('medium');
     if (isLocalLoggedOut()) {
-      wx.showModal({
+      this.modal({
         title: '先重新进入',
+        overline: 'RE-ENTER',
         content: '退出登录后需重新进入，方可出示会员码。',
         confirmText: '重新进入',
-        cancelText: '稍后',
-        success: (res) => {
-          if (res.confirm) this.resumeLogin();
-        }
+        cancelText: '稍后'
+      }).then((res) => {
+        if (res.confirm) this.resumeLogin();
       });
       return;
     }
@@ -2032,8 +2038,61 @@ Page({
     }, REDEEM_ANIM_MS);
   },
 
+  /**
+   * 加载二维码绘制器：主包 → business 分包，**必须**用 require.async（分包异步化）。
+   *
+   * 2026-09-18（礼券夹亮码真机空白事故）：这类「异步加载 + 失败只重试不置错」的写法
+   * 会让二维码区永远空白且毫无提示。这里做三件事：
+   *   ① 两种 API 形态都兼容（返回 thenable / 第二参回调），不赌平台的返回值约定；
+   *   ② 加载失败或超时都 reject → 调用方落到可见的 error 态；
+   *   ③ 失败不缓存，下次亮码还能再试。
+   */
+  loadQrDrawer() {
+    if (this._qrDrawerPromise) return this._qrDrawerPromise;
+    this._qrDrawerPromise = new Promise((resolve, reject) => {
+      let done = false;
+      let timer = null;
+      const fail = (e) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(e || new Error('qrCanvas 加载失败'));
+      };
+      const succeed = (mod) => {
+        if (done) return;
+        if (mod && typeof mod.drawMemberQr === 'function') {
+          done = true;
+          clearTimeout(timer);
+          this._drawMemberQr = mod.drawMemberQr;
+          resolve(mod.drawMemberQr);
+        } else {
+          fail(new Error('qrCanvas 未导出 drawMemberQr'));
+        }
+      };
+      timer = setTimeout(() => fail(new Error('qrCanvas 加载超时')), QR_DRAWER_TIMEOUT_MS);
+      try {
+        const ret = require.async('../../subpackages/business/utils/qrCanvas.js', succeed);
+        if (ret && typeof ret.then === 'function') ret.then(succeed).catch(fail);
+      } catch (e) {
+        fail(e);
+      }
+    });
+    this._qrDrawerPromise.catch(() => { this._qrDrawerPromise = null; });
+    return this._qrDrawerPromise;
+  },
+
   drawPassQr(payload, attempt = 0) {
     if (!payload || !this.data.showQrModal || this.data.passState === 'redeemed') return;
+    const failDraw = () => {
+      if (attempt < QR_DRAW_RETRY_MAX) {
+        setTimeout(() => this.drawPassQr(payload, attempt + 1), QR_DRAW_RETRY_MS);
+        return;
+      }
+      this.setData({
+        passState: 'error',
+        passErrorMsg: '二维码绘制失败，可出示下方编号'
+      });
+    };
     const runDraw = (drawMemberQr) => {
       drawMemberQr('#memberPassQrCanvas', payload, this, 264, {
         bg: '#F2EDE4',
@@ -2041,36 +2100,14 @@ Page({
         margin: 12
       }).then((ok) => {
         if (ok || !this.data.showQrModal || this.data.passState === 'redeemed') return;
-        if (attempt < 4) {
-          setTimeout(() => this.drawPassQr(payload, attempt + 1), 180);
-          return;
-        }
-        this.setData({
-          passState: 'error',
-          passErrorMsg: '二维码绘制失败，可出示下方编号'
-        });
-      });
+        failDraw();
+      }).catch(failDraw);
     };
     if (this._drawMemberQr) {
       runDraw(this._drawMemberQr);
       return;
     }
-    require
-      .async('../../subpackages/business/utils/qrCanvas.js')
-      .then((mod) => {
-        this._drawMemberQr = mod.drawMemberQr;
-        runDraw(this._drawMemberQr);
-      })
-      .catch(() => {
-        if (attempt < 4) {
-          setTimeout(() => this.drawPassQr(payload, attempt + 1), 180);
-          return;
-        }
-        this.setData({
-          passState: 'error',
-          passErrorMsg: '二维码绘制失败，可出示下方编号'
-        });
-      });
+    this.loadQrDrawer().then(runDraw).catch(failDraw);
   },
 
   async refreshMemberPass() {
@@ -2972,29 +3009,28 @@ Page({
       // ignore
     }
 
-    wx.showModal({
+    this.modal({
       title,
+      overline: 'NEW ORDER',
       content: String(content).slice(0, 160),
       confirmText: '去处理',
-      cancelText: '稍后',
-      confirmColor: '#C4A76C',
-      success: (r) => {
-        this._newOrderPopupShowing = false;
-        // showModal 确认为用户手势，可攒订阅额度
-        requestStaffOrderSubscribe().catch(() => null);
-        if (r.confirm) {
-          const mgr = entries.find(
-            (e) => e && (e.kind === 'super_admin' || e.kind === 'manager')
-          );
-          requestWorkspaceAccess(
-            (mgr && mgr.kind) || 'manager',
-            (mgr && mgr.workspace) || ''
-          );
-        }
-      },
-      fail: () => {
-        this._newOrderPopupShowing = false;
+      cancelText: '稍后'
+    }).then((r) => {
+      this._newOrderPopupShowing = false;
+      // 自定义弹窗的确认同样是用户手势，可攒订阅额度
+      requestStaffOrderSubscribe().catch(() => null);
+      if (r.confirm) {
+        const mgr = entries.find(
+          (e) => e && (e.kind === 'super_admin' || e.kind === 'manager')
+        );
+        requestWorkspaceAccess(
+          (mgr && mgr.kind) || 'manager',
+          (mgr && mgr.workspace) || ''
+        );
       }
+    }).catch(() => {
+      // 弹窗未正常结算时也要解除「正在展示」标记，否则后续新订单提醒会被吞掉
+      this._newOrderPopupShowing = false;
     });
   },
 
@@ -3090,4 +3126,4 @@ Page({
       });
     }
   }
-});
+}));

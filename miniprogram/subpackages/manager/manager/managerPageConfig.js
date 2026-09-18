@@ -138,6 +138,12 @@ const {
   sanitizeGiftScenes,
   readGiftScenes
 } = require('../utils/giftScenes');
+const {
+  BLESS_TAGS,
+  MAX_BLESS_TAGS,
+  sanitizeBlessTags,
+  readBlessTags
+} = require('../utils/blessTags');
 const { SCHEME_PRESETS, buildBannerLinkForSave, validateSchemePath } = require('../../../utils/bannerNav');
 const { requestStaffOrderSubscribe, requestStaffAllSubscribe } = require('../../../utils/staffOrderSubscribe');
 const {
@@ -1367,6 +1373,8 @@ const managerPageConfig = {
     productFormTabs: ['basic', 'sku', 'flags', 'archive', 'detail', 'promo'],
     skuBulkPrice: '',
     skuBulkStock: '',
+    // 规格库存合计（店长端「我改的库存到底进没进」必须当场可见 —— 2026-09-18 反馈）
+    skuStockTotal: 0,
     skuDimBuilder: [{ name: '', valuesStr: '' }],
     
     showProductModal: false, showFramerModal: false, showCatModal: false,
@@ -1592,6 +1600,8 @@ const managerPageConfig = {
     sizeFormHint: '方形玻璃罩：长 / 宽 / 高（cm）',
     sizeFormLabel: '长 × 宽 × 高',
     giftSceneOptions: GIFT_SCENES.map((s) => ({ key: s.key, label: s.label, on: false })),
+    blessTagOptions: BLESS_TAGS.map((b) => ({ key: b.key, label: b.label, on: false })),
+    maxBlessTags: MAX_BLESS_TAGS,
 
     isEditing: false, editId: '',
     
@@ -4426,6 +4436,7 @@ const managerPageConfig = {
         productFormTab: 'basic',
         skuBulkPrice: '',
         skuBulkStock: '',
+        skuStockTotal: skus.reduce((n, s) => n + (parseInt(s && s.stock, 10) || 0), 0),
         skuDimBuilder: item && item.skuDimensions && item.skuDimensions.length
           ? item.skuDimensions.map((name) => ({ name: String(name || ''), valuesStr: '' }))
           : [{ name: '', valuesStr: '' }],
@@ -4466,6 +4477,7 @@ const managerPageConfig = {
           tags: sanitizeProductTags(item.tags),
           tagDraft: '',
           giftScenes: readGiftScenes(item),
+          blessTags: readBlessTags(item),
           seckillEnabled: !!(seckill && seckill.enabled),
           seckillPrice: seckill ? seckill.price : '',
           seckillStock: seckill ? seckill.stock : '',
@@ -4489,6 +4501,7 @@ const managerPageConfig = {
           tags: [],
           tagDraft: '',
           giftScenes: [],
+          blessTags: [],
           seckillEnabled: false, seckillPrice: '', seckillStock: '', seckillLimitPerUser: 1, seckillStartTime: '', seckillEndTime: '',
           groupBuyingEnabled: false, groupBuyingPrice: '', groupBuyingSize: 2
         },
@@ -4507,6 +4520,7 @@ const managerPageConfig = {
       syncProductLatinRequired(this);
       syncProductTaxonomyFlags(this);
       this.syncGiftSceneOptionFlags();
+      this.syncBlessTagOptionFlags();
       if (!item && this.data.artisanEmbed) {
         this.applyArtisanConceptPrefill();
       }
@@ -4554,6 +4568,28 @@ const managerPageConfig = {
       on: selected.has(s.key)
     }));
     this.setData({ giftSceneOptions });
+  },
+  /** 祈运标签：与礼赠场景同一套交互（多选 chips），上限由 blessTags 的 MAX_BLESS_TAGS 定 */
+  syncBlessTagOptionFlags() {
+    const selected = new Set(sanitizeBlessTags((this.data.tempProduct || {}).blessTags));
+    const blessTagOptions = BLESS_TAGS.map((b) => ({
+      key: b.key,
+      label: b.label,
+      on: selected.has(b.key)
+    }));
+    this.setData({ blessTagOptions });
+  },
+  toggleProductBlessTag(e) {
+    const key = String((e.currentTarget.dataset && e.currentTarget.dataset.key) || '').trim();
+    if (!key) return;
+    const current = sanitizeBlessTags((this.data.tempProduct || {}).blessTags);
+    if (!current.includes(key) && current.length >= MAX_BLESS_TAGS) {
+      // 上限是刻意的：标签一多就等于没标签；这里如实说，不静默丢掉用户的选择
+      wx.showToast({ title: `最多选 ${MAX_BLESS_TAGS} 个祈运标签`, icon: 'none' });
+      return;
+    }
+    const next = current.includes(key) ? current.filter((k) => k !== key) : sanitizeBlessTags([...current, key]);
+    this.setData({ 'tempProduct.blessTags': next }, () => this.syncBlessTagOptionFlags());
   },
   toggleProductGiftScene(e) {
     const key = String((e.currentTarget.dataset && e.currentTarget.dataset.key) || '').trim();
@@ -5087,6 +5123,7 @@ const managerPageConfig = {
       stock: stock !== '' ? stock : s.stock
     }))
     this.setData({ 'tempProduct.skus': next })
+    this.refreshSkuStockTotal()
     wx.showToast({ title: '已应用到全部规格', icon: 'none' })
   },
   applyCoverToEmptySkus() {
@@ -5126,6 +5163,7 @@ const managerPageConfig = {
       }))
     }
     this.setData({ 'tempProduct.hasSku': true, 'tempProduct.skus': skus })
+    this.refreshSkuStockTotal()
     syncProductSizeForm(this)
   },
   bindSkuDimInput(e) {
@@ -5209,6 +5247,7 @@ const managerPageConfig = {
       'tempProduct.skus': skus,
       'tempProduct.skuDimensionsStr': dims.map((d) => d.name).join(',')
     })
+    this.refreshSkuStockTotal()
     syncProductSizeForm(this)
     wx.showToast({ title: `已生成 ${skus.length} 个规格`, icon: 'none' })
   },
@@ -5220,6 +5259,7 @@ const managerPageConfig = {
       stock: 1
     }))
     this.setData({ 'tempProduct.skus': skus })
+    this.refreshSkuStockTotal()
     syncProductSizeForm(this)
   },
   removeSkuRow(e) {
@@ -5227,6 +5267,7 @@ const managerPageConfig = {
     const skus = [...(this.data.tempProduct.skus || [])]
     skus.splice(idx, 1)
     this.setData({ 'tempProduct.skus': skus, 'tempProduct.hasSku': skus.length > 0 })
+    this.refreshSkuStockTotal()
   },
   bindSkuInput(e) {
     const { index, field } = e.currentTarget.dataset
@@ -5244,6 +5285,17 @@ const managerPageConfig = {
       delete patch[`tempProduct.skus[${index}].${field}`]
     }
     this.setData(patch)
+    if (field === 'stock') this.refreshSkuStockTotal()
+  },
+  /** 规格库存合计：任何改库存的入口都要刷，店长才能当场看到「改没改进去」 */
+  refreshSkuStockTotal() {
+    const skus = (this.data.tempProduct && this.data.tempProduct.skus) || []
+    const total = skus.reduce((n, s) => n + (parseInt(s && s.stock, 10) || 0), 0)
+    if (Number(this.data.skuStockTotal) !== total) this.setData({ skuStockTotal: total })
+  },
+  /** 商品级「库存」在多规格下由规格汇总：给一个明确入口，而不是一个灰掉改不动的输入框 */
+  goSkuStockTab() {
+    this.setData({ productFormTab: 'sku' }, () => this.refreshSkuStockTotal())
   },
   chooseSkuImages(e) {
     const idx = Number(e.currentTarget.dataset.index);
@@ -5297,6 +5349,26 @@ const managerPageConfig = {
       const hasCert = !!(p.tempCertificate || p.collectionCertificate);
       if (needsCert && !hasCert) {
         return wx.showToast({ title: '请上传收藏证书', icon: 'none' });
+      }
+
+      // 保存前把「批量工具」里填了却没点『应用到全部』的统一价/统一库存**落地**。
+      // 2026-09-18 反馈「多规格库存改完保存没生效」：这两种写法的效果在界面上完全一样，
+      // 但只有点了按钮才会进 payload —— 之前没点就静默丢弃，用户以为改了、其实一个字没提交。
+      let bulkApplied = false
+      if (p.hasSku) {
+        const bulkPrice = String(this.data.skuBulkPrice || '').trim()
+        const bulkStock = String(this.data.skuBulkStock || '').trim()
+        if (bulkPrice !== '' || bulkStock !== '') {
+          const rows = (p.skus || []).map((s) => ({
+            ...s,
+            price: bulkPrice !== '' ? bulkPrice : s.price,
+            stock: bulkStock !== '' ? bulkStock : s.stock
+          }))
+          p.skus = rows
+          this.setData({ 'tempProduct.skus': rows, skuBulkPrice: '', skuBulkStock: '' })
+          this.refreshSkuStockTotal()
+          bulkApplied = true
+        }
       }
 
       let hasSku = false
@@ -5503,6 +5575,8 @@ const managerPageConfig = {
         taxonomy: toChineseTaxonomy(p.taxonomy || {}),
         tags: sanitizeProductTags(p.tags),
         giftScenes: sanitizeGiftScenes(p.giftScenes),
+        // 需求 28 · item 6：祈运标签（受控枚举；云函数白名单里有它，漏在这里=保存成功但字段被丢）
+        blessTags: sanitizeBlessTags(p.blessTags),
         images,
         // 上下架仅走 manageApprovals，保存时不改 isOffShelf（云函数也会剥离）
         // 写库必须走 manageProducts；禁止客户端直写 products
@@ -5525,8 +5599,24 @@ const managerPageConfig = {
           msg: result.msg || '保存失败'
         });
       }
+      // 写后核对：服务端会把归一化后真正入库的库存口径回带（2026-09-18 新增）。
+      // 对不上就**明确报错**，绝不再报「已保存」——这类「假成功」在本仓库已有前科。
+      if (hasSku && Array.isArray(result.skus)) {
+        const mismatch = skus.some((s, i) => {
+          const back = result.skus[i];
+          return !back || Number(back.stock) !== (parseInt(s.stock, 10) || 0);
+        });
+        if (mismatch) {
+          throw Object.assign(new Error('规格库存未能写入，请重试'), { code: 'STOCK_NOT_APPLIED' });
+        }
+      }
       wx.hideLoading();
-      wx.showToast({ title: '已保存', icon: 'success' });
+      wx.showToast({
+        title: bulkApplied
+          ? `已保存 · 库存合计 ${totalStock}`
+          : (hasSku ? `已保存 · 库存合计 ${totalStock}` : '已保存'),
+        icon: 'success'
+      });
       this.setData({ showProductModal: false });
       if (this.data.artisanEmbed) {
         const worksUrl = '/subpackages/extra/artisan/works/index'

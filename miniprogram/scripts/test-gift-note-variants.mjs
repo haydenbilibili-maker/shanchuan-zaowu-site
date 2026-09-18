@@ -322,6 +322,29 @@ check('★ 展示态保留换行（white-space: pre-wrap）',
 check('埋点带上句序（便于回看哪一句更常用）',
   /label: preset\.label,\s*\n\s*variant: index \+ 1/.test(composeJs))
 
+/* ── 需求 9：写给谁必填 + 犒劳自己默认账号昵称（2026-09-18）────────────────── */
+const composeJsRaw = readFileSync(resolve(ROOT, COMPOSE_JS), 'utf8')
+check('★ 必填：goPay 里空名字会拦下并提示（不再静默带去空受礼人）',
+  /请先填写写给谁的名字/.test(composeJs)
+  && /if \(!String\(this\.data\.recipientName \|\| ''\)\.trim\(\)\) \{[\s\S]{0,200}?return/.test(composeJs))
+check('★ 必填拦截发生在进入确认订单之前',
+  composeJs.indexOf('请先填写写给谁的名字') < composeJs.indexOf('navigateToConfirmOrder(['))
+check('★ 空名字时聚焦回输入框（用户知道要改哪里）',
+  /if \(!String\(this\.data\.recipientName \|\| ''\)\.trim\(\)\) \{[\s\S]{0,160}?recipientEditing: true[\s\S]{0,160}?请先填写写给谁的名字/.test(composeJs))
+check('★ 犒劳自己（self）默认写账号昵称：落笔入口统一处理',
+  /if \(preset\.id === 'self'\) this\.applyToSelfRecipientDefault\(\)/.test(composeJs))
+check('★ 默认值只在空的时候补，不覆盖用户已填的名字',
+  /applyToSelfRecipientDefault\(\) \{[\s\S]{0,220}?if \(current\) return/.test(composeJs))
+check('★ 昵称来源复用账号昵称解析（globalData → session → 会员卡快照）',
+  /applyToSelfRecipientDefault\(\) \{[\s\S]{0,260}?_resolveAccountNickName\(\)/.test(composeJs))
+check('★ 占位文案随关系切换（必填可见；犒劳自己指向「你的昵称」）',
+  /recipientPlaceholder: preset\.id === 'self' \? '你的昵称（也可改）' : 'TA 的名字（必填）'/.test(composeJs)
+  && /placeholder="\{\{recipientPlaceholder\}\}"/.test(composeWxml))
+check('  └ placeholder 不再硬编码（否则占位文案永远不会变）',
+  !/placeholder="TA 的名字"/.test(composeWxml))
+check('提交时仍把受礼人带进 giftMeta（名字不能只停在界面）',
+  /recipientName: String\(this\.data\.recipientName \|\| ''\)\.trim\(\)/.test(composeJsRaw))
+
 /* ── 输出 / 自检 ─────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
   selftest()
@@ -395,6 +418,21 @@ function selftest() {
       file: COMPOSE_JS,
       from: "      if (!preset || bodies.indexOf(cardBody) === -1) patch.activeNotePresetId = ''",
       to: "      if (!preset || cardBody !== preset.body) patch.activeNotePresetId = ''"
+    },
+    {
+      name: '去掉「写给谁」必填拦截（空名字也能进确认订单）——《需求 9》',
+      file: COMPOSE_JS,
+      // 2026-09-18：注入锚点原本是那一行 `wx.showToast(...)`。该处已按 V1.1.2·W2 弹窗统一
+      // 迁到统一组件 `this.showAppToast(...)`（修 check:dialog-ratchet 的既存红），
+      // 于是旧锚点命中 0 次、自检恒失败。语义不变，只把锚点跟到新写法。
+      from: "      this.showAppToast({ overline: 'RECIPIENT', title: '请先填写写给谁的名字' })\n      return\n",
+      to: ''
+    },
+    {
+      name: '犒劳自己不再默认账号昵称 ——《需求 9》',
+      file: COMPOSE_JS,
+      from: "    if (preset.id === 'self') this.applyToSelfRecipientDefault()\n",
+      to: ''
     }
   ]
 

@@ -1,3 +1,4 @@
+const { resolveBlessTags } = require('../config/blessTags')
 /**
  * 需求 28：「马上有」弹幕祈福墙 —— 客户端纯函数基座
  *
@@ -13,8 +14,16 @@
 const TEXT_MIN = 2
 const TEXT_MAX = 30
 
-/** 弹幕轨道数：超过 4 条轨道在竖屏上会糊成一片 */
-const LANES = 4
+/**
+ * 弹幕轨道数。
+ *
+ * 4 → 6（2026-09-18 真机截图）：380rpx 高的浅纸墙只摊 4 行 28rpx 小字，看着空、
+ * 同一时刻能看见的心愿也太少。改 6 轨 + 字号 32rpx 后，轨间距 (380-44)/5 ≈ 67rpx、
+ * 行盒 32×1.3 ≈ 42rpx（余 ~25rpx），既不挤也不会糊成一片；
+ * 26 条心愿下每轨排 4–5 条，墙上同时有 6 条在走。
+ * ⚠️ 改这个数必须同时改 `.ww-wall-rail.rail-N` 的条数与百分比（守卫按 LANES 对账）。
+ */
+const LANES = 6
 
 /** 祈福墙作用域 key（与云函数 DEFAULT_PRODUCT_KEY 一致） */
 const PRODUCT_KEY = 'mashangyou'
@@ -57,8 +66,15 @@ function dailyQuota(rows, nowMs, limit) {
 /** 视觉速度：rpx/秒。时长 = (屏宽 + 文案宽) / 速度 */
 const SPEED_RPX_PER_SEC = 90
 const SCREEN_RPX = 750
-/** 单字约 28rpx（26rpx 字号 + 字距），用于估算文案占宽 */
-const CHAR_RPX = 28
+/**
+ * 单字占宽 ≈ 33rpx。
+ *
+ * ⚠️ 这个数必须跟着 `.ww-danmaku` 的 font-size 走（字号 + 0.02em 字距 ≈ 字号 ×1.03）：
+ * 它是**同轨不重叠**的唯一依据（clearMs 按它算），估小了后一条会在前一条尾部还在屏内时进场。
+ * 2026-09-18：字号 28 → 32rpx（真机截图里 4 轨 ×28rpx 摊在 380rpx 的浅纸墙上显得空且小），
+ * 这里同步 28 → 33。守卫按"字号 ×1.03 ≈ CHAR_RPX"实算断言，两边不会再各自漂移。
+ */
+const CHAR_RPX = 33
 
 /**
  * 同一轨道内两条弹幕之间的**视觉间隙**（毫秒）。
@@ -132,7 +148,51 @@ function buildWishWallUrl(product, opts) {
     `title=${encodeURIComponent(p.title || p.name || '马上有')}`,
     `from=${encodeURIComponent(o.from || 'unknown')}`
   ]
+  // 祈运标签随入口带过去（详情页手上就有商品对象，**不必为这一件事多发一个请求**）：
+  // 祈福墙据此把玩法瓦片按"这面墙求什么"重排、并显示一句祈运提示。
+  // ⚠️ 用 `resolveBlessTags` 而不是直接读 `p.blessTags`：存量商品大多只填了礼赠场景，
+  // 显式标签为空时由场景兜底推导（映射写死在 config/blessTags.js，永不写库）。
+  const bless = resolveBlessTags(p).join(',')
+  if (bless) params.push(`bless=${encodeURIComponent(bless)}`)
   return `/subpackages/feature/wish-wall/index?${params.join('&')}`
+}
+
+/**
+ * 解析**门店 / 物料小程序码**带进来的 `scene`（wxacode.getUnlimited，≤32 字符）。
+ *
+ * 为什么做成纯函数：门口立牌上那张码一旦生成就是**印刷品**，改不了 ——
+ * 所以"这张码的内容，页面到底认不认"必须能被**自动验证**（见 scripts/check-wall-qr.mjs：
+ * 它读 qr-assets 旁边的清单，把里面的 scene 直接喂给本函数，解析不出目标墙就红）。
+ *
+ * 约定（与 identify / onboarding 两页一致）：scene 是 `k=v&k2=v2` 形式，形如
+ *   `from=store_qr&k=mashangyou`
+ * 只认白名单里的键，其余忽略；解析不出来就返回空对象（**不猜、不抛**）。
+ *
+ * @param {string} scene
+ * @returns {{from:string, productKey:string}} 缺失字段为空串
+ */
+function parseWishWallScene(scene) {
+  const out = { from: '', productKey: '' }
+  const raw = String(scene == null ? '' : scene)
+  if (!raw) return out
+  let text = raw
+  try {
+    text = decodeURIComponent(raw)
+  } catch (e) {
+    text = raw
+  }
+  const grab = (key) => {
+    const m = new RegExp(`(?:^|[&?])${key}=([^&]*)`).exec(text)
+    return m && m[1] ? m[1] : ''
+  }
+  // 严进：scene 来自**我们自己印出去的码**，出现异常字符只可能是码坏了/被改过。
+  // 这种情况宁可回落到默认墙（返回空），也不要拿一串垃圾去查一面不存在的墙 ——
+  // 码是印刷品，静默指向"另一面墙"是最难发现的一类故障（守卫用超长/脏值用例钉住）。
+  const from = grab('from')
+  if (/^[a-zA-Z0-9_]{1,24}$/.test(from)) out.from = from
+  const rawKey = grab('k') || grab('productKey')
+  if (/^[a-zA-Z0-9_-]{1,40}$/.test(rawKey)) out.productKey = normalizeProductKey(rawKey)
+  return out
 }
 
 /**
@@ -470,6 +530,8 @@ function buildDanmakuRows(items, opts) {
       // 墙面不只是装饰：带上身份与状态，弹幕才能标注记、点开愿签
       id: String(raw._id || ''),
       pinned: raw.pinned === true,
+      // ⚠️ 保留字段、**不再渲染**：2026-09-18 产品决定去掉「馆方」徽章（基线内容全是馆方发的，
+      // 盖章不传递信息）。字段留着是为了以后能区分"真人馆方回复"与"AI 基线"而不必做数据迁移。
       official: !!raw.official,
       isMine: !!raw.isMine,
       hidden: !!raw.hidden,
@@ -577,6 +639,7 @@ module.exports = {
   buildWishWallUrl,
   shanghaiDayKey,
   rotateIndex,
+  parseWishWallScene,
   pickDailyLine,
   previousDayKey,
   lampStreak,

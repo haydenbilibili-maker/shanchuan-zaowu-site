@@ -1,0 +1,9 @@
+{
+  "name": "getBlessProducts",
+  "version": "1.0.0",
+  "description": "祈运选品（按商品祈运标签弱推）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

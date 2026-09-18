@@ -515,12 +515,54 @@ function buildFunnel(rows) {
     rows.filter((r) => r.action === 'identify_save_atlas_gate' && r.step === step).length
   const pct = (part, total) => (total > 0 ? Math.round((part / total) * 1000) / 10 : 0)
 
+  /**
+   * 祈福墙：**按 action + step 分桶**（与 identify 同一套写法）。
+   *
+   * ⚠️ 2026-09-18 产品反馈「数据报表里没有祈福墙数据」：这一段以前根本不存在 ——
+   * 报表只算了 identify / store / commerce，于是祈福墙的注册转化在新加坡…不，是在**小程序数据报表里完全看不到**。
+   * 现在补齐：进墙 → 落愿遇注册钩子（曝光/去注册/失败/先不挂/完成续发）→ 落愿成功。
+   * 口径与 ERP 侧「祈福墙 · 注册转化监测表」一致（同一批 action/step），两边数字必须能对上。
+   */
+  const wallStep = (step) =>
+    rows.filter((r) => r.action === 'wish_wall_register_gate' && r.step === step).length
+  const wallFail = rows.filter(
+    (r) => r.action === 'wish_wall_register_gate' && String(r.step || '').startsWith('fail_')
+  ).length
+  const wallEnter = count('wish_wall_enter')
+  const wallGateShow = wallStep('show')
+  const wallGateGo = wallStep('go_register')
+  const wallGateDismiss = wallStep('dismiss')
+  const wallGateResume = wallStep('resume_success')
+  const wallPost = rows.filter(
+    (r) => r.action === 'wish_wall_post' && String(r.targetId || '') === 'ok'
+  ).length
+  const wallEngage = count('wish_wall_lamp') + count('wish_wall_play') + count('wish_wall_sound')
+
   // AI 识别「保存图鉴」注册钩子漏斗：show（弹窗）→ go_register（去注册）/ dismiss（暂不保存）
   // → resume_success（注册完成后自动续写成功）
   const gateShow = countStep('show')
   const gateGo = countStep('go_register')
   const gateDismiss = countStep('dismiss')
   const gateResume = countStep('resume_success')
+
+  /** 任意注册钩子 → 同一套口径（曝光/去注册/放弃/完成 + 四个比率） */
+  const gateBlock = (action) => {
+    const n = (step) => rows.filter((r) => r.action === action && r.step === step).length
+    const show = n('show')
+    const go = n('go_register')
+    const dismiss = n('dismiss')
+    const resume = n('resume_success')
+    return {
+      show,
+      goRegister: go,
+      dismiss,
+      resumeSuccess: resume,
+      goRate: pct(go, show),
+      dismissRate: pct(dismiss, show),
+      completeRate: pct(resume, show),
+      resumeRate: pct(resume, go)
+    }
+  }
 
   return {
     identify: {
@@ -539,6 +581,29 @@ function buildFunnel(rows) {
         dismissRate: pct(gateDismiss, gateShow),
         completeRate: pct(gateResume, gateShow),
         resumeRate: pct(gateResume, gateGo)
+      },
+      // 「看结果注册钩子」：客户端一直在发（show/go_register/dismiss/resume_success），
+      // 但报表只算了「保存图鉴」那个 —— 同一类漏（2026-09-18 与祈福墙一起补齐）
+      resultGate: gateBlock('identify_result_gate')
+    },
+    wishWall: {
+      enter: wallEnter,
+      engage: wallEngage,
+      post: wallPost,
+      // 落愿成功占进墙（整条链路的终点）
+      postRate: pct(wallPost, wallEnter),
+      gate: {
+        show: wallGateShow,
+        goRegister: wallGateGo,
+        dismiss: wallGateDismiss,
+        fail: wallFail,
+        resumeSuccess: wallGateResume,
+        // 与 identify 钩子同一口径：三个分流相对**曝光**；完成率另给"相对去注册"一档
+        goRate: pct(wallGateGo, wallGateShow),
+        dismissRate: pct(wallGateDismiss, wallGateShow),
+        failRate: pct(wallFail, wallGateShow),
+        completeRate: pct(wallGateResume, wallGateShow),
+        resumeRate: pct(wallGateResume, wallGateGo)
       }
     },
     store: {
@@ -593,8 +658,10 @@ async function loadBehaviors(startTs, endTs, limit = BEHAVIOR_SAMPLE) {
       userId: true,
       dateKey: true,
       timestamp: true,
-      // 注册钩子漏斗按 step 分桶（identify_save_atlas_gate）
-      step: true
+      // 注册钩子漏斗按 step 分桶（identify_save_atlas_gate / wish_wall_register_gate）
+      step: true,
+      // 落愿成功要按 targetId==='ok' 过滤（wish_wall_post 的同名事件也用于失败分支）
+      targetId: true
     })
     .orderBy('timestamp', 'desc')
     .limit(limit)

@@ -1,0 +1,9 @@
+# 域 pay —— 守卫清单（一行一条 npm 脚本）。本文件是**该域的单写者面**：
+# 只有该域的 owner 改它（见 docs/并发工作流注册表.json）；跨流加守卫请提变更请求。
+# 校验：npm run check:guards-coverage
+npm run test:coupon-floor
+npm run test:coupon-fold
+npm run test:wallet-ledger
+npm run test:member-card-guest
+npm run test:wallet-hub-lifecycle
+npm run test:points-ledger
