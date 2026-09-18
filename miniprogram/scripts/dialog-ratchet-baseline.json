@@ -1,6 +1,6 @@
 {
- "at": "2026-09-18T05:18:54.149Z",
- "total": 1984,
+ "at": "2026-09-18T05:25:22.237Z",
+ "total": 1975,
  "counts": {
   "miniprogram/components/ProductList/index.js": 4,
   "miniprogram/components/RegisterAuthDialog/index.js": 4,
@@ -104,7 +104,7 @@
   "miniprogram/subpackages/feature/custom/pet/list/index.js": 4,
   "miniprogram/subpackages/feature/custom/pet/status/index.js": 11,
   "miniprogram/subpackages/feature/custom/share/index.js": 2,
-  "miniprogram/subpackages/feature/detail/index.js": 72,
+  "miniprogram/subpackages/feature/detail/index.js": 63,
   "miniprogram/subpackages/feature/detail/wiki-detail/index.js": 5,
   "miniprogram/subpackages/feature/gift/address/index.js": 7,
   "miniprogram/subpackages/feature/gift/compose/index.js": 18,
