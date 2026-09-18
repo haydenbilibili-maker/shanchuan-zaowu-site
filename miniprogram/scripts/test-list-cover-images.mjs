@@ -95,8 +95,19 @@ eq('firstImageOf + thumbUrl 串起来就是可渲染地址',
   imageUrl.thumbUrl(imageUrl.firstImageOf({ images: [REAL_ID] })), REAL_HTTPS)
 
 /* ── 1.6) 其余直绑 images[0] 的页面（同一类 bug，一并收口） ───────────────── */
-check('★ 首页推荐位封面走 thumbUrl', /thumbUrl\(getFirstImage\(item\.images\)/.test(stripComments(read(PAGE_INDEX))),
-  '首页又把原始 cloud:// 塞给 <image>')
+// ⚠️ 判据盯"意图"而不是函数名：封面必须走 imageUrl 的**尺寸化派生**（不得直出 cloud://）。
+// 2026-09-18 首页推荐位按实测卡宽（280rpx=140pt）从 thumbUrl 改成了 midUrl ——
+// 写死函数名会把"合法换档"误报成回归（错题本 E7：判据语义错 → 假失败）。
+check(
+  '★ 首页推荐位封面走尺寸化派生（rail/mid/thumb 任一档，且带只缩不放的 `>`）',
+  /(railUrl|midUrl|thumbUrl)\(getFirstImage\(item\.images\)/.test(stripComments(read(PAGE_INDEX))),
+  '首页又把原始 cloud:// 塞给 <image>'
+)
+check(
+  '★ 首页推荐位没有绕过派生直出原值',
+  !/image:\s*getFirstImage\(item\.images\)/.test(stripComments(read(PAGE_INDEX))),
+  '发现未经尺寸化的直出赋值'
+)
 check('★ 物种百科缩略走 thumbUrl', /thumbUrl\(getFirstImage\(p\.images\)\)/.test(stripComments(read(WIKI_JS))))
 check('★ 定制页商品 images 经 thumbUrl 换算',
   /images: \(Array\.isArray\(p\.images\) \? p\.images : \[\]\)\.map\(\(u\) => imageUrl\.thumbUrl\(u\)\)/.test(stripComments(read(CUSTOM_JS))))
@@ -208,8 +219,8 @@ function selftest() {
     {
       name: 'thumbUrl 不再把云文件 ID 换 https（封面又会全空）',
       file: IMAGE_URL,
-      from: 'function thumbUrl(url) {\n  const u = cloudIdToHttps(url)',
-      to: 'function thumbUrl(url) {\n  const u = url'
+      from: 'function thumbUrl(url, width) {\n  const u = cloudIdToHttps(url)',
+      to: 'function thumbUrl(url, width) {\n  const u = url'
     },
     {
       name: '门控组件丢掉 :host（卡片图又被裁成空白）',
@@ -226,7 +237,7 @@ function selftest() {
     {
       name: '首页推荐位又直绑原始值',
       file: PAGE_INDEX,
-      from: 'image: require(\'../../utils/imageUrl\').thumbUrl(getFirstImage(item.images) || item.httpImage || \'\'),',
+      from: 'image: require(\'../../utils/imageUrl\').midUrl(getFirstImage(item.images) || item.httpImage || \'\'),',
       to: "image: getFirstImage(item.images) || item.httpImage || '',"
     },
     {
