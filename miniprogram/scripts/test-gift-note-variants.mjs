@@ -422,7 +422,10 @@ function selftest() {
     {
       name: '去掉「写给谁」必填拦截（空名字也能进确认订单）——《需求 9》',
       file: COMPOSE_JS,
-      from: "      wx.showToast({ title: '请先填写写给谁的名字', icon: 'none' })\n      return\n",
+      // 2026-09-18：注入锚点原本是那一行 `wx.showToast(...)`。该处已按 V1.1.2·W2 弹窗统一
+      // 迁到统一组件 `this.showAppToast(...)`（修 check:dialog-ratchet 的既存红），
+      // 于是旧锚点命中 0 次、自检恒失败。语义不变，只把锚点跟到新写法。
+      from: "      this.showAppToast({ overline: 'RECIPIENT', title: '请先填写写给谁的名字' })\n      return\n",
       to: ''
     },
     {
