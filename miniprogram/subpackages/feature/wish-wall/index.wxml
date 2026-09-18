@@ -15,7 +15,7 @@
       <view class="ww-hero-top">
         <text class="ww-over">WISH WALL · 马上有愿</text>
         <!-- 灯的状态直接写进页头：今日已点 = 铜灯亮，未点 = 空心 -->
-        <view class="signal-light {{lamp.lit ? 'lamp-brass on' : 'lamp-muted hollow'}}"></view>
+        <view class="signal-light {{lamp.lit ? 'lamp-brass on' : 'lamp-muted hollow'}}" aria-hidden="true"></view>
         <view class="ww-seal" aria-hidden="true"><view class="ww-seal-inner"></view></view>
       </view>
       <text class="ww-brand">山海造物</text>
@@ -44,7 +44,7 @@
   <!-- 未开放：不发任何请求，只给一句解释 -->
   <view class="ww-closed" wx:if="{{flagChecked && !allowed}}">
     <view class="ww-closed-lamp" aria-hidden="true">
-      <view class="signal-light lamp-muted hollow"></view>
+      <view class="signal-light lamp-muted hollow" aria-hidden="true"></view>
     </view>
     <text class="ww-closed-title">祈福墙暂未开放</text>
     <text class="ww-closed-desc">馆方正在准备这块墙面，稍后再来看看。</text>
@@ -114,12 +114,12 @@
         aria-role="button"
         aria-label="{{items.length}} 条心愿，点击查看愿签列表"
       >
-        <view class="signal-light lamp-brass"></view>
+        <view class="signal-light lamp-brass" aria-hidden="true"></view>
         <text class="ww-wall-foot-text">{{items.length}} 条心愿正在墙上流动</text>
         <text class="ww-wall-foot-more">看全部 ›</text>
       </view>
       <view class="ww-wall-foot is-loading" wx:elif="{{loading}}">
-        <view class="signal-light lamp-muted"></view>
+        <view class="signal-light lamp-muted" aria-hidden="true"></view>
         <text class="ww-wall-foot-text">正在展开墙面…</text>
       </view>
       <!-- 即时反馈回声：点灯 / 木鱼 / 落愿（以及后续玩法）之后，墙的页脚回一句、边框亮一下。
@@ -133,7 +133,7 @@
         aria-label="{{item.text}}{{item.sub ? ' ' + item.sub : ''}}"
         aria-role="alert"
       >
-        <view class="signal-light lamp-brass"></view>
+        <view class="signal-light lamp-brass" aria-hidden="true"></view>
         <text class="ww-echo-text">{{item.text}}</text>
         <text class="ww-echo-sub" wx:if="{{item.sub}}">{{item.sub}}</text>
       </view>
@@ -146,7 +146,7 @@
       class="ww-lantern {{lamp.lit ? 'is-lit' : 'is-idle'}}"
       bindtap="onLampTap"
       hover-class="ww-lantern-press"
-      hover-stay-time="80"
+      hover-stay-time="70"
       aria-role="button"
       aria-label="{{lamp.lit ? '今日灯已点' : '点一盏灯'}}"
     >
@@ -193,7 +193,7 @@
       </view>
     </view>
 
-    <view class="ww-ritual-card" bindtap="onMuyuTap" hover-class="ww-muyu-press" hover-stay-time="60"
+    <view class="ww-ritual-card" bindtap="onMuyuTap" hover-class="ww-muyu-press" hover-stay-time="70"
       aria-role="button" aria-label="安心木鱼，敲一下静一分">
       <view class="ww-muyu {{muyuBeat ? 'is-beat' : ''}}" aria-hidden="true">
         <view class="ww-muyu-slit"></view>
@@ -239,7 +239,9 @@
         class="ww-send {{posting || !draft || quota.exhausted ? 'is-off' : ''}}"
         bindtap="submitWish"
         hover-class="ww-send-press"
-        hover-stay-time="80"
+        hover-stay-time="70"
+        aria-role="button"
+        aria-disabled="{{posting || !draft || quota.exhausted ? 'true' : 'false'}}"
       >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
     </view>
 
@@ -279,7 +281,7 @@
       <!-- 需要星座/MBTI 但资料里没有 → 引导去补（不给一个编出来的结果） -->
       <view class="ww-play-need" wx:if="{{playNeed}}">
         <text class="ww-play-need-text">这个玩法要用到你的「{{playNeed.fieldLabel}}」，资料页填一下就好（{{playNeed.gain}}）。</text>
-        <view class="ww-play-need-cta" bindtap="goProfileField" hover-class="ww-play-need-press" hover-stay-time="70">
+        <view class="ww-play-need-cta" bindtap="goProfileField" hover-class="ww-play-need-press" hover-stay-time="70" aria-role="button">
           去填{{playNeed.fieldLabel}}
         </view>
       </view>
@@ -298,6 +300,7 @@
             data-text="{{item}}"
             hover-class="ww-inspo-press"
             hover-stay-time="70"
+            aria-role="button"
           >{{item}}</view>
         </view>
       </view>
@@ -312,7 +315,7 @@
       </view>
 
       <view class="ww-notice" wx:if="{{myHidden > 0}}">
-        <view class="signal-light lamp-warn"></view>
+        <view class="signal-light lamp-warn" aria-hidden="true"></view>
         <text class="ww-notice-text">你有 {{myHidden}} 条心愿被馆方暂时收起，未公开展示。</text>
       </view>
     </view>
@@ -371,9 +374,9 @@
       </block>
       <!-- ⚠️ 失败必须给重试入口，且不得与「还没有人许愿」同时出现 -->
       <view class="ww-error" wx:elif="{{loadError}}">
-        <view class="signal-light lamp-warn"></view>
+        <view class="signal-light lamp-warn" aria-hidden="true"></view>
         <text class="ww-error-text">{{loadError}}</text>
-        <view class="ww-error-retry" wx:if="{{allowed}}" bindtap="refresh" hover-class="ww-error-retry-press" hover-stay-time="80">再试一次</view>
+        <view class="ww-error-retry" wx:if="{{allowed}}" bindtap="refresh" hover-class="ww-error-retry-press" hover-stay-time="70" aria-role="button">再试一次</view>
       </view>
       <block wx:else>
       <!-- 两列瀑布：30 条全宽卡片会拉出一条看不到头的列表；
@@ -388,7 +391,8 @@
             bindtap="openWishCard"
             data-id="{{item._id}}"
             hover-class="ww-tag-press"
-            hover-stay-time="80"
+            hover-stay-time="70"
+            aria-role="button"
           >
             <view class="ww-tag-pin" aria-hidden="true"></view>
             <!-- 印记优先级：已收起 > 我的 > 置顶（都是"你需要先知道"的信息）。
@@ -401,7 +405,7 @@
             <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>
             <text class="ww-tag-text">{{item.text}}</text>
             <view class="ww-tag-foot">
-              <image wx:if="{{item.avatar}}" class="ww-tag-avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load></image>
+              <image wx:if="{{item.avatar}}" class="ww-tag-avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load aria-hidden="true"></image>
               <text class="ww-tag-meta">{{item.nickname}} · {{item.timeText}}</text>
             </view>
           </view>
@@ -423,11 +427,12 @@
       wx:if="{{relics.total}}"
       bindtap="goRelics"
       hover-class="ww-relics-press"
-      hover-stay-time="80"
+      hover-stay-time="70"
+      aria-role="button"
     >
-      <view class="signal-light lamp-brass"></view>
+      <view class="signal-light lamp-brass" aria-hidden="true"></view>
       <text class="ww-relics-text">博物笔记 · 已拾 {{relics.found}} / {{relics.total}} 页</text>
-      <text class="ww-relics-chevron">›</text>
+      <text class="ww-relics-chevron" aria-hidden="true">›</text>
     </view>
   </block>
 
@@ -437,6 +442,8 @@
     wx:if="{{card}}"
     bindtap="closeWishCard"
     catchtouchmove="noop"
+    aria-role="button"
+    aria-label="关闭心愿笺"
   >
     <view
       class="ww-card"
@@ -460,8 +467,8 @@
         <text class="ww-card-tag" wx:if="{{card.pinned}}">置顶</text>
       </view>
       <view class="ww-card-acts">
-        <view class="ww-card-act" bindtap="borrowWishText" hover-class="ww-card-act-press" hover-stay-time="80">抄一句</view>
-        <view class="ww-card-act" bindtap="copyWishText" hover-class="ww-card-act-press" hover-stay-time="80">复制</view>
+        <view class="ww-card-act" bindtap="borrowWishText" hover-class="ww-card-act-press" hover-stay-time="70" aria-role="button">抄一句</view>
+        <view class="ww-card-act" bindtap="copyWishText" hover-class="ww-card-act-press" hover-stay-time="70" aria-role="button">复制</view>
         <button class="ww-card-act is-share" open-type="share">祈一份</button>
       </view>
     </view>
@@ -549,7 +556,7 @@
         <text class="ww-sheet-overline" wx:if="{{playResult.overline}}">{{playResult.overline}}</text>
         <text class="ww-sheet-name">{{playResult.name}}</text>
       </view>
-      <text class="ww-sheet-close" bindtap="closePlayResult" hover-class="ww-sheet-close-press" hover-stay-time="70">收起</text>
+      <text class="ww-sheet-close" bindtap="closePlayResult" hover-class="ww-sheet-close-press" hover-stay-time="70" aria-role="button">收起</text>
     </view>
 
     <view class="ww-sheet-body">
@@ -564,7 +571,7 @@
     </view>
 
     <view class="ww-sheet-cta-row">
-      <view class="ww-sheet-cta" bindtap="usePlayWish" hover-class="ww-sheet-cta-press" hover-stay-time="70">
+      <view class="ww-sheet-cta" bindtap="usePlayWish" hover-class="ww-sheet-cta-press" hover-stay-time="70" aria-role="button">
         {{playResult.wish ? '写成心愿' : '写下我的心愿'}}
       </view>
     </view>
@@ -577,12 +584,15 @@
       bindtap="{{reco ? 'goRecoProduct' : 'goProduct'}}"
       hover-class="ww-sheet-product-press"
       hover-stay-time="70"
+      aria-role="button"
     >
       <view class="ww-sheet-product-copy">
         <text class="ww-sheet-product-label">{{reco ? reco.label : ('这面墙的藏品' + (productTitle ? ' · ' + productTitle : ''))}}</text>
         <text class="ww-sheet-product-title" wx:if="{{reco}}">{{reco.title}}</text>
         <text class="ww-sheet-product-meta" wx:if="{{reco && (reco.latinName || reco.priceText)}}">{{reco.latinName}}{{reco.latinName && reco.priceText ? ' · ' : ''}}{{reco.priceText}}</text>
       </view>
+      <!-- ⚠️ 这一行是 CTA 文案（"看看这件"），不是装饰 —— 不许 aria-hidden，
+           否则读屏用户听不到这条主路的出口（本批曾误加一次，自查时撤掉）。 -->
       <text class="ww-sheet-product-go">看看这件 ›</text>
     </view>
 
