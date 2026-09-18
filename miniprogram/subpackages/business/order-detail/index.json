@@ -1,5 +1,7 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  },
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",
   "backgroundColorTop": "#1A1814",

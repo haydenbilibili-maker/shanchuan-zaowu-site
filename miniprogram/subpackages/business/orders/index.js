@@ -4,6 +4,7 @@ const db = wx.cloud.database();
 const _ = db.command;
 const { payForOrder } = require('../utils/payment');
 const { confirmReceiptOnOrder } = require('../utils/careHelper');
+const { withAppModal } = require('../../../utils/appModal');
 const {
   ensureOpenId,
   isOrderOwnedBy,
@@ -43,7 +44,7 @@ function mergeOrderRows(ownedRows, receivedRows, openid) {
     });
 }
 
-Page({
+Page(withAppModal({
   data: {
     // Tab 配置 (注意顺序：0-全部, 1-待付款, 2-待发货, 3-待收货, 4-已签收, 5-售后)
     tabs: [
@@ -452,11 +453,11 @@ Page({
       if (err.message === '已取消支付') return;
       const msg = err.message || '支付失败';
       if (/支付未开通|暂不可用|支付服务不可用/.test(msg)) {
-        wx.showModal({
+        this.modal({
           title: '暂无法支付',
+          overline: 'PAYMENT UNAVAILABLE',
           content: msg,
-          showCancel: false,
-          confirmColor: '#C4A76C'
+          showCancel: false
         });
       } else {
         wx.showToast({ title: msg, icon: 'none' });
@@ -486,23 +487,22 @@ Page({
   confirmReceipt(e) {
     const id = e.currentTarget.dataset.id;
     const order = (this.data.orders || []).find((o) => o._id === id);
-    wx.showModal({
+    this.modal({
       title: '确认签收',
+      overline: 'CONFIRM RECEIPT',
       content: '确认已收到藏品？\n签收后可写下感受，并查看养护指南与收藏证书。',
-      confirmText: '确认签收',
-      confirmColor: '#C4A76C',
-      success: async (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '确认签收…', mask: true });
-        try {
-          await confirmReceiptOnOrder(id, order);
-          await this.loadOrders();
-        } catch (err) {
-          console.error(err);
-          wx.showToast({ title: '操作失败，请重试', icon: 'none' });
-        } finally {
-          wx.hideLoading();
-        }
+      confirmText: '确认签收'
+    }).then(async (res) => {
+      if (!res.confirm) return;
+      wx.showLoading({ title: '确认签收…', mask: true });
+      try {
+        await confirmReceiptOnOrder(id, order);
+        await this.loadOrders();
+      } catch (err) {
+        console.error(err);
+        wx.showToast({ title: '操作失败，请重试', icon: 'none' });
+      } finally {
+        wx.hideLoading();
       }
     });
   },
@@ -528,4 +528,4 @@ Page({
         })
     });
   }
-});
+}));

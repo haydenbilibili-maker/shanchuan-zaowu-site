@@ -12,6 +12,7 @@ const { couponDiscountMultiplier, clampCouponAgainstOriginal, MIN_PAY_RATIO } = 
 const { fetchMyCoupons } = require('../../utils/couponService')
 const shippingConfig = require('../../config/shipping')
 const { ensureShippingRules } = require('../../utils/shippingRulesSync')
+const { withAppModal } = require('../../utils/appModal')
 
 /**
  * 单张券在本单的实际节省额（与 orderPricing/makeOrder 口径一致）。
@@ -54,7 +55,7 @@ function couponSaveFor(coupon, vipTotal, originalTotal, selectedItems) {
   return { saved: Math.round(saved * 100) / 100, final, reason: '' }
 }
 
-Page({
+Page(withAppModal({
   data: {
     allSelected: false,
     originalPrice: '0.00',
@@ -530,11 +531,29 @@ Page({
       name: 'toggleCollection',
       data: { engage: 'cartItem', action: 'updateCart', id: item._id, count: newCount }
     }).catch((e) => console.warn('cart count sync', e)); },
-  deleteItem(e) { wx.vibrateShort({ type: 'medium' }); const idx = e.currentTarget.dataset.index; const item = this.data.cartList[idx]; wx.showModal({ title: '移除藏品', content: '确定将此藏品移出购物车吗？', confirmColor: '#C4A76C', success: async (res) => { if (res.confirm) { await wx.cloud.callFunction({
-            name: 'toggleCollection',
-            data: { engage: 'cartItem', action: 'removeCart', id: item._id }
-          });
-          this.loadCollection(); } else { this.data.cartList[idx].isTouchMove = false; this.setData({ cartList: this.data.cartList }); } } }); },
+  deleteItem(e) {
+    wx.vibrateShort({ type: 'medium' });
+    const idx = e.currentTarget.dataset.index;
+    const item = this.data.cartList[idx];
+    this.modal({
+      title: '移除藏品',
+      overline: 'REMOVE FROM CART',
+      content: '确定将此藏品移出购物车吗？',
+      confirmText: '移除',
+      danger: true
+    }).then(async (res) => {
+      if (res.confirm) {
+        await wx.cloud.callFunction({
+          name: 'toggleCollection',
+          data: { engage: 'cartItem', action: 'removeCart', id: item._id }
+        });
+        this.loadCollection();
+      } else {
+        this.data.cartList[idx].isTouchMove = false;
+        this.setData({ cartList: this.data.cartList });
+      }
+    });
+  },
   
   openCouponModal() {
     if (this.data.selectedCount === 0) return wx.showToast({ title: '请先勾选藏品', icon: 'none' });
@@ -659,25 +678,26 @@ Page({
   clearInvalidItems() {
     const invalidItems = this.data.cartList.filter(i => i.invalid);
     if (!invalidItems.length) return;
-    wx.showModal({
+    this.modal({
       title: '清理失效藏品',
+      overline: 'CLEAR INVALID',
       content: `确定移除 ${invalidItems.length} 件已失效藏品吗？`,
-      confirmColor: '#C4A76C',
-      success: async (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '清理中…' });
-        try {
-          await Promise.all(invalidItems.map(item => wx.cloud.callFunction({
-            name: 'toggleCollection',
-            data: { engage: 'cartItem', action: 'removeCart', id: item._id }
-          }).catch(() => null)));
-          wx.hideLoading();
-          wx.showToast({ title: '已清理', icon: 'success' });
-          this.loadCollection();
-        } catch (err) {
-          wx.hideLoading();
-          wx.showToast({ title: '清理失败', icon: 'none' });
-        }
+      confirmText: '清理',
+      danger: true
+    }).then(async (res) => {
+      if (!res.confirm) return;
+      wx.showLoading({ title: '清理中…' });
+      try {
+        await Promise.all(invalidItems.map(item => wx.cloud.callFunction({
+          name: 'toggleCollection',
+          data: { engage: 'cartItem', action: 'removeCart', id: item._id }
+        }).catch(() => null)));
+        wx.hideLoading();
+        wx.showToast({ title: '已清理', icon: 'success' });
+        this.loadCollection();
+      } catch (err) {
+        wx.hideLoading();
+        wx.showToast({ title: '清理失败', icon: 'none' });
       }
     });
   },
@@ -825,4 +845,4 @@ Page({
     if (idx == null || idx === '') return;
     this.setData({ [`cartList[${idx}].image`]: '' });
   }
-});
+}));

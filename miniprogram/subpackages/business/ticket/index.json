@@ -1,6 +1,8 @@
 {
   "navigationBarTitleText": "预约详情",
-  "usingComponents": {},
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814"

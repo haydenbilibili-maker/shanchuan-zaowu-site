@@ -6,6 +6,7 @@ const { fetchMyCoupons } = require('../../../utils/couponService')
 const { formatDiscount } = require('../../../utils/profileHelper')
 // 直接读 config（新文件）+ 分包独立模块名 mallShipping，避开主包 utils/shipping 旧缓存
 const shippingConfig = require('../../../config/shipping')
+const { withAppModal } = require('../../../utils/appModal')
 const { calcShipping, getShippingFeeLabel, getShippingHint } = require('../utils/mallShipping')
 const { ensureShippingRules } = require('../../../utils/shippingRulesSync')
 const { consumeCheckoutPayload, saveCheckoutPayload } = require('../../../utils/checkout')
@@ -316,7 +317,7 @@ function resolveCouponRowState({ goodsFloorHit, coupons, shipFeeWithoutCoupon, c
   }
 }
 
-Page({
+Page(withAppModal({
   data: {
     items: [],
     source: 'cart',
@@ -1377,18 +1378,17 @@ Page({
     // 服务端价格未校验成功时不允许提交：否则用户按看到的本地估算价确认，
     // 实际会被云端按另一套价格扣款（差异来自会员折/券门槛/运费判定）
     if (this.data.serverPreviewFailed) {
-      wx.showModal({
+      this.modal({
         title: '价格校验未完成',
+        overline: 'PRICE CHECK',
         content: '当前价格未通过服务端校验，为避免与实付不一致，请重试校验后再提交。',
         confirmText: '重新校验',
-        cancelText: '取消',
-        confirmColor: '#C4A76C',
-        success: (r) => {
-          if (r.confirm) {
-            this.setData({ serverPreviewFailed: false })
-            if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
-            else if (typeof this.recalculate === 'function') this.recalculate()
-          }
+        cancelText: '取消'
+      }).then((r) => {
+        if (r.confirm) {
+          this.setData({ serverPreviewFailed: false })
+          if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
+          else if (typeof this.recalculate === 'function') this.recalculate()
         }
       })
       return
@@ -1557,11 +1557,11 @@ Page({
 
       const result = res.result
       if (!result || !result.success) {
-        wx.showModal({
+        this.modal({
           title: '下单失败',
+          overline: 'ORDER FAILED',
           content: (result && result.msg) || '请稍后重试',
-          showCancel: false,
-          confirmColor: '#C4A76C'
+          showCancel: false
         })
         this.setData({ submitting: false })
         return
@@ -1615,40 +1615,38 @@ Page({
         wx.hideLoading()
         const msg = payErr.message || '支付失败'
         if (payErr.cancelled || msg.indexOf('已取消支付') === 0) {
-          wx.showModal({
+          this.modal({
             title: '待付款',
+            overline: 'PAYMENT PENDING',
             content: (payErr.walletRefunded || /钱包余额已退回/.test(msg))
               ? '已取消支付，钱包余额已退回。订单仍保留在「待付款」，可继续支付。'
               : (msg.indexOf('钱包') >= 0
                 ? msg
                 : '订单已创建，可在「我的订单-待付款」中继续支付'),
-            confirmText: '立即支付',
-            confirmColor: '#C4A76C',
-            success: (m) => {
-              if (m.confirm) {
-                wx.redirectTo({
-                  url: `/subpackages/business/order-detail/index?id=${result.orderId}`
-                })
-              } else {
-                wx.navigateBack({
-                  fail: () => wx.redirectTo({
-                    url: `/subpackages/business/order-detail/index?id=${result.orderId}`
-                  })
-                })
-              }
-            }
-          })
-        } else if (/支付未开通|暂不可用|支付服务不可用|钱包余额已退回/.test(msg)) {
-          wx.showModal({
-            title: '暂无法支付',
-            content: msg + '\n订单已保留在「待付款」。',
-            showCancel: false,
-            confirmColor: '#C4A76C',
-            success: () => {
+            confirmText: '立即支付'
+          }).then((m) => {
+            if (m.confirm) {
               wx.redirectTo({
                 url: `/subpackages/business/order-detail/index?id=${result.orderId}`
               })
+            } else {
+              wx.navigateBack({
+                fail: () => wx.redirectTo({
+                  url: `/subpackages/business/order-detail/index?id=${result.orderId}`
+                })
+              })
             }
+          })
+        } else if (/支付未开通|暂不可用|支付服务不可用|钱包余额已退回/.test(msg)) {
+          this.modal({
+            title: '暂无法支付',
+            overline: 'PAYMENT UNAVAILABLE',
+            content: msg + '\n订单已保留在「待付款」。',
+            showCancel: false
+          }).then(() => {
+            wx.redirectTo({
+              url: `/subpackages/business/order-detail/index?id=${result.orderId}`
+            })
           })
         } else {
           wx.showToast({ title: msg, icon: 'none' })
@@ -1686,4 +1684,4 @@ Page({
       fail: () => wx.showToast({ title: '无法打开联系专员', icon: 'none' })
     })
   }
-})
+}))

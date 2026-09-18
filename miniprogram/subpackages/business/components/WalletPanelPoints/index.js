@@ -10,8 +10,12 @@ const {
 const { ensureOpenId } = require('../../../../utils/orderScope');
 const { fetchUserSession } = require('../../../../utils/userSession');
 const { drawMemberQr } = require('../../utils/qrCanvas');
+const { buildPointsTimeline, pointsCapText } = require('./points-ledger');
 const app = getApp();
 const db = wx.cloud.database();
+
+/** 积分明细分页大小（与储值账单一致：一屏多一点，翻页不卡） */
+const RECORDS_PAGE_SIZE = 20;
 
 function parsePoints(value) {
   const n = Number(value);
@@ -21,13 +25,6 @@ function parsePoints(value) {
 
 function newRequestId() {
   return `ex_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function formatRecordTime(value) {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /**
@@ -61,8 +58,19 @@ const _pageCfg = {
 
     // 积分明细
     records: [],
+    /** 时间轴（月带 + 日组 + 组内行）——由 points-ledger 纯函数派生 */
+    recordsTimeline: [],
     recordsLoading: false,
+    recordsLoadingMore: false,
     recordsError: false,
+    recordsHasMore: false,
+    recordsTotal: 0,
+    recordsPage: 1,
+    /** '' = 全部 / 'earn' = 获得 / 'spend' = 消耗（服务端过滤，计数才准） */
+    recordsFilter: '',
+    recordsCap: '',
+    recordsEarn: 0,
+    recordsSpend: 0,
     storeRuleText: RULE_TEXT_FALLBACK,
     storeNotice: STORE_POINTS_NOTICE,
     storeSpendTotal: 0,
@@ -131,28 +139,65 @@ const _pageCfg = {
   /**
    * 积分明细与门店累计。getPointRecords 按 userOpenid 归属过滤，
    * 门店赠分的 _openid 是店员，不能靠前端直查 point_records。
+   *
+   * 2026-09-18（需求 8）：改为**时间轴 + 分页 + 筛选**。
+   *   · 时间轴：月带 → 日组（组头给当日净积分）→ 组内逐笔；日期/时分走 points-ledger 纯函数
+   *     （`$date` 兼容、分页未完那天不给净额，都有单测钉住）；
+   *   · 分页：page/pageSize + hasMore（服务端已有），「加载更多」或触底续拉；
+   *   · 筛选：全部 / 获得 / 消耗 —— 走服务端 `type`，否则「共 N 笔」会算错。
    */
-  async loadRecords() {
-    if (this.data.recordsLoading) return;
-    this.setData({ recordsLoading: true });
+  async loadRecords(opts = {}) {
+    const append = !!(opts && opts.append);
+    const filter = opts && opts.filter != null ? String(opts.filter) : String(this.data.recordsFilter || '');
+    if (this.data.recordsLoading || (append && this.data.recordsLoadingMore)) return;
+    if (append && !this.data.recordsHasMore) return;
+
+    const page = append ? (Number(this.data.recordsPage) || 1) + 1 : 1;
+    this.setData(append
+      ? { recordsLoadingMore: true }
+      : { recordsLoading: true, recordsError: false });
+
     try {
-      const res = await wx.cloud.callFunction({ name: 'getPointRecords', data: { page: 1, pageSize: 30 } });
+      const res = await wx.cloud.callFunction({
+        name: 'getPointRecords',
+        data: {
+          page,
+          pageSize: RECORDS_PAGE_SIZE,
+          ...(filter ? { type: filter } : {})
+        }
+      });
       const result = (res && res.result) || {};
       if (!result.success) {
-        this.setData({ recordsLoading: false, recordsError: true });
+        this.setData(append
+          ? { recordsLoadingMore: false }
+          : { recordsLoading: false, recordsError: true });
         return;
       }
+      const incoming = Array.isArray(result.list) ? result.list : [];
+      // 类型文案（获得/消耗/扣回/调整）由 storePoints 统一提供，纯模块只负责排版
+      const withType = incoming.map((row) => ({
+        ...row,
+        typeText: POINT_TYPE_TEXT[row && row.type] || ''
+      }));
+      const rows = append ? (this.data.records || []).concat(withType) : withType;
+      const hasMore = !!result.hasMore;
+      const total = Number(result.total) || 0;
+      const built = buildPointsTimeline(rows, { hasMore });
       const summary = result.summary || {};
       const storeRule = result.storeRule || STORE_RULE_FALLBACK;
       this.setData({
         recordsLoading: false,
+        recordsLoadingMore: false,
         recordsError: false,
-        records: (result.list || []).map((row) => ({
-          ...row,
-          timeText: formatRecordTime(row.createTime),
-          typeText: POINT_TYPE_TEXT[row.type] || '',
-          pointsText: row.points > 0 ? `+${row.points}` : String(row.points)
-        })),
+        records: rows,
+        recordsPage: page,
+        recordsHasMore: hasMore,
+        recordsTotal: total,
+        recordsFilter: filter,
+        recordsTimeline: built.timeline,
+        recordsEarn: built.earn,
+        recordsSpend: built.spend,
+        recordsCap: pointsCapText(built.count, hasMore, total),
         storeSpendTotal: summary.storeSpendTotal || 0,
         storePointsTotal: summary.storePointsTotal || 0,
         onlineSpendTotal: summary.onlineSpendTotal || 0,
@@ -164,8 +209,37 @@ const _pageCfg = {
       });
     } catch (e) {
       console.warn('loadRecords', e);
-      this.setData({ recordsLoading: false, recordsError: true });
+      this.setData(append
+        ? { recordsLoadingMore: false }
+        : { recordsLoading: false, recordsError: true });
     }
+  },
+
+  /** 明细筛选：全部 / 获得 / 消耗（服务端过滤后重新拉第一页） */
+  setRecordsFilter(e) {
+    const next = String((e.currentTarget.dataset && e.currentTarget.dataset.type) || '');
+    if (next === this.data.recordsFilter && (this.data.records || []).length) return;
+    this.setData({
+      recordsFilter: next,
+      records: [],
+      recordsTimeline: [],
+      recordsPage: 1,
+      recordsHasMore: false,
+      recordsError: false,
+      recordsCap: '',
+      recordsEarn: 0,
+      recordsSpend: 0
+    });
+    this.loadRecords({ filter: next });
+  },
+
+  loadMoreRecords() {
+    this.loadRecords({ append: true });
+  },
+
+  /** 宿主页把「触底」转发进来；只有停在明细 tab 时才续拉 */
+  onReachBottom() {
+    if (this.data.curTab === 2) this.loadMoreRecords();
   },
 
   async loadData() {
