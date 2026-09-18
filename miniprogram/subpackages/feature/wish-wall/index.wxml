@@ -37,6 +37,64 @@
   </view>
 
   <block wx:else>
+    <!-- 墙面：浅纸墙 + 轨道化弹幕。同轨严格不重叠（排期见 utils/wishWall.buildDanmakuRows） -->
+    <view
+      class="ww-wall"
+      aria-label="{{rows.length ? rows.length + ' 条心愿在墙上流动，轻点一条可展开愿签' : '祈福墙'}}"
+    >
+      <view class="ww-wall-fiber" aria-hidden="true"></view>
+      <view class="ww-wall-inner">
+        <!-- 刻度必须和内层同坐标系：挂在整面墙上会因底部页脚高度而逐轨错开 -->
+        <view class="ww-wall-rail rail-1" aria-hidden="true"></view>
+        <view class="ww-wall-rail rail-2" aria-hidden="true"></view>
+        <view class="ww-wall-rail rail-3" aria-hidden="true"></view>
+        <view class="ww-wall-rail rail-4" aria-hidden="true"></view>
+        <!-- 加载中：四条轨道各出一条浅纸微光条（全站约定是骨架，不是一行字） -->
+        <block wx:if="{{loading}}">
+          <view class="ww-wall-skel skel-1" aria-hidden="true"></view>
+          <view class="ww-wall-skel skel-2" aria-hidden="true"></view>
+          <view class="ww-wall-skel skel-3" aria-hidden="true"></view>
+          <view class="ww-wall-skel skel-4" aria-hidden="true"></view>
+        </block>
+        <block wx:else>
+          <view
+            class="ww-danmaku ww-tone-{{item.tone}}"
+            wx:for="{{rows}}"
+            wx:key="key"
+            style="top:{{item.topPercent}}%; animation-duration:{{item.durationMs}}ms; animation-delay:{{item.delayMs}}ms;"
+            bindtap="openWishCard"
+          data-id="{{item.id}}"
+          hover-class="ww-danmaku-press"
+          hover-stay-time="70"
+          aria-role="button"
+          aria-label="{{item.text}}"
+        >
+              <text class="ww-emoji" wx:if="{{item.emoji}}">{{item.emoji}}</text>
+          <!-- 墙面也承担信任信号：置顶/馆方在墙上就有标记（此前只有愿签列表里有） -->
+          <view
+            class="ww-dm-mark {{item.pinned ? 'is-pinned' : (item.official ? 'is-official' : '')}}"
+            wx:if="{{item.pinned || item.official}}"
+            aria-hidden="true"
+          ></view>
+          <text class="ww-dm-text {{item.id === freshId ? 'is-fresh' : ''}}">{{item.text}}</text>
+        </view>
+          <!-- ⚠️ 失败时不得说「墙面还是空的」——那是把加载失败谎报成没人许愿 -->
+          <view class="ww-wall-empty" wx:if="{{!rows.length}}">
+            <view class="ww-wall-empty-mark" aria-hidden="true"></view>
+            <text class="ww-wall-empty-title">{{loadError ? '墙面未展开' : '墙面还是空的'}}</text>
+            <text class="ww-wall-empty-desc">{{loadError ? '网络或权限异常，可在下方重试' : '做第一个许愿的人'}}</text>
+          </view>
+        </block>
+      </view>
+      <view class="ww-wall-foot" wx:if="{{rows.length}}">
+        <view class="signal-light lamp-brass"></view>
+        <text class="ww-wall-foot-text">{{items.length}} 条心愿正在墙上流动</text>
+      </view>
+      <view class="ww-wall-foot is-loading" wx:elif="{{loading}}">
+        <view class="signal-light lamp-muted"></view>
+        <text class="ww-wall-foot-text">正在展开墙面…</text>
+      </view>
+    </view>
     <!-- 祈福动作区：点灯 + 木鱼并列（产品负责人 2026-09-19 版式） -->
     <view class="ww-ritual-row">
     <!-- 灯龛：零门槛的入场动作。点完亮出当天那一句，同一天复现同一句。
@@ -99,64 +157,6 @@
     </view>
     <!-- 说明：一行说清玩法，不占版面（原长说明已收进页头一句） -->
     <text class="ww-foot-note">点一盏灯、敲一下木鱼，心愿挂上墙就会一直流动。</text>
-    <!-- 墙面：浅纸墙 + 轨道化弹幕。同轨严格不重叠（排期见 utils/wishWall.buildDanmakuRows） -->
-    <view
-      class="ww-wall"
-      aria-label="{{rows.length ? rows.length + ' 条心愿在墙上流动，轻点一条可展开愿签' : '祈福墙'}}"
-    >
-      <view class="ww-wall-fiber" aria-hidden="true"></view>
-      <view class="ww-wall-inner">
-        <!-- 刻度必须和内层同坐标系：挂在整面墙上会因底部页脚高度而逐轨错开 -->
-        <view class="ww-wall-rail rail-1" aria-hidden="true"></view>
-        <view class="ww-wall-rail rail-2" aria-hidden="true"></view>
-        <view class="ww-wall-rail rail-3" aria-hidden="true"></view>
-        <view class="ww-wall-rail rail-4" aria-hidden="true"></view>
-        <!-- 加载中：四条轨道各出一条浅纸微光条（全站约定是骨架，不是一行字） -->
-        <block wx:if="{{loading}}">
-          <view class="ww-wall-skel skel-1" aria-hidden="true"></view>
-          <view class="ww-wall-skel skel-2" aria-hidden="true"></view>
-          <view class="ww-wall-skel skel-3" aria-hidden="true"></view>
-          <view class="ww-wall-skel skel-4" aria-hidden="true"></view>
-        </block>
-        <block wx:else>
-          <view
-            class="ww-danmaku ww-tone-{{item.tone}}"
-            wx:for="{{rows}}"
-            wx:key="key"
-            style="top:{{item.topPercent}}%; animation-duration:{{item.durationMs}}ms; animation-delay:{{item.delayMs}}ms;"
-            bindtap="openWishCard"
-          data-id="{{item.id}}"
-          hover-class="ww-danmaku-press"
-          hover-stay-time="70"
-          aria-role="button"
-          aria-label="{{item.text}}"
-        >
-              <text class="ww-emoji" wx:if="{{item.emoji}}">{{item.emoji}}</text>
-          <!-- 墙面也承担信任信号：置顶/馆方在墙上就有标记（此前只有愿签列表里有） -->
-          <view
-            class="ww-dm-mark {{item.pinned ? 'is-pinned' : (item.official ? 'is-official' : '')}}"
-            wx:if="{{item.pinned || item.official}}"
-            aria-hidden="true"
-          ></view>
-          <text class="ww-dm-text {{item.id === freshId ? 'is-fresh' : ''}}">{{item.text}}</text>
-        </view>
-          <!-- ⚠️ 失败时不得说「墙面还是空的」——那是把加载失败谎报成没人许愿 -->
-          <view class="ww-wall-empty" wx:if="{{!rows.length}}">
-            <view class="ww-wall-empty-mark" aria-hidden="true"></view>
-            <text class="ww-wall-empty-title">{{loadError ? '墙面未展开' : '墙面还是空的'}}</text>
-            <text class="ww-wall-empty-desc">{{loadError ? '网络或权限异常，可在下方重试' : '做第一个许愿的人'}}</text>
-          </view>
-        </block>
-      </view>
-      <view class="ww-wall-foot" wx:if="{{rows.length}}">
-        <view class="signal-light lamp-brass"></view>
-        <text class="ww-wall-foot-text">{{items.length}} 条心愿正在墙上流动</text>
-      </view>
-      <view class="ww-wall-foot is-loading" wx:elif="{{loading}}">
-        <view class="signal-light lamp-muted"></view>
-        <text class="ww-wall-foot-text">正在展开墙面…</text>
-      </view>
-    </view>
 
     <!-- 写愿签 -->
     <view class="ww-write">
