@@ -36,8 +36,20 @@ const INJECTIONS = {
   // 未确认能力就直接拼参数 → 首屏破图风险（最初的实现正是这样）
   'thumb-without-probe': {
     file: 'miniprogram/utils/imageUrl.js',
-    from: "function detailUrl(url) {\n  if (!isThumbUsable()) return String(url || '')",
-    to: "function detailUrl(url) {\n  if (false) return String(url || '')"
+    from: "function detailUrl(url) {\n  const u = cloudIdToHttps(url)\n  if (!isThumbUsable()) return u",
+    to: "function detailUrl(url) {\n  const u = cloudIdToHttps(url)\n  if (false) return u"
+  },
+  // 宽度退回"按 2 倍屏写死" → 3 倍屏上图片被放大 1.5 倍（本轮修复的那个真问题）
+  'width-hardcoded-2x': {
+    file: 'miniprogram/utils/imageUrl.js',
+    from: '  return Math.min(DETAIL_MAX, Math.max(DETAIL_MIN, need))',
+    to: '  return DETAIL_MIN'
+  },
+  // 丢掉质量参数 → 大比例缩小后细节糊（默认质量兜不住）
+  'quality-dropped': {
+    file: 'miniprogram/utils/imageUrl.js',
+    from: '  return `${u}${sep}imageMogr2/thumbnail/${w}x>/quality/${QUALITY}`',
+    to: '  return `${u}${sep}imageMogr2/thumbnail/${w}x`'
   },
   // 加载失败不回落 → 整页持续破图
   'no-degrade-on-error': {
@@ -131,10 +143,41 @@ eq('未探测时 isThumbUsable 为假', imgUrl.isThumbUsable(), false)
   ok.__resetProbe()
   const supported = await ok.probeSupport(ORIG)
   eq('探测成功返回 true', supported, true)
-  eq('★ 探测成功后 detailUrl 拼 750', ok.detailUrl(ORIG), `${ORIG}?imageMogr2/thumbnail/750x`)
-  eq('★ 探测成功后 thumbUrl 拼 480', ok.thumbUrl(ORIG), `${ORIG}?imageMogr2/thumbnail/480x`)
-  eq('★ 已有 query（带签名的临时链）用 & 追加，不破坏签名', ok.detailUrl(`${ORIG}?sign=abc&t=1`), `${ORIG}?sign=abc&t=1&imageMogr2/thumbnail/750x`)
-  eq('探测参数用 64 宽（越小越快）', ok.THUMB_WIDTH_LIST, 480)
+  eq('★ 取不到设备信息时 detailUrl 用兜底 375×2=750', ok.detailUrl(ORIG), `${ORIG}?imageMogr2/thumbnail/750x>/quality/90`)
+  eq('★ 列表档 thumbUrl 拼 560（两列栅格实测 ≈341rpx，3 倍屏需 ≈511）', ok.thumbUrl(ORIG), `${ORIG}?imageMogr2/thumbnail/560x>/quality/90`)
+  eq('★ 已有 query（带签名的临时链）用 & 追加，不破坏签名', ok.detailUrl(`${ORIG}?sign=abc&t=1`), `${ORIG}?sign=abc&t=1&imageMogr2/thumbnail/750x>/quality/90`)
+  eq('探测图宽度 64（越小越快）', ok.PROBE_WIDTH, 64)
+  eq('★ 三档宽度按实测渲染宽定（rail/mid/list）', `${ok.THUMB_WIDTH_RAIL}/${ok.THUMB_WIDTH_MID}/${ok.THUMB_WIDTH_LIST}`, '360/480/560')
+  eq('质量参数 90（清晰优先）', ok.QUALITY, 90)
+  // ★ 2026-09-18：宽度必须随设备 DPR 变，不能写死"2 倍屏"
+  const withDevice = (pixelRatio, windowWidth) => {
+    const m = { exports: {} }
+    // eslint-disable-next-line no-new-func
+    new Function('module', 'exports', 'wx', imgUrlSrc)(m, m.exports, {
+      getImageInfo: ({ success }) => success({ width: 64, height: 43 }),
+      getWindowInfo: () => ({ pixelRatio, windowWidth })
+    })
+    return m.exports
+  }
+  const iphone = withDevice(3, 390)      // iPhone 14 级别：390pt @3x
+  await iphone.probeSupport(ORIG)
+  eq('★ 3 倍屏满宽需要 1170 → detailUrl 必须给 1170（原实现写死 750 = 放大 1.5 倍显示）',
+    iphone.detailUrl(ORIG), `${ORIG}?imageMogr2/thumbnail/1170x>/quality/90`)
+  eq('3 倍屏 railUrl → 360（横滑小卡 110pt×3=330）',
+    iphone.railUrl(ORIG), `${ORIG}?imageMogr2/thumbnail/360x>/quality/90`)
+  eq('3 倍屏 midUrl → 480（横向中卡 140pt×3=420）',
+    iphone.midUrl(ORIG), `${ORIG}?imageMogr2/thumbnail/480x>/quality/90`)
+  eq('3 倍屏 thumbUrl → 560（两列栅格 170pt×3=511）',
+    iphone.thumbUrl(ORIG), `${ORIG}?imageMogr2/thumbnail/560x>/quality/90`)
+
+  const se = withDevice(2, 320)          // 老 2 倍屏小机：640 物理 px
+  eq('2 倍屏小机不低于下限 750', se.detailTargetWidth(), 750)
+  const ipad = withDevice(2, 768)
+  eq('iPad 满宽 1536（未被下限压住）', ipad.detailTargetWidth(), 1536)
+  const huge = withDevice(2, 1024)
+  eq('超大视口夹到上限 1600（不白花流量）', huge.detailTargetWidth(), 1600)
+  eq('设备信息取不到 → 兜底 2', loadImageUrl().devicePixelRatio(), 2)
+
   // 探测后失败 → 回落
   ok.onImageError()
   eq('★ 失败后永久回落原图（本会话）', ok.detailUrl(ORIG), ORIG)
@@ -324,8 +367,9 @@ function makePage(data) {
   imgUrl.__resetProbe()
   // 状态机本身已在 §1 用真实探测覆盖；这里只测「页面的映射逻辑」，故注入 supported 桩
   const supported = {
-    detailUrl: (u) => (u && u.startsWith('http') ? `${u}?imageMogr2/thumbnail/750x` : u),
-    thumbUrl: (u) => (u && u.startsWith('http') ? `${u}?imageMogr2/thumbnail/480x` : u),
+    detailUrl: (u) => (u && u.startsWith('http') ? `${u}?imageMogr2/thumbnail/750x>/quality/90` : u),
+    railUrl: (u) => (u && u.startsWith('http') ? `${u}?imageMogr2/thumbnail/360x>/quality/90` : u),
+    thumbUrl: (u) => (u && u.startsWith('http') ? `${u}?imageMogr2/thumbnail/560x>/quality/90` : u),
     isThumbUsable: () => true,
     onImageError: () => { supported._degraded = true }
   }
@@ -346,6 +390,7 @@ function makePage(data) {
   const orig = imgUrl.isThumbUsable
   imgUrl.isThumbUsable = () => true
   imgUrl.detailUrl = supported.detailUrl
+  imgUrl.railUrl = supported.railUrl
   imgUrl.thumbUrl = supported.thumbUrl
   try {
     page.buildImageView()
@@ -361,9 +406,9 @@ function makePage(data) {
   check('★ 大图槽位：非激活分组的长图文也已映射（源列表覆盖派生槽位）', !!big['https://x/other-group.png'])
   check('★ 大图槽位：sku.detailImages 已映射', !!big['https://x/skud.png'])
   check('大图槽位：sku.images 已映射', !!big['https://x/sku2.png'])
-  check('小图槽位：更多细节用 480', /thumbnail\/480x/.test(small['https://x/shared.png'] || ''), small['https://x/shared.png'])
-  check('小图槽位：相关推荐用 480', /thumbnail\/480x/.test(small['https://x/rec.png'] || ''), small['https://x/rec.png'])
-  check('大图槽位用 750', /thumbnail\/750x/.test(big[ORIG] || ''), big[ORIG])
+  check('★ 小图槽位：更多细节（200rpx=100pt）用 rail 360', /thumbnail\/360x>\/quality\/90/.test(small['https://x/shared.png'] || ''), small['https://x/shared.png'])
+  check('★ 小图槽位：相关推荐（200rpx=100pt）用 rail 360', /thumbnail\/360x>\/quality\/90/.test(small['https://x/rec.png'] || ''), small['https://x/rec.png'])
+  check('★ 大图槽位按设备宽 + 质量参数', /thumbnail\/750x>\/quality\/90/.test(big[ORIG] || ''), big[ORIG])
 
   // 2c. 加载失败 → 立刻清空映射
   page.onImageDegrade()
@@ -393,8 +438,8 @@ check('全屏查看器仍用原图（previewImage 未被改造）', /wx\.preview
   eq('带签名的临时链在原图模式下不被改写', fresh.detailUrl(withQuery), withQuery)
 }
 eq(
-  '参数形态与实测一致（imageMogr2/thumbnail/<w>x）',
-  /imageMogr2\/thumbnail\//.test(imgUrlSrc),
+  '参数形态与实测一致（imageMogr2/thumbnail/<w>x>/quality/<q>；`>` = 只缩不放）',
+  /imageMogr2\/thumbnail\/\$\{w\}x>\/quality\/\$\{QUALITY\}/.test(imgUrlSrc),
   true
 )
 

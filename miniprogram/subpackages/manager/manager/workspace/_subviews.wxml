@@ -2340,6 +2340,30 @@
           <view class="visit-stats-row"><text class="visit-stats-name">去注册→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.gate.resumeRate || 0}}%</text></view>
           <text class="week-split-hint">口径：去注册/放弃/完成率相对曝光；去注册→完成率相对「去注册」人次</text>
         </view>
+        <!-- 祈福墙 · 注册转化（2026-09-18 补：产品反馈"数据报表里没有祈福墙数据"——
+             漏斗以前只算了 identify/store/commerce，这一块压根不存在） -->
+        <view class="card" wx:if="{{analyticsReport.behavior.funnel.identify.resultGate}}">
+          <view class="card-top"><text class="no">AI 识别 · 看结果注册钩子</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">引导曝光（未注册看结果）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.show || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">去注册</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.goRegister || 0}} · {{analyticsReport.behavior.funnel.identify.resultGate.goRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">暂不保存（流失）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.dismiss || 0}} · {{analyticsReport.behavior.funnel.identify.resultGate.dismissRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">注册完成并解锁结果</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.identify.resultGate.completeRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">去注册→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.resumeRate || 0}}%</text></view>
+          <text class="week-split-hint">口径同上（相对曝光）</text>
+        </view>
+        <view class="card" wx:if="{{analyticsReport.behavior.funnel.wishWall}}">
+          <view class="card-top"><text class="no">祈福墙 · 注册转化</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">进墙（含门店码扫码）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.enter || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">参与仪式 / 玩法</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.engage || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">落愿遇注册钩子</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.show || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">点「去注册」</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.goRegister || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.goRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">先不挂（关掉弹窗）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.dismiss || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.dismissRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">注册未完成（授权失败）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.fail || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.failRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">注册完成并自动续发</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.completeRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">落愿成功（上墙）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.post || 0}} · {{analyticsReport.behavior.funnel.wishWall.postRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">去注册→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.resumeRate || 0}}%</text></view>
+          <text class="week-split-hint">口径：曝光/去注册/失败/完成率相对曝光；去注册→完成率相对「点去注册」人次；落愿成功率相对进墙</text>
+        </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.commerce}}">
           <view class="card-top"><text class="no">电商路径</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">藏品浏览</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.productView || 0}}</text></view>
@@ -2922,6 +2946,23 @@
             </view>
           </view>
           <text class="latin-hint">多选；写入 giftScenes，与兴趣标签分离。无标签也可礼赠，场景选品时优先匹配有标签藏品。</text>
+          <view class="form-row tag-editor-row">
+            <text>祈运标签</text>
+            <view class="tag-editor">
+              <view class="tag-chips gift-scene-chips">
+                <view
+                  class="tag-chip gift-scene-chip {{item.on ? 'on' : ''}}"
+                  wx:for="{{blessTagOptions}}"
+                  wx:key="key"
+                  data-key="{{item.key}}"
+                  bindtap="toggleProductBlessTag"
+                >
+                  <text class="tag-chip-text">{{item.label}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+          <text class="latin-hint">最多 {{maxBlessTags}} 个；写入 blessTags，用于祈福墙玩法推荐与墙面文案，与兴趣标签 / 礼赠场景分离。</text>
 
           <view class="form-section-label">祈福墙</view>
           <!-- 需求 28：本藏品是否挂祈福墙，以及挂在**哪面**墙。

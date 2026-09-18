@@ -138,6 +138,12 @@ const {
   sanitizeGiftScenes,
   readGiftScenes
 } = require('../utils/giftScenes');
+const {
+  BLESS_TAGS,
+  MAX_BLESS_TAGS,
+  sanitizeBlessTags,
+  readBlessTags
+} = require('../utils/blessTags');
 const { SCHEME_PRESETS, buildBannerLinkForSave, validateSchemePath } = require('../../../utils/bannerNav');
 const { requestStaffOrderSubscribe, requestStaffAllSubscribe } = require('../../../utils/staffOrderSubscribe');
 const {
@@ -1594,6 +1600,8 @@ const managerPageConfig = {
     sizeFormHint: '方形玻璃罩：长 / 宽 / 高（cm）',
     sizeFormLabel: '长 × 宽 × 高',
     giftSceneOptions: GIFT_SCENES.map((s) => ({ key: s.key, label: s.label, on: false })),
+    blessTagOptions: BLESS_TAGS.map((b) => ({ key: b.key, label: b.label, on: false })),
+    maxBlessTags: MAX_BLESS_TAGS,
 
     isEditing: false, editId: '',
     
@@ -4469,6 +4477,7 @@ const managerPageConfig = {
           tags: sanitizeProductTags(item.tags),
           tagDraft: '',
           giftScenes: readGiftScenes(item),
+          blessTags: readBlessTags(item),
           seckillEnabled: !!(seckill && seckill.enabled),
           seckillPrice: seckill ? seckill.price : '',
           seckillStock: seckill ? seckill.stock : '',
@@ -4492,6 +4501,7 @@ const managerPageConfig = {
           tags: [],
           tagDraft: '',
           giftScenes: [],
+          blessTags: [],
           seckillEnabled: false, seckillPrice: '', seckillStock: '', seckillLimitPerUser: 1, seckillStartTime: '', seckillEndTime: '',
           groupBuyingEnabled: false, groupBuyingPrice: '', groupBuyingSize: 2
         },
@@ -4510,6 +4520,7 @@ const managerPageConfig = {
       syncProductLatinRequired(this);
       syncProductTaxonomyFlags(this);
       this.syncGiftSceneOptionFlags();
+      this.syncBlessTagOptionFlags();
       if (!item && this.data.artisanEmbed) {
         this.applyArtisanConceptPrefill();
       }
@@ -4557,6 +4568,28 @@ const managerPageConfig = {
       on: selected.has(s.key)
     }));
     this.setData({ giftSceneOptions });
+  },
+  /** 祈运标签：与礼赠场景同一套交互（多选 chips），上限由 blessTags 的 MAX_BLESS_TAGS 定 */
+  syncBlessTagOptionFlags() {
+    const selected = new Set(sanitizeBlessTags((this.data.tempProduct || {}).blessTags));
+    const blessTagOptions = BLESS_TAGS.map((b) => ({
+      key: b.key,
+      label: b.label,
+      on: selected.has(b.key)
+    }));
+    this.setData({ blessTagOptions });
+  },
+  toggleProductBlessTag(e) {
+    const key = String((e.currentTarget.dataset && e.currentTarget.dataset.key) || '').trim();
+    if (!key) return;
+    const current = sanitizeBlessTags((this.data.tempProduct || {}).blessTags);
+    if (!current.includes(key) && current.length >= MAX_BLESS_TAGS) {
+      // 上限是刻意的：标签一多就等于没标签；这里如实说，不静默丢掉用户的选择
+      wx.showToast({ title: `最多选 ${MAX_BLESS_TAGS} 个祈运标签`, icon: 'none' });
+      return;
+    }
+    const next = current.includes(key) ? current.filter((k) => k !== key) : sanitizeBlessTags([...current, key]);
+    this.setData({ 'tempProduct.blessTags': next }, () => this.syncBlessTagOptionFlags());
   },
   toggleProductGiftScene(e) {
     const key = String((e.currentTarget.dataset && e.currentTarget.dataset.key) || '').trim();
@@ -5542,6 +5575,8 @@ const managerPageConfig = {
         taxonomy: toChineseTaxonomy(p.taxonomy || {}),
         tags: sanitizeProductTags(p.tags),
         giftScenes: sanitizeGiftScenes(p.giftScenes),
+        // 需求 28 · item 6：祈运标签（受控枚举；云函数白名单里有它，漏在这里=保存成功但字段被丢）
+        blessTags: sanitizeBlessTags(p.blessTags),
         images,
         // 上下架仅走 manageApprovals，保存时不改 isOffShelf（云函数也会剥离）
         // 写库必须走 manageProducts；禁止客户端直写 products
