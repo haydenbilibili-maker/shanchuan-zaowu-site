@@ -239,7 +239,10 @@
     "check:order-status-enum": "node miniprogram/scripts/check-order-status-enum.mjs",
     "check:order-status-enum:selftest": "node miniprogram/scripts/check-order-status-enum.mjs --selftest",
     "check:order-transition-guard": "node miniprogram/scripts/check-order-transition-guard.mjs",
-    "check:order-transition-guard:selftest": "node miniprogram/scripts/check-order-transition-guard.mjs --selftest"
+    "check:order-transition-guard:selftest": "node miniprogram/scripts/check-order-transition-guard.mjs --selftest",
+    "check:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs",
+    "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
+    "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
