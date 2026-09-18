@@ -161,6 +161,10 @@ const EVENTS = {
   // step = show（有进展且未注册时弹注册）/ go_register（点了授权按钮）/ dismiss（先存着）/
   //        resume_success（注册完成**且记录已同步上云**）/ fail_*（授权失败、同步失败、开关关闭）
   wish_ritual_gate: { module: MODULE.COMMUNITY, desc: '祈福墙连续记录云存注册漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
+  // 创新钩子 H2「功德证」（2026-09-20）：木鱼敲到里程点时出现的「领证」次级入口。
+  // step = show（入口在里程点曝光）/ go_register（未注册用户点了弹窗里的授权按钮）/
+  //        dismiss（先不领）/ resume_success（**证书已发且功德已同步上云**）/ fail_*（授权失败、同步失败、开关关闭）
+  muyu_cert_gate: { module: MODULE.COMMUNITY, desc: '祈福墙功德证领取漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
 
   // —— 用户 / 会员 ——
   member_card_flip: { module: MODULE.USER, desc: '会员卡翻面', targetType: 'member_card' },

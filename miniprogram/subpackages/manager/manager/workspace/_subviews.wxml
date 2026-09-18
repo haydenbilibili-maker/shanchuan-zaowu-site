@@ -2375,6 +2375,17 @@
           <view class="visit-stats-row"><text class="visit-stats-name">去注册→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.ritualGate.resumeRate || 0}}%</text></view>
           <text class="week-split-hint">口径同上；终点只算「注册完成**且记录已同步上云**」，同步失败走 fail_sync（不计入完成）</text>
         </view>
+        <!-- 祈福墙 · 功德证领取钩子（创新钩子 H2，2026-09-20）：与上面同一套口径，但 action 是 muyu_cert_gate。
+             没有这张卡 = 埋点发了、报表没有（祈福墙 2026-09-18 已经栽过一次） -->
+        <view class="card" wx:if="{{analyticsReport.behavior.funnel.wishWall.certGate}}">
+          <view class="card-top"><text class="no">祈福墙 · 功德证</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">里程点入口曝光</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.show || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">点「同意并一键注册」</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.goRegister || 0}} · {{analyticsReport.behavior.funnel.wishWall.certGate.goRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">先不领（关掉弹窗）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.dismiss || 0}} · {{analyticsReport.behavior.funnel.wishWall.certGate.dismissRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">证书已发且同步上云</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.wishWall.certGate.completeRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">入口曝光→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.resumeRate || 0}}%</text></view>
+          <text class="week-split-hint">口径同上；终点只算「证书已发**且功德同步上云**」，同步失败走 fail_sync（不计入完成）</text>
+        </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.commerce}}">
           <view class="card-top"><text class="no">电商路径</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">藏品浏览</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.productView || 0}}</text></view>
@@ -2581,6 +2592,15 @@
               <text class="cfg-switch-hint {{contentFlags.showRitualProfile ? 'on' : ''}}">{{contentFlags.showRitualProfile ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showRitualProfile}}" data-field="showRitualProfile" color="#C4A76C" bindchange="onContentFlagToggle"/>
+          </view>
+          <!-- 祈福墙「功德证」次级入口（创新钩子 H2）：领证要身份 → 属身份相关新能力，缺配置默认关。
+               关闭后不再出现「领证/回看」入口；点灯/木鱼/落愿等主功能不受影响（降级不影响主功能） -->
+          <view class="cfg-row cfg-row-switch">
+            <view class="cfg-label-block">
+              <text class="cfg-label cfg-label-wide">功德证</text>
+              <text class="cfg-switch-hint {{contentFlags.showMuyuCertificate ? 'on' : ''}}">{{contentFlags.showMuyuCertificate ? '展示中' : '已隐藏'}}</text>
+            </view>
+            <switch class="cfg-switch" checked="{{contentFlags.showMuyuCertificate}}" data-field="showMuyuCertificate" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
           <!-- 需求 28：弹幕治理入口。不接审核 → 必须能在此复核全部内容（含已隐藏） -->
           <view class="cfg-row cfg-row-link" bindtap="goWishWallManage">

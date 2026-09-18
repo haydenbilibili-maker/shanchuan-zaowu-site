@@ -1549,6 +1549,31 @@ page {
   100% { opacity: 0; transform: translateY(-22rpx); }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+ * 创新钩子 H2「功德证」次级入口（开关 showMuyuCertificate）
+ *
+ * 只在里程点出现的一整行，放在木鱼动作区下方 —— 为什么不是塞进半宽的木鱼卡：
+ *   · 卡宽 = 750 - 2×32(页面) - 2×20(卡内) ≈ 330rpx（还要减去 64rpx 的木鱼造型），
+ *     中文标签 + 「领证 ›」在 20~22rpx 字号下已接近一行上限，塞进去必然折行；
+ *   · 方案 §H2 要求"两个证书/记录入口不要与木鱼/点灯视觉并列"（仪式区不许变成功能区）。
+ * ⚠️ 本仓把"字宽/折行"记为**静态检查盲区**（AGENTS.md），上面这段只是源码侧推算，
+ *    真机效果**本轮未验**（交付说明如实标注，不声称"好看"）。
+ * ═══════════════════════════════════════════════════════════════════ */
+.ww-cert-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: 18rpx 22rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.34);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.12) 0%, rgba(196, 167, 108, 0.04) 100%);
+}
+.ww-cert-entry-press { opacity: 0.86; }
+.ww-cert-entry-tag { font-size: var(--fs-22); color: #D9BE86; letter-spacing: 1rpx; }
+.ww-cert-entry-go { font-size: var(--fs-22); color: #EFE6D2; }
+
 /* 说明：一行说完，不占版面 */
 .ww-foot-note {
   display: block;

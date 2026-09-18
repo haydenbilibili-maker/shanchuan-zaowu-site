@@ -1463,6 +1463,8 @@ const managerPageConfig = {
       showMaShangYou: false,
       // 祈福墙「连续记录云保存」注册钩子（2026-09-20）：缺配置默认关（身份新能力）
       showRitualProfile: false,
+      // 祈福墙「功德证」次级入口（创新钩子 H2，2026-09-20）：缺配置默认关（身份新能力）
+      showMuyuCertificate: false,
       // 以下四项本面板**没有渲染开关**（编辑入口在 ERP 内容开关页），但必须随状态一起携带：
       // 云函数 saveFlags 是按固定字段表整体写入的，本端不带上它们 = 保存时把它们重置为默认值，
       // 于是「ERP 关掉的图鉴/成就/缩略图/iOS 储值」会被这里一次保存静默打开（跨端互抹）。
@@ -10443,6 +10445,7 @@ bindSubCatChange(e) {
           showGift: flags.showGift === true,
           showMaShangYou: flags.showMaShangYou === true,
           showRitualProfile: flags.showRitualProfile === true,
+          showMuyuCertificate: flags.showMuyuCertificate === true,
           // 与 data 默认值同样必须齐全：这四项本面板不渲染开关，但保存时要原值回传，
           // 否则云函数按固定字段表整体写入时会它们重置为默认（见 data 处的说明）
           allowIosStoredValue: flags.allowIosStoredValue !== false,

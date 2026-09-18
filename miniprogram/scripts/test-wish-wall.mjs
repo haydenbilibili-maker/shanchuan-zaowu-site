@@ -935,6 +935,43 @@ const INJECTIONS = {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
     from: '  padding: 20rpx 22rpx 20rpx 26rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);',
     to: '  padding: 20rpx 22rpx 20rpx 26rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
+  },
+  // ── 创新钩子 H2「功德证」（2026-09-20）────────────────────────────────────
+  // 木鱼可连点 → 每敲一下就写一次云端（方案点名的头号风险：写放大）
+  'cert-writes-per-tap': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    this.maybeOfferRitualGate()\n    // 「功德证」次级入口：只做**纯函数判定 + setData**，一次云端写都没有',
+    to: '    void this.syncRitualToCloud()\n    this.maybeOfferRitualGate()\n    // 「功德证」次级入口：只做**纯函数判定 + setData**，一次云端写都没有'
+  },
+  // 里程点常量被随手改（口径未确认就悄悄漂移）
+  'cert-milestones-drift': {
+    file: 'miniprogram/utils/muyuCertificate.js',
+    from: 'const CERT_MILESTONES = [100, 500, 1000]',
+    to: 'const CERT_MILESTONES = [100, 500, 10000]'
+  },
+  // 同步失败也报"完成"（漏斗数字变假、用户被告知"已存到云端"）
+  'cert-sync-lies': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "    if (ok) {\n      this._certSyncedCount = this.data.muyuCount\n      this.trackCertGate('resume_success', { milestone: m })",
+    to: "    if (true) {\n      this._certSyncedCount = this.data.muyuCount\n      this.trackCertGate('resume_success', { milestone: m })"
+  },
+  // 领证只改内存不落本地存档 → 关掉小程序证就没了（"可保管"是空话）
+  'cert-local-record-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    muyuCert.writeRecord(this._certRecord)',
+    to: '    void 0'
+  },
+  // 新开关缺字段默认**开**（身份相关新能力默认关是本仓先例）
+  'cert-flag-default-on': {
+    file: 'miniprogram/utils/contentDisplayFlags.js',
+    from: '    showMuyuCertificate: src.showMuyuCertificate === true',
+    to: '    showMuyuCertificate: src.showMuyuCertificate !== false'
+  },
+  // 云函数 saveFlags 漏透传新开关（后台保存成功、字段却被静默重置为默认）
+  'cert-save-drops-field': {
+    file: 'miniprogram/cloudfunctions/getContentDisplayFlags/index.js',
+    from: '    showMuyuCertificate: incoming.showMuyuCertificate,',
+    to: '    showMuyuCertificate: false,'
   }
 }
 
@@ -4771,6 +4808,334 @@ check(
       /funnel\.wishWall\.ritualGate\.show/.test(subv)
   )
   check('漏斗 step 都从 trackRitualGate 一处发出（action 名只有一个事实源）', (hookPageSrc.match(/trackRitualGate\(/g) || []).length >= 6)
+}
+
+/* ================================================================== *
+ * 15) 创新钩子 H2「功德证」（2026-09-20）
+ *
+ * 产品口径（方案 `docs/创新钩子方案_2026-09-19.md` §H2）：木鱼功德攒到**里程点**时，
+ * 在木鱼按钮附近出现一个「领证」次级入口；领证要身份（复用 RegisterAuthDialog），
+ * 领到的证**可保管（本地存档）、可回看**，并与「连续记录云保存」共用同一份云端持久化。
+ *
+ * 这一节钉五件事（每一条都对应一种"看起来做了、其实没做"的缺陷）：
+ *   ① 里程点判定是**纯函数**、阈值只有一处常量，且**写明"口径待产品确认"**（不许猜成定稿）；
+ *   ② 开关 `showMuyuCertificate` 缺字段默认关，且**五处链路齐全**（漏一处就被静默重置）；
+ *   ③ **写放大防护**：木鱼可连点，`onMuyuTap` 一次云端写都不许有；只在离开页面/退出时上报；
+ *   ④ 注册成功后**真的调 `syncToCloud()`**，且只有成功才说「已存到云端」（失败说真话）；
+ *   ⑤ 证书文字**只有计数与日期**（合规：不涉命理改运），且埋点双端登记 + 数据报表有分桶。
+ * ================================================================== */
+{
+  const cert = loadCjs('miniprogram/utils/muyuCertificate.js', { require: markerRequire })
+  const certSrc = readSrc('miniprogram/utils/muyuCertificate.js')
+  // wx 桩要**先**挂：下面既有本地存档的 round-trip，也有页面行为断言
+  const stub = installWxStub()
+
+  /* —— ① 纯函数：里程点判定（阈值 = 一处常量，且口径待确认）—— */
+  eq('里程点常量按方案建议 100/500/1000（改口径只改这一行）', cert.CERT_MILESTONES.join('/'), '100/500/1000')
+  check(
+    '★ 常量旁写明「口径待产品确认」并指出方案出处（不许把猜测当定稿）',
+    /口径待产品确认/.test(certSrc) && /创新钩子方案_2026-09-19/.test(certSrc) && /CERT_MILESTONES/.test(certSrc)
+  )
+  eq('99 下没有证', cert.milestonesReached(99).length, 0)
+  eq('100 下正好第一档', cert.milestonesReached(100).join('/'), '100')
+  eq('1000 下三档都在（到达几档有几档，不是只有一张）', cert.milestonesReached(1000).join('/'), '100/500/1000')
+  eq('下一档：99 → 100', cert.nextMilestone(99), 100)
+  eq('下一档：100 → 500', cert.nextMilestone(100), 500)
+  eq('★ 封顶后没有下一档（返回 null，不编一个更大的数诱导继续敲）', cert.nextMilestone(1000), null)
+  eq('负数按 0（不崩、不报证）', cert.milestonesReached(-5).length, 0)
+  eq('非数字按 0（不崩）', cert.nextMilestone('abc'), 100)
+  eq('100 未领 → 可领 100', cert.nextUnclaimed(100, {}), 100)
+  eq('100 已领 → 无可领（下一档还没到）', cert.nextUnclaimed(100, { 100: {} }), null)
+  eq('600 已领 100 → 可领 500', cert.nextUnclaimed(600, { 100: {} }), 500)
+  eq('600 已领 100/500 → 无可领', cert.nextUnclaimed(600, { 100: {}, 500: {} }), null)
+  eq('回看档 = 已领最高档', cert.highestClaimed({ 100: {}, 500: {} }), 500)
+  eq('没领过 → 回看档 null（不凭空给一张证）', cert.highestClaimed({}), null)
+
+  /* —— ① 纯函数：持证记录（幂等 / 无副作用 / 归一脏数据）—— */
+  const rec0 = cert.emptyRecord()
+  const rec1 = cert.claimMilestone(rec0, 100, '2026-09-20', 137)
+  eq('领证记录写入档位', rec1.claimed['100'].milestone, 100)
+  eq('★ 证书只记计数与日期：领取日期落进记录', rec1.claimed['100'].dayKey, '2026-09-20')
+  eq('…并记下领取那一刻的真实功德数', rec1.claimed['100'].muyuCount, 137)
+  check('★ 纯函数：不改传入的记录（可断言、无副作用）', !rec0.claimed['100'])
+  eq('★ 幂等：重复领同一档不会改掉首次领取日期', cert.claimMilestone(rec1, 100, '2026-09-21', 200).claimed['100'].dayKey, '2026-09-20')
+  check('非法档位（42）写不进记录（造不出假证）', !cert.claimMilestone(rec1, 42, '2026-09-20', 42).claimed['42'])
+  const dirty = cert.normalizeRecord({ claimed: { 100: {}, 42: {}, x: null, 500: 'nope' } })
+  check(
+    '★ 归一脏存档：合法档保留、非法键/坏值丢掉（手改 storage 也不崩、不造假证）',
+    !!dirty.claimed['100'] && !dirty.claimed['42'] && !dirty.claimed['500']
+  )
+  const certView = cert.buildCertificate({ milestone: 100, muyuCount: 137, dayKey: '2026-09-20' })
+  check(
+    '★ 证书视图模型只有 档位/计数/日期 三个字段（不多带不该说的）',
+    !!certView && Object.keys(certView).sort().join(',') === 'dayKey,milestone,muyuCount'
+  )
+  eq('没有档位就没有证（不拿空数据凑一张假证）', cert.buildCertificate({}), null)
+
+  /* —— ⑤ 合规：对外文案只写计数与日期 —— */
+  const outwardText = [
+    cert.CERT_OVERLINE, cert.CERT_TITLE, cert.CERT_NOTE,
+    cert.buildCertDesc(100, 137),
+    cert.buildEntryText('claim', 100).tag, cert.buildEntryText('claim', 100).action,
+    cert.buildEntryText('view', 500).tag, cert.buildEntryText('view', 500).action
+  ].join('|')
+  check(
+    '★ 合规：对外文案不出现运势/改运/应验/发财/保佑这类承诺词（只写计数与日期）',
+    !/运势|改运|改命|应验|发财|保佑|加持|灵验/.test(outwardText),
+    outwardText
+  )
+  check('★ 门禁文案报出真实里程点与真实计数（不编数字）', /100/.test(cert.buildCertDesc(100, 137)) && /137/.test(cert.buildCertDesc(100, 137)), cert.buildCertDesc(100, 137))
+
+  /* —— ① 本地存档：round-trip + 失败静默 —— */
+  const certStore = new Map()
+  const prevGet = globalThis.wx.getStorageSync
+  const prevSet = globalThis.wx.setStorageSync
+  globalThis.wx.getStorageSync = (k) => (certStore.has(k) ? certStore.get(k) : '')
+  globalThis.wx.setStorageSync = (k, v) => { certStore.set(k, v) }
+  eq('写入本地存档返回 true', cert.writeRecord(rec1), true)
+  eq('★ 存档 round-trip：关掉小程序再打开，证还在（"可保管"的兑现）', cert.readRecord().claimed['100'].dayKey, '2026-09-20')
+  globalThis.wx.getStorageSync = () => { throw new Error('storage down') }
+  eq('★ 存储读失败 → 空记录，绝不抛（降级不得影响主功能）', cert.readRecord().claimed['100'], undefined)
+  globalThis.wx.getStorageSync = prevGet
+  globalThis.wx.setStorageSync = prevSet
+
+  /* —— ③ 行为：木鱼连点 300 下，一次云端写都不许有 —— */
+  const certProto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const flushMacro15 = () => new Promise((r) => setTimeout(r, 0))
+  const stepsOfCert = (p) => p.tracked.map((t) => t.step).join(',')
+  const claim100 = cert.claimMilestone(cert.emptyRecord(), 100, '2026-09-19', 100)
+
+  const mkCertPage = (o) => {
+    const opts = o || {}
+    const page = Object.assign(Object.create(null), certProto)
+    page.data = Object.assign({
+      allowed: true, flagChecked: true, productKey: 'wall1', productId: 'p1',
+      showRegisterDialog: false, showRitualProfile: false,
+      showMuyuCertificate: true, showCertDialog: false, certGateDesc: '',
+      certEntry: null, certCard: null, certNote: cert.CERT_NOTE,
+      lamp: { dayKey: '2026-09-20', lit: false, litAt: 0, line: '', streak: 0 },
+      muyuCount: 0, soundOn: true, quota: { used: 0, left: 5, cap: 5, exhausted: false },
+      viewMode: 'wall', danmakuCycle: 0, freshId: '', mine: { total: 0, visible: 0, hidden: 0 },
+      mineRows: [], loadError: '', draft: '', posting: false
+    }, opts.data || {})
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page._soundPlayer = null
+    page._certRecord = opts.record || cert.emptyRecord()
+    page._certBacked = opts.backed === true
+    page._certSyncedCount = opts.syncedCount === undefined ? null : opts.syncedCount
+    page._certShownKey = ''
+    page._certReportInFlight = false
+    page._pendingCertMilestone = 0
+    page.pushEcho = () => null
+    page.isGuestUser = () => Promise.resolve(opts.guest !== false)
+    page.syncCalls = 0
+    page.syncRitualToCloud = function () { this.syncCalls += 1; return Promise.resolve(opts.syncOk !== false) }
+    page.tracked = []
+    page.trackCertGate = function (step, extra) { this.tracked.push({ step, extra: extra || {} }) }
+    return page
+  }
+
+  {
+    const spam = mkCertPage({ data: { muyuCount: 0 }, syncedCount: 0 })
+    for (let i = 0; i < 300; i += 1) spam.onMuyuTap()
+    await flushMacro15()
+    eq('★ 木鱼连点 300 下：云端写入 0 次（方案点名的头号风险 = 写放大）', spam.syncCalls, 0)
+    eq('计数照常 +300（钩子不拦主功能）', spam.data.muyuCount, 300)
+    eq('★ 到里程点出现「领证」次级入口（不是弹窗、不拦截）', spam.data.certEntry && spam.data.certEntry.mode, 'claim')
+    eq('入口报出真实里程点', spam.data.certEntry.milestone, 100)
+    eq('入口不是注册弹窗', spam.data.showCertDialog, false)
+    eq('★ 入口曝光 show 只报一次（连点不会把曝光分母刷成点击数）', spam.tracked.filter((t) => t.step === 'show').length, 1)
+  }
+
+  /* —— 互斥：同一页两个注册门禁不许叠（H2 方案点名的骚扰风险）—— */
+  check(
+    '★ 互斥：领证门禁开着时，连灯云存钩子不抢同一个弹窗',
+    certProto.shouldOfferRitualGate({
+      allowed: true, flagOn: true, alreadyOffered: false, registerDialogOpen: false,
+      certDialogOpen: true, isGuest: true, streak: 2
+    }) === false
+  )
+  {
+    const busyPage = mkCertPage({ guest: true, data: { muyuCount: 100, showRitualDialog: true } })
+    busyPage.refreshCertEntry()
+    await busyPage.onCertEntryTap()
+    eq('★ 互斥：已有注册弹窗时不叠第二个领证门禁', busyPage.data.showCertDialog, false)
+    eq('…也没有把"待领档"记下来（不会误发一张用户没要的证）', busyPage._pendingCertMilestone, 0)
+  }
+
+  /* —— ④ 行为：未注册 → 门禁 → 注册成功 → 真的同步上云 + 如实反馈 —— */
+  const storeB = new Map()
+  globalThis.wx.getStorageSync = (k) => (storeB.has(k) ? storeB.get(k) : '')
+  globalThis.wx.setStorageSync = (k, v) => { storeB.set(k, v) }
+  const guestPage = mkCertPage({ guest: true, data: { muyuCount: 100 }, syncedCount: 0 })
+  guestPage.refreshCertEntry()
+  eq('入口曝光 step=show', stepsOfCert(guestPage), 'show')
+  await guestPage.onCertEntryTap()
+  eq('★ 未注册用户点「领证」→ 弹注册门禁（领证要身份）', guestPage.data.showCertDialog, true)
+  check('门禁文案报出真实里程点', /100/.test(guestPage.data.certGateDesc), guestPage.data.certGateDesc)
+  eq('★ 未注册时一次都不写云端（守住"存云端是注册的兑现"）', guestPage.syncCalls, 0)
+  guestPage.onCertDialogCta()
+  eq('CTA 只记一笔 go_register', stepsOfCert(guestPage), 'show,go_register')
+  await guestPage.onCertRegisterSuccess()
+  eq('★ 注册成功后**真的**同步上云（调用链执行到了）', guestPage.syncCalls, 1)
+  eq('★ 只有同步成功才上报漏斗终点 resume_success', stepsOfCert(guestPage), 'show,go_register,resume_success')
+  eq('★ 只有成功才说「已存到云端」（不假装）', guestPage.data.toastTitle, '已存到云端')
+  eq('★ 本地真的记下了这张证，日期取上海日键', guestPage._certRecord.claimed['100'].dayKey, wish.shanghaiDayKey(Date.now()))
+  eq('★ 领证后就地看得到证（可回看）', guestPage.data.certCard && guestPage.data.certCard.milestone, 100)
+  eq('★ 领完这一档入口变成「回看」（不再重复领）', guestPage.data.certEntry.mode, 'view')
+  check(
+    '★ 本地存档真的落盘（"可保管"不是空话）',
+    !!storeB.get(cert.CERT_STORAGE_KEY) && !!storeB.get(cert.CERT_STORAGE_KEY).claimed['100']
+  )
+
+  {
+    const failPage = mkCertPage({ guest: true, syncOk: false, data: { muyuCount: 100 }, syncedCount: 0 })
+    failPage.refreshCertEntry()
+    await failPage.onCertEntryTap()
+    failPage.onCertDialogCta()
+    await failPage.onCertRegisterSuccess()
+    eq('★ 同步失败走 fail_sync（不把"完成"记进漏斗）', stepsOfCert(failPage), 'show,go_register,fail_sync')
+    eq('★ 同步失败说真话「记录仍在本机」（绝不假装成功）', failPage.data.toastTitle, '记录仍在本机')
+    check('…但本地证照发不丢（不假装，也不吞掉用户的证）', !!failPage._certRecord.claimed['100'])
+  }
+
+  {
+    const regPage = mkCertPage({ guest: false, data: { muyuCount: 100 }, syncedCount: 0 })
+    regPage.refreshCertEntry()
+    eq('入口曝光 show 上报一次', stepsOfCert(regPage), 'show')
+    await regPage.onCertEntryTap()
+    eq('★ 已注册用户点「领证」不弹注册门禁（老用户不被重复打扰）', regPage.data.showCertDialog, false)
+    eq('已注册用户领证也真的同步上云', regPage.syncCalls, 1)
+    eq('★ 已注册路径也落在同一漏斗终点（领取数算得出来）', stepsOfCert(regPage), 'show,resume_success')
+  }
+
+  {
+    const viewPage = mkCertPage({ data: { muyuCount: 300 }, record: claim100, backed: true, syncedCount: 300 })
+    viewPage.refreshCertEntry()
+    eq('领过 100、还没到 500 → 入口是「回看」', viewPage.data.certEntry.mode, 'view')
+    eq('回看档案位 = 已领最高档', viewPage.data.certEntry.milestone, 100)
+    await viewPage.onCertEntryTap()
+    eq('★ 回看是纯本地展开（不联网、不问身份）', viewPage.syncCalls, 0)
+    eq('★ 回看到的日期是领取那天的日期，不是今天', viewPage.data.certCard.dayKey, '2026-09-19')
+    viewPage.closeCertCard()
+    eq('收起后不再渲染那张证', viewPage.data.certCard, null)
+  }
+
+  /* —— ② 开关：缺字段按关、显式 true 才开、一键关时把入口与证一起收 —— */
+  {
+    const gateOn = mkCertPage({ data: { allowed: true, flagChecked: true, showMuyuCertificate: false, muyuCount: 150 } })
+    gateOn.refresh = () => Promise.resolve()
+    gateOn.fireEntryEgg = () => {}
+    gateOn.refreshCertEntry()
+    eq('★ 开关关着时入口不出现（超管没显式开就不放）', gateOn.data.certEntry, null)
+    await gateOn.reportCertProgress()
+    eq('…开关关着时也不上报', gateOn.syncCalls, 0)
+    await gateOn.applyGate({ showMaShangYou: true })
+    eq('云函数回包缺 showMuyuCertificate → 按关处理', gateOn.data.showMuyuCertificate, false)
+    await gateOn.applyGate({ showMaShangYou: true, showMuyuCertificate: true })
+    eq('★ 显式 true 时开关才开（证明这个开关真的能开关）', gateOn.data.showMuyuCertificate, true)
+    eq('…并立刻按新开关重算入口（150 下、未领过 → 可领第一档）', gateOn.data.certEntry && gateOn.data.certEntry.mode, 'claim')
+    gateOn.setData({ certCard: { milestone: 100, muyuCount: 150, dayKey: '2026-09-19' } })
+    await gateOn.applyGate({ showMaShangYou: true, showMuyuCertificate: false })
+    eq('★ 显式 false 时关回去（出事一键关，无需发版）', gateOn.data.showMuyuCertificate, false)
+    eq('…入口收起', gateOn.data.certEntry, null)
+    eq('…已展开的证也一起收（还留一张在屏幕上等于没关）', gateOn.data.certCard, null)
+  }
+
+  /* —— ③ 行为：只在离开页面/退出时上报，且有脏标记与在途闸 —— */
+  {
+    const exitPage = mkCertPage({ data: { muyuCount: 150 }, record: claim100, backed: true, syncedCount: null })
+    exitPage.onHide()
+    await flushMacro15()
+    eq('★ 离开页面才上报一次（绝不逐次写）', exitPage.syncCalls, 1)
+    eq('同步成功后记住已同步的计数', exitPage._certSyncedCount, 150)
+    exitPage.onHide()
+    await flushMacro15()
+    eq('★ 计数没变就不重复写（脏标记）', exitPage.syncCalls, 1)
+    exitPage.onMuyuTap()
+    exitPage.onHide()
+    await flushMacro15()
+    eq('又敲了一下再离开 → 再写一次（只写有变化的那次）', exitPage.syncCalls, 2)
+
+    const bothPage = mkCertPage({ data: { muyuCount: 150 }, record: claim100, backed: true, syncedCount: null })
+    bothPage.onHide()
+    bothPage.onUnload()
+    await flushMacro15()
+    eq('★ onHide + onUnload 连击只写一次（在途闸）', bothPage.syncCalls, 1)
+
+    const guestExit = mkCertPage({ data: { muyuCount: 150 }, backed: false })
+    guestExit.onHide()
+    await flushMacro15()
+    eq('★ 未领证（未注册）用户离开也不写云端', guestExit.syncCalls, 0)
+  }
+  globalThis.wx.getStorageSync = prevGet
+  globalThis.wx.setStorageSync = prevSet
+  stub.restore()
+
+  /* —— 静态：复用组件 / 源码级写放大判据 / 五处开关链路 / 双端埋点 —— */
+  const certPageSrc = readSrc('miniprogram/subpackages/feature/wish-wall/index.js')
+  const certFlagClient = readSrc('miniprogram/utils/contentDisplayFlags.js')
+  const certFlagFn = readSrc('miniprogram/cloudfunctions/getContentDisplayFlags/index.js')
+  const certMgrCfg = readSrc('miniprogram/subpackages/manager/manager/managerPageConfig.js')
+  const certSubv = readSrc('miniprogram/subpackages/manager/manager/workspace/_subviews.wxml')
+  check(
+    '★ onMuyuTap 体内不含任何云端写入/上报调用（写放大防护的源码判据）',
+    (() => {
+      const i = certPageSrc.indexOf('  onMuyuTap() {')
+      const j = i < 0 ? -1 : certPageSrc.indexOf('\n  },', i)
+      const body = i < 0 || j < 0 ? '' : certPageSrc.slice(i, j)
+      return body.length > 0 && !/callFunction|syncToCloud|syncRitualToCloud|reportCertProgress/.test(body)
+    })()
+  )
+  check(
+    '★ 功德上报只在「离开页面 / 退出」两处被调（onHide / onUnload）',
+    (certPageSrc.match(/reportCertProgress\(/g) || []).length === 3,
+    String((certPageSrc.match(/reportCertProgress\(/g) || []).length)
+  )
+  check(
+    '领证复用既有 RegisterAuthDialog（不另造弹窗），走 cta→success 同一条链',
+    /show="\{\{showCertDialog\}\}"/.test(wallWxml2) &&
+      /bind:cta="onCertDialogCta"/.test(wallWxml2) &&
+      /bind:success="onCertRegisterSuccess"/.test(wallWxml2) &&
+      /bind:close="onCertDialogClose"/.test(wallWxml2)
+  )
+  check(
+    '★ 领证路径也真的调 syncRitualToCloud()（不是只弹个"成功"）',
+    (certPageSrc.match(/await this\.syncRitualToCloud\(\)/g) || []).length >= 2 &&
+      /ritualProfile\.syncToCloud\(\)/.test(certPageSrc)
+  )
+  check(
+    '★ 证书文案单一来源（wxml 用模块的 {{certNote}}，不写死对外承诺文案）',
+    /\{\{certNote\}\}/.test(wallWxml2) && /CERT_NOTE/.test(certSrc)
+  )
+  check(
+    '★ 次级入口挂的是 catchtap/bindtap 的入口方法，且不在木鱼卡内部（不与主仪式并列）',
+    /class="ww-cert-entry"[\s\S]{0,200}bindtap="onCertEntryTap"/.test(wallWxml2)
+  )
+  check('★ 页面把开关作为判定输入（不看开关 = 超管关不掉）', /flagOn: this\.data\.showMuyuCertificate === true/.test(certPageSrc))
+  check('① 客户端 normalize 缺字段默认关（=== true）', /showMuyuCertificate: src\.showMuyuCertificate === true/.test(certFlagClient))
+  check('② 云函数 getDefaultFlags 缺省 false', /showMuyuCertificate: false/.test(certFlagFn))
+  check('③ 云函数 normalizeFlags 同口径（=== true）', /showMuyuCertificate: src\.showMuyuCertificate === true/.test(certFlagFn))
+  check('④ ★ 云函数 saveFlags 显式透传（漏了 = 后台保存成功但字段被静默丢）', /showMuyuCertificate: incoming\.showMuyuCertificate/.test(certFlagFn))
+  check(
+    '⑤ ★ 店长端工作台（tab16 开关面板）：有该行 + load 归一 + data 默认（缺一个就会被保存抹掉）',
+    /data-field="showMuyuCertificate"/.test(certSubv) &&
+      /showMuyuCertificate: flags\.showMuyuCertificate === true/.test(certMgrCfg) &&
+      /showMuyuCertificate: false,/.test(certMgrCfg)
+  )
+  check(
+    '埋点双端登记 + ERP FUNNELS 有卡（否则"埋了但报表看不到"）',
+    /muyu_cert_gate:/.test(readSrc('miniprogram/utils/analytics/eventSchema.js')) &&
+      /muyu_cert_gate:/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+      /key: 'muyu_cert_gate'/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+      /muyu_cert_gate:resume_success/.test(readSrc('admin/src/utils/analyticsSchema.js'))
+  )
+  check(
+    '★ 小程序数据报表也算了这一块（云函数分桶 + 报表页卡片，否则恒 0/看不到）',
+    /certGate: gateBlock\('muyu_cert_gate'\)/.test(readSrc('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')) &&
+      /funnel\.wishWall\.certGate\.show/.test(certSubv)
+  )
+  check('漏斗 step 都从 trackCertGate 一处发出（action 名只有一个事实源）', (certPageSrc.match(/trackCertGate\(/g) || []).length >= 6)
 }
 
 if (process.argv.includes('--selftest') && !INJECT) {

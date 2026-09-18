@@ -45,7 +45,10 @@ function getDefaultFlags() {
     showMaShangYou: false,
     // 祈福墙「连续记录云保存」注册钩子（2026-09-20）：会向未注册用户弹注册弹窗，
     // 属身份相关新能力 → 缺配置默认**关闭**，由超管显式开启（照 showMaShangYou 先例）
-    showRitualProfile: false
+    showRitualProfile: false,
+    // 祈福墙「功德证」次级入口（创新钩子 H2，2026-09-20）：领证要身份（未注册会被引到注册门禁），
+    // 属身份相关新能力 → 缺配置默认**关闭**，由超管显式开启（照 showRitualProfile / showMaShangYou 先例）
+    showMuyuCertificate: false
   }
 }
 
@@ -82,7 +85,9 @@ function normalizeFlags(doc) {
     // 需求 28：缺字段 / undefined → false；UGC 新能力默认关闭
     showMaShangYou: src.showMaShangYou === true,
     // 祈福墙连续记录云保存钩子：缺字段 / undefined → false；身份新能力默认关闭
-    showRitualProfile: src.showRitualProfile === true
+    showRitualProfile: src.showRitualProfile === true,
+    // 祈福墙功德证钩子（H2）：缺字段 / undefined → false；身份新能力默认关闭
+    showMuyuCertificate: src.showMuyuCertificate === true
   }
 }
 
@@ -159,6 +164,8 @@ async function saveFlags(event, openid) {
     showAtlas: incoming.showAtlas,
     showAchievements: incoming.showAchievements,
     showMaShangYou: incoming.showMaShangYou,
+    // ⚠️ 漏这一行 = 店长端保存成功、但 showMuyuCertificate 被静默重置为默认（关）
+    showMuyuCertificate: incoming.showMuyuCertificate,
     // ⚠️ 漏这一行 = 超管在后台保存成功、但 showRitualProfile 被静默重置为默认（关）
     showRitualProfile: incoming.showRitualProfile
   })

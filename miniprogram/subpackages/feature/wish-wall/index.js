@@ -50,6 +50,8 @@ const { sanitizeBlessTags, blessPlayIds, blessLabel } = require('../../../config
 const { recoCacheKey, pickReco } = require('../../../utils/blessProducts')
 const easterEgg = require('../../../utils/easterEgg')
 const easterEggHost = require('../../../utils/easterEggHost')
+// 创新钩子 H2「功德证」的纯函数核（里程点判定 + 持证记录 + 本地存档），见 utils/muyuCertificate.js
+const muyuCert = require('../../../utils/muyuCertificate')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const {
   fetchContentDisplayFlags,
@@ -109,6 +111,8 @@ function shouldOfferRitualGate(state) {
   if (s.flagOn !== true) return false
   if (s.alreadyOffered === true) return false
   if (s.registerDialogOpen === true) return false
+  // 「功德证」的领证门禁正开着：同一时刻只允许一个注册弹窗（H2 方案点名的骚扰风险要求互斥）
+  if (s.certDialogOpen === true) return false
   if (s.isGuest !== true) return false
   return ritualGateProgress(s) !== ''
 }
@@ -120,6 +124,31 @@ function buildRitualGateDesc(reason, state) {
     return `已连续点灯 ${Number(s.streak) || 0} 天。注册后这份记录存到云端，换手机、清缓存都还在，断签前还会提醒你。`
   }
   return `已敲了 ${Number(s.muyuCount) || 0} 下木鱼。注册后功德与连灯记录存到云端，换手机、清缓存都还在，断签前还会提醒你。`
+}
+
+/**
+ * 「功德证」次级入口的判定（**纯函数**，便于单测）。
+ *
+ * 为什么是"入口"而不是"弹窗"：领证是**次级**动作（方案 §H2 明确"弹出次级入口"），
+ * 主仪式（敲木鱼）一步都不该被打断；而且连点场景下弹窗级骚扰是方案点名的风险。
+ *
+ * 返回 `null`（不显示）或 `{ mode, milestone }`：
+ *   · flagOn=false       —— `showMuyuCertificate` 缺省关（超管没显式打开 = 这能力还没上线）；
+ *   · allowed=false      —— 墙没开放时整页都不成立，别谈墙里的证；
+ *   · mode='claim'       —— 到达了某个**未领取**的里程点：请他领证；
+ *   · mode='view'        —— 档位都领过了：给一个**回看**入口（"可保管、可回看"的兑现）。
+ * 阈值一个都不在页面里写死，全部来自 `utils/muyuCertificate.CERT_MILESTONES`（口径待产品确认）。
+ */
+function certEntryState(state) {
+  const s = state || {}
+  if (s.flagOn !== true) return null
+  if (s.allowed !== true) return null
+  const claimed = s.claimed || {}
+  const unclaimed = muyuCert.nextUnclaimed(s.muyuCount, claimed)
+  if (unclaimed) return { mode: 'claim', milestone: unclaimed }
+  const top = muyuCert.highestClaimed(claimed)
+  if (top) return { mode: 'view', milestone: top }
+  return null
 }
 
 const FN = 'manageWishWall'
@@ -227,6 +256,19 @@ Page({
     showRitualDialog: false,
     ritualGateDesc: '',
     /**
+     * 创新钩子 H2「功德证」（2026-09-20）：
+     * `showMuyuCertificate` 是开关（`content_display_flags.showMuyuCertificate`，**缺字段默认关**），
+     * `certEntry` 是木鱼动作区下方的**次级入口**（null = 不显示），`showCertDialog` 是领证注册门禁，
+     * `certCard` 是那张证（可保管、可回看）。阈值与文案全部来自 `utils/muyuCertificate`。
+     */
+    showMuyuCertificate: false,
+    showCertDialog: false,
+    certGateDesc: '',
+    certEntry: null,
+    certCard: null,
+    /** 证书下的一句合规说明（单一来源在 utils/muyuCertificate.CERT_NOTE） */
+    certNote: muyuCert.CERT_NOTE,
+    /**
      * 统一轻提示（AppToast）。本页是**原生 toast 棘轮**（`check:dialog-ratchet`）盯着的文件：
      * 新增一处 `wx.showToast` 会把守卫弄红，故钩子的结果反馈走 AppToast 铭牌轻提示。
      */
@@ -258,6 +300,14 @@ Page({
     this._echoSeq = 0
     // 开关是持久化的（默认开）：进页要按存档回显，否则用户关过又"自己开了"
     this.setData({ soundOn: ritualFeedback.isSoundEnabled(), muyuCount: wishRitual.readMuyuCount() })
+    // 「功德证」持证记录：进页就本地读回来（"可保管" = 关掉小程序再打开还看得到）。
+    // `_certBacked` = 已领过证 = 已注册的持证人；未领证的用户**一次都不写云端**（见 reportCertProgress）。
+    // `_certSyncedCount = null`：换设备/清缓存后不能假设云端与本地一致，本次离开页面时对齐一次。
+    this._certRecord = muyuCert.readRecord()
+    this._certBacked = muyuCert.highestClaimed(this._certRecord.claimed) !== null
+    this._certSyncedCount = null
+    this._certShownKey = ''
+    this.refreshCertEntry()
     this.initRitual()
     this.bootstrap()
   },
@@ -590,6 +640,9 @@ Page({
     this._muyuTimer = setTimeout(() => this.setData({ muyuBeat: false, muyuPlus: false }), 420)
     // 「连续记录云保存」钩子：功德刚被创造出来的这一刻才谈（门槛与判定见 ritualGateProgress）
     this.maybeOfferRitualGate()
+    // 「功德证」次级入口：只做**纯函数判定 + setData**，一次云端写都没有
+    // （写放大防护的源码判据：本方法体内不出现任何云调用/上报，见 test-wish-wall §15）
+    this.refreshCertEntry()
   },
 
   onLampTap() {
@@ -699,6 +752,13 @@ Page({
     // 读不到 / 缺字段一律当关（normalizeContentDisplayFlags 已保证，这里是第二道）。
     const showRitualProfile = !!(flags && flags.showRitualProfile === true)
     if (showRitualProfile !== this.data.showRitualProfile) this.setData({ showRitualProfile })
+    // 「功德证」钩子的开关：同样单独同步（与 showRitualProfile 同一先例，缺字段一律当关）。
+    // 关掉/打开都要重算入口：开关的意义就是"一键关掉"（关掉时 refreshCertEntry 会把证也收起）。
+    const showMuyuCertificate = !!(flags && flags.showMuyuCertificate === true)
+    if (showMuyuCertificate !== this.data.showMuyuCertificate) {
+      this.setData({ showMuyuCertificate })
+      this.refreshCertEntry()
+    }
     if (allowed === this.data.allowed && this.data.flagChecked) return
     this.setData({ allowed, flagChecked: true, loading: allowed })
     if (!allowed) return
@@ -864,6 +924,8 @@ Page({
   onHide() {
     // 切后台不必继续排期；回前台时 onShow 会按当前 rows 重排
     this.clearDanmakuCycle()
+    // 「功德证」：离开页面才把功德推一次（写放大防护见 reportCertProgress —— 绝不逐次写）
+    void this.reportCertProgress()
   },
 
   onUnload() {
@@ -875,6 +937,8 @@ Page({
     if (this._heartTimer) clearTimeout(this._heartTimer)
     try { if (this._soundPlayer) this._soundPlayer.destroy() } catch (e) { /* ignore */ }
     this._soundPlayer = null
+    // 退出也要对一次账（在途闸保证与 onHide 连击时只写一次）
+    void this.reportCertProgress()
   },
 
   onShow() {
@@ -1203,6 +1267,8 @@ Page({
       flagOn: this.data.showRitualProfile === true,
       alreadyOffered: this._ritualGateOffered === true,
       registerDialogOpen: this.data.showRegisterDialog === true,
+      // 「功德证」领证门禁也算"已有一个注册弹窗"：同页两个门禁不许叠（见 shouldOfferRitualGate）
+      certDialogOpen: this.data.showCertDialog === true,
       // 会话要异步问；先按"未知"（非 true）走预筛
       isGuest: false,
       streak: (this.data.lamp && this.data.lamp.streak) || 0,
@@ -1310,6 +1376,209 @@ Page({
   onRitualDialogFail(e) {
     const reason = (e && e.detail && e.detail.reason) || 'unknown'
     this.trackRitualGate('fail_' + reason)
+  },
+
+  /* ----------------------------- 功德证（创新钩子 H2，2026-09-20） ----------------------------- */
+  /**
+   * 纯函数转接：判定写在模块作用域（`certEntryState`），阈值与文案写在 `utils/muyuCertificate`。
+   * 页面与测试直接调同一份实现 —— 抽成纯函数的意义就是"能被断言"。
+   */
+  certEntryState,
+
+  /**
+   * 刷新「功德证」次级入口（**只 setData，不联网**）。
+   *
+   * 木鱼可连点，入口判定必须在本地零成本完成；云端写入只在两个时刻发生，
+   * 见 `reportCertProgress` 与 `claimCert`（写放大防护）。
+   * 入口曝光埋点（`show`）同一次访问同一档只报一次 —— 否则连点会刷出一堆 show，
+   * 把漏斗的曝光分母污染成"被敲了多少下"。
+   */
+  refreshCertEntry() {
+    const next = certEntryState({
+      flagOn: this.data.showMuyuCertificate === true,
+      allowed: this.data.allowed === true,
+      muyuCount: this.data.muyuCount || 0,
+      claimed: (this._certRecord && this._certRecord.claimed) || {}
+    })
+    const cur = this.data.certEntry
+    const same = (!cur && !next) || (!!cur && !!next && cur.mode === next.mode && cur.milestone === next.milestone)
+    if (!same) {
+      const patch = {
+        certEntry: next
+          ? Object.assign({}, next, { muyuCount: this.data.muyuCount || 0 }, muyuCert.buildEntryText(next.mode, next.milestone))
+          : null
+      }
+      // 关掉开关（或不再有可领/可看的证）时，正在展开的证也要一起收 ——
+      // 开关的意义是"关掉写入与展示"，还留一张证在屏幕上等于没关。
+      if (!next) patch.certCard = null
+      this.setData(patch)
+    }
+    if (next && next.mode === 'claim') {
+      const key = 'claim:' + next.milestone
+      if (this._certShownKey !== key) {
+        this._certShownKey = key
+        this.trackCertGate('show', { milestone: next.milestone })
+      }
+    }
+  },
+
+  /**
+   * 埋点收口（纯转发）：`muyu_cert_gate` 这个 action 只在这里出现一次 ——
+   * 五处各写一遍 action 名，改名漏一处就多一条恒 0 的漏斗。
+   */
+  trackCertGate(step, extra) {
+    trackBehavior('muyu_cert_gate', 'wish_wall', this.data.productKey, Object.assign({ step }, extra || {}))
+  },
+
+  /**
+   * 次级入口被点。回看 = 纯本地展开（不问身份、不联网）；
+   * 领证才需要身份 —— 复用 `RegisterAuthDialog`（与落愿门禁 / 连续记录钩子同一条链）。
+   */
+  async onCertEntryTap() {
+    const entry = this.data.certEntry
+    if (!entry) return false
+    if (entry.mode === 'view') return this.openCertCard(entry.milestone)
+    if (this.data.showMuyuCertificate !== true) return false
+    // 互斥：落愿门禁 / 连灯云存钩子的注册弹窗正开着时，不再叠第二个注册弹窗
+    // （同一页两个门禁同时弹 = 方案 §H2 点名的骚扰风险；对应 shouldOfferRitualGate 的反向闸）
+    if (this.data.showRegisterDialog === true || this.data.showRitualDialog === true) return false
+    this._pendingCertMilestone = entry.milestone
+    const guest = await this.isGuestUser()
+    if (guest) {
+      // 门禁文案报真实里程点与真实计数（不编数字）；show 已在入口出现时上报过
+      this.setData({
+        showCertDialog: true,
+        certGateDesc: muyuCert.buildCertDesc(entry.milestone, this.data.muyuCount)
+      })
+      return true
+    }
+    // 已注册用户：不必走门禁，直接发证；但**同样**要同步上云并如实反馈
+    return this.claimCert(entry.milestone)
+  },
+
+  /**
+   * 发证 + 同步上云 + 如实反馈（**唯一**的领证实现，门禁路径与已注册路径共用）。
+   *
+   * 顺序刻意是"本地先落、云端后同步"：本地仍是权威（见 `utils/ritualProfile.js` 头注），
+   * 云同步失败不影响本地这张证，但**绝不说假话** —— 只有 `syncToCloud()` 返回成功
+   * 才说「已存到云端」，否则说「记录仍在本机」，且漏斗终点只记在成功那一支。
+   */
+  async claimCert(milestone) {
+    const m = muyuCert.toCount(milestone)
+    if (!m) return false
+    const dayKey = shanghaiDayKey(Date.now())
+    this._certRecord = muyuCert.claimMilestone(this._certRecord, m, dayKey, this.data.muyuCount)
+    // 本地存档 = "可保管"的兑现；写失败也不拦（本次仍看得到证，下次再存）
+    muyuCert.writeRecord(this._certRecord)
+    // 从此这台设备上的功德允许上报（＝已领证＝已注册的持证人）
+    this._certBacked = true
+    this.openCertCard(m)
+    this.refreshCertEntry()
+    const ok = await this.syncRitualToCloud()
+    if (ok) {
+      this._certSyncedCount = this.data.muyuCount
+      this.trackCertGate('resume_success', { milestone: m })
+      this.showAppToast({
+        overline: 'MUYU CERTIFICATE',
+        title: '已存到云端',
+        desc: '功德计数已同步到云端，随时可以回来回看这张功德证'
+      })
+    } else {
+      this.trackCertGate('fail_sync', { milestone: m })
+      this.showAppToast({
+        overline: 'MUYU CERTIFICATE',
+        title: '记录仍在本机',
+        desc: '云端暂不可用，本地功德没有丢，证也已经发到本机'
+      })
+    }
+    return ok
+  },
+
+  /**
+   * 注册成功。**必须真的同步**：只弹个"成功"却什么都没存，这个钩子就是空承诺
+   * （所以漏斗终点 `resume_success` 只在同步成功后上报，失败走 `fail_sync`）。
+   */
+  async onCertRegisterSuccess() {
+    this.setData({ showCertDialog: false })
+    // 会话刷新不阻塞发证（与落愿门禁同一口径）
+    try {
+      const { refreshSessionAfterAuth } = require('../../../utils/userSession')
+      Promise.resolve(refreshSessionAfterAuth()).catch(() => {})
+    } catch (e) {
+      console.warn('wish wall refresh session failed', e)
+    }
+    // 开关在授权期间被关掉（SWR 回填 / 超管改动）：能力不可用就明说，别假装存上了
+    if (this.data.showMuyuCertificate !== true) {
+      this._pendingCertMilestone = 0
+      this.trackCertGate('fail_flag_off')
+      this.showAppToast({ overline: 'MUYU CERTIFICATE', title: '功德证暂未开放' })
+      return
+    }
+    const milestone = this._pendingCertMilestone
+    this._pendingCertMilestone = 0
+    if (!milestone) return
+    await this.claimCert(milestone)
+  },
+
+  /** 弹窗里的「去注册」被点（还没拿到手机号）：单独立一个漏斗环节，区分"曝光多没人点"与"点了授权失败" */
+  onCertDialogCta() {
+    this.trackCertGate('go_register')
+  },
+
+  /** 「先存着」：只收弹窗，本地功德与已发的证一个字都不动 */
+  onCertDialogClose() {
+    if (this.data.showCertDialog) this.setData({ showCertDialog: false })
+    this.trackCertGate('dismiss')
+  },
+
+  /** 授权失败/被拒：只收口 + 记一笔，不打断主功能（可再点一次领证重试） */
+  onCertDialogFail(e) {
+    const reason = (e && e.detail && e.detail.reason) || 'unknown'
+    this.trackCertGate('fail_' + reason)
+  },
+
+  /** 展开 / 回看这张证（纯本地：证由本地持证记录派生，不需要联网） */
+  openCertCard(milestone) {
+    const rec = muyuCert.normalizeRecord(this._certRecord)
+    const card = muyuCert.buildCertificate(rec.claimed[String(muyuCert.toCount(milestone))])
+    if (!card) return false
+    this.setData({ certCard: card })
+    return true
+  },
+
+  closeCertCard() {
+    if (!this.data.certCard) return
+    this.setData({ certCard: null })
+  },
+
+  /**
+   * 功德上报 —— 云端写入的**唯一**非领证入口（领证那一刻的写入在 `claimCert` 里）。
+   *
+   * 方案 §H2 把「木鱼可连点 → 写放大」列为头号风险，这里用三道闸一起挡：
+   *   ① **只在离开页面 / 退出时**被调用（`onHide` / `onUnload`）；`onMuyuTap` 体内
+   *      没有任何云端写入（行为断言：连点 300 下写入 0 次；源码断言：方法体内不出现云调用）；
+   *   ② **只在已领证（＝已注册的持证人）之后**才写 —— 没领证就不该有云端档案，
+   *      也守住「存云端是注册的兑现」这条产品口径（未注册用户一次都不写）；
+   *   ③ **计数没变就不写**（脏标记 `_certSyncedCount`），再加在途闸 ——
+   *      `onHide` + `onUnload` 连击只写一次，离开十次也只写真正有变化的那几次。
+   */
+  reportCertProgress() {
+    if (this.data.showMuyuCertificate !== true) return Promise.resolve(false)
+    if (this._certBacked !== true) return Promise.resolve(false)
+    if (muyuCert.toCount(this.data.muyuCount) === muyuCert.toCount(this._certSyncedCount)) return Promise.resolve(false)
+    if (this._certReportInFlight === true) return Promise.resolve(false)
+    this._certReportInFlight = true
+    return Promise.resolve()
+      .then(() => this.syncRitualToCloud())
+      .then((ok) => {
+        if (ok) this._certSyncedCount = this.data.muyuCount
+        return ok
+      })
+      .catch(() => false)
+      .then((ok) => {
+        this._certReportInFlight = false
+        return ok
+      })
   },
 
   /** 浮层内层的空处理器：`catchtap`/`catchtouchmove` 需要一个存在的目标，防穿透 */
