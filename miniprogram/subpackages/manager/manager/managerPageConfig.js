@@ -5557,6 +5557,15 @@ const managerPageConfig = {
       const data = {
         title: p.title,
         latinName: p.latinName || '',
+        // 主题名（双层命名）：title 是标准名，themeName 是文艺主题名。
+        // ⚠️ 2026-09-20 真机反馈「一键补齐后主题名保存不生效、再进来是空的」——
+        //    根因就是**这两行此前不存在**：云函数白名单里有 themeName/themeNote（`manageProducts:63`），
+        //    表单也绑了 `tempProduct.themeName/themeNote`，唯独这里没往载荷里放 →
+        //    服务端 pickFields 只挑白名单里的键，没送过去的键它无从落库，而界面照样提示「已保存」。
+        //    这是本仓反复出现的一类：**白名单·表单·载荷 三处必须同改，漏一处就静默丢字段**。
+        //    现已补一条结构守卫（`check:product-save-fields`）钉住这条链。
+        themeName: p.themeName || '',
+        themeNote: p.themeNote || '',
         price: safePrice,
         costPrice: safeCost,
         stock: safeStock,
