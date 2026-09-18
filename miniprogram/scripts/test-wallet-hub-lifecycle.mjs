@@ -560,8 +560,12 @@ function selftest() {
     {
       name: '礼券夹面板重新接上 pageLifetimes.show（与宿主转发双触发）',
       file: P.coupons,
-      from: '  methods: _methods,\n',
-      to: '  methods: _methods,\n  pageLifetimes: { show() { _methods.onShow.call(this) } },\n'
+      // ⚠️ 锚点不能与积分面板共用：礼券夹面板的 methods 是 Object.assign({}, _methods, {…})
+      //    （2026-09-18 集成修正）。旧锚点 '  methods: _methods,\n' 在该文件命中 0 次，
+      //    导致本条自检注入永远失败 → check:admin:selftest 恒红 → CI 的 guards-can-fail 挡住 PR。
+      //    语义与积分面板那条一致：把 pageLifetimes.show 重新接上，模拟与宿主转发双触发。
+      from: '  lifetimes: {\n',
+      to: '  pageLifetimes: { show() { _methods.onShow.call(this) } },\n  lifetimes: {\n'
     },
     {
       name: '宿主删掉「跳过首屏」分支（时序变体下重复取数）',

@@ -209,7 +209,9 @@
     "check:fn-collection-rules": "node miniprogram/scripts/check-fn-collection-rules.mjs",
     "check:fn-collection-rules:selftest": "node miniprogram/scripts/check-fn-collection-rules.mjs --selftest",
     "check:approval-scope": "node miniprogram/scripts/check-approval-scope.mjs",
-    "check:approval-scope:selftest": "node miniprogram/scripts/check-approval-scope.mjs --selftest"
+    "check:approval-scope:selftest": "node miniprogram/scripts/check-approval-scope.mjs --selftest",
+    "check:species-dedup:selftest": "bash miniprogram/scripts/sync-species-dedup.sh --selftest",
+    "check:work-order-notify:selftest": "bash miniprogram/scripts/sync-work-order-notify.sh --selftest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
