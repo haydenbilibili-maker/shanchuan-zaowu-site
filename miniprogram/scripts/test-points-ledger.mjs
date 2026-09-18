@@ -65,8 +65,22 @@ const panelJs = stripComments(read(PANEL_JS))
 const panelWxml = read(PANEL_WXML)
 
 const DAY = 86400000
-const now = new Date('2026-09-18T20:00:00+08:00').getTime()
-const at = (offsetDays, hh, mm) => new Date(new Date('2026-09-18T00:00:00+08:00').getTime() + offsetDays * DAY + hh * 3600000 + mm * 60000).getTime()
+/*
+ * ⚠️ 时区基准必须与「被测方」一致（2026-09-18 修 CI 红：CI 跑 UTC，开发机跑 Asia/Shanghai）
+ *
+ * 被测方：`formatClock`（wallet-ledger.js:73）用 `d.getHours() / d.getMinutes()` —— **设备本地时区**。
+ * 这是**正确的产品行为**：积分流水存的是绝对时刻，给用户看的是「他所在时区的那个钟点」。
+ * 所以错的是**本测试夹具**：它用 `new Date('2026-09-18T00:00:00+08:00')` 把夹具锚在 +08:00 这个
+ * **绝对**瞬间上，却期望本地格式化输出 "09:05" —— 该等式只在 TZ=+08:00 时成立。
+ * TZ=UTC 时该瞬间是 01:05Z → 本地格式化 = "01:05" → 断言假红；TZ=America/New_York 时是前一天 21:05。
+ *
+ * 修法：夹具改用**本地时间构造**（与 formatClock 同一时区基准），而不是 +08:00 字面量。
+ * 断言本身（want '09:05'）一个字没放宽 —— 见 --selftest：注入「时分偏移 1 小时」照样被这条抓住。
+ */
+const now = new Date(2026, 8, 18, 20, 0, 0, 0).getTime()
+const at = (offsetDays, hh, mm) => new Date(
+  new Date(2026, 8, 18, 0, 0, 0, 0).getTime() + offsetDays * DAY + hh * 3600000 + mm * 60000
+).getTime()
 
 /* ── 1) 时间形态：{ $date } 不能让时分静默变空 ───────────────────────────── */
 const rowDateObj = ledger.mapPointRow({ _id: 'a', title: '每日签到', type: 'earn', points: 5, createTime: { $date: at(0, 9, 5) } }, now)
@@ -174,6 +188,19 @@ function selftest() {
       file: LEDGER,
       from: '    timeMs: ms,',
       to: '    timeMs: new Date(row && row.createTime).getTime(),'
+    },
+    {
+      // 夹具改成「本地时间构造」后仍须抓得住真实的格式化 bug（错题本 E7：不许为过而放宽判据）
+      name: '行内时分被偏移 1 小时（本地时钟格式化错了）',
+      file: LEDGER,
+      from: "    clockText: ms ? formatClock(ms) : '',",
+      to: "    clockText: ms ? formatClock(ms + 3600000) : '',"
+    },
+    {
+      name: '行内时分恒为空（时间静默消失）',
+      file: LEDGER,
+      from: "    clockText: ms ? formatClock(ms) : '',",
+      to: "    clockText: '',"
     },
     {
       name: '未完的那天照样算净额（谎报当日积分）',
