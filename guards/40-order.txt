@@ -3,3 +3,4 @@
 # 校验：npm run check:guards-coverage
 npm run check:order-summary
 npm run test:pickup-pass
+npm run test:checkout-addon

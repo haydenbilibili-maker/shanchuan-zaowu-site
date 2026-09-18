@@ -6,7 +6,7 @@
     "npm run check:domain -- pay": "只跑 pay 域 + cross（开发内循环，大幅缩时）",
     "npm run check:guards:list": "打印清单与域归属"
   },
-  "minGuards": 80,
+  "minGuards": 87,
   "crossWith": [
     "visual",
     "wish-wall",

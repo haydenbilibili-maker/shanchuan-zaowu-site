@@ -54,3 +54,6 @@ npm run check:fn-collection-rules
 npm run check:approval-scope
 npm run check:qr-draw
 npm run check:manager-sku-stock
+npm run test:image-upload
+npm run test:sold-display
+npm run test:banner-presets

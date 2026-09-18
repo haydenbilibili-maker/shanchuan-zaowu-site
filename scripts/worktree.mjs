@@ -40,8 +40,11 @@ const ROOT = resolve(HERE, '..')
 const REGISTRY = join(ROOT, 'docs', '并发工作流注册表.json')
 
 const git = (args, opts = {}) => spawnSync('git', args, { cwd: ROOT, encoding: 'utf8', ...opts })
+// ⚠ `-c core.quotepath=false` 不可省：默认 true 时 git 会把非 ASCII 路径转义成
+// `"docs/\344\272..."`，于是 headHas() 永远匹配不到中文名文件（实测 5 个 owns 被误判
+// 成「未提交」→ 明明在 HEAD 上的文件被报成阻塞）。本仓文档大量用中文名，踩中概率 100%。
 const out = (args) => {
-  const r = git(args)
+  const r = git(['-c', 'core.quotepath=false', ...args])
   return r.status === 0 ? String(r.stdout || '').trim() : ''
 }
 

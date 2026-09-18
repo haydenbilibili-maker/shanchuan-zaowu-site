@@ -49,6 +49,16 @@ const REGISTRY = join(ROOT, 'docs', '并发工作流注册表.json')
 const APP_JSON = join(ROOT, 'miniprogram', 'app.json')
 const PKG = join(ROOT, 'package.json')
 
+/**
+ * 所有 `git diff --name-only` 必须带这三个开关：
+ *   · `-c core.quotepath=false` —— 默认 true 时非 ASCII 路径被转义成 `"docs/\344\272..."`，
+ *     于是中文名文件匹配不上任何 `owns` glob，被误报成「无主的改动」（本仓文档大量中文名）；
+ *   · `--no-renames` —— 否则重命名会输出 `old => new` 这种**不是路径**的行，永远匹配不上；
+ *   · `--diff-filter=ACDMRTUXB` 由 git 默认给出全部状态，无需另加。
+ * 少任何一个都会把「检出落后」或编码问题误报成「越界」—— 正是 E7「守卫判据自身错误」那一类。
+ */
+const GIT_SAFE = ['-c', 'core.quotepath=false', '--no-renames']
+
 /** 不在扫描范围的目录：构建产物 / 依赖 / 归档，扫描它们只会变慢且引入假阳性 */
 const SKIP_DIRS = new Set([
   '.git', 'node_modules', 'dist', '.astro', '.wrangler', 'backups',
@@ -84,7 +94,7 @@ function appPages() {
 
 /** 当前改动的文件（工作区 + 暂存区），用于冻结判定 */
 function changedFiles() {
-  const r = spawnSync('git', ['diff', '--name-only', 'HEAD'], { cwd: ROOT, encoding: 'utf8' })
+  const r = spawnSync('git', [...GIT_SAFE, 'diff', '--name-only', 'HEAD'], { cwd: ROOT, encoding: 'utf8' })
   if (r.status !== 0) return []
   return String(r.stdout || '').split('\n').map((s) => s.trim()).filter(Boolean)
 }
@@ -97,7 +107,7 @@ function branchChangedFiles(base = 'main') {
     ['diff', '--name-only', 'HEAD'],
     ['diff', '--name-only', '--cached'],
   ]) {
-    const r = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' })
+    const r = spawnSync('git', [...GIT_SAFE, ...args], { cwd: ROOT, encoding: 'utf8' })
     if (r.status !== 0) continue
     for (const s of String(r.stdout || '').split('\n')) {
       const v = s.trim()
