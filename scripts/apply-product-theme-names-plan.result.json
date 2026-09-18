@@ -1,0 +1,70 @@
+{
+ "at": "2026-09-17T16:11:46.677Z",
+ "count": 8,
+ "items": [
+  {
+   "_id": "a8add1456a9e8dff01b048fd089d494e",
+   "title": "小鸭子标本",
+   "price": 198,
+   "themeName": "破壳新生",
+   "themeNote": "毛绒团子破壳而出，送给初来世界的生命一份温柔注视。",
+   "source": "人工圈定"
+  },
+  {
+   "_id": "a8add1456a9fe5d901c9ef4c773284d4",
+   "title": "蓝舌石龙子",
+   "price": 1200,
+   "themeName": "蓝尾衔石",
+   "themeNote": "蓝舌轻吐如衔来一枚温石，静守新居的晨昏。",
+   "source": "人工圈定"
+  },
+  {
+   "_id": "e04f59456aa01044030c28fb0ac19f1b",
+   "title": "海百合塑化标本",
+   "price": 3900,
+   "themeName": "石上花",
+   "themeNote": "珊瑚如花，盛开于时光之石，见证新居初暖。",
+   "source": "人工圈定"
+  },
+  {
+   "_id": "a8add1456aa0181e01cded085c91732c",
+   "title": "双叉犀金龟",
+   "price": 268,
+   "themeName": "金甲初冠",
+   "themeNote": "破土而出的瞬间，新程也为自己加冕。",
+   "source": "人工圈定"
+  },
+  {
+   "_id": "a8add1456aa0186801cdf21c14b07e6d",
+   "title": "扩头深山锹甲",
+   "price": 258,
+   "themeName": "甲第开篇",
+   "themeNote": "扩头如承大任，愿新程第一步便显赫有力",
+   "source": "人工圈定"
+  },
+  {
+   "_id": "a8add1456aa156b201e435360583f968",
+   "title": "青斑蝶",
+   "price": 98,
+   "themeName": "青衿之贺",
+   "themeNote": "以青斑蝶翅上青衿之色，贺少年初入学堂。",
+   "source": "人工圈定"
+  },
+  {
+   "_id": "a8add1456aa812e90269af2b70e69645",
+   "title": "猪鼻蛇",
+   "price": 499,
+   "themeName": "沃土小隐",
+   "themeNote": "猪鼻蛇喜掘土，入住新居如隐于沃土，暖居贴心。",
+   "source": "人工圈定"
+  },
+  {
+   "_id": "e04f59456aa813db04c36b8c6d6593a5",
+   "title": "白化猪鼻蛇",
+   "price": 299,
+   "themeName": "白鳞初雪",
+   "themeNote": "雪落春山，新生之始——愿每次启程都有纯净勇气",
+   "source": "人工圈定"
+  }
+ ]
+}
