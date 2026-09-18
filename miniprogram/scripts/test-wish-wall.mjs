@@ -177,6 +177,12 @@ const INJECTIONS = {
     from: '  animation-iteration-count: 1;',
     to: '  animation-iteration-count: infinite;'
   },
+  // 首屏预填被关掉 → 墙面在加载后 2–3 秒内是空的（只有刻度线），产品真机截图里的"空框"
+  'danmaku-no-prefill': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: '    const prefill = i < lanes',
+    to: '    const prefill = false'
+  },
   // 点灯卡片重新撞上全局信号灯基类 → 卡片被压成 12rpx 竖条
   'lamp-class-collision': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
@@ -738,29 +744,23 @@ const INJECTIONS = {
     from: '      <view class="ww-play-grid">',
     to: '      <view class="ww-plays-guide"><text class="ww-plays-guide-text">这面墙偏「求成」：摇一签。</text></view>\n      <view class="ww-play-grid">'
   },
-  // 发送条不再吸底 → 主操作又沉到首屏之外
-  'composer-not-sticky': {
+  // ── 发送条：**顺流**设计（2026-09-19 产品口径变更，原为吸底）────────────────
+  // 旧吸底版的三条判据与四条注入随设计一并退役（详见下方断言处的说明）。
+  // 新注入测的是顺流设计的三条边界：又变回 fixed / 丢了输入框 id / 被挪到墙之外。
+  'composer-fixed-again': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  position: fixed;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  z-index: 20;',
-    to: '  position: relative;'
+    from: '.ww-composer {\n  display: flex;\n  align-items: center;\n  gap: 14rpx;\n  margin: 20rpx 0 4rpx;',
+    to: '.ww-composer {\n  position: fixed;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  z-index: 30;\n  display: flex;\n  align-items: center;\n  gap: 14rpx;\n  margin: 20rpx 0 4rpx;'
   },
-  // 底部预留被收回 → 吸底条盖住最后一张愿签
-  'composer-bottom-space-dropped': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  padding: 0 var(--space-4) calc(180rpx + env(safe-area-inset-bottom));',
-    to: '  padding: 0 var(--space-4) calc(72rpx + env(safe-area-inset-bottom));'
-  },
-  // 条子又被塞回 .ww-write 的层叠上下文里 → 真机上与分段控件/愿签卡互相遮挡
-  'composer-back-inside-write': {
+  'composer-input-id-dropped': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '  <view class="ww-composer">',
-    to: '  <view class="ww-write"><view class="ww-composer">'
+    from: '        id="wishInput"',
+    to: '        id="wishInputMoved"'
   },
-  // 条子背景又变半透明 → 愿签从条子底下透上来
-  'composer-translucent-again': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  background: var(--color-bg, #14120F);\n  border-top: 1rpx solid rgba(196, 167, 108, 0.28);',
-    to: '  background: rgba(20, 18, 15, 0.94);\n  border-top: 1rpx solid rgba(196, 167, 108, 0.28);'
+  'composer-duplicated': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '    <view class="ww-composer">',
+    to: '    <view class="ww-composer"></view>\n    <view class="ww-composer">'
   },
   // 弹层退回"内联亮色卡"（遮罩/把手都没了）→ 又变回产品说的"与页面割裂"
   'sheet-identity-dropped': {
@@ -1105,6 +1105,30 @@ eq(
 )
 eq('空轮轮末为 0', wish.danmakuCycleEndMs([]), 0)
 eq('不传 opts 也不崩', wish.buildDanmakuRows(null).length, 0)
+
+/**
+ * ★ 首屏预填（2026-09-19 产品真机反馈「墙面像个空框」的根因判据）
+ *
+ * 根因：弹幕是 `left:100%` + 全屏横穿 + **正 delay**（原为 `i*260ms`），
+ * 所以 t=0 时墙面**必然是空的**，之后逐条从右侧入场 —— 首屏前 2–3 秒只有 6 条刻度线。
+ * 修法：前 `LANES` 条（每条轨道恰好一条）用**负 delay** 预填，加载瞬间屏内已有内容。
+ *
+ * 判据钉两件事：① 恰有 LANES 条负 delay；② 它们落在**不同轨道**（否则叠成一行更难看）。
+ * 注入 `danmaku-no-prefill` 会把 prefill 关掉 —— 本条必须变红（自检里跑）。
+ */
+const prefillRows = wish.buildDanmakuRows(
+  Array.from({ length: wish.LANES * 2 }, (_, i) => ({ _id: 'p' + i, text: '马上有预填' + i }))
+)
+const prefilled = prefillRows.filter((r) => r.delayMs < 0)
+eq('★ 首屏预填：恰有 LANES 条负 delay（加载瞬间屏内已有内容，不再是空墙）', prefilled.length, wish.LANES)
+eq('★ 首屏预填：每条落在不同轨道（否则叠成一行）', new Set(prefilled.map((r) => r.lane)).size, wish.LANES)
+check(
+  '★ 首屏预填不破坏「同轨不重叠」（预填只取每轨第一条）',
+  prefillRows.every((r, i) => {
+    const prev = prefillRows.slice(0, i).filter((p) => p.lane === r.lane).pop()
+    return !prev || r.delayMs >= prev.delayMs + prev.clearMs
+  })
+)
 
 // 轮次进 key：否则整批重排时同 key 不重播动画
 const cyc0 = wish.buildDanmakuRows([{ _id: 'a', text: '马上有钱' }], { cycle: 0 })
@@ -4091,15 +4115,51 @@ check(
   '★ 祈运提示已从玩法区挪走（不留死结构：.ww-plays-guide 的 DOM 与样式都不许复活）',
   !/ww-plays-guide/.test(wallWxml2) && !/\.ww-plays-guide\s*\{/.test(wallWxssCode)
 )
-// 吸底不变量：页面底部预留 ≥ 条高（84 输入 + 12×2 内边距）。用 CSS 里的数**实算**，不写死 180
+// 发送条位置：**按设计模式分支**（2026-09-19 产品口径变更：吸底 → 顺流，弹幕墙下方）。
+//
+// 为什么要分支而不是直接删掉旧判据：旧判据保护的是「吸底条被别的块盖住 / 盖住最后一张愿签」
+// 这个失败模式。**顺流后它不再盖任何东西，该模式不存在**；但若日后有人改回 fixed，
+// 旧判据必须自动复活 —— 写成裸删除就会留下假绿（本仓错题本 E7 那类）。
+// 设计意图（原话见 index.wxss 的 .ww-composer 注释）：顺流时它落在 .ww-write 内部。
 const composerPadY = Number((/\.ww-composer\s*\{[^}]*padding:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
 const composerInputH = Number((/\.ww-input\s*\{[^}]*height:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
 const pagePadBottom = Number((/\.ww-page\s*\{[^}]*padding:\s*0\s+[^;]*?calc\((\d+)rpx/.exec(wallWxssCode) || [])[1])
+const composerInline = /\.ww-composer\s*\{[^}]*position:\s*static/.test(wallWxssCode)
+const composerFixed = /\.ww-composer\s*\{[^}]*position:\s*fixed/.test(wallWxssCode)
+// 顺流时**位置本身**也是设计要求（产品原话：「放在更醒目位置如弹幕墙下方」）——
+// 必须被钉住，否则下次有人把它挪到页尾/页首，判据只会说「它是 static」而放过去。
 check(
-  '★ 发送条吸底，且页面底部预留 ≥ 条高（否则最后一张愿签会被盖住）',
-  /\.ww-composer\s*\{[^}]*position:\s*fixed/.test(wallWxssCode) &&
-    composerPadY > 0 && composerInputH > 0 && pagePadBottom >= composerInputH + composerPadY * 2,
-  `条高≈${composerInputH + composerPadY * 2}rpx / 预留 ${pagePadBottom}rpx`
+  '★ 顺流发送条的位置：在弹幕墙之后、玩法区之前（产品口径：弹幕墙下方），且只有一个',
+  (() => {
+    const wallIdx = wallWxml2.indexOf('class="ww-wall ')
+    const composerIdx = wallWxml2.indexOf('class="ww-composer"')
+    const playsIdx = wallWxml2.indexOf('class="ww-plays"')
+    const composerCount = (wallWxml2.match(/class="ww-composer"/g) || []).length
+    if (composerFixed) return true // 吸底时位置由 fixed 定位决定，本条不适用
+    return wallIdx >= 0 && composerIdx > wallIdx && playsIdx > composerIdx && composerCount === 1
+  })(),
+  (() => {
+    const w = wallWxml2.indexOf('class="ww-wall "')
+    const c = wallWxml2.indexOf('class="ww-composer"')
+    const p = wallWxml2.indexOf('class="ww-plays"')
+    return `wall@${w} composer@${c} plays@${p}（要求 wall < composer < plays）`
+  })()
+)
+check(
+  '发送条位置与设计意图一致（顺流：static + 输入框 id 仍在 + 不再通栏铺底；若改回吸底：见下两条）',
+  composerInline &&
+    /id="wishInput"/.test(wallWxml2) &&
+    composerInputH > 0 &&
+    // ⚠️ 顺流时**不得**再要求「页面底部预留 ≥ 条高」—— 那条约束是为「fixed 条盖住内容」服务的，
+    // 顺流后内容自己占位。若沿用旧约束（72 < 84）就会把正确的新设计判红（本轮实测踩过）。
+    !/\.ww-composer\s*\{[^}]*position:\s*fixed/.test(wallWxssCode),
+  `position=${composerInline ? 'static' : composerFixed ? 'fixed' : '未声明'} / 输入 ${composerInputH}rpx / 页面底部预留 ${pagePadBottom}rpx`
+)
+// 吸底专属不变量：只在**仍是 fixed** 时要求「底部预留 ≥ 条高」（顺流不需要，别硬留 180rpx）
+check(
+  '（吸底时）页面底部预留 ≥ 条高，否则最后一张愿签会被盖住',
+  !composerFixed || (composerPadY > 0 && composerInputH > 0 && pagePadBottom >= composerInputH + composerPadY * 2),
+  `position=${composerFixed ? 'fixed' : 'static（本条不适用）'} / 预留 ${pagePadBottom}rpx`
 )
 // ⚠️ 真机反馈「向下滑到愿签时与发送条互相遮挡」的根因：条子在 .ww-write（position:relative; z-index:1）
 // 这个层叠上下文里，自己的 z-index 只在该上下文内有效 → 页面其余 z-index≥1 的块画到它上面。
@@ -4133,19 +4193,24 @@ const isDirectChildOfPage = (innerMarker, ownClassPattern) => {
   const st = viewAncestorsAt(wallWxml2, innerMarker)
   return Array.isArray(st) && st.length >= 2 && /ww-page/.test(st[0]) && ownClassPattern.test(st[1])
 }
+// 顺流后发送条不再是覆盖层 —— 只有**仍是 fixed** 时才要求它是 .ww-page 直接子节点。
+// 纸签弹层始终是 fixed 覆盖层，这一条对它**始终**成立（与设计变更无关）。
 check(
-  '★ fixed 覆盖层必须是 .ww-page 的直接子节点（发送条 / 纸签弹层）—— "互相遮挡"的根因',
-  isDirectChildOfPage('class="ww-input"', /ww-composer/) &&
-    isDirectChildOfPage('class="ww-sheet-overline"', /ww-sheet/),
-  `composer 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-input"'))} sheet 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-sheet-overline"'))}`
+  '★ fixed 覆盖层必须是 .ww-page 的直接子节点（纸签弹层；发送条仅在吸底设计下适用）—— "互相遮挡"的根因',
+  isDirectChildOfPage('class="ww-sheet-overline"', /ww-sheet/) &&
+    (!composerFixed || isDirectChildOfPage('class="ww-input"', /ww-composer/)),
+  `composer(position=${composerFixed ? 'fixed' : 'static'}) 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-input"'))} sheet 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-sheet-overline"'))}`
 )
+// 层级可比性只在**两者都是覆盖层**（发送条吸底）时才要求；顺流时二者不重叠。
 check(
-  '纸签弹层盖在吸底发送条之上（层级：弹层 41 > 发送条 30）',
-  (() => {
-    const sheetZ = Number((/\.ww-sheet\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
-    const barZ = Number((/\.ww-composer\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
-    return sheetZ > barZ && barZ > 0
-  })()
+  '（吸底时）纸签弹层须盖在发送条之上（弹层 41 > 发送条 30）',
+  !composerFixed ||
+    (() => {
+      const sheetZ = Number((/\.ww-sheet\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
+      const barZ = Number((/\.ww-composer\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
+      return sheetZ > barZ && barZ > 0
+    })(),
+  `position=${composerFixed ? 'fixed' : 'static（本条不适用）'}`
 )
 check(
   '★ 遮罩在深色页面上压得动（浓度 ≥ 0.72；62% 在博物黑上实测"看不出被压暗"）',
@@ -4154,11 +4219,15 @@ check(
     return alpha >= 0.72
   })()
 )
+// 顺流时不铺底（不该出现一条通栏色带）；仍吸底时必须不透明（否则愿签透上来）。
 check(
-  '★ 吸底条背景不透明（半透明时愿签会透上来，与"遮挡"叠在一起更难读）',
-  /\.ww-composer\s*\{[^}]*background:\s*var\(--color-bg\)/.test(wallWxssCode) &&
-    !/\.ww-composer\s*\{[^}]*background:\s*rgba\(/.test(wallWxssCode) &&
-    /\.ww-composer\s*\{[^}]*z-index:\s*30/.test(wallWxssCode)
+  '发送条底色与设计一致（顺流：透明无通栏底；吸底：不透明 var(--color-bg) + z-index 30）',
+  composerFixed
+    ? /\.ww-composer\s*\{[^}]*background:\s*var\(--color-bg\)/.test(wallWxssCode) &&
+        !/\.ww-composer\s*\{[^}]*background:\s*rgba\(/.test(wallWxssCode) &&
+        /\.ww-composer\s*\{[^}]*z-index:\s*30/.test(wallWxssCode)
+    : /\.ww-composer\s*\{[^}]*background:\s*transparent/.test(wallWxssCode),
+  `position=${composerFixed ? 'fixed' : 'static'}`
 )
 {
   const stub = installWxStub()

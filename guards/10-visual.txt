@@ -10,3 +10,4 @@ npm run check:wxss-syntax
 npm run check:copy-terms
 npm run check:dialog-ratchet
 npm run check:modal-style
+npm run check:mp-contrast

@@ -220,6 +220,29 @@
       >{{soundOn ? '音效 开' : '音效 关'}}</view>
     </view>
 
+    <!-- 发送条（顺流）：**弹幕墙下方、玩法区上方** —— 2026-09-19 产品口径变更，
+         原为 `position: fixed; bottom: 0` 吸底（§35）。改顺流后不再需要页面底部预留。
+         见文件末尾同名注释块（那里记了取舍与回退方式）。 -->
+    <view class="ww-composer">
+      <input
+        class="ww-input"
+        id="wishInput"
+        value="{{draft}}"
+        maxlength="{{textMax}}"
+        confirm-type="send"
+        placeholder="例如：马上有闲，马上有缘"
+        placeholder-class="ww-input-ph"
+        bindinput="onDraftInput"
+        bindconfirm="submitWish"
+      />
+      <view
+        class="ww-send {{posting || !draft || quota.exhausted ? 'is-off' : ''}}"
+        bindtap="submitWish"
+        hover-class="ww-send-press"
+        hover-stay-time="80"
+      >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
+    </view>
+
     <!-- 玩法区（注册表驱动，2026-09-18 需求 5 第一批）：
          点灯 / 木鱼是"动作"，这里是"抽一句" —— 抽到的结果由页尾的**纸签弹层**呈现，
          看完能直接「写成心愿」，形成"抽 → 写 → 上墙"的一条路。
@@ -535,27 +558,11 @@
     <text class="ww-sheet-note">今日这一句一天一支，明天会换新的。</text>
   </view>
 
-  <!-- 吸底发送条：必须是 .ww-page 的**直接子节点**。
-       此前它放在 .ww-write 里，而 .ww-write 是 `position:relative; z-index:1` 的层叠上下文 ——
-       条子自己的 z-index:20 只在这个上下文里有效，页面其余 z-index≥1 的块（分段控件/愿签卡）
-       就会画到它**上面**，真机截图里表现为"互相遮挡"。 -->
-  <view class="ww-composer">
-    <input
-      class="ww-input"
-      id="wishInput"
-      value="{{draft}}"
-      maxlength="{{textMax}}"
-      confirm-type="send"
-      placeholder="例如：马上有闲，马上有缘"
-      placeholder-class="ww-input-ph"
-      bindinput="onDraftInput"
-      bindconfirm="submitWish"
-    />
-    <view
-      class="ww-send {{posting || !draft || quota.exhausted ? 'is-off' : ''}}"
-      bindtap="submitWish"
-      hover-class="ww-send-press"
-      hover-stay-time="80"
-    >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
-    </view>
+  <!-- 发送条：**弹幕墙下方**（2026-09-19 产品口径变更）。
+       原设计是吸底（§35 产品点头，`position: fixed; bottom: 0`），但产品真机反馈
+       「点『写下我的心愿』后页面滚下去、看不到输入框」—— 根因是纸签弹层没收（已修），
+       但产品进一步要求把输入放到**更醒目**的位置：弹幕墙下方、与玩法区同屏。
+       因此改为**顺流**（`position: static`），不再吸底、不再需要页面底部预留 180rpx。
+       ⚠️ 代价（如实记录）：主操作不再「永远在拇指下」，要滚到墙下方才看得到；
+       若日后产品觉得吵，改回 fixed 即可（一处样式 + 两条判据）。 -->
 </view>
