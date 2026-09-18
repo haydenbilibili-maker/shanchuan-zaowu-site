@@ -201,12 +201,16 @@ page {
   border-radius: 999rpx;
 }
 
+/* 2026-09-19 对比度修复：原用 --brass-600 #8A7530 压本 chip 的 rgba(196,167,108,0.16) tint、
+   再叠在 .ww-hero 羊皮纸浅渐变上，实测 3.31~3.74（报告 §3 复核 3；守卫更宽面集 3.992），
+   低于正文阈值 4.5。改为同文件**已合规同类项**（.ww-bless / .ww-scope.is-link）所用的
+   --brass-700 #6B5A24：只换既有令牌，不新造色、不动背景 alpha，保持 chip 的视觉层级。 */
 .ww-scope {
   display: inline-block;
   padding: 4rpx 14rpx;
   font-size: 20rpx;
   line-height: 1.3;
-  color: var(--brass-600);
+  color: var(--brass-700);
   background: rgba(196, 167, 108, 0.16);
   border: 1px solid rgba(138, 117, 48, 0.28);
   border-radius: 999rpx;
