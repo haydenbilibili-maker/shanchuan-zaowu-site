@@ -267,11 +267,23 @@ const INJECTIONS = {
     from: '          data-id="{{item.id}}"\n',
     to: ''
   },
-  // 墙面丢掉信任信号
+  // 墙面丢掉置顶标记
   'dm-mark-dropped': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: 'class="ww-dm-mark {{item.pinned ? \'is-pinned\' : (item.official ? \'is-official\' : \'\')}}"',
+    from: 'class="ww-dm-mark {{item.pinned ? \'is-pinned\' : \'\'}}"',
     to: 'class="ww-dm-plain"'
+  },
+  // 「馆方」徽章复活（2026-09-18 产品已决定去掉：基线内容全盖章 = 不传递信息）
+  'official-badge-resurrected': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '            <text class="ww-tag-seal is-mine" wx:elif="{{item.isMine}}">我的</text>',
+    to: '            <text class="ww-tag-seal is-official" wx:elif="{{item.official}}">馆方</text>\n            <text class="ww-tag-seal is-mine" wx:elif="{{item.isMine}}">我的</text>'
+  },
+  // 置顶印章被顺手删掉（去徽章时最容易误伤的就是它）
+  'pinned-seal-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '            <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>',
+    to: ''
   },
   // 刚落愿不再高亮
   'no-fresh-highlight': {
@@ -303,11 +315,13 @@ const INJECTIONS = {
     from: '  onUnload() {\n    this.clearDanmakuCycle()\n    this.clearFreshTimer()\n  },',
     to: '  onUnload() {\n    this.clearDanmakuCycle()\n  },'
   },
-  // 笺丢掉对话框语义
+  // 弹层丢掉对话框语义（读屏不知道这是一个弹层）
+  // ⚠️ 2026-09-18 锚点更新：结果层从"愿签弹层"扩到"纸签弹层"后，`aria-role="dialog"` 不再是唯一一处，
+  // 这里显式锚到纸签弹层那一处（否则注入会打错目标 → 自检失效）
   'card-not-dialog': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '      aria-role="dialog"\n',
-    to: ''
+    from: '        class="ww-sheet"\n        wx:if="{{playResult}}"\n        style="transform: translateY({{sheetDragY}}px);"\n        aria-role="dialog"\n',
+    to: '        class="ww-sheet"\n        wx:if="{{playResult}}"\n        style="transform: translateY({{sheetDragY}}px);"\n'
   },
   // 弹幕不再用手写体
   'handwriting-dropped': {
@@ -439,6 +453,362 @@ const INJECTIONS = {
     file: 'miniprogram/subpackages/manager/wish-wall/index.js',
     from: "        prefix: this.effectiveSeedPrefix(),\n",
     to: ''
+  },
+  // ===== 注册转化（祈福墙 = 注册转化路径）=====
+  // 未注册判定写死 false → 落愿时永不弹注册，转化路径等于没接
+  'register-gate-never-fires': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '      return state === \'guest\'',
+    to: '      return false'
+  },
+  // 注册成功不续发 → 用户注册完那条心愿凭空消失（最伤的转化体验）
+  'register-resume-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    this.setData({ draft: text })\n    this.submitWish()\n  },',
+    to: '    this.setData({ draft: text })\n  },'
+  },
+  // 会话读失败按未注册处理（fail-closed）→ 会话抖动会把「挂上墙」整个挡下来
+  'register-gate-fail-closed': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "      console.warn('wish wall session check failed', e)\n      return false",
+    to: "      console.warn('wish wall session check failed', e)\n      return true"
+  },
+  // ===== 视觉与排版（2026-09-18）=====
+  // 弹幕配色退回「深色墙」那套 → 浅纸上只剩 1.1:1，字几乎隐形
+  'danmaku-tone-low-contrast': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-tone-0 { color: #4A4234; }',
+    to: '.ww-tone-0 { color: #EFE6D2; }'
+  },
+  // 仪式两卡退回 flex → 左卡按内容撑宽，两卡不等宽
+  'ritual-row-flex-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  display: grid;\n  grid-template-columns: 1fr 1fr;\n  align-items: stretch;',
+    to: '  display: flex;\n  align-items: stretch;'
+  },
+  // 灯卡把竖排时代的 margin-bottom 加回来 → 两卡不等高
+  'lantern-margin-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  padding: 26rpx 20rpx;\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);',
+    to: '  margin-bottom: var(--space-3);\n  padding: 26rpx 20rpx;\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
+  },
+  // 木鱼卡跟着灯卡改成顶对齐 → 等高之后底部留一大片空白（真图上很明显）
+  'muyu-align-top-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  align-items: center;\n  gap: 16rpx;\n  min-width: 0;\n  /* ⚠️ 必须与 .ww-lantern 同值（守卫 `两卡内边距一致` 钉住）：改一边就是"两张卡不像一对" */\n  padding: 26rpx 20rpx;\n  border: 1rpx solid rgba(196, 167, 108, 0.34);',
+    to: '  align-items: flex-start;\n  gap: 16rpx;\n  min-width: 0;\n  /* ⚠️ 必须与 .ww-lantern 同值（守卫 `两卡内边距一致` 钉住）：改一边就是"两张卡不像一对" */\n  padding: 26rpx 20rpx;\n  border: 1rpx solid rgba(196, 167, 108, 0.34);'
+  },
+  // 条数又飘出段外 → 读起来像"我的心愿 26 条"
+  'seg-count-orphan-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      </view>\n    </view>\n    <view class="ww-tags">',
+    to: '      </view>\n      <text class="ww-head-n">{{items.length}} 条</text>\n    </view>\n    <view class="ww-tags">'
+  },
+  // 灯芯又变回实心圆 → 灯泡图标背后多一个圆底
+  'lamp-icon-back-to-circle': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  background-size: contain;\n  opacity: 0.38;',
+    to: '  border-radius: 50%;\n  background: #2A2723;\n  background-size: contain;\n  opacity: 0.38;'
+  },
+  // 同一选择器又冒出第二份图 → 后一份静默吃掉前一份（改哪份都不生效）
+  'lamp-icon-image-duplicated': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  opacity: 0.38;\n  transition: opacity 0.4s ease, transform 0.4s ease;\n}',
+    to: '  opacity: 0.38;\n  transition: opacity 0.4s ease, transform 0.4s ease;\n}\n.ww-lantern-core {\n  background-image: url("data:image/svg+xml,%3Csvg/%3E");\n}'
+  },
+  // 灯语又缩回标题旁边那 ~220rpx 的窄列 → 孤字回来（产品反馈过的"文案拥挤"）
+  'lamp-tail-inline-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  flex: 0 0 100%;\n  min-width: 0;\n}',
+    to: '  flex: 1;\n  min-width: 0;\n}'
+  },
+  // 文案超长 → 整行也装不下，折行 + 孤字
+  'lamp-copy-too-long': {
+    file: 'miniprogram/utils/wishRitual.js',
+    from: "  '一灯不灭，一事可期。'",
+    to: "  '一灯不灭，一事可期，慢慢来总会抵达的。'"
+  },
+  // 间距/层级又压紧 → 回到真图上那个"三行小字贴着"的状态
+  'lamp-spacing-tight-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  margin-top: 8rpx;\n  font-size: 19rpx;\n  line-height: 1.5;',
+    to: '  margin-top: 2rpx;\n  font-size: 21rpx;\n  line-height: 1.2;'
+  },
+  // 音效默认关 → 用户永远听不到（产品口径是"默认开但可关"）
+  'sound-default-off': {
+    file: 'miniprogram/utils/ritualFeedback.js',
+    from: '  const v = readStore(SOUND_KEY, true)',
+    to: '  const v = readStore(SOUND_KEY, false)'
+  },
+  // 频率闸门拿时间戳 0 当"没响过"的哨兵 → 闸门在 t=0 之后失效
+  'sound-gate-zero-sentinel': {
+    file: 'miniprogram/utils/ritualFeedback.js',
+    from: "  if (lastAtMs === null || lastAtMs === undefined || lastAtMs === '') return true",
+    to: '  if (!Number(lastAtMs)) return true'
+  },
+  // 回声文案超长 → 墙上页脚那一行装不下（注入用的字符串必须**真的**超过上限）
+  'echo-over-long': {
+    file: 'miniprogram/utils/ritualFeedback.js',
+    from: "  muyu: ['我敲了一下木鱼',",
+    to: "  muyu: ['我刚刚轻轻地敲了一下这只木鱼呀',"
+  },
+  // 回声改成第三人称 → 会被读成"别人许的愿"
+  'echo-third-person': {
+    file: 'miniprogram/utils/ritualFeedback.js',
+    from: "  muyu: ['我敲了一下木鱼', '我敲一声，静一分',",
+    to: "  muyu: ['我敲了一下木鱼', '有人敲了木鱼',"
+  },
+  // 墙上回声的 DOM 掉了（样式还在、类名改了）→ 即时反馈其实不显示
+  'echo-dom-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      <view\n        class="ww-echo"\n',
+    to: '      <view\n        class="ww-echo-legacy"\n'
+  },
+  // 回声动画时长与 ECHO_HOLD_MS 分叉 → 计时器移除时动画还在播（或反之）
+  'echo-duration-mismatch': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  animation: ww-echo-life 1800ms ease-out forwards;',
+    to: '  animation: ww-echo-life 900ms ease-out forwards;'
+  },
+  // 木鱼计数又变成"只写不读" → 功德每次进页归零
+  'muyu-count-write-only-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "    this.setData({ soundOn: ritualFeedback.isSoundEnabled(), muyuCount: wishRitual.readMuyuCount() })",
+    to: '    this.setData({ soundOn: ritualFeedback.isSoundEnabled() })'
+  },
+  // 音效开关的绑定掉了 → 开关看得见点不动
+  'sound-toggle-ui-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '        bindtap="onToggleSound"',
+    to: '        bindtap="noopToggle"'
+  },
+  // 轨道刻度的百分比漂了 → 刻度压着弹幕文字（两套写法对不上）
+  'rail-percent-drift': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-wall-rail.rail-6 { top: 84%; }',
+    to: '.ww-wall-rail.rail-6 { top: 76%; }'
+  },
+  // 墙页脚的跳转绑定掉了 → 「看全部 ›」变成一句不会动的字
+  'wall-foot-jump-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '        bindtap="goWishList"',
+    to: '        bindtap="noopWishList"'
+  },
+  // 列表落点的 id 被改名 → 跳转目标不存在（selector 打空）
+  'wishlist-anchor-renamed': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '<view class="ww-head" id="wishList">',
+    to: '<view class="ww-head" id="wishListOld">'
+  },
+  // 重看灯又绕回弹 toast（灯语就在卡上，弹框是多余的一层，也让原生弹窗棘轮多一处）
+  'lamp-relight-toast-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "      this.pushEcho('lampAgain')",
+    to: "      wx.showToast({ title: lamp.line || '今日灯已点', icon: 'none' })"
+  },
+  // 玩法文案里混进命理/占卜表述 → 审核风险
+  'play-content-forbidden-word': {
+    file: 'miniprogram/config/ritualPlayContent.js',
+    from: "  { yi: '开口', ji: '憋着', line: '想要什么就说出来，说出口才有回音。', wish: '回音' },",
+    to: "  { yi: '开口', ji: '憋着', line: '今天适合找人给你算一卦，看看吉凶。', wish: '回音' },"
+  },
+  // 玩法结果用随机数 → 刷新就换一个，"今日一签"名存实亡
+  'play-nondeterministic': {
+    file: 'miniprogram/utils/ritualPlay.js',
+    from: '  return `${String(playId)}|${String(dayKey)}`',
+    to: '  return `${String(playId)}|${String(dayKey)}|${Math.random()}`'
+  },
+  // 资料门禁被拆掉 → 没有星座也照样"给一个结果"（编出来的）
+  'play-profile-gate-dropped': {
+    file: 'miniprogram/utils/ritualPlay.js',
+    from: "    const value = String(profile[need] || '')",
+    to: "    const value = String(profile[need] || 'fallback')"
+  },
+  // 瓦片不再由注册表派生 → 加玩法必然漏接线
+  'play-tile-hardcoded': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '          wx:for="{{plays}}"',
+    to: '          wx:for="{{[]}}"'
+  },
+  // 心愿词规范化被拆掉 → 脏值（「回音」「马上有超长…」）会直接预填进写愿签
+  'play-wish-not-prefixed': {
+    file: 'miniprogram/utils/ritualPlay.js',
+    from: "  return /^马上有[\\u4e00-\\u9fa5]{1,3}$/.test(wish) && wish.length <= TEXT_MAX ? wish : ''",
+    to: '  return wish'
+  },
+  // 祈运标签不再参与排序 → 商品标签白打了（页面永远按注册表原顺序）
+  'bless-order-dropped': {
+    file: 'miniprogram/config/blessTags.js',
+    from: "  const out = []\n  sanitizeBlessTags(keys).forEach((key) => {",
+    to: "  const out = []\n  ;[].forEach((key) => {"
+  },
+  // 入口 URL 不再带祈运标签 → 墙面永远拿不到"这面墙求什么"
+  'bless-url-dropped': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: "  if (bless) params.push(`bless=${encodeURIComponent(bless)}`)",
+    to: "  if (false) params.push(`bless=${encodeURIComponent(bless)}`)"
+  },
+  // 祈运提示的 DOM 掉了 → 标签带了也看不见
+  'bless-guide-dom-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      <view class="ww-plays-guide" wx:if="{{blessGuide}}">',
+    to: '      <view class="ww-plays-guide-off" wx:if="{{blessGuide}}">'
+  },
+  // 选品不再按标签/场景过滤 → 等于拿全站在架兜底（"求学"会被推成任意商品 = 乱推）
+  'reco-filter-dropped': {
+    file: 'miniprogram/cloudfunctions/getBlessProducts/index.js',
+    from: "  const where = _.and([{ isOffShelf: _.neq(true) }, orConds.length > 1 ? _.or(orConds) : orConds[0]])",
+    to: "  const where = _.and([{ isOffShelf: _.neq(true) }])"
+  },
+  // 场景兜底那一支被丢掉 → 只填了礼赠场景的存量商品永远推荐不出来（功能空转）
+  'reco-scene-branch-dropped': {
+    file: 'miniprogram/cloudfunctions/getBlessProducts/index.js',
+    from: "  if (scenes.length) orConds.push({ giftScenes: _.in(scenes) })",
+    to: "  if (false && scenes.length) orConds.push({ giftScenes: _.in(scenes) })"
+  },
+  // C 端入口不再做场景兜底 → 存量商品连祈运提示都拿不到
+  'bless-scene-fallback-dropped': {
+    file: 'miniprogram/config/blessTags.js',
+    from: "  return blessTagsFromScenes(product && product.giftScenes)",
+    to: "  return []"
+  },
+  // 排除项失效 → 给自己推荐自己（当前这面墙的商品又出现一次）
+  'reco-exclude-dropped': {
+    file: 'miniprogram/cloudfunctions/getBlessProducts/index.js',
+    from: "  const list = sortPool(rows.filter((r) => isOnShelf(r) && !exclude.has(String(r._id))), e.category)",
+    to: "  const list = sortPool(rows.filter((r) => isOnShelf(r)), e.category)"
+  },
+  // 推荐卡 DOM 掉了 → 推荐取了也看不见
+  'reco-dom-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '<view class="ww-play-reco" wx:if="{{reco}}"',
+    to: '<view class="ww-play-reco-off" wx:if="{{reco}}"'
+  },
+  // 缓存键丢掉日期 → 跨天还拿昨天的推荐（"一天一件"悄悄变成"永远同一件"）
+  'reco-cache-crosses-day': {
+    file: 'miniprogram/utils/blessProducts.js',
+    from: '  return `${t}|${String(dayKey)}`',
+    to: '  return `${t}`'
+  },
+  // 回声条又变回半透明 → 页脚文字透上来，两行字叠一起（真机截图抓到的缺陷）
+  'echo-strip-translucent-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  background: linear-gradient(90deg, #E6D6AE 0%, #EFE8DA 62%, #E7DFCF 100%);',
+    to: '  background: linear-gradient(90deg, rgba(233, 190, 110, 0.34) 0%, rgba(231, 223, 207, 0.97) 62%);'
+  },
+  // 未点灯的灯卡又顶对齐 → 底部留白（真机截图里与木鱼卡不对称）
+  'idle-lamp-top-align-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-lantern.is-idle {\n  align-items: center;\n}',
+    to: '.ww-lantern.is-idle {\n  align-items: flex-start;\n}'
+  },
+  // 页面不再解析 scene → 门店码扫码进来落错墙、来源也丢了
+  'store-scene-parsing-dropped': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: "  const rawKey = grab('k') || grab('productKey')\n  if (/^[a-zA-Z0-9_-]{1,40}$/.test(rawKey)) out.productKey = normalizeProductKey(rawKey)",
+    to: "  const rawKey = ''\n  if (false) out.productKey = normalizeProductKey(rawKey)"
+  },
+  // 显式参数不再优先 → 门店码会覆盖正常入口的墙
+  'store-scene-overrides-url': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "      productKey: normalizeProductKey(opts.productKey || fromScene.productKey),",
+    to: "      productKey: normalizeProductKey(fromScene.productKey || opts.productKey),"
+  },
+  // matchSource 又变回常量 → 场景兜底的商品被说成"同好也在看"（编造社会证明）
+  'reco-match-source-constant': {
+    file: 'miniprogram/cloudfunctions/getBlessProducts/index.js',
+    from: "    .map((r) => leanProduct(r, explicitIds.has(String(r._id)) ? 'tag' : 'scene'))",
+    to: "    .map((r) => leanProduct(r, 'tag'))"
+  },
+  // 文案不再随依据走 → 页面永远显示"同好也在看"
+  'reco-label-hardcoded': {
+    file: 'miniprogram/utils/blessProducts.js',
+    from: "  if (s === 'scene') return '这类心愿常配这件'",
+    to: "  if (s === 'scene') return '同好也在看'"
+  },
+  // 页头那颗 chip 写死一个词 → 与这面墙的真实祈运标签脱钩
+  'hero-bless-hardcoded': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '        <text class="ww-bless" wx:if="{{blessLabelText}}">偏「{{blessLabelText}}」</text>',
+    to: '        <text class="ww-bless">偏「求成」</text>'
+  },
+  // 玩法区里那条提示又回来了 → 提示两处、且多占 60rpx
+  'plays-guide-resurrected': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      <view class="ww-play-grid">',
+    to: '      <view class="ww-plays-guide"><text class="ww-plays-guide-text">这面墙偏「求成」：摇一签。</text></view>\n      <view class="ww-play-grid">'
+  },
+  // 发送条不再吸底 → 主操作又沉到首屏之外
+  'composer-not-sticky': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  position: fixed;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  z-index: 20;',
+    to: '  position: relative;'
+  },
+  // 底部预留被收回 → 吸底条盖住最后一张愿签
+  'composer-bottom-space-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  padding: 0 var(--space-4) calc(180rpx + env(safe-area-inset-bottom));',
+    to: '  padding: 0 var(--space-4) calc(72rpx + env(safe-area-inset-bottom));'
+  },
+  // 条子又被塞回 .ww-write 的层叠上下文里 → 真机上与分段控件/愿签卡互相遮挡
+  'composer-back-inside-write': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '  <view class="ww-composer">',
+    to: '  <view class="ww-write"><view class="ww-composer">'
+  },
+  // 条子背景又变半透明 → 愿签从条子底下透上来
+  'composer-translucent-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  background: var(--color-bg, #14120F);\n  border-top: 1rpx solid rgba(196, 167, 108, 0.28);',
+    to: '  background: rgba(20, 18, 15, 0.94);\n  border-top: 1rpx solid rgba(196, 167, 108, 0.28);'
+  },
+  // 弹层退回"内联亮色卡"（遮罩/把手都没了）→ 又变回产品说的"与页面割裂"
+  'sheet-identity-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '        class="ww-sheet-mask"\n        wx:if="{{playResult}}"',
+    to: '        class="ww-sheet-mask-off"\n        wx:if="{{playResult}}"'
+  },
+  // 产品链路又拆成两行（推荐 + 这面墙的藏品并列）→ 主次不分
+  'product-path-split-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '          wx:if="{{reco || productId}}"',
+    to: '          wx:if="{{reco}}"\n        ></view>\n        <view\n          class="ww-sheet-product"\n          wx:if="{{productId}}"'
+  },
+  // 社会证明复活（把推荐标题写死成"同好也在看"）
+  'social-proof-resurrected': {
+    file: 'miniprogram/utils/blessProducts.js',
+    from: "  return label ? `偏「${label}」· 为你配一件` : '为你配一件'",
+    to: "  return '同好也在看'"
+  },
+  // 弹层又被塞回 .ww-plays 的层叠上下文 → 发送条会画到它上面
+  'sheet-back-inside-plays': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      <!-- 需要星座/MBTI 但资料里没有',
+    to: '      <view class="ww-plays"><view class="ww-sheet"></view>\n      <!-- 需要星座/MBTI 但资料里没有'
+  },
+  // 遮罩浓度被调回"看不出被压暗"
+  'sheet-mask-too-light': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  background: rgba(10, 9, 7, 0.78);',
+    to: '  background: rgba(12, 11, 9, 0.62);'
+  },
+  // 点灯的音效又被摘掉（只留木鱼）→ "玩法动作的音效"只剩一半
+  'lamp-sound-dropped': {
+    file: 'miniprogram/utils/ritualFeedback.js',
+    from: "  lamp: '/subpackages/feature/wish-wall/assets/lamp.mp3'",
+    to: "  lampOff: '/subpackages/feature/wish-wall/assets/lamp.mp3'"
+  },
+  // 两个动作共用同一个文件（复制粘贴）→ 点灯响的是木鱼的"笃"
+  'sounds-share-one-file': {
+    file: 'miniprogram/utils/ritualFeedback.js',
+    from: "  lamp: '/subpackages/feature/wish-wall/assets/lamp.mp3'",
+    to: "  lamp: '/subpackages/feature/wish-wall/assets/muyu.mp3'"
+  },
+  // 分享文案把"依据"带出去 → 等于公开了用户的星座/型别
+  'play-share-leaks-basis': {
+    file: 'miniprogram/utils/ritualPlay.js',
+    from: "    share: `${play.name}：${(play.needs || []).length ? '' : (body.overline ? String(body.overline) + ' · ' : '')}${String(body.title || '')}",
+    to: "    share: `${play.name}：${body.overline ? String(body.overline) + ' · ' : ''}${String(body.title || '')}"
   }
 }
 
@@ -520,6 +890,14 @@ function loadSibling(baseFile, id, cache) {
   })
 }
 
+/**
+ * 带相对 require 的模块必须用这个桩：harness 的默认 fallback 抛的是另一句话，
+ * 会被当成真实错误直接抛出（见 loadCjs 的 catch 分支）。
+ * ⚠️ wishWall.js 从 2026-09-18 起 require 了 ../config/blessTags（祈运标签解析），
+ * 漏了它就会在载入期炸「require not stubbed」。
+ */
+const markerRequire = (id) => { throw new Error('unexpected require ' + id) }
+
 function loadCjs(file, { require: req, _cache } = {}) {
   const cache = _cache || new Map()
   if (cache.has(file)) return cache.get(file)
@@ -566,7 +944,7 @@ check(
  * 2) 客户端纯函数：文案校验 / 命中判定 / 弹幕布局
  * ------------------------------------------------------------------ */
 
-const wish = loadCjs('miniprogram/utils/wishWall.js')
+const wish = loadCjs('miniprogram/utils/wishWall.js', { require: markerRequire })
 
 /**
  * 载入页面 JS 并抓住 `Page({...})` 传入的对象，用于**驱动真实页面方法**做行为级断言。
@@ -657,17 +1035,21 @@ check('同轨道不重叠（延迟递增）', rows[0].delayMs < rows[2].delayMs 
 
 /**
  * ★ 真·同轨不重叠（上面那条对 ≤4 条恒真，正是它放行了线上事故）：
- * 造 16 条（4 轨 × 4 条）压满每条轨道，逐对断言
+ * 把每条轨道都压满 `PER_LANE` 条，逐对断言
  *   「下一条进场时刻 ≥ 上一条进场时刻 + 上一条尾部离开右边缘所需时间」。
+ * ⚠️ 规模按 `wish.LANES` **实算**（原来写死 16 条 / 每轨 4 条）：轨道数一改（4 → 6），
+ * 写死的期望值就会假红——判据要表达"每条轨道被压满后的不重叠"，不是"轨道数永远是 4"。
  */
+const PER_LANE = 4
+const LANE_STRESS_N = wish.LANES * PER_LANE
 const laneStress = wish.buildDanmakuRows(
-  Array.from({ length: 16 }, (_, i) => ({ _id: 's' + i, text: '马上有' + '愿'.repeat(i % 7) }))
+  Array.from({ length: LANE_STRESS_N }, (_, i) => ({ _id: 's' + i, text: '马上有' + '愿'.repeat(i % 7) }))
 )
-eq('压满 4 条轨道 × 4 条', laneStress.length, 16)
+eq(`压满 ${wish.LANES} 条轨道 × ${PER_LANE} 条`, laneStress.length, LANE_STRESS_N)
 const overlaps = []
 for (let lane = 0; lane < wish.LANES; lane += 1) {
   const inLane = laneStress.filter((r) => r.lane === lane)
-  eq(`轨道 ${lane} 分到 4 条`, inLane.length, 4)
+  eq(`轨道 ${lane} 分到 ${PER_LANE} 条`, inLane.length, PER_LANE)
   for (let i = 1; i < inLane.length; i += 1) {
     const prev = inLane[i - 1]
     const cur = inLane[i]
@@ -676,7 +1058,7 @@ for (let lane = 0; lane < wish.LANES; lane += 1) {
     }
   }
 }
-eq('★ 同轨相邻两条不重叠（16 条压满轨道）', overlaps.join(' | '), '')
+eq(`★ 同轨相邻两条不重叠（${LANE_STRESS_N} 条压满轨道）`, overlaps.join(' | '), '')
 check(
   '★ 尾部离开右边缘的时间是「按字数算」的，不是固定间隔',
   wish.danmakuClearMs('愿'.repeat(30)) > wish.danmakuClearMs('马上有钱') * 2
@@ -1050,7 +1432,8 @@ check(
   listAfterSeed.list.every((r) => !('openid' in r) && !('status' in r))
 )
 check(
-  '公开列表带 source（C 端据此标「馆方」）',
+  // 字段仍要下发（用于统计与将来"真人馆方回复"的区分），但渲染层**不再**用它盖章
+  '公开列表带 source（数据侧保留来源，渲染层已不标「馆方」）',
   listAfterSeed.list.some((r) => r.source === 'ai' || r.source === 'seed')
 )
 
@@ -1244,7 +1627,7 @@ const egg = loadCjs('miniprogram/utils/easterEgg.js', {
     throw new Error('unexpected require ' + id)
   }
 })
-const ritual = loadCjs('miniprogram/utils/wishRitual.js')
+const ritual = loadCjs('miniprogram/utils/wishRitual.js', { require: markerRequire })
 
 // —— 注册表 ——
 const jiliang = eggConfig.EGGS.find((e) => e.id === 'jiliang')
@@ -1489,7 +1872,13 @@ check('祈福墙页有灵感入口', /bindtap="useInspiration"/.test(wallWxml))
 check('祈福墙页挂了彩蛋 behavior', /behaviors: \[easterEggHost\]/.test(wallPageSrc))
 check('进页彩蛋已接线', /easterEgg\.tryPageEnter\(/.test(wallPageSrc))
 check('落愿彩蛋已接线', /easterEgg\.tryWishPosted\(/.test(wallPageSrc))
-check('作用域取自路由参数（不是写死 mashangyou）', /normalizeProductKey\(opts\.productKey\)/.test(wallPageSrc))
+// 口径：作用域只能来自**入口**（路由参数），或门店码的 scene —— 绝不是写死的常量。
+// 2026-09-18 门店码接入后，来源从 1 个变 2 个，判据跟着口径走（不是放宽：仍然禁止写死）
+check(
+  '作用域取自入口参数或门店码 scene（不是写死 mashangyou）',
+  /normalizeProductKey\(opts\.productKey \|\| fromScene\.productKey\)/.test(wallPageSrc) &&
+    /parseWishWallScene\(opts\.scene\)/.test(wallPageSrc)
+)
 check('点灯仪式已接线', /wishRitual\.lightLamp\(/.test(wallPageSrc))
 check('页内所有请求都用 this.data.productKey', /action: 'list', productKey: this\.data\.productKey/.test(wallPageSrc))
 
@@ -1540,7 +1929,7 @@ check(
 )
 check('轮次进 rows 的 key（同 key 不会重播动画）', /buildDanmakuRows\(items, \{ cycle: this\.data\.danmakuCycle \|\| 0 \}\)/.test(wallPageSrc))
 check('切后台/卸载清掉轮播定时器', /onHide\(\)[\s\S]{0,120}clearDanmakuCycle/.test(wallPageSrc) && /onUnload\(\)[\s\S]{0,120}clearDanmakuCycle/.test(wallPageSrc))
-check('轨道刻度与 topPercent 对齐（四条写死）', (wallWxss.match(/\.ww-wall-rail\.rail-\d/g) || []).length === wish.LANES)
+check('轨道刻度与 topPercent 对齐（条数按 LANES 实算，不写死四条）', (wallWxss.match(/\.ww-wall-rail\.rail-\d/g) || []).length === wish.LANES)
 check('★ 轨道刻度是左侧短刻度，不是整条横线（整条像表格线且压文字）', /\.ww-wall-rail\s*\{[^}]*width:\s*26rpx/.test(wallWxss) && !/\.ww-wall-rail\s*\{[^}]*right:\s*20rpx/.test(wallWxss))
 check('入口箭头改为 CSS 折角（不再用字符 ›）', !/›/.test(entryWxml) && /\.wish-wall-entry-chevron\s*\{[^}]*border-right/.test(readSrc('miniprogram/components/WishWallEntry/index.wxss')))
 check('弹幕舞台高度固定（布局不随内容抖动）', /\.ww-wall\s*\{[^}]*height:\s*380rpx/.test(wallWxss))
@@ -1681,7 +2070,21 @@ check('★ 弹幕用手写体（心愿是"写"上去的）',
   /\.ww-danmaku\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
 check('★ 愿签正文也用手写体',
   /\.ww-tag-text\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
-check('★ 弹幕字号提到 28rpx（手写体笔画细，移动中要认得出）', /\.ww-danmaku\s*\{[^}]*font-size:\s*28rpx/.test(wallWxssCode))
+// 字号与 CHAR_RPX 是**一对**：CHAR_RPX 是同轨不重叠的宽度估算依据，
+// 只改字号不改它 → 后一条会在前一条尾部还在屏内时进场（叠字）。判据按"字号 ×1.03 ≈ CHAR_RPX"实算，
+// 既保住原来的下限（≥28rpx：手写体笔画细，移动中要认得出），又让两个数不再各自漂移。
+const danmakuFontRpx = Number((/\.ww-danmaku\s*\{[^}]*font-size:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
+const charRpxConst = Number((/const CHAR_RPX = (\d+)/.exec(readSrc('miniprogram/utils/wishWall.js')) || [])[1])
+check(
+  '★ 弹幕字号 ≥ 28rpx（手写体笔画细，移动中要认得出）',
+  danmakuFontRpx >= 28,
+  `font-size=${danmakuFontRpx}rpx`
+)
+check(
+  '★ 字号与 CHAR_RPX 同源（CHAR_RPX ≈ 字号 ×1.03，字距 0.02em）—— 只改一个就叠字',
+  Math.abs(charRpxConst - Math.round(danmakuFontRpx * 1.03)) <= 1,
+  `font=${danmakuFontRpx} CHAR_RPX=${charRpxConst} 期望≈${Math.round(danmakuFontRpx * 1.03)}`
+)
 
 // —— 结构 ——
 check(
@@ -2056,8 +2459,24 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
     /<view[\s\S]{0,400}?class="ww-danmaku[\s\S]{0,400}?bindtap="openWishCard"[\s\S]{0,200}?data-id="\{\{item\.id\}\}"/.test(wxml)
   )
   check(
-    '★ 墙上有置顶/馆方标记（信任信号进入墙面）',
+    '★ 墙上保留置顶标记（信任信号仍进墙面）',
     /class="ww-dm-mark \{\{item\.pinned/.test(wxml) && /\.ww-dm-mark\.is-pinned/.test(wxss)
+  )
+  check(
+    '★ 「馆方」徽章已下线：卡片/弹层/墙面三处都不再渲染它（数据字段保留）',
+    !/ww-tag-seal is-official/.test(wxml) &&
+      !/class="ww-card-tag" wx:if="\{\{card\.official\}\}"/.test(wxml) &&
+      !/is-official/.test(wxml) &&
+      !/\.ww-tag-seal\.is-official\s*\{/.test(wxss) &&
+      !/\.ww-dm-mark\.is-official\s*\{/.test(wxss) &&
+      /official: !!raw\.official/.test(readSrc('miniprogram/utils/wishWall.js'))
+  )
+  check(
+    '★ 去徽章没有误伤其它印记（已收起 / 我的 / 置顶 仍在）',
+    /ww-tag-seal is-hidden"[^>]*>已收起/.test(wxml) &&
+      /ww-tag-seal is-mine"[^>]*>我的/.test(wxml) &&
+      /ww-tag-seal"[^>]*>置顶/.test(wxml) &&
+      /ww-card-tag is-warn"[^>]*>已被馆方收起/.test(wxml)
   )
   check('墙面给了无障碍描述（读屏能说清这面墙是什么）', /aria-label="\{\{rows\.length \? rows\.length/.test(wxml))
 
@@ -2095,7 +2514,13 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
     '笺纸材料层不盖内容（绝对定位的材料必须让内容显式抬层）',
     /\.ww-card-over,[\s\S]{0,80}?\.ww-card-acts \{[\s\S]{0,80}?z-index: 1/.test(wxss) && /\.ww-card-fiber/.test(wxss)
   )
-  check('心愿笺有对话框语义', /aria-role="dialog"/.test(wxml))
+  // 口径升级：**两个弹层各自**都要有对话框语义（原来只要求"页面里出现过一次"，
+  // 于是删掉其中一个也测不出来 —— 自检抓到的空判据）
+  check(
+    '心愿笺与纸签弹层各自都有对话框语义（读屏要知道这是弹层）',
+    /class="ww-card[\s\S]{0,300}?aria-role="dialog"/.test(wxml) &&
+      /class="ww-sheet"[\s\S]{0,400}?aria-role="dialog"/.test(wxml)
+  )
 }
 
 // ---- 行为级：驱动真实页面 JS（乐观落地 + 额度拦截 + 高亮续标） ----
@@ -2119,6 +2544,9 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
     page.scheduleDanmakuCycle = () => {}
     page.clearDanmakuCycle = () => {}
     page.clearFreshTimer = () => {}
+    // 注册门禁：harness 里真实 userSession 的 ensureSession 不会 settle，
+    // 必须像 refresh/fireWishEgg 一样桩掉（否则 submitWish 永远不返回 → unsettled await）
+    page.isGuestUser = () => Promise.resolve(false)
     page._wallItems = []
     page.calls = calls
     return page
@@ -2152,6 +2580,63 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
   const fading = makePage({ freshId: 'new1' })
   fading._wallItems = [{ _id: 'new1', text: 'x', isFresh: true }]
   eq('褪色前列表里是高亮的', (fading.applyView(), fading.data.items[0].isFresh), true)
+  wxStub.restore()
+}
+
+// ---- 行为级：注册转化（未注册 → 落愿时弹注册 → 注册成功自动续发）----
+// 产品口径：浏览与仪式免费，**落愿才要身份**。这一条链路断在哪一环，转化就断在哪一环。
+{
+  const wxStub = installWxStub()
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const mkPage = (opts) => {
+    const o = opts || {}
+    const data = Object.assign({
+      allowed: true, posting: false, draft: '马上有光', textMax: 30, productKey: 'k', productId: 'p',
+      viewMode: 'wall', danmakuCycle: 0, quota: { used: 0, left: 5, cap: 5, exhausted: false },
+      freshId: '', mine: { total: 0, visible: 0, hidden: 0 }, mineRows: [], loadError: '',
+      showRegisterDialog: false
+    }, o.data || {})
+    const calls = []
+    const page = Object.assign(Object.create(null), proto)
+    page.data = data
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page.callFn = (payload) => { calls.push(payload); return Promise.resolve({ success: true, _id: 'new1', nickname: '我', msg: '心愿已挂上墙' }) }
+    page.refresh = () => Promise.resolve()
+    page.fireWishEgg = () => {}
+    page.recordRelics = () => {}
+    page.scheduleDanmakuCycle = () => {}
+    page.clearDanmakuCycle = () => {}
+    page.clearFreshTimer = () => {}
+    page.isGuestUser = () => Promise.resolve(o.guest !== false)
+    page._wallItems = []
+    page.calls = calls
+    return page
+  }
+
+  const guest = mkPage()
+  await guest.submitWish()
+  eq('★ 未注册：落愿**不发请求**，改为就地弹注册', guest.calls.length, 0)
+  eq('未注册：弹窗被打开', guest.data.showRegisterDialog, true)
+  eq('未注册：待发的心愿被记住（注册成功后要续发）', guest._pendingWish, '马上有光')
+  eq('未注册：草稿仍在输入框（不制造白写）', guest.data.draft, '马上有光')
+
+  await guest.onRegisterSuccess()
+  eq('★ 注册成功自动续发（用户的心愿没丢）', guest.calls.length, 1)
+  eq('续发的正是那条心愿', guest.calls[0] && guest.calls[0].text, '马上有光')
+  eq('续发后弹窗已关闭', guest.data.showRegisterDialog, false)
+  eq('★ 续发不再二次弹窗（会话未刷新也不会死循环）', guest.data.showRegisterDialog, false)
+
+  const dismissed = mkPage()
+  await dismissed.submitWish()
+  dismissed.onRegisterDialogClose()
+  eq('「先不挂」：弹窗关闭', dismissed.data.showRegisterDialog, false)
+  eq('★「先不挂」：草稿保留（回来还能接着挂）', dismissed.data.draft, '马上有光')
+  eq('「先不挂」不再发请求', dismissed.calls.length, 0)
+
+  const registered = mkPage({ guest: false })
+  await registered.submitWish()
+  eq('已注册用户直接落愿（不打扰）', registered.calls.length, 1)
+  eq('已注册用户不弹注册', registered.data.showRegisterDialog, false)
   wxStub.restore()
 }
 
@@ -2205,6 +2690,1413 @@ check(
   /code: 'NO_NEW_SEED'[\s\S]{0,420}?自定义前缀没有人工基线兜底/.test(wishWallFnSrc)
 )
 check('播种响应回报 prefix（运维要知道这批是什么句式）', /prefix,\s*\n\s*aiUsed/.test(wishWallFnSrc))
+
+/* ================================================================== *
+ * 11) 注册转化：祈福墙是**注册转化路径**（2026-09-18 产品口径，对齐 AI 识别）
+ *
+ * 口径：**浏览与仪式免费（价值先行），落愿这一步才要身份** ——
+ * 心愿挂在谁名下、以后回看谁的心愿，都要账号。所以门禁挂在 submitWish，不在进页。
+ * 三条硬要求：① 未注册才弹；② 注册成功后**自动续发**那条心愿（意图不丢）；
+ * ③ 会话读失败 **fail-open**（注册引导是转化动作，不能把核心功能挡下来）。
+ * ================================================================== */
+
+check(
+  '★ 落愿时对未注册用户弹注册（门禁在提交，不在进页）',
+  /submitWish\(\)[\s\S]{0,1600}?isGuestUser\(\)/.test(wallPageSrc) && /showRegisterDialog: true/.test(wallPageSrc)
+)
+check('★ 未注册判定按会话态（不是写死）', /return state === 'guest'/.test(wallPageSrc))
+check(
+  '★ 注册成功后自动续发那条心愿（意图不丢）',
+  /onRegisterSuccess\(\)[\s\S]{0,800}?this\.submitWish\(\)/.test(wallPageSrc)
+)
+check(
+  '★ 会话读失败 fail-open（宁少一次曝光，不废核心动作）',
+  /isGuestUser\(\)\s*\{[\s\S]{0,700}?catch \(e\) \{[\s\S]{0,320}?return false/.test(wallPageSrc)
+)
+check(
+  '关掉弹窗只丢待发、草稿保留（不制造白写的挫败）',
+  /onRegisterDialogClose\(\)[\s\S]{0,340}?_pendingWish = ''/.test(wallPageSrc) &&
+    !/onRegisterDialogClose\(\)[\s\S]{0,340}?draft: ''/.test(wallPageSrc)
+)
+check('弹窗可关（不把用户困在弹窗里）', /closable="\{\{true\}\}"/.test(wallWxml2))
+check(
+  '弹窗复用既有 RegisterAuthDialog（不另造一套注册流程）',
+  /register-auth-dialog/.test(wallWxml2) &&
+    /register-auth-dialog/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.json'))
+)
+check(
+  '转化漏斗三步都埋了（曝光 / 先不挂 / 注册完成并续发）',
+  ["step: 'show'", "step: 'dismiss'", "step: 'resume_success'"].every((s) => wallPageSrc.indexOf(s) !== -1)
+)
+check(
+  '★ 漏斗在 ERP 报表侧有登记（否则"埋了但报表看不到"）',
+  /wish_wall_register_gate/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+    /wish_wall_register_gate:dismiss/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+    /wish_wall_register_gate:resume_success/.test(readSrc('admin/src/utils/analyticsSchema.js'))
+)
+
+/* ================================================================== *
+ * 12) 视觉与排版：弹幕配色必须对**当前墙面**达标；仪式两卡必须等宽等高
+ *
+ * 这一节的判据是**算出来的**，不是"看代码像对的"：
+ *   · 弹幕 6 档配色曾经是按**深色墙**配的，墙面改成浅纸后只剩 1.0–1.8:1（AA 需 4.5:1）——
+ *     最浅的「素笺」几乎隐形。所以这里直接算 WCAG 对比度：色值从 WXSS 读，底色从墙面渐变读。
+ *   · 仪式两卡此前**不等宽**（左卡没有 flex/grid 份额）也**不等高**（左卡留着竖排时代的
+ *     margin-bottom）。这类问题不报错、不失败，只能靠断言钉住。
+ * ================================================================== */
+
+// —— WCAG 相对亮度 / 对比度（纯函数，测试内自算，不依赖任何库）——
+const _lin = (c) => {
+  const s = c / 255
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+}
+const _lum = (hex) => {
+  const n = parseInt(String(hex).replace('#', ''), 16)
+  return 0.2126 * _lin((n >> 16) & 255) + 0.7152 * _lin((n >> 8) & 255) + 0.0722 * _lin(n & 255)
+}
+const contrast = (a, b) => {
+  const l1 = _lum(a)
+  const l2 = _lum(b)
+  const [hi, lo] = l1 > l2 ? [l1, l2] : [l2, l1]
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+const AA_TEXT = 4.5
+const wallGradient = (/\.ww-wall\s*\{[^}]*linear-gradient\([^)]*?((?:#[0-9A-Fa-f]{6}[^)]*)+)\)/.exec(wallWxssCode) || [])[1] || ''
+const wallBg = Array.from(wallGradient.matchAll(/#[0-9A-Fa-f]{6}/g)).map((m) => m[0])
+check('能读到墙面的渐变底色（判据的输入必须真实存在）', wallBg.length >= 2, wallBg.join(','))
+
+const toneColors = []
+for (let i = 0; i < 6; i += 1) {
+  const m = new RegExp(`\\.ww-tone-${i}\\s*\\{\\s*color:\\s*(#[0-9A-Fa-f]{6})`).exec(wallWxssCode)
+  if (m) toneColors.push(m[1])
+}
+eq('弹幕 6 档配色都在（档数与 utils 一致）', toneColors.length, 6)
+check('弹幕档数与 DANMAKU_TONES 同源', new RegExp(`DANMAKU_TONES = ${toneColors.length}`).test(readSrc('miniprogram/utils/wishWall.js')))
+
+const worstTone = toneColors.reduce((acc, tone) => {
+  const min = wallBg.reduce((a, bg) => Math.min(a, contrast(tone, bg)), Infinity)
+  return min < acc.min ? { tone, min } : acc
+}, { tone: '', min: Infinity })
+check(
+  `★ 弹幕每一档都对墙面达 AA（最差 ${worstTone.tone} = ${worstTone.min.toFixed(2)}:1，需 ≥ ${AA_TEXT}）`,
+  worstTone.min >= AA_TEXT,
+  toneColors.map((t) => `${t}=${Math.min(...wallBg.map((b) => contrast(t, b))).toFixed(2)}`).join(' ')
+)
+
+// —— 仪式两卡：严格等宽 + 等高 + 顶对齐 ——
+check(
+  '★ 仪式两卡严格等宽（grid 1fr 1fr，而不是按内容分配的 flex）',
+  /\.ww-ritual-row\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*1fr\s+1fr/.test(wallWxssCode)
+)
+check(
+  '★ 灯卡没有 margin-bottom（留着它两卡永远不等高）',
+  /\.ww-lantern\s*\{[^}]*\}/.test(wallWxssCode) &&
+    !/\.ww-lantern\s*\{[^}]*margin-bottom/.test(wallWxssCode)
+)
+// ⚠️ 判据修正（2026-09-18 真图复核）：上一版断言"两卡都 flex-start、基线同高"是**我的推断**，
+// 真机截图否掉了它 —— 木鱼卡只有两行，等高之后顶对齐会在底部留一大片空白。
+// 正确口径：两卡**内边距一致**（这是"像一对"的来源）；灯卡顶对齐（内容三行、填满），
+// 木鱼卡垂直居中（内容短，顶对齐就空）。断言按这个口径写，不是放宽而是改对。
+// 判据改成**从 WXSS 里读出来比**，而不是钉死 "22rpx 20rpx"：钉死字面量时，
+// 同一轮改两处（灯卡 + 木鱼卡）只要漏一处就红，改对了也要改断言 —— 判据应该只表达"两者相同"。
+const cardPad = (selector) => {
+  const m = new RegExp(`\\${selector}\\s*\\{[^}]*padding:\\s*([^;]+);`).exec(wallWxssCode)
+  return m ? m[1].replace(/\s+/g, ' ').trim() : ''
+}
+const lanternPad = cardPad('.ww-lantern')
+const muyuPad = cardPad('.ww-ritual-card')
+check(
+  '两卡内边距一致（这是"像一对"的真正来源）',
+  /^\d+rpx \d+rpx$/.test(lanternPad) && lanternPad === muyuPad,
+  `灯卡=${lanternPad || '(读不到)'} 木鱼卡=${muyuPad || '(读不到)'}`
+)
+check(
+  '★ 灯卡顶对齐（内容三行，填满卡片）',
+  /\.ww-lantern\s*\{[^}]*align-items:\s*flex-start/.test(wallWxssCode)
+)
+check(
+  '★ 木鱼卡垂直居中（只有两行，顶对齐会在底部留大片空白 —— 真图证据）',
+  /\.ww-ritual-card\s*\{[^}]*align-items:\s*center/.test(wallWxssCode)
+)
+// —— 灯语文案：整行排版 + 纵向节奏 + 文案池长度上限 ——
+// 起因（2026-09-18 真机截图，产品反馈「文案过于拥挤」）：灯语原来留在 ~220rpx 的文案列里，
+// 「灯亮着，就还有没说完的心愿。」第二行只剩 3 个字（"的心愿。"孤字），徽章/正文/说明三行小字挤在一起。
+const idxCopy = wallWxml2.indexOf('class="ww-lantern-copy"')
+const idxStreak = wallWxml2.indexOf('class="ww-streak"')
+const idxTail = wallWxml2.indexOf('class="ww-lantern-tail"')
+const idxTailLine = wallWxml2.indexOf('class="ww-lantern-line"', idxTail)
+check(
+  '★ 灯语/灯位说明**整行**落在标题块下面（不再跟标题抢窄列，孤字消失）',
+  idxCopy > -1 && idxStreak > idxCopy && idxTail > idxStreak && idxTailLine > idxTail &&
+    /\.ww-lantern-tail\s*\{[^}]*flex:\s*0\s+0\s+100%/.test(wallWxssCode) &&
+    /\.ww-lantern\s*\{[^}]*flex-wrap:\s*wrap/.test(wallWxssCode)
+)
+
+// 判据是"关系"而不是字面值：字号层级（标题 > 灯语 > 灯位说明）+ 段间距/行距下限
+const numIn = (sel, prop) => {
+  const m = new RegExp(`\\${sel}\\s*\\{[^}]*${prop}:\\s*([\\d.]+)`).exec(wallWxssCode)
+  return m ? Number(m[1]) : NaN
+}
+const metaGap = numIn('.ww-lantern-meta', 'margin-top')
+const noteGap = numIn('.ww-lantern-note', 'margin-top')
+const lineLH = numIn('.ww-lantern-line', 'line-height')
+const lineFS = numIn('.ww-lantern-line', 'font-size')
+const noteFS = numIn('.ww-lantern-note', 'font-size')
+const titleFS = numIn('.ww-lantern-title', 'font-size')
+check(
+  '★ 灯卡纵向节奏：徽章距标题 ≥12rpx、灯语行距 ≥1.6、灯位说明距灯语 ≥8rpx',
+  metaGap >= 12 && lineLH >= 1.6 && noteGap >= 8
+)
+check(
+  '★ 三级字号层级不倒挂（标题 > 灯语 > 灯位说明）',
+  titleFS > lineFS && lineFS > noteFS
+)
+
+// 文案池长度上限**实算**：整行可用宽 = 750 − 2×页面左右 padding − 2×卡片左右 padding，
+// 除以灯语字号得到"一行几字"，再留 1 字余量。改字号/内边距时判据跟着走，不用手改数字。
+const pagePadX = Number((/--space-4:\s*(\d+)rpx/.exec(readSrc('miniprogram/app.wxss')) || [])[1])
+const cardPadX = Number((lanternPad.split(' ')[1] || '').replace('rpx', ''))
+const cardW = (750 - 2 * pagePadX - 16) / 2
+const rowW = cardW - 2 * cardPadX
+const maxChars = Math.floor(rowW / lineFS) - 1
+const idleText = (/<text class="ww-lantern-line is-idle"[^>]*>([^<]+)<\/text>/.exec(wallWxml2) || [])[1] || ''
+check(
+  '能算出一行几字（判据的输入必须真实存在）',
+  pagePadX > 0 && cardPadX > 0 && lineFS > 0 && maxChars >= 8 && idleText.length > 0,
+  `pagePadX=${pagePadX} cardPadX=${cardPadX} lineFS=${lineFS} rowW=${rowW} maxChars=${maxChars} idle="${idleText}"`
+)
+const longLines = [
+  ...ritual.LAMP_LINES,
+  ...Object.values(ritual.SOLAR_LINES),
+  ...Object.values(ritual.LAMP_TIER_NOTES),
+  idleText
+].filter((s) => [...s].length > maxChars)
+check(
+  `★ 灯语池每条都装得进一行（上限 ${maxChars} 字，含标点）`,
+  longLines.length === 0,
+  longLines.map((s) => `${s}(${[...s].length})`).join(' / ')
+)
+
+check(
+  '★ 徽章独立成行且允许折行（不再把「今日灯已点」挤成两行）',
+  /\.ww-lantern-meta\s*\{[^}]*flex-wrap:\s*wrap/.test(wallWxssCode) &&
+    /class="ww-lantern-meta"/.test(wallWxml2)
+)
+check(
+  '灯位/节气徽章挂在 meta 行里（不是挂在标题那一行）',
+  /ww-lantern-meta[\s\S]{0,400}?ww-lantern-tier[\s\S]{0,300}?ww-lantern-(solar|next)/.test(wallWxml2)
+)
+check(
+  '灯卡不再用旧的单行 head（避免死结构复活）',
+  !/class="ww-lantern-head"/.test(wallWxml2)
+)
+check(
+  '连续天数盒子收窄（半宽卡里它是固定宽度的一份子）',
+  /\.ww-streak\s*\{[^}]*min-width:\s*48rpx/.test(wallWxssCode)
+)
+check(
+  '★ 条数挂在**所属段**内（段外不留游离条数，否则会读成"我的心愿 26 条"）',
+  /data-mode="wall"[\s\S]{0,700}?ww-seg-n[\s\S]{0,200}?items\.length/.test(wallWxml2) &&
+    !/ww-head-n/.test(wallWxml2)
+)
+check(
+  '段外游离条数移除后不留死样式（.ww-head-n / .ww-head-rule）',
+  !/\.ww-head-n\s*\{/.test(wallWxssCode) && !/\.ww-head-rule\s*\{/.test(wallWxssCode)
+)
+// —— 灯芯图标（2026-09-18 产品指定：用附件里的灯泡 SVG）——
+// data URI 的两种 encoding 都算数（percent-encoded / ;base64），只要它是**内联矢量图**：
+// 微信 <image> 不渲染 svg 文件、本仓也零先例，所以「是 data URI」才是关键判据。
+const lampCoreRuleBlocks = (wallWxssCode.match(/\.ww-lantern-core\s*\{[^}]*\}/g) || [])
+const lampCoreWithImage = lampCoreRuleBlocks.filter((b) => /background-image:\s*url\("data:image\/svg\+xml[,;]/.test(b))
+check(
+  '★ 灯芯是灯泡 SVG（WXSS data URI，与本仓既有惯例一致）',
+  lampCoreWithImage.length >= 1
+)
+check(
+  '★ 灯芯图的声明只有一处（同一选择器两份 background-image → 后一份静默吃掉前一份）',
+  lampCoreWithImage.length === 1
+)
+check(
+  '★ 不新增 svg 资源文件、也不用 <image src="*.svg">（本仓零先例）',
+  !/<image[^>]+src="[^"]*\.svg"/.test(wallWxml2) && !/\.svg"/.test(wallWxssCode)
+)
+check(
+  '灯芯不再是实心圆（换了图标就别留着圆底，否则灯泡背后有个圆）',
+  !/\.ww-lantern-core\s*\{[^}]*border-radius:\s*50%/.test(wallWxssCode) &&
+    !/\.ww-lantern-core\s*\{[^}]*background:\s*#2A2723/.test(wallWxssCode)
+)
+check(
+  '★ 两态共用一张图：未点亮靠 opacity 调暗，点亮回全亮（不搞两张图）',
+  /\.ww-lantern-core\s*\{[^}]*opacity:\s*0\.38/.test(wallWxssCode) &&
+    /\.ww-lantern\.is-lit\s+\.ww-lantern-core\s*\{[^}]*opacity:\s*1/.test(wallWxssCode)
+)
+check(
+  '点亮态不再用 box-shadow（方盒阴影会在灯泡背后露方角）',
+  !/\.ww-lantern\.is-lit\s+\.ww-lantern-core\s*\{[^}]*box-shadow/.test(wallWxssCode)
+)
+
+/* ================================================================== *
+ * 即时反馈层（需求 28 · 玩法动作 → 音效 + 墙上回声）
+ *
+ * 这一层最容易"看起来做了、其实不响"：素材路径写错、开关没落盘、闸门写反、
+ * 回声文案超长、墙上的 DOM 没接上 —— 全都不报错。所以下面每组都配了注入。
+ * ================================================================== */
+
+const ritualFb = loadCjs('miniprogram/utils/ritualFeedback.js', { require: markerRequire })
+
+// ① 素材：登记了就必须能响（文件不在 = 永远静音，且没有任何提示）
+const fbRel = String(ritualFb.SOUND_SOURCES.muyu || '')
+const fbAbs = join2(ROOT, 'miniprogram' + fbRel)
+check('★ 木鱼音效素材真实存在（登记了就必须能响）', !!fbRel && existsSync(fbAbs), fbAbs)
+check(
+  '★ 音效体积受控（< 32KB：它挂在每次敲击上，不能是大文件）',
+  existsSync(fbAbs) && statSync(fbAbs).size < 32 * 1024,
+  existsSync(fbAbs) ? `${statSync(fbAbs).size}B` : '文件不存在'
+)
+// 每个登记在册的音色都要有真文件（漏一个 = 那个动作"接了音效但永远不响"）
+const srcEntries = Object.entries(ritualFb.SOUND_SOURCES)
+check('素材表里每个动作都有真实文件', srcEntries.length >= 2 && srcEntries.every(([, rel]) => {
+  const abs = join2(ROOT, 'miniprogram' + rel)
+  return existsSync(abs) && statSync(abs).size > 1024 && statSync(abs).size < 32 * 1024
+}), srcEntries.map(([k, v]) => `${k}=${v}`).join(' '))
+check(
+  '★ 点灯有独立的铜磬（不是把木鱼复制一份：两个动作要有各自的性格）',
+  (() => {
+    const a = join2(ROOT, 'miniprogram' + ritualFb.SOUND_SOURCES.muyu)
+    const b = join2(ROOT, 'miniprogram' + ritualFb.SOUND_SOURCES.lamp)
+    if (!existsSync(a) || !existsSync(b)) return false
+    return a !== b && readFileSync(a).length !== readFileSync(b).length
+  })()
+)
+check(
+  '生成脚本支持两种音色（--kind），且两套模态参数确实不同（同一套 = 两个动作一个声音）',
+  (() => {
+    const gen = readSrc('miniprogram/scripts/make-ritual-audio.mjs')
+    const kinds = /const KINDS = \{([\s\S]*?)\n\}/.exec(gen)
+    if (!/--kind/.test(gen) || !kinds) return false
+    const body = kinds[1]
+    const muyu = /muyu: \{([\s\S]*?)\n  \}/.exec(body)
+    const lamp = /lamp: \{([\s\S]*?)\n  \}/.exec(body)
+    if (!muyu || !lamp) return false
+    return muyu[1] !== lamp[1] && /2\.76|5\.4|8\.93/.test(lamp[1]) && /770/.test(muyu[1])
+  })()
+)
+check(
+  '★ 素材可复现：生成脚本在仓里（不是"某台机器上生成过一次"）',
+  existsSync(join2(ROOT, 'miniprogram/scripts/make-ritual-audio.mjs'))
+)
+
+// ② 开关：默认开 / 可关 / 落盘 / 往返可逆（用 wx 桩驱动真实模块）
+{
+  const stub = installWxStub()
+  const store = new Map()
+  globalThis.wx.getStorageSync = (k) => (store.has(k) ? store.get(k) : '')
+  globalThis.wx.setStorageSync = (k, v) => { store.set(k, v) }
+  check('★ 音效默认开（产品口径：默认开但可关）', ritualFb.isSoundEnabled() === true)
+  ritualFb.setSoundEnabled(false)
+  check(
+    '★ 关掉立刻生效并落盘（否则下次进页又"自己开了"）',
+    ritualFb.isSoundEnabled() === false && store.get(ritualFb.SOUND_KEY) === false
+  )
+  ritualFb.toggleSound()
+  check('★ 开关往返可逆', ritualFb.isSoundEnabled() === true)
+  stub.restore()
+}
+
+// ③ 频率闸门 + 播放器（连点不叠音是手感问题，不是性能问题）
+{
+  check('频率闸门：没响过就响', ritualFb.shouldPlaySound(null, 1000) === true)
+  check('★ 频率闸门：连点（<120ms）不响', ritualFb.shouldPlaySound(1000, 1050) === false)
+  check('★ 频率闸门：过了间隔就响', ritualFb.shouldPlaySound(1000, 1120) === true)
+  // ⚠️ 0 是合法时间戳，不能当"没响过"的哨兵 —— 自检时真抓到这个缺陷（闸门静默失效）
+  check('★ 频率闸门不把时间戳 0 当哨兵（否则 t=0 响过之后闸门失效）', ritualFb.shouldPlaySound(0, 50) === false)
+  let plays = 0
+  let destroyed = 0
+  const player = ritualFb.createPlayer({
+    createContext: () => ({ play() { plays += 1 }, stop() {}, destroy() { destroyed += 1 }, onError() {} })
+  })
+  const p0 = player.play('muyu', 0)
+  const p50 = player.play('muyu', 50)
+  const p130 = player.play('muyu', 130)
+  check('★ 连点只响一次、过了间隔再响', p0 === true && p50 === false && p130 === true && plays === 2, `plays=${plays}`)
+  // ⚠️ 口径随素材表变：点灯现在**也有**音效（铜磬），所以这条改用真的没有素材的动作
+  check('★ 没有素材的动作不响（素材表是唯一事实源）', player.play('wish', 9999) === false && player.play('nope', 9998) === false)
+  player.destroy()
+  check('★ destroy 释放音频实例（页面卸载不能留着后台音频）', destroyed >= 1, `destroyed=${destroyed}`)
+}
+
+// ④ 回声文案：长度 / 人称 / 确定性 / 未知动作
+const echoPool = Object.entries(ritualFb.ECHO_LINES)
+  .flatMap(([action, lines]) => (Array.isArray(lines) ? lines : []).map((t) => ({ action, t: String(t) })))
+check(
+  '回声池覆盖三个必修动作（点灯 / 木鱼 / 落愿）',
+  ['muyu', 'lamp', 'wish'].every((a) => (ritualFb.ECHO_LINES[a] || []).length > 0)
+)
+const echoTooLong = echoPool.filter((x) => [...x.t].length > ritualFb.ECHO_MAX_CHARS)
+check(
+  `★ 回声每条 ≤ ${ritualFb.ECHO_MAX_CHARS} 字（墙上页脚只有 44rpx 高，一行说完）`,
+  echoTooLong.length === 0,
+  echoTooLong.map((x) => `${x.t}(${[...x.t].length})`).join(' / ')
+)
+const echoNotMine = echoPool.filter((x) => !x.t.startsWith('我'))
+check(
+  '★ 回声一律第一人称（墙上其余弹幕是别人的心愿，不能冒充别人的愿）',
+  echoNotMine.length === 0,
+  echoNotMine.map((x) => x.t).join(' / ')
+)
+check(
+  '★ 回声轮换确定性（同 seq 同文案、不同 seq 换文案 —— 与弹幕布局同一条铁律）',
+  ritualFb.echoLine('muyu', 0) === ritualFb.echoLine('muyu', 0) &&
+    ritualFb.echoLine('muyu', 0) !== ritualFb.echoLine('muyu', 1)
+)
+check('未知动作不回显（页面据此不吐垃圾）', ritualFb.buildEcho('nope', 1) === null)
+const echoSample = ritualFb.buildEcho('muyu', 3, { muyuCount: 7 })
+check(
+  '回声带"事实"副文案（功德 N）且 key 唯一到每次动作',
+  !!echoSample && echoSample.sub === '功德 7' && echoSample.key === 'muyu#3'
+)
+
+// ⑤ 页面接线（驱动真实页面方法）
+{
+  const stub = installWxStub()
+  const store = new Map()
+  globalThis.wx.getStorageSync = (k) => (store.has(k) ? store.get(k) : '')
+  globalThis.wx.setStorageSync = (k, v) => { store.set(k, v) }
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  let played = 0
+  const mkPage = () => {
+    const page = Object.assign(Object.create(null), proto)
+    page.data = {
+      muyuCount: 0,
+      soundOn: true,
+      echoRows: [],
+      lamp: { streak: 3 },
+      quota: { left: 4 },
+      viewMode: 'wall',
+      items: [],
+      rows: [],
+      danmakuCycle: 0,
+      freshId: ''
+    }
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page.scheduleDanmakuCycle = () => {}
+    page.clearDanmakuCycle = () => {}
+    page.clearFreshTimer = () => {}
+    page._wallItems = []
+    page._soundPlayer = { play() { played += 1; return true }, destroy() {} }
+    page._echoSeq = 0
+    return page
+  }
+  const p1 = mkPage()
+  p1.onMuyuTap()
+  check(
+    '★ 敲木鱼 → 墙上立刻回一条即时反馈（第一人称、带功德）',
+    (p1.data.echoRows[0] || {}).action === 'muyu' &&
+      String((p1.data.echoRows[0] || {}).text).startsWith('我') &&
+      (p1.data.echoRows[0] || {}).sub === '功德 1'
+  )
+  check('★ 敲木鱼同时发声', played === 1, `played=${played}`)
+  check('★ 木鱼计数进存档（"只写不读"已修，这里保证写仍然发生）', Number(store.get('wish_muyu_v1')) === 1)
+  p1.clearEcho()
+
+  const p2 = mkPage()
+  p2.pushEcho('lamp')
+  check('★ 点灯走同一个口子（后续玩法照抄这一行即可）', (p2.data.echoRows[0] || {}).action === 'lamp')
+  p2.pushEcho('wish')
+  check(
+    '★ 落愿回声带额度事实（"今日还可写 N 条"顺带把额度说清）',
+    (p2.data.echoRows[0] || {}).sub === '今日还可写 4 条'
+  )
+
+  const p3 = mkPage()
+  p3.onToggleSound()
+  check('★ 音效开关：关 → 落盘 + 界面回显', p3.data.soundOn === false && store.get(ritualFb.SOUND_KEY) === false)
+  const beforePlay = played
+  p3.onToggleSound()
+  check('★ 音效开关：再开时给一声（"开了没感觉"是最差的开关）', p3.data.soundOn === true && played > beforePlay)
+
+  const p4 = mkPage()
+  let p4Destroyed = false
+  p4._soundPlayer = { play() { return true }, destroy() { p4Destroyed = true } }
+  p4._echoTimer = setTimeout(() => {}, 5000)
+  p4._muyuTimer = setTimeout(() => {}, 5000)
+  p4.onUnload()
+  check('★ 卸载时清回声计时器（页面没了还在 setData = 报错源头）', p4._echoTimer === null)
+  check('★ 卸载时销毁音效实例', p4Destroyed === true)
+  stub.restore()
+}
+
+// ⑥ 源码级接线（onLoad 这种没法在 harness 里整段跑的方法，按"接了什么"断言）
+const fbPageSrc = readSrc('miniprogram/subpackages/feature/wish-wall/index.js')
+check('★ 木鱼计数键名收在 utils（页面不得出现字面量存储键）', !/wish_muyu_v1/.test(fbPageSrc))
+check(
+  '★ 木鱼计数进页读回存档（曾经的缺陷：只写不读 → 每次进来都归零）',
+  /muyuCount:\s*wishRitual\.readMuyuCount\(\)/.test(fbPageSrc) && /wishRitual\.writeMuyuCount\(/.test(fbPageSrc)
+)
+check(
+  '★ 点灯与落愿都接进反馈层（不是只有木鱼有反馈）',
+  /pushEcho\('lamp'\)/.test(fbPageSrc) && /pushEcho\('wish'\)/.test(fbPageSrc)
+)
+
+// ⑦ 墙上的回声：DOM / 位置 / 时长同源
+check(
+  '★ 墙上回声用数组 + wx:key（连点要重播动画；同 key 不会重播）',
+  /class="ww-echo"[\s\S]{0,600}?wx:for="\{\{echoRows\}\}"[\s\S]{0,200}?wx:key="key"/.test(wallWxml2) &&
+    /wx:for="\{\{echoRows\}\}"/.test(wallWxml2)
+)
+check(
+  '★ 墙元素按 echoRows 挂 is-echo（墙本身也要回一下）',
+  /class="ww-wall \{\{echoRows\.length \? 'is-echo' : ''\}\}"/.test(wallWxml2) &&
+    /\.ww-wall\.is-echo\s*\{/.test(wallWxssCode)
+)
+const blockOf = (sel) => (new RegExp(`\\${sel}\\s*\\{[^}]*\\}`).exec(wallWxssCode) || [''])[0]
+// 长度可能是 `44rpx` 也可能是 `0`（无单位），两种都要读得出来 —— 否则判据会拿 NaN 比大小
+const lenIn = (block, prop) => {
+  const m = new RegExp(`${prop}:\\s*(-?[\\d.]+)(rpx)?`).exec(block)
+  return m ? Number(m[1]) : NaN
+}
+const echoBlock = blockOf('.ww-echo')
+const footBlock = blockOf('.ww-wall-foot')
+const echoZ = Number((/z-index:\s*(\d+)/.exec(echoBlock) || [])[1])
+const footZ = Number((/z-index:\s*(\d+)/.exec(footBlock) || [])[1])
+check(
+  '★ 回声条与墙页脚同带（等高 + 都贴底），且盖在页脚之上',
+  lenIn(echoBlock, 'height') === lenIn(footBlock, 'height') &&
+    lenIn(echoBlock, 'bottom') === 0 &&
+    lenIn(footBlock, 'bottom') === 0 &&
+    echoZ > footZ,
+  `height=${lenIn(echoBlock, 'height')}/${lenIn(footBlock, 'height')} z=${echoZ}/${footZ}`
+)
+const echoAnimMs = Number((/animation:\s*ww-echo-life\s+(\d+)ms/.exec(echoBlock) || [])[1])
+check(
+  '★ 回声动画时长与 utils 的 ECHO_HOLD_MS 同源（两处同值，改一处必须改两处）',
+  echoAnimMs === ritualFb.ECHO_HOLD_MS && /@keyframes ww-echo-life/.test(wallWxssCode),
+  `css=${echoAnimMs} js=${ritualFb.ECHO_HOLD_MS}`
+)
+check(
+  '★ 音效开关在玩法说明行里（on/off 两态 + 无障碍 switch 角色）',
+  /bindtap="onToggleSound"/.test(wallWxml2) &&
+    /aria-role="switch"/.test(wallWxml2) &&
+    /\.ww-sound\.is-on\s*\{/.test(wallWxssCode) &&
+    /\.ww-sound\.is-off\s*\{/.test(wallWxssCode)
+)
+
+/* ================================================================== *
+ * 注册钩子的「去注册」环节（2026-09-18 产品反馈"数据报表里没有祈福墙数据"）
+ *
+ * 报表看不到祈福墙 = ①报表没算它 ②漏斗缺"去注册"这一环，两件事本轮都补了。
+ * 这里钉住 C 端那一半：点了弹窗里的授权按钮，必须真的上报 step=go_register。
+ * ================================================================== */
+{
+  const stub = installWxStub()
+  const sent = []
+  globalThis.wx.cloud = { callFunction: (o) => { sent.push(o); return Promise.resolve({ result: {} }) } }
+  // 埋点队列只在**能取到 userId** 时才发送（analytics/index.js: getUserId ← getApp().globalData.openid）。
+  // 不桩这一条，事件只会进队列、永远不上报，测试会"看不到任何东西"（第一版就是这样空的）。
+  const prevGetApp = globalThis.getApp
+  globalThis.getApp = () => ({ globalData: { openid: 'u-test' } })
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const page = Object.assign(Object.create(null), proto)
+  page.data = { productKey: 'mashangyou', echoRows: [], soundOn: false, muyuCount: 0, lamp: {}, quota: { left: 4 } }
+  page.setData = function (patch) { Object.assign(this.data, patch) }
+  // 埋点是**批量 + 定时**上报的（FLUSH_INTERVAL_MS = 8000）：直接断言必然看到空数组。
+  // 这里只把"那个 8 秒的定时器"改成同步触发（压缩时间，不跳过传输），断言完立刻还原。
+  const realSetTimeout = globalThis.setTimeout
+  globalThis.setTimeout = (fn, ms) => {
+    if (ms === 8000 && typeof fn === 'function') { fn(); return 0 }
+    return realSetTimeout(fn, ms)
+  }
+  try {
+    page.onRegisterDialogCta()
+  } finally {
+    globalThis.setTimeout = realSetTimeout
+  }
+  const evs = sent.flatMap((o) => (o && o.data && o.data.events) || [])
+  const hit = evs.find((x) => String(x.action || '').includes('wish_wall_register_gate'))
+  check(
+    '★ 点「去注册」上报 step=go_register（否则漏斗只有曝光与完成，中间那段永远黑箱）',
+    !!hit && String(hit.step || '') === 'go_register' && String(hit.action || '') === 'wish_wall_register_gate',
+    JSON.stringify(evs.map((x) => `${x.action}:${x.step || ''}`))
+  )
+  check(
+    '弹窗事件已绑定（bind:cta）',
+    /bind:cta="onRegisterDialogCta"/.test(wallWxml2)
+  )
+  globalThis.getApp = prevGetApp
+  stub.restore()
+}
+
+/* ================================================================== *
+ * 版式与交互（需求 7 · 2026-09-18 真机截图驱动）
+ *
+ * 这轮改的三件事都属于"改了看不见、错了也不报错"：
+ *   1) 轨道刻度百分比（与弹幕 topPercent 是两套写法 → 必须实算对账）；
+ *   2) 墙页脚变成「看全部 ›」的入口（绑掉了就只是个不会动的字）；
+ *   3) 已点亮的灯再点一次（原来弹 toast，现在动效 + 回声 → 别又绕回弹窗）。
+ * ================================================================== */
+
+// ① 刻度百分比 = buildDanmakuRows 的 topPercent（用真实函数输出对账，不重写公式）
+const laneTops = wish
+  .buildDanmakuRows(Array.from({ length: wish.LANES }, (_, i) => ({ _id: 't' + i, text: '马上有钱' })))
+  .map((r) => r.topPercent)
+const railPercents = Array.from(wallWxssCode.matchAll(/\.ww-wall-rail\.rail-(\d+)\s*\{\s*top:\s*([\d.]+)%/g))
+  .map((m) => ({ i: Number(m[1]), top: Number(m[2]) }))
+  .sort((a, b) => a.i - b.i)
+check(
+  '★ 轨道刻度的百分比与弹幕实际落点逐条对齐（两套写法必须对账，错一条就是刻度压着文字）',
+  railPercents.length === wish.LANES &&
+    railPercents.every((r, i) => r.i === i + 1 && Math.abs(r.top - laneTops[i]) < 0.05),
+  `刻度=${railPercents.map((r) => r.top).join('/')} 弹幕=${laneTops.join('/')}`
+)
+check(
+  '轨道刻度条数与 WXML 里画的刻度一致（CSS 有不算有，得真画出来）',
+  (wallWxml2.match(/class="ww-wall-rail rail-\d"/g) || []).length === wish.LANES
+)
+
+// ② 墙页脚 = 「墙面 → 愿签列表」入口
+{
+  const stub = installWxStub()
+  const scrolled = []
+  globalThis.wx.pageScrollTo = (o) => scrolled.push(o)
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const page = Object.assign(Object.create(null), proto)
+  page.data = {}
+  page.setData = function (patch) { Object.assign(this.data, patch) }
+  page.goWishList()
+  check(
+    '★ 点墙页脚 → 滚到愿签列表（selector 必须是列表上真实存在的 id）',
+    scrolled.length === 1 &&
+      scrolled[0].selector === '#wishList' &&
+      /id="wishList"/.test(wallWxml2),
+    JSON.stringify(scrolled)
+  )
+  check(
+    '墙页脚有可点的绑定与「看全部 ›」提示（看得见才点得到）',
+    /class="ww-wall-foot"[\s\S]{0,500}?bindtap="goWishList"/.test(wallWxml2) &&
+      /ww-wall-foot-more/.test(wallWxml2) &&
+      /\.ww-wall-foot-more\s*\{/.test(wallWxssCode)
+  )
+  stub.restore()
+}
+
+// ③ 已点亮的灯再点一次：动效 + 回声，**不许弹 toast**（灯语已经写在卡上了）
+{
+  const stub = installWxStub()
+  const store = new Map()
+  globalThis.wx.getStorageSync = (k) => (store.has(k) ? store.get(k) : '')
+  globalThis.wx.setStorageSync = (k, v) => { store.set(k, v) }
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  let played = 0
+  const page = Object.assign(Object.create(null), proto)
+  page.data = { lamp: { lit: true, line: '灯亮着，心愿就还没说完。', streak: 3 }, echoRows: [], soundOn: true, muyuCount: 0, quota: { left: 4 } }
+  page.setData = function (patch) { Object.assign(this.data, patch) }
+  page._soundPlayer = { play() { played += 1; return true }, destroy() {} }
+  page._echoSeq = 0
+  page.onLampTap()
+  check(
+    '★ 已点的灯再点 = 「再看一眼」（爱心动效 + 回声，且**不弹 toast**：灯语就在卡上）',
+    page.data.heartBurst === true &&
+      (page.data.echoRows[0] || {}).action === 'lampAgain' &&
+      String((page.data.echoRows[0] || {}).text).startsWith('我') &&
+      stub.toasts.length === 0,
+    `toasts=${JSON.stringify(stub.toasts)}`
+  )
+  check('再看一眼也要有声音反馈', played === 1, `played=${played}`)
+  check(
+    '重看灯**不得**再写点灯存档（点灯幂等：同一天只记第一次）',
+    !store.has(ritual.STORAGE_KEY),
+    `storage keys=${[...store.keys()].join(',') || '(空)'}`
+  )
+  page.clearEcho()
+  stub.restore()
+}
+
+/* ================================================================== *
+ * 玩法第一批（需求 5 · 今日一签 / 拆签饼 / 星座签 / MBTI 贴士）
+ *
+ * 这一批最容易出的三类问题：
+ *   1) **合规**：文案里冒出算命/改运/预测吉凶这类表述（微信对占卜类内容从严）；
+ *   2) **确定性**：结果用了随机数 → 刷新就换一个，"今日一签"就不成立了；
+ *   3) **假结果**：需要星座/MBTI 而资料里没有，却还是编一个给用户。
+ * 三条都配了注入。
+ * ================================================================== */
+
+const plays = loadCjs('miniprogram/config/ritualPlays.js', { require: markerRequire })
+const playContent = loadCjs('miniprogram/config/ritualPlayContent.js', { require: markerRequire })
+const profileConstants = loadCjs('miniprogram/utils/profileConstants.js', { require: markerRequire })
+const playWishWall = loadCjs('miniprogram/utils/wishWall.js', { require: markerRequire })
+// 带 require 的模块必须给「标记式」桩：harness 的默认 fallback 抛的是另一句话，
+// 会被当成真实错误直接抛出（easterEgg 那处也是这么接的）
+const ritualPlay = loadCjs('miniprogram/utils/ritualPlay.js', {
+  require: (id) => {
+    if (id === '../config/ritualPlays') return plays
+    if (id === '../config/ritualPlayContent') return playContent
+    if (id === './profileConstants') return profileConstants
+    if (id === './wishWall') return playWishWall
+    throw new Error('unexpected require ' + id)
+  }
+})
+
+/** 去掉 JS / WXML 注释：禁词扫描只针对**真正会给用户看的字符串**，注释里写"不出现算命"不算违规 */
+function stripComments(src) {
+  return String(src)
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')
+}
+
+// ① 注册表：字段齐、id 唯一、needs 受控、回声是第一人称短句
+const playList = plays.RITUAL_PLAYS
+check('玩法注册表至少 4 个玩法（第一批：签 / 饼 / 星座 / MBTI）', playList.length >= 4, `count=${playList.length}`)
+check(
+  '每个玩法字段齐（id/mark/name/hint/cta/pool/echo）',
+  playList.every(
+    (p) => p.id && p.mark && p.name && p.hint && p.cta && p.pool && p.echo && p.daily === true
+  )
+)
+check('玩法 id 唯一（埋点与内容 seed 都用它）', new Set(playList.map((p) => p.id)).size === playList.length)
+check(
+  '玩法字标是单字（瓦片上的铜圈只放得下一个字）',
+  playList.every((p) => [...String(p.mark)].length === 1)
+)
+check(
+  'needs 只用受控字段（zodiac / mbti）',
+  playList.every((p) => (p.needs || []).every((f) => ['zodiac', 'mbti'].includes(f)) && (p.needs || []).length <= 1)
+)
+check('需要资料字段的玩法都有引导元数据（标签 + 落点 + 奖励）',
+  playList.filter((p) => (p.needs || []).length).every((p) => {
+    const meta = plays.NEED_PROFILE_FIELDS[p.needs[0]]
+    return meta && meta.label && meta.anchor && meta.gain
+  })
+)
+check(
+  `玩法回声一律第一人称且 ≤ ${ritualFb.ECHO_MAX_CHARS} 字（这条也会上弹幕墙）`,
+  playList.every((p) => String(p.echo).startsWith('我') && [...String(p.echo)].length <= ritualFb.ECHO_MAX_CHARS),
+  playList.map((p) => p.echo).join(' / ')
+)
+
+// ② 内容池：池子存在且非空、键与资料选项一一对应
+check(
+  '玩法引用的内容池都存在且非空',
+  playList.every((p) => (ritualPlay.POOLS[p.pool] ? (ritualPlay.POOLS[p.pool]() || []).length > 0 : false))
+)
+check(
+  '星座底色的键与资料页 ZODIAC_OPTIONS 完全对齐（少一个星座就没结果）',
+  profileConstants.ZODIAC_OPTIONS.every((z) => !!playContent.ZODIAC_HOOKS[z.key]) &&
+    Object.keys(playContent.ZODIAC_HOOKS).length === profileConstants.ZODIAC_OPTIONS.length
+)
+check(
+  'MBTI 底色的键与资料页 MBTI_OPTIONS 完全对齐（16 型一个不少）',
+  profileConstants.MBTI_OPTIONS.every((t) => !!playContent.MBTI_HOOKS[t]) &&
+    Object.keys(playContent.MBTI_HOOKS).length === profileConstants.MBTI_OPTIONS.length
+)
+check(
+  '今日一签每条都有 宜/忌/一句/心愿词',
+  playContent.QIAN.every((r) => r.yi && r.ji && r.line && r.wish)
+)
+check('签饼每条都有 签条 + 建议', playContent.COOKIE.every((r) => r.line && r.advice))
+
+// ③ 合规术语守卫：这些词出现在给用户看的文案里就是审核风险
+const FORBIDDEN_TERMS = [
+  '算命', '占卜', '卜卦', '算卦', '卦象', '改运', '转运', '开运', '风水', '看相',
+  '八字', '紫微', '塔罗', '吉凶', '预测', '大师', '命理', '招财', '辟邪'
+]
+const playTextSources = {
+  '注册表': stripComments(readSrc('miniprogram/config/ritualPlays.js')),
+  '内容池': stripComments(readSrc('miniprogram/config/ritualPlayContent.js')),
+  '玩法逻辑': stripComments(readSrc('miniprogram/utils/ritualPlay.js')),
+  '页面 JS': stripComments(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')),
+  '页面 WXML': stripComments(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml'))
+}
+const foundForbidden = []
+Object.entries(playTextSources).forEach(([name, src]) => {
+  FORBIDDEN_TERMS.forEach((term) => {
+    if (src.includes(term)) foundForbidden.push(`${name}:${term}`)
+  })
+})
+check(
+  '★ 玩法文案里不含命理/占卜类表述（文化娱乐向，微信对这类内容从严）',
+  foundForbidden.length === 0,
+  foundForbidden.join(' / ')
+)
+
+// ④ 逻辑：确定性 / 资料门禁 / 心愿词形态 / 分享不带依据
+const DAY_A = '2026-09-18'
+const DAY_B = '2026-09-19'
+const FULL_PROFILE = { zodiac: 'aries', mbti: 'INFP' }
+const DETERMINISM_DAYS = ['2026-09-18', '2026-09-19', '2026-09-20', '2026-09-21', '2026-09-22']
+check(
+  '★ seed 只由「玩法 + 日期」决定（不含时间戳/随机数 —— 判据直接看 seed 的形状）',
+  ritualPlay.playSeed('qian', DAY_A) === ritualPlay.playSeed('qian', DAY_A) &&
+    /^qian\|\d{4}-\d{2}-\d{2}$/.test(ritualPlay.playSeed('qian', DAY_A)),
+  ritualPlay.playSeed('qian', DAY_A)
+)
+check(
+  '★ 同一天同一玩法结果完全一致（连测 5 天，随机数不可能 5 天全中）',
+  DETERMINISM_DAYS.map((d) => JSON.stringify(ritualPlay.resolvePlay('qian', { dayKey: d }))).join('|') ===
+    DETERMINISM_DAYS.map((d) => JSON.stringify(ritualPlay.resolvePlay('qian', { dayKey: d }))).join('|')
+)
+const dayResults = DETERMINISM_DAYS.map(
+  (d) => ritualPlay.resolvePlay('qian', { dayKey: d }).title
+)
+check('★ 换一天会换一支签（不是永远同一句）', new Set(dayResults).size > 1, dayResults.join(' / '))
+check(
+  '★ 缺资料时返回 need_profile（不给假结果），并带上引导信息',
+  (() => {
+    const r = ritualPlay.resolvePlay('zodiac', { dayKey: DAY_A, profile: {} })
+    return r.ok === false && r.reason === 'need_profile' && r.field === 'zodiac' && !!r.anchor && !!r.profilePage
+  })()
+)
+check(
+  '资料齐了就能出结果（星座 / MBTI 各自都有）',
+  ritualPlay.resolvePlay('zodiac', { dayKey: DAY_A, profile: FULL_PROFILE }).ok === true &&
+    ritualPlay.resolvePlay('mbti', { dayKey: DAY_A, profile: FULL_PROFILE }).ok === true
+)
+check('未知玩法不 produce 结果（页面据此不回显）', ritualPlay.resolvePlay('nope', { dayKey: DAY_A }).ok === false)
+const allResults = playList.map((p) =>
+  ritualPlay.resolvePlay(p.id, { dayKey: DAY_A, profile: FULL_PROFILE })
+)
+check(
+  '每个玩法都出「标题 + 至少一句正文」',
+  allResults.every((r) => r.ok && r.title && (r.lines || []).length > 0)
+)
+check(
+  '★ 心愿词规范化：非「马上有X」一律回落为空（这是预填进写愿签的最后一道锁）',
+  ritualPlay.normalizeWish('马上有回音') === '马上有回音' &&
+    ritualPlay.normalizeWish('回音') === '' &&
+    ritualPlay.normalizeWish(`马上有${'回'.repeat(5)}`) === '' &&
+    ritualPlay.normalizeWish('') === '' &&
+    ritualPlay.normalizeWish(null) === '',
+  ['马上有回音', '回音', '超长', '空', 'null'].join(' / ')
+)
+check(
+  '心愿词要么为空、要么是合法的「马上有X」（1–3 字，且不超弹幕上限）',
+  allResults.every((r) => r.wish === '' || (/^马上有[\u4e00-\u9fa5]{1,3}$/.test(r.wish) && r.wish.length <= playWishWall.TEXT_MAX)),
+  allResults.map((r) => r.wish || '(空)').join(' / ')
+)
+check(
+  '★ 分享文案不带"依据"（不出现星座名 / MBTI 型别 —— 只公开结果与建议）',
+  allResults.every((r) => !r.share.includes('白羊座') && !r.share.includes('INFP')) &&
+    ritualPlay.resolvePlay('zodiac', { dayKey: DAY_A, profile: FULL_PROFILE }).share.includes('星座签'),
+  ritualPlay.resolvePlay('zodiac', { dayKey: DAY_A, profile: FULL_PROFILE }).share
+)
+
+// ⑤ 页面接线：瓦片由注册表派生 + 抽→写→上墙这条路
+check(
+  '★ 瓦片由注册表 wx:for 派生（页面不写死玩法名）',
+  /wx:for="\{\{plays\}\}"[\s\S]{0,400}?wx:key="id"[\s\S]{0,200}?data-id="\{\{item\.id\}\}"/.test(wallWxml2)
+)
+check('玩法数据来自注册表（不是页面里手抄一份）', /plays:\s*RITUAL_PLAYS/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')))
+check(
+  '纸签弹层：标题/正文/CTA 都来自结果对象（页面零判断）',
+  /class="ww-sheet-title">\{\{playResult\.title\}\}/.test(wallWxml2) &&
+    /wx:for="\{\{playResult\.lines\}\}"/.test(wallWxml2) &&
+    /bindtap="usePlayWish"/.test(wallWxml2)
+)
+check(
+  '★ 弹层身份明确：遮罩 + 把手 + 印章字标 + 从底部升起（不再是"既不像卡也不像弹窗"的内联块）',
+  /class="ww-sheet-mask"[\s\S]{0,200}?bindtap="closePlayResult"/.test(wallWxml2) &&
+    /class="ww-sheet-grip"/.test(wallWxml2) &&
+    /class="ww-sheet-mark"[^>]*>\{\{playResult\.mark\}\}/.test(wallWxml2) &&
+    /\.ww-sheet\s*\{[^}]*animation:\s*ww-sheet-up/.test(wallWxssCode) &&
+    /\.ww-sheet-mask\s*\{[^}]*position:\s*fixed/.test(wallWxssCode) &&
+    /@keyframes ww-sheet-up/.test(wallWxssCode)
+)
+check(
+  '弹层可拖拽关闭（把手上的手势；阈值是纯函数，能被单测钉住）',
+  /bindtouchstart="onSheetGripStart"/.test(wallWxml2) &&
+    /bindtouchmove="onSheetGripMove"/.test(wallWxml2) &&
+    /function sheetDragShouldClose\(dy\)/.test(fbPageSrc)
+)
+check(
+  '★ 产品链路**只留一条主路**（有祈运推荐用推荐，否则用这面墙的藏品；不再两行并列抢主次）',
+  /class="ww-sheet-product"/.test(wallWxml2) &&
+    /wx:if="\{\{reco \|\| productId\}\}"/.test(wallWxml2) &&
+    !/class="ww-play-reco"/.test(wallWxml2) &&
+    !/class="ww-play-product"/.test(wallWxml2)
+)
+check(
+  '★ 页头产品 chip 是常驻的产品入口（第一屏就能到详情，不必先抽一签）',
+  /class="ww-scope \{\{productId \? 'is-link' : ''\}\}"[\s\S]{0,200}?bindtap="goProduct"/.test(wallWxml2) &&
+    /\.ww-scope\.is-link/.test(wallWxssCode)
+)
+check(
+  '补资料引导有独立分支（不给假结果的那条路是画出来的，不是只写在注释里）',
+  /wx:if="\{\{playNeed\}\}"/.test(wallWxml2) && /bindtap="goProfileField"/.test(wallWxml2)
+)
+{
+  const stub = installWxStub()
+  const store = new Map()
+  globalThis.wx.getStorageSync = (k) => (store.has(k) ? store.get(k) : '')
+  globalThis.wx.setStorageSync = (k, v) => { store.set(k, v) }
+  const scrolled = []
+  globalThis.wx.pageScrollTo = (o) => scrolled.push(o)
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const mkPlayPage = (over) => {
+    const page = Object.assign(Object.create(null), proto)
+    page.data = Object.assign({ plays: playList, playResult: null, playNeed: null, draft: '', echoRows: [], soundOn: false, muyuCount: 0, lamp: {}, quota: { left: 4 } }, over || {})
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page._soundPlayer = { play() { return true }, destroy() {} }
+    page._echoSeq = 0
+    return page
+  }
+  const tapEvt = (id) => ({ currentTarget: { dataset: { id } } })
+  const p1 = mkPlayPage()
+  await p1.onPlayTap(tapEvt('qian'))
+  check(
+    '★ 抽今日一签 → 结果就地展开 + 墙上回一声（action=play，文案来自注册表）',
+    (p1.data.playResult || {}).id === 'qian' &&
+      (p1.data.echoRows[0] || {}).action === 'play' &&
+      (p1.data.echoRows[0] || {}).text === '我摇了今日一签'
+  )
+  p1.clearEcho()
+  await p1.onPlayTap(tapEvt('qian'))
+  check('再点同一张瓦片 = 收起（不重复播回声刷墙）', p1.data.playResult === null)
+
+  const p2 = mkPlayPage()
+  // 桩要读页面自己的缓存字段，否则"补上资料后再点"这一步测不到（第一版桩成常量 null → 必假红）
+  p2.loadPlayProfile = async function () { return this._playProfile || null }
+  await p2.onPlayTap(tapEvt('zodiac'))
+  check(
+    '★ 资料里没有星座 → 出引导、不出结果（不编一个给用户）',
+    p2.data.playResult === null && (p2.data.playNeed || {}).field === 'zodiac'
+  )
+  p2._playProfile = { zodiac: 'aries', mbti: '' }
+  await p2.onPlayTap(tapEvt('zodiac'))
+  check('补上星座后同一张瓦片就能出结果', (p2.data.playResult || {}).id === 'zodiac' && p2.data.playNeed === null)
+  // 抽到"一签"（自带心愿词）→ 预填；其它玩法 → 预填「马上有」开头让用户自己写
+  const p3 = mkPlayPage({ playResult: { id: 'qian', wish: '马上有回音' } })
+  p3.usePlayWish()
+  check('★ 结果卡「写成心愿」把心愿词预填进写愿签', p3.data.draft === '马上有回音')
+  check(
+    '预填后滚到输入框（selector 必须是输入框上真实存在的 id）',
+    scrolled.length >= 1 && scrolled[scrolled.length - 1].selector === '#wishInput' && /id="wishInput"/.test(wallWxml2)
+  )
+  const p4 = mkPlayPage({ playResult: { id: 'cookie', wish: '' }, playNeed: { field: 'mbti' } })
+  p4.usePlayWish()
+  check('没有可用的心愿词时，只给「马上有」开头（不硬拼一个废话）', p4.data.draft === '马上有')
+  const navigated = []
+  globalThis.wx.navigateTo = (o) => navigated.push(o && o.url)
+  p4.goProfileField()
+  check(
+    '补资料引导跳资料页（路径来自注册表常量）',
+    navigated.length === 1 && navigated[0] === plays.PROFILE_PAGE,
+    navigated.join(',')
+  )
+  stub.restore()
+}
+
+/* ================================================================== *
+ * 商品祈运标签 → 祈福墙（需求 6）：标签决定"先看到哪个玩法"与一句墙面提示
+ *
+ * 跨端一致性（四处副本逐例比对）由 `check:bless-tags-sync` 守卫负责；
+ * 这里只管 **C 端行为**：URL 带没带、页面排没排、提示画没画。
+ * ================================================================== */
+
+const bless = loadCjs('miniprogram/config/blessTags.js', { require: markerRequire })
+
+check('祈运标签是受控枚举（英文 key + 中文 label，key/label 都唯一）',
+  bless.BLESS_TAGS.length >= 4 &&
+    new Set(bless.BLESS_TAG_KEYS).size === bless.BLESS_TAGS.length &&
+    new Set(bless.BLESS_TAGS.map((t) => t.label)).size === bless.BLESS_TAGS.length
+)
+check('★ 归一化按 SSOT 顺序输出（同一件商品在任何端保存后顺序都一致，可比 diff）',
+  JSON.stringify(bless.sanitizeBlessTags(['success', 'fortune'])) === JSON.stringify(['fortune', 'success']) &&
+    JSON.stringify(bless.sanitizeBlessTags('journey, bond')) === JSON.stringify(['bond', 'journey'])
+)
+check('非法 key / 空段被丢弃，逗号串也认（URL 参数形态）',
+  JSON.stringify(bless.sanitizeBlessTags('peace, ,nope')) === JSON.stringify(['peace']) &&
+    JSON.stringify(bless.sanitizeBlessTags(null)) === '[]'
+)
+check(`最多 ${bless.MAX_BLESS_TAGS} 个（标签一多就等于没标签）`,
+  bless.sanitizeBlessTags(['fortune', 'peace', 'study', 'bond']).length === bless.MAX_BLESS_TAGS
+)
+check('玩法推荐顺序：点名玩法在前、其余保持注册表顺序（只重排不隐藏）',
+  JSON.stringify(bless.blessPlayIds(['success'])) === JSON.stringify(['qian', 'mbti']) &&
+    bless.blessPlayIds([]).length === 0
+)
+check('每个标签都有对应的墙面提示句', bless.BLESS_TAGS.every((t) => bless.blessGuide([t.key]).length > 0))
+
+const urlWithBless = wish.buildWishWallUrl({ _id: 'p1', title: '孔雀标本', blessTags: ['success', 'peace'] }, { from: 'detail' })
+// ⚠️ 期望值按 **SSOT 顺序**（peace 在 success 之前）而不是录入顺序：
+// resolveBlessTags 会归一化成受控顺序，这样同一件商品在任何端拼出的 URL/存库值都一致（可比 diff）
+check('★ 入口 URL 带上祈运标签、且按受控顺序归一化（详情页手上就有商品对象，不必多发请求）',
+  /bless=peace%2Csuccess/.test(urlWithBless), urlWithBless)
+check('没有标签的商品 URL 不出现 bless 参数（不留空参数）',
+  !/bless=/.test(wish.buildWishWallUrl({ _id: 'p1', title: 'x' }, {})),
+  wish.buildWishWallUrl({ _id: 'p1', title: 'x' }, {}))
+{
+  const stub = installWxStub()
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const navigated = []
+  globalThis.wx.navigateTo = (o) => navigated.push(o && o.url)
+  const mkBlessPage = () => {
+    const page = Object.assign(Object.create(null), proto)
+    page.data = { plays: playList, productId: '', productKey: 'k', productTitle: '孔雀标本' }
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    return page
+  }
+  const p1 = mkBlessPage()
+  p1.applyBlessScope('success')
+  check(
+    '★ 有祈运标签就重排玩法（点名的玩法排到最前，其余保持原顺序）',
+    p1.data.plays.slice(0, 2).map((x) => x.id).join(',') === 'qian,mbti' &&
+      p1.data.plays.length === playList.length &&
+      p1.data.blessLabelText === '求成'
+  )
+  const p2 = mkBlessPage()
+  p2.applyBlessScope('')
+  check('没有标签 → 恢复注册表顺序且不显示提示（参数缺失绝不影响页面）',
+    p2.data.plays.map((x) => x.id).join(',') === playList.map((x) => x.id).join(',') &&
+      p2.data.blessLabelText === '')
+  const p3 = mkBlessPage()
+  p3.applyBlessScope('nope,,')
+  check('标签非法 → 当没标签处理（不抛、页头不显示垃圾 chip）', p3.data.blessLabelText === '' && p3.data.blessTags.length === 0)
+  const p4 = mkBlessPage()
+  p4.data.productId = 'p9'
+  p4.goProduct()
+  check('★ 结果卡的商品入口跳详情页（这面墙的商品 = 最短转化路径）',
+    navigated.length === 1 && navigated[0] === '/subpackages/feature/detail/index?id=p9', navigated.join(','))
+  const p5 = mkBlessPage()
+  p5.goProduct()
+  check('没有 productId 时不跳（不拼一个空 id 的链接）', navigated.length === 1)
+  stub.restore()
+}
+check(
+  '祈运 chip 与产品入口都画在页面上（逻辑接了不代表用户看得见）',
+  /class="ww-bless"/.test(wallWxml2) && /bindtap="goProduct"/.test(wallWxml2) &&
+    /\.ww-bless\s*\{/.test(wallWxssCode) && /\.ww-sheet-product\s*\{/.test(wallWxssCode)
+)
+
+/* ================================================================== *
+ * 祈运选品云函数（需求 6 的弱推链路）：**实跑**真源码，替身只做 db
+ *
+ * 为什么要实跑而不是看源码里有那行字：这个函数的三条口径都是"行为"——
+ *   ① 只按标签取（不兜底热门，否则"求安"会被推成任意热卖）
+ *   ② 排除当前这面墙的商品（不给自己推荐自己）
+ *   ③ 确定性排序（同一天同一标签，刷两次结果一样）
+ * ================================================================== */
+
+const recoBless = loadCjs('miniprogram/cloudfunctions/getBlessProducts/blessTags.js', { require: markerRequire })
+/**
+ * 极简 db 替身：只支持 products.where().limit().get()。
+ * ⚠️ 必须模拟 CloudBase（Mongo）对**数组字段**的语义：`{blessTags: 'peace'}` 是"数组包含"，
+ * 不是"数组相等" —— 第一版替身写成了相等，于是真源码全被滤空，看着像功能坏了（假红）。
+ */
+function makeRecoDb(rows) {
+  const matchOne = (row, k, v) => {
+    if (v && typeof v === 'object' && v.$neq !== undefined) return row[k] !== v.$neq
+    if (v && typeof v === 'object' && v.$in !== undefined) {
+      const arr = Array.isArray(row[k]) ? row[k] : [row[k]]
+      return v.$in.some((x) => arr.includes(x))
+    }
+    if (Array.isArray(row[k])) return row[k].includes(v)
+    return row[k] === v
+  }
+  const matcher = (where) => (row) => {
+    if (where && where.$and) return where.$and.every((c) => matcher(c)(row))
+    if (where && where.$or) return where.$or.some((c) => matcher(c)(row))
+    return Object.entries(where).every(([k, v]) => matchOne(row, k, v))
+  }
+  return {
+    command: {
+      neq: (v) => ({ $neq: v }),
+      in: (v) => ({ $in: v }),
+      and: (list) => ({ $and: list }),
+      or: (list) => ({ $or: list })
+    },
+    collection: () => ({
+      where: (where) => ({
+        limit: (n) => ({
+          get: async () => ({ data: (rows || []).filter(matcher(where)).slice(0, n) })
+        })
+      })
+    })
+  }
+}
+function loadRecoFn(rows) {
+  const cloudStub = {
+    DYNAMIC_CURRENT_ENV: 'env',
+    init() {},
+    database: () => makeRecoDb(rows)
+  }
+  return loadCjs('miniprogram/cloudfunctions/getBlessProducts/index.js', {
+    require: (id) => {
+      if (id === 'wx-server-sdk') return cloudStub
+      if (id === './blessTags') return recoBless
+      throw new Error('unexpected require ' + id)
+    }
+  })
+}
+
+const RECO_ROWS = [
+  { _id: 'a', title: '甲', price: 100, sales: 5, isOffShelf: false, blessTags: ['peace'], category: '昆虫馆' },
+  { _id: 'b', title: '乙', price: 200, sales: 9, isOffShelf: false, blessTags: ['peace', 'bond'], category: '矿石馆' },
+  { _id: 'c', title: '丙', price: 300, sales: 1, isOffShelf: true, blessTags: ['peace'] },        // 已下架 → 不得出现
+  { _id: 'd', title: '丁', price: 400, sales: 99, isOffShelf: false, blessTags: ['fortune'] },     // 别的标签 → 不得出现
+  { _id: 'e', title: '戊', price: 500, sales: 2, isOffShelf: false },                             // 没标签没场景 → 不得出现
+  { _id: 'f', title: '己', price: 600, sales: 7, isOffShelf: false, giftScenes: ['enrollment'] }   // ★ 只有场景 → 必须被"求学"兜底捞出来
+]
+const recoFn = loadRecoFn(RECO_ROWS)
+{
+  const res = await recoFn.main({ tag: 'peace', limit: 3 })
+  check('★ 只返回命中标签且未下架的商品（下架 / 别的标签 / 无标签都不混进来）',
+    res.success === true && res.list.map((x) => x._id).join(',') === 'b,a',
+    JSON.stringify(res.list.map((x) => x._id)))
+  check('★ 销量高的排前面（确定性排序，不用随机）',
+    res.list.map((x) => x._id)[0] === 'b', res.list.map((x) => x._id).join(','))
+  const res2 = await recoFn.main({ tag: 'peace', limit: 3 })
+  check('★ 同参两次结果完全一致（推荐不能刷一次变一个）',
+    JSON.stringify(res2) === JSON.stringify(res))
+  const excluded = await recoFn.main({ tag: 'peace', excludeIds: ['b'], limit: 3 })
+  check('★ 排除当前这面墙的商品（不给自己推荐自己）',
+    excluded.list.every((x) => x._id !== 'b') && excluded.list.length === 1,
+    JSON.stringify(excluded.list.map((x) => x._id)))
+  // ★ matchSource 逐行判定：'f' 只有场景（→scene），'a'/'b' 显式打了 peace（→tag）
+  const peaceRes = await recoFn.main({ tag: 'peace', limit: 5 })
+  const srcOf = (res, id) => (res.list.find((x) => x._id === id) || {}).matchSource
+  check(
+    '★ 依据逐行标注（显式标签 = tag；场景兜底 = scene）—— 不许一律标成 tag',
+    srcOf(peaceRes, 'b') === 'tag' && srcOf(peaceRes, 'a') === 'tag'
+  )
+  const byScene = await recoFn.main({ tag: 'study', limit: 3 })
+  check('★ 只填了礼赠场景的商品也能被推荐出来（场景兜底查询真的生效）',
+    byScene.list.map((x) => x._id).join(',') === 'f', JSON.stringify(byScene.list.map((x) => x._id)))
+  check('★ 靠场景兜底命中的行标成 scene（客户端据此换一句不编社会证明的文案）',
+    byScene.list[0].matchSource === 'scene', String(byScene.list[0].matchSource))
+  check('返回里带上"这次用了哪几支场景兜底"（排查用）',
+    JSON.stringify(byScene.scenes) === JSON.stringify(['enrollment']))
+  const none = await recoFn.main({ tag: 'journey', limit: 3 })
+  check('★ 没有命中的商品就返回空列表（不拿热门兜底 —— 猜出来的推荐 = 乱推）',
+    none.success === true && none.list.length === 0, JSON.stringify(none))
+  const bad = await recoFn.main({ tag: 'nope' })
+  check('未受控的标签直接被拒（不拿脏 key 去查库）',
+    bad.success === false && bad.code === 'BAD_TAG' && bad.list.length === 0)
+  const capped = await recoFn.main({ tag: 'peace', limit: 99 })
+  check('条数上限被钳住（limit 99 → 不超过 6）', capped.list.length <= 6)
+}
+
+/* —— C 端弱推：纯函数先行（缓存键 / 取条 / 价格文案），再验接线 —— */
+const blessProducts = loadCjs('miniprogram/utils/blessProducts.js')
+check('★ 推荐缓存键带日期（不带日期 = 跨天还拿昨天的推荐）',
+  blessProducts.recoCacheKey('peace', '2026-09-18') !== blessProducts.recoCacheKey('peace', '2026-09-19') &&
+    blessProducts.recoCacheKey('peace', '2026-09-18') === 'peace|2026-09-18' &&
+    blessProducts.recoCacheKey('', '2026-09-18') === '')
+// 只查**用户可见文案**：注释里写"历史上曾用过「同好也在看」"不属于违规
+const stripForCopy = (src) => String(src)
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/<!--[\s\S]*?-->/g, ' ')
+  .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+check(
+  '★ 推荐区标题只说我们真知道的事：这面墙的祈运标签（**任何"同好也在看"式的社会证明都不许出现**）',
+  blessProducts.recoLabel('求成') === '偏「求成」· 为你配一件' &&
+    blessProducts.recoLabel('') === '为你配一件' &&
+    !/同好/.test(stripForCopy(readSrc('miniprogram/utils/blessProducts.js'))) &&
+    !/同好/.test(stripForCopy(wallWxml2))
+)
+check(
+  'pickReco 把依据与文案一起带出（页面不自己拼词）',
+  (() => {
+    const r = blessProducts.pickReco({ list: [{ _id: 'x', title: 't', matchSource: 'scene' }] }, 'study', '求学') || {}
+    return r.matchSource === 'scene' && r.label === '偏「求学」· 为你配一件'
+  })()
+)
+check('价格文案：没有价就不显示（不写 ¥0 / ¥undefined）',
+  blessProducts.formatPriceText(1280) === '¥1280' &&
+    blessProducts.formatPriceText('') === '' &&
+    blessProducts.formatPriceText(null) === '' &&
+    blessProducts.formatPriceText('abc') === '')
+check('取条：主视觉用主题名，没有才回落标准名；无有效行返回 null',
+  (blessProducts.pickReco({ list: [{ _id: 'x', themeName: '月下客', title: '标准名', price: 1 }] }, 'peace') || {}).title === '月下客' &&
+    (blessProducts.pickReco({ list: [{ _id: 'x', title: '标准名' }] }, 'peace') || {}).title === '标准名' &&
+    blessProducts.pickReco({ list: [] }, 'peace') === null &&
+    blessProducts.pickReco(null, 'peace') === null)
+
+/* —— C 端弱推接线：拉取 / 缓存 / 失败降级 / 跳转 —— */
+{
+  const stub = installWxStub()
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const calls = []
+  const navigated = []
+  let mode = 'ok'
+  globalThis.wx.cloud = {
+    callFunction: (o) => {
+      calls.push(o)
+      if (mode === 'throw') return Promise.reject(new Error('boom'))
+      if (mode === 'empty') return Promise.resolve({ result: { success: true, list: [] } })
+      return Promise.resolve({
+        result: {
+          success: true,
+          list: [{ _id: 'rec1', title: '标准名', themeName: '月下客', latinName: 'Heterometrus', price: 1280 }]
+        }
+      })
+    }
+  }
+  globalThis.wx.navigateTo = (o) => navigated.push(o && o.url)
+  const mkRecoPage = (blessTags, productId) => {
+    const page = Object.assign(Object.create(null), proto)
+    page.data = { blessTags: blessTags || [], productId: productId || '' }
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    return page
+  }
+
+  const p1 = mkRecoPage(['peace'], 'wall1')
+  await p1.loadBlessReco()
+  check('★ 弱推按"这面墙的祈运标签"取一件藏品（用墙的标签，不读用户资料）',
+    calls.length === 1 && calls[0].name === 'getBlessProducts' && calls[0].data.tag === 'peace')
+  check('★ 排除当前这面墙的商品（不给自己推荐自己）',
+    JSON.stringify(calls[0].data.excludeIds) === JSON.stringify(['wall1']))
+  check('★ 推荐卡片用主题名做主视觉（没有主题名才回落标准名）+ 价格文案',
+    (p1.data.reco || {}).title === '月下客' && (p1.data.reco || {}).priceText === '¥1280')
+  await p1.loadBlessReco()
+  check('同一天再抽一次不再打云函数（按 标签+当日 缓存）', calls.length === 1, `calls=${calls.length}`)
+  const p1b = mkRecoPage(['peace'], 'wall1')
+  p1b._recoCache = p1._recoCache
+  await p1b.loadBlessReco()
+  check('缓存命中时直接出推荐（换页面实例也认这份缓存）', (p1b.data.reco || {})._id === 'rec1')
+
+  const p2 = mkRecoPage([], '')
+  await p2.loadBlessReco()
+  check('这面墙没有祈运标签 → 一次云函数都不打（没有依据就不推）', calls.length === 1, `calls=${calls.length}`)
+
+  mode = 'throw'
+  const p3 = mkRecoPage(['bond'], 'wall1')
+  await p3.loadBlessReco()
+  check('★ 推荐失败只是"没有推荐"（不抛、不弹错、不影响玩法）', p3.data.reco === null)
+
+  mode = 'empty'
+  const p4 = mkRecoPage(['journey'], 'wall1')
+  await p4.loadBlessReco()
+  check('云函数回空列表 → 不显示推荐卡（不拿别的商品凑数）', p4.data.reco === null)
+
+  const p5 = mkRecoPage(['peace'], 'wall1')
+  p5.data.reco = { _id: 'rec1', tag: 'peace' }
+  p5.goRecoProduct()
+  check('★ 点推荐卡跳详情页',
+    navigated.length === 1 && navigated[0] === '/subpackages/feature/detail/index?id=rec1', navigated.join(','))
+  const p6 = mkRecoPage(['peace'], 'wall1')
+  p6.goRecoProduct()
+  check('没有推荐时不跳（不拼空链接）', navigated.length === 1)
+  stub.restore()
+}
+check(
+  '产品行画在纸签弹层里（逻辑接了不代表用户看得见）',
+  /class="ww-sheet-product"/.test(wallWxml2) && /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(wallWxml2) &&
+    /\.ww-sheet-product\s*\{/.test(wallWxssCode)
+)
+check('玩法事件之外，弱推点击有自己的埋点（双端登记）',
+  /wish_wall_reco/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')) &&
+    /wish_wall_reco:/.test(readSrc('miniprogram/utils/analytics/eventSchema.js')) &&
+    /wish_wall_reco:/.test(readSrc('admin/src/utils/analyticsSchema.js')))
+
+/* ================================================================== *
+ * 真机截图（2026-09-18 第三组）修的两处版式缺陷
+ *
+ *   ① 回声条半透明 → 与墙页脚的文字叠在一起（"两行字"看着像渲染错乱）；
+ *   ② 未点灯的灯卡顶对齐 → 底部空一截，与右边居中的木鱼卡不对称。
+ * 两条都不是"样式写错了"，而是**画出来才知道**——所以判据直接钉住"不许再犯"的形态。
+ * ================================================================== */
+const echoRuleBlock = (new RegExp('\\' + '.ww-echo' + '\\s*\\{[^}]*\\}').exec(wallWxssCode) || [''])[0]
+const echoBg = (new RegExp('background:\\s*([^;]+);').exec(echoRuleBlock) || [])[1] || ''
+check(
+  '★ 回声条背景必须不透明（半透明会让下面的页脚文字透上来，两行字叠一起）',
+  !!echoBg && !/rgba\(/.test(echoBg) && !/transparent/.test(echoBg),
+  `background=${echoBg.slice(0, 60)}`
+)
+check(
+  '★ 未点灯的灯卡垂直居中（三行内容顶对齐会在底部留白，与木鱼卡不对称）',
+  /\.ww-lantern\.is-idle\s*\{[^}]*align-items:\s*center/.test(wallWxssCode) &&
+    /class="ww-lantern \{\{lamp\.lit \? 'is-lit' : 'is-idle'\}\}"/.test(wallWxml2) &&
+    /\.ww-lantern\s*\{[^}]*align-items:\s*flex-start/.test(wallWxssCode),
+  '点亮态仍是顶对齐（那是真图确认过的），只有未点亮才居中'
+)
+
+/* ================================================================== *
+ * 场景兜底：存量商品没有 blessTags 时，用**人工策展过的** giftScenes 推导
+ * （这正是"功能不空转"的关键 —— 真机截图里祈运提示与推荐都是空的，原因是没人回填标签）
+ * ================================================================== */
+check(
+  '★ 显式 blessTags 优先于场景推导（人工判断压过兜底映射）',
+  JSON.stringify(bless.resolveBlessTags({ blessTags: ['fortune'], giftScenes: ['wedding'] })) === JSON.stringify(['fortune']) &&
+    JSON.stringify(bless.resolveBlessTags({ blessTags: [], giftScenes: ['wedding'] })) === JSON.stringify(['bond'])
+)
+check(
+  '★ 8 个礼赠场景全部有兜底映射，且都落在受控枚举内（漏一个 = 那类商品推荐不出来）',
+  Object.keys(bless.SCENE_BLESS).length === 8 &&
+    Object.values(bless.SCENE_BLESS).every((k) => bless.BLESS_TAG_KEYS.includes(k)) &&
+    bless.scenesForBless('study').join(',') === 'enrollment' &&
+    bless.scenesForBless('peace').length === 3
+)
+check('场景推导是确定的、去重、按 SSOT 顺序输出',
+  JSON.stringify(bless.blessTagsFromScenes(['wedding', 'enrollment', 'wedding'])) === JSON.stringify(['study', 'bond']) &&
+    JSON.stringify(bless.blessTagsFromScenes(['nope'])) === '[]' &&
+    JSON.stringify(bless.blessTagsFromScenes(null)) === '[]'
+)
+check('没有显式标签、也没有场景 → 空（不猜）',
+  JSON.stringify(bless.resolveBlessTags({})) === '[]' &&
+    JSON.stringify(bless.resolveBlessTags(null)) === '[]'
+)
+const urlFromScenesOnly = wish.buildWishWallUrl({ _id: 'p2', title: '孔雀标本', giftScenes: ['enrollment'] }, {})
+check(
+  '★ 只填了礼赠场景的商品，入口 URL 也带上祈运标签（存量商品**不必先做数据回填**）',
+  /bless=study/.test(urlFromScenesOnly), urlFromScenesOnly
+)
+
+/* ================================================================== *
+ * 门店物料小程序码（需求 28 · 门店现场转化）：scene 解析 + 页面接线
+ * 码是印刷品 —— 解析错了不会报错，只会"扫码进错墙、来源丢失"，所以判据钉在解析器与接线两处。
+ * ================================================================== */
+check(
+  '★ scene 解析：`from=store_qr&k=<墙key>`（含 URL 编码形态）都能解出目标墙与来源',
+  (() => {
+    const a = wish.parseWishWallScene('from=store_qr&k=mashangyou')
+    const b = wish.parseWishWallScene('from%3Dstore_qr%26k%3Dmashangyou')
+    const c = wish.parseWishWallScene('k=ma-shang-you&from=counter')
+    return a.from === 'store_qr' && a.productKey === 'mashangyou' &&
+      b.from === 'store_qr' && b.productKey === 'mashangyou' &&
+      c.from === 'counter' && c.productKey === 'ma-shang-you'
+  })()
+)
+check(
+  '★ scene 严进：脏值/超长一律回落为空（宁可进默认墙，也不拿垃圾 key 去查不存在的墙）',
+  wish.parseWishWallScene('k='.repeat(40)).productKey === '' &&
+    wish.parseWishWallScene('from=store qr').from === '' &&
+    wish.parseWishWallScene(null).from === '' &&
+    wish.parseWishWallScene('nope=1').productKey === ''
+)
+{
+  const stub = installWxStub()
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const mkOnLoadPage = () => {
+    const page = Object.assign(Object.create(null), proto)
+    page.data = { productId: '', productKey: '', productTitle: '', entryFrom: 'direct', echoRows: [], soundOn: false, muyuCount: 0, lamp: {}, quota: { left: 4 } }
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page.initRitual = () => {}
+    page.bootstrap = () => {}
+    page.applyBlessScope = () => {}
+    return page
+  }
+  const tracks = []
+  const p1 = mkOnLoadPage()
+  p1.onLoad({ scene: 'from=store_qr&k=mashangyou' })
+  check(
+    '★ 扫码进来（只有 scene）→ 落到码里的那面墙 + 来源记为 store_qr',
+    p1.data.productKey === 'mashangyou' && p1.data.entryFrom === 'store_qr',
+    JSON.stringify({ key: p1.data.productKey, from: p1.data.entryFrom })
+  )
+  const p2 = mkOnLoadPage()
+  p2.onLoad({ productKey: 'k2', from: 'detail', scene: 'from=store_qr&k=other' })
+  check(
+    '★ 显式参数优先于 scene（普通 URL 入口不被门店码抢走）',
+    p2.data.productKey === 'k2' && p2.data.entryFrom === 'detail',
+    JSON.stringify({ key: p2.data.productKey, from: p2.data.entryFrom })
+  )
+  const p3 = mkOnLoadPage()
+  p3.onLoad({})
+  check('既无显式参数也无 scene → 默认墙 + direct（不抛）',
+    p3.data.productKey === wish.PRODUCT_KEY && p3.data.entryFrom === 'direct')
+  stub.restore()
+}
+
+/* ================================================================== *
+ * 版式（2026-09-18 产品确认）：①祈运标签挪进页头填右侧空白 ②发送条吸底
+ * ================================================================== */
+check(
+  '★ 页头的祈运 chip 走标签名（不是写死的词），且与产品名同一行',
+  /class="ww-scope-row"[\s\S]{0,600}?class="ww-bless"[^>]*>偏「\{\{blessLabelText\}\}」/.test(wallWxml2) &&
+    /\.ww-scope-row\s*\{[^}]*display:\s*flex/.test(wallWxssCode) &&
+    /\.ww-scope-row\s*\{[^}]*justify-content:\s*space-between/.test(wallWxssCode)
+)
+check(
+  '★ 祈运提示已从玩法区挪走（不留死结构：.ww-plays-guide 的 DOM 与样式都不许复活）',
+  !/ww-plays-guide/.test(wallWxml2) && !/\.ww-plays-guide\s*\{/.test(wallWxssCode)
+)
+// 吸底不变量：页面底部预留 ≥ 条高（84 输入 + 12×2 内边距）。用 CSS 里的数**实算**，不写死 180
+const composerPadY = Number((/\.ww-composer\s*\{[^}]*padding:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
+const composerInputH = Number((/\.ww-input\s*\{[^}]*height:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
+const pagePadBottom = Number((/\.ww-page\s*\{[^}]*padding:\s*0\s+[^;]*?calc\((\d+)rpx/.exec(wallWxssCode) || [])[1])
+check(
+  '★ 发送条吸底，且页面底部预留 ≥ 条高（否则最后一张愿签会被盖住）',
+  /\.ww-composer\s*\{[^}]*position:\s*fixed/.test(wallWxssCode) &&
+    composerPadY > 0 && composerInputH > 0 && pagePadBottom >= composerInputH + composerPadY * 2,
+  `条高≈${composerInputH + composerPadY * 2}rpx / 预留 ${pagePadBottom}rpx`
+)
+// ⚠️ 真机反馈「向下滑到愿签时与发送条互相遮挡」的根因：条子在 .ww-write（position:relative; z-index:1）
+// 这个层叠上下文里，自己的 z-index 只在该上下文内有效 → 页面其余 z-index≥1 的块画到它上面。
+// 判据：①条子必须是 .ww-page 的直接子节点（不被任何层叠上下文罩住）②背景不透明 ③z-index 足够高
+/**
+ * 目标元素在 WXML 里的**祖先链**（用 <view …> 开合配平实算）。
+ * ⚠️ 第一版写成"数 <view 与 </view> 的个数是否相等"，但目标锚点落在**标签内部**（class 那一行），
+ * 于是把目标自己的 `<view` 也算进了开标签 → 恒定差一个 → 假红。改为维护祖先栈，只看真正的外层。
+ */
+const viewAncestorsAt = (wxml, marker) => {
+  const target = wxml.indexOf(marker)
+  if (target < 0) return null
+  const re = /<view\b[^>]*>|<\/view>/g
+  const stack = []
+  let m
+  while ((m = re.exec(wxml)) !== null) {
+    if (m.index >= target) break
+    if (m[0].startsWith('</')) stack.pop()
+    else stack.push(m[0].replace(/\s+/g, ' ').slice(0, 70))
+  }
+  return stack
+}
+// 锚点统一取**元素内部**的类名（不能取元素自己的开标签：那样它会被当成自己的祖先，数目差一）
+// → 覆盖层内部标记的祖先链 = [.ww-page, 覆盖层自己]，长度必须恰好 2
+/**
+ * 覆盖层是不是 .ww-page 的直接子节点：看目标**内部**标记的祖先链 ——
+ * 祖先链头必须是 .ww-page，第二个必须是这个覆盖层自己（中间不许再夹别的块）。
+ * 锚点要取"覆盖层的子元素"（取覆盖层自己的类名会把它算成自己的祖先）。
+ */
+const isDirectChildOfPage = (innerMarker, ownClassPattern) => {
+  const st = viewAncestorsAt(wallWxml2, innerMarker)
+  return Array.isArray(st) && st.length >= 2 && /ww-page/.test(st[0]) && ownClassPattern.test(st[1])
+}
+check(
+  '★ fixed 覆盖层必须是 .ww-page 的直接子节点（发送条 / 纸签弹层）—— "互相遮挡"的根因',
+  isDirectChildOfPage('class="ww-input"', /ww-composer/) &&
+    isDirectChildOfPage('class="ww-sheet-overline"', /ww-sheet/),
+  `composer 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-input"'))} sheet 祖先=${JSON.stringify(viewAncestorsAt(wallWxml2, 'class="ww-sheet-overline"'))}`
+)
+check(
+  '纸签弹层盖在吸底发送条之上（层级：弹层 41 > 发送条 30）',
+  (() => {
+    const sheetZ = Number((/\.ww-sheet\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
+    const barZ = Number((/\.ww-composer\s*\{[^}]*z-index:\s*(\d+)/.exec(wallWxssCode) || [])[1])
+    return sheetZ > barZ && barZ > 0
+  })()
+)
+check(
+  '★ 遮罩在深色页面上压得动（浓度 ≥ 0.72；62% 在博物黑上实测"看不出被压暗"）',
+  (() => {
+    const alpha = Number((/\.ww-sheet-mask\s*\{[^}]*background:\s*rgba\([^)]*?([0-9.]+)\s*\)/.exec(wallWxssCode) || [])[1])
+    return alpha >= 0.72
+  })()
+)
+check(
+  '★ 吸底条背景不透明（半透明时愿签会透上来，与"遮挡"叠在一起更难读）',
+  /\.ww-composer\s*\{[^}]*background:\s*var\(--color-bg\)/.test(wallWxssCode) &&
+    !/\.ww-composer\s*\{[^}]*background:\s*rgba\(/.test(wallWxssCode) &&
+    /\.ww-composer\s*\{[^}]*z-index:\s*30/.test(wallWxssCode)
+)
+{
+  const stub = installWxStub()
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const p = Object.assign(Object.create(null), proto)
+  p.data = { plays: playList, productId: '', productKey: 'k', productTitle: '孔雀标本' }
+  p.setData = function (patch) { Object.assign(this.data, patch) }
+  p.applyBlessScope('success')
+  check(
+    '★ 祈运标签的中文名来自 SSOT（求成），页头才有的可显示',
+    p.data.blessLabelText === '求成' && p.data.blessTags.join(',') === 'success',
+    JSON.stringify({ label: p.data.blessLabelText, tags: p.data.blessTags })
+  )
+  p.applyBlessScope('')
+  check('没有祈运标签时页头不显示那颗 chip（不留空标签）', p.data.blessLabelText === '')
+  stub.restore()
+}
 
 if (process.argv.includes('--selftest') && !INJECT) {
   const { spawnSync } = await import('node:child_process')

@@ -23,6 +23,7 @@ const {
   danmakuCycleEndMs,
   formatWishTime,
   normalizeProductKey,
+  parseWishWallScene,
   shanghaiDayKey,
   pickDailyLine,
   lampStreak,
@@ -42,6 +43,11 @@ const {
   CYCLE_PAUSE_MS
 } = require('../../../utils/wishWall')
 const wishRitual = require('../../../utils/wishRitual')
+const ritualFeedback = require('../../../utils/ritualFeedback')
+const ritualPlay = require('../../../utils/ritualPlay')
+const { RITUAL_PLAYS, PROFILE_PAGE } = require('../../../config/ritualPlays')
+const { sanitizeBlessTags, blessPlayIds, blessLabel } = require('../../../config/blessTags')
+const { recoCacheKey, pickReco } = require('../../../utils/blessProducts')
 const easterEgg = require('../../../utils/easterEgg')
 const easterEggHost = require('../../../utils/easterEggHost')
 const { trackBehavior } = require('../../../utils/trackBehavior')
@@ -49,6 +55,15 @@ const {
   fetchContentDisplayFlags,
   toastWishWallClosed
 } = require('../../../utils/contentDisplayFlags')
+
+/**
+ * 纸签弹层拖拽关闭的阈值（纯函数，便于单测）：下拉超过 88px 视为"想关掉"。
+ * 抽出来的理由与其他纯函数一致 —— 手势判定写成内联表达式就只能靠手感验证。
+ */
+const SHEET_CLOSE_DRAG_PX = 88
+function sheetDragShouldClose(dy) {
+  return (Number(dy) || 0) >= SHEET_CLOSE_DRAG_PX
+}
 
 const FN = 'manageWishWall'
 /** 灵感 chip 展示条数（与服务端 `INSPIRATION_COUNT` 对齐，多取的截掉） */
@@ -68,6 +83,8 @@ Page({
     textMax: TEXT_MAX,
     productId: '',
     productKey: PRODUCT_KEY,
+    /** 入口来源（门店码 → store_qr；线上入口 → 组件传入的 from） */
+    entryFrom: 'direct',
     productTitle: '马上有',
     items: [],
     /** 两列瀑布的列内容（items 的奇偶分列） */
@@ -112,18 +129,60 @@ Page({
     heartBurst: false,
     muyuCount: 0,     // 安心木鱼：本地功德计数（不上云，纯陪伴）
     muyuBeat: false,
-    muyuPlus: false
+    muyuPlus: false,
+    /**
+     * 即时反馈（需求 28 · 玩法动作 → 弹幕墙回声）：
+     * `echoRows` 是 0/1 条的数组而不是对象 —— 靠 `wx:key` 换 key 让 DOM 重建，
+     * 动画才会在连点时**重播**（同 key 不会重播，这是本页弹幕轮播同一套手法）。
+     */
+    echoRows: [],
+    /** 仪式音效开关（默认开，见 utils/ritualFeedback.isSoundEnabled） */
+    soundOn: true,
+    /**
+     * 玩法（今日一签 / 拆签饼 / 星座签 / MBTI 贴士）：瓦片**由注册表派生**，
+     * 页面不写死任何玩法名（加玩法只改 config/ritualPlays.js + 内容池）。
+     */
+    plays: RITUAL_PLAYS,
+    /** 这面墙的祈运标签（由入口从商品带过来；没有就不排不提示，页面照常） */
+    blessTags: [],
+    /** 祈运标签的中文名（页头那颗 chip 用；空串则不显示） */
+    blessLabelText: '',
+    /** 抽到的结果（就地展开的卡片；null = 未抽/已收起） */
+    playResult: null,
+    /** 需要补资料时的引导状态（不给假结果） */
+    playNeed: null,
+    /** 纸签弹层的拖拽位移（rpx 由 WXSS 换算；这里存 px） */
+    sheetDragY: 0,
+    /**
+     * 弱推：同好也在看的藏品（云函数 getBlessProducts 按祈运标签取）。
+     * 推荐是锦上添花 —— 取不到就为 null，卡片照常显示（绝不影响玩法本身）。
+     */
+    reco: null,
+    /** 注册转化：落愿时未注册 → 就地弹注册（见 submitWish / onRegisterSuccess） */
+    showRegisterDialog: false
   },
 
   onLoad(options) {
     const opts = options || {}
+    // 门店/物料**小程序码**走 scene（wxacode.getUnlimited）：内容是 `from=store_qr&k=mashangyou`。
+    // 只在显式参数缺失时采用 scene（与 identify / onboarding 两页同口径），
+    // 这样普通 URL 入口（带 productKey/from）不会被 scene 抢走。
+    const fromScene = parseWishWallScene(opts.scene)
     this.setData({
       productId: String(opts.productId || ''),
-      // 作用域来自入口组件；非法/缺失一律回落到默认墙，避免拼出一个读不到内容的 key
-      productKey: normalizeProductKey(opts.productKey),
-      productTitle: String(opts.title ? decodeURIComponent(opts.title) : '马上有')
+      // 作用域来自入口组件或门店码；非法/缺失一律回落到默认墙，避免拼出一个读不到内容的 key
+      productKey: normalizeProductKey(opts.productKey || fromScene.productKey),
+      productTitle: String(opts.title ? decodeURIComponent(opts.title) : '马上有'),
+      /** 入口来源：门店码会带 store_qr，用于埋点区分"现场扫码"与线上入口 */
+      entryFrom: String(opts.from || fromScene.from || 'direct')
     })
-    trackBehavior('wish_wall_enter', 'from', opts.from || 'direct')
+    this.applyBlessScope(opts.bless)
+    trackBehavior('wish_wall_enter', 'from', this.data.entryFrom)
+    // 仪式音效：一个动作一个 InnerAudioContext 实例（连点不叠音，见 utils/ritualFeedback）
+    this._soundPlayer = ritualFeedback.createPlayer()
+    this._echoSeq = 0
+    // 开关是持久化的（默认开）：进页要按存档回显，否则用户关过又"自己开了"
+    this.setData({ soundOn: ritualFeedback.isSoundEnabled(), muyuCount: wishRitual.readMuyuCount() })
     this.initRitual()
     this.bootstrap()
   },
@@ -132,6 +191,252 @@ Page({
     // 下拉 = **强制**重读开关 + 重拉列表。开关走 SWR 缓存（TTL 10 分钟 / 陈旧窗口 24 小时），
     // 下拉是用户自己能把门禁刷新过来的动作 —— 否则只能等缓存过期或清缓存。
     this.bootstrap({ force: true }).finally(() => wx.stopPullDownRefresh())
+  },
+
+  /**
+   * 祈运作用域：入口把商品的祈运标签带在 URL 上（见 utils/wishWall.buildWishWallUrl）。
+   *
+   * 只做两件事：**重排**玩法瓦片 + 显示一句提示。
+   * 刻意**不隐藏**任何玩法：标签只决定"先看到哪个" —— 隐藏玩法等于替用户做决定，也更难解释；
+   * 参数缺失/非法一律当"没有标签"（页面照常可用，绝不因为一个查询参数就报错）。
+   */
+  applyBlessScope(raw) {
+    const tags = sanitizeBlessTags(raw || '')
+    if (!tags.length) {
+      this.setData({ blessTags: [], blessLabelText: '', plays: RITUAL_PLAYS })
+      return
+    }
+    const order = blessPlayIds(tags)
+    const rank = (id) => {
+      const i = order.indexOf(id)
+      return i === -1 ? order.length : i
+    }
+    // 稳定排序：没被点名的玩法保持注册表原顺序（同分不重排，结果可预期）
+    const plays = RITUAL_PLAYS
+      .map((p, i) => ({ p, i }))
+      .sort((a, b) => (rank(a.p.id) - rank(b.p.id)) || (a.i - b.i))
+      .map((x) => x.p)
+    // 页头只放**标签名**（「偏「求成」」）—— 完整那句解释太长，塞进页头会挤成三行
+    this.setData({ blessTags: tags, blessLabelText: blessLabel(tags[0]), plays })
+  },
+
+  /** 结果卡上的「看这件藏品」：这面墙就是某个商品的墙，转化链路最短的一条 */
+  goProduct() {
+    const id = String(this.data.productId || '')
+    if (!id) return
+    trackBehavior('wish_wall_play', 'to_product', this.data.productKey || '')
+    wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}`, fail: () => {} })
+  },
+
+  /* ----------------------------- 玩法（今日一签 / 签饼 / 星座 / MBTI） ----------------------------- */
+
+  /**
+   * 抽一次玩法。页面只做三件事：取资料 → 交给纯函数 → 摊开结果。
+   *
+   * 不做的三件事（都是刻意的）：
+   *   - 不写云、不进集合：玩法结果**不是 UGC**，不进弹幕墙数据；墙上只回一条第一人称回声；
+   *   - 不弹窗：结果就地展开（`playResult`），用户能一边看一边点「写成心愿」；
+   *   - 不给假结果：需要星座/MBTI 而资料里没有 → 引导去补（那两项各有 7/8 分完善奖励）。
+   */
+  async onPlayTap(e) {
+    const id = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
+    const play = (RITUAL_PLAYS || []).find((p) => p.id === id)
+    if (!play) return
+    if (this.data.playResult && this.data.playResult.id === id) {
+      // 再点同一张 = 收起（同一份结果不重复播回声，免得墙上刷屏）
+      this.setData({ playResult: null })
+      return
+    }
+    let profile = null
+    if ((play.needs || []).length) {
+      profile = await this.loadPlayProfile()
+    }
+    const result = ritualPlay.resolvePlay(id, {
+      dayKey: shanghaiDayKey(Date.now()),
+      profile: profile || {}
+    })
+    if (!result.ok) {
+      if (result.reason === 'need_profile') {
+        this.setData({ playResult: null, playNeed: result })
+        trackBehavior('wish_wall_play', 'need_profile', id)
+      }
+      return
+    }
+    this.setData({ playResult: result, playNeed: null, sheetDragY: 0 })
+    try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
+    // 墙上回声用注册表里那句第一人称文案（结果里的依据不上墙）
+    this.pushEcho('play', { text: result.echo })
+    trackBehavior('wish_wall_play', 'ok', result.id)
+    // 弱推：这条签对应的祈运标签 → 同好也在看的藏品（异步，失败就不显示）
+    this.loadBlessReco()
+  },
+
+  /**
+   * 读玩法的资料依据（星座 / MBTI）：走已有会话（`ensureSession` 带缓存，不额外发请求），
+   * 读不到就返回 null → 走"引导补资料"分支。任何失败都不抛（玩法不能把页面弄崩）。
+   */
+  async loadPlayProfile() {
+    if (this._playProfile) return this._playProfile
+    try {
+      const { ensureSession } = require('../../../utils/userSession')
+      const session = await ensureSession()
+      const user = (session && session.user) || null
+      if (!user) return null
+      this._playProfile = { zodiac: user.zodiac || '', mbti: user.mbti || '' }
+      return this._playProfile
+    } catch (e) {
+      return null
+    }
+  },
+
+  /** 结果卡 → 写成心愿：预填心愿词（没有可用的就只给「马上有」开头），并滚到写愿签那里 */
+  usePlayWish() {
+    const r = this.data.playResult
+    if (!r) return
+    this.setData({ draft: r.wish || '马上有' })
+    trackBehavior('wish_wall_play', 'to_wish', r.id)
+    try {
+      wx.pageScrollTo({ selector: '#wishInput', duration: 260, fail: () => {} })
+    } catch (e) { /* 低版本基础库不支持 selector，忽略 */ }
+  },
+
+  closePlayResult() {
+    this.setData({ playResult: null, sheetDragY: 0 })
+  },
+
+  /**
+   * 纸签弹层的拖拽关闭：只挂在顶部"把手"上（整层可拖会让内部的滚动/点击变难用）。
+   * 阈值抽成纯函数：`sheetDragShouldClose(dy)` —— 手势的判定必须能被单测钉住，不能只靠手感。
+   */
+  onSheetGripStart(e) {
+    const t = (e && e.touches && e.touches[0]) || null
+    this._sheetStartY = t ? t.clientY : 0
+  },
+
+  onSheetGripMove(e) {
+    if (!this._sheetStartY) return
+    const t = (e && e.touches && e.touches[0]) || null
+    if (!t) return
+    const dy = Math.max(0, t.clientY - this._sheetStartY)
+    this.setData({ sheetDragY: dy })
+  },
+
+  onSheetGripEnd() {
+    const dy = Number(this.data.sheetDragY) || 0
+    this._sheetStartY = 0
+    if (sheetDragShouldClose(dy)) {
+      this.closePlayResult()
+      return
+    }
+    this.setData({ sheetDragY: 0 })
+  },
+
+  /**
+   * 弱推：按**这面墙的祈运标签**取一件"同好也在看的藏品"。
+   *
+   * 三条刻意的约束：
+   *   1. 用**墙的标签**而不是"用户是谁"：用户资料不该为一条推荐被读取，推荐也不该依赖隐私字段；
+   *   2. 排除**当前这面墙的商品**（不给自己推荐自己）；
+   *   3. 按「标签 + 当日」缓存一次：同一天反复抽签不会反复打云函数（推荐本来就是一天一件）。
+   * 任何失败都只是"没有推荐"（`reco = null`），不弹错、不阻断玩法。
+   */
+  async loadBlessReco() {
+    const tag = (this.data.blessTags || [])[0]
+    if (!tag) return
+    const cacheKey = recoCacheKey(tag, shanghaiDayKey(Date.now()))
+    if (cacheKey && this._recoCache && this._recoCache.key === cacheKey) {
+      this.setData({ reco: this._recoCache.row })
+      return
+    }
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'getBlessProducts',
+        data: { tag, excludeIds: this.data.productId ? [this.data.productId] : [], limit: 3 }
+      })
+      const reco = pickReco(res && res.result, tag, blessLabel(tag))
+      this._recoCache = { key: cacheKey, row: reco }
+      this.setData({ reco })
+    } catch (e) {
+      // 推荐失败不影响玩法：保持 reco=null（卡片少一行而已）
+      this.setData({ reco: null })
+    }
+  },
+
+  goRecoProduct() {
+    const r = this.data.reco
+    if (!r || !r._id) return
+    trackBehavior('wish_wall_reco', 'tap', r.tag || '')
+    wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(r._id)}`, fail: () => {} })
+  },
+
+  /** 需要补资料 → 去资料页（那两项自带完善奖励；不在这里拦注册，价值先行） */
+  goProfileField() {
+    trackBehavior('wish_wall_play', 'go_profile', (this.data.playNeed && this.data.playNeed.field) || '')
+    try {
+      wx.navigateTo({ url: PROFILE_PAGE, fail: () => {} })
+    } catch (e) { /* ignore */ }
+  },
+
+  /* ----------------------------- 即时反馈（动作 → 弹幕墙回声） ----------------------------- */
+
+  /**
+   * 玩法动作的即时反馈总口子：音效 + 墙上回声（震动仍由各动作自己调）。
+   *
+   * 为什么做成一个口子而不是每处各写一遍：需求 28 后续要加卜卦 / Fortune Cookie /
+   * 星座 / MBTI 等玩法，**每个玩法的"我做了这件事"都要在墙上被看见** ——
+   * 新玩法只需 `this.pushEcho('play', { text? })`，墙上回声、音效表、计时器都复用这里。
+   *
+   * 三条不变量：
+   *   1) 只走本地：不进愿签集合、不写云（木鱼可连点，写服务端就是写放大）；
+   *   2) 回声文案第一人称：墙上其余弹幕是别人的心愿，回声不能冒充别人的愿；
+   *   3) 静默降级：音效失败/素材缺失只是"没响"，回声照样出现（视觉反馈不依赖音频）。
+   *
+   * @param {string} action muyu / lamp / wish / play（后续玩法）
+   * @param {{text?:string, sub?:string}} [extra] 覆盖文案（玩法自带的签语等）
+   */
+  pushEcho(action, extra) {
+    const x = extra || {}
+    // seq 从 0 起算（第一次动作说文案池第一句），先取后加 —— 顺序反了会让首句永远轮不到
+    const seq = Number(this._echoSeq) || 0
+    this._echoSeq = seq + 1
+    const res = ritualFeedback.emitFeedback(action, {
+      seq,
+      player: this._soundPlayer,
+      soundEnabled: this.data.soundOn !== false,
+      muyuCount: this.data.muyuCount,
+      streak: (this.data.lamp && this.data.lamp.streak) || 0,
+      quotaLeft: (this.data.quota && this.data.quota.left) || 0
+    })
+    const echo = res && res.echo
+    if (!echo) return null
+    if (x.text) echo.text = String(x.text)
+    if (x.sub !== undefined) echo.sub = String(x.sub || '')
+    this.setData({ echoRows: [echo] })
+    clearTimeout(this._echoTimer)
+    this._echoTimer = setTimeout(() => this.setData({ echoRows: [] }), ritualFeedback.ECHO_HOLD_MS)
+    return echo
+  },
+
+  clearEcho() {
+    if (this._echoTimer) {
+      clearTimeout(this._echoTimer)
+      this._echoTimer = null
+    }
+  },
+
+  /** 仪式音效开关：关掉时也给一次震动与回声（手感不依赖声音），开的时候敲一声让你听见 */
+  onToggleSound() {
+    const next = ritualFeedback.toggleSound()
+    this.setData({ soundOn: next })
+    if (next) {
+      // 开启时立刻响一声：音效开关最怕"开了没感觉"
+      try { if (this._soundPlayer) this._soundPlayer.play('muyu') } catch (e) { /* ignore */ }
+    }
+    try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
+    // 刻意**不弹 toast**：胶囊自己的开/关两态 + 开启时那一声就是反馈，
+    // 再弹一个是噪音；而且本页的原生调用数被 `check:dialog-ratchet` 棘轮钉着，
+    // 新增原生弹窗要走 AppToast/AppModal —— 这里根本不需要。
+    trackBehavior('wish_wall_sound', 'on', next ? '1' : '0')
   },
 
   /* ----------------------------- 点灯仪式 ----------------------------- */
@@ -189,8 +494,11 @@ Page({
   onMuyuTap() {
     const next = (this.data.muyuCount || 0) + 1
     this.setData({ muyuCount: next, muyuBeat: true, muyuPlus: true })
-    try { wx.setStorageSync('wish_muyu_v1', next) } catch (e) { /* 存档失败不影响计数 */ }
+    // 存档走 utils/wishRitual（键名与读取都在那里，避免"只写不读"再次发生）
+    wishRitual.writeMuyuCount(next)
     try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* 部分机型不支持 */ }
+    // 即时反馈：音效 + 墙上回声（「我敲了一下木鱼 · 功德 N」）
+    this.pushEcho('muyu')
     clearTimeout(this._muyuTimer)
     this._muyuTimer = setTimeout(() => this.setData({ muyuBeat: false, muyuPlus: false }), 420)
   },
@@ -198,8 +506,14 @@ Page({
   onLampTap() {
     const lamp = this.data.lamp || {}
     if (lamp.lit) {
-      // 已点：再点一次把今天那句话读一遍（比弹 toast 更像"看灯"）
-      wx.showToast({ title: lamp.line || '今日灯已点', icon: 'none', duration: 2400 })
+      // 已点：再点一次＝「再看一眼灯」——爱心动效 + 墙上回声。
+      // 这里原来是 `wx.showToast(lamp.line)`：灯语此刻**就写在卡片上**，
+      // 弹一个框把同一句话再念一遍是多余的一层（还让原生弹窗棘轮多一处，见 check:dialog-ratchet）。
+      this.setData({ heartBurst: true })
+      clearTimeout(this._heartTimer)
+      this._heartTimer = setTimeout(() => this.setData({ heartBurst: false }), 2600)
+      try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
+      this.pushEcho('lampAgain')
       return
     }
     const dayKey = lamp.dayKey || shanghaiDayKey(Date.now())
@@ -217,6 +531,8 @@ Page({
     const next = this.buildLampState(dayKey, true, saved.litAt, days)
     this.setData({ lamp: next })
     try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
+    // 即时反馈：点灯也要在墙上回一声（与木鱼同一个口子）
+    this.pushEcho('lamp')
     trackBehavior('wish_wall_lamp', 'day', dayKey)
     // 连续点灯彩蛋：门槛（几天算数）在注册表里，页面只报事实
     this.fireLampStreakEgg(next.streak)
@@ -368,6 +684,22 @@ Page({
     })
   },
 
+  /**
+   * 墙页脚 → 愿签列表。
+   *
+   * 为什么值得加一步跳转：弹幕墙是"看一眼就有感觉"的面，愿签列表是"细看/复制"的面；
+   * 两者之间原本只有"手动往下滚一屏"。落在 `#wishList`（分段控件那一行）而不是列表底部，
+   * 这样切换「墙上的愿签 / 我的心愿」的入口也在视野里。
+   * 失败不兜底弹窗（不支持 selector 的基础库就直接不动）—— 滚动是锦上添花。
+   */
+  goWishList() {
+    try {
+      wx.pageScrollTo({ selector: '#wishList', duration: 260, fail: () => {} })
+    } catch (e) {
+      /* 低版本基础库不支持 selector，忽略 */
+    }
+  },
+
   /** 切换「墙上的愿签 / 我的心愿」 */
   switchView(e) {
     const mode = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.mode) || '')
@@ -440,6 +772,12 @@ Page({
   onUnload() {
     this.clearDanmakuCycle()
     this.clearFreshTimer()
+    // 音效实例与回声计时器都要收：页面卸载后还在响/还在 setData = 内存与噪声双泄漏
+    this.clearEcho()
+    if (this._muyuTimer) clearTimeout(this._muyuTimer)
+    if (this._heartTimer) clearTimeout(this._heartTimer)
+    try { if (this._soundPlayer) this._soundPlayer.destroy() } catch (e) { /* ignore */ }
+    this._soundPlayer = null
   },
 
   onShow() {
@@ -588,6 +926,18 @@ Page({
       wx.showToast({ title: checked.msg, icon: 'none' })
       return
     }
+    // 注册转化钩子（2026-09-18 产品口径：祈福墙是**注册转化路径**，对齐 AI 识别）：
+    // 浏览与仪式免费（价值先行），**落愿这一步才要身份** —— 心愿挂在谁名下、以后回看谁的心愿，
+    // 都需要账号。未注册时就地弹注册（不让用户跳走），注册成功后**自动续发这条心愿**。
+    // `_resumeAfterRegister`：刚注册完的这次续发**跳过门禁**（否则会话还没刷新 → 又弹一次，死循环）。
+    const resumingAfterRegister = !!this._resumeAfterRegister
+    this._resumeAfterRegister = false
+    if (!resumingAfterRegister && await this.isGuestUser()) {
+      this._pendingWish = checked.text
+      trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'show' })
+      this.setData({ showRegisterDialog: true })
+      return
+    }
     this.setData({ posting: true })
     try {
       const result = await this.callFn({
@@ -630,6 +980,8 @@ Page({
       this.scheduleFreshClear()
       wx.showToast({ title: result.msg || '心愿已挂上墙', icon: 'none' })
       try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
+      // 即时反馈：落愿是主转化动作，墙上也要回一声（附"今日还可写 N 条"，顺带说清额度）
+      this.pushEcho('wish')
       trackBehavior('wish_wall_post', 'ok', '1')
       await this.refresh()
       this.fireWishEgg()
@@ -643,6 +995,68 @@ Page({
 
   goBack() {
     wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) })
+  },
+
+  /* ----------------------------- 注册转化（落愿这一步要身份） ----------------------------- */
+
+  /**
+   * 是否未注册。
+   *
+   * ⚠️ **判断失败一律按"已注册"处理（fail-open）**：注册引导是**转化动作**，
+   * 不能因为会话读不到就把「挂上墙」这个核心动作挡下来 —— 宁少一次曝光，不废一个功能。
+   */
+  async isGuestUser() {
+    try {
+      const { ensureSession } = require('../../../utils/userSession')
+      const { resolveAuthState } = require('../../../utils/profileHelper')
+      const session = await ensureSession()
+      const state = (session && session.authState) || resolveAuthState(session && session.user)
+      return state === 'guest'
+    } catch (e) {
+      console.warn('wish wall session check failed', e)
+      return false
+    }
+  },
+
+  /** 原地注册成功：刷新会话态，并把刚才那条心愿**自动续发**（用户的意图不该丢） */
+  async onRegisterSuccess() {
+    this.setData({ showRegisterDialog: false })
+    trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'resume_success' })
+    // 会话刷新**不阻塞续发**：注册已经成功，不该因为一次刷新往返把心愿吞掉。
+    // 续发走 `_resumeAfterRegister` 跳过门禁，所以这里不需要等会话刷新完成。
+    try {
+      const { refreshSessionAfterAuth } = require('../../../utils/userSession')
+      Promise.resolve(refreshSessionAfterAuth()).catch(() => {})
+    } catch (e) {
+      console.warn('wish wall refresh session failed', e)
+    }
+    const text = this._pendingWish
+    this._pendingWish = ''
+    if (!text) return
+    this._resumeAfterRegister = true
+    this.setData({ draft: text })
+    this.submitWish()
+  },
+
+  /** 关掉弹窗：只丢"待发"，**草稿保留**（回来还是那句话，不制造白写的挫败） */
+  /**
+   * 弹窗里的「去注册」被点（还没拿到手机号）：这一步单独立一个漏斗环节。
+   * 没有它就无法区分"曝光多但没人点"（文案/位置问题）与"点了但授权失败"（流程问题）。
+   */
+  onRegisterDialogCta() {
+    trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'go_register' })
+  },
+
+  onRegisterDialogClose() {
+    this._pendingWish = ''
+    if (this.data.showRegisterDialog) this.setData({ showRegisterDialog: false })
+    trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'dismiss' })
+  },
+
+  /** 授权失败/被拒：同样只收口，不打断 */
+  onRegisterDialogFail(e) {
+    const reason = (e && e.detail && e.detail.reason) || 'unknown'
+    trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: `fail_${reason}` })
   },
 
   /** 浮层内层的空处理器：`catchtap`/`catchtouchmove` 需要一个存在的目标，防穿透 */
