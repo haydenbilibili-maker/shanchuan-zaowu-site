@@ -89,7 +89,8 @@
         "test:wish-wall",
         "check:bless-tags-sync",
         "check:wall-qr",
-        "check:wall-monitor"
+        "check:wall-monitor",
+        "test:ritual-profile"
       ],
       "switch": "showMaShangYou",
       "invariants": [
