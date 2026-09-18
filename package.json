@@ -211,6 +211,8 @@
     "check:astro:selftest": "node scripts/check-astro.mjs --selftest",
     "check:dedupe-index-coverage": "node miniprogram/scripts/check-dedupe-index-coverage.mjs",
     "check:dedupe-index-coverage:selftest": "node miniprogram/scripts/check-dedupe-index-coverage.mjs --selftest",
+    "check:dedupe-index-live": "node miniprogram/scripts/check-dedupe-index-live.mjs",
+    "check:dedupe-index-live:selftest": "node miniprogram/scripts/check-dedupe-index-live.mjs --selftest",
     "provision:dedupe-indexes": "node miniprogram/scripts/ensure-dedupe-indexes.cjs",
     "check:fn-collection-rules": "node miniprogram/scripts/check-fn-collection-rules.mjs",
     "check:fn-collection-rules:selftest": "node miniprogram/scripts/check-fn-collection-rules.mjs --selftest",
