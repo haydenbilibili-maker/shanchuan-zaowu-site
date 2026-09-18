@@ -102,6 +102,29 @@
       ]
     },
     {
+      "id": "ritual-cloud-store",
+      "name": "仪式档案云存储（验收冻结期在 feat/* 上推进，解冻后合回）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立：为「注册换真实价值」钩子提供连续点灯/木鱼功德的云端档案。⚠️ 越界声明：本流修改了 admin/src/cloud.js（C9 集合登记，归 integration）—— 集成官本人已批准该一次性越界，理由是 C9 三处同步必须同批落，否则集合无规则。",
+      "owns": [
+        "miniprogram/cloudfunctions/wishRitualProfile/**",
+        "miniprogram/utils/ritualProfile.js",
+        "miniprogram/utils/ritualProfileCore.js",
+        "miniprogram/scripts/test-ritual-profile.mjs"
+      ],
+      "consumes": [
+        "admin/src/cloud.js",
+        "cloudbase/rules/wish_ritual_profiles.json",
+        "cloudbase/schema/wish_ritual_profiles.md",
+        "docs/并发工作流注册表.json",
+        "miniprogram/cloudbaserc.json"
+      ],
+      "guards": [
+        "test:ritual-profile"
+      ]
+    },
+    {
       "id": "visual",
       "name": "视觉设计专项（令牌 / 弹窗 / 字号 / 文案）",
       "owner": "agent:visual",
