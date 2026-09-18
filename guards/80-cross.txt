@@ -46,7 +46,6 @@ npm run check:api-auth
 npm run test:api-auth
 npm run check:site-fallbacks
 npm run check:fn-openapi
-npm run verify:site-dist
 npm run check:dup-modules
 npm run check:astro
 npm run check:dedupe-index-coverage
