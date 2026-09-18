@@ -46,6 +46,8 @@
     "check:analytics-limits": "node admin/scripts/check-analytics-limits.mjs",
     "check:analytics-limits:selftest": "node admin/scripts/check-analytics-limits.mjs --selftest",
     "check:analytics-schema:selftest": "node miniprogram/scripts/check-analytics-schema.mjs --selftest",
+    "check:hook-registration": "node miniprogram/scripts/check-hook-registration.mjs",
+    "check:hook-registration:selftest": "node miniprogram/scripts/check-hook-registration.mjs --selftest",
     "check:brand-contrast": "node admin/scripts/check-brand-contrast.mjs",
     "check:brand-contrast:selftest": "node admin/scripts/check-brand-contrast.mjs --selftest",
     "test:write-layer": "node admin/scripts/test-write-layer.mjs",

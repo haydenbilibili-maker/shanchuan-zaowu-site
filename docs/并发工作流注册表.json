@@ -31,7 +31,8 @@
         "miniprogram/scripts/check-shared-modules.mjs",
         "miniprogram/scripts/sync-work-order-notify.sh",
         "miniprogram/scripts/sync-species-dedup.sh",
-        "admin/scripts/check-proxy-allowlist-sync.mjs"
+        "admin/scripts/check-proxy-allowlist-sync.mjs",
+        "miniprogram/scripts/check-hook-registration.mjs"
       ],
       "consumes": [],
       "guards": [
