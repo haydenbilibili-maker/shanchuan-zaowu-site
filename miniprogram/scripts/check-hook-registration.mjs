@@ -60,6 +60,8 @@ const F = {
   mgrWxml: 'miniprogram/subpackages/manager/manager/workspace/_subviews.wxml',
   mpSchema: 'miniprogram/utils/analytics/eventSchema.js',
   erpSchema: 'admin/src/utils/analyticsSchema.js',
+  // 报表分桶那一侧的排除清单（`REPORT_EXCLUDED_GATES`）—— 用于 B4「两本账必须同源」
+  wallMonitor: 'miniprogram/scripts/check-wall-monitor.mjs',
 }
 
 /** 锚点失效 = **无法判定**，不是「通过」（AGENTS.md 错题本 E16） */
@@ -227,6 +229,51 @@ export function evalChainA(input, allowedOrphans = ADMIN_ORPHAN_ALLOWED) {
   return problems
 }
 
+/**
+ * 两份「某漏斗故意不进 ERP 报表」的排除清单必须**同源**。
+ *
+ * 为什么要有这一条（2026-09-20 集成官复核时发现的风险）：
+ *   同一个概念现在有**两本账** ——
+ *   `check:wall-monitor` 的 `REPORT_EXCLUDED_GATES`（管**报表分桶**）
+ *   与本守卫的 `FUNNEL_CARD_EXCLUDED`（管 **FUNNELS 卡**）。
+ *   两本账各自漂移时会出现**互相矛盾**的结论：「分桶那边排除了、这边却以为该有卡」。
+ *   （本守卫的作者自己也报过同类风险：`wall-monitor` 的 `REPORT_COVERED_GATES` 与
+ *    `COVERED_PAIRS` 是两份清单。）
+ *
+ * 判据：两边的**键集合必须相等** —— 任一侧多/少都红，并点名差在哪一侧。
+ * 这不是"新增判据"而是"防两本账打架"：本来该只有一本。
+ */
+export function evalExclusionParity(cardExcluded, reportExcluded) {
+  const a = [...cardExcluded].sort()
+  const b = [...reportExcluded].sort()
+  const onlyCard = a.filter((x) => !b.includes(x))
+  const onlyReport = b.filter((x) => !a.includes(x))
+  const problems = []
+  if (onlyCard.length) {
+    problems.push(
+      `B4: 这些钩子在 FUNNEL_CARD_EXCLUDED 里排除了，但 check:wall-monitor 的 REPORT_EXCLUDED_GATES **没排除**` +
+        `（两本账打架）：${onlyCard.join(', ')}`
+    )
+  }
+  if (onlyReport.length) {
+    problems.push(
+      `B4: 这些钩子在 REPORT_EXCLUDED_GATES 里排除了，但本守卫的 FUNNEL_CARD_EXCLUDED **没登记理由**：${onlyReport.join(', ')}`
+    )
+  }
+  return problems
+}
+
+/** 从 check:wall-monitor 源码里取 `REPORT_EXCLUDED_GATES` 的键（取不到 = 无法判定，不许当通过） */
+export function parseWallMonitorExcluded(src) {
+  const i = src.indexOf('REPORT_EXCLUDED_GATES')
+  if (i < 0) throw new Unjudgeable('check:wall-monitor 里找不到 REPORT_EXCLUDED_GATES（锚点失效）')
+  const open = src.indexOf('{', i)
+  const close = src.indexOf('}', open)
+  if (open < 0 || close < 0) throw new Unjudgeable('REPORT_EXCLUDED_GATES 的对象字面量取不到')
+  const body = src.slice(open + 1, close)
+  return new Set([...body.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s*:/g)].map((m) => m[1]))
+}
+
 export function evalChainB(input, excluded = FUNNEL_CARD_EXCLUDED) {
   const { gates, cards } = input
   const problems = []
@@ -253,6 +300,9 @@ function report() {
   const b = inspectChainB()
   const aProblems = evalChainA(a)
   const bProblems = evalChainB(b)
+  // 两份排除清单必须同源（同一概念不许有两本会各自漂移的账）
+  const reportExcluded = parseWallMonitorExcluded(read(F.wallMonitor))
+  const parityProblems = evalExclusionParity(new Set(Object.keys(FUNNEL_CARD_EXCLUDED)), reportExcluded)
 
   const admin = union(a.erp, a.mgr)
   console.log('钩子登记链守卫（check:hook-registration）')
@@ -275,11 +325,11 @@ function report() {
   console.log(`  无卡（B2 判据）                     : [${sorted(b.gates).filter((g) => !b.cards.has(g))}]`)
   console.log(
     `  其中带理由排除（FUNNEL_CARD_EXCLUDED）: [${Object.keys(FUNNEL_CARD_EXCLUDED).sort()}]` +
-      ` —— ⚠ 已知漂移基线（棘轮：例外只许变小）`
+      ` —— 有据的**刻意排除**（非漂移；与 check:wall-monitor 的 REPORT_EXCLUDED_GATES 同源，B4 会核两边同源）`
   )
   console.log(`  （B1 双端镜像 = check:analytics-schema；B3 报表分桶 = check:wall-monitor，本守卫不重复）`)
 
-  const problems = [...aProblems, ...bProblems]
+  const problems = [...aProblems, ...bProblems, ...parityProblems]
   if (problems.length) {
     problems.forEach((p) => console.error(`✗ ${p}`))
     console.error(`\n✗ 钩子登记链未通过：${problems.length} 处`)
@@ -368,6 +418,20 @@ function selftest() {
   t('★ 把 wish_wall_register_gate 的 FUNNELS 卡抽掉 → 必须红', evalChainB({ ...baseB, cards: S() }, excl).length > 0)
   t('★ 新登记一个 gate 却既没卡也没例外 → 必须红', evalChainB({ gates: S('brand_new_gate'), cards: S() }, excl).length > 0)
   t('★ 过期例外（wiki 已有卡）→ 必须红（例外只许变小）', evalChainB({ ...baseB, cards: S('wish_wall_register_gate', 'wiki_register_gate') }, excl).length > 0)
+
+  console.log('③b B4：两份「不进报表」排除清单必须同源（防两本账打架）')
+  t(
+    '同源（两边都只有 wiki_register_gate）→ 通过',
+    evalExclusionParity(S('wiki_register_gate'), S('wiki_register_gate')).length === 0
+  )
+  t(
+    '★ 只在 FUNNEL_CARD_EXCLUDED（报表那侧没排除）→ 必须红',
+    evalExclusionParity(S('wiki_register_gate'), S()).length === 1
+  )
+  t(
+    '★ 只在 REPORT_EXCLUDED_GATES（本守卫没登记理由）→ 必须红',
+    evalExclusionParity(S(), S('wiki_register_gate')).length === 1
+  )
 
   console.log('④ 文件级注入 → 真实 CLI 必须 exit≠0 → 源文件逐字节还原')
   const WISH_RITUAL_STEP = "'wish_ritual_gate:"
