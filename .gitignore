@@ -17,6 +17,11 @@ dist/
 backups/
 
 # dependencies
+# ⚠️ 两行都要：`node_modules/`（带斜杠）**只匹配目录**，匹配不到符号链接。
+# 2026-09-19 实测踩过两次 —— 在隔离 worktree 里为解析依赖建的
+# `node_modules -> <真目录>` 符号链接被 `git add -A` 提交进了分支
+# （`git check-ignore` 确认当时确实未被忽略）。补一行不带斜杠的写法覆盖符号链接。
+node_modules
 node_modules/
 
 # logs
