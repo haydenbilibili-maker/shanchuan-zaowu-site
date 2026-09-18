@@ -267,6 +267,19 @@ page {
 
 .thumb { width: 100%; height: 100%; background: var(--color-bg-elevated); }
 
+/* 缩略图缺图占位（2026-09-20 新增）：与 .thumb 同尺寸同底，让"缺图"读得出来。
+   此前 onCartThumbError 清空 src 后模板没有 wx:else → 那一格直接空白。 */
+.thumb-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-elevated);
+}
+
+.thumb-ph-icon { width: 44rpx; height: 44rpx; opacity: 0.8; }
+
 .thumb-mask {
   position: absolute;
   inset: 0;
@@ -587,15 +600,27 @@ page {
   width: 100%;
   height: 220rpx;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10rpx;
   background: var(--color-bg-elevated);
 }
 
+/* 2026-09-20：原 `opacity: 0.45` 的图标压在 --color-bg-elevated(#262320) 深底上 ≈ 看不见，
+   加载失败时用户看到的是**深色空块**，会被当成渲染 bug（真机反馈）。
+   抬到 0.8 + 补一行文案，让"缺图"这件事自己说出来。 */
 .rec-img-ph-icon {
   width: 56rpx;
   height: 56rpx;
-  opacity: 0.45;
+  opacity: 0.8;
+}
+
+/* 用 --color-text-secondary（#A09A90，深面 5.6~6.35 ✓）而不是 --color-text-muted ——
+   后者在小程序深面上实测 2.72~3.09，低于正文阈值 4.5（见 check:mp-contrast）。 */
+.rec-img-ph-text {
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
 }
 
 .rec-body { padding: var(--space-2) var(--space-3) var(--space-3); }

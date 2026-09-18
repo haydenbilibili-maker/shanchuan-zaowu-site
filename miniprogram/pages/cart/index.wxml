@@ -80,7 +80,12 @@
 
                 <view class="card-body">
                   <view class="thumb-wrap" catchtap="goToDetail" data-id="{{item.productId}}">
-                    <image class="thumb" src="{{item.image}}" mode="aspectFill" lazy-load binderror="onCartThumbError" data-index="{{index}}"></image>
+                    <!-- 2026-09-20：补占位分支。此前 onCartThumbError 只把 image 清空，
+                         而模板里**没有 wx:else** → src 为空 → 那一格直接空白（连"缺图"都看不出来）。 -->
+                    <image class="thumb" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" lazy-load binderror="onCartThumbError" data-index="{{index}}"></image>
+                    <view class="thumb-ph" wx:else>
+                      <image class="thumb-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+                    </view>
                     <protected-badge
                       wx:if="{{item.isProtected}}"
                       show="{{true}}"
@@ -152,6 +157,7 @@
                 ></image>
                 <view class="rec-img-ph" wx:else>
                   <image class="rec-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+                  <text class="rec-img-ph-text">暂无封面</text>
                 </view>
               </sensitive-blur-gate>
             </view>
