@@ -438,6 +438,11 @@ function danmakuClearMs(text) {
  *        cycle：重开轮次。会进 key，从而让 DOM 重建、动画重播（同 key 不会重播）。
  * @returns {Array<object>} 每项含 key/text/lane/topPercent/durationMs/delayMs/clearMs/endAt/isCycleEnd
  */
+// 弹幕配色档位与 emoji（2026-09-19）：**必须确定性** —— 用 FNV-1a(rotateIndex) 按 id 取，
+// 绝不能用随机数（否则每次 setData 跳色，且与守卫「确定性布局」铁律冲突 ✗）
+const DANMAKU_TONES = 6
+const DANMAKU_EMOJIS = ['', '🌿', '✨', '🐚', '🌸', '🕯️', '🌙', '🍀']
+
 function buildDanmakuRows(items, opts) {
   const list = Array.isArray(items) ? items : []
   const o = opts || {}
@@ -456,8 +461,12 @@ function buildDanmakuRows(items, opts) {
     // 首屏错开：第 i 条至少等 i*260ms，避免整批同时冲进来（不替代轨道占用约束）
     const delayMs = Math.max(laneNextAt[lane], Math.round(i * 260))
     laneNextAt[lane] = delayMs + clearMs + gapMs
+    const seedId = String(raw._id || `w${i}`)
     rows.push({
       key: `${String(raw._id || `w${i}`)}#${cycle}`,
+      // 配色与 emoji：按 id 稳定取（emoji 用不同盐，避免与颜色绑定成固定搭配）
+      tone: rotateIndex(seedId, DANMAKU_TONES),
+      emoji: DANMAKU_EMOJIS[rotateIndex('e:' + seedId, DANMAKU_EMOJIS.length)] || '',
       // 墙面不只是装饰：带上身份与状态，弹幕才能标注记、点开愿签
       id: String(raw._id || ''),
       pinned: raw.pinned === true,

@@ -108,7 +108,8 @@ Page({
      * 弹幕只播一轮（forwards）：若用 CSS 无限循环，第二轮起同轨又会叠在一起
      * （旧实现就是这么叠成灾难现场的）。整批重排由 scheduleDanmakuCycle 定时触发。
      */
-    danmakuCycle: 0
+    danmakuCycle: 0,
+    heartBurst: false
   },
 
   onLoad(options) {
@@ -192,6 +193,10 @@ Page({
     let saved = { days: [dayKey] }
     try {
       saved = wishRitual.lightLamp(dayKey)
+      // 爱心动效：点灯成功时飘一次（transient，约 2.6s 后自动收起 —— 避免常驻重播 ✗）
+      this.setData({ heartBurst: true })
+      clearTimeout(this._heartTimer)
+      this._heartTimer = setTimeout(() => this.setData({ heartBurst: false }), 2600)
     } catch (e) {
       console.warn('wish wall ritual write failed', e)
     }

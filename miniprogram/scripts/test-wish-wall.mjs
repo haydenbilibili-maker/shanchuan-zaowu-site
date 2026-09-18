@@ -1648,6 +1648,21 @@ check(
   '★ 设计系统新增手写体 token --font-hand（走系统字体栈，不下载 webfont）',
   /--font-hand:/.test(appWxss) && /HanziPen SC/.test(appWxss) && /Kaiti/.test(appWxss)
 )
+// 2026-09-19 弹幕丰富样式：配色/emoji 必须**确定性**（按 id 用已有 FNV-1a 哈希取），
+// 禁用随机 —— 否则每次 setData 跳色，且与「确定性布局」铁律冲突 ✗。
+const wallJsSrc = readFileSync(resolve(ROOT, 'miniprogram/utils/wishWall.js'), 'utf8')
+check('★★ 弹幕配色与 emoji 走稳定哈希（rotateIndex），且**不得**出现 Math.random',
+  /tone: rotateIndex\(seedId, DANMAKU_TONES\)/.test(wallJsSrc)
+  && /emoji: DANMAKU_EMOJIS\[rotateIndex\('e:' \+ seedId/.test(wallJsSrc)
+  && !/Math\.random/.test(wallJsSrc),
+  '随机取色会让每次 setData 跳到不同颜色（守卫明令确定性）')
+check('★ 弹幕挂色调类 + emoji 为**独立元素**（不改 text 长度 → 不影响匀速时长）',
+  /ww-danmaku ww-tone-\{\{item\.tone\}\}/.test(wallWxmlCode)
+  && /class="ww-emoji" wx:if="\{\{item\.emoji\}\}"/.test(wallWxmlCode))
+check('★ 点灯爱心动效：一次性（heartBurst 为真才挂载 + js 定时收起）',
+  /ww-hearts" wx:if="\{\{heartBurst\}\}"/.test(wallWxmlCode)
+  && /setTimeout\(\(\) => this\.setData\(\{ heartBurst: false \}\)/.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.js'), 'utf8'))
+  && /@keyframes ww-heart-float/.test(wallWxssCode))
 check('★ 弹幕用手写体（心愿是"写"上去的）',
   /\.ww-danmaku\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
 check('★ 愿签正文也用手写体',

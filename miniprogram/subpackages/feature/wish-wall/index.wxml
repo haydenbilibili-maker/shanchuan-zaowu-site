@@ -51,6 +51,14 @@
         <view class="ww-lantern-halo"></view>
         <view class="ww-lantern-core"></view>
       </view>
+      <!-- 点灯爱心动效：一次性飘起（heartBurst 由 js 短暂置真，2.6s 后收起） -->
+      <view class="ww-hearts" wx:if="{{heartBurst}}" aria-hidden="true">
+        <text class="ww-heart h1">♥</text>
+        <text class="ww-heart h2">♥</text>
+        <text class="ww-heart h3">♥</text>
+        <text class="ww-heart h4">♥</text>
+        <text class="ww-heart h5">♥</text>
+      </view>
       <view class="ww-lantern-copy">
         <view class="ww-lantern-head">
           <text class="ww-lantern-title">{{lamp.lit ? '今日灯已点' : '点一盏灯'}}</text>
@@ -95,7 +103,7 @@
         </block>
         <block wx:else>
           <view
-            class="ww-danmaku"
+            class="ww-danmaku ww-tone-{{item.tone}}"
             wx:for="{{rows}}"
             wx:key="key"
             style="top:{{item.topPercent}}%; animation-duration:{{item.durationMs}}ms; animation-delay:{{item.delayMs}}ms;"
@@ -106,6 +114,7 @@
           aria-role="button"
           aria-label="{{item.text}}"
         >
+              <text class="ww-emoji" wx:if="{{item.emoji}}">{{item.emoji}}</text>
           <!-- 墙面也承担信任信号：置顶/馆方在墙上就有标记（此前只有愿签列表里有） -->
           <view
             class="ww-dm-mark {{item.pinned ? 'is-pinned' : (item.official ? 'is-official' : '')}}"

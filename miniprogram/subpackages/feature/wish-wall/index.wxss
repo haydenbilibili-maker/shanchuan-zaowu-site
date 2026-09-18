@@ -1270,3 +1270,46 @@ page {
 .ww-card-act.is-share::after {
   border: none;
 }
+
+/* ── 弹幕丰富样式（2026-09-19）：6 档配色 + emoji ─────────────────────────
+   取色偏「展签/矿物/草木」，统一在中高明度，保证深色墙面上可读；
+   配色由 utils/wishWall.js 按 id 稳定分配（确定性，非随机）。 */
+.ww-tone-0 { color: #EFE6D2; }   /* 素笺 */
+.ww-tone-1 { color: #D9BE86; }   /* 铜金 */
+.ww-tone-2 { color: #A9C6A0; }   /* 苔绿 */
+.ww-tone-3 { color: #9FC0D6; }   /* 远海 */
+.ww-tone-4 { color: #E0A9A0; }   /* 珊瑚 */
+.ww-tone-5 { color: #C7B4DE; }   /* 紫晶 */
+.ww-emoji {
+  margin-right: 6rpx;
+  font-size: 26rpx;
+  opacity: 0.92;
+}
+
+/* ── 点灯爱心动效（2026-09-19）：一次性飘起、错落上行、渐隐 ──────────────
+   只在 heartBurst 为真时挂载（js 2.6s 后收起）→ 不会常驻重播；
+   暖色系 + 低透明度，克制，不抢弹幕注意力。 */
+.ww-hearts {
+  position: absolute;
+  left: 50%;
+  bottom: 56rpx;
+  pointer-events: none;
+}
+.ww-heart {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  font-size: 26rpx;
+  color: #E0A9A0;
+  opacity: 0;
+  animation: ww-heart-float 1.6s ease-out forwards;
+}
+.ww-heart.h2 { color: #D9BE86; font-size: 22rpx; animation-delay: 0.18s; }
+.ww-heart.h3 { color: #E0A9A0; font-size: 30rpx; animation-delay: 0.34s; }
+.ww-heart.h4 { color: #C7B4DE; font-size: 20rpx; animation-delay: 0.5s; }
+.ww-heart.h5 { color: #D9BE86; font-size: 24rpx; animation-delay: 0.66s; }
+@keyframes ww-heart-float {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(0.7); }
+  18%  { opacity: 0.95; }
+  100% { opacity: 0; transform: translate(-50%, -120rpx) scale(1.12); }
+}
