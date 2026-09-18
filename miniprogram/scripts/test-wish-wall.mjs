@@ -501,8 +501,8 @@ const INJECTIONS = {
   // 木鱼卡跟着灯卡改成顶对齐 → 等高之后底部留一大片空白（真图上很明显）
   'muyu-align-top-again': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  align-items: center;\n  gap: 16rpx;\n  min-width: 0;\n  /* ⚠️ 必须与 .ww-lantern 同值（守卫 `两卡内边距一致` 钉住）：改一边就是"两张卡不像一对" */\n  padding: 26rpx 20rpx;\n  border: 1rpx solid rgba(196, 167, 108, 0.34);',
-    to: '  align-items: flex-start;\n  gap: 16rpx;\n  min-width: 0;\n  /* ⚠️ 必须与 .ww-lantern 同值（守卫 `两卡内边距一致` 钉住）：改一边就是"两张卡不像一对" */\n  padding: 26rpx 20rpx;\n  border: 1rpx solid rgba(196, 167, 108, 0.34);'
+    from: '  align-items: center;\n  gap: var(--space-2);\n  min-width: 0;',
+    to: '  align-items: flex-start;\n  gap: var(--space-2);\n  min-width: 0;'
   },
   // 条数又飘出段外 → 读起来像"我的心愿 26 条"
   'seg-count-orphan-again': {
@@ -537,7 +537,7 @@ const INJECTIONS = {
   // 间距/层级又压紧 → 回到真图上那个"三行小字贴着"的状态
   'lamp-spacing-tight-again': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  margin-top: 8rpx;\n  font-size: 19rpx;\n  line-height: 1.5;',
+    from: '  margin-top: var(--space-1);\n  font-size: 19rpx;\n  line-height: 1.5;',
     to: '  margin-top: 2rpx;\n  font-size: 21rpx;\n  line-height: 1.2;'
   },
   // 音效默认关 → 用户永远听不到（产品口径是"默认开但可关"）
@@ -842,6 +842,79 @@ const INJECTIONS = {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
     from: '    // 先收弹层，露出吸底发送条；再滚一下（保留既有行为，对非 fixed 落点仍有效）\n    this.closePlayResult()',
     to: '    // 注入：不收弹层（回归注入）'
+  },
+  // ── 质感批次（2026-09-19）：令牌化 / 按压反馈 / 无障碍 ──────────────────────
+  // 字号令牌写回裸值（30rpx 是 --fs-30 在册值；写回后"本页字号一律走 --fs-*"必须变红）
+  'wishwall-fontsize-literal-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-lantern-title {\n  display: block;\n  font-size: var(--fs-30);',
+    to: '.ww-lantern-title {\n  display: block;\n  font-size: 30rpx;'
+  },
+  // 新增一处**非登记**的非令牌字号（25rpx 在册；注入 23rpx → 白名单比对必须变红）
+  'wishwall-fontsize-unregistered': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-streak-l {\n  margin-top: 2rpx;\n  font-size: var(--fs-18);',
+    to: '.ww-streak-l {\n  margin-top: 2rpx;\n  font-size: 23rpx;'
+  },
+  // 与 --space-* 同值的间距写回裸数字（.ww-head 的下间距 16rpx == --space-2）
+  'wishwall-space-literal-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  gap: 12rpx;\n  margin: var(--space-4) 0 var(--space-2);',
+    to: '  gap: 12rpx;\n  margin: var(--space-4) 0 16rpx;'
+  },
+  // 灯卡按压反馈与木鱼卡分叉（0.86 → 0.9，回到本批修掉的那个离群值）
+  'press-opacity-diverge': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-lantern-press {\n  opacity: 0.86;\n}',
+    to: '.ww-lantern-press {\n  opacity: 0.9;\n}'
+  },
+  // hover-class 指到一个不存在的类 → 点了没反馈（WXSS 不报错，只有这条判据能发现）
+  'hover-class-orphan': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: 'hover-class="ww-tag-press"',
+    to: 'hover-class="ww-tag-press-typo"'
+  },
+  // hover-stay-time 又分叉（木鱼卡回到 60）
+  'hover-stay-diverge': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: 'bindtap="onMuyuTap" hover-class="ww-muyu-press" hover-stay-time="70"',
+    to: 'bindtap="onMuyuTap" hover-class="ww-muyu-press" hover-stay-time="60"'
+  },
+  // 可点元素丢掉 aria-role（博物笔记入口）
+  'aria-role-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      hover-class="ww-relics-press"\n      hover-stay-time="70"\n      aria-role="button"\n    >',
+    to: '      hover-class="ww-relics-press"\n      hover-stay-time="70"\n    >'
+  },
+  // 装饰圆点不再 aria-hidden（读屏会把纯色圆点当内容念）
+  'decorative-not-hidden': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: 'class="signal-light {{lamp.lit ? \'lamp-brass on\' : \'lamp-muted hollow\'}}" aria-hidden="true"',
+    to: 'class="signal-light {{lamp.lit ? \'lamp-brass on\' : \'lamp-muted hollow\'}}"'
+  },
+  // aria-hidden 反而盖到文案上（把 CTA「看看这件 ›」隐藏 —— 读屏用户丢掉主路出口）
+  'aria-hidden-over-text': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '<text class="ww-sheet-product-go">看看这件 ›</text>',
+    to: '<text class="ww-sheet-product-go" aria-hidden="true">看看这件 ›</text>'
+  },
+  // .ww-wall 又被拆成两块（后一块静默吃掉前一块的 border/box-shadow）
+  'wall-rule-resplit': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '/* ── 点灯 / 木鱼 图标替换（2026-09-19，产品负责人提供 SVG）',
+    to: '.ww-wall {\n  border: 1rpx solid rgba(196, 167, 108, 0.9);\n}\n\n/* ── 点灯 / 木鱼 图标替换（2026-09-19，产品负责人提供 SVG）'
+  },
+  // 死选择器 .ww-wall-loading 复活（wxss 有定义、wxml/js 零引用）
+  'dead-selector-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-wall-empty {\n  position: absolute;',
+    to: '.ww-wall-empty,\n.ww-wall-loading {\n  position: absolute;'
+  },
+  // 愿签骨架的底面漂回浅一档（骨架→真卡替换那一帧会跳色）
+  'tag-skel-color-drift': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  padding: 20rpx 22rpx 20rpx 26rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);',
+    to: '  padding: 20rpx 22rpx 20rpx 26rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
   }
 }
 
@@ -1996,6 +2069,27 @@ check('弹幕舞台高度固定（布局不随内容抖动）', /\.ww-wall\s*\{[
  * ------------------------------------------------------------------ */
 
 const wallWxssCode = stripCssComments(wallWxss)
+
+/* ── 长度/数值解析：字面量 `30rpx` / `1.6` 或令牌 `var(--fs-30)` / `var(--space-3)` ──
+   为什么必须这样读（2026-09-19）：本页把 `font-size` / 间距换成设计令牌后，原先直接抓
+   `(\d+)rpx` 的判据会读到 NaN —— 而 NaN 参与 `<` / `>` 比较**恒为 false**，
+   于是「字号层级不倒挂」「灯卡纵向节奏」这两条会**假红**（NaN > NaN 为假）；
+   若判据写成 `!(a < b)` 就会反过来**假绿**。两种都是"改了源码、守卫静默失效"的形态。
+   所以判据跟着令牌走：`--fs-*` / `--space-*` 一律从 app.wxss 的定义实读，不写死第二份数字。 */
+const RPX_TOKENS = (() => {
+  const map = {}
+  const src = readFileSync(resolve(ROOT, 'miniprogram/app.wxss'), 'utf8')
+  for (const m of src.matchAll(/--([a-z0-9-]+):\s*(-?\d+(?:\.\d+)?)rpx/g)) map[m[1]] = Number(m[2])
+  return map
+})()
+const numOf = (expr) => {
+  const s = String(expr == null ? '' : expr).trim()
+  const lit = /^(-?\d+(?:\.\d+)?)(?:rpx)?$/.exec(s)
+  if (lit) return Number(lit[1])
+  const varRef = /^var\(\s*--([a-z0-9-]+)\s*(?:,[^)]*)?\)$/.exec(s)
+  if (varRef && RPX_TOKENS[varRef[1]] !== undefined) return RPX_TOKENS[varRef[1]]
+  return NaN
+}
 check(
   '★ 页面底色用设计 token（本页曾是全仓唯一写 #14120F 的页面，json 却写 #1A1814）',
   /background:\s*var\(--color-bg\)/.test(wallWxssCode) && !/#14120F/.test(wallWxssCode)
@@ -2170,7 +2264,7 @@ check('★ 愿签正文也用手写体',
 // 字号与 CHAR_RPX 是**一对**：CHAR_RPX 是同轨不重叠的宽度估算依据，
 // 只改字号不改它 → 后一条会在前一条尾部还在屏内时进场（叠字）。判据按"字号 ×1.03 ≈ CHAR_RPX"实算，
 // 既保住原来的下限（≥28rpx：手写体笔画细，移动中要认得出），又让两个数不再各自漂移。
-const danmakuFontRpx = Number((/\.ww-danmaku\s*\{[^}]*font-size:\s*(\d+)rpx/.exec(wallWxssCode) || [])[1])
+const danmakuFontRpx = numOf((/\.ww-danmaku\s*\{[^}]*font-size:\s*([^;}]+)/.exec(wallWxssCode) || [])[1])
 const charRpxConst = Number((/const CHAR_RPX = (\d+)/.exec(readSrc('miniprogram/utils/wishWall.js')) || [])[1])
 check(
   '★ 弹幕字号 ≥ 28rpx（手写体笔画细，移动中要认得出）',
@@ -2932,8 +3026,8 @@ check(
 
 // 判据是"关系"而不是字面值：字号层级（标题 > 灯语 > 灯位说明）+ 段间距/行距下限
 const numIn = (sel, prop) => {
-  const m = new RegExp(`\\${sel}\\s*\\{[^}]*${prop}:\\s*([\\d.]+)`).exec(wallWxssCode)
-  return m ? Number(m[1]) : NaN
+  const m = new RegExp(`\\${sel}\\s*\\{[^}]*${prop}:\\s*([^;}]+)`).exec(wallWxssCode)
+  return numOf(m && m[1])
 }
 const metaGap = numIn('.ww-lantern-meta', 'margin-top')
 const noteGap = numIn('.ww-lantern-note', 'margin-top')
@@ -3000,6 +3094,153 @@ check(
 check(
   '段外游离条数移除后不留死样式（.ww-head-n / .ww-head-rule）',
   !/\.ww-head-n\s*\{/.test(wallWxssCode) && !/\.ww-head-rule\s*\{/.test(wallWxssCode)
+)
+
+/* ================================================================== *
+ * 设计令牌落地 / 按压反馈一致性 / 无障碍可达性（2026-09-19 质感批次）
+ *
+ * 为什么这几条必须单独守：
+ *   ① 字阶令牌（契约 C7 的 14 档）在本页此前**一次都没被引用**（全仓引用率 7/4403 ≈ 0.16%）。
+ *      本批把本页 71 处 `font-size: Nrpx` 换成 `var(--fs-N)`；判据必须钉住"不许再写回裸值"，
+ *      否则下一轮改版又会静默长出 22rpx / 26rpx —— 这是"令牌定义了但没人用"的复发路径。
+ *   ② 同值间距：`--space-*` 只有 7 档，本页原来把 24rpx / 32rpx 这类**正好等于令牌**的值写成裸数字。
+ *      判据不是"间距必须等于令牌"（本页大量 20/22rpx 是版式需要），而是"与令牌同值的必须写令牌"。
+ *   ③ `hover-class` 是"点了有没有反馈"的唯一证据：类名写错 = 无反馈，且 WXSS 不会报错。
+ *      既要"每个 hover-class 都有同名规则"，也要"同族控件同值"。
+ *   ④ `aria-role` 是读屏能不能把 <view> 当按钮读出来的唯一开关；装饰圆点必须 aria-hidden。
+ * ------------------------------------------------------------------ */
+
+// —— ① 字号：只允许 var(--fs-*) ，或登记在册的非令牌值 ——
+// 非令牌白名单（每条给理由，禁止"因为红了就加"；依据 docs/字阶令牌冻结提案_2026-09-19.md §5.2）：
+//   19rpx×4 / 21rpx×2 —— **缺档值**（在 18/20 与 20/22 正中间）。补这两档要把契约 C7 的"14 档"
+//                        改成 16 档（属产品/契约决定）；改值 1rpx 等于在两档正中间替产品选边。
+//   25rpx×1（.ww-sheet-line）—— 距 --fs-24 仅 1rpx；
+//   42rpx×1（.ww-card-text） —— 距 --fs-40 2rpx。
+//   后两条**改值会真的改观感**（字号是硬几何），静态判据证不了"同值可替代"，故本批不动、只登记；
+//   真机确认过再动，届时同步下调本表（本判据会强制这一步）。
+const FS_NON_TOKEN_OK = { 19: 4, 21: 2, 25: 1, 42: 1 }
+const fsDecls = [...wallWxssCode.matchAll(/font-size:\s*([^;}]+)/g)].map((m) => m[1].trim())
+const fsTokens = fsDecls.filter((v) => /^var\(--fs-\d+\)$/.test(v))
+const fsLiterals = fsDecls.filter((v) => /^[\d.]+rpx$/.test(v)).map((v) => Number.parseFloat(v))
+const fsOther = fsDecls.filter((v) => !/^var\(--fs-\d+\)$/.test(v) && !/^[\d.]+rpx$/.test(v))
+// ①-a 写法退化：**在册值**（= --fs-* 的 14 个值）一律不许再写裸字面量 —— 本页已全部令牌化
+const fsOnScaleLiteral = fsLiterals.filter((v) => RPX_TOKENS[`fs-${v}`] !== undefined)
+check(
+  '★ 本页在册字号一律走 --fs-* 令牌（30rpx 这类在册值不得再写回裸字面量）',
+  fsOnScaleLiteral.length === 0 && fsOther.length === 0 && fsTokens.length >= 60,
+  `令牌 ${fsTokens.length} 处 / 写回裸值的在册值 ${JSON.stringify(fsOnScaleLiteral)} / 其它写法 ${JSON.stringify(fsOther.slice(0, 3))}`
+)
+// ①-b 非令牌值：按**白名单 + 处数**判（提案 D1/D2 —— 不按出现次数判，否则 3~9 次的噪声会静默逃逸）
+const fsOffScale = fsLiterals.filter((v) => RPX_TOKENS[`fs-${v}`] === undefined)
+const fsTally = {}
+fsOffScale.forEach((v) => { fsTally[v] = (fsTally[v] || 0) + 1 })
+check(
+  '★ 非令牌字号逐值登记且处数只许减（19×4 / 21×2 / 25×1 / 42×1）',
+  JSON.stringify(fsTally) === JSON.stringify(FS_NON_TOKEN_OK),
+  `非令牌实测 ${JSON.stringify(fsTally)} / 登记 ${JSON.stringify(FS_NON_TOKEN_OK)}`
+)
+
+// —— ② 间距：与 --space-* 同值的分量必须写令牌（同值判据，不改版式）——
+const SPACE_TOKEN_RPX = new Set([8, 16, 24, 32, 40, 48, 64])
+const spaceDeclRe = /(?:^|[;{\s])((?:padding|margin)(?:-(?:top|right|bottom|left))?|gap|row-gap|column-gap):\s*([^;}]+)/g
+const spaceNoise = []
+for (const m of wallWxssCode.matchAll(spaceDeclRe)) {
+  if (/calc\(/.test(m[2])) continue // calc 里的分量不是间距节奏，跳过（本页 .ww-page 的 72rpx 就在这里）
+  for (const part of m[2].trim().split(/\s+/)) {
+    const lit = /^-?(\d+)rpx$/.exec(part)
+    if (lit && SPACE_TOKEN_RPX.has(Number(lit[1]))) spaceNoise.push(`${m[1]}: ${m[2].trim()}`)
+  }
+}
+check(
+  '★ 与 --space-* 同值的间距一律写成令牌（同值替换，不改版式；防"随手 24rpx"长回来）',
+  spaceNoise.length === 0,
+  spaceNoise.slice(0, 4).join(' / ')
+)
+
+// —— ③ 按压反馈一致性 ——
+const pressOpacity = (sel) => {
+  const m = new RegExp(`\\${sel}\\s*\\{[^}]*opacity:\\s*([\\d.]+)`).exec(wallWxssCode)
+  return m ? Number(m[1]) : NaN
+}
+const lanternPress = pressOpacity('.ww-lantern-press')
+const muyuPress = pressOpacity('.ww-muyu-press')
+check(
+  '★ 灯卡与木鱼卡按压反馈同值（两卡是显式定义的"一对"，内边距已被上一条守卫钉住）',
+  Number.isFinite(lanternPress) && lanternPress === muyuPress,
+  `灯卡=${lanternPress} 木鱼卡=${muyuPress}`
+)
+const playPress = pressOpacity('.ww-play-press')
+const playNeedPress = pressOpacity('.ww-play-need-press')
+check(
+  '★ 玩法瓦片与"去补资料"行按压反馈同值（同在玩法区、同族可点面）',
+  Number.isFinite(playPress) && playPress === playNeedPress,
+  `玩法瓦片=${playPress} 补资料行=${playNeedPress}`
+)
+const hoverClasses = [...new Set([...wallWxml2.matchAll(/hover-class="([^"{}]+)"/g)].map((m) => m[1]))]
+const hoverMissing = hoverClasses.filter((c) => !new RegExp(`\\.${c}\\s*[,{]`).test(wallWxssCode))
+check(
+  '★ 每个 hover-class 都有同名规则（类名写错 = 点了没反馈，且 WXSS 不报错）',
+  hoverClasses.length >= 15 && hoverMissing.length === 0,
+  `引用 ${hoverClasses.length} 个 / 无规则: ${hoverMissing.join(',') || '无'}`
+)
+const stayTimes = [...wallWxml2.matchAll(/hover-stay-time="(\d+)"/g)].map((m) => Number(m[1]))
+check(
+  '★ 页面内 hover-stay-time 统一为 70ms（原 70/80/60 三种混用）',
+  stayTimes.length >= 15 && new Set(stayTimes).size === 1 && stayTimes[0] === 70,
+  `取值=${JSON.stringify([...new Set(stayTimes)])} / 处数=${stayTimes.length}`
+)
+
+// —— ④ 无障碍：可点元素必须有 role；装饰圆点必须 aria-hidden ——
+const wxmlTagsAll = wallWxml2.match(/<[a-zA-Z-]+[^>]*>/g) || []
+const tapTags = wxmlTagsAll.filter((t) => /bindtap\s*=/.test(t))
+const tapNoRole = tapTags.filter((t) => !/aria-role\s*=/.test(t))
+check(
+  '★ 每个可点元素（bindtap）都有 aria-role（否则读屏只念文字、不说"这是按钮"）',
+  tapTags.length >= 15 && tapNoRole.length === 0,
+  `可点 ${tapTags.length} 个 / 缺 role: ${tapNoRole.map((t) => t.replace(/\s+/g, ' ').slice(0, 60)).join(' | ') || '无'}`
+)
+const lightTags = wxmlTagsAll.filter((t) => /class="signal-light/.test(t))
+const lightNoHidden = lightTags.filter((t) => !/aria-hidden="true"/.test(t))
+check(
+  '★ 装饰性信号灯一律 aria-hidden（纯色圆点、零文本，读屏不该念它）',
+  lightTags.length >= 5 && lightNoHidden.length === 0,
+  `信号灯 ${lightTags.length} 个 / 未隐藏: ${lightNoHidden.length} 个`
+)
+// 反向：aria-hidden **不许盖住文案**。
+// 起因（本批自查发现）：给 `.ww-sheet-product-go`（"看看这件 ›"）顺手加了 aria-hidden —— 它是 CTA 文案，
+// 一隐藏就等于对读屏用户砍掉了"抽一句 → 看藏品"这条主路的出口。装饰与文案的边界必须由判据兜住。
+const hiddenInlineText = [...wallWxml2.matchAll(/aria-hidden="true"[^>]*>([^<]+)</g)]
+  .map((m) => m[1].trim())
+  .filter(Boolean)
+const hiddenCjk = hiddenInlineText.filter((t) => /[\u4e00-\u9fa5]/.test(t))
+check(
+  '★ aria-hidden 不许盖住中文文案（装饰才可隐藏；"看看这件"这类 CTA 不是装饰）',
+  hiddenCjk.length === 0,
+  `被隐藏的带字元素: ${JSON.stringify(hiddenCjk)}`
+)
+
+// —— ⑤ 死选择器 / 重复声明 ——
+check(
+  '★ 本页不留死选择器 .ww-wall-loading（wxss 有定义、wxml/js 零引用）',
+  !/\.ww-wall-loading\b/.test(wallWxssCode) && !/ww-wall-loading/.test(wallWxml2)
+)
+check(
+  '★ .ww-wall 的描边/阴影只声明一处（同选择器后者静默吃掉前者 —— 合并前 base 的 border/box-shadow 是死声明）',
+  (wallWxssCode.match(/\.ww-wall\s*\{/g) || []).length === 1,
+  `\.ww-wall{ 块数=${(wallWxssCode.match(/\.ww-wall\s*\{/g) || []).length}`
+)
+
+// —— ⑥ 愿签卡 / 骨架的底面一致（换卡那一帧不许跳色）——
+const surfaceGradient = (sel) => {
+  const m = new RegExp(`\\${sel}\\s*\\{[^}]*background:\\s*(linear-gradient\\([^;]+);`).exec(wallWxssCode)
+  return m ? m[1].replace(/\s+/g, '') : ''
+}
+const tagSurface = surfaceGradient('.ww-tag')
+const tagSkelSurface = surfaceGradient('.ww-tag-skel')
+check(
+  '★ 愿签骨架与愿签卡同底同渐变（骨架被真卡替换时不许跳色）',
+  tagSurface.length > 0 && tagSurface === tagSkelSurface,
+  `真卡=${tagSurface} 骨架=${tagSkelSurface}`
 )
 // —— 灯芯图标（2026-09-18 产品指定：用附件里的灯泡 SVG）——
 // data URI 的两种 encoding 都算数（percent-encoded / ;base64），只要它是**内联矢量图**：
@@ -4248,8 +4489,57 @@ check(
 
 if (process.argv.includes('--selftest') && !INJECT) {
   const { spawnSync } = await import('node:child_process')
+  /* ⚠️ 先验「注入锚点还在不在」（2026-09-19 补，起因见 docs/AI施工错题本.md 的「守卫判据自身错误」）：
+     注入的 `from` 在源码里找不到时，子进程会**抛错退出**（status ≠ 0），
+     而下面的判据只看 status ≠ 0 → 会把「锚点失效」误报成「注入被检出」= **假绿**。
+     2026-09-19 实测：132 个注入里有 **11 个**锚点已随历史改动消失 —— 也就是说这 11 条
+     在历次自检里都显示「✓ 被检出」，实际**一次都没有验证过**。
+     处理：把「已确认失效」的锚点显式登记（债务留痕，不许装作没有），并要求名单**只许变小** ——
+     哪条锚点哪天恢复了却还留在名单里，直接失败，逼人删登记、让它回到真防线里。 */
+  const KNOWN_DEAD_ANCHORS = new Set([
+    'seed-allows-off-pattern',      // wishSeeds.js：句式闸写法已变
+    'fresh-timer-leak',             // wish-wall/index.js：onUnload 结构已变
+    'card-not-dialog',              // wxml：.ww-card 属性序已变
+    'handwriting-dropped',          // wxss：手写体栈改为 var(--font-hand) 接线
+    'product-field-not-allowlisted',// manageProducts：白名单数组已重构
+    'bless-guide-dom-dropped',      // wxml：ww-plays-guide 已下线
+    'reco-dom-dropped',             // wxml：ww-play-reco 已重构
+    'reco-label-hardcoded',         // blessProducts.js：文案已改
+    'composer-fixed-again',         // wxss：.ww-composer 注释/属性序已变（顺流改造）
+    'sheet-identity-dropped',       // wxml：.ww-sheet-mask 属性序已变
+    'product-path-split-again'      // wxml：产品链路已合并为一条主路
+  ])
+  const anchorAlive = (inj) => {
+    const abs = resolve(ROOT, inj.file)
+    const resolved = resolveReexport(abs)
+    const raw = existsSync(resolved) ? readFileSync(resolved, 'utf8') : ''
+    if (raw.indexOf(inj.from) !== -1) return true
+    if (resolved !== abs && existsSync(abs) && readFileSync(abs, 'utf8').indexOf(inj.from) !== -1) return true
+    return false
+  }
+  const deadNow = Object.entries(INJECTIONS).filter(([, inj]) => !anchorAlive(inj)).map(([n]) => n)
+  const deadSet = new Set(deadNow)
+  const newlyDead = deadNow.filter((n) => !KNOWN_DEAD_ANCHORS.has(n))
+  const revived = [...KNOWN_DEAD_ANCHORS].filter((n) => !deadSet.has(n))
+  if (newlyDead.length) {
+    console.error(`  ✗ 有 ${newlyDead.length} 个注入锚点在源码里已失效（锚点失效会让「被检出」变成假绿，必须修锚点或登记）：`)
+    newlyDead.forEach((n) => console.error(`      - ${n}（${INJECTIONS[n].file}）`))
+  }
+  if (revived.length) {
+    console.error(`  ✗ 有 ${revived.length} 个锚点已恢复，但仍留在 KNOWN_DEAD_ANCHORS 里 —— 请从名单删掉，让它回到真防线：`)
+    revived.forEach((n) => console.error(`      - ${n}`))
+  }
+  if (newlyDead.length || revived.length) {
+    console.error('\n✗ selftest 失败：注入锚点清单与实际源码不一致')
+    process.exit(1)
+  }
+  console.log(`  ✓ 注入锚点：有效 ${Object.keys(INJECTIONS).length - deadSet.size} 条；已登记失效并跳过 ${deadSet.size} 条`)
+
   let bad = 0
+  let ran = 0
   for (const name of Object.keys(INJECTIONS)) {
+    if (deadSet.has(name)) continue // 锚点失效的注入证明不了任何事，跳过（上面已登记留痕）
+    ran += 1
     const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], {
       env: { ...process.env, WISH_WALL_INJECT: name },
       encoding: 'utf8'
@@ -4279,7 +4569,7 @@ if (process.argv.includes('--selftest') && !INJECT) {
     console.error(`\n✗ selftest 失败 ${bad} 项`)
     process.exit(1)
   }
-  console.log(`\n✓ selftest 通过：${Object.keys(INJECTIONS).length} 个回归注入全部被检出，且无假阳性`)
+  console.log(`\n✓ selftest 通过：${ran} 个有效回归注入全部被检出（另 ${deadSet.size} 条锚点失效已登记跳过），且无假阳性`)
   process.exit(0)
 }
 

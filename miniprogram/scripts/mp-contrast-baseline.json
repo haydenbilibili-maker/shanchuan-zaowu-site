@@ -1,8 +1,8 @@
 {
  "_doc": "小程序对比度棘轮基线。总数与逐文件数**只许降不许涨**；修完一批用 --update 重设并说明理由。",
  "_report": "docs/小程序对比度实测_2026-09-19.md（人工策展确证 62 条；本守卫按 §8.2 判据机械扫描实测 66 条，见文件头「与报告的差异」）",
- "at": "2026-09-18T17:14:25.091Z",
- "total": 66,
+ "at": "2026-09-18T17:39:42.876Z",
+ "total": 65,
  "counts": {
   "miniprogram/app.wxss": 3,
   "miniprogram/components/MemberLevelModal/index.wxss": 2,
@@ -35,7 +35,6 @@
   "miniprogram/subpackages/feature/gift/compose/index.wxss": 4,
   "miniprogram/subpackages/feature/gift/my-gifts/index.wxss": 1,
   "miniprogram/subpackages/feature/identify/result/index.wxss": 1,
-  "miniprogram/subpackages/feature/wish-wall/index.wxss": 1,
   "miniprogram/subpackages/manager/deposit-ops/index.wxss": 1,
   "miniprogram/subpackages/manager/invoice-requests/index.wxss": 1,
   "miniprogram/subpackages/manager/manager/index.wxss": 9,
