@@ -59,3 +59,4 @@ npm run test:banner-presets
 npm run check:docs-index
 
 npm run check:product-save-fields
+npm run check:hook-registration
