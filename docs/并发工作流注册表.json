@@ -101,6 +101,26 @@
       ]
     },
     {
+      "id": "wish-wall-refine",
+      "name": "祈福墙优化批（验收期在 feat/* 上推进，解冻后合回）",
+      "owner": "lead",
+      "phase": 1,
+      "note": "2026-09-19 立：验收冻结期（交接页 §12）禁止改 guard-registration 的代码，故本批优化走 feat/wish-wall-refine。内容：① 发送条吸底→顺流（弹幕墙下方，产品口径变更）+ 判据同步；② check:mp-contrast 入链。解冻后由集成官合回，并按 §12-④ 列出相对 057ed66 的新增提交，供产品负责人判断是否需补充验收。",
+      "owns": [
+        "miniprogram/scripts/check-mp-contrast.mjs",
+        "miniprogram/scripts/mp-contrast-baseline.json"
+      ],
+      "guards": [
+        "test:wish-wall",
+        "check:mp-contrast"
+      ],
+      "consumes": [
+        "miniprogram/subpackages/feature/wish-wall/**",
+        "package.json",
+        "guards/10-visual.txt"
+      ]
+    },
+    {
       "id": "visual",
       "name": "视觉设计专项（令牌 / 弹窗 / 字号 / 文案）",
       "owner": "agent:visual",
