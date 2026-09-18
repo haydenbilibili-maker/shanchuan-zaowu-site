@@ -1117,6 +1117,12 @@ function dispatchUserMessage(eventType, openid, relatedId, vars = {}) {
 
 const managerPageConfig = {
   data: {
+    // 统一主视觉轻提示（铭牌 + 铜金）—— 取代原生 toast，见 components/AppToast
+    toastShow: false,
+    toastOverline: '',
+    toastTitle: '',
+    toastDesc: '',
+    toastDuration: 2200,
     navTop: 20,
     navBarHeight: 44,
     navSpacerHeight: 64,
@@ -4579,13 +4585,38 @@ const managerPageConfig = {
     }));
     this.setData({ blessTagOptions });
   },
+  /**
+   * 统一主视觉轻提示（铭牌 + 铜金 + 衬线标题）—— 取代原生 toast，见 components/AppToast。
+   * 与 pages/cart/index.js 的 showAppToast 同形（原生 toast 在博物黑界面里最不像本产品）。
+   * 宿主接线：用到本 mixin 的页面须在 .json 注册 app-toast、在 .wxml 挂 <app-toast>
+   * （当前只有 manager/manager/workspace/index —— 祈运标签 chips 由 _subviews.wxml 画出）。
+   */
+  showAppToast({ overline = '', title = '', desc = '', duration = 0 } = {}) {
+    if (!title) return
+    this.setData({
+      toastOverline: overline,
+      toastTitle: title,
+      toastDesc: desc,
+      toastDuration: duration || 2200,
+      toastShow: true
+    })
+  },
+
+  onToastClose() {
+    this.setData({ toastShow: false })
+  },
+
   toggleProductBlessTag(e) {
     const key = String((e.currentTarget.dataset && e.currentTarget.dataset.key) || '').trim();
     if (!key) return;
     const current = sanitizeBlessTags((this.data.tempProduct || {}).blessTags);
     if (!current.includes(key) && current.length >= MAX_BLESS_TAGS) {
       // 上限是刻意的：标签一多就等于没标签；这里如实说，不静默丢掉用户的选择
-      wx.showToast({ title: `最多选 ${MAX_BLESS_TAGS} 个祈运标签`, icon: 'none' });
+      // 语气不变（轻提示、不打断）：改走统一主视觉轻提示，宿主见 workspace/index.wxml
+      this.showAppToast({
+        overline: 'BLESS TAG LIMIT',
+        title: `最多选 ${MAX_BLESS_TAGS} 个祈运标签`
+      });
       return;
     }
     const next = current.includes(key) ? current.filter((k) => k !== key) : sanitizeBlessTags([...current, key]);

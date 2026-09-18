@@ -7,3 +7,14 @@
     <include src="_subviews.wxml" />
   </block>
 </view>
+
+<!-- 统一主视觉轻提示宿主：放最外层容器之外，避免被任何 filter/transform 影响定位 -->
+<!-- 祈运标签上限提示（toggleProductBlessTag）就走它，见 managerPageConfig.showAppToast -->
+<app-toast
+  show="{{toastShow}}"
+  overline="{{toastOverline}}"
+  title="{{toastTitle}}"
+  desc="{{toastDesc}}"
+  duration="{{toastDuration}}"
+  bind:close="onToastClose"
+/>
