@@ -43,23 +43,14 @@ const SOUND_SOURCES = {
   lamp: '/subpackages/feature/wish-wall/assets/lamp.mp3'
 }
 
-/**
- * **时刻音**素材表：只在"一次仪式完成"的那一刻放一次（与敲击音效是两种东西）。
- *
- * ⚠️ 为什么**不**并进上面的 `SOUND_SOURCES`：
- *   ① 体积口径不同：敲击音效挂在**每次**动作上，守卫逐条要求 `>1KB 且 <32KB`；
- *      时刻音是一段 6 秒音乐（≈47KB），并进那张表会当场把那条判据弄红；
- *   ② 语义不同：敲击音是"动作的反馈"，时刻音是"完成一次仪式的纪念"——
- *      敲十下木鱼不该把副歌放十遍。
- * 所以它**独立成表**，并有自己的守卫（存在 / 体积区间 / 不在敲击表里 / 尊重音效开关）。
- *
- * 素材来源与可复现方式见 `miniprogram/scripts/make-black-horse-clip.mjs`
- * （起点 98.7s 由响度包络定位，**不是听出来的**，待产品负责人试听确认）。
- * 原曲《黑马标本店》239.64s / 46MB —— **原曲不进包**（分包上限 2MB），只进这段 6 秒片段。
- */
-const MOMENT_SOURCES = {
-  blackHorseSong: '/subpackages/feature/wish-wall/assets/black-horse-song-clip.mp3'
-}
+/* ── 已否决：品牌推广曲的「时刻音」自动播放（2026-09-20）──────────────────────
+   曾实现过：上墙成功时自动播 6 秒副歌片段（独立于 SOUND_SOURCES 的 MOMENT_SOURCES
+   + playMoment/resetMoment + 随包的 black-horse-song-clip.mp3 + 5 条守卫）。
+   产品负责人 2026-09-20 裁决**撤掉**：「**还是别放音乐了，过于突兀**」——
+   完成动作时自动起音乐是"替你制造情绪"，与这面墙"让人自己说"的克制方向相反。
+   所以整套机制**一并删除**（不留永不调用的空壳），片段资产也不随包发布。
+   若日后想做，正确形态是**用户主动点**（例如一个「听这首歌」入口），而不是自动播放；
+   片段生成仍是可复现的：`node miniprogram/scripts/make-black-horse-clip.mjs <原曲.wav>`。 */
 
 /**
  * 回声文案池：同一动作给几句，按 seq 轮换（敲木鱼连点会换词，像真的在回应）。
@@ -230,44 +221,6 @@ function createPlayer(opts) {
   return { play, destroy }
 }
 
-/** 时刻音播放器 + "本次会话是否已放过"标记（复用 createPlayer：一个实例、失败不冒泡） */
-const moment = { player: null, played: false }
-
-/**
- * 放一段**时刻音**（一次仪式完成时的一次性纪念音）。
- *
- * 三条刻意的约束：
- *   1. **一个页面会话只放一次** —— 连点上墙/反复抽签不该把副歌叠着放；
- *   2. 尊重**音效开关**（用户关掉音效 = 什么都不响，包括这一条）；
- *   3. 任何失败只是"没响"（与敲击音效同一条纪律：装饰音不值得弹错、更不该阻断动作）。
- *
- * @param {string} key MOMENT_SOURCES 里的键
- * @returns {boolean} 是否真的放了
- */
-function playMoment(key) {
-  const k = String(key || '')
-  if (!MOMENT_SOURCES[k]) return false
-  if (moment.played) return false
-  if (!isSoundEnabled()) return false
-  try {
-    if (!moment.player) moment.player = createPlayer({ sources: MOMENT_SOURCES })
-    const ok = moment.player.play(k, Date.now()) === true
-    if (ok) moment.played = true
-    return ok
-  } catch (e) {
-    return false
-  }
-}
-
-/** 复位"已放过"（页面 onLoad/onUnload 与守卫用；换一次进页 = 可以再听一次） */
-function resetMoment() {
-  moment.played = false
-  if (moment.player) {
-    try { moment.player.destroy() } catch (e) { /* ignore */ }
-    moment.player = null
-  }
-}
-
 /**
  * 页面唯一入口：算一次动作的全部反馈。
  * @param {string} action
@@ -291,7 +244,6 @@ module.exports = {
   ECHO_HOLD_MS,
   ECHO_MAX_CHARS,
   SOUND_SOURCES,
-  MOMENT_SOURCES,
   ECHO_LINES,
   echoLine,
   echoSub,
@@ -301,7 +253,5 @@ module.exports = {
   toggleSound,
   shouldPlaySound,
   createPlayer,
-  playMoment,
-  resetMoment,
   emitFeedback
 }

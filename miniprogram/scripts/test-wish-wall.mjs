@@ -807,14 +807,6 @@ const INJECTIONS = {
     from: "  lamp: '/subpackages/feature/wish-wall/assets/lamp.mp3'",
     to: "  lamp: '/subpackages/feature/wish-wall/assets/muyu.mp3'"
   },
-  // 时刻音（品牌推广曲片段）被塞进**敲击音效表** → 两条判据同时该红：
-  // ① 它 47KB > 32KB（敲击音效的体积上限）② 语义错了（敲十下木鱼会放十遍副歌）。
-  // 这条注入存在的意义：防止日后有人"顺手"把它并进 SOUND_SOURCES 而没人拦。
-  'moment-into-tap-table': {
-    file: 'miniprogram/utils/ritualFeedback.js',
-    from: "  lamp: '/subpackages/feature/wish-wall/assets/lamp.mp3'\n}",
-    to: "  lamp: '/subpackages/feature/wish-wall/assets/lamp.mp3',\n  blackHorseSong: '/subpackages/feature/wish-wall/assets/black-horse-song-clip.mp3'\n}"
-  },
   // 分享文案把"依据"带出去 → 等于公开了用户的星座/型别
   'play-share-leaks-basis': {
     file: 'miniprogram/utils/ritualPlay.js',
@@ -3383,34 +3375,9 @@ check('素材表里每个动作都有真实文件', srcEntries.length >= 2 && sr
   const abs = join2(ROOT, 'miniprogram' + rel)
   return existsSync(abs) && statSync(abs).size > 1024 && statSync(abs).size < 32 * 1024
 }), srcEntries.map(([k, v]) => `${k}=${v}`).join(' '))
-/* ── 时刻音（品牌推广曲片段，2026-09-20）─────────────────────────────────────
-   它是"一次仪式完成时放一次"的音乐片段，**与敲击音效是两种东西**（所以独立成表）。
-   这四条把两件事同时钉住：片段真的存在且体积在区间内 / **不许**并进敲击表 /
-   尊重音效开关 / 一个页面会话只放一次。 */
-{
-  const fbSrc = readSrc('miniprogram/utils/ritualFeedback.js')
-  const momentRel = String((ritualFb.MOMENT_SOURCES || {}).blackHorseSong || '')
-  const momentAbs = momentRel ? join2(ROOT, 'miniprogram' + momentRel) : ''
-  const momentExists = !!momentAbs && existsSync(momentAbs)
-  check('★ 时刻音素材真实存在（登记了就必须能响）', momentExists, momentAbs || 'MOMENT_SOURCES 没有 blackHorseSong')
-  check(
-    '★ 时刻音体积在区间内 [10KB, 200KB]（6 秒音乐；比敲击音效宽松，但不许长成大文件）',
-    momentExists && statSync(momentAbs).size >= 10 * 1024 && statSync(momentAbs).size <= 200 * 1024,
-    momentExists ? `${statSync(momentAbs).size}B` : '文件不存在'
-  )
-  check(
-    '★ 时刻音**不在**敲击音效表里（并进去会同时把「<32KB」弄红，且语义不同：敲十下木鱼不该放十遍副歌）',
-    !!momentRel && !Object.values(ritualFb.SOUND_SOURCES || {}).includes(momentRel)
-  )
-  check(
-    '★ 时刻音尊重音效开关（用户关了音效，连这一刻也不该响）',
-    /function playMoment[\s\S]{0,400}?isSoundEnabled\(\)/.test(fbSrc)
-  )
-  check(
-    '★ 时刻音一个页面会话只放一次（连点上墙不叠副歌）',
-    /function playMoment[\s\S]{0,400}?moment\.played/.test(fbSrc) && /moment\.played = true/.test(fbSrc)
-  )
-}
+/* （2026-09-20 曾在此加过 5 条「时刻音」判据 —— 上墙成功自动播 6 秒推广曲副歌。
+   产品负责人当天裁决撤掉：「还是别放音乐了，过于突兀」→ 机制与判据一并删除。
+   若日后改成**用户主动点**的形态，再按那时的设计补判据，不要恢复自动播放。） */
 check(
   '★ 点灯有独立的铜磬（不是把木鱼复制一份：两个动作要有各自的性格）',
   (() => {
