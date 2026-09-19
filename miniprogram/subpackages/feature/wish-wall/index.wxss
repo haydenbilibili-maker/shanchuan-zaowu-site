@@ -1660,6 +1660,36 @@ page {
    这里是"抽一句"的入口瓦片（无状态、点开就地展开结果）。所以：
    - 瓦片矮、不带边框发光，只留纸面与字标；
    - 结果卡用与愿签同一套"纸面 + 铜边"语言，展开在瓦片下方。 */
+/* 注册成功后的「下一步」提示条（PRD §9-4「两者合一」）：纸面语言与页面一致，两个出口并排。
+   间距用 12/18/20rpx —— 刻意避开与 --space-* 同值的字面量（那是守卫的判据）。 */
+.ww-joined {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin: 12rpx 0 0;
+  padding: 18rpx 20rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  border-radius: var(--radius-md);
+}
+.ww-joined-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-24);
+  color: var(--color-text-primary);
+}
+.ww-joined-acts { display: flex; align-items: center; gap: 12rpx; flex-shrink: 0; }
+.ww-joined-act {
+  padding: 12rpx 20rpx;
+  font-size: var(--fs-24);
+  color: var(--brass-300);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  border-radius: 999rpx;
+}
+.ww-joined-act.is-primary { color: #1A1814; background: var(--brass-300); border-color: var(--brass-300); }
+.ww-joined-act-press { opacity: 0.86; }
+
 .ww-plays {
   position: relative;
   z-index: 1;

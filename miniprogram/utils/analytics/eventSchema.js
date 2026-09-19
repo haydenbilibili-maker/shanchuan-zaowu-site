@@ -156,7 +156,7 @@ const EVENTS = {
   wish_wall_reco: { module: MODULE.COMMUNITY, desc: '祈福墙祈运弱推（targetType=祈运标签 key）', targetType: 'reco' },
   // 注册转化漏斗（2026-09-18 产品口径：祈福墙是注册转化路径，对齐 AI 识别）：
   // step = show（落愿时弹注册）/ dismiss（先不挂）/ resume_success（注册完成并自动续发）/ fail_*
-  wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
+  wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success；注册成功后另有 to_coupons/to_shop 两个「下一步」点击，属转化**之后**的行为、不计入漏斗）', targetType: 'wish_wall' },
   // 连续记录云保存钩子（2026-09-20）：只在用户真有可丢进展（连灯 ≥2 天 / 木鱼 ≥21 下）时曝光。
   // step = show（有进展且未注册时弹注册）/ go_register（点了授权按钮）/ dismiss（先存着）/
   //        resume_success（注册完成**且记录已同步上云**）/ fail_*（授权失败、同步失败、开关关闭）

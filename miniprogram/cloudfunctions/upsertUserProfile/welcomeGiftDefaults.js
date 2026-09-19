@@ -38,7 +38,13 @@ function getDefaultConfig() {
       { id: 'c10', enabled: true, value: 10, minSpend: 99, expireDays: 90, count: 1, title: '新会员礼券 · 10元', channel: 'all' },
       { id: 'c30', enabled: true, value: 30, minSpend: 299, expireDays: 90, count: 1, title: '新会员礼券 · 30元', channel: 'all' },
       { id: 'c50', enabled: true, value: 50, minSpend: 499, expireDays: 90, count: 1, title: '新会员礼券 · 50元', channel: 'all' },
-      { id: 'c100', enabled: true, value: 100, minSpend: 999, expireDays: 90, count: 1, title: '新会员礼券 · 100元', channel: 'all' }
+      { id: 'c100', enabled: true, value: 100, minSpend: 999, expireDays: 90, count: 1, title: '新会员礼券 · 100元', channel: 'all' },
+      // 2026-09-20 产品负责人口径：门店立牌写的「写下心愿得 200 元礼券」是**累积加总**，
+      // 所以补一张「满 49 减 5」把合计从 195 补到 **200**（5+10+30+50+100+5）。
+      // id 用 c05（券 id 约定是 c<数字>，slotKey 格式 ^c\d+:\d+$ 由守卫核对）。
+      // ⚠️ 本文件与 cloudfunctions/manageWelcomeGift/welcomeGiftDefaults.js 是**两份副本**
+      //    （后者多一个 buildPreview），改券阶梯必须**两处同改** —— 本轮已同步。
+      { id: 'c05', enabled: true, value: 5, minSpend: 49, expireDays: 90, count: 1, title: '新会员礼券 · 5元（加赠）', channel: 'all' }
     ]
   }
 }

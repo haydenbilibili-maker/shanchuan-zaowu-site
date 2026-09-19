@@ -135,13 +135,18 @@ function upsertAnomalySignature(src) {
     && (src.match(/\|\|\s*couponsConfiguredButEmpty/g) || []).length >= 2
 }
 
-/** 线上权威档位（小程序-我的-超管工作台-新会员礼包）——变更须同步改此断言 */
+/** 线上权威档位（小程序-我的-超管工作台-新会员礼包）——变更须同步改此断言
+ *  2026-09-20：产品负责人裁决「立牌写的 200 元是累积加总」→ 礼包从 5 档(195) 补为
+ *  **6 档(200)**（加一张满49减5，id=c05）。本断言同步到 6 档。
+ *  ⚠️ 这是个**手工镜像**：它读不到线上真实配置，只能靠人同步。
+ *     线上那 6 档由产品负责人在超管工作台补齐；两处对齐后这条判据才真正成立。 */
 const SSOT_LADDER = [
   { value: 5, minSpend: 49 },
   { value: 10, minSpend: 99 },
   { value: 30, minSpend: 299 },
   { value: 50, minSpend: 499 },
-  { value: 100, minSpend: 999 }
+  { value: 100, minSpend: 999 },
+  { value: 5, minSpend: 49 }
 ]
 const MAX_OFF_RATIO = 0.25
 

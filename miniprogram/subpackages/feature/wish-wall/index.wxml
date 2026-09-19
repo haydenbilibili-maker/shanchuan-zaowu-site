@@ -170,6 +170,18 @@
       >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
     </view>
 
+    <!-- 注册成功后的「下一步」（PRD §9-4 裁决：**两者合一** = 券包 + 去逛）。
+         用**就地提示条**而不是新弹窗：不再加一层模态（避开原生弹窗棘轮），也不打断"心愿刚上墙"那一帧。
+         文案只写**成立的事实**（"注册成功"）—— 不写"券已到账"：礼包发不发取决于后台配置，
+         写死了就是在替配置打包票（本仓最忌"看起来像真的"）。两个出口各自单独记漏斗 step。 -->
+    <view class="ww-joined" wx:if="{{justRegistered}}">
+      <text class="ww-joined-text">注册成功 · 欢迎来到山海造物</text>
+      <view class="ww-joined-acts">
+        <view class="ww-joined-act" bindtap="goCouponsAfterRegister" hover-class="ww-joined-act-press" hover-stay-time="70" aria-role="button">我的券包</view>
+        <view class="ww-joined-act is-primary" bindtap="goShoppingAfterRegister" hover-class="ww-joined-act-press" hover-stay-time="70" aria-role="button">去逛逛</view>
+      </view>
+    </view>
+
     <!-- 祈福动作区：点灯 + 木鱼并列（产品负责人 2026-09-19 版式） -->
     <view class="ww-ritual-row">
     <!-- 灯龛：零门槛的入场动作。点完亮出当天那一句，同一天复现同一句。

@@ -182,6 +182,11 @@ Page({
     draft: '',
     /** 由「写成心愿」置 true → 输入框自动聚焦、键盘直接起来（失焦时由 onInputBlur 复位） */
     inputFocus: false,
+    /**
+     * 刚落愿时注册成功的「下一步」提示条（PRD §9-4 裁决：**两者合一** —— 券包 + 去逛）。
+     * 只在 `onRegisterSuccess` 置 true；它是一条**就地提示**，不是新弹窗。
+     */
+    justRegistered: false,
     loadError: '',
     myHidden: 0,
     /**
@@ -528,6 +533,23 @@ Page({
     if (!r || !r._id) return
     trackBehavior('wish_wall_reco', 'tap', r.tag || '')
     wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(r._id)}`, fail: () => {} })
+  },
+
+  /* ── 注册成功后的「下一步」（PRD §9-4 裁决：**两者合一**）──────────────────────
+     两个出口：去券包（复用共享导航，它会按"有没有可用券"分流）/ 去逛逛（切到馆藏 tab）。
+     两条都单独记漏斗 step —— 否则无法知道"给的这个下一步到底有没有人走"，
+     这正是 PRD §7「给下一步必须是可测的一步」的要求。 */
+  goCouponsAfterRegister() {
+    trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'to_coupons' })
+    try {
+      require('../../../utils/rewardsNav').openWalletHub({ tab: 'coupons' }).catch(() => {})
+    } catch (e) { /* 导航失败不影响页面 */ }
+  },
+
+  goShoppingAfterRegister() {
+    trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'to_shop' })
+    // 馆藏是 tabBar 页，必须 switchTab（navigateTo 会失败）
+    try { wx.switchTab({ url: '/pages/category/index', fail: () => {} }) } catch (e) { /* ignore */ }
   },
 
   /** 需要补资料 → 去资料页（那两项自带完善奖励；不在这里拦注册，价值先行） */
@@ -1236,7 +1258,7 @@ Page({
 
   /** 原地注册成功：刷新会话态，并把刚才那条心愿**自动续发**（用户的意图不该丢） */
   async onRegisterSuccess() {
-    this.setData({ showRegisterDialog: false })
+    this.setData({ showRegisterDialog: false, justRegistered: true })
     trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'resume_success' })
     // 会话刷新**不阻塞续发**：注册已经成功，不该因为一次刷新往返把心愿吞掉。
     // 续发走 `_resumeAfterRegister` 跳过门禁，所以这里不需要等会话刷新完成。

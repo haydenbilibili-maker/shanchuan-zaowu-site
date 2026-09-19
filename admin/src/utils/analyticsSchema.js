@@ -183,7 +183,7 @@ export const EVENTS = {
   wish_wall_sound: { module: MODULE.COMMUNITY, desc: '祈福墙仪式音效开关', targetType: 'on' },
   wish_wall_play: { module: MODULE.COMMUNITY, desc: '祈福墙玩法（targetType=玩法 id：qian/cookie/zodiac/mbti）', targetType: 'play' },
   wish_wall_reco: { module: MODULE.COMMUNITY, desc: '祈福墙祈运弱推（targetType=祈运标签 key）', targetType: 'reco' },
-  wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
+  wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success；注册成功后另有 to_coupons/to_shop 两个「下一步」点击，属转化**之后**的行为、不计入漏斗）', targetType: 'wish_wall' },
   wish_ritual_gate: { module: MODULE.COMMUNITY, desc: '祈福墙连续记录云存注册漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
   muyu_cert_gate: { module: MODULE.COMMUNITY, desc: '祈福墙功德证领取漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
   // —— 补登记（2026-09-16 与小程序 eventSchema 对齐）· USER ——

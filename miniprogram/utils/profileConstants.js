@@ -134,7 +134,11 @@ const REGISTER_GIFT = {
     { value: 10, minSpend: 99 },
     { value: 30, minSpend: 299 },
     { value: 50, minSpend: 499 },
-    { value: 100, minSpend: 999 }
+    { value: 100, minSpend: 999 },
+    // 2026-09-20：与云函数兜底、线上权威档位同步补第 6 张（满49减5），礼包合计 195 → **200**。
+    // 这是**第三处**副本（另两处在两个云函数的 welcomeGiftDefaults.js）——
+    // `check:welcome-gift` 会同时核对三处，漏一处就红（本轮实测：改完两处又被这条拦下）。
+    { value: 5, minSpend: 49 }
   ],
   expireDays: 90,
   stackable: false
