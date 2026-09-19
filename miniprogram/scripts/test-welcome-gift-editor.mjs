@@ -137,6 +137,19 @@ check('地板口径与云函数同源（0.25）',
 check('★ 会溢出的 .toggle 死样式已清', !/\.toggle\b/.test(pageWxss))
 check('顾客视角预览存在（与发放/预览同口径）', /class="coupon-preview"/.test(pageWxml))
 
+/* —— 维护入口：券对齐与补发（2026-09-20）────────────────────────────────────
+   为什么钉它：云函数早就有 `listIncomplete` / `alignCoupons` 两个**超管专属**动作
+   （按 registerGiftIncomplete 标记列人 / 把已发**未使用**券条款对齐到当前配置，幂等），
+   但**全仓没有任何 UI 调它们** —— 结果是"改档位后老会员的券不齐，谁也补不了"（能力在、跑不了）。
+   这两条判据保证入口不会被悄悄摘掉，且结果文案只用响应里真存在的字段。 */
+check('★ 维护入口接线：两个超管动作都能从本页触发',
+  /bindtap="onListIncomplete"/.test(pageWxml) && /bindtap="onAlignCoupons"/.test(pageWxml) &&
+  /action: 'listIncomplete'/.test(pageJs) && /action: 'alignCoupons'/.test(pageJs),
+  '缺入口 = 改档位后老会员的券不齐却补不了')
+check('★ 对齐结果只用响应里的真字段（否则面板会显示 undefined / 谎报 0 张）',
+  /s\.scanned/.test(pageJs) && /s\.updated/.test(pageJs) && /s\.skipped/.test(pageJs) && /s\.truncated/.test(pageJs),
+  'alignCoupons 返回的是 couponSync:{scanned,updated,pending,skipped,unchanged,truncated}')
+
 /* ── 4) ERP 端（同一套规则，两边必须同口径） ─────────────────────────────── */
 {
   const a = order.sortCouponsByThreshold(LIVE).map((c) => c.id).join(',')
@@ -183,6 +196,13 @@ if (process.argv.includes('--selftest')) {
 
 function selftest() {
   const injections = [
+    {
+      // 维护入口被摘掉 → 改档位后老会员的券不齐，谁也补不了（能力在、跑不了）
+      name: '维护入口被摘掉（券不齐的会员再也补不了）',
+      file: PAGE_WXML,
+      from: '          <view class="workbench-btn-outline sm {{maintBusy ? \'is-disabled\' : \'\'}}" bindtap="onAlignCoupons" aria-role="button">对齐已发券</view>\n',
+      to: ''
+    },
     {
       name: 'wx:key 退回可编辑的 id（输入框又会失焦）',
       file: PAGE_WXML,

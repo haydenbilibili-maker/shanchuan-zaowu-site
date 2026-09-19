@@ -19,6 +19,9 @@ Page({
     ready: false,
     loading: false,
     saving: false,
+    /** 「维护 · 券对齐」区块状态（2026-09-20）：两个超管动作的进行中标记与结果文案 */
+    maintBusy: false,
+    maintText: '',
     fromDefault: true,
     docId: '',
     ruleText: '',
@@ -58,6 +61,50 @@ Page({
       throw err
     }
     return result
+  },
+
+  /* ── 维护 · 券对齐（2026-09-20）─────────────────────────────────────────────
+     云函数侧早有这两个超管动作，但全仓没有 UI 入口 —— 改档位之后没人能把老会员的券补齐。
+     文案只用响应里**真实存在**的字段，避免"面板说补了 0 张但其实没查"这种假绿：
+       · listIncomplete → { list, ... }
+       · alignCoupons   → { couponSync: { scanned, updated, pending, skipped, unchanged, truncated, error? } } */
+  async onListIncomplete() {
+    if (this.data.maintBusy) return
+    this.setData({ maintBusy: true, maintText: '查询中…' })
+    try {
+      const r = await this.callFn({ action: 'listIncomplete', limit: 30 })
+      const n = (r.list || []).length
+      this.setData({
+        maintText: n
+          ? `券不齐的会员：${n} 位${n >= 30 ? '（单次最多列 30 位，可能还有更多）' : ''} —— 点「对齐已发券」补齐`
+          : '没有券不齐的会员 ✓'
+      })
+    } catch (e) {
+      this.setData({ maintText: `查询失败：${formatCloudFnError(e, '请稍后重试')}` })
+    } finally {
+      this.setData({ maintBusy: false })
+    }
+  },
+
+  async onAlignCoupons() {
+    if (this.data.maintBusy) return
+    this.setData({ maintBusy: true, maintText: '对齐中…' })
+    try {
+      const r = await this.callFn({ action: 'alignCoupons' })
+      const s = r.couponSync || {}
+      if (s.error) {
+        this.setData({ maintText: `对齐失败：${s.error}` })
+        return
+      }
+      this.setData({
+        maintText: `扫描 ${s.scanned || 0} 张 / 修正 ${s.updated || 0} 张 / 无需改 ${s.unchanged || 0} 张 / 跳过 ${s.skipped || 0} 张`
+          + (s.truncated ? '（已达单次扫描上限，建议再点一次）' : '')
+      })
+    } catch (e) {
+      this.setData({ maintText: `对齐失败：${formatCloudFnError(e, '请稍后重试')}` })
+    } finally {
+      this.setData({ maintBusy: false })
+    }
   },
 
   applyForm(config, extra) {

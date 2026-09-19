@@ -133,6 +133,25 @@
       </view>
     </view>
 
+    <!-- 维护 · 券对齐（2026-09-20）
+         为什么要有它：改礼包档位（如 5 档 195 → 6 档 200）之后，**改档前注册**的会员券是不齐的。
+         云函数早就提供两个超管动作 `listIncomplete`（按 registerGiftIncomplete 标记列人）与
+         `alignCoupons`（把已发**未使用**券条款强制对齐到当前配置，幂等），**但全仓没有 UI 调它们**
+         —— 能力在、谁也跑不了。这里把入口补上；权限仍由云函数 requireSuperAdmin 兜底。 -->
+    <view class="section">
+      <view class="workbench-section-head">
+        <text class="section-title">维护 · 券对齐</text>
+      </view>
+      <view class="field-block">
+        <text class="form-label block">改档位后，「改档前注册」的会员券会不齐（缺新增那一档）。先查、再对齐；对齐是幂等的，且只动「未使用」的券。</text>
+        <view class="flex">
+          <view class="workbench-btn-outline sm {{maintBusy ? 'is-disabled' : ''}}" bindtap="onListIncomplete" aria-role="button">查券不齐的会员</view>
+          <view class="workbench-btn-outline sm {{maintBusy ? 'is-disabled' : ''}}" bindtap="onAlignCoupons" aria-role="button">对齐已发券</view>
+        </view>
+        <text class="form-hint block" wx:if="{{maintText}}">{{maintText}}</text>
+      </view>
+    </view>
+
     <view class="workbench-page-foot-spacer"></view>
   </view>
 
