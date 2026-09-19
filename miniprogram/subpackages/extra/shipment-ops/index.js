@@ -957,6 +957,49 @@ Page({
     this.setData({ parsePreview: this.recomputePreviewTotals(parsePreview) })
   },
 
+  /**
+   * 跳到「逐行核对与算价」页（蓝图裁决 24）。
+   *
+   * 草稿走 Storage 而不是 URL：真实样本 21 行，JSON 放进 `navigateTo` 的 query
+   * 会被长度限制截断（截断后是静默的半个 JSON，比直接失败更难查）。
+   *
+   * 这里**不改动** `confirmPaste` 这条老路：不想算价的门店仍然可以一键写入。
+   */
+  openEditPage() {
+    const preview = this.data.parsePreview
+    if (!preview || !preview.canWrite) return
+    const shipments = Array.isArray(preview.shipments) ? preview.shipments : []
+    const lines = []
+    for (const block of shipments) {
+      for (const it of block.items || []) {
+        lines.push({
+          itemName: it.itemName,
+          qty: Number(it.qty) || 1,
+          // 预览阶段还没有定价线索，进来后由编辑页 quotePrice 自动带出能认出来的
+          pricingHint: {},
+          storeId: block.storeId,
+          storeName: block.storeName
+        })
+      }
+    }
+    if (!lines.length) return
+    try {
+      wx.setStorageSync('shipment_edit_draft_v1', {
+        shipmentDate: preview.shipmentDate || '',
+        storeId: shipments[0].storeId || '',
+        storeName: shipments[0].storeName || '',
+        laborRatePct: 30,
+        rawText: preview.rawText || '',
+        batchId: '',
+        lines
+      })
+    } catch (e) {
+      this.setData({ pasteError: '草稿写入失败，请重试' })
+      return
+    }
+    wx.navigateTo({ url: '/subpackages/extra/shipment-edit/index' })
+  },
+
   async confirmPaste() {
     const parsePreview = this.data.parsePreview
     if (!parsePreview || !parsePreview.canWrite) {

@@ -1,0 +1,185 @@
+<!-- 出货单 · 逐行核对与算价（蓝图裁决 24）
+     动线：从 shipment-ops 粘贴解析后带草稿进来 → 逐行核对/修正 → 保存
+     金额一律来自云函数 quotePrice（客户端不算钱） -->
+<view class="se-page" wx:if="{{ready}}">
+  <view class="se-header">
+    <text class="se-title">核对出货单</text>
+    <text class="se-sub">{{storeName || '未指定门店'}} · {{shipmentDate || '未指定日期'}}</text>
+    <text class="se-sub">改动任一项会自动重算；金额由服务端按价目表计算</text>
+  </view>
+
+  <!-- 单据级手工费率 -->
+  <view class="se-card se-rate-card">
+    <view class="se-rate-row">
+      <text class="se-rate-label">本单手工费率</text>
+      <view class="se-rate-input">
+        <input
+          class="se-input se-input-rate"
+          type="digit"
+          value="{{laborRatePct}}"
+          bindinput="onShipmentRateInput"
+        />
+        <text class="se-rate-unit">%</text>
+      </view>
+    </view>
+    <text class="se-hint">每行可单独覆盖（在行内勾「本行单独设」）</text>
+  </view>
+
+  <view class="se-tip is-{{tipTone}}" wx:if="{{tipText}}">
+    <text>{{tipText}}</text>
+  </view>
+
+  <!-- 逐行卡片 -->
+  <view class="se-lines">
+    <view class="se-line {{item.unmatched ? 'is-unmatched' : ''}}" wx:for="{{lines}}" wx:key="index">
+      <view class="se-line-head">
+        <text class="se-line-no">#{{item.index}}</text>
+        <text class="se-line-name">{{item.itemName}}</text>
+        <view class="se-del" data-index="{{index}}" catchtap="onRemoveLine">
+          <text>删除</text>
+        </view>
+      </view>
+
+      <view class="se-field">
+        <text class="se-field-label">原材料</text>
+        <view class="se-field-pick" data-index="{{index}}" data-kind="material" bindtap="openPicker">
+          <text class="se-pick-text {{item.materialName ? '' : 'is-empty'}}">{{item.materialLabel}}</text>
+          <text class="se-pick-arrow">▾</text>
+        </view>
+        <text class="se-field-cost">{{item.materialCostText}}/件</text>
+      </view>
+
+      <view class="se-field">
+        <text class="se-field-label">包装方式</text>
+        <view class="se-field-pick" data-index="{{index}}" data-kind="packaging" bindtap="openPicker">
+          <text class="se-pick-text {{item.packagingName ? '' : 'is-empty'}}">{{item.packagingLabel}}</text>
+          <text class="se-pick-arrow">▾</text>
+        </view>
+        <text class="se-field-cost">{{item.packagingCostText}}/件</text>
+      </view>
+
+      <view class="se-field se-field-labor">
+        <text class="se-field-label">手工费</text>
+        <view class="se-labor-ctl">
+          <switch
+            class="se-switch"
+            checked="{{item.useLineRate}}"
+            color="#C4A76C"
+            data-index="{{index}}"
+            bindchange="onToggleLineRate"
+          />
+          <input
+            wx:if="{{item.useLineRate}}"
+            class="se-input se-input-line-rate"
+            type="digit"
+            value="{{item.laborRatePct}}"
+            data-index="{{index}}"
+            bindinput="onLineRateInput"
+          />
+          <text class="se-labor-hint" wx:else>{{item.rateSource === 'shipment' ? '按本单费率' : '本行单独设'}}</text>
+        </view>
+        <text class="se-field-cost">{{item.laborCostText}}/件</text>
+      </view>
+
+      <view class="se-line-foot">
+        <view class="se-qty">
+          <view class="se-qty-btn" data-index="{{index}}" data-delta="-1" bindtap="onQtyStep"><text>−</text></view>
+          <input class="se-qty-input" type="number" value="{{item.qty}}" data-index="{{index}}" bindinput="onQtyChange" />
+          <view class="se-qty-btn" data-index="{{index}}" data-delta="1" bindtap="onQtyStep"><text>＋</text></view>
+        </view>
+        <view class="se-line-total">
+          <text class="se-line-total-label">行小计</text>
+          <text class="se-line-total-value {{item.unmatched ? 'is-pending' : ''}}">{{item.lineTotalText}}</text>
+        </view>
+      </view>
+
+      <view class="se-note" wx:if="{{item.unmatched}}">
+        <text>{{item.pricingNote || '这一行还没法算价'}}</text>
+      </view>
+      <view class="se-note se-note-ok" wx:else>
+        <text>按手工费 {{item.effectiveRatePct}}% 计算</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 常驻合计 -->
+  <view class="se-summary">
+    <view class="se-sum-item">
+      <text class="se-sum-label">材料</text>
+      <text class="se-sum-value">{{materialText}}</text>
+    </view>
+    <view class="se-sum-item">
+      <text class="se-sum-label">包装</text>
+      <text class="se-sum-value">{{packagingText}}</text>
+    </view>
+    <view class="se-sum-item">
+      <text class="se-sum-label">手工</text>
+      <text class="se-sum-value">{{laborText}}</text>
+    </view>
+    <view class="se-sum-item se-sum-total">
+      <text class="se-sum-label">合计</text>
+      <text class="se-sum-value">{{totalText}}</text>
+    </view>
+  </view>
+
+  <view class="se-actions">
+    <button class="se-btn se-btn-ghost" bindtap="onSave" disabled="{{busy}}">先存为待核价</button>
+    <button class="se-btn se-btn-main {{allPriced ? '' : 'is-disabled'}}" bindtap="onSave" disabled="{{busy}}">
+      {{busy ? '处理中…' : (allPriced ? '保存（已全部核价）' : '保存（含待核价行）')}}
+    </button>
+  </view>
+
+  <!-- 选择器弹层 -->
+  <view class="se-mask" wx:if="{{picker.show}}" bindtap="closePicker"></view>
+  <view class="se-sheet" wx:if="{{picker.show}}">
+    <view class="se-sheet-head">
+      <text class="se-sheet-title">{{picker.title}}</text>
+      <view class="se-sheet-close" bindtap="closePicker"><text>关闭</text></view>
+    </view>
+    <view class="se-search">
+      <input
+        class="se-search-input"
+        placeholder="输入名称或别名搜索（如 大蓝闪）"
+        value="{{picker.keyword}}"
+        bindinput="onPickerInput"
+        confirm-type="search"
+      />
+    </view>
+    <scroll-view class="se-sheet-body" scroll-y>
+      <view class="se-loading" wx:if="{{picker.loading}}"><text>加载中…</text></view>
+      <view class="se-empty" wx:elif="{{!picker.list.length}}">
+        <text>没有匹配的{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>
+        <text class="se-empty-hint">请先到「价目表配置」里维护，或换一个关键词</text>
+      </view>
+      <block wx:else>
+        <view class="se-group" wx:for="{{picker.list}}" wx:key="key">
+          <view class="se-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
+            <view class="se-group-main">
+              <text class="se-group-name">{{item.displayName}}</text>
+              <text class="se-group-meta" wx:if="{{item.aliases.length}}">别名 {{item.aliases}}</text>
+            </view>
+            <text class="se-group-count">{{item.optionField === 'size' ? '尺寸' : '等级'}} {{item.optionCount}}</text>
+          </view>
+          <!-- 只有一个规格时直接可点，不用先展开 -->
+          <view class="se-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
+            <view
+              class="se-option"
+              wx:for="{{item.options}}"
+              wx:for-item="opt"
+              wx:key="_id"
+              data-key="{{item.key}}"
+              data-option="{{opt.option}}"
+              data-id="{{opt._id}}"
+              bindtap="onPickOption"
+            >
+              <text class="se-option-name">{{opt.option}}</text>
+              <text class="se-option-price">{{opt.unitPriceText}}</text>
+              <text class="se-option-tag" wx:if="{{opt.isDefault}}">默认</text>
+            </view>
+          </view>
+          <view class="se-group-hint" wx:else><text>点一下展开 {{item.optionCount}} 个规格</text></view>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+</view>

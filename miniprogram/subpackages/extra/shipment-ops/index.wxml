@@ -419,6 +419,14 @@
             {{saving ? '写入中…' : '确认写入'}}
           </view>
         </view>
+        <!-- 逐行核对并算价（蓝图裁决 24）：在**独立页面**里选材料/等级/包装/尺寸并算价，
+             弹层里塞不下 21 行 × 5 个控件。点它会先把草稿写进 Storage 再跳转。 -->
+        <view
+          class="ops-btn-secondary {{(!parsePreview || !parsePreview.canWrite) ? 'disabled' : ''}}"
+          bindtap="openEditPage"
+        >
+          逐行核对并算价
+        </view>
       </view>
 
       <view class="ops-writeback" wx:if="{{writebackMsg}}">

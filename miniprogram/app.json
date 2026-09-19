@@ -191,6 +191,7 @@
         "member-level-adjust/index",
         "purchase-ops/index",
         "shipment-ops/index",
+        "shipment-edit/index",
         "inventory-ops/index",
         "property-cost/index",
         "artisan-commission/index",
