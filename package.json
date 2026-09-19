@@ -250,6 +250,8 @@
     "test:studio-bill:selftest": "node miniprogram/scripts/test-studio-bill.mjs --selftest",
     "test:studio-notify": "node miniprogram/scripts/test-studio-notify.mjs",
     "test:studio-notify:selftest": "node miniprogram/scripts/test-studio-notify.mjs --selftest",
+    "test:studio-dashboard": "node miniprogram/scripts/test-studio-dashboard.mjs",
+    "test:studio-dashboard:selftest": "node miniprogram/scripts/test-studio-dashboard.mjs --selftest",
     "check:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs",
     "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
     "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report",

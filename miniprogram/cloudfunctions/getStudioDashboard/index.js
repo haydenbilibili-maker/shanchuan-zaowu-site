@@ -13,6 +13,7 @@
  * 权限：仅超管
  */
 const cloud = require('wx-server-sdk')
+const { computeSettlementKpis } = require('./settlementKpis')
 const { assertStaff, STORED_ROLE_SUPER } = require('./staffGuard')
 const {
   BUDGET_POOLS,
@@ -522,6 +523,13 @@ exports.main = async (event) => {
     const revenueTotal = roundMoney(shipments.reduce((n, r) => n + shipmentAmount(r), 0))
     const shipmentCount = shipments.length
 
+    /**
+     * 结算口径（裁决 20）：把「出货额 / 已结清 / 未收款」拆开，并给出真毛利。
+     * 原 `revenueTotal` 是「写入当天即全额计入营收」，上了收款之后同一个词会被读出两种意思，
+     * 故保留它作为**出货额**（= settlementKpis.shippedAmount），另给三个新指标。
+     */
+    const settlement = computeSettlementKpis(shipments)
+
     const rawStockValue = roundMoney(
       rawInv.reduce(
         (n, r) => n + (Number(r.stockValue) || (Number(r.qty) || 0) * (Number(r.unitPrice) || 0)),
@@ -689,6 +697,21 @@ exports.main = async (event) => {
         revenueTotal,
         shipmentCount,
         netProfit,
+        // ── 结算口径（裁决 20）──
+        shippedAmount: settlement.shippedAmount,
+        settledAmount: settlement.settledAmount,
+        outstandingAmount: settlement.outstandingAmount,
+        paidPendingAmount: settlement.paidPendingAmount,
+        settledCount: settlement.settledCount,
+        outstandingCount: settlement.outstandingCount,
+        paidPendingCount: settlement.paidPendingCount,
+        pendingPricingCount: settlement.pendingPricingCount,
+        materialCostTotal: settlement.materialCostTotal,
+        packagingCostTotal: settlement.packagingCostTotal,
+        laborTotal: settlement.laborTotal,
+        materialAndPackagingTotal: settlement.materialAndPackagingTotal,
+        grossProfit: settlement.grossProfit,
+        grossMarginPct: settlement.grossMarginPct,
         usagePct,
         remainingPct,
         progressTone,
@@ -698,6 +721,8 @@ exports.main = async (event) => {
       signals: trafficLights,
       trafficLights,
       verdict: trafficLights.verdict,
+      settlement,
+      settlementNote: settlement.note,
       charts: {
         budgetTypeShare: byBudgetType,
         purchaseStatus: byPurchaseStatus,

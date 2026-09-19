@@ -1,0 +1,224 @@
+#!/usr/bin/env node
+/**
+ * 工作室仪表盘 · 结算口径守卫（`settlementKpis.js`）
+ *
+ * 为什么需要（蓝图 §8.4 + 裁决 20）：
+ *   ① 原实现把「写入当天即全额计入营收」叫 `revenueTotal`。上了收款之后，
+ *      同一个词会被读出两种意思（"发了多少货"vs"收了多少钱"）→ 必须把口径拆开且可断言。
+ *   ② **真毛利口径是产品负责人拍板的**：毛利 = 出货额 −（材料费 + 包装费），
+ *      **手工费算工作室的收入、不减**。这条口径不能靠"记得"，只能靠断言。
+ *   ③ 单位：单据里 `*CostCents`/`totalCents` 是**分**、`totalAmount` 是**元**。
+ *      本仓库已因单位混用踩过 E18（总额翻倍且不报错），所以这里也钉一条不变量。
+ *   ④ `totalCents` 是新字段：老数据（飞书导入等）没有它，必须**回落到**
+ *      `totalAmount` → 明细 —— 回落断了会把历史出货额算成 0（营收凭空消失）。
+ *
+ * 用法：
+ *   node miniprogram/scripts/test-studio-dashboard.mjs
+ *   node miniprogram/scripts/test-studio-dashboard.mjs --selftest
+ */
+import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+const HERE = dirname(fileURLToPath(import.meta.url))
+const ROOT = resolve(HERE, '../..')
+const FN_DIR = resolve(ROOT, 'miniprogram/cloudfunctions/getStudioDashboard')
+const KPI_PATH = join(FN_DIR, 'settlementKpis.js')
+
+let passes = 0
+const failures = []
+function ok(label, cond, detail) {
+  if (cond) passes += 1
+  else failures.push(detail ? `${label} —— ${detail}` : label)
+}
+function eq(label, got, want) {
+  ok(label, got === want, `期望 ${JSON.stringify(want)}，实际 ${JSON.stringify(got)}`)
+}
+
+/** 一张已核价、已结清的单：材料 360 + 包装 90 + 手工 135 = 585 */
+const S_SETTLED = {
+  totalCents: 58500,
+  materialCostCents: 36000,
+  packagingCostCents: 9000,
+  laborCostCents: 13500,
+  settleStatus: 'settled',
+  pricingStatus: 'priced'
+}
+/** 门店已标已付、超管未确认：材料 200 + 手工 60 = 260 */
+const S_PAID_PENDING = {
+  totalCents: 26000,
+  materialCostCents: 20000,
+  packagingCostCents: 0,
+  laborCostCents: 6000,
+  settleStatus: 'paid_pending',
+  pricingStatus: 'priced'
+}
+/** 老数据：没有 totalCents / 没有成本字段，只有 totalAmount=100 与待核价 */
+const S_LEGACY = { totalAmount: 100, settleStatus: 'unsettled', pricingStatus: 'incomplete' }
+
+function runTests(K) {
+  // ── A. 单位换算 ──
+  eq('A1 元转分', K.toCents(585), 58500)
+  eq('A2 元转分四舍五入', K.toCents(19.995), 2000)
+  eq('A3 分转元', K.toYuan(58500), 585)
+  eq('A4 分单位字段缺省为 0', K.centsField(undefined), 0)
+  eq('A5 分单位字段负数归 0', K.centsField(-5), 0)
+  eq('A6 分单位字段取整', K.centsField(1234.6), 1235)
+
+  // ── B. 单据总额的三级回落 ──
+  eq('B1 优先用 totalCents（最精确）', K.shipmentTotalCents(S_SETTLED), 58500)
+  eq(
+    'B2 无 totalCents 时回落到 totalAmount×100',
+    K.shipmentTotalCents({ totalAmount: 100, settleStatus: 'unsettled' }),
+    10000
+  )
+  eq(
+    'B3 两者都没有时回落到明细求和',
+    K.shipmentTotalCents({ items: [{ qty: 2, unitPrice: 30 }, { qty: 1, totalPrice: 15 }] }),
+    7500
+  )
+  eq('B4 全都没有时为 0', K.shipmentTotalCents({}), 0)
+  eq('B5 totalCents 为 0 时不被当成"有值"', K.shipmentTotalCents({ totalCents: 0, totalAmount: 5 }), 500)
+
+  // ── C. 三口径拆分 ──
+  const k = K.computeSettlementKpis([S_SETTLED, S_PAID_PENDING, S_LEGACY])
+  eq('C1 出货额 = 全部有效单据之和', k.shippedAmount, 945)
+  eq('C2 已结清额', k.settledAmount, 585)
+  eq('C3 未收款额 = 未结 + 已付待确认', k.outstandingAmount, 360)
+  eq('C4 其中"已付待确认"单列（待办）', k.paidPendingAmount, 260)
+  eq('C5 未结清单数', k.outstandingCount, 2)
+  eq('C6 已结清单数', k.settledCount, 1)
+  eq('C7 已付待确认单数', k.paidPendingCount, 1)
+  ok('C8 三口径自洽（已结清 + 未收款 = 出货额）', k.settledAmount + k.outstandingAmount === k.shippedAmount)
+  eq('C9 待核价单数', k.pendingPricingCount, 1)
+  ok('C10 老数据没被算成 0（回落生效）', k.shippedAmount > k.settledAmount + k.paidPendingAmount)
+
+  // ── D. 真毛利口径（裁决 20）──
+  eq('D1 材料费合计', k.materialCostTotal, 560)
+  eq('D2 包装费合计', k.packagingCostTotal, 90)
+  eq('D3 手工费合计', k.laborTotal, 195)
+  eq('D4 材料+包装', k.materialAndPackagingTotal, 650)
+  eq('D5 **真毛利 = 出货额 −（材料 + 包装）**', k.grossProfit, 295)
+  eq(
+    'D6 **手工费算工作室收入、不减**（若减了手工费，毛利会是 100）',
+    k.grossProfit,
+    945 - (560 + 90)
+  )
+  ok('D7 毛利率有值', k.grossMarginPct === 31.2, String(k.grossMarginPct))
+
+  // ── E. 边界 ──
+  const empty = K.computeSettlementKpis([])
+  eq('E1 空数据出货额为 0', empty.shippedAmount, 0)
+  eq('E2 **出货额为 0 时毛利率为 null**（0% 与"没数据"含义不同）', empty.grossMarginPct, null)
+  eq('E3 空数据不报负数毛利', empty.grossProfit, 0)
+  const noStatus = K.computeSettlementKpis([{ totalCents: 10000, materialCostCents: 0, packagingCostCents: 0 }])
+  // 10000 分 = 100 元（本守卫第一次跑就是在这里抓到我把 10000 分误算成 10 元）
+  eq('E4 缺 settleStatus 视为未结', noStatus.outstandingAmount, 100)
+  ok('E5 口径说明随结果回传（前端不必自己解释）', typeof k.note === 'string' && k.note.length > 10)
+
+  // ── F. 单位不变量（E18 的同族防护）──
+  ok(
+    'F1 出货额（元）×100 精确等于分之和（无浮点尾数）',
+    Math.round(k.shippedAmount * 100) === 94500,
+    String(k.shippedAmount * 100)
+  )
+  ok(
+    'F2 毛利（元）×100 精确等于分差',
+    Math.round(k.grossProfit * 100) === 94500 - 65000,
+    String(k.grossProfit * 100)
+  )
+  const frac = K.computeSettlementKpis([{ totalCents: 12345, materialCostCents: 1, packagingCostCents: 2 }])
+  ok('F3 带零头时元值仍是 2 位小数', String(frac.shippedAmount).split('.')[1].length <= 2, String(frac.shippedAmount))
+}
+
+const INJECTIONS = [
+  [
+    '真毛利把手工费也减掉（违反裁决 20）',
+    (src) => src.replace('  const grossCents = shippedCents - costCents', '  const grossCents = shippedCents - costCents - laborCents')
+  ],
+  [
+    '已付待确认被算进已结清（未收款凭空变少）',
+    (src) => src.replace("    if (st === 'settled') {", "    if (st === 'settled' || st === 'paid_pending') {")
+  ],
+  [
+    '不再回落到 totalAmount（老数据的出货额算成 0）',
+    (src) => src.replace('  if (Number.isFinite(amount) && amount !== 0) return Math.round(amount * CENTS)\n', '')
+  ],
+  ['元转分不再 ×100（单位错，金额缩水 100 倍）', (src) => src.replace('  return Math.round(n * CENTS)', '  return Math.round(n)')],
+  [
+    '出货额为 0 时毛利率返回 0（把"没数据"说成"0%"）',
+    (src) => src.replace('    grossMarginPct: shippedCents > 0 ? Math.round((grossCents / shippedCents) * 1000) / 10 : null,', '    grossMarginPct: shippedCents > 0 ? Math.round((grossCents / shippedCents) * 1000) / 10 : 0,')
+  ]
+]
+
+function runOnce(kpiPath) {
+  passes = 0
+  failures.length = 0
+  let K
+  try {
+    const resolved = require.resolve(kpiPath)
+    delete require.cache[resolved]
+    K = require(kpiPath)
+  } catch (e) {
+    failures.push(`加载模块失败：${e.message}`)
+    return { failed: failures.length, failures: failures.slice() }
+  }
+  try {
+    runTests(K)
+  } catch (e) {
+    failures.push(`断言执行抛异常：${e.message}`)
+  }
+  return { failed: failures.length, failures: failures.slice() }
+}
+
+function runSelfTest() {
+  console.log('自检：确认「结算口径被破坏」时断言确实会失败\n')
+  const original = readFileSync(KPI_PATH, 'utf8')
+  let allDetected = true
+  for (const [label, mutate] of INJECTIONS) {
+    const dir = mkdtempSync(join(tmpdir(), 'studio-kpi-selftest-'))
+    const mutated = mutate(original)
+    if (mutated === original) {
+      console.log(`✗ ${label} → 【注入锚点失效】（源码未改变，无法判定）`)
+      allDetected = false
+      rmSync(dir, { recursive: true, force: true })
+      continue
+    }
+    const target = join(dir, 'settlementKpis.js')
+    writeFileSync(target, mutated, 'utf8')
+    copyFileSync(KPI_PATH, join(dir, '.orig'))
+    const res = runOnce(target)
+    const detected = res.failed > 0
+    allDetected = allDetected && detected
+    console.log(
+      `${detected ? '✓' : '✗'} 注入 ${label} → ${detected ? '已检出' : '【漏检】'}${detected ? `（${res.failed} 项失败）` : ''}`
+    )
+    if (detected) res.failures.slice(0, 2).forEach((f) => console.log(`    · ${f}`))
+    rmSync(dir, { recursive: true, force: true })
+  }
+  const clean = runOnce(KPI_PATH)
+  console.log(`\n${clean.failed === 0 ? '✓' : '✗'} 未注入时通过（${clean.failed === 0 ? '无假阳性' : '有假阳性'}）`)
+  if (clean.failed > 0) clean.failures.slice(0, 5).forEach((f) => console.log(`    · ${f}`))
+  if (!allDetected || clean.failed > 0) {
+    console.log('\n✗ 自检失败')
+    process.exit(1)
+  }
+  console.log(`\n✓ selftest 通过：${INJECTIONS.length} 个注入全部被检出，且无假阳性`)
+}
+
+if (process.argv.includes('--selftest')) {
+  runSelfTest()
+} else {
+  const res = runOnce(KPI_PATH)
+  console.log(`工作室结算口径：通过 ${passes} / ${passes + res.failed}`)
+  if (res.failed > 0) {
+    console.log('')
+    res.failures.forEach((f) => console.log(`  ✗ ${f}`))
+    console.log(`\n✗ ${res.failed} 项失败`)
+    process.exit(1)
+  }
+  console.log('✓ 结算口径断言全部通过（三口径拆分 / 真毛利不减手工费 / 三级回落 / 单位不变量 / 空数据边界）')
+}
