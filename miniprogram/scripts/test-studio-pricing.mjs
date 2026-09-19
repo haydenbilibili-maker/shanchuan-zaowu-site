@@ -538,6 +538,53 @@ function runTests(E) {
   // I14 显式选择不改写原文（前端要原样展示与落库）
   eq('I14 原文按原样保留', bare2.itemName, '华艳色蟌')
 
+  // ── J. 重算历史单的可重算判定（裁决 16 / 蓝图 §5.5）—— 这是钱的安全边界 ──
+  const repriceRow = (over) =>
+    Object.assign(
+      { _id: 's1', shipmentNo: 'SH1', status: 'confirmed', settleStatus: 'unsettled', billId: '' },
+      over || {}
+    )
+  const plan = E.buildRepricePlan
+  ok('J1 判定函数存在', typeof plan === 'function')
+
+  const p1 = plan([repriceRow()])
+  eq('J2 未结且未入账单 → 可重算', p1.eligible.length, 1)
+  eq('J3 可重算时没有跳过项', p1.skipped.length, 0)
+
+  const p2 = plan([repriceRow({ settleStatus: 'settled' })])
+  eq('J4 **已结清永不重算**（钱已确认收过，事后改金额等于改账）', p2.eligible.length, 0)
+  eq('J5 已结清的原因码', p2.skipped[0].code, 'SETTLED')
+  ok('J6 已结清的原因说明写明"永不重算"', /永不重算/.test(p2.skipped[0].msg), p2.skipped[0].msg)
+
+  const p3 = plan([repriceRow({ settleStatus: 'paid_pending' })])
+  eq('J7 已付待确认仍可重算（钱还没确认）', p3.eligible.length, 1)
+
+  const p4 = plan([repriceRow({ billId: 'bill1' })])
+  eq('J8 **已入账单不许重算**（否则账单总额与明细对不上）', p4.eligible.length, 0)
+  eq('J9 已入账单的原因码', p4.skipped[0].code, 'IN_BILL')
+  ok('J10 原因里告诉人怎么办（先作废账单）', /先作废/.test(p4.skipped[0].msg), p4.skipped[0].msg)
+
+  const p5 = plan([repriceRow({ status: 'cancelled' })])
+  eq('J11 已取消跳过', p5.skipped[0].code, 'CANCELLED')
+  const p6 = plan([repriceRow({ deleted: true })])
+  eq('J12 已删除跳过', p6.skipped[0].code, 'DELETED')
+  const p7 = plan([{ shipmentNo: 'X' }])
+  eq('J13 缺 id 跳过', p7.skipped[0].code, 'NO_ID')
+  eq('J14 空输入不报错', plan([]).eligible.length + plan(null).eligible.length, 0)
+
+  const p8 = plan([
+    repriceRow({ _id: 'a' }),
+    repriceRow({ _id: 'b', settleStatus: 'settled' }),
+    repriceRow({ _id: 'c', billId: 'x' }),
+    repriceRow({ _id: 'd' })
+  ])
+  eq('J15 混合场景：只挑出真正该重算的', p8.eligible.map((r) => r._id).join(), 'a,d')
+  eq('J16 混合场景：跳过项都带原因', p8.skipped.length, 2)
+  ok(
+    'J17 每一张单要么可重算要么有跳过原因（不许静默漏掉）',
+    p8.eligible.length + p8.skipped.length === 4
+  )
+
   // ── F. 快照隔离：价目表改价后，用旧价快照算过的行不受影响 ──
   // 引擎本身不落库，这里证明「同一批输入 + 改价目表 → 结果变」，从而说明快照必须存在单据上。
   const before = E.quoteLines([{ itemName: '爱神凤蝶玻璃罩', qty: 1 }], baseCtx())
@@ -611,6 +658,14 @@ const INJECTIONS = [
   [
     '显式选了包装仍做文本残余校验（把用户的决定顶回去）',
     (src) => src.replace('    if (unresolved && packagingFromText) {', '    if (unresolved) {')
+  ],
+  [
+    '重算把已结清的单也算进去（事后改账）',
+    (src) => src.replace("    if (String(row.settleStatus || '') === 'settled') {", '    if (false) {')
+  ],
+  [
+    '重算不排除已入账单的单（账单总额与明细对不上）',
+    (src) => src.replace("    if (String(row.billId || '')) {", '    if (false) {')
   ]
 ]
 

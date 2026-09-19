@@ -680,6 +680,51 @@ function quoteLines(lines, ctx) {
 }
 
 /**
+ * 「重算历史单」的可重算判定（纯函数，裁决 16 + 蓝图 §5.5）。
+ *
+ * ⚠️ 这是**钱的安全边界**，四条禁止都必须是硬拒绝而不是"顺手也算了"：
+ *   · **已结清**的单永不重算 —— 钱已经确认收过，事后改金额等于改账；
+ *   · **已入账单**的单不许重算 —— 它的金额已经被汇总进账单总额，
+ *     单独改一张会让账单总额与明细对不上（要改先作废/撤回那张账单）；
+ *   · **已取消**的单跳过（业务上不成立）；
+ *   · **已删除**的单跳过。
+ *
+ * @returns {{eligible:Array, skipped:Array<{_id:string,shipmentNo:string,code:string,msg:string}>}}
+ */
+function buildRepricePlan(rows) {
+  const list = Array.isArray(rows) ? rows : []
+  const eligible = []
+  const skipped = []
+  const skip = (row, code, msg) =>
+    skipped.push({ _id: (row && row._id) || '', shipmentNo: (row && row.shipmentNo) || '', code, msg })
+
+  for (const row of list) {
+    if (!row || !row._id) {
+      skip(row, 'NO_ID', '缺少 id')
+      continue
+    }
+    if (row.deleted === true) {
+      skip(row, 'DELETED', '已删除')
+      continue
+    }
+    if (String(row.status || '') === 'cancelled') {
+      skip(row, 'CANCELLED', '已取消')
+      continue
+    }
+    if (String(row.settleStatus || '') === 'settled') {
+      skip(row, 'SETTLED', '已结清，永不重算')
+      continue
+    }
+    if (String(row.billId || '')) {
+      skip(row, 'IN_BILL', '已入账单，需先作废该账单再重算')
+      continue
+    }
+    eligible.push(row)
+  }
+  return { eligible, skipped }
+}
+
+/**
  * 价目表完整性校验。
  * 既给守卫 `check-price-book-integrity` 用，也在云函数保存前跑一遍 —— 脏数据不许进库。
  */
@@ -764,5 +809,6 @@ module.exports = {
   computeAmounts,
   quoteLines,
   validatePriceBook,
+  buildRepricePlan,
   buildContext
 }

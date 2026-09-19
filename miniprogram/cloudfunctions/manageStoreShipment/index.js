@@ -9,7 +9,7 @@
  * action:
  *   meta | list | get | dashboard | parseText | quotePrice | searchSku | create | createFromParsed
  *   update | setStatus | remove
- *   upsertFromFeishu | syncStatus | syncLogs | bindFeishuRecord
+ *   upsertFromFeishu | syncStatus | syncLogs | bindFeishuRecord | repriceShipments（仅超管）
  */
 const cloud = require('wx-server-sdk')
 const {
@@ -42,7 +42,7 @@ const {
   roundMoney
 } = require('./shipmentDefaults')
 const { buildShipmentDashboard } = require('./shipmentDashboard')
-const { buildContext, quoteLines, PRICING_STATUS, SHIPMENT_PRICING_STATUS } = require('./pricingEngine')
+const { buildContext, quoteLines, buildRepricePlan, PRICING_STATUS, SHIPMENT_PRICING_STATUS } = require('./pricingEngine')
 const {
   NOTIFY_EVENTS,
   resolveRecipients,
@@ -387,6 +387,122 @@ async function recomputeItemsPricing(items) {
       unitPrice: quoted.unitPrice,
       totalPrice: quoted.totalPrice
     })
+  })
+}
+
+/**
+ * 「重算历史单」（裁决 16）——**仅超管**，且**默认 dry-run**。
+ *
+ * 三条设计：
+ *   ① **默认 dry-run**（`event.dryRun !== false`）：不显式说"我要真写"就绝不落库 ——
+ *      这是会改历史金额的动作，安全默认必须是"只看不改"。
+ *   ② 可重算范围由纯函数 `buildRepricePlan` 判定（已结清 / 已入账单 / 已取消 / 已删除都拒），
+ *      并把每一条**拒绝原因**回传，而不是静默少算几张。
+ *   ③ 只更新**定价相关字段**，其余（结算状态、账单、物流状态、备注…）原样不动 ——
+ *      重算不该顺手改别的。
+ */
+async function handleRepriceShipments(event) {
+  const dryRun = event.dryRun !== false
+  const storeId = String(event.storeId || '').trim()
+  const limit = Math.min(500, Math.max(1, parseInt(event.limit, 10) || 200))
+
+  const where = { deleted: _.neq(true) }
+  if (storeId) where.storeId = storeId
+  const rows = []
+  let skip = 0
+  while (skip < limit) {
+    const take = Math.min(100, limit - skip)
+    const res = await db.collection(COLLECTION).where(where).skip(skip).limit(take).get()
+    const list = (res && res.data) || []
+    rows.push(...list)
+    if (list.length < take) break
+    skip += list.length
+  }
+
+  const plan = buildRepricePlan(rows)
+  const config = await loadSettlementConfig()
+  if (!config.enabled) {
+    return fail('算价未启用，重算没有意义：请先在「价目表配置」里开启算价', 'PRICING_DISABLED')
+  }
+
+  const changes = []
+  let changedCount = 0
+  let updated = 0
+  let issueAdded = 0
+
+  for (const row of plan.eligible) {
+    const items = await recomputeItemsPricing(row.items)
+    const normalized = normalizePayload({ items }, row)
+    if (!normalized.ok) {
+      changes.push({
+        _id: row._id,
+        shipmentNo: row.shipmentNo || '',
+        storeName: row.storeName || '',
+        error: normalized.msg
+      })
+      continue
+    }
+    const beforeCents = Number(row.totalCents) || 0
+    const afterCents = Number(normalized.row.totalCents) || 0
+    const deltaCents = afterCents - beforeCents
+    const becameIncomplete =
+      String(normalized.row.pricingStatus || '') === SHIPMENT_PRICING_STATUS.INCOMPLETE &&
+      String(row.pricingStatus || '') !== SHIPMENT_PRICING_STATUS.INCOMPLETE
+    if (becameIncomplete) issueAdded += 1
+    if (deltaCents !== 0) changedCount += 1
+    changes.push({
+      _id: row._id,
+      shipmentNo: row.shipmentNo || '',
+      storeName: row.storeName || '',
+      shipmentDate: row.shipmentDate || '',
+      beforeCents,
+      afterCents,
+      deltaCents,
+      pricingStatus: normalized.row.pricingStatus || ''
+    })
+    if (!dryRun && deltaCents !== 0) {
+      await db
+        .collection(COLLECTION)
+        .doc(row._id)
+        .update({
+          data: {
+            items: normalized.row.items,
+            itemCount: normalized.row.itemCount,
+            totalQty: normalized.row.totalQty,
+            totalAmount: normalized.row.totalAmount,
+            unitPrice: normalized.row.unitPrice,
+            pricingStatus: normalized.row.pricingStatus,
+            pricingIssueCount: normalized.row.pricingIssueCount,
+            materialCostCents: normalized.row.materialCostCents,
+            packagingCostCents: normalized.row.packagingCostCents,
+            laborCostCents: normalized.row.laborCostCents,
+            totalCents: normalized.row.totalCents,
+            laborRatePct: normalized.row.laborRatePct,
+            pricedAt: Date.now()
+          }
+        })
+      updated += 1
+    }
+  }
+
+  const deltaSum = changes.reduce((n, c) => n + (Number(c.deltaCents) || 0), 0)
+  return ok({
+    dryRun,
+    scanned: rows.length,
+    eligibleCount: plan.eligible.length,
+    skippedCount: plan.skipped.length,
+    changedCount,
+    updatedCount: updated,
+    issueAdded,
+    deltaSumCents: deltaSum,
+    deltaSumAmount: Math.round(deltaSum) / 100,
+    // 明细截断展示，避免一次返回几百条把响应撑爆
+    changes: changes.slice(0, 100),
+    changesTruncated: changes.length > 100,
+    skipped: plan.skipped.slice(0, 100),
+    msg: dryRun
+      ? `试算完成：${rows.length} 张扫描 · ${plan.eligible.length} 张可重算 · ${changedCount} 张金额会变（合计 ${Math.round(deltaSum) / 100} 元）· 未写入`
+      : `已重算：${updated} 张更新（${changedCount} 张金额变化，合计 ${Math.round(deltaSum) / 100} 元）`
   })
 }
 
@@ -1116,7 +1232,9 @@ exports.main = async (event = {}) => {
 
   const syncWriteActions = {
     upsertFromFeishu: 1,
-    bindFeishuRecord: 1
+    bindFeishuRecord: 1,
+    // 重算历史单会改历史金额 → 与飞书写入同档，仅超管（裁决 16）
+    repriceShipments: 1
   }
   const entryWriteActions = {
     create: 1,
@@ -1132,6 +1250,7 @@ exports.main = async (event = {}) => {
       if (!auth.ok) return auth.res
       if (action === 'upsertFromFeishu') return await handleUpsertFromFeishu(event, auth.actor)
       if (action === 'bindFeishuRecord') return await handleBindFeishuRecord(event, auth.actor)
+      if (action === 'repriceShipments') return await handleRepriceShipments(event)
     }
 
     if (entryWriteActions[action]) {
