@@ -945,8 +945,11 @@ const INJECTIONS = {
   // 愿签骨架的底面漂回浅一档（骨架→真卡替换那一帧会跳色）
   'tag-skel-color-drift': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  padding: 20rpx 22rpx 20rpx 26rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);',
-    to: '  padding: 20rpx 22rpx 20rpx 26rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
+    // 2026-09-20：锚点跟随源码更新 —— 骨架 padding 已从 `20rpx 22rpx 20rpx 26rpx`
+    // 改为与真卡**逐字同口径**的 `var(--space-6) var(--space-2) var(--space-2) 22rpx`
+    //（修「加载时整列跳高 40%」；也必须用令牌，裸 48/16rpx 会被间距令牌判据拦下）。
+    from: '  padding: var(--space-6) var(--space-2) var(--space-2) 22rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);',
+    to: '  padding: var(--space-6) var(--space-2) var(--space-2) 22rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
   },
   // ── 创新钩子 H2「功德证」（2026-09-20）────────────────────────────────────
   // 木鱼可连点 → 每敲一下就写一次云端（方案点名的头号风险：写放大）

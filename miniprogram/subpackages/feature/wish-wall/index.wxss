@@ -1093,7 +1093,14 @@ page {
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  padding: 20rpx 22rpx 20rpx 26rpx;
+  /* ⚠️ 2026-09-20 修：这里的 padding 原为 `20rpx 22rpx 20rpx 26rpx`，与**真卡**的
+     `48rpx(顶带) 16rpx 16rpx 22rpx` 完全不同 → 骨架总高 ~92rpx、真卡 ~155rpx，
+     **加载完成时整列会跳高 40%**（骨架存在的意义正是防止这个）。
+     现在与真卡**逐字同口径**（顶带 --space-6 + 左右/底 --space-2 + 左 22rpx），
+     并把内部块撑到真卡的正文+底行高度。
+     ⚠️ 必须写成令牌：48/16 正是 --space-6/--space-2 的值，写裸字面量会被
+     「与 --space-* 同值的间距一律写成令牌」拦下（本轮实测踩到）。 */
+  padding: var(--space-6) var(--space-2) var(--space-2) 22rpx;
   margin-bottom: 14rpx;
   /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */
   background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);
@@ -1121,6 +1128,9 @@ page {
 .ww-tag-skel-main {
   flex: 1;
   min-width: 0;
+  /* 2026-09-20：撑到真卡「正文一行(45rpx) + 底行间距(10rpx) + 头像(36rpx)」≈ 91rpx。
+     不撑开的话 flex 行只有头像的 36rpx 高，骨架总高 ~92rpx vs 真卡 ~155rpx → 加载时整列跳高。 */
+  min-height: 91rpx;
 }
 
 .ww-tag-skel-line {

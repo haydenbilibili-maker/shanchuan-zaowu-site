@@ -373,8 +373,10 @@
         >
           <text class="ww-seg-label">墙上的愿签</text>
           <!-- 条数必须挂进**它所属的那一段**：此前它游离在段外、紧挨「我的心愿」，
-               看着像在说"我的心愿有 26 条"（真图复核发现）。两段各自带自己的数，语义才自明 -->
-          <text class="ww-seg-n" wx:if="{{viewMode === 'wall' && items.length}}">{{items.length}}</text>
+               看着像在说"我的心愿有 26 条"（真图复核发现）。两段各自带自己的数，语义才自明。
+               2026-09-20：两段都**常显**条数（原来只在选中段显示）—— 否则用户看不到
+               另一段有多少条，切不切过去要凭猜（交互优化）。 -->
+          <text class="ww-seg-n" wx:if="{{items.length}}">{{items.length}}</text>
         </view>
         <view
           class="ww-seg-item {{viewMode === 'mine' ? 'is-on' : ''}}"
