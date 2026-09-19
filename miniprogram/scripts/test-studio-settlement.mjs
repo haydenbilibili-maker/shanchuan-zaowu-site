@@ -242,6 +242,42 @@ function runTests(D, CORE) {
   eq('F15b 不勾造景时名字里没有「造景」', /造景/.test(D.buildSkuRow(noSceneSku).row.skuName), false)
   eq('F15c mapSku 带出 hasScene/sceneCost（列表页要用）', D.mapSku(sceneSku).sceneCost, 35)
   eq('F15d mapSku 带出 hasScene', D.mapSku(sceneSku).hasScene, true)
+
+  /**
+   * ── F16–F19 SKU **部分更新**（2026-09-19 修）──
+   * 起因：ERP 列表上的「停用」只传 `{status}`，而 `handleSkuUpdate` 直接拿它过
+   * `buildSkuRow`（要求材料/包装齐全）→ 被判非法。抽成纯函数 `mergeSkuUpdate` 后可测。
+   */
+  const curSku = {
+    materialId: 'm1', materialName: '爱神凤蝶', materialGrade: '默认',
+    packagingId: 'p1', packagingName: '相框', packagingSize: '方6寸',
+    hasScene: true, sceneCost: 35, laborRatePct: null, skuName: '爱神凤蝶 · 相框 方6寸 · 造景',
+    status: 'active', sort: 3, note: '备注'
+  }
+  const merged = D.mergeSkuUpdate(curSku, { status: 'inactive' })
+  ok('F16 只传 status 也能构建（部分更新不丢材料/包装）', D.buildSkuRow(merged).ok === true, JSON.stringify(D.buildSkuRow(merged)))
+  eq('F16b 传入的字段生效', D.buildSkuRow(merged).row.status, 'inactive')
+  eq('F16c 未传的字段保留（造景成本）', D.buildSkuRow(merged).row.sceneCost, 35)
+  eq('F16d 未传的字段保留（SKU 名）', D.buildSkuRow(merged).row.skuName, curSku.skuName)
+  eq(
+    'F17 显式传 0 不被当成"没传"（费率 0 = 这条不收手工费）',
+    D.buildSkuRow(D.mergeSkuUpdate(curSku, { laborRatePct: 0 })).row.laborRatePct,
+    0
+  )
+  eq(
+    'F18 显式传空串 = 用全局（不是保留旧值）',
+    D.buildSkuRow(D.mergeSkuUpdate(curSku, { laborRatePct: '' })).row.laborRatePct,
+    null
+  )
+  eq(
+    'F19 取消勾选造景且不传成本 → 成本归 0（不残留旧金额）',
+    D.buildSkuRow(D.mergeSkuUpdate(curSku, { hasScene: false })).row.sceneCost,
+    0
+  )
+  ok(
+    'F19b **未合并**的部分更新必然失败（这正是原来的接口坑）',
+    D.buildSkuRow({ status: 'inactive' }).ok === false
+  )
   eq('F10 **费率 0 是合法值**（这个 SKU 不收手工费），不得被当成"没填"', D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: 0 })).row.laborRatePct, 0)
   eq('F11 费率超上限归 500', D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: 9999 })).row.laborRatePct, 500)
 
@@ -301,6 +337,17 @@ const INJECTIONS = [
     'SKU：费率进唯一键（改默认费率会变成新建重复 SKU）',
     // 锚点随 2026-09-19 的「造景入键」改动更新：key 现在有 5 段
     (src) => src.replace("    src.hasScene === true ? 'scene' : ''\n  ].join('|')", "    src.hasScene === true ? 'scene' : '',\n    String(src.laborRatePct == null ? '' : src.laborRatePct)\n  ].join('|')")
+  ],
+  [
+    // ⚠️ 注入要**真的造出缺陷**：只把 Object.assign 的基底换成 p 是**无效注入** ——
+    // 白名单字段仍从 cur 取到值，断言照样过（我第一版就是这么写的，自检报"漏检"，
+    // 那是注入的错、不是守卫的错）。真正的缺陷是"缺省字段不再回落到原行"。
+    'SKU 部分更新不合并原行（缺省字段不再回落 → 只传 status 被当成非法请求）',
+    (src) => src.replace('  const pick = (key, fallback) => (Object.prototype.hasOwnProperty.call(p, key) ? p[key] : fallback)', '  const pick = (key, fallback) => p[key]')
+  ],
+  [
+    'SKU 部分更新用真值判断（显式传 0 被当成"没传" → 费率 0 回落成旧值）',
+    (src) => src.replace('  const pick = (key, fallback) => (Object.prototype.hasOwnProperty.call(p, key) ? p[key] : fallback)', '  const pick = (key, fallback) => (p[key] ? p[key] : fallback)')
   ],
   [
     'SKU：造景金额也进唯一键（只想改成本却变成新建重复 SKU）',

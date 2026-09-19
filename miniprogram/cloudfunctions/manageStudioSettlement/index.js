@@ -40,6 +40,7 @@ const {
   skuKeyOf,
   autoSkuName,
   buildSkuRow,
+  mergeSkuUpdate,
   mapSku
 } = require('./settlementDefaults')
 const { normalizeName, buildContext, quoteLines, PRICING_STATUS } = require('./pricingCore')
@@ -844,7 +845,15 @@ async function handleSkuCreate(event, actor) {
 async function handleSkuUpdate(event, actor) {
   const id = String(event.id || '').trim()
   if (!id) return fail('缺少 id', 'BAD_PARAM')
-  const built = buildSkuRow(event.item || {})
+  /**
+   * ⚠️ 必须**先读原行再合并**：`event.item` 是**部分更新**（ERP 列表上「停用」只传 `{status}`），
+   * 而 `buildSkuRow` 要求材料/包装齐全 —— 不合并的话部分更新会被误判成非法请求。
+   */
+  const cur = await db.collection(SKU_COLLECTION).doc(id).get().catch(() => null)
+  const existingDoc = cur && cur.data
+  if (!existingDoc) return fail('SKU 不存在（可能已删除）', 'NOT_FOUND')
+
+  const built = buildSkuRow(mergeSkuUpdate(existingDoc, event.item || {}))
   if (!built.ok) return fail(built.msg, 'BAD_PARAM')
   const row = built.row
 

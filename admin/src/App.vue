@@ -1399,6 +1399,7 @@ const PurchaseOps = asyncWith(() => import('./components/PurchaseOps.vue'))
 const StoreShipments = asyncWith(() => import('./components/StoreShipments.vue'))
 const PriceBookManager = asyncWith(() => import('./components/PriceBookManager.vue'))
 const StudioBills = asyncWith(() => import('./components/StudioBills.vue'))
+const StudioSkus = asyncWith(() => import('./components/StudioSkus.vue'))
 const FeishuSyncCenter = asyncWith(() => import('./components/FeishuBridge.vue'))
 const PropertyCostOps = asyncWith(() => import('./components/PropertyCostOps.vue'))
 import OrderCenter from './components/Orders.vue'
@@ -1545,6 +1546,7 @@ const TAB_COMPONENT_MAP = {
   '79': () => ({ comp: StoreShipments }),
   '81': () => ({ comp: PriceBookManager }),
   '82': () => ({ comp: StudioBills }),
+  '83': () => ({ comp: StudioSkus }),
   '78': () => ({ comp: FeishuSyncCenter }),
   '77': () => ({ comp: PropertyCostOps })
 }

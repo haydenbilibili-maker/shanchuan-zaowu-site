@@ -54,6 +54,7 @@ export const MODULES = [
   { id: '79', name: '出货单', group: 'STUDIO', subgroup: '工作室', icon: 'Van', keywords: 'shipment ops_shipments manageStoreShipment chuhuo 出货单 门店出货' },
   { id: '81', name: '价目表配置', group: 'STUDIO', subgroup: '工作室', icon: 'PriceTag', keywords: '价目表 材料价 包装价 等级 尺寸 手工费率 算价 出货结算' },
   { id: '82', name: '工作室账单', group: 'STUDIO', subgroup: '工作室', icon: 'Wallet', keywords: '工作室账单 对账 货款 收款 结算 未收款 结清 ops_settlement_bills' },
+  { id: '83', name: '出货 SKU 目录', group: 'STUDIO', subgroup: '工作室', icon: 'Files', keywords: '出货 SKU 目录 组合 材料 等级 包装 尺寸 造景 造景成本 默认手工费率 复用 开单 studio_shipment_skus' },
   { id: '78', name: '飞书同步中心', group: 'STUDIO', subgroup: '工作室', icon: 'Connection', keywords: 'feishu bitable sync 飞书 多维表 同步 采购映射 ops_purchases ops_shipments feishu_bitable 库存管理 studio_inventory' },
   { id: '7',  name: '标本师管理', group: 'STUDIO', subgroup: '工作室', icon: 'Brush', keywords: 'framer staff bbsgl artisan 标本师管理' },
   { id: '38', name: '标本定制工单', group: 'STUDIO', subgroup: '工作室', icon: 'Brush', keywords: 'custom workshop bbdzgd 定制 工单' },

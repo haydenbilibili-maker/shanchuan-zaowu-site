@@ -268,6 +268,40 @@ function buildSkuRow(input) {
 }
 
 /** 落库 → 客户端形状 */
+/**
+ * **SKU 部分更新**：把改动合并到库里已有的值上，再交给 `buildSkuRow`。
+ *
+ * 为什么必须有这一步：`handleSkuUpdate` 原先直接拿 `event.item` 过 `buildSkuRow`，
+ * 而 `buildSkuRow` 要求「必须选原材料 / 必须选包装」。于是**只改一个字段**（例如
+ * ERP 列表上的「停用」按钮只传 `{status:'inactive'}`）会被判成非法请求 ——
+ * 界面看起来是"停用失败"，实际是接口不允许部分更新。
+ *
+ * 语义（与 `shipmentDefaults.normalizePayload` 从 `prev` 继承同一套）：
+ *   · 传了的字段以**传入值**为准（包括显式传 `''`/0/null，那是调用方的明确意思）
+ *   · 没传的字段**保留库里的值**
+ * 注意 `hasScene` 与 `sceneCost` 的联动交给 `buildSkuRow`（未勾选即归 0），这里不重复判断。
+ */
+function mergeSkuUpdate(existing, patch) {
+  const cur = existing || {}
+  const p = patch || {}
+  const pick = (key, fallback) => (Object.prototype.hasOwnProperty.call(p, key) ? p[key] : fallback)
+  return Object.assign({}, cur, {
+    materialId: pick('materialId', cur.materialId),
+    materialName: pick('materialName', cur.materialName),
+    materialGrade: pick('materialGrade', cur.materialGrade),
+    packagingId: pick('packagingId', cur.packagingId),
+    packagingName: pick('packagingName', cur.packagingName),
+    packagingSize: pick('packagingSize', cur.packagingSize),
+    hasScene: pick('hasScene', cur.hasScene),
+    sceneCost: pick('sceneCost', cur.sceneCost),
+    laborRatePct: pick('laborRatePct', cur.laborRatePct),
+    skuName: pick('skuName', cur.skuName),
+    status: pick('status', cur.status),
+    sort: pick('sort', cur.sort),
+    note: pick('note', cur.note)
+  })
+}
+
 function mapSku(doc) {
   const d = doc || {}
   return {
@@ -522,5 +556,6 @@ module.exports = {
   skuKeyOf,
   autoSkuName,
   buildSkuRow,
+  mergeSkuUpdate,
   mapSku
 }
