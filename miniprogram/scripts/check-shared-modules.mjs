@@ -62,6 +62,8 @@ export const FAMILIES = [
     why: '内容安全：各入口检测口径不一致会漏检' },
   { module: 'memberLevels.js', kind: 'superset', canonical: 'manageMemberLevels/memberLevels.js',
     why: 'makeOrder 为超集（多 3 个下单期预估定级导出），共享部分仍须一致' },
+  { module: 'settlementNotify.js', kind: 'identical', canonical: 'manageStudioSettlement/settlementNotify.js',
+    why: '出货结算通知：出货单生成（manageStoreShipment）与账单状态变更（manageStudioSettlement）两边都要解析同一批收件人（超管 + **指定门店**店长）；各写一份必然出现「一边通知了店长、另一边只通知超管」' },
   { module: 'pricingCore.js', kind: 'identical', canonical: 'manageStoreShipment/pricingCore.js',
     why: '出货算价内核：价目表**写入方**（manageStudioSettlement）与**算价方**（manageStoreShipment）必须同口径归一化 —— 一边把「大蓝闪 蝶」与「大蓝闪蝶」当两个材料、另一边当一个，就会静默算错价' }
 ]

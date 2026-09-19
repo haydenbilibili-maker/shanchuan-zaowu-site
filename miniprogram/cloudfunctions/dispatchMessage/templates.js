@@ -44,7 +44,11 @@ const WORKFLOW_EVENT_TYPES = {
   invoice_request_staff: true,
   approval_submitted: true,
   approval_approved: true,
-  approval_rejected: true
+  approval_rejected: true,
+  // 工作室结算（2026-09-19）：出货单待支付 / 待确认收款 / 已结清
+  studio_shipment_priced: true,
+  studio_bill_paid_marked: true,
+  studio_bill_settled: true
 }
 
 function isWorkflowEventType(eventType) {
@@ -654,6 +658,36 @@ const DEFAULT_TEMPLATES = {
     titleTemplate: '{{title}}',
     contentTemplate: '{{content}}',
     actionUrlTemplate: '{{actionUrl}}'
+  },
+
+  // ── 工作室结算（门店 → 工作室货款）───────────────────────────────
+  // 收件人解析在共享模块 `settlementNotify.js`（超管 + **指定门店**店长）。
+  // 这里用 {{noticeTitle}}/{{noticeContent}} 而非把正文写死在模板里：
+  // 正文由纯函数 `buildShipmentPricedNotice` 等生成，**有未核价行时会改口径**
+  // （改成"有 N 行待核价、金额不是最终值"），写死在模板里表达不了这个分支。
+  studio_shipment_priced: {
+    category: 'ops',
+    queue: QUEUE_WORKFLOW,
+    priority: 'P1',
+    titleTemplate: '{{noticeTitle}}',
+    contentTemplate: '{{noticeContent}}',
+    actionUrlTemplate: 'subpackages/extra/shipment-ops/index'
+  },
+  studio_bill_paid_marked: {
+    category: 'ops',
+    queue: QUEUE_WORKFLOW,
+    priority: 'P0',
+    titleTemplate: '{{noticeTitle}}',
+    contentTemplate: '{{noticeContent}}',
+    actionUrlTemplate: 'subpackages/manager/studio-bills/index'
+  },
+  studio_bill_settled: {
+    category: 'ops',
+    queue: QUEUE_WORKFLOW,
+    priority: 'P1',
+    titleTemplate: '{{noticeTitle}}',
+    contentTemplate: '{{noticeContent}}',
+    actionUrlTemplate: 'subpackages/manager/studio-bills/index'
   }
 }
 

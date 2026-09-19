@@ -43,6 +43,13 @@ const {
 } = require('./shipmentDefaults')
 const { buildShipmentDashboard } = require('./shipmentDashboard')
 const { buildContext, quoteLines, PRICING_STATUS, SHIPMENT_PRICING_STATUS } = require('./pricingEngine')
+const {
+  NOTIFY_EVENTS,
+  resolveRecipients,
+  notifyStaff,
+  buildShipmentPricedNotice,
+  toDispatchVars
+} = require('./settlementNotify')
 
 /**
  * 算价的三个外部数据源（蓝图 §4）。
@@ -343,6 +350,47 @@ async function loadSettlementConfig() {
 }
 
 /**
+ * 出货单生成后的「待支付」通知（裁决：每一次填写出货单之后通知去付款）。
+ *
+ * 收件人 = 超管 + **该门店店长**（付款方是门店）。**有未核价行时文案改口径**，
+ * 不报一个假总额 —— 门店据此备钱，报错金额比不报更糟。
+ *
+ * **best-effort**：通知失败绝不影响录单成功（录单是主流程，消息是告知）。
+ */
+async function notifyShipmentPricedQuietly(shipments) {
+  const list = Array.isArray(shipments) ? shipments.filter(Boolean) : []
+  if (!list.length) return { sent: 0, failed: 0, targetCount: 0, skipped: 'NO_SHIPMENT' }
+  const first = list[0]
+  try {
+    const resolved = await resolveRecipients(db, {
+      storeId: first.storeId,
+      includeSuper: true,
+      includeStoreManager: true
+    })
+    const notice = buildShipmentPricedNotice(
+      list.length === 1
+        ? first
+        : Object.assign({}, first, {
+            // 一次粘多店时把门店名说清，避免店长以为是自己那单
+            storeName: list.map((x) => x.storeName).filter(Boolean).join('、')
+          })
+    )
+    const sent = await notifyStaff(cloud, {
+      eventType: NOTIFY_EVENTS.SHIPMENT_PRICED,
+      openids: resolved.openids,
+      relatedId: first._id || first.batchId || '',
+      vars: toDispatchVars(notice)
+    })
+    return Object.assign({ targetCount: resolved.openids.length }, sent, {
+      storeManagerMissing: !!resolved.storeManagerMissing
+    })
+  } catch (e) {
+    console.error('[manageStoreShipment] notify shipment priced failed', e)
+    return { sent: 0, failed: 1, errors: [String((e && e.message) || e)], targetCount: 0 }
+  }
+}
+
+/**
  * 算价（蓝图 §5）——「逐行可编辑页」与保存时的**唯一**取价入口。
  *
  * 为什么客户端不许自己算：预览价与落库价必须同源。前端只传「选了什么」（材料/等级/包装/尺寸/数量/费率），
@@ -552,7 +600,9 @@ async function handleCreate(event, actor) {
     deleted: false
   })
   const addRes = await withCollectionRetry(() => db.collection(COLLECTION).add({ data }))
-  return ok({ id: addRes._id, item: mapRow(Object.assign({ _id: addRes._id }, data)) })
+  const item = mapRow(Object.assign({ _id: addRes._id }, data))
+  const notify = await notifyShipmentPricedQuietly([item])
+  return ok({ id: addRes._id, item, notify })
 }
 
 /**
@@ -626,11 +676,27 @@ async function handleCreateFromParsed(event, actor) {
     return fail((errors[0] && errors[0].msg) || '未能写入出货单')
   }
 
+  /**
+   * 通知**按门店分别发**（不是把多家店的单合成一条）：每个店长只该看到自己门店的待付款，
+   * 合成一条会把别家门店的金额发给他。
+   */
+  const notify = []
+  const byStore = {}
+  for (const it of created) {
+    const sid = it.storeId || ''
+    if (!byStore[sid]) byStore[sid] = []
+    byStore[sid].push(it)
+  }
+  for (const sid of Object.keys(byStore)) {
+    notify.push(await notifyShipmentPricedQuietly(byStore[sid]))
+  }
+
   return ok({
     batchId,
     list: created,
     stats: { created: created.length, failed: errors.length },
     errors: errors.slice(0, 20),
+    notify,
     msg: `已录入 ${created.length} 张出货单` + (errors.length ? `，失败 ${errors.length}` : '')
   })
 }

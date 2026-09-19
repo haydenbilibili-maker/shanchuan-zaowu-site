@@ -6,3 +6,4 @@
 npm run test:studio-pricing
 npm run test:studio-settlement
 npm run test:studio-bill
+npm run test:studio-notify

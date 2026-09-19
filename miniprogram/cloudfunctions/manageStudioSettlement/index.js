@@ -52,6 +52,14 @@ const {
 
 const BILL_COLLECTION = 'ops_settlement_bills'
 const SHIPMENT_COLLECTION = 'ops_shipments'
+const {
+  NOTIFY_EVENTS,
+  resolveRecipients,
+  notifyStaff,
+  buildBillPaidMarkedNotice,
+  buildBillSettledNotice,
+  toDispatchVars
+} = require('./settlementNotify')
 
 /**
  * 主店 id 别名（与 `manageStoreShipment/shipmentDefaults.js` 的 `MAIN_IDS` 同源）。
@@ -82,6 +90,29 @@ function actorCanAccessStore(actor, storeId, isSuper) {
 
 function isSuperActor(actor) {
   return hasRole(actor, STORED_ROLE_SUPER)
+}
+
+/**
+ * 通知（best-effort）：**任何失败都不影响业务动作**。
+ * 录单/收款已经成功，不能因为消息发不出去就回滚或报错。
+ * 返回值带 `storeManagerMissing`，便于排查「店长没收到」是没配门店范围还是投递失败。
+ */
+async function notifyQuietly(params) {
+  try {
+    const resolved = await resolveRecipients(db, params.want || {})
+    const sent = await notifyStaff(cloud, {
+      eventType: params.eventType,
+      openids: resolved.openids,
+      relatedId: params.relatedId,
+      vars: toDispatchVars(params.notice)
+    })
+    return Object.assign({ targetCount: resolved.openids.length }, sent, {
+      storeManagerMissing: !!resolved.storeManagerMissing
+    })
+  } catch (e) {
+    console.error('[manageStudioSettlement] notify failed', params && params.eventType, e)
+    return { sent: 0, failed: 1, errors: [String((e && e.message) || e)], targetCount: 0 }
+  }
 }
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -670,11 +701,17 @@ async function handleBillMarkPaid(event, actor) {
     db.collection(BILL_COLLECTION).doc(bill._id).update({ data: res.patch })
   )
   const updated = await patchShipments(res.shipmentIds, res.shipmentPatch)
+  const notify = await notifyQuietly({
+    eventType: NOTIFY_EVENTS.BILL_PAID_MARKED,
+    relatedId: bill._id,
+    notice: buildBillPaidMarkedNotice(Object.assign({}, bill, res.patch)),
+    want: { includeSuper: true, includeStoreManager: false }
+  })
   return ok({
     bill: mapBill(Object.assign({}, bill, res.patch)),
     updatedShipments: updated,
     msg: res.msg,
-    notify: 'bill_paid_marked'
+    notify
   })
 }
 
@@ -706,11 +743,17 @@ async function handleBillConfirmSettle(event, actor) {
     db.collection(BILL_COLLECTION).doc(bill._id).update({ data: res.billPatch })
   )
   const updated = await patchShipments(res.shipmentIds, res.shipmentPatch)
+  const notify = await notifyQuietly({
+    eventType: NOTIFY_EVENTS.BILL_SETTLED,
+    relatedId: bill._id,
+    notice: buildBillSettledNotice(Object.assign({}, bill, res.billPatch)),
+    want: { storeId: bill.storeId, includeSuper: false, includeStoreManager: true }
+  })
   return ok({
     bill: mapBill(Object.assign({}, bill, res.billPatch)),
     updatedShipments: updated,
     msg: res.msg,
-    notify: 'bill_settled'
+    notify
   })
 }
 
