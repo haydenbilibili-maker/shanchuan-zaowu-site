@@ -1,7 +1,7 @@
 {
   "_doc": "并发工作流归属注册表 · 单一事实源。守卫：scripts/check-workstream-ownership.mjs（npm run check:workstream-ownership）。规则与理由见 docs/并发工作流治理与契约基线_2026-09-18.md §3。",
   "version": 1,
-  "updated": "2026-09-18",
+  "updated": "2026-09-19",
   "frozenMode": "warn",
   "frozenModeNote": "本仓 git 身份共享（所有 agent 都是 Hadyen），无法从提交者推断动作者，故冻结违约先是告警；worktree+短分支纪律落地后改 strict。",
   "streams": [
@@ -522,6 +522,17 @@
       "guards": [
         "check:product-save-fields"
       ]
+    },
+    {
+      "id": "gift-label",
+      "name": "礼笺贴纸版式（热敏不干胶 90×110mm）",
+      "owner": "lead",
+      "phase": 1,
+      "owns": [
+        "miniprogram/subpackages/feature/gift/compose/**",
+        "miniprogram/utils/giftShareCard.js"
+      ],
+      "note": "2026-09-19 经产品负责人授权新建（选项「新建」）。目标：为 90×110mm 热敏不干胶贴纸新增一个礼笺导出**变体**，与既有 A6（105×148mm，守卫已钉住）**并存**，不替换。实物测量稍后进行，先实现。 （实测 A6 规格在 miniprogram/utils/giftShareCard.js，故一并认领。）"
     }
   ],
   "frozen": [
@@ -631,7 +642,6 @@
     "subpackages/feature/detail/index",
     "subpackages/feature/detail/wiki-detail/index",
     "subpackages/feature/gift/address/index",
-    "subpackages/feature/gift/compose/index",
     "subpackages/feature/gift/hub/index",
     "subpackages/feature/gift/my-gifts/index",
     "subpackages/feature/gift/receive/index",
