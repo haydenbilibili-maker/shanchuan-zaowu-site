@@ -305,6 +305,9 @@ Page({
           revenueTotalText: money(k.revenueTotal),
           shipmentCount: k.shipmentCount || 0,
           netProfitText: moneySigned(k.netProfit),
+          // 结算口径**不加在这里**：`kpis` 的这些 *Text 字段在 WXML 里没有被逐个渲染
+          // （只有 totalBudgetText 等少数几个被点名使用）。加了就是没人读的死数据。
+          // 结算口径统一由下面的 `stockRows` 渲染（那是通用循环，加行即显示）。
           netProfitTone: Number(k.netProfit) < 0 ? 'down' : Number(k.netProfit) > 0 ? 'up' : 'flat'
         },
         purchaseRows: [
@@ -322,10 +325,32 @@ Page({
             value: `${k.finishedSkuCount || 0} / ${k.finishedQty || 0}`,
             tone: 'flat'
           },
-          { label: '总营收（出货）', value: money(k.revenueTotal), tone: 'brass' },
+          /**
+           * ⚠️ 口径改名（P0-6 的落地）：原来这里叫「总营收（出货）」。
+           * 上了收款之后同一个词会被读出两种意思（发了多少货 vs 收回了多少钱），
+           * 所以拆成四个数并**把口径写进标签**，不让人猜。
+           */
+          { label: '出货额（全部有效单据）', value: money(k.revenueTotal), tone: 'brass' },
+          { label: '已结清（超管已确认收款）', value: money(k.settledAmount), tone: 'up' },
+          {
+            label: '未收款（未结 + 待确认）',
+            value: money(k.outstandingAmount),
+            tone: Number(k.outstandingAmount) > 0 ? 'brass' : 'flat'
+          },
+          {
+            label: '待确认收款',
+            value: `${k.paidPendingCount || 0} 笔 · ${money(k.paidPendingAmount)}`,
+            tone: Number(k.paidPendingCount) > 0 ? 'brass' : 'flat'
+          },
           { label: '出货总笔数', value: String(k.shipmentCount || 0), tone: 'flat' },
           {
-            label: '净收益',
+            // 真毛利：出货额 −（材料费 + 包装费）。**手工费算工作室收入、不减**（裁决 20）
+            label: '真毛利（出货额 − 材料 − 包装）',
+            value: moneySigned(k.grossProfit) + (k.grossMarginPct === null || k.grossMarginPct === undefined ? '' : ` · ${k.grossMarginPct}%`),
+            tone: Number(k.grossProfit) < 0 ? 'down' : Number(k.grossProfit) > 0 ? 'up' : 'flat'
+          },
+          {
+            label: '净收益（出货额 − 采购，旧口径）',
             value: moneySigned(k.netProfit),
             tone: Number(k.netProfit) < 0 ? 'down' : Number(k.netProfit) > 0 ? 'up' : 'flat'
           }
