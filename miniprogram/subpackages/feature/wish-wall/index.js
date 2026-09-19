@@ -301,6 +301,8 @@ Page({
     trackBehavior('wish_wall_enter', 'from', this.data.entryFrom)
     // 仪式音效：一个动作一个 InnerAudioContext 实例（连点不叠音，见 utils/ritualFeedback）
     this._soundPlayer = ritualFeedback.createPlayer()
+    // 时刻音：换一次进页 = 可以再听一次（"一个页面会话只放一次"的边界由 utils 侧持有）
+    ritualFeedback.resetMoment()
     this._echoSeq = 0
     // 开关是持久化的（默认开）：进页要按存档回显，否则用户关过又"自己开了"
     this.setData({ soundOn: ritualFeedback.isSoundEnabled(), muyuCount: wishRitual.readMuyuCount() })
@@ -1166,6 +1168,11 @@ Page({
         wx.showToast({ title: result.msg || '发布失败', icon: 'none', duration: 2500 })
         return
       }
+      // ★ 时刻音（2026-09-20）：**心愿真的挂上墙了**才放那段 6 秒副歌。
+      //   为什么绑在"上墙成功"而不是点灯/抽签：上墙是这条链上唯一"完成了一次仪式"的动作
+      //   （点灯木鱼是过程，抽签是中间态）；且它一个页面会话只放一次（见 playMoment 的三条约束）。
+      //   原曲《黑马标本店》以片段形式随包发布，起点与可复现方式见 scripts/make-black-horse-clip.mjs。
+      ritualFeedback.playMoment('blackHorseSong')
       // 落愿闭环：先本地落地（愿签插到墙首 + 弹幕立即接住 + 高亮），再等权威数据回来对齐。
       // 这样「挂上墙」不再只是一个 toast —— 而是**看得见心愿落在墙上**。
       const fresh = {
