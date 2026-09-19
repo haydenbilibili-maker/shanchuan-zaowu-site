@@ -1,7 +1,7 @@
 <!--components/WishWallEntry/index.wxml 需求 28：祈福墙入口（开关 + 藏品命中共同决定）
   ext-class 由宿主传入（外间距归宿主）；compact 为首屏位的一行变体 -->
 <view
-  class="wish-wall-entry ext-class {{compact ? 'is-compact' : ''}} {{tone === 'dark' ? 'is-dark' : ''}}"
+  class="wish-wall-entry ext-class {{compact ? 'is-compact' : ''}} {{tone === 'parchment' ? 'is-parchment' : ''}}"
   wx:if="{{visible}}"
   bindtap="onTap"
   hover-class="wish-wall-entry--press"
@@ -23,7 +23,7 @@
          入口自身的 aria-label 已说清"这是去哪"，故这里隐藏、语义由 aria-label 承担。 -->
     <view class="wish-wall-entry-mq" wx:if="{{mqItems.length}}">
       <view class="wish-wall-entry-mq-track" style="animation-duration:{{mqDurationMs}}ms" aria-hidden="true">
-        <text class="wish-wall-entry-mq-item" wx:for="{{mqItems}}" wx:key="i">· {{item.t}}</text>
+        <text class="wish-wall-entry-mq-item" wx:for="{{mqItems}}" wx:key="i">· <text class="wish-wall-entry-mq-emoji" wx:if="{{item.e}}">{{item.e}}</text>{{item.t}}</text>
       </view>
     </view>
   </view>

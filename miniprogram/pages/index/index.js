@@ -256,9 +256,15 @@ Page({
         data: { action: 'list', limit: 12 }
       });
       const list = ((res && res.result) || {}).list || [];
+      // emoji 用**与祈福墙弹幕同一条规则**（utils/wishWall.danmakuEmoji，按 _id 确定性取）——
+      // 首页不另造一套，否则两处的 emoji 早晚对不上。
+      const { danmakuEmoji } = require('../../utils/wishWall');
       const wishes = list
-        .map((r) => String((r && r.text) || '').trim())
-        .filter(Boolean);
+        .map((r) => ({
+          text: String((r && r.text) || '').trim(),
+          emoji: danmakuEmoji((r && r._id) || '')
+        }))
+        .filter((w) => w.text);
       this.setData({ wishWallWishes: wishes });
     } catch (e) {
       // 取不到就只是"没有跑马灯"：入口照常可点，降级不影响转化主路径

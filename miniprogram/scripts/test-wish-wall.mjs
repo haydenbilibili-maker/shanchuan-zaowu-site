@@ -2094,14 +2094,24 @@ const entryWxss = readSrc('miniprogram/components/WishWallEntry/index.wxss')
     /wishWallWishes: wishes/.test(homeJs) && /wishWallWishes: \[\]/.test(homeJs))
   check('★ 跑马灯 ≥2 条才开（1 条会露空档）+ 时长按内容长度算（长文案跑得久）',
     /const MQ_MIN = 2/.test(entrySrc) && /mqItems/.test(entryWxml) && /mqDurationMs/.test(entryWxml))
-  // 2026-09-20 产品负责人：「入口样式与主页视觉更符合」——
-  // 首页是博物黑页面，浅纸卡会成**全页唯一亮块**（真机截图确认）。组件 json 没有 styleIsolation
-  // → 页面样式进不去组件内部，**只能**由宿主选皮肤（tone），所以这条判据钉"首页确实选了深色"。
-  check('★ 首页入口用深色皮肤（tone=dark，与首页卡片同一套令牌）',
-    /tone="dark"/.test(homeWxml) &&
-    /\.wish-wall-entry\.is-dark\s*\{[^}]*var\(--color-bg-card/.test(entryWxss) &&
-    /\.wish-wall-entry\.is-dark\s+\.wish-wall-entry-title\s*\{[^}]*var\(--color-text-primary/.test(entryWxss),
-    '浅纸版在博物黑页面上是唯一亮块')
+  // 2026-09-20 产品负责人两轮口径：
+  //  ① 浅纸卡在博物黑页面上"比较突兀，需要适配"（不是纸不好）→ 出**羊皮纸**变体；
+  //  ② 跑马灯文字要**手写体 + emoji**（与祈福墙弹幕同一套观感）。
+  // 组件 json 没有 styleIsolation → 页面样式进不去组件内部，**只能**由宿主选皮肤，故钉 tone。
+  check('★ 首页入口用羊皮纸皮肤（tone=parchment：压暗纸面 + 软投影 + 内嵌铜金细框）',
+    /tone="parchment"/.test(homeWxml) &&
+    /\.wish-wall-entry\.is-parchment\s*\{[^}]*linear-gradient\(165deg, #F0E8D9/.test(entryWxss) &&
+    /\.wish-wall-entry\.is-parchment::after\s*\{[^}]*border:\s*1rpx solid rgba\(107, 90, 36, 0\.22\)/.test(entryWxss),
+    '羊皮纸变体缺了就不是"适配"，而是把纸换成了普通深色卡（产品负责人明确否掉过）')
+  check('★ 跑马灯文字用手写体（与祈福墙愿签/弹幕同一字栈；字体由 handFont 全局加载，组件不重复加载）',
+    /\.wish-wall-entry-mq-item\s*\{[^}]*font-family:\s*'ShanhaiHand'/.test(entryWxss) &&
+    /kai|KaiTi|楷体/.test(entryWxss) &&
+    !/loadFontFace/.test(entrySrc),
+    '组件里重复 loadFontFace = 每次进首页多下一份字体')
+  check('★ 跑马灯带 emoji，且 emoji 来自**共享规则**（utils/wishWall.danmakuEmoji，按 _id 确定性取）',
+    /\{\{item\.e\}\}/.test(entryWxml) && /wish-wall-entry-mq-emoji/.test(entryWxss) &&
+    /danmakuEmoji\(/.test(homeJs) && /emoji: danmakuEmoji\(/.test(homeJs),
+    '首页自造一套 emoji = 两处规则早晚对不上')
   check('★ 深色皮肤仍从属于「组件内变体」而非宿主覆盖（styleIsolation 是默认的 isolated）',
     !/styleIsolation/.test(readSrc('miniprogram/components/WishWallEntry/index.json')),
     '若哪天给组件开了 apply-shared，这条与上面的 tone 判据要一起复核')
@@ -2356,7 +2366,11 @@ check(
 const wallJsSrc = readFileSync(resolve(ROOT, 'miniprogram/utils/wishWall.js'), 'utf8')
 check('★★ 弹幕配色与 emoji 走稳定哈希（rotateIndex），且**不得**出现 Math.random',
   /tone: rotateIndex\(seedId, DANMAKU_TONES\)/.test(wallJsSrc)
-  && /emoji: DANMAKU_EMOJIS\[rotateIndex\('e:' \+ seedId/.test(wallJsSrc)
+  // 2026-09-20：emoji 的取法抽成了 `danmakuEmoji(seedId)`（首页入口的跑马灯要复用**同一条**规则，
+  // 否则两处 emoji 早晚对不上）→ 判据跟着代码走，但**确定性没有放宽**：
+  // 断言调用点仍传 seedId、且那个函数内部仍是 rotateIndex + 盐 'e:' + 同一 emoji 池。
+  && /emoji: danmakuEmoji\(seedId\)/.test(wallJsSrc)
+  && /function danmakuEmoji\(seedId\)[\s\S]{0,400}?rotateIndex\('e:' \+ id, DANMAKU_EMOJIS\.length\)/.test(wallJsSrc)
   && !/Math\.random/.test(wallJsSrc),
   '随机取色会让每次 setData 跳到不同颜色（守卫明令确定性）')
 check('★ 弹幕挂色调类 + emoji 为**独立元素**（不改 text 长度 → 不影响匀速时长）',

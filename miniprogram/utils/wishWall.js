@@ -503,6 +503,22 @@ function danmakuClearMs(text) {
 const DANMAKU_TONES = 6
 const DANMAKU_EMOJIS = ['', '🌿', '✨', '🐚', '🌸', '🕯️', '🌙', '🍀']
 
+/**
+ * 一条心愿该配哪个 emoji（**唯一规则**）。
+ *
+ * 2026-09-20 抽出：首页入口的跑马灯也要带 emoji，而规则原本内联在 `buildDanmakuRows` 里 →
+ * 复制一份到首页就是"两处规则会漂"。现在 builder 与首页入口都调这里。
+ * 盐 `'e:'` 与配色用的盐不同：**刻意让颜色与 emoji 不绑成固定搭配**。
+ * 必须确定性（按 id 取，不用随机）—— 否则每次 setData 都会换，且与守卫的确定性铁律冲突。
+ *
+ * @param {string} seedId 心愿 _id（缺失时调用方给稳定兜底值）
+ * @returns {string} emoji 或空串（池里第一项就是空串，即"这条不带 emoji"）
+ */
+function danmakuEmoji(seedId) {
+  const id = String(seedId == null ? '' : seedId)
+  return DANMAKU_EMOJIS[rotateIndex('e:' + id, DANMAKU_EMOJIS.length)] || ''
+}
+
 function buildDanmakuRows(items, opts) {
   const list = Array.isArray(items) ? items : []
   const o = opts || {}
@@ -541,7 +557,7 @@ function buildDanmakuRows(items, opts) {
       key: `${String(raw._id || `w${i}`)}#${cycle}`,
       // 配色与 emoji：按 id 稳定取（emoji 用不同盐，避免与颜色绑定成固定搭配）
       tone: rotateIndex(seedId, DANMAKU_TONES),
-      emoji: DANMAKU_EMOJIS[rotateIndex('e:' + seedId, DANMAKU_EMOJIS.length)] || '',
+      emoji: danmakuEmoji(seedId),
       // 墙面不只是装饰：带上身份与状态，弹幕才能标注记、点开愿签
       id: String(raw._id || ''),
       pinned: raw.pinned === true,
@@ -654,6 +670,7 @@ module.exports = {
   buildWishWallUrl,
   shanghaiDayKey,
   rotateIndex,
+  danmakuEmoji,
   parseWishWallScene,
   pickDailyLine,
   previousDayKey,

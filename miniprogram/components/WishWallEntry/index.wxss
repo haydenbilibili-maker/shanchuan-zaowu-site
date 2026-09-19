@@ -134,10 +134,20 @@
 
 .wish-wall-entry-mq-item {
   flex-shrink: 0;
-  font-size: 20rpx;
+  /* 与祈福墙页的愿签/弹幕**同一字栈**：手写体由 `handFont`（app.js onLaunch）全局加载
+     （wx.loadFontFace + global:true + scopes 含 native），所以组件里**只写族名、不要重复加载**。
+     系统栈兜底要写全：iOS 的 WeChat WebView 不暴露中文手写族，未加载成功时才轮到它们。 */
+  font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
+  font-size: 22rpx;
   line-height: 1.4;
   color: #7A6E58;
   white-space: nowrap;
+}
+
+/* emoji 与祈福墙弹幕同款：略大一点、留 6rpx 间距（手写体里混 emoji 时基线才不会挤） */
+.wish-wall-entry-mq-emoji {
+  margin-right: 6rpx;
+  font-size: 24rpx;
 }
 
 @keyframes wish-wall-entry-mq-scroll {
@@ -145,39 +155,26 @@
   to { transform: translateX(-50%); }
 }
 
-/* ── 深色皮肤（2026-09-20）：首页等**博物黑**页面用 ────────────────────────────
-   与首页卡片同一套令牌（--color-bg-card / --color-text-primary / --brass-300），
-   所以它和「为你推荐」的卡片是同一族；浅纸版仍是**默认**（详情页的牌匾语言不动）。
-   ⚠️ 灯那条必须写成与浅纸版**同长度**的选择器（.wish-wall-entry .wish-wall-entry-row .wish-wall-entry-lamp）：
-   浅纸版为了在 #FAF6ED 上看得见把灯加深成 #A8903C，深色底上该用标准铜金 —— 两者特异性相同，
-   只靠"谁在后面"决胜，故这里必须同长度 + 落在文件末尾。 */
-.wish-wall-entry.is-dark {
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1rpx solid rgba(196, 167, 108, 0.42);
-  box-shadow: none;
-}
-/* 纸纤维只属于浅纸：深色底上用 multiply 会糊成一团 */
-.wish-wall-entry.is-dark::before { display: none; }
-
-.wish-wall-entry.is-dark .wish-wall-entry-brand { color: var(--brass-300, #D4BC85); }
-
-.wish-wall-entry.is-dark .wish-wall-entry-title { color: var(--color-text-primary, #FFFFFF); }
-
-.wish-wall-entry.is-dark .wish-wall-entry-desc { color: var(--color-text-secondary, #A09A90); }
-
-.wish-wall-entry.is-dark .wish-wall-entry-row .wish-wall-entry-lamp {
-  border-color: rgba(196, 167, 108, 0.55);
-  background: var(--brass-300, #D4BC85);
+/* ── 羊皮纸变体（2026-09-20）：首页等**博物黑**页面用 ────────────────────────────
+   产品负责人口径：「不是白信纸的感觉不好，而是**比较突兀、需要适配**」。
+   所以**保留纸的性格**（暖调纸面 + 纸纤维 + 铜字 + 手写感跑马灯），只做三件适配：
+     ① 压暗一档：#FAF6ED → 暖调羊皮纸（#F0E8D9 → #DFD3BC），亮度跳变小了就不再刺眼；
+     ② 软投影：读成"**深色桌面上放着的一张纸**"，而不是一块发光的板；
+     ③ 内嵌一道铜金细框（与祈福墙页 .ww-emboss 同一手法）—— 这既是本仓的牌匾语言，
+        也是它与"普通深色卡片"的区别所在。
+   文字/箭头/灯沿用浅纸版那一套（深棕 #6B5A24 / 铜 #A8903C）——纸没换，就不该换字色。 */
+.wish-wall-entry.is-parchment {
+  padding: 22rpx 24rpx 20rpx;
+  background: linear-gradient(165deg, #F0E8D9 0%, #E7DCC7 52%, #DFD3BC 100%);
+  border: 1rpx solid rgba(196, 167, 108, 0.55);
+  box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.34), inset 0 1rpx 0 rgba(255, 255, 255, 0.55);
 }
 
-.wish-wall-entry.is-dark .wish-wall-entry-chevron {
-  border-right-color: var(--brass-300, #D4BC85);
-  border-bottom-color: var(--brass-300, #D4BC85);
+.wish-wall-entry.is-parchment::after {
+  content: '';
+  position: absolute;
+  inset: 8rpx;
+  pointer-events: none;
+  border: 1rpx solid rgba(107, 90, 36, 0.22);
+  border-radius: 10rpx;
 }
-
-/* 分隔线与跑马灯文案：深色底上原来的深棕（rgba(107,90,36,.18)）等于看不见 → 改铜金调 */
-.wish-wall-entry.is-dark .wish-wall-entry-mq {
-  border-top-color: rgba(196, 167, 108, 0.22);
-}
-
-.wish-wall-entry.is-dark .wish-wall-entry-mq-item { color: var(--color-text-secondary, #A09A90); }

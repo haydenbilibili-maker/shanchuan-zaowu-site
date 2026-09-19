@@ -67,12 +67,12 @@ Component({
      */
     compact: { type: Boolean, value: false },
     /**
-     * **皮肤**：`paper`（默认，浅纸+铜字，祈福墙牌匾语言，详情页用）
-     * / `dark`（博物黑卡片，与首页 `.section-box` 里的卡片同一套令牌）。
+     * **皮肤**：`paper`（默认，亮纸 + 铜字，祈福墙牌匾语言，详情页用）
+     * / `parchment`（**羊皮纸**：同样保留纸的性格，但压暗一档 + 软投影 + 内嵌铜金细框，
+     *   给首页这类**博物黑**页面用 —— 产品负责人口径："不是白信纸不好，是比较突兀、需要适配"）。
      *
      * 为什么必须是组件内变体、而不是让宿主页面覆盖：组件 json 没有 `styleIsolation`，
-     * 默认 `isolated` → **页面样式进不来**（2026-09-20 实测确认）。
-     * 首页是博物黑页面，浅纸卡会成了全页唯一亮块 → 故由宿主显式选皮肤。
+     * 默认 `isolated` → **页面样式进不来**（2026-09-20 实测确认）。故由宿主显式选皮肤。
      */
     tone: { type: String, value: 'paper' },
     /**
@@ -112,15 +112,25 @@ Component({
      * 时长按内容长度换算，让"长文案跑得久"（与祈福墙页 danmakuDurationMs 同一意图）——
      * 固定时长会让短文案一闪而过、长文案挤成一团。
      */
+    /**
+     * 跑马灯：清洗 + 限长 + 复制一份（无缝循环）。
+     * 入参支持两种：字符串，或 `{ text, emoji }` —— 首页会带 emoji（与祈福墙弹幕**同一套规则**，
+     * 见 `utils/wishWall.danmakuEmoji`，不在这里另造一套）。
+     */
     wishes(list) {
-      const texts = (Array.isArray(list) ? list : [])
-        .map((t) => String(t == null ? '' : t).trim())
-        .filter(Boolean)
+      const rows = (Array.isArray(list) ? list : [])
+        .map((it) => {
+          if (it && typeof it === 'object') {
+            return { t: String(it.text == null ? '' : it.text).trim(), e: String(it.emoji || '') }
+          }
+          return { t: String(it == null ? '' : it).trim(), e: '' }
+        })
+        .filter((r) => r.t)
         .slice(0, MQ_MAX)
-      const items = texts.length >= MQ_MIN
-        ? texts.concat(texts).map((t, i) => ({ i, t }))
+      const items = rows.length >= MQ_MIN
+        ? rows.concat(rows).map((r, i) => ({ i, t: r.t, e: r.e }))
         : []
-      const chars = texts.join('').length
+      const chars = rows.map((r) => r.t).join('').length
       const duration = Math.max(14000, Math.min(46000, 10000 + chars * 260))
       if (items.length !== this.data.mqItems.length) {
         this.setData({ mqItems: items, mqDurationMs: duration })
