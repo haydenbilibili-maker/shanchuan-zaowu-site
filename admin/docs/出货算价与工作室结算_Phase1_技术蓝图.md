@@ -649,14 +649,24 @@
 
 | # | 守卫 | 断言什么 | 注入（必须被检出） |
 |---|---|---|---|
-| 1 | `test-studio-pricing` | 前缀取最长命中、后缀取最长命中、别名命中、默认等级、默认尺寸、尺寸识别、裸名报红、残余非空报红、等长多义报红、**未匹配写 null 不写 0**、分单位取整、**快照隔离**（改价目表不改已定价单） | ①短掉 `isDefaultGrade` 逻辑 ②把未匹配改回写 `0` ③去掉别名匹配 ④前缀改成"最先命中"而非最长 |
-| 2 | `check-price-book-integrity` | 完整性校验函数：同一 `normName` 恰好一个 default、`normName+grade` 唯一、单价 ≥ 0、**别名跨材料冲突**检测 | ①构造两行都 `isDefaultGrade:true` ②构造跨材料同名别名 |
-| 3 | `check-settlement-single-ledger` | `settleStatus` **只能**由 `manageStudioSettlement` 写；`manageStoreShipment` 不得出现直接写 | 在 `manageStoreShipment` 注入一行写 `settleStatus` |
-| 4 | `test-studio-bill` | 账单状态机、**终结副作用**（账单 settled → 其下所有单 settled + completed）、未核价拦截生成、确认收款**幂等**、作废回退 | ①去掉"每张单都完成"循环 ②去掉幂等短路 ③去掉未核价拦截 |
-| 5 | `check-collection-docs`（**新增，补 §9.1 第 3 处的空缺**） | 云函数引用到的每个集合都必须有 `cloudbase/schema/<name>.md`（现状完全没守卫） | 删掉一个已有 schema 文件 |
+| 1 | `test:studio-pricing` | 前缀取最长命中、后缀取最长命中、别名命中、默认等级、默认尺寸、尺寸识别、裸名报红、残余非空报红、**未匹配写 null 不写 0**、分单位取整、**快照隔离**、单位不变量（单据合计 = Σ 行 lineTotalCents = 三分项之和）、行级费率覆盖（**显式 0 不等于没传**）、门面忠实转发 | 14 条，含「汇总把 lineTotalCents 又乘一次数量（翻倍）」「行级费率用真值判断」 |
+| 2 | `test:studio-settlement` | 写入路径：`buildRow` 归一化、别名按归一化去重且上限 20、单价按分取整、**`enabled` 缺字段默认关**、`mapRow` 往返、与算价方同口径 | 6 条，含「enabled 默认变开」「费率 0 被回落成默认」 |
+| 3 | `test:studio-bill` | 账单状态机、入账校验（门店不匹配 / 待核价 / 已入账）、**两步收款不可绕过**、**确认收款终结（两个维度各一条断言）**、幂等、作废释放、派生字段、只写状态码 | 8 条，含「不再终结物流状态」「去掉幂等」「不校验门店」 |
+| 4 | `test:studio-notify` | 收件人按**门店**隔离、主店 id 别名、无 `storeIds` 失败即拒、**未核价不报假金额**、best-effort 投递（失败不抛）、去重 | 6 条，含「未核价也报最终金额」「店长不按门店过滤」 |
+| 5 | `test:studio-dashboard` | 三口径拆分（出货额 / 已结清 / 未收款）、**真毛利不减手工费（裁决 20）**、`totalCents` 三级回落、空数据毛利率为 null、单位不变量 | 5 条，含「真毛利把手工费也减掉」 |
+| 6 | `check:settlement-single-ledger` | **结算状态只能由账单流程写**（唯一写入方 / 出货侧只从 prev 继承 / 终结三件套齐全） | 5 条，含「出货侧开始写 settleStatus」 |
 
-> 第 5 条是**顺带补的历史空洞**：`cloudbase/schema/` 一直没人守，而 `cloudbase/schema/ops_shipments.md`
-> 已经严重滞后（只列 5 字段，实际 20+）。按 AGENTS.md「同类错误第二次发生必须补守卫」，值得补。
+> **已合并的口径（不另立守卫，避免重复造轮子）**：蓝图 v1.0 曾列 `check-price-book-integrity`，
+> 但价目表完整性规则（同一 `normName` 恰好一个默认行、`normName+option` 唯一、单价 ≥ 0、
+> 别名不跨材料冲突、缺默认行）已由 **#1 的 B1–B8** 与 **#2 的 D1–D4** 两处断言覆盖，
+> 且两处都验证了「写入方与算价方同口径」。再写一条只是同一批断言的第三份副本 ——
+> **不加**，改为在本表登记「已覆盖」，避免守卫数量虚高而实际判据重复。
+>
+> **仍然空缺（下一批）**：`cloudbase/schema/<name>.md` 至今**没有任何守卫**
+> （`check:fn-collection-rules` 只比 rules），而 `cloudbase/schema/ops_shipments.md`
+> 已经严重滞后（只列 5 字段，实际 20+）。补 `check-collection-docs` 需要复用
+> `check-fn-collection-rules` 的「常量名形态」解析，属独立一条活。
+
 
 ---
 
