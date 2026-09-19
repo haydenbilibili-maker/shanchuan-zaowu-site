@@ -115,7 +115,7 @@
         defaultWall="{{true}}"
         from="home"
         compact="{{true}}"
-        tone="parchment"
+        tone="ink"
         wishes="{{wishWallWishes}}"
       />
     </view>

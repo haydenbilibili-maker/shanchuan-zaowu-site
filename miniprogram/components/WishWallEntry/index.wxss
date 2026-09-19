@@ -155,26 +155,58 @@
   to { transform: translateX(-50%); }
 }
 
-/* ── 羊皮纸变体（2026-09-20）：首页等**博物黑**页面用 ────────────────────────────
-   产品负责人口径：「不是白信纸的感觉不好，而是**比较突兀、需要适配**」。
-   所以**保留纸的性格**（暖调纸面 + 纸纤维 + 铜字 + 手写感跑马灯），只做三件适配：
-     ① 压暗一档：#FAF6ED → 暖调羊皮纸（#F0E8D9 → #DFD3BC），亮度跳变小了就不再刺眼；
-     ② 软投影：读成"**深色桌面上放着的一张纸**"，而不是一块发光的板；
-     ③ 内嵌一道铜金细框（与祈福墙页 .ww-emboss 同一手法）—— 这既是本仓的牌匾语言，
-        也是它与"普通深色卡片"的区别所在。
-   文字/箭头/灯沿用浅纸版那一套（深棕 #6B5A24 / 铜 #A8903C）——纸没换，就不该换字色。 */
-.wish-wall-entry.is-parchment {
+/* ── 墨底纸韵（2026-09-20，第三版）：首页等**博物黑**页面用 ─────────────────────
+   三版试出来的结论（产品负责人连否两版）：
+     ① 亮纸 #FAF6ED —— 突兀；② 压暗到羊皮纸 #F0E8D9 —— **还是突兀**。
+   根因不是"纸的色温"，而是**亮度**：博物黑页面上**任何亮块**都会跳出来，暖一点也没用。
+   所以「纸」不能靠亮度表达，只能靠**纸的线索**：
+     · 底色走**暖调墨黑**（比普通卡片 #1F1D1A 暖一档，读作"另一种材质"而不是"一块亮板"）；
+     · 纸纤维保留，但深底上**改用 soft-light + 低透明**（本仓既定口径：浅底 multiply / 深底 soft-light）；
+     · **内嵌铜金细框**（牌匾语言）—— 这才是它与普通深色卡的区别；
+     · 手写体 + emoji 的跑马灯（见 index.js 的 wishes observer）。
+   一句话：**它是"暗房里的一张纸"，不是"亮着的一张纸"。** */
+.wish-wall-entry.is-ink {
   padding: 22rpx 24rpx 20rpx;
-  background: linear-gradient(165deg, #F0E8D9 0%, #E7DCC7 52%, #DFD3BC 100%);
-  border: 1rpx solid rgba(196, 167, 108, 0.55);
-  box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.34), inset 0 1rpx 0 rgba(255, 255, 255, 0.55);
+  background:
+    linear-gradient(165deg, rgba(196, 167, 108, 0.12) 0%, rgba(196, 167, 108, 0.03) 46%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(165deg, #2C2822 0%, #262219 100%);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.07);
 }
 
-.wish-wall-entry.is-parchment::after {
+/* 纸纤维的余韵：深底用 soft-light，且压到 0.16（浅纸版是 multiply 0.1）——
+   看得出是纸，又不会把整块抬亮 */
+.wish-wall-entry.is-ink::before {
+  opacity: 0.16;
+  mix-blend-mode: soft-light;
+}
+
+.wish-wall-entry.is-ink::after {
   content: '';
   position: absolute;
   inset: 8rpx;
   pointer-events: none;
-  border: 1rpx solid rgba(107, 90, 36, 0.22);
+  border: 1rpx solid rgba(196, 167, 108, 0.3);
   border-radius: 10rpx;
 }
+
+.wish-wall-entry.is-ink .wish-wall-entry-brand { color: var(--brass-300, #D4BC85); }
+
+.wish-wall-entry.is-ink .wish-wall-entry-title { color: var(--color-text-primary, #FFFFFF); }
+
+.wish-wall-entry.is-ink .wish-wall-entry-desc { color: var(--color-text-secondary, #A09A90); }
+
+.wish-wall-entry.is-ink .wish-wall-entry-row .wish-wall-entry-lamp {
+  border-color: rgba(196, 167, 108, 0.55);
+  background: var(--brass-300, #D4BC85);
+}
+
+.wish-wall-entry.is-ink .wish-wall-entry-chevron {
+  border-right-color: var(--brass-300, #D4BC85);
+  border-bottom-color: var(--brass-300, #D4BC85);
+}
+
+.wish-wall-entry.is-ink .wish-wall-entry-mq { border-top-color: rgba(196, 167, 108, 0.22); }
+
+/* 手写体在深底上要暖白才像"墨迹"，用次级灰会显得脏 */
+.wish-wall-entry.is-ink .wish-wall-entry-mq-item { color: rgba(239, 230, 210, 0.88); }

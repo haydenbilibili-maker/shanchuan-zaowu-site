@@ -1,7 +1,7 @@
 <!--components/WishWallEntry/index.wxml 需求 28：祈福墙入口（开关 + 藏品命中共同决定）
   ext-class 由宿主传入（外间距归宿主）；compact 为首屏位的一行变体 -->
 <view
-  class="wish-wall-entry ext-class {{compact ? 'is-compact' : ''}} {{tone === 'parchment' ? 'is-parchment' : ''}}"
+  class="wish-wall-entry ext-class {{compact ? 'is-compact' : ''}} {{tone === 'ink' ? 'is-ink' : ''}}"
   wx:if="{{visible}}"
   bindtap="onTap"
   hover-class="wish-wall-entry--press"

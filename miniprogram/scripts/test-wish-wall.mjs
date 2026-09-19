@@ -2098,11 +2098,12 @@ const entryWxss = readSrc('miniprogram/components/WishWallEntry/index.wxss')
   //  ① 浅纸卡在博物黑页面上"比较突兀，需要适配"（不是纸不好）→ 出**羊皮纸**变体；
   //  ② 跑马灯文字要**手写体 + emoji**（与祈福墙弹幕同一套观感）。
   // 组件 json 没有 styleIsolation → 页面样式进不去组件内部，**只能**由宿主选皮肤，故钉 tone。
-  check('★ 首页入口用羊皮纸皮肤（tone=parchment：压暗纸面 + 软投影 + 内嵌铜金细框）',
-    /tone="parchment"/.test(homeWxml) &&
-    /\.wish-wall-entry\.is-parchment\s*\{[^}]*linear-gradient\(165deg, #F0E8D9/.test(entryWxss) &&
-    /\.wish-wall-entry\.is-parchment::after\s*\{[^}]*border:\s*1rpx solid rgba\(107, 90, 36, 0\.22\)/.test(entryWxss),
-    '羊皮纸变体缺了就不是"适配"，而是把纸换成了普通深色卡（产品负责人明确否掉过）')
+  check('★ 首页入口用「墨底纸韵」皮肤（tone=ink：暖调墨黑 + 纤维 soft-light + 内嵌铜金细框）',
+    /tone="ink"/.test(homeWxml) &&
+    /\.wish-wall-entry\.is-ink\s*\{[^}]*linear-gradient\(165deg, #2C2822/.test(entryWxss) &&
+    /\.wish-wall-entry\.is-ink::before\s*\{[^}]*mix-blend-mode:\s*soft-light/.test(entryWxss) &&
+    /\.wish-wall-entry\.is-ink::after\s*\{[^}]*border:\s*1rpx solid rgba\(196, 167, 108, 0\.3\)/.test(entryWxss),
+    '三版试出的结论：亮纸与羊皮纸都被否（亮度问题）→ 纸感只能靠线索表达，且深底纤维必须 soft-light')
   check('★ 跑马灯文字用手写体（与祈福墙愿签/弹幕同一字栈；字体由 handFont 全局加载，组件不重复加载）',
     /\.wish-wall-entry-mq-item\s*\{[^}]*font-family:\s*'ShanhaiHand'/.test(entryWxss) &&
     /kai|KaiTi|楷体/.test(entryWxss) &&
