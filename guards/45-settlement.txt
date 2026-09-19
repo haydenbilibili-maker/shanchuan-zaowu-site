@@ -10,4 +10,5 @@ npm run test:studio-notify
 npm run test:studio-dashboard
 npm run check:settlement-single-ledger
 npm run check:price-import-blocks
+npm run check:shipping-rules
 npm run test:feishu-sync

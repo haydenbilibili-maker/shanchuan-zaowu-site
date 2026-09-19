@@ -238,10 +238,13 @@ function ruleText(context) {
     return shippingConfig.getRuleText(context)
   }
   if (campaignActive()) return campaignLabel()
-  const accessory = (shippingConfig.thresholds && shippingConfig.thresholds.accessory) || 200
-  const specimen = (shippingConfig.thresholds && shippingConfig.thresholds.specimen) || 500
+  // 兜底文案（正常情况下走上面的 getRuleText）：v2 按装裱方式收费，见蓝图 §19
+  const free = shippingConfig.freeShippingThreshold != null
+    ? shippingConfig.freeShippingThreshold
+    : ((shippingConfig.thresholds && shippingConfig.thresholds.specimen) || 299)
   const fee = shippingConfig.shippingFee != null ? shippingConfig.shippingFee : 18
-  return `顺丰速运 · 饰品满 ¥${accessory} / 藏品满 ¥${specimen} 包邮，否则运费 ¥${fee}`
+  const carrier = shippingConfig.defaultCarrier || '顺丰速运'
+  return `${carrier} · 相框/玻璃罩类满 ¥${free} 免邮，其余免邮，否则运费 ¥${fee}`
 }
 
 /** 目录运费（划线用），与实际计费无关 */

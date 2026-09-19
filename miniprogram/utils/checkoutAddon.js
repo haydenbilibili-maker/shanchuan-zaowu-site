@@ -170,9 +170,12 @@ function computeFreeShipping(args) {
   const fee = typeof cfg.calcShippingFee === 'function'
     ? (Number(cfg.calcShippingFee(amount, items)) || 0)
     : 0
-  const kindLabel = typeof cfg.resolveOrderKind === 'function' && cfg.resolveOrderKind(items) === 'accessory'
-    ? '饰品'
-    : '藏品'
+  /**
+   * 门槛语义（运费 v2，蓝图 §19）：门槛是**全场订单**门槛，只在本单含收费装裱方式时才有值；
+   * 纯免邮类（含 craftType 未标注）时 `resolveThreshold` 返回 0，表示**规则上就不收运费**。
+   * 所以这里不能再用「饰品/藏品」来称呼它。
+   */
+  const kindLabel = '全场'
   const carrier = String((cfg.defaultCarrier || cfg.carrier || '顺丰速运')).replace(/速运$/, '')
 
   if (campaignActive) {
@@ -195,6 +198,30 @@ function computeFreeShipping(args) {
   const rawGap = threshold - amount
   const gap = rawGap > 0 ? Math.round(rawGap * 100) / 100 : 0
   const coveredByCoupon = opts.shippingCoveredByCoupon === true
+
+  /**
+   * 本单不含收费装裱方式（门槛 0）→ 规则本身免邮，没有「凑单」可言。
+   * 必须单独一条分支：走通用分支会得到「已包邮（全场满 ¥0）」这种荒谬文案。
+   */
+  if (threshold <= 0 && items.length > 0) {
+    return {
+      campaignActive: false,
+      coveredByCoupon: false,
+      reached: true,
+      gap: 0,
+      gapText: '0.00',
+      fee: 0,
+      baseFee: 0,
+      threshold: 0,
+      kindLabel,
+      nothingSelected: amount <= 0,
+      gapTitle: '本单免运费',
+      detailText: `${carrier} · 本单免运费（不含相框/玻璃罩类）`,
+      progress: 100,
+      filler: null,
+      fillerText: ''
+    }
+  }
 
   /**
    * 「已免邮」的判据**不能**用 `fee <= 0`（原实现的 bug）：

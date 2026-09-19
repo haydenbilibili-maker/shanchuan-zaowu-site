@@ -1,11 +1,15 @@
 /**
  * 商城运费规则 — 代码默认值（云端集合 shipping_rules 可覆盖）
- * 与 config/shipping.js、makeOrder/shipping.js 保持字段语义一致。
+ * 与 `config/shipping.js`（C 端展示）、`makeOrder/shipping.js`（服务端权威）保持字段语义一致。
  *
- * mixCartStrategy:
- *   specimen_wins — 混合车含任一标本 → 用标本门槛（默认）
- *   accessory_wins — 含任一饰品且无标本才用饰品门槛（与 specimen_wins 在「有标本」时等价）
- *   max_threshold — 取更高门槛
+ * 口径：`admin/docs/出货算价与工作室结算_Phase1_技术蓝图.md` §19（v1.7，裁决 40/41/41b/41c）
+ *   收费类（chargedCraftTypes：相框 / 方形玻璃罩 / 圆形玻璃罩 / 圆柱形玻璃罩）
+ *     → 订单**全场**满 ¥299 免邮，未满收 ¥18/单
+ *   其余（含 craftType 为空）→ 一律免邮
+ *
+ * ⚠️ 判定只看 `craftType`，不看标题/类别。
+ * ⚠️ 收费清单**不允许为空**：空清单 = 全场免邮，属危险配置，保存侧直接拒绝；
+ *    本文件 normalize 时也会把空清单退回默认值（绝不静默变成全场免邮）。
  */
 
 const MIX_SPECIMEN_WINS = 'specimen_wins'
@@ -13,16 +17,51 @@ const MIX_ACCESSORY_WINS = 'accessory_wins'
 const MIX_MAX_THRESHOLD = 'max_threshold'
 const VALID_MIX_STRATEGIES = [MIX_SPECIMEN_WINS, MIX_ACCESSORY_WINS, MIX_MAX_THRESHOLD]
 
+/** 收费类装裱方式默认清单（= 产品负责人裁决 41 的四项） */
+const DEFAULT_CHARGED_CRAFT_TYPES = ['frame', 'cloche', 'cloche_round', 'cloche_cylinder']
+
+/**
+ * 允许出现在收费清单里的 `craftType` key。
+ * 与 `miniprogram/config/productTaxonomy.js` 的 `CRAFT_TYPE_OPTIONS` 同源 ——
+ * 由 `npm run check:shipping-rules-sync` 守卫钉住（复制粘贴漂移会红）。
+ */
+const VALID_CRAFT_TYPES = [
+  'frame',
+  'cloche',
+  'cloche_round',
+  'cloche_cylinder',
+  'diorama',
+  'magnet',
+  'accessory',
+  'wing_art',
+  'other'
+]
+
+const CRAFT_TYPE_LABELS = {
+  frame: '相框',
+  cloche: '方形玻璃罩',
+  cloche_round: '圆形玻璃罩',
+  cloche_cylinder: '圆柱形玻璃罩',
+  diorama: '造景',
+  magnet: '冰箱贴',
+  accessory: '饰品',
+  wing_art: '蝶翅画',
+  other: '其它'
+}
+
 function getDefaultConfig() {
   return {
-    ruleId: 'shipping_default_v1',
+    ruleId: 'shipping_default_v2',
     name: '商城运费规则',
     status: 'active',
     priority: 100,
     defaultCarrier: '顺丰速运',
     flatFee: 18,
-    accessoryFreeThreshold: 200,
-    specimenFreeThreshold: 500,
+    freeShippingThreshold: 299,
+    chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
+    // —— 旧模型字段（仅作兼容镜像；判定逻辑不再读取，见蓝图 §19）——
+    accessoryFreeThreshold: 0,
+    specimenFreeThreshold: 299,
     mixCartStrategy: MIX_SPECIMEN_WINS,
     freeShippingCampaign: {
       enabled: false,
@@ -38,6 +77,27 @@ function toNumber(value, fallback) {
   return Number.isFinite(n) ? n : fallback
 }
 
+/** 清洗收费清单：非数组 → null（视为缺失）；空数组 → null；未知 key 丢弃 */
+function normalizeChargedCraftTypes(raw) {
+  if (!Array.isArray(raw)) return null
+  const out = []
+  raw.forEach((v) => {
+    const key = String(v == null ? '' : v).trim().toLowerCase()
+    if (!key || out.indexOf(key) !== -1) return
+    if (VALID_CRAFT_TYPES.indexOf(key) === -1) return
+    out.push(key)
+  })
+  return out.length ? out : null
+}
+
+/** 收费类中文清单（摘要文案用） */
+function chargedCraftTypesLabel(chargedCraftTypes) {
+  const list = Array.isArray(chargedCraftTypes) && chargedCraftTypes.length
+    ? chargedCraftTypes
+    : DEFAULT_CHARGED_CRAFT_TYPES
+  return list.map((k) => CRAFT_TYPE_LABELS[k] || k).join('/')
+}
+
 function normalizeCampaign(raw, base) {
   const src = raw && typeof raw === 'object' ? raw : {}
   return {
@@ -49,23 +109,19 @@ function normalizeCampaign(raw, base) {
 }
 
 /**
- * 兼容旧字段：shippingFee / carrier / thresholds / freeShippingThreshold
+ * 兼容旧字段：shippingFee / carrier / thresholds / specimenFreeThreshold / freeShippingThreshold
  */
 function normalizeConfig(raw) {
   const base = getDefaultConfig()
   const src = raw && typeof raw === 'object' ? raw : {}
   const thresholds = src.thresholds && typeof src.thresholds === 'object' ? src.thresholds : {}
 
-  const accessory = toNumber(
-    src.accessoryFreeThreshold != null ? src.accessoryFreeThreshold : thresholds.accessory,
-    base.accessoryFreeThreshold
-  )
-  const specimen = toNumber(
-    src.specimenFreeThreshold != null
-      ? src.specimenFreeThreshold
-      : (thresholds.specimen != null ? thresholds.specimen : src.freeShippingThreshold),
-    base.specimenFreeThreshold
-  )
+  // 兼容读取链：freeShippingThreshold（新） → specimenFreeThreshold（旧） → thresholds.specimen
+  const rawFree = src.freeShippingThreshold != null
+    ? src.freeShippingThreshold
+    : (src.specimenFreeThreshold != null ? src.specimenFreeThreshold : thresholds.specimen)
+  const free = Math.max(0, toNumber(rawFree, base.freeShippingThreshold))
+
   const flatFee = toNumber(
     src.flatFee != null ? src.flatFee : src.shippingFee,
     base.flatFee
@@ -73,6 +129,8 @@ function normalizeConfig(raw) {
   const carrier = String(
     src.defaultCarrier || src.carrier || base.defaultCarrier
   ).trim() || base.defaultCarrier
+
+  const charged = normalizeChargedCraftTypes(src.chargedCraftTypes) || base.chargedCraftTypes.slice()
 
   let mix = String(src.mixCartStrategy || base.mixCartStrategy).trim()
   if (VALID_MIX_STRATEGIES.indexOf(mix) === -1) mix = base.mixCartStrategy
@@ -84,8 +142,11 @@ function normalizeConfig(raw) {
     priority: Math.max(0, Math.floor(toNumber(src.priority, base.priority))),
     defaultCarrier: carrier,
     flatFee: Math.max(0, flatFee),
-    accessoryFreeThreshold: Math.max(0, accessory),
-    specimenFreeThreshold: Math.max(0, specimen),
+    freeShippingThreshold: free,
+    chargedCraftTypes: charged,
+    // 旧字段镜像：保持自洽，避免仍按旧字段读取的函数（getProductCoupons / getBestCoupon）拿到旧值
+    accessoryFreeThreshold: 0,
+    specimenFreeThreshold: free,
     mixCartStrategy: mix,
     freeShippingCampaign: normalizeCampaign(src.freeShippingCampaign, base.freeShippingCampaign)
   }
@@ -102,7 +163,9 @@ function describeRule(config) {
   if (cfg.freeShippingCampaign && cfg.freeShippingCampaign.enabled) {
     return `${cfg.defaultCarrier} · ${cfg.freeShippingCampaign.label}（全场免邮）`
   }
-  return `${cfg.defaultCarrier} · 饰品满 ¥${formatAmount(cfg.accessoryFreeThreshold)} / 标本满 ¥${formatAmount(cfg.specimenFreeThreshold)} 包邮，否则运费 ¥${formatAmount(cfg.flatFee)}`
+  const charged = chargedCraftTypesLabel(cfg.chargedCraftTypes)
+  return `${cfg.defaultCarrier} · ${charged}类满 ¥${formatAmount(cfg.freeShippingThreshold)} 免邮，`
+    + `否则运费 ¥${formatAmount(cfg.flatFee)}/单（其余装裱方式免邮）`
 }
 
 /** 客户端 / makeOrder 兼容视图 */
@@ -112,10 +175,10 @@ function toClientShape(config) {
     ...cfg,
     carrier: cfg.defaultCarrier,
     shippingFee: cfg.flatFee,
-    freeShippingThreshold: cfg.specimenFreeThreshold,
+    freeShippingThreshold: cfg.freeShippingThreshold,
     thresholds: {
-      accessory: cfg.accessoryFreeThreshold,
-      specimen: cfg.specimenFreeThreshold
+      accessory: 0,
+      specimen: cfg.freeShippingThreshold
     }
   }
 }
@@ -125,7 +188,12 @@ module.exports = {
   MIX_ACCESSORY_WINS,
   MIX_MAX_THRESHOLD,
   VALID_MIX_STRATEGIES,
+  DEFAULT_CHARGED_CRAFT_TYPES,
+  VALID_CRAFT_TYPES,
+  CRAFT_TYPE_LABELS,
   getDefaultConfig,
+  normalizeChargedCraftTypes,
+  chargedCraftTypesLabel,
   normalizeConfig,
   describeRule,
   toClientShape,

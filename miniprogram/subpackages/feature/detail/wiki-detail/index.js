@@ -248,7 +248,10 @@ Page({
       image: require('../../../../utils/imageUrl').thumbUrl(getFirstImage(p.images)),
       price: p.price,
       latinName: p.latinName,
-      memberDiscountEnabled: p.memberDiscountEnabled !== false
+      memberDiscountEnabled: p.memberDiscountEnabled !== false,
+      // 运费 v2（蓝图 §19）：判定只看 craftType
+      craftType: p.craftType || '',
+      shippingKind: p.shippingKind || ''
     }], { source: 'wiki' });
   },
 

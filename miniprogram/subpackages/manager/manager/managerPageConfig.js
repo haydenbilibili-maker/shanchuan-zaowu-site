@@ -16,6 +16,28 @@ const { isWishWallProduct, normalizeProductKey } = require('../../../utils/wishW
 // 工作通知声音（#29）：语料清单 + 播放引擎；只播「相比上次新增」的待办
 const workNoticeCatalog = require('../../../utils/workNoticeCatalog');
 const workNoticeVoice = require('../../../utils/workNoticeVoice');
+// 运费规则 v2（蓝图 §19）：收费清单的可选项与中文名都取自唯一事实源，避免界面另抄一份
+const {
+  DEFAULT_CHARGED_CRAFT_TYPES,
+  normalizeChargedCraftTypes: normalizeChargedCraftTypesForForm
+} = require('../../../config/shipping');
+const { CRAFT_TYPE_LABELS } = require('../../../config/productTaxonomy');
+
+/**
+ * 运费规则「按装裱方式收费」的可勾选项（裁决 41 的四项）。
+ *
+ * 为什么值走 require 而不是在界面里再抄一遍：运费判定只看 `craftType`，
+ * 界面抄错一个 key（例如把 cloche_round 写成 clocheRound）会**静默漏收**运费。
+ * 一致性由 `npm run check:shipping-rules-sync` 守卫钉住。
+ */
+function buildShippingCraftOptions(selected) {
+  const list = normalizeChargedCraftTypesForForm(selected) || [];
+  return DEFAULT_CHARGED_CRAFT_TYPES.map((value) => ({
+    value,
+    label: CRAFT_TYPE_LABELS[value] || value,
+    checked: list.indexOf(value) !== -1
+  }));
+}
 
 /**
  * 工作台抬头问候语（中文，按小时）。
@@ -1422,22 +1444,20 @@ const managerPageConfig = {
       status: 'active'
     },
 
-    // 运费规则（curTab 15）
+    // 运费规则（curTab 15）—— v2：按「装裱方式」区分收费（蓝图 §19 裁决 40/41）
     shippingLoading: false,
     shippingSaving: false,
     shippingRuleDocId: '',
     shippingRuleText: '',
     shippingFromDefault: true,
-    shippingMixLabels: ['含藏品用藏品门槛', '仅饰品用饰品门槛', '取更高门槛'],
-    shippingMixValues: ['specimen_wins', 'accessory_wins', 'max_threshold'],
-    shippingMixIndex: 0,
+    // 可勾选的收费装裱方式（值 = products.craftType 的英文 key）
+    shippingCraftOptions: buildShippingCraftOptions(DEFAULT_CHARGED_CRAFT_TYPES),
     shippingForm: {
       name: '商城运费规则',
       defaultCarrier: '顺丰速运',
       flatFee: '18.00',
-      accessoryFreeThreshold: '200.00',
-      specimenFreeThreshold: '500.00',
-      mixCartStrategy: 'specimen_wins',
+      freeShippingThreshold: '299.00',
+      chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
       campaignEnabled: false,
       campaignLabel: '当前全场免邮'
     },
@@ -10326,17 +10346,19 @@ bindSubCatChange(e) {
       })
       const result = (res && res.result) || {}
       const cfg = result.config || {}
-      const mix = cfg.mixCartStrategy || 'specimen_wins'
-      const mixIndex = Math.max(0, (this.data.shippingMixValues || []).indexOf(mix))
       const campaign = cfg.freeShippingCampaign || {}
       const money = (n, fallback) => storeLedger.formatMoney(n != null ? n : fallback)
+      // 兼容读取链：freeShippingThreshold（新）→ specimenFreeThreshold（旧）
+      const freeThreshold = cfg.freeShippingThreshold != null
+        ? cfg.freeShippingThreshold
+        : cfg.specimenFreeThreshold
+      const charged = normalizeChargedCraftTypesForForm(cfg.chargedCraftTypes) || DEFAULT_CHARGED_CRAFT_TYPES
       const form = {
         name: cfg.name || '商城运费规则',
         defaultCarrier: cfg.defaultCarrier || cfg.carrier || '顺丰速运',
         flatFee: money(cfg.flatFee, 18),
-        accessoryFreeThreshold: money(cfg.accessoryFreeThreshold, 200),
-        specimenFreeThreshold: money(cfg.specimenFreeThreshold, 500),
-        mixCartStrategy: mix,
+        freeShippingThreshold: money(freeThreshold, 299),
+        chargedCraftTypes: charged.slice(),
         campaignEnabled: !!(campaign && campaign.enabled),
         campaignLabel: (campaign && campaign.label) || '当前全场免邮'
       }
@@ -10345,7 +10367,7 @@ bindSubCatChange(e) {
         shippingRuleDocId: result.ruleDocId || '',
         shippingRuleText: this._buildShippingRuleText(form) || result.ruleText || '',
         shippingFromDefault: !!result.default,
-        shippingMixIndex: mixIndex,
+        shippingCraftOptions: buildShippingCraftOptions(form.chargedCraftTypes),
         shippingForm: form
       })
     } catch (e) {
@@ -10363,10 +10385,11 @@ bindSubCatChange(e) {
       const label = String(f.campaignLabel || '当前全场免邮').trim() || '当前全场免邮'
       return `${carrier} · ${label}（全场免邮）`
     }
-    const accessory = storeLedger.formatMoney(f.accessoryFreeThreshold)
-    const specimen = storeLedger.formatMoney(f.specimenFreeThreshold)
+    const charged = normalizeChargedCraftTypesForForm(f.chargedCraftTypes) || DEFAULT_CHARGED_CRAFT_TYPES
+    const chargedLabel = charged.map((k) => CRAFT_TYPE_LABELS[k] || k).join('/') || '（未选）'
+    const free = storeLedger.formatMoney(f.freeShippingThreshold)
     const fee = storeLedger.formatMoney(f.flatFee)
-    return `${carrier} · 饰品满 ¥${accessory} / 藏品满 ¥${specimen} 包邮，否则运费 ¥${fee}`
+    return `${carrier} · ${chargedLabel}类满 ¥${free} 免邮，否则运费 ¥${fee}/单（其余装裱方式免邮）`
   },
 
   onShippingFieldInput(e) {
@@ -10375,12 +10398,13 @@ bindSubCatChange(e) {
     this.setData({ [`shippingForm.${field}`]: e.detail.value })
   },
 
-  onShippingMixChange(e) {
-    const index = parseInt(e.detail.value, 10) || 0
-    const value = (this.data.shippingMixValues || [])[index] || 'specimen_wins'
+  /** 「按装裱方式收费」勾选变化（checkbox-group） */
+  onShippingCraftToggle(e) {
+    const values = (e.detail && e.detail.value) || []
+    const charged = normalizeChargedCraftTypesForForm(values) || []
     this.setData({
-      shippingMixIndex: index,
-      'shippingForm.mixCartStrategy': value
+      shippingCraftOptions: buildShippingCraftOptions(charged),
+      'shippingForm.chargedCraftTypes': charged
     })
   },
 
@@ -10395,6 +10419,13 @@ bindSubCatChange(e) {
     }
     if (this.data.shippingSaving) return
     const form = this.data.shippingForm || {}
+    const charged = normalizeChargedCraftTypesForForm(form.chargedCraftTypes) || []
+    // 空清单 = 整店免邮，属危险配置：先在本地拦住，别等云端校验（云端也会拒，但这里能立刻提示）
+    // 走统一主视觉轻提示（不新增原生 toast —— check:dialog-ratchet 只许降不许涨）
+    if (!charged.length) {
+      this.showAppToast({ overline: 'SHIPPING RULES', title: '至少保留一种收费装裱方式' })
+      return
+    }
     this.setData({ shippingSaving: true })
     wx.showLoading({ title: '保存中…' })
     try {
@@ -10407,9 +10438,8 @@ bindSubCatChange(e) {
             name: form.name,
             defaultCarrier: form.defaultCarrier,
             flatFee: Number(form.flatFee),
-            accessoryFreeThreshold: Number(form.accessoryFreeThreshold),
-            specimenFreeThreshold: Number(form.specimenFreeThreshold),
-            mixCartStrategy: form.mixCartStrategy,
+            freeShippingThreshold: Number(form.freeShippingThreshold),
+            chargedCraftTypes: charged,
             freeShippingCampaign: {
               enabled: !!form.campaignEnabled,
               label: form.campaignLabel || '当前全场免邮'
@@ -10427,14 +10457,15 @@ bindSubCatChange(e) {
       wx.showToast({ title: '运费规则已保存', icon: 'none' })
       const nextForm = {
         ...form,
+        chargedCraftTypes: charged.slice(),
         flatFee: storeLedger.formatMoney(form.flatFee),
-        accessoryFreeThreshold: storeLedger.formatMoney(form.accessoryFreeThreshold),
-        specimenFreeThreshold: storeLedger.formatMoney(form.specimenFreeThreshold)
+        freeShippingThreshold: storeLedger.formatMoney(form.freeShippingThreshold)
       }
       this.setData({
         shippingRuleDocId: result.ruleDocId || this.data.shippingRuleDocId,
         shippingRuleText: this._buildShippingRuleText(nextForm) || result.ruleText || '',
         shippingFromDefault: false,
+        shippingCraftOptions: buildShippingCraftOptions(charged),
         shippingForm: nextForm
       })
     } catch (e) {

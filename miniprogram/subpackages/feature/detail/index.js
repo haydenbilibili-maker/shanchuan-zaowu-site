@@ -2304,7 +2304,10 @@ Page(withAppModal({
       price: sku ? sku.price : p.price,
       latinName: p.latinName,
       isTreasure: !!p.isTreasure,
-      isUnique: !!(p.isUnique || p.isOneOfAKind)
+      isUnique: !!(p.isUnique || p.isOneOfAKind),
+      // 运费 v2（蓝图 §19）：尾款结算同样要带 craftType，否则展示与实收不一致
+      craftType: p.craftType || '',
+      shippingKind: p.shippingKind || ''
     }], {
       source: 'deposit_balance',
       depositIntentId: intentId
@@ -2335,6 +2338,8 @@ Page(withAppModal({
       rootCategoryName: p.rootCategoryName || '',
       category: p.category || p.categoryName || '',
       shippingKind: p.shippingKind || '',
+      // 运费 v2（蓝图 §19）：判定只看 craftType
+      craftType: p.craftType || '',
       protectionType: p.protectionType || 'none',
       isProtected: !!this.data.isProtected
     }], {

@@ -1,6 +1,9 @@
 /**
  * 商城运费规则读取 / 写入
  * 集合 shipping_rules；代码默认值 + 云端覆盖 + 异常降级
+ *
+ * ⚠️ 本集合是**线上真源**：改代码默认值而不同步这里，代码改动一点都不会生效
+ *    （云端文档覆盖代码默认值）。一致性由 `npm run check:shipping-rules-sync` 守卫。
  */
 const cloud = require('wx-server-sdk')
 const {
@@ -8,7 +11,8 @@ const {
   normalizeConfig,
   describeRule,
   toClientShape,
-  VALID_MIX_STRATEGIES
+  VALID_MIX_STRATEGIES,
+  VALID_CRAFT_TYPES
 } = require('./defaults')
 const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
 
@@ -23,6 +27,9 @@ const WRITABLE_FIELDS = [
   'priority',
   'defaultCarrier',
   'flatFee',
+  'freeShippingThreshold',
+  'chargedCraftTypes',
+  // —— 旧模型字段（兼容镜像；新界面不再写，但保留以兼容老客户端/老 ERP 页面）——
   'accessoryFreeThreshold',
   'specimenFreeThreshold',
   'mixCartStrategy',
@@ -84,6 +91,26 @@ async function saveConfig(event, openid) {
   const payload = pickWritable(event && event.config)
   if (payload.mixCartStrategy && VALID_MIX_STRATEGIES.indexOf(payload.mixCartStrategy) === -1) {
     return { success: false, msg: '混合车策略不合法' }
+  }
+
+  // 收费装裱方式清单：必须显式、非空、且每个 key 都在规范取值表内。
+  // ⚠️ 未知 key 一律**拒绝**而不是静默丢弃 —— 静默丢弃会让该类商品掉成免邮（少收钱），
+  //    而保存者以为已经收上费了（2026-09-19 定案的口径：宁可不保存，不可静默漏收）。
+  if (Object.prototype.hasOwnProperty.call(payload, 'chargedCraftTypes')) {
+    if (!Array.isArray(payload.chargedCraftTypes)) {
+      return { success: false, msg: '收费装裱方式必须是数组' }
+    }
+    const cleaned = payload.chargedCraftTypes
+      .map((v) => String(v == null ? '' : v).trim().toLowerCase())
+      .filter(Boolean)
+    if (!cleaned.length) {
+      return { success: false, msg: '至少保留一种收费装裱方式（全不收费会让整店免邮）' }
+    }
+    const unknown = cleaned.filter((k) => VALID_CRAFT_TYPES.indexOf(k) === -1)
+    if (unknown.length) {
+      return { success: false, msg: `未知装裱方式：${unknown.join('、')}` }
+    }
+    payload.chargedCraftTypes = cleaned
   }
 
   const docId = String((event && event.ruleDocId) || '').trim()

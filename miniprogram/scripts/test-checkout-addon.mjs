@@ -251,7 +251,7 @@ const P = (id, price, extra) => Object.assign({ _id: id, title: id, price, stock
  * 5) 免邮凑单（需求 2/3）
  * ------------------------------------------------------------------ */
 
-/** 假运费配置：门槛 ¥500 / 运费 ¥18（与 config/shipping.js 的标本档一致） */
+/** 假运费配置：门槛 ¥500 / 运费 ¥18（只做本测试的算术夹具，与线上 v2 门槛 299 无关） */
 const fakeShipping = (over) => Object.assign({
   // 与 config/shipping.js 同形：shippingFee / flatFee 两个字段线上一定存在
   shippingFee: 18,
@@ -281,8 +281,22 @@ const fakeShipping = (over) => Object.assign({
     eq('未勾选时进度为 0', empty.progress, 0)
     eq('未勾选时标出 nothingSelected（文案改中性）', empty.nothingSelected, true)
     eq('★ 未勾选时「当前运费」仍报规则运费，而不是 ¥0', empty.fee, 18)
-    eq('未勾选时不说「再买」', empty.gapTitle, '藏品满 ¥500 免运费')
+    eq('未勾选时不说「再买」', empty.gapTitle, '全场满 ¥500 免运费')
     eq('已勾选时才是「再买 ¥x 免运费」', addon.computeFreeShipping({ goodsAmount: 492, selectedItems: [], shipping: fakeShipping() }).gapTitle, '再买 ¥8.00 免运费')
+
+    // 运费 v2（蓝图 §19）：门槛是「全场」门槛，只在本单含收费装裱方式时才有值；
+    // 纯免邮类（含 craftType 未标注）时 resolveThreshold 返回 0 → 规则上就不收运费，没有可凑的单。
+    {
+      const freeAll = addon.computeFreeShipping({
+        goodsAmount: 250,
+        selectedItems: [{ craftType: 'accessory' }],
+        shipping: fakeShipping({ resolveThreshold: () => 0, calcShippingFee: () => 0 })
+      })
+      eq('★ 本单不含收费装裱方式（门槛 0）→ 已免邮', freeAll.reached, true)
+      eq('★ 门槛 0 时不出现「满 ¥0」荒谬文案', freeAll.gapTitle, '本单免运费')
+      eq('门槛 0 时说明原因', freeAll.detailText, '顺丰 · 本单免运费（不含相框/玻璃罩类）')
+      eq('门槛 0 时不推凑单件', addon.pickGapFiller(addon.listCandidates([P('a', 9.9)]), freeAll), null)
+    }
 
     const freeRule = addon.computeFreeShipping({ goodsAmount: 0, selectedItems: [], shipping: fakeShipping({ shippingFee: 0, flatFee: 0 }) })
     eq('★ 规则本身不收运费（shippingFee=0）→ 没有可省的运费，不显示凑单', freeRule.reached, true)

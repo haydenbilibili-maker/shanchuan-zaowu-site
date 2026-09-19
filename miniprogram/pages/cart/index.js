@@ -801,6 +801,8 @@ Page(withAppModal({
       rootCategoryName: item.rootCategoryName || '',
       category: item.category || '',
       shippingKind: item.shippingKind || '',
+      // 运费 v2（蓝图 §19）：确认页按 craftType 判是否收费，漏带会让展示与实收不一致
+      craftType: item.craftType || '',
       protectionType: item.protectionType || 'none',
       isProtected: !!item.isProtected
     }));

@@ -1151,6 +1151,22 @@
 ## 19. v1.7 追加：**C 端运费按「装裱方式」区分**（产品负责人 2026-09-19）
 
 > 本条改的是 **C 端真实收钱**，与 B 端工作室结算无关，但同属"钱的口径"，故并入本蓝图管理。
+>
+> **实现状态（逐项陈述事实，2026-09-19；实测账单见 §19.6，部署与守卫证据见 §19.7）**
+>
+> - ✅ **云端 `shipping_rules` 文档 = v2**（读回证据：`ruleId=shipping_default_v2`、
+>   `freeShippingThreshold=299`、`chargedCraftTypes=[frame,cloche,cloche_round,cloche_cylinder]`、
+>   旧字段镜像 `accessoryFreeThreshold=0` / `specimenFreeThreshold=299`）
+> - ✅ **4 份代码副本 + 装裱方式分类表一致**（`npm run check:shipping-rules` 102 项通过；
+>   `--selftest` 6 例注入全部被检出）
+> - ✅ **已部署**（`makeOrder` 2026-09-19 23:45:48 / `getCartList` 23:48:30 /
+>   `manageLiveSession` 23:48:53 / `getShippingRules` 23:46:11；四个函数的**改动文件与仓库逐字节一致**，见 §19.7）
+> - ⬜ **双仓同步（→ 微信开发仓）：由集成官统一执行**（跨出工作区写入需更高权限）；
+>   **本文不声称已完成**
+> - ⬜ **微信开发者工具真机/模拟器验收**：未做（需人工在开发者工具里跑确认订单页）
+>
+> 口径以 §19.1 的裁决 40/41/41b/41c 为准；**实现细节以 §19.3 的字段模型与判定顺序为准**
+> （本节在实现过程中对"落点清单"做过一次补正，见 §19.3 开头的 ⚠️）。
 
 ### 19.1 裁决 40–41（**已定，不再讨论**）
 
@@ -1178,26 +1194,138 @@
 | **未标注** | **86** | **免邮（按 41b）** |
 | | | **收费类合计 96 件** |
 
-### 19.3 实现落点（**四处必须同改**，漏一处就是"页面显示 ≠ 实收"）
+### 19.3 实现落点（**五处必须同改**，漏一处就是"页面显示 ≠ 实收"）
 
-| 位置 | 作用 |
-|---|---|
-| `miniprogram/config/shipping.js` | C 端**展示**用的规则（确认订单页文案与试算） |
-| `miniprogram/subpackages/business/utils/mallShipping.js` | 分包转发层（必须与主包同源） |
-| `miniprogram/cloudfunctions/makeOrder/shipping.js` | **服务端权威**（真实下单按它算钱） |
-| 超管工作台「商城运费规则」界面 | 收费类清单 / ¥18 / ¥299 做成**可改**（默认值即本裁决） |
+> ⚠️ **v1.7 实现时补正**：本节原写"四处"，把 `mallShipping.js` 当独立落点，**漏了最关键的一处
+> ——云端 `shipping_rules` 集合的规则文档**。实测代价：只改代码默认值时云端文档（98/298）覆盖代码，
+> 改动**一点没生效**，而 `node --check`、`build`、104 条门禁**全绿都发现不了**（`check:miniprogram-sync`
+> 只管双仓一致，不管"代码 vs 云端"）。下表按**真实需要改动的物理位置**重列，共 5 处 + 1 处转发层。
 
-分类轴从现有的**标题正则**（`SPECIMEN_TITLE_RE = /标本|相框|玻璃罩|造景|框画/`）换成
+| # | 位置 | 作用 |
+|---|---|---|
+| 1 | **云端 `shipping_rules` 集合的 active 文档** | ⚠️ **线上真源**（覆盖代码默认值）。迁移脚本：`node miniprogram/scripts/migrate-shipping-rules-v2.cjs`（幂等，改前/改后都打印关键字段） |
+| 2 | `miniprogram/config/shipping.js` | C 端**展示**用的规则（确认订单页文案与试算） |
+| 3 | `miniprogram/cloudfunctions/makeOrder/shipping.js` | **服务端权威**（真实下单按它算钱） |
+| 4 | `miniprogram/cloudfunctions/getShippingRules/defaults.js` + 同函数 `index.js` | 规则模型 + 写入校验（**空收费清单直接拒绝**；未知 `craftType` key 拒绝而不是静默丢弃） |
+| 5 | 超管工作台「运费规则」界面（小程序 `curTab 15`：`managerPageConfig.js` + `workspace/_subviews.wxml` + `index.wxss`）**与** ERP 的 `admin/src/components/ShippingRulesConfig.vue` | 收费类清单 / ¥299 / ¥18 做成**可改**。**两个界面都要改**：ERP 页保留旧字段时会用 `specimenFreeThreshold: 500` 覆盖云端文档 |
+| 附 | `miniprogram/subpackages/business/utils/mallShipping.js` · `subpackages/feature/utils/shipping.js` | 只是**转发层**（`module.exports` 直接再导出 `config/shipping.js` 的函数），改主包即同步，**不含独立口径** |
+
+**分类轴**从现有的**标题正则**（`SPECIMEN_TITLE_RE = /标本|相框|玻璃罩|造景|框画/`）换成
 **商品 `craftType` 字段**（`manageProducts/productTaxonomy.js` 的 `CRAFT_TYPE_OPTIONS`）。
 
-### 19.4 上线前必须做的验证
+字段模型（v2，防漂移）：
 
-1. **三档试算对照**（改完先给产品负责人看）：¥250 相框 / ¥250 相框+挂件 / ¥320 相框 —— 期望 ¥18 / ¥18 / ¥0
-2. **跨端一致性守卫**：客户端展示的运费 = `makeOrder` 实收（这是"半改"最容易出的错）
+```
+shipping_rules = {
+  ruleId: 'shipping_default_v2',
+  defaultCarrier: '顺丰速运',
+  flatFee: 18,                        // ¥18/单（一单一次）
+  freeShippingThreshold: 299,         // 全场门槛（仅订单含收费类时有意义）
+  chargedCraftTypes: ['frame','cloche','cloche_round','cloche_cylinder'],
+  // 旧字段镜像（getProductCoupons / getBestCoupon 的读取链更偏好它们，必须同值）
+  accessoryFreeThreshold: 0, specimenFreeThreshold: 299, mixCartStrategy: 'specimen_wins'
+}
+```
+
+判定顺序（**不可换位**，两条都在实现时踩过）：
+1. 显式 `shippingKind` 覆盖（人工标注优先）
+2. **`craftType` 是否在收费清单里** —— 唯一分类轴
+3. 未标注 `craftType`（空）→ **免邮**（裁决 41b）
+
+⚠️ 第 2 步必须插在**任何 `categoryType` 短路口之前**：绝大多数商品 `categoryType === 'specimen'`，
+先按 categoryType 短路的话，craftType 这一层**一行都不会生效**（表面改了、行为没变，门禁发现不了）。
+⚠️ 未标注不能写成「有 craftType 才按它判，否则走原逻辑」—— 那样未标注标本会掉回 categoryType
+短路被判收费类，与裁决 41b 相反（会**多收钱**）。
+⚠️ 客户端要把 `craftType` 一路带到确认页（购物车 / 立即购买 / 到店自提 / 直播挂车 / 礼赠 / 定制
+共 6 个 `navigateToConfirmOrder` 入口 + `getCartList` 投影 + `manageLiveSession/shelf.js` 挂车摘要），
+否则 C 端按"未标注 = 免邮"显示、服务端按收费类实收。
+
+### 19.4 上线前必须做的验证（**已做，见 §19.6 / §19.7**）
+
+1. **试算矩阵**（改完先给产品负责人看）
+2. **跨端一致性守卫**：客户端展示的运费 = `makeOrder` 实收
 3. 部署 `makeOrder`（**C 端真实下单路径**）+ 双仓同步
 
-### 19.5 待办（未做，明确记录）
+### 19.5 完成状态（v1.7）
 
-- 本条**尚未实现**：口径已定，代码未改（避免在未确认前触碰 C 端收钱路径）
-- 建议同时补 `check:taxonomy-sync` 守卫（钉住 `craftType`/`craftProcess` 的 3 份副本一致）——
-  这次补全制作工艺时，3 份副本靠人工数才确认没漏，而运费规则正建立在 `craftType` 上，更不能漂
+- ✅ 5 处落点全部改完（含云端文档，**已从云端读回验证**）
+- ✅ 新增守卫 `npm run check:shipping-rules`（+ `:selftest`）：4 份代码副本一致 / **云端文档快照 vs
+  代码默认值**一致 / `craftType` 分类表 3 副本一致 / 17 条试算矩阵双端同价
+- ✅ 部署 `makeOrder` / `getShippingRules` / `getCartList` / `manageLiveSession`（部署后下载线上代码
+  与仓库逐字节比对，见 §19.7）
+- ⬜ 双仓同步：**由集成官统一执行**（本项未完成，勿在别处写成已完成）
+- ⬜ 微信开发者工具人工验收：未做
+- ✅ 补上了本节原「待办」里建议的 `craftType` 多副本一致性检查（并入 `check:shipping-rules`，
+  未另立 `check:taxonomy-sync`）
+
+### 19.6 实测账单（2026-09-19，真实执行代码，非读代码推断）
+
+云端文档（`shipping_rules` active，改前 → 改后）：
+
+| 字段 | 改前（线上实测） | 改后（云端读回） |
+|---|---|---|
+| `ruleId` | `shipping_default_v1` | `shipping_default_v2` |
+| `flatFee` | 18 | 18 |
+| `accessoryFreeThreshold` | **98** | **0** |
+| `specimenFreeThreshold` | **298** | **299** |
+| `freeShippingThreshold` | （无此字段） | **299** |
+| `chargedCraftTypes` | （无此字段） | `['frame','cloche','cloche_round','cloche_cylinder']` |
+| `mixCartStrategy` | `specimen_wins` | `specimen_wins`（旧字段，判定不再读） |
+
+试算矩阵（服务端 `makeOrder/shipping.js` 与客户端 `config/shipping.js` **双端各跑一遍**；
+商品的 `categoryType` 全部刻意写成 `'specimen'`、标题含「标本」—— 若判定退回 categoryType
+短路或标题正则，第 6 行立刻变红）：
+
+| 购物车 | 期望 | 服务端 | 客户端 | 适用门槛 | 判定 |
+|---|---|---|---|---|---|
+| ¥250 相框 | ¥18 | 18 | 18 | 299 | 收费 |
+| ¥250 相框 + ¥60 挂件（**全场 ¥310**） | ¥0 | 0 | 0 | 299 | 收费 |
+| ¥320 相框 | ¥0 | 0 | 0 | 299 | 收费 |
+| ¥320 挂件 | ¥0 | 0 | 0 | 0 | 免邮 |
+| ¥250 挂件 | ¥0 | 0 | 0 | 0 | 免邮 |
+| ¥250 **未标注 craftType** | ¥0 | 0 | 0 | 0 | 免邮 |
+| ¥298 相框（差 1 元） | ¥18 | 18 | 18 | 299 | 收费 |
+| ¥299 相框（刚好满） | ¥0 | 0 | 0 | 299 | 收费 |
+| ¥250 方形玻璃罩 `cloche` | ¥18 | 18 | 18 | 299 | 收费 |
+| ¥250 圆形玻璃罩 `cloche_round` | ¥18 | 18 | 18 | 299 | 收费 |
+| ¥250 圆柱形玻璃罩 `cloche_cylinder` | ¥18 | 18 | 18 | 299 | 收费 |
+
+> 「全场满 ¥299」是**整单**口径，不是"收费类小计"：第 2 行 ¥250 相框 + ¥60 挂件 = ¥310 → 免邮。
+> 另：`shippingFee` 是**每单一次**（沿用单一 `flatFee`）——一单含 N 件相框也只收 ¥18。
+
+### 19.7 部署与守卫证据（2026-09-19，可复现）
+
+**部署**（`bash miniprogram/scripts/deploy-drifted.sh makeOrder getShippingRules getCartList manageLiveSession`；
+脚本第 1 步打印的漂移清单就是这 4 个 —— 2026-09-19 修过的「无条件 shift 吃掉第一个函数名」bug 未复发）：
+
+| 函数 | 云端 Modification time | Status | Runtime | 改动文件与仓库比对 |
+|---|---|---|---|---|
+| `makeOrder` | 2026-09-19 23:45:48 | Deployment completed | Nodejs16.13 | `shipping.js` / `pricing.js` **逐字节一致** |
+| `getShippingRules` | 2026-09-19 23:46:11 | Deployment completed | Nodejs20.19（**9-15 有意的 EOL 升版试点**，见 `docs/云函数运行时EOL升版_实测与执行方案_2026-09-17.md`；非本次改动） | `defaults.js` / `index.js` **逐字节一致** |
+| `getCartList` | 2026-09-19 23:48:30 | Deployment completed | Nodejs16.13 | `index.js` **逐字节一致**（`craftType` 出现 3 次） |
+| `manageLiveSession` | 2026-09-19 23:48:53 | Deployment completed | Nodejs16.13 | `shelf.js` **逐字节一致**（`craftType` 出现 2 次） |
+
+比对方法（可复现）：`tcb fn code download <name> <dir> -e <env>` 后用 `diff` 对比仓库文件 ——
+**不是**只看 mtime，也不是看 `tcb fn detail`（它只打印入口 `index.js`，看不到 `shelf.js` 这类同目录模块）。
+
+云端文档读回：`tcb fn invoke getShippingRules -e <env> --params '{"action":"get"}'` 实测返回
+`ruleId=shipping_default_v2` / `flatFee=18` / `freeShippingThreshold=299` /
+`chargedCraftTypes=[frame,cloche,cloche_round,cloche_cylinder]` / `accessoryFreeThreshold=0` /
+`specimenFreeThreshold=299`，`ruleText="顺丰速运 · 相框/方形玻璃罩/圆形玻璃罩/圆柱形玻璃罩类满 ¥299.00 免邮，否则运费 ¥18.00/单（其余装裱方式免邮）"`。
+
+守卫：`npm run check:shipping-rules` = **102 项通过 / 0 项失败**；`--selftest` 6 例注入（门槛改回 500 /
+云端快照漏 `cloche_round` / `craftType` 判定放回 `categoryType` 短路之后 / C 端门槛写成 98 /
+分类表副本中文名漂移 / 超管界面把清单抄成硬编码）**全部被检出**。
+`node scripts/run-guards.mjs`：`check:dialog-ratchet` 曾因新增一处原生 `wx.showToast` 判红
+（`managerPageConfig.js` 371 → 372），已改为统一主视觉轻提示 `showAppToast`，现为 1951 ≤ 基线 1960
+（**未抬高基线**）。`check:mp-contrast` 65 ≤ 65 未涨。
+
+**集成官独立复核（不复用本守卫断言）**：17 行试算矩阵 C 端 = 服务端 = 期望全对，其中一行本守卫没有 ——
+「¥80 相框 ×3（全场 ¥240，未满门槛）→ **仍只收 ¥18 一次**」，正面验证了「¥18/**单**」而非「¥18/件」。
+
+**已知残余（未改，明确记录）**：`getProductCoupons` / `getBestCoupon` 仍按**单一门槛**估算
+「免邮券可省金额」（< 门槛即报 `flatFee`），不区分该单是否本来就免邮 —— 于是**纯饰品/未标注**的订单
+可能被展示成「免邮券省 ¥18」。这是**改动前就存在**的口径（两分支原本都返回 `flatFee`），
+真正的下单权威 `makeOrder` 不受影响（确认页的免邮券可用性判据已按 `craftType` 修正）。
+要收口需要让这两个函数拿到购物车上下文，属独立改动，本次未做。
+

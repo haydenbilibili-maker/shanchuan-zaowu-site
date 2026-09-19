@@ -713,7 +713,10 @@ Page({
       title: product.title,
       latinName: product.latinName || '',
       image: customMeta.specimen.image,
-      skuLabel: customMeta.specimen.skuLabel
+      skuLabel: customMeta.specimen.skuLabel,
+      // 运费 v2（蓝图 §19）：判定只看 craftType
+      craftType: product.craftType || '',
+      shippingKind: product.shippingKind || ''
     }
 
     this.clearDirty()

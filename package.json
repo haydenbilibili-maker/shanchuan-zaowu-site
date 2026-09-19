@@ -29,6 +29,8 @@
     "tts:work-notice:check": "node miniprogram/scripts/generate-work-notice-tts.mjs --check",
     "check:store-points": "node miniprogram/scripts/check-store-point-rules-sync.cjs",
     "check:store-points:selftest": "node miniprogram/scripts/check-store-point-rules-sync.cjs --selftest",
+    "check:shipping-rules": "node miniprogram/scripts/check-shipping-rules.cjs",
+    "check:shipping-rules:selftest": "node miniprogram/scripts/check-shipping-rules.cjs --selftest",
     "check:share-image": "node miniprogram/scripts/check-share-image.mjs",
     "check:share-image:update": "node miniprogram/scripts/check-share-image.mjs --update",
     "check:share-image:selftest": "node miniprogram/scripts/check-share-image.mjs --selftest",

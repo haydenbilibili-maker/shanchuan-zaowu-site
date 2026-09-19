@@ -1255,6 +1255,8 @@ Page({
       rootCategoryName: p.rootCategoryName || '',
       category: p.category || p.categoryName || '',
       shippingKind: p.shippingKind || '',
+      // 运费 v2（蓝图 §19）：判定只看 craftType
+      craftType: p.craftType || '',
       protectionType: p.protectionType || 'none',
       isProtected: !!(p.protectionType && p.protectionType !== 'none')
     }], {

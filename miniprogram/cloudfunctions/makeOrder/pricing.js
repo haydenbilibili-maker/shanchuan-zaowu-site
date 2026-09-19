@@ -232,7 +232,8 @@ async function calculateOrderPricing(db, openid, rawItems, couponId, customExtra
 
   await shipping.loadFromDb(db)
   const { calcShipping, resolveShippingKind } = shipping
-  const THRESHOLDS = shipping.getThresholds()
+  // 运费 v2（蓝图 §19）：只有一个「全场包邮门槛」（含收费装裱方式时适用）
+  const FREE_SHIPPING_THRESHOLD = shipping.getFreeShippingThreshold()
   const DEFAULT_CARRIER = shipping.getDefaultCarrier()
 
   const items = rawItems.map((item) => ({
@@ -437,8 +438,11 @@ async function calculateOrderPricing(db, openid, rawItems, couponId, customExtra
   const wxpayFenEstimate = Math.max(0, totalFen - walletPayFenEstimate)
 
   const collectionIds = items.map((i) => i.collectionId).filter(Boolean)
+  // shippingKind = 'specimen' 在本模型里表示「本单含收费装裱方式（相框/玻璃罩）」，
+  // 是**保留的历史枚举值**（订单快照里存过它），语义见蓝图 §19
   const hasSpecimen = shippingContext.some((p) => resolveShippingKind(p) === 'specimen')
-  const freeShippingThreshold = hasSpecimen ? THRESHOLDS.specimen : THRESHOLDS.accessory
+  // 纯免邮类（含未标注 craftType）时门槛为 0，表示本单规则上不收运费
+  const freeShippingThreshold = hasSpecimen ? FREE_SHIPPING_THRESHOLD : 0
 
   const growthAmount = provisionalMemberLevel ? estimatedOrderGrowth : null
 

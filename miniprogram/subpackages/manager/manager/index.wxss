@@ -4458,6 +4458,37 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-bottom: 0;
 }
 
+/* 运费规则 tab15：按装裱方式收费的勾选清单 */
+.cfg-check-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.cfg-check {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 72rpx;
+  padding: 0 var(--space-3);
+  box-sizing: border-box;
+  background: var(--color-bg-elevated);
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-md);
+}
+
+.cfg-check-box {
+  transform: scale(0.82);
+  flex-shrink: 0;
+}
+
+.cfg-check-label {
+  font-size: 26rpx;
+  color: var(--color-text-body);
+  line-height: 1.4;
+}
+
 .cfg-label-top {
   display: block;
   margin-bottom: var(--space-2);

@@ -75,7 +75,10 @@ async function fetchProductMap(productIds) {
         rootCategoryName: true,
         category: true,
         categoryName: true,
-        shippingKind: true
+        shippingKind: true,
+        // 运费 v2（蓝图 §19）：判定只看 craftType，购物车必须带上它，
+        // 否则 C 端会按「未标注 = 免邮」显示、而服务端按收费类实收（页面显示 ≠ 实际收钱）
+        craftType: true
       })
       .get()
     ;(res.data || []).forEach((p) => { map[p._id] = p })
@@ -129,6 +132,7 @@ function enrichList(list, productMap) {
       row.rootCategoryName = p.rootCategoryName || row.rootCategoryName || ''
       row.category = p.category || p.categoryName || row.category || ''
       row.shippingKind = p.shippingKind || row.shippingKind || ''
+      row.craftType = p.craftType || row.craftType || ''
     } else if (row.memberDiscountEnabled == null) {
       row.memberDiscountEnabled = true
     }

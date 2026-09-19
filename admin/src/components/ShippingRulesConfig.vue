@@ -11,7 +11,7 @@
         :closable="false"
         show-icon
         style="margin-top: 12px;"
-        title="下单权威在 makeOrder：优先读本集合，失败回退代码 defaults（饰品满 200 / 标本满 500 / 运费 18 / 顺丰）。"
+        title="下单权威在 makeOrder：优先读本集合，失败回退代码 defaults（相框/玻璃罩类满 299 / 运费 18 / 顺丰；其余装裱方式免邮）。判定只看商品「装裱方式」craftType，未标注一律免邮。"
       />
     </div>
 
@@ -27,23 +27,26 @@
               <el-option v-for="c in carriers" :key="c" :label="c" :value="c" />
             </el-select>
           </el-form-item>
-          <el-form-item label="不包邮运费（元）">
+          <el-form-item label="不包邮运费（元/单）">
             <el-input-number v-model="form.flatFee" :min="0" :step="1" :precision="2" />
-            <span class="hint">默认 18</span>
+            <span class="hint">默认 18（一单一次，不是每件）</span>
           </el-form-item>
-          <el-form-item label="饰品包邮门槛（元）">
-            <el-input-number v-model="form.accessoryFreeThreshold" :min="0" :step="10" :precision="2" />
-            <span class="hint">默认 200</span>
+          <el-form-item label="包邮门槛（全场，元）">
+            <el-input-number v-model="form.freeShippingThreshold" :min="0" :step="10" :precision="2" />
+            <span class="hint">默认 299，按整单优惠前商品合计判定</span>
           </el-form-item>
-          <el-form-item label="标本包邮门槛（元）">
-            <el-input-number v-model="form.specimenFreeThreshold" :min="0" :step="10" :precision="2" />
-            <span class="hint">默认 500</span>
-          </el-form-item>
-          <el-form-item label="混合车策略">
-            <el-radio-group v-model="form.mixCartStrategy">
-              <el-radio :label="MIX_SPECIMEN_WINS">含标本 → 标本门槛</el-radio>
-              <el-radio :label="MIX_MAX_THRESHOLD">取更高门槛</el-radio>
-            </el-radio-group>
+          <el-form-item label="按装裱方式收费">
+            <el-checkbox-group v-model="form.chargedCraftTypes">
+              <el-checkbox
+                v-for="opt in chargedCraftOptions"
+                :key="opt.value"
+                :label="opt.value"
+              >{{ opt.label }}</el-checkbox>
+            </el-checkbox-group>
+            <div class="hint hint-block">
+              勾选的装裱方式（商品 craftType）需满门槛才免邮；未勾选的、以及未标注 craftType 的商品一律免邮。
+              判定只看装裱方式字段，不看标题与类别。
+            </div>
           </el-form-item>
 
           <el-divider content-position="left">限时全场免邮</el-divider>
@@ -101,12 +104,18 @@ import {
   getDefaultShippingConfig,
   normalizeShippingConfig,
   describeShippingRule,
-  MIX_SPECIMEN_WINS,
-  MIX_MAX_THRESHOLD
+  DEFAULT_CHARGED_CRAFT_TYPES,
+  CRAFT_TYPE_LABELS
 } from '../utils/shippingRules'
 import { ElMessage } from 'element-plus'
 
 const carriers = ['顺丰速运', '京东物流', '中通快递', '圆通速递', '申通快递', '韵达快递', 'EMS']
+
+/** 可勾选的收费装裱方式（裁决 41 的四项；值 = products.craftType） */
+const chargedCraftOptions = DEFAULT_CHARGED_CRAFT_TYPES.map((value) => ({
+  value,
+  label: CRAFT_TYPE_LABELS[value] || value
+}))
 
 const loading = ref(false)
 const saving = ref(false)
@@ -180,6 +189,12 @@ function buildPayload() {
  * `getShippingRules` 已在代理白名单内，实测 `action:'get'` 返回 success（同函数同鉴权路径）。
  */
 async function saveRules() {
+  // 空清单 = 整店免邮，属危险配置：前端先拦（云端 getShippingRules 也会拒）
+  const charged = normalizeShippingConfig(form).chargedCraftTypes
+  if (!charged.length) {
+    ElMessage.warning('至少保留一种收费装裱方式（全不收费会让整店免邮）')
+    return
+  }
   saving.value = true
   try {
     const payload = buildPayload()
@@ -204,7 +219,7 @@ async function saveRules() {
 
 function resetDefaults() {
   applyForm(getDefaultShippingConfig(), ruleDocId.value)
-  ElMessage.info('已重置为默认（饰品 200 / 标本 500 / 运费 18）')
+  ElMessage.info('已重置为默认（相框/玻璃罩类满 299 免邮 / 运费 18/单 / 其余免邮）')
 }
 
 onMounted(() => {
@@ -257,5 +272,10 @@ onMounted(() => {
   margin-left: 12px;
   color: #a09a90;
   font-size: 12px;
+}
+.hint-block {
+  display: block;
+  margin: 6px 0 0;
+  line-height: 1.6;
 }
 </style>

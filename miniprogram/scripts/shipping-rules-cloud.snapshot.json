@@ -1,0 +1,23 @@
+{
+  "_note": "线上 shipping_rules 真实值快照；由 check-shipping-rules.cjs --update-snapshot 生成。代码默认值改了而云端没改时，本文件会与代码对不上 → 守卫红。",
+  "ruleId": "shipping_default_v2",
+  "name": "商城运费规则",
+  "status": "active",
+  "priority": 100,
+  "defaultCarrier": "顺丰速运",
+  "flatFee": 18,
+  "freeShippingThreshold": 299,
+  "chargedCraftTypes": [
+    "frame",
+    "cloche",
+    "cloche_round",
+    "cloche_cylinder"
+  ],
+  "accessoryFreeThreshold": 0,
+  "specimenFreeThreshold": 299,
+  "mixCartStrategy": "specimen_wins",
+  "freeShippingCampaign": {
+    "enabled": false,
+    "label": "限时免费邮寄"
+  }
+}

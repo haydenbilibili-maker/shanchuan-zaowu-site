@@ -111,6 +111,10 @@ function summarizeProduct(product, spotlightId) {
     latinName: product.latinName || '',
     memberDiscountEnabled: product.memberDiscountEnabled !== false,
     categoryType: product.categoryType || '',
+    // 运费 v2（蓝图 §19）：直播挂车下单也要带 craftType，
+    // 否则确认页会按「未标注 = 免邮」显示、而 makeOrder 按收费类实收（页面显示 ≠ 实际收钱）
+    craftType: product.craftType || '',
+    shippingKind: product.shippingKind || '',
     spotlight: String(spotlightId || '') === String(product._id),
     buyable: onShelf && !soldOut
   }

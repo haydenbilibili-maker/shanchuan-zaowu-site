@@ -602,7 +602,10 @@ Page({
         isTreasure: !!item.isTreasure,
         isUnique: !!item.isUnique,
         memberDiscountEnabled: item.memberDiscountEnabled !== false,
-        categoryType: item.categoryType || ''
+        categoryType: item.categoryType || '',
+        // 运费 v2（蓝图 §19）：判定只看 craftType（由 manageLiveSession/shelf.js 的挂车摘要带下来）
+        craftType: item.craftType || '',
+        shippingKind: item.shippingKind || ''
       }],
       { source: 'live' }
     )
