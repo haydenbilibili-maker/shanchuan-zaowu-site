@@ -258,6 +258,8 @@
     "check:settlement-single-ledger:selftest": "node miniprogram/scripts/check-settlement-single-ledger.mjs --selftest",
     "check:collection-docs": "node miniprogram/scripts/check-collection-docs.mjs",
     "check:collection-docs:selftest": "node miniprogram/scripts/check-collection-docs.mjs --selftest",
+    "check:price-import-blocks": "node miniprogram/scripts/check-price-import-blocks.mjs",
+    "check:price-import-blocks:selftest": "node miniprogram/scripts/check-price-import-blocks.mjs --selftest",
     "check:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs",
     "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
     "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report",
