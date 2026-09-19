@@ -26,14 +26,14 @@ const shipping = {
   carrier: '顺丰速运',
   shippingFee: 18,
   flatFee: 18,
-  accessoryFreeThreshold: 0,
-  specimenFreeThreshold: 299,
+  accessoryFreeThreshold: 200,
+  specimenFreeThreshold: 500,
   thresholds: {
     accessory: 200,
     specimen: 500
   },
   mixCartStrategy: MIX_SPECIMEN_WINS,
-  freeShippingThreshold: 299,
+  freeShippingThreshold: 500,
   freeShippingCampaign: {
     enabled: false,
     label: '当前全场免邮'
@@ -44,12 +44,6 @@ const shipping = {
 const ACCESSORY_CATEGORY_RE = /衍生|文创|饰品|周边|礼品|陈饰|包装|联名/
 const ACCESSORY_TITLE_RE = /饰品|首饰|项链|手链|手环|耳环|耳钉|戒指|胸针|吊坠|徽章|冰箱贴/
 const SPECIMEN_TITLE_RE = /标本|相框|玻璃罩|造景|框画/
-
-/**
- * 2026-09-19 裁决 40/41：**C 端运费只按「装裱方式」craftType 区分**。
- * 收费类 = 相框 + 三种玻璃罩；其余（含**未标注**、造景/饰品/蝶翅画/冰箱贴/其它）一律免邮。
- */
-const CHARGED_CRAFT_TYPES = ['frame', 'cloche', 'cloche_round', 'cloche_cylinder']
 
 function toNumber(value, fallback) {
   const n = Number(value)
@@ -167,18 +161,6 @@ function resolveShippingKind(product) {
     product.shippingKind || product.shippingGroup || product.goodsKind || product.kind
   )
   if (explicit) return explicit
-
-  /**
-   * ⚠️ **这一段必须放在下面 categoryType 短路口之前** ——
-   * `categoryType === 'specimen'` 会直接 return，插在它后面则 craftType 永远轮不到说话
-   * （表面改了、行为没变，而且门禁发现不了）。
-   *
-   * ⚠️ 未命中收费清单的**一律免邮**（含 craftType 为空 = 裁决 41b 的未标注）。
-   * 不能写成「有 craftType 才按它判」—— 那样未标注的标本会掉回 categoryType 短路，被判成收费类。
-   */
-  const craft = String(product.craftType || '').trim()
-  if (CHARGED_CRAFT_TYPES.includes(craft)) return SHIPPING_KIND.SPECIMEN
-  return SHIPPING_KIND.ACCESSORY
 
   if (product.categoryType === 'merch') return SHIPPING_KIND.ACCESSORY
   if (product.categoryType === 'specimen' || product.categoryType === 'display') {
