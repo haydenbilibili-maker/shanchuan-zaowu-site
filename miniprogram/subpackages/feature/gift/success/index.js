@@ -6,6 +6,7 @@ const { drawMemberQr } = require('../../utils/qrCanvas')
 const { requestGiftSubscribe, giftSubscribeSkipHint } = require('../../utils/giftSubscribe')
 const { formatDuration } = require('../giftVoice')
 const { renderGiftShareImage } = require('../giftShareCard')
+const textFx = require('../giftTextEffect')
 
 Page({
   data: {
@@ -14,6 +15,10 @@ Page({
     orderId: '',
     token: '',
     cardBody: '',
+    /** 完整礼笺文字；cardBody 只放「已打出的部分」，逐字显示不动 wxml */
+    cardBodyFull: '',
+    sfxMuted: false, // onLoad 里按共享静音键刷新
+    typing: false,
     cardSignature: '',
     hasVoice: false,
     voiceDurationLabel: '',
@@ -36,7 +41,66 @@ Page({
     subscribeHint: ''
   },
 
+  /** 逐字显示礼笺；点任意处可立即显示全文并停音（产品负责人确认的手感） */
+  _startType(full) {
+    this._stopType()
+    const text = String(full || '')
+    if (!text) return
+    this._typeFull = text
+    this._typeIndex = 0
+    this.setData({ typing: true, cardBody: '' })
+    this._tickType()
+  },
+
+  _stopType() {
+    if (this._typeTimer) {
+      clearTimeout(this._typeTimer)
+      this._typeTimer = null
+    }
+    this._typeFull = ''
+    this._typeIndex = 0
+    if (this.data.typing) this.setData({ typing: false })
+  },
+
+  _tickType() {
+    const full = this._typeFull || ''
+    let i = this._typeIndex || 0
+    if (i >= full.length) {
+      this._stopType()
+      return
+    }
+    const ch = full.charAt(i)
+    let step = 1
+    // 偶发连写两字，更像运笔而非机械机打（判断收敛在共享件里，三页同一手感）
+    if (textFx.shouldDoubleWrite(ch, full.charAt(i + 1)) && i + 1 < full.length) step = 2
+    i += step
+    this._typeIndex = i
+    this.setData({ cardBody: full.slice(0, i) })
+    textFx.playTick(this.data.sfxMuted)
+    this._typeTimer = setTimeout(() => this._tickType(), textFx.delayForChar(ch))
+  },
+
+  /** 点礼笺任意处：立即显示全文并停音 */
+  finishTyping() {
+    if (!this.data.typing) return
+    this.setData({ cardBody: this._typeFull || '' })
+    this._stopType()
+  },
+
+  toggleSfxMute() {
+    const next = !this.data.sfxMuted
+    textFx.setMuted(next)
+    this.setData({ sfxMuted: next })
+    if (!next) textFx.playTick(false)
+  },
+
+  onUnload() {
+    this._stopType()
+    textFx.destroySfx()
+  },
+
   onLoad(options) {
+    this.setData({ sfxMuted: textFx.isMuted() })
     // 朋友圈入口会打开本页；若带 giftOrderId（+token）则导到领取页，避免 TA 看到送礼人封缄页
     const timelineOrderId = String((options && options.giftOrderId) || '').trim()
     const timelineToken = String((options && options.token) || '').trim()
@@ -125,7 +189,8 @@ Page({
         ready: true,
         orderId: this._orderId,
         token: gift.shareToken || '',
-        cardBody,
+        cardBodyFull: cardBody,
+        cardBody: '',
         cardSignature,
         hasVoice,
         voiceDurationLabel: hasVoice ? formatDuration(voiceDuration) : '',
@@ -157,6 +222,10 @@ Page({
           specimenFileID
         })
       })
+
+      // 礼笺逐字显示（产品负责人：文字跳出时给打字机音效）。
+      // 在 setData 之后启动，避免「先整段闪一下再从头打」。
+      this._startType(cardBody)
 
       requestGiftSubscribe(deliveryType === 'invite_address' ? 'nudge' : 'fulfill')
         .then((sub) => {

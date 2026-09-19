@@ -43,7 +43,8 @@
     <text class="claim-payload" wx:if="{{claimStatus !== 'claimed'}}">专员扫码 GIFT:{{claimCode}}</text>
   </view>
 
-  <view class="card-preview" wx:if="{{cardBody || hasVoice}}">
+  <!-- 点任意处立即显示全文并停音（产品负责人确认的手感） -->
+  <view class="card-preview" wx:if="{{cardBody || hasVoice}}" bindtap="finishTyping">
     <view class="card-preview-head">
       <text class="card-hint">已封入礼笺</text>
       <view class="mini-seal" aria-hidden="true">山海</view>
@@ -51,6 +52,14 @@
     <text class="card-body" wx:if="{{cardBody}}">{{cardBody}}</text>
     <text class="card-voice" wx:if="{{hasVoice}}">含语音 · {{voiceDurationLabel}}</text>
     <text class="card-sig" wx:if="{{cardSignature}}">— {{cardSignature}}</text>
+  </view>
+
+  <!-- 音效开关：与编排页/收礼页共用同一个静音偏好 -->
+  <view class="sfx-bar">
+    <view class="tool-btn" catchtap="toggleSfxMute" aria-role="button" aria-label="{{sfxMuted ? '开启音效' : '静音'}}">
+      <view class="icon-sound {{sfxMuted ? 'off' : 'on'}}" aria-hidden="true"></view>
+      <text>{{sfxMuted ? '已静音' : '音效'}}</text>
+    </view>
   </view>
 
   <!-- 离屏：分享封面（微信 imageUrl）；失败则无图降级 -->

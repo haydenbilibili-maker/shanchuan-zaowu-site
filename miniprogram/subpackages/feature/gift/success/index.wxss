@@ -583,3 +583,25 @@ page { background: #1A1814; color: #fff; }
   pointer-events: none;
   opacity: 0;
 }
+
+/* ── 音效开关（2026-09-19）── 样式逐字取自 receive/index.wxss（已过对比度棘轮） */
+.sfx-bar { display: flex; justify-content: flex-end; padding: 12rpx 24rpx 0; }
+.tool-btn {
+  display: flex; align-items: center; gap: 10rpx;
+  padding: 10rpx 18rpx;
+  border: 1px solid rgba(77, 64, 26, 0.7);
+  border-radius: 12rpx;
+  background: var(--color-bg-card);
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}
+.icon-sound {
+  width: 22rpx; height: 22rpx; border-radius: 50%;
+  border: 1.5px solid var(--gold); box-sizing: border-box; position: relative;
+}
+.icon-sound.on::after {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  width: 8rpx; height: 8rpx; margin: -4rpx 0 0 -4rpx;
+  border-radius: 50%; background: var(--gold);
+}
+.icon-sound.off { opacity: 0.45; border-color: var(--color-text-muted); }
