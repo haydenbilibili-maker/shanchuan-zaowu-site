@@ -124,13 +124,17 @@ Page({
           galleryImages = [mainImage];
         }
 
+        const imageUrl = require('../../../utils/imageUrl')
         this.setData({
           wiki: wikiData,
           articleContent: data.content || `<p>${data.brief || data.description || '暂无详细内容'}</p>`,
           galleryImages: galleryImages,
           // 需求 11：补 sensitiveEnabled（关联藏品此前封面直出）
+          // 2026-09-20：再补**取图链最后一步** thumbUrl —— getWikiData 回传的是**原始云文件 ID**，
+          // 而 <image> 渲染不了 cloud://（见 test-list-cover-images 头注），此前封面恒空。
           relatedProducts: require('../../../utils/sensitiveBlurCard')
-            .attachSensitiveFlags(res.result.relatedProducts || []),
+            .attachSensitiveFlags(res.result.relatedProducts || [])
+            .map((p) => ({ ...p, image: imageUrl.thumbUrl(imageUrl.firstImageOf(p)) })),
           isLoading: false
         })
         wx.setNavigationBarTitle({ title: wikiData.cn_name || '图鉴详情' })

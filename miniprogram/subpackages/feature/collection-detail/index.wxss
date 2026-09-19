@@ -122,7 +122,9 @@ page {
 }
 .product-card-glass:active { background: rgba(255,255,255,0.06); }
 
-.p-img { width: 120rpx; height: 120rpx; border-radius: 8rpx; background: #111; margin-right: 24rpx; flex-shrink: 0; }
+/* 门控组件的定位参照（见 wxml 注释）。margin/flex-shrink 由图片移到盒上，保持 flex 行为不变。 */
+.p-img-box { position: relative; width: 120rpx; height: 120rpx; margin-right: 24rpx; flex-shrink: 0; border-radius: 8rpx; overflow: hidden; background: #111; }
+.p-img { width: 100%; height: 100%; }
 .p-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .p-name { font-size: 28rpx; font-weight: bold; color: #eee; margin-bottom: 8rpx; }
 .p-price { font-size: 32rpx; color: #C4A76C; font-family: 'DIN'; font-weight: bold; }

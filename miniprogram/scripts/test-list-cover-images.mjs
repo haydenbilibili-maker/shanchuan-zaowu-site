@@ -9,14 +9,16 @@
  * 需要缩略时才 `thumbUrl()`（不可用时回落原值）。
  *
  * 本守卫钉住：① 取值链是共享的、**绝不把 cloud:// 丢空**；② 两页都走共享链；
- *            ③ 列表数据里不再依赖会过期的临时链；④ 封面加载失败有回落，不留破图。
+ *            ③ 列表数据里不再依赖会过期的临时链；④ 封面加载失败有回落，不留破图；
+ *            ⑤ 每处「`:host` 是 `position:absolute`」的组件（自动识别，见 §1.9）的
+ *              **包裹元素都必须已定位** —— 这是同一件事的**页面侧那一半**。
  *
  * 用法：
  *   node miniprogram/scripts/test-list-cover-images.mjs
  *   node miniprogram/scripts/test-list-cover-images.mjs --selftest
  */
 import { spawnSync } from 'node:child_process'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -175,6 +177,127 @@ check('★ 详情页 360°/SKU 两处改用 imgView 映射（不再直绑 cloud:
     risky.length === 0, risky.join(', '))
 }
 
+/* ── 1.9) 同一件事的**页面侧**那一半：包裹元素必须建立包含块 ─────────────────── */
+/**
+ * 2026-09-20 真机：购物车「你可能也喜欢」三张卡是**深色空块**。
+ * 根因**不在取图链**（那条 2026-09-20 已修对，见 §购物车断言）—— 在页面侧：
+ *
+ *   `SensitiveBlurGate` 的 `:host` 是 `position:absolute; left/top:0; width/height:100%`，
+ *   它靠**最近的已定位祖先**解析包含块。包裹元素是 `static` 时，宿主的包含块退化成**视口**：
+ *   封面被定位到**页面左上角**、尺寸按视口算，且**不受包裹元素 overflow:hidden 裁剪**
+ *   （绝对定位后代不被「非其包含块」的祖先裁剪）→ 卡里只剩包裹元素的背景色 = 「深色空块」。
+ *
+ *   现场特征（也是最好认的一条）：**区块在屏幕顶部时第 1 张卡"看起来有图"**
+ *   （视口左上角的那张图正好压住它），**往下滚就全部变空**。
+ *
+ * 为什么 1.7/1.8 抓不到：它们只查**组件侧**（组件自己有没有 `:host`）。
+ * 那半在 2026-09-17 修好了，**页面侧这半从来没人看** —— 于是同一类缺陷在 4 个页面
+ * 静默存活（cart / store-zone / collection-detail / wiki-detail，2026-09-20 一并修掉）。
+ * 组件侧 + 页面侧**两半都钉住**，这一类才真的关得上。
+ */
+/** 路径归一（去掉 . / .. 与空段） */
+function normalizeRel(p) {
+  const parts = []
+  for (const seg of String(p).split('/')) {
+    if (!seg || seg === '.') continue
+    if (seg === '..') parts.pop()
+    else parts.push(seg)
+  }
+  return parts.join('/')
+}
+
+/**
+ * 自动找出所有「`:host` 是 `position:absolute`」的组件标签 —— 不写死标签名。
+ * 这类组件的每个用法都**必须**有已定位的包裹元素（见 §1.9 说明）。
+ * 通过各页 `.json` 的 `usingComponents` 反查组件实现，而不是猜目录名 ——
+ * 这样**新增**一个这样的组件会自动被本条覆盖，不会静默长出来。
+ */
+function hostPositionedTags() {
+  const jsons = []
+  ;(function walk(dir) {
+    for (const name of readdirSync(resolve(ROOT, dir))) {
+      if (['node_modules', 'miniprogram_npm', '.git', '.tmp'].includes(name)) continue
+      const rel = `${dir}/${name}`
+      if (statSync(resolve(ROOT, rel)).isDirectory()) walk(rel)
+      else if (name.endsWith('.json')) jsons.push(rel)
+    }
+  })('miniprogram')
+
+  const tags = new Map()
+  for (const rel of jsons) {
+    let uc
+    try { uc = JSON.parse(read(rel)).usingComponents } catch (e) { continue }
+    if (!uc || typeof uc !== 'object') continue
+    const base = rel.slice(0, rel.lastIndexOf('/'))
+    for (const [tag, p] of Object.entries(uc)) {
+      if (typeof p !== 'string' || /^plugin/.test(p) || tags.has(tag)) continue
+      const dir = p.startsWith('/')
+        ? normalizeRel(p.slice(1))
+        : normalizeRel(`${base}/${p}`).replace(/^miniprogram\//, '')
+      let wxss
+      // usingComponents 的值是组件**入口路径（不含扩展名）**，如 `/components/SensitiveBlurGate/index`
+      // —— 对应的样式就是 `<入口>.wxss`（**不要再拼一层 /index**，否则一个都识别不到）。
+      try { wxss = stripComments(read(`miniprogram/${dir}.wxss`)) } catch (e) { continue }
+      const m = /:host\s*\{([^}]*)\}/.exec(wxss)
+      if (m && /position:\s*absolute/.test(m[1])) tags.set(tag, dir)
+    }
+  }
+  return tags
+}
+
+function auditHostPositionedWrappers(tags) {
+  const files = []
+  ;(function walk(dir) {
+    for (const name of readdirSync(resolve(ROOT, dir))) {
+      if (['node_modules', 'miniprogram_npm', '.git', '.tmp', 'docs'].includes(name)) continue
+      const rel = `${dir}/${name}`
+      if (statSync(resolve(ROOT, rel)).isDirectory()) walk(rel)
+      else if (name.endsWith('.wxml')) files.push(rel)
+    }
+  })('miniprogram')
+
+  const violations = []
+  for (const rel of files) {
+    // WXML 注释也要去掉：注释里提到组件名不算用法
+    const src = stripComments(read(rel)).replace(/<!--[\s\S]*?-->/g, '')
+    const open = []
+    for (const m of src.matchAll(/<(\/?)([a-zA-Z][\w-]*)([^>]*?)(\/?)>/g)) {
+      const [, slash, tag, attrs, selfClose] = m
+      if (slash) open.pop()
+      else if (!selfClose) open.push({ tag, attrs })
+      if (slash || !tags.has(tag)) continue
+      let wrapper = null
+      for (let i = open.length - 1; i >= 0; i -= 1) {
+        const cm = /class="([^"]+)"/.exec(open[i].attrs || '')
+        if (cm) { wrapper = cm[1]; break }
+      }
+      const line = src.slice(0, m.index).split('\n').length
+      let ok = false
+      if (wrapper) {
+        const wxss = stripComments(read(rel.replace(/\.wxml$/, '.wxss')))
+        const first = wrapper.split(/\s+/)[0].replace(/-/g, '\\-')
+        const re = new RegExp(`\\.${first}\\s*\\{([^}]*)\\}`, 'g')
+        let r
+        let body = null
+        while ((r = re.exec(wxss))) body = r[1]
+        ok = !!body && /position:\s*(relative|absolute|fixed)/.test(body)
+      }
+      if (!ok) violations.push(`<${tag}> ${rel}:${line} 包裹 .${wrapper || '?'} 未定位`)
+    }
+  }
+  return violations
+}
+
+{
+  const tags = hostPositionedTags()
+  check('★ 至少识别出「:host 绝对定位」的组件（否则本条判据会静默变成空转）',
+    tags.size > 0, '一个都没识别到 → usingComponents 反查或 :host 解析坏了')
+  const violations = auditHostPositionedWrappers(tags)
+  check(`★ 每处「:host 绝对定位」组件（${[...tags.keys()].join(' / ')}）的包裹元素都已定位`
+    + '（static → 宿主以视口为包含块 = 深色空块）',
+    violations.length === 0, violations.join(' | '))
+}
+
 /* ── 2) 礼赠 hub ─────────────────────────────────────────────────────────── */
 // ── 购物车（2026-09-20 真机反馈：你可能也喜欢三张卡是深色空块）────────────────
 // 根因：本页**漏了共享链的最后一步 thumbUrl()** —— 于是临时链一失败，src 上留下的
@@ -246,6 +369,18 @@ function selftest() {
       file: CART_WXML,
       from: '                    <view class="thumb-ph" wx:else>\n                      <image class="thumb-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>\n                    </view>',
       to: ''
+    },
+    {
+      name: '购物车推荐图盒丢掉 position（宿主以视口为包含块 → 又变深色空块）',
+      file: CART_WXSS,
+      from: '  position: relative;\n  width: 100%;\n  height: 220rpx;\n  background: var(--color-bg-elevated);\n  overflow: hidden;',
+      to: '  width: 100%;\n  height: 220rpx;\n  background: var(--color-bg-elevated);\n  overflow: hidden;'
+    },
+    {
+      name: 'store-zone 自建图盒丢掉 position（同类：flex 卡片未定位）',
+      file: 'miniprogram/subpackages/business/store-zone/index.wxss',
+      from: '.product-img-box { position: relative; width: 220rpx; height: 180rpx; overflow: hidden; }',
+      to: '.product-img-box { width: 220rpx; height: 180rpx; overflow: hidden; }'
     },
     {
       name: '取值链不再看 images（回到只认 coverImage）',

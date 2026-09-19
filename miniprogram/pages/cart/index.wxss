@@ -584,6 +584,17 @@ page {
 .rec-card-hover { opacity: 0.92; transform: scale(0.98); }
 
 .rec-img-wrap {
+  /* ⚠️ position:relative **不能删**（2026-09-20 真机：你可能也喜欢三张卡是深色空块）。
+     根因不在取图链（那条链已修对），在这个盒子：
+     `SensitiveBlurGate` 的 `:host` 是 `position:absolute; left/top:0; width/height:100%`，
+     它靠**最近的已定位祖先**解析包含块。本盒此前是 static → 宿主的包含块变成**视口**，
+     封面被定位到**页面左上角**、尺寸按视口算，且**不受本盒 overflow:hidden 裁剪**
+     （绝对定位后代不被非包含块的祖先裁剪）→ 卡里只剩本盒的深色背景。
+     复现特征：区块在屏幕顶部时第 1 张卡「看起来有图」（视口左上角的图正好压住它），
+     往下滚就三张全空 —— 与真机截图完全一致。
+     同族共 4 处（store-zone / collection-detail / wiki-detail 见各自 wxml 注释）；
+     守卫 `test-list-cover-images` 的「门控图盒必须已定位」判据会钉住这条。 */
+  position: relative;
   width: 100%;
   height: 220rpx;
   background: var(--color-bg-elevated);

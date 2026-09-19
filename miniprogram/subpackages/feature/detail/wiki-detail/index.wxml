@@ -98,13 +98,17 @@
     <block wx:for="{{displayProducts}}" wx:key="_relatedKey">
       <view class="product-card-mini" bindtap="goToProduct" data-id="{{item._id}}" data-skuid="{{item.relatedSkuId}}" hover-class="product-card-mini-press" hover-stay-time="80">
         <!-- 需求 11：敏感形态模糊 -->
-        <sensitive-blur-gate
-          enabled="{{item.sensitiveEnabled}}"
-          product-id="{{item._id}}"
-          size="thumb"
-        >
-          <image src="{{item.images[0] || item.image || item.httpImage}}" mode="aspectFill" class="p-thumb" lazy-load></image>
-        </sensitive-blur-gate>
+        <!-- ⚠️ 图盒必须自建且**已定位**（.p-thumb-box）：门控组件 :host 是 position:absolute，
+             而 .product-card-mini 是 display:flex 且未定位 → 缺此盒封面会被裁掉。 -->
+        <view class="p-thumb-box">
+          <sensitive-blur-gate
+            enabled="{{item.sensitiveEnabled}}"
+            product-id="{{item._id}}"
+            size="thumb"
+          >
+            <image src="{{item.images[0] || item.image || item.httpImage}}" mode="aspectFill" class="p-thumb" lazy-load></image>
+          </sensitive-blur-gate>
+        </view>
         <view class="p-info">
           <text class="p-name">{{item.title}}</text>
           <text class="p-sku" wx:if="{{item.relatedSkuLabel}}">{{item.relatedSkuLabel}}</text>

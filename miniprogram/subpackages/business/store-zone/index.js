@@ -184,7 +184,9 @@ Page(withAppModal({
       title: p.title || '',
       latinName: p.latinName || '',
       price: p.price || 0,
-      image: getFirstImage(imgs) || p.cover || '',
+      // 2026-09-20：封面必须走**共享取图链**。此前直接给原始云文件 ID，
+      // 而 <image> 渲染不了 cloud://（见 test-list-cover-images 头注）→ 关联商品封面恒空。
+      image: require('../../../utils/imageUrl').thumbUrl(getFirstImage(imgs) || p.cover || ''),
       sensitiveEnabled: sensitiveEnabledOf(p)
     }
   },
