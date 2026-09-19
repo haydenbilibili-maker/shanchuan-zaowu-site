@@ -58,6 +58,7 @@ const MENU_KEYS = {
   STUDIO_DASHBOARD: 'studioDashboard',
   STUDIO_BILLS: 'studioBills',
   SHIPMENT_SKU: 'shipmentSku',
+  FEISHU_SYNC: 'feishuSync',
   PROPERTY_COST: 'propertyCost',
   ARTISAN_COMMISSION: 'artisanCommission',
   BOOKING_RULES: 'bookingRules',
@@ -184,6 +185,7 @@ const HUB_MENU_SECTIONS = {
   STUDIO: [
     MENU_KEYS.STUDIO_DASHBOARD,
     MENU_KEYS.SHIPMENT_SKU,
+    MENU_KEYS.FEISHU_SYNC,
     MENU_KEYS.STUDIO_BILLS,
     MENU_KEYS.PROPERTY_COST,
     MENU_KEYS.PURCHASE_OPS,

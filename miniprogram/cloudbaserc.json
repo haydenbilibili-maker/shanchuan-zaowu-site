@@ -932,6 +932,13 @@
       "runtime": "Nodejs16.13",
       "handler": "index.main",
       "installDependency": true
+    },
+    {
+      "name": "syncFeishuData",
+      "timeout": 60,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
     }
   ]
 }

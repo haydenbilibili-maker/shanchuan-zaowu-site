@@ -56,6 +56,7 @@ const RAW_INVENTORY_OPS_PATH = '/subpackages/manager/raw-inventory-ops/index'
 const STUDIO_DASHBOARD_PATH = '/subpackages/manager/studio-dashboard/index'
 const STUDIO_BILLS_PATH = '/subpackages/manager/studio-bills/index'
 const SHIPMENT_SKU_PATH = '/subpackages/extra/shipment-sku/index'
+const FEISHU_SYNC_PATH = '/subpackages/extra/feishu-sync/index'
 const PROPERTY_COST_PATH = '/subpackages/extra/property-cost/index'
 const ARTISAN_COMMISSION_PATH = '/subpackages/extra/artisan-commission/index'
 const ARTISAN_COMMISSION_MINE_PATH = '/subpackages/extra/artisan/commission/index'
@@ -400,6 +401,15 @@ function goShipmentSku() {
 }
 
 /**
+ * **仅超管**：飞书同步（服务端读飞书 → 映射 → 写库）。
+ * 与出货开单同形：磁贴由 `menu.feishuSync` 控制，页面内 `guardStaffPage('manager')` 独立再判一次
+ * （客户端判定不是执法，真正的执法在云函数 `syncFeishuData` 的 requireSuper）。
+ */
+function goFeishuSync () {
+  wx.navigateTo({ url: FEISHU_SYNC_PATH })
+}
+
+/**
  * 超管或店长：工作室账单（超管确认收款 / 店长标记已付款；服务端按角色与门店范围判定）
  *
  * ⚠️ **刻意不写 `fail` 回调**：`check:dialog-ratchet` 冻结了原生弹窗数量（只许降），
@@ -666,6 +676,8 @@ module.exports = {
   STUDIO_DASHBOARD_PATH,
   STUDIO_BILLS_PATH,
   SHIPMENT_SKU_PATH,
+  FEISHU_SYNC_PATH,
+  goFeishuSync,
   PROPERTY_COST_PATH,
   MENU_KEYS,
   HUB_MENU_SECTIONS,

@@ -299,6 +299,10 @@
             <view class="icon-box"><image class="menu-icon-img" src="/subpackages/manager/assets/icons/edit.png" mode="aspectFit" /></view>
             <text>出货开单</text>
           </view>
+          <view class="menu-btn" wx:if="{{menu.feishuSync}}" bindtap="goFeishuSyncGuarded">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/deliver.png" mode="aspectFit" /></view>
+            <text>飞书同步</text>
+          </view>
           <view class="menu-btn" wx:if="{{menu.studioBills}}" bindtap="goStudioBillsGuarded">
             <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/pay.png" mode="aspectFit" /></view>
             <text>工作室账单</text>

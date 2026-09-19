@@ -194,6 +194,7 @@
         "shipment-ops/index",
         "shipment-edit/index",
         "shipment-sku/index",
+        "feishu-sync/index",
         "inventory-ops/index",
         "property-cost/index",
         "artisan-commission/index",

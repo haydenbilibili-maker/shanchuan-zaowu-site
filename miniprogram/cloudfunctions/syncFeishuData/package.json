@@ -1,0 +1,9 @@
+{
+  "name": "syncFeishuData",
+  "version": "1.0.0",
+  "main": "index.js",
+  "description": "飞书 → 云库 服务端同步（超管工作台入口；含定时开关，默认关）",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

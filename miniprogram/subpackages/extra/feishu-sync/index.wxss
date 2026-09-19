@@ -1,0 +1,25 @@
+.fs { padding: 24rpx 24rpx 60rpx; background: var(--bg-page, #f7f6f3); min-height: 100vh; box-sizing: border-box; }
+.fs-head { margin-bottom: 24rpx; }
+.fs-title { font-size: 40rpx; font-weight: 600; color: var(--text-primary, #1f1d1a); }
+.fs-sub { margin-top: 8rpx; font-size: 24rpx; line-height: 1.6; color: var(--text-tertiary, #8a8578); }
+.fs-tip { margin-bottom: 20rpx; padding: 18rpx 20rpx; border-radius: 14rpx; background: #f0ece1; font-size: 25rpx; line-height: 1.55; color: #4a4437; }
+.fs-tip.is-warn { background: #fbeceb; color: #8c3b34; }
+.fs-card { margin-bottom: 20rpx; padding: 24rpx; border-radius: 18rpx; background: #fff; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04); }
+.fs-card-title { font-size: 28rpx; font-weight: 600; color: var(--text-primary, #1f1d1a); margin-bottom: 10rpx; }
+.fs-card-body { font-size: 24rpx; line-height: 1.6; color: var(--text-secondary, #5f5a50); }
+.fs-row { display: flex; align-items: center; justify-content: space-between; }
+.fs-label { font-size: 28rpx; color: var(--text-primary, #1f1d1a); }
+.fs-hint { margin-top: 12rpx; font-size: 23rpx; line-height: 1.6; color: var(--text-tertiary, #8a8578); }
+.fs-item { display: flex; align-items: center; justify-content: space-between; padding: 20rpx 0; border-top: 1rpx solid #f0ede6; }
+.fs-item:first-of-type { border-top: none; }
+.fs-item-main { flex: 1; min-width: 0; margin-right: 20rpx; }
+.fs-item-name { font-size: 28rpx; font-weight: 500; color: var(--text-primary, #1f1d1a); }
+.fs-item-note { margin-top: 6rpx; font-size: 22rpx; color: var(--text-tertiary, #8a8578); }
+.fs-item-sum { margin-top: 6rpx; font-size: 24rpx; color: var(--text-secondary, #5f5a50); }
+.fs-btn { padding: 12rpx 28rpx; border-radius: 999rpx; border: 1rpx solid #c4a76c; color: #8a7340; font-size: 25rpx; }
+.fs-actions { margin-top: 8rpx; display: flex; flex-direction: column; gap: 16rpx; }
+/* 主按钮：白字压金底只有 2.31:1（对比度棘轮会拦）→ 改用深色底保证可读性 */
+.fs-btn-primary { text-align: center; padding: 26rpx; border-radius: 999rpx; background: #4a4437; color: #fff; font-size: 30rpx; }
+.fs-btn-primary.is-busy { opacity: 0.6; }
+.fs-btn-ghost { text-align: center; padding: 22rpx; border-radius: 999rpx; border: 1rpx solid #ddd8cc; color: #5f5a50; font-size: 27rpx; }
+.fs-foot { margin-top: 28rpx; font-size: 22rpx; line-height: 1.7; color: var(--text-tertiary, #8a8578); }

@@ -260,6 +260,8 @@
     "check:collection-docs:selftest": "node miniprogram/scripts/check-collection-docs.mjs --selftest",
     "check:price-import-blocks": "node miniprogram/scripts/check-price-import-blocks.mjs",
     "check:price-import-blocks:selftest": "node miniprogram/scripts/check-price-import-blocks.mjs --selftest",
+    "test:feishu-sync": "node miniprogram/scripts/test-feishu-sync.mjs",
+    "test:feishu-sync:selftest": "node miniprogram/scripts/test-feishu-sync.mjs --selftest",
     "check:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs",
     "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
     "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report",

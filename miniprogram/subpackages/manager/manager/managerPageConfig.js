@@ -89,6 +89,7 @@ const {
   goStudioDashboard,
   goStudioBills,
   goShipmentSku,
+  goFeishuSync,
   goPropertyCost,
   goArtisanCommission,
   goBookingRules,
@@ -2296,6 +2297,12 @@ const managerPageConfig = {
   goShipmentSkuGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.SHIPMENT_SKU)) return;
     goShipmentSku();
+  },
+
+  /** 飞书同步 —— **仅超管**。同形：磁贴由 menu.feishuSync 控制，这里再判一次 */
+  goFeishuSyncGuarded() {
+    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.FEISHU_SYNC)) return;
+    goFeishuSync();
   },
 
   goStudioBillsGuarded() {
