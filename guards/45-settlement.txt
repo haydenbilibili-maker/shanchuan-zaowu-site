@@ -5,3 +5,4 @@
 # 校验：npm run check:guards-coverage
 npm run test:studio-pricing
 npm run test:studio-settlement
+npm run test:studio-bill

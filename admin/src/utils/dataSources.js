@@ -244,6 +244,14 @@ export const CONCEPTS = [
     note: '出货算价的两个价目本（材料价 + 包装价），同一写入口、写权限仅超管。与 custom_configs 的 C 端定制加价语义相反，勿混用。',
   },
   {
+    key: 'studio_settlement',
+    label: '工作室结算台账',
+    authority: { kind: 'collection', name: 'ops_settlement_bills' },
+    writeVia: 'manageStudioSettlement',
+    divergent: [],
+    note: '门店→工作室货款账单。**结算唯一权威**：出货单的 settleStatus 是派生字段，只有账单流程能写。',
+  },
+  {
     key: 'analytics',
     label: '行为 / 经营分析',
     authority: { kind: 'collection', name: 'analytics_daily' },
@@ -360,6 +368,7 @@ export const SOURCE_REGISTRY = {
   'collection:ops_shipments': { concept: 'fulfillment', role: 'authority', confidence: 'high' },
   'collection:studio_material_prices': { concept: 'studio_pricing', role: 'authority', confidence: 'high', note: '原材料价目表：出货算价的材料费来源（manageStudioSettlement；写权限仅超管）' },
   'collection:studio_packaging_prices': { concept: 'studio_pricing', role: 'authority', confidence: 'high', note: '包装价目表：出货算价的包装费来源（manageStudioSettlement）' },
+  'collection:ops_settlement_bills': { concept: 'studio_settlement', role: 'authority', confidence: 'high', note: '工作室账单：**结算唯一权威**；出货单的 settleStatus 由它派生（manageStudioSettlement）' },
   'collection:feishu_purchases': { concept: 'fulfillment', role: 'derived', confidence: 'high', note: '飞书镜像' },
   'collection:feishu_shipments': { concept: 'fulfillment', role: 'derived', confidence: 'high', note: '飞书镜像；线上集合不存在（审计已记）' },
   'collection:analytics_daily': { concept: 'analytics', role: 'authority', confidence: 'high' },

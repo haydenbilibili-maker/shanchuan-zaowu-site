@@ -246,6 +246,8 @@
     "test:studio-pricing:selftest": "node miniprogram/scripts/test-studio-pricing.mjs --selftest",
     "test:studio-settlement": "node miniprogram/scripts/test-studio-settlement.mjs",
     "test:studio-settlement:selftest": "node miniprogram/scripts/test-studio-settlement.mjs --selftest",
+    "test:studio-bill": "node miniprogram/scripts/test-studio-bill.mjs",
+    "test:studio-bill:selftest": "node miniprogram/scripts/test-studio-bill.mjs --selftest",
     "check:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs",
     "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
     "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report",

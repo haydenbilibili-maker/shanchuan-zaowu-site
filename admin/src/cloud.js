@@ -489,6 +489,7 @@ export const COLLECTIONS = {
   OPS_SHIPMENTS: 'ops_shipments', // 门店出货单 SSOT（manageStoreShipment；小程序主录入）
   STUDIO_MATERIAL_PRICES: 'studio_material_prices', // 原材料价目表（出货算价，manageStudioSettlement）
   STUDIO_PACKAGING_PRICES: 'studio_packaging_prices', // 包装价目表（出货算价，manageStudioSettlement）
+  OPS_SETTLEMENT_BILLS: 'ops_settlement_bills', // 工作室账单（结算唯一权威，manageStudioSettlement）
   PROPERTY_COSTS: 'property_costs', // 物业成本（水电/房租，managePropertyCost）
   FULFILLMENT_SHIPMENTS: 'fulfillment_shipments', // 总部出货单（P1）
   STOCK_MOVEMENTS: 'stock_movements', // 总部成品库存流水（P1）

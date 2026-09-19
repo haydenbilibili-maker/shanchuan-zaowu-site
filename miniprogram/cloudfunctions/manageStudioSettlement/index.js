@@ -19,7 +19,7 @@
  *     ERP 侧经 `/api/cloud-fn` 代理注入 adminOpsKey → 判为 super_admin
  */
 const cloud = require('wx-server-sdk')
-const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
+const { assertStaff, ROLE_MANAGER, hasRole, STORED_ROLE_SUPER } = require('./staffGuard')
 const {
   CONFIG_COLLECTION,
   CONFIG_ID,
@@ -37,6 +37,52 @@ const {
   bookMeta
 } = require('./settlementDefaults')
 const { normalizeName } = require('./pricingCore')
+const {
+  BILL_STATUS,
+  BILL_STATUS_LABEL,
+  BILL_FLOW,
+  buildBill,
+  mapBill,
+  markPaidPatch,
+  confirmSettlePatch,
+  voidPatch,
+  withdrawPaidPatch,
+  shipmentBlockReason
+} = require('./billCore')
+
+const BILL_COLLECTION = 'ops_settlement_bills'
+const SHIPMENT_COLLECTION = 'ops_shipments'
+
+/**
+ * 主店 id 别名（与 `manageStoreShipment/shipmentDefaults.js` 的 `MAIN_IDS` 同源）。
+ * 云函数不能跨目录 require，这里只登记这一对；对不上时的后果是**拒绝**而不是放行（见 actorCanAccessStore）。
+ */
+const STORE_ALIASES = {
+  store_shanhaizaowu: ['store_1780146782017_6w0okpr'],
+  store_1780146782017_6w0okpr: ['store_shanhaizaowu']
+}
+
+/**
+ * 「门店标已付款」的门店范围判定 —— **失败即拒**（与既有 `storeIdsForActor` 的
+ * 「storeIds 为空 = 全部门店」相反）。
+ *
+ * 为什么这里要反过来：那是**读/录单**，放开顶多多看几张单；
+ * 这是**钱的动作**（标了之后超管会据此确认收款）。没配门店范围的非超管账号
+ * 若被默认放开，就能替所有门店标已付款 —— 宁可错拒（超管随时可代标），不可错放。
+ */
+function actorCanAccessStore(actor, storeId, isSuper) {
+  if (isSuper) return true
+  const sid = String(storeId || '').trim()
+  if (!sid) return false
+  const ids = (Array.isArray(actor && actor.storeIds) ? actor.storeIds : []).map((x) => String(x || '').trim())
+  if (!ids.length) return false
+  const candidates = [sid].concat(STORE_ALIASES[sid] || [])
+  return ids.some((id) => candidates.indexOf(id) !== -1)
+}
+
+function isSuperActor(actor) {
+  return hasRole(actor, STORED_ROLE_SUPER)
+}
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -425,13 +471,281 @@ async function handleRemove(event, actor) {
   return ok({ _id: id, msg: '已删除（历史出货单的定价快照不受影响）' })
 }
 
+// ─────────────────────────── 账单（结算权威） ───────────────────────────
+
+/** 批量改一批出货单（云开发支持 where(_id in [...]) 的服务端 update） */
+async function patchShipments(ids, patch) {
+  const list = Array.isArray(ids) ? ids.filter(Boolean) : []
+  if (!list.length) return 0
+  const res = await withCollectionRetry(SHIPMENT_COLLECTION, () =>
+    db
+      .collection(SHIPMENT_COLLECTION)
+      .where({ _id: _.in(list) })
+      .update({ data: patch })
+  )
+  return (res && res.stats && res.stats.updated) || 0
+}
+
+async function loadShipmentsByIds(ids) {
+  const list = Array.isArray(ids) ? ids.filter(Boolean) : []
+  if (!list.length) return []
+  const out = []
+  // `in` 一次最多 100 个，分批取
+  for (let i = 0; i < list.length; i += 100) {
+    const chunk = list.slice(i, i + 100)
+    const res = await withCollectionRetry(SHIPMENT_COLLECTION, () =>
+      db.collection(SHIPMENT_COLLECTION).where({ _id: _.in(chunk) }).limit(100).get()
+    )
+    out.push(...((res && res.data) || []))
+  }
+  return out
+}
+
+async function loadBill(id) {
+  const key = String(id || '').trim()
+  if (!key) return null
+  try {
+    const res = await db.collection(BILL_COLLECTION).doc(key).get()
+    const doc = res && res.data
+    if (!doc || doc.deleted === true) return null
+    return Object.assign({ _id: key }, doc)
+  } catch (err) {
+    return null
+  }
+}
+
+async function nextBillSeq(dateStr) {
+  const d = String(dateStr || '').replace(/[^0-9]/g, '').slice(0, 8)
+  if (!d) return 1
+  try {
+    const res = await db.collection(BILL_COLLECTION).where({ billNo: db.RegExp({ regexp: `^SB${d}-` }) }).count()
+    return ((res && res.total) || 0) + 1
+  } catch (err) {
+    return 1
+  }
+}
+
+async function handleBillMeta() {
+  return ok({
+    statuses: Object.keys(BILL_STATUS_LABEL).map((v) => ({ value: v, label: BILL_STATUS_LABEL[v] })),
+    flow: BILL_FLOW,
+    collection: BILL_COLLECTION,
+    note: '账单是结算唯一权威；出货单的结算状态由账单派生（未结 / 已付待确认 / 已结清）'
+  })
+}
+
+/**
+ * 可入账单据预览：列出该门店**未结且已核价**的出货单，并对不可入账的逐张给出原因。
+ * 让超管在勾选列表里就置灰看到原因，而不是勾完才被拒（蓝图 §6.2）。
+ */
+async function handleBillPreview(event) {
+  const storeId = String(event.storeId || '').trim()
+  if (!storeId) return fail('请选择门店', 'BAD_PARAM')
+  const rows = await fetchAll(SHIPMENT_COLLECTION, { storeId })
+  const candidates = []
+  for (const r of rows) {
+    if (r.deleted === true) continue
+    const reason = shipmentBlockReason(r, storeId)
+    // 已结清 / 已入账的单不进候选列表（它们不在「待入账」语境里）
+    if (reason && reason.code === 'ALREADY_IN_BILL') continue
+    candidates.push({
+      _id: r._id,
+      shipmentNo: r.shipmentNo || '',
+      shipmentDate: r.shipmentDate || '',
+      storeId: r.storeId || '',
+      storeName: r.storeName || '',
+      itemCount: Number(r.itemCount) || 0,
+      totalQty: Number(r.totalQty) || 0,
+      totalCents: Number(r.totalCents) || 0,
+      totalAmount: Math.round(Number(r.totalCents) || 0) / 100,
+      pricingStatus: r.pricingStatus || 'priced',
+      pricingIssueCount: Number(r.pricingIssueCount) || 0,
+      selectable: !reason,
+      blockReason: reason ? reason.msg : ''
+    })
+  }
+  candidates.sort((a, b) => String(b.shipmentDate).localeCompare(String(a.shipmentDate)))
+  const selectable = candidates.filter((c) => c.selectable)
+  return ok({
+    storeId,
+    list: candidates,
+    selectableCount: selectable.length,
+    selectableTotalAmount: Math.round(selectable.reduce((n, c) => n + c.totalCents, 0)) / 100,
+    blockedCount: candidates.length - selectable.length,
+    msg: selectable.length
+      ? `可入账 ${selectable.length} 张，合计 ¥${Math.round(selectable.reduce((n, c) => n + c.totalCents, 0)) / 100}`
+      : '该门店没有可入账的出货单'
+  })
+}
+
+async function handleBillCreate(event, actor) {
+  const storeId = String(event.storeId || '').trim()
+  const shipmentIds = Array.isArray(event.shipmentIds) ? event.shipmentIds.filter(Boolean) : []
+  if (!shipmentIds.length) return fail('请至少勾选一张出货单', 'BAD_PARAM')
+
+  const shipments = await loadShipmentsByIds(shipmentIds)
+  if (shipments.length !== shipmentIds.length) {
+    return fail(`有 ${shipmentIds.length - shipments.length} 张单据找不到，请刷新后重试`, 'NOT_FOUND')
+  }
+  const config = normalizeConfig(await loadConfigDoc())
+  const built = buildBill({
+    storeId,
+    shipments,
+    laborRatePct: config.laborRatePct,
+    actor,
+    now: Date.now(),
+    seq: await nextBillSeq(shipments[0] && shipments[0].shipmentDate)
+  })
+  if (!built.ok) return ok({ ok: false, blocked: built.blocked || [], msg: built.msg })
+
+  const res = await withCollectionRetry(BILL_COLLECTION, () =>
+    db.collection(BILL_COLLECTION).add({ data: built.bill })
+  )
+  const billId = (res && res._id) || ''
+  // 单据入账：结算状态仍为「未结」，但记上所属账单
+  const updated = await patchShipments(shipmentIds, {
+    settleStatus: BILL_STATUS.UNSETTLED,
+    billId,
+    billNo: built.bill.billNo,
+    updatedAt: Date.now(),
+    updatedBy: String(actor && actor.openid)
+  })
+  return ok({
+    bill: mapBill(Object.assign({ _id: billId }, built.bill)),
+    updatedShipments: updated,
+    msg: `账单 ${built.bill.billNo} 已生成（${built.bill.shipmentCount} 张单 · ¥${built.bill.totalAmount}）`
+  })
+}
+
+async function handleBillList(event) {
+  const storeId = String(event.storeId || '').trim()
+  const status = String(event.status || '').trim()
+  const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(event.limit, 10) || 50))
+  let rows = await fetchAll(BILL_COLLECTION, activeWhere())
+  if (storeId) rows = rows.filter((r) => r.storeId === storeId)
+  if (status) rows = rows.filter((r) => String(r.status || '') === status)
+  rows.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0))
+  const list = rows.slice(0, limit).map(mapBill)
+  const outstandingCents = rows
+    .filter((r) => String(r.status) !== BILL_STATUS.SETTLED && String(r.status) !== BILL_STATUS.VOID)
+    .reduce((n, r) => n + (Number(r.totalCents) || 0), 0)
+  return ok({
+    list,
+    total: rows.length,
+    outstandingAmount: Math.round(outstandingCents) / 100,
+    truncated: rows.length > limit
+  })
+}
+
+async function handleBillGet(event) {
+  const bill = await loadBill(event.id)
+  if (!bill) return fail('账单不存在', 'NOT_FOUND')
+  const shipments = await loadShipmentsByIds(bill.shipmentIds)
+  return ok({
+    bill: mapBill(bill),
+    shipments: shipments.map((s) => ({
+      _id: s._id,
+      shipmentNo: s.shipmentNo || '',
+      shipmentDate: s.shipmentDate || '',
+      itemCount: Number(s.itemCount) || 0,
+      totalQty: Number(s.totalQty) || 0,
+      totalAmount: Math.round(Number(s.totalCents) || 0) / 100,
+      status: s.status || '',
+      settleStatus: s.settleStatus || 'unsettled'
+    }))
+  })
+}
+
+/** 门店标「已付款」。店长可标**自己门店**的账单；超管可代标任意门店。 */
+async function handleBillMarkPaid(event, actor) {
+  const bill = await loadBill(event.id)
+  if (!bill) return fail('账单不存在', 'NOT_FOUND')
+  if (!actorCanAccessStore(actor, bill.storeId, isSuperActor(actor))) {
+    return fail('只能标记本门店账单的付款状态', 'FORBIDDEN')
+  }
+  const res = markPaidPatch(bill, actor, { now: Date.now(), note: event.note })
+  if (!res.ok) return fail(res.msg, 'BAD_STATE')
+  if (res.noop) return ok({ noop: true, bill: mapBill(bill), msg: res.msg })
+  await withCollectionRetry(BILL_COLLECTION, () =>
+    db.collection(BILL_COLLECTION).doc(bill._id).update({ data: res.patch })
+  )
+  const updated = await patchShipments(res.shipmentIds, res.shipmentPatch)
+  return ok({
+    bill: mapBill(Object.assign({}, bill, res.patch)),
+    updatedShipments: updated,
+    msg: res.msg,
+    notify: 'bill_paid_marked'
+  })
+}
+
+/** 撤回到未结：仅超管（店长标错了要找人改，不允许自己来回改钱的状态） */
+async function handleBillWithdrawPaid(event, actor) {
+  const bill = await loadBill(event.id)
+  if (!bill) return fail('账单不存在', 'NOT_FOUND')
+  const res = withdrawPaidPatch(bill, actor)
+  if (!res.ok) return fail(res.msg, 'BAD_STATE')
+  if (res.noop) return ok({ noop: true, bill: mapBill(bill), msg: res.msg })
+  await withCollectionRetry(BILL_COLLECTION, () =>
+    db.collection(BILL_COLLECTION).doc(bill._id).update({ data: res.patch })
+  )
+  const updated = await patchShipments(res.shipmentIds, res.shipmentPatch)
+  return ok({ bill: mapBill(Object.assign({}, bill, res.patch)), updatedShipments: updated, msg: res.msg })
+}
+
+/**
+ * 超管「确认收款」= 终结（裁决 13）：账单结清 + 其下每张单 `settleStatus=settled` 且 `status=completed`。
+ * 幂等：重复点直接短路，不重复写、不重复通知（靠 `noop` 让调用方跳过通知）。
+ */
+async function handleBillConfirmSettle(event, actor) {
+  const bill = await loadBill(event.id)
+  if (!bill) return fail('账单不存在', 'NOT_FOUND')
+  const res = confirmSettlePatch(bill, actor, { now: Date.now(), note: event.note })
+  if (!res.ok) return fail(res.msg, 'BAD_STATE')
+  if (res.noop) return ok({ noop: true, bill: mapBill(bill), msg: res.msg })
+  await withCollectionRetry(BILL_COLLECTION, () =>
+    db.collection(BILL_COLLECTION).doc(bill._id).update({ data: res.billPatch })
+  )
+  const updated = await patchShipments(res.shipmentIds, res.shipmentPatch)
+  return ok({
+    bill: mapBill(Object.assign({}, bill, res.billPatch)),
+    updatedShipments: updated,
+    msg: res.msg,
+    notify: 'bill_settled'
+  })
+}
+
+async function handleBillVoid(event, actor) {
+  const bill = await loadBill(event.id)
+  if (!bill) return fail('账单不存在', 'NOT_FOUND')
+  const res = voidPatch(bill, actor, { now: Date.now(), note: event.note })
+  if (!res.ok) return fail(res.msg, 'BAD_STATE')
+  if (res.noop) return ok({ noop: true, bill: mapBill(bill), msg: res.msg })
+  await withCollectionRetry(BILL_COLLECTION, () =>
+    db.collection(BILL_COLLECTION).doc(bill._id).update({ data: res.patch })
+  )
+  const updated = await patchShipments(res.shipmentIds, res.shipmentPatch)
+  return ok({ bill: mapBill(Object.assign({}, bill, res.patch)), updatedShipments: updated, msg: res.msg })
+}
+
 // ─────────────────────────── 入口 ───────────────────────────
 
-const WRITE_ACTIONS = {
-  'config.save': handleConfigSave,
-  'priceBook.create': handleCreate,
-  'priceBook.update': handleUpdate,
-  'priceBook.remove': handleRemove
+/**
+ * 权限分三档（**唯一驱动判定的是 `SUPER_ONLY_ACTIONS`**，其余按读权限放行）：
+ *   ① **仅超管**（`SUPER_ONLY_ACTIONS`）：价目表增删改、费率配置、建账单、撤回已付、
+ *      **确认收款**、作废账单 —— 都是定价权或收款权（裁决 7 / 12）。
+ *   ② **超管或店长**：所有读动作 + `bill.markPaid`（付款方是门店，由店长操作）。
+ *      `bill.markPaid` 另在 handler 内按门店范围**二次判定且失败即拒**（见 actorCanAccessStore）。
+ *   ③ 客户端无 openid 的 ERP 通道：经 `/api/cloud-fn` 代理注入 adminOpsKey → 判为 super_admin。
+ */
+const SUPER_ONLY_ACTIONS = {
+  'config.save': 1,
+  'priceBook.create': 1,
+  'priceBook.update': 1,
+  'priceBook.remove': 1,
+  'bill.create': 1,
+  'bill.withdrawPaid': 1,
+  'bill.confirmSettle': 1,
+  'bill.void': 1
 }
 
 exports.main = async (event) => {
@@ -439,8 +753,10 @@ exports.main = async (event) => {
   const openid = wxContext.OPENID || ''
   const action = String((event && event.action) || '').trim()
   try {
-    const isWrite = Object.prototype.hasOwnProperty.call(WRITE_ACTIONS, action)
-    const auth = isWrite ? await requireWriter(event, openid) : await requireReader(event, openid)
+    const isSuperAction = Object.prototype.hasOwnProperty.call(SUPER_ONLY_ACTIONS, action)
+    const auth = isSuperAction
+      ? await requireWriter(event, openid)
+      : await requireReader(event, openid)
     if (!auth.ok) return auth.res
 
     switch (action) {
@@ -464,6 +780,25 @@ exports.main = async (event) => {
         return await handleValidate()
       case 'searchPriceBook':
         return await handleSearchPriceBook(event)
+
+      case 'bill.meta':
+        return await handleBillMeta()
+      case 'bill.preview':
+        return await handleBillPreview(event)
+      case 'bill.create':
+        return await handleBillCreate(event, auth.actor)
+      case 'bill.list':
+        return await handleBillList(event)
+      case 'bill.get':
+        return await handleBillGet(event)
+      case 'bill.markPaid':
+        return await handleBillMarkPaid(event, auth.actor)
+      case 'bill.withdrawPaid':
+        return await handleBillWithdrawPaid(event, auth.actor)
+      case 'bill.confirmSettle':
+        return await handleBillConfirmSettle(event, auth.actor)
+      case 'bill.void':
+        return await handleBillVoid(event, auth.actor)
       default:
         return fail('未知 action', 'BAD_ACTION')
     }
