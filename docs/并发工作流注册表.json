@@ -524,15 +524,15 @@
       ]
     },
     {
-      "id": "gift-label",
-      "name": "礼笺贴纸版式（热敏不干胶 90×110mm）",
+      "id": "gift-print",
+      "name": "礼笺印刷版式（A6 + 热敏贴纸 90×110mm）",
       "owner": "lead",
       "phase": 1,
       "owns": [
         "miniprogram/subpackages/feature/gift/compose/**",
         "miniprogram/utils/giftShareCard.js"
       ],
-      "note": "2026-09-19 经产品负责人授权新建（选项「新建」）。目标：为 90×110mm 热敏不干胶贴纸新增一个礼笺导出**变体**，与既有 A6（105×148mm，守卫已钉住）**并存**，不替换。实物测量稍后进行，先实现。 （实测 A6 规格在 miniprogram/utils/giftShareCard.js，故一并认领。）"
+      "note": "2026-09-19 经产品负责人决定「把贴纸版式并入 gift-print」而改名（原 id=gift-label）。**改名理由（重要治理发现）**：仓库里已有提交以 style(gift-print)/feat(gift-print) 署名在改 miniprogram/utils/giftShareCard.js（65a87cd 码缩小右移+手写体放大、9de5e87 去「山海」印章、044865e 码改透明PNG+正文不截断），但注册表里**没有 gift-print 这条流** ⇒ 那是一个**未注册的动作者**。故本次把注册表补齐到现实：登记 gift-print 这个名字并承接其改动的文件认领。owns 含 compose/** 与 utils/giftShareCard.js（后者原属无人认领页面基线，覆盖棘轮规定不可撤回，故只能承接不能撤销）。任务范围：A6 既有版式 + 新增热敏不干胶贴纸（90×110mm）版式；测量与推导见 admin/docs/礼笺贴纸版式_技术蓝图.md §2/§3（可打印区影像预估 ≈75×69mm；A6 宽高比 1:1.41 vs 可打印区 1:0.92 ⇒ 无论怎么缩都放不进，需重排版式而非缩小）。"
     }
   ],
   "frozen": [
@@ -597,6 +597,7 @@
     "subpackages/extra/purchase-ops/index",
     "subpackages/extra/shareholder-config/index",
     "subpackages/extra/shareholder/index",
+    "subpackages/extra/shipment-edit/index",
     "subpackages/extra/shipment-ops/index",
     "subpackages/extra/staff-permissions/index",
     "subpackages/extra/staff/attendance/index",
@@ -663,6 +664,7 @@
     "subpackages/manager/payslip/index",
     "subpackages/manager/raw-inventory-ops/index",
     "subpackages/manager/staff-directory/index",
+    "subpackages/manager/studio-bills/index",
     "subpackages/manager/support-config/index"
   ]
 }
