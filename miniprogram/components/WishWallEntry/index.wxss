@@ -144,3 +144,40 @@
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+
+/* ── 深色皮肤（2026-09-20）：首页等**博物黑**页面用 ────────────────────────────
+   与首页卡片同一套令牌（--color-bg-card / --color-text-primary / --brass-300），
+   所以它和「为你推荐」的卡片是同一族；浅纸版仍是**默认**（详情页的牌匾语言不动）。
+   ⚠️ 灯那条必须写成与浅纸版**同长度**的选择器（.wish-wall-entry .wish-wall-entry-row .wish-wall-entry-lamp）：
+   浅纸版为了在 #FAF6ED 上看得见把灯加深成 #A8903C，深色底上该用标准铜金 —— 两者特异性相同，
+   只靠"谁在后面"决胜，故这里必须同长度 + 落在文件末尾。 */
+.wish-wall-entry.is-dark {
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  box-shadow: none;
+}
+/* 纸纤维只属于浅纸：深色底上用 multiply 会糊成一团 */
+.wish-wall-entry.is-dark::before { display: none; }
+
+.wish-wall-entry.is-dark .wish-wall-entry-brand { color: var(--brass-300, #D4BC85); }
+
+.wish-wall-entry.is-dark .wish-wall-entry-title { color: var(--color-text-primary, #FFFFFF); }
+
+.wish-wall-entry.is-dark .wish-wall-entry-desc { color: var(--color-text-secondary, #A09A90); }
+
+.wish-wall-entry.is-dark .wish-wall-entry-row .wish-wall-entry-lamp {
+  border-color: rgba(196, 167, 108, 0.55);
+  background: var(--brass-300, #D4BC85);
+}
+
+.wish-wall-entry.is-dark .wish-wall-entry-chevron {
+  border-right-color: var(--brass-300, #D4BC85);
+  border-bottom-color: var(--brass-300, #D4BC85);
+}
+
+/* 分隔线与跑马灯文案：深色底上原来的深棕（rgba(107,90,36,.18)）等于看不见 → 改铜金调 */
+.wish-wall-entry.is-dark .wish-wall-entry-mq {
+  border-top-color: rgba(196, 167, 108, 0.22);
+}
+
+.wish-wall-entry.is-dark .wish-wall-entry-mq-item { color: var(--color-text-secondary, #A09A90); }

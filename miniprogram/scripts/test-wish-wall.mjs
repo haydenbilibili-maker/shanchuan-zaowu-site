@@ -2079,6 +2079,7 @@ check('详情页不再自持入口实现', !/goWishWall\b/.test(detWxml))
      ④ 跑马灯至少 2 条才开（1 条在无缝循环里会露空档）、时长按内容长度算。 */
 const homeWxml = readSrc('miniprogram/pages/index/index.wxml')
 const homeJs = readSrc('miniprogram/pages/index/index.js')
+const entryWxss = readSrc('miniprogram/components/WishWallEntry/index.wxss')
 {
   const bannerAt = homeWxml.indexOf('hero-swiper')
   const entryAt = homeWxml.indexOf('<wish-wall-entry')
@@ -2093,6 +2094,17 @@ const homeJs = readSrc('miniprogram/pages/index/index.js')
     /wishWallWishes: wishes/.test(homeJs) && /wishWallWishes: \[\]/.test(homeJs))
   check('★ 跑马灯 ≥2 条才开（1 条会露空档）+ 时长按内容长度算（长文案跑得久）',
     /const MQ_MIN = 2/.test(entrySrc) && /mqItems/.test(entryWxml) && /mqDurationMs/.test(entryWxml))
+  // 2026-09-20 产品负责人：「入口样式与主页视觉更符合」——
+  // 首页是博物黑页面，浅纸卡会成**全页唯一亮块**（真机截图确认）。组件 json 没有 styleIsolation
+  // → 页面样式进不去组件内部，**只能**由宿主选皮肤（tone），所以这条判据钉"首页确实选了深色"。
+  check('★ 首页入口用深色皮肤（tone=dark，与首页卡片同一套令牌）',
+    /tone="dark"/.test(homeWxml) &&
+    /\.wish-wall-entry\.is-dark\s*\{[^}]*var\(--color-bg-card/.test(entryWxss) &&
+    /\.wish-wall-entry\.is-dark\s+\.wish-wall-entry-title\s*\{[^}]*var\(--color-text-primary/.test(entryWxss),
+    '浅纸版在博物黑页面上是唯一亮块')
+  check('★ 深色皮肤仍从属于「组件内变体」而非宿主覆盖（styleIsolation 是默认的 isolated）',
+    !/styleIsolation/.test(readSrc('miniprogram/components/WishWallEntry/index.json')),
+    '若哪天给组件开了 apply-shared，这条与上面的 tone 判据要一起复核')
 }
 
 // —— C 端页面的仪式/彩蛋接线 ——
