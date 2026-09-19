@@ -276,6 +276,8 @@ function emptyLine(status, note, extra) {
       totalCents: null,
       unitPrice: null,
       totalPrice: null,
+      laborRatePct: null,
+      laborRateSource: '',
       qty: 0,
       itemName: ''
     },
@@ -296,7 +298,20 @@ function resolveLine(line, ctx) {
   const materialIndex = (ctx && ctx.materialIndex) || { groups: {}, keys: [] }
   const packagingIndex = (ctx && ctx.packagingIndex) || { groups: {}, keys: [] }
   const requirePackaging = !(ctx && ctx.requirePackaging === false)
-  const laborRatePct = normalizeRate(ctx && ctx.laborRatePct)
+
+  /**
+   * 手工费率的取值优先级（蓝图裁决 8 + v1.2 追加）：
+   *   ① 行级 `line.laborRatePct`（**显式传了就用它，包括显式传 0**）
+   *   ② 单据级 `ctx.laborRatePct`（页面上的「本单手工费率」，默认带出全局配置值）
+   *
+   * ⚠️ 这里**不能用真值判断**（`src.laborRatePct ? … : …`）：
+   *    `0` 是合法费率（这一行不收手工费），用真值判断会把它当成「没传」而回落到单据级，
+   *    于是「免手工费的行」被静默加价。守卫 `test:studio-pricing` 的 G5 钉住这一点。
+   */
+  const hasLineRate =
+    src.laborRatePct !== undefined && src.laborRatePct !== null && src.laborRatePct !== ''
+  const laborRatePct = normalizeRate(hasLineRate ? src.laborRatePct : ctx && ctx.laborRatePct)
+  const laborRateSource = hasLineRate ? 'line' : 'shipment'
 
   if (!itemName) return emptyLine(PRICING_STATUS.UNMATCHED, '品名为空', { qty: 0 })
   if (!isPositiveInt(qty)) {
@@ -432,7 +447,10 @@ function resolveLine(line, ctx) {
     laborCostCents: amounts.laborCostCents,
     totalCents: amounts.totalCents,
     unitPrice: amounts.unitPrice,
-    totalPrice: amounts.totalPrice
+    totalPrice: amounts.totalPrice,
+    // 本行**实际生效**的费率与来源 —— 落库留痕用，账单对账时要能说清这一行按几个点算的
+    laborRatePct,
+    laborRateSource
   }
 }
 
@@ -496,6 +514,7 @@ function quoteLines(lines, ctx) {
   let pricedQty = 0
   let pricedCount = 0
   let issueCount = 0
+  let laborRateOverrideLines = 0
 
   for (const line of list) {
     const r = resolveLine(line, ctx)
@@ -503,6 +522,7 @@ function quoteLines(lines, ctx) {
     totalQty += isPositiveInt(r.qty) ? r.qty : 0
     if (r.pricingStatus === PRICING_STATUS.PRICED) {
       pricedCount += 1
+      if (r.laborRateSource === 'line') laborRateOverrideLines += 1
       pricedQty += r.qty
       materialCents += r.materialCostCents * r.qty
       packagingCents += r.packagingCostCents * r.qty
@@ -523,6 +543,9 @@ function quoteLines(lines, ctx) {
     totalCents,
     // 元（落库/展示，与既有字段同单位）
     totalAmount: toYuan(totalCents),
+    // 本单生效的费率与「有几行单独覆盖过」—— 账单页要能一眼看出这单的手工费不是一个统一比例
+    laborRatePct: normalizeRate(ctx && ctx.laborRatePct),
+    laborRateOverrideLines,
     lineCount: out.length,
     pricedCount,
     issueCount,

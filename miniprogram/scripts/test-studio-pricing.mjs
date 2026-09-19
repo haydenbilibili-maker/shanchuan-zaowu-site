@@ -355,6 +355,44 @@ function runTests(E) {
   eq('E17 同一材料配不同包装各自成价（爱神凤蝶 框）', quoted.lines[8].packagingName, '框')
   eq('E18 同一材料配不同包装各自成价（爱神凤蝶 造景）', quoted.lines[9].packagingName, '造景')
 
+  // ── G. 行级手工费率覆盖（蓝图 v1.2 追加：单据级默认 + 行级可覆盖，默认不启用） ──
+  const rateCtx = E.buildContext({ materials: MATERIALS, packagings: PACKAGINGS, laborRatePct: 30 })
+  const lineNoRate = one('爱神凤蝶玻璃罩', rateCtx)
+  eq('G1 不传行级费率时用单据级', lineNoRate.laborRatePct, 30)
+  eq('G2 来源标记为 shipment', lineNoRate.laborRateSource, 'shipment')
+
+  const lineWithRate = E.resolveLine({ itemName: '爱神凤蝶玻璃罩', qty: 1, laborRatePct: 50 }, rateCtx)
+  eq('G3 行级费率覆盖单据级', lineWithRate.laborRatePct, 50)
+  eq('G4 来源标记为 line', lineWithRate.laborRateSource, 'line')
+  ok('G5 行级费率更高时手工费更高', lineWithRate.laborCostCents > lineNoRate.laborCostCents)
+  ok(
+    'G6 行级覆盖后 单价×数量 仍精确等于总价',
+    Math.round(lineWithRate.unitPrice * 100) * 1 === lineWithRate.totalCents
+  )
+
+  // ⚠️ 关键陷阱：0 是**合法费率**（这一行不收手工费），不能被当成「没传」而回落到单据级。
+  //    用真值判断（`src.laborRatePct ? …`）就会踩这个坑，把「免手工费的行」静默加价。
+  const zeroRate = E.resolveLine({ itemName: '爱神凤蝶玻璃罩', qty: 1, laborRatePct: 0 }, rateCtx)
+  eq('G7 行级费率显式传 0 时用 0（不得回落单据级）', zeroRate.laborRatePct, 0)
+  eq('G8 显式 0 时来源仍是 line', zeroRate.laborRateSource, 'line')
+  eq('G9 显式 0 时没有手工费', zeroRate.laborCostCents, 0)
+  ok('G10 显式 0 比单据级 30% 便宜（证明没被静默加价）', zeroRate.totalCents < lineNoRate.totalCents)
+
+  const mixedQuote = E.quoteLines(
+    [
+      { itemName: '爱神凤蝶玻璃罩', qty: 1 },
+      { itemName: '天堂凤蝶造景', qty: 1, laborRatePct: 0 }
+    ],
+    rateCtx
+  )
+  eq('G11 整批统计能报出有几行单独覆盖过', mixedQuote.laborRateOverrideLines, 1)
+  eq('G12 整批仍报出单据级费率', mixedQuote.laborRatePct, 30)
+  ok(
+    'G13 行级覆盖后整批金额仍自洽（材料+包装+手工=合计）',
+    mixedQuote.materialCostCents + mixedQuote.packagingCostCents + mixedQuote.laborCostCents ===
+      mixedQuote.totalCents
+  )
+
   // ── F. 快照隔离：价目表改价后，用旧价快照算过的行不受影响 ──
   // 引擎本身不落库，这里证明「同一批输入 + 改价目表 → 结果变」，从而说明快照必须存在单据上。
   const before = E.quoteLines([{ itemName: '爱神凤蝶玻璃罩', qty: 1 }], baseCtx())
@@ -389,7 +427,15 @@ const INJECTIONS = [
   ['停用行仍参与匹配', (src) => src.replace("if (row.status && row.status !== 'active') continue", 'if (false) continue')],
   ['材料费不再按分四舍五入（floor）', (src) => src.replace('return Math.round(n * CENTS)', 'return Math.floor(n * CENTS)')],
   ['单价与总价脱钩（总价按整行另算）', (src) => src.replace('totalPrice: toYuan(perUnitTotal * unitQty)', 'totalPrice: toYuan(perUnitTotal * unitQty) + 0.01')],
-  ['总件数只统计已核价行（单据件数变少）', (src) => src.replace('totalQty += isPositiveInt(r.qty) ? r.qty : 0', 'totalQty += r.pricingStatus === PRICING_STATUS.PRICED && isPositiveInt(r.qty) ? r.qty : 0')]
+  ['总件数只统计已核价行（单据件数变少）', (src) => src.replace('totalQty += isPositiveInt(r.qty) ? r.qty : 0', 'totalQty += r.pricingStatus === PRICING_STATUS.PRICED && isPositiveInt(r.qty) ? r.qty : 0')],
+  [
+    '行级费率用真值判断（显式传 0 被当成「没传」→ 免手工费的行被静默加价）',
+    (src) => src.replace(
+      "src.laborRatePct !== undefined && src.laborRatePct !== null && src.laborRatePct !== ''",
+      '!!src.laborRatePct'
+    )
+  ],
+  ['行级费率被完全忽略（永远用单据级）', (src) => src.replace('const laborRateSource = hasLineRate ? \'line\' : \'shipment\'', "const laborRateSource = 'shipment'")]
 ]
 
 function loadEngine(enginePath) {
