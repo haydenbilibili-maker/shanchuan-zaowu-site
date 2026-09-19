@@ -320,6 +320,61 @@ function isActivePurchaseOf (row) {
   return String(row.status || '') !== 'cancelled'
 }
 
+/**
+ * **预算池配置**（飞书表 `tbl37YaUl1XQSYjM`）→ `configs/studio_budget_pools`。
+ *
+ * 为什么单独一条路（不进 `TARGETS`）：`TARGETS` 都是「写集合」的 upsertFromFeishu，
+ * 而预算池是一个**配置文档**。
+ *
+ * 为什么要同步它：产品负责人 2026-09-19 定「**剩余总预算以飞书为准**」——
+ * 小程序原先**自己重算** `剩余 = 年度 − 已使用`，与飞书口径不同
+ * （飞书还扣了已一次性缴纳的房租 54,200 与宽带已付 948），于是永远差 ¥55,148。
+ * 现在把飞书**算好的** `已使用金额`/`剩余金额` 一并取回，仪表盘直接采用 ⇒ 同源同数。
+ */
+const BUDGET_POOL_TABLE = 'tbl37YaUl1XQSYjM'
+
+const BUDGET_POOL_FIELDS = {
+  name: '池名称',
+  category: '池分类',
+  annualAmount: '年度预算金额',
+  monthlyAmount: '月度预算金额',
+  usedAmount: '已使用金额',
+  remainingAmount: '剩余金额',
+  usagePct: '使用率',
+  warnThreshold: '预警阈值',
+  purchaseTotal: '采购汇总',
+  revenueTotal: '营收汇总',
+  note: '备注'
+}
+
+/** 金额/阈值一律转成数字（`mapRecord` 只对固定的数量/单价键做数字转换，配置类字段会留成文本） */
+function numOf (v) {
+  if (v === null || v === undefined || v === '') return 0
+  const n = Number(String(v).replace(/[¥￥,\s%]/g, ''))
+  return Number.isFinite(n) ? n : 0
+}
+
+function toBudgetPools (records) {
+  return (records || [])
+    .map((rec) => {
+      const m = mapRecord(rec, BUDGET_POOL_FIELDS)
+      if (!m.category && !m.name) return null
+      return {
+        name: m.name || m.category,
+        category: m.category || m.name,
+        annualAmount: numOf(m.annualAmount),
+        monthlyAmount: numOf(m.monthlyAmount),
+        // 飞书**自己算好的**数（仪表盘以它为准）
+        feishuUsedAmount: numOf(m.usedAmount),
+        feishuRemainingAmount: numOf(m.remainingAmount),
+        feishuUsagePct: numOf(m.usagePct),
+        warnThreshold: numOf(m.warnThreshold),
+        note: m.note || ''
+      }
+    })
+    .filter(Boolean)
+}
+
 const TARGETS = {
   rawInventory: {
     label: '原材料库存',
@@ -352,6 +407,9 @@ module.exports = {
   assessMapping,
   resolveFieldMap,
   resolveTableId,
+  BUDGET_POOL_TABLE,
+  BUDGET_POOL_FIELDS,
+  toBudgetPools,
   purchaseAmountOf,
   isActivePurchaseOf,
   toRawInventoryItems,

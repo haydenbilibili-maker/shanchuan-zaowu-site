@@ -348,6 +348,52 @@ exports.main = async (event, context) => {
         return ok(summary)
       }
 
+      case 'budgetPools': {
+        /**
+         * 同步飞书「预算池配置」→ `configs/studio_budget_pools`。
+         * 产品负责人 2026-09-19：「剩余总预算**以飞书为准**」——
+         * 小程序不再自己重算（原先 剩余=年度−已使用，比飞书少扣房租 54,200 与宽带已付 948）。
+         * 这里把飞书**算好的** 已使用/剩余 一起写回来，仪表盘直接采用。
+         */
+        const put = e.write !== false
+        let records = []
+        try {
+          records = await feishu.listAllRecords(M.BUDGET_POOL_TABLE, process.env)
+        } catch (err) {
+          return fail(`读飞书预算池失败：${(err && err.message) || err}`, 'FEISHU_ERROR')
+        }
+        const pools = M.toBudgetPools(records)
+        if (!pools.length) return fail('飞书预算池表没有可用行', 'EMPTY')
+        const total = pools.find((p) => p.category === '总预算') || null
+        const summary = {
+          count: pools.length,
+          totalPoolAnnual: total ? total.annualAmount : null,
+          totalPoolUsed: total ? total.feishuUsedAmount : null,
+          totalPoolRemaining: total ? total.feishuRemainingAmount : null
+        }
+        if (!put) return ok({ dryRun: true, pools, summary, msg: `试算：读到 ${pools.length} 个预算池` })
+        await db.collection(CONFIGS).doc('studio_budget_pools').set({
+          data: {
+            pools: pools.map((p) => ({
+              name: p.name,
+              category: p.category,
+              annualAmount: p.annualAmount,
+              monthlyAmount: p.monthlyAmount,
+              warnThreshold: p.warnThreshold,
+              note: p.note,
+              // 飞书算好的数：仪表盘以它为准
+              feishuUsedAmount: p.feishuUsedAmount,
+              feishuRemainingAmount: p.feishuRemainingAmount,
+              feishuUsagePct: p.feishuUsagePct
+            })),
+            source: 'feishu',
+            syncedAt: Date.now(),
+            updatedAt: Date.now()
+          }
+        })
+        return ok({ pools, summary, msg: `已同步 ${pools.length} 个预算池（剩余总预算以飞书为准：${summary.totalPoolRemaining}）` })
+      }
+
       case 'reconcile': {
         /**
          * **对账**：同一口径同时算「飞书侧」与「本地侧」，并给出差异行。

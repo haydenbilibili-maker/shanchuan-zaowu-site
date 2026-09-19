@@ -560,8 +560,22 @@ exports.main = async (event) => {
         totalBudget - safetyReserve - rentBudget - broadbandBudget
     )
     const usedBudget = purchaseTotal
-    const remainingBudget = roundMoney(totalBudget - usedBudget)
-    const purchasableRemaining = roundMoney(purchasableBudget - usedBudget)
+    /**
+     * **剩余总预算以飞书为准**（产品负责人 2026-09-19）。
+     *
+     * 原先这里算的是 `总预算 − 已使用`，而飞书「预算池配置」的公式是
+     * `总预算 − 已使用 − 已一次性缴纳的房租 54,200 − 宽带已付 948` —— 两边永远差 ¥55,148。
+     * 现在只要预算池带回了飞书算好的 `feishuRemainingAmount`，就直接采用它（同源同数）；
+     * 没同步过时退回原公式，行为与之前一致（不制造新的缺口）。
+     */
+    const feishuTotalRemaining = totalPool && Number(totalPool.feishuRemainingAmount)
+    const remainingBudget = Number.isFinite(feishuTotalRemaining) && totalPool.feishuRemainingAmount !== undefined
+      ? roundMoney(feishuTotalRemaining)
+      : roundMoney(totalBudget - usedBudget)
+    const feishuPurchRemaining = purchasablePool && Number(purchasablePool.feishuRemainingAmount)
+    const purchasableRemaining = purchasablePool && purchasablePool.feishuRemainingAmount !== undefined && Number.isFinite(feishuPurchRemaining)
+      ? roundMoney(feishuPurchRemaining)
+      : roundMoney(purchasableBudget - usedBudget)
     const netProfit = roundMoney(revenueTotal - purchaseTotal)
     const usagePct = pctOrNull(usedBudget, totalBudget)
     const remainingPct = pctOrNull(Math.max(0, remainingBudget), totalBudget)
@@ -605,13 +619,16 @@ exports.main = async (event) => {
       else if (p.category === '标本原材料与耗材') used = specimenSpend
       else if (p.category === '总预算' || p.category === '采购控制') used = purchaseTotal
       const annual = roundMoney(p.annualAmount || 0)
+      // 飞书带回的数优先（以飞书为准）；没带回才用本地重算
+      const hasFeishu = p.feishuUsedAmount !== undefined && p.feishuRemainingAmount !== undefined
       return {
         name: p.name,
         category: p.category,
         annualAmount: annual,
-        usedAmount: roundMoney(used),
-        remainingAmount: roundMoney(annual - used),
-        note: p.note || ''
+        usedAmount: hasFeishu ? roundMoney(p.feishuUsedAmount) : roundMoney(used),
+        remainingAmount: hasFeishu ? roundMoney(p.feishuRemainingAmount) : roundMoney(annual - used),
+        note: p.note || '',
+        source: hasFeishu ? 'feishu' : 'computed'
       }
     })
 
