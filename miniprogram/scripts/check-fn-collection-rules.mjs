@@ -21,7 +21,7 @@
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const MP = resolve(HERE, '..')
@@ -142,7 +142,20 @@ function selftest() {
   console.log('\n自检通过：常量集合会被解析、动态名与注释不误报、缺规则会被列出')
 }
 
-if (process.argv.includes('--selftest')) {
+/**
+ * 只在**被直接执行**时跑主流程。
+ *
+ * 为什么需要：`check-collection-docs.mjs` 复用了本文件的 `resolveCollections()`
+ * （集合名解析要一份实现，两份必然漂移），而原先这里是**无条件执行**的 ——
+ * import 一下就会顺手跑一遍本检查、把输出混进别人的结果里。
+ * 直接跑（`npm run check:fn-collection-rules`）行为完全不变。
+ */
+const isDirectRun =
+  !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
+
+if (!isDirectRun) {
+  // 被 import：只提供解析函数，不执行检查
+} else if (process.argv.includes('--selftest')) {
   selftest()
 } else {
   const { resolved, literals, constants, dynamic, problems } = scanRepo()

@@ -7,7 +7,7 @@
     "npm run check:guards:list": "打印清单与域归属"
   },
   "_minGuardsNote": "2026-09-19：87 → 86。**这不是删守卫、不是放宽断言**：`verify:site-dist` 的输入是构建产物，把它放进先于构建的 check:admin 是范畴错误（链内必然没有 dist，只能假绿 exit 0）。它已在本就存在的 `npm run build` 链尾真跑（build = build:admin && astro build && verify-admin-dist && verify-site-dist）。同类的 `verify-admin-dist` 从来只在 build 链、从不进 check:admin —— 本次是把唯一的例外拉回既有一致形态。同日 86 → 88：order 域新增 check:order-status-enum / check:order-transition-guard。",
-  "minGuards": 99,
+  "minGuards": 100,
   "crossWith": [
     "visual",
     "wish-wall",

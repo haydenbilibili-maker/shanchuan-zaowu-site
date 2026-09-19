@@ -60,3 +60,4 @@ npm run check:docs-index
 
 npm run check:product-save-fields
 npm run check:hook-registration
+npm run check:collection-docs
