@@ -100,10 +100,16 @@
           <view class="mini-btn primary" wx:if="{{item.canShip}}" data-id="{{item.orderId}}" catchtap="goOrderManage">去发货</view>
           <view class="mini-btn primary" wx:if="{{bucket === 'pickup_verify'}}" catchtap="goVerify">去核销</view>
           <view class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
-          <!-- 印刷用：导出 A6@300dpi 礼笺卡（含题记带） -->
-          <view class="mini-btn" data-id="{{item.orderId}}" catchtap="onExportGiftCard">导出礼笺图</view>
+          <!-- 印刷用：导出 A6@300dpi 礼笺卡（含题记带）→ **先生成到预览**，看过再决定存/传 -->
+          <view class="mini-btn {{exporting ? 'is-off' : ''}}" data-id="{{item.orderId}}" catchtap="onExportGiftCard">
+            <text>导出礼笺图</text>
+            <text class="mini-btn-sub">A6 105×148mm · 自留/打印</text>
+          </view>
           <!-- 印刷用：导出热敏不干胶贴纸版（90×110mm 白区，近方形版式；复用同一画布与导出实现） -->
-          <view class="mini-btn" data-id="{{item.orderId}}" catchtap="onExportGiftSticker">导出贴纸图</view>
+          <view class="mini-btn {{exporting ? 'is-off' : ''}}" data-id="{{item.orderId}}" catchtap="onExportGiftSticker">
+            <text>导出贴纸图</text>
+            <text class="mini-btn-sub">贴纸 90×110mm 白区</text>
+          </view>
         </view>
       </view>
 
@@ -147,5 +153,60 @@
 </view>
 
 
-<!-- 印刷版礼笺卡离屏画布（A6 竖版 @300dpi，1240×1795 由 JS 设定像素缓冲） -->
+<!-- 印刷版礼笺卡离屏画布（A6/贴纸两种规格，像素缓冲由 JS 按 PRINT_SPECS 设定） -->
 <canvas type="2d" id="giftPrintCanvas" class="print-canvas"></canvas>
+
+<!-- 导出预览层：生成后**先看再动**（印刷类导出最大的风险是印错；原实现一点即存相册并上传） -->
+<view class="pp-mask" wx:if="{{printPreview}}" catchtouchmove="noop">
+  <view class="pp-panel">
+    <view class="pp-head">
+      <view class="pp-head-titles">
+        <text class="pp-overline">GIFT PRINT · 预览</text>
+        <text class="pp-title">{{printPreview.spec === 'sticker' ? '热敏贴纸版' : 'A6 礼笺版'}}</text>
+        <text class="pp-spec">{{printPreview.specLabel}}</text>
+        <text class="pp-note">{{printPreview.specNote}}</text>
+      </view>
+      <view class="pp-close" catchtap="closePrintPreview">✕</view>
+    </view>
+
+    <scroll-view scroll-y class="pp-body">
+      <image class="pp-img" src="{{printPreview.path}}" mode="widthFix" show-menu-by-longpress="{{true}}"></image>
+    </scroll-view>
+
+    <view class="pp-file">
+      <text class="pp-file-label">文件名（长按复制，云存储里按它找）</text>
+      <text class="pp-file-name" data-name="{{printPreview.fileName}}" bindlongpress="copyPrintFileName">{{printPreview.fileName}}</text>
+    </view>
+
+    <view class="pp-actions">
+      <view class="pp-act {{printPreview.saving ? 'is-busy' : ''}} {{printPreview.saved ? 'is-done' : ''}}"
+            catchtap="savePrintToAlbum">{{printPreview.saving ? '保存中…' : (printPreview.saved ? '已存相册 ✓' : '保存到相册')}}</view>
+      <view class="pp-act primary {{printPreview.uploading ? 'is-busy' : ''}} {{printPreview.uploaded ? 'is-done' : ''}}"
+            catchtap="uploadPrintFile">{{printPreview.uploading ? '上传中…' : (printPreview.uploaded ? '已上传 ✓' : '上传印刷文件')}}</view>
+    </view>
+    <text class="pp-hint" wx:if="{{printPreview.uploaded}}">失败可单独重试；相册里始终留有原图</text>
+    <text class="pp-hint" wx:elif="{{printPreview.saved}}">相册已存；上传用于让专员在云端取件打印</text>
+    <text class="pp-hint" wx:else>建议先核对受礼人姓名与正文，再保存/上传</text>
+  </view>
+</view>
+
+<!-- 最近导出（可追溯：规格 + 文件名，长按复制） -->
+<view class="rp-block" wx:if="{{recentPrints.length}}">
+  <text class="rp-title">最近导出</text>
+  <view class="rp-row" wx:for="{{recentPrints}}" wx:key="fileName" data-name="{{item.fileName}}" bindlongpress="copyPrintFileName">
+    <text class="rp-spec">{{item.spec === 'sticker' ? '贴纸' : 'A6'}}</text>
+    <text class="rp-name">{{item.fileName}}</text>
+  </view>
+</view>
+
+<!-- 页内轻提示（AppToast：非阻塞、与主视觉一致） -->
+<app-toast
+  show="{{toastShow}}"
+  overline="{{toastOverline}}"
+  title="{{toastTitle}}"
+  desc="{{toastDesc}}"
+  bind:close="onToastClose"
+/>
+
+<!-- 样式化弹窗宿主（相册权限被拒时给「去设置」出口，替代裸 wx.showModal） -->
+<app-modal id="appModal" />

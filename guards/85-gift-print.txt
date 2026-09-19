@@ -2,4 +2,6 @@
 # 只有该域的 owner 改它（见 docs/并发工作流注册表.json；gift-print = 礼笺印刷版式 A6 + 热敏贴纸）；
 # 跨流加守卫请提变更请求。
 # 校验：npm run check:guards-coverage
+# check:gift-sticker-layout = 版式（A6/贴纸几何与不截断）；check:gift-export-flow = 导出交互（先生成预览后动作/权限出口/AppToast/可追溯）
 npm run check:gift-sticker-layout
+npm run check:gift-export-flow

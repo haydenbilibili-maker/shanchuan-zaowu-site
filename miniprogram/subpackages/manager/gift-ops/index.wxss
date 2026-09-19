@@ -413,3 +413,219 @@ page {
   height: 290rpx;
   pointer-events: none;
 }
+
+/* ==================== 导出预览层（2026-09-19 交互升级） ==================== */
+/* 为什么加：印刷类导出的最大风险是"印错"（受礼人姓名/正文/规格），
+   而原实现点一下就直接存相册并上传——没有回看机会。现在生成后先进这里。 */
+
+.pp-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(10, 9, 8, 0.78);
+}
+
+.pp-panel {
+  width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  background: var(--color-bg-card);
+  border-top: 1rpx solid var(--brass-500);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.pp-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.pp-head-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-overline {
+  display: block;
+  font-size: 18rpx;
+  letter-spacing: 0.16em;
+  color: var(--brass-500);
+}
+
+.pp-title {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 30rpx;
+  font-family: var(--font-brand);
+  color: var(--color-text-primary);
+}
+
+.pp-spec {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--brass-300);
+}
+
+.pp-note {
+  display: block;
+  margin-top: 2rpx;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+}
+
+.pp-close {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: var(--color-text-secondary);
+  border: 1rpx solid var(--color-border);
+  border-radius: 50%;
+}
+
+.pp-body {
+  flex: 1;
+  min-height: 0;
+  margin: var(--space-3) 0;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.pp-img {
+  width: 100%;
+  display: block;
+}
+
+.pp-file {
+  padding: 12rpx 0;
+  border-top: 1rpx dashed var(--color-border);
+}
+
+.pp-file-label {
+  display: block;
+  font-size: 18rpx;
+  color: var(--color-text-muted);
+}
+
+.pp-file-name {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  font-family: var(--font-mono);
+  color: var(--brass-300);
+  word-break: break-all;
+}
+
+.pp-actions {
+  display: flex;
+  gap: 12rpx;
+  margin-top: var(--space-2);
+}
+
+.pp-act {
+  flex: 1;
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--brass-400);
+  border: 1rpx solid var(--brass-400);
+  border-radius: var(--radius-sm);
+}
+
+.pp-act.primary {
+  background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
+  color: var(--color-bg);
+  border-color: var(--brass-400);
+}
+
+/* 进行中 / 已完成：给可见的状态，而不是只靠一句 toast */
+.pp-act.is-busy {
+  opacity: 0.6;
+}
+
+.pp-act.is-done {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+  background: transparent;
+}
+
+.pp-hint {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  color: var(--color-text-muted);
+}
+
+/* ==================== 导出按钮：副标题 + 导出中禁用 ==================== */
+
+.mini-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rpx;
+}
+
+.mini-btn-sub {
+  font-size: 18rpx;
+  color: var(--color-text-muted);
+}
+
+.mini-btn.is-off {
+  opacity: 0.45;
+}
+
+/* ==================== 最近导出（可追溯） ==================== */
+
+.rp-block {
+  margin: 0 var(--space-4) var(--space-3);
+  padding: var(--space-3);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+}
+
+.rp-title {
+  display: block;
+  font-size: 20rpx;
+  letter-spacing: 0.08em;
+  color: var(--brass-500);
+}
+
+.rp-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 10rpx;
+}
+
+.rp-spec {
+  flex-shrink: 0;
+  padding: 2rpx 10rpx;
+  font-size: 18rpx;
+  color: var(--brass-400);
+  border: 1rpx solid var(--brass-500);
+  border-radius: 4rpx;
+}
+
+.rp-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 20rpx;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

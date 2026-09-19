@@ -131,15 +131,22 @@ check('★★ 有正文却一行都没画时必须告警（真图事故形态，
   /bodyDrawn < bodyLines\.length\) \{/.test(stickerFn) && /必须修 STICKER 表/.test(stickerFn))
 check('★★ 题记带下沿必须留间隔再起正文（否则 y 与正文带顶同值会把首行判掉）',
   /Math\.max\(y \+ Math\.round\(2 \* MM\), STICKER\.bodyTop\)/.test(stickerFn))
-check('★★ 署名下划线**限宽**（sigMaxW）+ 另受**印章左缘**约束（双保险，防历史真图 bug 重演）',
-  /STICKER\.sigMaxW, stampLeft - axisX - STICKER\.pad/.test(stickerFn),
-  '只留一个约束时，任一参数被改就会越到印章/两枚码上')
+// 2026-09-19 产品要求「署名与两枚码都靠右下」→ 署名由**左对齐改右对齐**，
+// 判据随之从「不越印章左缘」（左对齐时代）改为 **右对齐到内容右缘 + 仍限宽**；
+// 「不压预印印章」由下面的**真渲染 y 判据**保证（署名带整条必须在印章上缘之上）。
+check('★★ 署名**右对齐到内容右缘**且仍**限宽**（超宽等比缩字、到底线才截断；下划线另有独立限宽）',
+  /ctx\.textAlign = 'right'[\s\S]{0,600}?ctx\.fillText\(sigText, axisRight, sigBaseY\)/.test(stickerFn)
+  && /STICKER\.sigMinSize/.test(stickerFn)
+  // 下划线的**独立限宽**必须保留：即便文字被缩到 sigMaxW 内，也不许下划线另开一条越界路径
+  && /const underlineW = Math\.min\(Math\.max\(sw, Math\.round\(9 \* MM\)\), sigMaxW\)/.test(stickerFn),
+  '署名必须右对齐到 axisRight，并把 sigMaxW/sigMinSize 缩字链路 + 下划线独立限宽都保留')
 check('★★ 署名超宽时**等比缩字**，到底线才截断（不许直接压到印章区）',
   /sigFont = Math\.max\(STICKER\.sigMinSize/.test(stickerFn)
   && /truncate\(sigText, sigText\.length - 1\)/.test(stickerFn))
-check('★ 署名带与页脚带**同在左半区**（近方形下唯一能同时避开右下印章的排法）',
+check('★ **右下重心**（2026-09-19 产品要求）：两枚码整体**右对齐到印章左缘内缩**，不再从左往右铺',
   /const stampLeft = stampRight - STICKER\.stampSize/.test(stickerFn)
-  && /const sigBaseY = STICKER\.footerTop - STICKER\.sigOffset/.test(stickerFn))
+  && /const qrRight = Math\.min\(stampLeft - Math\.round\(2 \* MM\)/.test(stickerFn)
+  && /let cx = Math\.max\(axisX, qrRight - qrTotalW\)/.test(stickerFn))
 check('★ **不印自带边框**（贴纸已有装饰边框，再印一条是双框 —— 蓝图 §5）',
   !/strokeRect/.test(stickerFn),
   'sticker 分支里出现 strokeRect = 多印了一条边框')
@@ -334,7 +341,9 @@ for (const c of RENDER_CASES) {
   // ④.1 右下**印章区**（x≥stampLeft 且 y≥stampTop）零落墨 —— 近方形下最致命的越界
   for (const t of texts) {
     const w = t.t.length * t.size
-    const x0 = t.align === 'center' ? t.x - w / 2 : t.x
+    // ⚠️ 必须按 textAlign 折算范围（2026-09-19）：mock 只处理了 center，
+    // 右对齐文本会被当成 x→x+w → 合法排版被误判「越界/进印章区」（校验台保真度缺陷，非产品缺陷）。
+    const x0 = t.align === 'center' ? t.x - w / 2 : (t.align === 'right' ? t.x - w : t.x)
     if (x0 + w > stampLeft && t.y + t.size * 0.3 > stampTop) {
       stampViolations += 1
       check(`「${c.name}」印章区零落墨（文字）`, false, `"${t.t.slice(0, 14)}" 右缘 ${(x0 + w).toFixed(0)} > ${stampLeft}`)
@@ -349,7 +358,9 @@ for (const c of RENDER_CASES) {
   // ④.2 落墨不出纸
   for (const t of texts) {
     const w = t.t.length * t.size
-    const x0 = t.align === 'center' ? t.x - w / 2 : t.x
+    // ⚠️ 必须按 textAlign 折算范围（2026-09-19）：mock 只处理了 center，
+    // 右对齐文本会被当成 x→x+w → 合法排版被误判「越界/进印章区」（校验台保真度缺陷，非产品缺陷）。
+    const x0 = t.align === 'center' ? t.x - w / 2 : (t.align === 'right' ? t.x - w : t.x)
     if (x0 < 0 || x0 + w > SPEC_W + 2 || t.y - t.size < -2 || t.y > SPEC_H + 2) {
       overflow += 1
       check(`「${c.name}」落墨不出纸`, false, `"${t.t.slice(0, 14)}" x0=${x0.toFixed(0)} x1=${(x0 + w).toFixed(0)} y=${t.y.toFixed(0)}`)
@@ -389,11 +400,19 @@ for (const c of RENDER_CASES) {
     && ops[i + 1] && ops[i + 1].op === 'line')
   if (mv) {
     const line = ops[ops.indexOf(mv) + 1]
-    check(`「${c.name}」署名下划线不越过印章左缘`, !!line && line.op === 'line' && line.x <= stampLeft, `线右端 ${line && line.x && line.x.toFixed(0)} vs 印章左缘 ${stampLeft}`)
-    // 下划线若与码在同一 y 带，则不得横向越过码的右缘
-    for (const im of images) {
-      const sameBand = mv.y >= im.y - 4 && mv.y <= im.y + im.h + 24
-      if (sameBand) check(`「${c.name}」下划线不横向越过码`, !!line && line.x <= im.x, `线右端 ${line && line.x} vs 码 x=${im.x.toFixed(0)}`)
+    // 2026-09-19：署名改右对齐后，判据改为两条**更强**的不变量 ——
+    //   ① 下划线右端 = 内容右缘（右对齐生效）且不出纸；
+    //   ② **整条下划线高于印章上缘**（这才是"不压预印印章"的真正保证）。
+    check(`「${c.name}」署名下划线右对齐内容右缘且不出纸`,
+      !!line && line.op === 'line' && line.x > 0 && line.x <= SPEC_W + 2,
+      `线右端 ${line && line.x && line.x.toFixed(0)} / 纸宽 ${SPEC_W}`)
+    check(`「${c.name}」署名下划线在**印章上缘之上**（不压预印印章）`,
+      !!line && line.y < stampTop,
+      `线 y=${line && line.y && line.y.toFixed(0)} vs 印章上缘 ${stampTop}`)
+    // 署名/日期文字同样必须在印章上缘之上
+    for (const t of texts) {
+      if (t.align !== 'right') continue
+      check(`「${c.name}」右对齐文字（署名/日期）在印章上缘之上`, t.y < stampTop, `y=${t.y.toFixed(0)} vs ${stampTop}`)
     }
   }
 }
@@ -438,18 +457,31 @@ check('★ 真渲染：全部用例**正文不溢进页脚带**', footerIntrusio
 /* ── ⑤ UI 接线（并列入口 + 共用同一实现）───────────────────────────────────── */
 check('★ 履约页有**并列**的「导出贴纸图」入口', /导出贴纸图/.test(opsWxml) && /onExportGiftSticker/.test(opsWxml))
 check('★ 仍是 A6 与贴纸**两个**入口（贴纸不得替换 A6）', /导出礼笺图/.test(opsWxml) && /onExportGiftCard/.test(opsWxml))
+/**
+ * ⚠️ 判据在 2026-09-19 交互升级后**收紧而非放宽**：
+ *   原判据数「API 出现次数 == 1」，但升级后"相册被拒 → 去设置 → 授权后自动重试一次"是**合法**的
+ *   第二次调用（仍在同一个方法内）——按次数判会把合法重试判成复制粘贴（假失败）。
+ *   现改为**按方法归属**判：每个 API 只允许出现在**一个方法**里（复制到第二个方法仍会被抓），
+ *   且两个入口仍共用 `_exportGiftPrint`。
+ */
+const opsMethods = String(opsJs).split(/\n  (?:async )?[A-Za-z_$][\w$]*\s*\(/).slice(1)
+const methodsWith = (re) => opsMethods.filter((m) => re.test(m)).length
 check('★★ 两个入口**共用同一条导出实现**（不得复制第二份落盘/上传逻辑）',
   /onExportGiftCard\(e\) \{\s*\n\s*return this\._exportGiftPrint\(e, 'a6'\)/.test(opsJs)
   && /onExportGiftSticker\(e\) \{\s*\n\s*return this\._exportGiftPrint\(e, 'sticker'\)/.test(opsJs)
-  && (opsJs.match(/wx\.saveImageToPhotosAlbum/g) || []).length === 1
-  && (opsJs.match(/wx\.cloud\.uploadFile/g) || []).length === 1,
-  '出现两份 saveImageToPhotosAlbum/uploadFile = 复制粘贴，必然漂移')
+  && methodsWith(/wx\.saveImageToPhotosAlbum/) === 1
+  && methodsWith(/wx\.cloud\.uploadFile/) === 1,
+  `saveImageToPhotosAlbum 出现在 ${methodsWith(/wx\.saveImageToPhotosAlbum/)} 个方法 / uploadFile ${methodsWith(/wx\.cloud\.uploadFile/)} 个方法（各应恰好 1 个）`)
 check('★ 贴纸导出传 spec（否则仍是 A6 版式）',
   /spec: isSticker \? 'sticker' : 'a6'/.test(opsJs))
 check('★ 贴纸与 A6 **复用同一条 canvas**（不新增第二个离屏画布）',
   (opsWxml.match(/id="giftPrintCanvas"/g) || []).length === 1
   && (opsJs.match(/renderGiftPrintImage\('#giftPrintCanvas'/g) || []).length === 1)
-check('★ 上传路径可按规格区分（便于印刷厂取件）', /gift-print\/\$\{orderId\}-\$\{isSticker \? 'sticker' : 'a6'\}/.test(opsJs))
+// 同样的收紧：文件名可追溯 = orderId + 规格 + 时间戳，且云路径 = gift-print/<该文件名>。
+// （原来只认"内联一行模板"，交互升级把拼装抽成 fileName 一处后误报失败）
+check('★ 上传路径可按规格区分且可追溯（orderId + 规格 + 时间戳 → gift-print/<文件名>）',
+  /fileName: `\$\{orderId\}-\$\{isSticker \? 'sticker' : 'a6'\}-\$\{ts\}\.png`/.test(opsJs)
+  && /cloudPath: `gift-print\/\$\{pv\.fileName\}`/.test(opsJs))
 
 /* ── 输出 / 自检 ─────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
@@ -528,15 +560,17 @@ function selftest() {
       to: '    if (false) lineH = packedLh'
     },
     {
-      name: '署名下划线限宽被删（历史真图 bug：下划线/两枚码与署名争位）',
+      name: '署名下划线限宽被删（超长署名会把下划线拉出内容区）',
       file: CARD,
-      from: '    const underlineW = Math.min(Math.max(sw, Math.round(9 * MM)), STICKER.sigMaxW, stampLeft - axisX - STICKER.pad)',
+      // 锚点跟 2026-09-19 的右对齐改写（限宽由 sigMaxW 承担；印章约束改由 y 判据保证）
+      from: '    const underlineW = Math.min(Math.max(sw, Math.round(9 * MM)), sigMaxW)',
       to: '    const underlineW = Math.max(sw, Math.round(9 * MM))'
     },
     {
       name: '日期 offset 与署名 offset 推反（日期跑到署名上方）',
       file: CARD,
-      from: '  dateOffset: Math.round(10.2 * 11.811),',
+      // 锚点跟 2026-09-19 的数值改（10.2→1.5mm）：注入成 20mm 仍会「日期跑到署名上方」
+      from: '  dateOffset: Math.round(1.5 * 11.811),',
       to: '  dateOffset: Math.round(20 * 11.811),'
     },
     {
@@ -548,8 +582,9 @@ function selftest() {
     {
       name: '贴纸按钮被接回 A6 处理器（入口名存实亡，导出的是 A6）',
       file: OPS_WXML,
-      from: 'catchtap="onExportGiftSticker">导出贴纸图',
-      to: 'catchtap="onExportGiftCard">导出贴纸图'
+      // 锚点跟交互升级后的按钮标记（副标题 + 禁用态）对齐
+      from: 'catchtap="onExportGiftSticker">\n            <text>导出贴纸图</text>',
+      to: 'catchtap="onExportGiftCard">\n            <text>导出贴纸图</text>'
     },
     {
       name: '两个入口不再共用实现（复制出第二份落盘/上传）',

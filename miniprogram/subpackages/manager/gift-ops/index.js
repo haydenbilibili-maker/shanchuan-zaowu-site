@@ -4,6 +4,9 @@
  */
 const { guardStaffPage, goStaffConsole } = require('../utils/staffAuth')
 const { formatCloudFnError } = require('../utils/memberScan')
+// 相册权限被拒时给「去设置」出口 —— 走全站样式化弹窗（`utils/appModal`），
+// 不用裸 wx.showModal（全站在迁移，且 check:dialog-ratchet 盯着原生弹窗数）
+const { withAppModal } = require('../../../utils/appModal')
 
 // 印刷版礼笺导出需按标题回查 products（题记/藏品图）；履约页此前不直连数据库
 const db = wx.cloud.database()
@@ -105,7 +108,7 @@ function matchKeyword(item, kw) {
   return hay.indexOf(kw) !== -1
 }
 
-Page({
+Page(withAppModal({
   data: {
     ready: false,
     loading: false,
@@ -127,7 +130,22 @@ Page({
     note: '',
     expandedId: '',
     emptyTitle: EMPTY_COPY.awaiting_address.title,
-    emptyHint: EMPTY_COPY.awaiting_address.hint
+    emptyHint: EMPTY_COPY.awaiting_address.hint,
+    /**
+     * 导出预览态（null = 未生成）。**生成后先看再动**：
+     * 印刷类导出的最大风险是"印错"（受礼人姓名/正文/规格），而原实现一点即存相册并上传，没有回看机会。
+     * 结构：{ spec, specLabel, specNote, path, fileName, orderId, saving, saving2, saved, uploading, uploaded, fileID }
+     */
+    printPreview: null,
+    /** 导出进行中：两个导出按钮都禁用（防重复点，也给出可见的进行态） */
+    exporting: false,
+    /** 页内轻提示（AppToast，非阻塞；不用裸 wx.showToast） */
+    toastShow: false,
+    toastOverline: '',
+    toastTitle: '',
+    toastDesc: '',
+    /** 最近导出（可追溯：规格 + 文件名，可长按复制）——解决"上传的文件去哪了" */
+    recentPrints: []
   },
 
   onLoad(options) {
@@ -175,7 +193,7 @@ Page({
         ready: false,
         loadError: '当前账号无礼赠履约权限，请联系超管开通'
       })
-      wx.showToast({ title: '无礼赠履约权限', icon: 'none' })
+      this.toast('无礼赠履约权限', '请用店长/专员账号访问')
       setTimeout(() => {
         wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) })
       }, 1200)
@@ -268,7 +286,7 @@ Page({
   goOrderManage() {
     wx.navigateTo({
       url: '/subpackages/manager/manager/workspace/index?tab=2&title=' + encodeURIComponent('订单管理'),
-      fail: () => wx.showToast({ title: '请从订单管理发货', icon: 'none' })
+      fail: () => this.toast('请从订单管理发货', '本页只处理礼赠履约')
     })
   },
 
@@ -300,6 +318,7 @@ Page({
     const orderId = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '').trim()
     if (!orderId || this._exportingCard) return
     this._exportingCard = true
+    this.setData({ exporting: true })
     wx.showLoading({ title: '生成中…', mask: true })
     try {
       const res = await wx.cloud.callFunction({ name: 'manageGift', data: { action: 'getBoardDetail', orderId } })
@@ -344,39 +363,140 @@ Page({
       serviceQrPath: '/assets/qrcode/wechat-assistant-qr-print.png',
     })
       if (!path) throw new Error('生成失败，请重试')
-      try {
-        await new Promise((ok, no) => wx.saveImageToPhotosAlbum({ filePath: path, success: ok, fail: no }))
-        wx.showToast({ title: '已存相册', icon: 'none' })
-      } catch (err) {
-        wx.showToast({ title: '未存相册（可检查相册权限）', icon: 'none' })
-      }
-      try {
-        const up = await wx.cloud.uploadFile({
-          cloudPath: `gift-print/${orderId}-${isSticker ? 'sticker' : 'a6'}-${Date.now()}.png`,
-          filePath: path
-        })
-        wx.showToast({ title: isSticker ? '已上传贴纸文件' : '已上传印刷文件', icon: 'none', duration: 2500 })
-        console.log('gift print uploaded', up && up.fileID)
-      } catch (err) {
-        wx.showToast({ title: '上传失败（相册里已有原图）', icon: 'none' })
-      }
+      // ⚠️ 这里**不再**自动存相册/上传：先生成到预览态，由运营看一眼再决定
+      //（原名单位置错了会直接印出去；预览是印刷类导出最低成本的防错手段）
+      const ts = Date.now()
+      this.setData({
+        printPreview: {
+          spec,
+          specLabel: isSticker ? '热敏不干胶贴纸 90×110mm（白区 75×69mm）' : 'A6 竖版 105×148mm @300dpi',
+          specNote: isSticker
+            ? '近方形版式；内容已避开右下预印印章区'
+            : '含题记带与页脚两码；满幅无黑边',
+          path,
+          orderId,
+          fileName: `${orderId}-${isSticker ? 'sticker' : 'a6'}-${ts}.png`,
+          saving: false,
+          saved: false,
+          uploading: false,
+          uploaded: false,
+          fileID: ''
+        }
+      })
     } catch (err) {
-      wx.showToast({ title: (err && err.message) || '导出失败', icon: 'none' })
+      this.toast('导出失败', (err && err.message) || '请重试')
     } finally {
       wx.hideLoading()
       this._exportingCard = false
+      this.setData({ exporting: false })
     }
+  },
+
+  /** 页内轻提示（AppToast）：非阻塞、主视觉一致 */
+  toast(title, desc, overline) {
+    this.setData({ toastShow: true, toastTitle: title || '', toastDesc: desc || '', toastOverline: overline || '' })
+    try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* 震动失败无关紧要 */ }
+  },
+
+  onToastClose() {
+    if (this.data.toastShow) this.setData({ toastShow: false })
+  },
+
+  /** 预览层遮罩：吞掉滚动穿透（catchtouchmove 需要一个真实处理器） */
+  noop() {},
+
+  closePrintPreview() {
+    if (!this.data.printPreview) return
+    this.setData({ printPreview: null })
+  },
+
+  /**
+   * 保存到相册。被拒时给**可执行的出口**（去设置 → 授权后自动重试一次），
+   * 而不是只弹一句"可检查相册权限"就结束。
+   */
+  async savePrintToAlbum() {
+    const pv = this.data.printPreview
+    if (!pv || pv.saving) return
+    this.setData({ 'printPreview.saving': true })
+    try {
+      await new Promise((ok, no) => wx.saveImageToPhotosAlbum({ filePath: pv.path, success: ok, fail: no }))
+      this.setData({ 'printPreview.saved': true, 'printPreview.saving': false })
+      this.toast('已存相册', '可直接去打印店输出', 'GIFT PRINT')
+    } catch (err) {
+      this.setData({ 'printPreview.saving': false })
+      const msg = String((err && (err.errMsg || err.message)) || '')
+      const denied = /auth|deny|denied|permission|cancel/i.test(msg)
+      if (!denied) {
+        this.toast('未存相册', msg || '请重试')
+        return
+      }
+      const res = await this.modal({
+        overline: 'ALBUM PERMISSION',
+        title: '需要相册权限',
+        content: '保存印刷图需要「保存到相册」权限。已拒绝过授权时，需在设置页重新打开。',
+        confirmText: '去设置',
+        cancelText: '稍后'
+      })
+      if (!res.confirm) return
+      try {
+        const setting = await new Promise((ok) => wx.openSetting({ success: ok, fail: () => ok({ authSetting: {} }) }))
+        const granted = !!(setting && setting.authSetting && setting.authSetting['scope.writePhotosAlbum'])
+        if (!granted) {
+          this.toast('仍未授权', '在「设置 → 相册」里打开后可再试')
+          return
+        }
+        await new Promise((ok, no) => wx.saveImageToPhotosAlbum({ filePath: pv.path, success: ok, fail: no }))
+        this.setData({ 'printPreview.saved': true })
+        this.toast('已存相册', '授权后已自动重试成功', 'GIFT PRINT')
+      } catch (e2) {
+        this.toast('仍未存成功', String((e2 && e2.errMsg) || '请重试'))
+      }
+    }
+  },
+
+  /** 上传印刷文件到云端（失败可**单独重试**，预览与相册都还在） */
+  async uploadPrintFile() {
+    const pv = this.data.printPreview
+    if (!pv || pv.uploading) return
+    this.setData({ 'printPreview.uploading': true })
+    try {
+      const up = await wx.cloud.uploadFile({ cloudPath: `gift-print/${pv.fileName}`, filePath: pv.path })
+      this.setData({
+        'printPreview.uploading': false,
+        'printPreview.uploaded': true,
+        'printPreview.fileID': (up && up.fileID) || ''
+      })
+      const recent = [{ fileName: pv.fileName, spec: pv.spec, specLabel: pv.specLabel, at: Date.now() }]
+        .concat(this.data.recentPrints || [])
+        .slice(0, 5)
+      this.setData({ recentPrints: recent })
+      this.toast(pv.spec === 'sticker' ? '已上传贴纸文件' : '已上传印刷文件', pv.fileName, 'GIFT PRINT')
+    } catch (err) {
+      this.setData({ 'printPreview.uploading': false })
+      this.toast('上传失败', '相册里已有原图，可再试一次')
+    }
+  },
+
+  /** 长按复制文件名：上传后的文件在云存储里按这个名字找得到 */
+  copyPrintFileName(e) {
+    const name = String((e.currentTarget.dataset && e.currentTarget.dataset.name) || (this.data.printPreview && this.data.printPreview.fileName) || '')
+    if (!name) return
+    wx.setClipboardData({
+      data: name,
+      success: () => this.toast('已复制文件名', name),
+      fail: () => this.toast('复制失败', '请手动记录')
+    })
   },
 
   copyOrderNo(e) {
     const no = String((e.currentTarget.dataset && e.currentTarget.dataset.no) || '').trim()
     if (!no) {
-      wx.showToast({ title: '暂无单号', icon: 'none' })
+      this.toast('暂无单号', '刷新后再试')
       return
     }
     wx.setClipboardData({
       data: no,
-      success: () => wx.showToast({ title: '已复制单号', icon: 'none' })
+      success: () => this.toast('已复制单号', no),
     })
   }
-})
+}))

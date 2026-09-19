@@ -364,12 +364,12 @@ const STICKER = {
   bandTop: Math.round(10.5 * 11.811),                   // 题记带顶
   bandBasePad: Math.round(5 * 11.811),                  // 主题名基线（带顶下移）
   bandNoteBase: Math.round(8.8 * 11.811),               // 题记首行基线（带顶下移）
-  bandNoteLineH: 27,                                    // 题记行高
-  bandPadB: Math.round(3.5 * 11.811),                   // 带底留白
-  bandGap: Math.round(2 * 11.811),                      // 带底 → 正文带顶的间隔（**必须存在**：删掉它 y 会变 NaN ⇒ 正文再次消失）
+  bandNoteLineH: 28,                                    // 题记行高（2026-09-19：27→28 —— 再大就会把长笺正文挤到 24px 下限之下，守卫实测）                                    // 题记行高
+  bandPadB: Math.round(3.0 * 11.811),                   // 带底留白（2026-09-19：3.5→3.0mm，为题记字号调大找回空间）                   // 带底留白
+  bandGap: Math.round(1.7 * 11.811),                    // 带底→正文间隔（2026-09-19：2→1.7mm，同上；**必须 >0**）                      // 带底 → 正文带顶的间隔（**必须存在**：删掉它 y 会变 NaN ⇒ 正文再次消失）
   bodyTop: Math.round(19 * 11.811),                     // 正文带顶（无题记时用）—— **必须 < signTop**
-  sigOffset: Math.round(14 * 11.811),                   // 署名基线相对 footerTop（向上）—— 再小就会与正文末行贴住（实测 5px）
-  dateOffset: Math.round(10.2 * 11.811),                // 日期基线相对 footerTop（向上）—— **必须小于 sigOffset**（y 越大越靠下）
+  sigOffset: Math.round(5 * 11.811),                    // 署名基线相对 footerTop（向上）—— 2026-09-19：14→5mm，署名下移到印章正上方（同时把竖向余量还给正文）
+  dateOffset: Math.round(1.5 * 11.811),                  // 日期基线相对 footerTop（向上）—— 2026-09-19：10.2→1.5mm（**必须小于 sigOffset** 才在署名之下）
   underlineGap: Math.round(1.5 * 11.811),               // 署名下划线在基线下
   sigMaxW: Math.round(23 * 11.811),                     // 署名下划线**限宽**（不得越到印章区）
   sigBaseSize: 34,                                      // 署名基准字号（超宽按宽度等比缩，不裁字）
@@ -378,7 +378,7 @@ const STICKER = {
   qrSize: Math.round(13.6 * 11.811),                    // 每枚码的边长（白区纵向只有 69mm：码 13.6mm + 小字才放得下，且给正文留块）
   qrGap: Math.round(5 * 11.811),                        // 两枚码间距
   qrCaptionOffset: Math.round(1.8 * 11.811),            // 码下小字基线偏移（码底 + 1.8mm，避免蹭到白区下沿）
-  qrCaptionSize: 18,
+  qrCaptionSize: 21,                                    // 码下小字（2026-09-19：18→21px，1.52mm→1.78mm —— 热敏 1.5mm 易糊）
   qrRightPad: Math.round(1.8 * 11.811),                 // 页脚右内缩（内容不得贴到贴纸装饰边）
   stampSize: Math.round(24 * 11.811),                   // 右下**预印**圆形印章直径
   stampRightPad: Math.round(1.5 * 11.811),              // 印章距内容外框右缘（白区右缘）
@@ -589,7 +589,8 @@ function paintGiftStickerCard(canvas, o) {
   ctx.textAlign = 'left'
   if (toName) {
     ctx.fillStyle = '#8A7530'
-    ctx.font = '400 26px serif'
+    // 2026-09-19 字号：26→28px（**受礼人**姓名是对方第一眼要看的信息）
+    ctx.font = '400 28px serif'
     ctx.fillText('写给 · ' + toName, axisX, STICKER.topY)
   }
 
@@ -617,7 +618,8 @@ function paintGiftStickerCard(canvas, o) {
     ctx.font = '600 32px serif'
     ctx.fillText(bandTheme, axisX + innerPad, y + STICKER.bandBasePad)
     ctx.fillStyle = '#6A6258'
-    ctx.font = '400 24px serif'
+    // 2026-09-19 字号：24→25px（与 32px 主题名成 0.78 层级，两行注更易读）
+    ctx.font = '400 25px serif'
     for (let i = 0; i < noteLines.length; i += 1) {
       ctx.fillText(noteLines[i], axisX + innerPad, y + STICKER.bandNoteBase + i * STICKER.bandNoteLineH)
     }
@@ -682,47 +684,56 @@ function paintGiftStickerCard(canvas, o) {
     console.warn('giftSticker: 正文只画了 ' + bodyDrawn + '/' + bodyLines.length + ' 行（版面高度不足）—— 这是真图事故形态，必须修 STICKER 表')
   }
 
-  // ── 署名带（**只在左半区**：右端受 sigMaxW 与印章左缘双重限制）
+  // ── 署名带（**右对齐，落在预印印章的正上方**）
+  // 2026-09-19 产品要求「署名与两枚码都靠右下」：署名从"左半区"改为**右对齐**。
+  //   约束随之改变：不再是"不超过印章左缘"（那是左对齐时的写法），而是
+  //   ① 右端对齐内容右缘 axisRight；② 基线 + 下划线必须**高于印章上缘**（下面 stampTop 断言）。
   const sigBaseY = STICKER.footerTop - STICKER.sigOffset
   const sig = String(o.cardSignature || '').trim()
+  const sigMaxW = Math.max(Math.round(10 * MM), axisRight - axisX - Math.round(2 * MM))
   if (sig) {
-    ctx.textAlign = 'left'
+    ctx.textAlign = 'right'
     ctx.fillStyle = '#2B2723'
     let sigFont = STICKER.sigBaseSize
     let sigText = sig
     ctx.font = '500 ' + sigFont + 'px ' + HAND
     // 近方形下署名带浅 → 按可用宽度**等比缩字**；到下限仍超宽才截断（宁可小，不可越界/裁字）
-    if (ctx.measureText(sigText).width > STICKER.sigMaxW) {
-      sigFont = Math.max(STICKER.sigMinSize, Math.floor(sigFont * STICKER.sigMaxW / ctx.measureText(sigText).width))
+    if (ctx.measureText(sigText).width > sigMaxW) {
+      sigFont = Math.max(STICKER.sigMinSize, Math.floor(sigFont * sigMaxW / ctx.measureText(sigText).width))
       ctx.font = '500 ' + sigFont + 'px ' + HAND
-      while (ctx.measureText(sigText).width > STICKER.sigMaxW && sigText.length > 2) {
+      while (ctx.measureText(sigText).width > sigMaxW && sigText.length > 2) {
         sigText = truncate(sigText, sigText.length - 1)
       }
     }
-    ctx.fillText(sigText, axisX, sigBaseY)
+    ctx.fillText(sigText, axisRight, sigBaseY)
     const sw = ctx.measureText(sigText).width
     ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'
     ctx.lineWidth = 2
-    // 下划线**限宽**：既不超过 sigMaxW，也绝不到印章左缘（近方形历史 bug：署名与两枚码争位）
-    const underlineW = Math.min(Math.max(sw, Math.round(9 * MM)), STICKER.sigMaxW, stampLeft - axisX - STICKER.pad)
+    // 下划线**右端对齐**内容右缘、长度随署名（保底 9mm），并限宽不越版心
+    const underlineW = Math.min(Math.max(sw, Math.round(9 * MM)), sigMaxW)
     ctx.beginPath()
-    ctx.moveTo(axisX, sigBaseY + STICKER.underlineGap)
-    ctx.lineTo(axisX + Math.max(1, underlineW), sigBaseY + STICKER.underlineGap)
+    ctx.moveTo(axisRight - Math.max(1, underlineW), sigBaseY + STICKER.underlineGap)
+    ctx.lineTo(axisRight, sigBaseY + STICKER.underlineGap)
     ctx.stroke()
   }
   const d = new Date()
   const dateText = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0')
-  ctx.textAlign = 'left'
+  // 日期与署名**同一条右对齐轴**（在署名之下）
+  ctx.textAlign = 'right'
   ctx.fillStyle = '#B4AC9F'
-  ctx.font = '400 20px serif'
-  ctx.fillText(dateText, axisX, STICKER.footerTop - STICKER.dateOffset)
+  // 2026-09-19 字号：20→22px（日期需与署名前后的层级拉开但仍清楚）
+  ctx.font = '400 22px serif'
+  ctx.fillText(dateText, axisRight, STICKER.footerTop - STICKER.dateOffset)
 
-  // ── 页脚带（**左下**）：两枚码从左往右排，右端不得越过页脚右内缩（更不得进印章区）
+  // ── 页脚带（**靠右下**）：两枚码整体**右对齐到印章左缘的内缩**（不再从左往右铺）
+  // 2026-09-19 产品要求「两枚码靠右下」：右端改为贴住预印印章左侧，视觉上与右上方的署名构成右下重心。
   const codes = []
   if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店' })
   if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信' })
-  const qrRight = cardX + cardW - STICKER.qrRightPad
-  let cx = axisX
+  // 右端上限：印章左缘再让 2mm（不得进印章区），同时不越页脚右内缩
+  const qrRight = Math.min(stampLeft - Math.round(2 * MM), cardX + cardW - STICKER.qrRightPad)
+  const qrTotalW = codes.length * STICKER.qrSize + Math.max(0, codes.length - 1) * STICKER.qrGap
+  let cx = Math.max(axisX, qrRight - qrTotalW)
   for (let i = 0; i < codes.length; i += 1) {
     const c = codes[i]
     const x = Math.min(cx, qrRight - STICKER.qrSize)

@@ -167,6 +167,8 @@
     "test:gift-note-variants": "node miniprogram/scripts/test-gift-note-variants.mjs",
     "test:gift-note-variants:selftest": "node miniprogram/scripts/test-gift-note-variants.mjs --selftest",
     "check:gift-sticker-layout": "node miniprogram/scripts/check-gift-sticker-layout.mjs",
+    "check:gift-export-flow": "node miniprogram/scripts/check-gift-export-flow.mjs",
+    "check:gift-export-flow:selftest": "node miniprogram/scripts/check-gift-export-flow.mjs --selftest",
     "check:gift-sticker-layout:selftest": "node miniprogram/scripts/check-gift-sticker-layout.mjs --selftest",
     "test:product-copy-species": "node miniprogram/scripts/test-product-copy-species.mjs",
     "test:product-copy-species:selftest": "node miniprogram/scripts/test-product-copy-species.mjs --selftest",
