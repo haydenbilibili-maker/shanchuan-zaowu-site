@@ -414,8 +414,29 @@ function resolveLine(line, ctx) {
   } else if (src.gradeHint || src.materialGrade) {
     grade = normalizeName(normGrade(src.gradeHint || src.materialGrade))
   }
-  let materialRow = grade ? matGroup.byOption[grade] : matGroup.defaultRow
-  if (!materialRow) materialRow = matGroup.defaultRow
+  /**
+   * 显式等级若不在该材料已配等级里，**报红而不是静默用默认行**。
+   *
+   * ⚠️ 这里原先写的是 `if (!materialRow) materialRow = matGroup.defaultRow` ——
+   * 于是「显式选了 A2、但价目表里没有 A2」会**静默按默认等级的价算钱**。
+   * 同一段代码在**尺寸**那边（步骤 ④）明确拒绝这种静默回落，注释原话：
+   *   「显式尺寸若不在该包装已配规格里，报红而不是静默用默认行 —— 否则用户以为选了 15*8，实际按 20*10 算钱」。
+   * 等级与尺寸是同一件事（都是"这一行的区分维度"，蓝图裁决 31），**两边必须同一态度**。
+   *
+   * 未写等级（`grade === ''`）仍走默认行 —— 那是默认行存在的唯一理由。
+   */
+  let materialRow = null
+  if (grade) {
+    materialRow = matGroup.byOption[grade]
+    if (!materialRow) {
+      return emptyLine(PRICING_STATUS.UNMATCHED, `「${matGroup.displayName}」没有等级 ${grade}`, {
+        itemName,
+        qty
+      })
+    }
+  } else {
+    materialRow = matGroup.defaultRow
+  }
   if (!materialRow) {
     return emptyLine(PRICING_STATUS.UNMATCHED, `「${matGroup.displayName}」没有可用等级行`, {
       itemName,

@@ -207,6 +207,37 @@ function runTests(E) {
   eq('C5 没写等级时落到默认等级行', one('爱神凤蝶玻璃罩').materialGrade, '')
   eq('C6 没写尺寸时落到默认尺寸行', one('爱神凤蝶玻璃罩').packagingSize, '20*10')
 
+  /**
+   * C8/C9 —— **显式等级若价目表里没有，必须报红，不许静默用默认行**（2026-09-19 修）。
+   *
+   * 与尺寸同情形报红（见 C6 附近的尺寸分支）是同一件事的两面：等级和尺寸都是
+   * "这一行的区分维度"（裁决 31）。修之前等级那边写的是
+   * `if (!materialRow) materialRow = matGroup.defaultRow` —— 于是「选了 A2、价目表没有 A2」
+   * 会**按默认等级的价算钱**，用户看不出来。
+   * 注意 `one()` 的第三参是 qty，显式等级要直接调 `resolveLine` 传 `gradeHint`。
+   */
+  const gradedCtx = E.buildContext({
+    materials: [
+      { _id: 'g1', name: '双等蝶', unitPrice: 100, isDefaultGrade: true, status: 'active' },
+      { _id: 'g2', name: '双等蝶', grade: 'A2', unitPrice: 300, status: 'active' }
+    ],
+    packagings: PACKAGINGS,
+    laborRatePct: 30
+  })
+  const badGrade = E.resolveLine({ itemName: '双等蝶玻璃罩', qty: 1, gradeHint: 'A3' }, gradedCtx)
+  eq('C8 显式等级不在价目表 → 报红而不是按默认等级算钱', badGrade.pricingStatus, E.PRICING_STATUS.UNMATCHED)
+  ok(
+    'C8b 报红时不给金额（绝不回落到默认价）',
+    badGrade.unitPrice === null && badGrade.lineTotalCents === null,
+    JSON.stringify({ unitPrice: badGrade.unitPrice, lineTotalCents: badGrade.lineTotalCents })
+  )
+  ok('C8c 报红原因点名是哪个等级', /A3/.test(String(badGrade.pricingNote)), badGrade.pricingNote)
+  eq(
+    'C9 显式等级存在时正常取该等级价',
+    E.resolveLine({ itemName: '双等蝶玻璃罩', qty: 1, gradeHint: 'A2' }, gradedCtx).materialGrade,
+    'A2'
+  )
+
   // 最长命中：`杂` 是 `杂蝶` 的前缀，必须命中更长的 `杂蝶`（否则残余「蝶」会被误判）
   const trapCtx = E.buildContext({
     materials: [
@@ -614,7 +645,16 @@ const INJECTIONS = [
   ['手工费恒为 0（费率被忽略）', (src) => src.replace('const perUnitLabor = Math.round(((perUnitMaterial + perUnitPackaging) * rate) / 100)', 'const perUnitLabor = 0')],
   [
     '默认等级行被忽略（改用第一行）',
-    (src) => src.replace('let materialRow = grade ? matGroup.byOption[grade] : matGroup.defaultRow', 'let materialRow = matGroup.rows[0]')
+    // 锚点随 2026-09-19 的「显式等级缺失必须报红」改动更新：默认行现在只在 `else` 分支取
+    (src) => src.replace('    materialRow = matGroup.defaultRow\n  }', '    materialRow = matGroup.rows[0]\n  }')
+  ],
+  [
+    '显式等级缺失时静默回落到默认行（按默认等级的价算钱 —— 2026-09-19 真实修掉的这个）',
+    (src) =>
+      src.replace(
+        '    if (!materialRow) {\n      return emptyLine(PRICING_STATUS.UNMATCHED, `「${matGroup.displayName}」没有等级 ${grade}`, {',
+        '    if (!materialRow) materialRow = matGroup.defaultRow\n    if (false) {\n      return emptyLine(PRICING_STATUS.UNMATCHED, `「${matGroup.displayName}」没有等级 ${grade}`, {'
+      )
   ],
   ['停用行仍参与匹配', (src) => src.replace("if (row.status && row.status !== 'active') continue", 'if (false) continue')],
   ['材料费不再按分四舍五入（floor）', (src) => src.replace('return Math.round(n * CENTS)', 'return Math.floor(n * CENTS)')],
