@@ -66,12 +66,29 @@ let _sfxNeedsReload = false
 /** 上次真正发声的时刻（节流用；0 = 可立即发声） */
 let _lastTickAt = 0
 
+/**
+ * 「play 到底生不生效」的看门狗。
+ *
+ * 为什么需要：`stop()` 之后 `play()` 能否重启，**各基础库/机型不一致** ——
+ *   业界流传的保险是"每次都重设 `src`"，但那会让真机反复加载/解码（就是上一轮的卡顿）。
+ *   于是改成**运行时观测**：`play()` 成功开始播放会触发 `onPlay`；
+ *   若连发 `WATCHDOG_PLAYS` 次 play 却一次 `onPlay` 都没回来，说明这台机型不会重启，
+ *   立刻切到"重设 src 再播"的可靠路径（更贵，但比一声不响好）。
+ *   观测到一次 `onPlay` 就永不切换 —— 健康的机型全程走廉价路径。
+ */
+const WATCHDOG_PLAYS = 6
+let _plays = 0
+let _playEvents = 0
+/** 一旦观测到"play 不生效"就置位（**粘性**：不因换页/换会话而被重置，避免反复试错） */
+let _reliableReload = false
+
 function ensureSfx () {
   if (_sfx) return _sfx
   const audio = wx.createInnerAudioContext()
   audio.obeyMuteSwitch = true
   audio.volume = SFX_VOLUME
   audio.src = SFX_SRC
+  audio.onPlay(() => { _playEvents += 1 })
   audio.onError((err) => {
     // 音效失败不打断书写，但下一次 tick 要重载音源（否则会一直哑）
     _sfxNeedsReload = true
@@ -85,9 +102,9 @@ function ensureSfx () {
  * 每个字落笔时调用。
  *
  * ⚠️ **热路径只许做两件原生调用（stop + play）**：
- *   · 每 tick 重设 `src` = 让真机反复加载/解码音频 → 这是本次卡顿的主因（已删）；
- *   · 每 tick 写 `volume` 也是原生属性写入，只在创建时设一次（已删）；
- *   · 重设 `src` 只在 `onError` 之后走一次（`_sfxNeedsReload`），正常路径永不触发。
+ *   · 每 tick 重设 `src` = 让真机反复加载/解码音频 → 这是上一轮卡顿的主因（默认不做）；
+ *   · 每 tick 写 `volume` 也是原生属性写入，只在创建时设一次；
+ *   · 重设 `src` 只在两种情况下发生：`onError` 之后，或看门狗判定"play 不生效"之后。
  *
  * ⚠️ 节流判断必须在**碰音频之前**：先 stop/play 再判断等于没节流。
  *
@@ -97,11 +114,21 @@ function ensureSfx () {
 function playTick (muted) {
   if (muted) return
   const now = Date.now()
+  // 距上次发声超过一个"书写会话"的间隔 → 视为新会话，重置看门狗计数（但粘性结论不重置）
+  if (now - _lastTickAt > 1200) {
+    _plays = 0
+    _playEvents = 0
+  }
   if (now - _lastTickAt < MIN_TICK_GAP_MS) return
   _lastTickAt = now
   try {
     const a = ensureSfx()
-    if (_sfxNeedsReload) reloadSfxSrc(a)
+    _plays += 1
+    if (!_reliableReload && _plays >= WATCHDOG_PLAYS && _playEvents === 0) {
+      _reliableReload = true
+      console.warn('礼笺打字机音效：本机 play() 未生效，改用「重设音源再播」的可靠路径')
+    }
+    if (_reliableReload || _sfxNeedsReload) reloadSfxSrc(a)
     a.stop()
     a.play()
   } catch (e) {
@@ -123,6 +150,9 @@ function destroySfx () {
   _sfx = null
   _sfxNeedsReload = false
   _lastTickAt = 0
+  _plays = 0
+  _playEvents = 0
+  // 注意：`_reliableReload` 是**粘性**的 —— 这台机型不会重启就是不会，换页也不必重新试错
 }
 
 function isPunct (ch) {

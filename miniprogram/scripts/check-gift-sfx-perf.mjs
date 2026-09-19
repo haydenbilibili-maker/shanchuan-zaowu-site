@@ -128,23 +128,31 @@ function onsetMs (wav) {
 /** 每次音效之间的最小间隔下界（毫秒）：低于这个数就是在轰音频管线 */
 const MIN_GAP_FLOOR = 60
 
-/** 打桩 wx + 可控时钟：数清每一次原生调用 */
-function makeHarness (source) {
-  const counters = { create: 0, srcSet: 0, volumeSet: 0, play: 0, stop: 0, destroy: 0, onError: 0 }
+/** 打桩 wx + 可控时钟：数清每一次原生调用
+ *  @param {object} [opts] playEvents=false 模拟"这台机型 stop() 后 play() 不重启"（观察不到 onPlay） */
+function makeHarness (source, opts = {}) {
+  const firePlayEvents = opts.playEvents !== false
+  const counters = { create: 0, srcSet: 0, volumeSet: 0, play: 0, stop: 0, destroy: 0, onError: 0, onPlay: 0 }
   let currentSrc = ''
   let currentVolume = 1
   const ctx = {
     obeyMuteSwitch: true,
     paused: true,
     _onError: null,
+    _onPlay: null,
     get src () { return currentSrc },
     set src (v) { counters.srcSet += 1; currentSrc = v },
     get volume () { return currentVolume },
     set volume (v) { counters.volumeSet += 1; currentVolume = v },
-    play () { counters.play += 1 },
+    play () {
+      counters.play += 1
+      // 健康机型：play() 会真的开始播放 → 回调 onPlay
+      if (firePlayEvents && typeof ctx._onPlay === 'function') ctx._onPlay()
+    },
     stop () { counters.stop += 1 },
     destroy () { counters.destroy += 1 },
-    onError (cb) { counters.onError += 1; ctx._onError = cb }
+    onError (cb) { counters.onError += 1; ctx._onError = cb },
+    onPlay (cb) { counters.onPlay += 1; ctx._onPlay = cb }
   }
   const wxStub = {
     createInnerAudioContext () { counters.create += 1; return ctx },
@@ -296,6 +304,30 @@ function check (root) {
     }
   }
 
+  // ⑨ 机型不吃 `stop()+play()` 时：看门狗必须**自动切到可靠路径**，而不是一直哑着
+  {
+    const broken = makeHarness(source, { playEvents: false })
+    broken.api.playTick(false) // 第一次：创建上下文（这一次 src 本来就该写 1 次）
+    const srcAfterFirstPlay = broken.counters.srcSet
+    for (let i = 0; i < 25; i += 1) { broken.advance(120); broken.api.playTick(false) }
+    if (broken.counters.srcSet <= srcAfterFirstPlay) {
+      problems.push('观察不到 onPlay（本机 play() 不重启）时，未切换到「重设音源再播」的可靠路径 —— 真机会一声不响')
+    }
+    if (broken.counters.play < 25) {
+      problems.push(`切到可靠路径后不再发声（play 仅 ${broken.counters.play} 次 / 应 25 次）`)
+    }
+    // 健康机型反过来：独立起一个 harness（不复用上面那个 —— 它经历过 destroy 重建与注入报错，
+    // src 天然会多写两次），25 次正常节奏下一律不该重设 src（廉价路径）
+    const healthy = makeHarness(source, { playEvents: true })
+    for (let i = 0; i < 25; i += 1) { healthy.advance(120); healthy.api.playTick(false) }
+    if (healthy.counters.srcSet !== 1) {
+      problems.push(`健康机型（能观察到 onPlay）下 src 被重设了 ${healthy.counters.srcSet} 次 —— 应始终只写创建时那 1 次`)
+    }
+    if (healthy.counters.play !== 25) {
+      problems.push(`健康机型 25 次按键只响了 ${healthy.counters.play} 次`)
+    }
+  }
+
   return problems
 }
 
@@ -355,6 +387,12 @@ function selftest () {
         mutate: null,
         asset: true,
         expect: /瞬态在 \d+ms/
+      },
+      {
+        name: '看门狗被删（机型不吃 stop+play 时不再自动切可靠路径）',
+        file: REL.helper,
+        mutate: (s) => s.replace('      _reliableReload = true\n', ''),
+        expect: /未切换到「重设音源再播」的可靠路径/
       }
     ]
     for (const inj of injections) {
@@ -423,7 +461,8 @@ function main () {
   }
   console.log('✓ 礼笺打字机音效开销合格（真执行打桩计数）：')
   console.log('  同刻连打 50 次只创建 1 个上下文 / 只写 1 次 src / 只写 1 次 volume / 只响 1 次；')
-  console.log('  间隔 100ms 的正常按键不被吞；静音零原生调用；destroy 后可重建；报错只自愈一次；三页共用共享件')
+  console.log('  间隔 100ms 的正常按键不被吞；静音零原生调用；destroy 后可重建；报错只自愈一次；三页共用共享件；')
+  console.log('  音源瞬态 ≤25ms（解码实测）；机型不吃 stop+play 时看门狗自动切可靠路径、健康机型全程不重设 src')
 }
 
 main()
