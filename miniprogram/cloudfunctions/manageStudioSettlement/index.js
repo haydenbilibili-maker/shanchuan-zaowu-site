@@ -36,6 +36,7 @@ const {
   validateBooks,
   bookMeta,
   parseBulkText,
+  CATEGORY_OPTIONS,
   SKU_COLLECTION,
   skuKeyOf,
   autoSkuName,
@@ -288,6 +289,9 @@ async function handleMeta() {
     books: bookMeta(),
     config,
     defaultConfig: DEFAULT_CONFIG,
+    // 分类取值表：**唯一事实源**在 settlementDefaults.CATEGORY_OPTIONS，
+    // 前端下拉必须用它（原先 ERP 里手写了「标本/工具」两份 —— 那是漂移的种子）
+    categoryOptions: CATEGORY_OPTIONS,
     writable: true,
     note: '价目表写权限仅超管；店长可读、可搜（录出货单时要选材料与包装）'
   })
@@ -370,6 +374,8 @@ async function handleSearchPriceBook(event) {
   const kind = String(event.kind || '').trim()
   const kinds = KIND_OPTIONS.includes(kind) ? [kind] : KIND_OPTIONS.slice()
   const keyword = normalizeName(event.keyword || '')
+  /** 按分类过滤（空 = 不限）。SKU 新增时用它把长列表收窄 */
+  const category = String(event.category || '').trim()
   const limit = Math.min(50, Math.max(1, parseInt(event.limit, 10) || 20))
 
   const groups = []
@@ -379,6 +385,7 @@ async function handleSearchPriceBook(event) {
     const byName = {}
     for (const r of rows) {
       if (r.status !== 'active') continue
+      if (category && String(r.category || '') !== category) continue
       const nk = r.normName || normalizeName(r.name)
       if (!nk) continue
       if (keyword) {
@@ -394,6 +401,8 @@ async function handleSearchPriceBook(event) {
           aliases: Array.isArray(r.aliases) ? r.aliases : [],
           optionField: book.optionField,
           optionLabel: book.optionLabel,
+          // 分类随组带出：SKU 新增/查询按分类筛选时要用
+          category: String(r.category || ''),
           options: []
         }
       }
@@ -734,10 +743,27 @@ async function handleSkuList(event) {
   const config = normalizeConfig(await loadConfigDoc())
   const keyword = normalizeName(event.keyword || '')
   const status = String(event.status || '').trim()
+  /** 按**材料的分类**筛 SKU（SKU 自己不带分类，分类是材料的属性） */
+  const category = String(event.category || '').trim()
   const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(event.limit, 10) || 200))
 
   let rows = await fetchAll(SKU_COLLECTION, activeWhere())
   rows = rows.filter((r) => (status ? r.status === status : true))
+
+  /**
+   * 材料名 → 分类。**每次列表都现读价目表**而不是把分类冗余进 SKU：
+   * 分类是价目表那边维护的，改一次应该立刻在 SKU 列表的筛选上生效；
+   * 冗余进 SKU 会出现"价目表改了、SKU 里还是旧分类"的静默不一致。
+   */
+  const matRows = await fetchAll(collectionOf(KIND.MATERIAL), activeWhere())
+  const catOf = {}
+  matRows.forEach((r) => {
+    const nk = r.normName || normalizeName(r.name)
+    if (nk && r.category) catOf[nk] = String(r.category)
+  })
+  if (category) {
+    rows = rows.filter((r) => catOf[normalizeName(r.materialName || r.materialId || '')] === category)
+  }
   if (keyword) {
     rows = rows.filter((r) => {
       const keys = [r.skuKey || skuKeyOf(r), normalizeName(r.skuName || '')]
@@ -751,6 +777,8 @@ async function handleSkuList(event) {
   const list = sliced.map((r, i) => {
     const q = lines[i] || {}
     return Object.assign(mapSku(r), {
+      // 材料分类（列表上按分类筛/显示用；取自价目表，不冗余存储）
+      materialCategory: catOf[normalizeName(r.materialName || r.materialId || '')] || '',
       // 现算价（只回单价，不落库）：未核价时给 null 并带原因，**不编价**
       unitPrice: q.pricingStatus === PRICING_STATUS.PRICED ? q.unitPrice : null,
       pricingStatus: q.pricingStatus || 'unmatched',
@@ -760,6 +788,8 @@ async function handleSkuList(event) {
   })
   return ok({
     list,
+    /** 分类下拉的选项来自**数据里实际存在的值**，不在前端写死 —— 加分类不必改前端 */
+    categories: [...new Set(matRows.map((r) => String(r.category || '')).filter(Boolean))].sort(),
     total: rows.length,
     truncated: rows.length > limit,
     globalRatePct: config.laborRatePct,

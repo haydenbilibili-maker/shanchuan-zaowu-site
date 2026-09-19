@@ -244,9 +244,9 @@
           <div class="field-hint">一件成品用几个（只）。默认 1；「一个造景用 3 只蝶」才需要改。</div>
         </el-form-item>
         <el-form-item v-if="book.kind === 'material'" label="分类">
+          <!-- 分类选项来自服务端 CATEGORY_OPTIONS（唯一事实源），不在前端手写 -->
           <el-select v-model="form.category" clearable style="width: 160px">
-            <el-option label="标本" value="标本" />
-            <el-option label="工具" value="工具" />
+            <el-option v-for="c in categoryOptions" :key="c" :label="c" :value="c" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -286,6 +286,8 @@ const statusFilter = ref('all')
 const list = ref([])
 const books = ref([])
 const config = reactive({ enabled: false, laborRatePct: 30, requirePackaging: true })
+/** 分类取值表（来自服务端 meta，避免前端再抄一份） */
+const categoryOptions = ref([])
 
 const dialog = reactive({ visible: false, title: '', id: '' })
 /** 批量粘贴导入：先试算再确认（默认 dry-run） */
@@ -349,6 +351,7 @@ async function callFn(data) {
 async function loadMeta() {
   const res = await callFn({ action: 'meta' })
   books.value = res.books || []
+  categoryOptions.value = res.categoryOptions || []
   const c = res.config || {}
   config.enabled = c.enabled === true
   config.laborRatePct = Number(c.laborRatePct) || 0

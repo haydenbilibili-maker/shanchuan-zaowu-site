@@ -60,7 +60,13 @@ const BOOKS = {
 }
 
 const STATUS = { ACTIVE: 'active', INACTIVE: 'inactive' }
-const CATEGORY_OPTIONS = ['工具', '标本']
+/**
+ * 材料分类的可选值。
+ * ⚠️ 这里是**唯一事实源**：ERP 的下拉、导入校验都用它，不许在界面上再抄一份
+ *   （原先 `PriceBookManager.vue` 里手写了「标本/工具」两个 option —— 那是漂移的种子）。
+ * 2026-09-19 追加 `耗材`：产品负责人裁决 ④⑤ 已把白卡纸/乌檀木内框/密封标本盒归为耗材。
+ */
+const CATEGORY_OPTIONS = ['标本', '耗材', '工具']
 
 /**
  * 全局结算配置默认值。
@@ -326,7 +332,7 @@ function mapSku(doc) {
 }
 
 /** 批量导入的列定义（顺序即位置；只有前 4 列有意义，后 3 列可选） */
-const BULK_COLUMNS = ['名称', '别名', '等级或尺寸', '单价', '单位', '用量', '默认']
+const BULK_COLUMNS = ['名称', '别名', '等级或尺寸', '单价', '单位', '用量', '默认', '分类']
 
 /**
  * 按制表符 / 竖线（markdown 表格）/ 逗号切列。
@@ -404,6 +410,8 @@ function parseBulkText(text, kind) {
     const unit = cells[4] || ''
     const qtyRaw = cells[5] || ''
     const defaultRaw = cells[6] || ''
+    // 第 8 列「分类」（可选，追加在末尾 —— 放末尾是为了**老粘贴内容不受影响**）
+    const categoryRaw = cells[7] || ''
 
     const price = normalizePrice(priceRaw)
     if (price === null) {
@@ -420,7 +428,8 @@ function parseBulkText(text, kind) {
       qtyPerUnit: qtyRaw ? Number(qtyRaw) : 1,
       status: STATUS.ACTIVE,
       sort: rows.length,
-      isDefault
+      isDefault,
+      category: categoryRaw
     }
     if (book.kind === KIND.MATERIAL) {
       item.grade = optionRaw && optionRaw !== book.defaultOption ? optionRaw : ''

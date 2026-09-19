@@ -143,13 +143,19 @@ markDefaults(specRows, 'grade'); markDefaults(flowerRows, 'grade')
   for (const [, rs] of Object.entries(g)) { const ex = rs.find(r => r.isDef); const empty = rs.find(r => !r.size); const pick = ex || empty || rs[0]; rs.forEach(r => { r.isDef = (r === pick) }) } }
 
 const T = '\t'
-const line = (n, a, o, p, u, q, d) => [n, a, o, p, u, q, d].join(T).replace(/\t+$/, '')
-const hdr = o => ['名称', '别名', o, '单价', '单位', '每单位数量', '默认'].join(T)
+/**
+ * 一行导入数据（8 列）。第 8 列「分类」只对**材料**有意义（包装本不存分类），
+ * 放末尾是为了老粘贴内容不受影响（见 BULK_COLUMNS 的注释）。
+ */
+const line = (n, a, o, p, u, q, d, cat) => [n, a, o, p, u, q, d, cat === undefined ? '' : cat].join(T).replace(/\t+$/, '')
+const hdr = (o, withCat) => ['名称', '别名', o, '单价', '单位', '每单位数量', '默认'].concat(withCat ? ['分类'] : []).join(T)
 const sortZh = rs => rs.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh'))
 const BLK = {
-  material: [hdr('等级')].concat(sortZh(specRows).map(r => line(r.name, ALIAS[r.name] || '', r.grade || '默认', r.price, '只', '', r.isDef ? '是' : ''))).join('\n'),
+  // 分类按**事实**填：标本行的来源就是飞书「库存管理」的 `分类=标本`
+  material: [hdr('等级', true)].concat(sortZh(specRows).map(r => line(r.name, ALIAS[r.name] || '', r.grade || '默认', r.price, '只', '', r.isDef ? '是' : '', '标本'))).join('\n'),
   packaging: [hdr('尺寸')].concat(sortZh(pkgBook).map(r => line(r.name, r.name === '相框' ? '框' : '', r.size || '默认', r.price, '个', '', r.isDef ? '是' : ''))).join('\n'),
-  flower: [hdr('等级')].concat(sortZh(flowerRows).map(r => line(r.name, '', r.grade || '默认', r.price, '份', '', r.isDef ? '是' : ''))).join('\n')
+  // 干花辅料归「耗材」：它们不是标本本体，而是做造景/搭配的用料
+  flower: [hdr('等级', true)].concat(sortZh(flowerRows).map(r => line(r.name, '', r.grade || '默认', r.price, '份', '', r.isDef ? '是' : '', '耗材'))).join('\n')
 }
 
 // ══ 用生产解析器/校验器真验证 ══

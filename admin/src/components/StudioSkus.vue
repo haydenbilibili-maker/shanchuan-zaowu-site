@@ -38,6 +38,10 @@
           <el-option label="启用" value="active" />
           <el-option label="停用" value="inactive" />
         </el-select>
+        <!-- 分类筛选：选项来自服务端返回的**数据里实际存在的分类**，不在前端写死 -->
+        <el-select v-model="categoryFilter" placeholder="全部分类" clearable style="width: 150px" @change="loadList">
+          <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
+        </el-select>
         <el-button @click="loadList">刷新</el-button>
         <el-button type="primary" @click="openCreate">新增 SKU</el-button>
       </div>
@@ -50,6 +54,12 @@
 
       <el-table :data="list" stripe size="small" empty-text="还没有 SKU —— 点「新增 SKU」建第一条">
         <el-table-column prop="skuName" label="SKU 名" min-width="210" />
+        <el-table-column label="分类" width="90">
+          <template #default="{ row }">
+            <span v-if="row.materialCategory">{{ row.materialCategory }}</span>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="materialName" label="材料" min-width="120" />
         <el-table-column label="等级" width="95">
           <template #default="{ row }">
@@ -115,19 +125,35 @@
       />
       <el-form label-width="104px" label-position="left">
         <el-form-item label="原材料" required>
-          <el-select
-            v-model="form.materialName"
-            filterable
-            remote
-            reserve-keyword
-            :remote-method="searchMaterials"
-            :loading="searching.material"
-            placeholder="搜材料名或别名（如 大蓝闪）"
-            style="width: 100%"
-            @change="onMaterialChange"
-          >
-            <el-option v-for="g in materialGroups" :key="g.normName" :label="g.displayName" :value="g.name" />
-          </el-select>
+          <div class="pick-row">
+            <el-select
+              v-model="formCategory"
+              placeholder="全部分类"
+              clearable
+              style="width: 132px"
+              @change="searchMaterials(materialKeyword)"
+            >
+              <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
+            </el-select>
+            <el-select
+              v-model="form.materialName"
+              filterable
+              remote
+              reserve-keyword
+              :remote-method="onMaterialSearch"
+              :loading="searching.material"
+              placeholder="搜材料名或别名（如 大蓝闪）"
+              style="flex: 1"
+              @change="onMaterialChange"
+            >
+              <el-option
+                v-for="g in materialGroups"
+                :key="g.normName"
+                :label="g.category ? g.displayName + '（' + g.category + '）' : g.displayName"
+                :value="g.name"
+              />
+            </el-select>
+          </div>
         </el-form-item>
         <el-form-item label="等级">
           <el-select v-model="form.materialGrade" placeholder="默认（不写等级时用的行）" style="width: 100%">
@@ -207,6 +233,12 @@ const loading = ref(false)
 const saving = ref(false)
 const keyword = ref('')
 const statusFilter = ref('all')
+/** 分类筛选（列表）。选项来自服务端 `sku.list` 返回的 categories —— 数据驱动，不写死 */
+const categoryFilter = ref('')
+const categories = ref([])
+/** 材料选择器自己的分类筛选 + 记住关键词（切分类时要重搜） */
+const formCategory = ref('')
+const materialKeyword = ref('')
 const list = ref([])
 const config = reactive({ enabled: false, laborRatePct: 30 })
 
@@ -271,9 +303,11 @@ async function loadList() {
       action: 'sku.list',
       keyword: keyword.value,
       status: statusFilter.value === 'all' ? '' : statusFilter.value,
+      category: categoryFilter.value || '',
       limit: 200
     })
     list.value = res.list || []
+    if (Array.isArray(res.categories)) categories.value = res.categories
   } catch (e) {
     ElMessage.error(e.message || 'SKU 列表加载失败')
   } finally {
@@ -281,10 +315,16 @@ async function loadList() {
   }
 }
 
-async function searchGroups(kind, kw, groupsRef, loadingKey) {
+async function searchGroups(kind, kw, groupsRef, loadingKey, category) {
   searching[loadingKey] = true
   try {
-    const res = await callFn({ action: 'searchPriceBook', kind, keyword: kw || '', limit: 30 })
+    const res = await callFn({
+      action: 'searchPriceBook',
+      kind,
+      keyword: kw || '',
+      category: category || '',
+      limit: 30
+    })
     groupsRef.value = res.groups || []
   } catch (e) {
     // 搜索失败就置空下拉（人还能手输关键词重试）—— 但不许静默，留 warn
@@ -294,7 +334,15 @@ async function searchGroups(kind, kw, groupsRef, loadingKey) {
     searching[loadingKey] = false
   }
 }
-const searchMaterials = (kw) => searchGroups('material', kw, materialGroups, 'material')
+/** 记下关键词：切换分类时要拿同一个词重搜（remote 搜索不会自己重放） */
+function onMaterialSearch(kw) {
+  materialKeyword.value = kw || ''
+  return searchGroups('material', kw, materialGroups, 'material', formCategory.value)
+}
+const searchMaterials = (kw) => {
+  materialKeyword.value = kw || ''
+  return searchGroups('material', kw, materialGroups, 'material', formCategory.value)
+}
 const searchPackagings = (kw) => searchGroups('packaging', kw, packagingGroups, 'packaging')
 
 /** 选材料后带出它已配的等级，并把默认行预选上（与出货时"不写等级"的取值一致） */
@@ -325,6 +373,8 @@ async function openCreate() {
   })
   materialOptions.value = []
   packagingOptions.value = []
+  formCategory.value = ''
+  materialKeyword.value = ''
   dialog.id = ''
   dialog.problems = []
   await Promise.all([searchMaterials(''), searchPackagings('')])
@@ -345,6 +395,8 @@ async function openEdit(row) {
   })
   dialog.id = row._id
   dialog.problems = []
+  // 编辑时按该 SKU 材料的分类预筛，省得在 105 条里翻
+  formCategory.value = row.materialCategory || ''
   await Promise.all([searchMaterials(row.materialName || ''), searchPackagings(row.packagingName || '')])
   const mg = materialGroups.value.find((x) => x.name === form.materialName)
   materialOptions.value = mg ? mg.options || [] : []
@@ -472,6 +524,7 @@ onMounted(async () => {
 }
 .muted { color: var(--light-text-tertiary); }
 .cell-sub { margin-left: 6px; color: var(--light-text-tertiary); font-size: var(--text-xs, 12px); }
+.pick-row { display: flex; gap: var(--space-2, 8px); width: 100%; }
 .field-hint {
   margin-left: 10px;
   color: var(--light-text-tertiary);

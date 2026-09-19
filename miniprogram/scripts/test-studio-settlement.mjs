@@ -177,6 +177,26 @@ function runTests(D, CORE) {
   const r9 = D.parseBulkText('大蓝闪蝶\t\tA2\t200\t只\t1\t是', 'material')
   eq('E9 默认列打勾 → 该行是默认行', r9.rows[0].isDefaultGrade, true)
 
+  // ── E11–E14 第 8 列「分类」（2026-09-19 加，SKU 新增与查询按分类筛选要用）──
+  const rc1 = D.parseBulkText('爱神凤蝶\t\t默认\t60\t只\t\t是\t标本', 'material')
+  eq('E11 第 8 列「分类」被解析', rc1.rows[0].category, '标本')
+  const rc2 = D.parseBulkText('满天星\t\t10克\t4.75\t份\t\t是\t耗材', 'material')
+  eq('E12 分类「耗材」合法（本轮新增的取值）', rc2.rows[0].category, '耗材')
+  const rc3 = D.parseBulkText('爱神凤蝶\t\t默认\t60\t只', 'material')
+  eq('E13 **不写分类列 → 空**（老粘贴内容不受影响）', rc3.rows[0].category, '')
+  const rc4 = D.parseBulkText('爱神凤蝶\t\t默认\t60\t只\t\t是\t我瞎写的分类', 'material')
+  eq('E14 非法分类不落库（归空，不造出新分类）', rc4.rows[0].category, '')
+  ok(
+    'E14b 分类取值表含 标本/耗材/工具（唯一事实源）',
+    D.CATEGORY_OPTIONS.includes('标本') && D.CATEGORY_OPTIONS.includes('耗材') && D.CATEGORY_OPTIONS.includes('工具'),
+    JSON.stringify(D.CATEGORY_OPTIONS)
+  )
+  eq(
+    'E14c 包装本不存分类（分类只是材料的属性）',
+    D.parseBulkText('玻璃罩\t\t20*10\t45\t个\t\t是\t标本', 'packaging').rows[0].category,
+    undefined
+  )
+
   const r10 = D.parseBulkText('x\t\t默认\t1', 'nope')
   eq('E10 未知价目本 → 报错', r10.errors.length, 1)
   eq('E10b 未知价目本不产出任何行', r10.rows.length, 0)
@@ -337,6 +357,10 @@ const INJECTIONS = [
     'SKU：费率进唯一键（改默认费率会变成新建重复 SKU）',
     // 锚点随 2026-09-19 的「造景入键」改动更新：key 现在有 5 段
     (src) => src.replace("    src.hasScene === true ? 'scene' : ''\n  ].join('|')", "    src.hasScene === true ? 'scene' : '',\n    String(src.laborRatePct == null ? '' : src.laborRatePct)\n  ].join('|')")
+  ],
+  [
+    '批量导入忽略「分类」列（分类筛选永远筛不出东西）',
+    (src) => src.replace("    const categoryRaw = cells[7] || ''", "    const categoryRaw = ''")
   ],
   [
     // ⚠️ 注入要**真的造出缺陷**：只把 Object.assign 的基底换成 p 是**无效注入** ——
