@@ -107,6 +107,7 @@ function defaultFeishuConfig() {
           category: '分类',
           qty: '数量',
           unitPrice: '单价',
+          totalPrice: '总价',
           status: '状态',
           date: '出货日期',
           expressCompany: '快递公司',
@@ -436,7 +437,31 @@ function buildShipmentFeishuFields(row, item, fmap) {
   if (fmap.spec) fields[fmap.spec] = (item && item.spec) || ''
   if (fmap.category) fields[fmap.category] = (item && item.category) || row.category || ''
   if (fmap.qty) fields[fmap.qty] = Number((item && item.qty) || row.totalQty) || 0
-  if (fmap.unitPrice) fields[fmap.unitPrice] = Number((item && item.unitPrice) || row.unitPrice) || 0
+  /**
+   * 单价 / 总价回写（裁决 17）。
+   *
+   * ⚠️ 修掉的既有 bug：原实现 `Number((item && item.unitPrice) || row.unitPrice) || 0` 有两处错：
+   *   ① 多明细单的 `row.unitPrice` 是 **null**（本来就没有"单一单价"），经 `Number(null)` 变成 0
+   *      写进飞书 —— 在飞书表里看起来像「**0 元成交**」；
+   *   ② 末尾的 `|| 0` 把所有取不到值的情况都变成 0，同样是把「没有」说成「是 0」。
+   * 现在改成：**取不到有效值就不写这个字段**，而不是写 0。
+   */
+  if (fmap.unitPrice) {
+    const fromItem =
+      item && item.unitPrice !== undefined && item.unitPrice !== null ? Number(item.unitPrice) : NaN
+    const fromRow = row.unitPrice !== undefined && row.unitPrice !== null ? Number(row.unitPrice) : NaN
+    const v = Number.isFinite(fromItem) ? fromItem : fromRow
+    if (Number.isFinite(v)) fields[fmap.unitPrice] = v
+  }
+  // 总价：优先明细行的小计，其次单据总额（多明细单靠它才知道这一行值多少钱）
+  if (fmap.totalPrice) {
+    const fromItem =
+      item && item.totalPrice !== undefined && item.totalPrice !== null ? Number(item.totalPrice) : NaN
+    const fromRow =
+      row.totalAmount !== undefined && row.totalAmount !== null ? Number(row.totalAmount) : NaN
+    const v = Number.isFinite(fromItem) ? fromItem : fromRow
+    if (Number.isFinite(v)) fields[fmap.totalPrice] = v
+  }
   if (fmap.status) fields[fmap.status] = row.statusLabel || row.status || ''
   if (fmap.date) fields[fmap.date] = row.shipmentDate || ''
   if (fmap.expressCompany) fields[fmap.expressCompany] = row.expressCompany || ''
