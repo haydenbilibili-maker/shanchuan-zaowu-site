@@ -34,7 +34,8 @@ const {
   normalizeConfig,
   normalizeRatePct,
   validateBooks,
-  bookMeta
+  bookMeta,
+  parseBulkText
 } = require('./settlementDefaults')
 const { normalizeName } = require('./pricingCore')
 const {
@@ -200,6 +201,50 @@ async function fetchAll(collection, where) {
   return rows
 }
 
+/**
+ * **只读**且容忍集合不存在（不自动建）。
+ * 与 `fetchAll` 的区别：`fetchAll` 会在集合缺失时 `createCollection` ——
+ * 那是**写**。拿它读「别人家的集合」（如原材料库存）会顺手建一个空集合，
+ * 属于越界。所以参考价这类只读对照单独走这里。
+ */
+async function readMaybe(collection, where) {
+  const rows = []
+  try {
+    let skip = 0
+    while (skip < 2000) {
+      const res = await db.collection(collection).where(where).skip(skip).limit(100).get()
+      const list = (res && res.data) || []
+      rows.push(...list)
+      if (list.length < 100) break
+      skip += list.length
+    }
+  } catch (err) {
+    if (/not exist|集合不存在|502005/i.test(String((err && err.errMsg) || err.message || err))) return []
+    throw err
+  }
+  return rows
+}
+
+/** 原材料库存集合（飞书「库存管理」同步；单价是**采购价**，不是出货结算价） */
+const RAW_INVENTORY_COLLECTION = 'studio_raw_inventory'
+
+/**
+ * 采购价参照表：归一化名称 → 采购单价（元）。
+ * ⚠️ **只用于对照显示**，绝不参与算价 —— 出货算价只认 `studio_material_prices`。
+ * 产品负责人 2026-09-19 选择：两处独立维护，但价目表里显示参考采购价以便发现漂移。
+ */
+async function loadRefPurchasePrices() {
+  const rows = await readMaybe(RAW_INVENTORY_COLLECTION, { deleted: _.neq(true) })
+  const map = {}
+  for (const r of rows) {
+    const key = normalizeName(r.itemName || r.skuName || r.name || '')
+    if (!key || map[key] !== undefined) continue
+    const price = Number(r.unitPrice)
+    if (Number.isFinite(price)) map[key] = price
+  }
+  return map
+}
+
 function activeWhere() {
   return { deleted: _.neq(true) }
 }
@@ -267,11 +312,28 @@ async function handleList(event) {
   rows = sortRows(rows)
 
   const all = rows.map((r) => mapRow(Object.assign({ kind: book.kind }, r)))
+  // 材料表附上**参考采购价**（只读对照，来自原材料库存；不参与算价）
+  if (book.kind === KIND.MATERIAL) {
+    const ref = await loadRefPurchasePrices()
+    for (const row of all) {
+      const keys = [normalizeName(row.name)].concat((row.aliases || []).map((a) => normalizeName(a)))
+      let hit = null
+      for (const k of keys) {
+        if (k && ref[k] !== undefined) {
+          hit = ref[k]
+          break
+        }
+      }
+      row.refUnitPrice = hit
+      row.refDelta = hit === null || hit === undefined ? null : Math.round((row.unitPrice - hit) * 100) / 100
+    }
+  }
   return ok({
     kind: book.kind,
     list: all.slice(0, limit),
     total: all.length,
-    truncated: all.length > limit
+    truncated: all.length > limit,
+    refNote: book.kind === KIND.MATERIAL ? '参考采购价来自原材料库存（飞书「库存管理」同步），仅供对照，不参与算价' : ''
   })
 }
 
@@ -365,6 +427,132 @@ async function handleSearchPriceBook(event) {
  * 完整性校验：写入前后都能跑。
  * 复用共享内核的 `validatePriceBook`（与算价方同一套规则），所以「保存时能过」= 「算价时能匹配」。
  */
+/**
+ * 批量粘贴导入（产品负责人 2026-09-19 选定的首批录入方式）。
+ *
+ * **默认 dry-run**（与重算历史单同一安全默认）：先给「能认几行 / 哪行有问题 /
+ * 哪些是新增、哪些是覆盖」的预览，只有显式 `dryRun:false` 才写库。
+ *
+ * 导入**不做阻断**：允许只导材料、暂不导包装（分两次录是正常的）。
+ * 但会把「导入后的完整性预检」结果一并回传 —— 例如某材料没有默认行、
+ * 别名与别的材料撞了 —— 让问题在导入当刻就看得见，而不是等算价时才发现。
+ */
+async function handleBulkUpsert(event, actor) {
+  const book = bookOf(event.kind)
+  if (!book) return fail(`未知价目本：${event.kind}`, 'BAD_KIND')
+  const dryRun = event.dryRun !== false
+  const parsed = parseBulkText(event.text, book.kind)
+
+  const existing = await fetchAll(book.collection, activeWhere())
+  const byKey = {}
+  for (const r of existing) {
+    byKey[(r.normName || normalizeName(r.name)) + '|' + (r[book.optionField] || book.defaultOption)] = r
+  }
+
+  const plan = parsed.rows.map((r, i) => {
+    const hit = byKey[r.__key]
+    return {
+      line: r.__line,
+      name: r.name,
+      option: r[book.optionField] || book.defaultOption,
+      isDefault: r[book.defaultFlagKey] === true,
+      unitPrice: r.unitPrice,
+      unit: r.unit || '',
+      action: hit ? 'update' : 'create',
+      _id: hit ? hit._id : '',
+      _index: i
+    }
+  })
+
+  // 导入后的完整性预检：把导入行按 key 覆盖进现状，再跑与手动录入完全同一套校验
+  const merged = existing.slice()
+  parsed.rows.forEach((r, i) => {
+    const hit = byKey[r.__key]
+    const row = Object.assign({}, r, { sort: hit ? hit.sort : existing.length + i })
+    delete row.__key
+    delete row.__line
+    if (hit) {
+      const at = merged.findIndex((m) => m._id === hit._id)
+      if (at !== -1) merged[at] = Object.assign({}, hit, row)
+      else merged.push(row)
+    } else {
+      merged.push(row)
+    }
+  })
+
+  const otherKind = book.kind === KIND.MATERIAL ? KIND.PACKAGING : KIND.MATERIAL
+  const otherRows = await fetchAll(collectionOf(otherKind), activeWhere())
+  const check = validateBooks(
+    book.kind === KIND.MATERIAL ? merged : otherRows,
+    book.kind === KIND.PACKAGING ? merged : otherRows
+  )
+
+  const created = plan.filter((p) => p.action === 'create').length
+  const updatedCount = plan.filter((p) => p.action === 'update').length
+
+  if (dryRun) {
+    return ok({
+      dryRun: true,
+      parsedRows: parsed.rows.length,
+      created,
+      updated: updatedCount,
+      errors: parsed.errors,
+      plan: plan.slice(0, 200),
+      planTruncated: plan.length > 200,
+      check,
+      msg: `试算：可入库 ${parsed.rows.length} 行（新增 ${created} / 覆盖 ${updatedCount}）` +
+        (parsed.errors.length ? `，${parsed.errors.length} 行有问题未计入` : '') +
+        '；未写入'
+    })
+  }
+
+  let okCount = 0
+  let failCount = 0
+  const writeErrors = []
+  for (const r of parsed.rows) {
+    const hit = byKey[r.__key]
+    const row = Object.assign({}, r, {
+      kind: book.kind,
+      updatedAt: Date.now(),
+      updatedBy: actorName(actor)
+    })
+    delete row.__key
+    delete row.__line
+    // 覆盖时**保留原有 sort**（不让一次导入把已有排序打乱）；新增才给新序号
+    if (hit) row.sort = hit.sort
+    else row.sort = existing.length + (row.sort || 0)
+    try {
+      if (hit) {
+        await db.collection(book.collection).doc(hit._id).update({ data: row })
+      } else {
+        await db.collection(book.collection).add({
+          data: Object.assign({}, row, {
+            createdAt: Date.now(),
+            createdBy: actorName(actor),
+            deleted: false
+          })
+        })
+      }
+      okCount += 1
+    } catch (err) {
+      failCount += 1
+      if (writeErrors.length < 10) writeErrors.push({ name: r.name, option: r[book.optionField], msg: String((err && err.message) || err) })
+    }
+  }
+  return ok({
+    dryRun: false,
+    parsedRows: parsed.rows.length,
+    created,
+    updated: updatedCount,
+    written: okCount,
+    failed: failCount,
+    errors: parsed.errors,
+    writeErrors,
+    check,
+    msg: `已导入 ${okCount} 行（新增 ${created} / 覆盖 ${updatedCount}）` + (failCount ? `，失败 ${failCount}` : '')
+  })
+}
+
 async function handleValidate() {
   const materials = await fetchAll(collectionOf(KIND.MATERIAL), activeWhere())
   const packagings = await fetchAll(collectionOf(KIND.PACKAGING), activeWhere())
@@ -785,6 +973,7 @@ const SUPER_ONLY_ACTIONS = {
   'priceBook.create': 1,
   'priceBook.update': 1,
   'priceBook.remove': 1,
+  'priceBook.bulkUpsert': 1,
   'bill.create': 1,
   'bill.withdrawPaid': 1,
   'bill.confirmSettle': 1,
@@ -821,6 +1010,8 @@ exports.main = async (event) => {
         return await handleRemove(event, auth.actor)
       case 'priceBook.validate':
         return await handleValidate()
+      case 'priceBook.bulkUpsert':
+        return await handleBulkUpsert(event, auth.actor)
       case 'searchPriceBook':
         return await handleSearchPriceBook(event)
 

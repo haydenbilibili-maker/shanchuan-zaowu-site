@@ -162,6 +162,128 @@ function buildRow(input, kind) {
   return { ok: true, row }
 }
 
+/** 批量导入的列定义（顺序即位置；只有前 4 列有意义，后 3 列可选） */
+const BULK_COLUMNS = ['名称', '别名', '等级或尺寸', '单价', '单位', '用量', '默认']
+
+/**
+ * 按制表符 / 竖线（markdown 表格）/ 逗号切列。
+ * 三种都支持是因为人可能从 Excel 贴（制表符）、从我给的表格贴（竖线）、或手打（逗号）。
+ */
+function splitBulkLine(line) {
+  const t = String(line || '')
+  if (t.indexOf('\t') !== -1) return t.split('\t')
+  if (t.indexOf('|') !== -1) return t.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|')
+  return t.split(',')
+}
+
+function truthyCell(v) {
+  const s = String(v == null ? '' : v).trim().toLowerCase()
+  return s === '是' || s === '✓' || s === 'y' || s === 'yes' || s === 'true' || s === '1' || s === '默认'
+}
+
+/**
+ * 解析「批量粘贴导入」的文本（**纯函数**，不落库）。
+ *
+ * 为什么解析放服务端而不是 ERP 页面里：
+ *   ① 守卫能用同一套机器测它（页面里的解析逻辑测不到）；
+ *   ② 导入前的预览与真正入库**必须用同一份解析结果** —— 两处各解析一次必然漂移。
+ *
+ * 容错（都实测过，不是为了"看起来健壮"）：
+ *   · 跳过空行、markdown 分隔行（`|---|`）、表头行；
+ *   · 第一列若是**纯数字序号**（我的填写清单表格就是这样）→ 右移一位；
+ *   · 列数不足 4 列 → 报错并带上行号与原文，**不静默丢行**；
+ *   · `等级或尺寸` 留空、写「默认」、或 `默认` 列打了勾 → 都算默认行。
+ *
+ * @returns {{rows:Array, errors:Array<{line:number,text:string,msg:string}>, skipped:number}}
+ */
+function parseBulkText(text, kind) {
+  const book = bookOf(kind)
+  if (!book) return { rows: [], errors: [{ line: 0, text: '', msg: `未知价目本：${kind}` }], skipped: 0 }
+  const lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n')
+  const rows = []
+  const errors = []
+  let skipped = 0
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const lineNo = i + 1
+    const raw = lines[i]
+    const t = String(raw == null ? '' : raw).trim()
+    if (!t) continue
+    // markdown 分隔行（|---|:--|）与整行横线
+    if (/^[\s|:\-–—]+$/.test(t)) continue
+
+    let cells = splitBulkLine(t).map((c) => String(c == null ? '' : c).trim())
+    /**
+     * 首列是序号列 → 右移。
+     * 除纯数字外，**还认 `#`** —— 我给的填写清单表格表头就是 `| # | 材料名 | …`，
+     * 只认数字会让表头那行被当成数据行并报一个假错（守卫 E2c 实测抓到）。
+     */
+    if (cells.length > 1 && (/^\d+$/.test(cells[0]) || cells[0] === '#')) cells = cells.slice(1)
+
+    const name = cells[0] || ''
+    if (!name) continue
+    // 表头行
+    if (/^(名称|材料名|包装名|物品名称|name)$/i.test(name)) continue
+
+    // 前 4 列必须有内容位（别名允许空，但位置要在）
+    if (cells.length < 4) {
+      errors.push({
+        line: lineNo,
+        text: t,
+        msg: `列数不足：至少需要「名称	别名	${book.optionLabel}	单价」4 列（当前 ${cells.length} 列）`
+      })
+      continue
+    }
+
+    const aliasText = cells[1] || ''
+    const optionRaw = cells[2] || ''
+    const priceRaw = cells[3] || ''
+    const unit = cells[4] || ''
+    const qtyRaw = cells[5] || ''
+    const defaultRaw = cells[6] || ''
+
+    const price = normalizePrice(priceRaw)
+    if (price === null) {
+      errors.push({ line: lineNo, text: t, msg: `「${name}」单价不是 ≥ 0 的数字：${priceRaw || '(空)'}` })
+      continue
+    }
+
+    const isDefault = truthyCell(defaultRaw) || !optionRaw || optionRaw === book.defaultOption
+    const item = {
+      name,
+      aliases: aliasText,
+      unitPrice: price,
+      unit,
+      qtyPerUnit: qtyRaw ? Number(qtyRaw) : 1,
+      status: STATUS.ACTIVE,
+      sort: rows.length,
+      isDefault
+    }
+    if (book.kind === KIND.MATERIAL) {
+      item.grade = optionRaw && optionRaw !== book.defaultOption ? optionRaw : ''
+      item.isDefaultGrade = isDefault
+    } else {
+      item.size = optionRaw && optionRaw !== book.defaultOption ? optionRaw : ''
+      item.isDefaultSize = isDefault
+    }
+
+    const built = buildRow(item, book.kind)
+    if (!built.ok) {
+      errors.push({ line: lineNo, text: t, msg: built.msg })
+      continue
+    }
+    // 同一批里重复（同名称 + 同等级/尺寸）→ 报错而不是让后一条静默覆盖前一条
+    const key = built.row.normName + '|' + (built.row[book.optionField] || book.defaultOption)
+    if (rows.some((r) => r.__key === key)) {
+      errors.push({ line: lineNo, text: t, msg: `同一批里重复：${name} · ${optionRaw || book.defaultOption}` })
+      continue
+    }
+    rows.push(Object.assign({ __key: key, __line: lineNo }, built.row))
+  }
+
+  return { rows, errors, skipped }
+}
+
 /** 写库形状 → 客户端形状（补上派生字段，前端不必自己算） */
 function mapRow(doc) {
   const raw = doc || {}
@@ -264,5 +386,7 @@ module.exports = {
   toPatch,
   normalizeConfig,
   validateBooks,
-  bookMeta
+  bookMeta,
+  BULK_COLUMNS,
+  parseBulkText
 }

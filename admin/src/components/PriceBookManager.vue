@@ -34,6 +34,7 @@
           </el-select>
           <el-button @click="loadList">刷新</el-button>
           <el-button type="primary" @click="openCreate">新增{{ book.label }}</el-button>
+          <el-button type="success" plain @click="openBulk">批量粘贴导入</el-button>
           <el-button @click="runValidate">完整性校验</el-button>
         </div>
 
@@ -44,6 +45,11 @@
           class="rule-alert"
           :title="ruleTitle"
         />
+
+        <div class="ref-hint" v-if="book.kind === 'material'">
+          「参考采购价」来自<b>原材料库存</b>（飞书「库存管理」同步），<b>只用于对照</b>，
+          不参与算价 —— 算价只认本表的单价。两处是独立维护的，差价大说明该核对一下。
+        </div>
 
         <el-table :data="list" stripe size="small" empty-text="还没有条目">
           <el-table-column prop="name" label="名称" min-width="140" />
@@ -63,6 +69,20 @@
             <template #default="{ row }">¥{{ money(row.unitPrice) }}</template>
           </el-table-column>
           <el-table-column prop="unit" label="单位" width="70" />
+          <el-table-column label="参考采购价" width="150" align="right">
+            <template #default="{ row }">
+              <span v-if="row.refUnitPrice === null || row.refUnitPrice === undefined" class="muted">—</span>
+              <span v-else>
+                ¥{{ money(row.refUnitPrice) }}
+                <el-tag
+                  v-if="row.refDelta"
+                  size="small"
+                  :type="row.refDelta > 0 ? 'success' : 'warning'"
+                  class="alias-tag"
+                >{{ row.refDelta > 0 ? '+' : '' }}{{ money(row.refDelta) }}</el-tag>
+              </span>
+            </template>
+          </el-table-column>
           <el-table-column label="用量/件" width="90" align="right">
             <template #default="{ row }">{{ row.qtyPerUnit }}</template>
           </el-table-column>
@@ -117,6 +137,76 @@
         </el-form>
       </template>
     </el-card>
+
+    <!-- 批量粘贴导入：先试算再确认（默认不写库） -->
+    <el-dialog v-model="bulk.visible" :title="`批量导入${book.label}`" width="860px">
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px"
+        title="从 Excel 或下面示例直接粘贴。列顺序：名称 / 别名 / 等级或尺寸 / 单价 / 单位（后两列可空）。首列序号与表头行会自动跳过。"
+      />
+      <pre class="bulk-sample">{{ bulkSample }}</pre>
+      <el-input v-model="bulk.text" type="textarea" :rows="8" placeholder="把表格粘贴到这里" />
+      <div class="bulk-actions">
+        <el-button :loading="bulk.loading" @click="runBulk(true)">试算（不写入）</el-button>
+        <el-button
+          type="danger"
+          :loading="bulk.loading"
+          :disabled="!bulk.result || !bulk.result.dryRun || !bulk.result.parsedRows"
+          @click="runBulk(false)"
+        >确认导入（{{ bulk.result ? bulk.result.parsedRows : 0 }} 行）</el-button>
+      </div>
+
+      <div v-if="bulk.result" class="bulk-result">
+        <div class="bulk-summary">
+          <span>可入库 <b>{{ bulk.result.parsedRows }}</b> 行</span>
+          <span>· 新增 <b>{{ bulk.result.created }}</b></span>
+          <span>· 覆盖 <b>{{ bulk.result.updated }}</b></span>
+          <span v-if="bulk.result.errors && bulk.result.errors.length" class="bulk-bad">
+            · {{ bulk.result.errors.length }} 行有问题（未计入）
+          </span>
+          <el-tag v-if="bulk.result.dryRun" type="info" size="small">试算（未写入）</el-tag>
+          <el-tag v-else type="success" size="small">已写入</el-tag>
+        </div>
+
+        <el-table v-if="bulk.result.errors && bulk.result.errors.length" :data="bulk.result.errors" size="small" max-height="150">
+          <el-table-column prop="line" label="行号" width="70" />
+          <el-table-column prop="msg" label="问题" />
+        </el-table>
+
+        <el-table :data="bulk.result.plan || []" size="small" stripe max-height="240" style="margin-top: 8px">
+          <el-table-column prop="name" label="名称" min-width="140" />
+          <el-table-column prop="option" label="等级或尺寸" width="110" />
+          <el-table-column label="单价" width="100" align="right">
+            <template #default="{ row }">¥{{ money(row.unitPrice) }}</template>
+          </el-table-column>
+          <el-table-column label="动作" width="90">
+            <template #default="{ row }">
+              <el-tag size="small" :type="row.action === 'create' ? 'success' : 'warning'">
+                {{ row.action === 'create' ? '新增' : '覆盖' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-alert
+          v-if="bulk.result.check && !bulk.result.check.ok"
+          type="warning"
+          :closable="false"
+          show-icon
+          style="margin-top: 10px"
+          :title="`导入后价目表仍有 ${bulk.result.check.errors.length} 处不完整（不阻断导入，但算价时这些条目取不到价）`"
+        >
+          <div v-for="(e, i) in bulk.result.check.errors.slice(0, 5)" :key="i">{{ e.msg }}</div>
+        </el-alert>
+      </div>
+
+      <template #footer>
+        <el-button @click="bulk.visible = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 新增 / 编辑 -->
     <el-dialog v-model="dialog.visible" :title="dialog.title" width="560px">
@@ -198,6 +288,21 @@ const books = ref([])
 const config = reactive({ enabled: false, laborRatePct: 30, requirePackaging: true })
 
 const dialog = reactive({ visible: false, title: '', id: '' })
+/** 批量粘贴导入：先试算再确认（默认 dry-run） */
+const bulk = reactive({ visible: false, loading: false, text: '', result: null })
+const bulkSample = computed(() => {
+  if (book.value.kind === 'material') {
+    return ['名称\t别名\t等级或尺寸\t单价\t单位',
+            '独角仙展翅\t\t默认\t180\t只',
+            '独角仙没展翅\t\t默认\t150\t只',
+            '大蓝闪蝶\t大蓝闪\t默认\t300\t只',
+            '大蓝闪蝶\t\tA1\t420\t只'].join('\n')
+  }
+  return ['名称\t别名\t等级或尺寸\t单价\t单位',
+          '玻璃罩\t\t20*10\t45\t个',
+          '玻璃罩\t\t15*8\t30\t个',
+          '冰箱贴\t\t默认\t12\t个'].join('\n')
+})
 const form = reactive({
   name: '',
   aliasesText: '',
@@ -380,6 +485,37 @@ async function onRemove(row) {
   }
 }
 
+function openBulk() {
+  bulk.visible = true
+  bulk.text = ''
+  bulk.result = null
+}
+
+async function runBulk(dryRun) {
+  if (!String(bulk.text || '').trim()) {
+    ElMessage.warning('请先粘贴内容')
+    return
+  }
+  bulk.loading = true
+  try {
+    const res = await callFn({
+      action: 'priceBook.bulkUpsert',
+      kind: book.value.kind,
+      text: bulk.text,
+      dryRun
+    })
+    bulk.result = res
+    if (!dryRun) {
+      ElMessage.success(res.msg || '已导入')
+      await loadList()
+    }
+  } catch (e) {
+    ElMessage.error(e.message || '导入失败')
+  } finally {
+    bulk.loading = false
+  }
+}
+
 async function runValidate() {
   loading.value = true
   try {
@@ -459,6 +595,22 @@ onMounted(async () => {
   font-size: var(--text-xs, 12px);
   line-height: 1.5;
 }
+.ref-hint { margin-bottom: var(--space-3, 12px); color: var(--light-text-secondary); font-size: var(--text-xs, 12px); line-height: 1.6; }
+.bulk-sample {
+  background: var(--light-bg-elevated);
+  border: 1px solid var(--light-border-subtle);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: var(--text-xs, 12px);
+  color: var(--light-text-secondary);
+  white-space: pre;
+  overflow-x: auto;
+  margin: 0 0 var(--space-2, 8px);
+}
+.bulk-actions { display: flex; gap: var(--space-2, 8px); margin-top: var(--space-2, 8px); }
+.bulk-result { margin-top: var(--space-3, 12px); }
+.bulk-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space-2, 8px); color: var(--light-text-secondary); font-size: var(--text-sm, 13px); }
+.bulk-bad { color: var(--el-color-danger); }
 .config-form { max-width: 760px; margin-top: var(--space-2, 8px); }
 code {
   background: var(--light-bg-elevated);

@@ -133,6 +133,63 @@ function runTests(D, CORE) {
   eq('C6 包装往返尺寸一致', roundP.option, CORE.DEFAULT_SIZE)
   eq('C7 包装往返 kind 一致', roundP.kind, 'packaging')
 
+  // ── E. 批量粘贴导入的解析（纯函数，导入预览与入库共用同一份结果）──
+  const tsv = ['名称\t别名\t等级或尺寸\t单价\t单位', '独角仙展翅\t\t默认\t180\t只', '独角仙没展翅\t\t默认\t150\t只', '大蓝闪蝶\t大蓝闪\t默认\t300\t只'].join('\n')
+  const r1 = D.parseBulkText(tsv, 'material')
+  eq('E1 制表符格式解析出 3 行', r1.rows.length, 3)
+  eq('E1b 表头行被跳过（没有被当成数据）', r1.errors.length, 0)
+  eq('E1c 等级留空/写「默认」→ 落默认行', r1.rows[0].grade, CORE.DEFAULT_GRADE)
+  eq('E1d 默认标记为 true', r1.rows[0].isDefaultGrade, true)
+  deepEq('E1e 别名被解析', r1.rows[2].aliases, ['大蓝闪'])
+
+  const md = ['| # | 名称 | 别名 | 等级或尺寸 | 单价 |', '|---|---|---|---|---|', '| 1 | 独角仙展翅 | | 默认 | 180 |', '| 2 | 大蓝闪蝶 | 大蓝闪 | 默认 | 300 |'].join('\n')
+  const r2 = D.parseBulkText(md, 'material')
+  eq('E2 markdown 竖线表格也能解析', r2.rows.length, 2)
+  eq('E2b 首列纯数字序号被自动右移', r2.rows[0].name, '独角仙展翅')
+  eq('E2c 分隔行 |---| 被跳过', r2.errors.length, 0)
+
+  const csv = '名称,别名,等级或尺寸,单价\n冰箱贴,,默认,12'
+  const r3 = D.parseBulkText(csv, 'packaging')
+  eq('E3 逗号格式解析', r3.rows.length, 1)
+  eq('E3b 包装本写的是 size 而不是 grade', r3.rows[0].size, CORE.DEFAULT_SIZE)
+  ok('E3c 包装行不带 grade 字段', r3.rows[0].grade === undefined)
+
+  const r4 = D.parseBulkText('\n\n名称\t别名\t等级或尺寸\t单价\n\n雅灰蝶\t\t默认\t80\n', 'material')
+  eq('E4 空行被跳过', r4.errors.length, 0)
+  eq('E4b 有效行仍被解析', r4.rows.length, 1)
+
+  const r5 = D.parseBulkText('华艳色蟌\t\t默认', 'material')
+  eq('E5 列数不足 → 报错（不静默丢行）', r5.errors.length, 1)
+  ok('E5b 报错带**原文行号**，可回溯', r5.errors[0].line === 1, String(r5.errors[0].line))
+  ok('E5c 报错说明缺几列', /列数不足/.test(r5.errors[0].msg), r5.errors[0].msg)
+
+  const r6 = D.parseBulkText('华艳色蟌\t\t默认\tabc', 'material')
+  eq('E6 单价非数字 → 报错', r6.errors.length, 1)
+  ok('E6b 报价时把非法值原样带出来', /abc/.test(r6.errors[0].msg), r6.errors[0].msg)
+
+  const r7 = D.parseBulkText('雅灰蝶\t\t默认\t80\n雅灰蝶\t\t默认\t90', 'material')
+  eq('E7 同一批重复 → 报错（不让后一条静默覆盖）', r7.errors.length, 1)
+  eq('E7b 只有第一条入库', r7.rows.length, 1)
+
+  const r8 = D.parseBulkText('大蓝闪蝶\t\tA1\t300\n大蓝闪蝶\t\tA2\t200', 'material')
+  eq('E8 多等级各成一行', r8.rows.length, 2)
+  eq('E8b 写了等级就不算默认行', r8.rows[0].isDefaultGrade, false)
+  const r9 = D.parseBulkText('大蓝闪蝶\t\tA2\t200\t只\t1\t是', 'material')
+  eq('E9 默认列打勾 → 该行是默认行', r9.rows[0].isDefaultGrade, true)
+
+  const r10 = D.parseBulkText('x\t\t默认\t1', 'nope')
+  eq('E10 未知价目本 → 报错', r10.errors.length, 1)
+  eq('E10b 未知价目本不产出任何行', r10.rows.length, 0)
+
+  ok('E11 每行都带 __line（可回溯到粘贴原文）', r1.rows.every((x) => Number(x.__line) > 0))
+  ok(
+    'E12 不静默丢行：成功 + 报错 = 数据行总数',
+    (() => {
+      const r = D.parseBulkText('a\t\t默认\t1\nb\t\t默认\tbad\nc\t\t默认\t3', 'material')
+      return r.rows.length === 2 && r.errors.length === 1
+    })()
+  )
+
   // ── D. 与共享内核同口径（写入口放行 = 算价口能匹配） ──
   const rows = [
     { name: '独角仙展翅', unitPrice: 180, isDefaultGrade: true, status: 'active' },
@@ -157,7 +214,18 @@ const INJECTIONS = [
   ['别名不再去重', (src) => src.replace('    if (!nk || seen[nk]) continue', '    if (!nk) continue')],
   ['每行都成为默认行', (src) => src.replace('  row[book.defaultFlagKey] = src[book.defaultFlagKey] === true', '  row[book.defaultFlagKey] = true')],
   ['status 永远 active（停用失效）', (src) => src.replace("  return s === STATUS.INACTIVE ? STATUS.INACTIVE : STATUS.ACTIVE", '  return STATUS.ACTIVE')],
-  ['费率 0 被回落成默认 30', (src) => src.replace('  if (!Number.isFinite(n)) return fallback', '  if (!n) return fallback')]
+  ['费率 0 被回落成默认 30', (src) => src.replace('  if (!Number.isFinite(n)) return fallback', '  if (!n) return fallback')],
+  ['批量导入：列数不足时静默丢行', (src) => src.replace('    if (cells.length < 4) {', '    if (false) {')],
+  ['批量导入：同批重复不报（后一条静默覆盖前一条）', (src) => src.replace('    if (rows.some((r) => r.__key === key)) {', '    if (false) {')],
+  [
+    '批量导入：非法单价静默当 0',
+    (src) => src.replace('    const price = normalizePrice(priceRaw)', '    const price = normalizePrice(priceRaw) === null ? 0 : normalizePrice(priceRaw)')
+  ],
+  [
+    '批量导入：不识别首列序号（整行右移失效）',
+    (src) => src.replace("(/^\\d+$/.test(cells[0]) || cells[0] === '#')", '(false)')
+  ],
+  ['批量导入：表头行被当成数据', (src) => src.replace("    if (/^(名称|材料名|包装名|物品名称|name)$/i.test(name)) continue\n", '')]
 ]
 
 function loadModules(dir) {
