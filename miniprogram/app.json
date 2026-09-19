@@ -193,6 +193,7 @@
         "purchase-ops/index",
         "shipment-ops/index",
         "shipment-edit/index",
+        "shipment-sku/index",
         "inventory-ops/index",
         "property-cost/index",
         "artisan-commission/index",

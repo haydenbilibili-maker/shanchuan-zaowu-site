@@ -55,6 +55,7 @@ const INVENTORY_OPS_PATH = '/subpackages/extra/inventory-ops/index'
 const RAW_INVENTORY_OPS_PATH = '/subpackages/manager/raw-inventory-ops/index'
 const STUDIO_DASHBOARD_PATH = '/subpackages/manager/studio-dashboard/index'
 const STUDIO_BILLS_PATH = '/subpackages/manager/studio-bills/index'
+const SHIPMENT_SKU_PATH = '/subpackages/extra/shipment-sku/index'
 const PROPERTY_COST_PATH = '/subpackages/extra/property-cost/index'
 const ARTISAN_COMMISSION_PATH = '/subpackages/extra/artisan-commission/index'
 const ARTISAN_COMMISSION_MINE_PATH = '/subpackages/extra/artisan/commission/index'
@@ -391,6 +392,14 @@ function goStudioDashboard() {
 }
 
 /**
+ * **仅超管**：出货开单（SKU 化）—— 产品负责人要求的**独立新入口**，不与老「出货单」合并。
+ * 同样刻意不写 `fail` 回调（理由同下）。
+ */
+function goShipmentSku() {
+  wx.navigateTo({ url: SHIPMENT_SKU_PATH })
+}
+
+/**
  * 超管或店长：工作室账单（超管确认收款 / 店长标记已付款；服务端按角色与门店范围判定）
  *
  * ⚠️ **刻意不写 `fail` 回调**：`check:dialog-ratchet` 冻结了原生弹窗数量（只许降），
@@ -656,6 +665,7 @@ module.exports = {
   RAW_INVENTORY_OPS_PATH,
   STUDIO_DASHBOARD_PATH,
   STUDIO_BILLS_PATH,
+  SHIPMENT_SKU_PATH,
   PROPERTY_COST_PATH,
   MENU_KEYS,
   HUB_MENU_SECTIONS,
@@ -699,6 +709,7 @@ module.exports = {
   goRawInventoryOps,
   goStudioDashboard,
   goStudioBills,
+  goShipmentSku,
   goPropertyCost,
   goArtisanCommission,
   goArtisanCommissionMine,

@@ -1,0 +1,214 @@
+<!-- 出货开单（SKU 化）—— 超管工作台入口
+     与老入口（shipment-ops 粘贴解析 + shipment-edit 逐行核对）并存、不合并
+     单价一律来自云函数；取不到就显示「待核价」，不给假数字 -->
+<view class="ss-page" wx:if="{{ready}}">
+  <view class="ss-header">
+    <text class="ss-title">出货开单</text>
+    <text class="ss-sub">选 SKU → 填数量 → 保存。金额由服务端按价目表现算并存进单据。</text>
+  </view>
+
+  <!-- 客户 + 出货时间 -->
+  <view class="ss-card">
+    <view class="ss-row">
+      <text class="ss-label">客户</text>
+      <picker class="ss-pick" mode="selector" range="{{stores}}" range-key="name" value="{{storeIndex}}" bindchange="onStoreChange">
+        <view class="ss-pick-inner"><text>{{storeName || '请选择客户'}}</text><text class="ss-arrow">▾</text></view>
+      </picker>
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">出货时间</text>
+      <picker class="ss-pick" mode="date" value="{{shipmentDate}}" bindchange="onDateChange">
+        <view class="ss-pick-inner"><text>{{shipmentDate || '请选择日期'}}</text><text class="ss-arrow">▾</text></view>
+      </picker>
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">备注</text>
+      <input class="ss-input" value="{{note}}" placeholder="可留空" bindinput="onNoteInput" />
+    </view>
+  </view>
+
+  <view class="ss-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
+  <!-- 加行 -->
+  <view class="ss-add-row">
+    <view class="ss-add-btn" bindtap="openSkuPicker"><text>＋ 选已有 SKU</text></view>
+    <view class="ss-add-btn is-ghost" bindtap="openSkuForm"><text>＋ 新建 SKU</text></view>
+  </view>
+
+  <!-- 明细 -->
+  <view class="ss-lines">
+    <view class="ss-line {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}" wx:for="{{lines}}" wx:key="skuId">
+      <view class="ss-line-head">
+        <text class="ss-line-name">{{item.skuName}}</text>
+        <view class="ss-del" data-index="{{index}}" catchtap="onRemoveLine"><text>删除</text></view>
+      </view>
+
+      <view class="ss-line-calc">
+        <text class="ss-unit">{{item.unitPriceText}}/件</text>
+        <view class="ss-qty">
+          <view class="ss-qty-btn" data-index="{{index}}" data-delta="-1" bindtap="onQtyStep"><text>−</text></view>
+          <input class="ss-qty-input" type="number" value="{{item.qty}}" data-index="{{index}}" bindinput="onQtyInput" />
+          <view class="ss-qty-btn" data-index="{{index}}" data-delta="1" bindtap="onQtyStep"><text>＋</text></view>
+        </view>
+        <text class="ss-line-total {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{item.lineTotalText || '—'}}</text>
+      </view>
+
+      <!-- 行级费率覆盖（SKU 上已存默认，这里只处理"这一单特殊"） -->
+      <view class="ss-rate-row">
+        <switch class="ss-switch" checked="{{item.useLineRate}}" color="#C4A76C" data-index="{{index}}" bindchange="onToggleLineRate" />
+        <text class="ss-rate-hint" wx:if="{{!item.useLineRate}}">
+          手工费{{item.rateSource === 'sku' ? '（SKU 默认 ' + item.effectiveRatePct + '%）' : '（全局 ' + globalRatePct + '%）'}}
+        </text>
+        <block wx:else>
+          <input class="ss-rate-input" type="digit" value="{{item.laborRatePct}}" data-index="{{index}}" bindinput="onLineRateInput" />
+          <text class="ss-rate-hint">%（本行单独设）</text>
+        </block>
+      </view>
+
+      <view class="ss-note" wx:if="{{item.pricingStatus !== 'priced'}}">
+        <text>{{item.pricingNote || '这一行取不到价，未计入合计'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="ss-empty" wx:if="{{!lines.length}}">
+    <text>还没有明细</text>
+    <text class="ss-empty-hint">点上面「选已有 SKU」或「新建 SKU」</text>
+  </view>
+
+  <!-- 底部常驻合计 -->
+  <view class="ss-summary">
+    <view class="ss-sum-item"><text class="ss-sum-label">{{lines.length}} 行 · {{totalQty}} 件</text></view>
+    <view class="ss-sum-item ss-sum-total"><text class="ss-sum-label">合计</text><text class="ss-sum-value">{{totalText}}</text></view>
+  </view>
+
+  <view class="ss-actions">
+    <button class="ss-btn ss-btn-main" bindtap="onSave" disabled="{{busy}}">{{busy ? '处理中…' : '保存出货单'}}</button>
+  </view>
+
+  <!-- 选已有 SKU -->
+  <view class="ss-mask" wx:if="{{skuPicker.show}}" bindtap="closeSkuPicker"></view>
+  <view class="ss-sheet" wx:if="{{skuPicker.show}}">
+    <view class="ss-sheet-head">
+      <text class="ss-sheet-title">选择出货 SKU</text>
+      <view class="ss-sheet-close" bindtap="closeSkuPicker"><text>关闭</text></view>
+    </view>
+    <view class="ss-search">
+      <input class="ss-search-input" placeholder="搜 SKU 名（如 大蓝闪蝶）" value="{{skuPicker.keyword}}" bindinput="onSkuKeyword" />
+    </view>
+    <scroll-view class="ss-sheet-body" scroll-y>
+      <view class="ss-loading" wx:if="{{skuPicker.loading}}"><text>加载中…</text></view>
+      <view class="ss-empty" wx:elif="{{!skuPicker.list.length}}">
+        <text>还没有 SKU</text>
+        <text class="ss-empty-hint">点「新建 SKU」建一个（同组合只需建一次，以后直接选）</text>
+      </view>
+      <block wx:else>
+        <view class="ss-sku" wx:for="{{skuPicker.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onPickSku">
+          <view class="ss-sku-main">
+            <text class="ss-sku-name">{{item.skuName}}</text>
+            <text class="ss-sku-meta">{{item.rateText}}{{item.pricingStatus !== 'priced' ? ' · ' + (item.pricingNote || '待核价') : ''}}</text>
+          </view>
+          <text class="ss-sku-price {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{item.unitPriceText}}</text>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+
+  <!-- 现场新建 SKU -->
+  <view class="ss-mask" wx:if="{{skuForm.show}}" bindtap="closeSkuForm"></view>
+  <view class="ss-sheet" wx:if="{{skuForm.show}}">
+    <view class="ss-sheet-head">
+      <text class="ss-sheet-title">新建出货 SKU</text>
+      <view class="ss-sheet-close" bindtap="closeSkuForm"><text>关闭</text></view>
+    </view>
+    <scroll-view class="ss-sheet-body" scroll-y>
+      <view class="ss-alert">
+        <text>SKU = 材料 × 等级 × 包装 × 尺寸 + 默认手工费率。同组合只需建一次，以后开单直接选；要改默认费率就编辑它，别新建。</text>
+      </view>
+
+      <view class="ss-row">
+        <text class="ss-label">原材料</text>
+        <view class="ss-pick-inner ss-pick-click" data-kind="material" bindtap="openPicker">
+          <text class="{{skuForm.materialName ? '' : 'is-empty'}}">{{skuForm.materialName ? (skuForm.materialName + (skuForm.materialGrade ? '（' + skuForm.materialGrade + '）' : '')) : '选择原材料'}}</text>
+          <text class="ss-arrow">▾</text>
+        </view>
+      </view>
+      <view class="ss-row">
+        <text class="ss-label">包装方式</text>
+        <view class="ss-pick-inner ss-pick-click" data-kind="packaging" bindtap="openPicker">
+          <text class="{{skuForm.packagingName ? '' : 'is-empty'}}">{{skuForm.packagingName ? (skuForm.packagingName + (skuForm.packagingSize ? ' ' + skuForm.packagingSize : '')) : '选择包装方式'}}</text>
+          <text class="ss-arrow">▾</text>
+        </view>
+      </view>
+      <view class="ss-row">
+        <text class="ss-label">手工费</text>
+        <view class="ss-rate-ctl">
+          <switch class="ss-switch" checked="{{skuForm.useGlobalRate}}" color="#C4A76C" bindchange="onFormRateToggle" />
+          <text class="ss-rate-hint" wx:if="{{skuForm.useGlobalRate}}">用全局 {{globalRatePct}}%</text>
+          <block wx:else>
+            <input class="ss-rate-input" type="digit" value="{{skuForm.laborRatePct}}" bindinput="onFormRate" />
+            <text class="ss-rate-hint">%</text>
+          </block>
+        </view>
+      </view>
+      <view class="ss-row">
+        <text class="ss-label">SKU 名</text>
+        <input class="ss-input" value="{{skuForm.name}}" placeholder="留空即自动生成" bindinput="onFormName" />
+      </view>
+
+      <view class="ss-preview">
+        <text class="ss-preview-label">这一组合的单价</text>
+        <text class="ss-preview-value {{skuForm.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{skuForm.unitPriceText}}</text>
+        <text class="ss-preview-note" wx:if="{{skuForm.pricingNote}}">{{skuForm.pricingNote}}</text>
+      </view>
+
+      <view class="ss-problems" wx:if="{{skuForm.problems.length}}">
+        <text wx:for="{{skuForm.problems}}" wx:key="*this">· {{item}}</text>
+      </view>
+    </scroll-view>
+    <view class="ss-actions is-in-sheet">
+      <button class="ss-btn ss-btn-main" bindtap="submitSkuForm" disabled="{{skuForm.saving}}">
+        {{skuForm.saving ? '创建中…' : '创建并加入明细'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 材料/包装选择器 -->
+  <view class="ss-mask" wx:if="{{picker.show}}" bindtap="closePicker"></view>
+  <view class="ss-sheet" wx:if="{{picker.show}}">
+    <view class="ss-sheet-head">
+      <text class="ss-sheet-title">选择{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>
+      <view class="ss-sheet-close" bindtap="closePicker"><text>关闭</text></view>
+    </view>
+    <view class="ss-search">
+      <input class="ss-search-input" placeholder="输入名称或别名（如 大蓝闪）" value="{{picker.keyword}}" bindinput="onPickerKeyword" />
+    </view>
+    <scroll-view class="ss-sheet-body" scroll-y>
+      <view class="ss-loading" wx:if="{{picker.loading}}"><text>加载中…</text></view>
+      <view class="ss-empty" wx:elif="{{!picker.list.length}}">
+        <text>没有匹配项</text>
+        <text class="ss-empty-hint">请先到 ERP「价目表配置」维护</text>
+      </view>
+      <block wx:else>
+        <view class="ss-group" wx:for="{{picker.list}}" wx:key="key">
+          <view class="ss-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
+            <view class="ss-group-main">
+              <text class="ss-group-name">{{item.displayName}}</text>
+              <text class="ss-group-meta" wx:if="{{item.aliases.length}}">别名 {{item.aliases}}</text>
+            </view>
+            <text class="ss-group-count">{{item.optionField === 'size' ? '尺寸' : '等级'}} {{item.optionCount}}</text>
+          </view>
+          <view class="ss-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
+            <view class="ss-option" wx:for="{{item.options}}" wx:for-item="opt" wx:key="_id"
+                  data-key="{{item.key}}" data-option="{{opt.option}}" data-id="{{opt._id}}" bindtap="onPickOption">
+              <text class="ss-option-name">{{opt.option}}</text>
+              <text class="ss-option-price">{{opt.unitPriceText}}</text>
+              <text class="ss-option-tag" wx:if="{{opt.isDefault}}">默认</text>
+            </view>
+          </view>
+          <view class="ss-group-hint" wx:else><text>点一下展开 {{item.optionCount}} 个规格</text></view>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+</view>

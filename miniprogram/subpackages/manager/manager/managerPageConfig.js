@@ -88,6 +88,7 @@ const {
   goRawInventoryOps,
   goStudioDashboard,
   goStudioBills,
+  goShipmentSku,
   goPropertyCost,
   goArtisanCommission,
   goBookingRules,
@@ -2291,6 +2292,12 @@ const managerPageConfig = {
    *    `canSeeMenu` 用的是同一个判定源；页面内 `guardStaffPage('manager')` 与服务端
    *    仍各自独立判定（客户端判定不是执法）。
    */
+  /** 出货开单（SKU 化）—— **仅超管**。拒绝分支不弹原生 toast（棘轮只许降），该支在 UI 上不可达 */
+  goShipmentSkuGuarded() {
+    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.SHIPMENT_SKU)) return;
+    goShipmentSku();
+  },
+
   goStudioBillsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.STUDIO_BILLS)) return;
     goStudioBills();

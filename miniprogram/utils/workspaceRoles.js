@@ -57,6 +57,7 @@ const MENU_KEYS = {
   RAW_INVENTORY_OPS: 'rawInventoryOps',
   STUDIO_DASHBOARD: 'studioDashboard',
   STUDIO_BILLS: 'studioBills',
+  SHIPMENT_SKU: 'shipmentSku',
   PROPERTY_COST: 'propertyCost',
   ARTISAN_COMMISSION: 'artisanCommission',
   BOOKING_RULES: 'bookingRules',
@@ -182,6 +183,7 @@ const HUB_MENU_SECTIONS = {
   ],
   STUDIO: [
     MENU_KEYS.STUDIO_DASHBOARD,
+    MENU_KEYS.SHIPMENT_SKU,
     MENU_KEYS.STUDIO_BILLS,
     MENU_KEYS.PROPERTY_COST,
     MENU_KEYS.PURCHASE_OPS,
