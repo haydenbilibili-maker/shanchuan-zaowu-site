@@ -20,6 +20,10 @@
  *   ⑤ `destroySfx()` 之后能重建且立即发声（节流状态被复位）
  *   ⑥ 音频报错后**只自愈一次**（重设 src 恰好 1 次），不会回到每 tick 重设
  *   ⑦ 三页的逐字循环都走 `textFx.playTick`（漏一页等于那页还是旧写法）
+ *   ⑧ **音源本体**：解码 `SFX_SRC` 指向的 WAV，断言**敲击瞬态 ≤25ms**、时长 ≤250ms、
+ *      不削波、不近乎无声、单声道（②③④是"代码怎么用音频"，⑧是"素材本身对不对"——
+ *      真机"只响三声"的根因就在素材：敲击在第 110ms，前面 100ms 是静音，
+ *      而热路径每 ~90ms 就 stop() 一次 ⇒ 声音在响之前被掐掉）
  *
  * 用法：
  *   node miniprogram/scripts/check-gift-sfx-perf.mjs             # 校验
@@ -37,9 +41,88 @@ const MP_DEFAULT = join(HERE, '..')
 
 const REL = {
   helper: 'subpackages/feature/gift/giftTextEffect.js',
+  asset: 'subpackages/feature/gift/assets/gift-typewriter.wav',
   compose: 'subpackages/feature/gift/compose/index.js',
   success: 'subpackages/feature/gift/success/index.js',
   receive: 'subpackages/feature/gift/receive/index.js'
+}
+
+/** 在 WAV 的 data 块前面插一段静音（自检用：复现"瞬态不在开头"的事故形态） */
+function prependSilence (file, ms) {
+  const buf = readFileSync(file)
+  let off = 12
+  let fmt = null
+  let dataOff = -1
+  let dataSize = 0
+  let sizeFieldOff = -1
+  while (off + 8 <= buf.length) {
+    const id = buf.toString('ascii', off, off + 4)
+    const size = buf.readUInt32LE(off + 4)
+    if (id === 'fmt ') {
+      fmt = { channels: buf.readUInt16LE(off + 10), sampleRate: buf.readUInt32LE(off + 12), bits: buf.readUInt16LE(off + 22) }
+    } else if (id === 'data') {
+      dataOff = off + 8
+      dataSize = size
+      sizeFieldOff = off + 4
+      break
+    }
+    off = off + 8 + size + (size % 2)
+  }
+  if (!fmt || dataOff < 0) throw new Error('自检注入：找不到 fmt/data 块')
+  const zeros = Buffer.alloc(Math.round(fmt.sampleRate * (ms / 1000)) * fmt.channels * (fmt.bits / 8))
+  const out = Buffer.concat([
+    buf.subarray(0, dataOff), zeros,
+    buf.subarray(dataOff, dataOff + dataSize), buf.subarray(dataOff + dataSize)
+  ])
+  out.writeUInt32LE(dataSize + zeros.length, sizeFieldOff)
+  out.writeUInt32LE(out.length - 8, 4)
+  writeFileSync(file, out)
+}
+
+/**
+ * 解码 16bit PCM WAV（纯 JS，不依赖 ffmpeg —— CI 里也能真跑）。
+ * 之所以坚持"能解码"：本次真机事故的根因就在**素材**里（敲击在第 110ms、前面是静音），
+ * 只看文件大小/时长这种代理指标抓不住它。
+ */
+function readWav (file) {
+  const buf = readFileSync(file)
+  if (buf.length < 44 || buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WAVE') {
+    throw new Error('不是 RIFF/WAVE 文件')
+  }
+  let off = 12
+  let fmt = null
+  let dataOff = -1
+  let dataLen = 0
+  while (off + 8 <= buf.length) {
+    const id = buf.toString('ascii', off, off + 4)
+    const size = buf.readUInt32LE(off + 4)
+    const body = off + 8
+    if (id === 'fmt ') {
+      fmt = {
+        channels: buf.readUInt16LE(body + 2),
+        sampleRate: buf.readUInt32LE(body + 4),
+        bits: buf.readUInt16LE(body + 14)
+      }
+    } else if (id === 'data') {
+      dataOff = body
+      dataLen = Math.min(size, buf.length - body)
+    }
+    off = body + size + (size % 2)
+  }
+  if (!fmt || dataOff < 0) throw new Error('缺 fmt/data 块')
+  if (fmt.bits !== 16) throw new Error(`只支持 16bit PCM（当前 ${fmt.bits}bit）`)
+  const count = Math.floor(dataLen / 2)
+  const samples = new Array(count)
+  for (let i = 0; i < count; i += 1) samples[i] = buf.readInt16LE(dataOff + i * 2)
+  return { ...fmt, samples, durationMs: (count / fmt.channels / fmt.sampleRate) * 1000 }
+}
+
+/** 敲击瞬态位置（首个超过峰值 35% 的采样点，毫秒） */
+function onsetMs (wav) {
+  const peak = wav.samples.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
+  if (!peak) return { onsetMs: Infinity, peak: 0 }
+  const i = wav.samples.findIndex((v) => Math.abs(v) > peak * 0.35)
+  return { onsetMs: (i * 1000) / wav.sampleRate, peak }
 }
 
 /** 每次音效之间的最小间隔下界（毫秒）：低于这个数就是在轰音频管线 */
@@ -182,6 +265,37 @@ function check (root) {
     if (!src.includes('playTick(')) problems.push(`${rel} 的逐字循环没有调用 textFx.playTick（${key} 页会退回旧写法）`)
   }
 
+  // ⑧ 音源本体：**瞬态必须落在文件开头**（本次真机事故的根因就在素材里）
+  const srcMatch = source.match(/const SFX_SRC = '([^']+)'/)
+  if (!srcMatch) {
+    problems.push('未找到 SFX_SRC 常量')
+  } else {
+    const assetRel = srcMatch[1].replace(/^\//, '')
+    const assetAbs = join(root, assetRel)
+    let wav = null
+    try {
+      wav = readWav(assetAbs)
+    } catch (e) {
+      problems.push(`音源 ${assetRel} 不可解码：${e.message}（必须 16bit PCM WAV，守卫才能真正量到瞬态）`)
+    }
+    if (wav) {
+      const { onsetMs: onset, peak } = onsetMs(wav)
+      if (!(onset <= 25)) {
+        problems.push(
+          `音源 ${assetRel} 的敲击瞬态在 ${onset.toFixed(0)}ms（必须 ≤25ms）：热路径每 ≥${gap}ms 会 stop() 一次，` +
+          '瞬态靠后会**在响之前被掐掉** —— 真机表现就是"只响几声、忽有忽无"'
+        )
+      }
+      if (wav.durationMs > 250) {
+        problems.push(`音源 ${assetRel} 时长 ${wav.durationMs.toFixed(0)}ms（应 ≤250ms）：这是"每字一声"的短音效，不是循环床`)
+      }
+      if (peak > 0.99 * 32767) problems.push(`音源 ${assetRel} 削波（峰值 ${(peak / 32767).toFixed(3)}）`)
+      if (peak < 0.2 * 32767) problems.push(`音源 ${assetRel} 近乎无声（峰值 ${(peak / 32767).toFixed(3)}）`)
+      if (wav.channels !== 1) problems.push(`音源 ${assetRel} 是 ${wav.channels} 声道（应单声道，省包体也够用）`)
+      console.log(`  · 音源 ${assetRel}: ${wav.durationMs.toFixed(0)}ms / 瞬态 ${onset.toFixed(0)}ms / 峰值 ${(peak / 32767).toFixed(2)} / ${wav.sampleRate}Hz`)
+    }
+  }
+
   return problems
 }
 
@@ -234,9 +348,37 @@ function selftest () {
         file: REL.receive,
         mutate: (s) => s.replace(/textFx\.playTick\(/g, 'this._legacyTick('),
         expect: /没有调用 textFx\.playTick/
+      },
+      {
+        name: '音源被换成"前面一段静音"的（瞬态跑到 120ms —— 本次真机事故的原形态）',
+        file: null,
+        mutate: null,
+        asset: true,
+        expect: /瞬态在 \d+ms/
       }
     ]
     for (const inj of injections) {
+      if (inj.asset) {
+        // 音源类注入：直接在临时副本上给 data 块前面插 120ms 静音
+        const assetAbs = join(tmp, REL.asset)
+        try {
+          prependSilence(assetAbs, 120)
+          const res = run()
+          const out = `${res.stdout || ''}${res.stderr || ''}`
+          if (res.status !== 0 && inj.expect.test(out)) {
+            console.log(`✓ ${inj.name} → 被守卫拦下`)
+          } else {
+            bad += 1
+            console.log(`✗ ${inj.name} → 未被拦下（status=${res.status}）\n${out.slice(0, 500)}`)
+          }
+        } catch (e) {
+          bad += 1
+          console.log(`✗ ${inj.name} 注入出错：${e.message}`)
+        }
+        // 还原音源
+        writeFileSync(assetAbs, readFileSync(join(MP_DEFAULT, REL.asset)))
+        continue
+      }
       const abs = join(tmp, inj.file)
       const orig = readFileSync(abs, 'utf8')
       const mutated = inj.mutate(orig)
@@ -266,7 +408,7 @@ function selftest () {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：切片/计数判据 + 5 处真实注入（删节流、热路径重设 src、热路径写 volume、间隔调小、某页不走共享件）全部拦下')
+  console.log('\n自检通过：切片/计数判据 + 6 处真实注入（删节流、热路径重设 src、热路径写 volume、间隔调小、某页不走共享件、音源瞬态不在开头）全部拦下')
 }
 
 function main () {

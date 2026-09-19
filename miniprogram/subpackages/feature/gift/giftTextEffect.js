@@ -20,7 +20,18 @@
  * 这个意图应当一贯（收发是不同人不同设备，各自存储互不影响）。
  */
 
-const SFX_SRC = '/subpackages/feature/gift/assets/gift-typewriter.mp3'
+/**
+ * ⚠️ 音源的第一条硬约束：**敲击瞬态必须落在文件开头（≤25ms）**。
+ *
+ * 真机事故（2026-09-19，产品负责人："只播放了三声，每段隔 2 秒左右"）：
+ *   原来的 0.5s 素材把敲击放在 **110~120ms**、前面 100ms 是近乎静音，
+ *   而热路径每 ~90ms 就 `stop()` 一次 —— **声音在响之前就被掐掉了**，
+ *   只有恰好间隔够长的少数几次能走到瞬态，于是"只响几声、忽有忽无"。
+ *   现素材 `gift-typewriter.wav` 是同一段录音切出来的 170ms 单声（PCM，瞬态在 1ms）。
+ *   守卫 `check:gift-sfx-perf` 会**解码这个文件**断言瞬态位置 ≤25ms，
+ *   并断言本常量确实指向它 —— 免得"守卫查一个文件、代码放另一个文件"。
+ */
+const SFX_SRC = '/subpackages/feature/gift/assets/gift-typewriter.wav'
 const SFX_VOLUME = 0.58
 const MUTE_KEY = 'gift_receive_sfx_muted'
 
