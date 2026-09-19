@@ -263,7 +263,8 @@
 |---|---|---|
 | `materialId` / `materialName` / `materialGrade` | string | 命中的材料行（`materialId` = 价目表 `_id`） |
 | `packagingId` / `packagingName` / `packagingSize` | string | 命中的包装行 |
-| `materialCost` / `packagingCost` / `laborCost` | number | **分**为单位的整数，见 §5.4 |
+| `unitMaterialCostCents` / `unitPackagingCostCents` / `unitLaborCostCents` | number | **分 / 件**（整数），见 §5.4 |
+| `unitTotalCents` / `lineTotalCents` | number | **分 / 件** 与 **分 / 行**（`lineTotalCents` = `unitTotalCents × qty`） |
 | `unitPrice` / `totalPrice` | number | **已有字段**，改为算价结果（元，2 位小数） |
 | `pricingStatus` | `priced\|unmatched\|ambiguous\|manual` | `unmatched`=取不到价；`ambiguous`=多义；`manual`=人工填/改 |
 | `pricingNote` | string | 未匹配原因原文，直接给用户看 |
@@ -396,7 +397,16 @@
 - 单价存**元**（`unitPrice`，人读），算价时 `×100` 取整为分；
 - 手工费**按行**计算后四舍五入到分，再累加（口径：每行独立成价，行小计之和 = 单总价）；
 - 落库时 `unitPrice`/`totalPrice`/`totalAmount` 仍是**元（2 位小数）**，保持既有字段语义与飞书/看板兼容；
-- 分单位值另存（`materialCost` 等），供日后审计对账。
+- 分单位值另存（`unit*Cents` / `lineTotalCents`），供日后审计对账。
+
+> ⚠️ **字段名必须自带单位**（`unit*Cents` = 分/件、`lineTotalCents` = 分/行）。
+> 这是被真实事故逼出来的规矩：最初字段叫 `materialCostCents`（每件）与 `totalCents`（整行），
+> 两个名字看起来同级、实际单位不同 —— 汇总时若对两者都乘 `qty`，**总额正好翻倍**，
+> 而且不报错、类型也对，只有对账时才发现。详见 `docs/AI施工错题本.md` 的 **E18**。
+>
+> **单据级合计按定义取分项之和**（`totalCents = materialCostCents + packagingCostCents + laborCostCents`），
+> 而不是"另算一遍再指望两处一致" —— 让不变量成为**结构性**的。
+> 守卫 `test:studio-pricing` 的 E19/E20/E21 三条不变量 + 一条**专门复现该翻倍 bug 的注入**钉住它。
 
 ### 5.5 定价快照与重算（**防止历史单被改价**）
 

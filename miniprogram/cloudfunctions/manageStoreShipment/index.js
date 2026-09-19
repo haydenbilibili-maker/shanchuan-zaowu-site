@@ -7,7 +7,7 @@
  *   3. 飞书出货表：双向同步（upsertFromFeishu / bindFeishuRecord）
  *
  * action:
- *   meta | list | get | dashboard | parseText | searchSku | create | createFromParsed
+ *   meta | list | get | dashboard | parseText | quotePrice | searchSku | create | createFromParsed
  *   update | setStatus | remove
  *   upsertFromFeishu | syncStatus | syncLogs | bindFeishuRecord
  */
@@ -42,6 +42,20 @@ const {
   roundMoney
 } = require('./shipmentDefaults')
 const { buildShipmentDashboard } = require('./shipmentDashboard')
+const { buildContext, quoteLines, PRICING_STATUS, SHIPMENT_PRICING_STATUS } = require('./pricingEngine')
+
+/**
+ * 算价的三个外部数据源（蓝图 §4）。
+ * 读的是**集合本身**而不是 manageStudioSettlement 云函数：云函数之间不互相调用
+ * （仓库既有做法），共享的是数据；同口径由共享内核 `pricingCore.js` 保证。
+ */
+const MATERIAL_PRICE_COLLECTION = 'studio_material_prices'
+const PACKAGING_PRICE_COLLECTION = 'studio_packaging_prices'
+const SETTLEMENT_CONFIG_COLLECTION = 'configs'
+const SETTLEMENT_CONFIG_ID = 'studio_settlement'
+
+/** 结算配置缺字段一律按「关 + 30% + 要求写包装」兜底（与 manageStudioSettlement 同口径） */
+const DEFAULT_SETTLEMENT_CONFIG = { enabled: false, laborRatePct: 30, requirePackaging: true }
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -289,6 +303,86 @@ async function handleParseText(event) {
     msg: parsed.ok
       ? `已解析 ${parsed.summary.storeCount} 店 · ${parsed.summary.itemCount} 行 · 共 ${parsed.summary.totalQty} 件`
       : (parsed.errors[0] && parsed.errors[0].msg) || '解析失败'
+  })
+}
+
+/** 价目表可能还没建（首次使用）→ 视作空表，让页面提示「没有可选项」而不是报服务异常 */
+async function loadPriceRows(collection) {
+  const out = []
+  try {
+    let skip = 0
+    while (skip < 2000) {
+      const res = await db.collection(collection).where({ deleted: _.neq(true) }).skip(skip).limit(100).get()
+      const list = (res && res.data) || []
+      out.push(...list)
+      if (list.length < 100) break
+      skip += list.length
+    }
+  } catch (err) {
+    if (!/not exist|集合不存在|502005/i.test(String((err && err.errMsg) || err.message || err))) throw err
+    return []
+  }
+  return out
+}
+
+async function loadSettlementConfig() {
+  let doc = null
+  try {
+    const res = await db.collection(SETTLEMENT_CONFIG_COLLECTION).doc(SETTLEMENT_CONFIG_ID).get()
+    doc = (res && res.data) || null
+  } catch (err) {
+    doc = null
+  }
+  const src = doc || {}
+  const rate = Number(src.laborRatePct)
+  return {
+    enabled: src.enabled === true,
+    laborRatePct: Number.isFinite(rate) && rate >= 0 ? rate : DEFAULT_SETTLEMENT_CONFIG.laborRatePct,
+    requirePackaging: src.requirePackaging !== false
+  }
+}
+
+/**
+ * 算价（蓝图 §5）——「逐行可编辑页」与保存时的**唯一**取价入口。
+ *
+ * 为什么客户端不许自己算：预览价与落库价必须同源。前端只传「选了什么」（材料/等级/包装/尺寸/数量/费率），
+ * 金额一律由服务端用共享内核算出来，因此不存在「预览 160、落库 180」。
+ *
+ * 入参：{ lines: [{ itemName, qty, materialId?, materialName?, grade?, packagingId?, packagingName?, size?, laborRatePct? }],
+ *        laborRatePct? }   ← 单据级费率；行级 laborRatePct 优先（裁决 22）
+ */
+async function handleQuotePrice(event) {
+  const config = await loadSettlementConfig()
+  const lines = Array.isArray(event.lines) ? event.lines : []
+  if (!config.enabled) {
+    return ok({
+      enabled: false,
+      pricingStatus: SHIPMENT_PRICING_STATUS.INCOMPLETE,
+      lines: [],
+      msg: '算价未启用：请先在「价目表配置」里维护价目并开启结算算价',
+      config
+    })
+  }
+
+  const materials = await loadPriceRows(MATERIAL_PRICE_COLLECTION)
+  const packagings = await loadPriceRows(PACKAGING_PRICE_COLLECTION)
+  const ctx = buildContext({
+    materials,
+    packagings,
+    laborRatePct: event.laborRatePct != null ? event.laborRatePct : config.laborRatePct,
+    requirePackaging: config.requirePackaging
+  })
+  const quoted = quoteLines(lines, ctx)
+
+  return ok({
+    enabled: true,
+    config: { laborRatePct: config.laborRatePct, requirePackaging: config.requirePackaging },
+    priceBook: { materials: materials.length, packagings: packagings.length },
+    ...quoted,
+    msg:
+      quoted.issueCount > 0
+        ? `已算 ${quoted.pricedCount} 行，另有 ${quoted.issueCount} 行待处理`
+        : `已算 ${quoted.pricedCount} 行 · 合计 ¥${quoted.totalAmount}`
   })
 }
 
@@ -911,6 +1005,12 @@ exports.main = async (event = {}) => {
       const auth = await requireWriter(event, openid)
       if (!auth.ok) return auth.res
       return await handleSearchSku(event)
+    }
+
+    if (action === 'quotePrice') {
+      const auth = await requireWriter(event, openid)
+      if (!auth.ok) return auth.res
+      return await handleQuotePrice(event)
     }
 
     const auth = await requireReader(event, openid)

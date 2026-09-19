@@ -31,7 +31,11 @@ import { fileURLToPath } from 'node:url'
 const require = createRequire(import.meta.url)
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../..')
-const ENGINE_PATH = resolve(ROOT, 'miniprogram/cloudfunctions/manageStoreShipment/pricingEngine.js')
+// 实现真源在内核；`pricingEngine.js` 只是门面（转发 './pricingCore'）。
+// ⚠️ 注入必须打到**内核**：打门面会全部报「锚点失效」（2026-09-19 拆共享模块时真实发生，
+//    断言照样全绿、注入却什么都证明不了 —— 靠锚点失效检测才发现）。
+const CORE_PATH = resolve(ROOT, 'miniprogram/cloudfunctions/manageStoreShipment/pricingCore.js')
+const FACADE_PATH = resolve(ROOT, 'miniprogram/cloudfunctions/manageStoreShipment/pricingEngine.js')
 
 // ─────────────────────────── 断言收集 ───────────────────────────
 
@@ -122,6 +126,16 @@ const SAMPLE_BARE = ['华艳色蟌', '翠蓝眼蛱蝶', '扩头深山锹甲', '�
 
 function runTests(E) {
   const baseCtx = () => E.buildContext({ materials: MATERIALS, packagings: PACKAGINGS, laborRatePct: 30 })
+
+  // ── 0. 门面忠实转发 ──
+  // `pricingEngine.js` 只是 `module.exports = require('./pricingCore')`。
+  // 若将来有人在门面上加一层筛选/改名而漏掉某个导出，调用方会拿到 undefined 而**不报错**。
+  // 这条断言把「门面导出 == 内核导出」钉住。
+  const facade = require(FACADE_PATH)
+  const coreKeys = Object.keys(E).sort().join(',')
+  const facadeKeys = Object.keys(facade).sort().join(',')
+  ok('0-1 门面与内核导出同一批名字', coreKeys === facadeKeys, `内核 ${coreKeys}\n      门面 ${facadeKeys}`)
+  ok('0-2 门面转发的函数是真函数', typeof facade.buildContext === 'function' && typeof facade.quoteLines === 'function')
 
   // ── A. 归一化：粘贴文本里的全角/空格/零宽/乘号必须都能对上 ──
   eq('A1 全角字母数字转半角', E.normalizeName('Ａ１'), 'A1')
@@ -247,7 +261,7 @@ function runTests(E) {
   eq('C15 裸名报 unmatched', bare.pricingStatus, 'unmatched')
   ok('C16 裸名的原因明说是没写包装', /未写包装/.test(bare.pricingNote), bare.pricingNote)
   eq('C17 裸名不写 0 元单价（必须 null）', bare.unitPrice, null)
-  eq('C18 裸名不写 0 分材料费（必须 null）', bare.materialCostCents, null)
+  eq('C18 裸名不写 0 分材料费（必须 null）', bare.unitMaterialCostCents, null)
   eq('C19 裸名保留已命中的材料信息（便于人工补包装）', bare.materialName, '华艳色蟌')
   eq('C20 材料不存在报 unmatched', one('不存在的蝶玻璃罩').pricingStatus, 'unmatched')
   ok('C21 材料不存在的文案', /未找到原材料/.test(one('不存在的蝶玻璃罩').pricingNote))
@@ -276,21 +290,21 @@ function runTests(E) {
     qty: 2,
     laborRatePct: 30
   })
-  eq('D1 材料费（分/件）', amt.materialCostCents, 18000)
-  eq('D2 包装费（分/件）', amt.packagingCostCents, 4500)
-  eq('D3 手工费 = (材料+包装)×30%（分/件）', amt.laborCostCents, 6750)
+  eq('D1 材料费（分/件）', amt.unitMaterialCostCents, 18000)
+  eq('D2 包装费（分/件）', amt.unitPackagingCostCents, 4500)
+  eq('D3 手工费 = (材料+包装)×30%（分/件）', amt.unitLaborCostCents, 6750)
   eq('D4 单价（元）', amt.unitPrice, 292.5)
   eq('D5 总价（元）= 单价×数量', amt.totalPrice, 585)
-  eq('D6 总价分', amt.totalCents, 58500)
+  eq('D6 总价分', amt.lineTotalCents, 58500)
 
   // 手工费出现「不足 1 分」时必须四舍五入，且不允许破坏 单价×数量=总价
   const odd = E.computeAmounts({ materialUnitPrice: 19.99, packagingUnitPrice: 0, qty: 3, laborRatePct: 30 })
-  eq('D7 不足 1 分的手工费四舍五入（599.7 → 600）', odd.laborCostCents, 600)
+  eq('D7 不足 1 分的手工费四舍五入（599.7 → 600）', odd.unitLaborCostCents, 600)
   eq('D8 奇数单价×3 的总价精确（按件取整得到 77.97）', odd.totalPrice, 77.97)
   ok(
     'D9 单价×数量 === 总价（分，精确）',
-    Math.round(odd.unitPrice * 100) * 3 === odd.totalCents,
-    `unitPrice=${odd.unitPrice} totalCents=${odd.totalCents}`
+    Math.round(odd.unitPrice * 100) * 3 === odd.lineTotalCents,
+    `unitPrice=${odd.unitPrice} totalCents=${odd.lineTotalCents}`
   )
 
   // qtyPerUnit：默认 1；显式 >1 时按倍数算（蓝图裁决 19：字段留着，默认不启用）
@@ -301,10 +315,10 @@ function runTests(E) {
     qty: 2,
     laborRatePct: 0
   })
-  eq('D10 qtyPerUnit=3 时材料费按 3 倍', multi.materialCostCents, 30000)
+  eq('D10 qtyPerUnit=3 时材料费按 3 倍', multi.unitMaterialCostCents, 30000)
   const noQty = E.computeAmounts({ materialUnitPrice: 100, packagingUnitPrice: 0, qty: 1, laborRatePct: 0 })
-  eq('D11 qtyPerUnit 缺失时按 1', noQty.materialCostCents, 10000)
-  eq('D12 费率 0 时没有手工费', noQty.laborCostCents, 0)
+  eq('D11 qtyPerUnit 缺失时按 1', noQty.unitMaterialCostCents, 10000)
+  eq('D12 费率 0 时没有手工费', noQty.unitLaborCostCents, 0)
 
   // ── E. 整批：真实样本 21 行是验收基线 ──
   const quoted = E.quoteLines(sampleLines(), baseCtx())
@@ -347,13 +361,35 @@ function runTests(E) {
     'E13 每行 单价×数量 = 该行总分（逐行精确）',
     quoted.lines
       .filter((l) => l.pricingStatus === 'priced')
-      .every((l) => Math.round(l.unitPrice * 100) * l.qty === l.totalCents)
+      .every((l) => Math.round(l.unitPrice * 100) * l.qty === l.lineTotalCents)
   )
   eq('E14 别名行「大蓝闪玻璃罩」命中的是「大蓝闪蝶」', quoted.lines[12].materialName, '大蓝闪蝶')
   eq('E15 别名行「熊风王」命中的是「熊蜂王」', quoted.lines[18].materialName, '熊蜂王')
   eq('E16 同一材料配不同包装各自成价（爱神凤蝶 玻璃罩）', quoted.lines[7].packagingName, '玻璃罩')
   eq('E17 同一材料配不同包装各自成价（爱神凤蝶 框）', quoted.lines[8].packagingName, '框')
   eq('E18 同一材料配不同包装各自成价（爱神凤蝶 造景）', quoted.lines[9].packagingName, '造景')
+
+  // ⚠️ 单位不变量（本仓库真实踩过一次：行级 `unit*Cents` 是「分/件」、`lineTotalCents` 是「分/行」，
+  //    汇总时两者都乘 qty → 总额正好翻倍，且不报错、类型也对，只有对账时才发现）。
+  ok(
+    'E19 单据合计 = Σ 各行 lineTotalCents（分/行，**不再乘数量**）',
+    quoted.totalCents ===
+      quoted.lines
+        .filter((l) => l.pricingStatus === 'priced')
+        .reduce((n, l) => n + l.lineTotalCents, 0),
+    `totalCents=${quoted.totalCents}`
+  )
+  ok(
+    'E20 单据合计 = 材料 + 包装 + 手工（三分项按「分/件 × 数量」累加）',
+    quoted.totalCents ===
+      quoted.materialCostCents + quoted.packagingCostCents + quoted.laborCostCents,
+    `${quoted.materialCostCents}+${quoted.packagingCostCents}+${quoted.laborCostCents} != ${quoted.totalCents}`
+  )
+  ok(
+    'E21 单据合计（元）= 合计（分）÷ 100',
+    Math.round(quoted.totalCents) / 100 === quoted.totalAmount,
+    `totalCents=${quoted.totalCents} totalAmount=${quoted.totalAmount}`
+  )
 
   // ── G. 行级手工费率覆盖（蓝图 v1.2 追加：单据级默认 + 行级可覆盖，默认不启用） ──
   const rateCtx = E.buildContext({ materials: MATERIALS, packagings: PACKAGINGS, laborRatePct: 30 })
@@ -364,10 +400,10 @@ function runTests(E) {
   const lineWithRate = E.resolveLine({ itemName: '爱神凤蝶玻璃罩', qty: 1, laborRatePct: 50 }, rateCtx)
   eq('G3 行级费率覆盖单据级', lineWithRate.laborRatePct, 50)
   eq('G4 来源标记为 line', lineWithRate.laborRateSource, 'line')
-  ok('G5 行级费率更高时手工费更高', lineWithRate.laborCostCents > lineNoRate.laborCostCents)
+  ok('G5 行级费率更高时手工费更高', lineWithRate.unitLaborCostCents > lineNoRate.unitLaborCostCents)
   ok(
     'G6 行级覆盖后 单价×数量 仍精确等于总价',
-    Math.round(lineWithRate.unitPrice * 100) * 1 === lineWithRate.totalCents
+    Math.round(lineWithRate.unitPrice * 100) * 1 === lineWithRate.lineTotalCents
   )
 
   // ⚠️ 关键陷阱：0 是**合法费率**（这一行不收手工费），不能被当成「没传」而回落到单据级。
@@ -375,8 +411,8 @@ function runTests(E) {
   const zeroRate = E.resolveLine({ itemName: '爱神凤蝶玻璃罩', qty: 1, laborRatePct: 0 }, rateCtx)
   eq('G7 行级费率显式传 0 时用 0（不得回落单据级）', zeroRate.laborRatePct, 0)
   eq('G8 显式 0 时来源仍是 line', zeroRate.laborRateSource, 'line')
-  eq('G9 显式 0 时没有手工费', zeroRate.laborCostCents, 0)
-  ok('G10 显式 0 比单据级 30% 便宜（证明没被静默加价）', zeroRate.totalCents < lineNoRate.totalCents)
+  eq('G9 显式 0 时没有手工费', zeroRate.unitLaborCostCents, 0)
+  ok('G10 显式 0 比单据级 30% 便宜（证明没被静默加价）', zeroRate.lineTotalCents < lineNoRate.lineTotalCents)
 
   const mixedQuote = E.quoteLines(
     [
@@ -435,7 +471,15 @@ const INJECTIONS = [
       '!!src.laborRatePct'
     )
   ],
-  ['行级费率被完全忽略（永远用单据级）', (src) => src.replace('const laborRateSource = hasLineRate ? \'line\' : \'shipment\'', "const laborRateSource = 'shipment'")]
+  ['行级费率被完全忽略（永远用单据级）', (src) => src.replace('const laborRateSource = hasLineRate ? \'line\' : \'shipment\'', "const laborRateSource = 'shipment'")],
+  [
+    '汇总把 lineTotalCents 又乘了一次数量（总额正好翻倍 —— 2026-09-19 真实踩过）',
+    (src) => src.replace('totalCents += r.lineTotalCents', 'totalCents += r.lineTotalCents * r.qty')
+  ],
+  [
+    '行级成本字段退回旧名（单位不再自带，容易被再乘一次数量）',
+    (src) => src.replace('unitMaterialCostCents: perUnitMaterial,', 'materialCostCents: perUnitMaterial,')
+  ]
 ]
 
 function loadEngine(enginePath) {
@@ -464,12 +508,12 @@ function runOnce(enginePath) {
 
 function runSelfTest() {
   console.log('自检：确认「实现被破坏」时断言确实会失败\n')
-  const original = readFileSync(ENGINE_PATH, 'utf8')
+  const original = readFileSync(CORE_PATH, 'utf8')
   let allDetected = true
 
   for (const [label, mutate] of INJECTIONS) {
     const dir = mkdtempSync(join(tmpdir(), 'studio-pricing-selftest-'))
-    const target = join(dir, 'pricingEngine.js')
+    const target = join(dir, 'pricingCore.js')
     const mutated = mutate(original)
     if (mutated === original) {
       console.log(`✗ ${label} → 【注入锚点失效】（源码未改变，无法判定）`)
@@ -478,7 +522,7 @@ function runSelfTest() {
       continue
     }
     writeFileSync(target, mutated, 'utf8')
-    copyFileSync(ENGINE_PATH, join(dir, '.orig'))
+    copyFileSync(CORE_PATH, join(dir, '.orig'))
     const res = runOnce(target)
     const detected = res.failed > 0
     allDetected = allDetected && detected
@@ -488,7 +532,7 @@ function runSelfTest() {
   }
 
   // 反向：不注入时必须全绿（证明没有假阳性）
-  const clean = runOnce(ENGINE_PATH)
+  const clean = runOnce(CORE_PATH)
   console.log(`\n${clean.failed === 0 ? '✓' : '✗'} 未注入时通过（${clean.failed === 0 ? '无假阳性' : '有假阳性' }）`)
   if (clean.failed > 0) clean.failures.slice(0, 5).forEach((f) => console.log(`    · ${f}`))
 
@@ -504,7 +548,7 @@ function runSelfTest() {
 if (process.argv.includes('--selftest')) {
   runSelfTest()
 } else {
-  const res = runOnce(ENGINE_PATH)
+  const res = runOnce(CORE_PATH)
   console.log(`出货算价引擎：通过 ${passes} / ${passes + res.failed}`)
   if (res.failed > 0) {
     console.log('')

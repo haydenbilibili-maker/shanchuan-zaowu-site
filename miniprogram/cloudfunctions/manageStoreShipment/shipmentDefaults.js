@@ -19,6 +19,44 @@ const SYNC_META_COLLECTION = 'configs'
 const SYNC_META_ID = 'ops_shipment_sync'
 const SYNC_LOG_COLLECTION = 'feishu_sync_logs'
 
+/**
+ * 取价状态常量从共享内核取（与算价引擎同源，不在这里重写一遍）。
+ * `PRICING_STATUS` 行级；`SHIPMENT_PRICING_STATUS` 单据级。
+ */
+const { PRICING_STATUS, SHIPMENT_PRICING_STATUS } = require('./pricingEngine')
+
+/**
+ * 结算状态（裁决 10：与物流状态**并行**，不塞进 STATUS_FLOW —— 否则钱和货互锁，
+ * 「已发货但没结款」就无法表达）。
+ *
+ * ⚠️ **结算状态的唯一写入方是账单流程**（`manageStudioSettlement` 的 bill.*）。
+ * 本文件只**继承**它，**绝不从入参读取**（见 normalizePayload 里的注释）——
+ * 这是「账单是结算唯一权威、出货单是派生」这条架构决定的落地点，
+ * 由守卫 `check-settlement-single-ledger` 钉死 + 注入验证。
+ */
+const SETTLE_STATUS = {
+  UNSETTLED: 'unsettled',
+  PAID_PENDING: 'paid_pending',
+  SETTLED: 'settled'
+}
+
+const SETTLE_LABEL = {
+  unsettled: '未结',
+  paid_pending: '已付待确认',
+  settled: '已结清'
+}
+
+function normalizeSettleStatus(raw) {
+  const s = String(raw || '').trim()
+  if (s === SETTLE_STATUS.PAID_PENDING) return SETTLE_STATUS.PAID_PENDING
+  if (s === SETTLE_STATUS.SETTLED) return SETTLE_STATUS.SETTLED
+  return SETTLE_STATUS.UNSETTLED
+}
+
+function settleLabel(s) {
+  return SETTLE_LABEL[normalizeSettleStatus(s)] || SETTLE_LABEL.unsettled
+}
+
 const STORES = [
   { id: 'store_shanhaizaowu', name: '山川造物', aliases: ['山川造物', '山海造物', '山川'] },
   { id: 'store_xingchen', name: '星宸标本', aliases: ['星宸标本', '星宸'] }
@@ -380,6 +418,36 @@ function parseShipmentText(rawText) {
   }
 }
 
+/** 分单位整数（算价快照字段）：非法一律 null，**不写 0** —— 0 会被误读成「真的是 0 元」 */
+function optCents(v) {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(v)
+  if (!Number.isFinite(n)) return null
+  return Math.round(n)
+}
+
+function optText(v) {
+  return String(v == null ? '' : v).trim()
+}
+
+function optRate(v) {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+/**
+ * 行级取价状态。
+ * 入参没给就按「有没有价」推断：有价 = `manual`（价不是引擎算的，如飞书带价、手工填），
+ * 没价 = `unmatched`。**不推断成 `priced`** —— 那会让没价的行看起来已核价。
+ */
+function inferLinePricingStatus(row, unitPrice) {
+  const raw = optText(row.pricingStatus)
+  if (raw === PRICING_STATUS.PRICED || raw === PRICING_STATUS.MANUAL) return raw
+  if (raw === PRICING_STATUS.UNMATCHED || raw === PRICING_STATUS.AMBIGUOUS) return raw
+  return unitPrice > 0 ? PRICING_STATUS.MANUAL : PRICING_STATUS.UNMATCHED
+}
+
 function normalizeItems(rawItems) {
   const list = Array.isArray(rawItems) ? rawItems : []
   const items = []
@@ -411,7 +479,28 @@ function normalizeItems(rawItems) {
       inventoryRecordId: String(
         row.inventoryRecordId || row.inventoryId || ''
       ).trim(),
-      feishuRecordId: String(row.feishuRecordId || '').trim()
+      feishuRecordId: String(row.feishuRecordId || '').trim(),
+
+      // ── 结构化定价快照（蓝图 §4.4 / §5.5）──
+      // 命中的价目行 + 金额，**写进单据**：价目表以后改价不影响已出货的单。
+      // ⚠️ 字段名自带单位：`unit*Cents` = 分/件，`lineTotalCents` = 分/行。
+      materialId: optText(row.materialId),
+      materialName: optText(row.materialName),
+      materialGrade: optText(row.materialGrade),
+      packagingId: optText(row.packagingId),
+      packagingName: optText(row.packagingName),
+      packagingSize: optText(row.packagingSize),
+      unitMaterialCostCents: optCents(row.unitMaterialCostCents),
+      unitPackagingCostCents: optCents(row.unitPackagingCostCents),
+      unitLaborCostCents: optCents(row.unitLaborCostCents),
+      unitTotalCents: optCents(row.unitTotalCents),
+      lineTotalCents: optCents(row.lineTotalCents),
+      laborRatePct: optRate(row.laborRatePct),
+      laborRateSource: optText(row.laborRateSource),
+      pricingStatus: inferLinePricingStatus(row, unitPrice),
+      pricingNote: optText(row.pricingNote),
+      priceAdjusted: row.priceAdjusted === true,
+      priceAdjustments: Array.isArray(row.priceAdjustments) ? row.priceAdjustments : []
     })
   }
   return items
@@ -448,6 +537,44 @@ function normalizePayload(input, existing) {
   const totalAmount = roundMoney(
     items.reduce((n, it) => n + (Number(it.totalPrice) || 0), 0)
   )
+
+  // ── 定价汇总（蓝图 §4.4）──
+  // 三分项用「分」求和（审计精确）；只要有非 priced 行，整单就是 incomplete → 阻塞结算（裁决 5）
+  //
+  // ⚠️ 单位陷阱（本仓库已真实踩过一次，2026-09-19 P0-3 冒烟）：
+  //    行级 `unit*Cents` 是**分/件** → 汇总要乘数量；
+  //    行级 `lineTotalCents` 是**分/行** → 汇总**不能再乘**（乘了就正好翻倍）。
+  //    所以单据合计不独立累加，而是**按定义取三个分项之和** —— 让不变量成为结构性的，
+  //    而不是靠「两处算法碰巧一致」。守卫 test:studio-pricing 另有断言核对它与 Σ lineTotalCents 相等。
+  const sumUnitCents = (key) =>
+    items.reduce((n, it) => n + (Number(it[key]) || 0) * (Number(it.qty) || 0), 0)
+  const issueLines = items.filter(
+    (it) => it.pricingStatus !== PRICING_STATUS.PRICED && it.pricingStatus !== PRICING_STATUS.MANUAL
+  )
+  const pricingStatus =
+    items.length > 0 && issueLines.length > 0
+      ? SHIPMENT_PRICING_STATUS.INCOMPLETE
+      : SHIPMENT_PRICING_STATUS.PRICED
+  const materialCostCents = sumUnitCents('unitMaterialCostCents')
+  const packagingCostCents = sumUnitCents('unitPackagingCostCents')
+  const laborCostCents = sumUnitCents('unitLaborCostCents')
+  const totalCents = materialCostCents + packagingCostCents + laborCostCents
+  const laborRatePct = optRate(src.laborRatePct != null ? src.laborRatePct : prev.laborRatePct)
+
+  /**
+   * ⚠️ 结算字段**只继承、绝不从入参读取**（架构决定：账单是结算唯一权威）。
+   * 任何来自客户端的 settleStatus/billId/settledAt 都被忽略 ——
+   * 否则调用方可以自己把单标成「已结清」，账就烂了。
+   * 守卫 `check-settlement-single-ledger` 钉住这一点 + 注入验证。
+   */
+  const settleStatus = normalizeSettleStatus(prev.settleStatus)
+  const billId = optText(prev.billId)
+  const billNo = optText(prev.billNo)
+  const paidMarkedAt = Number(prev.paidMarkedAt) || null
+  const paidMarkedBy = optText(prev.paidMarkedBy)
+  const settledAt = Number(prev.settledAt) || null
+  const settledBy = optText(prev.settledBy)
+
   const category =
     normalizeCategory(src.category || prev.category) ||
     (items.find((it) => it.category) || {}).category ||
@@ -499,7 +626,29 @@ function normalizePayload(input, existing) {
     itemCount: items.length,
     totalQty: items.reduce((n, it) => n + (Number(it.qty) || 0), 0),
     totalAmount,
-    unitPrice: items.length === 1 ? items[0].unitPrice : 0,
+    // 单据级单价只在「恰好一行」时有意义。
+    // 原实现多明细时写 0 —— 那会让飞书回写把「0 元单价」当成真值写出去（既有 bug，本次修正）。
+    // 多明细写 null 表达「没有单一单价」，消费方 `Number(x) || 0` 行为不变。
+    unitPrice: items.length === 1 ? items[0].unitPrice : null,
+
+    // ── 定价汇总与结算（蓝图 §4.4）──
+    pricingStatus,
+    pricingIssueCount: issueLines.length,
+    materialCostCents,
+    packagingCostCents,
+    laborCostCents,
+    totalCents,
+    laborRatePct,
+    pricedAt: Number(src.pricedAt) || Number(prev.pricedAt) || null,
+    pricedBy: optText(src.pricedBy) || optText(prev.pricedBy),
+    settleStatus,
+    settleLabel: settleLabel(settleStatus),
+    billId,
+    billNo,
+    paidMarkedAt,
+    paidMarkedBy,
+    settledAt,
+    settledBy,
     trackingNo: String(
       src.trackingNo != null ? src.trackingNo : src.运单号 != null ? src.运单号 : prev.trackingNo || ''
     ).trim(),
@@ -557,7 +706,7 @@ function mapRow(doc) {
     totalQty:
       items.reduce((n, it) => n + (Number(it.qty) || 0), 0) || Number(doc.totalQty) || 0,
     totalAmount,
-    unitPrice: roundMoney(doc.unitPrice),
+    unitPrice: doc.unitPrice === null || doc.unitPrice === undefined ? null : roundMoney(doc.unitPrice),
     trackingNo: doc.trackingNo || '',
     expressCompany: doc.expressCompany || '',
     productId: doc.productId || (items[0] && items[0].productId) || '',
@@ -572,6 +721,30 @@ function mapRow(doc) {
     sourceLabel: sourceLabel(source),
     feishuRecordId: doc.feishuRecordId || '',
     syncedAt: doc.syncedAt || null,
+
+    // ── 定价与结算（蓝图 §4.4）──
+    // 结算字段由账单流程写，这里只回传，供列表/详情显示（前端不得据此反推可写）
+    pricingStatus:
+      doc.pricingStatus === SHIPMENT_PRICING_STATUS.INCOMPLETE
+        ? SHIPMENT_PRICING_STATUS.INCOMPLETE
+        : SHIPMENT_PRICING_STATUS.PRICED,
+    pricingIssueCount: Number(doc.pricingIssueCount) || 0,
+    materialCostCents: Number(doc.materialCostCents) || 0,
+    packagingCostCents: Number(doc.packagingCostCents) || 0,
+    laborCostCents: Number(doc.laborCostCents) || 0,
+    totalCents: Number(doc.totalCents) || 0,
+    laborRatePct: doc.laborRatePct === null || doc.laborRatePct === undefined ? null : Number(doc.laborRatePct),
+    pricedAt: doc.pricedAt || null,
+    pricedBy: doc.pricedBy || '',
+    settleStatus: normalizeSettleStatus(doc.settleStatus),
+    settleLabel: settleLabel(doc.settleStatus),
+    billId: doc.billId || '',
+    billNo: doc.billNo || '',
+    paidMarkedAt: doc.paidMarkedAt || null,
+    paidMarkedBy: doc.paidMarkedBy || '',
+    settledAt: doc.settledAt || null,
+    settledBy: doc.settledBy || '',
+
     createdAt: doc.createdAt || null,
     updatedAt: doc.updatedAt || null,
     createdBy: doc.createdBy || '',
@@ -752,6 +925,12 @@ module.exports = {
   STATUS,
   STATUS_LABEL,
   STATUS_FLOW,
+  SETTLE_STATUS,
+  SETTLE_LABEL,
+  normalizeSettleStatus,
+  settleLabel,
+  PRICING_STATUS,
+  SHIPMENT_PRICING_STATUS,
   CATEGORY,
   CATEGORY_OPTIONS,
   storeById,

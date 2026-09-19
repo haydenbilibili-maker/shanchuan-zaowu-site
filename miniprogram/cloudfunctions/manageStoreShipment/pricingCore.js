@@ -260,9 +260,15 @@ function matchOption(text, group) {
 /**
  * 单行算价结果。
  *
- * **单位约定（防混用，务必遵守）**：
- *   · 一切 `*Cents` 字段 = **分**（整数，审计精确，用于对账与断言）；
- *   · `unitPrice` / `totalPrice` = **元**（2 位小数）—— 只有这两个沿用 `ops_shipments` 的既有字段语义。
+ * **单位约定（字段名自带单位，防混用；违反即为交付失败）**：
+ *   · 一切 `*Cents` = **分**（整数，审计精确）；
+ *   · `unit*Cents` = **分 / 件**（`unitMaterialCostCents` = 单件材料费）；
+ *   · `lineTotalCents` = **分 / 行**（= 单件合计 × 数量）；
+ *   · `unitPrice` = **元 / 件**、`totalPrice` = **元 / 行** —— 只有这两个沿用 `ops_shipments` 既有语义。
+ *
+ * ⚠️ 为什么必须把单位写进名字：原先叫 `materialCostCents`（每件）与 `totalCents`（整行）——
+ *    两个名字看起来同级，实际单位不同。汇总时若对两者都乘 `qty`，总额会**正好翻倍**，
+ *    而且不报错、类型也对，只有对账时才发现。本仓库已真实踩过一次（2026-09-19 P0-3 冒烟）。
  *
  * @returns {Object} 永远返回结构完整的对象；取不到价时 `unitPrice=null`（**不是 0**）
  */
@@ -277,10 +283,11 @@ function emptyLine(status, note, extra) {
       packagingId: '',
       packagingName: '',
       packagingSize: '',
-      materialCostCents: null,
-      packagingCostCents: null,
-      laborCostCents: null,
-      totalCents: null,
+      unitMaterialCostCents: null,
+      unitPackagingCostCents: null,
+      unitLaborCostCents: null,
+      unitTotalCents: null,
+      lineTotalCents: null,
       unitPrice: null,
       totalPrice: null,
       laborRatePct: null,
@@ -449,10 +456,11 @@ function resolveLine(line, ctx) {
     packagingId: packagingRow ? packagingRow._id || '' : '',
     packagingName: pkgGroup ? pkgGroup.displayName : '',
     packagingSize: packagingRow ? packagingRow[pkgGroup.optionField] || '' : '',
-    materialCostCents: amounts.materialCostCents,
-    packagingCostCents: amounts.packagingCostCents,
-    laborCostCents: amounts.laborCostCents,
-    totalCents: amounts.totalCents,
+    unitMaterialCostCents: amounts.unitMaterialCostCents,
+    unitPackagingCostCents: amounts.unitPackagingCostCents,
+    unitLaborCostCents: amounts.unitLaborCostCents,
+    unitTotalCents: amounts.unitTotalCents,
+    lineTotalCents: amounts.lineTotalCents,
     unitPrice: amounts.unitPrice,
     totalPrice: amounts.totalPrice,
     // 本行**实际生效**的费率与来源 —— 落库留痕用，账单对账时要能说清这一行按几个点算的
@@ -469,9 +477,9 @@ function resolveLine(line, ctx) {
  *   · 手工费 = （单件材料费 + 单件包装费）× 费率，按件取整；
  *   · 若按整行一次性算，4 件单会出现「单价 × 4 ≠ 总价」差 1 分，对账时说不清。
  *
- * @returns {{materialCostCents:number, packagingCostCents:number, laborCostCents:number,
- *            totalCents:number, unitPrice:number, totalPrice:number}}
- *          `*Cents` 均为**分**（前三个是分/件，`totalCents` 是分/行）；
+ * @returns {{unitMaterialCostCents:number, unitPackagingCostCents:number, unitLaborCostCents:number,
+ *            unitTotalCents:number, lineTotalCents:number, unitPrice:number, totalPrice:number}}
+ *          `unit*Cents` 为**分/件**；`lineTotalCents` 为**分/行**（= unitTotalCents × qty）；
  *          `unitPrice`/`totalPrice` 为**元**（沿用既有字段语义）。
  */
 function computeAmounts(input) {
@@ -487,11 +495,12 @@ function computeAmounts(input) {
 
   return {
     // 分/件
-    materialCostCents: perUnitMaterial,
-    packagingCostCents: perUnitPackaging,
-    laborCostCents: perUnitLabor,
+    unitMaterialCostCents: perUnitMaterial,
+    unitPackagingCostCents: perUnitPackaging,
+    unitLaborCostCents: perUnitLabor,
+    unitTotalCents: perUnitTotal,
     // 分/行
-    totalCents: perUnitTotal * unitQty,
+    lineTotalCents: perUnitTotal * unitQty,
     // 元/件（整数分除 100 必然精确到分，不会出现浮点尾数）
     unitPrice: toYuan(perUnitTotal),
     // 元/行
@@ -531,10 +540,11 @@ function quoteLines(lines, ctx) {
       pricedCount += 1
       if (r.laborRateSource === 'line') laborRateOverrideLines += 1
       pricedQty += r.qty
-      materialCents += r.materialCostCents * r.qty
-      packagingCents += r.packagingCostCents * r.qty
-      laborCents += r.laborCostCents * r.qty
-      totalCents += r.totalCents
+      // ⚠️ unit* 是「分/件」要乘数量；lineTotalCents 已是「分/行」**不能再乘**（乘了就正好翻倍）
+      materialCents += r.unitMaterialCostCents * r.qty
+      packagingCents += r.unitPackagingCostCents * r.qty
+      laborCents += r.unitLaborCostCents * r.qty
+      totalCents += r.lineTotalCents
     } else {
       issueCount += 1
     }
