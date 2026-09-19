@@ -411,15 +411,45 @@ function runTests(E) {
     `totalCents=${quoted.totalCents}`
   )
   ok(
-    'E20 单据合计 = 材料 + 包装 + 手工（三分项按「分/件 × 数量」累加）',
+    'E20 单据合计 = 材料 + 包装 + 造景 + 手工（**四分项**按「分/件 × 数量」累加）',
     quoted.totalCents ===
-      quoted.materialCostCents + quoted.packagingCostCents + quoted.laborCostCents,
-    `${quoted.materialCostCents}+${quoted.packagingCostCents}+${quoted.laborCostCents} != ${quoted.totalCents}`
+      quoted.materialCostCents + quoted.packagingCostCents + quoted.sceneCostCents + quoted.laborCostCents,
+    `${quoted.materialCostCents}+${quoted.packagingCostCents}+${quoted.sceneCostCents}+${quoted.laborCostCents} != ${quoted.totalCents}`
   )
   ok(
     'E21 单据合计（元）= 合计（分）÷ 100',
     Math.round(quoted.totalCents) / 100 === quoted.totalAmount,
     `totalCents=${quoted.totalCents} totalAmount=${quoted.totalAmount}`
+  )
+
+  /**
+   * ── E22/E23 造景成本桶（产品负责人 2026-09-19 定）──
+   *
+   * 加一个成本桶时**最容易漏的就是汇总**：漏了不报错、类型也对，只是静默少算钱。
+   * 所以这里既钉「造景进总额」，也钉「造景**不进手工费基数**」——
+   * 后者若错，加了造景的 SKU 会连手工费一起多算。
+   */
+  const sceneCtx = E.buildContext({ materials: MATERIALS, packagings: PACKAGINGS, laborRatePct: 30 })
+  const withScene = E.resolveLine({ itemName: '爱神凤蝶玻璃罩', qty: 2, sceneCost: 35 }, sceneCtx)
+  const noScene = E.resolveLine({ itemName: '爱神凤蝶玻璃罩', qty: 2 }, sceneCtx)
+  eq('E22 造景成本按「分/件」入桶（¥35 → 3500 分）', withScene.unitSceneCostCents, 3500)
+  ok(
+    'E22b 造景计入行合计：差额 = 造景 × 数量',
+    withScene.lineTotalCents - noScene.lineTotalCents === 3500 * 2,
+    `${withScene.lineTotalCents} - ${noScene.lineTotalCents} != 7000`
+  )
+  ok(
+    'E23 造景**不进手工费基数**（手工费只按 材料+包装 算）',
+    withScene.unitLaborCostCents === noScene.unitLaborCostCents,
+    `${withScene.unitLaborCostCents} != ${noScene.unitLaborCostCents}`
+  )
+  const sceneQuote = E.quoteLines([{ itemName: '爱神凤蝶玻璃罩', qty: 2, sceneCost: 35 }], sceneCtx)
+  eq('E23b 汇总里的造景桶 = 分/件 × 数量', sceneQuote.sceneCostCents, 7000)
+  ok(
+    'E23c 含造景时四分项仍等于总额',
+    sceneQuote.totalCents ===
+      sceneQuote.materialCostCents + sceneQuote.packagingCostCents + sceneQuote.sceneCostCents + sceneQuote.laborCostCents,
+    `${sceneQuote.materialCostCents}+${sceneQuote.packagingCostCents}+${sceneQuote.sceneCostCents}+${sceneQuote.laborCostCents} != ${sceneQuote.totalCents}`
   )
 
   // ── G. 行级手工费率覆盖（蓝图 v1.2 追加：单据级默认 + 行级可覆盖，默认不启用） ──
@@ -641,6 +671,14 @@ const INJECTIONS = [
   [
     '前缀改成「最先命中」而不是最长命中',
     (src) => src.replace('if (!best || k.key.length > best.key.length) best = k', 'if (!best) best = k')
+  ],
+  [
+    '造景成本漏出汇总（加了桶但没并进总额 —— 静默少算钱）',
+    (src) => src.replace('  const perUnitTotal = perUnitMaterial + perUnitPackaging + perUnitScene + perUnitLabor', '  const perUnitTotal = perUnitMaterial + perUnitPackaging + perUnitLabor')
+  ],
+  [
+    '造景成本并进手工费基数（加了造景的 SKU 会连手工费一起多算）',
+    (src) => src.replace('const perUnitLabor = Math.round(((perUnitMaterial + perUnitPackaging) * rate) / 100)', 'const perUnitLabor = Math.round(((perUnitMaterial + perUnitPackaging + perUnitScene) * rate) / 100)')
   ],
   ['手工费恒为 0（费率被忽略）', (src) => src.replace('const perUnitLabor = Math.round(((perUnitMaterial + perUnitPackaging) * rate) / 100)', 'const perUnitLabor = 0')],
   [

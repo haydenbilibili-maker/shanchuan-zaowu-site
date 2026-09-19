@@ -443,6 +443,20 @@ function optCents(v) {
   return Math.round(n)
 }
 
+/**
+ * **元**单位的金额（如 `sceneCost` 造景成本）：取到分为止。
+ *
+ * ⚠️ 为什么不用 `optCents`：两者单位不同 —— `optCents` 收的是**分**，`sceneCost` 存的是**元**。
+ * 混用就是 E18/E21 那一类单位错（元当分 → 少算 100 倍；分当元 → 多算 100 倍）。
+ * 所以**名字里带单位**是本项目的硬约定。
+ */
+function optMoney(v) {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(v)
+  if (!Number.isFinite(n) || n < 0) return null
+  return Math.round(n * 100) / 100
+}
+
 function optText(v) {
   return String(v == null ? '' : v).trim()
 }
@@ -507,8 +521,12 @@ function normalizeItems(rawItems) {
       packagingId: optText(row.packagingId),
       packagingName: optText(row.packagingName),
       packagingSize: optText(row.packagingSize),
+      // 造景：是不是造景（货的属性）+ 这一行实际用的造景成本（元/件，快照）
+      hasScene: row.hasScene === true,
+      sceneCost: optMoney(row.sceneCost),
       unitMaterialCostCents: optCents(row.unitMaterialCostCents),
       unitPackagingCostCents: optCents(row.unitPackagingCostCents),
+      unitSceneCostCents: optCents(row.unitSceneCostCents),
       unitLaborCostCents: optCents(row.unitLaborCostCents),
       unitTotalCents: optCents(row.unitTotalCents),
       lineTotalCents: optCents(row.lineTotalCents),
@@ -574,8 +592,14 @@ function normalizePayload(input, existing) {
       : SHIPMENT_PRICING_STATUS.PRICED
   const materialCostCents = sumUnitCents('unitMaterialCostCents')
   const packagingCostCents = sumUnitCents('unitPackagingCostCents')
+  const sceneCostCents = sumUnitCents('unitSceneCostCents')
   const laborCostCents = sumUnitCents('unitLaborCostCents')
-  const totalCents = materialCostCents + packagingCostCents + laborCostCents
+  /**
+   * ⚠️ **单据总额 = 四个桶相加**（材料 + 包装 + 造景 + 手工），
+   * 且每个桶都是「分/件」要乘数量（E18：`unit*Cents` × qty；`lineTotalCents` 已是分/行**不能再乘**）。
+   * 加桶时**必须同步改这里** —— 漏一个桶不会报错，只会静默少算钱。
+   */
+  const totalCents = materialCostCents + packagingCostCents + sceneCostCents + laborCostCents
   const laborRatePct = optRate(src.laborRatePct != null ? src.laborRatePct : prev.laborRatePct)
 
   /**
@@ -653,6 +677,7 @@ function normalizePayload(input, existing) {
     pricingIssueCount: issueLines.length,
     materialCostCents,
     packagingCostCents,
+    sceneCostCents,
     laborCostCents,
     totalCents,
     laborRatePct,
@@ -751,6 +776,7 @@ function mapRow(doc) {
     materialCostCents: Number(doc.materialCostCents) || 0,
     packagingCostCents: Number(doc.packagingCostCents) || 0,
     laborCostCents: Number(doc.laborCostCents) || 0,
+    sceneCostCents: Number(doc.sceneCostCents) || 0,
     totalCents: Number(doc.totalCents) || 0,
     laborRatePct: doc.laborRatePct === null || doc.laborRatePct === undefined ? null : Number(doc.laborRatePct),
     pricedAt: doc.pricedAt || null,

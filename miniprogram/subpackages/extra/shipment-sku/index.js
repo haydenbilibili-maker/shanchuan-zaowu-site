@@ -65,6 +65,8 @@ Page({
       materialId: '', materialName: '', materialGrade: '',
       packagingId: '', packagingName: '', packagingSize: '',
       useGlobalRate: true, laborRatePct: 30,
+      // 造景：勾选后出现「造景成本」输入（产品负责人 2026-09-19）；成本留空则不许提交
+      hasScene: false, sceneCost: '',
       name: '', nameTouched: false,
       unitPriceText: '—', pricingStatus: '', pricingNote: '', problems: []
     },
@@ -189,6 +191,9 @@ Page({
         packagingId: sku.packagingId,
         packagingName: sku.packagingName,
         packagingSize: sku.packagingSize,
+        hasScene: sku.hasScene === true,
+        sceneCost: Number(sku.sceneCost) || 0,
+        skuSceneCost: Number(sku.sceneCost) || 0,
         qty: 1,
         unitPrice: sku.unitPrice,
         unitPriceText: sku.unitPriceText,
@@ -264,7 +269,9 @@ Page({
           materialGrade: l.materialGrade,
           packagingId: l.packagingId,
           packagingName: l.packagingName,
-          packagingSize: l.packagingSize
+          packagingSize: l.packagingSize,
+          // 造景成本随行传给引擎（引擎按「分/件」桶计；这里是**元/件**）
+          sceneCost: l.hasScene === true ? (Number(l.sceneCost) || 0) : 0
         }
         if (l.useLineRate) out.laborRatePct = Number(l.laborRatePct) || 0
         return out
@@ -320,6 +327,7 @@ Page({
       'skuForm.packagingId': '', 'skuForm.packagingName': '', 'skuForm.packagingSize': '',
       'skuForm.useGlobalRate': true,
       'skuForm.laborRatePct': this.data.globalRatePct,
+      'skuForm.hasScene': false, 'skuForm.sceneCost': '',
       'skuForm.name': '', 'skuForm.nameTouched': false,
       'skuForm.unitPriceText': '—', 'skuForm.pricingStatus': '', 'skuForm.pricingNote': '', 'skuForm.problems': []
     })
@@ -342,6 +350,31 @@ Page({
   onFormRate(e) {
     const v = Number(e.detail.value)
     this.setData({ 'skuForm.laborRatePct': Number.isFinite(v) ? v : 0 }, () => this.previewSku())
+  },
+
+  /**
+   * 「造景」勾选：勾上才显示「造景成本」输入，并立刻重算这一组合的单价。
+   * 取消勾选时把成本清空 —— 否则"取消后又改回来"会带着上一次的旧金额，
+   * 与 `buildSkuRow` 里「未勾选即归 0」保持一致。
+   */
+  onFormSceneToggle(e) {
+    const hasScene = !!(e.detail && e.detail.value)
+    this.setData(
+      { 'skuForm.hasScene': hasScene, 'skuForm.sceneCost': hasScene ? this.data.skuForm.sceneCost : '' },
+      () => this.previewSku()
+    )
+  },
+
+  onFormSceneCost(e) {
+    this.setData({ 'skuForm.sceneCost': String((e.detail && e.detail.value) || '') }, () => this.previewSku())
+  },
+
+  /** 明细行的造景成本就地改（与行级费率同形态：改完重算这一单） */
+  onLineSceneCost(e) {
+    const i = Number(e.currentTarget.dataset.index)
+    const lines = this.data.lines.slice()
+    lines[i].sceneCost = String((e.detail && e.detail.value) || '')
+    this.setData({ lines }, () => this.refreshLinePrices())
   },
 
   /** 打开材料/包装选择器（供新建 SKU 用） */
@@ -430,7 +463,8 @@ Page({
       itemName: f.name || `${f.materialName} · ${f.packagingName}`,
       qty: 1,
       materialId: f.materialId, materialName: f.materialName, materialGrade: f.materialGrade,
-      packagingId: f.packagingId, packagingName: f.packagingName, packagingSize: f.packagingSize
+      packagingId: f.packagingId, packagingName: f.packagingName, packagingSize: f.packagingSize,
+      sceneCost: f.hasScene ? (Number(f.sceneCost) || 0) : 0
     }
     if (!f.useGlobalRate) line.laborRatePct = Number(f.laborRatePct) || 0
     return this.callFn(SHIPMENT_FN, {
@@ -461,9 +495,17 @@ Page({
       this.setData({ 'skuForm.problems': ['请选择包装方式'] })
       return
     }
+    // 勾了造景就必须填成本：与「未核价不写 0」同一条纪律，不许静默按 0 算
+    const sceneRaw = String(f.sceneCost == null ? '' : f.sceneCost).trim()
+    if (f.hasScene && (sceneRaw === '' || !Number.isFinite(Number(sceneRaw)) || Number(sceneRaw) < 0)) {
+      this.setData({ 'skuForm.problems': ['勾了造景就必须填「造景成本」（元/件；不额外计价可填 0）'] })
+      return
+    }
     const item = {
       materialId: f.materialId, materialName: f.materialName, materialGrade: f.materialGrade,
-      packagingId: f.packagingId, packagingName: f.packagingName, packagingSize: f.packagingSize
+      packagingId: f.packagingId, packagingName: f.packagingName, packagingSize: f.packagingSize,
+      hasScene: f.hasScene === true,
+      sceneCost: f.hasScene ? Number(sceneRaw) : 0
     }
     if (!f.useGlobalRate) item.laborRatePct = Number(f.laborRatePct) || 0
     if (f.nameTouched && f.name) item.skuName = f.name
@@ -490,6 +532,8 @@ Page({
           packagingId: created.packagingId,
           packagingName: created.packagingName,
           packagingSize: created.packagingSize,
+          hasScene: created.hasScene === true,
+          sceneCost: Number(created.sceneCost) || 0,
           qty: 1,
           unitPrice: null,
           unitPriceText: '待核价',
@@ -528,6 +572,10 @@ Page({
       lines: lines.map((l) => {
         const out = { skuId: l.skuId, qty: Number(l.qty) || 1 }
         if (l.useLineRate) out.laborRatePct = Number(l.laborRatePct) || 0
+        // 行级造景成本覆盖：只有人真的改过这一行才传（未改则服务端用 SKU 上的默认值）
+        if (l.hasScene && String(l.sceneCost) !== String(l.skuSceneCost == null ? '' : l.skuSceneCost)) {
+          out.sceneCost = Number(l.sceneCost) || 0
+        }
         return out
       })
     })

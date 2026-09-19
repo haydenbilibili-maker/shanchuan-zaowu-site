@@ -80,6 +80,7 @@ function computeSettlementKpis(shipments) {
   let paidPendingCents = 0
   let materialCents = 0
   let packagingCents = 0
+  let sceneCents = 0
   let laborCents = 0
   let settledCount = 0
   let outstandingCount = 0
@@ -91,6 +92,13 @@ function computeSettlementKpis(shipments) {
     shippedCents += total
     materialCents += centsField(row && row.materialCostCents)
     packagingCents += centsField(row && row.packagingCostCents)
+    /**
+     * **造景成本**（产品负责人 2026-09-19 定）：它是**成本**，要进成本、扣毛利。
+     * 与 `laborCents` 的区别：手工费是工作室的手工收入、**不减**（裁决 20），
+     * 造景成本是买/做景的花费，**要减**。
+     * ⚠️ 老单没有这个字段 → `centsField` 取 0，历史数字不变。
+     */
+    sceneCents += centsField(row && row.sceneCostCents)
     laborCents += centsField(row && row.laborCostCents)
 
     const st = settleStatusOf(row)
@@ -108,7 +116,7 @@ function computeSettlementKpis(shipments) {
     if (String((row && row.pricingStatus) || '') === 'incomplete') pendingPricingCount += 1
   }
 
-  const costCents = materialCents + packagingCents
+  const costCents = materialCents + packagingCents + sceneCents
   const grossCents = shippedCents - costCents
 
   return {
@@ -119,8 +127,19 @@ function computeSettlementKpis(shipments) {
     paidPendingAmount: toYuan(paidPendingCents),
     materialCostTotal: toYuan(materialCents),
     packagingCostTotal: toYuan(packagingCents),
+    sceneCostTotal: toYuan(sceneCents),
     laborTotal: toYuan(laborCents),
-    materialAndPackagingTotal: toYuan(costCents),
+    /**
+     * **成本合计 = 材料 + 包装 + 造景**（不含手工费：手工费算工作室收入 → 不减，裁决 20）。
+     * 真毛利 = 出货额 − `costTotal`。
+     */
+    costTotal: toYuan(costCents),
+    /**
+     * ⚠️ 名字必须与含义一致：这一项**只**是 材料 + 包装，**不含造景**。
+     * 2026-09-19 加造景桶时我一度把它也写成 `costCents`（含造景）——那是
+     * 「名字说谎」，属于 E18/E21 同一类（字段名不反映真实口径）。名称口径以本条为准。
+     */
+    materialAndPackagingTotal: toYuan(materialCents + packagingCents),
     grossProfit: toYuan(grossCents),
     /** 毛利率（%）：出货额为 0 时返回 null（不是 0 —— 0% 与"没有数据"含义不同） */
     grossMarginPct: shippedCents > 0 ? Math.round((grossCents / shippedCents) * 1000) / 10 : null,

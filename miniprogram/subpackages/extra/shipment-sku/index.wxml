@@ -65,6 +65,13 @@
         </block>
       </view>
 
+      <!-- 造景成本：随行可改（SKU 上存的只是默认值，这一单可以不一样） -->
+      <view class="ss-rate-row" wx:if="{{item.hasScene}}">
+        <text class="ss-rate-hint">造景成本</text>
+        <input class="ss-rate-input" type="digit" value="{{item.sceneCost}}" data-index="{{index}}" bindinput="onLineSceneCost" />
+        <text class="ss-rate-hint">元 / 件</text>
+      </view>
+
       <view class="ss-note" wx:if="{{item.pricingStatus !== 'priced'}}">
         <text>{{item.pricingNote || '这一行取不到价，未计入合计'}}</text>
       </view>
@@ -123,7 +130,7 @@
     </view>
     <scroll-view class="ss-sheet-body" scroll-y>
       <view class="ss-alert">
-        <text>SKU = 材料 × 等级 × 包装 × 尺寸 + 默认手工费率。同组合只需建一次，以后开单直接选；要改默认费率就编辑它，别新建。</text>
+        <text>SKU = 材料 × 等级 × 包装 × 尺寸 + 是否造景 + 默认手工费率。同组合只需建一次，以后开单直接选；要改默认费率或造景成本就编辑它，别新建。</text>
       </view>
 
       <view class="ss-row">
@@ -150,6 +157,25 @@
             <text class="ss-rate-hint">%</text>
           </block>
         </view>
+      </view>
+      <view class="ss-row">
+        <text class="ss-label">造景</text>
+        <view class="ss-rate-ctl">
+          <switch class="ss-switch" checked="{{skuForm.hasScene}}" color="#C4A76C" bindchange="onFormSceneToggle" />
+          <text class="ss-rate-hint" wx:if="{{!skuForm.hasScene}}">不含造景</text>
+        </view>
+      </view>
+      <view class="ss-row" wx:if="{{skuForm.hasScene}}">
+        <text class="ss-label">造景成本</text>
+        <view class="ss-rate-ctl">
+          <text class="ss-rate-hint">¥</text>
+          <input class="ss-rate-input" type="digit" value="{{skuForm.sceneCost}}" placeholder="元/件" bindinput="onFormSceneCost" />
+          <text class="ss-rate-hint">/ 件</text>
+        </view>
+      </view>
+      <view class="ss-row" wx:if="{{skuForm.hasScene}}">
+        <text class="ss-label"></text>
+        <text class="ss-rate-hint">计入本单金额，并从毛利里扣；不计入手工费基数（手工费只按材料+包装算）。</text>
       </view>
       <view class="ss-row">
         <text class="ss-label">SKU 名</text>

@@ -710,6 +710,8 @@ exports.main = async (event) => {
         packagingCostTotal: settlement.packagingCostTotal,
         laborTotal: settlement.laborTotal,
         materialAndPackagingTotal: settlement.materialAndPackagingTotal,
+        sceneCostTotal: settlement.sceneCostTotal,
+        costTotal: settlement.costTotal,
         grossProfit: settlement.grossProfit,
         grossMarginPct: settlement.grossMarginPct,
         usagePct,

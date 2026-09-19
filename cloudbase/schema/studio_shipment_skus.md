@@ -25,12 +25,14 @@ SSOT：`admin/docs/出货算价与工作室结算_Phase1_技术蓝图.md` §16�
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `skuName` | string | 可读名。**默认自动生成**：`材料[ 等级] · 包装[ 尺寸]`（如 `大蓝闪蝶 A1 · 玻璃罩 20*10`），可手改。**不含费率** —— 费率改了名字不该跟着变 |
-| `skuKey` | string | **唯一键**：`规范化(材料名)\|规范化(等级)\|规范化(包装名)\|规范化(尺寸)`。**费率不进唯一键**（它是默认属性、出货还能覆盖），否则"只想改默认费率"会变成新建一个看起来一样的重复 SKU |
+| `skuKey` | string | **唯一键**：`规范化(材料名)\|规范化(等级)\|规范化(包装名)\|规范化(尺寸)\|造景标记`。**费率与造景金额都不进唯一键**（它们是默认属性、出货还能覆盖），否则"只想改默认费率/造景成本"会变成新建一个看起来一样的重复 SKU。**但「是否造景」要进键** —— 有造景与没造景是两种不同的货（2026-09-19 加，见蓝图 §17 裁决 36） |
 | `materialId` / `materialName` | string | 指向 `studio_material_prices` 的行 |
 | `materialGrade` | string | 等级（自由文本，默认 `默认`） |
 | `packagingId` / `packagingName` | string | 指向 `studio_packaging_prices` 的行 |
 | `packagingSize` | string | 尺寸（自由文本，默认 `默认`） |
 | `laborRatePct` | number\|null | **默认手工费率**。`null` = 用全局配置；**`0` 是合法值**（这个 SKU 不收手工费），两者含义不同 |
+| `hasScene` | boolean | **是否造景**（2026-09-19）。进唯一键；决定出货单里这一行的呈现方式 |
+| `sceneCost` | number | **默认造景成本**（元/件）。**不进唯一键**；`hasScene=false` 时归 0。勾了造景却留空 → 创建接口**拒绝**（不静默写 0）。出货时快照进单据 `items[].sceneCost`，行上还能就地改 |
 | `status` | `active\|inactive` | 停用后开单时不再出现在可选列表（历史单靠快照不受影响） |
 | `sort` / `note` | | 排序 / 备注 |
 | `createdAt/By` `updatedAt/By` | | 审计 |

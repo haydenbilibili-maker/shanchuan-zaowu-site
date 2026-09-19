@@ -358,6 +358,8 @@ async function recomputeItemsPricing(items) {
           packagingId: it.packagingId,
           packagingName: it.packagingName,
           packagingSize: it.packagingSize,
+          // 造景成本：行上存的就是这一行实际用的（来源是 SKU 默认或人工覆盖）
+          sceneCost: it.sceneCost,
           laborRatePct: it.laborRateSource === 'line' ? it.laborRatePct : undefined
         }
       ],
@@ -379,6 +381,7 @@ async function recomputeItemsPricing(items) {
       packagingSize: quoted.packagingSize,
       unitMaterialCostCents: quoted.unitMaterialCostCents,
       unitPackagingCostCents: quoted.unitPackagingCostCents,
+      unitSceneCostCents: quoted.unitSceneCostCents,
       unitLaborCostCents: quoted.unitLaborCostCents,
       unitTotalCents: quoted.unitTotalCents,
       lineTotalCents: quoted.lineTotalCents,
@@ -557,6 +560,9 @@ async function handleCreateFromSkus(event, actor) {
       packagingId: sku.packagingId || '',
       packagingName: sku.packagingName || '',
       packagingSize: sku.packagingSize || '',
+      // 造景：**快照进单据**（裁决 26 同口径：出货时定值，之后改 SKU 不影响历史单）
+      hasScene: sku.hasScene === true,
+      sceneCost: Number(sku.sceneCost) || 0,
       // 关联回 SKU 目录（items.skuId 是既有字段，不新加）
       skuId: sku._id || ''
     }
@@ -564,6 +570,9 @@ async function handleCreateFromSkus(event, actor) {
     const hasLineRate = l.laborRatePct !== undefined && l.laborRatePct !== null && l.laborRatePct !== ''
     if (hasLineRate) item.laborRatePct = Number(l.laborRatePct) || 0
     else if (sku.laborRatePct !== null && sku.laborRatePct !== undefined) item.laborRatePct = sku.laborRatePct
+    // 行级造景成本覆盖（同费率形态：显式传 0 也生效）—— 开单时能当场改这一行的造景成本
+    const hasLineScene = l.sceneCost !== undefined && l.sceneCost !== null && l.sceneCost !== ''
+    if (hasLineScene) item.sceneCost = Number(l.sceneCost) || 0
     return item
   })
 

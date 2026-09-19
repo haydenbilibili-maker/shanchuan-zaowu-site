@@ -285,6 +285,7 @@ function emptyLine(status, note, extra) {
       packagingSize: '',
       unitMaterialCostCents: null,
       unitPackagingCostCents: null,
+      unitSceneCostCents: null,
       unitLaborCostCents: null,
       unitTotalCents: null,
       lineTotalCents: null,
@@ -570,6 +571,10 @@ function resolveLine(line, ctx) {
     materialQtyPerUnit: materialRow.qtyPerUnit,
     packagingUnitPrice: packagingRow ? packagingRow.unitPrice : 0,
     packagingQtyPerUnit: packagingRow ? packagingRow.qtyPerUnit : 0,
+    // 造景成本：显式传入（SKU 的默认值或行上的覆盖值）；没传/空串都当 0
+    sceneCostUnitPrice: src.sceneCost === undefined || src.sceneCost === null || src.sceneCost === ''
+      ? 0
+      : src.sceneCost,
     qty,
     laborRatePct
   })
@@ -587,6 +592,7 @@ function resolveLine(line, ctx) {
     packagingSize: packagingRow ? packagingRow[pkgGroup.optionField] || '' : '',
     unitMaterialCostCents: amounts.unitMaterialCostCents,
     unitPackagingCostCents: amounts.unitPackagingCostCents,
+    unitSceneCostCents: amounts.unitSceneCostCents,
     unitLaborCostCents: amounts.unitLaborCostCents,
     unitTotalCents: amounts.unitTotalCents,
     lineTotalCents: amounts.lineTotalCents,
@@ -619,13 +625,24 @@ function computeAmounts(input) {
 
   const perUnitMaterial = toCents(src.materialUnitPrice) * normalizeQtyPerUnit(src.materialQtyPerUnit)
   const perUnitPackaging = toCents(src.packagingUnitPrice) * normalizeQtyPerUnit(src.packagingQtyPerUnit)
+  /**
+   * **造景成本**（元/件 → 分/件）：产品负责人 2026-09-19 定。
+   *
+   * 为什么是**独立桶**而不是并进材料/包装：造景因设计而异、逐单可填（SKU 上存默认，单据/行可覆盖），
+   * 混进材料费会让「材料涨了还是造景变复杂了」分辨不出来。
+   *
+   * ⚠️ **不进手工费基数**：手工费口径 =（材料 + 包装）× 费率（裁决 8），
+   * 造景是**成本**不是工作室手工收入，把它算进基数会让手工费凭空变多。
+   */
+  const perUnitScene = toCents(src.sceneCostUnitPrice)
   const perUnitLabor = Math.round(((perUnitMaterial + perUnitPackaging) * rate) / 100)
-  const perUnitTotal = perUnitMaterial + perUnitPackaging + perUnitLabor
+  const perUnitTotal = perUnitMaterial + perUnitPackaging + perUnitScene + perUnitLabor
 
   return {
     // 分/件
     unitMaterialCostCents: perUnitMaterial,
     unitPackagingCostCents: perUnitPackaging,
+    unitSceneCostCents: perUnitScene,
     unitLaborCostCents: perUnitLabor,
     unitTotalCents: perUnitTotal,
     // 分/行
@@ -653,6 +670,7 @@ function quoteLines(lines, ctx) {
   const out = []
   let materialCents = 0
   let packagingCents = 0
+  let sceneCents = 0
   let laborCents = 0
   let totalCents = 0
   let totalQty = 0
@@ -672,6 +690,7 @@ function quoteLines(lines, ctx) {
       // ⚠️ unit* 是「分/件」要乘数量；lineTotalCents 已是「分/行」**不能再乘**（乘了就正好翻倍）
       materialCents += r.unitMaterialCostCents * r.qty
       packagingCents += r.unitPackagingCostCents * r.qty
+      sceneCents += (r.unitSceneCostCents || 0) * r.qty
       laborCents += r.unitLaborCostCents * r.qty
       totalCents += r.lineTotalCents
     } else {
@@ -685,6 +704,7 @@ function quoteLines(lines, ctx) {
     // 分（审计精确）
     materialCostCents: materialCents,
     packagingCostCents: packagingCents,
+    sceneCostCents: sceneCents,
     laborCostCents: laborCents,
     totalCents,
     // 元（落库/展示，与既有字段同单位）

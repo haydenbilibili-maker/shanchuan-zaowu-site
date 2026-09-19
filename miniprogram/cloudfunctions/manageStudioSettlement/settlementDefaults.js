@@ -182,7 +182,17 @@ function skuKeyOf(input) {
     normalizeName(src.materialName || src.materialId || ''),
     normalizeName(normGrade(src.materialGrade)),
     normalizeName(src.packagingName || src.packagingId || ''),
-    normalizeName(normSize(src.packagingSize))
+    normalizeName(normSize(src.packagingSize)),
+    /**
+     * **造景「有无」进唯一键，造景「金额」不进** —— 两者必须分开：
+     *   · 「有造景」与「没造景」是**两种不同的货**（一个加了景、一个没有），
+     *     若不入键，想新开一个有造景的 SKU 会撞上没造景的那个（或被当成重复）。
+     *   · 造景**金额**是价格类的默认属性（同裁决 27 的手工费率）：出货时还能覆盖，
+     *     若入键，则"只想改造景成本"会变成新建一个看起来一样的重复 SKU。
+     * ⚠️ 加了这一段后 key 形状变了 —— 本次改动时 `studio_shipment_skus` 还是**空集合**，
+     *    没有历史数据需要迁移；若日后还要再加维度，先确认集合是否已在使用。
+     */
+    src.hasScene === true ? 'scene' : ''
   ].join('|')
 }
 
@@ -195,7 +205,8 @@ function autoSkuName(input) {
   const size = String(src.packagingSize || '').trim()
   const left = mat + (grade && grade !== DEFAULT_GRADE ? ' ' + grade : '')
   const right = pkg + (size && size !== DEFAULT_SIZE ? ' ' + size : '')
-  return [left, right].filter(Boolean).join(' · ')
+  const scene = src.hasScene === true ? '造景' : ''
+  return [left, right, scene].filter(Boolean).join(' · ')
 }
 
 /**
@@ -217,6 +228,24 @@ function buildSkuRow(input) {
   const hasRate = src.laborRatePct !== undefined && src.laborRatePct !== null && src.laborRatePct !== ''
   const laborRatePct = hasRate ? normalizeRatePct(src.laborRatePct, null) : null
 
+  /**
+   * 造景：产品负责人 2026-09-19 定 —— SKU 对话框上的「造景」勾选 + 勾选后填**造景成本**。
+   * `hasScene` 入唯一键（是不是造景是货本身）；`sceneCost` 不入键（价格类默认值，出货可覆盖）。
+   * 未勾选时把成本归 0，避免"取消勾选后旧金额还留着"这种脏数据。
+   */
+  const hasScene = src.hasScene === true
+  /**
+   * ⚠️ **勾了造景却没填成本 → 直接拒绝，不静默写 0**。
+   * 与本项目「未核价不写 0」同一条纪律（E21 家族）：静默 0 会让这条 SKU 一直少算成本，
+   * 而界面上看起来"配置完了"。显式填 0 是合法值（这份造景不额外计价）。
+   */
+  const sceneProvided = src.sceneCost !== undefined && src.sceneCost !== null && src.sceneCost !== ''
+  const sceneParsed = sceneProvided ? normalizePrice(src.sceneCost) : null
+  if (hasScene && (!sceneProvided || sceneParsed === null)) {
+    return { ok: false, msg: '勾了造景就必须填「造景成本」（元/件；不额外计价可填 0）' }
+  }
+  const sceneCost = hasScene ? sceneParsed : 0
+
   const row = {
     materialId,
     materialName,
@@ -224,6 +253,8 @@ function buildSkuRow(input) {
     packagingId,
     packagingName,
     packagingSize,
+    hasScene,
+    sceneCost,
     laborRatePct,
     status: String(src.status || '') === STATUS.INACTIVE ? STATUS.INACTIVE : STATUS.ACTIVE,
     sort: normalizeSort(src.sort),
@@ -248,6 +279,8 @@ function mapSku(doc) {
     packagingId: d.packagingId || '',
     packagingName: d.packagingName || '',
     packagingSize: d.packagingSize || DEFAULT_SIZE,
+    hasScene: d.hasScene === true,
+    sceneCost: Number(d.sceneCost) || 0,
     laborRatePct: d.laborRatePct === null || d.laborRatePct === undefined ? null : Number(d.laborRatePct),
     /** 费率是否落全局默认（前端显示"用全局 N%"而不是空白） */
     useGlobalRate: d.laborRatePct === null || d.laborRatePct === undefined,

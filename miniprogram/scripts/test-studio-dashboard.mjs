@@ -109,6 +109,22 @@ function runTests(K) {
   )
   ok('D7 毛利率有值', k.grossMarginPct === 31.2, String(k.grossMarginPct))
 
+  /**
+   * ── D8–D11 造景成本（产品负责人 2026-09-19）──
+   * 造景是**成本**：进成本合计、扣毛利；但**不进**「材料+包装」那一项（名字与口径必须一致）。
+   */
+  const ks = K.computeSettlementKpis([
+    { totalAmount: 945, materialCostCents: 56000, packagingCostCents: 9000, sceneCostCents: 5000, laborCostCents: 19500, status: 'unsettled' }
+  ])
+  eq('D8 造景成本合计单列', ks.sceneCostTotal, 50)
+  eq('D9 **材料+包装 不含造景**（名字与口径一致）', ks.materialAndPackagingTotal, 650)
+  eq('D10 成本合计 = 材料 + 包装 + 造景', ks.costTotal, 700)
+  eq('D11 **真毛利 = 出货额 − 成本合计（含造景）**', ks.grossProfit, 945 - 700)
+  ok(
+    'D11b 老单没有 sceneCostCents 字段时造景按 0（历史数字不变）',
+    K.computeSettlementKpis([{ totalAmount: 945, materialCostCents: 56000, packagingCostCents: 9000, laborCostCents: 19500, status: 'unsettled' }]).sceneCostTotal === 0
+  )
+
   // ── E. 边界 ──
   const empty = K.computeSettlementKpis([])
   eq('E1 空数据出货额为 0', empty.shippedAmount, 0)
@@ -135,6 +151,15 @@ function runTests(K) {
 }
 
 const INJECTIONS = [
+  [
+    '造景不进成本（加了桶却没扣毛利 —— 毛利虚高）',
+    (src) => src.replace('  const costCents = materialCents + packagingCents + sceneCents', '  const costCents = materialCents + packagingCents')
+  ],
+  [
+    '「材料+包装」那一项混进造景（名字与口径不一致）',
+    (src) => src.replace('    materialAndPackagingTotal: toYuan(materialCents + packagingCents),', '    materialAndPackagingTotal: toYuan(materialCents + packagingCents + sceneCents),')
+  ],
+
   [
     '真毛利把手工费也减掉（违反裁决 20）',
     (src) => src.replace('  const grossCents = shippedCents - costCents', '  const grossCents = shippedCents - costCents - laborCents')

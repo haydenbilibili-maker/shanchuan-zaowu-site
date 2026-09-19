@@ -192,7 +192,7 @@ function runTests(D, CORE) {
 
   // ── F. 出货 SKU 纯函数（v1.3 SKU 化）──
   const skuBase = { materialId: 'm1', materialName: '大蓝闪蝶', materialGrade: 'A1', packagingId: 'p1', packagingName: '玻璃罩', packagingSize: '20*10' }
-  ok('F1 唯一键含四段（材料|等级|包装|尺寸）', D.skuKeyOf(skuBase).split('|').length === 4, D.skuKeyOf(skuBase))
+  ok('F1 唯一键含五段（材料|等级|包装|尺寸|造景）', D.skuKeyOf(skuBase).split('|').length === 5, D.skuKeyOf(skuBase))
   ok(
     'F1b 唯一键走归一化（名称里的空格不影响匹配）',
     D.skuKeyOf(skuBase) === D.skuKeyOf(Object.assign({}, skuBase, { materialName: '大蓝闪 蝶' }))
@@ -215,6 +215,33 @@ function runTests(D, CORE) {
   ok('F8 缺包装方式被拒', D.buildSkuRow({ materialName: '大蓝闪蝶' }).ok === false)
 
   eq('F9 费率留空 → null（表示用全局）', D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: '' })).row.laborRatePct, null)
+
+  // ── F10–F15 造景（产品负责人 2026-09-19：对话框上加「造景」勾选 + 造景成本）──
+  const sceneSku = Object.assign({ hasScene: true, sceneCost: 35 }, skuBase)
+  const noSceneSku = Object.assign({ hasScene: false, sceneCost: 0 }, skuBase)
+  ok(
+    'F10 **「是否造景」进唯一键**（有造景与没造景是两种不同的货）',
+    D.skuKeyOf(sceneSku) !== D.skuKeyOf(noSceneSku),
+    `${D.skuKeyOf(sceneSku)} vs ${D.skuKeyOf(noSceneSku)}`
+  )
+  ok(
+    'F11 **造景金额不进唯一键**（只想改造景成本不该变成新建重复 SKU）',
+    D.skuKeyOf(Object.assign({}, sceneSku, { sceneCost: 35 })) ===
+      D.skuKeyOf(Object.assign({}, sceneSku, { sceneCost: 88 })),
+    D.skuKeyOf(sceneSku)
+  )
+  ok(
+    'F12 勾了造景却不填成本 → **拒绝**，不静默写 0',
+    D.buildSkuRow(Object.assign({}, skuBase, { hasScene: true })).ok === false,
+    JSON.stringify(D.buildSkuRow(Object.assign({}, skuBase, { hasScene: true })))
+  )
+  eq('F13 显式填 0 是合法值（这份造景不额外计价）', D.buildSkuRow(Object.assign({}, skuBase, { hasScene: true, sceneCost: 0 })).row.sceneCost, 0)
+  eq('F14 未勾造景时成本归 0（不残留旧金额）', D.buildSkuRow(Object.assign({}, skuBase, { hasScene: false, sceneCost: 99 })).row.sceneCost, 0)
+  eq('F14b 未勾造景时 hasScene 为 false', D.buildSkuRow(Object.assign({}, skuBase, { hasScene: false, sceneCost: 99 })).row.hasScene, false)
+  ok('F15 造景进自动名（一眼能分辨）', /造景/.test(D.buildSkuRow(sceneSku).row.skuName), D.buildSkuRow(sceneSku).row.skuName)
+  eq('F15b 不勾造景时名字里没有「造景」', /造景/.test(D.buildSkuRow(noSceneSku).row.skuName), false)
+  eq('F15c mapSku 带出 hasScene/sceneCost（列表页要用）', D.mapSku(sceneSku).sceneCost, 35)
+  eq('F15d mapSku 带出 hasScene', D.mapSku(sceneSku).hasScene, true)
   eq('F10 **费率 0 是合法值**（这个 SKU 不收手工费），不得被当成"没填"', D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: 0 })).row.laborRatePct, 0)
   eq('F11 费率超上限归 500', D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: 9999 })).row.laborRatePct, 500)
 
@@ -272,7 +299,20 @@ const INJECTIONS = [
   ['批量导入：表头行被当成数据', (src) => src.replace("    if (/^(名称|材料名|包装名|物品名称|name)$/i.test(name)) continue\n", '')],
   [
     'SKU：费率进唯一键（改默认费率会变成新建重复 SKU）',
-    (src) => src.replace("    normalizeName(normSize(src.packagingSize))\n  ].join('|')", "    normalizeName(normSize(src.packagingSize)),\n    String(src.laborRatePct == null ? '' : src.laborRatePct)\n  ].join('|')")
+    // 锚点随 2026-09-19 的「造景入键」改动更新：key 现在有 5 段
+    (src) => src.replace("    src.hasScene === true ? 'scene' : ''\n  ].join('|')", "    src.hasScene === true ? 'scene' : '',\n    String(src.laborRatePct == null ? '' : src.laborRatePct)\n  ].join('|')")
+  ],
+  [
+    'SKU：造景金额也进唯一键（只想改成本却变成新建重复 SKU）',
+    (src) => src.replace("    src.hasScene === true ? 'scene' : ''", "    src.hasScene === true ? 'scene' + (Number(src.sceneCost) || 0) : ''")
+  ],
+  [
+    'SKU：勾了造景却不填成本时静默放行（写 0 冒充合法成本）',
+    (src) => src.replace('  if (hasScene && (!sceneProvided || sceneParsed === null)) {', '  if (false) {')
+  ],
+  [
+    'SKU：未勾造景时旧金额残留（取消勾选后成本还留着）',
+    (src) => src.replace('  const sceneCost = hasScene ? sceneParsed : 0', '  const sceneCost = sceneProvided ? sceneParsed : 0')
   ],
   [
     'SKU：费率 0 被当成"没填"（回落全局 → 静默加价）',
