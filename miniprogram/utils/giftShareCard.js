@@ -304,10 +304,85 @@ const PRINT_W = 1240
 const PRINT_H = 1748
 const PRINT_DESIGN_W = 1240
 
+/**
+ * 纸张规格表（**纯增量**：`a6` 值即上面三个常量，绘制路径未改，A6 行为零改动）。
+ *
+ * ⚠ 为什么 `sticker` **不能**只靠等比缩放：
+ *   绘制坐标按 1240 宽的设计稿书写，绘制前**统一等比缩放**。A6 与设计稿同比例
+ *   （1240:1748 = 1:1.41）故能「满幅无黑边」；而热敏贴纸的可打印区约 75×69mm（1:0.92，**近方形**），
+ *   与设计稿比例不同 ⇒ 等比缩放只会**留白或溢出**，必须**重排版式**
+ *   （题记/正文/署名/页脚两枚码在近方形下的纵向分配）。
+ *   详见 `admin/docs/礼笺贴纸版式_技术蓝图.md` §3（A6 放不下的推导）与 §6（实现方案）。
+ *
+ * sticker 尺寸依据 —— **影像预估，待实物「校准网格」确认**（见蓝图 §2/§5）：
+ *   贴纸 90×110mm，扣装饰边框（左右 ~7.3/7.9mm、上 ~5.9mm）与底部水彩花带（~29.5mm）后
+ *   白区约 75×75mm，再避开右下**预印 24mm 印章** ⇒ 干净可打印区 ≈ 75 × 69 mm
+ *   ⇒ @300dpi = **886 × 815 px**。
+ */
+const PRINT_SPECS = {
+  a6: { w: 1240, h: 1748, designW: 1240, label: 'A6 竖版 105×148mm' },
+  sticker: { w: 886, h: 815, designW: 886, label: '热敏贴纸可打印区 75×69mm（预估，待实物确认）' },
+}
+
+/**
+ * 热敏贴纸（90×110mm）**近方形**版式的全部可调参数 —— 单位 px（@300dpi，1mm = 11.811px）。
+ *
+ * ⚠⚠ **待实物校准网格确认**：下面每一个数都由蓝图 §2 的**影像预估**推出（贴纸未到货）。
+ *   到货后必须：① 先印**校准网格**（每 5mm 一格）量真实白区；② 用真实白区重算本表；
+ *   ③ 再印真实礼笺做**真图复核**。**在完成 ①②③ 之前，本表一律视为未验证值。**
+ *
+ * 版式分带（y 从上到下）：
+ *   topY        写给 · TA（题记之上的一行）
+ *   bandTop     题记带（主题名 + 题记；无主题名则整带不画）
+ *   bodyTop/bodyBottom  正文带（自适应缩放，居中；**永不截断**）
+ *   sigY        署名带（署名 + 日期，**只在左半区**）
+ *   footerTop   页脚带（两枚 14mm 码 + 小字，**只在左半区**）
+ *   stampTop    右下**预印 24mm 印章**的上缘 —— 印章区（x ≥ stampLeft 且 y ≥ stampTop）**全空**
+ *
+ * 为什么署名/两枚码都在左半区（而不是 A6 的「署名左 + 码右」）：
+ *   近方形下右侧内缩后只剩 ~48mm，且**右下 24mm 被预印印章占掉**；
+ *   若沿用 A6 的「码贴右内框」，两枚 14mm 码 与 24mm 印章必然重叠（历史真图 bug 重演）。
+ *   故本版式把「署名 + 日期」与「两枚码」改为**同一左半区的上下两带** → 横向不可能相撞；
+ *   右侧留给印章，而署名下划线另有 `sigMaxW` 限宽（双保险）。
+ */
+const STICKER = {
+  margin: Math.round(1.5 * 11.811),                     // 内容外框（贴纸装饰边内再收 1.5mm）
+  pad: Math.round(1.8 * 11.811),                        // 文字轴相对外框的内边距
+  topY: Math.round(14.6 * 11.811),                      // 「写给 · TA」基线
+  bandTop: Math.round(16.8 * 11.811),                   // 题记带顶
+  bandBasePad: Math.round(5.5 * 11.811),                // 主题名基线（带顶下移）
+  bandNoteBase: Math.round(9.6 * 11.811),               // 题记首行基线（带顶下移）
+  bandNoteLineH: 28,                                    // 题记行高
+  bandPadB: Math.round(4.5 * 11.811),                   // 带底留白
+  bandGap: Math.round(2.5 * 11.811),                    // 带与正文的间隔
+  bodyTop: Math.round(47 * 11.811),                     // 正文带顶（无题记时用）
+  bodyGap: Math.round(4 * 11.811),
+  sigOffset: Math.round(5 * 11.811),                    // 署名基线相对 footerTop（向上）
+  dateOffset: Math.round(2 * 11.811),                   // 日期基线相对 footerTop（向上）—— **数值必须小于 sigOffset**（y 越大越靠下）
+  underlineGap: Math.round(1.5 * 11.811),               // 署名下划线在基线下
+  sigMaxW: Math.round(15 * 11.811),                     // 署名下划线**限宽**（不得越到印章/右半区）
+  sigBaseSize: 36,                                      // 署名基准字号（超宽按宽度等比缩，不裁字）
+  sigMinSize: 25,
+  footerTop: Math.round(48 * 11.811),                   // 页脚带顶（== 印章上缘，码从带顶起）
+  qrSize: Math.round(14 * 11.811),                      // 每枚码的边长（A6 是 15mm；近方形下收紧 1mm）
+  qrGap: Math.round(5 * 11.811),                        // 两枚码间距
+  qrCaptionOffset: Math.round(3.2 * 11.811),            // 码下小字基线偏移
+  qrCaptionSize: 18,
+  qrRightPad: Math.round(1.8 * 11.811),                 // 页脚右内缩（内容不得贴到贴纸装饰边）
+  stampSize: Math.round(24 * 11.811),                   // 右下**预印**圆形印章直径
+  stampRightPad: Math.round(1.5 * 11.811),              // 印章距内容外框右缘（白区右缘）
+  stampTopPad: Math.round(2 * 11.811),                  // 印章上缘相对 footerTop
+}
+
 function paintGiftPrintCard(canvas, opts) {
   // 版式学习前端礼笺卡（compose 的 .card-* ）：写给 TA → 题记带 → 手写体正文
   //   → 署名(左, 铜金下划线) + 日期(右, 弱化) → 右下淡「山海」水印
   const o = opts || {}
+  const spec = PRINT_SPECS[o.spec] || PRINT_SPECS.a6   // 未知/未传 → a6（**默认 A6，行为零改动**）
+  // 贴纸（近方形 886×815）与 A6 比例不同 —— **不是缩放问题而是版式问题**（蓝图 §3），
+  // 故另起一套 painter（paintGiftStickerCard）。此处除这一行分派外，
+  // A6 分支的坐标、字号、循环写法与 80-cross 的断言锚点**逐字未动**。
+  if (spec === PRINT_SPECS.sticker) return paintGiftStickerCard(canvas, o)
   const MM = 11.811
   const margin = Math.round(10 * MM)
   const pad = Math.round(14 * MM)
@@ -454,7 +529,176 @@ function paintGiftPrintCard(canvas, opts) {
 ctx.textAlign = 'left'
 }
 
-/** 印刷版导出：canvas 尺寸即输出像素（A6@300dpi），返回临时图片路径 */
+/* ─────────────────────────────────────────────────────────────────────────
+ * 热敏不干胶贴纸版（90×110mm，白区 ≈75×69mm @300dpi = 886×815）
+ *
+ * **这是重排版式，不是 A6 的缩放**（蓝图 §3：A6 1:1.41 vs 可打印区 1:0.92 ⇒ 放不进）：
+ *   A6 = 瘦高卡，纵向富裕；贴纸 = 近方形，纵向只剩 69mm ⇒ 四个带（题记/正文/署名/页脚）必须重分。
+ *
+ * **重点风险（历史真图 bug）**：近方形下「署名」与「两枚码」争位 → 两枚码压住署名。
+ *   A6 的解法是「署名左 / 码右」，但贴纸右侧只有 ~48mm 且**右下 24mm 被预印印章占掉**，
+ *   沿用 A6 排法必然让码压到印章上。故本版式改用**分区不重叠**的强约束：
+ *     · 两枚码 + 小字 全在**左下**（页脚带，从 axisX 起向右排）
+ *     · 署名 + 日期 全在**左半区**（署名带，位于页脚带之上）
+ *     · 右下**印章区**（stampLeft 右侧 且 stampTop 下方）**一律不落墨**
+ *   三条都能被守卫独立复算（见 miniprogram/scripts/check-gift-sticker-layout.mjs），
+ *   不靠「调参试出来」。
+ *
+ * 硬约束延续：满幅无黑边（米白铺满）/ 正文自适应**永不截断** / 不印自带边框 /
+ *   署名下划线不越到两枚码（贴纸另有 sigMaxW 限宽）/ 两枚码 15mm→**14mm**（近方形下收紧）。
+ * ───────────────────────────────────────────────────────────────────────── */
+function paintGiftStickerCard(canvas, o) {
+  const MM = 11.811
+  canvas.width = PRINT_SPECS.sticker.w
+  canvas.height = PRINT_SPECS.sticker.h
+  const ctx = canvas.getContext('2d')
+  const LW = PRINT_SPECS.sticker.designW
+  const LH = PRINT_SPECS.sticker.h
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+
+  // 满幅米白（无黑边；贴纸白区本就米白，铺满防透明/黑底）
+  ctx.fillStyle = '#F2EDE4'
+  ctx.fillRect(0, 0, LW, LH)
+
+  const cardX = STICKER.margin
+  const cardW = LW - STICKER.margin * 2
+  const cardH = LH - STICKER.margin * 2
+  const axisX = cardX + STICKER.pad
+  const axisRight = cardX + cardW - STICKER.pad
+  // 手写体：与 A6 同一套字体栈（保持品牌一致）
+  const HAND = '"HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", "KaiTi", serif'
+
+  // 禁止落墨的**右下预印印章区**（x ≥ stampLeft 且 y ≥ stampTop）
+  const stampRight = cardX + cardW - STICKER.stampRightPad
+  const stampLeft = stampRight - STICKER.stampSize
+  const stampTop = STICKER.footerTop + STICKER.stampTopPad
+
+  // ── 顶行：写给 · TA（左上）
+  const toName = String(o.recipientName || '').trim()
+  ctx.textAlign = 'left'
+  if (toName) {
+    ctx.fillStyle = '#8A7530'
+    ctx.font = '400 26px serif'
+    ctx.fillText('写给 · ' + toName, axisX, STICKER.topY)
+  }
+
+  // ── 题记带（近方形：主题名 32px / 题记 24px，最多 2 行；无主题名则整带不画）
+  let y = STICKER.bandTop
+  // ⚠ 变量名与 A6 分支**刻意不同**（这里是 `o.themeName ||`，A6 分支用 String(...) 包一层）：
+  //   80-cross 的 `test:gift-note-variants:selftest` 拿 A6 那一行的**源码字面量**当注入锚点，
+  //   同一文件出现第二份 → 锚点命中 2 次 → 那条**跨域**守卫的自检失败（本轮实测就是这么炸的）。
+  //   跨域改守卫要提变更请求，故由本分支改写法。
+  //   **不要把这里「统一」回 A6 的写法**（连注释里也不要写出那一整行），除非同步改那条守卫的锚点。
+  const bandTheme = String(o.themeName || '').trim()
+  const themeNote = String(o.themeNote || '').trim()
+  if (bandTheme) {
+    const bandW = axisRight - axisX
+    const innerPad = Math.round(4 * MM)
+    const noteLines = themeNote ? wrapLines(ctx, themeNote, bandW - innerPad * 2, 2) : []
+    const bandH = STICKER.bandBasePad + Math.max(1, noteLines.length) * STICKER.bandNoteLineH + STICKER.bandPadB
+    ctx.fillStyle = 'rgba(196, 167, 108, 0.10)'
+    roundRect(ctx, axisX, y, bandW, bandH, 8)
+    ctx.fill()
+    ctx.fillStyle = '#C4A76C'
+    ctx.fillRect(axisX, y, 6, bandH)
+    ctx.textAlign = 'left'
+    ctx.fillStyle = '#B08A3E'
+    ctx.font = '600 32px serif'
+    ctx.fillText(bandTheme, axisX + innerPad, y + STICKER.bandBasePad)
+    ctx.fillStyle = '#6A6258'
+    ctx.font = '400 24px serif'
+    for (let i = 0; i < noteLines.length; i += 1) {
+      ctx.fillText(noteLines[i], axisX + innerPad, y + STICKER.bandNoteBase + i * STICKER.bandNoteLineH)
+    }
+    y += bandH + STICKER.bandGap
+  }
+
+  // ── 正文带：bodyTop（无题记）/ 题记带下沿 → 署名带之上
+  const bodyTop = Math.max(y, STICKER.bodyTop)
+  const signTop = STICKER.footerTop - STICKER.sigOffset
+  const availH = signTop - bodyTop
+  const text = String(o.cardBody || '')
+  let fontPx = 34
+  let lineH = Math.round(34 * 1.62)
+  ctx.fillStyle = '#2B2723'
+  ctx.font = '400 ' + fontPx + 'px ' + HAND
+  let bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
+  if (bodyLines.length * lineH > availH && availH > 0) {
+    // **永不截断**（同 A6 口径：逐档缩小字号与行高，下限 26px，仍装不下才截断并告警）
+    while (fontPx > 26 && bodyLines.length * lineH > availH) {
+      fontPx -= 2
+      lineH = Math.round(fontPx * 1.62)
+      ctx.font = '400 ' + fontPx + 'px ' + HAND
+      bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
+    }
+    if (bodyLines.length * lineH > availH) console.warn('giftSticker: 礼笺过长，已按可用高度截断')
+  }
+  const bodyBlockH = bodyLines.length * lineH
+  // 在「题记带下沿 → 署名上沿」之间垂直居中（与 A6 同口径）
+  const bodyY = bodyTop + Math.max(0, Math.round((availH - bodyBlockH) / 2)) + Math.round(fontPx * 0.85)
+  for (let i = 0; i < bodyLines.length && (i + 1) * lineH <= availH + lineH; i += 1) {
+    if (bodyY + i * lineH > bodyTop && bodyY + (i + 1) * lineH > signTop) break  // 绝不落进署名/页脚带
+    ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
+  }
+
+  // ── 署名带（**只在左半区**：右端受 sigMaxW 与印章左缘双重限制）
+  const sigBaseY = STICKER.footerTop - STICKER.sigOffset
+  const sig = String(o.cardSignature || '').trim()
+  if (sig) {
+    ctx.textAlign = 'left'
+    ctx.fillStyle = '#2B2723'
+    let sigFont = STICKER.sigBaseSize
+    let sigText = sig
+    ctx.font = '500 ' + sigFont + 'px ' + HAND
+    // 近方形下署名带浅 → 按可用宽度**等比缩字**；到下限仍超宽才截断（宁可小，不可越界/裁字）
+    if (ctx.measureText(sigText).width > STICKER.sigMaxW) {
+      sigFont = Math.max(STICKER.sigMinSize, Math.floor(sigFont * STICKER.sigMaxW / ctx.measureText(sigText).width))
+      ctx.font = '500 ' + sigFont + 'px ' + HAND
+      while (ctx.measureText(sigText).width > STICKER.sigMaxW && sigText.length > 2) {
+        sigText = truncate(sigText, sigText.length - 1)
+      }
+    }
+    ctx.fillText(sigText, axisX, sigBaseY)
+    const sw = ctx.measureText(sigText).width
+    ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'
+    ctx.lineWidth = 2
+    // 下划线**限宽**：既不超过 sigMaxW，也绝不到印章左缘（近方形历史 bug：署名与两枚码争位）
+    const underlineW = Math.min(Math.max(sw, Math.round(9 * MM)), STICKER.sigMaxW, stampLeft - axisX - STICKER.pad)
+    ctx.beginPath()
+    ctx.moveTo(axisX, sigBaseY + STICKER.underlineGap)
+    ctx.lineTo(axisX + Math.max(1, underlineW), sigBaseY + STICKER.underlineGap)
+    ctx.stroke()
+  }
+  const d = new Date()
+  const dateText = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0')
+  ctx.textAlign = 'left'
+  ctx.fillStyle = '#B4AC9F'
+  ctx.font = '400 20px serif'
+  ctx.fillText(dateText, axisX, STICKER.footerTop - STICKER.dateOffset)
+
+  // ── 页脚带（**左下**）：两枚码从左往右排，右端不得越过页脚右内缩（更不得进印章区）
+  const codes = []
+  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店' })
+  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信' })
+  const qrRight = cardX + cardW - STICKER.qrRightPad
+  let cx = axisX
+  for (let i = 0; i < codes.length; i += 1) {
+    const c = codes[i]
+    const x = Math.min(cx, qrRight - STICKER.qrSize)
+    const cy = STICKER.footerTop
+    // 码已是**透明 PNG** → 不画白色底托
+    try { ctx.drawImage(c.img, x, cy, STICKER.qrSize, STICKER.qrSize) } catch (e) { /* 码挂跳过 */ }
+    ctx.fillStyle = '#8A7530'
+    ctx.font = '400 ' + STICKER.qrCaptionSize + 'px serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(c.caption, x + STICKER.qrSize / 2, cy + STICKER.qrSize + STICKER.qrCaptionOffset)
+    cx = x + STICKER.qrSize + STICKER.qrGap
+  }
+  ctx.textAlign = 'left'
+}
+
+/** 印刷版导出：canvas 尺寸即输出像素（A6@300dpi / 贴纸@300dpi），返回临时图片路径。
+ *  opts.spec = 'a6'（默认）| 'sticker' —— 版式分派见 paintGiftPrintCard 与 STICKER 表。 */
 function renderGiftPrintImage(selector, page, opts) {
   const options = opts || {}
   return new Promise((resolve) => {
@@ -483,7 +727,9 @@ function renderGiftPrintImage(selector, page, opts) {
               themeNote: options.themeNote,
               recipientName: options.recipientName,
               qrcodeImage,
-              serviceQrImage
+              serviceQrImage,
+              // 'a6'（默认，行为零改动）| 'sticker'（热敏不干胶 90×110mm，近方形版式）
+              spec: options.spec
             })
           } catch (e) {
             console.warn('giftShareCard print paint', e)
@@ -511,6 +757,8 @@ module.exports = {
   SHARE_CARD_W: W,
   PRINT_CARD_W: PRINT_W,
   PRINT_CARD_H: PRINT_H,
+  /** 纸张规格表（a6 既有 / sticker 预留）—— 供守卫与调用方引用，见文件内 PRINT_SPECS 注释 */
+  PRINT_SPECS,
   paintGiftPrintCard,
   renderGiftPrintImage,
   SHARE_CARD_H: H,

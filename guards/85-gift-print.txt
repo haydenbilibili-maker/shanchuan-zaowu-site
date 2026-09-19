@@ -1,0 +1,5 @@
+# 域 gift-print —— 守卫清单（一行一条 npm 脚本）。本文件是**该域的单写者面**：
+# 只有该域的 owner 改它（见 docs/并发工作流注册表.json；gift-print = 礼笺印刷版式 A6 + 热敏贴纸）；
+# 跨流加守卫请提变更请求。
+# 校验：npm run check:guards-coverage
+npm run check:gift-sticker-layout

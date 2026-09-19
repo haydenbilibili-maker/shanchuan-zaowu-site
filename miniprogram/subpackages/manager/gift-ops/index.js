@@ -277,11 +277,26 @@ Page({
   },
 
   /**
-   * 导出印刷版礼笺卡（A6 竖版 @300dpi，含题记带）—— 供礼赠卡印刷使用。
+   * 导出印刷版礼笺卡（默认 **A6 竖版 @300dpi**，含题记带）—— 供礼赠卡印刷使用。
    * 礼笺正文/署名取自 getBoardDetail；题记与藏品图按标题回查 products（订单看板项不含商品 id）。
    * 落盘：先存相册（便于当场核对），再上传云存储（印刷厂取件）。
    */
   async onExportGiftCard(e) {
+    return this._exportGiftPrint(e, 'a6')
+  },
+
+  /** 导出热敏不干胶**贴纸**版（90×110mm 白区，近方形版式）—— 与 A6 并列的入口 */
+  async onExportGiftSticker(e) {
+    return this._exportGiftPrint(e, 'sticker')
+  },
+
+  /**
+   * 导出印刷版礼笺（**A6 与贴纸共用这一条实现**，只有 spec 不同）。
+   * 为什么不复制第二份：落盘/上传/错误提示/并发锁 完全相同，
+   * 复制一份必然漂移（真图 bug 的常见来源），故按 spec 参数分派。
+   * @param {'a6'|'sticker'} spec
+   */
+  async _exportGiftPrint(e, spec) {
     const orderId = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '').trim()
     if (!orderId || this._exportingCard) return
     this._exportingCard = true
@@ -314,8 +329,11 @@ Page({
         } catch (err) { /* 回查失败不阻断出卡 */ }
       }
       const { renderGiftPrintImage } = require('../../../utils/giftShareCard')
+      const isSticker = spec === 'sticker'
       const path = await renderGiftPrintImage('#giftPrintCanvas', this, {
         cardBody, cardSignature, themeName, themeNote, specimenFileID,
+        // 规格：A6 默认 / 贴纸传 'sticker'（渲染器按规格分派版式，见 utils/giftShareCard.js）
+        spec: isSticker ? 'sticker' : 'a6',
         // 详情（mapBoardItem）不含 recipientName（那是列表侧客户端派生的）→ 以 address.name 为准
         // 受礼人姓名：**以 giftMeta.recipientName 为准**（实测 ORDMU5HRWP4829：
       //   recipientName/salutation = 「虞博阳&王瑛」；而 address.name 只是收件人「王瑛」✗ 会印错）。
@@ -334,10 +352,10 @@ Page({
       }
       try {
         const up = await wx.cloud.uploadFile({
-          cloudPath: `gift-print/${orderId}-${Date.now()}.png`,
+          cloudPath: `gift-print/${orderId}-${isSticker ? 'sticker' : 'a6'}-${Date.now()}.png`,
           filePath: path
         })
-        wx.showToast({ title: '已上传印刷文件', icon: 'none', duration: 2500 })
+        wx.showToast({ title: isSticker ? '已上传贴纸文件' : '已上传印刷文件', icon: 'none', duration: 2500 })
         console.log('gift print uploaded', up && up.fileID)
       } catch (err) {
         wx.showToast({ title: '上传失败（相册里已有原图）', icon: 'none' })

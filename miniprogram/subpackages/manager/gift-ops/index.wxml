@@ -102,6 +102,8 @@
           <view class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
           <!-- 印刷用：导出 A6@300dpi 礼笺卡（含题记带） -->
           <view class="mini-btn" data-id="{{item.orderId}}" catchtap="onExportGiftCard">导出礼笺图</view>
+          <!-- 印刷用：导出热敏不干胶贴纸版（90×110mm 白区，近方形版式；复用同一画布与导出实现） -->
+          <view class="mini-btn" data-id="{{item.orderId}}" catchtap="onExportGiftSticker">导出贴纸图</view>
         </view>
       </view>
 
