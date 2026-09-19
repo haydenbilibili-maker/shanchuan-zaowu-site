@@ -35,13 +35,16 @@ const DEFAULT_TABLES = {
     }
   },
   inventory: {
+    // ⚠️ 2026-09-19 实地核对飞书表后修正列名：成品库存表的真实列是
+    //    `物品名称 / 规格装裱 / 数量 / 盘点日期 / 备注`（原默认写的 `规格型号 / 当前库存 / 日期` 是**错的**，
+    //    按错的列名同步会整列取空 —— 不报错，只是同步出一堆空字段）
     tableId: 'tblh9wqtrQmZgRO5',
     fields: {
       skuName: '物品名称',
       itemName: '物品名称',
-      framingSpec: '规格型号',
-      qty: '当前库存',
-      date: '日期',
+      framingSpec: '规格装裱',
+      qty: '数量',
+      date: '盘点日期',
       note: '备注'
     }
   },
@@ -226,11 +229,82 @@ function toPurchaseItems (records, fieldMap) {
   })
 }
 
-/** 同步目标 → 写入口（云函数名 + items 构造器）。**加目标只改这一张表。** */
+/**
+ * 把字段映射**裁到表里真实存在的列**，并报告被丢弃的映射项。
+ *
+ * 为什么必须裁：映射里写了一个**表里不存在的列**时，飞书读取会取到空值，
+ * 然后这个空值会被 upsert 写进库 —— **把原有的好数据覆盖成空**。
+ * 这不是"同步得少一点"，是**破坏数据**。（实测：采购映射里的 `归属`/`单位` 两列在采购表里不存在，
+ * 若不裁就同步，370 条采购的「归属」会被清空。）
+ *
+ * ⚠️ 但"裁"必须在**表本身选对**的前提下才有意义 —— 见 `assessMapping`：
+ * 表选错时会有大片列不存在，那时的正确动作是**拒绝同步**而不是裁完再写。
+ */
+function filterMappingToColumns (fieldMap, tableColumns) {
+  const cols = new Set((tableColumns || []).map((c) => String(c || '').trim()))
+  const kept = {}
+  const dropped = []
+  for (const key of Object.keys(fieldMap || {})) {
+    const col = String(fieldMap[key] || '').trim()
+    if (col && cols.has(col)) kept[key] = fieldMap[key]
+    else dropped.push({ key, column: col })
+  }
+  return { kept, dropped }
+}
+
+/**
+ * 判断「映射与表」是否匹配到可以安全同步。
+ * 表选错（指向了另一张表）时会有大片列不存在 —— 此时若只裁不拒，
+ * 同步会把**另一张表的行**写进这张台账（实测：成品库存的映射指向了「库存管理」，
+ * 照它同步就会把 205 条**原材料**写进成品库存）。
+ * 规则：不存在的列 ≥ 2 且占比 ≥ 一半 → 判为"映射与表不匹配"，**拒绝同步**。
+ */
+function assessMapping (fieldMap, tableColumns, signature) {
+  const { kept, dropped } = filterMappingToColumns(fieldMap, tableColumns)
+  const total = Object.keys(fieldMap || {}).length
+  const missRatio = total ? dropped.length / total : 0
+  /**
+   * 判据两条，任一命中即"表选错了"：
+   *   ① **签名列**没全在（最硬的一条 —— 列名是这张表的身份）；
+   *   ② 缺列比例过高（≥ 一半且 ≥2）—— 兜住没有签名列的目标。
+   * 只留 ② 会漏：50% 的边界实测刚好漏过一次（见 TARGETS 注释）。
+   */
+  const cols = new Set((tableColumns || []).map((c) => String(c || '').trim()))
+  const missingSignature = (signature || []).filter((c) => !cols.has(String(c).trim()))
+  const mismatch = missingSignature.length > 0 || (dropped.length >= 2 && missRatio >= 0.5)
+  return { kept, dropped, mismatch, missRatio, total, missingSignature }
+}
+
+/**
+ * 同步目标 → 写入口（云函数名 + items 构造器 + **签名列**）。**加目标只改这一张表。**
+ *
+ * `signature` = 「这些列存在，才证明这张表就是我要的那张」。比"缺列比例"可靠得多：
+ *   2026-09-19 真实事故 —— 成品库存映射指向了「库存管理」表，6 列里缺 3 列（50%），
+ *   当时的比例阈值（≥50% 且 ≥2）**刚好没拦住**，于是把 205 条**原材料**灌进了成品库存。
+ *   换成"签名列必须全在"就不会有这种边界问题。
+ *
+ * ⚠️ **`inventory` 已从同步目标里移除** —— 产品负责人 2026-09-19 明确：
+ *    「成品库的库存以小程序-超管工作台-工作室-库存管理的数据为准」，
+ *    即成品库存的真源是**小程序里人工盘点的数据**，**不由飞书同步**。
+ *    代码与映射保留（`DEFAULT_TABLES.inventory` 等）只是为了万一将来要恢复时不必重写，
+ *    但 `TARGETS` 里没有它 ⇒ `pull` 不会碰成品库存。
+ */
 const TARGETS = {
-  rawInventory: { label: '原材料库存', fn: 'manageStudioRawInventory', build: toRawInventoryItems, note: '飞书「库存管理」' },
-  inventory: { label: '成品库存', fn: 'manageStudioInventory', build: toInventoryItems, note: '飞书「成品库存」' },
-  purchase: { label: '采购记录', fn: 'managePurchaseOrder', build: toPurchaseItems, note: '飞书「采购记录」', extra: { defaultEntityId: 'studio_specimen' } }
+  rawInventory: {
+    label: '原材料库存',
+    fn: 'manageStudioRawInventory',
+    build: toRawInventoryItems,
+    note: '飞书「库存管理」',
+    signature: ['物品名称', '当前库存']
+  },
+  purchase: {
+    label: '采购记录',
+    fn: 'managePurchaseOrder',
+    build: toPurchaseItems,
+    note: '飞书「采购记录」',
+    signature: ['物品名称', '采购编号'],
+    extra: { defaultEntityId: 'studio_specimen' }
+  }
 }
 
 module.exports = {
@@ -243,6 +317,8 @@ module.exports = {
   cellDate,
   pickField,
   mapRecord,
+  filterMappingToColumns,
+  assessMapping,
   resolveFieldMap,
   resolveTableId,
   toRawInventoryItems,

@@ -456,6 +456,47 @@ async function handleMeta() {
  * 飞书「成品库存」→ studio_inventory 按 feishuRecordId upsert
  * （勿用飞书「库存管理」表写入本集合——那是原材料）
  */
+/**
+ * 清掉「飞书同步进来的行」（**仅超管**）—— 用于同步写错后的收拾。
+ *
+ * 为什么要有它：`upsertFromFeishu` 只会按 `feishuRecordId` 增改，**不会删**；
+ * 一旦用错了映射把别的表的行灌进来（2026-09-19 真实发生：成品库存被灌进 205 条原材料），
+ * 没有任何入口能把它们去掉。删接口就这么一个，条件写死得很紧：
+ *   · `feishuRecordId` 非空（同步写入的行才有）
+ *   · `sourceLabel === '飞书成品库存'`（同步写入时打的标）
+ *   · **没有 `snapshotId`**（盘点快照行一定有 —— 这条保证**永远碰不到人工盘点数据**）
+ * 且只删调用方显式列出的 `ids`（最多 300），不做"按来源全删"。
+ */
+async function handleRemoveFeishuSynced (event, actor) {
+  if (!actor || actor.superAdmin !== true) return fail('只有超管可以清理同步数据', 'NOT_SUPER')
+  const ids = (Array.isArray(event.ids) ? event.ids : []).map((x) => String(x || '').trim()).filter(Boolean)
+  if (!ids.length) return fail('缺少 ids', 'BAD_PARAM')
+  if (ids.length > 300) return fail('一次最多清理 300 条', 'BAD_PARAM')
+
+  const removed = []
+  const skipped = []
+  for (const id of ids) {
+    let doc = null
+    try {
+      const res = await withCollectionRetry(COLLECTION, () => db.collection(COLLECTION).doc(id).get())
+      doc = (res && res.data) || null
+    } catch (e) {
+      doc = null
+    }
+    if (!doc) { skipped.push({ id, why: '不存在' }); continue }
+    if (!doc.feishuRecordId) { skipped.push({ id, why: '不是同步行（无 feishuRecordId）' }); continue }
+    if (String(doc.sourceLabel || '') !== '飞书成品库存') { skipped.push({ id, why: '来源不是飞书同步' }); continue }
+    if (doc.snapshotId) { skipped.push({ id, why: '属于盘点快照，拒绝删除' }); continue }
+    try {
+      await withCollectionRetry(COLLECTION, () => db.collection(COLLECTION).doc(id).remove())
+      removed.push(id)
+    } catch (e) {
+      skipped.push({ id, why: (e && e.message) || '删除失败' })
+    }
+  }
+  return ok({ removed: removed.length, skipped, msg: `已清理 ${removed.length} 条同步行，跳过 ${skipped.length} 条` })
+}
+
 async function handleUpsertFromFeishu(event, actor) {
   const items = Array.isArray(event.items) ? event.items : []
   if (!items.length) return fail('缺少 items')
@@ -552,6 +593,8 @@ exports.main = async (event) => {
         return await handleDashboard()
       case 'upsertFromFeishu':
         return await handleUpsertFromFeishu(event, auth.actor)
+      case 'removeFeishuSynced':
+        return await handleRemoveFeishuSynced(event, auth.actor)
       default:
         return fail('未知 action', 'BAD_ACTION')
     }

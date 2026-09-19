@@ -109,10 +109,22 @@ async function listAllRecords (tableId, env) {
   return records
 }
 
+/**
+ * 列出表字段名（只读）。
+ * 用途：把「配置里写的列名」与「表里真实存在的列」对一遍 —— 列名写错时同步**不会报错**，
+ * 只会整列取空（静默丢数据）。有了这个就能在同步前把问题显式报出来。
+ */
+async function listFieldNames (tableId, env) {
+  const token = await getTenantToken(env)
+  const { appToken } = envCreds(env)
+  const json = await feishuJson(`${API}/apps/${appToken}/tables/${tableId}/fields?page_size=100`, { token })
+  return (((json.data || {}).items) || []).map((f) => String(f.field_name || '').trim()).filter(Boolean)
+}
+
 /** 只读计数（用于「线上数据到底同没同步」的对比，不拉字段） */
 async function countRecords (tableId, env) {
   const rows = await listAllRecords(tableId, env)
   return rows.length
 }
 
-module.exports = { credsStatus, getTenantToken, listAllRecords, countRecords, DEFAULT_APP_TOKEN }
+module.exports = { credsStatus, getTenantToken, listAllRecords, countRecords, listFieldNames, DEFAULT_APP_TOKEN }

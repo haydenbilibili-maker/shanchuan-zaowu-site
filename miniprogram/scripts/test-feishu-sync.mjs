@@ -52,6 +52,15 @@ function runOnce (file) {
   eq('A6 原材料：物品名称列名', M.DEFAULT_TABLES.rawInventory.fields.itemName, '物品名称')
   eq('A7 采购字段数（与 ERP 18 个对齐）', Object.keys(M.DEFAULT_TABLES.purchase.fields).length, 18)
   eq('A8 原材料字段数（12 个）', Object.keys(M.DEFAULT_TABLES.rawInventory.fields).length, 12)
+  /**
+   * A9–A11 **成品库存的列名必须与飞书表实际列一致**（2026-09-19 我在这里犯过错）：
+   * 我照着 rawInventory 的形状"猜"了 `规格型号/当前库存/日期`，而飞书成品库存表的真实列是
+   * `规格装裱/数量/盘点日期` —— 猜错的后果不是报错，而是**整列同步成空**（静默丢数据）。
+   * 这三条断言就是钉住这个具体错误，代价只有三行。
+   */
+  eq('A9 成品：装裱列名（真实是「规格装裱」不是「规格型号」）', M.DEFAULT_TABLES.inventory.fields.framingSpec, '规格装裱')
+  eq('A10 成品：数量列名（真实是「数量」不是「当前库存」）', M.DEFAULT_TABLES.inventory.fields.qty, '数量')
+  eq('A11 成品：日期列名（真实是「盘点日期」不是「日期」）', M.DEFAULT_TABLES.inventory.fields.date, '盘点日期')
 
   // ── B. 单元格解析（与 ERP 同口径）──
   eq('B1 数字列带 ¥ 与千分位也能解析', M.cellNumber('¥1,234.5'), 1234.5)
@@ -103,12 +112,13 @@ function runOnce (file) {
   eq('E5 采购：数量转数字', purItems[0].qty, 2)
 
   const invItems = M.toInventoryItems(
-    [{ record_id: 'rec3', fields: { 物品名称: '成品A', 当前库存: '7' } }],
+    [{ record_id: 'rec3', fields: { 物品名称: '成品A', 数量: '7', 规格装裱: '玻璃罩' } }],
     M.DEFAULT_TABLES.inventory.fields
   )
   ;['feishuRecordId', 'itemName', 'skuName', 'framingSpec', 'qty', 'date', 'note']
     .forEach((k, i) => ok(`E6-${i} 成品载荷含 ${k}`, Object.prototype.hasOwnProperty.call(invItems[0], k)))
-  eq('E7 成品：数量转数字', invItems[0].qty, 7)
+  eq('E7 成品：数量转数字（真实列名「数量」）', invItems[0].qty, 7)
+  eq('E7b 成品：装裱进 framingSpec', invItems[0].framingSpec, '玻璃罩')
 
   // ── F. 配置合并：ERP 保存的映射优先，缺的用默认补 ──
   const merged = M.resolveFieldMap('rawInventory', { qty: '库存数' })
@@ -118,24 +128,79 @@ function runOnce (file) {
   eq('F4 表 id：配置优先', M.resolveTableId('purchase', 'tblCUSTOM'), 'tblCUSTOM')
   eq('F5 表 id：没配就用默认', M.resolveTableId('purchase', ''), 'tblMHhGXhpmGTiI5')
 
+  // ── H. 写库前的安全体检（2026-09-19 加）──
+  //   起因：实测发现两处映射写了**表里不存在的列**，若不处理，同步会把库里原有的
+  //   好数据覆盖成空（采购的「归属」会被清空 370 条），或把**别的表的行**灌进台账
+  //   （成品库存映射指向了「库存管理」= 205 条原材料）。
+  const cols = ['物品名称', '规格装裱', '数量', '盘点日期', '备注']
+  const f1 = M.filterMappingToColumns({ itemName: '物品名称', framingSpec: '规格装裱', unit: '单位' }, cols)
+  eq('H1 存在的列保留', Object.keys(f1.kept).sort(), ['framingSpec', 'itemName'])
+  eq('H2 不存在的列被裁掉并报告', f1.dropped.map((d) => d.column), ['单位'])
+
+  // 表选对：只有个别列过期 → 允许同步（裁掉即可）
+  const okAssess = M.assessMapping({ itemName: '物品名称', qty: '数量', note: '备注', unit: '单位' }, cols)
+  eq('H3 只缺 1 列 → 不算选错表', okAssess.mismatch, false)
+
+  // 签名列缺失 → 一定拒绝（比比例阈值可靠：实测 50% 的边界漏过一次）
+  const sigMiss = M.assessMapping({ itemName: '物品名称', framingSpec: '规格装裱', qty: '数量' }, cols, ['物品名称', '采购编号'])
+  eq('H3b 签名列缺失 → 判为选错表', sigMiss.mismatch, true)
+  ok('H3c 判定里点名缺了哪个签名列', sigMiss.missingSignature.includes('采购编号'), JSON.stringify(sigMiss.missingSignature))
+  const sigOk = M.assessMapping({ itemName: '物品名称', qty: '数量', unit: '单位' }, cols, ['物品名称', '数量'])
+  eq('H3d 签名列齐全且只缺 1 列 → 允许同步（裁掉即可）', sigOk.mismatch, false)
+
+  // 表选错：大片列不存在 → **拒绝同步**
+  const badAssess = M.assessMapping(
+    { itemName: '物品名称', framingSpec: '规格装裱', qty: '数量', date: '盘点日期' },
+    ['库存编号', '物品名称', '分类', '规格型号', '当前库存', '单价']
+  )
+  eq('H4 缺一半以上且≥2 列 → 判为选错表（必须拒绝同步）', badAssess.mismatch, true)
+  ok('H4b 判定里带上缺了哪些列（人要能据此改映射）', badAssess.dropped.length === 3, JSON.stringify(badAssess.dropped))
+
   // ── G. 目标表：加目标只改一处，但写入口名不能写错 ──
-  eq('G1 三个目标', Object.keys(M.TARGETS).sort(), ['inventory', 'purchase', 'rawInventory'])
+  /**
+   * G1 —— **成品库存不再是同步目标**。产品负责人 2026-09-19：
+   * 「成品库的库存以小程序-超管工作台-工作室-库存管理的数据为准」
+   * ⇒ 成品库存真源是小程序里人工盘点的数据，**不由飞书同步**。
+   */
+  eq('G1 同步目标只有两个（成品库存已按口径移出）', Object.keys(M.TARGETS).sort(), ['purchase', 'rawInventory'])
   eq('G2 原材料写入口', M.TARGETS.rawInventory.fn, 'manageStudioRawInventory')
-  eq('G3 成品写入口', M.TARGETS.inventory.fn, 'manageStudioInventory')
+  ok('G3 成品库存不在同步目标里（不会被飞书覆盖）', M.TARGETS.inventory === undefined)
   eq('G4 采购写入口', M.TARGETS.purchase.fn, 'managePurchaseOrder')
   ok('G5 每个目标都有 items 构造器', Object.values(M.TARGETS).every((t) => typeof t.build === 'function'), JSON.stringify(Object.keys(M.TARGETS)))
+  ok('G6 每个目标都声明签名列（表身份校验）', Object.values(M.TARGETS).every((t) => Array.isArray(t.signature) && t.signature.length >= 1), JSON.stringify(Object.keys(M.TARGETS)))
 
   return { passes, failures }
 }
 
 // ─────────────────────────── 自检 ───────────────────────────
 const INJECTIONS = [
+  [
+    '成品库存列名猜错（照原材料形状套 → 整列同步成空，静默丢数据）',
+    (s2) => s2.replace("      framingSpec: '规格装裱',\n      qty: '数量',\n      date: '盘点日期',", "      framingSpec: '规格型号',\n      qty: '当前库存',\n      date: '日期',")
+  ],
+  [
+    '映射裁剪失效：表里没有的列照样拿去读（空值覆盖库里的好数据）',
+    (s2) => s2.replace("    if (col && cols.has(col)) kept[key] = fieldMap[key]\n    else dropped.push({ key, column: col })", "    kept[key] = fieldMap[key]")
+  ],
+  [
+    // 锚点随 2026-09-19「加签名列判定」更新
+    '表选错的判定被放宽（把别的表的行灌进台账）',
+    (s2) => s2.replace('  const mismatch = missingSignature.length > 0 || (dropped.length >= 2 && missRatio >= 0.5)', '  const mismatch = false')
+  ],
+  [
+    '签名列不再参与判定（只靠缺列比例 —— 实测 50% 边界漏过一次）',
+    (s2) => s2.replace('  const mismatch = missingSignature.length > 0 || (dropped.length >= 2 && missRatio >= 0.5)', '  const mismatch = dropped.length >= 2 && missRatio >= 0.5')
+  ],
   ['数字解析把空当 null（写库会写进 undefined）', (s) => s.replace("  if (!t) return 0", "  if (!t) return null")],
   ['日期不再区分秒/毫秒（10 位秒被当毫秒 → 1970 年）', (s) => s.replace('const d = new Date(ms < 1e12 ? ms * 1000 : ms)', 'const d = new Date(ms)')],
   ['宽松列名匹配改成"第一个像的就用"（近名列会互相抢）', (s) => s.replace('  if (loose.length === 1) return f[loose[0]]', '  if (loose.length) return f[loose[0]]')],
   ['写库载荷漏掉 feishuRecordId（去重失效 → 每次同步都新增）', (s) => s.replace("      feishuRecordId: rec.record_id || rec.recordId || '',\n      inventoryNo:", "      inventoryNo:")],
   ['配置不再覆盖默认列名（ERP 改过的映射不生效）', (s) => s.replace('  return Object.assign({}, base, cfg)', '  return Object.assign({}, base)')],
-  ['原材料写入口指错函数（同步写到别的台账）', (s) => s.replace("rawInventory: { label: '原材料库存', fn: 'manageStudioRawInventory'", "rawInventory: { label: '原材料库存', fn: 'manageStudioInventory'")],
+  [
+    // 锚点随 TARGETS 改成多行后更新
+    '原材料写入口指错函数（同步写到别的台账）',
+    (s2) => s2.replace("    fn: 'manageStudioRawInventory',", "    fn: 'manageStudioInventory',")
+  ],
   ['表 id 配置优先被反转（ERP 换表后仍读旧表）', (s) => s.replace('  if (t) return t', '  if (false) return t')]
 ]
 

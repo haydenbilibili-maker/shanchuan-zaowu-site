@@ -120,6 +120,32 @@ async function pullOne (role, mapping, opsKey) {
   const spec = mapping[role]
   if (!spec || !spec.tableId) return fail(`「${target.label}」还没配飞书表 id`, 'NO_TABLE')
 
+  /**
+   * 同步前先体检「映射 vs 表」：
+   *   · 表里没有的映射列 → **裁掉**（否则空值会把库里原有的好数据覆盖成空）；
+   *   · 大片列都不存在 → 说明**表选错了**，此时**拒绝同步**（裁完再写会把别的表的行灌进这张台账）。
+   */
+  let fieldMap = spec.fields
+  let dropped = []
+  try {
+    const cols = await feishu.listFieldNames(spec.tableId, process.env)
+    const assess = M.assessMapping(spec.fields, cols, target.signature)
+    if (assess.mismatch) {
+      const why = assess.missingSignature.length
+        ? `缺少签名列 ${assess.missingSignature.join('、')}`
+        : `${assess.dropped.length}/${assess.total} 列不存在`
+      return fail(
+        `「${target.label}」的字段映射与该表对不上（${why}）—— 表很可能选错了，**拒绝同步以免写坏数据**`,
+        'MAPPING_MISMATCH'
+      )
+    }
+    fieldMap = assess.kept
+    dropped = assess.dropped
+  } catch (e) {
+    // 列名体检失败不阻断同步（可能是权限/网络），但保守起见用原映射并记下原因
+    dropped = []
+  }
+
   let records = []
   try {
     records = await feishu.listAllRecords(spec.tableId, process.env)
@@ -128,7 +154,7 @@ async function pullOne (role, mapping, opsKey) {
     return fail(`读飞书失败：${(e && e.message) || e}`, code)
   }
 
-  const items = target.build(records, spec.fields)
+  const items = target.build(records, fieldMap)
   if (!items.length) {
     return ok({ pulled: 0, written: 0, msg: `飞书「${target.label}」没有记录` })
   }
@@ -179,6 +205,7 @@ async function pullOne (role, mapping, opsKey) {
     updated: totals.updated,
     skipped: totals.skipped,
     failedBatches: totals.failedBatches,
+    droppedColumns: dropped.map((d) => d.column),
     msg: okAll
       ? `飞书 ${records.length} 条 → 新建 ${totals.created} / 更新 ${totals.updated}`
       : `飞书 ${records.length} 条，其中 ${totals.failedBatches} 批写入失败：${lastMsg}`
@@ -246,11 +273,26 @@ exports.main = async (event, context) => {
           const local = await countLocal(LOCAL_COLLECTION[role])
           let remote = null
           let remoteError = ''
+          let missingColumns = []
+          let tableColumns = null
           if (creds.configured && mapping[role].tableId) {
             try {
               remote = await feishu.countRecords(mapping[role].tableId, process.env)
             } catch (err) {
               remoteError = (err && err.message) || String(err)
+            }
+            /**
+             * **列名体检**：映射里写的列名在该表**存在吗**？
+             * 列名写错时同步不报错、只把整列取成空 —— 那是静默丢数据。
+             * 这里只报告、不改配置（改配置是人的决定）。
+             */
+            try {
+              tableColumns = await feishu.listFieldNames(mapping[role].tableId, process.env)
+              const want = Object.values(mapping[role].fields || {})
+              const set = new Set(tableColumns)
+              missingColumns = [...new Set(want.filter((c) => c && !set.has(String(c).trim())))]
+            } catch (err) {
+              tableColumns = null
             }
           }
           targets.push({
@@ -262,7 +304,9 @@ exports.main = async (event, context) => {
             fieldCount: Object.keys(mapping[role].fields).length,
             localCount: local,
             remoteCount: remote,
-            remoteError
+            remoteError,
+            missingColumns,
+            columnCount: tableColumns ? tableColumns.length : null
           })
         }
         return ok({ creds, autoSync: cfg.autoSync, lastRun: cfg.lastRun, targets })
