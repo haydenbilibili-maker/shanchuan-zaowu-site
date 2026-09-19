@@ -54,6 +54,7 @@ const SHIPMENT_OPS_PATH = '/subpackages/extra/shipment-ops/index'
 const INVENTORY_OPS_PATH = '/subpackages/extra/inventory-ops/index'
 const RAW_INVENTORY_OPS_PATH = '/subpackages/manager/raw-inventory-ops/index'
 const STUDIO_DASHBOARD_PATH = '/subpackages/manager/studio-dashboard/index'
+const STUDIO_BILLS_PATH = '/subpackages/manager/studio-bills/index'
 const PROPERTY_COST_PATH = '/subpackages/extra/property-cost/index'
 const ARTISAN_COMMISSION_PATH = '/subpackages/extra/artisan-commission/index'
 const ARTISAN_COMMISSION_MINE_PATH = '/subpackages/extra/artisan/commission/index'
@@ -389,6 +390,17 @@ function goStudioDashboard() {
   })
 }
 
+/**
+ * 超管或店长：工作室账单（超管确认收款 / 店长标记已付款；服务端按角色与门店范围判定）
+ *
+ * ⚠️ **刻意不写 `fail` 回调**：`check:dialog-ratchet` 冻结了原生弹窗数量（只许降），
+ *    新增一个 `wx.showToast` 就会被拦下。这里唯一可能的失败是「页面没登记」，
+ *    而那由 `check:page-paths` 在守卫链里保证 —— 不靠运行时报错兜。
+ */
+function goStudioBills() {
+  wx.navigateTo({ url: STUDIO_BILLS_PATH })
+}
+
 /** 仅超管：物业成本（水电 / 房租） */
 function goPropertyCost() {
   wx.navigateTo({
@@ -643,6 +655,7 @@ module.exports = {
   INVENTORY_OPS_PATH,
   RAW_INVENTORY_OPS_PATH,
   STUDIO_DASHBOARD_PATH,
+  STUDIO_BILLS_PATH,
   PROPERTY_COST_PATH,
   MENU_KEYS,
   HUB_MENU_SECTIONS,
@@ -685,6 +698,7 @@ module.exports = {
   goInventoryOps,
   goRawInventoryOps,
   goStudioDashboard,
+  goStudioBills,
   goPropertyCost,
   goArtisanCommission,
   goArtisanCommissionMine,

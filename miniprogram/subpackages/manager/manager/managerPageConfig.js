@@ -87,6 +87,7 @@ const {
   goInventoryOps,
   goRawInventoryOps,
   goStudioDashboard,
+  goStudioBills,
   goPropertyCost,
   goArtisanCommission,
   goBookingRules,
@@ -2281,6 +2282,18 @@ const managerPageConfig = {
       return;
     }
     goStudioDashboard();
+  },
+
+  /**
+   * 工作室账单（超管与店长都可进）。
+   * ⚠️ 拒绝分支**不再弹原生 toast**（棘轮只许降）。这一支在 UI 上不可达：
+   *    磁贴本身由 `wx:if="{{menu.studioBills}}"` 控制，而 `menu` 与这里的
+   *    `canSeeMenu` 用的是同一个判定源；页面内 `guardStaffPage('manager')` 与服务端
+   *    仍各自独立判定（客户端判定不是执法）。
+   */
+  goStudioBillsGuarded() {
+    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.STUDIO_BILLS)) return;
+    goStudioBills();
   },
 
   goPropertyCostGuarded() {

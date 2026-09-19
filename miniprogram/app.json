@@ -107,6 +107,7 @@
       "pages": [
         "manager/index",
         "manager/workspace/index",
+        "studio-bills/index",
         "invoice-requests/index",
         "gift-ops/index",
         "gift-manage/index",
