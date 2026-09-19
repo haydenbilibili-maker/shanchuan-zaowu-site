@@ -134,6 +134,14 @@ page {
   margin-bottom: 20rpx;
 }
 
+/* 祈福墙入口槽位（2026-09-20）：banner 正下方。
+   横向 32rpx 与 .section-box 的既有节奏对齐；上边距只留 4rpx —— hero-section 自己已有 20rpx 底距，
+   两段相加 ≈ 24rpx，才是"紧挨 banner"该有的间距。 */
+.wish-wall-slot-home {
+  display: block;
+  margin: 4rpx 32rpx 48rpx;
+}
+
 /* 直播 Banner：扫描线 / 信号条（克制、真机友好） */
 @keyframes hero-live-scan {
   0% { top: 6%; opacity: 0; }

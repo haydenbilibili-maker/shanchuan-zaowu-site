@@ -102,6 +102,23 @@
       </view>
     </view>
 
+    <!-- 祈福墙入口（2026-09-20）：banner 正下方，以「弹幕跑马灯」形式露出**真实**心愿。
+         三条口径：
+         ① 间距由**宿主自己的包裹 view** 给（与详情页同约定：ext-class 只留给改皮肤 ——
+            同一元素上组件样式与宿主样式撞 margin 时谁生效不保证）；
+         ② 开关 `showMaShangYou` 缺字段默认关 → 包裹层一起 `wx:if`，否则关掉时会留一段空槽；
+         ③ 跑马灯文案由 `loadWishWallMarquee` 取**默认墙**的真实心愿；取不到就只有入口、不放跑马灯
+            （**绝不编造**）。 -->
+    <view class="wish-wall-slot-home" wx:if="{{showMaShangYou}}">
+      <wish-wall-entry
+        enabled="{{showMaShangYou}}"
+        defaultWall="{{true}}"
+        from="home"
+        compact="{{true}}"
+        wishes="{{wishWallWishes}}"
+      />
+    </view>
+
     <!-- 灵动球（博物标本室） -->
     <view class="section-box orbs-section orbs-first" wx:if="{{showCategories}}">
       <view class="section-header-row section-header-compact">

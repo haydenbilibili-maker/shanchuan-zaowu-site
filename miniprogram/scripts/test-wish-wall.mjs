@@ -37,6 +37,12 @@ function eq(name, got, want) {
 }
 
 const INJECTIONS = {
+  // 首页入口槽位被摘掉 → 产品口径「入口放在首页 banner 下方」落空
+  'home-entry-slot-dropped': {
+    file: 'miniprogram/pages/index/index.wxml',
+    from: '    <view class="wish-wall-slot-home" wx:if="{{showMaShangYou}}">\n',
+    to: ''
+  },
   // 展示名改用客户端入参 → 可冒充他人
   'trust-client-nickname': {
     file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
@@ -2064,6 +2070,31 @@ const detWxml = readSrc('miniprogram/subpackages/feature/detail/index.wxml')
 check('详情页改用 <wish-wall-entry> 组件', /<wish-wall-entry\b/.test(detWxml))
 check('详情页不再自持入口实现', !/goWishWall\b/.test(detWxml))
 
+/* —— 首页入口 · 弹幕跑马灯（2026-09-20）────────────────────────────────────────
+   产品负责人口径：把祈福墙入口放到**首页 banner 下方**，以弹幕墙跑马灯形式展示。
+   四条钉住（每一条都对应一种"看起来做了、其实没做"）：
+     ① 真的在 banner **之后**（顺序断言，不是"某处有个标签"）；
+     ② 入口用 defaultWall（首页没有商品上下文）+ 开关默认关时**连槽位一起不渲染**（否则留一段空槽）；
+     ③ 跑马灯文案来自**真实心愿**（manageWishWall 默认墙的 list），取不到就置空 —— **不许编造**；
+     ④ 跑马灯至少 2 条才开（1 条在无缝循环里会露空档）、时长按内容长度算。 */
+const homeWxml = readSrc('miniprogram/pages/index/index.wxml')
+const homeJs = readSrc('miniprogram/pages/index/index.js')
+{
+  const bannerAt = homeWxml.indexOf('hero-swiper')
+  const entryAt = homeWxml.indexOf('<wish-wall-entry')
+  check('★ 首页接入祈福墙入口，且**在 banner 之后**（产品口径：主页 banner 下方）',
+    entryAt !== -1 && bannerAt !== -1 && entryAt > bannerAt,
+    `banner@${bannerAt} entry@${entryAt}`)
+  check('★ 首页入口用 defaultWall + 开关默认关时连槽位不渲染（不留空槽）',
+    /defaultWall="\{\{true\}\}"/.test(homeWxml) &&
+    /<view class="wish-wall-slot-home" wx:if="\{\{showMaShangYou\}\}"/.test(homeWxml))
+  check('★ 跑马灯文案来自**真实心愿**（manageWishWall 默认墙），取不到就置空 —— 不许编造',
+    /name: 'manageWishWall'/.test(homeJs) && /action: 'list'/.test(homeJs) &&
+    /wishWallWishes: wishes/.test(homeJs) && /wishWallWishes: \[\]/.test(homeJs))
+  check('★ 跑马灯 ≥2 条才开（1 条会露空档）+ 时长按内容长度算（长文案跑得久）',
+    /const MQ_MIN = 2/.test(entrySrc) && /mqItems/.test(entryWxml) && /mqDurationMs/.test(entryWxml))
+}
+
 // —— C 端页面的仪式/彩蛋接线 ——
 const wallJson = readSrc('miniprogram/subpackages/feature/wish-wall/index.json')
 check('祈福墙页注册了彩蛋浮层组件', /easter-egg-note/.test(wallJson))
@@ -2645,8 +2676,14 @@ check(
 eq('显式传入优先（宿主仍可覆盖）', entryMod.resolveCopy('moonrabbit', '某某墙', '自定义文案').brandText, '某某墙')
 eq('key 为空按默认墙处理（宁可按需求 28 的原样）', entryMod.resolveCopy('', '', '').brandText, '马上有')
 check(
-  '组件观察 brand/desc（否则宿主覆盖不生效）',
-  !!(entryComponentOptions && entryComponentOptions.observers && entryComponentOptions.observers['enabled, product, brand, desc'])
+  // 2026-09-20：键名不再写死 —— 首页入口需要额外观察 defaultWall，键变成了
+  // 'enabled, defaultWall, product, brand, desc'。判据改为钉**意图**：必须同时观察
+  // product / brand / desc（漏任一个宿主覆盖就不生效），允许继续加名字。
+  '组件观察 product/brand/desc（否则宿主覆盖不生效；键名可变，但三个名字必须在）',
+  !!(entryComponentOptions && entryComponentOptions.observers &&
+    Object.keys(entryComponentOptions.observers).some(
+      (k) => /\bproduct\b/.test(k) && /\bbrand\b/.test(k) && /\bdesc\b/.test(k)
+    ))
 )
 check('组件属性默认留空 = 按墙自动', /brand: \{ type: String, value: '' \}/.test(entrySrc))
 check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\}/.test(entryWxml) && /\{\{descText\}\}/.test(entryWxml))

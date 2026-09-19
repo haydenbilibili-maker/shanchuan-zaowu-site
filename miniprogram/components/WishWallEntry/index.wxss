@@ -107,3 +107,40 @@
   border-bottom: 3rpx solid #A8903C;
   transform: rotate(-45deg);
 }
+
+/* ── 跑马灯（2026-09-20）：真实心愿横向流动 ─────────────────────────────────────
+   与祈福墙页的弹幕同一意图（匀速线性），但**不吸顶、不遮挡、不拦点击**：它就是入口卡里的一行。
+   轨道用 inline-flex 让宽度 = 内容宽 —— 这样 translateX(-50%) 才恰好滚过一份内容、循环处无缝；
+   块级 flex 的宽度是父级 100%，-50% 只会滚半屏、循环时露出空档。 */
+.wish-wall-entry-mq {
+  position: relative;
+  z-index: 1;
+  margin-top: 10rpx;
+  padding-top: 8rpx;
+  border-top: 1rpx solid rgba(107, 90, 36, 0.18);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.wish-wall-entry-mq-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 24rpx;
+  animation-name: wish-wall-entry-mq-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.wish-wall-entry-mq-item {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  line-height: 1.4;
+  color: #7A6E58;
+  white-space: nowrap;
+}
+
+@keyframes wish-wall-entry-mq-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}

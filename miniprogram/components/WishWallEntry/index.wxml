@@ -6,6 +6,8 @@
   bindtap="onTap"
   hover-class="wish-wall-entry--press"
   hover-stay-time="60"
+  aria-role="button"
+  aria-label="{{brandText}}{{title}}：{{descText}}"
 >
   <view class="wish-wall-entry-main">
     <view class="wish-wall-entry-row">
@@ -14,6 +16,16 @@
       <text class="wish-wall-entry-title">{{title}}</text>
     </view>
     <text class="wish-wall-entry-desc" wx:if="{{!compact}}">{{descText}}</text>
+    <!-- 跑马灯（2026-09-20）：真实心愿横向流动 —— 把弹幕墙那一眼"别人也在写"搬到入口里。
+         ⚠️ mqItems 为空就整行不渲染：**绝不编造**（宁可不放，也不摆几条假心愿充场面）。
+         两份内容并排 + 平移 -50% = 无缝循环；时长按内容长度算（见 index.js 的 wishes observer）。
+         aria-hidden：为无缝循环把每条重复了一遍，读屏会把同样几条心愿念两遍；
+         入口自身的 aria-label 已说清"这是去哪"，故这里隐藏、语义由 aria-label 承担。 -->
+    <view class="wish-wall-entry-mq" wx:if="{{mqItems.length}}">
+      <view class="wish-wall-entry-mq-track" style="animation-duration:{{mqDurationMs}}ms" aria-hidden="true">
+        <text class="wish-wall-entry-mq-item" wx:for="{{mqItems}}" wx:key="i">· {{item.t}}</text>
+      </view>
+    </view>
   </view>
   <view class="wish-wall-entry-chevron" aria-hidden="true"></view>
 </view>

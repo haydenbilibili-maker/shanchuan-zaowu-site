@@ -12,6 +12,10 @@
  */
 const { isWishWallProduct, resolveWishWallKey, buildWishWallUrl, PRODUCT_KEY } = require('../../utils/wishWall')
 
+/** 跑马灯：最多展示几条 / 至少几条才开（只 1 条会在循环里露空档） */
+const MQ_MAX = 8
+const MQ_MIN = 2
+
 /**
  * 入口文案：显式传入优先，留空则按**这面墙**自动。
  *
@@ -39,6 +43,12 @@ Component({
   properties: {
     /** 宿主页面读到的 `content_display_flags.showMaShangYou` */
     enabled: { type: Boolean, value: false },
+    /**
+     * **默认墙入口**（2026-09-20）：首页这类**没有商品上下文**的页面用它。
+     * 为什么不做成"不传 product 就默认显示"：那样任何页面**忘了传 product** 都会亮出入口，
+     * 而入口是转化钩子 —— 宁可漏亮，不可错亮。所以要求宿主**显式**声明"我就是要默认墙"。
+     */
+    defaultWall: { type: Boolean, value: false },
     /** 藏品对象：优先读 `wishWallEnabled` / `wishWallKey`，标题子串只作过渡兜底 */
     product: { type: null, value: null },
     /** 来源标识，写进跳转 URL，供页面埋点区分入口 */
@@ -55,19 +65,28 @@ Component({
      * 紧凑单行版：主图正下方是"首屏最贵的一块地"，
      * 三行卡片会把价格卡挤出首屏 —— 故首屏位只用一行（灯 + 品牌 + 标题 + 箭头），不显示 desc。
      */
-    compact: { type: Boolean, value: false }
+    compact: { type: Boolean, value: false },
+    /**
+     * **跑马灯文案**：真实心愿文本，由宿主拉取后传入（首页用）。
+     * ⚠️ 空数组 = 整行不渲染 —— **绝不编造**：宁可没有跑马灯，也不摆几条假心愿充场面
+     * （本仓硬口径：不许编造社会证明）。
+     */
+    wishes: { type: Array, value: [] }
   },
 
   data: {
     visible: false,
     productKey: '',
     brandText: '',
-    descText: ''
+    descText: '',
+    /** 跑马灯条目：文案各两份 + 唯一 key → 平移 -50% 即无缝循环 */
+    mqItems: [],
+    mqDurationMs: 26000
   },
 
   observers: {
-    'enabled, product, brand, desc'(enabled, product, brand, desc) {
-      const visible = enabled === true && isWishWallProduct(product)
+    'enabled, defaultWall, product, brand, desc'(enabled, defaultWall, product, brand, desc) {
+      const visible = enabled === true && (defaultWall === true || isWishWallProduct(product))
       const productKey = visible ? resolveWishWallKey(product) : ''
       const copy = resolveCopy(productKey, brand, desc)
       if (
@@ -77,6 +96,27 @@ Component({
         copy.descText !== this.data.descText
       ) {
         this.setData({ visible, productKey, brandText: copy.brandText, descText: copy.descText })
+      }
+    },
+    /**
+     * 跑马灯：清洗 + 限长 + 复制一份（无缝循环）。
+     * 时长按内容长度换算，让"长文案跑得久"（与祈福墙页 danmakuDurationMs 同一意图）——
+     * 固定时长会让短文案一闪而过、长文案挤成一团。
+     */
+    wishes(list) {
+      const texts = (Array.isArray(list) ? list : [])
+        .map((t) => String(t == null ? '' : t).trim())
+        .filter(Boolean)
+        .slice(0, MQ_MAX)
+      const items = texts.length >= MQ_MIN
+        ? texts.concat(texts).map((t, i) => ({ i, t }))
+        : []
+      const chars = texts.join('').length
+      const duration = Math.max(14000, Math.min(46000, 10000 + chars * 260))
+      if (items.length !== this.data.mqItems.length) {
+        this.setData({ mqItems: items, mqDurationMs: duration })
+      } else if (duration !== this.data.mqDurationMs) {
+        this.setData({ mqDurationMs: duration })
       }
     }
   },

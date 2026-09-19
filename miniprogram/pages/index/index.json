@@ -3,7 +3,8 @@
     "product-list": "/components/ProductList/index",
     "protected-badge": "/components/ProtectedBadge/index",
     "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
-    "easter-egg-note": "/components/EasterEggNote/index"
+    "easter-egg-note": "/components/EasterEggNote/index",
+    "wish-wall-entry": "/components/WishWallEntry/index"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "山海造物",

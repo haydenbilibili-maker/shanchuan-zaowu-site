@@ -183,6 +183,10 @@ Page({
     showPetMemorial: true,
     showLive: false,
     showStore: true,
+    /** 祈福墙开关（`showMaShangYou`，缺字段默认关）：首页入口与跑马灯都由它决定 */
+    showMaShangYou: false,
+    /** 跑马灯文案（**真实**心愿，取自默认墙）；空数组 = 整行不渲染，绝不编造 */
+    wishWallWishes: [],
     liveSession: null,
     /** 朋友圈单页模式（scene=1154）：平台预览，不可路由跳转 */
     isSinglePage: false
@@ -214,8 +218,10 @@ Page({
           showPetMemorial: cached.flags.showPetMemorial !== false,
           showLive: cached.flags.showLive === true,
           showStore,
+          showMaShangYou: cached.flags.showMaShangYou === true,
           showExploreStore: showStore && this.data.showExploreStore
         });
+        if (cached.flags.showMaShangYou === true) this.loadWishWallMarquee();
       }
     } catch (e) { /* ignore */ }
 
@@ -231,6 +237,35 @@ Page({
     this.loadDisplayFlags();
   },
 
+  /**
+   * 首页祈福墙跑马灯（2026-09-20）：取**默认墙**最近的真实心愿文案。
+   *
+   * 三条约束：
+   *   1. **只取真实心愿**（`manageWishWall` 的 list）。失败/空 → `wishWallWishes: []`，
+   *      跑马灯整行不渲染 —— **绝不摆假文案充场面**（本仓硬口径：不许编造社会证明）；
+   *   2. **一个页面会话只拉一次**：开关的水合缓存与 SWR 两条路径都会走到这里；
+   *   3. **不传 productKey** = 默认墙（`manageWishWall` 用 `normalizeProductKey` 兜底到
+   *      DEFAULT_PRODUCT_KEY），所以首页不需要任何商品上下文。
+   */
+  async loadWishWallMarquee() {
+    if (this._wishWallMarqueeLoaded) return;
+    this._wishWallMarqueeLoaded = true;
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageWishWall',
+        data: { action: 'list', limit: 12 }
+      });
+      const list = ((res && res.result) || {}).list || [];
+      const wishes = list
+        .map((r) => String((r && r.text) || '').trim())
+        .filter(Boolean);
+      this.setData({ wishWallWishes: wishes });
+    } catch (e) {
+      // 取不到就只是"没有跑马灯"：入口照常可点，降级不影响转化主路径
+      this.setData({ wishWallWishes: [] });
+    }
+  },
+
   async loadDisplayFlags() {
     try {
       const { fetchContentDisplayFlags } = require('../../utils/contentDisplayFlags');
@@ -241,8 +276,10 @@ Page({
           showPetMemorial: flags.showPetMemorial !== false,
           showLive: flags.showLive === true,
           showStore,
+          showMaShangYou: flags.showMaShangYou === true,
           showExploreStore: showStore && this.data.showExploreStore
         });
+        if (flags.showMaShangYou === true) this.loadWishWallMarquee();
         return flags.showLive === true;
       };
       const { flags } = await fetchContentDisplayFlags({
