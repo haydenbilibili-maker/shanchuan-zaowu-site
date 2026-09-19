@@ -62,6 +62,15 @@ Page({
     detail: null,
     detailFields: [],
     showDetail: false,
+    /** 新建账单（仅超管）：选门店 → 勾未结且已核价的单 → 生成 */
+    creating: false,
+    stores: [],
+    createStoreIndex: 0,
+    createStoreName: '',
+    candidates: [],
+    selectedCount: 0,
+    selectedTotalText: '¥0.00',
+    createTip: '',
     tipText: '',
     tipTone: 'info'
   },
@@ -183,6 +192,104 @@ Page({
       {},
       '再点一次即确认收款：账单结清，且其下每张出货单会被标为「已完成」（不可撤销）'
     )
+  },
+
+  // ───────────── 新建账单（仅超管）：勾选未结且已核价的出货单 ─────────────
+
+  openCreate() {
+    this.setData({ creating: true, candidates: [], selectedCount: 0, selectedTotalText: '¥0.00', createTip: '' })
+    // 门店清单来自出货单云函数的 meta（与出货单口径同源，不另维护一份门店表）
+    wx.cloud
+      .callFunction({ name: 'manageStoreShipment', data: { action: 'meta' } })
+      .then((res) => {
+        const r = (res && res.result) || {}
+        const stores = r.stores || []
+        if (!stores.length) throw new Error('没有可用门店')
+        this.setData({ stores, createStoreIndex: 0 }, () => this.loadCandidates())
+      })
+      .catch((e) =>
+        this.setData({ creating: false, tipTone: 'warn', tipText: formatCloudFnError(e, '门店清单加载失败') })
+      )
+  },
+
+  closeCreate() {
+    this.setData({ creating: false })
+  },
+
+  onPickStore(e) {
+    const i = Number(e.detail.value) || 0
+    this.setData({ createStoreIndex: i }, () => this.loadCandidates())
+  },
+
+  /**
+   * 候选单：**未核价的单在这里就置灰并显示原因**，而不是让超管勾完才被拒。
+   */
+  loadCandidates() {
+    const store = this.data.stores[this.data.createStoreIndex]
+    if (!store) return
+    this.setData({ busy: true, createTip: '正在加载可入账单据…', candidates: [] })
+    this.callFn({ action: 'bill.preview', storeId: store.id })
+      .then((r) => {
+        const list = (r.list || []).map((c) => ({
+          _id: c._id,
+          shipmentNo: c.shipmentNo,
+          shipmentDate: c.shipmentDate,
+          qtyText: (Number(c.totalQty) || 0) + ' 件',
+          amountText: '¥' + money(Math.round((Number(c.totalCents) || 0) * 100)),
+          totalCents: Number(c.totalCents) || 0,
+          selectable: !!c.selectable,
+          blockReason: c.blockReason || '',
+          selected: false
+        }))
+        this.setData({
+          busy: false,
+          createStoreName: store.name || '',
+          candidates: list,
+          createTip: r.msg || '',
+          selectedCount: 0,
+          selectedTotalText: '¥0.00'
+        })
+      })
+      .catch((e) => this.setData({ busy: false, tipTone: 'warn', tipText: formatCloudFnError(e, '候选单据加载失败') }))
+  },
+
+  toggleCandidate(e) {
+    const id = String(e.currentTarget.dataset.id || '')
+    const list = this.data.candidates.slice()
+    const hit = list.find((c) => c._id === id)
+    if (!hit) return
+    if (!hit.selectable) {
+      // 不可选的直接说原因，不静默无反应
+      this.setData({ createTip: hit.blockReason || '这张单暂时不能入账' })
+      return
+    }
+    hit.selected = !hit.selected
+    const picked = list.filter((c) => c.selected)
+    this.setData({
+      candidates: list,
+      selectedCount: picked.length,
+      selectedTotalText: '¥' + money(picked.reduce((n, c) => n + c.totalCents, 0))
+    })
+  },
+
+  submitCreate() {
+    const picked = this.data.candidates.filter((c) => c.selected)
+    if (!picked.length) {
+      this.setData({ createTip: '请至少勾选一张出货单' })
+      return
+    }
+    const store = this.data.stores[this.data.createStoreIndex]
+    this.setData({ busy: true, createTip: '正在生成账单…' })
+    this.callFn({
+      action: 'bill.create',
+      storeId: store.id,
+      shipmentIds: picked.map((c) => c._id)
+    })
+      .then((r) => {
+        this.setData({ busy: false, creating: false, tipTone: 'info', tipText: r.msg || '账单已生成' })
+        return this.loadList()
+      })
+      .catch((e) => this.setData({ busy: false, createTip: formatCloudFnError(e, '生成账单失败') }))
   },
 
   onVoid() {

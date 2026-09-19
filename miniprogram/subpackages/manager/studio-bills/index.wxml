@@ -32,6 +32,10 @@
 
   <view class="sb-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
+  <view class="sb-create-btn" wx:if="{{isSuper}}" bindtap="openCreate">
+    <text>＋ 新建账单（勾选未结出货单）</text>
+  </view>
+
   <view class="sb-loading" wx:if="{{busy && !list.length}}"><text>加载中…</text></view>
   <view class="sb-empty" wx:elif="{{!list.length}}">
     <text>没有账单</text>
@@ -56,6 +60,53 @@
         <text class="sb-card-meta">门店标记：{{item.paidMarkedByName}}</text>
         <text class="sb-card-meta" wx:if="{{item.settledByName}}">收款：{{item.settledByName}}</text>
       </view>
+    </view>
+  </view>
+
+  <!-- 新建账单：选门店 → 勾单 → 生成 -->
+  <view class="sb-mask" wx:if="{{creating}}" bindtap="closeCreate"></view>
+  <view class="sb-sheet" wx:if="{{creating}}">
+    <view class="sb-sheet-head">
+      <text class="sb-sheet-title">新建账单</text>
+      <view class="sb-sheet-close" bindtap="closeCreate"><text>关闭</text></view>
+    </view>
+    <view class="sb-create-store">
+      <text class="sb-create-label">门店</text>
+      <picker mode="selector" range="{{stores}}" range-key="name" value="{{createStoreIndex}}" bindchange="onPickStore">
+        <view class="sb-picker"><text>{{createStoreName || '请选择门店'}}</text><text class="sb-picker-arrow">▾</text></view>
+      </picker>
+    </view>
+    <view class="sb-tip is-info" wx:if="{{createTip}}"><text>{{createTip}}</text></view>
+
+    <scroll-view class="sb-sheet-body" scroll-y>
+      <view
+        class="sb-cand {{item.selectable ? '' : 'is-blocked'}} {{item.selected ? 'is-on' : ''}}"
+        wx:for="{{candidates}}"
+        wx:key="_id"
+        data-id="{{item._id}}"
+        bindtap="toggleCandidate"
+      >
+        <view class="sb-cand-check">{{item.selected ? '✓' : ''}}</view>
+        <view class="sb-cand-main">
+          <text class="sb-cand-no">{{item.shipmentNo}}</text>
+          <text class="sb-cand-meta">{{item.shipmentDate}} · {{item.qtyText}}</text>
+          <!-- 不可入账的把原因写在这，而不是让超管勾完才被拒 -->
+          <text class="sb-cand-block" wx:if="{{!item.selectable}}">{{item.blockReason}}</text>
+        </view>
+        <text class="sb-cand-amount">{{item.amountText}}</text>
+      </view>
+      <view class="sb-empty" wx:if="{{!candidates.length}}">
+        <text>该门店没有可入账的出货单</text>
+        <text class="sb-empty-hint">只有「已核价」且「未结」的单能进账单</text>
+      </view>
+    </scroll-view>
+
+    <view class="sb-actions">
+      <view class="sb-create-sum">
+        <text class="sb-create-sum-label">已选 {{selectedCount}} 张</text>
+        <text class="sb-create-sum-value">{{selectedTotalText}}</text>
+      </view>
+      <button class="sb-btn sb-btn-main" bindtap="submitCreate" disabled="{{busy || !selectedCount}}">生成账单</button>
     </view>
   </view>
 
