@@ -224,6 +224,29 @@ function check(mp) {
       growthValue: 2500
     })
     if (noSrv.payable !== 900) problems.push(`无服务端费率时未按阶梯兜底（得到 ${noSrv.payable}）`)
+
+    // 钱安全：脏费率绝不能算出「近乎免费」或「高于原价」
+    // normalizeDiscountRate 会把 >1 的值当「折/百分数」写法治（1.05 → 0.105！），
+    // 故服务端费率只采信 [MIN_PLAUSIBLE_RATE, 1]。
+    const dirty = [
+      [1.05, '既非合法分数、又会被归一成 0.105（近乎免费）'],
+      [0.05, '低于可信下界'],
+      [0.2, '低于可信下界'],
+      [1.0001, '刚过 1 就会被 /10 归一成 0.1'],
+      [200, '百分数写法的越界值']
+    ]
+    for (const [r, why] of dirty) {
+      const got = helper.payableFor({ amount: 100, ladder: [], growthValue: 0, serverRate: r })
+      if (got.payable !== 100) problems.push(`脏服务端费率 ${r}（${why}）未回落原价（得到 ${got.payable}）`)
+    }
+    const badLadder = helper.payableFor({
+      amount: 100,
+      ladder: [{ level: 2, name: '脏档', threshold: 0, discountRate: 0.1 }],
+      growthValue: 0
+    })
+    if (badLadder.payable !== 100) problems.push(`脏阶梯费率 0.1 未回落原价（得到 ${badLadder.payable}）`)
+    const pct = helper.payableFor({ amount: 100, ladder: [], growthValue: 0, serverRate: 9.5 })
+    if (pct.payable !== 95) problems.push(`合法「9.5 折」写法未采信（得到 ${pct.payable}，应为 95）`)
   }
 
   // ⑦ 取数同源
@@ -359,7 +382,8 @@ function main() {
   }
   console.log('✓ 会员应付口径同源：主包副本三函数逐字一致 / 编排页只引主包件 /')
   console.log('  备妥应付渲染 payablePrice 且标注「以结算页为准」/ 折扣判据一致 /')
-  console.log('  与结算页单行公式在 9×6 费率矩阵上逐点等价 / 非法费率回落原价 / 两页同取 getUserStats')
+  console.log('  与结算页单行公式在 9×6 费率矩阵上逐点等价 / 两页同取 getUserStats /')
+  console.log('  钱安全：非法与脏费率（含 1.05→0.105 陷阱）一律回落原价，不出现近乎免费或高于原价')
 }
 
 main()

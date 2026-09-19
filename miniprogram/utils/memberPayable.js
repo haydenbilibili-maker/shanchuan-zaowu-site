@@ -72,6 +72,16 @@ function resolveFromLadder(ladder, growthValue, isHonorary) {
 /** 费率兜底：非法值一律 1.0（不打折），绝不因脏数据把价格算成 0 或负 */
 const FULL_RATE = 1
 
+/**
+ * 可信费率下界。为什么需要它：`normalizeDiscountRate` 为兼容「9.5 折 / 95 百分数」两种写法
+ * 会把 >1 的值除以 10 或 100 —— 于是脏数据 `1.05`（本意可能是「105%」）会被归一成
+ * **0.105**，即近乎免费。会员体系最优档是 7 折（云库 DEFAULT_LEVELS），
+ * 故取 0.5 作为「这还能叫会员折扣吗」的下界：落在 [0.5, 1] 之外的服务端费率**不采信**，
+ * 退回本地阶梯（同一张表，且 levelRate 会按同一套归一规则算）——
+ * 宁可按阶梯显示一个正常价，也不显示一个近乎免费或高于原价的价。
+ */
+const MIN_PLAUSIBLE_RATE = 0.5
+
 function round2(n) {
   return Math.round((Number(n) || 0) * 100) / 100
 }
@@ -100,13 +110,14 @@ function resolveCurrentRate(input) {
   const raw = Number(src.serverRate)
   if (Number.isFinite(raw) && raw > 0) {
     const rate = normalizeDiscountRate(raw)
-    if (rate > 0 && rate <= 1) return { rate, levelName: serverName }
+    if (rate >= MIN_PLAUSIBLE_RATE && rate <= 1) return { rate, levelName: serverName }
   }
   // ② 兜底：本地按成长值 + 阶梯推（与结算页 applyProvisionalFromStats 同一函数）
   try {
     const hit = resolveFromLadder(src.ladder, src.growthValue, src.isHonorary === true)
-    if (hit && Number.isFinite(Number(hit.discountRate))) {
-      return { rate: Number(hit.discountRate), levelName: serverName || String(hit.levelName || '') }
+    const rate = hit ? Number(hit.discountRate) : NaN
+    if (Number.isFinite(rate) && rate >= MIN_PLAUSIBLE_RATE && rate <= 1) {
+      return { rate, levelName: serverName || String(hit.levelName || '') }
     }
   } catch (e) {
     // 解析失败一律回落原价：**宁可显示原价，也不显示一个错的折后价**
@@ -147,6 +158,7 @@ function payableFor(input) {
 
 module.exports = {
   FULL_RATE,
+  MIN_PLAUSIBLE_RATE,
   normalizeDiscountRate,
   levelRate,
   resolveFromLadder,
