@@ -15,6 +15,8 @@ const db = wx.cloud.database()
  * 须在用户手势同步路径内 play；勿拆成 setTimeout 二次播（微信会静默拦截）。
  */
 const SFX_OPEN = '/subpackages/feature/gift/assets/gift-open.mp3'
+/** 礼笺打字机音效（与编排页/礼成页共用同一静音键与音源） */
+const textFx = require('../giftTextEffect')
 /** 开盒音量：适中，配合静默键 obeyMuteSwitch */
 const SFX_VOLUME = 0.58
 const MUTE_STORAGE_KEY = 'gift_receive_sfx_muted'
@@ -227,6 +229,10 @@ Page({
     i += step
     this._letterWriteIndex = i
     this.setData({ letterBodyShown: target.slice(0, i) })
+    // 打字机音效：标点不响（共享件内部判断）。
+    // 注意：本页的**节奏** `_delayForLetterChar` 与编排页的 `_delayForChar` 并不相同 ——
+    // 这是本页既有的手感，本次**只接音效、不动节奏**（改节奏属设计变更，需产品负责人明确要求）。
+    textFx.playTick(this.data.sfxMuted)
     this._letterWriteTimer = setTimeout(
       () => this._tickLetterWrite(),
       this._delayForLetterChar(ch)
