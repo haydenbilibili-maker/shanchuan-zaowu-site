@@ -3,5 +3,7 @@
 # 跨流加守卫请提变更请求。
 # 校验：npm run check:guards-coverage
 # check:gift-sticker-layout = 版式（A6/贴纸几何与不截断）；check:gift-export-flow = 导出交互（先生成预览后动作/权限出口/AppToast/可追溯）
+# check:gift-sfx-perf = 礼笺打字机音效的真机开销（热路径不许重设 src/写 volume；必须有节流；三页共用共享件）
 npm run check:gift-sticker-layout
 npm run check:gift-export-flow
+npm run check:gift-sfx-perf
