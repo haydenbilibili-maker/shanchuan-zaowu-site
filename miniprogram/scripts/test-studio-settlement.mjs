@@ -190,6 +190,50 @@ function runTests(D, CORE) {
     })()
   )
 
+  // ── F. 出货 SKU 纯函数（v1.3 SKU 化）──
+  const skuBase = { materialId: 'm1', materialName: '大蓝闪蝶', materialGrade: 'A1', packagingId: 'p1', packagingName: '玻璃罩', packagingSize: '20*10' }
+  ok('F1 唯一键含四段（材料|等级|包装|尺寸）', D.skuKeyOf(skuBase).split('|').length === 4, D.skuKeyOf(skuBase))
+  ok(
+    'F1b 唯一键走归一化（名称里的空格不影响匹配）',
+    D.skuKeyOf(skuBase) === D.skuKeyOf(Object.assign({}, skuBase, { materialName: '大蓝闪 蝶' }))
+  )
+  eq(
+    'F2 **费率不进唯一键**（只想改默认费率不该变成新建重复 SKU）',
+    D.skuKeyOf(Object.assign({}, skuBase, { laborRatePct: 30 })) === D.skuKeyOf(Object.assign({}, skuBase, { laborRatePct: 55 })),
+    true
+  )
+  const built = D.buildSkuRow(skuBase)
+  ok('F3 SKU 行可构建', built.ok === true)
+  eq('F4 自动名 = 材料 等级 · 包装 尺寸', built.row.skuName, '大蓝闪蝶 A1 · 玻璃罩 20*10')
+  const noGrade = D.buildSkuRow(Object.assign({}, skuBase, { materialGrade: '', packagingSize: '' }))
+  eq('F5 等级/尺寸为「默认」时不进名字', noGrade.row.skuName, '大蓝闪蝶 · 玻璃罩')
+  eq('F5b 等级留空落「默认」', noGrade.row.materialGrade, CORE.DEFAULT_GRADE)
+  const named = D.buildSkuRow(Object.assign({}, skuBase, { skuName: '我自己起的名字' }))
+  eq('F6 手填名字优先于自动生成', named.row.skuName, '我自己起的名字')
+
+  ok('F7 缺原材料被拒', D.buildSkuRow({ packagingName: '框' }).ok === false)
+  ok('F8 缺包装方式被拒', D.buildSkuRow({ materialName: '大蓝闪蝶' }).ok === false)
+
+  eq('F9 费率留空 → null（表示用全局）', D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: '' })).row.laborRatePct, null)
+  eq('F10 **费率 0 是合法值**（这个 SKU 不收手工费），不得被当成"没填"', D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: 0 })).row.laborRatePct, 0)
+  eq('F11 费率超上限归 500', D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: 9999 })).row.laborRatePct, 500)
+
+  const mapped = D.mapSku(Object.assign({ _id: 'k1' }, built.row))
+  eq('F12 mapSku 带出 id', mapped._id, 'k1')
+  eq('F13 mapSku 标出"用全局费率"', mapped.useGlobalRate, true)
+  const withRate = D.mapSku(Object.assign({ _id: 'k2' }, D.buildSkuRow(Object.assign({}, skuBase, { laborRatePct: 25 })).row))
+  eq('F14 有费率时不标"用全局"', withRate.useGlobalRate, false)
+  eq('F15 有费率时带出数值', withRate.laborRatePct, 25)
+  eq('F16 mapSku 回传组合四要素（开单页要用）', [mapped.materialName, mapped.materialGrade, mapped.packagingName, mapped.packagingSize].join('/'), '大蓝闪蝶/A1/玻璃罩/20*10')
+  eq(
+    'F17 留空等级/尺寸时 mapSku 回传「默认」',
+    [
+      D.mapSku(Object.assign({ _id: 'k3' }, noGrade.row)).materialGrade,
+      D.mapSku(Object.assign({ _id: 'k3' }, noGrade.row)).packagingSize
+    ].join('/'),
+    '默认/默认'
+  )
+
   // ── D. 与共享内核同口径（写入口放行 = 算价口能匹配） ──
   const rows = [
     { name: '独角仙展翅', unitPrice: 180, isDefaultGrade: true, status: 'active' },
@@ -225,7 +269,19 @@ const INJECTIONS = [
     '批量导入：不识别首列序号（整行右移失效）',
     (src) => src.replace("(/^\\d+$/.test(cells[0]) || cells[0] === '#')", '(false)')
   ],
-  ['批量导入：表头行被当成数据', (src) => src.replace("    if (/^(名称|材料名|包装名|物品名称|name)$/i.test(name)) continue\n", '')]
+  ['批量导入：表头行被当成数据', (src) => src.replace("    if (/^(名称|材料名|包装名|物品名称|name)$/i.test(name)) continue\n", '')],
+  [
+    'SKU：费率进唯一键（改默认费率会变成新建重复 SKU）',
+    (src) => src.replace("    normalizeName(normSize(src.packagingSize))\n  ].join('|')", "    normalizeName(normSize(src.packagingSize)),\n    String(src.laborRatePct == null ? '' : src.laborRatePct)\n  ].join('|')")
+  ],
+  [
+    'SKU：费率 0 被当成"没填"（回落全局 → 静默加价）',
+    (src) => src.replace("  const hasRate = src.laborRatePct !== undefined && src.laborRatePct !== null && src.laborRatePct !== ''", '  const hasRate = !!src.laborRatePct')
+  ],
+  [
+    'SKU：自动名总是显示等级（默认等级也显示）',
+    (src) => src.replace("  const left = mat + (grade && grade !== DEFAULT_GRADE ? ' ' + grade : '')", '  const left = mat + (grade ? \' \' + grade : \'\')')
+  ]
 ]
 
 function loadModules(dir) {

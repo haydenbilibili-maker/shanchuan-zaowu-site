@@ -15,6 +15,8 @@ const {
   validatePriceBook,
   DEFAULT_GRADE,
   DEFAULT_SIZE,
+  normGrade,
+  normSize,
   toCents,
   toYuan
 } = require('./pricingCore')
@@ -160,6 +162,100 @@ function buildRow(input, kind) {
     row.category = CATEGORY_OPTIONS.includes(category) ? category : ''
   }
   return { ok: true, row }
+}
+
+// ─────────────────────── 出货 SKU（可复用目录） ───────────────────────
+
+const SKU_COLLECTION = 'studio_shipment_skus'
+
+/**
+ * SKU 的**唯一键**：材料(规范化名) + 等级 + 包装(规范化名) + 尺寸。
+ *
+ * ⚠️ **手工费率不进唯一键** —— 它是 SKU 的**默认属性**（出货时还能覆盖），
+ * 不是身份。否则「同一个组合、只想改默认费率」会变成新建一个重复 SKU，
+ * 开单时列表里出现两个看起来一样的东西。
+ * `skuName` 同理**不编码费率**：费率改了名字不该跟着变。
+ */
+function skuKeyOf(input) {
+  const src = input || {}
+  return [
+    normalizeName(src.materialName || src.materialId || ''),
+    normalizeName(normGrade(src.materialGrade)),
+    normalizeName(src.packagingName || src.packagingId || ''),
+    normalizeName(normSize(src.packagingSize))
+  ].join('|')
+}
+
+/** 自动生成可读名（材料[ 等级] · 包装[ 尺寸]）。**不含费率**，理由见 skuKeyOf */
+function autoSkuName(input) {
+  const src = input || {}
+  const mat = String(src.materialName || '').trim()
+  const grade = String(src.materialGrade || '').trim()
+  const pkg = String(src.packagingName || '').trim()
+  const size = String(src.packagingSize || '').trim()
+  const left = mat + (grade && grade !== DEFAULT_GRADE ? ' ' + grade : '')
+  const right = pkg + (size && size !== DEFAULT_SIZE ? ' ' + size : '')
+  return [left, right].filter(Boolean).join(' · ')
+}
+
+/**
+ * SKU 归一化 + 校验（纯函数，不落库）。
+ * 只校验**结构与一致性**，不校验"这个材料在不在价目表里"（那要查库，见云函数的 handleSkuCreate）。
+ */
+function buildSkuRow(input) {
+  const src = input || {}
+  const materialId = String(src.materialId || '').trim()
+  const materialName = String(src.materialName || '').trim()
+  if (!materialId && !materialName) return { ok: false, msg: '必须选原材料' }
+  const packagingId = String(src.packagingId || '').trim()
+  const packagingName = String(src.packagingName || '').trim()
+  if (!packagingId && !packagingName) return { ok: false, msg: '必须选包装方式' }
+
+  const materialGrade = String(src.materialGrade || '').trim() || DEFAULT_GRADE
+  const packagingSize = String(src.packagingSize || '').trim() || DEFAULT_SIZE
+  // 费率：留空 = 用全局配置（不是 0）。0 是合法值（这一单不收手工费）
+  const hasRate = src.laborRatePct !== undefined && src.laborRatePct !== null && src.laborRatePct !== ''
+  const laborRatePct = hasRate ? normalizeRatePct(src.laborRatePct, null) : null
+
+  const row = {
+    materialId,
+    materialName,
+    materialGrade,
+    packagingId,
+    packagingName,
+    packagingSize,
+    laborRatePct,
+    status: String(src.status || '') === STATUS.INACTIVE ? STATUS.INACTIVE : STATUS.ACTIVE,
+    sort: normalizeSort(src.sort),
+    note: String(src.note == null ? '' : src.note).trim(),
+    deleted: false
+  }
+  row.skuKey = skuKeyOf(row)
+  row.skuName = String(src.skuName || '').trim() || autoSkuName(row)
+  if (!row.skuKey.replace(/\|/g, '')) return { ok: false, msg: 'SKU 组合为空' }
+  return { ok: true, row }
+}
+
+/** 落库 → 客户端形状 */
+function mapSku(doc) {
+  const d = doc || {}
+  return {
+    _id: d._id || '',
+    skuName: d.skuName || autoSkuName(d),
+    materialId: d.materialId || '',
+    materialName: d.materialName || '',
+    materialGrade: d.materialGrade || DEFAULT_GRADE,
+    packagingId: d.packagingId || '',
+    packagingName: d.packagingName || '',
+    packagingSize: d.packagingSize || DEFAULT_SIZE,
+    laborRatePct: d.laborRatePct === null || d.laborRatePct === undefined ? null : Number(d.laborRatePct),
+    /** 费率是否落全局默认（前端显示"用全局 N%"而不是空白） */
+    useGlobalRate: d.laborRatePct === null || d.laborRatePct === undefined,
+    status: d.status === STATUS.INACTIVE ? STATUS.INACTIVE : STATUS.ACTIVE,
+    sort: normalizeSort(d.sort),
+    note: d.note || '',
+    updatedAt: Number(d.updatedAt) || 0
+  }
 }
 
 /** 批量导入的列定义（顺序即位置；只有前 4 列有意义，后 3 列可选） */
@@ -388,5 +484,10 @@ module.exports = {
   validateBooks,
   bookMeta,
   BULK_COLUMNS,
-  parseBulkText
+  parseBulkText,
+  SKU_COLLECTION,
+  skuKeyOf,
+  autoSkuName,
+  buildSkuRow,
+  mapSku
 }

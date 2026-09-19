@@ -34,6 +34,23 @@ const { PRICING_STATUS, SHIPMENT_PRICING_STATUS } = require('./pricingEngine')
  * 这是「账单是结算唯一权威、出货单是派生」这条架构决定的落地点，
  * 由守卫 `check-settlement-single-ledger` 钉死 + 注入验证。
  */
+/**
+ * 录单路径（v1.3 SKU 化）：`sku` = 新的「选 SKU 开单」入口；`paste` = 老的粘贴解析；`single` = 单条手填。
+ * 加这个字段是为了**能统计新旧路径用量**，从而知道什么时候可以安全废弃老解析代码
+ * （产品负责人的要求是"等新流程走通后再废弃"，那就要有判断依据）。
+ */
+const ENTRY_PATH = {
+  SKU: 'sku',
+  PASTE: 'paste',
+  SINGLE: 'single'
+}
+
+function normalizeEntryPath(raw) {
+  const v = String(raw || '').trim()
+  if (v === ENTRY_PATH.SKU || v === ENTRY_PATH.PASTE || v === ENTRY_PATH.SINGLE) return v
+  return ''
+}
+
 const SETTLE_STATUS = {
   UNSETTLED: 'unsettled',
   PAID_PENDING: 'paid_pending',
@@ -666,6 +683,7 @@ function normalizePayload(input, existing) {
     batchId: String(src.batchId != null ? src.batchId : prev.batchId || '').trim(),
     source,
     sourceLabel: sourceLabel(source),
+    entryPath: optText(src.entryPath) || optText(prev.entryPath) || '',
     productId,
     skuId,
     inventoryRecordId,
@@ -719,6 +737,7 @@ function mapRow(doc) {
     batchId: doc.batchId || '',
     source,
     sourceLabel: sourceLabel(source),
+    entryPath: normalizeEntryPath(doc.entryPath),
     feishuRecordId: doc.feishuRecordId || '',
     syncedAt: doc.syncedAt || null,
 
@@ -925,6 +944,8 @@ module.exports = {
   STATUS,
   STATUS_LABEL,
   STATUS_FLOW,
+  ENTRY_PATH,
+  normalizeEntryPath,
   SETTLE_STATUS,
   SETTLE_LABEL,
   normalizeSettleStatus,

@@ -197,21 +197,61 @@ function collectProblems(fnRoot) {
   }
 
   // ── 判据 D：出货单写入前必须**服务端重算**（不信任前端传的价）──
-  // 逻辑本身（引擎 + 显式选择 + 分单位取整）已由 test:studio-pricing 118 条断言覆盖，
-  // 这里只钉**接线**：两条写入路径都必须调重算，否则前端能构造任意价格落库。
+  // 逻辑本身（引擎 + 显式选择 + 分单位取整）已由 test:studio-pricing 135 条断言覆盖，
+  // 这里只钉**接线**。
+  //
+  // ⚠️ 判据写法：**逐条按函数体断言，不用全局计数**。
+  //    原先写的是「`await recomputeItemsPricing(` 出现次数 ≥2」—— 加了第三条写入路径
+  //    （createFromSkus）之后，删掉其中一条仍剩 2 次，判据就**不响了**（自检实测从"已检出"变"漏检"）。
+  //    计数判据会随路径条数增长而失效；逐条断言不会。
+  //    **新增写入路径时，把函数名加进 WRITE_PATH_HANDLERS。**
+  const WRITE_PATH_HANDLERS = ['handleCreate', 'handleCreateFromParsed', 'handleCreateFromSkus']
   const writeSrc = readMaybe(join(fnRoot, 'manageStoreShipment', 'index.js'))
   if (writeSrc === null) {
     problems.push('判据 D 无法判定：读不到 manageStoreShipment/index.js')
   } else {
     if (!/async function recomputeItemsPricing\s*\(/.test(writeSrc)) {
-      problems.push('判据 D 违例：manageStoreShipment/index.js 里找不到 recomputeItemsPricing —— 写入前不重算')
+      problems.push('判据 D 无法判定：manageStoreShipment/index.js 里找不到 recomputeItemsPricing')
     }
-    const callSites = (writeSrc.match(/await recomputeItemsPricing\(/g) || []).length
-    if (callSites < 2) {
-      problems.push(
-        `判据 D 违例：只有 ${callSites} 条写入路径在重算 —— ` +
-          'handleCreate 与 handleCreateFromParsed **都必须**重算（漏一条，那条路径就能被构造价格）'
-      )
+    for (const fn of WRITE_PATH_HANDLERS) {
+      // ⚠️ 必须带 `(`：`indexOf('async function handleCreate')` 会**前缀命中**
+      //    `handleCreateFromSkus`，于是两条路径取到同一个函数体 → 删掉其中一条也检不出来
+      //    （自检实测：这条注入从"已检出"退化成"漏检"）。与错题本 E20 同一类错。
+      const at = writeSrc.indexOf('async function ' + fn + '(')
+      if (at === -1) {
+        problems.push(`判据 D 无法判定：找不到写入路径 ${fn}（改名了就要同步这里）`)
+        continue
+      }
+      const rest = writeSrc.slice(at)
+      const next = rest.indexOf('\nasync function ', 10)
+      const body = next === -1 ? rest : rest.slice(0, next)
+      if (!/await recomputeItemsPricing\(/.test(body)) {
+        problems.push(`判据 D 违例：${fn} 写入前没有调 recomputeItemsPricing —— 这条路径能被构造价格`)
+      }
+    }
+  }
+
+  // ── 判据 E：v1.3 新入口（SKU 开单）接线完整 ──
+  // 新入口只多了一条写入路径，但它必须满足与老路径**同样的**两条纪律：
+  //   ① 写入前服务端重算（否则前端能伪造价）；
+  //   ② 记 entryPath（否则日后无法统计新旧路径用量，也就无法判断何时能安全废弃老解析代码）。
+  if (writeSrc !== null) {
+    const skuIdx = writeSrc.indexOf('async function handleCreateFromSkus(')
+    if (skuIdx === -1) {
+      problems.push('判据 E 无法判定：manageStoreShipment/index.js 里找不到 handleCreateFromSkus（v1.3 新入口）')
+    } else {
+      const rest = writeSrc.slice(skuIdx)
+      const nextFn = rest.indexOf('\nasync function ', 10)
+      const body = nextFn === -1 ? rest : rest.slice(0, nextFn)
+      if (!/await recomputeItemsPricing\(/.test(body)) {
+        problems.push('判据 E 违例：createFromSkus **没有**在写入前调 recomputeItemsPricing（前端可伪造价）')
+      }
+      if (!/entryPath:\s*ENTRY_PATH\.SKU/.test(body)) {
+        problems.push('判据 E 违例：createFromSkus 没有记 entryPath=sku（日后无法统计新旧路径用量）')
+      }
+      if (!/SKU_COLLECTION/.test(body)) {
+        problems.push('判据 E 违例：createFromSkus 没有从 SKU_COLLECTION 取定义（材料/包装必须服务端查，不能信前端）')
+      }
     }
   }
 
@@ -243,6 +283,16 @@ const INJECTIONS = [
     '只留一条写入路径重算（另一条可被构造价格）',
     'manageStoreShipment/index.js',
     (src) => src.replace('    input.items = await recomputeItemsPricing(input.items)\n', '')
+  ],
+  [
+    '新入口 SKU 开单忘了服务端重算（前端可伪造价）',
+    'manageStoreShipment/index.js',
+    (src) => src.replace('  const recomputed = await recomputeItemsPricing(items)\n  const normalized = normalizePayload(\n    {\n      storeId,\n      shipmentDate,\n      items: recomputed,\n      source: SOURCE.MANUAL,\n      entryPath: ENTRY_PATH.SKU,', '  const normalized = normalizePayload(\n    {\n      storeId,\n      shipmentDate,\n      items,\n      source: SOURCE.MANUAL,\n      entryPath: ENTRY_PATH.SKU,')
+  ],
+  [
+    '新入口不记 entryPath（无法统计新旧路径用量）',
+    'manageStoreShipment/index.js',
+    (src) => src.replace('      entryPath: ENTRY_PATH.SKU,\n', '')
   ],
   [
     '终结不再返回要终结的单据列表',

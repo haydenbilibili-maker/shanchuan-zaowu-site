@@ -7,7 +7,7 @@
  *   3. 飞书出货表：双向同步（upsertFromFeishu / bindFeishuRecord）
  *
  * action:
- *   meta | list | get | dashboard | parseText | quotePrice | searchSku | create | createFromParsed
+ *   meta | list | get | dashboard | parseText | quotePrice | searchSku | create | createFromParsed | createFromSkus
  *   update | setStatus | remove
  *   upsertFromFeishu | syncStatus | syncLogs | bindFeishuRecord | repriceShipments（仅超管）
  */
@@ -26,6 +26,7 @@ const {
   SYNC_LOG_COLLECTION,
   STORES,
   SOURCE,
+  ENTRY_PATH,
   STATUS_LABEL,
   STATUS_FLOW,
   CATEGORY_OPTIONS,
@@ -56,6 +57,7 @@ const {
  * 读的是**集合本身**而不是 manageStudioSettlement 云函数：云函数之间不互相调用
  * （仓库既有做法），共享的是数据；同口径由共享内核 `pricingCore.js` 保证。
  */
+const SKU_COLLECTION = 'studio_shipment_skus'
 const MATERIAL_PRICE_COLLECTION = 'studio_material_prices'
 const PACKAGING_PRICE_COLLECTION = 'studio_packaging_prices'
 const SETTLEMENT_CONFIG_COLLECTION = 'configs'
@@ -503,6 +505,98 @@ async function handleRepriceShipments(event) {
     msg: dryRun
       ? `试算完成：${rows.length} 张扫描 · ${plan.eligible.length} 张可重算 · ${changedCount} 张金额会变（合计 ${Math.round(deltaSum) / 100} 元）· 未写入`
       : `已重算：${updated} 张更新（${changedCount} 张金额变化，合计 ${Math.round(deltaSum) / 100} 元）`
+  })
+}
+
+/**
+ * **v1.3 新入口**：按「出货 SKU」开单（产品负责人 2026-09-19 改造指令）。
+ *
+ * 与老 `createFromParsed` 的区别：明细不是从文本解析来的，而是**选出来的 SKU**，
+ * 所以不存在"名字写法对不上"这类匹配歧义 —— 这正是做 SKU 化的目的。
+ *
+ * 三条与老路径**完全一致**的地方（刻意复用，不写第二套）：
+ *   ① 算价走同一个共享内核（把 SKU 的显式选择喂给引擎）；
+ *   ② 落库走同一个 `normalizePayload`（结算字段仍只继承、不从入参读）；
+ *   ③ 写完发同一套「待支付」通知。
+ * 价格照旧**服务端重算**，不信前端传的价（recomputeItemsPricing 已在写入前跑）。
+ */
+async function handleCreateFromSkus(event, actor) {
+  const storeId = String(event.storeId || '').trim()
+  const shipmentDate = String(event.shipmentDate || '').trim()
+  const store = storeById(storeId)
+  if (!store) return fail('门店无效', 'BAD_PARAM')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(shipmentDate)) return fail('出货日期格式应为 YYYY-MM-DD', 'BAD_PARAM')
+  if (!canAccessStore(actor, storeId)) return fail('无该门店出货录入权限', 'FORBIDDEN')
+
+  const rawLines = Array.isArray(event.lines) ? event.lines : []
+  if (!rawLines.length) return fail('请至少添加一个 SKU', 'BAD_PARAM')
+
+  // 取 SKU 定义（客户端只送 skuId + qty，**不送材料/包装**，杜绝前端伪造组合）
+  const ids = rawLines.map((l) => String((l && l.skuId) || '').trim()).filter(Boolean)
+  if (ids.length !== rawLines.length) return fail('有明细缺少 skuId', 'BAD_PARAM')
+  const skuRows = []
+  for (let i = 0; i < ids.length; i += 100) {
+    const chunk = ids.slice(i, i + 100)
+    const res = await db.collection(SKU_COLLECTION).where({ _id: _.in(chunk) }).limit(100).get()
+    skuRows.push(...((res && res.data) || []))
+  }
+  const byId = {}
+  skuRows.forEach((r) => { byId[r._id] = r })
+  const missing = ids.filter((id) => !byId[id])
+  if (missing.length) return fail(`有 ${missing.length} 个 SKU 不存在（可能已删除），请刷新后重试`, 'NOT_FOUND')
+
+  const items = rawLines.map((l) => {
+    const sku = byId[String(l.skuId)]
+    const qty = Number(l.qty)
+    const item = {
+      itemName: sku.skuName || sku.materialName + ' · ' + sku.packagingName,
+      qty: Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 0,
+      materialId: sku.materialId || '',
+      materialName: sku.materialName || '',
+      materialGrade: sku.materialGrade || '',
+      packagingId: sku.packagingId || '',
+      packagingName: sku.packagingName || '',
+      packagingSize: sku.packagingSize || '',
+      // 关联回 SKU 目录（items.skuId 是既有字段，不新加）
+      skuId: sku._id || ''
+    }
+    // 行级费率覆盖：与既有裁决 22 一致（显式传 0 也要生效）
+    const hasLineRate = l.laborRatePct !== undefined && l.laborRatePct !== null && l.laborRatePct !== ''
+    if (hasLineRate) item.laborRatePct = Number(l.laborRatePct) || 0
+    else if (sku.laborRatePct !== null && sku.laborRatePct !== undefined) item.laborRatePct = sku.laborRatePct
+    return item
+  })
+
+  const recomputed = await recomputeItemsPricing(items)
+  const normalized = normalizePayload(
+    {
+      storeId,
+      shipmentDate,
+      items: recomputed,
+      source: SOURCE.MANUAL,
+      entryPath: ENTRY_PATH.SKU,
+      note: String(event.note || '').trim()
+    },
+    null
+  )
+  if (!normalized.ok) return fail(normalized.msg)
+
+  const now = Date.now()
+  const data = Object.assign({}, normalized.row, {
+    createdAt: now,
+    updatedAt: now,
+    createdBy: (actor && (actor.name || actor.openid)) || '',
+    updatedBy: (actor && (actor.name || actor.openid)) || '',
+    deleted: false
+  })
+  const addRes = await withCollectionRetry(() => db.collection(COLLECTION).add({ data }))
+  const item = mapRow(Object.assign({ _id: addRes._id }, data))
+  const notify = await notifyShipmentPricedQuietly([item])
+  return ok({
+    id: addRes._id,
+    item,
+    notify,
+    msg: `已按 SKU 开单：${item.itemCount} 行 · ¥${item.totalAmount}`
   })
 }
 
@@ -1273,6 +1367,12 @@ exports.main = async (event = {}) => {
       const auth = await requireWriter(event, openid)
       if (!auth.ok) return auth.res
       return await handleSearchSku(event)
+    }
+
+    if (action === 'createFromSkus') {
+      const auth = await requireWriter(event, openid)
+      if (!auth.ok) return auth.res
+      return await handleCreateFromSkus(event, auth.actor)
     }
 
     if (action === 'quotePrice') {

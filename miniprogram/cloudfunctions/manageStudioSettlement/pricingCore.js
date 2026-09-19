@@ -798,6 +798,8 @@ module.exports = {
   DEFAULT_GRADE,
   DEFAULT_SIZE,
   normalizeName,
+  normGrade,
+  normSize,
   toCents,
   toYuan,
   normalizeQtyPerUnit,

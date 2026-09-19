@@ -35,9 +35,14 @@ const {
   normalizeRatePct,
   validateBooks,
   bookMeta,
-  parseBulkText
+  parseBulkText,
+  SKU_COLLECTION,
+  skuKeyOf,
+  autoSkuName,
+  buildSkuRow,
+  mapSku
 } = require('./settlementDefaults')
-const { normalizeName } = require('./pricingCore')
+const { normalizeName, buildContext, quoteLines, PRICING_STATUS } = require('./pricingCore')
 const {
   BILL_STATUS,
   BILL_STATUS_LABEL,
@@ -690,6 +695,188 @@ async function handleRemove(event, actor) {
   return ok({ _id: id, msg: '已删除（历史出货单的定价快照不受影响）' })
 }
 
+// ─────────────────────── 出货 SKU 目录（材料×等级×包装×尺寸 + 默认费率） ───────────────────────
+
+/**
+ * 用**当前价目表**给一批 SKU 算出单价。
+ * SKU 自己不存价（蓝图 §16.3）——价格永远由价目表 + 费率现算，这样改价目表立即对新单生效。
+ * 走的是与出货单同一个共享内核（显式选择模式），所以"开单页显示的价"与"落库的价"不会漂移。
+ */
+async function quoteSkus(skus, config) {
+  const materials = await fetchAll(collectionOf(KIND.MATERIAL), activeWhere())
+  const packagings = await fetchAll(collectionOf(KIND.PACKAGING), activeWhere())
+  const ctx = buildContext({
+    materials,
+    packagings,
+    laborRatePct: config.laborRatePct,
+    requirePackaging: config.requirePackaging
+  })
+  const quoted = quoteLines(
+    skus.map((k) => ({
+      itemName: k.skuName || autoSkuName(k),
+      qty: 1,
+      materialId: k.materialId,
+      materialName: k.materialName,
+      materialGrade: k.materialGrade,
+      packagingId: k.packagingId,
+      packagingName: k.packagingName,
+      packagingSize: k.packagingSize,
+      // SKU 的默认费率：null = 用全局（**0 是合法值，必须原样传**）
+      laborRatePct: k.laborRatePct === null || k.laborRatePct === undefined ? undefined : k.laborRatePct
+    })),
+    ctx
+  )
+  return quoted.lines
+}
+
+async function handleSkuList(event) {
+  const config = normalizeConfig(await loadConfigDoc())
+  const keyword = normalizeName(event.keyword || '')
+  const status = String(event.status || '').trim()
+  const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(event.limit, 10) || 200))
+
+  let rows = await fetchAll(SKU_COLLECTION, activeWhere())
+  rows = rows.filter((r) => (status ? r.status === status : true))
+  if (keyword) {
+    rows = rows.filter((r) => {
+      const keys = [r.skuKey || skuKeyOf(r), normalizeName(r.skuName || '')]
+      return keys.some((k) => k && k.indexOf(keyword) !== -1)
+    })
+  }
+  rows.sort((a, b) => (Number(a.sort) || 0) - (Number(b.sort) || 0))
+
+  const sliced = rows.slice(0, limit)
+  const lines = await quoteSkus(sliced, config)
+  const list = sliced.map((r, i) => {
+    const q = lines[i] || {}
+    return Object.assign(mapSku(r), {
+      // 现算价（只回单价，不落库）：未核价时给 null 并带原因，**不编价**
+      unitPrice: q.pricingStatus === PRICING_STATUS.PRICED ? q.unitPrice : null,
+      pricingStatus: q.pricingStatus || 'unmatched',
+      pricingNote: q.pricingNote || '',
+      effectiveRatePct: q.laborRatePct === null || q.laborRatePct === undefined ? null : q.laborRatePct
+    })
+  })
+  return ok({
+    list,
+    total: rows.length,
+    truncated: rows.length > limit,
+    globalRatePct: config.laborRatePct,
+    pricingEnabled: config.enabled,
+    note: 'SKU 不存价：单价按当前价目表现算，出货时快照进单据'
+  })
+}
+
+async function handleSkuGet(event) {
+  const id = String(event.id || '').trim()
+  if (!id) return fail('缺少 id', 'BAD_PARAM')
+  let doc = null
+  try {
+    const res = await db.collection(SKU_COLLECTION).doc(id).get()
+    doc = res && res.data
+  } catch (err) {
+    doc = null
+  }
+  if (!doc || doc.deleted === true) return fail('SKU 不存在', 'NOT_FOUND')
+  const config = normalizeConfig(await loadConfigDoc())
+  const q = (await quoteSkus([doc], config))[0] || {}
+  return ok({
+    item: Object.assign(mapSku(Object.assign({ _id: id }, doc)), {
+      unitPrice: q.pricingStatus === PRICING_STATUS.PRICED ? q.unitPrice : null,
+      pricingStatus: q.pricingStatus || 'unmatched',
+      pricingNote: q.pricingNote || '',
+      effectiveRatePct: q.laborRatePct === null || q.laborRatePct === undefined ? null : q.laborRatePct
+    })
+  })
+}
+
+/** 建/改 SKU 前的一致性检查：引用的材料与包装必须**真的在价目表里**（否则这 SKU 永远算不出价） */
+async function checkSkuRefs(row) {
+  const problems = []
+  const materials = await fetchAll(collectionOf(KIND.MATERIAL), activeWhere())
+  const packagings = await fetchAll(collectionOf(KIND.PACKAGING), activeWhere())
+  const has = (rows, id, name) =>
+    rows.some(
+      (r) =>
+        (id && String(r._id || '') === id) ||
+        (name && (r.normName || normalizeName(r.name)) === normalizeName(name))
+    )
+  if (!has(materials, row.materialId, row.materialName)) {
+    problems.push(`原材料「${row.materialName || row.materialId}」不在价目表里（或已停用）`)
+  }
+  if (!has(packagings, row.packagingId, row.packagingName)) {
+    problems.push(`包装方式「${row.packagingName || row.packagingId}」不在价目表里（或已停用）`)
+  }
+  return problems
+}
+
+async function handleSkuCreate(event, actor) {
+  const built = buildSkuRow(event.item || {})
+  if (!built.ok) return fail(built.msg, 'BAD_PARAM')
+  const row = built.row
+
+  const problems = await checkSkuRefs(row)
+  if (problems.length) return ok({ ok: false, problems, msg: problems.join('；') })
+
+  const existing = await fetchAll(SKU_COLLECTION, activeWhere())
+  const dup = existing.find((r) => (r.skuKey || skuKeyOf(r)) === row.skuKey)
+  if (dup) {
+    return ok({
+      ok: false,
+      duplicate: mapSku(dup),
+      msg: `这个组合已经有一个 SKU 了：${dup.skuName || autoSkuName(dup)}（要改默认费率就编辑它，不要新建）`
+    })
+  }
+  const now = Date.now()
+  const res = await withCollectionRetry(SKU_COLLECTION, () =>
+    db.collection(SKU_COLLECTION).add({
+      data: Object.assign({}, row, {
+        createdAt: now,
+        createdBy: actorName(actor),
+        updatedAt: now,
+        updatedBy: actorName(actor)
+      })
+    })
+  )
+  return ok({ _id: (res && res._id) || '', item: mapSku(Object.assign({ _id: res && res._id }, row)), msg: 'SKU 已创建' })
+}
+
+async function handleSkuUpdate(event, actor) {
+  const id = String(event.id || '').trim()
+  if (!id) return fail('缺少 id', 'BAD_PARAM')
+  const built = buildSkuRow(event.item || {})
+  if (!built.ok) return fail(built.msg, 'BAD_PARAM')
+  const row = built.row
+
+  const problems = await checkSkuRefs(row)
+  if (problems.length) return ok({ ok: false, problems, msg: problems.join('；') })
+
+  const existing = await fetchAll(SKU_COLLECTION, activeWhere())
+  const dup = existing.find((r) => r._id !== id && (r.skuKey || skuKeyOf(r)) === row.skuKey)
+  if (dup) {
+    return ok({
+      ok: false,
+      duplicate: mapSku(dup),
+      msg: `改成这个组合会和已有 SKU 重复：${dup.skuName || autoSkuName(dup)}`
+    })
+  }
+  await withCollectionRetry(SKU_COLLECTION, () =>
+    db.collection(SKU_COLLECTION).doc(id).update({ data: Object.assign({}, row, { updatedAt: Date.now(), updatedBy: actorName(actor) }) })
+  )
+  return ok({ _id: id, msg: 'SKU 已保存' })
+}
+
+async function handleSkuRemove(event, actor) {
+  const id = String(event.id || '').trim()
+  if (!id) return fail('缺少 id', 'BAD_PARAM')
+  await withCollectionRetry(SKU_COLLECTION, () =>
+    db.collection(SKU_COLLECTION).doc(id).update({
+      data: { deleted: true, deletedAt: Date.now(), updatedAt: Date.now(), updatedBy: actorName(actor) }
+    })
+  )
+  return ok({ _id: id, msg: 'SKU 已删除（历史出货单的快照不受影响）' })
+}
+
 // ─────────────────────────── 账单（结算权威） ───────────────────────────
 
 /** 批量改一批出货单（云开发支持 where(_id in [...]) 的服务端 update） */
@@ -974,6 +1161,9 @@ const SUPER_ONLY_ACTIONS = {
   'priceBook.update': 1,
   'priceBook.remove': 1,
   'priceBook.bulkUpsert': 1,
+  'sku.create': 1,
+  'sku.update': 1,
+  'sku.remove': 1,
   'bill.create': 1,
   'bill.withdrawPaid': 1,
   'bill.confirmSettle': 1,
@@ -1014,6 +1204,17 @@ exports.main = async (event) => {
         return await handleBulkUpsert(event, auth.actor)
       case 'searchPriceBook':
         return await handleSearchPriceBook(event)
+
+      case 'sku.list':
+        return await handleSkuList(event)
+      case 'sku.get':
+        return await handleSkuGet(event)
+      case 'sku.create':
+        return await handleSkuCreate(event, auth.actor)
+      case 'sku.update':
+        return await handleSkuUpdate(event, auth.actor)
+      case 'sku.remove':
+        return await handleSkuRemove(event, auth.actor)
 
       case 'bill.meta':
         return await handleBillMeta()

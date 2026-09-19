@@ -369,6 +369,7 @@ export const SOURCE_REGISTRY = {
   'collection:studio_material_prices': { concept: 'studio_pricing', role: 'authority', confidence: 'high', note: '原材料价目表：出货算价的材料费来源（manageStudioSettlement；写权限仅超管）' },
   'collection:studio_packaging_prices': { concept: 'studio_pricing', role: 'authority', confidence: 'high', note: '包装价目表：出货算价的包装费来源（manageStudioSettlement）' },
   'collection:ops_settlement_bills': { concept: 'studio_settlement', role: 'authority', confidence: 'high', note: '工作室账单：**结算唯一权威**；出货单的 settleStatus 由它派生（manageStudioSettlement）' },
+  'collection:studio_shipment_skus': { concept: 'studio_pricing', role: 'derived', confidence: 'high', note: '出货 SKU 目录：**不持有价格**，只是引用价目表的可复用组合（材料×等级×包装×费率）；价格在出货时按当时价目表算并快照进单据' },
   'collection:feishu_purchases': { concept: 'fulfillment', role: 'derived', confidence: 'high', note: '飞书镜像' },
   'collection:feishu_shipments': { concept: 'fulfillment', role: 'derived', confidence: 'high', note: '飞书镜像；线上集合不存在（审计已记）' },
   'collection:analytics_daily': { concept: 'analytics', role: 'authority', confidence: 'high' },
