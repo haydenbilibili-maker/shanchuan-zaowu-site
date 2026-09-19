@@ -488,9 +488,14 @@ Page({
       this._giftRecorder.cancel()
       if (!willCancel && heldMs < MIN_HOLD_MS) {
         wx.showToast({ title: '按住说话', icon: 'none' })
-      } else if (willCancel) {
-        wx.showToast({ title: '已取消', icon: 'none' })
       }
+      /**
+       * 原「已取消」提示（`wx.showToast`）已移除：`check:dialog-ratchet` 是**只许降**的棘轮，
+       * 而 main 上这个文件比冻结基线多了 1 处原生弹窗（1960 → 1961）→ 整条 CI 变红、
+       * Pages 的 deploy（needs: verify）因此不执行。
+       * 选它移除是因为**代价最小**：取消录音时按钮状态本身已重置（上面那行 setData），
+       * 用户仍有视觉反馈；其余 17 处承载的是错误或必要提示，不动。
+       */
       return
     }
 

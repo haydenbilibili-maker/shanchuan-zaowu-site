@@ -487,6 +487,10 @@ export const COLLECTIONS = {
   PURCHASE_ORDERS: 'purchase_orders', // 正式订货单（门店/渠道）
   OPS_PURCHASES: 'ops_purchases', // 超管采购管理（门店+工作室，managePurchaseOrder）
   OPS_SHIPMENTS: 'ops_shipments', // 门店出货单 SSOT（manageStoreShipment；小程序主录入）
+  STUDIO_MATERIAL_PRICES: 'studio_material_prices', // 原材料价目表（出货算价，manageStudioSettlement）
+  STUDIO_PACKAGING_PRICES: 'studio_packaging_prices', // 包装价目表（出货算价，manageStudioSettlement）
+  OPS_SETTLEMENT_BILLS: 'ops_settlement_bills', // 工作室账单（结算唯一权威，manageStudioSettlement）
+  STUDIO_SHIPMENT_SKUS: 'studio_shipment_skus', // 出货 SKU 目录（材料×等级×包装×费率，manageStudioSettlement）
   PROPERTY_COSTS: 'property_costs', // 物业成本（水电/房租，managePropertyCost）
   FULFILLMENT_SHIPMENTS: 'fulfillment_shipments', // 总部出货单（P1）
   STOCK_MOVEMENTS: 'stock_movements', // 总部成品库存流水（P1）
@@ -541,6 +545,7 @@ export const COLLECTIONS = {
   SUPPORT_CONFIGS: 'support_configs',                     // 客服入口（getSupportConfig）
   CONTENT_DISPLAY_FLAGS: 'content_display_flags',         // 内容展示开关（getContentDisplayFlags）
   WISH_WALL_MESSAGES: 'wish_wall_messages',               // 马上有祈福弹幕（manageWishWall，需求 28）
+  WISH_RITUAL_PROFILES: 'wish_ritual_profiles',           // 祈福墙仪式档案：连续点灯 + 木鱼功德（wishRitualProfile）
   // ── 2026-09-17 全面审计补齐：以下集合此前只在云函数里以**常量名**被引用，
   //    既不在 COLLECTIONS、也没有 rules/schema（字面量扫描扫不到常量 → 长期盲区）。
   //    客户端 0 引用，权限均为「仅云函数可读写」。

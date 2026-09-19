@@ -172,6 +172,9 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   // 只加 verifyBooking：updateBooking/cancelBooking 是顾客本人通道（认 wxContext.OPENID），
   // ERP 走代理没有 openid，加进来也会被它们拒。
   'verifyBooking',
+  // 2026-09-19：工作室结算（价目表维护 + 全局手工费率配置）。写权限仅超管，
+  // 由 staffGuard 的 SUPER_ADMIN_ONLY_PERMISSIONS 强制；ERP 经代理注入 adminOpsKey。
+  'manageStudioSettlement',
 ])
 
 /**

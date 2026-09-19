@@ -1431,6 +1431,9 @@ import { setNavOrigin, getNavOrigin } from './utils/navOrigin'
 // 🟢 对齐小程序能力的模块
 import CustomOrders from './components/CustomOrders.vue'
 const FulfillmentCenter = asyncWith(() => import('./components/FulfillmentCenter.vue'))
+const PriceBookManager = asyncWith(() => import('./components/PriceBookManager.vue'))
+const StudioBills = asyncWith(() => import('./components/StudioBills.vue'))
+const StudioSkus = asyncWith(() => import('./components/StudioSkus.vue'))
 import PetMemorial from './components/PetMemorial.vue'
 import CareGuides from './components/CareGuides.vue'
 import SupportConfigs from './components/SupportConfigs.vue'
@@ -1525,6 +1528,9 @@ const TAB_COMPONENT_MAP = {
   ,
   // 2026-09-14 与小程序对齐补的四模块
   '72': () => ({ comp: DepositOps }),
+  '81': () => ({ comp: PriceBookManager }),
+  '82': () => ({ comp: StudioBills }),
+  '83': () => ({ comp: StudioSkus }),
   '73': () => ({ comp: LiveSessions }),
   '74': () => ({ comp: ArtisanCommissionRegistry }),
   '75': () => ({ comp: BirthdayGiftConfig }),
