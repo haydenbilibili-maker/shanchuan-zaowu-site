@@ -43,9 +43,7 @@ const {
 
 /** 上滑取消阈值（px） */
 /** 礼笺打字机音效（2026-09-19）：与 receive 页开盒音效同一套模式 */
-const SFX_TYPEWRITER = '/subpackages/feature/gift/assets/gift-typewriter.mp3'
-const SFX_VOLUME = 0.58
-const MUTE_STORAGE_KEY = 'gift_receive_sfx_muted'
+const textFx = require('../giftTextEffect')
 
 const VOICE_CANCEL_SLIDE_PX = 56
 
@@ -88,7 +86,7 @@ const OTHER_DELIVERIES = [
 Page({
   data: {
     /** 音效开关：与 receive 页共用同一个存储键，整条礼赠流程一个偏好 */
-    sfxMuted: !!wx.getStorageSync(MUTE_STORAGE_KEY),
+    sfxMuted: textFx.isMuted(),
     /** 统一主视觉轻提示（AppToast）：原生 toast 与本产品视觉脱节（V1.1.2·W2 棘轮不得新增原生调用） */
     toastShow: false,
     toastOverline: '',
@@ -367,7 +365,7 @@ Page({
 
   onUnload() {
     this.clearNoteWriteTimer()
-    this._destroySfx()
+    textFx.destroySfx()
     if (this._hintResetTimer) {
       clearTimeout(this._hintResetTimer)
       this._hintResetTimer = null
@@ -890,46 +888,12 @@ Page({
   },
 
   /** 打字机音效：懒建、失败不打断书写（照 receive/index.js 的既有模式） */
-  _ensureSfx() {
-    if (this._sfx) return this._sfx
-    const audio = wx.createInnerAudioContext()
-    audio.obeyMuteSwitch = true
-    audio.volume = SFX_VOLUME
-    audio.src = SFX_TYPEWRITER
-    audio.onError(() => { /* 音效失败不打断书写 */ })
-    this._sfx = audio
-    return audio
-  },
-
-  /**
-   * ⚠️ **只在 onUnload 里销毁，不要放进 `clearNoteWriteTimer()`** ——
-   * 那个函数在 `_tickNoteWrite()` 内部**每写一个字都会被调用**，
-   * 把停音放进去会让音效一声都响不出来（而且不报错，很难查）。
-   */
-  _destroySfx() {
-    if (this._sfx) {
-      try { this._sfx.stop(); this._sfx.destroy() } catch (e) { /* ignore */ }
-      this._sfx = null
-    }
-  },
-
-  _playTypeSfx() {
-    if (this.data.sfxMuted) return
-    try {
-      const a = this._ensureSfx()
-      a.volume = SFX_VOLUME
-      a.stop()
-      // 预加载后仍重赋 src：部分基础库 stop 后再 play 需显式复位
-      a.src = SFX_TYPEWRITER
-      a.play()
-    } catch (e) { /* ignore */ }
-  },
-
+  /** 音效统一走共享件 giftTextEffect（音源 / 静音键 / 标点判断三页一处，避免三份漂移） */
   toggleSfxMute() {
     const next = !this.data.sfxMuted
+    textFx.setMuted(next)
     this.setData({ sfxMuted: next })
-    try { wx.setStorageSync(MUTE_STORAGE_KEY, next) } catch (e) { /* ignore */ }
-    if (!next) this._playTypeSfx()
+    if (!next) textFx.playTick(false)
   },
 
   clearNoteWriteTimer() {
@@ -1008,7 +972,7 @@ Page({
     this._noteWriteIndex = i
     this.setData({ cardBody: target.slice(0, i) })
     // 标点不响：`_delayForChar` 已为标点单独留了停顿，那里一起静音更像真打字机
-    if (!/[，。；、！？—…\s]/.test(ch)) this._playTypeSfx()
+    textFx.playTick(this.data.sfxMuted)
 
     const delay = this._delayForChar(ch)
     this._noteWriteTimer = setTimeout(() => this._tickNoteWrite(), delay)
