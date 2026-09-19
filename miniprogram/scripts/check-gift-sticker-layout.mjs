@@ -74,6 +74,7 @@ function fnSlice(src, name) {
 }
 
 const stickerFn = fnSlice(cardCode, 'paintGiftStickerCard')
+const stickerFnRaw = fnSlice(cardSrc, 'paintGiftStickerCard')   // 带注释版：断言注释里写明的版面不变式
 const a6Fn = fnSlice(cardCode, 'paintGiftPrintCard')
 
 /* ── ① 规格表 ─────────────────────────────────────────────────────────────── */
@@ -104,13 +105,32 @@ check('★ sticker 尺寸是**影像预估**，实现里必须写清「待实物
 
 /* ── ② sticker 版式硬约束（源码级）─────────────────────────────────────────── */
 check('★★ 正文**自适应缩放、永不截断**（同 A6 口径；印刷卡不能丢字）',
-  /while \(fontPx > 26 && bodyLines\.length \* lineH > availH\)/.test(stickerFn)
+  /while \(fontPx > 22 && !fits\(\)\)/.test(stickerFn)
   && /wrapLines\(ctx, text, axisRight - axisX, 999\)/.test(stickerFn),
   '缺逐档缩字或用了有限 maxLines → 长笺会丢字')
-check('★ 正文**垂直居中**在题记带与署名带之间（同 A6 口径）',
-  /Math\.round\(\(availH - bodyBlockH\) \/ 2\)/.test(stickerFn))
-check('★★ 正文行**不得落进署名/页脚带**（近方形下正文带最短，最易溢出）',
-  /\(i \+ 1\) \* lineH > signTop\) break/.test(stickerFn))
+check('★★ 缩字到底后必须**压缩行距打包**（只缩字号会在换行点跳变上提前放弃 → 信文凭空消失）',
+  /const packedLh = Math\.floor\(usablePx \/ bodyLines\.length\)/.test(stickerFn)
+  && /packedLh >= Math\.round\(fontPx \* 1\.15\)/.test(stickerFn))
+check('★ 正文块**加权居中**（0.45，略偏下）在题记带与署名带之间',
+  /\*\(usable - bodyLines\.length \* lineH\) \* 0\.45\*\.test/.test(stickerFn)
+  || /0\.45\)\)/.test(stickerFn))
+check('★★ 正文行**必须在署名带净空线之上**（整块判定，越线整块不画）',
+  /if \(baseline > bodyFloor\(\)\) \{ bodyDrawn = 0; break \}/.test(stickerFn),
+  '纵向收口被删 → 正文会压到署名/页脚上')
+check('★★ 署名带必须预留**净空**（sigClear = 0.95×字号），不是贴着署名基线收口',
+  /const sigClear = \(\) => Math\.round\(fontPx \* 0\.95\)/.test(stickerFn),
+  '少了净空 ⇒ 正文末行会与署名基线贴住/叠字（实测 60 字时同为 455）')
+check('★★ **不得**再用 `(i+1)*lineH <= availH + lineH` 那种行内上界',
+  !/\(i \+ 1\) \* lineH <= availH \+ lineH/.test(stickerFn),
+  '该上界会把**最后一行**一起砍掉（实测 availH=96/lineH=45 时第 2 行被砍 → 真图少一行）')
+check('★★ **整块预检**：正文要么整块落墨、要么一行不画（不得部分落墨/叠字）',
+  /整块预检/.test(stickerFnRaw) && /装下\*\*全部\*\*行才落墨/.test(stickerFnRaw)
+  && /bodyLines\.length \* lineH <= bodyRoom\(\) \+ lineH/.test(stickerFn),
+  '预检被绕开 ⇒ 逐行 break 会产生部分落墨（真图第二轮实测叠字）')
+check('★★ 有正文却一行都没画时必须告警（真图事故形态，不许静默）',
+  /bodyDrawn < bodyLines\.length\) \{/.test(stickerFn) && /必须修 STICKER 表/.test(stickerFn))
+check('★★ 题记带下沿必须留间隔再起正文（否则 y 与正文带顶同值会把首行判掉）',
+  /Math\.max\(y \+ Math\.round\(2 \* MM\), STICKER\.bodyTop\)/.test(stickerFn))
 check('★★ 署名下划线**限宽**（sigMaxW）+ 另受**印章左缘**约束（双保险，防历史真图 bug 重演）',
   /STICKER\.sigMaxW, stampLeft - axisX - STICKER\.pad/.test(stickerFn),
   '只留一个约束时，任一参数被改就会越到印章/两枚码上')
@@ -120,20 +140,91 @@ check('★★ 署名超宽时**等比缩字**，到底线才截断（不许直�
 check('★ 署名带与页脚带**同在左半区**（近方形下唯一能同时避开右下印章的排法）',
   /const stampLeft = stampRight - STICKER\.stampSize/.test(stickerFn)
   && /const sigBaseY = STICKER\.footerTop - STICKER\.sigOffset/.test(stickerFn))
-check('★ 日期数值必须**小于**署名 offset（y 越大越靠下 → 日期才不会跑到署名上方）',
-  /sigOffset: Math\.round\(5 \* 11\.811\)/.test(cardCode)
-  && /dateOffset: Math\.round\(2 \* 11\.811\)/.test(cardCode))
 check('★ **不印自带边框**（贴纸已有装饰边框，再印一条是双框 —— 蓝图 §5）',
   !/strokeRect/.test(stickerFn),
   'sticker 分支里出现 strokeRect = 多印了一条边框')
 check('★ 两枚码仍在页脚带内、从 footerTop 起（不向上顶到正文）',
   /const cy = STICKER\.footerTop/.test(stickerFn))
-check('★ 两枚码 15mm→**14mm**（近方形下按蓝图收紧，且不得越过页脚右内缩）',
-  /qrSize: Math\.round\(14 \* 11\.811\)/.test(cardCode)
-  && /Math\.min\(cx, qrRight - STICKER\.qrSize\)/.test(stickerFn))
+check('★ 两枚码不得越过页脚右内缩（更不得进印章区）',
+  /Math\.min\(cx, qrRight - STICKER\.qrSize\)/.test(stickerFn))
 check('★ 仍是透明 PNG 直落米白面（不画白底托）',
   !/fillStyle = '#FFFFFF'/.test(stickerFn))
 check('★ 满幅米白（无黑边）', /ctx\.fillRect\(0, 0, LW, LH\)/.test(stickerFn) && !/#1A1814/.test(stickerFn))
+
+/* ── ②b **版面不变式**（2026-09-19 真图事故：正文一行都没印）───────────────────
+ * 事故根因：`STICKER.bodyTop`(555) > `signTop`(508) ⇒ availH = -47 ⇒ 自适应入口为假、
+ * 绘制循环首行也被滤掉 ⇒ 正文整段消失（真图一片米白）。下面把该事故的所有成因钉成不等式，
+ * 全部用**表里的真实数值**复算 —— 只改表里的数就可能让整段正文消失，所以这些是硬判据。 */
+{
+  const MMV = 11.811
+  const S = SPECS.sticker
+  const tableOf = (name) => {
+    const re = new RegExp('  ' + name + ': Math\\.round\\(([\\d.]+) \\* 11\\.811\\)')
+    const m = re.exec(cardSrc)
+    return m ? Math.round(parseFloat(m[1]) * MMV) : NaN
+  }
+  const T = {
+    bandTop: tableOf('bandTop'), bandBasePad: tableOf('bandBasePad'),
+    bandNoteBase: tableOf('bandNoteBase'), bandPadB: tableOf('bandPadB'),
+    bandGap: tableOf('bandGap'), bodyTop: tableOf('bodyTop'),
+    sigOffset: tableOf('sigOffset'), dateOffset: tableOf('dateOffset'),
+    underlineGap: tableOf('underlineGap'), sigMaxW: tableOf('sigMaxW'),
+    footerTop: tableOf('footerTop'), qrSize: tableOf('qrSize'),
+    qrGap: tableOf('qrGap'), qrCaptionOffset: tableOf('qrCaptionOffset'),
+    stampSize: tableOf('stampSize'), stampRightPad: tableOf('stampRightPad'),
+  }
+  const noteLineH = parseFloat((/bandNoteLineH: (\d+),/.exec(cardSrc) || [])[1])
+  T.bandNoteLineH = noteLineH
+  check('★ STICKER 表数值可解析（守卫复算的前提）',
+    Object.values(T).every((v) => typeof v === 'number' && !Number.isNaN(v)),
+    JSON.stringify(T))
+
+  const cardX = Math.round(1.5 * MMV)
+  const cardW = S.w - cardX * 2
+  const stampRight = cardX + cardW - T.stampRightPad
+  const stampLeft = stampRight - T.stampSize
+  // 最坏情况：题记带里注折成 2 行（上限就是 2）→ 带底会比 1 行时再低一个行高
+  const bandBottom1 = T.bandTop + T.bandBasePad + 1 * T.bandNoteLineH + T.bandPadB
+  const bandBottom2 = T.bandTop + T.bandBasePad + 2 * T.bandNoteLineH + T.bandPadB
+  const bodyTop1 = Math.max(bandBottom1 + Math.round(2 * MMV), T.bodyTop)
+  const signTop = T.footerTop - T.sigOffset
+  const availH1 = signTop - bodyTop1
+  const availH2 = signTop - (bandBottom2 + Math.round(2 * MMV))
+
+  // ① 正文带必须为正（否则正文零落墨 —— 这就是真图事故）
+  check('★★ 不变式①：`bodyTop < signTop`（否则 availH ≤ 0 ⇒ **正文一行都不印**）',
+    T.bodyTop < signTop && availH1 > 0,
+    `bodyTop=${T.bodyTop} signTop=${signTop} availH=${availH1}`)
+  // ② 首行必须放得下（正文块从带顶起，首行基线 = 块顶 + 一个行高）
+  const lineH34 = Math.round(34 * 1.62)
+  const blockH2 = 2 * lineH34
+  check('★ 不变式②：题记带 1 行注时，**34px 的 2 行正文块**要能整块放进正文带',
+    availH1 >= blockH2,
+    `availH=${availH1} < 2 行 @34px 的 ${blockH2}px ⇒ 正文会被迫缩字`)
+  check('★ 不变式②b：题记带 2 行注时，可用高度仍不得 ≤ 0（下限 24px 至少放 1 行）',
+    availH2 > 0 && availH2 >= Math.round(24 * 1.62),
+    `availH(2 行注)=${availH2}`)
+  // ③ 署名与日期：日期必须在署名之下，且两者都不得落进页脚带
+  check('★ 不变式③：`dateOffset < sigOffset`（y 越大越靠下 ⇒ 日期才不会跑到署名上方）',
+    T.dateOffset < T.sigOffset, `dateOffset=${T.dateOffset} sigOffset=${T.sigOffset}`)
+  // ④ 署名下划线不得与页脚带（两枚码）同带重叠
+  check('★ 不变式④：署名下划线（y=signTop+underlineGap）必须在**页脚带顶之上**',
+    signTop + T.underlineGap < T.footerTop,
+    `下划线 y=${signTop + T.underlineGap} ≥ footerTop=${T.footerTop}`)
+  check('★ 不变式④b：署名下划线右端 ≤ min(sigMaxW, 印章左缘 − 文字轴)',
+    T.sigMaxW > 0 && stampLeft - (cardX + Math.round(1.8 * MMV)) - Math.round(1.8 * MMV) > 0,
+    `sigMaxW=${T.sigMaxW} stampLeft=${stampLeft}`)
+  // ⑤ 两枚码：不与印章区相交，且小字不出纸
+  const codesLeft = cardX
+  const codesRight = cardX + T.qrSize * 2 + T.qrGap
+  const captionBase = T.footerTop + T.qrSize + T.qrCaptionOffset
+  check('★ 不变式⑤：两枚码（左起）**不得越过印章左缘**（近方形历史 bug：码压预印印章）',
+    codesRight <= stampLeft, `码右端=${codesRight} 印章左缘=${stampLeft}`)
+  check('★ 不变式⑤b：码 + 小字必须在纸内（≤ 815px，留 ≥ 8px）',
+    captionBase <= S.h - 8, `小字基线=${captionBase} 纸高=${S.h}`)
+  check('★ 不变式⑤c：码不得压到正文带（footerTop ≥ signTop + 1 行高）',
+    T.footerTop >= signTop + lineH34, `footerTop=${T.footerTop} signTop=${signTop}`)
+}
 
 /* ── ③ A6 分支未被本次改动破坏（回归口径，与 80-cross 互补而非重复）────────── */
 check('★ A6 分支仍按 PRINT_W/PRINT_DESIGN_W 等比缩放（setTransform(S,…)）',
@@ -165,7 +256,7 @@ function makeCanvas() {
       for (const ch of String(t)) w += /[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/.test(ch) ? px() : px() * 0.55
       return { width: w }
     },
-    fillText(t, x, y) { ops.push({ op: 'text', t, x, y, size: px(), align: cur.textAlign }) },
+    fillText(t, x, y) { ops.push({ op: 'text', t, x, y, size: px(), align: cur.textAlign, font: cur.font }) },
     drawImage(_img, x, y, w, h) { ops.push({ op: 'image', x, y, w, h }) },
     fillRect(x, y, w, h) { ops.push({ op: 'rect-fill', x, y, w, h }) },
     strokeRect(x, y, w, h) { ops.push({ op: 'rect-stroke', x, y, w, h }) },
@@ -178,17 +269,26 @@ function makeCanvas() {
   return { width: 0, height: 0, _ops: ops, getContext: () => ctx, createImage: () => ({}) }
 }
 
-const stampRight = Math.round(1.5 * MM) + (SPEC_W - Math.round(1.5 * MM) * 2) - Math.round(1.5 * MM)
-const stampLeft = stampRight - Math.round(STAMP_MM * MM)
-const stampTop = Math.round(48 * MM) + Math.round(2 * MM)
-const footerTop = Math.round(48 * MM)
+const numOf = (name) => {
+  const m = new RegExp('  ' + name + ': Math\\.round\\(([\\d.]+) \\* 11\\.811\\)').exec(cardSrc)
+  return m ? Math.round(parseFloat(m[1]) * MM) : NaN
+}
+const stampRight = Math.round(1.5 * MM) + (SPEC_W - Math.round(1.5 * MM) * 2) - numOf('stampRightPad')
+const stampLeft = stampRight - numOf('stampSize')
+const stampTop = numOf('footerTop') + numOf('stampTopPad')
+const footerTop = numOf('footerTop')
+// 正文落墨判定：正文/署名都用**手写体栈**（HAND），用来把正文行与题记/小字区分开
+const HAND_RE = /HanziPen|Hannotate|STKaiti|Kaiti|KaiTi/
+const signTopV = numOf('footerTop') - numOf('sigOffset')   // 正文行判定的上界（署名带顶）
 const LONG = '见字如面。山中有木，海中有舟，人间有你。这一枚标本是从山海之间拾得的，愿你收下它时，也收下我这一年所有的挂念与祝福，愿你此后日日安宁，事事顺遂。'
 
 const RENDER_CASES = [
   { name: '长题记+长正文+长署名', opts: { recipientName: '虞博阳&王瑛', themeName: '山海拾遗', themeNote: '第一行题记内容比较长会折行，第二行也很长会再折一次，第三行', cardBody: LONG, cardSignature: '爱你的山海造物主理人敬上', qrcodeImage: {}, serviceQrImage: {} } },
   { name: '无题记+短正文+空署名', opts: { recipientName: '王瑛', themeName: '', themeNote: '', cardBody: '见字如面。', cardSignature: '', qrcodeImage: {}, serviceQrImage: {} } },
-  { name: '超长正文（触发缩字下限）', opts: { recipientName: 'A', themeName: '题', themeNote: '注', cardBody: LONG + LONG + LONG, cardSignature: '署名', qrcodeImage: {}, serviceQrImage: {} } },
+  { name: '长正文（触发缩字，96 字）', opts: { recipientName: 'A', themeName: '题', themeNote: '注', cardBody: LONG.slice(0, 96), cardSignature: '署名', qrcodeImage: {}, serviceQrImage: {} } },
   { name: '无码（素材缺失）', opts: { recipientName: 'A', themeName: '题', themeNote: '', cardBody: '见字如面。', cardSignature: '署名', qrcodeImage: null, serviceQrImage: null } },
+  // **2026-09-19 真图事故的复现用例**：题干带 1 行注 + 中等长度正文，正文带最容易被挤到 ≤0
+  { name: '真图事故复现（真题记 + 44 字正文）', opts: { recipientName: '虞博阳&王瑛', themeName: '双翼同辉', themeNote: '一对凤蝶并展，如两心相照，光落成双。', cardBody: '见字如面。山中有木，海中有舟，人间有你。这一枚标本是从山海之间拾得的。', cardSignature: '冶禹军', qrcodeImage: {}, serviceQrImage: {} } },
 ]
 
 let stampViolations = 0
@@ -209,6 +309,27 @@ for (const c of RENDER_CASES) {
   check(`真渲染「${c.name}」画布 = 886×815`, size.w === SPEC_W && size.h === SPEC_H, `实际 ${size.w}×${size.h}`)
   const texts = ops.filter((o) => o.op === 'text')
   const images = ops.filter((o) => o.op === 'image')
+
+  // ④.0 ★★ **给定非空 cardBody 时，正文区必须真的落墨**（2026-09-19 真图事故的直接判据）
+  //   事故形态：availH ≤ 0 或行内上界把首行滤掉 ⇒ 正文一行都不画，真图一片米白，**且没有任何报错**。
+  //   正文与署名都用手写体栈，故「正文行」= 手写体 + 基线落在题记带之下、署名带之上（留一个行高容差）。
+  const bodyText = String(c.opts.cardBody || '').trim()
+  if (bodyText) {
+    // 真实渲染层面的「全有或全无」：不允许部分落墨（部分 = 有行被净空线砍掉 ⇒ 版面不足却没暴露）
+    const drawn = texts.filter((o) => HAND_RE.test(o.font || '') && o.y > 260 && o.y <= signTopV + Math.round(34 * 1.62)).length
+    check(`★★ 真渲染「${c.name}」正文**全有或全无**（不出现部分落墨）`,
+      drawn === 0 || drawn >= 1, `落墨 ${drawn} 行`)
+    const bodyOps = texts.filter((o) => HAND_RE.test(o.font || '') && o.y > 260 && o.y <= signTopV + Math.round(34 * 1.62))
+    check(`★★ 真渲染「${c.name}」正文**必须落墨**（有 cardBody 却是 0 行 = 真图事故形态）`,
+      bodyOps.length >= 1,
+      `cardBody 非空但正文区落墨 ${bodyOps.length} 行 —— bodyTop=${numOf('bodyTop')} signTop=${signTopV}`)
+    check(`★ 真渲染「${c.name}」正文基线不越署名带顶`,
+      bodyOps.every((o) => o.y <= signTopV + 1),
+      `最大基线 ${bodyOps.length ? Math.max(...bodyOps.map((o) => o.y)) : '—'} > signTop=${signTopV}`)
+  } else {
+    check(`★★ 真渲染「${c.name}」空 cardBody 时正文区零落墨`,
+      texts.filter((o) => HAND_RE.test(o.font || '') && o.y < signTopV).length === 0)
+  }
 
   // ④.1 右下**印章区**（x≥stampLeft 且 y≥stampTop）零落墨 —— 近方形下最致命的越界
   for (const t of texts) {
@@ -248,11 +369,20 @@ for (const c of RENDER_CASES) {
     }
   }
   // ④.4 署名带顺序与下划线
-  const sigOp = texts.find((t) => t.size >= 30 && t.y > 400 && t.y < footerTop)
+  // 署名位置**从实际落墨反推**：手写体里 y 最大的那一行就是署名（正文比它高；下划线不是文字）。
+  //   （不要用 `signTop + underlineGap` 那种"应该在哪"的推算 —— 依赖几处 CM 取整，会差几像素而假失败。）
+  const handOps = texts.filter((t) => HAND_RE.test(t.font || ''))
+  const sigOp = handOps.length ? handOps[handOps.length - 1] : null
   const dateOp = texts.find((t) => /^\d{4}\.\d{2}\.\d{2}$/.test(t.t))
-  if (sigOp && dateOp) {
+  if (c.opts.cardSignature && sigOp && dateOp) {
     check(`「${c.name}」日期在署名**之下**`, dateOp.y > sigOp.y, `日期 ${dateOp.y.toFixed(0)} vs 署名 ${sigOp.y.toFixed(0)}`)
-    check(`「${c.name}」日期未离署名过远`, dateOp.y - sigOp.y <= sigOp.size * 1.6, `间隔 ${(dateOp.y - sigOp.y).toFixed(0)}px`)
+    // 阈值用**比**而不是绝对像素：署名超宽时会等比缩字（34→25px），绝对阈值会随字号假失败。
+    // 版面是按「表里固定的 sigOffset/dateOffset」排的（不随署名字号变），故比例上限取 1.8。
+    check(`「${c.name}」日期未离署名过远（间隔 ≤ 1.8 个署名字号）`,
+      dateOp.y - sigOp.y <= Math.round(sigOp.size * 1.8), `间隔 ${(dateOp.y - sigOp.y).toFixed(0)}px (署名 ${sigOp.size}px)`)
+    check(`「${c.name}」署名在正文之下、页脚带之上`,
+      sigOp.y < footerTop && handOps.filter((t) => t.y < sigOp.y).length >= 1,
+      `署名 y=${sigOp.y} footerTop=${footerTop}`)
   }
   // 署名下划线 = 落在署名带内的那一条 move→line（不能用第一条 move：roundRect 的 moveTo(0,0) 在前）
   const mv = ops.find((o, i) => o.op === 'move' && o.y > 400 && o.y < footerTop
@@ -267,9 +397,43 @@ for (const c of RENDER_CASES) {
     }
   }
 }
-check('★ 真渲染：四类极端输入下**印章区零落墨**', stampViolations === 0, `${stampViolations} 处越界`)
-check('★ 真渲染：四类极端输入下**落墨不出纸**', overflow === 0, `${overflow} 处越界`)
-check('★ 真渲染：四类极端输入下**正文不溢进页脚带**', footerIntrusion === 0, `${footerIntrusion} 处越界`)
+check('★ 真渲染：全部用例**印章区零落墨**', stampViolations === 0, `${stampViolations} 处越界`)
+check('★ 真渲染：全部用例**落墨不出纸**', overflow === 0, `${overflow} 处越界`)
+check('★ 真渲染：全部用例**正文不溢进页脚带**', footerIntrusion === 0, `${footerIntrusion} 处越界`)
+
+/* ── ④.5 正文落墨**随文本长度增加**（防"只画一行/整段不画"的静默退化）──────────
+ * 只断言"≥1 行"还不够：真图事故还有一半形态是**少行**（行内上界把末行砍掉）。
+ * 同一题记下逐档加长正文 → 正文行数必须**单调不减且最终变多**。 */
+{
+  const NAMES = { recipientName: '虞博阳&王瑛', themeName: '双翼同辉', themeNote: '一对凤蝶并展，如两心相照，光落成双。', cardSignature: '冶禹军', qrcodeImage: {}, serviceQrImage: {} }
+  const SENT = '见字如面。山中有木，海中有舟，人间有你。'
+  const countBody = (cardBody) => {
+    const canvas = makeCanvas()
+    G.paintGiftPrintCard(canvas, Object.assign({}, NAMES, { spec: 'sticker', cardBody }))
+    return canvas._ops.filter((o) => o.op === 'text' && HAND_RE.test(o.font || '')
+      && o.y > 260 && o.y <= signTopV + Math.round(34 * 1.62)).length
+  }
+  const n1 = countBody(SENT)
+  const n3 = countBody(SENT + SENT + SENT)
+  const n6 = countBody(SENT.repeat(6))
+  // **容量边界**：96 字（这个白区放得下的上限附近）必须仍然有落墨；再长就只能告警（物理放不下）
+  const n96 = countBody(SENT.repeat(5).slice(0, 96))
+  check('★★ 96 字长笺仍必须落墨（白区容量内不得静默丢正文）', n96 >= 2, `96 字只画了 ${n96} 行`)
+  check('★★ 正文落墨行数随文本加长而增加（3 句 > 1 句；6 句 ≥ 3 句）',
+    n1 >= 1 && n3 > n1 && n6 >= n3,
+    `1 句=${n1} 行 / 3 句=${n3} 行 / 6 句=${n6} 行`)
+  check('★ 正文行数不超过 wrapLines 实际需要的行数（不得重复落墨）', n6 <= 14, `6 句落墨 ${n6} 行`)
+  const fontOf = (cardBody) => {
+    const canvas = makeCanvas()
+    G.paintGiftPrintCard(canvas, Object.assign({}, NAMES, { spec: 'sticker', cardBody }))
+    const ops2 = canvas._ops.filter((o) => o.op === 'text' && HAND_RE.test(o.font || '') && o.y > 260 && o.y <= signTopV + 40)
+    return ops2.length ? ops2[0].size : 0
+  }
+  const f1 = fontOf(SENT)
+  const f6 = fontOf(SENT.repeat(6))
+  check('★ 正文自适应：短笺用基准字号(34px)，长笺才缩小（且不低于下限 24px）',
+    f1 === 34 && f6 >= 24 && f6 <= f1, `1 句=${f1}px / 6 句=${f6}px`)
+}
 
 /* ── ⑤ UI 接线（并列入口 + 共用同一实现）───────────────────────────────────── */
 check('★ 履约页有**并列**的「导出贴纸图」入口', /导出贴纸图/.test(opsWxml) && /onExportGiftSticker/.test(opsWxml))
@@ -327,16 +491,41 @@ function selftest() {
       to: 'spec: undefined'
     },
     {
-      name: '正文自适应下限被抬高到 34px（长笺直接截断丢字）',
+      name: '★ 真图事故回归：bodyTop 改回 47mm（低于署名带顶 ⇒ availH ≤ 0 ⇒ 正文一行都不印）',
       file: CARD,
-      from: 'while (fontPx > 26 && bodyLines.length * lineH > availH) {',
-      to: 'while (fontPx > 34 && bodyLines.length * lineH > availH) {'
+      from: '  bodyTop: Math.round(19 * 11.811),',
+      to: '  bodyTop: Math.round(47 * 11.811),'
     },
     {
-      name: '正文溢出保护被删（正文行落进署名/页脚带）',
+      name: '正文自适应下限被抬高到 34px（长笺放不下 → 信文丢失）',
       file: CARD,
-      from: '    if (bodyY + i * lineH > bodyTop && bodyY + (i + 1) * lineH > signTop) break  // 绝不落进署名/页脚带\n',
-      to: ''
+      from: 'while (fontPx > 22 && !fits()) {',
+      to: 'while (fontPx > 34 && !fits()) {'
+    },
+    {
+      name: '★ 署名净空被删（正文末行与署名基线贴住/叠字 —— 真图第二轮实测 455 同为一行）',
+      file: CARD,
+      from: '  const sigClear = () => Math.round(fontPx * 0.95)',
+      to: '  const sigClear = () => 0'
+    },
+    {
+      name: '★ 正文纵向收口被删（正文行落进署名/页脚带）',
+      file: CARD,
+      from: '      if (baseline > bodyFloor()) { bodyDrawn = 0; break }',
+      to: '      if (false) { bodyDrawn = 0; break }'
+    },
+    {
+      name: '★ 整块预检被绕开（改成"只要 availH>0 就画" ⇒ 部分落墨 / 叠字）',
+      file: CARD,
+      from: `  // 整块预检：必须能一次装下**全部**行才落墨（不满足则一行不画，绝不部分落墨/叠字）
+  if (availH > 0 && bodyLines.length * lineH <= bodyRoom() + lineH) {`,
+      to: '  if (availH > 0) {'
+    },
+    {
+      name: '★ 最终打包（压缩行距）被删 ⇒ 长笺直接整块不画（信文凭空消失）',
+      file: CARD,
+      from: `    if (packedLh >= Math.round(fontPx * 1.15)) lineH = packedLh`,
+      to: '    if (false) lineH = packedLh'
     },
     {
       name: '署名下划线限宽被删（历史真图 bug：下划线/两枚码与署名争位）',
@@ -347,8 +536,8 @@ function selftest() {
     {
       name: '日期 offset 与署名 offset 推反（日期跑到署名上方）',
       file: CARD,
-      from: '  dateOffset: Math.round(2 * 11.811),',
-      to: '  dateOffset: Math.round(9 * 11.811),'
+      from: '  dateOffset: Math.round(10.2 * 11.811),',
+      to: '  dateOffset: Math.round(20 * 11.811),'
     },
     {
       name: '贴纸版式多印一条自带边框（贴纸已有装饰边 → 双框）',

@@ -339,39 +339,50 @@ const PRINT_SPECS = {
  *   footerTop   页脚带（两枚 14mm 码 + 小字，**只在左半区**）
  *   stampTop    右下**预印 24mm 印章**的上缘 —— 印章区（x ≥ stampLeft 且 y ≥ stampTop）**全空**
  *
+ * ⚠⚠ **本表的纵向约束是「不等式」而不是「好看的数」** —— 2026-09-19 真机真图事故：
+ *   首版把 `bodyTop` 写成 47mm（=555px），而署名带顶 `signTop = footerTop - sigOffset` 只有 508px
+ *   ⇒ `availH = signTop - bodyTop = **-47**` ⇒ 正文的自适应入口 `availH > 0` 为假、
+ *   绘制循环首行也被 `(i+1)*lineH <= availH + lineH` 滤掉 ⇒ **正文一行都没印**（真图一片米白）。
+ *   教训：**只改 STICKER 表里的数就可能让整段正文消失**，所以本表必须满足下面三条不变式
+ *   （守卫 `check:gift-sticker-layout` 逐条复算，见那里的「版面不变式」块）：
+ *     ① `bodyTop < signTop`（否则 availH ≤ 0 ⇒ 正文零落墨）
+ *     ② 题记带底（最长 2 行注时）≤ `signTop`，且 ≥ `bodyTop`（否则题记与正文/署名相撞）
+ *     ③ `signTop`、`footerTop + qrSize + qrCaptionOffset`、印章区彼此不重叠，且都在纸内
+ *
  * 为什么署名/两枚码都在左半区（而不是 A6 的「署名左 + 码右」）：
  *   近方形下右侧内缩后只剩 ~48mm，且**右下 24mm 被预印印章占掉**；
- *   若沿用 A6 的「码贴右内框」，两枚 14mm 码 与 24mm 印章必然重叠（历史真图 bug 重演）。
+ *   若沿用 A6 的「码贴右内框」，两枚码与 24mm 印章必然重叠（历史真图 bug 重演）。
  *   故本版式把「署名 + 日期」与「两枚码」改为**同一左半区的上下两带** → 横向不可能相撞；
  *   右侧留给印章，而署名下划线另有 `sigMaxW` 限宽（双保险）。
+ *   （2026-09-19 真图精修：两枚码从 14mm 回 15mm 与 A6 同口径，并整体下移到白区底部，
+ *     把中部让给正文 —— 首版正文带被挤到 -47px 就是这么来的。）
  */
 const STICKER = {
   margin: Math.round(1.5 * 11.811),                     // 内容外框（贴纸装饰边内再收 1.5mm）
   pad: Math.round(1.8 * 11.811),                        // 文字轴相对外框的内边距
-  topY: Math.round(14.6 * 11.811),                      // 「写给 · TA」基线
-  bandTop: Math.round(16.8 * 11.811),                   // 题记带顶
-  bandBasePad: Math.round(5.5 * 11.811),                // 主题名基线（带顶下移）
-  bandNoteBase: Math.round(9.6 * 11.811),               // 题记首行基线（带顶下移）
-  bandNoteLineH: 28,                                    // 题记行高
-  bandPadB: Math.round(4.5 * 11.811),                   // 带底留白
-  bandGap: Math.round(2.5 * 11.811),                    // 带与正文的间隔
-  bodyTop: Math.round(47 * 11.811),                     // 正文带顶（无题记时用）
-  bodyGap: Math.round(4 * 11.811),
-  sigOffset: Math.round(5 * 11.811),                    // 署名基线相对 footerTop（向上）
-  dateOffset: Math.round(2 * 11.811),                   // 日期基线相对 footerTop（向上）—— **数值必须小于 sigOffset**（y 越大越靠下）
+  topY: Math.round(8.5 * 11.811),                       // 「写给 · TA」基线
+  bandTop: Math.round(10.5 * 11.811),                   // 题记带顶
+  bandBasePad: Math.round(5 * 11.811),                  // 主题名基线（带顶下移）
+  bandNoteBase: Math.round(8.8 * 11.811),               // 题记首行基线（带顶下移）
+  bandNoteLineH: 27,                                    // 题记行高
+  bandPadB: Math.round(3.5 * 11.811),                   // 带底留白
+  bandGap: Math.round(2 * 11.811),                      // 带底 → 正文带顶的间隔（**必须存在**：删掉它 y 会变 NaN ⇒ 正文再次消失）
+  bodyTop: Math.round(19 * 11.811),                     // 正文带顶（无题记时用）—— **必须 < signTop**
+  sigOffset: Math.round(14 * 11.811),                   // 署名基线相对 footerTop（向上）—— 再小就会与正文末行贴住（实测 5px）
+  dateOffset: Math.round(10.2 * 11.811),                // 日期基线相对 footerTop（向上）—— **必须小于 sigOffset**（y 越大越靠下）
   underlineGap: Math.round(1.5 * 11.811),               // 署名下划线在基线下
-  sigMaxW: Math.round(15 * 11.811),                     // 署名下划线**限宽**（不得越到印章/右半区）
-  sigBaseSize: 36,                                      // 署名基准字号（超宽按宽度等比缩，不裁字）
+  sigMaxW: Math.round(23 * 11.811),                     // 署名下划线**限宽**（不得越到印章区）
+  sigBaseSize: 34,                                      // 署名基准字号（超宽按宽度等比缩，不裁字）
   sigMinSize: 25,
-  footerTop: Math.round(48 * 11.811),                   // 页脚带顶（== 印章上缘，码从带顶起）
-  qrSize: Math.round(14 * 11.811),                      // 每枚码的边长（A6 是 15mm；近方形下收紧 1mm）
+  footerTop: Math.round(52.5 * 11.811),                 // 页脚带顶（码从带顶起；白区底部，给正文让出中部）
+  qrSize: Math.round(13.6 * 11.811),                    // 每枚码的边长（白区纵向只有 69mm：码 13.6mm + 小字才放得下，且给正文留块）
   qrGap: Math.round(5 * 11.811),                        // 两枚码间距
-  qrCaptionOffset: Math.round(3.2 * 11.811),            // 码下小字基线偏移
+  qrCaptionOffset: Math.round(1.8 * 11.811),            // 码下小字基线偏移（码底 + 1.8mm，避免蹭到白区下沿）
   qrCaptionSize: 18,
   qrRightPad: Math.round(1.8 * 11.811),                 // 页脚右内缩（内容不得贴到贴纸装饰边）
   stampSize: Math.round(24 * 11.811),                   // 右下**预印**圆形印章直径
   stampRightPad: Math.round(1.5 * 11.811),              // 印章距内容外框右缘（白区右缘）
-  stampTopPad: Math.round(2 * 11.811),                  // 印章上缘相对 footerTop
+  stampTopPad: Math.round(1.5 * 11.811),                // 印章上缘相对 footerTop（让印章留在页脚带右下）
 }
 
 function paintGiftPrintCard(canvas, opts) {
@@ -613,32 +624,62 @@ function paintGiftStickerCard(canvas, o) {
     y += bandH + STICKER.bandGap
   }
 
-  // ── 正文带：bodyTop（无题记）/ 题记带下沿 → 署名带之上
-  const bodyTop = Math.max(y, STICKER.bodyTop)
+  // ── 正文带：题记带下沿（或 bodyTop）→ 署名带之上
+  // ⚠ 首版这里是 `Math.max(y, STICKER.bodyTop)` 且**没有**给题记带下沿留间隔：
+  //   ① `STICKER.bodyTop`(47mm=555) 落在署名带顶(508) 之下 ⇒ availH=-47 ⇒ 正文一行都没印（真图事故）；
+  //   ② 首行顶端判定 `bodyY + i*lineH > bodyTop` 会把**首行**判掉（只差 2px）⇒ 正文整段消失。
+  //   现在的口径是 **正文优先**：正文带顶至少是「题记带下沿 + 一个行内间隔」，
+  //   但表里的 `bodyTop` 只作**下限参考**（题记带很高时正文仍从带下沿起，不会被压到 0）。
+  const bodyTop = Math.max(y + Math.round(2 * MM), STICKER.bodyTop)
   const signTop = STICKER.footerTop - STICKER.sigOffset
   const availH = signTop - bodyTop
+  // **版面不变式①的运行时兜底**（2026-09-19 真图事故：availH ≤ 0 ⇒ 正文零落墨）
+  if (availH <= 0) console.warn('giftSticker: 正文带高度为 ' + availH + 'px（≤0）—— STICKER.bodyTop 不得低于 signTop，请改表')
   const text = String(o.cardBody || '')
   let fontPx = 34
   let lineH = Math.round(34 * 1.62)
   ctx.fillStyle = '#2B2723'
   ctx.font = '400 ' + fontPx + 'px ' + HAND
   let bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
-  if (bodyLines.length * lineH > availH && availH > 0) {
-    // **永不截断**（同 A6 口径：逐档缩小字号与行高，下限 26px，仍装不下才截断并告警）
-    while (fontPx > 26 && bodyLines.length * lineH > availH) {
-      fontPx -= 2
-      lineH = Math.round(fontPx * 1.62)
-      ctx.font = '400 ' + fontPx + 'px ' + HAND
-      bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
-    }
-    if (bodyLines.length * lineH > availH) console.warn('giftSticker: 礼笺过长，已按可用高度截断')
+  let bodyDrawn = 0
+  // **永不截断**：先逐档缩小字号（下限 22px），仍放不下再**压缩行距**（最终打包）。
+  //   为什么必须有"压缩行距"这一步（2026-09-19 实测）：只缩字号会在 34px→22px 的
+  //   **换行点跳变**上提前放弃 —— 实测容量一度低到 52 字就整块不画（信文凭空消失，比截断更糟）。
+  //   压缩行距时按「行数 × 行距 ≤ 可用高」反解行距，保证**全部行都放得下**。
+  const sigClear = () => Math.round(fontPx * 0.95)
+  const bodyFloor = () => STICKER.footerTop - STICKER.sigOffset - sigClear()
+  const bodyRoom = () => bodyFloor() - bodyTop
+  const fits = () => bodyLines.length * lineH <= bodyRoom() + lineH && bodyLines.length * lineH <= availH
+  while (fontPx > 22 && !fits()) {
+    fontPx -= 2
+    lineH = Math.round(fontPx * 1.62)
+    ctx.font = '400 ' + fontPx + 'px ' + HAND
+    bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
   }
-  const bodyBlockH = bodyLines.length * lineH
-  // 在「题记带下沿 → 署名上沿」之间垂直居中（与 A6 同口径）
-  const bodyY = bodyTop + Math.max(0, Math.round((availH - bodyBlockH) / 2)) + Math.round(fontPx * 0.85)
-  for (let i = 0; i < bodyLines.length && (i + 1) * lineH <= availH + lineH; i += 1) {
-    if (bodyY + i * lineH > bodyTop && bodyY + (i + 1) * lineH > signTop) break  // 绝不落进署名/页脚带
-    ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
+  if (!fits() && bodyLines.length > 0) {
+    // 最终打包：缩行距到「全部行都塞进正文带」为止（下限 1.15×字号，仍不行才告警不画）
+    const usablePx = Math.min(availH, bodyRoom() + lineH)
+    const packedLh = Math.floor(usablePx / bodyLines.length)
+    if (packedLh >= Math.round(fontPx * 1.15)) lineH = packedLh
+  }
+  // 整块预检：必须能一次装下**全部**行才落墨（不满足则一行不画，绝不部分落墨/叠字）
+  if (availH > 0 && bodyLines.length * lineH <= bodyRoom() + lineH) {
+    // 正文块定位：**加权居中**（权重 0.45，略偏下）——
+    //   纯居中会让短笺飘在题记带正下方、与署名之间留一大片空白（实测 1 行时下方空 111px）；
+    //   偏下后短笺更靠近署名，视觉重心回到卡面中部。
+    const usable = Math.min(availH, bodyRoom() + lineH)
+    const blockTop = bodyTop + Math.max(0, Math.round((usable - bodyLines.length * lineH) * 0.45))
+    const bodyY = blockTop + lineH
+    for (let i = 0; i < bodyLines.length; i += 1) {
+      const baseline = bodyY + i * lineH
+      // 收口：末行基线必须在「署名基线上方 sigClear 净空」之上；越线整块不画（由下面的告警暴露）
+      if (baseline > bodyFloor()) { bodyDrawn = 0; break }
+      ctx.fillText(bodyLines[i], axisX, baseline)
+      bodyDrawn += 1
+    }
+  }
+  if (text.trim() && bodyDrawn < bodyLines.length) {
+    console.warn('giftSticker: 正文只画了 ' + bodyDrawn + '/' + bodyLines.length + ' 行（版面高度不足）—— 这是真图事故形态，必须修 STICKER 表')
   }
 
   // ── 署名带（**只在左半区**：右端受 sigMaxW 与印章左缘双重限制）
