@@ -120,6 +120,8 @@
     "check:audit-matrix:selftest": "node miniprogram/scripts/check-audit-matrix.mjs --selftest",
     "check:shared-modules": "node miniprogram/scripts/check-shared-modules.mjs",
     "check:shared-modules:selftest": "node miniprogram/scripts/check-shared-modules.mjs --selftest",
+    "check:member-pricing-sync": "node miniprogram/scripts/check-member-pricing-sync.mjs",
+    "check:member-pricing-sync:selftest": "node miniprogram/scripts/check-member-pricing-sync.mjs --selftest",
     "check:proxy-allowlist": "node admin/scripts/check-proxy-allowlist-sync.mjs",
     "check:proxy-allowlist:selftest": "node admin/scripts/check-proxy-allowlist-sync.mjs --selftest",
     "check:require-paths": "node miniprogram/scripts/check-require-paths.mjs",

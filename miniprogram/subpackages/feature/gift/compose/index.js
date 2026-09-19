@@ -44,6 +44,9 @@ const {
 /** 上滑取消阈值（px） */
 /** 礼笺打字机音效（2026-09-19）：与 receive 页开盒音效同一套模式 */
 const textFx = require('../giftTextEffect')
+/** 会员应付（2026-09-19 裁决 46-a）：**主包**件 —— 分包之间不能互 require，
+ *  故编排页不能直接引 subpackages/business/utils/memberPricing.js */
+const memberPayable = require('../../../../utils/memberPayable')
 
 const VOICE_CANCEL_SLIDE_PX = 56
 
@@ -100,6 +103,10 @@ Page({
     product: null,
     cover: '',
     displayPrice: '0.00',
+    /** 备妥应付（裁决 46-a）：= 当前等级会员价；无折扣/未取到等级时与原价一致 */
+    payablePrice: '0.00',
+    memberDiscounted: false,
+    memberLevelName: '',
     skuLabel: '',
     selectedSku: null,
     count: 1,
@@ -237,6 +244,8 @@ Page({
     this._contactId = decodeQueryText((options && options.contactId) || '').trim()
     const count = parseInt((options && options.count) || '1', 10)
     this.setData({ count: count > 0 ? count : 1 })
+    // 与藏品读取并行取会员等级：谁先回来都会各自触发一次重算（见 _refreshMemberPayable）
+    this._loadMemberStats()
 
     let sceneKey = decodeQueryText((options && options.scene) || '').trim()
     // 对象入口经 hub 二次跳转时，未 decode 会留下 %E4%B8%XX 或双重编码残片
@@ -701,6 +710,8 @@ Page({
         displayPrice: total,
         cover: cover || ''
       })
+      // 备妥应付 = 当前等级会员价（displayPrice 落定后立刻重算）
+      this._refreshMemberPayable()
       // 主内容挂载后再量一次高度（allowed&&product 分支刚出现）
       setTimeout(() => this.syncScrollPane(), 40)
       // 场景选中后默认礼笺语向（正文为空时自动落笔；不碰录音）。题记另作叠加层，不占正文
@@ -709,6 +720,52 @@ Page({
       console.warn('gift compose loadProduct', e)
       this.setData({ loading: false, loadError: '柜中片刻未应，请稍后再试' })
     }
+  },
+
+  /**
+   * 取当前会员等级（**只取一次**；失败即当无折扣，绝不猜等级）。
+   * 口径与确认页 confirm-order:loadUserDiscount 同源：同一个 getUserStats 返回。
+   */
+  _loadMemberStats() {
+    if (this._memberStats || this._memberStatsLoading) return
+    this._memberStatsLoading = true
+    wx.cloud.callFunction({
+      name: 'getUserStats',
+      success: (res) => {
+        this._memberStatsLoading = false
+        this._memberStats = (res && res.result) || null
+        this._refreshMemberPayable()
+      },
+      fail: (err) => {
+        this._memberStatsLoading = false
+        // 未登录/网络失败 → 只显示原价（不显示折扣），不当成「已享折扣」
+        console.warn('gift compose getUserStats', err && (err.errMsg || err))
+      }
+    })
+  },
+
+  /**
+   * 重算「备妥应付」（裁决 46-a）。
+   * 只按**当前等级**计价：本单可达等级（投影定级）需券/运费/自提参与口径，
+   * 那是结算页的职责 → 故此处一律标注「以结算页为准」。
+   */
+  _refreshMemberPayable() {
+    const p = this.data.product || {}
+    const inputs = memberPayable.inputsFromStats(this._memberStats)
+    const r = memberPayable.payableFor({
+      amount: parseFloat(this.data.displayPrice) || 0,
+      ladder: inputs.ladder,
+      growthValue: inputs.growthValue,
+      isHonorary: inputs.isHonorary,
+      serverRate: inputs.serverRate,
+      serverLevelName: inputs.serverLevelName,
+      memberDiscountEnabled: p.memberDiscountEnabled !== false
+    })
+    this.setData({
+      payablePrice: r.payable.toFixed(2),
+      memberDiscounted: r.discounted,
+      memberLevelName: r.levelName
+    })
   },
 
 

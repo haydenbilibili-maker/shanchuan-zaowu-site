@@ -1060,6 +1060,26 @@ page {
   font-family: 'JetBrains Mono', 'DM Mono', monospace;
 }
 
+/* 会员价（裁决 46-a）：折后价主显，原价划掉；底色沿用底栏 #1F1D1A */
+.bottom-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.bottom-origin {
+  font-size: 24rpx;
+  color: #A09A90;
+  text-decoration: line-through;
+}
+
+.bottom-note {
+  display: block;
+  margin-top: 2rpx;
+  font-size: 20rpx;
+  color: #A09A90;
+}
+
 .pay-btn {
   flex: 0 0 280rpx;
   height: 80rpx;

@@ -334,7 +334,11 @@
   <view class="bottom-bar safe-area">
     <view class="bottom-price">
       <text class="bottom-label">备妥应付</text>
-      <text class="bottom-value">¥{{displayPrice}}</text>
+      <view class="bottom-value-row">
+        <text class="bottom-value">¥{{payablePrice}}</text>
+        <text class="bottom-origin" wx:if="{{memberDiscounted}}">¥{{displayPrice}}</text>
+      </view>
+      <text class="bottom-note" wx:if="{{memberDiscounted}}">{{memberLevelName}}会员价 · 以结算页为准</text>
     </view>
     <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="goPay">
       <text>{{paying ? '备妥中…' : '支付并备妥'}}</text>
