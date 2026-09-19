@@ -48,10 +48,35 @@ const CRAFT_TYPE_OPTIONS = [
   { value: 'other', label: '其它' }
 ]
 
+/**
+ * 制作工艺（标本学理分类，2026-09-19 按产品负责人给的分类补全）。
+ *
+ * ⚠️ **原有 3 个 key（immersion / plastination / taxidermy）的 value 一个都没动** ——
+ * 存量商品存的就是这些 key，改 value 等于把已有数据的工艺全部标错。
+ * 本次只**追加**新的工艺；中文名保持原样（`浸制`/`塑化`/`剥制`）以免影响既有界面与筛选文案。
+ *
+ * 分组（与产品负责人口径一致）：
+ *   · 干制标本工艺：压制（腊叶）/ 剥制 / 针插 / 干制骨骼
+ *   · 浸制标本工艺：浸制
+ *   · 切片与涂片工艺（显微玻片标本）：切片 / 涂片
+ *   · 现代高新标本工艺：生物塑化 / 透明骨骼 / 包埋
+ */
 const CRAFT_PROCESS_OPTIONS = [
-  { value: 'immersion', label: '浸制' },
-  { value: 'plastination', label: '塑化' },
+  // ── 干制标本工艺 ──
+  { value: 'pressed', label: '压制（腊叶）标本' },
   { value: 'taxidermy', label: '剥制' },
+  { value: 'pinned', label: '针插标本' },
+  { value: 'dry_bone', label: '干制骨骼标本' },
+  // ── 浸制标本工艺 ──
+  { value: 'immersion', label: '浸制' },
+  // ── 切片与涂片工艺（显微玻片标本）──
+  { value: 'section', label: '切片标本' },
+  { value: 'smear', label: '涂片标本' },
+  // ── 现代高新标本工艺 ──
+  { value: 'plastination', label: '塑化' },
+  { value: 'cleared_stained', label: '透明骨骼标本' },
+  { value: 'resin_embed', label: '包埋标本' },
+  // ── 兜底 ──
   { value: 'other', label: '其它' }
 ]
 
