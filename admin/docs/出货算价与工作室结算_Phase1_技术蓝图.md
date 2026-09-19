@@ -655,6 +655,7 @@
 | 4 | `test:studio-notify` | 收件人按**门店**隔离、主店 id 别名、无 `storeIds` 失败即拒、**未核价不报假金额**、best-effort 投递（失败不抛）、去重 | 6 条，含「未核价也报最终金额」「店长不按门店过滤」 |
 | 5 | `test:studio-dashboard` | 三口径拆分（出货额 / 已结清 / 未收款）、**真毛利不减手工费（裁决 20）**、`totalCents` 三级回落、空数据毛利率为 null、单位不变量 | 5 条，含「真毛利把手工费也减掉」 |
 | 6 | `check:settlement-single-ledger` | **结算状态只能由账单流程写**（唯一写入方 / 出货侧只从 prev 继承 / 终结三件套齐全） | 5 条，含「出货侧开始写 settleStatus」 |
+| 7 | `check:collection-docs` | 被云函数引用的集合必须有 `cloudbase/schema/<name>.md`（**补历史空洞**）；带**只许变小的冻结基线** | 6 条，含「新增集合没文档」「基线过期未收敛」 |
 
 > **已合并的口径（不另立守卫，避免重复造轮子）**：蓝图 v1.0 曾列 `check-price-book-integrity`，
 > 但价目表完整性规则（同一 `normName` 恰好一个默认行、`normName+option` 唯一、单价 ≥ 0、
@@ -662,10 +663,15 @@
 > 且两处都验证了「写入方与算价方同口径」。再写一条只是同一批断言的第三份副本 ——
 > **不加**，改为在本表登记「已覆盖」，避免守卫数量虚高而实际判据重复。
 >
-> **仍然空缺（下一批）**：`cloudbase/schema/<name>.md` 至今**没有任何守卫**
+> **已于本次补上**：`cloudbase/schema/<name>.md` 原先**没有任何守卫**
 > （`check:fn-collection-rules` 只比 rules），而 `cloudbase/schema/ops_shipments.md`
-> 已经严重滞后（只列 5 字段，实际 20+）。补 `check-collection-docs` 需要复用
-> `check-fn-collection-rules` 的「常量名形态」解析，属独立一条活。
+> 早已滞后（只列 5 字段、实际 20+）。
+> 现由 `check:collection-docs` 守住：建守卫时盘点出 **39 / 95** 个集合缺文档，
+> 用 `collection-docs-baseline.json` **冻结基线**（新增缺失直接报错、基线过期也报错、`--update` 不许放水）。
+> 集合名解析**复用** `check-fn-collection-rules` 导出的 `resolveCollections()`，不重写。
+>
+> **仍然空缺**：schema 文档的**内容**是否与代码字段一致（需要字段级 diff），以及
+> 「只被 ERP 直写、云函数从不引用」的集合（与 `check:fn-collection-rules` 同边界）。
 
 
 ---
