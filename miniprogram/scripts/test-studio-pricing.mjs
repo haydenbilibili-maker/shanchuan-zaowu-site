@@ -429,6 +429,115 @@ function runTests(E) {
       mixedQuote.totalCents
   )
 
+  // ── I. 显式选择（裁决 24：编辑页让人手选材料/等级/包装/尺寸）──
+  // 为什么必须有：编辑页允许给「原文只有 `华艳色蟌`」这行**手选**包装 `玻璃罩`。
+  // 原文里没有「玻璃罩」三个字 —— 只靠文本匹配的话，用户选完还是报「未写包装」。
+  const pickMaterial = (name, grade) => {
+    const m = MATERIALS.find((x) => x.name === name)
+    return { materialId: m._id, materialName: name, materialGrade: grade || '' }
+  }
+  const pickPackaging = (name, size) => {
+    const p = PACKAGINGS.find((x) => x.name === name)
+    return { packagingId: p._id, packagingName: name, packagingSize: size || '' }
+  }
+  const oneSel = (itemName, sel, qty) =>
+    E.resolveLine(Object.assign({ itemName, qty: qty === undefined ? 1 : qty }, sel || {}), baseCtx())
+
+  // I1 裸名 + 显式材料 + 显式包装 → 能算出价（编辑页的核心场景）
+  const bare2 = oneSel('华艳色蟌', Object.assign(pickMaterial('华艳色蟌'), pickPackaging('玻璃罩')))
+  eq('I1 裸名手选包装后能算出价', bare2.pricingStatus, 'priced')
+  eq('I1b 命中的材料正确', bare2.materialName, '华艳色蟌')
+  eq('I1c 命中的包装正确', bare2.packagingName, '玻璃罩')
+  ok('I1d 有正数总价', bare2.totalPrice > 0)
+
+  // I2 原文带了包装，但人**改成**另一个包装 → 以人的选择为准
+  const override = oneSel('爱神凤蝶玻璃罩', Object.assign(pickMaterial('爱神凤蝶'), pickPackaging('框')))
+  eq('I2 手选包装覆盖原文的包装', override.packagingName, '框')
+
+  // I3 显式材料按 id 命中（id 优先于名称）
+  const byId = oneSel('华艳色蟌', Object.assign({ materialId: 'm3' }, pickPackaging('玻璃罩')))
+  eq('I3 按 id 选材料命中', byId.materialName, '华艳色蟌')
+
+  // I4 显式材料用别名也能命中
+  const byAlias = oneSel('随便什么', Object.assign({ materialName: '大蓝闪' }, pickPackaging('玻璃罩')))
+  eq('I4 显式材料名支持别名', byAlias.materialName, '大蓝闪蝶')
+
+  // I5 **找不到就报红**，不许静默当没选
+  const badMat = oneSel('x', Object.assign({ materialName: '不存在的料' }, pickPackaging('框')))
+  eq('I5 显式材料不在价目表 → unmatched', badMat.pricingStatus, 'unmatched')
+  ok('I5b 文案说明是"指定的原材料不在价目表里"', /指定的原材料不在价目表里/.test(badMat.pricingNote), badMat.pricingNote)
+  const badPkg = oneSel('x', Object.assign(pickMaterial('华艳色蟌'), { packagingName: '不存在的包装' }))
+  eq('I6 显式包装不在价目表 → unmatched', badPkg.pricingStatus, 'unmatched')
+  ok('I6b 文案说明是"指定的包装方式不在价目表里"', /指定的包装方式不在价目表里/.test(badPkg.pricingNote), badPkg.pricingNote)
+
+  // I7 只选了材料、没选包装、原文也没有 → **仍要报红**（不能因为选了材料就放过）
+  const matOnly = oneSel('华艳色蟌', pickMaterial('华艳色蟌'))
+  eq('I7 选了材料但没包装仍报红', matOnly.pricingStatus, 'unmatched')
+  ok('I7b 原因仍是未写包装', /未写包装/.test(matOnly.pricingNote), matOnly.pricingNote)
+
+  // I8 显式包装时，原文残留文字不再被判成歧义（用户已经决定了）
+  const withResidual = oneSel('爱神凤蝶框', Object.assign(pickMaterial('爱神凤蝶'), pickPackaging('玻璃罩')))
+  eq('I8 手选包装后原文残留不再报 ambiguous', withResidual.pricingStatus, 'priced')
+
+  // I9 显式尺寸不在该包装已配规格里 → 报红，**不许静默用默认行**
+  //    （否则用户以为按 15*8 算，实际按 20*10 算钱）
+  const sizeCtx2 = E.buildContext({
+    materials: MATERIALS,
+    packagings: [
+      { _id: 'z1', name: '玻璃罩', size: '20*10', unitPrice: 45, isDefaultSize: true, status: 'active' },
+      { _id: 'z2', name: '玻璃罩', size: '15*8', unitPrice: 30, isDefaultSize: false, status: 'active' }
+    ],
+    laborRatePct: 30
+  })
+  const badSize = E.resolveLine(
+    Object.assign({ itemName: '爱神凤蝶', qty: 1, sizeHint: '99*99' }, pickMaterial('爱神凤蝶'), {
+      packagingId: 'z1',
+      packagingName: '玻璃罩'
+    }),
+    sizeCtx2
+  )
+  eq('I9 显式尺寸不存在 → unmatched', badSize.pricingStatus, 'unmatched')
+  ok('I9b 文案报出是哪个规格', /99\*99/.test(badSize.pricingNote), badSize.pricingNote)
+  const goodSize = E.resolveLine(
+    Object.assign({ itemName: '爱神凤蝶', qty: 1, sizeHint: '15*8' }, pickMaterial('爱神凤蝶'), {
+      packagingId: 'z1',
+      packagingName: '玻璃罩'
+    }),
+    sizeCtx2
+  )
+  eq('I10 显式尺寸合法 → 用该规格行', goodSize.packagingSize, '15*8')
+  ok('I10b 用的是 15*8 的价（30）而不是默认行（45）', goodSize.unitPrice < oneSel('爱神凤蝶玻璃罩', {}, 1).unitPrice)
+
+  // I11 显式等级 → 用该等级行
+  const gradeCtx2 = E.buildContext({
+    materials: [
+      { _id: 'gg1', name: '大蓝闪蝶', grade: 'A1', unitPrice: 300, isDefaultGrade: false, status: 'active' },
+      { _id: 'gg2', name: '大蓝闪蝶', grade: 'A2', unitPrice: 200, isDefaultGrade: true, status: 'active' }
+    ],
+    packagings: PACKAGINGS,
+    laborRatePct: 30
+  })
+  const gsel = E.resolveLine(
+    Object.assign({ itemName: '大蓝闪蝶', qty: 1 }, { materialId: 'gg1', materialName: '大蓝闪蝶', materialGrade: 'A1' }, pickPackaging('玻璃罩')),
+    gradeCtx2
+  )
+  eq('I11 显式等级 A1 命中 A1 行', gsel.materialGrade, 'A1')
+  const gsel2 = E.resolveLine(
+    Object.assign({ itemName: '大蓝闪蝶', qty: 1 }, { materialId: 'gg1', materialName: '大蓝闪蝶' }, pickPackaging('玻璃罩')),
+    gradeCtx2
+  )
+  eq('I12 显式材料未给等级 → 落默认行 A2', gsel2.materialGrade, 'A2')
+
+  // I13 显式选择时行级费率仍生效
+  const rateSel = oneSel(
+    '华艳色蟌',
+    Object.assign(pickMaterial('华艳色蟌'), pickPackaging('玻璃罩'), { laborRatePct: 0 })
+  )
+  eq('I13 手选后行级费率 0 仍生效', rateSel.unitLaborCostCents, 0)
+
+  // I14 显式选择不改写原文（前端要原样展示与落库）
+  eq('I14 原文按原样保留', bare2.itemName, '华艳色蟌')
+
   // ── F. 快照隔离：价目表改价后，用旧价快照算过的行不受影响 ──
   // 引擎本身不落库，这里证明「同一批输入 + 改价目表 → 结果变」，从而说明快照必须存在单据上。
   const before = E.quoteLines([{ itemName: '爱神凤蝶玻璃罩', qty: 1 }], baseCtx())
@@ -479,6 +588,29 @@ const INJECTIONS = [
   [
     '行级成本字段退回旧名（单位不再自带，容易被再乘一次数量）',
     (src) => src.replace('unitMaterialCostCents: perUnitMaterial,', 'materialCostCents: perUnitMaterial,')
+  ],
+  [
+    '忽略显式材料选择（编辑页手选后仍按文本猜）',
+    (src) => src.replace('  if (wantMaterialId || wantMaterialName) {', '  if (false) {')
+  ],
+  [
+    '忽略显式包装选择（裸名手选包装后仍报未写包装）',
+    (src) => src.replace('  if (wantPackagingId || wantPackagingName) {', '  if (false) {')
+  ],
+  [
+    '显式选择找不到时静默当没选（用户以为选上了）',
+    (src) => src.replace(
+      '  const name = normalizeName((ref && ref.name) || \'\')\n  if (name) {\n    for (const k of (index && index.keys) || []) {\n      if (k.key === name) return groups[k.normName]\n    }\n  }\n  return null\n}',
+      '  const name = normalizeName((ref && ref.name) || \'\')\n  if (name) {\n    for (const k of (index && index.keys) || []) {\n      if (k.key === name) return groups[k.normName]\n    }\n  }\n  return groups[Object.keys(groups)[0]] || null\n}'
+    )
+  ],
+  [
+    '显式尺寸不在已配规格里时静默用默认行（用户以为按所选规格算钱）',
+    (src) => src.replace('    if (sizeInText && !pkgGroup.byOption[sizeInText]) {', '    if (false) {')
+  ],
+  [
+    '显式选了包装仍做文本残余校验（把用户的决定顶回去）',
+    (src) => src.replace('    if (unresolved && packagingFromText) {', '    if (unresolved) {')
   ]
 ]
 

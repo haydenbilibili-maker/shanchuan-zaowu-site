@@ -313,6 +313,83 @@ async function handleParseText(event) {
   })
 }
 
+/**
+ * **写入前服务端强制重算**（蓝图 §9.2「不信任前端传的价」）。
+ *
+ * 为什么必须重算而不是信前端：前端传的 `unitPrice/totalPrice` 可以被任意构造，
+ * 而这些数直接决定门店要付多少钱。所以只要算价开着，客户端传来的价**只当作参考**，
+ * 落库一律以服务端按价目表 + 引擎算出的结果为准。
+ *
+ * 三种情况**不重算**（保持既有行为，避免把历史/飞书路径弄坏）：
+ *   ① 算价未启用（`enabled` 缺字段默认关）；
+ *   ② 该行的 `pricingStatus` 是 `manual`（飞书带价 / 人工手填）—— 那本来就是"外部给定的价"；
+ *   ③ 行里没有任何可用定价线索且文本也匹配不上 → 交给引擎报 unmatched（不编价）。
+ *
+ * @returns {Array} 重算后的 items（未启用时原样返回）
+ */
+async function recomputeItemsPricing(items) {
+  const list = Array.isArray(items) ? items : []
+  if (!list.length) return list
+  const config = await loadSettlementConfig()
+  if (!config.enabled) return list
+
+  const materials = await loadPriceRows(MATERIAL_PRICE_COLLECTION)
+  const packagings = await loadPriceRows(PACKAGING_PRICE_COLLECTION)
+  const ctx = buildContext({
+    materials,
+    packagings,
+    laborRatePct: config.laborRatePct,
+    requirePackaging: config.requirePackaging
+  })
+
+  return list.map((it) => {
+    // 人工/外部来源的价不覆盖（那是刻意的口径，不是"前端传的价"）
+    if (String(it.pricingStatus || '') === PRICING_STATUS.MANUAL) return it
+    const quoted = quoteLines(
+      [
+        {
+          itemName: it.itemName,
+          qty: it.qty,
+          materialId: it.materialId,
+          materialName: it.materialName,
+          materialGrade: it.materialGrade,
+          packagingId: it.packagingId,
+          packagingName: it.packagingName,
+          packagingSize: it.packagingSize,
+          laborRatePct: it.laborRateSource === 'line' ? it.laborRatePct : undefined
+        }
+      ],
+      ctx
+    ).lines[0]
+    if (!quoted || quoted.pricingStatus !== PRICING_STATUS.PRICED) {
+      // 算不出来就保留原值 + 引擎的原因，**不编价**
+      return Object.assign({}, it, {
+        pricingStatus: quoted ? quoted.pricingStatus : PRICING_STATUS.UNMATCHED,
+        pricingNote: quoted ? quoted.pricingNote : '重算失败'
+      })
+    }
+    return Object.assign({}, it, {
+      materialId: quoted.materialId,
+      materialName: quoted.materialName,
+      materialGrade: quoted.materialGrade,
+      packagingId: quoted.packagingId,
+      packagingName: quoted.packagingName,
+      packagingSize: quoted.packagingSize,
+      unitMaterialCostCents: quoted.unitMaterialCostCents,
+      unitPackagingCostCents: quoted.unitPackagingCostCents,
+      unitLaborCostCents: quoted.unitLaborCostCents,
+      unitTotalCents: quoted.unitTotalCents,
+      lineTotalCents: quoted.lineTotalCents,
+      laborRatePct: quoted.laborRatePct,
+      laborRateSource: quoted.laborRateSource,
+      pricingStatus: quoted.pricingStatus,
+      pricingNote: '',
+      unitPrice: quoted.unitPrice,
+      totalPrice: quoted.totalPrice
+    })
+  })
+}
+
 /** 价目表可能还没建（首次使用）→ 视作空表，让页面提示「没有可选项」而不是报服务异常 */
 async function loadPriceRows(collection) {
   const out = []
@@ -586,6 +663,10 @@ async function handleCreate(event, actor) {
   const input = Object.assign({}, event.item || event, {
     source: (event.item && event.item.source) || event.source || SOURCE.MANUAL
   })
+  // 写入前服务端强制重算（不信任前端传的价）
+  if (Array.isArray(input.items)) {
+    input.items = await recomputeItemsPricing(input.items)
+  }
   const normalized = normalizePayload(input, null)
   if (!normalized.ok) return fail(normalized.msg)
   if (!canAccessStore(actor, normalized.row.storeId)) {
@@ -640,11 +721,13 @@ async function handleCreateFromParsed(event, actor) {
       errors.push({ storeId: block.storeId, msg: '无该门店权限' })
       continue
     }
+    // 写入前服务端强制重算（不信任前端传的价）—— 逐店重算，各店费率一致
+    const recomputedItems = await recomputeItemsPricing(block.items)
     const normalized = normalizePayload(
       {
         storeId: block.storeId,
         shipmentDate,
-        items: block.items,
+        items: recomputedItems,
         status,
         source,
         note,

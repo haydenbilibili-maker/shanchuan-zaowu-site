@@ -305,6 +305,45 @@ function emptyLine(status, note, extra) {
  * @param {Object} line  { itemName, qty, gradeHint?, sizeHint? }
  * @param {Object} ctx   { materialIndex, packagingIndex, laborRatePct, requirePackaging }
  */
+/**
+ * 按**显式选择**找组（编辑页让人手选时用，蓝图裁决 24）。
+ *
+ * 为什么不能只靠文本匹配：编辑页允许人给 `华艳色蟌` 这行**手选**包装 `玻璃罩` ——
+ * 原文里根本没有「玻璃罩」这三个字。若仍走文本匹配，用户选完还是报「未写包装」。
+ * 所以显式选择必须能**绕过文本**：按 `_id` 或名称/别名精确命中。
+ *
+ * @returns {Object|null} 命中的组；找不到返回 null（调用方要报"不在价目表里"，不能静默当没选）
+ */
+function findExplicitGroup(index, ref) {
+  const id = String((ref && ref.id) || '').trim()
+  const groups = (index && index.groups) || {}
+  if (id) {
+    for (const nk of Object.keys(groups)) {
+      if ((groups[nk].rows || []).some((r) => String(r._id || '') === id)) return groups[nk]
+    }
+  }
+  const name = normalizeName((ref && ref.name) || '')
+  if (name) {
+    for (const k of (index && index.keys) || []) {
+      if (k.key === name) return groups[k.normName]
+    }
+  }
+  return null
+}
+
+/** 该组自身登记的全部匹配键（正名 + 别名），用于在原文里把材料段去掉 */
+function ownKeysOf(group) {
+  if (!group) return []
+  const keys = [group.normName]
+  for (const row of group.rows || []) {
+    for (const a of Array.isArray(row.aliases) ? row.aliases : []) {
+      const nk = normalizeName(a)
+      if (nk) keys.push(nk)
+    }
+  }
+  return keys.map((k) => ({ key: k, normName: group.normName }))
+}
+
 function resolveLine(line, ctx) {
   const src = line || {}
   const itemName = String(src.itemName || '').trim()
@@ -334,22 +373,46 @@ function resolveLine(line, ctx) {
 
   const input = normalizeName(itemName)
 
-  // ① 材料：最长前缀命中
-  const matHit = longestPrefix(input, materialIndex.keys)
-  if (!matHit) {
-    return emptyLine(PRICING_STATUS.UNMATCHED, '未找到原材料', { itemName, qty })
+  /**
+   * ① 材料：**显式选择优先**，其次才是文本最长前缀命中。
+   *
+   * 编辑页（裁决 24）允许人手选材料。显式选择必须能绕过文本：
+   * 否则「原文只有 `华艳色蟌`、人给它选了包装」这种情况永远算不出价。
+   */
+  const wantMaterialId = String(src.materialId || '').trim()
+  const wantMaterialName = String(src.materialName || '').trim()
+  let matGroup = null
+  let matKey = ''
+  if (wantMaterialId || wantMaterialName) {
+    matGroup = findExplicitGroup(materialIndex, { id: wantMaterialId, name: wantMaterialName })
+    if (!matGroup) {
+      return emptyLine(
+        PRICING_STATUS.UNMATCHED,
+        `指定的原材料不在价目表里（可能已停用）：${wantMaterialName || wantMaterialId}`,
+        { itemName, qty }
+      )
+    }
+    // 原文里若还带着这个材料名（或其别名），去掉它，好让后面的包装/尺寸文本仍能用
+    const own = longestPrefix(input, ownKeysOf(matGroup))
+    matKey = own ? own.key : ''
+  } else {
+    const matHit = longestPrefix(input, materialIndex.keys)
+    if (!matHit) {
+      return emptyLine(PRICING_STATUS.UNMATCHED, '未找到原材料', { itemName, qty })
+    }
+    matGroup = materialIndex.groups[matHit.normName]
+    matKey = matHit.key
   }
-  const matGroup = materialIndex.groups[matHit.normName]
-  let residual = input.slice(matHit.key.length)
+  let residual = matKey ? input.slice(matKey.length) : input
 
-  // ② 等级：先看文本里写了没有；没写就用默认行（蓝图裁决 2/15）
+  // ② 等级：先看文本里写了没有；没写就用**显式等级或默认行**（蓝图裁决 2/15）
   let grade = ''
   const gradeInText = matchOption(residual, matGroup)
   if (gradeInText) {
     grade = gradeInText
     residual = residual.replace(gradeInText, '')
-  } else if (src.gradeHint) {
-    grade = normalizeName(normGrade(src.gradeHint))
+  } else if (src.gradeHint || src.materialGrade) {
+    grade = normalizeName(normGrade(src.gradeHint || src.materialGrade))
   }
   let materialRow = grade ? matGroup.byOption[grade] : matGroup.defaultRow
   if (!materialRow) materialRow = matGroup.defaultRow
@@ -360,14 +423,40 @@ function resolveLine(line, ctx) {
     })
   }
 
-  // ③ 包装：在剩余串里取最长命中。
+  // ③ 包装：**显式选择优先**；否则在剩余串里取最长命中。
   //    真实文本里尺寸可能写在包装名**前**或**后**，所以前缀/后缀两种都试。
   let packagingRow = null
   let pkgGroup = null
   let sizeInText = ''
   let leftover = residual
+  let packagingFromText = false
 
-  if (!residual) {
+  const wantPackagingId = String(src.packagingId || '').trim()
+  const wantPackagingName = String(src.packagingName || '').trim()
+
+  if (wantPackagingId || wantPackagingName) {
+    pkgGroup = findExplicitGroup(packagingIndex, { id: wantPackagingId, name: wantPackagingName })
+    if (!pkgGroup) {
+      return emptyLine(
+        PRICING_STATUS.UNMATCHED,
+        `指定的包装方式不在价目表里（可能已停用）：${wantPackagingName || wantPackagingId}`,
+        {
+          itemName,
+          qty,
+          materialId: materialRow._id || '',
+          materialName: matGroup.displayName,
+          materialGrade: materialRow[matGroup.optionField] || ''
+        }
+      )
+    }
+    // 原文里若也写了包装名，先去掉（剩下的才是尺寸文本）
+    const own = longestPrefix(leftover, ownKeysOf(pkgGroup)) || longestSuffix(leftover, ownKeysOf(pkgGroup))
+    if (own) {
+      leftover = own.key.length && leftover.startsWith(own.key)
+        ? leftover.slice(own.key.length)
+        : leftover.slice(0, Math.max(0, leftover.length - own.key.length))
+    }
+  } else if (!residual) {
     if (requirePackaging) {
       return emptyLine(PRICING_STATUS.UNMATCHED, `未写包装方式（原文「${itemName}」只剩材料名）`, {
         itemName,
@@ -399,6 +488,7 @@ function resolveLine(line, ctx) {
     })
     const chosen = candidates[0]
     pkgGroup = packagingIndex.groups[chosen.hit.normName]
+    packagingFromText = true
     leftover =
       chosen.side === 'pre'
         ? residual.slice(chosen.hit.key.length)
@@ -406,11 +496,29 @@ function resolveLine(line, ctx) {
   }
 
   if (pkgGroup) {
-    // ④ 尺寸：包装名之外剩下的就是尺寸文本（没写就用默认行）
-    sizeInText = matchOption(leftover, pkgGroup) || (src.sizeHint ? normalizeName(normSize(src.sizeHint)) : '')
+    // ④ 尺寸：包装名之外剩下的就是尺寸文本（没写就用显式尺寸或默认行）
+    sizeInText =
+      matchOption(leftover, pkgGroup) ||
+      (src.sizeHint || src.packagingSize ? normalizeName(normSize(src.sizeHint || src.packagingSize)) : '')
     const unresolved = sizeInText ? leftover.replace(sizeInText, '') : leftover
-    if (unresolved) {
+    /**
+     * 残余校验**只在包装来自文本匹配时**做。
+     * 若包装是用户显式选的，说明他已经决定了这一行怎么包 —— 此时原文里的残留文字
+     * 不该再被判成「残留未识别」而把用户的决定顶回去（裁决 24）。
+     */
+    if (unresolved && packagingFromText) {
       return emptyLine(PRICING_STATUS.AMBIGUOUS, `残留未识别：${unresolved}`, {
+        itemName,
+        qty,
+        materialId: materialRow._id || '',
+        materialName: matGroup.displayName,
+        materialGrade: materialRow[matGroup.optionField] || '',
+        packagingName: pkgGroup.displayName
+      })
+    }
+    // 显式尺寸若不在该包装已配规格里，报红而不是静默用默认行 —— 否则用户以为选了 15*8，实际按 20*10 算钱
+    if (sizeInText && !pkgGroup.byOption[sizeInText]) {
+      return emptyLine(PRICING_STATUS.UNMATCHED, `「${pkgGroup.displayName}」没有规格 ${sizeInText}`, {
         itemName,
         qty,
         materialId: materialRow._id || '',

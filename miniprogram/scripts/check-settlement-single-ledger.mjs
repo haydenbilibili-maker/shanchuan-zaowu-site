@@ -15,6 +15,10 @@
  *   判据 B · **出货侧只继承**：`manageStoreShipment` 的 `normalizePayload` 必须
  *            从 `prev`（库里已有值）取结算字段，**不得从 `src`（入参）取** ——
  *            否则调用方可以自己把单标成「已结清」，账就烂了。
+ *   判据 D · **写入前必须服务端重算**：`manageStoreShipment` 的两条写入路径
+ *            （`create` / `createFromParsed`）都必须调 `recomputeItemsPricing` ——
+ *            否则前端能构造任意价格落库。逻辑本身由 `test:studio-pricing` 覆盖，这里只钉接线。
+ *
  *   判据 C · **终结副作用三件套齐全**：`confirmSettlePatch` 必须同时给出
  *            `settleStatus: settled`、`status: TERMINAL_SHIPMENT_STATUS`（裁决 13
  *            「确认收款=订单终结」）与要终结的单据 id 列表。
@@ -192,6 +196,25 @@ function collectProblems(fnRoot) {
     }
   }
 
+  // ── 判据 D：出货单写入前必须**服务端重算**（不信任前端传的价）──
+  // 逻辑本身（引擎 + 显式选择 + 分单位取整）已由 test:studio-pricing 118 条断言覆盖，
+  // 这里只钉**接线**：两条写入路径都必须调重算，否则前端能构造任意价格落库。
+  const writeSrc = readMaybe(join(fnRoot, 'manageStoreShipment', 'index.js'))
+  if (writeSrc === null) {
+    problems.push('判据 D 无法判定：读不到 manageStoreShipment/index.js')
+  } else {
+    if (!/async function recomputeItemsPricing\s*\(/.test(writeSrc)) {
+      problems.push('判据 D 违例：manageStoreShipment/index.js 里找不到 recomputeItemsPricing —— 写入前不重算')
+    }
+    const callSites = (writeSrc.match(/await recomputeItemsPricing\(/g) || []).length
+    if (callSites < 2) {
+      problems.push(
+        `判据 D 违例：只有 ${callSites} 条写入路径在重算 —— ` +
+          'handleCreate 与 handleCreateFromParsed **都必须**重算（漏一条，那条路径就能被构造价格）'
+      )
+    }
+  }
+
   return problems
 }
 
@@ -217,6 +240,11 @@ const INJECTIONS = [
     (src) => src.replace('    settleStatus: SETTLE_STATUS.SETTLED,\n', '')
   ],
   [
+    '只留一条写入路径重算（另一条可被构造价格）',
+    'manageStoreShipment/index.js',
+    (src) => src.replace('    input.items = await recomputeItemsPricing(input.items)\n', '')
+  ],
+  [
     '终结不再返回要终结的单据列表',
     'manageStudioSettlement/billCore.js',
     (src) => src.replace('  return { ok: true, billPatch, shipmentPatch, shipmentIds: ids, msg:', '  return { ok: true, billPatch, shipmentPatch, msg:')
@@ -234,6 +262,10 @@ function makeTempTree() {
   copyFileSync(
     join(FN_ROOT, 'manageStudioSettlement', 'billCore.js'),
     join(dir, 'manageStudioSettlement', 'billCore.js')
+  )
+  copyFileSync(
+    join(FN_ROOT, 'manageStoreShipment', 'index.js'),
+    join(dir, 'manageStoreShipment', 'index.js')
   )
   return dir
 }
