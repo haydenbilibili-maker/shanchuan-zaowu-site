@@ -1254,6 +1254,9 @@ shipping_rules = {
 - ✅ 部署 `makeOrder` / `getShippingRules` / `getCartList` / `manageLiveSession`（部署后下载线上代码
   与仓库逐字节比对，见 §19.7）
 - ⬜ 双仓同步：**由集成官统一执行**（本项未完成，勿在别处写成已完成）
+- ✅ **免邮券省额虚高已修**（产品负责人 2026-09-19 点单）：`isOrderChargeable` 唯一判定 + 两个云函数
+  `orderChargeable !== true` 一律 0 + 三个调用点传参；守卫 E 节**真跑**两个云函数（125 项，见 §19.7）。
+  部署 `getProductCoupons` / `getBestCoupon` 后逐字节比对一致
 - ⬜ 微信开发者工具人工验收：未做
 - ✅ 补上了本节原「待办」里建议的 `craftType` 多副本一致性检查（并入 `check:shipping-rules`，
   未另立 `check:taxonomy-sync`）
@@ -1323,9 +1326,29 @@ shipping_rules = {
 **集成官独立复核（不复用本守卫断言）**：17 行试算矩阵 C 端 = 服务端 = 期望全对，其中一行本守卫没有 ——
 「¥80 相框 ×3（全场 ¥240，未满门槛）→ **仍只收 ¥18 一次**」，正面验证了「¥18/**单**」而非「¥18/件」。
 
-**已知残余（未改，明确记录）**：`getProductCoupons` / `getBestCoupon` 仍按**单一门槛**估算
-「免邮券可省金额」（< 门槛即报 `flatFee`），不区分该单是否本来就免邮 —— 于是**纯饰品/未标注**的订单
-可能被展示成「免邮券省 ¥18」。这是**改动前就存在**的口径（两分支原本都返回 `flatFee`），
-真正的下单权威 `makeOrder` 不受影响（确认页的免邮券可用性判据已按 `craftType` 修正）。
-要收口需要让这两个函数拿到购物车上下文，属独立改动，本次未做。
+**免邮券省额虚高（2026-09-19 已修，产品负责人点单）**：
+`getProductCoupons` / `getBestCoupon` 原先按**单一门槛**估算「免邮券可省金额」（< 门槛即报 `flatFee`），
+不区分该单是否本来就免邮 —— 而 v2 之后「其余装裱方式全部免邮」，于是**大多数订单**（纯饰品/未标注）
+会被展示成「免邮券省 ¥18」：券列表虚高，`getBestCoupon` 还会据此把免邮券**推荐成"最优券"**。
+
+修法（口径与运费同源，不新增规则副本）：
+
+| 落点 | 改动 |
+|---|---|
+| `config/shipping.js` | 新增并导出 `isOrderChargeable(context)`：**是否确定含收费类装裱方式**。⚠️ 与 `resolveThreshold` 方向相反 —— 收费路径「未知按含收费类」（宁可多收不漏收），本函数「**未知一律 false**」（宁可少报不虚高）；两者都把确定空清单判 false |
+| 两个云函数 | `estimateFreeShippingSave(goodsAmount, orderChargeable)` → `orderChargeable !== true` 一律 0（**缺参也不报**）；`getBestCoupon` 顺带删掉已成死代码的 `accessoryFreeThreshold` 分支（v2 起不再驱动判定） |
+| 三个调用点 | 详情页 `isOrderChargeable(this.data.product)`（只有这一件商品的上下文）／确认页 `isOrderChargeable(this.data.items)`／购物车 `isOrderChargeable(已勾选商品)`；helper 缺省时传 `false` |
+
+**验证**：`check:shipping-rules` 102 → **125 项**（+23），其中 E 节把两个云函数的 `main` **真跑**起来
+（`wx-server-sdk` 打桩成内存假库、喂云端快照文档 + 一张免邮券）：`¥250 相框 → 省 ¥18`、
+`¥250 挂件 → 省 ¥0`、`¥299 相框 → 省 ¥0`、缺参 → 省 ¥0；再加 12 条 `isOrderChargeable` 判定矩阵
+与 3 条调用点接线断言。`--selftest` 增 2 例注入（**删掉 `orderChargeable` 判定** → 报
+「¥250 挂件 → 免邮券省 ¥0 — 实际 ¥18」；**详情页不再传参** → 报「参数里缺少 orderChargeable」）全部被检出。
+部署 `getProductCoupons` / `getBestCoupon` 后 `tcb fn code download` 与仓库**逐字节一致**；
+`deploy-drifted.sh` 复比「线上与仓库已一致」，且漂移清单当时只有这两个函数。
+
+**仍存在（不影响收钱，已记录）**：微信开发者工具人工验收未做；客户端 `shippingRulesSync` 有 5 分钟缓存，
+旧缓存（`specimenFreeThreshold=298`、无 `chargedCraftTypes`）在窗口内会让 ¥298 的收费类订单短暂免邮
+（1 元级、对顾客有利）；`render-cart-checkout-preview.mjs` 是纯截图夹具，内部文案「藏品满 ¥500 免运费」未改。
+
 

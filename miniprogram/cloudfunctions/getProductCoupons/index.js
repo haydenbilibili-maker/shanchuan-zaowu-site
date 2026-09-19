@@ -70,11 +70,23 @@ function parseMinSpend(coupon) {
   return 0
 }
 
-function estimateFreeShippingSave(goodsAmount) {
+/**
+ * 免邮券能省多少 —— **只在「本单确定含收费类装裱方式」时才有得省**。
+ *
+ * 为什么必须看 orderChargeable 而不能只看金额（2026-09-19 修）：
+ *   运费 v2 起，收费类（相框/三种玻璃罩）之外**全部免邮**。于是「金额 < 门槛」不再等于
+ *   「会被收运费」—— 一件 ¥250 的挂件/未标注藏品本来就免邮，免邮券对它省 **0**，
+ *   而旧实现只看金额会报「省 ¥18」→ 券列表虚高、会员可能为省 ¥18 选掉一张更好的券。
+ *
+ * ⚠️ `orderChargeable !== true` 一律 0（**缺参也不报**）：未知就不声称能省，宁可少报不虚高。
+ *    真实收多少钱由 `makeOrder` 服务端按 craftType 独立算，与这里的展示估算无关。
+ */
+function estimateFreeShippingSave(goodsAmount, orderChargeable) {
   if (FREE_SHIPPING_CAMPAIGN_ENABLED) return 0
   const amount = parseFloat(goodsAmount) || 0
   if (amount <= 0) return 0
   if (amount >= FREE_SHIPPING_THRESHOLD) return 0
+  if (orderChargeable !== true) return 0
   return DEFAULT_SHIPPING_FEE
 }
 
@@ -126,8 +138,9 @@ function mapHeldCoupon(coupon, extra = {}) {
  * 展示「可省」：与 makeOrder 75% 地板对齐，避免详情页夸大优惠
  * @param {number} goodsPrice 现价（详情页通常已含会员展示价）
  * @param {number} originalPrice 目录原价；缺省用 goodsPrice
+ * @param {boolean} orderChargeable 本单是否确定含收费类装裱方式（免邮券省额的唯一前提）
  */
-function calcSaved(coupon, goodsPrice, shippingBaseAmount, originalPrice) {
+function calcSaved(coupon, goodsPrice, shippingBaseAmount, originalPrice, orderChargeable) {
   const type = coupon.type || 'cash'
   const value = coupon.value || 0
   const original = Number.isFinite(originalPrice) && originalPrice > 0 ? originalPrice : goodsPrice
@@ -142,7 +155,8 @@ function calcSaved(coupon, goodsPrice, shippingBaseAmount, originalPrice) {
     }
     case 'freeShipping':
       return estimateFreeShippingSave(
-        shippingBaseAmount != null ? shippingBaseAmount : goodsPrice
+        shippingBaseAmount != null ? shippingBaseAmount : goodsPrice,
+        orderChargeable
       )
     default:
       return Math.min(value, cappedMax)
@@ -161,6 +175,8 @@ exports.main = async (event) => {
   const shippingBaseAmount = shippingBaseRaw != null && shippingBaseRaw !== ''
     ? parseFloat(shippingBaseRaw)
     : productPrice
+  // 免邮券省额的唯一前提：本单确定含收费类装裱方式（详情页由商品 craftType 判定后传入）
+  const orderChargeable = event.orderChargeable === true
   const now = new Date()
 
   try {
@@ -223,7 +239,7 @@ exports.main = async (event) => {
         const meetsThreshold = productPrice > 0 && productPrice >= minSpend
 
         if (onlineOk && meetsThreshold) {
-          const saved = calcSaved(coupon, productPrice, shippingBaseAmount, originalPrice)
+          const saved = calcSaved(coupon, productPrice, shippingBaseAmount, originalPrice, orderChargeable)
           const mapped = mapHeldCoupon(coupon, {
             usable: true,
             savedAmount: Math.round(saved * 100) / 100

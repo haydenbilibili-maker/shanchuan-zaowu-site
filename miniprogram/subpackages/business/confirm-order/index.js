@@ -1311,7 +1311,12 @@ Page(withAppModal({
           // 免邮券节省额按优惠前合计估算
           shippingBaseAmount: shippingBaseAmount != null ? shippingBaseAmount : vipTotal,
           // 75% 地板按目录原价（未加运费）估算
-          originalPrice: shippingBaseAmount != null ? shippingBaseAmount : vipTotal
+          originalPrice: shippingBaseAmount != null ? shippingBaseAmount : vipTotal,
+          // 免邮券省额只在「本单确定含收费类装裱方式」时才 > 0（v2：其余装裱方式全部免邮）。
+          // 确认页手里就是完整结算清单 → 按 items 的 craftType/shippingKind 判，口径与运费展示同源
+          orderChargeable: typeof shippingConfig.isOrderChargeable === 'function'
+            ? shippingConfig.isOrderChargeable(this.data.items)
+            : false
         }
       })
       if (res.result && res.result.success && res.result.bestCoupon) {

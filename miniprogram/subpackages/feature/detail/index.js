@@ -1256,7 +1256,12 @@ Page(withAppModal({
           productPrice: price > 0 ? price : listPrice,
           // 目录原价用于 75% 地板展示；免邮按标价估算
           originalPrice: listPrice,
-          shippingBaseAmount: listPrice
+          shippingBaseAmount: listPrice,
+          // 免邮券省额只在「本单确定含收费类装裱方式」时才 > 0（v2：其余装裱方式全部免邮）。
+          // 详情页只有这一件商品的上下文 → 就按它判；判不确定时不声称能省（helper 缺省即 false）
+          orderChargeable: typeof shippingConfig.isOrderChargeable === 'function'
+            ? shippingConfig.isOrderChargeable(this.data.product)
+            : false
         }
       });
       const result = res.result || {};

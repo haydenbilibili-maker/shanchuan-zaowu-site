@@ -47,6 +47,17 @@ function defaultPaths() {
     managerPage: path.join(ROOT, 'miniprogram', 'subpackages', 'manager', 'manager', 'managerPageConfig.js'),
     erpView: path.join(ROOT, 'admin', 'src', 'components', 'ShippingRulesConfig.vue'),
     snapshot: path.join(__dirname, 'shipping-rules-cloud.snapshot.json'),
+    // 免邮券省额的两个云函数（E 节真跑它们：证明「纯免邮订单不再报省 ¥18」）
+    couponFns: {
+      getProductCoupons: path.join(ROOT, 'miniprogram', 'cloudfunctions', 'getProductCoupons'),
+      getBestCoupon: path.join(ROOT, 'miniprogram', 'cloudfunctions', 'getBestCoupon')
+    },
+    // 三个调用点：必须把「本单是否确定含收费类」传下去（漏一处就回到虚高）
+    callSites: {
+      detail: path.join(ROOT, 'miniprogram', 'subpackages', 'feature', 'detail', 'index.js'),
+      confirm: path.join(ROOT, 'miniprogram', 'subpackages', 'business', 'confirm-order', 'index.js'),
+      cart: path.join(ROOT, 'miniprogram', 'pages', 'cart', 'index.js')
+    },
     taxonomies: [
       path.join(ROOT, 'miniprogram', 'config', 'productTaxonomy.js'),
       path.join(ROOT, 'miniprogram', 'cloudfunctions', 'manageProducts', 'productTaxonomy.js'),
@@ -88,6 +99,63 @@ function loadCjsModule(file) {
 
 function jsonEq(a, b) {
   return JSON.stringify(a) === JSON.stringify(b)
+}
+
+/* ------------------------------------------------------------------ *
+ * 云函数装载器（E 节用）：把 `wx-server-sdk` 打桩成内存假库，相对 require 走真文件。
+ *
+ * 为什么不满足于文本断言：这两个函数算出来的数字是**直接展示给会员的钱**，
+ * 只有真跑它们的 `main` 才能证明「纯免邮订单不再报省 ¥18」是真的、而不是注释写对了。
+ * ------------------------------------------------------------------ */
+
+/** @param {string} fnDir 云函数目录 @param {object} shippingDoc 喂给 shipping_rules 的文档 @param {Array} heldCoupons 喂给 user_coupons 的持有券 */
+function loadCloudFn(fnDir, shippingDoc, heldCoupons) {
+  const command = {
+    in: (arr) => ({ $in: arr }),
+    nin: (arr) => ({ $nin: arr }),
+    neq: (v) => ({ $ne: v }),
+    gte: (v) => ({ $gte: v }),
+    lte: (v) => ({ $lte: v })
+  }
+  const makeQuery = (name) => {
+    const q = {
+      where: () => q, orderBy: () => q, limit: () => q, skip: () => q, field: () => q,
+      get: async () => {
+        if (name === 'shipping_rules') return { data: shippingDoc ? [shippingDoc] : [] }
+        if (name === 'user_coupons') return { data: heldCoupons }
+        return { data: [] } // coupons / 其它：空即可，claimable 循环不跑
+      },
+      count: async () => ({ total: 0 })
+    }
+    return q
+  }
+  const stub = {
+    DYNAMIC_CURRENT_ENV: 'guard-stub-env',
+    init: () => {},
+    database: () => ({ collection: makeQuery, command }),
+    getWXContext: () => ({ OPENID: 'guard-stub-openid' })
+  }
+  const cache = new Map()
+  const miniRequire = (spec, fromDir) => {
+    if (spec === 'wx-server-sdk') return stub
+    if (!spec.startsWith('.')) throw new Error(`云函数守卫不该 require：${spec}`)
+    const p = path.resolve(fromDir, spec.endsWith('.js') ? spec : `${spec}.js`)
+    if (!cache.has(p)) {
+      const mod = { exports: {} }
+      cache.set(p, mod)
+      // eslint-disable-next-line no-new-func
+      new Function('module', 'exports', 'require', '__dirname', fs.readFileSync(p, 'utf8'))(
+        mod, mod.exports, (s) => miniRequire(s, path.dirname(p)), path.dirname(p)
+      )
+    }
+    return cache.get(p).exports
+  }
+  const mod = { exports: {} }
+  // eslint-disable-next-line no-new-func
+  new Function('module', 'exports', 'require', '__dirname', fs.readFileSync(path.join(fnDir, 'index.js'), 'utf8'))(
+    mod, mod.exports, (s) => miniRequire(s, fnDir), fnDir
+  )
+  return mod.exports
 }
 
 /* ------------------------------------------------------------------ *
@@ -449,6 +517,91 @@ async function runChecks(paths) {
   } catch (e) {
     check('免邮凑单层口径可校验', false, e.message)
   }
+
+  // —— E. 免邮券省额：只在「本单确定含收费类装裱方式」时才 > 0 ——
+  // 背景（2026-09-19 修）：两个券云函数的入参里**没有商品**，只看金额 → v2「其余全部免邮」之后，
+  // 一件 ¥250 挂件本来就免邮，却被报成「免邮券省 ¥18」→ 券列表虚高、会员可能为省 ¥18 选掉更好的券。
+  try {
+    const snapDoc = JSON.parse(fs.readFileSync(paths.snapshot, 'utf8'))
+
+    // E1. 唯一事实源 isOrderChargeable 的判定矩阵（含显式 shippingKind 覆盖与「未知不声称」）
+    const chargeCases = [
+      ['单一相框 → 会被收', [P('frame')], true],
+      ['单一方形玻璃罩 → 会被收', [P('cloche')], true],
+      ['圆柱玻璃罩 → 会被收', [P('cloche_cylinder')], true],
+      ['纯挂件 → 本来就免邮', [P('accessory')], false],
+      ['未标注 craftType → 本来就免邮', [P('')], false],
+      ['造景 → 本来就免邮', [P('diorama')], false],
+      ['相框 + 挂件 → 会被收', [P('frame'), P('accessory')], true],
+      ['显式 specimen 的挂件 → 会被收', [P('accessory', { shippingKind: 'specimen' })], true],
+      ['显式 accessory 的相框 → 免邮', [P('frame', { shippingKind: 'accessory' })], false],
+      ['空清单 → 没有商品就没有运费', [], false],
+      ['未知 null → 不声称能省', null, false],
+      ['未知数字 → 不声称能省', 250, false]
+    ]
+    chargeCases.forEach(([name, ctx, want]) => {
+      const got = typeof client.isOrderChargeable === 'function' ? client.isOrderChargeable(ctx) : 'NOT_A_FUNCTION'
+      check(`isOrderChargeable：${name}`, got === want, `实际 ${got}`)
+    })
+
+    // E2. 真跑两个云函数（喂云端快照文档 + 一张免邮券），看它们报「省多少」
+    const fsCoupon = { _id: 'guard_fs_coupon', title: '免邮券', type: 'freeShipping', value: 0, minSpend: 0 }
+    const couponCases = [
+      ['¥250 相框（会被收）', 250, true, 18],
+      ['¥250 挂件（本来就免邮）', 250, false, 0],
+      ['¥299 相框（已满门槛）', 299, true, 0],
+      ['¥250 缺省 orderChargeable（未知）', 250, undefined, 0]
+    ]
+    for (const [fnName, fnDir] of Object.entries(paths.couponFns)) {
+      let mod = null
+      try {
+        mod = loadCloudFn(fnDir, snapDoc, [fsCoupon])
+      } catch (e) {
+        check(`${fnName} 可装载（打桩 wx-server-sdk）`, false, e.message)
+        continue
+      }
+      for (const [label, amount, orderChargeable, want] of couponCases) {
+        const event = {
+          productPrice: amount, totalPrice: amount,
+          shippingBaseAmount: amount, originalPrice: amount
+        }
+        if (orderChargeable !== undefined) event.orderChargeable = orderChargeable
+        let got = null
+        try {
+          const res = await mod.main(event)
+          got = res && res.bestCoupon ? Number(res.bestCoupon.savedAmount || 0) : 0
+        } catch (e) {
+          check(`${fnName}：${label}`, false, e.message)
+          continue
+        }
+        check(`${fnName}：${label} → 免邮券省 ¥${want}`, got === want, `实际 ¥${got}`)
+      }
+    }
+
+    // E3. 三个调用点都得把前提传下去（漏一处就回到虚高）
+    const wiring = [
+      ['detail', 'getProductCoupons', 'shippingConfig.isOrderChargeable(this.data.product)'],
+      ['confirm', 'getBestCoupon', 'shippingConfig.isOrderChargeable(this.data.items)'],
+      ['cart', 'getBestCoupon', 'shippingConfig.isOrderChargeable(']
+    ]
+    for (const [key, fnName, needle] of wiring) {
+      const file = paths.callSites[key]
+      let src = ''
+      try {
+        src = fs.readFileSync(file, 'utf8')
+      } catch (e) {
+        check(`调用点可读：${key}`, false, e.message)
+        continue
+      }
+      const at = src.indexOf(`name: '${fnName}'`)
+      const region = at >= 0 ? src.slice(at, at + 1500) : ''
+      check(`调用点 ${key} 调 ${fnName} 时传了 orderChargeable`,
+        at >= 0 && region.includes('orderChargeable:') && region.includes(needle),
+        at < 0 ? '找不到该调用点' : `参数里缺少 orderChargeable / ${needle}`)
+    }
+  } catch (e) {
+    check('免邮券省额口径可校验', false, e.message)
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -478,6 +631,19 @@ function mirror(paths, tmp) {
     fs.copyFileSync(from, to)
   })
   paths.taxonomies.forEach((from, i) => fs.copyFileSync(from, out.taxonomies[i]))
+  // E 节要真跑云函数 + 读三个调用点 → 目录整份镜像（只有几个小文件，无 node_modules）
+  out.couponFns = {}
+  for (const [k, dir] of Object.entries(paths.couponFns)) {
+    const dst = path.join(tmp, 'fn', k)
+    fs.cpSync(dir, dst, { recursive: true })
+    out.couponFns[k] = dst
+  }
+  out.callSites = {}
+  for (const [k, f] of Object.entries(paths.callSites)) {
+    const dst = path.join(tmp, `call-${k}.js`)
+    fs.copyFileSync(f, dst)
+    out.callSites[k] = dst
+  }
   return out
 }
 
@@ -506,6 +672,15 @@ async function runSelfTest(paths) {
     }],
     ['超管界面把收费清单抄成硬编码（不再引用唯一事实源）', (p) => {
       patch(p.managerPage, (s) => s.replace(/DEFAULT_CHARGED_CRAFT_TYPES/g, "['frame', 'cloche']"))
+    }],
+    // E 节的两条回归：这正是本次修的「免邮券省额虚高」，必须能被拦下
+    ['免邮券省额退回「只看金额」（纯免邮订单又报省 ¥18）', (p) => {
+      Object.values(p.couponFns).forEach((dir) => {
+        patch(path.join(dir, 'index.js'), (s) => s.replace('  if (orderChargeable !== true) return 0\n', ''))
+      })
+    }],
+    ['详情页不再把 orderChargeable 传给券云函数（漏一处即虚高）', (p) => {
+      patch(p.callSites.detail, (s) => s.replace('orderChargeable:', 'orderChargeableOff:'))
     }]
   ]
   let allDetected = true
@@ -593,5 +768,6 @@ function patch(file, mutate) {
     failures.forEach((f) => console.error(`  ✗ ${f}`))
     process.exit(1)
   }
-  console.log('全部通过：4 份代码副本 / 云端文档快照 / 装裱方式分类表一致，试算矩阵双端同价。')
+  console.log('全部通过：4 份代码副本 / 云端文档快照 / 装裱方式分类表一致，试算矩阵双端同价，')
+  console.log('          免邮券省额只在「本单确定含收费类装裱方式」时才 > 0（两个券云函数真跑验证）。')
 })()

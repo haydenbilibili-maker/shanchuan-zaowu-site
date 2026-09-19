@@ -12,13 +12,11 @@ const _ = db.command
 // defaults；运行时由 shipping_rules 覆盖
 let FREE_SHIPPING_THRESHOLD = 500
 let DEFAULT_SHIPPING_FEE = 18
-let ACCESSORY_THRESHOLD = 200
 let FREE_SHIPPING_CAMPAIGN_ENABLED = false
 
 async function loadShippingRules() {
   FREE_SHIPPING_THRESHOLD = 500
   DEFAULT_SHIPPING_FEE = 18
-  ACCESSORY_THRESHOLD = 200
   FREE_SHIPPING_CAMPAIGN_ENABLED = false
   try {
     const res = await db.collection('shipping_rules')
@@ -29,10 +27,6 @@ async function loadShippingRules() {
     const row = res.data && res.data[0]
     if (!row) return
     const thresholds = row.thresholds || {}
-    ACCESSORY_THRESHOLD = Number(
-      row.accessoryFreeThreshold != null ? row.accessoryFreeThreshold : thresholds.accessory
-    )
-    if (!Number.isFinite(ACCESSORY_THRESHOLD)) ACCESSORY_THRESHOLD = 200
     FREE_SHIPPING_THRESHOLD = Number(
       row.specimenFreeThreshold != null
         ? row.specimenFreeThreshold
@@ -76,14 +70,26 @@ function couponDiscountMultiplier(value) {
   return Math.max(MIN_PAY_RATIO, discountMultiplierFromRules(value))
 }
 
-/** 无品类上下文时按标本门槛估算（保守，少误免邮） */
-function estimateFreeShippingSave(goodsAmount) {
+/**
+ * 免邮券能省多少 —— **只在「本单确定含收费类装裱方式」时才有得省**。
+ *
+ * 为什么必须看 orderChargeable 而不能只看金额（2026-09-19 修）：
+ *   运费 v2 起，收费类（相框/三种玻璃罩）之外**全部免邮**。于是「金额 < 门槛」不再等于
+ *   「会被收运费」—— 一车纯挂件/未标注藏品本来就免邮，免邮券对它省 **0**，
+ *   而旧实现只看金额会报「省 ¥18」→ 会据此把免邮券推荐成"最优券"（会员白丢一张好券）。
+ *
+ * ⚠️ `orderChargeable !== true` 一律 0（**缺参也不报**）：未知就不声称能省，宁可少报不虚高。
+ *    真实收多少钱由 `makeOrder` 服务端按 craftType 独立算，与这里的推荐估算无关。
+ *
+ * 注：旧实现在此读 `accessoryFreeThreshold` 做「饰品/标本」二分 —— v2 起该字段不再驱动判定，
+ *     已移除，避免留一条只会误导的旧口径（仅剩 `specimenFreeThreshold` 作为门槛来源）。
+ */
+function estimateFreeShippingSave(goodsAmount, orderChargeable) {
   if (FREE_SHIPPING_CAMPAIGN_ENABLED) return 0
   const amount = parseFloat(goodsAmount) || 0
   if (amount <= 0) return 0
   if (amount >= FREE_SHIPPING_THRESHOLD) return 0
-  // 金额已达饰品门槛但仍低于标本门槛时，仍可能收费（混合/标本单）
-  if (amount >= ACCESSORY_THRESHOLD) return DEFAULT_SHIPPING_FEE
+  if (orderChargeable !== true) return 0
   return DEFAULT_SHIPPING_FEE
 }
 
@@ -96,6 +102,8 @@ exports.main = async (event, context) => {
   const openid = wxContext.OPENID
   
   const { totalPrice, shippingBaseAmount, originalPrice } = event
+  // 免邮券省额的唯一前提：本单确定含收费类装裱方式（购物车/确认页按 craftType 判定后传入）
+  const orderChargeable = event.orderChargeable === true
   
   if (!totalPrice || totalPrice <= 0) {
     return {
@@ -177,7 +185,8 @@ exports.main = async (event, context) => {
           break
         case 'freeShipping':
           saved = estimateFreeShippingSave(
-            Number.isFinite(shipBase) ? shipBase : totalPrice
+            Number.isFinite(shipBase) ? shipBase : totalPrice,
+            orderChargeable
           )
           break
         case 'newUser':

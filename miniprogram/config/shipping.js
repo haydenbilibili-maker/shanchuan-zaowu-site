@@ -289,6 +289,30 @@ function resolveOrderKind(context) {
 }
 
 /**
+ * 本单**是否确定含收费类装裱方式**（⇒ 才可能被收运费）。
+ *
+ * 用途：给「免邮券能省多少」提供唯一判定（`getProductCoupons` / `getBestCoupon` 的入参）。
+ *
+ * ⚠️ 与 `resolveThreshold` 的方向**正好相反**，不要互相替代：
+ *   · 收费路径（`resolveThreshold`）：**未知**（null / 数字）按「含收费类」= 门槛 299 → 宁可多收不漏收（钱不能少收）。
+ *   · 券省额路径（本函数）：**未知**一律 `false` → 不声称能省 → 宁可少报不虚高（**展示不能夸大**）。
+ *   两者都把「确定的空清单」判为 false（没有商品就没有运费）。
+ */
+function isOrderChargeable(context) {
+  if (Array.isArray(context)) {
+    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN)
+  }
+  if (context && typeof context === 'object') {
+    if (Array.isArray(context.items)) return isOrderChargeable(context.items)
+    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN
+  }
+  if (typeof context === 'string') {
+    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN
+  }
+  return false
+}
+
+/**
  * @param {number} goodsAmount 优惠前**整单**商品合计（勿传折后应付、勿只传收费类小计）
  * @param {object|array|string|number} [context] 商品列表或品类上下文，用于判「本单是否含收费类」
  */
@@ -360,6 +384,7 @@ module.exports = Object.assign(shipping, {
   resolveShippingKind,
   resolveThreshold,
   resolveOrderKind,
+  isOrderChargeable,
   calcShippingFee,
   calcShipping: calcShippingFee,
   getRuleText,

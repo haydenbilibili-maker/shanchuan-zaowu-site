@@ -661,7 +661,14 @@ Page(withAppModal({
         data: {
           totalPrice: vipTotal > 0 ? vipTotal : originalPrice,
           shippingBaseAmount: originalPrice,
-          originalPrice
+          originalPrice,
+          // 免邮券省额只在「本单确定含收费类装裱方式」时才 > 0（v2：其余装裱方式全部免邮）。
+          // 按**已勾选**商品的 craftType/shippingKind 判，与 calculateTotal 的运费口径同源
+          orderChargeable: typeof shippingConfig.isOrderChargeable === 'function'
+            ? shippingConfig.isOrderChargeable(
+                this.data.cartList.filter(i => i.selected && i.stock > 0 && !i.invalid && i.productId)
+              )
+            : false
         }
       })
       
