@@ -681,8 +681,11 @@ const INJECTIONS = {
   // 排除项失效 → 给自己推荐自己（当前这面墙的商品又出现一次）
   'reco-exclude-dropped': {
     file: 'miniprogram/cloudfunctions/getBlessProducts/index.js',
-    from: "  const list = sortPool(rows.filter((r) => isOnShelf(r) && !exclude.has(String(r._id))), e.category)",
-    to: "  const list = sortPool(rows.filter((r) => isOnShelf(r)), e.category)"
+    // 2026-09-20：锚点跟随源码更新（推荐修复把「过滤 → 排序」拆成了 ranked / rotate / ordered 三步，
+    // 原锚点 `const list = sortPool(rows.filter(...))` 那一行已不存在）。
+    // 语义不变：去掉 exclude 过滤 → 守卫必须检出"给自己推荐自己"。
+    from: '    rows.filter((r) => isOnShelf(r) && !exclude.has(String(r._id))),',
+    to: '    rows.filter((r) => isOnShelf(r)),'
   },
   // 推荐卡 DOM 掉了 → 推荐取了也看不见
   'reco-dom-dropped': {
@@ -840,7 +843,10 @@ const INJECTIONS = {
   // 真机现象：「页面滚下去了，但看不到输入框」。本条注入把修复撤掉，新判据必须变红。
   'play-wish-keeps-sheet': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    from: '    // 先收弹层，露出吸底发送条；再滚一下（保留既有行为，对非 fixed 落点仍有效）\n    this.closePlayResult()',
+    // 2026-09-20：锚点跟随源码更新（原来锚的是「先收弹层，露出吸底发送条…」那句注释，
+    // 拆签动线重写时该注释被替换 → 锚点失效会让这条注入变成假绿，自检已拦下）。
+    // 语义不变：去掉 closePlayResult()，守卫必须检出"弹层没被收掉"。
+    from: '    // ① 先收弹层：`.ww-sheet` 的 z-index 高于发送条，不收就会一直盖住它\n    this.closePlayResult()',
     to: '    // 注入：不收弹层（回归注入）'
   },
   // ── 「连续记录云保存」注册钩子（2026-09-20）────────────────────────────────
@@ -2125,7 +2131,15 @@ check('切后台/卸载清掉轮播定时器', /onHide\(\)[\s\S]{0,120}clearDanm
 check('轨道刻度与 topPercent 对齐（条数按 LANES 实算，不写死四条）', (wallWxss.match(/\.ww-wall-rail\.rail-\d/g) || []).length === wish.LANES)
 check('★ 轨道刻度是左侧短刻度，不是整条横线（整条像表格线且压文字）', /\.ww-wall-rail\s*\{[^}]*width:\s*26rpx/.test(wallWxss) && !/\.ww-wall-rail\s*\{[^}]*right:\s*20rpx/.test(wallWxss))
 check('入口箭头改为 CSS 折角（不再用字符 ›）', !/›/.test(entryWxml) && /\.wish-wall-entry-chevron\s*\{[^}]*border-right/.test(readSrc('miniprogram/components/WishWallEntry/index.wxss')))
-check('弹幕舞台高度固定（布局不随内容抖动）', /\.ww-wall\s*\{[^}]*height:\s*380rpx/.test(wallWxss))
+// 2026-09-20：页头并入墙卡（产品要求「hero banner 应该与弹幕墙合并」）后，卡的总高改为**内容高度**
+// （页头自适应），于是「固定高度」这条要求**下移到弹幕舞台本身**。
+// ⚠️ 要求本身没有放宽：抖动风险来自弹幕行数/动画，而舞台高度仍是死的。
+// 现在**同时钉两条**（舞台 336rpx = 原 380 − 页脚带 44，以及页脚带 44rpx）——比原来钉得更细。
+check('弹幕舞台高度固定（布局不随弹幕内容抖动）：舞台 336rpx + 页脚带 44rpx',
+  /\.ww-wall-inner\s*\{[^}]*height:\s*336rpx/.test(wallWxss) &&
+  /\.ww-wall\s*\{[^}]*padding-bottom:\s*44rpx/.test(wallWxss),
+  `舞台=${(/\.ww-wall-inner\s*\{[^}]*height:\s*(\d+rpx)/.exec(wallWxss) || [, '未声明'])[1]}`
+  + ` / 页脚带=${(/\.ww-wall\s*\{[^}]*padding-bottom:\s*(\d+rpx)/.exec(wallWxss) || [, '未声明'])[1]}`)
 
 /* ------------------------------------------------------------------ *
  * 4d) 对标全站（2026-09-16）：逐项对齐站点基线与同族页
@@ -4151,31 +4165,59 @@ const RECO_ROWS = [
 ]
 const recoFn = loadRecoFn(RECO_ROWS)
 {
-  const res = await recoFn.main({ tag: 'peace', limit: 3 })
+  // ⚠️ 2026-09-20：选品现在**按天轮换**（"一天一件"不该等于"永远同一件"），
+  // 所以下面每一条都必须传**固定 dayKey** —— 否则测试会随"今天是几号"时绿时红
+  // （本仓已在 points-ledger 的时区依赖上栽过一次同类坑，见 docs/AI施工错题本）。
+  const DAY_A = '2026-09-20'
+  const DAY_B = '2026-09-21'
+  const res = await recoFn.main({ tag: 'peace', limit: 3, dayKey: DAY_A })
+  const ids = res.list.map((x) => x._id)
   check('★ 只返回命中标签且未下架的商品（下架 / 别的标签 / 无标签都不混进来）',
-    res.success === true && res.list.map((x) => x._id).join(',') === 'b,a',
-    JSON.stringify(res.list.map((x) => x._id)))
-  check('★ 销量高的排前面（确定性排序，不用随机）',
-    res.list.map((x) => x._id)[0] === 'b', res.list.map((x) => x._id).join(','))
-  const res2 = await recoFn.main({ tag: 'peace', limit: 3 })
-  check('★ 同参两次结果完全一致（推荐不能刷一次变一个）',
+    res.success === true && ids.length === 2 && new Set(ids).size === 2 &&
+      ['a', 'b'].every((id) => ids.includes(id)),
+    JSON.stringify(ids))
+  check('★ 基础排名仍是「销量高的在前」：返回列表必是排名 [b,a] 的**轮换**（b 销量 9 > a 的 5）',
+    ['b,a', 'a,b'].includes(ids.join(',')), ids.join(','))
+  const res2 = await recoFn.main({ tag: 'peace', limit: 3, dayKey: DAY_A })
+  check('★ 同一天同一标签两次结果完全一致（推荐不能刷一次变一个）',
     JSON.stringify(res2) === JSON.stringify(res))
-  const excluded = await recoFn.main({ tag: 'peace', excludeIds: ['b'], limit: 3 })
+  const resB = await recoFn.main({ tag: 'peace', limit: 3, dayKey: DAY_B })
+  check('★ 候选 ≥2 时**跨天会换首件**（"一天一件"不等于"永远同一件"，2026-09-20 修）',
+    resB.list[0]._id !== res.list[0]._id,
+    `${DAY_A}→${res.list[0]._id}；${DAY_B}→${resB.list[0]._id}`)
+  const excluded = await recoFn.main({ tag: 'peace', excludeIds: ['b'], limit: 3, dayKey: DAY_A })
   check('★ 排除当前这面墙的商品（不给自己推荐自己）',
     excluded.list.every((x) => x._id !== 'b') && excluded.list.length === 1,
     JSON.stringify(excluded.list.map((x) => x._id)))
+  // ★ 直接单元断言**基础排名**（不经过轮换 → 与日期无关）：
+  // 「显式命中优先于场景兜底」——就算兜底那件销量高出三个数量级。
+  // 2026-09-20 修：matchSource 此前是**排完序之后**才算的，兜底商品可以压过显式命中，
+  // 真机反馈「求缘位推的是前程类商品」即由此而来。
+  check('★ 显式命中优先于场景兜底（兜底件销量高 999 倍也排在后面）',
+    recoFn.__forTest
+      .sortPool(
+        [
+          { _id: 'sceneHot', price: 200, sales: 999, category: 'X' },
+          { _id: 'tagLow', price: 200, sales: 1, category: 'X' }
+        ],
+        '',
+        new Set(['tagLow'])
+      )
+      .map((x) => x._id)
+      .join(',') === 'tagLow,sceneHot')
   // ★ matchSource 逐行判定：'f' 只有场景（→scene），'a'/'b' 显式打了 peace（→tag）
-  const peaceRes = await recoFn.main({ tag: 'peace', limit: 5 })
+  const peaceRes = await recoFn.main({ tag: 'peace', limit: 5, dayKey: DAY_A })
   const srcOf = (res, id) => (res.list.find((x) => x._id === id) || {}).matchSource
   check(
     '★ 依据逐行标注（显式标签 = tag；场景兜底 = scene）—— 不许一律标成 tag',
     srcOf(peaceRes, 'b') === 'tag' && srcOf(peaceRes, 'a') === 'tag'
   )
-  const byScene = await recoFn.main({ tag: 'study', limit: 3 })
+  const byScene = await recoFn.main({ tag: 'study', limit: 3, dayKey: DAY_A })
   check('★ 只填了礼赠场景的商品也能被推荐出来（场景兜底查询真的生效）',
     byScene.list.map((x) => x._id).join(',') === 'f', JSON.stringify(byScene.list.map((x) => x._id)))
+  // 取不到时**判失败**而不是抛异常 —— 抛异常会让整条守卫中断，看不到后面 700 条断言的结果
   check('★ 靠场景兜底命中的行标成 scene（客户端据此换一句不编社会证明的文案）',
-    byScene.list[0].matchSource === 'scene', String(byScene.list[0].matchSource))
+    (byScene.list[0] || {}).matchSource === 'scene', String(byScene.list[0] && byScene.list[0].matchSource))
   check('返回里带上"这次用了哪几支场景兜底"（排查用）',
     JSON.stringify(byScene.scenes) === JSON.stringify(['enrollment']))
   const none = await recoFn.main({ tag: 'journey', limit: 3 })

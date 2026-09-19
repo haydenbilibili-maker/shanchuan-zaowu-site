@@ -180,6 +180,8 @@ Page({
     rows: [],
     inspiration: [],
     draft: '',
+    /** 由「写成心愿」置 true → 输入框自动聚焦、键盘直接起来（失焦时由 onInputBlur 复位） */
+    inputFocus: false,
     loadError: '',
     myHidden: 0,
     /**
@@ -435,11 +437,21 @@ Page({
     if (!r) return
     this.setData({ draft: r.wish || '马上有' })
     trackBehavior('wish_wall_play', 'to_wish', r.id)
-    // 先收弹层，露出吸底发送条；再滚一下（保留既有行为，对非 fixed 落点仍有效）
+    // ① 先收弹层：`.ww-sheet` 的 z-index 高于发送条，不收就会一直盖住它
     this.closePlayResult()
+    // ② 再滚到输入框（发送条 2026-09-19 起改为顺流，所以滚动这一下是有意义的）
     try {
       wx.pageScrollTo({ selector: '#wishInput', duration: 260, fail: () => {} })
     } catch (e) { /* 低版本基础库不支持 selector，忽略 */ }
+    // ③ 最后**自动聚焦**：键盘直接起来，用户不必再点一下输入框 ——
+    //    PRD §4 要求「抽签 → 结果 → 写成心愿」这条动线**无感**，多一次点击就是有感的。
+    //    延迟到滚动（260ms）之后再聚焦：否则"滚动落点"与"键盘顶起"同时发生，落点会跳。
+    setTimeout(() => { this.setData({ inputFocus: true }) }, 300)
+  },
+
+  /** 失焦即复位自动聚焦标记 —— 否则某些机型在后续任意重渲染时会把键盘再次顶起来 */
+  onInputBlur() {
+    if (this.data.inputFocus) this.setData({ inputFocus: false })
   },
 
   closePlayResult() {
@@ -493,7 +505,14 @@ Page({
     try {
       const res = await wx.cloud.callFunction({
         name: 'getBlessProducts',
-        data: { tag, excludeIds: this.data.productId ? [this.data.productId] : [], limit: 3 }
+        data: {
+          tag,
+          excludeIds: this.data.productId ? [this.data.productId] : [],
+          limit: 3,
+          // 与缓存键**同一个日期**：服务端据此在候选池里按天轮换，
+          // 否则「一天一件」会退化成「永远同一件」（2026-09-20 真机反馈，见云函数注释）
+          dayKey: shanghaiDayKey(Date.now())
+        }
       })
       const reco = pickReco(res && res.result, tag, blessLabel(tag))
       this._recoCache = { key: cacheKey, row: reco }

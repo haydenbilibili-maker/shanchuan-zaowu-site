@@ -48,16 +48,32 @@ page {
   box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.85);
 }
 
-/* 2026-09-20 产品要求：「顶部的 banner 与祈福墙合并」。
-   只动**外框**：页头让出下圆角、去掉下边框与下外边距，由墙面的上边框充当两段之间的分隔线 ——
-   **不动配色、不动字阶、不动 .ww-wall 的内部几何**。理由：弹幕轨道的落位依赖 .ww-wall-inner
-   这个盒（轨道位置由 utils/wishWall.buildDanmakuRows 计算），改内部会连带把轨道排期搞坏；
-   而"合并"要的只是视觉上成为一张卡。
-   关闭态（flagChecked && !allowed）时墙面不渲染 → 页头保持完整圆角，不会出现"下面缺一块"。 */
+/* 2026-09-20 产品要求：「顶部的 banner 与弹幕墙合并」。
+   **真合并**：页头已搬进 .ww-wall 内部（见 wxml），本类让它**不再自己画底** ——
+   背景透明、无边、无圆角、无内阴影、无外边距，于是页头直接坐在墙面的**连续纸面**上：
+   整张卡只有一份渐变 + 一份纹理。
+   为什么不满足于"去掉空隙"：那样仍是两块纸，页头是 165deg 渐变、墙面是 180deg 渐变，
+   角度不同 → 接缝两侧的色调**不可能对齐**，读起来还是两个模块（产品已就此提了两次）。
+
+   ⚠️ 页头自己的三个装饰层必须一并隐藏（见下一条规则）：它们是照"独立卡片"设计的 ——
+   `.ww-emboss` 是 `inset:10rpx` 的内框、`.ww-wm` 是右下角 200rpx 的圆环水印；
+   进墙后墙面自己有 `.ww-wall-fiber`，留着这三个会变成浮在弹幕区上的游离方块。
+   对比度不受影响：本条只声明 `background`（无 `color`），不构成 check:mp-contrast 的
+   「同规则配对面」；且该守卫明确规定**不追父面**。 */
 .ww-hero.is-joined {
-  margin-bottom: 0;
-  border-bottom: 0;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  margin: 0;
+  padding: 20rpx 26rpx 14rpx;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* 合并态下页头不带自己的装饰层：整张卡的纸张纹理由墙面的 .ww-wall-fiber 统一提供 */
+.ww-hero.is-joined .ww-fiber,
+.ww-hero.is-joined .ww-emboss,
+.ww-hero.is-joined .ww-wm {
+  display: none;
 }
 
 /* 纸纤维：浅底用 multiply 才像纸（深底请改用 soft-light） */
@@ -454,15 +470,19 @@ page {
 .ww-wall {
   position: relative;
   z-index: 1;
-  height: 380rpx;
-  margin-bottom: var(--space-3);
+  /* 2026-09-20 真合并：页头进墙后本卡**总高改为由内容决定** = 页头(自适应) + 舞台(336) + 页脚带(44)。
+     原来固定 380rpx，是因为墙里只有「舞台 + 页脚带」。
+     ⚠️「布局不随内容抖动」这条要求**没有放宽**，只是把固定高度落到**舞台本身**
+     （.ww-wall-inner 336rpx）：抖动风险来自弹幕行数/动画，而舞台高度仍是死的。
+     守卫现在同时钉「舞台 336rpx」与「页脚带 44rpx」两条（比原来钉得更细）。 */
+  padding-bottom: 44rpx;   /* 页脚 / 回声带仍是 absolute;bottom:0 → 正好落进这条带，与合并前一致 */
+  margin: var(--space-2) 0 var(--space-3);
   overflow: hidden;
   background: linear-gradient(180deg, #F6F1E7 0%, #EFE8DA 52%, #E7DFCF 100%);
   /* 原 base 是 1px solid var(--brass-200)，被末尾强化段的 1rpx rgba(196,167,108,0.42) 覆盖 → 取生效值 */
   border: 1rpx solid rgba(196, 167, 108, 0.42);
-  /* 2026-09-20：与页头**合并为一张卡** → 只留下圆角。页头已让出下圆角并去掉下边框，
-     两段之间那条 1rpx 铜线由**本边框的上边**充当（是设计上的分隔线，不是空隙）。 */
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  /* 2026-09-20 真合并：页头已进墙、且自己不画底 → 本卡是**唯一**的卡片，四角都圆 */
+  border-radius: var(--radius-lg);
   /* 原 base 的两层 inset 被末尾覆盖 → 取生效值（内光 + 外投影） */
   box-shadow: inset 0 0 40rpx rgba(196, 167, 108, 0.1), 0 8rpx 24rpx rgba(0, 0, 0, 0.18);
 }
@@ -501,11 +521,11 @@ page {
 .ww-wall-rail.rail-6 { top: 84%; }
 
 .ww-wall-inner {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 44rpx;
+  /* 2026-09-20 真合并：页头进墙后，本层从「绝对定位铺满墙的上半」改为**流内固定高度**。
+     高度 = 原 380rpx − 页脚带 44rpx = 336rpx —— 与合并前**逐像素相同**，
+     所以 buildDanmakuRows 的 topPercent 落位、.ww-wall-rail 的刻度对齐**完全不变**。 */
+  position: relative;
+  height: 336rpx;
   z-index: 2;
 }
 
@@ -1650,7 +1670,8 @@ page {
   display: flex;
   align-items: baseline;
   gap: 12rpx;
-  margin: 4rpx 4rpx 14rpx;
+  /* 2026-09-20 排版收紧：头部上下留白各减一档，把高度让给内容（页面过长是首屏最明显的问题） */
+  margin: 0 2rpx 12rpx;
 }
 
 .ww-plays-title {
@@ -1668,16 +1689,19 @@ page {
   display: grid;
   /* 两列等宽：瓦片内容长度差异大（"MBTI 贴士" vs "拆签饼"），flex 会按内容分配 */
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
+  /* 2026-09-20：16rpx → 12rpx，四块瓦片收紧成一簇（极简要的是"更少的留白、更清晰的层"） */
+  gap: 12rpx;
 }
 
 .ww-play {
+  /* 2026-09-20 极简（PRD §4 的视觉口径）：去掉装饰字标与填充底。
+     字标（单字铜底圆）是**标题的重复**——本页没有图标资产，它只提供视觉噪声；
+     底色由实心块改为透明后，四块瓦片读作"细框单元"而不是"重色块"，一屏的重色少一半。 */
   display: flex;
   align-items: center;
-  gap: 14rpx;
   min-width: 0;
-  padding: 20rpx 18rpx;
-  background: var(--color-bg-card);
+  padding: 18rpx 20rpx;
+  background: transparent;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -1692,20 +1716,8 @@ page {
   background: rgba(196, 167, 108, 0.1);
 }
 
-.ww-play-mark {
-  flex-shrink: 0;
-  width: 48rpx;
-  height: 48rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--fs-24);
-  color: var(--brass-300);
-  border: 1rpx solid rgba(196, 167, 108, 0.42);
-  border-radius: 50%;
-  background: rgba(196, 167, 108, 0.08);
-}
-
+/* （原 `.ww-play-mark` 装饰字标已于 2026-09-20 随极简一起下线：字标是标题的重复，
+   本页没有图标资产，它只贡献视觉噪声。样式一并删除，不留死选择器。） */
 .ww-play-copy {
   flex: 1;
   min-width: 0;

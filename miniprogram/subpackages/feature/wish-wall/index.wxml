@@ -6,41 +6,6 @@
 <view class="ww-page">
   <view class="ww-grain" aria-hidden="true"></view>
 
-  <!-- 牌匾式纸质页头：浅纸 + 铜字，与礼赠页的标本纸页头同一语言 -->
-  <view class="ww-hero{{flagChecked && !allowed ? '' : ' is-joined'}}">
-    <view class="ww-fiber" aria-hidden="true"></view>
-    <view class="ww-emboss" aria-hidden="true"></view>
-    <view class="ww-wm" aria-hidden="true"></view>
-    <view class="ww-hero-body">
-      <view class="ww-hero-top">
-        <text class="ww-over">WISH WALL · 马上有愿</text>
-        <!-- 灯的状态直接写进页头：今日已点 = 铜灯亮，未点 = 空心 -->
-        <view class="signal-light {{lamp.lit ? 'lamp-brass on' : 'lamp-muted hollow'}}" aria-hidden="true"></view>
-        <view class="ww-seal" aria-hidden="true"><view class="ww-seal-inner"></view></view>
-      </view>
-      <text class="ww-brand">山海造物</text>
-      <!-- 主标题固定「祈福墙」：入口传进来的 title 本身就是「马上有」，
-           写「{{productTitle}} · 祈福墙」会变成「马上有 · 祈福墙」重复两遍 -->
-      <text class="ww-title">祈福墙</text>
-      <!-- 这一行右侧原本空着（印泥/水印之外没有任何内容）。祈运标签挪上来：
-           ① 第一屏就能看到"这面墙求什么"（不必滚到玩法区）② 玩法区因此省下一条提示的高度 -->
-      <view class="ww-scope-row">
-        <!-- 产品 chip 本身就是**产品链路的常驻入口**（第一屏就能到详情页）。
-             以前只有抽完玩法才在结果卡里出现「看这件藏品」，链路藏得太深。 -->
-        <text
-          class="ww-scope {{productId ? 'is-link' : ''}}"
-          wx:if="{{productTitle}}"
-          bindtap="goProduct"
-          hover-class="ww-scope-press"
-          hover-stay-time="70"
-          aria-role="{{productId ? 'link' : 'text'}}"
-        >{{productTitle}}{{productId ? ' ›' : ''}}</text>
-        <text class="ww-bless" wx:if="{{blessLabelText}}">偏「{{blessLabelText}}」</text>
-      </view>
-      <text class="ww-hint">把想成真的心愿挂上墙。轻一点写，短一点说。</text>
-    </view>
-  </view>
-
   <!-- 未开放：不发任何请求，只给一句解释 -->
   <view class="ww-closed" wx:if="{{flagChecked && !allowed}}">
     <view class="ww-closed-lamp" aria-hidden="true">
@@ -56,6 +21,44 @@
       class="ww-wall {{echoRows.length ? 'is-echo' : ''}}"
       aria-label="{{rows.length ? rows.length + ' 条心愿在墙上流动，轻点一条可展开愿签' : '祈福墙'}}"
     >
+      <!-- 牌匾式页头：**与墙面同一张卡**（2026-09-20 产品要求「hero banner 应该与弹幕墙合并」）。
+           做法：页头进墙、自己不画底（.ww-hero.is-joined 背景透明 + 无边无圆角），
+           由墙面的连续纸面与纹理承载它 —— 不是两段拼色，也不是"去掉空隙"那种视觉凑合。
+           关闭态（flagChecked && !allowed）时墙面不渲染，页面由 .ww-closed 自己给标题
+           「祈福墙暂未开放」，所以不会出现"没有页头"的空页。 -->
+      <view class="ww-hero is-joined">
+      <view class="ww-fiber" aria-hidden="true"></view>
+      <view class="ww-emboss" aria-hidden="true"></view>
+      <view class="ww-wm" aria-hidden="true"></view>
+      <view class="ww-hero-body">
+        <view class="ww-hero-top">
+          <text class="ww-over">WISH WALL · 马上有愿</text>
+          <!-- 灯的状态直接写进页头：今日已点 = 铜灯亮，未点 = 空心 -->
+          <view class="signal-light {{lamp.lit ? 'lamp-brass on' : 'lamp-muted hollow'}}" aria-hidden="true"></view>
+          <view class="ww-seal" aria-hidden="true"><view class="ww-seal-inner"></view></view>
+        </view>
+        <text class="ww-brand">山海造物</text>
+        <!-- 主标题固定「祈福墙」：入口传进来的 title 本身就是「马上有」，
+             写「{{productTitle}} · 祈福墙」会变成「马上有 · 祈福墙」重复两遍 -->
+        <text class="ww-title">祈福墙</text>
+        <!-- 这一行右侧原本空着（印泥/水印之外没有任何内容）。祈运标签挪上来：
+             ① 第一屏就能看到"这面墙求什么"（不必滚到玩法区）② 玩法区因此省下一条提示的高度 -->
+        <view class="ww-scope-row">
+          <!-- 产品 chip 本身就是**产品链路的常驻入口**（第一屏就能到详情页）。
+               以前只有抽完玩法才在结果卡里出现「看这件藏品」，链路藏得太深。 -->
+          <text
+            class="ww-scope {{productId ? 'is-link' : ''}}"
+            wx:if="{{productTitle}}"
+            bindtap="goProduct"
+            hover-class="ww-scope-press"
+            hover-stay-time="70"
+            aria-role="{{productId ? 'link' : 'text'}}"
+          >{{productTitle}}{{productId ? ' ›' : ''}}</text>
+          <text class="ww-bless" wx:if="{{blessLabelText}}">偏「{{blessLabelText}}」</text>
+        </view>
+        <text class="ww-hint">把想成真的心愿挂上墙。轻一点写，短一点说。</text>
+      </view>
+    </view>
       <view class="ww-wall-fiber" aria-hidden="true"></view>
       <view class="ww-wall-inner">
         <!-- 刻度必须和内层同坐标系：挂在整面墙上会因底部页脚高度而逐轨错开 -->
@@ -152,7 +155,9 @@
         confirm-type="send"
         placeholder="例如：马上有闲，马上有缘"
         placeholder-class="ww-input-ph"
+        focus="{{inputFocus}}"
         bindinput="onDraftInput"
+        bindblur="onInputBlur"
         bindconfirm="submitWish"
       />
       <view
@@ -286,7 +291,6 @@
           aria-role="button"
           aria-label="{{item.name}}：{{item.hint}}"
         >
-          <view class="ww-play-mark" aria-hidden="true">{{item.mark}}</view>
           <view class="ww-play-copy">
             <text class="ww-play-name">{{item.name}}</text>
             <text class="ww-play-hint">{{item.hint}}</text>
@@ -592,7 +596,9 @@
     <view class="ww-sheet-head">
       <view class="ww-sheet-mark" aria-hidden="true">{{playResult.mark}}</view>
       <view class="ww-sheet-head-copy">
-        <text class="ww-sheet-overline" wx:if="{{playResult.overline}}">{{playResult.overline}}</text>
+        <!-- 2026-09-20 极简：`overline` 与 `name` 对「今日一签」是同一个词（内容是 `今日一签`、
+             注册表名也是 `今日一签`），并排渲染就是同一个词出现两遍。两者相同时只留 `name`。 -->
+        <text class="ww-sheet-overline" wx:if="{{playResult.overline && playResult.overline !== playResult.name}}">{{playResult.overline}}</text>
         <text class="ww-sheet-name">{{playResult.name}}</text>
       </view>
       <text class="ww-sheet-close" bindtap="closePlayResult" hover-class="ww-sheet-close-press" hover-stay-time="70" aria-role="button">收起</text>

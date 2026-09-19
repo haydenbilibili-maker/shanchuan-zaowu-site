@@ -11,12 +11,15 @@
  *   category   string   可选：同品类命中排在前面
  *
  * 匹配规则（刻意简单、可解释、可测）：
- *   1. 只取 `blessTags` 命中该 tag 且**未下架**的商品；
- *   2. 同品类优先 → 销量 → 较新上架 → 价格适中优先 → _id（**全确定性，不用随机**：
- *      玩法的结果是一天一支，推荐也跟着一天一件，不会刷一次变一个）；
+ *   1. 只取 `blessTags` 命中该 tag 且**未下架**的商品（存量无标签的用 `giftScenes` 场景兜底）；
+ *   2. 排序：**显式命中优先** → 同品类 → 销量 → 较新上架 → 价格适中优先 → _id；
+ *      再从前若干件里**按天轮换**（同一天固定、跨天会换，见 exports.main 的 2026-09-20 修正）；
  *   3. **不做兜底**：没有命中的商品就返回空列表。
  *      为什么不做"热门兜底"：那会把"求安"推成任意一件热卖，推荐与标签脱钩 = 乱推，
  *      比不推更糟（见 docs/需求28_…交付记录 §26.6）。
+ *
+ * 入参补充：`dayKey`（上海自然日 `YYYY-MM-DD`）—— 客户端会把它的缓存键日期传进来，
+ * 保证「一天一件」两端同源；缺省时云函数自己按 UTC+8 算一份。
  */
 const cloud = require('wx-server-sdk')
 const { sanitizeBlessTags, getBlessTag, scenesForBless } = require('./blessTags')
@@ -27,6 +30,27 @@ const _ = db.command
 
 const DEFAULT_LIMIT = 3
 const MAX_LIMIT = 6
+/** 候选池上限：取这么多条再在代码里精细排序 —— 要能装下**本标签的全部命中**，否则排序又变成在截断的小池里做（见 queryByTag 的 2026-09-20 修正） */
+const POOL_MAX = 100
+/** 按天轮换的池子大小：从排序后的前 N 件里挑今天这一件（见 exports.main 的 2026-09-20 修正） */
+const ROTATE_POOL = 5
+
+/**
+ * 上海自然日键（UTC+8，`YYYY-MM-DD`）—— 与客户端 `utils/wishWall.shanghaiDayKey` 同口径。
+ * 客户端会把 dayKey 传进来（它的缓存键本来就用这个），云函数在缺省时自己算一份，
+ * 保证「一天一件」这件事**两端用的是同一个日期**。
+ */
+function shanghaiDayKey(ms) {
+  const t = Number(ms)
+  const utc8 = (Number.isFinite(t) && t > 0 ? t : Date.now()) + 8 * 3600 * 1000
+  return new Date(utc8).toISOString().slice(0, 10)
+}
+
+/** 日序号：用于"今天从候选池里取第几件"。连续两天 → 取相邻两件（明天真的会换新的） */
+function dayNumber(dayKey) {
+  const t = new Date(`${dayKey}T00:00:00Z`).getTime()
+  return Number.isFinite(t) ? Math.floor(t / 86400000) : 0
+}
 
 function isOnShelf(row) {
   return !(row && row.isOffShelf === true)
@@ -51,13 +75,28 @@ function leanProduct(row, matchSource) {
   }
 }
 
-/** 同组排序：同品类优先 → 销量 → 较新 → 价格适中优先（全确定性） */
-function sortPool(rows, category) {
+/**
+ * 同组排序：**显式命中优先** → 同品类优先 → 销量 → 较新 → 价格适中优先（全确定性）
+ *
+ * ⚠️ 2026-09-20 修：`explicitIds` 此前根本不存在 —— `matchSource` 是**排完序之后**才算的，
+ * 于是一个仅靠「婚宴 / 纪念日」场景兜底命中的商品，可以压过**显式打了本标签**的商品。
+ * 真机反馈「求缘位推的是前程类商品」的直接来源就在这里：显式命中才是真的相关，
+ * 场景兜底只是「存量商品还没有标签时别让功能空转」的补丁，不能反客为主。
+ *
+ * @param {Array} rows
+ * @param {string} [category] 同品类优先的品类名
+ * @param {Set<string>} [explicitIds] 显式打了本标签的商品 id
+ */
+function sortPool(rows, category, explicitIds) {
   const list = (rows || []).slice()
   const prices = list.map((p) => Number(p.price)).filter((n) => Number.isFinite(n) && n > 0)
   const mid = prices.length ? prices.slice().sort((a, b) => a - b)[Math.floor(prices.length / 2)] : 0
   const wantCat = String(category || '').trim()
+  const explicit = (r) => (explicitIds && explicitIds.has(String(r && r._id)) ? 0 : 1)
   return list.sort((a, b) => {
+    const ea = explicit(a)
+    const eb = explicit(b)
+    if (ea !== eb) return ea - eb
     if (wantCat) {
       const ca = String(a.category || '') === wantCat ? 0 : 1
       const cb = String(b.category || '') === wantCat ? 0 : 1
@@ -98,6 +137,13 @@ async function queryByTag(tag, take) {
   if (scenes.length) orConds.push({ giftScenes: _.in(scenes) })
   const where = _.and([{ isOffShelf: _.neq(true) }, orConds.length > 1 ? _.or(orConds) : orConds[0]])
   try {
+    // ⚠️ 2026-09-20 修（真机反馈「只有孔雀标本一个商品」的真因）：
+    // 原实现取 `Math.min(24, limit + exclude.size + 4)` ≈ **7 条** —— 数据库按 `_id` 自然序截断，
+    // 于是下面 sortPool 排的只是「_id 最靠前的 7 条」，而不是「全部命中里最好的 7 条」。
+    // 排序信号（销量 / 新上架 / 价格）因此在**一个与它们无关的固定小池**里生效 → 永远同几件。
+    // 修法：把池子放大到能装下**本标签的全部命中**（商品量级远小于 POOL_MAX），再在代码里排序。
+    // 有意**不加** `.orderBy('sales')`：那会把「排序」下推给数据库，而本项目明确要求
+    // "排序可解释、可测"（见 check-bless-tags-sync：「不做热门兜底」的代理判据也盯着它）。
     const res = await db.collection('products').where(where).limit(take).get()
     return res.data || []
   } catch (e) {
@@ -126,8 +172,9 @@ exports.main = async (event) => {
   const exclude = new Set(
     (Array.isArray(e.excludeIds) ? e.excludeIds : [e.excludeIds]).filter(Boolean).map((x) => String(x))
   )
-  // 多取一些再过滤：排除项在库里过滤不掉，只能取回来再筛
-  const rows = await queryByTag(tag, Math.min(MAX_LIMIT * 4, limit + exclude.size + 4))
+  const dayKey = String(e.dayKey || '').trim() || shanghaiDayKey(Date.now())
+  // 取一个有界的大池再筛：排除项在库里过滤不掉，只能取回来再筛（POOL_MAX 留足余量）
+  const rows = await queryByTag(tag, POOL_MAX)
   // ⚠️ matchSource 必须**逐行**判定：显式打了这个标签 = 'tag'，靠礼赠场景兜底命中 = 'scene'。
   // 第一版对所有行都写 'tag'，于是客户端一律显示「同好也在看」—— 而场景兜底的商品
   // **根本没有任何"同好"数据**，那是编出来的社会证明（本仓最忌"看起来像真的"）。
@@ -136,8 +183,32 @@ exports.main = async (event) => {
       .filter((r) => sanitizeBlessTags(r && r.blessTags).includes(tag))
       .map((r) => String(r._id))
   )
-  const list = sortPool(rows.filter((r) => isOnShelf(r) && !exclude.has(String(r._id))), e.category)
+  const ranked = sortPool(
+    rows.filter((r) => isOnShelf(r) && !exclude.has(String(r._id))),
+    e.category,
+    explicitIds
+  )
+  // ★ 2026-09-20 修：**按天轮换** —— 让「一天一件」真的"一天换一件"。
+  // 此前选品结果与日期**完全无关**（排序全确定性、又没有随机项），所以只要商品数据不变，
+  // 客户端缓存键里那个日期等于白写：每天算出来都是同一件（真机反馈「只有孔雀标本一个商品」）。
+  // 做法：从排序后的前 ROTATE_POOL 件里按**日序号**取一件并置于列表首位。
+  // 仍然**确定性**（同一天同一标签同一人结果固定），只是**跨天会变**。
+  const rotate = ranked.slice(0, ROTATE_POOL)
+  const offset = rotate.length
+    ? (((dayNumber(dayKey) % rotate.length) + rotate.length) % rotate.length)
+    : 0
+  const ordered = rotate.length > 1 ? rotate.slice(offset).concat(rotate.slice(0, offset)) : rotate
+  const list = ordered
+    .concat(ranked.slice(rotate.length))
     .slice(0, limit)
     .map((r) => leanProduct(r, explicitIds.has(String(r._id)) ? 'tag' : 'scene'))
-  return { success: true, tag, scenes: scenesForBless(tag), list, total: list.length }
+  return { success: true, tag, scenes: scenesForBless(tag), dayKey, list, total: list.length }
 }
+
+/**
+ * **仅供守卫单元断言**的纯函数出口（非业务 API）。
+ * 为什么必须暴露：选品会**按天轮换**（见 exports.main），所以从 `main` 的输出**看不到**基础排名
+ * —— 而「显式命中优先于场景兜底」这条恰恰只能靠基础排名来验，且不该依赖"今天是几号"。
+ * 守卫（test:wish-wall）直接调它，从而把这条口径钉成与日期无关的断言。
+ */
+exports.__forTest = { sortPool, shanghaiDayKey, dayNumber }
