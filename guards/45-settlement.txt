@@ -4,3 +4,4 @@
 # 口径与数据模型：admin/docs/出货算价与工作室结算_Phase1_技术蓝图.md
 # 校验：npm run check:guards-coverage
 npm run test:studio-pricing
+npm run test:studio-settlement

@@ -487,6 +487,8 @@ export const COLLECTIONS = {
   PURCHASE_ORDERS: 'purchase_orders', // 正式订货单（门店/渠道）
   OPS_PURCHASES: 'ops_purchases', // 超管采购管理（门店+工作室，managePurchaseOrder）
   OPS_SHIPMENTS: 'ops_shipments', // 门店出货单 SSOT（manageStoreShipment；小程序主录入）
+  STUDIO_MATERIAL_PRICES: 'studio_material_prices', // 原材料价目表（出货算价，manageStudioSettlement）
+  STUDIO_PACKAGING_PRICES: 'studio_packaging_prices', // 包装价目表（出货算价，manageStudioSettlement）
   PROPERTY_COSTS: 'property_costs', // 物业成本（水电/房租，managePropertyCost）
   FULFILLMENT_SHIPMENTS: 'fulfillment_shipments', // 总部出货单（P1）
   STOCK_MOVEMENTS: 'stock_movements', // 总部成品库存流水（P1）

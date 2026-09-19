@@ -153,7 +153,8 @@ const SUPER_ADMIN_ONLY_PERMISSIONS = [
   'manageSupportConfig',
   'manageMemberLevels',
   'manageGift',
-  'manageArtisanCommission'
+  'manageArtisanCommission',
+  'manageStudioSettlement'
 ]
 
 /** 店长：现场 + 发分撤销/发票等经营必要能力（不含超管专属；规则配置仅超管） */

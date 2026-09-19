@@ -61,7 +61,9 @@ export const FAMILIES = [
   { module: 'contentSecurity.js', kind: 'identical', canonical: 'submitCommunityPost/contentSecurity.js',
     why: '内容安全：各入口检测口径不一致会漏检' },
   { module: 'memberLevels.js', kind: 'superset', canonical: 'manageMemberLevels/memberLevels.js',
-    why: 'makeOrder 为超集（多 3 个下单期预估定级导出），共享部分仍须一致' }
+    why: 'makeOrder 为超集（多 3 个下单期预估定级导出），共享部分仍须一致' },
+  { module: 'pricingCore.js', kind: 'identical', canonical: 'manageStoreShipment/pricingCore.js',
+    why: '出货算价内核：价目表**写入方**（manageStudioSettlement）与**算价方**（manageStoreShipment）必须同口径归一化 —— 一边把「大蓝闪 蝶」与「大蓝闪蝶」当两个材料、另一边当一个，就会静默算错价' }
 ]
 
 /** 有意分歧、**不纳入本守卫**的家族（登记原因，防后来者「顺手统一」） */

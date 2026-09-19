@@ -244,6 +244,8 @@
     "check:order-transition-guard:selftest": "node miniprogram/scripts/check-order-transition-guard.mjs --selftest",
     "test:studio-pricing": "node miniprogram/scripts/test-studio-pricing.mjs",
     "test:studio-pricing:selftest": "node miniprogram/scripts/test-studio-pricing.mjs --selftest",
+    "test:studio-settlement": "node miniprogram/scripts/test-studio-settlement.mjs",
+    "test:studio-settlement:selftest": "node miniprogram/scripts/test-studio-settlement.mjs --selftest",
     "check:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs",
     "check:mp-contrast:selftest": "node miniprogram/scripts/check-mp-contrast.mjs --selftest",
     "report:mp-contrast": "node miniprogram/scripts/check-mp-contrast.mjs --report",
