@@ -47,6 +47,21 @@ const COLLECTIONS = [
 /** 文档里的三个代码块 → 云函数 bulkUpsert 的 kind（顺序 = §1.1/§1.2/§1.3） */
 const BLOCK_KINDS = ['material', 'packaging', 'material']
 
+/**
+ * 产品负责人 2026-09-19 裁决 ④⑤：这几条是**耗材、不是包装方式**，要从包装价目表移出。
+ * `bulkUpsert` 只做 create/update、**不会删**，所以必须显式软删 —— 否则上一版导进去的
+ * `内框`/`白卡纸` 会一直留在包装表里参与算价（这正是"改了文档但库里还是旧的"那类静默不一致）。
+ * name 用云函数返回的 `name`（已归一）；`size` 留空表示该名称下所有尺寸都移除。
+ */
+const REMOVED_PACKAGING = [
+  // 旧名 `框`：裁决 ③ 把包装名改成 `相框` 后，`bulkUpsert` **只会新建 `相框`、不会删旧的 `框`**
+  // → 两张表同时存在 `框`(旧) 与 `相框`(新，别名 `框`)，出货单写 `爱神凤蝶框` 会**歧义**。
+  // 必须显式软删旧的 `框`。这是"改名"在只做 upsert 的导入器下的必然坑。
+  { name: '框', why: '裁决 ③：名称已改为 `相框`（`框` 现为它的别名），旧的同名分组必须移出' },
+  { name: '内框', why: '裁决 ④：耗材（另见 §6.1 与裁决 ③ 的冲突待澄清）' },
+  { name: '白卡纸', why: '裁决 ④：耗材，不计入包装' }
+]
+
 function loadDotEnv () {
   if (!fs.existsSync(ADMIN_ENV)) throw new Error('缺少 ' + ADMIN_ENV)
   for (const line of fs.readFileSync(ADMIN_ENV, 'utf8').split('\n')) {
@@ -239,6 +254,28 @@ async function main () {
           }
         }
       }
+    }
+  }
+
+  // ── ⑤ 移出已裁决为耗材的包装行（幂等软删） ──────────────────
+  if (doImport && !checkOnly) {
+    if (!opsKey) { try { opsKey = pullOpsKey() } catch (e) { row('移出耗材', '取 opsKey', 'fail', e.message) } }
+    try {
+      const body = invokeFn({ action: 'priceBook.list', kind: 'packaging', adminOpsKey: opsKey, limit: 500 })
+      // 列表接口把行放在 `list`（不是 `rows`）—— 读错字段会让本步骤假报「无需移出」
+      const data = body.data || body
+      const list = data.list || data.rows || []
+      let removed = 0
+      for (const r of list) {
+        const hit = REMOVED_PACKAGING.find((x) => x.name === r.name)
+        if (!hit) continue
+        invokeFn({ action: 'priceBook.remove', kind: 'packaging', id: r._id, adminOpsKey: opsKey })
+        row('移出包装：' + r.name + ' / ' + (r.option || '默认'), '软删', 'removed', hit.why)
+        removed += 1
+      }
+      if (!removed) row('移出耗材', '软删', 'exists', '包装表里已没有需要移出的行（幂等）')
+    } catch (e) {
+      row('移出耗材', '软删', 'fail', e.message || String(e))
     }
   }
 
