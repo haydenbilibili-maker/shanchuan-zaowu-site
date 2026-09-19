@@ -7,7 +7,7 @@
   <view class="ww-grain" aria-hidden="true"></view>
 
   <!-- 牌匾式纸质页头：浅纸 + 铜字，与礼赠页的标本纸页头同一语言 -->
-  <view class="ww-hero">
+  <view class="ww-hero{{flagChecked && !allowed ? '' : ' is-joined'}}">
     <view class="ww-fiber" aria-hidden="true"></view>
     <view class="ww-emboss" aria-hidden="true"></view>
     <view class="ww-wm" aria-hidden="true"></view>
@@ -138,6 +138,33 @@
         <text class="ww-echo-sub" wx:if="{{item.sub}}">{{item.sub}}</text>
       </view>
     </view>
+    <!-- 发送条（顺流）：**紧贴弹幕墙正下方**（2026-09-20 产品负责人：「把这个弹幕发送放在弹幕墙下方」）。
+         历史：2026-09-19 之前是 `position: fixed; bottom: 0` 吸底（§35），当天改为顺流；
+         今天再把它从「灯/木鱼 + 提示行之后」上移到墙面正下方 —— 写愿是这一页的主交互，
+         应该紧挨着墙，而不是滚过两块内容才看到（产品口径同 test:wish-wall 的位置判据）。
+         位置不变量：wall < composer < plays，且全页只有一个（守卫已钉）。 -->
+    <view class="ww-composer">
+      <input
+        class="ww-input"
+        id="wishInput"
+        value="{{draft}}"
+        maxlength="{{textMax}}"
+        confirm-type="send"
+        placeholder="例如：马上有闲，马上有缘"
+        placeholder-class="ww-input-ph"
+        bindinput="onDraftInput"
+        bindconfirm="submitWish"
+      />
+      <view
+        class="ww-send {{posting || !draft || quota.exhausted ? 'is-off' : ''}}"
+        bindtap="submitWish"
+        hover-class="ww-send-press"
+        hover-stay-time="70"
+        aria-role="button"
+        aria-disabled="{{posting || !draft || quota.exhausted ? 'true' : 'false'}}"
+      >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
+    </view>
+
     <!-- 祈福动作区：点灯 + 木鱼并列（产品负责人 2026-09-19 版式） -->
     <view class="ww-ritual-row">
     <!-- 灯龛：零门槛的入场动作。点完亮出当天那一句，同一天复现同一句。
@@ -236,31 +263,6 @@
         aria-checked="{{soundOn}}"
         aria-label="仪式音效"
       >{{soundOn ? '音效 开' : '音效 关'}}</view>
-    </view>
-
-    <!-- 发送条（顺流）：**弹幕墙下方、玩法区上方** —— 2026-09-19 产品口径变更，
-         原为 `position: fixed; bottom: 0` 吸底（§35）。改顺流后不再需要页面底部预留。
-         见文件末尾同名注释块（那里记了取舍与回退方式）。 -->
-    <view class="ww-composer">
-      <input
-        class="ww-input"
-        id="wishInput"
-        value="{{draft}}"
-        maxlength="{{textMax}}"
-        confirm-type="send"
-        placeholder="例如：马上有闲，马上有缘"
-        placeholder-class="ww-input-ph"
-        bindinput="onDraftInput"
-        bindconfirm="submitWish"
-      />
-      <view
-        class="ww-send {{posting || !draft || quota.exhausted ? 'is-off' : ''}}"
-        bindtap="submitWish"
-        hover-class="ww-send-press"
-        hover-stay-time="70"
-        aria-role="button"
-        aria-disabled="{{posting || !draft || quota.exhausted ? 'true' : 'false'}}"
-      >{{posting ? '挂上…' : (quota.exhausted ? '明天再来' : '挂上墙')}}</view>
     </view>
 
     <!-- 玩法区（注册表驱动，2026-09-18 需求 5 第一批）：
