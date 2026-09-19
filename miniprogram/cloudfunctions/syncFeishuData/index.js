@@ -62,6 +62,29 @@ async function readDoc (id) {
   }
 }
 
+/**
+ * 分页读全量（云开发单次上限 100，必须自己翻页）。
+ * 用途：对账要算**全部**行 —— `managePurchaseOrder.list` 的 limit 硬顶 100，
+ * 拿它做对账会得出"本地只有 100 行"的错误结论。
+ */
+async function fetchAll (collection, where) {
+  const rows = []
+  let skip = 0
+  while (skip < 5000) {
+    let res
+    try {
+      res = await db.collection(collection).where(where).skip(skip).limit(100).get()
+    } catch (e) {
+      break
+    }
+    const list = (res && res.data) || []
+    rows.push(...list)
+    if (list.length < 100) break
+    skip += list.length
+  }
+  return rows
+}
+
 async function countLocal (collection) {
   try {
     const res = await db.collection(collection).count()
@@ -323,6 +346,83 @@ exports.main = async (event, context) => {
         const summary = await pullMany(roles, mapping, opsKey)
         await saveLastRun(Object.assign({ by: 'manual' }, summary))
         return ok(summary)
+      }
+
+      case 'reconcile': {
+        /**
+         * **对账**：同一口径同时算「飞书侧」与「本地侧」，并给出差异行。
+         * 起因：产品负责人指出「工作室仪表盘的预算数据与飞书采购预算仪表盘对不上」——
+         * 对不上必须先说清**差在哪几行**，否则只能猜。
+         * 口径与仪表盘逐字一致：金额 = `amount ?? qty × unitPrice`，且只算未删且非 cancelled 的行。
+         */
+        const target = String(e.target || 'purchase').trim()
+        if (target !== 'purchase') return fail('目前只支持 purchase 的对账', 'BAD_TARGET')
+        const mapping = await loadMapping()
+        const spec = mapping[target]
+        if (!spec || !spec.tableId) return fail('采购表还没配飞书表 id', 'NO_TABLE')
+
+        let records = []
+        try {
+          records = await feishu.listAllRecords(spec.tableId, process.env)
+        } catch (err) {
+          return fail(`读飞书失败：${(err && err.message) || err}`, 'FEISHU_ERROR')
+        }
+        // 与 pull 同样的裁剪：表里没有的列不参与（否则整列空值会污染对账）
+        let fieldMap = spec.fields
+        try {
+          const cols = await feishu.listFieldNames(spec.tableId, process.env)
+          const assess = M.assessMapping(spec.fields, cols, M.TARGETS[target].signature)
+          if (assess.mismatch) return fail(`字段映射与表对不上（${assess.missingSignature.join('、')}），拒绝按错映射对账`, 'MAPPING_MISMATCH')
+          fieldMap = assess.kept
+        } catch (err) { /* 体检失败就用原映射 */ }
+
+        const remoteItems = M.TARGETS[target].build(records, fieldMap)
+        const remoteByRid = {}
+        let remoteTotal = 0
+        remoteItems.forEach((it, i) => {
+          const amt = M.purchaseAmountOf(it)
+          remoteTotal += amt
+          if (it.feishuRecordId) remoteByRid[it.feishuRecordId] = { amt, name: it.itemName, no: it.orderNo, row: i }
+        })
+        remoteTotal = Math.round(remoteTotal * 100) / 100
+
+        const localRows = (await fetchAll(LOCAL_COLLECTION[target], { deleted: _.neq(true) }))
+          .filter((r) => M.isActivePurchaseOf(r))
+        let localTotal = 0
+        const localWithoutRid = []
+        const amountMismatch = []
+        const seen = {}
+        localRows.forEach((r) => {
+          const amt = M.purchaseAmountOf(r)
+          localTotal += amt
+          const rid = String(r.feishuRecordId || '')
+          if (!rid) localWithoutRid.push({ name: r.itemName, no: r.orderNo, amount: amt, status: r.status })
+          else {
+            seen[rid] = true
+            const rm = remoteByRid[rid]
+            if (rm && Math.abs(rm.amt - amt) > 0.009) {
+              amountMismatch.push({ rid, name: r.itemName, localAmount: amt, feishuAmount: rm.amt, diff: Math.round((amt - rm.amt) * 100) / 100 })
+            }
+          }
+        })
+        localTotal = Math.round(localTotal * 100) / 100
+        const remoteMissingLocal = Object.keys(remoteByRid).filter((rid) => !seen[rid])
+
+        return ok({
+          target,
+          localCount: localRows.length,
+          remoteCount: remoteItems.length,
+          localTotal,
+          remoteTotal,
+          diff: Math.round((localTotal - remoteTotal) * 100) / 100,
+          localWithoutRidCount: localWithoutRid.length,
+          localWithoutRid: localWithoutRid.slice(0, 20),
+          amountMismatchCount: amountMismatch.length,
+          amountMismatch: amountMismatch.slice(0, 20),
+          remoteMissingLocalCount: remoteMissingLocal.length,
+          remoteMissingLocal: remoteMissingLocal.slice(0, 20).map((rid) => remoteByRid[rid]),
+          formula: '金额 = amount ?? qty × unitPrice（与仪表盘同一口径）；只算未删且非 cancelled'
+        })
       }
 
       case 'config.get':

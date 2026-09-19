@@ -50,7 +50,7 @@ function runOnce (file) {
   eq('A4 采购：数量列名', M.DEFAULT_TABLES.purchase.fields.qty, '数量')
   eq('A5 原材料：当前库存列名', M.DEFAULT_TABLES.rawInventory.fields.qty, '当前库存')
   eq('A6 原材料：物品名称列名', M.DEFAULT_TABLES.rawInventory.fields.itemName, '物品名称')
-  eq('A7 采购字段数（与 ERP 18 个对齐）', Object.keys(M.DEFAULT_TABLES.purchase.fields).length, 18)
+  eq('A7 采购字段数（与 ERP 19 个对齐；2026-09-19 加了「总价」→amount）', Object.keys(M.DEFAULT_TABLES.purchase.fields).length, 19)
   eq('A8 原材料字段数（12 个）', Object.keys(M.DEFAULT_TABLES.rawInventory.fields).length, 12)
   /**
    * A9–A11 **成品库存的列名必须与飞书表实际列一致**（2026-09-19 我在这里犯过错）：
@@ -128,6 +128,27 @@ function runOnce (file) {
   eq('F4 表 id：配置优先', M.resolveTableId('purchase', 'tblCUSTOM'), 'tblCUSTOM')
   eq('F5 表 id：没配就用默认', M.resolveTableId('purchase', ''), 'tblMHhGXhpmGTiI5')
 
+  // ── I. 采购金额口径：冲正行必须带得出来（2026-09-19 真实"对不上 ¥30"的根因）──
+  eq('I1 采购映射把「总价」映射到 amount', M.DEFAULT_TABLES.purchase.fields.amount, '总价')
+  const reversal = M.toPurchaseItems(
+    [{ record_id: 'rev1', fields: { 物品名称: '开心果退款冲正', 数量: '1', 单价: '0', 总价: '-30' } }],
+    M.DEFAULT_TABLES.purchase.fields
+  )
+  eq('I2 负数总价原样带出（不被当成 0）', reversal[0].amount, '-30')
+  eq('I3 冲正行按 amount 计价（口径与仪表盘一致）', M.purchaseAmountOf(reversal[0]), -30)
+  const normal = M.toPurchaseItems(
+    [{ record_id: 'n1', fields: { 物品名称: '正常', 数量: '2', 单价: '5', 总价: '10' } }],
+    M.DEFAULT_TABLES.purchase.fields
+  )
+  eq('I4 正常行金额取 amount', M.purchaseAmountOf(normal[0]), 10)
+  // 没配「总价」列时**不能**带 amount（带 0 会把 数量×单价 的正确金额覆盖成 0）
+  const noAmtCol = M.toPurchaseItems(
+    [{ record_id: 'n2', fields: { 物品名称: '无总价列', 数量: '2', 单价: '5' } }],
+    { itemName: '物品名称', qty: '数量', unitPrice: '单价' }
+  )
+  ok('I5 没配「总价」列时不带 amount（避免把 数量×单价 覆盖成 0）', noAmtCol[0].amount === undefined, JSON.stringify(noAmtCol[0]))
+  eq('I6 此时仍按 数量×单价 计价', M.purchaseAmountOf(noAmtCol[0]), 10)
+
   // ── H. 写库前的安全体检（2026-09-19 加）──
   //   起因：实测发现两处映射写了**表里不存在的列**，若不处理，同步会把库里原有的
   //   好数据覆盖成空（采购的「归属」会被清空 370 条），或把**别的表的行**灌进台账
@@ -181,6 +202,10 @@ const INJECTIONS = [
   [
     '映射裁剪失效：表里没有的列照样拿去读（空值覆盖库里的好数据）',
     (s2) => s2.replace("    if (col && cols.has(col)) kept[key] = fieldMap[key]\n    else dropped.push({ key, column: col })", "    kept[key] = fieldMap[key]")
+  ],
+  [
+    '采购不再映射「总价」→ amount（退款冲正行的 −30 丢掉 → 仪表盘与飞书差 ¥30）',
+    (s2) => s2.replace("      note: '备注',\n      // ⚠️ 必须映射「总价」→ amount：退款冲正行的总价为负，\n      //    只靠 数量×单价 表达不了（数量/单价有硬校验），本地会算成 0 → 仪表盘与飞书差 30\n      amount: '总价'", "      note: '备注'")
   ],
   [
     // 锚点随 2026-09-19「加签名列判定」更新

@@ -255,7 +255,18 @@ function normalizePayload(input, existing) {
     qty,
     unit: String(src.unit != null ? src.unit : prev.unit || '件').trim() || '件',
     unitPrice,
-    amount: roundMoney(qty * unitPrice),
+    /**
+     * 金额：**显式传入的 `amount` 优先**，否则按 数量×单价 算。
+     *
+     * 为什么需要显式（2026-09-19）：飞书采购表里有**退款冲正**行（`总价` 为负，如 −30），
+     * 而本模型对 `qty>0` / `unitPrice>=0` 有硬校验 —— 冲正行没有任何合法方式表达，
+     * 于是同步进来变成 0，**仪表盘的「已使用预算」正好高 30**（与飞书对不上）。
+     * 现在冲正行以 `amount`（可为负）表达，数量/单价仍需合法；仪表盘 `purchaseAmount`
+     * 本来就优先取 `amount`，因此数字能对上。
+     */
+    amount: src.amount !== null && src.amount !== undefined && src.amount !== ''
+      ? roundMoney(src.amount)
+      : roundMoney(qty * unitPrice),
     supplier: String(src.supplier != null ? src.supplier : prev.supplier || '').trim(),
     purchaseDate: purchaseDate || new Date().toISOString().slice(0, 10),
     expectedArrival: String(
@@ -416,6 +427,13 @@ function feishuItemToPayload(item, defaultEntityId) {
     trackingNo: String(src.trackingNo || src.运单号 || '').trim(),
     invoiceNo: String(src.invoiceNo || src.发票号 || '').trim(),
     status: src.status || src.状态 || STATUS.ORDERED,
+    // 飞书「总价」→ 我们的 amount：冲正行为负，必须带过来（见 normalizePayload 的说明）
+    amount: (() => {
+      const raw = src.amount != null ? src.amount : src.总价 != null ? src.总价 : null
+      if (raw === null || raw === '') return undefined
+      const n = Number(raw)
+      return Number.isFinite(n) ? Math.round(n * 100) / 100 : undefined
+    })(),
     note: String(src.note || src.备注 || '').trim(),
     source: SOURCE.FEISHU,
     feishuRecordId: String(src.feishuRecordId || src.recordId || '').trim(),

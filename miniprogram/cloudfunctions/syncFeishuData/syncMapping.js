@@ -31,7 +31,10 @@ const DEFAULT_TABLES = {
       expressCompany: '快递公司',
       trackingNo: '运单号',
       invoiceNo: '发票号',
-      note: '备注'
+      note: '备注',
+      // ⚠️ 必须映射「总价」→ amount：退款冲正行的总价为负，
+      //    只靠 数量×单价 表达不了（数量/单价有硬校验），本地会算成 0 → 仪表盘与飞书差 30
+      amount: '总价'
     }
   },
   inventory: {
@@ -201,7 +204,7 @@ function toPurchaseItems (records, fieldMap) {
   return (records || []).map((rec) => {
     const m = mapRecord(rec, fieldMap)
     const rid = rec.record_id || rec.recordId || ''
-    return {
+    const out = {
       feishuRecordId: rid,
       recordId: rid,
       orderNo: m.orderNo || '',
@@ -226,6 +229,13 @@ function toPurchaseItems (records, fieldMap) {
       invoiceNo: m.invoiceNo || '',
       note: m.note || ''
     }
+    /**
+     * `amount` 只在**飞书确实配了「总价」列**时才带出去。
+     * 理由：`0` 与「这一列没有值」含义不同 —— 若列没配，带 0 会把
+     * 「数量×单价」的正确金额覆盖成 0（把好数据改坏）。
+     */
+    if ((fieldMap || {}).amount) out.amount = m.amount
+    return out
   })
 }
 
@@ -289,6 +299,27 @@ function assessMapping (fieldMap, tableColumns, signature) {
  *    代码与映射保留（`DEFAULT_TABLES.inventory` 等）只是为了万一将来要恢复时不必重写，
  *    但 `TARGETS` 里没有它 ⇒ `pull` 不会碰成品库存。
  */
+/**
+ * 采购金额口径 —— **必须与仪表盘逐字一致**：
+ *   仪表盘 `getStudioDashboard/index.js` 的 `purchaseAmount(row)`：
+ *     `row.amount != null ? row.amount : qty × unitPrice`
+ * 若这里换一种算法（比如一律 qty×单价），对账就会报出"假差异"，
+ * 把人引去查一个根本不存在的问题。所以两边共用同一口径，且守卫钉住它。
+ */
+function purchaseAmountOf (row) {
+  const r = row || {}
+  if (r.amount !== null && r.amount !== undefined && r.amount !== '') {
+    return Math.round(Number(r.amount) * 100) / 100
+  }
+  return Math.round(((Number(r.qty) || 0) * (Number(r.unitPrice) || 0)) * 100) / 100
+}
+
+/** 与仪表盘 `isActivePurchase` 同口径：未删且非 cancelled */
+function isActivePurchaseOf (row) {
+  if (!row || row.deleted === true) return false
+  return String(row.status || '') !== 'cancelled'
+}
+
 const TARGETS = {
   rawInventory: {
     label: '原材料库存',
@@ -321,6 +352,8 @@ module.exports = {
   assessMapping,
   resolveFieldMap,
   resolveTableId,
+  purchaseAmountOf,
+  isActivePurchaseOf,
   toRawInventoryItems,
   toInventoryItems,
   toPurchaseItems

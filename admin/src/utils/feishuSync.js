@@ -64,6 +64,9 @@ function defaultFeishuConfig() {
           trackingNo: '运单号',
           invoiceNo: '发票号',
           note: '备注',
+          // 2026-09-19：必须映射「总价」→ amount —— 退款冲正行的总价为负，
+          // 只靠 数量×单价 表达不了（数量/单价有硬校验），会导致仪表盘与飞书对不上
+          amount: '总价',
         },
       },
       /** 成品库存 → studio_inventory（飞书表名「成品库存」） */
