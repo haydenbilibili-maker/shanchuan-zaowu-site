@@ -1,5 +1,7 @@
 // pages/manager/index.js
 const imageUrl = require('../../../utils/imageUrl')
+// 装裱方式 / 制作工艺的选项表——与 C 端、ERP 同一份（字段维护面板直接用，勿另抄一份）
+const TAXONOMY = require('../../../config/productTaxonomy')
 const db = wx.cloud.database();
 const _ = db.command;
 const { PRODUCTION_STATUS_LABELS } = require('../utils/customDefaults');
@@ -1473,6 +1475,22 @@ const managerPageConfig = {
     contentFlagsDirty: false,
     contentFlagsDocId: '',
     contentFlagsFromDefault: true,
+
+    // 字段维护（curTab 17）：装裱方式 craftType / 制作工艺 craftProcess —— 仅超管
+    pfLoading: false,
+    pfSaving: false,
+    pfLoaded: false,
+    pfRows: [],        // 分页拉齐后的全量：{_id,title,image,craftType,craftProcess}
+    pfVisible: [],     // 当前筛选 + 搜索后可见
+    pfFilter: 'all',   // all | missing | type | process
+    pfKeyword: '',
+    pfCounts: { all: 0, missing: 0, type: 0, process: 0 },
+    pfMatchedCount: 0,   // 当前筛选命中数（可能大于可见上限 100）
+    pfDirty: {},       // { [productId]: { craftType?, craftProcess? } } —— 只存改动
+    pfDirtyCount: 0,
+    // 选项表用**唯一事实源**（与 C 端/ERP 同一份），不另抄
+    pfTypeLabels: TAXONOMY.CRAFT_TYPE_OPTIONS.map((o) => o.label),
+    pfProcessLabels: TAXONOMY.CRAFT_PROCESS_OPTIONS.map((o) => o.label),
     contentFlags: {
       showSpecimenArchive: false,
       showUserCommunity: false,
@@ -2732,6 +2750,7 @@ const managerPageConfig = {
       if(idx === 13) { await this.loadAnalyticsDashboard(); }
       if(idx === 15) { await this.loadShippingRules(); }
       if(idx === 16) { await this.loadContentDisplayFlags(); }
+      if(idx === 17) { await this.loadProductFields(); }
   },
 
   // 🟢 核心：加载线下营收（本月 store_ledger，三源合并；固定主店，勿用 C 端 preferred）
@@ -10338,6 +10357,158 @@ bindSubCatChange(e) {
 
   toggleAnalyticsNotes() {
     this.setData({ analyticsNotesOpen: !this.data.analyticsNotesOpen })
+  },
+
+  /* ══════════ 字段维护（curTab 17）· 装裱方式 craftType / 制作工艺 craftProcess ══════════
+   * 为什么单独一个入口：这两个字段既是**运输口径**（craftType 决定运费档）又是**展示口径**
+   * （装裱/工艺标签、尺寸录入形态），历史上有 86 件未标注 —— 需要一个能按「未标注」筛出来、
+   * 就地改、批量存的维护面板。选项表用唯一事实源 config/productTaxonomy.js，不另抄一份。
+   */
+
+  /** 选项值 → 中文标签（未标注给「未标注」而不是空串，面板上要看得出来） */
+  _pfLabel(options, value) {
+    const hit = (options || []).find((o) => o.value === value)
+    return hit ? hit.label : '未标注'
+  },
+
+  /** 拉齐全部商品（分页到 total；只留面板要用的字段） */
+  async loadProductFields() {
+    if (this.data.pfLoading) return
+    this.setData({ pfLoading: true })
+    try {
+      const rows = []
+      let total = Infinity
+      for (let page = 1; page <= 10 && rows.length < total; page += 1) {
+        const res = await wx.cloud.callFunction({
+          name: 'manageProducts',
+          data: { action: 'list', page, pageSize: 100, sortBy: 'new' }
+        })
+        const r = (res && res.result) || {}
+        if (!r.success) throw new Error(r.msg || '藏品库读取被拒')
+        total = Number(r.total) || 0
+        const list = r.list || []
+        list.forEach((p) => {
+          rows.push({
+            _id: p._id,
+            title: p.title || p.name || '(未命名)',
+            image: (p.images && p.images[0]) || p.image || '',
+            craftType: p.craftType || '',
+            craftProcess: p.craftProcess || ''
+          })
+        })
+        if (!list.length) break
+      }
+      this.setData({ pfRows: rows, pfLoaded: true, pfDirty: {}, pfDirtyCount: 0 })
+      this.applyProductFieldFilter()
+    } catch (e) {
+      console.error('loadProductFields', e)
+      this.showAppToast({ overline: 'FIELDS', title: '字段读取失败', desc: String((e && e.message) || e) })
+    } finally {
+      this.setData({ pfLoading: false })
+    }
+  },
+
+  /** 筛选 + 搜索 + 计数（未标注 = 任一为空；按装裱方式/工艺 = 排序视图，便于扫同类） */
+  applyProductFieldFilter() {
+    const rows = this.data.pfRows || []
+    const dirty = this.data.pfDirty || {}
+    const kw = String(this.data.pfKeyword || '').trim().toLowerCase()
+    const isMissing = (r) => !r.craftType || !r.craftProcess
+    const filter = this.data.pfFilter
+    let base = rows
+    if (filter === 'missing') base = rows.filter(isMissing)
+    else if (filter === 'type') base = rows.slice().sort((a, b) => String(a.craftType).localeCompare(String(b.craftType)))
+    else if (filter === 'process') base = rows.slice().sort((a, b) => String(a.craftProcess).localeCompare(String(b.craftProcess)))
+    const matched = kw ? base.filter((r) => String(r.title).toLowerCase().indexOf(kw) !== -1) : base
+    const VISIBLE_CAP = 100
+    const visible = matched.slice(0, VISIBLE_CAP).map((r) => ({
+      _id: r._id,
+      title: r.title,
+      image: r.image,
+      craftType: r.craftType,
+      craftProcess: r.craftProcess,
+      craftTypeLabel: this._pfLabel(TAXONOMY.CRAFT_TYPE_OPTIONS, r.craftType),
+      craftProcessLabel: this._pfLabel(TAXONOMY.CRAFT_PROCESS_OPTIONS, r.craftProcess),
+      // picker 的第 0 项是「未标注」⇒ 下标要 +1（值到下标的映射见 onPfPick）
+      typeIndex: this._pfIndex(TAXONOMY.CRAFT_TYPE_OPTIONS, r.craftType),
+      processIndex: this._pfIndex(TAXONOMY.CRAFT_PROCESS_OPTIONS, r.craftProcess),
+      dirty: !!dirty[r._id]
+    }))
+    this.setData({
+      pfVisible: visible,
+      pfMatchedCount: matched.length,
+      pfCounts: {
+        all: rows.length,
+        missing: rows.filter(isMissing).length,
+        type: rows.filter((r) => !r.craftType).length,
+        process: rows.filter((r) => !r.craftProcess).length
+      }
+    })
+  },
+
+  /** picker 下标：0 = 未标注，其后依次是选项表 */
+  _pfIndex(options, value) {
+    const i = (options || []).findIndex((o) => o.value === value)
+    return i < 0 ? 0 : i + 1
+  },
+
+  onPfFilter(e) {
+    const f = String((e.currentTarget.dataset && e.currentTarget.dataset.filter) || 'all')
+    this.setData({ pfFilter: f }, () => this.applyProductFieldFilter())
+  },
+
+  onPfKeyword(e) {
+    this.setData({ pfKeyword: (e.detail && e.detail.value) || '' }, () => this.applyProductFieldFilter())
+  },
+
+  /** 就地改：只记改动，不发请求（保存时一次 batchPatch ≤100 条/次） */
+  onPfPick(e) {
+    const ds = (e.currentTarget && e.currentTarget.dataset) || {}
+    const id = String(ds.id || '')
+    const field = String(ds.field || '')
+    if (!id || (field !== 'craftType' && field !== 'craftProcess')) return
+    const opts = field === 'craftType' ? TAXONOMY.CRAFT_TYPE_OPTIONS : TAXONOMY.CRAFT_PROCESS_OPTIONS
+    const idx = Number((e.detail && e.detail.value) || 0)
+    const value = idx <= 0 ? '' : ((opts[idx - 1] && opts[idx - 1].value) || '')
+    const dirty = Object.assign({}, this.data.pfDirty || {})
+    const entry = Object.assign({}, dirty[id] || {})
+    entry[field] = value
+    dirty[id] = entry
+    this.setData({ pfDirty: dirty, pfDirtyCount: Object.keys(dirty).length }, () => this.applyProductFieldFilter())
+  },
+
+  /** 保存：按 100 条/次分批；成功后再拉一次，保证面板与库一致 */
+  async saveProductFields() {
+    if (this.data.pfSaving) return
+    const dirty = this.data.pfDirty || {}
+    const ids = Object.keys(dirty)
+    if (!ids.length) {
+      this.showAppToast({ overline: 'FIELDS', title: '没有需要保存的改动' })
+      return
+    }
+    this.setData({ pfSaving: true })
+    try {
+      let ok = 0
+      for (let i = 0; i < ids.length; i += 100) {
+        const items = ids.slice(i, i + 100).map((id) => ({ productId: id, data: dirty[id] }))
+        const res = await wx.cloud.callFunction({
+          name: 'manageProducts',
+          data: { action: 'batchPatch', items }
+        })
+        const r = (res && res.result) || {}
+        if (!r.success) throw new Error(r.msg || '保存被拒')
+        if (r.fail) throw new Error(`有 ${r.fail} 件未保存成功`)
+        ok += Number(r.ok) || items.length
+      }
+      this.setData({ pfDirty: {}, pfDirtyCount: 0 })
+      this.showAppToast({ overline: 'FIELDS', title: `已保存 ${ok} 件` })
+      await this.loadProductFields()
+    } catch (e) {
+      console.error('saveProductFields', e)
+      this.showAppToast({ overline: 'FIELDS', title: '保存失败', desc: String((e && e.message) || e) })
+    } finally {
+      this.setData({ pfSaving: false })
+    }
   },
 
   async loadShippingRules() {

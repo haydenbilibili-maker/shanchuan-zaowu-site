@@ -174,6 +174,8 @@
     "check:gift-sfx-perf:selftest": "node miniprogram/scripts/check-gift-sfx-perf.mjs --selftest",
     "check:order-badge-sync": "node miniprogram/scripts/check-order-badge-sync.mjs",
     "check:order-badge-sync:selftest": "node miniprogram/scripts/check-order-badge-sync.mjs --selftest",
+    "check:product-fields-entry": "node miniprogram/scripts/check-product-fields-entry.mjs",
+    "check:product-fields-entry:selftest": "node miniprogram/scripts/check-product-fields-entry.mjs --selftest",
     "test:product-copy-species": "node miniprogram/scripts/test-product-copy-species.mjs",
     "test:product-copy-species:selftest": "node miniprogram/scripts/test-product-copy-species.mjs --selftest",
     "check:size-canonical-sync": "node miniprogram/scripts/check-size-canonical-sync.mjs",

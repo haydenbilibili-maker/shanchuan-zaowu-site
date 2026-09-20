@@ -44,6 +44,8 @@ const MENU_KEYS = {
   ANALYTICS: 'analytics',
   SHIPPING: 'shipping',
   CONTENT_FLAGS: 'contentFlags',
+  /** 字段维护：装裱方式(craftType) / 制作工艺(craftProcess)—— 仅超管（见 menusForWorkspace） */
+  PRODUCT_FIELDS: 'productFields',
   LIVE: 'live',
   HONORARY_CURATORS: 'honoraryCurators',
   MEMBER_CRM: 'memberCrm',
@@ -89,7 +91,8 @@ const TAB_MENU_KEY = {
   13: MENU_KEYS.ANALYTICS,
   14: MENU_KEYS.FRAMER_RECRUIT,
   15: MENU_KEYS.SHIPPING,
-  16: MENU_KEYS.CONTENT_FLAGS
+  16: MENU_KEYS.CONTENT_FLAGS,
+  17: MENU_KEYS.PRODUCT_FIELDS
 }
 
 const SUPER_ADMIN_MENUS = Object.keys(MENU_KEYS).map((k) => MENU_KEYS[k])
@@ -180,7 +183,8 @@ const HUB_MENU_SECTIONS = {
     MENU_KEYS.CONTENT,
     MENU_KEYS.LIVE,
     MENU_KEYS.STORES,
-    MENU_KEYS.CONTENT_FLAGS
+    MENU_KEYS.CONTENT_FLAGS,
+    MENU_KEYS.PRODUCT_FIELDS
   ],
   STUDIO: [
     MENU_KEYS.STUDIO_DASHBOARD,

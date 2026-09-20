@@ -2485,6 +2485,66 @@
     </view>
   </block>
 
+  <!-- [Tab 17] 字段维护 · 装裱方式(craftType) / 制作工艺(craftProcess) —— 仅超管 -->
+  <block wx:if="{{curTab===17}}">
+    <view class="cfg-page">
+      <view class="cfg-header">
+        <view class="cfg-brand">
+          <text class="cfg-en">FIELD MAINTENANCE</text>
+          <text class="cfg-cn">字段维护 · 装裱方式 / 制作工艺</text>
+        </view>
+        <text class="cfg-header-note">只改这两个字段 · 选项与 C 端/ERP 同源 · 仅超管</text>
+      </view>
+
+      <view class="cfg-card">
+        <view class="pf-counts">
+          <text class="pf-count">共 {{pfCounts.all}} 件</text>
+          <text class="pf-count pf-warn" wx:if="{{pfCounts.missing}}">未标注 {{pfCounts.missing}}</text>
+          <text class="pf-count" wx:if="{{pfCounts.type}}">缺装裱 {{pfCounts.type}}</text>
+          <text class="pf-count" wx:if="{{pfCounts.process}}">缺工艺 {{pfCounts.process}}</text>
+        </view>
+        <view class="cfg-shortcut-row">
+          <view class="cfg-shortcut {{pfFilter==='all'?'on':''}}" bindtap="onPfFilter" data-filter="all">全部</view>
+          <view class="cfg-shortcut {{pfFilter==='missing'?'on':''}}" bindtap="onPfFilter" data-filter="missing">未标注 {{pfCounts.missing}}</view>
+          <view class="cfg-shortcut {{pfFilter==='type'?'on':''}}" bindtap="onPfFilter" data-filter="type">按装裱方式</view>
+          <view class="cfg-shortcut {{pfFilter==='process'?'on':''}}" bindtap="onPfFilter" data-filter="process">按制作工艺</view>
+        </view>
+        <view class="cfg-row">
+          <text class="cfg-label">搜索</text>
+          <input class="cfg-field cfg-field-full" value="{{pfKeyword}}" bindinput="onPfKeyword" placeholder="按标题筛选…" placeholder-class="cfg-placeholder"/>
+        </view>
+      </view>
+
+      <view class="cfg-card" wx:if="{{pfLoading}}">
+        <text class="cfg-meta-line">读取中…</text>
+      </view>
+
+      <view class="cfg-card" wx:else>
+        <view class="pf-row" wx:for="{{pfVisible}}" wx:key="_id">
+          <image class="pf-cover" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+          <view class="pf-main">
+            <text class="pf-title">{{item.title}}</text>
+            <view class="pf-pickers">
+              <picker mode="selector" range="{{pfTypeLabels}}" value="{{item.typeIndex}}" bindchange="onPfPick" data-id="{{item._id}}" data-field="craftType">
+                <view class="pf-pick {{item.craftType ? '' : 'pf-empty'}}">装裱 · {{item.craftTypeLabel}}</view>
+              </picker>
+              <picker mode="selector" range="{{pfProcessLabels}}" value="{{item.processIndex}}" bindchange="onPfPick" data-id="{{item._id}}" data-field="craftProcess">
+                <view class="pf-pick {{item.craftProcess ? '' : 'pf-empty'}}">工艺 · {{item.craftProcessLabel}}</view>
+              </picker>
+            </view>
+          </view>
+          <text class="pf-dirty" wx:if="{{item.dirty}}">待存</text>
+        </view>
+        <text class="cfg-meta-line" wx:if="{{!pfVisible.length}}">没有符合条件的藏品（换个筛选或清空搜索）</text>
+        <text class="cfg-meta-line" wx:if="{{pfMatchedCount > pfVisible.length}}">仅显示前 {{pfVisible.length}} 件（共 {{pfMatchedCount}} 件符合）——用筛选或搜索缩小范围</text>
+      </view>
+
+      <view class="cfg-cta {{pfDirtyCount && !pfSaving ? '' : 'disabled'}}" bindtap="saveProductFields">
+        {{pfSaving ? '保存中…' : (pfDirtyCount ? '保存 ' + pfDirtyCount + ' 件改动' : '保存（先在上面改动）')}}
+      </view>
+    </view>
+  </block>
+
   <!-- [Tab 16] 内容展示开关 -->
   <block wx:if="{{curTab===16}}">
     <view class="panel-title cfg-panel-title">内容展示开关 · Display Flags</view>

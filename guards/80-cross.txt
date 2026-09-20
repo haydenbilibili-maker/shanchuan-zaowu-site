@@ -33,6 +33,7 @@ npm run check:gift-scene-rules-sync
 npm run check:shared-modules
 npm run check:member-pricing-sync
 npm run check:order-badge-sync
+npm run check:product-fields-entry
 npm run check:proxy-allowlist
 npm run check:require-paths
 npm run check:page-paths

@@ -5399,3 +5399,28 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 32rpx;
   color: var(--brass-400);
 }
+
+/* ── 字段维护（curTab 17）：装裱方式 / 制作工艺 ───────────────────────── */
+.pf-counts { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 16rpx; }
+.pf-count { font-size: 22rpx; color: var(--color-text-secondary); }
+.pf-count.pf-warn { color: var(--brass-400); font-weight: 600; }
+.pf-row {
+  display: flex; align-items: center; gap: 18rpx;
+  padding: 20rpx 0; border-bottom: 1px solid rgba(38, 35, 32, 0.55);
+}
+.pf-row:last-child { border-bottom: none; }
+.pf-cover { width: 88rpx; height: 88rpx; border-radius: 10rpx; flex-shrink: 0; background: var(--color-bg-elevated); }
+.pf-main { flex: 1; min-width: 0; }
+.pf-title {
+  display: block; font-size: 26rpx; color: var(--color-text-body);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 10rpx;
+}
+.pf-pickers { display: flex; flex-wrap: wrap; gap: 12rpx; }
+.pf-pick {
+  padding: 8rpx 18rpx; border-radius: 9999px; font-size: 22rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.45); color: var(--brass-400);
+  background: rgba(196, 167, 108, 0.08);
+}
+.pf-pick.pf-empty { border-color: rgba(160, 154, 144, 0.5); color: var(--color-text-muted); background: transparent; }
+.pf-dirty { font-size: 20rpx; color: var(--brass-400); flex-shrink: 0; }
+.cfg-shortcut.on { background: rgba(196, 167, 108, 0.22); border-color: var(--brass-400); }
