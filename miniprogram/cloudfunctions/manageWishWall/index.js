@@ -563,6 +563,11 @@ async function staffWalls(event, openid) {
 
   const counts = Object.create(null)
   const agg = db.command && db.command.aggregate
+  // ⚠️ 两条查询路径**都失败**时必须报失败（2026-09-21 夜班补，与 P1-1 同一类）：
+  //    原写法两处 catch 都只 console.warn → counts 为空 → 下面照常补 `DEFAULT_PRODUCT_KEY = 0`
+  //    → 管理端看到「马上有 · 0 条」，把「读不出来」谎报成「这面墙还没内容」。
+  //    这是同一族缺陷在本函数里的**第二处**（第一处是 listPublic / listMine）。
+  let lastError = null
   if (agg) {
     try {
       const res = await db.collection(COLLECTION)
@@ -576,18 +581,26 @@ async function staffWalls(event, openid) {
       })
     } catch (e) {
       console.warn('wish wall staffWalls aggregate failed:', e && e.message)
+      lastError = e
     }
   }
   if (!Object.keys(counts).length) {
+    // 聚合不可用 / 失败 / 真的为空 → 走兜底扫描；**这条成功了就不算故障**
+    // （空结果与读失败必须区分，否则又会把"没内容"误报成故障）
     try {
       const res = await db.collection(COLLECTION).limit(200).get()
       ;((res && res.data) || []).forEach((doc) => {
         const key = normalizeProductKey(doc && doc.productKey)
         counts[key] = (counts[key] || 0) + 1
       })
+      lastError = null
     } catch (e) {
       console.warn('wish wall staffWalls fallback failed:', e && e.message)
+      lastError = e
     }
+  }
+  if (lastError && !Object.keys(counts).length) {
+    return { success: false, msg: '墙面统计暂时读不出来，请稍后再试', fallback: true }
   }
 
   // 默认墙永远在列表里（哪怕 0 条：运营要能看出"这面墙还没内容"）
