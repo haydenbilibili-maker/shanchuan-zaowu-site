@@ -309,7 +309,7 @@ const PRINT_DESIGN_W = 1240
  *
  * ⚠ 为什么 `sticker` **不能**只靠等比缩放：
  *   绘制坐标按 1240 宽的设计稿书写，绘制前**统一等比缩放**。A6 与设计稿同比例
- *   （1240:1748 = 1:1.41）故能「满幅无黑边」；而热敏贴纸的可打印区约 75×69mm（1:0.92，**近方形**），
+ *   （1240:1748 = 1:1.41）故能「满幅无黑边」；而热敏贴纸白区 75×75mm（**1:1**，2026-09-20 裁定），
  *   与设计稿比例不同 ⇒ 等比缩放只会**留白或溢出**，必须**重排版式**
  *   （题记/正文/署名/页脚两枚码在近方形下的纵向分配）。
  *   详见 `admin/docs/礼笺贴纸版式_技术蓝图.md` §3（A6 放不下的推导）与 §6（实现方案）。
@@ -317,11 +317,14 @@ const PRINT_DESIGN_W = 1240
  * sticker 尺寸依据 —— **影像预估，待实物「校准网格」确认**（见蓝图 §2/§5）：
  *   贴纸 90×110mm，扣装饰边框（左右 ~7.3/7.9mm、上 ~5.9mm）与底部水彩花带（~29.5mm）后
  *   白区约 75×75mm，再避开右下**预印 24mm 印章** ⇒ 干净可打印区 ≈ 75 × 69 mm
- *   ⇒ @300dpi = **886 × 815 px**。
+ *   ⇒ @300dpi = **886 × 886 px**（1:1；早期影像预估的 75×69→886×815 已作废）。
  */
 const PRINT_SPECS = {
   a6: { w: 1240, h: 1748, designW: 1240, label: 'A6 竖版 105×148mm' },
-  sticker: { w: 886, h: 815, designW: 886, label: '热敏贴纸可打印区 75×69mm（预估，待实物确认）' },
+  // ⚠️ 2026-09-20 产品负责人裁定：礼笺**输出比例 1:1** → 贴纸白区按 75×75mm（886×886 @300dpi）。
+  //    原来的 75×69 是从实物照片反推的**影像预估**（蓝图 §2 自己就标着"待实物校准网格确认"），
+  //    1:0.92 的"近方形"是那个预估的产物，不是产品要求。裁定后按正方形重排纵向。
+  sticker: { w: 886, h: 886, designW: 886, label: '热敏贴纸可打印区 75×75mm（1:1）' },
 }
 
 /**
@@ -374,8 +377,11 @@ const STICKER = {
   sigMaxW: Math.round(23 * 11.811),                     // 署名下划线**限宽**（不得越到印章区）
   sigBaseSize: 34,                                      // 署名基准字号（超宽按宽度等比缩，不裁字）
   sigMinSize: 25,
-  footerTop: Math.round(53.9 * 11.811),                 // 页脚带顶（码从带顶起；白区**下 1/5**，把小字压到距纸底 ~6px —— 守卫不变式⑤d/e 复算）
-  qrSize: Math.round(13 * 11.811),                      // 每枚码的边长（白区纵向 69mm 是硬上限：码+小字+纸底 10px 余量一起复算，见不变式⑤d）
+  // 页脚带顶：白区**下 1/5** → 75mm × 0.8 = 60mm。
+  // 2026-09-20 白区从 69mm 改 75mm（1:1）时**必须一起改**：这组纵坐标全是绝对 mm，
+  // 不动它就会出现"内容全挤在上 69mm、底下留 6mm 空白"（守卫不变式⑤d/e 会当场判红）。
+  footerTop: Math.round(60 * 11.811),
+  qrSize: Math.round(13 * 11.811),                      // 每枚码的边长（白区纵向 75mm 是硬上限：码+小字+纸底 6~16px 余量一起复算，见不变式⑤d）
   qrGap: Math.round(5 * 11.811),                        // 两枚码间距
   qrCaptionOffset: Math.round(1.4 * 11.811),            // 码下小字基线偏移（码底 + 1.4mm，避免小字贴住码底）
   qrCaptionSize: 21,                                    // 码下小字（2026-09-19：18→21px，1.52mm→1.78mm —— 热敏 1.5mm 易糊）
@@ -390,7 +396,7 @@ function paintGiftPrintCard(canvas, opts) {
   //   → 署名(左, 铜金下划线) + 日期(右, 弱化) → 右下淡「山海」水印
   const o = opts || {}
   const spec = PRINT_SPECS[o.spec] || PRINT_SPECS.a6   // 未知/未传 → a6（**默认 A6，行为零改动**）
-  // 贴纸（近方形 886×815）与 A6 比例不同 —— **不是缩放问题而是版式问题**（蓝图 §3），
+  // 贴纸（1:1 的 886×886）与 A6 比例不同 —— **不是缩放问题而是版式问题**（蓝图 §3），
   // 故另起一套 painter（paintGiftStickerCard）。此处除这一行分派外，
   // A6 分支的坐标、字号、循环写法与 80-cross 的断言锚点**逐字未动**。
   if (spec === PRINT_SPECS.sticker) return paintGiftStickerCard(canvas, o)
@@ -421,7 +427,15 @@ function paintGiftPrintCard(canvas, opts) {
   const axisX = cardX + pad
   const axisRight = cardX + cardW - pad
   // 手写体：与前端同一套系统字体栈（iOS 命中汉仪手写体/签笔，Android 落衬线兜底）
-  const HAND = '"HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", "KaiTi", serif'
+  // 手写体：**必须先写已注册的网络字体族 `ShanhaiHand`**，系统栈只作兜底。
+  // ⚠️ 2026-09-20 产品负责人真机反馈「礼笺的字体输出不是礼赠页面的手写体」——
+  //   根因就在这里：页面（compose 的 .card-write-text/.card-note-display）用的是
+  //   `'ShanhaiHand', "HanziPen SC", …`，而 canvas 这边只有系统栈；iOS 的 WeChat WebView
+  //   **不向网页暴露** 汉仪手写/签笔这些中文族（见 utils/handFont.js 的实测记录），
+  //   于是导出图一律落回系统 default —— 同一段字，屏幕上是手写体、打出来不是。
+  //   `wx.loadFontFace({global:true, scopes:['webview','native']})` 注册的自定义族名
+  //   对 canvas 同样有效，前提是 `ctx.font` 里写的是**它**。
+  const HAND = '"ShanhaiHand", "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", "KaiTi", serif'
 
   // ── 顶行：写给 · TA（左上）—— 原「山海」印章已去掉
   const topY = cardY + Math.round(16 * MM)
@@ -541,10 +555,10 @@ ctx.textAlign = 'left'
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * 热敏不干胶贴纸版（90×110mm，白区 ≈75×69mm @300dpi = 886×815）
+ * 热敏不干胶贴纸版（白区 75×75mm @300dpi = 886×886，1:1）
  *
  * **这是重排版式，不是 A6 的缩放**（蓝图 §3：A6 1:1.41 vs 可打印区 1:0.92 ⇒ 放不进）：
- *   A6 = 瘦高卡，纵向富裕；贴纸 = 近方形，纵向只剩 69mm ⇒ 四个带（题记/正文/署名/页脚）必须重分。
+ *   A6 = 瘦高卡，纵向富裕；贴纸 = 正方形（75mm）⇒ 四个带（题记/正文/署名/页脚）必须重分。
  *
  * **重点风险（历史真图 bug）**：近方形下「署名」与「两枚码」争位 → 两枚码压住署名。
  *   A6 的解法是「署名左 / 码右」，但贴纸右侧只有 ~48mm 且**右下 24mm 被预印印章占掉**，
@@ -576,8 +590,9 @@ function paintGiftStickerCard(canvas, o) {
   const cardH = LH - STICKER.margin * 2
   const axisX = cardX + STICKER.pad
   const axisRight = cardX + cardW - STICKER.pad
-  // 手写体：与 A6 同一套字体栈（保持品牌一致）
-  const HAND = '"HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", "KaiTi", serif'
+  // 手写体：与 A6 **完全同一套栈**（含已注册的 ShanhaiHand）—— 改这里必须同时改 A6 那处。
+  // 为什么两处都得带 ShanhaiHand：见 A6 分支上面那段（iOS 不暴露中文手写族，只有网络字体有效）。
+  const HAND = '"ShanhaiHand", "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", "KaiTi", serif'
 
   // 禁止落墨的**右下预印印章区**（x ≥ stampLeft 且 y ≥ stampTop）
   const stampRight = cardX + cardW - STICKER.stampRightPad
@@ -730,7 +745,7 @@ function paintGiftStickerCard(canvas, o) {
   // ── 页脚带（**两枚码居中在「左文字轴 ~ 印章左缘」之间**）
   // 2026-09-20 真图反馈「两枚码右侧到边框之间还有空白」：原先是**左对齐**铺开（码右缘离印章区 14.2mm），
   //   右对齐又会把码推到印章正下方（印章是直径 24mm 的圆，圆的**底部**左右两侧仍有白），故取**居中**：
-  //   两侧留白均等、不与印章相交，同时把码放大到 14mm 提高扫码率（白区纵向 69mm 的硬上限，见不变式⑤d）。
+  //   两侧留白均等、不与印章相交，同时把码放大到 14mm 提高扫码率（白区纵向 75mm 的硬上限，见不变式⑤d）。
   const codes = []
   if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店' })
   if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信' })
@@ -768,6 +783,13 @@ function renderGiftPrintImage(selector, page, opts) {
         .exec(async (res) => {
           const canvas = res && res[0] && res[0].node
           if (!canvas) { resolve(''); return }
+          // 手写体是**异步**注册的（wx.loadFontFace 网络字体，3MB）：
+          // 不等它就画，canvas 会先把字排成兜底字体再缓存 —— 屏幕上/导出图都变回系统字体。
+          // 所以导出前显式等一次（`ensureHandFont` 幂等 + 并发合并，已加载时立即 resolve）。
+          try {
+            const { ensureHandFont } = require('./handFont')
+            await ensureHandFont()
+          } catch (e) { /* 加载失败按兜底字体出图，不阻断导出 */ }
           // 印刷卡不画藏品图（版式对齐前端礼笺卡）→ 不再下载云文件，省一次 IO
           try {
             let qrcodeImage = null

@@ -369,7 +369,7 @@ Page(withAppModal({
       this.setData({
         printPreview: {
           spec,
-          specLabel: isSticker ? '热敏不干胶贴纸 90×110mm（白区 75×69mm）' : 'A6 竖版 105×148mm @300dpi',
+          specLabel: isSticker ? '热敏不干胶贴纸 90×110mm（白区 75×75mm，1:1）' : 'A6 竖版 105×148mm @300dpi',
           specNote: isSticker
             ? '近方形版式；内容已避开右下预印印章区'
             : '含题记带与页脚两码；满幅无黑边',

@@ -2,19 +2,20 @@
  * 礼笺**热敏不干胶贴纸**版式守卫（域 gift-print · 2026-09-19）
  *
  * 背景：礼笺原本只有 A6 竖版一种印刷规格（105×148mm，1:1.41 瘦高）。新增热敏贴纸
- * （90×110mm，白区 ≈75×69mm，**1:0.92 近方形**）。蓝图 `admin/docs/礼笺贴纸版式_技术蓝图.md` §3
- * 已推导：**A6 无论怎么缩都放不进**（105mm→75mm 时高 105.7mm > 69mm）⇒ 这是**版式重构**。
+ * （白区 **75×75mm，1:1**；2026-09-20 产品负责人裁定把输出比例改成 1:1，原 75×69mm 的影像预估作废）。
+ * 蓝图 `admin/docs/礼笺贴纸版式_技术蓝图.md` §3
+ * 已推导：**A6 无论怎么缩都放不进**（105mm→75mm 时高 105.7mm > 75mm）⇒ 这是**版式重构**。
  *
  * 近方形下最危险的是**历史真图 bug 重演**：署名与两枚码争位 → 两枚码压住署名
  * （A6 的解法是「署名左 / 码右」，但贴纸右侧只剩 ~48mm 且**右下 24mm 被预印印章占掉**，
  *   照搬 A6 排法必然把码压到印章上）。故本守卫同时钉三类判据：
- *   ① 规格与默认值（sticker 886×815 / 默认仍 a6 / A6 常量未动）
+ *   ① 规格与默认值（sticker 886×886 / 默认仍 a6 / A6 常量未动）
  *   ② **真渲染**（mock canvas 记录每次落墨）→ 印章区零落墨、落墨不出纸、正文不溢页脚、日期在署名之下
  *   ③ UI 接线（贴纸入口存在，且与 A6 **共用同一条导出实现**，不得复制第二份）
  *
  * ⚠ **本守卫不能替代真图**（错题本 E8）：可打印区是**影像预估**，24mm 印章位置也是估的。
  *   贴纸到货后必须印**校准网格**量真实白区 → 回填 `STICKER` 表 → 再印真实礼笺做**真图复核**。
- *   本守卫只保证「在假定的 886×815 + 24mm 印章下，版式自身不自相矛盾」。
+ *   本守卫只保证「在假定的 886×886 + 24mm 印章下，版式自身不自相矛盾」。
  *
  * 用法：
  *   node miniprogram/scripts/check-gift-sticker-layout.mjs
@@ -35,7 +36,7 @@ const OPS_WXML = 'miniprogram/subpackages/manager/gift-ops/index.wxml'
 
 const MM = 11.811   // @300dpi：1mm = 11.811px（与渲染器同源口径）
 const SPEC_W = 886  // 75mm
-const SPEC_H = 815  // 69mm
+const SPEC_H = 886  // 75mm（1:1；2026-09-20 产品负责人裁定，原 69mm/815 的影像预估作废）
 const STAMP_MM = 24 // 右下预印圆形印章直径（**影像预估**）
 
 let passed = 0
@@ -82,11 +83,11 @@ const G = loadCjs(cardSrc)
 const SPECS = G.PRINT_SPECS || {}
 check('★ PRINT_SPECS 存在且导出（a6 / sticker 两档）',
   !!SPECS.a6 && !!SPECS.sticker, `实际 ${Object.keys(SPECS).join(',') || '无'}`)
-check('★ sticker 规格 = 蓝图 §5 的 **75×69mm @300dpi = 886×815**',
+check('★ sticker 规格 = **75×75mm @300dpi = 886×886**（1:1）',
   SPECS.sticker && SPECS.sticker.w === SPEC_W && SPECS.sticker.h === SPEC_H && SPECS.sticker.designW === SPEC_W,
   `实际 ${SPECS.sticker && JSON.stringify(SPECS.sticker)}`)
-check('★ 886×815 反推毫米 = 75×69（±0.1mm）',
-  Math.abs(SPEC_W / MM - 75) < 0.1 && Math.abs(SPEC_H / MM - 69) < 0.1,
+check('★ 886×886 反推毫米 = 75×75（±0.1mm）',
+  Math.abs(SPEC_W / MM - 75) < 0.1 && Math.abs(SPEC_H / MM - 75) < 0.1,
   `实际 ${(SPEC_W / MM).toFixed(2)}×${(SPEC_H / MM).toFixed(2)}mm`)
 check('★ **A6 规格零改动**（a6 仍 1240×1748/designW 1240 —— 80-cross 的 A6 守卫继续钉这两行）',
   SPECS.a6 && SPECS.a6.w === 1240 && SPECS.a6.h === 1748 && SPECS.a6.designW === 1240
@@ -228,7 +229,7 @@ check('★ 满幅米白（无黑边）', /ctx\.fillRect\(0, 0, LW, LH\)/.test(st
   const captionBase = T.footerTop + T.qrSize + T.qrCaptionOffset
   check('★ 不变式⑤：两枚码（左起）**不得越过印章左缘**（近方形历史 bug：码压预印印章）',
     codesRight <= stampLeft, `码右端=${codesRight} 印章左缘=${stampLeft}`)
-  check('★ 不变式⑤b：码 + 小字必须在纸内（≤ 815px，留 ≥ 6px）',
+  check('★ 不变式⑤b：码 + 小字必须在纸内（≤ 纸高，留 ≥ 6px）',
     captionBase <= S.h - 6, `小字基线=${captionBase} 纸高=${S.h}（余 ${S.h - captionBase}px）`)
   check('★ 不变式⑤c：码不得压到正文带（footerTop ≥ signTop + 1 行高）',
     T.footerTop >= signTop + lineH34, `footerTop=${T.footerTop} signTop=${signTop}`)
@@ -329,7 +330,7 @@ for (const c of RENDER_CASES) {
     check(`真渲染「${c.name}」不抛错`, false, String(e && e.message))
     continue
   }
-  check(`真渲染「${c.name}」画布 = 886×815`, size.w === SPEC_W && size.h === SPEC_H, `实际 ${size.w}×${size.h}`)
+  check(`真渲染「${c.name}」画布 = 886×886`, size.w === SPEC_W && size.h === SPEC_H, `实际 ${size.w}×${size.h}`)
   const texts = ops.filter((o) => o.op === 'text')
   const images = ops.filter((o) => o.op === 'image')
 
@@ -499,6 +500,23 @@ check('★ 上传路径可按规格区分且可追溯（orderId + 规格 + 时�
   /fileName: `\$\{orderId\}-\$\{isSticker \? 'sticker' : 'a6'\}-\$\{ts\}\.png`/.test(opsJs)
   && /cloudPath: `gift-print\/\$\{pv\.fileName\}`/.test(opsJs))
 
+/* ── ④ 手写体：canvas 必须用**已注册的网络字体族**（2026-09-20 产品负责人真机反馈）──
+ * 「礼笺的字体输出不是礼赠页面的手写体」的根因：
+ *   页面（compose 的 `.card-write-text` / `.card-note-display`）用 `'ShanhaiHand', 系统栈`，
+ *   而 canvas 的 `HAND` 只有系统栈；**iOS 的 WeChat WebView 不向网页暴露**汉仪手写/签笔这些中文族
+ *   （utils/handFont.js 有实测记录）→ 屏幕上是手写体、导出图落回系统字体。
+ * 两条判据缺一不可：栈里要有 `ShanhaiHand`，**而且**画之前要等它加载完
+ * （`loadFontFace` 是异步的，不等就画会把兜底字体排好缓存下来）。 */
+{
+  const handStacks = [...cardSrc.matchAll(/const HAND = '([^']*)'/g)].map((m) => m[1])
+  check('★ 画布手写体栈必须以已注册的 `ShanhaiHand` 打头（A6 + 贴纸两处都要）',
+    // ⚠️ 捕获到的是**引号内的内容**，它以 `"` 开头（栈里写的是 "ShanhaiHand"），不是 `'`
+    handStacks.length === 2 && handStacks.every((f) => /^"ShanhaiHand"/.test(f)),
+    `共 ${handStacks.length} 处：${handStacks.map((f) => f.slice(0, 30)).join(' || ')}`)
+  check('★ 画之前必须**等手写体加载完**（异步注册，不等就会把兜底字体缓存进画布）',
+    /await ensureHandFont\(\)/.test(cardSrc) && /require\('\.\/handFont'\)/.test(cardSrc))
+}
+
 /* ── 输出 / 自检 ─────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
   selftest()
@@ -508,17 +526,30 @@ if (process.argv.includes('--selftest')) {
   console.log(`✗ ${failed} 项失败 / ${passed} 项通过`)
   process.exit(1)
 } else {
-  console.log(`✓ 礼笺贴纸版式：${passed} 项通过（886×815 规格 / 真渲染印章区零落墨 / 正文不溢页脚 / 两入口共用一条实现）`)
+  console.log(`✓ 礼笺贴纸版式：${passed} 项通过（886×886 规格 / 真渲染印章区零落墨 / 正文不溢页脚 / 两入口共用一条实现）`)
   console.log('  ⚠ 可打印区与 24mm 印章位置均为**影像预估**：贴纸到货后必须印校准网格回填 STICKER 表，再做真图复核（E8）')
 }
 
 function selftest() {
   const injections = [
     {
-      name: '贴纸规格被改错（886×815 → 620×815）—— 蓝图 §5 的 75×69mm 被推翻',
+      name: '贴纸规格被改错（886×886 → 620×886）—— 1:1 的 75×75mm 被推翻',
       file: CARD,
-      from: "  sticker: { w: 886, h: 815, designW: 886, label: '热敏贴纸可打印区 75×69mm（预估，待实物确认）' },",
-      to: "  sticker: { w: 620, h: 815, designW: 620, label: '热敏贴纸可打印区 75×69mm（预估，待实物确认）' },"
+      from: "  sticker: { w: 886, h: 886, designW: 886, label: '热敏贴纸可打印区 75×75mm（1:1）' },",
+      to: "  sticker: { w: 620, h: 886, designW: 620, label: '热敏贴纸可打印区 75×75mm（1:1）' },"
+    },
+    {
+      name: '画布手写体栈丢掉 ShanhaiHand（回到"系统栈 → iOS 落回默认字体"）',
+      file: CARD,
+      // ⚠️ 两处 HAND 常量**逐字相同** → 锚点必须带上下文才唯一（这里锚贴纸那处的专属注释）
+      from: "  // 手写体：与 A6 **完全同一套栈**（含已注册的 ShanhaiHand）—— 改这里必须同时改 A6 那处。\n  // 为什么两处都得带 ShanhaiHand：见 A6 分支上面那段（iOS 不暴露中文手写族，只有网络字体有效）。\n  const HAND = '\"ShanhaiHand\", \"HanziPen SC\", \"Hannotate SC\", \"STKaiti\", \"Kaiti SC\", \"KaiTi\", serif'",
+      to: "  // 手写体：与 A6 **完全同一套栈**（含已注册的 ShanhaiHand）—— 改这里必须同时改 A6 那处。\n  // 为什么两处都得带 ShanhaiHand：见 A6 分支上面那段（iOS 不暴露中文手写族，只有网络字体有效）。\n  const HAND = '\"HanziPen SC\", \"Hannotate SC\", \"STKaiti\", \"Kaiti SC\", \"KaiTi\", serif'"
+    },
+    {
+      name: '画之前不再等手写体（异步注册没完成就出图）',
+      file: CARD,
+      from: '            const { ensureHandFont } = require(\'./handFont\')\n            await ensureHandFont()',
+      to: '            const { ensureHandFont } = require(\'./handFont\'); void ensureHandFont'
     },
     {
       name: '默认规格被改成 sticker —— 老调用方（A6 入口不传 spec）会印错规格',
