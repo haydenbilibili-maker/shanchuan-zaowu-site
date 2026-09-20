@@ -125,7 +125,10 @@
 .wish-wall-entry-mq-track {
   display: inline-flex;
   align-items: center;
-  gap: 24rpx;
+  /* ⚠️ 间距**不能**用 track 的 `gap`：轨道内容是两份并排、靠 translateX(-50%) 走一份的宽度。
+     有 gap 时总宽 = 2×内容 + (2n-1)×gap，而 -50% 只走 2×内容的一半 ——
+     每次回绕都会错半个 gap（24rpx 的 gap = 12rpx 的顿挫）。间距改由**每条自己的 margin-right**
+     承担（见 .wish-wall-entry-mq-item），它计入每条宽度，于是 -50% 正好等于一份内容宽。 */
   animation-name: wish-wall-entry-mq-scroll;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -134,6 +137,8 @@
 
 .wish-wall-entry-mq-item {
   flex-shrink: 0;
+  /* 无缝循环的几何见上（track 不用 gap，间距在这里） */
+  margin-right: 24rpx;
   /* 与祈福墙页的愿签/弹幕**同一字栈**：手写体由 `handFont`（app.js onLaunch）全局加载
      （wx.loadFontFace + global:true + scopes 含 native），所以组件里**只写族名、不要重复加载**。
      系统栈兜底要写全：iOS 的 WeChat WebView 不暴露中文手写族，未加载成功时才轮到它们。 */

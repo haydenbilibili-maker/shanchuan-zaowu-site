@@ -43,6 +43,68 @@ const INJECTIONS = {
     from: '    <view class="wish-wall-slot-home" wx:if="{{showMaShangYou}}">\n',
     to: ''
   },
+  /* —— 首页跑马灯健壮性（2026-09-20 施工代理补强）：每一条都对应"看起来能跑、其实半成品"——
+     注入块只动首页/入口相关文件（index.js / WishWallEntry / index.wxss）。 */
+  // 首页文案退回自己那套 .trim()（不再走共享 normalizeWishText）→ 换行/零宽字符进跑马灯
+  'home-marquee-no-normalize': {
+    file: 'miniprogram/pages/index/index.js',
+    from: '          text: normalizeWishText(r && r.text),',
+    to: "          text: String((r && r.text) || '').trim(),"
+  },
+  // 组件只信宿主、自己不再归一化 → 一条纯零宽字符的"愿"占一个看不见字的空位
+  'home-marquee-raw-text': {
+    file: 'miniprogram/components/WishWallEntry/index.js',
+    from: "            return { t: normalizeWishText(it.text), e: String(it.emoji || '') }",
+    to: "            return { t: String(it.text == null ? '' : it.text).trim(), e: String(it.emoji || '') }"
+  },
+  // 单条不再封顶 → 存量脏数据里的超长单条把"按长度换算时长"的匀速跑马灯拖乱
+  'home-marquee-item-uncapped': {
+    file: 'miniprogram/components/WishWallEntry/index.js',
+    from: '        .map((r) => ({ t: r.t.slice(0, TEXT_MAX), e: r.e }))',
+    to: '        .map((r) => ({ t: r.t, e: r.e }))'
+  },
+  // 1 条也开跑马灯 → 无缝循环里露空档（PRD 明确 ≥2 条才开）
+  'home-marquee-one-item': {
+    file: 'miniprogram/components/WishWallEntry/index.js',
+    from: '      const items = rows.length >= MQ_MIN',
+    to: '      const items = rows.length >= 1'
+  },
+  // 时长写死 → 短文案一闪而过、长文案挤成一团（"长文案跑得久"失效）
+  'home-marquee-flat-duration': {
+    file: 'miniprogram/components/WishWallEntry/index.js',
+    from: '      const duration = Math.max(14000, Math.min(46000, 10000 + chars * 260))',
+    to: '      const duration = 26000'
+  },
+  // 去重退回"只看条数" → 刷新后条数一样就永远停在旧文案上
+  'home-marquee-length-dedup': {
+    file: 'miniprogram/components/WishWallEntry/index.js',
+    from: '      if (signature !== this._mqSignature) {',
+    to: '      if (items.length !== this.data.mqItems.length) {'
+  },
+  // 失败后不清"已拉过"标记 → 一次网络抖动 = 本次会话永远没有跑马灯
+  'home-marquee-sticky-failure': {
+    file: 'miniprogram/pages/index/index.js',
+    from: '      this._wishWallMarqueeLoaded = false;\n      this.setData({ wishWallWishes: [] });',
+    to: '      this.setData({ wishWallWishes: [] });'
+  },
+  // 刷新不重置标记 → 会话内永远停在旧心愿（下拉刷新对它无效）
+  'home-marquee-refresh-not-reset': {
+    file: 'miniprogram/pages/index/index.js',
+    from: '  resetWishWallMarquee() {\n    this._wishWallMarqueeLoaded = false;\n  },',
+    to: '  resetWishWallMarquee() {\n    void 0;\n  },'
+  },
+  // 无缝循环的几何被 gap 破坏 → 每次回绕错半个 gap（12rpx 顿挫）
+  'home-marquee-gap-seam': {
+    file: 'miniprogram/components/WishWallEntry/index.wxss',
+    from: '  display: inline-flex;\n  align-items: center;\n',
+    to: '  display: inline-flex;\n  align-items: center;\n  gap: 24rpx;\n'
+  },
+  // 组件不再看 enabled（只按 defaultWall/藏品判定）→ 开关关了组件自己还亮
+  'home-entry-enabled-ignored': {
+    file: 'miniprogram/components/WishWallEntry/index.js',
+    from: '      const visible = enabled === true && (defaultWall === true || isWishWallProduct(product))',
+    to: '      const visible = defaultWall === true || isWishWallProduct(product)'
+  },
   // 展示名改用客户端入参 → 可冒充他人
   'trust-client-nickname': {
     file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
@@ -2779,6 +2841,184 @@ check(
 )
 check('组件属性默认留空 = 按墙自动', /brand: \{ type: String, value: '' \}/.test(entrySrc))
 check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\}/.test(entryWxml) && /\{\{descText\}\}/.test(entryWxml))
+
+/* ================================================================== *
+ * 3b) 首页入口 · 跑马灯健壮性（PRD §4.1 的补强断言，2026-09-20）
+ *
+ * 上一版这一段只钉了「MQ_MIN 这个标识符存在」「wxml 里有 mqItems/mqDurationMs」——
+ * 把时长公式写死、把去重键换回"只看条数"、把 1 条也放行，它全都发现不了。
+ * 这里改成**驱动真实组件 observer / 真实页面方法**，逐条覆盖入口最容易"半成品"的分支：
+ *   开关关闭｜开启、加载中、取不到心愿、网络失败、单条超长、只有 1 条。
+ * ================================================================== */
+{
+  // —— 文案必须走共享归一化（首页不与墙页各造一套）——
+  check(
+    '★ 首页跑马灯文案走共享 normalizeWishText（.trim() 挡不住换行/零宽字符）',
+    /normalizeWishText\(/.test(homeJs) && /text:\s*normalizeWishText\(/.test(homeJs),
+    '一条纯零宽字符的愿在 .trim() 之后仍"非空"，会凑满条数并在跑马灯里留一个看不见字的空位'
+  )
+  check('★ 组件侧同样走共享归一化（它是全站唯一渲染边界，不能只信宿主）', /\bnormalizeWishText\(/.test(entrySrc))
+
+  // —— 组件行为：条数门槛 / 时长 / 单条封顶 / 内容去重 ——
+  const wishesObs = entryComponentOptions && entryComponentOptions.observers && entryComponentOptions.observers.wishes
+  check('能拿到跑马灯 observer（判据的输入必须真实存在）', typeof wishesObs === 'function')
+  const newMqInstance = (base) => ({
+    data: Object.assign({ mqItems: [], mqDurationMs: 26000 }, base || {}),
+    setData(patch) { Object.assign(this.data, patch) }
+  })
+  const runWishes = (list, base) => {
+    const inst = newMqInstance(base)
+    if (typeof wishesObs === 'function') wishesObs.call(inst, list)
+    return inst.data
+  }
+  const w = (text, emoji) => ({ text, emoji: emoji || '' })
+  eq('★ 只有 1 条不开跑马灯（1 条在无缝循环里会露空档）', runWishes([w('独愿')]).mqItems.length, 0)
+  eq('★ 0 条不开跑马灯（取不到心愿只留入口）', runWishes([]).mqItems.length, 0)
+  eq('★ 2 条才开，且内容是两份（translateX(-50%) 无缝循环）', runWishes([w('甲愿'), w('乙愿')]).mqItems.length, 4)
+  eq(
+    '★ ≥2 条但全是空/零宽文案 = 0 条（不摆"看不见的愿"凑数）',
+    runWishes([w('\u200b\u200b'), w('   '), w('\n')]).mqItems.length,
+    0
+  )
+  eq(
+    '★ 零宽文案不占条数也不进轨道（4 条里混 2 条零宽/空白 → 只按 2 条真实心愿开，得 4 项）',
+    runWishes([w('\u200b\u200b'), w('甲愿'), w('   '), w('乙愿')]).mqItems.length,
+    4
+  )
+  check(
+    '★ 时长按内容长度换算（短的两条 < 长的两条；写死时长会让短的一闪而过、长的挤成一团）',
+    runWishes([w('短'), w('短')]).mqDurationMs < runWishes([w('愿'.repeat(30)), w('愿'.repeat(30))]).mqDurationMs
+  )
+  check(
+    '★ 单条封顶 = 系统上限 TEXT_MAX（存量脏数据的超长单条不会拖乱匀速跑马灯）',
+    runWishes([w('愿'.repeat(300)), w('丙愿')]).mqItems.every((it) => it.t.length <= wish.TEXT_MAX)
+  )
+  {
+    const inst = newMqInstance()
+    if (typeof wishesObs === 'function') wishesObs.call(inst, [w('甲愿'), w('乙愿')])
+    const before = inst.data.mqItems.map((it) => it.t).join(',')
+    if (typeof wishesObs === 'function') wishesObs.call(inst, [w('丙愿'), w('丁愿')])
+    const after = inst.data.mqItems.map((it) => it.t).join(',')
+    check(
+      '★ 条数相同但文案变了也要更新（下拉刷新后停在旧文案 = 过期社会证明）',
+      before === '甲愿,乙愿,甲愿,乙愿' && after === '丙愿,丁愿,丙愿,丁愿',
+      `${before} → ${after}`
+    )
+  }
+
+  // —— 可见性判定：开关 + 墙作用域（组件自身也要守，"宁可漏亮，不可错亮"）——
+  const visObsEntry = entryComponentOptions && entryComponentOptions.observers &&
+    Object.entries(entryComponentOptions.observers).find(
+      ([k]) => /\benabled\b/.test(k) && /\bdefaultWall\b/.test(k)
+    )
+  check('能拿到可见性 observer（判据的输入必须真实存在）', !!visObsEntry)
+  const runVisible = (enabled, defaultWall, product) => {
+    const inst = newMqInstance()
+    if (visObsEntry) visObsEntry[1].call(inst, enabled, defaultWall, product, '', '')
+    return inst.data.visible
+  }
+  eq(
+    '★ 开关关 → 组件自身也不渲染（不能只靠宿主槽位：详情页走的是同一条判定）',
+    runVisible(false, true, null),
+    false
+  )
+  eq('★ 开关开 + defaultWall 显式声明 → 首页入口亮', runVisible(true, true, null), true)
+  eq(
+    '★ 开关开但既没 defaultWall、也没命中藏品 → 不亮（宁可漏亮，不可错亮）',
+    runVisible(true, false, null),
+    false
+  )
+  eq(
+    '★ 开关开 + 藏品显式命中 → 亮（详情页路径不受 defaultWall 影响）',
+    runVisible(true, false, { wishWallEnabled: true }),
+    true
+  )
+
+  // —— 无缝循环的几何：-50% 必须正好等于一份内容宽 ——
+  const mqCss = stripCssComments(entryWxss)
+  const mqTrackBody = (/\.wish-wall-entry-mq-track\s*\{([^}]*)\}/.exec(mqCss) || [, ''])[1]
+  const mqItemBody = (/\.wish-wall-entry-mq-item\s*\{([^}]*)\}/.exec(mqCss) || [, ''])[1]
+  check('能解析到跑马灯轨道/条目规则（判据不是空转）', !!mqTrackBody && !!mqItemBody)
+  check(
+    '★ 无缝循环的几何：轨道不能用 gap 造间距（有 gap 时 -50% 每次回绕错半个 gap）',
+    !/(?:^|;)\s*gap\s*:/.test(mqTrackBody) && /margin-right\s*:/.test(mqItemBody),
+    '总宽 = 2×内容 + (2n-1)×gap，而 -50% 只走 2×内容的一半 → 回绕处 12rpx 顿挫'
+  )
+
+  // —— 页面行为：真实心愿 / 失败可重试 / 刷新可更新 / 开关初值 ——
+  const homeWxPrev = globalThis.wx
+  let mqCalls = 0
+  let mqReply = { result: { list: [] } }
+  try {
+    installWxStub() // index.js 的 require 链在载入期就会读 wx.cloud
+    // installWxStub 的 cloud 桩只有 callFunction；首页 require 链里有一个模块在载入期
+    // 就 `wx.cloud.database()`（缺失会炸在第二层，现象像"页面根本加载不了"）
+    globalThis.wx.cloud.database = () => ({ collection: () => ({}) })
+    globalThis.wx.cloud.callFunction = () => {
+      mqCalls += 1
+      return mqReply.__fail ? Promise.reject(new Error('network down')) : Promise.resolve(mqReply)
+    }
+    const homePageCfg = loadPageConfig('miniprogram/pages/index/index.js')
+    const mqPage = () => ({ data: { wishWallWishes: [] }, setData(patch) { Object.assign(this.data, patch) } })
+
+    eq('★ 首页开关初始为关（缺字段默认关：不开就没有跑马灯、也没有槽位）', homePageCfg.data.showMaShangYou, false)
+
+    // 取不到心愿（网络失败）：不编造，只留入口
+    const mqPageInst = mqPage()
+    mqReply = { __fail: true, result: { list: [] } }
+    await homePageCfg.loadWishWallMarquee.call(mqPageInst)
+    const afterFail = mqCalls
+    check('★ 取不到心愿 = 空文案（不编造社会证明），入口本身不受影响', mqPageInst.data.wishWallWishes.length === 0)
+
+    // 失败必须可重试：一次网络抖动不能把跑马灯钉死在"没有"状态
+    mqReply = { result: { list: [{ _id: 'a', text: '甲愿' }, { _id: 'b', text: '乙愿' }] } }
+    await homePageCfg.loadWishWallMarquee.call(mqPageInst)
+    check(
+      '★ 失败后可重试（清掉"已拉过"标记；否则本次会话永远没有跑马灯）',
+      afterFail === 1 && mqCalls === 2 && mqPageInst.data.wishWallWishes.length === 2,
+      `calls ${afterFail}→${mqCalls}，wishes ${mqPageInst.data.wishWallWishes.length}`
+    )
+
+    // 成功后同一会话不重复打云函数（水合缓存 + SWR 两条路径共用一次结果）
+    const settledCalls = mqCalls
+    await homePageCfg.loadWishWallMarquee.call(mqPageInst)
+    check('★ 同一会话只拉一次（缓存与 SWR 两条路径不会各打一次云函数）', mqCalls === settledCalls)
+
+    // 刷新：重置标记后必须重新拉（首页是 tab 页，会话可以很长）
+    homePageCfg.resetWishWallMarquee.call(mqPageInst)
+    mqReply = { result: { list: [{ _id: 'c', text: '丙愿' }, { _id: 'd', text: '丁愿' }] } }
+    await homePageCfg.loadWishWallMarquee.call(mqPageInst)
+    check(
+      '★ 下拉刷新/错误重试后重新拉一次（否则会话内永远停在旧心愿）',
+      mqCalls === settledCalls + 1 && mqPageInst.data.wishWallWishes[0].text === '丙愿'
+    )
+
+    // 文案归一化（页面侧）：换行折叠 + 纯零宽条目剔除
+    mqReply = { result: { list: [{ _id: 'e', text: '  甲\n乙  ' }, { _id: 'f', text: '\u200b\u200b' }, { _id: 'g', text: '丙愿' }] } }
+    homePageCfg.resetWishWallMarquee.call(mqPageInst)
+    await homePageCfg.loadWishWallMarquee.call(mqPageInst)
+    check(
+      '★ 页面把换行折叠、把纯零宽条目剔除（否则跑马灯多一个看不见字的空位）',
+      mqPageInst.data.wishWallWishes.length === 2 && mqPageInst.data.wishWallWishes[0].text === '甲 乙',
+      JSON.stringify(mqPageInst.data.wishWallWishes)
+    )
+
+    // 两个刷新入口都要重置（少一个就有一条"永远不更新"的死路）
+    const handlerBody = (name) => {
+      const start = homeJs.indexOf(`\n  ${name}(`)
+      if (start === -1) return ''
+      const end = homeJs.indexOf('\n  },', start)
+      return end === -1 ? homeJs.slice(start) : homeJs.slice(start, end)
+    }
+    check(
+      '★ 下拉刷新与错误重试**两个**入口都重置跑马灯',
+      /resetWishWallMarquee\(\)/.test(handlerBody('onPullDownRefresh')) &&
+        /resetWishWallMarquee\(\)/.test(handlerBody('onRetryLoad'))
+    )
+  } finally {
+    globalThis.wx = homeWxPrev
+  }
+}
 
 
 /* ------------------------------------------------------------------ *

@@ -240,12 +240,15 @@ Page({
   /**
    * 首页祈福墙跑马灯（2026-09-20）：取**默认墙**最近的真实心愿文案。
    *
-   * 三条约束：
+   * 四条约束：
    *   1. **只取真实心愿**（`manageWishWall` 的 list）。失败/空 → `wishWallWishes: []`，
    *      跑马灯整行不渲染 —— **绝不摆假文案充场面**（本仓硬口径：不许编造社会证明）；
    *   2. **一个页面会话只拉一次**：开关的水合缓存与 SWR 两条路径都会走到这里；
    *   3. **不传 productKey** = 默认墙（`manageWishWall` 用 `normalizeProductKey` 兜底到
-   *      DEFAULT_PRODUCT_KEY），所以首页不需要任何商品上下文。
+   *      DEFAULT_PRODUCT_KEY），所以首页不需要任何商品上下文；
+   *   4. 文案/emoji 都走**共享规则**（`utils/wishWall` 的 `normalizeWishText` / `danmakuEmoji`），
+   *      首页**不另造一套**。为什么正文也必须归一化：换行与零宽字符在 `.trim()` 之后仍然"非空"，
+   *      一条纯零宽的心愿会被当成有效条目凑满条数，跑马灯里就多出一个"看不见字"的假空位。
    */
   async loadWishWallMarquee() {
     if (this._wishWallMarqueeLoaded) return;
@@ -255,21 +258,30 @@ Page({
         name: 'manageWishWall',
         data: { action: 'list', limit: 12 }
       });
-      const list = ((res && res.result) || {}).list || [];
-      // emoji 用**与祈福墙弹幕同一条规则**（utils/wishWall.danmakuEmoji，按 _id 确定性取）——
-      // 首页不另造一套，否则两处的 emoji 早晚对不上。
-      const { danmakuEmoji } = require('../../utils/wishWall');
-      const wishes = list
+      const list = ((res && res.result) || {}).list;
+      const { danmakuEmoji, normalizeWishText } = require('../../utils/wishWall');
+      const wishes = (Array.isArray(list) ? list : [])
         .map((r) => ({
-          text: String((r && r.text) || '').trim(),
+          text: normalizeWishText(r && r.text),
           emoji: danmakuEmoji((r && r._id) || '')
         }))
         .filter((w) => w.text);
       this.setData({ wishWallWishes: wishes });
     } catch (e) {
-      // 取不到就只是"没有跑马灯"：入口照常可点，降级不影响转化主路径
+      // 取不到就只是"没有跑马灯"：入口照常可点，降级不影响转化主路径。
+      // ⚠️ 但失败**必须可重试**：不清标记的话，一次网络抖动会让本次会话永远没有跑马灯
+      //    （开关的水合缓存与 SWR 两条路径都已走过这里，不会再有第三次）。
+      this._wishWallMarqueeLoaded = false;
       this.setData({ wishWallWishes: [] });
     }
+  },
+
+  /**
+   * 让跑马灯在下一次开关判定时**重新拉一次**（下拉刷新 / 错误重试共用）。
+   * 没有它，一次成功之后就永远停在旧心愿上 —— 而首页是 tab 页，会话可以很长。
+   */
+  resetWishWallMarquee() {
+    this._wishWallMarqueeLoaded = false;
   },
 
   async loadDisplayFlags() {
@@ -861,6 +873,7 @@ Page({
     // 🔧 重写：清除所有加载标记
     this._initializing = false;
     this._configLoaded = false;
+    this.resetWishWallMarquee();
     
     // 清除数据与首页配置缓存，确保 Admin 开关变更可立即生效
     clearCache('HOME_CONFIG');
@@ -888,6 +901,7 @@ Page({
     // 与 onPullDownRefresh 保持一致的重置集合，避免命中旧的失败缓存
     this._initializing = false;
     this._configLoaded = false;
+    this.resetWishWallMarquee();
     clearCache('HOME_CONFIG');
     clearCache('BANNERS');
     clearCache('COLLECTIONS');
