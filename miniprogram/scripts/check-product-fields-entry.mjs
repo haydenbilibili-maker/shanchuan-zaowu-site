@@ -39,6 +39,10 @@ const REL = {
   sync: 'utils/productTaxonomySync.js',
   cloudFn: 'cloudfunctions/getProductTaxonomy/index.js',
   cloudFnPkg: 'cloudfunctions/getProductTaxonomy/package.json',
+  // 选项表的**另外两份副本**（2026-09-20 缺陷就在这两份里：别名表是手写的、漏了 7 个新工艺）
+  cloudTaxonomy: 'cloudfunctions/manageProducts/productTaxonomy.js',
+  feedTaxonomy: 'cloudfunctions/getEncyclopediaFeed/productTaxonomy.js',
+  artisanFn: 'cloudfunctions/manageArtisanCommission/index.js',
   appJs: 'app.js',
   cloudbaserc: 'cloudbaserc.json'
 }
@@ -242,6 +246,68 @@ function check (root) {
     }
   }
 
+  /* ── ⑤-g 选项表**往返一致**（2026-09-20 真机缺陷的判据）─────────────────────────
+   * 缺陷形态：产品负责人在「分类管理 → 字段维护」里把制作工艺标成「针插」→ 保存 → 再读回来还是「未标注」。
+   * 根因：云函数 `manageProducts/productTaxonomy.js` 的**别名表是手写的**，只覆盖 4 个旧工艺；
+   *   2026-09-19 追加的 7 个（压制/针插/干制骨骼/切片/涂片/透明骨骼/包埋）不在表里 →
+   *   `normalizeCraftProcess('pinned')` 返回 `''` → `batchPatch` 把 craftProcess **静默写成空串**。
+   *   （客户端 `config/productTaxonomy.js` 早已改成从选项表派生，两份云函数副本没跟上。）
+   *
+   * 判据只钉**结果**：每个选项的 value 与中文名，在**每一份** normalize 里都必须往返回同一个 value；
+   * 选项维护新增的 `custom_xxx` 必须放行（校验端放行的值，写库端也得放行）；脏值仍要挡住。 */
+  {
+    const loadCjs = (rel) => {
+      try {
+        const m = { exports: {} }
+        // eslint-disable-next-line no-new-func
+        new Function('module', 'exports', 'require', readFileSync(join(root, rel), 'utf8'))(
+          m, m.exports, () => { throw new Error('守卫里不提供 require') }
+        )
+        return m.exports
+      } catch (e) { return null }
+    }
+    const client = loadCjs(REL.taxonomy)
+    const cloudMP = loadCjs(REL.cloudTaxonomy)
+    const feed = loadCjs(REL.feedTaxonomy)
+    const optionsOf = (m) => (m && (m.craftTypeOptions ? m.craftTypeOptions() : m.CRAFT_TYPE_OPTIONS)) || []
+    const procsOf = (m) => (m && (m.craftProcessOptions ? m.craftProcessOptions() : m.CRAFT_PROCESS_OPTIONS)) || []
+    if (!client || !cloudMP || !feed) {
+      problems.push('选项表副本加载失败（路径改了？三份副本必须都能被独立加载）')
+    } else {
+      const canonTypes = optionsOf(client)
+      const canonProcs = procsOf(client)
+      // 三份副本的**选项清单**必须逐字一致（差异 = 下一处「值合法但被抹掉」）
+      for (const [label, m] of [['manageProducts', cloudMP]]) {
+        const tv = optionsOf(m).map((o) => o.value).join(',')
+        const pv = procsOf(m).map((o) => o.value).join(',')
+        if (tv !== canonTypes.map((o) => o.value).join(',')) problems.push(`云函数 ${label} 的装裱方式选项与客户端不一致 —— 手工副本已漂移`)
+        if (pv !== canonProcs.map((o) => o.value).join(',')) problems.push(`云函数 ${label} 的制作工艺选项与客户端不一致 —— 手工副本已漂移`)
+      }
+      // 往返：每一份有 normalize 的副本都得过
+      const plain = (m, fn, v) => { try { return m[fn](v) } catch (e) { return null } }
+      for (const [label, m] of [['客户端', client], ['manageProducts', cloudMP], ['getEncyclopediaFeed', feed]]) {
+        const nt = (v) => plain(m, 'normalizeCraftType', v)
+        const np = (v) => plain(m, 'normalizeCraftProcess', v)
+        if (typeof nt('相框') !== 'string') continue
+        const bad = []
+        for (const o of canonTypes) {
+          if (nt(o.value) !== o.value) bad.push(`craftType(${o.value})=${JSON.stringify(nt(o.value))}`)
+          if (nt(o.label) !== o.value) bad.push(`craftType(${o.label})=${JSON.stringify(nt(o.label))}`)
+        }
+        for (const o of canonProcs) {
+          if (np(o.value) !== o.value) bad.push(`craftProcess(${o.value})=${JSON.stringify(np(o.value))}`)
+          if (np(o.label) !== o.value) bad.push(`craftProcess(${o.label})=${JSON.stringify(np(o.label))}`)
+        }
+        if (bad.length) {
+          problems.push(`${label} 的 normalize 不能往返（**标记后会静默清空**）：${bad.slice(0, 4).join(' / ')}`)
+        }
+        if (nt('custom_abc') !== 'custom_abc') problems.push(`${label} 把「选项维护」新增的 craftType 值抹成空串`)
+        if (np('custom_xyz') !== 'custom_xyz') problems.push(`${label} 把「选项维护」新增的 craftProcess 值抹成空串`)
+        if (np('不是合法值') !== '') problems.push(`${label} 没挡住非法 craftProcess 值`)
+      }
+    }
+  }
+
   // 未标注必须能选回去（picker 第 0 项 = 未标注）
   if (!/_pfIndex\(/.test(manager) || !/i < 0 \? 0 : i \+ 1/.test(manager)) {
     problems.push('picker 下标未按「第 0 项 = 未标注」映射 —— 无法把字段清回未标注')
@@ -256,6 +322,8 @@ function selftest () {
     if (!ok) bad += 1
     console.log(`${ok ? '✓' : '✗'} ${name}${ok || !extra ? '' : ` —— ${extra}`}`)
   }
+  // 注入清单在 try 块里声明，末尾的汇总在块外 —— 提出来，汇总才能从数组派生（写死过一版，加了注入还是显示 11）
+  let injections = []
   const tmp = mkdtempSync(join(tmpdir(), 'product-fields-'))
   try {
     const copy = () => {
@@ -270,7 +338,7 @@ function selftest () {
     const base = run()
     t('基线（真文件副本）通过', base.status === 0, (base.stdout || '') + (base.stderr || ''))
 
-    const injections = [
+    injections = [
       {
         name: '把入口也发给店长（该字段影响运费档，不该给店员）',
         file: REL.roles,
@@ -310,6 +378,28 @@ function selftest () {
         mutate: (s) => s.replace('class="cat-field-zone" wx:if="{{canProductFields && catZone===\'fields\'}}"',
                                  'class="cat-field-zone" wx:if="{{canProductFields}}"'),
         expect: /catZone 门/
+      },
+      {
+        // 真机缺陷本体：云函数别名表退回**手写**（只留 4 个旧工艺）→ 标记「针插」写库变空串
+        name: '云函数别名表退回手写 4 项（标记「针插」写库变空串 —— 产品负责人报的那个缺陷）',
+        file: REL.cloudTaxonomy,
+        mutate: (s) => s.replace(
+          'const CRAFT_PROCESS_ALIASES = Object.assign(\n  aliasesFromOptions(CRAFT_PROCESS_OPTIONS),\n  CRAFT_PROCESS_ALIAS_EXTRAS\n)',
+          "const CRAFT_PROCESS_ALIASES = Object.assign({ immersion: 'immersion', plastination: 'plastination', taxidermy: 'taxidermy', other: 'other' }, CRAFT_PROCESS_ALIAS_EXTRAS)"
+        ),
+        expect: /不能往返/
+      },
+      {
+        name: '云函数不再放行「选项维护」新增的值（自定义选项保存后仍是未标注）',
+        file: REL.cloudTaxonomy,
+        mutate: (s) => s.replace("  return SAFE_OPTION_VALUE_RE.test(s) ? s : ''\n}\n\nfunction normalizeCraftProcess", '  return \'\'\n}\n\nfunction normalizeCraftProcess'),
+        expect: /抹成空串/
+      },
+      {
+        name: '百科云函数的工艺数值表漏掉新工艺（同一个漂移的第二份副本）',
+        file: REL.feedTaxonomy,
+        mutate: (s) => s.replace("  pinned: ['pinned', '针插标本', '针插'],\n", ''),
+        expect: /不能往返/
       },
       {
         name: 'C 端标签退回冻结常量（超管新增的选项会显示成空白）',
@@ -380,7 +470,8 @@ function selftest () {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：11 处真实注入（发给店长 / 内联选项清单 / 分批超限 / 退化成只读 / 标签退回冻结常量 / 服务端漏删除保护 / 启动不加载字典 / 横排抄了竖排输入框 / 分区丢 catZone 门 / 专区没权限门 / Tab 17 复活）全部拦下')
+  // 计数与清单都从数组派生 —— 写死会在加注入时变成假的「11 处」（这行上一版就是写死的）
+  console.log(`\n自检通过：${injections.length} 处真实注入（${injections.map((i) => i.name.slice(0, 12)).join(' / ')}）全部拦下`)
 }
 
 function main () {

@@ -78,46 +78,60 @@ const CHANNEL_ALIASES = {
   其他: 'other'
 }
 
-const CRAFT_ALIASES = {
-  frame: 'frame',
-  cloche: 'cloche',
-  cloche_round: 'cloche_round',
-  cloche_cylinder: 'cloche_cylinder',
-  diorama: 'diorama',
-  magnet: 'magnet',
-  accessory: 'accessory',
+/**
+ * 选项值 → 自身（同时收下小写形态与中文名）—— **从选项表派生**，不再手抄。
+ *
+ * ⚠️ 这里曾是两份**手写**别名表，而 `CRAFT_PROCESS_OPTIONS` 2026-09-19 追加了 7 个新工艺
+ *    （压制/针插/干制骨骼/切片/涂片/透明骨骼/包埋），别名表**只加了 4 个旧工艺**。
+ *    后果：`normalizeCraftProcess('pinned')` 返回 `''` → `batchPatch` 把 craftProcess
+ *    **静默写成空串** → 后台「分类管理 → 字段维护」里标记完再读回来仍是「未标注」，
+ *    也就是产品负责人 2026-09-20 报的「标记后状态没有保存」。
+ *    客户端 `config/productTaxonomy.js` 早就改成派生了（那里的注释写着"静默清空比不保存更糟"），
+ *    **两份云函数副本没跟上** —— 现在一起改成派生：加选项忘了加别名这类错误在结构上不可能再发生。
+ */
+function aliasesFromOptions(options) {
+  const map = {}
+  ;(options || []).forEach((o) => {
+    if (!o || !o.value) return
+    const v = String(o.value)
+    map[v] = v
+    map[v.toLowerCase()] = v
+    if (o.label) map[String(o.label)] = v
+  })
+  return map
+}
+
+/** 历史别名：不在选项表里，但存量数据/旧文案里出现过，必须继续认 */
+const CRAFT_TYPE_ALIAS_EXTRAS = {
   jewelry: 'accessory',
-  wing_art: 'wing_art',
-  other: 'other',
-  相框: 'frame',
   玻璃罩: 'cloche',
   方罩: 'cloche',
-  方形玻璃罩: 'cloche',
-  圆形玻璃罩: 'cloche_round',
   圆罩: 'cloche_round',
-  圆柱形玻璃罩: 'cloche_cylinder',
   圆柱玻璃罩: 'cloche_cylinder',
-  造景: 'diorama',
-  冰箱贴: 'magnet',
-  饰品: 'accessory',
   首饰: 'accessory',
-  蝶翅画: 'wing_art',
-  其它: 'other',
+  // 简体「其他」：选项表的 label 是「其它」（派生得到），这条只在旧别名表里 —— 漏了就会
+  // 让『其他』被判非法并**写成空**，而 craftType 是运费档判据（2026-09-20 由非退化比对抓出）
   其他: 'other'
 }
 
-const CRAFT_PROCESS_ALIASES = {
-  immersion: 'immersion',
-  plastination: 'plastination',
-  taxidermy: 'taxidermy',
-  other: 'other',
-  浸制: 'immersion',
+const CRAFT_PROCESS_ALIAS_EXTRAS = {
   浸液: 'immersion',
-  塑化: 'plastination',
-  剥制: 'taxidermy',
-  其它: 'other',
   其他: 'other'
 }
+
+const CRAFT_ALIASES = Object.assign(aliasesFromOptions(CRAFT_TYPE_OPTIONS), CRAFT_TYPE_ALIAS_EXTRAS)
+
+const CRAFT_PROCESS_ALIASES = Object.assign(
+  aliasesFromOptions(CRAFT_PROCESS_OPTIONS),
+  CRAFT_PROCESS_ALIAS_EXTRAS
+)
+
+/**
+ * 「选项维护」里**新增**的选项（value 形如 `custom_xxx`）不在本文件的选项表里 ——
+ * 但它是**合法值**，normalize 必须放行；不然写库时又会变成空串（同一个缺陷换个入口复发）。
+ * 口径与 `getProductTaxonomy` 的 `VALUE_RE` 一致（校验端与写库端必须同一条规则）。
+ */
+const SAFE_OPTION_VALUE_RE = /^[a-z][a-z0-9_]{0,31}$/
 
 /** 支持渠道 / 装裱方式 / 制作工艺筛选与标注的一级馆（短名/全名均可） */
 const TAXONOMY_ELIGIBLE_ROOTS = [
@@ -145,15 +159,18 @@ function normalizeChannel(raw) {
 function normalizeCraftType(raw) {
   if (raw == null || raw === '') return ''
   const s = String(raw).trim()
-  const lower = s.toLowerCase()
-  return CRAFT_ALIASES[lower] || CRAFT_ALIASES[s] || ''
+  const hit = CRAFT_ALIASES[s.toLowerCase()] || CRAFT_ALIASES[s]
+  if (hit) return hit
+  // 云端字典新增的选项（选项维护）：值本身合法，不能当脏值抹掉
+  return SAFE_OPTION_VALUE_RE.test(s) ? s : ''
 }
 
 function normalizeCraftProcess(raw) {
   if (raw == null || raw === '') return ''
   const s = String(raw).trim()
-  const lower = s.toLowerCase()
-  return CRAFT_PROCESS_ALIASES[lower] || CRAFT_PROCESS_ALIASES[s] || ''
+  const hit = CRAFT_PROCESS_ALIASES[s.toLowerCase()] || CRAFT_PROCESS_ALIASES[s]
+  if (hit) return hit
+  return SAFE_OPTION_VALUE_RE.test(s) ? s : ''
 }
 
 /** 分类文案是否属于可标注渠道/装裱/工艺的标本品类 */

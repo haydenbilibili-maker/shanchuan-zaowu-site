@@ -125,46 +125,59 @@ const CHANNEL_ALIASES = {
   其他: 'other'
 }
 
-const CRAFT_ALIASES = {
-  frame: 'frame',
-  cloche: 'cloche',
-  cloche_round: 'cloche_round',
-  cloche_cylinder: 'cloche_cylinder',
-  diorama: 'diorama',
-  magnet: 'magnet',
-  accessory: 'accessory',
+/**
+ * 从选项表派生别名表（`value → value` 且 `中文名 → value`）。
+ *
+ * ⚠️ 为什么必须派生而不是手写（2026-09-20 真缺陷）：2026-09-19 给 `craftProcess` 追加了
+ * 7 个新工艺（pressed/pinned/dry_bone/section/smear/cleared_stained/resin_embed），
+ * **选项表加了、手写的别名表没加**。而 `normalizeCraftProcess` 只查别名表 →
+ * 这些值被判成非法并**写成空字符串**：超管在「分类管理 → 字段维护」里标记工艺后
+ * 看到「已保存 N 件」，重载却回到「未标注」——用户报的"标记后状态没有保存"就是它，
+ * 而且是**静默清空**（比不保存更糟：会抹掉原有工艺）。
+ * 派生之后，「加选项忘了加别名」这一类错误在结构上不可能再发生。
+ */
+function aliasesFromOptions(options) {
+  const map = {}
+  ;(options || []).forEach((o) => {
+    if (!o || !o.value) return
+    const v = String(o.value)
+    map[v] = v
+    map[v.toLowerCase()] = v
+    if (o.label) map[String(o.label)] = v
+  })
+  return map
+}
+
+/** 历史别名：不在选项表里，但存量数据/旧文案里出现过，必须继续认 */
+const CRAFT_TYPE_ALIAS_EXTRAS = {
   jewelry: 'accessory',
-  wing_art: 'wing_art',
-  other: 'other',
-  相框: 'frame',
   玻璃罩: 'cloche',
   方罩: 'cloche',
-  方形玻璃罩: 'cloche',
-  圆形玻璃罩: 'cloche_round',
   圆罩: 'cloche_round',
-  圆柱形玻璃罩: 'cloche_cylinder',
   圆柱玻璃罩: 'cloche_cylinder',
-  造景: 'diorama',
-  冰箱贴: 'magnet',
-  饰品: 'accessory',
   首饰: 'accessory',
-  蝶翅画: 'wing_art',
-  其它: 'other',
+  // ⚠️ 别删：「其它」是选项表的 label（派生得到），而简体「其他」只在旧别名表里。
+  //    2026-09-20 改成派生时漏搬了这一条 → normalizeCraftType('其他') 变成 ''，
+  //    而 craftType 是运费档判据（丢值=静默落错档）。由非退化比对抓出。
   其他: 'other'
 }
 
-const CRAFT_PROCESS_ALIASES = {
-  immersion: 'immersion',
-  plastination: 'plastination',
-  taxidermy: 'taxidermy',
-  other: 'other',
-  浸制: 'immersion',
+const CRAFT_PROCESS_ALIAS_EXTRAS = {
   浸液: 'immersion',
-  塑化: 'plastination',
-  剥制: 'taxidermy',
-  其它: 'other',
   其他: 'other'
 }
+
+/** 选项值的**合法形态**（选项维护里新增的 `custom_xxx` 就是这一类）。
+ *  与云端 `getProductTaxonomy` 的 `VALUE_RE`、两份云函数 `SAFE_OPTION_VALUE_RE` 逐字同源 ——
+ *  「校验端放行的值，写库端也必须放行」，否则就是静默清空。 */
+const SAFE_OPTION_VALUE_RE = /^[a-z][a-z0-9_]{0,31}$/
+
+const CRAFT_ALIASES = Object.assign(aliasesFromOptions(CRAFT_TYPE_OPTIONS), CRAFT_TYPE_ALIAS_EXTRAS)
+
+const CRAFT_PROCESS_ALIASES = Object.assign(
+  aliasesFromOptions(CRAFT_PROCESS_OPTIONS),
+  CRAFT_PROCESS_ALIAS_EXTRAS
+)
 
 /** 支持渠道 / 装裱方式 / 制作工艺筛选与标注的一级馆（短名/全名均可） */
 const TAXONOMY_ELIGIBLE_ROOTS = [
@@ -193,14 +206,28 @@ function normalizeCraftType(raw) {
   if (raw == null || raw === '') return ''
   const s = String(raw).trim()
   const lower = s.toLowerCase()
-  return CRAFT_ALIASES[lower] || CRAFT_ALIASES[s] || ''
+  const hit = CRAFT_ALIASES[lower] || CRAFT_ALIASES[s]
+  if (hit) return hit
+  // 云端字典新增的选项（选项维护里加的 custom_N）：值本身合法，不能当脏值丢掉
+  // （否则「标记后没保存」会在自定义选项上重演 —— 与 2026-09-20 那个缺陷同类）
+  const opt = craftTypeOptions().find((o) => o && String(o.value) === s)
+  if (opt) return opt.value
+  // ⚠️ 兜底的兜底：**字典还没铺上**时（冷启动那一刻 `hydrateFromStorage()` 之前）上面这一句查不到，
+  //    自定义值会被抹成空串 —— 读回来就是"未标注"。所以再按**取值规则**放行一次：
+  //    与云端 `getProductTaxonomy` 的 `VALUE_RE`、两份云函数 `SAFE_OPTION_VALUE_RE` **同一条规则**。
+  return SAFE_OPTION_VALUE_RE.test(s) ? s : ''
 }
 
 function normalizeCraftProcess(raw) {
   if (raw == null || raw === '') return ''
   const s = String(raw).trim()
   const lower = s.toLowerCase()
-  return CRAFT_PROCESS_ALIASES[lower] || CRAFT_PROCESS_ALIASES[s] || ''
+  const hit = CRAFT_PROCESS_ALIASES[lower] || CRAFT_PROCESS_ALIASES[s]
+  if (hit) return hit
+  // 同 normalizeCraftType：云端字典里的值必须放行，字典没铺上时按取值规则放行
+  const opt = craftProcessOptions().find((o) => o && String(o.value) === s)
+  if (opt) return opt.value
+  return SAFE_OPTION_VALUE_RE.test(s) ? s : ''
 }
 
 /** 分类文案是否属于可标注渠道/装裱/工艺的标本品类 */

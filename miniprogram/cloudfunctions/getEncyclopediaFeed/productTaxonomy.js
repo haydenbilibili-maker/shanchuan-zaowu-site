@@ -23,10 +23,31 @@ const CRAFT_VALUES = {
   other: ['other', '其它', '其他']
 }
 
+/**
+ * 制作工艺：canonical → [可匹配的写法…]。
+ *
+ * ⚠️ 2026-09-20 补齐：这张表**漏了 2026-09-19 追加的 7 个工艺**
+ *   （压制/针插/干制骨骼/切片/涂片/透明骨骼/包埋）—— 与 `manageProducts` 那份别名表
+ *   是同一个漂移。少了它们的后果不只是"百科筛选匹配不上"：`normalizeCraftProcess` 从这张表派生，
+ *   于是这些值会被**静默清空**（写库时 craftProcess 变空串 = 后台标记不保存）。
+ *   口径与 `config/productTaxonomy.js` / `manageProducts/productTaxonomy.js` 的选项表逐字一致。
+ */
 const CRAFT_PROCESS_VALUES = {
-  immersion: ['immersion', '浸制', '浸液'],
-  plastination: ['plastination', '塑化'],
+  // 干制标本工艺
+  pressed: ['pressed', '压制（腊叶）标本', '压制'],
   taxidermy: ['taxidermy', '剥制'],
+  pinned: ['pinned', '针插标本', '针插'],
+  dry_bone: ['dry_bone', '干制骨骼标本', '干制骨骼'],
+  // 浸制标本工艺
+  immersion: ['immersion', '浸制', '浸液'],
+  // 切片与涂片工艺（显微玻片标本）
+  section: ['section', '切片标本', '切片'],
+  smear: ['smear', '涂片标本', '涂片'],
+  // 现代高新标本工艺
+  plastination: ['plastination', '塑化'],
+  cleared_stained: ['cleared_stained', '透明骨骼标本', '透明骨骼'],
+  resin_embed: ['resin_embed', '包埋标本', '包埋'],
+  // 兜底
   other: ['other', '其它', '其他']
 }
 
@@ -42,46 +63,30 @@ const CHANNEL_ALIASES = {
   其他: 'other'
 }
 
-const CRAFT_ALIASES = {
-  frame: 'frame',
-  cloche: 'cloche',
-  cloche_round: 'cloche_round',
-  cloche_cylinder: 'cloche_cylinder',
-  diorama: 'diorama',
-  magnet: 'magnet',
-  accessory: 'accessory',
-  jewelry: 'accessory',
-  wing_art: 'wing_art',
-  other: 'other',
-  相框: 'frame',
-  玻璃罩: 'cloche',
-  方罩: 'cloche',
-  方形玻璃罩: 'cloche',
-  圆形玻璃罩: 'cloche_round',
-  圆罩: 'cloche_round',
-  圆柱形玻璃罩: 'cloche_cylinder',
-  圆柱玻璃罩: 'cloche_cylinder',
-  造景: 'diorama',
-  冰箱贴: 'magnet',
-  饰品: 'accessory',
-  首饰: 'accessory',
-  蝶翅画: 'wing_art',
-  其它: 'other',
-  其他: 'other'
+/**
+ * 别名表**从本文件已有的 value map 派生**（不手抄、也不另抄一份选项表）。
+ *
+ * ⚠️ 这里原先是一张**手写**别名表，只覆盖 4 个旧工艺 —— 与 `manageProducts` 那份是同一个漂移：
+ *    `normalizeCraftProcess('pinned')` 返回 `''`，写库时把 craftProcess **静默清空**
+ *    （产品负责人 2026-09-20 报的「标记后状态没有保存」就是这个）。
+ *    改成派生之后，"数值表加了、别名表忘了"在结构上不可能再发生。
+ */
+function aliasesFromValues(values) {
+  const map = {}
+  Object.keys(values || {}).forEach((canonical) => {
+    map[canonical] = canonical
+    map[String(canonical).toLowerCase()] = canonical
+    ;(values[canonical] || []).forEach((a) => {
+      if (a) map[String(a)] = canonical
+    })
+  })
+  return map
 }
 
-const CRAFT_PROCESS_ALIASES = {
-  immersion: 'immersion',
-  plastination: 'plastination',
-  taxidermy: 'taxidermy',
-  other: 'other',
-  浸制: 'immersion',
-  浸液: 'immersion',
-  塑化: 'plastination',
-  剥制: 'taxidermy',
-  其它: 'other',
-  其他: 'other'
-}
+const CRAFT_ALIASES = aliasesFromValues(CRAFT_VALUES)
+const CRAFT_PROCESS_ALIASES = aliasesFromValues(CRAFT_PROCESS_VALUES)
+
+const SAFE_OPTION_VALUE_RE = /^[a-z][a-z0-9_]{0,31}$/
 
 /** 与 utils/categorySeed LEGACY_ROOT_ALIASES / CANONICAL_ROOT_NAMES 对齐 */
 const CANONICAL_ROOT_NAMES = ['昆虫馆', '矿石馆', '植物馆', '海洋馆', '动物馆', '首饰馆', '衍生品']
@@ -118,13 +123,17 @@ function normalizeChannel(raw) {
 function normalizeCraftType(raw) {
   if (raw == null || raw === '') return ''
   const s = String(raw).trim()
-  return CRAFT_ALIASES[s.toLowerCase()] || CRAFT_ALIASES[s] || ''
+  const hit = CRAFT_ALIASES[s.toLowerCase()] || CRAFT_ALIASES[s]
+  if (hit) return hit
+  return SAFE_OPTION_VALUE_RE.test(s) ? s : ''
 }
 
 function normalizeCraftProcess(raw) {
   if (raw == null || raw === '') return ''
   const s = String(raw).trim()
-  return CRAFT_PROCESS_ALIASES[s.toLowerCase()] || CRAFT_PROCESS_ALIASES[s] || ''
+  const hit = CRAFT_PROCESS_ALIASES[s.toLowerCase()] || CRAFT_PROCESS_ALIASES[s]
+  if (hit) return hit
+  return SAFE_OPTION_VALUE_RE.test(s) ? s : ''
 }
 
 function enumMatchValues(field, canonical) {
