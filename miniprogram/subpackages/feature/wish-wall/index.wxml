@@ -170,11 +170,18 @@
          应该紧挨着墙，而不是滚过两块内容才看到（产品口径同 test:wish-wall 的位置判据）。
          位置不变量：wall < composer < plays，且全页只有一个（守卫已钉）。 -->
     <view class="ww-composer">
+      <!-- 为什么要摘掉原生 maxlength（P0 修复的另一半）：它按 **UTF-16 码元** 算，
+           绑成 textMax=30 时一个 emoji 吃掉 2 个额度、一个家庭 emoji 吃掉 8 个；
+           而同一属性也没有办法表达「30 个字」。故取消原生截断，**唯一**截断点是
+           `index.js` 的 `wishTextTruncate(…, TEXT_MAX)`（按「字」，绝不切出半个代理对），
+           与服务端 `manageWishWall` 的内嵌副本同源。
+           ⚠️ 代价（如实记录）：真机上"打到 30 字"不再有输入层硬停，只靠 JS 回写；
+           手感属本仓静态检查盲区，需真机复核。 -->
       <input
         class="ww-input"
         id="wishInput"
         value="{{draft}}"
-        maxlength="{{textMax}}"
+        maxlength="-1"
         confirm-type="send"
         placeholder="例如：马上有闲，马上有缘"
         placeholder-class="ww-input-ph"
@@ -222,7 +229,7 @@
         <text class="ww-quota {{quota.exhausted ? 'is-done' : ''}}" wx:elif="{{quota.cap}}">
           {{quota.exhausted ? '今日 ' + quota.cap + ' 条额度已用完，明天再来' : '今日还可写 ' + quota.left + ' 条'}}
         </text>
-        <text class="ww-count">{{draft.length}}/{{textMax}}</text>
+        <text class="ww-count">{{draftCount}}/{{textMax}}</text>
       </view>
     </view>
 
@@ -695,6 +702,20 @@
       <view class="ww-sheet-cta" bindtap="usePlayWish" hover-class="ww-sheet-cta-press" hover-stay-time="70" aria-role="button">
         {{playResult.wish ? '写成心愿' : '写下我的心愿'}}
       </view>
+      <!-- 玩法结果分享（W1 建议方案 A：会话卡片，不做生成图）。
+           为什么必须是 <button open-type="share">：这是小程序**唯一**能唤起转发的元素，
+           `<view bindtap>` 点了不会转发。
+           为什么 bindtap 还要落一个标记：`onShareAppMessage` 是页面级的，它也服务愿签卡上的
+           「祈一份」；不标记来源，两条链路就会串（弹层分享出去变成别人的愿签正文）。
+           文案与依据口径在 `utils/ritualPlay.js` 的 `share` 字段里（只公开结果与建议、不公开依据）。 -->
+      <button
+        class="ww-sheet-cta is-share"
+        open-type="share"
+        bindtap="onSheetShareTap"
+        hover-class="ww-sheet-cta-press"
+        hover-stay-time="70"
+        aria-role="button"
+      >分享这份结果</button>
     </view>
 
     <!-- 产品链路：**只留一条主路**（以前同时有"推荐卡"和"看这件藏品"两行，谁主谁次看不出来）。

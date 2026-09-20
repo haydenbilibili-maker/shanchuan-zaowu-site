@@ -479,8 +479,10 @@ const INJECTIONS = {
   // 注册成功不续发 → 用户注册完那条心愿凭空消失（最伤的转化体验）
   'register-resume-dropped': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    from: '    this.setData({ draft: text })\n    this.submitWish()\n  },',
-    to: '    this.setData({ draft: text })\n  },'
+    // 2026-09-20：锚点跟随源码更新（续发时又补了 draftCount 同步，见 P0 字数口径）。
+    // 语义不变：去掉 `this.submitWish()` → 注册成功后那条心愿不再续发，必须被检出。
+    from: '    this.setData({ draft: text, draftCount: wishTextCount(text) })\n    this.submitWish()\n  },',
+    to: '    this.setData({ draft: text, draftCount: wishTextCount(text) })\n  },'
   },
   // 会话读失败按未注册处理（fail-closed）→ 会话抖动会把「挂上墙」整个挡下来
   'register-gate-fail-closed': {
@@ -1048,6 +1050,54 @@ const INJECTIONS = {
     file: 'miniprogram/cloudfunctions/getContentDisplayFlags/index.js',
     from: '    showMuyuCertificate: incoming.showMuyuCertificate,',
     to: '    showMuyuCertificate: false,'
+  },
+
+  // ── P0 字数口径：emoji / ZWJ 序列按「字」算（2026-09-20）─────────────────────
+  // 这四条分别对应"看起来修了、其实没修"的四类退化：
+  //   ① 退回 `String.length`（UTF-16 码元）→ 家庭 emoji 又算 8；
+  //   ② 用 `.slice` 截断 → 又截出半个代理对；
+  //   ③ 只改客户端、服务端内嵌副本漂了 → 端上允许、服务端拒绝；
+  //   ④ 页面某条改 draft 的路漏掉新模块（字数展示与输入框不符）。
+  // 真值源：docs/祈福墙_全面改造_交付记录_2026-09-20.md §7 第 4 条。
+  'count-by-utf16-units': {
+    file: 'miniprogram/utils/wishTextCount.js',
+    from: '  return wishTextGraphemes(raw).length',
+    to: '  return String(raw).length'
+  },
+  'truncate-by-slice': {
+    file: 'miniprogram/utils/wishTextCount.js',
+    from: "  return wishTextGraphemes(text).slice(0, Math.floor(n)).join('')",
+    to: '  return text.slice(0, Math.floor(n))'
+  },
+  'server-copy-drift': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: '  return wishTextGraphemes(raw).length',
+    to: '  return String(raw).length'
+  },
+  'client-count-not-wired': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    const draft = wishTextTruncate(String((e.detail && e.detail.value) || \'\'), TEXT_MAX)',
+    to: '    const draft = String((e.detail && e.detail.value) || \'\').slice(0, TEXT_MAX)'
+  },
+
+  // ── W1 玩法结果分享：两条链路必须可区分（2026-09-20）────────────────────────
+  // ① 弹层按钮被摘掉（分享又只剩愿签那一条路）；
+  // ② 弹层分享退化成读 `card.text`（把别人的愿签正文转发出去）；
+  // ③ 来源标记不复位（第二次愿签分享被上一次的玩法分享污染）。
+  'sheet-share-button-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '        open-type="share"\n        bindtap="onSheetShareTap"',
+    to: '        bindtap="onSheetShareTap"'
+  },
+  'sheet-share-reads-card-text': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "    const result = this.data.playResult\n    // `!this.data.card`：愿签卡是另一个弹层；它开着就说明用户在看愿签，不抢玩法分支\n    if (result && result.share && (fromPlay || !this.data.card)) {\n      return { title: result.share, path }\n    }",
+    to: "    const result = this.data.playResult\n    const wrongCard = this.data.card\n    if (result && (fromPlay || !this.data.card)) {\n      return { title: wrongCard ? normalizeWishText(wrongCard.text) : result.title, path }\n    }"
+  },
+  'share-from-never-reset': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "    if (this.data.shareFrom) this.setData({ shareFrom: '' })",
+    to: '    // 注入：不复位来源标记'
   }
 }
 
@@ -2659,7 +2709,23 @@ check(
   '心愿笺四件事齐备（开 / 关 / 抄一句 / 复制）',
   ['openWishCard', 'closeWishCard', 'borrowWishText', 'copyWishText'].every((m) => wallPageSrc.indexOf(m) !== -1)
 )
-check('分享标题取自心愿笺', /onShareAppMessage\(\)[\s\S]{0,320}?title: text/.test(wallPageSrc))
+// ⚠️ 2026-09-20 收紧：`onShareAppMessage` 从「只有一条愿签链路」变成**两条**（玩法结果 W1）。
+// 原来的正则 `onShareAppMessage\(\)[\s\S]{0,320}?title: text` 之所以还过，是碰巧第一分支
+// 先写了 shareFrom 分流、`title: text` 仍在 320 字内 —— 这种"位置窗口"判据恰好是错题本 E7。
+// 现在改成**按语法边界取整个方法体**再判：末端必须有愿签分支（card.text），
+// 且分流的依据必须是显式标记（否则两条链路会串，见"分享来源"那组行为判据）。
+{
+  const shareFnBody = (() => {
+    const start = wallPageSrc.indexOf('onShareAppMessage()')
+    if (start === -1) return ''
+    return wallPageSrc.slice(start, start + 1400)
+  })()
+  check(
+    '分享标题取自心愿笺（愿签链路的末端分支仍然读 card.text）',
+    /const text = card \? normalizeWishText\(card\.text\) : ''/.test(shareFnBody) &&
+      /title: text \|\| '马上有 · 祈福墙'/.test(shareFnBody)
+  )
+}
 check('浮层防穿透的空处理器存在（catchtap 指向它）', /noop\(\)\s*\{\s*\}/.test(wallPageSrc))
 check('★ 博物笔记入口把彩蛋进度显示出来', /goRelics\(\)/.test(wallPageSrc) && /getProgress\(\)/.test(wallPageSrc))
 
@@ -5403,6 +5469,263 @@ check(
       /funnel\.wishWall\.certGate\.show/.test(certSubv)
   )
   check('漏斗 step 都从 trackCertGate 一处发出（action 名只有一个事实源）', (certPageSrc.match(/trackCertGate\(/g) || []).length >= 6)
+}
+
+/* ================================================================== *
+ * ★ P0 字数口径：emoji / ZWJ 序列按「字」算（两端同源）
+ *
+ * 出处：docs/祈福墙_全面改造_交付记录_2026-09-20.md §7 第 4 条。
+ * 旧口径的两个错：① `draft.length` 是 UTF-16 码元数（emoji 算 2、ZWJ 家庭 emoji 算 8）；
+ * ② `.slice(0, 30)` 会截出半个代理对。
+ * ------------------------------------------------------------------ */
+{
+  const wc = loadCjs('miniprogram/utils/wishTextCount.js', { require: markerRequire })
+
+  // 「孤立代理对」是数据属性，不该用正则去猜（正则本身容易写错 = 错题本 E7）。
+  // 用码点扫描：高代理后必须跟低代理，低代理前必须是高代理，否则就是被切开的半个字符。
+  const hasLoneSurrogate = (s) => {
+    for (let i = 0; i < s.length; i += 1) {
+      const c = s.charCodeAt(i)
+      if (c >= 0xd800 && c <= 0xdbff) {
+        const n = s.charCodeAt(i + 1)
+        if (!(n >= 0xdc00 && n <= 0xdfff)) return true
+        i += 1
+      } else if (c >= 0xdc00 && c <= 0xdfff) {
+        return true
+      }
+    }
+    return false
+  }
+
+  // 同一组用例：客户端实现 / 服务端副本（fn.wishTextCount 从云函数导出）/ 期望值
+  const textCountCases = [
+    ['👨‍👩‍👧', 1],             // ZWJ 家庭：旧 `length` = 8
+    ['👨‍👩‍👧‍👦', 1],           // 四个人的 ZWJ 家庭：旧 `length` = 11
+    ['abc', 3],
+    ['马上有', 3],
+    ['🙂🙂', 2],               // 相邻 emoji 之间**不许**互相吸收
+    ['👍🏽', 1],               // 肤色修饰符
+    ['❤️', 1],                // 变体选择符 VS16
+    ['🇨🇳', 1],                // 区域指示符成对 = 一面国旗
+    ['🇨🇳🇯🇵', 2],              // 两面旗不许粘成一个字
+    ['e\u0301', 1],            // 组合用记号
+    ['', 0]
+  ]
+  check(
+    '★ 新模块按「字」计数：ZWJ 家庭 emoji = 1、abc = 3、相邻 emoji 不互相吸收',
+    textCountCases.every(([s, want]) => wc.wishTextCount(s) === want),
+    textCountCases.map(([s, want]) => `${JSON.stringify(s)} → ${wc.wishTextCount(s)}（期望 ${want}）`).join(' | ')
+  )
+  check(
+    '★ 服务端副本（云函数导出的 wishTextCount）与客户端**逐用例同结果**',
+    typeof fn.wishTextCount === 'function' &&
+      textCountCases.every(([s, want]) => fn.wishTextCount(s) === want && fn.wishTextCount(s) === wc.wishTextCount(s)),
+    textCountCases.map(([s]) => `${JSON.stringify(s)}: client=${wc.wishTextCount(s)} server=${typeof fn.wishTextCount === 'function' ? fn.wishTextCount(s) : '(缺失)'}`).join(' | ')
+  )
+
+  // 截断：按字截、绝不切出半个代理对（用 JSON.stringify + 码点扫描双向证明）
+  const cut2 = wc.wishTextTruncate('👨‍👩‍👧abc', 2)
+  check(
+    '★ 按「字」安全截断：家庭 emoji + abc 截 2 → 整字保留，且不产生孤立代理对',
+    wc.wishTextCount(cut2) === 2 &&
+      cut2.startsWith('👨‍👩‍👧') &&
+      !hasLoneSurrogate(cut2) &&
+      JSON.stringify(cut2).indexOf('\\ud') === -1,
+    `truncate=${JSON.stringify(cut2)} count=${wc.wishTextCount(cut2)} lone=${hasLoneSurrogate(cut2)}`
+  )
+  const cutEmoji = wc.wishTextTruncate('🙂🙂🙂', 2)
+  check(
+    '★ 纯 emoji 截断：3 个 🙂 截 2 → 恰好 2 个完整 emoji（旧 `.slice(0,2)` 会切出半个代理对）',
+    cutEmoji === '🙂🙂' && !hasLoneSurrogate(cutEmoji),
+    `truncate=${JSON.stringify(cutEmoji)} len=${cutEmoji.length}`
+  )
+  // 直接复现旧写法，证明"这是真 bug、不是纸面担忧"：
+  // `'👨‍👩‍👧'.slice(0, 4)` 的落点正好在 `👩` 的高代理之后 → 尾巴是一个孤立高代理 `\uD83D`。
+  const legacyCut = '👨‍👩‍👧'.slice(0, 4)
+  const newCut = wc.wishTextTruncate('👨‍👩‍👧', 1)
+  check(
+    '★ 反证：旧写法 `.slice(0, 4)` 确实会切出孤立代理对（新实现截 1 个字必须整字保留）',
+    hasLoneSurrogate(legacyCut) && !hasLoneSurrogate(newCut) && newCut === '👨‍👩‍👧',
+    `legacy=${JSON.stringify(legacyCut)}（len ${legacyCut.length}, lone=${hasLoneSurrogate(legacyCut)}） | new=${JSON.stringify(newCut)} lone=${hasLoneSurrogate(newCut)}`
+  )
+  check(
+    '★ 截断与服务端同口径（同组用例两端结果一致）',
+    typeof fn.wishTextTruncate === 'function' &&
+      ['👨‍👩‍👧abc', '🙂🙂🙂', '马上有光', '👍🏽👍🏽👍🏽'].every(
+        (s) => fn.wishTextTruncate(s, 2) === wc.wishTextTruncate(s, 2)
+      )
+  )
+  check(
+    '边界：截 0 字 = 空串、max 非数字 = 原文（不丢用户内容）',
+    wc.wishTextTruncate('马上有', 0) === '' && wc.wishTextTruncate('马上有', NaN) === '马上有'
+  )
+
+  // ── 两端**同源**：内嵌副本必须逐字节相同 ────────────────────────────────
+  const regionOf = (text) => {
+    const b = '// WISH_TEXT_COUNT_BEGIN'
+    const e = '// WISH_TEXT_COUNT_END'
+    const i = text.indexOf(b)
+    const j = text.indexOf(e)
+    if (i === -1 || j === -1 || j < i) return null
+    return text.slice(i, j + e.length + 1)
+  }
+  const clientRegion = regionOf(readSrc('miniprogram/utils/wishTextCount.js'))
+  const serverRegion = regionOf(readSrc('miniprogram/cloudfunctions/manageWishWall/index.js'))
+  check(
+    '★ 客户端实现与服务端内嵌副本**逐字节相同**（云函数不能 require 小程序目录，按 ritualProfileCore 双份惯例）',
+    clientRegion !== null && serverRegion !== null && clientRegion === serverRegion,
+    `client=${clientRegion === null ? '(缺 BEGIN/END 标记)' : clientRegion.length + ' chars'} server=${serverRegion === null ? '(缺标记)' : serverRegion.length + ' chars'}`
+  )
+  check(
+    '★ 服务端校验真的用了同口径计数（不是留着旧的 `text.length`）',
+    /const count = wishTextCount\(text\)/.test(readSrc('miniprogram/cloudfunctions/manageWishWall/index.js')) &&
+      fn.validateWishText('👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧').ok === true &&
+      fn.validateWishText('🙂'.repeat(fn.TEXT_MAX + 1)).ok === false &&
+      fn.validateWishText('🙂'.repeat(fn.TEXT_MAX)).ok === true,
+    `家庭 emoji×4 → ${JSON.stringify(fn.validateWishText('👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧').ok)}；31 个 emoji → ${JSON.stringify(fn.validateWishText('🙂'.repeat(fn.TEXT_MAX + 1)).ok)}`
+  )
+
+  // ── 页面接线：四条改 draft 的路都必须走新模块 + 同步 draftCount ──────────
+  const pageBody = (name) => {
+    const i = wallPageSrc.indexOf(`  ${name}(`)
+    if (i === -1) return ''
+    return wallPageSrc.slice(i, wallPageSrc.indexOf('\n  },', i) + 4)
+  }
+  const draftWriters = ['onDraftInput', 'useInspiration', 'borrowWishText', 'usePlayWish']
+  check(
+    '★ 页面所有改 draft 的方法都走 wishTextTruncate + 同步 draftCount（少一处就会出现"字数与输入框不符"）',
+    draftWriters.every((m) => /wishTextTruncate\(/.test(pageBody(m)) && /draftCount: wishTextCount\(/.test(pageBody(m))),
+    draftWriters.map((m) => `${m}=${/wishTextTruncate\(/.test(pageBody(m)) ? 'ok' : '缺失'}`).join(' ')
+  )
+  // 上面点名了 4 个方法；这条防"日后新增第 5 条改 draft 的路漏接"：
+  // 全页每一处按字截断都必须配一处按字计数（截断与计数成对）。
+  // 计数（5 = 4 处 draftCount 同步 + 1 处续发时补记）与截断（4）都是**定数**：多处或少处都会变红。
+  {
+    const truncateCalls = (wallPageSrc.match(/wishTextTruncate\(/g) || []).length
+    const countCalls = (wallPageSrc.match(/wishTextCount\(/g) || []).length
+    check(
+      '★ 全页"按字截断"与"按字计数"成对（防止新增改 draft 的路漏同步 draftCount）',
+      truncateCalls === 4 && countCalls === 5,
+      `wishTextTruncate=${truncateCalls} wishTextCount=${countCalls}`
+    )
+  }
+  check(
+    '★ 页面不再留下 `draft.length` / `.slice(0, TEXT_MAX)`（旧口径的调用点必须清零）',
+    // 先去掉注释行：`//` 与 `*` 开头的说明里会写"原来用的是 draft.length"（错题本 E7 的老坑）
+    (() => {
+      const code = wallPageSrc
+        .split('\n')
+        .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+        .join('\n')
+      return !/draft\.length/.test(code) &&
+        !/\.slice\(0,\s*TEXT_MAX\)/.test(code) &&
+        /const \{ wishTextCount, wishTextTruncate \} = require\('\.\.\/\.\.\/\.\.\/utils\/wishTextCount'\)/.test(code)
+    })()
+  )
+  check(
+    'WXML：字数展示读 draftCount（不再是 draft.length），且输入框摘掉按码元算的 maxlength',
+    /\{\{draftCount\}\}\/\{\{textMax\}\}/.test(wallWxml2) &&
+      !/\{\{draft\.length\}\}/.test(wallWxml2) &&
+      /maxlength="-1"/.test(wallWxml2)
+  )
+}
+
+/* ================================================================== *
+ * ★ W1 玩法结果分享（会话卡片形态）：两条分享链路必须可区分
+ *
+ * 产品口径（docs/祈福墙_待产品负责人拍板_2026-09-19.md 建议方案 A）：
+ * 弹层给一个 `<button open-type="share">`，分享的是**玩法结果**，不是愿签正文，
+ * 更不许把星座/MBTI 等"依据"写进转发文案。
+ * ------------------------------------------------------------------ */
+{
+  const shareFnSrc = (() => {
+    const i = wallPageSrc.indexOf('onShareAppMessage()')
+    if (i === -1) return ''
+    // ⚠️ 先去掉注释：方法上方的 JSDoc 里写了"玩法结果分支**绝不读 `card.text`**"这句说明，
+    // 不剥注释的话下面那条"不许出现 card.text"的负向判据会被自己的说明文字弄红（错题本 E7 老坑）。
+    return wallPageSrc
+      .slice(i, i + 1600)
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+  })()
+  check(
+    '★ 玩法结果弹层有唯一的转发入口：`<button open-type="share">`（`<view bindtap>` 唤不起转发）',
+    /<button[\s\S]{0,220}?open-type="share"[\s\S]{0,220}?bindtap="onSheetShareTap"/.test(wallWxml2)
+  )
+  // 玩法分支的**语法边界**：从 `const result = this.data.playResult` 到 `if (result …) {`。
+  // 判据：这一段里只许出现 `result.share`，**不许出现 `card.text`** —— 两条链路的正文
+  // 不允许出现在同一个返回分支里（错题本 E7：用位置窗口代替语法边界会误判）。
+  const playBranchSrc = (() => {
+    const start = shareFnSrc.indexOf('const result = this.data.playResult')
+    if (start === -1) return ''
+    const open = shareFnSrc.indexOf('if (result', start)
+    if (open === -1) return shareFnSrc.slice(start)
+    // 到该 if 块结束（方法内缩进 4 空格的 `}`）为止 —— 含分支体，不含后面的愿签兜底
+    const close = shareFnSrc.indexOf('\n    }', open)
+    if (close === -1) return shareFnSrc.slice(start)
+    return shareFnSrc.slice(start, close)
+  })()
+  check(
+    '★ `onShareAppMessage` 有玩法结果分支，且读的是 `result.share`（**不读** card.text、不自己拼依据）',
+    /this\.data\.shareFrom === 'play'/.test(shareFnSrc) &&
+      /result\.share/.test(playBranchSrc) &&
+      playBranchSrc.indexOf('card.text') === -1 &&
+      // 依据不许写进文案：玩法分支里不能出现"依据"字段（星座/MBTI 走的是 ritualPlay.share）
+      playBranchSrc.indexOf('zodiac') === -1 &&
+      playBranchSrc.indexOf('mbti') === -1,
+    `playBranch=${JSON.stringify(playBranchSrc.slice(0, 120))}`
+  )
+  check(
+    '★ 按钮落来源标记（不落标记 = 弹层分享会串成别人的愿签正文）',
+    /onSheetShareTap\(\)\s*\{[\s\S]{0,360}?shareFrom: 'play'/.test(wallPageSrc)
+  )
+
+  // 行为级：直接驱动真实页面方法
+  const stub = installWxStub()
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const mkSharePage = (over) => {
+    const page = Object.assign(Object.create(null), proto)
+    page.data = Object.assign(
+      { playResult: null, card: null, shareFrom: '', productKey: 'mashangyou', draft: '', draftCount: 0 },
+      over || {}
+    )
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    return page
+  }
+  const PLAY = { id: 'qian', share: '今日一签：马上有闲 · 先喝口热茶' }
+  const CARD = { _id: 'w1', text: '这是别人的心愿正文' }
+
+  const pShare = mkSharePage({ playResult: PLAY })
+  pShare.onSheetShareTap()
+  eq('★ 点弹层分享按钮 → 落来源标记 play（并记一次行为埋点）', pShare.data.shareFrom, 'play')
+  const playShare = pShare.onShareAppMessage()
+  eq('★ 弹层分享的标题 = 玩法结果的 share 字段', playShare.title, PLAY.share)
+  eq('★ 弹层分享后来源标记必须复位（否则下一次愿签分享会被污染）', pShare.data.shareFrom, '')
+  check(
+    '★ 玩法分享文案里没有"依据"（不出现星座名 / MBTI 型别）',
+    !/白羊座|INFP/.test(playShare.title),
+    playShare.title
+  )
+
+  // 关键反串：card 也在（用户刚点开过别人的愿签）且标记已复位 → 必须回到愿签链路
+  const pCard = mkSharePage({ playResult: PLAY, card: CARD })
+  const cardShare = pCard.onShareAppMessage()
+  eq('★ 没有 play 标记时走愿签链路（弹层还开着也不许抢）', cardShare.title, CARD.text)
+  eq('★ 愿签分享读的是 card.text，绝不会读成玩法文案', cardShare.title === PLAY.share, false)
+  check(
+    '两条链路的 path 同源（都带当前墙的 productKey）',
+    playShare.path === cardShare.path && playShare.path.indexOf('productKey=mashangyou') !== -1,
+    `play=${playShare.path} card=${cardShare.path}`
+  )
+
+  const pNoResult = mkSharePage({ playResult: null })
+  pNoResult.onSheetShareTap()
+  eq('弹层已收起时点分享不落标记（不允许把玩法分享挂到愿签上）', pNoResult.data.shareFrom, '')
+
+  const pStale = mkSharePage({ card: CARD })
+  pStale.onSheetShareTap()
+  eq('★ 没有玩法结果时不落 play 标记（否则愿签分享会读空 result 回落到默认标题）', pStale.onShareAppMessage().title, CARD.text)
+  stub.restore()
 }
 
 if (process.argv.includes('--selftest') && !INJECT) {

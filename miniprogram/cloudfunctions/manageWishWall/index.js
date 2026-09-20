@@ -53,6 +53,132 @@ const PERMISSION = 'manageContentDisplayFlags'
 /** 祈福墙作用域：当前只挂在「马上有」上，字段留出为后续「为全站拓展」预留 */
 const DEFAULT_PRODUCT_KEY = 'mashangyou'
 
+/**
+ * ↓↓↓ 与小程序 `utils/wishTextCount.js` **逐字节相同**的字数口径副本（WISH_TEXT_COUNT_BEGIN…END）。
+ *
+ * 为什么内嵌而不是 require：云函数是独立部署单元（微信上传按函数目录打包），
+ * 不能 require 小程序目录的文件。本仓既有惯例见 utils/ritualProfileCore.js ↔
+ * cloudfunctions/wishRitualProfile/ritualProfileCore.js（逐字节双份）。
+ * 为什么必须同源：`text.length` 是 UTF-16 码元数，emoji 算 2、ZWJ 家庭 emoji 算 8，
+ * 端上按「字」拦、服务端按码元拦就会出现「端上允许、服务端拒绝」。
+ * 守卫：miniprogram/scripts/test-wish-wall.mjs 逐字节比对两份 + 同组用例两端比对。
+ */
+// WISH_TEXT_COUNT_BEGIN —— 字数口径同源区间的起点：本区间在「小程序 utils/wishTextCount.js」
+// 与「云函数 manageWishWall/index.js」里**逐字节相同**（理由与守卫见文件头）。
+'use strict'
+
+/**
+ * 「附码」判定（与基码点同属一个字）。
+ * 用 `u` 标志是为了 `\u{…}` 与 `\p{…}`（Node ≥ 12 与小程序基础库都支持）。
+ */
+const WISH_TEXT_EXTEND_RE =
+  /[\u{1F3FB}-\u{1F3FF}\uFE0E\uFE0F\p{Emoji_Modifier}\p{Mark}\u200D\u{1F1E6}-\u{1F1FF}]/u
+
+/**
+ * 一个「字」由几个码点组成？返回正数表示 `codePoints[index]` 是「附码」。
+ * 单独抽出来只为让「基码点 + 后续附码」这条规则只有一处实现。
+ */
+/** ZWJ（U+200D）的数值码点。写成常量而不是行内字面量，便于守卫按名字断言。 */
+const WISH_TEXT_ZWJ = 8205
+
+function wishTextExtendSize(codePoints, index) {
+  const el = codePoints[index]
+  // 入参可能是「单码点字符串」（`Array.from(str)` 的产物），也可能是数值码点
+  // （`Array.from(str, (c) => c.codePointAt(0))` 的产物）—— 两种都收。
+  // 孤立代理项会拿到 NaN → 视为「不是附码」，绝不让 `String.fromCodePoint` 抛 RangeError。
+  const cp = typeof el === 'number' ? el : String(el).codePointAt(0)
+  if (!Number.isInteger(cp)) return 0
+  if (cp === WISH_TEXT_ZWJ) {
+    // ZWJ：把自己与**紧跟的那一个码点**一起挂到当前字上。
+    // 这就是 `👨‍👩‍👧` = 1 个字的原因（人 + ZWJ + 人 + ZWJ + 人 全部同属一个字）。
+    // 末尾孤立 ZWJ 只吃掉自己（返回 1），不会越界。
+    return index + 1 < codePoints.length ? 2 : 1
+  }
+  return WISH_TEXT_EXTEND_RE.test(String.fromCodePoint(cp)) ? 1 : 0
+}
+
+/**
+ * 区域指示符（国旗字母）判定。
+ *
+ * 为什么要单拎出来：`\u{1F1E6}-\u{1F1FF}` 在 `WISH_TEXT_EXTEND_RE` 里是"可附"的，
+ * 但**一枚国旗恰好由两枚组成** —— 无脑往后粘会把 `🇨🇳🇯🇵` 粘成一个字（应为 2）。
+ * 故在拼接循环里数「已经吃掉几枚」：吃掉偶数枚时，下一枚可以成对；吃掉奇数枚时结字。
+ */
+function wishTextIsRegionalIndicator(cp) {
+  return cp >= 0x1f1e6 && cp <= 0x1f1ff
+}
+
+/**
+ * 把文本拆成「字」的数组（每项是一个字，元素数量 = 字数）。
+ * 截断与计数都走这一处，防止两条口径漂移。
+ * @param {*} raw
+ * @returns {string[]}
+ */
+function wishTextGraphemes(raw) {
+  const text = String(raw == null ? '' : raw)
+  if (!text) return []
+  const chars = Array.from(text)
+  const out = []
+  let i = 0
+  while (i < chars.length) {
+    let end = i
+    let ris = wishTextIsRegionalIndicator(String(chars[i]).codePointAt(0)) ? 1 : 0
+    for (;;) {
+      if (end + 1 >= chars.length) break
+      const size = wishTextExtendSize(chars, end + 1)
+      if (!size) break
+      // 国旗：已吃掉偶数枚区域指示符时才允许再粘一枚（两枚 = 一面旗）
+      const nextCp = String(chars[end + 1]).codePointAt(0)
+      if (wishTextIsRegionalIndicator(nextCp)) {
+        // 已经吃掉偶数枚 = 上一面旗配齐了，不许再粘（否则 🇨🇳🇯🇵 会粘成一个字）
+        if (ris % 2 === 0) break
+        ris += 1
+      }
+      end += size
+    }
+    out.push(chars.slice(i, end + 1).join(''))
+    i = end + 1
+  }
+  return out
+}
+
+/**
+ * 按**字**计数（emoji / ZWJ 序列 / 变体选择符 = 1）。口径与已知边界见文件头。
+ * @param {*} raw
+ * @returns {number}
+ */
+function wishTextCount(raw) {
+  return wishTextGraphemes(raw).length
+}
+
+/**
+ * 按**字**安全截断：只保留前 `max` 个字，**绝不切出半个代理对**。
+ *
+ * 实现说明：先切成「字」，再 `slice(0, max)` —— 一个「字」在源码里始终是完整的码点序列，
+ * 所以截断点永远落在字边界上（`.slice(0,30)` 的代理对 / ZWJ 撕裂不可能再发生）。
+ * `max <= 0` 返回空串；`max` 非有限数时返回原文（口径：调用方传错就别丢用户内容）。
+ *
+ * @param {*} raw
+ * @param {number} max
+ * @returns {string}
+ */
+function wishTextTruncate(raw, max) {
+  const text = String(raw == null ? '' : raw)
+  const n = Number(max)
+  if (!Number.isFinite(n)) return text
+  if (n <= 0) return ''
+  return wishTextGraphemes(text).slice(0, Math.floor(n)).join('')
+}
+
+// 逐属性赋值而不是 `module.exports = {…}`：本区间要**原样内嵌**到云函数里，
+// 整体赋值会把云函数自己的 `module.exports`（main 等）整个覆盖掉。
+module.exports.WISH_TEXT_EXTEND_RE = WISH_TEXT_EXTEND_RE
+module.exports.wishTextExtendSize = wishTextExtendSize
+module.exports.wishTextGraphemes = wishTextGraphemes
+module.exports.wishTextCount = wishTextCount
+module.exports.wishTextTruncate = wishTextTruncate
+// WISH_TEXT_COUNT_END
+
 /** 文案长度：弹幕太长会糊满屏幕；下限防「。』这类无意义提交 */
 const TEXT_MIN = 2
 const TEXT_MAX = 30
@@ -97,8 +223,12 @@ function normalizeWishText(raw) {
 function validateWishText(raw) {
   const text = normalizeWishText(raw)
   if (!text) return { ok: false, msg: '写点想说的吧' }
-  if (text.length < TEXT_MIN) return { ok: false, msg: `至少 ${TEXT_MIN} 个字` }
-  if (text.length > TEXT_MAX) return { ok: false, msg: `最多 ${TEXT_MAX} 个字` }
+  // ⚠️ 必须按「字」算（wishTextCount，emoji / ZWJ 序列 = 1），不能用 `text.length`：
+  // 后者是 UTF-16 码元数，`👨‍👩‍👧` 会算成 8 → emoji 文案在服务端被误拒。
+  // 该函数的内嵌副本与小程序 `utils/wishTextCount.js` 逐字节相同（见上面那段注释）。
+  const count = wishTextCount(text)
+  if (count < TEXT_MIN) return { ok: false, msg: `至少 ${TEXT_MIN} 个字` }
+  if (count > TEXT_MAX) return { ok: false, msg: `最多 ${TEXT_MAX} 个字` }
   return { ok: true, text }
 }
 
@@ -646,6 +776,8 @@ module.exports.todayRangeShanghai = todayRangeShanghai
 module.exports.shanghaiDayKey = shanghaiDayKey
 module.exports.TEXT_MAX = TEXT_MAX
 module.exports.TEXT_MIN = TEXT_MIN
+module.exports.wishTextCount = wishTextCount
+module.exports.wishTextTruncate = wishTextTruncate
 module.exports.DAILY_LIMIT = DAILY_LIMIT
 module.exports.DEFAULT_PRODUCT_KEY = DEFAULT_PRODUCT_KEY
 module.exports.INSPIRATION_COUNT = INSPIRATION_COUNT
