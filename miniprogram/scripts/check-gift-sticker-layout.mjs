@@ -66,6 +66,12 @@ const cardCode = stripComments(cardSrc)
 const opsJs = stripComments(readFileSync(resolve(ROOT, OPS_JS), 'utf8'))
 const opsWxml = readFileSync(resolve(ROOT, OPS_WXML), 'utf8')
 
+/** 印刷码的**侧车清单**（生成时写下的 page/scene/时间）：没有它就无法核对
+ *  "纸上的文案承诺的落地页"与"码真正指向的页"是否一致 —— 印出去就改不了，必须留证。 */
+function sidecarOf(rel) {
+  try { return JSON.parse(readFileSync(resolve(ROOT, rel), 'utf8')) } catch (e) { return null }
+}
+
 /** 按**函数边界**切片（固定窗口会越界到下一个函数 —— 错题本 E7） */
 function fnSlice(src, name) {
   const i = src.indexOf('function ' + name + '(')
@@ -166,11 +172,64 @@ check('★ 两枚码**居中在「左文字轴 ~ 印章左缘」之间**（2026-
   && /axisX \+ Math\.round\(\(qrZone - qrTotalW\) \/ 2\)/.test(stickerFn)
   && /stampLeft - Math\.round\(2 \* MM\)/.test(stickerFn),
   '右端必须由印章左缘约束（不得进印章区），且两侧留白均等')
+/* ── 页脚两枚码的**文案**（2026-09-20 产品负责人：码继续留，但要说清扫了能得到什么 +
+ *   认出困难时的第二条路）──────────────────────────────────────────────────────
+ * 这一组判据的价值不在"字面"，而在**两件事必须同时成立**：
+ *   ① 文案承诺的落地页 = 码真正指向的页（印在纸上的假承诺比没有文案更坏）；
+ *   ② 兜底文案是**第二行**、在纸内、且不与右侧预印印章区相交（否则就是白印一行字）。 */
+check('★★ 两枚码的文案**同源于一处常量**（A6 与贴纸不得各写一份 —— 否则两个规格两种说法）',
+  /const PRINT_QR_COPY = \{/.test(cardSrc)
+  && /caption: PRINT_QR_COPY\.miniprogram/.test(stickerFn)
+  && /caption: PRINT_QR_COPY\.service/.test(stickerFn)
+  && /caption: PRINT_QR_COPY\.miniprogram, size: Math\.round\(15 \* MM\)/.test(a6Fn)
+  && /caption: PRINT_QR_COPY\.service, size: Math\.round\(15 \* MM\)/.test(a6Fn),
+  '文案硬编码进 painter ⇒ 改一个规格会漏掉另一个（下一次真图就是"同一份礼笺两个说法"）')
+check('★ 旧文案「扫码进店」必须消失（它只说"扫"，没说扫了能得到什么）',
+  // ⚠️ 判**去注释后的代码**：注释里正当地解释了"为什么不再用这句"，
+  //    拿含注释的源码判会自己把自己判红（第一版就是这么红的）。
+  !/扫码进店/.test(cardCode),
+  '还留着「扫码进店」—— 顾客不知道值不值得扫')
+check('★★ 小程序码文案必须与**码真正指向的落地页**一致（须是养护说明，且清单页 = care/guide）',
+  (() => {
+    const capt = /miniprogram: '([^']+)'/.exec(cardSrc)
+    if (!capt) return false
+    // 文案里必须出现「养护」——承诺的是养护说明，不是"进店"
+    if (!/养护/.test(capt[1])) return false
+    // 清单（生成时的侧车记录）里的 page 必须是养护指南页；没有清单 = 无法核对 = 判红
+    const man = sidecarOf('miniprogram/scripts/qr-assets/gift-care-code-print.json')
+    return !!man && man.page === 'subpackages/feature/care/guide/index' && !!man.scene
+  })(),
+  '文案说"养护说明"，但码的清单里 page 不是 care/guide（或没有清单）—— 这是印在纸上的假承诺')
+check('★★ 印在纸上的小程序码必须是**纯黑**（热敏头没有灰阶 —— 品牌黄铜在米白上只有 ~1.7:1，抖动后是噪声）',
+  (() => {
+    const man = sidecarOf('miniprogram/scripts/qr-assets/gift-care-code-print.json')
+    // 颜色必须**在清单里被记下来**（没有这条记录 = 无法核对 = 判红，而不是默认放行）
+    return !!man && /^#?0{6}$/.test(String(man.lineColor || '').toLowerCase())
+  })(),
+  '印刷码不是纯黑：热敏抖动会把中灰抖成 50% 散点（亮模块也被点上黑点）→ 扫不出来。用 generate-store-qr.js --mono 重新生成')
+check('★★ 必须有**兜底文案**（识别困难时怎么办），且给的是可执行的第二条路',
+  (() => {
+    const m = /hint: '([^']+)'/.exec(cardSrc)
+    return !!m && /山海造物/.test(m[1]) && m[1].length >= 10
+  })(),
+  '兜底文案缺失或没给出"微信搜索「山海造物」"这条可执行路径 ⇒ 扫不出来就彻底断了导流')
+check('★★ 兜底文案必须**真的画出来**（两枚码都在时才画，且与码块同一条中轴）',
+  /ctx\.fillText\(PRINT_QR_COPY\.hint, axisX \+ Math\.round\(qrZone \/ 2\)/.test(stickerFn)
+  && /ctx\.fillText\(PRINT_QR_COPY\.hint, Math\.round\(\(blockL \+ qrRight\) \/ 2\)/.test(a6Fn),
+  '常量写了但没落墨 = 白定义（贴纸与 A6 两处都要画）')
+check('★★ 兜底文案放不下时必须**缩字**（同署名的做法），缩到下限才告警',
+  /while \(hintFont > 16 && ctx\.measureText\(PRINT_QR_COPY\.hint\)\.width > qrZone\)/.test(stickerFn)
+  && /hintFont <= 16\) console\.warn/.test(stickerFn),
+  '文案超宽不缩字 ⇒ 会越进右侧印章区（真渲染的"印章区零落墨"会当场判红）')
+
 check('★ **不印自带边框**（贴纸已有装饰边框，再印一条是双框 —— 蓝图 §5）',
   !/strokeRect/.test(stickerFn),
   'sticker 分支里出现 strokeRect = 多印了一条边框')
-check('★ 两枚码仍在页脚带内、从 footerTop 起（不向上顶到正文）',
-  /const cy = STICKER\.footerTop/.test(stickerFn))
+check('★ 两枚码仍在页脚带内、从 `qrTop = footerTop − qrLift` 起（码块整体上提，把纸底让给两行小字）',
+  /const qrTop = STICKER\.footerTop - STICKER\.qrLift/.test(stickerFn)
+  && /\n  qrLift: Math\.round\(/.test(cardSrc)
+  && /drawImage\(c\.img, x, qrTop, STICKER\.qrSize, STICKER\.qrSize\)/.test(stickerFn),
+  '码块必须由 qrTop 定位（原来直接落 footerTop，纸底只剩 23px ⇒ 放不下兜底文案）')
 check('★ 两枚码不得越过页脚右内缩（更不得进印章区）',
   /Math\.min\(cx, qrRight - STICKER\.qrSize\)/.test(stickerFn))
 check('★ 仍是透明 PNG 直落米白面（不画白底托）',
@@ -551,6 +610,43 @@ if (process.argv.includes('--selftest')) {
 
 function selftest() {
   const injections = [
+    {
+      // 让印刷码退回"品牌黄铜色"（屏幕好看，热敏上是一坨中灰 → 抖成噪声 → 扫不出）
+      name: '小程序码文案不再指向养护说明（回到「扫码进店」：只说扫，没说扫了能得到什么）',
+      file: CARD,
+      from: "  miniprogram: '扫码看养护说明',",
+      to: "  miniprogram: '扫码进店',"
+    },
+    {
+      name: '印刷码退回品牌黄铜色（热敏上是一坨中灰 → 抖成噪声 → 扫不出）',
+      file: 'miniprogram/scripts/qr-assets/gift-care-code-print.json',
+      from: '  "lineColor": "#000000",',
+      to: '  "lineColor": "#C4A76C",'
+    },
+    {
+      name: '兜底文案被清空（识别困难时顾客没有第二条路）',
+      file: CARD,
+      from: "  hint: '二维码识别困难？微信搜索「山海造物」'",
+      to: "  hint: ''"
+    },
+    {
+      name: '兜底文案只在常量里、不再落墨（白定义）',
+      file: CARD,
+      from: "    ctx.fillText(PRINT_QR_COPY.hint, axisX + Math.round(qrZone / 2), captionBase + STICKER.qrHintOffset)",
+      to: "    void PRINT_QR_COPY.hint"
+    },
+    {
+      name: '码块退回直接落 footerTop（纸底只剩 23px ⇒ 兜底文案被挤出纸外）',
+      file: CARD,
+      from: '  const qrTop = STICKER.footerTop - STICKER.qrLift',
+      to: '  const qrTop = STICKER.footerTop'
+    },
+    {
+      name: '兜底文案超宽时不再缩字（会越进右侧预印印章区）',
+      file: CARD,
+      from: '    while (hintFont > 16 && ctx.measureText(PRINT_QR_COPY.hint).width > qrZone) {',
+      to: '    while (false) {'
+    },
     {
       name: '贴纸规格被改错（886×886 → 620×886）—— 1:1 的 75×75mm 被推翻',
       file: CARD,

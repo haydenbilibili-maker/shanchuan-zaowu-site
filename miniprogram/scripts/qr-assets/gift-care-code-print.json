@@ -1,0 +1,10 @@
+{
+  "page": "subpackages/feature/care/guide/index",
+  "scene": "from=gift_print",
+  "envVersion": "release",
+  "width": 430,
+  "hyaline": true,
+  "lineColor": "#000000",
+  "out": "subpackages/manager/assets/qrcode/miniprogram-code-print.png",
+  "generatedAt": "2026-09-20T10:14:24.151Z"
+}

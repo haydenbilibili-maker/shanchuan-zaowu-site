@@ -208,15 +208,23 @@ check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
   // 2026-09-18：印刷卡版式**学习前端礼笺卡**（compose 的 .card-*）
   check('★ 印刷卡首行是「写给 · TA」（学前端 .card-*）', /写给 · /.test(card) && /o\.recipientName/.test(card))
   check('★ 两枚码各 **15mm**，右边界贴**内框内侧 4mm**（不再误用文字轴，右移约 10mm）',
-    /caption: '扫码进店', size: Math\.round\(15 \* MM\)/.test(card)
-    && /caption: '客服微信', size: Math\.round\(15 \* MM\)/.test(card)
+    // 2026-09-20：文案改由 `PRINT_QR_COPY` 统一供给（旧字面量 '扫码进店' 已作废），
+    //   判据只认"尺寸 + 右边界 + 文案来自常量"这三件事 —— 不再钉某一句具体的话。
+    /caption: PRINT_QR_COPY\.miniprogram, size: Math\.round\(15 \* MM\)/.test(card)
+    && /caption: PRINT_QR_COPY\.service, size: Math\.round\(15 \* MM\)/.test(card)
     && /const qrRight = cardX \+ cardW - Math\.round\(4 \* MM\)/.test(card)
     && /let cx = qrRight/.test(card),
     '码的右边界若用 axisRight，等于把左内边距算两次 → 离纸边过远')
   check('★ 正文用**手写体**且基线 **40px**（自适应下限 28px；产品负责人要求放大）',
     /HanziPen SC/.test(card) && /fontPx \+ 'px ' \+ HAND/.test(card) && /let fontPx = 40/.test(card) && /while \(fontPx > 28/.test(card))
-  check('★ 卡上**不得有**「山海」水印（定稿：页脚已被署名+两枚码占满，再叠会糊）',
-    !/globalAlpha = 0\.0[0-9]/.test(card.slice(card.indexOf('// 页脚带：左＝署名'), card.indexOf('// 页脚带：左＝署名') + 2600)))
+  /* ⚠️ 2026-09-20 修一条**恒真**判据（错题本 E7：判据自身失效）：
+   * 原文锚点是 `'// 页脚带：左＝署名'`，而源码那行前面还有 `── `（盒线字符）→ `indexOf` 返回 **-1**
+   * → `''.slice(-1, 2599)` = `''` → 正则恒不命中 → `!false` = **恒真**。
+   * 也就是说"卡上不得有水印"这条**从来没生效过**（真加了水印也照样绿）。
+   * 现在改成：整段代码里都不许出现 `globalAlpha` 的水印写法 —— 不再依赖任何偏移锚点。 */
+  check('★ 卡上**不得有**水印（`globalAlpha` 洗淡写法；定稿：页脚已被署名+两枚码占满，再叠会糊）',
+    !/globalAlpha\s*=\s*0\.0[0-9]/.test(stripComments(card)),
+    '整份源码里出现 globalAlpha 低透明度水印 —— 定稿明确不要（且热敏纸上会糊）')
 }
 
 /* ── 礼赠履约页「导出礼笺图」接线（印刷用；2026-09-17）────────────────── */
@@ -246,8 +254,9 @@ check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
   check('★ 导出侧传入 recipientName（多来源：recipientName/salutation/toName/address.name）',
     /recipientName: item\.recipientName \|\| item\.salutation \|\| item\.toName/.test(opsJs),
     '只取一个字段会在别的单子上落空（实名制印刷卡不能印错）')
-  check('★ 底部两枚码：小程序码 + 客服微信码（缺失各自静默跳过）',
-    /o\.qrcodeImage/.test(card) && /o\.serviceQrImage/.test(card) && /扫码进店/.test(card) && /客服微信/.test(card))
+  check('★ 底部两枚码：小程序码 + 客服微信码（缺失各自静默跳过）+ 各自文案来自同一常量',
+    /o\.qrcodeImage/.test(card) && /o\.serviceQrImage/.test(card)
+    && /PRINT_QR_COPY\.miniprogram/.test(card) && /PRINT_QR_COPY\.service/.test(card))
   check('★ 姓名为空时**不印**「写给 · 受礼人」占位（印刷卡不该有假称呼）',
     /if \(toName\) \{/.test(card) && !/写给 · 受礼人/.test(card))
   const printOnly = (function () {   // 断言内内联切片（避免跨块作用域坑）

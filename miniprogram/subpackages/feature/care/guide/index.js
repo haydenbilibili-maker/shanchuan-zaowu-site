@@ -45,12 +45,16 @@ function contextKind(from) {
     return 'order'
   }
   if (from === 'my' || from === 'hub_my') return 'collection'
+  // 印刷礼笺上的小程序码（scene=from=gift_print）：说"关联藏品"是错的 —— 他手里那张纸上没写是哪件标本，
+  // 扫进来就是**先看通用养护**。标成"来自礼笺"才对得上他刚才做的事（这也是归因能用的那一层）。
+  if (from === 'gift_print' || from === 'gift') return 'gift'
   return 'related'
 }
 
 function contextCopy(kind) {
   if (kind === 'order') return { contextOverline: 'ORDER', contextLabelText: '来自订单' }
   if (kind === 'collection') return { contextOverline: 'COLLECTION', contextLabelText: '来自藏品' }
+  if (kind === 'gift') return { contextOverline: 'GIFT NOTE', contextLabelText: '来自礼笺' }
   return { contextOverline: 'SPECIMEN', contextLabelText: '关联藏品' }
 }
 
@@ -91,11 +95,19 @@ Page({
 
   onLoad(options) {
     const nav = getPageNavInsets({ nativeNav: true })
-    const rawCategory = options.category || ''
+    // 印刷礼笺上的小程序码走 `wxacode.getUnlimited`：页面收到的**不是** `from=xxx`，
+    // 而是整串 `scene`（同 `subpackages/feature/identify/index.js` 与祈福墙的解析方式）。
+    // 不解析它 → 扫礼笺进来会被当成"没有来源"，上下文标签与归因全丢。
+    const sceneText = options && options.scene ? decodeURIComponent(String(options.scene)) : ''
+    const sceneOf = (key) => {
+      const m = new RegExp('(?:^|[&?])' + key + '=([^&]+)').exec(sceneText)
+      return m ? m[1] : ''
+    }
+    const rawCategory = options.category || sceneOf('category') || ''
     const orderId = options.orderId || ''
     const category = normalizeCategory(rawCategory || 'GENERAL')
     const meta = getCategoryMeta(category)
-    const from = options.from || ''
+    const from = options.from || sceneOf('from') || ''
     const kind = contextKind(from)
 
     this.setData({

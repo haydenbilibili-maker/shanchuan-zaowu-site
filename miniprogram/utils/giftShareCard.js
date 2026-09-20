@@ -360,6 +360,26 @@ const PRINT_SPECS = {
  *   （2026-09-19 真图精修：两枚码从 14mm 回 15mm 与 A6 同口径，并整体下移到白区底部，
  *     把中部让给正文 —— 首版正文带被挤到 -47px 就是这么来的。）
  */
+/**
+ * 印刷礼笺上两枚码的**文案**（A6 与贴纸同源 —— 只改一个规格会导致"同一份礼笺两个说法"）。
+ *
+ * 为什么要改（2026-09-20 产品负责人）：
+ *   原文案「扫码进店」只说了"扫"，没说"扫了能得到什么"，顾客不知道值不值得扫；
+ *   而贴纸是**热敏 75mm 的近方小卡**，扫码本来就难 —— 与其把码换成水印（那样就断了导流），
+ *   不如①把好处写清楚，②在码下补一句**识别困难时的兜底路径**（微信搜一搜）。
+ *   ⚠️ 码本身指向「养护指南」页（`subpackages/feature/care/guide/index`，见
+ *   `scripts/qr-assets/gift-care-code-print.json` 的清单）—— 文案说"看养护说明"必须与它一致，
+ *   否则就是印在纸上的假承诺。
+ */
+const PRINT_QR_COPY = {
+  /** 小程序码：扫了到哪、能干什么 */
+  miniprogram: '扫码看养护说明',
+  /** 客服码 */
+  service: '客服微信',
+  /** 兜底：印刷条件（热敏/小尺寸/磨损）导致识别不了时的第二条路 */
+  hint: '二维码识别困难？微信搜索「山海造物」'
+}
+
 const STICKER = {
   margin: Math.round(1.5 * 11.811),                     // 内容外框（贴纸装饰边内再收 1.5mm）
   pad: Math.round(1.8 * 11.811),                        // 文字轴相对外框的内边距
@@ -387,8 +407,15 @@ const STICKER = {
   footerTop: Math.round(60 * 11.811),
   qrSize: Math.round(13 * 11.811),                      // 每枚码的边长（白区纵向 75mm 是硬上限：码+小字+纸底 6~16px 余量一起复算，见不变式⑤d）
   qrGap: Math.round(5 * 11.811),                        // 两枚码间距
+  // 码块整体**上提**：白区 75mm 的纵向余量只剩 23px（码底 863 → 纸底 886），
+  // 放不下"码下小字 + 兜底文案"两行。上提不会撞到右侧署名/日期 ——
+  // 码右缘 ≤ stampLeft−2mm = 543，而署名下划线左端 ≥ axisRight − sigMaxW = 847−271 = 576，
+  // 两者**横向不相交**（守卫「码块与署名带包围盒不相交」钉住这一点）。
+  qrLift: Math.round(3 * 11.811),
   qrCaptionOffset: Math.round(1.4 * 11.811),            // 码下小字基线偏移（码底 + 1.4mm，避免小字贴住码底）
   qrCaptionSize: 24,                                    // 码下小字（2026-09-19：18→21px，1.52mm→1.78mm —— 热敏 1.5mm 易糊）
+  qrHintSize: 21,                                       // 兜底文案（21px = 1.78mm，与码下小字同档，压在热敏 1.5mm 糊线之上）
+  qrHintOffset: Math.round(2.2 * 11.811),               // 兜底文案相对码下小字的基线偏移
   qrRightPad: Math.round(1.8 * 11.811),                 // 页脚右内缩（内容不得贴到贴纸装饰边）
   stampSize: Math.round(24 * 11.811),                   // 右下**预印**圆形印章直径
   stampRightPad: Math.round(1.5 * 11.811),              // 印章距内容外框右缘（白区右缘）
@@ -536,11 +563,13 @@ function paintGiftPrintCard(canvas, opts) {
 
   // 两枚码：从右往左排（小程序码在最右），各自带小字；素材缺失各自静默跳过
   const codes = []
-  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店', size: Math.round(15 * MM) })
-  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信', size: Math.round(15 * MM) })
+  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: PRINT_QR_COPY.miniprogram, size: Math.round(15 * MM) })
+  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: PRINT_QR_COPY.service, size: Math.round(15 * MM) })
   // 右边界贴内框内侧 4mm（此前误用文字轴 axisRight，等于把左内边距算两次 → 离纸边 24mm ✗）
   const qrRight = cardX + cardW - Math.round(4 * MM)
   let cx = qrRight
+  let captionBase = 0
+  let blockL = qrRight
   for (let i = 0; i < codes.length; i += 1) {
     const c = codes[i]
     const x = cx - c.size
@@ -550,8 +579,19 @@ function paintGiftPrintCard(canvas, opts) {
     ctx.fillStyle = '#8A7530'
     ctx.font = '400 20px serif'
     ctx.textAlign = 'center'
-    ctx.fillText(c.caption, x + c.size / 2, y + c.size + Math.round(6 * MM))
+    captionBase = y + c.size + Math.round(6 * MM)
+    ctx.fillText(c.caption, x + c.size / 2, captionBase)
+    blockL = Math.min(blockL, x)
     cx = x - Math.round(6 * MM)
+  }
+  // 兜底文案：与码块同一条中轴（A6 的页脚带 30mm 富余，横向空间充足，不需要缩字）
+  if (codes.length) {
+    // 字号与贴纸同源（STICKER.qrHintSize）：A6 原写 20px，热敏模拟里只剩 8% 墨点 —— 抖没了。
+    // 兜底文案的**全部价值**就是"码扫不出时还能读"，读不清等于没印。
+    ctx.fillStyle = '#8A7530'
+    ctx.font = '400 ' + STICKER.qrHintSize + 'px serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(PRINT_QR_COPY.hint, Math.round((blockL + qrRight) / 2), captionBase + STICKER.qrHintOffset)
   }
   ctx.textAlign = 'left'
 
@@ -760,25 +800,40 @@ function paintGiftStickerCard(canvas, o) {
   //   右对齐又会把码推到印章正下方（印章是直径 24mm 的圆，圆的**底部**左右两侧仍有白），故取**居中**：
   //   两侧留白均等、不与印章相交，同时把码放大到 14mm 提高扫码率（白区纵向 75mm 的硬上限，见不变式⑤d）。
   const codes = []
-  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店' })
-  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信' })
+  if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: PRINT_QR_COPY.miniprogram })
+  if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: PRINT_QR_COPY.service })
   // 右端上限：印章左缘再让 2mm（不得进印章区），同时不越页脚右内缩
   const qrRight = Math.min(stampLeft - Math.round(2 * MM), cardX + cardW - STICKER.qrRightPad)
   const qrTotalW = codes.length * STICKER.qrSize + Math.max(0, codes.length - 1) * STICKER.qrGap
   // 居中：可放区间 [axisX, qrRight]，两侧各留 (zone - qrTotalW)/2
   const qrZone = qrRight - axisX
+  const qrTop = STICKER.footerTop - STICKER.qrLift
+  const captionBase = qrTop + STICKER.qrSize + STICKER.qrCaptionOffset
   let cx = Math.max(axisX, axisX + Math.round((qrZone - qrTotalW) / 2))
   for (let i = 0; i < codes.length; i += 1) {
     const c = codes[i]
     const x = Math.min(cx, qrRight - STICKER.qrSize)
-    const cy = STICKER.footerTop
     // 码已是**透明 PNG** → 不画白色底托
-    try { ctx.drawImage(c.img, x, cy, STICKER.qrSize, STICKER.qrSize) } catch (e) { /* 码挂跳过 */ }
+    try { ctx.drawImage(c.img, x, qrTop, STICKER.qrSize, STICKER.qrSize) } catch (e) { /* 码挂跳过 */ }
     ctx.fillStyle = '#8A7530'
     ctx.font = '400 ' + STICKER.qrCaptionSize + 'px serif'
     ctx.textAlign = 'center'
-    ctx.fillText(c.caption, x + STICKER.qrSize / 2, cy + STICKER.qrSize + STICKER.qrCaptionOffset)
+    ctx.fillText(c.caption, x + STICKER.qrSize / 2, captionBase)
     cx = x + STICKER.qrSize + STICKER.qrGap
+  }
+  // 兜底文案：与码块**同一条中轴**（码块在 [axisX, qrRight] 内居中 ⇒ 中轴 = axisX + qrZone/2）。
+  // 太长就缩字（同署名的做法）—— 缩到下限还放不下才告警，绝不越进印章区。
+  if (codes.length) {
+    let hintFont = STICKER.qrHintSize
+    ctx.font = '400 ' + hintFont + 'px serif'
+    while (hintFont > 16 && ctx.measureText(PRINT_QR_COPY.hint).width > qrZone) {
+      hintFont -= 1
+      ctx.font = '400 ' + hintFont + 'px serif'
+    }
+    if (hintFont <= 16) console.warn('giftSticker: 兜底文案放不下（' + PRINT_QR_COPY.hint + '）—— 需要缩短文案或调整 STICKER 表')
+    ctx.fillStyle = '#8A7530'
+    ctx.textAlign = 'center'
+    ctx.fillText(PRINT_QR_COPY.hint, axisX + Math.round(qrZone / 2), captionBase + STICKER.qrHintOffset)
   }
   ctx.textAlign = 'left'
 }

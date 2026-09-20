@@ -14,6 +14,12 @@
  *
  * 默认参数：page=subpackages/feature/identify/index  scene=from=store_qr
  *           envVersion=release  width=430  hyaline=true  品牌黄铜色 #C4A76C
+ *
+ * `--mono`（= `--lineColor 000000`）：**印刷用必须加这个开关**。
+ *   品牌黄铜色 #C4A76C 印在米白卡面上对比度只有约 2.0:1，屏幕上看还行，
+ *   但**热敏头没有灰阶** —— 抖动之后码点会变成半调噪声（见
+ *   `scripts/render-gift-print-preview.mjs` 的热敏模拟出图），可读性显著下降。
+ *   屏幕码（识别/门店立牌）保留品牌色；**印在纸上的码一律走黑色**。
  */
 const https = require('https')
 const fs = require('fs')
@@ -24,7 +30,18 @@ const { execFileSync } = require('child_process')
 const ROOT = path.resolve(__dirname, '..')
 const ENV_ID = process.env.CLOUD_ENV || 'cloud1-8gnkty5bfff9f0bf'
 const DEFAULT_APPID = 'wxf2550373b010b447'
-const BRASS = { r: 196, g: 167, b: 108 } // #C4A76C
+const BRASS = { r: 196, g: 167, b: 108 } // #C4A76C（品牌黄铜，屏幕码用）
+const MONO = { r: 0, g: 0, b: 0 }        // 印刷码用（热敏无灰阶，见文件头）
+
+/** 'C4A76C' / '#c4a76c' / '000000' → {r,g,b}；非法值回落到黄铜（并报警，不静默出歪色码） */
+function parseHex (hex) {
+  const h = String(hex || '').replace(/^#/, '')
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) {
+    console.error('--lineColor 需要 6 位十六进制（如 000000）：', hex)
+    process.exit(1)
+  }
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) }
+}
 
 function parseArgs(argv) {
   const args = {}
@@ -112,7 +129,7 @@ async function viaWechat(opts) {
     env_version: opts.envVersion,
     width: opts.width,
     auto_color: false,
-    line_color: { r: BRASS.r, g: BRASS.g, b: BRASS.b },
+    line_color: opts.lineColor,
     is_hyaline: opts.hyaline
   })
   const tmp = path.join(os.tmpdir(), `wx-store-qr-${Date.now()}.png`)
@@ -194,6 +211,9 @@ async function main() {
     hyaline: args.hyaline !== 'false',
     out: args.out || 'scripts/qr-assets/identify-store-qr.png',
     manifest: args.manifest || '',
+    // --mono 是 --lineColor 000000 的语法糖（印刷码默认就该是它，但**不默认**：
+    // 默认值一改，门店立牌那几张屏幕码会跟着掉品牌色）
+    lineColor: args.mono ? MONO : (args.lineColor ? parseHex(args.lineColor) : BRASS),
     appid: args.appid,
     appsecret: args.appsecret
   }
@@ -201,7 +221,8 @@ async function main() {
     console.error('scene 超过 32 字符上限：', opts.scene.length)
     process.exit(1)
   }
-  console.log(`生成门店码 via=${via} page=${opts.page} scene=${opts.scene} env=${opts.envVersion}`)
+  const hex = (c) => '#' + [c.r, c.g, c.b].map((n) => n.toString(16).padStart(2, '0')).join('')
+  console.log(`生成门店码 via=${via} page=${opts.page} scene=${opts.scene} env=${opts.envVersion} lineColor=${hex(opts.lineColor)}`)
   const buf = via === 'wechat' ? await viaWechat(opts) : viaCloud(opts)
   const outPath = path.resolve(ROOT, opts.out)
   fs.mkdirSync(path.dirname(outPath), { recursive: true })
@@ -219,6 +240,7 @@ async function main() {
       envVersion: opts.envVersion,
       width: opts.width,
       hyaline: opts.hyaline,
+      lineColor: hex(opts.lineColor),
       out: path.relative(ROOT, outPath).replace(/\\/g, '/'),
       generatedAt: new Date().toISOString()
     }, null, 2) + '\n')
