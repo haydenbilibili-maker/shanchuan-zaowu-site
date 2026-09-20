@@ -42,6 +42,10 @@ const {
   isTagListCapped,
   CYCLE_PAUSE_MS
 } = require('../../../utils/wishWall')
+// 字数口径（P0 修复）：按「字」算而不是按 UTF-16 码元算 —— `draft.length` 会把 emoji 算 2、
+// 把 ZWJ 家庭 emoji 算 8，`.slice(0, TEXT_MAX)` 还会截出半个代理对。口径与已知边界见该模块文件头；
+// 服务端 `manageWishWall` 内嵌的副本与它逐字节相同（守卫 test-wish-wall 会比对两份 + 同组用例）。
+const { wishTextCount, wishTextTruncate } = require('../../../utils/wishTextCount')
 const wishRitual = require('../../../utils/wishRitual')
 const ritualFeedback = require('../../../utils/ritualFeedback')
 const ritualPlay = require('../../../utils/ritualPlay')
@@ -167,6 +171,15 @@ Page({
     loading: true,
     posting: false,
     textMax: TEXT_MAX,
+    /**
+     * 已写几个「字」（P0 修复：原来展示的是 `{{draft.length}}`，即 UTF-16 码元数 ——
+     * 写 1 个家庭 emoji 会显示 8/30）。计数走 `utils/wishTextCount.wishTextCount`，
+     * 与服务端同一口径。**每次改 `draft` 都必须同步改它**（onDraftInput / useInspiration /
+     * borrowWishText / usePlayWish 四处，守卫有断言钉住）。
+     */
+    draftCount: 0,
+    /** 分享来源标记：'' = 愿签卡（默认）/ 'play' = 玩法结果弹层。只在一次转发里有效 */
+    shareFrom: '',
     productId: '',
     productKey: PRODUCT_KEY,
     /** 入口来源（门店码 → store_qr；线上入口 → 组件传入的 from） */
@@ -498,7 +511,9 @@ Page({
   usePlayWish() {
     const r = this.data.playResult
     if (!r) return
-    this.setData({ draft: r.wish || '马上有' })
+    // 玩法给的心愿词也要按同一口径截断 + 同步计数（不允许有一条改 draft 的路漏计数）
+    const draft = wishTextTruncate(r.wish || '马上有', TEXT_MAX)
+    this.setData({ draft, draftCount: wishTextCount(draft) })
     trackBehavior('wish_wall_play', 'to_wish', r.id)
     // ① 先收弹层：`.ww-sheet` 的 z-index 高于发送条，不收就会一直盖住它
     this.closePlayResult()
@@ -510,6 +525,24 @@ Page({
     //    PRD §4 要求「抽签 → 结果 → 写成心愿」这条动线**无感**，多一次点击就是有感的。
     //    延迟到滚动（260ms）之后再聚焦：否则"滚动落点"与"键盘顶起"同时发生，落点会跳。
     this.focusWishInput(300)
+  },
+
+  /**
+   * 玩法结果弹层里的「分享这份结果」（W1 建议方案 A：先上转发卡片，不做生成图/canvas）。
+   *
+   * 为什么需要这个方法：小程序唤起转发**只有** `<button open-type="share">` 这一条路，
+   * 而 `onShareAppMessage` 是页面级的 —— 它同时服务愿签卡上的「祈一份」。
+   * 所以按钮 `bindtap` 先落一个**来源标记**，`onShareAppMessage` 据此分流
+   * （见那里的注释；判据：test-wish-wall 钉住「弹层分享读 result.share、不读 card.text」）。
+   *
+   * 本方法**只写一个标记**：不弹 toast、不发云调用、不改 draft —— 分享是纯本地动作，
+   * 失败也不影响玩法结果本身（口径：玩法与推荐不得阻断主流程）。
+   */
+  onSheetShareTap() {
+    const r = this.data.playResult
+    if (!r) return
+    this.setData({ shareFrom: 'play' })
+    trackBehavior('wish_wall_play', 'share', r.id)
   },
 
   /**
@@ -1227,7 +1260,9 @@ Page({
   borrowWishText() {
     const card = this.data.card
     if (!card) return
-    this.setData({ draft: normalizeWishText(card.text).slice(0, TEXT_MAX), card: null })
+    // 按「字」安全截断（P0：`.slice(0, TEXT_MAX)` 会截出半个代理对）
+    const draft = wishTextTruncate(normalizeWishText(card.text), TEXT_MAX)
+    this.setData({ draft, draftCount: wishTextCount(draft), card: null })
     // 2026-09-20 改造：这里原来只弹一句「已填进输入框，可再改」——
     // 而输入框在视口上方（愿签列表在写愿区之下），toast 在说一件用户看不到的事。
     // 现在把它滚进视野并聚焦：说了什么，就让人看到什么。
@@ -1246,20 +1281,49 @@ Page({
     })
   },
 
-  /** 分享这张心愿笺（转发标题就是那句心愿） */
+  /**
+   * 转发入口（本页**两条链路**，必须可区分，否则文案会串）。
+   *
+   * A. 愿签卡上的「祈一份」 → 分享的是**愿签正文**（`card.text`）。
+   * B. 玩法结果弹层里的「分享这份结果」 → 分享的是**玩法结果**（`ritualPlay` 的 `share`）。
+   *
+   * 分流判据 = `shareFrom === 'play'`（按钮 bindtap 落的**一次性标记**）。
+   * 为什么不只看"现在弹层开着吗"：`playResult` 在 `usePlayWish` / 收起弹层之后就被清掉了，
+   * 而转发回调与那次点击之间存在时序 —— 只看 `playResult` 会把玩法分享悄悄降级成愿签文案。
+   * 反过来，`shareFrom` 万一因为时序/基础库差异没落上，**第二条兜底**（弹层开着且没有愿签卡）
+   * 仍能分享玩法结果 —— 宁可多一层保险，也不要"分享出去是错的文案"。两条都不成立时才走愿签。
+   *
+   * 合规口径（两条都不能破）：
+   *   · 玩法结果分支**绝不读 `card.text`** —— 用户可能刚点开过别人的愿签，拿错就是把别人的心愿
+   *     转发出去；
+   *   · 玩法结果分支只用 `ritualPlay.share`，**不自己拼星座/MBTI 等"依据"**
+   *     （`share` 字段本身就是"只公开结果与建议、不公开依据"，见 utils/ritualPlay.js）。
+   */
   onShareAppMessage() {
+    // 一次性标记：读完就复位，避免「上一次是玩法分享」污染下一次愿签分享
+    const fromPlay = this.data.shareFrom === 'play'
+    if (this.data.shareFrom) this.setData({ shareFrom: '' })
+    const path = `/subpackages/feature/wish-wall/index?productKey=${encodeURIComponent(this.data.productKey)}`
+    const result = this.data.playResult
+    // `!this.data.card`：愿签卡是另一个弹层；它开着就说明用户在看愿签，不抢玩法分支
+    if (result && result.share && (fromPlay || !this.data.card)) {
+      return { title: result.share, path }
+    }
     const card = this.data.card
     const text = card ? normalizeWishText(card.text) : ''
     return {
       title: text || '马上有 · 祈福墙',
-      path: `/subpackages/feature/wish-wall/index?productKey=${encodeURIComponent(this.data.productKey)}`
+      path
     }
   },
 
   /* ----------------------------- 发布 ----------------------------- */
 
   onDraftInput(e) {
-    this.setData({ draft: String((e.detail && e.detail.value) || '').slice(0, TEXT_MAX) })
+    // 输入框给什么就存什么（原生 maxlength 已在 WXML 侧取消，见那里的注释）：
+    // 截断只走 wishTextTruncate —— 按「字」，绝不切出半个代理对 / 半个 ZWJ 序列。
+    const draft = wishTextTruncate(String((e.detail && e.detail.value) || ''), TEXT_MAX)
+    this.setData({ draft, draftCount: wishTextCount(draft) })
   },
 
   /**
@@ -1273,7 +1337,8 @@ Page({
   useInspiration(e) {
     const text = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.text) || '')
     if (!text) return
-    this.setData({ draft: normalizeWishText(text).slice(0, TEXT_MAX) })
+    const draft = wishTextTruncate(normalizeWishText(text), TEXT_MAX)
+    this.setData({ draft, draftCount: wishTextCount(draft) })
     this.focusWishInput(60)
   },
 
@@ -1337,6 +1402,8 @@ Page({
       this._wallItems = [fresh].concat(this._wallItems || [])
       this.setData({
         draft: '',
+        // 草稿清空 → 字数展示必须一起归零（否则输入框空了、右边还写着「12/30」）
+        draftCount: 0,
         freshId: fresh._id,
         // ⚠️ 2026-09-20 修（子代理行为复核抓到）：乐观插入墙上数据之后**必须同步 wallCount**。
         // 否则"空墙写下第一条"时：墙上已经有一条（rows 也重建了、页脚照样渲染），
@@ -1410,7 +1477,7 @@ Page({
     this._pendingWish = ''
     if (!text) return
     this._resumeAfterRegister = true
-    this.setData({ draft: text })
+    this.setData({ draft: text, draftCount: wishTextCount(text) })
     this.submitWish()
   },
 
