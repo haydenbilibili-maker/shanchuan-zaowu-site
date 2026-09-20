@@ -166,6 +166,14 @@ const EVENTS = {
   //        dismiss（先不领）/ resume_success（**证书已发且功德已同步上云**）/ fail_*（授权失败、同步失败、开关关闭）
   muyu_cert_gate: { module: MODULE.COMMUNITY, desc: '祈福墙功德证领取漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
 
+  // —— 印刷物料码（二维码）转化（2026-09-20 产品负责人指派）——
+  // 一次扫码记一条（step=open）；页面解析不到且无法重映射时再补一条（step=fallback_home = 码已失效）。
+  // 注意：**漏斗归因不靠本事件**，而是会话内所有事件都带 `entrySource=qr:<key>`
+  // （app.js#maybeTrackQrMaterial → session.setEntrySource → index.js#buildPayload）；
+  // 本事件只负责算漏斗第一环「扫码进入」。物料登记表是 analytics/qrMaterial.js 的 QR_MATERIALS
+  // （ERP 镜像 admin/src/utils/analyticsSchema.js），两端漂移由 check:analytics-schema 拦。
+  qr_material_enter: { module: MODULE.SYSTEM, desc: '物料码扫码进入（targetId=物料 key；step: open/fallback_home）', targetType: 'qr_material' },
+
   // —— 用户 / 会员 ——
   member_card_flip: { module: MODULE.USER, desc: '会员卡翻面', targetType: 'member_card' },
   member_code_show: { module: MODULE.USER, desc: '展示会员码', targetType: 'member_card' },

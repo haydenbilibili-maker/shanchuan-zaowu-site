@@ -32,6 +32,12 @@ const QR_CLI = 'miniprogram/scripts/generate-store-qr.js'
 const MANIFEST = 'miniprogram/scripts/qr-assets/wish-wall-store-qr.json'
 const ASSET = 'miniprogram/scripts/qr-assets/wish-wall-store-qr.png'
 const PAGE_PATH = 'subpackages/feature/wish-wall/index'
+// ── AI 识别码（同一族：门店物料码）2026-09-20 新增：安卓扫识别码落首页的真机反馈 ──
+const APP_JS = 'miniprogram/app.js'
+const IDENTIFY_MANIFEST = 'miniprogram/scripts/qr-assets/identify-store-qr.json'
+const IDENTIFY_ASSET = 'miniprogram/scripts/qr-assets/identify-store-qr.png'
+const IDENTIFY_PAGE = 'subpackages/feature/identify/index'
+const IDENTIFY_RESULT = 'subpackages/feature/identify/result/index'
 /** 微信 scene 上限（超出会被截断成另一串，等于码指向了别的东西） */
 const SCENE_MAX = 32
 /** 430×430 的空白 PNG 压出来只有几 KB；真实小程序码（含铜色 + 透明底）在几十 KB 量级 */
@@ -48,9 +54,13 @@ function check(name, cond, extra) {
   }
 }
 const read = (f) => readFileSync(resolve(ROOT, f), 'utf8')
+// ⚠️ 注释剥离必须**避开正则字面量里的 `\/`**（2026-09-20 实测）：
+//    `.replace(/^\//, '')` 里紧跟着的 `//` 会被当成注释起点 → 该行被截断 →
+//    一旦把源码交给 new Function 求值就 SyntaxError（校验台保真度缺陷，不是产品缺陷）。
+//    故注释起点要求前一个字符既不是 `:`（https://）也不是 `\`（转义斜杠）。
 const stripComments = (t) => String(t)
   .replace(/\/\*[\s\S]*?\*\//g, ' ')
-  .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+  .replace(/(^|[^:\\])\/\/[^\n]*/g, '$1')
 
 /** 直接跑真源码的纯函数（CJS） */
 function loadCjs(file) {
@@ -242,8 +252,200 @@ if (process.argv.includes('--selftest')) {
     console.error('✗ selftest 失败：删掉 .env.qr 的忽略规则，守卫居然没红（AppSecret 可能被提交）')
     process.exit(1)
   }
-  console.log('✓ selftest 通过：注入「页面不在白名单」与「密钥文件不再被忽略」均被检出，且已还原源文件')
+  // 第三条：拆掉识别码兜底路由（安卓热启动再次落首页）
+  const appAbs = resolve(ROOT, APP_JS)
+  const appBackup = readFileSync(appAbs, 'utf8')
+  const appStripped = appBackup.replace('    this.maybeOpenIdentifyEntry(options);\n', '')
+  if (appStripped === appBackup) {
+    console.error('✗ selftest 第三条无法注入（app.js onShow 锚点没找到）')
+    process.exit(1)
+  }
+  let caught3 = false
+  try {
+    writeFileSync(appAbs, appStripped)
+    const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
+    caught3 = run.status !== 0
+  } finally {
+    writeFileSync(appAbs, appBackup)
+  }
+  if (!caught3) {
+    console.error('✗ selftest 失败：拆掉识别码兜底路由，守卫居然没红（安卓扫码又会落首页）')
+    process.exit(1)
+  }
+
+  // 第四条：识别码清单指到一个未登记的页面（扫码 404 → 落首页）
+  const imAbs2 = resolve(ROOT, IDENTIFY_MANIFEST)
+  if (existsSync(imAbs2)) {
+    const imBackup = readFileSync(imAbs2, 'utf8')
+    const imBad = imBackup.replace('"page": "subpackages/feature/identify/index"', '"page": "subpackages/feature/identify/old-index"')
+    let caught4 = false
+    try {
+      writeFileSync(imAbs2, imBad)
+      const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
+      caught4 = run.status !== 0
+    } finally {
+      writeFileSync(imAbs2, imBackup)
+    }
+    if (!caught4) {
+      console.error('✗ selftest 失败：清单 page 改成未登记路径，守卫居然没红')
+      process.exit(1)
+    }
+  }
+  // 第五条：去掉 getEnterOptionsSync 兜底（安卓热启动会再落首页）
+  const appBackup2 = readFileSync(appAbs, 'utf8')
+  // 两个入口函数**都**去掉才叫"兜底被删"（只删一个会被另一个的正则掩护过去 —— 改前就是这样）
+  const appNoEnter = appBackup2
+    .split('if (sceneOf(opts) == null && typeof wx.getEnterOptionsSync === \'function\') {')
+    .map((part, i) => (i === 0 ? part : part.slice(part.indexOf('\n      }\n') + 9)))
+    .join('')
+  if (appNoEnter === appBackup2) {
+    console.error('✗ selftest 第五条无法注入（getEnterOptionsSync 锚点没找到）')
+    process.exit(1)
+  }
+  let caught5 = false
+  try {
+    writeFileSync(appAbs, appNoEnter)
+    const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
+    caught5 = run.status !== 0
+  } finally {
+    writeFileSync(appAbs, appBackup2)
+  }
+  if (!caught5) {
+    console.error('✗ selftest 失败：去掉 getEnterOptionsSync 兜底，守卫居然没红')
+    process.exit(1)
+  }
+  console.log('✓ selftest 通过：注入「页面不在白名单」「密钥文件不再被忽略」「拆掉识别码兜底路由」「清单 page 未登记」「去掉热启动 scene 兜底」均被检出，且已还原源文件')
   process.exit(0)
+}
+
+/* ── C. AI 识别码入口（2026-09-20：iOS 正常、安卓扫码落首页）──────────
+ * 真机反馈的现象是"扫码后停在首页"。可核的事实：生成侧参数**都对**（页面在白名单、
+ * checkPath=false、envVersion 默认 release），识别页路径也从未搬过家 —— 所以问题在**入口路由**：
+ *   ① 小程序在后台时扫码（热启动），部分安卓机只把小程序切到前台、不重走码里指定的页面；
+ *   ② 任何路径解析不到都会走 onPageNotFound，而那里**原先一律 goHome（落首页）**。
+ * 下面既钉"兜底路由存在且行为正确"，也钉"印刷码指向的页面在当前版本里必须解析得到"。 */
+{
+  const appSrc = stripComments(read(APP_JS))
+  const calls = { relaunch: [], switched: [] }
+  let captured = null
+  // ⚠️ 必须传 `require` 桩：app.js 顶层就 require 了 4 个模块，不传会让 Node 走进
+  //    "require() + 模块格式嗅探" 分支并抛 ERR_AMBIGUOUS_MODULE_SYNTAX（与祈福墙守卫同款坑）。
+  const appRequire = (id) => {
+    const k = String(id)
+    if (k.includes('cloudEnv')) return { CLOUD_ENV: 'test-env' }
+    if (k.includes('cloudHealth')) return { checkCloudHealth: () => {}, notifyCloudHealthFailure: () => {} }
+    return {}
+  }
+  // eslint-disable-next-line no-new-func
+  new Function('App', 'wx', 'getCurrentPages', 'require', appSrc)(
+    (cfg) => { captured = cfg },
+    {
+      reLaunch: ({ url }) => calls.relaunch.push(url),
+      switchTab: ({ url }) => calls.switched.push(url),
+      navigateTo: () => {}, showToast: () => {}, getSystemInfoSync: () => ({}),
+      cloud: { database: () => ({}), callFunction: () => Promise.resolve({ result: {} }) },
+      onError: () => {}
+    },
+    () => [{ route: 'pages/index/index' }],
+    appRequire
+  )
+  check('app.js 能被加载（App 配置已捕获）', !!captured && typeof captured.maybeOpenIdentifyEntry === 'function')
+  // ★ 接线断言：方法存在 ≠ 真的被调用（第一版判据只驱动了方法本身，
+  //   注入"拆掉 onShow 里那行"检不出 —— 自检抓到的判据漏洞，已补）
+  check('★ onShow 真的调用了识别码兜底路由（方法在但没接线 = 等于没写）',
+    /onShow\(options\)[\s\S]{0,400}?this\.maybeOpenIdentifyEntry\(options\)/.test(appSrc))
+
+  const drive = (options) => {
+    calls.relaunch.length = 0
+    const ctx = Object.assign(Object.create(null), captured)
+    ctx._identifyEntryKey = ''
+    ctx.maybeOpenIdentifyEntry(options)
+    return new Promise((r) => setTimeout(() => r(calls.relaunch.slice()), 700))
+  }
+  if (captured && typeof captured.maybeOpenIdentifyEntry === 'function') {
+    const storeHit = await drive({ query: { scene: 'from=store_qr' } })
+    check('★ 门店识别码（scene=from=store_qr）→ 兜底跳到识别页',
+      storeHit.length === 1 && storeHit[0].indexOf('/subpackages/feature/identify/index') === 0, JSON.stringify(storeHit))
+    const rid = 'a1b2c3d4e5f60718293a4b5c'
+    const posterHit = await drive({ query: { scene: rid } })
+    check('★ 分享海报码（scene=记录 id）→ 兜底跳到识别结果页',
+      posterHit.length === 1 && posterHit[0].indexOf('/subpackages/feature/identify/result/index') === 0, JSON.stringify(posterHit))
+    const cold = await drive({ path: IDENTIFY_PAGE, query: { scene: 'from=store_qr' } })
+    check('冷启动入口就是识别页时**不再重复跳**（避免二次加载/重复埋点）', cold.length === 0, JSON.stringify(cold))
+    const other = await drive({ query: { scene: 's3' } })
+    check('非识别类 scene 不受影响（图鉴 spot 仍走原路径）', other.length === 0, JSON.stringify(other))
+  }
+
+  check('★ onPageNotFound 对识别类路径**回识别页**而不是落首页',
+    /if \(\/identify\/i\.test\(rawPath\)\)/.test(appSrc)
+    && /identify\/index\?from=/.test(appSrc))
+  const goHomeAt = appSrc.indexOf('goHome()')
+  check('识别分支出现在 goHome 兜底**之前**（否则等于没写）',
+    goHomeAt === -1 || appSrc.indexOf('/identify/i.test(rawPath)') < goHomeAt)
+
+  /* ★ 热启动兜底：**逐个入口函数**判，不看整份 app.js。
+   * ⚠️ 原来只看 `/getEnterOptionsSync/.test(appSrc)` —— 于是自检里"去掉某个函数的兜底"根本判不出来：
+   *   另一个入口函数里还有同一个调用，整文件级正则照样命中（自检第五条实测就是这么假绿的）。
+   *   入口函数是**互相独立的代码路径**，丢一个 = 那个物料在安卓热启动下又落首页。 */
+  {
+    const fnSliceOf = (src, name) => {
+      const i = src.indexOf(name + '(options) {')
+      if (i < 0) return ''
+      const j = src.indexOf('\n  },', i)
+      return src.slice(i, j < 0 ? src.length : j)
+    }
+    for (const fn of ['maybeOpenIdentifyEntry', 'maybeOpenRegisterEntry']) {
+      const body = fnSliceOf(appSrc, fn)
+      check(`★ ${fn} 自带热启动兜底（scene 缺失时用 wx.getEnterOptionsSync() 再取一次）`,
+        !!body && /getEnterOptionsSync/.test(body),
+        body ? '该入口函数里没有兜底 —— 安卓热启动时这一步会丢 scene' : `app.js 里找不到 ${fn}`)
+    }
+  }
+
+  const qrFn2 = stripComments(read(QR_FN))
+  check('★ 门店码云函数把 envVersion 钉成 release 白名单（印 trial/develop 码 = 没装那版的设备扫码落首页）',
+    /\['release', 'trial', 'develop'\]\.includes\(event && event\.envVersion\)/.test(qrFn2)
+    && /:\s*'release'/.test(qrFn2))
+  check('★ 门店码云函数 checkPath:false（页面未随版本发布时也能生成，交由入口兜底路由接住）',
+    /checkPath:\s*false/.test(qrFn2))
+
+  const cli = stripComments(read(QR_CLI))
+  check('CLI 默认 page = 识别页 / scene = from=store_qr（印出去的默认口径）',
+    /args\.page \|\| 'subpackages\/feature\/identify\/index'/.test(cli)
+    && /args\.scene \|\| 'from=store_qr'/.test(cli))
+  check('CLI 传 check_path:false + env_version（与云函数同口径）',
+    /check_path:\s*false/.test(cli) && /env_version:\s*opts\.envVersion/.test(cli))
+
+  // 印刷码清单：印刷品改不了，必须留下"它指向哪"的可核对记录
+  const imAbs = resolve(ROOT, IDENTIFY_MANIFEST)
+  const iaAbs = resolve(ROOT, IDENTIFY_ASSET)
+  if (!existsSync(imAbs)) {
+    check('★ 识别码侧车清单存在（印出去的码必须能对账指向哪一页）', false, IDENTIFY_MANIFEST)
+  } else {
+    const im = JSON.parse(readFileSync(imAbs, 'utf8'))
+    check('识别码清单 page = 识别页', im.page === IDENTIFY_PAGE, String(im.page))
+    check('★ 识别码 page 必须**已登记在 app.json**（未登记 = 扫码 404 → 落首页）',
+      (() => {
+        const app = JSON.parse(read(APP_JS.replace('app.js', 'app.json')))
+        const set = new Set(app.pages || [])
+        ;(app.subPackages || app.subpackages || []).forEach((sp) => {
+          const root = String(sp.root || '').replace(/\/$/, '')
+          ;(sp.pages || []).forEach((pg) => set.add(root + '/' + pg))
+        })
+        return set.has(im.page)
+      })(), String(im.page))
+    check('识别码清单 envVersion = release（trial/develop 码在正式版设备上会回落首页）',
+      im.envVersion === 'release', String(im.envVersion))
+    check('识别码 scene 非空且 ≤ 32', String(im.scene || '').length > 0 && String(im.scene || '').length <= SCENE_MAX, String(im.scene))
+    check('识别码 scene 含 from=store_qr（页面据此记来源）', /from=store_qr/.test(String(im.scene || '')))
+    check('识别码资产存在且为 PNG', existsSync(iaAbs) && readFileSync(iaAbs).slice(1, 4).toString('hex') === '504e47', IDENTIFY_ASSET)
+    if (existsSync(iaAbs)) {
+      check(`★ 识别码资产不是空白图（≥ ${Math.round(MIN_ASSET_BYTES / 1024)}KB）`,
+        statSync(iaAbs).size >= MIN_ASSET_BYTES, `${statSync(iaAbs).size}B`)
+    }
+    check('回填清单标了 provenance（不许把回填冒充生成时记录）',
+      !!im.provenance && /backfill/i.test(String(im.provenance)), String(im.provenance))
+  }
 }
 
 console.log(`祈福墙门店码：通过 ${passed} / ${passed + failed}`)

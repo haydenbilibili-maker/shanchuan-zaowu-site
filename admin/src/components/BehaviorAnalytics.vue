@@ -225,6 +225,78 @@
       <el-empty v-else :description="wallMonitorEmptyHint" :image-size="60" />
     </el-card>
 
+    <!-- 📱 物料码转化监测（2026-09-20）：三张印刷二维码的扫码→到达→转化。
+         口径只可能来自 user_behaviors 明细 —— 归因值 `entrySource` 是文档顶层字段，
+         而 analytics_daily 是「日期+action」二维汇总、**没有来源维度**，按它算会把三张码
+         合并成一个数（这正是本功能要解决的问题）。故本卡片复用本页已加载的明细，
+         不新增云查询。 -->
+    <el-card shadow="never" class="wall-monitor-card">
+      <template #header>
+        <div class="card-header">
+          <span>📱 物料码转化监测</span>
+          <span class="hint">
+            口径 = 明细行 <code>entrySource === 'qr:&lt;物料 key&gt;'</code>（会话级归因，扫码后该会话全部事件都带）；
+            「—」= 分母为 0，不是 0%
+          </span>
+        </div>
+      </template>
+
+      <el-alert
+        v-if="qrMaterialTotals.fallback > 0"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="ba-alert"
+        title="有失效码：扫码进来落到了首页，需要重新印制或发版兜底"
+        :description="`共 ${formatNum(qrMaterialTotals.fallback)} 条 fallback_home 记录（页面解析不到物料且未能重映射）—— 该码已失效，现场立牌建议重印。`"
+      />
+
+      <template v-if="qrMaterialRows.length">
+        <el-table :data="qrMaterialRows" size="small" v-loading="loading" class="wall-monitor-table">
+          <el-table-column label="物料" min-width="260">
+            <template #default="{ row }">
+              <div>{{ row.label }}</div>
+              <div class="wm-desc">{{ row.hint }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="扫码进入" width="110" align="right">
+            <template #default="{ row }">
+              <div>{{ formatNum(row.enterUv) }} 人</div>
+              <div class="wm-desc">{{ formatNum(row.enterCount) }} 次</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="到达目标页" width="120" align="right">
+            <template #default="{ row }">{{ formatNum(row.pageUv) }}</template>
+          </el-table-column>
+          <el-table-column label="关键转化" width="110" align="right">
+            <template #default="{ row }">
+              <div>{{ formatNum(row.convertUv) }}</div>
+              <div class="wm-desc">{{ row.convertLabel }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="总转化率" width="110" align="right">
+            <template #default="{ row }">
+              <span v-if="row.rate === null" class="wm-empty">—</span>
+              <b v-else :class="convClass(row.rate)">{{ row.rate }}%</b>
+            </template>
+          </el-table-column>
+          <el-table-column label="码状态" min-width="200">
+            <template #default="{ row }">
+              <el-tag v-if="row.fallback > 0" size="small" type="warning">
+                ⚠️ 该码已失效 · {{ formatNum(row.fallback) }} 条落首页
+              </el-tag>
+              <span v-else class="wm-desc">正常</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="wm-desc mat-note">
+          三张码的归因（<code>entrySource</code>）<b>从新版本发布后</b>才开始记录，历史数据无法回溯；
+          因此卡片里的数字天然小于「AI 鉴定 / 注册」等全站口径。
+        </div>
+      </template>
+      <el-empty v-else v-loading="loading" :description="qrMaterialEmptyHint" :image-size="60" />
+    </el-card>
+
     <!-- Top 表格区 -->
     <div class="tables-grid">
       <el-card shadow="never">
@@ -323,6 +395,8 @@
         数据来源：<code>user_behaviors</code> 与 <code>analytics_daily</code> 集合（小程序 trackBehavior 实时上报）。
         埋点目录共 <b>{{ totalActions }}</b> 个事件 · 跨 <b>{{ totalModules }}</b> 个业务模块，
         与小程序 <code>utils/analytics/eventSchema.js</code> 保持同构。
+        「物料码转化监测」卡片只读 <code>user_behaviors</code> 明细 —— 归因值 <code>entrySource</code> 是明细顶层字段，
+        而 <code>analytics_daily</code> 是「日期+动作」汇总、<b>没有来源维度</b>，按它算会把三张码合并成一个数。
         <el-button link type="primary" @click="guideVisible = true">查看埋点说明</el-button>
       </span>
     </div>
@@ -361,7 +435,7 @@ import { Refresh, InfoFilled } from '@element-plus/icons-vue'
 import { getCdnDatabase, fetchCollectionWhere } from '../cloud'
 import { ElMessage } from 'element-plus'
 import Chart from 'chart.js/auto'
-import { MODULE, MODULE_META, EVENTS, FUNNELS, getEventMeta, ACTION_NAMES } from '../utils/analyticsSchema'
+import { MODULE, MODULE_META, EVENTS, FUNNELS, QR_MATERIALS, getEventMeta, ACTION_NAMES } from '../utils/analyticsSchema'
 import { buildWallMonitor } from '../utils/wishWallMonitor'
 // 采样上限单一真源：避免同一指标在不同页面取样上限不一致（原实现此处写死 1000）
 import { BEHAVIOR_SAMPLE_LIMIT, DAILY_ROLLUP_LIMIT } from '../utils/analyticsLimits'
@@ -572,7 +646,12 @@ const buildGateStepRows = (events = []) => {
     const step = String(ev.step || (ev.properties && ev.properties.step) || '').trim()
     if (!step) return
     const dateKey = (new Date(ev.timestamp || Date.now())).toISOString().split('T')[0]
-    const action = `${GATE_ACTION}:${step}`
+    // ⚠️ 2026-09-20 修：这里原来写的是 `${GATE_ACTION}:${step}`，而 `GATE_ACTION` **全仓无定义**
+    //    （HEAD 版本同样如此 → 非本次改动引入）。明细里只要出现任一 `STEP_GATE_ACTIONS` 命中事件
+    //    就会抛 `ReferenceError`，被下面的 catch 吞掉 → 注册钩子类漏斗**恒 0**，且页面**谎报**
+    //    「user_behaviors 不可读」。合成 action 必须用**该事件自己的 action**（上面刚按它过滤过），
+    //    才能与 FUNNELS 里声明的 `action:step` 对上（由 check:analytics-schema 的 F 段防回归）。
+    const action = `${ev.action}:${step}`
     const key = `${dateKey}|${action}`
     if (!map[key]) {
       map[key] = {
@@ -859,6 +938,79 @@ const wallMonitorEmptyHint = computed(() =>
     : '所选区间内没有 user_behaviors 明细（监测表不读 analytics_daily：它没有 step 与来源维度）'
 )
 
+/* ----- 📱 物料码转化监测（2026-09-20）-----
+ *
+ * 口径（三张印刷二维码各自的扫码→到达→转化）：
+ *   1. 归因：app 级入口识别到码后把 `entrySource = 'qr:<key>'` 写进会话，
+ *      此后**该会话内所有事件**都带它（云端白名单字段，落在 user_behaviors 顶层）；
+ *   2. 因此本卡片必须**按 entrySource 在明细行上过滤**：
+ *      - 扫码进入 = `action === 'qr_material_enter'`（step=open 为主；step 缺失的也计入，
+ *        因为「能扫码进入」本身就是事实，且兼容未写 step 的旧版本上报）
+ *      - 到达目标页 = `action === 'page_view' && page === targetPage`
+ *      - 关键转化 = `action === convertAction`
+ *      - 失效提醒 = `step === 'fallback_home'` 的条数（码已失效）
+ *   3. 为什么不用 `funnelData`：它只按 action 全局计数、不区分物料；
+ *      为什么不用 `analytics_daily`：它是「dateKey+action」汇总，**没有来源维度**。
+ */
+const qrMaterialActionLabel = (action) => {
+  const meta = getEventMeta(action)
+  return meta?.desc ? meta.desc.split('（')[0] : action
+}
+
+/** 一条明细行的 step（云端 flattenProperties 会同时写到顶层与 properties 里，两处都兼容） */
+const qrMaterialStep = (ev = {}) =>
+  String(ev.step || (ev.properties && ev.properties.step) || '').trim()
+
+/** 去重用户数；明细行没有 userId/_openid 时退回行数（口径要在卡片上说明） */
+const qrUv = (rows = []) => {
+  const ids = new Set()
+  let noId = 0
+  rows.forEach((ev) => {
+    const uid = ev.userId || ev._openid
+    if (uid) ids.add(uid)
+    else noId += 1
+  })
+  return ids.size + noId
+}
+
+const qrMaterialRows = computed(() => QR_MATERIALS.map((qr) => {
+  const source = `qr:${qr.key}`
+  const rows = wallRows.value.filter((ev) => ev.entrySource === source)
+  const enterRows = rows.filter((ev) => ev.action === 'qr_material_enter')
+  // 严格只算 step=open；缺 step 的旧上报也计入（兼容），fallback_home 明确排除
+  const openRows = enterRows.filter((ev) => {
+    const step = qrMaterialStep(ev)
+    return step === 'open' || step === ''
+  })
+  // 分母为 0 时 rate 保持 null → 模板渲染「—」，而不是误导性的 0%
+  const enterUv = qrUv(openRows)
+  const pageUv = qrUv(rows.filter((ev) => ev.action === 'page_view' && ev.page === qr.targetPage))
+  const convertUv = qrUv(rows.filter((ev) => ev.action === qr.convertAction))
+  const rate = enterUv > 0 ? ((convertUv / enterUv) * 100).toFixed(1) : null
+  return {
+    key: qr.key,
+    label: qr.label,
+    hint: `entrySource = ${source} · scene ${qr.scene}`,
+    enterUv,
+    enterCount: openRows.length,
+    pageUv,
+    convertUv,
+    convertLabel: qrMaterialActionLabel(qr.convertAction),
+    rate,
+    fallback: rows.filter((ev) => qrMaterialStep(ev) === 'fallback_home').length
+  }
+}))
+
+const qrMaterialTotals = computed(() => ({
+  fallback: qrMaterialRows.value.reduce((sum, r) => sum + r.fallback, 0)
+}))
+
+const qrMaterialEmptyHint = computed(() =>
+  wallRows.value.length
+    ? '暂无该物料数据（埋点自新版本发布后开始记录）'
+    : '所选区间内没有 user_behaviors 明细（本卡片不读 analytics_daily：它没有来源维度）'
+)
+
 </script>
 
 <style scoped>
@@ -904,6 +1056,8 @@ const wallMonitorEmptyHint = computed(() =>
 .wm-indent { padding-left: 14px; color: var(--light-text-tertiary); }
 .wm-desc { font-size: 12px; color: var(--light-text-secondary); }
 .wm-empty { color: var(--light-text-tertiary); }
+/* 物料码卡片脚注（复用监测表字号/配色，不新增硬编码色） */
+.mat-note { margin-top: 8px; line-height: 1.6; }
 
 /* 漏斗区 */
 .funnels-card { margin-bottom: 20px; }

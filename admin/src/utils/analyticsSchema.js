@@ -186,6 +186,15 @@ export const EVENTS = {
   wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success；注册成功后另有 to_coupons/to_shop 两个「下一步」点击，属转化**之后**的行为、不计入漏斗）', targetType: 'wish_wall' },
   wish_ritual_gate: { module: MODULE.COMMUNITY, desc: '祈福墙连续记录云存注册漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
   muyu_cert_gate: { module: MODULE.COMMUNITY, desc: '祈福墙功德证领取漏斗（step: show/go_register/dismiss/fail_*/resume_success）', targetType: 'wish_wall' },
+
+  // —— 印刷物料码（二维码）转化（2026-09-20 产品负责人指派）——
+  // 一次扫码记一条（step=open）；页面解析不到且无法重映射时再补一条（step=fallback_home = 码已失效）。
+  // 注意：**漏斗归因不靠本事件**，而是会话内所有事件都带 `entrySource=qr:<key>`
+  // （小程序 app.js#maybeTrackQrMaterial → session.setEntrySource → index.js#buildPayload）；
+  // 本事件只负责算漏斗第一环「扫码进入」。物料登记表见下方 QR_MATERIALS
+  // （小程序镜像 utils/analytics/qrMaterial.js），两端漂移由 check:analytics-schema 拦。
+  qr_material_enter: { module: MODULE.SYSTEM, desc: '物料码扫码进入（targetId=物料 key；step: open/fallback_home）', targetType: 'qr_material' },
+
   // —— 补登记（2026-09-16 与小程序 eventSchema 对齐）· USER ——
   member_card_flip: { module: MODULE.USER, desc: '会员卡翻面', targetType: 'member_card' },
   member_code_show: { module: MODULE.USER, desc: '展示会员码', targetType: 'member_card' },
@@ -208,6 +217,46 @@ export const EVENTS = {
   // —— 补登记（2026-09-16 与小程序 eventSchema 对齐）· MESSAGE ——
   message_queue: { module: MODULE.MESSAGE, desc: '消息队列切换', targetType: 'queue' }
 }
+
+/**
+ * 印刷物料码（二维码）登记表 —— **与小程序 `utils/analytics/qrMaterial.js` 的 QR_MATERIALS 同值**。
+ *
+ * · `key` = 归因值：app 级入口识别到码后把 `entrySource = 'qr:<key>'` 写进会话，
+ *   此后该会话内所有事件都带它，故报表必须按 `entrySource === 'qr:<key>'` 过滤明细；
+ * · `scene` 是生成码时写进 `scene` 的原始串（`generate-store-qr.js --scene`）；
+ * · `targetPage` 是这张码指向的页面，对应漏斗第二步 `page_view` 的 `page` 判据；
+ * · `convertAction` 是该物料的关键转化事件，对应漏斗终点。
+ *
+ * ⚠️ `analytics_daily`（动作级日汇总）**没有来源维度**，所以本表只能在 `user_behaviors`
+ *    明细上过滤使用 —— 见 `admin/src/components/BehaviorAnalytics.vue` 的物料码监测卡片。
+ * ⚠️ `key` 一旦发布不可改（已印出的码与已入库的 `entrySource` 都按它聚合）。
+ */
+export const QR_MATERIALS = [
+  {
+    key: 'identify_store',
+    label: '门店 AI 识别码',
+    scene: 'from=store_qr',
+    targetPage: 'subpackages/feature/identify/index',
+    convertAction: 'identify_success',
+    desc: '门店立牌/桌牌，扫码进 AI 识别主页'
+  },
+  {
+    key: 'register_counter',
+    label: '收银台注册码',
+    scene: 'from=counter_qr',
+    targetPage: 'subpackages/extra/user/onboarding/index',
+    convertAction: 'onboarding_complete',
+    desc: '收银台「新用户注册」立牌，扫码进注册页领新客礼'
+  },
+  {
+    key: 'wish_wall_store',
+    label: '祈福墙立牌码',
+    scene: 'from=store_qr&k=mashangyou',
+    targetPage: 'subpackages/feature/wish-wall/index',
+    convertAction: 'wish_wall_post',
+    desc: '祈福墙立牌，扫码进「马上有」祈福墙'
+  }
+]
 
 /** 已注册的漏斗（C 端核心转化路径） */
 export const FUNNELS = [
@@ -289,6 +338,13 @@ export const FUNNELS = [
       { action: 'muyu_cert_gate:resume_success', label: '证书已发且功德同步上云', endpoint: true }
     ]
   },
+  // —— 印刷物料码 ——
+  // ⚠️ 这里**刻意不放**物料漏斗：通用 `funnelData` 只按 `action` 全局聚合（既不看 `material`
+  //    也不看步骤上的 `page`），放进来会渲染出 3 条「扫码进入=三张码之和 / 到达目标页=全站
+  //    page_view 总量」的虚高且互相重复的漏斗 —— 数字错比没有更糟。
+  //    按物料拆分的正确口径在 `BehaviorAnalytics.vue` 的「📱 物料码转化监测」卡片
+  //    （按 `entrySource === 'qr:<key>'` 过滤 `user_behaviors` 明细，四环 + 失效档）。
+  //    若要把物料漏斗搬进通用区，先让 `funnelData` 支持 `material` / `page` 过滤。
   {
     key: 'custom',
     name: '标本定制漏斗',

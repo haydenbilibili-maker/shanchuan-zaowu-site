@@ -1,0 +1,12 @@
+{
+  "page": "subpackages/feature/identify/index",
+  "scene": "from=store_qr",
+  "envVersion": "release",
+  "width": 430,
+  "hyaline": true,
+  "out": "scripts/qr-assets/identify-store-qr.png",
+  "provenance": "backfilled-2026-09-20",
+  "provenanceNote": "⚠️ 本清单是**回填**，不是生成时的记录：资产实际生成于 2026-09-15 14:46（文件 mtime），当时脚本还没写侧车清单。page/scene/envVersion/width/hyaline 取自 generate-store-qr.js 头部注释里的默认值（page=subpackages/feature/identify/index、scene=from=store_qr、envVersion=release、width=430、hyaline=true），envVersion 另由 getStoreQRCode 的取值逻辑交叉印证。**印出去的实物若与此不符，以实物扫码结果为准**。",
+  "assetMtime": "2026-09-15T14:46:00+08:00",
+  "printed": true
+}

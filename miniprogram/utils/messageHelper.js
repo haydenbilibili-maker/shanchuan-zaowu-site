@@ -260,6 +260,70 @@ const BUSINESS_LEGACY_PREFIXES = [
   '/pages/store-zone'
 ].sort((a, b) => b.length - a.length);
 
+/**
+ * **第二代**遗留路径：**分包内部搬迁**（2026-09-17 `b312a0f`「拆出 extra 分包解决超限」）。
+ *
+ * 上面四张表只认「主包 → 分包」那一代（`/pages/xxx`）。但页面还搬过**第二次家**：
+ *   · `subpackages/feature/user/*` → `subpackages/extra/user/*`（整棵个人中心子树，12 个页根）
+ *   · `subpackages/user/*`         → `subpackages/extra/user/*`（更早一代，achievements / certificates）
+ *   · `subpackages/manager/*`      → `subpackages/extra/*`（管理侧页，**不是整根搬**，逐页列举）
+ * 这些路径**不是拼出来的**（当年是真实存在的字面量），所以静态扫 navigation 调用点扫不到它们，
+ * 而它们已经**印在物料上 / 存在已发出的订阅消息与站内信里**，改不掉。
+ *
+ * 为什么必须有（2026-09-20 真机反馈的**同一类**问题）：
+ *   收银台「新用户注册」立牌的小程序码生成于 2026-09-15 15:03，当时注册页
+ *   （当天 `b424752` 首次新增）就在 `subpackages/feature/user/onboarding/index`；
+ *   09-17 `b312a0f` 把它搬去 `extra/user/onboarding`。于是**印出去的码**今天解析不到页面
+ *   → 走 `onPageNotFound` → 旧表无此路径 → 落首页（用户看到的就是「扫码跳到主页」）。
+ *
+ * 安全性（`npm run test:legacy-remap` 强制）：每条 `from` 都必须是**已不存在的死路径** ——
+ *   只要某条 `from` 仍命中 app.json 的注册页，就说明它会改写活路径，守卫直接红。
+ * 顺序：按 `from` 长度倒序，保证长前缀（`artisan-commission`）不被短前缀（`artisan`）截胡。
+ */
+const MOVED_SUBPACKAGE_ALIASES = [
+  // ① 个人中心整棵子树（feature/user → extra/user）
+  { from: '/subpackages/feature/user', to: '/subpackages/extra/user' },
+  // ② 更早一代（subpackages/user → extra/user）
+  { from: '/subpackages/user', to: '/subpackages/extra/user' },
+  // ③ manager 分包里搬去 extra 的页（manager 分包仍在，还有 19 个页 → 绝不可整根替换）
+  { from: '/subpackages/manager/approvals', to: '/subpackages/extra/approvals' },
+  { from: '/subpackages/manager/artisan', to: '/subpackages/extra/artisan' },
+  { from: '/subpackages/manager/artisan-commission', to: '/subpackages/extra/artisan-commission' },
+  { from: '/subpackages/manager/honorary-curators', to: '/subpackages/extra/honorary-curators' },
+  { from: '/subpackages/manager/inventory-ops', to: '/subpackages/extra/inventory-ops' },
+  { from: '/subpackages/manager/investor', to: '/subpackages/extra/investor' },
+  { from: '/subpackages/manager/live/broadcast', to: '/subpackages/extra/live/broadcast' },
+  { from: '/subpackages/manager/live/studio', to: '/subpackages/extra/live/studio' },
+  { from: '/subpackages/manager/member-crm', to: '/subpackages/extra/member-crm' },
+  { from: '/subpackages/manager/member-level-adjust', to: '/subpackages/extra/member-level-adjust' },
+  { from: '/subpackages/manager/property-cost', to: '/subpackages/extra/property-cost' },
+  { from: '/subpackages/manager/purchase-ops', to: '/subpackages/extra/purchase-ops' },
+  { from: '/subpackages/manager/shareholder', to: '/subpackages/extra/shareholder' },
+  { from: '/subpackages/manager/shareholder-config', to: '/subpackages/extra/shareholder-config' },
+  { from: '/subpackages/manager/shipment-ops', to: '/subpackages/extra/shipment-ops' },
+  { from: '/subpackages/manager/staff', to: '/subpackages/extra/staff' },
+  { from: '/subpackages/manager/staff-permissions', to: '/subpackages/extra/staff-permissions' }
+].sort((a, b) => b.from.length - a.from.length);
+
+/**
+ * 命中「分包内搬迁」别名则返回改写后的路径；未命中返回空串（交由后面的旧表继续处理）。
+ * 只做整段前缀替换 + 保留尾段/query，不碰其它任何东西。
+ */
+function remapMovedSubpackage(url) {
+  for (let i = 0; i < MOVED_SUBPACKAGE_ALIASES.length; i++) {
+    const alias = MOVED_SUBPACKAGE_ALIASES[i];
+    const from = alias.from;
+    if (
+      url === from
+      || url.indexOf(`${from}/`) === 0
+      || url.indexOf(`${from}?`) === 0
+    ) {
+      return alias.to + url.slice(from.length);
+    }
+  }
+  return '';
+}
+
 function ensurePageIndex(url) {
   const original = String(url || '');
   if (!original) return original;
@@ -290,8 +354,13 @@ function remapLegacyPageUrl(raw) {
   const hadSlash = original.charAt(0) === '/';
   const url = hadSlash ? original : `/${original}`;
   let mapped = url;
-  // 标本工坊已升为主包 Tab
-  if (
+  // ② 第二代遗留路径（分包内部搬迁）优先：只可能命中**已死**的 subpackages 前缀，
+  //    与下面的「主包 → 分包」四张表互不重叠（那四张表的 from 全是 `/pages/*`）。
+  const movedTarget = remapMovedSubpackage(url);
+  if (movedTarget) {
+    mapped = movedTarget;
+  } else if (
+    // 标本工坊已升为主包 Tab
     url === '/pages/atelier'
     || url.indexOf('/pages/atelier/') === 0
     || url.indexOf('/pages/atelier?') === 0

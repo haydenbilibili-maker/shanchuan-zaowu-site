@@ -60,6 +60,10 @@ function buildPayload(action, targetType, targetId, extra = {}) {
     page,
     scene: session.scene,
     referrerPage: session.referrerPage || '',
+    // 物料码归因（`qr:<key>`，见 analytics/qrMaterial.js）：会话内**所有**事件都带上，
+    // 于是"扫码→到达→转化"整条漏斗都能按物料切开，不必在每个转化点各埋一遍。
+    // 字段名必须在云端 BEHAVIOR_ALLOWED_FIELDS 白名单内（否则被静默丢弃、报表恒 0）。
+    entrySource: session.entrySource || '',
     timestamp,
     properties: properties || restExtra,
     ...restExtra,

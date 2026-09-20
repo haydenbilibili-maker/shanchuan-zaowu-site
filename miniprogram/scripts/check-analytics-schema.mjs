@@ -20,7 +20,8 @@
  *   node miniprogram/scripts/check-analytics-schema.mjs --selftest
  * 退出码：有问题为 1。
  */
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -30,6 +31,13 @@ const MP_SCHEMA = join(ROOT, 'miniprogram/utils/analytics/eventSchema.js')
 const MP_CONSTANTS = join(ROOT, 'miniprogram/utils/analytics/constants.js')
 const ERP_SCHEMA = join(ROOT, 'admin/src/utils/analyticsSchema.js')
 const MP_ROOT = join(ROOT, 'miniprogram')
+const MP_QR_MATERIAL = join(ROOT, 'miniprogram/utils/analytics/qrMaterial.js')
+const MP_ANALYTICS_INDEX = join(ROOT, 'miniprogram/utils/analytics/index.js')
+const MP_SESSION = join(ROOT, 'miniprogram/utils/analytics/session.js')
+const MP_APP_JS = join(ROOT, 'miniprogram/app.js')
+const MP_APP_JSON = join(ROOT, 'miniprogram/app.json')
+const CLOUD_TRACK = join(ROOT, 'miniprogram/cloudfunctions/trackUserBehavior/index.js')
+const ERP_BEHAVIOR_PAGE = join(ROOT, 'admin/src/components/BehaviorAnalytics.vue')
 
 /** 纯函数：解析形如 `action: { module: MODULE.X, desc: '...' }` 的注册表 */
 export function parseEvents(src) {
@@ -111,6 +119,156 @@ export function checkAll(input) {
   return problems
 }
 
+/**
+ * 纯函数：解析「物料码登记表」（`QR_MATERIALS = [ { key: '…', … } ]`）。
+ * 小程序 `utils/analytics/qrMaterial.js` 与 ERP 镜像各有一份，必须同 key。
+ */
+export function parseQrMaterials(src) {
+  const m = /const QR_MATERIALS\s*=\s*\[([\s\S]*?)\n\]/.exec(src)
+  if (!m) return null
+  const out = []
+  for (const blk of m[1].matchAll(/\{([\s\S]*?)\}/g)) {
+    const body = blk[1]
+    const g = (f) => {
+      const x = new RegExp(`${f}:\\s*'([^']*)'`).exec(body)
+      return x ? x[1] : ''
+    }
+    const key = g('key')
+    if (key) {
+      out.push({ key, label: g('label'), scene: g('scene'), targetPage: g('targetPage'), convertAction: g('convertAction') })
+    }
+  }
+  return out
+}
+
+/** 读 app.json，返回已注册页面集合（形如 /subpackages/feature/identify/index） */
+export function registeredPages(appJsonSrc) {
+  const app = JSON.parse(appJsonSrc)
+  const set = new Set()
+  for (const p of app.pages || []) set.add('/' + String(p).replace(/^\//, ''))
+  for (const sp of app.subpackages || app.subPackages || []) {
+    const root = String(sp.root || '').replace(/\/$/, '')
+    for (const p of sp.pages || []) set.add('/' + `${root}/${p}`.replace(/^\//, ''))
+  }
+  return set
+}
+
+/**
+ * 物料码（印刷二维码）转化监测的**契约检查**（2026-09-20 产品负责人指派）。
+ *
+ * 为什么必须独立成段：这套监测有 4 个「静默失效点」，任何一处错了报表都只是**数字偏低或恒 0**，
+ * 不会报错、也不会有人发现 ——
+ *   ① ERP 镜像缺物料 → 那张码在报表里根本没有行；
+ *   ② `targetPage` 不是注册页 → 漏斗第二环「到达目标页」永远算不出（页面搬过家，见扫码入口兜底文档）；
+ *   ③ 云端字段白名单缺 `entrySource` → **整条归因被静默丢弃**（所有漏斗只剩首环）；
+ *   ④ `convertAction` 未登记 → 末环恒 0。
+ * 另外还要证明"登记表真的能被 scene 解析到"（表里写了但解析不出来 = 等于没埋）。
+ */
+export function checkQrMaterials(input) {
+  const {
+    mpMaterials, erpMaterials, registered, mpEvents, erpEvents,
+    cloudSrc, appSrc, payloadSrc, sessionSrc, parse, entrySourceOf,
+  } = input
+  const problems = []
+  if (!mpMaterials || !mpMaterials.length) {
+    problems.push('E: 小程序 qrMaterial.js 里没有 QR_MATERIALS（三张物料码无法归因）')
+    return problems
+  }
+  const erpKeys = new Set((erpMaterials || []).map((m) => m.key))
+  for (const m of mpMaterials) {
+    if (!erpKeys.has(m.key)) {
+      problems.push(`E: ERP 镜像 QR_MATERIALS 缺物料 \`${m.key}\`（这张码在报表里没有行）`)
+    }
+    if (!m.targetPage || !registered.has('/' + String(m.targetPage).replace(/^\//, ''))) {
+      problems.push(`E: 物料 \`${m.key}\` 的 targetPage=${m.targetPage} 不是 app.json 注册页（「到达目标页」这一环永远算不出）`)
+    }
+    if (!mpEvents.has(m.convertAction)) {
+      problems.push(`E: 物料 \`${m.key}\` 的 convertAction=\`${m.convertAction}\` 未登记到 eventSchema（漏斗末环恒 0）`)
+    } else if (!erpEvents.has(m.convertAction)) {
+      problems.push(`E: 物料 \`${m.key}\` 的 convertAction=\`${m.convertAction}\` 在 ERP 镜像缺失`)
+    }
+    // 登记表写了却解析不出来 = 等于没埋（scene 串与判据脱节）
+    if (typeof parse === 'function' && parse(m.scene) !== m.key) {
+      problems.push(`E: 物料 \`${m.key}\` 的 scene='${m.scene}' 解析得到 '${parse(m.scene)}'（登记表与解析判据脱节）`)
+    }
+    if (typeof entrySourceOf === 'function' && entrySourceOf(m.key) !== `qr:${m.key}`) {
+      problems.push(`E: 物料 \`${m.key}\` 的 entrySource 前缀不是 \`qr:\``)
+    }
+  }
+  // ③ 云端白名单：字段名不在白名单 = 归因被静默丢弃
+  const wl = /BEHAVIOR_ALLOWED_FIELDS\s*=\s*\[([\s\S]*?)\]/.exec(cloudSrc || '')
+  const allowed = wl ? [...wl[1].matchAll(/'([^']+)'/g)].map((x) => x[1]) : []
+  if (!allowed.includes('entrySource')) {
+    problems.push('E: 云端 trackUserBehavior 的 BEHAVIOR_ALLOWED_FIELDS 没有 `entrySource` → 物料归因被静默丢弃（所有物料漏斗只剩首环）')
+  }
+  // 入口埋点与接线
+  if (!/qr_material_enter\s*['"]/.test(appSrc || '')) {
+    problems.push('E: app.js 没有埋 `qr_material_enter`（「扫码进入」这一环收不到）')
+  }
+  // ⚠️ 必须匹配 `this.` 前缀：方法**定义**是 `maybeTrackQrMaterial(options) {`，
+  //    不带 this. 的判据会被定义本身满足 → 拆掉 onShow 那行也检不出（空判，自检抓到的）。
+  if (!/this\.maybeTrackQrMaterial\(options\)/.test(appSrc || '')) {
+    problems.push('E: onShow 没接线 `this.maybeTrackQrMaterial(options)`（方法在但没调用 = 等于没写）')
+  }
+  if (!/entrySource/.test(payloadSrc || '')) {
+    problems.push('E: analytics/index.js#buildPayload 没把 `entrySource` 写进事件（只有首环有归因，后半条漏斗全丢）')
+  }
+  if (!/setEntrySource/.test(sessionSrc || '')) {
+    problems.push('E: analytics/session.js 没有 `setEntrySource`（会话归因写不进去）')
+  }
+  return problems
+}
+
+/**
+ * F 段：门禁漏斗（`*_gate`）的「合成 action」口径。
+ *
+ * 为什么单列一段（2026-09-20 实测到的真缺陷）：ERP 行为看板把带 `step` 的门禁事件
+ * 展开成合成 action（`wish_wall_register_gate:show` 这种）。原实现写的是
+ * `` `${GATE_ACTION}:${step}` ``，而 `GATE_ACTION` **全仓无定义**（HEAD 版本即如此）——
+ * 只要明细里出现任一命中事件就抛 `ReferenceError`，被 refresh 的 catch 吞掉，后果是：
+ *   · 该类漏斗**恒 0**（数字错）；
+ *   · 页面**谎报**「user_behaviors 不可读」（把"代码坏了"说成"数据没了"，更误导）。
+ * 合成 action 必须用**事件自己的 action**（函数开头刚按它过滤过），才能与 FUNNELS 里
+ * 声明的 `action:step` 对上；且 `STEP_GATE_ACTIONS` 必须**从 FUNNELS 派生**（历史缺陷：
+ * 曾经硬编码单个 action，导致新加的门禁漏斗恒 0）。
+ */
+export function checkGateExpansion(src) {
+  const problems = []
+  // ⚠️ 先去掉注释再判：修复说明里会**引用**坏标识符的名字（"原来写的是 `${GATE_ACTION}…`"），
+  //    不剥注释就会把"解释这个坑的注释"当成"又踩了这个坑"（判据自身错误）。
+  const code = String(src || '')
+    .replace(/(^|[^:\\])\/\/[^\n]*/g, '$1')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+  const m = /const buildGateStepRows[\s\S]*?\n\}/.exec(code)
+  if (!m) {
+    problems.push('F: 找不到 `buildGateStepRows`（门禁漏斗展开逻辑被改名/删除 → 该类漏斗会失真）')
+    return problems
+  }
+  const body = m[0]
+  // ⚠️ 必须带词边界：`STEP_GATE_ACTIONS` **含有**子串 `GATE_ACTION`，
+  //    裸 /GATE_ACTION/ 会把正确的 `STEP_GATE_ACTIONS` 也判成"引用了未定义标识符"（判据自身错误）。
+  if (/(^|[^A-Z_])GATE_ACTION\b/.test(body)) {
+    problems.push('F: `buildGateStepRows` 引用了未定义的 `GATE_ACTION`（抛 ReferenceError 被吞 → 漏斗恒 0 且页面谎报「user_behaviors 不可读」）')
+  }
+  if (!/const\s+action\s*=\s*`\$\{ev\.action\}:\$\{step\}`/.test(body)) {
+    problems.push('F: 门禁漏斗的合成 action 不是 `${ev.action}:${step}`（与 FUNNELS 声明的 `action:step` 对不上 → 恒 0）')
+  }
+  if (!/const\s+STEP_GATE_ACTIONS\s*=\s*Array\.from\(\s*new Set\(\s*FUNNELS/.test(code)) {
+    problems.push('F: `STEP_GATE_ACTIONS` 不再从 `FUNNELS` 派生（新增门禁漏斗会恒 0 —— 2026-09-18 踩过）')
+  }
+  return problems
+}
+
+/** 加载真实 qrMaterial.js（纯函数模块，无依赖） */function loadQrMaterial() {
+  const src = readFileSync(MP_QR_MATERIAL, 'utf8')
+  const mod = { exports: {} }
+  // eslint-disable-next-line no-new-func
+  new Function('module', 'exports', 'require', src)(mod, mod.exports, (id) => {
+    throw new Error(`unexpected require ${id}`)
+  })
+  return mod.exports
+}
+
 function selftest() {
   const base = {
     mpEvents: new Map([['product_view', 'COMMERCE'], ['gift_pay_click', 'GIFT']]),
@@ -136,16 +294,139 @@ function selftest() {
     if (!ok) failed++
     console.log(`${ok ? '✓' : '✗'} ${name}（期望${want === 0 ? '通过' : '报错'}，实际 ${got} 处）`)
   }
+  // ── E 段：物料码契约（合成输入 → 每条判据都必须能红）──
+  const qr = loadQrMaterial()
+  const baseMaterial = {
+    key: 'identify_store',
+    scene: 'from=store_qr',
+    targetPage: 'subpackages/feature/identify/index',
+    convertAction: 'identify_success',
+  }
+  const goodMat = {
+    mpMaterials: [baseMaterial],
+    erpMaterials: [baseMaterial],
+    registered: new Set(['/subpackages/feature/identify/index']),
+    mpEvents: new Map([['identify_success', 'IDENTIFY']]),
+    erpEvents: new Map([['identify_success', 'IDENTIFY']]),
+    cloudSrc: "const BEHAVIOR_ALLOWED_FIELDS = ['action', 'entrySource']",
+    appSrc: "this.maybeTrackQrMaterial(options)\ntrackBehavior('qr_material_enter', 'qr_material', key)",
+    payloadSrc: 'entrySource: session.entrySource',
+    sessionSrc: 'function setEntrySource() {}',
+    parse: qr.parseQrMaterial,
+    entrySourceOf: qr.entrySourceOf,
+  }
+  const matCases = [
+    ['物料契约齐全时不报错', goodMat, 0],
+    ['ERP 镜像缺物料必须报错', { ...goodMat, erpMaterials: [] }, 1],
+    ['targetPage 不是注册页必须报错', { ...goodMat, registered: new Set(['/pages/other/index']) }, 1],
+    ['convertAction 未登记必须报错', { ...goodMat, mpEvents: new Map() }, 1],
+    ['convertAction 在 ERP 镜像缺失必须报错', { ...goodMat, erpEvents: new Map() }, 1],
+    ['云端白名单缺 entrySource 必须报错', { ...goodMat, cloudSrc: "const BEHAVIOR_ALLOWED_FIELDS = ['action']" }, 1],
+    ['onShow 没接线必须报错', { ...goodMat, appSrc: 'function maybeTrackQrMaterial() {}' }, 1],
+    ['buildPayload 没带 entrySource 必须报错', { ...goodMat, payloadSrc: 'nothing' }, 1],
+    ['没有 setEntrySource 必须报错', { ...goodMat, sessionSrc: 'nothing' }, 1],
+    ['登记表与解析判据脱节必须报错', { ...goodMat, mpMaterials: [{ ...baseMaterial, scene: 'from=counter_qr' }] }, 1],
+  ]
+  for (const [name, input, want] of matCases) {
+    const got = checkQrMaterials(input).length
+    const ok = want === 0 ? got === 0 : got > 0
+    if (!ok) failed++
+    console.log(`${ok ? '✓' : '✗'} ${name}（期望${want === 0 ? '通过' : '报错'}，实际 ${got} 处）`)
+  }
+
+  // ── F 段：门禁漏斗合成 action（合成输入）──
+  const goodGateSrc = 'const STEP_GATE_ACTIONS = Array.from(new Set(FUNNELS.flatMap((f) => f.steps)))\n'
+    + 'const buildGateStepRows = (events = []) => {\n'
+    + '  const action = `${ev.action}:${step}`\n'
+    + '  return []\n'
+    + '}\n'
+  const gateCases = [
+    ['F 段：正常源码不报错', goodGateSrc, 0],
+    ['F 段：引用未定义 GATE_ACTION 必须报错（真缺陷形态）',
+      goodGateSrc.replace('${ev.action}', '${GATE_ACTION}'), 1],
+    ['F 段：合成 action 用错变量必须报错',
+      goodGateSrc.replace('${ev.action}', '${ev.targetType}'), 1],
+    ['F 段：STEP_GATE_ACTIONS 不再从 FUNNELS 派生必须报错',
+      goodGateSrc.replace('FUNNELS.flatMap((f) => f.steps)', "[{ action: 'wish_wall_register_gate:show' }]"), 1],
+  ]
+  for (const [name, src, want] of gateCases) {
+    const got = checkGateExpansion(src).length
+    const ok = want === 0 ? got === 0 : got > 0
+    if (!ok) failed++
+    console.log(`${ok ? '✓' : '✗'} ${name}（期望${want === 0 ? '通过' : '报错'}，实际 ${got} 处）`)
+  }
+
+  // ── 真实注入：证明 E 段判据在真实文件上也真的会红（写完立即还原）──
+  // ⚠️ 会写源码 → 必须在**隔离 worktree** 里跑 `--selftest`。
+  const inject = (file, from, to, why) => {
+    const backup = readFileSync(file, 'utf8')
+    if (backup.indexOf(from) < 0) {
+      console.error(`✗ selftest 注入点找不到（源码已变，注入失效）：${why}`)
+      process.exit(1) // 尚未写盘，退出安全
+    }
+    let ran = false
+    let caught = false
+    try {
+      writeFileSync(file, backup.replace(from, to))
+      ran = true
+      caught = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' }).status !== 0
+    } finally {
+      // ⚠️ 必须**先还原再判成败**：Node 的 `process.exit()` 不会执行挂起的 finally 块，
+      //    把 exit 写在 try 里会把注入**留在源码中**（2026-09-20 实际踩到：app.js 被留成注入态）。
+      writeFileSync(file, backup)
+    }
+    if (!ran || !caught) {
+      console.error(`✗ selftest 失败：${why}，守卫居然没红（已还原源文件）`)
+      process.exit(1)
+    }
+  }
+  inject(CLOUD_TRACK, "'entrySource', ", '', '把 entrySource 从云端字段白名单里拿掉（归因会被静默丢弃）')
+  inject(MP_APP_JS, 'this.maybeTrackQrMaterial(options);', '', '拆掉 onShow 里的物料码打点接线')
+  inject(ERP_BEHAVIOR_PAGE, '`${ev.action}:${step}`', '`${GATE_ACTION}:${step}`',
+    '把门禁漏斗合成 action 改回未定义的 GATE_ACTION（该类漏斗恒 0）')
+
   if (failed) {
     console.error(`\n自检失败 ${failed} 项——守卫不可信，请先修它`)
     process.exit(1)
   }
   console.log('\n自检通过：守卫能抓到「ERP 缺事件 / 未登记触发点 / 缺前缀 / 模块不同构」')
 }
+/** 物料码契约（E 段）—— 单独一段，便于 selftest 注入时精确定位 */
+function checkMaterials() {
+  const mpSchemaSrc = readFileSync(MP_SCHEMA, 'utf8')
+  const erpSchemaSrc = readFileSync(ERP_SCHEMA, 'utf8')
+  const qr = loadQrMaterial()
+  const mpMaterials = parseQrMaterials(readFileSync(MP_QR_MATERIAL, 'utf8'))
+  const problems = checkQrMaterials({
+    mpMaterials,
+    erpMaterials: parseQrMaterials(erpSchemaSrc),
+    registered: registeredPages(readFileSync(MP_APP_JSON, 'utf8')),
+    mpEvents: parseEvents(mpSchemaSrc),
+    erpEvents: parseEvents(erpSchemaSrc),
+    cloudSrc: readFileSync(CLOUD_TRACK, 'utf8'),
+    appSrc: readFileSync(MP_APP_JS, 'utf8'),
+    payloadSrc: readFileSync(MP_ANALYTICS_INDEX, 'utf8'),
+    sessionSrc: readFileSync(MP_SESSION, 'utf8'),
+    parse: qr.parseQrMaterial,
+    entrySourceOf: qr.entrySourceOf,
+  })
+  // 未登记物料不得被误归因（否则报表里会冒出无漏斗的孤儿来源）
+  for (const bad of ['s3', 'from=store_qr&k=otherwall', '', 'a1b2c3d4e5f60718293a4b5c']) {
+    const got = qr.parseQrMaterial(bad)
+    if (got) problems.push(`E: 未登记 scene '${bad}' 被误归因为 '${got}'`)
+  }
+  // F 段：门禁漏斗合成 action（在 ERP 行为看板里，与物料漏斗同页）
+  if (existsSync(ERP_BEHAVIOR_PAGE)) {
+    problems.push(...checkGateExpansion(readFileSync(ERP_BEHAVIOR_PAGE, 'utf8')))
+  } else {
+    problems.push('F: 找不到 admin/src/components/BehaviorAnalytics.vue（行为看板/物料码监测所在页）')
+  }
+  return { problems, materials: mpMaterials || [] }
+}
 
 function main() {
   if (process.argv.includes('--selftest')) return selftest()
-  for (const p of [MP_SCHEMA, MP_CONSTANTS, ERP_SCHEMA]) {
+  for (const p of [MP_SCHEMA, MP_CONSTANTS, ERP_SCHEMA, MP_QR_MATERIAL, CLOUD_TRACK, MP_APP_JSON]) {
     if (!existsSync(p)) {
       console.error(`✗ 找不到文件 ${p}`)
       process.exit(1)
@@ -165,6 +446,8 @@ function main() {
     prefixes: parsePrefixMap(mpConstSrc),
     giftModule: 'GIFT',
   })
+  const mat = checkMaterials()
+  problems.push(...mat.problems)
 
   for (const p of problems) console.error(`✗ ${p}`)
   if (problems.length) {
@@ -172,7 +455,8 @@ function main() {
     process.exit(1)
   }
   console.log(
-    `✓ 埋点 schema 一致（小程序 ${parseEvents(mpSchemaSrc).size} 事件 / ERP ${parseEvents(erpSchemaSrc).size} 事件 / 模块 ${parseModules(mpConstSrc).size} 个）`,
+    `✓ 埋点 schema 一致（小程序 ${parseEvents(mpSchemaSrc).size} 事件 / ERP ${parseEvents(erpSchemaSrc).size} 事件 / 模块 ${parseModules(mpConstSrc).size} 个）`
+    + ` · 物料码 ${mat.materials.length} 张：目标页/转化事件/云端归因字段/入口接线均已核`,
   )
 }
 
