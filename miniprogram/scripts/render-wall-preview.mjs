@@ -62,7 +62,7 @@ const argOf = (n, d) => {
   const i = argv.indexOf(n)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
-const SCENES = ['full', 'lit', 'sheet', 'sheet-loading', 'loading', 'error', 'closed']
+const SCENES = ['full', 'lit', 'ember', 'sheet', 'sheet-loading', 'loading', 'error', 'closed']
 const SCENE = (() => {
   const s = argOf('--scene', 'full')
   const alias = { plays: 'sheet' }[s] || s
@@ -118,6 +118,14 @@ if (has('--selftest')) {
       scene: 'full',
       css: '\n.ww-composer { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--color-bg) !important; }\n',
       expect: '发送条改回吸底但没有底部预留'
+    },
+    {
+      // 某颗余烬改回离群色（粉）→ 必须检出"颜色不在铜色系"
+      name: 'ember-off-palette',
+      file: 'wxss',
+      scene: 'ember',
+      css: '\n.ww-heart.h3 { color: #E0A9A0 !important; }\n',
+      expect: '点灯余烬不合格'
     },
     {
       // 连续天数盒改回**浮层**（回到本轮修掉的那个形态）→ 必须检出"压字"。
@@ -339,6 +347,16 @@ const SCENE_PATCH = {
     // 上一版预览把它写进了 lit 场景，于是 §7.3「点亮态多一条入口」的结论里混进了一个停用功能 ——
     // 预览态不许冒充生产态。
     echoRows: [{ key: 'e1', text: '我敲了一下木鱼', sub: '功德 36' }]
+  },
+  ember: {
+    // 点灯余烬动效（2026-09-20 动效专项）：lit 的全部内容 + 一次 heartBurst。
+    // 单独立场景的原因：`* { animation: none }` 会把动效冻在 0% 帧（5 颗心都是 opacity:0），
+    // 所以"看得见"这件事只能靠**静态终态**判断 —— 这里量的是"5 颗都在、且颜色全在铜色系"。
+    lamp: {
+      lit: true, label: '长明', solar: null, solarNext: { name: '秋分', inDays: 3 },
+      streak: 7, lampDots: [1, 1, 1, 1, 1], line: '灯亮着，心愿就还没说完。', tierNote: '今天来过，记下了。'
+    },
+    heartBurst: true
   },
   sheet: {
     playResult: {
@@ -582,6 +600,23 @@ window.addEventListener('load', () => {
       text: barFixed ? ('吸底：预留 ' + reserved + 'px / 条高 ' + barH + 'px') : '顺流（本条不适用）' })
   }
 
+  // ── 点灯余烬：5 颗、且颜色**全在铜色三档**内（2026-09-20 动效专项）
+  // 起因：这 5 颗 ♥ 原来用了 4 种颜色，其中粉 #E0A9A0 与紫 #C7B4DE 不在本页纸/铜语言里
+  //（子代理审计列为"无等价 token 的离群色"）。判据直接量**计算后的颜色**，不是 grep 源码：
+  // 只有真的渲染成铜色才算数。
+  if (__SCENE__ === 'ember') {
+    const hearts = document.querySelector('.ww-hearts')
+    const kids = hearts ? Array.from(hearts.children) : []
+    const cols = kids.map((k) => getComputedStyle(k).color)
+    const BRASS = ['rgb(224, 207, 163)', 'rgb(212, 188, 133)', 'rgb(196, 167, 108)'] // 200 / 300 / 400
+    out.push({
+      label: '点灯余烬', sel: '.ww-hearts', mode: 'embers', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+      count: kids.length,
+      allBrass: cols.length > 0 && cols.every((c) => BRASS.indexOf(c) !== -1),
+      text: kids.length + ' 颗 · 色值 ' + Array.from(new Set(cols)).join(' / ')
+    })
+  }
+
   // ── 连续天数盒**不许压到文案**（2026-09-20 补）：
   // 子代理用 headless-Chrome 量 rect 相交，实测"3 盏压灯位行 4px、5 盏压标题 18px（整字被盖）"——
   // 而当时的判据只量"标题折了几行"，看不出"文字钻到徽章底下"。这里直接判几何相交。
@@ -664,13 +699,16 @@ metrics.forEach((row) => {
   // 「没渲染出来」只在**整页都该在的场景**里算问题：closed / loading / error 三个场景
   // 本来就会合法地缺掉发送条、灯卡、愿签列（页面先画骨架，或干脆不画内容）。
   if (row.missing) {
-    if (['full', 'lit', 'sheet', 'sheet-loading'].includes(SCENE)) problems.push(`${row.label}：选择器 ${row.sel} 没渲染出来`)
+    if (['full', 'lit', 'ember', 'sheet', 'sheet-loading'].includes(SCENE)) problems.push(`${row.label}：选择器 ${row.sel} 没渲染出来`)
     return
   }
   if (row.overflowX) problems.push(`${row.label}：横向溢出（scrollW ${row.scrollW} > clientW ${row.clientW}）`)
   if (row.mode === 'same-row' && !row.sameRow) problems.push(`${row.label}：子元素折行了（本该同一行）`)
   if (row.mode === 'absent' && !row.absent) problems.push(`${row.label}：${row.text}`)
   if (row.mode === 'must-exist' && !row.exists) problems.push(`${row.label}：${row.text}`)
+  if (row.mode === 'embers' && (row.count !== 5 || !row.allBrass)) {
+    problems.push(`点灯余烬不合格：${row.text}（要求 5 颗，且颜色全在 --brass-200/300/400 内）`)
+  }
   if (row.mode === 'overlap' && (row.overlapTitle > 0 || row.overlapMeta > 0)) {
     problems.push(`连续天数盒压字：${row.text} —— 徽章浮在文案列上，字被盖住（几何相交判据）`)
   }
@@ -746,7 +784,7 @@ if (advisories.length) {
 }
 const show = (row) => row.missing
   ? `  ✗ ${String(row.label).padEnd(18)} 未渲染（${row.sel}）`
-  : row.mode === 'order' || row.mode === 'gap' || row.mode === 'fold' || row.mode === 'absent' || row.mode === 'must-exist' || row.mode === 'sticky' || row.mode === 'overlap'
+  : row.mode === 'order' || row.mode === 'gap' || row.mode === 'fold' || row.mode === 'absent' || row.mode === 'must-exist' || row.mode === 'sticky' || row.mode === 'overlap' || row.mode === 'embers'
     ? `  · ${String(row.label).padEnd(18)} ${row.text}`
     : `  · ${String(row.label).padEnd(18)} y${String(row.y).padStart(4)} ${String(row.w).padStart(4)}×${String(row.h).padStart(4)}  行 ${row.lines}  ${row.text}`
 console.log(`祈福墙版式预览（场景 ${SCENE}；视口 750px ↔ 750rpx，等比于任意真机宽度）`)

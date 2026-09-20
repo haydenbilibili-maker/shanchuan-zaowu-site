@@ -1387,7 +1387,7 @@ page {
 .ww-tag.is-fresh {
   border-color: rgba(196, 167, 108, 0.85);
   box-shadow: 0 0 0 1rpx rgba(196, 167, 108, 0.35), 0 6rpx 24rpx rgba(233, 190, 110, 0.18);
-  animation: ww-fresh-in 0.5s ease both;
+  animation: ww-fresh-in 0.5s ease-out both;
 }
 
 @keyframes ww-fresh-in {
@@ -1640,22 +1640,31 @@ page {
   bottom: 56rpx;
   pointer-events: none;
 }
+/* 点灯后的余烬（2026-09-20 动效专项）：
+   此前 5 颗 ♥ 用了 **4 种颜色**，其中 `#E0A9A0`（粉）与 `#C7B4DE`（紫）**不在本页的纸/铜语言里**
+   —— 子代理审计把这两个值列为"无等价 token 的离群色"，而它们恰好只出现在这一处动效上。
+   现在统一到铜色三档（200/300/400），层次改由**明度 + 字号 + 横向错位**表达，而不是靠换色相：
+   色相一多，五颗心读起来像贴纸，而不像一盏铜灯升起的余烬。
+   横向错位用 `left`（不写进 @keyframes 的 var/calc）：keyframes 里只有负责居中的 translate(-50%)，
+   left 负责散开 —— 这样不必在动画里求值自定义属性，基础库兼容面更宽。 */
 .ww-heart {
   position: absolute;
   left: 0;
   bottom: 0;
   font-size: var(--fs-26);
-  color: #E0A9A0;
+  color: var(--brass-300);
   opacity: 0;
+  /* 与全页动效同一缓动族（ease-out）；此前它是唯一写 `ease` 的一处 */
   animation: ww-heart-float 1.6s ease-out forwards;
+  text-shadow: 0 0 10rpx rgba(233, 190, 110, 0.55);
 }
 /* 第一颗（h1）：显式写出颜色/字号/0 延迟 —— 此前 h1 在 WXSS 里**没有任何规则**
    （只有 h2~h5），靠基类兜底。空转的类名会让下一个人以为"h1 是特例"，实际它只是没写。 */
-.ww-heart.h1 { color: #D9BE86; font-size: var(--fs-26); animation-delay: 0s; }
-.ww-heart.h2 { color: #D9BE86; font-size: var(--fs-22); animation-delay: 0.18s; }
-.ww-heart.h3 { color: #E0A9A0; font-size: var(--fs-30); animation-delay: 0.34s; }
-.ww-heart.h4 { color: #C7B4DE; font-size: var(--fs-20); animation-delay: 0.5s; }
-.ww-heart.h5 { color: #D9BE86; font-size: var(--fs-24); animation-delay: 0.66s; }
+.ww-heart.h1 { left: -12rpx; color: var(--brass-200); font-size: var(--fs-22); animation-delay: 0s; }
+.ww-heart.h2 { left: 8rpx; color: var(--brass-300); font-size: var(--fs-26); animation-delay: 0.18s; }
+.ww-heart.h3 { left: -4rpx; color: var(--brass-400); font-size: var(--fs-20); animation-delay: 0.34s; }
+.ww-heart.h4 { left: 14rpx; color: var(--brass-200); font-size: var(--fs-24); animation-delay: 0.5s; }
+.ww-heart.h5 { left: 2rpx; color: var(--brass-300); font-size: var(--fs-28); animation-delay: 0.66s; }
 @keyframes ww-heart-float {
   0%   { opacity: 0; transform: translate(-50%, 0) scale(0.7); }
   18%  { opacity: 0.95; }
@@ -1930,15 +1939,17 @@ page {
 /* 摇签中（2026-09-20 改造）：星座 / MBTI 要读用户资料，首次会走一次会话请求 ——
    此前这段等待**一点反馈都没有**（`onPlayTap` 在 await 之后才 setData），点上去像没反应。
    现在瓦片边框呼吸 + 副文案就地换成「摇签中…」（见 index.wxml）。
-   ⚠️ 只动 opacity 与边框色：不改盒尺寸，避免"点了之后瓦片跳一下"。 */
+   ⚠️ **只呼吸边框色，不压暗整块**：第一版写的是 `opacity: 1 → 0.55 → 1`，
+   那会把「星座签」四个字一起变淡 —— 等待中的东西反而更难看清（动效不该牺牲可读性）。
+   边框呼吸同样传达"在处理"，而文字始终是满对比度。 */
 .ww-play.is-pending {
   border-color: rgba(196, 167, 108, 0.62);
   animation: ww-play-pending 1.1s ease-in-out infinite;
 }
 
 @keyframes ww-play-pending {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
+  0%, 100% { border-color: rgba(196, 167, 108, 0.42); }
+  50% { border-color: rgba(196, 167, 108, 0.95); }
 }
 
 .ww-play-copy {

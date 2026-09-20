@@ -886,6 +886,17 @@ const INJECTIONS = {
     from: '    this.restoreRitualFromCloud()',
     to: ''
   },
+  // ── 动效专项（2026-09-20 第三批）：余烬配色统一 / 等待态不压文字 / 缓动一致 ──
+  'ember-off-palette-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '.ww-heart.h3 { left: -4rpx; color: var(--brass-400);',
+    to: '.ww-heart.h3 { left: -4rpx; color: #C7B4DE;'
+  },
+  'pending-dims-text-back': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
+    from: '  0%, 100% { border-color: rgba(196, 167, 108, 0.42); }\n  50% { border-color: rgba(196, 167, 108, 0.95); }',
+    to: '  0%, 100% { opacity: 1; }\n  50% { opacity: 0.55; }'
+  },
   // ── 第二批改造（2026-09-20）：门禁错误态 / 聚焦定时器 / 跨天 / 额度未知 / 玩法失败 / 条数同步 ──
   // 为什么每条都配注入：这六处全是"新加的状态位"，而**状态位的失效方式是静默的** ——
   // 少清一个标志、少写一个字段，页面照样渲染，只有真机上表现为"永久显示网络异常""点了没反应"。
@@ -5595,6 +5606,51 @@ if (process.argv.includes('--selftest') && !INJECT) {
   }
 
   stub.restore()
+}
+
+/* ================================================================== *
+ * 动效专项（2026-09-20 第三批）
+ *
+ * 为什么单独立判据：动效的失效方式**全是静默的** —— 颜色跑出令牌、等待态把文字一起压暗、
+ * 五颗粒子同时起跳，页面照样渲染、单测照样绿，只有在真机上"看着不对"。
+ * ------------------------------------------------------------------ */
+{
+  // 去注释再判：说明段里**故意写着**被删掉的旧色值（#E0A9A0 / #C7B4DE），
+  // 直接正则会被自己的注释判红（本仓老坑：守卫读到自己那段解释）。
+  const animCss = wallWxssCode.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  check(
+    '★ 点灯余烬的颜色必须全在铜色令牌内（旧版有粉 #E0A9A0 / 紫 #C7B4DE 两个离群色）',
+    (() => {
+      const blocks = (animCss.match(/\.ww-heart[^{]*\{[^}]*\}/g) || [])
+      if (blocks.length < 6) return false // 基类 + h1..h5
+      return blocks.every((b) => {
+        const m = /color:\s*([^;}]+)/.exec(b)
+        return !m || /var\(--brass-\d00\)/.test(m[1])
+      })
+    })(),
+    (animCss.match(/\.ww-heart[^{]*\{[^}]*\}/g) || []).filter((b) => {
+      const m = /color:\s*([^;}]+)/.exec(b)
+      return m && !/var\(--brass-\d00\)/.test(m[1])
+    }).join(' | ')
+  )
+
+  check(
+    '★ 点灯余烬的起跳时刻必须逐个错开（5 颗同时起跳 = 一次闪现，不是"余烬"）',
+    (() => {
+      // ⚠️ 必须用 matchAll 取**捕获组**：`String.match` 带 /g 只回整条匹配，
+      // 把整条规则里的数字全剥出来会得到一串垃圾（第一版就是这样，判据恒假）。
+      const delays = [...animCss.matchAll(/\.ww-heart\.h([1-5])\b[^}]*animation-delay:\s*([0-9.]+)s/g)]
+        .map((m) => Number(m[2]))
+      return delays.length === 5 && delays.every((d, i) => (i === 0 ? d === 0 : d > delays[i - 1]))
+    })()
+  )
+
+  check(
+    '★ 摇签中只呼吸**边框**、不压暗文字（动效不该牺牲可读性）',
+    /@keyframes ww-play-pending\s*\{[\s\S]{0,240}?border-color/.test(animCss) &&
+      !/@keyframes ww-play-pending\s*\{[\s\S]{0,240}?opacity/.test(animCss)
+  )
 }
 
 /* ================================================================== *
