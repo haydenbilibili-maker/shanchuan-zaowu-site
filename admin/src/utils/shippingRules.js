@@ -43,6 +43,22 @@ export const VALID_CRAFT_TYPES = [
   'other'
 ]
 
+/**
+ * **逐装裱方式的运费规则**（2026-09-21 产品负责人：运费规则配置页按最新装裱方式重构）。
+ * `craftType: '*'` = 通配符档：所有未单独列出的装裱方式（含未标注、含后台新增的塑封/玻璃瓶）都走它。
+ * ⚠️ 与小程序三份副本（config/shipping.js、makeOrder/shipping.js、getShippingRules/defaults.js）
+ *    的 `DEFAULT_CRAFT_TYPE_RULES` **逐字一致**，由 `npm run check:shipping-rules` 守卫钉住。
+ */
+export const WILDCARD_CRAFT_TYPE = '*'
+
+export const DEFAULT_CRAFT_TYPE_RULES = [
+  { craftType: 'frame', freeShippingThreshold: 299, flatFee: 18 },
+  { craftType: 'cloche', freeShippingThreshold: 299, flatFee: 18 },
+  { craftType: 'cloche_round', freeShippingThreshold: 299, flatFee: 18 },
+  { craftType: 'cloche_cylinder', freeShippingThreshold: 299, flatFee: 18 },
+  { craftType: '*', freeShippingThreshold: 39, flatFee: 10 }
+]
+
 export const CRAFT_TYPE_LABELS = {
   frame: '相框',
   cloche: '方形玻璃罩',
@@ -53,6 +69,61 @@ export const CRAFT_TYPE_LABELS = {
   accessory: '饰品',
   wing_art: '蝶翅画',
   other: '其它'
+}
+
+/** 老文档 → 合成规则表（与小程序 rulesFromLegacyConfig 同口径） */
+export function legacyRules(cfg) {
+  const src = cfg || {}
+  const charged = Array.isArray(src.chargedCraftTypes) && src.chargedCraftTypes.length
+    ? src.chargedCraftTypes
+    : DEFAULT_CHARGED_CRAFT_TYPES
+  return charged
+    .map((ct) => ({
+      craftType: String(ct),
+      freeShippingThreshold: Number(src.freeShippingThreshold) || 0,
+      flatFee: Number(src.flatFee) || 0
+    }))
+    .concat([{
+      craftType: WILDCARD_CRAFT_TYPE,
+      freeShippingThreshold: Number(src.accessoryFreeThreshold) || 0,
+      flatFee: Number(src.accessoryFlatFee) || 0
+    }])
+}
+
+/** 归一化规则表：丢非法项、去重、**必须留一条通配符**（否则返回 null = 视为缺失） */
+export function normalizeCraftTypeRules(raw) {
+  if (!Array.isArray(raw)) return null
+  const out = []
+  const seen = {}
+  raw.forEach((r) => {
+    if (!r || typeof r !== 'object') return
+    const key = String(r.craftType == null ? '' : r.craftType).trim().toLowerCase()
+    if (!key || seen[key]) return
+    if (key !== WILDCARD_CRAFT_TYPE && !VALID_CRAFT_TYPES.includes(key)) return
+    seen[key] = true
+    out.push({
+      craftType: key,
+      freeShippingThreshold: Math.max(0, toNumber(r.freeShippingThreshold, 0)),
+      flatFee: Math.max(0, toNumber(r.flatFee, 0))
+    })
+  })
+  if (!seen[WILDCARD_CRAFT_TYPE]) return null
+  return out
+}
+
+/** 规则表 → 旧字段镜像（与小程序 legacyMirrorFromRules 同口径） */
+export function legacyMirrorFromRules(rules) {
+  const list = Array.isArray(rules) && rules.length ? rules : DEFAULT_CRAFT_TYPE_RULES
+  const explicit = list.filter((r) => r.craftType !== WILDCARD_CRAFT_TYPE)
+  const wildcard = list.find((r) => r.craftType === WILDCARD_CRAFT_TYPE) || DEFAULT_CRAFT_TYPE_RULES[DEFAULT_CRAFT_TYPE_RULES.length - 1]
+  const top = explicit.slice().sort((a, b) => (b.freeShippingThreshold - a.freeShippingThreshold) || (b.flatFee - a.flatFee))[0] || wildcard
+  return {
+    chargedCraftTypes: explicit.map((r) => r.craftType),
+    freeShippingThreshold: Number(top.freeShippingThreshold) || 0,
+    flatFee: Number(top.flatFee) || 0,
+    accessoryFreeThreshold: Number(wildcard.freeShippingThreshold) || 0,
+    accessoryFlatFee: Number(wildcard.flatFee) || 0
+  }
 }
 
 function toNumber(value, fallback) {
@@ -94,6 +165,8 @@ export function getDefaultShippingConfig() {
     /** 其它类型的单次运费（裁决 48：¥10） */
     accessoryFlatFee: 10,
     chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
+    /** 逐装裱方式规则表（唯一判定依据；旧字段只是镜像） */
+    craftTypeRules: DEFAULT_CRAFT_TYPE_RULES.map((r) => ({ ...r })),
     // —— 旧模型字段（仅作兼容镜像；判定逻辑不读，见蓝图 §19）——
     specimenFreeThreshold: 299,
     mixCartStrategy: MIX_SPECIMEN_WINS,
@@ -155,6 +228,14 @@ export function normalizeShippingConfig(raw) {
     accessoryFreeThreshold: freeOther,
     accessoryFlatFee: feeOther,
     chargedCraftTypes: charged,
+    // 规则表：带就用它；没有就按刚读进来的旧字段合成（行为逐字不变），再镜像回旧字段
+    craftTypeRules: normalizeCraftTypeRules(src.craftTypeRules) || legacyRules({
+      chargedCraftTypes: charged,
+      freeShippingThreshold: free,
+      flatFee,
+      accessoryFreeThreshold: freeOther,
+      accessoryFlatFee: feeOther
+    }),
     // 兼容镜像：保持自洽，避免 ERP 其他读者拿到旧值
     specimenFreeThreshold: free,
     mixCartStrategy: mix,

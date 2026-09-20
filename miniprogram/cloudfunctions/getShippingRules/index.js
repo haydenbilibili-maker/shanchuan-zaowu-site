@@ -32,6 +32,7 @@ const WRITABLE_FIELDS = [
   'accessoryFreeThreshold',
   'accessoryFlatFee',
   'chargedCraftTypes',
+  'craftTypeRules',
   // —— 兼容镜像（保留以兼容老客户端/老 ERP 页面）——
   'specimenFreeThreshold',
   'mixCartStrategy',
@@ -113,6 +114,30 @@ async function saveConfig(event, openid) {
       return { success: false, msg: `未知装裱方式：${unknown.join('、')}` }
     }
     payload.chargedCraftTypes = cleaned
+  }
+
+  /* 逐装裱方式的规则表（2026-09-21 产品负责人重构）。
+   * ⚠️ **必须有且只有一条通配符**：没有它，后台新加的装裱方式（塑封/玻璃瓶…）与未标注商品
+   *    就没有规则可落 —— 那正是 2026-09-20「选了塑封仍显示其它」那类问题的根。
+   * ⚠️ 未知 craftType 一律**拒绝**（与 chargedCraftTypes 同口径：宁可不保存，不可静默漏收）。 */
+  if (Object.prototype.hasOwnProperty.call(payload, 'craftTypeRules')) {
+    if (!Array.isArray(payload.craftTypeRules) || !payload.craftTypeRules.length) {
+      return { success: false, msg: '装裱方式规则表不能为空' }
+    }
+    const unknownRules = payload.craftTypeRules
+      .map((r) => String((r && r.craftType) || '').trim().toLowerCase())
+      .filter((k) => k && k !== '*' && VALID_CRAFT_TYPES.indexOf(k) === -1)
+    if (unknownRules.length) {
+      return { success: false, msg: `规则表里有未知装裱方式：${unknownRules.join('、')}` }
+    }
+    const wildcards = payload.craftTypeRules
+      .filter((r) => String((r && r.craftType) || '').trim() === '*')
+    if (wildcards.length !== 1) {
+      return { success: false, msg: '规则表必须**有且只有一条**通配符（craftType = "*"）—— 未标注与后台新增的装裱方式都靠它兜底' }
+    }
+    if (payload.craftTypeRules.length < 2) {
+      return { success: false, msg: '至少要单独配置一种装裱方式（全都跟随通配符 = 所有订单同一档）' }
+    }
   }
 
   const docId = String((event && event.ruleDocId) || '').trim()

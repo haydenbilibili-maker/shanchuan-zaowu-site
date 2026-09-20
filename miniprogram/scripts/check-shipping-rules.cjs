@@ -183,7 +183,13 @@ function keySnapshot(cfg) {
     // 裁决 48：其它类型那一档（门槛 ¥39 / 费率 ¥10）与收费类档各自独立
     accessoryFreeThreshold: Number(cfg.accessoryFreeThreshold),
     accessoryFlatFee: Number(cfg.accessoryFlatFee),
-    chargedCraftTypes: Array.isArray(cfg.chargedCraftTypes) ? cfg.chargedCraftTypes.slice().sort() : null
+    chargedCraftTypes: Array.isArray(cfg.chargedCraftTypes) ? cfg.chargedCraftTypes.slice().sort() : null,
+    // 逐装裱方式规则表（2026-09-21）：跨副本漂移必须红 —— 副本之间"档位不同"= 两端收费不同
+    craftTypeRules: Array.isArray(cfg.craftTypeRules)
+      ? cfg.craftTypeRules
+        .map((r) => `${r.craftType}:${r.freeShippingThreshold}/${r.flatFee}`)
+        .sort()
+      : null
   }
 }
 
@@ -649,14 +655,15 @@ async function runChecks(paths) {
     // E5. 档位判定与**文案**必须与费率同档
     // 2026-09-20 真机截图抓到的回归：其它档商品的说明写成「全场满 ¥299 免邮，否则 ¥18」，
     // 而实际收 ¥10 —— 根因是 resolveOrderKind 用「门槛 > 0」判档（裁决 48 起两档门槛都非零）。
+    // 最后一列 = 文案里**必须点名的那件商品自己的装裱方式**（产品负责人 2026-09-21）
     const tierCases = [
-      ['相框（收费档）', [P('frame')], 'specimen', 299, 18],
-      ['挂件（其它档）', [P('accessory')], 'accessory', 39, 10],
-      ['未标注（其它档）', [P('')], 'accessory', 39, 10],
-      ['显式 accessory 的相框（其它档）', [P('frame', { shippingKind: 'accessory' })], 'accessory', 39, 10],
-      ['显式 specimen 的挂件（收费档）', [P('accessory', { shippingKind: 'specimen' })], 'specimen', 299, 18]
+      ['相框（收费档）', [P('frame')], 'specimen', 299, 18, '相框'],
+      ['挂件（其它档）', [P('accessory')], 'accessory', 39, 10, '饰品'],
+      ['未标注（其它档）', [P('')], 'accessory', 39, 10, '其它类型'],
+      ['显式 accessory 的相框（其它档）', [P('frame', { shippingKind: 'accessory' })], 'accessory', 39, 10, '相框'],
+      ['显式 specimen 的挂件（收费档）', [P('accessory', { shippingKind: 'specimen' })], 'specimen', 299, 18, '饰品']
     ]
-    tierCases.forEach(([name, ctx, kind, thr, fee]) => {
+    tierCases.forEach(([name, ctx, kind, thr, fee, namedLabel]) => {
       const gotKind = typeof client.resolveOrderKind === 'function' ? client.resolveOrderKind(ctx) : 'NOT_A_FUNCTION'
       check(`档位判定：${name} = ${kind}`, gotKind === kind,
         `实际 ${gotKind}（判据不能写成"门槛 > 0"：裁决 48 起两档门槛都非零）`)
@@ -665,16 +672,60 @@ async function runChecks(paths) {
       const noCrossTier = kind !== 'accessory' || (!text.includes('299') && !text.includes('18'))
       check(`说明文案与费率同档：${name}（¥${thr} 免邮 / 否则 ¥${fee}）`, sameTier && noCrossTier,
         `${text} ｜ 费率 ¥${client.resolveFee(ctx)}`)
-      // 前缀：顾客侧用**短标签**（2026-09-20 产品负责人：枚举四个装裱方式会把「说明」行挤爆），
-      // 但**不得**回到含糊的「全场」（那会让顾客以为门槛是对整单任意商品）
-      // 其它档：**点名到具体装裱方式**（2026-09-20 产品负责人：「选了塑封还显示其它」）；
-      // 上下文里没有中文名时才退回「其它类型」。收费档仍用短标签「标本框」。
-      const wantPrefix = kind === 'accessory' ? '' : '标本框'
-      const noLongEnum = kind !== 'specimen' || !text.includes('方形玻璃罩')
-      check(`说明文案用短标签且不溢出：${name}`,
-        text.includes('商品满') && (wantPrefix ? text.includes(wantPrefix) : true) && !text.includes('全场') && noLongEnum,
-        `${text}（应含「${wantPrefix || '装裱方式'}…商品满」、不得出现「全场」或长枚举）`)
+      /* 文案必须**点名这件商品自己的装裱方式**（产品负责人 2026-09-21：
+       * 「相框类产品的页面只展示相框，而不是「玻璃罩/标本框」」）。
+       * 两条同时成立：① 只出现**一个**装裱方式名（不许退回"枚举四个"的长标签）；
+       *             ② 不出现含糊的「全场」（那会让顾客以为门槛是对整单任意商品）。 */
+      const SPECIMEN_LABELS = ['相框', '方形玻璃罩', '圆形玻璃罩', '圆柱形玻璃罩']
+      const namedTypes = SPECIMEN_LABELS.filter((n) => text.includes(n)).length
+      // ★ 必须**点名这件商品自己的装裱方式**（不是组标签、也不是别的类型）
+      check(`说明文案点名装裱方式且不溢出：${name}`,
+        text.includes('商品满') && text.includes(namedLabel) && !text.includes('全场') && namedTypes <= 1,
+        `${text}（应含「${namedLabel}…商品满」、不得出现「全场」或长枚举；实测点名 ${namedTypes} 个装裱方式）`)
     })
+    /* ★ 逐装裱方式配置**必须真的生效**（2026-09-21 产品负责人：运费规则配置页按最新装裱方式重构）。
+     * 判据：给一份自定义规则表 → 每一档的门槛/运费都跟着变；通配符必须兜住未列出的类型；
+     *      混合车取门槛最高的一档（裁决 48-A 的推广）。 */
+    try {
+      // 先把当前 5 个旧字段 + 规则表存下来 —— `applyRemoteConfig({})` **不会**回到代码默认值
+      // （它会按当前值合成规则表），不显式还原就会污染后面的用例（第一版就是这么红的）。
+      const saved = {
+        chargedCraftTypes: (client.chargedCraftTypes || []).slice(),
+        freeShippingThreshold: client.freeShippingThreshold,
+        flatFee: client.flatFee,
+        accessoryFreeThreshold: client.accessoryFreeThreshold,
+        accessoryFlatFee: client.accessoryFlatFee,
+        craftTypeRules: (client.craftTypeRules || []).map((r) => ({ ...r }))
+      }
+      const custom = [
+        { craftType: 'frame', freeShippingThreshold: 199, flatFee: 12 },
+        { craftType: 'cloche', freeShippingThreshold: 299, flatFee: 18 },
+        { craftType: 'cloche_round', freeShippingThreshold: 299, flatFee: 18 },
+        { craftType: 'cloche_cylinder', freeShippingThreshold: 299, flatFee: 18 },
+        { craftType: 'diorama', freeShippingThreshold: 88, flatFee: 6 },
+        { craftType: '*', freeShippingThreshold: 49, flatFee: 8 }
+      ]
+      client.applyRemoteConfig({ craftTypeRules: custom })
+      const expect = { frame: [199, 12], diorama: [88, 6], accessory: [49, 8], custom_2: [49, 8], '': [49, 8] }
+      Object.keys(expect).forEach((ct) => {
+        const ctx = [P(ct)]
+        const thr = client.resolveThreshold(ctx)
+        const fee = client.resolveFee(ctx)
+        check(`逐装裱方式配置生效：${ct || '(未标注)'} → ¥${expect[ct][0]}/${expect[ct][1]}`,
+          thr === expect[ct][0] && fee === expect[ct][1], `实际 ¥${thr}/${fee}`)
+        const short = client.getRuleTextShort(ctx)
+        check(`说明行用的是**本档**数字：${ct || '(未标注)'}`,
+          short.includes(`¥${expect[ct][0]}`), short)
+      })
+      const mixedThr = client.resolveThreshold([P('frame'), P('diorama')])
+      const mixedFee = client.resolveFee([P('frame'), P('diorama')])
+      check('混合车取门槛最高的一档（相框 199/12 vs 造景 88/6 → 199/12）',
+        mixedThr === 199 && mixedFee === 12, `实际 ¥${mixedThr}/${mixedFee}`)
+      // 收尾：**显式**还原（连带规则表），免得影响后面的用例
+      client.applyRemoteConfig(saved)
+    } catch (e) {
+      check('逐装裱方式配置生效（用例执行）', false, e.message)
+    }
     check('顾客侧短标签是一个常量（不在页面里内联）',
       typeof client.CHARGED_GROUP_LABEL === 'string' && client.CHARGED_GROUP_LABEL.indexOf('/') > 0,
       String(client.CHARGED_GROUP_LABEL))
@@ -697,7 +748,9 @@ async function runChecks(paths) {
     }
     // ⚠️ 2026-09-20 产品负责人：「其它标本这个字段没有配置通配符 —— 选塑封时仍然显示『其它』」。
     //    现在其它档**点名到具体装裱方式**（饰品→「饰品」），解析不出来才退回「其它类型」。
-    ;[['相框（收费档）', [P('frame')], '标本框'],
+    // 收费档同样点名（相框 → 「相框满 ¥299 免邮」）；解析不出才退回组标签/「其它类型」
+    ;[['相框（收费档，应点名相框）', [P('frame')], '相框'],
+      ['方形玻璃罩（收费档，应点名方形玻璃罩）', [P('cloche')], '方形玻璃罩'],
       ['饰品（其它档，应点名）', [P('accessory')], '饰品'],
       ['造景（其它档，应点名）', [P('diorama')], '造景'],
       ['未标注装裱方式（解析不出 → 退回「其它类型」）', [P('')], '其它类型']].forEach(([name, ctx, wantPrefix]) => {
@@ -785,8 +838,23 @@ function mirror(paths, tmp) {
 async function runSelfTest(paths) {
   console.log('自检：确认检查在「代码副本 / 云端快照 / 分类表 / 判定位置」被改坏时确实会失败\n')
   const cases = [
+    ['逐装裱方式规则被忽略（判定退回只用旧的两档字段）', (p) => {
+      patch(p.client, (s) => s.replace(
+        '  const rule = pickRuleForContext(context, shipping.craftTypeRules)\n  if (rule) return Number(rule.freeShippingThreshold) || 0\n',
+        ''
+      ))
+    }],
+    ['逐装裱方式规则被绕过（按 categoryType 短路 —— 未标注/新增装裱方式会误判收费档）', (p) => {
+      // 钱的路现在走 `ruleForItem`：把 craftType 那一层拿掉 = 回归本体
+      patch(p.server, (s) => s.replace(
+        "  const explicit = normalizeExplicitKind(item.shippingKind || item.shippingGroup || item.goodsKind || item.kind)",
+        "  if (item.categoryType === 'specimen' || item.categoryType === 'display') return topExplicitRuleOf(list)\n  const explicit = normalizeExplicitKind(item.shippingKind || item.shippingGroup || item.goodsKind || item.kind)"
+      ))
+    }],
     ['规则模型门槛被改回 500（云端 299 就不再生效）', (p) => {
-      patch(p.defaults, (s) => s.replace('freeShippingThreshold: 299,', 'freeShippingThreshold: 500,'))
+      patch(p.defaults, (s) => s
+        .replace("    freeShippingThreshold: 299,", "    freeShippingThreshold: 500,")
+        .replace("  { craftType: 'frame', freeShippingThreshold: 299, flatFee: 18 },", "  { craftType: 'frame', freeShippingThreshold: 500, flatFee: 18 },"))
     }],
     ['云端快照少一个收费 key（cloche_round 漏收）', (p) => {
       const snap = JSON.parse(fs.readFileSync(p.snapshot, 'utf8'))
@@ -794,10 +862,13 @@ async function runSelfTest(paths) {
       fs.writeFileSync(p.snapshot, JSON.stringify(snap, null, 2))
     }],
     ['craftType 判定被放回 categoryType 短路之后（未标注会误判收费）', (p) => {
-      patch(p.server, (s) => s.replace(
-        '  return isChargedCraftType(product.craftType) ? SHIPPING_KIND.SPECIMEN : SHIPPING_KIND.ACCESSORY',
-        "  if (product.categoryType === 'specimen' || product.categoryType === 'display') return SHIPPING_KIND.SPECIMEN\n  return SHIPPING_KIND.ACCESSORY"
-      ))
+      // ⚠️ 2026-09-21：判定改读 `craftTypeRules` 之后，只打 server 已经**判不出来**（钱的路不再经过
+      //    `resolveShippingKind`），自检报"漏检"。回归形态没变，所以**两端一起打**：
+      //    C 端的 `resolveOrderKind`（档位判据）与服务端的规则查找（同价矩阵）都会红。
+      const from = '  return isChargedCraftType(product.craftType) ? SHIPPING_KIND.SPECIMEN : SHIPPING_KIND.ACCESSORY'
+      const to = "  if (product.categoryType === 'specimen' || product.categoryType === 'display') return SHIPPING_KIND.SPECIMEN\n  return SHIPPING_KIND.ACCESSORY"
+      patch(p.server, (s) => s.replace(from, to))
+      patch(p.client, (s) => s.replace(from, to))
     }],
     ['C 端与服务端口径分叉（C 端仍用 98 门槛）', (p) => {
       patch(p.client, (s) => s.replace('  freeShippingThreshold: 299,', '  freeShippingThreshold: 98,'))
@@ -811,7 +882,7 @@ async function runSelfTest(paths) {
     // E 节的三条回归：文案/档位判定与免邮券省额，都必须能被拦下
     ['文案退回"全场满 ¥X 免邮"（2026-09-20 产品负责人指出的误会来源）', (p) => {
       patch(p.client, (s) => s.replace(
-        'return `${carrier} · ${charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`',
+        "return `${carrier} · ${craftTypeLabelOf(context) || charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`",
         'return `${carrier} · 全场满 ¥${free} 免邮，否则运费 ¥${fee}`'
       ))
     }],
@@ -821,9 +892,15 @@ async function runSelfTest(paths) {
         'function resolveOrderKind(context) {\n  return resolveThreshold(context) > 0 ? SHIPPING_KIND.SPECIMEN : SHIPPING_KIND.ACCESSORY\n  if (context == null) return SHIPPING_KIND.SPECIMEN'
       ))
     }],
+    ['收费档退回组标签「玻璃罩/标本框」（相框商品的说明写成玻璃罩 —— 产品负责人 2026-09-21 截图）', (p) => {
+      patch(p.client, (s) => s.replace(
+        "  return `${carrier} · ${craftTypeLabelOf(context) || charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`",
+        "  return `${carrier} · ${charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`"
+      ))
+    }],
     ['「其它档」退回写死的「其它类型」（选了塑封还是显示"其它" —— 产品负责人 2026-09-20）', (p) => {
       patch(p.client, (s) => s.replace(
-        "    return `${otherCraftTypeLabel(context) || '其它类型'}满 ¥${freeOther} 免邮`",
+        "    return `${craftTypeLabelOf(context) || '其它类型'}满 ¥${thr} 免邮`",
         "    return `其它类型满 ¥${freeOther} 免邮`"
       ))
     }],
@@ -832,7 +909,14 @@ async function runSelfTest(paths) {
         'function getRuleTextShort(context) {\n  return getRuleText(context)\n  if (isCampaignActive())'))
     }],
     ['顾客侧文案退回长枚举（「说明」行会溢出 —— 2026-09-20 真机截图）', (p) => {
-      patch(p.client, (s) => s.replace('  const charged = CHARGED_GROUP_LABEL', '  const charged = chargedCraftTypesLabel()'))
+      // ⚠️ 旧注入是"把 `charged` 换成 chargedCraftTypesLabel()"—— 2026-09-21 文案改成
+      //    **点名这件商品的装裱方式**之后它**语义上已经死了**（`craftTypeLabelOf` 永远先命中，
+      //    `charged` 只剩兜底），注入不再产生任何可观察变化 ⇒ 自检报「漏检」而不是判据有问题。
+      //    现在直接把它换成**真的长枚举**，这才是这条用例要防的回归形态。
+      patch(p.client, (s) => s.replace(
+        "  return `${carrier} · ${craftTypeLabelOf(context) || charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`",
+        "  return `${carrier} · 相框/方形玻璃罩/圆形玻璃罩/圆柱形玻璃罩类商品满 ¥${free} 免邮，否则运费 ¥${fee}`"
+      ))
     }],
     ['免邮券省额的门槛闸被删（门槛未知也敢报省额）', (p) => {
       Object.values(p.couponFns).forEach((dir) => {

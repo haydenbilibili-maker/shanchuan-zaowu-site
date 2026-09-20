@@ -20,6 +20,72 @@
  * 云端覆盖由 utils/shippingRulesSync 拉取后调用 applyRemoteConfig。
  */
 
+/**
+ * **按装裱方式逐条配置的运费规则**（2026-09-21 产品负责人：
+ * 「运费规则配置页面，根据最新的装裱方式进行重构 —— 支持对每一个装裱方式灵活配置对应的邮费规则；
+ *   运费的前端展示不用写死字段，都用装裱方式的通配符」）。
+ *
+ * 结构：`{ craftType: <装裱方式 value 或 '*'> , freeShippingThreshold, flatFee }`
+ *   · `craftType` = 具体值 → 该装裱方式**单独**一档；
+ *   · `craftType` = `'*'`  → **通配符**：所有没在上面单独列出的装裱方式都走这一档
+ *     （含 `craftType` 为空 / 未标注，以及后台通过「选项维护」新增的「塑封 / 玻璃瓶」等）。
+ *
+ * ⚠️ **必须有一条 `'*'`**：没有它，后台新加的装裱方式就没有规则可落 —— 这正是
+ *    2026-09-20「选了塑封，说明里仍显示『其它』」那类问题的根。
+ * ⚠️ **混合车**（一单里有多种装裱方式）：取适用规则里**门槛最高**的那一档，
+ *    门槛相同取运费高者 —— 这是裁决 48-A（含相框/玻璃罩 → 按 ¥299/¥18 那一档）的推广。
+ * ⚠️ 下面这份默认值**与裁决 48 完全等价**：相框/三种玻璃罩 → ¥299/¥18；其余（含未标注）→ ¥39/¥10。
+ */
+/** 允许出现在规则表里的 craftType（与 config/productTaxonomy.js 的 CRAFT_TYPE_OPTIONS 同源；
+ *  由 `npm run check:shipping-rules` / `check:shipping-rules-sync` 守卫钉住） */
+const VALID_CRAFT_TYPES = [
+  'frame', 'cloche', 'cloche_round', 'cloche_cylinder',
+  'diorama', 'magnet', 'accessory', 'wing_art', 'other'
+]
+
+const DEFAULT_CRAFT_TYPE_RULES = [
+  { craftType: 'frame', freeShippingThreshold: 299, flatFee: 18 },
+  { craftType: 'cloche', freeShippingThreshold: 299, flatFee: 18 },
+  { craftType: 'cloche_round', freeShippingThreshold: 299, flatFee: 18 },
+  { craftType: 'cloche_cylinder', freeShippingThreshold: 299, flatFee: 18 },
+  { craftType: '*', freeShippingThreshold: 39, flatFee: 10 }
+]
+
+/** 通配符 key（未单独列出的装裱方式都归它） */
+const WILDCARD_CRAFT_TYPE = '*'
+
+/**
+ * 老文档（没有 `craftTypeRules`）→ 合成规则表，保证**行为逐字不变**：
+ * 收费清单里的每一项 → ¥299/¥18；其余 → 通配符档 ¥39/¥10。
+ */
+function rulesFromLegacyConfig(cfg) {
+  const src = cfg || {}
+  const charged = Array.isArray(src.chargedCraftTypes) ? src.chargedCraftTypes : DEFAULT_CHARGED_CRAFT_TYPES
+  const free = Number(src.freeShippingThreshold != null ? src.freeShippingThreshold : src.specimenFreeThreshold)
+  const fee = Number(src.flatFee != null ? src.flatFee : src.shippingFee)
+  const freeOther = Number(src.accessoryFreeThreshold)
+  const feeOther = Number(src.accessoryFlatFee)
+  return charged
+    .map((ct) => ({ craftType: String(ct), freeShippingThreshold: free, flatFee: fee }))
+    .concat([{ craftType: WILDCARD_CRAFT_TYPE, freeShippingThreshold: freeOther, flatFee: feeOther }])
+}
+
+/** 规则表 → 旧字段镜像（`chargedCraftTypes` 等仍被既有读者使用，保持自洽） */
+function legacyMirrorFromRules(rules) {
+  const list = Array.isArray(rules) && rules.length ? rules : DEFAULT_CRAFT_TYPE_RULES
+  const explicit = list.filter((r) => r.craftType !== WILDCARD_CRAFT_TYPE)
+  const wildcard = list.find((r) => r.craftType === WILDCARD_CRAFT_TYPE) || DEFAULT_CRAFT_TYPE_RULES[DEFAULT_CRAFT_TYPE_RULES.length - 1]
+  // 旧模型只能表达"一个收费档"，取**门槛最高**的显式规则（= 混合车口径，也 = 默认时的 ¥299/¥18）
+  const top = explicit.slice().sort((a, b) => (b.freeShippingThreshold - a.freeShippingThreshold) || (b.flatFee - a.flatFee))[0] || wildcard
+  return {
+    chargedCraftTypes: explicit.map((r) => r.craftType),
+    freeShippingThreshold: Number(top.freeShippingThreshold) || 0,
+    flatFee: Number(top.flatFee) || 0,
+    accessoryFreeThreshold: Number(wildcard.freeShippingThreshold) || 0,
+    accessoryFlatFee: Number(wildcard.flatFee) || 0
+  }
+}
+
 const SHIPPING_KIND = {
   ACCESSORY: 'accessory',
   SPECIMEN: 'specimen'
@@ -72,8 +138,10 @@ const shipping = {
   accessoryFreeThreshold: 39,
   /** 其它类型的单次运费（裁决 48：¥10，与收费类的 ¥18 不同） */
   accessoryFlatFee: 10,
-  /** 收费类装裱方式清单（可被云端覆盖） */
+  /** 收费类装裱方式清单（可被云端覆盖）——**旧字段镜像**，判定已改读 craftTypeRules */
   chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
+  /** 逐装裱方式的规则表（唯一判定依据；见 DEFAULT_CRAFT_TYPE_RULES） */
+  craftTypeRules: DEFAULT_CRAFT_TYPE_RULES.map((r) => ({ ...r })),
   /**
    * 兼容镜像（判定逻辑读上面的 `accessoryFreeThreshold`）：
    * `specimenFreeThreshold` 是收费类门槛的旧名，保持同值以免仍读它的调用方拿到旧值。
@@ -134,6 +202,78 @@ function chargedCraftTypesLabel() {
 /**
  * 用云端配置覆盖本地 defaults（失败时保留 defaults）
  */
+/** 通配符规则（兜底档：未单独列出的装裱方式 / 未标注 / 显式 accessory 都走它） */
+function wildcardRuleOf (rules) {
+  const list = Array.isArray(rules) && rules.length ? rules : DEFAULT_CRAFT_TYPE_RULES
+  return list.find((r) => r.craftType === WILDCARD_CRAFT_TYPE) || list[list.length - 1]
+}
+
+/** 显式规则里门槛最高的那条（= 旧模型里"收费类那一档"，也是显式 specimen 的落点） */
+function topExplicitRuleOf (rules) {
+  const list = (Array.isArray(rules) && rules.length ? rules : DEFAULT_CRAFT_TYPE_RULES)
+    .filter((r) => r.craftType !== WILDCARD_CRAFT_TYPE)
+  return list.slice().sort((a, b) => (b.freeShippingThreshold - a.freeShippingThreshold) || (b.flatFee - a.flatFee))[0] || wildcardRuleOf(rules)
+}
+
+/**
+ * 单件商品落到哪条规则。
+ * 判定顺序与 `resolveShippingKind` **完全一致**（不可换位）：
+ *   ① 显式 `shippingKind` 覆盖 → accessory 走通配符档 / specimen 走门槛最高的显式档；
+ *   ② `craftType` **精确匹配**某条规则 → 用它；
+ *   ③ 都没命中 → **通配符档**（含未标注、以及后台新增的装裱方式）。
+ */
+function ruleForItem (item, rules) {
+  const list = Array.isArray(rules) && rules.length ? rules : DEFAULT_CRAFT_TYPE_RULES
+  if (!item || typeof item !== 'object') return wildcardRuleOf(list)
+  const explicit = normalizeExplicitKind(item.shippingKind || item.shippingGroup || item.goodsKind || item.kind)
+  if (explicit === SHIPPING_KIND.ACCESSORY) return wildcardRuleOf(list)
+  if (explicit === SHIPPING_KIND.SPECIMEN) return topExplicitRuleOf(list)
+  const key = String(item.craftType == null ? '' : item.craftType).trim().toLowerCase()
+  const hit = key ? list.find((r) => r.craftType === key) : null
+  return hit || wildcardRuleOf(list)
+}
+
+/**
+ * 本单适用的规则（**混合车**：取适用规则里门槛最高的一档，门槛相同取运费高者）。
+ * 这是裁决 48-A（含相框/玻璃罩 → 按 ¥299/¥18 那一档）在"逐装裱方式配置"下的推广。
+ * 返回 null 表示"上下文为空/无法判定" → 调用方走旧的单档逻辑。
+ */
+function pickRuleForContext (context, rules) {
+  const list = Array.isArray(rules) && rules.length ? rules : DEFAULT_CRAFT_TYPE_RULES
+  const items = (() => {
+    if (context == null) return null
+    if (Array.isArray(context)) return context
+    if (typeof context === 'object' && Array.isArray(context.items)) return context.items
+    if (typeof context === 'object') return [context]
+    return null
+  })()
+  if (!items || !items.length) return null
+  const picked = items.map((it) => ruleForItem(it, list))
+  return picked.slice().sort((a, b) => (b.freeShippingThreshold - a.freeShippingThreshold) || (b.flatFee - a.flatFee))[0]
+}
+
+/** 归一化规则表（保存侧与读取侧同一口径）：丢掉非法项、去重、**必须留一条通配符** */
+function normalizeCraftTypeRules (raw) {
+  if (!Array.isArray(raw)) return null
+  const out = []
+  const seen = {}
+  raw.forEach((r) => {
+    if (!r || typeof r !== 'object') return
+    let key = String(r.craftType == null ? '' : r.craftType).trim().toLowerCase()
+    if (!key) return
+    if (key !== WILDCARD_CRAFT_TYPE && VALID_CRAFT_TYPES.indexOf(key) === -1) return
+    if (seen[key]) return
+    seen[key] = true
+    out.push({
+      craftType: key,
+      freeShippingThreshold: Math.max(0, toNumber(r.freeShippingThreshold, 0)),
+      flatFee: Math.max(0, toNumber(r.flatFee, 0))
+    })
+  })
+  if (!seen[WILDCARD_CRAFT_TYPE]) return null   // 没有通配符 = 新装裱方式没有规则可落，视为无效配置
+  return out
+}
+
 function applyRemoteConfig(raw) {
   if (!raw || typeof raw !== 'object') return shipping
   const thresholds = raw.thresholds && typeof raw.thresholds === 'object' ? raw.thresholds : {}
@@ -174,11 +314,29 @@ function applyRemoteConfig(raw) {
   shipping.freeShippingThreshold = free
   shipping.accessoryFreeThreshold = freeOther
   shipping.accessoryFlatFee = feeOther
+  /* 规则表：云端带 `craftTypeRules` 就用它；没有 → 用**刚读进来的旧字段**合成（行为逐字不变）。
+   * 再反过来把旧字段按规则表镜像一遍，保证"判定读规则表、旧读者读旧字段"两个口径一致。 */
+  const rules = normalizeCraftTypeRules(raw.craftTypeRules) || rulesFromLegacyConfig({
+    chargedCraftTypes: charged && charged.length ? charged : shipping.chargedCraftTypes,
+    freeShippingThreshold: free,
+    flatFee,
+    accessoryFreeThreshold: freeOther,
+    accessoryFlatFee: feeOther
+  })
+  shipping.craftTypeRules = rules
+  const mirror = legacyMirrorFromRules(rules)
+  if (mirror.chargedCraftTypes.length) shipping.chargedCraftTypes = mirror.chargedCraftTypes
+  const freeMirror = mirror.freeShippingThreshold
+  const feeMirror = mirror.flatFee
+  shipping.freeShippingThreshold = freeMirror
+  shipping.shippingFee = feeMirror
+  shipping.flatFee = feeMirror
+  shipping.accessoryFreeThreshold = mirror.accessoryFreeThreshold
+  shipping.accessoryFlatFee = mirror.accessoryFlatFee
   // 旧字段镜像：保持自洽，避免仍读它们的代码（导出常量 / 历史页面）拿到旧值
-  shipping.specimenFreeThreshold = free
-  shipping.thresholds.accessory = freeOther
-  shipping.thresholds.specimen = free
-  if (charged && charged.length) shipping.chargedCraftTypes = charged
+  shipping.specimenFreeThreshold = freeMirror
+  shipping.thresholds.accessory = mirror.accessoryFreeThreshold
+  shipping.thresholds.specimen = freeMirror
 
   const camp = raw.freeShippingCampaign && typeof raw.freeShippingCampaign === 'object'
     ? raw.freeShippingCampaign
@@ -283,6 +441,10 @@ function resolveThreshold(context) {
 
   if (context == null) return free
 
+  // 逐装裱方式的规则表优先（与 makeOrder/shipping.js 同一口径，混合车取门槛最高档）
+  const rule = pickRuleForContext(context, shipping.craftTypeRules)
+  if (rule) return Number(rule.freeShippingThreshold) || 0
+
   if (typeof context === 'number' && Number.isFinite(context)) {
     return context
   }
@@ -316,6 +478,9 @@ function resolveThreshold(context) {
  */
 function resolveFee(context) {
   if (context == null) return shipping.flatFee
+  // 与 resolveThreshold 必须落在同一条规则上
+  const rule = pickRuleForContext(context, shipping.craftTypeRules)
+  if (rule) return Number(rule.flatFee) || 0
   if (typeof context === 'number' && Number.isFinite(context)) return shipping.flatFee
   if (typeof context === 'string') {
     const kind = normalizeExplicitKind(context) || resolveShippingKind(context)
@@ -433,7 +598,7 @@ function craftTypeOfContext(context) {
  *    · 退一步用本文件的 `CRAFT_TYPE_LABELS`（内置 9 项，供不带上文的调用方）；
  *    · 都没有就不用（退回「其它类型」），并受长度上限保护（那行 nowrap 放不下长名）。
  */
-function otherCraftTypeLabel(context) {
+function craftTypeLabelOf(context) {
   const label = labelOfContext(context) || CRAFT_TYPE_LABELS[craftTypeOfContext(context)] || ''
   const text = String(label).trim()
   if (!text) return ''
@@ -459,8 +624,10 @@ function labelOfContext(context) {
 
 function getRuleText(context) {
   if (isCampaignActive()) return getCampaignLabel()
-  const fee = shipping.shippingFee
-  const free = shipping.freeShippingThreshold
+  // ⚠️ 有上下文就取**这条上下文匹配到的规则**的数字：逐装裱方式配置之后，
+  //    各类型的门槛与运费都不一样，再用全局的 `shipping.freeShippingThreshold` 就会写错（实测过）。
+  const fee = context != null ? resolveFee(context) : shipping.shippingFee
+  const free = context != null ? resolveThreshold(context) : shipping.freeShippingThreshold
   const carrier = shipping.defaultCarrier || '顺丰速运'
   // 顾客侧用短标签（见 CHARGED_GROUP_LABEL 的说明）；完整枚举只出现在后台/云端 ruleText
   const charged = CHARGED_GROUP_LABEL
@@ -471,13 +638,16 @@ function getRuleText(context) {
   //    （2026-09-20 产品负责人：截图里的"全场满 ¥299 / ¥39 免邮"会引发误会）。
   //    收费档→列出收费装裱方式；其它档→"其它类型"（纯其它单的整单就是其它类型商品）。
   if (context != null && resolveOrderKind(context) === SHIPPING_KIND.ACCESSORY) {
-    const named = otherCraftTypeLabel(context)
-    return `${carrier} · ${named || '其它类型'}商品满 ¥${freeOther} 免邮，否则运费 ¥${feeOther}`
+    const named = craftTypeLabelOf(context)
+    return `${carrier} · ${named || '其它类型'}商品满 ¥${free} 免邮，否则运费 ¥${fee}`
   }
   if (context == null) {
     return `${carrier} · ${charged}类商品满 ¥${free} 免邮（否则 ¥${fee}）；其它类型商品满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
   }
-  return `${carrier} · ${charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`
+  // 收费档同样**点名这件商品自己的装裱方式**：相框商品的「说明」行就该写「相框」，
+  // 而不是把它们打包成一个组标签（产品负责人 2026-09-21 截图：「相框类产品只展示相框」）。
+  // 解析不出中文名（自定义名过长 / 字典没铺上）才退回组标签。
+  return `${carrier} · ${craftTypeLabelOf(context) || charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`
 }
 
 /**
@@ -492,12 +662,15 @@ function getRuleTextShort(context) {
   if (isCampaignActive()) return getCampaignLabel()
   const free = shipping.freeShippingThreshold
   const freeOther = shipping.accessoryFreeThreshold
+  // 有上下文 → 用**本档**的门槛（逐装裱方式配置后各档不同）
+  const thr = context != null ? resolveThreshold(context) : free
   if (context != null && resolveOrderKind(context) === SHIPPING_KIND.ACCESSORY) {
     // 点名到具体装裱方式（塑封/造景/饰品…），解析不出来才用「其它类型」
-    return `${otherCraftTypeLabel(context) || '其它类型'}满 ¥${freeOther} 免邮`
+    return `${craftTypeLabelOf(context) || '其它类型'}满 ¥${thr} 免邮`
   }
   if (context == null) return `满 ¥${free} / ¥${freeOther} 免邮`
-  return `${CHARGED_GROUP_LABEL}满 ¥${free} 免邮`
+  // 同上：点名这件商品的装裱方式（相框 → 「相框满 ¥299 免邮」），解析不出才退回组标签
+  return `${craftTypeLabelOf(context) || CHARGED_GROUP_LABEL}满 ¥${thr} 免邮`
 }
 
 function getHint(price, context) {
@@ -534,7 +707,7 @@ module.exports = Object.assign(shipping, {
   DEFAULT_CHARGED_CRAFT_TYPES,
   CRAFT_TYPE_LABELS,
   CHARGED_GROUP_LABEL,
-  otherCraftTypeLabel,
+  craftTypeLabelOf,
   normalizeChargedCraftTypes,
   getChargedCraftTypes,
   isChargedCraftType,

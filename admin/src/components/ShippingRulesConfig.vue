@@ -27,35 +27,60 @@
               <el-option v-for="c in carriers" :key="c" :label="c" :value="c" />
             </el-select>
           </el-form-item>
-          <el-form-item label="不包邮运费（元/单）">
-            <el-input-number v-model="form.flatFee" :min="0" :step="1" :precision="2" />
-            <span class="hint">默认 18（一单一次，不是每件）</span>
-          </el-form-item>
-          <el-form-item label="包邮门槛（全场，元）">
-            <el-input-number v-model="form.freeShippingThreshold" :min="0" :step="10" :precision="2" />
-            <span class="hint">默认 299，按整单优惠前商品合计判定。含相框/玻璃罩的单都按这一档</span>
-          </el-form-item>
-          <el-form-item label="其它类型运费（元/单）">
-            <el-input-number v-model="form.accessoryFlatFee" :min="0" :step="1" :precision="2" />
-            <span class="hint">默认 10。相框/玻璃罩之外的全部类型（含未标注装裱方式）</span>
-          </el-form-item>
-          <el-form-item label="其它类型包邮门槛（全场，元）">
-            <el-input-number v-model="form.accessoryFreeThreshold" :min="0" :step="1" :precision="2" />
-            <span class="hint">默认 39。混合车（含相框/玻璃罩）仍按上面那一档算</span>
-          </el-form-item>
-          <el-form-item label="按装裱方式收费">
-            <el-checkbox-group v-model="form.chargedCraftTypes">
-              <el-checkbox
-                v-for="opt in chargedCraftOptions"
-                :key="opt.value"
-                :label="opt.value"
-              >{{ opt.label }}</el-checkbox>
-            </el-checkbox-group>
-            <div class="hint hint-block">
-              勾选的装裱方式（商品 craftType）需满门槛才免邮；未勾选的、以及未标注 craftType 的商品一律免邮。
-              判定只看装裱方式字段，不看标题与类别。
-            </div>
-          </el-form-item>
+          <el-divider content-position="left">按装裱方式配置邮费</el-divider>
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            style="margin: 0 0 12px;"
+            title="每一种装裱方式都可以单独设「包邮门槛」与「不包邮运费」；没单独配置的跟随最下面那条通配符。混合车（一单里有多种装裱方式）按门槛最高的一档算。"
+          />
+          <el-table :data="ruleRows" size="small" style="width: 100%; margin-bottom: 8px;">
+            <el-table-column label="装裱方式" min-width="140">
+              <template #default="{ row }">
+                <span :class="{ 'rule-wildcard': row.isWildcard }">{{ row.label }}</span>
+                <span v-if="row.isWildcard" class="hint">（通配符）</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="单独配置" width="100">
+              <template #default="{ row }">
+                <el-switch
+                  v-if="!row.isWildcard"
+                  :model-value="row.enabled"
+                  @update:model-value="(v) => toggleRow(row, v)"
+                />
+                <span v-else class="hint">必配</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="包邮门槛（元）" width="170">
+              <template #default="{ row }">
+                <el-input-number
+                  v-model="row.freeShippingThreshold"
+                  :min="0" :step="10" :precision="2" :disabled="!row.enabled"
+                  controls-position="right" style="width: 140px;"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column label="不包邮运费（元/单）" width="180">
+              <template #default="{ row }">
+                <el-input-number
+                  v-model="row.flatFee"
+                  :min="0" :step="1" :precision="2" :disabled="!row.enabled"
+                  controls-position="right" style="width: 140px;"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column label="说明" min-width="160">
+              <template #default="{ row }">
+                <span class="hint">{{ row.enabled ? `满 ¥${fmt(row.freeShippingThreshold)} 免邮，否则 ¥${fmt(row.flatFee)}/单` : '跟随通配符' }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="hint hint-block" style="margin-bottom: 12px;">
+            判定只看商品的「装裱方式」（craftType），不看标题与类别。
+            <strong>通配符那一档必须保留</strong>：未标注装裱方式的商品、以及后台用「选项维护」新加的
+            （塑封 / 玻璃瓶…）都走它 —— 没有它，新装裱方式就没有规则可落。
+          </div>
 
           <el-divider content-position="left">限时全场免邮</el-divider>
           <el-form-item label="活动开关">
@@ -113,17 +138,69 @@ import {
   normalizeShippingConfig,
   describeShippingRule,
   DEFAULT_CHARGED_CRAFT_TYPES,
-  CRAFT_TYPE_LABELS
+  DEFAULT_CRAFT_TYPE_RULES,
+  CRAFT_TYPE_LABELS,
+  WILDCARD_CRAFT_TYPE,
+  VALID_CRAFT_TYPES
 } from '../utils/shippingRules'
 import { ElMessage } from 'element-plus'
 
 const carriers = ['顺丰速运', '京东物流', '中通快递', '圆通速递', '申通快递', '韵达快递', 'EMS']
 
-/** 可勾选的收费装裱方式（裁决 41 的四项；值 = products.craftType） */
-const chargedCraftOptions = DEFAULT_CHARGED_CRAFT_TYPES.map((value) => ({
-  value,
-  label: CRAFT_TYPE_LABELS[value] || value
-}))
+const fmt = (v) => (Number.isInteger(Number(v)) ? String(Number(v)) : Number(v).toFixed(2))
+
+/**
+ * 规则表的可编辑行 = **每一种装裱方式** + 一条通配符（2026-09-21 产品负责人重构）。
+ * `enabled = false` 的行**不写进 craftTypeRules**（= 跟随通配符），避免存一堆同值规则。
+ */
+const ruleRows = ref(buildRows(getDefaultShippingConfig()))
+
+function buildRows (cfg) {
+  const rules = Array.isArray(cfg.craftTypeRules) && cfg.craftTypeRules.length
+    ? cfg.craftTypeRules
+    : DEFAULT_CRAFT_TYPE_RULES
+  const wildcard = rules.find((r) => r.craftType === WILDCARD_CRAFT_TYPE) || DEFAULT_CRAFT_TYPE_RULES[DEFAULT_CRAFT_TYPE_RULES.length - 1]
+  const rows = VALID_CRAFT_TYPES.map((value) => {
+    const hit = rules.find((r) => r.craftType === value)
+    return {
+      craftType: value,
+      label: CRAFT_TYPE_LABELS[value] || value,
+      isWildcard: false,
+      enabled: !!hit,
+      freeShippingThreshold: hit ? hit.freeShippingThreshold : wildcard.freeShippingThreshold,
+      flatFee: hit ? hit.flatFee : wildcard.flatFee
+    }
+  })
+  rows.push({
+    craftType: WILDCARD_CRAFT_TYPE,
+    label: '其它',
+    isWildcard: true,
+    enabled: true,
+    freeShippingThreshold: wildcard.freeShippingThreshold,
+    flatFee: wildcard.flatFee
+  })
+  return rows
+}
+
+function toggleRow (row, on) {
+  row.enabled = !!on
+  if (row.enabled && (row.freeShippingThreshold == null || row.flatFee == null)) {
+    const wildcard = ruleRows.value.find((r) => r.isWildcard)
+    row.freeShippingThreshold = wildcard ? wildcard.freeShippingThreshold : 39
+    row.flatFee = wildcard ? wildcard.flatFee : 10
+  }
+}
+
+/** 表格 → craftTypeRules（只存"单独配置"的行 + 通配符） */
+function rowsToRules () {
+  return ruleRows.value
+    .filter((r) => r.isWildcard || r.enabled)
+    .map((r) => ({
+      craftType: r.craftType,
+      freeShippingThreshold: Number(r.freeShippingThreshold) || 0,
+      flatFee: Number(r.flatFee) || 0
+    }))
+}
 
 const loading = ref(false)
 const saving = ref(false)
@@ -138,6 +215,7 @@ function applyForm(raw, docId = '') {
   if (!form.freeShippingCampaign) {
     form.freeShippingCampaign = getDefaultShippingConfig().freeShippingCampaign
   }
+  ruleRows.value = buildRows(form)
   ruleDocId.value = docId || ''
 }
 
@@ -177,7 +255,8 @@ async function loadRules() {
 }
 
 function buildPayload() {
-  const normalized = normalizeShippingConfig(form)
+  // 规则表以**表格**为准（它才是产品负责人要编辑的东西）；旧字段由 normalize 派生镜像
+  const normalized = normalizeShippingConfig({ ...form, craftTypeRules: rowsToRules() })
   return {
     ...normalized,
     freeShippingCampaign: { ...normalized.freeShippingCampaign },
@@ -197,10 +276,14 @@ function buildPayload() {
  * `getShippingRules` 已在代理白名单内，实测 `action:'get'` 返回 success（同函数同鉴权路径）。
  */
 async function saveRules() {
-  // 空清单 = 整店免邮，属危险配置：前端先拦（云端 getShippingRules 也会拒）
-  const charged = normalizeShippingConfig(form).chargedCraftTypes
-  if (!charged.length) {
-    ElMessage.warning('至少保留一种收费装裱方式（清空会让所有订单都掉进「其它类型」档 ¥39/¥10）')
+  // 规则表校验（前端先拦；云端 getShippingRules 也会拒）
+  const rules = rowsToRules()
+  if (!rules.some((r) => r.craftType === WILDCARD_CRAFT_TYPE)) {
+    ElMessage.warning('通配符那一档不能删（未标注与后台新增的装裱方式都靠它兜底）')
+    return
+  }
+  if (!rules.some((r) => r.craftType !== WILDCARD_CRAFT_TYPE)) {
+    ElMessage.warning('至少要单独配置一种装裱方式（全都跟随通配符 = 所有订单同一档）')
     return
   }
   saving.value = true
@@ -227,7 +310,7 @@ async function saveRules() {
 
 function resetDefaults() {
   applyForm(getDefaultShippingConfig(), ruleDocId.value)
-  ElMessage.info('已重置为默认（相框/玻璃罩类满 299 免邮 / 运费 18/单 / 其余免邮）')
+  ElMessage.info('已重置为默认（相框/三种玻璃罩 满 ¥299 免邮、否则 ¥18/单；其余含未标注 满 ¥39 免邮、否则 ¥10/单）')
 }
 
 onMounted(() => {
@@ -281,6 +364,7 @@ onMounted(() => {
   color: #a09a90;
   font-size: 12px;
 }
+.rule-wildcard { font-weight: 600; }
 .hint-block {
   display: block;
   margin: 6px 0 0;
