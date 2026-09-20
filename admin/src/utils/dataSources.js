@@ -268,6 +268,18 @@ export const CONCEPTS = [
     note: '键值型集合，各页面按 docId 读写自己的配置文档；与 home_configs（首页专表）不是同一概念。',
   },
   {
+    key: 'product_taxonomy',
+    label: '装裱方式 / 制作工艺字典',
+    authority: { kind: 'collection', name: 'product_taxonomy' },
+    writeVia: 'getProductTaxonomy（action:save，仅超管）',
+    divergent: [],
+    note:
+      '单文档字典（装裱方式 craftTypes / 制作工艺 craftProcesses）。**代码里的默认清单是兜底、不是权威**：' +
+      '`miniprogram/config/productTaxonomy.js` 与 `admin/src/App.vue` 各持一份与对方逐字一致的默认表（守卫 ' +
+      '`check:product-fields-entry` ⑤-h 钉住），云端有文档时**由云端覆写**（`集合 → 覆写层 → 代码默认`）。' +
+      '两端都必须经 `function:getProductTaxonomy` 取，不许各自维护第三份清单。',
+  },
+  {
     key: 'product_concept_draft',
     label: '爆品概念草稿',
     authority: { kind: 'storage', name: 'productConcept(STORAGE_KEY)' },
@@ -359,6 +371,8 @@ export const SOURCE_REGISTRY = {
   'collection:custom_drafts': { concept: 'content_factory', role: 'derived', confidence: 'low', note: '待确认归属：内容工厂草稿 or 定制草稿' },
   'collection:content_pieces': { concept: 'content_factory', role: 'authority', confidence: 'high' },
   'collection:configs': { concept: 'generic_config', role: 'authority', confidence: 'medium', note: '通用配置文档集合（键值型），各页面按 docId 读取' },
+  'collection:product_taxonomy': { concept: 'product_taxonomy', role: 'authority', confidence: 'high', note: '装裱方式/制作工艺字典（单文档）。云端有文档即覆写两端的代码默认表' },
+  'function:getProductTaxonomy': { concept: 'product_taxonomy', role: 'channel', confidence: 'high', note: '字典的唯一读写通道：读公开、写在服务端校验（仅超管，且拒绝删除仍被商品引用的选项）' },
   'collection:store_booking_rules': { concept: 'booking_rules', role: 'authority', confidence: 'medium' },
   'collection:bookings': { concept: 'bookings', role: 'authority', confidence: 'high', note: '规则 write:false → ERP 只读；写通道未接入' },
   'collection:support_tickets': { concept: 'support', role: 'authority', confidence: 'high' },

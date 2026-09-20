@@ -749,7 +749,7 @@
                             style="width:100%"
                             :disabled="!isTaxonomyEligibleProduct"
                         >
-                            <el-option v-for="o in CRAFT_TYPE_OPTIONS" :key="o.value" :label="o.label" :value="o.value" />
+                            <el-option v-for="o in ERP_CRAFT_TYPE_OPTIONS" :key="o.value" :label="o.label" :value="o.value" />
                         </el-select>
                         <span class="sku-hint-muted">装裱/封装形态；DB 字段 craftType；空=未标注</span>
                     </el-form-item>
@@ -765,7 +765,7 @@
                             style="width:100%"
                             :disabled="!isTaxonomyEligibleProduct"
                         >
-                            <el-option v-for="o in CRAFT_PROCESS_OPTIONS" :key="o.value" :label="o.label" :value="o.value" />
+                            <el-option v-for="o in ERP_CRAFT_PROCESS_OPTIONS" :key="o.value" :label="o.label" :value="o.value" />
                         </el-select>
                         <span class="sku-hint-muted">标本制作工艺；DB 字段 craftProcess；空=未标注</span>
                     </el-form-item>
@@ -1348,6 +1348,8 @@ import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchC
 import { toChineseTaxonomy } from './utils/taxonomyZh'
 import { buildCanonicalSize, parseCanonicalSize } from './utils/sizeCanonical'
 import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
+// 装裱方式/制作工艺的云端覆写纯函数：抽成模块**是为了让守卫能求值做行为断言**（SFC 里没法求值，只能看结构）
+import { normalizeOverlayList, resolveCraftOptions } from './utils/productTaxonomyOverlay'
 import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
 import { BLESS_TAGS, MAX_BLESS_TAGS, sanitizeBlessTags, readBlessTags } from './utils/blessTags'
 import { establishAdminSession, clearAdminSession, probeAdminSession, assertWriteApplied } from './utils/cloudbaseCdnDb'
@@ -1924,9 +1926,12 @@ const CHANNEL_LABEL_MAP = {
  *   现在：下拉与标签表**都从下面这一份数组派生**，两者不可能再互相漂移；
  *   与小程序的逐字一致性由守卫 `npm run check:product-fields-entry` 断言。
  *
- * ⚠️ 仍有边界：后台通过「选项维护」**新增**的自定义选项（value `custom_xxx`）不在代码里，
- *    ERP 这两张表拿不到 → 下拉里选不了、列表里显示英文 key（**值不会被清掉**，见 craftProcess 的保存口径）。
- *    要做到完全同源，ERP 得改读云端字典 `getProductTaxonomy`（未做，登记在交付记录里）。 */
+ * ✅ 2026-09-21 夜班**已补上这条原本登记的边界**：ERP 也改读云端字典 `getProductTaxonomy` ——
+ *    后台通过「选项维护」新增的自定义选项（value `custom_xxx`）现在会出现在下拉里，
+ *    列表也能取到中文名（不再回退成英文 key）。
+ *    做法**照抄小程序 `config/productTaxonomy.js` 的同一套形状**（代码默认值 + 云端覆写层 + 失败静默退回默认），
+ *    见下方的 `erpTaxonomyOverlay` / `ERP_CRAFT_TYPE_OPTIONS` / `ERP_CRAFT_PROCESS_OPTIONS`。
+ *    ⚠️ 上面这两份数组**必须保留**：它既是**离线兜底**，也是守卫 `check:product-fields-entry` ⑤-h 的比对基准。 */
 const CRAFT_TYPE_OPTIONS = [
     { value: 'frame', label: '相框' },
     { value: 'cloche', label: '方形玻璃罩' },
@@ -1958,12 +1963,72 @@ const CRAFT_PROCESS_OPTIONS = [
     { value: 'other', label: '其它' }
 ]
 
-/** 标签表从选项数组派生；`jewelry` 是存量数据里的历史值（= 饰品），单独兜一层 */
-const CRAFT_TYPE_LABEL_MAP = Object.assign(
+/* ── 装裱方式 / 制作工艺的**云端覆写层**（2026-09-21 夜班补的那条边界）──────────────
+ *
+ * 为什么需要它：上面两份数组是**代码默认值**；而超管在「选项维护」里新增的选项（`custom_xxx`）
+ *   只存在于云端字典（云函数 `getProductTaxonomy`）。缺这一层时 ERP 会：
+ *     ① 下拉里没有那一项（**选不了**）；② 列表的 `CRAFT_*_LABEL_MAP[值]` 取不到中文名 →
+ *     回退成英文 key（`|| scope.row.craftType`）→ 看起来像"没保存"。
+ *     （**值不会被清掉**，是界面在撒谎 —— 与产品负责人 2026-09-20 报的那次同一类。）
+ *
+ * 形状**必须**与小程序 `config/productTaxonomy.js` 一致（本地缓存 → 异步拉云端 → 失败静默退回默认），
+ *   否则就是下一处"双真源"。语义上有三处刻意对齐：
+ *   · 空/非法字典一律**退回代码默认**（绝不把界面弄空）；
+ *   · 「其它」**恒排最后**（产品负责人 2026-09-21 口径）；
+ *   · 云端标签优先，但**代码默认里的存量值仍然可解释**（如历史值 `jewelry`）。
+ */
+const erpTaxonomyOverlay = ref({ types: null, processes: null })
+
+/** 归一化 + 「其它」排最后 + 覆写优先：都在 `utils/productTaxonomyOverlay` 里（纯函数，守卫可求值验证） */
+function applyErpTaxonomy(doc) {
+    const d = doc || {}
+    erpTaxonomyOverlay.value = {
+        types: normalizeOverlayList(d.craftTypes),
+        processes: normalizeOverlayList(d.craftProcesses)
+    }
+}
+
+/** 当前生效的装裱方式（云端优先，否则代码默认）；**「其它」恒在最后** */
+const ERP_CRAFT_TYPE_OPTIONS = computed(() => resolveCraftOptions(CRAFT_TYPE_OPTIONS, erpTaxonomyOverlay.value.types))
+/** 当前生效的制作工艺（云端优先，否则代码默认）；**「其它」恒在最后** */
+const ERP_CRAFT_PROCESS_OPTIONS = computed(() => resolveCraftOptions(CRAFT_PROCESS_OPTIONS, erpTaxonomyOverlay.value.processes))
+
+/** 标签表从选项数组派生（+ 云端覆写，云端标签优先）；`jewelry` 是存量数据里的历史值（= 饰品） */
+const CRAFT_TYPE_LABEL_MAP = computed(() => Object.assign(
     Object.fromEntries(CRAFT_TYPE_OPTIONS.map((o) => [o.value, o.label])),
-    { jewelry: '饰品' }
-)
-const CRAFT_PROCESS_LABEL_MAP = Object.fromEntries(CRAFT_PROCESS_OPTIONS.map((o) => [o.value, o.label]))
+    { jewelry: '饰品' },
+    Object.fromEntries((erpTaxonomyOverlay.value.types || []).map((o) => [o.value, o.label]))
+))
+const CRAFT_PROCESS_LABEL_MAP = computed(() => Object.assign(
+    Object.fromEntries(CRAFT_PROCESS_OPTIONS.map((o) => [o.value, o.label])),
+    Object.fromEntries((erpTaxonomyOverlay.value.processes || []).map((o) => [o.value, o.label]))
+))
+
+/**
+ * 拉云端字典并应用。**失败一律退回代码默认**（超管改没改过字典都不该让编辑藏品报错）。
+ * ⚠️ 与小程序一致：云端**没有这份文档**不是"降级"而是"正常"（没人改过就该用代码默认）。
+ *
+ * ⚠️ **刻意不做 localStorage 缓存**（小程序那边有 5 分钟缓存，ERP 这里不跟）：
+ *   ① 治理：`report:data-sources:strict` 把 localStorage 视为**非权威数据源**，新增一处就要登记并解释
+ *      —— 而它在这里只买到"少一次标签闪烁"，不值得引入一个新数据源；
+ *   ② 正确性：缓存会让**另一个管理员**看到旧选项表（他改完字典、你这边还是老的），
+ *      而这一层的全部意义就是"跟着后台的字典走"。每次进 ERP 拉一次，代价是一次云函数调用。
+ */
+function loadErpTaxonomy() {
+    return Promise.resolve()
+        .then(() => callCloudFunction('getProductTaxonomy', { action: 'get' }))
+        .then((res) => {
+            const result = (res && res.result) || res || {}
+            applyErpTaxonomy(result.doc || null)
+            return result.doc || null
+        })
+        .catch((err) => {
+            // 云函数未部署 / 网络失败：退回代码默认是**正确行为**（没人改过字典本来就该用默认），
+            // 但不能"什么都不说" —— 留一条 warn 便于定位"后台改了字典但 ERP 没跟上"。
+            console.warn('[erpTaxonomy] 拉取云端选项字典失败，改用代码默认值', err)
+            return null
+        })
+}
 
 const TAXONOMY_ELIGIBLE_RE = /昆虫|植物|海洋|动物|蝴蝶|鳞翅|蝶/
 
@@ -4105,6 +4170,9 @@ onMounted(() => {
     initMobileDetection()
     // 监听自定义事件，支持组件间跳转（命名引用，确保可被移除）
     window.addEventListener('switch-tab', onSwitchTabEvent)
+    // 装裱方式/制作工艺：异步拉云端字典，把后台「选项维护」新增的选项补进下拉。
+    // 刻意 fire-and-forget：它只是把下拉补全，**不该拖慢或阻断登录与列表**；失败已在内部退回代码默认。
+    void loadErpTaxonomy()
 })
 
 onUnmounted(() => {

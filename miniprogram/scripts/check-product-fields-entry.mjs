@@ -413,8 +413,74 @@ function check (root) {
       if (!/Object\.fromEntries\(CRAFT_PROCESS_OPTIONS\.map/.test(erpSrc)) {
         problems.push('ERP 的 CRAFT_PROCESS_LABEL_MAP 不是从 CRAFT_PROCESS_OPTIONS 派生的（两份清单会再次漂移）')
       }
-      if (!/v-for="o in CRAFT_PROCESS_OPTIONS"/.test(erpSrc)) {
-        problems.push('ERP 的制作工艺下拉不是 v-for CRAFT_PROCESS_OPTIONS（手写 el-option 会漏项）')
+      /* ⚠️ 2026-09-21 夜班**纠正了这条判据的目标** —— 原判据要求的就是缺口本身：
+       *   原来这里断言「下拉必须是 `v-for CRAFT_PROCESS_OPTIONS`（**冻结常量**）」，
+       *   而冻结常量里**没有**超管在「选项维护」新增的 `custom_xxx` ⇒
+       *   "照原判据写"的结果就是：后台加了新选项，ERP 下拉里选不了（正是产品负责人报的那类"看起来没保存"）。
+       *   正确目标是：下拉走**云端覆写后的生效表** `ERP_CRAFT_*_OPTIONS`，
+       *   而生效表本身必须由「代码默认 + 云端覆写」派生（不许退化成第三份手写清单）。
+       *   **这不是放宽**：原来只钉"用了某个数组"，现在同时钉住 ①生效表的来源 ②标签表并入云端标签，
+       *   并配了三条注入证明它真的能失败（见 `--selftest`）。 */
+      for (const [re, name] of [
+        [/v-for="o in ERP_CRAFT_PROCESS_OPTIONS"/, '制作工艺'],
+        [/v-for="o in ERP_CRAFT_TYPE_OPTIONS"/, '装裱方式']
+      ]) {
+        if (!re.test(erpSrc)) {
+          problems.push(`ERP 的${name}下拉不是 v-for ERP_CRAFT_*_OPTIONS —— 用冻结常量会让「选项维护」新增的选项选不了，手写 el-option 会漏项`)
+        }
+      }
+      if (!/resolveCraftOptions\(CRAFT_TYPE_OPTIONS,\s*erpTaxonomyOverlay/.test(erpSrc)
+        || !/resolveCraftOptions\(CRAFT_PROCESS_OPTIONS,\s*erpTaxonomyOverlay/.test(erpSrc)) {
+        problems.push('ERP 的 ERP_CRAFT_*_OPTIONS 不是「云端覆写 || 代码默认」派生的（会退化成第三份手写清单）')
+      }
+      if (!/const CRAFT_TYPE_LABEL_MAP = computed\([\s\S]{0,800}?erpTaxonomyOverlay/.test(erpSrc)
+        || !/const CRAFT_PROCESS_LABEL_MAP = computed\([\s\S]{0,800}?erpTaxonomyOverlay/.test(erpSrc)) {
+        problems.push('ERP 的 CRAFT_*_LABEL_MAP 没有并入云端标签 —— custom_xxx 在列表里会显示英文 key（看着像没保存）')
+      }
+
+      /* ── ⑤-h-2 **行为**断言（不只是结构）：求值 ERP 的纯函数模块 ─────────────────────
+       * 为什么必须求值：结构断言只能证明"看起来接对了"——本仓反复吃过"结构对、行为错"的亏
+       *   （错题本 E7：判据自身会失效）。把纯函数从 5300 行的 `App.vue` 里抽出来，
+       *   就是为了这里能**真的跑**：null 退回默认、脏项被丢、覆写优先、`other` 恒在最后。
+       * 求值方式：模块是 ESM，而本脚本 `--root` 指向临时目录、**不能 import 仓库外路径**，
+       *   故剥掉 `export ` 前缀后用 `Function` 求值（与上面测小程序 `config/productTaxonomy.js`
+       *   同一思路，那份是 CommonJS，直接给 module/exports）。 */
+      {
+        const utilPath = process.env.PRODUCT_FIELDS_ERP_UTIL || join(MP_DEFAULT, '..', 'admin/src/utils/productTaxonomyOverlay.js')
+        let utilSrc = ''
+        try { utilSrc = readFileSync(utilPath, 'utf8') } catch (e) { utilSrc = '' }
+        if (!utilSrc) {
+          problems.push('读不到 admin/src/utils/productTaxonomyOverlay.js —— ERP 的覆写语义无法求值核对')
+        } else {
+          let mod = null
+          try {
+            const body = utilSrc.replace(/^export\s+/gm, '')
+            mod = new Function(body + '\nreturn { normalizeOverlayList, otherLast, resolveCraftOptions }')()
+          } catch (e) { mod = null }
+          if (!mod) {
+            problems.push('admin/src/utils/productTaxonomyOverlay.js 求值失败（导出名被改名？）')
+          } else {
+            const base = [{ value: 'frame', label: '相框' }, { value: 'other', label: '其它' }]
+            // 覆写里刻意塞三种脏数据：空 value、重复 other、与 base 重名的 frame
+            const overlay = [
+              { value: 'custom_1', label: '玻璃瓶' },
+              { value: 'other', label: '其它' },
+              { value: 'frame', label: '相框' },
+              { value: '', label: '空 value（必须丢）' }
+            ]
+            const resolved = mod.resolveCraftOptions(base, mod.normalizeOverlayList(overlay))
+            const values = resolved.map((o) => o.value).join(',')
+            if (values !== 'custom_1,frame,other') {
+              problems.push(`ERP 云端覆写解析不对：期望 custom_1,frame,other，实得 ${values}（覆写优先/丢脏项/other 最后，三者之一坏了）`)
+            }
+            if (mod.normalizeOverlayList([]) !== null) problems.push('ERP 空覆写没有退回 null（会把下拉弄空）')
+            if (mod.normalizeOverlayList(null) !== null) problems.push('ERP 非数组覆写没有退回 null')
+            const fallback = mod.resolveCraftOptions(base, mod.normalizeOverlayList(null)).map((o) => o.value).join(',')
+            if (fallback !== 'frame,other') problems.push(`ERP 无覆写时没有退回代码默认：实得 ${fallback}`)
+            const moved = mod.otherLast([{ value: 'other', label: '其它' }, { value: 'frame', label: '相框' }]).map((o) => o.value).join(',')
+            if (moved !== 'frame,other') problems.push('ERP 「其它」没有恒排最后（产品负责人 2026-09-21 口径）')
+          }
+        }
       }
     }
   }
@@ -630,6 +696,46 @@ function selftest () {
         expect: /编辑藏品里看到的就是老字段/
       },
       {
+        // 这条注入就是「原判据」的样子：下拉退回冻结常量 —— 后台新增的 custom_xxx 会选不了
+        name: 'ERP 下拉退回冻结常量（「选项维护」新增的选项选不了）',
+        erp: (s) => s.replace('v-for="o in ERP_CRAFT_PROCESS_OPTIONS"', 'v-for="o in CRAFT_PROCESS_OPTIONS"'),
+        expect: /不是 v-for ERP_CRAFT_\*_OPTIONS/
+      },
+      {
+        name: 'ERP 生效表丢掉云端覆写（退化成第三份手写清单）',
+        erp: (s) => s.replace(
+          'const ERP_CRAFT_PROCESS_OPTIONS = computed(() => resolveCraftOptions(CRAFT_PROCESS_OPTIONS, erpTaxonomyOverlay.value.processes))',
+          'const ERP_CRAFT_PROCESS_OPTIONS = computed(() => resolveCraftOptions(CRAFT_PROCESS_OPTIONS, null))'
+        ),
+        expect: /不是「云端覆写 \|\| 代码默认」派生的/
+      },
+      {
+        // 求值型注入：**行为**坏了（不是结构）—— 覆写不再优先
+        name: 'ERP 覆写层不再优先（后台新增的选项被代码默认顶掉）',
+        erpUtil: (s) => s.replace(
+          '    return otherLast(overlayList || base)',
+          '    return otherLast(base)'
+        ),
+        expect: /ERP 云端覆写解析不对/
+      },
+      {
+        // 求值型注入：`other` 不再排最后
+        name: 'ERP 「其它」不再恒排最后（产品负责人 2026-09-21 口径被破坏）',
+        erpUtil: (s) => s.replace(
+          '    const rest = arr.filter((o) => !o || String(o.value) !== \'other\')',
+          '    const rest = arr.filter((o) => !!o)'
+        ),
+        expect: /「其它」没有恒排最后/
+      },
+      {
+        name: 'ERP 标签表不并入云端标签（custom_xxx 显示英文 key）',
+        erp: (s) => s.replace(
+          '    Object.fromEntries((erpTaxonomyOverlay.value.processes || []).map((o) => [o.value, o.label]))\n',
+          ''
+        ),
+        expect: /没有并入云端标签/
+      },
+      {
         name: '云函数别名表退回手写 4 项（标记「针插」写库变空串 —— 产品负责人报的那个缺陷）',
         file: REL.cloudTaxonomy,
         mutate: (s) => s.replace(
@@ -705,19 +811,32 @@ function selftest () {
       }
     ]
     for (const inj of injections) {
-      // `erp:` 型注入：ERP 文件不在小程序目录下（拷进 tmp 会越出隔离区），
-      // 所以写到 tmp 下的独立副本、用 PRODUCT_FIELDS_ERP 指过去。
-      if (inj.erp) {
-        const erpAbs = join(MP_DEFAULT, '..', 'admin/src/App.vue')
-        const erpCopy = join(tmp, 'admin-App.vue')
-        writeFileSync(erpCopy, inj.erp(readFileSync(erpAbs, 'utf8')))
+      // `erp:` / `erpUtil:` 型注入：ERP 文件不在小程序目录下（拷进 tmp 会越出隔离区），
+      // 所以写到 tmp 下的独立副本、用 `PRODUCT_FIELDS_ERP*` 指过去。
+      if (inj.erp || inj.erpUtil) {
+        const env = Object.assign({}, process.env)
+        const copies = []
+        if (inj.erp) {
+          const erpAbs = join(MP_DEFAULT, '..', 'admin/src/App.vue')
+          const erpCopy = join(tmp, 'admin-App.vue')
+          writeFileSync(erpCopy, inj.erp(readFileSync(erpAbs, 'utf8')))
+          env.PRODUCT_FIELDS_ERP = erpCopy
+          copies.push(erpCopy)
+        }
+        if (inj.erpUtil) {
+          const utilAbs = join(MP_DEFAULT, '..', 'admin/src/utils/productTaxonomyOverlay.js')
+          const utilCopy = join(tmp, 'admin-productTaxonomyOverlay.js')
+          writeFileSync(utilCopy, inj.erpUtil(readFileSync(utilAbs, 'utf8')))
+          env.PRODUCT_FIELDS_ERP_UTIL = utilCopy
+          copies.push(utilCopy)
+        }
         const resErp = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--root', tmp], {
-          encoding: 'utf8', env: Object.assign({}, process.env, { PRODUCT_FIELDS_ERP: erpCopy })
+          encoding: 'utf8', env
         })
         const outErp = `${resErp.stdout || ''}${resErp.stderr || ''}`
         const hitErp = resErp.status !== 0 && inj.expect.test(outErp)
         t(`${inj.name} → 被守卫拦下`, hitErp, hitErp ? '' : outErp.split('\n').filter((l) => l.includes('✗')).slice(0, 3).join(' | '))
-        try { rmSync(erpCopy, { force: true }) } catch (e) { /* ignore */ }
+        for (const c of copies) { try { rmSync(c, { force: true }) } catch (e) { /* ignore */ } }
         continue
       }
       copy()
