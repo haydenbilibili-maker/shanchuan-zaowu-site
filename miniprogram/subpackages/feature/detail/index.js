@@ -1257,11 +1257,11 @@ Page(withAppModal({
           // 目录原价用于 75% 地板展示；免邮按标价估算
           originalPrice: listPrice,
           shippingBaseAmount: listPrice,
-          // 免邮券省额只在「本单确定含收费类装裱方式」时才 > 0（v2：其余装裱方式全部免邮）。
-          // 详情页只有这一件商品的上下文 → 就按它判；判不确定时不声称能省（helper 缺省即 false）
-          orderChargeable: typeof shippingConfig.isOrderChargeable === 'function'
-            ? shippingConfig.isOrderChargeable(this.data.product)
-            : false
+          // 免邮券省额按「本单适用门槛」分档（裁决 48）：含相框/玻璃罩→299 档（券最多省 ¥18）；
+          // 其它类型→39 档（券最多省 ¥10）。详情页只有这一件商品的上下文 → 就按它算门槛。
+          shippingThreshold: typeof shippingConfig.resolveThreshold === 'function'
+            ? shippingConfig.resolveThreshold(this.data.product)
+            : 0
         }
       });
       const result = res.result || {};

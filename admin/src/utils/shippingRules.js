@@ -89,9 +89,12 @@ export function getDefaultShippingConfig() {
     defaultCarrier: '顺丰速运',
     flatFee: 18,
     freeShippingThreshold: 299,
+    /** 其它类型的全场包邮门槛（裁决 48） */
+    accessoryFreeThreshold: 39,
+    /** 其它类型的单次运费（裁决 48：¥10） */
+    accessoryFlatFee: 10,
     chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
     // —— 旧模型字段（仅作兼容镜像；判定逻辑不读，见蓝图 §19）——
-    accessoryFreeThreshold: 0,
     specimenFreeThreshold: 299,
     mixCartStrategy: MIX_SPECIMEN_WINS,
     freeShippingCampaign: {
@@ -120,6 +123,17 @@ export function normalizeShippingConfig(raw) {
     src.flatFee != null ? src.flatFee : src.shippingFee,
     base.flatFee
   )
+  // 其它类型门槛/费率（裁决 48）
+  const freeOther = Math.max(0, toNumber(
+    src.accessoryFreeThreshold != null ? src.accessoryFreeThreshold : thresholds.accessory,
+    base.accessoryFreeThreshold
+  ))
+  const feeOther = Math.max(0, toNumber(
+    src.accessoryFlatFee != null
+      ? src.accessoryFlatFee
+      : (src.accessoryShippingFee != null ? src.accessoryShippingFee : (src.fees && src.fees.accessory)),
+    base.accessoryFlatFee
+  ))
   const carrier = String(src.defaultCarrier || src.carrier || base.defaultCarrier).trim() || base.defaultCarrier
   let mix = String(src.mixCartStrategy || base.mixCartStrategy).trim()
   if (!VALID_MIX_STRATEGIES.includes(mix)) mix = base.mixCartStrategy
@@ -138,9 +152,10 @@ export function normalizeShippingConfig(raw) {
     defaultCarrier: carrier,
     flatFee: Math.max(0, flatFee),
     freeShippingThreshold: free,
+    accessoryFreeThreshold: freeOther,
+    accessoryFlatFee: feeOther,
     chargedCraftTypes: charged,
-    // 旧字段镜像：保持自洽，避免 ERP 其他读者拿到旧值
-    accessoryFreeThreshold: 0,
+    // 兼容镜像：保持自洽，避免 ERP 其他读者拿到旧值
     specimenFreeThreshold: free,
     mixCartStrategy: mix,
     freeShippingCampaign: {
@@ -163,6 +178,7 @@ export function describeShippingRule(config) {
     return `${cfg.defaultCarrier} · ${cfg.freeShippingCampaign.label}（全场免邮）`
   }
   const charged = chargedCraftTypesLabel(cfg.chargedCraftTypes)
-  return `${cfg.defaultCarrier} · ${charged}类满 ¥${formatAmount(cfg.freeShippingThreshold)} 免邮，`
-    + `否则运费 ¥${formatAmount(cfg.flatFee)}/单（其余装裱方式免邮）`
+  return `${cfg.defaultCarrier} · ${charged}类满 ¥${formatAmount(cfg.freeShippingThreshold)} 免邮`
+    + `（否则 ¥${formatAmount(cfg.flatFee)}/单）；其余类型满 ¥${formatAmount(cfg.accessoryFreeThreshold)} 免邮`
+    + `（否则 ¥${formatAmount(cfg.accessoryFlatFee)}/单）`
 }

@@ -12,11 +12,13 @@ const _ = db.command
 // defaults；运行时由 shipping_rules 覆盖
 let FREE_SHIPPING_THRESHOLD = 500
 let DEFAULT_SHIPPING_FEE = 18
+let ACCESSORY_SHIPPING_FEE = 10
 let FREE_SHIPPING_CAMPAIGN_ENABLED = false
 
 async function loadShippingRules() {
   FREE_SHIPPING_THRESHOLD = 500
   DEFAULT_SHIPPING_FEE = 18
+  ACCESSORY_SHIPPING_FEE = 10
   FREE_SHIPPING_CAMPAIGN_ENABLED = false
   try {
     const res = await db.collection('shipping_rules')
@@ -35,6 +37,10 @@ async function loadShippingRules() {
     if (!Number.isFinite(FREE_SHIPPING_THRESHOLD)) FREE_SHIPPING_THRESHOLD = 500
     DEFAULT_SHIPPING_FEE = Number(row.flatFee != null ? row.flatFee : row.shippingFee)
     if (!Number.isFinite(DEFAULT_SHIPPING_FEE)) DEFAULT_SHIPPING_FEE = 18
+    ACCESSORY_SHIPPING_FEE = Number(
+      row.accessoryFlatFee != null ? row.accessoryFlatFee : row.accessoryShippingFee
+    )
+    if (!Number.isFinite(ACCESSORY_SHIPPING_FEE)) ACCESSORY_SHIPPING_FEE = 10
     FREE_SHIPPING_CAMPAIGN_ENABLED = !!(row.freeShippingCampaign && row.freeShippingCampaign.enabled === true)
   } catch (e) {
     console.warn('getProductCoupons shipping_rules fallback:', e.message)
@@ -71,23 +77,25 @@ function parseMinSpend(coupon) {
 }
 
 /**
- * 免邮券能省多少 —— **只在「本单确定含收费类装裱方式」时才有得省**。
+ * 免邮券能省多少 —— 取决于「本单适用门槛」落在哪一档（裁决 48 起是两档）：
+ *   含相框/玻璃罩 → 门槛 ¥299、券最多省 ¥18
+ *   其它类型       → 门槛 ¥39、券最多省 ¥10
  *
- * 为什么必须看 orderChargeable 而不能只看金额（2026-09-19 修）：
- *   运费 v2 起，收费类（相框/三种玻璃罩）之外**全部免邮**。于是「金额 < 门槛」不再等于
- *   「会被收运费」—— 一件 ¥250 的挂件/未标注藏品本来就免邮，免邮券对它省 **0**，
- *   而旧实现只看金额会报「省 ¥18」→ 券列表虚高、会员可能为省 ¥18 选掉一张更好的券。
+ * 为什么必须由调用方传 `shippingThreshold` 而不是只看金额：
+ *   「金额 < 某门槛」不再等于「会被收运费」—— ¥250 的挂件单本来就免邮（≥39），
+ *   免邮券对它省 0；而旧实现只看金额会报「省 ¥18」→ 券列表虚高、还会把免邮券推荐成"最优券"。
  *
- * ⚠️ `orderChargeable !== true` 一律 0（**缺参也不报**）：未知就不声称能省，宁可少报不虚高。
- *    真实收多少钱由 `makeOrder` 服务端按 craftType 独立算，与这里的展示估算无关。
+ * ⚠️ 门槛未知（老客户端 / 漏参 / 0）→ 一律 0：不声称能省，宁可少报不虚高。
+ *    真实收多少钱由 `makeOrder` 服务端按 craftType 独立算，与此展示估算无关。
  */
-function estimateFreeShippingSave(goodsAmount, orderChargeable) {
+function estimateFreeShippingSave(goodsAmount, shippingThreshold) {
   if (FREE_SHIPPING_CAMPAIGN_ENABLED) return 0
   const amount = parseFloat(goodsAmount) || 0
   if (amount <= 0) return 0
-  if (amount >= FREE_SHIPPING_THRESHOLD) return 0
-  if (orderChargeable !== true) return 0
-  return DEFAULT_SHIPPING_FEE
+  const threshold = Number(shippingThreshold)
+  if (!Number.isFinite(threshold) || threshold <= 0) return 0
+  if (amount >= threshold) return 0
+  return threshold >= FREE_SHIPPING_THRESHOLD ? DEFAULT_SHIPPING_FEE : ACCESSORY_SHIPPING_FEE
 }
 
 function formatMoneyLabel(amount) {
@@ -138,9 +146,9 @@ function mapHeldCoupon(coupon, extra = {}) {
  * 展示「可省」：与 makeOrder 75% 地板对齐，避免详情页夸大优惠
  * @param {number} goodsPrice 现价（详情页通常已含会员展示价）
  * @param {number} originalPrice 目录原价；缺省用 goodsPrice
- * @param {boolean} orderChargeable 本单是否确定含收费类装裱方式（免邮券省额的唯一前提）
+ * @param {number} shippingThreshold 本单适用的包邮门槛（编码了档位与费率）
  */
-function calcSaved(coupon, goodsPrice, shippingBaseAmount, originalPrice, orderChargeable) {
+function calcSaved(coupon, goodsPrice, shippingBaseAmount, originalPrice, shippingThreshold) {
   const type = coupon.type || 'cash'
   const value = coupon.value || 0
   const original = Number.isFinite(originalPrice) && originalPrice > 0 ? originalPrice : goodsPrice
@@ -156,7 +164,7 @@ function calcSaved(coupon, goodsPrice, shippingBaseAmount, originalPrice, orderC
     case 'freeShipping':
       return estimateFreeShippingSave(
         shippingBaseAmount != null ? shippingBaseAmount : goodsPrice,
-        orderChargeable
+        shippingThreshold
       )
     default:
       return Math.min(value, cappedMax)
@@ -175,8 +183,9 @@ exports.main = async (event) => {
   const shippingBaseAmount = shippingBaseRaw != null && shippingBaseRaw !== ''
     ? parseFloat(shippingBaseRaw)
     : productPrice
-  // 免邮券省额的唯一前提：本单确定含收费类装裱方式（详情页由商品 craftType 判定后传入）
-  const orderChargeable = event.orderChargeable === true
+  // 本单适用的包邮门槛（客户端用 resolveThreshold 算好传入：299=含收费类档 / 39=其它档）
+  // 门槛为 0/缺失 → 券省额一律不报（见 estimateFreeShippingSave 的注释）
+  const shippingThreshold = Number(event.shippingThreshold)
   const now = new Date()
 
   try {
@@ -239,7 +248,7 @@ exports.main = async (event) => {
         const meetsThreshold = productPrice > 0 && productPrice >= minSpend
 
         if (onlineOk && meetsThreshold) {
-          const saved = calcSaved(coupon, productPrice, shippingBaseAmount, originalPrice, orderChargeable)
+          const saved = calcSaved(coupon, productPrice, shippingBaseAmount, originalPrice, shippingThreshold)
           const mapped = mapHeldCoupon(coupon, {
             usable: true,
             savedAmount: Math.round(saved * 100) / 100

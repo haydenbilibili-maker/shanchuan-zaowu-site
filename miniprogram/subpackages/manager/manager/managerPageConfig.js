@@ -1457,6 +1457,9 @@ const managerPageConfig = {
       defaultCarrier: '顺丰速运',
       flatFee: '18.00',
       freeShippingThreshold: '299.00',
+      // 其它类型档（裁决 48）：相框/玻璃罩之外的全部类型
+      accessoryFlatFee: '10.00',
+      accessoryFreeThreshold: '39.00',
       chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
       campaignEnabled: false,
       campaignLabel: '当前全场免邮'
@@ -10358,6 +10361,8 @@ bindSubCatChange(e) {
         defaultCarrier: cfg.defaultCarrier || cfg.carrier || '顺丰速运',
         flatFee: money(cfg.flatFee, 18),
         freeShippingThreshold: money(freeThreshold, 299),
+        accessoryFlatFee: money(cfg.accessoryFlatFee, 10),
+        accessoryFreeThreshold: money(cfg.accessoryFreeThreshold, 39),
         chargedCraftTypes: charged.slice(),
         campaignEnabled: !!(campaign && campaign.enabled),
         campaignLabel: (campaign && campaign.label) || '当前全场免邮'
@@ -10389,7 +10394,10 @@ bindSubCatChange(e) {
     const chargedLabel = charged.map((k) => CRAFT_TYPE_LABELS[k] || k).join('/') || '（未选）'
     const free = storeLedger.formatMoney(f.freeShippingThreshold)
     const fee = storeLedger.formatMoney(f.flatFee)
-    return `${carrier} · ${chargedLabel}类满 ¥${free} 免邮，否则运费 ¥${fee}/单（其余装裱方式免邮）`
+    const feeOther = storeLedger.formatMoney(f.accessoryFlatFee)
+    const freeOther = storeLedger.formatMoney(f.accessoryFreeThreshold)
+    return `${carrier} · ${chargedLabel}类满 ¥${free} 免邮（否则 ¥${fee}/单）；`
+      + `其余类型满 ¥${freeOther} 免邮（否则 ¥${feeOther}/单）`
   },
 
   onShippingFieldInput(e) {
@@ -10439,6 +10447,8 @@ bindSubCatChange(e) {
             defaultCarrier: form.defaultCarrier,
             flatFee: Number(form.flatFee),
             freeShippingThreshold: Number(form.freeShippingThreshold),
+            accessoryFlatFee: Number(form.accessoryFlatFee),
+            accessoryFreeThreshold: Number(form.accessoryFreeThreshold),
             chargedCraftTypes: charged,
             freeShippingCampaign: {
               enabled: !!form.campaignEnabled,

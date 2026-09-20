@@ -1,6 +1,6 @@
 {
   "_note": "线上 shipping_rules 真实值快照；由 check-shipping-rules.cjs --update-snapshot 生成。代码默认值改了而云端没改时，本文件会与代码对不上 → 守卫红。",
-  "ruleId": "shipping_default_v2",
+  "ruleId": "shipping_default_v3",
   "name": "商城运费规则",
   "status": "active",
   "priority": 100,
@@ -13,7 +13,8 @@
     "cloche_round",
     "cloche_cylinder"
   ],
-  "accessoryFreeThreshold": 0,
+  "accessoryFreeThreshold": 39,
+  "accessoryFlatFee": 10,
   "specimenFreeThreshold": 299,
   "mixCartStrategy": "specimen_wins",
   "freeShippingCampaign": {

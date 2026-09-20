@@ -28,9 +28,11 @@ const WRITABLE_FIELDS = [
   'defaultCarrier',
   'flatFee',
   'freeShippingThreshold',
-  'chargedCraftTypes',
-  // —— 旧模型字段（兼容镜像；新界面不再写，但保留以兼容老客户端/老 ERP 页面）——
+  // 其它类型的门槛与费率（裁决 48：¥39 / ¥10）—— 已是正式字段，两个后台界面都可改
   'accessoryFreeThreshold',
+  'accessoryFlatFee',
+  'chargedCraftTypes',
+  // —— 兼容镜像（保留以兼容老客户端/老 ERP 页面）——
   'specimenFreeThreshold',
   'mixCartStrategy',
   'freeShippingCampaign'
@@ -104,7 +106,7 @@ async function saveConfig(event, openid) {
       .map((v) => String(v == null ? '' : v).trim().toLowerCase())
       .filter(Boolean)
     if (!cleaned.length) {
-      return { success: false, msg: '至少保留一种收费装裱方式（全不收费会让整店免邮）' }
+      return { success: false, msg: '至少保留一种收费装裱方式（清空会让所有订单都掉进「其它类型」档 ¥39/¥10）' }
     }
     const unknown = cleaned.filter((k) => VALID_CRAFT_TYPES.indexOf(k) === -1)
     if (unknown.length) {

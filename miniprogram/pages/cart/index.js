@@ -662,13 +662,13 @@ Page(withAppModal({
           totalPrice: vipTotal > 0 ? vipTotal : originalPrice,
           shippingBaseAmount: originalPrice,
           originalPrice,
-          // 免邮券省额只在「本单确定含收费类装裱方式」时才 > 0（v2：其余装裱方式全部免邮）。
-          // 按**已勾选**商品的 craftType/shippingKind 判，与 calculateTotal 的运费口径同源
-          orderChargeable: typeof shippingConfig.isOrderChargeable === 'function'
-            ? shippingConfig.isOrderChargeable(
+          // 免邮券省额按「本单适用门槛」分档（裁决 48）：含相框/玻璃罩→299 档；其它类型→39 档。
+          // 按**已勾选**商品算门槛，与 calculateTotal 的运费口径同源
+          shippingThreshold: typeof shippingConfig.resolveThreshold === 'function'
+            ? shippingConfig.resolveThreshold(
                 this.data.cartList.filter(i => i.selected && i.stock > 0 && !i.invalid && i.productId)
               )
-            : false
+            : 0
         }
       })
       

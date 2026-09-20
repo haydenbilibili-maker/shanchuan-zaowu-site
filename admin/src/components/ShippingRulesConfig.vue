@@ -33,7 +33,15 @@
           </el-form-item>
           <el-form-item label="包邮门槛（全场，元）">
             <el-input-number v-model="form.freeShippingThreshold" :min="0" :step="10" :precision="2" />
-            <span class="hint">默认 299，按整单优惠前商品合计判定</span>
+            <span class="hint">默认 299，按整单优惠前商品合计判定。含相框/玻璃罩的单都按这一档</span>
+          </el-form-item>
+          <el-form-item label="其它类型运费（元/单）">
+            <el-input-number v-model="form.accessoryFlatFee" :min="0" :step="1" :precision="2" />
+            <span class="hint">默认 10。相框/玻璃罩之外的全部类型（含未标注装裱方式）</span>
+          </el-form-item>
+          <el-form-item label="其它类型包邮门槛（全场，元）">
+            <el-input-number v-model="form.accessoryFreeThreshold" :min="0" :step="1" :precision="2" />
+            <span class="hint">默认 39。混合车（含相框/玻璃罩）仍按上面那一档算</span>
           </el-form-item>
           <el-form-item label="按装裱方式收费">
             <el-checkbox-group v-model="form.chargedCraftTypes">
@@ -192,7 +200,7 @@ async function saveRules() {
   // 空清单 = 整店免邮，属危险配置：前端先拦（云端 getShippingRules 也会拒）
   const charged = normalizeShippingConfig(form).chargedCraftTypes
   if (!charged.length) {
-    ElMessage.warning('至少保留一种收费装裱方式（全不收费会让整店免邮）')
+    ElMessage.warning('至少保留一种收费装裱方式（清空会让所有订单都掉进「其它类型」档 ¥39/¥10）')
     return
   }
   saving.value = true

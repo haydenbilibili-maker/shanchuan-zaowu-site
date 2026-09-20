@@ -1352,3 +1352,88 @@ shipping_rules = {
 （1 元级、对顾客有利）；`render-cart-checkout-preview.mjs` 是纯截图夹具，内部文案「藏品满 ¥500 免运费」未改。
 
 
+
+---
+
+### 19.8 裁决 48：**两档运费**（产品负责人 2026-09-20）
+
+> **本条取代裁决 41b / 41c 中「其余（含未标注）一律免邮」的部分**；裁决 40（只看 `craftType`）与
+> 收费类清单不变。上一版的字段模型（v2）与实测账单见 §19.5–§19.7。
+
+| # | 问题 | 裁决 |
+|---|---|---|
+| 48 | 其它类型怎么收 | **其它类型（含未标注 `craftType`）→ 全场满 ¥39 免邮，未满收 ¥10/单** |
+| 48-A | **混合车**（含相框/玻璃罩 + 其它，全场 <¥299） | **按收费类那一档**：全场满 ¥299 才免邮，否则 **¥18/单**（"其它部分满 ¥39"不能救混合车） |
+| — | 收费类（相框/三种玻璃罩） | **保持不变**：全场满 ¥299 免邮，未满 ¥18/单 |
+| — | 空车 | ¥0（没有商品就没有运费） |
+| — | 未标注 `craftType` 的 86 件 | 归入「其它类型」⇒ 也需满 ¥39（不再是"一律免邮"） |
+
+**字段模型 v3**（`ruleId: shipping_default_v3`）：
+
+```
+shipping_rules = {
+  ruleId: 'shipping_default_v3',
+  flatFee: 18,                    // 收费类单次运费
+  freeShippingThreshold: 299,     // 收费类全场门槛
+  accessoryFlatFee: 10,           // ★新增：其它类型单次运费
+  accessoryFreeThreshold: 39,     // ★新增：其它类型全场门槛
+  chargedCraftTypes: ['frame','cloche','cloche_round','cloche_cylinder'],
+  // 兼容镜像（与真值同值；老读者若读它们也拿到新口径）
+  specimenFreeThreshold: 299,
+  thresholds: { accessory: 39, specimen: 299 },
+  mixCartStrategy: 'specimen_wins'
+}
+```
+
+**判定不变量**：门槛与费率必须**同一分派结果** —— 否则会出现「按 ¥39 判免邮、却按 ¥18 收」。
+故 `resolveThreshold()` 与新增的 `resolveFee()` 走同一个 `resolveShippingKind()` 分支；
+`calcShippingFee()` 用 `resolveFee()` 而不是固定的 `shippingFee`。
+
+**落点（11 处，缺一处就是"页面显示 ≠ 实收"或"后台一保存就回退"）**：
+
+| # | 位置 | 改动 |
+|---|---|---|
+| 1 | 云端 `shipping_rules` 文档 | `node miniprogram/scripts/migrate-shipping-rules-v3.cjs`（幂等，改前/改后读回） |
+| 2 | `miniprogram/config/shipping.js` | 两档默认值 + `resolveFee()` + 文案 |
+| 3 | `miniprogram/cloudfunctions/makeOrder/shipping.js` | 服务端权威同源（`state.accessoryFreeThreshold/accessoryFlatFee` + `resolveFee`） |
+| 4 | `miniprogram/cloudfunctions/getShippingRules/defaults.js` | 字段模型 + `normalizeConfig` + `toClientShape` 镜像 |
+| 5 | `miniprogram/cloudfunctions/getShippingRules/index.js` | 可写字段加 `accessoryFlatFee` |
+| 6 | 小程序超管 curTab 15（`managerPageConfig.js` + `workspace/_subviews.wxml`） | 「其它类型运费/门槛」两个输入框 + 摘要文案两档 |
+| 7 | ERP `admin/src/utils/shippingRules.js` + `components/ShippingRulesConfig.vue` | 同上（ERP 若不改会用旧镜像把云端覆盖回 0） |
+| 8 | `miniprogram/cloudfunctions/getProductCoupons/index.js` | 免邮券省额按「本单适用门槛」分档取费率 |
+| 9 | `miniprogram/cloudfunctions/getBestCoupon/index.js` | 同上 |
+| 10 | 三个调用点（详情页 / 确认页 / 购物车） | 传 `shippingThreshold: resolveThreshold(items)` 而不是旧的布尔 `orderChargeable` |
+| 11 | `miniprogram/utils/checkoutAddon.js` | 免邮凑单层自动跟随（用 `resolveThreshold` + `calcShippingFee`，本次未改代码） |
+
+**试算矩阵（真实执行，C 端 = 服务端 = 期望；`categoryType` 一律写 `specimen` 以钉住"craftType 判定必须在短路之前"）**：
+
+| 购物车 | 期望 | 档 |
+|---|---|---|
+| ¥38 挂件（差 1 元） | ¥10 | 其它 |
+| ¥39 挂件（刚好满） | ¥0 | 其它 |
+| ¥20 未标注 / ¥20 造景 | ¥10 | 其它 |
+| ¥250 挂件 / ¥250 蝶翅画 / ¥250 冰箱贴 | ¥0 | 其它 |
+| ¥10 相框 / ¥298 相框 | ¥18 | 收费 |
+| ¥299 相框 / ¥320 相框 | ¥0 | 收费 |
+| ¥250 方形/圆形/圆柱玻璃罩 | ¥18 | 收费 |
+| **★¥10 相框 + ¥50 挂件（全场 ¥60）** | **¥18** | 收费（48-A） |
+| ★¥10 相框 + ¥300 挂件（全场 ¥310） | ¥0 | 收费 |
+| ★¥20 挂件 ×2（全场 ¥40） | ¥0 | 其它 |
+| 显式 `specimen` 的挂件 ¥20 / 显式 `accessory` 的相框 ¥20 | ¥18 / ¥10 | 按显式标注覆盖 |
+
+**证据（2026-09-20 实测）**：
+
+- 云端读回：`tcb fn invoke getShippingRules --params '{"action":"get"}'` →
+  `ruleId=shipping_default_v3 / flatFee=18 / freeShippingThreshold=299 / accessoryFreeThreshold=39 /
+  accessoryFlatFee=10 / thresholds={accessory:39,specimen:299}`，
+  `ruleText="顺丰速运 · 相框/方形玻璃罩/圆形玻璃罩/圆柱形玻璃罩类满 ¥299.00 免邮（否则 ¥18.00/单）；其余类型满 ¥39.00 免邮（否则 ¥10.00/单）"`。
+- 部署 `makeOrder` / `getShippingRules` / `getProductCoupons` / `getBestCoupon` 后
+  `tcb fn code download` 与仓库 **5 个文件逐字节一致**；`deploy-drifted.sh` 复比「线上与仓库已一致」。
+- 守卫 `check:shipping-rules` **164 项通过**（+试算矩阵两档行 +券省额 7×2 例），`--selftest` **8 例注入全部检出**
+  （含「门槛闸被删」「调用点不传门槛」「云端快照与代码不一致」）。
+- 集成官独立复核：自写 22 行试算（含混合车、显式标注覆盖、空车）C 端 = 服务端 = 期望 **22/22**。
+- 过程中抓到并修掉的两个真缺陷：① ERP `getDefaultShippingConfig()` 里残留的旧镜像行
+  `accessoryFreeThreshold: 0` **在同对象字面量中覆盖**了新值（后者胜）；② `toClientShape()` 的
+  `thresholds.accessory` 写死 0（老读者会以为"其它类型永远免邮"）。
+
+**⬜ 仍未做**：双仓同步（由集成官执行）；微信开发者工具人工验收。

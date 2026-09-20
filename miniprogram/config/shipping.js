@@ -58,18 +58,21 @@ const shipping = {
   carrier: '顺丰速运',
   shippingFee: 18,
   flatFee: 18,
-  /** 全场包邮门槛（仅当订单含收费类时有意义） */
+  /** 收费类（相框/玻璃罩）的全场包邮门槛 */
   freeShippingThreshold: 299,
+  /** 其它类型（含未标注装裱方式）的全场包邮门槛（裁决 48） */
+  accessoryFreeThreshold: 39,
+  /** 其它类型的单次运费（裁决 48：¥10，与收费类的 ¥18 不同） */
+  accessoryFlatFee: 10,
   /** 收费类装裱方式清单（可被云端覆盖） */
   chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
   /**
-   * 以下字段是旧模型的兼容镜像，**判定逻辑不再读取它们**：
-   * 只用于 `THRESHOLDS` / `FREE_SHIPPING_THRESHOLD` 等既有导出不被解构出 undefined。
+   * 兼容镜像（判定逻辑读上面的 `accessoryFreeThreshold`）：
+   * `specimenFreeThreshold` 是收费类门槛的旧名，保持同值以免仍读它的调用方拿到旧值。
    */
-  accessoryFreeThreshold: 0,
   specimenFreeThreshold: 299,
   thresholds: {
-    accessory: 0,
+    accessory: 39,
     specimen: 299
   },
   mixCartStrategy: MIX_SPECIMEN_WINS,
@@ -142,6 +145,18 @@ function applyRemoteConfig(raw) {
     shipping.freeShippingThreshold
   ))
 
+  // 其它类型门槛/费率（裁决 48）：与收费类各自独立，都跟云端走
+  const freeOther = Math.max(0, toNumber(
+    raw.accessoryFreeThreshold != null ? raw.accessoryFreeThreshold : thresholds.accessory,
+    shipping.accessoryFreeThreshold
+  ))
+  const feeOther = Math.max(0, toNumber(
+    raw.accessoryFlatFee != null
+      ? raw.accessoryFlatFee
+      : (raw.accessoryShippingFee != null ? raw.accessoryShippingFee : (raw.fees && raw.fees.accessory)),
+    shipping.accessoryFlatFee
+  ))
+
   const charged = normalizeChargedCraftTypes(raw.chargedCraftTypes)
 
   shipping.defaultCarrier = carrier
@@ -149,10 +164,11 @@ function applyRemoteConfig(raw) {
   shipping.shippingFee = flatFee
   shipping.flatFee = flatFee
   shipping.freeShippingThreshold = free
+  shipping.accessoryFreeThreshold = freeOther
+  shipping.accessoryFlatFee = feeOther
   // 旧字段镜像：保持自洽，避免仍读它们的代码（导出常量 / 历史页面）拿到旧值
-  shipping.accessoryFreeThreshold = 0
   shipping.specimenFreeThreshold = free
-  shipping.thresholds.accessory = 0
+  shipping.thresholds.accessory = freeOther
   shipping.thresholds.specimen = free
   if (charged && charged.length) shipping.chargedCraftTypes = charged
 
@@ -255,6 +271,7 @@ function resolveShippingKind(product) {
  */
 function resolveThreshold(context) {
   const free = shipping.freeShippingThreshold
+  const freeOther = shipping.accessoryFreeThreshold
 
   if (context == null) return free
 
@@ -264,12 +281,12 @@ function resolveThreshold(context) {
 
   if (typeof context === 'string') {
     const kind = normalizeExplicitKind(context) || resolveShippingKind(context)
-    return kind === SHIPPING_KIND.SPECIMEN ? free : 0
+    return kind === SHIPPING_KIND.SPECIMEN ? free : freeOther
   }
 
   if (Array.isArray(context)) {
     if (!context.length) return free
-    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN) ? free : 0
+    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN) ? free : freeOther
   }
 
   if (typeof context === 'object') {
@@ -278,10 +295,38 @@ function resolveThreshold(context) {
       return Number(context.threshold)
     }
     if (context.kind) return resolveThreshold(context.kind)
-    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN ? free : 0
+    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN ? free : freeOther
   }
 
   return free
+}
+
+/**
+ * 本单适用的**单次运费**（裁决 48：收费类 ¥18 / 其它类型 ¥10）。
+ * 与 `resolveThreshold` 同源：门槛与费率必须按同一个分派结果取，否则会出现
+ * "按 ¥39 判免邮、却按 ¥18 收"这种自相矛盾。
+ */
+function resolveFee(context) {
+  if (context == null) return shipping.flatFee
+  if (typeof context === 'number' && Number.isFinite(context)) return shipping.flatFee
+  if (typeof context === 'string') {
+    const kind = normalizeExplicitKind(context) || resolveShippingKind(context)
+    return kind === SHIPPING_KIND.SPECIMEN ? shipping.flatFee : shipping.accessoryFlatFee
+  }
+  if (Array.isArray(context)) {
+    if (!context.length) return shipping.flatFee
+    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN)
+      ? shipping.flatFee
+      : shipping.accessoryFlatFee
+  }
+  if (typeof context === 'object') {
+    if (Array.isArray(context.items)) return resolveFee(context.items)
+    if (context.kind) return resolveFee(context.kind)
+    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN
+      ? shipping.flatFee
+      : shipping.accessoryFlatFee
+  }
+  return shipping.flatFee
 }
 
 function resolveOrderKind(context) {
@@ -298,19 +343,6 @@ function resolveOrderKind(context) {
  *   · 券省额路径（本函数）：**未知**一律 `false` → 不声称能省 → 宁可少报不虚高（**展示不能夸大**）。
  *   两者都把「确定的空清单」判为 false（没有商品就没有运费）。
  */
-function isOrderChargeable(context) {
-  if (Array.isArray(context)) {
-    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN)
-  }
-  if (context && typeof context === 'object') {
-    if (Array.isArray(context.items)) return isOrderChargeable(context.items)
-    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN
-  }
-  if (typeof context === 'string') {
-    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN
-  }
-  return false
-}
 
 /**
  * @param {number} goodsAmount 优惠前**整单**商品合计（勿传折后应付、勿只传收费类小计）
@@ -322,7 +354,7 @@ function calcShippingFee(goodsAmount, context) {
   if (amount <= 0) return 0
   const threshold = resolveThreshold(context)
   if (amount >= threshold) return 0
-  return shipping.shippingFee
+  return resolveFee(context)
 }
 
 function getRuleText(context) {
@@ -331,11 +363,13 @@ function getRuleText(context) {
   const free = shipping.freeShippingThreshold
   const carrier = shipping.defaultCarrier || '顺丰速运'
   const charged = chargedCraftTypesLabel()
+  const freeOther = shipping.accessoryFreeThreshold
+  const feeOther = shipping.accessoryFlatFee
   if (context != null && resolveOrderKind(context) === SHIPPING_KIND.ACCESSORY) {
-    return `${carrier} · 本单免邮（非${charged}类免邮）`
+    return `${carrier} · 全场满 ¥${freeOther} 免邮，否则运费 ¥${feeOther}`
   }
   if (context == null) {
-    return `${carrier} · ${charged}类满 ¥${free} 免邮，其余免邮`
+    return `${carrier} · ${charged}类满 ¥${free} 免邮（否则 ¥${fee}）；其余类型满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
   }
   return `${carrier} · 全场满 ¥${free} 免邮，否则运费 ¥${fee}`
 }
@@ -383,8 +417,8 @@ module.exports = Object.assign(shipping, {
   getCampaignLabel,
   resolveShippingKind,
   resolveThreshold,
+  resolveFee,
   resolveOrderKind,
-  isOrderChargeable,
   calcShippingFee,
   calcShipping: calcShippingFee,
   getRuleText,

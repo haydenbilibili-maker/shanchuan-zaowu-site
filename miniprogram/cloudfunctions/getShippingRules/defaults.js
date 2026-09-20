@@ -5,7 +5,8 @@
  * 口径：`admin/docs/出货算价与工作室结算_Phase1_技术蓝图.md` §19（v1.7，裁决 40/41/41b/41c）
  *   收费类（chargedCraftTypes：相框 / 方形玻璃罩 / 圆形玻璃罩 / 圆柱形玻璃罩）
  *     → 订单**全场**满 ¥299 免邮，未满收 ¥18/单
- *   其余（含 craftType 为空）→ 一律免邮
+ *   其它类型（含 craftType 为空）→ 订单**全场**满 ¥39 免邮，未满收 ¥10/单（裁决 48）
+ *   混合车（含任一收费类）→ 按收费类那一档（全场满 ¥299，否则 ¥18）
  *
  * ⚠️ 判定只看 `craftType`，不看标题/类别。
  * ⚠️ 收费清单**不允许为空**：空清单 = 全场免邮，属危险配置，保存侧直接拒绝；
@@ -51,16 +52,19 @@ const CRAFT_TYPE_LABELS = {
 
 function getDefaultConfig() {
   return {
-    ruleId: 'shipping_default_v2',
+    ruleId: 'shipping_default_v3',
     name: '商城运费规则',
     status: 'active',
     priority: 100,
     defaultCarrier: '顺丰速运',
     flatFee: 18,
     freeShippingThreshold: 299,
+    /** 其它类型的全场包邮门槛（裁决 48） */
+    accessoryFreeThreshold: 39,
+    /** 其它类型的单次运费（裁决 48：¥10） */
+    accessoryFlatFee: 10,
     chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
-    // —— 旧模型字段（仅作兼容镜像；判定逻辑不再读取，见蓝图 §19）——
-    accessoryFreeThreshold: 0,
+    // —— 兼容镜像（判定逻辑读上面的字段）——
     specimenFreeThreshold: 299,
     mixCartStrategy: MIX_SPECIMEN_WINS,
     freeShippingCampaign: {
@@ -126,6 +130,17 @@ function normalizeConfig(raw) {
     src.flatFee != null ? src.flatFee : src.shippingFee,
     base.flatFee
   )
+  // 其它类型门槛/费率（裁决 48）：各自独立，都可被云端覆盖
+  const rawFreeOther = src.accessoryFreeThreshold != null
+    ? src.accessoryFreeThreshold
+    : thresholds.accessory
+  const freeOther = Math.max(0, toNumber(rawFreeOther, base.accessoryFreeThreshold))
+  const feeOther = Math.max(0, toNumber(
+    src.accessoryFlatFee != null
+      ? src.accessoryFlatFee
+      : (src.accessoryShippingFee != null ? src.accessoryShippingFee : (src.fees && src.fees.accessory)),
+    base.accessoryFlatFee
+  ))
   const carrier = String(
     src.defaultCarrier || src.carrier || base.defaultCarrier
   ).trim() || base.defaultCarrier
@@ -143,9 +158,10 @@ function normalizeConfig(raw) {
     defaultCarrier: carrier,
     flatFee: Math.max(0, flatFee),
     freeShippingThreshold: free,
+    accessoryFreeThreshold: freeOther,
+    accessoryFlatFee: feeOther,
     chargedCraftTypes: charged,
-    // 旧字段镜像：保持自洽，避免仍按旧字段读取的函数（getProductCoupons / getBestCoupon）拿到旧值
-    accessoryFreeThreshold: 0,
+    // 兼容镜像：保持自洽，避免仍按旧字段读取的调用方拿到旧值
     specimenFreeThreshold: free,
     mixCartStrategy: mix,
     freeShippingCampaign: normalizeCampaign(src.freeShippingCampaign, base.freeShippingCampaign)
@@ -164,8 +180,9 @@ function describeRule(config) {
     return `${cfg.defaultCarrier} · ${cfg.freeShippingCampaign.label}（全场免邮）`
   }
   const charged = chargedCraftTypesLabel(cfg.chargedCraftTypes)
-  return `${cfg.defaultCarrier} · ${charged}类满 ¥${formatAmount(cfg.freeShippingThreshold)} 免邮，`
-    + `否则运费 ¥${formatAmount(cfg.flatFee)}/单（其余装裱方式免邮）`
+  return `${cfg.defaultCarrier} · ${charged}类满 ¥${formatAmount(cfg.freeShippingThreshold)} 免邮`
+    + `（否则 ¥${formatAmount(cfg.flatFee)}/单）；其余类型满 ¥${formatAmount(cfg.accessoryFreeThreshold)} 免邮`
+    + `（否则 ¥${formatAmount(cfg.accessoryFlatFee)}/单）`
 }
 
 /** 客户端 / makeOrder 兼容视图 */
@@ -176,8 +193,9 @@ function toClientShape(config) {
     carrier: cfg.defaultCarrier,
     shippingFee: cfg.flatFee,
     freeShippingThreshold: cfg.freeShippingThreshold,
+    // 兼容镜像：其它档门槛也要跟真实值走（写死 0 会让仍读它的老读者以为"其它类型永远免邮"）
     thresholds: {
-      accessory: 0,
+      accessory: cfg.accessoryFreeThreshold,
       specimen: cfg.freeShippingThreshold
     }
   }

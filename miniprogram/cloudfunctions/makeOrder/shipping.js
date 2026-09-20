@@ -52,6 +52,8 @@ const DEFAULTS = {
   defaultCarrier: '顺丰速运',
   flatFee: 18,
   freeShippingThreshold: 299,
+  accessoryFreeThreshold: 39,
+  accessoryFlatFee: 10,
   chargedCraftTypes: DEFAULT_CHARGED_CRAFT_TYPES.slice(),
   freeShippingCampaign: {
     enabled: false,
@@ -66,6 +68,8 @@ const state = {
   defaultCarrier: DEFAULTS.defaultCarrier,
   flatFee: DEFAULTS.flatFee,
   freeShippingThreshold: DEFAULTS.freeShippingThreshold,
+  accessoryFreeThreshold: DEFAULTS.accessoryFreeThreshold,
+  accessoryFlatFee: DEFAULTS.accessoryFlatFee,
   chargedCraftTypes: DEFAULTS.chargedCraftTypes.slice(),
   freeShippingCampaign: { ...DEFAULTS.freeShippingCampaign },
   fromDefault: true,
@@ -123,6 +127,18 @@ function applyConfig(raw) {
       ? src.specimenFreeThreshold
       : thresholds.specimen)
   state.freeShippingThreshold = Math.max(0, toNumber(rawFree, DEFAULTS.freeShippingThreshold))
+
+  // 其它类型门槛/费率（裁决 48）：与收费类各自独立
+  state.accessoryFreeThreshold = Math.max(0, toNumber(
+    src.accessoryFreeThreshold != null ? src.accessoryFreeThreshold : thresholds.accessory,
+    DEFAULTS.accessoryFreeThreshold
+  ))
+  state.accessoryFlatFee = Math.max(0, toNumber(
+    src.accessoryFlatFee != null
+      ? src.accessoryFlatFee
+      : (src.accessoryShippingFee != null ? src.accessoryShippingFee : (src.fees && src.fees.accessory)),
+    DEFAULTS.accessoryFlatFee
+  ))
 
   const charged = normalizeChargedCraftTypes(src.chargedCraftTypes)
   state.chargedCraftTypes = charged && charged.length
@@ -182,10 +198,11 @@ function snapshotConfig() {
     freeShippingThreshold: state.freeShippingThreshold,
     chargedCraftTypes: state.chargedCraftTypes.slice(),
     // 旧字段镜像（保持自洽，避免仍读它们的调用方拿到旧值）
-    accessoryFreeThreshold: 0,
+    accessoryFreeThreshold: state.accessoryFreeThreshold,
+    accessoryFlatFee: state.accessoryFlatFee,
     specimenFreeThreshold: state.freeShippingThreshold,
     thresholds: {
-      accessory: 0,
+      accessory: state.accessoryFreeThreshold,
       specimen: state.freeShippingThreshold
     },
     mixCartStrategy: MIX_SPECIMEN_WINS,
@@ -272,6 +289,7 @@ function resolveShippingKind(product) {
  */
 function resolveThreshold(context) {
   const free = state.freeShippingThreshold
+  const freeOther = state.accessoryFreeThreshold
 
   if (context == null) return free
 
@@ -281,12 +299,12 @@ function resolveThreshold(context) {
 
   if (typeof context === 'string') {
     const kind = normalizeExplicitKind(context) || resolveShippingKind(context)
-    return kind === SHIPPING_KIND.SPECIMEN ? free : 0
+    return kind === SHIPPING_KIND.SPECIMEN ? free : freeOther
   }
 
   if (Array.isArray(context)) {
     if (!context.length) return free
-    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN) ? free : 0
+    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN) ? free : freeOther
   }
 
   if (typeof context === 'object') {
@@ -295,10 +313,37 @@ function resolveThreshold(context) {
       return Number(context.threshold)
     }
     if (context.kind) return resolveThreshold(context.kind)
-    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN ? free : 0
+    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN ? free : freeOther
   }
 
   return free
+}
+
+/**
+ * 本单适用的单次运费（裁决 48：收费类 ¥18 / 其它类型 ¥10）。
+ * 与 resolveThreshold 必须同一分派结果，否则会"按 ¥39 判免邮、却按 ¥18 收"。
+ */
+function resolveFee(context) {
+  if (context == null) return state.flatFee
+  if (typeof context === 'number' && Number.isFinite(context)) return state.flatFee
+  if (typeof context === 'string') {
+    const kind = normalizeExplicitKind(context) || resolveShippingKind(context)
+    return kind === SHIPPING_KIND.SPECIMEN ? state.flatFee : state.accessoryFlatFee
+  }
+  if (Array.isArray(context)) {
+    if (!context.length) return state.flatFee
+    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN)
+      ? state.flatFee
+      : state.accessoryFlatFee
+  }
+  if (typeof context === 'object') {
+    if (Array.isArray(context.items)) return resolveFee(context.items)
+    if (context.kind) return resolveFee(context.kind)
+    return resolveShippingKind(context) === SHIPPING_KIND.SPECIMEN
+      ? state.flatFee
+      : state.accessoryFlatFee
+  }
+  return state.flatFee
 }
 
 function resolveOrderKind(context) {
@@ -315,7 +360,7 @@ function calcShipping(goodsAmount, context) {
   if (amount <= 0) return 0
   const threshold = resolveThreshold(context)
   if (amount >= threshold) return 0
-  return state.flatFee
+  return resolveFee(context)
 }
 
 function getDefaultCarrier() {
@@ -328,9 +373,13 @@ function getFreeShippingThreshold() {
 
 function getThresholds() {
   return {
-    accessory: 0,
+    accessory: state.accessoryFreeThreshold,
     specimen: state.freeShippingThreshold
   }
+}
+
+function getAccessoryFlatFee() {
+  return state.accessoryFlatFee
 }
 
 function getFlatFee() {
@@ -379,5 +428,7 @@ module.exports = {
   getDefaultCarrier,
   getFreeShippingThreshold,
   getThresholds,
-  getFlatFee
+  resolveFee,
+  getFlatFee,
+  getAccessoryFlatFee
 }

@@ -2449,6 +2449,14 @@
             <text class="cfg-label">包邮门槛（元）</text>
             <input class="cfg-field cfg-field-num" type="digit" value="{{shippingForm.freeShippingThreshold}}" data-field="freeShippingThreshold" bindinput="onShippingFieldInput" placeholder="0.00" placeholder-class="cfg-placeholder"/>
           </view>
+          <view class="cfg-row">
+            <text class="cfg-label">其它类型运费（元）</text>
+            <input class="cfg-field cfg-field-num" type="digit" value="{{shippingForm.accessoryFlatFee}}" data-field="accessoryFlatFee" bindinput="onShippingFieldInput" placeholder="0.00" placeholder-class="cfg-placeholder"/>
+          </view>
+          <view class="cfg-row">
+            <text class="cfg-label">其它类型包邮门槛（元）</text>
+            <input class="cfg-field cfg-field-num" type="digit" value="{{shippingForm.accessoryFreeThreshold}}" data-field="accessoryFreeThreshold" bindinput="onShippingFieldInput" placeholder="0.00" placeholder-class="cfg-placeholder"/>
+          </view>
           <view class="cfg-field-block">
             <text class="cfg-label-top">按装裱方式收费（勾选的装裱方式需满门槛才免邮）</text>
             <checkbox-group class="cfg-check-group" bindchange="onShippingCraftToggle">

@@ -1312,11 +1312,11 @@ Page(withAppModal({
           shippingBaseAmount: shippingBaseAmount != null ? shippingBaseAmount : vipTotal,
           // 75% 地板按目录原价（未加运费）估算
           originalPrice: shippingBaseAmount != null ? shippingBaseAmount : vipTotal,
-          // 免邮券省额只在「本单确定含收费类装裱方式」时才 > 0（v2：其余装裱方式全部免邮）。
-          // 确认页手里就是完整结算清单 → 按 items 的 craftType/shippingKind 判，口径与运费展示同源
-          orderChargeable: typeof shippingConfig.isOrderChargeable === 'function'
-            ? shippingConfig.isOrderChargeable(this.data.items)
-            : false
+          // 免邮券省额按「本单适用门槛」分档（裁决 48）：含相框/玻璃罩→299 档；其它类型→39 档。
+          // 确认页手里就是完整结算清单 → 与运费展示同一个 resolveThreshold，口径同源
+          shippingThreshold: typeof shippingConfig.resolveThreshold === 'function'
+            ? shippingConfig.resolveThreshold(this.data.items)
+            : 0
         }
       })
       if (res.result && res.result.success && res.result.bestCoupon) {

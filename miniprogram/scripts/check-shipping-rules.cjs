@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 运费规则 v2 守卫：**代码 4 副本一致 + 云端文档与代码一致 + 装裱方式分类表一致 + 试算矩阵**
+ * 运费规则 v3 守卫（两档：¥299/¥18 与 ¥39/¥10）：**代码 4 副本一致 + 云端文档与代码一致 + 装裱方式分类表一致 + 试算矩阵**
  *
  * 为什么必须有（2026-09-19 上一轮的教训）：
  *   本系统是「代码默认值 + **云端 shipping_rules 覆盖** + 异常降级」。上一轮把代码默认值
@@ -15,7 +15,7 @@
  *
  * 四段检查：
  *   A. 4 份代码副本（C 端展示 / 服务端权威 / 规则模型 / ERP 平行副本）关键字段一致
- *   B. 云端文档快照 vs 代码默认值一致（flatFee / freeShippingThreshold / chargedCraftTypes …）
+ *   B. 云端文档快照 vs 代码默认值一致（flatFee / freeShippingThreshold / **accessoryFreeThreshold / accessoryFlatFee** / chargedCraftTypes …）
  *   C. 收费 key 在 3 份 productTaxonomy 副本里都存在，且副本之间不漂移；界面不得另抄一份清单
  *   D. **真实执行**试算矩阵：8 组购物车在「服务端」与「C 端」算出同一个金额，且等于期望值
  *
@@ -177,6 +177,9 @@ function keySnapshot(cfg) {
   return {
     flatFee: Number(cfg.flatFee),
     freeShippingThreshold: Number(cfg.freeShippingThreshold != null ? cfg.freeShippingThreshold : cfg.specimenFreeThreshold),
+    // 裁决 48：其它类型那一档（门槛 ¥39 / 费率 ¥10）与收费类档各自独立
+    accessoryFreeThreshold: Number(cfg.accessoryFreeThreshold),
+    accessoryFlatFee: Number(cfg.accessoryFlatFee),
     chargedCraftTypes: Array.isArray(cfg.chargedCraftTypes) ? cfg.chargedCraftTypes.slice().sort() : null
   }
 }
@@ -252,8 +255,12 @@ function snapshotFromDoc(doc) {
     flatFee: Number(doc.flatFee),
     freeShippingThreshold: Number(doc.freeShippingThreshold != null ? doc.freeShippingThreshold : doc.specimenFreeThreshold),
     chargedCraftTypes: Array.isArray(doc.chargedCraftTypes) ? doc.chargedCraftTypes.slice() : null,
-    // 旧字段镜像（getProductCoupons / getBestCoupon 的读取链更偏好它们，必须同值）
+    // 两档（裁决 48）：其它类型的门槛与费率，必须与代码默认值一致
     accessoryFreeThreshold: Number(doc.accessoryFreeThreshold),
+    accessoryFlatFee: Number(
+      doc.accessoryFlatFee != null ? doc.accessoryFlatFee : doc.accessoryShippingFee
+    ),
+    // 兼容镜像
     specimenFreeThreshold: Number(doc.specimenFreeThreshold),
     mixCartStrategy: doc.mixCartStrategy || '',
     freeShippingCampaign: {
@@ -325,7 +332,18 @@ const MATRIX = [
   { name: '¥250 其它', amount: 250, items: [P('other')], expect: 0 },
   // 显式 shippingKind 覆盖仍然优先（人工标注）
   { name: '¥250 显式标注为藏品的挂件', amount: 250, items: [P('accessory', { shippingKind: 'specimen' })], expect: 18 },
-  { name: '¥250 显式标注为饰品的相框', amount: 250, items: [P('frame', { shippingKind: 'accessory' })], expect: 0 }
+  { name: '¥250 显式标注为饰品的相框', amount: 250, items: [P('frame', { shippingKind: 'accessory' })], expect: 0 },
+  // —— 裁决 48：其它类型那一档（满 ¥39 包邮，未满收 ¥10）——
+  { name: '¥38 挂件（差 1 元到 ¥39）', amount: 38, items: [P('accessory')], expect: 10 },
+  { name: '¥39 挂件（刚好满 ¥39）', amount: 39, items: [P('accessory')], expect: 0 },
+  { name: '¥20 未标注 craftType（其它档）', amount: 20, items: [P('')], expect: 10 },
+  { name: '¥39 未标注 craftType（刚好满）', amount: 39, items: [P('')], expect: 0 },
+  { name: '¥20 造景（其它档）', amount: 20, items: [P('diorama')], expect: 10 },
+  { name: '¥10 相框（收费档，不满 ¥299 收 ¥18）', amount: 10, items: [P('frame')], expect: 18 },
+  // ★混合车（产品负责人 2026-09-20 裁决 48-A）：只要含相框/玻璃罩，就按收费类那一档
+  { name: '★混合 ¥10 相框 + ¥50 挂件（全场 ¥60，含收费类）', amount: 60, items: [P('frame'), P('accessory')], expect: 18 },
+  { name: '★混合 ¥10 相框 + ¥300 挂件（全场 ¥310）', amount: 310, items: [P('frame'), P('accessory')], expect: 0 },
+  { name: '★纯其它多件 ¥20 挂件 ×2（全场 ¥40）', amount: 40, items: [P('accessory'), P('accessory')], expect: 0 }
 ]
 
 function runMatrix(mod) {
@@ -396,8 +414,13 @@ async function runChecks(paths) {
     check('云端文档旧字段镜像 specimenFreeThreshold = freeShippingThreshold',
       Number(snap.specimenFreeThreshold) === Number(snap.freeShippingThreshold),
       `specimenFreeThreshold=${snap.specimenFreeThreshold} / freeShippingThreshold=${snap.freeShippingThreshold}`)
-    check('云端文档旧字段镜像 accessoryFreeThreshold = 0（不再有饰品门槛）',
-      Number(snap.accessoryFreeThreshold) === 0, String(snap.accessoryFreeThreshold))
+    // 裁决 48：其它类型那一档（¥39 / ¥10）也必须与云端文档一致
+    check('云端文档 accessoryFreeThreshold 与代码默认值一致',
+      Number(snap.accessoryFreeThreshold) === canon.accessoryFreeThreshold,
+      `云端 ${snap.accessoryFreeThreshold} vs 代码 ${canon.accessoryFreeThreshold}`)
+    check('云端文档 accessoryFlatFee 与代码默认值一致',
+      Number(snap.accessoryFlatFee) === canon.accessoryFlatFee,
+      `云端 ${snap.accessoryFlatFee} vs 代码 ${canon.accessoryFlatFee}`)
   }
 
   // —— C. 装裱方式分类表 3 份副本 ——
@@ -495,17 +518,25 @@ async function runChecks(paths) {
       `服务端 ¥${s.fee}/${s.threshold} vs C 端 ¥${row.fee}/${row.threshold}`)
   })
 
-  // 免邮凑单层的门槛口径（纯免邮类 → 0，不出现「满 ¥0」）
+  // 免邮凑单层的门槛口径（裁决 48：其它档 ¥39，不出现「满 ¥299」）
   try {
     const addon = loadCjsModule(path.join(ROOT, 'miniprogram', 'utils', 'checkoutAddon.js'))
-    const freeCart = addon.computeFreeShipping({
+    const otherCart = addon.computeFreeShipping({
       goodsAmount: 250,
       selectedItems: [P('accessory')],
       shipping: client
     })
-    check('纯免邮类购物车：凑单行按「本单免运费」而不是「满 ¥299」',
-      freeCart && freeCart.reached === true && /本单免运费/.test(freeCart.detailText),
-      freeCart ? freeCart.detailText : 'null')
+    check('其它档购物车（¥250 ≥ ¥39）：凑单行按「已包邮（全场满 ¥39）」',
+      otherCart && otherCart.reached === true && /¥39/.test(otherCart.detailText),
+      otherCart ? otherCart.detailText : 'null')
+    const otherShort = addon.computeFreeShipping({
+      goodsAmount: 20,
+      selectedItems: [P('accessory')],
+      shipping: client
+    })
+    check('其它档购物车（¥20 < ¥39）：缺口 ¥19、运费 ¥10（不是 ¥18）',
+      otherShort && otherShort.gap === 19 && otherShort.fee === 10,
+      otherShort ? `gap=${otherShort.gap} fee=${otherShort.fee}` : 'null')
     const chargedCart = addon.computeFreeShipping({
       goodsAmount: 250,
       selectedItems: [P('frame')],
@@ -518,39 +549,52 @@ async function runChecks(paths) {
     check('免邮凑单层口径可校验', false, e.message)
   }
 
-  // —— E. 免邮券省额：只在「本单确定含收费类装裱方式」时才 > 0 ——
-  // 背景（2026-09-19 修）：两个券云函数的入参里**没有商品**，只看金额 → v2「其余全部免邮」之后，
-  // 一件 ¥250 挂件本来就免邮，却被报成「免邮券省 ¥18」→ 券列表虚高、会员可能为省 ¥18 选掉更好的券。
+  // —— E. 两档口径（裁决 48）：门槛 ¥299/¥18 与 ¥39/¥10，及其对免邮券省额的影响 ——
   try {
-    const snapDoc = JSON.parse(fs.readFileSync(paths.snapshot, 'utf8'))
-
-    // E1. 唯一事实源 isOrderChargeable 的判定矩阵（含显式 shippingKind 覆盖与「未知不声称」）
-    const chargeCases = [
-      ['单一相框 → 会被收', [P('frame')], true],
-      ['单一方形玻璃罩 → 会被收', [P('cloche')], true],
-      ['圆柱玻璃罩 → 会被收', [P('cloche_cylinder')], true],
-      ['纯挂件 → 本来就免邮', [P('accessory')], false],
-      ['未标注 craftType → 本来就免邮', [P('')], false],
-      ['造景 → 本来就免邮', [P('diorama')], false],
-      ['相框 + 挂件 → 会被收', [P('frame'), P('accessory')], true],
-      ['显式 specimen 的挂件 → 会被收', [P('accessory', { shippingKind: 'specimen' })], true],
-      ['显式 accessory 的相框 → 免邮', [P('frame', { shippingKind: 'accessory' })], false],
-      ['空清单 → 没有商品就没有运费', [], false],
-      ['未知 null → 不声称能省', null, false],
-      ['未知数字 → 不声称能省', 250, false]
+    // E1. 门槛矩阵：含相框/玻璃罩 → 299 档；其它（含未标注）→ 39 档
+    const thrCases = [
+      ['相框', [P('frame')], 299],
+      ['方形玻璃罩', [P('cloche')], 299],
+      ['圆柱形玻璃罩', [P('cloche_cylinder')], 299],
+      ['挂件（其它档）', [P('accessory')], 39],
+      ['未标注 craftType（其它档）', [P('')], 39],
+      ['造景（其它档）', [P('diorama')], 39],
+      ['★混合：相框 + 挂件 → 收费档', [P('frame'), P('accessory')], 299],
+      ['显式 specimen 的挂件 → 收费档', [P('accessory', { shippingKind: 'specimen' })], 299],
+      ['显式 accessory 的相框 → 其它档', [P('frame', { shippingKind: 'accessory' })], 39]
     ]
-    chargeCases.forEach(([name, ctx, want]) => {
-      const got = typeof client.isOrderChargeable === 'function' ? client.isOrderChargeable(ctx) : 'NOT_A_FUNCTION'
-      check(`isOrderChargeable：${name}`, got === want, `实际 ${got}`)
+    thrCases.forEach(([name, ctx, want]) => {
+      const got = typeof client.resolveThreshold === 'function' ? client.resolveThreshold(ctx) : 'NOT_A_FUNCTION'
+      check(`门槛：${name} = ¥${want}`, got === want, `实际 ${got}`)
+    })
+    // 空/未知上下文沿用「收费档」口径（收费路径宁可多收不漏收，见 resolveThreshold 注释）
+    check('门槛：空清单 → 收费档（¥299）', client.resolveThreshold([]) === 299, String(client.resolveThreshold([])))
+    check('门槛：未知 null → 收费档（¥299）', client.resolveThreshold(null) === 299, String(client.resolveThreshold(null)))
+
+    // E2. 费率矩阵：与门槛同一分派结果（否则「按 ¥39 判免邮、却按 ¥18 收」）
+    const feeCases = [
+      ['相框', [P('frame')], 18],
+      ['挂件（其它档）', [P('accessory')], 10],
+      ['未标注（其它档）', [P('')], 10],
+      ['★混合车按收费档费率', [P('frame'), P('accessory')], 18],
+      ['显式 accessory 的相框 → 其它档费率', [P('frame', { shippingKind: 'accessory' })], 10]
+    ]
+    feeCases.forEach(([name, ctx, want]) => {
+      const got = typeof client.resolveFee === 'function' ? client.resolveFee(ctx) : 'NOT_A_FUNCTION'
+      check(`费率：${name} = ¥${want}`, got === want, `实际 ${got}`)
     })
 
-    // E2. 真跑两个云函数（喂云端快照文档 + 一张免邮券），看它们报「省多少」
+    // E3. 真跑两个券云函数：免邮券省额按「本单适用门槛」分档
+    const snapDoc = JSON.parse(fs.readFileSync(paths.snapshot, 'utf8'))
     const fsCoupon = { _id: 'guard_fs_coupon', title: '免邮券', type: 'freeShipping', value: 0, minSpend: 0 }
     const couponCases = [
-      ['¥250 相框（会被收）', 250, true, 18],
-      ['¥250 挂件（本来就免邮）', 250, false, 0],
-      ['¥299 相框（已满门槛）', 299, true, 0],
-      ['¥250 缺省 orderChargeable（未知）', 250, undefined, 0]
+      ['¥250 相框（299 档，未满）', 250, 299, 18],
+      ['¥300 相框（299 档，已满）', 300, 299, 0],
+      ['¥20 挂件（39 档，未满 → 其它档费率 ¥10）', 20, 39, 10],
+      ['¥250 挂件（39 档，已满 → 省 0）', 250, 39, 0],
+      ['¥20 相框（299 档，未满 → ¥18）', 20, 299, 18],
+      ['缺 shippingThreshold（未知 → 不报）', 20, undefined, 0],
+      ['shippingThreshold = 0（规则本身免邮 → 不报）', 20, 0, 0]
     ]
     for (const [fnName, fnDir] of Object.entries(paths.couponFns)) {
       let mod = null
@@ -560,12 +604,12 @@ async function runChecks(paths) {
         check(`${fnName} 可装载（打桩 wx-server-sdk）`, false, e.message)
         continue
       }
-      for (const [label, amount, orderChargeable, want] of couponCases) {
+      for (const [label, amount, threshold, want] of couponCases) {
         const event = {
           productPrice: amount, totalPrice: amount,
           shippingBaseAmount: amount, originalPrice: amount
         }
-        if (orderChargeable !== undefined) event.orderChargeable = orderChargeable
+        if (threshold !== undefined) event.shippingThreshold = threshold
         let got = null
         try {
           const res = await mod.main(event)
@@ -578,11 +622,11 @@ async function runChecks(paths) {
       }
     }
 
-    // E3. 三个调用点都得把前提传下去（漏一处就回到虚高）
+    // E4. 三个调用点都必须把「本单适用门槛」传下去（漏一处就让省额回到虚高/虚低）
     const wiring = [
-      ['detail', 'getProductCoupons', 'shippingConfig.isOrderChargeable(this.data.product)'],
-      ['confirm', 'getBestCoupon', 'shippingConfig.isOrderChargeable(this.data.items)'],
-      ['cart', 'getBestCoupon', 'shippingConfig.isOrderChargeable(']
+      ['detail', 'getProductCoupons', 'shippingConfig.resolveThreshold(this.data.product)'],
+      ['confirm', 'getBestCoupon', 'shippingConfig.resolveThreshold(this.data.items)'],
+      ['cart', 'getBestCoupon', 'shippingConfig.resolveThreshold(']
     ]
     for (const [key, fnName, needle] of wiring) {
       const file = paths.callSites[key]
@@ -595,12 +639,12 @@ async function runChecks(paths) {
       }
       const at = src.indexOf(`name: '${fnName}'`)
       const region = at >= 0 ? src.slice(at, at + 1500) : ''
-      check(`调用点 ${key} 调 ${fnName} 时传了 orderChargeable`,
-        at >= 0 && region.includes('orderChargeable:') && region.includes(needle),
-        at < 0 ? '找不到该调用点' : `参数里缺少 orderChargeable / ${needle}`)
+      check(`调用点 ${key} 调 ${fnName} 时传了 shippingThreshold`,
+        at >= 0 && region.includes('shippingThreshold:') && region.includes(needle),
+        at < 0 ? '找不到该调用点' : `参数里缺少 shippingThreshold / ${needle}`)
     }
   } catch (e) {
-    check('免邮券省额口径可校验', false, e.message)
+    check('两档口径可校验', false, e.message)
   }
 }
 
@@ -674,13 +718,13 @@ async function runSelfTest(paths) {
       patch(p.managerPage, (s) => s.replace(/DEFAULT_CHARGED_CRAFT_TYPES/g, "['frame', 'cloche']"))
     }],
     // E 节的两条回归：这正是本次修的「免邮券省额虚高」，必须能被拦下
-    ['免邮券省额退回「只看金额」（纯免邮订单又报省 ¥18）', (p) => {
+    ['免邮券省额的门槛闸被删（门槛未知也敢报省额）', (p) => {
       Object.values(p.couponFns).forEach((dir) => {
-        patch(path.join(dir, 'index.js'), (s) => s.replace('  if (orderChargeable !== true) return 0\n', ''))
+        patch(path.join(dir, 'index.js'), (s) => s.replace('  if (!Number.isFinite(threshold) || threshold <= 0) return 0\n', ''))
       })
     }],
-    ['详情页不再把 orderChargeable 传给券云函数（漏一处即虚高）', (p) => {
-      patch(p.callSites.detail, (s) => s.replace('orderChargeable:', 'orderChargeableOff:'))
+    ['详情页不再把 shippingThreshold 传给券云函数（漏一处即回到按金额猜）', (p) => {
+      patch(p.callSites.detail, (s) => s.replace('shippingThreshold:', 'shippingThresholdOff:'))
     }]
   ]
   let allDetected = true
@@ -758,7 +802,7 @@ function patch(file, mutate) {
   passCount = 0
   await runChecks(paths)
 
-  console.log(`运费规则 v2 守卫：${passCount} 项通过，${failures.length} 项失败`)
+  console.log(`运费规则 v3 守卫：${passCount} 项通过，${failures.length} 项失败`)
   if (warnings.length) {
     console.log('\n提示：')
     warnings.forEach((w) => console.log(`  ⚠ ${w}`))
@@ -768,6 +812,6 @@ function patch(file, mutate) {
     failures.forEach((f) => console.error(`  ✗ ${f}`))
     process.exit(1)
   }
-  console.log('全部通过：4 份代码副本 / 云端文档快照 / 装裱方式分类表一致，试算矩阵双端同价，')
-  console.log('          免邮券省额只在「本单确定含收费类装裱方式」时才 > 0（两个券云函数真跑验证）。')
+  console.log('全部通过：4 份代码副本 / 云端文档快照 / 装裱方式分类表一致（两档：¥299·¥18 与 ¥39·¥10），')
+  console.log('          试算矩阵双端同价；免邮券省额按「本单适用门槛」分档（两个券云函数真跑验证）。')
 })()
