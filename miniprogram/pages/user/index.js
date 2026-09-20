@@ -419,6 +419,9 @@ const _bootCard = buildBootMemberCardState();
 Page(withAppModal({
   behaviors: [easterEggHost],
   data: {
+    // 「藏品订单」数字角标（待付款/待发货/待收货/售后；0 或空则不渲染）
+    // 数字来自 getUserStats 的分状态计数，分桶口径与订单页签一致
+    orderBadges: { pay: '', paid: '', shipped: '', signed: '', refund: '' },
     // 统一主视觉轻提示（铭牌 + 铜金）——取代原生 toast，见 components/AppToast
     toastShow: false,
     toastOverline: '',
@@ -620,6 +623,9 @@ Page(withAppModal({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 4 });
     }
+
+    // 角标可能已过期（刚付过款 / 刚签收 / 刚提交售后）→ 轻量刷新
+    this.refreshOrderBadges();
 
     // 券夹「到店亮码」备用通路：带提示打开会员码
     try {
@@ -1233,12 +1239,17 @@ Page(withAppModal({
     if (!statsLoaded) {
       wx.cloud.callFunction({
         name: 'getUserStats',
+        // withOrderCounts：「藏品订单」数字角标（分桶口径与订单页签逐字一致，见云函数注释）。
+        // 只在本页请求 —— 结算页等其它调用方不受影响。
+        data: { withOrderCounts: true },
         success: (res) => {
           if (!res || !res.result) return;
           const data = res.result;
           if (Array.isArray(data.levelLadder) && data.levelLadder.length) {
             this.applyLevelLadder(data.levelLadder);
           }
+          this.applyOrderBadges(data.orderStatusCounts);
+          this._orderBadgesLoaded = true;
           this.setData({
             points: data.points || 0,
             level: data.level || 1,
@@ -1499,6 +1510,48 @@ Page(withAppModal({
       return;
     }
     this.startOnboarding();
+  },
+
+  /**
+   * 「藏品订单」数字角标：把云端的**分状态计数**转成角标文案。
+   *
+   * 口径说明（与订单页签一致，别在这里另立一套）：
+   *   · 待付款 / 待发货 / 待收货 / 售后 —— 只在这四格上显示（都是"要你去处理"的状态）
+   *   · 已签收是终态，累计数会一直是正数 → **不显示角标**（否则 我的 页常年挂一个数字）
+   *   · 0 / 空不渲染、>99 显示 99+（沿用 badgeDisplay 的规范）
+   */
+  applyOrderBadges(counts) {
+    const src = counts && typeof counts === 'object' ? counts : {}
+    const pick = (k) => formatBadgeText(src[k])
+    this.setData({
+      orderBadges: {
+        pay: pick('pay'),
+        paid: pick('paid'),
+        shipped: pick('shipped'),
+        signed: '', // 终态不显示（见上方说明）
+        refund: pick('refund')
+      }
+    })
+  },
+
+  /**
+   * onShow 轻量刷新角标：切回本 Tab 时可能刚付过款/刚签收，不刷新会显示过期数字。
+   * 走 `action: 'orderCounts'` 专用通道（只做 10 个 count，不跑花销/等级聚合）。
+   */
+  refreshOrderBadges() {
+    if (!this._orderBadgesLoaded) return
+    const now = Date.now()
+    if (now - (this._orderBadgesAt || 0) < 5000) return // 5s 内不重复打
+    this._orderBadgesAt = now
+    wx.cloud.callFunction({
+      name: 'getUserStats',
+      data: { action: 'orderCounts' },
+      success: (res) => {
+        const r = (res && res.result) || {}
+        if (r.success && r.orderStatusCounts) this.applyOrderBadges(r.orderStatusCounts)
+      },
+      fail: (err) => console.warn('refreshOrderBadges', err && (err.errMsg || err))
+    })
   },
 
   applyLevelLadder(ladder) {

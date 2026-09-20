@@ -193,21 +193,41 @@
       <text class="ph-en">ORDERS</text>
       <text class="ph-more">全部订单 ›</text>
     </view>
+    <!-- 数字角标：待付款/待发货/待收货/售后 = 「要你处理」的状态；已签收是终态不挂角标 -->
     <view class="order-matrix">
       <view class="om-item" bindtap="goToOrderList" data-type="pay" hover-class="om-item-press" hover-stay-time="80">
-        <image class="om-icon" src="/assets/icons/pay.png"></image><text>待付款</text>
+        <view class="om-icon-wrap">
+          <image class="om-icon" src="/assets/icons/pay.png"></image>
+          <view class="badge-solid-danger badge-sm as-badge-pos badge-enter" wx:if="{{orderBadges.pay}}"><text>{{orderBadges.pay}}</text></view>
+        </view>
+        <text>待付款</text>
       </view>
       <view class="om-item" bindtap="goToOrderList" data-type="paid" hover-class="om-item-press" hover-stay-time="80">
-        <image class="om-icon" src="/assets/icons/ship.png"></image><text>待发货</text>
+        <view class="om-icon-wrap">
+          <image class="om-icon" src="/assets/icons/ship.png"></image>
+          <view class="badge-solid-danger badge-sm as-badge-pos badge-enter" wx:if="{{orderBadges.paid}}"><text>{{orderBadges.paid}}</text></view>
+        </view>
+        <text>待发货</text>
       </view>
       <view class="om-item" bindtap="goToOrderList" data-type="shipped" hover-class="om-item-press" hover-stay-time="80">
-        <image class="om-icon" src="/assets/icons/deliver.png"></image><text>待收货</text>
+        <view class="om-icon-wrap">
+          <image class="om-icon" src="/assets/icons/deliver.png"></image>
+          <view class="badge-solid-danger badge-sm as-badge-pos badge-enter" wx:if="{{orderBadges.shipped}}"><text>{{orderBadges.shipped}}</text></view>
+        </view>
+        <text>待收货</text>
       </view>
       <view class="om-item" bindtap="goToOrderList" data-type="received" hover-class="om-item-press" hover-stay-time="80">
-        <image class="om-icon icon-gold" src="/assets/icons/done.png"></image><text>已签收</text>
+        <view class="om-icon-wrap">
+          <image class="om-icon icon-gold" src="/assets/icons/done.png"></image>
+        </view>
+        <text>已签收</text>
       </view>
       <view class="om-item" bindtap="goToOrderList" data-type="refund" hover-class="om-item-press" hover-stay-time="80">
-        <image class="om-icon" src="/assets/icons/refund.png"></image><text>售后</text>
+        <view class="om-icon-wrap">
+          <image class="om-icon" src="/assets/icons/refund.png"></image>
+          <view class="badge-solid-danger badge-sm as-badge-pos badge-enter" wx:if="{{orderBadges.refund}}"><text>{{orderBadges.refund}}</text></view>
+        </view>
+        <text>售后</text>
       </view>
     </view>
   </view>

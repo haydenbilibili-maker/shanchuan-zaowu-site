@@ -229,7 +229,8 @@ page {
 .om-item { display: flex; flex-direction: column; align-items: center; width: 20%; opacity: 0.9; transition: transform 0.2s ease, opacity 0.2s ease; }
 .om-item:active,
 .om-item-press { opacity: 0.78; transform: scale(0.94); }
-.om-icon { width: 48rpx; height: 48rpx; margin-bottom: 16rpx; filter: invert(1); opacity: 0.7; }
+.om-icon-wrap { position: relative; margin-bottom: 16rpx; }
+.om-icon { width: 48rpx; height: 48rpx; filter: invert(1); opacity: 0.7; }
 .om-item text { font-size: 22rpx; color: var(--color-text-secondary); }
 
 /* 列表式菜单 */

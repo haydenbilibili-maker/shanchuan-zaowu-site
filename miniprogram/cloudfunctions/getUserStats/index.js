@@ -85,6 +85,53 @@ async function resolveStaffRole(db, openid, userInfo) {
   return role === 'manager' || role === 'staff' ? role : ''
 }
 
+
+/**
+ * 「藏品订单」数字角标的分桶 —— **口径必须与小程序订单页签逐字一致**
+ * （见 `subpackages/business/orders/index.js` 的 `switch (this.data.curTab)`）：
+ * 角标数字要等于点进去看到的条数，否则就是「角标 0、列表有 1 条」那类事故。
+ *
+ * 两条来源都要算，与订单页一致：
+ *   · 我是买家：`_openid == 我`，且**排除券/积分兑换单**（source=exchange 不属于藏品订单）
+ *   · 我是受礼人：`giftMeta.receiverOpenid == 我`（客户端读不到别人的单，只能在这里算）
+ */
+const ORDER_BADGE_BUCKETS = {
+  pay: ['pending_pay', 'fulfilling'],
+  paid: ['paid', 'paid_awaiting_address', 'ready_pickup'],
+  shipped: ['shipped'],
+  signed: ['received'],
+  // ⚠️ 不要照抄订单页签里的 `refund_approved` / `refund_rejected`：两者在
+  // `scripts/lib/orderStatusAllowed.json` 里属 **ghosts（零写入方）**（契约 C3 §4.2），
+  // 写回代码会被 `check:order-status-enum` 拦下；且因为零写入方，去掉它们**不改变任何计数**。
+  refund: ['aftersales', 'refunding', 'refunded', 'expired_refunding']
+}
+
+/**
+ * 10 个 count() 并行（只回计数、不传文档），失败一律回 null —— 角标宁可不显示，也不谎报数字。
+ * @returns {Promise<{pay:number,paid:number,shipped:number,signed:number,refund:number}|null>}
+ */
+async function countOrderBadges(db, _, openid) {
+  if (!openid) return null
+  try {
+    const entries = await Promise.all(Object.keys(ORDER_BADGE_BUCKETS).map((key) => {
+      const statuses = ORDER_BADGE_BUCKETS[key]
+      return Promise.all([
+        db.collection('orders').where({ _openid: openid, source: _.neq('exchange'), status: _.in(statuses) }).count(),
+        db.collection('orders').where({ 'giftMeta.receiverOpenid': openid, status: _.in(statuses) }).count()
+      ]).then(([own, recv]) => [
+        key,
+        (own && own.total ? own.total : 0) + (recv && recv.total ? recv.total : 0)
+      ])
+    }))
+    const out = {}
+    entries.forEach(([key, n]) => { out[key] = n })
+    return out
+  } catch (e) {
+    console.warn('getUserStats countOrderBadges', e)
+    return null
+  }
+}
+
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const callerOpenId = wxContext.OPENID || ''
@@ -92,6 +139,15 @@ exports.main = async (event, context) => {
 
   if (!callerOpenId) {
     return { totalAmount: 0, points: 0, level: 1, levelName: '原木·见习者', discountRate: 1.00, error: true, msg: '未登录' }
+  }
+
+  // 轻量通道：只要「藏品订单」角标计数（「我的」页 onShow 刷新用）
+  // —— 不跑花销/等级聚合，避免每次切到该 Tab 都做一遍重活
+  if (event && event.action === 'orderCounts') {
+    return {
+      success: true,
+      orderStatusCounts: await countOrderBadges(db, _, callerOpenId)
+    }
   }
 
   if (targetOpenId !== callerOpenId) {
@@ -140,8 +196,14 @@ exports.main = async (event, context) => {
     const { levels, source } = await loadMemberLevels(db)
     const resolved = resolveMemberLevel(levels, growthValue, isHonorary, userInfo && userInfo.levelOverride)
 
+    // 角标按需计算：只有「我的」页会传 withOrderCounts，结算页等调用方不受影响
+    const orderStatusCounts = (event && event.withOrderCounts === true)
+      ? await countOrderBadges(db, _, targetOpenId)
+      : undefined
+
     return {
       totalAmount,
+      orderStatusCounts,
       points: Math.max(0, availablePoints),
       orderCount,
       level: resolved.level,
