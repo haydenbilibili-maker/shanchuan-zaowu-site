@@ -41,7 +41,8 @@ const MP_DEFAULT = join(HERE, '..')
 
 const REL = {
   helper: 'subpackages/feature/gift/giftTextEffect.js',
-  asset: 'subpackages/feature/gift/assets/gift-typewriter-bed.wav',
+  // 2026-09-20 第四轮：音色由"打字机"改为"铅笔书写"（素材换、约束与播放逻辑不变）
+  asset: 'subpackages/feature/gift/assets/gift-pencil-bed.wav',
   compose: 'subpackages/feature/gift/compose/index.js',
   success: 'subpackages/feature/gift/success/index.js',
   receive: 'subpackages/feature/gift/receive/index.js'
