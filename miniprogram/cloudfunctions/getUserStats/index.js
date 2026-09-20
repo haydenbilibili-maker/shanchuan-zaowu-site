@@ -100,10 +100,12 @@ const ORDER_BADGE_BUCKETS = {
   paid: ['paid', 'paid_awaiting_address', 'ready_pickup'],
   shipped: ['shipped'],
   signed: ['received'],
-  // ⚠️ 不要照抄订单页签里的 `refund_approved` / `refund_rejected`：两者在
-  // `scripts/lib/orderStatusAllowed.json` 里属 **ghosts（零写入方）**（契约 C3 §4.2），
-  // 写回代码会被 `check:order-status-enum` 拦下；且因为零写入方，去掉它们**不改变任何计数**。
-  refund: ['aftersales', 'refunding', 'refunded', 'expired_refunding']
+  // ⚠️ 两处与订单页签**故意不同**，都是"角标只表达**要你处理**"这条规则：
+  //   · 不照抄 `refund_approved`/`refund_rejected` —— 两者在 `scripts/lib/order-statusAllowed.json`
+  //     里属 ghosts（零写入方，契约 C3 §4.2），写回代码会被 `check:order-status-enum` 拦下；
+  //   · 不含 `refunded`（已退款完成＝**终态**）—— 否则售后角标会只增不减（实测某账号 13 条）。
+  //     「已签收」同理：bucket 仍返回（数据完整性），但 UI 不渲染角标。
+  refund: ['aftersales', 'refunding', 'expired_refunding']
 }
 
 /**
@@ -196,14 +198,8 @@ exports.main = async (event, context) => {
     const { levels, source } = await loadMemberLevels(db)
     const resolved = resolveMemberLevel(levels, growthValue, isHonorary, userInfo && userInfo.levelOverride)
 
-    // 角标按需计算：只有「我的」页会传 withOrderCounts，结算页等调用方不受影响
-    const orderStatusCounts = (event && event.withOrderCounts === true)
-      ? await countOrderBadges(db, _, targetOpenId)
-      : undefined
-
     return {
       totalAmount,
-      orderStatusCounts,
       points: Math.max(0, availablePoints),
       orderCount,
       level: resolved.level,

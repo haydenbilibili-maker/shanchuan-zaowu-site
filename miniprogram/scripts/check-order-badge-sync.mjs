@@ -45,6 +45,18 @@ const REL = {
 /** 角标桶 → 订单页的页签序号（tab 1..5；0 是「全部」） */
 const BUCKET_TAB = { pay: 1, paid: 2, shipped: 3, signed: 4, refund: 5 }
 
+/** 「我的」页**会渲染**角标的格子（signed=已签收是终态，数据仍返回但不挂角标） */
+const DISPLAYED = ['pay', 'paid', 'shipped', 'refund']
+
+/**
+ * 角标**故意不计**的终态：角标只表达"要你处理"，累计记录不是待办。
+ * 这条与订单页签**故意不同**，所以必须在这里显式声明 ——
+ * 否则"少了一个状态"会被当成漏写，而"多了一个状态"会被当成新造，两者都判红。
+ */
+const BADGE_TERMINAL_EXCLUDED = {
+  refund: ['refunded'] // 已退款完成＝终态
+}
+
 /** 解析订单页顶部的 ORDER_STATUS 枚举字面量 */
 function parseStatusEnum (src) {
   const at = src.indexOf('const ORDER_STATUS = {')
@@ -152,11 +164,18 @@ function check (root) {
       const b = tabs[tab] ? tabs[tab].filter((v) => !ghostTokens.has(v)) : null
       if (!a) { problems.push(`云函数缺桶「${bucket}」`); return }
       if (!b) { problems.push(`订单页缺页签 ${tab}（${bucket}）的 status 集合`); return }
-      if (JSON.stringify(a) !== JSON.stringify(b)) {
+      const invented = a.filter((v) => !b.includes(v))
+      if (invented.length) {
+        problems.push(`桶「${bucket}」出现订单页签里没有的状态 ${invented.join('、')} —— 角标会多算`)
+      }
+      const dropped = b.filter((v) => !a.includes(v)).sort()
+      const allowed = (BADGE_TERMINAL_EXCLUDED[bucket] || []).slice().sort()
+      if (JSON.stringify(dropped) !== JSON.stringify(allowed)) {
         problems.push(
-          `桶「${bucket}」与订单页签 ${tab} 口径不一致：\n` +
+          `桶「${bucket}」与订单页签 ${tab} 的状态集合差集不是声明的终态排除：\n` +
+          `      少算了 ${JSON.stringify(dropped)}（声明允许 ${JSON.stringify(allowed)}）\n` +
           `      云函数 ${JSON.stringify(a)}\n      订单页 ${JSON.stringify(b)}\n` +
-          '      ⇒ 角标数字会与点进去的条数不符（"角标 0、列表有 1 条"）'
+          '      ⇒ 要么漏了状态（角标<列表），要么忘了声明终态排除'
         )
       }
     })
@@ -178,8 +197,28 @@ function check (root) {
 
   // ③ 我的页接线
   const countMentions = (src, re) => (src.match(re) || []).length
-  if (!/withOrderCounts:\s*true/.test(userJs)) problems.push('「我的」页初载未请求 withOrderCounts')
-  if (!/action:\s*'orderCounts'/.test(userJs)) problems.push('「我的」页 onShow 未走轻量 action: orderCounts')
+  if (/withOrderCounts/.test(userJs)) {
+    problems.push('「我的」页又用 withOrderCounts 搭在 getUserStats 上了 —— 那条调用在 `if (!statsLoaded)` 里，登录用户走 `session.stats` 分支时**根本不执行**（角标会一直不显示）')
+  }
+  if (!/action:\s*'orderCounts'/.test(userJs)) problems.push('「我的」页未走轻量 action: orderCounts')
+  // 载入时**无条件**取一次：必须在 `if (!statsLoaded)` 那段之前出现，
+  // 否则又会回到"会话自带 stats 时角标永不出数据"的老 bug（2026-09-20 真机截图）
+  // ⚠️ 锚点必须是**代码形态**：`if (!statsLoaded)` 这串字在说明注释里也会出现，
+  //    用裸字符串会被注释命中（本守卫第一版就这么误报过）。带 `{` 与 `this.` 才唯一。
+  const forced = userJs.indexOf('this.refreshOrderBadges(true)')
+  const fallbackBlock = userJs.indexOf('if (!statsLoaded) {')
+  if (forced < 0) problems.push('「我的」页载入时未无条件调用 refreshOrderBadges(true)')
+  else {
+    if (fallbackBlock > 0 && forced > fallbackBlock) {
+      problems.push('「我的」页的角标取数落在 `if (!statsLoaded)` 之后/之内 —— 登录用户走 session.stats 分支时不会执行')
+    }
+    // 更本质：必须在**会话拉取**之前 —— 会话自带 stats 时 `if (session.stats)` 会
+    // `statsLoaded = true` 并跳过下一次 getUserStats，角标就永远没有数据（2026-09-20 真机原形态）
+    const sessionFetch = userJs.lastIndexOf('await fetchUserSession', fallbackBlock > 0 ? fallbackBlock : userJs.length)
+    if (sessionFetch > 0 && forced > sessionFetch) {
+      problems.push('「我的」页的角标取数在会话拉取之后 —— 会被 session.stats 分支影响，登录用户可能永远拿不到数据')
+    }
+  }
   if (!/refreshOrderBadges\(\)/.test(userJs)) problems.push('「我的」页未在 onShow 调用 refreshOrderBadges()')
   // 每个角标在 wxml 里天然出现两次（wx:if 与 text 各一次）→ 只数 wx:if 那一处
   ;['pay', 'paid', 'shipped', 'refund'].forEach((k) => {
@@ -227,7 +266,7 @@ function selftest () {
           "statusFilter.status = _.in([ORDER_STATUS.PENDING_PAY, 'fulfilling']);",
           "statusFilter.status = _.in([ORDER_STATUS.PENDING_PAY, 'fulfilling', 'pending_review']);"
         ),
-        expect: /桶「pay」与订单页签 1 口径不一致/
+        expect: /桶「pay」与订单页签 1 的状态集合差集不是声明的终态排除/
       },
       {
         name: '云函数漏掉受礼单来源（受礼人的待发货角标少算）',
@@ -242,11 +281,19 @@ function selftest () {
         expect: /未排除兑换单/
       },
       {
+        name: '角标取数被挂进 session.stats 分支（登录用户永远拿不到数据 —— 本次真机"不展示角标"的原形态）',
+        file: REL.userPageJs,
+        mutate: (t) => t
+          .replace('    this.refreshOrderBadges(true);\n', '')
+          .replace('        if (session.stats) {\n', '        if (session.stats) {\n          this.refreshOrderBadges(true);\n'),
+        expect: /在会话拉取之后|未无条件调用/
+      },
+      {
         name: '角标桶写回幽灵状态 refund_approved（check:order-status-enum 教会的一条）',
         file: REL.cloudFn,
         mutate: (t) => t.replace(
-          "refund: ['aftersales', 'refunding', 'refunded', 'expired_refunding']",
-          "refund: ['aftersales', 'refunding', 'refunded', 'expired_refunding', 'refund_approved']"
+          "refund: ['aftersales', 'refunding', 'expired_refunding']",
+          "refund: ['aftersales', 'refunding', 'expired_refunding', 'refund_approved']"
         ),
         expect: /列了幽灵状态/
       },
@@ -290,7 +337,7 @@ function selftest () {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：5 处真实注入（页签加状态 / 漏受礼单 / 不排除兑换单 / 已签收也挂角标 / 桶里写回幽灵状态）全部拦下')
+  console.log('\n自检通过：6 处真实注入（页签加状态 / 漏受礼单 / 不排除兑换单 / 已签收也挂角标 / 桶里写回幽灵状态 / 取数挂进会话分支）全部拦下')
 }
 
 function main () {
@@ -303,7 +350,7 @@ function main () {
     for (const p of problems) console.error(`  - ${p}`)
     process.exit(1)
   }
-  console.log('✓ 「藏品订单」角标口径同源：5 桶与订单页签 status 集合逐桶相等 /')
+  console.log('✓ 「藏品订单」角标口径同源：桶 ⊆ 订单页签（差集＝声明的终态排除）/')
   console.log('  买家(排除兑换单)+受礼单两条来源都算 / 四格显示(已签收不挂) / onShow 走轻量 orderCounts / 文案走 formatBadgeText')
 }
 

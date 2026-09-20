@@ -1158,6 +1158,13 @@ Page(withAppModal({
       return;
     }
 
+    // 「藏品订单」角标：**必须独立于 stats 的来源**取一次。
+    // ⚠️ 踩过的坑：把它挂在 `if (!statsLoaded)` 里那次 getUserStats 上是错的 ——
+    //    登录用户的会话（fetchUserSession）通常自带 stats，会走 `if (session.stats)` 分支并
+    //    `statsLoaded = true`，那次 getUserStats **根本不会执行**，角标永远拿不到数据。
+    //    故这里无条件走轻量通道（action: 'orderCounts'）。
+    this.refreshOrderBadges(true);
+
     // openid 就绪后按账号隔离：快照属他人则切黄金骨架，等会话回填
     try {
       const raw = wx.getStorageSync(MEMBER_CARD_CACHE_KEY);
@@ -1239,17 +1246,13 @@ Page(withAppModal({
     if (!statsLoaded) {
       wx.cloud.callFunction({
         name: 'getUserStats',
-        // withOrderCounts：「藏品订单」数字角标（分桶口径与订单页签逐字一致，见云函数注释）。
-        // 只在本页请求 —— 结算页等其它调用方不受影响。
-        data: { withOrderCounts: true },
         success: (res) => {
           if (!res || !res.result) return;
           const data = res.result;
           if (Array.isArray(data.levelLadder) && data.levelLadder.length) {
             this.applyLevelLadder(data.levelLadder);
           }
-          this.applyOrderBadges(data.orderStatusCounts);
-          this._orderBadgesLoaded = true;
+
           this.setData({
             points: data.points || 0,
             level: data.level || 1,
@@ -1538,11 +1541,12 @@ Page(withAppModal({
    * onShow 轻量刷新角标：切回本 Tab 时可能刚付过款/刚签收，不刷新会显示过期数字。
    * 走 `action: 'orderCounts'` 专用通道（只做 10 个 count，不跑花销/等级聚合）。
    */
-  refreshOrderBadges() {
-    if (!this._orderBadgesLoaded) return
+  refreshOrderBadges(force) {
+    if (!force && !this._orderBadgesLoaded) return
     const now = Date.now()
-    if (now - (this._orderBadgesAt || 0) < 5000) return // 5s 内不重复打
+    if (!force && now - (this._orderBadgesAt || 0) < 5000) return // 5s 内不重复打
     this._orderBadgesAt = now
+    this._orderBadgesLoaded = true
     wx.cloud.callFunction({
       name: 'getUserStats',
       data: { action: 'orderCounts' },
