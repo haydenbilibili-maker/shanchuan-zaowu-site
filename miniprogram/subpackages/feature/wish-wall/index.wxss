@@ -8,6 +8,28 @@
  *   · 所有类名 ww- 前缀 —— 本页曾用 .lamp 撞上 app.wxss 的全局信号灯基类，
  *     卡片被压成 12rpx 竖条（详见 index.wxml 顶部注释与 test:wish-wall 的撞车守卫）。
  */
+
+/* ── 字号口径收口（2026-09-20）· 本页 8 处非令牌字号的分类与"不收敛"理由 ──────────
+   分类结论：8 处**全部是文本带**（正文 / 标题 / 标签 / 说明），本文件**没有**装饰带离群字号
+   —— 装饰 / 几何带那 46 处（≥56rpx，圆章直径那类）不在本文件，见
+   `docs/字阶令牌冻结提案_2026-09-19.md` §4.4 与 `docs/契约C7_设计令牌与交互规范_2026-09-18.md` §1.4。
+     19rpx×4：.ww-lantern-note / .ww-play-hint / .ww-sheet-product-label / .ww-sheet-note
+     21rpx×2：.ww-lantern-line / .ww-play-need-text
+     25rpx×1：.ww-sheet-line        42rpx×1：.ww-card-text
+   为什么不换成令牌（这是本轮"收口"的结论，不是漏做）：
+     1) 字阶 14 档是 16/18/20/22/…/44/48，**没有 19 / 21 / 25 / 42** ——「同值换令牌」在这 4 档上无解；
+     2) 这 4 个值**全部落在两档的正中间**（19 = 18/20 · 21 = 20/22 · 25 = 24/26 · 42 = 40/44）：
+        即**不存在"语义最接近"的令牌**，改值必然在两个等距档位之间选边 —— 那不是收敛，
+        是替产品做选择（提案 §5.2 结论一；C7 §1.3 给的 21→20 / 25→24 / 42→40 正是这种单边选取，
+        且 C7 §1.3 整张映射表**根本没有 19rpx**）。而字号是硬几何、改了就**真的改观感**，
+        静态判据证不了"可替代"（错题本 E8：版式类必须真机复核）；
+     3) 真收敛的前置条件：补 --fs-19 / --fs-21（把契约 C7 §1.1 的"14 档"改成 16 档 = 契约变更单，
+        归 visual 流）+ 25 / 42 由真机确认 —— 两条都不在"只改本文件"的范围里；
+     4) 本页已有棘轮：`scripts/test-wish-wall.mjs` 的 `FS_NON_TOKEN_OK` 逐值登记处数
+        （19×4 / 21×2 / 25×1 / 42×1），且按**精确相等**判 —— 动任何一处（哪怕 25→24）
+        都必须同步下调那张表，否则 `test:wish-wall` 变红。
+   因此本轮 **0 处取值变动**；每处就地留一行注释，避免下一个人再来"收"一次。 */
+
 page {
   /* 用设计 token：本页曾是全仓唯一写 #14120F 的页面，而 index.json 自己写的是 #1A1814 */
   background: var(--color-bg);
@@ -495,6 +517,7 @@ page {
   display: block;
   /* 整行的第一行，段间距交给 .ww-lantern 的 gap，不再叠 margin */
   margin-top: 0;
+  /* 字号口径：文本带；21rpx 不在字阶 14 档内（20 与 22 的正中间）→ 按"同值换令牌"不动值（见文件头） */
   font-size: 21rpx;
   /* 中文正文行距 1.45 偏挤（真图反馈）；1.6 是这套字号下的舒适值 */
   line-height: 1.6;
@@ -1335,6 +1358,7 @@ page {
   display: block;
   /* 灯位说明是三级信息：与灯语拉开 8rpx，字号再降一档、颜色压到 muted */
   margin-top: var(--space-1);
+  /* 字号口径：文本带；19rpx 不在字阶 14 档内（18 与 20 的正中间）→ 不动值（见文件头） */
   font-size: 19rpx;
   line-height: 1.5;
   color: var(--color-text-muted);
@@ -1533,6 +1557,7 @@ page {
   display: block;
   margin-top: 18rpx;
   font-family: var(--font-brand);
+  /* 字号口径：文本带；42rpx 不在字阶 14 档内（--fs-40 与 --fs-44 各差 2rpx = 无唯一就近，改值会改观感）→ 不动值（见文件头） */
   font-size: 42rpx;
   line-height: 1.5;
   color: #241F18;
@@ -1973,6 +1998,7 @@ page {
 .ww-play-hint {
   display: block;
   margin-top: 6rpx;
+  /* 字号口径：文本带；19rpx 不在字阶 14 档内（18 与 20 的正中间）→ 不动值（见文件头） */
   font-size: 19rpx;
   line-height: 1.4;
   color: var(--color-text-muted, #8A857C);
@@ -2115,6 +2141,7 @@ page {
 .ww-sheet-line {
   display: block;
   margin-top: 14rpx;
+  /* 字号口径：文本带；25rpx 不在字阶 14 档内（--fs-24 与 --fs-26 各差 1rpx = 无唯一就近，改值会改观感）→ 不动值（见文件头） */
   font-size: 25rpx;
   line-height: 1.72;
   color: #4A4234;
@@ -2161,6 +2188,7 @@ page {
 
 .ww-sheet-product-label {
   display: block;
+  /* 字号口径：文本带；19rpx 不在字阶 14 档内（18 与 20 的正中间）→ 不动值（见文件头） */
   font-size: 19rpx;
   letter-spacing: 0.06em;
   color: var(--brass-600);
@@ -2201,6 +2229,7 @@ page {
 .ww-sheet-note {
   display: block;
   margin-top: 18rpx;
+  /* 字号口径：文本带；19rpx 不在字阶 14 档内（18 与 20 的正中间）→ 不动值（见文件头） */
   font-size: 19rpx;
   text-align: center;
   color: #8A7E66;
@@ -2221,6 +2250,7 @@ page {
 .ww-play-need-text {
   flex: 1;
   min-width: 0;
+  /* 字号口径：文本带；21rpx 不在字阶 14 档内（20 与 22 的正中间）→ 不动值（见文件头） */
   font-size: 21rpx;
   line-height: 1.5;
   color: var(--color-text-muted, #8A857C);
