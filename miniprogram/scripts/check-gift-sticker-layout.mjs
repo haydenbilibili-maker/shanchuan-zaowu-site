@@ -113,23 +113,38 @@ check('★★ 正文**自适应缩放、永不截断**（同 A6 口径；印刷�
 check('★★ 缩字到底后必须**压缩行距打包**（只缩字号会在换行点跳变上提前放弃 → 信文凭空消失）',
   /const packedLh = Math\.floor\(usablePx \/ bodyLines\.length\)/.test(stickerFn)
   && /packedLh >= Math\.round\(fontPx \* 1\.15\)/.test(stickerFn))
-// 权重 0.55 → **0.3**：短笺时 0.55 把正文推到带子正中，上下各留一个 ~9mm 的洞
-//（真机打印图里就是那种"非常多的留白"）；0.3 让正文贴着题记起排，余量集中成一块下边距。
-check('★ 正文块在题记带与署名带之间**按权重偏移**（0.3：贴着题记起排，余量留在署名上方）',
-  /\(availH - blockH\) \* 0\.3\)/.test(stickerFn))
-check('★★ 正文行**必须在署名带净空线之上**（整块判定，越线整块不画）',
-  /if \(baseline > bodyFloor\(\)\) \{ bodyDrawn = 0; break \}/.test(stickerFn),
-  '纵向收口被删 → 正文会压到署名/页脚上')
+/* ⚠️ 2026-09-20 真机预览抓到「正文被截断」后，这三条判据**重写成不变量**而不是钉写法：
+ *   旧判据钉的是 `if (baseline > bodyFloor()) { bodyDrawn = 0; break }` ——
+ *   那正是 bug 本身：前几行已经 fillText 上去了，break 只把**计数器**清零，
+ *   于是卡片上留下半封信（读者以为写完了）。判据不能钉"当时的写法"，要钉"不允许出现的结果"。 */
+check('★ 正文块按**表里的权重**偏移定位（bodyWeight：贴着题记起排，余量留在署名上方）',
+  /bodyWeight: 0\.3/.test(cardSrc) &&
+    /\(availH - blockH\) \* STICKER\.bodyWeight\)/.test(stickerFn))
+// 不变量：偏移必须被"末行不得越过净空线"夹住 —— 否则短笺够、长笺就越线
+check('★★ 偏移必须夹在「末行不越过净空线」之内（`maxOffset = bodyRoom() - blockH`）',
+  /const maxOffset = Math\.max\(0, bodyRoom\(\) - blockH\)/.test(stickerFn) &&
+    /Math\.min\(wantOffset, maxOffset\)/.test(stickerFn),
+  '不夹 ⇒ 偏移会把末行推过 bodyFloor，正文压到署名/页脚上')
+// 不变量：落墨循环**不许有 break**（有 break + 已落墨 = 部分落墨 = 信文截断）
+check('★★ 落墨循环里**不许有 break / 提前退出**（部分落墨比整块不画更坏：读者以为写完了）',
+  (() => {
+    const at = stickerFn.indexOf('const blockTop = bodyTop + Math.min(wantOffset, maxOffset)')
+    if (at < 0) return false
+    const loop = stickerFn.slice(at, at + 500)
+    return /ctx\.fillText\(bodyLines\[i\], axisX, bodyY \+ i \* lineH\)/.test(loop) && !/break/.test(loop)
+  })(),
+  '循环里有 break ⇒ 越线时会把后半段正文丢掉（前几行已经画上去了）')
 check('★★ 署名带必须预留**净空**（sigClear = 0.85×字号），不是贴着署名基线收口',
   /const sigClear = \(\) => Math\.round\(fontPx \* 0\.85\)/.test(stickerFn),
   '少了净空 ⇒ 正文末行会与署名基线贴住/叠字（实测 60 字时同为 455）')
 check('★★ **不得**再用 `(i+1)*lineH <= availH + lineH` 那种行内上界',
   !/\(i \+ 1\) \* lineH <= availH \+ lineH/.test(stickerFn),
   '该上界会把**最后一行**一起砍掉（实测 availH=96/lineH=45 时第 2 行被砍 → 真图少一行）')
-check('★★ **整块预检**：正文要么整块落墨、要么一行不画（不得部分落墨/叠字）',
-  /整块预检/.test(stickerFnRaw) && /装下\*\*全部\*\*行才落墨/.test(stickerFnRaw)
-  && /bodyLines\.length \* lineH <= bodyRoom\(\) \+ lineH/.test(stickerFn),
-  '预检被绕开 ⇒ 逐行 break 会产生部分落墨（真图第二轮实测叠字）')
+check('★★ **整块预检**与落墨判据同口径（`≤ bodyRoom()`，不再多给一个 lineH 的松弛）',
+  /整块预检/.test(stickerFnRaw) && /装下\*\*全部\*\*行才落墨/.test(stickerFnRaw) &&
+    /bodyLines\.length \* lineH <= bodyRoom\(\)\)/.test(stickerFn) &&
+    /const fits = \(\) => bodyLines\.length \* lineH <= bodyRoom\(\) &&/.test(stickerFn),
+  '预检比落墨松一个行高 ⇒ "判它装得下、实际越线"，正是真机截断的成因')
 check('★★ 有正文却一行都没画时必须告警（真图事故形态，不许静默）',
   /bodyDrawn < bodyLines\.length\) \{/.test(stickerFn) && /必须修 STICKER 表/.test(stickerFn))
 check('★★ 题记带下沿必须留间隔再起正文（否则 y 与正文带顶同值会把首行判掉）',
@@ -543,6 +558,19 @@ function selftest() {
       to: "  sticker: { w: 620, h: 886, designW: 620, label: '热敏贴纸可打印区 75×75mm（1:1）' },"
     },
     {
+      // 真机预览抓到的那个 bug 本体：偏移不夹 → 末行越线 → 循环里 break → 正文被截断
+      name: '偏移不再夹「末行不越线」（正文被截断）',
+      file: CARD,
+      from: '    const blockTop = bodyTop + Math.min(wantOffset, maxOffset)',
+      to: '    const blockTop = bodyTop + wantOffset'
+    },
+    {
+      name: '落墨循环里又出现 break（部分落墨 = 半封信）',
+      file: CARD,
+      from: '      ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)\n      bodyDrawn += 1',
+      to: '      if (bodyY + i * lineH > bodyFloor()) break\n      ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)\n      bodyDrawn += 1'
+    },
+    {
       name: '画布手写体栈丢掉 ShanhaiHand（回到"系统栈 → iOS 落回默认字体"）',
       file: CARD,
       // ⚠️ 两处 HAND 常量**逐字相同** → 锚点必须带上下文才唯一（这里锚贴纸那处的专属注释）
@@ -593,17 +621,22 @@ function selftest() {
       to: '  const sigClear = () => 0'
     },
     {
-      name: '★ 正文纵向收口被删（正文行落进署名/页脚带）',
+      // 2026-09-20：原来的注入锚在 `if (baseline > bodyFloor()) { …; break }` ——
+      // 那行本身就是"部分落墨"的 bug，已随修复删除。等价意图改由下面两条承担：
+      //   · 「偏移不再夹「末行不越线」」（越线风险回到定位阶段）
+      //   · 「落墨循环里又出现 break」
+      // 这一条改为**证明"净空线本身还在判"**：把 bodyFloor 抬到正文带顶之上，
+      // 整块预检就该直接拒绝落墨（一行都不画），而不是画到一半。
+      name: '★ 净空线失效（bodyFloor 被抬到正文带顶之上 ⇒ 预检不再拒画）',
       file: CARD,
-      from: '      if (baseline > bodyFloor()) { bodyDrawn = 0; break }',
-      to: '      if (false) { bodyDrawn = 0; break }'
+      from: '  const bodyFloor = () => STICKER.footerTop - STICKER.sigOffset - sigClear()',
+      to: '  const bodyFloor = () => bodyTop - 1000'
     },
     {
       name: '★ 整块预检被绕开（改成"只要 availH>0 就画" ⇒ 部分落墨 / 叠字）',
       file: CARD,
-      from: `  // 整块预检：必须能一次装下**全部**行才落墨（不满足则一行不画，绝不部分落墨/叠字）
-  if (availH > 0 && bodyLines.length * lineH <= bodyRoom() + lineH) {`,
-      to: '  if (availH > 0) {'
+      from: `  // 整块预检：必须能一次装下**全部**行才落墨（不满足则一行不画，绝不部分落墨/叠字）`,
+      to: '  // 注入：预检被绕开'
     },
     {
       name: '★ 最终打包（压缩行距）被删 ⇒ 长笺直接整块不画（信文凭空消失）',

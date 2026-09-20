@@ -370,6 +370,10 @@ const STICKER = {
   bandNoteLineH: 34,                                    // 题记行高（2026-09-19：27→28 —— 再大就会把长笺正文挤到 24px 下限之下，守卫实测）                                    // 题记行高
   bandPadB: Math.round(3.0 * 11.811),                   // 带底留白（2026-09-19：3.5→3.0mm，为题记字号调大找回空间）                   // 带底留白
   bandGap: Math.round(1.7 * 11.811),                    // 带底→正文间隔（2026-09-19：2→1.7mm，同上；**必须 >0**）                      // 带底 → 正文带顶的间隔（**必须存在**：删掉它 y 会变 NaN ⇒ 正文再次消失）
+  // 正文块在「正文带」里的**偏移权重**（0 = 贴着题记带起排；1 = 顶到净空线上）。
+  // 2026-09-20：0.55 → 0.3 —— 短笺用 0.55 会被推到带子正中，上下各留一个 ~9mm 的洞
+  //（真机打印图里就是"非常多的留白"）；0.3 让余量集中成署名上方的一块下边距。
+  bodyWeight: 0.3,
   bodyTop: Math.round(19 * 11.811),                     // 正文带顶（无题记时用）—— **必须 < signTop**
   sigOffset: Math.round(5 * 11.811),                    // 署名基线相对 footerTop（向上）—— 2026-09-19：14→5mm，署名下移到印章正上方（同时把竖向余量还给正文）
   dateOffset: Math.round(1.5 * 11.811),                  // 日期基线相对 footerTop（向上）—— 2026-09-19：10.2→1.5mm（**必须小于 sigOffset** 才在署名之下）
@@ -669,7 +673,8 @@ function paintGiftStickerCard(canvas, o) {
   const sigClear = () => Math.round(fontPx * 0.85)
   const bodyFloor = () => STICKER.footerTop - STICKER.sigOffset - sigClear()
   const bodyRoom = () => bodyFloor() - bodyTop
-  const fits = () => bodyLines.length * lineH <= bodyRoom() + lineH && bodyLines.length * lineH <= availH
+  // 与落墨预检**同一条判据**（原来这里多给了一个 `lineH` 的松弛，导致"判它装得下、实际落墨越线"）
+  const fits = () => bodyLines.length * lineH <= bodyRoom() && bodyLines.length * lineH <= availH
   while (fontPx > 30 && !fits()) {
     fontPx -= 2
     lineH = Math.round(fontPx * 1.62)
@@ -683,23 +688,25 @@ function paintGiftStickerCard(canvas, o) {
     if (packedLh >= Math.round(fontPx * 1.15)) lineH = packedLh
   }
   // 整块预检：必须能一次装下**全部**行才落墨（不满足则一行不画，绝不部分落墨/叠字）
-  if (availH > 0 && bodyLines.length * lineH <= bodyRoom() + lineH) {
+  // ⚠️ 2026-09-20 真机预览抓到"正文被截断"：预检用的是「总高 ≤ 带宽 + 一个行高」，
+  //   而实际落墨位置还要**加一段偏移**（权重 × 余量）—— 于是"总高够"但"偏移之后末行越线"，
+  //   循环里那个 `break` 就把**后半段正文丢掉了**（前几行已经画上去了）。
+  //   部分落墨比整块不画更坏：读者以为信就写到这里。现在把不变量前移到**定位**这一步。
+  if (availH > 0 && bodyLines.length * lineH <= bodyRoom()) {
     // 正文块定位：在整个正文带（题记带下沿 → 署名净空线）里**加权居中**，权重 0.55（略偏下；0.75 会把正文推得离署名太近，守卫里已实测）。
     //   ⚠ 2026-09-20 真图反馈「排版偏上、下部发虚」的根因就在这里：
     //   原先是 `Math.min(availH, bodyRoom())` 当作可用高 —— 短笺时它会**把块顶顶到净空线上**
     //   （正文末行紧贴署名、而题记带下方留 14.5mm 空档），于是整块看起来"贴在下半部之上、重心偏上"。
     //   改成用真实 `availH` 分配余量：短笺上下各留约 7~8mm 相等的留白，长笺才靠净空线收口。
     const blockH = bodyLines.length * lineH
-    // 2026-09-20：权重 0.55 → **0.3**。短笺（1~2 行）时 0.55 会把正文块推到带子正中，
-    // 于是**上下各留一个 ~9mm 的洞**（真机打印图里就是这种"非常多的留白"）。
-    // 0.3 让正文贴着题记带起排，余量集中到署名上方 —— 读起来是一块下边距，而不是两个空洞。
-    const blockTop = bodyTop + Math.max(0, Math.round((availH - blockH) * 0.3))
+    // 想要的偏移（贴着题记带起排，余量留到署名上方）；再按"末行不得越过净空线"夹一次。
+    // 夹完仍是"整块落墨"——**循环里不再有 break**，进得来就一定画得完。
+    const wantOffset = Math.max(0, Math.round((availH - blockH) * STICKER.bodyWeight))
+    const maxOffset = Math.max(0, bodyRoom() - blockH)
+    const blockTop = bodyTop + Math.min(wantOffset, maxOffset)
     const bodyY = blockTop + lineH
     for (let i = 0; i < bodyLines.length; i += 1) {
-      const baseline = bodyY + i * lineH
-      // 收口：末行基线必须在「署名基线上方 sigClear 净空」之上；越线整块不画（由下面的告警暴露）
-      if (baseline > bodyFloor()) { bodyDrawn = 0; break }
-      ctx.fillText(bodyLines[i], axisX, baseline)
+      ctx.fillText(bodyLines[i], axisX, bodyY + i * lineH)
       bodyDrawn += 1
     }
   }
