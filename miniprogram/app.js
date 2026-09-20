@@ -339,7 +339,21 @@ App({
   },
 
   maybeOpenAtlasSpot(options) {
-    const q = (options && options.query) || {};
+    let opts = options || {};
+    // ⚠️ 与识别 / 注册两个入口**同一个坑**（2026-09-20 产品负责人：「iOS 能用、安卓不行」）：
+    //   安卓热启动时 onShow 的 options 可能是**旧的**（没有本次进入的 scene/query）。
+    //   缺了这段兜底，扫图鉴立牌在安卓上热启动不会跳页 —— 而 iOS 正常。
+    const hasSpot = (o) => {
+      const q = (o && o.query) || {};
+      return !!(q.spot || q.atlas || q.scene || (o && o.scene));
+    };
+    if (!hasSpot(opts) && typeof wx.getEnterOptionsSync === 'function') {
+      try {
+        const enter = wx.getEnterOptionsSync();
+        if (enter && hasSpot(enter)) opts = enter;
+      } catch (e) { /* 拿不到就按原 options 走 */ }
+    }
+    const q = (opts && opts.query) || {};
     let spot = q.spot || q.atlas || '';
     if (!spot && q.scene) {
       try {
@@ -348,11 +362,11 @@ App({
         spot = q.scene;
       }
     }
-    if (!spot && options && options.scene) {
+    if (!spot && opts && opts.scene) {
       try {
-        spot = decodeURIComponent(options.scene);
+        spot = decodeURIComponent(opts.scene);
       } catch (e) {
-        spot = options.scene;
+        spot = opts.scene;
       }
     }
     if (spot) {

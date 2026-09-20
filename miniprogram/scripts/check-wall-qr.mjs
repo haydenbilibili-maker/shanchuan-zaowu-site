@@ -383,22 +383,42 @@ if (process.argv.includes('--selftest')) {
   check('识别分支出现在 goHome 兜底**之前**（否则等于没写）',
     goHomeAt === -1 || appSrc.indexOf('/identify/i.test(rawPath)') < goHomeAt)
 
-  /* ★ 热启动兜底：**逐个入口函数**判，不看整份 app.js。
-   * ⚠️ 原来只看 `/getEnterOptionsSync/.test(appSrc)` —— 于是自检里"去掉某个函数的兜底"根本判不出来：
-   *   另一个入口函数里还有同一个调用，整文件级正则照样命中（自检第五条实测就是这么假绿的）。
-   *   入口函数是**互相独立的代码路径**，丢一个 = 那个物料在安卓热启动下又落首页。 */
+  /* ★ 热启动兜底：**逐个入口路由**判，不看整份 app.js。
+   * ⚠️ 原来只看 `/getEnterOptionsSync/.test(appSrc)` —— 自检里"去掉某个入口的兜底"因此**判不出来**
+   *   （另一个入口还有同一个调用，整文件级正则照样命中）。
+   *   这不是判据洁癖：安卓热启动时 `onShow` 的 options 可能是**旧的**，缺兜底的入口在那个物料上
+   *   就是"iOS 能用、安卓不行"（2026-09-20 产品负责人报的正是这一类）。
+   *
+   * 路由清单**从 app.js 派生**（不写死名单）：凡读入口 scene 的 App 方法都算 ——
+   *   `sceneOf(` 或任何 `*.scene`。只认 `sceneOf(` 会漏掉自己内联解析的那种
+   *   （图鉴 spot 路由就是这样漏掉的，它今天也补上了兜底）。
+   * 排除生命周期钩子（onLaunch/onShow/onPageNotFound… 它们**转发** options，不自己解析物料）。 */
   {
-    const fnSliceOf = (src, name) => {
-      const i = src.indexOf(name + '(options) {')
-      if (i < 0) return ''
-      const j = src.indexOf('\n  },', i)
-      return src.slice(i, j < 0 ? src.length : j)
+    const LIFECYCLE = new Set(['onLaunch', 'onShow', 'onHide', 'onError', 'onPageNotFound', 'onUnhandledRejection', 'onUncaughtException', 'onThemeChange', 'onMemoryWarning'])
+    const nameRe = /\n  ([a-zA-Z_][\w]*)\(([^)]*)\) \{/g
+    const marks = []
+    let m
+    while ((m = nameRe.exec(appSrc))) marks.push({ name: m[1], at: m.index })
+    const routers = []
+    for (let i = 0; i < marks.length; i += 1) {
+      const body = appSrc.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : appSrc.length)
+      if (LIFECYCLE.has(marks[i].name)) continue
+      if (/sceneOf\(|\.scene\b/.test(body)) routers.push({ name: marks[i].name, body })
     }
-    for (const fn of ['maybeOpenIdentifyEntry', 'maybeOpenRegisterEntry']) {
-      const body = fnSliceOf(appSrc, fn)
-      check(`★ ${fn} 自带热启动兜底（scene 缺失时用 wx.getEnterOptionsSync() 再取一次）`,
-        !!body && /getEnterOptionsSync/.test(body),
-        body ? '该入口函数里没有兜底 —— 安卓热启动时这一步会丢 scene' : `app.js 里找不到 ${fn}`)
+    check('★ 入口路由清单能从 app.js 派生（至少 3 个读入口 scene 的方法）',
+      routers.length >= 3, `派生到：${routers.map((r) => r.name).join(', ') || '(空)'}`)
+    // 兜底可以**自己调** `wx.getEnterOptionsSync()`，也可以**委托**给会话层的 `getEnterSceneText()`
+    //   —— 但委托必须是真的：那条 helper 自己也得调 `getEnterOptionsSync`（否则判据会被"委托"绕过）。
+    const sessionSrc = stripComments(readFileSync(resolve(ROOT, 'miniprogram/utils/analytics/session.js'), 'utf8'))
+    const helperCovers = /getEnterOptionsSync/.test(sessionSrc)
+    check('★ 会话层 getEnterSceneText() 自己就带热启动兜底（委托型入口靠它）',
+      helperCovers, 'session.js 里没有 getEnterOptionsSync —— 委托型入口的兜底是假的')
+    for (const r of routers) {
+      const direct = /getEnterOptionsSync/.test(r.body)
+      const delegated = /getEnterSceneText\(/.test(r.body)
+      check(`★★ ${r.name} 自带热启动兜底（直接调 getEnterOptionsSync，或委托 getEnterSceneText）`,
+        direct || (delegated && helperCovers),
+        '该入口缺兜底 —— 安卓热启动时这一步会丢 scene（"iOS 能用、安卓不行"）')
     }
   }
 
