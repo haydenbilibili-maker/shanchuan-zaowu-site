@@ -127,6 +127,8 @@ Page({
       clearTimeout(this._letterWriteTimer)
       this._letterWriteTimer = null
     }
+    // 收笔（或直接看全文/离开）就把敲击床停掉：床是"书写期间连续响"的，不停会一直响下去
+    textFx.stopTickSound()
   },
 
   _letterBodyFull() {

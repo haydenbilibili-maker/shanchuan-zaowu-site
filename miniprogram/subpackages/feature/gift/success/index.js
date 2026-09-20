@@ -59,6 +59,8 @@ Page({
     }
     this._typeFull = ''
     this._typeIndex = 0
+    // 收笔（或跳过/离开）就把敲击床停掉：床是"书写期间连续响"的，不停会一直响下去
+    textFx.stopTickSound()
     if (this.data.typing) this.setData({ typing: false })
   },
 
@@ -91,7 +93,9 @@ Page({
     const next = !this.data.sfxMuted
     textFx.setMuted(next)
     this.setData({ sfxMuted: next })
-    if (!next) textFx.playTick(false)
+    // 试听必须"放一小段就停"：敲击床是循环的，直接 playTick 会在没写字时一直响
+    if (!next) textFx.previewTickSound(900)
+    else textFx.stopTickSound()
   },
 
   onUnload() {

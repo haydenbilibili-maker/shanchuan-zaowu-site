@@ -21,18 +21,27 @@
  */
 
 /**
- * ⚠️ 音源的第一条硬约束：**敲击瞬态必须落在文件开头（≤25ms）**。
+ * 音效设计（2026-09-20 第三轮，按真机证据重做）：
  *
- * 真机事故（2026-09-19，产品负责人："只播放了三声，每段隔 2 秒左右"）：
- *   原来的 0.5s 素材把敲击放在 **110~120ms**、前面 100ms 是近乎静音，
- *   而热路径每 ~90ms 就 `stop()` 一次 —— **声音在响之前就被掐掉了**，
- *   只有恰好间隔够长的少数几次能走到瞬态，于是"只响几声、忽有忽无"。
- *   现素材 `gift-typewriter.wav` 是同一段录音切出来的 170ms 单声（PCM，瞬态在 1ms）。
- *   守卫 `check:gift-sfx-perf` 会**解码这个文件**断言瞬态位置 ≤25ms，
- *   并断言本常量确实指向它 —— 免得"守卫查一个文件、代码放另一个文件"。
+ * **不再"每字敲一下"，而是"书写期间放一条循环敲击床"** —— 一次书写只动两次原生音频调用
+ * （起笔 `play()`、收笔 `stop()`），逐字回调里**0 次**。
+ *
+ * 为什么必须这样（三轮真机反馈推出的结论）：
+ *   1. 第一轮："音效导致页面卡顿" → 每字 4 次原生写（含重设 `src`）；
+ *   2. 第二轮："只响三声、每段隔 2 秒" → 素材敲击在第 110ms，而每 90ms 就 `stop()`
+ *      一次，**声音在响之前被掐掉**（素材已重做，瞬态在 1ms）；
+ *   3. 第三轮仍不对 → 说明这台机器上**单次 `play()/stop()` 本身就慢**：
+ *      它既让逐字回调被拖住（页面卡顿），又让敲击声稀疏（听感=隔很久响一下）。
+ *      ⇒ 唯一稳的解法是把调用次数降到"每段书写一两次"，而不是继续调参数。
+ *
+ * ⚠️ 素材硬约束：**开头的瞬态 ≤25ms**（床的第一个敲击也必须在 0 附近，起笔即刻有声）；
+ *    且必须够"密"（≥8 次敲击），否则听起来是单响而不是打字。
+ *    守卫 `check:gift-sfx-perf` 会**解码这个文件**逐条断言，并断言本常量确实指向它 ——
+ *    免得"守卫查一个文件、代码放另一个文件"。
  */
-const SFX_SRC = '/subpackages/feature/gift/assets/gift-typewriter.wav'
-const SFX_VOLUME = 0.58
+const SFX_SRC = '/subpackages/feature/gift/assets/gift-typewriter-bed.wav'
+/** 床是**连续**在场的，同样音量会比"断续单响"听起来更吵，故比第一轮的 0.58 略低 */
+const SFX_VOLUME = 0.45
 const MUTE_KEY = 'gift_receive_sfx_muted'
 
 /** 标点与空白不响、且停顿更久 —— 与"真打字机换行/停顿"的手感一致 */
@@ -49,36 +58,35 @@ function setMuted (v) {
 }
 
 /**
- * 两次音效之间的最小间隔（毫秒）。
- *
- * 为什么必须有（2026-09-19 真机反馈"编排页打字时卡顿"，实测代码定位到这里）：
- *   逐字间隔只有 52~99ms，若每个字都重启一次音频，真机上音频管线一直在
- *   **加载/解码/重启**（叠加每字一次 setData），表现就是打字时掉帧、声音发糊。
- *   而打字机本来就是"离散按键"——限到 ≈11 次/秒以内反而更像，
- *   且把热路径的原生调用量直接减半。
+ * 距上次落笔超过它就视为**新的一次书写**（用于重置看门狗计数）。
+ * 逐字间隔只有 52~99ms（标点 260~360ms），1.2s 足以把两次书写分开。
  */
-const MIN_TICK_GAP_MS = 90
+const TYPING_IDLE_MS = 1200
 
 /** 音源单例（与 giftVoice.js 的既有约定一致：模块级持有，避免每次新建上下文） */
 let _sfx = null
-/** 仅在音频**报错**后置位 → 下一次 tick 才重设 src（自愈），正常路径一次都不重设 */
+/** 仅在音频**报错**后置位 → 下次启动床时才重设 src（自愈），正常路径不重设 */
 let _sfxNeedsReload = false
-/** 上次真正发声的时刻（节流用；0 = 可立即发声） */
+/** 上次落笔时刻（判"是否同一次书写"；0 = 新会话） */
 let _lastTickAt = 0
+/** 床当前是否应该在响（乐观置位；`onPlay` 会确认，看门狗会纠偏） */
+let _bedPlaying = false
 
 /**
- * 「play 到底生不生效」的看门狗。
+ * 「play 到底生不生效」的看门狗（第三轮新增，仍是运行时观测而非赌机型）。
  *
- * 为什么需要：`stop()` 之后 `play()` 能否重启，**各基础库/机型不一致** ——
- *   业界流传的保险是"每次都重设 `src`"，但那会让真机反复加载/解码（就是上一轮的卡顿）。
- *   于是改成**运行时观测**：`play()` 成功开始播放会触发 `onPlay`；
- *   若连发 `WATCHDOG_PLAYS` 次 play 却一次 `onPlay` 都没回来，说明这台机型不会重启，
- *   立刻切到"重设 src 再播"的可靠路径（更贵，但比一声不响好）。
- *   观测到一次 `onPlay` 就永不切换 —— 健康的机型全程走廉价路径。
+ * `play()` 成功开始播放会触发 `onPlay`。若连发 `WATCHDOG_PLAYS` 次 play 却一次 `onPlay`
+ * 都没回来，说明这台机型不认这条路，于是切到"重设 src 再播"的可靠路径；
+ * 观测到一次 `onPlay` 就永不切换。为避免"一直不响就一直重试"把页面拖死，
+ * 每次书写最多重试 `MAX_START_RETRIES` 次。
  */
-const WATCHDOG_PLAYS = 6
+const WATCHDOG_TICKS = 4
+const MAX_START_RETRIES = 3
 let _plays = 0
 let _playEvents = 0
+let _retries = 0
+/** "床应该响、却始终收不到 onPlay"的落笔计数（看门狗判据） */
+let _silentTicks = 0
 /** 一旦观测到"play 不生效"就置位（**粘性**：不因换页/换会话而被重置，避免反复试错） */
 let _reliableReload = false
 
@@ -88,9 +96,18 @@ function ensureSfx () {
   audio.obeyMuteSwitch = true
   audio.volume = SFX_VOLUME
   audio.src = SFX_SRC
-  audio.onPlay(() => { _playEvents += 1 })
+  audio.loop = true
+  audio.onPlay(() => {
+    _playEvents += 1
+    _bedPlaying = true
+  })
+  audio.onEnded(() => {
+    // 理论上 loop=true 不会走到这里；若某些机型 loop 失效，这里补一次（每床一次，不构成热路径）
+    _bedPlaying = false
+    if (_lastTickAt && Date.now() - _lastTickAt < TYPING_IDLE_MS) startBed()
+  })
   audio.onError((err) => {
-    // 音效失败不打断书写，但下一次 tick 要重载音源（否则会一直哑）
+    // 音效失败不打断书写，但下次启动床时要重载音源（否则会一直哑）
     _sfxNeedsReload = true
     console.warn('礼笺打字机音效出错，下次重载音源', err && (err.errMsg || err))
   })
@@ -98,46 +115,109 @@ function ensureSfx () {
   return audio
 }
 
-/**
- * 每个字落笔时调用。
- *
- * ⚠️ **热路径只许做两件原生调用（stop + play）**：
- *   · 每 tick 重设 `src` = 让真机反复加载/解码音频 → 这是上一轮卡顿的主因（默认不做）；
- *   · 每 tick 写 `volume` 也是原生属性写入，只在创建时设一次；
- *   · 重设 `src` 只在两种情况下发生：`onError` 之后，或看门狗判定"play 不生效"之后。
- *
- * ⚠️ 节流判断必须在**碰音频之前**：先 stop/play 再判断等于没节流。
- *
- * ⚠️ **不要在 `clearTimer` 里调用销毁** —— 那种函数往往在每次 tick 内部都被调用，
- * 放进去会让音效一声都响不出来（不报错、极难查；编排页就是这么差点踩到的）。
- */
-function playTick (muted) {
-  if (muted) return
-  const now = Date.now()
-  // 距上次发声超过一个"书写会话"的间隔 → 视为新会话，重置看门狗计数（但粘性结论不重置）
-  if (now - _lastTickAt > 1200) {
-    _plays = 0
-    _playEvents = 0
-  }
-  if (now - _lastTickAt < MIN_TICK_GAP_MS) return
-  _lastTickAt = now
+/** 启动敲击床：一次书写里只会走 1 次（除非看门狗纠偏） */
+function startBed () {
   try {
     const a = ensureSfx()
     _plays += 1
-    if (!_reliableReload && _plays >= WATCHDOG_PLAYS && _playEvents === 0) {
-      _reliableReload = true
-      console.warn('礼笺打字机音效：本机 play() 未生效，改用「重设音源再播」的可靠路径')
-    }
     if (_reliableReload || _sfxNeedsReload) reloadSfxSrc(a)
-    a.stop()
     a.play()
+    _bedPlaying = true
+    _silentTicks = 0
+    armIdleWatch()
   } catch (e) {
     _sfxNeedsReload = true
-    console.warn('礼笺打字机音效播放失败，下次重载音源', e)
+    _bedPlaying = false
+    console.warn('礼笺打字机音效启动失败，下次重载音源', e)
   }
 }
 
-/** 罕见路径：音频报错后重设音源（自愈一次），不在热路径上 */
+/**
+ * 空闲自停：床是循环的，万一某条路径漏了收笔就会一直响。
+ * 每 `TYPING_IDLE_MS` 检查一次"最近还有没有落笔"，没有就自己停 —— 兜底，不依赖调用方。
+ */
+let _idleTimer = null
+
+function armIdleWatch () {
+  if (_idleTimer) return
+  _idleTimer = setTimeout(() => {
+    _idleTimer = null
+    if (!_bedPlaying) return
+    if (Date.now() - _lastTickAt > TYPING_IDLE_MS) stopTickSound()
+    else armIdleWatch()
+  }, TYPING_IDLE_MS)
+}
+
+function clearIdleWatch () {
+  if (!_idleTimer) return
+  clearTimeout(_idleTimer)
+  _idleTimer = null
+}
+
+/**
+ * 每个字落笔时调用（三页共用）。
+ *
+ * ⚠️ **热路径（床已在响时）必须是 0 次原生调用** —— 这是本设计唯一的目的：
+ *   这台机器上单次 `play()/stop()` 本身就慢，任何"每字一次"的写法都会同时
+ *   拖住逐字回调（页面卡顿）并让敲击变稀疏。
+ *
+ * ⚠️ 静音态下必须**主动停床**（不能只 `return`）：否则关掉声音后床还在响。
+ *
+ * ⚠️ **不要在 `clearTimer` 里调用销毁** —— 那种函数往往在每次 tick 内部都被调用，
+ * 放进去会让音效一声都响不出来（不报错、极难查；编排页就是这么差点踩到的）。
+ *   收笔请用 `stopTickSound()`（幂等，已响才停）。
+ */
+function playTick (muted) {
+  if (muted) {
+    stopTickSound()
+    return
+  }
+  const now = Date.now()
+  // 距上次落笔很久 → 新的一次书写：重置计数与重试预算（粘性结论 `_reliableReload` 不重置）
+  if (now - _lastTickAt > TYPING_IDLE_MS) {
+    _plays = 0
+    _playEvents = 0
+    _retries = 0
+  }
+  _lastTickAt = now
+  if (_bedPlaying) {
+    // 看门狗：床"应该"在响，却连一次 onPlay 都没收到 ⇒ 认定本机不认这条路，
+    // 切到「重设音源再播」并重来一次；重试有上限，避免"一直不响就一直重试"拖死页面。
+    _silentTicks += 1
+    if (_playEvents === 0 && _silentTicks >= WATCHDOG_TICKS) {
+      if (!_reliableReload) {
+        _reliableReload = true
+        console.warn('礼笺打字机音效：本机 play() 未生效，改用「重设音源再播」的可靠路径')
+      }
+      if (_retries >= MAX_START_RETRIES) return
+      _retries += 1
+      _bedPlaying = false
+      _silentTicks = 0
+    }
+    if (_bedPlaying) return // ← 正常情况：0 次原生调用
+  }
+  startBed()
+}
+
+/** 收笔 / 静音 / 卸载时停床（幂等：没在响就什么都不做） */
+function stopTickSound () {
+  clearIdleWatch()
+  if (!_bedPlaying) return
+  _bedPlaying = false
+  try { if (_sfx) _sfx.stop() } catch (e) { /* ignore */ }
+}
+
+/**
+ * 静音开关的「试听」：床不能在没写字时一直响，所以放一小段就自己停。
+ * @param {number} [ms] 试听时长
+ */
+function previewTickSound (ms) {
+  _lastTickAt = Date.now()
+  playTick(false)
+  setTimeout(() => stopTickSound(), Math.max(300, Number(ms) || 900))
+}
+
+/** 罕见路径：音频报错/看门狗纠偏后重设音源，不在逐字热路径上 */
 function reloadSfxSrc (a) {
   _sfxNeedsReload = false
   a.src = SFX_SRC
@@ -150,8 +230,12 @@ function destroySfx () {
   _sfx = null
   _sfxNeedsReload = false
   _lastTickAt = 0
+  _bedPlaying = false
   _plays = 0
   _playEvents = 0
+  _retries = 0
+  _silentTicks = 0
+  clearIdleWatch()
   // 注意：`_reliableReload` 是**粘性**的 —— 这台机型不会重启就是不会，换页也不必重新试错
 }
 
@@ -182,12 +266,14 @@ module.exports = {
   SFX_SRC,
   SFX_VOLUME,
   MUTE_KEY,
-  MIN_TICK_GAP_MS,
+  TYPING_IDLE_MS,
   PUNCT_RE,
   isMuted,
   setMuted,
   ensureSfx,
   playTick,
+  stopTickSound,
+  previewTickSound,
   destroySfx,
   isPunct,
   delayForChar,

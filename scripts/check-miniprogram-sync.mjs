@@ -67,7 +67,9 @@ const IGNORE_REL = /^scripts\/.*\.result\.json$/
  *   ① 只处理「主库会管理的代码/资源后缀」；
  *   ② 显式排除本机产物与身份文件 —— 这些在开发仓本来就该存在，删了会出事。
  */
-const PRUNE_SAFE_EXT = /\.(js|json|wxml|wxss|wxs|ts|png|jpe?g|gif|svg|webp|mp3|mp4|ttf|otf|woff2?)$/i
+// 注意带上 wav/aac/m4a/ogg：礼笺打字机音效就是 .wav（2026-09-20），
+// 漏了它 → 删素材时 --prune 会判成"本机产物"跳过，开发仓留残骸、包体也不瘦。
+const PRUNE_SAFE_EXT = /\.(js|json|wxml|wxss|wxs|ts|png|jpe?g|gif|svg|webp|mp3|mp4|wav|aac|m4a|ogg|ttf|otf|woff2?)$/i
 const PRUNE_EXCLUDE_REL = [
   /(^|\/)node_modules\//,
   /(^|\/)\.git\//,
@@ -324,6 +326,12 @@ function selftest() {
     expect('J 残留 js 已删', !existsSync(join(dst, 'legacy.js')))
     expect('J 残留 wxml 已删', !existsSync(join(dst, 'sub-legacy.wxml')))
     expect('J 复跑检查通过', run(false).status === 0)
+
+    seed()
+    writeFileSync(join(dst, 'legacy-sfx.wav'), 'RIFF....WAVE')
+    const l = run(false, ['--prune'])
+    expect('L --prune 删除开发仓残留音频（.wav 在主库已删）→ 0', l.status === 0, l.stderr)
+    expect('L 残留 wav 已删', !existsSync(join(dst, 'legacy-sfx.wav')))
 
     seed()
     mkdirSync(join(dst, 'scripts'), { recursive: true })

@@ -41,10 +41,40 @@ const MP_DEFAULT = join(HERE, '..')
 
 const REL = {
   helper: 'subpackages/feature/gift/giftTextEffect.js',
-  asset: 'subpackages/feature/gift/assets/gift-typewriter.wav',
+  asset: 'subpackages/feature/gift/assets/gift-typewriter-bed.wav',
   compose: 'subpackages/feature/gift/compose/index.js',
   success: 'subpackages/feature/gift/success/index.js',
   receive: 'subpackages/feature/gift/receive/index.js'
+}
+
+/** 把 WAV 截短到前 ms 毫秒（自检用：复现"只剩一声、密度不足"的形态） */
+function truncateWav (file, ms) {
+  const buf = readFileSync(file)
+  let off = 12
+  let fmt = null
+  let dataOff = -1
+  let dataSize = 0
+  let sizeFieldOff = -1
+  while (off + 8 <= buf.length) {
+    const id = buf.toString('ascii', off, off + 4)
+    const size = buf.readUInt32LE(off + 4)
+    if (id === 'fmt ') {
+      fmt = { channels: buf.readUInt16LE(off + 10), sampleRate: buf.readUInt32LE(off + 12), bits: buf.readUInt16LE(off + 22) }
+    } else if (id === 'data') {
+      dataOff = off + 8
+      dataSize = size
+      sizeFieldOff = off + 4
+      break
+    }
+    off = off + 8 + size + (size % 2)
+  }
+  if (!fmt || dataOff < 0) throw new Error('自检注入：找不到 fmt/data 块')
+  const bytesPerSec = fmt.sampleRate * fmt.channels * (fmt.bits / 8)
+  const keep = Math.min(dataSize, Math.round((bytesPerSec * ms) / 1000))
+  const out = Buffer.concat([buf.subarray(0, dataOff), buf.subarray(dataOff, dataOff + keep)])
+  out.writeUInt32LE(keep, sizeFieldOff)
+  out.writeUInt32LE(out.length - 8, 4)
+  writeFileSync(file, out)
 }
 
 /** 在 WAV 的 data 块前面插一段静音（自检用：复现"瞬态不在开头"的事故形态） */
@@ -117,6 +147,20 @@ function readWav (file) {
   return { ...fmt, samples, durationMs: (count / fmt.channels / fmt.sampleRate) * 1000 }
 }
 
+/** 数敲击次数（过阈值 + 不应期 30ms），用于断言床的密度 */
+function countClacks (wav) {
+  const peak = wav.samples.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
+  if (!peak) return 0
+  const thr = peak * 0.35
+  const refractory = Math.round(wav.sampleRate * 0.03)
+  let n = 0
+  let last = -refractory
+  for (let i = 0; i < wav.samples.length; i += 1) {
+    if (Math.abs(wav.samples[i]) > thr && i - last > refractory) { n += 1; last = i }
+  }
+  return n
+}
+
 /** 敲击瞬态位置（首个超过峰值 35% 的采样点，毫秒） */
 function onsetMs (wav) {
   const peak = wav.samples.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
@@ -132,7 +176,7 @@ const MIN_GAP_FLOOR = 60
  *  @param {object} [opts] playEvents=false 模拟"这台机型 stop() 后 play() 不重启"（观察不到 onPlay） */
 function makeHarness (source, opts = {}) {
   const firePlayEvents = opts.playEvents !== false
-  const counters = { create: 0, srcSet: 0, volumeSet: 0, play: 0, stop: 0, destroy: 0, onError: 0, onPlay: 0 }
+  const counters = { create: 0, srcSet: 0, volumeSet: 0, play: 0, stop: 0, destroy: 0, onError: 0, onPlay: 0, onEnded: 0 }
   let currentSrc = ''
   let currentVolume = 1
   const ctx = {
@@ -140,6 +184,7 @@ function makeHarness (source, opts = {}) {
     paused: true,
     _onError: null,
     _onPlay: null,
+    _onEnded: null,
     get src () { return currentSrc },
     set src (v) { counters.srcSet += 1; currentSrc = v },
     get volume () { return currentVolume },
@@ -152,7 +197,8 @@ function makeHarness (source, opts = {}) {
     stop () { counters.stop += 1 },
     destroy () { counters.destroy += 1 },
     onError (cb) { counters.onError += 1; ctx._onError = cb },
-    onPlay (cb) { counters.onPlay += 1; ctx._onPlay = cb }
+    onPlay (cb) { counters.onPlay += 1; ctx._onPlay = cb },
+    onEnded (cb) { counters.onEnded += 1; ctx._onEnded = cb }
   }
   const wxStub = {
     createInnerAudioContext () { counters.create += 1; return ctx },
@@ -163,15 +209,31 @@ function makeHarness (source, opts = {}) {
   // 可控时钟：模块里的 Date.now() 取参数里的 Date（形参遮蔽全局，无需改 globalThis）
   let now = 1_000_000
   const DateStub = { now: () => now }
+  // 可控定时器：守卫要能证明"床不会一直响"（空闲自停 / 试听到时停）
+  let timerSeq = 0
+  const timerQ = new Map()
+  const timers = {
+    setTimeout (fn, ms) { const id = ++timerSeq; timerQ.set(id, { fn, ms }); return id },
+    clearTimeout (id) { timerQ.delete(id) },
+    /** 触发全部待发回调（按延时升序；回调里重新 arm 的进新队列） */
+    flush () {
+      const items = [...timerQ.entries()].sort((a, b) => a[1].ms - b[1].ms)
+      timerQ.clear()
+      items.forEach(([, t]) => { try { t.fn() } catch (e) { /* ignore */ } })
+    },
+    pending: () => timerQ.size
+  }
   const mod = { exports: {} }
   // eslint-disable-next-line no-new-func
-  new Function('wx', 'Date', 'module', 'exports', 'require', source)(
-    wxStub, DateStub, mod, mod.exports, () => { throw new Error('giftTextEffect 不该 require 别的模块') }
+  new Function('wx', 'Date', 'setTimeout', 'clearTimeout', 'module', 'exports', 'require', source)(
+    wxStub, DateStub, timers.setTimeout, timers.clearTimeout, mod, mod.exports,
+    () => { throw new Error('giftTextEffect 不该 require 别的模块') }
   )
   return {
     api: mod.exports,
     counters,
     ctx,
+    timers,
     advance: (ms) => { now += ms },
     now: () => now
   }
@@ -195,73 +257,82 @@ function check (root) {
   const { api, counters, ctx, advance } = h
 
   if (typeof api.playTick !== 'function') return ['giftTextEffect.js 未导出 playTick']
-  if (typeof api.MIN_TICK_GAP_MS !== 'number') problems.push('未导出 MIN_TICK_GAP_MS（节流间隔不可观测）')
-  else if (api.MIN_TICK_GAP_MS < MIN_GAP_FLOOR) {
-    problems.push(`MIN_TICK_GAP_MS = ${api.MIN_TICK_GAP_MS}ms 太小（下限 ${MIN_GAP_FLOOR}ms）：逐字间隔只有 52~99ms，等于每个字都重启音频`)
-  }
+  if (typeof api.stopTickSound !== 'function') return ['giftTextEffect.js 未导出 stopTickSound（收笔停床靠它）']
 
-  // ① 同一毫秒内连打 50 次：只许一次"创建 + 写 src + 写 volume + play"
+  // ① 一次书写：同刻连打 50 次 → 只创建 1 个上下文、只写 1 次 src/volume、**只 play 1 次**
   for (let i = 0; i < 50; i += 1) api.playTick(false)
   if (counters.create !== 1) problems.push(`同刻连打 50 次却创建了 ${counters.create} 个音频上下文（应恰好 1 个）`)
   if (counters.srcSet !== 1) problems.push(`同刻连打 50 次却重设 src ${counters.srcSet} 次（应恰好 1 次 —— 每 tick 重设 src 就是真机卡顿主因）`)
   if (counters.volumeSet !== 1) problems.push(`同刻连打 50 次却写 volume ${counters.volumeSet} 次（应恰好 1 次，只在创建时设）`)
-  if (counters.play !== 1) problems.push(`同刻连打 50 次却 play 了 ${counters.play} 次（节流应只放行 1 次；节流必须在碰音频之前）`)
+  if (counters.play !== 1) problems.push(`同刻连打 50 次却 play 了 ${counters.play} 次（床只需启动 1 次）`)
 
-  // ② 正常节奏（100ms）不被节流吞掉
-  const beforePlay = counters.play
-  for (let i = 0; i < 20; i += 1) { advance(100); api.playTick(false) }
-  if (counters.play - beforePlay !== 20) {
-    problems.push(`间隔 100ms 连打 20 次只响了 ${counters.play - beforePlay} 次（正常按键不该被节流吞掉）`)
+  // ② ★核心：整段书写（6 秒、每 100ms 一次落笔 = 60 次）里**原生 play 始终只有 1 次**
+  //    —— 这就是"这台机器单次 play 慢也拖不垮页面"的机械证明
+  for (let i = 0; i < 60; i += 1) { advance(100); api.playTick(false) }
+  if (counters.play !== 1) {
+    problems.push(`6 秒书写（60 次落笔）里 play 了 ${counters.play} 次 —— 床在响时逐字回调必须是 0 次原生调用`)
   }
-  if (counters.srcSet !== 1) problems.push(`正常节奏下 src 被重设了 ${counters.srcSet} 次（热路径不许碰 src）`)
+  if (counters.srcSet !== 1) problems.push(`整段书写里 src 被重设了 ${counters.srcSet} 次（热路径不许碰 src）`)
+  if (counters.stop !== 0) problems.push(`书写中途不该出现 stop（实际 ${counters.stop} 次）`)
 
-  // ③ 静音：零原生调用
-  const snapshot = { ...counters }
+  // ③ 收笔：停床，且幂等（再调一次不该再产生原生调用）
+  const beforeStop = counters.stop
+  api.stopTickSound()
+  if (counters.stop !== beforeStop + 1) problems.push('stopTickSound() 没有停床')
+  const afterStop = counters.stop
+  api.stopTickSound()
+  if (counters.stop !== afterStop) problems.push('stopTickSound() 不幂等（重复调用又发了一次 stop）')
+
+  // ④ 下一次书写：隔开一个空闲期后必须能重新起笔（且仍然只 play 1 次）
+  advance(2000)
+  const p1 = counters.play
+  for (let i = 0; i < 30; i += 1) { advance(100); api.playTick(false) }
+  if (counters.play !== p1 + 1) problems.push(`新一次书写应恰好重新起笔 1 次（实际 ${counters.play - p1} 次）`)
+
+  // ⑤ 静音：必须**主动停床**（不能只 return，否则关了声音床还在响）
+  const s1 = counters.stop
+  api.playTick(true)
+  if (counters.stop !== s1 + 1) problems.push('静音时没有停床（关掉声音后床会继续响）')
+  const snap = { ...counters }
   for (let i = 0; i < 20; i += 1) { advance(100); api.playTick(true) }
-  Object.keys(snapshot).forEach((k) => {
-    if (counters[k] !== snapshot[k]) problems.push(`静音时仍产生了原生调用 ${k}（${snapshot[k]} → ${counters[k]}）`)
+  Object.keys(snap).forEach((k) => {
+    if (counters[k] !== snap[k]) problems.push(`静音期间仍产生了原生调用 ${k}（${snap[k]} → ${counters[k]}）`)
   })
 
-  // ④ 节流边界（先制造一次基准发声 —— 否则"上次发声"还停在静音循环之前，窗口早就过期了）
-  const gap = typeof api.MIN_TICK_GAP_MS === 'number' ? api.MIN_TICK_GAP_MS : 90
-  api.playTick(false)
-  const p0 = counters.play
-  advance(gap - 1)
-  api.playTick(false)
-  if (counters.play !== p0) problems.push(`距上次发声 ${gap - 1}ms 就响了（应被节流拦下）`)
-  advance(2)
-  api.playTick(false)
-  if (counters.play !== p0 + 1) problems.push(`距上次发声 ${gap + 1}ms 仍不响（节流过头）`)
+  // ⑥ 空闲自停：床在响但一直没落笔 → 定时器到点必须自己停（兜底，不依赖调用方）
+  advance(2000)
+  api.playTick(false) // 起笔
+  const s2 = counters.stop
+  advance(5000) // 之后不再有落笔
+  h.timers.flush()
+  h.timers.flush()
+  if (counters.stop <= s2) problems.push('空闲自停失效：长时间没有落笔，床仍在响（会一直响下去）')
 
-  // ⑤ destroy 后可重建且立即发声（节流状态复位）
+  // ⑦ 试听：静音开关的试听必须"放一小段就停"，不能一直响
+  advance(2000)
+  const p3 = counters.play
+  api.previewTickSound(900)
+  if (counters.play !== p3 + 1) problems.push('previewTickSound() 没有起笔')
+  const s3 = counters.stop
+  h.timers.flush()
+  if (counters.stop <= s3) problems.push('previewTickSound() 到时没有停（试听会一直响）')
+
+  // ⑧ destroy 后可重建并立即起笔
   const c0 = counters.create
-  const p1 = counters.play
+  const p4 = counters.play
   api.destroySfx()
   if (counters.destroy < 1) problems.push('destroySfx() 未销毁音频上下文')
   api.playTick(false)
   if (counters.create !== c0 + 1) problems.push('destroySfx() 之后未重建音频上下文')
-  if (counters.play !== p1 + 1) problems.push('destroySfx() 之后首次 tick 被节流拦下（节流状态未复位）')
+  if (counters.play !== p4 + 1) problems.push('destroySfx() 之后首次落笔没有起笔')
 
-  // ⑥ 报错后只自愈一次
-  if (typeof ctx._onError !== 'function') {
-    problems.push('未注册 onError（音频报错后无法自愈，会一直变哑）')
-  } else {
-    const srcBefore = counters.srcSet
-    ctx._onError({ errMsg: 'guard-injected error' })
-    advance(gap + 10)
-    api.playTick(false)
-    if (counters.srcSet !== srcBefore + 1) {
-      problems.push(`音频报错后应恰好重设 src 1 次（实际 ${counters.srcSet - srcBefore} 次）`)
-    }
-    const srcAfter = counters.srcSet
-    for (let i = 0; i < 5; i += 1) { advance(gap + 10); api.playTick(false) }
-    if (counters.srcSet !== srcAfter) {
-      problems.push('自愈后又在热路径重设 src（应只在报错后的下一次重设一次）')
-    }
-  }
-
-  // ⑦ 三页都走共享件
-  for (const [key, rel] of [['compose', REL.compose], ['success', REL.success], ['receive', REL.receive]]) {
+  // ⑦ 三页都走共享件：逐字循环调 playTick，且**收笔那个函数体内**调了 stopTickSound
+  const PAGES = [
+    ['compose', REL.compose, 'clearNoteWriteTimer'],
+    ['success', REL.success, '_stopType'],
+    ['receive', REL.receive, '_clearLetterWriteTimer']
+  ]
+  for (const [key, rel, stopFn] of PAGES) {
     let src = ''
     try {
       src = readFileSync(join(root, rel), 'utf8')
@@ -271,6 +342,13 @@ function check (root) {
     }
     if (!src.includes('giftTextEffect')) problems.push(`${rel} 未引用共享件 giftTextEffect`)
     if (!src.includes('playTick(')) problems.push(`${rel} 的逐字循环没有调用 textFx.playTick（${key} 页会退回旧写法）`)
+    // 只认**定义**形态 `name() {`：`this.name()` 这种调用点会先被 indexOf 命中，锚点就错了
+    const at = src.indexOf(`${stopFn}() {`)
+    const body = at >= 0 ? src.slice(at, at + 400) : ''
+    if (at < 0) problems.push(`${rel} 找不到收笔函数 ${stopFn}(（守卫的锚点需要同步更新）`)
+    else if (!body.includes('stopTickSound(')) {
+      problems.push(`${rel} 的收笔函数 ${stopFn}() 没有调用 textFx.stopTickSound —— ${key} 页的敲击床会一直响下去`)
+    }
   }
 
   // ⑧ 音源本体：**瞬态必须落在文件开头**（本次真机事故的根因就在素材里）
@@ -290,41 +368,49 @@ function check (root) {
       const { onsetMs: onset, peak } = onsetMs(wav)
       if (!(onset <= 25)) {
         problems.push(
-          `音源 ${assetRel} 的敲击瞬态在 ${onset.toFixed(0)}ms（必须 ≤25ms）：热路径每 ≥${gap}ms 会 stop() 一次，` +
-          '瞬态靠后会**在响之前被掐掉** —— 真机表现就是"只响几声、忽有忽无"'
+          `音源 ${assetRel} 的敲击瞬态在 ${onset.toFixed(0)}ms（必须 ≤25ms）：起笔那一刻就要有声，` +
+          '靠后的瞬态在真机上会**在响之前被掐掉** —— 真机表现就是"只响几声、忽有忽无"'
         )
       }
-      if (wav.durationMs > 250) {
-        problems.push(`音源 ${assetRel} 时长 ${wav.durationMs.toFixed(0)}ms（应 ≤250ms）：这是"每字一声"的短音效，不是循环床`)
+      // 床是"书写期间连续响"的循环音源：时长可以到几秒，但要够密、接缝要顺
+      if (wav.durationMs < 500 || wav.durationMs > 3000) {
+        problems.push(`音源 ${assetRel} 时长 ${wav.durationMs.toFixed(0)}ms（应在 500~3000ms）：太短循环感强，太长白占包体`)
+      }
+      const clacks = countClacks(wav)
+      if (clacks < 8) {
+        problems.push(`音源 ${assetRel} 只检出 ${clacks} 次敲击（应 ≥8）：密度不够听起来是"单响"而不是打字床`)
+      }
+      // 接缝：末尾必须落在两次敲击之间的安静处，否则循环点会有"咔"的一声
+      const tail = Math.abs(wav.samples[wav.samples.length - 1])
+      if (tail > peak * 0.5) {
+        problems.push(`音源 ${assetRel} 末尾样本 ${tail} 仍接近峰值 —— 循环接缝会听到咔哒（末尾应落在安静处）`)
       }
       if (peak > 0.99 * 32767) problems.push(`音源 ${assetRel} 削波（峰值 ${(peak / 32767).toFixed(3)}）`)
       if (peak < 0.2 * 32767) problems.push(`音源 ${assetRel} 近乎无声（峰值 ${(peak / 32767).toFixed(3)}）`)
       if (wav.channels !== 1) problems.push(`音源 ${assetRel} 是 ${wav.channels} 声道（应单声道，省包体也够用）`)
-      console.log(`  · 音源 ${assetRel}: ${wav.durationMs.toFixed(0)}ms / 瞬态 ${onset.toFixed(0)}ms / 峰值 ${(peak / 32767).toFixed(2)} / ${wav.sampleRate}Hz`)
+      console.log(`  · 音源 ${assetRel}: ${wav.durationMs.toFixed(0)}ms / 瞬态 ${onset.toFixed(0)}ms / ${clacks} 次敲击 / 峰值 ${(peak / 32767).toFixed(2)} / ${wav.sampleRate}Hz`)
     }
   }
 
-  // ⑨ 机型不吃 `stop()+play()` 时：看门狗必须**自动切到可靠路径**，而不是一直哑着
+  // ⑨ 机型不吃 play() 时：看门狗必须**自动切到可靠路径并重试**，且重试有上限（不能一直重试拖死页面）
   {
     const broken = makeHarness(source, { playEvents: false })
-    broken.api.playTick(false) // 第一次：创建上下文（这一次 src 本来就该写 1 次）
-    const srcAfterFirstPlay = broken.counters.srcSet
-    for (let i = 0; i < 25; i += 1) { broken.advance(120); broken.api.playTick(false) }
-    if (broken.counters.srcSet <= srcAfterFirstPlay) {
-      problems.push('观察不到 onPlay（本机 play() 不重启）时，未切换到「重设音源再播」的可靠路径 —— 真机会一声不响')
+    for (let i = 0; i < 40; i += 1) { broken.advance(120); broken.api.playTick(false) }
+    if (broken.counters.srcSet < 2) {
+      problems.push('观察不到 onPlay（本机 play() 不生效）时，未切换到「重设音源再播」的可靠路径 —— 真机会一声不响')
     }
-    if (broken.counters.play < 25) {
-      problems.push(`切到可靠路径后不再发声（play 仅 ${broken.counters.play} 次 / 应 25 次）`)
+    if (broken.counters.play < 2) problems.push('切到可靠路径后没有重试起笔（真机仍会一直哑着）')
+    if (broken.counters.play > 8) {
+      problems.push(`不健康机型下 play 了 ${broken.counters.play} 次 —— 重试没有上限，会一直重试把页面拖死`)
     }
-    // 健康机型反过来：独立起一个 harness（不复用上面那个 —— 它经历过 destroy 重建与注入报错，
-    // src 天然会多写两次），25 次正常节奏下一律不该重设 src（廉价路径）
+    // 健康机型反过来：独立起一个 harness，40 次落笔里 play 恒为 1、src 恒为 1（廉价路径）
     const healthy = makeHarness(source, { playEvents: true })
-    for (let i = 0; i < 25; i += 1) { healthy.advance(120); healthy.api.playTick(false) }
+    for (let i = 0; i < 40; i += 1) { healthy.advance(120); healthy.api.playTick(false) }
+    if (healthy.counters.play !== 1) {
+      problems.push(`健康机型 40 次落笔 play 了 ${healthy.counters.play} 次 —— 床在响时应恒为 1 次`)
+    }
     if (healthy.counters.srcSet !== 1) {
       problems.push(`健康机型（能观察到 onPlay）下 src 被重设了 ${healthy.counters.srcSet} 次 —— 应始终只写创建时那 1 次`)
-    }
-    if (healthy.counters.play !== 25) {
-      problems.push(`健康机型 25 次按键只响了 ${healthy.counters.play} 次`)
     }
   }
 
@@ -352,55 +438,75 @@ function selftest () {
 
     const injections = [
       {
-        name: '节流被删掉（每个字都重启音频）',
+        name: '床的幂等被删（每字都重新起笔，回到"每字一次原生调用"）',
         file: REL.helper,
-        mutate: (s) => s.replace('  if (now - _lastTickAt < MIN_TICK_GAP_MS) return\n', ''),
-        expect: /play 了 50 次|play .*次/
+        mutate: (t) => t.replace('    if (_bedPlaying) return // ← 正常情况：0 次原生调用\n', ''),
+        expect: /play 了 \d+ 次|床只需启动 1 次/
       },
       {
-        name: '热路径又重设 src（本次卡顿的原写法）',
+        name: '热路径又重设 src（第一轮卡顿的原写法）',
         file: REL.helper,
-        mutate: (s) => s.replace('    a.stop()\n', '    a.src = SFX_SRC\n    a.stop()\n'),
-        expect: /重设 src/
+        mutate: (t) => t.replace('    a.play()\n    _bedPlaying = true', '    a.src = SFX_SRC\n    a.play()\n    _bedPlaying = true'),
+        expect: /src 被重设/
       },
       {
-        name: '热路径又写 volume',
+        name: '静音时不主动停床（关了声音床还在响）',
         file: REL.helper,
-        mutate: (s) => s.replace('    a.stop()\n', '    a.volume = SFX_VOLUME\n    a.stop()\n'),
-        expect: /写 volume/
+        mutate: (t) => t.replace('  if (muted) {\n    stopTickSound()\n    return\n  }', '  if (muted) return'),
+        expect: /静音时没有停床/
       },
       {
-        name: '节流间隔被调到 20ms（等于没节流）',
+        name: '空闲自停被删（漏了收笔就会一直响）',
         file: REL.helper,
-        mutate: (s) => s.replace('const MIN_TICK_GAP_MS = 90', 'const MIN_TICK_GAP_MS = 20'),
-        expect: /MIN_TICK_GAP_MS/
+        mutate: (t) => t.replace('    _silentTicks = 0\n    armIdleWatch()', '    _silentTicks = 0'),
+        expect: /空闲自停失效/
       },
       {
-        name: '某页不再走共享件（退回自己的音频写法）',
+        name: '试听不再自动停（点开静音开关后一直响）',
+        file: REL.helper,
+        mutate: (t) => t.replace('  setTimeout(() => stopTickSound(), Math.max(300, Number(ms) || 900))\n', ''),
+        expect: /试听会一直响|previewTickSound\(\) 到时没有停/
+      },
+      {
+        name: '看门狗被删（机型不吃 play 时不再自动切可靠路径）',
+        file: REL.helper,
+        mutate: (t) => t.replace('        _reliableReload = true\n        console.warn', '        console.warn'),
+        expect: /未切换到「重设音源再播」的可靠路径/
+      },
+      {
+        name: '某页的逐字循环不再走共享件',
         file: REL.receive,
-        mutate: (s) => s.replace(/textFx\.playTick\(/g, 'this._legacyTick('),
+        mutate: (t) => t.replace(/textFx\.playTick\(/g, 'this._legacyTick('),
         expect: /没有调用 textFx\.playTick/
       },
       {
-        name: '音源被换成"前面一段静音"的（瞬态跑到 120ms —— 本次真机事故的原形态）',
+        name: '某页收笔不再停床（敲击床会一直响下去）',
+        file: REL.success,
+        mutate: (t) => t.replace('    textFx.stopTickSound()\n', ''),
+        expect: /没有调用 textFx\.stopTickSound/
+      },
+      {
+        name: '音源被换成"前面一段静音"的（起笔即刻没声）',
         file: null,
         mutate: null,
-        asset: true,
+        asset: 'silence',
         expect: /瞬态在 \d+ms/
       },
       {
-        name: '看门狗被删（机型不吃 stop+play 时不再自动切可靠路径）',
-        file: REL.helper,
-        mutate: (s) => s.replace('      _reliableReload = true\n', ''),
-        expect: /未切换到「重设音源再播」的可靠路径/
+        name: '音源被换成"只有一声"的（密度不足，听起来是单响不是打字）',
+        file: null,
+        mutate: null,
+        asset: 'truncate',
+        expect: /只检出 \d+ 次敲击/
       }
     ]
     for (const inj of injections) {
       if (inj.asset) {
-        // 音源类注入：直接在临时副本上给 data 块前面插 120ms 静音
+        // 音源类注入：在临时副本上改素材（silence = 前面插静音；truncate = 截成只剩一声）
         const assetAbs = join(tmp, REL.asset)
         try {
-          prependSilence(assetAbs, 120)
+          if (inj.asset === 'truncate') truncateWav(assetAbs, 200)
+          else prependSilence(assetAbs, 120)
           const res = run()
           const out = `${res.stdout || ''}${res.stderr || ''}`
           if (res.status !== 0 && inj.expect.test(out)) {
@@ -460,9 +566,10 @@ function main () {
     process.exit(1)
   }
   console.log('✓ 礼笺打字机音效开销合格（真执行打桩计数）：')
-  console.log('  同刻连打 50 次只创建 1 个上下文 / 只写 1 次 src / 只写 1 次 volume / 只响 1 次；')
-  console.log('  间隔 100ms 的正常按键不被吞；静音零原生调用；destroy 后可重建；报错只自愈一次；三页共用共享件；')
-  console.log('  音源瞬态 ≤25ms（解码实测）；机型不吃 stop+play 时看门狗自动切可靠路径、健康机型全程不重设 src')
+  console.log('  一次书写只动两次原生音频调用（起笔 play / 收笔 stop），逐字回调 **0 次**；')
+  console.log('  6 秒书写（60 次落笔）里 play 恒为 1、src 恒为 1；静音必停床；空闲会自停；试听到时停；')
+  console.log('  音源是「多声循环床」（瞬态 ≤25ms / 敲击数 ≥8 / 接缝落在安静处，全部解码实测）；')
+  console.log('  机型不吃 play() 时看门狗自动切可靠路径且有重试上限；三页共用共享件且收笔都停床')
 }
 
 main()
