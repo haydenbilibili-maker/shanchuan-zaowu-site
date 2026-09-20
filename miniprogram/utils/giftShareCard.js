@@ -328,7 +328,8 @@ const PRINT_SPECS = {
 }
 
 /**
- * 热敏贴纸（90×110mm）**近方形**版式的全部可调参数 —— 单位 px（@300dpi，1mm = 11.811px）。
+ * 热敏贴纸**可打印白区 75×75mm（1:1）**版式的全部可调参数 —— 单位 px（@300dpi，1mm = 11.811px）。
+ *   （不干胶底纸是 90×110mm；本表只管**白区**上的版面。）
  *
  * ⚠⚠ **待实物校准网格确认**：下面每一个数都由蓝图 §2 的**影像预估**推出（贴纸未到货）。
  *   到货后必须：① 先印**校准网格**（每 5mm 一格）量真实白区；② 用真实白区重算本表；
@@ -876,7 +877,7 @@ function renderGiftPrintImage(selector, page, opts) {
               recipientName: options.recipientName,
               qrcodeImage,
               serviceQrImage,
-              // 'a6'（默认，行为零改动）| 'sticker'（热敏不干胶 90×110mm，近方形版式）
+              // 'a6'（默认，行为零改动）| 'sticker'（热敏不干胶，可打印白区 75×75mm 1:1）
               spec: options.spec
             })
           } catch (e) {

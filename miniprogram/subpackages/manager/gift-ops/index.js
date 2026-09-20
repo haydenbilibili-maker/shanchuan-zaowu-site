@@ -303,7 +303,7 @@ Page(withAppModal({
     return this._exportGiftPrint(e, 'a6')
   },
 
-  /** 导出热敏不干胶**贴纸**版（90×110mm 白区，近方形版式）—— 与 A6 并列的入口 */
+  /** 导出热敏不干胶**贴纸**版（可打印白区 75×75mm，1:1 版式）—— 与 A6 并列的入口 */
   async onExportGiftSticker(e) {
     return this._exportGiftPrint(e, 'sticker')
   },
@@ -369,9 +369,11 @@ Page(withAppModal({
       this.setData({
         printPreview: {
           spec,
-          specLabel: isSticker ? '热敏不干胶贴纸 90×110mm（白区 75×75mm，1:1）' : 'A6 竖版 105×148mm @300dpi',
+          // 2026-09-20：原来写「贴纸 90×110mm（白区 75×75mm）」—— 同一行里两个尺寸自相矛盾。
+          //   90×110 是**不干胶底纸**的尺寸，运营要核对的是**可打印白区**，所以只写白区。
+          specLabel: isSticker ? '热敏不干胶贴纸 · 可打印白区 75×75mm @300dpi（1:1）' : 'A6 竖版 105×148mm @300dpi',
           specNote: isSticker
-            ? '近方形版式；内容已避开右下预印印章区'
+            ? '1:1 版式；内容已避开右下预印印章区'
             : '含题记带与页脚两码；满幅无黑边',
           path,
           orderId,

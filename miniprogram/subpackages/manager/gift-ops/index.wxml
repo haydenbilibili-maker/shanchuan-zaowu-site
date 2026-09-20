@@ -96,6 +96,12 @@
       <!-- 高频操作：无需展开即可点 -->
       <view class="card-actions" wx:if="{{item.canShip || bucket === 'pickup_verify' || item.shipBlockReason}}">
         <text class="block-reason" wx:if="{{item.shipBlockReason && !item.canShip && bucket !== 'pickup_verify'}}">{{item.shipBlockReason}}</text>
+        <!-- 2026-09-20 产品负责人：「优化这个位置的 button 排版，使其在一排」。
+             原因：两个导出按钮各带一行副标题（A6 尺寸 / 贴纸尺寸）→ 高度与宽度都不一样，
+             `.action-row` 的 flex-wrap 就把第 4 个按钮挤到第二行。
+             改法：按钮**只留动作、等宽平分一排**；规格说明收到下面**一行共用的 action-hint**。
+             ⚠️ 副标题里的贴纸尺寸同时是**错的**（写的还是旧的 90×110mm，
+             产品负责人 2026-09-20 已裁定白区为 75×75mm 1:1）—— 一并更正。 -->
         <view class="action-row">
           <view class="mini-btn primary" wx:if="{{item.canShip}}" data-id="{{item.orderId}}" catchtap="goOrderManage">去发货</view>
           <view class="mini-btn primary" wx:if="{{bucket === 'pickup_verify'}}" catchtap="goVerify">去核销</view>
@@ -103,14 +109,13 @@
           <!-- 印刷用：导出 A6@300dpi 礼笺卡（含题记带）→ **先生成到预览**，看过再决定存/传 -->
           <view class="mini-btn {{exporting ? 'is-off' : ''}}" data-id="{{item.orderId}}" catchtap="onExportGiftCard">
             <text>导出礼笺图</text>
-            <text class="mini-btn-sub">A6 105×148mm · 自留/打印</text>
           </view>
-          <!-- 印刷用：导出热敏不干胶贴纸版（90×110mm 白区，近方形版式；复用同一画布与导出实现） -->
+          <!-- 印刷用：导出热敏不干胶贴纸版（75×75mm 白区，1:1 近方形版式；复用同一画布与导出实现） -->
           <view class="mini-btn {{exporting ? 'is-off' : ''}}" data-id="{{item.orderId}}" catchtap="onExportGiftSticker">
             <text>导出贴纸图</text>
-            <text class="mini-btn-sub">贴纸 90×110mm 白区</text>
           </view>
         </view>
+        <text class="action-hint">礼笺 A6 105×148mm ／ 贴纸 75×75mm · 先预览再保存</text>
       </view>
 
       <view class="card-extra" wx:if="{{expandedId === item.orderId}}">

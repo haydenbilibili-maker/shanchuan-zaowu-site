@@ -329,7 +329,34 @@ page {
   line-height: 1.4;
 }
 
-.action-row,
+/* 卡片主操作行：**一排**（产品负责人 2026-09-20）。
+   原来是 `flex-wrap: wrap` + 每个按钮带副标题（宽度/高度都不同）→ 第 4 个按钮被挤到第二行。
+   现在按钮等宽平分、不再折行；副标题统一收到 `.action-hint`（见下）。 */
+.action-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12rpx;
+}
+
+/* 等宽：`flex: 1 1 0` + `min-width: 0`（后者是关键 —— 不加的话按钮的 min-content
+   宽度仍是「导出礼笺图」5 个字，4 个竖排撑不下就还是会溢出/折行）。 */
+.action-row .mini-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 14rpx 6rpx;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 规格说明：一行共用，替代原来挂在按钮里的两条副标题 */
+.action-hint {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
 .extra-actions {
   display: flex;
   flex-wrap: wrap;
@@ -579,18 +606,14 @@ page {
   color: var(--color-text-muted);
 }
 
-/* ==================== 导出按钮：副标题 + 导出中禁用 ==================== */
+/* ==================== 导出按钮：内容居中 + 导出中禁用 ====================
+   2026-09-20：副标题（.mini-btn-sub）随「按钮排成一排」撤掉，规格说明改为 `.action-hint`。
+   按钮里只剩一个 `<text>`，flex 只负责居中（原来 column + gap 是给副标题留的）。 */
 
 .mini-btn {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2rpx;
-}
-
-.mini-btn-sub {
-  font-size: 18rpx;
-  color: var(--color-text-muted);
+  justify-content: center;
 }
 
 .mini-btn.is-off {

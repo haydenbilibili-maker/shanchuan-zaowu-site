@@ -78,6 +78,18 @@ const INJECTIONS = {
     from: '<scroll-view scroll-y class="pp-body">',
     to: '<scroll-view class="pp-body">'
   },
+  // 主操作行退回"会折行"（2026-09-20 产品负责人截图里就是两行）
+  'action-row-wraps': {
+    file: PAGE + '.wxss',
+    from: '  display: flex;\n  flex-wrap: nowrap;\n  gap: 12rpx;\n}',
+    to: '  display: flex;\n  flex-wrap: wrap;\n  gap: 12rpx;\n}'
+  },
+  // 按钮退回"不伸不缩"：4 个按钮按各自 min-content 宽排，照样折行/溢出
+  'action-btn-not-equal': {
+    file: PAGE + '.wxss',
+    from: '  flex: 1 1 0;\n  min-width: 0;',
+    to: '  flex: 0 1 auto;'
+  },
   // 遮罩层级掉回页脚栏之下：页面固定底栏（z-index 110）会盖住「保存/上传」两个按钮
   'mask-under-footbar': {
     file: PAGE + '.wxss',
@@ -200,7 +212,11 @@ function makeHarness() {
   const pv = h.page.data.printPreview
   check('★ 贴纸导出后进入**预览态**（不再盲存盲传）', !!pv, JSON.stringify(pv && pv.spec))
   eq('规格是 sticker', pv && pv.spec, 'sticker')
-  check('预览写明了规格与尺寸（运营能核对是不是要的那一版）', /90×110mm/.test((pv && pv.specLabel) || ''), pv && pv.specLabel)
+  // 2026-09-20：贴纸白区裁定为 75×75mm（1:1）。原来写「贴纸 90×110mm（白区 75×75mm）」
+  //   是同一行里两个尺寸自相矛盾 —— 运营要核对的是**可打印白区**。
+  check('预览写明了规格与尺寸（运营能核对是不是要的那一版）', /75×75mm/.test((pv && pv.specLabel) || ''), pv && pv.specLabel)
+  check('★ 贴纸预览标签里**不得**再出现底纸尺寸 90×110mm（只写白区，避免自相矛盾）',
+    !/90×110mm/.test((pv && pv.specLabel) || ''), pv && pv.specLabel)
   eq('★ 导出过程**没有**写相册', h.calls.save, 0)
   eq('★ 导出过程**没有**上传云端', h.calls.upload, 0)
   check('文件名可追溯（orderId + 规格 + 时间戳）', /^ord1-sticker-\d+\.png$/.test(pv.fileName), pv.fileName)
@@ -264,6 +280,22 @@ function makeHarness() {
   const code = stripComments(js)
   const wxml = readSrc(PAGE + '.wxml')
   const json = JSON.parse(readSrc(PAGE + '.json'))
+  // 本块自己取一条 WXSS 规则（另一块里的 ruleOf 在这个作用域不可见 —— 第一版就是踩了这个 ReferenceError）
+  const wxssCodeHere = stripComments(readSrc(PAGE + '.wxss'))
+  const ruleOf = (sel) => {
+    const i = wxssCodeHere.indexOf(sel + ' {')
+    if (i < 0) return ''
+    const open = wxssCodeHere.indexOf('{', i)
+    let depth = 0
+    for (let k = open; k < wxssCodeHere.length; k += 1) {
+      if (wxssCodeHere[k] === '{') depth += 1
+      else if (wxssCodeHere[k] === '}') {
+        depth -= 1
+        if (depth === 0) return wxssCodeHere.slice(i, k + 1)
+      }
+    }
+    return wxssCodeHere.slice(i)
+  }
   check('★ 本页不得出现裸 wx.showToast（统一 AppToast）', !/wx\.showToast\s*\(/.test(code))
   check('★ 本页不得新增原生 wx.showModal（dialog-ratchet）', !/wx\.showModal\s*\(/.test(code))
   eq('注册了 AppToast', (json.usingComponents || {})['app-toast'], '/components/AppToast/index')
@@ -273,8 +305,26 @@ function makeHarness() {
   check('预览层存在且绑定 printPreview', /wx:if="\{\{printPreview\}\}"/.test(wxml) && /printPreview\.path/.test(wxml))
   check('预览层有「保存到相册」与「上传印刷文件」两个动作', /catchtap="savePrintToAlbum"/.test(wxml) && /catchtap="uploadPrintFile"/.test(wxml))
   check('导出中两个入口都带禁用态 is-off', (wxml.match(/mini-btn \{\{exporting \? 'is-off'/g) || []).length >= 2)
-  check('导出入口都带尺寸副标题（礼笺图 vs 贴纸图要一眼可分）',
-    /A6 105×148mm/.test(wxml) && /贴纸 90×110mm/.test(wxml))
+  /* ── 2026-09-20 产品负责人：「优化这个位置的 button 排版，使其在一排」──────────────
+   * 成因：两个导出按钮各带一行尺寸副标题 → 4 个按钮的宽/高都不一样，
+   *      `.action-row` 的 `flex-wrap: wrap` 就把第 4 个挤到第二行。
+   * 修法：按钮只留动作、**等宽平分一排**；规格说明收到**一行共用**的 `.action-hint`。
+   * 判据只钉"结果形态"（不折行 / 等宽 / 副标题不再存在 / 规格仍在页面上），不钉具体那句话。 */
+  const actionRow = ruleOf('.action-row')
+  const actionBtn = ruleOf('.action-row .mini-btn')
+  check('★★ 卡片主操作行必须**一排**（`.action-row` 不得 wrap）',
+    /flex-wrap:\s*nowrap/.test(actionRow) && !/flex-wrap:\s*wrap\s*;/.test(actionRow),
+    `\`.action-row\` = ${actionRow.replace(/\s+/g, ' ').slice(0, 90)}`)
+  check('★★ 行内按钮必须**等宽平分**（`flex: 1 1 0` + `min-width: 0`）',
+    /flex:\s*1\s+1\s+0/.test(actionBtn) && /min-width:\s*0/.test(actionBtn),
+    // 少 `min-width:0` 的话按钮的 min-content 宽仍是「导出礼笺图」5 个字 → 4 个竖排撑不下，照样折/溢出
+    `\`.action-row .mini-btn\` = ${actionBtn.replace(/\s+/g, ' ').slice(0, 90)}`)
+  check('★★ 按钮里不得再有**尺寸副标题**（`.mini-btn-sub` —— 宽高不齐正是折行的成因）',
+    !/mini-btn-sub/.test(stripComments(wxml)),
+    '副标题还在按钮里 ⇒ 按钮宽高不一致，"一排"迟早再退化')
+  check('★ 规格说明改为**一行共用**的 `.action-hint`，且两个规格都在',
+    /class="action-hint"/.test(wxml) && /A6 105×148mm/.test(wxml) && /75×75mm/.test(wxml),
+    '规格说明丢了 ⇒ 运营没法核对导出的到底是哪一版')
   check('文件名可复制（长按）', /bindlongpress="copyPrintFileName"/.test(wxml) && /copyPrintFileName\s*\(/.test(code))
   check('「最近导出」区块存在', /recentPrints/.test(wxml) && /recentPrints: \[\]/.test(code))
 }
