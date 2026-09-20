@@ -44,6 +44,16 @@ App({
       } catch (e) {
         console.warn('shippingRulesSync init failed:', e);
       }
+      // 装裱方式 / 制作工艺的**选项字典**：同一套「缓存先覆盖 → 异步拉云端 → 失败退回代码默认」。
+      // 云端没有这份文档**不是异常**（没改过字典的项目本来就该用内置选项），
+      // 只有"云函数没部署/读不到"才把 taxonomyCloudReady 置 false（字段维护专区据此禁用保存）。
+      try {
+        const { hydrateFromStorage: hydrateTaxonomy, ensureProductTaxonomy } = require('./utils/productTaxonomySync');
+        hydrateTaxonomy();
+        ensureProductTaxonomy().catch(() => {});
+      } catch (e) {
+        console.warn('productTaxonomySync init failed:', e);
+      }
       // 冷启动并行预取：内容开关 / 门店 / 会话
       try {
         const { prefetchColdStart } = require('./utils/appPrefetch');
