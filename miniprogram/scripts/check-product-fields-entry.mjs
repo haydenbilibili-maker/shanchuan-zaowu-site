@@ -34,7 +34,13 @@ const REL = {
   roles: 'utils/workspaceRoles.js',
   manager: 'subpackages/manager/manager/managerPageConfig.js',
   subviews: 'subpackages/manager/manager/workspace/_subviews.wxml',
-  taxonomy: 'config/productTaxonomy.js'
+  taxonomy: 'config/productTaxonomy.js',
+  // 选项维护（2026-09-20）：字典本身可增删改
+  sync: 'utils/productTaxonomySync.js',
+  cloudFn: 'cloudfunctions/getProductTaxonomy/index.js',
+  cloudFnPkg: 'cloudfunctions/getProductTaxonomy/package.json',
+  appJs: 'app.js',
+  cloudbaserc: 'cloudbaserc.json'
 }
 
 function check (root) {
@@ -44,8 +50,13 @@ function check (root) {
   let manager = ''
   let subviews = ''
   let taxonomy = ''
+  let sync = ''
+  let cloudFn = ''
+  let appJs = ''
+  let cloudbaserc = ''
   try {
     roles = read('roles'); manager = read('manager'); subviews = read('subviews'); taxonomy = read('taxonomy')
+    sync = read('sync'); cloudFn = read('cloudFn'); appJs = read('appJs'); cloudbaserc = read('cloudbaserc')
   } catch (e) {
     return [`读取失败：${e.message}`]
   }
@@ -164,6 +175,53 @@ function check (root) {
     }
   }
 
+  // ⑤ 选项维护（2026-09-20）：装裱方式 / 制作工艺的**字典本身**可增删改
+  // 判据分四层：客户端覆写层 / 客户端标签走覆写 / 服务端删除保护 + 超管门 / 启动接线 + 函数登记。
+  {
+    // ⑤-a 覆写层：代码常量是默认值，云端文档是覆写（与运费规则同一套「双真源」口径）
+    if (!/function setCraftOverlay/.test(taxonomy)) problems.push('productTaxonomy 缺 setCraftOverlay（云端字典没处落）')
+    if (!/function craftTypeOptions/.test(taxonomy) || !/function craftProcessOptions/.test(taxonomy)) {
+      problems.push('productTaxonomy 缺 craftTypeOptions/craftProcessOptions 访问器')
+    }
+    // ⑤-b 标签必须走访问器：`CRAFT_TYPE_LABELS` 是**冻结的常量映射**，只认内置 value；
+    //      超管新增的选项用它查会得到空串（详情页会显示空白）—— 这正是最容易漏的一处。
+    const labelFn = (/function craftTypeLabel[\s\S]{0,400}?\n\}/.exec(taxonomy) || [])[0] || ''
+    if (!/craftTypeOptions\(\)/.test(labelFn)) {
+      problems.push('craftTypeLabel 没走 craftTypeOptions() 访问器 —— 超管新增的选项在 C 端会显示成空白')
+    }
+    if (!/normalizeCraftType\(value\) \|\|/.test(labelFn)) {
+      problems.push('craftTypeLabel 没给"别名表不认的新值"留退回路径（云端新增的 value 不在别名表里）')
+    }
+    // ⑤-c 页面两侧（选商品 / 维护字典）都要走访问器，不许直接用常量数组
+    if (/TAXONOMY\.CRAFT_TYPE_OPTIONS|TAXONOMY\.CRAFT_PROCESS_OPTIONS/.test(manager)) {
+      problems.push('managerPageConfig 仍直接用 TAXONOMY 常量数组 —— 云端覆写对它不可见，必须走访问器')
+    }
+    if (!/loadTaxonomyEditor\(\)/.test(manager) || !/saveTaxonomy\(\)/.test(manager)) {
+      problems.push('managerPageConfig 缺 loadTaxonomyEditor / saveTaxonomy（选项维护没接线）')
+    }
+    // ⑤-d 服务端：超管门 + 删除保护（数在用量）+ 兜底项 other 不许删
+    if (!/requireSuperAdmin:\s*true/.test(cloudFn)) problems.push('getProductTaxonomy 保存没有超管门（requireSuperAdmin）')
+    // ⚠️ 判据要锚**真正的拒绝分支**（`if (n > 0) … 'IN_USE'`），不能只 grep 标识符 ——
+    // 第一版写的就是后者，注入把 `if (n > 0)` 改成 `if (false)` 之后标识符还在，守卫照样绿（自己放水）。
+    if (!/countInUse/.test(cloudFn) || !/if \(n > 0\)[\s\S]{0,240}?'IN_USE'/.test(cloudFn)) {
+      problems.push('getProductTaxonomy 缺「被删选项还有商品在用」的服务端校验 —— craftType 决定运费档，删错会静默落档')
+    }
+    if (!/o\.value === 'other'/.test(cloudFn)) problems.push('getProductTaxonomy 没守住兜底项 other 不许删')
+    if (!/VALUE_RE/.test(cloudFn)) problems.push('getProductTaxonomy 缺 value 格式校验（中文名当 value 会立刻坏掉）')
+    // ⑤-e 启动接线 + 函数登记
+    if (!/ensureProductTaxonomy/.test(appJs) || !/hydrateFromStorage: hydrateTaxonomy/.test(appJs)) {
+      problems.push('app.js 没接 productTaxonomySync（超管改完字典，C 端本次启动读不到）')
+    }
+    if (!/"name":\s*"getProductTaxonomy"/.test(cloudbaserc)) {
+      problems.push('cloudbaserc.json 未登记 getProductTaxonomy（部署会漏掉这个函数）')
+    }
+    // ⑤-f 横排行的输入框不许用 width:100%（2026-09-20 真机横向溢出的直接成因）
+    const optRows = subviews.match(/<view class="cat-opt-row"[\s\S]{0,600}?<\/view>/g) || []
+    for (const r of optRows) {
+      if (/cfg-field-full/.test(r)) { problems.push('.cat-opt-row（横排）里用了 cfg-field-full —— 会把整行撑出卡片'); break }
+    }
+  }
+
   // 未标注必须能选回去（picker 第 0 项 = 未标注）
   if (!/_pfIndex\(/.test(manager) || !/i < 0 \? 0 : i \+ 1/.test(manager)) {
     problems.push('picker 下标未按「第 0 项 = 未标注」映射 —— 无法把字段清回未标注')
@@ -227,6 +285,28 @@ function selftest () {
         expect: /未用 picker 就地改/
       },
       {
+        name: 'C 端标签退回冻结常量（超管新增的选项会显示成空白）',
+        file: REL.taxonomy,
+        mutate: (s) => s.replace(
+          '  const key = normalizeCraftType(value) || String(value == null ? \'\' : value).trim()\n  if (!key) return \'\'\n  const hit = craftTypeOptions().find((o) => o.value === key)',
+          '  const key = normalizeCraftType(value)\n  const hit = craftTypeOptions().find((o) => o.value === key)'
+        ),
+        expect: /没走 craftTypeOptions\(\) 访问器|退回路径/
+      },
+      {
+        name: '服务端去掉「被删选项还有商品在用」的校验（craftType 决定运费档，删错会静默落档）',
+        file: REL.cloudFn,
+        mutate: (s) => s.replace('        if (n > 0) {', '        if (false) {'),
+        expect: /服务端校验|IN_USE/
+      },
+      {
+        name: 'app.js 不再加载云端字典（超管改完 C 端读不到）',
+        file: REL.appJs,
+        mutate: (s) => s.replace("        const { hydrateFromStorage: hydrateTaxonomy, ensureProductTaxonomy } = require('./utils/productTaxonomySync');",
+                                "        const hydrateTaxonomy = () => {}; const ensureProductTaxonomy = () => Promise.resolve(null);"),
+        expect: /没接 productTaxonomySync/
+      },
+      {
         name: '搜索行又抄回 cfg-field-full（横排 100% → 整页横向溢出）',
         file: REL.subviews,
         mutate: (s) => s.replace('<text class="cfg-label">搜索</text>\n            <input class="cfg-field"',
@@ -273,7 +353,7 @@ function selftest () {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：7 处真实注入（发给店长 / 内联选项清单 / 分批超限 / 退化成只读 / 横排抄了竖排输入框 / 专区没权限门 / Tab 17 复活）全部拦下')
+  console.log('\n自检通过：10 处真实注入（发给店长 / 内联选项清单 / 分批超限 / 退化成只读 / 标签退回冻结常量 / 服务端漏删除保护 / 启动不加载字典 / 横排抄了竖排输入框 / 专区没权限门 / Tab 17 复活）全部拦下')
 }
 
 function main () {

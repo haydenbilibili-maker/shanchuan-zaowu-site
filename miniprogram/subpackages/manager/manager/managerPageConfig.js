@@ -1490,9 +1490,17 @@ const managerPageConfig = {
     pfMatchedCount: 0,   // 当前筛选命中数（可能大于可见上限 100）
     pfDirty: {},       // { [productId]: { craftType?, craftProcess? } } —— 只存改动
     pfDirtyCount: 0,
-    // 选项表用**唯一事实源**（与 C 端/ERP 同一份），不另抄
-    pfTypeLabels: TAXONOMY.CRAFT_TYPE_OPTIONS.map((o) => o.label),
-    pfProcessLabels: TAXONOMY.CRAFT_PROCESS_OPTIONS.map((o) => o.label),
+    // 选项表用**唯一事实源**（与 C 端/ERP 同一份），不另抄。
+    // ⚠️ 2026-09-20：改用**访问器**而不是常量数组 —— 超管可以在本页新增/改/删选项，
+    // 而访问器会带上云端覆写（`setCraftOverlay`），常量数组永远只有内置的那几个。
+    pfTypeLabels: TAXONOMY.craftTypeOptions().map((o) => o.label),
+    pfProcessLabels: TAXONOMY.craftProcessOptions().map((o) => o.label),
+    // 选项维护（字典本身）：新增 / 改中文名 / 删减
+    optGroups: [],          // [{ key:'craftTypes', title:'装裱方式', items:[{value,label,used,canDelete}] }]
+    taxonomyDirty: false,
+    taxonomySaving: false,
+    /** 云端字典通路是否可用（云函数未部署 → false：只能看，不能存） */
+    taxonomyCloudReady: false,
     contentFlags: {
       showSpecimenArchive: false,
       showUserCommunity: false,
@@ -2115,8 +2123,158 @@ const managerPageConfig = {
    */
   maybeLoadProductFields() {
     if (!this.data.canProductFields) return;
+    this.loadTaxonomyEditor();
     if (this.data.pfLoaded || this.data.pfLoading) return;
     this.loadProductFields();
+  },
+
+  /* ══════════ 选项维护（2026-09-20）：装裱方式 / 制作工艺的**字典本身** ══════════
+   * 为什么要能做：这两个字段既是运输口径（craftType 决定运费档）又是展示口径，
+   * 而它们的选项表此前**只存在于代码里**（5 处副本）—— 想加一个装裱方式就得发版。
+   * 现在：代码常量 = 默认值，云端文档 = 覆写（与运费规则同一套双真源口径）。
+   *
+   * 三条硬约束（都能在界面上看见，不靠记性）：
+   *   ① `value` 是历史数据（商品存的就是它）→ **只允许改中文名**，界面上 value 只读；
+   *   ② 还有商品在用的选项**不许删**（`used > 0` 时删除键置灰，服务端还会再数一遍）；
+   *   ③ `other`（其它）是兜底，不许删 —— 存量里 craftType 为空/历史值的商品要有地方落。
+   */
+
+  /** 组装选项维护面板：选项 + 每项的在用件数（用已经拉齐的 pfRows 数，不再发请求） */
+  async loadTaxonomyEditor() {
+    // 云端通路**主动探一次**：app 启动那次是 fire-and-forget，进这一页时可能还没回来；
+    // 只探一次（`_taxonomyProbed`），之后靠 app.globalData 的标记。
+    if (!this._taxonomyProbed) {
+      this._taxonomyProbed = true
+      try {
+        const { ensureProductTaxonomy } = require('../../../utils/productTaxonomySync')
+        await ensureProductTaxonomy({ force: true })
+      } catch (e) { /* 探不通就按"不可用"处理（页面会明说） */ }
+    }
+    const rows = this.data.pfRows || [];
+    const count = (field) => rows.reduce((acc, r) => {
+      const v = String(r[field] || '');
+      if (v) acc[v] = (acc[v] || 0) + 1;
+      return acc;
+    }, {});
+    const typeUse = count('craftType');
+    const procUse = count('craftProcess');
+    const build = (key, title, options, used) => ({
+      key,
+      title,
+      items: options.map((o) => ({
+        value: o.value,
+        label: o.label,
+        used: used[o.value] || 0,
+        // 未使用且不是兜底项才可删（value 一被商品引用就是历史数据）
+        canDelete: !(used[o.value] > 0) && o.value !== 'other'
+      }))
+    });
+    const app = (() => { try { return getApp() } catch (e) { return null } })();
+    const cloudReady = !!(app && app.globalData && app.globalData.taxonomyCloudReady);
+    this.setData({
+      optGroups: [
+        build('craftTypes', '装裱方式', TAXONOMY.craftTypeOptions(), typeUse),
+        build('craftProcesses', '制作工艺', TAXONOMY.craftProcessOptions(), procUse)
+      ],
+      taxonomyCloudReady: cloudReady,
+      taxonomyDirty: false
+    });
+  },
+
+  /** 把当前 optGroups 写回 config 的覆写层（改完立刻在页面 picker 上生效，未保存也能看见） */
+  _applyOptGroups() {
+    const g = this.data.optGroups || [];
+    const pick = (key) => ((g.find((x) => x.key === key) || {}).items || [])
+      .filter((o) => String(o.label || '').trim() && String(o.value || '').trim())
+      .map((o) => ({ value: o.value, label: String(o.label).trim() }));
+    const doc = { craftTypes: pick('craftTypes'), craftProcesses: pick('craftProcesses') };
+    TAXONOMY.setCraftOverlay(doc);
+    // picker 的选项表跟着刷新，否则刚加的选项在下面选不到
+    this.setData({
+      pfTypeLabels: TAXONOMY.craftTypeOptions().map((o) => o.label),
+      pfProcessLabels: TAXONOMY.craftProcessOptions().map((o) => o.label)
+    });
+    return doc;
+  },
+
+  onOptLabelInput(e) {
+    const kind = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.kind) || '');
+    const index = Number((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.index));
+    const value = String((e.detail && e.detail.value) || '');
+    const groups = (this.data.optGroups || []).map((g) => {
+      if (g.key !== kind) return g;
+      const items = g.items.map((o, i) => (i === index ? Object.assign({}, o, { label: value }) : o));
+      return Object.assign({}, g, { items });
+    });
+    this.setData({ optGroups: groups, taxonomyDirty: true });
+  },
+
+  /** 新增一项：value 自动生成（中文名当 value 会立刻坏掉 —— 商品存的是 value） */
+  addTaxonomyOption(e) {
+    const kind = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.kind) || '');
+    if (!this.data.taxonomyCloudReady) {
+      this.showAppToast({ overline: 'TAXONOMY', title: '云端未连接', desc: '选项维护要先部署 getProductTaxonomy 云函数' });
+      return;
+    }
+    const groups = (this.data.optGroups || []).map((g) => {
+      if (g.key !== kind) return g;
+      if (g.items.length >= 40) return g;
+      const taken = new Set(g.items.map((o) => o.value));
+      let n = 1;
+      while (taken.has('custom_' + n)) n += 1;
+      const items = g.items.concat([{ value: 'custom_' + n, label: '', used: 0, canDelete: true }]);
+      return Object.assign({}, g, { items });
+    });
+    this.setData({ optGroups: groups, taxonomyDirty: true });
+  },
+
+  removeTaxonomyOption(e) {
+    const kind = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.kind) || '');
+    const index = Number((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.index));
+    const group = (this.data.optGroups || []).find((g) => g.key === kind);
+    const item = group && group.items[index];
+    if (!item) return;
+    if (!item.canDelete) {
+      // 说清"为什么不能删"，而不是静默无反应
+      this.showAppToast({
+        overline: 'TAXONOMY',
+        title: item.used > 0 ? '还有 ' + item.used + ' 件在用' : '兜底项不能删',
+        desc: item.used > 0 ? '请先把这些商品改成别的选项' : '「其它」是存量数据的落脚点'
+      });
+      return;
+    }
+    const groups = (this.data.optGroups || []).map((g) => {
+      if (g.key !== kind) return g;
+      return Object.assign({}, g, { items: g.items.filter((o, i) => i !== index) });
+    });
+    this.setData({ optGroups: groups, taxonomyDirty: true });
+  },
+
+  async saveTaxonomy() {
+    if (!this.data.taxonomyCloudReady) {
+      this.showAppToast({ overline: 'TAXONOMY', title: '云端未连接', desc: '请先部署 getProductTaxonomy 云函数' });
+      return;
+    }
+    if (!this.data.taxonomyDirty) return;
+    const doc = this._applyOptGroups();
+    const bad = doc.craftTypes.concat(doc.craftProcesses).find((o) => !o.label);
+    if (bad) {
+      this.showAppToast({ overline: 'TAXONOMY', title: '有选项没填中文名', desc: 'value = ' + bad.value });
+      return;
+    }
+    this.setData({ taxonomySaving: true });
+    try {
+      const { saveProductTaxonomy } = require('../../../utils/productTaxonomySync');
+      const res = await saveProductTaxonomy(doc);
+      if (!res.ok) {
+        this.showAppToast({ overline: 'TAXONOMY', title: '选项没存上', desc: res.msg || '' });
+        return;
+      }
+      this.showAppToast({ overline: 'TAXONOMY', title: '选项已保存', desc: 'C 端与 ERP 会读到同一份' });
+      this.loadTaxonomyEditor();
+    } finally {
+      this.setData({ taxonomySaving: false });
+    }
   },
 
   /** 标本师工作台：?productTab=create | productId=xxx */
@@ -10446,11 +10604,11 @@ bindSubCatChange(e) {
       image: r.image,
       craftType: r.craftType,
       craftProcess: r.craftProcess,
-      craftTypeLabel: this._pfLabel(TAXONOMY.CRAFT_TYPE_OPTIONS, r.craftType),
-      craftProcessLabel: this._pfLabel(TAXONOMY.CRAFT_PROCESS_OPTIONS, r.craftProcess),
+      craftTypeLabel: this._pfLabel(TAXONOMY.craftTypeOptions(), r.craftType),
+      craftProcessLabel: this._pfLabel(TAXONOMY.craftProcessOptions(), r.craftProcess),
       // picker 的第 0 项是「未标注」⇒ 下标要 +1（值到下标的映射见 onPfPick）
-      typeIndex: this._pfIndex(TAXONOMY.CRAFT_TYPE_OPTIONS, r.craftType),
-      processIndex: this._pfIndex(TAXONOMY.CRAFT_PROCESS_OPTIONS, r.craftProcess),
+      typeIndex: this._pfIndex(TAXONOMY.craftTypeOptions(), r.craftType),
+      processIndex: this._pfIndex(TAXONOMY.craftProcessOptions(), r.craftProcess),
       dirty: !!dirty[r._id]
     }))
     this.setData({
@@ -10486,7 +10644,7 @@ bindSubCatChange(e) {
     const id = String(ds.id || '')
     const field = String(ds.field || '')
     if (!id || (field !== 'craftType' && field !== 'craftProcess')) return
-    const opts = field === 'craftType' ? TAXONOMY.CRAFT_TYPE_OPTIONS : TAXONOMY.CRAFT_PROCESS_OPTIONS
+    const opts = field === 'craftType' ? TAXONOMY.craftTypeOptions() : TAXONOMY.craftProcessOptions()
     const idx = Number((e.detail && e.detail.value) || 0)
     const value = idx <= 0 ? '' : ((opts[idx - 1] && opts[idx - 1].value) || '')
     const dirty = Object.assign({}, this.data.pfDirty || {})

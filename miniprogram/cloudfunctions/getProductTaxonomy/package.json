@@ -1,0 +1,9 @@
+{
+  "name": "getProductTaxonomy",
+  "version": "1.0.0",
+  "description": "装裱方式 / 制作工艺 选项字典读取与维护（代码默认 + 云端覆盖）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

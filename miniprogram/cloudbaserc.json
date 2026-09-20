@@ -164,6 +164,13 @@
       "installDependency": true
     },
     {
+      "name": "getProductTaxonomy",
+      "timeout": 15,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "getCustomConfig",
       "timeout": 10,
       "runtime": "Nodejs16.13",

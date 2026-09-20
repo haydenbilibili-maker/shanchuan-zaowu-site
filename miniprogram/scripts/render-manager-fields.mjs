@@ -143,6 +143,14 @@ const data = {
   pfSaving: false,
   pfTypeLabels: OPT_TYPES.map((o) => o.label),
   pfProcessLabels: OPT_PROC.map((o) => o.label),
+  // 选项维护（字典本身）：行数取真实规模（装裱 9 / 工艺 11），才能量出"最多的一行会不会撑破卡片"
+  taxonomyCloudReady: true,
+  taxonomyDirty: true,
+  taxonomySaving: false,
+  optGroups: [
+    { key: 'craftTypes', title: '装裱方式', items: OPT_TYPES.map((o, i) => ({ value: o.value, label: o.label, used: i === 0 ? 128 : 0, canDelete: i !== 0 && o.value !== 'other' })) },
+    { key: 'craftProcesses', title: '制作工艺', items: OPT_PROC.map((o, i) => ({ value: o.value, label: o.label, used: i === 4 ? 61 : 0, canDelete: i !== 4 && o.value !== 'other' })) }
+  ],
   pfVisible: [
     { _id: 'p1', title: '大蓝闪蝶标本框', image: '', craftType: 'frame', craftProcess: '', craftTypeLabel: '相框', craftProcessLabel: '未标注', typeIndex: 1, processIndex: 0, dirty: false },
     { _id: 'p2', title: '古靴蛱蝶植物标本框', image: '', craftType: 'frame', craftProcess: '', craftTypeLabel: '相框', craftProcessLabel: '未标注', typeIndex: 1, processIndex: 0, dirty: true },

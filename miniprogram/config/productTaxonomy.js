@@ -63,6 +63,53 @@ const CHANNEL_LABELS = {
   // 历史库存可能仍为 wild，仅展示用，筛选项已下线
   wild: '野采'
 }
+/* ══════════════════════════════════════════════════════════════════
+ * 运行时可覆写（2026-09-20）：超管可在「藏品库 → 分类管理 → 字段维护专区」里
+ * **新增 / 改中文名 / 删减** 装裱方式与制作工艺，不必发版。
+ *
+ * 口径与运费规则同一套（本仓「双真源」教训的正面用法）：
+ *   **代码常量 = 默认值，云端文档 = 覆写**；云端读不到 / 没配 / 云函数没部署 → 一律退回默认。
+ * 所以"没部署"这件事的表现是"和以前完全一样"，而不是"页面空了"。
+ *
+ * ⚠️ 覆盖是**整份替换**（不是追加）：删掉一个选项要能真的从界面消失。
+ * ⚠️ `value` 一旦被商品引用就是历史数据（改 value = 把存量数据的工艺标错），
+ *    所以后台只允许改 `label`、新增新 value、删除没人用的 value —— 这条在云端强校验。
+ * ══════════════════════════════════════════════════════════════════ */
+let CRAFT_OVERLAY = { types: null, processes: null }
+
+/** 归一化一份云端字典；空/非法一律返回 null（= 用代码默认，绝不把界面弄空） */
+function normalizeOverlayList (raw, fallback) {
+  if (!Array.isArray(raw)) return null
+  const seen = new Set()
+  const out = []
+  for (const item of raw) {
+    const value = String((item && item.value) || '').trim()
+    const label = String((item && item.label) || '').trim()
+    if (!value || !label || seen.has(value)) continue
+    seen.add(value)
+    out.push({ value, label })
+  }
+  return out.length ? out : (fallback || null)
+}
+
+/** 应用云端字典（`null` / 空 = 退回代码默认）。由 utils/productTaxonomySync 调用。 */
+function setCraftOverlay (doc) {
+  const d = doc || {}
+  CRAFT_OVERLAY = {
+    types: normalizeOverlayList(d.craftTypes),
+    processes: normalizeOverlayList(d.craftProcesses)
+  }
+}
+
+/** 当前生效的装裱方式选项（云端优先，否则代码默认） */
+function craftTypeOptions () { return CRAFT_OVERLAY.types || CRAFT_TYPE_OPTIONS }
+
+/** 当前生效的制作工艺选项 */
+function craftProcessOptions () { return CRAFT_OVERLAY.processes || CRAFT_PROCESS_OPTIONS }
+
+/** 当前是否在用云端字典（后台据此显示"已连接云端 / 用的内置选项"） */
+function hasCraftOverlay () { return !!(CRAFT_OVERLAY.types || CRAFT_OVERLAY.processes) }
+
 const CRAFT_TYPE_LABELS = Object.fromEntries(CRAFT_TYPE_OPTIONS.map((o) => [o.value, o.label]))
 const CRAFT_PROCESS_LABELS = Object.fromEntries(CRAFT_PROCESS_OPTIONS.map((o) => [o.value, o.label]))
 
@@ -181,13 +228,19 @@ function channelLabel(value) {
 }
 
 function craftTypeLabel(value) {
-  const key = normalizeCraftType(value)
-  return CRAFT_TYPE_LABELS[key] || ''
+  // ⚠️ 别名表（normalizeCraftType）只认**内置**的 value；云端新增的选项不在别名表里，
+  // 直接用它会把新选项的标签查成空串。所以：别名优先，别名不认时**退回原值**再查一次。
+  const key = normalizeCraftType(value) || String(value == null ? '' : value).trim()
+  if (!key) return ''
+  const hit = craftTypeOptions().find((o) => o.value === key)
+  return hit ? hit.label : ''
 }
 
 function craftProcessLabel(value) {
-  const key = normalizeCraftProcess(value)
-  return CRAFT_PROCESS_LABELS[key] || ''
+  const key = normalizeCraftProcess(value) || String(value == null ? '' : value).trim()
+  if (!key) return ''
+  const hit = craftProcessOptions().find((o) => o.value === key)
+  return hit ? hit.label : ''
 }
 
 /**
@@ -221,6 +274,10 @@ module.exports = {
   isCraftEligibleRoot,
   isChannelEligibleRoot,
   channelLabel,
+  setCraftOverlay,
+  craftTypeOptions,
+  craftProcessOptions,
+  hasCraftOverlay,
   craftTypeLabel,
   craftProcessLabel,
   buildCraftDisplayTags
