@@ -294,6 +294,24 @@ const COVERED_PAIRS = [
   // 新登记一个 *_gate 若忘了进报表，上面的 unclassified 立刻红
   { gate: 'muyu_cert_gate', payload: /certGate:\s*gateBlock\('muyu_cert_gate'\)/, view: /\.funnel\.wishWall\.certGate\.show/ }
 ]
+/* ── P2-7 报表侧（2026-09-21）：`wish_wall_play` 被**页头藏品 chip** 复用 ——
+ * 那里没有任何玩法发生（`targetType='product'`，玩法一律 `'play'`）。
+ * 为什么必须**两侧一起**钉：ERP 监测表与小程序的数字**必须能对上**（本文件头注的既定约束）；
+ * 只改一侧 → 两边数字不一致，而且「参与玩法」被无玩法的点击抬高（分母是进页 UV → 可 >100%）。 */
+{
+  const engageRow = (monitor.WALL_MONITOR_ROWS || []).find((r) => r.key === 'engage')
+  check(
+    '★ ERP engage 行排除 targetType=product（页头 chip 的商品点击不算「参与玩法」）',
+    !!engageRow && Array.isArray(engageRow.excludeTargetTypes) && engageRow.excludeTargetTypes.includes('product'),
+    engageRow ? JSON.stringify(engageRow.excludeTargetTypes || null) : 'engage 行不存在'
+  )
+  check(
+    '★ 小程序报表的「参与玩法」同样排除 targetType=product（与 ERP 同口径，两边数字才能对上）',
+    /action === 'wish_wall_play'[\s\S]{0,140}?targetType[^\n]*!==\s*'product'/.test(dashFnSrc),
+    '未在 getAnalyticsDashboard 里找到 wish_wall_play 的 product 排除'
+  )
+}
+
 COVERED_PAIRS.forEach(({ gate, payload, view }) => {
   check(
     `★ ${gate}：报表云函数返回了对应的漏斗块（不返回 = 那一块在数据报表里恒 0）`,
@@ -426,6 +444,20 @@ if (process.argv.includes('--selftest')) {
       file: MONITOR_UTIL,
       from: "actions: ['wish_wall_post'], target: 'ok'",
       to: "actions: ['wish_wall_post'], target: 'posted'"
+    },
+    // 2026-09-21 新增（P2-7 报表侧）：两侧的 product 排除各证明一半 ——
+    // 去掉任一侧，「参与玩法」都会被无玩法的商品点击抬高，且两边数字对不上。
+    {
+      name: 'ERP engage 行不再排除 product（页头 chip 被算成「参与玩法」）',
+      file: MONITOR_UTIL,
+      from: "of: 'enter', excludeTargetTypes: ['product'], desc:",
+      to: "of: 'enter', desc:"
+    },
+    {
+      name: '小程序报表的「参与玩法」不再排除 product（与 ERP 口径分叉）',
+      file: 'miniprogram/cloudfunctions/getAnalyticsDashboard/index.js',
+      from: "    (r) => r.action === 'wish_wall_play' && String(r.targetType || '') !== 'product'",
+      to: "    (r) => r.action === 'wish_wall_play'"
     }
   ]
   let bad = 0

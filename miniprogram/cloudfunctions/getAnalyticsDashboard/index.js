@@ -536,7 +536,15 @@ function buildFunnel(rows) {
   const wallPost = rows.filter(
     (r) => r.action === 'wish_wall_post' && String(r.targetId || '') === 'ok'
   ).length
-  const wallEngage = count('wish_wall_lamp') + count('wish_wall_play') + count('wish_wall_sound')
+  // ⚠️ 2026-09-21（P2-7 报表侧）：`wish_wall_play` 被**页头藏品 chip** 复用 ——
+  // 那里没有任何玩法发生（`targetType='product'`，玩法一律 `'play'`）。不排除就会把
+  // 「参与仪式 / 玩法」抬高（分母是进页 UV，所以可以 >100%）。
+  // 与 ERP `admin/src/utils/wishWallMonitor.js` 的 engage 行**同一口径**（那边用 `excludeTargetTypes: ['product']`），
+  // 两边的数字必须能对上（本文件头注已声明这条约束）。
+  const wallPlay = rows.filter(
+    (r) => r.action === 'wish_wall_play' && String(r.targetType || '') !== 'product'
+  ).length
+  const wallEngage = count('wish_wall_lamp') + wallPlay + count('wish_wall_sound')
 
   // AI 识别「保存图鉴」注册钩子漏斗：show（弹窗）→ go_register（去注册）/ dismiss（暂不保存）
   // → resume_success（注册完成后自动续写成功）

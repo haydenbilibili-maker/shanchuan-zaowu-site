@@ -30,7 +30,7 @@ export const WALL_SOURCES = [
 export const WALL_MONITOR_ROWS = [
   { key: 'enter', label: '进祈福墙', actions: ['wish_wall_enter'], desc: '进页即上报（含所有入口）' },
   { key: 'enterStore', label: '其中：门店码扫码', actions: ['wish_wall_enter'], from: 'store_qr', indent: true, of: 'enter', desc: '门店现场物料带来的进页' },
-  { key: 'engage', label: '参与仪式 / 玩法', actions: ['wish_wall_lamp', 'wish_wall_play', 'wish_wall_sound'], of: 'enter', desc: '点灯 / 抽玩法 / 切音效（同一动作多次只按次计）' },
+  { key: 'engage', label: '参与仪式 / 玩法', actions: ['wish_wall_lamp', 'wish_wall_play', 'wish_wall_sound'], of: 'enter', excludeTargetTypes: ['product'], desc: '点灯 / 抽玩法 / 切音效（同一动作多次只按次计）。⚠️ 排除 targetType=product：那是**页头藏品 chip** 的商品点击（复用同一 action，但没有任何玩法发生），不排除会让本行比率 >100%' },
   { key: 'gateShow', label: '落愿遇注册钩子', actions: ['wish_wall_register_gate'], step: 'show', of: 'enter', desc: '未注册用户点「挂上墙」时弹注册' },
   { key: 'gateGo', label: '点「去注册」', actions: ['wish_wall_register_gate'], step: 'go_register', indent: true, of: 'gateShow', desc: '弹窗里的授权按钮被点（还没拿到手机号）' },
   { key: 'gateDismiss', label: '先不挂（关掉弹窗）', actions: ['wish_wall_register_gate'], step: 'dismiss', indent: true, of: 'gateShow', desc: '弹窗可关：关掉是"暂时不挂"，不是流失' },
@@ -66,6 +66,12 @@ export function matchRow(ev, row) {
   if (row.stepPrefix && !stepOf(ev).startsWith(row.stepPrefix)) return false
   if (row.target && String(ev.targetId || '') !== row.target) return false
   if (row.from && fromOf(ev) !== row.from) return false
+  // 2026-09-21（P2-7 报表侧）：**按 targetType 排除**。
+  // 为什么需要它：`engage` 行的口径是"点了灯 / 抽了玩法 / 切了音效"，
+  // 但同一个 action（`wish_wall_play`）也被**页头藏品 chip** 复用 —— 那里没有任何玩法发生。
+  // 页面侧已把 chip 的 targetType 标成 `'product'`（玩法一律 `'play'`），这里据此排除，
+  // 否则「参与玩法」的分子被无玩法的点击抬高（可以 >100%，因为分母是进页 UV）。
+  if (row.excludeTargetTypes && row.excludeTargetTypes.includes(String(ev.targetType || ''))) return false
   return true
 }
 
