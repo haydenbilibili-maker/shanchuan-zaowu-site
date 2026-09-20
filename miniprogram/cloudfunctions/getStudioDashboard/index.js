@@ -32,6 +32,19 @@ const FINISHED_INVENTORY = 'studio_inventory'
 const CONFIGS = 'configs'
 const BUDGET_CONFIG_ID = 'studio_budget_pools'
 
+/**
+ * 「识别到的房租与网费」在库里的落点 —— `ops_purchases.budgetType`。
+ *
+ * ⚠️ 2026-09-20 产品负责人：「工作室仪表盘没有把识别到的房租和网费加进去，预算相关信息错误」。
+ *   实测：仪表盘里房租/宽带**只有年度预算常量**（54,200 / 1,098），**没有任何"已用"**；
+ *   而飞书同步进来的房租/宽带采购行只被并进总「已使用」，既拆不出来、也没进固定成本口径。
+ * 取值口径：飞书预算池里那两池的"已使用金额"优先（裁决 39：剩余以飞书为准），
+ *          没有飞书数时按 `budgetType` 汇总 `ops_purchases`（就是同步/识别进来的那批行）。
+ * `网费`/`网络费` 一并认：产品负责人口径叫"网费"，历史/将来可能这么录。
+ */
+const RENT_BUDGET_TYPES = ['房租', '房租费', '租金']
+const BROADBAND_BUDGET_TYPES = ['宽带', '宽带费', '网费', '网络费']
+
 function fail(msg, code) {
   return { success: false, msg, code: code || 'FAIL' }
 }
@@ -420,14 +433,18 @@ function buildBudgetStructure(pack) {
   const safetyReserve = Number(pack.safetyReserve) || 0
   const rentBudget = Number(pack.rentBudget) || 0
   const broadbandBudget = Number(pack.broadbandBudget) || 0
+  // 房租/宽带的**实际已用**（产品负责人 2026-09-20：只给预算不给已用，等于没有这笔账）
+  const rentSpend = Number(pack.rentSpend) || 0
+  const broadbandSpend = Number(pack.broadbandSpend) || 0
   const overspend = Math.max(0, -purchasableRemaining)
   const usedInPool = Math.min(usedBudget, Math.max(purchasableBudget, 0))
   const leftInPool = Math.max(0, purchasableRemaining)
 
   const raw = [
     { key: 'safety', label: '安全储备', amount: safetyReserve, tone: 'safety' },
-    { key: 'rent', label: '房租', amount: rentBudget, tone: 'rent' },
-    { key: 'broadband', label: '宽带', amount: broadbandBudget, tone: 'fixed' },
+    // 房租/宽带：`amount` 仍是**年度预算**，另外带上 `used`（实际已用）
+    { key: 'rent', label: '房租', amount: rentBudget, used: rentSpend, tone: 'rent' },
+    { key: 'broadband', label: '宽带', amount: broadbandBudget, used: broadbandSpend, tone: 'fixed' },
     { key: 'purchased', label: '已采购', amount: usedInPool, tone: 'used' },
     { key: 'purchasable_left', label: '可采购剩余', amount: leftInPool, tone: 'ok' },
     { key: 'overspend', label: '超支占用', amount: overspend, tone: 'danger' }
@@ -438,6 +455,7 @@ function buildBudgetStructure(pack) {
     key: x.key,
     label: x.label,
     amount: roundMoney(x.amount),
+    used: x.used === undefined ? null : roundMoney(x.used),
     pct: Math.max(1, Math.round((Number(x.amount) / sum) * 1000) / 10),
     widthPct: Math.max(2, Math.round((Number(x.amount) / sum) * 100)),
     tone: x.tone
@@ -559,6 +577,27 @@ exports.main = async (event) => {
       (purchasablePool && purchasablePool.annualAmount) ||
         totalBudget - safetyReserve - rentBudget - broadbandBudget
     )
+    /**
+     * 房租 / 宽带（网费）的**实际支出**——仪表盘此前完全没有这两个数。
+     * 见文件头 `RENT_BUDGET_TYPES` 的说明：飞书池的"已使用"优先，退回按 budgetType 汇总。
+     */
+    const spendOfBudgetTypes = (types) =>
+      roundMoney(
+        purchases
+          .filter((r) => types.indexOf(String(r.budgetType || '')) !== -1)
+          .reduce((n, r) => n + purchaseAmount(r), 0)
+      )
+    const poolUsedOf = (pool) => {
+      if (!pool || pool.feishuUsedAmount === undefined) return null
+      const v = Number(pool.feishuUsedAmount)
+      return Number.isFinite(v) ? roundMoney(v) : null
+    }
+    const rentPoolUsed = poolUsedOf(rentPool)
+    const broadbandPoolUsed = poolUsedOf(broadbandPool)
+    const rentSpend = rentPoolUsed !== null ? rentPoolUsed : spendOfBudgetTypes(RENT_BUDGET_TYPES)
+    const broadbandSpend = broadbandPoolUsed !== null ? broadbandPoolUsed : spendOfBudgetTypes(BROADBAND_BUDGET_TYPES)
+    const fixedSpend = roundMoney(rentSpend + broadbandSpend)
+
     const usedBudget = purchaseTotal
     /**
      * **剩余总预算以飞书为准**（产品负责人 2026-09-19）。
@@ -617,6 +656,10 @@ exports.main = async (event) => {
       let used = 0
       if (p.category === '基础硬件') used = hardwareSpend
       else if (p.category === '标本原材料与耗材') used = specimenSpend
+      // ⚠️ 房租/宽带此前**没有分支** ⇒ 本地重算时它们的 used 恒为 0（"一年没花过房租"）。
+      //    飞书带回 feishuUsedAmount 时看不出来，一旦没同步过就是错的数。
+      else if (p.category === '房租') used = rentSpend
+      else if (p.category === '宽带') used = broadbandSpend
       else if (p.category === '总预算' || p.category === '采购控制') used = purchaseTotal
       const annual = roundMoney(p.annualAmount || 0)
       // 飞书带回的数优先（以飞书为准）；没带回才用本地重算
@@ -641,6 +684,9 @@ exports.main = async (event) => {
       safetyReserve,
       rentBudget,
       broadbandBudget,
+      rentSpend,
+      broadbandSpend,
+      fixedSpend,
       hardwareBudget,
       specimenBudget,
       hardwareSpend,
@@ -687,7 +733,9 @@ exports.main = async (event) => {
         },
         property: {
           label: '物业成本',
-          collection: 'ops_property_cost',
+          // ⚠️ 集合名原来是 `ops_property_cost`，全仓没有这个集合（真名 `property_costs`，
+          //    见 admin/src/cloud.js:494）。2026-09-20 顺手改正 —— 审计 P1 也登记过这条。
+          collection: 'property_costs',
           feishuTable: '物业成本',
           hint: '房租等固定成本以预算池为准'
         }
@@ -701,6 +749,10 @@ exports.main = async (event) => {
         safetyReserve,
         rentBudget,
         broadbandBudget,
+        // 房租/宽带的**实际已用**（2026-09-20 新增）：前端「采购与固定成本」用它显示"已用/预算"
+        rentSpend,
+        broadbandSpend,
+        fixedSpend,
         monthlyOpsCost: monthlyOps,
         hardwareBudget,
         specimenBudget,

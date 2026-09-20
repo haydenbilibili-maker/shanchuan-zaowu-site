@@ -27,6 +27,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../..')
 const FN_DIR = resolve(ROOT, 'miniprogram/cloudfunctions/getStudioDashboard')
 const KPI_PATH = join(FN_DIR, 'settlementKpis.js')
+const DASHBOARD_INDEX = join(FN_DIR, 'index.js')
 
 let passes = 0
 const failures = []
@@ -150,6 +151,51 @@ function runTests(K) {
   ok('F3 带零头时元值仍是 2 位小数', String(frac.shippedAmount).split('.')[1].length <= 2, String(frac.shippedAmount))
 }
 
+/**
+ * 预算构成断言（**源码级**，2026-09-20 新增）。
+ *
+ * 为什么需要：产品负责人报「工作室仪表盘没把**识别到的房租和网费**加进去，预算相关信息错误」。
+ * 实测：仪表盘里房租/宽带**只有年度预算常量**（54,200 / 1,098），**没有任何"已用"**；
+ * 飞书同步进来的房租/宽带采购行只被并进总「已使用」，拆不出来；各预算池的本地重算
+ * 对房租/宽带**没有分支** ⇒ used 恒为 0。这条业务口径此前**没有任何守卫**。
+ *
+ * 判据只钉"数从哪来"：必须是**按 `budgetType` 汇总的真实支出**（或飞书池的已使用），
+ * 不许退回写死的常量；并且要一路露到结构/池子/kpis 上，否则算了也没人看得见。
+ */
+function budgetSourceProblems (src) {
+  const problems = []
+  const need = (re, msg) => { if (!re.test(src)) problems.push(msg) }
+  need(/const RENT_BUDGET_TYPES = \[/, '缺 RENT_BUDGET_TYPES —— 房租的 budgetType 取值没有登记（识别到的那批行认不出来）')
+  need(/const BROADBAND_BUDGET_TYPES = \[[^\]]*'宽带'/.test(src) ? /'宽带'/ : /$^/, 'BROADBAND_BUDGET_TYPES 里没有「宽带」')
+  need(/const rentSpend = rentPoolUsed !== null \? rentPoolUsed : spendOfBudgetTypes\(RENT_BUDGET_TYPES\)/,
+    '房租实际支出不是"飞书池已用 → 按 budgetType 汇总"这条链（可能退回常量了）')
+  need(/const broadbandSpend = broadbandPoolUsed !== null \? broadbandPoolUsed : spendOfBudgetTypes\(BROADBAND_BUDGET_TYPES\)/,
+    '宽带/网费实际支出同上')
+  need(/\{ key: 'rent', label: '房租', amount: rentBudget, used: rentSpend/,
+    '预算结构里房租那行没带 `used`（只有预算、没有已用 ⇒ 运营看不出这笔账花了多少）')
+  need(/\{ key: 'broadband', label: '宽带', amount: broadbandBudget, used: broadbandSpend/,
+    '预算结构里宽带那行没带 `used`')
+  need(/p\.category === '房租'\) used = rentSpend/, '各预算池的本地重算缺「房租」分支（used 会恒为 0）')
+  need(/p\.category === '宽带'\) used = broadbandSpend/, '各预算池的本地重算缺「宽带」分支')
+  need(/rentSpend,\s*\n\s*broadbandSpend,\s*\n\s*fixedSpend,/s, 'kpis 没把 rentSpend/broadbandSpend/fixedSpend 露出去（算了也没人看得见）')
+  need(/collection: 'property_costs'/, '「物业成本」的集合名不是 property_costs（原来写成不存在的 ops_property_cost）')
+  if (/const rentSpend = 54200|const rentSpend = roundMoney\(rentBudget\)/.test(src)) {
+    problems.push('房租实际支出被写成了常量/预算本身 —— 正是产品负责人报的那个缺陷')
+  }
+  return problems
+}
+
+const SOURCE_INJECTIONS = [
+  ['房租实际支出退回常量（就是产品负责人报的那个缺陷）',
+   (src) => src.replace('const rentSpend = rentPoolUsed !== null ? rentPoolUsed : spendOfBudgetTypes(RENT_BUDGET_TYPES)', 'const rentSpend = 54200')],
+  ['宽带池的本地重算分支被删（used 恒为 0）',
+   (src) => src.replace("      else if (p.category === '宽带') used = broadbandSpend\n", '')],
+  ['预算结构里房租那行不再带 used', 
+   (src) => src.replace("amount: rentBudget, used: rentSpend", 'amount: rentBudget')],
+  ['物业成本集合名又写回不存在的 ops_property_cost',
+   (src) => src.replace("collection: 'property_costs'", "collection: 'ops_property_cost'")]
+]
+
 const INJECTIONS = [
   [
     '造景不进成本（加了桶却没扣毛利 —— 毛利虚高）',
@@ -224,6 +270,19 @@ function runSelfTest() {
     if (detected) res.failures.slice(0, 2).forEach((f) => console.log(`    · ${f}`))
     rmSync(dir, { recursive: true, force: true })
   }
+  // 预算构成：源码级注入（不需要复制文件，直接对变异后的源码复跑那组判据）
+  const budgetSrc = readFileSync(DASHBOARD_INDEX, 'utf8')
+  for (const [label, mutate] of SOURCE_INJECTIONS) {
+    const mutated = mutate(budgetSrc)
+    if (mutated === budgetSrc) {
+      console.log(`✗ ${label} → 【注入锚点失效】（源码未改变，无法判定）`)
+      allDetected = false
+      continue
+    }
+    const hit = budgetSourceProblems(mutated)
+    allDetected = allDetected && hit.length > 0
+    console.log(`${hit.length ? '✓' : '✗'} 注入 ${label} → ${hit.length ? `已检出（${hit[0]}）` : '【漏检】'}`)
+  }
   const clean = runOnce(KPI_PATH)
   console.log(`\n${clean.failed === 0 ? '✓' : '✗'} 未注入时通过（${clean.failed === 0 ? '无假阳性' : '有假阳性'}）`)
   if (clean.failed > 0) clean.failures.slice(0, 5).forEach((f) => console.log(`    · ${f}`))
@@ -231,13 +290,21 @@ function runSelfTest() {
     console.log('\n✗ 自检失败')
     process.exit(1)
   }
-  console.log(`\n✓ selftest 通过：${INJECTIONS.length} 个注入全部被检出，且无假阳性`)
+  console.log(`\n✓ selftest 通过：${INJECTIONS.length + SOURCE_INJECTIONS.length} 个注入全部被检出，且无假阳性`)
+}
+
+function runBudgetSourceChecks (src) {
+  const problems = budgetSourceProblems(src)
+  problems.forEach((p) => failures.push(p))
+  if (!problems.length) passes += 1
+  return problems.length
 }
 
 if (process.argv.includes('--selftest')) {
   runSelfTest()
 } else {
   const res = runOnce(KPI_PATH)
+  runBudgetSourceChecks(readFileSync(DASHBOARD_INDEX, 'utf8'))
   console.log(`工作室结算口径：通过 ${passes} / ${passes + res.failed}`)
   if (res.failed > 0) {
     console.log('')

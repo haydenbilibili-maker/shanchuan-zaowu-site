@@ -128,6 +128,8 @@
             <text class="structure-label">{{item.label}}</text>
             <text class="structure-pct">{{item.pct}}%</text>
             <text class="structure-amt {{item.isDanger ? 'down' : ''}}">¥{{item.amountText}}</text>
+            <!-- 房租/宽带：把"已用"也显示出来（只有预算没有已用，运营看不出这笔账） -->
+            <text class="structure-used" wx:if="{{item.usedText}}">已用 ¥{{item.usedText}}</text>
           </view>
         </view>
       </view>

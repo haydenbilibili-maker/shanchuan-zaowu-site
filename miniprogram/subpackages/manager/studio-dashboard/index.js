@@ -262,6 +262,8 @@ Page({
           key: s.key,
           label: s.label,
           amountText: money(s.amount),
+          // 房租/宽带额外带"已用"（云端 2026-09-20 起下发 `used`），其余项为 null
+          usedText: s.used === null || s.used === undefined ? '' : money(s.used),
           pct: s.pct,
           widthPct: s.widthPct || Math.max(2, Math.round(s.pct || 0)),
           tone: s.tone || 'used',
@@ -294,6 +296,10 @@ Page({
           purchasableTone: purchNeg ? 'down' : 'flat',
           safetyReserveText: money(k.safetyReserve),
           rentBudgetText: money(k.rentBudget),
+          rentSpendText: money(k.rentSpend),
+          broadbandBudgetText: money(k.broadbandBudget),
+          broadbandSpendText: money(k.broadbandSpend),
+          fixedSpendText: money(k.fixedSpend),
           monthlyOpsCostText: money(k.monthlyOpsCost),
           purchaseCount: k.purchaseCount || 0,
           purchaseTotalText: money(k.purchaseTotal),
@@ -315,7 +321,12 @@ Page({
           { label: '采购总额', value: money(k.purchaseTotal), tone: 'flat' },
           { label: '基础硬件（含工具）', value: money(k.hardwareSpend), tone: 'flat' },
           { label: '藏品原材料与耗材', value: money(k.specimenMaterialsSpend), tone: 'flat' },
-          { label: '房租预算', value: money(k.rentBudget), tone: 'flat' },
+          // 2026-09-20 产品负责人：「仪表盘没把识别到的房租和网费加进去，预算相关信息错误」。
+          // 原来这里只有「房租预算」一个年度数，**没有已用** —— 运营看不出这笔钱花了多少。
+          // 现在房租/宽带都显示「预算 · 已用」，并把两者合计作为固定成本已发生额。
+          { label: '房租（预算 · 已用）', value: `${money(k.rentBudget)} · ${money(k.rentSpend)}`, tone: 'flat' },
+          { label: '宽带 / 网费（预算 · 已用）', value: `${money(k.broadbandBudget)} · ${money(k.broadbandSpend)}`, tone: 'flat' },
+          { label: '固定成本已发生', value: money(k.fixedSpend), tone: 'flat' },
           { label: '月度基础运营', value: money(k.monthlyOpsCost), tone: 'flat' }
         ],
         stockRows: [

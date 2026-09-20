@@ -420,9 +420,23 @@
 .structure-row {
   display: flex;
   align-items: center;
+  /* 允许换行：房租/宽带那两行会多带一行"已用"（见 .structure-used），
+     不让它换行的话第五列会把整行挤爆（750rpx 里已经有 点/标签/占比/金额 四列）。 */
+  flex-wrap: wrap;
   gap: 12rpx;
   min-height: 40rpx;
   padding: 4rpx 0;
+}
+
+/* 房租/宽带：把"已用"显示出来（只有年度预算没有已用，运营看不出这笔账花了多少） */
+.structure-used {
+  flex: 1 1 100%;
+  text-align: right;
+  margin-top: 2rpx;
+  font-size: 20rpx;
+  color: var(--color-text-muted, #6b6560);
+  font-family: var(--font-mono, monospace);
+  font-variant-numeric: tabular-nums;
 }
 
 .structure-row.is-danger .structure-label {
