@@ -530,6 +530,16 @@ button.nav-share-btn::after { display: none; border: none; }
 .info-row:active,
 .info-row-press { background: var(--color-bg-elevated); }
 .info-row.muted .info-value { color: var(--color-text-muted); font-size: 22rpx; }
+/* 收起态单行省略（那行只放得下一行）；展开态允许换行显示完整规则 */
+.info-row.muted .info-value.open {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.5;
+  padding-right: 4rpx;
+}
+.rule-arrow { transition: transform 0.2s ease; }
+.rule-arrow.open { transform: rotate(90deg); }
 .info-label { width: 80rpx; font-size: 26rpx; color: var(--color-text-muted); flex-shrink: 0; }
 .info-value { flex: 1; font-size: 26rpx; color: var(--color-text-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .info-value.gold { color: var(--gold); }

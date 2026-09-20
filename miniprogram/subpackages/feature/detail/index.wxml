@@ -252,9 +252,11 @@ module.exports.saveLabel = saveLabel;
           <text class="{{isShippingFree ? 'shipping-free-tag' : ''}}">{{shippingHint}}</text>
         </view>
       </view>
-      <view class="info-row muted">
+      <!-- 说明行：收起态只放得下一行短句；点一下展开完整规则（含承运商与"否则运费 ¥X"） -->
+      <view class="info-row muted" bindtap="toggleShippingRuleDetail" hover-class="info-row-press" hover-stay-time="80">
         <text class="info-label">说明</text>
-        <text class="info-value">{{shippingRuleText}}</text>
+        <text class="info-value {{shippingDetailOpen ? 'open' : ''}}">{{shippingDetailOpen ? shippingRuleText : shippingRuleShort}}</text>
+        <text class="info-arrow rule-arrow {{shippingDetailOpen ? 'open' : ''}}">›</text>
       </view>
     </view>
 

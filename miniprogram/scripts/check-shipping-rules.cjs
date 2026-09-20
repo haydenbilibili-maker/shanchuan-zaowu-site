@@ -45,6 +45,9 @@ function defaultPaths() {
     defaults: path.join(ROOT, 'miniprogram', 'cloudfunctions', 'getShippingRules', 'defaults.js'),
     erp: path.join(ROOT, 'admin', 'src', 'utils', 'shippingRules.js'),
     managerPage: path.join(ROOT, 'miniprogram', 'subpackages', 'manager', 'manager', 'managerPageConfig.js'),
+    detailPageJs: path.join(ROOT, 'miniprogram', 'subpackages', 'feature', 'detail', 'index.js'),
+    detailPageWxml: path.join(ROOT, 'miniprogram', 'subpackages', 'feature', 'detail', 'index.wxml'),
+    detailPageWxss: path.join(ROOT, 'miniprogram', 'subpackages', 'feature', 'detail', 'index.wxss'),
     erpView: path.join(ROOT, 'admin', 'src', 'components', 'ShippingRulesConfig.vue'),
     snapshot: path.join(__dirname, 'shipping-rules-cloud.snapshot.json'),
     // 免邮券省额的两个云函数（E 节真跑它们：证明「纯免邮订单不再报省 ¥18」）
@@ -681,6 +684,39 @@ async function runChecks(paths) {
     } catch (e) {
       check('确认页可读（短标签同源）', false, e.message)
     }
+    // E6. 「说明」行**收起态**：必须是短句且真的放得下
+    // 那行是 `white-space: nowrap` 的单行。上限来自**实测**：2026-09-20 真机截图里
+    // 「顺丰速运 · 玻璃罩/标本框类商品满 ¥299 免邮，否则运费 ¥18」（本估算器算 ≈616rpx）
+    // 已经**被截断** ⇒ 真实可用宽度约 550rpx，故取 **520rpx** 留余量。别调大，调大就等于不拦。
+    const textWidthRpx = (t, fontRpx) => {
+      let units = 0
+      for (const ch of String(t)) units += /[\u2E80-\uFFFD]/.test(ch) ? 1 : 0.5
+      return units * fontRpx
+    }
+    ;[['相框（收费档）', [P('frame')], '标本框'], ['挂件（其它档）', [P('accessory')], '其它类型']].forEach(([name, ctx, wantPrefix]) => {
+      const short = typeof client.getRuleTextShort === 'function' ? String(client.getRuleTextShort(ctx)) : ''
+      const w = Math.round(textWidthRpx(short, 22))
+      check(`说明行收起态：${name} 是短句且放得下（≈${w}rpx ≤ 520）`,
+        short.includes(wantPrefix) && short.includes('免邮') && !short.includes('否则') && w <= 520,
+        `${short}（≈${w}rpx）`)
+    })
+    // 详情页：收起渲染短句、展开渲染完整、可点开
+    try {
+      const wxml = fs.readFileSync(paths.detailPageWxml, 'utf8')
+      const js = fs.readFileSync(paths.detailPageJs, 'utf8')
+      check('详情页「说明」行可点开（收起短句 ⇄ 展开完整）',
+        wxml.includes('bindtap="toggleShippingRuleDetail"') &&
+        /shippingDetailOpen\s*\?\s*shippingRuleText\s*:\s*shippingRuleShort/.test(wxml),
+        '需要 bindtap + `shippingDetailOpen ? shippingRuleText : shippingRuleShort`')
+      check('详情页有展开态样式（允许换行，不再省略号截断）',
+        /info-value\.open/.test(fs.readFileSync(paths.detailPageWxss, 'utf8')),
+        'wxss 需要 .info-row.muted .info-value.open { white-space: normal }')
+      check('详情页短句走共享件（不内联文案）',
+        /getRuleTextShort/.test(js) && /buildShippingRuleShortText\(/.test(js),
+        '详情页应调 shippingConfig.getRuleTextShort')
+    } catch (e) {
+      check('详情页可读（收起态接线）', false, e.message)
+    }
     check('说明文案：无上下文时两档都要交代',
       (() => { const t = String(client.getRuleText()); return t.includes('299') && t.includes('39') })(),
       String(client.getRuleText()))
@@ -703,6 +739,9 @@ function mirror(paths, tmp) {
     managerPage: path.join(tmp, 'managerPage.js'),
     erpView: path.join(tmp, 'erpView.vue'),
     snapshot: path.join(tmp, 'snapshot.json'),
+    detailPageJs: path.join(tmp, 'detailPage.js'),
+    detailPageWxml: path.join(tmp, 'detailPage.wxml'),
+    detailPageWxss: path.join(tmp, 'detailPage.wxss'),
     taxonomies: paths.taxonomies.map((_, i) => path.join(tmp, `tax${i}.js`))
   }
   ;[
@@ -712,7 +751,10 @@ function mirror(paths, tmp) {
     [paths.erp, out.erp],
     [paths.managerPage, out.managerPage],
     [paths.erpView, out.erpView],
-    [paths.snapshot, out.snapshot]
+    [paths.snapshot, out.snapshot],
+    [paths.detailPageJs, out.detailPageJs],
+    [paths.detailPageWxml, out.detailPageWxml],
+    [paths.detailPageWxss, out.detailPageWxss]
   ].forEach(([from, to]) => {
     fs.copyFileSync(from, to)
   })
@@ -771,6 +813,10 @@ async function runSelfTest(paths) {
         'function resolveOrderKind(context) {\n  if (context == null) return SHIPPING_KIND.SPECIMEN',
         'function resolveOrderKind(context) {\n  return resolveThreshold(context) > 0 ? SHIPPING_KIND.SPECIMEN : SHIPPING_KIND.ACCESSORY\n  if (context == null) return SHIPPING_KIND.SPECIMEN'
       ))
+    }],
+    ['「说明」行收起态退回长句（那行会溢出 —— 2026-09-20 真机截图）', (p) => {
+      patch(p.client, (s) => s.replace('function getRuleTextShort(context) {\n  if (isCampaignActive())',
+        'function getRuleTextShort(context) {\n  return getRuleText(context)\n  if (isCampaignActive())'))
     }],
     ['顾客侧文案退回长枚举（「说明」行会溢出 —— 2026-09-20 真机截图）', (p) => {
       patch(p.client, (s) => s.replace('  const charged = CHARGED_GROUP_LABEL', '  const charged = chargedCraftTypesLabel()'))

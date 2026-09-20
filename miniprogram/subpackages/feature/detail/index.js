@@ -490,6 +490,8 @@ Page(withAppModal({
     favoriteBusy: false,
     depositBusy: false,
     specSummary: '默认规格',
+    shippingRuleShort: '',
+    shippingDetailOpen: false,
     shippingRuleText: (typeof shippingConfig.getRuleText === 'function')
       ? shippingConfig.getRuleText()
       : getShippingRuleText(),
@@ -665,7 +667,8 @@ Page(withAppModal({
       if (p && this.data.displayPrice != null) {
         this.setData({
           ...this.buildShippingDisplay(this.data.displayPrice, p),
-          shippingRuleText: this.buildShippingRuleText(p)
+          shippingRuleText: this.buildShippingRuleText(p),
+          shippingRuleShort: this.buildShippingRuleShortText(p),
         });
       } else {
         this.setData({
@@ -1042,6 +1045,7 @@ Page(withAppModal({
         ? this.buildShippingDisplay(displayPrice, data)
         : {}),
       shippingRuleText: this.buildShippingRuleText(data),
+      shippingRuleShort: this.buildShippingRuleShortText(data),
       protectionLabel,
       isProtected,
       certificateUrl,
@@ -1191,6 +1195,20 @@ Page(withAppModal({
       showShippingStrike: isShippingFree && catalogFee > 0,
       originalShippingFeeDisplay: catalogFee > 0 ? Number(catalogFee).toFixed(2) : ''
     }
+  },
+
+  /** 收起态短句（那行 nowrap 单行，长文案会溢出；点一下展开看完整规则） */
+  buildShippingRuleShortText(product) {
+    const ctx = product || this.data.product;
+    if (typeof shippingConfig.getRuleTextShort === 'function') {
+      return shippingConfig.getRuleTextShort(ctx);
+    }
+    return this.buildShippingRuleText(product);
+  },
+
+  /** 「说明」行：收起 ⇄ 展开（展开显示完整规则，含承运商与"否则运费 ¥X"） */
+  toggleShippingRuleDetail() {
+    this.setData({ shippingDetailOpen: !this.data.shippingDetailOpen });
   },
 
   buildShippingRuleText(product) {
@@ -1709,7 +1727,8 @@ Page(withAppModal({
       buyCount,
       ...galleryPatch,
       ...this.buildShippingDisplay(displayPrice, product),
-      shippingRuleText: this.buildShippingRuleText(product)
+      shippingRuleText: this.buildShippingRuleText(product),
+      shippingRuleShort: this.buildShippingRuleShortText(product),
     });
     this.refreshDimensionOptions();
     this.updateSpecSummary();

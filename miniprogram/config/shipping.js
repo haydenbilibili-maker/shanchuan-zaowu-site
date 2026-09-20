@@ -411,6 +411,25 @@ function getRuleText(context) {
   return `${carrier} · ${charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`
 }
 
+/**
+ * 「说明」行**收起态**用的短句。
+ *
+ * 为什么单独有这一档：详情页那行是 `white-space: nowrap` 的单行，
+ * 可用宽度约 **640rpx**（22rpx 字号）——枚举装裱方式 ≈800rpx 会溢出（2026-09-20 真机截图两次）。
+ * 收起态只答「**哪类** + 满多少免邮」；承运商与"否则运费 ¥X"放在**展开态**（`getRuleText`）。
+ * 守卫按"估算宽度 ≤ 640rpx"钉住，改长了会红。
+ */
+function getRuleTextShort(context) {
+  if (isCampaignActive()) return getCampaignLabel()
+  const free = shipping.freeShippingThreshold
+  const freeOther = shipping.accessoryFreeThreshold
+  if (context != null && resolveOrderKind(context) === SHIPPING_KIND.ACCESSORY) {
+    return `其它类型满 ¥${freeOther} 免邮`
+  }
+  if (context == null) return `满 ¥${free} / ¥${freeOther} 免邮`
+  return `${CHARGED_GROUP_LABEL}满 ¥${free} 免邮`
+}
+
 function getHint(price, context) {
   if (isCampaignActive()) return getCampaignLabel()
   const amount = parseFloat(price) || 0
@@ -461,6 +480,7 @@ module.exports = Object.assign(shipping, {
   calcShipping: calcShippingFee,
   getRuleText,
   getShippingRuleText: getRuleText,
+  getRuleTextShort,
   getHint,
   getShippingHint: getHint,
   getFeeLabel,
