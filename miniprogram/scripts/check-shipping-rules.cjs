@@ -662,6 +662,11 @@ async function runChecks(paths) {
       const noCrossTier = kind !== 'accessory' || (!text.includes('299') && !text.includes('18'))
       check(`说明文案与费率同档：${name}（¥${thr} 免邮 / 否则 ¥${fee}）`, sameTier && noCrossTier,
         `${text} ｜ 费率 ¥${client.resolveFee(ctx)}`)
+      // 前缀必须**取装裱方式字段**（不得写"全场"）—— 2026-09-20 产品负责人：截图里的
+      // "全场满 ¥299 / ¥39 免邮"会让顾客以为门槛是对整单任意商品、且不知道哪类商品触发规则
+      const wantPrefix = kind === 'accessory' ? '其它类型' : '相框'
+      check(`说明文案的前缀取装裱方式字段：${name}`, text.includes('商品满') && text.includes(wantPrefix) && !text.includes('全场'),
+        `${text}（应含「${wantPrefix}…商品满」且不得出现「全场」）`)
     })
     check('说明文案：无上下文时两档都要交代',
       (() => { const t = String(client.getRuleText()); return t.includes('299') && t.includes('39') })(),
@@ -742,6 +747,12 @@ async function runSelfTest(paths) {
       patch(p.managerPage, (s) => s.replace(/DEFAULT_CHARGED_CRAFT_TYPES/g, "['frame', 'cloche']"))
     }],
     // E 节的三条回归：文案/档位判定与免邮券省额，都必须能被拦下
+    ['文案退回"全场满 ¥X 免邮"（2026-09-20 产品负责人指出的误会来源）', (p) => {
+      patch(p.client, (s) => s.replace(
+        'return `${carrier} · ${charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`',
+        'return `${carrier} · 全场满 ¥${free} 免邮，否则运费 ¥${fee}`'
+      ))
+    }],
     ['档位判据退回"门槛 > 0"（其它档商品的说明写成 ¥299/¥18 —— 2026-09-20 真机截图的原形态）', (p) => {
       patch(p.client, (s) => s.replace(
         'function resolveOrderKind(context) {\n  if (context == null) return SHIPPING_KIND.SPECIMEN',

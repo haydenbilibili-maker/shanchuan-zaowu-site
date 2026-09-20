@@ -180,8 +180,9 @@ function describeRule(config) {
     return `${cfg.defaultCarrier} · ${cfg.freeShippingCampaign.label}（全场免邮）`
   }
   const charged = chargedCraftTypesLabel(cfg.chargedCraftTypes)
-  return `${cfg.defaultCarrier} · ${charged}类满 ¥${formatAmount(cfg.freeShippingThreshold)} 免邮`
-    + `（否则 ¥${formatAmount(cfg.flatFee)}/单）；其余类型满 ¥${formatAmount(cfg.accessoryFreeThreshold)} 免邮`
+  // 前缀取装裱方式字段（chargedCraftTypesLabel 动态渲染），不写"全场"
+  return `${cfg.defaultCarrier} · ${charged}类商品满 ¥${formatAmount(cfg.freeShippingThreshold)} 免邮`
+    + `（否则 ¥${formatAmount(cfg.flatFee)}/单）；其它类型商品满 ¥${formatAmount(cfg.accessoryFreeThreshold)} 免邮`
     + `（否则 ¥${formatAmount(cfg.accessoryFlatFee)}/单）`
 }
 

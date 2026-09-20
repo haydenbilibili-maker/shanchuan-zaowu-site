@@ -10396,8 +10396,9 @@ bindSubCatChange(e) {
     const fee = storeLedger.formatMoney(f.flatFee)
     const feeOther = storeLedger.formatMoney(f.accessoryFlatFee)
     const freeOther = storeLedger.formatMoney(f.accessoryFreeThreshold)
-    return `${carrier} · ${chargedLabel}类满 ¥${free} 免邮（否则 ¥${fee}/单）；`
-      + `其余类型满 ¥${freeOther} 免邮（否则 ¥${feeOther}/单）`
+    // 前缀取装裱方式字段（chargedLabel 由勾选的 craftType 动态渲染），不写"全场"
+    return `${carrier} · ${chargedLabel}类商品满 ¥${free} 免邮（否则 ¥${fee}/单）；`
+      + `其它类型商品满 ¥${freeOther} 免邮（否则 ¥${feeOther}/单）`
   },
 
   onShippingFieldInput(e) {

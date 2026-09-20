@@ -389,13 +389,17 @@ function getRuleText(context) {
   const charged = chargedCraftTypesLabel()
   const freeOther = shipping.accessoryFreeThreshold
   const feeOther = shipping.accessoryFlatFee
+  // ⚠️ 前缀必须**取装裱方式字段**（`chargedCraftTypesLabel()` 动态渲染），不要写死"全场满 XX 免邮"：
+  //    "全场"会让顾客以为门槛是对整单任意商品、且不知道**哪类商品**触发这条规则
+  //    （2026-09-20 产品负责人：截图里的"全场满 ¥299 / ¥39 免邮"会引发误会）。
+  //    收费档→列出收费装裱方式；其它档→"其它类型"（纯其它单的整单就是其它类型商品）。
   if (context != null && resolveOrderKind(context) === SHIPPING_KIND.ACCESSORY) {
-    return `${carrier} · 全场满 ¥${freeOther} 免邮，否则运费 ¥${feeOther}`
+    return `${carrier} · 其它类型商品满 ¥${freeOther} 免邮，否则运费 ¥${feeOther}`
   }
   if (context == null) {
-    return `${carrier} · ${charged}类满 ¥${free} 免邮（否则 ¥${fee}）；其余类型满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
+    return `${carrier} · ${charged}类商品满 ¥${free} 免邮（否则 ¥${fee}）；其它类型商品满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
   }
-  return `${carrier} · 全场满 ¥${free} 免邮，否则运费 ¥${fee}`
+  return `${carrier} · ${charged}类商品满 ¥${free} 免邮，否则运费 ¥${fee}`
 }
 
 function getHint(price, context) {

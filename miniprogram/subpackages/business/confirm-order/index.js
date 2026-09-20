@@ -248,7 +248,12 @@ function ruleText(context) {
     : ((shippingConfig.thresholds && shippingConfig.thresholds.accessory) || 39)
   const feeOther = shippingConfig.accessoryFlatFee != null ? shippingConfig.accessoryFlatFee : 10
   const carrier = shippingConfig.defaultCarrier || '顺丰速运'
-  return `${carrier} · 相框/玻璃罩类满 ¥${free} 免邮（否则 ¥${fee}）；其余类型满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
+  // 前缀取装裱方式字段（chargedCraftTypesLabel 动态渲染），不写"全场"
+  const chargedLabel = (typeof shippingConfig.chargedCraftTypesLabel === 'function')
+    ? shippingConfig.chargedCraftTypesLabel()
+    : '相框/玻璃罩'
+  return `${carrier} · ${chargedLabel}类商品满 ¥${free} 免邮（否则 ¥${fee}）；`
+    + `其它类型商品满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
 }
 
 /** 目录运费（划线用），与实际计费无关 */
