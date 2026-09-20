@@ -81,15 +81,35 @@ function loadGuards() {
   }
   const meta = loadMeta();
   let names = meta.domainOrder || [];
+  // --quick：内循环用 —— 本域 + `quickWith` 里**点名**的跨域守卫（不是整个 cross 域）。
+  // 实测成本：全套 124.5s / --domain 1.1s / --quick 约 0.3s。内循环要用最后那个量级。
+  const quickOnly = argv.includes('--quick');
+  let extra = [];
+  if (domain && quickOnly) {
+    extra = (meta.quickWith && meta.quickWith[domain]) || [];
+  }
   if (domain) {
     if (!names.includes(domain)) {
       console.error(`✗ 未知域 "${domain}"；可用域：${names.join(' / ')}`);
       process.exit(1);
     }
-    names = [domain];
-    if (!argv.includes('--no-cross') && (meta.crossWith || []).includes(domain)) names.push('cross');
+    // --quick 时**不**拉整个 cross 域（那是 62 条），只补 quickWith 点名的几条
+    names = quickOnly ? [] : [domain];
+    if (!quickOnly && !argv.includes('--no-cross') && (meta.crossWith || []).includes(domain)) names.push('cross');
   }
   const out = [];
+  if (quickOnly && domain) {
+    // 本域自己的清单 + 点名的跨域条目（保持清单里的原始顺序）
+    const mine = readDomain(domain) || [];
+    const wanted = new Set(extra);
+    for (const n of (meta.domainOrder || [])) {
+      for (const cmd of (readDomain(n) || [])) {
+        if (n === domain || wanted.has(scriptNameOf(cmd))) out.push({ cmd, name: scriptNameOf(cmd), domain: n });
+      }
+    }
+    if (!mine.length) console.error(`✗ 域 ${domain} 的清单为空或缺失`);
+    return out;
+  }
   for (const n of names) {
     const list = readDomain(n);
     if (list === null) {
@@ -155,7 +175,9 @@ function buildPlan(guards) {
 /** 逐条运行，全部跑完再汇总。返回 { failed, problems, total } */
 function runAll(plan, problems) {
   const mode = wantSelftest ? '自检' : '守卫';
-  const scope = domain ? `域 ${domain}${argv.includes('--no-cross') ? '' : ' + cross'}` : '全部域';
+  const scope = domain
+    ? (argv.includes('--quick') ? `域 ${domain} + 点名跨域（内循环）` : `域 ${domain}${argv.includes('--no-cross') ? '' : ' + cross'}`)
+    : '全部域';
   console.log(`\n════ ${mode}批量执行：共 ${plan.length} 条（${scope}，逐条独立、不短路）════\n`);
 
   const results = [];

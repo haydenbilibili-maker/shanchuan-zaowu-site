@@ -34,8 +34,11 @@
     跨流加守卫走变更请求。**不要把清单写回 `package.json`**：
     旧形态是一行 2690 字符的 `check:admin:guards`，而 `package.json` 在近 200 次提交里被改过 **49 次（全仓第一）**
     —— 两条流同时加守卫 = 100% 文本冲突。拆成一文件一域后跨流零冲突（2026-09-18 P1-1）；
-  - `npm run check:domain -- <域>`（只跑该域 + `cross`，开发内循环；例：`-- pay` 从 80 条降到 59 条）
+  - `npm run check:domain -- <域>`（只跑该域 + `cross`，开发内循环）
     与 `npm run check:guards:list` / `--domains`（看清单与域归属）；
+  - **内循环用 `npm run check:quick -- <域>`**（该域 + `guards/_meta.json` 的 `quickWith` 里**点名**的跨域守卫；
+    实测 ~2.5s，而 `check:admin` 全套 124.5s）。**全套只在收口/提交前跑一次** ——
+    把收口动作塞进内循环是 2026-09-20 那几轮"一轮做很久"的主因，见 `docs/工作节奏_快速通道_2026-09-20.md`；
   - `npm run check:guards-coverage`（**守清单本身**：不丢条目 / 不重复 / 脚本与自检齐全 / 总数棘轮只许多不许少）；
   - `npm run check:admin:selftest`（逐条跑守卫自检，证明每条都能失败）；`npm run check:admin:runner-selftest`
     （证明执行器不短路、缺自检与死脚本名会被点名）；

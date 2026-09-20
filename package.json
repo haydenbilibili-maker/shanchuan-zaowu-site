@@ -91,6 +91,7 @@
     "report:data-sources:selftest": "node admin/scripts/report-data-sources.mjs --selftest",
     "check:admin": "node scripts/run-guards.mjs",
     "check:domain": "node scripts/run-guards.mjs --domain",
+    "check:quick": "node scripts/run-guards.mjs --quick --domain",
     "check:guards:list": "node scripts/run-guards.mjs --list",
     "check:guards:domains": "node scripts/run-guards.mjs --domains",
     "check:guards-coverage": "node scripts/check-guards-coverage.mjs",

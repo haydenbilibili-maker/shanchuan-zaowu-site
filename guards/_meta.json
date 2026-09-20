@@ -30,5 +30,17 @@
     "erp",
     "gift-print",
     "cross"
-  ]
+  ],
+  "quickWith": {
+    "_doc": "内循环（npm run check:quick -- <域>）在「本域」之外还要顺带跑的**具体**守卫（npm 脚本名）。用来兜住「改本域的东西会打破别的域的守卫」这类情况 —— crossWith 是把整个 cross 域拉进来，太重，不适合内循环。",
+    "gift-print": [
+      "test:gift-note-variants"
+    ],
+    "wish-wall": [
+      "test:gift-note-variants"
+    ],
+    "manager": [
+      "check:product-fields-entry"
+    ]
+  }
 }
