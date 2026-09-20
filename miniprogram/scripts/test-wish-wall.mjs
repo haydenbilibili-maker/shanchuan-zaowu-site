@@ -620,6 +620,13 @@ const INJECTIONS = {
     from: '  margin-top: var(--space-1);\n  /* 字号口径：文本带；19rpx 不在字阶 14 档内（18 与 20 的正中间）→ 不动值（见文件头） */\n  font-size: 19rpx;\n  line-height: 1.5;',
     to: '  margin-top: 2rpx;\n  /* 字号口径：文本带；19rpx 不在字阶 14 档内（18 与 20 的正中间）→ 不动值（见文件头） */\n  font-size: 21rpx;\n  line-height: 1.2;'
   },
+  // 端上预校验退回 UTF-16 → 30 个 emoji 会被**误拒**（服务端本来接受），
+  // 即"端上拒绝、服务端允许"的口径分叉。2026-09-21 夜班修的就是这一处。
+  'client-validate-by-utf16': {
+    file: 'miniprogram/utils/wishWall.js',
+    from: '  const count = wishTextCount(text)',
+    to: '  const count = text.length'
+  },
   // 音效默认关 → 用户永远听不到（产品口径是"默认开但可关"）
   'sound-default-off': {
     file: 'miniprogram/utils/ritualFeedback.js',
@@ -1369,6 +1376,14 @@ eq('空文案被拒', wish.validateWishText('   ').ok, false)
 eq('单字被拒（下限 2）', wish.validateWishText('好').ok, false)
 eq('正常文案通过并归一化', wish.validateWishText('  马上  有钱 \n').text, '马上 有钱')
 eq('超长文案被拒', wish.validateWishText('愿'.repeat(wish.TEXT_MAX + 1)).ok, false)
+// ★ 端上预校验必须按「字」算（与服务端同一口径）。
+//   30 个 emoji：按「字」= 30 → 通过；退回 `text.length`（UTF-16）= 60 → 被**误拒**。
+//   2026-09-21 夜班修：服务端早已按字，端上 `utils/wishWall.js` 漏改（不在当时子代理的白名单内）。
+//   注入 `client-validate-by-utf16` 会把实现退回 `text.length`，本断言必须变红。
+eq('★ 端上预校验按「字」算（30 个 emoji = 30 字，不被 UTF-16 误拒）',
+  wish.validateWishText('🙂'.repeat(wish.TEXT_MAX)).ok, true)
+eq('★ emoji 超一个字就拒（TEXT_MAX+1 个 → 拒）',
+  wish.validateWishText('🙂'.repeat(wish.TEXT_MAX + 1)).ok, false)
 eq('零宽字符被剔除', wish.normalizeWishText('马\u200B上\uFEFF有'), '马上有')
 
 check('标题命中「马上有」', wish.isWishWallProduct({ title: '黑马标本·马上有' }) === true)

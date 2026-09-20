@@ -1,4 +1,7 @@
 const { resolveBlessTags } = require('../config/blessTags')
+// 字数口径的**唯一实现**（按「字」= grapheme，emoji/ZWJ 序列算 1）。
+// 与服务端 `manageWishWall` 内嵌的那份**逐字节相同**；端上任何"算几个字"的地方都必须走它。
+const { wishTextCount } = require('./wishTextCount')
 /**
  * 需求 28：「马上有」弹幕祈福墙 —— 客户端纯函数基座
  *
@@ -433,8 +436,14 @@ function mineSummary(mine) {
 function validateWishText(raw) {
   const text = normalizeWishText(raw)
   if (!text) return { ok: false, msg: '写点想说的吧' }
-  if (text.length < TEXT_MIN) return { ok: false, msg: `至少 ${TEXT_MIN} 个字` }
-  if (text.length > TEXT_MAX) return { ok: false, msg: `最多 ${TEXT_MAX} 个字` }
+  // ⚠️ 必须按「字」算（`wishTextCount`），**不能**用 `text.length`（UTF-16 码元）：
+  //    后者把 emoji 算成 2、把 ZWJ 序列算成 8 → 端上会把服务端本来接受的文案**误拒**。
+  //    2026-09-21 夜班修：当时只把**服务端**（`manageWishWall` 的 `validateWishText`，
+  //    用的是同一份口径的内嵌副本）改成了按「字」，端上这一处**漏了** —— 因为它在 `utils/` 里、
+  //    不在那个子代理的文件白名单内。修后端上预校验与**服务端逐字一致**（同为归一化后按字计）。
+  const count = wishTextCount(text)
+  if (count < TEXT_MIN) return { ok: false, msg: `至少 ${TEXT_MIN} 个字` }
+  if (count > TEXT_MAX) return { ok: false, msg: `最多 ${TEXT_MAX} 个字` }
   return { ok: true, text }
 }
 

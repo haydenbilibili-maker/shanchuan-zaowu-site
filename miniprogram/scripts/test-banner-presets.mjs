@@ -228,10 +228,17 @@ const REQUIRED_TARGETS = [
     const req = (id) => {
       const name = String(id)
       if (name.includes('blessTags')) return { resolveBlessTags: () => [] }
-      if (name.includes('config/') || name.includes('utils/')) {
+      // ⚠️ 2026-09-21：`wishWall.js` 新增了 `require('./wishTextCount')`（字数口径的唯一实现），
+      //    而原桩只认带 `config/` 或 `utils/` 的写法 → `./wishTextCount` 落到 throw：
+      //    `Error: unstubbed ./wishTextCount`，本守卫当场红。
+      //    **守卫正确地抓到了新引入的跨模块依赖**（这正是它该做的）。
+      //    修法：**同级相对路径**（`./x`）按被加载文件自己的目录（这里是 `utils/`）解析，
+      //    这样以后再往 `wishWall.js` 加同级依赖，不会被同一类问题再咬一次。
+      const rel = name.startsWith('.') && !name.startsWith('..') ? 'utils/' + name.replace(/^\.\//, '') : name
+      if (rel.includes('config/') || rel.includes('utils/')) {
         const m2 = { exports: {} }
         // eslint-disable-next-line no-new-func
-        new Function('module', 'exports', read(name.replace(/^\.\.\//, '').replace(/^\.\//, '') + '.js'))(m2, m2.exports)
+        new Function('module', 'exports', read(rel.replace(/^\.\.\//, '').replace(/^\.\//, '') + '.js'))(m2, m2.exports)
         return m2.exports
       }
       throw new Error('unstubbed ' + name)
