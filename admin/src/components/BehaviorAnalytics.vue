@@ -851,6 +851,14 @@ onUnmounted(() => {
 })
 
 watch(rawEvents, () => recomputeTops(), { deep: true })
+/** 祈福墙监测表：纯函数在 utils/wishWallMonitor.js（口径与聚合都能单测/守卫） */
+const wallMonitor = computed(() => buildWallMonitor(wallRows.value))
+const wallMonitorEmptyHint = computed(() =>
+  wallRows.value.length
+    ? '所选区间内没有祈福墙埋点'
+    : '所选区间内没有 user_behaviors 明细（监测表不读 analytics_daily：它没有 step 与来源维度）'
+)
+
 </script>
 
 <style scoped>
@@ -887,13 +895,6 @@ watch(rawEvents, () => recomputeTops(), { deep: true })
 .lg-dot { width: 8px; height: 8px; border-radius: 50%; }
 .lg-num { color: #333; font-weight: 600; margin-left: 2px; }
 
-/** 祈福墙监测表：纯函数在 utils/wishWallMonitor.js（口径与聚合都能单测/守卫） */
-const wallMonitor = computed(() => buildWallMonitor(wallRows.value))
-const wallMonitorEmptyHint = computed(() =>
-  wallRows.value.length
-    ? '所选区间内没有祈福墙埋点'
-    : '所选区间内没有 user_behaviors 明细（监测表不读 analytics_daily：它没有 step 与来源维度）'
-)
 
 .wall-monitor-card { margin-bottom: 20px; }
 .wall-monitor-table { margin-bottom: 8px; }
