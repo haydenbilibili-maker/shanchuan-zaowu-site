@@ -111,14 +111,13 @@ check('★★ 正文**自适应缩放、永不截断**（同 A6 口径；印刷�
 check('★★ 缩字到底后必须**压缩行距打包**（只缩字号会在换行点跳变上提前放弃 → 信文凭空消失）',
   /const packedLh = Math\.floor\(usablePx \/ bodyLines\.length\)/.test(stickerFn)
   && /packedLh >= Math\.round\(fontPx \* 1\.15\)/.test(stickerFn))
-check('★ 正文块**加权居中**（0.45，略偏下）在题记带与署名带之间',
-  /\*\(usable - bodyLines\.length \* lineH\) \* 0\.45\*\.test/.test(stickerFn)
-  || /0\.45\)\)/.test(stickerFn))
+check('★ 正文块**加权居中**（0.55，略偏下）在题记带与署名带之间',
+  /\(availH - blockH\) \* 0\.55\)/.test(stickerFn))
 check('★★ 正文行**必须在署名带净空线之上**（整块判定，越线整块不画）',
   /if \(baseline > bodyFloor\(\)\) \{ bodyDrawn = 0; break \}/.test(stickerFn),
   '纵向收口被删 → 正文会压到署名/页脚上')
-check('★★ 署名带必须预留**净空**（sigClear = 0.95×字号），不是贴着署名基线收口',
-  /const sigClear = \(\) => Math\.round\(fontPx \* 0\.95\)/.test(stickerFn),
+check('★★ 署名带必须预留**净空**（sigClear = 0.85×字号），不是贴着署名基线收口',
+  /const sigClear = \(\) => Math\.round\(fontPx \* 0\.85\)/.test(stickerFn),
   '少了净空 ⇒ 正文末行会与署名基线贴住/叠字（实测 60 字时同为 455）')
 check('★★ **不得**再用 `(i+1)*lineH <= availH + lineH` 那种行内上界',
   !/\(i \+ 1\) \* lineH <= availH \+ lineH/.test(stickerFn),
@@ -143,10 +142,11 @@ check('★★ 署名**右对齐到内容右缘**且仍**限宽**（超宽等比�
 check('★★ 署名超宽时**等比缩字**，到底线才截断（不许直接压到印章区）',
   /sigFont = Math\.max\(STICKER\.sigMinSize/.test(stickerFn)
   && /truncate\(sigText, sigText\.length - 1\)/.test(stickerFn))
-check('★ **右下重心**（2026-09-19 产品要求）：两枚码整体**右对齐到印章左缘内缩**，不再从左往右铺',
-  /const stampLeft = stampRight - STICKER\.stampSize/.test(stickerFn)
-  && /const qrRight = Math\.min\(stampLeft - Math\.round\(2 \* MM\)/.test(stickerFn)
-  && /let cx = Math\.max\(axisX, qrRight - qrTotalW\)/.test(stickerFn))
+check('★ 两枚码**居中在「左文字轴 ~ 印章左缘」之间**（2026-09-20 真图反馈：右端原离印章 14.2mm 太空）',
+  /const qrZone = qrRight - axisX/.test(stickerFn)
+  && /axisX \+ Math\.round\(\(qrZone - qrTotalW\) \/ 2\)/.test(stickerFn)
+  && /stampLeft - Math\.round\(2 \* MM\)/.test(stickerFn),
+  '右端必须由印章左缘约束（不得进印章区），且两侧留白均等')
 check('★ **不印自带边框**（贴纸已有装饰边框，再印一条是双框 —— 蓝图 §5）',
   !/strokeRect/.test(stickerFn),
   'sticker 分支里出现 strokeRect = 多印了一条边框')
@@ -179,6 +179,7 @@ check('★ 满幅米白（无黑边）', /ctx\.fillRect\(0, 0, LW, LH\)/.test(st
     footerTop: tableOf('footerTop'), qrSize: tableOf('qrSize'),
     qrGap: tableOf('qrGap'), qrCaptionOffset: tableOf('qrCaptionOffset'),
     stampSize: tableOf('stampSize'), stampRightPad: tableOf('stampRightPad'),
+    stampTopPad: tableOf('stampTopPad'),
   }
   const noteLineH = parseFloat((/bandNoteLineH: (\d+),/.exec(cardSrc) || [])[1])
   T.bandNoteLineH = noteLineH
@@ -227,10 +228,25 @@ check('★ 满幅米白（无黑边）', /ctx\.fillRect\(0, 0, LW, LH\)/.test(st
   const captionBase = T.footerTop + T.qrSize + T.qrCaptionOffset
   check('★ 不变式⑤：两枚码（左起）**不得越过印章左缘**（近方形历史 bug：码压预印印章）',
     codesRight <= stampLeft, `码右端=${codesRight} 印章左缘=${stampLeft}`)
-  check('★ 不变式⑤b：码 + 小字必须在纸内（≤ 815px，留 ≥ 8px）',
-    captionBase <= S.h - 8, `小字基线=${captionBase} 纸高=${S.h}`)
+  check('★ 不变式⑤b：码 + 小字必须在纸内（≤ 815px，留 ≥ 6px）',
+    captionBase <= S.h - 6, `小字基线=${captionBase} 纸高=${S.h}（余 ${S.h - captionBase}px）`)
   check('★ 不变式⑤c：码不得压到正文带（footerTop ≥ signTop + 1 行高）',
     T.footerTop >= signTop + lineH34, `footerTop=${T.footerTop} signTop=${signTop}`)
+  /* ── ⑤d~⑤g **用满白区高度**（2026-09-20 真图反馈「排版偏上、下部发虚」）─────────────
+   * 这一组是「版面利用率」判据：把内容压到上半部、或页脚离纸底太远，都会被拦下。
+   * 全部从 STICKER 表实算（不写死像素），改了参数就会重新判。 */
+  check('★ 不变式⑤d：小字必须在纸内且**贴近白区下沿**（余 6~16px：既不裁字也不发虚）',
+    captionBase <= S.h - 6 && captionBase >= S.h - 16,
+    `小字基线=${captionBase} 纸高=${S.h}（余 ${S.h - captionBase}px）`)
+  check('★ 不变式⑤e：页脚必须落在白区**下 1/5**（footerTop ≥ 78% 纸高 —— 否则下部一大片空）',
+    T.footerTop >= Math.round(S.h * 0.78), `footerTop=${T.footerTop} < ${Math.round(S.h * 0.78)}`)
+  check('★ 不变式⑤f：两枚码右缘离印章左缘 ≥ 6mm（不能挤到一起；也不能因过大顶到纸底）',
+    stampLeft - codesRight >= Math.round(6 * MMV),
+    `码右缘=${codesRight} 印章左缘=${stampLeft} 余=${stampLeft - codesRight}px`)
+  check('★ 不变式⑤g：日期**右对齐**且在印章左缘之上（右半区要有内容，否则右下发虚）',
+    /ctx\.fillText\(dateText, axisRight, STICKER\.footerTop/.test(stickerFn)
+    && T.footerTop - T.dateOffset < T.footerTop + T.stampTopPad,
+    `日期基线=${T.footerTop - T.dateOffset} 印章上缘=${T.footerTop + T.stampTopPad}`)
 }
 
 /* ── ③ A6 分支未被本次改动破坏（回归口径，与 80-cross 互补而非重复）────────── */
@@ -537,7 +553,7 @@ function selftest() {
     {
       name: '★ 署名净空被删（正文末行与署名基线贴住/叠字 —— 真图第二轮实测 455 同为一行）',
       file: CARD,
-      from: '  const sigClear = () => Math.round(fontPx * 0.95)',
+      from: '  const sigClear = () => Math.round(fontPx * 0.85)',
       to: '  const sigClear = () => 0'
     },
     {

@@ -374,10 +374,10 @@ const STICKER = {
   sigMaxW: Math.round(23 * 11.811),                     // 署名下划线**限宽**（不得越到印章区）
   sigBaseSize: 34,                                      // 署名基准字号（超宽按宽度等比缩，不裁字）
   sigMinSize: 25,
-  footerTop: Math.round(52.5 * 11.811),                 // 页脚带顶（码从带顶起；白区底部，给正文让出中部）
-  qrSize: Math.round(13.6 * 11.811),                    // 每枚码的边长（白区纵向只有 69mm：码 13.6mm + 小字才放得下，且给正文留块）
+  footerTop: Math.round(53.9 * 11.811),                 // 页脚带顶（码从带顶起；白区**下 1/5**，把小字压到距纸底 ~6px —— 守卫不变式⑤d/e 复算）
+  qrSize: Math.round(13 * 11.811),                      // 每枚码的边长（白区纵向 69mm 是硬上限：码+小字+纸底 10px 余量一起复算，见不变式⑤d）
   qrGap: Math.round(5 * 11.811),                        // 两枚码间距
-  qrCaptionOffset: Math.round(1.8 * 11.811),            // 码下小字基线偏移（码底 + 1.8mm，避免蹭到白区下沿）
+  qrCaptionOffset: Math.round(1.4 * 11.811),            // 码下小字基线偏移（码底 + 1.4mm，避免小字贴住码底）
   qrCaptionSize: 21,                                    // 码下小字（2026-09-19：18→21px，1.52mm→1.78mm —— 热敏 1.5mm 易糊）
   qrRightPad: Math.round(1.8 * 11.811),                 // 页脚右内缩（内容不得贴到贴纸装饰边）
   stampSize: Math.round(24 * 11.811),                   // 右下**预印**圆形印章直径
@@ -648,7 +648,7 @@ function paintGiftStickerCard(canvas, o) {
   //   为什么必须有"压缩行距"这一步（2026-09-19 实测）：只缩字号会在 34px→22px 的
   //   **换行点跳变**上提前放弃 —— 实测容量一度低到 52 字就整块不画（信文凭空消失，比截断更糟）。
   //   压缩行距时按「行数 × 行距 ≤ 可用高」反解行距，保证**全部行都放得下**。
-  const sigClear = () => Math.round(fontPx * 0.95)
+  const sigClear = () => Math.round(fontPx * 0.85)
   const bodyFloor = () => STICKER.footerTop - STICKER.sigOffset - sigClear()
   const bodyRoom = () => bodyFloor() - bodyTop
   const fits = () => bodyLines.length * lineH <= bodyRoom() + lineH && bodyLines.length * lineH <= availH
@@ -666,11 +666,13 @@ function paintGiftStickerCard(canvas, o) {
   }
   // 整块预检：必须能一次装下**全部**行才落墨（不满足则一行不画，绝不部分落墨/叠字）
   if (availH > 0 && bodyLines.length * lineH <= bodyRoom() + lineH) {
-    // 正文块定位：**加权居中**（权重 0.45，略偏下）——
-    //   纯居中会让短笺飘在题记带正下方、与署名之间留一大片空白（实测 1 行时下方空 111px）；
-    //   偏下后短笺更靠近署名，视觉重心回到卡面中部。
-    const usable = Math.min(availH, bodyRoom() + lineH)
-    const blockTop = bodyTop + Math.max(0, Math.round((usable - bodyLines.length * lineH) * 0.45))
+    // 正文块定位：在整个正文带（题记带下沿 → 署名净空线）里**加权居中**，权重 0.55（略偏下；0.75 会把正文推得离署名太近，守卫里已实测）。
+    //   ⚠ 2026-09-20 真图反馈「排版偏上、下部发虚」的根因就在这里：
+    //   原先是 `Math.min(availH, bodyRoom())` 当作可用高 —— 短笺时它会**把块顶顶到净空线上**
+    //   （正文末行紧贴署名、而题记带下方留 14.5mm 空档），于是整块看起来"贴在下半部之上、重心偏上"。
+    //   改成用真实 `availH` 分配余量：短笺上下各留约 7~8mm 相等的留白，长笺才靠净空线收口。
+    const blockH = bodyLines.length * lineH
+    const blockTop = bodyTop + Math.max(0, Math.round((availH - blockH) * 0.55))
     const bodyY = blockTop + lineH
     for (let i = 0; i < bodyLines.length; i += 1) {
       const baseline = bodyY + i * lineH
@@ -725,15 +727,19 @@ function paintGiftStickerCard(canvas, o) {
   ctx.font = '400 22px serif'
   ctx.fillText(dateText, axisRight, STICKER.footerTop - STICKER.dateOffset)
 
-  // ── 页脚带（**靠右下**）：两枚码整体**右对齐到印章左缘的内缩**（不再从左往右铺）
-  // 2026-09-19 产品要求「两枚码靠右下」：右端改为贴住预印印章左侧，视觉上与右上方的署名构成右下重心。
+  // ── 页脚带（**两枚码居中在「左文字轴 ~ 印章左缘」之间**）
+  // 2026-09-20 真图反馈「两枚码右侧到边框之间还有空白」：原先是**左对齐**铺开（码右缘离印章区 14.2mm），
+  //   右对齐又会把码推到印章正下方（印章是直径 24mm 的圆，圆的**底部**左右两侧仍有白），故取**居中**：
+  //   两侧留白均等、不与印章相交，同时把码放大到 14mm 提高扫码率（白区纵向 69mm 的硬上限，见不变式⑤d）。
   const codes = []
   if (o.qrcodeImage) codes.push({ img: o.qrcodeImage, caption: '扫码进店' })
   if (o.serviceQrImage) codes.push({ img: o.serviceQrImage, caption: '客服微信' })
   // 右端上限：印章左缘再让 2mm（不得进印章区），同时不越页脚右内缩
   const qrRight = Math.min(stampLeft - Math.round(2 * MM), cardX + cardW - STICKER.qrRightPad)
   const qrTotalW = codes.length * STICKER.qrSize + Math.max(0, codes.length - 1) * STICKER.qrGap
-  let cx = Math.max(axisX, qrRight - qrTotalW)
+  // 居中：可放区间 [axisX, qrRight]，两侧各留 (zone - qrTotalW)/2
+  const qrZone = qrRight - axisX
+  let cx = Math.max(axisX, axisX + Math.round((qrZone - qrTotalW) / 2))
   for (let i = 0; i < codes.length; i += 1) {
     const c = codes[i]
     const x = Math.min(cx, qrRight - STICKER.qrSize)

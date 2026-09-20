@@ -71,6 +71,18 @@ const INJECTIONS = {
     file: PAGE + '.js',
     from: '      const res = await this.modal({',
     to: '      const res = await wx.showModal({ success: () => {} }) && this.modal({'
+  },
+  // 预览区不再可滚（scroll-y 掉了）：A6 图比视口高，运营看不到下半张图
+  'preview-not-scrollable': {
+    file: PAGE + '.wxml',
+    from: '<scroll-view scroll-y class="pp-body">',
+    to: '<scroll-view class="pp-body">'
+  },
+  // 遮罩层级掉回页脚栏之下：页面固定底栏（z-index 110）会盖住「保存/上传」两个按钮
+  'mask-under-footbar': {
+    file: PAGE + '.wxss',
+    from: '  z-index: 300;',
+    to: '  z-index: 60;'
   }
 }
 
@@ -265,6 +277,60 @@ function makeHarness() {
     /A6 105×148mm/.test(wxml) && /贴纸 90×110mm/.test(wxml))
   check('文件名可复制（长按）', /bindlongpress="copyPrintFileName"/.test(wxml) && /copyPrintFileName\s*\(/.test(code))
   check('「最近导出」区块存在', /recentPrints/.test(wxml) && /recentPrints: \[\]/.test(code))
+}
+
+/* ------------------------------------------------------------------ *
+ * E) 预览层**可达性**（2026-09-20 真机：「无法向下滑动到保存按钮」）
+ *
+ * 真机实测根因（不是猜）：本页自带固定底栏 `.foot-bar`（`position:fixed; bottom:0; z-index:110`，
+ * 就是那个「刷新」按钮），而预览遮罩 `.pp-mask` 只有 `z-index:60`
+ * ⇒ 底栏盖在面板底部，把「保存到相册 / 上传印刷文件」整排按钮压住（截图里只剩两条按钮上沿）。
+ *   另一处：`.pp-body` 用 `flex:1 + min-height:0` 时，内部 `<image mode="widthFix">`（A6 图 ≈1200px 高）
+ *   按内容高度参与布局 → 把按钮行顶出视口；scroll-view 必须有**确定高度**才形成滚动区。
+ * 下面三条判据 + 两条注入，确保「可滚动」与「底部按钮可达」不会静默退化。
+ * ------------------------------------------------------------------ */
+{
+  const wxss = readSrc(PAGE + '.wxss')
+  const wxml = readSrc(PAGE + '.wxml')
+  // 取一条规则：注释先剔除（`.pp-mask` 的注释里含 `z-index:110` 字样，会把判据读成 110）
+  const wxssCode = stripComments(wxss)
+  const ruleOf = (sel) => {
+    const i = wxssCode.indexOf(sel + ' {')
+    if (i < 0) return ''
+    const open = wxssCode.indexOf('{', i)
+    let depth = 0
+    for (let k = open; k < wxssCode.length; k += 1) {
+      if (wxssCode[k] === '{') depth += 1
+      else if (wxssCode[k] === '}') {
+        depth -= 1
+        if (depth === 0) return wxssCode.slice(i, k + 1)
+      }
+    }
+    return wxssCode.slice(i)
+  }
+  const zIndexOf = (sel) => {
+    const m = /z-index:\s*(\d+)/.exec(ruleOf(sel))
+    return m ? Number(m[1]) : NaN
+  }
+  const maskZ = zIndexOf('.pp-mask')
+  const footZ = zIndexOf('.foot-bar')
+  check('★★ 预览遮罩必须**盖在页面固定底栏之上**（否则底栏压住保存/上传按钮）',
+    Number.isFinite(maskZ) && Number.isFinite(footZ) && maskZ > footZ,
+    `.pp-mask z-index=${maskZ} 必须 > .foot-bar z-index=${footZ}`)
+  check('★★ 预览区必须**可滚动**（wxml 用 scroll-view scroll-y；面板自身不滚）',
+    /<scroll-view[^>]*scroll-y[^>]*class="pp-body"/.test(wxml))
+  check('★★ 滚动区必须有**确定高度**（不能只靠 flex:1：内容图会把按钮顶出视口）',
+    /height:\s*\d+(?:\.\d+)?(?:vh|rpx|px)/.test(ruleOf('.pp-body'))
+    && /max-height:\s*\d+(?:\.\d+)?(?:vh|rpx|px)/.test(ruleOf('.pp-body')),
+    `实际 .pp-body = ${ruleOf('.pp-body').replace(/\s+/g, ' ').trim()}`)
+  check('★ 面板自身 overflow:hidden（滚动只发生在 .pp-body，按钮行恒定可见）',
+    /overflow:\s*hidden/.test(ruleOf('.pp-panel')))
+  check('★ 面板高度受限（max-height，不能撑到视口之外）',
+    /max-height:\s*\d+(?:\.\d+)?vh/.test(ruleOf('.pp-panel')))
+  check('★ 底部按钮行在滚动容器**之外**（滚走也不会丢按钮）',
+    wxml.indexOf('pp-body') < wxml.indexOf('class="pp-actions"'))
+  check('★ 底部安全区已让开（iOS home indicator）',
+    /safe-area-inset-bottom/.test(ruleOf('.pp-panel')))
 }
 
 /* ------------------------------------------------------------------ */
