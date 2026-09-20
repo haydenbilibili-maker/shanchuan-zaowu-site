@@ -147,8 +147,8 @@ const {
 const { goManagerModule } = require('./moduleRoutes');
 const {
   CHANNEL_OPTIONS,
-  CRAFT_TYPE_OPTIONS,
-  CRAFT_PROCESS_OPTIONS,
+  // ⚠️ 不要再导入 `CRAFT_TYPE_OPTIONS` / `CRAFT_PROCESS_OPTIONS`（冻结常量）：
+  //    选项表必须走 `TAXONOMY.craft*Options()`（常量 + 云端字典覆写），否则又是"两套选项"。
   normalizeChannel,
   normalizeCraftType,
   normalizeCraftProcess,
@@ -672,10 +672,16 @@ function syncProductTaxonomyFlags(page) {
   const craftProcess = taxonomyOk ? normalizeCraftProcess(p.craftProcess) : '';
   const channelLabels = ['未标注'].concat(CHANNEL_OPTIONS.map((o) => o.label));
   const channelValues = [''].concat(CHANNEL_OPTIONS.map((o) => o.value));
-  const craftLabels = ['未标注'].concat(CRAFT_TYPE_OPTIONS.map((o) => o.label));
-  const craftValues = [''].concat(CRAFT_TYPE_OPTIONS.map((o) => o.value));
-  const craftProcessLabels = ['未标注'].concat(CRAFT_PROCESS_OPTIONS.map((o) => o.label));
-  const craftProcessValues = [''].concat(CRAFT_PROCESS_OPTIONS.map((o) => o.value));
+  // ⚠️ 2026-09-20：这里原来用的是**冻结常量** `CRAFT_*_OPTIONS`，而「字段维护」用的是
+  //    `TAXONOMY.craft*Options()`（常量 + 云端字典覆写）—— **同一件事两套选项表**。
+  //    后果（产品负责人报的「保存了两套字段 / 编辑藏品处还是老字段」）：
+  //      后台在「选项维护」里改过/加过的选项，在**编辑藏品表单**里看不到，商品存的是新值时
+  //      下拉会落到「未标注」（indexOf = -1 → 0），看着就像"没保存"。
+  //    现在表单与字段维护**同一份口径**（TAXONOMY 的带覆写版本）。
+  const craftLabels = ['未标注'].concat(TAXONOMY.craftTypeOptions().map((o) => o.label));
+  const craftValues = [''].concat(TAXONOMY.craftTypeOptions().map((o) => o.value));
+  const craftProcessLabels = ['未标注'].concat(TAXONOMY.craftProcessOptions().map((o) => o.label));
+  const craftProcessValues = [''].concat(TAXONOMY.craftProcessOptions().map((o) => o.value));
   const channelIndex = Math.max(0, channelValues.indexOf(channel));
   const craftTypeIndex = Math.max(0, craftValues.indexOf(craftType));
   const craftProcessIndex = Math.max(0, craftProcessValues.indexOf(craftProcess));
@@ -1660,11 +1666,12 @@ const managerPageConfig = {
     channelLabels: ['未标注', '进口', '国产', '其它'],
     channelValues: ['', 'import', 'domestic', 'other'],
     channelIndex: 0,
-    craftLabels: ['未标注'].concat(CRAFT_TYPE_OPTIONS.map((o) => o.label)),
-    craftValues: [''].concat(CRAFT_TYPE_OPTIONS.map((o) => o.value)),
+    // 同上：表单初值也用带覆写的口径，别退回冻结常量
+    craftLabels: ['未标注'].concat(TAXONOMY.craftTypeOptions().map((o) => o.label)),
+    craftValues: [''].concat(TAXONOMY.craftTypeOptions().map((o) => o.value)),
     craftTypeIndex: 0,
-    craftProcessLabels: ['未标注'].concat(CRAFT_PROCESS_OPTIONS.map((o) => o.label)),
-    craftProcessValues: [''].concat(CRAFT_PROCESS_OPTIONS.map((o) => o.value)),
+    craftProcessLabels: ['未标注'].concat(TAXONOMY.craftProcessOptions().map((o) => o.label)),
+    craftProcessValues: [''].concat(TAXONOMY.craftProcessOptions().map((o) => o.value)),
     craftProcessIndex: 0,
     sizeFormMode: 'box',
     sizeFormHint: '方形玻璃罩：长 / 宽 / 高（cm）',

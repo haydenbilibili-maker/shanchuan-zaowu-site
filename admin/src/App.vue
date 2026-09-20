@@ -749,15 +749,7 @@
                             style="width:100%"
                             :disabled="!isTaxonomyEligibleProduct"
                         >
-                            <el-option label="相框" value="frame" />
-                            <el-option label="方形玻璃罩" value="cloche" />
-                            <el-option label="圆形玻璃罩" value="cloche_round" />
-                            <el-option label="圆柱形玻璃罩" value="cloche_cylinder" />
-                            <el-option label="造景" value="diorama" />
-                            <el-option label="冰箱贴" value="magnet" />
-                            <el-option label="饰品" value="accessory" />
-                            <el-option label="蝶翅画" value="wing_art" />
-                            <el-option label="其它" value="other" />
+                            <el-option v-for="o in CRAFT_TYPE_OPTIONS" :key="o.value" :label="o.label" :value="o.value" />
                         </el-select>
                         <span class="sku-hint-muted">装裱/封装形态；DB 字段 craftType；空=未标注</span>
                     </el-form-item>
@@ -769,14 +761,11 @@
                         <el-select
                             v-model="form.craftProcess"
                             clearable
-                            placeholder="浸制/塑化/剥制/其它"
+                            placeholder="压制/针插/浸制/塑化/包埋/其它"
                             style="width:100%"
                             :disabled="!isTaxonomyEligibleProduct"
                         >
-                            <el-option label="浸制" value="immersion" />
-                            <el-option label="塑化" value="plastination" />
-                            <el-option label="剥制" value="taxidermy" />
-                            <el-option label="其它" value="other" />
+                            <el-option v-for="o in CRAFT_PROCESS_OPTIONS" :key="o.value" :label="o.label" :value="o.value" />
                         </el-select>
                         <span class="sku-hint-muted">标本制作工艺；DB 字段 craftProcess；空=未标注</span>
                     </el-form-item>
@@ -1923,25 +1912,58 @@ const CHANNEL_LABEL_MAP = {
     other: '其它'
 }
 
-const CRAFT_TYPE_LABEL_MAP = {
-    frame: '相框',
-    cloche: '方形玻璃罩',
-    cloche_round: '圆形玻璃罩',
-    cloche_cylinder: '圆柱形玻璃罩',
-    diorama: '造景',
-    magnet: '冰箱贴',
-    accessory: '饰品',
-    jewelry: '饰品',
-    wing_art: '蝶翅画',
-    other: '其它'
-}
+/* 装裱方式 / 制作工艺：**与小程序 `miniprogram/config/productTaxonomy.js` 同一份口径**。
+ *
+ * ⚠️ 2026-09-20 产品负责人报「生产工艺保存了两套字段」——根因就是这里：
+ *   本文件原来有**两份手写清单**（下拉的 `<el-option>` + 标签表），而制作工艺只写了
+ *   4 个旧工艺（浸制/塑化/剥制/其它）；小程序那边 2026-09-19 已扩到 **11 个**
+ *   （压制/针插/干制骨骼/切片/涂片/透明骨骼/包埋）。
+ *   后果：后台在「字段维护」里标了新工艺，回 ERP「编辑藏品」看——
+ *     ① 下拉里没有那一项（选不了）；② 列表里 `CRAFT_PROCESS_LABEL_MAP[值]` 取不到中文名，
+ *     回退成英文 key（`|| scope.row.craftProcess`）→ 看起来"保存了老字段 / 没保存"。
+ *   现在：下拉与标签表**都从下面这一份数组派生**，两者不可能再互相漂移；
+ *   与小程序的逐字一致性由守卫 `npm run check:product-fields-entry` 断言。
+ *
+ * ⚠️ 仍有边界：后台通过「选项维护」**新增**的自定义选项（value `custom_xxx`）不在代码里，
+ *    ERP 这两张表拿不到 → 下拉里选不了、列表里显示英文 key（**值不会被清掉**，见 craftProcess 的保存口径）。
+ *    要做到完全同源，ERP 得改读云端字典 `getProductTaxonomy`（未做，登记在交付记录里）。 */
+const CRAFT_TYPE_OPTIONS = [
+    { value: 'frame', label: '相框' },
+    { value: 'cloche', label: '方形玻璃罩' },
+    { value: 'cloche_round', label: '圆形玻璃罩' },
+    { value: 'cloche_cylinder', label: '圆柱形玻璃罩' },
+    { value: 'diorama', label: '造景' },
+    { value: 'magnet', label: '冰箱贴' },
+    { value: 'accessory', label: '饰品' },
+    { value: 'wing_art', label: '蝶翅画' },
+    { value: 'other', label: '其它' }
+]
 
-const CRAFT_PROCESS_LABEL_MAP = {
-    immersion: '浸制',
-    plastination: '塑化',
-    taxidermy: '剥制',
-    other: '其它'
-}
+const CRAFT_PROCESS_OPTIONS = [
+    // 干制标本工艺
+    { value: 'pressed', label: '压制（腊叶）标本' },
+    { value: 'taxidermy', label: '剥制' },
+    { value: 'pinned', label: '针插标本' },
+    { value: 'dry_bone', label: '干制骨骼标本' },
+    // 浸制标本工艺
+    { value: 'immersion', label: '浸制' },
+    // 切片与涂片工艺（显微玻片标本）
+    { value: 'section', label: '切片标本' },
+    { value: 'smear', label: '涂片标本' },
+    // 现代高新标本工艺
+    { value: 'plastination', label: '塑化' },
+    { value: 'cleared_stained', label: '透明骨骼标本' },
+    { value: 'resin_embed', label: '包埋标本' },
+    // 兜底
+    { value: 'other', label: '其它' }
+]
+
+/** 标签表从选项数组派生；`jewelry` 是存量数据里的历史值（= 饰品），单独兜一层 */
+const CRAFT_TYPE_LABEL_MAP = Object.assign(
+    Object.fromEntries(CRAFT_TYPE_OPTIONS.map((o) => [o.value, o.label])),
+    { jewelry: '饰品' }
+)
+const CRAFT_PROCESS_LABEL_MAP = Object.fromEntries(CRAFT_PROCESS_OPTIONS.map((o) => [o.value, o.label]))
 
 const TAXONOMY_ELIGIBLE_RE = /昆虫|植物|海洋|动物|蝴蝶|鳞翅|蝶/
 

@@ -308,6 +308,73 @@ function check (root) {
     }
   }
 
+  /* ── ⑤-h ERP（`admin/src/App.vue`）的选项表必须与小程序**逐字一致** ────────────────
+   * 2026-09-20 产品负责人：「生产工艺保存了两套字段 —— 编辑藏品处还是老字段，字段维护处是新字段，
+   *   保存后仍是老字段信息」。根因：ERP 里**自己手写了两份清单**（下拉 `<el-option>` + 标签表），
+   *   制作工艺只写了 4 个旧工艺，而小程序 2026-09-19 已扩到 11 个 →
+   *   ERP 下拉选不了新工艺、列表取不到中文名（回退成英文 key）⇒ 看起来"没保存"。
+   * 现在 ERP 的下拉与标签表都从**一份数组**派生，本判据再钉死"那份数组 == 小程序的口径"。 */
+  {
+    // 本脚本没有 ROOT（只有 HERE / MP_DEFAULT）—— miniprogram 的上一级才是仓库根
+    const erpPath = process.env.PRODUCT_FIELDS_ERP || join(MP_DEFAULT, '..', 'admin/src/App.vue')
+    let erpSrc = ''
+    try { erpSrc = readFileSync(erpPath, 'utf8') } catch (e) { erpSrc = '' }
+    if (!erpSrc) {
+      problems.push('读不到 admin/src/App.vue —— ERP 侧的选项表无法核对')
+    } else {
+      const arrOf = (name) => {
+        const i = erpSrc.indexOf('const ' + name + ' = [')
+        if (i < 0) return null
+        const j = erpSrc.indexOf('\n]', i)
+        return [...erpSrc.slice(i, j).matchAll(/value:\s*'([^']+)'/g)].map((m) => m[1])
+      }
+      const erpTypes = arrOf('CRAFT_TYPE_OPTIONS')
+      const erpProcs = arrOf('CRAFT_PROCESS_OPTIONS')
+      const mini = (() => {
+        try {
+          const m = { exports: {} }
+          new Function('module', 'exports', 'require', readFileSync(join(root, REL.taxonomy), 'utf8'))(m, m.exports, () => { throw new Error('no require') })
+          return m.exports
+        } catch (e) { return null }
+      })()
+      if (!erpTypes || !erpProcs) {
+        problems.push('ERP 的 CRAFT_TYPE_OPTIONS / CRAFT_PROCESS_OPTIONS 数组找不到（下拉与标签表必须从它派生，不许再手写两份）')
+      } else if (mini) {
+        const want = (mini.CRAFT_TYPE_OPTIONS || []).map((o) => o.value).join(',')
+        const wantP = (mini.CRAFT_PROCESS_OPTIONS || []).map((o) => o.value).join(',')
+        if (erpTypes.join(',') !== want) problems.push('ERP 装裱方式清单与小程序不一致 —— 编辑藏品里会看不到/选不了新装裱方式')
+        if (erpProcs.join(',') !== wantP) problems.push('ERP 制作工艺清单与小程序不一致 —— **编辑藏品里看到的就是老字段**（这就是产品负责人报的现象）')
+      }
+      if (!/Object\.fromEntries\(CRAFT_PROCESS_OPTIONS\.map/.test(erpSrc)) {
+        problems.push('ERP 的 CRAFT_PROCESS_LABEL_MAP 不是从 CRAFT_PROCESS_OPTIONS 派生的（两份清单会再次漂移）')
+      }
+      if (!/v-for="o in CRAFT_PROCESS_OPTIONS"/.test(erpSrc)) {
+        problems.push('ERP 的制作工艺下拉不是 v-for CRAFT_PROCESS_OPTIONS（手写 el-option 会漏项）')
+      }
+    }
+  }
+
+  /* ── ⑤-i **编辑藏品表单**与「字段维护」必须同一份选项口径 ────────────────────────
+   * 产品负责人报的「保存了两套字段」在**小程序内部**也有一份：表单用冻结常量、字段维护用
+   * `TAXONOMY.craft*Options()`（常量 + 云端覆写）。后台在「选项维护」里改过的选项，
+   * 表单里看不到，商品存的是新值时下拉会落到「未标注」→ 看着像没保存。 */
+  {
+    // 只看"有没有在表单里 concat 冻结常量" —— 前缀是 `['未标注']`（labels）还是 `['']`（values）都算
+    const formUsesFrozen = /\.concat\(CRAFT_(TYPE|PROCESS)_OPTIONS\.map/.test(manager)
+    if (formUsesFrozen) {
+      problems.push('「编辑藏品」表单的选项表用了**冻结常量** CRAFT_*_OPTIONS —— 与字段维护不是同一份口径（后台改过的选项在表单里看不到）')
+    }
+    // 表单里 labels 用 ['未标注'] 前缀、values 用 [''] 前缀 —— 两条都要走 TAXONOMY
+    const formOk = /const craftProcessLabels = \['未标注'\]\.concat\(TAXONOMY\.craftProcessOptions\(\)/.test(manager)
+      && /const craftProcessValues = \[''\]\.concat\(TAXONOMY\.craftProcessOptions\(\)/.test(manager)
+    if (!formOk) {
+      problems.push('「编辑藏品」表单的制作工艺选项表没走 TAXONOMY.craftProcessOptions()')
+    }
+    if (/^\s*CRAFT_TYPE_OPTIONS,\s*$/m.test(manager) || /^\s*CRAFT_PROCESS_OPTIONS,\s*$/m.test(manager)) {
+      problems.push('managerPageConfig 还在导入冻结常量 —— 迟早被某个表单用回去')
+    }
+  }
+
   // 未标注必须能选回去（picker 第 0 项 = 未标注）
   if (!/_pfIndex\(/.test(manager) || !/i < 0 \? 0 : i \+ 1/.test(manager)) {
     problems.push('picker 下标未按「第 0 项 = 未标注」映射 —— 无法把字段清回未标注')
@@ -381,6 +448,20 @@ function selftest () {
       },
       {
         // 真机缺陷本体：云函数别名表退回**手写**（只留 4 个旧工艺）→ 标记「针插」写库变空串
+        name: '编辑藏品表单退回冻结常量（后台改过的工艺选项在表单里看不到）',
+        file: REL.manager,
+        mutate: (s) => s.replace(
+          "  const craftProcessValues = [''].concat(TAXONOMY.craftProcessOptions().map((o) => o.value));",
+          "  const craftProcessValues = [''].concat(CRAFT_PROCESS_OPTIONS.map((o) => o.value));"
+        ),
+        expect: /冻结常量/
+      },
+      {
+        name: 'ERP 制作工艺清单漏掉「针插」（编辑藏品里看不到新工艺）',
+        erp: (s) => s.replace("    { value: 'pinned', label: '针插标本' },\n", ''),
+        expect: /编辑藏品里看到的就是老字段/
+      },
+      {
         name: '云函数别名表退回手写 4 项（标记「针插」写库变空串 —— 产品负责人报的那个缺陷）',
         file: REL.cloudTaxonomy,
         mutate: (s) => s.replace(
@@ -450,6 +531,21 @@ function selftest () {
       }
     ]
     for (const inj of injections) {
+      // `erp:` 型注入：ERP 文件不在小程序目录下（拷进 tmp 会越出隔离区），
+      // 所以写到 tmp 下的独立副本、用 PRODUCT_FIELDS_ERP 指过去。
+      if (inj.erp) {
+        const erpAbs = join(MP_DEFAULT, '..', 'admin/src/App.vue')
+        const erpCopy = join(tmp, 'admin-App.vue')
+        writeFileSync(erpCopy, inj.erp(readFileSync(erpAbs, 'utf8')))
+        const resErp = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--root', tmp], {
+          encoding: 'utf8', env: Object.assign({}, process.env, { PRODUCT_FIELDS_ERP: erpCopy })
+        })
+        const outErp = `${resErp.stdout || ''}${resErp.stderr || ''}`
+        const hitErp = resErp.status !== 0 && inj.expect.test(outErp)
+        t(`${inj.name} → 被守卫拦下`, hitErp, hitErp ? '' : outErp.split('\n').filter((l) => l.includes('✗')).slice(0, 3).join(' | '))
+        try { rmSync(erpCopy, { force: true }) } catch (e) { /* ignore */ }
+        continue
+      }
       copy()
       const abs = join(tmp, inj.file)
       const orig = readFileSync(abs, 'utf8')
