@@ -70,8 +70,20 @@ check(
   funnelStepActions.size >= 3 && funnelStepActions.has('wish_wall_register_gate'),
   `${funnelStepActions.size} 个漏斗事件：${[...funnelStepActions.keys()].join('/')}`
 )
-// 小程序实际发出的 step（字面量 + `fail_${reason}` 模板）
-const emittedSteps = new Set([...pageSrc.matchAll(/step:\s*'([a-z_]+)'/g)].map((m) => m[1]))
+// 小程序实际发出的 step（字面量 + `fail_${reason}` 模板）。
+// ⚠️ 2026-09-21（P2-8）：`resume_success` 变成**按续发真实结果分支**的取值
+// `this.trackRitualGate(ok === true ? 'resume_success' : 'fail_resume')` ——
+// 它不再是 `step: '...'` 的**键值**形态，旧正则只认 `step:` 会**假报**"小程序没有发出"。
+// 现在把 `trackRitualGate('...')` 的第一个实参也算作"真的发出了"（这正是本判据要保的东西：
+// step 字符串在页面上真实存在，用户行为真的能落进这张表的行里）。
+// 只收**像 step 的字面量**（小写+下划线），不会把同一方法调用里的 `resumeWishBase` 之类标识符收进来。
+const emittedSteps = new Set([
+  ...[...pageSrc.matchAll(/step:\s*'([a-z_]+)'/g)].map((m) => m[1]),
+  // 收口形态：`trackRitualGate('show')` / `trackRitualGate(cond ? 'a' : 'b')`
+  // —— 把整段调用的实参里的所有字符串字面量都算作"页面真的会发出这个 step"。
+  ...[...pageSrc.matchAll(/trackRitualGate\(([^)]*)\)/g)]
+    .flatMap((m) => [...m[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1])),
+])
 const emittedPrefixes = [...pageSrc.matchAll(/step:\s*`([a-z_]+)\$\{/g)].map((m) => m[1])
 const badSteps = []
 monitor.WALL_MONITOR_ROWS.forEach((row) => {

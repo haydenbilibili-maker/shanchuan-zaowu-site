@@ -142,7 +142,10 @@ if (has('--selftest')) {
       name: 'reco-placeholder-dropped',
       file: 'wxml',
       scene: 'sheet-loading',
-      from: 'wx:if="{{reco || productId || recoLoading}}"',
+      // ⚠️ 2026-09-21 锚点跟随源码更新：P2-12 给这一行的条件加了第四档 `recoFailed`
+      // （取件失败也要占位，不许整行消失）。注入语义不变：**撤掉占位条件**，
+      // 看 preview 还能不能检出"弹层长高一块"。
+      from: 'wx:if="{{reco || productId || recoLoading || recoFailed}}"',
       to: 'wx:if="{{reco || productId}}"',
       expect: '取件中：产品行已占位'
     },
