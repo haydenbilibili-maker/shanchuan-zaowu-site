@@ -42,6 +42,115 @@ function check(name, cond, extra) {
 }
 const read = (f) => readFileSync(resolve(ROOT, f), 'utf8')
 
+/* ── 源码级：解析 trackBehavior 调用（端到端对账用；见 §②b） ──────────────
+ * 旧版守卫全用**合成行**（`{ action:'wish_wall_post', targetId:'ok' }`）自测，
+ * 从不读客户端**实发**的 targetId —— 所以 P1-3（页面实发 targetId='1'、报表按 'ok' 过滤）
+ * 能稳稳穿 27/27 全绿。下面这组解析器就是"把客户端真发了什么读出来"的最小工具。 */
+
+/** 去掉注释但**保持长度不变**（注释字符换成空格）：这样解析出的下标可直接用于改写原源码，
+ *  且不会把注释里"写过的调用"当成真的发过。感知字符串/模板串，避免误伤 `'https://…'`。 */
+function stripComments(src) {
+  const out = src.split('')
+  let quote = ''
+  for (let i = 0; i < src.length; i += 1) {
+    const ch = src[i]
+    if (quote) {
+      if (ch === '\\') { i += 1; continue }
+      if (ch === quote) quote = ''
+      continue
+    }
+    if (ch === '"' || ch === "'" || ch === '`') { quote = ch; continue }
+    if (ch === '/' && src[i + 1] === '/') {
+      while (i < src.length && src[i] !== '\n') { out[i] = ' '; i += 1 }
+      i -= 1
+      continue
+    }
+    if (ch === '/' && src[i + 1] === '*') {
+      out[i] = ' '; out[i + 1] = ' '; i += 2
+      while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) {
+        if (src[i] !== '\n') out[i] = ' '
+        i += 1
+      }
+      if (i < src.length) { out[i] = ' '; out[i + 1] = ' '; i += 1 }
+      continue
+    }
+  }
+  return out.join('')
+}
+
+/** 字符串字面量取值；不是字面量（变量/模板/表达式）返回 null —— 不猜。 */
+function literalOf(raw) {
+  const s = String(raw == null ? '' : raw).trim()
+  const m = /^'([^'\\]*)'$/.exec(s) || /^"([^"\\]*)"$/.exec(s)
+  return m ? m[1] : null
+}
+
+/** 从 `start`（'(' 之后）解析一层实参，返回 [{ raw, start, end }]（下标相对 src） */
+function parseCallArgs(src, start) {
+  const args = []
+  let depth = 0
+  let quote = ''
+  let argStart = start
+  const push = (end) => {
+    const raw = src.slice(argStart, end)
+    const lead = raw.length - raw.replace(/^\s+/, '').length
+    const trail = raw.length - raw.replace(/\s+$/, '').length
+    args.push({ raw: raw.trim(), start: argStart + lead, end: end - trail })
+  }
+  for (let i = start; i < src.length; i += 1) {
+    const ch = src[i]
+    if (quote) {
+      if (ch === '\\') { i += 1; continue }
+      if (ch === quote) quote = ''
+      continue
+    }
+    if (ch === '"' || ch === "'" || ch === '`') { quote = ch; continue }
+    if (ch === '(' || ch === '[' || ch === '{') { depth += 1; continue }
+    if (ch === ')' || ch === ']' || ch === '}') {
+      if (ch === ')' && depth === 0) { push(i); return { args, end: i } }
+      depth -= 1
+      continue
+    }
+    if (ch === ',' && depth === 0) { push(i); argStart = i + 1; continue }
+  }
+  return { args, end: -1 }
+}
+
+/** 找出源码里所有 `trackBehavior('<action>', …)` 调用。 */
+function findTrackCalls(src, action) {
+  const out = []
+  const re = /trackBehavior\s*\(/g
+  let m
+  while ((m = re.exec(src))) {
+    const open = src.indexOf('(', m.index)
+    const { args } = parseCallArgs(src, open + 1)
+    if (args.length && literalOf(args[0].raw) === action) out.push({ args, index: m.index })
+  }
+  return out
+}
+
+/** 报表期望的"带 target 的口径"：{ row, action, target }（判据的事实源是 wishWallMonitor 本身） */
+function wallTargetExpectations() {
+  const out = []
+  monitor.WALL_MONITOR_ROWS.forEach((row) => {
+    if (!row.target) return
+    ;(row.actions || []).forEach((action) => out.push({ row: row.key, action, target: String(row.target) }))
+  })
+  return out
+}
+
+/** 把源码里某 action 调用的第 3 实参（targetId）改写为字面量 `'value'`；找不到就原样返回。 */
+function setTrackTarget(src, action, value) {
+  const targets = findTrackCalls(stripComments(src), action).filter((c) => c.args.length >= 3)
+  if (!targets.length) return src
+  let out = src
+  for (let i = targets.length - 1; i >= 0; i -= 1) {
+    const a = targets[i].args[2]
+    out = out.slice(0, a.start) + `'${value}'` + out.slice(a.end)
+  }
+  return out
+}
+
 const monitor = await import(pathToFileURL(resolve(ROOT, MONITOR_UTIL)).href)
 const erpSchemaSrc = read(ERP_SCHEMA)
 const mpSchemaSrc = read(MP_SCHEMA)
@@ -87,6 +196,35 @@ check(
   '门店来源口径与页面埋点一致（entryFrom 会被写进 targetId/from）',
   /trackBehavior\('wish_wall_enter', 'from', this\.data\.entryFrom\)/.test(pageSrc) &&
     monitor.WALL_SOURCES.some((s) => s.key === 'store_qr')
+)
+
+/* ── ②b 端到端一致性：客户端**实发**的 targetId 必须等于监测表**期望**的 target ──
+ *
+ * P1-3 的真问题：页面实发 `trackBehavior('wish_wall_post', 'ok', '1')`（targetId='1'），
+ * 而表口径 `target: 'ok'` → 「落愿成功」行**恒 0**。旧守卫只对"合成行"自测，
+ * 从不读客户端实发值，所以 27/27 全绿也盖不住。这条断言把"表要什么"与"页面真发了什么"直接对账。
+ * （同类若有其它带 target 的口径，一并覆盖；当前 WALL_MONITOR_ROWS 里只有 post 一条。） */
+const pageStripped = stripComments(pageSrc)
+const targetMismatches = []
+wallTargetExpectations().forEach(({ row, action, target }) => {
+  const calls = findTrackCalls(pageStripped, action)
+  if (!calls.length) { targetMismatches.push(`${row}：页面没有发出 ${action}`); return }
+  const withId = calls.filter((c) => c.args.length >= 3)
+  if (!withId.length) { targetMismatches.push(`${row}：${action} 调用没有第 3 实参（targetId）`); return }
+  withId.forEach((c) => {
+    const actual = literalOf(c.args[2].raw)
+    if (actual === null) {
+      // 不是字面量 = 本判据无法对账；按 E16，无法判定不得算通过
+      targetMismatches.push(`${row}：${action} 的 targetId 不是字符串字面量，无法对账（${c.args[2].raw}）`)
+    } else if (actual !== target) {
+      targetMismatches.push(`${row}：客户端实发 ${action} targetId='${actual}' ≠ 监测表期望 '${target}'`)
+    }
+  })
+})
+check(
+  '★ 端到端一致性：客户端实发 targetId == 监测表期望值（不一致 = 这一行恒 0；P1-3 就是这么漏掉的）',
+  targetMismatches.length === 0,
+  targetMismatches.join(' / ')
 )
 
 /* ── ③ 页面从 FUNNELS 派生（不许再写死单个 action） ───────────────────── */
@@ -263,30 +401,80 @@ if (process.argv.includes('--selftest')) {
       file: MP_REPORT,
       from: '{{analyticsReport.behavior.funnel.wishWall.certGate.show || 0}}',
       to: '{{analyticsReport.behavior.funnel.wishWall.certGateOff.show || 0}}'
+    },
+    // 2026-09-21 新增（P1-3 防复发）：落愿成功埋点 targetId 与报表口径**端到端**对账。
+    // 两条注入各证明一半：①判据读了客户端实发值；②判据读了监测表期望值。
+    {
+      name: '落愿成功埋点 targetId 与监测表口径漂移（客户端实发 ≠ 表要 ok）',
+      file: WALL_PAGE,
+      apply: (src) => setTrackTarget(src, 'wish_wall_post', '__selftest_drift__')
+    },
+    {
+      name: '监测表把落愿成功的 target 口径改掉（与客户端实发不再一致）',
+      file: MONITOR_UTIL,
+      from: "actions: ['wish_wall_post'], target: 'ok'",
+      to: "actions: ['wish_wall_post'], target: 'posted'"
     }
   ]
   let bad = 0
-  for (const inj of injections) {
-    const target = resolve(ROOT, inj.file)
-    const original = readFileSync(target, 'utf8')
-    if (!original.includes(inj.from)) {
-      console.error(`  ✗ 注入「${inj.name}」锚点没找到`)
+  // 0) 基线归一：P1-3 的**页面侧**由并行流修复，本 worktree 可能仍是实发 '1'。
+  //    先按监测表期望值把页面源码里带 target 的口径归一到一致，再跑注入 —— 这样每条注入的
+  //    "被检出"来自注入本身，而不是借用"页面还没修"这条红（否则全部注入都会假绿 = 自检失效，E7/E16）。
+  const trueOriginals = new Map()
+  const readTrue = (f) => {
+    const abs = resolve(ROOT, f)
+    if (!trueOriginals.has(abs)) trueOriginals.set(abs, readFileSync(abs, 'utf8'))
+    return trueOriginals.get(abs)
+  }
+  const alignNotes = []
+  try {
+    for (const { action, target } of wallTargetExpectations()) {
+      const cur = readTrue(WALL_PAGE)
+      const next = setTrackTarget(cur, action, target)
+      if (next !== cur) {
+        writeFileSync(resolve(ROOT, WALL_PAGE), next)
+        alignNotes.push(`${action} targetId → '${target}'`)
+      }
+    }
+    if (alignNotes.length) {
+      console.log(`  · 自检前置归一（页面侧并行修复前的兜底）：${alignNotes.join('；')}`)
+    }
+    // 0b) 归一后基线必须全绿；否则"注入被检出"可能只是基线本来就红 —— 那样的自检不证明任何事
+    const base = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
+    if (base.status !== 0) {
+      console.error('  ✗ 自检基线非全绿 —— 注入结果不可信（先修红，再跑自检）')
+      console.error((base.stdout || '') + (base.stderr || ''))
       bad += 1
-      continue
+    } else {
+      for (const inj of injections) {
+        const target = resolve(ROOT, inj.file)
+        const original = readFileSync(target, 'utf8')
+        let mutated = null
+        if (typeof inj.apply === 'function') mutated = inj.apply(original)
+        else if (original.includes(inj.from)) mutated = original.replace(inj.from, inj.to)
+        if (mutated == null || mutated === original) {
+          // 锚点失效必须判失败（E18-b）：否则重构后注入会静默全废
+          console.error(`  ✗ 注入「${inj.name}」锚点没找到`)
+          bad += 1
+          continue
+        }
+        let caught = false
+        try {
+          writeFileSync(target, mutated)
+          const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
+          caught = run.status !== 0
+        } finally {
+          writeFileSync(target, original)
+        }
+        if (caught) console.log(`  ✓ 注入「${inj.name}」被检出`)
+        else {
+          bad += 1
+          console.error(`  ✗ 注入「${inj.name}」未被检出（判据没接上）`)
+        }
+      }
     }
-    let caught = false
-    try {
-      writeFileSync(target, original.replace(inj.from, inj.to))
-      const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
-      caught = run.status !== 0
-    } finally {
-      writeFileSync(target, original)
-    }
-    if (caught) console.log(`  ✓ 注入「${inj.name}」被检出`)
-    else {
-      bad += 1
-      console.error(`  ✗ 注入「${inj.name}」未被检出（判据没接上）`)
-    }
+  } finally {
+    for (const [abs, content] of trueOriginals) writeFileSync(abs, content)
   }
   if (bad) {
     console.error(`\n✗ selftest 失败 ${bad} 项`)

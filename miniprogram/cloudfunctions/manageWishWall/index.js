@@ -223,8 +223,13 @@ async function listPublic(event) {
     })
     return { success: true, list: rows, inspiration, productKey }
   } catch (e) {
+    // P1-1：查询失败**不是**"墙上一条都没有"。旧写法 `success:true + list:[]` 会让页面
+    // 渲染「墙面还是空的 · 做第一个许愿的人」这个假事实，并把上层的诚实修复全部架空。
+    // 回包形状是**冻结契约**：success:false + 给人看的中文 msg + fallback 显式标记"这是故障、不是真的空"。
+    // 内部异常原文只进服务端日志（下一行），不回传给用户。
     console.warn('wish wall list failed:', e && e.message)
-    return { success: true, list: [], inspiration, productKey, fallback: true }
+    // 灵感文案刻意保留：它不依赖列表查询（见上面注释），故障时输入框上方仍应有起兴的句子
+    return { success: false, msg: '墙面暂时没刷出来，请稍后再试', inspiration, productKey, fallback: true }
   }
 }
 
@@ -313,7 +318,11 @@ async function listMine(event, openid) {
       .get()
     return { success: true, list: (res.data || []).map(mapStaffItem) }
   } catch (e) {
-    return { success: true, list: [], fallback: true }
+    // 与 listPublic 同一原则（P1-1）：读失败 ≠「你还没写过」。
+    // 旧写法 success:true + list:[] 会让「我的心愿」显示「你还没在这面墙上写过心愿」——
+    // 一个用户无法分辨的假事实。同样按冻结契约回 success:false + fallback。
+    console.warn('wish wall mine failed:', e && e.message)
+    return { success: false, msg: '你的心愿暂时没读出来，请稍后再试', fallback: true }
   }
 }
 
