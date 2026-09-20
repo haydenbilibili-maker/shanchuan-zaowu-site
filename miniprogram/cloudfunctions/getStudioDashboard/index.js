@@ -45,6 +45,19 @@ const BUDGET_CONFIG_ID = 'studio_budget_pools'
 const RENT_BUDGET_TYPES = ['房租', '房租费', '租金']
 const BROADBAND_BUDGET_TYPES = ['宽带', '宽带费', '网费', '网络费']
 
+/**
+ * 「已一次性缴纳」的池：**飞书把这类钱算作已经付掉**，但它自己那行的「已使用金额」可能还是 0。
+ *
+ * 线上实测（2026-09-20，直接调云函数）：
+ *   · 房租池   年度 54200 / 已用 **0** / 剩 54200，note「全年房租已一次性缴纳54200元」
+ *   · 宽带池   年度 1098  / 已用 **948** / 剩 150，note「…已一次性缴纳」
+ *   · 可采购池 note 里明写：`可采购预算 = 总预算(200000) − 安全储备(60000) − 房租(54200) − 宽带已付(948) = 84852`
+ * 也就是说**总预算/可采购那两行的算式已经按 54,200 扣过房租了**，而房租池自己显示"剩 54200"
+ * —— 运营会以为还有五万四可以花。这正是产品负责人说的「预算相关信息错误」。
+ * 判据（只在池自己没报已用时才启用，不覆盖真实台账）：note 里写了"一次性缴纳/已付"且 used = 0。
+ */
+const PREPAID_RE = /一次性缴纳|已付/
+
 function fail(msg, code) {
   return { success: false, msg, code: code || 'FAIL' }
 }
@@ -592,10 +605,20 @@ exports.main = async (event) => {
       const v = Number(pool.feishuUsedAmount)
       return Number.isFinite(v) ? roundMoney(v) : null
     }
+    /** 池的"已用"为 0 但 note 说已一次性缴纳 → 按**年度额**当作已经花掉（见 PREPAID_RE 的说明） */
+    const prepaidOf = (pool, annual) => {
+      if (!pool) return null
+      const used = poolUsedOf(pool)
+      if (used !== null && used > 0) return null            // 池自己报了真实已用 → 以它为准
+      if (Number(pool.annualAmount || 0) <= 0) return null
+      return PREPAID_RE.test(String(pool.note || '')) ? roundMoney(annual) : null
+    }
     const rentPoolUsed = poolUsedOf(rentPool)
     const broadbandPoolUsed = poolUsedOf(broadbandPool)
-    const rentSpend = rentPoolUsed !== null ? rentPoolUsed : spendOfBudgetTypes(RENT_BUDGET_TYPES)
-    const broadbandSpend = broadbandPoolUsed !== null ? broadbandPoolUsed : spendOfBudgetTypes(BROADBAND_BUDGET_TYPES)
+    const rentPrepaid = prepaidOf(rentPool, (rentPool && rentPool.annualAmount) || 54200)
+    const broadbandPrepaid = prepaidOf(broadbandPool, (broadbandPool && broadbandPool.annualAmount) || 1098)
+    const rentSpend = rentPrepaid !== null ? rentPrepaid : (rentPoolUsed !== null ? rentPoolUsed : spendOfBudgetTypes(RENT_BUDGET_TYPES))
+    const broadbandSpend = broadbandPrepaid !== null ? broadbandPrepaid : (broadbandPoolUsed !== null ? broadbandPoolUsed : spendOfBudgetTypes(BROADBAND_BUDGET_TYPES))
     const fixedSpend = roundMoney(rentSpend + broadbandSpend)
 
     const usedBudget = purchaseTotal
@@ -662,6 +685,22 @@ exports.main = async (event) => {
       else if (p.category === '宽带') used = broadbandSpend
       else if (p.category === '总预算' || p.category === '采购控制') used = purchaseTotal
       const annual = roundMoney(p.annualAmount || 0)
+      // 「已一次性缴纳」的池：飞书那行"已用 0"与它自己的 note 冲突（房租 54,200 已被
+      // 总预算/可采购的算式扣掉），按**已缴**口径呈现，免得同页出现"剩 54200"的错觉。
+      const prepaidAmt = (p.category === '房租' && rentPrepaid !== null) ? rentPrepaid
+        : (p.category === '宽带' && broadbandPrepaid !== null) ? broadbandPrepaid
+          : null
+      if (prepaidAmt !== null) {
+        return {
+          name: p.name,
+          category: p.category,
+          annualAmount: annual,
+          usedAmount: roundMoney(prepaidAmt),
+          remainingAmount: roundMoney(Math.max(0, annual - prepaidAmt)),
+          note: p.note || '',
+          source: 'prepaid'
+        }
+      }
       // 飞书带回的数优先（以飞书为准）；没带回才用本地重算
       const hasFeishu = p.feishuUsedAmount !== undefined && p.feishuRemainingAmount !== undefined
       return {

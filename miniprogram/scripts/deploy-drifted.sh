@@ -118,12 +118,25 @@ AFTER="$(node -e '
     process.stdout.write((j.inconsistent||[]).map(r=>r.name).join(" "));
   }catch(e){ process.stdout.write("(读取失败)"); }
 ' "$TMP_DIR/fn-drift-after.json")"
-echo "成功 $([ -s "$OK_LOG" ] && wc -l < "$OK_LOG" | tr -d ' ' || echo 0) / 失败 $([ -s "$FAIL_LOG" ] && wc -l < "$FAIL_LOG" | tr -d ' ' || echo 0)" | tee -a "$LOG"
+N_OK=$([ -s "$OK_LOG" ] && wc -l < "$OK_LOG" | tr -d ' ' || echo 0)
+N_FAIL=$([ -s "$FAIL_LOG" ] && wc -l < "$FAIL_LOG" | tr -d ' ' || echo 0)
+echo "成功 $N_OK / 失败 $N_FAIL" | tee -a "$LOG"
+# ⚠️ 2026-09-20 修一处**会撒谎的结论**：原来只看"复比是否还有漂移"，
+#    而 `tcb` 的失败可能发生在**上传成功之后的最后一个 API 回执**上
+#    （实测 getStudioDashboard：日志写着 `FetchError: network timeout`，代码其实已经更新，
+#     复比也就"通过"了）—— 于是脚本一边写"失败 1"一边打 `✓ 复比通过`。
+#    现在：**只要部署步骤报过失败，就不许打 ✓**；要说清"到底算不算成功"，
+#    一律以**线上拉回来的代码**为准（复比），但结论必须把"部署步骤有失败"一起说出来。
 if [ -n "$AFTER" ]; then
   echo "✗ 仍不一致：$AFTER" | tee -a "$LOG"
   rc_all=1
+elif [ "$N_FAIL" -gt 0 ]; then
+  echo "⚠ 部署步骤报了 $N_FAIL 个失败，但复比显示线上已与仓库一致 ——" | tee -a "$LOG"
+  echo "   这类失败通常发生在**上传成功之后的回执**上（网络超时）。请按函数逐个确认：" | tee -a "$LOG"
+  echo "   失败清单：$(tr '\n' ' ' < "$FAIL_LOG")" | tee -a "$LOG"
+  rc_all=1
 else
-  echo "✓ 复比通过：线上与仓库已一致" | tee -a "$LOG"
+  echo "✓ 复比通过：线上与仓库已一致（$N_OK 个函数，无失败）" | tee -a "$LOG"
 fi
 echo "日志：$LOG"
 exit $rc_all

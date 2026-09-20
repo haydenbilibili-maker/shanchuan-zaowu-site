@@ -167,10 +167,13 @@ function budgetSourceProblems (src) {
   const need = (re, msg) => { if (!re.test(src)) problems.push(msg) }
   need(/const RENT_BUDGET_TYPES = \[/, '缺 RENT_BUDGET_TYPES —— 房租的 budgetType 取值没有登记（识别到的那批行认不出来）')
   need(/const BROADBAND_BUDGET_TYPES = \[[^\]]*'宽带'/.test(src) ? /'宽带'/ : /$^/, 'BROADBAND_BUDGET_TYPES 里没有「宽带」')
-  need(/const rentSpend = rentPoolUsed !== null \? rentPoolUsed : spendOfBudgetTypes\(RENT_BUDGET_TYPES\)/,
-    '房租实际支出不是"飞书池已用 → 按 budgetType 汇总"这条链（可能退回常量了）')
-  need(/const broadbandSpend = broadbandPoolUsed !== null \? broadbandPoolUsed : spendOfBudgetTypes\(BROADBAND_BUDGET_TYPES\)/,
+  need(/const rentSpend = rentPrepaid !== null \? rentPrepaid : \(rentPoolUsed !== null \? rentPoolUsed : spendOfBudgetTypes\(RENT_BUDGET_TYPES\)\)/,
+    '房租实际支出不是"已一次性缴纳 → 飞书池已用 → 按 budgetType 汇总"这条链（可能退回常量了）')
+  need(/const broadbandSpend = broadbandPrepaid !== null \? broadbandPrepaid : \(broadbandPoolUsed !== null \? broadbandPoolUsed : spendOfBudgetTypes\(BROADBAND_BUDGET_TYPES\)\)/,
     '宽带/网费实际支出同上')
+  // 「已一次性缴纳」的池：飞书那行"已用 0"与它自己的 note 冲突，必须按已缴口径呈现
+  need(/const PREPAID_RE = \/一次性缴纳\|已付\//, '缺 PREPAID_RE（"已一次性缴纳"的池会被当成"没花过"）')
+  need(/const prepaidAmt = \(p\.category === '房租' && rentPrepaid !== null\)/, '各池清单没有按已缴口径覆盖房租（同页会出现"剩 54200"的错觉）')
   need(/\{ key: 'rent', label: '房租', amount: rentBudget, used: rentSpend/,
     '预算结构里房租那行没带 `used`（只有预算、没有已用 ⇒ 运营看不出这笔账花了多少）')
   need(/\{ key: 'broadband', label: '宽带', amount: broadbandBudget, used: broadbandSpend/,
@@ -187,7 +190,9 @@ function budgetSourceProblems (src) {
 
 const SOURCE_INJECTIONS = [
   ['房租实际支出退回常量（就是产品负责人报的那个缺陷）',
-   (src) => src.replace('const rentSpend = rentPoolUsed !== null ? rentPoolUsed : spendOfBudgetTypes(RENT_BUDGET_TYPES)', 'const rentSpend = 54200')],
+   (src) => src.replace('const rentSpend = rentPrepaid !== null ? rentPrepaid : (rentPoolUsed !== null ? rentPoolUsed : spendOfBudgetTypes(RENT_BUDGET_TYPES))', 'const rentSpend = 54200')],
+  ['「已一次性缴纳」的房租被当成没花过（线上实测就是 已用 0）',
+   (src) => src.replace('const PREPAID_RE = /一次性缴纳|已付/', 'const PREPAID_RE = /绝不匹配/')],
   ['宽带池的本地重算分支被删（used 恒为 0）',
    (src) => src.replace("      else if (p.category === '宽带') used = broadbandSpend\n", '')],
   ['预算结构里房租那行不再带 used', 

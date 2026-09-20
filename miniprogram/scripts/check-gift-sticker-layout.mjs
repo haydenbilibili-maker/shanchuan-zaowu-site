@@ -625,7 +625,7 @@ function selftest() {
       // 让印刷码退回"品牌黄铜色"（屏幕好看，热敏上是一坨中灰 → 抖成噪声 → 扫不出）
       name: '小程序码文案不再指向养护说明（回到「扫码进店」：只说扫，没说扫了能得到什么）',
       file: CARD,
-      from: "  miniprogram: '扫码看养护说明',",
+      from: "  miniprogram: '养护指南',",
       to: "  miniprogram: '扫码进店',"
     },
     {
@@ -637,7 +637,7 @@ function selftest() {
     {
       name: '兜底文案被清空（识别困难时顾客没有第二条路）',
       file: CARD,
-      from: "  hint: '二维码识别困难？微信搜索「山海造物」'",
+      from: "  hint: '微信搜山海造物领标本养护指南'",
       to: "  hint: ''"
     },
     {
