@@ -121,13 +121,21 @@ function shouldOfferRitualGate(state) {
   return ritualGateProgress(s) !== ''
 }
 
-/** 钩子弹窗的 desc（纯函数）：说清"存什么 + 换手机还在 + 断签提醒"三件事，且报出真实进度 */
+/**
+ * 钩子弹窗的 desc（纯函数）：只说**两件真的做得到的事** —— "存什么 + 换手机/清缓存都还在"，
+ * 并报出真实进度。
+ *
+ * ⚠️ 2026-09-21（P2-11）：原来这句还承诺「断签前还会提醒你」——**那是没有实现的承诺**：
+ * 全仓没有祈福墙的 `requestSubscribeMessage`，云函数也不发任何通知（需后台模板 ID，
+ * 超出本机能力）。产品处置：**把未兑现的承诺删掉**，不要在没有实现的情况下继续承诺。
+ * 同类话术一并核对过：本页其余文案只陈述"存到云端"这一件事（本次真的做了，见 onRegisterSuccess）。
+ */
 function buildRitualGateDesc(reason, state) {
   const s = state || {}
   if (reason === 'streak') {
-    return `已连续点灯 ${Number(s.streak) || 0} 天。注册后这份记录存到云端，换手机、清缓存都还在，断签前还会提醒你。`
+    return `已连续点灯 ${Number(s.streak) || 0} 天。注册后这份记录存到云端，换手机、清缓存都还在。`
   }
-  return `已敲了 ${Number(s.muyuCount) || 0} 下木鱼。注册后功德与连灯记录存到云端，换手机、清缓存都还在，断签前还会提醒你。`
+  return `已敲了 ${Number(s.muyuCount) || 0} 下木鱼。注册后功德与连灯记录存到云端，换手机、清缓存都还在。`
 }
 
 /**
@@ -226,6 +234,16 @@ Page({
     viewMode: 'wall',
     mineRows: [],
     mine: { total: 0, visible: 0, hidden: 0 },
+    /**
+     * 「我的心愿」自己的加载 / 失败态（2026-09-21 · P1-5）。
+     *
+     * 为什么必须与墙的 `loading` / `loadError` 分开：`applyView` 用的是 `this._mineRows || []` ——
+     * mine 还没回来（或读失败）时它**同样是空数组**，于是 WXML 的 `!items.length` 分支会说出
+     * 「你还没在这面墙上写过心愿」：那是把"还没读到"当成"你没写过"，正是本批要消灭的假事实。
+     * 两个状态位各自有一个 WXML 分支，空文案只在 `mineLoading===false && !mineError` 时才允许出现。
+     */
+    mineLoading: false,
+    mineError: '',
     /** 心愿笺（点愿签弹出的那张纸）：null = 未打开 */
     card: null,
     /**
@@ -279,9 +297,20 @@ Page({
     playPending: '',
     /**
      * 祈运推荐**取件中**。弹层的产品行据此占位（同高骨架），避免"弹层长高一块"。
-     * 只有 `recoLoading || reco || productId` 三者之一成立时那一行才在，故高度从出现起就稳定。
+     * 只有 `recoLoading || reco || productId || recoFailed` 之一成立时那一行才在，
+     * 故高度从出现起就稳定（`recoFailed` = 取件失败也占位，见下）。
      */
     recoLoading: false,
+    /**
+     * 祈运推荐**这次没配到**（故障或空池），2026-09-21 · P2-12。
+     * ⚠️ 为什么必须给失败也留一个状态位：原来 catch 里把 `reco/recoLoading` 双清，
+     * 而 WXML 那一行的 `wx:if` 正是 `reco || productId || recoLoading` —— 三者都不成立时
+     * **整行被移除**，正在读签文的用户会看到弹层收掉一块（内容上跳）。
+     * 现在失败也把这一行留在原位，只是换一句"这次没配到"，高度不再变。
+     * 与 `recoLoading` 的关系：任何一次 setData 都成对写（一个 true 则另一个 false），
+     * 所以 `recoLoading && recoFailed` 永远不会同时为真 —— WXML 的骨架条件据此写。
+     */
+    recoFailed: false,
     /** 需要补资料时的引导状态（不给假结果） */
     playNeed: null,
     /** 纸签弹层的拖拽位移（rpx 由 WXSS 换算；这里存 px） */
@@ -356,6 +385,10 @@ Page({
     this._certShownKey = ''
     this.refreshCertEntry()
     this.initRitual()
+    // 博物笔记入口：**纯本地**（一次云调用都没有），所以放在门禁/云调用之前无条件算一次 ——
+    // 它此前只在 loadMine 成功分支被调，mine 一失败入口就整块消失（P2-9，2026-09-21）。
+    // 幂等：进度没变时 recordRelics 直接 return，不进 setData。
+    this.recordRelics()
     this.bootstrap()
     // H1 钩子的「取」这一半：换机 / 清缓存后把云端档案拉回来并刷新显示。
     // 刻意 fire-and-forget（不 await）：它是补强，不该拖慢首屏；失败已在内部静默降级。
@@ -408,11 +441,42 @@ Page({
     this.setData({ blessTags: tags, blessLabelText: blessLabel(tags[0]), plays })
   },
 
-  /** 结果卡上的「看这件藏品」：这面墙就是某个商品的墙，转化链路最短的一条 */
+  /**
+   * 纸签弹层里的产品行（有推荐走推荐，没有就用这面墙的藏品）——**玩法流程之内**的一条转化。
+   *
+   * ⚠️ P2-7（2026-09-21）：页头 chip **不再复用本方法**（那里没有任何玩法发生）。
+   * 见 `goWallProduct`，两个入口分别上报。
+   */
   goProduct() {
     const id = String(this.data.productId || '')
     if (!id) return
-    trackBehavior('wish_wall_play', 'to_product', this.data.productKey || '')
+    // ⚠️ targetId 必须有值：`analytics.enqueue` 对空 targetId 直接丢弃（`if (!payload.targetId) return`）。
+    // 这面墙的 productKey 恒非空（normalizeProductKey 兜底成 mashangyou），这里再兜一层，
+    // 免得"埋了这条"却在报表里查不到（本仓典型静默失效）。
+    trackBehavior('wish_wall_play', 'play', this.data.productKey || PRODUCT_KEY, { step: 'to_product' })
+    wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}`, fail: () => {} })
+  },
+
+  /**
+   * 页头藏品 chip（第一屏常驻的产品入口，2026-09-21 · P2-7）。
+   *
+   * ⚠️ 为什么必须与 `goProduct` 分开：这个 handler 挂在**页头 chip** 上，那里
+   * **没有任何玩法发生**。此前它与纸签弹层共用 `goProduct`，也就共用
+   * `wish_wall_play/to_product` —— 而 ERP「参与仪式 / 玩法」行的口径是
+   * `actions: ['wish_wall_lamp','wish_wall_play','wish_wall_sound']`（只看 action 名），
+   * 于是"点一下页头 chip"会被计成一次玩法参与，**参与率可以 >100%**。
+   *
+   * 处置（在既有维度内区分，不改报表、不改 schema）：
+   *   · 玩法转化 → `wish_wall_play` / `targetType='play'`（玩法 id 在 targetId）；
+   *   · 页头 chip → `wish_wall_play` / **`targetType='product'`**（productId 在 targetId）。
+   * `targetType` 是**已入库的既有维度**（`BEHAVIOR_ALLOWED_FIELDS` 里就有），
+   * 报表侧只需在 engage 行的 action 之外加一条 `targetType === 'play'` 即可把两者分开
+   * —— 这正是本条的验收口径（"以报表侧能区分"）。报表侧不属本代理白名单，未改。
+   */
+  goWallProduct() {
+    const id = String(this.data.productId || '')
+    if (!id) return
+    trackBehavior('wish_wall_play', 'product', id)
     wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}`, fail: () => {} })
   },
 
@@ -456,7 +520,7 @@ Page({
     if (!result.ok) {
       if (result.reason === 'need_profile') {
         this.setData({ playResult: null, playNeed: result })
-        trackBehavior('wish_wall_play', 'need_profile', id)
+        trackBehavior('wish_wall_play', 'play', id, { step: 'need_profile' })
       } else {
         // ⚠️ 2026-09-20 修：其它失败分支此前**静默 return** —— 点瓦片毫无反应，
         // 用户只会以为"这个玩法坏了"。玩法失败不许阻断页面，但必须说出来。
@@ -466,7 +530,7 @@ Page({
           title: play.name + '没摇出来',
           desc: '网络或内容池暂时异常，过一会儿再试。'
         })
-        trackBehavior('wish_wall_play', 'fail', id)
+        trackBehavior('wish_wall_play', 'play', id, { step: 'fail' })
       }
       return
     }
@@ -474,7 +538,7 @@ Page({
     try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
     // 墙上回声用注册表里那句第一人称文案（结果里的依据不上墙）
     this.pushEcho('play', { text: result.echo })
-    trackBehavior('wish_wall_play', 'ok', result.id)
+    trackBehavior('wish_wall_play', 'play', result.id)
     // 弱推：这条签对应的祈运标签 → 同好也在看的藏品（异步，失败就不显示）
     this.loadBlessReco()
   },
@@ -482,6 +546,13 @@ Page({
   /**
    * 读玩法的资料依据（星座 / MBTI）：走已有会话（`ensureSession` 带缓存，不额外发请求），
    * 读不到就返回 null → 走"引导补资料"分支。任何失败都不抛（玩法不能把页面弄崩）。
+   *
+   * ⚠️ 2026-09-21（P1-4）：`this._playProfile` 是**短期缓存**，不是永久结论 ——
+   * 它由 `goProfileField`（去补资料）与 `onShow`（从资料页回来）负责清空。
+   * 此前全仓**零处重置**，于是"点瓦片 → 被引导去补 → 填好返回 → 再点同一张瓦片"
+   * 仍然要求去补（缓存里那个空串还在），只有退出页面重进才恢复。
+   * 失效策略刻意是"只在**离开本页去补资料**和**回到本页**时清"：
+   * 不打在 onShow 的每个分支上，也不会因为一次空结论就在 onShow 里反复打云。
    */
   async loadPlayProfile() {
     if (this._playProfile) return this._playProfile
@@ -514,7 +585,7 @@ Page({
     // 玩法给的心愿词也要按同一口径截断 + 同步计数（不允许有一条改 draft 的路漏计数）
     const draft = wishTextTruncate(r.wish || '马上有', TEXT_MAX)
     this.setData({ draft, draftCount: wishTextCount(draft) })
-    trackBehavior('wish_wall_play', 'to_wish', r.id)
+    trackBehavior('wish_wall_play', 'play', r.id, { step: 'to_wish' })
     // ① 先收弹层：`.ww-sheet` 的 z-index 高于发送条，不收就会一直盖住它
     this.closePlayResult()
     // ② 再滚到输入框（发送条 2026-09-19 起改为顺流，所以滚动这一下是有意义的）
@@ -542,7 +613,12 @@ Page({
     const r = this.data.playResult
     if (!r) return
     this.setData({ shareFrom: 'play' })
-    trackBehavior('wish_wall_play', 'share', r.id)
+    // ⚠️ 2026-09-21 合并两路时对齐：**targetType 恒为 'play'**（schema 的声明字段就是 'play'），
+    // 「分享」这个区分度放 `step`。原来这里写 `targetType='share'`，与
+    // `wish_wall_play` 的 schema 声明不一致 —— 页面侧那条「本页所有 wish_wall_play 的
+    // targetType 与 schema 一致」的断言在合并后当场把它抓了出来（判据起作用了）。
+    // 这也与同批 P2-7 的处置一致：**判别维度优先用 step，targetType 保持契约声明值**。
+    trackBehavior('wish_wall_play', 'play', r.id, { step: 'share' })
   },
 
   /**
@@ -613,12 +689,12 @@ Page({
     if (!tag) return
     const cacheKey = recoCacheKey(tag, shanghaiDayKey(Date.now()))
     if (cacheKey && this._recoCache && this._recoCache.key === cacheKey) {
-      this.setData({ reco: this._recoCache.row, recoLoading: false })
+      this.setData({ reco: this._recoCache.row, recoLoading: false, recoFailed: false })
       return
     }
     // ⚠️ 2026-09-20：进云之前先立"推荐取件中"标记 —— 弹层那一行据此**占位**。
     // 此前这一行在回包前整块不渲染，弹层会在用户读签文时长高一块（没有 productId 的墙必现）。
-    this.setData({ recoLoading: true })
+    this.setData({ recoLoading: true, recoFailed: false })
     try {
       const res = await wx.cloud.callFunction({
         name: 'getBlessProducts',
@@ -632,12 +708,16 @@ Page({
         }
       })
       const reco = pickReco(res && res.result, tag, blessLabel(tag))
+      // 取到才进缓存：把"这次没配到"也缓存一天，会让整天的推荐都停在失败态上
       this._recoCache = { key: cacheKey, row: reco }
-      this.setData({ reco, recoLoading: false })
+      this.setData({ reco, recoLoading: false, recoFailed: false })
     } catch (e) {
-      // 推荐失败不影响玩法：保持 reco=null（卡片少一行而已）。
-      // ⚠️ `recoLoading` 必须一起清：否则弹层会永久停在骨架占位上（"看起来在加载、其实不会来了"）。
-      this.setData({ reco: null, recoLoading: false })
+      // 推荐失败不影响玩法：`reco` 仍为 null（没有推荐可给）。
+      // ⚠️ 2026-09-21（P2-12）：这里**不再双清** —— 原来 `reco: null, recoLoading: false`
+      // 会让 WXML 的 `wx:if="{{reco || productId || recoLoading}}"` 全部落空，
+      // 整行被移除 = 弹层当着用户的面收掉一块。现在把 `recoFailed` 立起来，
+      // 那一行留在原位只说"这次没配到"（同高，内容不上跳）。
+      this.setData({ reco: null, recoLoading: false, recoFailed: true })
     }
   },
 
@@ -667,7 +747,12 @@ Page({
 
   /** 需要补资料 → 去资料页（那两项自带完善奖励；不在这里拦注册，价值先行） */
   goProfileField() {
-    trackBehavior('wish_wall_play', 'go_profile', (this.data.playNeed && this.data.playNeed.field) || '')
+    trackBehavior('wish_wall_play', 'play', (this.data.playNeed && this.data.playNeed.field) || '', { step: 'go_profile' })
+    // ⚠️ 2026-09-21（P1-4）：离开本页去补资料前**先作废缓存**。用户回来的第一件事
+    // 就是再点同一张瓦片，而 onShow 的失效只在"页面被显示"时发生；把失效放在这里，
+    // 即使某个基础库下 onShow 的时序不如预期，回来那次点击也一定会重新读会话。
+    // 语义上它也更准：我们**知道**用户正要去改这份资料。
+    this._playProfile = null
     try {
       wx.navigateTo({ url: PROFILE_PAGE, fail: () => {} })
     } catch (e) { /* ignore */ }
@@ -981,16 +1066,36 @@ Page({
     return (res && res.result) || {}
   },
 
+  /**
+   * 列表查询失败 → **一律进错误态**，不许把故障渲染成"空墙/你还没写过"（2026-09-21 · P1-1）。
+   *
+   * 契约（与云函数侧并行开发，见 docs/祈福墙_夜班审计_2026-09-21.md）：
+   *   查询失败回 `{ success:false, msg, fallback:true }`（listPublic 与 listMine 同）。
+   * 页面这里**三个条件都要认**，任一命中即故障：
+   *   · `!result.success`   —— 契约的主口径；
+   *   · `result.fallback`   —— 云函数自己的"这是故障不是真的空"显式标记。即使将来某个版本
+   *     又把 success 写回 true，只要 fallback 还在，页面也不会把故障说成事实（两侧只需一边守约）；
+   *   · `result.list` 不是数组 —— 回包形状坏了同样是"没读到"，不能当成空数组。
+   * 为什么值得多认两个：本仓已有先例（P0「功德的真值被 success 之外的字段遮住」），
+   * 而这一条一旦漏掉，用户看到的是**一句他无从分辨的假事实**。
+   */
+  listFailed(result) {
+    const r = result || {}
+    if (r.fallback === true) return true
+    if (r.success !== true) return true
+    return !Array.isArray(r.list)
+  },
+
   async refresh() {
     if (!this.data.allowed) return
     this.setData({ loadError: '' })
     try {
       const result = await this.callFn({ action: 'list', productKey: this.data.productKey, limit: LIST_LIMIT })
-      if (!result.success) {
-        this.setData({ loadError: result.msg || '加载失败', loading: false })
+      if (this.listFailed(result)) {
+        this.setData({ loadError: (result && result.msg) || '加载失败', loading: false })
         return
       }
-      this.applyItems(result.list || [], result.inspiration || [])
+      this.applyItems(result.list, result.inspiration || [])
       this.loadMine()
     } catch (e) {
       console.warn('wish wall list', e)
@@ -1166,6 +1271,13 @@ Page({
     const today = shanghaiDayKey(Date.now())
     const lampDay = (this.data.lamp && this.data.lamp.dayKey) || ''
     if (lampDay && lampDay !== today) this.initRitual()
+    // 博物笔记入口：纯本地、幂等，与 mine 云调用的成败无关（P2-9，2026-09-21）。
+    // 放 onShow 也覆盖"从成就页回来看进度变了"这一路。
+    this.recordRelics()
+    // 玩法资料缓存：从资料页回来必须失效，否则用户补完星座/MBTI 再点同一张瓦片
+    // 仍会被要求去补资料（P1-4，2026-09-21）。这里只失效**不请求** —— 真正的会话请求
+    // 仍由 onPlayTap 按需发起，onShow 一次云都不打。
+    this._playProfile = null
     if (this.data.allowed && (this.data.rows || []).length) {
       // 同值 setData 能否重播弹幕动画取决于基础库 diff；弹幕轮播本来就有
       // `danmakuCycle` 进 key 的确定路径，这里只负责"接着排期"，不指望它重播。
@@ -1180,18 +1292,44 @@ Page({
    * 用我自己记录的 `_id` 集合去标记"哪条是我的"，就不必为了一句"我的"把身份铺到公开数据里。
    */
   async loadMine() {
+    // ⚠️ P1-5（2026-09-21）：进函数就立"我的心愿在读"标记，且**清掉上一次的失败**。
+    // 清失败态是必要的：重试成功却留着 mineError，用户会在数据回来后仍看到错误块。
+    this.setData({ mineLoading: true, mineError: '' })
     try {
       const result = await this.callFn({ action: 'mine', productKey: this.data.productKey })
-      const list = (result && result.list) || []
+      // ⚠️ P1-1（2026-09-21）：mine 失败此前被 `(result && result.list) || []` 吞成空列表 ——
+      // 于是「我的心愿」显示「你还没在这面墙上写过心愿」+ 0 条。云函数现在回 success:false，
+      // 这里必须进错误态，而不是继续渲染那句假事实。
+      if (this.listFailed(result)) {
+        const msg = (result && result.msg) || '加载失败'
+        this.setData({
+          mineLoading: false,
+          mineError: msg,
+          myHidden: 0,
+          quota: Object.assign({}, this.data.quota, { unknown: true })
+        })
+        return
+      }
+      const list = result.list
       const summary = mineSummary(list)
       this._mineRows = decorateMineRows(list, Date.now())
       // 标记并回写当前视图（viewMode 可能是 mine，也可能还是 wall）
       this._wallItems = markMine(this._wallItems || [], list)
       // 今日额度：只陈述事实（今天写了几条），上限与云函数 DAILY_LIMIT 同源
       const quota = dailyQuota(list, Date.now())
-      this.setData({ myHidden: summary.hidden, mine: summary, mineRows: this._mineRows, quota })
+      // 成功即清失败态（同一次 setData，免得出现"数据到了、错误块还在"的一帧）
+      this.setData({
+        myHidden: summary.hidden,
+        mine: summary,
+        mineRows: this._mineRows,
+        quota,
+        mineLoading: false,
+        mineError: ''
+      })
       this.applyView()
-      this.recordRelics()
+      // ⚠️ P2-9（2026-09-21）：博物笔记入口**不再挂在 mine 成功路径上** —— 它是纯本地数据
+      // （easterEgg.getProgress），与这次云调用毫无关系。原来只在成功分支调，于是 mine 一失败，
+      // 彩蛋图鉴的入口整块消失。真正的调用点已移到 onLoad / onShow（见 recordRelics 注释）。
       // 我的心愿条数彩蛋：门槛（几条算数）在注册表里，页面只报事实
       this.fireWishCountEgg(summary.total)
     } catch (e) {
@@ -1199,7 +1337,15 @@ Page({
       // 于是 mine 读取失败时界面停在默认值「今日还可写 5 条」。而用户可能已经写满 5 条，
       // 那句话是替服务端打包票的假事实（真正被拒要等到点发送那一刻）。
       // 现在如实标记"额度未知"，UI 只说事实（见 WXML 的 quota.unknown 分支）。
-      this.setData({ myHidden: 0, quota: Object.assign({}, this.data.quota, { unknown: true }) })
+      // ⚠️ P1-5（2026-09-21）：同时落 `mineError`，让「我的心愿」说"没读到"而不是"你没写过"。
+      // `errMsg` 优先（wx.cloud 的失败形态）、其次 `message`（普通 Error），最后才是兜底话 ——
+      // 失败原因不许被吞成一句空话（吞掉就分不清"网络挂了"与"代码坏了"）。
+      this.setData({
+        myHidden: 0,
+        mineLoading: false,
+        mineError: (e && (e.errMsg || e.message)) || '加载失败',
+        quota: Object.assign({}, this.data.quota, { unknown: true })
+      })
     }
   },
 
@@ -1218,6 +1364,12 @@ Page({
   /**
    * 把彩蛋进度显示在墙上 —— 拾到的笔记本来就"收入博物笔记"，
    * 但祈福墙上一直没有任何入口指向它，用户不知道去哪儿看。这里补上（失败静默）。
+   *
+   * ⚠️ 2026-09-21（P2-9）：读的是**纯本地**数据（`easterEgg.getProgress()` 走
+   * `wx.getStorageSync`，一次云调用都没有），所以它**不该依赖任何云调用的成败**。
+   * 此前唯一的调用点在 `loadMine` 的**成功分支**，于是 mine 读失败时：
+   * 彩蛋照常在进页时被拾到、进度也写进了本地，入口却整块消失 —— 用户找不到刚拿到的东西。
+   * 现在由 `onLoad` 与 `onShow` 无条件各算一次（幂等：进度没变就直接 return，不产生 setData）。
    */
   recordRelics() {
     try {
@@ -1342,11 +1494,20 @@ Page({
     this.focusWishInput(60)
   },
 
+  /**
+   * 落愿（唯一的写入实现）。
+   *
+   * ⚠️ 2026-09-21（P2-8）：本方法现在**返回布尔**（真的挂上墙 = true；被拦/被拒/异常 = false）。
+   * 为什么必须回值：注册续发那条路要用**真实结果**决定漏斗终点发什么 step ——
+   * 原来 `onRegisterSuccess` 在 `submitWish` 之前就把 `resume_success` 发出去了，
+   * 续发失败（toast 之后什么都不回滚）也被记成"注册完成并自动续发"，
+   * 于是 ERP 的注册→落愿转化率**系统性偏高**。返回值是这条判据唯一的真值来源。
+   */
   async submitWish() {
-    if (this.data.posting) return
+    if (this.data.posting) return false
     if (!this.data.allowed) {
       toastWishWallClosed()
-      return
+      return false
     }
     // 额度用完就地拦住，并**用服务端同一句口径**说明（服务端仍会独立判定，这里只是别让人白写）
     if (this.data.quota && this.data.quota.exhausted) {
@@ -1355,12 +1516,12 @@ Page({
         icon: 'none',
         duration: 2500
       })
-      return
+      return false
     }
     const checked = validateWishText(this.data.draft)
     if (!checked.ok) {
       wx.showToast({ title: checked.msg, icon: 'none' })
-      return
+      return false
     }
     // 注册转化钩子（2026-09-18 产品口径：祈福墙是**注册转化路径**，对齐 AI 识别）：
     // 浏览与仪式免费（价值先行），**落愿这一步才要身份** —— 心愿挂在谁名下、以后回看谁的心愿，
@@ -1372,7 +1533,7 @@ Page({
       this._pendingWish = checked.text
       trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'show' })
       this.setData({ showRegisterDialog: true })
-      return
+      return false
     }
     this.setData({ posting: true })
     try {
@@ -1384,7 +1545,7 @@ Page({
       })
       if (!result.success) {
         wx.showToast({ title: result.msg || '发布失败', icon: 'none', duration: 2500 })
-        return
+        return false
       }
       // 落愿闭环：先本地落地（愿签插到墙首 + 弹幕立即接住 + 高亮），再等权威数据回来对齐。
       // 这样「挂上墙」不再只是一个 toast —— 而是**看得见心愿落在墙上**。
@@ -1425,12 +1586,20 @@ Page({
       try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
       // 即时反馈：落愿是主转化动作，墙上也要回一声（附"今日还可写 N 条"，顺带说清额度）
       this.pushEcho('wish')
-      trackBehavior('wish_wall_post', 'ok', '1')
+      // ⚠️ P1-3（2026-09-21）：漏斗终点必须与 PRD §7.1 和 ERP 监测表**同一口径**。
+      // 签名是 `trackBehavior(action, targetType, targetId, extra)` —— 原来写的是
+      // `('wish_wall_post', 'ok', '1')`，即 targetType='ok'、**targetId='1'**；
+      // 而监测表按 `String(ev.targetId) === 'ok'` 过滤（admin/src/utils/wishWallMonitor.js 的
+      // `post` 行 + `sources[].post`），于是「落愿成功（上墙）」这一行与按来源转化率**恒为 0**。
+      // 两个都写 'ok'：既满足事件 schema 声明的 targetType='ok'，也让 targetId 落在报表口径上。
+      trackBehavior('wish_wall_post', 'ok', 'ok')
       await this.refresh()
       this.fireWishEgg()
+      return true
     } catch (e) {
       console.error('wish wall post', e)
       wx.showToast({ title: (e && e.errMsg) || '发布失败', icon: 'none', duration: 2500 })
+      return false
     } finally {
       this.setData({ posting: false })
     }
@@ -1461,10 +1630,28 @@ Page({
     }
   },
 
-  /** 原地注册成功：刷新会话态，并把刚才那条心愿**自动续发**（用户的意图不该丢） */
+  /**
+   * 原地注册成功：① 把已有仪式进展**存上云** ② 刷新会话态 ③ 把刚才那条心愿**自动续发**。
+   *
+   * ⚠️ P1-2（2026-09-21）：PRD §6 原文「注册后必须立刻发生三件事（**缺一条这个钩子就白做**）」，
+   * ①就是"把已有进展存上云"（"你的记录不会丢了"是用户能感知的回报）。此前这条主路径
+   * **从不写云** —— `syncRitualToCloud()` 只在 H1 钩子（开关默认关）与 H2 功德证（已停用）里被调，
+   * 而读那半边（`restoreRitualFromCloud`）在 onLoad 无条件跑：于是"换机不丢"在续发这条主路径上
+   * 只成立一半（云端可能压根没有这份档案）。
+   * 这里**fire-and-forget**：不 await、不把它并进续发的成败判定 —— 同步失败不得影响续发那条心愿
+   * （续发的真值只由 `submitWish` 的返回值决定，见 P2-8）。
+   *
+   * ⚠️ P2-8（2026-09-21）：漏斗终点 `resume_success` **挪到续发成功之后**。
+   * 原来它在方法开头、`submitWish` 之前就发，续发失败也被记成"注册完成并自动续发"，
+   * 报表的注册→落愿转化率因此偏高。现在按 `submitWish` 的**真实结果**分 step：
+   * 成功 `resume_success`，失败 `fail_resume`（沿用既有 `fail_*` 前缀，报表侧的「注册未完成」
+   * 行就是按 `stepPrefix: 'fail_'` 归并的，不必改报表）。
+   */
   async onRegisterSuccess() {
     this.setData({ showRegisterDialog: false, justRegistered: true })
-    trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'resume_success' })
+    // ① PRD §6①：注册后立刻把已有连灯/功德存上云。fire-and-forget —— 失败静默降级，
+    //    绝不影响下面那条心愿的续发（本页的既有纪律：降级不得影响主功能）。
+    Promise.resolve(this.syncRitualToCloud()).catch(() => {})
     // 会话刷新**不阻塞续发**：注册已经成功，不该因为一次刷新往返把心愿吞掉。
     // 续发走 `_resumeAfterRegister` 跳过门禁，所以这里不需要等会话刷新完成。
     try {
@@ -1478,7 +1665,25 @@ Page({
     if (!text) return
     this._resumeAfterRegister = true
     this.setData({ draft: text, draftCount: wishTextCount(text) })
-    this.submitWish()
+    await this.resumeWishAfterRegister()
+  },
+
+  /**
+   * 注册后的续发 + 漏斗终点（**唯一**发 `resume_success` 的地方，2026-09-21 · P2-8）。
+   *
+   * 为什么要单独一个方法而不是内联在 `onRegisterSuccess` 里：终点必须等 `submitWish`
+   * 的**真实结果**，所以这里必须是 `await`；而 `submitWish` 的返回值同时也要能被单测直接驱动
+   * （见 test-wish-wall 的注册续发行为断言）。抽出来也让"发什么 step"只有一处事实源。
+   */
+  async resumeWishAfterRegister() {
+    const ok = await this.submitWish()
+    // 续发失败不能说成成功：报表把这一步当"注册完成并自动续发"的终点，
+    // 而失败只 toast、不回滚草稿 —— 只有真值才能决定终点。
+    // ⚠️ 走 `trackRitualGate`（而不是直接 `trackBehavior`）：`wish_ritual_gate` 之外的
+    // action 名只在这里出现一次是本页的既定口径（改名漏一处就多一条恒 0 的漏斗），
+    // 落愿门禁这条漏斗同理，收口在 `trackRitualGate` 一处。
+    this.trackRitualGate(ok === true ? 'resume_success' : 'fail_resume')
+    return ok === true
   },
 
   /** 关掉弹窗：只丢"待发"，**草稿保留**（回来还是那句话，不制造白写的挫败） */
@@ -1513,7 +1718,8 @@ Page({
   buildRitualGateDesc,
   /**
    * 产品逻辑：连灯天数与木鱼功德都只存本地，换手机/清缓存即丢。
-   * 钩子话术 = 「注册后连续记录存云端，不会丢，且断签前会提醒你」。
+   * 钩子话术 = 「注册后连续记录存云端，不会丢」（**不含断签提醒** —— 提醒需要订阅消息，
+   * 本仓没有实现，见 P2-11 与 buildRitualGateDesc 的说明；不再承诺做不到的事）。
    *
    * 为什么是**动作触发**而不是进页就弹：进页弹窗是拦截；动作之后弹才是
    * 「我刚做完这件事，现在告诉你怎么把它留住」。而且本页的连续天数只在"今天点了灯"

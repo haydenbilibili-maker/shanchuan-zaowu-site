@@ -280,7 +280,12 @@ check('页面读 bless 并重排玩法（applyBlessScope）', /applyBlessScope\(
 // 口径更新（2026-09-18 产品确认）：祈运提示从玩法区**挪进页头**那颗 chip（`blessLabelText`），
 // 玩法区不再有 .ww-plays-guide —— 判据跟着口径走，仍然要求"用户真的看得见"
 check('页面显示祈运 chip + 商品入口',
-  /class="ww-bless"/.test(wallView) && /blessLabelText/.test(wallView) && /bindtap="goProduct"/.test(wallView))
+  // ⚠️ 2026-09-21（P2-7）：页头商品 chip 的 handler 从 `goProduct` 改为 `goWallProduct`
+  // —— 那里没有任何玩法发生，复用玩法转化事件会把 ERP「参与玩法」比率推到 >100%。
+  // 判据语义不变："用户真的看得见那颗祈运 chip、也有一个能点的商品入口"。
+  /class="ww-bless"/.test(wallView) && /blessLabelText/.test(wallView) &&
+    /bindtap="goWallProduct"/.test(wallView) &&
+    /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(wallView))
 
 /* ── 汇总 ───────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {

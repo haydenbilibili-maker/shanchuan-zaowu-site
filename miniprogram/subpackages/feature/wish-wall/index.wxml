@@ -68,11 +68,14 @@
              ① 第一屏就能看到"这面墙求什么"（不必滚到玩法区）② 玩法区因此省下一条提示的高度 -->
         <view class="ww-scope-row">
           <!-- 产品 chip 本身就是**产品链路的常驻入口**（第一屏就能到详情页）。
-               以前只有抽完玩法才在结果卡里出现「看这件藏品」，链路藏得太深。 -->
+               以前只有抽完玩法才在结果卡里出现「看这件藏品」，链路藏得太深。
+               ⚠️ 2026-09-21（P2-7）：handler 从 `goProduct` 改为 `goWallProduct` ——
+               这里**没有任何玩法发生**，复用玩法转化事件会把「参与玩法」比率推到 >100%。
+               两个入口的上报口径见 index.js 的 goWallProduct / goProduct。 -->
           <text
             class="ww-scope {{productId ? 'is-link' : ''}}"
             wx:if="{{productTitle}}"
-            bindtap="goProduct"
+            bindtap="goWallProduct"
             hover-class="ww-scope-press"
             hover-stay-time="70"
             aria-role="{{productId ? 'link' : 'text'}}"
@@ -476,11 +479,35 @@
         </view>
       </view>
       </block>
-      <!-- ⚠️ 失败必须给重试入口，且不得与「还没有人许愿」同时出现 -->
+      <!-- ⚠️ 失败必须给重试入口，且不得与「还没有人许愿」同时出现。
+           P1-1（2026-09-21）：`loadError` 由 refresh 写入，**墙与愿签列表共用这一个分支**；
+           云函数查询失败现在回 `success:false`（或 fallback:true），refresh 一律落这里。 -->
       <view class="ww-error" wx:elif="{{loadError}}">
         <view class="signal-light lamp-warn" aria-hidden="true"></view>
         <text class="ww-error-text">{{loadError}}</text>
         <view class="ww-error-retry" wx:if="{{allowed}}" bindtap="refresh" hover-class="ww-error-retry-press" hover-stay-time="70" aria-role="button">再试一次</view>
+      </view>
+      <!-- ⚠️ P1-5（2026-09-21）：「我的心愿」自己的加载态。
+           此前它没有独立状态位，`applyView` 用的是 `this._mineRows || []` ——
+           mine 还没回来（或读失败）时空数组会直接落进下面的 `!items.length` 分支，
+           说出「你还没在这面墙上写过心愿」。这一条把"还没读到"与"确实没写过"分开。
+           骨架与真卡同高（.ww-tag-skel 的 padding 与 .ww-tag 逐字同口径），不跳高。 -->
+      <block wx:elif="{{viewMode === 'mine' && mineLoading}}">
+      <view class="ww-tag-skel" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+        <view class="ww-tag-skel-pin" aria-hidden="true"></view>
+        <view class="ww-tag-skel-avatar wallet-skel" aria-hidden="true"></view>
+        <view class="ww-tag-skel-main" aria-hidden="true">
+          <view class="ww-tag-skel-line is-w1 wallet-skel"></view>
+          <view class="ww-tag-skel-line is-w2 wallet-skel"></view>
+        </view>
+      </view>
+      </block>
+      <!-- ⚠️ P1-5：「我的心愿」读失败 → 说"没读到" + 重试（**绝不说成"你还没写过"**）。
+           `mineError` 只在 loadMine 真的失败时写入；成功路径会一并清空它。 -->
+      <view class="ww-error" wx:elif="{{viewMode === 'mine' && mineError}}">
+        <view class="signal-light lamp-warn" aria-hidden="true"></view>
+        <text class="ww-error-text">{{mineError}}</text>
+        <view class="ww-error-retry" bindtap="loadMine" hover-class="ww-error-retry-press" hover-stay-time="70" aria-role="button">再试一次</view>
       </view>
       <block wx:else>
       <!-- 两列瀑布：30 条全宽卡片会拉出一条看不到头的列表；
@@ -518,6 +545,10 @@
           </view>
         </view>
       </view>
+      <!-- ⚠️ P1-5（2026-09-21）：空文案只在"**确认成功且为空**"时才允许出现 ——
+           上面两个 wx:elif 已经把 mine 的加载态与失败态接走，所以走到这里必然
+           `mineLoading===false && !mineError`。这正是本条的全部意义：
+           不许把故障说成"你还没写过"（本仓 E14/E16 那一类的假事实）。 -->
       <view class="ww-tags-empty" wx:if="{{!items.length}}">{{viewMode === 'mine' ? '你还没在这面墙上写过心愿' : '还没有人许愿'}}</view>
       <!-- 明确收尾：服务端一面墙只回 30 条，到底了要如实说 -->
       <view class="ww-end" wx:if="{{items.length}}">
@@ -722,10 +753,14 @@
          有祈运推荐就用推荐，没有就用这面墙自己的藏品。
          ⚠️ 2026-09-20 改造：推荐是**异步**取的（云函数 `getBlessProducts`）。此前这一行在回包前
          **整块不渲染** —— 弹层会在用户正读签文时长高一块，内容跳一下（没有 productId 的墙必现）。
-         现在 `recoLoading` 期间也占位（同高骨架行），整块高度从弹层出现那一刻就稳定。 -->
+         现在 `recoLoading` 期间也占位（同高骨架行），整块高度从弹层出现那一刻就稳定。
+         ⚠️ 2026-09-21（P2-12）：取件**失败**也要占位。原来 JS 在 catch 里把 `reco/recoLoading`
+         双清，这一行的 `wx:if` 全部落空 → **整行被移除**，用户正读签文时弹层当场收掉一块。
+         现在 `recoFailed` 也是一档条件：行留在原位，只把内容换成"这次没配到"（同高）。
+         条件里的三个状态位与 JS 一一对应，**缺一个就会退回"整行消失"**（守卫钉住）。 -->
     <view
       class="ww-sheet-product"
-      wx:if="{{reco || productId || recoLoading}}"
+      wx:if="{{reco || productId || recoLoading || recoFailed}}"
       bindtap="{{reco ? 'goRecoProduct' : 'goProduct'}}"
       hover-class="ww-sheet-product-press"
       hover-stay-time="70"
@@ -734,7 +769,11 @@
       <view class="ww-sheet-product-copy">
         <text class="ww-sheet-product-label">{{reco ? reco.label : ('这面墙的藏品' + (productTitle ? ' · ' + productTitle : ''))}}</text>
         <text class="ww-sheet-product-title" wx:if="{{reco}}">{{reco.title}}</text>
-        <view class="ww-sheet-product-skel wallet-skel" wx:elif="{{recoLoading}}" aria-hidden="true"></view>
+        <!-- 取件中：骨架占位（与推荐标题同高）。⚠️ `!recoFailed` 是必须的 ——
+             失败态也算"这一行在"，骨架若不排除失败就会被替换掉（见 P2-12）。 -->
+        <view class="ww-sheet-product-skel wallet-skel" wx:elif="{{recoLoading && !recoFailed}}" aria-hidden="true"></view>
+        <!-- 没配到：把话说明白，但**不撤掉这一行**（撤掉就是 P2-12 那个"弹层收掉一块"） -->
+        <text class="ww-sheet-product-title" wx:elif="{{recoFailed}}">这次没配到</text>
         <text class="ww-sheet-product-meta" wx:if="{{reco && (reco.latinName || reco.priceText)}}">{{reco.latinName}}{{reco.latinName && reco.priceText ? ' · ' : ''}}{{reco.priceText}}</text>
       </view>
       <!-- ⚠️ 这一行是 CTA 文案（"看看这件"），不是装饰 —— 不许 aria-hidden，

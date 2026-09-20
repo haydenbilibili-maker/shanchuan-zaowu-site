@@ -201,9 +201,15 @@ function runChecks(r) {
   {
     const ok = fnBody(wallJs, 'onRegisterSuccess')
     check('★ 注册成功后自动续发那条心愿（意图不该丢）',
+      // ⚠️ 2026-09-21（P2-8）：续发抽成 `resumeWishAfterRegister()` —— 终点要等
+      // `submitWish` 的**真实结果**，所以这里锚"调了那次续发"，而不是锚 submitWish 的字面量。
       /_resumeAfterRegister\s*=\s*true/.test(ok) && /draft:\s*text/.test(ok)
-      && /this\.submitWish\(\)/.test(ok))
-    check('★ 注册成功记 step=resume_success', /step:\s*'resume_success'/.test(ok))
+      && /this\.resumeWishAfterRegister\(\)/.test(ok))
+    check('★ 注册成功记 step=resume_success（按续发真实结果分支）',
+      // 终点现在在 `resumeWishAfterRegister` 里：成功 resume_success、失败 fail_resume。
+      // 判据语义不变：**成功那条路的 step 仍然是 resume_success**（报表的终点行靠它）。
+      /resumeWishAfterRegister\(\)\s*\{[\s\S]{0,600}?'resume_success'/.test(wallJs) &&
+      /this\.trackRitualGate\(ok === true \? 'resume_success' : 'fail_resume'\)/.test(wallJs))
   }
   {
     const close = fnBody(wallJs, 'onRegisterDialogClose')
