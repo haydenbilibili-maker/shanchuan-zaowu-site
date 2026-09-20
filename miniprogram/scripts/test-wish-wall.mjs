@@ -608,10 +608,15 @@ const INJECTIONS = {
     to: "  '一灯不灭，一事可期，慢慢来总会抵达的。'"
   },
   // 间距/层级又压紧 → 回到真图上那个"三行小字贴着"的状态
+  // ⚠️ 锚点必须**含中间那行注释**：2026-09-21 夜班给 8 处离群字号加口径注释时，
+  //    注释被插进 `margin-top` 与 `font-size` 之间 → 原「三行连续」锚点失配；
+  //    自检的「死锚点检测」把它报了出来（机制按设计工作）。
+  //    这里**把注释纳入锚点**、而不是缩短锚点 —— 缩短会丢掉 `margin-top` 那半，
+  //    本注入就不再覆盖「灯位说明距灯语 ≥8rpx」那条断言（等于悄悄弱化判据）。
   'lamp-spacing-tight-again': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  margin-top: var(--space-1);\n  font-size: 19rpx;\n  line-height: 1.5;',
-    to: '  margin-top: 2rpx;\n  font-size: 21rpx;\n  line-height: 1.2;'
+    from: '  margin-top: var(--space-1);\n  /* 字号口径：文本带；19rpx 不在字阶 14 档内（18 与 20 的正中间）→ 不动值（见文件头） */\n  font-size: 19rpx;\n  line-height: 1.5;',
+    to: '  margin-top: 2rpx;\n  /* 字号口径：文本带；19rpx 不在字阶 14 档内（18 与 20 的正中间）→ 不动值（见文件头） */\n  font-size: 21rpx;\n  line-height: 1.2;'
   },
   // 音效默认关 → 用户永远听不到（产品口径是"默认开但可关"）
   'sound-default-off': {
