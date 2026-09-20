@@ -65,6 +65,11 @@ function check (root) {
     return [`读取失败：${e.message}`]
   }
 
+  // ⚠️ 负向断言一律看**去注释**的源码：注释里会正当地写出历史 bug 的写法
+  //    （例如 `values[idx - 1]` 就写在"这里曾经错在哪"的说明里），拿含注释的源码判会自己把自己判红。
+  //    必须在**所有使用点之前**声明（const 有 TDZ，写在中间会让整个守卫抛异常）。
+  const managerCode = manager.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+
   // ① 权限键保留 + 专区并入分类管理 + 旧 Tab 17 已撤销 + 仅超管
   if (!/PRODUCT_FIELDS:\s*'productFields'/.test(roles)) problems.push('workspaceRoles 缺 MENU_KEYS.PRODUCT_FIELDS（专区的可见性靠它判）')
   if (!/canProductFields:\s*menu\[MENU_KEYS\.PRODUCT_FIELDS\]\s*===\s*true/.test(manager)) {
@@ -138,8 +143,11 @@ function check (root) {
   if (!/CRAFT_TYPE_OPTIONS/.test(taxonomy) || !/CRAFT_PROCESS_OPTIONS/.test(taxonomy)) {
     problems.push('productTaxonomy 缺 CRAFT_TYPE_OPTIONS / CRAFT_PROCESS_OPTIONS（事实源被改名？）')
   }
-  // 面板自己又内联一份中文选项清单 → 红（用「长中文标签数组」做特征）
-  if (/pfTypeLabels:\s*\[['"][\u4e00-\u9fa5]/.test(manager)) {
+  // 面板自己又内联一份中文选项清单 → 红。
+  // ⚠️ 特征必须是「数组里有**两个以上**中文项」（即出现了 `'中文',`），
+  //    否则会把 picker 的「未标注」首项 `pfTypeLabels: ['未标注'].concat(...)` 误判成内联清单
+  //    —— 2026-09-20 加「未标注」首项时就是这么假红了一次。
+  if (/pfTypeLabels:\s*\[\s*['"][\u4e00-\u9fa5][^'"]*['"]\s*,/.test(manager)) {
     problems.push('面板内联了装裱方式中文清单 —— 必须用 TAXONOMY.CRAFT_TYPE_OPTIONS 派生')
   }
 
@@ -156,7 +164,25 @@ function check (root) {
   if (!/items:\s*\[\{ productId: id, data: patch \}\]/.test(manager)) {
     problems.push('单行编辑没有走"立即保存这一件"（items 里只有 1 条）—— 面板会退回"改完还得拉到底点保存"')
   }
-  // ★ 下标 → 取值必须用 picker 自己的那份快照（与 range 同源），否则会整体错位
+  /* ★★ 下标坐标系（2026-09-20 产品负责人实测的"整体偏移一位"）。
+   *    现象：**选干制存成针插、选浸制存成干制，装裱方式也一样**。
+   *    根因：picker 的 `range` 是**纯标签数组**（第 0 项是「压制（腊叶）标本」），
+   *          而 `_pfIndex` 按"第 0 项 = 未标注"算（`i + 1`）、`onPfPick` 又 `values[idx - 1]`
+   *          —— 两头各自加减一次，整张列表就整体错开一位。
+   *    判据：**range 必须带「未标注」首项**，且下标/取值**两头都不许再 ±1**。 */
+  if (!/pfProcessLabels: \['未标注'\]\.concat\(/.test(manager) || !/pfTypeLabels: \['未标注'\]\.concat\(/.test(manager)) {
+    problems.push("picker 的 range 没有「未标注」首项 —— 与下标口径不在同一坐标系（会整体偏移一位）")
+  }
+  if (!/const value = String\(values\[idx\] \|\| ''\)/.test(manager)) {
+    problems.push('onPfPick 取的不是 `values[idx]`（若写成 idx-1，就是"选干制存成针插"）')
+  }
+  if (/values\[idx - 1\]/.test(managerCode)) {
+    problems.push('onPfPick 里出现了 `values[idx - 1]` —— 整体偏移一位的元凶')
+  }
+  if (/return i < 0 \? 0 : i \+ 1/.test(manager)) {
+    problems.push('_pfIndex 还在 `i + 1`（range 已有「未标注」首项，再 +1 就偏一位）')
+  }
+  // ★ 下标 → 取值必须用 picker 自己的那份快照（与 range 同源），否则选项表一变就错位
   if (!/const values = field === 'craftType' \? \(this\.data\.pfTypeValues/.test(manager)) {
     problems.push('onPfPick 不是用 picker 的快照数组做下标映射 —— 选项表一变就会"选干制存成针插"')
   }
@@ -413,12 +439,12 @@ function check (root) {
   }
 
   // ★ 字典里没有的历史值必须**原样显示**（不许伪装成「未标注」）
-  if (!/return hit \? hit\.label : v/.test(manager)) {
+  if (!/i >= 0 \? \(\(labels \|\| \[\]\)\[i\] \|\| v\) : v/.test(managerCode)) {
     problems.push('_pfLabel 把"不在字典里的历史值"显示成「未标注」—— 操作员会以为没保存过、顺手重选，真相被藏起来')
   }
 
-  // 未标注必须能选回去（picker 第 0 项 = 未标注）
-  if (!/_pfIndex\(/.test(manager) || !/i < 0 \? 0 : i \+ 1/.test(manager)) {
+  // 未标注必须能选回去（picker 第 0 项 = 未标注，下标 0 ↔ 空串）
+  if (!/_pfIndex\(/.test(managerCode) || !/if \(!v\) return 0/.test(managerCode)) {
     problems.push('picker 下标未按「第 0 项 = 未标注」映射 —— 无法把字段清回未标注')
   }
 
@@ -485,6 +511,18 @@ function selftest () {
         file: REL.manager,
         mutate: (s) => s.replace('items: [{ productId: id, data: patch }]', 'items: []'),
         expect: /立即保存这一件/
+      },
+      {
+        name: 'picker 偏移一位（选干制存成针插、选浸制存成干制 —— 产品负责人实测的那个）',
+        file: REL.manager,
+        mutate: (s) => s.replace("    const value = String(values[idx] || '')", "    const value = String(values[idx - 1] || '')"),
+        expect: /整体偏移一位|idx - 1/
+      },
+      {
+        name: 'picker 的 range 去掉「未标注」首项（与下标口径错开一位）',
+        file: REL.manager,
+        mutate: (s) => s.replace("      pfProcessLabels: ['未标注'].concat(procs.map((o) => o.label)),", '      pfProcessLabels: procs.map((o) => o.label),'),
+        expect: /没有「未标注」首项/
       },
       {
         name: '下标映射退回"现算 TAXONOMY 选项"（选项表一变就选干制存成针插）',
@@ -556,7 +594,7 @@ function selftest () {
       {
         name: '历史值被打扮成「未标注」（字典漂移时真相反被藏起来）',
         file: REL.manager,
-        mutate: (s) => s.replace("    return hit ? hit.label : v", "    return hit ? hit.label : '未标注'"),
+        mutate: (s) => s.replace("    return i >= 0 ? ((labels || [])[i] || v) : v", "    return i >= 0 ? ((labels || [])[i] || v) : '未标注'"),
         expect: /不在字典里的历史值/
       },
       {

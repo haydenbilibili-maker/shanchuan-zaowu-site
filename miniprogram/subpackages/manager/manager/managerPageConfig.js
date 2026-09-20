@@ -1502,12 +1502,15 @@ const managerPageConfig = {
     pfFailedCount: 0,
     pfSavingIds: {},   // { [productId]: true } —— 正在保存的行
     pfSavedIds: {},    // { [productId]: ts } —— 刚保存成功的行（2.5s 后自动淡掉）
-    // ⚠️ **选项值与标签必须同源同快照**：picker 的 `range` 用 pf*Labels，
-    //    而 onPfPick 把下标映射回 value —— 两处一旦来自不同时刻的选项表，
-    //    下标就会整体错位（产品负责人实测："选干制 → 存成针插"：canonical 顺序里
-    //    干制 dry_bone 是第 4 项、针插 pinned 是第 3 项，正好差一位）。
-    pfTypeValues: [],
-    pfProcessValues: [],
+    // ⚠️⚠️ **picker 的 range 与"下标→取值"必须是同一个数组，且第 0 项固定是「未标注」**。
+    //    2026-09-20 产品负责人实测：「**整个选择器整体偏移一位** —— 选干制会存成针插、
+    //    选浸制会存成干制，装裱方式也一样」。根因就是这两处不在同一个坐标系：
+    //      · `range` 用的 `pf*Labels` 是**纯标签数组**（第 0 项是「压制（腊叶）标本」）；
+    //      · 而 `_pfIndex` 按"第 0 项 = 未标注"算（`i + 1`）、`onPfPick` 又 `values[idx - 1]`。
+    //    两边差一位 ⇒ 点列表位置 k 实际存的是 k−1 那一项。
+    //    现在统一：range 前面补「未标注」，下标直接 `indexOf`、取值直接 `values[idx]`，**不再 ±1**。
+    pfTypeValues: [''],
+    pfProcessValues: [''],
     // 选项表用**唯一事实源**（与 C 端/ERP 同一份），不另抄。
     // ⚠️ 2026-09-20：改用**访问器**而不是常量数组 —— 超管可以在本页新增/改/删选项，
     // 而访问器会带上云端覆写（`setCraftOverlay`），常量数组永远只有内置的那几个。
@@ -10589,11 +10592,13 @@ bindSubCatChange(e) {
   _syncPfPickerOptions() {
     const types = TAXONOMY.craftTypeOptions() || [];
     const procs = TAXONOMY.craftProcessOptions() || [];
+    // range 的第 0 项**必须是「未标注」**（运营要能把字段清回去），
+    // values 的第 0 项对应空串 —— 下标与取值从此**同一个坐标系，不再 ±1**。
     this.setData({
-      pfTypeLabels: types.map((o) => o.label),
-      pfTypeValues: types.map((o) => o.value),
-      pfProcessLabels: procs.map((o) => o.label),
-      pfProcessValues: procs.map((o) => o.value)
+      pfTypeLabels: ['未标注'].concat(types.map((o) => o.label)),
+      pfTypeValues: [''].concat(types.map((o) => o.value)),
+      pfProcessLabels: ['未标注'].concat(procs.map((o) => o.label)),
+      pfProcessValues: [''].concat(procs.map((o) => o.value))
     });
   },
 
@@ -10605,11 +10610,11 @@ bindSubCatChange(e) {
    *    这种"字典里没有的历史值"如果显示成「未标注」，操作员会以为没保存过、
    *    顺手重选一个 —— 真相被藏起来，而这正是本页最不该发生的事。
    *    ERP 那边一直是这个口径（`LABEL_MAP[值] || 值`），这里对齐。 */
-  _pfLabel(options, value) {
+  _pfLabel(values, labels, value) {
     const v = String(value == null ? '' : value)
     if (!v) return '未标注'
-    const hit = (options || []).find((o) => o.value === v)
-    return hit ? hit.label : v
+    const i = (values || []).indexOf(v)
+    return i >= 0 ? ((labels || [])[i] || v) : v
   },
 
   /** 拉齐全部商品（分页到 total；只留面板要用的字段） */
@@ -10668,8 +10673,11 @@ bindSubCatChange(e) {
     const VISIBLE_CAP = 100
     // ⚠️ 下标与标签都从 `data.pf*Values/Labels`（**同一次快照**）算 —— 不要在这里重新调
     //    TAXONOMY，否则"picker 显示的选项"与"下标映射用的选项"又是两份（见 data 注释）。
-    const typeOpts = (this.data.pfTypeValues || []).map((v, i) => ({ value: v, label: (this.data.pfTypeLabels || [])[i] }))
-    const procOpts = (this.data.pfProcessValues || []).map((v, i) => ({ value: v, label: (this.data.pfProcessLabels || [])[i] }))
+    // 带前缀的 picker 数组（第 0 项 = 未标注）—— 下标就是这里的 indexOf，不再 +1
+    const typeValues = this.data.pfTypeValues || []
+    const procValues = this.data.pfProcessValues || []
+    const typeLabels = this.data.pfTypeLabels || []
+    const procLabels = this.data.pfProcessLabels || []
     const failed = this.data.pfFailed || {}
     const saving = this.data.pfSavingIds || {}
     const saved = this.data.pfSavedIds || {}
@@ -10679,11 +10687,11 @@ bindSubCatChange(e) {
       image: r.image,
       craftType: r.craftType,
       craftProcess: r.craftProcess,
-      craftTypeLabel: this._pfLabel(typeOpts, r.craftType),
-      craftProcessLabel: this._pfLabel(procOpts, r.craftProcess),
-      // picker 的第 0 项是「未标注」⇒ 下标要 +1（值到下标的映射见 onPfPick）
-      typeIndex: this._pfIndex(typeOpts, r.craftType),
-      processIndex: this._pfIndex(procOpts, r.craftProcess),
+      craftTypeLabel: this._pfLabel(typeValues, typeLabels, r.craftType),
+      craftProcessLabel: this._pfLabel(procValues, procLabels, r.craftProcess),
+      // picker 下标 = 在**同一个带前缀数组**里的位置（0 = 未标注）
+      typeIndex: this._pfIndex(typeValues, r.craftType),
+      processIndex: this._pfIndex(procValues, r.craftProcess),
       // 行状态：保存中 / 已保存 / 保存失败（可点重试）—— 立即保存模式下**不再有"待存"**
       rowState: saving[r._id] ? 'saving' : (failed[r._id] ? 'failed' : (saved[r._id] ? 'saved' : '')),
       rowStateText: saving[r._id] ? '保存中…' : (failed[r._id] ? '未保存 · 点此重试' : (saved[r._id] ? '已保存' : '')),
@@ -10706,9 +10714,14 @@ bindSubCatChange(e) {
   },
 
   /** picker 下标：0 = 未标注，其后依次是选项表 */
-  _pfIndex(options, value) {
-    const i = (options || []).findIndex((o) => o.value === value)
-    return i < 0 ? 0 : i + 1
+  /** picker 下标：在**带前缀的 values 数组**里直接找位置（0 = 未标注）。
+   *  ⚠️ 这里**不许再 `+ 1`** —— 那是"range 没有未标注首项"时代的补丁；
+   *    两头各加/减一次就会整体偏移一位（product owner 实测的那个 bug）。 */
+  _pfIndex(values, value) {
+    const v = String(value == null ? '' : value)
+    if (!v) return 0
+    const i = (values || []).indexOf(v)
+    return i < 0 ? 0 : i
   },
 
   onPfFilter(e) {
@@ -10751,8 +10764,9 @@ bindSubCatChange(e) {
     const idx = Number((e.detail && e.detail.value) || 0)
     // ⚠️ 这里**不能**再 `TAXONOMY.craft*Options()` 现算：picker 的 range 是 data 里那份快照，
     //    两处来自不同时刻就会整体错位（"选干制 → 存成针插"）。用同一个数组。
+    // ⚠️ `values[idx]`（**不是 idx-1**）：values 与 range 是同一个带「未标注」首项的数组
     const values = field === 'craftType' ? (this.data.pfTypeValues || []) : (this.data.pfProcessValues || [])
-    const value = idx <= 0 ? '' : String(values[idx - 1] || '')
+    const value = String(values[idx] || '')
     const prev = this._pfRowValue(id, field)
     if (prev === value) return
     this._applyPfLocalValue(id, field, value)
