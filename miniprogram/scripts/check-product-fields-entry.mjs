@@ -149,6 +149,21 @@ function check (root) {
       problems.push('picker 未标 data-field="craftType|craftProcess"（保存时不知道改哪个字段）')
     }
   }
+  // ④b 布局：`cfg-field-full`（width:100% + flex:none）**不许**放进 `.cfg-row`（横排）。
+  // 起因（2026-09-20 产品负责人真机截图）：专区里那行「搜索」直接抄了 `.cfg-field-block`（竖排）的
+  // `cfg-field-full`，于是 100% + 220rpx 标签 + gap + padding 一起算 → 整行 min-content 超出卡片
+  // → 卡片被撑宽、**整页横向溢出**（左侧文字被切、右侧多一条背景）。
+  // 静态判据够了：`.cfg-row` 是横排这一件事写在 WXSS 里，二者同现就是错配。
+  {
+    const rows = subviews.match(/<view class="cfg-row">[\s\S]{0,400}?<\/view>/g) || []
+    for (const r of rows) {
+      if (/cfg-field-full/.test(r)) {
+        problems.push('.cfg-row（横排）里用了 cfg-field-full（width:100% + flex:none）—— 会把整行撑出卡片')
+        break
+      }
+    }
+  }
+
   // 未标注必须能选回去（picker 第 0 项 = 未标注）
   if (!/_pfIndex\(/.test(manager) || !/i < 0 \? 0 : i \+ 1/.test(manager)) {
     problems.push('picker 下标未按「第 0 项 = 未标注」映射 —— 无法把字段清回未标注')
@@ -212,6 +227,13 @@ function selftest () {
         expect: /未用 picker 就地改/
       },
       {
+        name: '搜索行又抄回 cfg-field-full（横排 100% → 整页横向溢出）',
+        file: REL.subviews,
+        mutate: (s) => s.replace('<text class="cfg-label">搜索</text>\n            <input class="cfg-field"',
+                                 '<text class="cfg-label">搜索</text>\n            <input class="cfg-field cfg-field-full"'),
+        expect: /会把整行撑出卡片/
+      },
+      {
         name: '专区不再受超管开关控制（合并顺手放宽了权限）',
         file: REL.subviews,
         mutate: (s) => s.replace('class="cat-field-zone" wx:if="{{canProductFields}}"', 'class="cat-field-zone"'),
@@ -251,7 +273,7 @@ function selftest () {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：6 处真实注入（发给店长 / 内联选项清单 / 分批超限 / 退化成只读 / 专区没权限门 / Tab 17 复活）全部拦下')
+  console.log('\n自检通过：7 处真实注入（发给店长 / 内联选项清单 / 分批超限 / 退化成只读 / 横排抄了竖排输入框 / 专区没权限门 / Tab 17 复活）全部拦下')
 }
 
 function main () {

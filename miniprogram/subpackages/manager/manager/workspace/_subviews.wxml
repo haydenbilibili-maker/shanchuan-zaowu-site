@@ -489,9 +489,14 @@
             <view class="cfg-shortcut {{pfFilter==='type'?'on':''}}" bindtap="onPfFilter" data-filter="type">按装裱方式</view>
             <view class="cfg-shortcut {{pfFilter==='process'?'on':''}}" bindtap="onPfFilter" data-filter="process">按制作工艺</view>
           </view>
+          <!-- ⚠️ 这里**不能**用 `cfg-field-full`：它是给 `.cfg-field-block`（竖排：标签在上、
+               输入框在下）用的 `width:100% + flex:none`；放进 `.cfg-row`（横排：220rpx 标签 + gap
+               + 输入框）就会 **100% + 220 + 24 + 64rpx** 一起算 → 整行的 min-content 宽超出卡片，
+               卡片被撑宽、整页横向溢出（产品负责人真机截图：左侧文字被切掉、右侧多出一条背景）。
+               横排里要的是 `.cfg-field` 自带的 `flex:1; min-width:0`。 -->
           <view class="cfg-row">
             <text class="cfg-label">搜索</text>
-            <input class="cfg-field cfg-field-full" value="{{pfKeyword}}" bindinput="onPfKeyword" placeholder="按标题筛选…" placeholder-class="cfg-placeholder"/>
+            <input class="cfg-field" value="{{pfKeyword}}" bindinput="onPfKeyword" placeholder="按标题筛选…" placeholder-class="cfg-placeholder"/>
           </view>
         </view>
 

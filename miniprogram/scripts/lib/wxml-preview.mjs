@@ -104,6 +104,17 @@ function parseAttrs(s) {
 
 const FN_CACHE = new Map()
 /** `with` 只在**非严格模式**可用；`new Function` 的函数体天然是非严格的（ESM 的严格性不外溢） */
+/**
+ * 缺字段时的行为：
+ *   · `null`（默认，严格）= 抛错。这是 **wish-wall 预览**要的：样例数据必须覆盖 WXML 引用的每个字段，
+ *     少一个就说明预览会少画一块，必须当场报出来（assertSampleCovers 是同一道闸）。
+ *   · 函数 = 宽免模式：记下缺的表达式、求值为 undefined，**照常渲染**。
+ *     给「藏品库 → 分类管理」那种几千行、引用上百个字段的面板用：
+ *     为了量一条行的宽度去补齐全页样例数据不现实；但「静默少画一块」仍然是危险的 ——
+ *     所以宽免模式**必须**把缺的字段名交回调用方（见 onMissing）。
+ */
+let ON_MISSING = null
+
 function evalJs(expr, scope) {
   let fn = FN_CACHE.get(expr)
   if (!fn) {
@@ -114,6 +125,7 @@ function evalJs(expr, scope) {
   try {
     return fn(scope)
   } catch (e) {
+    if (ON_MISSING) { ON_MISSING(expr); return undefined }
     throw new Error(`wxml-preview：表达式 {{${expr}}} 求值失败 —— ${e.message}（多半是样例数据缺字段）`)
   }
 }
@@ -135,7 +147,18 @@ function evalAttr(raw, scope) {
 
 /* ── 3. 渲染 ──────────────────────────────────────────────────────────── */
 
-const TAG_MAP = { view: 'div', text: 'span', block: null, image: 'img', button: 'button', input: 'input' }
+const TAG_MAP = {
+  view: 'div', text: 'span', block: null, image: 'img', button: 'button', input: 'input',
+  // 小程序内建组件（2026-09-20 补，起因：给「藏品库 → 分类管理」量版式时 <picker> 直接抛错）。
+  // ⚠️ 带 `-` 的标签**必须显式登记**：否则会被当成"自定义组件"整棵跳过 ——
+  // 而 `<scroll-view>` 这类是**有子节点的容器**，跳过它等于把里面量没了（比抛错更危险）。
+  picker: 'div', 'scroll-view': 'div', swiper: 'div', 'swiper-item': 'div',
+  'radio-group': 'div', 'checkbox-group': 'div', radio: 'span', checkbox: 'span',
+  switch: 'span', label: 'span', textarea: 'div', video: 'div', navigator: 'div',
+  form: 'div', canvas: 'div', 'movable-area': 'div', 'movable-view': 'div',
+  'cover-view': 'div', 'cover-image': 'img', 'rich-text': 'div', progress: 'div',
+  icon: 'span', slot: null, wxs: null
+}
 const KEEP_ATTRS = new Set(['class', 'style', 'id', 'src', 'placeholder', 'value', 'maxlength', 'type'])
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -225,6 +248,14 @@ function renderElement(n, scope) {
 export function renderWxml(wxml, data, opts = {}) {
   const tree = parseWxml(wxml.replace(/<!--[\s\S]*?-->/g, ''))
   const scope = Object.assign(Object.create(null), data)
-  const html = renderNodes(tree.kids, scope)
+  const prev = ON_MISSING
+  // 只有显式声明 lenient 才开宽免；开了就把缺的字段交回 onMissing（缺字段必须留痕）
+  ON_MISSING = opts.lenient ? (opts.onMissing || (() => {})) : null
+  let html
+  try {
+    html = renderNodes(tree.kids, scope)
+  } finally {
+    ON_MISSING = prev
+  }
   return opts.rewrite ? opts.rewrite(html) : html
 }
