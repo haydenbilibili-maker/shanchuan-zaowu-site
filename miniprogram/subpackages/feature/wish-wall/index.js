@@ -390,9 +390,10 @@ Page({
     // 幂等：进度没变时 recordRelics 直接 return，不进 setData。
     this.recordRelics()
     this.bootstrap()
-    // H1 钩子的「取」这一半：换机 / 清缓存后把云端档案拉回来并刷新显示。
-    // 刻意 fire-and-forget（不 await）：它是补强，不该拖慢首屏；失败已在内部静默降级。
-    this.restoreRitualFromCloud()
+    // ⚠️ P2-10（2026-09-21）：`restoreRitualFromCloud()` **不再在这里**无条件调用。
+    // 本文件开头写着「关闭时不发起任何网络请求」，但它在 onLoad 里是无条件的 ——
+    // 开关关闭（页面渲染成「暂未开放」）时仍会打一次 `wishRitualProfile`，成功还会写本地存储。
+    // 现在移动到 `applyGate` 的 `if (!allowed) return` **之后**（只有真的开放了才拉）。
   },
 
   onPullDownRefresh() {
@@ -1056,6 +1057,10 @@ Page({
     }
     this.setData({ allowed, flagChecked: true, loading: allowed, gateError: false })
     if (!allowed) return
+    // H1 钩子的「取」这一半（P2-10，2026-09-21）：换机 / 清缓存后把云端档案拉回来并刷新显示。
+    // **只在这里调** —— 门禁已确认开放。刻意 fire-and-forget（不 await）：
+    // 它是补强，不该拖慢首屏；失败已在内部降级（见 restoreRitualFromCloud 的注释）。
+    void this.restoreRitualFromCloud()
     await this.refresh()
     // 彩蛋放在内容就位之后：先亮出墙面，再给惊喜
     this.fireEntryEgg()

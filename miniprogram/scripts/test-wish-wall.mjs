@@ -629,6 +629,13 @@ const INJECTIONS = {
     from: '  const count = wishTextCount(text)',
     to: '  const count = text.length'
   },
+  // P2-10：关闭态又发起云调用 —— 把「取云端档案」放回**无条件执行**（即本缺陷的原样）。
+  // 判据是行为级的（见"关闭态零网络请求"那两条），所以这条注入必须被检出。
+  'closed-page-still-calls-cloud': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    if (!allowed) return\n',
+    to: '    if (!allowed) { void this.restoreRitualFromCloud(); return }\n'
+  },
   // 音效默认关 → 用户永远听不到（产品口径是"默认开但可关"）
   'sound-default-off': {
     file: 'miniprogram/utils/ritualFeedback.js',
@@ -959,9 +966,12 @@ const INJECTIONS = {
     to: ''
   },
   // 「取」这一半被摘掉（只存不取）→ 换机/清缓存后本地仍是 0，而文案仍承诺「记录不丢」
+  // ⚠️ 2026-09-21（P2-10）锚点跟随源码：这行从 `onLoad` 无条件执行搬到了
+  // `applyGate` 的 `if (!allowed) return` 之后（关闭态不许发请求），并加了 `void`。
+  // 注入语义不变：**摘掉这次拉取**，看"换机不丢"还能不能被检出。
   'ritual-recover-unwired': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    from: '    this.restoreRitualFromCloud()',
+    from: '    void this.restoreRitualFromCloud()',
     to: ''
   },
   // ── 动效专项（2026-09-20 第三批）：余烬配色统一 / 等待态不压文字 / 缓动一致 ──
@@ -1956,7 +1966,14 @@ check('客户端 normalize 同口径', /showMaShangYou: src\.showMaShangYou === 
 check('客户端导出关闭提示', /toastWishWallClosed/.test(clientFlagSrc))
 
 const wallPageSrc = readSrc('miniprogram/subpackages/feature/wish-wall/index.js')
-check('关闭时提前返回不发请求', /if \(!allowed\) return\s*\n\s*await this\.refresh\(\)/.test(wallPageSrc))
+// ⚠️ 2026-09-21（P2-10）判据目标已改：原来是"`if (!allowed) return` 必须**紧邻** `await this.refresh()`"，
+// 而本批在两者之间插入了「取云端档案」（只在门禁确认为开后执行）。
+// 现在钉的是**顺序语义**：提前返回 → 取档案 → 刷新；即"关闭时什么都不发"这件的**结构**保证。
+// 真正的行为保证另有两条（见"关闭态零网络请求"那组，直接驱动 applyGate 数调用次数）。
+check(
+  '关闭时提前返回不发请求（且「取云端档案」必须在其**之后**，P2-10）',
+  /if \(!allowed\) return\s*\n[\s\S]{0,400}?void this\.restoreRitualFromCloud\(\)[\s\S]{0,200}?await this\.refresh\(\)/.test(wallPageSrc)
+)
 check('闸门来自 showMaShangYou', /flags\.showMaShangYou === true/.test(wallPageSrc))
 check(
   '读开关失败时保守关闭，且**不冒充「馆方没开放」**（假事实 + 没有出路，2026-09-20 修）',
@@ -5555,6 +5572,25 @@ check(
     eq('★ 显式 true 时开关才开（证明这个开关真的能开关）', gatePage.data.showRitualProfile, true)
     await gatePage.applyGate({ showMaShangYou: false, showRitualProfile: false })
     eq('★ 显式 false 时关回去（出事时一键关，无需发版）', gatePage.data.showRitualProfile, false)
+
+    // ★ P2-10（2026-09-21）：**关闭态一次云调用都不许发**。
+    // 本文件开头写着这条纪律，但 `restoreRitualFromCloud()` 原来挂在 `onLoad` 上**无条件**跑 ——
+    // 关着的时候仍会打一次 `wishRitualProfile`（成功还会写本地存储）。
+    // 这里从**行为**上钉，而不是像旧判据那样只对源码做正则：
+    //   门禁没开 → 一次都不拉；门禁开了 → 由 applyGate 拉一次（"换机不丢"的那一半）。
+    const offPage = mkHookPage({ data: { allowed: false, flagChecked: false } })
+    offPage.refresh = () => Promise.resolve()
+    offPage.fireEntryEgg = () => {}
+    offPage.restoreRitualFromCloud = () => { offPage.restored = (offPage.restored || 0) + 1; return Promise.resolve() }
+    await offPage.applyGate({ showMaShangYou: false })
+    eq('★ P2-10：开关关闭 → 云端档案一次都不拉（关闭态零网络请求）', offPage.restored || 0, 0)
+
+    const onPage = mkHookPage({ data: { allowed: false, flagChecked: false } })
+    onPage.refresh = () => Promise.resolve()
+    onPage.fireEntryEgg = () => {}
+    onPage.restoreRitualFromCloud = () => { onPage.restored = (onPage.restored || 0) + 1; return Promise.resolve() }
+    await onPage.applyGate({ showMaShangYou: true })
+    eq('★ P2-10：开关打开 → 才拉一次云端档案（换机不丢的那一半）', onPage.restored || 0, 1)
 
     // ⚠️ 2026-09-20 补（子代理行为复核抓到）：**读成功就必须清掉"读失败"态**。
     // 原来的早退分支什么都不写，于是「首次读开关失败 → 点『再试一次』→ 这次读成功、但开关确实是关的」
