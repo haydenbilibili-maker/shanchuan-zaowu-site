@@ -243,12 +243,21 @@ function ruleText(context) {
     ? shippingConfig.freeShippingThreshold
     : ((shippingConfig.thresholds && shippingConfig.thresholds.specimen) || 299)
   const fee = shippingConfig.shippingFee != null ? shippingConfig.shippingFee : 18
+  const freeOther = shippingConfig.accessoryFreeThreshold != null
+    ? shippingConfig.accessoryFreeThreshold
+    : ((shippingConfig.thresholds && shippingConfig.thresholds.accessory) || 39)
+  const feeOther = shippingConfig.accessoryFlatFee != null ? shippingConfig.accessoryFlatFee : 10
   const carrier = shippingConfig.defaultCarrier || '顺丰速运'
-  return `${carrier} · 相框/玻璃罩类满 ¥${free} 免邮，其余免邮，否则运费 ¥${fee}`
+  return `${carrier} · 相框/玻璃罩类满 ¥${free} 免邮（否则 ¥${fee}）；其余类型满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
 }
 
 /** 目录运费（划线用），与实际计费无关 */
-function listShippingFee() {
+function listShippingFee(context) {
+  // 与计费同档：其它档 ¥10 / 收费档 ¥18（写死 flatFee 会让其它档的划线价虚高）
+  if (typeof shippingConfig.resolveFee === 'function') {
+    const tierFee = parseFloat(shippingConfig.resolveFee(context))
+    if (Number.isFinite(tierFee) && tierFee >= 0) return tierFee
+  }
   const raw = shippingConfig.flatFee != null ? shippingConfig.flatFee : shippingConfig.shippingFee
   const fee = parseFloat(raw)
   return Number.isFinite(fee) && fee > 0 ? fee : 18
@@ -746,7 +755,7 @@ Page(withAppModal({
     const couponSaved = selectedCoupon ? pricing.couponSaved : 0
     const payable = Math.round((pricing.finalPrice + shippingFee) * 100) / 100
     const isShippingFree = shippingFee <= 0
-    const originalFee = listShippingFee()
+    const originalFee = listShippingFee(this.data.items)
     const showShippingStrike = isShippingFree && originalFee > 0
     let couponHint = ''
     if (selectedCoupon) {

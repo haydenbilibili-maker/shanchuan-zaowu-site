@@ -1165,9 +1165,15 @@ Page(withAppModal({
   buildShippingDisplay(price, product) {
     const ctx = product || this.data.product
     const amount = parseFloat(price) || 0
-    const catalogRaw = shippingConfig.flatFee != null
+    let catalogRaw = shippingConfig.flatFee != null
       ? shippingConfig.flatFee
       : shippingConfig.shippingFee
+    // 划线用的「目录运费」必须跟随本单档位：其它档是 ¥10，写死 flatFee(18) 会把划线价标错
+    // （2026-09-20 真机截图：其它档商品运费显示 ¥10，说明文案却是 ¥299/¥18）
+    if (typeof shippingConfig.resolveFee === 'function') {
+      const tierFee = parseFloat(shippingConfig.resolveFee(ctx))
+      if (Number.isFinite(tierFee) && tierFee >= 0) catalogRaw = tierFee
+    }
     const catalogFee = Math.max(0, parseFloat(catalogRaw) || 0)
     let fee = 0
     if (typeof shippingConfig.calcShippingFee === 'function') {

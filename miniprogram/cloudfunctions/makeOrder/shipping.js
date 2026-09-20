@@ -346,8 +346,32 @@ function resolveFee(context) {
   return state.flatFee
 }
 
+/**
+ * 本单在**运费口径上**属于哪一档（收费类 / 其它）。
+ *
+ * ⚠️ 判据必须是 `resolveShippingKind`，**不能**写成 `resolveThreshold(context) > 0`：
+ *    裁决 48 起两档都有非零门槛（收费类 ¥299、其它 ¥39），"门槛 > 0" 再也区分不了档位 ——
+ *    那样会把「其它档」误判成收费档，文案写成「满 ¥299 免邮，否则 ¥18」而实际收 ¥10
+ *    （2026-09-20 真机截图抓到的回归）。
+ */
 function resolveOrderKind(context) {
-  return resolveThreshold(context) > 0 ? SHIPPING_KIND.SPECIMEN : SHIPPING_KIND.ACCESSORY
+  if (context == null) return SHIPPING_KIND.SPECIMEN
+  if (typeof context === 'number' && Number.isFinite(context)) return SHIPPING_KIND.SPECIMEN
+  if (typeof context === 'string') {
+    return normalizeExplicitKind(context) || resolveShippingKind(context)
+  }
+  if (Array.isArray(context)) {
+    if (!context.length) return SHIPPING_KIND.SPECIMEN
+    return context.some((item) => resolveShippingKind(item) === SHIPPING_KIND.SPECIMEN)
+      ? SHIPPING_KIND.SPECIMEN
+      : SHIPPING_KIND.ACCESSORY
+  }
+  if (typeof context === 'object') {
+    if (Array.isArray(context.items)) return resolveOrderKind(context.items)
+    if (context.kind) return resolveOrderKind(context.kind)
+    return resolveShippingKind(context)
+  }
+  return SHIPPING_KIND.SPECIMEN
 }
 
 /**

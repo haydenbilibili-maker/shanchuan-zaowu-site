@@ -643,6 +643,30 @@ async function runChecks(paths) {
         at >= 0 && region.includes('shippingThreshold:') && region.includes(needle),
         at < 0 ? '找不到该调用点' : `参数里缺少 shippingThreshold / ${needle}`)
     }
+    // E5. 档位判定与**文案**必须与费率同档
+    // 2026-09-20 真机截图抓到的回归：其它档商品的说明写成「全场满 ¥299 免邮，否则 ¥18」，
+    // 而实际收 ¥10 —— 根因是 resolveOrderKind 用「门槛 > 0」判档（裁决 48 起两档门槛都非零）。
+    const tierCases = [
+      ['相框（收费档）', [P('frame')], 'specimen', 299, 18],
+      ['挂件（其它档）', [P('accessory')], 'accessory', 39, 10],
+      ['未标注（其它档）', [P('')], 'accessory', 39, 10],
+      ['显式 accessory 的相框（其它档）', [P('frame', { shippingKind: 'accessory' })], 'accessory', 39, 10],
+      ['显式 specimen 的挂件（收费档）', [P('accessory', { shippingKind: 'specimen' })], 'specimen', 299, 18]
+    ]
+    tierCases.forEach(([name, ctx, kind, thr, fee]) => {
+      const gotKind = typeof client.resolveOrderKind === 'function' ? client.resolveOrderKind(ctx) : 'NOT_A_FUNCTION'
+      check(`档位判定：${name} = ${kind}`, gotKind === kind,
+        `实际 ${gotKind}（判据不能写成"门槛 > 0"：裁决 48 起两档门槛都非零）`)
+      const text = typeof client.getRuleText === 'function' ? String(client.getRuleText(ctx)) : ''
+      const sameTier = text.includes(`¥${thr}`) && text.includes(`¥${fee}`) && client.resolveFee(ctx) === fee
+      const noCrossTier = kind !== 'accessory' || (!text.includes('299') && !text.includes('18'))
+      check(`说明文案与费率同档：${name}（¥${thr} 免邮 / 否则 ¥${fee}）`, sameTier && noCrossTier,
+        `${text} ｜ 费率 ¥${client.resolveFee(ctx)}`)
+    })
+    check('说明文案：无上下文时两档都要交代',
+      (() => { const t = String(client.getRuleText()); return t.includes('299') && t.includes('39') })(),
+      String(client.getRuleText()))
+
   } catch (e) {
     check('两档口径可校验', false, e.message)
   }
@@ -717,7 +741,13 @@ async function runSelfTest(paths) {
     ['超管界面把收费清单抄成硬编码（不再引用唯一事实源）', (p) => {
       patch(p.managerPage, (s) => s.replace(/DEFAULT_CHARGED_CRAFT_TYPES/g, "['frame', 'cloche']"))
     }],
-    // E 节的两条回归：这正是本次修的「免邮券省额虚高」，必须能被拦下
+    // E 节的三条回归：文案/档位判定与免邮券省额，都必须能被拦下
+    ['档位判据退回"门槛 > 0"（其它档商品的说明写成 ¥299/¥18 —— 2026-09-20 真机截图的原形态）', (p) => {
+      patch(p.client, (s) => s.replace(
+        'function resolveOrderKind(context) {\n  if (context == null) return SHIPPING_KIND.SPECIMEN',
+        'function resolveOrderKind(context) {\n  return resolveThreshold(context) > 0 ? SHIPPING_KIND.SPECIMEN : SHIPPING_KIND.ACCESSORY\n  if (context == null) return SHIPPING_KIND.SPECIMEN'
+      ))
+    }],
     ['免邮券省额的门槛闸被删（门槛未知也敢报省额）', (p) => {
       Object.values(p.couponFns).forEach((dir) => {
         patch(path.join(dir, 'index.js'), (s) => s.replace('  if (!Number.isFinite(threshold) || threshold <= 0) return 0\n', ''))
