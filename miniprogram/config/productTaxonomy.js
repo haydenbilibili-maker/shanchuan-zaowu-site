@@ -101,11 +101,28 @@ function setCraftOverlay (doc) {
   }
 }
 
-/** 当前生效的装裱方式选项（云端优先，否则代码默认） */
-function craftTypeOptions () { return CRAFT_OVERLAY.types || CRAFT_TYPE_OPTIONS }
+/**
+ * 「其它」必须排在**最后**（产品负责人 2026-09-21）。
+ *
+ * 为什么放在这一层：装裱方式/制作工艺的选项表有**好几个消费方**
+ * （C 端筛选面板、藏品库字段维护的 picker、选项维护编辑器、详情页标签…），
+ * 只有在**唯一事实源的出口**排一次，才不用每个消费方各排一遍。
+ * ⚠️ 云端字典里「其它」原本排在中间（`…, other, custom_1 玻璃瓶, custom_2 塑封`），
+ *    后台新增的选项会插在它后面 —— 顾客翻筛选时「其它」夹在中间很别扭。
+ * 排序方式：稳定排序，只把 `other` 移到末尾，其余保持原有相对顺序（后台的编排不被破坏）。
+ */
+function otherLast (list) {
+  const arr = Array.isArray(list) ? list.slice() : []
+  const rest = arr.filter((o) => !o || String(o.value) !== 'other')
+  const tail = arr.filter((o) => o && String(o.value) === 'other')
+  return rest.concat(tail)
+}
 
-/** 当前生效的制作工艺选项 */
-function craftProcessOptions () { return CRAFT_OVERLAY.processes || CRAFT_PROCESS_OPTIONS }
+/** 当前生效的装裱方式选项（云端优先，否则代码默认）；**「其它」恒在最后** */
+function craftTypeOptions () { return otherLast(CRAFT_OVERLAY.types || CRAFT_TYPE_OPTIONS) }
+
+/** 当前生效的制作工艺选项；**「其它」恒在最后** */
+function craftProcessOptions () { return otherLast(CRAFT_OVERLAY.processes || CRAFT_PROCESS_OPTIONS) }
 
 /** 当前是否在用云端字典（后台据此显示"已连接云端 / 用的内置选项"） */
 function hasCraftOverlay () { return !!(CRAFT_OVERLAY.types || CRAFT_OVERLAY.processes) }
@@ -304,6 +321,7 @@ module.exports = {
   setCraftOverlay,
   craftTypeOptions,
   craftProcessOptions,
+  otherLast,
   hasCraftOverlay,
   craftTypeLabel,
   craftProcessLabel,

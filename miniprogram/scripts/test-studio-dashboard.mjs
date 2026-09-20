@@ -182,6 +182,16 @@ function budgetSourceProblems (src) {
   need(/p\.category === '宽带'\) used = broadbandSpend/, '各预算池的本地重算缺「宽带」分支')
   need(/rentSpend,\s*\n\s*broadbandSpend,\s*\n\s*fixedSpend,/s, 'kpis 没把 rentSpend/broadbandSpend/fixedSpend 露出去（算了也没人看得见）')
   need(/collection: 'property_costs'/, '「物业成本」的集合名不是 property_costs（原来写成不存在的 ops_property_cost）')
+  // 「已使用 / 使用率」必须含房租与宽带，且**不能和采购记录重复计账**
+  need(/const fixedBudgetTypes = RENT_BUDGET_TYPES\.concat\(BROADBAND_BUDGET_TYPES\)/,
+    '缺 fixedBudgetTypes —— 无法把房租/宽带从采购合计里剔除（会重复计账）')
+  need(/const purchaseSpendExFixed = roundMoney\(/, '缺 purchaseSpendExFixed（采购合计没有排除房租/宽带行）')
+  need(/const usedBudget = roundMoney\(purchaseSpendExFixed \+ rentSpend \+ broadbandSpend\)/,
+    '「已使用」没有把房租/宽带算进去（产品负责人 2026-09-21 报的就是这个）')
+  // 新增信号：账户余额 = 总预算 − 总支付 + 收入（出货单货款）
+  need(/const accountBalance = roundMoney\(totalBudget - usedBudget \+ revenueTotal\)/,
+    '账户余额的公式不是「总预算 − 总支付 + 收入（出货单货款）」')
+  need(/id: 'account_balance',\s*\n\s*name: '账户余额'/, '预算承压看板里没有「账户余额」这一项')
   if (/const rentSpend = 54200|const rentSpend = roundMoney\(rentBudget\)/.test(src)) {
     problems.push('房租实际支出被写成了常量/预算本身 —— 正是产品负责人报的那个缺陷')
   }
@@ -191,6 +201,10 @@ function budgetSourceProblems (src) {
 const SOURCE_INJECTIONS = [
   ['房租实际支出退回常量（就是产品负责人报的那个缺陷）',
    (src) => src.replace('const rentSpend = rentPrepaid !== null ? rentPrepaid : (rentPoolUsed !== null ? rentPoolUsed : spendOfBudgetTypes(RENT_BUDGET_TYPES))', 'const rentSpend = 54200')],
+  ['「已使用」把房租/宽带漏掉（产品负责人 2026-09-21 报的那个）',
+   (src) => src.replace('const usedBudget = roundMoney(purchaseSpendExFixed + rentSpend + broadbandSpend)', 'const usedBudget = purchaseTotal')],
+  ['账户余额项目被删（预算承压看板少一项）',
+   (src) => src.replace("      id: 'account_balance',\n      name: '账户余额',", "      id: 'x_removed',\n      name: '账户余额',")],
   ['「已一次性缴纳」的房租被当成没花过（线上实测就是 已用 0）',
    (src) => src.replace('const PREPAID_RE = /一次性缴纳|已付/', 'const PREPAID_RE = /绝不匹配/')],
   ['宽带池的本地重算分支被删（used 恒为 0）',

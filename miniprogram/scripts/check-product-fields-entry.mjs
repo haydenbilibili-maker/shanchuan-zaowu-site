@@ -467,6 +467,25 @@ function check (root) {
     }
   }
 
+  /* ── ⑤-k 「其它」必须排在最后（产品负责人 2026-09-21）──────────────────────────
+   * 线上字典实测：`…, other, custom_1 玻璃瓶, custom_2 塑封` —— 后台新增的选项插在「其它」后面，
+   * 顾客翻筛选时它夹在中间。判据钉在**出口与保存两处**：
+   *  ① 唯一事实源的访问器必须把它排到最后（所有消费方自动一致）；
+   *  ② 存进云端的归一化也必须排（否则读原始文档的地方还是乱的）。 */
+  {
+    const tax = read('taxonomy')
+    if (!/function otherLast\s*\(/.test(tax)) {
+      problems.push('productTaxonomy 缺 otherLast() ——「其它」不会排到最后（线上字典里它本来在中间）')
+    }
+    if (!/craftTypeOptions \(\) \{ return otherLast\(/.test(tax) || !/craftProcessOptions \(\) \{ return otherLast\(/.test(tax)) {
+      problems.push('装裱/工艺访问器没有经过 otherLast() —— 消费方还是会看到「其它」在中间')
+    }
+    const cloudGet = read('cloudFn')
+    if (!/const rest = out\.filter\(\(o\) => o\.value !== 'other'\)/.test(cloudGet)) {
+      problems.push('getProductTaxonomy 保存时没把「其它」排到最后 —— 存进云端的顺序仍是乱的')
+    }
+  }
+
   // 未标注必须能选回去（picker 第 0 项 = 未标注，下标 0 ↔ 空串）
   if (!/_pfIndex\(/.test(managerCode) || !/if \(!v\) return 0/.test(managerCode)) {
     problems.push('picker 下标未按「第 0 项 = 未标注」映射 —— 无法把字段清回未标注')
@@ -535,6 +554,19 @@ function selftest () {
         file: REL.manager,
         mutate: (s) => s.replace('items: [{ productId: id, data: patch }]', 'items: []'),
         expect: /立即保存这一件/
+      },
+      {
+        name: '「其它」不再排最后（线上字典里它夹在新增项中间）',
+        file: REL.taxonomy,
+        mutate: (s) => s.replace('function craftProcessOptions () { return otherLast(CRAFT_OVERLAY.processes || CRAFT_PROCESS_OPTIONS) }',
+                                 'function craftProcessOptions () { return CRAFT_OVERLAY.processes || CRAFT_PROCESS_OPTIONS }'),
+        expect: /其它.*排到最后|otherLast/
+      },
+      {
+        name: '云端保存不再把「其它」排最后（存进云端的顺序是乱的）',
+        file: REL.cloudFn,
+        mutate: (s) => s.replace("  const rest = out.filter((o) => o.value !== 'other')\n  const tail = out.filter((o) => o.value === 'other')\n  return rest.concat(tail)", '  return out'),
+        expect: /没把「其它」排到最后/
       },
       {
         name: '馆藏筛选面板退回"冻结常量硬编码"（后台改完字典它不更新）',

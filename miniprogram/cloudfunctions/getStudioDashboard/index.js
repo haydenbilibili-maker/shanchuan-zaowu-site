@@ -337,6 +337,28 @@ function buildStudioSignals(pack) {
     }
   }
 
+  /* 账户余额 = 总预算 − 总支付 + 收入（出货单货款）（产品负责人 2026-09-21 指定口径）。
+   *   · 总支付 = `usedBudget`（已含房租/宽带）—— 与「预算使用率」同一个口径，不然两个数会打架
+   *   · 收入   = `revenueTotal`（出货单货款合计；结算口径的"已结清"另有一栏，这里按**出货额**算） */
+  const accountBalance = roundMoney(totalBudget - usedBudget + revenueTotal)
+  let acctStatus = 'muted'
+  let acctReason = '总预算未配置'
+  if (totalBudget > 0) {
+    if (accountBalance < 0) {
+      acctStatus = 'danger'
+      acctReason = `账户余额已为负：¥${moneyText(totalBudget)} − ¥${moneyText(usedBudget)} + ¥${moneyText(revenueTotal)} = −¥${moneyText(Math.abs(accountBalance))}`
+    } else if (accountBalance < safetyReserve) {
+      acctStatus = 'danger'
+      acctReason = `账户余额已低于安全储备：¥${moneyText(accountBalance)} < ¥${moneyText(safetyReserve)}`
+    } else if (accountBalance < safetyReserve + monthlyOps) {
+      acctStatus = 'warn'
+      acctReason = `账户余额 ¥${moneyText(accountBalance)}，不足「安全储备 + 一月基础运营」`
+    } else {
+      acctStatus = 'ok'
+      acctReason = `总预算 ¥${moneyText(totalBudget)} − 总支付 ¥${moneyText(usedBudget)} + 收入（出货单货款）¥${moneyText(revenueTotal)} = ¥${moneyText(accountBalance)}`
+    }
+  }
+
   const items = [
     makeSignal({
       id: 'usage_rate',
@@ -345,6 +367,14 @@ function buildStudioSignals(pack) {
       valueRaw: usagePct,
       status: usageStatus,
       reason: usageReason
+    }),
+    makeSignal({
+      id: 'account_balance',
+      name: '账户余额',
+      value: totalBudget > 0 ? `¥${moneyText(accountBalance)}` : '—',
+      valueRaw: accountBalance,
+      status: acctStatus,
+      reason: acctReason
     }),
     makeSignal({
       id: 'purchasable',
@@ -621,7 +651,25 @@ exports.main = async (event) => {
     const broadbandSpend = broadbandPrepaid !== null ? broadbandPrepaid : (broadbandPoolUsed !== null ? broadbandPoolUsed : spendOfBudgetTypes(BROADBAND_BUDGET_TYPES))
     const fixedSpend = roundMoney(rentSpend + broadbandSpend)
 
-    const usedBudget = purchaseTotal
+    /**
+     * **已使用 = 采购（不含房租/宽带行） + 房租 + 宽带/网费**。
+     *
+     * 产品负责人 2026-09-21：「工作室仪表盘的**预算使用率、已使用**都没有将房租和网费计算入内」。
+     * 改前 `usedBudget = purchaseTotal`（只算采购记录），而房租 54,200 与宽带 948 是**真实支出**，
+     * 于是使用率被低估、结构图里「已采购」也不含固定成本。
+     * 线上实测佐证（飞书总预算池的算式）：`剩余 = 总预算 200000 − 已使用 132304.7 − 房租 54200 − 宽带 948
+     * = 12547.3` —— 飞书自己就是**分开扣**的，所以仪表盘的"已使用"必须把这两笔加回来才对得上。
+     *
+     * ⚠️ 防重复计账：若哪天有人把房租/宽带也录成采购记录（`budgetType` 命中），
+     *    这里会先把它从采购合计里剔除再加固定成本 —— 两边都算一次才是真错。
+     */
+    const fixedBudgetTypes = RENT_BUDGET_TYPES.concat(BROADBAND_BUDGET_TYPES)
+    const purchaseSpendExFixed = roundMoney(
+      purchases
+        .filter((r) => fixedBudgetTypes.indexOf(String(r.budgetType || '')) === -1)
+        .reduce((n, r) => n + purchaseAmount(r), 0)
+    )
+    const usedBudget = roundMoney(purchaseSpendExFixed + rentSpend + broadbandSpend)
     /**
      * **剩余总预算以飞书为准**（产品负责人 2026-09-19）。
      *
@@ -732,7 +780,8 @@ exports.main = async (event) => {
       specimenSpend,
       netProfit,
       revenueTotal,
-      monthlyOps
+      monthlyOps,
+      accountBalance
     }
     const trafficLights = buildStudioSignals(signalPack)
     const budgetStructure = buildBudgetStructure(signalPack)
@@ -792,6 +841,8 @@ exports.main = async (event) => {
         rentSpend,
         broadbandSpend,
         fixedSpend,
+        // 账户余额 = 总预算 − 总支付（含房租/宽带） + 收入（出货单货款）
+        accountBalance,
         monthlyOpsCost: monthlyOps,
         hardwareBudget,
         specimenBudget,

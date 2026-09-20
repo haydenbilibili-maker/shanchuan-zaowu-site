@@ -48,7 +48,16 @@ function normalizeOptions (raw) {
     seen.add(value)
     out.push({ value, label })
   }
-  return out
+  /**
+   * 「其它」必须排**最后**（产品负责人 2026-09-21）。
+   * 在这里排一次 = **存进云端的顺序就定了**，所有读这份字典的地方（C 端筛选、字段维护 picker、
+   * 选项维护编辑器、ERP…）看到的是同一个顺序。稳定排序：其余项保持后台的编排。
+   * ⚠️ 后台新增的选项会插在「其它」后面（线上字典实测 `…, other, custom_1 玻璃瓶, custom_2 塑封`），
+   *    顾客翻筛选时「其它」夹在中间很别扭，也会让人以为后面还有"更正式"的分类。
+   */
+  const rest = out.filter((o) => o.value !== 'other')
+  const tail = out.filter((o) => o.value === 'other')
+  return rest.concat(tail)
 }
 
 /** 四项校验；返回 null = 通过，否则返回给用户看的那句话 */

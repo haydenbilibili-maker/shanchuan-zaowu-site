@@ -300,6 +300,8 @@ Page({
           broadbandBudgetText: money(k.broadbandBudget),
           broadbandSpendText: money(k.broadbandSpend),
           fixedSpendText: money(k.fixedSpend),
+          accountBalanceText: moneySigned(k.accountBalance),
+          accountBalanceTone: Number(k.accountBalance) < 0 ? 'down' : 'flat',
           monthlyOpsCostText: money(k.monthlyOpsCost),
           purchaseCount: k.purchaseCount || 0,
           purchaseTotalText: money(k.purchaseTotal),
@@ -327,6 +329,8 @@ Page({
           { label: '房租（预算 · 已用）', value: `${money(k.rentBudget)} · ${money(k.rentSpend)}`, tone: 'flat' },
           { label: '宽带 / 网费（预算 · 已用）', value: `${money(k.broadbandBudget)} · ${money(k.broadbandSpend)}`, tone: 'flat' },
           { label: '固定成本已发生', value: money(k.fixedSpend), tone: 'flat' },
+          // 账户余额 = 总预算 − 总支付（已含房租/宽带） + 收入（出货单货款）
+          { label: '账户余额（预算−支付+收入）', value: moneySigned(k.accountBalance), tone: Number(k.accountBalance) < 0 ? 'down' : 'flat' },
           { label: '月度基础运营', value: money(k.monthlyOpsCost), tone: 'flat' }
         ],
         stockRows: [
