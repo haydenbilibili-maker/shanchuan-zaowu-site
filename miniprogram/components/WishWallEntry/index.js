@@ -10,7 +10,14 @@
  * 组件只负责「是否显示 + 点进去」；**开关值仍由宿主页面传入**（`enabled`），
  * 因为开关是页面级 SWR 缓存的产物，组件自己再拉一次会多打一次云函数。
  */
-const { isWishWallProduct, resolveWishWallKey, buildWishWallUrl, PRODUCT_KEY } = require('../../utils/wishWall')
+const {
+  isWishWallProduct,
+  resolveWishWallKey,
+  buildWishWallUrl,
+  PRODUCT_KEY,
+  normalizeWishText,
+  TEXT_MAX
+} = require('../../utils/wishWall')
 
 /** 跑马灯：最多展示几条 / 至少几条才开（只 1 条会在循环里露空档） */
 const MQ_MAX = 8
@@ -114,30 +121,36 @@ Component({
     },
     /**
      * 跑马灯：清洗 + 限长 + 复制一份（无缝循环）。
-     * 时长按内容长度换算，让"长文案跑得久"（与祈福墙页 danmakuDurationMs 同一意图）——
-     * 固定时长会让短文案一闪而过、长文案挤成一团。
-     */
-    /**
-     * 跑马灯：清洗 + 限长 + 复制一份（无缝循环）。
      * 入参支持两种：字符串，或 `{ text, emoji }` —— 首页会带 emoji（与祈福墙弹幕**同一套规则**，
-     * 见 `utils/wishWall.danmakuEmoji`，不在这里另造一套）。
+     * 见 `utils/wishWall`，不在这里另造一套）。
+     * 时长按内容长度换算，让"长文案跑得久"（与祈福墙页 `danmakuDurationMs` 同一意图）——
+     * 固定时长会让短文案一闪而过、长文案挤成一团。
      */
     wishes(list) {
       const rows = (Array.isArray(list) ? list : [])
         .map((it) => {
           if (it && typeof it === 'object') {
-            return { t: String(it.text == null ? '' : it.text).trim(), e: String(it.emoji || '') }
+            return { t: normalizeWishText(it.text), e: String(it.emoji || '') }
           }
-          return { t: String(it == null ? '' : it).trim(), e: '' }
+          return { t: normalizeWishText(it), e: '' }
         })
+        // 归一化后为空的行**必须丢掉**：`.trim()` 挡不住零宽字符（U+200B/前缀 BOM 等），
+        // 这类"看不见的愿"单独一条就能凑满 MQ_MIN，跑马灯里会出现一个只有间隔、没有字的空位。
         .filter((r) => r.t)
+        // 单条封顶 = **系统对一条心愿的上限**（`TEXT_MAX`，云函数同样拒收超长）。
+        // 存量脏数据绕过校验时，一条超长文案会把"按长度换算时长"的匀速跑马灯拖成忽快忽慢。
+        .map((r) => ({ t: r.t.slice(0, TEXT_MAX), e: r.e }))
         .slice(0, MQ_MAX)
       const items = rows.length >= MQ_MIN
         ? rows.concat(rows).map((r, i) => ({ i, t: r.t, e: r.e }))
         : []
       const chars = rows.map((r) => r.t).join('').length
       const duration = Math.max(14000, Math.min(46000, 10000 + chars * 260))
-      if (items.length !== this.data.mqItems.length) {
+      // 去重键按**内容**而不是条数：宿主下拉刷新后条数往往一模一样（墙上还是那几条），
+      // 但文案可能已经被新愿替换 —— 只看长度会让跑马灯停在旧文案上。
+      const signature = items.map((it) => `${it.t}\u0001${it.e}`).join('\u0002')
+      if (signature !== this._mqSignature) {
+        this._mqSignature = signature
         this.setData({ mqItems: items, mqDurationMs: duration })
       } else if (duration !== this.data.mqDurationMs) {
         this.setData({ mqDurationMs: duration })
