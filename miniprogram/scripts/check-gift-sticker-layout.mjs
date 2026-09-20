@@ -256,6 +256,7 @@ check('★ 满幅米白（无黑边）', /ctx\.fillRect\(0, 0, LW, LH\)/.test(st
     underlineGap: tableOf('underlineGap'), sigMaxW: tableOf('sigMaxW'),
     footerTop: tableOf('footerTop'), qrSize: tableOf('qrSize'),
     qrGap: tableOf('qrGap'), qrCaptionOffset: tableOf('qrCaptionOffset'),
+    qrLift: tableOf('qrLift'), qrHintOffset: tableOf('qrHintOffset'),
     stampSize: tableOf('stampSize'), stampRightPad: tableOf('stampRightPad'),
     stampTopPad: tableOf('stampTopPad'),
   }
@@ -303,19 +304,29 @@ check('★ 满幅米白（无黑边）', /ctx\.fillRect\(0, 0, LW, LH\)/.test(st
   // ⑤ 两枚码：不与印章区相交，且小字不出纸
   const codesLeft = cardX
   const codesRight = cardX + T.qrSize * 2 + T.qrGap
-  const captionBase = T.footerTop + T.qrSize + T.qrCaptionOffset
+  // ⚠️ 2026-09-20 修一处**过期不变式**：painter 从引入 `qrLift` 起，码块是从
+  //    `qrTop = footerTop − qrLift` 起画的，而这里仍按 `footerTop` 复算 ——
+  //    于是判据算的是"不存在的那一行"（实测差 qrLift 那么多），真图上小字明明在纸内却报 -1px。
+  //    现在按真实几何复算，并且 ⑤b/⑤d 判的是**最下面那一行（兜底文案）**，不是码下小字。
+  const qrTop = T.footerTop - T.qrLift
+  const captionBase = qrTop + T.qrSize + T.qrCaptionOffset
+  const hintSize = Number((/qrHintSize: (\d+),/.exec(cardSrc) || [])[1]) || 21
+  const hintBase = captionBase + T.qrHintOffset
+  const hintBottom = hintBase + Math.round(hintSize * 0.22)   // 基线 → 降部底
   check('★ 不变式⑤：两枚码（左起）**不得越过印章左缘**（近方形历史 bug：码压预印印章）',
     codesRight <= stampLeft, `码右端=${codesRight} 印章左缘=${stampLeft}`)
-  check('★ 不变式⑤b：码 + 小字必须在纸内（≤ 纸高，留 ≥ 6px）',
-    captionBase <= S.h - 6, `小字基线=${captionBase} 纸高=${S.h}（余 ${S.h - captionBase}px）`)
-  check('★ 不变式⑤c：码不得压到正文带（footerTop ≥ signTop + 1 行高）',
-    T.footerTop >= signTop + lineH34, `footerTop=${T.footerTop} signTop=${signTop}`)
+  check('★ 不变式⑤b：码 + 两行小字必须在纸内（≤ 纸高，留 ≥ 6px）',
+    hintBottom <= S.h - 6, `兜底文案底=${hintBottom} 纸高=${S.h}（余 ${S.h - hintBottom}px）`)
+  check('★ 不变式⑤c：码不得压到正文带（码块顶 qrTop ≥ 正文带下沿 bodyFloor）',
+    // 码块从 qrTop 起（不是 footerTop）—— 判据要跟着真实几何走，否则 qrLift 一改就失效
+    qrTop >= signTop - T.sigOffset - Math.round(34 * 0.85),
+    `qrTop=${qrTop} 正文净空线=${signTop - T.sigOffset - Math.round(34 * 0.85)}`)
   /* ── ⑤d~⑤g **用满白区高度**（2026-09-20 真图反馈「排版偏上、下部发虚」）─────────────
    * 这一组是「版面利用率」判据：把内容压到上半部、或页脚离纸底太远，都会被拦下。
    * 全部从 STICKER 表实算（不写死像素），改了参数就会重新判。 */
   check('★ 不变式⑤d：小字必须在纸内且**贴近白区下沿**（余 6~16px：既不裁字也不发虚）',
-    captionBase <= S.h - 6 && captionBase >= S.h - 16,
-    `小字基线=${captionBase} 纸高=${S.h}（余 ${S.h - captionBase}px）`)
+    hintBottom <= S.h - 6 && hintBottom >= S.h - 16,
+    `兜底文案底=${hintBottom} 纸高=${S.h}（余 ${S.h - hintBottom}px）`)
   check('★ 不变式⑤e：页脚必须落在白区**下 1/5**（footerTop ≥ 78% 纸高 —— 否则下部一大片空）',
     T.footerTop >= Math.round(S.h * 0.78), `footerTop=${T.footerTop} < ${Math.round(S.h * 0.78)}`)
   check('★ 不变式⑤f：两枚码右缘离印章左缘 ≥ 6mm（不能挤到一起；也不能因过大顶到纸底）',
