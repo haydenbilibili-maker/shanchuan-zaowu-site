@@ -128,6 +128,61 @@ page {
   z-index: 2;
 }
 
+/* ── 牌匾主体与黄铜铭牌（2026-09-20 改造）────────────────────────────
+   线下黑马底座嵌着黄铜三字「马上有」（PRD §2.1 的原件），而页头此前**通篇没有一个器物**：
+   三行字直接浮在纸面上，牌匾没有重心，也就撑不起目标 2「一眼认出这是黑马那面墙」。
+   铭牌是那个原件的线上对等物：铜底 + 内高光 + 两颗铆钉，字走衬线体（与底座铜字同一语汇）。
+   它只是装饰（同样三个字已在 overline 里出现），故 WXML 上标了 aria-hidden。 */
+.ww-hero-main {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.ww-hero-names {
+  min-width: 0;
+}
+
+.ww-plate {
+  position: relative;
+  flex-shrink: 0;
+  padding: 10rpx 20rpx 12rpx;
+  background: linear-gradient(150deg, var(--brass-200) 0%, var(--brass-400) 46%, var(--brass-600) 100%);
+  border: 1rpx solid rgba(107, 90, 36, 0.55);
+  border-radius: 8rpx;
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.55), inset 0 -2rpx 4rpx rgba(48, 40, 16, 0.28), 0 4rpx 10rpx rgba(48, 40, 16, 0.22);
+}
+
+/* 铜牌的左上 / 右上两颗铆钉：纯 CSS 圆点，不用贴图 —— 本页没有图标资产。
+   取两个伪元素而不是两个子节点：铆钉是铜牌自己的装饰，挂在铜牌上就不必再多两个 view。 */
+.ww-plate::before,
+.ww-plate::after {
+  content: '';
+  position: absolute;
+  top: 7rpx;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: rgba(48, 40, 16, 0.42);
+  box-shadow: 0 0 0 1rpx rgba(250, 246, 237, 0.35);
+}
+
+.ww-plate::before { left: 7rpx; }
+.ww-plate::after { right: 7rpx; }
+
+.ww-plate-text {
+  display: block;
+  font-family: var(--font-brand);
+  font-size: var(--fs-30);
+  line-height: 1.1;
+  letter-spacing: 0.08em;
+  color: #3A2E12;
+  text-shadow: 0 1rpx 0 rgba(250, 246, 237, 0.4);
+}
+
 .ww-hero-top {
   display: flex;
   align-items: center;
@@ -290,6 +345,25 @@ page {
   color: var(--color-text-muted);
 }
 
+/* 门禁**读失败**时的重试（2026-09-20 改造）：读不到开关与"馆方确实没开放"是两件事，
+   前者必须给一条可走的路 —— 否则用户只能干等缓存过期或重进小程序。
+   与全站黄铜胶囊按钮同一配方（同 .ww-send / .ww-sheet-cta）。 */
+.ww-closed-retry {
+  display: inline-block;
+  margin-top: var(--space-4);
+  padding: 12rpx var(--space-5);
+  font-size: var(--fs-24);
+  color: var(--color-bg);
+  background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
+  border: 1px solid rgba(224, 207, 163, 0.4);
+  border-radius: 999rpx;
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.35);
+}
+
+.ww-closed-retry-press {
+  opacity: 0.86;
+}
+
 /* ==================== 灯龛 ==================== */
 
 .ww-lantern {
@@ -309,7 +383,7 @@ page {
   /* 纵向 22 → 26rpx：文案变整行之后卡片不高了，多出来的高度给上下留白。
      横向保持 20rpx（半宽卡里再收就把徽章行挤折行了）。木鱼卡必须同值（守卫钉住）。 */
   padding: 26rpx 20rpx;
-  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);
+  background: linear-gradient(180deg, var(--color-bg-card) 0%, #1B1917 100%);
   border: 1rpx solid rgba(196, 167, 108, 0.24);
   border-radius: var(--radius-lg);
 }
@@ -453,6 +527,23 @@ page {
   color: var(--brass-300);
   font-family: var(--font-mono);
 }
+
+/* 连续天数盒：**绝对定位到卡片右上角**（2026-09-20 改造）。
+   它此前是文案列右边的一份 flex 子项。半宽卡可用宽 ≈ 450rpx，扣掉图标 64 + 两个 gap 32
+   + 本盒 48~76，文案列只剩 ~150rpx —— 而点亮后标题「今日灯已点」= 5 × 30rpx = 150rpx，
+   正好卡在断行临界上：离线渲染里实测折成「今日灯已 / 点」（真机字体更宽时同样会折）。
+   移到角上之后文案列拿回整行宽度。
+   ⚠️ DOM 顺序（copy → streak → tail）**不变**，所以 test:wish-wall 的顺序判据
+   与 `.ww-streak { min-width: 48rpx }` 判据都照旧成立。 */
+.ww-lantern .ww-streak {
+  position: absolute;
+  right: 20rpx;
+  top: 22rpx;
+}
+
+/* ⚠️ 文案列**故意不加** padding-right：角上的连续天数盒宽 ~76rpx，只占卡片右端；
+   本页最长的灯卡标题「今日灯已点」= 5 × 30rpx = 150rpx，而文案列有 ~215rpx ——
+   两者在 x 轴上不重叠。（第一版加了 92rpx 让位，实测反把标题挤成两行 = 防御过度。） */
 
 .ww-streak-l {
   margin-top: 2rpx;
@@ -706,23 +797,24 @@ page {
   100% { box-shadow: inset 0 0 0 rgba(233, 190, 110, 0); }
 }
 
-/* ==================== 写愿签 ==================== */
-
-.ww-write {
+/* ==================== 写愿区（2026-09-20 改造） ====================
+   这里原来是一张独立的「写愿签」卡（`.ww-write`），位置在灯 / 木鱼 / 玩法**之后**。
+   问题（离线版式实测，不是观感）：灵感行距发送条 **586px、整块在首屏之外**，
+   而 `useInspiration` 只改 draft、既不聚焦也不滚动 —— 点一下的唯一反馈是远处一个数字跳了一下，
+   真机反馈就是「点了像没反应」。现在灵感词 + 额度 + 字数贴在发送条正下方（`.ww-wishassist`），
+   与输入框同一视线、点完就能看到输入框里的字。
+   为什么不另给卡底：它与发送条本来就该读成一组（发送条自己是透明的，见 `.ww-composer` 的说明）。 */
+.ww-wishassist {
   position: relative;
   z-index: 1;
-  padding: var(--space-3) 26rpx;
-  margin-bottom: var(--space-3);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-lg);
+  margin-top: var(--space-2);
+  padding: 0 4rpx;
 }
 
 .ww-inspo {
   display: flex;
   align-items: flex-start;
   gap: 12rpx;
-  margin-bottom: 18rpx;
 }
 
 .ww-inspo-label {
@@ -799,7 +891,7 @@ page {
   padding: 0 var(--space-4);
   line-height: 84rpx;
   font-size: var(--fs-26);
-  color: #1A1814;
+  color: var(--color-bg);
   /* 与全站黄铜主按钮同一配方：160deg / 48% / 描边 + 顶部内高光 */
   background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
   border: 1px solid rgba(224, 207, 163, 0.4);
@@ -1245,7 +1337,7 @@ page {
 }
 
 .ww-seg-item.is-on .ww-seg-label {
-  color: #1A1814;
+  color: var(--color-bg);
 }
 
 .ww-seg-item.is-on .ww-seg-n {
@@ -1270,14 +1362,24 @@ page {
   opacity: 0.86;
 }
 
-.ww-tag-seal.is-mine {
-  color: var(--color-bg);
-  background: var(--brass-400);
-  border-color: var(--brass-400);
+/* ⚠️ 2026-09-20 改造：`.ww-tag-seal.is-mine`（金色「我的」章）整条下线。
+   理由与 2026-09-18 下线「馆方」章**完全相同**：产品负责人真机截图里 6 张愿签有 5 张盖着它
+   —— 重复 5 次的信息不再是信息，只是噪音。
+   信号改挂在卡片**已有的左侧铜绳**（`.ww-tag::before`）上：粗一档 + 铜色实心 + 一圈微光。
+   为什么复用而不是新加元素：`::before` 本来就画在左边缘（3rpx 淡铜竖线），
+   加粗加亮**不改任何盒尺寸**，不会把正文挤动一行 —— 换成一个新元素就要重新配平顶部 48rpx 顶带。
+   一眼扫得到"哪条是我的"，但不占一行、不与标题抢视线。 */
+.ww-tag.is-mine::before {
+  width: 5rpx;
+  top: 8rpx;
+  bottom: 8rpx;
+  border-radius: 3rpx;
+  background: linear-gradient(180deg, var(--brass-300) 0%, var(--brass-500) 100%);
+  box-shadow: 0 0 12rpx rgba(233, 190, 110, 0.4);
 }
 
 .ww-tag-seal.is-hidden {
-  color: #E9A23B;
+  color: var(--color-warning);
   border-color: rgba(233, 162, 59, 0.5);
   background: rgba(233, 162, 59, 0.1);
 }
@@ -1621,23 +1723,24 @@ page {
 .ww-cert-entry-tag { font-size: var(--fs-22); color: #D9BE86; letter-spacing: 1rpx; }
 .ww-cert-entry-go { font-size: var(--fs-22); color: #EFE6D2; }
 
-/* 说明：一行说完，不占版面 */
-.ww-foot-note {
-  display: block;
-  /* 与音效开关同行（见 .ww-foot-row）：说明占满剩余宽度，开关固定宽度贴右 */
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  font-size: var(--fs-20);
-  line-height: 1.6;
-  color: var(--color-text-muted, #8A857C);
-}
-
-.ww-foot-row {
+/* 说明行 + 音效开关（2026-09-20 改造）：说明文案已删（与墙页脚重复），
+   音效开关上移到仪式区**区头**。这里只保留区头本身。 */
+.ww-sec-head {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin: 18rpx 4rpx 4rpx;
+  margin: var(--space-3) 2rpx 12rpx;
+}
+
+.ww-sec-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-26);
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  color: var(--brass-300);
 }
 
 /* 仪式音效开关：铜色描边小胶囊。开=实心铜字，关=压暗（一眼看出状态，不靠读文字） */
@@ -1697,7 +1800,7 @@ page {
   border: 1rpx solid rgba(196, 167, 108, 0.42);
   border-radius: 999rpx;
 }
-.ww-joined-act.is-primary { color: #1A1814; background: var(--brass-300); border-color: var(--brass-300); }
+.ww-joined-act.is-primary { color: var(--color-bg); background: var(--brass-300); border-color: var(--brass-300); }
 .ww-joined-act-press { opacity: 0.86; }
 
 .ww-plays {
@@ -1734,9 +1837,6 @@ page {
 }
 
 .ww-play {
-  /* 2026-09-20 极简（PRD §4 的视觉口径）：去掉装饰字标与填充底。
-     字标（单字铜底圆）是**标题的重复**——本页没有图标资产，它只提供视觉噪声；
-     底色由实心块改为透明后，四块瓦片读作"细框单元"而不是"重色块"，一屏的重色少一半。 */
   display: flex;
   align-items: center;
   min-width: 0;
@@ -1744,6 +1844,37 @@ page {
   background: transparent;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
+}
+
+/* ── 瓦片分两级（2026-09-20 改造）──────────────────────────────────
+   四枚等大等重的纯文字瓦片 = 四个同质的列表框：用户看不出"该先点哪个"。
+   而 `plays` 已经按祈运标签重排过（index.js applyBlessScope），前两枚天然就是
+   这面墙最该抽的两支 —— **排序做了、视觉没跟上，等于白排**。
+   主瓦片（前两枚）：更高、铜边、带字标、名字大一档。
+   次瓦片（后两枚）：更矮、弱边框、无字标 —— 它们是"也可以试试"，不是并列选项。
+   字标只给主瓦片：四枚都加等于没加（2026-09-20 极简下线它的理由，在这一点上仍然成立）。 */
+.ww-play.is-lead {
+  padding: 20rpx;
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.1) 0%, rgba(196, 167, 108, 0.03) 100%);
+  border-color: rgba(196, 167, 108, 0.42);
+}
+
+.ww-play.is-minor {
+  padding: 14rpx 20rpx;
+}
+
+.ww-play-mark {
+  flex-shrink: 0;
+  width: 52rpx;
+  height: 52rpx;
+  margin-right: var(--space-2);
+  font-size: var(--fs-24);
+  line-height: 52rpx;
+  text-align: center;
+  color: var(--color-bg);
+  background: linear-gradient(145deg, var(--brass-200) 0%, var(--brass-400) 52%, var(--brass-600) 100%);
+  border-radius: 50%;
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.5);
 }
 
 .ww-play-press {
@@ -1756,8 +1887,6 @@ page {
   background: rgba(196, 167, 108, 0.1);
 }
 
-/* （原 `.ww-play-mark` 装饰字标已于 2026-09-20 随极简一起下线：字标是标题的重复，
-   本页没有图标资产，它只贡献视觉噪声。样式一并删除，不留死选择器。） */
 .ww-play-copy {
   flex: 1;
   min-width: 0;
@@ -1768,6 +1897,12 @@ page {
   font-size: var(--fs-26);
   line-height: 1.3;
   color: #EFE6D2;
+}
+
+/* 次瓦片的名字收一档：层级靠高度 + 边框 + 字号三处表达，不靠一处 */
+.ww-play.is-minor .ww-play-name {
+  font-size: var(--fs-24);
+  color: var(--color-text-body);
 }
 
 .ww-play-hint {
@@ -1935,7 +2070,7 @@ page {
   text-align: center;
   font-size: var(--fs-28);
   letter-spacing: 0.06em;
-  color: #1A1814;
+  color: var(--color-bg);
   background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
   border-radius: 12rpx;
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.6);

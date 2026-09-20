@@ -11,24 +11,33 @@
  * 宽度、换行、间距都能据此判断；但**字体度量、安全区、真机字体替换**无法等价，
  * 所以本工具的输出是"改版式前的第一道网"，**不能替代真机验收**。
  *
+ * ⚠️ 2026-09-20 重写（重要）：结构**不再手抄**，改为直接解析真 `index.wxml`（见 `lib/wxml-preview.mjs`）。
+ * 原因是手抄件已经**静默漂移**过：预览里画着 `.ww-play-mark`（玩法瓦片上的「签/饼/座/我」字标），
+ * 真源码里根本没有它；还把发送条摆在了玩法区之后（真源码在弹幕墙正下方），
+ * 于是工具报出两条「发送条没有吸底」的**假失败**。凡是"读的是镜像、不是真源"的判据，
+ * 都会以这种方式骗人（错题本 E3）。
+ *
  * 用法：
- *   node miniprogram/scripts/render-wall-preview.mjs                 # 量 + 截图
- *   node miniprogram/scripts/render-wall-preview.mjs --check         # 只跑版式不变量（非 0 = 违反）
- *   node miniprogram/scripts/render-wall-preview.mjs --check --selftest   # 证明判据真的会红（注入 → 必须检出 → 还原）
+ *   node miniprogram/scripts/render-wall-preview.mjs                    # 量 + 截图（默认场景 full）
+ *   node miniprogram/scripts/render-wall-preview.mjs --scene sheet       # 纸签弹层展开态
+ *   node miniprogram/scripts/render-wall-preview.mjs --check             # 只跑版式不变量（非 0 = 违反）
+ *   node miniprogram/scripts/render-wall-preview.mjs --check --selftest  # 证明判据真的会红（注入 → 检出 → 还原）
  *   node miniprogram/scripts/render-wall-preview.mjs --out /tmp/x.png
  *
- * 场景（--scene）：full（默认，首屏各块） / plays（只渲染玩法区，放大看细节）
+ * 场景（--scene）：full（默认）整页原样 / lit 已点灯 / sheet 纸签弹层 / loading 骨架 / error 加载失败 / closed 开关关
  */
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { renderWxml } from './lib/wxml-preview.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
 const APP_WXSS = resolve(ROOT, 'miniprogram/app.wxss')
 const PAGE_WXSS = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss')
+const PAGE_WXML = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxml')
 
 const argv = process.argv.slice(2)
 const has = (n) => argv.includes(n)
@@ -36,44 +45,45 @@ const argOf = (n, d) => {
   const i = argv.indexOf(n)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
-const SCENE = argOf('--scene', 'full')
+const SCENES = ['full', 'lit', 'sheet', 'loading', 'error', 'closed']
+const SCENE = (() => {
+  const s = argOf('--scene', 'full')
+  const alias = { plays: 'sheet' }[s] || s
+  if (!SCENES.includes(alias)) {
+    console.error(`✗ 未知场景 ${s}（可用：${SCENES.join(' / ')}）`)
+    process.exit(1)
+  }
+  return alias
+})()
 const OUT = argOf('--out', join(ROOT, 'miniprogram/scripts/.tmp', `wall-preview-${SCENE}.png`))
 const CHECK_ONLY = has('--check')
 
 /* ── 0. 版式判据的阈值（都是**量出来的**，不是拍的） ──────────────────────
- * 需求 7 §3 要求把"位置 / 大小"变成**可量、可打红**的判据，例：banner 不超 X% 屏高、
+ * 需求 7 §3 要求把"位置 / 大小"变成**可量、可打红**的判据，例：牌匾不超 X% 屏高、
  * 玩法区一屏内可见 N 个。这两条此前缺失：元素各自"不溢出、不折行"，合起来却可能
  * 把玩法区整个顶出第一屏 —— 静态断言看不出来（错题本 E8）。
  *
- * 基线（2026-09-19 实量）：`--window-size=750,1334` 下 headless 的**实际可视高是 1191px**
+ * 基线（2026-09-20 实量）：`--window-size=750,1334` 下 headless 的**实际可视高是 1191px**
  * （不是 1334 —— 本工具文档一直没写清这点，判据的分母因此不能写死），与 iPhone 8/SE2 的
  * 可用高（667pt − 20 状态栏 − 44 导航 ≈ 603pt ≈ 1206rpx）同量级；1rpx = 1px 等比，
- * 所以宽度 / 换行 / 占比对任意真机宽度成立：
- *   · 横幅 hero 254 / 1191 = **21.3%**
- *   · 玩法区首排瓦片 top = 1037、吸底条顶边 = 1080 → 首排**进得了首屏**（不用先滚屏）；
- *     但瓦片底边 1145 被吸底条盖住 **65px（约 60%）** —— 见下面 ⚠ 参考项，属产品取舍，
- *     不进判据（改版式要真机图，E8）。
- * 阈值都留了余量：只有"真的变胖 / 真的被顶下去"才红，镜像字体差异不会红。
+ * 所以宽度 / 换行 / 占比对任意真机宽度成立。
  */
-/** 页头 banner 占首屏高的上限（实测 21.3%） */
-const HERO_MAX_SHARE = 0.24
-/** 首屏内必须**看得到**（顶边在吸底条之上，不必先滚屏）的玩法瓦片数（当前首排 = 2） */
+/** 页头「牌匾」占首屏高的上限：它是身份标识，不是内容，不许把弹幕墙顶下去 */
+const HERO_MAX_SHARE = 0.22
+/** 首屏内必须**看得到**（顶边在折叠线之上）的玩法瓦片数（2 列 × 1 排 = 2） */
 const FOLD_MIN_TILES = 2
-/** 被吸底条盖住超过这个比例 → 进 ⚠ 参考项（不红：这是产品取舍，不是回归） */
-const TILE_COVER_ADVISORY = 0.2
 
 /* ── 0b. 自检：判据必须能被打红（AGENTS.md：每条守卫都要能证明自己会失败） ──
  * 做法与仓内其它守卫一致：**改真源码 → 必须检出 → 还原**（不是改镜像数据，否则证明不了
- * 判据读的是真源码）。注入都打在页面 WXSS 末尾，用 !important 覆盖：
- *   ① hero-tall        把 banner 撑到 420px   → 必须触发"占首屏超上限"
- *   ② plays-below-fold 把弹幕墙撑到 820px     → 必须触发"首屏内可见瓦片不足"
+ * 判据读的是真源码）。注入都打在页面 WXSS 末尾，用 !important 覆盖。
  * 判定要求**错误信息命中预期关键词**（不是"非 0 就算过"）：Chrome 崩溃也会非 0，
  * 那种"自检通过"是假的。
  */
 if (has('--selftest')) {
   const INJECTS = [
-    { name: 'hero-tall', css: '\n.ww-hero { height: 420px !important; }\n', expect: '横幅 hero 占首屏' },
-    { name: 'plays-below-fold', css: '\n.ww-wall { height: 820px !important; }\n', expect: '首屏内看得到的瓦片' }
+    { name: 'hero-tall', css: '\n.ww-hero { height: 420px !important; }\n', expect: '牌匾占首屏' },
+    { name: 'wall-inflated', css: '\n.ww-wall { height: 900px !important; }\n', expect: '首屏内看得到的玩法瓦片' },
+    { name: 'inspo-detached', css: '\n.ww-inspo { margin-top: 900px !important; }\n', expect: '灵感词与发送条不在同一屏' }
   ]
   const original = readFileSync(PAGE_WXSS, 'utf8')
   let ok = true
@@ -122,156 +132,158 @@ const vars = [...toCssEarly(pageVarBlock).matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+)
   .map((m) => `  ${m[1]}: ${m[2].trim()};`)
   .join('\n')
 
-// 页面 wxss 里除了 page{} 之外的规则（含 @keyframes）
 const pageCss = toCssEarly(readFileSync(PAGE_WXSS, 'utf8').replace(/^page\s*\{[\s\S]*?\}/m, ''))
-// signal-light 等全局小件：从**已去注释**的 app.wxss 里挑（这时正则不会落在注释里）
-const globalBits = (appCss.match(/\.signal-light[^{]*\{[^}]*\}/g) || []).join('\n')
-// 页面 wxss 里的 `page { … }` 也要保留（背景色等）；已由 appCss 提供背景，这里不重复
+// signal-light / button 复位等全局小件：从**已去注释**的 app.wxss 里挑（这时正则不会落在注释里）
+const globalBits = [
+  ...(appCss.match(/\.signal-light[^{]*\{[^}]*\}/g) || []),
+  ...(appCss.match(/(^|\n)\s*button[^{,]*\{[^}]*\}/g) || [])
+].join('\n')
 
-/* ── 2. 结构：按真实 WXML 的类名与文案镜像（@see index.wxml） ─────────────── */
-const PLAYS = [
-  { mark: '签', name: '今日一签', hint: '摇一支，看今天宜做什么' },
-  { mark: '饼', name: '拆签饼', hint: '拆开今天的签饼' },
-  { mark: '座', name: '星座签', hint: '按你的星座给一句' },
-  { mark: '我', name: 'MBTI 贴士', hint: '顺着你的性子来一句' }
+/* ── 2. 样例数据：模拟 Page 的 data（结构必须与 index.js 的 data 对齐） ────
+ * 为什么数据可以手写、结构不能手抄：结构漂移会**静默画出假页面**（见文件头）；
+ * 数据漂移只会让预览里少一个字段，而 `assertSampleCovers` 会把缺失的字段名直接报出来。 */
+const AVATAR = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+const WISHES = [
+  { _id: 'w1', text: '马上有人念', nickname: '蛋炒饭', avatar: AVATAR, timeText: '2 天前', pinned: true },
+  { _id: 'w2', text: '马上有热汤', nickname: '令狐冲大哥', avatar: AVATAR, timeText: '1 天前', isMine: true },
+  { _id: 'w3', text: '马上有胃口', nickname: '令狐冲大哥', avatar: AVATAR, timeText: '1 天前', isMine: true },
+  { _id: 'w4', text: '马上有胃口', nickname: '令狐冲大哥', avatar: AVATAR, timeText: '1 天前', isMine: true },
+  { _id: 'w5', text: '马上有胆', nickname: '令狐冲大哥', avatar: AVATAR, timeText: '1 天前', isMine: true },
+  { _id: 'w6', text: '马上有 Offer', nickname: '令狐冲大哥', avatar: AVATAR, timeText: '1 天前', isMine: true }
+]
+const DANMAKU = [
+  { key: 'd1', id: 'd1', text: '马上有人念', tone: 0, topPercent: 8, durationMs: 12000, delayMs: 0 },
+  { key: 'd2', id: 'd2', text: '马上有好事', tone: 1, topPercent: 23.2, durationMs: 12000, delayMs: 900 },
+  { key: 'd3', id: 'd3', text: '马上有归处', tone: 2, topPercent: 38.4, durationMs: 12000, delayMs: 1800 },
+  { key: 'd4', id: 'd4', text: '马上有花看', tone: 3, topPercent: 53.6, durationMs: 12000, delayMs: 2700 },
+  { key: 'd5', id: 'd5', text: '马上有信', tone: 4, topPercent: 68.8, durationMs: 12000, delayMs: 3600 },
+  { key: 'd6', id: 'd6', text: '马上有下一程', tone: 5, topPercent: 84, durationMs: 12000, delayMs: 4500 }
 ]
 
-const head = `
-<view class="ww-page">
-  <view class="ww-hero">
-    <view class="ww-hero-body">
-      <view class="ww-hero-top"><text class="ww-over">WISH WALL · 马上有愿</text></view>
-      <text class="ww-brand">山海造物</text>
-      <text class="ww-title">祈福墙</text>
-      <view class="ww-scope-row"><text class="ww-scope">孔雀标本</text><text class="ww-bless">偏「求成」</text></view>
-      <text class="ww-hint">把想成真的心愿挂上墙。轻一点写，短一点说。</text>
-    </view>
-  </view>
-  <view class="ww-wall is-echo">
-    <view class="ww-wall-inner">
-      <view class="ww-wall-rail rail-1"></view><view class="ww-wall-rail rail-2"></view>
-      <view class="ww-wall-rail rail-3"></view><view class="ww-wall-rail rail-4"></view>
-      <view class="ww-wall-rail rail-5"></view><view class="ww-wall-rail rail-6"></view>
-      <view class="ww-danmaku ww-tone-0" style="top:8%; left:62%; animation:none"><text class="ww-dm-text">马上有人念</text></view>
-      <view class="ww-danmaku ww-tone-1" style="top:23.2%; left:74%; animation:none"><text class="ww-dm-text">马上有好事</text></view>
-      <view class="ww-danmaku ww-tone-2" style="top:38.4%; left:56%; animation:none"><text class="ww-dm-text">马上有归处</text></view>
-      <view class="ww-danmaku ww-tone-3" style="top:53.6%; left:68%; animation:none"><text class="ww-dm-text">马上有花看</text></view>
-      <view class="ww-danmaku ww-tone-4" style="top:68.8%; left:60%; animation:none"><text class="ww-dm-text">马上有信</text></view>
-      <view class="ww-danmaku ww-tone-5" style="top:84%; left:72%; animation:none"><text class="ww-dm-text">马上有下一程</text></view>
-    </view>
-    <view class="ww-wall-foot">
-      <view class="signal-light lamp-brass"></view>
-      <text class="ww-wall-foot-text">26 条心愿正在墙上流动</text>
-      <text class="ww-wall-foot-more">看全部 ›</text>
-    </view>
-    <view class="ww-echo">
-      <view class="signal-light lamp-brass"></view>
-      <text class="ww-echo-text">我敲了一下木鱼</text>
-      <text class="ww-echo-sub">功德 19</text>
-    </view>
-  </view>
-  <view class="ww-ritual-row">
-    <view class="ww-lantern is-lit">
-      <view class="ww-lantern-box"><view class="ww-lantern-core"></view></view>
-      <view class="ww-lantern-copy">
-        <text class="ww-lantern-title">今日灯已点</text>
-        <view class="ww-lantern-meta">
-          <text class="ww-lantern-tier">初见</text>
-          <text class="ww-lantern-next">距秋分 5 天</text>
-        </view>
-      </view>
-      <view class="ww-lantern-tail">
-        <text class="ww-lantern-line">灯亮着，心愿就还没说完。</text>
-        <text class="ww-lantern-note">今天来过，记下了。</text>
-      </view>
-    </view>
-    <view class="ww-ritual-card">
-      <view class="ww-muyu"></view>
-      <view class="ww-muyu-copy">
-        <text class="ww-muyu-title">安心木鱼</text>
-        <text class="ww-muyu-line">敲一下，静一分</text>
-        <text class="ww-muyu-count">功德 19</text>
-      </view>
-      <text class="ww-muyu-plus">+1</text>
-    </view>
-  </view>
-  <view class="ww-foot-row">
-    <text class="ww-foot-note">点一盏灯、敲一下木鱼，心愿挂上墙就会一直流动。</text>
-    <view class="ww-sound is-on">音效 开</view>
-  </view>`
+function baseData() {
+  return {
+    flagChecked: true,
+    allowed: true,
+    loading: false,
+    loadError: '',
+    gateError: false,
+    rows: DANMAKU,
+    echoRows: [],
+    items: WISHES,
+    tagColumns: [[WISHES[0], WISHES[2], WISHES[4]], [WISHES[1], WISHES[3], WISHES[5]]],
+    tagCapped: true,
+    wallCount: WISHES.length,
+    freshId: '',
+    viewMode: 'wall',
+    mine: { total: 8 },
+    productId: 'p-peacock',
+    productTitle: '孔雀标本',
+    blessLabelText: '求成',
+    // 未点灯（与产品负责人 2026-09-20 真机截图一致）
+    lamp: {
+      lit: false, label: '', solar: null, solarNext: { name: '秋分', inDays: 3 },
+      streak: 0, lampDots: [], line: '', tierNote: ''
+    },
+    heartBurst: false,
+    muyuBeat: false,
+    muyuCount: 36,
+    muyuPlus: false,
+    certEntry: null,
+    soundOn: true,
+    plays: [
+      { id: 'qian', mark: '签', name: '今日一签', hint: '摇一支，看今天宜做什么' },
+      { id: 'cookie', mark: '饼', name: '拆签饼', hint: '拆开今天的签饼' },
+      { id: 'zodiac', mark: '座', name: '星座签', hint: '按你的星座给一句' },
+      { id: 'mbti', mark: '我', name: 'MBTI 贴士', hint: '顺着你的性子来一句' }
+    ],
+    playResult: null,
+    playNeed: null,
+    sheetDragY: 0,
+    inspiration: ['马上有风', '马上有暖', '马上有眠', '马上有劲'],
+    quota: { cap: 5, left: 5, exhausted: false, unknown: false },
+    myHidden: 0,
+    draft: '',
+    textMax: 30,
+    inputFocus: false,
+    posting: false,
+    relics: { total: 12, found: 3 },
+    card: null,
+    justRegistered: false,
+    reco: null,
+    showRegisterDialog: false,
+    showRitualDialog: false,
+    showCertDialog: false,
+    ritualGateDesc: '',
+    certGateDesc: '',
+    certNote: '',
+    certCard: null,
+    toastShow: false,
+    toastOverline: '',
+    toastTitle: '',
+    toastDesc: '',
+    toastDuration: 2000
+  }
+}
 
-const playsBlock = `
-  <view class="ww-plays">
-    <view class="ww-plays-head">
-      <text class="ww-plays-title">今天的玩法</text>
-      <text class="ww-plays-sub">抽一句，顺手写下来</text>
-    </view>
-    <view class="ww-play-grid">
-      ${PLAYS.map((p, i) => `<view class="ww-play${i === 0 ? ' is-open' : ''}">
-        <view class="ww-play-mark">${p.mark}</view>
-        <view class="ww-play-copy"><text class="ww-play-name">${p.name}</text><text class="ww-play-hint">${p.hint}</text></view>
-      </view>`).join('\n      ')}
-    </view>
-    <view class="ww-play-need">
-      <text class="ww-play-need-text">这个玩法要用到你的「MBTI」，资料页填一下就好（完善奖励 +8）。</text>
-      <view class="ww-play-need-cta">去填MBTI</view>
-    </view>
-  </view>
-  <view class="ww-composer">
-      <input class="ww-input" placeholder="例如：马上有闲，马上有缘" />
-      <view class="ww-send">挂上墙</view>
-    </view>`
+const SCENE_PATCH = {
+  full: {},
+  lit: {
+    lamp: {
+      lit: true, label: '初见', solar: null, solarNext: { name: '秋分', inDays: 3 },
+      streak: 3, lampDots: [1, 1, 1], line: '灯亮着，心愿就还没说完。', tierNote: '今天来过，记下了。'
+    },
+    certEntry: { tag: '功德 108 · 已达里程', action: '领证 ›', mode: 'claim' },
+    echoRows: [{ key: 'e1', text: '我敲了一下木鱼', sub: '功德 36' }]
+  },
+  sheet: {
+    playResult: {
+      id: 'daily', mark: '签', overline: '今日一签', name: '今日一签',
+      title: '宜 开口', sub: '忌 憋着',
+      lines: ['想要什么就说出来，说出口才有回音。'], wish: '马上有回应'
+    },
+    reco: { label: '偏「求学」· 为你配一件', title: '潮汐书页', latinName: 'Haliotis iris', priceText: '¥78' }
+  },
+  loading: { loading: true, rows: [], items: [], tagColumns: [[], []], mine: { total: 0 }, relics: { total: 0, found: 0 } },
+  error: {
+    loading: false, loadError: '网络开小差了，墙面没能展开', rows: [], items: [], tagColumns: [[], []],
+    mine: { total: 0 }, relics: { total: 0, found: 0 }
+  },
+  closed: { flagChecked: true, allowed: false }
+}
 
-const sheetBlock = `
-    <div class="ww-sheet-mask"></div>
-    <div class="ww-sheet">
-      <div class="ww-sheet-grip"><div class="ww-sheet-grip-bar"></div></div>
-      <div class="ww-sheet-head">
-        <div class="ww-sheet-mark">签</div>
-        <div class="ww-sheet-head-copy"><span class="ww-sheet-overline">今日一签</span><span class="ww-sheet-name">今日一签</span></div>
-        <span class="ww-sheet-close">收起</span>
-      </div>
-      <div class="ww-sheet-body">
-        <span class="ww-sheet-title">宜 开口</span>
-        <span class="ww-sheet-sub">忌 憋着</span>
-        <span class="ww-sheet-line" style="animation:none;opacity:1">想要什么就说出来，说出口才有回音。</span>
-      </div>
-      <div class="ww-sheet-cta-row"><div class="ww-sheet-cta">写成心愿</div></div>
-      <div class="ww-sheet-product">
-        <div class="ww-sheet-product-copy">
-          <span class="ww-sheet-product-label">偏「求学」· 为你配一件</span>
-          <span class="ww-sheet-product-title">潮汐书页</span>
-          <span class="ww-sheet-product-meta">Haliotis iris · ¥78</span>
-        </div>
-        <span class="ww-sheet-product-go">看看这件 ›</span>
-      </div>
-      <span class="ww-sheet-note">今日这一句一天一支，明天会换新的。</span>
-    </div>`
+/** 样例数据必须覆盖 WXML 里引用到的**每一个根标识符**，否则预览会静默少画一块 */
+function assertSampleCovers(wxml, data) {
+  const idents = new Set()
+  for (const m of wxml.matchAll(/\{\{([\s\S]*?)\}\}/g)) {
+    const stripped = m[1].replace(/'[^']*'/g, "''").replace(/"[^"]*"/g, '""')
+    for (const t of stripped.matchAll(/(^|[^.\w$])([A-Za-z_$][\w$]*)/g)) {
+      if (['true', 'false', 'null', 'undefined', 'item', 'index', 'col', 'ci'].includes(t[2])) continue
+      idents.add(t[2])
+    }
+  }
+  const missing = [...idents].filter((k) => !(k in data))
+  if (missing.length) {
+    console.error(`✗ 样例数据缺字段：${missing.join(', ')} —— 预览会少画内容，先去补 baseData()`)
+    process.exit(1)
+  }
+}
 
-const writeBlock = `
-  <view class="ww-write">
-    <view class="ww-inspo">
-      <text class="ww-inspo-label">灵感</text>
-      <view class="ww-inspo-row">
-        <view class="ww-inspo-chip">马上有闲</view>
-        <view class="ww-inspo-chip">马上有余地</view>
-        <view class="ww-inspo-chip">马上有底气</view>
-        <view class="ww-inspo-chip">马上有缘</view>
-      </view>
-    </view>
-  
-    <view class="ww-write-foot">
-      <text class="ww-quota">今日还可写 5 条</text>
-      <text class="ww-count">0/30</text>
-    </view>
-  </view>
-</view>`
+const data = Object.assign(baseData(), SCENE_PATCH[SCENE])
+const wxmlSrc = readFileSync(PAGE_WXML, 'utf8')
+assertSampleCovers(wxmlSrc, data)
 
-const markup = SCENE === 'plays'
-  ? `<view class="ww-page">${playsBlock}${sheetBlock}</view>`
-  : `${head}${playsBlock}${writeBlock}`
+// 弹幕是**动画态**：截图里必须把它们摆进画面（否则全停在屏外，墙看着是空的）。
+// ⚠️ 这一步只改**渲染产物**的定位，不改任何被量的几何（墙高是 CSS 定的）。
+const spreadDanmaku = (html) => {
+  let i = -1
+  return html.replace(/(class="ww-danmaku[^"]*"[^>]*style=")([^"]*)"/g, (_, head, style) => {
+    i += 1
+    return `${head}${style} left:${10 + ((i * 23) % 48)}%; animation:none;"`
+  })
+}
+const markup = renderWxml(wxmlSrc, data, { rewrite: spreadDanmaku })
 
-/* ── 3. 组装 HTML（WXML 标签 → HTML 标签，否则 <view> 是未知元素会塌成一列） ── */
+/* ── 3. 组装 HTML（WXSS 里只有类选择器，所以 <view> → <div> 就够了） ─────── */
 const html = `<!doctype html>
 <html><head><meta charset="utf-8"><style>
 :root {
@@ -281,12 +293,21 @@ html, body { margin: 0; padding: 0; }
 body { background: var(--color-bg, #14120F); }
 page, .page-root { display: block; }
 .ww-page { display: block; }
+img { display: block; object-fit: cover; }
+button { border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; line-height: inherit; }
 ${globalBits}
 ${pageCss}
-/* 预览专用：截图时不做动画（否则量到的是动画中间态） */
-* { animation: none !important; }
+/* 真机 placeholder 走 placeholder-class，HTML 没有这个概念 —— 把那条规则搬到 ::placeholder 上 */
+${(pageCss.match(/\.ww-input-ph\s*\{[^}]*\}/) || [''])[0].replace('.ww-input-ph', '.ww-input::placeholder')}
+/* 预览专用：截图与量测都不做动画（否则量到的是动画中间态）。
+   ⚠️ 副作用：靠 animation-fill-mode: forwards 从 opacity:0 入场的元素会**停在 0**（看不见）——
+   弹层的签文就是这种（.ww-sheet-line）。这里补一句静态终态，让截图与真机「动画播完」一致。
+   ⚠️ 这一段是**注入到页面里的字符串**：注释里不许出现反引号（会把外层模板字符串截断，实测报
+   "Unexpected identifier"），一律用「」。 */
+* { animation: none !important; transition: none !important; }
+.ww-sheet-line { opacity: 1 !important; }
 </style></head>
-<body>${markup.replace(/<view/g, '<div').replace(/<\/view>/g, '</div>').replace(/<text/g, '<span').replace(/<\/text>/g, '</span>')}</body></html>`
+<body>${markup}</body></html>`
 
 /* ── 4. 无头 Chrome：一次 --dump-dom 量几何，一次 --screenshot 出图 ────────
    为什么不用仓库里的 CDP 驱动（admin/scripts/lib/cdp.mjs）：本沙箱里 CDP 的 WebSocket
@@ -307,10 +328,49 @@ if (!chromePath) {
   process.exit(1)
 }
 
+/* 量的清单：[标签, 选择器, 行数上限?, 模式?]
+ *   mode 'same-row' = 子元素必须同一行；mode 'lines' = 按行数上限判 */
+const METRICS = [
+  ['页面容器 .ww-page', '.ww-page'],
+  ['牌匾 .ww-hero', '.ww-hero'],
+  ['牌匾标题', '.ww-title', 1],
+  ['墙+牌匾 .ww-wall', '.ww-wall'],
+  ['墙页脚', '.ww-wall-foot', 0, 'same-row'],
+  ['发送条 .ww-composer', '.ww-composer'],
+  ['输入框 .ww-input', '.ww-input'],
+  ['挂上墙按钮 .ww-send', '.ww-send', 1],
+  ['点灯卡 .ww-lantern', '.ww-lantern'],
+  ['点灯卡标题', '.ww-lantern-title', 1],
+  ['木鱼卡 .ww-ritual-card', '.ww-ritual-card'],
+  ['仪式区区头 .ww-sec-head', '.ww-sec-head', 1, 'same-row'],
+  ['写愿助手 .ww-wishassist', '.ww-wishassist'],
+  ['玩法区 .ww-plays', '.ww-plays'],
+  ['玩法区标题行', '.ww-plays-head', 1, 'same-row'],
+  ['瓦片1', '.ww-play:nth-child(1)'],
+  ['瓦片2', '.ww-play:nth-child(2)'],
+  ['瓦片3', '.ww-play:nth-child(3)'],
+  ['瓦片4', '.ww-play:nth-child(4)'],
+  ['瓦片1 名字', '.ww-play:nth-child(1) .ww-play-name', 1],
+  ['瓦片1 字标', '.ww-play:nth-child(1) .ww-play-mark', 1],
+  ['瓦片4 副文案', '.ww-play:nth-child(4) .ww-play-hint', 1],
+  ['灵感行 .ww-inspo-row', '.ww-inspo-row'],
+  ['灵感 chip1', '.ww-inspo-chip:nth-child(1)', 1],
+  ['额度行 .ww-write-foot', '.ww-write-foot', 1, 'same-row'],
+  ['额度文字', '.ww-quota', 1],
+  ['字数 .ww-count', '.ww-count', 1],
+  ['分段控件 .ww-seg', '.ww-seg', 1, 'same-row'],
+  ['愿签两列 .ww-tag-cols', '.ww-tag-cols'],
+  ['愿签卡（首张）', '.ww-tag-col:nth-child(1) .ww-tag:nth-child(1)'],
+  ['愿签正文', '.ww-tag-text'],
+  ['愿签 meta', '.ww-tag-meta', 1],
+  ['博物笔记 .ww-relics', '.ww-relics', 1, 'same-row']
+]
+
 /** 量几何的脚本：结果写进 <pre id="wall-metrics">，靠 --dump-dom 取回 */
 const MEASURE_JS = `
 <script>
 const __SCENE__ = ${JSON.stringify(SCENE)};
+const __METRICS__ = ${JSON.stringify(METRICS)};
 window.addEventListener('load', () => {
   const out = []
   const rect = (el) => { const r = el.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) } }
@@ -324,7 +384,9 @@ window.addEventListener('load', () => {
     const bottom = Math.min(...kids.map((k) => k.getBoundingClientRect().bottom))
     return bottom - top > 1
   }
-  const push = (label, sel, maxLines, mode, adv) => {
+  const idxOf = new Map()
+  Array.from(document.querySelectorAll('*')).forEach((el, i) => idxOf.set(el, i))
+  const push = (label, sel, maxLines, mode) => {
     const el = document.querySelector(sel)
     if (!el) { out.push({ label, missing: true, sel }); return }
     const cs = getComputedStyle(el)
@@ -337,79 +399,43 @@ window.addEventListener('load', () => {
       overflowX: cs.overflowX !== 'hidden' && el.scrollWidth > el.clientWidth + 1,
       maxLines: maxLines || 0,
       mode: mode || 'lines',
-      advisory: !!adv,
       sameRow: kidsSameRow(el),
       padL: cs.paddingLeft,
-      text: (el.textContent || '').trim().slice(0, 26)
+      docIndex: idxOf.get(el) || 0,
+      text: (el.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 24)
     }))
   }
-  const FULL = __SCENE__ === 'full'
-  // 视口单独量：新增的两条判据（banner 占屏高、玩法区一屏内可见）都以它为分母/底边，
-  // 写死 1334 会在换视口时静默算错 —— 判据的来源必须自己也是量出来的。
+  // 视口单独量：判据的分母/底边都以它为源，写死 1334 会在换视口时静默算错
   out.push({ label: '视口', sel: ':window', x: 0, y: 0, w: innerWidth, h: innerHeight, lines: 0, text: innerWidth + '×' + innerHeight })
-  push('首屏总高', 'body')
-  push('页面容器 .ww-page', '.ww-page')
-  if (FULL) {
-  push('横幅 hero', '.ww-hero')
-  push('页头祈运 chip', '.ww-bless', 1)
-  push('弹幕墙', '.ww-wall')
-  push('墙页脚', '.ww-wall-foot')
-  push('即时回声条', '.ww-echo')
-  push('灯卡', '.ww-lantern')
-  push('灯卡标题', '.ww-lantern-title', 1)
-  push('灯卡徽章行', '.ww-lantern-meta', 1, 'same-row')
-  push('灯卡灯语', '.ww-lantern-line', 1)
-  push('木鱼卡', '.ww-ritual-card')
-  }
-  push('玩法区', '.ww-plays')
-  // 瓦片容器（不是只量名字行）：判据问的是"首屏里看得到几枚瓦片"，只量一行名字会漏掉
-  // "名字在屏内、瓦片底边被吸底条压住"这种半可见状态 —— 而它正是这一页的真实版式风险。
-  // ⚠️ 这一段是**注入到页面里的字符串**：不能用反引号模板（会截断外层模板字符串），一律字符串拼接
-  for (let i = 1; i <= 4; i += 1) push('瓦片' + i + '容器', '.ww-play:nth-child(' + i + ')')
-  push('瓦片1 今日一签', '.ww-play:nth-child(1) .ww-play-name', 1)
-  push('瓦片2 拆签饼', '.ww-play:nth-child(2) .ww-play-name', 1)
-  push('瓦片3 星座签', '.ww-play:nth-child(3) .ww-play-name', 1)
-  push('瓦片4 MBTI', '.ww-play:nth-child(4) .ww-play-name', 1)
-  push('瓦片4 副文案', '.ww-play:nth-child(4) .ww-play-hint')
-  // 纸签弹层只在 plays 场景渲染（full 场景里它与吸底发送条都 fixed 在底部，同屏量测会互相压）
-  if (__SCENE__ === 'plays') {
-  push('纸签弹层', '.ww-sheet')
-  push('弹层签文', '.ww-sheet-title', 1)
-  push('弹层正文', '.ww-sheet-line', 2)
+  const br = document.body.getBoundingClientRect()
+  out.push({ label: '整页 body', sel: 'body', x: 0, y: 0, w: Math.round(br.width), h: Math.round(br.height),
+    lines: 0, maxLines: 0, mode: 'lines', scrollW: document.body.scrollWidth, clientW: document.body.clientWidth,
+    overflowX: false, clips: false, sameRow: true, padL: '0px', docIndex: 0, text: '' })
+  __METRICS__.forEach((m) => push(m[0], m[1], m[2], m[3]))
 
-  push('CTA 写成心愿', '.ww-sheet-cta', 1)
-  push('产品路径（唯一条）', '.ww-sheet-product')
-  push('产品名', '.ww-sheet-product-title', 1)
-
+  // ── DOM 相对顺序（产品口径：发送条必须紧贴弹幕墙正下方、在仪式区之前） ──
+  const order = (sel) => { const el = document.querySelector(sel); return el ? (idxOf.get(el) || 0) : -1 }
+  const oWall = order('.ww-wall'), oComposer = order('.ww-composer'), oRitual = order('.ww-ritual-row')
+  out.push({ label: 'DOM 顺序', sel: ':order', mode: 'order', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+    orderWall: oWall, orderComposer: oComposer, orderRitual: oRitual,
+    text: '墙 ' + oWall + ' < 发送条 ' + oComposer + ' < 仪式区 ' + oRitual })
+  // ── 同屏距离（灵感词离输入框多远：远了就是"点完看不到输入框"） ──
+  const el = (s) => document.querySelector(s)
+  if (el('.ww-composer') && el('.ww-inspo-row')) {
+    const c = el('.ww-composer').getBoundingClientRect(), i = el('.ww-inspo-row').getBoundingClientRect()
+    const d = Math.round(i.top - c.bottom)
+    out.push({ label: '灵感行距发送条', sel: ':gap', mode: 'gap', lines: 0, maxLines: 0, x: Math.round(i.top), y: d, w: 0, h: 0,
+      text: '相隔 ' + d + 'px · 灵感顶边 y' + Math.round(i.top) })
   }
-  push('补资料引导', '.ww-play-need')
-  if (FULL) {
-  push('发送条（吸底）', '.ww-composer')
-  push('输入框', '.ww-input')
-  push('挂上墙按钮', '.ww-send', 1)
-  // ⚠️ 参考项：预览用的是系统字体（仓里没有 ShanhaiHand 字体文件，真机由环境提供），
-  // 字宽与真机有偏差 —— 它折行不代表真机折行（真机截图确认过四个灵感 chip 在同一行）
-  push('灵感行', '.ww-inspo-row', 0, 'same-row', true)
-  }
-  // 吸底条不变量：position fixed + 页面底部预留 ≥ 条高（否则最后一张愿签被盖住）
-  const composerEl = document.querySelector('.ww-composer')
-  const pageEl = document.querySelector('.ww-page')
-  if (composerEl && pageEl) {
-    const cs = getComputedStyle(composerEl)
-    const pageCs = getComputedStyle(pageEl)
-    out.push(Object.assign(rect(composerEl), {
-      label: '吸底条自身',
-      sel: '.ww-composer',
-      fixed: cs.position === 'fixed',
-      barH: Math.round(composerEl.getBoundingClientRect().height),
-      reservedBottom: Math.round(parseFloat(pageCs.paddingBottom) || 0),
-      lines: 0,
-      maxLines: 0,
-      mode: 'sticky-bar',
-      // ⚠️ 这里是**注入到页面里的字符串**：不能再用反引号模板（会把外层模板字符串截断 —— 报错就是这个）
-      text: '预留 ' + Math.round(parseFloat(getComputedStyle(pageEl).paddingBottom) || 0) + 'px'
-    }))
-  }
+  // ── 首屏可见清单（不是判据，是给人看的"第一屏到底有什么"） ──
+  const vh = innerHeight
+  const fold = ['.ww-hero', '.ww-wall', '.ww-composer', '.ww-lantern', '.ww-plays', '.ww-inspo-row', '.ww-seg']
+  out.push({ label: '首屏可见', sel: ':fold', mode: 'fold', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+    text: fold.filter((s) => { const e2 = el(s); return e2 && e2.getBoundingClientRect().top < vh }).join(' / ') })
+  // ── 否定判据：次瓦片**不许**有字标（四枚都加 = 没有层级，等于没加）
+  const minorMark = document.querySelector('.ww-play.is-minor .ww-play-mark')
+  out.push({ label: '次瓦片无字标', sel: ':absent', mode: 'absent', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+    absent: !minorMark, text: minorMark ? '次瓦片上出现了字标（不该有）' : '未出现（对）' })
   const pre = document.createElement('pre')
   pre.id = 'wall-metrics'
   pre.textContent = JSON.stringify(out)
@@ -449,70 +475,65 @@ if (!m) {
   process.exit(1)
 }
 const metrics = JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'))
+const byLabel = (l) => metrics.find((x) => x.label === l)
+
+/* ── 5. 判据 ────────────────────────────────────────────────────────────── */
 const problems = []
 const advisories = []
 metrics.forEach((row) => {
-  if (row.missing) problems.push(`${row.label}：选择器 ${row.sel} 没渲染出来`)
-  else {
-    if (row.overflowX) problems.push(`${row.label}：横向溢出（scrollW ${row.scrollW} > clientW ${row.clientW}）`)
-    if (row.mode === 'sticky-bar') {
-      if (!row.fixed) problems.push('发送条没有吸底（position 不是 fixed）')
-      if (row.reservedBottom < row.barH) {
-        problems.push(`页面底部预留 ${row.reservedBottom}px < 吸底条 ${row.barH}px（最后一张愿签会被盖住）`)
-      }
-    } else if (row.mode === 'same-row') {
-      if (!row.sameRow) (row.advisory ? advisories : problems).push(`${row.label}：子元素折行了（本该同一行）${row.advisory ? '〔参考项：字体差异〕' : ''}`)
-    } else if (row.maxLines && row.lines > row.maxLines) {
-      problems.push(`${row.label}：折成 ${row.lines} 行（上限 ${row.maxLines}）`)
-    }
-    if (row.label === '页面容器 .ww-page' && row.padL === '0px') {
-      problems.push('页面容器 .ww-page 没有左右内边距（token 没生效 —— 会连带所有卡片量成满宽）')
-    }
+  // 「没渲染出来」只在**整页都该在的场景**里算问题：closed / loading / error 三个场景
+  // 本来就会合法地缺掉发送条、灯卡、愿签列（页面先画骨架，或干脆不画内容）。
+  if (row.missing) {
+    if (['full', 'lit', 'sheet'].includes(SCENE)) problems.push(`${row.label}：选择器 ${row.sel} 没渲染出来`)
+    return
+  }
+  if (row.overflowX) problems.push(`${row.label}：横向溢出（scrollW ${row.scrollW} > clientW ${row.clientW}）`)
+  if (row.mode === 'same-row' && !row.sameRow) problems.push(`${row.label}：子元素折行了（本该同一行）`)
+  if (row.mode === 'absent' && !row.absent) problems.push(`${row.label}：${row.text}`)
+  if (row.mode === 'lines' && row.maxLines && row.lines > row.maxLines) {
+    problems.push(`${row.label}：折成 ${row.lines} 行（上限 ${row.maxLines}）`)
+  }
+  if (row.label === '页面容器 .ww-page' && row.padL === '0px') {
+    problems.push('页面容器 .ww-page 没有左右内边距（token 没生效 —— 会连带所有卡片量成满宽）')
   }
 })
 
-/* ── ①b. 需求 7 §3 的两条"位置 / 大小"判据 ───────────────────────────────
- * 为什么必须单独判：前面那批判据管的是"每个元素自己有没有坏"（溢出 / 折行），
- * 而需求 7 的正题是**它们合起来把谁挤到哪去了** —— 元素全都没坏，玩法区照样能被顶出第一屏。
- * 判据写死成数字才可验收；数字全部来自本次实量（分母是量到的视口高，不是常量）。 */
+// ①b. 结构判据
 {
-  const byLabel = (l) => metrics.find((x) => x.label === l)
   const vp = byLabel('视口')
   if (!vp || !vp.h) {
     // 判据的输入没量到 = 判据失效。这里必须红（否则工具"看着通过"其实是假通过，本工具已栽过一次）。
-    problems.push('没量到视口尺寸（banner 占屏比 / 一屏可见数两条判据无法成立 = 假通过）')
-  } else {
-    const hero = byLabel('横幅 hero')
+    problems.push('没量到视口尺寸（占屏比 / 一屏可见数两条判据无法成立 = 假通过）')
+  } else if (SCENE === 'full' || SCENE === 'lit') {
+    const hero = byLabel('牌匾 .ww-hero')
     if (hero && !hero.missing) {
       const share = hero.h / vp.h
       if (share > HERO_MAX_SHARE) {
-        problems.push(
-          `横幅 hero 占首屏 ${(share * 100).toFixed(1)}% > 上限 ${(HERO_MAX_SHARE * 100).toFixed(0)}%（${hero.h}/${vp.h}px）—— banner 一胖，弹幕墙与玩法区就被顶出第一屏`
-        )
+        problems.push(`牌匾占首屏 ${(share * 100).toFixed(1)}% > 上限 ${(HERO_MAX_SHARE * 100).toFixed(0)}%（${hero.h}/${vp.h}px）—— 牌匾一胖，弹幕墙与玩法区就被顶出第一屏`)
       }
     }
-    if (SCENE === 'full') {
-      // 吸底条盖住的区域不算"看得到"：它常年压在页面底部，被它压住的瓦片用户先看到的是输入框。
-      const composer = byLabel('吸底条自身')
-      const coverH = composer && composer.fixed ? composer.barH : 0
-      const foldBottom = vp.h - coverH
-      const tiles = [1, 2, 3, 4].map((i) => byLabel(`瓦片${i}容器`)).filter((t) => t && !t.missing)
-      const seen = tiles.filter((t) => t.y >= 0 && t.y < foldBottom)
-      if (tiles.length === 4 && seen.length < FOLD_MIN_TILES) {
-        problems.push(
-          `玩法区首屏内看得到的瓦片 ${seen.length} 个 < ${FOLD_MIN_TILES} 个（首屏可用底边 ${foldBottom}px，四枚瓦片 top ${tiles.map((t) => t.y).join('/')}）—— 首屏看不到玩法 = 需求 7 的"位置大小"没做到`
-        )
-      }
-      // ⚠ 参考项（不红）：半遮挡本身是产品取舍（吸底条是产品点过头的），但数字要留痕 ——
-      // 真机上"要不要把玩法区再往上挪 / 吸底条要不要矮一点"由产品看图定。
-      // 只报"首屏内确实露头、但被吸底条压掉一截"的瓦片；整枚在首屏之下的不在此列（那是上面那条判据的事）。
-      tiles.forEach((t, i) => {
-        if (t.y >= foldBottom) return
-        const overlap = t.y + t.h > foldBottom ? Math.min(t.y + t.h, vp.h) - foldBottom : 0
-        if (overlap / t.h > TILE_COVER_ADVISORY) {
-          advisories.push(`瓦片${i + 1} 在首屏内露出但被吸底条压掉 ${overlap}px / ${t.h}px（${Math.round((overlap / t.h) * 100)}%）—— 滚一下即完整，是否上移由产品定`)
-        }
-      })
+    // 顺序：弹幕墙 < 发送条 < 仪式区（产品口径 2026-09-20：写愿是主交互，紧贴墙下）
+    const ord = byLabel('DOM 顺序')
+    if (ord && !(ord.orderWall < ord.orderComposer && ord.orderComposer < ord.orderRitual)) {
+      problems.push(`发送条不在「弹幕墙正下方、仪式区之前」（DOM 序号 墙 ${ord.orderWall} / 发送条 ${ord.orderComposer} / 仪式区 ${ord.orderRitual}）`)
+    }
+    // 灵感词必须与发送条**同一屏**：点一下就要能看到输入框（否则"点了没反应"）。
+    // ⚠️ 判据是"灵感顶边在首屏之内"，不是"相隔 < 一屏高"——后者在发送条位于 y670、
+    // 灵感位于 y1342 时仍然通过（相隔 586 < 1191），而那恰恰就是要修的那个毛病。
+    const gap = byLabel('灵感行距发送条')
+    if (gap && gap.x >= vp.h) {
+      problems.push(`灵感词与发送条不在同一屏（灵感顶边 y${gap.x} ≥ 屏高 ${vp.h}）—— 点灵感后看不到输入框`)
+    }
+    const tiles = [1, 2, 3, 4].map((i) => byLabel(`瓦片${i}`)).filter((t) => t && !t.missing)
+    const seen = tiles.filter((t) => t.y >= 0 && t.y < vp.h)
+    if (tiles.length === 4 && seen.length < FOLD_MIN_TILES) {
+      // ⚠️ 判据只在 **full（今日未点灯）** 场景打红。点灯之后（lit）页面**合法地**更高：
+      // 灯卡从 3 行长到 4 行、还多出一条「功德证」次级入口 —— 实测四枚瓦片被顶到 y1303。
+      // 那是"今天已经来过"的用户，主任务（看一眼墙 / 再写一条）本来就在更上面，
+      // 玩法掉到折叠线下属产品取舍，留成参考项给人看，不当回归。
+      const msg = `首屏内看得到的玩法瓦片 ${seen.length} 个 < ${FOLD_MIN_TILES} 个（视口高 ${vp.h}px，四枚瓦片 top ${tiles.map((t) => t.y).join('/')}）`
+      if (SCENE === 'full') problems.push(msg)
+      else advisories.push(`${msg}〔参考项：点亮态页面合法地更高，是否要压灯卡由产品定〕`)
     }
   }
 }
@@ -522,8 +543,8 @@ if (!CHECK_ONLY) {
   const pngPath = join(ROOT, 'miniprogram/scripts/.tmp', `wall-preview-${SCENE}.png`)
   try { rmSync(pngPath, { force: true }) } catch { /* ignore */ }
   // 全页高度：按量到的 body 高度（+ 余量）设窗口，避免只截到首屏
-  const bodyH = (metrics.find((x) => x.label === '首屏总高') || {}).h || 1334
-  await runChrome([`--window-size=750,${Math.min(6000, bodyH + 40)}`, `--screenshot=${pngPath}`, `file://${htmlPath}`])
+  const bodyH = (byLabel('整页 body') || {}).h || 1334
+  await runChrome([`--window-size=750,${Math.min(8000, bodyH + 40)}`, `--screenshot=${pngPath}`, `file://${htmlPath}`])
   if (existsSync(pngPath)) {
     writeFileSync(OUT, readFileSync(pngPath))
     console.log(`\n截图：${OUT}（${Math.round(statSync(OUT).size / 1024)}KB）`)
@@ -537,14 +558,16 @@ if (advisories.length) {
   advisories.forEach((a) => console.log('  - ' + a))
 }
 const show = (row) => row.missing
-  ? `  ✗ ${String(row.label).padEnd(16)} 未渲染`
-  : `  · ${String(row.label).padEnd(16)} y${String(row.y).padStart(4)} ${String(row.w).padStart(4)}×${String(row.h).padStart(4)}  行 ${row.lines}  ${row.text}`
+  ? `  ✗ ${String(row.label).padEnd(18)} 未渲染（${row.sel}）`
+  : row.mode === 'order' || row.mode === 'gap' || row.mode === 'fold' || row.mode === 'absent'
+    ? `  · ${String(row.label).padEnd(18)} ${row.text}`
+    : `  · ${String(row.label).padEnd(18)} y${String(row.y).padStart(4)} ${String(row.w).padStart(4)}×${String(row.h).padStart(4)}  行 ${row.lines}  ${row.text}`
 console.log(`祈福墙版式预览（场景 ${SCENE}；视口 750px ↔ 750rpx，等比于任意真机宽度）`)
 metrics.forEach((row) => console.log(show(row)))
 
 if (problems.length) {
   console.error(`\n✗ 版式不变量违反 ${problems.length} 处：`)
   problems.forEach((p) => console.error('  - ' + p))
-  process.exit(1)
+  process.exit(CHECK_ONLY ? 1 : 0)
 }
-console.log(`\n✓ 版式不变量通过（宽度 / 换行 / 溢出 / 吸底预留 / banner 占屏 ≤${(HERO_MAX_SHARE * 100).toFixed(0)}% / 首屏内看得见的瓦片 ≥${FOLD_MIN_TILES} 个；字体度量与安全区仍需真机确认）`)
+console.log(`\n✓ 版式不变量通过（宽度 / 换行 / 溢出 / DOM 顺序 / 同屏距离 / 牌匾占屏 ≤${(HERO_MAX_SHARE * 100).toFixed(0)}% / 首屏内看得见的瓦片 ≥${FOLD_MIN_TILES} 个；字体度量与安全区仍需真机确认）`)

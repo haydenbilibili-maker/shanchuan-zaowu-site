@@ -177,6 +177,13 @@ Page({
     tagColumns: [],
     /** 打到服务端上限：文案改说「仅展示最近 N 条」 */
     tagCapped: false,
+    /**
+     * **墙上的**愿签条数（与当前视图无关）。
+     * ⚠️ 为什么不能直接用 `items.length`：`items` 会被 applyView 整体换成当前视图的数据源，
+     * 于是切到「我的心愿」后，「墙上的愿签」那一段与墙页脚都会显示我的心愿条数（串台）。
+     * 只有 applyItems（墙列表回包）写这个字段。
+     */
+    wallCount: 0,
     rows: [],
     inspiration: [],
     draft: '',
@@ -188,6 +195,13 @@ Page({
      */
     justRegistered: false,
     loadError: '',
+    /**
+     * **门禁读失败**（不是"馆方关了"）。`flagChecked && !allowed` 有两种成因：
+     * 开关读了、确实是关的；或者开关压根没读上（网络/权限异常）。
+     * 2026-09-20 改造前两者共用一句「祈福墙暂未开放 / 馆方正在准备这块墙面」——
+     * 那是把系统故障说成馆方的状态（假事实），且用户没有重试的路。
+     */
+    gateError: false,
     myHidden: 0,
     /**
      * 点灯仪式：lit 为当日是否已点，line 为当日那句，streak 为连续天数。
@@ -327,7 +341,18 @@ Page({
   onPullDownRefresh() {
     // 下拉 = **强制**重读开关 + 重拉列表。开关走 SWR 缓存（TTL 10 分钟 / 陈旧窗口 24 小时），
     // 下拉是用户自己能把门禁刷新过来的动作 —— 否则只能等缓存过期或清缓存。
+    // ⚠️ 2026-09-20 修：`force` 此前在 applyGate 的早退分支里被丢掉 ——
+    // 开关没变时整条 refresh 都不执行，"刷新"只刷新了开关。现在 force 会一路传到 applyGate。
     this.bootstrap({ force: true }).finally(() => wx.stopPullDownRefresh())
+  },
+
+  /**
+   * 门禁读失败后的重试（只有 `gateError` 才渲染这个入口）。
+   * 与下拉刷新同一条路：强制跳过 SWR 缓存重读开关。
+   */
+  onGateRetry() {
+    this.setData({ loading: true })
+    this.bootstrap({ force: true })
   },
 
   /**
@@ -396,6 +421,16 @@ Page({
       if (result.reason === 'need_profile') {
         this.setData({ playResult: null, playNeed: result })
         trackBehavior('wish_wall_play', 'need_profile', id)
+      } else {
+        // ⚠️ 2026-09-20 修：其它失败分支此前**静默 return** —— 点瓦片毫无反应，
+        // 用户只会以为"这个玩法坏了"。玩法失败不许阻断页面，但必须说出来。
+        this.setData({ playNeed: null })
+        this.showAppToast({
+          overline: 'PLAY',
+          title: play.name + '没摇出来',
+          desc: '网络或内容池暂时异常，过一会儿再试。'
+        })
+        trackBehavior('wish_wall_play', 'fail', id)
       }
       return
     }
@@ -451,7 +486,25 @@ Page({
     // ③ 最后**自动聚焦**：键盘直接起来，用户不必再点一下输入框 ——
     //    PRD §4 要求「抽签 → 结果 → 写成心愿」这条动线**无感**，多一次点击就是有感的。
     //    延迟到滚动（260ms）之后再聚焦：否则"滚动落点"与"键盘顶起"同时发生，落点会跳。
-    setTimeout(() => { this.setData({ inputFocus: true }) }, 300)
+    this.focusWishInput(300)
+  },
+
+  /**
+   * 把焦点交给写愿输入框（`focus="{{inputFocus}}"` 唯一的置真处）。
+   *
+   * ⚠️ 2026-09-20：定时器**必须存句柄**。此前 usePlayWish 里的 300ms 是匿名 setTimeout，
+   * 页面在 300ms 内卸载就会对已卸载页面 setData —— 本页唯一漏清的定时器（审计实测）。
+   * 另外灵感词与「抄一句」也从这里聚焦：它们只改 draft，从前既不聚焦也不滚动，
+   * 真机上的反馈是"点了像没反应"。
+   */
+  focusWishInput(delayMs) {
+    if (this._focusTimer) clearTimeout(this._focusTimer)
+    this._focusTimer = setTimeout(() => {
+      this._focusTimer = null
+      if (this._unloaded) return
+      if (this.data.inputFocus) return
+      this.setData({ inputFocus: true })
+    }, Math.max(0, Number(delayMs) || 0))
   },
 
   /** 失焦即复位自动聚焦标记 —— 否则某些机型在后续任意重渲染时会把键盘再次顶起来 */
@@ -814,15 +867,20 @@ Page({
         force,
         onUpdate: (payload) => this.applyGate(payload && payload.flags)
       })
-      await this.applyGate(flags)
+      await this.applyGate(flags, { force })
     } catch (e) {
-      // 开关读取失败：保守关闭（UGC 新能力，读不到就当没开）
-      this.setData({ allowed: false, flagChecked: true, loading: false })
+      // 开关读取失败：保守关闭（UGC 新能力，读不到就当没开）。
+      // ⚠️ 2026-09-20 改造：**必须与"馆方确实没开放"区分开**。此前两者都渲染成
+      // 「祈福墙暂未开放 / 馆方正在准备这块墙面」—— 一次网络故障被说成馆方的状态，
+      // 用户读到的是假事实，客服也分不清是"没开"还是"没连上"。
+      // 页面现在按 `gateError` 说"没读上"并给重试（WXML 的 .ww-closed 分支）。
+      this.setData({ allowed: false, flagChecked: true, loading: false, gateError: true })
     }
   },
 
   /** 门禁收敛：未开放时**提前返回，不发起任何网络请求** */
-  async applyGate(flags) {
+  async applyGate(flags, opts) {
+    const force = !!(opts && opts.force)
     const allowed = !!(flags && flags.showMaShangYou === true)
     // 「连续记录云保存」钩子的开关：单独同步，**不动**原来的门禁控制流
     // （合并进下面的 early-return 会让"只改了这一个开关"也走一遍 refresh + 进页彩蛋）。
@@ -836,8 +894,15 @@ Page({
       this.setData({ showMuyuCertificate })
       this.refreshCertEntry()
     }
-    if (allowed === this.data.allowed && this.data.flagChecked) return
-    this.setData({ allowed, flagChecked: true, loading: allowed })
+    if (allowed === this.data.allowed && this.data.flagChecked) {
+      // ⚠️ 2026-09-20 修：开关没变时**也要把内容重拉一遍**。
+      // 此前这里直接 return，于是下拉刷新的实际效果是"只重读了开关"——
+      // 列表、额度、我的心愿一个都不动，与「刷新」这个词不符（onPullDownRefresh 传的 force 白传）。
+      // 只在 force（下拉刷新）时补这一次，不改变普通进页的控制流。
+      if (force && allowed) await this.refresh()
+      return
+    }
+    this.setData({ allowed, flagChecked: true, loading: allowed, gateError: false })
     if (!allowed) return
     await this.refresh()
     // 彩蛋放在内容就位之后：先亮出墙面，再给惊喜
@@ -884,6 +949,8 @@ Page({
     this._wallItems = items
     this.setData({
       items,
+      // 「墙上的愿签」条数与墙页脚都用它 —— 与当前视图无关（见 data.wallCount 的说明）
+      wallCount: items.length,
       // 两列瀑布与「是否打到上限」都是纯函数（见 utils/wishWall.js），页面只负责接线
       tagColumns: splitTagColumns(items),
       // 服务端一面墙只回 LIST_LIMIT 条：到底了必须说清是"最近 N 条"，不能装作全量
@@ -958,9 +1025,12 @@ Page({
     if (!endMs) return
     this._danmakuTimer = setTimeout(() => {
       this._danmakuTimer = null
-      if (!this.data.allowed || !(this.data.items || []).length) return
+      // ⚠️ 弹幕永远取自**墙上的**那一份（`this._wallItems`），不是 `this.data.items` ——
+      // 后者在「我的心愿」视图下是另一份数据，用它会让弹幕在切视图后偷偷换成我的心愿。
+      const wall = this._wallItems || []
+      if (!this.data.allowed || !wall.length) return
       const cycle = (this.data.danmakuCycle || 0) + 1
-      const next = buildDanmakuRows(this.data.items, { cycle })
+      const next = buildDanmakuRows(wall, { cycle })
       this.setData({ danmakuCycle: cycle, rows: next })
       this.scheduleDanmakuCycle(next)
     }, endMs + CYCLE_PAUSE_MS)
@@ -1006,12 +1076,16 @@ Page({
   },
 
   onUnload() {
+    this._unloaded = true
     this.clearDanmakuCycle()
     this.clearFreshTimer()
     // 音效实例与回声计时器都要收：页面卸载后还在响/还在 setData = 内存与噪声双泄漏
     this.clearEcho()
     if (this._muyuTimer) clearTimeout(this._muyuTimer)
     if (this._heartTimer) clearTimeout(this._heartTimer)
+    // 自动聚焦的延时器（2026-09-20 补）：此前它是匿名 setTimeout，卸页后仍会对已卸载页面 setData
+    if (this._focusTimer) clearTimeout(this._focusTimer)
+    this._focusTimer = null
     try { if (this._soundPlayer) this._soundPlayer.destroy() } catch (e) { /* ignore */ }
     this._soundPlayer = null
     // 退出也要对一次账（在途闸保证与 onHide 连击时只写一次）
@@ -1019,8 +1093,15 @@ Page({
   },
 
   onShow() {
+    // ⚠️ 2026-09-20：跨天回来必须重算灯态。此前 onShow 只重排弹幕，
+    // 于是"昨晚点了灯、今早从后台切回来"时 `lamp.lit` 还是 true ——
+    // 点灯会走「再看一眼灯」分支，新的一天点不亮（`lightLamp` 连调用都到不了）。
+    const today = shanghaiDayKey(Date.now())
+    const lampDay = (this.data.lamp && this.data.lamp.dayKey) || ''
+    if (lampDay && lampDay !== today) this.initRitual()
     if (this.data.allowed && (this.data.rows || []).length) {
-      this.setData({ rows: this.data.rows })
+      // 同值 setData 能否重播弹幕动画取决于基础库 diff；弹幕轮播本来就有
+      // `danmakuCycle` 进 key 的确定路径，这里只负责"接着排期"，不指望它重播。
       this.scheduleDanmakuCycle(this.data.rows)
     }
   },
@@ -1047,7 +1128,11 @@ Page({
       // 我的心愿条数彩蛋：门槛（几条算数）在注册表里，页面只报事实
       this.fireWishCountEgg(summary.total)
     } catch (e) {
-      this.setData({ myHidden: 0 })
+      // ⚠️ 2026-09-20 修：这里此前只重置 `myHidden`，**额度一个字都不动** ——
+      // 于是 mine 读取失败时界面停在默认值「今日还可写 5 条」。而用户可能已经写满 5 条，
+      // 那句话是替服务端打包票的假事实（真正被拒要等到点发送那一刻）。
+      // 现在如实标记"额度未知"，UI 只说事实（见 WXML 的 quota.unknown 分支）。
+      this.setData({ myHidden: 0, quota: Object.assign({}, this.data.quota, { unknown: true }) })
     }
   },
 
@@ -1109,7 +1194,13 @@ Page({
     const card = this.data.card
     if (!card) return
     this.setData({ draft: normalizeWishText(card.text).slice(0, TEXT_MAX), card: null })
-    wx.showToast({ title: '已填进输入框，可再改', icon: 'none' })
+    // 2026-09-20 改造：这里原来只弹一句「已填进输入框，可再改」——
+    // 而输入框在视口上方（愿签列表在写愿区之下），toast 在说一件用户看不到的事。
+    // 现在把它滚进视野并聚焦：说了什么，就让人看到什么。
+    try {
+      wx.pageScrollTo({ selector: '#wishInput', duration: 260, fail: () => {} })
+    } catch (e) { /* 低版本基础库不支持 selector，忽略 */ }
+    this.focusWishInput(300)
   },
 
   copyWishText() {
@@ -1137,11 +1228,19 @@ Page({
     this.setData({ draft: String((e.detail && e.detail.value) || '').slice(0, TEXT_MAX) })
   },
 
-  /** 灵感 chip：点一下填进输入框（不直接发布，用户仍可改） */
+  /**
+   * 灵感 chip：点一下填进输入框（不直接发布，用户仍可改）。
+   *
+   * 2026-09-20 改造：灵感词从页面下方（灯/木鱼/玩法之后）搬到发送条正下方，所以
+   * **不再需要滚动**（离线版式实测：改造前它距发送条 586px、整块在首屏之外）。
+   * 剩下必须补的是**聚焦**——它是"输入框收到了"最直接的反馈；此前这个函数只改 draft，
+   * 用户看到的唯一变化是远处一个数字跳了一下，真机反馈就是「点了像没反应」。
+   */
   useInspiration(e) {
     const text = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.text) || '')
     if (!text) return
     this.setData({ draft: normalizeWishText(text).slice(0, TEXT_MAX) })
+    this.focusWishInput(60)
   },
 
   async submitWish() {
@@ -1395,8 +1494,21 @@ Page({
     try {
       const ritualProfile = require('../../../utils/ritualProfile')
       if (!ritualProfile || typeof ritualProfile.syncToCloud !== 'function') return false
-      const ok = await ritualProfile.syncToCloud()
-      return ok === true
+      const res = await ritualProfile.syncToCloud()
+      /*
+       * ⚠️ 2026-09-20 修（P0 · 本函数此前**恒返回 false**）：
+       * 原来写的是 `return res === true`，而 `utils/ritualProfile.syncToCloud()` 的
+       * **每一条 return 都返回对象**（`{ ok, degraded, profile }`，见该文件 141 行的 JSDoc）
+       * —— `object === true` 恒为 false。真实后果三条：
+       *   ① 用户即使同步成功，也被告知「记录仍在本机 / 云端暂不可用」（说的是假话）；
+       *   ② `resume_success` 这个漏斗终点**永远是 0**，PRD §7 的注册转化率一直测不出来；
+       *   ③ `_certSyncedCount` 永不写入 → 每次 onHide / onUnload 都重复写一次云。
+       * 为什么此前没被发现：所有单测都把 `page.syncRitualToCloud` 整个桩掉了，
+       * 源码级断言只查"调用了 syncToCloud"——**桩住被测对象等于把这条链路的真值遮住**。
+       * 现在按真形态取 `ok`，并保留布尔兼容（万一将来有实现真的返回布尔）。
+       */
+      if (res && typeof res === 'object') return res.ok === true
+      return res === true
     } catch (e) {
       console.warn('wish wall ritual sync failed', e)
       return false

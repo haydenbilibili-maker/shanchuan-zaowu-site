@@ -286,10 +286,12 @@ const INJECTIONS = {
     to: 'class="ww-dm-plain"'
   },
   // 「馆方」徽章复活（2026-09-18 产品已决定去掉：基线内容全盖章 = 不传递信息）
+  // 2026-09-20：锚点跟随源码更新 —— 「我的」章已整条下线，改锚在它下面那行「置顶」章上；
+  // 语义完全不变：往印记链里塞回一个「馆方」章，守卫必须检出。
   'official-badge-resurrected': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '            <text class="ww-tag-seal is-mine" wx:elif="{{item.isMine}}">我的</text>',
-    to: '            <text class="ww-tag-seal is-official" wx:elif="{{item.official}}">馆方</text>\n            <text class="ww-tag-seal is-mine" wx:elif="{{item.isMine}}">我的</text>'
+    from: '            <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>',
+    to: '            <text class="ww-tag-seal is-official" wx:elif="{{item.official}}">馆方</text>\n            <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>'
   },
   // 置顶印章被顺手删掉（去徽章时最容易误伤的就是它）
   'pinned-seal-dropped': {
@@ -300,7 +302,8 @@ const INJECTIONS = {
   // 刚落愿不再高亮
   'no-fresh-highlight': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: "class=\"ww-tag {{item.isFresh ? 'is-fresh' : ''}}\"",
+    // 2026-09-20：锚点跟随源码更新（class 上多了 is-mine 一档，见「我的」章下线）
+    from: "class=\"ww-tag {{item.isFresh ? 'is-fresh' : ''}} {{item.isMine ? 'is-mine' : ''}}\"",
     to: 'class="ww-tag"'
   },
   // 分段控件退回标题（切换意图又看不出来）
@@ -501,8 +504,10 @@ const INJECTIONS = {
   // 灯卡把竖排时代的 margin-bottom 加回来 → 两卡不等高
   'lantern-margin-back': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  padding: 26rpx 20rpx;\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);',
-    to: '  margin-bottom: var(--space-3);\n  padding: 26rpx 20rpx;\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
+    // 2026-09-20：锚点跟随源码更新（灯卡底色从裸 #1F1D1A 换成 var(--color-bg-card)，同值）。
+    // 语义不变：把已删掉的 margin-bottom 塞回去，守卫必须检出"灯卡与木鱼卡不再等高"。
+    from: '  padding: 26rpx 20rpx;\n  background: linear-gradient(180deg, var(--color-bg-card) 0%, #1B1917 100%);',
+    to: '  margin-bottom: var(--space-3);\n  padding: 26rpx 20rpx;\n  background: linear-gradient(180deg, var(--color-bg-card) 0%, #1B1917 100%);'
   },
   // 木鱼卡跟着灯卡改成顶对齐 → 等高之后底部留一大片空白（真图上很明显）
   'muyu-align-top-again': {
@@ -975,6 +980,12 @@ const INJECTIONS = {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
     from: "    if (ok) {\n      this._certSyncedCount = this.data.muyuCount\n      this.trackCertGate('resume_success', { milestone: m })",
     to: "    if (true) {\n      this._certSyncedCount = this.data.muyuCount\n      this.trackCertGate('resume_success', { milestone: m })"
+  },
+  // 同步结果的判据退回"判一个对象"（P0：2026-09-20 修，此前 851 条断言全部漏掉）
+  'ritual-sync-object-vs-true': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "      if (res && typeof res === 'object') return res.ok === true\n      return res === true",
+    to: '      return res === true'
   },
   // 领证只改内存不落本地存档 → 关掉小程序证就没了（"可保管"是空话）
   'cert-local-record-dropped': {
@@ -1661,7 +1672,17 @@ check('客户端导出关闭提示', /toastWishWallClosed/.test(clientFlagSrc))
 const wallPageSrc = readSrc('miniprogram/subpackages/feature/wish-wall/index.js')
 check('关闭时提前返回不发请求', /if \(!allowed\) return\s*\n\s*await this\.refresh\(\)/.test(wallPageSrc))
 check('闸门来自 showMaShangYou', /flags\.showMaShangYou === true/.test(wallPageSrc))
-check('读开关失败时保守关闭', /catch \(e\) \{[\s\S]{0,200}allowed: false, flagChecked: true, loading: false/.test(wallPageSrc))
+check(
+  '读开关失败时保守关闭，且**不冒充「馆方没开放」**（假事实 + 没有出路，2026-09-20 修）',
+  // 2026-09-20：窗口从 200 放到 600（catch 里补了 5 行说明），并新增后半段断言 ——
+  // 「保守关闭」只说了权限，没说"用户看到的是不是真话"：网络故障与"馆方关了"必须区分，
+  // 且读失败要留一条重试的路（onGateRetry → bootstrap({force:true})）。
+  // ⚠️ 这里不能用 wallWxml2：它在文件下方才初始化（本行执行时还在 TDZ）。
+  /catch \(e\) \{[\s\S]{0,600}allowed: false, flagChecked: true, loading: false, gateError: true/.test(wallPageSrc) &&
+    /gateError \? '墙面没能打开' : '祈福墙暂未开放'/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')) &&
+    /bindtap="onGateRetry"/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')) &&
+    /onGateRetry\(\) \{[\s\S]{0,120}bootstrap\(\{ force: true \}\)/.test(wallPageSrc)
+)
 
 /* ------------------------------------------------------------------ *
  * 5) 超管工作台-内容模块：开关行 + 治理入口都在
@@ -2807,10 +2828,16 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
       /official: !!raw\.official/.test(readSrc('miniprogram/utils/wishWall.js'))
   )
   check(
-    '★ 去徽章没有误伤其它印记（已收起 / 我的 / 置顶 仍在）',
+    '★ 去徽章没有误伤其它印记（已收起 / 置顶 仍在，且「我的」的信号以左边线形式保住）',
+    // 2026-09-20 改造：「我的」章整条下线（真机 6 张里 5 张盖着它 = 噪音）。
+    // 本条的**意图不变**：去任何一次徽章都不许把"哪条是我的"这个信息弄丢 ——
+    // 只是它现在挂在卡片已有的左侧铜绳上（.ww-tag.is-mine::before），不再是一枚金色印章。
     /ww-tag-seal is-hidden"[^>]*>已收起/.test(wxml) &&
-      /ww-tag-seal is-mine"[^>]*>我的/.test(wxml) &&
       /ww-tag-seal"[^>]*>置顶/.test(wxml) &&
+      /ww-tag \{\{item\.isFresh \? 'is-fresh' : ''\}\} \{\{item\.isMine \? 'is-mine' : ''\}\}/.test(wxml) &&
+      /\.ww-tag\.is-mine::before\s*\{[\s\S]{0,240}?var\(--brass-300\)/.test(wxss) &&
+      !/ww-tag-seal is-mine/.test(wxml) &&
+      !/\.ww-tag-seal\.is-mine\s*\{/.test(wxss) &&
       /ww-card-tag is-warn"[^>]*>已被馆方收起/.test(wxml)
   )
   check('墙面给了无障碍描述（读屏能说清这面墙是什么）', /aria-label="\{\{rows\.length \? rows\.length/.test(wxml))
@@ -2842,7 +2869,7 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
     '★ 愿签高亮有动效且真挂在愿签上（落愿看得见）',
     /\.ww-tag\.is-fresh/.test(wxss) &&
       /@keyframes ww-fresh-in/.test(wxss) &&
-      /class="ww-tag \{\{item\.isFresh \? 'is-fresh' : ''\}\}"/.test(wxml)
+      /class="ww-tag \{\{item\.isFresh \? 'is-fresh' : ''\}\} \{\{item\.isMine \? 'is-mine' : ''\}\}"/.test(wxml)
   )
   check('选中态的分段控件仍走黄铜 token', /var\(--brass-300\) 0%, var\(--brass-400\) 48%, var\(--brass-500\) 100%/.test(wxss))
   check(
@@ -3231,9 +3258,16 @@ check(
   /\.ww-streak\s*\{[^}]*min-width:\s*48rpx/.test(wallWxssCode)
 )
 check(
-  '★ 条数挂在**所属段**内（段外不留游离条数，否则会读成"我的心愿 26 条"）',
-  /data-mode="wall"[\s\S]{0,700}?ww-seg-n[\s\S]{0,200}?items\.length/.test(wallWxml2) &&
-    !/ww-head-n/.test(wallWxml2)
+  '★ 条数挂在**所属段**内，且「墙上的愿签」条数与当前视图无关（2026-09-20 修串台）',
+  // 原来的判据只要求"条数挂在 wall 段里"，用的却是 `items.length` —— 而 `items` 会被
+  // applyView 换成当前视图的数据源，于是切到「我的心愿」后**两段显示同一个数**。
+  // 根因是共用一个字段，不是挂错了位置。现在用 `wallCount`，并额外钉住"只有 applyItems 写它"。
+  /data-mode="wall"[\s\S]{0,700}?ww-seg-n[\s\S]{0,200}?wallCount/.test(wallWxml2) &&
+    !/ww-head-n/.test(wallWxml2) &&
+    // 初值 + applyItems 各一处 = 恰好两处；applyView **不许**碰它（碰了就又是串台）
+    (wallPageSrc.match(/wallCount:/g) || []).length === 2 &&
+    /wallCount: items\.length/.test(wallPageSrc) &&
+    !/applyView\(\) \{[\s\S]{0,600}?wallCount:/.test(wallPageSrc)
 )
 check(
   '段外游离条数移除后不留死样式（.ww-head-n / .ww-head-rule）',
@@ -4878,6 +4912,21 @@ check(
     /this\.syncRitualToCloud\(\)/.test(hookPageSrc) &&
       /const ok = await this\.syncRitualToCloud\(\)/.test(hookPageSrc) &&
       /ritualProfile\.syncToCloud\(\)/.test(hookPageSrc)
+  )
+  check(
+    '★★ 同步结果的判据按**真形态**取（utils/ritualProfile 返回的是对象，不是布尔）',
+    // 2026-09-20 新增。为什么必须单独立一条：这条链路的**真值**此前从未被验过 ——
+    // 所有单测都把 `page.syncRitualToCloud` 整个桩掉（返回 Promise.resolve(true)），
+    // 源码级断言又只查"调用了 syncToCloud"。于是 `return ok === true` 判一个对象、
+    // 恒为 false 这件事躲过了 851 条断言。真实后果三条：
+    //   ① 用户即使同步成功，也被告知「记录仍在本机」（说假话）；
+    //   ② `resume_success` 漏斗终点恒为 0（PRD §7 的注册转化率根本测不出来）；
+    //   ③ `_certSyncedCount` 永不写入 → 每次 onHide/onUnload 重复写一次云。
+    // 判据三件套：调用处按 `res.ok` 取；被调方的 JSDoc 确实声明对象；页面里不再有裸的 `=== true` 误判。
+    /const res = await ritualProfile\.syncToCloud\(\)/.test(hookPageSrc) &&
+      /if \(res && typeof res === 'object'\) return res\.ok === true/.test(hookPageSrc) &&
+      /@returns \{Promise<\{ok:boolean, degraded:boolean/.test(readSrc('miniprogram/utils/ritualProfile.js')) &&
+      !/const ok = await ritualProfile\.syncToCloud\(\)/.test(hookPageSrc)
   )
   check(
     '★ 动态 require + try/catch 降级（云存模块缺失不得让祈夆墙不可用）',
