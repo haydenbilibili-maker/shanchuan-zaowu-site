@@ -1,7 +1,9 @@
 const {
   CHANNEL_OPTIONS,
-  CRAFT_TYPE_OPTIONS,
-  CRAFT_PROCESS_OPTIONS,
+  // ⚠️ 用**访问器**（常量 + 云端字典覆写），不要用冻结常量：
+  //    冻结常量是"代码里那一刻"的清单，后台在「选项维护」里增删/改名之后它永远不变。
+  craftTypeOptions,
+  craftProcessOptions,
   PRICE_PRESETS,
   isChannelEligibleRoot,
   isCraftEligibleRoot
@@ -43,9 +45,12 @@ Component({
       priceMin: '',
       priceMax: ''
     },
+    // 渠道 / 价格区间不是可维护字典，仍是常量；
+    // 装裱方式 / 制作工艺**每次打开面板时现取**（见 syncTaxonomyOptions），
+    // 初值给空数组 —— 写死在这里就等于把"构造那一刻的清单"冻住。
     channelOptions: CHANNEL_OPTIONS,
-    craftOptions: CRAFT_TYPE_OPTIONS,
-    craftProcessOptions: CRAFT_PROCESS_OPTIONS,
+    craftOptions: [],
+    craftProcessOptions: [],
     pricePresets: PRICE_PRESETS,
     showChannel: false,
     showCraft: false
@@ -53,7 +58,24 @@ Component({
 
   observers: {
     visible(v) {
-      if (v) this.openDraft()
+      if (v) {
+        // 「实时对齐」就靠这两步：①先用手上的字典渲染；②再探一次云端并刷新。
+        // 超管在「选项维护」里增删/改了装裱方式或制作工艺，C 端**不需要等发版**就能看到。
+        // ① 用当前（缓存/已加载）字典立刻渲染，打开不等待
+        this.syncTaxonomyOptions()
+        this.openDraft()
+        // ② 冷启动那一次云端字典可能还在路上（app 启动时是 fire-and-forget）——
+        //    这里补一次幂等探测（有 TTL 缓存，不会每次打开都打网络），回来后再刷一遍筛选项。
+        if (!this._taxonomyProbing) {
+          this._taxonomyProbing = true
+          try {
+            const { ensureProductTaxonomy } = require('../../utils/productTaxonomySync')
+            Promise.resolve(ensureProductTaxonomy())
+              .then(() => { if (this.properties.visible) this.syncTaxonomyOptions() })
+              .catch(() => { /* 拉不到就用内置的 9 / 11 项，不打断筛选 */ })
+          } catch (e) { /* 模块缺失按"不可用"处理 */ }
+        }
+      }
     },
     'rootName, categoryOptions'() {
       this.refreshDims()
@@ -61,6 +83,15 @@ Component({
   },
 
   methods: {
+    /** 从唯一事实源现取筛选项（含云端字典覆写）；字典拉不到时自动退回代码内置的 9 / 11 项 */
+    syncTaxonomyOptions() {
+      let types = []
+      let procs = []
+      try { types = craftTypeOptions() || [] } catch (e) { types = [] }
+      try { procs = craftProcessOptions() || [] } catch (e) { procs = [] }
+      this.setData({ craftOptions: types, craftProcessOptions: procs })
+    },
+
     refreshDims() {
       const root = this.properties.rootName || ''
       const showChannel = !root || root === '全部' || isChannelEligibleRoot(root)

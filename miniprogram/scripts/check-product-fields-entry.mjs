@@ -43,6 +43,8 @@ const REL = {
   cloudTaxonomy: 'cloudfunctions/manageProducts/productTaxonomy.js',
   feedTaxonomy: 'cloudfunctions/getEncyclopediaFeed/productTaxonomy.js',
   artisanFn: 'cloudfunctions/manageArtisanCommission/index.js',
+  // C 端「馆藏 → 筛选」面板（2026-09-20：这里的装裱/工艺曾经是**硬编码**的冻结常量）
+  filterPanel: 'components/ProductFilterPanel/index.js',
   appJs: 'app.js',
   cloudbaserc: 'cloudbaserc.json'
 }
@@ -443,6 +445,28 @@ function check (root) {
     problems.push('_pfLabel 把"不在字典里的历史值"显示成「未标注」—— 操作员会以为没保存过、顺手重选，真相被藏起来')
   }
 
+  /* ── ⑤-j C 端「馆藏 → 筛选」的装裱/工艺必须**跟后台实时对齐**（2026-09-20 产品负责人）──
+   * 「馆藏的筛选项目，装裱方式和生产工艺没有跟后台的字段实时对齐，核查是不是硬编码」
+   * ——**是硬编码**：`components/ProductFilterPanel/index.js` 把冻结常量直接塞进 `data`，
+   *   那是**构造那一刻的快照**：后台在「选项维护」里增删/改名之后它永远不变（也看不到自定义项）。
+   * 判据：必须导入**访问器**、`data` 里不许放冻结常量、且**每次打开面板都重新现取**。 */
+  {
+    const filterPanel = read('filterPanel')
+    if (/craftOptions:\s*CRAFT_TYPE_OPTIONS|craftProcessOptions:\s*CRAFT_PROCESS_OPTIONS/.test(filterPanel)) {
+      problems.push('馆藏筛选面板把**冻结常量**塞进了 data —— 后台改完字典它永远不更新（硬编码）')
+    }
+    if (!/craftTypeOptions\b/.test(filterPanel) || !/craftProcessOptions\b/.test(filterPanel)) {
+      problems.push('馆藏筛选面板没走 craftTypeOptions()/craftProcessOptions() 访问器 —— 读不到云端字典')
+    }
+    if (!/syncTaxonomyOptions\s*\(\s*\)/.test(filterPanel)) {
+      problems.push('馆藏筛选面板缺 syncTaxonomyOptions —— 打开时不会重新读字典，"实时对齐"无从谈起')
+    }
+    // 打开面板（observers.visible）那一步必须真的调它
+    if (!/visible\(v\)\s*\{[\s\S]{0,200}?syncTaxonomyOptions\(\)/.test(filterPanel)) {
+      problems.push('打开筛选面板时没有重取字典（只是构造时取一次 = 依然是硬编码）')
+    }
+  }
+
   // 未标注必须能选回去（picker 第 0 项 = 未标注，下标 0 ↔ 空串）
   if (!/_pfIndex\(/.test(managerCode) || !/if \(!v\) return 0/.test(managerCode)) {
     problems.push('picker 下标未按「第 0 项 = 未标注」映射 —— 无法把字段清回未标注')
@@ -511,6 +535,18 @@ function selftest () {
         file: REL.manager,
         mutate: (s) => s.replace('items: [{ productId: id, data: patch }]', 'items: []'),
         expect: /立即保存这一件/
+      },
+      {
+        name: '馆藏筛选面板退回"冻结常量硬编码"（后台改完字典它不更新）',
+        file: 'components/ProductFilterPanel/index.js',
+        mutate: (s) => s.replace('    craftOptions: [],', '    craftOptions: CRAFT_TYPE_OPTIONS,'),
+        expect: /冻结常量|硬编码/
+      },
+      {
+        name: '馆藏筛选面板打开时不再重取字典（只是构造时取一次）',
+        file: 'components/ProductFilterPanel/index.js',
+        mutate: (s) => s.replace('        this.syncTaxonomyOptions()\n        this.openDraft()', '        this.openDraft()'),
+        expect: /没有重取字典|syncTaxonomyOptions/
       },
       {
         name: 'picker 偏移一位（选干制存成针插、选浸制存成干制 —— 产品负责人实测的那个）',
