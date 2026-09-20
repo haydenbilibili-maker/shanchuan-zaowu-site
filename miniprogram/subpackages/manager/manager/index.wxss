@@ -5641,3 +5641,28 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .pf-pick.pf-empty .pf-pick-v { color: var(--color-text-muted); }
 .pf-dirty { font-size: 20rpx; color: var(--brass-400); flex-shrink: 0; }
 .cfg-shortcut.on { background: rgba(196, 167, 108, 0.22); border-color: var(--brass-400); }
+
+/* ── 运费规则：逐装裱方式的行（2026-09-21 产品负责人重构）──────────────
+   每行 = 装裱方式名 + 「满 __ 免邮 / 否则 __ 元/单」两个输入。
+   通配符那一行加底色区分（它是兜底档，语义与其它行不同）。 */
+.ship-rule-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid rgba(38, 35, 32, 0.55);
+}
+.ship-rule-row:last-of-type { border-bottom: none; }
+.ship-rule-row.is-wildcard {
+  margin-top: 8rpx;
+  padding: 18rpx;
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.1);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+}
+.ship-rule-name { font-size: 24rpx; color: var(--color-text-body); }
+.ship-rule-row.is-wildcard .ship-rule-name { color: var(--brass-300); font-weight: 600; }
+.ship-rule-inputs { display: flex; align-items: center; gap: 16rpx; }
+.ship-rule-field { display: flex; align-items: center; gap: 8rpx; flex: 1; min-width: 0; }
+.ship-rule-label { font-size: 21rpx; color: var(--color-text-muted); flex-shrink: 0; }
+.ship-rule-field .cfg-field-num { flex: 1; min-width: 0; }

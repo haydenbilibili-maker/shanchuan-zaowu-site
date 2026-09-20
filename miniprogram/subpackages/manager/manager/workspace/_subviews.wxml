@@ -2583,32 +2583,44 @@
             <input class="cfg-field cfg-field-full" value="{{shippingForm.defaultCarrier}}" data-field="defaultCarrier" bindinput="onShippingFieldInput" placeholder="如：顺丰速运" placeholder-class="cfg-placeholder"/>
           </view>
 
-          <view class="cfg-row">
-            <text class="cfg-label">基础运费（元）</text>
-            <input class="cfg-field cfg-field-num" type="digit" value="{{shippingForm.flatFee}}" data-field="flatFee" bindinput="onShippingFieldInput" placeholder="0.00" placeholder-class="cfg-placeholder"/>
-          </view>
-          <view class="cfg-row">
-            <text class="cfg-label">包邮门槛（元）</text>
-            <input class="cfg-field cfg-field-num" type="digit" value="{{shippingForm.freeShippingThreshold}}" data-field="freeShippingThreshold" bindinput="onShippingFieldInput" placeholder="0.00" placeholder-class="cfg-placeholder"/>
-          </view>
-          <view class="cfg-row">
-            <text class="cfg-label">其它类型运费（元）</text>
-            <input class="cfg-field cfg-field-num" type="digit" value="{{shippingForm.accessoryFlatFee}}" data-field="accessoryFlatFee" bindinput="onShippingFieldInput" placeholder="0.00" placeholder-class="cfg-placeholder"/>
-          </view>
-          <view class="cfg-row">
-            <text class="cfg-label">其它类型包邮门槛（元）</text>
-            <input class="cfg-field cfg-field-num" type="digit" value="{{shippingForm.accessoryFreeThreshold}}" data-field="accessoryFreeThreshold" bindinput="onShippingFieldInput" placeholder="0.00" placeholder-class="cfg-placeholder"/>
-          </view>
           <view class="cfg-field-block">
-            <text class="cfg-label-top">按装裱方式收费（勾选的装裱方式需满门槛才免邮）</text>
-            <checkbox-group class="cfg-check-group" bindchange="onShippingCraftToggle">
-              <label class="cfg-check" wx:for="{{shippingCraftOptions}}" wx:key="value">
-                <checkbox class="cfg-check-box" value="{{item.value}}" checked="{{item.checked}}" color="#C4A76C"/>
-                <text class="cfg-check-label">{{item.label}}</text>
-              </label>
-            </checkbox-group>
-            <text class="cfg-hint">未勾选的装裱方式、以及未标注「装裱方式」的商品一律免邮；判定只看商品的装裱方式字段，不看标题与类别。</text>
+            <text class="cfg-label-top">按装裱方式配置邮费（每种装裱方式可以单独设门槛与运费）</text>
+            <text class="cfg-hint">没单独配置的跟随最下面那条「其它（通配符）」；混合车（一单含多种装裱方式）按门槛最高的一档算。判定只看商品的装裱方式字段。</text>
           </view>
+          <view class="ship-rule-row {{item.isWildcard ? 'is-wildcard' : ''}}" wx:for="{{shippingRuleRows}}" wx:key="craftType">
+            <text class="ship-rule-name">{{item.label}}{{item.isWildcard ? '（通配符）' : ''}}</text>
+            <view class="ship-rule-inputs">
+              <view class="ship-rule-field">
+                <text class="ship-rule-label">满</text>
+                <input
+                  class="cfg-field cfg-field-num"
+                  type="digit"
+                  value="{{item.freeShippingThreshold}}"
+                  data-index="{{index}}"
+                  data-field="freeShippingThreshold"
+                  bindinput="onShippingRuleRowInput"
+                  placeholder="0.00"
+                  placeholder-class="cfg-placeholder"
+                />
+                <text class="ship-rule-label">免邮</text>
+              </view>
+              <view class="ship-rule-field">
+                <text class="ship-rule-label">否则</text>
+                <input
+                  class="cfg-field cfg-field-num"
+                  type="digit"
+                  value="{{item.flatFee}}"
+                  data-index="{{index}}"
+                  data-field="flatFee"
+                  bindinput="onShippingRuleRowInput"
+                  placeholder="0.00"
+                  placeholder-class="cfg-placeholder"
+                />
+                <text class="ship-rule-label">元/单</text>
+              </view>
+            </view>
+          </view>
+          <text class="cfg-hint">通配符那一档会兜住**未标注装裱方式**的商品，以及后台用「选项维护」新加的（塑封 / 玻璃瓶…）—— 它不能删。</text>
           <view class="cfg-row cfg-row-switch">
             <view class="cfg-label-block">
               <text class="cfg-label">限时免邮</text>

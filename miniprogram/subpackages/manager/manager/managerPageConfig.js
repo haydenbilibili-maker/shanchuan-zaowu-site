@@ -10871,6 +10871,8 @@ bindSubCatChange(e) {
         ? cfg.freeShippingThreshold
         : cfg.specimenFreeThreshold
       const charged = normalizeChargedCraftTypesForForm(cfg.chargedCraftTypes) || DEFAULT_CHARGED_CRAFT_TYPES
+      // 逐装裱方式规则表（2026-09-21 重构）：线上文档带就用它，老文档按旧字段合成（行为不变）
+      const ruleRows = this._buildShippingRuleRows(cfg, { charged, freeThreshold, flatFee: cfg.flatFee, accessoryFreeThreshold: cfg.accessoryFreeThreshold, accessoryFlatFee: cfg.accessoryFlatFee })
       const form = {
         name: cfg.name || '商城运费规则',
         defaultCarrier: cfg.defaultCarrier || cfg.carrier || '顺丰速运',
@@ -10888,6 +10890,7 @@ bindSubCatChange(e) {
         shippingRuleText: this._buildShippingRuleText(form) || result.ruleText || '',
         shippingFromDefault: !!result.default,
         shippingCraftOptions: buildShippingCraftOptions(form.chargedCraftTypes),
+        shippingRuleRows: ruleRows,
         shippingForm: form
       })
     } catch (e) {
@@ -10895,6 +10898,62 @@ bindSubCatChange(e) {
       this.setData({ shippingLoading: false })
       wx.showToast({ title: formatCloudFnError(e, '运费规则加载失败'), icon: 'none' })
     }
+  },
+
+  /**
+   * 构建逐装裱方式的行（每种装裱方式一行 + 一条通配符）。
+   * 有 `craftTypeRules` 就按它铺；没有（老文档）就按旧的两档字段合成 —— 与小程序三份代码副本同口径。
+   */
+  _buildShippingRuleRows(cfg, legacy) {
+    const money = (n, fallback) => storeLedger.formatMoney(n != null ? n : fallback)
+    const rules = Array.isArray(cfg && cfg.craftTypeRules) && cfg.craftTypeRules.length
+      ? cfg.craftTypeRules
+      : (legacy.charged || []).map((ct) => ({
+        craftType: ct,
+        freeShippingThreshold: legacy.freeThreshold,
+        flatFee: legacy.flatFee
+      })).concat([{
+        craftType: '*',
+        freeShippingThreshold: legacy.accessoryFreeThreshold,
+        flatFee: legacy.accessoryFlatFee
+      }])
+    const wildcard = rules.find((r) => r.craftType === '*') || { freeShippingThreshold: 39, flatFee: 10 }
+    const rows = (TAXONOMY.craftTypeOptions() || []).map((o) => {
+      const hit = rules.find((r) => r.craftType === o.value)
+      return {
+        craftType: o.value,
+        label: o.label,
+        isWildcard: false,
+        freeShippingThreshold: money(hit ? hit.freeShippingThreshold : wildcard.freeShippingThreshold),
+        flatFee: money(hit ? hit.flatFee : wildcard.flatFee)
+      }
+    })
+    rows.push({
+      craftType: '*',
+      label: '其它',
+      isWildcard: true,
+      freeShippingThreshold: money(wildcard.freeShippingThreshold),
+      flatFee: money(wildcard.flatFee)
+    })
+    return rows
+  },
+
+  /** 行内输入：`data-index` + `data-field` */
+  onShippingRuleRowInput(e) {
+    const ds = (e.currentTarget && e.currentTarget.dataset) || {}
+    const idx = Number(ds.index)
+    const field = String(ds.field || '')
+    if (!Number.isInteger(idx) || (field !== 'freeShippingThreshold' && field !== 'flatFee')) return
+    this.setData({ [`shippingRuleRows[${idx}].${field}`]: (e.detail && e.detail.value) || '' })
+  },
+
+  /** 行 → 规则表（数值化；空值按 0） */
+  _shippingRulesFromRows() {
+    return (this.data.shippingRuleRows || []).map((r) => ({
+      craftType: String(r.craftType || '').trim(),
+      freeShippingThreshold: Number(r.freeShippingThreshold) || 0,
+      flatFee: Number(r.flatFee) || 0
+    })).filter((r) => r.craftType)
   },
 
   /** 摘要展示用（两位小数），不改计价逻辑 */
@@ -10905,13 +10964,21 @@ bindSubCatChange(e) {
       const label = String(f.campaignLabel || '当前全场免邮').trim() || '当前全场免邮'
       return `${carrier} · ${label}（全场免邮）`
     }
+    // 按**规则表**描述（逐装裱方式；不在规则表里的跟随通配符），不写死组标签
+    const rows = this.data.shippingRuleRows || []
+    if (rows.length) {
+      const named = rows.filter((r) => !r.isWildcard && !r.isWildcardOnlyFallback)
+      const wildcard = rows.find((r) => r.isWildcard)
+      const parts = named.map((r) => `${r.label}满 ¥${storeLedger.formatMoney(r.freeShippingThreshold)}（否则 ¥${storeLedger.formatMoney(r.flatFee)}/单）`)
+      if (wildcard) parts.push(`其它（含未标注）满 ¥${storeLedger.formatMoney(wildcard.freeShippingThreshold)}（否则 ¥${storeLedger.formatMoney(wildcard.flatFee)}/单）`)
+      return `${carrier} · ${parts.join('；')}`
+    }
     const charged = normalizeChargedCraftTypesForForm(f.chargedCraftTypes) || DEFAULT_CHARGED_CRAFT_TYPES
     const chargedLabel = charged.map((k) => CRAFT_TYPE_LABELS[k] || k).join('/') || '（未选）'
     const free = storeLedger.formatMoney(f.freeShippingThreshold)
     const fee = storeLedger.formatMoney(f.flatFee)
     const feeOther = storeLedger.formatMoney(f.accessoryFlatFee)
     const freeOther = storeLedger.formatMoney(f.accessoryFreeThreshold)
-    // 前缀取装裱方式字段（chargedLabel 由勾选的 craftType 动态渲染），不写"全场"
     return `${carrier} · ${chargedLabel}类商品满 ¥${free} 免邮（否则 ¥${fee}/单）；`
       + `其它类型商品满 ¥${freeOther} 免邮（否则 ¥${feeOther}/单）`
   },
@@ -10944,12 +11011,20 @@ bindSubCatChange(e) {
     if (this.data.shippingSaving) return
     const form = this.data.shippingForm || {}
     const charged = normalizeChargedCraftTypesForForm(form.chargedCraftTypes) || []
-    // 空清单 = 整店免邮，属危险配置：先在本地拦住，别等云端校验（云端也会拒，但这里能立刻提示）
+    const rules = this._shippingRulesFromRows()
+    // 危险配置先在本地拦（云端也会拒，但这里能立刻提示）：
+    //  ⚠️ 2026-09-21 起判定读**规则表**，"收费清单为空"已不是危险点；
+    //     真正危险的是**没有通配符**（新装裱方式/未标注没有规则可落）或一条都没单独配。
     // 走统一主视觉轻提示（不新增原生 toast —— check:dialog-ratchet 只许降不许涨）
-    if (!charged.length) {
-      this.showAppToast({ overline: 'SHIPPING RULES', title: '至少保留一种收费装裱方式' })
+    if (!rules.some((r) => r.craftType === '*')) {
+      this.showAppToast({ overline: 'SHIPPING RULES', title: '通配符那一档不能删' })
       return
     }
+    if (!rules.some((r) => r.craftType !== '*')) {
+      this.showAppToast({ overline: 'SHIPPING RULES', title: '至少单独配置一种装裱方式' })
+      return
+    }
+    if (!charged.length) charged.push(...DEFAULT_CHARGED_CRAFT_TYPES)
     this.setData({ shippingSaving: true })
     wx.showLoading({ title: '保存中…' })
     try {
@@ -10966,6 +11041,8 @@ bindSubCatChange(e) {
             accessoryFlatFee: Number(form.accessoryFlatFee),
             accessoryFreeThreshold: Number(form.accessoryFreeThreshold),
             chargedCraftTypes: charged,
+            // ★ 唯一判定依据（逐装裱方式）；旧字段只作兼容镜像
+            craftTypeRules: rules,
             freeShippingCampaign: {
               enabled: !!form.campaignEnabled,
               label: form.campaignLabel || '当前全场免邮'

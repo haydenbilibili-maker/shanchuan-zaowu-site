@@ -488,6 +488,26 @@ async function runChecks(paths) {
     })
   }
 
+  /* ★ 小程序超管「运费规则」页也必须走**规则表**（2026-09-21 产品负责人截图：
+   *   ERP 改完了，小程序那页还是老表单 —— 它只提交旧字段，云端会按旧字段**合成**一张规则表，
+   *   于是逐装裱方式的配置一保存就被覆盖 = "没有生效"。判据钉住三件事：
+   *   ① 提交载荷带 `craftTypeRules`；② 有逐装裱方式的行数据；③ 行输入接上了。 */
+  {
+    let mgr = ''
+    try { mgr = fs.readFileSync(paths.managerPage, 'utf8') } catch (e) { mgr = '' }
+    if (!mgr) {
+      check('可读小程序超管运费规则页', false, '读不到 managerPageConfig.js')
+    } else {
+      check('小程序运费规则页提交 craftTypeRules（否则逐装裱方式配置会被旧字段合成覆盖）',
+        /craftTypeRules:\s*rules/.test(mgr), '保存载荷里没有 craftTypeRules')
+      check('小程序运费规则页有逐装裱方式的行 + 行输入',
+        /shippingRuleRows/.test(mgr) && /onShippingRuleRowInput/.test(mgr) && /_shippingRulesFromRows/.test(mgr),
+        '缺行数据 / 行输入 / 行→规则表 的转换')
+      check('小程序运费规则页的危险配置判据已跟着改（通配符必配）',
+        /通配符那一档不能删/.test(mgr), '还在用"收费清单不能为空"那套旧判据')
+    }
+  }
+
   // 界面不得另抄一份收费清单（必须引用唯一事实源）
   ;[
     ['小程序超管工作台', paths.managerPage, 'DEFAULT_CHARGED_CRAFT_TYPES'],
@@ -875,6 +895,9 @@ async function runSelfTest(paths) {
     }],
     ['分类表副本被改中文名（方形玻璃罩 → 玻璃罩）', (p) => {
       patch(p.taxonomies[1], (s) => s.replace("label: '方形玻璃罩'", "label: '玻璃罩'"))
+    }],
+    ['小程序运费规则页退回"只提交旧字段"（逐装裱方式配置会被覆盖 —— 2026-09-21 截图）', (p) => {
+      patch(p.managerPage, (s) => s.replace('            craftTypeRules: rules,\n', ''))
     }],
     ['超管界面把收费清单抄成硬编码（不再引用唯一事实源）', (p) => {
       patch(p.managerPage, (s) => s.replace(/DEFAULT_CHARGED_CRAFT_TYPES/g, "['frame', 'cloche']"))

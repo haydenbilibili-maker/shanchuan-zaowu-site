@@ -340,7 +340,10 @@ function buildStudioSignals(pack) {
   /* 账户余额 = 总预算 − 总支付 + 收入（出货单货款）（产品负责人 2026-09-21 指定口径）。
    *   · 总支付 = `usedBudget`（已含房租/宽带）—— 与「预算使用率」同一个口径，不然两个数会打架
    *   · 收入   = `revenueTotal`（出货单货款合计；结算口径的"已结清"另有一栏，这里按**出货额**算） */
-  const accountBalance = roundMoney(totalBudget - usedBudget + revenueTotal)
+  // 账户余额由**调用方**算好传进来（见主流程）；这里保留兜底以便本函数被单独调用/测试
+  const accountBalance = Number.isFinite(Number(pack.accountBalance))
+    ? Number(pack.accountBalance)
+    : roundMoney(totalBudget - usedBudget + revenueTotal)
   let acctStatus = 'muted'
   let acctReason = '总预算未配置'
   if (totalBudget > 0) {
@@ -670,6 +673,11 @@ exports.main = async (event) => {
         .reduce((n, r) => n + purchaseAmount(r), 0)
     )
     const usedBudget = roundMoney(purchaseSpendExFixed + rentSpend + broadbandSpend)
+    /* 账户余额 = 总预算 − 总支付 + 收入（出货单货款）（产品负责人 2026-09-21 指定口径）。
+     * ⚠️ 必须在**这个作用域**算：`signalPack` 与 `kpis` 都在主流程里引用它。
+     *    第一版算在了 `buildStudioSignals` 内部（局部 const），主流程一引用就
+     *    `accountBalance is not defined` —— 真机整页报错（2026-09-21 截图）。 */
+    const accountBalance = roundMoney(totalBudget - usedBudget + revenueTotal)
     /**
      * **剩余总预算以飞书为准**（产品负责人 2026-09-19）。
      *
