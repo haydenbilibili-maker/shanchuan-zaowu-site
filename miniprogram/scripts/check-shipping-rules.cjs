@@ -667,11 +667,13 @@ async function runChecks(paths) {
         `${text} ｜ 费率 ¥${client.resolveFee(ctx)}`)
       // 前缀：顾客侧用**短标签**（2026-09-20 产品负责人：枚举四个装裱方式会把「说明」行挤爆），
       // 但**不得**回到含糊的「全场」（那会让顾客以为门槛是对整单任意商品）
-      const wantPrefix = kind === 'accessory' ? '其它类型' : '标本框'
+      // 其它档：**点名到具体装裱方式**（2026-09-20 产品负责人：「选了塑封还显示其它」）；
+      // 上下文里没有中文名时才退回「其它类型」。收费档仍用短标签「标本框」。
+      const wantPrefix = kind === 'accessory' ? '' : '标本框'
       const noLongEnum = kind !== 'specimen' || !text.includes('方形玻璃罩')
       check(`说明文案用短标签且不溢出：${name}`,
-        text.includes('商品满') && text.includes(wantPrefix) && !text.includes('全场') && noLongEnum,
-        `${text}（应含「${wantPrefix}…商品满」、不得出现「全场」或长枚举）`)
+        text.includes('商品满') && (wantPrefix ? text.includes(wantPrefix) : true) && !text.includes('全场') && noLongEnum,
+        `${text}（应含「${wantPrefix || '装裱方式'}…商品满」、不得出现「全场」或长枚举）`)
     })
     check('顾客侧短标签是一个常量（不在页面里内联）',
       typeof client.CHARGED_GROUP_LABEL === 'string' && client.CHARGED_GROUP_LABEL.indexOf('/') > 0,
@@ -693,7 +695,12 @@ async function runChecks(paths) {
       for (const ch of String(t)) units += /[\u2E80-\uFFFD]/.test(ch) ? 1 : 0.5
       return units * fontRpx
     }
-    ;[['相框（收费档）', [P('frame')], '标本框'], ['挂件（其它档）', [P('accessory')], '其它类型']].forEach(([name, ctx, wantPrefix]) => {
+    // ⚠️ 2026-09-20 产品负责人：「其它标本这个字段没有配置通配符 —— 选塑封时仍然显示『其它』」。
+    //    现在其它档**点名到具体装裱方式**（饰品→「饰品」），解析不出来才退回「其它类型」。
+    ;[['相框（收费档）', [P('frame')], '标本框'],
+      ['饰品（其它档，应点名）', [P('accessory')], '饰品'],
+      ['造景（其它档，应点名）', [P('diorama')], '造景'],
+      ['未标注装裱方式（解析不出 → 退回「其它类型」）', [P('')], '其它类型']].forEach(([name, ctx, wantPrefix]) => {
       const short = typeof client.getRuleTextShort === 'function' ? String(client.getRuleTextShort(ctx)) : ''
       const w = Math.round(textWidthRpx(short, 22))
       check(`说明行收起态：${name} 是短句且放得下（≈${w}rpx ≤ 520）`,
@@ -812,6 +819,12 @@ async function runSelfTest(paths) {
       patch(p.client, (s) => s.replace(
         'function resolveOrderKind(context) {\n  if (context == null) return SHIPPING_KIND.SPECIMEN',
         'function resolveOrderKind(context) {\n  return resolveThreshold(context) > 0 ? SHIPPING_KIND.SPECIMEN : SHIPPING_KIND.ACCESSORY\n  if (context == null) return SHIPPING_KIND.SPECIMEN'
+      ))
+    }],
+    ['「其它档」退回写死的「其它类型」（选了塑封还是显示"其它" —— 产品负责人 2026-09-20）', (p) => {
+      patch(p.client, (s) => s.replace(
+        "    return `${otherCraftTypeLabel(context) || '其它类型'}满 ¥${freeOther} 免邮`",
+        "    return `其它类型满 ¥${freeOther} 免邮`"
       ))
     }],
     ['「说明」行收起态退回长句（那行会溢出 —— 2026-09-20 真机截图）', (p) => {

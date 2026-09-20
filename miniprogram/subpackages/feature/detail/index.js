@@ -1199,7 +1199,13 @@ Page(withAppModal({
 
   /** 收起态短句（那行 nowrap 单行，长文案会溢出；点一下展开看完整规则） */
   buildShippingRuleShortText(product) {
-    const ctx = product || this.data.product;
+    const p = product || this.data.product || {};
+    // ⚠️ 把**装裱方式的中文名**一并带进上下文：shipping 配置模块不允许 require 别的文件，
+    //    而「其它档」要点名到具体装裱方式（产品负责人 2026-09-20：「选了塑封还显示其它」）。
+    //    这里用 `craftTypeLabel()`（走**云端字典**），新增的「塑封/玻璃瓶」也能点名。
+    const ctx = Object.assign({}, p, {
+      craftTypeLabel: craftTypeLabel(p.craftType) || p.craftTypeLabel || ''
+    });
     if (typeof shippingConfig.getRuleTextShort === 'function') {
       return shippingConfig.getRuleTextShort(ctx);
     }

@@ -389,6 +389,74 @@ function calcShippingFee(goodsAmount, context) {
   return resolveFee(context)
 }
 
+/**
+ * 「其它档」的说明里**点名这件商品实际的装裱方式**。
+ *
+ * 产品负责人 2026-09-20：「商品详情页-快递说明部分，『其它标本』这个字段没有配置通配符，
+ * 如当选择**塑封**字段时仍然显示『其它』，需要优化」。
+ * 原来其它档的文案写死成「其它类型满 ¥39 免邮」——**只要不是收费类，顾客看到的都是「其它」**，
+ * 包括「造景/饰品/蝶翅画/冰箱贴」以及后台通过「选项维护」新增的（塑封、玻璃瓶…）。
+ * 现在：能把 craftType 解析出中文名就**点名到具体装裱方式**（塑封 → 「塑封满 ¥39 免邮」），
+ * 解析不出来（未标注 / 字典里没有 / 名字过长会撑破那行 nowrap）才退回「其它类型」。
+ *
+ * ⚠️ 长度上限 `OTHER_LABEL_MAX_CHARS`：那行是 `white-space: nowrap` 的单行，
+ *    实测可用约 520rpx；点名一个很长的自定义名会把它撑爆（守卫按宽度钉住）。
+ */
+const OTHER_LABEL_MAX_CHARS = 6
+
+function craftTypeOfContext(context) {
+  if (context == null) return ''
+  if (typeof context === 'string') {
+    return isChargedCraftType(context) ? '' : String(context).trim()
+  }
+  if (Array.isArray(context)) {
+    for (const item of context) {
+      const v = craftTypeOfContext(item)
+      if (v) return v
+    }
+    return ''
+  }
+  if (typeof context === 'object') {
+    if (Array.isArray(context.items)) return craftTypeOfContext(context.items)
+    if (context.craftType) return String(context.craftType).trim()
+    if (context.kind) return craftTypeOfContext(context.kind)
+  }
+  return ''
+}
+
+/**
+ * 取「其它档」要点名的中文名。
+ * ⚠️ 本文件**不允许 require 别的文件**（守卫 `check-shipping-rules` 的装载器把 require 打桩成抛错，
+ *    理由："被守卫加载的模块不应 require 其他文件"）——所以中文名由**调用方带进来**：
+ *    · 优先用上下文里的 `craftTypeLabel`（详情页/确认页本来就有 `craftTypeLabel(p.craftType)`，
+ *      它走的是**云端字典**，新增的「塑封/玻璃瓶」也能解析）；
+ *    · 退一步用本文件的 `CRAFT_TYPE_LABELS`（内置 9 项，供不带上文的调用方）；
+ *    · 都没有就不用（退回「其它类型」），并受长度上限保护（那行 nowrap 放不下长名）。
+ */
+function otherCraftTypeLabel(context) {
+  const label = labelOfContext(context) || CRAFT_TYPE_LABELS[craftTypeOfContext(context)] || ''
+  const text = String(label).trim()
+  if (!text) return ''
+  return [...text].length <= OTHER_LABEL_MAX_CHARS ? text : ''
+}
+
+function labelOfContext(context) {
+  if (context == null) return ''
+  if (Array.isArray(context)) {
+    for (const item of context) {
+      const v = labelOfContext(item)
+      if (v) return v
+    }
+    return ''
+  }
+  if (typeof context === 'object') {
+    if (Array.isArray(context.items)) return labelOfContext(context.items)
+    if (context.craftTypeLabel) return String(context.craftTypeLabel).trim()
+    if (context.kind && typeof context.kind === 'object') return labelOfContext(context.kind)
+  }
+  return ''
+}
+
 function getRuleText(context) {
   if (isCampaignActive()) return getCampaignLabel()
   const fee = shipping.shippingFee
@@ -403,7 +471,8 @@ function getRuleText(context) {
   //    （2026-09-20 产品负责人：截图里的"全场满 ¥299 / ¥39 免邮"会引发误会）。
   //    收费档→列出收费装裱方式；其它档→"其它类型"（纯其它单的整单就是其它类型商品）。
   if (context != null && resolveOrderKind(context) === SHIPPING_KIND.ACCESSORY) {
-    return `${carrier} · 其它类型商品满 ¥${freeOther} 免邮，否则运费 ¥${feeOther}`
+    const named = otherCraftTypeLabel(context)
+    return `${carrier} · ${named || '其它类型'}商品满 ¥${freeOther} 免邮，否则运费 ¥${feeOther}`
   }
   if (context == null) {
     return `${carrier} · ${charged}类商品满 ¥${free} 免邮（否则 ¥${fee}）；其它类型商品满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
@@ -424,7 +493,8 @@ function getRuleTextShort(context) {
   const free = shipping.freeShippingThreshold
   const freeOther = shipping.accessoryFreeThreshold
   if (context != null && resolveOrderKind(context) === SHIPPING_KIND.ACCESSORY) {
-    return `其它类型满 ¥${freeOther} 免邮`
+    // 点名到具体装裱方式（塑封/造景/饰品…），解析不出来才用「其它类型」
+    return `${otherCraftTypeLabel(context) || '其它类型'}满 ¥${freeOther} 免邮`
   }
   if (context == null) return `满 ¥${free} / ¥${freeOther} 免邮`
   return `${CHARGED_GROUP_LABEL}满 ¥${free} 免邮`
@@ -464,6 +534,7 @@ module.exports = Object.assign(shipping, {
   DEFAULT_CHARGED_CRAFT_TYPES,
   CRAFT_TYPE_LABELS,
   CHARGED_GROUP_LABEL,
+  otherCraftTypeLabel,
   normalizeChargedCraftTypes,
   getChargedCraftTypes,
   isChargedCraftType,
