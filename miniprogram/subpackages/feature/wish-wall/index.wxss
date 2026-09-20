@@ -528,22 +528,41 @@ page {
   font-family: var(--font-mono);
 }
 
-/* 连续天数盒：**绝对定位到卡片右上角**（2026-09-20 改造）。
+/* 连续天数：**自己占一行的静态行**（2026-09-20，几何实测后从"浮层"改回来）。
    它此前是文案列右边的一份 flex 子项。半宽卡可用宽 ≈ 450rpx，扣掉图标 64 + 两个 gap 32
    + 本盒 48~76，文案列只剩 ~150rpx —— 而点亮后标题「今日灯已点」= 5 × 30rpx = 150rpx，
    正好卡在断行临界上：离线渲染里实测折成「今日灯已 / 点」（真机字体更宽时同样会折）。
-   移到角上之后文案列拿回整行宽度。
-   ⚠️ DOM 顺序（copy → streak → tail）**不变**，所以 test:wish-wall 的顺序判据
-   与 `.ww-streak { min-width: 48rpx }` 判据都照旧成立。 */
+   中间试过"绝对定位到右上角"：折行确实修好了（标题从 2 行 78px 回到 1 行 39px），
+   **但它把"标题被挤断"换成了"文字钻到徽章底下"** —— 子代理用 headless-Chrome 量 rect 相交，
+   实测徽章 66px：3 盏档压灯位行 4px、5 盏档压标题 18px（「点」整字被盖）。
+   给文案列让位（padding-right）又会把标题挤回两行 —— **两个方向都不成立**：
+   半宽卡横向要同时容下 标题 155 + 徽章 66 + 灯位行 159 ≈ 380rpx，而文案列只有 ~221rpx，这道加法没有解。
+   所以改成**静态行**：徽章在自己的行里，文案列拿满整宽，**不存在横向竞争**。
+   代价如实记录：点亮态卡片多一行（约 30rpx）→ 玩法区更靠下（已是本工具的"参考项"，见 §7.3）。
+   ⚠️ DOM 顺序（copy → streak → tail）**不变**，test:wish-wall 的顺序判据与
+   `.ww-streak { min-width: 48rpx }` 判据都照旧成立。
+   判据：render-wall-preview 的「连续天数盒压字」（量文字 rect 的相交，必须为 0）。 */
 .ww-lantern .ww-streak {
-  position: absolute;
-  right: 20rpx;
-  top: 22rpx;
+  /* ⚠️ 它现在是 `.ww-lantern-copy` 的**子节点**（WXML 里挪进去了），不再是 `.ww-lantern` 的 flex 子项 ——
+     这是"占一行且保持小徽章"的唯一形态：作为 copy 里的 inline-flex，它在 meta 行之后另起一行、
+     宽度收缩到内容（≈58px）；而作为 .ww-lantern 的 flex 子项时，`flex:0 0 100%` 会让它铺成
+     横贯整卡的色带、自然宽度又会被挤回标题那一行。 */
+  display: inline-flex;
+  /* 横排（点 天 数 一行）而不是竖排：它已经独占一行，再竖着堆就是白白多出 ~35rpx 高。 */
+  flex-direction: row;
+  align-items: center;
+  gap: 6rpx;
+  margin-top: var(--space-1);
 }
 
-/* ⚠️ 文案列**故意不加** padding-right：角上的连续天数盒宽 ~76rpx，只占卡片右端；
-   本页最长的灯卡标题「今日灯已点」= 5 × 30rpx = 150rpx，而文案列有 ~215rpx ——
-   两者在 x 轴上不重叠。（第一版加了 92rpx 让位，实测反把标题挤成两行 = 防御过度。） */
+/* 横排之后"天"字不再需要与数字拉开一行间距 */
+.ww-lantern .ww-streak-l {
+  margin-top: 0;
+}
+
+/* 点亮态的标题**不缩**：连续天数盒已改为静态行（见上），文案列拿满整宽 ——
+   「今日灯已点」在 fs-30 下实测 155px ≤ 221px，余量充足，字号与未点亮态保持一致。
+   （短暂试过"缩到 fs-28 + 徽章浮层"，那是为了给浮层让路；改静态行后这层妥协不再需要。） */
 
 .ww-streak-l {
   margin-top: 2rpx;
@@ -926,6 +945,14 @@ page {
 
 .ww-quota.is-done {
   color: var(--color-warning);
+}
+
+/* 额度**读不到**（mine 失败）时的专属态。
+   为什么必须与普通态区分：普通态是灰（一句事实），用完是橙（警示），
+   而"读不到"是第三种 —— 它既不是事实也不是警示，是"这条信息暂时没有"。
+   三者共用一色会让用户以为额度还是准的（2026-09-20 修；子代理静态扫描抓到 `is-unknown` 无规则）。 */
+.ww-quota.is-unknown {
+  color: var(--brass-300);
 }
 
 .ww-count {
@@ -1316,13 +1343,23 @@ page {
 /* 连续点灯的小灯排：盏数由 lampTier 决定（1/3/5） */
 .ww-lamps {
   display: flex;
-  gap: 4rpx;
+  justify-content: center;
+  align-items: center;
+  gap: 2rpx;
+  /* ⚠️ **固定宽度**（2026-09-20，子代理几何实测后修）：点子数随连灯档位变（1/3/5 盏），
+     宽度若跟着变，右上角徽章就"几天宽一点"，与标题抢的宽度**不可预测** ——
+     实测 5 盏档徽章宽 84px，把标题「今日灯已点」右端 18px 压到了徽章底下（整字被盖）。
+     钉死 40rpx 后 1/3/5 点同宽（5×6 + 4×2 = 38 ≤ 40），徽章宽度是常量，
+     文案列的可用宽度因此**可算**（这也是"不再压字"能被判据证明的前提）。
+     点子仍然按档位画（1/3/5），只是容器不再随它伸缩。 */
+  width: 40rpx;
+  height: 10rpx;
   margin-bottom: 4rpx;
 }
 
 .ww-lamp-dot {
-  width: 10rpx;
-  height: 10rpx;
+  width: 6rpx;
+  height: 6rpx;
   border-radius: 50%;
   background: var(--brass-300);
   box-shadow: 0 0 8rpx rgba(233, 190, 110, 0.7);
@@ -1612,6 +1649,9 @@ page {
   opacity: 0;
   animation: ww-heart-float 1.6s ease-out forwards;
 }
+/* 第一颗（h1）：显式写出颜色/字号/0 延迟 —— 此前 h1 在 WXSS 里**没有任何规则**
+   （只有 h2~h5），靠基类兜底。空转的类名会让下一个人以为"h1 是特例"，实际它只是没写。 */
+.ww-heart.h1 { color: #D9BE86; font-size: var(--fs-26); animation-delay: 0s; }
 .ww-heart.h2 { color: #D9BE86; font-size: var(--fs-22); animation-delay: 0.18s; }
 .ww-heart.h3 { color: #E0A9A0; font-size: var(--fs-30); animation-delay: 0.34s; }
 .ww-heart.h4 { color: #C7B4DE; font-size: var(--fs-20); animation-delay: 0.5s; }
@@ -1887,6 +1927,20 @@ page {
   background: rgba(196, 167, 108, 0.1);
 }
 
+/* 摇签中（2026-09-20 改造）：星座 / MBTI 要读用户资料，首次会走一次会话请求 ——
+   此前这段等待**一点反馈都没有**（`onPlayTap` 在 await 之后才 setData），点上去像没反应。
+   现在瓦片边框呼吸 + 副文案就地换成「摇签中…」（见 index.wxml）。
+   ⚠️ 只动 opacity 与边框色：不改盒尺寸，避免"点了之后瓦片跳一下"。 */
+.ww-play.is-pending {
+  border-color: rgba(196, 167, 108, 0.62);
+  animation: ww-play-pending 1.1s ease-in-out infinite;
+}
+
+@keyframes ww-play-pending {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 .ww-play-copy {
   flex: 1;
   min-width: 0;
@@ -2116,6 +2170,15 @@ page {
   margin-top: 4rpx;
   font-size: var(--fs-20);
   color: #7A6E58;
+}
+
+/* 推荐**取件中**的占位：与 `.ww-sheet-product-title` 同高（28rpx 字 + 6rpx 上距 ≈ 46rpx），
+   这样「骨架 → 真内容」不改变这一块的高度 —— 弹层不会在用户读签文时长高一块。 */
+.ww-sheet-product-skel {
+  width: 60%;
+  height: 46rpx;
+  margin-top: 6rpx;
+  border-radius: var(--radius-sm);
 }
 
 .ww-sheet-product-go {

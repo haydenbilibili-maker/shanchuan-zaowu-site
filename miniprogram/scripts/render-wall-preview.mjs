@@ -24,9 +24,10 @@
  *   node miniprogram/scripts/render-wall-preview.mjs --check --selftest  # 证明判据真的会红（注入 → 检出 → 还原）
  *   node miniprogram/scripts/render-wall-preview.mjs --out /tmp/x.png
  *
- * 场景（--scene）：full（默认）整页原样 / lit 已点灯 / sheet 纸签弹层 / loading 骨架 / error 加载失败 / closed 开关关
+ * 场景（--scene）：full（默认）整页原样 / lit 已点灯 / sheet 纸签弹层 / sheet-loading 弹层（推荐取件中）/
+ *                loading 骨架 / error 加载失败 / closed 开关关
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -36,8 +37,24 @@ import { renderWxml } from './lib/wxml-preview.mjs'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
 const APP_WXSS = resolve(ROOT, 'miniprogram/app.wxss')
-const PAGE_WXSS = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss')
-const PAGE_WXML = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxml')
+/** 真源码路径（自检**只读**它们，见下面的 --selftest） */
+const REAL_WXSS = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss')
+const REAL_WXML = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxml')
+/**
+ * 实际读取的路径 —— 允许用环境变量指向**副本**。
+ * 为什么需要这个开关（2026-09-20，子代理静态扫描时抓到的事故）：
+ * 自检原本是"把注入写进**真源码** → 跑 → finally 还原"的形态。`finally` 挡得住异常，
+ * **挡不住 SIGKILL / 超时**：扫描那一刻正好看到 `index.wxss` 末尾残留着
+ * `.ww-wall { height: 900px !important; }`（自检注入串逐字相同）——
+ * 一个 `!important` 覆盖留在要发版的样式表里，是这一页最危险的一类残留。
+ * 现在自检把注入写进 `.tmp/` 下的**副本**，再让子进程通过环境变量读副本：
+ * 真源码在自检全程一个字节都不被写。顺带让自检可以被并行跑。
+ */
+const PAGE_WXSS = process.env.WALL_PREVIEW_WXSS || REAL_WXSS
+const PAGE_WXML = process.env.WALL_PREVIEW_WXML || REAL_WXML
+/** 产物目录（scripts/.tmp 被 .gitignore；**必须自建**，否则新 clone / 新 worktree 里直接 ENOENT） */
+const TMP_DIR = resolve(ROOT, 'miniprogram/scripts/.tmp')
+mkdirSync(TMP_DIR, { recursive: true })
 
 const argv = process.argv.slice(2)
 const has = (n) => argv.includes(n)
@@ -45,7 +62,7 @@ const argOf = (n, d) => {
   const i = argv.indexOf(n)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
-const SCENES = ['full', 'lit', 'sheet', 'loading', 'error', 'closed']
+const SCENES = ['full', 'lit', 'sheet', 'sheet-loading', 'loading', 'error', 'closed']
 const SCENE = (() => {
   const s = argOf('--scene', 'full')
   const alias = { plays: 'sheet' }[s] || s
@@ -74,23 +91,97 @@ const HERO_MAX_SHARE = 0.22
 const FOLD_MIN_TILES = 2
 
 /* ── 0b. 自检：判据必须能被打红（AGENTS.md：每条守卫都要能证明自己会失败） ──
- * 做法与仓内其它守卫一致：**改真源码 → 必须检出 → 还原**（不是改镜像数据，否则证明不了
- * 判据读的是真源码）。注入都打在页面 WXSS 末尾，用 !important 覆盖。
+ * 注入按 `file` 分派：`wxss` 追加到样式末尾用 !important 覆盖，`wxml` 做一次字面替换
+ * （替换不到就抛错，避免"注入没生效 = 假绿"）。
+ *
+ * ⚠️ 2026-09-20 重写（**上一版有真实事故**）：原实现把注入写进**真源码**再 `finally` 还原。
+ * `finally` 挡得住异常，**挡不住 SIGKILL / 超时** —— 一个子代理在静态扫描时正好抓到
+ * `index.wxss` 末尾残留 `.ww-wall { height: 900px !important; }`（与本文件 `wall-inflated`
+ * 注入串逐字相同）。那是一个 `!important` 覆盖留在**要发版的样式表**里：真机上整面弹幕墙被
+ * 强制定高 900px，而这个错误任何单测都看不见。
+ * 现在：注入写进 `scripts/.tmp/selftest-*` 的**副本**，子进程用环境变量读副本 →
+ * **真源码在自检全程一个字节都不被写**（末尾会断言这一点），顺带让自检可并行。
+ *
  * 判定要求**错误信息命中预期关键词**（不是"非 0 就算过"）：Chrome 崩溃也会非 0，
  * 那种"自检通过"是假的。
  */
 if (has('--selftest')) {
   const INJECTS = [
-    { name: 'hero-tall', css: '\n.ww-hero { height: 420px !important; }\n', expect: '牌匾占首屏' },
-    { name: 'wall-inflated', css: '\n.ww-wall { height: 900px !important; }\n', expect: '首屏内看得到的玩法瓦片' },
-    { name: 'inspo-detached', css: '\n.ww-inspo { margin-top: 900px !important; }\n', expect: '灵感词与发送条不在同一屏' }
+    { name: 'hero-tall', file: 'wxss', css: '\n.ww-hero { height: 420px !important; }\n', expect: '牌匾占首屏' },
+    { name: 'wall-inflated', file: 'wxss', css: '\n.ww-wall { height: 900px !important; }\n', expect: '首屏内看得到的玩法瓦片' },
+    { name: 'inspo-detached', file: 'wxss', css: '\n.ww-inspo { margin-top: 900px !important; }\n', expect: '灵感词与发送条不在同一屏' },
+    {
+      // 发送条改回吸底却不留底部余量 → 最后一张愿签会被盖住（旧 sticky-bar 判据的等价物，
+      // 2026-09-20 重写成"按当前设计分支"的形态，见下面 5b）
+      name: 'composer-fixed-without-reserve',
+      file: 'wxss',
+      scene: 'full',
+      css: '\n.ww-composer { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--color-bg) !important; }\n',
+      expect: '发送条改回吸底但没有底部预留'
+    },
+    {
+      // 连续天数盒改回**浮层**（回到本轮修掉的那个形态）→ 必须检出"压字"。
+      // ⚠️ 第一次写的注入是"把徽章加宽"，但设计已改成静态行，加宽不再压任何字 → 判据抓不到。
+      // 注入必须命中**真正的失效形态**：这里就是"又把它绝对定位回右上角"。
+      name: 'streak-absolute-again',
+      file: 'wxss',
+      scene: 'lit',
+      css: '\n.ww-lantern .ww-streak { position: absolute !important; right: 20rpx !important; top: 22rpx !important; display: flex !important; flex-direction: column !important; }\n',
+      expect: '连续天数盒压字'
+    },
+    {
+      // 推荐取件期间产品行不再占位（回到"弹层事后长高一块"的旧行为）
+      name: 'reco-placeholder-dropped',
+      file: 'wxml',
+      scene: 'sheet-loading',
+      from: 'wx:if="{{reco || productId || recoLoading}}"',
+      to: 'wx:if="{{reco || productId}}"',
+      expect: '取件中：产品行已占位'
+    },
+    {
+      // 取件结束后骨架没收（会盖住真推荐）。
+      // ⚠️ 注入形态：把骨架**无条件**插进产品行 —— 这正是"没收骨架"的终态。
+      // （第一版写成 `wx:elif="{{recoLoading}}"` → `{{true}}`：它前面那条 `wx:if="{{reco}}"`
+      //   在 sheet 场景为真、先命中了链，骨架根本不会渲染 → 注入等于没注入、自检报"判据无效"。
+      //   教训：注入必须真正改变**渲染结果**，只改一个分支的条件字符串不算。）
+      name: 'reco-skeleton-not-cleared',
+      file: 'wxml',
+      scene: 'sheet',
+      from: '<text class="ww-sheet-product-title" wx:if="{{reco}}">{{reco.title}}</text>',
+      to: '<view class="ww-sheet-product-skel wallet-skel" wx:if="{{true}}" aria-hidden="true"></view>',
+      expect: '取件完成：骨架已撤'
+    },
+    {
+      // 次瓦片也长出了字标（四枚都加 = 没有层级）
+      name: 'minor-mark-back',
+      file: 'wxml',
+      scene: 'full',
+      from: '<view class="ww-play-mark" wx:if="{{index < 2}}" aria-hidden="true">{{item.mark}}</view>',
+      to: '<view class="ww-play-mark" aria-hidden="true">{{item.mark}}</view>',
+      expect: '次瓦片无字标'
+    }
   ]
-  const original = readFileSync(PAGE_WXSS, 'utf8')
+  const baseWxss = readFileSync(REAL_WXSS, 'utf8')
+  const baseWxml = readFileSync(REAL_WXML, 'utf8')
   let ok = true
   for (const inj of INJECTS) {
+    const wxssCopy = join(TMP_DIR, `selftest-${inj.name}.wxss`)
+    const wxmlCopy = join(TMP_DIR, `selftest-${inj.name}.wxml`)
+    let wxss = baseWxss
+    let wxml = baseWxml
     try {
-      writeFileSync(PAGE_WXSS, original + inj.css)
-      const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--check', '--scene', SCENE], { encoding: 'utf8' })
+      if (inj.file === 'wxml') {
+        if (!baseWxml.includes(inj.from)) throw new Error(`注入锚点在 WXML 里找不到：${inj.name}`)
+        wxml = baseWxml.replace(inj.from, inj.to)
+      } else {
+        wxss = baseWxss + inj.css
+      }
+      writeFileSync(wxssCopy, wxss)
+      writeFileSync(wxmlCopy, wxml)
+      const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--check', '--scene', inj.scene || SCENE], {
+        encoding: 'utf8',
+        env: { ...process.env, WALL_PREVIEW_WXSS: wxssCopy, WALL_PREVIEW_WXML: wxmlCopy }
+      })
       const caught = run.status !== 0 && `${run.stderr}\n${run.stdout}`.includes(inj.expect)
       if (!caught) {
         ok = false
@@ -98,17 +189,22 @@ if (has('--selftest')) {
       } else {
         console.log(`  ✓ 注入「${inj.name}」被检出：${inj.expect}`)
       }
+    } catch (e) {
+      ok = false
+      console.error(`✗ selftest「${inj.name}」无法施加：${e.message}`)
     } finally {
-      writeFileSync(PAGE_WXSS, original)
+      try { rmSync(wxssCopy, { force: true }) } catch (e) { /* ignore */ }
+      try { rmSync(wxmlCopy, { force: true }) } catch (e) { /* ignore */ }
     }
   }
-  const restored = readFileSync(PAGE_WXSS, 'utf8') === original
-  if (!restored) {
-    console.error('✗ selftest 还原失败：页面 WXSS 与注入前不一致，请立刻 git checkout 该文件')
+  // 真源码**只读**：自检全程一个字节都不许被写（这正是上一版事故的判据）
+  const untouched = readFileSync(REAL_WXSS, 'utf8') === baseWxss && readFileSync(REAL_WXML, 'utf8') === baseWxml
+  if (!untouched) {
+    console.error('✗ selftest 改动了真源码：请立刻 git checkout 页面 WXSS / WXML（自检只许写 .tmp 副本）')
     process.exit(1)
   }
   if (!ok) process.exit(1)
-  console.log(`✓ selftest 通过：${INJECTS.length} 个版式注入全部被检出、已还原源文件`)
+  console.log(`✓ selftest 通过：${INJECTS.length} 个版式/结构注入全部被检出；真源码未被改动（注入只写 .tmp 副本）`)
   process.exit(0)
 }
 
@@ -197,6 +293,8 @@ function baseData() {
       { id: 'mbti', mark: '我', name: 'MBTI 贴士', hint: '顺着你的性子来一句' }
     ],
     playResult: null,
+    playPending: '',
+    recoLoading: false,
     playNeed: null,
     sheetDragY: 0,
     inspiration: ['马上有风', '马上有暖', '马上有眠', '马上有劲'],
@@ -228,11 +326,18 @@ function baseData() {
 const SCENE_PATCH = {
   full: {},
   lit: {
+    // ⚠️ 用**最坏档**：7 天 = 5 盏（utils/wishWall.lampTier 的「长明」）。
+    // 子代理几何实测证明 3 盏档只压 4px、5 盏档压标题 18px —— 样例取 3 盏就等于
+    // "永远只测最松的那一档"。连续天数盒宽度现在被 .ww-lamps{width:40rpx} 钉成常量，
+    // 但样例仍取 5 盏，让"宽度被改回自适应"这类回归一定被渲染出来。
     lamp: {
-      lit: true, label: '初见', solar: null, solarNext: { name: '秋分', inDays: 3 },
-      streak: 3, lampDots: [1, 1, 1], line: '灯亮着，心愿就还没说完。', tierNote: '今天来过，记下了。'
+      lit: true, label: '长明', solar: null, solarNext: { name: '秋分', inDays: 3 },
+      streak: 7, lampDots: [1, 1, 1, 1, 1], line: '灯亮着，心愿就还没说完。', tierNote: '今天来过，记下了。'
     },
-    certEntry: { tag: '功德 108 · 已达里程', action: '领证 ›', mode: 'claim' },
+    // ⚠️ 这里**故意不设 certEntry**：H2「功德证」已按 PRD §8 停用
+    // （`showMuyuCertificate` 缺字段默认关 → 真机点亮态不会有那条入口）。
+    // 上一版预览把它写进了 lit 场景，于是 §7.3「点亮态多一条入口」的结论里混进了一个停用功能 ——
+    // 预览态不许冒充生产态。
     echoRows: [{ key: 'e1', text: '我敲了一下木鱼', sub: '功德 36' }]
   },
   sheet: {
@@ -242,6 +347,18 @@ const SCENE_PATCH = {
       lines: ['想要什么就说出来，说出口才有回音。'], wish: '马上有回应'
     },
     reco: { label: '偏「求学」· 为你配一件', title: '潮汐书页', latinName: 'Haliotis iris', priceText: '¥78' }
+  },
+  'sheet-loading': {
+    // 弹层已开、推荐还在路上：产品行必须**已经在**（同高骨架），否则弹层会事后长高一块
+    playResult: {
+      id: 'daily', mark: '签', overline: '今日一签', name: '今日一签',
+      title: '宜 开口', sub: '忌 憋着',
+      lines: ['想要什么就说出来，说出口才有回音。'], wish: '马上有回应'
+    },
+    reco: null,
+    recoLoading: true,
+    productId: '',
+    productTitle: ''
   },
   loading: { loading: true, rows: [], items: [], tagColumns: [[], []], mine: { total: 0 }, relics: { total: 0, found: 0 } },
   error: {
@@ -432,6 +549,69 @@ window.addEventListener('load', () => {
   const fold = ['.ww-hero', '.ww-wall', '.ww-composer', '.ww-lantern', '.ww-plays', '.ww-inspo-row', '.ww-seg']
   out.push({ label: '首屏可见', sel: ':fold', mode: 'fold', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
     text: fold.filter((s) => { const e2 = el(s); return e2 && e2.getBoundingClientRect().top < vh }).join(' / ') })
+  // ── 弹层产品行（只在弹层场景量）：推荐是异步取的，取件期间那一行**必须已经在**，
+  //    否则弹层会在用户读签文时长高一块。所以 sheet-loading 场景要正判"它存在"。
+  if (__SCENE__ === 'sheet' || __SCENE__ === 'sheet-loading') {
+    push('弹层产品行', '.ww-sheet-product')
+    push('弹层产品标题', '.ww-sheet-product-title', 1)
+    const skel = document.querySelector('.ww-sheet-product-skel')
+    if (__SCENE__ === 'sheet-loading') {
+      out.push({ label: '取件中：产品行已占位', sel: ':must-exist', mode: 'must-exist', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+        exists: !!document.querySelector('.ww-sheet-product'),
+        text: document.querySelector('.ww-sheet-product') ? '在' : '不在（弹层会事后长高一块）' })
+      out.push({ label: '取件中：骨架占位在', sel: ':must-exist', mode: 'must-exist', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+        exists: !!skel, text: skel ? '在' : '不在' })
+    } else {
+      out.push({ label: '取件完成：骨架已撤', sel: ':must-exist', mode: 'must-exist', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+        exists: !skel, text: skel ? '骨架没收（会盖住真推荐）' : '已撤' })
+    }
+  }
+
+  // ── 发送条**若被改回吸底**：必须有底部预留（否则最后一张愿签被盖住）。
+  // 顺流（当前设计）时本条不适用 —— 与 test:wish-wall 的"按设计分支"同一口径：
+  // 旧预览把这一条写成了无条件判据，于是源码改成 static 之后它天天报假失败，最后被整条删掉。
+  // 现在它跟着设计走：只有真的改回 fixed 才生效（自检里有对应注入）。
+  const composerBar = document.querySelector('.ww-composer')
+  const pageBox = document.querySelector('.ww-page')
+  if (composerBar && pageBox) {
+    const barFixed = getComputedStyle(composerBar).position === 'fixed'
+    const barH = Math.round(composerBar.getBoundingClientRect().height)
+    const reserved = Math.round(parseFloat(getComputedStyle(pageBox).paddingBottom) || 0)
+    out.push({ label: '发送条吸底预留', sel: ':sticky', mode: 'sticky', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: barH,
+      fixed: barFixed, reserved, bad: barFixed && reserved < barH,
+      text: barFixed ? ('吸底：预留 ' + reserved + 'px / 条高 ' + barH + 'px') : '顺流（本条不适用）' })
+  }
+
+  // ── 连续天数盒**不许压到文案**（2026-09-20 补）：
+  // 子代理用 headless-Chrome 量 rect 相交，实测"3 盏压灯位行 4px、5 盏压标题 18px（整字被盖）"——
+  // 而当时的判据只量"标题折了几行"，看不出"文字钻到徽章底下"。这里直接判几何相交。
+  const streakEl = document.querySelector('.ww-streak')
+  if (streakEl) {
+    const sr = streakEl.getBoundingClientRect()
+    // ⚠️ 必须量**文字的** rect，不是元素的 rect：「.ww-lantern-title」是 display:block，
+    // 它的元素盒铺满整列，用元素 rect 判相交会**恒真**（第一版就这样误报 36px）。
+    // 用 Range 框住它的文本内容，才是「字画到哪儿」。
+    // ⚠️ 这段是**注入到页面里的字符串**：注释里不许出现反引号（会把外层模板字符串截断）——
+    // 本文件已经栽过三次，现在由 test:wish-wall 的「node --check」判据兜住。
+    const hitPx = (sel) => {
+      const e = document.querySelector(sel)
+      if (!e) return 0
+      const rng = document.createRange()
+      rng.selectNodeContents(e)
+      const rects = Array.from(rng.getClientRects()).filter((x) => x.height > 1)
+      const r = rects.length ? rects[rects.length - 1] : e.getBoundingClientRect()
+      const ox = Math.min(sr.right, r.right) - Math.max(sr.left, r.left)
+      const oy = Math.min(sr.bottom, r.bottom) - Math.max(sr.top, r.top)
+      return (ox > 1 && oy > 1) ? Math.min(ox, oy) : 0
+    }
+    const oTitle = hitPx('.ww-lantern-title')
+    const oMeta = hitPx('.ww-lantern-meta')
+    out.push({ label: '连续天数盒压字', sel: ':overlap', mode: 'overlap', lines: 0, maxLines: 0,
+      x: Math.round(sr.left), y: Math.round(sr.top), w: Math.round(sr.width), h: Math.round(sr.height),
+      overlapTitle: oTitle, overlapMeta: oMeta,
+      text: '徽章 ' + Math.round(sr.width) + 'px；压标题 ' + oTitle.toFixed(1) + 'px / 压灯位行 ' + oMeta.toFixed(1) + 'px' })
+  }
+
   // ── 否定判据：次瓦片**不许**有字标（四枚都加 = 没有层级，等于没加）
   const minorMark = document.querySelector('.ww-play.is-minor .ww-play-mark')
   out.push({ label: '次瓦片无字标', sel: ':absent', mode: 'absent', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
@@ -484,12 +664,19 @@ metrics.forEach((row) => {
   // 「没渲染出来」只在**整页都该在的场景**里算问题：closed / loading / error 三个场景
   // 本来就会合法地缺掉发送条、灯卡、愿签列（页面先画骨架，或干脆不画内容）。
   if (row.missing) {
-    if (['full', 'lit', 'sheet'].includes(SCENE)) problems.push(`${row.label}：选择器 ${row.sel} 没渲染出来`)
+    if (['full', 'lit', 'sheet', 'sheet-loading'].includes(SCENE)) problems.push(`${row.label}：选择器 ${row.sel} 没渲染出来`)
     return
   }
   if (row.overflowX) problems.push(`${row.label}：横向溢出（scrollW ${row.scrollW} > clientW ${row.clientW}）`)
   if (row.mode === 'same-row' && !row.sameRow) problems.push(`${row.label}：子元素折行了（本该同一行）`)
   if (row.mode === 'absent' && !row.absent) problems.push(`${row.label}：${row.text}`)
+  if (row.mode === 'must-exist' && !row.exists) problems.push(`${row.label}：${row.text}`)
+  if (row.mode === 'overlap' && (row.overlapTitle > 0 || row.overlapMeta > 0)) {
+    problems.push(`连续天数盒压字：${row.text} —— 徽章浮在文案列上，字被盖住（几何相交判据）`)
+  }
+  if (row.mode === 'sticky' && row.bad) {
+    problems.push(`发送条改回吸底但没有底部预留（预留 ${row.reserved}px < 条高 ${row.h}px）—— 最后一张愿签会被盖住`)
+  }
   if (row.mode === 'lines' && row.maxLines && row.lines > row.maxLines) {
     problems.push(`${row.label}：折成 ${row.lines} 行（上限 ${row.maxLines}）`)
   }
@@ -559,7 +746,7 @@ if (advisories.length) {
 }
 const show = (row) => row.missing
   ? `  ✗ ${String(row.label).padEnd(18)} 未渲染（${row.sel}）`
-  : row.mode === 'order' || row.mode === 'gap' || row.mode === 'fold' || row.mode === 'absent'
+  : row.mode === 'order' || row.mode === 'gap' || row.mode === 'fold' || row.mode === 'absent' || row.mode === 'must-exist' || row.mode === 'sticky' || row.mode === 'overlap'
     ? `  · ${String(row.label).padEnd(18)} ${row.text}`
     : `  · ${String(row.label).padEnd(18)} y${String(row.y).padStart(4)} ${String(row.w).padStart(4)}×${String(row.h).padStart(4)}  行 ${row.lines}  ${row.text}`
 console.log(`祈福墙版式预览（场景 ${SCENE}；视口 750px ↔ 750rpx，等比于任意真机宽度）`)
@@ -568,6 +755,9 @@ metrics.forEach((row) => console.log(show(row)))
 if (problems.length) {
   console.error(`\n✗ 版式不变量违反 ${problems.length} 处：`)
   problems.forEach((p) => console.error('  - ' + p))
-  process.exit(CHECK_ONLY ? 1 : 0)
+  // ⚠️ 2026-09-20：这里原来写的是 `process.exit(CHECK_ONLY ? 1 : 0)` ——
+  // 不加 `--check` 时版式违反**不再非 0 退出**，等于把这个工具的"看门狗"属性悄悄降级成"报告"。
+  // 它是我自己引入的（子代理事实核查抓到）。改回一律非 0：截图场景同样要能挡住回归。
+  process.exit(1)
 }
 console.log(`\n✓ 版式不变量通过（宽度 / 换行 / 溢出 / DOM 顺序 / 同屏距离 / 牌匾占屏 ≤${(HERO_MAX_SHARE * 100).toFixed(0)}% / 首屏内看得见的瓦片 ≥${FOLD_MIN_TILES} 个；字体度量与安全区仍需真机确认）`)

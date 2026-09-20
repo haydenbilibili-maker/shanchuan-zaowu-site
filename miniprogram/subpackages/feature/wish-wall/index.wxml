@@ -299,13 +299,13 @@
           <!-- 不是节气日时给"还差几天"：一个"过几天再来"的理由（>7 天不显示，免得成噪音） -->
           <text class="ww-lantern-next" wx:elif="{{lamp.solarNext}}">距{{lamp.solarNext.name}} {{lamp.solarNext.inDays}} 天</text>
         </view>
-      </view>
       <view class="ww-streak" wx:if="{{lamp.streak > 1}}">
         <view class="ww-lamps" aria-hidden="true">
           <view class="ww-lamp-dot" wx:for="{{lamp.lampDots}}" wx:key="*this"></view>
         </view>
         <text class="ww-streak-n">{{lamp.streak}}</text>
         <text class="ww-streak-l">天</text>
+      </view>
       </view>
       <!-- 灯语 / 灯位说明整行落在标题块下面（flex-basis:100%）：
            留在文案列里时它只有 ~220rpx 宽，「灯亮着，就还有没说完的心愿。」的第二行只剩
@@ -371,7 +371,7 @@
              字标来自注册表 `mark`（config/ritualPlays.js），是"抽签"这件事的视觉语汇，
              只给主瓦片 —— 四枚都加就等于没加（噪声）。 -->
         <view
-          class="ww-play {{index < 2 ? 'is-lead' : 'is-minor'}} {{playResult && playResult.id === item.id ? 'is-open' : ''}}"
+          class="ww-play {{index < 2 ? 'is-lead' : 'is-minor'}} {{playPending === item.id ? 'is-pending' : ''}} {{playResult && playResult.id === item.id ? 'is-open' : ''}}"
           wx:for="{{plays}}"
           wx:key="id"
           bindtap="onPlayTap"
@@ -384,7 +384,10 @@
           <view class="ww-play-mark" wx:if="{{index < 2}}" aria-hidden="true">{{item.mark}}</view>
           <view class="ww-play-copy">
             <text class="ww-play-name">{{item.name}}</text>
-            <text class="ww-play-hint">{{item.hint}}</text>
+            <!-- 摇签中（2026-09-20）：星座 / MBTI 要读用户资料，首次会走一次会话请求 ——
+                 此前这段等待**一点反馈都没有**（函数体在 await 之后才 setData），
+                 点上去像没反应。现在副文案就地换成「摇签中…」，与瓦片的呼吸边框同一件事。 -->
+            <text class="ww-play-hint">{{playPending === item.id ? '摇签中…' : item.hint}}</text>
           </view>
         </view>
       </view>
@@ -455,9 +458,12 @@
            `navigateTo:fail timeout`（2026-09-17 实测定位）。 -->
       <block wx:if="{{loading}}">
       <view class="ww-tag-skel" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+        <!-- 骨架整块是**装饰**：三块灰条必须与铜钉一样 aria-hidden，
+             否则读屏把"正在加载"念成几个没有内容的空元素（2026-09-20 修；
+             子代理静态扫描抓到同组里只有铜钉被隐藏）。 -->
         <view class="ww-tag-skel-pin" aria-hidden="true"></view>
-        <view class="ww-tag-skel-avatar wallet-skel"></view>
-        <view class="ww-tag-skel-main">
+        <view class="ww-tag-skel-avatar wallet-skel" aria-hidden="true"></view>
+        <view class="ww-tag-skel-main" aria-hidden="true">
           <view class="ww-tag-skel-line is-w1 wallet-skel"></view>
           <view class="ww-tag-skel-line is-w2 wallet-skel"></view>
         </view>
@@ -692,10 +698,13 @@
     </view>
 
     <!-- 产品链路：**只留一条主路**（以前同时有"推荐卡"和"看这件藏品"两行，谁主谁次看不出来）。
-         有祈运推荐就用推荐，没有就用这面墙自己的藏品。 -->
+         有祈运推荐就用推荐，没有就用这面墙自己的藏品。
+         ⚠️ 2026-09-20 改造：推荐是**异步**取的（云函数 `getBlessProducts`）。此前这一行在回包前
+         **整块不渲染** —— 弹层会在用户正读签文时长高一块，内容跳一下（没有 productId 的墙必现）。
+         现在 `recoLoading` 期间也占位（同高骨架行），整块高度从弹层出现那一刻就稳定。 -->
     <view
       class="ww-sheet-product"
-      wx:if="{{reco || productId}}"
+      wx:if="{{reco || productId || recoLoading}}"
       bindtap="{{reco ? 'goRecoProduct' : 'goProduct'}}"
       hover-class="ww-sheet-product-press"
       hover-stay-time="70"
@@ -704,6 +713,7 @@
       <view class="ww-sheet-product-copy">
         <text class="ww-sheet-product-label">{{reco ? reco.label : ('这面墙的藏品' + (productTitle ? ' · ' + productTitle : ''))}}</text>
         <text class="ww-sheet-product-title" wx:if="{{reco}}">{{reco.title}}</text>
+        <view class="ww-sheet-product-skel wallet-skel" wx:elif="{{recoLoading}}" aria-hidden="true"></view>
         <text class="ww-sheet-product-meta" wx:if="{{reco && (reco.latinName || reco.priceText)}}">{{reco.latinName}}{{reco.latinName && reco.priceText ? ' · ' : ''}}{{reco.priceText}}</text>
       </view>
       <!-- ⚠️ 这一行是 CTA 文案（"看看这件"），不是装饰 —— 不许 aria-hidden，

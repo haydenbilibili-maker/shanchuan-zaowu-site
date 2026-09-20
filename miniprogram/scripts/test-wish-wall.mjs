@@ -886,6 +886,39 @@ const INJECTIONS = {
     from: '    this.restoreRitualFromCloud()',
     to: ''
   },
+  // ── 第二批改造（2026-09-20）：门禁错误态 / 聚焦定时器 / 跨天 / 额度未知 / 玩法失败 / 条数同步 ──
+  // 为什么每条都配注入：这六处全是"新加的状态位"，而**状态位的失效方式是静默的** ——
+  // 少清一个标志、少写一个字段，页面照样渲染，只有真机上表现为"永久显示网络异常""点了没反应"。
+  'gate-error-never-cleared': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '      if (this.data.gateError || this.data.loading) this.setData({ gateError: false, loading: false })',
+    to: '      // 注入：读成功也不清错误态'
+  },
+  'focus-timer-anonymous': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    this._focusTimer = setTimeout(() => {',
+    to: '    setTimeout(() => {'
+  },
+  'onshow-daykey-drop': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    if (lampDay && lampDay !== today) this.initRitual()',
+    to: '    if (false) this.initRitual()'
+  },
+  'quota-unknown-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "      this.setData({ myHidden: 0, quota: Object.assign({}, this.data.quota, { unknown: true }) })",
+    to: '      this.setData({ myHidden: 0 })'
+  },
+  'play-fail-silent-again': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: "        this.setData({ playNeed: null })\n        this.showAppToast({",
+    to: "        this.setData({ playNeed: null })  // 注入：静默 return（回到旧行为）\n        void 0 && this.showAppToast({"
+  },
+  'wallcount-desync-on-insert': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '        wallCount: this._wallItems.length,',
+    to: '        // 注入：乐观插入不同步条数'
+  },
   // ── 质感批次（2026-09-19）：令牌化 / 按压反馈 / 无障碍 ──────────────────────
   // 字号令牌写回裸值（30rpx 是 --fs-30 在册值；写回后"本页字号一律走 --fs-*"必须变红）
   'wishwall-fontsize-literal-back': {
@@ -1681,7 +1714,7 @@ check(
   /catch \(e\) \{[\s\S]{0,600}allowed: false, flagChecked: true, loading: false, gateError: true/.test(wallPageSrc) &&
     /gateError \? '墙面没能打开' : '祈福墙暂未开放'/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')) &&
     /bindtap="onGateRetry"/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')) &&
-    /onGateRetry\(\) \{[\s\S]{0,120}bootstrap\(\{ force: true \}\)/.test(wallPageSrc)
+    /onGateRetry\(\) \{[\s\S]{0,400}?bootstrap\(\{ force: true \}\)/.test(wallPageSrc)
 )
 
 /* ------------------------------------------------------------------ *
@@ -3264,9 +3297,10 @@ check(
   // 根因是共用一个字段，不是挂错了位置。现在用 `wallCount`，并额外钉住"只有 applyItems 写它"。
   /data-mode="wall"[\s\S]{0,700}?ww-seg-n[\s\S]{0,200}?wallCount/.test(wallWxml2) &&
     !/ww-head-n/.test(wallWxml2) &&
-    // 初值 + applyItems 各一处 = 恰好两处；applyView **不许**碰它（碰了就又是串台）
-    (wallPageSrc.match(/wallCount:/g) || []).length === 2 &&
+    // 初值 + applyItems + 落愿乐观插入 = 恰好三处；applyView **不许**碰它（碰了就又是串台）
+    (wallPageSrc.match(/wallCount:/g) || []).length === 3 &&
     /wallCount: items\.length/.test(wallPageSrc) &&
+    /wallCount: this\._wallItems\.length/.test(wallPageSrc) &&
     !/applyView\(\) \{[\s\S]{0,600}?wallCount:/.test(wallPageSrc)
 )
 check(
@@ -4034,8 +4068,11 @@ check(
 )
 check(
   '★ 产品链路**只留一条主路**（有祈运推荐用推荐，否则用这面墙的藏品；不再两行并列抢主次）',
+  // 2026-09-20：条件多了一档 `recoLoading` —— 推荐是异步取的，取件期间那一行也要在（占位），
+  // 否则弹层会在用户读签文时长高一块。语义不变：**只有一个** `.ww-sheet-product`，主次不分家的两行仍不许回来。
   /class="ww-sheet-product"/.test(wallWxml2) &&
-    /wx:if="\{\{reco \|\| productId\}\}"/.test(wallWxml2) &&
+    /wx:if="\{\{reco \|\| productId \|\| recoLoading\}\}"/.test(wallWxml2) &&
+    (wallWxml2.match(/class="ww-sheet-product"/g) || []).length === 1 &&
     !/class="ww-play-reco"/.test(wallWxml2) &&
     !/class="ww-play-product"/.test(wallWxml2)
 )
@@ -4895,6 +4932,30 @@ check(
     eq('★ 显式 true 时开关才开（证明这个开关真的能开关）', gatePage.data.showRitualProfile, true)
     await gatePage.applyGate({ showMaShangYou: false, showRitualProfile: false })
     eq('★ 显式 false 时关回去（出事时一键关，无需发版）', gatePage.data.showRitualProfile, false)
+
+    // ⚠️ 2026-09-20 补（子代理行为复核抓到）：**读成功就必须清掉"读失败"态**。
+    // 原来的早退分支什么都不写，于是「首次读开关失败 → 点『再试一次』→ 这次读成功、但开关确实是关的」
+    // 会命中早退直接 return：gateError 永远 true、loading 卡 true，页面继续显示
+    // 「网络或权限异常，没读上馆方的开关」——**又一种把系统状态说成事实的假话**，
+    // 而且正是本批改造声称要消灭的那一种。这条断言只认"读成功后的终态"，不认代码怎么写。
+    const retryPage = mkHookPage({ data: { allowed: false, flagChecked: true, gateError: true, loading: true } })
+    retryPage.refresh = () => { retryPage.refreshed = (retryPage.refreshed || 0) + 1; return Promise.resolve() }
+    retryPage.fireEntryEgg = () => {}
+    await retryPage.applyGate({ showMaShangYou: false }, { force: true })
+    eq('★ 开关读成功（哪怕墙仍是关的）必须清掉「读失败」态与加载态', `${retryPage.data.gateError}/${retryPage.data.loading}`, 'false/false')
+    eq('…且这一支一次内容请求都不发（关门不拉数据）', retryPage.refreshed || 0, 0)
+
+    // 同一条的"开"分支：开关没变 + force → 必须**重拉内容**（下拉刷新的本意）
+    const forcePage = mkHookPage({ data: { allowed: true, flagChecked: true, gateError: false, loading: false } })
+    forcePage.refresh = () => { forcePage.refreshed = (forcePage.refreshed || 0) + 1; return Promise.resolve() }
+    forcePage.fireEntryEgg = () => {}
+    await forcePage.applyGate({ showMaShangYou: true }, { force: true })
+    eq('★ 下拉刷新（force）在开关未变时仍必须重拉内容', forcePage.refreshed || 0, 1)
+    const softPage = mkHookPage({ data: { allowed: true, flagChecked: true, gateError: false, loading: false } })
+    softPage.refresh = () => { softPage.refreshed = (softPage.refreshed || 0) + 1; return Promise.resolve() }
+    softPage.fireEntryEgg = () => {}
+    await softPage.applyGate({ showMaShangYou: true })
+    eq('…而非 force 的同值回包不重拉（保持进页控制流不变）', softPage.refreshed || 0, 0)
   }
   stub.restore()
 
@@ -5417,6 +5478,211 @@ if (process.argv.includes('--selftest') && !INJECT) {
   }
   console.log(`\n✓ selftest 通过：${ran} 个有效回归注入全部被检出（另 ${deadSet.size} 条锚点失效已登记跳过），且无假阳性`)
   process.exit(0)
+}
+
+/* ================================================================== *
+ * 第二批改造的**状态位**（2026-09-20）：每一条都配了注入（见 INJECTIONS 末尾六条）
+ *
+ * 为什么这六处必须单独立判据：它们全是"新加的状态位"，而**状态位的失效方式是静默的** ——
+ * 少清一个标志、少写一个字段，页面照样渲染、单测照样绿，
+ * 只有在真机上表现为"永久显示网络异常""点了没反应""条数写着 0 而墙上明明有一条"。
+ * ------------------------------------------------------------------ */
+{
+  const stub = installWxStub()
+  const wwPage = loadCjs('miniprogram/utils/wishWall.js', { require: markerRequire })
+  const store = new Map()
+  globalThis.wx.setStorageSync = (k, v) => { store.set(k, v) }
+  globalThis.wx.pageScrollTo = () => {}
+  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const mkPage = (over) => {
+    const page = Object.assign(Object.create(null), proto)
+    page.data = Object.assign({
+      allowed: true, flagChecked: true, productKey: 'wall1', productId: 'p1', productTitle: '孔雀标本',
+      plays: playList, playResult: null, playPending: '', playNeed: null, draft: '',
+      echoRows: [], soundOn: false, muyuCount: 0, lamp: { dayKey: '', lit: false, streak: 0 },
+      quota: { used: 0, left: 5, cap: 5, exhausted: false, unknown: false },
+      mine: { total: 0, visible: 0, hidden: 0 }, mineRows: [], rows: [],
+      tagColumns: [], items: [], freshId: '', danmakuCycle: 0, loadError: ''
+    }, over || {})
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page._soundPlayer = { play() { return true }, destroy() {} }
+    page._echoSeq = 0
+    page.showAppToast = function (o) { this.data.toastTitle = (o && o.title) || '' }
+    return page
+  }
+
+  /* ① 灵感词：点完必须**聚焦**（这条链路从前"点了像没反应"），定时器必须有句柄 */
+  {
+    const p = mkPage()
+    p.useInspiration({ currentTarget: { dataset: { text: '马上有风' } } })
+    check('…且聚焦定时器**有句柄**（旧实现是匿名 setTimeout，卸页后仍会 setData）', !!p._focusTimer)
+    // 聚焦是**延时**落下的（60ms，与真机键盘顶起同一手法），所以要等定时器跑完再断言
+    await new Promise((r) => setTimeout(r, 140))
+    eq('★ 点灵感词要落到输入框焦点上（只改 draft 不聚焦 = 真机「点了像没反应」）',
+      `${p.data.draft}/${p.data.inputFocus}`, '马上有风/true')
+    // 再排一个"待触发"的定时器，验证 onUnload 清句柄 + 卸载后不再 setData
+    p.data.inputFocus = false
+    p.focusWishInput(60)
+    check('（前置）确实排上了一个待触发的定时器', !!p._focusTimer)
+    p.onUnload()
+    eq('★ onUnload 必须清掉聚焦定时器', p._focusTimer, null)
+    await new Promise((r) => setTimeout(r, 120))
+    eq('…且卸载后回调不再 setData（_unloaded 闸兜底）', p.data.inputFocus, false)
+  }
+
+  /* ② 抽签等待态：await 期间落 pending，拿到结果必须清掉 */
+  {
+    const p = mkPage()
+    let release = null
+    p.loadPlayProfile = () => new Promise((res) => { release = res })
+    const running = p.onPlayTap({ currentTarget: { dataset: { id: 'zodiac' } } })
+    await Promise.resolve()
+    eq('★ 星座签要读资料：等待期间瓦片必须落 pending 态（否则点上去零反馈）', p.data.playPending, 'zodiac')
+    release({ zodiac: 'aries', mbti: '' })
+    await running
+    eq('…拿到结果后 pending 必须清掉（漏清 = 瓦片永久卡在「摇签中」）', p.data.playPending, '')
+  }
+
+  /* ③ 玩法失败必须**说出来**并记一笔（此前静默 return，点瓦片毫无反应） */
+  check(
+    '★ 玩法非 need_profile 的失败要给出反馈并留在漏斗里（原来静默 return）',
+    // ⚠️ 判据必须锚**行首的调用**，不能只 grep `showAppToast(` ——
+    // 第一版写成后者，注入把调用改成 `void 0 && this.showAppToast(` 之后**字符串还在**，
+    // 正则照样命中，自检就报"注入未被检出"（判据自己放水）。
+    /if \(result\.reason === 'need_profile'\)[\s\S]{0,700}?\n        this\.showAppToast\(\{/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')) &&
+      /trackBehavior\('wish_wall_play', 'fail', id\)/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js'))
+  )
+
+  /* ④ 跨天 onShow 必须重算灯态（否则新的一天点不亮） */
+  {
+    const p = mkPage({ lamp: { dayKey: '2000-01-01', lit: false, streak: 0 } })
+    let inited = 0
+    p.initRitual = () => { inited += 1 }
+    p.scheduleDanmakuCycle = () => {}
+    p.onShow()
+    eq('★ 跨天回到页面必须重算灯态（否则今天点不亮灯）', inited, 1)
+    const p2 = mkPage({ lamp: { dayKey: wwPage.shanghaiDayKey(Date.now()), lit: true, streak: 1 } })
+    let inited2 = 0
+    p2.initRitual = () => { inited2 += 1 }
+    p2.scheduleDanmakuCycle = () => {}
+    p2.onShow()
+    eq('…同一天不重算（不白跑一遍）', inited2, 0)
+  }
+
+  /* ⑤ 落愿后的乐观插入必须同步墙条数（空墙第一条时否则显示「0 条心愿正在墙上流动」） */
+  {
+    const p = mkPage({ draft: '马上有风', _wallItems: [] })
+    p.isGuestUser = async () => false
+    p.callFn = async () => ({ success: true, _id: 'new1', nickname: '我' })
+    p.refresh = async () => { throw new Error('列表回包失败（正是这条不变量最该成立的时候）') }
+    p.applyView = () => {}
+    p.scheduleDanmakuCycle = () => {}
+    p.scheduleFreshClear = () => {}
+    p.pushEcho = () => {}
+    await p.submitWish()
+    eq('★ 落愿后墙条数必须与墙上数据一致（哪怕随后的列表回包失败）',
+      p.data.wallCount, (p._wallItems || []).length)
+  }
+
+  /* ⑥ 门禁读失败 → 额度未知：UI 不许沿用默认的"还可写 5 条" */
+  {
+    const p = mkPage({ quota: { used: 2, left: 3, cap: 5, exhausted: false } })
+    p.callFn = async () => { throw new Error('mine 读取失败') }
+    await p.loadMine()
+    eq('★ mine 读取失败要标记额度未知（默认值"还可写 5 条"可能是假的）', p.data.quota.unknown, true)
+    eq('…且不许把已读到的 left 重置成默认值', p.data.quota.left, 3)
+    check('WXML 有 unknown 专述分支（不沿用事实句）', /quota\.unknown/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')))
+  }
+
+  stub.restore()
+}
+
+/* ================================================================== *
+ * 离线版式预览工具自身的静态防线（2026-09-20 补，起因是子代理的两条发现）
+ *
+ * 为什么单独立这一节：本轮改造里改动最大、却**一条守卫都没有**的是
+ * `miniprogram/scripts/render-wall-preview.mjs`（601 行改动）+ 新增的
+ * `scripts/lib/wxml-preview.mjs`（230 行）。`grep -rn "render-wall-preview" guards/ package.json`
+ * 零命中 ——「109 条全绿」对这两个文件不构成任何证据。
+ * 它们需要本机 Chrome，不能进 check:admin（本仓既有口径）；但**不依赖 Chrome 的那部分**
+ * 完全可以静态守住，而且正是最容易出事的那部分：
+ *   ① 自检**不许写真源码**（旧实现写进真源码再 finally 还原；子代理实测抓到
+ *      `index.wxss` 末尾残留 `.ww-wall { height: 900px !important; }` —— 一个 !important
+ *      覆盖留在要发版的样式表里，SIGKILL/超时下 finally 根本跑不到）；
+ *   ② 自检的**注入锚点**不许悄悄失效（锚点没了 = 子进程抛错 = 判据"看着通过"，本仓的老坑）；
+ *   ③ 判据本身不许被无声删掉（旧预览的两条吸底判据就是这样"过期 → 报假失败 → 被整条删除"的）。
+ * ------------------------------------------------------------------ */
+{
+  const previewSrc = readSrc('miniprogram/scripts/render-wall-preview.mjs')
+  const previewWxml = readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')
+
+  check(
+    '★ 预览自检**只写 .tmp 副本**，真源码一个字节都不许被写（旧实现会残留 !important 覆盖）',
+    /const REAL_WXSS = resolve\(/.test(previewSrc) &&
+      /const REAL_WXML = resolve\(/.test(previewSrc) &&
+      /process\.env\.WALL_PREVIEW_WXSS \|\| REAL_WXSS/.test(previewSrc) &&
+      /process\.env\.WALL_PREVIEW_WXML \|\| REAL_WXML/.test(previewSrc) &&
+      /WALL_PREVIEW_WXSS: wxssCopy/.test(previewSrc) &&
+      /WALL_PREVIEW_WXML: wxmlCopy/.test(previewSrc) &&
+      // 真源码路径只许出现"读"，不许出现在 writeFileSync 里
+      !/writeFileSync\(REAL_WXSS/.test(previewSrc) &&
+      !/writeFileSync\(REAL_WXML/.test(previewSrc) &&
+      // 并且自检结尾要**断言**真源码未变（不是靠 finally 的自觉）
+      /readFileSync\(REAL_WXSS, 'utf8'\) === baseWxss/.test(previewSrc)
+  )
+
+  check(
+    '★ 预览自检的 WXML 注入锚点必须还在真源码里，且**不许有注入残留**（锚点失效/残留 = 假绿或假页面）',
+    (() => {
+      const block = (/const INJECTS = \[([\s\S]*?)\n  \]/.exec(previewSrc) || [])[1] || ''
+      if (!block) return false
+      const chunks = block.split(/\{\s*\n?\s*(?:\/\/[^\n]*\n\s*)*name:/).slice(1)
+      const pairs = []
+      for (const c of chunks) {
+        if (!/file: 'wxml'/.test(c)) continue
+        const f = /from: '((?:[^'\\]|\\.)*)'/.exec(c)
+        const t = /to: '((?:[^'\\]|\\.)*)'/.exec(c)
+        if (f) pairs.push([f[1].replace(/\\'/g, "'"), t ? t[1].replace(/\\'/g, "'") : ''])
+      }
+      // 至少 3 条 WXML 锚点（reco 占位 / 骨架撤回 / 次瓦片无字标）；
+      // from 必须在、to **必须不在** —— 「to 在真源码里」意味着自检被中断后**注入残留在真源码**
+      // （2026-09-20 实测发生过一次：`--selftest` 被杀，真 WXML 里留的是注入后的 `wx:if`）。
+      return pairs.length >= 3 &&
+        pairs.every(([f]) => previewWxml.includes(f)) &&
+        pairs.every(([, t]) => !t || !previewWxml.includes(t))
+    })()
+  )
+
+  // 这条判据是"同类错误第三次发生"逼出来的（本仓错题本的原话：同类错误第二次发生必须补守卫）：
+  // MEASURE_JS 与 HTML 都是**巨大的模板字符串**，在里面写一个反引号就会截断它，
+  // 症状只是运行时报一个离得很远的 SyntaxError。三次里有一次就发生在我自己写的修复注释里。
+  const previewSyntax = await (async () => {
+    const { spawnSync } = await import('node:child_process')
+    const r = spawnSync(process.execPath, ['--check', resolve(ROOT, 'miniprogram/scripts/render-wall-preview.mjs')], { encoding: 'utf8' })
+    return { ok: r.status === 0, err: String(r.stderr || '').split('\n').filter((l) => l.includes('SyntaxError')).join(' ') }
+  })()
+  check(
+    '★ 预览脚本必须能通过 node --check（注释里的反引号会截断它内部的模板字符串）',
+    previewSyntax.ok,
+    previewSyntax.err
+  )
+
+  check(
+    '★ 预览的关键判据不许被无声删除，且不许把「看门狗」降级成「报告」',
+    // 四条：灵感词同屏 / 推荐取件占位 / 次瓦片无字标 / 吸底预留（按设计分支）；
+    // 外加两条本轮自查发现的退化点：非 --check 时静默 exit 0、.tmp 不自建导致新 clone ENOENT。
+    // ⚠️ 负向判据必须先**去注释**再测 —— 否则它会读到自己那段"原来写的是 …"的说明（本仓的老坑）。
+    (() => {
+      const code = previewSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+      return /灵感词与发送条不在同一屏/.test(code) &&
+        /取件中：产品行已占位/.test(code) &&
+        /次瓦片无字标/.test(code) &&
+        /发送条改回吸底但没有底部预留/.test(code) &&
+        !/process\.exit\(CHECK_ONLY \? 1 : 0\)/.test(code) &&
+        /版式不变量违反[\s\S]{0,600}?process\.exit\(1\)/.test(code) &&
+        /mkdirSync\(TMP_DIR, \{ recursive: true \}\)/.test(code)
+    })()
+  )
 }
 
 console.log(`\n需求 28 行为断言：通过 ${passed} / ${passed + failed}`)

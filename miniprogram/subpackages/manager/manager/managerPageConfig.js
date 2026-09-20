@@ -1476,7 +1476,9 @@ const managerPageConfig = {
     contentFlagsDocId: '',
     contentFlagsFromDefault: true,
 
-    // 字段维护（curTab 17）：装裱方式 craftType / 制作工艺 craftProcess —— 仅超管
+    // 字段维护专区（2026-09-20 并入「藏品库 → 分类管理」，原来是一个独立的 curTab 17）
+    // 权限沿用 MENU_KEYS.PRODUCT_FIELDS：只换位置、不放宽（见 applyWorkspaceRole）
+    canProductFields: false,
     pfLoading: false,
     pfSaving: false,
     pfLoaded: false,
@@ -1846,6 +1848,9 @@ const managerPageConfig = {
       workspaceReady: true,
       workspaceRole,
       isSuperAdmin: workspaceRole === WORKSPACE_SUPER_ADMIN,
+      // 字段维护专区：仍然只用 MENU_KEYS.PRODUCT_FIELDS 判（合并进「分类管理」是**换位置**，
+      // 不是放宽权限 —— 这两个字段影响运费档，不该给店员）
+      canProductFields: menu[MENU_KEYS.PRODUCT_FIELDS] === true,
       staffName: String((role && role.name) || '').trim(),
       menu,
       menuSectionOps,
@@ -2093,11 +2098,25 @@ const managerPageConfig = {
         this.loadProductStats();
       }
       if (next === 'category') this.loadCategoriesManage();
+      if (next === 'category') this.maybeLoadProductFields();
       return;
     }
     this.setData({ productLibTab: next });
     if (next === 'stats') this.loadProductStats();
     if (next === 'category') this.loadCategoriesManage();
+    if (next === 'category') this.maybeLoadProductFields();
+  },
+
+  /**
+   * 字段维护专区的**懒加载**（2026-09-20 合并时加）。
+   * 为什么不让「进分类管理就无条件拉」：`loadProductFields` 要把藏品库分页拉到 total（最多 10×100 条），
+   * 而"分类管理"的主任务是改分类树 —— 为一个可能不展开的专区拖慢它是错的。
+   * 所以只在**有权限**且**没加载过**时拉一次；失败/想看最新可用专区里的「读取藏品字段」手动重拉。
+   */
+  maybeLoadProductFields() {
+    if (!this.data.canProductFields) return;
+    if (this.data.pfLoaded || this.data.pfLoading) return;
+    this.loadProductFields();
   },
 
   /** 标本师工作台：?productTab=create | productId=xxx */
@@ -2750,7 +2769,7 @@ const managerPageConfig = {
       if(idx === 13) { await this.loadAnalyticsDashboard(); }
       if(idx === 15) { await this.loadShippingRules(); }
       if(idx === 16) { await this.loadContentDisplayFlags(); }
-      if(idx === 17) { await this.loadProductFields(); }
+      // 字段维护已并入「藏品库 → 分类管理」的子 Tab，不再有 curTab 17（见 setProductLibTab）
   },
 
   // 🟢 核心：加载线下营收（本月 store_ledger，三源合并；固定主店，勿用 C 端 preferred）

@@ -91,8 +91,11 @@ const TAB_MENU_KEY = {
   13: MENU_KEYS.ANALYTICS,
   14: MENU_KEYS.FRAMER_RECRUIT,
   15: MENU_KEYS.SHIPPING,
-  16: MENU_KEYS.CONTENT_FLAGS,
-  17: MENU_KEYS.PRODUCT_FIELDS
+  16: MENU_KEYS.CONTENT_FLAGS
+  // ⚠️ 17（字段维护）已于 2026-09-20 撤销：它自成一个 Tab，但产品负责人在开发仓里**找不到**这个入口
+  //（入口只在超管工作台 Hub 的 OPS 分组里，而"改字段"这件事用户是在「藏品库」里找的）。
+  // 现在它并入 **藏品库 → 分类管理** 里的「字段维护专区」；权限仍用 MENU_KEYS.PRODUCT_FIELDS 判，
+  // 只换位置、不放宽权限（见 _subviews.wxml 的 .cat-field-zone 与 managerPageConfig 的 canProductFields）。
 }
 
 const SUPER_ADMIN_MENUS = Object.keys(MENU_KEYS).map((k) => MENU_KEYS[k])
@@ -183,8 +186,11 @@ const HUB_MENU_SECTIONS = {
     MENU_KEYS.CONTENT,
     MENU_KEYS.LIVE,
     MENU_KEYS.STORES,
-    MENU_KEYS.CONTENT_FLAGS,
-    MENU_KEYS.PRODUCT_FIELDS
+    MENU_KEYS.CONTENT_FLAGS
+    // ⚠️ MENU_KEYS.PRODUCT_FIELDS 于 2026-09-20 从 Hub 菜单里移除：它不再是一个独立入口，
+    // 而是「藏品库 → 分类管理」里的一个**专区**（同一子 Tab，滚动即见）。
+    // 菜单里留着它就等于同一件事有两个入口，而产品负责人恰恰是"在藏品库里找不到"才要求合并的。
+    // 权限键本身保留（`canProductFields` 用它判定专区的显示与隐藏）。
   ],
   STUDIO: [
     MENU_KEYS.STUDIO_DASHBOARD,

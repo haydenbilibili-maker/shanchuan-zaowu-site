@@ -258,6 +258,17 @@ Page({
     blessLabelText: '',
     /** 抽到的结果（就地展开的卡片；null = 未抽/已收起） */
     playResult: null,
+    /**
+     * 正在摇的那一支（玩法 id；空串 = 没有在等）。
+     * 为什么需要它：星座 / MBTI 要读用户资料，首次会走一次会话请求 —— 那段等待此前**零反馈**，
+     * 点上去像没反应。现在瓦片落 pending 态（呼吸边框 + 副文案「摇签中…」）。
+     */
+    playPending: '',
+    /**
+     * 祈运推荐**取件中**。弹层的产品行据此占位（同高骨架），避免"弹层长高一块"。
+     * 只有 `recoLoading || reco || productId` 三者之一成立时那一行才在，故高度从出现起就稳定。
+     */
+    recoLoading: false,
     /** 需要补资料时的引导状态（不给假结果） */
     playNeed: null,
     /** 纸签弹层的拖拽位移（rpx 由 WXSS 换算；这里存 px） */
@@ -351,7 +362,9 @@ Page({
    * 与下拉刷新同一条路：强制跳过 SWR 缓存重读开关。
    */
   onGateRetry() {
-    this.setData({ loading: true })
+    // 重试前先清掉错误态：这样即使这次也读失败，用户看到的是"又失败了一次"，
+    // 而不是"上一次的错误 + 一个卡住的加载态"叠在一起（2026-09-20，子代理复核补）。
+    this.setData({ loading: true, gateError: false })
     this.bootstrap({ force: true })
   },
 
@@ -411,7 +424,17 @@ Page({
     }
     let profile = null
     if ((play.needs || []).length) {
-      profile = await this.loadPlayProfile()
+      // ⚠️ 2026-09-20：这一段是**唯一**可能等待网络的 await（首次会话请求）；
+      // 此前它没有任何前置反馈 —— 用户点「星座签」后到弹层出现之间是纯静默。
+      // 现在先落 pending 态（瓦片呼吸 + 副文案「摇签中…」），finally 里一定清掉：
+      // 清早清晚都不影响结果，但**漏清就是把瓦片永久卡在"摇签中"**。
+      if (this.data.playPending) return
+      this.setData({ playPending: id })
+      try {
+        profile = await this.loadPlayProfile()
+      } finally {
+        this.setData({ playPending: '' })
+      }
     }
     const result = ritualPlay.resolvePlay(id, {
       dayKey: shanghaiDayKey(Date.now()),
@@ -557,9 +580,12 @@ Page({
     if (!tag) return
     const cacheKey = recoCacheKey(tag, shanghaiDayKey(Date.now()))
     if (cacheKey && this._recoCache && this._recoCache.key === cacheKey) {
-      this.setData({ reco: this._recoCache.row })
+      this.setData({ reco: this._recoCache.row, recoLoading: false })
       return
     }
+    // ⚠️ 2026-09-20：进云之前先立"推荐取件中"标记 —— 弹层那一行据此**占位**。
+    // 此前这一行在回包前整块不渲染，弹层会在用户读签文时长高一块（没有 productId 的墙必现）。
+    this.setData({ recoLoading: true })
     try {
       const res = await wx.cloud.callFunction({
         name: 'getBlessProducts',
@@ -574,10 +600,11 @@ Page({
       })
       const reco = pickReco(res && res.result, tag, blessLabel(tag))
       this._recoCache = { key: cacheKey, row: reco }
-      this.setData({ reco })
+      this.setData({ reco, recoLoading: false })
     } catch (e) {
-      // 推荐失败不影响玩法：保持 reco=null（卡片少一行而已）
-      this.setData({ reco: null })
+      // 推荐失败不影响玩法：保持 reco=null（卡片少一行而已）。
+      // ⚠️ `recoLoading` 必须一起清：否则弹层会永久停在骨架占位上（"看起来在加载、其实不会来了"）。
+      this.setData({ reco: null, recoLoading: false })
     }
   },
 
@@ -895,6 +922,13 @@ Page({
       this.refreshCertEntry()
     }
     if (allowed === this.data.allowed && this.data.flagChecked) {
+      // ⚠️ 2026-09-20 修（子代理行为复核抓到）：**读成功就要清错误态**。
+      // 原来的早退分支什么都不写，于是"首次读开关失败 → 用户点重试 → 这次读成功、开关确实是关的"
+      // 会命中这里直接 return：`gateError` 永远留在 true、`loading` 卡在 true，
+      // 页面继续显示「网络或权限异常，没读上馆方的开关」——**这又是一种假事实**，
+      // 而且正是本批改造声称要消灭的那一种（把系统状态说成馆方状态）。
+      // 语义：`gateError` 只表示"上一次读失败"，任何一次成功读取（无论开关开还是关）都必须清掉它。
+      if (this.data.gateError || this.data.loading) this.setData({ gateError: false, loading: false })
       // ⚠️ 2026-09-20 修：开关没变时**也要把内容重拉一遍**。
       // 此前这里直接 return，于是下拉刷新的实际效果是"只重读了开关"——
       // 列表、额度、我的心愿一个都不动，与「刷新」这个词不符（onPullDownRefresh 传的 force 白传）。
@@ -1304,6 +1338,11 @@ Page({
       this.setData({
         draft: '',
         freshId: fresh._id,
+        // ⚠️ 2026-09-20 修（子代理行为复核抓到）：乐观插入墙上数据之后**必须同步 wallCount**。
+        // 否则"空墙写下第一条"时：墙上已经有一条（rows 也重建了、页脚照样渲染），
+        // 但页脚文案与分段条数读的是 wallCount = 0 → 显示「0 条心愿正在墙上流动」，
+        // 而如果随后的 refresh 回包失败，这个 0 会一直留着（又是一条与画面不符的假事实）。
+        wallCount: this._wallItems.length,
         // 额度即时递减（诚实：以本地事实为准，服务端刷新会再校准）
         quota: Object.assign({}, this.data.quota, {
           used: (this.data.quota.used || 0) + 1,
