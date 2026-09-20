@@ -75,7 +75,9 @@ function check (root) {
     if (catAt >= 0 && zoneAt >= 0 && zoneAt < catAt) {
       problems.push('.cat-field-zone 不在分类管理块内部（专区被挪出了「藏品库 → 分类管理」）')
     }
-    if (zoneAt >= 0 && !/class="cat-field-zone"\s+wx:if="\{\{canProductFields\}\}"/.test(subviews)) {
+    // 门可以是复合的（`canProductFields && catZone==='fields'`，2026-09-20 分子 Tab 之后），
+    // 但**必须包含** canProductFields —— 判据只认这一点，不去钉门的完整写法。
+    if (zoneAt >= 0 && !/class="cat-field-zone"\s+wx:if="\{\{[^}]*canProductFields[^}]*\}\}"/.test(subviews)) {
       problems.push('.cat-field-zone 未受 canProductFields 控制 —— 合并不得放宽权限（该字段影响运费档）')
     }
   }
@@ -172,6 +174,24 @@ function check (root) {
         problems.push('.cfg-row（横排）里用了 cfg-field-full（width:100% + flex:none）—— 会把整行撑出卡片')
         break
       }
+    }
+  }
+
+  // ④c 内层分区（2026-09-20 产品负责人：「几个功能分区做成分 tab，而不是无限下拉」）
+  // 判据本体是**每个分区都带 catZone 门** —— 只要有一块不 gate，它就又变回"永远显示在下拉流里"。
+  {
+    const tabs = subviews.match(/class="cat-zone-tab [^"]*"/g) || []
+    if (tabs.length < 3) problems.push(`内层分区 Tab 不足 3 个（分类管理/字段维护/选项维护），实测 ${tabs.length}`)
+    const gates = [
+      ['分类管理块', /<block wx:if="\{\{catZone==='category'\}\}">/],
+      ['字段维护区', /class="cat-field-zone"\s+wx:if="\{\{canProductFields && catZone==='fields'\}\}"/],
+      ['选项维护区', /class="cat-opt-block"\s+wx:if="\{\{canProductFields && catZone==='options'\}\}"/]
+    ]
+    for (const [name, re] of gates) {
+      if (!re.test(subviews)) problems.push(`${name}没有 catZone 门 —— 分 Tab 会退回"无限下拉"`)
+    }
+    if (!/switchCatZone\(/.test(manager) || !/loadCatZoneData\(/.test(manager)) {
+      problems.push('managerPageConfig 缺 switchCatZone / loadCatZoneData（切 Tab 没接线 / 没懒加载）')
     }
   }
 
@@ -285,6 +305,13 @@ function selftest () {
         expect: /未用 picker 就地改/
       },
       {
+        name: '字段维护区丢掉 catZone 门（分 Tab 退回"无限下拉"）',
+        file: REL.subviews,
+        mutate: (s) => s.replace('class="cat-field-zone" wx:if="{{canProductFields && catZone===\'fields\'}}"',
+                                 'class="cat-field-zone" wx:if="{{canProductFields}}"'),
+        expect: /catZone 门/
+      },
+      {
         name: 'C 端标签退回冻结常量（超管新增的选项会显示成空白）',
         file: REL.taxonomy,
         mutate: (s) => s.replace(
@@ -316,7 +343,7 @@ function selftest () {
       {
         name: '专区不再受超管开关控制（合并顺手放宽了权限）',
         file: REL.subviews,
-        mutate: (s) => s.replace('class="cat-field-zone" wx:if="{{canProductFields}}"', 'class="cat-field-zone"'),
+        mutate: (s) => s.replace('class="cat-field-zone" wx:if="{{canProductFields && catZone===\'fields\'}}"', 'class="cat-field-zone"'),
         expect: /未受 canProductFields 控制/
       },
       {
@@ -353,7 +380,7 @@ function selftest () {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：10 处真实注入（发给店长 / 内联选项清单 / 分批超限 / 退化成只读 / 标签退回冻结常量 / 服务端漏删除保护 / 启动不加载字典 / 横排抄了竖排输入框 / 专区没权限门 / Tab 17 复活）全部拦下')
+  console.log('\n自检通过：11 处真实注入（发给店长 / 内联选项清单 / 分批超限 / 退化成只读 / 标签退回冻结常量 / 服务端漏删除保护 / 启动不加载字典 / 横排抄了竖排输入框 / 分区丢 catZone 门 / 专区没权限门 / Tab 17 复活）全部拦下')
 }
 
 function main () {

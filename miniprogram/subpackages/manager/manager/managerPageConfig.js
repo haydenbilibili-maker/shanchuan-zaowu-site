@@ -1495,6 +1495,12 @@ const managerPageConfig = {
     // 而访问器会带上云端覆写（`setCraftOverlay`），常量数组永远只有内置的那几个。
     pfTypeLabels: TAXONOMY.craftTypeOptions().map((o) => o.label),
     pfProcessLabels: TAXONOMY.craftProcessOptions().map((o) => o.label),
+    /**
+     * 「藏品库 → 分类管理」的**内层分区**（2026-09-20 产品负责人：「几个功能分区做成分 tab，
+     * 而不是无限下拉」）。三块此前是一条长滚动：分类树 + 字段维护（计数/筛选/列表）+ 选项维护。
+     * 现在各自成页，**同时只渲染一块**（WXML 每块都有 catZone 门，守卫钉住）。
+     */
+    catZone: 'category',
     // 选项维护（字典本身）：新增 / 改中文名 / 删减
     optGroups: [],          // [{ key:'craftTypes', title:'装裱方式', items:[{value,label,used,canDelete}] }]
     taxonomyDirty: false,
@@ -2123,9 +2129,25 @@ const managerPageConfig = {
    */
   maybeLoadProductFields() {
     if (!this.data.canProductFields) return;
-    this.loadTaxonomyEditor();
-    if (this.data.pfLoaded || this.data.pfLoading) return;
-    this.loadProductFields();
+    // 只准备"当前这一页"的内容：进「分类管理」不该顺手把全库拉一遍（分页最多 10×100 条）。
+    // 切到「字段维护」才拉商品、切到「选项维护」才拉字典 —— 这也是分 Tab 的意义之一。
+    this.loadCatZoneData(this.data.catZone);
+  },
+
+  /** 切内层分区；切到哪一页才加载哪一页的数据 */
+  switchCatZone(e) {
+    const zone = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.zone) || 'category');
+    const next = (zone === 'fields' || zone === 'options') ? zone : 'category';
+    if (!this.data.canProductFields && next !== 'category') return;
+    this.setData({ catZone: next });
+    this.loadCatZoneData(next);
+  },
+
+  /** 分区数据懒加载（切换时调用；重复进入不重复拉） */
+  loadCatZoneData(zone) {
+    if (!this.data.canProductFields) return;
+    if (zone === 'fields' && !this.data.pfLoaded && !this.data.pfLoading) this.loadProductFields();
+    if (zone === 'options') this.loadTaxonomyEditor();
   },
 
   /* ══════════ 选项维护（2026-09-20）：装裱方式 / 制作工艺的**字典本身** ══════════

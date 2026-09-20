@@ -408,6 +408,20 @@
     <!-- 分类管理（原弹窗能力内嵌） -->
     <block wx:if="{{productLibTab==='category'}}">
       <view class="cat-manage-inline">
+        <!-- 内层分区（2026-09-20 产品负责人：「几个功能分区做成分 tab，而不是无限下拉」）：
+             分类管理 / 字段维护 / 选项维护 三块各自成页，切 Tab 而不是一路往下滚。
+             ⚠️ 三块**必须各自带 wx:if**（只渲染当前这一块）：这是"不再无限下拉"的判据本体，
+             守卫 check-product-fields-entry 会钉住"每个分区都有 catZone 门"。 -->
+        <view class="cat-zone-tabs" aria-role="tablist">
+          <view class="cat-zone-tab {{catZone==='category'?'on':''}}" bindtap="switchCatZone" data-zone="category"
+            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='category'}}">分类管理</view>
+          <view class="cat-zone-tab {{catZone==='fields'?'on':''}}" wx:if="{{canProductFields}}" bindtap="switchCatZone" data-zone="fields"
+            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='fields'}}">字段维护</view>
+          <view class="cat-zone-tab {{catZone==='options'?'on':''}}" wx:if="{{canProductFields}}" bindtap="switchCatZone" data-zone="options"
+            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='options'}}">选项维护</view>
+        </view>
+
+        <block wx:if="{{catZone==='category'}}">
         <view class="cat-manage-actions">
           <view class="cat-sync-btn" bindtap="syncCategoriesFromSeed">同步标准分类</view>
           <view class="cat-sync-btn cat-sync-btn-ghost" bindtap="fillL2LatinNames">补齐拉丁名</view>
@@ -467,7 +481,9 @@
              权限**不放宽**：整块由 `canProductFields` 控制（= MENU_KEYS.PRODUCT_FIELDS），
              与合并前"仅超管"完全一致；选项表仍取唯一事实源 config/productTaxonomy.js。
              守卫：miniprogram/scripts/check-product-fields-entry.mjs。 -->
-        <view class="cat-field-zone" wx:if="{{canProductFields}}">
+        </block>
+
+        <view class="cat-field-zone" wx:if="{{canProductFields && catZone==='fields'}}">
           <view class="cat-field-head">
             <text class="cat-field-title">字段维护专区</text>
             <text class="cat-field-sub">装裱方式 / 制作工艺 · 选项与 C 端 / ERP 同源 · 只改这两个字段</text>
@@ -527,7 +543,41 @@
         <view class="cfg-cta {{pfDirtyCount && !pfSaving ? '' : 'disabled'}}" bindtap="saveProductFields">
           {{pfSaving ? '保存中…' : (pfDirtyCount ? '保存 ' + pfDirtyCount + ' 件改动' : '保存（先在上面改动）')}}
         </view>
-    
+        </view>
+
+        <view class="cat-opt-block" wx:if="{{canProductFields && catZone==='options'}}">
+        <!-- ══════════ 选项维护（2026-09-20 新增）══════════
+             上面管的是"给商品**选**装裱方式/制作工艺"，这里管的是**选项本身**（增 / 改中文名 / 删）。
+             为什么要能改：这两个字段的选项表此前只存在于代码里（本仓有 5 处副本），加一个装裱方式就得发版。
+             现在代码常量是默认值、云端文档是覆写（与运费规则同一套双真源口径）。
+             三条硬约束直接做进界面（不靠记性）：
+               · `value` 是历史数据（商品存的就是它）→ 只读，只让改中文名；
+               · 还有商品在用的选项删除键置灰（服务端还会再数一遍，不信客户端）；
+               · 「其它」是存量数据的落脚点，不许删。
+             未连接云端时整块仍然可见，但保存被禁用并在标题下明说原因 —— 不做"看起来能存"的假象。 -->
+          <view class="cat-opt-head">
+            <text class="cat-opt-title">选项维护</text>
+            <text class="cat-opt-sub">{{taxonomyCloudReady ? '改中文名 / 新增 / 删减，保存后 C 端与 ERP 读到同一份' : '未连接云端：当前用的是内置选项，选项维护暂不可用（需部署 getProductTaxonomy）'}}</text>
+          </view>
+
+          <view class="cat-opt-group" wx:for="{{optGroups}}" wx:for-item="g" wx:key="key">
+            <text class="cat-opt-group-title">{{g.title}}（{{g.items.length}}）</text>
+            <view class="cat-opt-row" wx:for="{{g.items}}" wx:for-item="o" wx:key="value">
+              <input class="cat-opt-input" value="{{o.label}}" data-kind="{{g.key}}" data-index="{{index}}"
+                bindinput="onOptLabelInput" placeholder="中文名" placeholder-class="cfg-placeholder"/>
+              <text class="cat-opt-value">{{o.value}}</text>
+              <text class="cat-opt-used {{o.used ? 'is-used' : ''}}">{{o.used ? o.used + ' 件在用' : '未使用'}}</text>
+              <view class="cat-opt-del {{o.canDelete ? '' : 'disabled'}}" bindtap="removeTaxonomyOption"
+                data-kind="{{g.key}}" data-index="{{index}}" hover-class="cat-opt-del-press" hover-stay-time="70"
+                aria-role="button" aria-label="删除 {{o.label || o.value}}">删除</view>
+            </view>
+            <view class="cat-opt-add" bindtap="addTaxonomyOption" data-kind="{{g.key}}"
+              hover-class="cat-opt-add-press" hover-stay-time="70" aria-role="button">+ 新增{{g.title}}</view>
+          </view>
+
+          <view class="cfg-cta {{taxonomyDirty && !taxonomySaving && taxonomyCloudReady ? '' : 'disabled'}}" bindtap="saveTaxonomy">
+            {{taxonomySaving ? '保存中…' : (taxonomyCloudReady ? (taxonomyDirty ? '保存选项' : '保存选项（先改动）') : '选项维护不可用（云端未连接）')}}
+          </view>
         </view>
       </view>
     </block>

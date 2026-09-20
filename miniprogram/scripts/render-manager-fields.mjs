@@ -41,6 +41,12 @@ const CHECK_ONLY = has('--check')
 
 /** 视口宽 750px ↔ 750rpx：1rpx = 1px，等比于任意真机宽度（与 render-wall-preview 同口径） */
 const VIEW_W = 750
+/** 内层分区（与页面 data.catZone 同值）：category | fields | options */
+const ZONE = (() => {
+  const i = process.argv.indexOf('--zone')
+  const v = i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : 'fields'
+  return ['category', 'fields', 'options'].includes(v) ? v : 'fields'
+})()
 
 /* ── 自检：判据必须能被打红 ──────────────────────────────────────────────
  * 注入只写 `.tmp/` 副本（沿用 render-wall-preview 2026-09-20 的事故教训：
@@ -117,6 +123,8 @@ const data = {
   productLibTab: 'category',
   artisanEmbed: false,
   canProductFields: true,
+  // 内层分区（2026-09-20）：默认量「字段维护」页；--zone 可切
+  catZone: ZONE,
   // 分类管理
   categoryManageTree: [
     { _id: 'c1', name: '昆虫馆', enName: 'INSECTA', children: [
@@ -282,7 +290,7 @@ if (!CHECK_ONLY) {
   console.log(`\n截图：${OUT}`)
 }
 
-console.log('藏品库 → 分类管理 → 字段维护专区（视口 750px ↔ 750rpx）')
+console.log(`藏品库 → 分类管理 → 内层分区「${ZONE}」（视口 750px ↔ 750rpx）`)
 metrics.forEach((r) => console.log(`  · ${String(r.label).padEnd(14)} ${String(r.w).padStart(5)}  ${r.text}`))
 if (problems.length) {
   console.error(`\n✗ 版式不变量违反 ${problems.length} 处：`)

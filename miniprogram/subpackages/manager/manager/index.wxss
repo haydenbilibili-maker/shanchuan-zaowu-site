@@ -5405,6 +5405,32 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
    不再需要整页容器的边距（原来的 `.cfg-page` 已随独立 Tab 一起去掉）。
    为什么合并：产品负责人在开发仓里找不到那个独立 Tab（它在 Hub 的 OPS 分组里），
    而"改装裱/工艺"这类活他会到藏品库里找 —— 入口要放在用户会去找的地方。 */
+/* ── 内层分区 Tab（2026-09-20）：分类管理 / 字段维护 / 选项维护 ────────────────
+   为什么改：三块叠在一条长滚动里，越往下越难找（产品负责人原话「而不是无限下拉」）。
+   样式沿用本页既有的 `.sub-tab` 语汇（同一页里两处 Tab 长得一样，别自成一套）。 */
+.cat-zone-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.24);
+}
+.cat-zone-tab {
+  padding: 12rpx 28rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  background: rgba(196, 167, 108, 0.06);
+  border: 1rpx solid rgba(196, 167, 108, 0.24);
+  border-radius: 9999px;
+}
+.cat-zone-tab.on {
+  color: var(--color-bg);
+  background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
+  border-color: var(--brass-400);
+}
+.cat-zone-tab-press { opacity: 0.86; }
+
 .cat-field-zone {
   margin-top: 36rpx;
   padding-top: 28rpx;
