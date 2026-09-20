@@ -367,7 +367,7 @@ const STICKER = {
   bandTop: Math.round(10.5 * 11.811),                   // 题记带顶
   bandBasePad: Math.round(5 * 11.811),                  // 主题名基线（带顶下移）
   bandNoteBase: Math.round(8.8 * 11.811),               // 题记首行基线（带顶下移）
-  bandNoteLineH: 28,                                    // 题记行高（2026-09-19：27→28 —— 再大就会把长笺正文挤到 24px 下限之下，守卫实测）                                    // 题记行高
+  bandNoteLineH: 34,                                    // 题记行高（2026-09-19：27→28 —— 再大就会把长笺正文挤到 24px 下限之下，守卫实测）                                    // 题记行高
   bandPadB: Math.round(3.0 * 11.811),                   // 带底留白（2026-09-19：3.5→3.0mm，为题记字号调大找回空间）                   // 带底留白
   bandGap: Math.round(1.7 * 11.811),                    // 带底→正文间隔（2026-09-19：2→1.7mm，同上；**必须 >0**）                      // 带底 → 正文带顶的间隔（**必须存在**：删掉它 y 会变 NaN ⇒ 正文再次消失）
   bodyTop: Math.round(19 * 11.811),                     // 正文带顶（无题记时用）—— **必须 < signTop**
@@ -375,8 +375,8 @@ const STICKER = {
   dateOffset: Math.round(1.5 * 11.811),                  // 日期基线相对 footerTop（向上）—— 2026-09-19：10.2→1.5mm（**必须小于 sigOffset** 才在署名之下）
   underlineGap: Math.round(1.5 * 11.811),               // 署名下划线在基线下
   sigMaxW: Math.round(23 * 11.811),                     // 署名下划线**限宽**（不得越到印章区）
-  sigBaseSize: 34,                                      // 署名基准字号（超宽按宽度等比缩，不裁字）
-  sigMinSize: 25,
+  sigBaseSize: 42,                                      // 署名基准字号（超宽按宽度等比缩，不裁字）
+  sigMinSize: 30,
   // 页脚带顶：白区**下 1/5** → 75mm × 0.8 = 60mm。
   // 2026-09-20 白区从 69mm 改 75mm（1:1）时**必须一起改**：这组纵坐标全是绝对 mm，
   // 不动它就会出现"内容全挤在上 69mm、底下留 6mm 空白"（守卫不变式⑤d/e 会当场判红）。
@@ -384,7 +384,7 @@ const STICKER = {
   qrSize: Math.round(13 * 11.811),                      // 每枚码的边长（白区纵向 75mm 是硬上限：码+小字+纸底 6~16px 余量一起复算，见不变式⑤d）
   qrGap: Math.round(5 * 11.811),                        // 两枚码间距
   qrCaptionOffset: Math.round(1.4 * 11.811),            // 码下小字基线偏移（码底 + 1.4mm，避免小字贴住码底）
-  qrCaptionSize: 21,                                    // 码下小字（2026-09-19：18→21px，1.52mm→1.78mm —— 热敏 1.5mm 易糊）
+  qrCaptionSize: 24,                                    // 码下小字（2026-09-19：18→21px，1.52mm→1.78mm —— 热敏 1.5mm 易糊）
   qrRightPad: Math.round(1.8 * 11.811),                 // 页脚右内缩（内容不得贴到贴纸装饰边）
   stampSize: Math.round(24 * 11.811),                   // 右下**预印**圆形印章直径
   stampRightPad: Math.round(1.5 * 11.811),              // 印章距内容外框右缘（白区右缘）
@@ -605,7 +605,7 @@ function paintGiftStickerCard(canvas, o) {
   if (toName) {
     ctx.fillStyle = '#8A7530'
     // 2026-09-19 字号：26→28px（**受礼人**姓名是对方第一眼要看的信息）
-    ctx.font = '400 28px serif'
+    ctx.font = '400 32px serif'
     ctx.fillText('写给 · ' + toName, axisX, STICKER.topY)
   }
 
@@ -630,11 +630,12 @@ function paintGiftStickerCard(canvas, o) {
     ctx.fillRect(axisX, y, 6, bandH)
     ctx.textAlign = 'left'
     ctx.fillStyle = '#B08A3E'
-    ctx.font = '600 32px serif'
+    // 2026-09-20 字号放大（真机打印图反馈「非常多留白」）：32→40px，与正文 46px 成层级
+    ctx.font = '600 40px serif'
     ctx.fillText(bandTheme, axisX + innerPad, y + STICKER.bandBasePad)
     ctx.fillStyle = '#6A6258'
-    // 2026-09-19 字号：24→25px（与 32px 主题名成 0.78 层级，两行注更易读）
-    ctx.font = '400 25px serif'
+    // 2026-09-20 字号放大：25→30px（与 40px 主题名成 0.75 层级，两行注在热敏纸上才读得清）
+    ctx.font = '400 30px serif'
     for (let i = 0; i < noteLines.length; i += 1) {
       ctx.fillText(noteLines[i], axisX + innerPad, y + STICKER.bandNoteBase + i * STICKER.bandNoteLineH)
     }
@@ -653,8 +654,10 @@ function paintGiftStickerCard(canvas, o) {
   // **版面不变式①的运行时兜底**（2026-09-19 真图事故：availH ≤ 0 ⇒ 正文零落墨）
   if (availH <= 0) console.warn('giftSticker: 正文带高度为 ' + availH + 'px（≤0）—— STICKER.bodyTop 不得低于 signTop，请改表')
   const text = String(o.cardBody || '')
-  let fontPx = 34
-  let lineH = Math.round(34 * 1.62)
+  // 2026-09-20 真机打印图反馈「最多的是留白、字偏小」→ 正文基准 34→**46px**（≈3.9mm），
+  // 缩字下限 22→**30px**（再小在热敏纸上就糊了）。「永不截断」的机制不变（缩字 → 压行距）。
+  let fontPx = 46
+  let lineH = Math.round(46 * 1.62)
   ctx.fillStyle = '#2B2723'
   ctx.font = '400 ' + fontPx + 'px ' + HAND
   let bodyLines = wrapLines(ctx, text, axisRight - axisX, 999)
@@ -667,7 +670,7 @@ function paintGiftStickerCard(canvas, o) {
   const bodyFloor = () => STICKER.footerTop - STICKER.sigOffset - sigClear()
   const bodyRoom = () => bodyFloor() - bodyTop
   const fits = () => bodyLines.length * lineH <= bodyRoom() + lineH && bodyLines.length * lineH <= availH
-  while (fontPx > 22 && !fits()) {
+  while (fontPx > 30 && !fits()) {
     fontPx -= 2
     lineH = Math.round(fontPx * 1.62)
     ctx.font = '400 ' + fontPx + 'px ' + HAND
@@ -687,7 +690,10 @@ function paintGiftStickerCard(canvas, o) {
     //   （正文末行紧贴署名、而题记带下方留 14.5mm 空档），于是整块看起来"贴在下半部之上、重心偏上"。
     //   改成用真实 `availH` 分配余量：短笺上下各留约 7~8mm 相等的留白，长笺才靠净空线收口。
     const blockH = bodyLines.length * lineH
-    const blockTop = bodyTop + Math.max(0, Math.round((availH - blockH) * 0.55))
+    // 2026-09-20：权重 0.55 → **0.3**。短笺（1~2 行）时 0.55 会把正文块推到带子正中，
+    // 于是**上下各留一个 ~9mm 的洞**（真机打印图里就是这种"非常多的留白"）。
+    // 0.3 让正文贴着题记带起排，余量集中到署名上方 —— 读起来是一块下边距，而不是两个空洞。
+    const blockTop = bodyTop + Math.max(0, Math.round((availH - blockH) * 0.3))
     const bodyY = blockTop + lineH
     for (let i = 0; i < bodyLines.length; i += 1) {
       const baseline = bodyY + i * lineH

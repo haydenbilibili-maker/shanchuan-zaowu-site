@@ -105,15 +105,18 @@ check('★ sticker 尺寸是**影像预估**，实现里必须写清「待实物
   'E10：未实测的数值必须以注释标注来源与待验证状态')
 
 /* ── ② sticker 版式硬约束（源码级）─────────────────────────────────────────── */
+// 2026-09-20 真机打印图反馈「留白多、字小」→ 基准 34→46、下限 22→30（产品口径变更，判据跟着走）
 check('★★ 正文**自适应缩放、永不截断**（同 A6 口径；印刷卡不能丢字）',
-  /while \(fontPx > 22 && !fits\(\)\)/.test(stickerFn)
+  /while \(fontPx > 30 && !fits\(\)\)/.test(stickerFn)
   && /wrapLines\(ctx, text, axisRight - axisX, 999\)/.test(stickerFn),
   '缺逐档缩字或用了有限 maxLines → 长笺会丢字')
 check('★★ 缩字到底后必须**压缩行距打包**（只缩字号会在换行点跳变上提前放弃 → 信文凭空消失）',
   /const packedLh = Math\.floor\(usablePx \/ bodyLines\.length\)/.test(stickerFn)
   && /packedLh >= Math\.round\(fontPx \* 1\.15\)/.test(stickerFn))
-check('★ 正文块**加权居中**（0.55，略偏下）在题记带与署名带之间',
-  /\(availH - blockH\) \* 0\.55\)/.test(stickerFn))
+// 权重 0.55 → **0.3**：短笺时 0.55 把正文推到带子正中，上下各留一个 ~9mm 的洞
+//（真机打印图里就是那种"非常多的留白"）；0.3 让正文贴着题记起排，余量集中成一块下边距。
+check('★ 正文块在题记带与署名带之间**按权重偏移**（0.3：贴着题记起排，余量留在署名上方）',
+  /\(availH - blockH\) \* 0\.3\)/.test(stickerFn))
 check('★★ 正文行**必须在署名带净空线之上**（整块判定，越线整块不画）',
   /if \(baseline > bodyFloor\(\)\) \{ bodyDrawn = 0; break \}/.test(stickerFn),
   '纵向收口被删 → 正文会压到署名/页脚上')
@@ -467,8 +470,9 @@ check('★ 真渲染：全部用例**正文不溢进页脚带**', footerIntrusio
   }
   const f1 = fontOf(SENT)
   const f6 = fontOf(SENT.repeat(6))
-  check('★ 正文自适应：短笺用基准字号(34px)，长笺才缩小（且不低于下限 24px）',
-    f1 === 34 && f6 >= 24 && f6 <= f1, `1 句=${f1}px / 6 句=${f6}px`)
+  // 2026-09-20 放大后的口径：基准 46px、下限 30px
+  check('★ 正文自适应：短笺用基准字号(46px)，长笺才缩小（且不低于下限 30px）',
+    f1 === 46 && f6 >= 30 && f6 <= f1, `1 句=${f1}px / 6 句=${f6}px`)
 }
 
 /* ── ⑤ UI 接线（并列入口 + 共用同一实现）───────────────────────────────────── */
@@ -576,10 +580,11 @@ function selftest() {
       to: '  bodyTop: Math.round(47 * 11.811),'
     },
     {
-      name: '正文自适应下限被抬高到 34px（长笺放不下 → 信文丢失）',
+      // 2026-09-20 下限 22→30（字号放大批次）→ 注入把它抬到 44：长笺必然放不下 ⇒ 信文丢失
+      name: '正文自适应下限被抬高到 44px（长笺放不下 → 信文丢失）',
       file: CARD,
-      from: 'while (fontPx > 22 && !fits()) {',
-      to: 'while (fontPx > 34 && !fits()) {'
+      from: 'while (fontPx > 30 && !fits()) {',
+      to: 'while (fontPx > 44 && !fits()) {'
     },
     {
       name: '★ 署名净空被删（正文末行与署名基线贴住/叠字 —— 真图第二轮实测 455 同为一行）',
