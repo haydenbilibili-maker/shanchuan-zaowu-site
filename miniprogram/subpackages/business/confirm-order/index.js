@@ -248,10 +248,8 @@ function ruleText(context) {
     : ((shippingConfig.thresholds && shippingConfig.thresholds.accessory) || 39)
   const feeOther = shippingConfig.accessoryFlatFee != null ? shippingConfig.accessoryFlatFee : 10
   const carrier = shippingConfig.defaultCarrier || '顺丰速运'
-  // 前缀取装裱方式字段（chargedCraftTypesLabel 动态渲染），不写"全场"
-  const chargedLabel = (typeof shippingConfig.chargedCraftTypesLabel === 'function')
-    ? shippingConfig.chargedCraftTypesLabel()
-    : '相框/玻璃罩'
+  // 前缀用**短标签**（详情页/确认页那行太窄，枚举四个装裱方式会溢出）
+  const chargedLabel = shippingConfig.CHARGED_GROUP_LABEL || '玻璃罩/标本框'
   return `${carrier} · ${chargedLabel}类商品满 ¥${free} 免邮（否则 ¥${fee}）；`
     + `其它类型商品满 ¥${freeOther} 免邮（否则 ¥${feeOther}）`
 }

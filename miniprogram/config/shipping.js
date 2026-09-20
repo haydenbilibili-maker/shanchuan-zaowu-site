@@ -40,6 +40,14 @@ const MIX_MAX_THRESHOLD = 'max_threshold'
  */
 const DEFAULT_CHARGED_CRAFT_TYPES = ['frame', 'cloche', 'cloche_round', 'cloche_cylinder']
 
+/**
+ * 面向顾客的**短标签**：详情页/确认页的「说明」行只有一行宽度，
+ * 枚举四个装裱方式（相框/方形玻璃罩/圆形玻璃罩/圆柱形玻璃罩）必然溢出（2026-09-20 真机截图）。
+ * 故顾客侧统一用这个短名；**后台/云端的 ruleText 仍用完整枚举**（管理端要看清到底哪几类收费）。
+ * ⚠️ 若以后收费清单增删了**语义不同的**类型，改这一个常量即可。
+ */
+const CHARGED_GROUP_LABEL = '玻璃罩/标本框'
+
 /** 装裱方式中文名（展示用；未知 key 回退为 key 本身） */
 const CRAFT_TYPE_LABELS = {
   frame: '相框',
@@ -386,7 +394,8 @@ function getRuleText(context) {
   const fee = shipping.shippingFee
   const free = shipping.freeShippingThreshold
   const carrier = shipping.defaultCarrier || '顺丰速运'
-  const charged = chargedCraftTypesLabel()
+  // 顾客侧用短标签（见 CHARGED_GROUP_LABEL 的说明）；完整枚举只出现在后台/云端 ruleText
+  const charged = CHARGED_GROUP_LABEL
   const freeOther = shipping.accessoryFreeThreshold
   const feeOther = shipping.accessoryFlatFee
   // ⚠️ 前缀必须**取装裱方式字段**（`chargedCraftTypesLabel()` 动态渲染），不要写死"全场满 XX 免邮"：
@@ -435,6 +444,7 @@ module.exports = Object.assign(shipping, {
   MIX_MAX_THRESHOLD,
   DEFAULT_CHARGED_CRAFT_TYPES,
   CRAFT_TYPE_LABELS,
+  CHARGED_GROUP_LABEL,
   normalizeChargedCraftTypes,
   getChargedCraftTypes,
   isChargedCraftType,

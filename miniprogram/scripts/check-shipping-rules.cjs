@@ -662,12 +662,25 @@ async function runChecks(paths) {
       const noCrossTier = kind !== 'accessory' || (!text.includes('299') && !text.includes('18'))
       check(`说明文案与费率同档：${name}（¥${thr} 免邮 / 否则 ¥${fee}）`, sameTier && noCrossTier,
         `${text} ｜ 费率 ¥${client.resolveFee(ctx)}`)
-      // 前缀必须**取装裱方式字段**（不得写"全场"）—— 2026-09-20 产品负责人：截图里的
-      // "全场满 ¥299 / ¥39 免邮"会让顾客以为门槛是对整单任意商品、且不知道哪类商品触发规则
-      const wantPrefix = kind === 'accessory' ? '其它类型' : '相框'
-      check(`说明文案的前缀取装裱方式字段：${name}`, text.includes('商品满') && text.includes(wantPrefix) && !text.includes('全场'),
-        `${text}（应含「${wantPrefix}…商品满」且不得出现「全场」）`)
+      // 前缀：顾客侧用**短标签**（2026-09-20 产品负责人：枚举四个装裱方式会把「说明」行挤爆），
+      // 但**不得**回到含糊的「全场」（那会让顾客以为门槛是对整单任意商品）
+      const wantPrefix = kind === 'accessory' ? '其它类型' : '标本框'
+      const noLongEnum = kind !== 'specimen' || !text.includes('方形玻璃罩')
+      check(`说明文案用短标签且不溢出：${name}`,
+        text.includes('商品满') && text.includes(wantPrefix) && !text.includes('全场') && noLongEnum,
+        `${text}（应含「${wantPrefix}…商品满」、不得出现「全场」或长枚举）`)
     })
+    check('顾客侧短标签是一个常量（不在页面里内联）',
+      typeof client.CHARGED_GROUP_LABEL === 'string' && client.CHARGED_GROUP_LABEL.indexOf('/') > 0,
+      String(client.CHARGED_GROUP_LABEL))
+    try {
+      const confirmSrc = fs.readFileSync(paths.callSites.confirm, 'utf8')
+      check('确认页兜底文案也用同一个短标签常量',
+        /CHARGED_GROUP_LABEL/.test(confirmSrc) && !/chargedCraftTypesLabel\(\)/.test(confirmSrc),
+        '确认页兜底文案应引用 shippingConfig.CHARGED_GROUP_LABEL')
+    } catch (e) {
+      check('确认页可读（短标签同源）', false, e.message)
+    }
     check('说明文案：无上下文时两档都要交代',
       (() => { const t = String(client.getRuleText()); return t.includes('299') && t.includes('39') })(),
       String(client.getRuleText()))
@@ -758,6 +771,9 @@ async function runSelfTest(paths) {
         'function resolveOrderKind(context) {\n  if (context == null) return SHIPPING_KIND.SPECIMEN',
         'function resolveOrderKind(context) {\n  return resolveThreshold(context) > 0 ? SHIPPING_KIND.SPECIMEN : SHIPPING_KIND.ACCESSORY\n  if (context == null) return SHIPPING_KIND.SPECIMEN'
       ))
+    }],
+    ['顾客侧文案退回长枚举（「说明」行会溢出 —— 2026-09-20 真机截图）', (p) => {
+      patch(p.client, (s) => s.replace('  const charged = CHARGED_GROUP_LABEL', '  const charged = chargedCraftTypesLabel()'))
     }],
     ['免邮券省额的门槛闸被删（门槛未知也敢报省额）', (p) => {
       Object.values(p.couponFns).forEach((dir) => {
