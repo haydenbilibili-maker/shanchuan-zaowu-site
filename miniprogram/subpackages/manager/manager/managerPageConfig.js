@@ -1493,9 +1493,21 @@ const managerPageConfig = {
     pfFilter: 'all',   // all | missing | type | process
     pfKeyword: '',
     pfCounts: { all: 0, missing: 0, type: 0, process: 0 },
+    pfDoneCount: 0,
+    pfProgressPct: 0,
     pfMatchedCount: 0,   // 当前筛选命中数（可能大于可见上限 100）
-    pfDirty: {},       // { [productId]: { craftType?, craftProcess? } } —— 只存改动
+    pfDirty: {},       // { [productId]: { craftType?, craftProcess? } } —— 只存**保存失败**待重试的
     pfDirtyCount: 0,
+    pfFailed: {},      // { [productId]: { patch, msg } } —— 立即保存失败的行（可重试）
+    pfFailedCount: 0,
+    pfSavingIds: {},   // { [productId]: true } —— 正在保存的行
+    pfSavedIds: {},    // { [productId]: ts } —— 刚保存成功的行（2.5s 后自动淡掉）
+    // ⚠️ **选项值与标签必须同源同快照**：picker 的 `range` 用 pf*Labels，
+    //    而 onPfPick 把下标映射回 value —— 两处一旦来自不同时刻的选项表，
+    //    下标就会整体错位（产品负责人实测："选干制 → 存成针插"：canonical 顺序里
+    //    干制 dry_bone 是第 4 项、针插 pinned 是第 3 项，正好差一位）。
+    pfTypeValues: [],
+    pfProcessValues: [],
     // 选项表用**唯一事实源**（与 C 端/ERP 同一份），不另抄。
     // ⚠️ 2026-09-20：改用**访问器**而不是常量数组 —— 超管可以在本页新增/改/删选项，
     // 而访问器会带上云端覆写（`setCraftOverlay`），常量数组永远只有内置的那几个。
@@ -2218,11 +2230,10 @@ const managerPageConfig = {
       .map((o) => ({ value: o.value, label: String(o.label).trim() }));
     const doc = { craftTypes: pick('craftTypes'), craftProcesses: pick('craftProcesses') };
     TAXONOMY.setCraftOverlay(doc);
-    // picker 的选项表跟着刷新，否则刚加的选项在下面选不到
-    this.setData({
-      pfTypeLabels: TAXONOMY.craftTypeOptions().map((o) => o.label),
-      pfProcessLabels: TAXONOMY.craftProcessOptions().map((o) => o.label)
-    });
+    // picker 的选项表跟着刷新，否则刚加的选项在下面选不到。
+    // ⚠️ **labels 与 values 必须一起刷**（同一快照）—— 只刷 labels 就会出现
+    //    "显示的是新表、下标映射按另一份算"的错位（"选干制存成针插"）。
+    this._syncPfPickerOptions();
     return doc;
   },
 
@@ -10571,15 +10582,43 @@ bindSubCatChange(e) {
    * 就地改、批量存的维护面板。选项表用唯一事实源 config/productTaxonomy.js，不另抄一份。
    */
 
-  /** 选项值 → 中文标签（未标注给「未标注」而不是空串，面板上要看得出来） */
+  /**
+   * 把 picker 的**标签与取值**从同一份选项表一次性刷出来（两处必须同源，见 data 里的注释）。
+   * 进入「字段维护」时、以及「选项维护」改完字典时都要调它。
+   */
+  _syncPfPickerOptions() {
+    const types = TAXONOMY.craftTypeOptions() || [];
+    const procs = TAXONOMY.craftProcessOptions() || [];
+    this.setData({
+      pfTypeLabels: types.map((o) => o.label),
+      pfTypeValues: types.map((o) => o.value),
+      pfProcessLabels: procs.map((o) => o.label),
+      pfProcessValues: procs.map((o) => o.value)
+    });
+  },
+
+  /** 选项值 → 中文标签。
+   *  · 空值 → 「未标注」（面板上要看得出来）
+   *  · **非空但不在选项表里** → 回退**原始 value**（不是「未标注」！）
+   *    ⚠️ 2026-09-20 实测：云端字典与代码常量**已经漂移**（云端 craftProcesses 12 项、
+   *    代码 11 项，从下标 9 起错位；代码里的 `resin_embed` 云端没有）。
+   *    这种"字典里没有的历史值"如果显示成「未标注」，操作员会以为没保存过、
+   *    顺手重选一个 —— 真相被藏起来，而这正是本页最不该发生的事。
+   *    ERP 那边一直是这个口径（`LABEL_MAP[值] || 值`），这里对齐。 */
   _pfLabel(options, value) {
-    const hit = (options || []).find((o) => o.value === value)
-    return hit ? hit.label : '未标注'
+    const v = String(value == null ? '' : value)
+    if (!v) return '未标注'
+    const hit = (options || []).find((o) => o.value === v)
+    return hit ? hit.label : v
   },
 
   /** 拉齐全部商品（分页到 total；只留面板要用的字段） */
   async loadProductFields() {
     if (this.data.pfLoading) return
+    // ⚠️ 必须**先**把选项快照刷成当前字典：data 初始化时云端字典多半还没回来，
+    //    那时刷出来的 labels 是冻结常量 —— 与 onPfPick 稍后用的 options 不是同一份，
+    //    下标会整体错位（"选干制存成针插"）。
+    this._syncPfPickerOptions()
     this.setData({ pfLoading: true })
     try {
       const rows = []
@@ -10627,17 +10666,27 @@ bindSubCatChange(e) {
     else if (filter === 'process') base = rows.slice().sort((a, b) => String(a.craftProcess).localeCompare(String(b.craftProcess)))
     const matched = kw ? base.filter((r) => String(r.title).toLowerCase().indexOf(kw) !== -1) : base
     const VISIBLE_CAP = 100
+    // ⚠️ 下标与标签都从 `data.pf*Values/Labels`（**同一次快照**）算 —— 不要在这里重新调
+    //    TAXONOMY，否则"picker 显示的选项"与"下标映射用的选项"又是两份（见 data 注释）。
+    const typeOpts = (this.data.pfTypeValues || []).map((v, i) => ({ value: v, label: (this.data.pfTypeLabels || [])[i] }))
+    const procOpts = (this.data.pfProcessValues || []).map((v, i) => ({ value: v, label: (this.data.pfProcessLabels || [])[i] }))
+    const failed = this.data.pfFailed || {}
+    const saving = this.data.pfSavingIds || {}
+    const saved = this.data.pfSavedIds || {}
     const visible = matched.slice(0, VISIBLE_CAP).map((r) => ({
       _id: r._id,
       title: r.title,
       image: r.image,
       craftType: r.craftType,
       craftProcess: r.craftProcess,
-      craftTypeLabel: this._pfLabel(TAXONOMY.craftTypeOptions(), r.craftType),
-      craftProcessLabel: this._pfLabel(TAXONOMY.craftProcessOptions(), r.craftProcess),
+      craftTypeLabel: this._pfLabel(typeOpts, r.craftType),
+      craftProcessLabel: this._pfLabel(procOpts, r.craftProcess),
       // picker 的第 0 项是「未标注」⇒ 下标要 +1（值到下标的映射见 onPfPick）
-      typeIndex: this._pfIndex(TAXONOMY.craftTypeOptions(), r.craftType),
-      processIndex: this._pfIndex(TAXONOMY.craftProcessOptions(), r.craftProcess),
+      typeIndex: this._pfIndex(typeOpts, r.craftType),
+      processIndex: this._pfIndex(procOpts, r.craftProcess),
+      // 行状态：保存中 / 已保存 / 保存失败（可点重试）—— 立即保存模式下**不再有"待存"**
+      rowState: saving[r._id] ? 'saving' : (failed[r._id] ? 'failed' : (saved[r._id] ? 'saved' : '')),
+      rowStateText: saving[r._id] ? '保存中…' : (failed[r._id] ? '未保存 · 点此重试' : (saved[r._id] ? '已保存' : '')),
       dirty: !!dirty[r._id]
     }))
     this.setData({
@@ -10648,7 +10697,11 @@ bindSubCatChange(e) {
         missing: rows.filter(isMissing).length,
         type: rows.filter((r) => !r.craftType).length,
         process: rows.filter((r) => !r.craftProcess).length
-      }
+      },
+      // 进度条用的两个数：**已标注 = 装裱与工艺都填了**
+      // （产品负责人要看的是"还剩多少件要处理"，不是"缺装裱几件/缺工艺几件"）
+      pfDoneCount: rows.filter((r) => r.craftType && r.craftProcess).length,
+      pfProgressPct: rows.length ? Math.round((rows.filter((r) => r.craftType && r.craftProcess).length / rows.length) * 100) : 0
     })
   },
 
@@ -10667,29 +10720,100 @@ bindSubCatChange(e) {
     this.setData({ pfKeyword: (e.detail && e.detail.value) || '' }, () => this.applyProductFieldFilter())
   },
 
-  /** 就地改：只记改动，不发请求（保存时一次 batchPatch ≤100 条/次） */
-  onPfPick(e) {
+  /* ══════════ 字段维护：**单行立即生效**（2026-09-20 产品负责人）══════════
+   * 原形态是"改若干行 → 拉到最下点「保存 N 件改动」"：手机上一屏放不下几行，
+   * 改完必须滚到底，而且中途退出就全丢。现在：**选完即保存这一行**，
+   * 行上直接显示 保存中… / 已保存 / 未保存·点此重试 —— 不需要再去底下找按钮。
+   */
+
+  /** 从 pfRows 里取某件商品的某个字段当前值 */
+  _pfRowValue(id, field) {
+    const row = (this.data.pfRows || []).find((r) => r._id === id)
+    return row ? String(row[field] || '') : ''
+  },
+
+  /** 乐观更新一行（含清掉它的失败标记）；不改库 */
+  _applyPfLocalValue(id, field, value) {
+    const rows = (this.data.pfRows || []).map((r) => (r._id === id ? Object.assign({}, r, { [field]: value }) : r))
+    const failed = Object.assign({}, this.data.pfFailed || {})
+    delete failed[id]
+    const saved = Object.assign({}, this.data.pfSavedIds || {})
+    delete saved[id]
+    this.setData({ pfRows: rows, pfFailed: failed, pfFailedCount: Object.keys(failed).length, pfSavedIds: saved }, () => this.applyProductFieldFilter())
+  },
+
+  /** 选完即保存这一行。**下标 → 取值**必须用 picker 自己的那份数组（与 range 同源） */
+  async onPfPick(e) {
     const ds = (e.currentTarget && e.currentTarget.dataset) || {}
     const id = String(ds.id || '')
     const field = String(ds.field || '')
     if (!id || (field !== 'craftType' && field !== 'craftProcess')) return
-    const opts = field === 'craftType' ? TAXONOMY.craftTypeOptions() : TAXONOMY.craftProcessOptions()
     const idx = Number((e.detail && e.detail.value) || 0)
-    const value = idx <= 0 ? '' : ((opts[idx - 1] && opts[idx - 1].value) || '')
-    const dirty = Object.assign({}, this.data.pfDirty || {})
-    const entry = Object.assign({}, dirty[id] || {})
-    entry[field] = value
-    dirty[id] = entry
-    this.setData({ pfDirty: dirty, pfDirtyCount: Object.keys(dirty).length }, () => this.applyProductFieldFilter())
+    // ⚠️ 这里**不能**再 `TAXONOMY.craft*Options()` 现算：picker 的 range 是 data 里那份快照，
+    //    两处来自不同时刻就会整体错位（"选干制 → 存成针插"）。用同一个数组。
+    const values = field === 'craftType' ? (this.data.pfTypeValues || []) : (this.data.pfProcessValues || [])
+    const value = idx <= 0 ? '' : String(values[idx - 1] || '')
+    const prev = this._pfRowValue(id, field)
+    if (prev === value) return
+    this._applyPfLocalValue(id, field, value)
+    await this._saveProductField(id, { [field]: value }, { field, prev })
   },
 
-  /** 保存：按 100 条/次分批；成功后再拉一次，保证面板与库一致 */
+  /** 单行保存：成功留 2.5s「已保存」，失败回滚这一格并挂进 pfFailed（可点重试） */
+  async _saveProductField(id, patch, rollback) {
+    const saving = Object.assign({}, this.data.pfSavingIds || {}, { [id]: true })
+    const failed = Object.assign({}, this.data.pfFailed || {})
+    delete failed[id]
+    this.setData({ pfSavingIds: saving, pfFailed: failed, pfFailedCount: Object.keys(failed).length }, () => this.applyProductFieldFilter())
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageProducts',
+        data: { action: 'batchPatch', items: [{ productId: id, data: patch }] }
+      })
+      const r = (res && res.result) || {}
+      if (!r.success) throw new Error(r.msg || '保存被拒')
+      if (r.fail) throw new Error((r.errors && r.errors[0] && r.errors[0].msg) || '这一件未保存成功')
+      const s2 = Object.assign({}, this.data.pfSavingIds || {})
+      delete s2[id]
+      const d2 = Object.assign({}, this.data.pfSavedIds || {}, { [id]: Date.now() })
+      this.setData({ pfSavingIds: s2, pfSavedIds: d2 }, () => {
+        this.applyProductFieldFilter()
+        // 2.5s 后把「已保存」淡掉（不然一片绿勾，看不出哪一行是刚改的）
+        setTimeout(() => {
+          if (!(this.data.pfSavedIds || {})[id]) return
+          const d3 = Object.assign({}, this.data.pfSavedIds || {})
+          delete d3[id]
+          this.setData({ pfSavedIds: d3 }, () => this.applyProductFieldFilter())
+        }, 2500)
+      })
+    } catch (err) {
+      if (rollback) this._applyPfLocalValue(id, rollback.field, rollback.prev)
+      const s3 = Object.assign({}, this.data.pfSavingIds || {})
+      delete s3[id]
+      const f3 = Object.assign({}, this.data.pfFailed || {}, { [id]: { patch, msg: String((err && err.message) || err) } })
+      this.setData({ pfSavingIds: s3, pfFailed: f3, pfFailedCount: Object.keys(f3).length }, () => this.applyProductFieldFilter())
+      this.showAppToast({ overline: 'FIELDS', title: '这一件没保存上', desc: String((err && err.message) || err) })
+    }
+  },
+
+  /** 点行上的「未保存·点此重试」 */
+  async onPfRetry(e) {
+    const id = String(((e.currentTarget && e.currentTarget.dataset) || {}).id || '')
+    const item = (this.data.pfFailed || {})[id]
+    if (!id || !item) return
+    await this._saveProductField(id, item.patch, null)
+  },
+
+  /** 重试**全部保存失败的行**（按 100 条/次分批；单行编辑已经即时保存，用不到这个按钮）
+   *  保留它是因为：网络抖动时一次改了很多行，逐个点重试太累（顶部会出现这条提示条）。 */
   async saveProductFields() {
     if (this.data.pfSaving) return
-    const dirty = this.data.pfDirty || {}
+    const failedMap = this.data.pfFailed || {}
+    const dirty = Object.assign({}, this.data.pfDirty || {})
+    Object.keys(failedMap).forEach((id) => { dirty[id] = Object.assign({}, dirty[id] || {}, failedMap[id].patch) })
     const ids = Object.keys(dirty)
     if (!ids.length) {
-      this.showAppToast({ overline: 'FIELDS', title: '没有需要保存的改动' })
+      this.showAppToast({ overline: 'FIELDS', title: '没有需要重试的改动' })
       return
     }
     this.setData({ pfSaving: true })
@@ -10706,7 +10830,7 @@ bindSubCatChange(e) {
         if (r.fail) throw new Error(`有 ${r.fail} 件未保存成功`)
         ok += Number(r.ok) || items.length
       }
-      this.setData({ pfDirty: {}, pfDirtyCount: 0 })
+      this.setData({ pfDirty: {}, pfDirtyCount: 0, pfFailed: {}, pfFailedCount: 0 })
       this.showAppToast({ overline: 'FIELDS', title: `已保存 ${ok} 件` })
       await this.loadProductFields()
     } catch (e) {

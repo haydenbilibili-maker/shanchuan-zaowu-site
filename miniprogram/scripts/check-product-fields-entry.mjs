@@ -146,18 +146,55 @@ function check (root) {
   // ③ 保存通道与分批
   if (!/action:\s*'batchPatch'/.test(manager)) problems.push('保存未走 manageProducts 的 batchPatch')
   if (!/name:\s*'manageProducts'/.test(manager)) problems.push('保存未调用 manageProducts')
-  // ⚠️ 必须锚在 batchPatch 附近：文件里更早有 `i += 1` 之类的循环，全局找会命中它
-  const batchAt = manager.indexOf("action: 'batchPatch'")
-  const chunk = batchAt > 0 ? manager.slice(Math.max(0, batchAt - 900), batchAt).match(/i \+= (\d+)/) : null
+  // ⚠️ 分批步长锚在**批量循环**上：2026-09-20 起本文件里 `batchPatch` 有**两处调用**
+  //    （单行即时保存 1 件 + 重试全部失败项的分批循环），按"第一个 batchPatch 往前找"会锚错。
+  const chunk = /for \(let i = 0; i < ids\.length; i \+= (\d+)\)/.exec(manager)
   if (!chunk || Number(chunk[1]) > 100) {
-    problems.push(`batchPatch 分批步长应为 ≤100（当前 ${chunk ? chunk[1] : '找不到'}）—— 云端单次上限就是 100`)
+    problems.push(`批量重试的分批步长应为 ≤100（当前 ${chunk ? chunk[1] : '找不到'}）—— 云端单次上限就是 100`)
+  }
+  // ★ 单行即时保存：必须**只发 1 件**（产品负责人：「单个编辑即默认生效，不需要拉到最下保存」）
+  if (!/items:\s*\[\{ productId: id, data: patch \}\]/.test(manager)) {
+    problems.push('单行编辑没有走"立即保存这一件"（items 里只有 1 条）—— 面板会退回"改完还得拉到底点保存"')
+  }
+  // ★ 下标 → 取值必须用 picker 自己的那份快照（与 range 同源），否则会整体错位
+  if (!/const values = field === 'craftType' \? \(this\.data\.pfTypeValues/.test(manager)) {
+    problems.push('onPfPick 不是用 picker 的快照数组做下标映射 —— 选项表一变就会"选干制存成针插"')
+  }
+  if (!/_syncPfPickerOptions\(\)/.test(manager) || !/pfProcessValues/.test(manager)) {
+    problems.push('缺 _syncPfPickerOptions（picker 的 labels 与 values 必须同一次刷，否则下标错位）')
+  }
+
+  /* ★ 交互形态（2026-09-20 产品负责人）：「单个编辑即默认生效，不需要拉到最下保存」。
+   * 判据钉的是**结果形态**：保存入口（重试条）必须出现在列表**之前**，
+   * 且行上要有可点重试的状态 —— 只要有人把"底部保存按钮"加回来，这条就红。 */
+  {
+    const zoneAt = subviews.indexOf('class="cat-field-zone"')
+    const zoneEnd = zoneAt >= 0 ? subviews.indexOf('class="cat-opt-block"', zoneAt) : -1
+    const zone = zoneAt >= 0 ? subviews.slice(zoneAt, zoneEnd > 0 ? zoneEnd : undefined) : ''
+    const saveAt = zone.indexOf('bindtap="saveProductFields"')
+    const listAt = zone.indexOf('class="pf-row')
+    if (saveAt < 0) {
+      problems.push('字段维护区里没有"重试未保存项"的入口 —— 网络抖动时只能逐行重试')
+    } else if (listAt > 0 && saveAt > listAt) {
+      problems.push('保存入口出现在藏品列表**之后** —— 又变回"拉到最下才能保存"（产品负责人明确不要）')
+    }
+    if (!/catchtap="onPfRetry"/.test(zone)) {
+      problems.push('行上没有"未保存·点此重试"的入口 —— 单行保存失败后没有就地补救')
+    }
+    if (/class="pf-dirty"/.test(zone)) {
+      problems.push('还在用「待存」标记 —— 单行即时保存下不应该再有"攒着等保存"的状态')
+    }
   }
 
   // ④ 面板是 picker（可改）+ 未标注可选回
   const panelAt = subviews.indexOf('class="cat-field-zone"')
   if (panelAt < 0) problems.push('_subviews.wxml 缺 .cat-field-zone 面板（字段维护专区）')
   else {
-    const panel = subviews.slice(panelAt, panelAt + 4000)
+    // ⚠️ 原来这里是 `slice(panelAt, panelAt + 4000)` 的**固定窗口** —— 面板一变长，
+    //    第二个 picker（制作工艺）就被切到窗口外，判据报"未标 data-field"（假红）。
+    //    按分区边界切：到下一个分区 `cat-opt-block` 为止。
+    const panelEnd = subviews.indexOf('class="cat-opt-block"', panelAt)
+    const panel = subviews.slice(panelAt, panelEnd > panelAt ? panelEnd : panelAt + 12000)
     if (!/bindchange="onPfPick"/.test(panel)) problems.push('面板未用 picker 就地改（bindchange="onPfPick" 缺失）')
     if (!/range="\{\{pfTypeLabels\}\}"/.test(panel) || !/range="\{\{pfProcessLabels\}\}"/.test(panel)) {
       problems.push('面板缺装裱方式/制作工艺两个 picker 的选项绑定')
@@ -375,6 +412,11 @@ function check (root) {
     }
   }
 
+  // ★ 字典里没有的历史值必须**原样显示**（不许伪装成「未标注」）
+  if (!/return hit \? hit\.label : v/.test(manager)) {
+    problems.push('_pfLabel 把"不在字典里的历史值"显示成「未标注」—— 操作员会以为没保存过、顺手重选，真相被藏起来')
+  }
+
   // 未标注必须能选回去（picker 第 0 项 = 未标注）
   if (!/_pfIndex\(/.test(manager) || !/i < 0 \? 0 : i \+ 1/.test(manager)) {
     problems.push('picker 下标未按「第 0 项 = 未标注」映射 —— 无法把字段清回未标注')
@@ -421,17 +463,37 @@ function selftest () {
       {
         name: '分批步长调成 500（超过云端 batchPatch 的 100 上限）',
         file: REL.manager,
-        // 必须命中「保存」那段循环：文件里同形的 `i += 100` 有 2 处，按 batchPatch 位置定位
-        mutate: (s) => {
-          const at = s.indexOf("action: 'batchPatch'")
-          if (at < 0) return s
-          const winStart = Math.max(0, at - 900)
-          const m = s.slice(winStart, at).match(/i \+= 100/)
-          if (!m) return s
-          const abs = winStart + m.index
-          return s.slice(0, abs) + 'i += 500' + s.slice(abs + 'i += 100'.length)
-        },
+        // 直接锚批量重试循环（文件里 batchPatch 有两处，按位置找会锚错行）
+        mutate: (s) => s.replace('for (let i = 0; i < ids.length; i += 100)', 'for (let i = 0; i < ids.length; i += 500)'),
         expect: /分批步长应为 ≤100/
+      },
+      {
+        name: '保存入口被挪回列表之后（又变成"拉到最下才能保存"）',
+        file: REL.subviews,
+        mutate: (s) => {
+          const at = s.indexOf('仅显示前 {{pfVisible.length}} 件')
+          if (at < 0) return s
+          const lineEnd = s.indexOf('\n', at) + 1
+          // ① 在列表**之后**加回一个"保存全部改动"按钮 ② 把顶部那条的入口摘掉
+          const withBottom = s.slice(0, lineEnd) + '          <view class="pf-bottom-save" bindtap="saveProductFields">保存全部改动</view>\n' + s.slice(lineEnd)
+          return withBottom.replace('<view class="pf-retry-btn" bindtap="saveProductFields">', '<view class="pf-retry-btn" bindtap="noop">')
+        },
+        expect: /拉到最下才能保存/
+      },
+      {
+        name: '单行编辑退回"攒着等底下批量保存"（产品负责人明确不要）',
+        file: REL.manager,
+        mutate: (s) => s.replace('items: [{ productId: id, data: patch }]', 'items: []'),
+        expect: /立即保存这一件/
+      },
+      {
+        name: '下标映射退回"现算 TAXONOMY 选项"（选项表一变就选干制存成针插）',
+        file: REL.manager,
+        mutate: (s) => s.replace(
+          "    const values = field === 'craftType' ? (this.data.pfTypeValues || []) : (this.data.pfProcessValues || [])",
+          "    const values = (field === 'craftType' ? TAXONOMY.craftTypeOptions() : TAXONOMY.craftProcessOptions()).map((o) => o.value)"
+        ),
+        expect: /下标映射/
       },
       {
         name: '面板退化成只读文本（点不动、改不了）',
@@ -490,6 +552,12 @@ function selftest () {
           '  const key = normalizeCraftType(value)\n  const hit = craftTypeOptions().find((o) => o.value === key)'
         ),
         expect: /没走 craftTypeOptions\(\) 访问器|退回路径/
+      },
+      {
+        name: '历史值被打扮成「未标注」（字典漂移时真相反被藏起来）',
+        file: REL.manager,
+        mutate: (s) => s.replace("    return hit ? hit.label : v", "    return hit ? hit.label : '未标注'"),
+        expect: /不在字典里的历史值/
       },
       {
         name: '服务端去掉「被删选项还有商品在用」的校验（craftType 决定运费档，删错会静默落档）',

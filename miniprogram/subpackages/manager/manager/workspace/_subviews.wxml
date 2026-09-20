@@ -484,23 +484,26 @@
         </block>
 
         <view class="cat-field-zone" wx:if="{{canProductFields && catZone==='fields'}}">
-          <view class="cat-field-head">
-            <text class="cat-field-title">字段维护专区</text>
-            <text class="cat-field-sub">装裱方式 / 制作工艺 · 选项与 C 端 / ERP 同源 · 只改这两个字段</text>
+        <view class="cat-field-head">
+          <text class="cat-field-title">字段维护</text>
+          <text class="cat-field-sub">点一下就能改 · 改完即刻保存，不用拉到最下面</text>
+        </view>
+
+        <view class="cfg-card">
+          <!-- 进度：一眼看出还差多少件没标注（比一串数字更像"在推进一件事"） -->
+          <view class="pf-progress">
+            <view class="pf-progress-track">
+              <view class="pf-progress-fill" style="width:{{pfProgressPct}}%"></view>
+            </view>
+            <text class="pf-progress-text">已标注 {{pfDoneCount}} / {{pfCounts.all}}</text>
           </view>
-
-          <view class="cat-field-load" wx:if="{{!pfLoaded && !pfLoading}}" bindtap="loadProductFields"
-            hover-class="cat-field-load-press" hover-stay-time="70" aria-role="button">读取藏品字段（用于批量维护）</view>
-
-  <view class="cfg-card">
           <view class="pf-counts">
-            <text class="pf-count">共 {{pfCounts.all}} 件</text>
-            <text class="pf-count pf-warn" wx:if="{{pfCounts.missing}}">未标注 {{pfCounts.missing}}</text>
-            <text class="pf-count" wx:if="{{pfCounts.type}}">缺装裱 {{pfCounts.type}}</text>
-            <text class="pf-count" wx:if="{{pfCounts.process}}">缺工艺 {{pfCounts.process}}</text>
+            <text class="pf-count pf-warn" wx:if="{{pfCounts.type}}">缺装裱 {{pfCounts.type}}</text>
+            <text class="pf-count pf-warn" wx:if="{{pfCounts.process}}">缺工艺 {{pfCounts.process}}</text>
+            <text class="pf-count" wx:if="{{!pfCounts.type && !pfCounts.process && pfCounts.all}}">全部已标注</text>
           </view>
           <view class="cfg-shortcut-row">
-            <view class="cfg-shortcut {{pfFilter==='all'?'on':''}}" bindtap="onPfFilter" data-filter="all">全部</view>
+            <view class="cfg-shortcut {{pfFilter==='all'?'on':''}}" bindtap="onPfFilter" data-filter="all">全部 {{pfCounts.all}}</view>
             <view class="cfg-shortcut {{pfFilter==='missing'?'on':''}}" bindtap="onPfFilter" data-filter="missing">未标注 {{pfCounts.missing}}</view>
             <view class="cfg-shortcut {{pfFilter==='type'?'on':''}}" bindtap="onPfFilter" data-filter="type">按装裱方式</view>
             <view class="cfg-shortcut {{pfFilter==='process'?'on':''}}" bindtap="onPfFilter" data-filter="process">按制作工艺</view>
@@ -516,34 +519,53 @@
           </view>
         </view>
 
+        <!-- ⚠️ 重试条放**顶部**：产品负责人反馈的就是"要拉到最下才能保存"。
+             只有真的存失败时才出现（正常单行编辑即时落库，这里一直不出现）。 -->
+        <view class="pf-retry-bar" wx:if="{{pfFailedCount}}">
+          <text class="pf-retry-text">{{pfFailedCount}} 件没保存上（网络或权限）</text>
+          <view class="pf-retry-btn" bindtap="saveProductFields">{{pfSaving ? '重试中…' : '全部重试'}}</view>
+        </view>
+
         <view class="cfg-card" wx:if="{{pfLoading}}">
           <text class="cfg-meta-line">读取中…</text>
         </view>
 
         <view class="cfg-card" wx:else>
-          <view class="pf-row" wx:for="{{pfVisible}}" wx:key="_id">
+          <view class="pf-row {{item.rowState ? 'is-' + item.rowState : ''}}" wx:for="{{pfVisible}}" wx:key="_id">
             <image class="pf-cover" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
             <view class="pf-main">
-              <text class="pf-title">{{item.title}}</text>
+              <view class="pf-head">
+                <text class="pf-title">{{item.title}}</text>
+                <!-- 行状态：保存中… / 已保存 / 未保存·点此重试（失败时整行可点重试） -->
+                <text
+                  class="pf-state is-{{item.rowState}}"
+                  wx:if="{{item.rowStateText}}"
+                  catchtap="onPfRetry"
+                  data-id="{{item._id}}"
+                >{{item.rowStateText}}</text>
+              </view>
               <view class="pf-pickers">
                 <picker mode="selector" range="{{pfTypeLabels}}" value="{{item.typeIndex}}" bindchange="onPfPick" data-id="{{item._id}}" data-field="craftType">
-                  <view class="pf-pick {{item.craftType ? '' : 'pf-empty'}}">装裱 · {{item.craftTypeLabel}}</view>
+                  <view class="pf-pick {{item.craftType ? '' : 'pf-empty'}}">
+                    <text class="pf-pick-k">装裱</text>
+                    <text class="pf-pick-v">{{item.craftTypeLabel}}</text>
+                    <text class="pf-pick-go">›</text>
+                  </view>
                 </picker>
                 <picker mode="selector" range="{{pfProcessLabels}}" value="{{item.processIndex}}" bindchange="onPfPick" data-id="{{item._id}}" data-field="craftProcess">
-                  <view class="pf-pick {{item.craftProcess ? '' : 'pf-empty'}}">工艺 · {{item.craftProcessLabel}}</view>
+                  <view class="pf-pick {{item.craftProcess ? '' : 'pf-empty'}}">
+                    <text class="pf-pick-k">工艺</text>
+                    <text class="pf-pick-v">{{item.craftProcessLabel}}</text>
+                    <text class="pf-pick-go">›</text>
+                  </view>
                 </picker>
               </view>
             </view>
-            <text class="pf-dirty" wx:if="{{item.dirty}}">待存</text>
           </view>
           <text class="cfg-meta-line" wx:if="{{!pfVisible.length}}">没有符合条件的藏品（换个筛选或清空搜索）</text>
           <text class="cfg-meta-line" wx:if="{{pfMatchedCount > pfVisible.length}}">仅显示前 {{pfVisible.length}} 件（共 {{pfMatchedCount}} 件符合）——用筛选或搜索缩小范围</text>
         </view>
-
-        <view class="cfg-cta {{pfDirtyCount && !pfSaving ? '' : 'disabled'}}" bindtap="saveProductFields">
-          {{pfSaving ? '保存中…' : (pfDirtyCount ? '保存 ' + pfDirtyCount + ' 件改动' : '保存（先在上面改动）')}}
-        </view>
-        </view>
+      </view>
 
         <view class="cat-opt-block" wx:if="{{canProductFields && catZone==='options'}}">
         <!-- ══════════ 选项维护（2026-09-20 新增）══════════

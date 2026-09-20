@@ -159,10 +159,19 @@ const data = {
     { key: 'craftTypes', title: '装裱方式', items: OPT_TYPES.map((o, i) => ({ value: o.value, label: o.label, used: i === 0 ? 128 : 0, canDelete: i !== 0 && o.value !== 'other' })) },
     { key: 'craftProcesses', title: '制作工艺', items: OPT_PROC.map((o, i) => ({ value: o.value, label: o.label, used: i === 4 ? 61 : 0, canDelete: i !== 4 && o.value !== 'other' })) }
   ],
+  // 2026-09-20：字段维护改成"选完即存"，行上多了状态；顶部多了进度与失败重试条
+  pfDoneCount: 1,
+  pfProgressPct: 33,
+  pfFailed: {},
+  pfFailedCount: 1,   // 截图里带出"失败重试条"（真机上只在真失败时出现）
+  pfSavingIds: {},
+  pfSavedIds: { p3: 1 },
+  pfDirty: {},
+  pfDirtyCount: 0,
   pfVisible: [
-    { _id: 'p1', title: '大蓝闪蝶标本框', image: '', craftType: 'frame', craftProcess: '', craftTypeLabel: '相框', craftProcessLabel: '未标注', typeIndex: 1, processIndex: 0, dirty: false },
-    { _id: 'p2', title: '古靴蛱蝶植物标本框', image: '', craftType: 'frame', craftProcess: '', craftTypeLabel: '相框', craftProcessLabel: '未标注', typeIndex: 1, processIndex: 0, dirty: true },
-    { _id: 'p3', title: '大蓝闪蝶标本框·圆柱形玻璃罩', image: '', craftType: 'cloche_cylinder', craftProcess: 'other', craftTypeLabel: '圆柱形玻璃罩', craftProcessLabel: '其它', typeIndex: 4, processIndex: 6, dirty: false }
+    { _id: 'p1', title: '大蓝闪蝶标本框', image: '', craftType: 'frame', craftProcess: '', craftTypeLabel: '相框', craftProcessLabel: '未标注', typeIndex: 1, processIndex: 0, dirty: false, rowState: 'failed', rowStateText: '未保存 · 点此重试' },
+    { _id: 'p2', title: '古靴蛱蝶植物标本框（长标题测试会不会折行）', image: '', craftType: 'frame', craftProcess: '', craftTypeLabel: '相框', craftProcessLabel: '未标注', typeIndex: 1, processIndex: 0, dirty: false, rowState: 'saving', rowStateText: '保存中…' },
+    { _id: 'p3', title: '大蓝闪蝶标本框·圆柱形玻璃罩', image: '', craftType: 'cloche_cylinder', craftProcess: 'cleared_stained', craftTypeLabel: '圆柱形玻璃罩', craftProcessLabel: '透明骨骼标本', typeIndex: 4, processIndex: 9, dirty: false, rowState: 'saved', rowStateText: '已保存' }
   ]
 }
 

@@ -5571,26 +5571,73 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .cat-opt-add-press { opacity: 0.8; }
 
+/* ── 字段维护：进度 / 筛选 ──────────────────────────────────────────────── */
+.pf-progress { display: flex; align-items: center; gap: 16rpx; margin-bottom: 14rpx; }
+.pf-progress-track {
+  flex: 1; height: 10rpx; border-radius: 9999px; overflow: hidden;
+  background: rgba(196, 167, 108, 0.16);
+}
+.pf-progress-fill {
+  height: 100%; border-radius: 9999px;
+  background: linear-gradient(90deg, var(--brass-500) 0%, var(--brass-300) 100%);
+  transition: width 0.25s ease;
+}
+.pf-progress-text { font-size: 22rpx; color: var(--color-text-secondary); flex-shrink: 0; }
 .pf-counts { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 16rpx; }
 .pf-count { font-size: 22rpx; color: var(--color-text-secondary); }
 .pf-count.pf-warn { color: var(--brass-400); font-weight: 600; }
+
+/* ── 失败重试条（顶部；正常单行编辑不会出现）────────────────────────────── */
+.pf-retry-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16rpx;
+  margin: 0 0 16rpx; padding: 16rpx 20rpx; border-radius: var(--radius-md);
+  border: 1rpx solid rgba(214, 64, 69, 0.42); background: rgba(214, 64, 69, 0.12);
+}
+.pf-retry-text { font-size: 23rpx; color: #E8A9AB; }
+.pf-retry-btn {
+  padding: 10rpx 24rpx; border-radius: 9999px; font-size: 23rpx;
+  color: var(--color-bg); background: var(--brass-400); flex-shrink: 0;
+}
+.pf-retry-btn:active { background: var(--brass-500); }
+
+/* ── 行：封面 + 标题/状态 + 两行选择器 ──────────────────────────────────
+   2026-09-20 产品负责人：「继续对这个页面的交互排版和样式进行升级优化」。
+   改动要点：① 选择器从"并排小胶囊"改成**整行两段式**（左=字段名、右=当前值、尾部箭头），
+   长工艺名（如「压制（腊叶）标本」）不再被挤成两行；② 每行右侧多一个**行状态**
+   （保存中… / 已保存 / 未保存·点此重试）—— 因为保存已经改成"选完即存"，状态必须看得见。 */
 .pf-row {
-  display: flex; align-items: center; gap: 18rpx;
-  padding: 20rpx 0; border-bottom: 1px solid rgba(38, 35, 32, 0.55);
+  display: flex; align-items: flex-start; gap: 18rpx;
+  padding: 22rpx 0; border-bottom: 1px solid rgba(38, 35, 32, 0.55);
 }
 .pf-row:last-child { border-bottom: none; }
-.pf-cover { width: 88rpx; height: 88rpx; border-radius: 10rpx; flex-shrink: 0; background: var(--color-bg-elevated); }
+.pf-row.is-saving { opacity: 0.72; }
+.pf-cover { width: 96rpx; height: 96rpx; border-radius: 12rpx; flex-shrink: 0; background: var(--color-bg-elevated); }
 .pf-main { flex: 1; min-width: 0; }
+.pf-head { display: flex; align-items: baseline; gap: 12rpx; margin-bottom: 12rpx; }
 .pf-title {
-  display: block; font-size: 26rpx; color: var(--color-text-body);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 10rpx;
+  flex: 1; min-width: 0; font-size: 26rpx; color: var(--color-text-body);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.pf-pickers { display: flex; flex-wrap: wrap; gap: 12rpx; }
+.pf-state { font-size: 20rpx; flex-shrink: 0; }
+.pf-state.is-saving { color: var(--color-text-muted); }
+.pf-state.is-saved { color: #7EDC96; }
+.pf-state.is-failed { color: #E8A9AB; text-decoration: underline; }
+
+/* 选择器：整行两段式（左字段名 / 右当前值 / 尾箭头） */
+.pf-pickers { display: flex; flex-direction: column; gap: 10rpx; }
 .pf-pick {
-  padding: 8rpx 18rpx; border-radius: 9999px; font-size: 22rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.45); color: var(--brass-400);
-  background: rgba(196, 167, 108, 0.08);
+  display: flex; align-items: center; gap: 12rpx;
+  padding: 14rpx 18rpx; border-radius: var(--radius-sm);
+  border: 1rpx solid rgba(196, 167, 108, 0.34); background: rgba(196, 167, 108, 0.06);
 }
-.pf-pick.pf-empty { border-color: rgba(160, 154, 144, 0.5); color: var(--color-text-muted); background: transparent; }
+.pf-pick:active { background: rgba(196, 167, 108, 0.14); }
+.pf-pick-k { font-size: 21rpx; color: var(--color-text-muted); flex-shrink: 0; }
+.pf-pick-v {
+  flex: 1; min-width: 0; font-size: 24rpx; color: var(--brass-300);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-pick-go { font-size: 26rpx; color: var(--brass-400); opacity: 0.7; flex-shrink: 0; }
+.pf-pick.pf-empty { border-color: rgba(160, 154, 144, 0.42); background: transparent; }
+.pf-pick.pf-empty .pf-pick-v { color: var(--color-text-muted); }
 .pf-dirty { font-size: 20rpx; color: var(--brass-400); flex-shrink: 0; }
 .cfg-shortcut.on { background: rgba(196, 167, 108, 0.22); border-color: var(--brass-400); }
