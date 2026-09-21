@@ -305,6 +305,11 @@ function baseData() {
     ],
     playResult: null,
     playPending: '',
+    // 夜班（09-21 P1/P2）新加的字段：样例数据补齐，否则预览会少画内容（守卫会点名）
+    draftCount: 0,
+    mineLoading: false,
+    mineError: '',
+    recoFailed: false,
     recoLoading: false,
     playNeed: null,
     sheetDragY: 0,
@@ -432,7 +437,10 @@ body { background: var(--color-bg, #14120F); }
 page, .page-root { display: block; }
 .ww-page { display: block; }
 img { display: block; object-fit: cover; }
-button { border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; line-height: inherit; }
+/* ⚠️ 必须还原小程序 button 的**盒模型**：真机是 display:block + box-sizing:border-box，
+   浏览器默认 inline-block + content-box —— 不还原的话 class="ww-sheet-cta" 的 <button>
+   会渲染成"铜底比文字窄"的假象（2026-09-21 出图实测，差点据此改错样式）。 */
+button { display: block; box-sizing: border-box; border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; line-height: inherit; }
 ${globalBits}
 ${pageCss}
 /* 真机 placeholder 走 placeholder-class，HTML 没有这个概念 —— 把那条规则搬到 ::placeholder 上 */
@@ -586,6 +594,17 @@ window.addEventListener('load', () => {
       out.push({ label: '取件完成：骨架已撤', sel: ':must-exist', mode: 'must-exist', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
         exists: !skel, text: skel ? '骨架没收（会盖住真推荐）' : '已撤' })
     }
+    /* ── 弹层可用性：**「收起」的触控区**（2026-09-21）。
+     * 它原来只有 ~38rpx 高（padding 8 + 行高 22），真机上很容易点不中。
+     * 44pt ≈ 88rpx 是可用性下限 —— 静态样式表里"看"不出这件事（padding 与行高是两处），
+     * 只有在真渲染里量 getBoundingClientRect 才算数（本仓 E8：静态分析 ≠ 事实）。 */
+    const closeEl = document.querySelector('.ww-sheet-close')
+    if (closeEl) {
+      const r = closeEl.getBoundingClientRect()
+      out.push({ label: '弹层「收起」触控区', sel: '.ww-sheet-close', mode: 'box', lines: 0, maxLines: 0,
+        x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height),
+        text: Math.round(r.width) + '×' + Math.round(r.height) + 'rpx' })
+    }
   }
 
   // ── 发送条**若被改回吸底**：必须有底部预留（否则最后一张愿签被盖住）。
@@ -725,6 +744,18 @@ metrics.forEach((row) => {
     problems.push('页面容器 .ww-page 没有左右内边距（token 没生效 —— 会连带所有卡片量成满宽）')
   }
 })
+
+/* ①a-2. 弹层「收起」的触控区（2026-09-21）：44pt ≈ 88rpx 是可用性下限。
+ *     它原来只有 ~38rpx 高（padding 8 + 行高 22），真机上很容易点不中。
+ *     静态样式表里"看"不出来（padding 与行高分散两处）→ 只有真渲染量 box 才算数。 */
+if (SCENE === 'sheet' || SCENE === 'sheet-loading') {
+  const close = byLabel('弹层「收起」触控区')
+  if (!close || close.missing || !close.h) {
+    problems.push('没量到弹层「收起」的触控区（判据失效 = 假通过）')
+  } else if (close.h < 88 || close.w < 88) {
+    problems.push('弹层「收起」触控区 ' + close.w + '×' + close.h + 'rpx < 88×88rpx（真机容易点不中）')
+  }
+}
 
 // ①b. 结构判据
 {

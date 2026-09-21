@@ -4572,6 +4572,8 @@ check(
 check(
   '★ 弹层身份明确：遮罩 + 把手 + 印章字标 + 从底部升起（不再是"既不像卡也不像弹窗"的内联块）',
   /class="ww-sheet-mask"[\s\S]{0,200}?bindtap="closePlayResult"/.test(wallWxml2) &&
+    // 遮罩必须**锁住背景滚动**（2026-09-21）：读签文时误滑会把整面墙滚走
+    /class="ww-sheet-mask"[\s\S]{0,300}?catchtouchmove="noop"/.test(wallWxml2) &&
     /class="ww-sheet-grip"/.test(wallWxml2) &&
     /class="ww-sheet-mark"[^>]*>\{\{playResult\.mark\}\}/.test(wallWxml2) &&
     /\.ww-sheet\s*\{[^}]*animation:\s*ww-sheet-up/.test(wallWxssCode) &&
@@ -6308,6 +6310,41 @@ check(
   pStale.onSheetShareTap()
   eq('★ 没有玩法结果时不落 play 标记（否则愿签分享会读空 result 回落到默认标题）', pStale.onShareAppMessage().title, CARD.text)
   stub.restore()
+}
+
+/* ─────────── 弹层排版确定性 + 工具自检（2026-09-21）───────────
+ * 起因：给弹层做视觉优化时，**预览出图与真机截图给出相反结果** —— 两个动作按钮的
+ * 间距与宽度全看平台 button 默认样式（预览里铜底比文字窄；真机里是窄按钮 + 间距）。
+ * 同一份样式两处渲染不一致 = 排版没写死。这三条把它钉成确定形态。
+ * 另：render-*.mjs 是"模板字符串里拼 CSS"的工具，**模板串里写反引号会截断模板**
+ * （本会话第 5 次犯，前 4 次都靠 node --check 抓到）→ 这里补一条"工具必须可解析"的判据。 */
+{
+  // spawnSync 在文件后面的 selftest 块里才是局部 import，这里必须自己取一份（否则 TDZ/未定义）
+  const { spawnSync } = await import('node:child_process')
+  const ctaRow = (/\.ww-sheet-cta-row\s*\{([^}]*)\}/.exec(wallWxssCode) || [])[1] || ''
+  check('★ 弹层动作行是显式纵向 flex + gap（不依赖平台 button 默认排布）',
+    /display:\s*flex/.test(ctaRow) && /flex-direction:\s*column/.test(ctaRow)
+    && /gap:\s*(var\(--space-\d+\)|\d+rpx)/.test(ctaRow),
+    'CTA 行没写死排布 —— 两个平台的渲染结果会不一致')
+
+  const cta = (/\.ww-sheet-cta\s*\{([^}]*)\}/.exec(wallWxssCode) || [])[1] || ''
+  check('★ 弹层动作按钮有显式宽度（不靠平台 button 的 width 默认值）',
+    /width:\s*100%/.test(cta) && /box-sizing:\s*border-box/.test(cta),
+    '主 CTA 没写宽度 —— 分享按钮会缩成文字宽（真机截图里就是这样）')
+
+  const share = (/\.ww-sheet-cta\.is-share\s*\{([^}]*)\}/.exec(wallWxssCode) || [])[1] || ''
+  check('★ 次动作（分享）与主 CTA 有层级差（描边式，不是两条一模一样的实心铜条）',
+    /background:\s*transparent/.test(share) && /border:/.test(share),
+    '分享按钮没有独立的视觉层级 —— 用户看不出哪条是主路')
+
+  const toolFiles = readdirSync(resolve(ROOT, 'miniprogram/scripts'))
+    .filter((n) => n.endsWith('.mjs') && /^render-/.test(n))
+  check('脚本目录里能扫到 render-*.mjs（判据不是空转）', toolFiles.length >= 2, String(toolFiles.length))
+  toolFiles.forEach((n) => {
+    const r = spawnSync(process.execPath, ['--check', resolve(ROOT, 'miniprogram/scripts', n)], { encoding: 'utf8' })
+    check('★ 工具脚本可解析：' + n + '（模板串里的反引号会截断模板）', r.status === 0,
+      (r.stderr || '').split('\n').slice(0, 2).join(' '))
+  })
 }
 
 if (process.argv.includes('--selftest') && !INJECT) {

@@ -2110,9 +2110,18 @@ page {
   color: #4A4234;
 }
 
+/* 「收起」触控区：**44pt ≈ 88rpx** 是可用性下限，而原来只有 ~38rpx 高（padding 8 + 行高 ~22），
+   真机上很容易点不中（产品负责人真机截图里它就是个很小的纯文字）。
+   做法：用 padding 把触控区撑到 88rpx，再用**负 margin 抵消**它对行高的影响 —— 视觉一字未动。 */
 .ww-sheet-close {
   flex-shrink: 0;
-  padding: var(--space-1) 4rpx var(--space-1) 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 88rpx;
+  min-height: 88rpx;
+  margin: -30rpx 0;
+  padding: 0 0 0 20rpx;
   font-size: var(--fs-22);
   color: var(--brass-600);
 }
@@ -2127,6 +2136,10 @@ page {
   font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, serif;
   font-size: var(--fs-44);
   line-height: 1.25;
+  /* ⚠️ 2026-09-21 复核：真机上「放下一 点」那种空隙**不是字距问题** ——
+     0.04em @44rpx ≈ 1.76rpx（0.15mm），肉眼看不见；内容源也是 `keyword: '放下一点'`（无空格）。
+     它来自**手写体「一」自己的字身**（短横 + 左右大留白）。已撤回改成 0 的那次改动：
+     没有真机证据就不动字距（与夜班「字阶契约收口」同一条纪律）。 */
   letter-spacing: 0.04em;
   color: var(--brass-700);
 }
@@ -2154,9 +2167,21 @@ page {
   100% { opacity: 1; transform: translateY(0); }
 }
 
-.ww-sheet-cta-row { margin-top: 26rpx; }
+/* 弹层两个动作：**纵向 flex + 显式 gap + 显式宽度**。
+   ⚠️ 2026-09-21：原来这一行只是个普通块级容器、`.ww-sheet-cta` 也不写宽度 ——
+   两个按钮的间距与宽度全看**平台 button 默认样式**（浏览器与真机给出相反结果：
+   预览里 <button> 是 inline-block 铜底比文字窄；真机截图里是窄按钮 + 间距）。
+   同一份样式两处渲染不一致 = 排版没写死，必须显式定义。 */
+.ww-sheet-cta-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: 26rpx;
+}
 
 .ww-sheet-cta {
+  width: 100%;
+  box-sizing: border-box;
   height: 84rpx;
   line-height: 84rpx;
   text-align: center;
@@ -2166,6 +2191,15 @@ page {
   background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
   border-radius: 12rpx;
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.6);
+}
+
+/* 次动作（分享）：同配方但**不上底色**，描边式 —— 与主 CTA 的层级一眼可辨
+   （原来两条实心铜条一模一样，用户看不出哪个是主路）。 */
+.ww-sheet-cta.is-share {
+  color: var(--brass-600);
+  background: transparent;
+  border: 2rpx solid rgba(196, 167, 108, 0.62);
+  box-shadow: none;
 }
 
 .ww-sheet-cta-press { opacity: 0.9; }

@@ -689,6 +689,7 @@
     class="ww-sheet-mask"
     wx:if="{{playResult}}"
     bindtap="closePlayResult"
+    catchtouchmove="noop"
     aria-role="button"
     aria-label="收起"
   ></view>
