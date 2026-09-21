@@ -157,6 +157,25 @@
       <view class="manifest-empty" wx:else>暂无藏品明细</view>
     </view>
 
+    <!-- 发货包装实拍（可选）：馆员发货时留档，会随「山海有信」一并给到顾客；
+         订单详情页这一处是**顾客主动回看**的入口（图片已由 JS 转成 https，见 packagePhotos）。 -->
+    <view class="pack-section slide-in-delay-2" wx:if="{{order.packagePhotos && order.packagePhotos.length}}">
+      <text class="section-title"><text class="en-label">PACKING</text> 包装实拍</text>
+      <view class="pack-grid">
+        <image
+          class="pack-item"
+          wx:for="{{order.packagePhotos}}"
+          wx:key="*this"
+          src="{{item}}"
+          mode="aspectFill"
+          data-src="{{item}}"
+          bindtap="previewPackagePhoto"
+          lazy-load
+        ></image>
+      </view>
+      <text class="pack-tip">这是这件的打包留影；点击可放大查看。</text>
+    </view>
+
     <view class="custom-section slide-in-delay-2" wx:if="{{isCustomOrder && customPreviewLines.length}}">
       <text class="section-title"><text class="en-label">ATELIER</text> 定制方案</text>
       <view class="custom-plate">

@@ -419,6 +419,22 @@ function assertCustomerCanSeePhotos() {
 }
 
 /** ⑦ 订单文档：只在真的传了图时才落字段（需求 4） */
+/**
+ * 订单详情页也要能看到包装实拍（蓝图 §7 登记为「未做，待集成官收口补」——已补）。
+ * ⚠️ 关键不是"页面上有这一块"，而是**图片经过 https 转换**：
+ *    订单文档里存的是 `cloud://` fileID，真机 `<image>` 渲染不出来（空白图）。
+ */
+function assertOrderDetailShowsPhotos() {
+  const wxml = read('miniprogram/subpackages/business/order-detail/index.wxml')
+  const js = read('miniprogram/subpackages/business/order-detail/index.js')
+  check('订单详情页画了包装实拍（order.packagePhotos）',
+    /order\.packagePhotos/.test(wxml) && /pack-section/.test(wxml))
+  check('订单详情页把 fileID 换成了 https（不然真机是空白图）',
+    /cloudIdToHttps/.test(js) && /packagePhotos/.test(js) && /cloudIdToHttps\(String\(u/.test(js))
+  check('订单详情页的图片可放大（previewImage）',
+    /previewPackagePhoto/.test(wxml) && /wx\.previewImage/.test(js))
+}
+
 function assertOrderFieldConditional() {
   const ship = read('miniprogram/cloudfunctions/managerShipOrder/index.js')
   check('订单文档只在有图时写 packagePhotos', /if \(photos\.length\) shipPatch\.packagePhotos = photos/.test(ship))
@@ -440,12 +456,20 @@ async function runAll() {
   assertCarriedIntoMessage()
   assertShipSurfaces()
   assertCustomerCanSeePhotos()
+  assertOrderDetailShowsPhotos()
   assertOrderFieldConditional()
   assertSchemaRegistered()
 }
 
 /* ── --selftest：每条注入都是一处**真实可能写错**的改动 ──────────────────── */
 const INJECTIONS = [
+  {
+    // 订单详情页退回"只渲染 fileID"（真机就是空白图 —— 这条正是本任务最容易犯的假交付）
+    label: 'order-detail-raw-fileid',
+    file: 'miniprogram/subpackages/business/order-detail/index.js',
+    from: "        .map((u) => cloudIdToHttps(String(u || '')))",
+    to: "        .map((u) => String(u || ''))"
+  },
   {
     // 需求 1 的反面：不传图也落一个空 photos 字段 → 存量消息与「没传图」在文档层面不再等价
     label: 'photos-always-written',

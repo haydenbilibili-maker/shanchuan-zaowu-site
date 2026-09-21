@@ -2,6 +2,10 @@
 const app = getApp();
 const db = wx.cloud.database();
 const { withAppModal } = require('../../../utils/appModal');
+// 发货包装实拍（可选）：订单文档里存的是 cloud fileID，**必须换成免签名 https 才能渲染**
+// —— 真机 `<image src="cloud://…">` 是空白（本仓 utils/imageUrl.js 头注记录过这个坑，
+//    包装图片流也因此把「渲染态不许有 cloud:// 残留」写成了判据）。
+const { cloudIdToHttps } = require('../../../utils/imageUrl');
 
 // 物流查询插件：仅 business 分包 plugins.logisticsPlugin（provider wx9ad912bf20548d92；同 provider 不可多分包/根级重复声明）
 // 官方：requirePlugin + openWaybillTracking({ waybillToken })
@@ -393,11 +397,17 @@ Page(withAppModal({
             return next
           })
         : []
+      // 包装实拍：cloud fileID → https（云函数/文档里存的是 fileID；不转换就是真机空白图）
+      const packagePhotos = (Array.isArray(data.packagePhotos) ? data.packagePhotos : [])
+        .map((u) => cloudIdToHttps(String(u || '')))
+        .filter(Boolean)
+
       const orderPayload = {
           ...data,
           _id: data._id,
           archiveDate: dateStr,
           serialNo: serialNo,
+          packagePhotos,
           
           // 确保金额显示为两位小数（受赠人隐价时不展示）
           totalPrice: hidePriceForViewer
@@ -1190,6 +1200,14 @@ Page(withAppModal({
     } catch (e) {
       console.warn('order gift share image', e);
     }
+  },
+
+  /** 包装实拍放大查看（同页多图，可左右滑） */
+  previewPackagePhoto(e) {
+    const src = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.src) || '')
+    const urls = ((this.data.order && this.data.order.packagePhotos) || []).filter(Boolean)
+    if (!src || !urls.length) return
+    wx.previewImage({ current: src, urls })
   },
 
   /** 查看礼赠信封：送礼人 → 封缄/分享页；受赠人 → 自己拆信那一页 */

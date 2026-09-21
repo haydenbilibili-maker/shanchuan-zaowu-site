@@ -929,3 +929,19 @@ button.btn-text {
 .ga-entry.primary .ga-entry-text { color: var(--color-bg); font-weight: 600; }
 .ga-entry-press { opacity: 0.86; }
 .ga-entry-text { font-size: 24rpx; color: var(--brass-400); }
+
+/* ── 包装实拍（2026-09-21）：发货留档，顾客可回看/放大 ── */
+.pack-section { margin-top: 28rpx; }
+.pack-grid { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: 18rpx; }
+.pack-item {
+  width: 188rpx;
+  height: 188rpx;
+  border-radius: var(--radius-sm, 8rpx);
+  background: rgba(38, 35, 32, 0.5);
+}
+.pack-tip {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--fs-22);
+  color: var(--color-text-muted);
+}
