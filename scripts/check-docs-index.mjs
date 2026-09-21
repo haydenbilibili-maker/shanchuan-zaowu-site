@@ -77,6 +77,27 @@ export function analyze(cfg) {
 
   const subIndexFiles = []
   const candidates = []
+  // ⚠️ 这两个必须在**扫描之前**声明（const 有 TDZ；第一版放在下面，扫描先跑 → 整个守卫抛异常）
+  const missingDocs = []
+
+  if (indexText) {
+    const seen = new Set()
+    // ⚠️ README 里的引用**多数是裸文件名**（索引表本身就在 docs/ 下，所以写的是 `xxx.md`），
+    //    只有少数带 `docs/` 前缀 —— 第一版只匹配带前缀的，结果一条都没扫到（白名单形同虚设）。
+    for (const m of indexText.matchAll(/`([^`\s]+\.md)`/g)) {
+      const raw = m[1]
+      // 只认"文档目录内"的引用：裸文件名，或显式 docs/ 前缀；其它路径（admin/docs、miniprogram/…）跳过
+      if (raw.includes('/') && !raw.startsWith('docs/')) continue
+      const rel = normPath(raw.startsWith('docs/') ? raw : 'docs/' + raw)
+      if (seen.has(rel)) continue
+      seen.add(rel)
+      const base = rel.replace(/^docs\//, '')
+      // ⚠️ 裸文件名有两种真实落点：`docs/x.md`（索引表里的绝大多数）**和仓库根**（如 `AGENTS.md`）。
+      //    第一版只查 docs/ 下 → 把 `AGENTS.md` 误报成"不存在"（判据自身的错，不是文档的错）。
+      if (!existsSync(join(DOCS, base)) && !existsSync(join(ROOT, base))) missingDocs.push(rel)
+    }
+  }
+
   for (const rel of all) {
     if (rel === INDEX_REL) continue
     if (rel.endsWith('/README.md')) { subIndexFiles.push(rel); continue }
@@ -88,6 +109,12 @@ export function analyze(cfg) {
   const exempted = []
   const unregistered = []
   const violations = []
+  /* ── **反向**：README 里写了的文档必须真的存在 ──────────────────────────────
+   * 2026-09-21 夜班发现：`docs/README.md` 用整整一段（含阅读入口）描述了 6 份
+   * `内容体系_*.md`，而这 6 份**从未提交**（`git log --all --diff-filter=A` 查无）——
+   * 索引在描述不存在的东西。原判据只查「文档 → README」这一个方向，所以完全看不见。
+   * ⚠️ 这 6 份的**内容可能还在云端会话的工作副本里**（那次会话"改了 README 忘了 git add"），
+   *    所以**先钉住、不删行**：等确认取不回来再清 README。基线只许降不许涨。 */
   const dirStats = new Map()
 
   for (const rel of candidates) {
@@ -113,7 +140,8 @@ export function analyze(cfg) {
     unregistered.push(rel)
   }
 
-  return { all, candidates, subIndexFiles, registered, selfIndexed, exempted, unregistered, violations, dirStats }
+  return { all, candidates, subIndexFiles, registered, selfIndexed, exempted, unregistered,
+    missingDocs, violations, dirStats }
 }
 
 /** 配置自身的合法性问题（理由缺失、失效豁免、重复项、baseline 形态） */
@@ -188,6 +216,18 @@ function main() {
 
   const cfgErrs = validateConfig(cfg)
   const res = analyze(cfg)
+  /* 反向判据：README 引用但仓库里不存在的文档 → 违规（白名单内的只提示、不红）。
+   * 基线只许降：白名单外新增一条就红。 */
+  {
+    const known = new Set((cfg.indexKnownMissing || []).map(normPath))
+    const fresh = (res.missingDocs || []).filter((d) => !known.has(d))
+    if (fresh.length) {
+      res.violations.push(`README 引用了**仓库里不存在**的文档（${fresh.length} 条）：${fresh.join('、')}`
+        + ' —— 要么补提交这些文件，要么删掉 README 里那几行')
+    }
+    res.indexKnownMissingFresh = fresh
+    res.indexKnownMissingStale = [...known].filter((d) => !(res.missingDocs || []).includes(d))
+  }
   const baseline = Array.isArray(cfg.baseline) ? cfg.baseline.map(normPath) : []
   const { newDrift, improved } = judge(res.unregistered, baseline)
 
