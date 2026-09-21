@@ -47,6 +47,7 @@ const WXSS = 'miniprogram/subpackages/feature/gift/my-gifts/index.wxss'
 const ORDER_DETAIL_JS = 'miniprogram/subpackages/business/order-detail/index.js'
 const ORDER_DETAIL_WXML = 'miniprogram/subpackages/business/order-detail/index.wxml'
 const GIFT_SUCCESS_WXML = 'miniprogram/subpackages/feature/gift/success/index.wxml'
+const GIFT_SUCCESS_JS = 'miniprogram/subpackages/feature/gift/success/index.js'
 
 const INJECTIONS = {
   // 退回旧写法：模板里引用页面 data → 「致 XX」永不显示（本轮修掉的真 bug）
@@ -102,6 +103,21 @@ const INJECTIONS = {
     file: WXML,
     from: '          <text class="meta recipient" wx:if="{{item.flowTab === \'sent\' && item.recipientName}}">致 {{item.recipientName}}</text>\n          <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>',
     to: '          <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>\n          <text class="meta recipient" wx:elif="{{item.flowTab === \'sent\' && item.recipientName}}">致 {{item.recipientName}}</text>'
+  },
+  /* 送礼人页退回"只有一行不可点的「含语音」" → 录制者再也听不到自己的祝福语。
+   * ⚠️ 注入必须与判据**同层**：我第一版注入的是 `toggleVoice() { return; }`（早退），
+   *    而判据是**文本级**的（正则看有没有 `player.play(`）—— 早退不会删掉那句调用，所以抓不到。
+   *    这不是判据太弱，是**注入太弱**（改成"把播放调用删掉"就抓得到）。 */
+  'gift-voice-not-playable': {
+    file: GIFT_SUCCESS_JS,
+    from: '    player.play(url)',
+    to: '    return'
+  },
+  // 头部文案退回"只按 deliveryType 分支"（对方留址后仍显示等待文案）
+  'gift-hero-ignores-address': {
+    file: GIFT_SUCCESS_JS,
+    from: "        const addrSubmitted = gift.addressStatus === 'submitted'",
+    to: '        const addrSubmitted = false'
   },
   // 收端不再解码中文人名 → 「致 %E5%8E%89…」乱码 + 筛选空（2026-09-21 真机截图）
   'contact-name-not-decoded': {
@@ -615,6 +631,47 @@ check('失效卡在折叠区内仍整体降调', /\.card-hit\.is-folded\s*\{[^}]
     /giftRecipientName/.test(odWxml) && /giftStatusText/.test(odWxml)
     && /giftRecipientName:/.test(odJs) && /giftStatusText:/.test(odJs),
     '卡片上只有入口、没有"给谁/进展"，用户仍然分不清是哪一份礼赠')
+
+  /* ★ 送礼人必须能**回放自己录的那段祝福语**（2026-09-21 真机反馈：
+   *   「音频是无法播放的……录制者是没有地方和环节可以再次听到自己录制的祝福语」）。
+   *   云函数 `getGiverShare` 一直在返回 `voiceTempUrl`，缺的是页面上的播放入口。 */
+  {
+    const okJs = readSrc(GIFT_SUCCESS_JS)
+    // ⚠️ 只断言"有这个函数"是不够的：注入一个 `toggleVoice() { return; }`（早退）
+    //    时那条断言照样绿 —— 自检当场把这个假绿抓了出来。必须断言它**真的调到播放**。
+    check('★ 封缄页有语音播放入口，且真的调到了播放（不是一行不可点的说明）',
+      /(bind|catch)tap="toggleVoice"/.test(successWxml)
+      && /toggleVoice\s*\(\)\s*\{[\s\S]{0,900}?player\.play\(/.test(okJs)
+      && /ensureInnerAudioOption\(\)/.test(okJs),
+      '「含语音」那行要么不可点、要么点了不放 —— 送礼人再也听不到自己录的话')
+    check('★ 播放器复用收礼页同一个 createGiftPlayer（错误口径一致）',
+      /createGiftPlayer/.test(okJs), '另起一套播放器 = 两页行为会分叉')
+    check('★ 播放地址接的是云端返回的 voiceTempUrl',
+      /voiceUrl:\s*hasVoice \? String\(gift\.voiceTempUrl/.test(okJs),
+      '没有把 gift.voiceTempUrl 接到 data.voiceUrl —— 有控件也放不出声')
+    check('★ 离开页面必须停语音（onHide/onUnload 都要）',
+      /onHide\s*\(\)[\s\S]{0,200}?_voicePlayer\.pause\(\)/.test(okJs)
+      && /onUnload\s*\(\)[\s\S]{0,240}?_voicePlayer\.destroy\(\)/.test(okJs),
+      '离开不停 = 语音会在订单页/后台继续响')
+  }
+
+  /* ★ 送礼人页的头部文案必须**跟着状态走**（2026-09-21 真机反馈：
+   *   「当对方已经留下地址之后这个页面的状态并没有随着更改，文案仍然是等待启封留下去处的文案」）。
+   *   原来那段只按 deliveryType 分支，从不看 addressStatus / status。 */
+  {
+    const okJs = readSrc(GIFT_SUCCESS_JS)
+    check('★ 封缄页读 addressStatus 分流（留址后不再说"正等 TA 留下去处"）',
+      /gift\.addressStatus === 'submitted'/.test(okJs)
+      && /addrSubmitted/.test(okJs) && /TA 已留下去处/.test(okJs),
+      '头部文案没跟 addressStatus 走 —— 对方留址后仍显示等待文案')
+    check('★ 已寄出/已送达各有自己的文案（不是一律"已留址"）',
+      /gift\.status === 'received'/.test(okJs) && /gift\.status === 'shipped'/.test(okJs)
+      && /这份山海已送达/.test(okJs) && /礼物已启程/.test(okJs),
+      '状态机缺档：发货/送达后文案不会变')
+    check('★ 留址后必须撤掉填址倒计时（挂着"须于 X 日前"是假紧迫）',
+      /if \(!addrSubmitted && !shipped && !received\)/.test(okJs),
+      '倒计时没跟留址状态联动')
+  }
 
   check('★ 闭环另一端仍在：礼赠信封页有「查看礼赠进度」回订单详情',
     /bindtap="goOrder"/.test(successWxml),

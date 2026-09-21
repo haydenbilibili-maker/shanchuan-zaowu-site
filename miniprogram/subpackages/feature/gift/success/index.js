@@ -4,7 +4,7 @@ const {
 } = require('../../../../utils/contentDisplayFlags')
 const { drawMemberQr } = require('../../utils/qrCanvas')
 const { requestGiftSubscribe, giftSubscribeSkipHint } = require('../../utils/giftSubscribe')
-const { formatDuration } = require('../giftVoice')
+const { formatDuration, createGiftPlayer, ensureInnerAudioOption } = require('../giftVoice')
 const { renderGiftShareImage } = require('../giftShareCard')
 const textFx = require('../giftTextEffect')
 
@@ -22,6 +22,13 @@ Page({
     cardSignature: '',
     hasVoice: false,
     voiceDurationLabel: '',
+    /* 自己录的祝福语**必须能在这里回放**（2026-09-21 产品负责人：
+       「音频是无法播放的，这样意味着只要音频发出去之后，录制者是没有地方和环节可以再次听到自己录制的祝福语」）。
+       云函数 getGiverShare 一直在返回 voiceTempUrl（enrichVoiceAccess），是**页面没有播放入口**。 */
+    voiceUrl: '',
+    voicePlaying: false,
+    voiceLoading: false,
+    voiceError: '',
     expireHint: '',
     heroOverline: 'GIFT SEALED',
     heroTitle: '礼已备好',
@@ -98,8 +105,46 @@ Page({
     else textFx.stopTickSound()
   },
 
+  /** 「听一听我录的话」——复用与收礼页同一个播放器（同一条语音、同一套错误口径） */
+  _ensureVoicePlayer() {
+    if (this._voicePlayer) return this._voicePlayer
+    this._voicePlayer = createGiftPlayer({
+      onPlay: () => this.setData({ voicePlaying: true, voiceLoading: false }),
+      onPause: () => this.setData({ voicePlaying: false, voiceLoading: false }),
+      onStop: () => this.setData({ voicePlaying: false, voiceLoading: false }),
+      onEnded: () => this.setData({ voicePlaying: false, voiceLoading: false }),
+      onError: () => this.setData({ voicePlaying: false, voiceLoading: false, voiceError: '这条语音暂时放不出来' })
+    })
+    return this._voicePlayer
+  },
+
+  /** 点一下播放、再点一下停下（自己的语音，不需要"听完"这种仪式） */
+  toggleVoice() {
+    const url = String(this.data.voiceUrl || '').trim()
+    if (!url) {
+      this.setData({ voiceError: '这条语音还在路上，稍后再试' })
+      return
+    }
+    const player = this._ensureVoicePlayer()
+    if (this.data.voicePlaying) {
+      player.pause()
+      return
+    }
+    this.setData({ voiceError: '', voiceLoading: true })
+    ensureInnerAudioOption()
+    player.play(url)
+  },
+
+  onHide() {
+    // 离开页面必须停：否则语音会在订单页/后台继续响（收礼页同一口径）
+    if (this._voicePlayer) this._voicePlayer.pause()
+    this._stopType()
+  },
+
   onUnload() {
     this._stopType()
+    if (this._voicePlayer) this._voicePlayer.destroy()
+    this._voicePlayer = null
     textFx.destroySfx()
   },
 
@@ -155,18 +200,53 @@ Page({
       let expireHint = ''
       let canShare = true
       if (deliveryType === 'invite_address') {
-        heroTitle = '礼已备好，等你送出'
-        heroDesc = '正等 TA 启封并留下去处。把礼笺交出去——对方写下收件信息后，专员再启程。'
-        shareCta = '把这份心意交给 TA'
-        if (gift.expireAt) {
-          try {
-            const d = new Date(gift.expireAt)
-            expireHint = `须于 ${d.getMonth() + 1}月${d.getDate()}日前请 TA 留下地址`
-          } catch (e) {
+        /* ⚠️ 2026-09-21 产品负责人：「当对方已经留下地址之后这个页面的状态并没有随着更改，
+         *    文案仍然是等待启封留下去处的文案」。
+         *    根因：这一段**只按 deliveryType 分支**，从不看 `addressStatus` / `status` ——
+         *    于是无论对方留没留址、发没发货，送礼人看到的都是同一句"正等 TA 启封并留下去处"。
+         *    口径（与订单详情页的礼赠档案一致）：
+         *      已送达 > 已寄出 > 已留址 > 已启封 > 待启封。
+         *    `expireHint`（填址倒计时）只在**还没留址**时才有意义，留址后必须撤掉。 */
+        const addrSubmitted = gift.addressStatus === 'submitted'
+        const received = gift.status === 'received'
+        const shipped = gift.status === 'shipped'
+        const accepted = gift.acceptStatus === 'accepted' || gift.acceptStatus === 'opened'
+        if (received) {
+          heroOverline = 'GIFT ARRIVED'
+          heroTitle = '这份山海已送达'
+          heroDesc = 'TA 已经收到。这封信与那段语音都留在这里，随时可以回看。'
+          shareCta = '把这段也留着'
+        } else if (shipped) {
+          heroOverline = 'ON THE WAY'
+          heroTitle = '礼物已启程'
+          heroDesc = '已按 TA 留下的去处寄出。可在「礼赠进度」里看物流。'
+          shareCta = '把礼笺也告诉 TA'
+        } else if (addrSubmitted) {
+          heroOverline = 'ADDRESS RECEIVED'
+          heroTitle = 'TA 已留下去处'
+          heroDesc = '收件信息已经收到，专员正在备妥启程。每一步都可以在「礼赠进度」里回看。'
+          shareCta = '把礼笺也告诉 TA'
+        } else if (accepted) {
+          heroTitle = 'TA 已启封，正等留下去处'
+          heroDesc = '对方已经打开这封信了。等 TA 写下收件信息，专员就能启程。'
+          shareCta = '再轻轻提醒一声'
+        } else {
+          heroTitle = '礼已备好，等你送出'
+          heroDesc = '正等 TA 启封并留下去处。把礼笺交出去——对方写下收件信息后，专员再启程。'
+          shareCta = '把这份心意交给 TA'
+        }
+        // 填址倒计时只在**还没留址**时给出；已经留址还挂着"须于 X 日前"就是假紧迫
+        if (!addrSubmitted && !shipped && !received) {
+          if (gift.expireAt) {
+            try {
+              const d = new Date(gift.expireAt)
+              expireHint = `须于 ${d.getMonth() + 1}月${d.getDate()}日前请 TA 留下地址`
+            } catch (e) {
+              expireHint = `填址有效期 ${gift.addressTimeoutDays || 7} 日`
+            }
+          } else {
             expireHint = `填址有效期 ${gift.addressTimeoutDays || 7} 日`
           }
-        } else {
-          expireHint = `填址有效期 ${gift.addressTimeoutDays || 7} 日`
         }
       } else if (deliveryType === 'ship_to_receiver') {
         heroDesc = '将按你填写的地址妥投给 TA。仍可分享礼笺，让对方先读到你的话。'
@@ -198,6 +278,9 @@ Page({
         cardSignature,
         hasVoice,
         voiceDurationLabel: hasVoice ? formatDuration(voiceDuration) : '',
+        // 送礼人自己那条语音的可播地址（云函数早已返回，之前页面没用）
+        voiceUrl: hasVoice ? String(gift.voiceTempUrl || '') : '',
+        voiceError: '',
         expireHint,
         heroOverline,
         heroTitle,

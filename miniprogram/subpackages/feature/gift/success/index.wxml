@@ -50,7 +50,22 @@
       <view class="mini-seal" aria-hidden="true">山海</view>
     </view>
     <text class="card-body" wx:if="{{cardBody}}">{{cardBody}}</text>
-    <text class="card-voice" wx:if="{{hasVoice}}">含语音 · {{voiceDurationLabel}}</text>
+    <!-- 自己录的那段话要能在这里**回放**（2026-09-21 产品负责人真机反馈）。
+         ⚠️ 这一行原来是纯文本「含语音 · 0:05」，不可点 —— 语音发出去之后，录制者再无任何环节能听到它。
+         现在它是播放/暂停控件（与收礼页共用 createGiftPlayer）。`catchtap` 避免冒泡到 finishTyping。 -->
+    <view
+      class="card-voice is-playable {{voicePlaying ? 'is-playing' : ''}}"
+      wx:if="{{hasVoice}}"
+      catchtap="toggleVoice"
+      hover-class="card-voice-press"
+      hover-stay-time="70"
+      aria-role="button"
+      aria-label="{{voicePlaying ? '暂停我录的祝福语' : '播放我录的祝福语'}}"
+    >
+      <view class="voice-play-icon {{voiceLoading ? 'is-loading' : ''}}" aria-hidden="true">{{voicePlaying ? '❙❙' : '▶'}}</view>
+      <text class="voice-play-text">{{voicePlaying ? '正在播我说的话' : '听一听我录的话'}} · {{voiceDurationLabel}}</text>
+    </view>
+    <text class="voice-error" wx:if="{{voiceError}}">{{voiceError}}</text>
     <text class="card-sig" wx:if="{{cardSignature}}">— {{cardSignature}}</text>
   </view>
 

@@ -477,6 +477,42 @@ page { background: #1A1814; color: #fff; }
   letter-spacing: 0.04em;
   font-family: 'JetBrains Mono', 'DM Mono', monospace;
 }
+
+/* 可回放的语音行（2026-09-21）：从"一行不可点的说明"变成播放控件。
+   触控区按 88rpx 可用性下限给（负 margin 抵消，视觉高度不变）。 */
+.card-voice.is-playable {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 88rpx;
+  margin: -22rpx 0 0;
+  padding: 22rpx 0;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+.card-voice-press { opacity: 0.7; }
+.voice-play-icon {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  color: #A8903C;
+  border: 2rpx solid rgba(168, 144, 60, 0.55);
+  border-radius: 50%;
+  background: rgba(168, 144, 60, 0.12);
+}
+.voice-play-icon.is-loading { opacity: 0.5; }
+.card-voice.is-playing .voice-play-icon { background: rgba(168, 144, 60, 0.28); }
+.voice-play-text { font-size: 22rpx; }
+.voice-error {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 20rpx;
+  color: #C4756B;
+}
 .card-sig {
   display: block;
   margin-top: 18rpx;
