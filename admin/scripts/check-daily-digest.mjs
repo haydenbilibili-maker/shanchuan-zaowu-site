@@ -344,6 +344,39 @@ async function loadModules (override = {}) {
   return { catalogMod, coreMod, collectMod, viewMod, catalog, seq: loadSeq }
 }
 
+/**
+ * 去注释（字符串字面量先占位保护）。
+ * ⚠️ 2026-09-21：D10 第一版**误红了** —— 它匹配到了我在取数文件里写的**注释**
+ * （注释里正举着 `.aggregate().append(pipeline)` 当反例）。本仓错题本第一族：
+ * 形态/负向判据必须看去注释的源码。
+ */
+function stripComments (src) {
+  return String(src || '')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+}
+
+/** 纯判据：取数不能用 wx-server-sdk 不支持的 .append()，且必须有东八日兜底 */
+function checkCollectApi (collectSrc) {
+  const out = []
+  const code = stripComments(collectSrc)
+  if (/\.aggregate\(\)[\s\S]{0,80}?\.append\(/.test(code) || /\.append\(\s*orderDayPipeline/.test(code)) {
+    out.push('取数用了 .append(pipeline)（wx-server-sdk 无此 API）')
+  }
+  if (!/beijingDayRange/.test(collectSrc)) out.push('缺东八日边界兜底')
+  return out
+}
+
+/** 纯判据：「取数失败」与「当日无数据」必须分两档 */
+function checkDigestFailureSplit (coreSrc) {
+  const out = []
+  if (!/failed:\s*rows\.filter\(\(r\) => r\.error\)/.test(coreSrc)) out.push('没有 failed 档')
+  if (!/missing:\s*rows\.filter\(\(r\) => r\.value == null && !r\.error\)/.test(coreSrc)) {
+    out.push('missing 没排除取数失败项')
+  }
+  return out
+}
+
 function staticChecks (mods) {
   const { catalogMod, coreMod, catalog } = mods
 
@@ -369,6 +402,32 @@ function staticChecks (mods) {
   if (!shipMetric) fail('目录里没有 order_shipped（发货单数）')
   else if (!shipMetric.sources.some((s) => s.timeField === 'logistics.shipTime')) {
     fail("order_shipped 的 timeField 不是 'logistics.shipTime'")
+  }
+
+  /* D10 ── 线上真调用抓到的两个 P0（2026-09-21 集成官）─────────────────────────
+   * ① `db.collection().aggregate().append(pipeline)` —— **`wx-server-sdk` 没有 `append`**
+   *    （那是 manager-node / @cloudbase/node-sdk 的形态）。线上 7 个订单指标**全部**
+   *    `append is not a function`。本地用 `tcb db nosql` 验是绿的 —— "本地验过 ≠ 线上能跑"。
+   * ② 取数失败被混进"当日无数据" ⇒ 日报平静地报"订单当日无数据"，读者以为那天真没生意。
+   *    必须 `failed`（取数失败，带原因）与 `missing`（当日确实无数据）**分两档**。 */
+  if (checkCollectApi(collectSrc).length) {
+    fail('取数用了 .append(pipeline) —— wx-server-sdk 的聚合没有这个 API（线上会全部取数失败）')
+  }
+  if (!/\.aggregate\(\)/.test(collectSrc) || !/\.end\(\)/.test(collectSrc)) {
+    fail('取数没有走 wx-server-sdk 的 fluent 聚合（.aggregate()…end()）')
+  }
+  if (!/beijingDayRange/.test(collectSrc)) {
+    fail('取数没有东八日边界的兜底路径（聚合不可用时会一条都出不来）')
+  }
+  const coreSrc = read(F.core)
+  if (!/failed:\s*rows\.filter\(\(r\) => r\.error\)/.test(coreSrc)) {
+    fail("buildDigest 没有把「取数失败」单独分档（failed）—— 故障会被说成「当日无数据」")
+  }
+  if (!/missing:\s*rows\.filter\(\(r\) => r\.value == null && !r\.error\)/.test(coreSrc)) {
+    fail('missing 没有排除取数失败项 —— 两档会混在一起')
+  }
+  if (!/failed:\s*digest\.failed \|\| \[\]/.test(read(F.entry))) {
+    fail('入口回包没有带 failed —— 失败原因传不出来（线上只能靠猜）')
   }
 
   // D6 队列字段 + 读侧 payload 放行
@@ -581,6 +640,20 @@ async function selftest () {
     const fenMetric = unitMismatch.metrics.find((m) => /_fen$/.test(m.id))
     if (fenMetric) fenMetric.unit = 'yuan'
     t('★ 被检出：_fen 指标的单位被写成 yuan', checkCatalog(unitMismatch).length > 0)
+
+    // ⑩-a 取数退回 wx-server-sdk 不支持的 `.append(pipeline)`（线上 7 个订单指标会全灭）
+    const appendBack = mutate('collect-append.js', read(F.collect),
+      (s) => s.replace('        .aggregate()\n        .group(group)', '        .aggregate()\n        .append([])\n        .group(group)'))
+    t('★ 被检出：取数退回 .append(pipeline)（wx-server-sdk 无此 API，线上取数全灭）',
+      checkCollectApi(read(appendBack)).length > 0)
+
+    // ⑩-b 取数失败被混回"当日无数据"
+    const mergedMissing = mutate('core-mergedmissing.js', read(F.core),
+      (s) => s.replace('missing: rows.filter((r) => r.value == null && !r.error).map((r) => r.id),',
+        'missing: rows.filter((r) => r.value == null).map((r) => r.id),')
+        .replace('failed: rows.filter((r) => r.error).map((r) => ({ id: r.id, label: r.label, error: r.error }))',
+          'failed: [],'))
+    t('★ 被检出：取数失败被混成「当日无数据」', checkDigestFailureSplit(read(mergedMissing)).length > 0)
 
     // ⑩ 扩展位被误开（本次只应开超管）
     const allOn = mutate('cat-allroles.js', read(F.catalog), (s) => s.replace(/\n\s*enabled: false/g, '\n    enabled: true'))

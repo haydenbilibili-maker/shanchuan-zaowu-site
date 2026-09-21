@@ -135,8 +135,10 @@ function buildDigest (raw = {}) {
     sections,
     metrics: rows,
     metricsCount: rows.length,
-    /** 哪些格是「当日没有数据」而不是「取数失败」 */
-    missing: rows.filter((r) => r.value == null).map((r) => r.id)
+    /** 当日**确实没有数据**（不是取数失败） */
+    missing: rows.filter((r) => r.value == null && !r.error).map((r) => r.id),
+    /** **取数失败**（聚合报错等）：必须与"当日无数据"分开，且要把原因带回给调用方 */
+    failed: rows.filter((r) => r.error).map((r) => ({ id: r.id, label: r.label, error: r.error }))
   }
 }
 
@@ -172,6 +174,11 @@ function readMetric (metric, bag) {
     const got = bag.orderDays[metric.id]
     if (!got || got.found !== true) {
       base.value = null
+      /* ⚠️ 2026-09-21 集成官修复：**取数失败 ≠ 当日无数据**。
+       * 原来 `found !== true` 一律当成"当日没有数据"，于是聚合抛错时（实测线上 orders 全部聚合失败）
+       * 日报会平静地写「未取到」，读的人以为"那天真的没订单" —— 这正是本仓反复禁止的
+       * 「把故障说成事实」。现在把适配器带回来的 error 原样挂上，由 buildDigest 分流。 */
+      if (got && got.error) base.error = String(got.error).slice(0, 240)
       return base
     }
     base.value = metric.sumField ? toNumber(got.sum) : toNumber(got.count)
@@ -231,7 +238,10 @@ function buildMessageText (digest) {
     lines.push('')
   }
   const missing = digest.missing.length
-  if (missing) lines.push(`（${missing} 项当日无数据，已标「未取到」，不是取数失败）`)
+  if (missing) lines.push(`（${missing} 项当日无数据）`)
+  const failed = (digest.failed || []).length
+  // 失败必须单独说，且**不能**混进"当日无数据" —— 那会让读者以为那天真的没生意
+  if (failed) lines.push(`⚠️ ${failed} 项**取数失败**（数据可能不准，请联系技术）：${(digest.failed || []).map((f) => f.label).join('、')}`)
   lines.push('', '口径与来源见详情页「数据口径」。')
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }

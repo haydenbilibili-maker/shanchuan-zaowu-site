@@ -162,6 +162,8 @@ exports.main = async (event = {}) => {
     metrics: digest.metrics,
     sections: digest.sections.map((s) => ({ key: s.key, label: s.label, ids: s.metrics.map((m) => m.id) })),
     missing: digest.missing,
+    // 取数失败单独回传（含原因）—— 故障不许伪装成"当日无数据"
+    failed: digest.failed || [],
     catalogVersion: 'daily-digest-v1'
   }
 
@@ -211,6 +213,7 @@ exports.main = async (event = {}) => {
     prune,
     metricsCount: digest.metrics.length,
     missing: digest.missing,
+    failed: digest.failed || [],
     // 抽样返回结构化日报，便于人工/脚本核对（不写库时也能看数）
     digest: dryRun ? payload : { dayKey, role, metrics: payload.metrics }
   }
