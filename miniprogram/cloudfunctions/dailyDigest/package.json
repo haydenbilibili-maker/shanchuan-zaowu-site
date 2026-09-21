@@ -1,0 +1,9 @@
+{
+  "name": "dailyDigest",
+  "version": "1.0.0",
+  "description": "每日日报：按自然日汇总小程序/订单/门店营收，经工作信息发给超管（可回看）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

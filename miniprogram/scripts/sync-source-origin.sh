@@ -13,7 +13,7 @@ set -e
 cd "$(dirname "$0")/.."
 SRC="cloudfunctions/grantStorePoints/sourceOrigin.js"
 # 所有内联过 isNonClientSource / isClientSource / SOURCE 全等判定的云函数
-DIRS="grantStorePoints verifyBooking manageInvoiceRequests refundOrder claimStoreReceipt getStorePointRules managerShipOrder manageGift manageArtisanCommission manageDeposit sendBookingReminder sendCareReminder bindPlatformOrder dispatchMessage sendInAppMessage payCallback claimBirthdayGift sweepExpiredOrders"
+DIRS="grantStorePoints verifyBooking manageInvoiceRequests refundOrder claimStoreReceipt getStorePointRules managerShipOrder manageGift manageArtisanCommission manageDeposit sendBookingReminder sendCareReminder bindPlatformOrder dispatchMessage sendInAppMessage payCallback claimBirthdayGift sweepExpiredOrders dailyDigest"
 CHECK=0
 [ "$1" = "--check" ] && CHECK=1
 

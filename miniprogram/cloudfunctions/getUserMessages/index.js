@@ -234,6 +234,11 @@ function normalizeMessage(doc, source = 'user_messages') {
     // 需求 10：信件商品卡（名称 + 图片 + 规格）。历史消息没有该字段 → 返回 []，
     // 前端据此决定是否渲染卡片；不在这里补默认图，以免给旧信凭空造出商品。
     products: normalizeProducts(doc.products),
+    // 每日日报的结构化正文（数字 + 每个数字的口径与来源）。
+    // 为什么必须在这里显式透传：本函数是**白名单式**归一化，未列出的字段会被丢掉 ——
+    // 不透传的话，日报详情页拿不到 payload，只能渲染纯文本，产品负责人要的「口径可对账」就没了。
+    // 只透传 dailyDigest 一种 type，且做尺寸收敛，避免任意文档把大对象带进列表响应。
+    payload: normalizeDigestPayload(doc),
     read: doc.read === true,
     createTime: doc.createTime || doc.sentAt || doc._createTime,
     _createTime: doc._createTime || doc.sentAt || doc.createTime,
@@ -267,6 +272,61 @@ function normalizeProducts(raw) {
   return out
 }
 
+/**
+ * 每日日报结构化正文的收敛（只认 daily_digest 一种 type）。
+ *
+ * 为什么收敛而不是原样透传：本函数是客户端可调的读接口，任何类型的文档都可能被塞进
+ * `payload`。这里只取日报真正需要的字段，并给数组长度与字符串长度封顶，
+ * 免得一条被人工改坏的文档把列表响应撑大。
+ */
+const DIGEST_MAX_METRICS = 40
+const DIGEST_MAX_SOURCES = 4
+const DIGEST_STR_MAX = 200
+
+function clipText (v, max = DIGEST_STR_MAX) {
+  return String(v == null ? '' : v).slice(0, max)
+}
+
+function normalizeDigestPayload (doc) {
+  const type = String((doc && (doc.type || doc.templateCode)) || '')
+  if (type !== 'daily_digest') return null
+  const raw = doc && doc.payload
+  if (!raw || typeof raw !== 'object') return null
+  const metrics = Array.isArray(raw.metrics) ? raw.metrics.slice(0, DIGEST_MAX_METRICS) : []
+  return {
+    v: Number(raw.v) || 1,
+    dayKey: clipText(raw.dayKey, 10),
+    role: clipText(raw.role, 32),
+    roleLabel: clipText(raw.roleLabel, 32),
+    generatedAt: clipText(raw.generatedAt, 32),
+    missing: Array.isArray(raw.missing) ? raw.missing.slice(0, DIGEST_MAX_METRICS).map((x) => clipText(x, 48)) : [],
+    sections: Array.isArray(raw.sections)
+      ? raw.sections.slice(0, 8).map((s) => ({
+        key: clipText(s && s.key, 24),
+        label: clipText(s && s.label, 24),
+        ids: Array.isArray(s && s.ids) ? s.ids.slice(0, DIGEST_MAX_METRICS).map((x) => clipText(x, 48)) : []
+      }))
+      : [],
+    metrics: metrics.map((m) => ({
+      id: clipText(m && m.id, 48),
+      section: clipText(m && m.section, 24),
+      label: clipText(m && m.label, 32),
+      unit: clipText(m && m.unit, 12),
+      value: m && m.value == null ? null : Number(m.value),
+      source: clipText(m && m.source, 240),
+      caveat: clipText(m && m.caveat, 240),
+      sources: Array.isArray(m && m.sources)
+        ? m.sources.slice(0, DIGEST_MAX_SOURCES).map((s) => ({
+          collection: clipText(s && s.collection, 48),
+          timeField: clipText(s && s.timeField, 48),
+          filter: clipText(s && s.filter, 160),
+          tz: clipText(s && s.tz, 48)
+        }))
+        : []
+    }))
+  }
+}
+
 function eventDedupeKey(item) {
   const type = item.type || 'system_notice'
   const relatedId = item.relatedId || item.campaignId || ''
@@ -292,6 +352,9 @@ function mergePair(prev, item) {
     // 需求 10：通知日志行永远没有商品卡（只有 user_messages 有），
     // 若让它按 primary 覆盖，会把另一侧真实商品的卡抹成空数组。
     products: (primary.products && primary.products.length) ? primary.products : (secondary.products || []),
+    // 日报结构化正文只写在 user_messages 侧（notification_logs 镜像不落 payload）。
+    // 若让它按 primary 覆盖，当 primary 是日志行时会把日报正文抹成 null —— 与 products 同一族问题。
+    payload: primary.payload || secondary.payload || null,
     _id: primary._id,
     _altId: secondary._id && secondary._id !== primary._id ? secondary._id : (primary._altId || ''),
     _source: primary._source

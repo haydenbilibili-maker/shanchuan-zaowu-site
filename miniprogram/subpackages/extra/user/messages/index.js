@@ -18,8 +18,14 @@ const CUSTOMER_FILTER_TABS = [
   { id: 'system', label: '馆务' }
 ];
 
+/**
+ * 工作信息分档：与「待办」「审批」并列的第三档 = 日报。
+ * id 直接就是云端消息的 `category`（getUserMessages 按 category 精确匹配过滤），
+ * 所以这里加一行就等于给日报开了一档，并以同一列表分页回看历史日报。
+ */
 const WORKFLOW_FILTER_TABS = [
   { id: 'all', label: '全部' },
+  { id: 'digest', label: '日报' },
   { id: 'ops', label: '待办' },
   { id: 'system', label: '审批' }
 ];
@@ -35,6 +41,7 @@ const EMPTY_COPY = {
   },
   workflow: {
     all: { title: '工作台暂无来信', desc: '新单、候补补货、审批与开票待办会出现在这里' },
+    digest: { title: '暂无日报', desc: '每日日报由云端在次日凌晨生成，生成后会归档在这里，可随时回看历史' },
     ops: { title: '暂无运营待办', desc: '新单启程与藏家候补会放在这一类' },
     system: { title: '暂无审批来信', desc: '审批提交与结果会放在这里' }
   }

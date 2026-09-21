@@ -103,10 +103,11 @@ const SPECS = [
     reason: '站内信/到货提醒防重（24 个云函数各自的 inAppMessage.js / messageWrite.js / dispatchMessage core.js 写入；authPhone 以它查重）',
     usedBy: [
       'authPhone', 'bindPlatformOrder', 'cancelOrder', 'claimBirthdayGift', 'claimStoreReceipt',
-      'confirmOrderReceipt', 'confirmPayment', 'createBooking', 'dispatchMessage', 'exchangeCoupon',
-      'grantStorePoints', 'makeOrder', 'manageApprovals', 'manageGift', 'manageHonoraryCurators',
-      'manageInvoiceRequests', 'managerShipOrder', 'payCallback', 'refundOrder', 'submitCustomInquiry',
-      'submitInvoiceRequest', 'submitSupportTicket', 'sweepExpiredOrders', 'toggleCollection',
+      'confirmOrderReceipt', 'confirmPayment', 'createBooking', 'dailyDigest', 'dispatchMessage',
+      'exchangeCoupon', 'grantStorePoints', 'makeOrder', 'manageApprovals', 'manageGift',
+      'manageHonoraryCurators', 'manageInvoiceRequests', 'managerShipOrder', 'payCallback',
+      'refundOrder', 'submitCustomInquiry', 'submitInvoiceRequest', 'submitSupportTicket',
+      'sweepExpiredOrders', 'toggleCollection',
     ],
   },
   {

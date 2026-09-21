@@ -106,6 +106,7 @@ function emptyWorkbenchBadgeState() {
     workbenchEntries: [],
     workbenchTiles: [],
     workflowUnreadCount: 0,
+    workbenchDigestUnread: 0,
     workbenchOrderUnread: 0,
     workbenchWishlistUnread: 0,
     workbenchApprovalPending: 0,
@@ -118,6 +119,7 @@ function emptyWorkbenchBadgeState() {
 function normalizeWorkbenchCounts(raw) {
   return {
     workflow: Math.max(0, Number(raw && raw.workflow) || 0),
+    digest: Math.max(0, Number(raw && raw.digest) || 0),
     approval: Math.max(0, Number(raw && raw.approval) || 0),
     order: Math.max(0, Number(raw && raw.order) || 0),
     wishlist: Math.max(0, Number(raw && raw.wishlist) || 0)
@@ -171,6 +173,19 @@ function buildWorkbenchTilesFromCounts(entries, counts = {}) {
       workspace: '',
       icon: '/assets/icons/message.png',
       ...decorate(c.workflow)
+    },
+    // 日报：工作信息之外**单独一档**（产品口径「与待办、审批并列」）。
+    // 为什么不并进「工作信息」的角标：日报是每日一份的**回看**入口，
+    // 混进待办未读数会让「有几件事等我处理」这个数字失真。
+    // 有未读日报才亮角标 —— 已读之后角标消失，但入口与历史仍可进（不阻塞回看）。
+    {
+      key: 'digest',
+      kind: 'digest',
+      title: '日报',
+      en: 'DIGEST',
+      workspace: '',
+      icon: '/assets/icons/trend.png',
+      ...decorate(c.digest)
     }
   ];
   list.forEach((e) => {
@@ -225,6 +240,7 @@ function persistWorkbenchBadgeCache(counts, entries) {
       openid: currentOpenid() || '',
       ts: Date.now(),
       workflow: c.workflow,
+      digest: c.digest,
       approval: c.approval,
       order: c.order,
       wishlist: c.wishlist,
@@ -251,6 +267,7 @@ function snapshotToWorkbenchFields(snap) {
     workbenchEntries: entries,
     workbenchTiles: buildWorkbenchTilesFromCounts(entries, counts),
     workflowUnreadCount: counts.workflow,
+    workbenchDigestUnread: counts.digest,
     workbenchOrderUnread: counts.order,
     workbenchWishlistUnread: counts.wishlist,
     workbenchApprovalPending: counts.approval,
@@ -482,6 +499,7 @@ Page(withAppModal({
     workbenchEntries: _bootWorkbench.workbenchEntries,
     workbenchTiles: _bootWorkbench.workbenchTiles,
     workflowUnreadCount: _bootWorkbench.workflowUnreadCount,
+    workbenchDigestUnread: _bootWorkbench.workbenchDigestUnread,
     workbenchOrderUnread: _bootWorkbench.workbenchOrderUnread,
     workbenchWishlistUnread: _bootWorkbench.workbenchWishlistUnread,
     workbenchApprovalPending: _bootWorkbench.workbenchApprovalPending,
@@ -2435,6 +2453,7 @@ Page(withAppModal({
       const cached = readWorkbenchBadgeCache();
       const counts = {
         workflow: this.data.workflowUnreadCount || (cached && cached.workflow) || 0,
+        digest: this.data.workbenchDigestUnread || (cached && cached.digest) || 0,
         approval: this.data.workbenchApprovalPending || (cached && cached.approval) || 0,
         order: this.data.workbenchOrderUnread || (cached && cached.order) || 0,
         wishlist: this.data.workbenchWishlistUnread || (cached && cached.wishlist) || 0
@@ -2447,6 +2466,7 @@ Page(withAppModal({
         workbenchEntries: entries,
         workbenchTiles: tiles,
         workflowUnreadCount: counts.workflow,
+        workbenchDigestUnread: counts.digest,
         workbenchOrderUnread: counts.order,
         workbenchWishlistUnread: counts.wishlist,
         workbenchApprovalPending: counts.approval,
@@ -2589,7 +2609,36 @@ Page(withAppModal({
       this.goToWorkflowMessages();
       return;
     }
+    // 日报：直接进「工作信息 → 日报」这一档。
+    // 不依赖未读数 —— 没有未读也要能回看历史日报（产品口径「日报要可回看」）。
+    if (key === 'digest') {
+      this.goToDigestMessages();
+      return;
+    }
     requestWorkspaceAccess(String(ds.kind || '').trim(), ds.workspace || '');
+  },
+
+  /**
+   * 打开「工作信息 → 日报」档。
+   * 与工作信息是**同一个页面**，只是预选 category=digest：
+   * 这样日报天然带上工作信息已有的分页、已读、搜索与保留策略，
+   * 不再造第二套「只读就没了」的推送列表。
+   */
+  goToDigestMessages() {
+    try {
+      if (app.globalData) app.globalData.forceWorkbenchBadgeRefresh = true;
+    } catch (e) { /* ignore */ }
+    wx.navigateTo({
+      url: '/subpackages/extra/user/messages/index?queue=workflow&category=digest&from=workbench',
+      success: () => {
+        setTimeout(() => {
+          this.loadUnreadMessageCount();
+          this.loadWorkbenchBadges({ force: true });
+        }, 500);
+      },
+      // 不新增原生 wx.showToast（本仓纪律）：失败提示走页面已有的 AppToast 封装
+      fail: () => this.showAppToast({ title: '无法打开日报' })
+    });
   },
 
   goToWorkflowMessages() {
@@ -2864,6 +2913,7 @@ Page(withAppModal({
     );
 
     let workflowUnread = 0;
+    let digestUnread = 0;
     let approvalPending = 0;
     let orderUnread = 0;
     let wishlistUnread = 0;
@@ -2876,6 +2926,21 @@ Page(withAppModal({
         }).catch(() => null)
       ];
       const taskMeta = ['workflow'];
+
+      // 日报**单独一档**：角标只数「日报这一档的未读」。
+      // 为什么不并入 workflow 未读：那会把「有 N 条工作信息待阅」的语义搞糊，
+      // 而日报的未读只表示「这一期你还没点开看」。
+      tasks.push(
+        wx.cloud.callFunction({
+          name: 'getUserMessages',
+          data: {
+            action: 'getUnreadCount',
+            queue: 'workflow',
+            category: 'digest'
+          }
+        }).catch(() => null)
+      );
+      taskMeta.push('digest');
 
       if (needsManagerBadge) {
         tasks.push(
@@ -2920,6 +2985,7 @@ Page(withAppModal({
         if (!payload.success) return;
         const n = Number(payload.count != null ? payload.count : payload.pendingCount) || 0;
         if (key === 'workflow') workflowUnread = n;
+        if (key === 'digest') digestUnread = n;
         if (key === 'approval') approvalPending = n;
         if (key === 'order') orderUnread = n;
         if (key === 'wishlist') wishlistUnread = n;
@@ -2932,6 +2998,7 @@ Page(withAppModal({
 
     const counts = {
       workflow: workflowUnread,
+      digest: digestUnread,
       approval: approvalPending,
       order: orderUnread,
       wishlist: wishlistUnread
@@ -2957,6 +3024,7 @@ Page(withAppModal({
       workbenchOrderUnread: orderUnread,
       workbenchWishlistUnread: wishlistUnread,
       workbenchApprovalPending: approvalPending,
+      workbenchDigestUnread: counts.digest,
       workbenchTiles: buildWorkbenchTilesFromCounts(nextEntries, counts),
       ...buildWorkbenchMarqueeFields(counts)
     });
