@@ -402,14 +402,15 @@ page {
   background: rgba(196, 167, 108, 0.08);
 }
 
-.note-preset-scroll {
+.note-preset-wrap {
   width: 100%;
   margin-bottom: 20rpx;
-  white-space: nowrap;
 }
 
+/* 关系 chip 换行铺开（原来是不换行的横向滚动，角色一多后面的就看不见了） */
 .note-preset-row {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12rpx;
   padding: 2rpx 0 4rpx;

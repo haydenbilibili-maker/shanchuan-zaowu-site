@@ -80,6 +80,31 @@ const composeWxml = readFileSync(resolve(ROOT, COMPOSE_WXML), 'utf8')
 const LIST = presets.GIFT_NOTE_PRESETS
 check('关系预设存在', Array.isArray(LIST) && LIST.length >= 6, `实际 ${LIST && LIST.length}`)
 
+/* ── 2026-09-21 产品负责人：「送礼的对象目前只有爱人、妻子、同事…现在拓展更多角色」──
+ * 扩到 14 个（伴侣/家人/挚友/师长/职场/自己）。两条防回退：
+ *   ① 角色数与**关键角色**不许回退（删掉 "看起来用不上" 的角色 = 又把场景砍回去）；
+ *   ② chip 必须**换行铺开** —— 原来是不换行的横向滚动，一屏只露 5–6 个，
+ *      新增的「老师 / 领导 / 长辈」等于藏起来，"拓展"就白做。 */
+check('★ 关系角色已拓展到 ≥14 个（不许回退）', LIST.length >= 14, `实际 ${LIST.length}`)
+{
+  const want = ['lover', 'husband', 'wife', 'child', 'parents', 'elder', 'bestie', 'brother', 'friend', 'teacher', 'colleague', 'leader', 'client', 'self']
+  const ids = LIST.map((p) => p.id)
+  const lost = want.filter((id) => ids.indexOf(id) === -1)
+  check('★ 关键角色一个都不能少（丈夫/孩子/长辈/老师/朋友/领导 等）', lost.length === 0,
+    `缺：${lost.join('、') || '（无）'}`)
+  check('角色 id 不重复', new Set(ids).size === ids.length)
+  check('「犒劳自己」仍在最后（self 有独立默认地址逻辑）', ids[ids.length - 1] === 'self', ids.join(','))
+}
+check('★ 关系 chip 换行铺开（不是横向滚动 —— 否则新增角色会被藏起来）',
+  /class="note-preset-row"/.test(composeWxml) && !/scroll-x/.test(composeWxml),
+  'compose 页仍有 scroll-x 的关系条')
+{
+  const wxss = readFileSync(resolve(ROOT, COMPOSE_WXSS), 'utf8')
+  const row = (/\.note-preset-row\s*\{([^}]*)\}/.exec(wxss) || [])[1] || ''
+  check('★ 关系 chip 容器是 flex-wrap（视觉上真的换行）',
+    /flex-wrap:\s*wrap/.test(row), row.trim() || '找不到 .note-preset-row')
+}
+
 const counts = LIST.map((p) => presets.presetBodyCount(p))
 check('★ 每个关系都有多句候选（不再是「一关系一文案」）', counts.every((n) => n >= 3),
   `实际每关系句数：${LIST.map((p) => `${p.id}=${presets.presetBodyCount(p)}`).join(' ')}`)
@@ -389,6 +414,18 @@ function selftest() {
       file: 'miniprogram/subpackages/manager/gift-ops/index.js',
       from: 'const db = wx.cloud.database()',
       to: 'const db = null'
+    },
+    {
+      name: '关系角色被砍回 8 个（把新增的角色删掉）',
+      file: PRESETS,
+      from: "  {\n    id: 'teacher',",
+      to: "  {\n    id: 'teacher_removed',"
+    },
+    {
+      name: '关系 chip 退回横向滚动（新增角色会被藏在屏幕外）',
+      file: COMPOSE_WXSS,
+      from: '  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 12rpx;',
+      to: '  display: flex;\n  align-items: center;\n  gap: 12rpx;'
     },
     {
       name: '礼笺字体退回只依赖 var()（iOS 会落回默认字体）',
