@@ -34,9 +34,10 @@
   color: #C4A76C;
 }
 
+/* 顶部标语区：上紧下松（标题块 → 标语 → 安心提示），用间距令牌固定节奏 */
 .page-pet .nav-motto {
   text-align: center;
-  padding: 24rpx 48rpx 20rpx;
+  padding: var(--space-3) 48rpx var(--space-4);
   border-bottom: none;
 }
 
@@ -49,12 +50,20 @@
   font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
 }
 
+/* 「提交意向后专员评估 · 无需立即支付」是这一页**最重要的安心信息**（顾客最怕的是
+   "点一下就被扣钱"），原来它是顶部最弱的一行灰字（#A09A90 / 22rpx）。
+   改成一条有铜色描边的提示条：可读性提上来，层级也从"免责声明"变成"承诺"。 */
 .page-pet .motto-secondary {
-  margin-top: 12rpx;
-  font-size: 22rpx;
+  display: inline-block;
+  margin-top: var(--space-2);
+  padding: 10rpx 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.45;
   letter-spacing: 0.02em;
-  color: #A09A90;
+  color: var(--brass-300);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  border-radius: 999rpx;
+  background: rgba(196, 167, 108, 0.1);
 }
 
 /* 步骤条：与标题区用边框锚定，节奏稳定 */
@@ -66,17 +75,28 @@
   border-bottom: 1px solid rgba(38, 35, 32, 0.55);
 }
 
+/* ⚠️ 2026-09-21：本页原来把步骤条字号**改小**（20rpx / 当前 22rpx），比共享基线
+   （22rpx / 当前 24rpx）还小 —— 结果顶部最需要被读懂的导航上下文，是全页最小的字。
+   改回不低于基线的口径，并把**未点亮**的连接线给一点存在感（原来 #262320 在深底上几乎不可见，
+   真机截图里五步之间看不出是一条轨迹）。 */
 .page-pet .rail-top {
   margin-bottom: 12rpx;
 }
 
 .page-pet .rail-label {
-  font-size: 20rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.02em;
+  color: #A09A90;
 }
 
+.page-pet .rail-col.past .rail-label { color: #A09A90; }
+
 .page-pet .rail-col.current .rail-label {
-  font-size: 22rpx;
+  font-size: var(--fs-24);
+}
+
+.page-pet .rail-line {
+  background: rgba(196, 167, 108, 0.18);
 }
 
 /* Museum Mode：步骤点用边框层次，不用发光 */

@@ -36,8 +36,12 @@
     </view>
   </view>
 
+  <!-- 关掉内层滚动条：真机截图里右侧那条浅色竖条就是它 —— 深色设计稿上非常出戏
+       （本仓祈福墙页同样处理过：enhanced + show-scrollbar="{{false}}"）。 -->
   <scroll-view
     scroll-y
+    enhanced
+    show-scrollbar="{{false}}"
     class="main-scroll"
     scroll-top="{{scrollTop}}"
     scroll-with-animation
