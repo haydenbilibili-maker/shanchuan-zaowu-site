@@ -100,7 +100,17 @@ const SPECS = [
     collection: 'user_messages',
     field: 'dedupeKey',
     indexName: 'dedupeKey_1',
-    reason: '站内信/到货提醒防重（24 个云函数各自的 inAppMessage.js / messageWrite.js / dispatchMessage core.js 写入；authPhone 以它查重）',
+    /* ⚠️ 2026-09-21 查清：**这里不能建唯一索引** —— 同一个 dedupeKey 在本集合是**允许重复出现**的，
+       因为两条去重语义并存：
+         · 永久去重：toggleCollection / payCallback·inAppMessage 等 —— 查到同键就 skip；
+         · **时间窗去重**：dispatchMessage/core.js（`DEDUPE_HOURS = 24`）—— 只压 24 小时内的重复，
+           跨天再发生同一事件**有意再发一次**（例：顾客隔几天再进店，应该再谢一次）。
+       实测佐证：`store_visit_thanks:store_x:openid` 在 2026-05-24 / 05-27 / 08-15 各有一条。
+       所以唯一索引不仅建不起来（现存 9 组重复），**还会把正常写入打成失败**。
+       这里只建**普通索引**（供 `where({dedupeKey})` 点查走索引），唯一性交给各写入方自己的判据。 */
+    nonUnique: true,
+    nonUniqueReason: '同一 dedupeKey 跨时间窗可再次写入（dispatchMessage 的 24h 窗去重），唯一索引会打断正常的再次到店感谢',
+    reason: '站内信/到货提醒防重（24 个云函数各自的 inAppMessage.js / messageWrite.js / dispatchMessage core.js 写入；authPhone 以它查重）——**普通索引**，见 nonUniqueReason',
     usedBy: [
       'authPhone', 'bindPlatformOrder', 'cancelOrder', 'claimBirthdayGift', 'claimStoreReceipt',
       'confirmOrderReceipt', 'confirmPayment', 'createBooking', 'dailyDigest', 'dispatchMessage',
@@ -378,9 +388,15 @@ async function main() {
       fail += 1
       continue
     }
-    if (pre.missingField !== 0 || pre.duplicateKeys !== 0) {
+    // nonUnique 的 spec：重复键是**预期**的（跨时间窗可再写），所以不拿"重复键=0"当门槛
+    if (!spec.nonUnique && (pre.missingField !== 0 || pre.duplicateKeys !== 0)) {
       console.error(`✗ ${spec.collection}：预检未通过（缺字段=${pre.missingField} 重复=${pre.duplicateKeys}）`)
       console.error('   拒绝创建 —— 请先在控制台补齐 dedupeKey / 清理重复，或在控制台确认该集合的历史数据情况。')
+      fail += 1
+      continue
+    }
+    if (spec.nonUnique && pre.missingField !== 0) {
+      console.error(`✗ ${spec.collection}：缺 dedupeKey 字段 ${pre.missingField} 条 —— 请先补齐（普通索引也要求字段可索引）`)
       fail += 1
       continue
     }
@@ -389,12 +405,13 @@ async function main() {
         CreateIndexes: [{
           IndexName: spec.indexName,
           MgoKeySchema: {
-            MgoIsUnique: true,
+            // 唯一性由 spec 决定：跨时间窗可重复写的集合只能建**普通**索引
+            MgoIsUnique: spec.nonUnique ? false : true,
             MgoIndexKeys: [{ Name: spec.field, Direction: '1' }],
           },
         }],
       })
-      console.log(`✓ ${spec.collection}：已提交创建 ${spec.indexName}（唯一）`)
+      console.log(`✓ ${spec.collection}：已提交创建 ${spec.indexName}（${spec.nonUnique ? '普通（非唯一）' : '唯一'}）`)
     } catch (e) {
       const msg = (e && e.message) || String(e)
       if (/exist|已存在|already|Duplicate/i.test(msg)) {
