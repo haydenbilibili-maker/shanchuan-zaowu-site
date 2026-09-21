@@ -221,6 +221,32 @@
             <el-form-item label="快递单号" prop="trackingNumber">
                 <el-input v-model="shipForm.trackingNumber" placeholder="请扫描或手动输入真实运单号" clearable @keyup.enter="confirmShip" />
             </el-form-item>
+            <!-- 发货包装图片（**选填**）：上传后会随「山海有信」私信一起发给顾客。
+                 不传 = 与改造前完全一致；故这里没有任何必填校验。 -->
+            <el-form-item label="包装图片（选填）">
+                <div class="ship-photos">
+                    <div v-for="(photo, idx) in shipForm.packagePhotos" :key="photo.fileID" class="ship-photo">
+                        <el-image :src="photo.url || photo.fileID" fit="cover" class="ship-photo-img"
+                                  :preview-src-list="shipPhotoPreviewList" :initial-index="idx" preview-teleported />
+                        <el-button class="ship-photo-del" size="small" type="danger" link @click="removeShipPhoto(idx)">移除</el-button>
+                    </div>
+                    <el-upload
+                        v-if="shipForm.packagePhotos.length < SHIP_PHOTO_MAX"
+                        accept="image/*"
+                        :show-file-list="false"
+                        :disabled="shipPhotoUploading"
+                        :http-request="handleShipPhotoUpload"
+                        :before-upload="beforeShipPhotoUpload"
+                    >
+                        <el-button type="primary" plain :icon="Upload" :loading="shipPhotoUploading">
+                            {{ shipPhotoUploading ? '上传中…' : '添加图片' }}
+                        </el-button>
+                    </el-upload>
+                </div>
+                <p class="ship-photos-tip">
+                    选填，最多 {{ SHIP_PHOTO_MAX }} 张。上传后会随「山海有信」一起发给顾客；不传则发货流程与原来一致。
+                </p>
+            </el-form-item>
         </el-form>
         <template #footer>
             <el-button @click="shipVisible = false">取消</el-button>
@@ -269,8 +295,8 @@
 
 <script setup>
 import { ref, onMounted, reactive, computed, nextTick } from 'vue'
-import { Refresh, Search, Picture, MagicStick, Box, DocumentCopy } from '@element-plus/icons-vue'
-import { getTempFileUrl, cdnUpdate, cdnCount, fetchCollectionLimit, callCloudFunction } from '../cloud'
+import { Refresh, Search, Picture, MagicStick, Box, DocumentCopy, Upload } from '@element-plus/icons-vue'
+import { getTempFileUrl, cdnUpdate, cdnCount, fetchCollectionLimit, callCloudFunction, uploadAdminBinary, getTempFileUrls } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { safeWarn } from '../utils/safeStorage.js'
 import { excludeExchangeOrders } from '../utils/orderFilters'
@@ -292,8 +318,18 @@ const total = ref(0)
 const searchKeyword = ref('')
 
 const shipVisible = ref(false)
-const shipForm = ref({ id: '', carrier: '顺丰速运', trackingNumber: '' })
+const shipForm = ref({ id: '', carrier: '顺丰速运', trackingNumber: '', packagePhotos: [] })
 const shipFormRef = ref(null)
+/**
+ * 发货包装图片（选填）上限 —— 必须与云端 `orderSummary.DEFAULT_MAX_PHOTOS`
+ * 和店长小程序端的 `SHIP_PHOTO_MAX` 一致（守卫 check:package-photos 会真读三处比对）。
+ */
+const SHIP_PHOTO_MAX = 6
+const shipPhotoUploading = ref(false)
+/** 已上传包装图的预览地址（cloud fileID 不能直接给 <el-image>，要先换临时链接） */
+const shipPhotoPreviewList = computed(() =>
+    shipForm.value.packagePhotos.map((p) => p.url || p.fileID).filter(Boolean)
+)
 /** 运单号至少 6 位（与批量发货弹窗的口径一致） */
 const shipRules = {
     carrier: [{ required: true, message: '请选择物流公司', trigger: 'change' }],
@@ -525,8 +561,57 @@ const updateBadge = async () => {
 
 // --- 业务操作 ---
 const openShip = (row) => {
-    shipForm.value = { id: row._id, carrier: '顺丰速运', trackingNumber: '' }
+    // 每次打开发货弹窗都从零开始：绝不能把上一单上传的包装图带到这一单
+    shipForm.value = { id: row._id, carrier: '顺丰速运', trackingNumber: '', packagePhotos: [] }
     shipVisible.value = true
+}
+
+function beforeShipPhotoUpload(file) {
+    const type = file?.type || ''
+    if (type && !type.startsWith('image/')) {
+        ElMessage.error('包装图片仅支持图片文件（image/*）')
+        return false
+    }
+    // 与小程序端同一取向：单张 12MB 硬上限，避免手机原图直传把云存储撑爆
+    if (file.size > 12 * 1024 * 1024) {
+        ElMessage.error('图片过大，请压缩到 12MB 以内')
+        return false
+    }
+    return true
+}
+
+/**
+ * 上传一张发货包装图，落到 shipForm.packagePhotos（fileID + 预览临时链接）。
+ * 为什么不用 ImageUploadField：那个组件是**单值**形态（v-model 一个 fileID），
+ * 而这里要 0..N 张；复用它的上传内核（uploadAdminBinary）而不是再造一个上传实现。
+ */
+async function handleShipPhotoUpload(opt) {
+    shipPhotoUploading.value = true
+    try {
+        const fileID = await uploadAdminBinary(opt.file, 'ship-pack')
+        let url = ''
+        try {
+            // getTempFileUrls 是**按入参顺序返回字符串数组**（不是 map），故取 [0]
+            const urls = await getTempFileUrls([fileID])
+            url = Array.isArray(urls) ? (urls[0] || '') : String(urls || '')
+        } catch (e) {
+            // 预览链接拿不到不影响发货：fileID 才是真正落库的值
+            safeWarn('ship photo preview url failed', e)
+        }
+        shipForm.value.packagePhotos.push({ fileID, url: url || '' })
+        opt.onSuccess?.({ fileID }, opt.file)
+    } catch (e) {
+        opt.onError?.(e)
+        ElMessage.error('包装图上传失败：' + (e?.message || '请检查登录态与云存储权限'))
+    } finally {
+        shipPhotoUploading.value = false
+    }
+}
+
+function removeShipPhoto(idx) {
+    if (idx >= 0 && idx < shipForm.value.packagePhotos.length) {
+        shipForm.value.packagePhotos.splice(idx, 1)
+    }
 }
 
 const confirmShip = async () => {
@@ -539,11 +624,16 @@ const confirmShip = async () => {
     submitting.value = true
     try {
         // SSOT 写路径：与小程序店长一致，走 managerShipOrder（站内信 + 物流字段）
-        const result = await callCloudFunction('managerShipOrder', {
+        const payload = {
             orderId: shipForm.value.id,
             carrier: shipForm.value.carrier || '顺丰速运',
             trackingNumber: String(shipForm.value.trackingNumber || '').trim()
-        })
+        }
+        // 包装图片（选填）：**没传就不带这个字段**，云端不写字段，
+        // 于是「没传图」与改造前逐字节一致（需求：非必须）。
+        const photoIds = shipForm.value.packagePhotos.map((p) => p.fileID).filter(Boolean)
+        if (photoIds.length) payload.packagePhotos = photoIds
+        const result = await callCloudFunction('managerShipOrder', payload)
         if (result && result.success === false) {
             throw new Error(result.msg || result.message || '发货失败')
         }
@@ -784,5 +874,45 @@ onMounted(() => fetchOrders())
 .batch-actions {
   display: flex;
   gap: 10px;
+}
+
+/* 发货包装图片（选填）：横向方格 + 「添加图片」按钮。
+   不设宽度也能自适应弹窗；被移除的图直接 splice，不产生孤儿状态。 */
+.ship-photos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.ship-photo {
+  position: relative;
+  width: 84px;
+  height: 84px;
+}
+
+.ship-photo-img {
+  width: 84px;
+  height: 84px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-light);
+}
+
+.ship-photo-del {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  padding: 0 4px !important;
+  font-size: 12px;
+  background: #fff;
+  border-radius: 4px;
+}
+
+.ship-photos-tip {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6B6560;
 }
 </style>

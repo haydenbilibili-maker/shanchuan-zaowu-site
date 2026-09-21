@@ -87,6 +87,53 @@
                 <text class="goods-qty" wx:if="{{item.countText}}">{{item.countText}}</text>
               </view>
             </view>
+            <!-- 发货包装图片（可选附件）：馆员发货时留档的实拍，随「山海有信」一起给到顾客。
+                 非必须 —— hasPackagePhotos 为 false 时整块不出现，老信与「这次没传图」完全一样。 -->
+            <view class="letter-photos" wx:if="{{selectedMessage.hasPackagePhotos}}">
+              <view class="photos-head">
+                <text class="photos-head-title">包装实拍</text>
+                <text class="photos-head-count" wx:if="{{selectedMessage.packagePhotoCountText}}">{{selectedMessage.packagePhotoCountText}}</text>
+              </view>
+              <view class="photos-grid">
+                <image
+                  class="photos-item"
+                  wx:for="{{selectedMessage.packagePhotos}}"
+                  wx:key="*this"
+                  src="{{item}}"
+                  mode="aspectFill"
+                  data-src="{{item}}"
+                  bindtap="previewPackagePhoto"
+                  lazy-load
+                ></image>
+              </view>
+              <text class="photos-tip">这是这件的打包留影；点击可放大查看。</text>
+            </view>
+            <!-- 每日日报：结构化正文 + 每个数字的**口径与来源**。
+                 digestView 只在 type=daily_digest 且带 payload 时非空；
+                 非日报消息整块不出现 —— 与老信完全一致，不改变既有版式。 -->
+            <view class="letter-digest" wx:if="{{digestView}}">
+              <view class="dg-head">
+                <text class="dg-title">{{digestView.title}}</text>
+                <text class="dg-role" wx:if="{{digestView.roleLabel}}">{{digestView.roleLabel}}</text>
+              </view>
+
+              <view class="dg-section" wx:for="{{digestView.sections}}" wx:for-item="sec" wx:key="key">
+                <text class="dg-sec-title">{{sec.label}}</text>
+                <view class="dg-row" wx:for="{{sec.metrics}}" wx:for-item="m" wx:key="id">
+                  <view class="dg-row-top">
+                    <text class="dg-label">{{m.label}}</text>
+                    <text class="dg-value {{m.missing ? 'is-missing' : ''}}">{{m.valueText}}</text>
+                  </view>
+                  <text class="dg-source">{{m.sourceText}}</text>
+                  <text class="dg-caveat" wx:if="{{m.caveat}}">{{m.caveat}}</text>
+                </view>
+              </view>
+
+              <view class="dg-foot">
+                <text class="dg-note">{{digestView.snapshotNote}}</text>
+                <text class="dg-note warn" wx:if="{{digestView.missingNote}}">{{digestView.missingNote}}</text>
+              </view>
+            </view>
             <view class="letter-sign">
               <text class="sign-line">{{selectedMessage.senderName}}</text>
               <text class="sign-mark">{{selectedMessage.signOff}}</text>

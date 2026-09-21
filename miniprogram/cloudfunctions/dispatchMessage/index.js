@@ -66,7 +66,8 @@ exports.main = async (event) => {
       actionUrl,
       category,
       queue,
-      campaignId
+      campaignId,
+      photos
     } = event
 
     try {
@@ -81,7 +82,10 @@ exports.main = async (event) => {
         actionUrl,
         category,
         queue,
-        campaignId
+        campaignId,
+        // 发货包装图片（可选）：允许调用方直接给（而不是塞进 vars）——
+        // 图片是「附件」不是模板变量，模板里没有任何 {{photo}} 可渲染。
+        photos
       })
     } catch (err) {
       console.error('dispatchMessage error:', err)

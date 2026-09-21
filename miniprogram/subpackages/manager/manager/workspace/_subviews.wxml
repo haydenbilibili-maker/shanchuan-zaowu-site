@@ -3627,6 +3627,44 @@
             <view class="ship-action-btn" catchtap="scanTrackingNumber">扫码</view>
           </view>
         </view>
+        <!-- 3. 包装图片（可选）—— 上传后会随「山海有信」一起发给顾客，故文案直接说清去向 -->
+        <view class="ship-section">
+          <view class="ship-section-label">
+            包装图片
+            <text class="ship-section-opt">选填 · 会随「山海有信」发给顾客</text>
+          </view>
+          <view class="ship-photo-grid">
+            <view
+              class="ship-photo-cell"
+              wx:for="{{tempShip.packagePhotos}}"
+              wx:key="*this"
+            >
+              <image
+                class="ship-photo-img"
+                src="{{item}}"
+                mode="aspectFill"
+                data-index="{{index}}"
+                catchtap="previewShipPhoto"
+              ></image>
+              <view
+                class="ship-photo-del"
+                data-index="{{index}}"
+                catchtap="removeShipPhoto"
+              >✕</view>
+            </view>
+            <view
+              class="ship-photo-add"
+              wx:if="{{tempShip.packagePhotos.length < 6}}"
+              catchtap="chooseShipPhotos"
+            >
+              <text class="ship-photo-add-mark">＋</text>
+              <text class="ship-photo-add-text">添加</text>
+            </view>
+          </view>
+          <text class="ship-photo-hint" wx:if="{{tempShip.packagePhotos.length}}">已选 {{tempShip.packagePhotos.length}} 张，发货时一起寄出</text>
+          <text class="ship-photo-hint muted" wx:else>不传也可以，发货流程与原来一致</text>
+          <text class="ship-photo-err" wx:if="{{tempShip.packagePhotoError}}">{{tempShip.packagePhotoError}}</text>
+        </view>
       </view>
 
       <view class="modal-foot ship-modal-foot">

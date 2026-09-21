@@ -308,6 +308,13 @@ function buildManagerShipLabelText(order) {
 const OM_TAB_BY_SUB = ['pending', 'shipped', 'completed', 'refund', 'pendingPay'];
 /** 店长订单备注长度上限（与云函数 normalizeOrderNote 一致） */
 const ORDER_NOTE_MAX = 100;
+/**
+ * 发货包装图片上限（**可选附件**）—— 与云端
+ * `cloudfunctions/dispatchMessage/orderSummary.js` 的 `DEFAULT_MAX_PHOTOS` 必须一致。
+ * 前端先拦一道，避免「店长选了 20 张、云端静默截成 6 张」这种无声缩水。
+ * 守卫 check:package-photos 会真读两侧比对。
+ */
+const SHIP_PHOTO_MAX = 6;
 const OM_TAB_META = {
   pending: {
     dataKey: 'orders',
@@ -1377,7 +1384,13 @@ const managerPageConfig = {
       orderId: '',
       orderNo: '',
       carrier: '顺丰速运', // 默认快递，减少输入
-      trackingNumber: ''
+      trackingNumber: '',
+      // 发货包装图片（**可选**）：本地已选好、尚未上传的图片路径。
+      // 提交发货时才真正上传（顾客上传前的取消不该在云存储留下垃圾文件）。
+      packagePhotos: [],
+      // 校验未通过 / 上传失败的**内联**提示：本页原生 toast 已被棘轮冻结，
+      // 新增弹窗必须走 AppToast 或页面内文案（这里选后者：错误就贴在图片区下方）。
+      packagePhotoError: ''
     },
     
     // 弹窗与表单
@@ -8318,7 +8331,10 @@ bindSubCatChange(e) {
         orderId,
         orderNo,
         carrier: String(defaultCarrier).trim() || '顺丰速运',
-        trackingNumber: ''
+        trackingNumber: '',
+        // 每次打开发货弹窗都从零开始：绝不能把上一单选的包装图带到这一单
+        packagePhotos: [],
+        packagePhotoError: ''
       }
     });
   },
@@ -8392,14 +8408,31 @@ bindSubCatChange(e) {
       // 订单备注：带上卡片里正在编辑的值（未保存也会随本次发货写入并发出）
       const noteRow = (this.data.orders || []).find((o) => o && o._id === orderId)
       const shipNote = String((noteRow && noteRow.managerNote) || '').trim().slice(0, ORDER_NOTE_MAX)
+      // 发货包装图片（可选）：**只有本次真的选了图才上传/传参** ——
+      // 没选时 packagePhotos 一个字段都不带，云端不写字段，行为与改造前逐字节一致。
+      let packagePhotos = [];
+      if ((this.data.tempShip.packagePhotos || []).length) {
+        wx.showLoading({ title: '上传包装图…', mask: true });
+        try {
+          packagePhotos = await this.uploadShipPhotos();
+        } catch (upErr) {
+          wx.hideLoading();
+          // 上传失败**不能静默吞掉**：否则店长以为图发出去了，顾客信里却没有。
+          this.setData({ 'tempShip.packagePhotoError': '包装图上传失败，请重试或先移除图片' });
+          console.warn('uploadShipPhotos', upErr);
+          return;
+        }
+      }
+      const shipPayload = {
+        orderId,
+        carrier: (carrier || '快递').trim(),
+        trackingNumber,
+        note: shipNote
+      };
+      if (packagePhotos.length) shipPayload.packagePhotos = packagePhotos;
       const res = await wx.cloud.callFunction({
         name: 'managerShipOrder',
-        data: {
-          orderId,
-          carrier: (carrier || '快递').trim(),
-          trackingNumber,
-          note: shipNote
-        }
+        data: shipPayload
       });
       const result = res.result || {};
 
@@ -8416,7 +8449,14 @@ bindSubCatChange(e) {
       this.setData({
         showShipModal: false,
         subTab: 1,
-        tempShip: { orderId: '', orderNo: '', carrier: nextCarrier, trackingNumber: '' }
+        tempShip: {
+          orderId: '',
+          orderNo: '',
+          carrier: nextCarrier,
+          trackingNumber: '',
+          packagePhotos: [],
+          packagePhotoError: ''
+        }
       });
       this.loadOrders();
       this.loadShippedOrders();
@@ -8449,6 +8489,92 @@ bindSubCatChange(e) {
       wx.hideLoading();
       wx.showToast({ title: '发货失败，请部署 managerShipOrder', icon: 'none' });
     }
+  },
+
+  /**
+   * 发货包装图片（**可选**）—— 选图。上限与云端 `orderSummary.DEFAULT_MAX_PHOTOS` 对齐，
+   * 前端先拦一道，避免店长选完 20 张、提交时才被云端静默截到 6 张。
+   * 尺寸/体积核验复用藏品图那套 `imageUploadGuard`（同一份工具，不另抄一遍）。
+   */
+  chooseShipPhotos() {
+    const current = (this.data.tempShip && this.data.tempShip.packagePhotos) || [];
+    const remain = Math.max(0, SHIP_PHOTO_MAX - current.length);
+    if (remain <= 0) {
+      this.showAppToast({
+        overline: 'PACKING',
+        title: `最多 ${SHIP_PHOTO_MAX} 张包装图`,
+        desc: '先移除一张再加'
+      });
+      return;
+    }
+    wx.chooseImage({
+      count: remain,
+      success: async (res) => {
+        const picked = (res && res.tempFilePaths) || [];
+        if (!picked.length) return;
+        wx.showLoading({ title: '校验中…', mask: true });
+        let accepted = picked;
+        let rejected = [];
+        try {
+          const { prepareUploadImages } = require('../utils/imageUploadGuard');
+          const checked = await prepareUploadImages(picked, { label: '包装图' });
+          accepted = checked.accepted || [];
+          rejected = checked.rejected || [];
+        } catch (e) {
+          // 校验工具异常时降级放行，不阻塞发货（与藏品图同取向）
+          console.warn('prepareUploadImages(ship)', e);
+        }
+        wx.hideLoading();
+        // 不用 wx.showModal / wx.showToast：本仓有「原生弹窗棘轮」只许降不许涨，
+        // 被拒的图改为贴在图片区下方的内联文案（用户看得见，也不新增原生弹窗）。
+        this.setData({
+          'tempShip.packagePhotos': current.concat(accepted).slice(0, SHIP_PHOTO_MAX),
+          'tempShip.packagePhotoError': rejected.length
+            ? `${rejected.length} 张未通过校验：${rejected.map((r) => r.reason).slice(0, 2).join('；')}`
+            : ''
+        });
+      }
+    });
+  },
+
+  removeShipPhoto(e) {
+    const idx = Number((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.index));
+    const current = (this.data.tempShip && this.data.tempShip.packagePhotos) || [];
+    if (!(idx >= 0) || idx >= current.length) return;
+    const next = current.slice();
+    next.splice(idx, 1);
+    this.setData({ 'tempShip.packagePhotos': next, 'tempShip.packagePhotoError': '' });
+  },
+
+  previewShipPhoto(e) {
+    const idx = Number((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.index));
+    const urls = (this.data.tempShip && this.data.tempShip.packagePhotos) || [];
+    if (!(idx >= 0) || idx >= urls.length) return;
+    wx.previewImage({ current: urls[idx], urls });
+  },
+
+  /**
+   * 把本地选好的包装图上传到云存储，返回 cloud fileID 数组。
+   * 为什么在**提交时**才上传：店长选完图又取消发货时，不该在云存储留下孤儿文件。
+   */
+  async uploadShipPhotos() {
+    const list = (this.data.tempShip && this.data.tempShip.packagePhotos) || [];
+    const fileIDs = [];
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      if (!p) continue;
+      if (isRemoteMediaUrl(p)) {
+        fileIDs.push(p);
+        continue;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      const up = await wx.cloud.uploadFile({
+        cloudPath: `ship-pack/${this.data.tempShip.orderId || 'order'}_${Date.now()}_${i}.png`,
+        filePath: p
+      });
+      if (up && up.fileID) fileIDs.push(up.fileID);
+    }
+    return fileIDs;
   },
 
   closeModal() {

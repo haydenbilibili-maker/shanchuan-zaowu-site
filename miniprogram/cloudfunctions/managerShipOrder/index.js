@@ -1,5 +1,8 @@
 const cloud = require('wx-server-sdk')
 const { dispatchInAppMessage, normalizeOrderNote, renderMiniMessage, NOTE_MAX } = require('./messageWrite')
+// 发货包装图片（可选附件）的真源归一化：与 dispatchMessage 共用同一份 orderSummary，
+// 保证「信里的 photos」与「订单文档的 packagePhotos」永远同源同序。
+const { pickPackagePhotos, DEFAULT_MAX_PHOTOS } = require('./orderSummary')
 const {
   resolveDeliveryId,
   looksLikePlaceholderTracking,
@@ -1230,6 +1233,9 @@ exports.main = async (event) => {
     carrier = '顺丰速运',
     trackingNumber = '',
     note = '',
+    // 发货包装图片（**可选**）：不传 = 与没有这个功能完全一致（需求 1）。
+    // 小程序侧传 cloud fileID 数组；ERP 侧同样。归一化在下面 shipAction 里统做一次。
+    packagePhotos,
     adminOpsKey,
     force = false,
     productionStatus = '',
@@ -1712,6 +1718,15 @@ exports.main = async (event) => {
 
   const tracking = String(trackingNumber || '').trim().replace(/\s/g, '')
 
+  // 发货包装图片（可选）：**归一化一次，后面所有分支都用这一份**。
+  // 为什么提到 approval 分支之前：敏感发货要写入审批 payload 并等超管放行，
+  // 审批执行时（manageApprovals.executeOrderShipSensitive）只回传 payload 里的字段 ——
+  // 若在这里不落 payload，图片会在「需要审批」这条路径上**静默丢掉**。
+  const photos = pickPackagePhotos(packagePhotos)
+  if (photos.length && !photos.every((u) => /^cloud:\/\//.test(u))) {
+    return { success: false, msg: '包装图片仅支持云存储地址（cloud://），请重新上传' }
+  }
+
   if (!orderId) {
     return { success: false, msg: '缺少订单 ID' }
   }
@@ -1800,6 +1815,9 @@ exports.main = async (event) => {
           carrier: carrierName,
           trackingNumber: tracking,
           note: normalizeOrderNote(note) || normalizeOrderNote(order.managerNote),
+          // 包装图片必须进 payload：审批放行时 manageApprovals 只回传 payload 里的字段，
+          // 漏了它 = 「需要超管审批的发货」这一支永远丢图（且不报错）。
+          packagePhotos: photos,
           totalPrice: order.totalPrice,
           isReship: order.status === 'shipped'
         },
@@ -1831,6 +1849,10 @@ exports.main = async (event) => {
       status: 'shipped',
       logistics: logisticsBase
     }
+    // 发货包装图片（可选）：**只在本次真的传了图时才写字段** ——
+    // 于是「没传图」与**存量订单**（文档里根本没有 packagePhotos 键）
+    // 在读取侧完全等价，都是「不渲染」（需求 1 + 需求 4）。
+    if (photos.length) shipPatch.packagePhotos = photos
     if (shipNote && shipNote !== normalizeOrderNote(order.managerNote)) {
       shipPatch.managerNote = shipNote
       shipPatch.managerNoteAt = db.serverDate()
@@ -1843,7 +1865,9 @@ exports.main = async (event) => {
       products: order.products,
       carrier: carrierName,
       trackingNo: tracking,
-      note: shipNote
+      note: shipNote,
+      // 包装图片随「山海有信」一起发给用户（需求 2）
+      photos
     }
 
     // 礼赠订单只发一条「标本已启程」：历史上这里同时发 order_shipped
@@ -1857,6 +1881,8 @@ exports.main = async (event) => {
       openid: buyerOpenid,
       relatedId: orderId,
       vars: shipVars,
+      // 顶层显式传图片：图片是**附件**不是模板变量（模板里没有 {{photo}} 可渲染）
+      photos,
       title: shipRendered.title,
       content: shipRendered.content
     })
@@ -1869,6 +1895,7 @@ exports.main = async (event) => {
           openid: receiverOpenid,
           relatedId: orderId,
           vars: shipVars,
+          photos,
           title: shipRendered.title,
           content: shipRendered.content
         }).catch(() => {})

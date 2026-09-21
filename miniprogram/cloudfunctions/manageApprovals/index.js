@@ -811,6 +811,9 @@ async function executeOrderShipSensitive(row, event, openid) {
       orderId,
       carrier: payload.carrier || '快递',
       trackingNumber: payload.trackingNumber || '',
+      // 发货包装图片（可选）：起单人上传时存进审批 payload，放行时原样回传；
+      // 漏这一行 = 走审批的敏感发货永远丢图（静默，只有顾客发现信里没图）
+      packagePhotos: payload.packagePhotos,
       adminOpsKey: event && event.adminOpsKey,
       _fromApproval: true,
       _callerOpenid: openid

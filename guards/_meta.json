@@ -6,8 +6,8 @@
     "npm run check:domain -- pay": "只跑 pay 域 + cross（开发内循环，大幅缩时）",
     "npm run check:guards:list": "打印清单与域归属"
   },
-  "_minGuardsNote": "2026-09-19：87 → 86。**这不是删守卫、不是放宽断言**：`verify:site-dist` 的输入是构建产物，把它放进先于构建的 check:admin 是范畴错误（链内必然没有 dist，只能假绿 exit 0）。它已在本就存在的 `npm run build` 链尾真跑（build = build:admin && astro build && verify-admin-dist && verify-site-dist）。同类的 `verify-admin-dist` 从来只在 build 链、从不进 check:admin —— 本次是把唯一的例外拉回既有一致形态。同日 86 → 88：order 域新增 check:order-status-enum / check:order-transition-guard。同日 gift-print 域新增（88 → 89 实为按域文件实算）：check:gift-sticker-layout。同日 104 → 105：settlement 域新增 check:shipping-rules（C 端运费按装裱方式区分，蓝图 §19）—— 该守卫含「云端 shipping_rules 文档 vs 代码默认值」一段，正是上一轮「只改代码不改云端 → 改动全不生效」的堵口。同日 105 → 107：cross 域新增 check:member-pricing-sync（编排页「备妥应付」= 当前等级会员价，裁决 46-a；防主包副本的定级口径悄悄漂移），gift-print 域新增 check:gift-sfx-perf（礼笺打字机音效的真机开销：热路径每 tick 重设 src 会让真机反复加载/解码音频 —— 产品负责人真机反馈「编排页打字卡顿」的根因）。",
-  "minGuards": 109,
+  "_minGuardsNote": "2026-09-19：87 → 86。**这不是删守卫、不是放宽断言**：`verify:site-dist` 的输入是构建产物，把它放进先于构建的 check:admin 是范畴错误（链内必然没有 dist，只能假绿 exit 0）。它已在本就存在的 `npm run build` 链尾真跑（build = build:admin && astro build && verify-admin-dist && verify-site-dist）。同类的 `verify-admin-dist` 从来只在 build 链、从不进 check:admin —— 本次是把唯一的例外拉回既有一致形态。同日 86 → 88：order 域新增 check:order-status-enum / check:order-transition-guard。同日 gift-print 域新增（88 → 89 实为按域文件实算）：check:gift-sticker-layout。同日 104 → 105：settlement 域新增 check:shipping-rules（C 端运费按装裱方式区分，蓝图 §19）—— 该守卫含「云端 shipping_rules 文档 vs 代码默认值」一段，正是上一轮「只改代码不改云端 → 改动全不生效」的堵口。同日 105 → 107：cross 域新增 check:member-pricing-sync（编排页「备妥应付」= 当前等级会员价，裁决 46-a；防主包副本的定级口径悄悄漂移），gift-print 域新增 check:gift-sfx-perf（礼笺打字机音效的真机开销：热路径每 tick 重设 src 会让真机反复加载/解码音频 —— 产品负责人真机反馈「编排页打字卡顿」的根因）。 2026-09-21：109 → 110，新增 fulfilment 域（check:package-photos）——发货「包装图片」可选附件（非必须/随山海有信发出/顾客可见/存量订单不受影响四条验收），含 11 个回归注入（其中一条专打「cloud fileID 没换成 https → 真机空白图」）。 2026-09-21：110 → 111，reporting 域新增 check:daily-digest（每日日报：口径表可对账 + 角色切片扩展位 + 工作信息投递 + 入口单独一档 + 可回看保留策略；16 项自检注入）。",
+  "minGuards": 111,
   "crossWith": [
     "visual",
     "wish-wall",
@@ -24,7 +24,9 @@
     "wish-wall",
     "pay",
     "order",
+    "fulfilment",
     "settlement",
+    "reporting",
     "onboarding",
     "av",
     "erp",
@@ -41,6 +43,11 @@
     ],
     "manager": [
       "check:product-fields-entry"
+    ],
+    "fulfilment": [
+      "check:order-summary",
+      "test:message-products",
+      "check:dialog-ratchet"
     ]
   }
 }

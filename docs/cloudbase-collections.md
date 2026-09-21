@@ -135,7 +135,7 @@
 | `rewards` | 积分兑换品（`redeemReward`；Admin 权益与营销 → 积分兑换） |
 | `user_behaviors` | 用户行为埋点 |
 | `analytics_daily` | 日聚合统计 |
-| `user_messages` | 站内消息 |
+| `user_messages` | 站内消息（「山海有信」）。选填字段 `photos: string[]` = 发货包装图片（云存储 fileID），2026-09-21 新增，由 `managerShipOrder` 发货时随信写入；为空时不落字段，故**存量消息**读不到该键、渲染侧与「没有这个功能」逐字节一致 |
 | `message_templates` | 云函数消息模板（与 ERP `notification_templates` 可并存） |
 | `waitlist` | 预约候补（Admin「预约与核销 → 候补队列」） |
 | `booking_reminders` | 预约提醒记录 |

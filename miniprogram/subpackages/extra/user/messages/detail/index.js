@@ -1,5 +1,6 @@
 const { enrichMessage, openMiniProgramUrl } = require('../../../../../utils/messageHelper');
 const { trackBehavior } = require('../../../../../utils/trackBehavior');
+const { buildDigestView } = require('../../../../../utils/digestView');
 
 const LIST_URL = '/subpackages/extra/user/messages/index';
 
@@ -42,6 +43,8 @@ function getWindowHeight() {
 Page({
   data: {
     selectedMessage: {},
+    // 每日日报的结构化视图模型（非日报消息恒为 null → WXML 整块不出现）
+    digestView: null,
     loadError: false,
     entered: false,
     scrollHeightPx: 0,
@@ -141,6 +144,8 @@ Page({
     const enriched = enrichMessage({ ...message, read: true });
     this.setData({
       selectedMessage: { ...enriched, isUnread: false, read: true },
+      // 从 payload 生成渲染模型：每个数字带口径与来源，且「未取到」与「0」分开显示
+      digestView: buildDigestView(message),
       loadError: false,
       entered: false
     });
@@ -226,6 +231,22 @@ Page({
     });
 
     openMiniProgramUrl(msg.actionUrl);
+  },
+
+  /**
+   * 发货包装图片（可选附件）点击放大。
+   *
+   * 为什么必须有：信内是 aspectFill 的小方格，包装实拍的价值在细节（封条、衬垫、玻璃罩），
+   * 不能放大等于没给。`urls` 传整组、`current` 传点到的那张 —— 顾客可以左右滑动看完整组。
+   */
+  previewPackagePhoto(e) {
+    const src = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.src) || '');
+    const urls = (this.data.selectedMessage && this.data.selectedMessage.packagePhotos) || [];
+    if (!src || !urls.length) return;
+    wx.previewImage({
+      current: src,
+      urls
+    });
   },
 
   async deleteMessage() {

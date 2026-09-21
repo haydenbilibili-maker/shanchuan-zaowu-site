@@ -1,0 +1,12 @@
+# 域 fulfilment —— 守卫清单（一行一条 npm 脚本）。本文件是**该域的单写者面**：
+# 只有该域的 owner 改它（见 docs/并发工作流注册表.json）；跨流加守卫请提变更请求。
+# 校验：npm run check:guards-coverage
+#
+# check:package-photos = 发货「包装图片」（可选附件）四条验收：
+#   ① 非必须（不传时落库对象与改造前**逐字段一致**，只多 photos 一个键）；
+#   ② 随「山海有信」发出（managerShipOrder → dispatchMessage 两个云函数的载荷都被读出来断言）；
+#   ③ 顾客侧能看到（**真解析 detail/index.wxml 并渲染**，数出真实 <img>，不是静态 grep）；
+#   ④ 存量订单不受影响（无该键 == 没传图，渲染结果逐字节相同）。
+# 含 11 个回归注入，其中两条专打「假绿」陷阱：本机临时路径、上限四处一致；
+# 另有一条专打「cloud fileID 没换成 https → 真机空白图」。
+npm run check:package-photos

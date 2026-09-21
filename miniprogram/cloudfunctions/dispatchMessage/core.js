@@ -1,4 +1,4 @@
-const { orderProductLine, pickMessageProducts } = require('./orderSummary')
+const { orderProductLine, pickMessageProducts, pickPackagePhotos } = require('./orderSummary')
 const {
   DEFAULT_TEMPLATES,
   QUEUE_CUSTOMER,
@@ -69,7 +69,11 @@ async function writeMessage(db, payload) {
     campaignId = '',
     queue = QUEUE_CUSTOMER,
     // 需求 10：商品卡（名称 + 图片 + 规格）
-    products = []
+    products = [],
+    // 发货包装图片（**可选**）：与 products 是**两类东西**，故独立字段。
+    // 为什么不塞进 products：商品卡的口径是「名称+图片+规格」，后台/客服看到卡片
+    // 会当成「买了什么」；把发货实拍混进去会让订单清单与信里展示对不上。
+    photos = []
   } = payload
 
   const resolvedQueue = resolveMessageQueue({
@@ -101,6 +105,9 @@ async function writeMessage(db, payload) {
   // 需求 10：信件里按「名称 + 图片 + 规格」展示商品。空数组不落字段，
   // 让「没有商品的信」与「有商品的信」在文档层面可区分（前端据 hasProducts 渲染）。
   if (Array.isArray(products) && products.length) data.products = products
+  // 发货包装图片（可选）：同样「空数组不落字段」—— 于是**存量消息文档**里
+  // 根本没有 photos 键，读到 undefined 与读到 [] 走的是同一个「不渲染」分支。
+  if (Array.isArray(photos) && photos.length) data.photos = photos
 
   const addRes = await db.collection('user_messages').add({ data })
 
@@ -143,7 +150,8 @@ async function dispatch(db, options) {
     actionUrl: overrideActionUrl,
     category: overrideCategory,
     queue: overrideQueue,
-    campaignId = ''
+    campaignId = '',
+    photos: overridePhotos
   } = options
 
   if (!openid || !eventType) {
@@ -166,6 +174,12 @@ async function dispatch(db, options) {
   // 需求 10：同步裁出「名称 + 图片 + 规格」商品卡并落库，供信件详情页渲染。
   // 放在 dispatch 里统一做，各调用方只需把 order.products 传进 vars，无需各自裁剪。
   const messageProducts = pickMessageProducts(vars.products)
+  // 发货包装图片（可选）：与商品卡同一处归一化，避免两条写路径（私信文档 / 订单文档）
+  // 各写一份而漂移成「信里有图、订单详情里没有」。
+  // 取值优先级：调用方的顶层 `photos` → vars.photos（老调用方把变量一股脑塞进 vars）。
+  const messagePhotos = pickPackagePhotos(
+    overridePhotos === undefined ? vars.photos : overridePhotos
+  )
   const title = overrideTitle || renderTemplate(template.titleTemplate, mergedVars)
   const content = overrideContent !== undefined
     ? overrideContent
@@ -210,7 +224,9 @@ async function dispatch(db, options) {
     dedupeKey,
     campaignId,
     // 需求 10：商品卡随信落库
-    products: messageProducts
+    products: messageProducts,
+    // 发货包装图片（可选）随信落库
+    photos: messagePhotos
   })
 
   return { success: true, messageId, dedupeKey, queue }

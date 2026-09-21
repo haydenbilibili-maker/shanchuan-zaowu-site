@@ -228,6 +228,8 @@
     "check:astro:selftest": "node scripts/check-astro.mjs --selftest",
     "check:dedupe-index-coverage": "node miniprogram/scripts/check-dedupe-index-coverage.mjs",
     "check:dedupe-index-coverage:selftest": "node miniprogram/scripts/check-dedupe-index-coverage.mjs --selftest",
+    "check:daily-digest": "node admin/scripts/check-daily-digest.mjs",
+    "check:daily-digest:selftest": "node admin/scripts/check-daily-digest.mjs --selftest",
     "check:dedupe-index-live": "node miniprogram/scripts/check-dedupe-index-live.mjs",
     "check:dedupe-index-live:selftest": "node miniprogram/scripts/check-dedupe-index-live.mjs --selftest",
     "provision:dedupe-indexes": "node miniprogram/scripts/ensure-dedupe-indexes.cjs",
@@ -283,7 +285,9 @@
     "check:docs-index": "node scripts/check-docs-index.mjs",
     "check:docs-index:selftest": "node scripts/check-docs-index.mjs --selftest",
     "check:product-save-fields": "node miniprogram/scripts/check-product-save-fields.mjs",
-    "check:product-save-fields:selftest": "node miniprogram/scripts/check-product-save-fields.mjs --selftest"
+    "check:product-save-fields:selftest": "node miniprogram/scripts/check-product-save-fields.mjs --selftest",
+    "check:package-photos": "node miniprogram/scripts/check-package-photos.mjs",
+    "check:package-photos:selftest": "node miniprogram/scripts/check-package-photos.mjs --selftest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

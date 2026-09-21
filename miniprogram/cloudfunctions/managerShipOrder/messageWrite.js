@@ -2,7 +2,7 @@
  * 山海有信 — 云函数内可靠写入（dispatchMessage + 直写 fallback）
  */
 const cloud = require('wx-server-sdk')
-const { orderProductLine, pickMessageProducts } = require('./orderSummary')
+const { orderProductLine, pickMessageProducts, pickPackagePhotos } = require('./orderSummary')
 
 /** 店长订单备注（随发货私信发送）上限，与前端输入框 maxlength 保持一致 */
 const NOTE_MAX = 100
@@ -194,7 +194,10 @@ function renderMini(eventType, relatedId, vars = {}) {
     actionUrl: typeof t.actionUrl === 'function' ? t.actionUrl(relatedId) : (t.actionUrl || ''),
     // 需求 10：fallback 直写路径同样要带「名称 + 图片 + 规格」商品卡，
     // 否则 dispatchMessage 调用失败时信件就退回「只有订单号」的旧形态。
-    products: pickMessageProducts(vars.products)
+    products: pickMessageProducts(vars.products),
+    // 发货包装图片（可选）：fallback 路径同样要带 —— 否则「图只在 dispatchMessage 成功时才到」
+    // 会变成一条**只在故障时才丢图**的隐藏行为（最难排查的那类）。
+    photos: pickPackagePhotos(vars.photos)
   }
 }
 
@@ -202,7 +205,7 @@ function renderMini(eventType, relatedId, vars = {}) {
 const renderMiniMessage = renderMini
 
 async function writeDirect(db, payload) {
-  const { eventType, openid, relatedId, title, content, category, actionUrl, products } = payload
+  const { eventType, openid, relatedId, title, content, category, actionUrl, products, photos } = payload
   if (!openid || !title) {
     return { success: false, msg: '缺少 openid 或 title' }
   }
@@ -238,6 +241,10 @@ async function writeDirect(db, payload) {
   }
   // 需求 10：商品卡（名称 + 图片 + 规格）
   if (Array.isArray(products) && products.length) data.products = products
+  // 发货包装图片（可选）：空数组不落字段 → 存量消息文档（无此键）与「这次没选图」
+  // 在读取侧走同一条「不渲染」分支。
+  const safePhotos = pickPackagePhotos(photos)
+  if (safePhotos.length) data.photos = safePhotos
 
   try {
     await db.collection('user_messages').add({ data })
@@ -283,6 +290,11 @@ async function dispatchInAppMessage(db, { eventType, openid, relatedId, vars = {
         openid,
         relatedId,
         vars,
+        // 发货包装图片（可选）：顶层显式传，别只靠 vars ——
+        // 图片是附件不是模板变量，模板里没有 {{photo}} 可渲染。
+        ...(Array.isArray(vars && vars.photos) && vars.photos.length
+          ? { photos: vars.photos }
+          : {}),
         ...(title ? { title } : {}),
         ...(content != null ? { content } : {})
       }
@@ -307,7 +319,8 @@ async function dispatchInAppMessage(db, { eventType, openid, relatedId, vars = {
     content: rendered.content,
     category: rendered.category,
     actionUrl: rendered.actionUrl,
-    products: rendered.products
+    products: rendered.products,
+    photos: rendered.photos
   })
 }
 

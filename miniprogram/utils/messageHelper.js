@@ -1,3 +1,29 @@
+/**
+ * 发货包装图片（**可选**）：与云端 `orderSummary.pickPackagePhotos` **同一口径**，
+ * 但多一步**渲染态转换**（cloud fileID → https），见下面 normalizePackagePhotos。
+ *
+ * ⚠️ 下面那个转换函数是**刻意内联**的，不 `require('./imageUrl')`：
+ * 本模块被 `test-legacy-remap` / `test-message-products` 用「任何 require 都非法」的桩
+ * 直接加载（本仓对「被测试直接加载的纯模块」就是这么管的），加顶层 require 会把那两条守卫弄红。
+ * 内联件与 `utils/imageUrl.cloudIdToHttps` **必须同口径** ——
+ * 守卫 `check:package-photos` 会真跑两侧并比对结果（含一条专门注入）。
+ */
+
+/** cloud fileID → 免签名 https（真机 `<image src="cloud://…">` 渲染不出来，详见 utils/imageUrl.js） */
+function cloudFileIdToHttps(fileID) {
+  const s = String(fileID == null ? '' : fileID).trim()
+  if (!s || s.indexOf('cloud://') !== 0) return s
+  const rest = s.slice('cloud://'.length)
+  const slash = rest.indexOf('/')
+  if (slash <= 0) return s
+  const host = rest.slice(0, slash)
+  const path = rest.slice(slash + 1)
+  const dot = host.indexOf('.')
+  const bucket = dot === -1 ? '' : host.slice(dot + 1)
+  if (!bucket || !path) return s
+  return `https://${bucket}.tcb.qcloud.la/${path}`
+}
+
 const CATEGORY_META = {
   all: { label: '全部', icon: '/assets/icons/message.png' },
   booking: { label: '约访', icon: '/assets/icons/booking.png' },
@@ -6,6 +32,10 @@ const CATEGORY_META = {
   activity: { label: '馆讯', icon: '/assets/icons/gift.png' },
   system: { label: '馆务', icon: '/assets/icons/message.png' },
   ops: { label: '工作流', icon: '/assets/icons/message.png' },
+  // 每日日报：工作信息里的独立一档（与「待办 ops」「审批 system」并列）。
+  // 'digest' 同时是云函数写入时的 category（dailyDigest/reportCatalog.js MESSAGE_CATEGORY）
+  // 与信箱工作流分页签的 id —— 三处必须一致，否则「日报」页签永远是空的。
+  digest: { label: '日报', icon: '/assets/icons/trend.png' },
   other: { label: '其他', icon: '/assets/icons/message.png' }
 };
 
@@ -71,6 +101,8 @@ const TYPE_META = {
   approval_submitted: { label: '审批提交', category: 'ops' },
   approval_approved: { label: '审批通过', category: 'ops' },
   approval_rejected: { label: '审批驳回', category: 'ops' },
+  // 每日日报（与云函数 dailyDigest 的 MESSAGE_TYPE 一致）
+  daily_digest: { label: '每日日报', category: 'digest' },
   identify_result: { label: '鉴定结果', category: 'activity' },
   store_visit_thanks: { label: '到访回执', category: 'activity' },
   store_points_granted: { label: '积分入账', category: 'activity' },
@@ -123,6 +155,7 @@ const TYPE_ACTION_LABELS = {
   approval_submitted: '去审批',
   approval_approved: '查看审批',
   approval_rejected: '查看审批',
+  daily_digest: '查看口径',
   activity_notice: '前往相关页'
 };
 
@@ -738,6 +771,10 @@ function resolveKind(msg, isCampaign) {
   }
   const queue = String(msg.queue || '');
   const category = msg.category || '';
+  // 日报是工作信息里的独立一档（与「待办」「审批」并列），标签不能沿用队列名「工作流」
+  if (category === 'digest') {
+    return { kind: 'workflow', kindLabel: '日报', kindLampClass: 'lamp-info' };
+  }
   if (queue === 'workflow' || category === 'ops') {
     return { kind: 'workflow', kindLabel: '工作流', kindLampClass: 'lamp-forest' };
   }
@@ -842,6 +879,53 @@ function buildProductCards(raw) {
     })
 }
 
+/**
+ * 发货包装图片（**可选**）：与云端 `orderSummary.pickPackagePhotos` **同一口径**。
+ *
+ * 为什么前端也要收敛一遍（而不是直接把 doc.photos 递给 WXML）：
+ *   ① 云库文档可能被人工改过 / 是历史版本 —— 直接渲染会出空 src 破图；
+ *   ② **存量消息根本没有 photos 键**（需求 4：老订单一切照旧），
+ *      这里必须把它与「这次没传图」收敛成同一个结果：**空数组**。
+ *   ③ 只收能被 `<image>` 渲染且**换设备仍在**的地址；`wxfile://` / `http://tmp/…`
+ *      是选图返回的本机临时路径，落库后别人打开都是破图。
+ *
+ * 口径必须与 `cloudfunctions/dispatchMessage/orderSummary.js` 的
+ * `pickPackagePhotos` 一致（守卫 `check:package-photos` 会真跑两侧比对）。
+ */
+const MAX_PACKAGE_PHOTOS = 6
+
+function isRenderablePackagePhoto(url) {
+  const s = String(url || '').trim()
+  if (!s) return false
+  if (s.indexOf('cloud://') === 0) return true
+  if (s.indexOf('wxfile://') === 0) return false
+  if (/^https?:\/\/tmp\//i.test(s)) return false
+  return s.indexOf('https://') === 0
+}
+
+function normalizePackagePhotos(raw) {
+  const list = Array.isArray(raw) ? raw : []
+  const out = []
+  for (let i = 0; i < list.length; i++) {
+    const item = list[i]
+    if (item === null || item === undefined) continue
+    const value = typeof item === 'string'
+      ? item
+      : (typeof item === 'object' ? (item.url || item.fileID || item.src) : '')
+    const url = String(value == null ? '' : value).trim().slice(0, 512)
+    if (!isRenderablePackagePhoto(url)) continue
+    // ⚠️ **必须换成 https**：`<image src="cloud://…">` 在真机上**渲染不出来**（封面全空），
+    // 这是本仓已记录的事实（见 utils/imageUrl.js 的 cloudIdToHttps 头注）。
+    // 少了这一步 = 字段/接口/守卫全绿、顾客手机上是六个空白方块（最典型的一类假交付）。
+    const renderable = cloudFileIdToHttps(url)
+    if (!renderable) continue
+    if (out.indexOf(renderable) !== -1) continue
+    out.push(renderable)
+    if (out.length >= MAX_PACKAGE_PHOTOS) break
+  }
+  return out
+}
+
 function enrichMessage(msg) {
   const typeMeta = getTypeMeta(msg.type);
   const category = msg.category || (typeMeta && typeMeta.category) || 'other';
@@ -853,6 +937,9 @@ function enrichMessage(msg) {
   const { bodyBlocks, summaries } = parseLetterContent(content);
   // 需求 10：商品卡（名称 + 图片 + 规格）
   const productCards = buildProductCards(msg.products);
+  // 发货包装图片（可选附件）：与商品卡是**两类东西**，独立字段独立渲染。
+  // 空数组 = 不渲染任何东西（存量消息 / 本次没传图 走同一条分支）。
+  const packagePhotos = normalizePackagePhotos(msg.photos);
   const preview = makePreview(content);
   const isCampaign = isCampaignMessage(msg);
   const isPaper = true;
@@ -890,6 +977,12 @@ function enrichMessage(msg) {
     summaries,
     productCards,
     hasProductCards: productCards.length > 0,
+    // 发货包装图片（可选附件，需求 2/3）：信内直接可见。
+    // `hasPackagePhotos` 是**唯一**的渲染开关 —— 老消息没有 photos 键 → 空数组 → false
+    // → WXML 整块不出现，与改造前逐字节一致（需求 4）。
+    packagePhotos,
+    hasPackagePhotos: packagePhotos.length > 0,
+    packagePhotoCountText: packagePhotos.length > 1 ? `${packagePhotos.length} 张` : '',
     // 需求 10：列表页用的紧凑摘要（最多 3 张缩略图 + 「首件 等 N 项」）
     productThumbs: productCards.filter((c) => c.hasImage).slice(0, 3).map((c) => ({ id: c.id, image: c.image })),
     productSummary: productCards.length
@@ -926,6 +1019,11 @@ function enrichMessage(msg) {
 module.exports = {
   CATEGORY_META,
   TYPE_META,
+  // 导出内联件：守卫 check:package-photos 要用它跟 utils/imageUrl.cloudIdToHttps 比对同口径
+  cloudFileIdToHttps,
+  MAX_PACKAGE_PHOTOS,
+  normalizePackagePhotos,
+  isRenderablePackagePhoto,
   getCategoryMeta,
   getTypeMeta,
   formatMessageTime,

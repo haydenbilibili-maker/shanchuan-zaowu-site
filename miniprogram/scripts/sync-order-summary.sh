@@ -59,6 +59,12 @@ PY
   probe "drop-sku" "      skuLabel: skuLabel.slice(0, 40)," "      skuLabel: '',"
   # 3) 内部字段外泄（成本与内部枚举码跟着信一起发出去）
   probe "leak-internal" "      count: Math.max(1, parseInt(p.count, 10) || 1)" "      count: Math.max(1, parseInt(p.count, 10) || 1), price: item.price"
+  # 4) 包装图片：未传时不再返回空数组（前端会多渲染一个空壳区块 = 破坏「非必须」）
+  probe "photos-required" "  const list = Array.isArray(raw) ? raw : []" "  const list = Array.isArray(raw) ? raw : ['cloud://phantom.png']"
+  # 5) 包装图片：不再筛「可渲染地址」→ 本机临时路径落库，别的设备全是破图（静默坏图）
+  probe "photos-keep-local" "    if (!isRenderablePhotoUrl(url)) continue" "    if (false) continue"
+  # 6) 包装图片：不再去重 → 同一张图被渲染多次
+  probe "photos-no-dedupe" "    if (out.indexOf(url) !== -1) continue" "    if (false) continue"
 
   cp "$BAK" "$SRC"
   if ! node "$ASSERT" "$SELF_DIR/../$SRC" >/dev/null 2>&1; then
@@ -67,7 +73,7 @@ PY
     echo "  ✓ 未注入时通过（无假阳性）"
   fi
   if [ "$bad" != "0" ]; then echo "✗ selftest 失败 $bad 项"; exit 1; fi
-  echo "✓ selftest 通过：3 个回归注入全部被行为断言检出，且无假阳性"
+  echo "✓ selftest 通过：6 个回归注入全部被行为断言检出，且无假阳性"
   exit 0
 fi
 

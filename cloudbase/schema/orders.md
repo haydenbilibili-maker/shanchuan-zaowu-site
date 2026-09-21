@@ -28,6 +28,12 @@ C 端下单、支付、履约、退款的主订单集合。
 | `couponId` / `couponValue` | string/number | 用券 |
 | `createTime` / `payExpireTime` | date | 创建与支付超时 |
 | `refundPolicy` | object | 退款策略快照 |
+| `packagePhotos` | array\<string\> | **选填**（2026-09-21 新增）。发货时店长上传的包装实拍，元素是云存储 fileID（`cloud://…`）。由 `managerShipOrder` 在发货动作里归一化（`orderSummary.pickPackagePhotos`）后写入，并**同时**写入该笔发货私信 `user_messages.photos` —— 顾客在「山海有信」里直接看到。 |
+
+> `packagePhotos` 的三条不变量（守卫 `npm run check:package-photos`）：
+> 1. **可选**：没传时**不写这个键**（不是写空数组）——「没传图」与**存量订单**（根本没有该键）在读取侧完全等价；
+> 2. 上限 6 张、去重、只收可渲染地址（`cloud://` / `https://`），**丢弃本机临时路径**（`wxfile://`、`http://tmp/…`）；
+> 3. 需要超管审批的「敏感发货」走审批流时，图片必须随 `manageApprovals` 的 payload **原样回传**，否则那一支会静默丢图。
 
 ## 维护
 

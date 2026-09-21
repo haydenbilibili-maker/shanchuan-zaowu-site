@@ -545,6 +545,34 @@ page {
   text-overflow: ellipsis;
 }
 
+/* 发货包装图片（可选附件）列表线索：与商品线索同一行距口径，颜色走品牌金令牌。
+   本页是深色信箱底，故用 --brass-400（与 .mg-text 同源），不引入新裸色。 */
+.message-photos-hint {
+  margin-top: 14rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.mph-lamp {
+  flex-shrink: 0;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--brass-400, #C4A76C);
+  opacity: 0.85;
+}
+
+.mph-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-20, 20rpx);
+  color: var(--brass-400, #C4A76C);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .message-foot {
   margin-top: 14rpx;
   display: flex;

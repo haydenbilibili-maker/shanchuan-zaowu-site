@@ -151,6 +151,12 @@
             ></image>
             <text class="mg-text">{{item.productSummary}}</text>
           </view>
+          <!-- 发货包装图片（可选附件）：列表里先给一个「这封信里有实拍」的线索，
+               否则顾客不会专门点进信里看图（图片只在信内渲染）。非必须 → 没图就整块不出现。 -->
+          <view class="message-photos-hint" wx:if="{{item.hasPackagePhotos}}">
+            <view class="mph-lamp"></view>
+            <text class="mph-text">随信附包装实拍{{item.packagePhotoCountText ? ' ' + item.packagePhotoCountText : ' 1 张'}}</text>
+          </view>
           <view class="message-foot">
             <view class="status-chip">
               <view class="lamp {{item.statusLampClass}}"></view>

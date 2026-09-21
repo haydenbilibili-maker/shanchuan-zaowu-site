@@ -116,10 +116,96 @@ function pickMessageProducts(products, options = {}) {
   return merged.map(({ key, ...rest }) => rest)
 }
 
+/**
+ * 发货「包装图片」上限。**这是可选附件，不是商品图**：
+ * 不传时全链路必须与「没有这个功能」完全一致（需求 1：非必须）。
+ */
+const DEFAULT_MAX_PHOTOS = 6
+/** 单张图片地址上限（cloud fileID / https URL 都在此内），防脏数据把私信文档撑大 */
+const PHOTO_URL_MAX = 512
+
+/**
+ * 这个地址是不是**本机临时路径**（换台设备就失效）。
+ * 单独成一个函数、且**不用正则**，是为了让「必须丢掉本机路径」这条判据有唯一、
+ * 无转义的落点 —— 正则里的 `\/` 会把守卫的注入锚点坑掉（第一版就因此注入打空却显示"通过"）。
+ */
+function isLocalTempPhotoPath(url) {
+  const s = clean(url)
+  return s.indexOf('wxfile://') === 0
+    || s.indexOf('http://tmp/') === 0
+    || s.indexOf('https://tmp/') === 0
+}
+
+/**
+ * 这个地址能不能被 `<image src>` 渲染出来（且**换了设备也还在**）。
+ */
+function isRenderablePhotoUrl(url) {
+  const s = clean(url)
+  if (!s) return false
+  // 云存储 fileID：小程序侧渲染无需再换临时链接
+  if (s.indexOf('cloud://') === 0) return true
+  // 微信选图/相机返回的是**本机路径**：wxfile:// 或 http://tmp/…
+  // 它们只在那台手机上有效，落库 = 别人打开只看到破图。
+  if (isLocalTempPhotoPath(s)) return false
+  // 其余仅接受 https（生产图床全走 https；http 明文在真机上会被拦或告警）
+  return s.indexOf('https://') === 0
+}
+
+/**
+ * 发货包装图片（**可选**）—— 归一化成「可渲染 URL 字符串数组」。
+ *
+ * 为什么要有这个函数（而不是各处自己 map 一遍）：
+ *   同一批发货图片会**同时**落两处 —— ①「山海有信」私信文档的 `photos` 字段，
+ *   ② 订单文档的 `packagePhotos`。两处若各写一份归一化，迟早漂移成
+ *   「信里有图、订单详情里没有」（或反过来），而这类不一致**不报错**。
+ *   故真源只有这一份，两个调用点都必须过它（守卫 check:package-photos 钉住）。
+ *
+ * 为什么空输入返回 []（而不是 undefined）：
+ *   前端与云端都按「长度 0 = 不渲染任何东西」处理，于是**存量订单/老消息**
+ *   （根本没有这个字段）与「店长这次没选图」走**同一条**零渲染分支 —— 这正是需求 4。
+ *
+ * 只收「看起来能被 <image> 渲染」的地址：
+ *   · `cloud://…` 云存储 fileID（本仓上传返回的就是这个）
+ *   · `https://…` 远程地址
+ *   · `wxfile://` / `http://tmp/…` 这类**本地临时路径**必须丢弃 ——
+ *     它们只在那台手机上有效，落库后别的设备只会看到破图（静默坏图）。
+ *
+ * ⚠️ **不能只用「是不是 http:// 开头」当判据**：微信选图返回的本地路径恰好也是
+ *   `http://tmp/…` 形状（2026-09-21 由本模块的行为断言当场抓出 —— 见守卫
+ *   `check:package-photos` 的注入 `photos-keep-local`）。本地路径一律排除。
+ *
+ * @param {Array<string|{url?:string,fileID?:string,src?:string}>} raw
+ * @param {{max?:number}} [options]
+ * @returns {string[]} 保持输入顺序、去重、已截断
+ */
+function pickPackagePhotos(raw, options = {}) {
+  const max = Number(options.max) > 0 ? Number(options.max) : DEFAULT_MAX_PHOTOS
+  const list = Array.isArray(raw) ? raw : []
+  const out = []
+  for (const item of list) {
+    if (item === null || item === undefined) continue
+    const value = typeof item === 'string'
+      ? item
+      : (typeof item === 'object' ? (item.url || item.fileID || item.src) : '')
+    const url = clean(value).slice(0, PHOTO_URL_MAX)
+    if (!url) continue
+    if (!isRenderablePhotoUrl(url)) continue
+    if (out.indexOf(url) !== -1) continue
+    out.push(url)
+    if (out.length >= max) break
+  }
+  return out
+}
+
 module.exports = {
   orderProductLine,
   formatOrderItem,
   pickMessageProducts,
+  pickPackagePhotos,
+  isRenderablePhotoUrl,
+  isLocalTempPhotoPath,
   DEFAULT_MAX_ITEMS,
-  DEFAULT_CARD_MAX
+  DEFAULT_CARD_MAX,
+  DEFAULT_MAX_PHOTOS,
+  PHOTO_URL_MAX
 }
