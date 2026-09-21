@@ -85,9 +85,44 @@ check('关系预设存在', Array.isArray(LIST) && LIST.length >= 6, `实际 ${L
  *   ① 角色数与**关键角色**不许回退（删掉 "看起来用不上" 的角色 = 又把场景砍回去）；
  *   ② chip 必须**换行铺开** —— 原来是不换行的横向滚动，一屏只露 5–6 个，
  *      新增的「老师 / 领导 / 长辈」等于藏起来，"拓展"就白做。 */
-check('★ 关系角色已拓展到 ≥14 个（不许回退）', LIST.length >= 14, `实际 ${LIST.length}`)
+check('★ 关系角色已拓展到 ≥20 个（不许回退）', LIST.length >= 20, `实际 ${LIST.length}`)
+/* ★ 跨关系**长片段**不许复用（2026-09-21 集成官加）。
+ * 「完全相同的句子」已有判据，但那挡不住"每段都换个开头、后半句照抄" ——
+ * 那正是顾客抱怨的「点进去好几次都是同样一段话」。
+ * 加这条当天就抓到我自己写的 12 个角色：老师/师父共享 **41 字**、朋友/同学 30 字。
+ * 判据：任意两个关系之间，最长公共子串必须 **< 14 字**（同义的house phrase 如
+ * 「挑了件安静的藏品」可以留，整句话不许照搬）。 */
 {
-  const want = ['lover', 'husband', 'wife', 'child', 'parents', 'elder', 'bestie', 'brother', 'friend', 'teacher', 'colleague', 'leader', 'client', 'self']
+  const lcs = (a, b) => {
+    let best = 0
+    let prev = new Array(b.length + 1).fill(0)
+    for (let i = 1; i <= a.length; i++) {
+      const cur = new Array(b.length + 1).fill(0)
+      for (let j = 1; j <= b.length; j++) {
+        if (a[i - 1] === b[j - 1]) { cur[j] = prev[j - 1] + 1; if (cur[j] > best) best = cur[j] }
+      }
+      prev = cur
+    }
+    return best
+  }
+  let worst = { n: 0, pair: '' }
+  for (let i = 0; i < LIST.length; i++) {
+    for (let j = i + 1; j < LIST.length; j++) {
+      for (const x of LIST[i].bodies) {
+        for (const y of LIST[j].bodies) {
+          const n = lcs(x, y)
+          if (n > worst.n) worst = { n, pair: `${LIST[i].label}/${LIST[j].label}` }
+        }
+      }
+    }
+  }
+  check('★ 跨关系最长公共片段 < 14 字（防"换开头照抄后半句"）', worst.n < 14,
+    `最差 ${worst.pair} 共享 ${worst.n} 字 —— 请重写该句，别整句照搬`)
+}
+{
+  const want = ['lover', 'husband', 'wife', 'child', 'parents', 'elder', 'junior',
+    'bestie', 'brother', 'friend', 'classmate', 'fellow',
+    'teacher', 'master', 'colleague', 'leader', 'team', 'client', 'partner', 'self']
   const ids = LIST.map((p) => p.id)
   const lost = want.filter((id) => ids.indexOf(id) === -1)
   check('★ 关键角色一个都不能少（丈夫/孩子/长辈/老师/朋友/领导 等）', lost.length === 0,
@@ -414,6 +449,12 @@ function selftest() {
       file: 'miniprogram/subpackages/manager/gift-ops/index.js',
       from: 'const db = wx.cloud.database()',
       to: 'const db = null'
+    },
+    {
+      name: '跨关系照抄长句（换开头、后半句整段搬）',
+      file: PRESETS,
+      from: "      '这份心意不贵重，但来得清楚。摆在书桌一角就好——将来想起今天，还知道有人一直站在你这边。'",
+      to: "      '这份心意不贵重，但来得清楚。摆在书桌一角就好——将来想起今天，还知道有人一直站在你这边。',\n      '同好也说一句：这份心意不贵重，但来得清楚。摆在书桌一角就好。'"
     },
     {
       name: '关系角色被砍回 8 个（把新增的角色删掉）',
