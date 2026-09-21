@@ -19,7 +19,7 @@
  *   node miniprogram/scripts/check-package-photos.mjs
  *   node miniprogram/scripts/check-package-photos.mjs --selftest   # 注入回归 → 必须被检出 → 还原
  */
-import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync, cpSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync, cpSync } from 'node:fs'
 import { dirname, resolve, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
@@ -73,6 +73,12 @@ function loadCjs(rel) {
  */
 function loadRealMessageWrite() {
   const srcDir = resolve(MP, 'cloudfunctions/managerShipOrder')
+  /* ⚠️ 2026-09-21 集成官修复：`TMP_DIR`（miniprogram/scripts/.tmp）**在 gitignore 里**，
+   * 新克隆 / CI / 隔离 worktree 里都不存在 —— 原来直接 `mkdtempSync` 会
+   * `ENOENT: mkdtemp ... /.tmp/pkgphotos-XXXXXX`，**守卫自身报错（exit 1）**，
+   * 于是 `check:admin` 在 CI 上会红，而且看起来像"代码有问题"。
+   * 先递归创建父目录即可（幂等）。 */
+  mkdirSync(TMP_DIR, { recursive: true })
   const work = mkdtempSync(join(TMP_DIR, 'pkgphotos-'))
   for (const f of ['messageWrite.js', 'orderSummary.js']) {
     cpSync(join(srcDir, f), join(work, f))
