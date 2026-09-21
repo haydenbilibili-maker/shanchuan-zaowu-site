@@ -23,7 +23,9 @@
  *      与云函数的 category/type 常量三处一致。
  *   D8 **可回看**：必须有保留策略（保留天数常量 + 清理函数），且幂等键按「日期 + 角色 + 收件人」
  *      确定（不是 24h 窗口）—— 否则同一天重复触发会发两封。
- *   D9 **入口**：我的页工作台必须有独立的日报瓦片与导航函数（不是并进工作信息角标）。
+ *   D9 **入口**：日报必须是「工作信息」里的一个**分类档**，且**不许**再在工作台另开入口
+ *      （2026-09-21 产品负责人：「把日报放在工作信息中，没有必要单独提供一个入口 banner」——
+ *       原判据要求"必须有独立瓦片"，那**正是被否掉的做法**，已反向）。
  *
  * 真实数据侧：`--live` 会用 `admin/.env.local` 的 ADMIN_OPS_KEY 调**已部署的** dailyDigest
  *   做一次只读 dryRun，把每个指标的值与来源打出来（人工/脚本核对）。
@@ -69,6 +71,7 @@ const F = {
   digestView: join(ROOT, 'miniprogram/utils/digestView.js'),
   msgIndex: join(ROOT, 'miniprogram/subpackages/extra/user/messages/index.js'),
   userPage: join(ROOT, 'miniprogram/pages/user/index.js'),
+  userWxml: join(ROOT, 'miniprogram/pages/user/index.wxml'),
   detailWxml: join(ROOT, 'miniprogram/subpackages/extra/user/messages/detail/index.wxml')
 }
 
@@ -367,6 +370,17 @@ function checkCollectApi (collectSrc) {
   return out
 }
 
+/** 纯判据：工作台不许有独立「日报」入口（产品负责人 2026-09-21 口径） */
+function checkNoDigestBanner (pageSrc) {
+  const out = []
+  // ⚠️ 必须去注释：本判据第一版**被我自己写的说明注释误红**了
+  //    （注释里正写着"goToDigestMessages 随瓦片一起去掉了"）—— 错题本第一族的第二次复发。
+  const code = stripComments(pageSrc)
+  if (/key:\s*'digest'/.test(code)) out.push('工作台出现独立日报入口 key: digest')
+  if (/goToDigestMessages/.test(code)) out.push('工作台出现 goToDigestMessages 深链')
+  return out
+}
+
 /** 纯判据：「取数失败」与「当日无数据」必须分两档 */
 function checkDigestFailureSplit (coreSrc) {
   const out = []
@@ -467,11 +481,17 @@ function staticChecks (mods) {
   const entrySrc = read(F.entry)
   if (!/pruneOldDigests\(/.test(entrySrc)) fail('入口没有真正调用清理（登记了不等于执行）')
 
-  // D9 入口
+  /* D9 入口：**工作信息里的一档**，且工作台**不许**再有独立入口
+   *  产品负责人 2026-09-21：「把日报放在工作信息中，没有必要单独提供一个入口 banner」。
+   *  ⚠️ 原判据要求"工作台必须有独立瓦片 key:'digest' + goToDigestMessages()" ——
+   *     那**正是产品负责人否掉的做法**。判据不能停在旧口径上（否则改对了反而变红）。 */
   const pageSrc = read(F.userPage)
-  if (!/key:\s*'digest'/.test(pageSrc)) fail('工作台没有日报瓦片（key: digest）')
-  if (!/goToDigestMessages/.test(pageSrc)) fail('工作台没有日报导航函数 goToDigestMessages')
-  if (!/category=digest/.test(pageSrc)) fail('日报入口没有带 category=digest（进不了日报那一档）')
+  checkNoDigestBanner(pageSrc).forEach(fail)
+  // ⚠️ 瓦片是 WXML 模板、不在 JS 里：第一版读 `F.userPage`（.js）→ 恒判为"瓦片不见了"（误红）。
+  const wbWxml = read(F.userWxml)
+  if (!/wb-tile/.test(wbWxml) || !/item\.key === 'workflow'/.test(wbWxml)) {
+    fail('工作信息瓦片不见了 —— 日报没有了可达路径')
+  }
 
   // 定时触发器（有先例可依）
   if (!existsSync(F.config)) fail('dailyDigest 缺 config.json')
@@ -654,6 +674,15 @@ async function selftest () {
         .replace('failed: rows.filter((r) => r.error).map((r) => ({ id: r.id, label: r.label, error: r.error }))',
           'failed: [],'))
     t('★ 被检出：取数失败被混成「当日无数据」', checkDigestFailureSplit(read(mergedMissing)).length > 0)
+
+    // ⑩-c 工作台又冒出独立「日报」入口 banner（产品负责人已否掉的做法）
+    // ⚠️ 锚点要贴着真实源码：工作台瓦片是 `{ key: 'workflow', kind: 'workflow', … }`，
+    //    第一版锚在 `{\n      kind: 'workflow',` 上 —— 中间隔着 `key:` 一行，**匹配不到**，
+    //    于是 mutate 变成空操作、注入"恒绿"（本仓错题本：注入锚点必须与实际源码逐字对齐）。
+    const tileBack = mutate('user-digesttile.js', read(F.userPage),
+      (s) => s.replace("    {\n      key: 'workflow',", "    {\n      key: 'digest',"))
+    t('★ 被检出：工作台又出现独立「日报」入口（产品口径：只放在工作信息里）',
+      checkNoDigestBanner(read(tileBack)).length > 0)
 
     // ⑩ 扩展位被误开（本次只应开超管）
     const allOn = mutate('cat-allroles.js', read(F.catalog), (s) => s.replace(/\n\s*enabled: false/g, '\n    enabled: true'))

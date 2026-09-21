@@ -174,20 +174,13 @@ function buildWorkbenchTilesFromCounts(entries, counts = {}) {
       icon: '/assets/icons/message.png',
       ...decorate(c.workflow)
     },
-    // 日报：工作信息之外**单独一档**（产品口径「与待办、审批并列」）。
-    // 为什么不并进「工作信息」的角标：日报是每日一份的**回看**入口，
-    // 混进待办未读数会让「有几件事等我处理」这个数字失真。
-    // 有未读日报才亮角标 —— 已读之后角标消失，但入口与历史仍可进（不阻塞回看）。
-    {
-      key: 'digest',
-      kind: 'digest',
-      title: '日报',
-      en: 'DIGEST',
-      workspace: '',
-      icon: '/assets/icons/trend.png',
-      ...decorate(c.digest)
-    }
   ];
+  /* ⚠️ 2026-09-21 产品负责人：「把日报放在工作信息中，没有必要单独提供一个入口 banner」。
+     去掉了工作台上那张独立「日报」瓦片 —— 日报本来就是**工作信息里的一个分类**
+     （与待办/审批并列的那一档，见 `WORKFLOW_FILTER_TABS` 的 `digest`），
+     工作台再开一个入口是重复入口。可达性不受影响：
+       · 工作信息瓦片的角标本来就统计整个 workflow 队列（日报也在里面）；
+       · 进去之后「日报」档就在筛选分栏上，历史日报照旧可翻。 */
   list.forEach((e) => {
     let badgeCount = 0;
     if (e.kind === 'super_admin' || e.kind === 'manager') {
@@ -2609,37 +2602,12 @@ Page(withAppModal({
       this.goToWorkflowMessages();
       return;
     }
-    // 日报：直接进「工作信息 → 日报」这一档。
-    // 不依赖未读数 —— 没有未读也要能回看历史日报（产品口径「日报要可回看」）。
-    if (key === 'digest') {
-      this.goToDigestMessages();
-      return;
-    }
     requestWorkspaceAccess(String(ds.kind || '').trim(), ds.workspace || '');
   },
 
-  /**
-   * 打开「工作信息 → 日报」档。
-   * 与工作信息是**同一个页面**，只是预选 category=digest：
-   * 这样日报天然带上工作信息已有的分页、已读、搜索与保留策略，
-   * 不再造第二套「只读就没了」的推送列表。
-   */
-  goToDigestMessages() {
-    try {
-      if (app.globalData) app.globalData.forceWorkbenchBadgeRefresh = true;
-    } catch (e) { /* ignore */ }
-    wx.navigateTo({
-      url: '/subpackages/extra/user/messages/index?queue=workflow&category=digest&from=workbench',
-      success: () => {
-        setTimeout(() => {
-          this.loadUnreadMessageCount();
-          this.loadWorkbenchBadges({ force: true });
-        }, 500);
-      },
-      // 不新增原生 wx.showToast（本仓纪律）：失败提示走页面已有的 AppToast 封装
-      fail: () => this.showAppToast({ title: '无法打开日报' })
-    });
-  },
+  /* 2026-09-21：`goToDigestMessages()` 随工作台那张独立「日报」瓦片一起去掉了。
+     日报的入口现在是**工作信息里的「日报」档**（`WORKFLOW_FILTER_TABS` 的 digest），
+     进工作信息后点那一栏即可，深链参数由消息页自己处理。 */
 
   goToWorkflowMessages() {
     try {
