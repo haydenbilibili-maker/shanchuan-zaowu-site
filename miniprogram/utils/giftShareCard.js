@@ -319,6 +319,24 @@ const PRINT_DESIGN_W = 1240
  *   白区约 75×75mm，再避开右下**预印 24mm 印章** ⇒ 干净可打印区 ≈ 75 × 69 mm
  *   ⇒ @300dpi = **886 × 886 px**（1:1；早期影像预估的 75×69→886×815 已作废）。
  */
+/**
+ * 礼笺正文的**字数上限**（客户可自己编辑，但必须印得出来）。
+ *
+ * 为什么是这个数 —— 不是拍的，是**真渲染量出来的**（2026-09-21，`render-gift-print-preview.mjs`）：
+ *   · 贴纸（75×75mm 白区）正文带**永不截断**：先缩字号（下限 30px）再压行距，
+ *     仍放不下就**一行都不画**（真图事故形态）。所以容量是个**悬崖**，不是渐变。
+ *   · 实测（题记 20 字）:  **155 字 ✓ 全部落墨 / 158 字 ✗ 0 行**
+ *     实测（题记 57 字）:  155 字 ✓（题记占行不额外吃容量）
+ *   · 而**改动前 UI 上限是 200 字** ⇒ 写满 200 字的顾客，贴纸上的正文**整段消失**
+ *     （实测 200 字 → 「正文只画了 0/8 行」）。A6 不受影响（200 字仍全部落墨）。
+ * 取 **140**（在断点 155 下留约 10% 余量：换字体/改行距/题记更长时不至于立刻掉下悬崖）。
+ *
+ * ⚠️ 改本值前必须重跑容量探针：
+ *   node miniprogram/scripts/render-gift-print-preview.mjs --spec sticker --body <该字数的文本> --check
+ *   （判据：不许出现「正文只画了 x/y 行」，且正文带落墨 > 0）
+ */
+const GIFT_NOTE_MAX_CHARS = 140
+
 const PRINT_SPECS = {
   a6: { w: 1240, h: 1748, designW: 1240, label: 'A6 竖版 105×148mm' },
   // ⚠️ 2026-09-20 产品负责人裁定：礼笺**输出比例 1:1** → 贴纸白区按 75×75mm（886×886 @300dpi）。
@@ -908,10 +926,14 @@ function renderGiftPrintImage(selector, page, opts) {
 
 module.exports = {
   SHARE_CARD_W: W,
+  /** 贴纸版式表（正文带/署名带等）—— 容量探针与守卫引用**同一份**，避免各抄一遍 */
+  STICKER,
   PRINT_CARD_W: PRINT_W,
   PRINT_CARD_H: PRINT_H,
   /** 纸张规格表（a6 既有 / sticker 预留）—— 供守卫与调用方引用，见文件内 PRINT_SPECS 注释 */
   PRINT_SPECS,
+  /** 礼笺正文可编辑字数上限（印得上得去的前提；推导见常量处注释） */
+  GIFT_NOTE_MAX_CHARS,
   paintGiftPrintCard,
   renderGiftPrintImage,
   SHARE_CARD_H: H,

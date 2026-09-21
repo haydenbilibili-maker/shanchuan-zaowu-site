@@ -86,6 +86,25 @@ check('关系预设存在', Array.isArray(LIST) && LIST.length >= 6, `实际 ${L
  *   ② chip 必须**换行铺开** —— 原来是不换行的横向滚动，一屏只露 5–6 个，
  *      新增的「老师 / 领导 / 长辈」等于藏起来，"拓展"就白做。 */
 check('★ 关系角色已拓展到 ≥20 个（不许回退）', LIST.length >= 20, `实际 ${LIST.length}`)
+/* ★ 正文字数上限必须**由打印尺寸反推**，且 UI 只能引用它（2026-09-21 集成官加）。
+ * 起因：产品负责人「礼信笺文案允许自己编辑，但需要限定一下字数，使其符合打印尺寸要求」。
+ * 实测（真渲染，见 render-gift-print-preview）：贴纸正文带**永不截断**，
+ * 155 字 ✓ / 158 字 ✗（0 行 = 整段消失），而**改动前 UI 上限是 200 字** ⇒ 写满的顾客贴纸上没有正文。
+ * 判据三件：① 常量存在且 ≤ 实测断点（留余量）；② UI 不许再写死 200；③ 提示要说清原因。 */
+{
+  const cardMod = loadCjs('miniprogram/utils/giftShareCard.js')
+  const LIMIT = cardMod && cardMod.GIFT_NOTE_MAX_CHARS
+  check('★ 打印模块导出正文字数上限 GIFT_NOTE_MAX_CHARS', typeof LIMIT === 'number' && LIMIT > 0, String(LIMIT))
+  check('★ 上限 ≤ 实测断点 155（贴纸 158 字就整段不画）', LIMIT <= 155, `实际 ${LIMIT}`)
+  check('★ 上限不至于过紧（预设最长句也放得下，且留出余量）', LIMIT >= 100, `实际 ${LIMIT}`)
+  check('★ 编排页用常量而不是写死 200',
+    /maxlength="\{\{noteMaxChars\}\}"/.test(composeWxml) && !/maxlength="200"/.test(composeWxml)
+    && /\{\{cardBody\.length\}\}\/\{\{noteMaxChars\}\}/.test(composeWxml),
+    'textarea 或计数仍写死 200')
+  check('★ 上限的**原因**在界面上说得出来（否则用户以为是无理限制）',
+    /noteLimitHint/.test(composeJs) && /贴纸|打印/.test(composeJs) && /noteLimitHint/.test(composeWxml))
+}
+
 /* ★ 跨关系**长片段**不许复用（2026-09-21 集成官加）。
  * 「完全相同的句子」已有判据，但那挡不住"每段都换个开头、后半句照抄" ——
  * 那正是顾客抱怨的「点进去好几次都是同样一段话」。
@@ -146,7 +165,10 @@ check('★ 每个关系都有多句候选（不再是「一关系一文案」）
 
 const flat = LIST.flatMap((p) => (p.bodies || []).map((b) => String(b)))
 check('候选总句数 ≥ 关系数×3', flat.length >= LIST.length * 3, `${flat.length} 句`)
-check('★ 每句都在 textarea 上限内（≤200 字）', flat.every((b) => b.length <= 200),
+// ⚠️ 2026-09-21：这条原来查的是"≤200（textarea 旧上限）" —— 比**打印上限**还宽。
+//    预设句是官方文案，必须**印得出来**，所以改查 GIFT_NOTE_MAX_CHARS。
+check(`★ 每句都在打印上限内（≤${loadCjs('miniprogram/utils/giftShareCard.js').GIFT_NOTE_MAX_CHARS} 字）`,
+  flat.every((b) => b.length <= loadCjs('miniprogram/utils/giftShareCard.js').GIFT_NOTE_MAX_CHARS),
   `最长 ${Math.max(...flat.map((b) => b.length))} 字`)
 check('★ 每句都不再过短（≥40 字，回应「文案较短」）', flat.every((b) => b.length >= 40),
   `最短 ${Math.min(...flat.map((b) => b.length))} 字`)
@@ -449,6 +471,18 @@ function selftest() {
       file: 'miniprogram/subpackages/manager/gift-ops/index.js',
       from: 'const db = wx.cloud.database()',
       to: 'const db = null'
+    },
+    {
+      name: '正文字数上限被放宽到 200（贴纸会整段不画）',
+      file: 'miniprogram/utils/giftShareCard.js',
+      from: 'const GIFT_NOTE_MAX_CHARS = 140',
+      to: 'const GIFT_NOTE_MAX_CHARS = 200'
+    },
+    {
+      name: '编排页把上限写死回 200（与打印模块脱钩）',
+      file: COMPOSE_WXML,
+      from: 'maxlength="{{noteMaxChars}}"',
+      to: 'maxlength="200"'
     },
     {
       name: '跨关系照抄长句（换开头、后半句整段搬）',

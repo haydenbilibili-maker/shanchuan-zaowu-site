@@ -153,7 +153,7 @@
             wx:else
             class="card-input"
             focus="{{cardFocused}}"
-            maxlength="200"
+            maxlength="{{noteMaxChars}}"
             placeholder="这段日子里你帮了太多。柜中挑了一件安静的藏品……"
             placeholder-class="card-placeholder"
             value="{{cardBody}}"
@@ -162,7 +162,11 @@
             bindblur="onCardBlur"
           />
           <view class="card-foot">
-            <text class="card-count">{{cardBody.length}}/200</text>
+            <view class="card-count-wrap">
+              <text class="card-count {{cardBody.length >= noteMaxChars ? 'is-full' : ''}}">{{cardBody.length}}/{{noteMaxChars}}</text>
+              <!-- 快到上限才提示（平时不占版面）：说清"为什么有上限"——礼笺要印在贴纸上 -->
+              <text class="card-count-hint" wx:if="{{cardBody.length >= noteMaxChars - 20}}">{{noteLimitHint}}</text>
+            </view>
             <text class="card-sig-label">署名</text>
           </view>
           <view class="card-sig-wrap {{sigFocused ? 'focused' : ''}} {{sigJustSigned ? 'just-signed' : ''}}">

@@ -871,6 +871,11 @@ page {
   font-size: 22rpx;
   color: #A09A90;
 }
+/* 正文字数：count 与"为什么有上限"的提示（2026-09-21：上限由打印尺寸反推，140 字） */
+.card-count-wrap { display: flex; align-items: baseline; gap: var(--space-1); flex-wrap: wrap; }
+.card-count.is-full { color: var(--brass-400); font-weight: 600; }
+.card-count-hint { font-size: var(--fs-20); color: var(--color-text-muted); }
+
 
 .card-sig-label {
   font-size: 22rpx;

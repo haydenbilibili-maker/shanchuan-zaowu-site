@@ -54,8 +54,11 @@ const OUT = argOf('--out', join(TMP_DIR, `gift-print-${SPEC}.png`))
 const SAMPLE = {
   recipientName: '冶禹军',
   themeName: '化羽为约',
-  themeNote: '以羽翼封存誓言，愿相守如蝶般轻盈长久。',
-  cardBody: '不多说场面话。祝福你们白首偕老，早生贵子。柜里挑了一件踏实的标本给你——放在手边，像我们之间那些不用说',
+  // `--note` 可覆盖题记：题记占几行会直接压低正文带顶，容量探针要试**最长题记**
+  themeNote: argOf('--note', process.env.GIFT_PREVIEW_NOTE || '以羽翼封存誓言，愿相守如蝶般轻盈长久。'),
+  // `--body` / GIFT_PREVIEW_BODY 可覆盖正文：字数容量探针要反复换长度跑（见 §容量）
+  cardBody: argOf('--body', process.env.GIFT_PREVIEW_BODY ||
+    '不多说场面话。祝福你们白首偕老，早生贵子。柜里挑了一件踏实的标本给你——放在手边，像我们之间那些不用说'),
   cardSignature: '冶禹军',
   dateText: '2026.09.20'
 }
@@ -87,6 +90,14 @@ const module = { exports: {} }; const exports = module.exports;
 const require = (p) => { throw new Error('browser-shim: require(' + p + ')') };
 ${cardSrc}
 const CARD = module.exports
+
+// 绘制函数用 console.warn 报「正文只画了 x/y 行」—— 容量判据就挂在它上面
+window.__giftWarns = []
+const __warn = console.warn
+console.warn = function () {
+  try { window.__giftWarns.push(Array.prototype.slice.call(arguments).join(' ')) } catch (e) {}
+  return __warn.apply(console, arguments)
+}
 const spec = ${JSON.stringify(SPEC)}
 const opts = ${JSON.stringify(Object.assign({ spec: SPEC }, SAMPLE))}
 
@@ -238,6 +249,8 @@ window.addEventListener('load', async () => {
     zones.svc = { x: qRight - qSize * 2 - qGap, y: qTop, w: qSize, h: qSize }
     // A6 没有预印印章 → 不量印章区（判据里也要跳过）
     zones.stamp = null
+    // 正文带（题记带下沿 → 署名带之上）：容量探针看它有没有落墨、有没有越线
+    zones.body = { x: cardX + pad, y: Math.round(38 * MM), w: cardW - pad * 2, h: Math.round(63 * MM) }
     const axisX = cardX + pad
     zones.foot = { x: axisX, y: footerTop, w: cardW - pad * 2, h: Math.round(30 * MM) }
     // 兜底文案基线 = footerTop + 2mm(码顶) + 15mm(码) + 6mm(码下小字) + 2.2mm(偏移) ≈ +25.2mm
@@ -264,8 +277,17 @@ window.addEventListener('load', async () => {
     zones.stamp = clipZone(real, { x: Math.round(W - 1.5 * MM - 24 * MM), y: Math.round(60 * MM + 1.5 * MM), w: Math.round(24 * MM), h: Math.round(24 * MM) })
     zones.foot = clipZone(real, { x: axisX, y: Math.round(55 * MM), w: Math.round(45 * MM), h: Math.round(30 * MM) })
     zones.hint = clipZone(real, { x: axisX, y: Math.round(72.6 * MM), w: Math.round(45 * MM), h: Math.round(3.4 * MM) })
+    // 贴纸正文带：与 painter 同源（bodyTop = max(题记带下沿, 表值) → 署名净空线 signTop）
+    const S = CARD.STICKER
+    const signTop = S.footerTop - S.sigOffset
+    zones.body = clipZone(real, { x: axisX, y: S.bodyTop, w: Math.round(45 * MM), h: Math.max(0, signTop - S.bodyTop) })
   }
   report.zones = zones
+  /* 容量探针要看的两个量：
+     ① 绘制函数自己的告警（「正文只画了 x/y 行（版面高度不足）」= 溢出）；
+     ② 正文带的落墨量（=0 说明一行都没画，也是溢出）。 */
+  report.warns = (window.__giftWarns || []).slice(0, 6)
+  report.bodyInk = zones.body ? inkIn(real, zones.body, false) : null
   report.stampInk = zones.stamp ? inkIn(real, zones.stamp, false) : null
   report.stampInkThermal = zones.stamp ? inkIn(thermalCv, zones.stamp, true) : null
   report.footInk = inkIn(real, zones.foot, false)
@@ -355,7 +377,11 @@ if (!report.zones || report.miniContrast === undefined) {
   ;(report.errors || []).forEach((e) => console.error('  - ' + e))
   process.exit(1)
 }
-console.log(`礼笺印刷预览（spec=${SPEC}）`)
+console.log(`礼笺印刷预览（spec=${SPEC}，正文 ${SAMPLE.cardBody.length} 字）`)
+if (report.warns && report.warns.length) {
+  for (const w of report.warns) if (/正文|截断|越线/.test(w)) console.log(`  ⚠ ${w}`)
+}
+console.log(`  · 正文带落墨：${report.bodyInk}`)
 console.log(report.stampInk === null
   ? '  · 预印印章区：A6 无预印印章 → 不适用'
   : `  · 预印印章区 落墨：真实 ${report.stampInk} / 热敏 ${report.stampInkThermal}（必须都是 0）`)

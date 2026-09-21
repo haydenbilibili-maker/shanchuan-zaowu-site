@@ -19,6 +19,8 @@ const {
   presetBodyCount,
   pickPresetBody
 } = require('../giftNotePresets')
+// 正文字数上限**从打印模块取**（印得出来才算数；推导见 giftShareCard.js 常量处注释）
+const { GIFT_NOTE_MAX_CHARS } = require('../../../../utils/giftShareCard')
 const {
   GIFT_PACKAGING_LABEL,
   GIFT_PACKAGING_NOTE
@@ -129,6 +131,9 @@ Page({
     /** 需求 9：必填项要在界面上看得出来；选「犒劳自己」时改成「你的昵称」 */
     recipientPlaceholder: 'TA 的名字（必填）',
     notePresets: GIFT_NOTE_PRESETS,
+    // 正文字数上限与提示（模板只读这两个值，不再写死 200）
+    noteMaxChars: GIFT_NOTE_MAX_CHARS,
+    noteLimitHint: `最多 ${GIFT_NOTE_MAX_CHARS} 字（礼笺要印在 75×75mm 贴纸上）`,
     activeNotePresetId: '',
     /** 当前关系选到第几句（0 基）与候选总数 —— 给「换一句」与「第 n/N 句」标用 */
     noteVariantIndex: 0,
