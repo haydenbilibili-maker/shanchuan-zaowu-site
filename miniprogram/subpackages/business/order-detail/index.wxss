@@ -893,3 +893,39 @@ button.btn-text {
 .custom-val { font-size: 24rpx; color: var(--color-text-body); text-align: right; flex: 1; }
 .custom-val.latin { font-style: italic; color: var(--gold); }
 .custom-val.gold { color: var(--gold); }
+
+/* ── 礼赠档案（2026-09-21）：把"这封信写给谁 / 进展到哪 / 回看入口"收在一张卡里 ── */
+.gift-archive { margin: 8rpx 0 24rpx; }
+.ga-card {
+  margin-top: 16rpx;
+  padding: var(--space-4, 32rpx);
+  border-radius: var(--radius-md, 16rpx);
+  background: rgba(196, 167, 108, 0.08);
+  border: 1rpx solid rgba(196, 167, 108, 0.38);
+}
+.ga-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
+.ga-who { display: flex; align-items: baseline; gap: 12rpx; min-width: 0; }
+.ga-label { font-size: 22rpx; color: var(--color-text-muted); flex-shrink: 0; }
+.ga-name {
+  font-size: 32rpx; color: var(--brass-300); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ga-status { font-size: 22rpx; flex-shrink: 0; }
+.ga-status.tone-waiting { color: var(--brass-400); }
+.ga-status.tone-moving { color: #8FB6D9; }
+.ga-status.tone-done { color: #7EDC96; }
+.ga-status.tone-muted { color: var(--color-text-muted); }
+.ga-note { margin-top: 16rpx; }
+.ga-note-quote { font-size: 24rpx; line-height: 1.6; color: var(--color-text-body); }
+.ga-meta { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 14rpx; }
+.ga-meta-item { font-size: 21rpx; color: var(--color-text-muted); }
+.ga-entries { display: flex; gap: 16rpx; margin-top: 22rpx; }
+.ga-entry {
+  flex: 1; min-width: 0; text-align: center;
+  padding: 18rpx 12rpx; border-radius: var(--radius-sm, 8rpx);
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+}
+.ga-entry.primary { background: var(--brass-400); border-color: var(--brass-400); }
+.ga-entry.primary .ga-entry-text { color: var(--color-bg); font-weight: 600; }
+.ga-entry-press { opacity: 0.86; }
+.ga-entry-text { font-size: 24rpx; color: var(--brass-400); }

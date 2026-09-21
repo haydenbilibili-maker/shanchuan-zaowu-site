@@ -438,7 +438,15 @@ Page({
     const hub = String((options && options.hub) || '').trim()
     const flow = String((options && options.tab) || '').trim()
     const segment = String((options && options.segment) || '').trim()
-    const contactName = String((options && options.contactName) || '').trim()
+    /* ⚠️ `contactName` 是**中文人名**，调用方（订单详情页）按 URL 规范用 `encodeURIComponent`
+     * 编码后传进来，而 `options` 拿到的是**未解码**的串（2026-09-21 真机截图：
+     * 「致 %E5%8E%89%E7%8E%A9…」——既显示成乱码，筛选也因此匹配不到任何一份礼赠）。
+     * 这里**防御性解码**：只在"看起来是百分号编码"时才解，避免把人名里合法的 `%` 解坏。 */
+    const rawContact = String((options && options.contactName) || '').trim()
+    let contactName = rawContact
+    if (/%[0-9A-Fa-f]{2}/.test(rawContact)) {
+      try { contactName = decodeURIComponent(rawContact) } catch (e) { contactName = rawContact }
+    }
     const patch = {}
     if (hub === 'people' || hub === 'dates' || hub === 'flow') patch.hubTab = hub
     if (flow === 'received' || flow === 'sent') {

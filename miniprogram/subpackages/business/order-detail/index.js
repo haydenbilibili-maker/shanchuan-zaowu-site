@@ -102,6 +102,13 @@ Page(withAppModal({
     pickupDoneInfo: null,
     isStorePickup: false,
     pickupStoreName: '',
+    // ── 礼赠档案区（2026-09-21）：订单详情页原本只在**底栏**按状态给礼赠动作，
+    //    没有任何"回看这封礼笺 / 看这份礼赠进展"的入口（产品负责人报的缺口）。
+    giftRecipientName: '',
+    giftStatusText: '',
+    giftStatusTone: 'flat',
+    giftNotePreview: '',
+    giftEnvelopeLabel: '查看礼赠信封',
     giftCardBody: '',
     giftCardSignature: '',
     giftHasVoice: false,
@@ -559,6 +566,34 @@ Page(withAppModal({
         giftCardBody: (data.giftMeta && data.giftMeta.cardBody) || '',
         giftCardSignature: (data.giftMeta && data.giftMeta.cardSignature) || '',
         giftHasVoice: !!(data.giftMeta && data.giftMeta.voiceFileID && data.giftMeta.voiceDuration),
+        // 礼赠档案：受赠人 / 状态 / 礼笺摘要（订单详情页要给"回看这封礼笺 + 看进展"的入口）
+        giftRecipientName: (data.giftMeta && (data.giftMeta.recipientName || data.giftMeta.toName)) ||
+          (data.address && data.address.name) || '',
+        giftStatusText: (() => {
+          const gm = data.giftMeta || {}
+          const addrSubmitted = gm.addressStatus === 'submitted'
+          const invite = gm.deliveryType === 'invite_address'
+          if (invite && !addrSubmitted && ['paid', 'paid_awaiting_address'].includes(data.status)) {
+            return isGiver ? '等待 TA 留下收件去处' : '等你留下收件去处'
+          }
+          if (gm.claimStatus === 'claimed') return 'TA 已领取'
+          if (data.status === 'shipped') return '礼物已寄出'
+          if (data.status === 'received') return '礼物已送达'
+          if (['refunded', 'expired_refunding', 'refunding'].includes(data.status)) return '礼赠已退回'
+          return '等待 TA 领取'
+        })(),
+        giftStatusTone: (() => {
+          const gm = data.giftMeta || {}
+          if (['refunded', 'expired_refunding', 'refunding'].includes(data.status)) return 'muted'
+          if (data.status === 'received' || gm.claimStatus === 'claimed') return 'done'
+          if (data.status === 'shipped') return 'moving'
+          return 'waiting'
+        })(),
+        giftNotePreview: String((data.giftMeta && (data.giftMeta.cardBody || data.giftMeta.themeNote)) || '')
+          .replace(/\s+/g, ' ')
+          .slice(0, 48),
+        // 受赠人看到的入口应回**自己拆信那一页**（receive），送礼人才看封缄页（success）
+        giftEnvelopeLabel: isReceiver ? '再拆一次这封礼笺' : '查看礼赠信封',
         stampClass: sClass,
         stampText: sText,
         depositTag: data._depositTag || '',
@@ -1155,6 +1190,38 @@ Page(withAppModal({
     } catch (e) {
       console.warn('order gift share image', e);
     }
+  },
+
+  /** 查看礼赠信封：送礼人 → 封缄/分享页；受赠人 → 自己拆信那一页 */
+  goGiftEnvelope() {
+    const order = this.data.order || {};
+    const id = order._id || this.data.orderId || '';
+    if (!id) return;
+    const token = this.data.giftShareToken || (order.giftMeta && order.giftMeta.shareToken) || '';
+    const q = [`orderId=${encodeURIComponent(id)}`];
+    if (token) q.push(`token=${encodeURIComponent(token)}`);
+    const base = this.data.isGiftReceiver
+      ? '/subpackages/feature/gift/receive/index'
+      : '/subpackages/feature/gift/success/index';
+    wx.navigateTo({
+      url: `${base}?${q.join('&')}`,
+      // ⚠️ 不用 `wx.showToast` 兜底：本页的原生弹窗计数被 `check:dialog-ratchet` 棘轮钉住（只许降不许涨）。
+      //    失败时把人送到「我的礼赠」——比弹一句"打不开"更有用，也不新增原生调用。
+      fail: () => wx.navigateTo({ url: '/subpackages/feature/gift/my-gifts/index?tab=sent' })
+    });
+  },
+
+  /** 礼赠详情：到「我的礼赠」里这份礼赠所在的那一栏（送出 / 收到） */
+  goGiftDetail() {
+    const name = String(this.data.giftRecipientName || '').trim();
+    const parts = [`tab=${this.data.isGiftReceiver ? 'received' : 'sent'}`];
+    // 送礼人按受赠人筛，能直接落到"致 某某"这一份；受赠人那边没有这个维度，就落到整栏
+    if (name && !this.data.isGiftReceiver) parts.push(`contactName=${encodeURIComponent(name)}`);
+    wx.navigateTo({
+      url: `/subpackages/feature/gift/my-gifts/index?${parts.join('&')}`,
+      // 同上：不新增原生 toast；退无可退时回个人中心（那里本来就有「我的礼赠」入口）
+      fail: () => wx.switchTab({ url: '/pages/user/index' })
+    });
   },
 
   onShareAppMessage() {

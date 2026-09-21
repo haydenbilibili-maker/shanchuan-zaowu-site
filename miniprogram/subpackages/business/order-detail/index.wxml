@@ -26,6 +26,37 @@
 
     <view class="divider-dashed"></view>
 
+    <!-- 礼赠档案（2026-09-21）：订单详情页原来只在**底栏**按状态给礼赠动作，
+         没有"回看这封礼笺 / 看这份礼赠进展"的入口 —— 送礼人付完款就找不到自己写的那封信了。 -->
+    <view class="gift-archive slide-in-delay-1" wx:if="{{isGiftOrder}}">
+      <text class="section-title"><text class="en-label">GIFT NOTE</text> 礼赠档案</text>
+      <view class="ga-card">
+        <view class="ga-head">
+          <view class="ga-who">
+            <text class="ga-label">赠与</text>
+            <text class="ga-name">{{giftRecipientName || '（未留称呼）'}}</text>
+          </view>
+          <text class="ga-status tone-{{giftStatusTone}}">{{giftStatusText}}</text>
+        </view>
+        <view class="ga-note" wx:if="{{giftNotePreview}}">
+          <text class="ga-note-quote">「{{giftNotePreview}}{{giftNotePreview.length >= 48 ? '…' : ''}}」</text>
+        </view>
+        <view class="ga-meta">
+          <text class="ga-meta-item" wx:if="{{giftCardSignature}}">署 · {{giftCardSignature}}</text>
+          <text class="ga-meta-item" wx:if="{{giftHasVoice}}">含语音</text>
+          <text class="ga-meta-item" wx:if="{{giftShareToken}}">礼笺已封缄</text>
+        </view>
+        <view class="ga-entries">
+          <view class="ga-entry primary" bindtap="goGiftEnvelope" hover-class="ga-entry-press" hover-stay-time="70">
+            <text class="ga-entry-text">{{giftEnvelopeLabel}}</text>
+          </view>
+          <view class="ga-entry" bindtap="goGiftDetail" hover-class="ga-entry-press" hover-stay-time="70">
+            <text class="ga-entry-text">礼赠详情</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <view class="shipping-label slide-in-delay-1" 
           wx:if="{{order.status === 'shipped' || order.status === 'received'}}">
       

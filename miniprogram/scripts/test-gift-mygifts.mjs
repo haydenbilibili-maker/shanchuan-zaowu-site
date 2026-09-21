@@ -43,6 +43,10 @@ function eq(name, got, want) {
 const PAGE = 'miniprogram/subpackages/feature/gift/my-gifts/index.js'
 const WXML = 'miniprogram/subpackages/feature/gift/my-gifts/index.wxml'
 const WXSS = 'miniprogram/subpackages/feature/gift/my-gifts/index.wxss'
+// 礼赠链路的两端（2026-09-21 产品负责人：「订单详情页缺少跳转到礼赠信封页面以及后续礼赠详情的入口」）
+const ORDER_DETAIL_JS = 'miniprogram/subpackages/business/order-detail/index.js'
+const ORDER_DETAIL_WXML = 'miniprogram/subpackages/business/order-detail/index.wxml'
+const GIFT_SUCCESS_WXML = 'miniprogram/subpackages/feature/gift/success/index.wxml'
 
 const INJECTIONS = {
   // 退回旧写法：模板里引用页面 data → 「致 XX」永不显示（本轮修掉的真 bug）
@@ -98,6 +102,30 @@ const INJECTIONS = {
     file: WXML,
     from: '          <text class="meta recipient" wx:if="{{item.flowTab === \'sent\' && item.recipientName}}">致 {{item.recipientName}}</text>\n          <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>',
     to: '          <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>\n          <text class="meta recipient" wx:elif="{{item.flowTab === \'sent\' && item.recipientName}}">致 {{item.recipientName}}</text>'
+  },
+  // 收端不再解码中文人名 → 「致 %E5%8E%89…」乱码 + 筛选空（2026-09-21 真机截图）
+  'contact-name-not-decoded': {
+    file: PAGE,
+    from: "    if (/%[0-9A-Fa-f]{2}/.test(rawContact)) {\n      try { contactName = decodeURIComponent(rawContact) } catch (e) { contactName = rawContact }\n    }",
+    to: '    contactName = rawContact'
+  },
+  // 礼赠档案区被删 → 礼赠订单又没有回看礼笺的入口（产品负责人报的那个缺口）
+  'gift-archive-removed': {
+    file: ORDER_DETAIL_WXML,
+    from: 'class="gift-archive slide-in-delay-1" wx:if="{{isGiftOrder}}"',
+    to: 'class="gift-archive slide-in-delay-1" wx:if="{{false}}"'
+  },
+  // 信封入口不再按身份分流 → 受赠人被送到送礼人的封缄页
+  'gift-envelope-not-split': {
+    file: ORDER_DETAIL_JS,
+    from: "    const base = this.data.isGiftReceiver\n      ? '/subpackages/feature/gift/receive/index'\n      : '/subpackages/feature/gift/success/index';",
+    to: "    const base = '/subpackages/feature/gift/success/index';"
+  },
+  // 礼赠详情不再带栏位 → 用户要自己再找一次
+  'gift-detail-no-tab': {
+    file: ORDER_DETAIL_JS,
+    from: "const parts = [`tab=${this.data.isGiftReceiver ? 'received' : 'sent'}`];",
+    to: 'const parts = [];'
   },
   // 折叠区被挪出 .list → 刷新态不跟列表一起 dim，页脚顺序也乱
   'pouch-outside-list': {
@@ -540,6 +568,58 @@ eq('★ v1 券背语言已清零（WXSS）', (wxss.match(/pouch-layer/g) || []).
 eq('旧 .folded-pouch 类已清零', (wxss.match(/folded-pouch/g) || []).length, 0)
 check('折叠区动画已定义', /@keyframes pouch-in/.test(wxss))
 check('失效卡在折叠区内仍整体降调', /\.card-hit\.is-folded\s*\{[^}]*opacity/.test(wxss))
+
+/* ─────────── 2) 礼赠链路闭环：订单详情 → 礼赠信封 / 礼赠详情 → 回订单 ───────────
+ * 产品负责人 2026-09-21：「礼赠的订单详情页**缺少**跳转到礼赠信封页面以及后续礼赠详情的入口」。
+ * 改前：订单详情的礼赠动作全在**底栏**、且只在特定状态出现（待填址/待领取/妥投码），
+ *      一旦礼赠进入"已领取/已发货/已送达"，页面里**没有任何**回看礼笺或看进展的入口。
+ * 判据钉住这条链路的**四个接口**（少任何一个，用户就会在某一环走丢）。 */
+{
+  const odJs = readSrc(ORDER_DETAIL_JS)
+  const odWxml = readSrc(ORDER_DETAIL_WXML)
+  const successWxml = readSrc(GIFT_SUCCESS_WXML)
+
+  check('★ 订单详情有「礼赠档案」区，且只对礼赠订单显示',
+    /class="gift-archive[^"]*"\s+wx:if="\{\{isGiftOrder\}\}"/.test(odWxml),
+    '缺少 .gift-archive（isGiftOrder 门）—— 礼赠订单没有回看礼笺的入口')
+
+  check('★ 礼赠档案带「查看礼赠信封」入口（送礼人 → success / 受赠人 → receive）',
+    /goGiftEnvelope/.test(odWxml) && /goGiftEnvelope\s*\(/.test(odJs)
+    && /gift\/success\/index/.test(odJs) && /gift\/receive\/index/.test(odJs)
+    && /isGiftReceiver[\s\S]{0,200}?gift\/receive\/index/.test(odJs),
+    '信封入口必须按身份分流：送礼人看封缄页、受赠人回自己拆信那一页')
+
+  check('★ 礼赠档案带「礼赠详情」入口（跳「我的礼赠」并落到这份礼赠所在那一栏）',
+    /goGiftDetail/.test(odWxml) && /goGiftDetail\s*\(/.test(odJs)
+    && /gift\/my-gifts\/index\?\$\{parts\.join\('&'\)\}/.test(odJs)
+    && /tab=\$\{this\.data\.isGiftReceiver \? 'received' : 'sent'\}/.test(odJs),
+    '礼赠详情必须按身份落 sent / received 栏，否则用户要自己再找一次')
+
+  /* ★ `contactName` 是中文人名，必须**两端配对**：发端 encodeURIComponent、收端 decodeURIComponent。
+   * 2026-09-21 真机截图：「致 %E5%8E%89%E7%8E%A9…」——既显示成乱码，筛选也因此匹配不到任何一份礼赠
+   * （我当时只做了发端编码，收端直接用，属"两端不成对"的典型）。 */
+  {
+    const mgJs = readSrc(PAGE)
+    check('★ 中文人名两端配对：发端 encodeURIComponent + 收端防御性 decode',
+      /contactName=\$\{encodeURIComponent\(name\)\}/.test(odJs)
+      && /%\[0-9A-Fa-f\]\{2\}\/\.test\(rawContact\)/.test(mgJs)
+      && /decodeURIComponent\(rawContact\)/.test(mgJs),
+      'contactName 必须发端编码、收端解码；只在"看起来是编码串"时解（人名里合法的 % 不能被解坏）')
+    check('★ 收端解码后用于**筛选与文案**（不能只解一半）',
+      /contactName\b[\s\S]{0,400}?patch\.recipientFilter = contactName/.test(mgJs)
+      && /filterLabel = `致 \$\{contactName\}`/.test(mgJs),
+      '解出来的名字必须同时进 recipientFilter 与「致 XX」文案')
+  }
+
+  check('★ 礼赠档案显示"给谁 + 进展"（受赠人姓名与状态文案都要有）',
+    /giftRecipientName/.test(odWxml) && /giftStatusText/.test(odWxml)
+    && /giftRecipientName:/.test(odJs) && /giftStatusText:/.test(odJs),
+    '卡片上只有入口、没有"给谁/进展"，用户仍然分不清是哪一份礼赠')
+
+  check('★ 闭环另一端仍在：礼赠信封页有「查看礼赠进度」回订单详情',
+    /bindtap="goOrder"/.test(successWxml),
+    'success 页少了回订单详情的出口 —— 送礼人从信封页退出就断了')
+}
 
 /* ------------------------------------------------------------------ */
 
