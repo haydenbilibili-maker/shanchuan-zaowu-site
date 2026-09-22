@@ -431,145 +431,39 @@
          2026-09-20 改造把它拆了：灵感词与额度上移到发送条正下方（同一个视线），
          越权提示上移为独立一行 —— 整块 `.ww-write` 因此消失（见上面 .ww-wishassist 的说明）。 -->
 
-    <!-- 愿签列表：弹幕看得快，愿签看得清，也便于复制与无障碍阅读。
-         id 是墙页脚「看全部 ›」的落点（wx.pageScrollTo 的 selector），改名要同步 goWishList -->
-    <view class="ww-head" id="wishList">
-      <!-- 两个视图共用一套愿签渲染，只有数据源不同（见页面 applyView）。
-           本轮把它从"两个像标题的文字"改成**分段控件**：切换意图要一眼看得出来 -->
-      <view class="ww-seg" aria-role="tablist">
-        <view
-          class="ww-seg-item {{viewMode === 'wall' ? 'is-on' : ''}}"
-          bindtap="switchView"
-          data-mode="wall"
-          hover-class="ww-seg-press"
-          hover-stay-time="70"
-          aria-role="tab"
-          aria-selected="{{viewMode === 'wall'}}"
-        >
-          <text class="ww-seg-label">墙上的愿签</text>
-          <!-- 条数必须挂进**它所属的那一段**：此前它游离在段外、紧挨「我的心愿」，
-               看着像在说"我的心愿有 26 条"（真图复核发现）。两段各自带自己的数，语义才自明。
-               2026-09-20：两段都**常显**条数（原来只在选中段显示）—— 否则用户看不到
-               另一段有多少条，切不切过去要凭猜（交互优化）。
-               ⚠️ 2026-09-20 改造：这里从 `items.length` 换成 **`wallCount`** —— `items` 会随
-               视图被整体替换（applyView），切到「我的心愿」后两段显示的是同一个数（串台）。
-               `wallCount` 只由墙列表写入，与当前视图无关。 -->
-          <text class="ww-seg-n" wx:if="{{wallCount}}">{{wallCount}}</text>
-        </view>
-        <view
-          class="ww-seg-item {{viewMode === 'mine' ? 'is-on' : ''}}"
-          bindtap="switchView"
-          data-mode="mine"
-          hover-class="ww-seg-press"
-          hover-stay-time="70"
-          aria-role="tab"
-          aria-selected="{{viewMode === 'mine'}}"
-        >
-          <text class="ww-seg-label">我的心愿</text>
-          <text class="ww-seg-n" wx:if="{{mine.total}}">{{mine.total}}</text>
-        </view>
-      </view>
-    </view>
-    <view class="ww-tags">
-      <!-- 加载中：愿签骨架（与站点同款铜色微光） -->
-      <!-- ⚠️ wx:if 必须放在外层 block 上，**不能与 wx:for 同标签**：
-           `wx:for` 与 `wx:if` 写在同一元素上时，编译器不会把它当成
-           `wx:elif`/`wx:else` 链的起点，下面的 `wx:elif="{{loadError}}"` 会直接报
-           「Bad attr `wx:elif` … `wx:if not found`」——这是 **WXML 编译错误**，
-           会让**整个 feature 分包**编译失败，表现为该分包所有页面
-           `navigateTo:fail timeout`（2026-09-17 实测定位）。 -->
-      <block wx:if="{{loading}}">
-      <view class="ww-tag-skel" wx:for="{{[1, 2, 3]}}" wx:key="*this">
-        <!-- 骨架整块是**装饰**：三块灰条必须与铜钉一样 aria-hidden，
-             否则读屏把"正在加载"念成几个没有内容的空元素（2026-09-20 修；
-             子代理静态扫描抓到同组里只有铜钉被隐藏）。 -->
-        <view class="ww-tag-skel-pin" aria-hidden="true"></view>
-        <view class="ww-tag-skel-avatar wallet-skel" aria-hidden="true"></view>
-        <view class="ww-tag-skel-main" aria-hidden="true">
-          <view class="ww-tag-skel-line is-w1 wallet-skel"></view>
-          <view class="ww-tag-skel-line is-w2 wallet-skel"></view>
-        </view>
-      </view>
-      </block>
-      <!-- ⚠️ 失败必须给重试入口，且不得与「还没有人许愿」同时出现。
-           P1-1（2026-09-21）：`loadError` 由 refresh 写入，**墙与愿签列表共用这一个分支**；
-           云函数查询失败现在回 `success:false`（或 fallback:true），refresh 一律落这里。 -->
-      <view class="ww-error" wx:elif="{{loadError}}">
-        <view class="signal-light lamp-warn" aria-hidden="true"></view>
-        <text class="ww-error-text">{{loadError}}</text>
-        <view class="ww-error-retry" wx:if="{{allowed}}" bindtap="refresh" hover-class="ww-error-retry-press" hover-stay-time="70" aria-role="button">再试一次</view>
-      </view>
-      <!-- ⚠️ P1-5（2026-09-21）：「我的心愿」自己的加载态。
-           此前它没有独立状态位，`applyView` 用的是 `this._mineRows || []` ——
-           mine 还没回来（或读失败）时空数组会直接落进下面的 `!items.length` 分支，
-           说出「你还没在这面墙上写过心愿」。这一条把"还没读到"与"确实没写过"分开。
-           骨架与真卡同高（.ww-tag-skel 的 padding 与 .ww-tag 逐字同口径），不跳高。 -->
-      <block wx:elif="{{viewMode === 'mine' && mineLoading}}">
-      <view class="ww-tag-skel" wx:for="{{[1, 2, 3]}}" wx:key="*this">
-        <view class="ww-tag-skel-pin" aria-hidden="true"></view>
-        <view class="ww-tag-skel-avatar wallet-skel" aria-hidden="true"></view>
-        <view class="ww-tag-skel-main" aria-hidden="true">
-          <view class="ww-tag-skel-line is-w1 wallet-skel"></view>
-          <view class="ww-tag-skel-line is-w2 wallet-skel"></view>
-        </view>
-      </view>
-      </block>
-      <!-- ⚠️ P1-5：「我的心愿」读失败 → 说"没读到" + 重试（**绝不说成"你还没写过"**）。
-           `mineError` 只在 loadMine 真的失败时写入；成功路径会一并清空它。 -->
-      <view class="ww-error" wx:elif="{{viewMode === 'mine' && mineError}}">
-        <view class="signal-light lamp-warn" aria-hidden="true"></view>
-        <text class="ww-error-text">{{mineError}}</text>
-        <view class="ww-error-retry" bindtap="loadMine" hover-class="ww-error-retry-press" hover-stay-time="70" aria-role="button">再试一次</view>
-      </view>
-      <block wx:else>
-      <!-- 两列瀑布：30 条全宽卡片会拉出一条看不到头的列表；
-           拆两列后滚动长度减半，也更像"一面贴满愿签的墙" -->
-      <view class="ww-tag-cols">
-        <view class="ww-tag-col" wx:for="{{tagColumns}}" wx:for-item="col" wx:for-index="ci" wx:key="ci">
-          <view
-            class="ww-tag {{item.isFresh ? 'is-fresh' : ''}} {{item.isMine ? 'is-mine' : ''}}"
-            wx:for="{{col}}"
-            wx:for-item="item"
-            wx:key="_id"
-            bindtap="openWishCard"
-            data-id="{{item._id}}"
-            hover-class="ww-tag-press"
-            hover-stay-time="70"
-            aria-role="button"
-          >
-            <view class="ww-tag-pin" aria-hidden="true"></view>
-            <!-- 印记优先级：已收起 > 置顶（都是"你需要先知道"的信息，且都罕见）。
-                 ⚠️ 2026-09-18 产品决定：**去掉「馆方」章** —— 首批基线内容全是馆方发的，
-                 26 条愿签里 24 条盖章 = 这个章不再传递任何信息，只是噪音。
-                 ⚠️ 2026-09-20 改造：**同一个理由又发生在「我的」章上** —— 产品负责人真机截图里
-                 6 张愿签有 5 张盖着金色「我的」，重复 5 次的信息就不再是信息，只是噪音。
-                 信号改为卡片**左侧一道铜色细边**（`.ww-tag.is-mine`，见 index.wxss）：
-                 扫一眼就知道哪条是自己的，但不占一行、不抢标题的视线。
-                 `official` / `isMine` 字段**都保留在数据与行模型里**（见 utils/wishWall.js），
-                 以后要挂回任何印记都不必做数据迁移。 -->
-            <text class="ww-tag-seal is-hidden" wx:if="{{item.hidden}}">已收起</text>
-            <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>
-            <text class="ww-tag-text">{{item.text}}</text>
-            <view class="ww-tag-foot">
-              <image wx:if="{{item.avatar}}" class="ww-tag-avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load aria-hidden="true"></image>
-              <text class="ww-tag-meta">{{item.nickname}} · {{item.timeText}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-      <!-- ⚠️ P1-5（2026-09-21）：空文案只在"**确认成功且为空**"时才允许出现 ——
-           上面两个 wx:elif 已经把 mine 的加载态与失败态接走，所以走到这里必然
-           `mineLoading===false && !mineError`。这正是本条的全部意义：
-           不许把故障说成"你还没写过"（本仓 E14/E16 那一类的假事实）。 -->
-      <view class="ww-tags-empty" wx:if="{{!items.length}}">{{viewMode === 'mine' ? '你还没在这面墙上写过心愿' : '还没有人许愿'}}</view>
-      <!-- 明确收尾：服务端一面墙只回 30 条，到底了要如实说 -->
-      <view class="ww-end" wx:if="{{items.length}}">
-        <view class="ww-end-rule" aria-hidden="true"></view>
-        <text class="ww-end-text">{{tagCapped ? '已到墙底 · 仅展示最近 ' + items.length + ' 条' : '已到墙底 · 共 ' + items.length + ' 条'}}</text>
-        <view class="ww-end-rule" aria-hidden="true"></view>
-      </view>
-      </block>
-    </view>
+    <!-- 愿签内容流（PRD v1.4 §11.1 R2「页面下方的祈福内容流彻底优化」）：
+         整段交给自包含组件 <wall-feed>（`components/WallFeed/`）。
+         为什么抽成组件：本页正被 R1（玩法大改）编辑，内容流必须与它**文件级解耦** ——
+         页面只传原始数据与回调能力，组件自己持有全部视图态（两栏 / 筛选 / 排序 / 分页游标 /
+         加载更多状态机 / 详情层），并且**不发任何云调用**（见组件 `index.js` 顶部的契约表）。
+         ⚠️ `items` 传的是**墙面那一份**（`wallItems`），与当前视图无关 ——
+         视图态在组件里；页面旧的 `data.items`（会被 applyView 换成当前视图）**不许**传进去，
+         否则切到「我的心愿」后墙视图会串台（这正是 2026-09-20 修过的那个缺陷）。
+         ⚠️ `id="wishList"` 必须留在页面：墙页脚「看全部 ›」的 `wx.pageScrollTo({selector:'#wishList'})`
+         指着它。这里是一个零高度锚点（无定位、无 z-index、无 transform），
+         不会把组件的 `position: fixed` 详情层（z-index 60）困住（本页 `.ww-plays` 踩过这个坑）。 -->
+    <view id="wishList"></view>
+    <wall-feed
+      items="{{wallItems}}"
+      mine-rows="{{mineRows}}"
+      wall-count="{{wallCount}}"
+      mine-total="{{mine.total}}"
+      loading="{{loading}}"
+      load-error="{{loadError}}"
+      mine-loading="{{mineLoading}}"
+      mine-error="{{mineError}}"
+      allowed="{{allowed}}"
+      has-more="{{false}}"
+      manageable="{{false}}"
+      capped="{{wallCapped}}"
+      bind:switchview="onFeedSwitchView"
+      bind:loadmore="onFeedLoadMore"
+      bind:retry="onFeedRetry"
+      bind:retrymine="onFeedRetryMine"
+      bind:openwish="onFeedOpenWish"
+      bind:closewish="onFeedCloseWish"
+      bind:borrowwish="onFeedBorrowWish"
+    />
 
     <!-- 博物笔记：彩蛋拾得的去处。此前墙上没有任何入口指向它，用户不知道去哪儿看 -->
     <view

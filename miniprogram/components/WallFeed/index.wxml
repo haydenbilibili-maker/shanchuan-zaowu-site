@@ -167,7 +167,8 @@
       </view>
       <view class="wf-more-end" wx:elif="{{loadState === 'nomore'}}">
         <view class="wf-end-rule" aria-hidden="true"></view>
-        <text class="wf-end-text">已到墙底 · 共 {{total}} 条</text>
+        <!-- 打到服务端上限时必须如实说「仅展示最近 N 条」，不能装作全量（页面传 capped，纯函数给 endText） -->
+        <text class="wf-end-text">{{endText}}</text>
         <view class="wf-end-rule" aria-hidden="true"></view>
       </view>
       <block wx:elif="{{loadState === 'error'}}">

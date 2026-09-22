@@ -10,6 +10,7 @@
   "usingComponents": {
     "easter-egg-note": "/components/EasterEggNote/index",
     "register-auth-dialog": "/components/RegisterAuthDialog/index",
-    "app-toast": "/components/AppToast/index"
+    "app-toast": "/components/AppToast/index",
+    "wall-feed": "/components/WallFeed/index"
   }
 }

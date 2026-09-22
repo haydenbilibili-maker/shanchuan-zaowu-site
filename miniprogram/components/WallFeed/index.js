@@ -21,6 +21,7 @@
  * | `hasMore`     | Boolean | false | **服务端**是否还有更多（当前 C 端列表一次取回 → 保持 false） |
  * | `manageable`  | Boolean | false | 页面是否已具备写操作能力；true 才渲染「收起/恢复/删除」 |
  * | `pageSize`    | Number  | 20    | 每次「加载更多」展开的条数 |
+ * | `capped`      | Boolean | false | 服务端是否已打到上限（页面 `isTagListCapped`）；只影响收尾那句话的**诚实措辞**，不改任何行为 |
  *
  * 行模型的字段（`items[i]` / `mineRows[i]` —— 全部由页面提供，组件不猜）：
  *   `_id` `text` `nickname` `avatar` `pinned` `official` `timeText` `isFresh`（墙）
@@ -93,7 +94,16 @@ Component({
     allowed: { type: Boolean, value: false },
     hasMore: { type: Boolean, value: false },
     manageable: { type: Boolean, value: false },
-    pageSize: { type: Number, value: PAGE_SIZE }
+    pageSize: { type: Number, value: PAGE_SIZE },
+    /**
+     * 服务端是否已打到上限（页面 `isTagListCapped`）。
+     * ⚠️ 2026-09-22 接线时的**最小修正①/②**（两处，均已在交付说明单列；② 是 wxss 的
+     * `.wf-card.is-fresh` 入场动效）：
+     * 改造前页面在收尾条上区分「已到墙底 · 仅展示最近 N 条」与「已到墙底 · 共 N 条」，
+     * 组件原先只有后者 —— 直接接线会把「打到上限也装作全量」这条**已上判据的诚实口径**弄丢。
+     * 这里只多一个默认 false 的属性 + 一处文案分支：不传 = 与修正前逐字相同。
+     */
+    capped: { type: Boolean, value: false }
   },
 
   data: Object.assign(initialViewState(), {
@@ -108,6 +118,8 @@ Component({
     rendered: 0,
     loadState: 'nomore',
     loadLabel: '',
+    /** 收尾句（`deriveView` 给；初始空串，`_recompute` 立刻填上） */
+    endText: '',
     showSkeleton: false,
     showError: false,
     showEmpty: false,
@@ -157,6 +169,8 @@ Component({
         rendered: v.rendered,
         loadState: v.loadState,
         loadLabel: v.loadLabel,
+        // 收尾句（诚实措辞：打到上限时「仅展示最近 N 条」）由纯函数给，模板只读
+        endText: v.endText,
         showSkeleton: v.showSkeleton,
         showError: v.showError,
         showEmpty: v.showEmpty,

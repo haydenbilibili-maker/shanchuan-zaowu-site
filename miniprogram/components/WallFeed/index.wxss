@@ -149,6 +149,16 @@
 
 .wf-card.is-fresh {
   border-color: rgba(196, 167, 108, 0.6);
+  /* ⚠️ 2026-09-22 接线时的**最小修正②**（已在交付说明单列）：改造前页面愿签卡的
+     `.ww-tag.is-fresh` 带一层入场动效（`ww-fresh-in`）—— 「刚落愿看得见」是**已上判据**的行为。
+     组件原先只有静态铜边，直接接线会把这一层动效弄丢。这里按同一手法补回来
+     （opacity + translateY + scale，0.5s ease-out both），不做别的样式改动。 */
+  animation: wf-fresh-in 0.5s ease-out both;
+}
+
+@keyframes wf-fresh-in {
+  from { opacity: 0; transform: translateY(-12rpx) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .wf-card-press {
