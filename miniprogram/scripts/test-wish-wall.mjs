@@ -392,13 +392,13 @@ const INJECTIONS = {
     from: '  onUnload() {\n    this.clearDanmakuCycle()\n    this.clearFreshTimer()\n  },',
     to: '  onUnload() {\n    this.clearDanmakuCycle()\n  },'
   },
-  // 弹层丢掉对话框语义（读屏不知道这是一个弹层）
-  // ⚠️ 2026-09-18 锚点更新：结果层从"愿签弹层"扩到"纸签弹层"后，`aria-role="dialog"` 不再是唯一一处，
-  // 这里显式锚到纸签弹层那一处（否则注入会打错目标 → 自检失效）
+  // 结果纸面丢掉对话框语义（读屏不知道这是一个结果层）
+  // ⚠️ 2026-09-21（§11.4 玩法各开一页）锚点跟随源码：结果层从"祈福墙页的纸签弹层"
+  // 搬到**玩法页的结果纸面**（`.rp-paper`）。注入语义不变：摘掉 aria-role="dialog"。
   'card-not-dialog': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '        class="ww-sheet"\n        wx:if="{{playResult}}"\n        style="transform: translateY({{sheetDragY}}px);"\n        aria-role="dialog"\n',
-    to: '        class="ww-sheet"\n        wx:if="{{playResult}}"\n        style="transform: translateY({{sheetDragY}}px);"\n'
+    file: 'miniprogram/subpackages/feature/play-qian/index.wxml',
+    from: 'aria-role="dialog" aria-label="{{result.name}}结果"',
+    to: 'aria-label="{{result.name}}结果"'
   },
   // 弹幕不再用手写体
   'handwriting-dropped': {
@@ -723,8 +723,10 @@ const INJECTIONS = {
   // 资料门禁被拆掉 → 没有星座也照样"给一个结果"（编出来的）
   'play-profile-gate-dropped': {
     file: 'miniprogram/utils/ritualPlay.js',
-    from: "    const value = String(profile[need] || '')",
-    to: "    const value = String(profile[need] || 'fallback')"
+    // 2026-09-21（§11.2-4）：多了 `variant ||` 这一档（同一天换一个维度），锚点跟随源码。
+    // 注入语义不变：把空值兜成 'fallback' → 缺资料不再返回 need_profile。
+    from: "    fieldValue = variant || String(profile[need] || '')",
+    to: "    fieldValue = variant || String(profile[need] || 'fallback')"
   },
   // 瓦片不再由注册表派生 → 加玩法必然漏接线
   'play-tile-hardcoded': {
@@ -879,11 +881,14 @@ const INJECTIONS = {
     from: "  return label ? `偏「${label}」· 为你配一件` : '为你配一件'",
     to: "  return '同好也在看'"
   },
-  // 弹层又被塞回 .ww-plays 的层叠上下文 → 发送条会画到它上面
+  // 玩法结果覆盖层又被塞回本页（回到"弹层盖住发送条"的老结构）
+  // ⚠️ 2026-09-21（§11.4）：`.ww-plays` 是 z-index:1 的层叠上下文，fixed 覆盖层待在它里面
+  // 就会与发送条抢层级（真机实测过）。玩法结果已搬到独立页，本页**结构上不该再有**
+  // `playResult` / `.ww-sheet-product` / `.ww-play.is-pending` —— 注入把结果层塞回去，守卫必须检出。
   'sheet-back-inside-plays': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '      <!-- 需要星座/MBTI 但资料里没有',
-    to: '      <view class="ww-plays"><view class="ww-sheet"></view>\n      <!-- 需要星座/MBTI 但资料里没有'
+    from: '      <view class="ww-play-grid">',
+    to: '      <view class="ww-play-result-returned" wx:if="{{playResult}}"></view>\n      <view class="ww-play-grid">'
   },
   // 遮罩浓度被调回"看不出被压暗"
   'sheet-mask-too-light': {
@@ -933,17 +938,15 @@ const INJECTIONS = {
     from: "const FONT_FAMILY = 'ShanhaiHand'",
     to: "const FONT_FAMILY = 'ShanhaiHandX'"
   },
-  // ── 「写成心愿」不收弹层（2026-09-19 真机反馈的缺陷本体）───────────────────
-  // 纸签弹层 `.ww-sheet` 与吸底发送条 `.ww-composer` 都是 fixed bottom:0，
-  // 而弹层 z-index 41 > 发送条 z-index 30 —— 不收弹层就会永久盖住发送条。
-  // 真机现象：「页面滚下去了，但看不到输入框」。本条注入把修复撤掉，新判据必须变红。
+  // ── 「写成心愿」不收结果层 / 不带回文案（2026-09-19 真机反馈的缺陷本体）───────────
+  // ⚠️ 2026-09-21（§11.4 玩法各开一页）锚点跟随源码：玩法结果搬到玩法页后，
+  // 那条"弹层盖住发送条"的失败模式**结构上不存在了**（两个东西不在同一页）。
+  // 保留的是它另一半语义 —— **写完必须把心愿词带回祈福墙页**：
+  // 注入把 `handoff.stash(...)` 摘掉，新判据（writeWish 必须落一份一次性交接）必须变红。
   'play-wish-keeps-sheet': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    // 2026-09-20：锚点跟随源码更新（原来锚的是「先收弹层，露出吸底发送条…」那句注释，
-    // 拆签动线重写时该注释被替换 → 锚点失效会让这条注入变成假绿，自检已拦下）。
-    // 语义不变：去掉 closePlayResult()，守卫必须检出"弹层没被收掉"。
-    from: '    // ① 先收弹层：`.ww-sheet` 的 z-index 高于发送条，不收就会一直盖住它\n    this.closePlayResult()',
-    to: '    // 注入：不收弹层（回归注入）'
+    file: 'miniprogram/utils/ritualPlayPage.js',
+    from: '      handoff.stash({ draft, echo: String((play && play.echo) || r.echo || \'\') })',
+    to: '      // 注入：不写交接（回归注入 —— 返回后文案就丢了）'
   },
   // ── 「连续记录云保存」注册钩子（2026-09-20）────────────────────────────────
   // 三条注入分别对应三类"看起来做了、其实没做"的缺陷：
@@ -980,10 +983,13 @@ const INJECTIONS = {
     from: '.ww-heart.h3 { left: -4rpx; color: var(--brass-400);',
     to: '.ww-heart.h3 { left: -4rpx; color: #C7B4DE;'
   },
+  // ⚠️ 2026-09-21（§11.4 玩法各开一页）锚点跟随源码：这条从"瓦片呼吸边框"改成
+  // **玩法页的进行态动效**。语义完全不变：等待中的动效只许动几何/描边，**不许压暗文字**。
+  // 注入把 `.rp-hint`（进行态里就在屏幕上的那句话）挂上透明度动画，判据必须检出。
   'pending-dims-text-back': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  0%, 100% { border-color: rgba(196, 167, 108, 0.42); }\n  50% { border-color: rgba(196, 167, 108, 0.95); }',
-    to: '  0%, 100% { opacity: 1; }\n  50% { opacity: 0.55; }'
+    file: 'miniprogram/subpackages/feature/play-qian/index.wxss',
+    from: '@keyframes rp-tube-shake {',
+    to: '.rp-hint { animation: rp-dim-text 800ms ease-in-out infinite; }\n@keyframes rp-dim-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }\n@keyframes rp-tube-shake {'
   },
   // ── 第二批改造（2026-09-20）：门禁错误态 / 聚焦定时器 / 跨天 / 额度未知 / 玩法失败 / 条数同步 ──
   // 为什么每条都配注入：这六处全是"新加的状态位"，而**状态位的失效方式是静默的** ——
@@ -1010,10 +1016,12 @@ const INJECTIONS = {
     from: '        quota: Object.assign({}, this.data.quota, { unknown: true })\n      })',
     to: '        quota: this.data.quota\n      })'
   },
+  // ⚠️ 2026-09-21（§11.4）锚点跟随源码：玩法失败的"必须说出来"搬进了玩法页工厂
+  // （`utils/ritualPlayPage.js` 的 settle）。注入语义不变：把提示改成静默 return。
   'play-fail-silent-again': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    from: "        this.setData({ playNeed: null })\n        this.showAppToast({",
-    to: "        this.setData({ playNeed: null })  // 注入：静默 return（回到旧行为）\n        void 0 && this.showAppToast({"
+    file: 'miniprogram/utils/ritualPlayPage.js',
+    from: "          this.setData({ stage: 'idle', result: null, need: null })\n          this.showAppToast({",
+    to: "          this.setData({ stage: 'idle', result: null, need: null })  // 注入：静默 return（回到旧行为）\n          void 0 && this.showAppToast({"
   },
   'wallcount-desync-on-insert': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
@@ -1069,11 +1077,12 @@ const INJECTIONS = {
     from: 'class="signal-light {{lamp.lit ? \'lamp-brass on\' : \'lamp-muted hollow\'}}" aria-hidden="true"',
     to: 'class="signal-light {{lamp.lit ? \'lamp-brass on\' : \'lamp-muted hollow\'}}"'
   },
-  // aria-hidden 反而盖到文案上（把 CTA「看看这件 ›」隐藏 —— 读屏用户丢掉主路出口）
+  // aria-hidden 反而盖到文案上（把推荐出口「看看这件 ›」隐藏 —— 读屏用户丢掉主路出口）
+  // ⚠️ 2026-09-21（§11.4）锚点跟随源码：这一行搬到玩法页（`.rp-reco-go`）。
   'aria-hidden-over-text': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '<text class="ww-sheet-product-go">看看这件 ›</text>',
-    to: '<text class="ww-sheet-product-go" aria-hidden="true">看看这件 ›</text>'
+    file: 'miniprogram/subpackages/feature/play-qian/index.wxml',
+    from: '<text class="rp-reco-go">看看这件 ›</text>',
+    to: '<text class="rp-reco-go" aria-hidden="true">看看这件 ›</text>'
   },
   // .ww-wall 又被拆成两块（后一块静默吃掉前一块的 border/box-shadow）
   'wall-rule-resplit': {
@@ -1168,24 +1177,52 @@ const INJECTIONS = {
     to: '    const draft = String((e.detail && e.detail.value) || \'\').slice(0, TEXT_MAX)'
   },
 
-  // ── W1 玩法结果分享：两条链路必须可区分（2026-09-20）────────────────────────
-  // ① 弹层按钮被摘掉（分享又只剩愿签那一条路）；
-  // ② 弹层分享退化成读 `card.text`（把别人的愿签正文转发出去）；
-  // ③ 来源标记不复位（第二次愿签分享被上一次的玩法分享污染）。
+  // ── W1 玩法结果分享（2026-09-20；2026-09-21 玩法各开一页后锚点跟随到玩法页/工厂）──
+  // ① 分享按钮被摘掉 `open-type="share"`（小程序里点了不会转发）；
+  // ② 分享退化成读别的字段（不读 `result.share`）；
+  // ③ 来源标记不复位（第二次点分享被上一次污染）。
   'sheet-share-button-dropped': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '        open-type="share"\n        bindtap="onSheetShareTap"',
-    to: '        bindtap="onSheetShareTap"'
+    file: 'miniprogram/subpackages/feature/play-qian/index.wxml',
+    from: '        open-type="share"\n        bindtap="onShareTap"',
+    to: '        bindtap="onShareTap"'
   },
+  // ⚠️ 玩法页**结构上根本没有** `card`（愿签卡只在祈福墙页），所以这条的旧形态
+  // （"玩法分享读到 card.text"）已不可能发生 —— 判据改成更强的形态：
+  // **分享必须只读 `result.share`**。注入把 title 换成 result.title，判据必须变红。
   'sheet-share-reads-card-text': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    from: "    const result = this.data.playResult\n    // `!this.data.card`：愿签卡是另一个弹层；它开着就说明用户在看愿签，不抢玩法分支\n    if (result && result.share && (fromPlay || !this.data.card)) {\n      return { title: result.share, path }\n    }",
-    to: "    const result = this.data.playResult\n    const wrongCard = this.data.card\n    if (result && (fromPlay || !this.data.card)) {\n      return { title: wrongCard ? normalizeWishText(wrongCard.text) : result.title, path }\n    }"
+    file: 'miniprogram/utils/ritualPlayPage.js',
+    from: "      if (r && r.share && fromPlay) return { title: r.share, path }",
+    to: "      if (r && fromPlay) return { title: r.title, path }"
   },
   'share-from-never-reset': {
+    file: 'miniprogram/utils/ritualPlayPage.js',
+    from: "      if (this.data.shareFrom) this.setData({ shareFrom: '' })",
+    to: '      // 注入：不复位来源标记'
+  },
+  // ── 2026-09-21 §11.4「玩法各开一页」的四条结构不变量（各自配注入）──────────────
+  // ① 入口跳转写死页路径（加玩法/挪页面就会点空）；
+  'play-entry-hardcoded-page': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    from: "    if (this.data.shareFrom) this.setData({ shareFrom: '' })",
-    to: '    // 注入：不复位来源标记'
+    from: '    const page = playPage(id)',
+    to: "    const page = '/subpackages/feature/play-qian/index'"
+  },
+  // ② 入口不显示"今天玩过没有"（把状态装饰整个摘掉）；
+  'play-state-dropped': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    return list.map((p) => Object.assign({}, p, { played: !!playedMap[p.id] }))',
+    to: '    return list'
+  },
+  // ③ 回到祈福墙不消费玩法页留下的交接（文案丢了）；
+  'play-handoff-ignored': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
+    from: '    if (this.data.allowed) this.applyPlayHandoff()',
+    to: '    // 注入：不消费交接'
+  },
+  // ④ 玩法结果不留档（"可回看"落空、"今天玩过没有"永远为假）。
+  'play-archive-not-saved': {
+    file: 'miniprogram/utils/ritualPlayPage.js',
+    from: '      archive.saveResult(id, this._dayKey, result)',
+    to: '      void result'
   },
   /* ══════════════════════════════════════════════════════════════════
    * 2026-09-21「状态诚实」批次（P1-1 / P1-2 / P1-3 / P1-4 / P1-5 /
@@ -1257,9 +1294,10 @@ const INJECTIONS = {
   },
   // P1-3 顺手体检：wish_wall_play 的 targetType 又漂出 schema 声明
   'play-targettype-drift': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    from: "        trackBehavior('wish_wall_play', 'play', id, { step: 'fail' })",
-    to: "        trackBehavior('wish_wall_play', 'fail', id)"
+    // 2026-09-21（§11.4）：失败分支的 trackBehavior 搬进玩法页工厂，锚点跟随。
+    file: 'miniprogram/utils/ritualPlayPage.js',
+    from: "          trackBehavior('wish_wall_play', 'play', id, { step: 'fail' })",
+    to: "          trackBehavior('wish_wall_play', 'fail', id)"
   },
   // P2-7：页头 chip 又被记成玩法转化（"参与玩法"比率可 >100%）
   'chip-counted-as-play': {
@@ -1269,11 +1307,12 @@ const INJECTIONS = {
   },
   // P1-4：玩法资料缓存又永久驻留（补完资料回来仍被挡）
   'play-profile-cache-sticky': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    // 注入形态：拆掉**进资料页**那一处失效 —— 判据要求两处都在（`_playProfile = null` ≥ 2 次），
+    // 2026-09-21（§11.4）：资料缓存随玩法搬到玩法页工厂，锚点跟随。
+    file: 'miniprogram/utils/ritualPlayPage.js',
+    // 注入形态：拆掉**进资料页**那一处失效 —— 判据要求两处都在（`_profile = null` ≥ 2 次），
     // 少一处就必须红。`to` 特意选一个源码里**不存在**的注释（否则注入会被判成"残留"）。
-    from: '    // 语义上它也更准：我们**知道**用户正要去改这份资料。\n    this._playProfile = null',
-    to: '    // 注入：故意不作废缓存'
+    from: '      // 离开去补资料前先作废缓存：回来那次一定重新读（P1-4）\n      this._profile = null',
+    to: '      // 注入：故意不作废缓存'
   },
   // P2-11：未兑现的「断签前还会提醒你」又回到文案里
   'reminder-promise-back': {
@@ -1283,15 +1322,16 @@ const INJECTIONS = {
   },
   // P2-12：推荐失败又整行消失（弹层收掉一块）
   'reco-failure-row-dropped': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    // 2026-09-21（§11.4）：推荐行搬到玩法页（`.rp-reco`），锚点跟随。
+    file: 'miniprogram/subpackages/feature/play-qian/index.wxml',
     from: 'wx:if="{{reco || productId || recoLoading || recoFailed}}"',
     to: 'wx:if="{{reco || productId || recoLoading}}"'
   },
   // P2-12：失败不进 recoFailed（这一行留不住 + 骨架被顶掉）
   'reco-failure-not-flagged': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.js',
-    from: '      this.setData({ reco: null, recoLoading: false, recoFailed: true })',
-    to: '      this.setData({ reco: null, recoLoading: false })'
+    file: 'miniprogram/utils/ritualPlayPage.js',
+    from: '        this.setData({ reco: null, recoLoading: false, recoFailed: true })',
+    to: '        this.setData({ reco: null, recoLoading: false })'
   }
 }
 
@@ -3630,9 +3670,12 @@ check(
     !/trackBehavior\('wish_wall_post', 'ok', '1'\)/.test(wallPageSrc)
   )
   // 同一页其余 trackBehavior 的三参数也要与 schema 声明一致（这类错往往成片出现）
-  const playCalls = [...wallPageSrc.matchAll(/trackBehavior\('wish_wall_play',\s*'([a-z_]+)'/g)].map((m) => m[1])
+  // ⚠️ 2026-09-21（§11.4）：玩法的事件从祈福墙页搬到玩法页工厂 —— 扫描面必须跟上，
+  // 否则这条守卫只盯着"本页那一处 product"，玩法侧 6 处漂移全看不见。
+  const playSrcAll = wallPageSrc + readSrc('miniprogram/utils/ritualPlayPage.js')
+  const playCalls = [...playSrcAll.matchAll(/trackBehavior\('wish_wall_play',\s*'([a-z_]+)'/g)].map((m) => m[1])
   check(
-    '★ P1-3 顺手体检：本页所有 wish_wall_play 调用的 targetType 与 schema 声明一致',
+    '★ P1-3 顺手体检：本页 + 玩法页所有 wish_wall_play 调用的 targetType 与 schema 声明一致',
     playCalls.length >= 5 && playCalls.every((t) => t === 'play' || t === 'product'),
     playCalls.join(',')
   )
@@ -3848,7 +3891,7 @@ check(
 //   42rpx×1（.ww-card-text） —— 距 --fs-40 2rpx。
 //   后两条**改值会真的改观感**（字号是硬几何），静态判据证不了"同值可替代"，故本批不动、只登记；
 //   真机确认过再动，届时同步下调本表（本判据会强制这一步）。
-const FS_NON_TOKEN_OK = { 19: 4, 21: 2, 25: 1, 42: 1 }
+const FS_NON_TOKEN_OK = { 19: 2, 21: 1, 25: 1, 42: 1 }
 const fsDecls = [...wallWxssCode.matchAll(/font-size:\s*([^;}]+)/g)].map((m) => m[1].trim())
 const fsTokens = fsDecls.filter((v) => /^var\(--fs-\d+\)$/.test(v))
 const fsLiterals = fsDecls.filter((v) => /^[\d.]+rpx$/.test(v)).map((v) => Number.parseFloat(v))
@@ -3861,11 +3904,12 @@ check(
   `令牌 ${fsTokens.length} 处 / 写回裸值的在册值 ${JSON.stringify(fsOnScaleLiteral)} / 其它写法 ${JSON.stringify(fsOther.slice(0, 3))}`
 )
 // ①-b 非令牌值：按**白名单 + 处数**判（提案 D1/D2 —— 不按出现次数判，否则 3~9 次的噪声会静默逃逸）
+// 2026-09-21：玩法结果/补资料引导搬去玩法页后，19rpx 4→2、21rpx 2→1（那三处随玩法弹层下线）。
 const fsOffScale = fsLiterals.filter((v) => RPX_TOKENS[`fs-${v}`] === undefined)
 const fsTally = {}
 fsOffScale.forEach((v) => { fsTally[v] = (fsTally[v] || 0) + 1 })
 check(
-  '★ 非令牌字号逐值登记且处数只许减（19×4 / 21×2 / 25×1 / 42×1）',
+  '★ 非令牌字号逐值登记且处数只许减（19×2 / 21×1 / 25×1 / 42×1）',
   JSON.stringify(fsTally) === JSON.stringify(FS_NON_TOKEN_OK),
   `非令牌实测 ${JSON.stringify(fsTally)} / 登记 ${JSON.stringify(FS_NON_TOKEN_OK)}`
 )
@@ -3900,11 +3944,13 @@ check(
   `灯卡=${lanternPress} 木鱼卡=${muyuPress}`
 )
 const playPress = pressOpacity('.ww-play-press')
-const playNeedPress = pressOpacity('.ww-play-need-press')
+// 2026-09-21（§11.4）："去补资料行"随玩法搬到玩法页，按压反馈在**共享玩法样式**里（`.rp-press`）。
+// 语义不变：入口与玩法页同族可点面保持同一套手感（跨页也不许分叉）。
+const rpPress = Number((/\.rp-press\s*\{[^}]*opacity:\s*([\d.]+)/.exec(readSrc('miniprogram/subpackages/feature/play-shared/ritual-play.wxss')) || [])[1])
 check(
-  '★ 玩法瓦片与"去补资料"行按压反馈同值（同在玩法区、同族可点面）',
-  Number.isFinite(playPress) && playPress === playNeedPress,
-  `玩法瓦片=${playPress} 补资料行=${playNeedPress}`
+  '★ 玩法入口与玩法页的按压反馈同值（同族可点面，跨页一套手感）',
+  Number.isFinite(playPress) && playPress === rpPress,
+  `玩法入口=${playPress} 玩法页=${rpPress}`
 )
 const hoverClasses = [...new Set([...wallWxml2.matchAll(/hover-class="([^"{}]+)"/g)].map((m) => m[1]))]
 const hoverMissing = hoverClasses.filter((c) => !new RegExp(`\\.${c}\\s*[,{]`).test(wallWxssCode))
@@ -4430,6 +4476,34 @@ check(
     (p) => p.id && p.mark && p.name && p.hint && p.cta && p.pool && p.echo && p.daily === true
   )
 )
+// 2026-09-21（PRD v1.4 §11.4「玩法各开一页」）：注册表还要声明**页面与形态** ——
+// 入口区靠它跳转、玩法页靠它选纸面语言，所以字段缺失就是"点了没反应/长得一样"。
+check(
+  '★ 每个玩法都登记独立页路径 / 结果纸面语言 / 入口形态 / 进行态参数（缺一个就不是"独立闭环"）',
+  playList.every((p) => /^\/subpackages\/feature\/play-[a-z]+\/index$/.test(String(p.page || '')) &&
+    p.kind && p.form && Number(p.spinMs) > 0 && p.spinText && p.entryNote && p.doneNote),
+  playList.map((p) => `${p.id}:${p.page}`).join(' / ')
+)
+check(
+  '★ 玩法页路径各不相同（四个玩法**各开一页**，不是一个页面挂四个参数）',
+  new Set(playList.map((p) => p.page)).size === playList.length
+)
+check(
+  '★ 入口形态至少三种且不重复（不再是"四枚同质瓦片"）',
+  new Set(playList.map((p) => p.form)).size >= 3,
+  playList.map((p) => `${p.id}=${p.form}`).join(' / ')
+)
+check(
+  '玩法页路径都在 app.json 注册过（否则 check:page-paths 之外没人拦得住"点了白屏"）',
+  (() => {
+    const appJson = JSON.parse(readFileSync(resolve(ROOT, 'miniprogram/app.json'), 'utf8'))
+    const reg = new Set()
+    for (const sp of appJson.subpackages || []) {
+      for (const pg of sp.pages || []) reg.add(`/${String(sp.root).replace(/\/$/, '')}/${pg}`)
+    }
+    return playList.every((p) => reg.has(p.page))
+  })()
+)
 check('玩法 id 唯一（埋点与内容 seed 都用它）', new Set(playList.map((p) => p.id)).size === playList.length)
 check(
   '玩法字标是单字（瓦片上的铜圈只放得下一个字）',
@@ -4472,18 +4546,27 @@ check(
 )
 check('签饼每条都有 签条 + 建议', playContent.COOKIE.every((r) => r.line && r.advice))
 
-// ③ 合规术语守卫：这些词出现在给用户看的文案里就是审核风险
+// ③ 合规术语守卫（PRD §7 + §11.3）：这些词出现在给用户看的文案里就是审核风险。
+// 2026-09-21 追加 §11.3 的三个词：应验 / 消灾 / 因果报应（官方类目指引没有占卜/命理类目）。
 const FORBIDDEN_TERMS = [
   '算命', '占卜', '卜卦', '算卦', '卦象', '改运', '转运', '开运', '风水', '看相',
-  '八字', '紫微', '塔罗', '吉凶', '预测', '大师', '命理', '招财', '辟邪'
+  '八字', '紫微', '塔罗', '吉凶', '预测', '大师', '命理', '招财', '辟邪',
+  '应验', '消灾', '因果报应'
 ]
+// ⚠️ 扫描面必须**覆盖玩法页**（§11.4 之后文案大多写在那里）——
+// 上一版只扫祈福墙页，等于玩法页的文案没有任何合规守卫。
+const PLAY_PAGE_FILES = [
+  'play-qian', 'play-cookie', 'play-zodiac', 'play-mbti'
+].map((n) => `miniprogram/subpackages/feature/${n}/index.wxml`)
 const playTextSources = {
   '注册表': stripComments(readSrc('miniprogram/config/ritualPlays.js')),
   '内容池': stripComments(readSrc('miniprogram/config/ritualPlayContent.js')),
   '玩法逻辑': stripComments(readSrc('miniprogram/utils/ritualPlay.js')),
+  '玩法页工厂': stripComments(readSrc('miniprogram/utils/ritualPlayPage.js')),
   '页面 JS': stripComments(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')),
   '页面 WXML': stripComments(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml'))
 }
+PLAY_PAGE_FILES.forEach((f) => { playTextSources[`玩法页 ${f.split('/').pop()}`] = stripComments(readSrc(f)) })
 const foundForbidden = []
 Object.entries(playTextSources).forEach(([name, src]) => {
   FORBIDDEN_TERMS.forEach((term) => {
@@ -4557,121 +4640,283 @@ check(
   ritualPlay.resolvePlay('zodiac', { dayKey: DAY_A, profile: FULL_PROFILE }).share
 )
 
-// ⑤ 页面接线：瓦片由注册表派生 + 抽→写→上墙这条路
+// ⑤ 页面接线（2026-09-21 · PRD v1.4 §11.4「玩法各开一页」后的新形态）：
+//   · 祈福墙页 = **入口区**：注册表派生 + 按 `form` 分支 + "今天玩过没有" + 跳注册表里的页路径；
+//   · 玩法页 = 完整闭环（进行态 → 结果 → 留档 → 下一步）；行为在工厂里、四页共用。
+const playPageDir = (p) => `miniprogram${p.page}`
+const playPageWxml = (p) => `${playPageDir(p)}.wxml`
+const playPageWxss = (p) => `${playPageDir(p)}.wxss`
+const playById = (id) => playList.find((p) => p.id === id)
+
 check(
-  '★ 瓦片由注册表 wx:for 派生（页面不写死玩法名）',
+  '★ 玩法入口由注册表 wx:for 派生（页面不写死玩法名）',
   /wx:for="\{\{plays\}\}"[\s\S]{0,400}?wx:key="id"[\s\S]{0,200}?data-id="\{\{item\.id\}\}"/.test(wallWxml2)
 )
 check('玩法数据来自注册表（不是页面里手抄一份）', /plays:\s*RITUAL_PLAYS/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')))
 check(
-  '纸签弹层：标题/正文/CTA 都来自结果对象（页面零判断）',
-  /class="ww-sheet-title">\{\{playResult\.title\}\}/.test(wallWxml2) &&
-    /wx:for="\{\{playResult\.lines\}\}"/.test(wallWxml2) &&
-    /bindtap="usePlayWish"/.test(wallWxml2)
+  '★ 四种入口形态由注册表 `form` 分支渲染（不再是四枚同质瓦片，也不靠"前两枚更大"）',
+  /class="ww-play is-\{\{item\.form\}\}/.test(wallWxml2) &&
+    ['card', 'shell', 'ring', 'axis'].every((f) => new RegExp(`item\\.form === '${f}'`).test(wallWxml2))
 )
 check(
-  '★ 弹层身份明确：遮罩 + 把手 + 印章字标 + 从底部升起（不再是"既不像卡也不像弹窗"的内联块）',
-  /class="ww-sheet-mask"[\s\S]{0,200}?bindtap="closePlayResult"/.test(wallWxml2) &&
-    // 遮罩必须**锁住背景滚动**（2026-09-21）：读签文时误滑会把整面墙滚走
-    /class="ww-sheet-mask"[\s\S]{0,300}?catchtouchmove="noop"/.test(wallWxml2) &&
-    /class="ww-sheet-grip"/.test(wallWxml2) &&
-    /class="ww-sheet-mark"[^>]*>\{\{playResult\.mark\}\}/.test(wallWxml2) &&
-    /\.ww-sheet\s*\{[^}]*animation:\s*ww-sheet-up/.test(wallWxssCode) &&
-    /\.ww-sheet-mask\s*\{[^}]*position:\s*fixed/.test(wallWxssCode) &&
-    /@keyframes ww-sheet-up/.test(wallWxssCode)
+  '★ 入口带"今天玩过没有"（状态句 + is-done 档，来自本地留档现算）',
+  /\{\{item\.played \? item\.doneNote : item\.entryNote\}\}/.test(wallWxml2) &&
+    /class="ww-play-state \{\{item\.played \? 'is-done' : ''\}\}"/.test(wallWxml2) &&
+    /plays: this\.decoratePlayStates\(/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js'))
 )
 check(
-  '弹层可拖拽关闭（把手上的手势；阈值是纯函数，能被单测钉住）',
-  /bindtouchstart="onSheetGripStart"/.test(wallWxml2) &&
-    /bindtouchmove="onSheetGripMove"/.test(wallWxml2) &&
-    /function sheetDragShouldClose\(dy\)/.test(fbPageSrc)
+  '★ 玩法结果 / 推荐 / 进行态**不在**祈福墙页（结构上不可能再与发送条抢层级）',
+  !/playResult/.test(wallWxml2) &&
+    !/ww-sheet-product/.test(wallWxml2) &&
+    !/ww-play-need/.test(wallWxml2) &&
+    !/\.ww-play\.is-(pending|open)\s*\{/.test(wallWxssCode)
 )
 check(
-  '★ 产品链路**只留一条主路**（有祈运推荐用推荐，否则用这面墙的藏品；不再两行并列抢主次）',
-  // 2026-09-20：条件多了一档 `recoLoading` —— 推荐是异步取的，取件期间那一行也要在（占位），
-  // 否则弹层会在用户读签文时长高一块。语义不变：**只有一个** `.ww-sheet-product`，主次不分家的两行仍不许回来。
-  // 2026-09-21（P2-12）：再多一档 `recoFailed`（失败也要占位，不许整行消失）。
-  // 元素的基础类名没动（wxss 只有 .ww-sheet-product，不新增修饰类）。
-  /class="ww-sheet-product[\s"]/.test(wallWxml2) &&
-    /wx:if="\{\{reco \|\| productId \|\| recoLoading \|\| recoFailed\}\}"/.test(wallWxml2) &&
-    (wallWxml2.match(/class="ww-sheet-product[\s"]/g) || []).length === 1 &&
-    !/class="ww-play-reco"/.test(wallWxml2) &&
-    !/class="ww-play-product"/.test(wallWxml2)
+  '★ 入口跳转路径来自注册表（playPage(id)），不是页面里写死的页路径',
+  /const page = playPage\(id\)/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')) &&
+    /const { RITUAL_PLAYS, playPage } = require\('\.\.\/\.\.\/\.\.\/config\/ritualPlays'\)/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js'))
 )
 check(
-  '★ 页头产品 chip 是常驻的产品入口（第一屏就能到详情，不必先抽一签）',
-  /class="ww-scope \{\{productId \? 'is-link' : ''\}\}"[\s\S]{0,200}?bindtap="goWallProduct"/.test(wallWxml2) &&
-    /\.ww-scope\.is-link/.test(wallWxssCode)
+  '★ 四个玩法页都是"薄壳 + 主包工厂"（行为只有一份，四页共用；加玩法只改注册表 + 一页皮）',
+  playList.every((p) => /Page\(createRitualPlayPage\('([a-z]+)'\)\)/.test(readSrc(`${playPageDir(p)}.js`))) &&
+    /module\.exports = \{\s*createRitualPlayPage/.test(readSrc('miniprogram/utils/ritualPlayPage.js'))
+)
+check(
+  '★ 玩法页结果纸面：对话框语义 + 可下拉收起的把手 + 各自一份纸面（四种纸面语言不同）',
+  playList.every((p) => {
+    const wxml = readSrc(playPageWxml(p))
+    return /class="rp-paper"/.test(wxml) && /aria-role="dialog"/.test(wxml) &&
+      /class="rp-paper-grip"/.test(wxml) && /bindtouchstart="onSheetGripStart"/.test(wxml)
+  }) &&
+    new Set(playList.map((p) => ((/\.rp-paper\s*\{([^}]*)\}/.exec(readSrc(playPageWxss(p))) || [])[1] || '').trim())).size === playList.length
+)
+check(
+  '★ 每个玩法页都有自己的进行态（CSS 动效，不用 canvas）',
+  playList.every((p) => /\.rp-stage\.is-pending\s+\.rp-[\w-]+\s*\{[^}]*animation:/.test(readSrc(playPageWxss(p))))
+)
+check(
+  '★ 结果页「写成心愿」是主 CTA，且排在推荐行**之前**（推荐不许抢注意力）',
+  playList.every((p) => {
+    const wxml = readSrc(playPageWxml(p))
+    const cta = wxml.indexOf('bindtap="writeWish"')
+    const reco = wxml.indexOf('class="rp-reco"')
+    return cta >= 0 && reco > cta
+  })
+)
+check(
+  '★ 推荐行：取件中也占位、失败也留位（同高，不整行消失），且只有一条主路',
+  playList.every((p) => {
+    const wxml = readSrc(playPageWxml(p))
+    return /wx:if="\{\{reco \|\| productId \|\| recoLoading \|\| recoFailed\}\}"/.test(wxml) &&
+      /wx:elif="\{\{recoLoading && !recoFailed\}\}"/.test(wxml) &&
+      /wx:elif="\{\{recoFailed\}\}">这次没配到</.test(wxml) &&
+      (wxml.match(/class="rp-reco[\s"]/g) || []).length === 1
+  })
+)
+check(
+  '★ 结果页分享必须是 <button open-type="share">（view 点了不会转发），且只读 result.share（工厂里没有 card 这个输入）',
+  playList.every((p) => /<button[\s\S]{0,240}?open-type="share"[\s\S]{0,240}?bindtap="onShareTap"/.test(readSrc(playPageWxml(p)))) &&
+    /if \(r && r\.share && fromPlay\) return \{ title: r\.share, path \}/.test(readSrc('miniprogram/utils/ritualPlayPage.js')) &&
+    // 去注释再判：文件头那句「**没有** `card` 这个输入」是说明文字，不是代码（本仓 E7 老坑）
+    !/\bcard\b/.test(stripComments(readSrc('miniprogram/utils/ritualPlayPage.js')))
 )
 check(
   '补资料引导有独立分支（不给假结果的那条路是画出来的，不是只写在注释里）',
-  /wx:if="\{\{playNeed\}\}"/.test(wallWxml2) && /bindtap="goProfileField"/.test(wallWxml2)
+  playList.every((p) => /wx:if="\{\{stage === 'need'\}\}"/.test(readSrc(playPageWxml(p))) && /bindtap="goProfileField"/.test(readSrc(playPageWxml(p))))
+)
+check(
+  '★ 结果里带"文化一层"（§11.3：只讲来历习俗，不做个人吉凶判断）',
+  playList.every((p) => /class="rp-note"[^>]*>\{\{result.note\}\}/.test(readSrc(playPageWxml(p)))) &&
+    playList.every((p) => !!playContent.KIND_NOTES[p.kind])
+)
+check(
+  '★ 「换一个」只在星座 / MBTI 页（同一天可切 12 座 / 16 型），今日一签/签饼一天一条',
+  /class="rp-variants"/.test(readSrc(playPageWxml(playById('zodiac')))) &&
+    /class="rp-variants"/.test(readSrc(playPageWxml(playById('mbti')))) &&
+    !/switchVariant/.test(readSrc(playPageWxml(playById('qian')))) &&
+    !/switchVariant/.test(readSrc(playPageWxml(playById('cookie')))) &&
+    ritualPlay.variantOptions('zodiac').length === 12 &&
+    ritualPlay.variantOptions('mbti').length === 16 &&
+    ritualPlay.variantOptions('qian').length === 0
+)
+check(
+  '★ 页头产品 chip 是常驻的产品入口（第一屏就能到详情，不必先进玩法）',
+  /class="ww-scope \{\{productId \? 'is-link' : ''\}\}"[\s\S]{0,200}?bindtap="goWallProduct"/.test(wallWxml2) &&
+    /\.ww-scope\.is-link/.test(wallWxssCode)
 )
 {
   const stub = installWxStub()
   const store = new Map()
   globalThis.wx.getStorageSync = (k) => (store.has(k) ? store.get(k) : '')
   globalThis.wx.setStorageSync = (k, v) => { store.set(k, v) }
+  globalThis.wx.removeStorageSync = (k) => { store.delete(k) }
   const scrolled = []
   globalThis.wx.pageScrollTo = (o) => scrolled.push(o)
-  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
-  const mkPlayPage = (over) => {
-    const page = Object.assign(Object.create(null), proto)
-    page.data = Object.assign({ plays: playList, playResult: null, playNeed: null, draft: '', echoRows: [], soundOn: false, muyuCount: 0, lamp: {}, quota: { left: 4 } }, over || {})
+  const navs = []
+  globalThis.wx.navigateTo = (o) => navs.push(o && o.url)
+  const backs = []
+  globalThis.wx.navigateBack = (o) => backs.push(o)
+  const relaunches = []
+  globalThis.wx.reLaunch = (o) => relaunches.push(o && o.url)
+  const archiveMod = loadCjs('miniprogram/utils/ritualPlayArchive.js', { require: markerRequire })
+  const handoffMod = loadCjs('miniprogram/utils/wishHandoff.js', { require: markerRequire })
+  const wallProto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const playProto = (id) => loadPageConfig(`${playPageDir(playById(id))}.js`)
+
+  const mkWall = (over) => {
+    const page = Object.assign(Object.create(null), wallProto)
+    page.data = Object.assign({ plays: playList, draft: '', echoRows: [], soundOn: false, muyuCount: 0, allowed: true, rows: [], lamp: {}, quota: { left: 4 } }, over || {})
     page.setData = function (patch) { Object.assign(this.data, patch) }
     page._soundPlayer = { play() { return true }, destroy() {} }
     page._echoSeq = 0
     return page
   }
+  const mkPlay = async (id, over) => {
+    const cfg = playProto(id)
+    const page = Object.assign(Object.create(null), cfg)
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    page.showAppToast = cfg.showAppToast
+    await page.onLoad(Object.assign({ productKey: 'k', productId: 'p1', title: '孔雀标本' }, over || {}))
+    return page
+  }
   const tapEvt = (id) => ({ currentTarget: { dataset: { id } } })
-  const p1 = mkPlayPage()
-  await p1.onPlayTap(tapEvt('qian'))
-  check(
-    '★ 抽今日一签 → 结果就地展开 + 墙上回一声（action=play，文案来自注册表）',
-    (p1.data.playResult || {}).id === 'qian' &&
-      (p1.data.echoRows[0] || {}).action === 'play' &&
-      (p1.data.echoRows[0] || {}).text === '我摇了今日一签'
-  )
-  p1.clearEcho()
-  await p1.onPlayTap(tapEvt('qian'))
-  check('再点同一张瓦片 = 收起（不重复播回声刷墙）', p1.data.playResult === null)
 
-  const p2 = mkPlayPage()
-  // 桩要读页面自己的缓存字段，否则"补上资料后再点"这一步测不到（第一版桩成常量 null → 必假红）
-  p2.loadPlayProfile = async function () { return this._playProfile || null }
-  await p2.onPlayTap(tapEvt('zodiac'))
+  /* ① 入口 → 注册表里登记的那一页（带墙的上下文；未知 id 不跳） */
+  const w1 = mkWall({ productId: 'p1', productKey: 'k', productTitle: '孔雀标本', blessTags: ['success'] })
+  w1.onPlayTap(tapEvt('qian'))
+  w1.onPlayTap(tapEvt('mbti'))
   check(
-    '★ 资料里没有星座 → 出引导、不出结果（不编一个给用户）',
-    p2.data.playResult === null && (p2.data.playNeed || {}).field === 'zodiac'
+    '★ 入口跳转：每个玩法都跳到**注册表登记的那一页**，并带上墙的上下文（productKey/bless）',
+    navs.length === 2 &&
+      navs[0] === `/subpackages/feature/play-qian/index?productId=p1&productKey=k&title=${encodeURIComponent('孔雀标本')}&bless=success` &&
+      navs[1].indexOf('/subpackages/feature/play-mbti/index?') === 0,
+    navs.join(' | ')
   )
-  p2._playProfile = { zodiac: 'aries', mbti: '' }
-  await p2.onPlayTap(tapEvt('zodiac'))
-  check('补上星座后同一张瓦片就能出结果', (p2.data.playResult || {}).id === 'zodiac' && p2.data.playNeed === null)
-  // 抽到"一签"（自带心愿词）→ 预填；其它玩法 → 预填「马上有」开头让用户自己写
-  const p3 = mkPlayPage({ playResult: { id: 'qian', wish: '马上有回音' } })
-  p3.usePlayWish()
-  check('★ 结果卡「写成心愿」把心愿词预填进写愿签', p3.data.draft === '马上有回音')
+  const navBefore = navs.length
+  w1.onPlayTap(tapEvt('nope'))
+  check('入口拿到未知玩法 id 时不跳（不拼一个空页路径）', navs.length === navBefore)
+
+  /* ② "今天玩过没有"：本地留档里今天有记录 → 入口状态为已玩 */
+  store.clear()
+  const TODAY = playWishWall.shanghaiDayKey(Date.now())
+  archiveMod.saveResult('qian', TODAY, ritualPlay.resolvePlay('qian', { dayKey: TODAY }))
+  const w2 = mkWall()
+  const decorated = w2.decoratePlayStates(playList)
   check(
-    '★ 点「写成心愿」必须收掉纸签弹层（弹层 z-index 41 高于吸底发送条 z-index 30；不收就会永久盖住它 —— 2026-09-19 真机反馈「滚下去了但看不到输入框」的根因）',
-    p3.data.playResult === null,
-    `playResult=${JSON.stringify(p3.data.playResult)}`
+    '★ 今天玩过的玩法在入口上是"已玩过"（状态来自本地留档现算，不是编的）',
+    decorated.find((p) => p.id === 'qian').played === true &&
+      decorated.find((p) => p.id === 'cookie').played === false
   )
   check(
-    '预填后滚到输入框（selector 必须是输入框上真实存在的 id）',
-    scrolled.length >= 1 && scrolled[scrolled.length - 1].selector === '#wishInput' && /id="wishInput"/.test(wallWxml2)
+    '★ 跨天重置口径：只按日期键现算（不需要任何清理钩子 / 定时器）',
+    archiveMod.playedToday('qian', TODAY) === true &&
+      archiveMod.playedToday('qian', '2000-01-01') === false
   )
-  const p4 = mkPlayPage({ playResult: { id: 'cookie', wish: '' }, playNeed: { field: 'mbti' } })
-  p4.usePlayWish()
-  check('没有可用的心愿词时，只给「马上有」开头（不硬拼一个废话）', p4.data.draft === '马上有')
-  check('★ 无心愿词那条路径同样要收弹层（两条分支不能只修一条）', p4.data.playResult === null)
-  const navigated = []
-  globalThis.wx.navigateTo = (o) => navigated.push(o && o.url)
-  p4.goProfileField()
+
+  /* ③ 玩法页：进行态 → 结果 → 留档 → 写成心愿（交接带回祈福墙） */
+  const q = await mkPlay('qian')
+  q.startPlay()
   check(
-    '补资料引导跳资料页（路径来自注册表常量）',
-    navigated.length === 1 && navigated[0] === plays.PROFILE_PAGE,
-    navigated.join(',')
+    '★ 进行态：startPlay 落 pending 且**定时器有句柄**（漏清就会永久卡在进行态）',
+    q.data.stage === 'pending' && !!q._spinTimer && q.data.result === null,
+    `stage=${q.data.stage}`
   )
+  q.settle()
+  check(
+    '★ 落结果：stage=result + 写进本地留档（"可回看"与"今天玩过没有"都靠它）',
+    q.data.stage === 'result' && !!q.data.result && !!archiveMod.todayEntry('qian', q._dayKey, ''),
+    `stage=${q.data.stage}`
+  )
+  check(
+    '★ 同一天再摇一次还是这一支（确定性：无随机）',
+    ritualPlay.resolvePlay('qian', { dayKey: q._dayKey }).title === q.data.result.title
+  )
+  // ⚠️ 页面栈顺序：**最后一个才是当前页**，上一页是 `length-2`（第一版把 route 写在了栈顶 → 判据假红）
+  globalThis.getCurrentPages = () => [{ route: 'subpackages/feature/wish-wall/index' }, { route: 'subpackages/feature/play-qian/index' }]
+  q.writeWish()
+  const stashed = store.get(handoffMod.STORAGE_KEY)
+  check(
+    '★ 「写成心愿」把心愿词写进一次性交接 + 墙上回声是第一人称句',
+    !!stashed && /^马上有/.test(String(stashed.draft)) && stashed.echo === '我摇了今日一签',
+    JSON.stringify(stashed || null)
+  )
+  check('★ 上一页就是祈福墙 → navigateBack（不重新压栈）', backs.length === 1 && relaunches.length === 0)
+  globalThis.getCurrentPages = () => [{}]
+  q.writeWish()
+  check(
+    '★ 降级：页面栈里没有祈福墙（直接进入 / 栈被回收）→ reLaunch 回墙；交接已写好，文案不会丢',
+    relaunches.length === 1 && relaunches[0] === '/subpackages/feature/wish-wall/index'
+  )
+  delete globalThis.getCurrentPages
+
+  /* ④ 祈福墙页消费交接：预填草稿 + 滚到输入框 + 弹幕墙回一声；且**只消费一次** */
+  scrolled.length = 0
+  const w3 = mkWall()
+  w3.onShow()
+  check(
+    '★ 回到祈福墙：交接被取走 → 草稿预填 + 滚到输入框 + 弹幕墙回一声（§11.4 动线不能断）',
+    w3.data.draft === q.data.result.wish &&
+      typeof w3.data.draftCount === 'number' && w3.data.draftCount > 0 &&
+      scrolled.some((o) => o && o.selector === '#wishInput') &&
+      (w3.data.echoRows[0] || {}).text === '我摇了今日一签',
+    `draft=${w3.data.draft} echo=${JSON.stringify(w3.data.echoRows[0] || null)}`
+  )
+  w3.data.draft = ''
+  w3.data.echoRows = []
+  w3.onShow()
+  check('★ 交接是"读到即删"的一次性存档：再回到页面不会重复预填/重复回声刷墙',
+    w3.data.draft === '' && (w3.data.echoRows || []).length === 0)
+
+  /* ⑤ 缺资料：星座页停在 need 分支（不给假结果），补完能出结果（缓存作废重读） */
+  const z = await mkPlay('zodiac')
+  z.loadPlayProfile = async () => null
+  await z.hydrateProfile()
+  check(
+    '★ 缺资料：星座页停在 need 分支、不出结果（不编一个给用户）',
+    z.data.stage === 'need' && (z.data.need || {}).field === 'zodiac'
+  )
+  navs.length = 0
+  z.goProfileField()
+  check('补资料引导跳资料页（路径来自注册表常量）', navs.length === 1 && navs[0] === plays.PROFILE_PAGE)
+  z.loadPlayProfile = async () => ({ zodiac: 'aries', mbti: '' })
+  await z.hydrateProfile()
+  z.startPlay()
+  z.settle()
+  check(
+    '★ 补上星座后能出结果，且结果带上"这一座"的上下文（「换一个」的前置）',
+    z.data.stage === 'result' && (z.data.result || {}).variant === 'aries'
+  )
+
+  /* ⑥ 「换一个」：同一天切 12 座；切过的直接摊开留档，不再等一次进行态 */
+  z.switchVariant({ currentTarget: { dataset: { key: 'taurus' } } })
+  z.settle()
+  check(
+    '★ 「换一个」：同一天切到另一座 → 出新结果并**各自留档**',
+    !!archiveMod.todayEntry('zodiac', z._dayKey, 'taurus') && z.data.result.variant === 'taurus'
+  )
+  z.switchVariant({ currentTarget: { dataset: { key: 'aries' } } })
+  check(
+    '★ 切回今天看过的座：直接摊开留档（不再等一次进行态 —— "换一个"不该变成等待）',
+    z.data.stage === 'result' && z.data.result.variant === 'aries' && !z._spinTimer
+  )
+
+  /* ⑦ 结果区下拉收起（阈值是纯函数） */
+  z.onSheetGripStart({ touches: [{ clientY: 100 }] })
+  z.onSheetGripMove({ touches: [{ clientY: 260 }] })
+  z.onSheetGripEnd()
+  check(
+    '★ 下拉超过阈值 → 收起结果回入口态（留档仍在，随时能再摊开）',
+    z.data.stage === 'idle' && z.data.sheetDragY === 0
+  )
+
+  /* ⑧ 卸载必须清掉进行态定时器 */
+  const q2 = await mkPlay('qian')
+  q2.startPlay()
+  const pendingTimer = q2._spinTimer
+  q2.onUnload()
+  check('★ onUnload 清掉进行态定时器（漏清 = 卸载后仍 setData）', q2._spinTimer === null && !!pendingTimer)
+  if (pendingTimer) clearTimeout(pendingTimer)
+
   stub.restore()
 }
 
@@ -4741,20 +4986,33 @@ check('没有标签的商品 URL 不出现 bless 参数（不留空参数）',
   const p3 = mkBlessPage()
   p3.applyBlessScope('nope,,')
   check('标签非法 → 当没标签处理（不抛、页头不显示垃圾 chip）', p3.data.blessLabelText === '' && p3.data.blessTags.length === 0)
-  const p4 = mkBlessPage()
-  p4.data.productId = 'p9'
+  // ⚠️ 2026-09-21（§11.4）：结果页的商品/推荐入口搬到了**玩法页**（工厂）——
+  // 用玩法页配置驱动这两条转化路径（页面商品入口 = 最短转化路径）。
+  const playProto2 = loadPageConfig('miniprogram/subpackages/feature/play-qian/index.js')
+  const mkRecoPage = (over) => {
+    const page = Object.assign(Object.create(null), playProto2)
+    page.data = Object.assign({}, playProto2.data, over || {})
+    page.setData = function (patch) { Object.assign(this.data, patch) }
+    return page
+  }
+  const p4 = mkRecoPage({ productId: 'p9' })
   p4.goProduct()
-  check('★ 结果卡的商品入口跳详情页（这面墙的商品 = 最短转化路径）',
+  check('★ 结果页的商品入口跳详情页（这面墙的商品 = 最短转化路径）',
     navigated.length === 1 && navigated[0] === '/subpackages/feature/detail/index?id=p9', navigated.join(','))
-  const p5 = mkBlessPage()
+  const p5 = mkRecoPage({ productId: '' })
   p5.goProduct()
   check('没有 productId 时不跳（不拼一个空 id 的链接）', navigated.length === 1)
+  const p6 = mkRecoPage({ reco: { _id: 'p8', tag: 'success' }, blessTags: ['success'] })
+  p6.goRecoProduct()
+  check('★ 推荐入口跳的是**推荐那件**（不是墙的商品），并记一次 wish_wall_reco',
+    navigated.length === 2 && /id=p8$/.test(navigated[1]), navigated.join(','))
   stub.restore()
 }
 check(
   '祈运 chip 与产品入口都画在页面上（逻辑接了不代表用户看得见）',
   /class="ww-bless"/.test(wallWxml2) && /bindtap="goWallProduct"/.test(wallWxml2) &&
-    /\.ww-bless\s*\{/.test(wallWxssCode) && /\.ww-sheet-product\s*\{/.test(wallWxssCode)
+    /\.ww-bless\s*\{/.test(wallWxssCode) &&
+    playList.every((p) => /class="rp-reco"/.test(readSrc(playPageWxml(p))))
 )
 
 /* ================================================================== *
@@ -4929,10 +5187,10 @@ check('取条：主视觉用主题名，没有才回落标准名；无有效行�
     blessProducts.pickReco({ list: [] }, 'peace') === null &&
     blessProducts.pickReco(null, 'peace') === null)
 
-/* —— C 端弱推接线：拉取 / 缓存 / 失败降级 / 跳转 —— */
+/* —— C 端弱推接线：拉取 / 缓存 / 失败降级 / 跳转（2026-09-21：接线在**玩法页工厂**里）—— */
 {
   const stub = installWxStub()
-  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const proto = loadPageConfig('miniprogram/subpackages/feature/play-qian/index.js')
   const calls = []
   const navigated = []
   let mode = 'ok'
@@ -4952,7 +5210,7 @@ check('取条：主视觉用主题名，没有才回落标准名；无有效行�
   globalThis.wx.navigateTo = (o) => navigated.push(o && o.url)
   const mkRecoPage = (blessTags, productId) => {
     const page = Object.assign(Object.create(null), proto)
-    page.data = { blessTags: blessTags || [], productId: productId || '' }
+    page.data = Object.assign({}, proto.data, { blessTags: blessTags || [], productId: productId || '' })
     page.setData = function (patch) { Object.assign(this.data, patch) }
     return page
   }
@@ -4997,12 +5255,14 @@ check('取条：主视觉用主题名，没有才回落标准名；无有效行�
   stub.restore()
 }
 check(
-  '产品行画在纸签弹层里（逻辑接了不代表用户看得见）',
-  /class="ww-sheet-product[\s"]/.test(wallWxml2) && /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(wallWxml2) &&
-    /\.ww-sheet-product\s*\{/.test(wallWxssCode)
+  '产品行画在玩法页的结果里（逻辑接了不代表用户看得见）',
+  playList.every((p) => /class="rp-reco"/.test(readSrc(playPageWxml(p))) &&
+    /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(readSrc(playPageWxml(p)))) &&
+    /\.rp-reco\s*\{/.test(readSrc('miniprogram/subpackages/feature/play-shared/ritual-play.wxss'))
 )
 check('玩法事件之外，弱推点击有自己的埋点（双端登记）',
-  /wish_wall_reco/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')) &&
+  // 2026-09-21（§11.4）：弱推点击从祈福墙页搬到玩法页工厂。
+  /wish_wall_reco/.test(readSrc('miniprogram/utils/ritualPlayPage.js')) &&
     /wish_wall_reco:/.test(readSrc('miniprogram/utils/analytics/eventSchema.js')) &&
     /wish_wall_reco:/.test(readSrc('admin/src/utils/analyticsSchema.js')))
 
@@ -5497,31 +5757,38 @@ check(
     )
   }
 
-  /* —— ⑥ 2026-09-21 P1-4：玩法资料缓存必须会失效（补完资料回来仍被挡 = 死路） —— */
+  /* —— ⑥ 2026-09-21 P1-4（§11.4 后搬到玩法页工厂）：资料缓存必须会失效 —— */
   {
+    const factorySrc = readSrc('miniprogram/utils/ritualPlayPage.js')
     // 源码：两处失效点（进资料页 / onShow）
     check(
       '★ P1-4：缓存失效点有两处（进资料页前 + onShow 回页），且**不再永久驻留**',
-      /goProfileField\(\)\s*\{[\s\S]{0,700}?this\._playProfile = null/.test(wallPageSrc) &&
-        /onShow\(\)\s*\{[\s\S]{0,900}?this\._playProfile = null/.test(wallPageSrc) &&
-        (wallPageSrc.match(/this\._playProfile = null/g) || []).length >= 2
+      /goProfileField\(\)\s*\{[\s\S]{0,500}?this\._profile = null/.test(factorySrc) &&
+        /onShow\(\)\s*\{[\s\S]{0,500}?this\._profile = null/.test(factorySrc) &&
+        (factorySrc.match(/this\._profile = null/g) || []).length >= 2
     )
     // 行为：进资料页会作废缓存（不额外打云 —— 这里只断言"作废"这一件事）
-    const p = mkHookPage({ data: { playNeed: { field: 'zodiac' } } })
-    p._playProfile = { zodiac: '', mbti: '' }
+    const zProto = loadPageConfig('miniprogram/subpackages/feature/play-zodiac/index.js')
+    const mkZ = (over) => {
+      const page = Object.assign(Object.create(null), zProto)
+      page.data = Object.assign({}, zProto.data, over || {})
+      page.setData = function (patch) { Object.assign(this.data, patch) }
+      return page
+    }
+    const p = mkZ({ stage: 'need' })
+    p._profile = { zodiac: '', mbti: '' }
     p.goProfileField()
-    eq('★ P1-4：去补资料前把缓存作废（回来那次点击才会重新读会话）', p._playProfile, null)
+    eq('★ P1-4：去补资料前把缓存作废（回来那次点击才会重新读会话）', p._profile, null)
     // 行为：onShow 也作废（从资料页返回 / 从后台切回）
-    const p2 = mkHookPage({})
-    p2._playProfile = { zodiac: '', mbti: '' }
-    p2.scheduleDanmakuCycle = () => {}
-    p2.recordRelics = () => {}
+    const p2 = mkZ({ stage: 'need' })
+    p2._profile = { zodiac: '', mbti: '' }
+    p2.hydrateProfile = () => {}
     p2.onShow()
-    eq('★ P1-4：onShow 也作废（否则填好返回、再点同一张瓦片仍被要求去补）', p2._playProfile, null)
-    // onShow 作废**不打云**：真正的请求仍由 onPlayTap 按需发起
+    eq('★ P1-4：onShow 也作废（否则填好返回、再点同一张瓦片仍被要求去补）', p2._profile, null)
+    // onShow 作废**不打云**：真正的请求仍是"停在 need 态"时才重试
     check(
       '…且 onShow 里没有直接调 loadPlayProfile（失效不等于每次 onShow 都打云）',
-      !/onShow\(\)\s*\{[\s\S]{0,1400}?loadPlayProfile\(\)/.test(wallPageSrc)
+      !/onShow\(\)\s*\{[\s\S]{0,600}?this\.loadPlayProfile\(\)/.test(factorySrc)
     )
   }
 
@@ -5542,10 +5809,13 @@ check(
       /class="ww-scope \{\{productId \? 'is-link' : ''\}\}"[\s\S]{0,400}?bindtap="goWallProduct"/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')) &&
         !/class="ww-scope \{\{productId \? 'is-link' : ''\}\}"[\s\S]{0,400}?bindtap="goProduct"/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml'))
     )
-    // 纸签弹层里的产品行仍走 goProduct（那是玩法流程**之内**的一条转化）
+    // 结果页的产品行（`reco ? goRecoProduct : goProduct`）随玩法搬到玩法页 ——
+    // 那是玩法流程**之内**的一条转化；本页只剩页头 chip 那一条（上面已钉）。
     check(
-      '…纸签弹层里的产品行仍走 goProduct（玩法流程之内的那条转化不变）',
-      /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml'))
+      '…玩法结果页的产品行仍走 goProduct（玩法流程之内的那条转化不变），且本页不再有它',
+      playList.every((p) => /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(readSrc(playPageWxml(p)))) &&
+        // 去注释再判：本页那段说明里**写着** goProduct 这个名字（不剥注释会自己把自己判红）
+        !/bindtap="goProduct"|goProduct\(\)/.test(stripComments(readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')) + stripComments(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')))
     )
   }
 
@@ -6175,7 +6445,7 @@ check(
     if (i === -1) return ''
     return wallPageSrc.slice(i, wallPageSrc.indexOf('\n  },', i) + 4)
   }
-  const draftWriters = ['onDraftInput', 'useInspiration', 'borrowWishText', 'usePlayWish']
+  const draftWriters = ['onDraftInput', 'useInspiration', 'borrowWishText', 'applyPlayHandoff']
   check(
     '★ 页面所有改 draft 的方法都走 wishTextTruncate + 同步 draftCount（少一处就会出现"字数与输入框不符"）',
     draftWriters.every((m) => /wishTextTruncate\(/.test(pageBody(m)) && /draftCount: wishTextCount\(/.test(pageBody(m))),
@@ -6215,124 +6485,98 @@ check(
 }
 
 /* ================================================================== *
- * ★ W1 玩法结果分享（会话卡片形态）：两条分享链路必须可区分
+ * ★ W1 玩法结果分享（会话卡片形态）
  *
- * 产品口径（docs/祈福墙_待产品负责人拍板_2026-09-19.md 建议方案 A）：
- * 弹层给一个 `<button open-type="share">`，分享的是**玩法结果**，不是愿签正文，
+ * 产品口径：给一个 `<button open-type="share">`，分享的是**玩法结果**，不是愿签正文，
  * 更不许把星座/MBTI 等"依据"写进转发文案。
+ * 2026-09-21（PRD v1.4 §11.4）：玩法结果分享搬到**玩法页**；祈福墙页只剩愿签分享 ——
+ * 两条链路从此在**两个页面**上，结构上不可能串（比"落标记分流"更强）。
  * ------------------------------------------------------------------ */
 {
-  const shareFnSrc = (() => {
-    const i = wallPageSrc.indexOf('onShareAppMessage()')
-    if (i === -1) return ''
-    // ⚠️ 先去掉注释：方法上方的 JSDoc 里写了"玩法结果分支**绝不读 `card.text`**"这句说明，
-    // 不剥注释的话下面那条"不许出现 card.text"的负向判据会被自己的说明文字弄红（错题本 E7 老坑）。
-    return wallPageSrc
-      .slice(i, i + 1600)
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+  const factoryShareSrc = (() => {
+    const src = readSrc('miniprogram/utils/ritualPlayPage.js')
+    const i = src.indexOf('onShareAppMessage()')
+    return i === -1 ? '' : src.slice(i, i + 900)
   })()
   check(
-    '★ 玩法结果弹层有唯一的转发入口：`<button open-type="share">`（`<view bindtap>` 唤不起转发）',
-    /<button[\s\S]{0,220}?open-type="share"[\s\S]{0,220}?bindtap="onSheetShareTap"/.test(wallWxml2)
-  )
-  // 玩法分支的**语法边界**：从 `const result = this.data.playResult` 到 `if (result …) {`。
-  // 判据：这一段里只许出现 `result.share`，**不许出现 `card.text`** —— 两条链路的正文
-  // 不允许出现在同一个返回分支里（错题本 E7：用位置窗口代替语法边界会误判）。
-  const playBranchSrc = (() => {
-    const start = shareFnSrc.indexOf('const result = this.data.playResult')
-    if (start === -1) return ''
-    const open = shareFnSrc.indexOf('if (result', start)
-    if (open === -1) return shareFnSrc.slice(start)
-    // 到该 if 块结束（方法内缩进 4 空格的 `}`）为止 —— 含分支体，不含后面的愿签兜底
-    const close = shareFnSrc.indexOf('\n    }', open)
-    if (close === -1) return shareFnSrc.slice(start)
-    return shareFnSrc.slice(start, close)
-  })()
-  check(
-    '★ `onShareAppMessage` 有玩法结果分支，且读的是 `result.share`（**不读** card.text、不自己拼依据）',
-    /this\.data\.shareFrom === 'play'/.test(shareFnSrc) &&
-      /result\.share/.test(playBranchSrc) &&
-      playBranchSrc.indexOf('card.text') === -1 &&
-      // 依据不许写进文案：玩法分支里不能出现"依据"字段（星座/MBTI 走的是 ritualPlay.share）
-      playBranchSrc.indexOf('zodiac') === -1 &&
-      playBranchSrc.indexOf('mbti') === -1,
-    `playBranch=${JSON.stringify(playBranchSrc.slice(0, 120))}`
+    '★ 玩法页有唯一的转发入口：`<button open-type="share">`（`<view bindtap>` 唤不起转发）',
+    playList.every((p) => /<button[\s\S]{0,240}?open-type="share"[\s\S]{0,240}?bindtap="onShareTap"/.test(readSrc(playPageWxml(p))))
   )
   check(
-    '★ 按钮落来源标记（不落标记 = 弹层分享会串成别人的愿签正文）',
-    /onSheetShareTap\(\)\s*\{[\s\S]{0,360}?shareFrom: 'play'/.test(wallPageSrc)
+    '★ `onShareAppMessage` 只读 `result.share`（工厂里**没有** card 这个输入 —— 结构上不可能串到愿签）',
+    /\br\.share\b/.test(factoryShareSrc) && !/\bcard\b/.test(factoryShareSrc) &&
+      factoryShareSrc.indexOf('zodiac') === -1 && factoryShareSrc.indexOf('mbti') === -1,
+    factoryShareSrc.slice(0, 160)
+  )
+  check(
+    '★ 分享按钮落一次性来源标记（读到即复位，只对这一次转发生效）',
+    /onShareTap\(\)\s*\{[\s\S]{0,360}?shareFrom: 'play'/.test(readSrc('miniprogram/utils/ritualPlayPage.js'))
   )
 
-  // 行为级：直接驱动真实页面方法
+  // 行为级：玩法页
   const stub = installWxStub()
-  const proto = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const factoryProto = loadPageConfig('miniprogram/subpackages/feature/play-qian/index.js')
   const mkSharePage = (over) => {
-    const page = Object.assign(Object.create(null), proto)
-    page.data = Object.assign(
-      { playResult: null, card: null, shareFrom: '', productKey: 'mashangyou', draft: '', draftCount: 0 },
-      over || {}
-    )
+    const page = Object.assign(Object.create(null), factoryProto)
+    page.data = Object.assign({ result: null, shareFrom: '', productKey: 'mashangyou' }, over || {})
     page.setData = function (patch) { Object.assign(this.data, patch) }
     return page
   }
   const PLAY = { id: 'qian', share: '今日一签：马上有闲 · 先喝口热茶' }
-  const CARD = { _id: 'w1', text: '这是别人的心愿正文' }
-
-  const pShare = mkSharePage({ playResult: PLAY })
-  pShare.onSheetShareTap()
-  eq('★ 点弹层分享按钮 → 落来源标记 play（并记一次行为埋点）', pShare.data.shareFrom, 'play')
+  const pShare = mkSharePage({ result: PLAY })
+  pShare.onShareTap()
+  eq('★ 点分享按钮 → 落来源标记 play', pShare.data.shareFrom, 'play')
   const playShare = pShare.onShareAppMessage()
-  eq('★ 弹层分享的标题 = 玩法结果的 share 字段', playShare.title, PLAY.share)
-  eq('★ 弹层分享后来源标记必须复位（否则下一次愿签分享会被污染）', pShare.data.shareFrom, '')
+  eq('★ 分享标题 = 玩法结果的 share 字段', playShare.title, PLAY.share)
+  eq('★ 分享后来源标记必须复位（同一次点击只生效一次）', pShare.data.shareFrom, '')
   check(
     '★ 玩法分享文案里没有"依据"（不出现星座名 / MBTI 型别）',
     !/白羊座|INFP/.test(playShare.title),
     playShare.title
   )
+  const pNoResult = mkSharePage({ result: null })
+  pNoResult.onShareTap()
+  eq('没有结果时不落标记（不产生一次空分享）', pNoResult.data.shareFrom, '')
 
-  // 关键反串：card 也在（用户刚点开过别人的愿签）且标记已复位 → 必须回到愿签链路
-  const pCard = mkSharePage({ playResult: PLAY, card: CARD })
-  const cardShare = pCard.onShareAppMessage()
-  eq('★ 没有 play 标记时走愿签链路（弹层还开着也不许抢）', cardShare.title, CARD.text)
-  eq('★ 愿签分享读的是 card.text，绝不会读成玩法文案', cardShare.title === PLAY.share, false)
+  // 行为级：祈福墙页只剩愿签分享（本页没有玩法结果可抢）
+  const wallProto2 = loadPageConfig('miniprogram/subpackages/feature/wish-wall/index.js')
+  const CARD = { _id: 'w1', text: '这是别人的心愿正文' }
+  const wShare = Object.assign(Object.create(null), wallProto2)
+  wShare.data = { card: CARD, productKey: 'mashangyou' }
+  wShare.setData = function (patch) { Object.assign(this.data, patch) }
+  const cardShare = wShare.onShareAppMessage()
+  eq('★ 祈福墙页分享读的是 card.text（玩法结果已不在本页）', cardShare.title, CARD.text)
   check(
-    '两条链路的 path 同源（都带当前墙的 productKey）',
+    '两条链路的 path 同源（都带回当前墙的 productKey）',
     playShare.path === cardShare.path && playShare.path.indexOf('productKey=mashangyou') !== -1,
     `play=${playShare.path} card=${cardShare.path}`
   )
-
-  const pNoResult = mkSharePage({ playResult: null })
-  pNoResult.onSheetShareTap()
-  eq('弹层已收起时点分享不落标记（不允许把玩法分享挂到愿签上）', pNoResult.data.shareFrom, '')
-
-  const pStale = mkSharePage({ card: CARD })
-  pStale.onSheetShareTap()
-  eq('★ 没有玩法结果时不落 play 标记（否则愿签分享会读空 result 回落到默认标题）', pStale.onShareAppMessage().title, CARD.text)
   stub.restore()
 }
 
-/* ─────────── 弹层排版确定性 + 工具自检（2026-09-21）───────────
- * 起因：给弹层做视觉优化时，**预览出图与真机截图给出相反结果** —— 两个动作按钮的
+/* ─────────── 结果页动作行排版确定性 + 工具自检（2026-09-21）───────────
+ * 起因：给结果层做视觉优化时，**预览出图与真机截图给出相反结果** —— 两个动作按钮的
  * 间距与宽度全看平台 button 默认样式（预览里铜底比文字窄；真机里是窄按钮 + 间距）。
  * 同一份样式两处渲染不一致 = 排版没写死。这三条把它钉成确定形态。
+ * 2026-09-21（§11.4）：这三条随结果层搬到玩法页的共享样式（`.rp-acts` / `.rp-act`）。
  * 另：render-*.mjs 是"模板字符串里拼 CSS"的工具，**模板串里写反引号会截断模板**
  * （本会话第 5 次犯，前 4 次都靠 node --check 抓到）→ 这里补一条"工具必须可解析"的判据。 */
 {
   // spawnSync 在文件后面的 selftest 块里才是局部 import，这里必须自己取一份（否则 TDZ/未定义）
   const { spawnSync } = await import('node:child_process')
-  const ctaRow = (/\.ww-sheet-cta-row\s*\{([^}]*)\}/.exec(wallWxssCode) || [])[1] || ''
-  check('★ 弹层动作行是显式纵向 flex + gap（不依赖平台 button 默认排布）',
+  const sharedPlayCss = readSrc('miniprogram/subpackages/feature/play-shared/ritual-play.wxss')
+  const ctaRow = (/\.rp-acts\s*\{([^}]*)\}/.exec(sharedPlayCss) || [])[1] || ''
+  check('★ 结果页动作行是显式纵向 flex + gap（不依赖平台 button 默认排布）',
     /display:\s*flex/.test(ctaRow) && /flex-direction:\s*column/.test(ctaRow)
     && /gap:\s*(var\(--space-\d+\)|\d+rpx)/.test(ctaRow),
-    'CTA 行没写死排布 —— 两个平台的渲染结果会不一致')
+    '动作行没写死排布 —— 两个平台的渲染结果会不一致')
 
-  const cta = (/\.ww-sheet-cta\s*\{([^}]*)\}/.exec(wallWxssCode) || [])[1] || ''
-  check('★ 弹层动作按钮有显式宽度（不靠平台 button 的 width 默认值）',
+  const cta = (/\.rp-act\s*\{([^}]*)\}/.exec(sharedPlayCss) || [])[1] || ''
+  check('★ 结果页动作按钮有显式宽度（不靠平台 button 的 width 默认值）',
     /width:\s*100%/.test(cta) && /box-sizing:\s*border-box/.test(cta),
     '主 CTA 没写宽度 —— 分享按钮会缩成文字宽（真机截图里就是这样）')
 
-  const share = (/\.ww-sheet-cta\.is-share\s*\{([^}]*)\}/.exec(wallWxssCode) || [])[1] || ''
+  const share = (/\.rp-act\.is-share\s*\{([^}]*)\}/.exec(sharedPlayCss) || [])[1] || ''
   check('★ 次动作（分享）与主 CTA 有层级差（描边式，不是两条一模一样的实心铜条）',
     /background:\s*transparent/.test(share) && /border:/.test(share),
     '分享按钮没有独立的视觉层级 —— 用户看不出哪条是主路')
@@ -6359,7 +6603,6 @@ if (process.argv.includes('--selftest') && !INJECT) {
   const KNOWN_DEAD_ANCHORS = new Set([
     'seed-allows-off-pattern',      // wishSeeds.js：句式闸写法已变
     'fresh-timer-leak',             // wish-wall/index.js：onUnload 结构已变
-    'card-not-dialog',              // wxml：.ww-card 属性序已变
     'handwriting-dropped',          // wxss：手写体栈改为 var(--font-hand) 接线
     'product-field-not-allowlisted',// manageProducts：白名单数组已重构
     'bless-guide-dom-dropped',      // wxml：ww-plays-guide 已下线
@@ -6488,30 +6731,32 @@ if (process.argv.includes('--selftest') && !INJECT) {
     eq('…且卸载后回调不再 setData（_unloaded 闸兜底）', p.data.inputFocus, false)
   }
 
-  /* ② 抽签等待态：await 期间落 pending，拿到结果必须清掉 */
+  /* ② 进行态：点下去**同一 tick** 就落 pending（否则点上去零反馈），落结果后回 result */
   {
-    const p = mkPage()
-    let release = null
-    p.loadPlayProfile = () => new Promise((res) => { release = res })
-    const running = p.onPlayTap({ currentTarget: { dataset: { id: 'zodiac' } } })
-    await Promise.resolve()
-    eq('★ 星座签要读资料：等待期间瓦片必须落 pending 态（否则点上去零反馈）', p.data.playPending, 'zodiac')
-    release({ zodiac: 'aries', mbti: '' })
-    await running
-    eq('…拿到结果后 pending 必须清掉（漏清 = 瓦片永久卡在「摇签中」）', p.data.playPending, '')
+    const playProto3 = loadPageConfig('miniprogram/subpackages/feature/play-qian/index.js')
+    const p = Object.assign(Object.create(null), playProto3)
+    p.data = Object.assign({}, playProto3.data, { stage: 'idle' })
+    p.setData = function (patch) { Object.assign(this.data, patch) }
+    p.startPlay()
+    eq('★ 开始玩法：同一 tick 就落 pending 态（否则点上去零反馈）', p.data.stage, 'pending')
+    check('…且进行态定时器有句柄（漏清 = 永久卡在进行态）', !!p._spinTimer)
+    const spinTimer = p._spinTimer
+    p.settle()
+    eq('…落结果后必须离开 pending（漏清 = 永久卡在进行态）', p.data.stage, 'result')
+    if (spinTimer) clearTimeout(spinTimer)
   }
 
-  /* ③ 玩法失败必须**说出来**并记一笔（此前静默 return，点瓦片毫无反应） */
+  /* ③ 玩法失败必须**说出来**并记一笔（此前静默 return，点下去毫无反应） */
   check(
     '★ 玩法非 need_profile 的失败要给出反馈并留在漏斗里（原来静默 return）',
     // ⚠️ 判据必须锚**行首的调用**，不能只 grep `showAppToast(` ——
     // 第一版写成后者，注入把调用改成 `void 0 && this.showAppToast(` 之后**字符串还在**，
     // 正则照样命中，自检就报"注入未被检出"（判据自己放水）。
-    /if \(result\.reason === 'need_profile'\)[\s\S]{0,700}?\n        this\.showAppToast\(\{/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js')) &&
+    // 2026-09-21（§11.4）：这段随玩法搬到工厂（utils/ritualPlayPage.js 的 settle）。
+    /if \(result\.reason === 'need_profile'\)[\s\S]{0,700}?\n\s*this\.showAppToast\(\{/.test(readSrc('miniprogram/utils/ritualPlayPage.js')) &&
       // ⚠️ 2026-09-21（P1-3 顺手体检）：`wish_wall_play` 的 targetType 一律是 'play'
-      // （schema 声明的就是它），失败/分步信息放 `step`。原来写成 `('wish_wall_play','fail',id)`
-      // —— 按签名那是 targetType='fail'、targetId=id，targetType 与 schema 声明不一致。
-      /trackBehavior\('wish_wall_play', 'play', id, \{ step: 'fail' \}\)/.test(readSrc('miniprogram/subpackages/feature/wish-wall/index.js'))
+      // （schema 声明的就是它），失败/分步信息放 `step`。
+      /trackBehavior\('wish_wall_play', 'play', id, \{ step: 'fail' \}\)/.test(readSrc('miniprogram/utils/ritualPlayPage.js'))
   )
 
   /* ④ 跨天 onShow 必须重算灯态（否则新的一天点不亮） */
@@ -6674,13 +6919,15 @@ if (process.argv.includes('--selftest') && !INJECT) {
       !/this\.applyView\(\)\s*\n\s*this\.recordRelics\(\)/.test(wallPageSrc) &&
         // ② onLoad：initRitual 之后、bootstrap（门禁/云调用）之前
         /this\.initRitual\(\)\n[\s\S]{0,600}?this\.recordRelics\(\)/.test(wallPageSrc) &&
-        // ③ onShow：在 `_playProfile` 失效之前，且**在 onShow 方法体内**
+        // ③ onShow：在玩法交接消费之前，且**在 onShow 方法体内**
         //    （用位置比较而不是跨行正则 —— 中间那两行注释会让正则又变成"锚在注释上"）
+        //    2026-09-21（§11.4）：`_playProfile` 随玩法搬到玩法页，这里改成它**后面的**那一步：
+        //    玩法交接消费（applyPlayHandoff）。语义不变：recordRelics 必须无条件排在 onShow 前段。
         (() => {
           const showAt = wallPageSrc.indexOf('onShow() {')
           const relicsAt = wallPageSrc.indexOf('this.recordRelics()', showAt)
-          const profileAt = wallPageSrc.indexOf('this._playProfile = null', showAt)
-          return showAt > -1 && relicsAt > showAt && profileAt > relicsAt && profileAt - showAt < 1400
+          const nextStepAt = wallPageSrc.indexOf('this.applyPlayHandoff()', showAt)
+          return showAt > -1 && relicsAt > showAt && nextStepAt > relicsAt && nextStepAt - showAt < 1400
         })()
     )
     // 行为：onLoad **整条云路径都失败**时，博物笔记入口照样算出来
@@ -6703,22 +6950,24 @@ if (process.argv.includes('--selftest') && !INJECT) {
     eq('★ onShow 也要重算一次（从成就页回来进度会变）', p._relicsCalls, 1)
   }
 
-  /* ⑩ P2-12：推荐取件失败后整行不许消失（弹层内容不上跳） */
+  /* ⑩ P2-12（§11.4 后接线在玩法页）：推荐取件失败后整行不许消失（结果内容不上跳） */
   {
-    const wxmlNow = readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')
+    const playWxmlNow = readSrc(playPageWxml(playById('qian')))
     check(
       '★ 推荐行的 wx:if 收进 recoFailed（失败也占位；原来双清 = 整行被移除）',
-      /wx:if="\{\{reco \|\| productId \|\| recoLoading \|\| recoFailed\}\}"/.test(wxmlNow) &&
-        // 基础类名不许被改（wxss 只有 .ww-sheet-product，加修饰类就得多一条样式 —— 不属本批白名单）
-        /<view\s+class="ww-sheet-product"\s+wx:if="\{\{reco \|\| productId \|\| recoLoading \|\| recoFailed\}\}"/.test(wxmlNow)
+      /wx:if="\{\{reco \|\| productId \|\| recoLoading \|\| recoFailed\}\}"/.test(playWxmlNow) &&
+        // 基础类名不许被改（wxss 只有 .rp-reco，加修饰类就得多一条样式）
+        /<view\s+class="rp-reco"\s+wx:if="\{\{reco \|\| productId \|\| recoLoading \|\| recoFailed\}\}"/.test(playWxmlNow)
     )
     check(
       '★ 骨架不被失败态顶掉（取件完成/失败后骨架必须撤，且失败要有一句等价高度的说明）',
-      /wx:elif="\{\{recoLoading && !recoFailed\}\}"/.test(wxmlNow) &&
-        /wx:elif="\{\{recoFailed\}\}">这次没配到</.test(wxmlNow)
+      /wx:elif="\{\{recoLoading && !recoFailed\}\}"/.test(playWxmlNow) &&
+        /wx:elif="\{\{recoFailed\}\}">这次没配到</.test(playWxmlNow)
     )
     // 行为：云调用失败后 recoFailed 必须为 true（JS 端也要真的写这个字段）
-    const p = mkPage({ blessTags: ['peace'], productId: 'p1', recoLoading: false, recoFailed: false })
+    const playProto4 = loadPageConfig('miniprogram/subpackages/feature/play-qian/index.js')
+    const p = Object.assign(Object.create(null), playProto4)
+    p.data = Object.assign({}, playProto4.data, { blessTags: ['peace'], productId: 'p1', recoLoading: false, recoFailed: false })
     p.setData = function (patch) { Object.assign(this.data, patch) }
     globalThis.wx.cloud.callFunction = () => Promise.reject(new Error('取件失败'))
     p._recoCache = null
@@ -6770,9 +7019,23 @@ if (process.argv.includes('--selftest') && !INJECT) {
   )
 
   check(
-    '★ 摇签中只呼吸**边框**、不压暗文字（动效不该牺牲可读性）',
-    /@keyframes ww-play-pending\s*\{[\s\S]{0,240}?border-color/.test(animCss) &&
-      !/@keyframes ww-play-pending\s*\{[\s\S]{0,240}?opacity/.test(animCss)
+    '★ 玩法进行态只动几何 / 描边、不压暗文字（动效不该牺牲可读性）',
+    // 2026-09-21（§11.4）锚点跟随源码：这条从"瓦片呼吸边框"改成**玩法页的进行态动效**。
+    // 语义不变：等待中的动效只许动几何/描边，不许把文字一起淡入淡出。
+    (() => {
+      const textSel = /\.rp-(hint|spin-text|hero|paper|line|note|name)/
+      return playList.every((p) => {
+        const css = readSrc(playPageWxss(p)).replace(/\/\*[\s\S]*?\*\//g, '')
+        if (!/\.rp-stage\.is-pending\s+\.rp-[\w-]+\s*\{[^}]*animation:/.test(css)) return false
+        const rules = css.match(/[^{}]+\{[^{}]*\}/g) || []
+        return rules.every((r) => {
+          const sel = r.slice(0, r.indexOf('{'))
+          if (!textSel.test(sel)) return true
+          return !/animation\s*:/.test(r)
+        })
+      })
+    })(),
+    '某个玩法页把透明度动画挂到了文字类上'
   )
 }
 
@@ -6848,14 +7111,14 @@ if (process.argv.includes('--selftest') && !INJECT) {
 
   check(
     '★ 预览的关键判据不许被无声删除，且不许把「看门狗」降级成「报告」',
-    // 四条：灵感词同屏 / 推荐取件占位 / 次瓦片无字标 / 吸底预留（按设计分支）；
+    // 四条：灵感词同屏 / 入口区不再承载结果层 / 四种入口形态 / 吸底预留（按设计分支）；
     // 外加两条本轮自查发现的退化点：非 --check 时静默 exit 0、.tmp 不自建导致新 clone ENOENT。
     // ⚠️ 负向判据必须先**去注释**再测 —— 否则它会读到自己那段"原来写的是 …"的说明（本仓的老坑）。
     (() => {
       const code = previewSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
       return /灵感词与发送条不在同一屏/.test(code) &&
-        /取件中：产品行已占位/.test(code) &&
-        /次瓦片无字标/.test(code) &&
+        /入口区不再承载结果层/.test(code) &&
+        /四种入口形态/.test(code) &&
         /发送条改回吸底但没有底部预留/.test(code) &&
         !/process\.exit\(CHECK_ONLY \? 1 : 0\)/.test(code) &&
         /版式不变量违反[\s\S]{0,600}?process\.exit\(1\)/.test(code) &&

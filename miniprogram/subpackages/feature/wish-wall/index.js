@@ -48,10 +48,12 @@ const {
 const { wishTextCount, wishTextTruncate } = require('../../../utils/wishTextCount')
 const wishRitual = require('../../../utils/wishRitual')
 const ritualFeedback = require('../../../utils/ritualFeedback')
-const ritualPlay = require('../../../utils/ritualPlay')
-const { RITUAL_PLAYS, PROFILE_PAGE } = require('../../../config/ritualPlays')
+// 玩法（2026-09-21 口径变更 · PRD v1.4 §11.4）：玩法**各开一页**，本页只剩入口区。
+// 玩法的进行态/结果/推荐/分享全在 `utils/ritualPlayPage.js`（四个玩法页共用），本页不再持有。
+const { RITUAL_PLAYS, playPage } = require('../../../config/ritualPlays')
+const ritualPlayArchive = require('../../../utils/ritualPlayArchive')
+const wishHandoff = require('../../../utils/wishHandoff')
 const { sanitizeBlessTags, blessPlayIds, blessLabel } = require('../../../config/blessTags')
-const { recoCacheKey, pickReco } = require('../../../utils/blessProducts')
 const easterEgg = require('../../../utils/easterEgg')
 const easterEggHost = require('../../../utils/easterEggHost')
 // 创新钩子 H2「功德证」的纯函数核（里程点判定 + 持证记录 + 本地存档），见 utils/muyuCertificate.js
@@ -62,15 +64,6 @@ const {
   toastWishWallClosed,
   toastRitualProfileClosed
 } = require('../../../utils/contentDisplayFlags')
-
-/**
- * 纸签弹层拖拽关闭的阈值（纯函数，便于单测）：下拉超过 88px 视为"想关掉"。
- * 抽出来的理由与其他纯函数一致 —— 手势判定写成内联表达式就只能靠手感验证。
- */
-const SHEET_CLOSE_DRAG_PX = 88
-function sheetDragShouldClose(dy) {
-  return (Number(dy) || 0) >= SHEET_CLOSE_DRAG_PX
-}
 
 /**
  * 「连续记录云保存」注册钩子的阈值 —— **只在用户真的有可丢的进展时**才谈注册。
@@ -182,12 +175,10 @@ Page({
     /**
      * 已写几个「字」（P0 修复：原来展示的是 `{{draft.length}}`，即 UTF-16 码元数 ——
      * 写 1 个家庭 emoji 会显示 8/30）。计数走 `utils/wishTextCount.wishTextCount`，
-     * 与服务端同一口径。**每次改 `draft` 都必须同步改它**（onDraftInput / useInspiration /
-     * borrowWishText / usePlayWish 四处，守卫有断言钉住）。
+     * 与服务端同一口径。**每次改 `draft` 都必须同步改它**（本页：onDraftInput /
+     * useInspiration / borrowWishText / applyPlayHandoff 四处，守卫有断言钉住）。
      */
     draftCount: 0,
-    /** 分享来源标记：'' = 愿签卡（默认）/ 'play' = 玩法结果弹层。只在一次转发里有效 */
-    shareFrom: '',
     productId: '',
     productKey: PRODUCT_KEY,
     /** 入口来源（门店码 → store_qr；线上入口 → 组件传入的 from） */
@@ -279,47 +270,16 @@ Page({
     /** 仪式音效开关（默认开，见 utils/ritualFeedback.isSoundEnabled） */
     soundOn: true,
     /**
-     * 玩法（今日一签 / 拆签饼 / 星座签 / MBTI 贴士）：瓦片**由注册表派生**，
-     * 页面不写死任何玩法名（加玩法只改 config/ritualPlays.js + 内容池）。
+     * 玩法**入口区**（2026-09-21 口径变更 · PRD v1.4 §11.4「玩法各开一页」）：
+     * `plays` 由注册表派生，页面不写死任何玩法名；每个入口还带 `played` / `stateText`
+     * （"今天玩过没有" —— 由 `refreshPlayStates` 按本地留档与今天的日期键现算）。
+     * 进行态 / 结果 / 推荐 / 分享**不在本页**，它们在各自玩法页（`item.page`）。
      */
     plays: RITUAL_PLAYS,
     /** 这面墙的祈运标签（由入口从商品带过来；没有就不排不提示，页面照常） */
     blessTags: [],
     /** 祈运标签的中文名（页头那颗 chip 用；空串则不显示） */
     blessLabelText: '',
-    /** 抽到的结果（就地展开的卡片；null = 未抽/已收起） */
-    playResult: null,
-    /**
-     * 正在摇的那一支（玩法 id；空串 = 没有在等）。
-     * 为什么需要它：星座 / MBTI 要读用户资料，首次会走一次会话请求 —— 那段等待此前**零反馈**，
-     * 点上去像没反应。现在瓦片落 pending 态（呼吸边框 + 副文案「摇签中…」）。
-     */
-    playPending: '',
-    /**
-     * 祈运推荐**取件中**。弹层的产品行据此占位（同高骨架），避免"弹层长高一块"。
-     * 只有 `recoLoading || reco || productId || recoFailed` 之一成立时那一行才在，
-     * 故高度从出现起就稳定（`recoFailed` = 取件失败也占位，见下）。
-     */
-    recoLoading: false,
-    /**
-     * 祈运推荐**这次没配到**（故障或空池），2026-09-21 · P2-12。
-     * ⚠️ 为什么必须给失败也留一个状态位：原来 catch 里把 `reco/recoLoading` 双清，
-     * 而 WXML 那一行的 `wx:if` 正是 `reco || productId || recoLoading` —— 三者都不成立时
-     * **整行被移除**，正在读签文的用户会看到弹层收掉一块（内容上跳）。
-     * 现在失败也把这一行留在原位，只是换一句"这次没配到"，高度不再变。
-     * 与 `recoLoading` 的关系：任何一次 setData 都成对写（一个 true 则另一个 false），
-     * 所以 `recoLoading && recoFailed` 永远不会同时为真 —— WXML 的骨架条件据此写。
-     */
-    recoFailed: false,
-    /** 需要补资料时的引导状态（不给假结果） */
-    playNeed: null,
-    /** 纸签弹层的拖拽位移（rpx 由 WXSS 换算；这里存 px） */
-    sheetDragY: 0,
-    /**
-     * 弱推：同好也在看的藏品（云函数 getBlessProducts 按祈运标签取）。
-     * 推荐是锦上添花 —— 取不到就为 null，卡片照常显示（绝不影响玩法本身）。
-     */
-    reco: null,
     /** 注册转化：落愿时未注册 → 就地弹注册（见 submitWish / onRegisterSuccess） */
     showRegisterDialog: false,
     /**
@@ -425,7 +385,7 @@ Page({
   applyBlessScope(raw) {
     const tags = sanitizeBlessTags(raw || '')
     if (!tags.length) {
-      this.setData({ blessTags: [], blessLabelText: '', plays: RITUAL_PLAYS })
+      this.setData({ blessTags: [], blessLabelText: '', plays: this.decoratePlayStates(RITUAL_PLAYS) })
       return
     }
     const order = blessPlayIds(tags)
@@ -439,36 +399,20 @@ Page({
       .sort((a, b) => (rank(a.p.id) - rank(b.p.id)) || (a.i - b.i))
       .map((x) => x.p)
     // 页头只放**标签名**（「偏「求成」」）—— 完整那句解释太长，塞进页头会挤成三行
-    this.setData({ blessTags: tags, blessLabelText: blessLabel(tags[0]), plays })
-  },
-
-  /**
-   * 纸签弹层里的产品行（有推荐走推荐，没有就用这面墙的藏品）——**玩法流程之内**的一条转化。
-   *
-   * ⚠️ P2-7（2026-09-21）：页头 chip **不再复用本方法**（那里没有任何玩法发生）。
-   * 见 `goWallProduct`，两个入口分别上报。
-   */
-  goProduct() {
-    const id = String(this.data.productId || '')
-    if (!id) return
-    // ⚠️ targetId 必须有值：`analytics.enqueue` 对空 targetId 直接丢弃（`if (!payload.targetId) return`）。
-    // 这面墙的 productKey 恒非空（normalizeProductKey 兜底成 mashangyou），这里再兜一层，
-    // 免得"埋了这条"却在报表里查不到（本仓典型静默失效）。
-    trackBehavior('wish_wall_play', 'play', this.data.productKey || PRODUCT_KEY, { step: 'to_product' })
-    wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}`, fail: () => {} })
+    this.setData({ blessTags: tags, blessLabelText: blessLabel(tags[0]), plays: this.decoratePlayStates(plays) })
   },
 
   /**
    * 页头藏品 chip（第一屏常驻的产品入口，2026-09-21 · P2-7）。
    *
-   * ⚠️ 为什么必须与 `goProduct` 分开：这个 handler 挂在**页头 chip** 上，那里
-   * **没有任何玩法发生**。此前它与纸签弹层共用 `goProduct`，也就共用
-   * `wish_wall_play/to_product` —— 而 ERP「参与仪式 / 玩法」行的口径是
+   * ⚠️ 为什么这个 handler 必须与"玩法"分开上报：它挂在**页头 chip** 上，那里
+   * **没有任何玩法发生**。此前它与纸签弹层（现已搬到玩法页）共用同一个 `goProduct`，
+   * 也就共用 `wish_wall_play/to_product` —— 而 ERP「参与仪式 / 玩法」行的口径是
    * `actions: ['wish_wall_lamp','wish_wall_play','wish_wall_sound']`（只看 action 名），
    * 于是"点一下页头 chip"会被计成一次玩法参与，**参与率可以 >100%**。
    *
    * 处置（在既有维度内区分，不改报表、不改 schema）：
-   *   · 玩法转化 → `wish_wall_play` / `targetType='play'`（玩法 id 在 targetId）；
+   *   · 玩法转化 → `wish_wall_play` / `targetType='play'`（玩法 id 在 targetId，已随玩法页搬走）；
    *   · 页头 chip → `wish_wall_play` / **`targetType='product'`**（productId 在 targetId）。
    * `targetType` 是**已入库的既有维度**（`BEHAVIOR_ALLOWED_FIELDS` 里就有），
    * 报表侧只需在 engage 行的 action 之外加一条 `targetType === 'play'` 即可把两者分开
@@ -481,145 +425,82 @@ Page({
     wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}`, fail: () => {} })
   },
 
-  /* ----------------------------- 玩法（今日一签 / 签饼 / 星座 / MBTI） ----------------------------- */
+  /* ----------------------------- 玩法入口区（四个玩法各开一页） ----------------------------- */
 
   /**
-   * 抽一次玩法。页面只做三件事：取资料 → 交给纯函数 → 摊开结果。
+   * 入口区刷新（PRD v1.4 §11.4）：给每个玩法算一句**"今天玩过没有"**。
    *
-   * 不做的三件事（都是刻意的）：
-   *   - 不写云、不进集合：玩法结果**不是 UGC**，不进弹幕墙数据；墙上只回一条第一人称回声；
-   *   - 不弹窗：结果就地展开（`playResult`），用户能一边看一边点「写成心愿」；
-   *   - 不给假结果：需要星座/MBTI 而资料里没有 → 引导去补（那两项各有 7/8 分完善奖励）。
+   * 状态来源：`utils/ritualPlayArchive` 的本地留档（key `shanhai_ritual_play_v1`，
+   * 按玩法分桶、每天每维度最多一条）。**跨天不需要任何钩子** —— `playedToday` 是拿留档里的
+   * dayKey 与"今天"（`shanghaiDayKey`，与点灯/灯语同源）现算的，所以跨天自然翻页、
+   * 也不可能漏重置。不写云：玩法结果是娱乐/收集，不是资产（同 §7 木鱼不写云的口径）。
+   *
+   * 为什么要在 onShow 也算一次：用户从玩法页返回，状态必须立刻变成"今天已玩过"。
    */
-  async onPlayTap(e) {
+  refreshPlayStates() {
+    this.setData({ plays: this.decoratePlayStates(this.data.plays) })
+  },
+
+  /**
+   * 给注册表条目补一个 `played`（今天玩过没有）。纯本地、必不抛 —— 存储不可用时一律当"没玩过"。
+   * 抽成纯函数式的私有方法，是为了让 `applyBlessScope`（重排后）与 `refreshPlayStates`（回页后）
+   * 用**同一套**状态口径，不会出现"重排之后状态丢了"。
+   */
+  decoratePlayStates(plays) {
+    const today = shanghaiDayKey(Date.now())
+    const list = Array.isArray(plays) ? plays : []
+    const playedMap = ritualPlayArchive.playedTodayMap(list.map((p) => p.id), today)
+    return list.map((p) => Object.assign({}, p, { played: !!playedMap[p.id] }))
+  },
+
+  /**
+   * 玩法入口 → 该玩法的**独立页**（进行态 / 结果 / 推荐 / 分享都在那里，见 utils/ritualPlayPage.js）。
+   *
+   * 为什么把页面路径放在注册表（`play.page`）：这是"加玩法只改注册表"这条纪律的延伸 ——
+   * 页面不写死玩法名，也不写死玩法页路径。
+   * 为什么这里**不**记 `wish_wall_play`：入口点击是"去玩"，真正的玩法参与在玩法页里上报；
+   * 在这里也发一次会让 ERP「参与仪式 / 玩法」的参与率被点进门的那一下灌水（P2-7 同一条教训）。
+   */
+  onPlayTap(e) {
     const id = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
     const play = (RITUAL_PLAYS || []).find((p) => p.id === id)
-    if (!play) return
-    if (this.data.playResult && this.data.playResult.id === id) {
-      // 再点同一张 = 收起（同一份结果不重复播回声，免得墙上刷屏）
-      this.setData({ playResult: null })
-      return
+    const page = playPage(id)
+    if (!play || !page) return
+    const params = []
+    if (this.data.productId) params.push(`productId=${encodeURIComponent(this.data.productId)}`)
+    if (this.data.productKey) params.push(`productKey=${encodeURIComponent(this.data.productKey)}`)
+    if (this.data.productTitle) params.push(`title=${encodeURIComponent(this.data.productTitle)}`)
+    if ((this.data.blessTags || []).length) params.push(`bless=${encodeURIComponent(this.data.blessTags.join(','))}`)
+    const url = params.length ? `${page}?${params.join('&')}` : page
+    try {
+      wx.navigateTo({ url, fail: () => {} })
+    } catch (err) {
+      console.warn('open play page', err)
     }
-    let profile = null
-    if ((play.needs || []).length) {
-      // ⚠️ 2026-09-20：这一段是**唯一**可能等待网络的 await（首次会话请求）；
-      // 此前它没有任何前置反馈 —— 用户点「星座签」后到弹层出现之间是纯静默。
-      // 现在先落 pending 态（瓦片呼吸 + 副文案「摇签中…」），finally 里一定清掉：
-      // 清早清晚都不影响结果，但**漏清就是把瓦片永久卡在"摇签中"**。
-      if (this.data.playPending) return
-      this.setData({ playPending: id })
+  },
+
+  /**
+   * 玩法页「写成心愿」的**落点**（PRD v1.4 §11.4 动线不能断）。
+   *
+   * 玩法页在跳回之前写一份一次性交接（`utils/wishHandoff`），这里在 `onShow` 取走：
+   *   · 有 draft → 预填写愿输入框（同一口径截断 + 同步字数）+ 滚动 + 自动聚焦；
+   *   · 有 echo → 在弹幕墙回一声（"我摇了今日一签"这类第一人称句，来自注册表）。
+   * `take()` **读到即删 + 5 分钟时效**，所以不会之后每次进墙都诡异地预填一句旧心愿。
+   * 交接读不到（用户没走这条路 / 已超时）就什么都不做 —— 页面照常可用。
+   */
+  applyPlayHandoff() {
+    const h = wishHandoff.take()
+    if (!h) return
+    if (h.draft) {
+      const draft = wishTextTruncate(h.draft, TEXT_MAX)
+      this.setData({ draft, draftCount: wishTextCount(draft) })
       try {
-        profile = await this.loadPlayProfile()
-      } finally {
-        this.setData({ playPending: '' })
-      }
+        wx.pageScrollTo({ selector: '#wishInput', duration: 260, fail: () => {} })
+      } catch (e) { /* 低版本基础库不支持 selector，忽略 */ }
+      // 滚动（260ms）之后再聚焦，否则"滚动落点"与"键盘顶起"同时发生、落点会跳
+      this.focusWishInput(300)
     }
-    const result = ritualPlay.resolvePlay(id, {
-      dayKey: shanghaiDayKey(Date.now()),
-      profile: profile || {}
-    })
-    if (!result.ok) {
-      if (result.reason === 'need_profile') {
-        this.setData({ playResult: null, playNeed: result })
-        trackBehavior('wish_wall_play', 'play', id, { step: 'need_profile' })
-      } else {
-        // ⚠️ 2026-09-20 修：其它失败分支此前**静默 return** —— 点瓦片毫无反应，
-        // 用户只会以为"这个玩法坏了"。玩法失败不许阻断页面，但必须说出来。
-        this.setData({ playNeed: null })
-        this.showAppToast({
-          overline: 'PLAY',
-          title: play.name + '没摇出来',
-          desc: '网络或内容池暂时异常，过一会儿再试。'
-        })
-        trackBehavior('wish_wall_play', 'play', id, { step: 'fail' })
-      }
-      return
-    }
-    this.setData({ playResult: result, playNeed: null, sheetDragY: 0 })
-    try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
-    // 墙上回声用注册表里那句第一人称文案（结果里的依据不上墙）
-    this.pushEcho('play', { text: result.echo })
-    trackBehavior('wish_wall_play', 'play', result.id)
-    // 弱推：这条签对应的祈运标签 → 同好也在看的藏品（异步，失败就不显示）
-    this.loadBlessReco()
-  },
-
-  /**
-   * 读玩法的资料依据（星座 / MBTI）：走已有会话（`ensureSession` 带缓存，不额外发请求），
-   * 读不到就返回 null → 走"引导补资料"分支。任何失败都不抛（玩法不能把页面弄崩）。
-   *
-   * ⚠️ 2026-09-21（P1-4）：`this._playProfile` 是**短期缓存**，不是永久结论 ——
-   * 它由 `goProfileField`（去补资料）与 `onShow`（从资料页回来）负责清空。
-   * 此前全仓**零处重置**，于是"点瓦片 → 被引导去补 → 填好返回 → 再点同一张瓦片"
-   * 仍然要求去补（缓存里那个空串还在），只有退出页面重进才恢复。
-   * 失效策略刻意是"只在**离开本页去补资料**和**回到本页**时清"：
-   * 不打在 onShow 的每个分支上，也不会因为一次空结论就在 onShow 里反复打云。
-   */
-  async loadPlayProfile() {
-    if (this._playProfile) return this._playProfile
-    try {
-      const { ensureSession } = require('../../../utils/userSession')
-      const session = await ensureSession()
-      const user = (session && session.user) || null
-      if (!user) return null
-      this._playProfile = { zodiac: user.zodiac || '', mbti: user.mbti || '' }
-      return this._playProfile
-    } catch (e) {
-      return null
-    }
-  },
-
-  /**
-   * 结果卡 → 写成心愿：预填心愿词（没有可用的就只给「马上有」开头），并滚到写愿签那里。
-   *
-   * ⚠️ **必须收掉纸签弹层**（2026-09-19 修）：`.ww-sheet` 与 `.ww-composer` 都是
-   * `position: fixed; bottom: 0`，而弹层 `z-index: 41` **高于**发送条 `z-index: 30` ——
-   * 点「写下我的心愿」若只填草稿、不收弹层，弹层会**一直盖住发送条**，用户看到的现象是
-   * 「页面滚下去了，但看不到输入框」。而且本页发送条是吸底的、本来就常驻可见，
-   * **不是靠滚动才能看到** —— 此前想用 `pageScrollTo` 修这件事属于改错了地方
-   * （`pageScrollTo` 对 `position: fixed` 元素本来就无效，它不在文档流里）。
-   * 判据：`test:wish-wall` 钉住「调用后 `playResult === null`（弹层已收）」。
-   */
-  usePlayWish() {
-    const r = this.data.playResult
-    if (!r) return
-    // 玩法给的心愿词也要按同一口径截断 + 同步计数（不允许有一条改 draft 的路漏计数）
-    const draft = wishTextTruncate(r.wish || '马上有', TEXT_MAX)
-    this.setData({ draft, draftCount: wishTextCount(draft) })
-    trackBehavior('wish_wall_play', 'play', r.id, { step: 'to_wish' })
-    // ① 先收弹层：`.ww-sheet` 的 z-index 高于发送条，不收就会一直盖住它
-    this.closePlayResult()
-    // ② 再滚到输入框（发送条 2026-09-19 起改为顺流，所以滚动这一下是有意义的）
-    try {
-      wx.pageScrollTo({ selector: '#wishInput', duration: 260, fail: () => {} })
-    } catch (e) { /* 低版本基础库不支持 selector，忽略 */ }
-    // ③ 最后**自动聚焦**：键盘直接起来，用户不必再点一下输入框 ——
-    //    PRD §4 要求「抽签 → 结果 → 写成心愿」这条动线**无感**，多一次点击就是有感的。
-    //    延迟到滚动（260ms）之后再聚焦：否则"滚动落点"与"键盘顶起"同时发生，落点会跳。
-    this.focusWishInput(300)
-  },
-
-  /**
-   * 玩法结果弹层里的「分享这份结果」（W1 建议方案 A：先上转发卡片，不做生成图/canvas）。
-   *
-   * 为什么需要这个方法：小程序唤起转发**只有** `<button open-type="share">` 这一条路，
-   * 而 `onShareAppMessage` 是页面级的 —— 它同时服务愿签卡上的「祈一份」。
-   * 所以按钮 `bindtap` 先落一个**来源标记**，`onShareAppMessage` 据此分流
-   * （见那里的注释；判据：test-wish-wall 钉住「弹层分享读 result.share、不读 card.text」）。
-   *
-   * 本方法**只写一个标记**：不弹 toast、不发云调用、不改 draft —— 分享是纯本地动作，
-   * 失败也不影响玩法结果本身（口径：玩法与推荐不得阻断主流程）。
-   */
-  onSheetShareTap() {
-    const r = this.data.playResult
-    if (!r) return
-    this.setData({ shareFrom: 'play' })
-    // ⚠️ 2026-09-21 合并两路时对齐：**targetType 恒为 'play'**（schema 的声明字段就是 'play'），
-    // 「分享」这个区分度放 `step`。原来这里写 `targetType='share'`，与
-    // `wish_wall_play` 的 schema 声明不一致 —— 页面侧那条「本页所有 wish_wall_play 的
-    // targetType 与 schema 一致」的断言在合并后当场把它抓了出来（判据起作用了）。
-    // 这也与同批 P2-7 的处置一致：**判别维度优先用 step，targetType 保持契约声明值**。
-    trackBehavior('wish_wall_play', 'play', r.id, { step: 'share' })
+    if (h.echo) this.pushEcho('play', { text: h.echo })
   },
 
   /**
@@ -645,90 +526,6 @@ Page({
     if (this.data.inputFocus) this.setData({ inputFocus: false })
   },
 
-  closePlayResult() {
-    this.setData({ playResult: null, sheetDragY: 0 })
-  },
-
-  /**
-   * 纸签弹层的拖拽关闭：只挂在顶部"把手"上（整层可拖会让内部的滚动/点击变难用）。
-   * 阈值抽成纯函数：`sheetDragShouldClose(dy)` —— 手势的判定必须能被单测钉住，不能只靠手感。
-   */
-  onSheetGripStart(e) {
-    const t = (e && e.touches && e.touches[0]) || null
-    this._sheetStartY = t ? t.clientY : 0
-  },
-
-  onSheetGripMove(e) {
-    if (!this._sheetStartY) return
-    const t = (e && e.touches && e.touches[0]) || null
-    if (!t) return
-    const dy = Math.max(0, t.clientY - this._sheetStartY)
-    this.setData({ sheetDragY: dy })
-  },
-
-  onSheetGripEnd() {
-    const dy = Number(this.data.sheetDragY) || 0
-    this._sheetStartY = 0
-    if (sheetDragShouldClose(dy)) {
-      this.closePlayResult()
-      return
-    }
-    this.setData({ sheetDragY: 0 })
-  },
-
-  /**
-   * 弱推：按**这面墙的祈运标签**取一件"同好也在看的藏品"。
-   *
-   * 三条刻意的约束：
-   *   1. 用**墙的标签**而不是"用户是谁"：用户资料不该为一条推荐被读取，推荐也不该依赖隐私字段；
-   *   2. 排除**当前这面墙的商品**（不给自己推荐自己）；
-   *   3. 按「标签 + 当日」缓存一次：同一天反复抽签不会反复打云函数（推荐本来就是一天一件）。
-   * 任何失败都只是"没有推荐"（`reco = null`），不弹错、不阻断玩法。
-   */
-  async loadBlessReco() {
-    const tag = (this.data.blessTags || [])[0]
-    if (!tag) return
-    const cacheKey = recoCacheKey(tag, shanghaiDayKey(Date.now()))
-    if (cacheKey && this._recoCache && this._recoCache.key === cacheKey) {
-      this.setData({ reco: this._recoCache.row, recoLoading: false, recoFailed: false })
-      return
-    }
-    // ⚠️ 2026-09-20：进云之前先立"推荐取件中"标记 —— 弹层那一行据此**占位**。
-    // 此前这一行在回包前整块不渲染，弹层会在用户读签文时长高一块（没有 productId 的墙必现）。
-    this.setData({ recoLoading: true, recoFailed: false })
-    try {
-      const res = await wx.cloud.callFunction({
-        name: 'getBlessProducts',
-        data: {
-          tag,
-          excludeIds: this.data.productId ? [this.data.productId] : [],
-          limit: 3,
-          // 与缓存键**同一个日期**：服务端据此在候选池里按天轮换，
-          // 否则「一天一件」会退化成「永远同一件」（2026-09-20 真机反馈，见云函数注释）
-          dayKey: shanghaiDayKey(Date.now())
-        }
-      })
-      const reco = pickReco(res && res.result, tag, blessLabel(tag))
-      // 取到才进缓存：把"这次没配到"也缓存一天，会让整天的推荐都停在失败态上
-      this._recoCache = { key: cacheKey, row: reco }
-      this.setData({ reco, recoLoading: false, recoFailed: false })
-    } catch (e) {
-      // 推荐失败不影响玩法：`reco` 仍为 null（没有推荐可给）。
-      // ⚠️ 2026-09-21（P2-12）：这里**不再双清** —— 原来 `reco: null, recoLoading: false`
-      // 会让 WXML 的 `wx:if="{{reco || productId || recoLoading}}"` 全部落空，
-      // 整行被移除 = 弹层当着用户的面收掉一块。现在把 `recoFailed` 立起来，
-      // 那一行留在原位只说"这次没配到"（同高，内容不上跳）。
-      this.setData({ reco: null, recoLoading: false, recoFailed: true })
-    }
-  },
-
-  goRecoProduct() {
-    const r = this.data.reco
-    if (!r || !r._id) return
-    trackBehavior('wish_wall_reco', 'tap', r.tag || '')
-    wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(r._id)}`, fail: () => {} })
-  },
-
   /* ── 注册成功后的「下一步」（PRD §9-4 裁决：**两者合一**）──────────────────────
      两个出口：去券包（复用共享导航，它会按"有没有可用券"分流）/ 去逛逛（切到馆藏 tab）。
      两条都单独记漏斗 step —— 否则无法知道"给的这个下一步到底有没有人走"，
@@ -744,19 +541,6 @@ Page({
     trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'to_shop' })
     // 馆藏是 tabBar 页，必须 switchTab（navigateTo 会失败）
     try { wx.switchTab({ url: '/pages/category/index', fail: () => {} }) } catch (e) { /* ignore */ }
-  },
-
-  /** 需要补资料 → 去资料页（那两项自带完善奖励；不在这里拦注册，价值先行） */
-  goProfileField() {
-    trackBehavior('wish_wall_play', 'play', (this.data.playNeed && this.data.playNeed.field) || '', { step: 'go_profile' })
-    // ⚠️ 2026-09-21（P1-4）：离开本页去补资料前**先作废缓存**。用户回来的第一件事
-    // 就是再点同一张瓦片，而 onShow 的失效只在"页面被显示"时发生；把失效放在这里，
-    // 即使某个基础库下 onShow 的时序不如预期，回来那次点击也一定会重新读会话。
-    // 语义上它也更准：我们**知道**用户正要去改这份资料。
-    this._playProfile = null
-    try {
-      wx.navigateTo({ url: PROFILE_PAGE, fail: () => {} })
-    } catch (e) { /* ignore */ }
   },
 
   /* ----------------------------- 即时反馈（动作 → 弹幕墙回声） ----------------------------- */
@@ -1279,10 +1063,11 @@ Page({
     // 博物笔记入口：纯本地、幂等，与 mine 云调用的成败无关（P2-9，2026-09-21）。
     // 放 onShow 也覆盖"从成就页回来看进度变了"这一路。
     this.recordRelics()
-    // 玩法资料缓存：从资料页回来必须失效，否则用户补完星座/MBTI 再点同一张瓦片
-    // 仍会被要求去补资料（P1-4，2026-09-21）。这里只失效**不请求** —— 真正的会话请求
-    // 仍由 onPlayTap 按需发起，onShow 一次云都不打。
-    this._playProfile = null
+    // 玩法入口区的"今天玩过没有"：从玩法页回来必须立刻变成"已玩过"（§11.4）。
+    this.refreshPlayStates()
+    // 玩法页「写成心愿」留下的交接（§11.4 动线不能断）：取走 → 预填草稿 + 墙上回一声。
+    // ⚠️ 只在开放态消费：关闭态取走会把这份交接白白吃掉（take 读到即删）。
+    if (this.data.allowed) this.applyPlayHandoff()
     if (this.data.allowed && (this.data.rows || []).length) {
       // 同值 setData 能否重播弹幕动画取决于基础库 diff；弹幕轮播本来就有
       // `danmakuCycle` 进 key 的确定路径，这里只负责"接着排期"，不指望它重播。
@@ -1439,33 +1224,19 @@ Page({
   },
 
   /**
-   * 转发入口（本页**两条链路**，必须可区分，否则文案会串）。
+   * 转发入口（2026-09-21 口径变更后，本页**只剩一条链路**）。
    *
    * A. 愿签卡上的「祈一份」 → 分享的是**愿签正文**（`card.text`）。
-   * B. 玩法结果弹层里的「分享这份结果」 → 分享的是**玩法结果**（`ritualPlay` 的 `share`）。
+   * B. 玩法结果的「分享这份结果」 → 已在**玩法页**（`utils/ritualPlayPage.js` 的
+   *    `onShareAppMessage`，只读 `ritualPlay.share`）。本页不再有玩法结果，
+   *    所以这里**不存在**"把玩法分享降级成愿签文案"的分流问题 —— 那条分流标记
+   *    （`shareFrom`）随玩法弹层一起下线（结构上不再可能串链）。
    *
-   * 分流判据 = `shareFrom === 'play'`（按钮 bindtap 落的**一次性标记**）。
-   * 为什么不只看"现在弹层开着吗"：`playResult` 在 `usePlayWish` / 收起弹层之后就被清掉了，
-   * 而转发回调与那次点击之间存在时序 —— 只看 `playResult` 会把玩法分享悄悄降级成愿签文案。
-   * 反过来，`shareFrom` 万一因为时序/基础库差异没落上，**第二条兜底**（弹层开着且没有愿签卡）
-   * 仍能分享玩法结果 —— 宁可多一层保险，也不要"分享出去是错的文案"。两条都不成立时才走愿签。
-   *
-   * 合规口径（两条都不能破）：
-   *   · 玩法结果分支**绝不读 `card.text`** —— 用户可能刚点开过别人的愿签，拿错就是把别人的心愿
-   *     转发出去；
-   *   · 玩法结果分支只用 `ritualPlay.share`，**不自己拼星座/MBTI 等"依据"**
-   *     （`share` 字段本身就是"只公开结果与建议、不公开依据"，见 utils/ritualPlay.js）。
+   * 合规口径：玩法分支**绝不读 `card.text`** 这条规矩移到了玩法页 ——
+   * 那边结构上**根本没有** `card` 这个输入（更强的保证），守卫按此断言。
    */
   onShareAppMessage() {
-    // 一次性标记：读完就复位，避免「上一次是玩法分享」污染下一次愿签分享
-    const fromPlay = this.data.shareFrom === 'play'
-    if (this.data.shareFrom) this.setData({ shareFrom: '' })
     const path = `/subpackages/feature/wish-wall/index?productKey=${encodeURIComponent(this.data.productKey)}`
-    const result = this.data.playResult
-    // `!this.data.card`：愿签卡是另一个弹层；它开着就说明用户在看愿签，不抢玩法分支
-    if (result && result.share && (fromPlay || !this.data.card)) {
-      return { title: result.share, path }
-    }
     const card = this.data.card
     const text = card ? normalizeWishText(card.text) : ''
     return {

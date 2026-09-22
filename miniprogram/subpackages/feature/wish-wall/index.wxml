@@ -362,26 +362,24 @@
     <!-- 「说明行 + 音效」整块已下线（2026-09-20 改造）：音效上移到仪式区区头，
          说明文案与墙页脚重复。原结构见 git 历史（.ww-foot-row）。 -->
 
-    <!-- 玩法区（注册表驱动，2026-09-18 需求 5 第一批）：
-         点灯 / 木鱼是"动作"，这里是"抽一句" —— 抽到的结果由页尾的**纸签弹层**呈现，
-         看完能直接「写成心愿」，形成"抽 → 写 → 上墙"的一条路。
-         ⚠️ 瓦片一律 wx:for 注册表，页面不写死玩法名（加玩法只改 config/ritualPlays.js）。 -->
+    <!-- 游戏分区 · 玩法**入口区**（PRD v1.4 §11.3 六分区的「游戏」；§11.4 玩法各开一页）。
+         2026-09-21 口径变更：这里**只做入口** —— 进行态 / 结果 / 推荐 / 分享全部搬到各自玩法页
+         （每个玩法一个完整闭环：入口 → 进行态 → 结果 → 留档 → 下一步）。
+         ⚠️ 三条不许破：
+           · `wx:for="{{plays}}"` 注册表驱动，页面不写死玩法名（加玩法只改 config/ritualPlays.js）；
+           · 前两枚由祈运标签决定（applyBlessScope 的排序不变，同一天同一标签结果仍确定）；
+           · 入口形态按注册表 `form` 分支（card / shell / ring / axis）—— 四种入口长得不一样，
+             不再靠"前两枚更大"这一种表达（§11.1 R1）。
+         每个入口还带**"今天玩过没有"**（`item.played / entryNote / doneNote`）——
+         这是把用户再引进玩法页的理由（状态由本地留档按日期键现算，见 index.js refreshPlayStates）。 -->
     <view class="ww-plays">
       <view class="ww-plays-head">
-        <text class="ww-plays-title">今天的玩法</text>
-        <!-- 副文案随祈运标签走：这面墙「求什么」决定先看到哪两支（排序见 index.js applyBlessScope），
-             把理由写出来，前两枚瓦片为什么更大就不再是"排版偏心"。没有标签时保持通用文案。 -->
-        <text class="ww-plays-sub">{{blessLabelText ? '偏「' + blessLabelText + '」先推这两支' : '抽一句，顺手写下来'}}</text>
+        <text class="ww-plays-title">游戏</text>
+        <text class="ww-plays-sub">{{blessLabelText ? '偏「' + blessLabelText + '」先推这两支' : '四个玩法，各进各的门'}}</text>
       </view>
       <view class="ww-play-grid">
-        <!-- 瓦片分两级（2026-09-20 改造）：四枚等大等重的纯文字瓦片＝四个同质的列表框，
-             用户看不出"该先点哪个"。`plays` 已按祈运标签重排（applyBlessScope），
-             所以前两枚天然就是这面墙最该抽的两支 —— 给它们**主瓦片**式样（铜边 + 更大字 + 字标），
-             其余两枚退为**次瓦片**（更矮、无字标、弱一档的边框）。
-             字标来自注册表 `mark`（config/ritualPlays.js），是"抽签"这件事的视觉语汇，
-             只给主瓦片 —— 四枚都加就等于没加（噪声）。 -->
         <view
-          class="ww-play {{index < 2 ? 'is-lead' : 'is-minor'}} {{playPending === item.id ? 'is-pending' : ''}} {{playResult && playResult.id === item.id ? 'is-open' : ''}}"
+          class="ww-play is-{{item.form}} {{index < 2 ? 'is-lead' : 'is-minor'}}"
           wx:for="{{plays}}"
           wx:key="id"
           bindtap="onPlayTap"
@@ -389,28 +387,42 @@
           hover-class="ww-play-press"
           hover-stay-time="70"
           aria-role="button"
-          aria-label="{{item.name}}：{{item.hint}}"
+          aria-label="{{item.name}}：{{item.played ? item.doneNote : item.hint}}"
         >
-          <view class="ww-play-mark" wx:if="{{index < 2}}" aria-hidden="true">{{item.mark}}</view>
-          <view class="ww-play-copy">
-            <text class="ww-play-name">{{item.name}}</text>
-            <!-- 摇签中（2026-09-20）：星座 / MBTI 要读用户资料，首次会走一次会话请求 ——
-                 此前这段等待**一点反馈都没有**（函数体在 await 之后才 setData），
-                 点上去像没反应。现在副文案就地换成「摇签中…」，与瓦片的呼吸边框同一件事。 -->
-            <text class="ww-play-hint">{{playPending === item.id ? '摇签中…' : item.hint}}</text>
+          <!-- 入口形态：四种各一套（纯 CSS 盒子，不用图片/图标资产、不用 canvas） -->
+          <view class="ww-play-form" wx:if="{{item.form === 'card'}}" aria-hidden="true">
+            <view class="ww-play-tube">
+              <view class="ww-play-tube-body"></view>
+              <view class="ww-play-tube-mouth"></view>
+            </view>
           </view>
-        </view>
-      </view>
+          <view class="ww-play-form" wx:elif="{{item.form === 'shell'}}" aria-hidden="true">
+            <view class="ww-play-shell">
+              <view class="ww-play-shell-half is-left"></view>
+              <view class="ww-play-shell-half is-right"></view>
+            </view>
+          </view>
+          <view class="ww-play-form" wx:elif="{{item.form === 'ring'}}" aria-hidden="true">
+            <view class="ww-play-ring">
+              <view class="ww-play-ring-dot"></view>
+            </view>
+          </view>
+          <view class="ww-play-form" wx:elif="{{item.form === 'axis'}}" aria-hidden="true">
+            <view class="ww-play-axis">
+              <view class="ww-play-axis-line"></view>
+              <view class="ww-play-axis-knob"></view>
+            </view>
+          </view>
 
-      <!-- 纸签弹层（2026-09-18 细节雕刻）：
-           结果以前是"就地展开的一张亮色卡"，夹在深色瓦片下既不像卡也不像弹窗 —— 产品反馈"与页面割裂"。
-           现在明确身份：**一张签从底部递上来**（遮罩 + 铜色把手 + 印章字标），纸面语言与牌匾/愿签同源。
-           标题/正文仍全部来自 utils/ritualPlay 的纯函数（页面零判断）。 -->
-      <!-- 需要星座/MBTI 但资料里没有 → 引导去补（不给一个编出来的结果） -->
-      <view class="ww-play-need" wx:if="{{playNeed}}">
-        <text class="ww-play-need-text">这个玩法要用到你的「{{playNeed.fieldLabel}}」，资料页填一下就好（{{playNeed.gain}}）。</text>
-        <view class="ww-play-need-cta" bindtap="goProfileField" hover-class="ww-play-need-press" hover-stay-time="70" aria-role="button">
-          去填{{playNeed.fieldLabel}}
+          <view class="ww-play-copy">
+            <view class="ww-play-title-row">
+              <view class="ww-play-mark" aria-hidden="true">{{item.mark}}</view>
+              <text class="ww-play-name">{{item.name}}</text>
+              <text class="ww-play-lead-tag" wx:if="{{index < 2}}">先推</text>
+            </view>
+            <text class="ww-play-hint">{{item.hint}}</text>
+            <text class="ww-play-state {{item.played ? 'is-done' : ''}}">{{item.played ? item.doneNote : item.entryNote}}</text>
+          </view>
         </view>
       </view>
     </view>
@@ -681,109 +693,9 @@
     duration="{{toastDuration}}"
     bind:close="onToastClose"
   />
-  <!-- 纸签弹层（遮罩 + 从底部升起的签）：与发送条一样，**必须是 .ww-page 的直接子节点** ——
-       它原本挂在 .ww-plays 里，而 .ww-plays 是 z-index:1 的层叠上下文，于是弹层的 z-index:41
-       只在那个上下文内有效，吸底发送条（页面级 z-index:30）反而画到它上面（渲染图里实测到）。
-       规则：**凡是 fixed 覆盖层，不许待在任何一个带 z-index 的祖先里**。 -->
-  <view
-    class="ww-sheet-mask"
-    wx:if="{{playResult}}"
-    bindtap="closePlayResult"
-    catchtouchmove="noop"
-    aria-role="button"
-    aria-label="收起"
-  ></view>
-  <view
-    class="ww-sheet"
-    wx:if="{{playResult}}"
-    style="transform: translateY({{sheetDragY}}px);"
-    aria-role="dialog"
-    aria-label="{{playResult.name}}结果"
-  >
-    <view
-      class="ww-sheet-grip"
-      bindtouchstart="onSheetGripStart"
-      bindtouchmove="onSheetGripMove"
-      bindtouchend="onSheetGripEnd"
-      bindtouchcancel="onSheetGripEnd"
-    ><view class="ww-sheet-grip-bar" aria-hidden="true"></view></view>
-
-    <view class="ww-sheet-head">
-      <view class="ww-sheet-mark" aria-hidden="true">{{playResult.mark}}</view>
-      <view class="ww-sheet-head-copy">
-        <!-- 2026-09-20 极简：`overline` 与 `name` 对「今日一签」是同一个词（内容是 `今日一签`、
-             注册表名也是 `今日一签`），并排渲染就是同一个词出现两遍。两者相同时只留 `name`。 -->
-        <text class="ww-sheet-overline" wx:if="{{playResult.overline && playResult.overline !== playResult.name}}">{{playResult.overline}}</text>
-        <text class="ww-sheet-name">{{playResult.name}}</text>
-      </view>
-      <text class="ww-sheet-close" bindtap="closePlayResult" hover-class="ww-sheet-close-press" hover-stay-time="70" aria-role="button">收起</text>
-    </view>
-
-    <view class="ww-sheet-body">
-      <text class="ww-sheet-title">{{playResult.title}}</text>
-      <text class="ww-sheet-sub" wx:if="{{playResult.sub}}">{{playResult.sub}}</text>
-      <text
-        class="ww-sheet-line"
-        wx:for="{{playResult.lines}}"
-        wx:key="*this"
-        style="animation-delay: {{120 + index * 60}}ms;"
-      >{{item}}</text>
-    </view>
-
-    <view class="ww-sheet-cta-row">
-      <view class="ww-sheet-cta" bindtap="usePlayWish" hover-class="ww-sheet-cta-press" hover-stay-time="70" aria-role="button">
-        {{playResult.wish ? '写成心愿' : '写下我的心愿'}}
-      </view>
-      <!-- 玩法结果分享（W1 建议方案 A：会话卡片，不做生成图）。
-           为什么必须是 <button open-type="share">：这是小程序**唯一**能唤起转发的元素，
-           `<view bindtap>` 点了不会转发。
-           为什么 bindtap 还要落一个标记：`onShareAppMessage` 是页面级的，它也服务愿签卡上的
-           「祈一份」；不标记来源，两条链路就会串（弹层分享出去变成别人的愿签正文）。
-           文案与依据口径在 `utils/ritualPlay.js` 的 `share` 字段里（只公开结果与建议、不公开依据）。 -->
-      <button
-        class="ww-sheet-cta is-share"
-        open-type="share"
-        bindtap="onSheetShareTap"
-        hover-class="ww-sheet-cta-press"
-        hover-stay-time="70"
-        aria-role="button"
-      >分享这份结果</button>
-    </view>
-
-    <!-- 产品链路：**只留一条主路**（以前同时有"推荐卡"和"看这件藏品"两行，谁主谁次看不出来）。
-         有祈运推荐就用推荐，没有就用这面墙自己的藏品。
-         ⚠️ 2026-09-20 改造：推荐是**异步**取的（云函数 `getBlessProducts`）。此前这一行在回包前
-         **整块不渲染** —— 弹层会在用户正读签文时长高一块，内容跳一下（没有 productId 的墙必现）。
-         现在 `recoLoading` 期间也占位（同高骨架行），整块高度从弹层出现那一刻就稳定。
-         ⚠️ 2026-09-21（P2-12）：取件**失败**也要占位。原来 JS 在 catch 里把 `reco/recoLoading`
-         双清，这一行的 `wx:if` 全部落空 → **整行被移除**，用户正读签文时弹层当场收掉一块。
-         现在 `recoFailed` 也是一档条件：行留在原位，只把内容换成"这次没配到"（同高）。
-         条件里的三个状态位与 JS 一一对应，**缺一个就会退回"整行消失"**（守卫钉住）。 -->
-    <view
-      class="ww-sheet-product"
-      wx:if="{{reco || productId || recoLoading || recoFailed}}"
-      bindtap="{{reco ? 'goRecoProduct' : 'goProduct'}}"
-      hover-class="ww-sheet-product-press"
-      hover-stay-time="70"
-      aria-role="button"
-    >
-      <view class="ww-sheet-product-copy">
-        <text class="ww-sheet-product-label">{{reco ? reco.label : ('这面墙的藏品' + (productTitle ? ' · ' + productTitle : ''))}}</text>
-        <text class="ww-sheet-product-title" wx:if="{{reco}}">{{reco.title}}</text>
-        <!-- 取件中：骨架占位（与推荐标题同高）。⚠️ `!recoFailed` 是必须的 ——
-             失败态也算"这一行在"，骨架若不排除失败就会被替换掉（见 P2-12）。 -->
-        <view class="ww-sheet-product-skel wallet-skel" wx:elif="{{recoLoading && !recoFailed}}" aria-hidden="true"></view>
-        <!-- 没配到：把话说明白，但**不撤掉这一行**（撤掉就是 P2-12 那个"弹层收掉一块"） -->
-        <text class="ww-sheet-product-title" wx:elif="{{recoFailed}}">这次没配到</text>
-        <text class="ww-sheet-product-meta" wx:if="{{reco && (reco.latinName || reco.priceText)}}">{{reco.latinName}}{{reco.latinName && reco.priceText ? ' · ' : ''}}{{reco.priceText}}</text>
-      </view>
-      <!-- ⚠️ 这一行是 CTA 文案（"看看这件"），不是装饰 —— 不许 aria-hidden，
-           否则读屏用户听不到这条主路的出口（本批曾误加一次，自查时撤掉）。 -->
-      <text class="ww-sheet-product-go">看看这件 ›</text>
-    </view>
-
-    <text class="ww-sheet-note">今日这一句一天一支，明天会换新的。</text>
-  </view>
+  <!-- 原「纸签弹层（玩法结果）」整块已下线（2026-09-21 PRD v1.4 §11.4：玩法各开一页）。
+       结果 / 写成心愿 / 分享 / 推荐行**原样搬到玩法页**（`.rp-*`，见 subpackages/feature/play-*），
+       本页只剩入口区。层叠纪律不变：本页仍是 fixed 覆盖层（H2 功德证）必须是 `.ww-page` 直接子节点。 -->
 
   <!-- 创新钩子 H2「功德证」本体（可保管、可回看）：与纸签弹层同一套纸张语言与层叠纪律 ——
        同样是 .ww-page 的直接子节点（fixed 覆盖层不许待在带 z-index 的祖先里，见上面那段注释）。
