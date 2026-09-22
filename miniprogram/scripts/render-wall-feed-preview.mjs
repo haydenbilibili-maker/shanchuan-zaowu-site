@@ -274,7 +274,9 @@ const MINE_ROWS = [
 /** 每个场景：props（页面传的）+ view（组件自己的视图态，模拟用户点过什么） */
 const SCENES_PATCH = {
   full: {},
-  more: { props: { pageSize: 4 } },
+  // ⚠️ 必须显式 hasMore:true：baseProps() 默认 false，组件会（正确地）显示"墙底"行，
+  //    于是场景期望的"加载更多按钮"根本不该出现 —— 原判据把这报成组件缺陷，是场景写漏了。
+  more: { props: { pageSize: 4, hasMore: true } },
   loading: { props: { items: [], loading: true } },
   empty: { props: { items: [] } },
   error: { props: { items: [], loadError: '网络开小差了，愿签没能读到' } },
@@ -453,15 +455,54 @@ const ABSENT = {
 /** 可点区（≥88rpx）逐条钉住：这些元素都必须 h≥88 且 w≥88 */
 const TAP_TARGETS = ['.wf-seg-item', '.wf-chip', '.wf-sort', '.wf-card', '.wf-act', '.wf-more-btn', '.wf-error-retry', '.wf-more-retry', '.wf-sheet-close', '.wf-sheet-act']
 
+// MUST/ABSENT 里出现的**全部**裸选择器 —— 注入页面做存在性探测（见页内注释）
+const EXIST_SELECTORS = Array.from(new Set(
+  Object.values(MUST).flat().concat(Object.values(ABSENT).flat())
+)).sort()
+
 const MEASURE_JS = `
 <script>
 const __SCENE__ = ${JSON.stringify(SCENE)};
+const __EXIST_SELECTORS__ = ${JSON.stringify(EXIST_SELECTORS)};
 const __METRICS__ = ${JSON.stringify(METRICS)};
 const __TAP__ = ${JSON.stringify(TAP_TARGETS)};
 window.addEventListener('load', () => {
   const out = []
   const rect = (el) => { const r = el.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) } }
-  const lineCount = (el) => { const r = document.createRange(); r.selectNodeContents(el); return Array.from(r.getClientRects()).filter((x) => x.height > 1).length }
+  /* 视觉行数。
+   * ⚠️ 2026-09-22 集成官修：原实现是 Range.getClientRects().length —— 它返回的是
+   * **内联盒子**的矩形，**不是视觉行数**：一行里放两个 <text>（比如「墙上的愿签」+ 角标 8）
+   * 就会被算成 2 行；分段控件（4 个内联盒子）被算成 **4 行**。
+   * 于是渲染台对着**正确的一行排版**报「折成 4 行（上限 1）」—— 工具在说谎，
+   * 而它比真缺陷更危险：会把人骗去改本来没坏的样式（本仓已栽过同类一次）。
+   * 正确做法：把矩形**按 top 聚类**（同一行内的盒子 top 几乎相同），聚出的类数才是行数。 */
+  const lineCount = (el) => {
+    const r = document.createRange()
+    r.selectNodeContents(el)
+    // 只数**可见框内**的行：被 -webkit-line-clamp 夹掉的行仍然有矩形（在框下方），
+    // 不加这一刀就会把"4 行截断"报成「折成 7 行」（本判据第二次说谎的形态）。
+    const boxBottom = el.getBoundingClientRect().bottom
+    const all = Array.from(r.getClientRects()).filter((x) => x.height > 1 && x.width > 0)
+    // 只保留**最内层**矩形：Range 会同时给出"子元素盒子"和"子元素里的文字"两层，
+    // 而它们 top 相差可达几十像素（子盒子满高、文字居中）→ 会被聚成两行。
+    // （.wf-more 报 2 行、它的子元素 .wf-more-end 却报 1 行，就是这个嵌套造成的。）
+    const inner = all.filter((x) => !all.some((o) => o !== x &&
+      o.left >= x.left - 1 && o.right <= x.right + 1 && o.top >= x.top - 1 && o.bottom <= x.bottom + 1))
+    const rects = (inner.length ? inner : all).filter((x) => x.top < boxBottom - 1)
+    if (!rects.length) return 0
+    const cs = getComputedStyle(el)
+    const lh = parseFloat(cs.lineHeight) || 0
+    // 容差：优先行高的一半；flex 容器常见 line-height: normal（→ parseFloat 得 NaN），
+    // 这时退回**字号** —— 原来硬编码 6px，会把同一行里 top 差 11px 的两个盒子（分隔线 + 文字）
+    // 拆成两行（.wf-more 被误报「折成 2 行」就是这么来的）。
+    const fs = parseFloat(cs.fontSize) || 0
+    const tol = lh > 1 ? lh / 2 : Math.max(8, fs * 0.75)
+    const tops = []
+    rects.map((x) => x.top).sort((a, b) => a - b).forEach((t) => {
+      if (!tops.length || t - tops[tops.length - 1] > tol) tops.push(t)
+    })
+    return tops.length
+  }
   const kidsSameRow = (el) => {
     const kids = Array.from(el.children).filter((k) => k.getBoundingClientRect().height > 1)
     if (kids.length < 2) return true
@@ -527,8 +568,18 @@ window.addEventListener('load', () => {
   const firstText = el('.wf-col:nth-child(1) .wf-card:nth-child(1) .wf-card-text')
   if (firstText) {
     out.push({ label: '首项正文', sel: ':first', mode: 'first', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
-      text: (firstText.textContent || '').trim() })
+      // 与 push() 同口径截 24 字：判据那边比的是 EXPECT_FIRST_TEXT.slice(0,24)，
+      // 这里给全文就永远不相等（原判据因此恒红，是**判据自身的 bug**）
+      text: (firstText.textContent || '').trim().slice(0, 24) })
   }
+  // 存在性：MUST/ABSENT 用的是**裸选择器**（.wf-card / .wf-more-btn …），
+  // 而 METRICS 里只有带作用域的（.wf-col:nth-child(1) .wf-card:nth-child(1)）——
+  // 原来的实现拿 metrics 去匹配 sel === '.wf-card'，**永远匹配不到** ⇒ 判据恒红（假失败）。
+  // 现在由 Node 侧把全集传进来，这里逐个 querySelector 探一遍。
+  const exists = {}
+  ;(__EXIST_SELECTORS__ || []).forEach((sel) => { exists[sel] = !!document.querySelector(sel) })
+  out.push({ label: '存在性', sel: ':exists', mode: 'exists', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0, exists })
+
   const pre = document.createElement('pre')
   pre.id = 'wallfeed-metrics'
   pre.textContent = JSON.stringify(out)
@@ -575,11 +626,13 @@ const advisories = []
 const must = MUST[SCENE] || []
 const absent = ABSENT[SCENE] || []
 
+const existsRow = metrics.find((r) => r.sel === ':exists')
+const existsMap = (existsRow && existsRow.exists) || {}
 for (const sel of must) {
-  if (!metrics.some((r) => r.sel === sel && !r.missing)) problems.push(`${SCENE} 场景必须有的元素没渲染出来：${sel}（判据失效 = 假通过）`)
+  if (!existsMap[sel]) problems.push(`${SCENE} 场景必须有的元素没渲染出来：${sel}（判据失效 = 假通过）`)
 }
 for (const sel of absent) {
-  if (metrics.some((r) => r.sel === sel && !r.missing)) problems.push(`${SCENE} 场景不该出现的元素渲染出来了：${sel}`)
+  if (existsMap[sel]) problems.push(`${SCENE} 场景不该出现的元素渲染出来了：${sel}`)
 }
 
 metrics.forEach((row) => {
@@ -664,11 +717,15 @@ if (SCENE === 'full') {
   }
 }
 
-// ⑥ 两列等宽
+// ⑥ 两列等宽 —— 只在**该场景本来就有两列**时判：
+//    骨架/空/失败态没有 .wf-cols，原来无条件要求"必须量到两列宽度"⇒ 恒红（判据作用域错）。
 {
+  const hasCols = !!existsMap['.wf-cols']
   const c = byLabel('两列等宽')
-  if (!c) problems.push('没量到两列宽度（判据失效 = 假通过）')
-  else if (c.delta > 2) problems.push(`两列不等宽：${c.w1} vs ${c.w2}`)
+  if (hasCols) {
+    if (!c || c.missing) problems.push('没量到两列宽度（判据失效 = 假通过）')
+    else if (c.delta > 2) problems.push(`两列不等宽：${c.w1} vs ${c.w2}`)
+  }
 }
 
 // ⑦ 骨架不跳高（骨架卡与真卡同量级）
