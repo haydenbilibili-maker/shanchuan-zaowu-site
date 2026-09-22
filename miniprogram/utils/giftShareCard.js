@@ -445,10 +445,36 @@ const STICKER = {
   stampTopPad: Math.round(1.5 * 11.811),                // 印章上缘相对 footerTop（让印章留在页脚带右下）
 }
 
+/**
+ * P0-2（2026-09-21 产品负责人点名放行）：**打印前按 `GIFT_NOTE_MAX_CHARS` clamp 正文**。
+ *
+ * 为什么必须在打印路径上 clamp（而不是只靠服务端收紧）：
+ *   · 贴纸版式的容量是**悬崖**不是渐变 —— 实测 >~158 字时**一行都不画**（见上面常量处推导）；
+ *   · 服务端（5 个 `giftMeta.js`）原先收 200 字，**存量 141–200 字礼笺**此刻仍会打出空白；
+ *   · 处置口径（产品负责人 2026-09-21 定）：**不迁移、不改数据**（稳定期纪律禁止改生产数据）
+ *     ⇒ 存量超长礼笺的处置是**打印时截断 + 告警**，而不是回写数据库。
+ *   服务端已同步收紧到 140（新写入不会超），本 clamp 是**存量与任何旁路的兜底**。
+ *
+ * 只截正文、不动其它字段；命中时给**带 `giftPrint:` 前缀的 console 告警**，
+ * 并通过 `onNoteTruncated(info)` 回调让页面层给**可见提示**（gift-ops 导出后弹 AppToast）。
+ * 未超限时**原样返回同一个对象**（零行为变化）。
+ */
+function clampGiftNoteBody(raw) {
+  const src = raw || {}
+  const text = String(src.cardBody || '')
+  if (text.length <= GIFT_NOTE_MAX_CHARS) return src
+  const info = { chars: text.length, max: GIFT_NOTE_MAX_CHARS, kept: GIFT_NOTE_MAX_CHARS }
+  console.warn(`giftPrint: 礼笺正文 ${info.chars} 字超过上限 ${info.max} 字，已截断到 ${info.kept} 字打印（存量超长礼笺不回写数据库 —— 2026-09-21 P0-2 处置口径）`)
+  try {
+    if (typeof src.onNoteTruncated === 'function') src.onNoteTruncated(info)
+  } catch (e) { /* 回调失败不阻断出图 */ }
+  return Object.assign({}, src, { cardBody: text.slice(0, GIFT_NOTE_MAX_CHARS) })
+}
+
 function paintGiftPrintCard(canvas, opts) {
   // 版式学习前端礼笺卡（compose 的 .card-* ）：写给 TA → 题记带 → 手写体正文
   //   → 署名(左, 铜金下划线) + 日期(右, 弱化) → 右下淡「山海」水印
-  const o = opts || {}
+  const o = clampGiftNoteBody(opts)
   const spec = PRINT_SPECS[o.spec] || PRINT_SPECS.a6   // 未知/未传 → a6（**默认 A6，行为零改动**）
   // 贴纸（1:1 的 886×886）与 A6 比例不同 —— **不是缩放问题而是版式问题**（蓝图 §3），
   // 故另起一套 painter（paintGiftStickerCard）。此处除这一行分派外，
@@ -900,7 +926,9 @@ function renderGiftPrintImage(selector, page, opts) {
               qrcodeImage,
               serviceQrImage,
               // 'a6'（默认，行为零改动）| 'sticker'（热敏不干胶，可打印白区 75×75mm 1:1）
-              spec: options.spec
+              spec: options.spec,
+              // P0-2：正文超上限被截断时回调给页面（页面据此给可见提示）—— 见 clampGiftNoteBody
+              onNoteTruncated: options.onNoteTruncated
             })
           } catch (e) {
             console.warn('giftShareCard print paint', e)

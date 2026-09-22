@@ -606,6 +606,73 @@ check('★ 上传路径可按规格区分且可追溯（orderId + 规格 + 时�
     /await ensureHandFont\(\)/.test(cardSrc) && /require\('\.\/handFont'\)/.test(cardSrc))
 }
 
+/* ── ④.6 P0-2 容量用例：141 / 160 / 200 字正文**必须仍有落墨**───────────────────
+ * 判据盲区修复：原来渲染用例最长只有 96 字（72 字那种更短），于是
+ * 「服务端收 200 字 → 贴纸正文整段空白」**守卫全绿**（审计 P0-2 的守卫盲区）。
+ * 现在 141 / 160 / 200 三档都真渲染：打印路径 clamp 到 `GIFT_NOTE_MAX_CHARS` 后必须落墨 ≥1 行
+ *（**允许截断，不许整段空白** —— 空白就是真图事故形态）。
+ * 再加一条**同长断言**：200 字与 140 字落墨行数必须相同 ⇒ 证明是"截断到上限"而不是"没画"。 */
+{
+  const NAMES = { recipientName: '虞博阳&王瑛', themeName: '双翼同辉', themeNote: '一对凤蝶并展，如两心相照，光落成双。', cardSignature: '冶禹军', qrcodeImage: {}, serviceQrImage: {} }
+  const SENT = '见字如面。山中有木，海中有舟，人间有你。'
+  const bodyOf = (n) => SENT.repeat(Math.ceil(n / SENT.length)).slice(0, n)
+  const linesOf = (n) => {
+    const canvas = makeCanvas()
+    G.paintGiftPrintCard(canvas, Object.assign({}, NAMES, { spec: 'sticker', cardBody: bodyOf(n) }))
+    return canvas._ops.filter((o) => o.op === 'text' && HAND_RE.test(o.font || '')
+      && o.y > 260 && o.y <= signTopV + Math.round(34 * 1.62)).length
+  }
+  const LIMIT = Number(G.GIFT_NOTE_MAX_CHARS)
+  for (const n of [141, 160, 200]) {
+    let drawn = -1
+    let err = null
+    try { drawn = linesOf(n) } catch (e) { err = e }
+    check(`★★ P0-2 容量：${n} 字正文（clamp 到 ${LIMIT}）不得「正文只画了 0 行」`,
+      !err && drawn >= 1, err ? String(err.message) : `${n} 字只画了 ${drawn} 行`)
+  }
+  const l140 = linesOf(140)
+  const l200 = linesOf(200)
+  check('★★ P0-2：200 字与 140 字落墨行数相同（证明打印路径确实 clamp 到上限，而非整段不画）',
+    l140 >= 1 && l200 === l140, `140→${l140} 行 / 200→${l200} 行`)
+}
+
+/* ── ⑥ P0-2 服务端口径**同源**：5 个 giftMeta.js 的正文上限必须 === GIFT_NOTE_MAX_CHARS ─────
+ * 审计 P0-2 的核心是「UI 上限 140、服务端仍收 200」——141–200 字的正文在贴纸上整段消失。
+ * 这条判据把"服务端与客户端口径不一致"变成一条**会被看到的红线**：
+ *   ① 每个 giftMeta.js 都必须有常量且 === 客户端 `GIFT_NOTE_MAX_CHARS`；
+ *   ② cardBody 必须**用常量 clamp**（不许再出现字面量 200）；
+ *   ③ 5 份副本的「常量块 + clamp 行」必须**逐字节相同**（本仓副本惯例）。
+ * ⚠️ 5 个文件**整体**并非逐字节相同（buildProductSnapshot / maskAddress 各有合法差异），
+ *    所以"逐字节"断言只针对**礼笺正文口径这一段**（那才是必须同源的部分）。 */
+const GIFT_META_COPIES = [
+  'miniprogram/cloudfunctions/makeOrder/giftMeta.js',
+  'miniprogram/cloudfunctions/confirmPayment/giftMeta.js',
+  'miniprogram/cloudfunctions/payCallback/giftMeta.js',
+  'miniprogram/cloudfunctions/managerShipOrder/giftMeta.js',
+  'miniprogram/cloudfunctions/manageGift/giftMeta.js'
+]
+{
+  const clientMax = Number(G.GIFT_NOTE_MAX_CHARS)
+  check('★ 客户端 GIFT_NOTE_MAX_CHARS 可解析', Number.isFinite(clientMax) && clientMax > 0, String(G.GIFT_NOTE_MAX_CHARS))
+  const blocks = []
+  const clampLines = []
+  for (const rel of GIFT_META_COPIES) {
+    const src = readFileSync(resolve(ROOT, rel), 'utf8')
+    const m = /const GIFT_NOTE_MAX_CHARS = (\d+)/.exec(src)
+    check(`★ ${rel}：正文上限 === 客户端常量`, !!m && Number(m[1]) === clientMax,
+      m ? `服务端 ${m[1]} / 客户端 ${clientMax}` : '没有 GIFT_NOTE_MAX_CHARS 常量（口径不同源）')
+    const line = ((/const cardBody = [^\n]*/.exec(src) || [''])[0]).trim()
+    clampLines.push(line)
+    check(`★ ${rel}：cardBody 用常量 clamp（不得再是字面量 200）`,
+      /slice\(0,\s*GIFT_NOTE_MAX_CHARS\)/.test(line) && !/slice\(0,\s*[0-9]+\)/.test(line), line)
+    blocks.push(((/(\/\*\* 礼笺正文字数上限[\s\S]*?const GIFT_NOTE_MAX_CHARS = \d+\n)/.exec(src) || [''])[0]))
+  }
+  check('★★ 5 份 giftMeta.js 的「常量块」逐字节相同', blocks.every((b) => b) && new Set(blocks).size === 1,
+    `${new Set(blocks).size} 种写法`)
+  check('★★ 5 份 giftMeta.js 的「cardBody clamp 行」逐字节相同', new Set(clampLines).size === 1,
+    `${new Set(clampLines).size} 种写法`)
+}
+
 /* ── 输出 / 自检 ─────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
   selftest()
@@ -796,6 +863,27 @@ function selftest() {
       file: OPS_JS,
       from: "        spec: isSticker ? 'sticker' : 'a6',\n",
       to: ''
+    },
+    {
+      // P0-2 服务端口径漂移：某个 giftMeta.js 的正文上限被改回 200（客户端是 140）
+      name: '★ P0-2：giftMeta.js 正文上限被改回 200（与客户端 140 不同源）',
+      file: 'miniprogram/cloudfunctions/makeOrder/giftMeta.js',
+      from: 'const GIFT_NOTE_MAX_CHARS = 140',
+      to: 'const GIFT_NOTE_MAX_CHARS = 200'
+    },
+    {
+      // P0-2 服务端退回字面量 clamp：即使常量还在，cardBody 也不再用它
+      name: '★ P0-2：giftMeta.js 的 cardBody 退回字面量 slice(0, 200)',
+      file: 'miniprogram/cloudfunctions/confirmPayment/giftMeta.js',
+      from: "  const cardBody = String(src.cardBody || '').trim().slice(0, GIFT_NOTE_MAX_CHARS)",
+      to: "  const cardBody = String(src.cardBody || '').trim().slice(0, 200)"
+    },
+    {
+      // P0-2 打印路径不再 clamp：存量 141–200 字会整段空白（容量用例必须当场判红）
+      name: '★ P0-2：打印路径不再 clamp 正文（141–200 字会整段空白）',
+      file: CARD,
+      from: '  const o = clampGiftNoteBody(opts)',
+      to: '  const o = opts || {}'
     }
   ]
 

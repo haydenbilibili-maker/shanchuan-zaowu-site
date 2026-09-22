@@ -597,7 +597,12 @@ window.addEventListener('load', () => {
     /* ── 弹层可用性：**「收起」的触控区**（2026-09-21）。
      * 它原来只有 ~38rpx 高（padding 8 + 行高 22），真机上很容易点不中。
      * 44pt ≈ 88rpx 是可用性下限 —— 静态样式表里"看"不出这件事（padding 与行高是两处），
-     * 只有在真渲染里量 getBoundingClientRect 才算数（本仓 E8：静态分析 ≠ 事实）。 */
+     * 只有在真渲染里量 getBoundingClientRect 才算数（本仓 E8：静态分析 ≠ 事实）。
+     * ⚠️ 2026-09-21 P3-22 **订正证据来源**：本预览台（desktop Chrome）量到的**宽度会偏大**
+     *   （实测 108×88rpx），那是浏览器字体/弹性布局的假象 —— **真机是 88×88rpx**，
+     *   真机生效的硬保证是 index.wxss 里的 min-width: 88rpx / min-height: 88rpx
+     *   （不是这条预览数字）。引用宽度时**不要**把 108 当成真机值。
+     *   ⚠️ 本段在 MEASURE_JS 模板串内：不能出现反引号，否则会提前结束模板串。 */
     const closeEl = document.querySelector('.ww-sheet-close')
     if (closeEl) {
       const r = closeEl.getBoundingClientRect()
@@ -747,7 +752,9 @@ metrics.forEach((row) => {
 
 /* ①a-2. 弹层「收起」的触控区（2026-09-21）：44pt ≈ 88rpx 是可用性下限。
  *     它原来只有 ~38rpx 高（padding 8 + 行高 22），真机上很容易点不中。
- *     静态样式表里"看"不出来（padding 与行高分散两处）→ 只有真渲染量 box 才算数。 */
+ *     静态样式表里"看"不出来（padding 与行高分散两处）→ 只有真渲染量 box 才算数。
+ *     ⚠️ P3-22：这里的宽度是本预览台的**假象**（实测 108×88rpx，真机 88×88rpx）——
+ *        真机宽度由 WXSS 的 `min-width: 88rpx` 保证；不要把预览宽度当真机数字引用。 */
 if (SCENE === 'sheet' || SCENE === 'sheet-loading') {
   const close = byLabel('弹层「收起」触控区')
   if (!close || close.missing || !close.h) {

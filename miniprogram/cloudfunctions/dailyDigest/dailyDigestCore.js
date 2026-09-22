@@ -162,6 +162,12 @@ function readMetric (metric, bag) {
 
   if (metric.kind === 'analytics') {
     const row = bag.analytics[metric.action]
+    // P1-4：取数失败（analytics_daily 查询抛错）必须分流到 failed —— 见 collectAnalytics 的 catch。
+    if (row && row.error) {
+      base.value = null
+      base.error = String(row.error).slice(0, 240)
+      return base
+    }
     const { count, uvCount, found } = readAnalyticsRow(row)
     // 「访问人数 / 新注册」按 uv[] 去重人数；其余按 count
     const useUv = metric.id === 'mini_visitors' || metric.id === 'mini_register'
@@ -189,6 +195,12 @@ function readMetric (metric, bag) {
   if (metric.kind === 'dateKeyed' || metric.kind === 'simpleDay') {
     if (metric.kind === 'simpleDay') {
       const got = bag.simpleDay[metric.id]
+      // P1-4：取数失败（count 抛错）→ failed，与"当日确实没有行"（null/undefined → missing）分开。
+      if (got && typeof got === 'object' && got.error) {
+        base.value = null
+        base.error = String(got.error).slice(0, 240)
+        return base
+      }
       base.value = got == null ? null : toNumber(got)
       return base
     }
@@ -197,6 +209,8 @@ function readMetric (metric, bag) {
     const rows = bag.dateKeyedRows[col]
     if (!Array.isArray(rows)) {
       base.value = null
+      // P1-4：取数失败（dateKeyed 查询抛错）带 error 对象；"当日无行"是空数组，二者必须分开。
+      if (rows && rows.error) base.error = String(rows.error).slice(0, 240)
       return base
     }
     // 求和字段来自目录登记（`sumField`），不从 id 猜 —— 字段与指标的对应必须一眼可查（错题本 E20）
@@ -241,7 +255,9 @@ function buildMessageText (digest) {
   if (missing) lines.push(`（${missing} 项当日无数据）`)
   const failed = (digest.failed || []).length
   // 失败必须单独说，且**不能**混进"当日无数据" —— 那会让读者以为那天真的没生意
-  if (failed) lines.push(`⚠️ ${failed} 项**取数失败**（数据可能不准，请联系技术）：${(digest.failed || []).map((f) => f.label).join('、')}`)
+  // ⚠️ 2026-09-21 P3-21：正文是**纯文本**（站内信不渲染 markdown），原先写的 `**取数失败**`
+  //    会把星号原样显示给读者 —— 已去掉星号，只留 ⚠️ 前缀做视觉强调。
+  if (failed) lines.push(`⚠️ ${failed} 项取数失败（数据可能不准，请联系技术）：${(digest.failed || []).map((f) => f.label).join('、')}`)
   lines.push('', '口径与来源见详情页「数据口径」。')
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }

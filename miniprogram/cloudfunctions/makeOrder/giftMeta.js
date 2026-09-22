@@ -12,6 +12,15 @@ const DELIVERY_TYPES = {
 
 const DEFAULT_ADDRESS_TIMEOUT_DAYS = 7
 
+/** 礼笺正文字数上限 —— 必须与小程序 `utils/giftShareCard.js` 的 `GIFT_NOTE_MAX_CHARS` **同源**。
+ *  云函数与小程序是两个部署单元（不能 require 同一份），故用**同值 + 守卫断言**钉住
+ *  （check:gift-sticker-layout：5 份副本的该值必须 === 该常量）。
+ *  为什么是 140（P0-2，2026-09-21 产品负责人点名放行）：贴纸版式在 >~158 字时**一行都不画**
+ *  （容量悬崖），而服务端原先收 200 字 → 存量 141–200 字礼笺打印**整段空白**。
+ *  处置口径（产品负责人 2026-09-21 定）：**不迁移、不改数据**（稳定期纪律禁止改生产数据）
+ *  ⇒ 存量超长礼笺由打印路径**截断 + 告警**兜底，服务端从源头收紧到 140。 */
+const GIFT_NOTE_MAX_CHARS = 140
+
 function createShareToken() {
   return crypto.randomBytes(16).toString('hex')
 }
@@ -29,7 +38,7 @@ function normalizeGiftMeta(raw, { generateToken = false, generateClaim = false }
     ? src.deliveryType
     : 'invite_address'
   const hidePrice = src.hidePrice !== false
-  const cardBody = String(src.cardBody || '').trim().slice(0, 200)
+  const cardBody = String(src.cardBody || '').trim().slice(0, GIFT_NOTE_MAX_CHARS)
   const cardSignature = String(src.cardSignature || '').trim().slice(0, 20)
   /** 受赠人名：recipientName / toName / salutation 同源 */
   const recipientName = String(

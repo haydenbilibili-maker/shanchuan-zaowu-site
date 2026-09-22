@@ -101,10 +101,15 @@ const SPECS = [
     field: 'dedupeKey',
     indexName: 'dedupeKey_1',
     /* ⚠️ 2026-09-21 查清：**这里不能建唯一索引** —— 同一个 dedupeKey 在本集合是**允许重复出现**的，
-       因为两条去重语义并存：
-         · 永久去重：toggleCollection / payCallback·inAppMessage 等 —— 查到同键就 skip；
-         · **时间窗去重**：dispatchMessage/core.js（`DEDUPE_HOURS = 24`）—— 只压 24 小时内的重复，
-           跨天再发生同一事件**有意再发一次**（例：顾客隔几天再进店，应该再谢一次）。
+       因为两种去重语义并存：
+         · **永久去重**：`toggleCollection/index.js:41`（查到同键就 skip，**不看时间**）等；
+         · **24h 窗去重**：`dispatchMessage/core.js`（`DEDUPE_HOURS = 24`）与
+           **`payCallback/inAppMessage.js:167`**（`Date.now() - createTime < 24h` 才 skip）——
+           只压 24 小时内的重复，跨天再发生同一事件**有意再发一次**
+           （例：顾客隔几天再进店，应该再谢一次）。
+       ⚠️ P2-14 订正（2026-09-21）：`229d94f` 的注释把 **`payCallback·inAppMessage` 说成"永久去重"** ——
+          与代码不符（实测它是 **<24h 窗**，依据就是上面那行 `:167` 的时间比较）。结论方向（只建普通索引）
+          不变，但那句错误依据会被后续班次照抄，故在此订正。
        实测佐证：`store_visit_thanks:store_x:openid` 在 2026-05-24 / 05-27 / 08-15 各有一条。
        所以唯一索引不仅建不起来（现存 9 组重复），**还会把正常写入打成失败**。
        这里只建**普通索引**（供 `where({dedupeKey})` 点查走索引），唯一性交给各写入方自己的判据。 */
@@ -245,9 +250,14 @@ async function preflight(database, spec) {
     const desc = await database.describeCollection(spec.collection)
     out.exists = true
     out.indexes = (desc.Indexes || []).map(normalizeIndex)
+    // 字段上的**任意**单键索引（唯一与否）—— nonUnique spec 的正确期望就是普通索引，
+    // 消费者（check-dedupe-index-live）必须能区分"没有索引"与"索引在但不是唯一"。
+    const onField = out.indexes.find((i) => i.keys.length === 1 && i.keys[0].name === spec.field)
     const uni = out.indexes.find((i) => i.unique && i.keys.length === 1 && i.keys[0].name === spec.field)
+    out.hasDedupeIndex = !!onField
+    out.dedupeIndexUnique = onField ? onField.unique : null
     out.hasUniqueDedupe = !!uni
-    out.dedupeIndexSparse = uni ? uni.sparse : null
+    out.dedupeIndexSparse = uni ? uni.sparse : (onField ? onField.sparse : null)
   } catch (e) {
     out.exists = false
     out.error = (e && e.message) || String(e)
@@ -354,15 +364,21 @@ async function main() {
         console.log(`   ✗ 集合不存在或读不到：${pre.error || ''}`)
         continue
       }
-      console.log(`   已有唯一幂等索引：${pre.hasUniqueDedupe ? `是（Sparse=${pre.dedupeIndexSparse === true ? '是' : pre.dedupeIndexSparse === false ? '否' : '未知'}）` : '否'}`)
+      const wantKind = spec.nonUnique ? '普通（非唯一）' : '唯一'
+      const gotKind = pre.hasDedupeIndex ? (pre.dedupeIndexUnique ? '唯一' : '普通（非唯一）') : '无'
+      console.log(`   期望 / 线上幂等索引：${wantKind} / ${gotKind}${pre.hasDedupeIndex ? `（Sparse=${pre.dedupeIndexSparse === true ? '是' : pre.dedupeIndexSparse === false ? '否' : '未知'}）` : ''}`)
       if (spec.sparse && pre.hasUniqueDedupe && pre.dedupeIndexSparse === false) {
         console.log('   ⚠️ Sparse 不一致：spec 期望 Sparse 唯一索引，线上这一条**不是** Sparse')
+      }
+      if (spec.nonUnique && pre.dedupeIndexUnique === true) {
+        console.log('   ⚠️ 唯一性相反：spec 期望普通索引（跨时间窗允许重复），线上却是唯一索引')
       }
       console.log(`   缺 ${spec.field} 的文档数：${pre.missingField === null ? '读不到（' + (pre.countError || '') + '）' : pre.missingField}`)
       console.log(`   重复键：${pre.duplicateKeys === null ? '读不到（' + (pre.dupError || '') + '）' : `样本 ${pre.samples.length ? pre.samples.map((s) => `${s.key}×${s.n}`).join(', ') : '无'}；确切重复组数 ${pre.duplicateGroupCount === null ? '读不到' : pre.duplicateGroupCount}`}`)
     }
-    console.log('\n判据：**无重复键** 才能建唯一索引；按**非 Sparse** 建时还要求缺字段数为 0')
-    console.log('（非 Sparse 唯一索引把缺失当 null，只允许一条 null；Sparse 唯一索引不索引缺失字段）')
+    console.log('\n判据：**要建唯一索引**的 spec，须**无重复键**（按**非 Sparse** 建时还要求缺字段数为 0）；')
+    console.log('      **nonUnique spec**（user_messages.dedupeKey）期望**普通**索引，重复键是预期行为、不构成阻断。')
+    console.log('（非 Sparse 唯一索引把缺失当 null，只允许一条 null；Sparse 唯一索引不索引缺失字段；普通索引不受缺失字段影响）')
     const sparseSpecs = SPECS.filter((s) => s.sparse)
     if (sparseSpecs.length) {
       console.log(`\n其中 ${sparseSpecs.length} 个 spec 标记了 sparse:true（${sparseSpecs.map((s) => s.collection).join(', ')}）：`)
@@ -379,7 +395,21 @@ async function main() {
   let fail = 0
   for (const { spec, pre } of reports) {
     if (!pre.exists) { console.error(`✗ ${spec.collection}：集合不存在，跳过`); fail += 1; continue }
-    if (pre.hasUniqueDedupe) { console.log(`✓ ${spec.collection}：唯一幂等索引已存在，跳过`); continue }
+    /* 幂等索引"就位"的判据必须带着 spec 声明的**期望唯一性**：
+     *   唯一 spec   → 字段上有唯一索引才算就位；
+     *   nonUnique spec → 字段上有**普通**索引才算就位（229d94f 的语义结论：user_messages.dedupeKey
+     *     跨 24h 时间窗允许再次写入，唯一索引会打断正常写入）。
+     * 旧写法 `if (pre.hasUniqueDedupe)` 对 nonUnique spec 是**语义相反**的判据 —— 见 P1-9。 */
+    const indexReady = spec.nonUnique
+      ? (pre.hasDedupeIndex && pre.dedupeIndexUnique === false)
+      : pre.hasUniqueDedupe
+    if (indexReady) { console.log(`✓ ${spec.collection}：${spec.nonUnique ? '普通' : '唯一'}幂等索引已存在，跳过`); continue }
+    if (spec.nonUnique && pre.hasDedupeIndex && pre.dedupeIndexUnique === true) {
+      console.error(`✗ ${spec.collection}：spec 期望**普通**索引，线上却是**唯一**索引 —— 唯一索引会打断跨时间窗的正常再次写入。`)
+      console.error('   本脚本不自动改动线上索引；请在控制台核对该索引语义后再决定。')
+      fail += 1
+      continue
+    }
     if (spec.sparse) {
       // 不猜 SDK 的 Sparse 参数名：宁可在控制台手动建，也不自动建一个**语义不同**的非 Sparse 索引
       console.error(`✗ ${spec.collection}：spec 要求 Sparse 唯一索引，本脚本的 SDK 未声明 Sparse 参数 → 拒绝自动创建`)

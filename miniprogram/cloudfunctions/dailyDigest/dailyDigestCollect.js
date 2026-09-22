@@ -61,7 +61,17 @@ async function collectAnalytics (db, dayKey, metrics) {
       }
     }
   } catch (e) {
-    console.warn('dailyDigest collect analytics_daily failed:', e && e.message)
+    const msg = (e && e.message) || 'analytics_daily 查询失败'
+    console.warn('dailyDigest collect analytics_daily failed:', msg)
+    /* ⚠️ 2026-09-21 P1-4 修复：**取数失败必须留痕，不能吃成"当日无数据"**。
+     * 原来这里只 console.warn，返回值里没有任何失败标记 → core 见到 `out[action]`
+     * 不存在就判"当日无数据"（missing），19 个指标里只有 7 个订单指标有失败档。
+     * 现在按**每个请求到的 action** 写一条带 `error` 的记录，core 见到 `error`
+     * 即分流到 `failed`（带原因），与"当日确实没有该 action 的行"（missing）分开。 */
+    for (const m of metrics) {
+      if (!m.action) continue
+      out[m.action] = { action: m.action, count: 0, uv: [], error: msg }
+    }
   }
   return out
 }
@@ -176,8 +186,11 @@ async function collectDateKeyed (db, dayKey, metrics) {
       const res = await db.collection(col).where({ [timeField]: dayKey }).limit(200).get()
       out[col] = res.data || []
     } catch (e) {
-      console.warn(`dailyDigest ${col} query failed:`, e && e.message)
-      out[col] = null
+      const msg = (e && e.message) || `${col} 查询失败`
+      console.warn(`dailyDigest ${col} query failed:`, msg)
+      /* P1-4：原来写 `out[col] = null` —— core 把"不是数组"一律当成"当日无数据"（missing），
+       * 故障被说成事实。改为带 `error` 的失败档，core 据此分到 failed。 */
+      out[col] = { error: msg, collection: col }
     }
   }
   return out
@@ -194,8 +207,10 @@ async function collectSimpleDay (db, dayKey, metrics) {
       const res = await db.collection(col).where({ [field]: dayKey }).count()
       out[metric.id] = toNumber(res && res.total)
     } catch (e) {
-      console.warn(`dailyDigest ${col} count failed:`, e && e.message)
-      out[metric.id] = null
+      const msg = (e && e.message) || `${col} count 失败`
+      console.warn(`dailyDigest ${col} count failed:`, msg)
+      /* P1-4：原来写 `null`，与"当日确实没有行"无法区分；改为失败档（带 error）。 */
+      out[metric.id] = { error: msg, collection: col }
     }
   }
   return out
