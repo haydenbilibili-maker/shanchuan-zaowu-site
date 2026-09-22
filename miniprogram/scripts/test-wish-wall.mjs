@@ -3985,7 +3985,14 @@ check(
 // 反向：aria-hidden **不许盖住文案**。
 // 起因（本批自查发现）：给 `.ww-sheet-product-go`（"看看这件 ›"）顺手加了 aria-hidden —— 它是 CTA 文案，
 // 一隐藏就等于对读屏用户砍掉了"抽一句 → 看藏品"这条主路的出口。装饰与文案的边界必须由判据兜住。
-const hiddenInlineText = [...wallWxml2.matchAll(/aria-hidden="true"[^>]*>([^<]+)</g)]
+// ⚠️ 2026-09-21（§11.4）：这条 CTA 随玩法结果搬到**四个玩法页**（`.rp-reco-go`）——
+// 扫描面必须一起搬，否则注入打到玩法页就没人接（切片自检当场抓到）。
+const a11yViews = [wallWxml2].concat(
+  ['play-qian', 'play-cookie', 'play-zodiac', 'play-mbti']
+    .map((n) => readSrc(`miniprogram/subpackages/feature/${n}/index.wxml`))
+)
+const hiddenInlineText = a11yViews
+  .flatMap((w) => [...w.matchAll(/aria-hidden="true"[^>]*>([^<]+)</g)])
   .map((m) => m[1].trim())
   .filter(Boolean)
 const hiddenCjk = hiddenInlineText.filter((t) => /[\u4e00-\u9fa5]/.test(t))
@@ -6640,7 +6647,19 @@ if (process.argv.includes('--selftest') && !INJECT) {
 
   let bad = 0
   let ran = 0
-  for (const name of Object.keys(INJECTIONS)) {
+  /* ⚠️ 2026-09-22 机器约束（本机 2 vCPU / 4 GB，且与 Web 服务共用 2.22 GB cgroup）：
+     全量 selftest 要跑 ~193 次子进程（每次都要跑完整个 test:wish-wall），一次跑不完。
+     支持按序号切片（`WISH_WALL_SELFTEST_FROM` / `_TO`，左闭右开）把覆盖分几次做完。
+     **默认不切片 = 全量**；切片只决定"这一次跑哪些子进程"，不改任何判据、
+     也不跳过锚点核对（上面那段始终全量跑）。报告里必须写明哪些序号实际跑过。 */
+  const allNames = Object.keys(INJECTIONS)
+  const sliceFrom = Math.max(0, Number(process.env.WISH_WALL_SELFTEST_FROM) || 0)
+  const sliceTo = Math.min(allNames.length, Number(process.env.WISH_WALL_SELFTEST_TO) || allNames.length)
+  const sliceNames = allNames.slice(sliceFrom, sliceTo)
+  if (sliceFrom > 0 || sliceTo < allNames.length) {
+    console.log(`  · 本次只跑注入 #${sliceFrom}–#${sliceTo - 1}（共 ${allNames.length} 条；机器内存约束下的分片）`)
+  }
+  for (const name of sliceNames) {
     if (deadSet.has(name)) continue // 锚点失效的注入证明不了任何事，跳过（上面已登记留痕）
     ran += 1
     const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], {

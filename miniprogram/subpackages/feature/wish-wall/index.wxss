@@ -1907,9 +1907,11 @@ page {
 
 .ww-play-grid {
   display: grid;
-  /* 两列不等宽：入口形态不同、需要的宽度也不同（整卡要宽，饼壳/星盘够窄）。
-     右列窄一档，让"整卡"与"半卡"的对比读得出来。 */
-  grid-template-columns: 1.32fr 1fr;
+  /* 两列等宽（2026-09-22 离线实测修正）：此前把 `card`/`axis` 做成整行，
+     结果**首屏只看得到 1 个入口**（第二个被顶到 y1305 > 视口 1191），
+     与"玩法区一屏内至少可见 2 个入口"这条既有判据冲突。四种形态靠**内部盒子**区分
+     （签筒 / 签饼 / 星盘 / 双极轴），不靠占满整行 —— 两列也保住了首屏可见数。 */
+  grid-template-columns: 1fr 1fr;
   gap: 12rpx;
 }
 
@@ -1918,12 +1920,8 @@ page {
    四种入口**各有形态**（注册表 `form` → is-card / is-shell / is-ring / is-axis，
    见 index.wxml 与 config/ritualPlays.js）—— 不再靠"前两枚更大"这一种表达，
    但前两枚仍加一道「先推」标记（祈运标签排序的结果要看得见，§11.1 R1）。
-   整卡（签筒）与双极轴各占满一行，饼壳 / 星盘各占半列 —— 四个 form 恰好两满两半，**不会留洞**。 */
-.ww-play.is-card,
-.ww-play.is-axis {
-  grid-column: 1 / -1;
-}
-
+   四个 form 一律占一列（2×2）：整行的排法会把第二个入口顶出首屏（离线实测 y1305 > 1191），
+   与"一屏内至少可见 2 个入口"的既有判据冲突。 */
 .ww-play {
   display: flex;
   align-items: center;
@@ -1954,26 +1952,22 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 76rpx;
+  width: 60rpx;
 }
 
-.ww-play.is-card .ww-play-form {
-  width: 96rpx;
-}
-
-/* 形态一：签筒（整卡） */
+/* 形态一：签筒 */
 .ww-play-tube {
   position: relative;
-  width: 56rpx;
-  height: 78rpx;
+  width: 44rpx;
+  height: 64rpx;
 }
 
 .ww-play-tube-body {
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 56rpx;
-  height: 62rpx;
+  width: 44rpx;
+  height: 50rpx;
   background: linear-gradient(180deg, var(--brass-500) 0%, var(--brass-800) 100%);
   border-radius: 4rpx 4rpx 10rpx 10rpx;
 }
@@ -1982,8 +1976,8 @@ page {
   position: absolute;
   left: -2rpx;
   top: 6rpx;
-  width: 60rpx;
-  height: 12rpx;
+  width: 48rpx;
+  height: 10rpx;
   background: var(--brass-900);
   border-radius: 50%;
 }
@@ -1991,40 +1985,40 @@ page {
 /* 形态二：签饼（两半合拢） */
 .ww-play-shell {
   position: relative;
-  width: 72rpx;
-  height: 52rpx;
+  width: 56rpx;
+  height: 40rpx;
 }
 
 .ww-play-shell-half {
   position: absolute;
-  top: 4rpx;
-  width: 34rpx;
-  height: 44rpx;
+  top: 3rpx;
+  width: 26rpx;
+  height: 34rpx;
   background: linear-gradient(160deg, var(--brass-200) 0%, var(--brass-500) 100%);
 }
 
 .ww-play-shell-half.is-left {
   left: 0;
-  border-radius: 20rpx 3rpx 3rpx 20rpx;
+  border-radius: 16rpx 3rpx 3rpx 16rpx;
 }
 
 .ww-play-shell-half.is-right {
   right: 0;
-  border-radius: 3rpx 20rpx 20rpx 3rpx;
+  border-radius: 3rpx 16rpx 16rpx 3rpx;
 }
 
 /* 形态三：星盘（一圈 + 一枚指针点） */
 .ww-play-ring {
   position: relative;
-  width: 60rpx;
-  height: 60rpx;
+  width: 46rpx;
+  height: 46rpx;
   border: 2rpx solid rgba(196, 167, 108, 0.5);
   border-radius: 50%;
 }
 
 .ww-play-ring-dot {
   position: absolute;
-  left: 25rpx;
+  left: 18rpx;
   top: -5rpx;
   width: 8rpx;
   height: 8rpx;
@@ -2032,28 +2026,28 @@ page {
   border-radius: 50%;
 }
 
-/* 形态四：双极轴（整卡） */
+/* 形态四：双极轴 */
 .ww-play-axis {
   position: relative;
-  width: 104rpx;
-  height: 44rpx;
+  width: 60rpx;
+  height: 34rpx;
 }
 
 .ww-play-axis-line {
   position: absolute;
   left: 0;
   right: 0;
-  top: 21rpx;
+  top: 16rpx;
   height: 2rpx;
   background: linear-gradient(90deg, rgba(196, 167, 108, 0.25) 0%, rgba(196, 167, 108, 0.75) 50%, rgba(196, 167, 108, 0.25) 100%);
 }
 
 .ww-play-axis-knob {
   position: absolute;
-  left: 43rpx;
-  top: 13rpx;
-  width: 18rpx;
-  height: 18rpx;
+  left: 22rpx;
+  top: 9rpx;
+  width: 16rpx;
+  height: 16rpx;
   background: var(--brass-300);
   border-radius: 50%;
 }
@@ -2066,15 +2060,15 @@ page {
 .ww-play-title-row {
   display: flex;
   align-items: center;
-  gap: 10rpx;
+  gap: var(--space-1);
 }
 
 .ww-play-mark {
   flex-shrink: 0;
-  width: 40rpx;
-  height: 40rpx;
-  font-size: var(--fs-20);
-  line-height: 40rpx;
+  width: 34rpx;
+  height: 34rpx;
+  font-size: var(--fs-18);
+  line-height: 34rpx;
   text-align: center;
   color: var(--color-bg);
   background: linear-gradient(145deg, var(--brass-200) 0%, var(--brass-400) 52%, var(--brass-600) 100%);
@@ -2084,7 +2078,7 @@ page {
 
 .ww-play-name {
   display: block;
-  font-size: var(--fs-26);
+  font-size: var(--fs-24);
   line-height: 1.3;
   color: #EFE6D2;
 }
@@ -2092,7 +2086,7 @@ page {
 /* 「先推」：祈运标签排在最前的两支各带一枚小签（排序的可见表达，不是唯一表达） */
 .ww-play-lead-tag {
   flex-shrink: 0;
-  padding: 2rpx 10rpx;
+  padding: 2rpx var(--space-1);
   font-size: var(--fs-16);
   color: var(--brass-200);
   border: 1rpx solid rgba(196, 167, 108, 0.45);
