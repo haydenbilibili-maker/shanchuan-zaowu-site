@@ -406,7 +406,20 @@ async function main() {
       }
     })()`)
     check('「在职员工」KPI 卡片存在', staffKpi.found)
-    check('KPI 说明写明来源为小程序超管工作台 · 员工（staff_members）', /staff_members/.test(staffKpi.desc || ''), `desc=${JSON.stringify(staffKpi.desc)}`)
+    // 说明文字的判据必须**分两种环境**（2026-09-22 实测修正）：
+    //   读成功 → 必须点名来源 staff_members；
+    //   读失败 → 必须**显式说明失败且不是 0**（`—` + 「非 0」文案）。
+    // 原判据只认前者，于是**离线验收环境（无 admin/.env → manageStaff 走不通）必然失败**，
+    // 与「接线错了」混成同一个红条 —— 守卫一旦分不清环境问题与代码缺陷，就会训练人忽略它（错题本 E16）。
+    // 注意：这不是放宽 —— 失败态另加了两条更严的断言（值必须是「—」、文案必须写「非 0」），
+    // 原来的回归（读本地花名册 → 恒 0 且来源写成别的）在两种环境下都仍然会被抓到。
+    const staffDesc = String(staffKpi.desc || '')
+    if (/读取失败|失败/.test(staffDesc)) {
+      check('读取失败时 KPI 说明必须显式写明失败且「非 0」', /非\s*0/.test(staffDesc), `desc=${JSON.stringify(staffKpi.desc)}`)
+      check('读取失败时 KPI 数值必须是「—」（不得显示 0）', staffKpi.value === '—', `value=${JSON.stringify(staffKpi.value)}`)
+    } else {
+      check('KPI 说明写明来源为小程序超管工作台 · 员工（staff_members）', /staff_members/.test(staffDesc), `desc=${JSON.stringify(staffKpi.desc)}`)
+    }
     check('数据源健康表有「员工通讯录」行', !!staffKpi.health, JSON.stringify(staffKpi.health))
     const healthCount = (staffKpi.health?.text || '').match(/(\d+)\s*名生效员工/)
     if (healthCount) {

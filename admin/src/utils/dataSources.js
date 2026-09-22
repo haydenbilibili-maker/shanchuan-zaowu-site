@@ -398,6 +398,12 @@ export const SOURCE_REGISTRY = {
   'collection:search_hot_keywords': { concept: 'home_config', role: 'derived', confidence: 'low' },
   'collection:search_blacklist': { concept: 'home_config', role: 'derived', confidence: 'low' },
   'collection:notification_logs': { concept: 'support', role: 'derived', confidence: 'low', note: '通知日志，待细分概念' },
+  // 2026-09-22 审计实测（确定性）：NotificationConfig.vue 读写本集合，而**运行期一条都不读** ——
+  // 发消息的 cloudfunctions/dispatchMessage 与 messageAdmin 读的是 `message_templates`，
+  // 且字段口径不同（本集合 code/name/title/content vs 运行期 templateCode/titleTemplate/contentTemplate/enabled）。
+  // 即：本页保存会弹「成功」，但**配置从不生效**。标 erpWriteOnly 后，D6b 会强制该页显式披露，
+  // 直到产品负责人决定「接线到 message_templates」或「下线本页」。
+  'collection:notification_templates': { concept: 'message_config', role: 'legacy', confidence: 'high', erpWriteOnly: true, note: '⚠ ERP 只写不读；运行期读 message_templates（字段口径也不同）—— 见 NotificationConfig.vue 顶部披露' },
   'collection:admin_roles': { concept: 'admin_permission_records', role: 'authority', confidence: 'medium', note: '⚠ 不参与鉴权（staffGuard 读的是 staff_members/workspace_acl）；PermissionManager 只读展示 —— 审计 P0-4 的「无任何消费方」说法不准确，已更正' },
   'collection:admin_users': { concept: 'admin_permission_records', role: 'authority', confidence: 'medium', note: '⚠ 不参与鉴权；与 admin_roles 同属「后台角色/账号分配记录」这一概念（coAuthorities）' },
   'collection:admin_operation_logs': { concept: 'staff', role: 'derived', confidence: 'low' },

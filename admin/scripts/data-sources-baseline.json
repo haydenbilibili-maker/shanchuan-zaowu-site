@@ -1,11 +1,25 @@
 {
-  "updatedAt": "2026-09-16",
-  "note": "未登记源应恒为 0；口径分歧数只能减少；本地权威概念数只能减少（要么上云，要么显式标注）",
+  "updatedAt": "2026-09-22",
+  "note": "未登记源应恒为 0；口径分歧数只能减少；本地权威概念数只能减少（要么上云，要么显式标注）；D6「ERP 写入但运行期不读」的集合只能减少，且标了 erpWriteOnly 的必须显式披露",
   "unregistered": [],
   "duplicateRole": [],
   "divergenceCount": 0,
   "localAuthorityCount": 4,
   "nonAuthorityReaderCount": 16,
+  "writeOnlyCount": 11,
+  "writeOnly": [
+    "achievement_configs ← src/components/AchievementConfig.vue",
+    "audience_campaigns ← src/components/AudienceManager.vue",
+    "marketing_rules_config ← src/components/MarketingRulesConfig.vue",
+    "notification_templates ← src/components/NotificationConfig.vue",
+    "property_proposals ← src/components/PropertyEval.vue",
+    "recommend_algorithm_config ← src/components/RecommendAlgorithmConfig.vue",
+    "report_templates ← src/components/CustomReportBuilder.vue",
+    "search_blacklist ← src/components/SearchKeywordsManager.vue",
+    "search_hot_keywords ← src/components/SearchKeywordsManager.vue",
+    "user_audiences ← src/components/AudienceManager.vue",
+    "user_behavior_config ← src/components/UserBehaviorConfig.vue"
+  ],
   "nonAuthorityReaders": [
     "src/components/ai/OpenClawVirtualStaff.vue local:openclaw_virtual_staff_v1",
     "src/components/AICenter.vue local:ai_center_chat_sessions_v1",

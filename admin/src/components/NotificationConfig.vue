@@ -5,6 +5,33 @@
       <p class="subtitle">配置消息模板和发送规则</p>
     </div>
 
+    <!--
+      2026-09-22 审计披露（**不要删**，由 report:data-sources 的 D6b 判据钉住）：
+      本页读写 `notification_templates`，但**运行期一条都不读** —— 真正发消息的是
+      cloudfunctions/dispatchMessage 与 messageAdmin，它们读 `message_templates`，
+      且字段口径不同（本页 code/name/title/content vs 运行期 templateCode/titleTemplate/
+      contentTemplate/enabled）。所以本页保存会弹「成功」，但配置**从不生效**。
+    -->
+    <el-alert
+      class="write-only-disclosure"
+      type="warning"
+      :closable="false"
+      show-icon
+      title="本页配置未接通运行期：保存成功但不会影响实际发出的消息"
+    >
+      <template #default>
+        <p>
+          本页写入集合 <code>notification_templates</code>，而小程序运行期（云函数
+          <code>dispatchMessage</code> / <code>messageAdmin</code>）读取的是 <code>message_templates</code>，
+          两者字段口径也不同。<b>因此这里的「保存成功」不等于配置生效</b>。
+        </p>
+        <p>
+          在接线完成（或本页下线）之前，请勿以本页内容判断线上实际发送的文案；实际文案以
+          <code>message_templates</code> 为准。接线/下线需产品负责人决定（属契约变更）。
+        </p>
+      </template>
+    </el-alert>
+
     <el-tabs v-model="activeTab" type="card" class="config-tabs">
       <!-- 消息模板 -->
       <el-tab-pane label="📧 消息模板" name="templates">
