@@ -171,6 +171,51 @@ Host: evil.example.com      → /api/config  http=403 forbidden
 
 
 
+## 四点五、⚠️ 在服务器上跑重活的三条纪律（2026-09-22 **真事故**后补）
+
+**事故**：`agent.shanhaizaowu.com` 返回 Cloudflare **524**（origin timeout），控制台看服务器"运行中"。
+上机核查发现：`dsh-web` 端口在听、但**回环 `/api/config` = `000`（20s 超时）**；
+load **9.0**（2 vCPU）、`dsh-web.service` 的 cgroup 内存 **2.08 / 2.22 GB（94%）**。
+
+**根因（自伤，不是被攻击）**：agent 在服务器上执行的命令是 `dsh-web.service` 的**子进程**，
+因此计入**同一个 cgroup**。当时有 **12 个验证/构建进程卡死了 9.8 小时**没被收拾
+（两套 `run-guards.mjs`、`astro check` 522 MB、`vite` dev 269 MB、`check-sfc-dev-transform` 386 MB…共 ~1.5 GB），
+把 web 自己的内存配额顶满 ⇒ Node 无法响应 ⇒ 524。
+
+**处置**：kill 掉那 12 个（全是 `/tmp/wt-*` 里可重跑的验证跑）→ 回环立刻恢复 **401 / 0.26s**、
+cgroup 降到 **0.88 GB**、系统可用内存 860 MB → **2189 MB**。
+
+### 三条纪律（照做就不会再发生）
+
+1. **内循环只用 `npm run check:quick -- <域>`（约 2.5s）** —— 和本地同一条节奏。
+   **不要在服务器上跑全套 `check:admin`**（111 条、~125s、CPU 密集），除非确实要收口。
+2. **重活必须走包装器**（跑进**独立 cgroup** + 硬超时，不再挤占 web 的 2.22 GB 配额）：
+   ```bash
+   dsh-heavy-task npm run check:admin                       # 默认 25 分钟超时 / 1.2 GB 上限
+   dsh-heavy-task --timeout 10min --memory 800M npm run test:wish-wall
+   dsh-heavy-task --list                                    # 看有没有在跑的 heavy 单元
+   ```
+   实测（决定性验证）：在 `--memory 200M` 的单元里申请 400 MB → 该单元自己被 `Killed`，
+   同时 `dsh-web` 仍 `401 / 0.198s` ✓。
+3. **别在服务器上开常驻 dev server 或跑重构建**：`vite` / `astro check` / 大克隆会一直挂着占内存
+   （本仓 README 早有"GitHub 直连被限速、别在服务器上跑重构建"的提示，这次是它的加重版）。
+   需要浏览器验证的活，回本地做。
+
+### 兜底：看门狗（已安装并启用）
+`dsh-heavy-watchdog.timer` 每 10 分钟扫一次，**任何跑超过 30 分钟**的验证/构建进程会被 TERM→KILL 并记日志
+（只按命令行特征匹配 `/tmp/wt-*`、`run-guards`、`astro check`、`vite`、`check-sfc-dev-transform`、`test-wish-wall`；
+永不碰 `dsh web` / `cloudflared` / `sshd`）。
+```bash
+systemctl list-timers dsh-heavy-watchdog.timer     # 下次触发时间
+DRY_RUN=1 /usr/local/bin/dsh-heavy-watchdog        # 只看会杀谁
+tail -f /var/log/dsh-heavy-watchdog.log            # 杀了谁
+# 现场处置（某个 heavy 单元跑太久）：systemctl stop dsh-heavy-<时间戳>.scope
+```
+脚本源码在本目录：`heavy-task.sh` / `heavy-task-watchdog.sh`（改完 scp 到 `/usr/local/bin/dsh-heavy-task`、
+`/usr/local/bin/dsh-heavy-watchdog`，权限 755）。
+
+---
+
 ## 五、执行步骤
 
 ### 1) 上机 + 基础部署（我在服务器上执行）
