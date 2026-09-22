@@ -275,11 +275,11 @@ const INJECTIONS = {
     from: "{{loadError ? '墙面未展开' : '墙面还是空的'}}",
     to: "'墙面还是空的'"
   },
-  // 失败没有重试入口
+  // 失败没有重试入口（2026-09-22 接线：愿签段的错误块搬进组件，锚点跟随真源）
   'no-retry-entry': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: 'bindtap="refresh" hover-class="ww-error-retry-press"',
-    to: 'hover-class="ww-error-retry-press"'
+    file: 'miniprogram/components/WallFeed/index.wxml',
+    from: '<view class="wf-error-retry" bindtap="onRetry" hover-class="wf-press" hover-stay-time="70" aria-role="button">再试一次</view>',
+    to: '<view class="wf-error-retry" hover-class="wf-press" hover-stay-time="70" aria-role="button">再试一次</view>'
   },
   // 骨架不再渲染（退回"一行字"）
   'skeleton-removed': {
@@ -349,30 +349,32 @@ const INJECTIONS = {
   },
   // 「馆方」徽章复活（2026-09-18 产品已决定去掉：基线内容全盖章 = 不传递信息）
   // 2026-09-20：锚点跟随源码更新 —— 「我的」章已整条下线，改锚在它下面那行「置顶」章上；
+  // 2026-09-22 接线：愿签卡搬进组件，锚点再跟随到 components/WallFeed/index.wxml。
   // 语义完全不变：往印记链里塞回一个「馆方」章，守卫必须检出。
   'official-badge-resurrected': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '            <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>',
-    to: '            <text class="ww-tag-seal is-official" wx:elif="{{item.official}}">馆方</text>\n            <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>'
+    file: 'miniprogram/components/WallFeed/index.wxml',
+    from: '          <text class="wf-card-seal" wx:elif="{{item.pinned}}">置顶</text>',
+    to: '          <text class="wf-card-seal is-official" wx:elif="{{item.official}}">馆方</text>\n          <text class="wf-card-seal" wx:elif="{{item.pinned}}">置顶</text>'
   },
   // 置顶印章被顺手删掉（去徽章时最容易误伤的就是它）
   'pinned-seal-dropped': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '            <text class="ww-tag-seal" wx:elif="{{item.pinned}}">置顶</text>',
+    file: 'miniprogram/components/WallFeed/index.wxml',
+    from: '          <text class="wf-card-seal" wx:elif="{{item.pinned}}">置顶</text>',
     to: ''
   },
   // 刚落愿不再高亮
   'no-fresh-highlight': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    file: 'miniprogram/components/WallFeed/index.wxml',
     // 2026-09-20：锚点跟随源码更新（class 上多了 is-mine 一档，见「我的」章下线）
-    from: "class=\"ww-tag {{item.isFresh ? 'is-fresh' : ''}} {{item.isMine ? 'is-mine' : ''}}\"",
-    to: 'class="ww-tag"'
+    // 2026-09-22：再跟随到组件（愿签卡搬进 <wall-feed>，class 上还多了 is-hidden 一档）
+    from: "class=\"wf-card {{item.isFresh ? 'is-fresh' : ''}} {{item.isMine ? 'is-mine' : ''}} {{item.hidden ? 'is-hidden' : ''}}\"",
+    to: 'class="wf-card"'
   },
   // 分段控件退回标题（切换意图又看不出来）
   'seg-reverted': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '<view class="ww-seg" aria-role="tablist">',
-    to: '<view class="ww-seg-x" aria-role="tablist">'
+    file: 'miniprogram/components/WallFeed/index.wxml',
+    from: '<view class="wf-seg" aria-role="tablist">',
+    to: '<view class="wf-seg-x" aria-role="tablist">'
   },
   // 额度不再预告（让用户写完才被拒）
   'quota-line-dropped': {
@@ -418,11 +420,11 @@ const INJECTIONS = {
     from: '  ;(Array.isArray(items) ? items : []).forEach((it, i) => { out[i % n].push(it) })',
     to: '  ;(Array.isArray(items) ? items : []).forEach((it) => { out[0].push(it) })'
   },
-  // 去掉收尾条 → 30 条又变成看不到头的滚动
+  // 去掉收尾条 → 30 条又变成看不到头的滚动（2026-09-22 接线：收尾条在组件里）
   'no-end-marker': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '      <view class="ww-end" wx:if="{{items.length}}">',
-    to: '      <view class="ww-end-x" wx:if="{{false}}">'
+    file: 'miniprogram/components/WallFeed/index.wxml',
+    from: '      <view class="wf-more-end" wx:elif="{{loadState === \'nomore\'}}">',
+    to: '      <view class="wf-more-end-x" wx:elif="{{false}}">'
   },
   // 打到上限也装作全量
   'cap-lies': {
@@ -581,11 +583,25 @@ const INJECTIONS = {
     from: '  align-items: center;\n  gap: var(--space-2);\n  min-width: 0;',
     to: '  align-items: flex-start;\n  gap: var(--space-2);\n  min-width: 0;'
   },
-  // 条数又飘出段外 → 读起来像"我的心愿 26 条"
+  // 条数又飘出段外 / 串台（2026-09-22 接线：段内条数在组件里，页面侧的风险变成"传了会被
+  // applyView 换掉的 items.length"）→ 注入把稳定字段 wallCount 换成 items.length，守卫必须检出。
   'seg-count-orphan-again': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '      </view>\n    </view>\n    <view class="ww-tags">',
-    to: '      </view>\n      <text class="ww-head-n">{{items.length}} 条</text>\n    </view>\n    <view class="ww-tags">'
+    from: '      wall-count="{{wallCount}}"',
+    to: '      wall-count="{{items.length}}"'
+  },
+  // ── R2 接线判据自身的回归（2026-09-22 新增；每条新守卫都要能证明自己会失败）──
+  // 组件属性没接（这里把稳定字段 wallItems 换回会被 applyView 换掉的 items）
+  'feed-attr-unwired': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      items="{{wallItems}}"',
+    to: '      items="{{items}}"'
+  },
+  // 组件事件没接（重试入口点了没反应）
+  'feed-event-unwired': {
+    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    from: '      bind:retry="onFeedRetry"',
+    to: '      bind:retry="onFeedRetryX"'
   },
   // 灯芯又变回实心圆 → 灯泡图标背后多一个圆底
   'lamp-icon-back-to-circle': {
@@ -697,10 +713,11 @@ const INJECTIONS = {
     to: '        bindtap="noopWishList"'
   },
   // 列表落点的 id 被改名 → 跳转目标不存在（selector 打空）
+  // 2026-09-22 接线：愿签段换成组件后，这个 id 作为**零高度锚点**留在页面（见 wxml 注释）
   'wishlist-anchor-renamed': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '<view class="ww-head" id="wishList">',
-    to: '<view class="ww-head" id="wishListOld">'
+    from: '<view id="wishList">',
+    to: '<view id="wishListOld">'
   },
   // 重看灯又绕回弹 toast（灯语就在卡上，弹框是多余的一层，也让原生弹窗棘轮多一处）
   'lamp-relight-toast-back': {
@@ -1054,10 +1071,11 @@ const INJECTIONS = {
     to: '.ww-lantern-press {\n  opacity: 0.9;\n}'
   },
   // hover-class 指到一个不存在的类 → 点了没反馈（WXSS 不报错，只有这条判据能发现）
+  // 2026-09-22 接线：愿签卡的 hover 搬进组件，锚点与判据的扫描面一起跟随（见 hoverClasses 段）
   'hover-class-orphan': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: 'hover-class="ww-tag-press"',
-    to: 'hover-class="ww-tag-press-typo"'
+    file: 'miniprogram/components/WallFeed/index.wxml',
+    from: 'hover-class="wf-card-press"',
+    to: 'hover-class="wf-card-press-typo"'
   },
   // hover-stay-time 又分叉（木鱼卡回到 60）
   'hover-stay-diverge': {
@@ -1098,12 +1116,10 @@ const INJECTIONS = {
   },
   // 愿签骨架的底面漂回浅一档（骨架→真卡替换那一帧会跳色）
   'tag-skel-color-drift': {
-    file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    // 2026-09-20：锚点跟随源码更新 —— 骨架 padding 已从 `20rpx 22rpx 20rpx 26rpx`
-    // 改为与真卡**逐字同口径**的 `var(--space-6) var(--space-2) var(--space-2) 22rpx`
-    //（修「加载时整列跳高 40%」；也必须用令牌，裸 48/16rpx 会被间距令牌判据拦下）。
-    from: '  padding: var(--space-6) var(--space-2) var(--space-2) 22rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);',
-    to: '  padding: var(--space-6) var(--space-2) var(--space-2) 22rpx;\n  margin-bottom: 14rpx;\n  /* 与真卡 .ww-tag 同底同渐变：骨架被真卡替换时不许跳色（原写 #1F1D1A，比真卡顶色浅一档）。 */\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
+    // 2026-09-22 接线：愿签骨架搬进组件的 `.wf-skel`，锚点与判据（surfaceGradient）一起跟随真源
+    file: 'miniprogram/components/WallFeed/index.wxss',
+    from: '  min-height: 196rpx;\n  overflow: hidden;\n  border: 1rpx solid var(--color-border);\n  border-radius: var(--radius-md);\n  background: linear-gradient(180deg, #221F1A 0%, #1B1917 100%);',
+    to: '  min-height: 196rpx;\n  overflow: hidden;\n  border: 1rpx solid var(--color-border);\n  border-radius: var(--radius-md);\n  background: linear-gradient(180deg, #1F1D1A 0%, #1B1917 100%);'
   },
   // ── 创新钩子 H2「功德证」（2026-09-20）────────────────────────────────────
   // 木鱼可连点 → 每敲一下就写一次云端（方案点名的头号风险：写放大）
@@ -1256,10 +1272,12 @@ const INJECTIONS = {
     from: '        quota,\n        mineLoading: false,\n        mineError: \'\'',
     to: '        quota,\n        mineError: \'\''
   },
-  // P1-5：WXML 去掉「我的心愿」错误分支（失败落回空文案）
+  // P1-5：页面不再把 mineError 传给愿签流组件（失败落回空文案）
+  // 2026-09-22 接线：「我的心愿」错误分支搬进组件，页面侧的失效形态变成"漏传 mineError"
+  // —— 组件的 showError 仍只认它，漏传就会被 deriveView 判成"确认成功且为空"。
   'mine-error-branch-dropped': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-    from: '      <view class="ww-error" wx:elif="{{viewMode === \'mine\' && mineError}}">\n        <view class="signal-light lamp-warn" aria-hidden="true"></view>\n        <text class="ww-error-text">{{mineError}}</text>\n        <view class="ww-error-retry" bindtap="loadMine" hover-class="ww-error-retry-press" hover-stay-time="70" aria-role="button">再试一次</view>\n      </view>\n',
+    from: '      mine-error="{{mineError}}"\n',
     to: ''
   },
   // P2-9：recordRelics 又挂回 loadMine（纯本地数据被云调用连坐）
@@ -2486,6 +2504,14 @@ const entryWxss = readSrc('miniprogram/components/WishWallEntry/index.wxss')
 const wallJson = readSrc('miniprogram/subpackages/feature/wish-wall/index.json')
 check('祈福墙页注册了彩蛋浮层组件', /easter-egg-note/.test(wallJson))
 const wallWxml = readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')
+/* ── 愿签内容流组件 `<wall-feed>` 的真源（PRD v1.4 §11.1 R2，2026-09-22 接线）──────────
+   改造后「愿签段」的**渲染结构**整体搬进 `components/WallFeed/`（页面只传属性、接事件）。
+   因此本文件里所有原先读**页面** WXML/WXSS 的愿签段判据都必须改读这里 ——
+   继续读页面残留的死 CSS / 已删的 WXML 会变成**假绿**（错题本 E3/E7：读的是镜像、不是真源）。
+   注入也按同一口径跟随（见 INJECTIONS 里那些 file 指向组件的条目）。 */
+const feedWxml = readSrc('miniprogram/components/WallFeed/index.wxml')
+const feedWxss = readSrc('miniprogram/components/WallFeed/index.wxss')
+const feedLogicSrc = readSrc('miniprogram/components/WallFeed/logic.js')
 check('祈福墙页放了彩蛋挂点', /id="easterEggNote"/.test(wallWxml))
 check('祈福墙页有点灯仪式 UI', /bindtap="onLampTap"/.test(wallWxml))
 check('祈福墙页有灵感入口', /bindtap="useInspiration"/.test(wallWxml))
@@ -2501,6 +2527,68 @@ check(
 )
 check('点灯仪式已接线', /wishRitual\.lightLamp\(/.test(wallPageSrc))
 check('页内所有请求都用 this.data.productKey', /action: 'list', productKey: this\.data\.productKey/.test(wallPageSrc))
+
+/* ── R2 接线：愿签内容流换成 `<wall-feed>`（PRD v1.4 §11.1，2026-09-22）──────────
+   组件自身的自包含性由组件侧判据（feedWxml 段）钉住；这一组钉**页面侧**，三条：
+   ① 真的登记并使用组件（文件存在不算数 —— 那正是 E7 的空判据）；
+   ② 传进去的是**稳定字段**（`wallItems`，不是会被 applyView 换成当前视图的 `items`）；
+   ③ 组件 triggerEvent 的每个事件都有落点，且落点调回页面**既有的**方法
+      （不在页面/组件里长出第二套取数逻辑 —— 云调用只在本页）。 */
+{
+  // ⚠️ 一律读**去注释后**的页面 WXML：上面这段说明里就原样写着 `<wall-feed>` / `id="wishList"`，
+  // 拿原始文本判会"读到自己的解释"（错题本 E7，本仓反复踩）。
+  const pageMarkup = wallWxml.replace(/<!--[\s\S]*?-->/g, '')
+  check('★ 页面 json 登记了愿签内容流组件（路径必须指到真组件）',
+    /"wall-feed"\s*:\s*"\/components\/WallFeed\/index"/.test(wallJson))
+  check('★ 页面真的渲染了 <wall-feed>（登记了不用 = 组件形同不存在）',
+    /<wall-feed\b/.test(pageMarkup))
+  check('★ 墙页脚跳转的落点 id 仍在页面（组件内页面选不中）',
+    /id="wishList"/.test(pageMarkup))
+  // 属性契约：以组件**实际声明**为准（components/WallFeed/index.js 的 properties）
+  const propBindings = [
+    ['items', 'items="\\{\\{wallItems\\}\\}"'],
+    ['mineRows', 'mine-rows="\\{\\{mineRows\\}\\}"'],
+    ['wallCount', 'wall-count="\\{\\{wallCount\\}\\}"'],
+    ['mineTotal', 'mine-total="\\{\\{mine\\.total\\}\\}"'],
+    ['loading', 'loading="\\{\\{loading\\}\\}"'],
+    ['loadError', 'load-error="\\{\\{loadError\\}\\}"'],
+    ['mineLoading', 'mine-loading="\\{\\{mineLoading\\}\\}"'],
+    ['mineError', 'mine-error="\\{\\{mineError\\}\\}"'],
+    ['allowed', 'allowed="\\{\\{allowed\\}\\}"'],
+    ['hasMore', 'has-more="\\{\\{false\\}\\}"'],
+    ['manageable', 'manageable="\\{\\{false\\}\\}"'],
+    ['capped', 'capped="\\{\\{wallCapped\\}\\}"']
+  ]
+  const missingProps = propBindings.filter(([, re]) => !new RegExp(re).test(pageMarkup)).map(([n]) => n)
+  eq('★ 组件声明的属性全部接线（缺一个 = 那一维悄悄失效）', missingProps.join(','), '')
+  check('★ 组件拿到的是**墙面那一份**（wallItems），不是会被 applyView 换掉的 items',
+    /wallItems: items,/.test(wallPageSrc) && !/items="\{\{items\}\}"/.test(pageMarkup))
+  // 不可越界（R2）：组件不发云调用、不 require 云函数、不读写集合（去注释后判，防注释里提到就算数）
+  check('★ 组件不发云调用（去注释后 wx.cloud / callFunction / db.collection 一个都不许有）',
+    !/wx\.cloud|callFunction|db\.collection/.test(stripComments(readSrc('miniprogram/components/WallFeed/index.js'))) &&
+    !/wx\.cloud|callFunction|db\.collection/.test(stripComments(feedLogicSrc)))
+  // 事件契约：组件 triggerEvent 的每个事件都有页面落点
+  const eventBindings = [
+    ['switchview', 'bind:switchview="onFeedSwitchView"'],
+    ['loadmore', 'bind:loadmore="onFeedLoadMore"'],
+    ['retry', 'bind:retry="onFeedRetry"'],
+    ['retrymine', 'bind:retrymine="onFeedRetryMine"'],
+    ['openwish', 'bind:openwish="onFeedOpenWish"'],
+    ['borrowwish', 'bind:borrowwish="onFeedBorrowWish"']
+  ]
+  const missingEvents = eventBindings.filter(([, lit]) => pageMarkup.indexOf(lit) === -1).map(([n]) => n)
+  eq('★ 组件 triggerEvent 的事件全部有页面落点（漏一个 = 那个交互点了没反应）', missingEvents.join(','), '')
+  check('★ 事件落点调回页面**既有**方法（refresh / loadMine / switchView / borrowWishText）',
+    /onFeedRetry\(\)\s*\{\s*this\.refresh\(\)/.test(wallPageSrc) &&
+    /onFeedRetryMine\(\)\s*\{\s*this\.loadMine\(\)/.test(wallPageSrc) &&
+    /onFeedSwitchView\(e\)[\s\S]{0,260}?this\.switchView\(/.test(wallPageSrc) &&
+    /onFeedBorrowWish\(e\)[\s\S]{0,260}?this\.borrowWishText\(/.test(wallPageSrc))
+  check('★ 云调用只在本页（组件不 require 云函数）',
+    /callFn\(data\)/.test(wallPageSrc) && /name: FN/.test(wallPageSrc))
+  check('★ 页面不再自渲染愿签段（ww-tags / tagColumns / ww-seg 的 WXML 已下线）',
+    !/class="ww-tags"/.test(wallWxml) && !/wx:for="\{\{tagColumns\}\}"/.test(wallWxml) &&
+    !/class="ww-seg"/.test(wallWxml))
+}
 
 /* ------------------------------------------------------------------ *
  * 4b) 重设计防线（2026-09-16：业务方判定原样式「灾难现场」）
@@ -2597,10 +2685,11 @@ check(
   /"enablePullDownRefresh"\s*:\s*true/.test(wallJson) && /"backgroundTextStyle"\s*:\s*"light"/.test(wallJson)
 )
 check(
-  '★ 加载中出骨架（全站约定是骨架而不是一行字；用全局 skeleton-shimmer）',
+  '★ 加载中出骨架（全站约定是骨架而不是一行字）——弹幕墙走全局 skeleton-shimmer，愿签流组件自带 wf-shimmer',
   /<block wx:if="\{\{loading\}\}">[\s\S]{0,400}?ww-wall-skel skel-1[\s\S]{0,400}?ww-wall-skel skel-4/.test(wallWxml) &&
-    /class="ww-tag-skel"/.test(wallWxml) &&
-    /animation:\s*skeleton-shimmer/.test(wallWxssCode)
+    /class="wf-skel"/.test(feedWxml) &&
+    /animation:\s*skeleton-shimmer/.test(wallWxssCode) &&
+    /animation:\s*wf-shimmer/.test(feedWxss)
 )
 check(
   '★ 黄铜色阶走 token（app.wxss 的 --brass-50..900，本页原来硬编码 7 个色值）',
@@ -2614,15 +2703,19 @@ check(
 )
 check(
   '★ 加载失败给「再试一次」（同族五页都有重试入口，本页原来只能碰运气下拉）',
-  /bindtap="refresh"/.test(wallWxml) && /再试一次/.test(wallWxml)
+  // 2026-09-22 接线：愿签段的错误块搬进组件，重试入口是组件的 `onRetry`
+  // （它按当前视图发 retry / retrymine，页面分别接回 refresh / loadMine）
+  /bindtap="onRetry"/.test(feedWxml) && /再试一次/.test(feedWxml) &&
+    /bind:retry="onFeedRetry"/.test(wallWxml) && /bind:retrymine="onFeedRetryMine"/.test(wallWxml)
 )
 {
-  const skelAt = wallWxml.indexOf('class="ww-tag-skel"')
-  const errAt = wallWxml.indexOf('class="ww-error" wx:elif="{{loadError}}"')
-  const elseAt = errAt > -1 ? wallWxml.indexOf('<block wx:else>', errAt) : -1
-  const emptyAt = wallWxml.indexOf('ww-tags-empty')
+  // 骨架 → 错误 → 列表/空态 的三段互斥链现在由组件的**派生标记**给出（logic.js 的 deriveView）
+  const skelAt = feedWxml.indexOf('wx:if="{{showSkeleton}}"')
+  const errAt = feedWxml.indexOf('class="wf-error" wx:elif="{{showError}}"')
+  const elseAt = errAt > -1 ? feedWxml.indexOf('<block wx:else>', errAt) : -1
+  const emptyAt = feedWxml.indexOf('wf-empty')
   check(
-    '★ 失败时出错误块 + 重试，且不与「还没有人许愿」同屏（骨架 → 错误 → 列表/空态 三段互斥）',
+    '★ 失败时出错误块 + 重试，且不与空文案同屏（骨架 → 错误 → 列表/空态 三段互斥链）',
     skelAt > -1 && errAt > skelAt && elseAt > errAt && emptyAt > elseAt,
     `skel=${skelAt} err=${errAt} else=${elseAt} empty=${emptyAt}`
   )
@@ -2722,7 +2815,12 @@ check(
     '★★ 页面手写体族名与加载器加载的族名逐字相同（不同 = 加载了也用不上，真机静默回落）',
     !!handFamily &&
       new RegExp(`\\.ww-danmaku\\s*\\{[^}]*font-family:\\s*'${handFamily}'`).test(wallWxssCode) &&
-      new RegExp(`\\.ww-tag-text\\s*\\{[^}]*font-family:\\s*'${handFamily}'`).test(wallWxssCode),
+      // 2026-09-22 接线：愿签正文搬进组件，组件走 `var(--font-hand)`（系统手写栈）。
+      // 判据不消失、只跟随真源：弹幕仍与加载族名逐字相同；愿签正文钉"用的是手写栈"，
+      // 并钉住 `--font-hand` 确实是手写栈（含 HanziPen/Kaiti 兜底）——
+      // 即"加载成功与否都有手写观感"，这是组件作者的口径（见交付说明）。
+      /\.wf-card-text\s*\{[^}]*font-family:\s*var\(--font-hand\)/.test(feedWxss) &&
+      /--font-hand:[^;]*(HanziPen|Kaiti|楷体)/.test(appWxss),
     `FONT_FAMILY=${handFamily}`
   )
 }
@@ -2761,8 +2859,8 @@ check('★ 点灯爱心动效：一次性（heartBurst 为真才挂载 + js 定�
 }
 check('★ 弹幕用手写体（心愿是"写"上去的）',
   /\.ww-danmaku\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
-check('★ 愿签正文也用手写体',
-  /\.ww-tag-text\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(wallWxssCode))
+check('★ 愿签正文也用手写体（接线后真源在组件的 .wf-card-text）',
+  /\.wf-card-text\s*\{[^}]*font-family:\s*('ShanhaiHand'|var\(--font-hand\)|"HanziPen SC")/.test(feedWxss))
 // 字号与 CHAR_RPX 是**一对**：CHAR_RPX 是同轨不重叠的宽度估算依据，
 // 只改字号不改它 → 后一条会在前一条尾部还在屏内时进场（叠字）。判据按"字号 ×1.03 ≈ CHAR_RPX"实算，
 // 既保住原来的下限（≥28rpx：手写体笔画细，移动中要认得出），又让两个数不再各自漂移。
@@ -2779,19 +2877,27 @@ check(
   `font=${danmakuFontRpx} CHAR_RPX=${charRpxConst} 期望≈${Math.round(danmakuFontRpx * 1.03)}`
 )
 
-// —— 结构 ——
+// —— 结构（2026-09-22 接线后：愿签段的结构判据读组件真源，页面侧只钉"把纯函数结果传进去"）——
 check(
-  '★ WXML 渲染 tagColumns（嵌套 wx:for，内层 wx:for-item="item" 防遮蔽）',
-  /wx:for="\{\{tagColumns\}\}"[\s\S]{0,260}?wx:for="\{\{col\}\}"[\s\S]{0,140}?wx:for-item="item"/.test(wallWxml)
+  '★ 组件渲染 columns（嵌套 wx:for，内层 wx:for-item="item" 防遮蔽）',
+  /wx:for="\{\{columns\}\}"[\s\S]{0,260}?wx:for="\{\{col\}\}"[\s\S]{0,140}?wx:for-item="item"/.test(feedWxml)
 )
-check('★ 页面把分列/上限交给纯函数（不埋在页面里）', /splitTagColumns\(items\)/.test(wallPageSrc) && /isTagListCapped\(items\.length\)/.test(wallPageSrc))
+check('★ 页面把分列/上限交给纯函数（不埋在页面里）',
+  /splitTagColumns\(items\)/.test(wallPageSrc) && /isTagListCapped\(items\.length\)/.test(wallPageSrc) &&
+    /wallCapped: isTagListCapped\(items\.length\)/.test(wallPageSrc))
 eq('★ 旧单列标记已清除（.ww-tag-main）', (wallWxssCode.match(/ww-tag-main/g) || []).length, 0)
-check('★ 列表有明确收尾（原来 30 条一路滚下去没有终点）', /class="ww-end"/.test(wallWxml) && /已到墙底/.test(wallWxml))
+check('★ 列表有明确收尾（原来 30 条一路滚下去没有终点）',
+  /class="wf-more-end"/.test(feedWxml) && /\{\{endText\}\}/.test(feedWxml) &&
+    /loadState === 'nomore'/.test(feedWxml) && /已到墙底/.test(feedLogicSrc))
 check(
-  '★ 打到上限时如实说「仅展示最近 N 条」，不装作全量',
-  /tagCapped \? '已到墙底 · 仅展示最近 '/.test(wallWxml) && /'已到墙底 · 共 '/.test(wallWxml)
+  '★ 打到上限时如实说「仅展示最近 N 条」，不装作全量（页面 capped → 组件纯函数给 endText）',
+  /仅展示最近 \$\{total\} 条/.test(feedLogicSrc) && /已到墙底 · 共 \$\{total\} 条/.test(feedLogicSrc) &&
+    /const endText = p\.capped === true/.test(feedLogicSrc) &&
+    /\{\{endText\}\}/.test(feedWxml) &&
+    /endText: v\.endText/.test(readSrc('miniprogram/components/WallFeed/index.js')) &&
+    /capped="\{\{wallCapped\}\}"/.test(wallWxml)
 )
-check('两列瀑布用 flex 列（不是 flex-wrap 行对齐）', /\.ww-tag-cols\s*\{[^}]*align-items:\s*flex-start/.test(wallWxssCode) && /\.ww-tag-col\s*\{[^}]*flex-direction:\s*column/.test(wallWxssCode))
+check('两列瀑布用 flex 列（不是 flex-wrap 行对齐）', /\.wf-cols\s*\{[^}]*align-items:\s*flex-start/.test(feedWxss) && /\.wf-col\s*\{[^}]*flex-direction:\s*column/.test(feedWxss))
 
 /* ------------------------------------------------------------------ *
  * 4f) 详情页入口位置：主图正下方（2026-09-16 第三轮）
@@ -2953,7 +3059,9 @@ check('★ 连续点灯彩蛋已接线', /tryLampStreak\(/.test(wallPageSrc))
 check('★ 心愿数彩蛋已接线', /tryWishCount\(/.test(wallPageSrc))
 check('我的心愿用 markMine 标记（而不是让公开列表回 openid）', /markMine\(this\._wallItems/.test(wallPageSrc))
 check('两个视图共用 applyView（不各写一份渲染）', /applyView\(\)/.test(wallPageSrc))
-check('我的心愿视图可切换且条目可点开', /switchView\(/.test(wallPageSrc) && /data-mode="mine"/.test(wallWxml2) && /bindtap="openWishCard"/.test(wallWxml2))
+check('我的心愿视图可切换且条目可点开',
+  /switchView\(/.test(wallPageSrc) && /bind:switchview="onFeedSwitchView"/.test(wallWxml2) &&
+    /data-view="mine"/.test(feedWxml) && /bindtap="onOpen"/.test(feedWxml))
 check(
   '心愿笺四件事齐备（开 / 关 / 抄一句 / 复制）',
   ['openWishCard', 'closeWishCard', 'borrowWishText', 'copyWishText'].every((m) => wallPageSrc.indexOf(m) !== -1)
@@ -2981,9 +3089,11 @@ check('★ 博物笔记入口把彩蛋进度显示出来', /goRelics\(\)/.test(w
 check('灯位/节气 UI 已上墙', /ww-lantern-tier/.test(wallWxml2) && /ww-lantern-solar/.test(wallWxml2))
 check('灯位盏数按数组渲染（wx:for 传数字语义不一致）', /lampDots/.test(wallWxml2) && /lampDots/.test(wallPageSrc))
 check('心愿笺浮层已上墙', /ww-card-mask/.test(wallWxml2) && /bindtap="borrowWishText"/.test(wallWxml2))
-check('我的心愿 tab 已上墙', /data-mode="mine"/.test(wallWxml2))
+check('我的心愿 tab 已上墙（组件里的第二段）', /data-view="mine"/.test(feedWxml))
 check('博物笔记入口已上墙', /bindtap="goRelics"/.test(wallWxml2))
-check('愿签可点开（bindtap + data-id）', /bindtap="openWishCard"/.test(wallWxml2) && /data-id="\{\{item\._id\}\}"/.test(wallWxml2))
+check('愿签可点开（组件卡片 bindtap="onOpen" + data-id）',
+  /bindtap="onOpen"/.test(feedWxml) && /data-id="\{\{item\._id\}\}"/.test(feedWxml) &&
+    /bind:openwish="onFeedOpenWish"/.test(wallWxml2))
 
 const achSrc = readSrc('miniprogram/subpackages/extra/user/achievements/index.js')
 check('★ 博物笔记支持 focus 定位', /\.trim\(\) === 'relics'/.test(achSrc))
@@ -3356,11 +3466,13 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
     /class="ww-dm-mark \{\{item\.pinned/.test(wxml) && /\.ww-dm-mark\.is-pinned/.test(wxss)
   )
   check(
-    '★ 「馆方」徽章已下线：卡片/弹层/墙面三处都不再渲染它（数据字段保留）',
+    '★ 「馆方」徽章已下线：愿签卡片（组件）/ 弹层（页面）/ 墙面三处都不再渲染它（数据字段保留）',
     !/ww-tag-seal is-official/.test(wxml) &&
       !/class="ww-card-tag" wx:if="\{\{card\.official\}\}"/.test(wxml) &&
       !/is-official/.test(wxml) &&
+      !/is-official/.test(feedWxml) &&
       !/\.ww-tag-seal\.is-official\s*\{/.test(wxss) &&
+      !/\.wf-card-seal\.is-official\s*\{/.test(feedWxss) &&
       !/\.ww-dm-mark\.is-official\s*\{/.test(wxss) &&
       /official: !!raw\.official/.test(readSrc('miniprogram/utils/wishWall.js'))
   )
@@ -3368,13 +3480,14 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
     '★ 去徽章没有误伤其它印记（已收起 / 置顶 仍在，且「我的」的信号以左边线形式保住）',
     // 2026-09-20 改造：「我的」章整条下线（真机 6 张里 5 张盖着它 = 噪音）。
     // 本条的**意图不变**：去任何一次徽章都不许把"哪条是我的"这个信息弄丢 ——
-    // 只是它现在挂在卡片已有的左侧铜绳上（.ww-tag.is-mine::before），不再是一枚金色印章。
-    /ww-tag-seal is-hidden"[^>]*>已收起/.test(wxml) &&
-      /ww-tag-seal"[^>]*>置顶/.test(wxml) &&
-      /ww-tag \{\{item\.isFresh \? 'is-fresh' : ''\}\} \{\{item\.isMine \? 'is-mine' : ''\}\}/.test(wxml) &&
-      /\.ww-tag\.is-mine::before\s*\{[\s\S]{0,240}?var\(--brass-300\)/.test(wxss) &&
-      !/ww-tag-seal is-mine/.test(wxml) &&
-      !/\.ww-tag-seal\.is-mine\s*\{/.test(wxss) &&
+    // 只是它现在挂在卡片已有的左侧铜绳上（.wf-card.is-mine::before），不再是一枚金色印章。
+    // 2026-09-22 接线：愿签卡从页面 `.ww-tag` 搬进组件的 `.wf-card`，判据跟着真源走。
+    /wf-card-seal is-hidden"[^>]*>已收起/.test(feedWxml) &&
+      /wf-card-seal"[^>]*>置顶/.test(feedWxml) &&
+      /wf-card \{\{item\.isFresh \? 'is-fresh' : ''\}\} \{\{item\.isMine \? 'is-mine' : ''\}\} \{\{item\.hidden \? 'is-hidden' : ''\}\}/.test(feedWxml) &&
+      /\.wf-card\.is-mine::before\s*\{[\s\S]{0,240}?var\(--brass-300\)/.test(feedWxss) &&
+      !/wf-card-seal is-mine/.test(feedWxml) &&
+      !/\.wf-card-seal\.is-mine\s*\{/.test(feedWxss) &&
       /ww-card-tag is-warn"[^>]*>已被馆方收起/.test(wxml)
   )
   check('墙面给了无障碍描述（读屏能说清这面墙是什么）', /aria-label="\{\{rows\.length \? rows\.length/.test(wxml))
@@ -3395,20 +3508,25 @@ check('wxml 用解析后的文案（不再直接用 props）', /\{\{brandText\}\
   check('额度预检用的是服务端文案形状（不是自造一句）', /今天已许愿 \$\{this\.data\.quota\.cap\} 次，明天再来/.test(js))
 
   check(
-    '★ 两个视图改成分段控件（此前像两个标题，切换意图不明显）',
-    /class="ww-seg"/.test(wxml) && (wxml.match(/ww-seg-item/g) || []).length >= 2 && /\.ww-seg-item\.is-on/.test(wxss)
+    '★ 两个视图改成分段控件（此前像两个标题，切换意图不明显；接线后由 <wall-feed> 承载）',
+    /class="wf-seg"/.test(feedWxml) && (feedWxml.match(/wf-seg-item/g) || []).length >= 2 &&
+      /\.wf-seg-item\.is-on/.test(feedWxss) && /<wall-feed\b/.test(wxml)
   )
-  check('分段控件有选中态语义', /aria-role="tab"/.test(wxml) && /aria-selected=/.test(wxml))
-  check('旧的标题式 tab 样式已清干净（不留死样式）', !/\.ww-head-label/.test(wxss))
+  check('分段控件有选中态语义', /aria-role="tab"/.test(feedWxml) && /aria-selected=/.test(feedWxml))
+  check('旧的标题式 tab 样式已清干净（不留死样式）', !/\.ww-head-label/.test(wxss) && !/\.wf-head-label/.test(feedWxss))
 
   // 只验 WXSS 有样式是不够的：样式必须在愿签上真的被挂出来（首轮注入没检出正是这个空洞）
   check(
     '★ 愿签高亮有动效且真挂在愿签上（落愿看得见）',
-    /\.ww-tag\.is-fresh/.test(wxss) &&
-      /@keyframes ww-fresh-in/.test(wxss) &&
-      /class="ww-tag \{\{item\.isFresh \? 'is-fresh' : ''\}\} \{\{item\.isMine \? 'is-mine' : ''\}\}"/.test(wxml)
+    /\.wf-card\.is-fresh/.test(feedWxss) &&
+      /@keyframes wf-fresh-in/.test(feedWxss) &&
+      /class="wf-card \{\{item\.isFresh \? 'is-fresh' : ''\}\} \{\{item\.isMine \? 'is-mine' : ''\}\} \{\{item\.hidden \? 'is-hidden' : ''\}\}"/.test(feedWxml)
   )
-  check('选中态的分段控件仍走黄铜 token', /var\(--brass-300\) 0%, var\(--brass-400\) 48%, var\(--brass-500\) 100%/.test(wxss))
+  check(
+    '选中态的分段控件仍走黄铜 token（组件的选中态用黄铜 rgba + --brass token，不许出现离群色）',
+    /\.wf-seg-item\.is-on\s*\{[^}]*rgba\(196,\s*167,\s*108/.test(feedWxss) &&
+      /\.wf-seg-item\.is-on\s+\.wf-seg-label\s*\{[^}]*var\(--brass-\d+\)/.test(feedWxss)
+  )
   check(
     '笺纸材料层不盖内容（绝对定位的材料必须让内容显式抬层）',
     /\.ww-card-over,[\s\S]{0,80}?\.ww-card-acts \{[\s\S]{0,80}?z-index: 1/.test(wxss) && /\.ww-card-fiber/.test(wxss)
@@ -3856,7 +3974,10 @@ check(
   // 原来的判据只要求"条数挂在 wall 段里"，用的却是 `items.length` —— 而 `items` 会被
   // applyView 换成当前视图的数据源，于是切到「我的心愿」后**两段显示同一个数**。
   // 根因是共用一个字段，不是挂错了位置。现在用 `wallCount`，并额外钉住"只有 applyItems 写它"。
-  /data-mode="wall"[\s\S]{0,700}?ww-seg-n[\s\S]{0,200}?wallCount/.test(wallWxml2) &&
+  // ⚠️ 2026-09-22 接线：段的渲染在组件里，所以「条数在段内」读组件真源；
+  //    页面侧则必须传**稳定字段** `wallCount`（传 items.length 就是把串台搬了个地方）。
+  /data-view="wall"[\s\S]{0,700}?wf-seg-n[\s\S]{0,200}?wallCount/.test(feedWxml) &&
+    /wall-count="\{\{wallCount\}\}"/.test(wallWxml2) &&
     !/ww-head-n/.test(wallWxml2) &&
     // 初值 + applyItems + 落愿乐观插入 = 恰好三处；applyView **不许**碰它（碰了就又是串台）
     (wallPageSrc.match(/wallCount:/g) || []).length === 3 &&
@@ -3952,26 +4073,31 @@ check(
   Number.isFinite(playPress) && playPress === rpPress,
   `玩法入口=${playPress} 玩法页=${rpPress}`
 )
-const hoverClasses = [...new Set([...wallWxml2.matchAll(/hover-class="([^"{}]+)"/g)].map((m) => m[1]))]
-const hoverMissing = hoverClasses.filter((c) => !new RegExp(`\\.${c}\\s*[,{]`).test(wallWxssCode))
+// 2026-09-22 接线：愿签段（卡片 / 分段 / 筛选 / 加载更多 / 详情）搬进 <wall-feed>，
+// 这三条通用可点性判据的**扫描面必须一起搬**，否则组件里的 hover-class / aria-role 回归
+// 没有任何判据接得住（注入打到组件就成了没人接的空枪）。
+const uiSurface = wallWxml2 + '\n' + feedWxml
+const uiCss = wallWxssCode + '\n' + feedWxss
+const hoverClasses = [...new Set([...uiSurface.matchAll(/hover-class="([^"{}]+)"/g)].map((m) => m[1]))]
+const hoverMissing = hoverClasses.filter((c) => !new RegExp(`\\.${c}\\s*[,{]`).test(uiCss))
 check(
-  '★ 每个 hover-class 都有同名规则（类名写错 = 点了没反馈，且 WXSS 不报错）',
+  '★ 每个 hover-class 都有同名规则（页面 + 愿签流组件；类名写错 = 点了没反馈，且 WXSS 不报错）',
   hoverClasses.length >= 15 && hoverMissing.length === 0,
   `引用 ${hoverClasses.length} 个 / 无规则: ${hoverMissing.join(',') || '无'}`
 )
-const stayTimes = [...wallWxml2.matchAll(/hover-stay-time="(\d+)"/g)].map((m) => Number(m[1]))
+const stayTimes = [...uiSurface.matchAll(/hover-stay-time="(\d+)"/g)].map((m) => Number(m[1]))
 check(
-  '★ 页面内 hover-stay-time 统一为 70ms（原 70/80/60 三种混用）',
+  '★ 页面 + 愿签流组件内 hover-stay-time 统一为 70ms（原 70/80/60 三种混用）',
   stayTimes.length >= 15 && new Set(stayTimes).size === 1 && stayTimes[0] === 70,
   `取值=${JSON.stringify([...new Set(stayTimes)])} / 处数=${stayTimes.length}`
 )
 
 // —— ④ 无障碍：可点元素必须有 role；装饰圆点必须 aria-hidden ——
-const wxmlTagsAll = wallWxml2.match(/<[a-zA-Z-]+[^>]*>/g) || []
+const wxmlTagsAll = uiSurface.match(/<[a-zA-Z-]+[^>]*>/g) || []
 const tapTags = wxmlTagsAll.filter((t) => /bindtap\s*=/.test(t))
 const tapNoRole = tapTags.filter((t) => !/aria-role\s*=/.test(t))
 check(
-  '★ 每个可点元素（bindtap）都有 aria-role（否则读屏只念文字、不说"这是按钮"）',
+  '★ 每个可点元素（bindtap）都有 aria-role（页面 + 愿签流组件；否则读屏只念文字、不说"这是按钮"）',
   tapTags.length >= 15 && tapNoRole.length === 0,
   `可点 ${tapTags.length} 个 / 缺 role: ${tapNoRole.map((t) => t.replace(/\s+/g, ' ').slice(0, 60)).join(' | ') || '无'}`
 )
@@ -3987,7 +4113,8 @@ check(
 // 一隐藏就等于对读屏用户砍掉了"抽一句 → 看藏品"这条主路的出口。装饰与文案的边界必须由判据兜住。
 // ⚠️ 2026-09-21（§11.4）：这条 CTA 随玩法结果搬到**四个玩法页**（`.rp-reco-go`）——
 // 扫描面必须一起搬，否则注入打到玩法页就没人接（切片自检当场抓到）。
-const a11yViews = [wallWxml2].concat(
+// 2026-09-22 接线：愿签流组件也在本页渲染，扫描面含组件 WXML
+const a11yViews = [wallWxml2, feedWxml].concat(
   ['play-qian', 'play-cookie', 'play-zodiac', 'play-mbti']
     .map((n) => readSrc(`miniprogram/subpackages/feature/${n}/index.wxml`))
 )
@@ -4014,12 +4141,13 @@ check(
 )
 
 // —— ⑥ 愿签卡 / 骨架的底面一致（换卡那一帧不许跳色）——
+// 2026-09-22 接线：愿签卡与骨架都搬进组件，判据读组件真源（页面残留的 .ww-tag 规则已废）
 const surfaceGradient = (sel) => {
-  const m = new RegExp(`\\${sel}\\s*\\{[^}]*background:\\s*(linear-gradient\\([^;]+);`).exec(wallWxssCode)
+  const m = new RegExp(`\\${sel}\\s*\\{[^}]*background:\\s*(linear-gradient\\([^;]+);`).exec(feedWxss)
   return m ? m[1].replace(/\s+/g, '') : ''
 }
-const tagSurface = surfaceGradient('.ww-tag')
-const tagSkelSurface = surfaceGradient('.ww-tag-skel')
+const tagSurface = surfaceGradient('.wf-card')
+const tagSkelSurface = surfaceGradient('.wf-skel')
 check(
   '★ 愿签骨架与愿签卡同底同渐变（骨架被真卡替换时不许跳色）',
   tagSurface.length > 0 && tagSurface === tagSkelSurface,
@@ -4396,7 +4524,9 @@ check(
     '★ 点墙页脚 → 滚到愿签列表（selector 必须是列表上真实存在的 id）',
     scrolled.length === 1 &&
       scrolled[0].selector === '#wishList' &&
-      /id="wishList"/.test(wallWxml2),
+      // ⚠️ 去注释再判：wxml 里那段说明原样写着 `id="wishList"`，
+      // 不去注释就会在锚点被改名后仍然通过（守卫读到自己那段解释，E7）
+      /id="wishList"/.test(wallWxml2.replace(/<!--[\s\S]*?-->/g, '')),
     JSON.stringify(scrolled)
   )
   check(
@@ -6857,9 +6987,10 @@ if (process.argv.includes('--selftest') && !INJECT) {
     // 墙与愿签列表共用同一个 loadError：WXML 里两处分支都要吃到它
     const wxmlNow = readSrc('miniprogram/subpackages/feature/wish-wall/index.wxml')
     check(
-      '★ loadError 两个渲染分支都吃到（弹幕墙 + 愿签列表；只认一处 = 另一半继续说假事实）',
+      '★ loadError 两个渲染分支都吃到（弹幕墙 + 愿签流组件；只认一处 = 另一半继续说假事实）',
       /loadError \? '墙面未展开' : '墙面还是空的'/.test(wxmlNow) &&
-        /class="ww-error" wx:elif="\{\{loadError\}\}"/.test(wxmlNow)
+        /load-error="\{\{loadError\}\}"/.test(wxmlNow) &&
+        /wx:elif="\{\{showError\}\}"/.test(feedWxml)
     )
     check(
       '★ 页面显式识别 fallback（契约的"故障显式标记"，不只认 success）',
@@ -6899,35 +7030,37 @@ if (process.argv.includes('--selftest') && !INJECT) {
     eq('（反例）**确认成功且为空**才允许空文案', `${emptyPage.data.mineError}/${emptyPage.data.mineLoading}`, '/false')
     eq('（反例）空列表确实落进空态（items 为空）', (emptyPage.data.items || []).length, 0)
 
-    // WXML 三态互斥链：骨架 → 错误+重试 → else（空文案在 else 里）
-    // ⚠️ 先**去注释**再定位：我自己在上面那段说明里原样写了「你还没在这面墙上写过心愿」，
-    // 不去注释就会锚到那句解释上（本仓老坑：守卫读到自己那段解释）。
-    const mineWxml = wxmlNow.replace(/<!--[\s\S]*?-->/g, '')
-    const mineLoadAt = mineWxml.indexOf("viewMode === 'mine' && mineLoading")
-    const mineErrAt = mineWxml.indexOf("viewMode === 'mine' && mineError")
-    const emptyAt = mineWxml.indexOf('你还没在这面墙上写过心愿')
+    // 三态互斥链（2026-09-22 接线后由组件承载）：骨架 → 错误+重试 → else（空文案在 else 里）。
+    const mineWxml = feedWxml.replace(/<!--[\s\S]*?-->/g, '')
+    const mineLoadAt = mineWxml.indexOf('wx:if="{{showSkeleton}}"')
+    const mineErrAt = mineWxml.indexOf('wx:elif="{{showError}}"')
+    const emptyAt = mineWxml.indexOf('wf-empty')
     check(
       '★ 三态是**互斥链**且顺序正确（wx:if 骨架 → wx:elif 错误+重试 → wx:else 里的空文案）',
       mineLoadAt > -1 && mineErrAt > mineLoadAt && emptyAt > mineErrAt &&
-        // 加载态/错误态必须是 wx:elif（并列成 wx:if 会让两个骨架同时渲染）
-        /wx:elif="\{\{viewMode === 'mine' && mineLoading\}\}"/.test(mineWxml) &&
-        /wx:elif="\{\{viewMode === 'mine' && mineError\}\}"/.test(mineWxml) &&
         // 空文案在最后一个 wx:else 之后（= 上面那条互斥链兜底走到的分支）
-        mineWxml.lastIndexOf('<block wx:else>', emptyAt) > mineErrAt,
+        mineWxml.lastIndexOf('<block wx:else>', emptyAt) > mineErrAt &&
+        // 错误分支自带重试入口
+        /wx:elif="\{\{showError\}\}"[\s\S]{0,240}?bindtap="onRetry"/.test(mineWxml),
       `load=${mineLoadAt} err=${mineErrAt} empty=${emptyAt}`
     )
     check(
-      '★ 空文案挂在 wx:else 分支内，且自身条件**只判 items 为空**（不掺 mine 状态）',
-      (() => {
-        const elseAt = mineWxml.lastIndexOf('<block wx:else>', emptyAt)
-        if (elseAt < 0 || elseAt < mineErrAt) return false
-        // 用**空文案自己那个元素**的整行来判：条件只能是 `!items.length`
-        // —— 只要它开始掺 mineLoading/mineError，就说明"空文案只在确认成功且为空时出现"这条破了。
-        const tag = (/<view class="ww-tags-empty"[^>]*>/.exec(mineWxml.slice(emptyAt - 120, emptyAt + 40)) || [])[0] || ''
-        return /wx:if="\{\{!items\.length\}\}"/.test(tag) && !/mine(Loading|Error)/.test(tag)
-      })()
+      '★ 空文案只在"确认成功且为空"时成立（error / loading 任一立着都不许说空）',
+      // 接线后组件不在 WXML 里自己拼条件，而是读 deriveView 派生的 showEmpty ——
+      // 判据因此打在**派生规则**上（比逐元素判条件更强：模板绕不过它）。
+      /const showEmpty = !error && !loading && rendered === 0/.test(feedLogicSrc) &&
+        (() => {
+          const elseAt = mineWxml.lastIndexOf('<block wx:else>', emptyAt)
+          if (elseAt < 0 || elseAt < mineErrAt) return false
+          // 用**空文案自己那个元素**的整行来判：条件只能是派生的 showEmpty，
+          // 一旦它开始掺 loading/error 字样，就说明"确认成功且为空"这条被绕开了。
+          const tag = (/<view class="wf-empty"[^>]*>/.exec(mineWxml.slice(emptyAt - 120, emptyAt + 40)) || [])[0] || ''
+          return /wx:if="\{\{showEmpty\}\}"/.test(tag) && !/loading|error/i.test(tag)
+        })()
     )
-    check('★ 失败态有自己的重试入口（不是只能切视图碰运气）', /bindtap="loadMine"/.test(wxmlNow))
+    check('★ 失败态有自己的重试入口（不是只能切视图碰运气）',
+      /bindtap="onRetry"/.test(feedWxml) &&
+        /bind:retry="onFeedRetry"/.test(wxmlNow) && /bind:retrymine="onFeedRetryMine"/.test(wxmlNow))
   }
 
   /* ⑨ P2-9：博物笔记入口不依赖 mine 云调用（纯本地数据被无关云调用连坐） */

@@ -191,6 +191,17 @@ function deriveView(props, state, pending) {
   const loadLabel = moreServer
     ? '加载更多'
     : `再看 ${Math.min(pageSize, remaining)} 条`
+  /**
+   * 收尾那句话（**诚实措辞**）：打到服务端上限时不能装作全量。
+   * ⚠️ 2026-09-22 接线：改造前页面按 `isTagListCapped` 区分「仅展示最近 N 条」与「共 N 条」，
+   * 组件原先只有后者。这里把它收进**纯函数**（页面传 `capped` 属性）——
+   * 为什么不直接写在 WXML 的三元里：组件自己的离线渲染台
+   * （`render-wall-feed-preview.mjs`）要求 WXML 引用的每个根标识符都在样例数据里，
+   * 派生字段走 `data` 与它天然一致，也不必去改那个不属于本次接线范围的文件。
+   */
+  const endText = p.capped === true
+    ? `已到墙底 · 仅展示最近 ${total} 条`
+    : `已到墙底 · 共 ${total} 条`
 
   return {
     view,
@@ -218,6 +229,7 @@ function deriveView(props, state, pending) {
     errorText: error,
     loadState,
     loadLabel,
+    endText,
     pendingResolved,
     // 「我的」管理动作是否出现：页面声明 manageable 才出现（当前 C 端**没有**写 action，
     // 页面未接线时保持 false —— 不给一个点了没反应的删除入口，也不假造能力）

@@ -41,6 +41,14 @@ const APP_WXSS = resolve(ROOT, 'miniprogram/app.wxss')
 const REAL_WXSS = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss')
 const REAL_WXML = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxml')
 /**
+ * 愿签内容流组件（`<wall-feed>`）的真源 —— 2026-09-22 接线（PRD v1.4 §11.1 R2）。
+ * 预览必须**渲染组件的真 WXML/WXSS**，不能用页面残留的 `.ww-tag` 死样式去量
+ * （那是"读的是镜像、不是真源"，错题本 E3）。结构展开见下面的 `FEED_*` 段。
+ */
+const FEED_WXML = resolve(ROOT, 'miniprogram/components/WallFeed/index.wxml')
+const FEED_WXSS = resolve(ROOT, 'miniprogram/components/WallFeed/index.wxss')
+const FEED_LOGIC = resolve(ROOT, 'miniprogram/components/WallFeed/logic.js')
+/**
  * 实际读取的路径 —— 允许用环境变量指向**副本**。
  * 为什么需要这个开关（2026-09-20，子代理静态扫描时抓到的事故）：
  * 自检原本是"把注入写进**真源码** → 跑 → finally 还原"的形态。`finally` 挡得住异常，
@@ -240,6 +248,11 @@ const vars = [...toCssEarly(pageVarBlock).matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+)
   .join('\n')
 
 const pageCss = toCssEarly(readFileSync(PAGE_WXSS, 'utf8').replace(/^page\s*\{[\s\S]*?\}/m, ''))
+// ⚠️ 必须把组件的真 WXSS 一起拼进来（2026-09-22 接线）：愿签段的样式现在全在
+// components/WallFeed/index.wxss（`.wf-*`）里，只拼页面样式会让 `.wf-*` 全部量不到几何。
+// 组件的 `styleIsolation: apply-shared` 也不影响这里：预览是把两份样式放进同一个文档，
+// 与真机上"页面样式可作用于组件"的语义一致（组件自带样式对自身生效则完全等价）。
+const feedCss = toCssEarly(readFileSync(FEED_WXSS, 'utf8'))
 // signal-light / button 复位等全局小件：从**已去注释**的 app.wxss 里挑（这时正则不会落在注释里）
 const globalBits = [
   ...(appCss.match(/\.signal-light[^{]*\{[^}]*\}/g) || []),
@@ -280,6 +293,11 @@ function baseData() {
     tagColumns: [[WISHES[0], WISHES[2], WISHES[4]], [WISHES[1], WISHES[3], WISHES[5]]],
     tagCapped: true,
     wallCount: WISHES.length,
+    // ── 愿签内容流组件（<wall-feed>）的入参（2026-09-22 接线）──
+    // wallItems = 墙面那一份（与视图无关）；wallCapped = 打到服务端上限（收尾条如实说）
+    wallItems: WISHES,
+    mineRows: [],
+    wallCapped: true,
     freshId: '',
     viewMode: 'wall',
     mine: { total: 8 },
@@ -366,9 +384,9 @@ const SCENE_PATCH = {
     },
     heartBurst: true
   },
-  loading: { loading: true, rows: [], items: [], tagColumns: [[], []], mine: { total: 0 }, relics: { total: 0, found: 0 } },
+  loading: { loading: true, rows: [], items: [], wallItems: [], tagColumns: [[], []], mine: { total: 0 }, relics: { total: 0, found: 0 } },
   error: {
-    loading: false, loadError: '网络开小差了，墙面没能展开', rows: [], items: [], tagColumns: [[], []],
+    loading: false, loadError: '网络开小差了，墙面没能展开', rows: [], items: [], wallItems: [], tagColumns: [[], []],
     mine: { total: 0 }, relics: { total: 0, found: 0 }
   },
   closed: { flagChecked: true, allowed: false }
@@ -391,9 +409,86 @@ function assertSampleCovers(wxml, data) {
   }
 }
 
+/**
+ * 极简 CJS 加载器（**只服务组件纯逻辑核**）。
+ * 本文件是 `.mjs`，而仓根 package.json 是 `"type": "module"` —— 直接 `require()` 会把
+ * 小程序源码（CJS）当 ESM 解析（`require is not defined`）。test-wish-wall.mjs 用的是
+ * 同一手法（`new Function` 注入 module/exports/require），这里按最小实现取一份，
+ * 目的是**复用组件自己的 `deriveView`** 去算预览要画的数据 —— 绝不在这里重写一份筛选/分页
+ * （重写必然漂移：错题本 E3「读的是镜像、不是真源」）。
+ */
+function loadCjs(absPath, cache = new Map()) {
+  if (cache.has(absPath)) return cache.get(absPath)
+  const module = { exports: {} }
+  cache.set(absPath, module.exports)
+  const dir = dirname(absPath)
+  const localRequire = (id) => {
+    let p = resolve(dir, id)
+    if (!existsSync(p) && existsSync(`${p}.js`)) p = `${p}.js`
+    return loadCjs(p, cache)
+  }
+  // eslint-disable-next-line no-new-func
+  new Function('module', 'exports', 'require', readFileSync(absPath, 'utf8'))(module, module.exports, localRequire)
+  cache.set(absPath, module.exports)
+  return module.exports
+}
+const feedLogic = loadCjs(FEED_LOGIC)
+
+/**
+ * 把 `<wall-feed ... />` 展开成**组件的真 WXML**，并用组件自己的 `deriveView` 算出的数据
+ * 一起渲染。做法：先把页面 WXML 里的那个自闭合标签替换成组件 WXML 源，再让 `renderWxml`
+ * 统一渲染（合并作用域）—— 这样量到的结构与真机一致，也不需要在预览里重写组件结构。
+ */
+function expandWallFeed(pageWxml, data) {
+  const props = {
+    items: data.wallItems,
+    mineRows: data.mineRows,
+    wallCount: data.wallCount,
+    mineTotal: (data.mine && data.mine.total) || 0,
+    loading: data.loading,
+    loadError: data.loadError,
+    mineLoading: data.mineLoading,
+    mineError: data.mineError,
+    allowed: data.allowed,
+    hasMore: data.hasMore === true,
+    manageable: data.manageable === true,
+    capped: data.wallCapped === true,
+    pageSize: feedLogic.PAGE_SIZE
+  }
+  const state = {
+    viewMode: 'wall', wallFilter: 'all', mineFilter: 'all', sort: 'new',
+    wallLimit: feedLogic.PAGE_SIZE, mineLimit: feedLogic.PAGE_SIZE
+  }
+  const derived = feedLogic.deriveView(props, state, null)
+  const feedData = Object.assign({}, derived, {
+    viewMode: state.viewMode,
+    sorts: feedLogic.SORTS,
+    filters: derived.filters,
+    filter: derived.filter,
+    wallCount: props.wallCount,
+    mineTotal: props.mineTotal,
+    allowed: props.allowed,
+    capped: props.capped,
+    // 详情层预览不打开（null = 未打开），与组件初始态一致
+    detail: null,
+    detailCount: 0
+  })
+  const feedWxml = readFileSync(FEED_WXML, 'utf8')
+  // ⚠️ 先去注释再替换：页面那段的说明里原样写着 `<wall-feed>`，不去注释会把注释一起吞掉/锚错
+  const expanded = pageWxml
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<wall-feed\b[\s\S]*?\/>/, feedWxml)
+  if (expanded === pageWxml.replace(/<!--[\s\S]*?-->/g, '')) {
+    console.error('✗ 页面 WXML 里找不到 <wall-feed ... /> —— 预览无法展开组件（接线被回退了？）')
+    process.exit(1)
+  }
+  return { wxml: expanded, scope: Object.assign({}, data, feedData) }
+}
+
 const data = Object.assign(baseData(), SCENE_PATCH[SCENE])
-const wxmlSrc = readFileSync(PAGE_WXML, 'utf8')
-assertSampleCovers(wxmlSrc, data)
+const expanded = expandWallFeed(readFileSync(PAGE_WXML, 'utf8'), data)
+const wxmlSrc = expanded.wxml
+assertSampleCovers(wxmlSrc, expanded.scope)
 
 // 弹幕是**动画态**：截图里必须把它们摆进画面（否则全停在屏外，墙看着是空的）。
 // ⚠️ 这一步只改**渲染产物**的定位，不改任何被量的几何（墙高是 CSS 定的）。
@@ -404,7 +499,7 @@ const spreadDanmaku = (html) => {
     return `${head}${style} left:${10 + ((i * 23) % 48)}%; animation:none;"`
   })
 }
-const markup = renderWxml(wxmlSrc, data, { rewrite: spreadDanmaku })
+const markup = renderWxml(wxmlSrc, expanded.scope, { rewrite: spreadDanmaku })
 
 /* ── 3. 组装 HTML（WXSS 里只有类选择器，所以 <view> → <div> 就够了） ─────── */
 const html = `<!doctype html>
@@ -423,6 +518,7 @@ img { display: block; object-fit: cover; }
 button { display: block; box-sizing: border-box; border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; line-height: inherit; }
 ${globalBits}
 ${pageCss}
+${feedCss}
 /* 真机 placeholder 走 placeholder-class，HTML 没有这个概念 —— 把那条规则搬到 ::placeholder 上 */
 ${(pageCss.match(/\.ww-input-ph\s*\{[^}]*\}/) || [''])[0].replace('.ww-input-ph', '.ww-input::placeholder')}
 /* 预览专用：截图与量测都不做动画（否则量到的是动画中间态）。
@@ -490,11 +586,14 @@ const METRICS = [
   ['额度行 .ww-write-foot', '.ww-write-foot', 1, 'same-row'],
   ['额度文字', '.ww-quota', 1],
   ['字数 .ww-count', '.ww-count', 1],
-  ['分段控件 .ww-seg', '.ww-seg', 1, 'same-row'],
-  ['愿签两列 .ww-tag-cols', '.ww-tag-cols'],
-  ['愿签卡（首张）', '.ww-tag-col:nth-child(1) .ww-tag:nth-child(1)'],
-  ['愿签正文', '.ww-tag-text'],
-  ['愿签 meta', '.ww-tag-meta', 1],
+  ['分段控件 .wf-seg', '.wf-seg', 1, 'same-row'],
+  // 愿签内容流（2026-09-22 接线）：量点随结构搬进组件（`.wf-*`），不再量页面残留的 `.ww-tag*`
+  ['筛选行 .wf-controls', '.wf-controls'],
+  ['愿签两列 .wf-cols', '.wf-cols'],
+  ['愿签卡（首张）', '.wf-col:nth-child(1) .wf-card:nth-child(1)'],
+  ['愿签正文', '.wf-card-text'],
+  ['愿签 meta', '.wf-card-meta', 1],
+  ['加载更多 .wf-more', '.wf-more'],
   ['博物笔记 .ww-relics', '.ww-relics', 1, 'same-row']
 ]
 
@@ -561,7 +660,7 @@ window.addEventListener('load', () => {
   }
   // ── 首屏可见清单（不是判据，是给人看的"第一屏到底有什么"） ──
   const vh = innerHeight
-  const fold = ['.ww-hero', '.ww-wall', '.ww-composer', '.ww-lantern', '.ww-plays', '.ww-inspo-row', '.ww-seg']
+  const fold = ['.ww-hero', '.ww-wall', '.ww-composer', '.ww-lantern', '.ww-plays', '.ww-inspo-row', '.wf-seg']
   out.push({ label: '首屏可见', sel: ':fold', mode: 'fold', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
     text: fold.filter((s) => { const e2 = el(s); return e2 && e2.getBoundingClientRect().top < vh }).join(' / ') })
   // ── 发送条**若被改回吸底**：必须有底部预留（否则最后一张愿签被盖住）。

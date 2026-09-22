@@ -185,10 +185,25 @@ Page({
     entryFrom: 'direct',
     productTitle: '马上有',
     items: [],
+    /**
+     * **墙面那一份**愿签（与当前视图无关）—— 传给 `<wall-feed>` 的 `items`（PRD v1.4 §11.1 R2）。
+     * ⚠️ 为什么必须另起一个字段：`items` 会被 `applyView` 整体换成**当前视图**的数据源
+     * （改造前两视图共用一套渲染），直接把它传给组件，切到「我的心愿」后组件的墙视图会读到
+     * 我的心愿（串台 —— 2026-09-20 刚修过的那一类）。
+     * 写入点只有四处（组件接线后，墙数据的每次变更都在这里同步一份）：
+     * applyItems / loadMine 回写 isMine / 落愿乐观插入 / 高亮消退。
+     */
+    wallItems: [],
     /** 两列瀑布的列内容（items 的奇偶分列） */
     tagColumns: [],
     /** 打到服务端上限：文案改说「仅展示最近 N 条」 */
     tagCapped: false,
+    /**
+     * **墙面**是否打到服务端上限（只由 applyItems 写）。
+     * 传给组件的 `capped` —— 组件收尾条据此如实说「仅展示最近 N 条」而不是「共 N 条」。
+     * 与 `wallCount` 同口径：只描述**墙**，不被当前视图带偏（tagCapped 会被 applyView 重写）。
+     */
+    wallCapped: false,
     /**
      * **墙上的**愿签条数（与当前视图无关）。
      * ⚠️ 为什么不能直接用 `items.length`：`items` 会被 applyView 整体换成当前视图的数据源，
@@ -910,12 +925,16 @@ Page({
     this._wallItems = items
     this.setData({
       items,
+      // 组件的 `items`：墙面那一份（与当前视图无关，见 data.wallItems 的说明）
+      wallItems: items,
       // 「墙上的愿签」条数与墙页脚都用它 —— 与当前视图无关（见 data.wallCount 的说明）
       wallCount: items.length,
       // 两列瀑布与「是否打到上限」都是纯函数（见 utils/wishWall.js），页面只负责接线
       tagColumns: splitTagColumns(items),
       // 服务端一面墙只回 LIST_LIMIT 条：到底了必须说清是"最近 N 条"，不能装作全量
       tagCapped: isTagListCapped(items.length),
+      // 组件的 `capped`：同样只描述**墙**（applyView 不许碰它，否则切视图就变味）
+      wallCapped: isTagListCapped(items.length),
       inspiration: (Array.isArray(inspiration) ? inspiration : [])
         .map((t) => normalizeWishText(t))
         .filter(Boolean)
@@ -1017,7 +1036,7 @@ Page({
       const strip = (rows) => (rows || []).map((it) => (it && it.isFresh ? Object.assign({}, it, { isFresh: false }) : it))
       this._wallItems = strip(this._wallItems)
       this._mineRows = strip(this._mineRows)
-      this.setData({ freshId: '' })
+      this.setData({ freshId: '', wallItems: this._wallItems })
       this.applyView()
     }, FRESH_HOLD_MS)
   },
@@ -1112,6 +1131,8 @@ Page({
         myHidden: summary.hidden,
         mine: summary,
         mineRows: this._mineRows,
+        // 墙面那份被 markMine 回写了 isMine —— 组件要在墙上看出"哪条是我的"，必须同步
+        wallItems: this._wallItems,
         quota,
         mineLoading: false,
         mineError: ''
@@ -1198,12 +1219,23 @@ Page({
     this.setData({ card: null })
   },
 
-  /** 抄一句：把别人的心愿填进输入框（仍可改，不直接发布） */
-  borrowWishText() {
+  /**
+   * 抄一句：把别人的心愿填进输入框（仍可改，不直接发布）。
+   *
+   * ⚠️ 2026-09-22 接线（R2）：`<wall-feed>` 的详情层也有「抄一句」，它 `triggerEvent('borrowwish',
+   * {id,text})` 把正文交回页面（组件不碰输入框、不碰云）。这里让本方法同时吃两种来源：
+   *   · 页面自己的心愿笺（弹幕墙那一路）→ 从 `this.data.card` 取；
+   *   · 组件的 `borrowwish` → 事件里已经带着正文，直接用它。
+   * 这样「抄一句」的截断/计数/滚动/聚焦**只有一条实现**（不给组件里再写一份输入框逻辑）。
+   * 页面自己的 `card` 收尾时清掉 —— 组件的详情层与页面的愿签笺不会叠在一起。
+   */
+  borrowWishText(e) {
+    const fromEvent = e && e.detail && typeof e.detail.text === 'string' ? e.detail.text : ''
     const card = this.data.card
-    if (!card) return
+    const source = fromEvent || (card ? card.text : '')
+    if (!source) return
     // 按「字」安全截断（P0：`.slice(0, TEXT_MAX)` 会截出半个代理对）
-    const draft = wishTextTruncate(normalizeWishText(card.text), TEXT_MAX)
+    const draft = wishTextTruncate(normalizeWishText(source), TEXT_MAX)
     this.setData({ draft, draftCount: wishTextCount(draft), card: null })
     // 2026-09-20 改造：这里原来只弹一句「已填进输入框，可再改」——
     // 而输入框在视口上方（愿签列表在写愿区之下），toast 在说一件用户看不到的事。
@@ -1221,6 +1253,67 @@ Page({
       data: normalizeWishText(card.text),
       success: () => wx.showToast({ title: '已复制', icon: 'none' })
     })
+  },
+
+  /* ── 愿签内容流组件（<wall-feed>）的事件落点（PRD v1.4 §11.1 R2）──────────────
+     组件是"属性进 / 事件出"的：它自己持有视图态与详情层，**不发任何云调用**；
+     需要数据或写操作时只 `triggerEvent`，由页面接回**既有的**方法与既有状态位。
+     三个"不许"（破了就是两种实现各说各话）：
+       ① 不许在事件里复制一份取数逻辑 —— 一律调本页已有的 refresh / loadMine；
+       ② 不许把云调用搬进组件（`callFn` 只在本文件里）；
+       ③ 不许让页面的愿签笺（.ww-card，服务弹幕墙那一路）与组件的详情层同时打开。 */
+
+  /** 两栏切换：组件发的是 `{view}`，本页既有 `switchView` 吃的是 dataset.mode —— 适配一层 */
+  onFeedSwitchView(e) {
+    const view = String((e && e.detail && e.detail.view) || '')
+    this.switchView({ currentTarget: { dataset: { mode: view } } })
+  },
+
+  /**
+   * 「加载更多」：组件本地展开完且 `hasMore` 时才会发（本页 C 端一次取回 30 条，
+   * 所以 `has-more=false` → 通常不会触发；接线是为了契约完整，不是死路）。
+   * 页面侧不新增服务端分页契约：仍然走 refresh / loadMine 重取当前视图的数据源。
+   */
+  onFeedLoadMore(e) {
+    const view = String((e && e.detail && e.detail.view) || '')
+    if (view === 'mine') this.loadMine()
+    else this.refresh()
+  },
+
+  /** 墙列表失败（含"加载更多失败"）→ 页面 refresh（`refresh` 自带 allowed 与 error 口径） */
+  onFeedRetry() {
+    this.refresh()
+  },
+
+  /** 「我的心愿」失败 → 页面 loadMine（P1-5 的两个状态位由页面维护） */
+  onFeedRetryMine() {
+    this.loadMine()
+  },
+
+  /**
+   * 点开一张愿签：**详情层由组件自己承载**（组件契约：`openwish` 的同时它自己打开详情层，
+   * 见 `components/WallFeed/index.js` 的 `onOpen`）。
+   * 所以页面**不能**再打开自己的 `.ww-card` —— 两层 fixed 叠在一起（组件 z-index 60 >
+   * 页面 41），关掉上面那层会露出下面那张纸。页面自己的愿签笺仍然服务**弹幕墙**那一路
+   * （`bindtap="openWishCard"`），这里只保证两条路不会叠。
+   */
+  onFeedOpenWish() {
+    if (this.data.card) this.setData({ card: null })
+  },
+
+  /** 组件详情收起：页面侧没有对应状态要改（页面愿签笺只服务弹幕墙），保留事件落点以便同步 */
+  onFeedCloseWish() {
+    if (this.data.card) this.setData({ card: null })
+  },
+
+  /**
+   * 组件详情「抄一句」→ 复用页面既有的 `borrowWishText`（它吃 `e.detail.text`，
+   * 见那里的说明）。组件不碰输入框，落点只有一个。
+   */
+  onFeedBorrowWish(e) {
+    const text = String((e && e.detail && e.detail.text) || '')
+    if (!text) return
+    this.borrowWishText({ detail: { text } })
   },
 
   /**
@@ -1347,6 +1440,9 @@ Page({
         // 但页脚文案与分段条数读的是 wallCount = 0 → 显示「0 条心愿正在墙上流动」，
         // 而如果随后的 refresh 回包失败，这个 0 会一直留着（又是一条与画面不符的假事实）。
         wallCount: this._wallItems.length,
+        // 组件读的是 wallItems / wallCapped（与 wallCount 同一口径：只描述**墙**）
+        wallItems: this._wallItems,
+        wallCapped: isTagListCapped(this._wallItems.length),
         // 额度即时递减（诚实：以本地事实为准，服务端刷新会再校准）
         quota: Object.assign({}, this.data.quota, {
           used: (this.data.quota.used || 0) + 1,
