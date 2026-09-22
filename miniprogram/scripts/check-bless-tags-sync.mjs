@@ -44,6 +44,12 @@ const ERP_FORM = 'admin/src/App.vue'
 const URL_BUILDER = 'miniprogram/utils/wishWall.js'
 const WALL_PAGE = 'miniprogram/subpackages/feature/wish-wall/index.js'
 const WALL_VIEW = 'miniprogram/subpackages/feature/wish-wall/index.wxml'
+/**
+ * 玩法页（PRD v1.4 §11.4「玩法各开一页」）——推荐行与"写成心愿"从那之后都在这里。
+ * 本守卫只关心"用户真的看得见祈运依据与推荐出口"，所以判据目标跟着代码搬。
+ */
+const PLAY_VIEWS = ['play-qian', 'play-cookie', 'play-zodiac', 'play-mbti']
+  .map((n) => `miniprogram/subpackages/feature/${n}/index.wxml`)
 // 玩法注册表：`plays` 的合法 id 集合**唯一事实源**（本文件不写死任何一个 id）
 const PLAYS = 'miniprogram/config/ritualPlays.js'
 
@@ -249,8 +255,9 @@ check('★ 推荐区文案只说真知道的事（这面墙的祈运标签），
   /function recoLabel\(blessLabel\)/.test(recoUtilSrc) &&
     /偏「\$\{label\}」· 为你配一件/.test(recoUtilSrc) &&
     !/同好/.test(recoUtilSrc) &&
-    // 页面现在写成三元：`{{reco ? reco.label : (…这面墙的藏品…)}}` —— 只看它是否用了这个字段
-    /reco\.label/.test(read(WALL_VIEW)))
+    // 页面写成三元：`{{reco ? reco.label : (…这面墙的藏品…)}}` —— 只看它是否用了这个字段。
+    // ⚠️ 2026-09-21（§11.4）：推荐行搬到玩法页，扫描面跟着搬（否则"文案口径"这条会挂在旧位置上）。
+    PLAY_VIEWS.every((f) => /reco\.label/.test(read(f))))
 
 /* ── ④ 两端表单与 C 端接线 ───────────────────────────────────────────── */
 const managerForm = stripComments(read(MANAGER_FORM))
@@ -282,10 +289,11 @@ check('页面读 bless 并重排玩法（applyBlessScope）', /applyBlessScope\(
 check('页面显示祈运 chip + 商品入口',
   // ⚠️ 2026-09-21（P2-7）：页头商品 chip 的 handler 从 `goProduct` 改为 `goWallProduct`
   // —— 那里没有任何玩法发生，复用玩法转化事件会把 ERP「参与玩法」比率推到 >100%。
-  // 判据语义不变："用户真的看得见那颗祈运 chip、也有一个能点的商品入口"。
+  // ⚠️ 2026-09-21（§11.4）：玩法结果页那条 `reco ? goRecoProduct : goProduct` 随玩法搬到玩法页，
+  // 判据目标跟着搬。语义不变："用户真的看得见那颗祈运 chip、也有能点的商品/推荐入口"。
   /class="ww-bless"/.test(wallView) && /blessLabelText/.test(wallView) &&
     /bindtap="goWallProduct"/.test(wallView) &&
-    /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(wallView))
+    PLAY_VIEWS.every((f) => /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(read(f))))
 
 /* ── 汇总 ───────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
