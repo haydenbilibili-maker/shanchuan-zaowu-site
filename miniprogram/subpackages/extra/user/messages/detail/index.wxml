@@ -125,12 +125,16 @@
                     <text class="dg-value {{m.missing ? 'is-missing' : ''}}">{{m.valueText}}</text>
                   </view>
                   <text class="dg-source">{{m.sourceText}}</text>
+                  <!-- 取数失败：与「当日无数据（未取到）」分开呈现，且带出原因 -->
+                  <text class="dg-caveat" wx:if="{{m.failedText}}">{{m.failedText}}</text>
                   <text class="dg-caveat" wx:if="{{m.caveat}}">{{m.caveat}}</text>
                 </view>
               </view>
 
               <view class="dg-foot">
                 <text class="dg-note">{{digestView.snapshotNote}}</text>
+                <!-- 两档分开：先「取数失败」，再「当日确实无数据」 -->
+                <text class="dg-note warn" wx:if="{{digestView.failedNote}}">{{digestView.failedNote}}</text>
                 <text class="dg-note warn" wx:if="{{digestView.missingNote}}">{{digestView.missingNote}}</text>
               </view>
             </view>

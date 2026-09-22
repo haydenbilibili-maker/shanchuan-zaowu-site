@@ -18,6 +18,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { renderWxml } from './lib/wxml-preview.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../..')
@@ -69,6 +70,24 @@ const INJECTIONS = {
     file: 'miniprogram/cloudfunctions/getUserMessages/index.js',
     from: 'products: (primary.products && primary.products.length) ? primary.products : (secondary.products || []),',
     to: 'products: primary.products || [],'
+  },
+  // 读管道白名单漏 photos（P0-1 的原样回归：写库有图，顾客侧永远看不到）
+  'drop-photos-whitelist': {
+    file: 'miniprogram/cloudfunctions/getUserMessages/index.js',
+    from: 'photos: normalizePhotos(doc.photos),',
+    to: ''
+  },
+  // 合并时让日志行 / 旧格式行覆盖 → 包装实拍被抹成空数组
+  'merge-overwrites-photos': {
+    file: 'miniprogram/cloudfunctions/getUserMessages/index.js',
+    from: 'photos: (primary.photos && primary.photos.length) ? primary.photos : (secondary.photos || []),',
+    to: 'photos: primary.photos || [],'
+  },
+  // 日报读侧漏 failed（P1-3 的原样回归：取数失败被显示成「当日无数据」）
+  'drop-digest-failed-whitelist': {
+    file: 'miniprogram/cloudfunctions/getUserMessages/index.js',
+    from: 'failed: Array.isArray(raw.failed)',
+    to: 'failed: false && Array.isArray(raw.failed)'
   }
 }
 
@@ -359,6 +378,216 @@ const umSrc = readSrc('miniprogram/cloudfunctions/getUserMessages/index.js')
     const richRow = { _id: 'u2', _source: 'user_messages', products: [{ title: '有卡' }], read: false }
     eq('两条 user_messages：新行在后仍保住卡片', (mergePair(legacyRow, richRow).products || []).length, 1)
     eq('两条 user_messages：新行在前也保住卡片', (mergePair(richRow, legacyRow).products || []).length, 1)
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 5) photos 读管道（P0-1）：真跑 getUserMessages 入口（桩 sdk）→ 真 enrichMessage → 真渲染
+ *
+ * ⚠️ 为什么必须走**真实读路径**（而不是像 check-package-photos.mjs:365 那样手工把
+ *    photos 喂给 enrichMessage）：手工喂字段**绕过了 normalizeMessage 的白名单**，
+ *    白名单漏 photos 时守卫照样绿 —— 这正是 P0-1「顾客侧整个功能是死的、守卫全绿」
+ *    的成因（错题本第一族：守卫测层不测链路）。这里喂进去的是**库里的原始文档**，
+ *    出来的是**云函数回包里的消息对象**，再交给真 enrichMessage / 真 WXML 渲染。
+ * ------------------------------------------------------------------ */
+
+const READ_PHOTO_A = 'cloud://test-env.aaa/ship/pack-1.jpg'
+const READ_PHOTO_B = 'cloud://test-env.aaa/ship/pack-2.jpg'
+const DETAIL_WXML_REL = 'miniprogram/subpackages/extra/user/messages/detail/index.wxml'
+
+/** 桩 db：记录每个集合要返回的原始文档；链式 API 只回自身，`get()` 才吐数据 */
+function makeReadDb(rowsByCollection) {
+  return {
+    command: {
+      or: (v) => ({ $or: v }),
+      and: (v) => ({ $and: v }),
+      in: (v) => ({ $in: v })
+    },
+    collection(name) {
+      const chain = {
+        where() { return chain },
+        orderBy() { return chain },
+        limit() { return chain },
+        doc() { return chain },
+        async get() { return { data: (rowsByCollection[name] || []).slice() } }
+      }
+      return chain
+    }
+  }
+}
+
+/** 真跑读管道：真 getUserMessages 入口（桩 wx-server-sdk）→ 回包里的**消息对象** */
+async function runReadPipeline(rowsByCollection, opts = {}) {
+  const readDb = makeReadDb(rowsByCollection)
+  const cloudStub = {
+    init() {},
+    DYNAMIC_CURRENT_ENV: 'env',
+    database: () => readDb,
+    getWXContext: () => ({ OPENID: opts.openid || 'o1' })
+  }
+  const loadRead = makeLoader(cloudStub)
+  const fn = loadRead('miniprogram/cloudfunctions/getUserMessages/index.js')
+  check('getUserMessages 导出 main（真实现，不是切片）', typeof fn.main === 'function')
+  return fn.main({ action: 'getMessages', pageSize: 20, ...(opts.event || {}) })
+}
+
+const photoRow = {
+  _id: 'um-photos-1',
+  _openid: 'o1',
+  type: 'order_shipped',
+  category: 'order',
+  title: '标本已启程',
+  content: '这件标本已启程。',
+  relatedId: 'ord-photos-1',
+  read: false,
+  createTime: '2026-09-21T10:00:00.000Z',
+  photos: [READ_PHOTO_A, READ_PHOTO_B]
+}
+// 同一次发货的 notification_logs 镜像行：永远没有 photos（合并逻辑的另一个坑）
+const photoLogRow = {
+  _id: 'nl-photos-1',
+  recipient: 'o1',
+  channel: 'inapp',
+  category: 'order',
+  type: 'order_shipped',
+  title: '标本已启程',
+  content: '这件标本已启程。',
+  relatedId: 'ord-photos-1',
+  read: true,
+  sentAt: '2026-09-21T10:00:00.000Z'
+}
+// 新旧格式并存的**同键** user_messages 行：旧行归一化后 photos 是空数组
+const photoLegacyRow = {
+  _id: 'um-photos-legacy',
+  _openid: 'o1',
+  type: 'order_shipped',
+  category: 'order',
+  title: '标本已启程',
+  content: '这件标本已启程。',
+  relatedId: 'ord-photos-1',
+  read: false,
+  createTime: '2026-09-20T10:00:00.000Z',
+  photos: []
+}
+
+{
+  const detailWxml = readFileSync(resolve(ROOT, DETAIL_WXML_REL), 'utf8')
+
+  const res = await runReadPipeline({ user_messages: [photoRow], notification_logs: [photoLogRow] })
+  check('读管道回包 success', res && res.success === true, JSON.stringify(res && res.msg))
+  const got = res && res.messages && res.messages[0]
+  check('读管道回包里有 1 条消息', !!got)
+  // ★ 核心断言：写入侧写了 photos，读侧白名单若不透传 → 这里必然 undefined
+  check('读管道回包保留 photos（写入侧写了、读侧不许丢）',
+    Array.isArray(got && got.photos) && got.photos.length === 2, JSON.stringify(got && got.photos))
+
+  // 真 enrichMessage → 真渲染 detail/index.wxml（端到端「顾客能不能看到」）
+  const letter = helper.enrichMessage(got)
+  eq('端到端：hasPackagePhotos = true', letter.hasPackagePhotos, true)
+  eq('端到端：包装实拍 2 张', letter.packagePhotos.length, 2)
+  const rendered = renderWxml(detailWxml, {
+    selectedMessage: letter,
+    scrollStyle: '',
+    entered: true,
+    loadError: false,
+    digestView: null
+  })
+  check('真渲染：出现「包装实拍」区块', rendered.includes('包装实拍'))
+  check('真渲染：https 地址已就位', rendered.includes('https://'))
+  check('真渲染：渲染态里没有 cloud:// 残留（真机空白图的根因）', !rendered.includes('cloud://'))
+  eq('真渲染：出现 2 个包装图元素', (rendered.match(/class="photos-item"/g) || []).length, 2)
+
+  // 合并两条同键 user_messages（新旧格式并存）：富行在前 / 在后都不许丢图
+  const resRichFirst = await runReadPipeline({ user_messages: [photoRow, photoLegacyRow], notification_logs: [] })
+  eq('两条 user_messages：富行在前仍保住 photos', helper.enrichMessage(resRichFirst.messages[0]).hasPackagePhotos, true)
+  const resLegacyFirst = await runReadPipeline({ user_messages: [photoLegacyRow, photoRow], notification_logs: [] })
+  eq('两条 user_messages：富行在后仍保住 photos', helper.enrichMessage(resLegacyFirst.messages[0]).hasPackagePhotos, true)
+
+  // 存量消息：没有 photos 键 → 与「没传图」一致，不凭空造图
+  const resNoPhoto = await runReadPipeline({
+    user_messages: [{ ...photoRow, _id: 'um-nophoto', photos: undefined }],
+    notification_logs: []
+  })
+  eq('存量消息（无该键）→ hasPackagePhotos = false', helper.enrichMessage(resNoPhoto.messages[0]).hasPackagePhotos, false)
+}
+
+/* 5b) 日报读侧 failed（P1-3）：写侧 dailyDigest 已分档，读侧不许再并回「当日无数据」 */
+const digestViewMod = (() => {
+  const module = { exports: {} }
+  // eslint-disable-next-line no-new-func
+  new Function('module', 'exports', readSrc('miniprogram/utils/digestView.js'))(module, module.exports)
+  return module.exports
+})()
+
+const digestRow = {
+  _id: 'um-digest-1',
+  _openid: 'o1',
+  type: 'daily_digest',
+  category: 'digest',
+  queue: 'workflow',
+  title: '2026-09-21 日报',
+  content: '2026-09-21 日报',
+  read: false,
+  createTime: '2026-09-21T01:00:00.000Z',
+  payload: {
+    v: 1,
+    dayKey: '2026-09-21',
+    role: 'super_admin',
+    roleLabel: '超管',
+    generatedAt: '2026-09-21T00:20:00.000Z',
+    metrics: [
+      { id: 'order_paid_fen', section: 'orders', label: '订单支付金额', unit: 'fen', value: null, source: 'orders.paidTime', caveat: '' },
+      { id: 'mini_visitors', section: 'miniapp', label: '小程序访客', unit: 'count', value: null, source: 'analytics_daily.date', caveat: '' }
+    ],
+    sections: [
+      { key: 'orders', label: '订单数据', ids: ['order_paid_fen'] },
+      { key: 'miniapp', label: '小程序数据', ids: ['mini_visitors'] }
+    ],
+    missing: ['mini_visitors'],
+    failed: [{ id: 'order_paid_fen', label: '订单支付金额', error: 'aggregate failed' }]
+  }
+}
+
+{
+  // 日报是 workflow 队列 → 用超管 openid + queue:'all' 才取得到（真 staffGuard 会放行白名单）
+  const SUPER_OID = 'oa22s5ZcMY7xkQDlNW8X8jaYy46M'
+  const res = await runReadPipeline(
+    { user_messages: [{ ...digestRow, _openid: SUPER_OID }], notification_logs: [] },
+    { openid: SUPER_OID, event: { queue: 'all' } }
+  )
+  const digestMsg = res && res.messages && res.messages[0]
+  check('读管道取到日报消息', !!digestMsg)
+  check('读管道回包保留 payload.failed（写侧分档、读侧不许并回无数据）',
+    Array.isArray(digestMsg && digestMsg.payload && digestMsg.payload.failed) && digestMsg.payload.failed.length === 1,
+    JSON.stringify(digestMsg && digestMsg.payload && digestMsg.payload.failed))
+  const view = digestViewMod.buildDigestView(digestMsg)
+  check('digestView 非空', !!view)
+  if (view) {
+    eq('failedCount = 1', view.failedCount, 1)
+    eq('missingCount 排除取数失败项', view.missingCount, 1)
+    check('failedNote 点明「取数失败、不是 0 也不是当日无数据」',
+      /取数失败/.test(view.failedNote) && /不是 0/.test(view.failedNote), view.failedNote)
+    check('failedNote 带出失败项名称', view.failedNote.includes('订单支付金额'), view.failedNote)
+    const flat = view.sections.reduce((a, s) => a.concat(s.metrics), [])
+    const failedMetric = flat.find((m) => m.id === 'order_paid_fen')
+    const missingMetric = flat.find((m) => m.id === 'mini_visitors')
+    eq('失败项 valueText = 取数失败', failedMetric && failedMetric.valueText, '取数失败')
+    eq('失败项不再算 missing', failedMetric && failedMetric.missing, false)
+    check('失败项带出原因', /aggregate failed/.test(failedMetric && failedMetric.failedText), failedMetric && failedMetric.failedText)
+    eq('真没数据项仍是「未取到」', missingMetric && missingMetric.valueText, '未取到')
+    eq('真没数据项 missing = true', missingMetric && missingMetric.missing, true)
+    eq('真没数据项不算 failed', missingMetric && missingMetric.failed, false)
+
+    const digestRendered = renderWxml(readFileSync(resolve(ROOT, DETAIL_WXML_REL), 'utf8'), {
+      selectedMessage: helper.enrichMessage(digestMsg),
+      scrollStyle: '',
+      entered: true,
+      loadError: false,
+      digestView: view
+    })
+    check('真渲染：两档都出现（取数失败 + 未取到）',
+      digestRendered.includes('取数失败') && digestRendered.includes('未取到'))
+    check('真渲染：渲染态里没有 cloud:// 残留', !digestRendered.includes('cloud://'))
   }
 }
 

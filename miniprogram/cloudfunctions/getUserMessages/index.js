@@ -234,6 +234,11 @@ function normalizeMessage(doc, source = 'user_messages') {
     // 需求 10：信件商品卡（名称 + 图片 + 规格）。历史消息没有该字段 → 返回 []，
     // 前端据此决定是否渲染卡片；不在这里补默认图，以免给旧信凭空造出商品。
     products: normalizeProducts(doc.products),
+    // 发货包装实拍（可选附件）：随「山海有信」一起送达顾客，是顾客侧「包装实拍」
+    // 区块的**唯一**来源。与 products 同一族问题 —— 本函数是白名单式，不列出来的
+    // 字段会被静默丢掉；客户端 normalizePackagePhotos(undefined) 只得到空数组，
+    // 表现为「顾客永远看不到图，且无任何报错」。历史消息没有该字段 → 返回 []。
+    photos: normalizePhotos(doc.photos),
     // 每日日报的结构化正文（数字 + 每个数字的口径与来源）。
     // 为什么必须在这里显式透传：本函数是**白名单式**归一化，未列出的字段会被丢掉 ——
     // 不透传的话，日报详情页拿不到 payload，只能渲染纯文本，产品负责人要的「口径可对账」就没了。
@@ -273,6 +278,30 @@ function normalizeProducts(raw) {
 }
 
 /**
+ * 发货包装实拍（可选附件）的防御性收敛 —— 与 normalizeProducts 同一族。
+ *
+ * 云库文档可能来自历史版本或被人工改过，故这里只保留**非空字符串地址**并封顶张数，
+ * 避免脏数据把列表响应撑大。历史消息没有该字段 → 返回 []（前端据此不渲染该区块）。
+ * ⚠️ 这里**不做 cloud:// → https 的转换**：那是客户端渲染态的事，唯一落点是
+ *   `utils/messageHelper.normalizePackagePhotos`；云侧只负责把字段**活着送出去**。
+ */
+const MESSAGE_MAX_PHOTOS = 6
+
+function normalizePhotos(raw) {
+  const list = Array.isArray(raw) ? raw : []
+  const out = []
+  for (const item of list.slice(0, MESSAGE_MAX_PHOTOS)) {
+    const value = typeof item === 'string'
+      ? item
+      : (item && typeof item === 'object' ? (item.url || item.fileID || item.src) : '')
+    const url = String(value == null ? '' : value).trim().slice(0, 512)
+    if (!url) continue
+    out.push(url)
+  }
+  return out
+}
+
+/**
  * 每日日报结构化正文的收敛（只认 daily_digest 一种 type）。
  *
  * 为什么收敛而不是原样透传：本函数是客户端可调的读接口，任何类型的文档都可能被塞进
@@ -300,6 +329,15 @@ function normalizeDigestPayload (doc) {
     roleLabel: clipText(raw.roleLabel, 32),
     generatedAt: clipText(raw.generatedAt, 32),
     missing: Array.isArray(raw.missing) ? raw.missing.slice(0, DIGEST_MAX_METRICS).map((x) => clipText(x, 48)) : [],
+    // 取数失败（含原因）必须单独回传：写侧 dailyDigest 已把 failed 与 missing 分两档，
+    // 读侧若在这里丢掉，超管在信里看到的就只剩「当日无数据」—— 把故障伪装成 0/没生意。
+    failed: Array.isArray(raw.failed)
+      ? raw.failed.slice(0, DIGEST_MAX_METRICS).map((f) => ({
+        id: clipText(f && f.id, 48),
+        label: clipText(f && f.label, 32),
+        error: clipText(f && f.error, 160)
+      }))
+      : [],
     sections: Array.isArray(raw.sections)
       ? raw.sections.slice(0, 8).map((s) => ({
         key: clipText(s && s.key, 24),
@@ -352,6 +390,10 @@ function mergePair(prev, item) {
     // 需求 10：通知日志行永远没有商品卡（只有 user_messages 有），
     // 若让它按 primary 覆盖，会把另一侧真实商品的卡抹成空数组。
     products: (primary.products && primary.products.length) ? primary.products : (secondary.products || []),
+    // 发货包装实拍与 products 同一族：notification_logs 镜像行永远没有 photos，
+    // 两条同为 user_messages 的同键行（新旧格式并存）也会互相覆盖。
+    // 若让它按 primary 覆盖，会把另一侧真实的图片抹成空数组 —— 顾客侧静默无图。
+    photos: (primary.photos && primary.photos.length) ? primary.photos : (secondary.photos || []),
     // 日报结构化正文只写在 user_messages 侧（notification_logs 镜像不落 payload）。
     // 若让它按 primary 覆盖，当 primary 是日志行时会把日报正文抹成 null —— 与 products 同一族问题。
     payload: primary.payload || secondary.payload || null,
