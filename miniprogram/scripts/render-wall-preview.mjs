@@ -128,23 +128,29 @@ if (has('--selftest')) {
       expect: '点灯余烬不合格'
     },
     {
-      // 连续天数盒改回**浮层**（回到本轮修掉的那个形态）→ 必须检出"压字"。
-      // ⚠️ 第一次写的注入是"把徽章加宽"，但设计已改成静态行，加宽不再压任何字 → 判据抓不到。
-      // 注入必须命中**真正的失效形态**：这里就是"又把它绝对定位回右上角"。
+      // 连续天数盒改回**浮层**并压到文字上（回到本轮修掉的那个形态）→ 必须检出"压字"。
+      // ⚠️ 2026-09-22：注入形态跟随 DOM 更新 —— 该徽章现在挂在 `.ww-lantern-copy` 里
+      // （2026-09-20 从"绝对定位浮层"改成"独占一行的静态行"）。原注入只写 `.ww-lantern .ww-streak`
+      // 的 absolute，而它的定位祖先不是文案列 → 浮到别处、**压不到任何字**，判据因此静默失效
+      // （本工具的 Chrome 一直没打通，这条假绿直到 2026-09-22 真渲染跑起来才暴露）。
+      // 现在注入同时把文案列设成定位祖先，并让它**横贯整列**（left/right 都为 0）——
+      // 这才是"徽章浮在标题上、字被盖住"的真实失效形态（只贴右上角时标题太短、压不到字，实测 0.0px）。
       name: 'streak-absolute-again',
       file: 'wxss',
       scene: 'lit',
-      css: '\n.ww-lantern .ww-streak { position: absolute !important; right: 20rpx !important; top: 22rpx !important; display: flex !important; flex-direction: column !important; }\n',
+      css: '\n.ww-lantern-copy { position: relative !important; }\n.ww-lantern .ww-streak { position: absolute !important; left: 0 !important; right: 0 !important; top: 0 !important; display: flex !important; flex-direction: column !important; }\n',
       expect: '连续天数盒压字'
     },
     {
       // 入口区又长出"结果层"（2026-09-21 §11.4 之后，结果/推荐/补资料引导全在玩法页）
       // —— 那会让玩法区重新变成"本页弹层"，与发送条抢层级。
+      // ⚠️ 注入必须是**真的会渲染出来**的节点：写 `wx:if="{{playNeed}}"` 而样例数据里 playNeed=null，
+      // 节点根本不进 DOM → 判据"看着通过"（注入自检当场抓到过这一次，见 2026-09-22）。
       name: 'result-layer-back',
       file: 'wxml',
       scene: 'full',
       from: '      <view class="ww-play-grid">',
-      to: '      <view class="ww-play-need" wx:if="{{playNeed}}"></view>\n      <view class="ww-play-grid">',
+      to: '      <view class="ww-play-need"></view>\n      <view class="ww-play-grid">',
       expect: '入口区不再承载结果层'
     },
     {
@@ -781,4 +787,4 @@ if (problems.length) {
   // 它是我自己引入的（子代理事实核查抓到）。改回一律非 0：截图场景同样要能挡住回归。
   process.exit(1)
 }
-console.log(`\n✓ 版式不变量通过（宽度 / 换行 / 溢出 / DOM 顺序 / 同屏距离 / 牌匾占屏 ≤${(HERO_MAX_SHARE * 100).toFixed(0)}% / 首屏内看得见的瓦片 ≥${FOLD_MIN_TILES} 个；字体度量与安全区仍需真机确认）`)
+console.log(`\n✓ 版式不变量通过（宽度 / 换行 / 溢出 / DOM 顺序 / 同屏距离 / 牌匾占屏 ≤${(HERO_MAX_SHARE * 100).toFixed(0)}% / 首屏内看得见的玩法入口 ≥${FOLD_MIN_TILES} 个；字体度量与安全区仍需真机确认）`)
