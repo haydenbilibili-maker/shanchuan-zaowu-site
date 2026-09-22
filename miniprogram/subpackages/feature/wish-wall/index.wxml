@@ -392,6 +392,9 @@
           <!-- 入口形态：四种各一套（纯 CSS 盒子，不用图片/图标资产、不用 canvas） -->
           <view class="ww-play-form" wx:if="{{item.form === 'card'}}" aria-hidden="true">
             <view class="ww-play-tube">
+              <!-- 2026-09-22：入口尺寸下「筒」读成一块铜方块 —— 补一支露在筒口的签条，
+                   这是玩法页 .rp-stick 已有的语言，一眼能看出"这是签筒"。 -->
+              <view class="ww-play-tube-stick"></view>
               <view class="ww-play-tube-body"></view>
               <view class="ww-play-tube-mouth"></view>
             </view>

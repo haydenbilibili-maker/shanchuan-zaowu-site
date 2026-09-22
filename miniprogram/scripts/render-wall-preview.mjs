@@ -278,6 +278,10 @@ const WISHES = [
  * 判据要跟实现同源，样例也一样 —— 用真函数，逻辑一改出图立刻跟着变。 */
 const WALL_LOGIC = resolve(ROOT, 'miniprogram/utils/wishWall.js')
 const wallLogic = loadCjs(WALL_LOGIC)
+// 玩法注册表（唯一事实源）—— 见上面那段：预览的入口区必须跟它同源
+const RITUAL_PLAYS = loadCjs(resolve(ROOT, 'miniprogram/config/ritualPlays.js')).RITUAL_PLAYS || []
+// 预览里"哪个玩法今天已经玩过"（只影响状态文案与徽章，属于场景态，不是注册表内容）
+const PREVIEW_PLAYED = { cookie: true }
 const DANMAKU = wallLogic.buildDanmakuRows(
   [
     { _id: 'd1', text: '马上有人念' },
@@ -326,10 +330,14 @@ function baseData() {
     certEntry: null,
     soundOn: true,
     plays: [
-      { id: 'qian', mark: '签', name: '今日一签', hint: '摇一支，看今天宜做什么', form: 'card', kind: 'qian', played: false, entryNote: '今天还没摇', doneNote: '今天已摇过 · 再进去看这支' },
-      { id: 'cookie', mark: '饼', name: '拆签饼', hint: '拆开今天的签饼', form: 'shell', kind: 'cookie', played: true, entryNote: '今天还没拆', doneNote: '今天已拆过 · 再进去看这张' },
-      { id: 'zodiac', mark: '座', name: '星座签', hint: '按你的星座给一句', form: 'ring', kind: 'zodiac', played: false, entryNote: '今天还没转', doneNote: '今天已转过 · 可换一个' },
-      { id: 'mbti', mark: '我', name: 'MBTI 贴士', hint: '顺着你的性子来一句', form: 'axis', kind: 'mbti', played: false, entryNote: '今天还没读', doneNote: '今天已读过 · 可换一个' }
+      /* ⚠️ 玩法入口**必须从注册表派生**，不许在这里手抄一份。
+       * 2026-09-22 修：原来是硬编码的 4 条（name/hint/form/entryNote/doneNote 全抄了一遍），
+       * 我把 `config/ritualPlays.js` 里「今日一签」的 hint 从 11 字改到 9 字修折行，
+       * **出图一字未变** —— 因为预览读的是那份过期镜像（本仓错题本 E3 的形态）。
+       * 只有 `played` 是**场景态**（哪个玩法今天已玩过），保留为预览的显式覆盖。 */
+      ...RITUAL_PLAYS.filter((p) => p.enabled !== false).map((p) => Object.assign({}, p, {
+        played: PREVIEW_PLAYED[p.id] === true
+      }))
     ],
     playResult: null,
     playPending: '',

@@ -37,6 +37,12 @@ function eq(name, got, want) {
 }
 
 const INJECTIONS = {
+  // 预览台退回硬编码玩法入口（注册表改文案、预览不跟着变 —— 2026-09-22 修过一次）
+  'preview-hardcodes-plays': {
+    file: 'miniprogram/scripts/render-wall-preview.mjs',
+    from: '      ...RITUAL_PLAYS.filter((p) => p.enabled !== false).map((p) => Object.assign({}, p, {',
+    to: '      ...[].map((p) => Object.assign({}, p, {'
+  },
   // 首页入口槽位被摘掉 → 产品口径「入口放在首页 banner 下方」落空
   'home-entry-slot-dropped': {
     file: 'miniprogram/pages/index/index.wxml',
@@ -6717,6 +6723,27 @@ check(
   check('★ 次动作（分享）与主 CTA 有层级差（描边式，不是两条一模一样的实心铜条）',
     /background:\s*transparent/.test(share) && /border:/.test(share),
     '分享按钮没有独立的视觉层级 —— 用户看不出哪条是主路')
+
+  /* ★ 预览台**不许读过期镜像**（2026-09-22 一天栽了两次）：
+   *   ① `<wall-feed>` 预览的弹幕是**手写样例**（清一色正延迟），而真逻辑会给前 lanes 条负延迟预填
+   *      ⇒ 出图把"已经修好的空框问题"画成"弹幕叠成一团"；
+   *   ② 祈福墙预览的玩法入口**硬编码**了 4 条 name/hint（`config/ritualPlays.js` 的副本）
+   *      ⇒ 我把注册表里的 hint 改短修折行，**出图一字未变**。
+   * 两次都会让人照着假象去改样式。判据：这两个预览必须分别引用真源函数/注册表。 */
+  {
+    // ⚠️ 必须走 readSrc（注入才会生效）—— 直接 readFileSync 会把注入绕过，自检报"未被检出"
+    const wallPrev = readSrc('miniprogram/scripts/render-wall-preview.mjs')
+    const code = stripComments(wallPrev)
+    check('★ 祈福墙预览的弹幕来自真逻辑 buildDanmakuRows（不是手写样例）',
+      /buildDanmakuRows\s*\(/.test(code), '弹幕样例又被手写了 —— 会与 utils/wishWall 漂移')
+    // ⚠️ 只查标识符是不够的：声明行 `const RITUAL_PLAYS = loadCjs(...)` 里也有它，
+    //    注入删掉"用法"后判据照样绿（自检报"未被检出"）。必须查**展开使用**那一处。
+    check('★ 祈福墙预览的玩法入口**展开自**注册表 RITUAL_PLAYS（不是硬编码副本）',
+      /\.\.\.RITUAL_PLAYS\b/.test(code), '玩法入口又被硬编码 —— 注册表改文案预览不会跟着变')
+    const feedPrev = readSrc('miniprogram/scripts/render-wall-feed-preview.mjs')
+    check('★ 愿签内容流预览引用组件真源 logic.js',
+      /FEED_LOGIC|WallFeed\/logic/.test(stripComments(feedPrev)))
+  }
 
   const toolFiles = readdirSync(resolve(ROOT, 'miniprogram/scripts'))
     .filter((n) => n.endsWith('.mjs') && /^render-/.test(n))

@@ -1962,6 +1962,17 @@ page {
   height: 64rpx;
 }
 
+/* 筒口露出的签条：让它读成「签筒」而不是一块铜方块（玩法页 .rp-stick 的同族语言） */
+.ww-play-tube-stick {
+  position: absolute;
+  left: 15rpx;
+  top: -8rpx;
+  width: 14rpx;
+  height: 26rpx;
+  border-radius: 7rpx 7rpx 2rpx 2rpx;
+  background: linear-gradient(180deg, var(--brass-100) 0%, var(--brass-400) 100%);
+}
+
 .ww-play-tube-body {
   position: absolute;
   left: 0;
@@ -1975,11 +1986,13 @@ page {
 .ww-play-tube-mouth {
   position: absolute;
   left: -2rpx;
-  top: 6rpx;
+  top: 8rpx;
   width: 48rpx;
-  height: 10rpx;
+  height: 12rpx;
   background: var(--brass-900);
   border-radius: 50%;
+  /* 口沿加一道高光：44×64rpx 这个尺寸下，纯深色椭圆容易被筒身吃掉 */
+  box-shadow: inset 0 -2rpx 0 rgba(255, 255, 255, 0.18);
 }
 
 /* 形态二：签饼（两半合拢） */
