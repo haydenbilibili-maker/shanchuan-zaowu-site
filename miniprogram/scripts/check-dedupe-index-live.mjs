@@ -21,6 +21,18 @@
  * 凭据：admin/.env 的 TCB_SECRET_ID / TCB_SECRET_KEY（勿提交）
  * 覆盖范围：只覆盖 SPECS 里的 `dedupeKey`（本脚本不检查 `stored_value_ledgers.idempotencyKey`
  *          —— 它还没有 spec，见输出末尾的「未覆盖」提示）。
+ *
+ * ⚠️ 2026-09-21 P1-9 **判据修正**（这是一条「判据自身错误」，错题本 E7）：
+ *   `ensure-dedupe-indexes.cjs` 在 `229d94f` 已把 `user_messages.dedupeKey_1` 的语义结论定为
+ *   **`nonUnique: true`（普通索引才是正确的）** —— 同一个 dedupeKey 跨 24h 时间窗**允许再次写入**
+ *   （`dispatchMessage/core.js` 的 `DEDUPE_HOURS = 24`），唯一索引会把正常的再次到店感谢打成写失败。
+ *   而本脚本原来的判据只有「字段上有没有**唯一**索引」，与生产者结论相反 → 线上索引即使完全正确也
+ *   **恒红**；又因本脚本不在 guards 清单、无凭据时 exit 2，CI 也不会红 —— 一条永远错的判据无人看见。
+ *   现在按 spec 声明的**期望唯一性**判：
+ *     · 唯一 spec      → 字段上必须有唯一索引（Sparse 语义照旧）；
+ *     · nonUnique spec → 字段上必须有**普通**索引；线上反而是唯一索引 → `unexpectedUnique` 判失败；
+ *     · nonUnique spec 的重复键 / 缺字段只作**报告**（重复正是它被允许的语义），不阻断判定。
+ *   本脚本**只读**：它不 import `updateCollection` 分支，语法上就不可能建/改任何线上索引。
  */
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
@@ -34,32 +46,59 @@ const require = createRequire(import.meta.url)
 /**
  * 预检结果 → 两个汇总数字 + 是否通过（纯函数，便于自检）。
  * 「读不到」一律算**不通过**（不许把 null 当成 0 —— 那是 E10 的变体：没实测就写数字）。
+ *
+ * ⚠️ 2026-09-21 P1-9 判据修正（**判据自身错误**，错题本 E7 的那一族）：
+ *   原判据只有一句 `!pre.hasUniqueDedupe → noIndex`，即「字段上没有**唯一**索引就算缺」。
+ *   但 `ensure-dedupe-indexes.cjs` 在 `229d94f` 已把 `user_messages.dedupeKey_1` 的语义结论
+ *   写成 **`nonUnique: true`（普通索引才是正确的）** —— 因为同一 dedupeKey 跨 24h 时间窗
+ *   **允许再次写入**（dispatchMessage/core.js 的 `DEDUPE_HOURS = 24`），唯一索引会把正常写入打断。
+ *   于是消费者（本文件）与生产者（ensure）语义相反 → 线上即使索引完全正确也**恒红**；
+ *   而本脚本不在守卫清单、无凭据 exit 2，所以 CI 也不会红 —— 一条"永远错"的判据谁也看不见。
+ *   现在按 spec 声明的**期望唯一性**判：
+ *     · 唯一 spec  → 字段上必须有**唯一**索引（Sparse 语义照旧）；
+ *     · nonUnique spec → 字段上必须有**普通**索引；若线上反而是唯一索引 → `unexpectedUnique` 判失败；
+ *     · nonUnique spec 的**重复键 / 缺字段**只作报告（重复正是它允许的行为），不阻断判定。
  */
 export function summarize(reports) {
   // 「集合不存在/读不到」的项不进汇总数字（它们单独列出，避免把 null 摊进总数）
   const readable = reports.filter((r) => r.pre.exists)
   const sum = (arr) => (arr.some((v) => v === null || v === undefined) ? null : arr.reduce((a, b) => a + b, 0))
-  // 缺字段数：**报告用**全量；**判失败用**只算非 Sparse 的 spec ——
+  // 缺字段数：**报告用**全量；**判失败用**只算「要求唯一索引且非 Sparse」的 spec ——
   // Sparse 唯一索引不索引缺失字段（实测线上 point_records 就是 Sparse 且带 48 篇缺字段文档），
-  // 所以缺字段只对「非 Sparse」创建构成阻断，对 Sparse 只是数据质量信号。
+  // nonUnique 普通索引也不受缺失字段影响（缺字段视作 null 照常可索引、无唯一性约束）。
   const missingSum = sum(readable.map((r) => r.pre.missingField))
-  const missingBlockingSum = sum(readable.filter((r) => r.spec.sparse !== true).map((r) => r.pre.missingField))
+  const missingBlockingSum = sum(readable
+    .filter((r) => r.spec.nonUnique !== true && r.spec.sparse !== true)
+    .map((r) => r.pre.missingField))
   const dups = readable.map((r) => r.pre.duplicateKeys)
   const groups = readable.map((r) => r.pre.duplicateGroupCount)
   const dupSum = sum(dups)
   const dupGroupSum = sum(groups)
+  // 重复键**只在要求唯一索引的 spec 上**构成阻断：nonUnique 集合里重复键是预期行为
+  //（实测 user_messages 9 组、notification_logs 13 组 —— 后者是 Sparse 唯一，仍阻断）
+  const dupBlockingSum = sum(readable.filter((r) => r.spec.nonUnique !== true).map((r) => r.pre.duplicateKeys))
+  const dupGroupBlockingSum = sum(readable.filter((r) => r.spec.nonUnique !== true).map((r) => r.pre.duplicateGroupCount))
   const notExists = reports.filter((r) => !r.pre.exists).map((r) => r.spec.collection)
-  const noIndex = reports.filter((r) => r.pre.exists && !r.pre.hasUniqueDedupe).map((r) => r.spec.collection)
+  // 缺索引：唯一 spec 看 hasUniqueDedupe；nonUnique spec 看字段上**有没有**索引（唯一与否下面另判）
+  const noIndex = readable
+    .filter((r) => (r.spec.nonUnique === true ? !r.pre.hasDedupeIndex : !r.pre.hasUniqueDedupe))
+    .map((r) => r.spec.collection)
+  // nonUnique spec 线上却是唯一索引 → 语义相反（唯一索引会打断跨时间窗的正常写入）
+  const unexpectedUnique = readable
+    .filter((r) => r.spec.nonUnique === true && r.pre.hasDedupeIndex && r.pre.dedupeIndexUnique === true)
+    .map((r) => r.spec.collection)
   // spec 声明 sparse:true（缺字段不占槽位）却装了非 Sparse 索引 → 语义不一致，单独列出并判失败
   const sparseMismatch = reports
     .filter((r) => r.spec.sparse === true && r.pre.exists && r.pre.hasUniqueDedupe && r.pre.dedupeIndexSparse === false)
     .map((r) => r.spec.collection)
   return {
-    missingSum, missingBlockingSum, dupSum, dupGroupSum, notExists, noIndex, sparseMismatch,
+    missingSum, missingBlockingSum, dupSum, dupGroupSum, dupBlockingSum, dupGroupBlockingSum,
+    notExists, noIndex, unexpectedUnique, sparseMismatch,
     readableCount: readable.length,
-    // 重复键对 Sparse / 非 Sparse **都**阻断（实测 user_messages 9 组、notification_logs 13 组）
-    bad: !!(notExists.length || noIndex.length || sparseMismatch.length
-      || missingBlockingSum !== 0 || dupSum !== 0 || dupGroupSum !== 0),
+    // 重复键对 Sparse / 要求唯一的非 Sparse spec **都**阻断（实测 user_messages 9 组、notification_logs 13 组）；
+    // 对 nonUnique spec 不阻断（重复是它被允许的语义）
+    bad: !!(notExists.length || noIndex.length || unexpectedUnique.length || sparseMismatch.length
+      || missingBlockingSum !== 0 || dupBlockingSum !== 0 || dupGroupBlockingSum !== 0),
   }
 }
 
@@ -96,11 +135,25 @@ function selftest() {
   t('  Sparse spec 的缺字段仍进「报告用」总数（不当 0 吞掉）',
     summarize([sparseSpecOkLive]).missingSum === 5 && summarize([sparseSpecOkLive]).missingBlockingSum === 0)
 
+  /* P1-9：nonUnique spec（229d94f 的语义结论：user_messages.dedupeKey 必须是**普通**索引）。
+   * 旧判据只认"字段上有没有唯一索引" → 线上普通索引完全正确也**恒红**；这里钉住新语义。 */
+  const nuOk = { spec: { collection: 'u', nonUnique: true }, pre: { exists: true, hasDedupeIndex: true, dedupeIndexUnique: false, hasUniqueDedupe: false, dedupeIndexSparse: false, missingField: 12, duplicateKeys: 5, duplicateGroupCount: 9 } }
+  const nuMissing = { spec: { collection: 'u', nonUnique: true }, pre: { exists: true, hasDedupeIndex: false, dedupeIndexUnique: null, hasUniqueDedupe: false, missingField: 0, duplicateKeys: 0, duplicateGroupCount: 0 } }
+  const nuUnique = { spec: { collection: 'u', nonUnique: true }, pre: { exists: true, hasDedupeIndex: true, dedupeIndexUnique: true, hasUniqueDedupe: true, dedupeIndexSparse: false, missingField: 0, duplicateKeys: 0, duplicateGroupCount: 0 } }
+  t('★ nonUnique spec + 普通索引（含重复键/缺字段）→ 通过（与 229d94f 语义一致，不再恒红）',
+    summarize([nuOk]).bad === false && summarize([nuOk]).noIndex.length === 0)
+  t('★ nonUnique spec + 字段上没有索引 → 不通过', summarize([nuMissing]).bad === true && summarize([nuMissing]).noIndex.includes('u'))
+  t('★ nonUnique spec + 线上却是唯一索引 → 不通过（语义相反，会打断跨窗写入）',
+    summarize([nuUnique]).bad === true && summarize([nuUnique]).unexpectedUnique.includes('u'))
+  t('★ nonUnique 的重复键只报告、不阻断（dupSum 仍如实统计）',
+    summarize([nuOk]).dupBlockingSum === 0 && summarize([nuOk]).dupSum === 5 && summarize([nuOk]).dupGroupSum === 9)
+
   if (bad) {
     console.error(`\n自检失败 ${bad} 项 —— 判据不可信`)
     process.exit(1)
   }
-  console.log('\n自检通过：缺索引 / 脏数据 / 读不到 都会被判为「不通过」，且读不到不会冒充 0')
+  console.log('\n自检通过：缺索引 / 脏数据 / 读不到 都会被判为「不通过」，且读不到不会冒充 0；')
+  console.log('          nonUnique spec 期望普通索引（重复键不阻断）—— 与 ensure-dedupe-indexes 的 229d94f 结论一致')
 }
 
 const provision = require(join(HERE, 'ensure-dedupe-indexes.cjs'))
@@ -167,9 +220,14 @@ async function main() {
         console.log(`   ✗ 集合不存在或读不到：${pre.error || ''}`)
         continue
       }
-      console.log(`   已有唯一幂等索引：${pre.hasUniqueDedupe ? `是（Sparse=${pre.dedupeIndexSparse === true ? '是' : pre.dedupeIndexSparse === false ? '否' : '未知'}）` : '**否**'}`)
+      const wantKind = spec.nonUnique ? '普通（非唯一）' : '唯一'
+      const gotKind = pre.hasDedupeIndex ? (pre.dedupeIndexUnique ? '唯一' : '普通（非唯一）') : '**无**'
+      console.log(`   期望 / 线上幂等索引：${wantKind} / ${gotKind}${pre.hasDedupeIndex ? `（Sparse=${pre.dedupeIndexSparse === true ? '是' : pre.dedupeIndexSparse === false ? '否' : '未知'}）` : ''}`)
       if (spec.sparse && pre.hasUniqueDedupe && pre.dedupeIndexSparse === false) {
         console.log('   ⚠️ Sparse 不一致：spec 要求 Sparse 唯一索引（缺字段不占槽位），线上这条**不是** Sparse')
+      }
+      if (spec.nonUnique && pre.dedupeIndexUnique === true) {
+        console.log('   ⚠️ 唯一性相反：spec 要求**普通**索引（同一 dedupeKey 跨 24h 窗可再写），线上却是唯一索引')
       }
       console.log(`   缺 ${spec.field} 的文档数：${pre.missingField === null ? '读不到（' + (pre.countError || '') + '）' : pre.missingField}`)
       console.log(`   重复键：${pre.duplicateKeys === null ? '读不到（' + (pre.dupError || '') + '）' : `样本 ${pre.samples.length ? pre.samples.map((s) => `${s.key}×${s.n}`).join(', ') : '无'}；确切重复组数 ${pre.duplicateGroupCount === null ? '读不到' : pre.duplicateGroupCount}`}`)
@@ -177,21 +235,25 @@ async function main() {
   }
 
   // 两个汇总数字（裁决 §6 步骤 1 明确要的两个数）
-  const { missingSum, missingBlockingSum, dupSum, dupGroupSum, notExists, noIndex, sparseMismatch, readableCount, bad } = summarize(reports)
+  const { missingSum, missingBlockingSum, dupSum, dupGroupSum, notExists, noIndex, unexpectedUnique, sparseMismatch, readableCount, bad } = summarize(reports)
 
   if (!asJson) {
     console.log(`\n汇总（只统计能读到的 ${readableCount} 个集合；集合不存在的见上，不摊进总数）：`)
     console.log(`  · 缺幂等键（dedupeKey / idempotencyKey）的文档数：${missingSum === null ? '读不到（见上）' : missingSum}`)
-    console.log(`    （其中会**阻断创建**的只有非 Sparse spec：${missingBlockingSum === null ? '读不到' : missingBlockingSum}；Sparse 的缺字段不占唯一槽位）`)
+    console.log(`    （其中会**阻断创建唯一索引**的只有「要求唯一且非 Sparse」的 spec：${missingBlockingSum === null ? '读不到' : missingBlockingSum}；`
+      + 'Sparse 的缺字段不占唯一槽位、普通索引不受缺字段影响）')
     console.log(`  · 重复键样本数：${dupSum === null ? '读不到（见上）' : dupSum}（每集合最多取 5 个样本）`)
     console.log(`  · 重复键**确切组数**：${dupGroupSum === null ? '读不到（见上）' : dupGroupSum}`)
-    console.log(`  · 尚缺唯一索引的集合（${noIndex.length}）：${noIndex.length ? noIndex.join(', ') : '无'}`)
+    console.log(`  · 尚缺幂等索引的集合（${noIndex.length}）：${noIndex.length ? noIndex.join(', ') : '无'}`)
+    if (unexpectedUnique.length) console.log(`  · 线上唯一性与 spec 相反（期望普通索引却是唯一，${unexpectedUnique.length}）：${unexpectedUnique.join(', ')}`)
     if (notExists.length) console.log(`  · 读不到的集合（${notExists.length}）：${notExists.join(', ')}`)
     if (sparseMismatch.length) console.log(`  · Sparse 与 spec 期望不一致（${sparseMismatch.length}）：${sparseMismatch.join(', ')}`)
     console.log('\n注意 Sparse：spec 标了 sparse:true 的集合（point_records / notification_logs）要求「唯一 + Sparse」——')
-    console.log('      缺字段的文档**不占唯一槽位**，所以缺字段数只在按**非 Sparse** 建时才会阻断创建。')
+    console.log('      缺字段的文档**不占唯一槽位**，所以缺字段数只在按**非 Sparse** 建唯一索引时才会阻断创建。')
+    console.log('      重复键仍**阻断**唯一索引的创建（对 nonUnique spec 不阻断 —— 那正是普通索引的语义）。')
     console.log('已覆盖：本脚本按 SPECS 检查，现已含 stored_value_ledgers.idempotencyKey（裁决 §2 第二个要件）。')
-    console.log('判据：**无重复键** 才能建唯一索引（若按非 Sparse 建，还要求缺字段数为 0）。')
+    console.log('判据：唯一 spec → 字段上必须有**唯一**索引（非 Sparse 时还要求缺字段=0、无重复键）；')
+    console.log('      nonUnique spec（user_messages.dedupeKey）→ 字段上必须有**普通**索引，重复键是预期、不阻断。')
   }
 
   if (bad) {

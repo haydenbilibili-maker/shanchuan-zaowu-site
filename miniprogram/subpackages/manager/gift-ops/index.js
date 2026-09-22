@@ -349,10 +349,14 @@ Page(withAppModal({
       }
       const { renderGiftPrintImage } = require('../../../utils/giftShareCard')
       const isSticker = spec === 'sticker'
+      // P0-2：存量 141–200 字礼笺打印路径会**截断**（不回写数据库）—— 截断信息由渲染器回调带出来，
+      //        预览态生成后给运营一条可见提示（否则"字少了"会被当成导出 bug）。
+      let noteTruncated = null
       const path = await renderGiftPrintImage('#giftPrintCanvas', this, {
         cardBody, cardSignature, themeName, themeNote, specimenFileID,
         // 规格：A6 默认 / 贴纸传 'sticker'（渲染器按规格分派版式，见 utils/giftShareCard.js）
         spec: isSticker ? 'sticker' : 'a6',
+        onNoteTruncated: (info) => { noteTruncated = info },
         // 详情（mapBoardItem）不含 recipientName（那是列表侧客户端派生的）→ 以 address.name 为准
         // 受礼人姓名：**以 giftMeta.recipientName 为准**（实测 ORDMU5HRWP4829：
       //   recipientName/salutation = 「虞博阳&王瑛」；而 address.name 只是收件人「王瑛」✗ 会印错）。
@@ -385,6 +389,11 @@ Page(withAppModal({
           fileID: ''
         }
       })
+      // 截断提示放在预览态 setData 之后：toast 是页内轻提示，先弹会被预览遮罩压住。
+      if (noteTruncated) {
+        this.toast('礼笺正文过长，已截断打印',
+          `原文 ${noteTruncated.chars} 字，超过上限 ${noteTruncated.max} 字；本张只印前 ${noteTruncated.kept} 字`)
+      }
     } catch (err) {
       this.toast('导出失败', (err && err.message) || '请重试')
     } finally {

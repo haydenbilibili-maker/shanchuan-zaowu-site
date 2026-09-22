@@ -26,6 +26,12 @@
  *   D9 **入口**：日报必须是「工作信息」里的一个**分类档**，且**不许**再在工作台另开入口
  *      （2026-09-21 产品负责人：「把日报放在工作信息中，没有必要单独提供一个入口 banner」——
  *       原判据要求"必须有独立瓦片"，那**正是被否掉的做法**，已反向）。
+ *   D10 **取数 API 与失败分档**：不许用 wx-server-sdk 没有的 `.append()`；`failed`（取数失败，
+ *      带原因）与 `missing`（当日确实无数据）必须分两档。
+ *   D11 **失败档必须覆盖每一个 collector**（**行为级**，不是正则匹配 `failed` 出现过）：
+ *      给数据库打一个必定抛错的桩，真跑 analytics / orderDay / dateKeyed / simpleDay 四类取数，
+ *      断言各自负责的**每一个**指标都进 `failed`。旧判据只匹配 `failed` 字面出现，于是
+ *      「19 个指标里只有 7 个有失败档」照样全绿（错题本 E7）。
  *
  * 真实数据侧：`--live` 会用 `admin/.env.local` 的 ADMIN_OPS_KEY 调**已部署的** dailyDigest
  *   做一次只读 dryRun，把每个指标的值与来源打出来（人工/脚本核对）。
@@ -261,6 +267,82 @@ export function runBuildChecks (mod, catalog) {
   const enabled = (catalog.enabledRoles || [])
   if (enabled.length !== 1 || enabled[0] !== 'super_admin') {
     errs.push(`本次只应开放超管日报，enabledRoles = ${JSON.stringify(enabled)}`)
+  }
+  return errs
+}
+
+/**
+ * 行为级判据（P1-3 的守卫那一半 / P1-4 的堵口）：
+ *   **模拟每一个 collector 的查询失败，断言它负责的每一个指标都出现在 `failed` 里**
+ *   （而不是被算进 `missing`，更不是既不 failed 也不 missing 地静默）。
+ *
+ * 为什么必须是行为级而不是正则（错题本 E7「守卫判据自身错误」）：
+ *   旧判据只是在 core 源码里正则匹配 `failed` 这个词出现过 —— 于是
+ *   「19 个指标里只有 7 个订单指标有失败档」照样全绿（"字出现过" ≠ "每个指标都能失败"）。
+ *   这里给数据库打一个**必定抛错**的桩，真跑 `collectXxx → buildDigest`，
+ *   按 kind 逐指标核对分流结果。
+ *
+ * 桩的形态与线上调用一致：`collectOrderDay` 先看 `db.command.aggregate`，
+ * 桩不提供它 → 走东八日 `where` 兜底，兜底的 `count()/get()` 抛错 → 与线上"两条路都不通"同形。
+ *
+ * @returns {Promise<string[]>} 问题清单（空数组 = 每个 collector 的失败都能落进 failed）
+ */
+export async function runCollectorFailureChecks (coreMod, collectMod) {
+  const errs = []
+  const dayKey = '2026-09-20'
+  /** 每个查询动作都抛错的 db 桩 */
+  const boomDb = (what) => {
+    const fail = () => { throw new Error(`simulated ${what} query failure`) }
+    const chain = () => {
+      const o = {}
+      for (const k of ['where', 'limit', 'field', 'skip', 'orderBy']) o[k] = () => o
+      for (const k of ['group', 'match', 'project']) o[k] = () => o
+      o.aggregate = () => o
+      o.get = fail
+      o.count = fail
+      o.end = fail
+      return o
+    }
+    return {
+      collection: () => chain(),
+      command: {
+        in: (v) => ({ $in: v }),
+        // 保留 `.and()` 形态：collectOrderDay 的兜底 where 用 `_.gte(x).and(_.lt(y))`，
+        // 桩若在这里就抛错，测到的就不是"查询失败"而是"构造条件失败"，与线上不同形。
+        gte: (v) => ({ $gte: v, and: (other) => ({ $gte: v, $and: other }) }),
+        lt: (v) => ({ $lt: v })
+      }
+    }
+  }
+  const runners = {
+    analytics: (db, metrics) => collectMod.collectAnalytics(db, dayKey, metrics),
+    orderDay: (db, metrics) => collectMod.collectOrderDays(db, dayKey, metrics),
+    dateKeyed: (db, metrics) => collectMod.collectDateKeyed(db, dayKey, metrics),
+    simpleDay: (db, metrics) => collectMod.collectSimpleDay(db, dayKey, metrics)
+  }
+  for (const kind of Object.keys(runners)) {
+    const metrics = collectMod.metricsOfKind(kind).filter((m) => m.phase === 1)
+    if (!metrics.length) { errs.push(`kind=${kind} 没有任何 phase1 指标（无法核对失败档）`); continue }
+    let out
+    try {
+      out = await runners[kind](boomDb(kind), metrics)
+    } catch (e) {
+      errs.push(`${kind} collector 把取数异常抛了出去 —— 应在内部转成失败档（原因：${(e && e.message) || e}）`)
+      continue
+    }
+    const raw = { dayKey, role: 'super_admin' }
+    if (kind === 'analytics') raw.analytics = out
+    else if (kind === 'orderDay') raw.orderDays = out
+    else if (kind === 'dateKeyed') raw.dateKeyedRows = out
+    else raw.simpleDay = out
+    const digest = coreMod.buildDigest(raw)
+    const failedIds = new Set((digest.failed || []).map((f) => f.id))
+    const missingIds = new Set(digest.missing || [])
+    for (const m of metrics) {
+      if (failedIds.has(m.id)) continue
+      const where = missingIds.has(m.id) ? 'missing（故障被说成「当日无数据」）' : '既不在 failed 也不在 missing（静默）'
+      errs.push(`${kind} collector 取数失败时，指标 ${m.id} 落进了 ${where}`)
+    }
   }
   return errs
 }
@@ -675,6 +757,38 @@ async function selftest () {
           'failed: [],'))
     t('★ 被检出：取数失败被混成「当日无数据」', checkDigestFailureSplit(read(mergedMissing)).length > 0)
 
+    // ⑩-d 行为级 D11：**每一个** collector 的失败都必须落进 failed。
+    //     逐个 kind 注入"失败又变回无数据"，证明判据对 4 类取数都真的会红（不是恒绿）。
+    const injAnalytics = mutate('collect-analytics-silent.js', read(F.collect),
+      (s) => s.replace('out[m.action] = { action: m.action, count: 0, uv: [], error: msg }',
+        'out[m.action] = { action: m.action, count: 0, uv: [] }'))
+    const mAnalytics = await loadModules({ collect: injAnalytics })
+    t('★ 被检出：analytics 取数失败被静默成 0（6 个指标没有失败档）',
+      (await runCollectorFailureChecks(mAnalytics.coreMod, mAnalytics.collectMod)).length > 0)
+
+    const injOrder = mutate('collect-order-silent.js', read(F.collect),
+      (s) => s.replace("out[metric.id] = { found: false, count: 0, sum: null, error: (e && e.message) || 'collect failed' }",
+        'out[metric.id] = { found: false, count: 0, sum: null }'))
+    const mOrder = await loadModules({ collect: injOrder })
+    t('★ 被检出：orderDay 取数失败被混成「当日无数据」',
+      (await runCollectorFailureChecks(mOrder.coreMod, mOrder.collectMod)).length > 0)
+
+    const injDateKeyed = mutate('collect-datekeyed-silent.js', read(F.collect),
+      (s) => s.replace('out[col] = { error: msg, collection: col }', 'out[col] = null'))
+    const mDateKeyed = await loadModules({ collect: injDateKeyed })
+    t('★ 被检出：dateKeyed 取数失败被混成「当日无数据」（5 个门店指标没有失败档）',
+      (await runCollectorFailureChecks(mDateKeyed.coreMod, mDateKeyed.collectMod)).length > 0)
+
+    const injSimple = mutate('collect-simpleday-silent.js', read(F.collect),
+      (s) => s.replace('out[metric.id] = { error: msg, collection: col }', 'out[metric.id] = null'))
+    const mSimple = await loadModules({ collect: injSimple })
+    t('★ 被检出：simpleDay 取数失败被混成「当日无数据」',
+      (await runCollectorFailureChecks(mSimple.coreMod, mSimple.collectMod)).length > 0)
+
+    // 反例：干净源码下 D11 必须**零问题**（否则上面的红是恒红，不构成判据）
+    t('★ 反例：干净源码下 D11 零问题（判据不是恒红）',
+      (await runCollectorFailureChecks(base.coreMod, base.collectMod)).length === 0)
+
     // ⑩-c 工作台又冒出独立「日报」入口 banner（产品负责人已否掉的做法）
     // ⚠️ 锚点要贴着真实源码：工作台瓦片是 `{ key: 'workflow', kind: 'workflow', … }`，
     //    第一版锚在 `{\n      kind: 'workflow',` 上 —— 中间隔着 `key:` 一行，**匹配不到**，
@@ -705,6 +819,9 @@ async function main () {
   }
   const mods = await loadModules()
   staticChecks(mods)
+  // D11 行为级：模拟**每一个** collector 的查询失败，逐指标断言它落进 failed（不是 missing）
+  const collectorFailures = await runCollectorFailureChecks(mods.coreMod, mods.collectMod)
+  collectorFailures.forEach(fail)
   if (has('--live')) livePreview()
 
   if (problems.length) {
