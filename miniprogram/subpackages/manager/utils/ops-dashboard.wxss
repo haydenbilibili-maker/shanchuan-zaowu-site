@@ -411,7 +411,7 @@
 .structure-seg.tone-fixed { background: var(--color-text-muted); }
 .structure-seg.tone-used { background: var(--gold); }
 .structure-seg.tone-ok { background: #52b788; }
-.structure-seg.tone-danger { background: #d64045; }
+.structure-seg.tone-danger { background: var(--color-error); }
 
 .structure-legend {
   margin-top: 16rpx;
@@ -455,7 +455,7 @@
 .structure-dot.tone-fixed { background: var(--color-text-muted); }
 .structure-dot.tone-used { background: var(--gold); }
 .structure-dot.tone-ok { background: #52b788; }
-.structure-dot.tone-danger { background: #d64045; }
+.structure-dot.tone-danger { background: var(--color-error); }
 
 .structure-label {
   flex: 1 1 auto;
