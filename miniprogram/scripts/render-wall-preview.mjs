@@ -271,14 +271,24 @@ const WISHES = [
   { _id: 'w5', text: '马上有胆', nickname: '令狐冲大哥', avatar: AVATAR, timeText: '1 天前', isMine: true },
   { _id: 'w6', text: '马上有 Offer', nickname: '令狐冲大哥', avatar: AVATAR, timeText: '1 天前', isMine: true }
 ]
-const DANMAKU = [
-  { key: 'd1', id: 'd1', text: '马上有人念', tone: 0, topPercent: 8, durationMs: 12000, delayMs: 0 },
-  { key: 'd2', id: 'd2', text: '马上有好事', tone: 1, topPercent: 23.2, durationMs: 12000, delayMs: 900 },
-  { key: 'd3', id: 'd3', text: '马上有归处', tone: 2, topPercent: 38.4, durationMs: 12000, delayMs: 1800 },
-  { key: 'd4', id: 'd4', text: '马上有花看', tone: 3, topPercent: 53.6, durationMs: 12000, delayMs: 2700 },
-  { key: 'd5', id: 'd5', text: '马上有信', tone: 4, topPercent: 68.8, durationMs: 12000, delayMs: 3600 },
-  { key: 'd6', id: 'd6', text: '马上有下一程', tone: 5, topPercent: 84, durationMs: 12000, delayMs: 4500 }
-]
+/* 弹幕行**必须由真逻辑生成**（`utils/wishWall.buildDanmakuRows`）。
+ * ⚠️ 2026-09-22 修：这里原来是**手写样例**（清一色正延迟 0/900/1800…），
+ * 而真逻辑会给**前 `lanes` 条负延迟预填**（2026-09-19 专门修过"t=0 墙面是空的"）。
+ * 样例过期 ⇒ 出图把已经修好的状态画成"弹幕全叠在左边"的假事故，我差点据此去改版面。
+ * 判据要跟实现同源，样例也一样 —— 用真函数，逻辑一改出图立刻跟着变。 */
+const WALL_LOGIC = resolve(ROOT, 'miniprogram/utils/wishWall.js')
+const wallLogic = loadCjs(WALL_LOGIC)
+const DANMAKU = wallLogic.buildDanmakuRows(
+  [
+    { _id: 'd1', text: '马上有人念' },
+    { _id: 'd2', text: '马上有好事' },
+    { _id: 'd3', text: '马上有归处' },
+    { _id: 'd4', text: '马上有花看' },
+    { _id: 'd5', text: '马上有信' },
+    { _id: 'd6', text: '马上有下一程' }
+  ],
+  { cycle: 0 }
+)
 
 function baseData() {
   return {
@@ -490,18 +500,43 @@ const expanded = expandWallFeed(readFileSync(PAGE_WXML, 'utf8'), data)
 const wxmlSrc = expanded.wxml
 assertSampleCovers(wxmlSrc, expanded.scope)
 
-// 弹幕是**动画态**：截图里必须把它们摆进画面（否则全停在屏外，墙看着是空的）。
-// ⚠️ 这一步只改**渲染产物**的定位，不改任何被量的几何（墙高是 CSS 定的）。
+// 弹幕是**动画态**：量测要确定、出图要像真机。
+// ⚠️ 2026-09-22 修两处（都是"工具说谎"，我差点据此去改版面）：
+//   ① 原实现给每条只补 `left:<算出来的%>%` + `animation:none` —— 于是出图里几条**长文案按这些
+//      百分比摆出来必然互相压住**，看着像"弹幕糊成一团"的排版事故；真机是错峰滚动的，不会这样。
+//   ② 页面里的 `wx:for` 展开后这些元素的 `{{item.*}}`（tone / top / duration / delay）在本渲染库里
+//      **解析为空**（`class="ww-danmaku ww-tone-"`、`top:%`），所以原 hack 只能靠"自己摆位置"遮住它。
+// 现在：**用真实行数据把值填回去**（top / 时长 / 延迟都来自 `buildDanmakuRows` 的返回值），
+//   位置仍按确定性的左右分布摆（量测要确定），而 `animation-delay` 用真值 ⇒ 出图（放行动画 +
+//   Chrome 虚拟时间）会像真机那样错峰散开，不再是一坨。
 const spreadDanmaku = (html) => {
   let i = -1
-  return html.replace(/(class="ww-danmaku[^"]*"[^>]*style=")([^"]*)"/g, (_, head, style) => {
+  return html.replace(/(class="ww-danmaku[^"]*"[^>]*style=")([^"]*)"/g, (_, headIn, style) => {
+    let head = headIn
     i += 1
-    return `${head}${style} left:${10 + ((i * 23) % 48)}%; animation:none;"`
+    const row = DANMAKU[i] || {}
+    const leftPct = 10 + ((i * 23) % 48)
+    // 配色类同样是空值（`ww-tone-`）—— 补上真 tone，否则出图的弹幕全是同一个颜色，
+    // 而"六种色调"正是这一页的视觉语言之一（预览看不到就等于没验）。
+    const tone = row.tone == null ? '' : String(row.tone)
+    head = head.replace(/ww-tone-[^"\s]*/, 'ww-tone-' + tone)
+    const top = row.topPercent == null ? '' : `top:${row.topPercent}%; `
+    const dur = row.durationMs == null ? '' : `animation-duration:${row.durationMs}ms; `
+    const delay = row.delayMs == null ? '' : `animation-delay:${row.delayMs}ms; `
+    return `${head}${top}${dur}${delay}left:${leftPct}%;"`
   })
 }
 const markup = renderWxml(wxmlSrc, expanded.scope, { rewrite: spreadDanmaku })
 
 /* ── 3. 组装 HTML（WXSS 里只有类选择器，所以 <view> → <div> 就够了） ─────── */
+/* 量几何那一份要**冻结动画**（不然量到的是动画中间态）；
+   出图那一份**必须放行动画**（靠 Chrome 的 --virtual-time-budget=2000 推进到 2s 处的真实状态）。
+   ⚠️ 2026-09-22 修：原来两份共用同一份 HTML、都冻结 ⇒ 出图永远是 **0% 帧** ——
+   而弹幕正是 `animation-fill-mode: forwards` 从左侧入场，0% 时**所有轨道叠在同一个 x**，
+   出图看起来像"弹幕糊成一团"的重排版事故（实际是工具的假象，我差点据此去改版面）。 */
+const FREEZE_CSS = `* { animation: none !important; transition: none !important; }
+.ww-sheet-line { opacity: 1 !important; }`
+
 const html = `<!doctype html>
 <html><head><meta charset="utf-8"><style>
 :root {
@@ -526,8 +561,7 @@ ${(pageCss.match(/\.ww-input-ph\s*\{[^}]*\}/) || [''])[0].replace('.ww-input-ph'
    弹层的签文就是这种（.ww-sheet-line）。这里补一句静态终态，让截图与真机「动画播完」一致。
    ⚠️ 这一段是**注入到页面里的字符串**：注释里不许出现反引号（会把外层模板字符串截断，实测报
    "Unexpected identifier"），一律用「」。 */
-* { animation: none !important; transition: none !important; }
-.ww-sheet-line { opacity: 1 !important; }
+${FREEZE_CSS}
 </style></head>
 <body>${markup}</body></html>`
 
@@ -745,6 +779,9 @@ window.addEventListener('load', () => {
 
 const htmlPath = join(ROOT, 'miniprogram/scripts/.tmp', `wall-preview-${SCENE}.html`)
 writeFileSync(htmlPath, html.replace('</body>', `${MEASURE_JS}</body>`))
+// 出图用：同一页但**不冻结动画**（FREEZE_CSS 置空）
+const shotHtmlPath = join(ROOT, 'miniprogram/scripts/.tmp', `wall-preview-shot-${SCENE}.html`)
+writeFileSync(shotHtmlPath, html.replace(FREEZE_CSS, ''))
 
 function runChrome(args, timeoutMs = 30000) {
   return new Promise((resolvePromise) => {
@@ -857,7 +894,8 @@ if (!CHECK_ONLY) {
   try { rmSync(pngPath, { force: true }) } catch { /* ignore */ }
   // 全页高度：按量到的 body 高度（+ 余量）设窗口，避免只截到首屏
   const bodyH = (byLabel('整页 body') || {}).h || 1334
-  await runChrome([`--window-size=750,${Math.min(8000, bodyH + 40)}`, `--screenshot=${pngPath}`, `file://${htmlPath}`])
+  // 出图用**动画版**：--virtual-time-budget 会把它推进到 2s 处（弹幕已散开、入场动画已落定）
+  await runChrome([`--window-size=750,${Math.min(8000, bodyH + 40)}`, `--screenshot=${pngPath}`, `file://${shotHtmlPath}`])
   if (existsSync(pngPath)) {
     writeFileSync(OUT, readFileSync(pngPath))
     console.log(`\n截图：${OUT}（${Math.round(statSync(OUT).size / 1024)}KB）`)
