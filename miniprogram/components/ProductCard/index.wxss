@@ -68,8 +68,12 @@
   z-index: 3;
 }
 .p-info { padding: 20rpx; }
-.p-title { font-size: 26rpx; color: var(--color-text-primary); font-weight: 600; margin-bottom: 4rpx; font-family: var(--font-heading); }
-.p-latin { font-size: 20rpx; color: var(--color-text-latin); font-family: Georgia, 'Times New Roman', serif; font-style: italic; margin-bottom: 16rpx; }
+/* 2026-09-21 分子级审计：`.text-cut` / `.font-num` 定义在 app.wxss，但本组件 json **没有**
+   `styleIsolation`（默认 isolated）→ 全局 class 进不来（同目录 8 个组件都显式 apply-shared /
+   addGlobalClass，本组件没有）。故把这 3 条声明**写进组件自己的规则**：
+   两种读法（isolated 生效 / app.wxss 仍生效）下结果一致，属于「自持样式」。 */
+.p-title { font-size: 26rpx; color: var(--color-text-primary); font-weight: 600; margin-bottom: 4rpx; font-family: var(--font-heading); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.p-latin { font-size: 20rpx; color: var(--color-text-latin); font-family: Georgia, 'Times New Roman', serif; font-style: italic; margin-bottom: 16rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .p-craft-tags {
   display: flex;
   flex-wrap: wrap;
@@ -100,7 +104,7 @@
   min-width: 0;
   flex-wrap: wrap;
 }
-.p-price { font-size: 32rpx; color: var(--primary); font-family: var(--font-mono); letter-spacing: 0.02em; }
+.p-price { font-size: 32rpx; color: var(--primary); font-family: var(--font-mono); font-weight: bold; letter-spacing: 0.02em; }
 .p-sold { font-size: 20rpx; color: var(--color-text-secondary); letter-spacing: 0.02em; white-space: nowrap; }
 /* 「馆方新藏」：真实成立的状态标（新品 30 天内），做成铜色小标而不是销量文字 */
 .p-sold.is-new {

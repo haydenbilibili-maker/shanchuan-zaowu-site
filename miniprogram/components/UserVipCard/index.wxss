@@ -1278,7 +1278,8 @@
   background: #E8DFD0;
 }
 .vip-card.level-skin-2 .badge-pill {
-  background: #8B6F47;
+  /* 2026-09-21 分子级审计：#8B6F47 与 #F2EDE4 仅 4.04（AA 需 4.5）→ 同色相只降亮度到 4.62 */
+  background: #806641;
   color: #F2EDE4;
 }
 .vip-card.level-skin-2 .rate-tag {
@@ -2992,7 +2993,7 @@
   letter-spacing: 0.03em;
 }
 .ge-desc {
-  font-size: 21rpx;
+  font-size: var(--fs-20);
   line-height: 1.5;
 }
 .ge-note {

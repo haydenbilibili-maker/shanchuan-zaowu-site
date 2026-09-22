@@ -811,7 +811,7 @@ module.exports.saveLabel = saveLabel;
           >{{seg.t}}</text>
         </view>
       </view>
-      <view class="refund-sheet-btn" bindtap="closeRefundSheet">我知道了</view>
+      <view class="refund-sheet-btn" bindtap="closeRefundSheet">知道了</view>
     </view>
   </view>
   </block>

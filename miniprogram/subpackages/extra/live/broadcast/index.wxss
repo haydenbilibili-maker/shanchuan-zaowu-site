@@ -168,7 +168,7 @@
 }
 
 .live-badge.on .dot {
-  background: #D64045;
+  background: var(--color-error);
   animation: pulse 1.2s ease-in-out infinite;
 }
 
@@ -329,7 +329,8 @@
   flex: 1.3;
   text-align: center;
   padding: 22rpx 12rpx;
-  background: #D64045;
+  /* 2026-09-21 分子级审计：原字面量 #D64045 配白字仅 4.489（AA 需 4.5）→ 用令牌（4.74） */
+  background: var(--color-error);
   color: #FFFFFF;
   border-radius: 16rpx;
   font-size: 26rpx;

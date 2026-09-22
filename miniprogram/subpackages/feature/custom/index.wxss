@@ -155,7 +155,10 @@ view, text, image { box-sizing: border-box; }
 }
 
 .main-scroll {
-  position: fixed; left: 0; right: 0; bottom: 200rpx; box-sizing: border-box;
+  /* 2026-09-21 分子级审计：底栏 `.footer-bar` 的高度含 `env(safe-area-inset-bottom)`（见本文件 .footer-bar
+     的 padding），而这里的预留是**固定 rpx** → 两者不可能同时成立：带 Home Indicator 的机型上
+     底栏顶边会压住滚动区末尾（算术见交付报告）。加上同一项 env() 后，「安全区」这一项被抵消。 */
+  position: fixed; left: 0; right: 0; bottom: calc(200rpx + env(safe-area-inset-bottom)); box-sizing: border-box;
 }
 
 .loading-wrap { padding: 120rpx 0; text-align: center; color: #6B6560; }

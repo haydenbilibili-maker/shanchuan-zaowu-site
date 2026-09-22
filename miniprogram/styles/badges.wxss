@@ -39,7 +39,8 @@
 
 /* 顾客待办：醒目但偏博物柜暖红，避免荧光刺眼 */
 .badge-solid-danger {
-  background: #C55458;
+  /* 2026-09-21 分子级审计：#C55458 与 #FAF6ED 仅 4.07（AA 需 4.5）→ 同色相只降亮度到 4.62 */
+  background: #C0464B;
   border: 1px solid rgba(214, 64, 69, 0.35);
   color: #FAF6ED;
 }
@@ -58,7 +59,8 @@
 }
 
 .badge-info {
-  background: #5A86A8;
+  /* 2026-09-21 分子级审计：#5A86A8 与白字仅 3.88（AA 需 4.5）→ 同色相只降亮度到 4.62 */
+  background: #517999;
   border: 1px solid rgba(91, 143, 185, 0.4);
   color: var(--color-text-primary);
 }

@@ -113,7 +113,7 @@ page {
 /* 品牌部分 */
 .brand-part { display: flex; flex-direction: column; justify-content: center; margin-right: 16rpx; }
 .brand-en-wrap { display: flex; flex-direction: column; line-height: 1; margin-bottom: 4rpx; }
-.brand-en { font-family: 'DIN', sans-serif; font-size: 12rpx; color: var(--primary); font-weight: bold; letter-spacing: 0.12em; line-height: 1.15; }
+.brand-en { font-family: 'DIN', sans-serif; font-size: var(--fs-16); color: var(--primary); font-weight: bold; letter-spacing: 0.12em; line-height: 1.15; }
 .brand-en-second { margin-top: 2rpx; }
 .brand-cn { font-size: 24rpx; color: var(--color-text-primary); font-weight: 600; letter-spacing: 0.12em; line-height: 1; }
 
@@ -572,7 +572,7 @@ page {
 .orb-sphere { width: 120rpx; height: 120rpx; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 35% 35%, rgba(242,237,228,0.1), rgba(26,24,20,0.98)); box-shadow: inset 0 0 20rpx rgba(26,24,20,0.72); border: 1px solid rgba(38,35,32,0.5); margin-bottom: 24rpx; }
 .orb-sphere::before { content: ''; position: absolute; top: -10%; left: -10%; right: -10%; bottom: -10%; border: 1px solid rgba(196, 167, 108, 0.22); border-radius: 50%; border-top-color: transparent; border-bottom-color: transparent; transform: rotateX(60deg); animation: orbit 8s linear infinite; pointer-events: none; }
 .orb-sphere::after { content: ''; position: absolute; top: 0; left: 50%; width: 6rpx; height: 6rpx; background: var(--brass-400, #C4A76C); border-radius: 50%; transform-origin: 0 60rpx; animation: electron 4s linear infinite; opacity: 0.7; }
-.orb-icon { font-size: 52rpx; line-height: 1; position: relative; z-index: 10; animation: iconBreathe 4s ease-in-out infinite; }
+.orb-icon { font-size: var(--fs-48); line-height: 1; position: relative; z-index: 10; animation: iconBreathe 4s ease-in-out infinite; }
 .orb-texture { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 50% 50%, rgba(196, 167, 108, 0.16), transparent 70%); opacity: 0.55; animation: texturePulse 6s ease-in-out infinite; }
 .orb-ring { position: absolute; width: 140%; height: 140%; border-radius: 50%; border: 1px solid rgba(196, 167, 108, 0.16); border-top-color: rgba(196, 167, 108, 0.5); border-bottom-color: transparent; transform: rotateX(75deg) rotateY(15deg); pointer-events: none; }
 .orb-particle { position: absolute; top: 50%; left: 50%; width: 140%; height: 140%; border-radius: 50%; transform: translate(-50%, -50%) rotateX(75deg) rotateY(15deg); pointer-events: none; animation: spinOrbit 8s linear infinite; }
@@ -592,7 +592,7 @@ page {
 
 .orb-meta { text-align: center; }
 .orb-meta .cn { font-size: 26rpx; color: var(--color-text-body); font-weight: 600; display: block; letter-spacing: 2rpx; }
-.orb-meta .en { font-size: 14rpx; color: var(--color-text-secondary); font-family: 'DIN'; letter-spacing: 1rpx; margin-top: 6rpx; display: block; text-transform: uppercase; font-weight: bold; }
+.orb-meta .en { font-size: var(--fs-16); color: var(--color-text-secondary); font-family: 'DIN'; letter-spacing: 1rpx; margin-top: 6rpx; display: block; text-transform: uppercase; font-weight: bold; }
 
 /* 灵动球展开面板 */
 .orb-expansion-panel { width: 100%; height: 0; opacity: 0; overflow: hidden; transition: height 0.28s ease, opacity 0.28s ease, margin 0.28s ease; margin-top: 20rpx; background: rgba(31, 29, 26, 0.6); border-radius: 16rpx; }
@@ -608,7 +608,7 @@ page {
 .op-card-press { border-color: rgba(196, 167, 108, 0.45); transform: scale(0.98); }
 .op-img-box { width: 100%; height: 200rpx; background: var(--color-bg); position: relative; flex-shrink: 0; }
 .op-img { width: 100%; height: 100%; }
-.op-rare-tag { position: absolute; top: 8rpx; left: 8rpx; font-size: 14rpx; color: var(--color-bg); background: var(--primary); padding: 2rpx 8rpx; border-radius: 4rpx; font-weight: bold; }
+.op-rare-tag { position: absolute; top: 8rpx; left: 8rpx; font-size: var(--fs-16); color: var(--color-bg); background: var(--primary); padding: 2rpx 8rpx; border-radius: 4rpx; font-weight: bold; }
 .op-info { flex: 1; min-height: 0; padding: 10rpx 12rpx 12rpx; display: flex; flex-direction: column; justify-content: flex-start; gap: 4rpx; overflow: hidden; }
 .op-title { font-size: 22rpx; color: var(--color-text-body); font-weight: bold; line-height: 1.3; }
 .op-latin { font-size: 16rpx; color: var(--color-text-secondary); font-style: italic; line-height: 1.2; flex-shrink: 0; }
@@ -654,9 +654,9 @@ page {
   padding: 48rpx 24rpx;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
-  letter-spacing: 0.06em;
-  background: var(--color-bg-card);
+  /* 2026-09-21 分子级审计：--color-text-muted 在不透明底 --color-bg-card 上仅 2.93（AA 需 4.5）
+     → 与 ProductList / 分类页空态统一到 --color-text-secondary（6.02） */
+  color: var(--color-text-secondary);
   border: 1px dashed #4D401A;
   border-radius: 16rpx;
 }

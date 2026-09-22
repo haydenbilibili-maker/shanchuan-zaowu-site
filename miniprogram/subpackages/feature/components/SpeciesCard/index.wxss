@@ -257,7 +257,7 @@
 }
 
 .conf-fill.tone-low {
-  background: #D64045;
+  background: var(--color-error);
 }
 
 .conf-desc {

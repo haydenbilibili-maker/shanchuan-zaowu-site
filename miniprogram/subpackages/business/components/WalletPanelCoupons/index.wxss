@@ -216,7 +216,8 @@ view, text { box-sizing: border-box; }
 }
 .c-status.muted {
   background: #262320;
-  color: #6B6560;
+  /* 2026-09-21 分子级审计：#6B6560 在 #262320 上仅 2.72（AA 需 4.5）→ secondary（5.60） */
+  color: var(--color-text-secondary);
 }
 .c-status.clickable:active {
   background: #A8903C;
@@ -724,9 +725,11 @@ view, text { box-sizing: border-box; }
 }
 
 .void-stamp.is-expired {
-  color: rgba(160, 154, 144, 0.72);
+  /* 2026-09-21 分子级审计：原 fg rgba(160,154,144,.72) 叠在 4% 同色底上只有 3.78。
+     改为不透明 fg + 不透明底（色相不变，观感几乎不变）→ 8.46。 */
+  color: #C4BEB4;
   border-color: rgba(160, 154, 144, 0.4);
-  background: rgba(160, 154, 144, 0.04);
+  background: #262320;
 }
 
 /* 让出章的位置：失效券的文字区右侧留白，避免日期被章压住 */

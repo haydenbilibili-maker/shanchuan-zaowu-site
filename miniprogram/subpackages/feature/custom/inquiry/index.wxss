@@ -28,7 +28,9 @@ page { background: #1A1814; color: #fff; }
 .nav-title { display: block; font-size: 34rpx; font-weight: 600; }
 .nav-sub { display: block; font-size: 20rpx; color: #C4A76C; letter-spacing: 0.1em; margin-top: 4rpx; }
 
-.main-scroll { position: fixed; left: 0; right: 0; bottom: 140rpx; box-sizing: border-box; }
+/* 2026-09-21 分子级审计：底栏 `.footer` 的 padding 含 `env(safe-area-inset-bottom)`，
+   而这里的预留是固定 140rpx → 有 Home Indicator 的机型上底栏压住滚动区末尾。补同一项 env()。 */
+.main-scroll { position: fixed; left: 0; right: 0; bottom: calc(140rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .loading-wrap { padding: 120rpx 0; text-align: center; color: #6B6560; }
 
 .load-error-box {

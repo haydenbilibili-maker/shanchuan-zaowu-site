@@ -2256,7 +2256,9 @@ Page(withAppModal({
           overline: 'DEPOSIT STATUS',
           content: result.msg || '请查看定金状态',
           showCancel: false,
-          confirmText: '好的'
+          /* 2026-09-21 分子级审计：纯告知型弹窗的确认键全站统一为「知道了」（其余 9 处均如此，
+             此处原为「好的」）—— 仅改措辞，不改 confirmText 的语义与行为。 */
+          confirmText: '知道了'
         });
         return;
       }

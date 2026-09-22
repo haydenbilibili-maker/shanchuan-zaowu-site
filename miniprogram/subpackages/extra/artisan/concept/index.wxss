@@ -33,7 +33,7 @@ page {
 .hero .cn {
   display: block;
   font-family: var(--font-brand);
-  font-size: 42rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 8rpx;
 }
@@ -388,7 +388,7 @@ page {
   display: block;
   margin-top: 10rpx;
   font-family: var(--font-brand);
-  font-size: 38rpx;
+  font-size: var(--fs-36);
   line-height: 1.3;
   color: var(--color-text-primary);
   word-break: break-word;

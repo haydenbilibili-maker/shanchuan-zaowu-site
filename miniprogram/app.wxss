@@ -55,7 +55,10 @@ page {
   --color-marine: #5B8FB9;
   --color-success: #52B788;
   --color-warning: #E9A23B;
-  --color-error: #D64045;
+  /* 2026-09-21 分子级审计：error 作为**实心底**承载白字时只有 4.489（AA 需 4.5），
+     按同色相只降亮度到 4.74。#D64045 与 #D13C41 的色差 (~5/255) 肉眼不可辨，
+     语义与其余 `rgba(214,64,69,*)` 边框/底色仍同族（它们用的是字面量，不受本令牌影响）。 */
+  --color-error: #D13C41;
   --color-info: #5B8FB9;
   --font-brand: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
   --font-heading: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", sans-serif;

@@ -432,7 +432,7 @@ page {
 }
 .source-note {
   margin-top: 14rpx;
-  font-size: 21rpx;
+  font-size: var(--fs-20);
   line-height: 1.6;
   color: var(--color-text-secondary, #A8A29A);
   opacity: 0.85;

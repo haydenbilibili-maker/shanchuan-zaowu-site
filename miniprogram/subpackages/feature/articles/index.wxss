@@ -144,7 +144,8 @@ page {
   padding: 8rpx 20rpx;
   border-radius: var(--radius-full);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  /* 2026-09-21 分子级审计：#6B6560 在 --color-bg-elevated 上仅 2.72（AA 需 4.5）→ secondary（5.60） */
+  color: var(--color-text-secondary);
   background: var(--color-bg-elevated);
   border: 1px solid transparent;
 }

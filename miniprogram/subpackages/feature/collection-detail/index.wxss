@@ -125,8 +125,9 @@ page {
 /* 门控组件的定位参照（见 wxml 注释）。margin/flex-shrink 由图片移到盒上，保持 flex 行为不变。 */
 .p-img-box { position: relative; width: 120rpx; height: 120rpx; margin-right: 24rpx; flex-shrink: 0; border-radius: 8rpx; overflow: hidden; background: #111; }
 .p-img { width: 100%; height: 100%; }
-.p-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-.p-name { font-size: 28rpx; font-weight: bold; color: #eee; margin-bottom: 8rpx; }
+/* 2026-09-21 分子级审计：同 orders/index.wxss —— flex:1 缺 min-width:0 + 标题无截断 */
+.p-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.p-name { font-size: 28rpx; font-weight: bold; color: #eee; margin-bottom: 8rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .p-price { font-size: 32rpx; color: #C4A76C; font-family: 'DIN'; font-weight: bold; }
 .p-btn { 
   font-size: 22rpx; color: #1A1814; background: #C4A76C; 
