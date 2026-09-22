@@ -1,0 +1,107 @@
+<!-- 今日一签 · 独立页（PRD v1.4 §11.4）
+     入口形态：**一只签筒**（整张卡，不是瓦片）—— 摇一次，签条从筒里升起来。
+     进行态：签筒左右轻摇 + 签条升起（纯 CSS keyframes，不用 canvas）。
+     结果纸面：**竹签**（竖长浅纸、宜/忌分列、印章字标）。
+     页面不写死玩法名：`mark / name / play.hint / play.cta / play.spinText` 全来自注册表。 -->
+<view class="rp-page">
+  <view class="rp-hero">
+    <view class="rp-hero-mark" aria-hidden="true">{{mark}}</view>
+    <view class="rp-hero-copy">
+      <text class="rp-hero-name">{{name}}</text>
+      <text class="rp-hero-state">{{playedToday ? '今天已摇过 · 这支在下面' : play.entryNote}}</text>
+    </view>
+  </view>
+
+  <!-- 缺资料（今日一签不读资料；保留统一分支，注册表加了 needs 自动生效） -->
+  <view class="rp-need" wx:if="{{stage === 'need'}}">
+    <text class="rp-need-text">这个玩法要用到你的「{{need.fieldLabel}}」，资料页填一下就好（{{need.gain}}）。</text>
+    <view class="rp-need-cta is-primary" bindtap="goProfileField" hover-class="rp-press" hover-stay-time="70" aria-role="button">去填{{need.fieldLabel}}</view>
+  </view>
+
+  <!-- 结果：一支竹签 -->
+  <block wx:elif="{{stage === 'result'}}">
+    <view class="rp-paper" style="transform: translateY({{sheetDragY}}px);" aria-role="dialog" aria-label="{{result.name}}结果">
+      <view
+        class="rp-paper-grip"
+        bindtouchstart="onSheetGripStart"
+        bindtouchmove="onSheetGripMove"
+        bindtouchend="onSheetGripEnd"
+        bindtouchcancel="onSheetGripEnd"
+      ><view class="rp-paper-grip-bar" aria-hidden="true"></view></view>
+      <view class="rp-paper-mark" aria-hidden="true">{{result.mark}}</view>
+      <text class="rp-paper-overline" wx:if="{{result.overline}}">{{result.overline}}</text>
+      <text class="rp-paper-title">{{result.title}}</text>
+      <text class="rp-paper-sub" wx:if="{{result.sub}}">{{result.sub}}</text>
+      <text class="rp-line" wx:for="{{result.lines}}" wx:key="*this">{{item}}</text>
+      <text class="rp-note" wx:if="{{result.note}}">{{result.note}}</text>
+    </view>
+
+    <view class="rp-acts">
+      <view class="rp-act is-primary" bindtap="writeWish" hover-class="rp-press" hover-stay-time="70" aria-role="button">
+        {{result.wish ? '写成心愿' : '写下我的心愿'}}
+      </view>
+      <button
+        class="rp-act is-share"
+        open-type="share"
+        bindtap="onShareTap"
+        hover-class="rp-press"
+        hover-stay-time="70"
+        aria-role="button"
+      >分享这份结果</button>
+    </view>
+
+    <view
+      class="rp-reco"
+      wx:if="{{reco || productId || recoLoading || recoFailed}}"
+      bindtap="{{reco ? 'goRecoProduct' : 'goProduct'}}"
+      hover-class="rp-press"
+      hover-stay-time="70"
+      aria-role="button"
+    >
+      <view class="rp-reco-copy">
+        <text class="rp-reco-label">{{reco ? reco.label : ('这面墙的藏品' + (productTitle ? ' · ' + productTitle : ''))}}</text>
+        <text class="rp-reco-title" wx:if="{{reco}}">{{reco.title}}</text>
+        <view class="rp-reco-skel wallet-skel" wx:elif="{{recoLoading && !recoFailed}}" aria-hidden="true"></view>
+        <text class="rp-reco-title" wx:elif="{{recoFailed}}">这次没配到</text>
+        <text class="rp-reco-meta" wx:if="{{reco && (reco.latinName || reco.priceText)}}">{{reco.latinName}}{{reco.latinName && reco.priceText ? ' · ' : ''}}{{reco.priceText}}</text>
+      </view>
+      <text class="rp-reco-go">看看这件 ›</text>
+    </view>
+
+    <view class="rp-archive">
+      <text class="rp-archive-toggle" bindtap="toggleArchive" aria-role="button">{{archiveOpen ? '收起留档' : '我的留档（' + archive.length + '）'}}</text>
+      <view class="rp-archive-list" wx:if="{{archiveOpen}}">
+        <view class="rp-archive-row" wx:for="{{archive}}" wx:key="at">
+          <text class="rp-archive-day">{{item.dayKey}}</text>
+          <text class="rp-archive-what">{{item.label}}</text>
+        </view>
+        <text class="rp-archive-empty" wx:if="{{!archive.length}}">还没有留档。</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 入口 / 进行态 -->
+  <block wx:else>
+    <view class="rp-stage {{stage === 'pending' ? 'is-pending' : ''}}">
+      <view class="rp-tube">
+        <view class="rp-tube-mouth" aria-hidden="true"></view>
+        <view class="rp-tube-body" aria-hidden="true"></view>
+        <view class="rp-stick" aria-hidden="true"></view>
+      </view>
+    </view>
+    <text class="rp-hint">{{play.hint}}</text>
+    <text class="rp-spin-text" wx:if="{{stage === 'pending'}}">{{play.spinText}}</text>
+    <view class="rp-cta is-primary" wx:else bindtap="startPlay" hover-class="rp-press" hover-stay-time="70" aria-role="button">{{play.cta}}</view>
+  </block>
+
+  <text class="rp-foot">文化娱乐向的每日一句，仅供今天对照行事。</text>
+
+  <app-toast
+    show="{{toastShow}}"
+    overline="{{toastOverline}}"
+    title="{{toastTitle}}"
+    desc="{{toastDesc}}"
+    duration="{{toastDuration}}"
+    bind:close="onToastClose"
+  />
+</view>

@@ -19,13 +19,13 @@
  *
  * 用法：
  *   node miniprogram/scripts/render-wall-preview.mjs                    # 量 + 截图（默认场景 full）
- *   node miniprogram/scripts/render-wall-preview.mjs --scene sheet       # 纸签弹层展开态
  *   node miniprogram/scripts/render-wall-preview.mjs --check             # 只跑版式不变量（非 0 = 违反）
  *   node miniprogram/scripts/render-wall-preview.mjs --check --selftest  # 证明判据真的会红（注入 → 检出 → 还原）
  *   node miniprogram/scripts/render-wall-preview.mjs --out /tmp/x.png
  *
- * 场景（--scene）：full（默认）整页原样 / lit 已点灯 / sheet 纸签弹层 / sheet-loading 弹层（推荐取件中）/
- *                loading 骨架 / error 加载失败 / closed 开关关
+ * 场景（--scene）：full（默认）整页原样 / lit 已点灯 / ember 点灯余烬 / loading 骨架 / error 加载失败 / closed 开关关
+ *   （2026-09-21 §11.4：玩法结果/推荐搬到玩法页后，`sheet` / `sheet-loading` 两个场景**已下线** ——
+ *    本工具渲染的是祈福墙页，那两个场景要画的东西已经不在这一页上了。）
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
@@ -62,10 +62,10 @@ const argOf = (n, d) => {
   const i = argv.indexOf(n)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
-const SCENES = ['full', 'lit', 'ember', 'sheet', 'sheet-loading', 'loading', 'error', 'closed']
+const SCENES = ['full', 'lit', 'ember', 'loading', 'error', 'closed']
 const SCENE = (() => {
   const s = argOf('--scene', 'full')
-  const alias = { plays: 'sheet' }[s] || s
+  const alias = s
   if (!SCENES.includes(alias)) {
     console.error(`✗ 未知场景 ${s}（可用：${SCENES.join(' / ')}）`)
     process.exit(1)
@@ -108,7 +108,7 @@ const FOLD_MIN_TILES = 2
 if (has('--selftest')) {
   const INJECTS = [
     { name: 'hero-tall', file: 'wxss', css: '\n.ww-hero { height: 420px !important; }\n', expect: '牌匾占首屏' },
-    { name: 'wall-inflated', file: 'wxss', css: '\n.ww-wall { height: 900px !important; }\n', expect: '首屏内看得到的玩法瓦片' },
+    { name: 'wall-inflated', file: 'wxss', css: '\n.ww-wall { height: 900px !important; }\n', expect: '首屏内看得到的玩法入口' },
     { name: 'inspo-detached', file: 'wxss', css: '\n.ww-inspo { margin-top: 900px !important; }\n', expect: '灵感词与发送条不在同一屏' },
     {
       // 发送条改回吸底却不留底部余量 → 最后一张愿签会被盖住（旧 sticky-bar 判据的等价物，
@@ -138,38 +138,32 @@ if (has('--selftest')) {
       expect: '连续天数盒压字'
     },
     {
-      // 推荐取件期间产品行不再占位（回到"弹层事后长高一块"的旧行为）
-      name: 'reco-placeholder-dropped',
-      file: 'wxml',
-      scene: 'sheet-loading',
-      // ⚠️ 2026-09-21 锚点跟随源码更新：P2-12 给这一行的条件加了第四档 `recoFailed`
-      // （取件失败也要占位，不许整行消失）。注入语义不变：**撤掉占位条件**，
-      // 看 preview 还能不能检出"弹层长高一块"。
-      from: 'wx:if="{{reco || productId || recoLoading || recoFailed}}"',
-      to: 'wx:if="{{reco || productId}}"',
-      expect: '取件中：产品行已占位'
-    },
-    {
-      // 取件结束后骨架没收（会盖住真推荐）。
-      // ⚠️ 注入形态：把骨架**无条件**插进产品行 —— 这正是"没收骨架"的终态。
-      // （第一版写成 `wx:elif="{{recoLoading}}"` → `{{true}}`：它前面那条 `wx:if="{{reco}}"`
-      //   在 sheet 场景为真、先命中了链，骨架根本不会渲染 → 注入等于没注入、自检报"判据无效"。
-      //   教训：注入必须真正改变**渲染结果**，只改一个分支的条件字符串不算。）
-      name: 'reco-skeleton-not-cleared',
-      file: 'wxml',
-      scene: 'sheet',
-      from: '<text class="ww-sheet-product-title" wx:if="{{reco}}">{{reco.title}}</text>',
-      to: '<view class="ww-sheet-product-skel wallet-skel" wx:if="{{true}}" aria-hidden="true"></view>',
-      expect: '取件完成：骨架已撤'
-    },
-    {
-      // 次瓦片也长出了字标（四枚都加 = 没有层级）
-      name: 'minor-mark-back',
+      // 入口区又长出"结果层"（2026-09-21 §11.4 之后，结果/推荐/补资料引导全在玩法页）
+      // —— 那会让玩法区重新变成"本页弹层"，与发送条抢层级。
+      name: 'result-layer-back',
       file: 'wxml',
       scene: 'full',
-      from: '<view class="ww-play-mark" wx:if="{{index < 2}}" aria-hidden="true">{{item.mark}}</view>',
-      to: '<view class="ww-play-mark" aria-hidden="true">{{item.mark}}</view>',
-      expect: '次瓦片无字标'
+      from: '      <view class="ww-play-grid">',
+      to: '      <view class="ww-play-need" wx:if="{{playNeed}}"></view>\n      <view class="ww-play-grid">',
+      expect: '入口区不再承载结果层'
+    },
+    {
+      // 入口形态被抹平成同一枚瓦片（`is-{{item.form}}` → `is-tile`）→ 四种形态判据必须红
+      name: 'form-degraded',
+      file: 'wxml',
+      scene: 'full',
+      from: 'class="ww-play is-{{item.form}} {{index < 2 ? \'is-lead\' : \'is-minor\'}}"',
+      to: 'class="ww-play is-tile {{index < 2 ? \'is-lead\' : \'is-minor\'}}"',
+      expect: '入口形态'
+    },
+    {
+      // "今天玩过没有"那一行被改名 → 量不到状态句（状态丢了，用户没有"再进去"的理由）
+      name: 'entry-state-dropped',
+      file: 'wxml',
+      scene: 'full',
+      from: '<text class="ww-play-state {{item.played ? \'is-done\' : \'\'}}">',
+      to: '<text class="ww-play-note {{item.played ? \'is-done\' : \'\'}}">',
+      expect: '入口1 状态句'
     }
   ]
   const baseWxss = readFileSync(REAL_WXSS, 'utf8')
@@ -298,10 +292,10 @@ function baseData() {
     certEntry: null,
     soundOn: true,
     plays: [
-      { id: 'qian', mark: '签', name: '今日一签', hint: '摇一支，看今天宜做什么' },
-      { id: 'cookie', mark: '饼', name: '拆签饼', hint: '拆开今天的签饼' },
-      { id: 'zodiac', mark: '座', name: '星座签', hint: '按你的星座给一句' },
-      { id: 'mbti', mark: '我', name: 'MBTI 贴士', hint: '顺着你的性子来一句' }
+      { id: 'qian', mark: '签', name: '今日一签', hint: '摇一支，看今天宜做什么', form: 'card', kind: 'qian', played: false, entryNote: '今天还没摇', doneNote: '今天已摇过 · 再进去看这支' },
+      { id: 'cookie', mark: '饼', name: '拆签饼', hint: '拆开今天的签饼', form: 'shell', kind: 'cookie', played: true, entryNote: '今天还没拆', doneNote: '今天已拆过 · 再进去看这张' },
+      { id: 'zodiac', mark: '座', name: '星座签', hint: '按你的星座给一句', form: 'ring', kind: 'zodiac', played: false, entryNote: '今天还没转', doneNote: '今天已转过 · 可换一个' },
+      { id: 'mbti', mark: '我', name: 'MBTI 贴士', hint: '顺着你的性子来一句', form: 'axis', kind: 'mbti', played: false, entryNote: '今天还没读', doneNote: '今天已读过 · 可换一个' }
     ],
     playResult: null,
     playPending: '',
@@ -365,26 +359,6 @@ const SCENE_PATCH = {
       streak: 7, lampDots: [1, 1, 1, 1, 1], line: '灯亮着，心愿就还没说完。', tierNote: '今天来过，记下了。'
     },
     heartBurst: true
-  },
-  sheet: {
-    playResult: {
-      id: 'daily', mark: '签', overline: '今日一签', name: '今日一签',
-      title: '宜 开口', sub: '忌 憋着',
-      lines: ['想要什么就说出来，说出口才有回音。'], wish: '马上有回应'
-    },
-    reco: { label: '偏「求学」· 为你配一件', title: '潮汐书页', latinName: 'Haliotis iris', priceText: '¥78' }
-  },
-  'sheet-loading': {
-    // 弹层已开、推荐还在路上：产品行必须**已经在**（同高骨架），否则弹层会事后长高一块
-    playResult: {
-      id: 'daily', mark: '签', overline: '今日一签', name: '今日一签',
-      title: '宜 开口', sub: '忌 憋着',
-      lines: ['想要什么就说出来，说出口才有回音。'], wish: '马上有回应'
-    },
-    reco: null,
-    recoLoading: true,
-    productId: '',
-    productTitle: ''
   },
   loading: { loading: true, rows: [], items: [], tagColumns: [[], []], mine: { total: 0 }, relics: { total: 0, found: 0 } },
   error: {
@@ -492,13 +466,19 @@ const METRICS = [
   ['写愿助手 .ww-wishassist', '.ww-wishassist'],
   ['玩法区 .ww-plays', '.ww-plays'],
   ['玩法区标题行', '.ww-plays-head', 1, 'same-row'],
-  ['瓦片1', '.ww-play:nth-child(1)'],
-  ['瓦片2', '.ww-play:nth-child(2)'],
-  ['瓦片3', '.ww-play:nth-child(3)'],
-  ['瓦片4', '.ww-play:nth-child(4)'],
-  ['瓦片1 名字', '.ww-play:nth-child(1) .ww-play-name', 1],
-  ['瓦片1 字标', '.ww-play:nth-child(1) .ww-play-mark', 1],
-  ['瓦片4 副文案', '.ww-play:nth-child(4) .ww-play-hint', 1],
+  // 入口形态四种（2026-09-21 §11.4）：几何上必须**各有各的盒子**，不能退化成四枚同质瓦片
+  ['入口卡（签筒）', '.ww-play.is-card'],
+  ['入口壳（签饼）', '.ww-play.is-shell'],
+  ['入口盘（星盘）', '.ww-play.is-ring'],
+  ['入口轴（双极）', '.ww-play.is-axis'],
+  ['入口1', '.ww-play:nth-child(1)'],
+  ['入口2', '.ww-play:nth-child(2)'],
+  ['入口3', '.ww-play:nth-child(3)'],
+  ['入口4', '.ww-play:nth-child(4)'],
+  ['入口1 名字', '.ww-play:nth-child(1) .ww-play-name', 1],
+  ['入口1 字标', '.ww-play:nth-child(1) .ww-play-mark', 1],
+  ['入口1 状态句', '.ww-play:nth-child(1) .ww-play-state', 1],
+  ['入口4 副文案', '.ww-play:nth-child(4) .ww-play-hint', 1],
   ['灵感行 .ww-inspo-row', '.ww-inspo-row'],
   ['灵感 chip1', '.ww-inspo-chip:nth-child(1)', 1],
   ['额度行 .ww-write-foot', '.ww-write-foot', 1, 'same-row'],
@@ -578,35 +558,6 @@ window.addEventListener('load', () => {
   const fold = ['.ww-hero', '.ww-wall', '.ww-composer', '.ww-lantern', '.ww-plays', '.ww-inspo-row', '.ww-seg']
   out.push({ label: '首屏可见', sel: ':fold', mode: 'fold', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
     text: fold.filter((s) => { const e2 = el(s); return e2 && e2.getBoundingClientRect().top < vh }).join(' / ') })
-  // ── 弹层产品行（只在弹层场景量）：推荐是异步取的，取件期间那一行**必须已经在**，
-  //    否则弹层会在用户读签文时长高一块。所以 sheet-loading 场景要正判"它存在"。
-  if (__SCENE__ === 'sheet' || __SCENE__ === 'sheet-loading') {
-    push('弹层产品行', '.ww-sheet-product')
-    push('弹层产品标题', '.ww-sheet-product-title', 1)
-    const skel = document.querySelector('.ww-sheet-product-skel')
-    if (__SCENE__ === 'sheet-loading') {
-      out.push({ label: '取件中：产品行已占位', sel: ':must-exist', mode: 'must-exist', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
-        exists: !!document.querySelector('.ww-sheet-product'),
-        text: document.querySelector('.ww-sheet-product') ? '在' : '不在（弹层会事后长高一块）' })
-      out.push({ label: '取件中：骨架占位在', sel: ':must-exist', mode: 'must-exist', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
-        exists: !!skel, text: skel ? '在' : '不在' })
-    } else {
-      out.push({ label: '取件完成：骨架已撤', sel: ':must-exist', mode: 'must-exist', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
-        exists: !skel, text: skel ? '骨架没收（会盖住真推荐）' : '已撤' })
-    }
-    /* ── 弹层可用性：**「收起」的触控区**（2026-09-21）。
-     * 它原来只有 ~38rpx 高（padding 8 + 行高 22），真机上很容易点不中。
-     * 44pt ≈ 88rpx 是可用性下限 —— 静态样式表里"看"不出这件事（padding 与行高是两处），
-     * 只有在真渲染里量 getBoundingClientRect 才算数（本仓 E8：静态分析 ≠ 事实）。 */
-    const closeEl = document.querySelector('.ww-sheet-close')
-    if (closeEl) {
-      const r = closeEl.getBoundingClientRect()
-      out.push({ label: '弹层「收起」触控区', sel: '.ww-sheet-close', mode: 'box', lines: 0, maxLines: 0,
-        x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height),
-        text: Math.round(r.width) + '×' + Math.round(r.height) + 'rpx' })
-    }
-  }
-
   // ── 发送条**若被改回吸底**：必须有底部预留（否则最后一张愿签被盖住）。
   // 顺流（当前设计）时本条不适用 —— 与 test:wish-wall 的"按设计分支"同一口径：
   // 旧预览把这一条写成了无条件判据，于是源码改成 static 之后它天天报假失败，最后被整条删掉。
@@ -669,10 +620,17 @@ window.addEventListener('load', () => {
       text: '徽章 ' + Math.round(sr.width) + 'px；压标题 ' + oTitle.toFixed(1) + 'px / 压灯位行 ' + oMeta.toFixed(1) + 'px' })
   }
 
-  // ── 否定判据：次瓦片**不许**有字标（四枚都加 = 没有层级，等于没加）
-  const minorMark = document.querySelector('.ww-play.is-minor .ww-play-mark')
-  out.push({ label: '次瓦片无字标', sel: ':absent', mode: 'absent', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
-    absent: !minorMark, text: minorMark ? '次瓦片上出现了字标（不该有）' : '未出现（对）' })
+  // ── 入口区**不再承载结果层**（2026-09-21 · PRD v1.4 §11.4「玩法各开一页」）──
+  // 这条替换了旧的"次瓦片无字标"：那条的前提（四枚同质瓦片靠"有没有字标"分主次）已被产品口径取消，
+  // 现在四种入口靠**形态**区分（card/shell/ring/axis 四套纯 CSS），字标每枚都有。
+  // 新的失败模式是"结果/推荐/补资料引导又回到本页" —— 那会让玩法区重新变成弹层。
+  const resultLayer = document.querySelector('.ww-play-need, .ww-sheet-product, .ww-play-reco')
+  out.push({ label: '入口区不再承载结果层', sel: ':absent', mode: 'absent', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+    absent: !resultLayer, text: resultLayer ? '玩法结果层又出现在入口区（应搬到玩法页）' : '未出现（对）' })
+  // ── 四种入口形态各有各的盒子（"入口不是四枚同质瓦片"的几何证据）──
+  const formCount = ['card', 'shell', 'ring', 'axis'].filter((f) => document.querySelector('.ww-play.is-' + f + ' .ww-play-form')).length
+  out.push({ label: '四种入口形态', sel: ':forms', mode: 'forms', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
+    forms: formCount, text: formCount + ' 种形态（card/shell/ring/axis）' })
   const pre = document.createElement('pre')
   pre.id = 'wall-metrics'
   pre.textContent = JSON.stringify(out)
@@ -721,12 +679,15 @@ metrics.forEach((row) => {
   // 「没渲染出来」只在**整页都该在的场景**里算问题：closed / loading / error 三个场景
   // 本来就会合法地缺掉发送条、灯卡、愿签列（页面先画骨架，或干脆不画内容）。
   if (row.missing) {
-    if (['full', 'lit', 'ember', 'sheet', 'sheet-loading'].includes(SCENE)) problems.push(`${row.label}：选择器 ${row.sel} 没渲染出来`)
+    if (['full', 'lit', 'ember'].includes(SCENE)) problems.push(`${row.label}：选择器 ${row.sel} 没渲染出来`)
     return
   }
   if (row.overflowX) problems.push(`${row.label}：横向溢出（scrollW ${row.scrollW} > clientW ${row.clientW}）`)
   if (row.mode === 'same-row' && !row.sameRow) problems.push(`${row.label}：子元素折行了（本该同一行）`)
   if (row.mode === 'absent' && !row.absent) problems.push(`${row.label}：${row.text}`)
+  if (row.mode === 'forms' && row.forms < 4) {
+    problems.push(`入口形态只有 ${row.forms} 种 < 4 种（四枚同质瓦片回来了）`)
+  }
   if (row.mode === 'must-exist' && !row.exists) problems.push(`${row.label}：${row.text}`)
   if (row.mode === 'embers' && (row.count !== 5 || !row.allBrass)) {
     problems.push(`点灯余烬不合格：${row.text}（要求 5 颗，且颜色全在 --brass-200/300/400 内）`)
@@ -744,18 +705,6 @@ metrics.forEach((row) => {
     problems.push('页面容器 .ww-page 没有左右内边距（token 没生效 —— 会连带所有卡片量成满宽）')
   }
 })
-
-/* ①a-2. 弹层「收起」的触控区（2026-09-21）：44pt ≈ 88rpx 是可用性下限。
- *     它原来只有 ~38rpx 高（padding 8 + 行高 22），真机上很容易点不中。
- *     静态样式表里"看"不出来（padding 与行高分散两处）→ 只有真渲染量 box 才算数。 */
-if (SCENE === 'sheet' || SCENE === 'sheet-loading') {
-  const close = byLabel('弹层「收起」触控区')
-  if (!close || close.missing || !close.h) {
-    problems.push('没量到弹层「收起」的触控区（判据失效 = 假通过）')
-  } else if (close.h < 88 || close.w < 88) {
-    problems.push('弹层「收起」触控区 ' + close.w + '×' + close.h + 'rpx < 88×88rpx（真机容易点不中）')
-  }
-}
 
 // ①b. 结构判据
 {
@@ -783,14 +732,14 @@ if (SCENE === 'sheet' || SCENE === 'sheet-loading') {
     if (gap && gap.x >= vp.h) {
       problems.push(`灵感词与发送条不在同一屏（灵感顶边 y${gap.x} ≥ 屏高 ${vp.h}）—— 点灵感后看不到输入框`)
     }
-    const tiles = [1, 2, 3, 4].map((i) => byLabel(`瓦片${i}`)).filter((t) => t && !t.missing)
+    const tiles = [1, 2, 3, 4].map((i) => byLabel(`入口${i}`)).filter((t) => t && !t.missing)
     const seen = tiles.filter((t) => t.y >= 0 && t.y < vp.h)
     if (tiles.length === 4 && seen.length < FOLD_MIN_TILES) {
       // ⚠️ 判据只在 **full（今日未点灯）** 场景打红。点灯之后（lit）页面**合法地**更高：
-      // 灯卡从 3 行长到 4 行、还多出一条「功德证」次级入口 —— 实测四枚瓦片被顶到 y1303。
+      // 灯卡从 3 行长到 4 行、还多出一条「功德证」次级入口 —— 实测四枚入口被顶到 y1303。
       // 那是"今天已经来过"的用户，主任务（看一眼墙 / 再写一条）本来就在更上面，
       // 玩法掉到折叠线下属产品取舍，留成参考项给人看，不当回归。
-      const msg = `首屏内看得到的玩法瓦片 ${seen.length} 个 < ${FOLD_MIN_TILES} 个（视口高 ${vp.h}px，四枚瓦片 top ${tiles.map((t) => t.y).join('/')}）`
+      const msg = `首屏内看得到的玩法入口 ${seen.length} 个 < ${FOLD_MIN_TILES} 个（视口高 ${vp.h}px，四个入口 top ${tiles.map((t) => t.y).join('/')}）`
       if (SCENE === 'full') problems.push(msg)
       else advisories.push(`${msg}〔参考项：点亮态页面合法地更高，是否要压灯卡由产品定〕`)
     }

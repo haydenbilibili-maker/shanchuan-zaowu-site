@@ -1,0 +1,94 @@
+@import "../play-shared/ritual-play.wxss";
+
+/* ── MBTI 贴士：一根双极轴 ──────────────────────────────────────
+   入口不是"一枚瓦片"：两端各一个极点，中间一枚游标；游标滑到哪侧就给哪侧的话。 */
+.rp-axis {
+  position: relative;
+  width: 300rpx;
+  height: 120rpx;
+}
+
+.rp-axis-line {
+  position: absolute;
+  left: 10rpx;
+  right: 10rpx;
+  top: 57rpx;
+  height: 2rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.2) 0%, rgba(196, 167, 108, 0.75) 50%, rgba(196, 167, 108, 0.2) 100%);
+}
+
+.rp-axis-end {
+  position: absolute;
+  top: 45rpx;
+  width: 26rpx;
+  height: 26rpx;
+  border: 2rpx solid rgba(196, 167, 108, 0.6);
+  border-radius: 50%;
+}
+
+.rp-axis-end.is-left { left: 0; }
+.rp-axis-end.is-right { right: 0; }
+
+.rp-axis-knob {
+  position: absolute;
+  left: 138rpx;
+  top: 40rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: linear-gradient(160deg, var(--brass-100) 0%, var(--brass-400) 100%);
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.35);
+}
+
+/* 进行态：游标从中间滑向左极再回右侧停住（"对齐"的感觉） */
+.rp-stage.is-pending .rp-axis-knob {
+  animation: rp-knob-align 900ms cubic-bezier(0.3, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes rp-knob-align {
+  0% { transform: translateX(0); }
+  38% { transform: translateX(-118rpx); }
+  72% { transform: translateX(118rpx); }
+  100% { transform: translateX(0); }
+}
+
+/* ── 结果纸面：一张类型卡（浅纸 + 顶部一根小轴） ──────────────────── */
+.rp-paper {
+  background: linear-gradient(180deg, #F6F1E4 0%, #EAE2D0 100%);
+  border: 1rpx solid rgba(122, 92, 44, 0.32);
+}
+
+.rp-axis-mini {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 30rpx;
+  margin-top: 12rpx;
+}
+
+.rp-axis-mini-line {
+  flex: 1;
+  height: 2rpx;
+  background: rgba(58, 50, 38, 0.3);
+}
+
+.rp-axis-mini-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+}
+
+.rp-axis-mini-dot.is-left {
+  background: rgba(58, 50, 38, 0.45);
+}
+
+.rp-axis-mini-dot.is-right {
+  background: rgba(122, 46, 36, 0.6);
+}
+
+.rp-paper-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-40);
+  letter-spacing: 0.03em;
+}

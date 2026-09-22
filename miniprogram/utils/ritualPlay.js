@@ -11,9 +11,9 @@
  *   3. **页面零判断**：页面拿到的永远是"标题 + 正文 + 可挂上墙的心愿词"，
  *      不需要知道某个玩法是抽签还是拼句（加玩法只改注册表与内容池）。
  */
-const { findPlay, NEED_PROFILE_FIELDS, PROFILE_PAGE } = require('../config/ritualPlays')
+const { findPlay, NEED_PROFILE_FIELDS, PROFILE_PAGE, VARIANT_PLAYS, playPage } = require('../config/ritualPlays')
 const content = require('../config/ritualPlayContent')
-const { ZODIAC_OPTIONS } = require('./profileConstants')
+const { ZODIAC_OPTIONS, MBTI_OPTIONS } = require('./profileConstants')
 const { rotateIndex, TEXT_MAX } = require('./wishWall')
 
 /** 星座 key → 中文标签：从资料页那份常量取，**不在这里再写一遍中文**（两处必然漂移） */
@@ -28,6 +28,18 @@ const POOLS = {
   COOKIE: () => content.COOKIE,
   ZODIAC: () => content.ZODIAC_DAILY,
   MBTI: () => content.MBTI_DAILY
+}
+
+/**
+ * 可"换一个"的玩法（星座 12 / MBTI 16）的候选维度。
+ * 返回 `[{ key, label }]`；不可换的玩法返回空数组。
+ * 为什么放这里：这是**资料字段的受控取值域**，页面与资料页必须同源（不各自写一遍中文）。
+ */
+function variantOptions(playId) {
+  const key = VARIANT_PLAYS[String(playId || '')]
+  if (!key) return []
+  if (key === 'zodiac') return (ZODIAC_OPTIONS || []).map((z) => ({ key: z.key, label: z.label }))
+  return (MBTI_OPTIONS || []).map((t) => ({ key: t, label: t }))
 }
 
 /** 从池里按 seed 稳定取一条（确定性：同 seed 同一条） */
@@ -111,7 +123,7 @@ function playSeed(playId, dayKey) {
  *
  * @param {string} playId
  * @param {{dayKey:string, profile?:{zodiac?:string,mbti?:string}}} ctx
- * @returns {{ok:true, id, mark, name, dayKey, title, sub, lines:string[], wish, share}
+ * @returns {{ok:true, id, mark, name, dayKey, title, sub, lines:string[], wish, share, kind, page, variant}
  *          |{ok:false, reason:'unknown_play'|'need_profile', field?, fieldLabel?, anchor?, profilePage?, gain?}}
  */
 function resolvePlay(playId, ctx) {
@@ -120,12 +132,16 @@ function resolvePlay(playId, ctx) {
   const o = ctx || {}
   const dayKey = String(o.dayKey || '')
   const profile = o.profile || {}
+  // 「换一个」（星座 12 / MBTI 16，PRD §11.2-4）：同一天内允许指定另一个维度取值。
+  // 只在注册表声明可换（VARIANT_PLAYS）且值非空时生效 —— 其它玩法的 variant 一律忽略。
+  const variant = VARIANT_PLAYS[play.id] ? String(o.variant || '') : ''
 
   // 需要资料字段的玩法：读不到就引导，不给假结果
   const need = (play.needs || [])[0]
+  let fieldValue = ''
   if (need) {
-    const value = String(profile[need] || '')
-    if (!value) {
+    fieldValue = variant || String(profile[need] || '')
+    if (!fieldValue) {
       const meta = NEED_PROFILE_FIELDS[need] || { label: need, anchor: '', gain: '' }
       return {
         ok: false,
@@ -143,8 +159,8 @@ function resolvePlay(playId, ctx) {
   let body = null
   if (play.pool === 'QIAN') body = resolveQian(seed)
   else if (play.pool === 'COOKIE') body = resolveCookie(seed)
-  else if (play.pool === 'ZODIAC') body = resolveHook('ZODIAC', profile.zodiac, `${seed}|z`)
-  else if (play.pool === 'MBTI') body = resolveHook('MBTI', profile.mbti, `${seed}|m`)
+  else if (play.pool === 'ZODIAC') body = resolveHook('ZODIAC', fieldValue, `${seed}|z`)
+  else if (play.pool === 'MBTI') body = resolveHook('MBTI', fieldValue, `${seed}|m`)
   if (!body) return { ok: false, reason: 'unknown_play' }
 
   // 心愿词（可空）：要么是「马上有X」且长度合法，要么为空 —— 页面据此决定"预填"还是"只给开头"
@@ -157,7 +173,17 @@ function resolvePlay(playId, ctx) {
     name: play.name,
     cta: play.cta,
     echo: play.echo,
+    // 玩法的结构事实：结果纸面语言 / 独立页 / 进行态参数（页面按它渲染，不写死玩法名）
+    kind: String(play.kind || ''),
+    page: playPage(play.id),
+    spinMs: Number(play.spinMs) || 0,
+    spinText: String(play.spinText || ''),
+    // 文化一层（§11.3：只讲来历习俗，不做个人吉凶判断）
+    note: String((content.KIND_NOTES || {})[play.kind] || ''),
     dayKey,
+    // 「换一个」的当前维度（无则可换玩法的空串）与它的中文标签（星座）／型别（MBTI）
+    variant,
+    variantLabel: play.pool === 'ZODIAC' && variant ? zodiacLabel(variant) : variant,
     overline: String(body.overline || ''),
     title: String(body.title || ''),
     sub: String(body.sub || ''),
@@ -176,5 +202,6 @@ module.exports = {
   pick,
   playSeed,
   normalizeWish,
+  variantOptions,
   resolvePlay
 }
