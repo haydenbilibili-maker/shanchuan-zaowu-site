@@ -1,0 +1,16 @@
+diff --git a/miniprogram/scripts/render-wall-feed-preview.mjs b/miniprogram/scripts/render-wall-feed-preview.mjs
+index 180e019..32e7a49 100644
+--- a/miniprogram/scripts/render-wall-feed-preview.mjs
++++ b/miniprogram/scripts/render-wall-feed-preview.mjs
+@@ -544,6 +544,11 @@ function runChrome(args, timeoutMs = 30000) {
+     const profile = mkdtempSync(join(tmpdir(), 'sc-wallfeed-preview-'))
+     const child = spawn(chromePath, [
+       '--headless=new', '--disable-gpu', '--no-sandbox',
++      // ⚠️ `--disable-dev-shm-usage` 是本环境**必需**的：容器里 /dev/shm 太小，
++      // 少了它 Chrome 会在 `--dump-dom` 上**静默挂住**（本机实测：不带该开关时 60s 超时、
++      // 进程无输出；带上后同一页面 <1s 返回）。本仓既有的几个渲染台还没带这个开关，
++      // 在这台机器上会直接"没拿到量测结果"——已在本轮交付说明里报备。
++      '--disable-dev-shm-usage',
+       '--no-first-run', '--no-default-browser-check',
+       `--user-data-dir=${profile}`, '--hide-scrollbars',
+       '--force-device-scale-factor=1', '--virtual-time-budget=2000',

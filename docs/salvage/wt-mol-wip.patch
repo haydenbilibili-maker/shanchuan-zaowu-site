@@ -1,0 +1,127 @@
+diff --git a/miniprogram/components/MemberLevelModal/index.wxml b/miniprogram/components/MemberLevelModal/index.wxml
+index 469131c..1cfd0e2 100644
+--- a/miniprogram/components/MemberLevelModal/index.wxml
++++ b/miniprogram/components/MemberLevelModal/index.wxml
+@@ -42,7 +42,7 @@
+             <text class="hero-next" wx:if="{{nextLevelPreview}}">下一级 · {{nextLevelPreview.name}} · {{nextLevelPreview.discount}}</text>
+           </view>
+           <view class="hero-max" wx:else>
+-            <image class="hero-max-icon icon-gold" src="/assets/icons/medal_gold.png" mode="aspectFit"></image>
++            <image class="hero-max-icon icon-gold" src="/assets/icons/medal_gold.png" mode="aspectFit" aria-hidden="true"></image>
+             <text class="hero-max-text">已达成最高等级</text>
+           </view>
+         </view>
+@@ -107,7 +107,7 @@
+         <view class="perk-list" wx:if="{{selectedPlate.perkItems.length}}">
+           <view class="perk-row" wx:for="{{selectedPlate.perkItems}}" wx:key="label" wx:for-item="perk">
+             <view class="perk-icon-wrap">
+-              <image class="perk-icon icon-gold" src="{{perk.icon}}" mode="aspectFit"></image>
++              <image class="perk-icon icon-gold" src="{{perk.icon}}" mode="aspectFit" aria-hidden="true"></image>
+             </view>
+             <text class="perk-label">{{perk.label}}</text>
+           </view>
+diff --git a/miniprogram/components/UserVipCard/index.wxml b/miniprogram/components/UserVipCard/index.wxml
+index bac6b4c..664c84b 100644
+--- a/miniprogram/components/UserVipCard/index.wxml
++++ b/miniprogram/components/UserVipCard/index.wxml
+@@ -67,7 +67,7 @@
+       <!-- 停驻蝴蝶：idle 漂浮 + 振翅 + 暖光；按住加速；启封后振翅飞离（对齐礼赠） -->
+       <view class="ge-butterfly {{butterflyAlert ? 'is-alert' : ''}}" aria-hidden="true">
+         <view class="ge-butterfly-glow"></view>
+-        <image class="ge-butterfly-img" src="/assets/envelope/butterfly_pink.png" mode="aspectFit"></image>
++        <image class="ge-butterfly-img" src="/assets/envelope/butterfly_pink.png" mode="aspectFit" aria-hidden="true"></image>
+       </view>
+ 
+       <!-- 封缄态手势提示（启封时淡出） -->
+@@ -116,7 +116,7 @@
+               hover-class="action-chip-press"
+               hover-stay-time="80"
+             >
+-              <image class="ap-icon icon-gold" src="/assets/icons/checkin.png" mode="aspectFit" wx:if="{{!hasCheckedIn}}"></image>
++              <image class="ap-icon icon-gold" src="/assets/icons/checkin.png" mode="aspectFit" wx:if="{{!hasCheckedIn}}" aria-hidden="true"></image>
+               <text class="ap-text">{{hasCheckedIn ? '已签到' : '签到'}}</text>
+             </view>
+             <view
+@@ -125,7 +125,7 @@
+               hover-class="action-chip-press"
+               hover-stay-time="80"
+             >
+-              <image class="qr-icon icon-gold" src="/assets/icons/qrcode.png" mode="aspectFit"></image>
++              <image class="qr-icon icon-gold" src="/assets/icons/qrcode.png" mode="aspectFit" aria-hidden="true"></image>
+               <text class="ap-text">亮码</text>
+             </view>
+           </view>
+diff --git a/miniprogram/scripts/mp-contrast-baseline.json b/miniprogram/scripts/mp-contrast-baseline.json
+index 26e755c..df6e81e 100644
+--- a/miniprogram/scripts/mp-contrast-baseline.json
++++ b/miniprogram/scripts/mp-contrast-baseline.json
+@@ -1,46 +1,32 @@
+ {
+  "_doc": "小程序对比度棘轮基线。总数与逐文件数**只许降不许涨**；修完一批用 --update 重设并说明理由。",
+  "_report": "docs/小程序对比度实测_2026-09-19.md（人工策展确证 62 条；本守卫按 §8.2 判据机械扫描实测 66 条，见文件头「与报告的差异」）",
+- "at": "2026-09-18T17:39:42.876Z",
+- "total": 65,
++ "at": "2026-09-22T00:48:21.835Z",
++ "total": 44,
+  "counts": {
+   "miniprogram/app.wxss": 3,
+   "miniprogram/components/MemberLevelModal/index.wxss": 2,
+-  "miniprogram/components/ProductList/index.wxss": 1,
+-  "miniprogram/components/UserVipCard/index.wxss": 1,
+-  "miniprogram/pages/category/index.wxss": 1,
+-  "miniprogram/pages/index/index.wxss": 1,
+-  "miniprogram/styles/badges.wxss": 2,
+-  "miniprogram/subpackages/business/ar/index.wxss": 1,
+-  "miniprogram/subpackages/business/components/WalletPanelCoupons/index.wxss": 3,
++  "miniprogram/subpackages/business/components/WalletPanelCoupons/index.wxss": 1,
+   "miniprogram/subpackages/business/order-claim/index.wxss": 1,
+   "miniprogram/subpackages/business/pickup-pass/index.wxss": 2,
+-  "miniprogram/subpackages/extra/approvals/index.wxss": 3,
++  "miniprogram/subpackages/extra/approvals/index.wxss": 2,
+   "miniprogram/subpackages/extra/artisan/works/index.wxss": 2,
+   "miniprogram/subpackages/extra/investor/index.wxss": 2,
+-  "miniprogram/subpackages/extra/live/broadcast/index.wxss": 1,
+-  "miniprogram/subpackages/extra/member-crm/index.wxss": 3,
++  "miniprogram/subpackages/extra/member-crm/index.wxss": 1,
+   "miniprogram/subpackages/extra/member-level-adjust/index.wxss": 1,
+   "miniprogram/subpackages/extra/shareholder/index.wxss": 2,
+   "miniprogram/subpackages/extra/user/messages/detail/index.wxss": 1,
+   "miniprogram/subpackages/extra/utils/ops-dashboard.wxss": 2,
+   "miniprogram/subpackages/extra/utils/ops-museum.wxss": 1,
+-  "miniprogram/subpackages/extra/utils/workbench-nav.wxss": 1,
+-  "miniprogram/subpackages/feature/articles/index.wxss": 1,
+   "miniprogram/subpackages/feature/care/guide/index.wxss": 1,
+-  "miniprogram/subpackages/feature/comment/index.wxss": 1,
+-  "miniprogram/subpackages/feature/community/index.wxss": 1,
+   "miniprogram/subpackages/feature/community/publish/index.wxss": 1,
+   "miniprogram/subpackages/feature/custom/index.wxss": 1,
+   "miniprogram/subpackages/feature/gift/compose/index.wxss": 4,
+   "miniprogram/subpackages/feature/gift/my-gifts/index.wxss": 1,
+-  "miniprogram/subpackages/feature/identify/result/index.wxss": 1,
+   "miniprogram/subpackages/manager/deposit-ops/index.wxss": 1,
+   "miniprogram/subpackages/manager/invoice-requests/index.wxss": 1,
+-  "miniprogram/subpackages/manager/manager/index.wxss": 9,
+-  "miniprogram/subpackages/manager/store-points/index.wxss": 1,
++  "miniprogram/subpackages/manager/manager/index.wxss": 8,
+   "miniprogram/subpackages/manager/utils/ops-dashboard.wxss": 2,
+-  "miniprogram/subpackages/manager/utils/ops-museum.wxss": 1,
+-  "miniprogram/subpackages/manager/utils/workbench-nav.wxss": 1
++  "miniprogram/subpackages/manager/utils/ops-museum.wxss": 1
+  }
+ }
+diff --git a/miniprogram/subpackages/business/orders/index.wxss b/miniprogram/subpackages/business/orders/index.wxss
+index a0586d7..ba5db3a 100644
+--- a/miniprogram/subpackages/business/orders/index.wxss
++++ b/miniprogram/subpackages/business/orders/index.wxss
+@@ -64,6 +64,11 @@ view, text, image, scroll-view { box-sizing: border-box; }
+ }
+ .order-card:last-child { margin-bottom: 0; }
+ .order-card-press { transform: scale(0.985); border-color: rgba(196, 167, 108, 0.4); }
++/* 2026-09-21 分子级审计：本文件 :134/:135 给 `.btn-action` 写了 `:active`，但小程序 `<view>` 的
++   `:active` 不生效（要么用 `<button>`，要么用 `hover-class`）→ 6 个订单操作按钮**实际没有任何点击反馈**，
++   而同文件的 `.tab-pill-press`(:42) / `.order-card-press`(:66) 都用了 hover-class。
++   故补一个与同文件一致（opacity 0.82）的 hover-class，并在 6 处 `.btn-action` 上引用。 */
++.btn-action-press { opacity: 0.82; }
+ @keyframes slideUp { from { opacity: 0; transform: translateY(16rpx); } to { opacity: 1; transform: translateY(0); } }
+ 
+ /* 头部 */
