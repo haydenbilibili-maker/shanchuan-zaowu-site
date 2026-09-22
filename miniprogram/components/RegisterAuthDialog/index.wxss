@@ -56,7 +56,7 @@
 }
 
 .rad-title {
-  font-size: 38rpx;
+  font-size: var(--fs-36);
   font-weight: 900;
   color: var(--text-main, #FFFFFF);
   letter-spacing: 1rpx;
@@ -66,7 +66,7 @@
 
 .rad-desc {
   margin-top: 14rpx;
-  font-size: 25rpx;
+  font-size: var(--fs-24);
   line-height: 1.6;
   color: var(--text-sub, #A09A90);
   text-align: center;
@@ -120,7 +120,7 @@
 
 .rad-fineprint {
   margin-top: 18rpx;
-  font-size: 21rpx;
+  font-size: var(--fs-20);
   color: var(--text-muted, #6B6560);
   text-align: center;
   line-height: 1.6;

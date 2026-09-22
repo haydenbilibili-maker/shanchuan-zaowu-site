@@ -884,7 +884,7 @@ page {
 }
 
 /* 礼券项：本单实际可省 / 不可用原因 */
-.cp-save { margin-top: 4rpx; font-size: 21rpx; color: var(--gold, #C4A76C); }
+.cp-save { margin-top: 4rpx; font-size: var(--fs-20); color: var(--gold, #C4A76C); }
 .cp-save.is-off { color: var(--color-text-muted, #8A847C); }
 
 /* === 需求 1：结账台「顺手带走一件」（吧台口香糖位） ===
@@ -945,7 +945,7 @@ page {
 }
 
 .addon-title {
-  font-size: 25rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -973,7 +973,7 @@ page {
   border-radius: 999rpx;
   background: var(--gold);
   color: #1A1814;
-  font-size: 23rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
 }
 

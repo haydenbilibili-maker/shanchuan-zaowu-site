@@ -792,9 +792,9 @@ view, text, image, scroll-view { box-sizing: border-box; }
   text-align: center;
   padding: 64rpx 24rpx;
   font-size: 24rpx;
-  color: var(--color-text-muted);
-  letter-spacing: 0.06em;
-  background: var(--color-bg-card);
+  /* 2026-09-21 分子级审计：--color-text-muted 在不透明底 --color-bg-card 上仅 2.93（AA 需 4.5）
+     → 与 ProductList / 首页空态统一到 --color-text-secondary（6.02） */
+  color: var(--color-text-secondary);
   border: 1px dashed rgba(77, 64, 26, 0.45);
   border-radius: 16rpx;
 }

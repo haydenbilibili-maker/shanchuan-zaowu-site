@@ -241,7 +241,9 @@ page {
   align-items: center;
   width: auto;
   font-size: 18rpx;
-  color: var(--color-bg);
+  /* 2026-09-21 分子级审计：原 --color-bg(#1A1814) 在 --color-forest(#2D5A3F) 上仅 2.23（AA 需 4.5）
+     → 改用 --color-text-primary（8.4） */
+  color: var(--color-text-primary);
   background: var(--color-forest);
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);

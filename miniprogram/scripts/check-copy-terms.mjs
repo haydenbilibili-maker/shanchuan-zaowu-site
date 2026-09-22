@@ -23,7 +23,9 @@ const SKIP = new Set(['node_modules', '.git', 'miniprogram_npm', 'dist'])
 
 /** 禁用词 → 正确用词（可扩充） */
 const BANNED = [
-  { bad: '收礼人', good: '受礼人', why: '全站统一用「受礼人」（2026-09-19 产品口径）' }
+  { bad: '收礼人', good: '受礼人', why: '全站统一用「受礼人」（2026-09-19 产品口径）' },
+  { bad: '我知道了', good: '知道了', why: '纯告知型弹窗的确认键全站统一为「知道了」（2026-09-21 分子级审计：9 处「知道了」vs 1 处「我知道了」）' },
+  { bad: "confirmText: '好的'", good: "confirmText: '知道了'", why: '同上；「好的」还会撞「做好的」等词，故连上下文一起钉（2026-09-21）' }
 ]
 
 function walk(dir, out = []) {
@@ -52,23 +54,88 @@ function scan() {
   return hits
 }
 
+/**
+ * 第二类判据（2026-09-21 分子级审计新增）：**字数上限必须只有一个口径**。
+ *
+ * 同一个 `<input>` / `<textarea>` 上的 `maxlength="N"` 是**硬上限**（用户实际能输入多少），
+ * 而 placeholder 里写的「最多 N 字 / N 字以内 / 不超过 N 字 / 限 N 字」是**对用户的承诺**。
+ * 两者不一致 = 界面在骗人。2026-09-21 的 P0-2（礼笺 UI 说 140 字、服务端仍收 200 字）
+ * 就是同族缺陷 —— 本判据把「界面自己前后不一致」这一半**离线**钉死。
+ *
+ * 只认「上限」语义：`至少 N 字` 是**下限**，与 maxlength 无关，**不**计入（否则会误报
+ * `maxlength="500" placeholder="…（至少 5 字）"` 这类合法写法）。
+ */
+const MAX_LEN_RE = /(?:最多|不超过|限)\s*(\d+)\s*字|(\d+)\s*字\s*(?:以内|内)/g
+
+function scanMaxLenCopy() {
+  const hits = []
+  for (const abs of walk(MP)) {
+    if (!abs.endsWith('.wxml')) continue
+    const rel = relative(ROOT, abs)
+    const src = readFileSync(abs, 'utf8')
+    const tagRe = /<(?:textarea|input)\b[^>]*>/g
+    let m
+    while ((m = tagRe.exec(src))) {
+      const tag = m[0]
+      const ml = /maxlength="(\d+)"/.exec(tag)
+      if (!ml) continue
+      const max = Number(ml[1])
+      const ph = /placeholder="([^"]*)"/.exec(tag)
+      if (!ph) continue
+      const claimed = []
+      let x
+      MAX_LEN_RE.lastIndex = 0
+      while ((x = MAX_LEN_RE.exec(ph[1]))) claimed.push(Number(x[1] || x[2]))
+      if (claimed.some((v) => v !== max)) {
+        const line = src.slice(0, m.index).split('\n').length
+        hits.push(`${rel}:${line} maxlength=${max} 与 placeholder 里的上限「${claimed.join(' / ')} 字」不一致 → ${ph[1]}`)
+      }
+    }
+  }
+  return hits
+}
+
 if (process.argv.includes('--selftest')) {
-  const target = join(MP, 'app.json')
-  const orig = readFileSync(target, 'utf8')
-  const injected = orig.replace('{', '{\n  "_copyTermProbe": "收礼人",')
-  writeFileSync(target, injected)
-  const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
-  writeFileSync(target, orig)
-  if (readFileSync(target, 'utf8') !== orig) { console.log('✗ 未能逐字还原'); process.exit(1) }
-  if (r.status === 0) { console.log('✗ 注入未被检出：禁用词扫描失效'); process.exit(1) }
-  console.log('✓ 自检通过：注入「收礼人」被检出、源文件逐字还原')
+  const SELF = fileURLToPath(import.meta.url)
+  const run = () => spawnSync(process.execPath, [SELF], { encoding: 'utf8' })
+  const restore = (target, orig, label) => {
+    writeFileSync(target, orig)
+    if (readFileSync(target, 'utf8') !== orig) {
+      console.log(`✗ 未能逐字还原（${label}）`)
+      process.exit(1)
+    }
+  }
+
+  // 注入 A：禁用词
+  const wordTarget = join(MP, 'app.json')
+  const wordOrig = readFileSync(wordTarget, 'utf8')
+  writeFileSync(wordTarget, wordOrig.replace('{', '{\n  "_copyTermProbe": "我知道了",'))
+  const a = run()
+  restore(wordTarget, wordOrig, '禁用词注入')
+  if (a.status === 0) {
+    console.log('✗ 注入未被检出：禁用词扫描失效')
+    process.exit(1)
+  }
+
+  // 注入 B：字数上限口径不一致（maxlength=500 vs placeholder「最多 40 字」）
+  const lenTarget = join(MP, 'pages/index/index.wxml')
+  const lenOrig = readFileSync(lenTarget, 'utf8')
+  writeFileSync(lenTarget, lenOrig + '\n<textarea maxlength="500" placeholder="最多 40 字"></textarea>\n')
+  const b = run()
+  restore(lenTarget, lenOrig, '字数上限注入')
+  if (b.status === 0) {
+    console.log('✗ 注入未被检出：字数上限口径扫描失效')
+    process.exit(1)
+  }
+
+  console.log('✓ 自检通过：注入「我知道了」与「maxlength=500 / 最多 40 字」均被检出、源文件逐字还原')
 } else {
-  const hits = scan()
+  const hits = [...scan(), ...scanMaxLenCopy()]
   if (hits.length) {
     console.log('✗ 文案一致性未通过：')
     for (const h of hits) console.log('  - ' + h)
-    console.log(`✗ ${hits.length} 处禁用词`)
+    console.log(`✗ ${hits.length} 处不一致`)
     process.exit(1)
   }
-  console.log(`✓ 文案一致性通过（禁用词 ${BANNED.length} 条，零命中）`)
+  console.log(`✓ 文案一致性通过（禁用词 ${BANNED.length} 条 + 字数上限口径，零命中）`)
 }

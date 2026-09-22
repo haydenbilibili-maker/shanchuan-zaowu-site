@@ -122,7 +122,7 @@
 }
 
 .live-badge.on .dot {
-  background: #D64045;
+  background: var(--color-error);
   animation: pulse 1.2s ease-in-out infinite;
 }
 

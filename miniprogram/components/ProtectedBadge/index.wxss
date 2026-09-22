@@ -22,7 +22,7 @@
 }
 
 .prot-badge-kicker {
-  font-size: 14rpx;
+  font-size: var(--fs-16);
   font-weight: 500;
   letter-spacing: 0.16em;
   color: rgba(196, 167, 108, 0.72);
@@ -50,7 +50,7 @@
 .prot-badge--sm {
   padding: 6rpx 12rpx;
 }
-.prot-badge--sm .prot-badge-kicker { font-size: 12rpx; }
+.prot-badge--sm .prot-badge-kicker { font-size: var(--fs-16); }
 .prot-badge--sm .prot-badge-text { font-size: 18rpx; }
 
 .prot-badge--md {

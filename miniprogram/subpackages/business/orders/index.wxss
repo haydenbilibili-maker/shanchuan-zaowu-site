@@ -85,7 +85,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
   display: flex; flex-direction: column; align-items: center; line-height: 1;
 }
 .stamp-inner .cn { font-size: 20rpx; font-weight: 900; letter-spacing: 2rpx; margin-bottom: 2rpx; }
-.stamp-inner .en { font-size: 12rpx; font-weight: bold; transform: scale(0.8); font-family: 'DIN'; }
+.stamp-inner .en { font-size: var(--fs-16); font-weight: bold; transform: scale(0.8); font-family: 'DIN'; }
 
 /* 状态颜色 */
 .status-stamp.paid { color: #C4A76C; border-color: #C4A76C; }
@@ -101,9 +101,12 @@ view, text, image, scroll-view { box-sizing: border-box; }
 /* 内容 */
 .card-body { display: flex; margin-bottom: 24rpx; }
 .prod-img { width: 140rpx; height: 140rpx; background: #1A1814; border-radius: 12rpx; border: 1px solid #262320; margin-right: 24rpx; flex-shrink: 0; }
-.prod-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-.prod-name { font-size: 28rpx; font-weight: bold; color: #D5D1C8; margin-bottom: 6rpx; }
-.prod-latin { font-family: 'Times New Roman'; font-style: italic; font-size: 22rpx; color: #C4A76C; margin-bottom: 12rpx; }
+/* 2026-09-21 分子级审计：`flex:1` 子项默认 min-width:auto（= min-content），拉丁学名这类长 token
+   会把整行顶宽、被 .order-card 的 overflow:hidden 直接裁掉且无省略号；标题也没有任何钳制。
+   与同仓 feature/search 的 .ac-info/.ac-title 同型写法对齐：min-width:0 + 单行省略号。 */
+.prod-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.prod-name { font-size: 28rpx; font-weight: bold; color: #D5D1C8; margin-bottom: 6rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prod-latin { font-family: 'Times New Roman'; font-style: italic; font-size: 22rpx; color: #C4A76C; margin-bottom: 12rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sku-tag { font-size: 20rpx; color: #A09A90; border: 1px solid #262320; align-self: flex-start; padding: 2rpx 8rpx; border-radius: 4rpx; }
 .sku-tag.gift { color: #C4A76C; border-color: rgba(196, 167, 108, 0.45); margin-top: 8rpx; }
 

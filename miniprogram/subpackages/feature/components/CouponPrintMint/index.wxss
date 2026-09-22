@@ -92,8 +92,9 @@
 
 .signal-light.lamp-error,
 .signal-light.danger {
-  background: #D64045;
-  border-color: #D64045;
+  /* 2026-09-21 分子级审计：danger 红单一来源于 --color-error（原字面量 #D64045 与令牌漂移） */
+  background: var(--color-error);
+  border-color: var(--color-error);
   box-shadow: 0 0 10rpx rgba(214, 64, 69, 0.55);
 }
 
@@ -306,7 +307,7 @@
 .tm-foot {
   margin-top: auto;
   padding-top: 28rpx;
-  font-size: 15rpx;
+  font-size: var(--fs-16);
   color: #A09A90;
   letter-spacing: 0.16em;
   flex-shrink: 0;

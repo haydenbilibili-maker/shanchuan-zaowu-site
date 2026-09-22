@@ -75,7 +75,7 @@
               <!-- 操作按钮 -->
               <view class="btn-group" style="display:flex; gap:20rpx;">
                  <!-- 待付款 -> 去支付（仅买家） -->
-                 <view class="btn-action primary" 
+                 <view class="btn-action primary" hover-class="btn-action-press" 
                       wx:if="{{item.status === 'pending_pay' && !item.isGiftReceiver}}" 
                       catchtap="handlePay" 
                       data-id="{{item._id}}">
@@ -83,7 +83,7 @@
                 </view>
 
                 <!-- 送礼人：待填址 -> 分享礼笺 -->
-                <view class="btn-action gold"
+                <view class="btn-action gold" hover-class="btn-action-press"
                       wx:if="{{item.giftNeedsAddress && !item.isGiftReceiver}}"
                       catchtap="handleOrderClick"
                       data-id="{{item._id}}"
@@ -92,7 +92,7 @@
                 </view>
 
                 <!-- 受礼人：待填址 -> 填写地址 -->
-                <view class="btn-action primary"
+                <view class="btn-action primary" hover-class="btn-action-press"
                       wx:if="{{item.giftNeedsAddress && item.isGiftReceiver}}"
                       catchtap="goFillGiftAddress"
                       data-id="{{item._id}}">
@@ -100,7 +100,7 @@
                 </view>
 
                 <!-- 待收货 -> 确认签收 -->
-                <view class="btn-action" 
+                <view class="btn-action" hover-class="btn-action-press" 
                       wx:if="{{item.status === 'shipped'}}" 
                       catchtap="confirmReceipt" 
                       data-id="{{item._id}}">
@@ -108,14 +108,14 @@
                 </view>
                 
                 <!-- 已签收 -> 评价 / 详情 -->
-                <view class="btn-action"
+                <view class="btn-action" hover-class="btn-action-press"
                       wx:if="{{(item.status === 'received' || item.status === 'signed') && !item.isVoucherOrder}}"
                       catchtap="goToReview"
                       data-id="{{item._id}}"
                       data-item="{{item}}">
                   写下感受
                 </view>
-                <view class="btn-action gold" 
+                <view class="btn-action gold" hover-class="btn-action-press" 
                       wx:if="{{item.status === 'received' || item.status === 'signed'}}" 
                       catchtap="handleOrderClick" 
                       data-id="{{item._id}}">

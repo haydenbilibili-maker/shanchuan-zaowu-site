@@ -452,7 +452,7 @@ button.nav-share-btn::after { display: none; border: none; }
 /* 主题名（双层命名的第一层）：详情页做主视觉，标准名降为副行 */
 .title-theme {
   display: block;
-  font-size: 46rpx;
+  font-size: var(--fs-44);
   font-weight: 600;
   color: var(--color-text-primary, #F5F2EC);
   letter-spacing: 2rpx;
@@ -1907,11 +1907,11 @@ button.nav-share-btn::after { display: none; border: none; }
   border-radius: 8rpx;
   background: linear-gradient(90deg, #C4A76C 0%, #D9BE86 100%);
   color: #1A1814;
-  font-size: 21rpx;
+  font-size: var(--fs-20);
   font-weight: 600;
   letter-spacing: 0.5rpx;
 }
-.side-stock { font-size: 21rpx; opacity: 0.9; }
+.side-stock { font-size: var(--fs-20); opacity: 0.9; }
 
 /* ── 分隔线与金色收敛（2026-09-17 美学第二轮）────────────────────────────
  * 金色通胀问题：价格 + 折扣标签 + 题记线 + 场景 chips + CTA 曾同时用亮金 ✗

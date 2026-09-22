@@ -53,7 +53,7 @@ page {
 
 .done-seal-glyph {
   font-family: var(--font-brand);
-  font-size: 46rpx;
+  font-size: var(--fs-44);
   color: var(--brass-400);
   letter-spacing: 0.04em;
 }
@@ -117,7 +117,7 @@ page {
 }
 
 .gift-num {
-  font-size: 52rpx;
+  font-size: var(--fs-48);
   font-family: var(--font-mono);
   font-weight: 600;
   color: var(--brass-400);
@@ -159,7 +159,7 @@ page {
 .done-warn-msg {
   display: block;
   margin-top: 10rpx;
-  font-size: 23rpx;
+  font-size: var(--fs-22);
   line-height: 1.55;
   color: var(--color-text-secondary);
 }
@@ -201,7 +201,7 @@ page {
 .done-footnote {
   display: block;
   text-align: center;
-  font-size: 21rpx;
+  font-size: var(--fs-20);
   line-height: 1.6;
   color: var(--color-text-muted);
   opacity: 0.85;

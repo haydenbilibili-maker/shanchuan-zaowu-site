@@ -177,7 +177,7 @@ view, text, canvas { box-sizing: border-box; }
 }
 .pass-code-value {
   font-family: var(--font-mono);
-  font-size: 46rpx;
+  font-size: var(--fs-44);
   font-weight: 600;
   letter-spacing: 0.14em;
   color: var(--gold);

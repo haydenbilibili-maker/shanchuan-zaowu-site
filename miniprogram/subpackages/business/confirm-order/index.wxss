@@ -900,7 +900,7 @@ view, text, scroll-view { box-sizing: border-box; }
 .coupon-opt .c-right { display: flex; flex-direction: column; align-items: flex-end; }
 .c-save {
   margin-top: 6rpx;
-  font-size: 21rpx;
+  font-size: var(--fs-20);
   color: var(--gold, #C4A76C);
 }
 .c-save.is-off {

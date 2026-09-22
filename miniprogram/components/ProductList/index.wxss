@@ -52,7 +52,9 @@
   margin-top: 24rpx;
   padding: 64rpx 24rpx;
   font-size: 24rpx;
-  color: #6B6560;
+  /* 2026-09-21 分子级审计：原 #6B6560 在本规则的不透明底 #1F1D1A 上仅 2.93（AA 需 4.5）。
+     与 pages/category、pages/index 的同类「空态」统一到 --color-text-secondary（6.02）。 */
+  color: var(--color-text-secondary);
   letter-spacing: 0.06em;
   background: #1F1D1A;
   border: 1px dashed rgba(77, 64, 26, 0.45);

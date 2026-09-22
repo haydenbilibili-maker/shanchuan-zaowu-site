@@ -114,7 +114,7 @@ view, text, image, map { box-sizing: border-box; }
     0 0 30rpx rgba(0,0,0,0.4);
 }
 .h-title-sub { 
-  font-size: 52rpx; 
+  font-size: var(--fs-48); 
   font-weight: 400; 
   letter-spacing: 18rpx; 
   display: block; 
@@ -248,7 +248,7 @@ view, text, image, map { box-sizing: border-box; }
   opacity: 0.6;
 }
 .p-cn { 
-  font-size: 42rpx; 
+  font-size: var(--fs-40); 
   color: rgba(255,255,255,0.95); 
   font-weight: 900; 
   letter-spacing: 4rpx; 
@@ -277,7 +277,7 @@ view, text, image, map { box-sizing: border-box; }
 .p-quote { 
   font-family: 'Times New Roman', serif; 
   font-style: italic; 
-  font-size: 38rpx; 
+  font-size: var(--fs-36); 
   color: rgba(255,255,255,0.95); 
   line-height: 2; 
   margin-bottom: 32rpx;
@@ -437,7 +437,7 @@ view, text, image, map { box-sizing: border-box; }
 .dot { 
   margin: 0 24rpx; 
   color: var(--gold); 
-  font-size: 14rpx;
+  font-size: var(--fs-16);
   text-shadow: 0 0 8rpx rgba(196, 167, 108,0.5);
   animation: dot-pulse 2s ease-in-out infinite;
 }

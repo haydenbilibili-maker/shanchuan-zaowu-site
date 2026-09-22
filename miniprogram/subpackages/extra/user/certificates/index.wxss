@@ -28,7 +28,7 @@ page {
 .h1 {
   display: block;
   font-family: var(--font-brand, 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif);
-  font-size: 52rpx;
+  font-size: var(--fs-48);
   font-weight: 600;
   line-height: 1.45;
   padding: 4rpx 0;

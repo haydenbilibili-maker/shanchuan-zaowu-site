@@ -73,8 +73,10 @@ page { background: var(--color-bg); color: #fff; }
 /* 门控组件的定位参照（见 wxml 注释）。margin/border/border-radius 移到盒上，保持 flex 行为不变。 */
 .p-thumb-box { position: relative; width: 100rpx; height: 100rpx; margin-right: 24rpx; flex-shrink: 0; border-radius: 8rpx; overflow: hidden; background: var(--color-bg); border: 1px solid rgba(38, 35, 32, 0.9); }
 .p-thumb { width: 100%; height: 100%; }
-.p-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-.p-name { color: var(--color-text-primary); font-size: 26rpx; font-weight: bold; margin-bottom: 4rpx; }
+/* 2026-09-21 分子级审计：同 orders/index.wxss —— flex:1 缺 min-width:0 + 标题无截断。
+   本文件下方 `.notes-brief` 已有 2 行钳制；标题行改与「缩略图 + 标题」同型的 search 页一致（单行省略号）。 */
+.p-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.p-name { color: var(--color-text-primary); font-size: 26rpx; font-weight: bold; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .p-latin { color: var(--gold); font-size: 20rpx; font-style: italic; margin-bottom: 6rpx; font-family: Georgia, serif; }
 .p-sku { color: var(--color-text-secondary); font-size: 20rpx; margin-bottom: 6rpx; }
 .p-craft-tags {

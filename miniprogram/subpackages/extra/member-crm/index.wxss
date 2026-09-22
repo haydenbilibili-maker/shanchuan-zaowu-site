@@ -526,7 +526,7 @@ page {
 }
 
 .signal-lamp.signal-danger {
-  background: #D64045;
+  background: var(--color-error);
   box-shadow: 0 0 0 2rpx rgba(214, 64, 69, 0.35);
 }
 
@@ -1462,7 +1462,8 @@ page {
 
 .ov-rank-seg {
   font-size: 18rpx;
-  color: var(--color-text-muted);
+  /* 2026-09-21 分子级审计：#6B6560 在 --color-bg-elevated 上仅 2.72（AA 需 4.5）→ secondary（5.60） */
+  color: var(--color-text-secondary);
   background: var(--color-bg-elevated);
   padding: 2rpx 10rpx;
   border-radius: var(--radius-sm);
@@ -1490,8 +1491,8 @@ page {
 .drawer-cta-row { display: flex; gap: 16rpx; align-items: center; }
 .drawer-cta-row .drawer-cta { flex: 1; }
 
-.danger-outline { border: 1rpx solid #D64045; color: #D64045; background: transparent; }
-.btn-primary.btn-danger { background: #D64045; border-color: #D64045; color: #fff; }
+.danger-outline { border: 1rpx solid var(--color-error); color: var(--color-error); background: transparent; }
+.btn-primary.btn-danger { background: var(--color-error); border-color: var(--color-error); color: #fff; }
 
 .cancel-state-bar {
   display: flex; align-items: center; justify-content: space-between;
@@ -1522,7 +1523,7 @@ page {
 .cancel-mode.danger-mode.active { border-color: #D64045; background: rgba(214,64,69,0.12); }
 .cancel-mode-name { font-size: 26rpx; color: var(--color-text-primary, #E8E4DC); }
 .cancel-mode.danger-mode .cancel-mode-name { color: #D64045; }
-.cancel-mode-desc { margin-top: 6rpx; font-size: 21rpx; line-height: 1.5; color: var(--color-text-secondary, #A8A29A); }
+.cancel-mode-desc { margin-top: 6rpx; font-size: var(--fs-20); line-height: 1.5; color: var(--color-text-secondary, #A8A29A); }
 
 .cancel-verify-title { margin-top: 6rpx; color: var(--gold, #C4A76C); }
 .cancel-verify-hint { display: block; margin: 10rpx 0 6rpx; font-size: 22rpx; color: var(--color-text-secondary, #A8A29A); }

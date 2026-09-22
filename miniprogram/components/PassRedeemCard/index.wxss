@@ -40,6 +40,29 @@
   height: 12rpx;
 }
 
+/* 2026-09-21 分子级审计：本组件 wxml 用的是 `.signal-light.lamp-success.blink`，
+   但它的圆点几何/绿色/**闪烁动画**全部定义在 app.wxss（`.signal-light` / `.signal-light.lamp-success`
+   / `@keyframes signal-blink`）。本组件 json 没有 `styleIsolation`（默认 isolated，同目录 8 个组件都显式
+   apply-shared）→ 这些全局规则进不来：圆点会渲染成**无底色的透明方块**、且不会闪。
+   故把灯座样式与动画**搬进组件自己**（keyframes 用组件内专名，避开跨组件重名）。 */
+.pass-redeem-status .signal-light.lamp-success {
+  border-radius: 50%;
+  background: var(--color-success, #52B788);
+  border: 2rpx solid var(--color-success, #52B788);
+  box-shadow: 0 0 8rpx rgba(82, 183, 136, 0.45);
+  animation: passRedeemLampBlink 0.5s infinite;
+}
+
+@keyframes passRedeemLampBlink {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 10rpx var(--color-success, #52B788);
+  }
+}
+
 .pass-redeem-status-text {
   font-size: 24rpx;
   font-weight: 500;
