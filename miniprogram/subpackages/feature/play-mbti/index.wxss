@@ -4,25 +4,28 @@
    入口不是"一枚瓦片"：两端各一个极点，中间一枚游标；游标滑到哪侧就给哪侧的话。 */
 .rp-axis {
   position: relative;
-  width: 300rpx;
-  height: 120rpx;
+  /* 2026-09-22（渲染台出图评审）：这一页的形态件原来是 300×120rpx 的**2rpx 细线 + 细空心圈**，
+     在整屏深色里像一根发丝 —— 与另外三页的形态件（签筒 150×210、饼壳、星盘 ~200 直径）
+     比**视觉重量明显偏弱**，而它是这一页唯一的主体。加粗线、放大端圈与游标、略放宽。 */
+  width: 360rpx;
+  height: 150rpx;
 }
 
 .rp-axis-line {
   position: absolute;
   left: 10rpx;
   right: 10rpx;
-  top: 57rpx;
-  height: 2rpx;
-  background: linear-gradient(90deg, rgba(196, 167, 108, 0.2) 0%, rgba(196, 167, 108, 0.75) 50%, rgba(196, 167, 108, 0.2) 100%);
+  top: 72rpx;          /* = 高 150 / 2 - 线高 3 */
+  height: 3rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.28) 0%, rgba(196, 167, 108, 0.9) 50%, rgba(196, 167, 108, 0.28) 100%);
 }
 
 .rp-axis-end {
   position: absolute;
-  top: 45rpx;
-  width: 26rpx;
-  height: 26rpx;
-  border: 2rpx solid rgba(196, 167, 108, 0.6);
+  top: 57rpx;          /* 端圈高 36 → 圆心落在中心线 75 上 */
+  width: 36rpx;
+  height: 36rpx;
+  border: 3rpx solid rgba(196, 167, 108, 0.72);
   border-radius: 50%;
 }
 
@@ -31,10 +34,10 @@
 
 .rp-axis-knob {
   position: absolute;
-  left: 138rpx;
-  top: 40rpx;
-  width: 36rpx;
-  height: 36rpx;
+  left: 162rpx;        /* = (宽 360 - 游标 44) / 2 —— 换宽度必须同步改，否则游标不居中 */
+  top: 53rpx;          /* 游标高 44 → 圆心落在中心线 75 上 */
+  width: 44rpx;
+  height: 44rpx;
   border-radius: 50%;
   background: linear-gradient(160deg, var(--brass-100) 0%, var(--brass-400) 100%);
   box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.35);
