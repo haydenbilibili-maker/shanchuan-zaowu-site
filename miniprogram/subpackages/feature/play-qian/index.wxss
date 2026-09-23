@@ -28,7 +28,12 @@
   height: 30rpx;
   border-radius: 50%;
   background: var(--brass-900);
-  box-shadow: inset 0 4rpx 8rpx rgba(0, 0, 0, 0.5);
+  /* 口沿高光（2026-09-22 渲染台量出来的问题）：这根筒是**入口态整屏唯一的主体**，
+     而筒口是「深铜色椭圆」、页面底色近黑 —— 两者几乎同色，于是筒口读不出来，
+     整只签筒就成了**一块铜方块**（出图逐像素看得到，判据看不出来）。
+     加一道顶沿高光 = 圆柱开口的经典提示，筒口立刻读得出来。 */
+  border-top: 3rpx solid rgba(250, 246, 237, 0.24);
+  box-shadow: inset 0 4rpx 8rpx rgba(0, 0, 0, 0.5), inset 0 10rpx 14rpx rgba(0, 0, 0, 0.32);
 }
 
 .rp-stick {

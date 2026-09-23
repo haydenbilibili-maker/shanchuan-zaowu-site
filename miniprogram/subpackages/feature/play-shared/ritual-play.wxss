@@ -208,7 +208,9 @@
   justify-content: center;
   width: 100%;
   box-sizing: border-box;
-  height: 84rpx;
+  /* 2026-09-22：84 → 88。渲染台量出 84rpx < 本仓自己的 **88rpx（44pt）可点区下限**
+     （`.rp-cta` 就是 88）—— 四个玩法页的动作按钮都偏矮，真机上容易点不中。 */
+  height: 88rpx;
   font-size: var(--fs-26);
   border-radius: var(--radius-md);
 }
@@ -291,7 +293,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 80rpx;
+  /* 2026-09-22：80 → 88（同上，可点区下限）。缺资料是**唯一出口**，更不该难点。 */
+  height: 88rpx;
   margin-top: 20rpx;
   font-size: var(--fs-24);
   border-radius: var(--radius-md);
@@ -333,6 +336,10 @@
   display: block;
   font-size: var(--fs-22);
   color: var(--brass-300);
+  /* 2026-09-22：它原来是个**裸文字链**（高度只有 ~30rpx）—— 渲染台量出来的可点区远低于 88rpx。
+     用 padding 撑开触控区 + **负 margin 抵消**，视觉一行字原样不动。 */
+  padding: 29rpx 0;
+  margin: -29rpx 0;
 }
 
 .rp-archive-list {
