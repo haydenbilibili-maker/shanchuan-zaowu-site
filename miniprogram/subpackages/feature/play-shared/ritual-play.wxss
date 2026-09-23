@@ -314,7 +314,16 @@
 }
 
 .rp-variant {
-  padding: 10rpx 20rpx;
+  /* 2026-09-22：渲染台（可点区清单改为**从 WXML 的 bindtap 自动派生**后）量出
+     它只有 **102×50rpx** —— 而星座 12 个 / MBTI 16 个是密集网格，最容易误触。
+     竖向 padding 10 → 30rpx：芯片高 50 → **90rpx**（≥ 88rpx 下限），
+     网格因此变高是可接受的代价（每行多 40rpx，2–3 行）。 */
+  padding: 30rpx 20rpx;
+  /* 短标签（MBTI 的 INTJ 这类 4 字母）只有 84rpx 宽 < 88rpx 下限 ⇒ 用 min-width 兜住。
+     只影响比 88rpx 还窄的芯片，宽标签（摩羯座这类 3 字）视觉不变。 */
+  min-width: 88rpx;
+  box-sizing: border-box;
+  text-align: center;
   font-size: var(--fs-20);
   color: var(--color-text-body);
   border: 1rpx solid var(--color-border);

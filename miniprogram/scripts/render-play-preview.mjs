@@ -141,6 +141,22 @@ function stagePatch (stage) {
 
 const data = Object.assign({}, baseData, stagePatch(STAGE))
 const wxmlSrc = readFileSync(pageWxmlPath, 'utf8')
+
+/* 可点区选择器**从 WXML 的 bindtap 元素自动派生**（2026-09-22）。
+ * ⚠️ 原来是手工清单（5 个），于是 `.rp-variant`（星座/MBTI 的「换一个」选项，12/16 个格子）
+ * **从未被量过** —— 盲区。手工清单必然会漏，漏了还不报错（正是本仓最怕的"判据不全 = 假绿"）。
+ * 现在凡带 bindtap 的元素，取其 class 的首个 rp- 令牌作为选择器，逐个量可点区。 */
+const TAP_SELECTORS = Array.from(new Set(
+  Array.from(wxmlSrc.matchAll(/<[\w-]+([^>]*?)bindtap="[^"]*"([^>]*?)>/g))
+    .map((m) => {
+      // ⚠️ matchAll 的结果是类数组：用 m[1]/m[2]，没有 m.group()
+      const cls = /class="([^"]+)"/.exec(m[1] + m[2])
+      if (!cls) return ''
+      const tok = String(cls[1]).split(/\s+/).find((t) => /^rp-[a-z-]+$/.test(t))
+      return tok ? '.' + tok : ''
+    })
+    .filter(Boolean)
+)).sort()
 // 页面里的 `<app-toast .../>` 是自定义组件：预览没有实现，renderWxml 会整棵跳过（带 - 的标签）
 const markup = renderWxml(wxmlSrc, data)
 
@@ -149,6 +165,7 @@ const FREEZE_CSS = `* { animation: none !important; transition: none !important;
 .rp-shell-slip { opacity: 1 !important; }`
 
 const html = `<!doctype html><html><head><meta charset="utf-8">
+<script>const __TAP_SELECTORS__ = ${JSON.stringify(TAP_SELECTORS)};</script>
 <style>
 :root {
 ${vars}
@@ -225,7 +242,8 @@ window.addEventListener('load', () => {
       text: (el.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 24)
     }))
   }
-  const TAPS = ['.rp-cta', '.rp-act', '.rp-need-cta', '.rp-archive-toggle', '.rp-reco']
+  // 清单由 Node 侧从 WXML 的 bindtap 自动派生后注入（见上面的 TAP_SELECTORS）
+  const TAPS = __TAP_SELECTORS__
   out.push({ label: '视口', sel: ':window', x: 0, y: 0, w: innerWidth, h: innerHeight, lines: 0, maxLines: 0, mode: 'lines' })
   push('页容器 .rp-page', '.rp-page')
   push('页头玩法名', '.rp-hero-name', 2)
