@@ -694,6 +694,16 @@ window.addEventListener('load', () => {
     text: '墙 ' + oWall + ' < 发送条 ' + oComposer + ' < 仪式区 ' + oRitual })
   // ── 同屏距离（灵感词离输入框多远：远了就是"点完看不到输入框"） ──
   const el = (s) => document.querySelector(s)
+  // 「灵感」标签与芯片的**垂直中线**对齐（2026-09-22）：这不是审美，是可量的排版不变量 ——
+  // 标签用的是 align-items: flex-start + 手调 margin-top，改字号/内边距就会失准。
+  if (el('.ww-inspo-label') && el('.ww-inspo-chip')) {
+    const l = el('.ww-inspo-label').getBoundingClientRect()
+    const ch = el('.ww-inspo-chip').getBoundingClientRect()
+    const d = Math.round((l.top + l.height / 2) - (ch.top + ch.height / 2))
+    out.push({ label: '灵感标签中线', sel: ':inspoalign', mode: 'inspoalign', lines: 0, maxLines: 0,
+      x: 0, y: d, w: 0, h: 0, delta: Math.abs(d),
+      text: '标签中线比芯片低 ' + d + 'px（正=偏低）' })
+  }
   if (el('.ww-composer') && el('.ww-inspo-row')) {
     const c = el('.ww-composer').getBoundingClientRect(), i = el('.ww-inspo-row').getBoundingClientRect()
     const d = Math.round(i.top - c.bottom)
@@ -878,6 +888,11 @@ metrics.forEach((row) => {
     // 灵感词必须与发送条**同一屏**：点一下就要能看到输入框（否则"点了没反应"）。
     // ⚠️ 判据是"灵感顶边在首屏之内"，不是"相隔 < 一屏高"——后者在发送条位于 y670、
     // 灵感位于 y1342 时仍然通过（相隔 586 < 1191），而那恰恰就是要修的那个毛病。
+    // 「灵感」标签中线必须与芯片中线对齐（±4px）—— 手调偏移失准是这类行的常见退化
+    const align = byLabel('灵感标签中线')
+    if (align && !align.missing && align.delta > 4) {
+      problems.push(`「灵感」标签与芯片**垂直中线**差 ${align.delta}px（>4px）—— ${align.text}`)
+    }
     const gap = byLabel('灵感行距发送条')
     if (gap && gap.x >= vp.h) {
       problems.push(`灵感词与发送条不在同一屏（灵感顶边 y${gap.x} ≥ 屏高 ${vp.h}）—— 点灵感后看不到输入框`)
