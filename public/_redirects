@@ -6,6 +6,15 @@
 # 文件已从 public/ 移出，并由 scripts/build-admin.mjs + admin/scripts/check-publish-dir.mjs 守住；
 # 这里再兜一道，防止历史残留或误加回来被直链下载。见 docs/全面审计_2026-09-17/README.md A1。
 /admin/governance-assets/* /404.html 404
+# 2026-09-29：以下 4 个内部页/附件曾直接放在 admin/public/ 被公开部署，已迁入 governance-assets；
+# 旧地址（含 Pages 去 .html 后的形式）显式 404，防 CDN 残留或误加回来。
+/admin/shanhai-capital-architecture-sandbox.html /404.html 404
+/admin/shanhai-capital-architecture-sandbox /404.html 404
+/admin/shanhai-studio-startup-cost-model.html /404.html 404
+/admin/shanhai-studio-startup-cost-model /404.html 404
+/admin/partner-destiny-center.html /404.html 404
+/admin/partner-destiny-center /404.html 404
+/admin/sanyou-minglu.pdf /404.html 404
 /products /what 301
 /about /who 301
 /senses /how/senses 301

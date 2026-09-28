@@ -1,5 +1,5 @@
 /**
- * 将谢天命理 Markdown 转为可嵌入 `public/partner-destiny-center.html` 的 HTML 片段。
+ * 将谢天命理 Markdown 转为可嵌入 `admin/public/governance-assets/erp-embeds/partner-destiny-center.html` 的 HTML 片段。
  * 默认输出 `public/xietian-destiny-fragment.html`，需手动替换主文件中 `id="tab-xt"` 整块（见文件内「谢天」注释锚点）。
  * 运行：npm run build:xietian-fragment
  * 或：node scripts/build-xietian-html.mjs [源.md路径]

@@ -45,7 +45,12 @@
           </div>
 
           <div class="kb-editor" v-if="currentKb">
-            <div v-if="currentKb.docUrl" class="kb-doc">
+            <div v-if="currentKb.docUrl && isInternalDoc(currentKb.docUrl) && !internalEmbedsAvailable" class="kb-doc">
+              <div class="kb-doc-bar">
+                <span class="kb-doc-hint">附件 PDF 已移出公开部署，仅本地 / 私有环境（npm run dev:admin）可预览</span>
+              </div>
+            </div>
+            <div v-else-if="currentKb.docUrl" class="kb-doc">
               <div class="kb-doc-bar">
                 <span class="kb-doc-hint">附件 PDF（扫描件，支持内嵌预览）</span>
                 <a :href="currentKb.docUrl" class="kb-doc-link" target="_blank" rel="noopener noreferrer">新窗口打开</a>
@@ -382,6 +387,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { INTERNAL_EMBED_DIR, internalEmbedPath, internalEmbedsAvailable } from '../utils/embeddedPageUrl'
 
 /**
  * 破坏性操作二次确认：必须输入指定字样才继续。
@@ -531,12 +537,16 @@ const saveJsonArray = (key, value) => { try { localStorage.setItem(key, JSON.str
 // 合规知识库（本地可编辑 + 持久化）
 // ------------------------------
 const SANYOU_KB_ID = 'kb-002'
+const SANYOU_DOC_URL = `${String(import.meta.env.BASE_URL || '/admin/').replace(/\/?$/, '/')}${internalEmbedPath('sanyou-minglu.pdf')}`
+/** 本地已持久化的知识库里可能还存着旧地址（文件已迁入 governance-assets） */
+const LEGACY_SANYOU_DOC_URLS = ['/sanyou-minglu.pdf', '/admin/sanyou-minglu.pdf']
+const isInternalDoc = (url) => String(url || '').includes(INTERNAL_EMBED_DIR)
 
 const defaultSanyouKbEntry = () => ({
   id: SANYOU_KB_ID,
   title: '国家保护的有益的或者有重要经济、科学研究价值的陆生野生动物名录（三有名录）',
   tags: ['三有名录', '陆生野生动物', '名录', '合规选品', 'PDF'],
-  docUrl: '/sanyou-minglu.pdf',
+  docUrl: SANYOU_DOC_URL,
   content:
 `本条目附带《三有名录》原文 PDF（扫描件），上方可直接内嵌预览。
 
@@ -568,7 +578,9 @@ const defaultKb = () => ([
 ])
 
 const mergeSanyouKbIfMissing = (list) => {
-  const base = Array.isArray(list) && list.length ? [...list] : defaultKb()
+  const base = (Array.isArray(list) && list.length ? [...list] : defaultKb()).map((x) =>
+    x && LEGACY_SANYOU_DOC_URLS.includes(x.docUrl) ? { ...x, docUrl: SANYOU_DOC_URL } : x
+  )
   if (base.some((x) => x && x.id === SANYOU_KB_ID)) return base
   return [...base, defaultSanyouKbEntry()]
 }

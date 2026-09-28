@@ -21,18 +21,29 @@
     </div>
 
     <div class="embed-frame-wrap">
-      <div v-if="loading" class="embed-loading">
-        <el-icon class="spin"><Loading /></el-icon>
-        <span>加载沙盘中…</span>
-      </div>
-      <iframe
-        ref="iframeRef"
-        class="embed-frame"
-        :src="src"
-        title="资本架构沙盘"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-downloads allow-popups"
-        @load="onIframeLoad"
+      <el-alert
+        v-if="!internalEmbedsAvailable"
+        class="embed-unavailable"
+        type="warning"
+        :closable="false"
+        show-icon
+        title="资本架构沙盘仅在本地 / 私有环境可用"
+        :description="INTERNAL_EMBED_UNAVAILABLE_TIP"
       />
+      <template v-else>
+        <div v-if="loading" class="embed-loading">
+          <el-icon class="spin"><Loading /></el-icon>
+          <span>加载沙盘中…</span>
+        </div>
+        <iframe
+          ref="iframeRef"
+          class="embed-frame"
+          :src="src"
+          title="资本架构沙盘"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-downloads allow-popups"
+          @load="onIframeLoad"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -41,7 +52,13 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { Refresh, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { embeddedPageUrl, standalonePageUrl } from '../utils/embeddedPageUrl'
+import {
+  embeddedPageUrl,
+  standalonePageUrl,
+  internalEmbedPath,
+  internalEmbedsAvailable,
+  INTERNAL_EMBED_UNAVAILABLE_TIP,
+} from '../utils/embeddedPageUrl'
 import {
   pushFinanceSnapshotToIframeAsync,
   readFinanceSnapshotAsync,
@@ -53,10 +70,10 @@ import {
 
 const emit = defineEmits(['switch-tab'])
 
-const PAGE = 'shanhai-capital-architecture-sandbox.html'
+const PAGE = internalEmbedPath('shanhai-capital-architecture-sandbox.html')
 
 const iframeRef = ref(null)
-const loading = ref(true)
+const loading = ref(internalEmbedsAvailable)
 const syncing = ref(false)
 const financeSynced = ref(false)
 const cacheBuster = ref(Date.now())
@@ -85,6 +102,10 @@ const onIframeLoad = () => {
 }
 
 const syncFinanceLedger = async () => {
+  if (!internalEmbedsAvailable) {
+    ElMessage.warning(INTERNAL_EMBED_UNAVAILABLE_TIP)
+    return
+  }
   await syncFinanceToIframe()
   if (financeSynced.value) {
     ElMessage.success('财务账本已同步至沙盘')
@@ -96,11 +117,16 @@ const syncFinanceLedger = async () => {
 const goFinance = () => emit('switch-tab', '2')
 
 const reload = () => {
+  if (!internalEmbedsAvailable) return
   loading.value = true
   cacheBuster.value = Date.now()
 }
 
 const openInNewTab = () => {
+  if (!internalEmbedsAvailable) {
+    ElMessage.warning(INTERNAL_EMBED_UNAVAILABLE_TIP)
+    return
+  }
   try {
     window.open(standalonePageUrl(PAGE), '_blank', 'noopener,noreferrer')
   } catch {
@@ -192,6 +218,11 @@ onUnmounted(() => {
   flex: 1;
   min-height: 480px;
   background: #f4ede0;
+}
+
+.embed-unavailable {
+  margin: 20px;
+  width: auto;
 }
 
 .embed-frame {

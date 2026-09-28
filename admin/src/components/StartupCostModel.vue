@@ -18,18 +18,29 @@
     </div>
 
     <div class="embed-frame-wrap">
-      <div v-if="loading" class="embed-loading">
-        <el-icon class="spin"><Loading /></el-icon>
-        <span>加载启动成本模型…</span>
-      </div>
-      <iframe
-        ref="iframeRef"
-        class="embed-frame"
-        :src="src"
-        title="工作室启动成本模型"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-downloads allow-popups"
-        @load="onIframeLoad"
+      <el-alert
+        v-if="!internalEmbedsAvailable"
+        class="embed-unavailable"
+        type="warning"
+        :closable="false"
+        show-icon
+        title="启动成本模型仅在本地 / 私有环境可用"
+        :description="INTERNAL_EMBED_UNAVAILABLE_TIP"
       />
+      <template v-else>
+        <div v-if="loading" class="embed-loading">
+          <el-icon class="spin"><Loading /></el-icon>
+          <span>加载启动成本模型…</span>
+        </div>
+        <iframe
+          ref="iframeRef"
+          class="embed-frame"
+          :src="src"
+          title="工作室启动成本模型"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-downloads allow-popups"
+          @load="onIframeLoad"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -38,13 +49,19 @@
 import { computed, ref } from 'vue'
 import { Refresh, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { embeddedPageUrl, standalonePageUrl } from '../utils/embeddedPageUrl'
+import {
+  embeddedPageUrl,
+  standalonePageUrl,
+  internalEmbedPath,
+  internalEmbedsAvailable,
+  INTERNAL_EMBED_UNAVAILABLE_TIP,
+} from '../utils/embeddedPageUrl'
 
 const emit = defineEmits(['switch-tab'])
 
-const PAGE = 'shanhai-studio-startup-cost-model.html'
+const PAGE = internalEmbedPath('shanhai-studio-startup-cost-model.html')
 
-const loading = ref(true)
+const loading = ref(internalEmbedsAvailable)
 const cacheBuster = ref(Date.now())
 
 const src = computed(() => embeddedPageUrl(PAGE, { cacheBuster: cacheBuster.value }))
@@ -57,11 +74,16 @@ const goFinance = () => emit('switch-tab', '2')
 const goPropertyEval = () => emit('switch-tab', '48')
 
 const reload = () => {
+  if (!internalEmbedsAvailable) return
   loading.value = true
   cacheBuster.value = Date.now()
 }
 
 const openInNewTab = () => {
+  if (!internalEmbedsAvailable) {
+    ElMessage.warning(INTERNAL_EMBED_UNAVAILABLE_TIP)
+    return
+  }
   try {
     window.open(standalonePageUrl(PAGE), '_blank', 'noopener,noreferrer')
   } catch {
@@ -127,6 +149,11 @@ const openInNewTab = () => {
   flex: 1;
   min-height: 480px;
   background: #eef2f7;
+}
+
+.embed-unavailable {
+  margin: 20px;
+  width: auto;
 }
 
 .embed-frame {

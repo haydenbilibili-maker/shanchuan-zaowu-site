@@ -87,6 +87,11 @@ import { safeWarn } from '../utils/safeStorage.js'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
+import {
+  internalEmbedPath,
+  internalEmbedsAvailable,
+  INTERNAL_EMBED_UNAVAILABLE_TIP,
+} from '../utils/embeddedPageUrl'
 
 const STORAGE_KEY = 'sc_partner_destiny_unlocked'
 /**
@@ -118,7 +123,7 @@ const scrollRoot = ref(null)
 
 let styleEl = null
 
-const destinyPageUrl = (v = cacheBuster.value) => `${BASE}partner-destiny-center.html?v=${v}`
+const destinyPageUrl = (v = cacheBuster.value) => `${BASE}${internalEmbedPath('partner-destiny-center.html')}?v=${v}`
 
 function scopeCss(css, scope) {
   const scopeSelectors = (selectors) =>
@@ -269,6 +274,11 @@ function parseDestinyHtml(html) {
 
 async function loadContent() {
   if (!unlocked.value) return
+  if (!internalEmbedsAvailable) {
+    clearEmbedState()
+    loadError.value = INTERNAL_EMBED_UNAVAILABLE_TIP
+    return
+  }
   loading.value = true
   loadError.value = ''
   try {
@@ -349,6 +359,10 @@ const openInNewTab = () => {
   try {
     if (!unlocked.value) {
       ElMessage.warning('请先解锁后再打开')
+      return
+    }
+    if (!internalEmbedsAvailable) {
+      ElMessage.warning(INTERNAL_EMBED_UNAVAILABLE_TIP)
       return
     }
     window.open(destinyPageUrl(Date.now()), '_blank', 'noopener,noreferrer')

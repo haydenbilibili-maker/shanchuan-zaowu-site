@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { scanInternalKeywords } from '../admin/scripts/check-publish-dir.mjs';
 
 const adminDir = join(process.cwd(), 'dist', 'admin');
 const indexHtml = join(adminDir, 'index.html');
@@ -57,6 +58,14 @@ if (leakedPrivate.length) {
   console.error('✗ dist/admin 含内部治理资料，已阻断部署：');
   for (const name of leakedPrivate) console.error(`  - dist/admin/${name}/`);
   console.error('  修复：把该目录移出 admin/public/ 与 public/admin/（内部资料只存仓库内非发布目录）。');
+  process.exit(1);
+}
+// 目录名之外再按文件名/文档内容关键词扫一遍产物（2026-09-29：内部页曾直接放在 admin/public/ 根目录）
+const keywordLeaks = scanInternalKeywords(process.cwd(), [[adminDir, ['assets/']]]);
+if (keywordLeaks.length) {
+  console.error('✗ dist/admin 含疑似内部资料，已阻断部署：');
+  for (const f of keywordLeaks) console.error(`  - ${f}`);
+  console.error('  修复：移入 admin/public/governance-assets/；本机 public/admin/ 的旧构建副本需手动删除（vite emptyOutDir=false）。');
   process.exit(1);
 }
 
