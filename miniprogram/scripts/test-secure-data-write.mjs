@@ -135,6 +135,11 @@ async function runChecks(policySource, clientSource, indexSource) {
   t.ok('finance_records 只许 remove', policy.isOpAllowed('finance_records', 'remove') && !policy.isOpAllowed('finance_records', 'add') && !policy.isOpAllowed('finance_records', 'update'))
   t.ok('stock_movements 只许追加', policy.isOpAllowed('stock_movements', 'add') && !policy.isOpAllowed('stock_movements', 'update') && !policy.isOpAllowed('stock_movements', 'remove'))
   t.ok('purchase_intents 不许新增（官网表单直写 create）', !policy.isOpAllowed('purchase_intents', 'add'))
+  t.ok('products 只许 update（入档 / 删除走 manageProducts）', policy.isOpAllowed('products', 'update') && !policy.isOpAllowed('products', 'add') && !policy.isOpAllowed('products', 'remove'))
+  t.eq('products 库存写入放行（B2B 出货 / 飞书对齐 / 财务同步）', policy.prepareData('products', 'update', { skus: [{ stock: 1 }], stock: 1, soldCount: 2, updateTime: 1 }).fields, ['skus', 'stock', 'soldCount', 'updateTime'])
+  rejects('products 不许改价（走 manageProducts.patch）', () => policy.prepareData('products', 'update', { price: 1 }))
+  rejects('products 不许上下架（走 manageApprovals）', () => policy.prepareData('products', 'update', { isOffShelf: true }))
+  t.ok('notification_templates 不进写网关（无写入方，已 write:false）', !policy.isAllowedCollection('notification_templates'))
 
   const p = policy.prepareData('stores', 'add', { name: '山川', _openid: 'oa_x', updatedAt: { $date: 5 }, zones: [{ at: { $date: 6 } }] })
   t.ok('_openid 剔除', !('_openid' in p.data))

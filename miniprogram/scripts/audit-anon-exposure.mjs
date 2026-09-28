@@ -59,7 +59,7 @@ export function judge(list, results) {
 /** wresults: { [collection]: 'writable' | 'denied' | 'error' } */
 export function judgeWrite(list, wresults) {
   const { writable, denied } = list.probeControls
-  if (wresults[writable] !== 'writable' || wresults[denied] !== 'denied') {
+  if ((writable && wresults[writable] !== 'writable') || wresults[denied] !== 'denied') {
     return {
       code: 2,
       lines: [`写探针失效：对照组 ${writable}=${wresults[writable]}（应 writable）、${denied}=${wresults[denied]}（应 denied），不出结论`],
@@ -120,7 +120,7 @@ async function probeWrite(list, token) {
     if (!j.code && j.data) return 'allowed'
     return 'error'
   }
-  const targets = [...writeTargets(list), list.probeControls.writable, list.probeControls.denied]
+  const targets = [...writeTargets(list), list.probeControls.writable, list.probeControls.denied].filter(Boolean)
   const results = {}
   for (const c of targets) {
     try {
@@ -202,6 +202,10 @@ if (process.argv.includes('--selftest')) {
   }
   for (const [name, results, expected] of cases) run(judge, list, name, results, expected)
   for (const [name, results, expected] of wcases) run(judgeWrite, list, name, results, expected)
+  const noCtl = { ...list, probeControls: { ...wc, writable: null } }
+  const nbase = Object.fromEntries(Object.entries(wbase).filter(([c]) => c !== wc.writable || writeTargets(list).includes(c)))
+  run(judgeWrite, noCtl, '无可写对照组（writable=null）时拒写对照仍须生效', { ...nbase, [wc.denied]: 'writable' }, 2)
+  if (judgeWrite(noCtl, nbase).code !== 0) { console.log('✗ writable=null 时基线应判通过'); ok = false }
   process.exit(ok ? 0 : 1)
 }
 

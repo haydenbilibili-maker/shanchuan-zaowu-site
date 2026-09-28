@@ -296,7 +296,7 @@
 <script setup>
 import { ref, onMounted, reactive, computed, nextTick } from 'vue'
 import { Refresh, Search, Picture, MagicStick, Box, DocumentCopy, Upload } from '@element-plus/icons-vue'
-import { getTempFileUrl, cdnUpdate, cdnCount, fetchCollectionLimit, callCloudFunction, uploadAdminBinary, getTempFileUrls } from '../cloud'
+import { getTempFileUrl, cdnCount, fetchCollectionLimit, callCloudFunction, uploadAdminBinary, getTempFileUrls } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { safeWarn } from '../utils/safeStorage.js'
 import { excludeExchangeOrders } from '../utils/orderFilters'
@@ -670,9 +670,18 @@ const handleRefund = (row) => {
         }
     ).then(async () => {
         try {
-            // 先确保状态为 refunding，refundOrder 只接受 refunding/aftersales
+            // 先进入 refunding（refundOrder 执行只接受 refunding/aftersales）；orders 客户端不可写，由服务端状态机完成
             if (row.status === 'paid' || row.status === 'ready_pickup' || row.status === 'shipped' || row.status === 'received') {
-                await cdnUpdate('orders', row._id, { status: 'refunding', refundRequestedAt: Date.now() })
+                const marked = await callCloudFunction('refundOrder', {
+                    action: 'staffMarkRefunding',
+                    orderId: row._id,
+                    note: '总部 ERP 发起退款'
+                })
+                if (!marked || marked.success === false) {
+                    ElMessage.error(`未能进入退款流程：${marked?.msg || '未知错误'}`)
+                    fetchOrders()
+                    return
+                }
             }
             const result = await callCloudFunction('refundOrder', {
                 orderId: row._id

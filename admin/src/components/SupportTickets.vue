@@ -135,10 +135,10 @@
           <div class="msg-content">{{ current.message }}</div>
         </div>
 
-        <div class="msg-block" v-if="current.reply">
+        <div class="msg-block" v-if="current.replyContent || current.reply">
           <div class="msg-title">已回复</div>
-          <div class="msg-content reply">{{ current.reply }}</div>
-          <div class="reply-time">{{ fmt(current.replyTime) }}</div>
+          <div class="msg-content reply">{{ current.replyContent || current.reply }}</div>
+          <div class="reply-time">{{ fmt(current.repliedAt || current.replyTime) }}</div>
         </div>
 
         <!-- AI 沟通锦囊（基于工单 + 用户画像） -->
@@ -168,10 +168,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { Refresh, Loading } from '@element-plus/icons-vue'
-import { fetchCollectionSorted, fetchCollectionWhere, cdnUpdate } from '../cloud'
+import { fetchCollectionSorted, fetchCollectionWhere, callCloudFunction } from '../cloud'
 import { loadPortraitForOpenid } from '../utils/portraitDataLoad'
 import { ElMessage } from 'element-plus'
-import { assertWriteApplied } from '../utils/cloudbaseCdnDb.js'
 import { buildProfile } from '../utils/userSegmentation'
 import TalkingScriptCard from './TalkingScriptCard.vue'
 import ErpEmpty from './ErpEmpty.vue'
@@ -292,26 +291,18 @@ const refresh = async () => {
 
 const select = (t) => {
   current.value = t
-  replyText.value = t.reply || ''
+  replyText.value = t.replyContent || t.reply || ''
   loadCustomerProfile(t._openid)
 }
 
 /**
- * 工单写操作守卫。
- *
- * `support_tickets` 线上规则 `{ read: "auth != null", write: false }` → ERP **只读**，
- * 而权限被拒时 SDK **不抛错**，而是 resolve `{code:'DATABASE_PERMISSION_DENIED'}`。
- * 于是原实现：`resolve()` / `archive()` 连 try/catch 都没有，直接弹「已标记处理 / 已归档」；
- * `reply()` 的 catch 也永远不会触发 —— 三个按钮**全都在谎报成功**（实测确认）。
- *
- * 现在统一走 `assertWriteApplied`，写不进去就抛 `WriteNotAppliedError`，调用方如实报错。
- * 真正的修复需要服务端写通道（见审计 C.3）。
+ * 工单写操作：`support_tickets` 线上规则 `{ read: "auth != null", write: false }`，ERP 直写必被拒。
+ * 回复走 messageAdmin.replySupportTicket（与小程序店长页同一通道，含站内信推送；字段 replyContent / repliedAt），
+ * 标记处理 / 归档走 messageAdmin.setSupportTicketStatus。success:false 即抛错，调用方如实报错。
  */
-const SUPPORT_WRITE_BLOCKED_HINT = '工单写操作当前不可用：support_tickets 集合为只读，且服务端写通道尚未接入 ERP。请在小程序端处理，或联系技术接入后再用。'
-
-async function writeTicket(id, patch, actionLabel) {
-  const res = await cdnUpdate('support_tickets', id, patch)
-  assertWriteApplied('support_tickets', res, actionLabel)
+async function callMessageAdmin(payload) {
+  const res = await callCloudFunction('messageAdmin', payload)
+  if (!res || res.success === false) throw new Error(res?.msg || '操作失败')
   return res
 }
 
@@ -319,46 +310,33 @@ const reply = async () => {
   if (!current.value) return
   if (!replyText.value.trim()) return ElMessage.warning('请输入回复内容')
   try {
-    await writeTicket(current.value._id, {
-      reply: replyText.value.trim(),
-      replyTime: Date.now(),
-      status: 'replied'
-    }, '回复')
-    ElMessage.success('已回复（注意：站内信推送需在云函数侧处理）')
+    await callMessageAdmin({ action: 'replySupportTicket', ticketId: current.value._id, replyContent: replyText.value.trim() })
+    ElMessage.success('已回复，已推送站内信')
     refresh()
   } catch (e) {
-    ElMessage.error(e?.name === 'WriteNotAppliedError'
-      ? `回复未生效：${SUPPORT_WRITE_BLOCKED_HINT}`
-      : '回复失败：' + (e?.message || '请重试'))
+    ElMessage.error('回复失败：' + (e?.message || '请重试'))
   }
 }
 
 const resolve = async () => {
   if (!current.value) return
   try {
-    await writeTicket(current.value._id, {
-      status: 'resolved',
-      resolveTime: Date.now()
-    }, '标记处理')
+    await callMessageAdmin({ action: 'setSupportTicketStatus', ticketId: current.value._id, status: 'resolved' })
     ElMessage.success('已标记处理')
     refresh()
   } catch (e) {
-    ElMessage.error(e?.name === 'WriteNotAppliedError'
-      ? `标记未生效：${SUPPORT_WRITE_BLOCKED_HINT}`
-      : '操作失败：' + (e?.message || '请重试'))
+    ElMessage.error('操作失败：' + (e?.message || '请重试'))
   }
 }
 
 const archive = async () => {
   if (!current.value) return
   try {
-    await writeTicket(current.value._id, { status: 'archived' }, '归档')
+    await callMessageAdmin({ action: 'setSupportTicketStatus', ticketId: current.value._id, status: 'archived' })
     ElMessage.success('已归档')
     refresh()
   } catch (e) {
-    ElMessage.error(e?.name === 'WriteNotAppliedError'
-      ? `归档未生效：${SUPPORT_WRITE_BLOCKED_HINT}`
-      : '归档失败：' + (e?.message || '请重试'))
+    ElMessage.error('归档失败：' + (e?.message || '请重试'))
   }
 }
 

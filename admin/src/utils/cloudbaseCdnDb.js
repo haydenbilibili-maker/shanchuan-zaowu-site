@@ -183,6 +183,8 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'secureDataWrite',
   // 2026-09-29：财务账本 / 设置写入（upload_records / upload_settings，仅超管）
   'syncFinanceData',
+  // 2026-09-29：工单回复 / 标记处理 / 归档（support_tickets 客户端不可写）
+  'messageAdmin',
 ])
 
 /**
@@ -389,6 +391,23 @@ export const PROXY_WRITE_COLLECTIONS = new Set([
   'fulfillment_shipments',
   'stock_movements',
   'finance_records',
+  'products',
+  'achievement_configs',
+  'benchmark_research_docs',
+  'booking_rules',
+  'content_display_flags',
+  'content_topics',
+  'content_assets',
+  'content_pieces',
+  'content_reviews',
+  'content_analytics',
+  'marketing_rules_config',
+  'member_levels',
+  'recommend_algorithm_config',
+  'search_blacklist',
+  'search_hot_keywords',
+  'support_configs',
+  'user_behavior_config',
 ])
 
 function shouldProxyWrite(collectionName) {

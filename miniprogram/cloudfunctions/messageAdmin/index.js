@@ -52,6 +52,8 @@ exports.main = async (event) => {
         return await listSupportTickets(event)
       case 'replySupportTicket':
         return await replySupportTicket(event, operatorOpenid)
+      case 'setSupportTicketStatus':
+        return await setSupportTicketStatus(event, operatorOpenid)
       default:
         return { success: false, msg: '未知 action' }
     }
@@ -148,6 +150,25 @@ async function listSupportTickets(event) {
     .limit(50)
     .get()
   return { success: true, list: res.data || [] }
+}
+
+/** ERP 工单页：标记已处理 / 归档（support_tickets 客户端 write:false） */
+const TICKET_STATUS_STAMP = { resolved: 'resolveTime', archived: 'archivedAt' }
+
+async function setSupportTicketStatus(event, operatorOpenid) {
+  const ticketId = String((event && event.ticketId) || '').trim()
+  const status = String((event && event.status) || '').trim()
+  if (!ticketId) return { success: false, msg: '缺少工单 id' }
+  if (!TICKET_STATUS_STAMP[status]) return { success: false, msg: '不支持的工单状态' }
+  const res = await db.collection('support_tickets').where({ _id: ticketId }).update({
+    data: {
+      status,
+      [TICKET_STATUS_STAMP[status]]: db.serverDate(),
+      statusUpdatedBy: operatorOpenid || 'admin_web'
+    }
+  })
+  if (!res || !res.stats || res.stats.updated !== 1) return { success: false, msg: '工单不存在' }
+  return { success: true, ticketId, status }
 }
 
 async function replySupportTicket(event, operatorOpenid) {

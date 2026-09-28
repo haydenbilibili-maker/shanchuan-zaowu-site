@@ -212,7 +212,6 @@ import {
   cdnUpdate,
   cdnAdd,
   callCloudFunction,
-  assertWriteApplied,
 } from '../cloud'
 import { isMaskedPii } from '../utils/cloudbaseCdnDb.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -469,25 +468,12 @@ const approve = (row) => {
     .then(async () => {
       const patch = { status: 'approved', approvedTime: Date.now() }
       try {
-        if (row._fromOrder && row.orderId) {
-          // orders 线上为 write:false：写不进去时必须报错，不能假装成功（审计 §0 P0-8）
-          const res = await cdnUpdate(COLLECTIONS.ORDERS, row.orderId, {
-            status: 'refund_approved',
-            refundApprovedTime: Date.now(),
-          })
-          assertWriteApplied(COLLECTIONS.ORDERS, res, 'update')
-        }
+        // 订单保持 refunding / aftersales（refundOrder 执行的合法入口）；refund_approved 是契约 C3 的幽灵状态，不写订单
         await ensureRefundDoc(row, patch)
-        ElMessage.success('已批准')
+        ElMessage.success('已批准，可执行退款')
       } catch (e) {
         console.error('批准退款失败', e)
-        // 不再静默（原为 .catch(() => {})）：明确告知未生效 + 正确路径
-        ElMessageBox.alert(
-          `${e?.message || '批准未生效'}。ERP 无权限直接改订单状态（orders 仅允许云函数写入），`
-            + '本次审批未落库。请在云函数侧完成审批后再操作。',
-          '批准未生效',
-          { type: 'error' },
-        )
+        ElMessageBox.alert(`${e?.message || '批准未生效'}。本次审批未落库，请重试。`, '批准未生效', { type: 'error' })
       }
       refresh()
     })
@@ -511,23 +497,15 @@ const reject = (row) => {
       }
       try {
         if (row._fromOrder && row.orderId) {
-          const res = await cdnUpdate(COLLECTIONS.ORDERS, row.orderId, {
-            status: 'refund_rejected',
-            refundRejectReason: value,
-            refundRejectTime: Date.now(),
-          })
-          assertWriteApplied(COLLECTIONS.ORDERS, res, 'update')
+          // 服务端状态机：退回申请前状态（statusBeforeRefund 等），并校验订单确在退款申请中
+          const res = await callCloudFunction('refundOrder', { action: 'staffReject', orderId: row.orderId, reason: value })
+          if (!res || res.success === false) throw new Error(res?.msg || '拒绝失败')
         }
         await ensureRefundDoc(row, patch)
         ElMessage.success('已拒绝')
       } catch (e) {
         console.error('拒绝退款失败', e)
-        ElMessageBox.alert(
-          `${e?.message || '拒绝未生效'}。ERP 无权限直接改订单状态（orders 仅允许云函数写入），`
-            + '本次拒绝未落库。注意：订单可能仍停在退款中状态，请在小程序「店长后台 → 订单 → 退款」处理。',
-          '拒绝未生效',
-          { type: 'error' },
-        )
+        ElMessageBox.alert(`${e?.message || '拒绝未生效'}。本次拒绝未落库，订单仍在退款申请中。`, '拒绝未生效', { type: 'error' })
       }
       refresh()
     })
@@ -549,12 +527,14 @@ const execRefund = (row) => {
         return
       }
       try {
-        // 确保订单处于可退状态
-        try {
-          await cdnUpdate(COLLECTIONS.ORDERS, orderId, { status: 'refunding' })
-        } catch {
-          /* ignore if already refunding */
-        }
+        // 确保订单处于可退状态（服务端状态机；已在退款流程中返回 duplicated）。
+        // 失败不在此拦截：refundOrder 执行自带状态校验，会给出可读原因
+        const marked = await callCloudFunction('refundOrder', {
+          action: 'staffMarkRefunding',
+          orderId,
+          note: '总部 ERP 执行退款',
+        }).catch((e) => ({ success: false, msg: e?.message }))
+        if (marked && marked.success === false) console.warn('staffMarkRefunding 未生效', orderId, marked.msg)
         const result = await callCloudFunction('refundOrder', {
           orderId
         })

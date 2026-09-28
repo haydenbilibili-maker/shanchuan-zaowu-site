@@ -1,0 +1,4 @@
+{
+  "read": "auth != null || doc.status == 'active'",
+  "write": false
+}

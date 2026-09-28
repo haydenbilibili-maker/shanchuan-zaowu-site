@@ -1344,7 +1344,7 @@ import {
 } from '@element-plus/icons-vue'
 import * as EpIcons from '@element-plus/icons-vue'
 // 导入云开发工具
-import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, cdnUpdate, callCloudFunction, getCdnDatabase, cdnCount, cdnQueryPage } from './cloud'
+import { getTempFileUrl, getTempFileUrls, uploadAdminBinary, COLLECTIONS, fetchCollectionSorted, callCloudFunction, getCdnDatabase, cdnCount, cdnQueryPage } from './cloud'
 import { toChineseTaxonomy } from './utils/taxonomyZh'
 import { buildCanonicalSize, parseCanonicalSize } from './utils/sizeCanonical'
 import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productTags'
@@ -1352,7 +1352,7 @@ import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productT
 import { normalizeOverlayList, resolveCraftOptions } from './utils/productTaxonomyOverlay'
 import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
 import { BLESS_TAGS, MAX_BLESS_TAGS, sanitizeBlessTags, readBlessTags } from './utils/blessTags'
-import { establishAdminSession, clearAdminSession, probeAdminSession, assertWriteApplied } from './utils/cloudbaseCdnDb'
+import { establishAdminSession, clearAdminSession, probeAdminSession } from './utils/cloudbaseCdnDb'
 import { ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE } from './utils/cloudFnErrors'
 import { isActiveCategory } from './utils/categoryActive'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -1360,19 +1360,27 @@ import RichHtmlEditor from './components/RichHtmlEditor.vue'
 import ImageUploadField from './components/ImageUploadField.vue'
 
 /**
- * 藏品写入守卫（products）。
- *
- * `products` 线上规则 `{ read: true, write: false }` → ERP **只读**。而权限被拒时
- * CloudBase SDK **不抛错**，只 resolve `{code:'DATABASE_PERMISSION_DENIED'}` —— 于是
- * 「批量下架 / 入档 / 调价 / 改库存 / 秒杀开关」这些操作原先都会打出
- * 「已下架 N 个商品」而**零落库**（审计 P0-5 里 `products` 那一项）。
- *
- * 统一在这里断言：写没生效就抛 `WriteNotAppliedError`，由调用方**既有的** catch
- * 如实报错，不再出现假成功。批量场景下 Promise.all 会因第一个失败而拒绝。
+ * 藏品写入（products 线上 `{ read: true, write: false }`，ERP 直写必被拒）。
+ *   · 下架：manageApprovals.submitProductShelf（上下架只走审批函数；下架对店长/超管直通）
+ *   · 其余（入档 / 调价 / 改库存 / 秒杀 / 拼团）：manageProducts.patch（字段白名单 + 审计）
+ * patch 白名单外的字段会被云函数静默丢弃 → 这里先拦下，避免「提示成功却没改」。
+ * 失败即抛，由调用方既有的 catch 如实报错；批量场景下 Promise.all 会因第一个失败而拒绝。
  */
+const PRODUCT_PATCH_KEYS = new Set(['inArchive', 'price', 'stock', 'seckill', 'groupBuying', 'updateTime'])
+
 async function updateProduct(id, patch, actionLabel = '藏品写入') {
-    const res = await cdnUpdate(COLLECTIONS.PRODUCTS, id, patch)
-    assertWriteApplied('products', res, actionLabel)
+    const { isOffShelf, ...rest } = patch || {}
+    if (isOffShelf === true) {
+        const res = await callCloudFunction('manageApprovals', { action: 'submitProductShelf', productId: id, onShelf: false })
+        if (!res || res.success === false) throw new Error(`${actionLabel}失败：${res?.msg || '下架未生效'}`)
+        return res
+    }
+    const unknown = Object.keys(rest).filter((k) => !PRODUCT_PATCH_KEYS.has(k))
+    if (isOffShelf !== undefined || unknown.length) {
+        throw new Error(`${actionLabel}：不支持的字段 ${[isOffShelf !== undefined ? 'isOffShelf' : '', ...unknown].filter(Boolean).join(', ')}`)
+    }
+    const res = await callCloudFunction('manageProducts', { action: 'patch', productId: id, data: rest })
+    if (!res || res.success === false) throw new Error(`${actionLabel}失败：${res?.msg || '未生效'}`)
     return res
 }
 

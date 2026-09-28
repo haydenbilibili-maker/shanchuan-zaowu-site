@@ -32,7 +32,26 @@ const WRITE_POLICY = {
   feishu_sync_logs: { ops: ['add'] },
   fulfillment_shipments: { ops: ['add', 'update'] },
   stock_movements: { ops: ['add'] },
-  finance_records: { ops: ['remove'] }
+  finance_records: { ops: ['remove'] },
+  // 仅库存类写入（飞书库存对齐 / 财务库存同步 / B2B 出货扣减）；改价、上下架、入档等走 manageProducts / manageApprovals
+  products: { ops: ['update'], allowFields: ['stock', 'skus', 'soldCount', 'updateTime'] },
+  // 内容 / 配置表（2026-09-29 第三轮）：动作按 ERP 实际调用点取最小集
+  achievement_configs: { ops: ['add', 'update', 'remove'] },
+  benchmark_research_docs: { ops: ['add', 'update'] },
+  booking_rules: { ops: ['add', 'update'] },
+  content_display_flags: { ops: ['add', 'update'] },
+  content_topics: { ops: ['add', 'update'] },
+  content_assets: { ops: ['add'] },
+  content_pieces: { ops: ['add', 'update'] },
+  content_reviews: { ops: ['add'] },
+  content_analytics: { ops: ['add'] },
+  marketing_rules_config: { ops: ['add', 'update'] },
+  member_levels: { ops: ['add', 'update', 'remove'] },
+  recommend_algorithm_config: { ops: ['add', 'update'] },
+  search_blacklist: { ops: ['add', 'update', 'remove'] },
+  search_hot_keywords: { ops: ['add', 'update', 'remove'] },
+  support_configs: { ops: ['add', 'update', 'remove'] },
+  user_behavior_config: { ops: ['add', 'update'] }
 }
 
 const OPS = { add: 1, update: 1, remove: 1 }

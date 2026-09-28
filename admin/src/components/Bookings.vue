@@ -262,7 +262,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { Stamp, Refresh } from '@element-plus/icons-vue'
 import { safeWarn } from '../utils/safeStorage.js'
-import { assertWriteApplied } from '../utils/cloudbaseCdnDb.js'
 import {
   fetchCollectionLimit,
   fetchCollectionWhere,
@@ -274,21 +273,10 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 /**
- * 预约写操作守卫。
- *
- * `bookings` 线上规则是 `{ read: "auth != null", write: false }` —— **ERP 直写必被拒**，
- * 而权威写通道是云函数（`updateBooking` / `verifyBooking` / `cancelBooking`），
- * 它们**不在**前端代理白名单里。也就是说本页所有写按钮当前**没有任何可用通道**。
- *
- * 更危险的是 CloudBase `update` 对不匹配/无权限的文档**返回 `{updated:0}` 而不抛错**
- * （本仓已在 `test:write-layer` 里钉住这个语义），于是原实现会：
- *   · `checkIn` / `confirmBooking` 打出「核销成功 / 已确认」而实际零落库；
- *   · `cancelBooking` 连失败都不提示（错误被确认框的 catch 一起吞掉）。
- * 现在统一走 `assertWriteApplied`：没写进去就抛 `WriteNotAppliedError`，调用方如实报错。
- *
- * 真正的修法是「部署后把预约写通道接进代理」（见审计 C.3），在此之前本页必须**说真话**。
+ * 预约写操作：`bookings` 线上规则 `{ read: "auth != null", write: false }`，ERP 直写必被拒。
+ * 核销 / 确认 / 取消全部走 `verifyBooking`（经 /api/cloud-fn 代理，接受代理注入的 adminOpsKey），
+ * 云函数返回 success:false 即抛错，调用方如实报错。
  */
-const BOOKING_WRITE_BLOCKED_HINT = '预约写操作当前不可用：bookings 集合为只读，且服务端写通道尚未接入 ERP。请在小程序端处理，或联系技术接入后再用。'
 
 /**
  * 预约**核销**走云函数 `verifyBooking`（经 /api/cloud-fn 代理）。
@@ -309,11 +297,15 @@ async function verifyBookingRemote(row) {
   return res
 }
 
-function writeBooking(id, patch, actionLabel) {
-  return cdnUpdate('bookings', id, patch).then((res) => {
-    assertWriteApplied('bookings', res, actionLabel)
-    return res
-  })
+/** 确认 / 取消：bookings 客户端 write:false，走 verifyBooking 的 staffConfirm / staffCancel（条件更新 + 归还名额 + 留痕） */
+async function setBookingStatusRemote(row, action) {
+  const res = await callCloudFunction('verifyBooking', { action, bookingId: row._id })
+  if (!res || res.success === false) {
+    const err = new Error(res?.msg || '操作失败')
+    err.code = res?.code
+    throw err
+  }
+  return res
 }
 
 const activeTab = ref('bookings')
@@ -449,8 +441,6 @@ const checkIn = (row) => {
       ElMessage.success('核销成功')
       refresh()
     } catch (e) {
-      // 核销现在走云函数：失败是**真实**失败（权限不足 / 状态机不允许 / 网络），
-      // 与「直写被规则拒绝」不是一回事，故不再套用 BOOKING_WRITE_BLOCKED_HINT
       ElMessage.error('核销失败：' + (e?.message || '请重试'))
     }
   }).catch((e) => {
@@ -460,13 +450,11 @@ const checkIn = (row) => {
 
 const confirmBooking = async (row) => {
   try {
-    await writeBooking(row._id, { status: 'confirmed' }, '确认预约')
+    await setBookingStatusRemote(row, 'staffConfirm')
     ElMessage.success('已确认')
     refresh()
   } catch (e) {
-    ElMessage.error(e?.name === 'WriteNotAppliedError'
-      ? `确认未生效：${BOOKING_WRITE_BLOCKED_HINT}`
-      : '操作失败：' + (e?.message || '请重试'))
+    ElMessage.error('确认未生效：' + (e?.message || '请重试'))
   }
 }
 
@@ -474,16 +462,11 @@ const cancelBooking = (row) => {
   ElMessageBox.confirm(`取消【${row.title}】的预约？`, '取消预约', { type: 'warning' }).then(async () => {
     // 写操作单独 try/catch：与「用户点取消」分开，否则真实失败会被当成取消静默吞掉
     try {
-      await writeBooking(row._id, {
-        status: 'cancelled',
-        cancelTime: Date.now()
-      }, '取消预约')
+      await setBookingStatusRemote(row, 'staffCancel')
       ElMessage.success('已取消')
       refresh()
     } catch (e) {
-      ElMessage.error(e?.name === 'WriteNotAppliedError'
-        ? `取消失败：${BOOKING_WRITE_BLOCKED_HINT}`
-        : '取消失败：' + (e?.message || '请重试'))
+      ElMessage.error('取消失败：' + (e?.message || '请重试'))
     }
   }).catch((e) => {
       if (e !== 'cancel' && e !== 'close') console.error('确认框异常', e)

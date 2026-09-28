@@ -56,13 +56,13 @@
     "fulfillment_shipments",
     "stock_movements"
   ],
-  "_writeDoc": "写权限收紧（2026-09-28 第二轮）。写保护集合 = collections ∪ writeProtectedExtra：写字段（write/create/update/delete）不得对 Web 匿名放行，pendingWrite 内与 writeExceptions 点名的字段除外。ERP 写入已改走 secureDataWrite / syncFinanceData 云函数，新版 ERP 经 CI 上线后应用 staged 规则、再从 pendingWrite / liveWriteDrift 删掉对应项并调小 pendingWriteMax。",
-  "writeProtectedExtra": ["stores", "store_zones", "home_configs", "pet_craft_configs"],
+  "_writeDoc": "写权限收紧（2026-09-28 第二轮）。写保护集合 = collections ∪ writeProtectedExtra：写字段（write/create/update/delete）不得对 Web 匿名放行，pendingWrite 内与 writeExceptions 点名的字段除外。ERP 写入已改走 secureDataWrite / syncFinanceData 云函数，新版 ERP 经 CI 上线后应用 staged 规则、再从 pendingWrite / liveWriteDrift 删掉对应项并调小 pendingWriteMax。2026-09-29 第三轮把 products + 17 张内容/配置表纳入写保护（守卫范围扩大，不是回退）：products 与 notification_templates 已是 write:false；其余 16 张 ERP 写入已改走 secureDataWrite，暂列 pendingWrite（13→29），上线后按同法收紧。",
+  "writeProtectedExtra": ["stores", "store_zones", "home_configs", "pet_craft_configs", "products", "notification_templates", "achievement_configs", "benchmark_research_docs", "booking_rules", "content_analytics", "content_assets", "content_display_flags", "content_pieces", "content_reviews", "content_topics", "marketing_rules_config", "member_levels", "recommend_algorithm_config", "search_blacklist", "search_hot_keywords", "support_configs", "user_behavior_config"],
   "_writeExceptionsDoc": "允许对匿名放行的写字段（精确值）。purchase_intents.create = 官网询价表单匿名提交（src/lib/purchaseIntent.ts），必须保留。",
   "writeExceptions": {
     "purchase_intents": { "create": "auth != null" }
   },
-  "pendingWriteMax": 13,
+  "pendingWriteMax": 29,
   "pendingWrite": [
     "finance_settings",
     "purchase_intents",
@@ -76,7 +76,23 @@
     "stores",
     "store_zones",
     "home_configs",
-    "pet_craft_configs"
+    "pet_craft_configs",
+    "achievement_configs",
+    "benchmark_research_docs",
+    "booking_rules",
+    "content_analytics",
+    "content_assets",
+    "content_display_flags",
+    "content_pieces",
+    "content_reviews",
+    "content_topics",
+    "marketing_rules_config",
+    "member_levels",
+    "recommend_algorithm_config",
+    "search_blacklist",
+    "search_hot_keywords",
+    "support_configs",
+    "user_behavior_config"
   ],
   "_liveWriteDriftDoc": "线上写规则 ≠ 仓库文件（仓库已是 write:false、线上仍 auth != null，旧版 ERP 依赖线上值匿名直写）。这些表的仓库规则看似已收紧，守卫据此不逼它们离开 pendingWrite；值 = 线上现值 = 回滚值。apply-database-rules --dry-run 可复核。",
   "liveWriteDrift": {
@@ -120,15 +136,10 @@
   "clientWriteBaseline": {
     "src/lib/purchaseIntent.ts|purchase_intents": 1
   },
-  "_erpDeniedWriteBaselineDoc": "ERP 对 write:false 集合的直写（未走 secureDataWrite / manageStoreContent），线上必被拒 —— 存量缺陷冻结，只许变少。Orders/Refunds 的 orders 与 Bookings 的 bookings 属稳定期订单/预约链路，待产品负责人点名再改走云函数；SupportTickets 页已有「写通道未接入」提示。",
-  "erpDeniedWriteBaseline": {
-    "admin/src/components/Bookings.vue|bookings": 1,
-    "admin/src/components/Orders.vue|orders": 1,
-    "admin/src/components/Refunds.vue|orders": 3,
-    "admin/src/components/SupportTickets.vue|support_tickets": 1
-  },
+  "_erpDeniedWriteBaselineDoc": "ERP 对 write:false 集合的直写（未走 secureDataWrite / manageStoreContent），线上必被拒 —— 只许变少。2026-09-29 产品负责人点名后已清零：订单退款 → refundOrder.staffMarkRefunding / staffReject，预约 → verifyBooking.staffConfirm / staffCancel，工单 → messageAdmin.replySupportTicket / setSupportTicketStatus，藏品 → manageProducts.patch / manageApprovals.submitProductShelf 与 secureDataWrite（products 仅库存字段）。",
+  "erpDeniedWriteBaseline": {},
   "probeControls": {
-    "_doc": "audit:anon-exposure 的对照组：readable 必须匿名可读、writable 必须匿名可写（仅打不存在的 _id）、denied 读写均须匿名被拒，否则探针本身失效（不出结论）。writable 选内容工厂表：ERP 直写、不在本轮收紧范围；日后收紧它时须换对照。",
+    "_doc": "audit:anon-exposure 的对照组：readable 必须匿名可读、writable 必须匿名可写（仅打不存在的 _id）、denied 读写均须匿名被拒，否则探针本身失效（不出结论）。writable 选内容工厂表 content_topics（仍在 pendingWrite）；check:sensitive-rules 要求 writable 不在写保护集或仍在 pendingWrite —— 应用它的 staged 规则时须同时把 writable 换成仍匿名可写的表，或置 null 表示已无匿名可写对照。",
     "readable": "products",
     "writable": "content_topics",
     "denied": "staff_members"

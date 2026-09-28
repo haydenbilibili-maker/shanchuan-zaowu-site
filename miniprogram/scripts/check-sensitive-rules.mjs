@@ -15,7 +15,8 @@
  *      pendingWrite / writeExceptions 除外；pendingWrite 只许变小（= pendingWriteMax），
  *      仓库已收紧且不在 liveWriteDrift 的仍挂 pendingWrite → 拦下；liveWriteDrift ⊆ pendingWrite
  *   7. ERP 写网关清单（PROXY_WRITE_COLLECTIONS）≡ secureDataWrite/policy.js WRITE_POLICY，
- *      且不含 writeGatewayForbidden（admin_users/admin_roles 等提权表）
+ *      且不含 writeGatewayForbidden（admin_users/admin_roles 等提权表）；products 须有 allowFields 且不含改价/上下架/入档字段
+ *   8. probeControls.writable 不得指向已收紧写的表（探针对照组失效）
  *
  * --selftest：内存注入（不写盘），每个注入都必须被检出。
  */
@@ -30,6 +31,7 @@ const STAGED_DIR = 'cloudbase/rules-staged/after-erp-release'
 const CLIENT_PATH = 'admin/src/utils/cloudbaseCdnDb.js'
 const WRITE_POLICY_PATH = 'miniprogram/cloudfunctions/secureDataWrite/policy.js'
 const WRITE_KEYS = ['write', 'create', 'update', 'delete']
+const PRODUCT_GATED_FIELDS = ['price', 'originalPrice', 'isOffShelf', 'onShelf', 'status', 'inArchive', 'seckill', 'groupBuying', 'storeId', 'storeIds', 'visibility']
 
 /**
  * read 是否挡住 Web 匿名（N0 实测口径）：
@@ -98,6 +100,10 @@ export function checkSensitiveRules(files) {
   Object.keys(drift).forEach((c) => {
     if (!pendingWSet.has(c)) errors.push(`liveWriteDrift.${c}：线上写漂移的表必须留在 pendingWrite（应用 staged 后两处一起删）`)
   })
+  const probeW = list.probeControls?.writable
+  if (probeW && writeProtected.includes(probeW) && !pendingWSet.has(probeW)) {
+    errors.push(`probeControls.writable=${probeW} 已收紧写，探针对照组失效：换成仍匿名可写的表或置 null`)
+  }
 
   const pickWrite = (r) => Object.fromEntries(WRITE_KEYS.filter((k) => k in r).map((k) => [k, r[k]]))
   const anonWriteKeys = (c, r) =>
@@ -172,6 +178,13 @@ export function checkSensitiveRules(files) {
     if (onlyFn.length) errors.push(`云函数 WRITE_POLICY 有、ERP 写网关清单没有（ERP 仍直写）：${onlyFn.join(', ')}`)
     const forbidden = (list.writeGatewayForbidden || []).filter((c) => fnW.has(c) || erpW.has(c))
     if (forbidden.length) errors.push(`写网关开放了禁写集合（提权 / 审计链路）：${forbidden.join(', ')}`)
+    const prodLine = (pm[1].match(/^ {2}products:.*$/m) || [''])[0]
+    if (prodLine) {
+      const fields = [...((prodLine.match(/allowFields:\s*\[([^\]]*)\]/) || [])[1] || '').matchAll(/'([A-Za-z_]+)'/g)].map((x) => x[1])
+      const bad = fields.filter((f) => PRODUCT_GATED_FIELDS.includes(f))
+      if (!fields.length) errors.push('WRITE_POLICY.products 缺 allowFields（改价 / 上下架须走 manageProducts / manageApprovals）')
+      if (bad.length) errors.push(`WRITE_POLICY.products 放开了须审批的字段：${bad.join(', ')}`)
+    }
   }
   const m = client.match(/PROXY_READ_COLLECTIONS = new Set\(\[([\s\S]*?)\]\)/)
   if (!m) {
@@ -249,6 +262,9 @@ function main() {
         [WRITE_POLICY_PATH]: f[WRITE_POLICY_PATH].replace('const WRITE_POLICY = {\n', "const WRITE_POLICY = {\n  admin_users: { ops: ['update'] },\n"),
         [CLIENT_PATH]: f[CLIENT_PATH].replace('PROXY_WRITE_COLLECTIONS = new Set([\n', "PROXY_WRITE_COLLECTIONS = new Set([\n  'admin_users',\n"),
       })],
+      ['探针可写对照组指向已收紧表', editList((l) => ({ ...l, probeControls: { ...l.probeControls, writable: 'notification_templates' } }))],
+      ['写网关 products 放开 price', (f) => ({ ...f, [WRITE_POLICY_PATH]: f[WRITE_POLICY_PATH].replace("allowFields: ['stock',", "allowFields: ['price', 'stock',") })],
+      ['写网关 products 去掉字段白名单', (f) => ({ ...f, [WRITE_POLICY_PATH]: f[WRITE_POLICY_PATH].replace(/(\n {2}products: \{ ops: \['update'\]), allowFields: \[[^\]]*\]/, '$1') })],
     ]
     const base = checkSensitiveRules(files)
     if (base.length) {
