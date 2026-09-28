@@ -19,11 +19,13 @@
  *   P5 合法 Cookie + 白名单外 / 穿越 / 原型链名 → 404
  *   P6 HEAD → 200 空体；POST → 405
  *   S1 路由文件的资料映射 ≡ 白名单，且每个源文件都在 admin/public/governance-assets/erp-embeds/（构建剔除目录）
+ *   G1 曾被公开部署的旧地址（LEGACY_INTERNAL_PATHS）每条都有 functions/<路径>.js，且回 404 + no-store
+ *      —— 2026-09-29 线上实测 Pages 资产层对旧 URL 仍返回上线前缓存的副本，Function 先于资产层执行、可兜住
  *
  * 用法：node scripts/test-private-asset.mjs [--selftest]
  *   --selftest：在临时目录的**副本**里注入 6 种回归，逐个必须被检出（不写共享工作区）。
  */
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { register } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -34,6 +36,7 @@ const ROUTE_REL = 'functions/api/private-asset.js';
 const LIB_REL = 'functions/_lib/privateAsset.mjs';
 const SESSION_REL = 'functions/_lib/proxySession.mjs';
 const EMBED_DIR_REL = 'admin/public/governance-assets/erp-embeds';
+const LEGACY_LIB_REL = 'functions/_lib/legacyInternalGone.mjs';
 
 register(
   `data:text/javascript,${encodeURIComponent(`
@@ -176,6 +179,27 @@ export async function runChecks(root = ROOT) {
     const outside = imports.filter((p) => !p.startsWith(`../../${EMBED_DIR_REL}/`));
     t('S1 资料源文件全部位于 governance-assets/erp-embeds（构建剔除目录）', outside.length === 0, `越界：${outside.join(',')}`);
   }
+  // G1
+  {
+    let legacy = [];
+    try {
+      legacy = [...(await import(pathToFileURL(join(root, LEGACY_LIB_REL)).href)).LEGACY_INTERNAL_PATHS];
+    } catch (e) {
+      failures.push(`G1 旧地址清单无法加载 — ${e.message.split('\n')[0]}`);
+    }
+    t('G1 旧地址清单覆盖 4 份资料', ['capital-architecture', 'cost-model', 'destiny', 'sanyou'].every((k) => legacy.some((p) => p.includes(k))),
+      `legacy=${legacy.join(',')}`);
+    for (const p of legacy) {
+      let res = null;
+      try {
+        const mod = await import(pathToFileURL(join(root, 'functions', `${p}.js`)).href);
+        res = await mod.onRequest({ request: new Request(`${ORIGIN}${p}`), env: ENV });
+      } catch { /* 下方判红 */ }
+      t(`G1 旧地址 ${p} 由 Function 回 404 + no-store`,
+        !!res && res.status === 404 && /no-store/.test(res.headers.get('Cache-Control') || ''),
+        res ? `status=${res.status}` : `缺 functions${p}.js`);
+    }
+  }
   return { pass, failures };
 }
 
@@ -183,7 +207,9 @@ export async function runChecks(root = ROOT) {
 function makeCopy(mutate = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'private-asset-selftest-'));
   writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
-  for (const rel of [ROUTE_REL, LIB_REL, SESSION_REL]) {
+  const legacyRoutes = readdirSync(join(ROOT, 'functions/admin')).map((f) => `functions/admin/${f}`);
+  for (const rel of [ROUTE_REL, LIB_REL, SESSION_REL, LEGACY_LIB_REL, ...legacyRoutes]) {
+    if (mutate[rel] === null) continue;
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     const src = readFileSync(join(ROOT, rel), 'utf8');
     writeFileSync(join(dir, rel), mutate[rel] ? mutate[rel](src) : src);
@@ -221,6 +247,9 @@ async function selftest() {
     ['白名单被绕过（路由多挂一个文件 + 去掉白名单判定）', /P5 白名单外文件名 → 404「sanyou-minglu\.pdf」/, {
       [LIB_REL]: (s) => must(s, '!PRIVATE_ASSET_NAMES.includes(name) || ', ''),
       [ROUTE_REL]: (s) => must(s, "const ASSETS = {\n", "const ASSETS = {\n  'sanyou-minglu.pdf': capitalSandbox,\n"),
+    }],
+    ['删掉旧地址 /admin/partner-destiny-center 的 404 Function（陈旧缓存重新可见）', /G1 旧地址 \/admin\/partner-destiny-center 由/, {
+      'functions/admin/partner-destiny-center.js': null,
     }],
     ['资料源文件改从公开目录 admin/public/ 根取', /S1 资料源文件全部位于/, {
       [ROUTE_REL]: (s) => must(s, "'../../admin/public/governance-assets/erp-embeds/partner-destiny-center.html'",
@@ -261,6 +290,6 @@ if (process.argv.includes('--selftest')) {
     failures.forEach((f) => console.error(`  ✗ ${f}`));
     process.exit(1);
   }
-  console.log('全部通过：未登录/过期/伪造/未配置口令/非白名单来源一律拒绝，白名单外文件名 404，合法会话 200 且 no-store/noindex，资料源只在构建剔除目录。');
+  console.log('全部通过：未登录/过期/伪造/未配置口令/非白名单来源一律拒绝，白名单外文件名 404，合法会话 200 且 no-store/noindex，资料源只在构建剔除目录，旧公开地址由 Function 回 404。');
   process.exit(0);
 }
