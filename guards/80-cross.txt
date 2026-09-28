@@ -49,6 +49,7 @@ npm run check:share-image
 npm run check:caller-openid-gate
 npm run check:api-auth
 npm run test:api-auth
+npm run test:private-asset
 npm run check:site-fallbacks
 npm run check:fn-openapi
 npm run check:dup-modules

@@ -222,6 +222,8 @@
     "check:api-auth:selftest": "node scripts/check-api-auth.mjs --selftest",
     "test:api-auth": "node scripts/test-api-auth-behavior.mjs",
     "test:api-auth:selftest": "node scripts/test-api-auth-behavior.mjs --selftest",
+    "test:private-asset": "node scripts/test-private-asset.mjs",
+    "test:private-asset:selftest": "node scripts/test-private-asset.mjs --selftest",
     "check:site-fallbacks": "node scripts/check-site-fallbacks.mjs",
     "check:site-fallbacks:selftest": "node scripts/check-site-fallbacks.mjs --selftest",
     "check:fn-openapi": "node admin/scripts/check-fn-openapi.mjs",

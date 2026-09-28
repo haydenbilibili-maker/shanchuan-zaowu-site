@@ -21,14 +21,18 @@
     </div>
 
     <div class="embed-frame-wrap">
+      <div v-if="access === 'checking'" class="embed-loading">
+        <el-icon class="spin"><Loading /></el-icon>
+        <span>校验管理会话…</span>
+      </div>
       <el-alert
-        v-if="!internalEmbedsAvailable"
+        v-else-if="access === 'denied'"
         class="embed-unavailable"
         type="warning"
         :closable="false"
         show-icon
-        title="资本架构沙盘仅在本地 / 私有环境可用"
-        :description="INTERNAL_EMBED_UNAVAILABLE_TIP"
+        title="资本架构沙盘需以最高管理权限口令登录后查看"
+        :description="accessMsg"
       />
       <template v-else>
         <div v-if="loading" class="embed-loading">
@@ -53,11 +57,9 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { Refresh, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
-  embeddedPageUrl,
-  standalonePageUrl,
-  internalEmbedPath,
+  internalEmbedUrl,
   internalEmbedsAvailable,
-  INTERNAL_EMBED_UNAVAILABLE_TIP,
+  checkInternalEmbedAccess,
 } from '../utils/embeddedPageUrl'
 import {
   pushFinanceSnapshotToIframeAsync,
@@ -70,15 +72,23 @@ import {
 
 const emit = defineEmits(['switch-tab'])
 
-const PAGE = internalEmbedPath('shanhai-capital-architecture-sandbox.html')
+const PAGE = 'shanhai-capital-architecture-sandbox.html'
 
 const iframeRef = ref(null)
-const loading = ref(internalEmbedsAvailable)
+const access = ref(internalEmbedsAvailable ? 'ok' : 'checking')
+const accessMsg = ref('')
+const loading = ref(true)
 const syncing = ref(false)
 const financeSynced = ref(false)
 const cacheBuster = ref(Date.now())
 
-const src = computed(() => embeddedPageUrl(PAGE, { cacheBuster: cacheBuster.value }))
+const src = computed(() => internalEmbedUrl(PAGE, { cacheBuster: cacheBuster.value }))
+
+const checkAccess = async () => {
+  const r = await checkInternalEmbedAccess(PAGE)
+  accessMsg.value = r.msg || ''
+  access.value = r.ok ? 'ok' : 'denied'
+}
 
 const syncFinanceToIframe = async () => {
   if (!iframeRef.value || syncing.value) return
@@ -102,8 +112,8 @@ const onIframeLoad = () => {
 }
 
 const syncFinanceLedger = async () => {
-  if (!internalEmbedsAvailable) {
-    ElMessage.warning(INTERNAL_EMBED_UNAVAILABLE_TIP)
+  if (access.value !== 'ok') {
+    ElMessage.warning(accessMsg.value || '请先以最高管理权限口令登录')
     return
   }
   await syncFinanceToIframe()
@@ -116,19 +126,22 @@ const syncFinanceLedger = async () => {
 
 const goFinance = () => emit('switch-tab', '2')
 
-const reload = () => {
-  if (!internalEmbedsAvailable) return
+const reload = async () => {
+  if (access.value !== 'ok') {
+    await checkAccess()
+    if (access.value !== 'ok') return
+  }
   loading.value = true
   cacheBuster.value = Date.now()
 }
 
 const openInNewTab = () => {
-  if (!internalEmbedsAvailable) {
-    ElMessage.warning(INTERNAL_EMBED_UNAVAILABLE_TIP)
+  if (access.value !== 'ok') {
+    ElMessage.warning(accessMsg.value || '请先以最高管理权限口令登录')
     return
   }
   try {
-    window.open(standalonePageUrl(PAGE), '_blank', 'noopener,noreferrer')
+    window.open(internalEmbedUrl(PAGE, { embed: false }), '_blank', 'noopener,noreferrer')
   } catch {
     ElMessage.warning('无法打开新窗口，请检查浏览器拦截设置')
   }
@@ -146,6 +159,7 @@ const onMessage = (event) => {
 
 onMounted(() => {
   window.addEventListener('message', onMessage)
+  if (access.value === 'checking') checkAccess()
   Promise.all([readFinanceSnapshotAsync(), readMiniprogramSandboxSnapshot()]).then(([snap]) => {
     financeSynced.value = !!(snap?.hasErpShanhaizaowu)
     if (iframeRef.value && !loading.value) syncFinanceToIframe()

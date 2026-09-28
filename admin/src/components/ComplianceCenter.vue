@@ -47,7 +47,8 @@
           <div class="kb-editor" v-if="currentKb">
             <div v-if="currentKb.docUrl && isInternalDoc(currentKb.docUrl) && !internalEmbedsAvailable" class="kb-doc">
               <div class="kb-doc-bar">
-                <span class="kb-doc-hint">附件 PDF 已移出公开部署，仅本地 / 私有环境（npm run dev:admin）可预览</span>
+                <span class="kb-doc-hint">扫描件（2000 年原名录）未随站点部署；现行版为国家林草局 2023 年第 17 号公告，请查看官方原文</span>
+                <a :href="SANYOU_OFFICIAL_URL" class="kb-doc-link" target="_blank" rel="noopener noreferrer">官方原文（中国政府网）</a>
               </div>
             </div>
             <div v-else-if="currentKb.docUrl" class="kb-doc">
@@ -541,6 +542,8 @@ const SANYOU_DOC_URL = `${String(import.meta.env.BASE_URL || '/admin/').replace(
 /** 本地已持久化的知识库里可能还存着旧地址（文件已迁入 governance-assets） */
 const LEGACY_SANYOU_DOC_URLS = ['/sanyou-minglu.pdf', '/admin/sanyou-minglu.pdf']
 const isInternalDoc = (url) => String(url || '').includes(INTERNAL_EMBED_DIR)
+/** 现行三有名录（2023 年第 17 号公告，含名录 PDF 附件）；公开法规文本，线上直接链官方原文 */
+const SANYOU_OFFICIAL_URL = 'https://www.gov.cn/zhengce/zhengceku/202307/content_6889361.htm'
 
 const defaultSanyouKbEntry = () => ({
   id: SANYOU_KB_ID,

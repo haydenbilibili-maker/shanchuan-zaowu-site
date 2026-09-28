@@ -87,11 +87,7 @@ import { safeWarn } from '../utils/safeStorage.js'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
-import {
-  internalEmbedPath,
-  internalEmbedsAvailable,
-  INTERNAL_EMBED_UNAVAILABLE_TIP,
-} from '../utils/embeddedPageUrl'
+import { internalEmbedUrl, INTERNAL_EMBED_UNAVAILABLE_TIP } from '../utils/embeddedPageUrl'
 
 const STORAGE_KEY = 'sc_partner_destiny_unlocked'
 /**
@@ -105,7 +101,7 @@ const DEFAULT_PASSWORD = import.meta.env.DEV ? (import.meta.env.VITE_PARTNER_PAS
 /** 二次门是否可用：未配置（生产默认）即视为不该有门 */
 const gateDisabled = !DEFAULT_PASSWORD
 const EXPECTED_IDS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'hcx', 'wh', 'lel', 'xt', 'fam', 'z']
-const BASE = import.meta.env.BASE_URL || '/admin/'
+const PAGE = 'partner-destiny-center.html'
 
 const unlocked = ref(typeof window !== 'undefined' && (gateDisabled || localStorage.getItem(STORAGE_KEY) === '1'))
 const password = ref('')
@@ -123,7 +119,7 @@ const scrollRoot = ref(null)
 
 let styleEl = null
 
-const destinyPageUrl = (v = cacheBuster.value) => `${BASE}${internalEmbedPath('partner-destiny-center.html')}?v=${v}`
+const destinyPageUrl = (v = cacheBuster.value) => internalEmbedUrl(PAGE, { embed: false, cacheBuster: v })
 
 function scopeCss(css, scope) {
   const scopeSelectors = (selectors) =>
@@ -274,18 +270,14 @@ function parseDestinyHtml(html) {
 
 async function loadContent() {
   if (!unlocked.value) return
-  if (!internalEmbedsAvailable) {
-    clearEmbedState()
-    loadError.value = INTERNAL_EMBED_UNAVAILABLE_TIP
-    return
-  }
   loading.value = true
   loadError.value = ''
   try {
     const url = destinyPageUrl(cacheBuster.value)
-    const res = await fetch(url, { cache: 'no-store' })
+    const res = await fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+    if (res.status === 401) throw new Error(INTERNAL_EMBED_UNAVAILABLE_TIP)
     if (!res.ok) {
-      throw new Error(`无法读取命理全书（HTTP ${res.status}）。请确认 ${url} 可访问。`)
+      throw new Error(`无法读取命理全书（HTTP ${res.status}），请稍后重试或联系维护者。`)
     }
     const html = await res.text()
     if (!html || html.length < 1000) {
@@ -361,8 +353,8 @@ const openInNewTab = () => {
       ElMessage.warning('请先解锁后再打开')
       return
     }
-    if (!internalEmbedsAvailable) {
-      ElMessage.warning(INTERNAL_EMBED_UNAVAILABLE_TIP)
+    if (loadError.value) {
+      ElMessage.warning(loadError.value)
       return
     }
     window.open(destinyPageUrl(Date.now()), '_blank', 'noopener,noreferrer')
