@@ -40,6 +40,7 @@ const {
   normalizeCraftProcess
 } = require('./productTaxonomy')
 const { resolveSensitiveBlurForSave } = require('./sensitiveMorphology')
+const { sanitizeProductMedia, stripVideoUrls, isVideoUrl } = require('./productMedia')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -62,7 +63,9 @@ const ALLOWED_FIELDS = [
   // 需求：主题名（双层命名 —— title 仍是标准名，用于检索/识别/对账；themeName 是文艺主题名）
   'themeName', 'themeNote',
   // 需求 28 · item 6：商品祈运标签（受控枚举，见 blessTags.js）—— 玩法推荐与祈福墙文案的匹配依据之一
-  'blessTags'
+  'blessTags',
+  // 2026-09-28 产品点名：视频 / 实况（可选；只有详情页轮播读它，images 仍只放图片）—— 见 productMedia.js
+  'media'
 ]
 
 const PATCH_FIELDS = ALLOWED_FIELDS.filter((k) => k !== 'createTime')
@@ -267,6 +270,15 @@ function prepareProductData(raw) {
     data.latinName = /^(n\/?a|n\.a\.?|null|undefined|none|nil|unknown|-|—|–|暂无|无|未知)$/i.test(latin)
       ? ''
       : latin
+  }
+  if (Object.prototype.hasOwnProperty.call(data, 'media')) {
+    data.media = sanitizeProductMedia(data.media)
+  }
+  if (Array.isArray(data.images)) {
+    data.images = stripVideoUrls(data.images)
+  }
+  if (typeof data.coverImage === 'string' && isVideoUrl(data.coverImage)) {
+    delete data.coverImage
   }
   if (Object.prototype.hasOwnProperty.call(data, 'channel')) {
     data.channel = normalizeChannel(data.channel) || ''

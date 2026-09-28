@@ -53,7 +53,12 @@
 
       <!-- 中间列表 -->
       <div class="list-pane" v-loading="loading">
-        <div v-if="!list.length" class="empty">该分类暂无工单</div>
+        <div v-if="!list.length" class="list-empty">
+          <ErpEmpty
+            description="该分类暂无工单"
+            hint="顾客在小程序「山海有信」提交后会出现在此；也可切换左侧话题或状态再看。"
+          />
+        </div>
         <div
           v-for="t in list"
           :key="t._id"
@@ -169,6 +174,7 @@ import { ElMessage } from 'element-plus'
 import { assertWriteApplied } from '../utils/cloudbaseCdnDb.js'
 import { buildProfile } from '../utils/userSegmentation'
 import TalkingScriptCard from './TalkingScriptCard.vue'
+import ErpEmpty from './ErpEmpty.vue'
 
 const list = ref([])
 const loading = ref(false)
@@ -363,12 +369,12 @@ onMounted(refresh)
 .ticket-write-alert { margin-bottom: 12px; }
 .support-container { padding: 10px; height: calc(100vh - 60px); display: flex; flex-direction: column; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid #d4af37; padding-left: 12px; font-weight: 800; }
-.title-box .subtitle { color: #999; font-size: 12px; padding-left: 17px; letter-spacing: 2px; }
+.title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid var(--gold-400); padding-left: 12px; font-weight: 800; }
+.title-box .subtitle { color: var(--light-text-secondary); font-size: 12px; padding-left: 17px; letter-spacing: 2px; }
 
 .layout { display: grid; grid-template-columns: 220px 380px 1fr; gap: 16px; flex: 1; min-height: 0; }
 .sidebar, .list-pane, .detail-pane { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); overflow-y: auto; }
-.seg-title { font-size: 12px; color: #999; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; }
+.seg-title { font-size: 12px; color: var(--light-text-secondary); margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; }
 .topic-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
 .topic-item:hover { background: #f9f9f9; }
 .topic-item.active { background: #fdf6ec; color: var(--gold-700); font-weight: bold; }
@@ -379,27 +385,28 @@ onMounted(refresh)
 .list-pane { padding: 8px; }
 .ticket-item { padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; margin-bottom: 6px; }
 .ticket-item:hover { background: #fafafa; }
-.ticket-item.active { background: #fdf6ec; border-color: #d4af37; }
+.ticket-item.active { background: var(--el-color-primary-light-9); border-color: var(--gold-400); }
 .ticket-item.unread { border-left: 3px solid #f56c6c; }
 .ti-row1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .ti-topic { font-weight: bold; color: #333; font-size: 13px; }
 .ti-msg { color: #666; font-size: 12px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.ti-meta { display: flex; justify-content: space-between; color: #999; font-size: 11px; margin-top: 6px; }
+.ti-meta { display: flex; justify-content: space-between; color: var(--light-text-secondary); font-size: 11px; margin-top: 6px; }
 
 .detail-pane { display: flex; flex-direction: column; }
 /* 空态提示是信息不是装饰：#ccc 白底 1.61:1 几乎看不见，改次级文字色 5.74:1 达 AA */
 .empty-detail { display: flex; align-items: center; justify-content: center; color: var(--light-text-secondary); }
 .detail-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
 .d-topic { font-size: 18px; font-weight: bold; color: #333; }
-.d-time { font-size: 12px; color: #999; margin-top: 4px; }
+.d-time { font-size: 12px; color: var(--light-text-secondary); margin-top: 4px; }
 .msg-block { margin-top: 20px; }
-.msg-title { font-size: 12px; color: #999; margin-bottom: 6px; }
+.msg-title { font-size: 12px; color: var(--light-text-secondary); margin-bottom: 6px; }
 .msg-content { background: #fafafa; padding: 14px; border-radius: 8px; font-size: 14px; line-height: 1.7; color: #333; white-space: pre-wrap; }
 .msg-content.reply { background: #fdf6ec; border-left: 3px solid #d4af37; }
-.reply-time { color: #999; font-size: 12px; margin-top: 4px; text-align: right; }
+.reply-time { color: var(--light-text-secondary); font-size: 12px; margin-top: 4px; text-align: right; }
 
 .actions { margin-top: auto; padding-top: 20px; }
 .action-row { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; }
+.list-empty { padding: 24px 12px; }
 .empty { text-align: center; color: var(--light-text-secondary); padding: 60px; }
 
 /* 客户画像卡 */
@@ -408,10 +415,10 @@ onMounted(refresh)
 .cp-title { font-weight: bold; font-size: 13px; color: #333; }
 .cp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .cp-item { display: flex; flex-direction: column; gap: 2px; }
-.cp-lbl { font-size: 11px; color: #999; }
+.cp-lbl { font-size: 11px; color: var(--light-text-secondary); }
 .cp-val { font-size: 14px; font-weight: bold; color: #333; }
-.cp-val.rfm { color: #d4af37; font-family: monospace; }
+.cp-val.rfm { color: var(--erp-gold-on-light); font-family: monospace; }
 .cp-tags { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f0f0f0; }
-.customer-profile-loading { padding: 12px; color: #999; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+.customer-profile-loading { padding: 12px; color: var(--light-text-secondary); font-size: 12px; display: flex; gap: 6px; align-items: center; }
 .ai-card-wrap { margin-top: 16px; }
 </style>

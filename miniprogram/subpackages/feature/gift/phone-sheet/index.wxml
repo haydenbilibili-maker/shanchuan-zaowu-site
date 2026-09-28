@@ -1,0 +1,23 @@
+<view class="ps-mask" wx:if="{{show}}" bindtap="onClose" catchtouchmove="noop">
+  <view class="ps-panel" catchtap="noop">
+    <text class="ps-over">{{overline}}</text>
+    <text class="ps-title">{{title}}</text>
+    <text class="ps-desc" wx:if="{{desc}}">{{desc}}</text>
+    <input
+      class="ps-input"
+      type="number"
+      maxlength="11"
+      placeholder="{{placeholder}}"
+      placeholder-class="ps-ph"
+      value="{{value}}"
+      focus="{{show}}"
+      bindinput="onInput"
+      bindconfirm="onConfirm"
+    />
+    <text class="ps-error" wx:if="{{localError || error}}">{{localError || error}}</text>
+    <view class="ps-btn {{busy ? 'is-busy' : ''}}" hover-class="ps-btn-press" hover-stay-time="80" bindtap="onConfirm">{{busy ? '请稍候…' : confirmText}}</view>
+    <view class="ps-link" wx:if="{{quickText}}" bindtap="onQuick">{{quickText}}</view>
+    <view class="ps-link ps-link-muted" wx:if="{{clearText}}" bindtap="onClear">{{clearText}}</view>
+    <view class="ps-link ps-link-muted" bindtap="onClose">取消</view>
+  </view>
+</view>

@@ -490,7 +490,9 @@ const photoLegacyRow = {
     scrollStyle: '',
     entered: true,
     loadError: false,
-    digestView: null
+    digestView: null,
+    digestPayloadMissing: false,
+    actionPadStyle: ''
   })
   check('真渲染：出现「包装实拍」区块', rendered.includes('包装实拍'))
   check('真渲染：https 地址已就位', rendered.includes('https://'))
@@ -515,7 +517,7 @@ const photoLegacyRow = {
 const digestViewMod = (() => {
   const module = { exports: {} }
   // eslint-disable-next-line no-new-func
-  new Function('module', 'exports', readSrc('miniprogram/utils/digestView.js'))(module, module.exports)
+  new Function('module', 'exports', readSrc('miniprogram/subpackages/extra/utils/digestView.js'))(module, module.exports)
   return module.exports
 })()
 
@@ -583,7 +585,11 @@ const digestRow = {
       scrollStyle: '',
       entered: true,
       loadError: false,
-      digestView: view
+      digestView: view,
+      digestPayloadMissing: false,
+      actionPadStyle: '',
+      sectionCollapsed: {},
+      showSources: false
     })
     check('真渲染：两档都出现（取数失败 + 未取到）',
       digestRendered.includes('取数失败') && digestRendered.includes('未取到'))

@@ -42,7 +42,8 @@
             <text class="letter-title">{{selectedMessage.title}}</text>
             <text class="letter-time">{{selectedMessage.formattedTime}} · {{selectedMessage.typeName}}</text>
             <view class="letter-rule"></view>
-            <view class="letter-body">
+            <!-- 有结构化日报时，纯文本正文让位（避免与关键数重复）；无 payload 时仍显示正文兜底 -->
+            <view class="letter-body" wx:if="{{!digestView}}">
               <text
                 class="letter-p"
                 wx:for="{{selectedMessage.bodyBlocks}}"
@@ -56,7 +57,7 @@
                 >{{run.text}}</text>
               </text>
             </view>
-            <view class="letter-sum" wx:if="{{selectedMessage.summaries.length}}">
+            <view class="letter-sum" wx:if="{{!digestView && selectedMessage.summaries.length}}">
               <view class="letter-sum-row" wx:for="{{selectedMessage.summaries}}" wx:key="id">
                 <text class="sum-label">{{item.label}}</text>
                 <text class="sum-value">{{item.value}}</text>
@@ -113,30 +114,99 @@
                  非日报消息整块不出现 —— 与老信完全一致，不改变既有版式。 -->
             <view class="letter-digest" wx:if="{{digestView}}">
               <view class="dg-head">
-                <text class="dg-title">{{digestView.title}}</text>
-                <text class="dg-role" wx:if="{{digestView.roleLabel}}">{{digestView.roleLabel}}</text>
+                <view class="dg-head-main">
+                  <text class="dg-title">{{digestView.title}}</text>
+                  <text class="dg-role" wx:if="{{digestView.roleLabel}}">{{digestView.roleLabel}}</text>
+                </view>
+                <view class="dg-head-meta">
+                  <text class="dg-dayline" wx:if="{{digestView.dayLine}}">{{digestView.dayLine}}</text>
+                  <text class="dg-generated" wx:if="{{digestView.generatedAtText}}">生成 {{digestView.generatedAtText}}</text>
+                </view>
+                <view class="dg-health tone-{{digestView.healthTone}}" wx:if="{{digestView.healthLabel}}">
+                  <view class="dg-health-row">
+                    <view class="dg-health-lamp tone-{{digestView.healthTone}}"></view>
+                    <text class="dg-health-label">{{digestView.healthLabel}}</text>
+                  </view>
+                  <text class="dg-health-summary">{{digestView.countNote}}</text>
+                </view>
               </view>
 
-              <view class="dg-section" wx:for="{{digestView.sections}}" wx:for-item="sec" wx:key="key">
-                <text class="dg-sec-title">{{sec.label}}</text>
-                <view class="dg-row" wx:for="{{sec.metrics}}" wx:for-item="m" wx:key="id">
-                  <view class="dg-row-top">
-                    <text class="dg-label">{{m.label}}</text>
-                    <text class="dg-value {{m.missing ? 'is-missing' : ''}}">{{m.valueText}}</text>
+              <view class="dg-alert" wx:if="{{digestView.failedCount > 0}}">
+                <text class="dg-alert-text">{{digestView.failedNote}}</text>
+              </view>
+
+              <view class="dg-highlights" wx:if="{{digestView.hasHighlights}}">
+                <view
+                  class="dg-hi {{m.primary ? 'is-primary' : ''}} {{m.failed ? 'is-failed' : ''}} {{m.missing ? 'is-missing' : ''}}"
+                  wx:for="{{digestView.highlights}}"
+                  wx:for-item="m"
+                  wx:key="id"
+                >
+                  <text class="dg-hi-kicker" wx:if="{{m.primary}}">关键</text>
+                  <text class="dg-hi-label">{{m.label}}</text>
+                  <text class="dg-hi-value">{{m.valueText}}</text>
+                </view>
+              </view>
+
+              <view class="dg-sec-tools" wx:if="{{digestView.sections.length > 1}}">
+                <view class="dg-tool ghost" bindtap="expandAllDigestSections" hover-class="dg-tool-press" hover-stay-time="80">
+                  <text>全部展开</text>
+                </view>
+                <view class="dg-tool ghost" bindtap="collapseOkDigestSections" hover-class="dg-tool-press" hover-stay-time="80">
+                  <text>收起正常组</text>
+                </view>
+              </view>
+
+              <view class="dg-section tone-{{sec.healthTone}} {{sectionCollapsed[sec.key] ? 'is-collapsed' : ''}}" wx:for="{{digestView.sections}}" wx:for-item="sec" wx:key="key">
+                <view
+                  class="dg-sec-head"
+                  bindtap="toggleDigestSection"
+                  data-key="{{sec.key}}"
+                  hover-class="dg-sec-head-press"
+                  hover-stay-time="80"
+                >
+                  <view class="dg-sec-lamp tone-{{sec.healthTone}}"></view>
+                  <text class="dg-sec-title">{{sec.label}}</text>
+                  <text class="dg-sec-count tone-{{sec.healthTone}}">{{sec.countText}}</text>
+                  <text class="dg-sec-chevron">{{sectionCollapsed[sec.key] ? '展开' : '收起'}}</text>
+                </view>
+                <view class="dg-sec-body" wx:if="{{!sectionCollapsed[sec.key]}}">
+                  <view class="dg-row {{m.failed ? 'row-failed' : ''}}" wx:for="{{sec.metrics}}" wx:for-item="m" wx:key="id">
+                    <view class="dg-row-top">
+                      <text class="dg-label">{{m.label}}</text>
+                      <text class="dg-value {{m.missing ? 'is-missing' : ''}} {{m.failed ? 'is-failed' : ''}}">{{m.valueText}}</text>
+                    </view>
+                    <text class="dg-source" wx:if="{{showSources && m.sourceText}}">{{m.sourceText}}</text>
+                    <text class="dg-source brief" wx:elif="{{m.sourceBrief}}">{{m.sourceBrief}}</text>
+                    <text class="dg-caveat" wx:if="{{m.failedText}}">{{m.failedText}}</text>
+                    <text class="dg-caveat" wx:if="{{m.caveat}}">{{m.caveat}}</text>
                   </view>
-                  <text class="dg-source">{{m.sourceText}}</text>
-                  <!-- 取数失败：与「当日无数据（未取到）」分开呈现，且带出原因 -->
-                  <text class="dg-caveat" wx:if="{{m.failedText}}">{{m.failedText}}</text>
-                  <text class="dg-caveat" wx:if="{{m.caveat}}">{{m.caveat}}</text>
+                </view>
+                <view class="dg-sec-collapsed" wx:else>
+                  <text>{{sec.collapsedHint || '已收起'}}</text>
+                </view>
+              </view>
+
+              <view class="dg-tools">
+                <view class="dg-tool" bindtap="toggleDigestSources" hover-class="dg-tool-press" hover-stay-time="80">
+                  <text>{{showSources ? '收起完整口径' : '显示完整口径'}}</text>
+                </view>
+                <view class="dg-tool" bindtap="shareDigestSheet" hover-class="dg-tool-press" hover-stay-time="80">
+                  <text>复制 / 分享摘要</text>
                 </view>
               </view>
 
               <view class="dg-foot">
                 <text class="dg-note">{{digestView.snapshotNote}}</text>
-                <!-- 两档分开：先「取数失败」，再「当日确实无数据」 -->
-                <text class="dg-note warn" wx:if="{{digestView.failedNote}}">{{digestView.failedNote}}</text>
+                <text class="dg-note" wx:if="{{digestView.generatedNote}}">{{digestView.generatedNote}}</text>
                 <text class="dg-note warn" wx:if="{{digestView.missingNote}}">{{digestView.missingNote}}</text>
               </view>
+            </view>
+
+            <!-- 日报但无结构化 payload：诚实提示，不假装「没生意」 -->
+            <view class="letter-digest-missing" wx:elif="{{digestPayloadMissing}}">
+              <text class="dgm-title">结构化口径未下发</text>
+              <text class="dgm-desc">本期只有文字摘要。常见原因：getUserMessages 未更新部署，或 payload 归一化未放行。数字请以云端修复后再看。</text>
             </view>
             <view class="letter-sign">
               <text class="sign-line">{{selectedMessage.senderName}}</text>
@@ -147,23 +217,33 @@
       </view>
     </scroll-view>
 
-    <view class="letter-actions on-paper">
+    <view class="letter-actions on-paper {{digestView ? 'digest-actions' : ''}}" style="{{actionPadStyle}}">
       <button
         class="btn-primary"
         bindtap="handleAction"
-        wx:if="{{selectedMessage.hasAction}}"
+        wx:if="{{selectedMessage.hasAction && !digestView}}"
       >{{selectedMessage.actionLabel || '前往相关页'}}</button>
-      <button class="btn-secondary" bindtap="leaveLetter">返回信箱</button>
-      <view class="letter-delete" bindtap="deleteMessage">从信箱移除</view>
+      <button class="btn-primary" bindtap="leaveLetter" wx:if="{{digestView}}">返回工作信息</button>
+      <button class="btn-secondary" bindtap="shareDigestSheet" wx:if="{{digestView}}">复制摘要</button>
+      <button class="btn-secondary" bindtap="leaveLetter" wx:elif="{{!digestView}}">返回信箱</button>
+      <view class="letter-delete" bindtap="deleteMessage">{{digestView ? '移除本期日报' : '从信箱移除'}}</view>
     </view>
+  </view>
+
+  <view class="empty-state" wx:elif="{{letterLoading}}">
+    <view class="empty-lamps">
+      <view class="lamp lamp-info dim"></view>
+    </view>
+    <text class="empty-text">正在取信</text>
+    <text class="empty-desc">稍候即可对账本期数字。</text>
   </view>
 
   <view class="empty-state" wx:elif="{{loadError}}">
     <view class="empty-lamps">
       <view class="lamp lamp-warning"></view>
     </view>
-    <text class="empty-text">这封信暂时读不到</text>
-    <text class="empty-desc">请先回到信箱，稍后再打开。</text>
-    <view class="retry-btn" hover-class="retry-btn-press" hover-stay-time="80" bindtap="leaveLetter">返回信箱</view>
+    <text class="empty-text">{{selectedMessage.isDigest || digestPayloadMissing ? '这份日报暂时读不到' : '这封信暂时读不到'}}</text>
+    <text class="empty-desc">请先回到工作信息或信箱，稍后再打开。</text>
+    <view class="retry-btn" hover-class="retry-btn-press" hover-stay-time="80" bindtap="leaveLetter">返回列表</view>
   </view>
 </view>

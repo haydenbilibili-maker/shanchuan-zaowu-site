@@ -9,7 +9,7 @@
     </div>
 
     <div class="filter-bar">
-      <el-radio-group v-model="statusFilter" fill="#d4af37" @change="refresh">
+      <el-radio-group v-model="statusFilter" @change="refresh">
         <el-radio-button label="all">全部</el-radio-button>
         <el-radio-button label="pending">待审核</el-radio-button>
         <el-radio-button label="approved">已批准</el-radio-button>
@@ -214,6 +214,7 @@ import {
   callCloudFunction,
   assertWriteApplied,
 } from '../cloud'
+import { isMaskedPii } from '../utils/cloudbaseCdnDb.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 /** 订单侧历史退款相关状态（小程序申请 / 店长退款 / 云函数完成后写入） */
@@ -444,8 +445,9 @@ async function ensureRefundDoc(row, patch) {
       amount: Number(row.amount || 0),
       reason: row.reason || '客户申请退款',
       description: row.description || '',
-      userName: row.userName || '',
-      contactPhone: row.contactPhone || '',
+      // 订单经只读网关读取时联系人已脱敏；脱敏值不得写进退款单（详情页会回落到关联订单）
+      userName: isMaskedPii(row.userName) ? '' : row.userName || '',
+      contactPhone: isMaskedPii(row.contactPhone) ? '' : row.contactPhone || '',
       _openid: row._openid || '',
       createTime: row.createTime || Date.now(),
       source: 'order_backfill',

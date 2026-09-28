@@ -367,6 +367,11 @@ Page({
   data: {
     ready: false,
     loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    formTipTone: 'warn',
     keyword: '',
     segment: '',
     topSegments: [],
@@ -401,6 +406,8 @@ Page({
     cancelPhoneInput: '',
     cancelTextInput: '',
     cancelSubmitting: false,
+    cancelPending: false,
+    restorePending: false,
 
     showYouxin: false,
     youxinTarget: null,
@@ -479,8 +486,11 @@ Page({
         overviewHint: overviewHintFor(overview, this.data.overviewTab)
       });
     } catch (e) {
-      this.setData({ overviewLoading: false });
-      wx.showToast({ title: formatCloudFnError(e, e.msg || '概览加载失败'), icon: 'none' });
+      this.setData({
+        overviewLoading: false,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, e.msg || '概览加载失败')
+      });
     }
   },
 
@@ -506,7 +516,7 @@ Page({
 
   async loadList() {
     if (this.data.loading) return;
-    this.setData({ loading: true });
+    this.setData({ loading: true, listError: false, tipText: '' });
     try {
       const result = await this.callFn({
         action: 'list',
@@ -519,6 +529,7 @@ Page({
       const mapped = (result.list || []).map(mapListItem);
       this.setData({
         loading: false,
+        listError: false,
         list: mapped,
         totalMatched: result.totalMatched || 0,
         totalLoaded: result.totalLoaded || 0,
@@ -527,8 +538,12 @@ Page({
         footerTip: `共 ${result.totalMatched || 0} / ${result.totalLoaded || 0} 位 · ${tip}`
       });
     } catch (e) {
-      this.setData({ loading: false, list: [] });
-      wx.showToast({ title: formatCloudFnError(e, e.msg || '加载失败'), icon: 'none' });
+      this.setData({
+        loading: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, e.msg || '会员列表加载失败')
+      });
     }
   },
 
@@ -556,7 +571,8 @@ Page({
       detailLoading: true,
       detail: null,
       recentOrders: [],
-      tagsExpanded: false
+      tagsExpanded: false,
+      restorePending: false
     });
     try {
       const result = await this.callFn({ action: 'getDetail', openid, userId });
@@ -570,8 +586,11 @@ Page({
       });
       this.syncListItemFromDetail(detail);
     } catch (err) {
-      this.setData({ detailLoading: false, showDetail: false });
-      wx.showToast({ title: formatCloudFnError(err, err.msg || '加载详情失败'), icon: 'none' });
+      this.setData({
+        detailLoading: false,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(err, err.msg || '加载详情失败')
+      });
     }
   },
 
@@ -624,7 +643,7 @@ Page({
     wx.navigateTo({
       url: `${ORDER_DETAIL_PATH}?id=${encodeURIComponent(id)}`,
       fail: () => {
-        wx.showToast({ title: '无法打开订单详情', icon: 'none' });
+        this.setData({ tipTone: 'warn', tipText: '无法打开订单详情' });
       }
     });
   },
@@ -634,7 +653,7 @@ Page({
     if (!openid) return;
     wx.setClipboardData({
       data: openid,
-      success: () => wx.showToast({ title: '已复制 OpenID', icon: 'none' })
+      success: () => this.setData({ tipTone: 'info', tipText: '已复制 OpenID' })
     });
   },
 
@@ -649,7 +668,7 @@ Page({
         } catch (err) {
           /* 部分基础库不支持 */
         }
-        wx.showToast({ title: '已复制手机号', icon: 'none' });
+        this.setData({ tipTone: 'info', tipText: '已复制手机号' });
       }
     });
   },
@@ -675,7 +694,9 @@ Page({
       youxinTitle: '',
       youxinContent: '',
       youxinAiLoading: false,
-      youxinSending: false
+      youxinSending: false,
+      formTip: '',
+      formTipTone: 'warn'
     });
     this.generateYouxinCopyForMember(member, campaignType);
   },
@@ -704,8 +725,7 @@ Page({
     const segmentKey = String(member.segment || 'never_purchased');
     const campaignType = campaignTypeOverride || inferCampaignType(segmentKey);
     const portraitHint = buildPortraitHint(member);
-    this.setData({ youxinAiLoading: true, youxinCampaignType: campaignType });
-    wx.showLoading({ title: '撰写中…' });
+    this.setData({ youxinAiLoading: true, youxinCampaignType: campaignType, formTip: '撰写中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'assistYouxinCopy',
@@ -716,23 +736,21 @@ Page({
           portraitHint
         }
       });
-      wx.hideLoading();
       const r = (res && res.result) || {};
       if (!r.success) {
         const msg = r.code === 'FORBIDDEN' || /权限|FORBIDDEN/i.test(String(r.msg || ''))
           ? '无有信权限'
           : r.msg || '撰写失败';
-        wx.showToast({ title: msg, icon: 'none' });
+        this.setData({ formTip: msg });
         return;
       }
       this.setData({
         youxinTitle: r.title || '',
-        youxinContent: r.content || ''
+        youxinContent: r.content || '',
+        formTip: '已生成，可编辑'
       });
-      wx.showToast({ title: '已生成，可编辑', icon: 'none' });
     } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: 'AI 不可用', icon: 'none' });
+      this.setData({ formTip: 'AI 不可用' });
     } finally {
       this.setData({ youxinAiLoading: false });
     }
@@ -749,15 +767,14 @@ Page({
     const content = String(this.data.youxinContent || '').trim();
     const targetOpenid = String(this.data.youxinTarget.openid || '').trim();
     if (!title || !content) {
-      wx.showToast({ title: '请填写标题和正文', icon: 'none' });
+      this.setData({ formTip: '请填写标题和正文' });
       return;
     }
     if (!targetOpenid) {
-      wx.showToast({ title: '缺少接收用户', icon: 'none' });
+      this.setData({ formTip: '缺少接收用户' });
       return;
     }
-    this.setData({ youxinSending: true });
-    wx.showLoading({ title: '发送中…' });
+    this.setData({ youxinSending: true, formTip: '发送中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'pushMessage',
@@ -773,20 +790,18 @@ Page({
           segment: String(this.data.youxinTarget.segment || '')
         }
       });
-      wx.hideLoading();
       const r = (res && res.result) || {};
       if (!r.success) {
         const msg = r.code === 'FORBIDDEN' || /权限|FORBIDDEN/i.test(String(r.msg || ''))
           ? '无有信权限'
           : r.msg || '发送失败';
-        wx.showToast({ title: msg, icon: 'none' });
+        this.setData({ formTip: msg });
         return;
       }
-      wx.showToast({ title: '已发往山海有信', icon: 'none' });
+      this.setData({ tipTone: 'info', tipText: '已发往山海有信' });
       this.closeYouxin();
     } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: '发送失败', icon: 'none' });
+      this.setData({ formTip: '发送失败' });
     } finally {
       this.setData({ youxinSending: false });
     }
@@ -794,7 +809,7 @@ Page({
 
   openAdjust() {
     if (!this.data.detail) return;
-    this.setData({ showAdjust: true, adjustAmount: '' });
+    this.setData({ showAdjust: true, adjustAmount: '', formTip: '' });
   },
 
   closeAdjust() {
@@ -809,7 +824,7 @@ Page({
     if (this.data.adjustSubmitting || !this.data.detail) return;
     const amount = parseInt(this.data.adjustAmount, 10);
     if (!Number.isFinite(amount) || amount === 0) {
-      wx.showToast({ title: '请输入非零整数', icon: 'none' });
+      this.setData({ formTip: '请输入非零整数' });
       return;
     }
     this.setData({ adjustSubmitting: true });
@@ -820,12 +835,13 @@ Page({
         userId: this.data.detail._id,
         amount
       });
-      wx.showToast({ title: result.msg || '已调整', icon: 'success' });
       const after = Number(result.afterAvailable) || 0;
       this.setData({
         adjustSubmitting: false,
         showAdjust: false,
         adjustAmount: '',
+        tipTone: 'info',
+        tipText: result.msg || '已调整',
         'detail.availablePoints': after,
         'detail.points': after,
         'detail.pointsDisplay': String(after),
@@ -841,8 +857,10 @@ Page({
       this.loadList();
       if (this.data.overviewReady) this.loadOverview(true);
     } catch (e) {
-      this.setData({ adjustSubmitting: false });
-      wx.showToast({ title: formatCloudFnError(e, e.msg || '调整失败'), icon: 'none' });
+      this.setData({
+        adjustSubmitting: false,
+        formTip: formatCloudFnError(e, e.msg || '调整失败')
+      });
     }
   },
 
@@ -855,6 +873,8 @@ Page({
       cancelMode: 'soft',
       cancelPhoneInput: '',
       cancelTextInput: '',
+      cancelPending: false,
+      formTip: ''
     });
   },
 
@@ -884,11 +904,11 @@ Page({
 
     // 客户端即时校验（服务端会再校验一次，这里只为即时反馈）
     if (!String(this.data.cancelPhoneInput || '').replace(/\D/g, '')) {
-      wx.showToast({ title: '请输入该会员的手机号', icon: 'none' });
+      this.setData({ formTip: '请输入该会员的手机号' });
       return;
     }
     if (String(this.data.cancelTextInput || '').trim() !== '注销') {
-      wx.showToast({ title: '请手动输入「注销」二字', icon: 'none' });
+      this.setData({ formTip: '请手动输入「注销」二字' });
       return;
     }
 
@@ -896,20 +916,16 @@ Page({
       mode === 'purge' ? '硬删除会员记录（不可恢复）'
         : mode === 'anonymize' ? '注销并匿名化（不可恢复）'
           : '软注销（可恢复）';
-    const confirmed = await new Promise((resolve) => {
-      wx.showModal({
-        title: '最终确认',
-        content: `将对「${d.nickName || d.memberNo || '该会员'}」执行：${modeLabel}。\n\n此操作会记入操作日志。`,
-        confirmText: '确认注销',
-        confirmColor: '#D64045',
-        cancelText: '再想想',
-        success: (r) => resolve(!!r.confirm),
-        fail: () => resolve(false),
+    // 页内二次确认（已有手机号+「注销」双校验，不再叠原生弹窗）
+    if (!this.data.cancelPending) {
+      this.setData({
+        cancelPending: true,
+        formTip: `再点一次确认：对「${d.nickName || d.memberNo || '该会员'}」执行${modeLabel}`
       });
-    });
-    if (!confirmed) return;
+      return;
+    }
 
-    this.setData({ cancelSubmitting: true });
+    this.setData({ cancelSubmitting: true, cancelPending: false, formTip: '正在注销…' });
     try {
       const result = await this.callFn({
         action: 'cancelMember',
@@ -919,8 +935,14 @@ Page({
         confirmPhone: this.data.cancelPhoneInput,
         confirmText: this.data.cancelTextInput,
       });
-      wx.showToast({ title: result.msg || '已注销', icon: 'none', duration: 2500 });
-      this.setData({ cancelSubmitting: false, showCancelMember: false, cancelPhoneInput: '', cancelTextInput: '' });
+      this.setData({
+        cancelSubmitting: false,
+        showCancelMember: false,
+        cancelPhoneInput: '',
+        cancelTextInput: '',
+        tipTone: 'info',
+        tipText: result.msg || '已注销'
+      });
       if (mode === 'purge') {
         this.setData({ showDetail: false });
       } else {
@@ -928,8 +950,10 @@ Page({
       }
       this.loadList();
     } catch (e) {
-      this.setData({ cancelSubmitting: false });
-      wx.showToast({ title: formatCloudFnError(e, (e && e.msg) || '注销失败'), icon: 'none', duration: 3000 });
+      this.setData({
+        cancelSubmitting: false,
+        formTip: formatCloudFnError(e, (e && e.msg) || '注销失败')
+      });
     }
   },
 
@@ -937,23 +961,25 @@ Page({
   async restoreMember() {
     const d = this.data.detail;
     if (!d) return;
-    const confirmed = await new Promise((resolve) => {
-      wx.showModal({
-        title: '恢复会员',
-        content: `将「${d.nickName || d.memberNo || '该会员'}」恢复为正常状态？`,
-        confirmText: '确认恢复',
-        success: (r) => resolve(!!r.confirm),
-        fail: () => resolve(false),
+    if (!this.data.restorePending) {
+      this.setData({
+        restorePending: true,
+        tipTone: 'warn',
+        tipText: `再点一次「恢复」即将「${d.nickName || d.memberNo || '该会员'}」恢复为正常状态`
       });
-    });
-    if (!confirmed) return;
+      return;
+    }
+    this.setData({ restorePending: false, tipTone: 'info', tipText: '正在恢复…' });
     try {
       const result = await this.callFn({ action: 'restoreMember', userId: d._id });
-      wx.showToast({ title: result.msg || '已恢复', icon: 'success' });
+      this.setData({ tipTone: 'info', tipText: result.msg || '已恢复' });
       this.reloadDetail();
       this.loadList();
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, (e && e.msg) || '恢复失败'), icon: 'none' });
+      this.setData({
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, (e && e.msg) || '恢复失败')
+      });
     }
   },
 

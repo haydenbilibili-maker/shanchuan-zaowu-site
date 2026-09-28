@@ -123,7 +123,8 @@
         "support-config/index",
         "wish-wall/index",
         "payslip/index",
-        "payslip/admin/index"
+        "payslip/admin/index",
+        "feishu-sync/index"
       ]
     },
     {
@@ -141,34 +142,49 @@
         "custom/pet/status/index",
         "custom/pet/list/index",
         "wish-wall/index",
-        "play-qian/index",
-        "play-cookie/index",
-        "play-zodiac/index",
-        "play-mbti/index",
         "custom/orders/index",
         "custom/share/index",
         "custom/inquiry/index",
         "care/index",
         "care/guide/index",
         "care/my/index",
-        "comment/index",
         "identify/index",
         "identify/result/index",
         "identify/share/index",
         "collection/index",
         "collection/detail/index",
         "collection/log/index",
-        "collection-detail/index",
         "articles/index",
         "articles/detail/index",
-        "live/watch/index",
-        "videos/index",
         "gift/hub/index",
         "gift/compose/index",
         "gift/success/index",
         "gift/receive/index",
         "gift/address/index",
         "gift/my-gifts/index"
+      ]
+    },
+    {
+      "root": "subpackages/plays",
+      "name": "plays",
+      "pages": [
+        "play-qian/index",
+        "play-cookie/index",
+        "play-zodiac/index",
+        "play-mbti/index",
+        "play-solar/index",
+        "play-coin/index"
+      ]
+    },
+    {
+      "root": "subpackages/content",
+      "name": "content",
+      "pages": [
+        "videos/index",
+        "comment/index",
+        "collection-detail/index",
+        "user/legal/index",
+        "live/watch/index"
       ]
     },
     {
@@ -183,7 +199,6 @@
         "user/messages/detail/index",
         "user/support/index",
         "user/invoice-request/index",
-        "user/legal/index",
         "user/feedback/index",
         "user/certificates/index",
         "user/stored-value/index",
@@ -198,7 +213,6 @@
         "shipment-ops/index",
         "shipment-edit/index",
         "shipment-sku/index",
-        "feishu-sync/index",
         "inventory-ops/index",
         "property-cost/index",
         "artisan-commission/index",
@@ -219,12 +233,35 @@
         "artisan/works/index",
         "artisan/commission/index",
         "artisan/pet/index",
+        "supplier/index",
+        "supplier/catalog/index",
+        "supplier/buyer-cart/index",
+        "supplier/buyer-orders/index",
+        "supplier/orders/index",
+        "supplier/ship/index",
+        "supplier/settlement/index",
         "investor/index",
         "shareholder/index"
       ]
+    },
+    {
+      "root": "subpackages/b2bdesk",
+      "name": "b2bdesk",
+      "pages": [
+        "center/index",
+        "order/index",
+        "price-edit/index",
+        "partner/index",
+        "statement/index"
+      ]
     }
   ],
-  "preloadRule": {},
+  "preloadRule": {
+    "subpackages/feature/wish-wall/index": {
+      "network": "all",
+      "packages": ["plays"]
+    }
+  },
   "requiredPrivateInfos": [
     "chooseAddress",
     "getLocation"

@@ -9,6 +9,9 @@
     <text class="header-note">多规则匹配 · 默认蝶翅画 10% · 仅超管可改规则</text>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+  <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+
   <view class="tabs">
     <view class="tab {{tab==='rule'?'on':''}}" data-tab="rule" bindtap="setTab">规则配置</view>
     <view class="tab {{tab==='ledger'?'on':''}}" data-tab="ledger" bindtap="setTab">账目明细</view>
@@ -21,8 +24,13 @@
       <text class="list-intro-sub">{{matchPriorityNote}}</text>
     </view>
 
-    <view class="empty" wx:if="{{loading}}">加载规则…</view>
-    <view class="empty empty-friendly" wx:if="{{!loading && !rules.length}}">
+    <view class="empty" wx:if="{{loading && !listError}}">加载规则…</view>
+    <view class="empty-tip is-error" wx:elif="{{listError && !rules.length}}">
+      <text class="empty-title">规则列表未能取回</text>
+      <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryRules">重试</view>
+    </view>
+    <view class="empty empty-friendly" wx:elif="{{!loading && !listError && !rules.length}}">
       <text class="empty-title">暂无提成规则</text>
       <text class="empty-desc">可新增规则，或恢复默认蝶翅画 10%</text>
     </view>
@@ -50,14 +58,14 @@
           data-id="{{item._id}}"
           data-enabled="{{item.enabled}}"
           bindtap="toggleRuleFromList"
-        >{{item.enabled ? '停用' : '启用'}}</text>
+        >{{item.enabled ? (togglePendingId === item._id ? '确认停用' : '停用') : '启用'}}</text>
         <text
           class="act danger"
           wx:if="{{!item.isDefault}}"
           data-id="{{item._id}}"
           data-default="{{item.isDefault}}"
           bindtap="archiveRule"
-        >归档</text>
+        >{{archivePendingId === item._id ? '确认归档' : '归档'}}</text>
       </view>
     </view>
 
@@ -65,7 +73,7 @@
     <view class="workbench-footer-bar">
       <view class="workbench-btn-primary" bindtap="openCreate">新增规则</view>
       <view class="workbench-footer-secondary">
-        <view class="workbench-btn-outline" bindtap="resetDefaults">恢复默认规则</view>
+        <view class="workbench-btn-outline" bindtap="resetDefaults">{{resetPending ? '确认恢复默认' : '恢复默认规则'}}</view>
       </view>
     </view>
   </block>
@@ -294,7 +302,7 @@
     <view class="workbench-page-foot-spacer"></view>
     <view class="workbench-footer-bar">
       <view class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveRule">
-        {{saving ? '保存中…' : '保存规则'}}
+        {{saving ? '保存中…' : (savePending ? '再点确认保存' : '保存规则')}}
       </view>
       <view class="workbench-footer-secondary">
         <view class="workbench-btn-outline" bindtap="closeEditor">取消</view>
@@ -304,7 +312,7 @@
           data-id="{{editDocId}}"
           data-default="{{form.isDefault}}"
           bindtap="archiveRule"
-        >归档</view>
+        >{{archivePendingId === editDocId ? '确认归档' : '归档'}}</view>
       </view>
     </view>
   </block>
@@ -356,8 +364,13 @@
       <view class="btn-ghost filter-btn" bindtap="loadLedger">筛选查询</view>
     </view>
 
-    <view class="empty" wx:if="{{ledgerLoading}}">加载账目…</view>
-    <view class="empty empty-friendly" wx:if="{{!ledgerLoading && !ledger.length}}">
+    <view class="empty" wx:if="{{ledgerLoading && !ledgerError}}">加载账目…</view>
+    <view class="empty-tip is-error" wx:elif="{{ledgerError && !ledger.length}}">
+      <text class="empty-title">账目未能取回</text>
+      <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryLedger">重试</view>
+    </view>
+    <view class="empty empty-friendly" wx:elif="{{!ledgerLoading && !ledgerError && !ledger.length}}">
       <text class="empty-title">暂无提成流水</text>
       <text class="empty-desc">可调整上方筛选后重试；订单履约入账后会出现在此</text>
     </view>

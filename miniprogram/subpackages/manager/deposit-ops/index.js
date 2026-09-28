@@ -63,6 +63,11 @@ Page({
     canEdit: false,
     loading: false,
     loadingList: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    forfeitPendingId: '',
     saving: false,
     sweeping: false,
     ruleText: '',
@@ -130,7 +135,7 @@ Page({
         canEdit: result.canEdit !== false
       })
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '规则加载失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '规则加载失败') })
     }
   },
 
@@ -139,10 +144,10 @@ Page({
     const f = this.data.form
     const pct = Number(f.depositRatioPct)
     if (!(pct > 0 && pct <= 90)) {
-      wx.showToast({ title: '比例请填 1–90', icon: 'none' })
+      this.setData({ formTip: '比例请填 1–90' })
       return
     }
-    this.setData({ saving: true })
+    this.setData({ saving: true, formTip: '保存中…' })
     try {
       const result = await this.callFn({
         action: 'saveRules',
@@ -158,12 +163,16 @@ Page({
       this.setData({
         saving: false,
         ruleText: result.ruleText || '',
-        fromDefault: false
+        fromDefault: false,
+        formTip: '',
+        tipTone: 'info',
+        tipText: '已保存'
       })
-      wx.showToast({ title: '已保存', icon: 'success' })
     } catch (e) {
-      this.setData({ saving: false })
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
+      this.setData({
+        saving: false,
+        formTip: formatCloudFnError(e, '保存失败')
+      })
     }
   },
 
@@ -178,7 +187,7 @@ Page({
   },
 
   async loadList() {
-    this.setData({ loadingList: true })
+    this.setData({ loadingList: true, listError: false, forfeitPendingId: '' })
     try {
       const result = await this.callFn({
         action: 'listIntents',
@@ -204,56 +213,54 @@ Page({
         counts,
         countsTotal: result.total != null ? result.total : countsTotal,
         loadingList: false,
+        listError: false,
         emptyHint: FILTER_EMPTY[this.data.statusFilter] || FILTER_EMPTY.all
       })
     } catch (e) {
-      this.setData({ loadingList: false, list: [] })
-      wx.showToast({ title: formatCloudFnError(e, '列表加载失败'), icon: 'none' })
+      this.setData({
+        loadingList: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '列表加载失败')
+      })
     }
+  },
+
+  onRetryList() {
+    this.loadList()
   },
 
   async openExpired(e) {
     const id = e.currentTarget.dataset.id
     if (!id) return
-    const ok = await new Promise((resolve) => {
-      wx.showModal({
-        title: '逾期开放',
-        content: '将该意向标记为逾期开放后，藏品对所有人可购，定金不退。确认？',
-        confirmText: '确认开放',
-        confirmColor: '#D64045',
-        success: (r) => resolve(!!r.confirm),
-        fail: () => resolve(false)
+    if (this.data.forfeitPendingId !== id) {
+      this.setData({
+        forfeitPendingId: id,
+        tipTone: 'warn',
+        tipText: '再点一次「逾期开放」：藏品对所有人可购，定金不退'
       })
-    })
-    if (!ok) return
+      return
+    }
+    this.setData({ forfeitPendingId: '', tipTone: 'info', tipText: '处理中…' })
     try {
-      wx.showLoading({ title: '处理中', mask: true })
       await this.callFn({ action: 'openExpired', intentId: id })
-      wx.hideLoading()
-      wx.showToast({ title: '已开放', icon: 'success' })
+      this.setData({ tipTone: 'info', tipText: '已开放' })
       this.loadList()
     } catch (err) {
-      wx.hideLoading()
-      wx.showToast({ title: formatCloudFnError(err, '操作失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '操作失败') })
     }
   },
 
   async sweepNow() {
     if (this.data.sweeping) return
-    this.setData({ sweeping: true })
+    this.setData({ sweeping: true, tipTone: 'info', tipText: '清扫中…' })
     try {
-      wx.showLoading({ title: '清扫中', mask: true })
       const result = await this.callFn({ action: 'sweepBalanceDue' })
-      wx.hideLoading()
       const n = Number(result.forfeited) || 0
-      wx.showToast({
-        title: n > 0 ? `已清扫 ${n} 条逾期` : '没有逾期项',
-        icon: 'none'
-      })
+      this.setData({ tipTone: 'info', tipText: n > 0 ? `已清扫 ${n} 条逾期` : '没有逾期项' })
       this.loadList()
     } catch (e) {
-      wx.hideLoading()
-      wx.showToast({ title: formatCloudFnError(e, '清扫失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '清扫失败') })
     } finally {
       this.setData({ sweeping: false })
     }
@@ -264,7 +271,7 @@ Page({
     if (!pid) return
     wx.navigateTo({
       url: `/subpackages/manager/manager/workspace/index?tab=1&productTab=list&productId=${pid}`,
-      fail: () => wx.showToast({ title: '无法打开藏品库', icon: 'none' })
+      fail: () => this.setData({ tipTone: 'warn', tipText: '无法打开藏品库' })
     })
   }
 })

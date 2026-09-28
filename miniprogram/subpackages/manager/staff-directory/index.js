@@ -13,6 +13,10 @@ const ROLE_FILTERS = [
   { key: 'specimen_artisan', label: '标本师' },
   { key: 'investor', label: '投资人' },
   { key: 'shareholder', label: '股东' },
+  { key: 'buyer', label: '采购商' },
+  { key: 'franchisee', label: '加盟商' },
+  { key: 'channel', label: '渠道商' },
+  { key: 'supplier', label: '供货方' },
   { key: 'super_admin', label: '超管' }
 ]
 
@@ -42,6 +46,11 @@ Page({
   data: {
     ready: false,
     loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    statusPendingId: '',
+    statusPendingAction: '',
     roleFilters: ROLE_FILTERS,
     statusFilters: STATUS_FILTERS,
     roleFilter: 'all',
@@ -82,7 +91,7 @@ Page({
   async loadStaff() {
     if (this._loading) return
     this._loading = true
-    this.setData({ loading: true })
+    this.setData({ loading: true, listError: false, tipText: '', statusPendingId: '', statusPendingAction: '' })
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageStaff',
@@ -91,14 +100,11 @@ Page({
       const result = (res && res.result) || {}
       if (!result.success) {
         this.setData({
-          staffAll: [],
-          staffList: [],
-          counts: { all: 0, active: 0, disabled: 0 },
+          listError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '员工列表未能取回'),
           emptyHint: result.msg || '加载失败'
         })
-        if (result.msg) {
-          wx.showToast({ title: formatCloudFnError(result, result.msg), icon: 'none' })
-        }
         return
       }
       const storeNameMap = this._storeNameMap || {}
@@ -114,6 +120,7 @@ Page({
       })
       const active = staffAll.filter((r) => r.status === 'active').length
       this.setData({
+        listError: false,
         staffAll,
         counts: {
           all: staffAll.length,
@@ -123,11 +130,19 @@ Page({
       })
       this.applyFilters()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '员工列表加载失败'), icon: 'none' })
+      this.setData({
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '员工列表未能取回')
+      })
     } finally {
       this._loading = false
       this.setData({ loading: false })
     }
+  },
+
+  onRetryList() {
+    this.loadStaff()
   },
 
   applyFilters() {
@@ -166,45 +181,48 @@ Page({
   goPermissions() {
     wx.navigateTo({
       url: STAFF_PERMISSIONS_PATH,
-      fail: () => wx.showToast({ title: '权限配置暂不可用', icon: 'none' })
+      fail: () => this.setData({ tipTone: 'warn', tipText: '权限配置暂不可用' })
     })
   },
 
   goEditPermissions() {
-    wx.navigateTo({
-      url: STAFF_PERMISSIONS_PATH,
-      fail: () => wx.showToast({ title: '权限配置暂不可用', icon: 'none' })
-    })
+    this.goPermissions()
   },
 
   disableStaff(e) {
     const id = e.currentTarget.dataset.id
     if (!id) return
-    wx.showModal({
-      title: '停用员工',
-      content: '停用后该账号将无法进入门店后台，可再次启用。',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          const call = await wx.cloud.callFunction({
-            name: 'manageStaff',
-            data: { action: 'remove', staffId: id }
-          })
-          const result = (call && call.result) || {}
-          wx.showToast({
-            title: result.success
-              ? (result.msg || '已停用')
-              : formatCloudFnError(result, result.msg || '停用失败'),
-            icon: 'none'
-          })
-          clearStaffRoleCache()
-          this.loadStaff()
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '停用失败'), icon: 'none' })
-        }
-      }
-    })
+    if (this.data.statusPendingId !== id || this.data.statusPendingAction !== 'disable') {
+      this.setData({
+        statusPendingId: id,
+        statusPendingAction: 'disable',
+        tipTone: 'warn',
+        tipText: '再点一次「停用」：停用后无法进门店后台，可再次启用'
+      })
+      return
+    }
+    this.setData({ statusPendingId: '', statusPendingAction: '' })
+    this.doDisableStaff(id)
+  },
+
+  async doDisableStaff(id) {
+    try {
+      const call = await wx.cloud.callFunction({
+        name: 'manageStaff',
+        data: { action: 'remove', staffId: id }
+      })
+      const result = (call && call.result) || {}
+      this.setData({
+        tipTone: result.success ? 'info' : 'warn',
+        tipText: result.success
+          ? (result.msg || '已停用')
+          : formatCloudFnError(result, result.msg || '停用失败')
+      })
+      clearStaffRoleCache()
+      this.loadStaff()
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '停用失败') })
+    }
   },
 
   enableStaff(e) {
@@ -212,52 +230,58 @@ Page({
     if (!id) return
     const item = (this.data.staffAll || []).find((row) => row._id === id)
     if (!item || !item.openid) {
-      wx.showToast({ title: '账号信息缺失', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '账号信息缺失' })
       return
     }
-    wx.showModal({
-      title: '恢复生效',
-      content: `确认恢复「${item.name || '未命名'} · ${item.roleText || ''}」？`,
-      confirmColor: '#52B788',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          const roles = Array.isArray(item.roles) && item.roles.length
-            ? item.roles
-            : [item.role || 'staff']
-          const showStoreScope = rolesNeedStoreScope(roles)
-          const enablePayload = {
-            action: 'upsert',
-            openid: item.openid,
-            name: item.name || '',
-            staffNo: item.staffNo || '',
-            roles,
-            role: item.role || 'staff',
-            permissions: Array.isArray(item.permissions) ? item.permissions : undefined,
-            permissionsExplicit: !!item.permissionsExplicit,
-            status: 'active'
-          }
-          if (showStoreScope) {
-            enablePayload.storeIds = Array.isArray(item.storeIds) ? item.storeIds : []
-            enablePayload.dailyGrantCap = Number(item.dailyGrantCap) || 0
-          }
-          if (item.shareholderProfile) {
-            enablePayload.shareholderProfile = item.shareholderProfile
-          }
-          const call = await wx.cloud.callFunction({ name: 'manageStaff', data: enablePayload })
-          const result = (call && call.result) || {}
-          wx.showToast({
-            title: result.success
-              ? (result.msg || '已启用')
-              : formatCloudFnError(result, result.msg || '启用失败'),
-            icon: 'none'
-          })
-          clearStaffRoleCache()
-          this.loadStaff()
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '启用失败'), icon: 'none' })
-        }
+    if (this.data.statusPendingId !== id || this.data.statusPendingAction !== 'enable') {
+      this.setData({
+        statusPendingId: id,
+        statusPendingAction: 'enable',
+        tipTone: 'warn',
+        tipText: `再点一次确认恢复「${item.name || '未命名'} · ${item.roleText || ''}」`
+      })
+      return
+    }
+    this.setData({ statusPendingId: '', statusPendingAction: '' })
+    this.doEnableStaff(item)
+  },
+
+  async doEnableStaff(item) {
+    try {
+      const roles = Array.isArray(item.roles) && item.roles.length
+        ? item.roles
+        : [item.role || 'staff']
+      const showStoreScope = rolesNeedStoreScope(roles)
+      const enablePayload = {
+        action: 'upsert',
+        openid: item.openid,
+        name: item.name || '',
+        staffNo: item.staffNo || '',
+        roles,
+        role: item.role || 'staff',
+        permissions: Array.isArray(item.permissions) ? item.permissions : undefined,
+        permissionsExplicit: !!item.permissionsExplicit,
+        status: 'active'
       }
-    })
+      if (showStoreScope) {
+        enablePayload.storeIds = Array.isArray(item.storeIds) ? item.storeIds : []
+        enablePayload.dailyGrantCap = Number(item.dailyGrantCap) || 0
+      }
+      if (item.shareholderProfile) {
+        enablePayload.shareholderProfile = item.shareholderProfile
+      }
+      const call = await wx.cloud.callFunction({ name: 'manageStaff', data: enablePayload })
+      const result = (call && call.result) || {}
+      this.setData({
+        tipTone: result.success ? 'info' : 'warn',
+        tipText: result.success
+          ? (result.msg || '已启用')
+          : formatCloudFnError(result, result.msg || '启用失败')
+      })
+      clearStaffRoleCache()
+      this.loadStaff()
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '启用失败') })
+    }
   }
 })

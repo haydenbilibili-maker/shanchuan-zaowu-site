@@ -1,5 +1,8 @@
 /**
  * 标本养护 — 我的藏品 / 订单上下文（云函数侧，真机 openid 可靠）
+ * action:
+ *   list（默认）/ orderContext
+ *   saveCertificate —— 证书首次签发后固化：签发时间 certMeta.issuedAt + 本人那一版证书图 fileID（之后打开直接展示，不再重绘）
  */
 const cloud = require('wx-server-sdk')
 const {
@@ -10,6 +13,7 @@ const {
   getCareSummary,
   isVoucherLikeProduct
 } = require('./defaults')
+const { isGiftOrder, resolveHolderOpenid, certIssuedAt, certKindOf } = require('./giftHolder')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -58,11 +62,10 @@ function buildSpecimenItem(order, product, index) {
   }
 }
 
-async function fetchReceivedOrders(openid, limit) {
-  const cap = Math.min(Math.max(1, limit || 50), 50)
+async function queryReceived(where, cap) {
   try {
     const res = await db.collection('orders')
-      .where({ _openid: openid, status: 'received' })
+      .where(where)
       .orderBy('receiveTime', 'desc')
       .limit(cap)
       .get()
@@ -70,15 +73,37 @@ async function fetchReceivedOrders(openid, limit) {
   } catch (err) {
     console.warn('getCareSpecimens orderBy fallback', err)
     const res = await db.collection('orders')
-      .where({ _openid: openid, status: 'received' })
+      .where(where)
       .limit(cap)
       .get()
-    return (res.data || []).sort((a, b) => {
-      const ta = pickReceiveTime(a)
-      const tb = pickReceiveTime(b)
-      return new Date(tb || 0).getTime() - new Date(ta || 0).getTime()
-    })
+    return res.data || []
   }
+}
+
+/**
+ * 我的藏品 = 我持有的已签收订单（礼赠 2026-09-28）：
+ * 自己下的非礼赠单（原口径）+ 我作为已绑定受礼人收到的礼赠；我送出的礼赠归受礼人，不在此列
+ */
+async function fetchReceivedOrders(openid, limit) {
+  const cap = Math.min(Math.max(1, limit || 50), 50)
+  const own = await queryReceived({ _openid: openid, status: 'received' }, cap)
+  let gifted = []
+  try {
+    gifted = await queryReceived({ 'giftMeta.receiverOpenid': openid, status: 'received' }, cap)
+  } catch (e) {
+    console.warn('getCareSpecimens gifted query failed', e && e.message)
+  }
+  const seen = {}
+  const rows = own.concat(gifted).filter((o) => {
+    if (!o || seen[o._id]) return false
+    seen[o._id] = true
+    return !isGiftOrder(o) || resolveHolderOpenid(o) === openid
+  })
+  return rows.sort((a, b) => {
+    const ta = pickReceiveTime(a)
+    const tb = pickReceiveTime(b)
+    return new Date(tb || 0).getTime() - new Date(ta || 0).getTime()
+  }).slice(0, cap)
 }
 
 /** 早期订单快照未落 category/rootCategoryName，需回查 products 才能归类 */
@@ -152,7 +177,8 @@ async function loadSpecimenList(openid, limit) {
 async function loadOrderContext(openid, orderId, productId) {
   const res = await db.collection('orders').doc(orderId).get()
   const order = res.data
-  if (!order || order._openid !== openid) {
+  // 下单人（原口径）或礼赠持有人（已绑定受礼人）可读养护上下文
+  if (!order || (order._openid !== openid && !(isGiftOrder(order) && resolveHolderOpenid(order) === openid))) {
     return { success: false, msg: '无权查看' }
   }
 
@@ -181,6 +207,40 @@ async function loadOrderContext(openid, orderId, productId) {
   }
 }
 
+const CERT_KINDS = { holder: 1, gift_holder: 1, gift_voucher: 1 }
+
+/**
+ * 固化证书：只收「调用者自己的那一版」（普通单下单人=holder；礼赠受礼人=gift_holder；送礼人=gift_voucher）。
+ * 签发时间首次写入后不再变（存量单取最接近的真实签收时间）；同 sig 重复保存幂等，sig 变了（如赠予凭证的状态）才覆盖。
+ */
+async function saveCertificate(openid, event) {
+  const orderId = String(event.orderId || '').trim()
+  const kind = String(event.kind || '')
+  const fileID = String(event.fileID || '').trim()
+  const sig = String(event.sig || '').slice(0, 160)
+  if (!orderId || !CERT_KINDS[kind]) return { success: false, msg: '参数不完整' }
+  if (!/^cloud:\/\//.test(fileID) || fileID.length > 512) return { success: false, msg: '证书文件无效' }
+
+  const res = await db.collection('orders').doc(orderId).get().catch(() => ({ data: null }))
+  const order = res && res.data
+  if (!order || certKindOf(order, openid) !== kind) return { success: false, code: 'FORBIDDEN', msg: '无权签发此证书' }
+
+  const cm = order.certMeta || {}
+  const prev = cm[kind] || null
+  if (prev && prev.openid === openid && prev.sig === sig && prev.fileID) {
+    return { success: true, already: true, fileID: prev.fileID, issuedAt: certIssuedAt(order) }
+  }
+  const data = {}
+  data[`certMeta.${kind}`] = { fileID, sig, openid, savedAt: db.serverDate() }
+  let issuedAt = certIssuedAt(order)
+  if (!cm.issuedAt) {
+    data['certMeta.issuedAt'] = issuedAt ? new Date(issuedAt) : db.serverDate()
+    if (!issuedAt) issuedAt = Date.now()
+  }
+  await db.collection('orders').doc(orderId).update({ data })
+  return { success: true, fileID, issuedAt }
+}
+
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID
@@ -194,6 +254,9 @@ exports.main = async (event) => {
     if (action === 'orderContext') {
       if (!orderId) return { success: false, msg: '缺少 orderId' }
       return loadOrderContext(openid, orderId, productId)
+    }
+    if (action === 'saveCertificate') {
+      return await saveCertificate(openid, event || {})
     }
 
     const data = await loadSpecimenList(openid, limit)

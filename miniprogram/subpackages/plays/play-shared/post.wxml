@@ -1,0 +1,35 @@
+<!-- 祈福墙弹层里的「挂签条」：结果下面就地改一句、一步挂上墙（2026-09-27 全链路提速）。
+     只在弹层本体（PlayBody 组件，embedded=true）里渲染；独立页走原来的「写成心愿 → 回墙预填」。
+     发布本身**不在这里实现**：postWish 只抛 post 事件，墙页用它唯一的 submitWish 落愿（门禁 / 额度 / 云函数同一条路）。 -->
+<block wx:if="{{embedded}}">
+  <view class="rp-post">
+    <view class="rp-post-head">
+      <view class="rp-return-seal"><text class="rp-return-seal-t">挂</text></view>
+      <text class="rp-post-title">改一句，就挂上墙</text>
+      <text class="rp-post-count">{{wishCount}}/{{textMax}}</text>
+    </view>
+    <input
+      class="rp-post-input"
+      value="{{wishDraft}}"
+      maxlength="-1"
+      confirm-type="send"
+      adjust-position="{{true}}"
+      cursor-spacing="120"
+      placeholder="写下想要的，例如：马上有闲"
+      placeholder-class="rp-post-ph"
+      bindinput="onWishDraftInput"
+      bindconfirm="postWish"
+    />
+  </view>
+  <view class="rp-acts rp-post-acts">
+    <view
+      class="rp-act is-primary {{wishCount ? '' : 'is-off'}}"
+      bindtap="postWish"
+      hover-class="rp-press"
+      hover-stay-time="70"
+      aria-role="button"
+      aria-disabled="{{wishCount ? 'false' : 'true'}}"
+    >挂上墙</view>
+    <text class="rp-post-alt" bindtap="writeWish" aria-role="button">到挂签台慢慢写 ›</text>
+  </view>
+</block>

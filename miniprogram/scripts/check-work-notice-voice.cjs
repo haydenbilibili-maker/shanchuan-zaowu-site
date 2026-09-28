@@ -20,8 +20,8 @@ const path = require('path')
 
 const ROOT = path.resolve(__dirname, '..', '..')
 const MP = path.join(ROOT, 'miniprogram')
-const CATALOG_FILE = path.join(MP, 'utils', 'workNoticeCatalog.js')
-const VOICE_FILE = path.join(MP, 'utils', 'workNoticeVoice.js')
+const CATALOG_FILE = path.join(MP, 'subpackages', 'manager', 'utils', 'workNoticeCatalog.js')
+const VOICE_FILE = path.join(MP, 'subpackages', 'manager', 'utils', 'workNoticeVoice.js')
 const AUDIO_DIR = path.join(MP, 'subpackages', 'manager', 'assets', 'audio', 'work-notice')
 const MANIFEST_FILE = path.join(AUDIO_DIR, 'manifest.json')
 const HUB_JS = path.join(MP, 'subpackages', 'manager', 'manager', 'managerPageConfig.js')
@@ -137,15 +137,15 @@ function hubWiringProblem(js) {
     return 'prefetchHubTodoBadges 完成时没有调用 syncWorkNoticeVoice（漏了就没声音）'
   }
   if (js.indexOf('syncWorkNoticeVoice() {') === -1) return '缺少 syncWorkNoticeVoice 实现'
-  if (js.indexOf("require('../../../utils/workNoticeVoice')") === -1) return '未引入 workNoticeVoice'
-  if (js.indexOf("require('../../../utils/workNoticeCatalog')") === -1) return '未引入 workNoticeCatalog'
+  if (js.indexOf("require('../utils/workNoticeVoice')") === -1) return '未引入 workNoticeVoice'
+  if (js.indexOf("require('../utils/workNoticeCatalog')") === -1) return '未引入 workNoticeCatalog'
   return ''
 }
 
 function artisanWiringProblem(js) {
   if (js.indexOf('syncWorkNoticeVoice()') === -1) return '标本师工作台未接入声音'
   if (js.indexOf('statsOk') === -1) return '标本师工作台未在统计成功后再生效（半截计数会误报）'
-  if (js.indexOf("require('../../../utils/workNoticeVoice')") === -1) return '未引入 workNoticeVoice'
+  if (js.indexOf("require('../utils/workNoticeVoice')") === -1) return '未引入 workNoticeVoice'
   return ''
 }
 
@@ -344,7 +344,7 @@ function runSelfTest() {
     ['hub 漏掉「待办落地后判定」',
       () => hubWiringProblem('prefetchHubTodoBadges(options = {}) {\n    return Promise.resolve()\n  },') !== ''],
     ['标本师工作台漏掉成功判断（半截计数会误报）',
-      () => artisanWiringProblem("require('../../../utils/workNoticeVoice')\nthis.syncWorkNoticeVoice()") !== ''],
+      () => artisanWiringProblem("require('../utils/workNoticeVoice')\nthis.syncWorkNoticeVoice()") !== ''],
     ['页面 json 未注册组件', () => !jsonRegistersComponent('{"usingComponents":{}}')],
     ['声音 chip 又被加回文字（会挤成竖排）',
       () => iconOnlyProblem('<view class="wnv"><text class="wnv-icon">🔔</text><text class="wnv-text">声音</text></view>', '.wnv-text{font-size:22rpx}') !== ''],

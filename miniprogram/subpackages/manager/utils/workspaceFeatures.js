@@ -11,6 +11,8 @@ const WORKBENCH_ARTISAN = 'specimen_artisan'
 const WORKBENCH_LIVE = 'live_host'
 const WORKBENCH_INVESTOR = 'investor'
 const WORKBENCH_SHAREHOLDER = 'shareholder'
+const WORKBENCH_BUYER = 'buyer'
+const WORKBENCH_SUPPLIER = 'supplier'
 
 /** @typedef {{ key: string, label: string, hint?: string }} FeatureDef */
 
@@ -101,7 +103,32 @@ const WORKBENCH_CATALOG = {
         hint: '按绑定门店与占股/回本前·后分成比例查看回本进度、应得分成、月度经营与汇报摘要'
       }
     ]
+  },
+  [WORKBENCH_BUYER]: {
+    title: '采购商工作台',
+    en: 'B2B BUYER',
+    readOnly: true,
+    features: [
+      {
+        key: '_buyer_desk',
+        label: '向总部采购',
+        hint: '价目选购 / 采购车 / 我的采购单；无门店经营写权限'
+      }
+    ]
+  },
+  [WORKBENCH_SUPPLIER]: {
+    title: '供货方工作台',
+    en: 'B2B SUPPLIER',
+    readOnly: true,
+    features: [
+      {
+        key: '_supplier_desk',
+        label: '需求确认 / 发货回传 / 结算摘要',
+        hint: '仅 party=supplier_fulfillment 真数据；禁止工作室机密页'
+      }
+    ]
   }
+
 }
 
 const ROLE_TO_WORKBENCH = {
@@ -111,7 +138,11 @@ const ROLE_TO_WORKBENCH = {
   specimen_artisan: WORKBENCH_ARTISAN,
   live_host: WORKBENCH_LIVE,
   investor: WORKBENCH_INVESTOR,
-  shareholder: WORKBENCH_SHAREHOLDER
+  shareholder: WORKBENCH_SHAREHOLDER,
+  buyer: WORKBENCH_BUYER,
+  franchisee: WORKBENCH_BUYER,
+  channel: WORKBENCH_BUYER,
+  supplier: WORKBENCH_SUPPLIER
 }
 
 function featureKeysForRoles(roles) {
@@ -135,7 +166,7 @@ function buildWorkbenchFeatureUI(roles, selectedPermissions) {
   const selected = {}
   ;(selectedPermissions || []).forEach((k) => { if (k) selected[k] = true })
   const groups = []
-  const order = ['super_admin', 'manager', 'staff', 'specimen_artisan', 'live_host', 'investor', 'shareholder']
+  const order = ['super_admin', 'manager', 'staff', 'specimen_artisan', 'live_host', 'investor', 'shareholder', 'buyer', 'franchisee', 'channel', 'supplier']
   order.forEach((roleKey) => {
     if ((roles || []).indexOf(roleKey) === -1) return
     const wb = ROLE_TO_WORKBENCH[roleKey]
@@ -195,6 +226,8 @@ module.exports = {
   WORKBENCH_LIVE,
   WORKBENCH_INVESTOR,
   WORKBENCH_SHAREHOLDER,
+  WORKBENCH_BUYER,
+  WORKBENCH_SUPPLIER,
   featureKeysForRoles,
   buildWorkbenchFeatureUI,
   permissionsFromFeatureGroups

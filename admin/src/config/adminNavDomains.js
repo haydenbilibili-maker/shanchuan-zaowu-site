@@ -69,6 +69,7 @@ const NAV_CURATION = {
         overline: 'FULFILLMENT',
         entries: [
           { id: '3', desc: '订单查询、发货与状态' },
+          { id: '84', desc: '总部运营总控（非供应商登录）：价目维护、履约、出货核对、工作室账单' },
           { id: '52', desc: '采购意向、出货与库存' },
           { id: '57', desc: '供货价与报价清单' },
           { id: '42', desc: '退款申请处理' },
@@ -185,7 +186,7 @@ const NAV_CURATION = {
         entries: [
           { id: '19', desc: '首页与馆藏推荐权重' },
           { id: '18', desc: '热搜与同义词' },
-          { id: '24', desc: '订阅消息与推送文案' },
+          { id: '24', desc: '已下线·勿当配置（运行期用 message_templates）' },
           { id: '21', desc: '自定义报表构建' },
           { id: '17', desc: '后台 RBAC 角色' },
         ],

@@ -32,7 +32,7 @@ import { tmpdir } from 'node:os'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
 const MP_DIR = join(ROOT, 'miniprogram')
-const CATALOG_PATH = join(MP_DIR, 'utils', 'workNoticeCatalog.js')
+const CATALOG_PATH = join(MP_DIR, 'subpackages', 'manager', 'utils', 'workNoticeCatalog.js')
 const AUDIO_DIR = join(MP_DIR, 'subpackages', 'manager', 'assets', 'audio', 'work-notice')
 const MANIFEST_PATH = join(AUDIO_DIR, 'manifest.json')
 

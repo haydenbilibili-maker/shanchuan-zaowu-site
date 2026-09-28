@@ -10,7 +10,9 @@
       <text class="header-note">两门店与工作室的水电、房租及其他成本；票据可多图入柜。</text>
     </view>
 
-    <view class="summary-bar" wx:if="{{!loading || list.length}}">
+    <view class="pc-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
+    <view class="summary-bar" wx:if="{{(!loading || list.length) && !listError}}">
       <view class="summary-main">
         <text class="summary-label">本筛选成本合计</text>
         <text class="summary-value">¥{{summary.totalAmountText}}</text>
@@ -42,12 +44,18 @@
       <view class="btn-add" bindtap="openCreate">登记</view>
     </view>
 
-    <view class="skeleton-list" wx:if="{{loading && !list.length}}">
+    <view class="skeleton-list" wx:if="{{loading && !list.length && !listError}}">
       <view class="skeleton-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
         <view class="sk-line wide"></view>
         <view class="sk-line"></view>
         <view class="sk-line mid"></view>
       </view>
+    </view>
+
+    <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
+      <text class="empty-title">清单未能展开</text>
+      <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="pc-retry" bindtap="loadList">重试</view>
     </view>
 
     <view class="empty-tip" wx:elif="{{!loading && !list.length}}">
@@ -56,7 +64,7 @@
     </view>
 
     <block wx:for="{{list}}" wx:key="_id">
-      <view class="card">
+      <view class="card {{pendingRemoveId === item._id ? 'pending-remove' : ''}}">
         <view class="card-top">
           <text class="card-title">{{item.entityName}}</text>
           <text class="status-tag {{item.typeTone}}">{{item.costTypeLabel}}</text>
@@ -82,7 +90,7 @@
         </view>
         <view class="card-actions">
           <view class="chip-btn" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
-          <view class="chip-btn danger" data-id="{{item._id}}" bindtap="onRemove">删除</view>
+          <view class="chip-btn danger" data-id="{{item._id}}" bindtap="onRemove">{{pendingRemoveId === item._id ? '确认删除' : '删除'}}</view>
         </view>
       </view>
     </block>
@@ -96,6 +104,7 @@
     <text class="sheet-close" bindtap="closeForm">关闭</text>
   </view>
   <scroll-view scroll-y class="sheet-body">
+    <view class="pc-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
     <view class="field">
       <text class="field-label">归属主体</text>
       <picker mode="selector" range="{{formEntityNames}}" value="{{formEntityIndex}}" bindchange="onFormEntity">

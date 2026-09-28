@@ -207,11 +207,24 @@ async function handleList(event, actor) {
   const dateFrom = String(event.dateFrom || '').trim()
   const dateTo = String(event.dateTo || '').trim()
   const limit = Math.min(Math.max(Number(event.limit) || 50, 1), 100)
+  const dateFromOk = /^\d{4}-\d{2}-\d{2}$/.test(dateFrom)
+  const dateToOk = /^\d{4}-\d{2}-\d{2}$/.test(dateTo)
 
   const where = { deleted: _.neq(true) }
   if (storeId) where.storeId = storeId
   if (status && status !== 'all') where.status = normalizeStatus(status)
   if (source && source !== 'all') where.source = source
+
+  // 日期推进 where（YYYY-MM-DD 字符串可比较），避免「先 limit 再内存滤日期」把刚写入的单滤没
+  if (dateFromOk && dateToOk && dateFrom === dateTo) {
+    where.shipmentDate = dateFrom
+  } else if (dateFromOk && dateToOk) {
+    where.shipmentDate = _.and(_.gte(dateFrom), _.lte(dateTo))
+  } else if (dateFromOk) {
+    where.shipmentDate = _.gte(dateFrom)
+  } else if (dateToOk) {
+    where.shipmentDate = _.lte(dateTo)
+  }
 
   const allowed = actorStoreFilter(actor)
   if (allowed) {
@@ -227,24 +240,27 @@ async function handleList(event, actor) {
     if (!storeId) where.storeId = _.in(allowed)
   }
 
-  const res = await withCollectionRetry(() =>
-    db.collection(COLLECTION).where(where).limit(limit).get()
-  )
-  let list = (res.data || []).map(mapRow).filter(Boolean)
-  list.sort((a, b) => {
-    const d = String(b.shipmentDate || '').localeCompare(String(a.shipmentDate || ''))
-    if (d !== 0) return d
-    return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)
-  })
-
-  if (dateFrom || dateTo) {
-    list = list.filter((row) => {
-      const d = String(row.shipmentDate || '')
-      if (!d) return false
-      if (dateFrom && d < dateFrom) return false
-      if (dateTo && d > dateTo) return false
-      return true
+  let list = []
+  let listNote = ''
+  try {
+    const res = await withCollectionRetry(() =>
+      db.collection(COLLECTION).where(where).orderBy('updatedAt', 'desc').limit(limit).get()
+    )
+    list = (res.data || []).map(mapRow).filter(Boolean)
+  } catch (err) {
+    // 缺索引时降级：多取再内存排序（仍把日期条件放在 where，避免漏掉当日新单）
+    listNote = 'list-fallback-no-index'
+    const fetchLimit = Math.min(Math.max(limit * 5, 100), 200)
+    const res = await withCollectionRetry(() =>
+      db.collection(COLLECTION).where(where).limit(fetchLimit).get()
+    )
+    list = (res.data || []).map(mapRow).filter(Boolean)
+    list.sort((a, b) => {
+      const d = String(b.shipmentDate || '').localeCompare(String(a.shipmentDate || ''))
+      if (d !== 0) return d
+      return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)
     })
+    if (list.length > limit) list = list.slice(0, limit)
   }
 
   if (keyword) {
@@ -265,7 +281,8 @@ async function handleList(event, actor) {
     total: list.length,
     summary: buildSummary(list),
     stores,
-    canWrite: isSuper(actor) || isStoreManager(actor)
+    canWrite: isSuper(actor) || isStoreManager(actor),
+    listNote: listNote || undefined
   })
 }
 

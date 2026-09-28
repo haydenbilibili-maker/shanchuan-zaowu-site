@@ -46,18 +46,20 @@ const {
 // 把 ZWJ 家庭 emoji 算 8，`.slice(0, TEXT_MAX)` 还会截出半个代理对。口径与已知边界见该模块文件头；
 // 服务端 `manageWishWall` 内嵌的副本与它逐字节相同（守卫 test-wish-wall 会比对两份 + 同组用例）。
 const { wishTextCount, wishTextTruncate } = require('../../../utils/wishTextCount')
-const wishRitual = require('../../../utils/wishRitual')
-const ritualFeedback = require('../../../utils/ritualFeedback')
-// 玩法（2026-09-21 口径变更 · PRD v1.4 §11.4）：玩法**各开一页**，本页只剩入口区。
-// 玩法的进行态/结果/推荐/分享全在 `utils/ritualPlayPage.js`（四个玩法页共用），本页不再持有。
-const { RITUAL_PLAYS, playPage } = require('../../../config/ritualPlays')
-const ritualPlayArchive = require('../../../utils/ritualPlayArchive')
-const wishHandoff = require('../../../utils/wishHandoff')
-const { sanitizeBlessTags, blessPlayIds, blessLabel } = require('../../../config/blessTags')
+const wishRitual = require('../utils/wishRitual')
+const ritualFeedback = require('../utils/ritualFeedback')
+// 玩法（2026-09-27 口径）：入口打开本页弹层（plays 分包 PlaySheet），不再跳玩法页。
+// 玩法的进行态/结果/推荐/分享全在 `subpackages/plays/utils/ritualPlayPage.js`（弹层与兼容独立页共用），本页不持有。
+const { RITUAL_PLAYS, findPlay } = require('../config/ritualPlays')
+const ritualPlayArchive = require('../utils/ritualPlayArchive')
+const wishHandoff = require('../utils/wishHandoff')
+const { sanitizeBlessTags, blessPlayIds, blessLabel, wallDefaultBlessTags } = require('../../../config/blessTags')
 const easterEgg = require('../../../utils/easterEgg')
 const easterEggHost = require('../../../utils/easterEggHost')
 // 创新钩子 H2「功德证」的纯函数核（里程点判定 + 持证记录 + 本地存档），见 utils/muyuCertificate.js
-const muyuCert = require('../../../utils/muyuCertificate')
+const muyuCert = require('../utils/muyuCertificate')
+// 展品主角区：静态文案逐条有出处（config/wallExhibit），商品字段按既有只读方式运行时取
+const { pickWallProduct, buildExhibitView } = require('../utils/wallExhibitProduct')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const {
   fetchContentDisplayFlags,
@@ -262,6 +264,17 @@ Page({
      * 「挂上墙」此前只有一个 toast —— 心愿落在墙上的**落地感**是这轮补的。
      */
     freshId: '',
+    /** 点按弹幕时短暂高亮/停住的那条（B 站式点弹幕反馈） */
+    heldDmId: '',
+    /** 落愿瞬间：挂签台切换成「已挂上」态，与墙上回声/落签高亮同窗 */
+    deskPosted: false,
+    /**
+     * 展品主角（这面墙对应的那件线下展品）。null = 这面墙没登记展品 → 墙头展签与展品卡都不渲染。
+     * 形状见 utils/wallExhibitProduct.buildExhibitView。
+     */
+    exhibit: null,
+    /** 展品卡（从墙头展签点开的底部卡片） */
+    exhibitOpen: false,
     /** 博物笔记进度（彩蛋图鉴入口用） */
     relics: { found: 0, total: 0 },
     /**
@@ -288,9 +301,12 @@ Page({
      * 玩法**入口区**（2026-09-21 口径变更 · PRD v1.4 §11.4「玩法各开一页」）：
      * `plays` 由注册表派生，页面不写死任何玩法名；每个入口还带 `played` / `stateText`
      * （"今天玩过没有" —— 由 `refreshPlayStates` 按本地留档与今天的日期键现算）。
-     * 进行态 / 结果 / 推荐 / 分享**不在本页**，它们在各自玩法页（`item.page`）。
+     * 进行态 / 结果 / 推荐 / 分享在**玩法弹层**里（plays 分包的 PlaySheet 组件），入口不再跳页。
      */
     plays: RITUAL_PLAYS,
+    /** 玩法弹层：当前打开的玩法 id（空串 = 未打开）与带进去的墙上下文 */
+    playSheetId: '',
+    playSheetCtx: {},
     /** 这面墙的祈运标签（由入口从商品带过来；没有就不排不提示，页面照常） */
     blessTags: [],
     /** 祈运标签的中文名（页头那颗 chip 用；空串则不显示） */
@@ -336,15 +352,20 @@ Page({
     // 只在显式参数缺失时采用 scene（与 identify / onboarding 两页同口径），
     // 这样普通 URL 入口（带 productKey/from）不会被 scene 抢走。
     const fromScene = parseWishWallScene(opts.scene)
+    const productKey = normalizeProductKey(opts.productKey || fromScene.productKey)
     this.setData({
       productId: String(opts.productId || ''),
       // 作用域来自入口组件或门店码；非法/缺失一律回落到默认墙，避免拼出一个读不到内容的 key
-      productKey: normalizeProductKey(opts.productKey || fromScene.productKey),
+      productKey,
       productTitle: String(opts.title ? decodeURIComponent(opts.title) : '马上有'),
       /** 入口来源：门店码会带 store_qr，用于埋点区分"现场扫码"与线上入口 */
       entryFrom: String(opts.from || fromScene.from || 'direct')
     })
-    this.applyBlessScope(opts.bless)
+    // `play=<玩法 id>`：旧玩法页兼容落地 / 外链直达，门禁放行后自动打开对应弹层（见 openPendingPlay）
+    this._pendingPlay = String(opts.play || '')
+    // 展签先用静态文案画出来（零网络）；商品图 / productId 等门禁放行后再补（resolveWallExhibit）
+    this.setData({ exhibit: buildExhibitView(productKey, null, '') })
+    this.applyBlessScope(opts.bless, productKey)
     trackBehavior('wish_wall_enter', 'from', this.data.entryFrom)
     // 仪式音效：一个动作一个 InnerAudioContext 实例（连点不叠音，见 utils/ritualFeedback）
     this._soundPlayer = ritualFeedback.createPlayer()
@@ -397,8 +418,12 @@ Page({
    * 刻意**不隐藏**任何玩法：标签只决定"先看到哪个" —— 隐藏玩法等于替用户做决定，也更难解释；
    * 参数缺失/非法一律当"没有标签"（页面照常可用，绝不因为一个查询参数就报错）。
    */
-  applyBlessScope(raw) {
-    const tags = sanitizeBlessTags(raw || '')
+  applyBlessScope(raw, productKeyOpt) {
+    let tags = sanitizeBlessTags(raw || '')
+    // P2-6 选项 B：门店默认墙无 bless 参数时，按 productKey 推导墙级标签（不改印刷物）
+    if (!tags.length) {
+      tags = wallDefaultBlessTags(productKeyOpt || this.data.productKey)
+    }
     if (!tags.length) {
       this.setData({ blessTags: [], blessLabelText: '', plays: this.decoratePlayStates(RITUAL_PLAYS) })
       return
@@ -437,7 +462,80 @@ Page({
     const id = String(this.data.productId || '')
     if (!id) return
     trackBehavior('wish_wall_play', 'product', id)
-    wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}`, fail: () => {} })
+    // from=wish_wall：与玩法页出墙同口径，详情侧可区分「从墙回看本品」
+    wx.navigateTo({
+      url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}&from=wish_wall`,
+      fail: () => {}
+    })
+  },
+
+  /* ----------------------------- 展品主角区（墙头展签 + 展品卡） ----------------------------- */
+
+  /**
+   * 只读解析「这面墙的那件商品」，补上 productId 与实物主图。
+   *
+   * 读取方式与详情页同形（`products` 集合 `read: true`，客户端直读）；**不写库、不调任何云函数**。
+   *   · 有 productId（从详情页进来）→ `doc(id)`，只为拿主图 / 学名；
+   *   · 没有（门店码 / 首页默认墙）→ 按展品名只读取候选，再用入口组件同一套命中口径挑一件
+   *     （`pickWallProduct`）。挑不到就维持纯文案展签 —— 不拿别的商品凑数。
+   * 失败一律静默降级：展签照常显示，只是没有实物图、页头 chip 仍点不进详情。
+   */
+  async resolveWallExhibit() {
+    const key = this.data.productKey
+    if (!this.data.exhibit) return
+    if (!(wx.cloud && typeof wx.cloud.database === 'function')) return
+    let product = null
+    try {
+      const db = wx.cloud.database()
+      const coll = db.collection('products')
+      const pid = String(this.data.productId || '')
+      if (pid) {
+        const res = await coll.doc(pid).get()
+        product = (res && res.data) || null
+      } else {
+        const where = key === PRODUCT_KEY
+          ? { title: db.RegExp({ regexp: this.data.exhibit.name, options: 'i' }) }
+          : { wishWallKey: key }
+        const res = await coll.where(where).limit(10).get()
+        product = pickWallProduct(res && res.data, key)
+      }
+    } catch (e) {
+      console.warn('resolveWallExhibit', e)
+      return
+    }
+    if (!product || this._unloaded) return
+    const raw = String((Array.isArray(product.images) && product.images[0]) || product.cover || '')
+    let cover = raw
+    if (raw.indexOf('cloud://') === 0) {
+      try {
+        const r = await wx.cloud.getTempFileURL({ fileList: [raw] })
+        cover = String((r && r.fileList && r.fileList[0] && r.fileList[0].tempFileURL) || '')
+      } catch (e) {
+        cover = ''
+      }
+    }
+    if (this._unloaded) return
+    const patch = { exhibit: buildExhibitView(key, product, cover) }
+    if (!this.data.productId && product._id) patch.productId = String(product._id)
+    this.setData(patch)
+  },
+
+  openExhibit() {
+    if (!this.data.exhibit) return
+    this.setData({ exhibitOpen: true })
+  },
+
+  closeExhibit() {
+    if (this.data.exhibitOpen) this.setData({ exhibitOpen: false })
+  },
+
+  /** 展品卡 →「对着它写一句」：收起卡片，滚到挂签台并聚焦（与灵感词同一条聚焦路径） */
+  exhibitToWish() {
+    this.setData({ exhibitOpen: false })
+    try {
+      wx.pageScrollTo({ selector: '#wishInput', duration: 260, fail: () => {} })
+    } catch (e) { /* 低版本基础库不支持 selector，忽略 */ }
+    this.focusWishInput(300)
   },
 
   /* ----------------------------- 玩法入口区（四个玩法各开一页） ----------------------------- */
@@ -469,29 +567,61 @@ Page({
   },
 
   /**
-   * 玩法入口 → 该玩法的**独立页**（进行态 / 结果 / 推荐 / 分享都在那里，见 utils/ritualPlayPage.js）。
+   * 玩法入口 → **本页弹层**（2026-09-27 产品口径：玩法都在祈福墙上完成，不跳新页面）。
+   * 进行态 / 结果 / 推荐 / 分享在 PlaySheet 里（plays 分包，与独立页同一份工厂与皮）。
    *
-   * 为什么把页面路径放在注册表（`play.page`）：这是"加玩法只改注册表"这条纪律的延伸 ——
-   * 页面不写死玩法名，也不写死玩法页路径。
-   * 为什么这里**不**记 `wish_wall_play`：入口点击是"去玩"，真正的玩法参与在玩法页里上报；
+   * 为什么这里**不**记 `wish_wall_play`：点入口是"去玩"，真正的玩法参与在弹层本体里上报；
    * 在这里也发一次会让 ERP「参与仪式 / 玩法」的参与率被点进门的那一下灌水（P2-7 同一条教训）。
    */
   onPlayTap(e) {
     const id = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
-    const play = (RITUAL_PLAYS || []).find((p) => p.id === id)
-    const page = playPage(id)
-    if (!play || !page) return
-    const params = []
-    if (this.data.productId) params.push(`productId=${encodeURIComponent(this.data.productId)}`)
-    if (this.data.productKey) params.push(`productKey=${encodeURIComponent(this.data.productKey)}`)
-    if (this.data.productTitle) params.push(`title=${encodeURIComponent(this.data.productTitle)}`)
-    if ((this.data.blessTags || []).length) params.push(`bless=${encodeURIComponent(this.data.blessTags.join(','))}`)
-    const url = params.length ? `${page}?${params.join('&')}` : page
-    try {
-      wx.navigateTo({ url, fail: () => {} })
-    } catch (err) {
-      console.warn('open play page', err)
-    }
+    this.openPlaySheet(id)
+  },
+
+  /** 打开玩法弹层：只认注册表里的 id；把墙的上下文（本品 / 祈运）带进去，推荐与回看靠它 */
+  openPlaySheet(id) {
+    const key = String(id || '')
+    if (!findPlay(key) || this.data.playSheetId) return false
+    this._playShare = null
+    this.setData({
+      playSheetId: key,
+      playSheetCtx: {
+        productId: this.data.productId || '',
+        productKey: this.data.productKey || '',
+        title: this.data.productTitle || '',
+        blessTags: (this.data.blessTags || []).slice()
+      }
+    })
+    return true
+  },
+
+  /** 深链 `play=<id>`：只消费一次（下拉刷新 / 门禁回填都不会重复弹） */
+  openPendingPlay() {
+    const id = this._pendingPlay
+    this._pendingPlay = ''
+    if (id) this.openPlaySheet(id)
+  },
+
+  /** 收起弹层：卸载本体 + 入口状态立刻变成"今天已玩过" */
+  onPlaySheetClose() {
+    this._playShare = null
+    this.setData({ playSheetId: '' })
+    this.refreshPlayStates()
+  },
+
+  /**
+   * 弹层「写成心愿」：本体已写好一次性交接 → 当场取走（预填 + 滚到挂签台 + 墙上回一声）。
+   * 弹层在出场**开始**时就抛这一声：滚动与面板下沉同时进行，出场结束它再抛 close 卸载自己。
+   */
+  onPlaySheetWish() {
+    if (!this.data.allowed) return
+    this.applyPlayHandoff()
+  },
+
+  /** 弹层「分享这份结果」：只记下 result.share，交给 onShareAppMessage 用一次 */
+  onPlaySheetShare(e) {
+    const title = String((e && e.detail && e.detail.title) || '')
+    this._playShare = title ? { title } : null
   },
 
   /**
@@ -690,7 +820,7 @@ Page({
    */
   async restoreRitualFromCloud() {
     try {
-      const mod = require('../../../utils/ritualProfile')
+      const mod = require('../utils/ritualProfile')
       if (!mod || typeof mod.loadFromCloud !== 'function') return
       const res = await mod.loadFromCloud()
       if (!res || res.ok !== true) return // 降级：本地值不动（保住既有行为）
@@ -856,10 +986,13 @@ Page({
     }
     this.setData({ allowed, flagChecked: true, loading: allowed, gateError: false })
     if (!allowed) return
+    this.openPendingPlay()
     // H1 钩子的「取」这一半（P2-10，2026-09-21）：换机 / 清缓存后把云端档案拉回来并刷新显示。
     // **只在这里调** —— 门禁已确认开放。刻意 fire-and-forget（不 await）：
     // 它是补强，不该拖慢首屏；失败已在内部降级（见 restoreRitualFromCloud 的注释）。
     void this.restoreRitualFromCloud()
+    // 展品主角：只读解析这面墙的那件商品（补 productId 与实物图）。fire-and-forget，失败只是没有图
+    void this.resolveWallExhibit()
     await this.refresh()
     // 彩蛋放在内容就位之后：先亮出墙面，再给惊喜
     this.fireEntryEgg()
@@ -1021,6 +1154,10 @@ Page({
       clearTimeout(this._danmakuTimer)
       this._danmakuTimer = null
     }
+    if (this._heldDmTimer) {
+      clearTimeout(this._heldDmTimer)
+      this._heldDmTimer = null
+    }
   },
 
   /**
@@ -1061,6 +1198,10 @@ Page({
     this.clearFreshTimer()
     // 音效实例与回声计时器都要收：页面卸载后还在响/还在 setData = 内存与噪声双泄漏
     this.clearEcho()
+    if (this._deskPostedTimer) {
+      clearTimeout(this._deskPostedTimer)
+      this._deskPostedTimer = null
+    }
     if (this._muyuTimer) clearTimeout(this._muyuTimer)
     if (this._heartTimer) clearTimeout(this._heartTimer)
     // 自动聚焦的延时器（2026-09-20 补）：此前它是匿名 setTimeout，卸页后仍会对已卸载页面 setData
@@ -1204,10 +1345,17 @@ Page({
 
   /* ----------------------------- 心愿笺 ----------------------------- */
 
-  /** 点愿签 → 展开那张纸（弹幕看得快，愿签看得清，笺看得住） */
+  /** 点弹幕 → 短暂停住高亮 + 展开愿签（B 站式点弹幕反馈；笺看得住） */
   openWishCard(e) {
     const id = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
     if (!id) return
+    this.setData({ heldDmId: id })
+    try { wx.vibrateShort({ type: 'light' }) } catch (err) { /* ignore */ }
+    if (this._heldDmTimer) clearTimeout(this._heldDmTimer)
+    this._heldDmTimer = setTimeout(() => {
+      this._heldDmTimer = null
+      if (this.data.heldDmId === id) this.setData({ heldDmId: '' })
+    }, 560)
     const src = (this._mineRows || []).concat(this._wallItems || [])
     const hit = src.find((it) => String(it._id) === id)
     if (!hit) return
@@ -1317,25 +1465,29 @@ Page({
   },
 
   /**
-   * 转发入口（2026-09-21 口径变更后，本页**只剩一条链路**）。
+   * 转发入口（两条链路，2026-09-27 玩法回到墙上弹层后）。
    *
    * A. 愿签卡上的「祈一份」 → 分享的是**愿签正文**（`card.text`）。
-   * B. 玩法结果的「分享这份结果」 → 已在**玩法页**（`utils/ritualPlayPage.js` 的
-   *    `onShareAppMessage`，只读 `ritualPlay.share`）。本页不再有玩法结果，
-   *    所以这里**不存在**"把玩法分享降级成愿签文案"的分流问题 —— 那条分流标记
-   *    （`shareFrom`）随玩法弹层一起下线（结构上不再可能串链）。
-   *
-   * 合规口径：玩法分支**绝不读 `card.text`** 这条规矩移到了玩法页 ——
-   * 那边结构上**根本没有** `card` 这个输入（更强的保证），守卫按此断言。
+   * B. 玩法弹层的「分享这份结果」 → 弹层本体在按钮 bindtap 里抛 `share`（detail.title = `result.share`），
+   *    `onPlaySheetShare` 记到实例字段 `_playShare`；这里**先**判它、读到即清，
+   *    命中就直接返回 —— 该分支结构上不接触 `card`，不会把玩法分享串成愿签文案。
    */
   onShareAppMessage() {
     const path = `/subpackages/feature/wish-wall/index?productKey=${encodeURIComponent(this.data.productKey)}`
+    // 玩法弹层的「分享这份结果」：只用弹层递来的 result.share（一次性，读到即清）
+    const playShare = this._playShare
+    this._playShare = null
+    if (playShare && playShare.title) return { title: playShare.title, path }
     const card = this.data.card
     const text = card ? normalizeWishText(card.text) : ''
-    return {
-      title: text || '马上有 · 祈福墙',
+    const ex = this.data.exhibit
+    // 墙本身的分享卡带出展品（与墙头展签 / 入口组件同一句）；有实物图就当封面
+    const share = {
+      title: text || (ex && ex.line ? ex.line : '马上有 · 祈福墙'),
       path
     }
+    if (!text && ex && ex.cover) share.imageUrl = ex.cover
+    return share
   },
 
   /* ----------------------------- 发布 ----------------------------- */
@@ -1371,9 +1523,12 @@ Page({
    * 原来 `onRegisterSuccess` 在 `submitWish` 之前就把 `resume_success` 发出去了，
    * 续发失败（toast 之后什么都不回滚）也被记成"注册完成并自动续发"，
    * 于是 ERP 的注册→落愿转化率**系统性偏高**。返回值是这条判据唯一的真值来源。
+   *
+   * `_submitting` 锁住门禁那段 await：`posting` 要等门禁读完会话才置真，此前这段时间里连点两下
+   * （或键盘「发送」+ 按钮各一下）会发出两次 post。门禁一过 `posting` 同步接手。
    */
   async submitWish() {
-    if (this.data.posting) return false
+    if (this.data.posting || this._submitting) return false
     if (!this.data.allowed) {
       toastWishWallClosed()
       return false
@@ -1398,83 +1553,144 @@ Page({
     // `_resumeAfterRegister`：刚注册完的这次续发**跳过门禁**（否则会话还没刷新 → 又弹一次，死循环）。
     const resumingAfterRegister = !!this._resumeAfterRegister
     this._resumeAfterRegister = false
+    // isGuestUser 自己吞掉异常（fail-open），这把锁不会漏放
+    this._submitting = true
     if (!resumingAfterRegister && await this.isGuestUser()) {
+      this._submitting = false
       this._pendingWish = checked.text
       trackBehavior('wish_wall_register_gate', 'wish_wall', this.data.productKey, { step: 'show' })
       this.setData({ showRegisterDialog: true })
       return false
     }
-    this.setData({ posting: true })
+    this._submitting = false
+    // 落愿闭环（2026-09-27 改为**先落地、后确认**）：点下去这一刻心愿就插到墙首、弹幕立即接住、高亮，
+    // 不再干等云函数往返（"挂上…"那 0.3–1s 是全链路最后一段空等）。
+    // 云函数说没挂上 / 调用抛错 → 撤回这条、额度还原、**草稿原样还给挂签台**（不白写）。
+    // 挂签台「成」、震动、墙上回声只在确认之后给：它们说的是"已经挂上了"，不能先说。
+    const before = { items: this._wallItems || [], quota: this.data.quota }
+    const fresh = {
+      _id: `local-${Date.now()}`,
+      text: checked.text,
+      nickname: '我',
+      avatar: '',
+      pinned: false,
+      official: false,
+      isMine: true,
+      isFresh: true,
+      timeText: '刚刚'
+    }
+    const localId = fresh._id
+    this._wallItems = [fresh].concat(before.items)
+    this.setData({
+      posting: true,
+      draft: '',
+      // 草稿清空 → 字数展示必须一起归零（否则输入框空了、右边还写着「12/30」）
+      draftCount: 0,
+      freshId: fresh._id,
+      // ⚠️ 2026-09-20 修（子代理行为复核抓到）：乐观插入墙上数据之后**必须同步 wallCount**。
+      // 否则"空墙写下第一条"时：墙上已经有一条（rows 也重建了、页脚照样渲染），
+      // 但页脚文案与分段条数读的是 wallCount = 0 → 显示「0 条心愿正在墙上流动」，
+      // 而如果随后的 refresh 回包失败，这个 0 会一直留着（又是一条与画面不符的假事实）。
+      wallCount: this._wallItems.length,
+      // 组件读的是 wallItems / wallCapped（与 wallCount 同一口径：只描述**墙**）
+      wallItems: this._wallItems,
+      wallCapped: isTagListCapped(this._wallItems.length),
+      // 额度即时递减（诚实：以本地事实为准，服务端刷新会再校准；撤回时还原）
+      quota: Object.assign({}, this.data.quota, {
+        used: (this.data.quota.used || 0) + 1,
+        left: Math.max(0, (this.data.quota.left || 0) - 1),
+        exhausted: (this.data.quota.used || 0) + 1 >= (this.data.quota.cap || DAILY_LIMIT)
+      })
+    })
+    if (this.data.viewMode === 'wall') this.applyView()
+    this.setData({ rows: buildDanmakuRows(this._wallItems, { cycle: (this.data.danmakuCycle || 0) + 1, boostId: fresh._id }) })
+    this.scheduleDanmakuCycle(this.data.rows)
+    this.scheduleFreshClear()
+    let result = null
     try {
-      const result = await this.callFn({
+      result = await this.callFn({
         action: 'post',
         productKey: this.data.productKey,
         productId: this.data.productId,
         text: checked.text
       })
-      if (!result.success) {
-        wx.showToast({ title: result.msg || '发布失败', icon: 'none', duration: 2500 })
-        return false
-      }
-      // 落愿闭环：先本地落地（愿签插到墙首 + 弹幕立即接住 + 高亮），再等权威数据回来对齐。
-      // 这样「挂上墙」不再只是一个 toast —— 而是**看得见心愿落在墙上**。
-      const fresh = {
-        _id: String(result._id || ''),
-        text: checked.text,
-        nickname: result.nickname || '我',
-        avatar: '',
-        pinned: false,
-        official: false,
-        isMine: true,
-        isFresh: true,
-        timeText: '刚刚'
-      }
-      this._wallItems = [fresh].concat(this._wallItems || [])
-      this.setData({
-        draft: '',
-        // 草稿清空 → 字数展示必须一起归零（否则输入框空了、右边还写着「12/30」）
-        draftCount: 0,
-        freshId: fresh._id,
-        // ⚠️ 2026-09-20 修（子代理行为复核抓到）：乐观插入墙上数据之后**必须同步 wallCount**。
-        // 否则"空墙写下第一条"时：墙上已经有一条（rows 也重建了、页脚照样渲染），
-        // 但页脚文案与分段条数读的是 wallCount = 0 → 显示「0 条心愿正在墙上流动」，
-        // 而如果随后的 refresh 回包失败，这个 0 会一直留着（又是一条与画面不符的假事实）。
-        wallCount: this._wallItems.length,
-        // 组件读的是 wallItems / wallCapped（与 wallCount 同一口径：只描述**墙**）
-        wallItems: this._wallItems,
-        wallCapped: isTagListCapped(this._wallItems.length),
-        // 额度即时递减（诚实：以本地事实为准，服务端刷新会再校准）
-        quota: Object.assign({}, this.data.quota, {
-          used: (this.data.quota.used || 0) + 1,
-          left: Math.max(0, (this.data.quota.left || 0) - 1),
-          exhausted: (this.data.quota.used || 0) + 1 >= (this.data.quota.cap || DAILY_LIMIT)
-        })
-      })
-      if (this.data.viewMode === 'wall') this.applyView()
-      this.setData({ rows: buildDanmakuRows(this._wallItems, { cycle: (this.data.danmakuCycle || 0) + 1 }) })
-      this.scheduleDanmakuCycle(this.data.rows)
-      this.scheduleFreshClear()
-      wx.showToast({ title: result.msg || '心愿已挂上墙', icon: 'none' })
-      try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
-      // 即时反馈：落愿是主转化动作，墙上也要回一声（附"今日还可写 N 条"，顺带说清额度）
-      this.pushEcho('wish')
-      // ⚠️ P1-3（2026-09-21）：漏斗终点必须与 PRD §7.1 和 ERP 监测表**同一口径**。
-      // 签名是 `trackBehavior(action, targetType, targetId, extra)` —— 原来写的是
-      // `('wish_wall_post', 'ok', '1')`，即 targetType='ok'、**targetId='1'**；
-      // 而监测表按 `String(ev.targetId) === 'ok'` 过滤（admin/src/utils/wishWallMonitor.js 的
-      // `post` 行 + `sources[].post`），于是「落愿成功（上墙）」这一行与按来源转化率**恒为 0**。
-      // 两个都写 'ok'：既满足事件 schema 声明的 targetType='ok'，也让 targetId 落在报表口径上。
-      trackBehavior('wish_wall_post', 'ok', 'ok')
-      await this.refresh()
-      this.fireWishEgg()
-      return true
     } catch (e) {
       console.error('wish wall post', e)
-      wx.showToast({ title: (e && e.errMsg) || '发布失败', icon: 'none', duration: 2500 })
-      return false
-    } finally {
-      this.setData({ posting: false })
+      result = { success: false, msg: (e && e.errMsg) || '' }
     }
+    if (!result || !result.success) {
+      this.unlandWish(localId, before, checked.text)
+      wx.showToast({ title: (result && result.msg) || '发布失败', icon: 'none', duration: 2500 })
+      return false
+    }
+    // 确认：本地那条换成服务端 _id（弹幕行只换 id、不换 key —— 换 key 会让正在飘的这条重播）
+    fresh._id = String(result._id || localId)
+    if (result.nickname) fresh.nickname = result.nickname
+    this.setData({
+      posting: false,
+      freshId: fresh._id,
+      deskPosted: true,
+      wallItems: this._wallItems,
+      rows: (this.data.rows || []).map((r) => (r && r.id === localId ? Object.assign({}, r, { id: fresh._id }) : r))
+    })
+    if (this._deskPostedTimer) clearTimeout(this._deskPostedTimer)
+    this._deskPostedTimer = setTimeout(() => {
+      this._deskPostedTimer = null
+      if (this.data.deskPosted) this.setData({ deskPosted: false })
+    }, ritualFeedback.ECHO_HOLD_MS)
+    // 反馈只留墙内这一组（弹幕落签 + 挂签台「成」+ 回声），不再叠一个遮住墙面的原生 toast
+    try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
+    // 即时反馈：落愿是主转化动作，墙上也要回一声（附"今日还可写 N 条"，顺带说清额度）
+    this.pushEcho('wish')
+    // ⚠️ P1-3（2026-09-21）：漏斗终点必须与 PRD §7.1 和 ERP 监测表**同一口径**。
+    // 签名是 `trackBehavior(action, targetType, targetId, extra)` —— 原来写的是
+    // `('wish_wall_post', 'ok', '1')`，即 targetType='ok'、**targetId='1'**；
+    // 而监测表按 `String(ev.targetId) === 'ok'` 过滤（admin/src/utils/wishWallMonitor.js 的
+    // `post` 行 + `sources[].post`），于是「落愿成功（上墙）」这一行与按来源转化率**恒为 0**。
+    // 两个都写 'ok'：既满足事件 schema 声明的 targetType='ok'，也让 targetId 落在报表口径上。
+    trackBehavior('wish_wall_post', 'ok', 'ok')
+    // 已经挂上了：之后的列表对齐失败只影响"墙上是不是最新"，不许再报「发布失败」、不许让续发记成失败
+    try {
+      await this.refresh()
+    } catch (e) {
+      console.warn('wish wall refresh after post', e)
+    }
+    this.fireWishEgg()
+    return true
+  },
+
+  /** 乐观落地的撤回：墙、弹幕、额度回到提交前，草稿还给挂签台 */
+  unlandWish(localId, before, text) {
+    this._wallItems = (this._wallItems || []).filter((it) => it && it._id !== localId)
+    this.clearFreshTimer()
+    this.setData({
+      posting: false,
+      draft: text,
+      draftCount: wishTextCount(text),
+      freshId: '',
+      wallCount: this._wallItems.length,
+      wallItems: this._wallItems,
+      wallCapped: isTagListCapped(this._wallItems.length),
+      quota: before.quota,
+      rows: (this.data.rows || []).filter((r) => r && r.id !== localId)
+    })
+    if (this.data.viewMode === 'wall') this.applyView()
+  },
+
+  /**
+   * 弹层挂签条「挂上墙」：一步落愿。走本页唯一的 submitWish（门禁 / 额度 / 云函数同一条路），
+   * 先把这句放进挂签台 —— 被注册门禁拦下、发布失败时草稿就留在挂签台上，不白写。
+   * 滚到墙面：落愿的主反馈（弹幕落签 + 挂签台「成」）都在这一屏里。
+   */
+  onPlaySheetPost(e) {
+    if (!this.data.allowed) return
+    const draft = wishTextTruncate(String((e && e.detail && e.detail.text) || ''), TEXT_MAX)
+    if (!draft) return
+    this.setData({ draft, draftCount: wishTextCount(draft) })
+    try {
+      wx.pageScrollTo({ selector: '.ww-wall', duration: 260, fail: () => {} })
+    } catch (err) { /* 低版本基础库不支持 selector，忽略 */ }
+    return this.submitWish()
   },
 
   goBack() {
@@ -1676,7 +1892,7 @@ Page({
    */
   async syncRitualToCloud() {
     try {
-      const ritualProfile = require('../../../utils/ritualProfile')
+      const ritualProfile = require('../utils/ritualProfile')
       if (!ritualProfile || typeof ritualProfile.syncToCloud !== 'function') return false
       const res = await ritualProfile.syncToCloud()
       /*

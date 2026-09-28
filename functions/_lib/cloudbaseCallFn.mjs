@@ -62,6 +62,12 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   // adminOpsKey（`verifyBooking/index.js:244/254`）；那两个只认 wxContext.OPENID 且校验
   // `booking._openid !== openid`，是**顾客本人通道** —— ERP 没有 openid，加进来也没用。
   'verifyBooking',
+  // 2026-09-28：B2B 采购单 查单补记 / 退款 / 确认对公到账。仅 admin* action 接受 adminOpsKey（超管），
+  // 采购商 create/pay 等 action 只认 wxContext.OPENID，代理调不动。
+  'payB2bPurchase',
+  // 2026-09-28：敏感集合只读网关（orders 等 read 收紧为非匿名后，ERP 匿名 CDN 读不到 → 经此函数；
+  // 超管鉴权 + 集合白名单 + 默认脱敏，见 docs/订单隐私收紧方案_2026-09-28.md）
+  'secureDataRead',
 ])
 
 const ALLOWED = new Set(ALLOWED_FUNCTIONS)

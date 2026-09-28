@@ -15,6 +15,8 @@
       <text class="header-note">看待办 · 调规则 · 履约请进「礼赠履约」</text>
     </view>
 
+    <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
     <view class="workbench-state" wx:if="{{loading && !hasLoaded}}">同步中…</view>
 
     <view class="hint-card" wx:if="{{loadError}}">

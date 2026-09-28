@@ -1,0 +1,11 @@
+# 域 manager —— 店长 / 超管工作台（miniprogram/subpackages/manager）守卫清单（一行一条 npm 脚本）。
+# 本文件是**该域的单写者面**：只有该域的 owner 改它（见 docs/并发工作流注册表.json）；跨流加守卫请提变更请求。
+# 校验：npm run check:guards-coverage
+# 2026-09-28：超管工作台「活动课程」看板升级（miniprogram/docs/超管工作台_活动课程_升级_2026-09-28.md）
+npm run check:activity-board
+# 2026-09-28：待点名三项拍板修复（子页提示可见 / C 端过期隐藏 / 报名原子扣名额 + 取消归还）
+npm run check:activity-seats
+# 2026-09-28：超管工作台「供应商预览」→「供应商管理」中心（admin/docs/供应商管理中心_Phase2_技术蓝图_2026-09-28.md）
+npm run check:supplier-desk
+# 2026-09-28：云函数禁用 wx.*（cancelBooking/updateBooking 提醒用 wx.cloud 发不出去的回归防线；全仓云函数范围，理应归 cross，待 cross owner 迁移）
+npm run check:cloudfn-no-wx

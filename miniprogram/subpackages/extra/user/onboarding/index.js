@@ -461,14 +461,14 @@ Page({
 
   openTerms() {
     wx.navigateTo({
-      url: '/subpackages/extra/user/legal/index?type=terms',
+      url: '/subpackages/content/user/legal/index?type=terms',
       fail: () => wx.showToast({ title: '无法打开协议', icon: 'none' })
     })
   },
 
   openPrivacy() {
     wx.navigateTo({
-      url: '/subpackages/extra/user/legal/index?type=privacy',
+      url: '/subpackages/content/user/legal/index?type=privacy',
       fail: () => wx.showToast({ title: '无法打开协议', icon: 'none' })
     })
   },

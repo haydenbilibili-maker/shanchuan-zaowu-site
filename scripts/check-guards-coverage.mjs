@@ -66,6 +66,23 @@ export function needsCredentials(scripts, name, root = ROOT) {
   try { return CRED_RE.test(readFileSync(abs, 'utf8')) } catch { return false }
 }
 
+/**
+ * 起浏览器 / dev server 的守卫（`--jobs` 并行时会抢端口、配置目录、CPU）：必须登记 `serialGuards`。
+ * 只扫守卫入口脚本（去注释后）；写固定名临时文件这类静态难判的冲突由 `check:fast` 的 `--retry-serial` 兜底。
+ */
+const SHARED_RESOURCE_RE = /--headless|--remote-debugging-port|\bpuppeteer\b|\bplaywright\b|from\s+['"]vite['"]|import\(\s*['"]vite['"]\s*\)|\.listen\(\s*\d/
+export function sharedResourceOf(scripts, name, root = ROOT) {
+  const p = scriptFileOf(scripts, name)
+  if (!p || !existsSync(join(root, p))) return null
+  // 本脚本自己的判据正则里就写着这些关键词 —— 扫自己必然误报
+  if (resolve(root, p) === join(HERE, 'check-guards-coverage.mjs')) return null
+  const code = readFileSync(join(root, p), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1')
+  const m = SHARED_RESOURCE_RE.exec(code)
+  return m ? m[0] : null
+}
+
 /** 域文件命名：`<NN>-<域>.txt`；返回 { domain -> 文件名 } */
 export function domainFiles(dir = GUARDS_DIR) {
   const map = new Map()
@@ -134,6 +151,19 @@ export function runChecks(meta, scripts, dir = GUARDS_DIR) {
   for (const d of meta.crossWith || []) {
     if (!order.includes(d)) fail.push(`crossWith 引用了不存在的域 ${d}`)
     if (d === 'cross' || d === 'meta') warn.push(`crossWith 里出现 ${d}（一般不需要）`)
+  }
+  const serial = new Set(meta.serialGuards || [])
+  for (const n of serial) {
+    if (!seen.has(`npm run ${n}`)) fail.push(`serialGuards 里的 ${n} 不在任何域清单里（并行互斥通道引用了不存在的守卫）`)
+  }
+  for (const [cmd, d] of seen) {
+    const name = scriptNameOf(cmd)
+    if (!name || serial.has(name) || !scripts[name]) continue
+    const hit = sharedResourceOf(scripts, name)
+    if (hit) {
+      fail.push(`域 ${d}：${name} 起浏览器/dev server（命中 \`${hit}\`）却未登记 guards/_meta.json 的 serialGuards`
+        + ' —— check:fast / CI 并行时会与别的守卫抢端口或配置目录')
+    }
   }
   if (!seen.has('npm run check:guards-coverage')) {
     fail.push('meta 域没有登记 `npm run check:guards-coverage` 自己 —— 校验器不在清单里，等于没人守清单')
@@ -242,6 +272,20 @@ function selftest() {
     const res = withMutatedDomain(targetFile, (s) => s, (m) => ({ ...m, domainOrder: [...m.domainOrder, 'no-such-domain'] }))
     t('★ 被检出：domainOrder 里有一个没有域文件的域', res.fail.some((f) => /没有 guards\/<NN>-no-such-domain\.txt/.test(f)))
   }
+  // serialGuards 写了清单里没有的名字 → 必须检出（否则 --jobs 下该守卫静默失去互斥保护）
+  {
+    const res = withMutatedDomain(targetFile, (s) => s, (m) => ({ ...m, serialGuards: [...(m.serialGuards || []), 'check:no-such-serial'] }))
+    t('★ 被检出：serialGuards 引用了不在清单里的守卫', res.fail.some((f) => /serialGuards 里的 check:no-such-serial/.test(f)))
+  }
+  // 起 vite / Chrome 的守卫从 serialGuards 里摘掉 → 必须检出（两类各注入一次）
+  for (const [victim, hit] of [['check:sfc-dev', 'vite'], ['check:toast-style', 'headless']]) {
+    const res = withMutatedDomain(targetFile, (s) => s, (m) => ({ ...m, serialGuards: (m.serialGuards || []).filter((n) => n !== victim) }))
+    t(`★ 被检出：${victim}（起 ${hit}）未登记 serialGuards`,
+      res.fail.some((f) => f.includes(`${victim} 起浏览器/dev server`)))
+  }
+  // 反例：普通只读守卫不被误报
+  t('★ 反例：只读守卫（test:points-ledger）不被判为起浏览器/dev server',
+    sharedResourceOf(scripts, 'test:points-ledger') === null)
   // 游离 txt：命名不合规 → 永远不被读到，必须点名
   {
     const orphan = join(GUARDS_DIR, 'zz-orphan.txt')

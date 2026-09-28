@@ -17,6 +17,7 @@ const {
   DEFAULT_ADDRESS_TIMEOUT_DAYS
 } = require('./giftMeta')
 const { notifyGiftSubscribe } = require('./giftSubscribe')
+const { GIFT_VERIFY_COL, normalizeCnPhone, hashPhone, buildVerifyDoc } = require('./giftReceiverPhone')
 const {
   COLLECTION: GIFT_SETTINGS_COL,
   DOC_KEY: GIFT_SETTINGS_KEY,
@@ -35,6 +36,18 @@ const db = cloud.database()
 const _ = db.command
 
 const FLAGS_COLLECTION = 'content_display_flags'
+
+/**
+ * 礼笺领取核验（2026-09-28 产品负责人点名 N3，蓝图 miniprogram/docs/礼赠_证书与养护闭环_2026-09-28.md §8）
+ * 送礼人可为礼赠预留「受礼人手机号」：只存加盐哈希 + 尾号，放在**仅云函数可读写**的独立集合
+ * （orders 集合 read: auth != null，任何登录用户都能按 id 读订单 → 手机号及其可暴力还原的哈希都不得落 orders）。
+ * 订单上只留布尔标记 giftMeta.receiverVerify。设了号的礼赠：未核验者不得成为持有人（accept / submitAddress / bindReceiver 同一道门）；
+ * 未设号的礼赠（含全部历史单）保持现行行为。
+ */
+const VERIFY_MAX_PER_HOUR = 5
+const VERIFY_ORDER_MAX_PER_HOUR = 20
+const HOUR_MS = 60 * 60 * 1000
+const GIFT_CLOSED_STATUS = ['refunded', 'void', 'expired_refunding']
 
 /**
  * 礼赠领取/自提核销后的线上赠分 — 与 confirmOrderReceipt 同源
@@ -161,6 +174,8 @@ function publicGiftView(order, { role = 'receiver', includeVoiceMeta = true } = 
     /** sender=送礼人；receiver=收件人/持卡访客（与 PRD Two Audiences 对齐） */
     viewerRole: role === 'giver' ? 'sender' : 'receiver',
     receiverBound: !!meta.receiverOpenid,
+    /** 送礼人设了领取核验（只给布尔，不给号码 / 尾号） */
+    receiverVerify: !!meta.receiverVerify,
     totalPrice: role === 'giver' ? order.totalPrice : undefined,
     paidTime: order.paidTime || null,
     storeId: meta.storeId || '',
@@ -451,6 +466,12 @@ async function getShare(event, openid) {
       gift.voiceTempUrl = ''
       gift.voiceDuration = 0
     }
+    // 设了领取核验：核验通过（即已绑定）前不出自提领取码，防持链接者绕过核验到店领取
+    if (order.giftMeta && order.giftMeta.receiverVerify && !isBoundReceiver) {
+      gift.claimCode = ''
+      gift.claimQrPayload = ''
+      gift.verifyRequired = true
+    }
   }
 
   return {
@@ -496,6 +517,8 @@ async function acceptGift(event, openid) {
   if (meta.acceptStatus === 'accepted' && meta.receiverOpenid === openid) {
     return { success: true, already: true, gift: publicGiftView(order, { role: 'receiver' }) }
   }
+  const acceptGate = await receiverVerifyGate(order, openid)
+  if (acceptGate) return acceptGate
 
   const nextMetaPatch = {
     'giftMeta.acceptStatus': 'accepted',
@@ -584,6 +607,8 @@ async function submitAddress(event, openid) {
   if (meta.receiverOpenid && meta.receiverOpenid !== openid) {
     return { success: false, code: 'CLAIMED', msg: '这份山海已有去处' }
   }
+  const addressGate = await receiverVerifyGate(order, openid)
+  if (addressGate) return addressGate
   if (meta.addressStatus === 'submitted') {
     // 历史脏数据：地址已记但 status 未翻转 → 补齐后返回
     if (order.status === 'paid_awaiting_address') {
@@ -1834,6 +1859,8 @@ async function bindReceiver(event, openid) {
   if (["refunded", "void", "cancelled"].includes(String(order.status || ""))) {
     return { success: false, code: 'CLOSED', msg: '该礼赠已关闭' }
   }
+  const bindGate = await receiverVerifyGate(order, openid)
+  if (bindGate) return bindGate
 
   try {
     await db.collection("orders").doc(order._id).update({
@@ -1848,6 +1875,194 @@ async function bindReceiver(event, openid) {
     return { success: false, msg: "绑定失败，请稍后重试" }
   }
   return { success: true, orderId: order._id, bound: true }
+}
+
+
+async function loadVerifyDoc(orderId) {
+  if (!orderId) return null
+  try {
+    const res = await db.collection(GIFT_VERIFY_COL).doc(orderId).get()
+    return res.data || null
+  } catch (e) {
+    return null
+  }
+}
+
+function isGiverOfOrder(order, openid) {
+  return !!(openid && order && (openid === order._openid || openid === order.openid))
+}
+
+function recentVerifyFailures(doc, now) {
+  return (Array.isArray(doc && doc.attempts) ? doc.attempts : []).filter((a) => a && now - Number(a.t) < HOUR_MS)
+}
+
+/** 领取门：返回 null = 放行；否则为 VERIFY_REQUIRED 响应。只读核验结果，不做比对 */
+async function receiverVerifyGate(order, openid) {
+  const meta = (order && order.giftMeta) || {}
+  if (!meta.receiverVerify) return null
+  if (meta.receiverOpenid && meta.receiverOpenid === openid) return null
+  const doc = await loadVerifyDoc(order._id)
+  if (!doc || !doc.phoneHash) return null
+  if (doc.verifiedOpenid && doc.verifiedOpenid === openid) return null
+  return { success: false, code: 'VERIFY_REQUIRED', msg: '送礼人为这份礼赠设了手机号核验，请先完成核验' }
+}
+
+/**
+ * 送礼人设置 / 修改 / 清除受礼人手机号（TA 领取前）。
+ * phone 为空 = 清除核验；useAddressPhone = 直寄 TA 时沿用送礼人填的收件电话。出参只含尾号。
+ */
+async function setReceiverPhone(event, openid) {
+  if (!openid) return { success: false, msg: '请先登录' }
+  const order = await loadOrder(String(event.orderId || '').trim())
+  if (!order || !isGiftOrder(order)) return { success: false, msg: '礼赠不存在' }
+  if (!isGiverOfOrder(order, openid)) return { success: false, code: 'FORBIDDEN', msg: '只有送礼人可以设置领取核验' }
+  const meta = order.giftMeta || {}
+  if (meta.receiverOpenid) return { success: false, code: 'ALREADY_BOUND', msg: 'TA 已领取，核验手机号不能再改' }
+  if (GIFT_CLOSED_STATUS.includes(String(order.status || '')) || order.status === 'received') {
+    return { success: false, code: 'CLOSED', msg: '这份礼赠已结束' }
+  }
+
+  let raw = String(event.phone || '').trim()
+  if (event.useAddressPhone) {
+    if (meta.deliveryType !== 'ship_to_receiver' || !order.address) {
+      return { success: false, code: 'BAD_PHONE', msg: '这份礼赠没有 TA 的收件电话' }
+    }
+    raw = String(order.address.phone || '')
+  }
+  if (!raw) {
+    await db.collection(GIFT_VERIFY_COL).doc(order._id).set({
+      data: { orderId: order._id, giverOpenid: openid, salt: '', phoneHash: '', phoneTail: '', attempts: [], verifiedOpenid: '', updatedAt: db.serverDate() }
+    })
+    await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.receiverVerify': false } })
+    return { success: true, receiverVerify: false, phoneTail: '' }
+  }
+  const phone = normalizeCnPhone(raw)
+  if (!phone) return { success: false, code: 'BAD_PHONE', msg: '请输入 11 位手机号' }
+  await db.collection(GIFT_VERIFY_COL).doc(order._id).set({ data: buildVerifyDoc(order._id, openid, phone, db.serverDate()) })
+  await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.receiverVerify': true } })
+  return { success: true, receiverVerify: true, phoneTail: phone.slice(-4) }
+}
+
+/** 送礼人查看领取核验状态（只给尾号） */
+async function getReceiverVerify(event, openid) {
+  if (!openid) return { success: false, msg: '请先登录' }
+  const order = await loadOrder(String(event.orderId || '').trim())
+  if (!order || !isGiftOrder(order)) return { success: false, msg: '礼赠不存在' }
+  if (!isGiverOfOrder(order, openid)) return { success: false, code: 'FORBIDDEN', msg: '无权查看' }
+  const meta = order.giftMeta || {}
+  const doc = meta.receiverVerify ? await loadVerifyDoc(order._id) : null
+  const on = !!(doc && doc.phoneHash)
+  return {
+    success: true,
+    receiverVerify: on,
+    phoneTail: on ? String(doc.phoneTail || '') : '',
+    bound: !!meta.receiverOpenid,
+    editable: !meta.receiverOpenid && order.status !== 'received' && !GIFT_CLOSED_STATUS.includes(String(order.status || '')),
+    addressPhoneTail: meta.deliveryType === 'ship_to_receiver' && order.address && normalizeCnPhone(order.address.phone)
+      ? normalizeCnPhone(order.address.phone).slice(-4)
+      : ''
+  }
+}
+
+/**
+ * 受礼人核验：method=account 比对本人经微信授权绑定的手机号（users.phone 且有 phoneVerifiedAt，由 authPhone 写入）；
+ * method=manual 比对手动输入的完整号码。服务端比对；失败只回「不一致 + 剩余次数」，不回任何号码片段。
+ * 限次：每人每单每小时 VERIFY_MAX_PER_HOUR 次、每单每小时 VERIFY_ORDER_MAX_PER_HOUR 次（多账号轮试）。通过即绑定为受礼人。
+ */
+async function verifyReceiver(event, openid) {
+  const enabled = await isGiftFeatureEnabled()
+  if (!enabled) return { success: false, code: 'GIFT_CLOSED', msg: '礼赠暂未开放' }
+  if (!openid) return { success: false, msg: '请先登录' }
+
+  const token = String(event.token || '').trim()
+  let order = token ? await findOrderByToken(token) : null
+  if (!order && event.orderId) order = await loadOrder(event.orderId)
+  if (!order || !isGiftOrder(order)) return { success: false, msg: '礼赠不存在' }
+  if (isGiverOfOrder(order, openid)) return { success: false, code: 'IS_GIVER', msg: '不能核验自己送出的礼赠' }
+  const meta = order.giftMeta || {}
+  if (meta.receiverOpenid) {
+    if (meta.receiverOpenid === openid) return { success: true, already: true, orderId: order._id }
+    return { success: false, code: 'ALREADY_BOUND', msg: '这份礼赠已由其他人领取' }
+  }
+  const shareToken = String(meta.shareToken || '').trim()
+  if (!shareToken || token !== shareToken) return { success: false, code: 'BAD_TOKEN', msg: '请从分享礼笺进入后再核验' }
+  if (GIFT_CLOSED_STATUS.includes(String(order.status || ''))) return { success: false, code: 'CLOSED', msg: '该礼赠已关闭' }
+
+  const doc = meta.receiverVerify ? await loadVerifyDoc(order._id) : null
+  if (!doc || !doc.phoneHash) return { success: true, notRequired: true, orderId: order._id }
+
+  const now = Date.now()
+  const failures = recentVerifyFailures(doc, now)
+  const mine = failures.filter((a) => a.o === openid)
+  if (mine.length >= VERIFY_MAX_PER_HOUR || failures.length >= VERIFY_ORDER_MAX_PER_HOUR) {
+    const oldest = (mine.length >= VERIFY_MAX_PER_HOUR ? mine : failures)[0]
+    const retryAfterMin = Math.max(1, Math.ceil((Number(oldest.t) + HOUR_MS - now) / 60000))
+    return { success: false, code: 'VERIFY_LOCKED', msg: `尝试次数过多，请 ${retryAfterMin} 分钟后再试`, retryAfterMin, remaining: 0 }
+  }
+
+  const method = event.method === 'account' ? 'account' : 'manual'
+  let phone = ''
+  if (method === 'account') {
+    const userRes = await db.collection('users').where({ _openid: openid }).limit(1).get().catch(() => ({ data: [] }))
+    const user = (userRes.data && userRes.data[0]) || null
+    phone = user && user.phoneVerifiedAt ? normalizeCnPhone(user.phone) : ''
+    if (!phone) return { success: false, code: 'NEED_PHONE', msg: '请先授权微信手机号' }
+  } else {
+    phone = normalizeCnPhone(event.phone)
+    if (!phone) return { success: false, code: 'BAD_PHONE', msg: '请输入 11 位手机号' }
+  }
+
+  if (hashPhone(doc.salt, phone) !== doc.phoneHash) {
+    const attempts = failures.concat([{ o: openid, t: now }]).slice(-50)
+    await db.collection(GIFT_VERIFY_COL).doc(order._id).update({ data: { attempts } })
+    const remaining = Math.max(0, VERIFY_MAX_PER_HOUR - mine.length - 1)
+    return {
+      success: false,
+      code: 'VERIFY_MISMATCH',
+      msg: remaining
+        ? `与送礼人预留的手机号不一致，还可尝试 ${remaining} 次`
+        : '与送礼人预留的手机号不一致，尝试次数已用完，请 1 小时后再试',
+      remaining
+    }
+  }
+
+  await db.collection(GIFT_VERIFY_COL).doc(order._id).update({
+    data: { verifiedOpenid: openid, verifiedAt: db.serverDate(), verifyMethod: method, attempts: failures }
+  })
+  await db.collection('orders').doc(order._id).update({
+    data: {
+      'giftMeta.receiverOpenid': openid,
+      'giftMeta.receiverBoundAt': db.serverDate(),
+      'giftMeta.receiverBoundSource': `phone_verify_${method}`
+    }
+  })
+  return { success: true, bound: true, orderId: order._id, method }
+}
+
+/** 我的礼赠（送出侧）：补上领取核验状态与尾号（批量读核验集合，只给尾号） */
+async function attachVerifyInfo(list, orders) {
+  const byId = {}
+  orders.forEach((o) => { byId[o._id] = o })
+  const ids = list.filter((it) => byId[it.orderId] && (byId[it.orderId].giftMeta || {}).receiverVerify).map((it) => it.orderId)
+  const docs = {}
+  if (ids.length) {
+    try {
+      const res = await db.collection(GIFT_VERIFY_COL).where({ _id: _.in(ids) }).limit(ids.length).get()
+      ;(res.data || []).forEach((d) => { docs[d._id] = d })
+    } catch (e) {
+      console.warn('attachVerifyInfo', e && e.message)
+    }
+  }
+  list.forEach((it) => {
+    const o = byId[it.orderId]
+    if (!o) return
+    const meta = o.giftMeta || {}
+    const doc = docs[it.orderId]
+    it.receiverVerify = !!(doc && doc.phoneHash)
+    it.verifyPhoneTail = it.receiverVerify ? String(doc.phoneTail || '') : ''
+    it.verifyEditable = !meta.receiverOpenid && o.status !== 'received' && !GIFT_CLOSED_STATUS.includes(String(o.status || ''))
+  })
+  return list
 }
 
 async function listReceivedOrders(event, openid) {
@@ -1952,6 +2167,7 @@ async function listMine(event, openid) {
   const start = (page - 1) * pageSize
   const slice = filtered.slice(start, start + pageSize)
   const list = slice.map((o) => mapMineItem(o, role))
+  if (role === 'giver') await attachVerifyInfo(list, slice)
 
   let upcomingDateCount = 0
   try {
@@ -2786,6 +3002,9 @@ exports.main = async (event) => {
     if (action === 'getGiftVoice') return await getGiftVoice(event, openid)
     if (action === 'accept') return await acceptGift(event, openid)
     if (action === 'bindReceiver') return await bindReceiver(event, openid)
+    if (action === 'setReceiverPhone') return await setReceiverPhone(event, openid)
+    if (action === 'getReceiverVerify') return await getReceiverVerify(event, openid)
+    if (action === 'verifyReceiver') return await verifyReceiver(event, openid)
     if (action === 'submitAddress') return await submitAddress(event, openid)
     if (action === 'nudge') return await nudge(event, openid)
     if (action === 'verifyPickup') return await verifyPickup(event, openid)

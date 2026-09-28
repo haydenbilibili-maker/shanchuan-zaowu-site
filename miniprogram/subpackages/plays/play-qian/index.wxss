@@ -1,0 +1,199 @@
+@import "../play-shared/ritual-play.wxss";
+
+/* ── 今日一签：一只签筒 ──────────────────────────────────────────
+   入口不是"一枚瓦片"，而是一只有体积的筒 —— 摇它才有签条出来。
+   全部用 CSS 盒子拼（无图片、无 canvas）：真机排版可量、可离线预览。 */
+.rp-tube {
+  position: relative;
+  width: 168rpx;
+  height: 230rpx;
+  filter: drop-shadow(0 12rpx 20rpx rgba(0, 0, 0, 0.35));
+}
+
+.rp-tube-body {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 168rpx;
+  height: 188rpx;
+  border-radius: 12rpx 12rpx 24rpx 24rpx;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 12rpx,
+      rgba(0, 0, 0, 0.07) 12rpx,
+      rgba(0, 0, 0, 0.07) 14rpx
+    ),
+    linear-gradient(180deg, var(--brass-400) 0%, var(--brass-800) 100%);
+  box-shadow:
+    inset 0 5rpx 0 rgba(250, 246, 237, 0.2),
+    inset -12rpx 0 24rpx rgba(0, 0, 0, 0.3),
+    0 10rpx 22rpx rgba(0, 0, 0, 0.32);
+}
+
+.rp-tube-mouth {
+  position: absolute;
+  left: -8rpx;
+  top: 24rpx;
+  width: 184rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  background: var(--brass-900);
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  border-top: 4rpx solid rgba(250, 246, 237, 0.38);
+  box-shadow: inset 0 4rpx 10rpx rgba(0, 0, 0, 0.55), inset 0 12rpx 16rpx rgba(0, 0, 0, 0.35);
+}
+
+.rp-stick {
+  position: absolute;
+  left: 74rpx;
+  top: 10rpx;
+  width: 20rpx;
+  height: 140rpx;
+  border-radius: 10rpx;
+  background: linear-gradient(180deg, #FAF6ED 0%, var(--brass-300) 100%);
+  box-shadow: inset -2rpx 0 0 rgba(122, 92, 44, 0.28);
+  opacity: 0.78;
+  transform: translateY(42rpx);
+  z-index: 2;
+}
+
+/* 侧签：筒里不止一支，入口一眼「有一捆」 */
+.rp-stick.is-side {
+  width: 12rpx;
+  height: 110rpx;
+  opacity: 0.4;
+  transform: translateY(52rpx);
+  z-index: 1;
+}
+
+.rp-stick.is-l { left: 52rpx; }
+.rp-stick.is-r { left: 104rpx; }
+
+/* 进行态：筒在摇、签在升 —— 只在这里挂动画（入口静止时是一筒安静的签） */
+.rp-stage.is-pending .rp-tube {
+  animation: rp-tube-shake 0.26s ease-in-out infinite;
+}
+
+.rp-stage.is-pending .rp-stick:not(.is-side) {
+  animation: rp-stick-up 1000ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+/* 侧签只微微颤，主签才升起 */
+.rp-stage.is-pending .rp-stick.is-side {
+  animation: rp-stick-side 0.26s ease-in-out infinite;
+}
+
+@keyframes rp-tube-shake {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes rp-stick-up {
+  0% { opacity: 0.78; transform: translateY(42rpx); }
+  40% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(-34rpx); }
+}
+
+@keyframes rp-stick-side {
+  0%, 100% { transform: translateY(56rpx) rotate(-1deg); }
+  50% { transform: translateY(54rpx) rotate(1deg); }
+}
+
+/* ── 结果纸面：竹签（竖长的浅纸，宜/忌分列）· v3 展签 ───────────── */
+.rp-paper {
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 46rpx,
+      rgba(122, 92, 44, 0.06) 46rpx 48rpx
+    ),
+    linear-gradient(90deg, rgba(122, 92, 44, 0.08) 0%, transparent 10%, transparent 90%, rgba(122, 92, 44, 0.08) 100%),
+    linear-gradient(180deg, #F8F1E0 0%, #E8D9BA 100%);
+  border: 2rpx solid rgba(122, 92, 44, 0.48);
+  border-radius: 10rpx;
+  /* 左右双线 + 竹节感：读成竖签而不是普通信卡 */
+  box-shadow:
+    inset 14rpx 0 0 rgba(122, 92, 44, 0.12),
+    inset -14rpx 0 0 rgba(122, 92, 44, 0.12),
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.55),
+    0 20rpx 44rpx rgba(0, 0, 0, 0.36);
+  padding-left: 44rpx;
+  padding-right: 44rpx;
+}
+
+/* 顶缘朱红穗：一眼「签」不是卡 */
+.rp-paper::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2rpx;
+  width: 28rpx;
+  height: 14rpx;
+  margin-left: -14rpx;
+  background: linear-gradient(180deg, #8A3A30 0%, #5A241C 100%);
+  border-radius: 0 0 8rpx 8rpx;
+  box-shadow: 0 4rpx 8rpx rgba(90, 36, 28, 0.25);
+}
+
+/* 印章：略旋 + 淡朱红底，像钤印而不是空框字标 */
+.rp-paper-mark {
+  transform: rotate(-9deg);
+  color: #7A2E24;
+  background: rgba(122, 46, 36, 0.08);
+  border: 2rpx solid rgba(122, 46, 36, 0.68);
+  box-shadow: inset 0 0 0 1rpx rgba(122, 46, 36, 0.28);
+  font-family: var(--font-brand);
+  letter-spacing: 0.06em;
+}
+
+.rp-paper-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-40);
+  letter-spacing: 0.04em;
+  margin-top: 0;
+  text-align: center;
+}
+
+/* 宜 | 忌 真正分列（页面注释承诺过，此前是上下堆叠） */
+.rp-yi-ji {
+  display: flex;
+  align-items: stretch;
+  margin-top: 18rpx;
+  gap: 10rpx;
+}
+
+.rp-yi-ji .rp-paper-title,
+.rp-yi-ji .rp-paper-sub {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+  padding: 18rpx 10rpx 16rpx;
+  text-align: center;
+  border-top: none;
+  background: rgba(122, 92, 44, 0.08);
+  border-radius: 8rpx;
+  border: 1rpx solid rgba(122, 92, 44, 0.18);
+}
+
+.rp-yi-ji .rp-paper-sub {
+  font-family: var(--font-brand);
+  font-size: var(--fs-36);
+  letter-spacing: 0.04em;
+  color: #2A2418;
+  line-height: 1.25;
+}
+
+.rp-yi-ji-rule {
+  flex-shrink: 0;
+  width: 1rpx;
+  margin: 10rpx 8rpx;
+  background: rgba(122, 92, 44, 0.32);
+}
+
+.rp-paper-sub {
+  padding-top: 10rpx;
+  border-top: 1rpx solid rgba(122, 92, 44, 0.24);
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# 只部署「线上与仓库不一致」的云函数。
+# 只部署「线上与仓库不一致」的云函数 —— **默认只针对你点名的函数**。
 #
-# 为什么需要：仓库已有 `scripts/check-cloud-functions-sync.cjs`（线上 vs 仓库全量比对），
+# 为什么需要：仓库已有 `scripts/check-cloud-functions-sync.cjs`（线上 vs 仓库比对），
 # 但部署侧只有「部署单个」与「部署全部」两种脚本 —— 结果历史上一度出现
 # **129 个云函数里 30 个跑的是旧代码**（改完只部署自己改的那个，从上没做过全量比对）。
 # 本脚本把比对结果直接当作部署清单，两者永远同源。
@@ -10,77 +10,141 @@
 # 注意：本脚本从 `miniprogram/` 目录调用 tcb，以便它读取 `miniprogram/cloudbaserc.json`
 #       （其中 functionRoot=./cloudfunctions，且**没有** envVariables → 不会覆盖线上环境变量）。
 #
-# 用法：
-#   bash miniprogram/scripts/deploy-drifted.sh              # 只读比对后、逐个部署
-#   bash miniprogram/scripts/deploy-drifted.sh --dry-run    # 只打印清单
-#   bash miniprogram/scripts/deploy-drifted.sh a b c        # 只部署指定函数（仍会先比对）
-#   bash miniprogram/scripts/deploy-drifted.sh --selftest-args   # 只自检参数解析（不联网、不部署）
+# 用法（各工作流**只比对 / 只部署本流涉及的函数**）：
+#   bash miniprogram/scripts/deploy-drifted.sh a b c            # 只比对 a b c → 只部署其中有漂移的 → 只复比这些
+#   bash miniprogram/scripts/deploy-drifted.sh a,b,c            # 同上（逗号分隔也可）
+#   bash miniprogram/scripts/deploy-drifted.sh --dry-run a b    # 只比对 a b、打印漂移清单，不部署
+#   bash miniprogram/scripts/deploy-drifted.sh --all            # 全量比对 ~130 个函数并部署全部漂移（20+ 分钟，需显式 --all）
+#   bash miniprogram/scripts/deploy-drifted.sh --all --dry-run  # 全量只读比对
+#   bash miniprogram/scripts/deploy-drifted.sh --selftest-args  # 只自检参数解析（不联网、不部署）
+#   不带任何函数名也不带 --all → 打印用法并退出（exit 2），**不会**触发全量比对。
 #
-# ⚠️ **2026-09-19 修过一个会误伤生产的参数 bug**：原先这里是无条件的 `shift`，
-#    于是 `deploy-drifted.sh a b c` 会把**第一个目标 `a` 静默丢掉**（只部署 b c）；
-#    更糟的是**只指定一个函数**时它会被丢光，`$1` 变空 → 走 `TARGETS="$ALL_DRIFT"`
-#    → **一次"只部署 X"变成部署全部漂移函数**（当时 59 个）。
-#    现象是"命令成功、日志全绿、但你要的那个函数没更新"。
-#    现在改为「只有真的是 `--dry-run` 才 shift」，并加 `--selftest-args` 钉住它。
+# ⚠️ 2026-09-28 产品负责人口径：**禁止**「带了函数名却仍全量比对」。
+#    原先第 1 步无条件跑全量比对（下载 ~130 个函数，20+ 分钟），带函数名只影响部署清单 ——
+#    每条流单部署一个函数都要白等 20 分钟，且多条流同时跑会互相拖慢。
+#    现在：带函数名 → 第 1 步只比对这些；全量必须显式 `--all`（误敲裸命令只会打印用法）。
+#
+# ⚠️ 2026-09-19 修过一个会误伤生产的参数 bug：原先无条件 `shift`，
+#    `deploy-drifted.sh a b c` 会把**第一个目标 `a` 静默丢掉**；只指定一个函数时会被丢光
+#    → 退化成部署全部漂移函数（当时 59 个）。现在参数逐个解析，并由 `--selftest-args` 钉住。
+#
+# ⚠️ 修改本文件请「写临时文件 → mv 原子替换」，**不要原地编辑**：
+#    bash 边读边执行，其它工作流可能正在跑本脚本，原地改写会让它读到错位的字节而崩溃。
 set -u
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ENV_ID="${CLOUD_ENV:-cloud1-8gnkty5bfff9f0bf}"
-TMP_DIR="$ROOT/miniprogram/scripts/.tmp"
-mkdir -p "$TMP_DIR"
-STAMP="$(date +%Y%m%d-%H%M%S)"
-LOG="$TMP_DIR/deploy-drifted-$STAMP.log"
-OK_LOG="$TMP_DIR/deploy-drifted-ok-$STAMP.txt"
-FAIL_LOG="$TMP_DIR/deploy-drifted-fail-$STAMP.txt"
-: > "$OK_LOG"; : > "$FAIL_LOG"
+# 可被环境变量覆盖：只为守卫能用假比对器离线证明「带函数名时不走全量」
+CHECKER="${DEPLOY_DRIFTED_CHECKER:-$ROOT/scripts/check-cloud-functions-sync.cjs}"
 
-DRY=0
-# 只有**真的是** `--dry-run` 才 shift —— 无条件 shift 会吃掉第一个函数名（见文件头说明）
-if [ "${1:-}" = "--dry-run" ]; then DRY=1; shift || true; fi
+usage() {
+  cat <<'EOF'
+用法：
+  bash miniprogram/scripts/deploy-drifted.sh [--dry-run] <函数名...>   只比对/部署点名的函数（空格或逗号分隔）
+  bash miniprogram/scripts/deploy-drifted.sh --all [--dry-run]         全量比对并部署全部漂移（20+ 分钟，慎用）
+  bash miniprogram/scripts/deploy-drifted.sh --selftest-args           参数解析自检（离线）
+各工作流只比对/部署本流涉及的函数；全量必须显式 --all。
+EOF
+}
 
-# ── 参数解析自检：不联网、不部署，只证明「指定目标不会被吃掉」 ──
+# ── 参数解析（纯函数，--selftest-args 回放同一份）──
+# 输出一行：「DRY ALL NAMES...」；出错输出「ERR 说明」
+parse_args() {
+  local dry=0 all=0 names="" a
+  for a in "$@"; do
+    case "$a" in
+      --dry-run) dry=1 ;;
+      --all) all=1 ;;
+      -h|--help) echo "HELP"; return 0 ;;
+      --*) echo "ERR 未知参数 $a"; return 0 ;;
+      *) names="$names $(echo "$a" | tr ',' ' ')" ;;
+    esac
+  done
+  names="$(echo $names)"
+  if [ "$all" = "1" ] && [ -n "$names" ]; then echo "ERR --all 与函数名不能同时给"; return 0; fi
+  if [ "$all" = "0" ] && [ -z "$names" ]; then echo "ERR 未指定函数名（全量请显式 --all）"; return 0; fi
+  echo $dry $all $names
+}
+
+# ── 参数解析自检：不联网、不部署，只证明「指定目标不会被吃掉、裸命令不会全量」 ──
 if [ "${1:-}" = "--selftest-args" ]; then
   fail=0
   check() { # $1=期望  $2=实际  $3=说明
     if [ "$1" = "$2" ]; then echo "✓ $3"
-    else echo "✗ $3：期望 TARGETS=[$1]，实际=[$2]"; fail=1; fi
+    else echo "✗ $3：期望 [$1]，实际=[$2]"; fail=1; fi
   }
-  parse() { # 回放同一套解析逻辑（不含 IO）
-    local dry=0
-    if [ "${1:-}" = "--dry-run" ]; then dry=1; shift || true; fi
-    if [ -n "${1:-}" ]; then echo "$*"; else echo "__ALL_DRIFT__"; fi
-  }
-  check "manageStudioSettlement" "$(parse manageStudioSettlement)" "单目标不被吃掉（原先会被吃掉 → 退化成部署全部）"
-  check "a b c" "$(parse a b c)" "多目标完整保留（原先会丢第一个）"
-  check "a b" "$(parse --dry-run a b)" "--dry-run 被消费、其后目标保留"
-  check "__ALL_DRIFT__" "$(parse)" "无参数 → 全部漂移函数"
-  check "__ALL_DRIFT__" "$(parse --dry-run)" "只有 --dry-run → 全部漂移函数（只打印）"
-  if [ "$fail" = "0" ]; then echo "✓ 参数解析自检通过（5 项）"; exit 0; fi
+  check "0 0 manageStudioSettlement" "$(parse_args manageStudioSettlement)" "单目标不被吃掉（原先会被吃掉 → 退化成部署全部）"
+  check "0 0 a b c" "$(parse_args a b c)" "多目标完整保留（原先会丢第一个）"
+  check "0 0 a b c" "$(parse_args a,b,c)" "逗号分隔等价于空格分隔"
+  check "1 0 a b" "$(parse_args --dry-run a b)" "--dry-run 被消费、其后目标保留"
+  check "1 0 a b" "$(parse_args a --dry-run b)" "--dry-run 位置任意"
+  check "0 1" "$(parse_args --all)" "--all → 全量"
+  check "1 1" "$(parse_args --all --dry-run)" "--all --dry-run → 全量只读"
+  case "$(parse_args)" in ERR*) echo "✓ 无参数 → 报错打印用法（不再默认全量）" ;; *) echo "✗ 无参数竟未报错"; fail=1 ;; esac
+  case "$(parse_args --dry-run)" in ERR*) echo "✓ 只有 --dry-run → 报错（不再默认全量）" ;; *) echo "✗ 只有 --dry-run 竟未报错"; fail=1 ;; esac
+  case "$(parse_args --all a)" in ERR*) echo "✓ --all 与函数名混用 → 报错" ;; *) echo "✗ --all 与函数名混用竟未报错"; fail=1 ;; esac
+  case "$(parse_args --drry-run a)" in ERR*) echo "✓ 拼错的参数 → 报错（不会被当成函数名）" ;; *) echo "✗ 拼错的参数竟未报错"; fail=1 ;; esac
+  if [ "$fail" = "0" ]; then echo "✓ 参数解析自检通过（11 项）"; exit 0; fi
   echo "✗ 参数解析自检失败"; exit 1
 fi
 
-echo "== 1/3 比对线上与仓库（只读）==" | tee "$LOG"
-node "$ROOT/scripts/check-cloud-functions-sync.cjs" --json > "$TMP_DIR/fn-drift.json" 2>>"$LOG" || true
-ALL_DRIFT="$(node -e '
-  const fs=require("fs");
-  try{
-    const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
-    process.stdout.write((j.inconsistent||[]).map(r=>r.name).join(" "));
-  }catch(e){ process.stdout.write(""); }
-' "$TMP_DIR/fn-drift.json")"
+PARSED="$(parse_args "$@")"
+case "$PARSED" in
+  HELP) usage; exit 0 ;;
+  ERR*) echo "✗ ${PARSED#ERR }" >&2; usage >&2; exit 2 ;;
+esac
+set -- $PARSED
+DRY="$1"; ALL="$2"; shift 2
+NAMES="$*"
 
-if [ -n "${1:-}" ]; then
-  TARGETS="$*"
+TMP_DIR="$ROOT/miniprogram/scripts/.tmp"
+mkdir -p "$TMP_DIR"
+STAMP="$(date +%Y%m%d-%H%M%S)-$$"
+LOG="$TMP_DIR/deploy-drifted-$STAMP.log"
+OK_LOG="$TMP_DIR/deploy-drifted-ok-$STAMP.txt"
+FAIL_LOG="$TMP_DIR/deploy-drifted-fail-$STAMP.txt"
+DRIFT_JSON="$TMP_DIR/fn-drift-$STAMP.json"
+AFTER_JSON="$TMP_DIR/fn-drift-after-$STAMP.json"
+: > "$OK_LOG"; : > "$FAIL_LOG"
+
+# 读比对结果：成功输出漂移函数名（可能为空）；JSON 读不了输出 __READ_FAIL__
+read_drift() {
+  node -e '
+    const fs=require("fs");
+    try{
+      const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
+      process.stdout.write((j.inconsistent||[]).map(r=>r.name).join(" "));
+    }catch(e){ process.stdout.write("__READ_FAIL__"); }
+  ' "$1"
+}
+
+if [ "$ALL" = "1" ]; then
+  echo "== 1/3 比对线上与仓库（只读，全量 --all）==" | tee "$LOG"
 else
-  TARGETS="$ALL_DRIFT"
+  echo "== 1/3 比对线上与仓库（只读，仅：${NAMES}）==" | tee "$LOG"
+fi
+T0=$(date +%s)
+# 带函数名时**必须**把 ${NAMES} 传给比对器 —— 不传它会下载全部 ~130 个函数（20+ 分钟）。
+# ALL=1 时 NAMES 为空 → 比对器走全量，这是唯一允许全量的路径。
+node "$CHECKER" $NAMES --json > "$DRIFT_JSON" 2>>"$LOG"
+rc_check=$?
+T1=$(date +%s)
+echo "比对耗时 $((T1 - T0)) 秒" | tee -a "$LOG"
+DRIFT="$(read_drift "$DRIFT_JSON")"
+# 比对器退出码：0 一致 / 1 有不一致 / 2 自身失败（缺凭证等）。
+# 自身失败时**绝不能**当成「一致」—— 否则会谎报「无需部署」。
+if [ "$rc_check" -ge 2 ] || [ "$DRIFT" = "__READ_FAIL__" ]; then
+  echo "✗ 比对失败（rc=${rc_check}），未部署任何函数。详见日志：$LOG" | tee -a "$LOG"
+  tail -n 5 "$LOG" >&2
+  exit 2
 fi
 
-if [ -z "$TARGETS" ]; then
+if [ -z "$DRIFT" ]; then
   echo "✓ 线上与仓库一致，无需部署" | tee -a "$LOG"
   exit 0
 fi
 
-COUNT="$(echo $TARGETS | wc -w | tr -d ' ')"
-echo "漂移函数 ${COUNT} 个：$TARGETS" | tee -a "$LOG"
+COUNT="$(echo $DRIFT | wc -w | tr -d ' ')"
+echo "漂移函数 ${COUNT} 个：$DRIFT" | tee -a "$LOG"
 if [ "$DRY" = "1" ]; then
   echo "（--dry-run，未部署）" | tee -a "$LOG"
   exit 0
@@ -88,7 +152,7 @@ fi
 
 echo "== 2/3 逐个部署（env=${ENV_ID}）==" | tee -a "$LOG"
 rc_all=0
-for name in $TARGETS; do
+for name in $DRIFT; do
   dir="$ROOT/miniprogram/cloudfunctions/$name"
   if [ ! -f "$dir/index.js" ] && [ ! -f "$dir/package.json" ]; then
     echo "✖ 跳过：$name 目录不存在" | tee -a "$LOG"
@@ -107,17 +171,11 @@ for name in $TARGETS; do
   fi
 done
 
-echo "== 3/3 复比（只读，仅本次目标）==" | tee -a "$LOG"
-# 必须带上 ${TARGETS}：不带函数名时它会下载全部 ~130 个函数做比对，
-# 单函数部署会被这一步拖到十几分钟（实测一次 manageWishWall 部署因此超时被杀）。
-node "$ROOT/scripts/check-cloud-functions-sync.cjs" $TARGETS --json > "$TMP_DIR/fn-drift-after.json" 2>>"$LOG" || true
-AFTER="$(node -e '
-  const fs=require("fs");
-  try{
-    const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
-    process.stdout.write((j.inconsistent||[]).map(r=>r.name).join(" "));
-  }catch(e){ process.stdout.write("(读取失败)"); }
-' "$TMP_DIR/fn-drift-after.json")"
+echo "== 3/3 复比（只读，仅本次部署的函数）==" | tee -a "$LOG"
+# 必须带上 ${DRIFT}：不带函数名时它会下载全部 ~130 个函数做比对。
+node "$CHECKER" $DRIFT --json > "$AFTER_JSON" 2>>"$LOG" || true
+AFTER="$(read_drift "$AFTER_JSON")"
+[ "$AFTER" = "__READ_FAIL__" ] && AFTER="(读取失败)"
 N_OK=$([ -s "$OK_LOG" ] && wc -l < "$OK_LOG" | tr -d ' ' || echo 0)
 N_FAIL=$([ -s "$FAIL_LOG" ] && wc -l < "$FAIL_LOG" | tr -d ' ' || echo 0)
 echo "成功 $N_OK / 失败 $N_FAIL" | tee -a "$LOG"

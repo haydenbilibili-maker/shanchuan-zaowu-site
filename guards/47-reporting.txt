@@ -4,3 +4,5 @@
 # 口径与数据模型：admin/docs/每日日报_Phase1_技术蓝图_2026-09-21.md
 # 校验：npm run check:guards-coverage
 npm run check:daily-digest
+# 2026-09-28：超管数据报表「昨日 / 选某一天」单日视图（北京时间营业日、契约不动、对比诚实）
+npm run check:report-day

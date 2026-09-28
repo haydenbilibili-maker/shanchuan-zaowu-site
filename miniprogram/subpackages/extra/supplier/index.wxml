@@ -1,0 +1,127 @@
+<view class="page">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">B2B DESK</text>
+    <text class="boot-cn">采购商工作台</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">B2B DESK</text>
+        <text class="cn">采购商工作台</text>
+      </view>
+      <view class="header-row">
+        <text class="greeting">{{staffName ? staffName + '，' : ''}}欢迎回来</text>
+        <view class="preview-chip" wx:if="{{isPreview}}"><text>{{modeLabel}}</text></view>
+        <view class="mode-chip" wx:else><text>{{modeLabel}}</text></view>
+        <view class="demo-chip" wx:if="{{demoOn}}"><text>演示·供货方</text></view>
+      </view>
+      <text class="header-note">{{roleHint}}</text>
+    </view>
+
+    <view class="flow-strip" wx:if="{{!features || features.catalog !== false}}">
+      <view
+        class="flow-step-btn {{cartCount > 0 ? 'hot' : ''}}"
+        data-key="catalog"
+        bindtap="onModuleTap"
+        hover-class="flow-press"
+      >
+        <text class="flow-num">1</text>
+        <text class="flow-label">选购</text>
+      </view>
+      <text class="flow-sep">›</text>
+      <view
+        class="flow-step-btn {{cartCount > 0 ? 'hot' : ''}}"
+        bindtap="onFlowCart"
+        hover-class="flow-press"
+      >
+        <text class="flow-num">2</text>
+        <text class="flow-label">确认下单</text>
+      </view>
+      <text class="flow-sep">›</text>
+      <view
+        class="flow-step-btn"
+        data-key="buyer-orders"
+        bindtap="onModuleTap"
+        hover-class="flow-press"
+      >
+        <text class="flow-num">3</text>
+        <text class="flow-label">支付结果</text>
+      </view>
+    </view>
+
+    <view class="group">
+      <view class="group-head">
+        <text class="group-en">BUYER</text>
+        <text class="group-cn">向总部采购</text>
+      </view>
+      <view
+        class="module-card primary-card"
+        wx:for="{{buyerModules}}"
+        wx:key="key"
+        hover-class="module-card-press"
+        data-key="{{item.key}}"
+        bindtap="onModuleTap"
+      >
+        <view class="module-icon">
+          <image src="{{item.icon}}" mode="aspectFit" />
+          <view class="module-badge" wx:if="{{item.badge}}"><text>{{item.badge}}</text></view>
+        </view>
+        <view class="module-card-body">
+          <text class="module-title">{{item.title}}</text>
+          <text class="module-desc">{{item.desc}}</text>
+        </view>
+        <text class="module-chevron">›</text>
+      </view>
+    </view>
+
+    <view class="group supplier-group" wx:if="{{showSupplierSection}}">
+      <view class="group-head fold" bindtap="toggleSupplier" hover-class="flow-press">
+        <view class="group-head-text">
+          <text class="group-en">SUPPLIER</text>
+          <text class="group-cn">第三方供货方履约</text>
+          <text class="group-sub">非采购下单 · 不含工作室账本</text>
+        </view>
+        <text class="fold-chevron">{{supplierOpen ? '收起' : '展开'}}</text>
+      </view>
+
+      <view class="demo-bar" wx:if="{{isPreview && supplierOpen}}">
+        <view class="demo-bar-copy">
+          <text class="demo-bar-title">本地演示（仅超管）</text>
+          <text class="demo-bar-hint">{{demoOn ? '已开：需求/发货/结算为本地假数据。采购建单仍写真实库。' : '默认关。开启后便于走通供货方界面，勿当生产。'}}</text>
+        </view>
+        <view class="demo-toggle {{demoOn ? 'on' : ''}}" bindtap="toggleDemo">{{demoOn ? '关闭' : '开启'}}</view>
+      </view>
+      <view class="demo-reset" wx:if="{{isPreview && demoOn && supplierOpen}}" bindtap="resetDemo">重置演示流</view>
+
+      <block wx:if="{{supplierOpen}}">
+        <view
+          class="module-card muted-card"
+          wx:for="{{visibleSupplierModules}}"
+          wx:key="key"
+          hover-class="module-card-press"
+          data-key="{{item.key}}"
+          bindtap="onModuleTap"
+        >
+          <view class="module-icon">
+            <image src="{{item.icon}}" mode="aspectFit" />
+          </view>
+          <view class="module-card-body">
+            <text class="module-title">{{item.title}}</text>
+            <text class="module-desc">{{item.desc}}</text>
+          </view>
+          <text class="module-chevron">›</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="foot-note">
+      <text wx:if="{{isPreview}}">预览：采购=真实订货单；演示开关只影响供货方列表。支付需部署 payB2bPurchase / b2bPayCallback。</text>
+      <text wx:elif="{{isBuyer}}">有问题请联系山海造物对接人。微信支付以真机与商户配置为准。</text>
+      <text wx:else>仅展示与您相关的单据。不进入工作室采购/出货/账单页。</text>
+    </view>
+  </block>
+
+</view>

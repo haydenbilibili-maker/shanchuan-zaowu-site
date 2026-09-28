@@ -1,20 +1,31 @@
 /* components/WishWallEntry/index.wxss 需求 28：祈福墙入口
- * 与祈福墙页的「牌匾」同一语言：浅纸 + 铜字 + 纸纤维；箭头用 CSS 折角而不是字符 › */
+ * ═══════════════════════════════════════════════════════════════════
+ * 2026-09-26 v2「厅·墙·签」对齐：入口 = 嵌墙迷你铭牌（与墙内 .ww-plate / 双线浅纸同族）
+ *   · 浅纸双线铜框 + 纤维；「马上有」铜铸铭牌带铆钉
+ *   · 墨底版仍是「暗房里的纸」（#2C2822 起点守卫钉死），内嵌铜金细框
+ * ═══════════════════════════════════════════════════════════════════ */
 .wish-wall-entry {
   position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3, 24rpx);
-  /* ⚠️ 根节点不留任何外边距：外间距 100% 归宿主的 ext-class。
-     同一元素上组件样式与宿主样式都设 margin 时，谁生效取决于样式表先后 ——
-     实测（切片渲染）宿主的 margin-top 会被组件样式吃掉。职责分离才不会有这种隐性覆盖。 */
+  /* ⚠️ 根节点不留任何外边距：外间距 100% 归宿主的 ext-class。 */
   margin: 0;
-  padding: 24rpx;
+  min-height: 88rpx;
+  padding: 24rpx 28rpx;
   overflow: hidden;
-  background: linear-gradient(165deg, #FAF6ED 0%, #F2EDE4 50%, #EDE6DA 100%);
-  border: 1px solid #E0CFA3;
-  border-radius: var(--radius-md, 16rpx);
-  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.85);
+  box-sizing: border-box;
+  /* 嵌墙浅纸：与主页墙面同暖纸阶 */
+  background:
+    linear-gradient(180deg, rgba(250, 246, 237, 0.65) 0%, transparent 36%),
+    linear-gradient(165deg, #F8F3E8 0%, #EFE7D6 52%, #E5DCC8 100%);
+  border: 2rpx solid rgba(196, 167, 108, 0.58);
+  border-radius: var(--radius-xl, 32rpx);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(250, 246, 237, 0.6),
+    inset 0 0 0 6rpx rgba(196, 167, 108, 0.07),
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.85),
+    0 14rpx 32rpx rgba(48, 40, 16, 0.16);
 }
 
 /* 纸纤维：浅底用 multiply 才像纸 */
@@ -23,13 +34,13 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.1;
+  opacity: 0.12;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.35' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
 }
 
 .wish-wall-entry--press {
-  opacity: 0.9;
+  opacity: 0.86;
 }
 
 .wish-wall-entry-main {
@@ -39,85 +50,134 @@
   min-width: 0;
 }
 
-/* 品牌与标题同行：比两行更省竖向空间，也让"马上有 · 祈福墙"读成一个整体 */
 .wish-wall-entry-row {
   display: flex;
   align-items: center;
-  gap: 10rpx;
+  gap: 14rpx;
   min-width: 0;
 }
 
-/* 浅纸上的信号灯：#C4A76C on #FAF6ED 几乎看不见，需加深铜描边（同祈福墙页的牌匾）。
-   ⚠️ 必须用三层选择器：全局是 `.signal-light.lamp-brass`（两个类），
-   单类选择器会被它按特异性压过，灯就退回成空心铜圈。 */
 .wish-wall-entry .wish-wall-entry-row .wish-wall-entry-lamp {
   flex-shrink: 0;
+  width: 16rpx;
+  height: 16rpx;
   box-shadow: none;
   border-color: rgba(107, 90, 36, 0.55);
   background: #A8903C;
 }
 
+/* 迷你黄铜铭牌：与墙内 .ww-plate 同族（铜底 + 铆钉 + 内高光） */
 .wish-wall-entry-brand {
+  position: relative;
   flex-shrink: 0;
-  font-size: 18rpx;
-  line-height: 1.3;
-  letter-spacing: 0.16em;
-  color: #A8903C;
+  padding: 8rpx 18rpx 9rpx;
+  font-family: var(--font-brand, 'Source Han Serif SC', serif);
+  font-size: 20rpx;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  color: #2A220E;
+  background: linear-gradient(145deg, #F0E2B8 0%, #C4A76C 42%, #A8903C 78%, #8A7038 100%);
+  border: 1rpx solid rgba(107, 90, 36, 0.55);
+  border-radius: 8rpx;
+  box-shadow:
+    inset 0 2rpx 0 rgba(250, 246, 237, 0.55),
+    inset 0 -2rpx 4rpx rgba(48, 40, 16, 0.28),
+    0 4rpx 10rpx rgba(48, 40, 16, 0.2);
+  text-shadow: 0 1rpx 0 rgba(250, 246, 237, 0.4);
 }
+
+.wish-wall-entry-brand::before,
+.wish-wall-entry-brand::after {
+  content: '';
+  position: absolute;
+  top: 6rpx;
+  width: 5rpx;
+  height: 5rpx;
+  border-radius: 50%;
+  background: rgba(48, 40, 16, 0.45);
+  box-shadow: 0 0 0 1rpx rgba(250, 246, 237, 0.35);
+}
+
+.wish-wall-entry-brand::before { left: 6rpx; }
+.wish-wall-entry-brand::after { right: 6rpx; }
 
 .wish-wall-entry-title {
   min-width: 0;
   font-family: var(--font-brand, 'Source Han Serif SC', serif);
-  font-size: 32rpx;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: 0.04em;
-  color: #6B5A24;
+  font-size: 34rpx;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  color: #3A2E12;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-shadow: 0 1rpx 0 rgba(250, 246, 237, 0.55);
 }
 
-/* 首屏一行版：只有灯 + 品牌 + 标题 + 箭头 */
 .wish-wall-entry.is-compact {
-  /* 26rpx×2 + 标题行 ≈ 45px：一行版仍满足触控最小高度（≥44px） */
-  padding: 26rpx 24rpx;
+  min-height: 80rpx;
+  padding: 22rpx 26rpx;
 }
 
 .wish-wall-entry.is-compact .wish-wall-entry-title {
   font-size: 30rpx;
 }
 
-.wish-wall-entry-desc {
+.wish-wall-entry-hint {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
-  line-height: 1.5;
-  color: #7A6E58;
+  font-size: 20rpx;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  color: rgba(90, 74, 36, 0.72);
 }
 
-/* 折角箭头：右 + 下描边旋转 45° */
-.wish-wall-entry-chevron {
+.wish-wall-entry-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: rgba(90, 74, 36, 0.78);
+}
+
+/* 右侧进墙：铜铸小圆钮 */
+.wish-wall-entry-go {
   position: relative;
   z-index: 1;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  margin-right: -2rpx;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #F0E2B8 0%, #C4A76C 48%, #A8903C 100%);
+  border: 1rpx solid rgba(107, 90, 36, 0.45);
+  box-sizing: border-box;
+  box-shadow:
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.5),
+    0 6rpx 14rpx rgba(48, 40, 16, 0.22);
+}
+
+.wish-wall-entry-chevron {
   width: 16rpx;
   height: 16rpx;
-  border-right: 3rpx solid #A8903C;
-  border-bottom: 3rpx solid #A8903C;
+  margin-left: -2rpx;
+  border-right: 3rpx solid #3A2E12;
+  border-bottom: 3rpx solid #3A2E12;
   transform: rotate(-45deg);
 }
 
-/* ── 跑马灯（2026-09-20）：真实心愿横向流动 ─────────────────────────────────────
-   与祈福墙页的弹幕同一意图（匀速线性），但**不吸顶、不遮挡、不拦点击**：它就是入口卡里的一行。
-   轨道用 inline-flex 让宽度 = 内容宽 —— 这样 translateX(-50%) 才恰好滚过一份内容、循环处无缝；
-   块级 flex 的宽度是父级 100%，-50% 只会滚半屏、循环时露出空档。 */
+/* ── 跑马灯 ───────────────────────────────────────────────────── */
 .wish-wall-entry-mq {
   position: relative;
   z-index: 1;
-  margin-top: 10rpx;
-  padding-top: 8rpx;
-  border-top: 1rpx solid rgba(107, 90, 36, 0.18);
+  margin-top: 14rpx;
+  padding-top: 12rpx;
+  border-top: 1rpx solid rgba(107, 90, 36, 0.2);
   overflow: hidden;
   white-space: nowrap;
 }
@@ -125,10 +185,6 @@
 .wish-wall-entry-mq-track {
   display: inline-flex;
   align-items: center;
-  /* ⚠️ 间距**不能**用 track 的 `gap`：轨道内容是两份并排、靠 translateX(-50%) 走一份的宽度。
-     有 gap 时总宽 = 2×内容 + (2n-1)×gap，而 -50% 只走 2×内容的一半 ——
-     每次回绕都会错半个 gap（24rpx 的 gap = 12rpx 的顿挫）。间距改由**每条自己的 margin-right**
-     承担（见 .wish-wall-entry-mq-item），它计入每条宽度，于是 -50% 正好等于一份内容宽。 */
   animation-name: wish-wall-entry-mq-scroll;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -136,23 +192,43 @@
 }
 
 .wish-wall-entry-mq-item {
+  position: relative;
   flex-shrink: 0;
-  /* 无缝循环的几何见上（track 不用 gap，间距在这里） */
-  margin-right: 24rpx;
-  /* 与祈福墙页的愿签/弹幕**同一字栈**：手写体由 `handFont`（app.js onLaunch）全局加载
-     （wx.loadFontFace + global:true + scopes 含 native），所以组件里**只写族名、不要重复加载**。
-     系统栈兜底要写全：iOS 的 WeChat WebView 不暴露中文手写族，未加载成功时才轮到它们。 */
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-right: var(--space-3, 24rpx);
+  padding: 8rpx 14rpx 8rpx 12rpx;
   font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
   font-size: 22rpx;
   line-height: 1.4;
-  color: #7A6E58;
+  color: #5A4A28;
   white-space: nowrap;
+  background: linear-gradient(180deg, rgba(250, 246, 237, 0.92) 0%, rgba(242, 234, 214, 0.88) 100%);
+  border: 1rpx solid rgba(138, 117, 48, 0.38);
+  border-radius: 6rpx 10rpx 10rpx 6rpx;
+  box-shadow:
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.85),
+    0 4rpx 10rpx rgba(48, 40, 16, 0.12);
 }
 
-/* emoji 与祈福墙弹幕同款：略大一点、留 6rpx 间距（手写体里混 emoji 时基线才不会挤） */
+.wish-wall-entry-mq-pin {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 34%, #F0E6CC 0%, #A8903C 70%);
+  box-shadow: 0 0 0 1rpx rgba(196, 167, 108, 0.3);
+}
+
 .wish-wall-entry-mq-emoji {
-  margin-right: 6rpx;
+  margin-right: 0;
   font-size: 24rpx;
+}
+
+.wish-wall-entry-mq-text {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
 @keyframes wish-wall-entry-mq-scroll {
@@ -160,27 +236,20 @@
   to { transform: translateX(-50%); }
 }
 
-/* ── 墨底纸韵（2026-09-20，第三版）：首页等**博物黑**页面用 ─────────────────────
-   三版试出来的结论（产品负责人连否两版）：
-     ① 亮纸 #FAF6ED —— 突兀；② 压暗到羊皮纸 #F0E8D9 —— **还是突兀**。
-   根因不是"纸的色温"，而是**亮度**：博物黑页面上**任何亮块**都会跳出来，暖一点也没用。
-   所以「纸」不能靠亮度表达，只能靠**纸的线索**：
-     · 底色走**暖调墨黑**（比普通卡片 #1F1D1A 暖一档，读作"另一种材质"而不是"一块亮板"）；
-     · 纸纤维保留，但深底上**改用 soft-light + 低透明**（本仓既定口径：浅底 multiply / 深底 soft-light）；
-     · **内嵌铜金细框**（牌匾语言）—— 这才是它与普通深色卡的区别；
-     · 手写体 + emoji 的跑马灯（见 index.js 的 wishes observer）。
-   一句话：**它是"暗房里的一张纸"，不是"亮着的一张纸"。** */
+/* ── 墨底纸韵：暗房里的嵌墙纸（#2C2822 起点被守卫钉死） ───────────── */
 .wish-wall-entry.is-ink {
-  padding: 22rpx 24rpx 20rpx;
+  padding: 22rpx var(--space-3, 24rpx) 20rpx;
   background:
-    linear-gradient(165deg, rgba(196, 167, 108, 0.12) 0%, rgba(196, 167, 108, 0.03) 46%, rgba(0, 0, 0, 0) 100%),
-    linear-gradient(165deg, #2C2822 0%, #262219 100%);
-  border: 1rpx solid rgba(196, 167, 108, 0.42);
-  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.07);
+    linear-gradient(165deg, rgba(196, 167, 108, 0.16) 0%, rgba(196, 167, 108, 0.04) 46%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(165deg, #2C2822 0%, #1E1A14 100%);
+  border: 2rpx solid rgba(196, 167, 108, 0.48);
+  border-radius: var(--radius-xl, 32rpx);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(250, 246, 237, 0.06),
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.08),
+    0 12rpx 28rpx rgba(0, 0, 0, 0.28);
 }
 
-/* 纸纤维的余韵：深底用 soft-light，且压到 0.16（浅纸版是 multiply 0.1）——
-   看得出是纸，又不会把整块抬亮 */
 .wish-wall-entry.is-ink::before {
   opacity: 0.16;
   mix-blend-mode: soft-light;
@@ -192,26 +261,49 @@
   inset: 8rpx;
   pointer-events: none;
   border: 1rpx solid rgba(196, 167, 108, 0.3);
-  border-radius: 10rpx;
+  border-radius: 18rpx;
 }
 
-.wish-wall-entry.is-ink .wish-wall-entry-brand { color: var(--brass-300, #D4BC85); }
+.wish-wall-entry.is-ink .wish-wall-entry-brand {
+  color: #2A220E;
+  background: linear-gradient(145deg, #F0E2B8 0%, #C4A76C 42%, #A8903C 100%);
+  border-color: rgba(107, 90, 36, 0.5);
+}
 
-.wish-wall-entry.is-ink .wish-wall-entry-title { color: var(--color-text-primary, #FFFFFF); }
+.wish-wall-entry.is-ink .wish-wall-entry-title {
+  color: #F7F1E4;
+  text-shadow: none;
+}
 
-.wish-wall-entry.is-ink .wish-wall-entry-desc { color: var(--color-text-secondary, #A09A90); }
+.wish-wall-entry.is-ink .wish-wall-entry-desc {
+  color: rgba(224, 207, 163, 0.62);
+}
+
+.wish-wall-entry.is-ink .wish-wall-entry-hint {
+  color: rgba(224, 207, 163, 0.55);
+}
 
 .wish-wall-entry.is-ink .wish-wall-entry-row .wish-wall-entry-lamp {
   border-color: rgba(196, 167, 108, 0.55);
   background: var(--brass-300, #D4BC85);
 }
 
-.wish-wall-entry.is-ink .wish-wall-entry-chevron {
-  border-right-color: var(--brass-300, #D4BC85);
-  border-bottom-color: var(--brass-300, #D4BC85);
+.wish-wall-entry.is-ink .wish-wall-entry-go {
+  background: linear-gradient(145deg, #F0E2B8 0%, #C4A76C 48%, #A8903C 100%);
+  border-color: rgba(107, 90, 36, 0.45);
 }
 
-.wish-wall-entry.is-ink .wish-wall-entry-mq { border-top-color: rgba(196, 167, 108, 0.22); }
+.wish-wall-entry.is-ink .wish-wall-entry-chevron {
+  border-right-color: #3A2E12;
+  border-bottom-color: #3A2E12;
+}
 
-/* 手写体在深底上要暖白才像"墨迹"，用次级灰会显得脏 */
-.wish-wall-entry.is-ink .wish-wall-entry-mq-item { color: rgba(239, 230, 210, 0.88); }
+.wish-wall-entry.is-ink .wish-wall-entry-mq {
+  border-top-color: rgba(196, 167, 108, 0.22);
+}
+
+.wish-wall-entry.is-ink .wish-wall-entry-mq-item {
+  color: #5A4A28;
+  background: linear-gradient(180deg, rgba(250, 246, 237, 0.88) 0%, rgba(232, 223, 204, 0.82) 100%);
+  border-color: rgba(196, 167, 108, 0.42);
+}

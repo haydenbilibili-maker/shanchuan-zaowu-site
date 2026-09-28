@@ -58,6 +58,7 @@ Page({
       { value: 'settled', label: '已结清' }
     ],
     list: [],
+    listError: false,
     outstandingText: '¥0.00',
     detail: null,
     detailFields: [],
@@ -101,17 +102,24 @@ Page({
 
   loadList() {
     const status = this.data.filter === 'all' ? '' : this.data.filter
-    this.setData({ busy: true, tipText: '' })
+    this.setData({ busy: true, tipText: '', listError: false })
     return this.callFn({ action: 'bill.list', status, limit: 60 })
       .then((r) => {
         this.setData({
           busy: false,
+          listError: false,
           list: (r.list || []).map(mapBillRow),
           outstandingText: '¥' + money(Math.round((Number(r.outstandingAmount) || 0) * 100))
         })
       })
       .catch((e) => {
-        this.setData({ busy: false, list: [], tipTone: 'warn', tipText: formatCloudFnError(e, '账单加载失败') })
+        // 失败不清空列表、不把错误伪装成「没有账单」
+        this.setData({
+          busy: false,
+          listError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(e, '账单加载失败')
+        })
       })
   },
 

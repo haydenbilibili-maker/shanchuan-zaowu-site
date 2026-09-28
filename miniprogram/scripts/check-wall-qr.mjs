@@ -475,3 +475,5 @@ if (failed) {
   process.exit(1)
 }
 console.log('✓ scene 解析 / 页面接线 / 白名单 / 清单与资产校验全部通过')
+// 被测页面代码留下的定时器会让进程白挂约 3s；判定已全部完成，冲刷输出后退出（保留 exitCode）
+process.stdout.write('', () => process.exit())

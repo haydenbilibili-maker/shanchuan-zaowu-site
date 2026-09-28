@@ -11,6 +11,10 @@ Page({
   data: {
     ready: false,
     loading: false,
+    loadError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
     saving: false,
     stores: [],
     storeId: 'store_shanhaizaowu',
@@ -70,12 +74,13 @@ Page({
 
   async loadRules() {
     if (this.data.loading) return
-    this.setData({ loading: true })
+    this.setData({ loading: true, loadError: false, tipText: '', formTip: '' })
     try {
       const result = await this.callFn({ action: 'get', storeId: this.data.storeId })
       const rules = result.rules || {}
       this.setData({
         loading: false,
+        loadError: false,
         docId: result.docId || '',
         fromDefault: !!result.fromDefault,
         ruleText: result.ruleText || '',
@@ -92,9 +97,18 @@ Page({
         }
       })
     } catch (e) {
-      this.setData({ loading: false })
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
+      // 失败保留已展示规则，勿伪装默认已加载
+      this.setData({
+        loading: false,
+        loadError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '规则未能取回')
+      })
     }
+  },
+
+  onRetryRules() {
+    this.loadRules()
   },
 
   switchStore(e) {
@@ -133,7 +147,7 @@ Page({
   removeSlot(e) {
     const index = Number(e.currentTarget.dataset.index)
     if (this.data.rules.visitSlots.length <= 1) {
-      wx.showToast({ title: '至少保留一个时段', icon: 'none' })
+      this.setData({ formTip: '至少保留一个时段' })
       return
     }
     const visitSlots = this.data.rules.visitSlots.slice()
@@ -148,11 +162,11 @@ Page({
   addClosedDate() {
     const date = String(this.data.newClosedDate || '').trim()
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      wx.showToast({ title: '日期格式 YYYY-MM-DD', icon: 'none' })
+      this.setData({ formTip: '日期格式 YYYY-MM-DD' })
       return
     }
     if (this.data.rules.closedDates.indexOf(date) !== -1) {
-      wx.showToast({ title: '该日期已存在', icon: 'none' })
+      this.setData({ formTip: '该日期已存在' })
       return
     }
     this.setData({
@@ -170,7 +184,7 @@ Page({
 
   async saveConfig() {
     if (this.data.saving) return
-    this.setData({ saving: true })
+    this.setData({ saving: true, formTip: '保存中…', tipText: '' })
     try {
       const result = await this.callFn({
         action: 'save',
@@ -181,12 +195,14 @@ Page({
       this.setData({
         docId: result.docId || this.data.docId,
         ruleText: result.ruleText || '',
-        fromDefault: false
+        fromDefault: false,
+        formTip: '',
+        tipTone: 'info',
+        tipText: '已保存'
       })
-      wx.showToast({ title: '已保存', icon: 'success' })
       await this.loadRules()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
+      this.setData({ formTip: formatCloudFnError(e, '保存失败') })
     } finally {
       this.setData({ saving: false })
     }

@@ -44,8 +44,8 @@ const SCHEME_PRESETS = [
   { id: 'pet-memorial', label: '伴宠记忆', path: '/subpackages/feature/custom/pet/index' },
   { id: 'pet-orders', label: '伴宠工单', path: '/subpackages/feature/custom/pet/list/index' },
   { id: 'custom-orders', label: '定制订单', path: '/subpackages/feature/custom/orders/index' },
-  { id: 'live', label: '馆内直播', path: '/subpackages/feature/live/watch/index' },
-  { id: 'videos', label: '山海影像', path: '/subpackages/feature/videos/index' },
+  { id: 'live', label: '馆内直播', path: '/subpackages/content/live/watch/index' },
+  { id: 'videos', label: '山海影像', path: '/subpackages/content/videos/index' },
   { id: 'articles', label: '博物文章', path: '/subpackages/feature/articles/index' },
   { id: 'certificates', label: '我的证书', path: '/subpackages/extra/user/certificates/index' },
   { id: 'support', label: '联系专员', path: '/subpackages/extra/user/support/index' },
@@ -64,8 +64,8 @@ const SCHEME_PRESETS = [
   { id: 'wishlist', label: '收藏与候补', path: '/subpackages/extra/user/wishlist/index' },
   { id: 'ar', label: 'AR 试摆', path: '/subpackages/business/ar/index' },
   { id: 'feedback', label: '反馈与建议', path: '/subpackages/extra/user/feedback/index' },
-  { id: 'terms', label: '用户协议', path: '/subpackages/extra/user/legal/index?type=terms' },
-  { id: 'privacy', label: '隐私政策', path: '/subpackages/extra/user/legal/index?type=privacy' },
+  { id: 'terms', label: '用户协议', path: '/subpackages/content/user/legal/index?type=terms' },
+  { id: 'privacy', label: '隐私政策', path: '/subpackages/content/user/legal/index?type=privacy' },
   // 保留末项
   { id: 'custom', label: '自定义路径', path: '' }
 ];

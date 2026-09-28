@@ -16,6 +16,8 @@
       <view class="ops-tab {{viewMode === 'detail' ? 'on' : ''}}" data-mode="detail" bindtap="switchView">明细</view>
     </view>
 
+    <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
     <!-- ========== 总览 ========== -->
     <block wx:if="{{viewMode === 'overview'}}">
       <view class="ops-source-toggle" bindtap="toggleSource">
@@ -26,11 +28,21 @@
         <text class="ops-note">{{sourceNote}}</text>
       </view>
 
-      <view class="ops-skeleton" wx:if="{{dashLoading && !kpis}}">
+      <view class="ops-skeleton" wx:if="{{dashLoading && !kpis && !dashError}}">
         <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
           <view class="ops-sk-line wide"></view>
           <view class="ops-sk-line"></view>
         </view>
+      </view>
+
+      <view class="ops-empty is-error" wx:elif="{{dashError && !kpis}}">
+        <text class="ops-empty-title">观测台未能展开</text>
+        <text class="ops-empty-sub">{{dashError}}</text>
+        <view class="ops-btn-secondary inv-retry" bindtap="loadDashboard">重试</view>
+      </view>
+
+      <view class="ops-tip is-warn" wx:elif="{{dashError && kpis}}">
+        <text>刷新失败：{{dashError}}（仍显示上次数据）</text>
       </view>
 
       <block wx:if="{{kpis}}">
@@ -308,11 +320,17 @@
           <view class="ops-btn-add" bindtap="openPaste">粘贴入库</view>
         </view>
 
-        <view class="ops-skeleton" wx:if="{{loading && !groups.length}}">
+        <view class="ops-skeleton" wx:if="{{loading && !groups.length && !finishedListError}}">
           <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
             <view class="ops-sk-line wide"></view>
             <view class="ops-sk-line"></view>
           </view>
+        </view>
+
+        <view class="ops-empty is-error" wx:elif="{{finishedListError && !groups.length}}">
+          <text class="ops-empty-title">成品列表未能取回</text>
+          <text class="ops-empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+          <view class="ops-btn-secondary inv-retry" bindtap="loadFinishedList">重试</view>
         </view>
 
         <view class="ops-empty" wx:elif="{{!loading && !groups.length}}">
@@ -392,11 +410,17 @@
           <view class="ops-btn-add" bindtap="openRawForm">录入</view>
         </view>
 
-        <view class="ops-skeleton" wx:if="{{loading && !rawList.length}}">
+        <view class="ops-skeleton" wx:if="{{loading && !rawList.length && !rawListError}}">
           <view class="ops-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
             <view class="ops-sk-line wide"></view>
             <view class="ops-sk-line"></view>
           </view>
+        </view>
+
+        <view class="ops-empty is-error" wx:elif="{{rawListError && !rawList.length}}">
+          <text class="ops-empty-title">原材料列表未能取回</text>
+          <text class="ops-empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+          <view class="ops-btn-secondary inv-retry" bindtap="loadRawList">重试</view>
         </view>
 
         <view class="ops-empty" wx:elif="{{!loading && !rawList.length}}">
@@ -444,13 +468,13 @@
       <view class="ops-actions">
         <view class="ops-btn-secondary" bindtap="runPreview">解析预览</view>
         <view class="ops-btn-primary {{committing ? 'disabled' : ''}}" bindtap="confirmCommit">
-          {{committing ? '写入中…' : '确认覆盖写入'}}
+          {{committing ? '写入中…' : (commitPending ? '再点确认覆盖' : '确认覆盖写入')}}
         </view>
       </view>
     </view>
 
     <view class="ops-issue-block" wx:if="{{previewError}}">
-      <text class="ops-issue-label">解析失败</text>
+      <text class="ops-issue-label">{{commitPending ? '待确认' : '提示'}}</text>
       <text class="ops-issue-msg">{{previewError}}</text>
     </view>
 
@@ -497,6 +521,7 @@
     <text class="ops-sheet-close" bindtap="closeRawForm">关闭</text>
   </view>
   <scroll-view scroll-y class="ops-sheet-body">
+    <view class="ops-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
     <view class="ops-field">
       <text class="ops-field-label">物品名称</text>
       <input class="ops-field-input" value="{{rawForm.itemName}}" bindinput="onRawForm" data-key="itemName" />

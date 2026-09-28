@@ -36,11 +36,9 @@ page {
   padding: 36rpx 0; margin-bottom: 40rpx;
   background: var(--color-bg-card); border-radius: 20rpx; border: 1px solid var(--border-light);
 }
-.stat-block { display: flex; flex-direction: column; align-items: center; flex: 1; }
 .s-val { font-family: var(--font-din); font-size: 44rpx; font-weight: bold; color: #fff; margin-bottom: 4rpx; }
 .s-val.gold { color: var(--gold); }
 .s-key { font-size: 22rpx; color: #666; }
-.v-sep { width: 1px; height: 30rpx; background: #333; }
 
 /* 资产行：四格三行结构（icon / value / label）；角标在 icon 容器内出血，避免裁切 */
 .assets-panel {
@@ -132,17 +130,12 @@ page {
 }
 
 /* 会员权益 */
-.benefits-grid { display: flex; justify-content: space-between; padding: 20rpx 10rpx; }
-.benefit-item { display: flex; flex-direction: column; align-items: center; opacity: 0.3; filter: grayscale(1); transition: all 0.3s; }
-.benefit-item.active { opacity: 1; filter: grayscale(0); }
 .b-icon-box { 
   width: 80rpx; height: 80rpx; background: rgba(196, 167, 108,0.1); 
   border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-size: 32rpx; margin-bottom: 12rpx; border: 1px solid rgba(196, 167, 108,0.3);
   color: var(--gold);
 }
-.benefit-item text { font-size: 20rpx; color: #aaa; }
-.benefit-item.active text { color: var(--gold); font-weight: bold; }
 
 
 /* === 3. 服务菜单 (保持原样，微调间距) === */
@@ -388,43 +381,7 @@ page {
 }
 
 /* 兼容旧 class（若别处引用）→ 对齐全局 .badge-info */
-.workbench-badge,
-.wb-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  min-width: 28rpx;
-  height: 28rpx;
-  padding: 0 6rpx;
-  border-radius: 9999px;
-  background: var(--color-info, #5B8FB9);
-  border: none;
-  pointer-events: none;
-}
-.workbench-badge {
-  min-width: 36rpx;
-  height: 36rpx;
-  padding: 0 8rpx;
-  margin-right: 8rpx;
-}
-.workbench-badge-dot,
-.workbench-badge text,
-.wb-badge text {
-  font-size: 16rpx;
-  line-height: 1;
-  color: var(--color-text-primary);
-  font-weight: 700;
-  font-family: var(--font-mono, var(--font-din), monospace);
-  letter-spacing: 0;
-}
-.workbench-badge-dot,
-.workbench-badge text {
-  font-size: 20rpx;
-}
 
-.contact-btn { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; }
 .copyright {
   display: flex;
   flex-direction: column;
@@ -755,12 +712,6 @@ page {
   width: 40rpx;
   height: 40rpx;
 }
-.p-icon .icon-discount,
-.p-icon .icon-drink,
-.p-icon .icon-gift {
-  width: 40rpx;
-  height: 40rpx;
-}
 .p-item text { font-size: 20rpx; color: #aaa; }
 .p-item.active text { color: var(--gold); }
 
@@ -895,10 +846,6 @@ page {
   align-items: center;
   justify-content: center;
 }
-.tip-icon .icon-phone {
-  width: 32rpx;
-  height: 32rpx;
-}
 .tip-text {
   font-size: 28rpx;
   color: #fff;
@@ -1010,11 +957,6 @@ page {
   padding: 30rpx 30rpx 0;
   box-sizing: border-box;
 }
-.statistics-body-safe {
-  width: 100%;
-  height: calc(30rpx + env(safe-area-inset-bottom));
-  flex-shrink: 0;
-}
 .statistics-body::-webkit-scrollbar {
   width: 6rpx;
 }
@@ -1078,11 +1020,6 @@ page {
   width: 48rpx;
   height: 48rpx;
 }
-.card-icon .icon-eye,
-.card-icon .icon-search {
-  width: 48rpx;
-  height: 48rpx;
-}
 .card-val {
   font-size: 32rpx;
   font-weight: 700;
@@ -1109,18 +1046,6 @@ page {
   background: rgba(0,0,0,0.3);
   border: 1px solid rgba(196, 167, 108,0.2);
   border-radius: 12rpx;
-}
-.stat-row-label {
-  font-size: 24rpx;
-  color: rgba(255,255,255,0.8);
-  letter-spacing: 1rpx;
-}
-.stat-row-value {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: rgba(196, 167, 108,0.9);
-  font-family: var(--font-din);
-  letter-spacing: 1rpx;
 }
 
 .qr-tips.sub {
@@ -1341,19 +1266,7 @@ page {
   text-align: center;
 }
 
-.nlp-label {
-  display: block;
-  font-size: 24rpx;
-  color: var(--brass-400);
-  font-weight: 600;
-  margin-bottom: 6rpx;
-}
 
-.nlp-meta {
-  display: block;
-  font-size: 22rpx;
-  color: var(--color-text-secondary);
-}
 
 /* 等级升级铭牌 */
 .level-up-mask {

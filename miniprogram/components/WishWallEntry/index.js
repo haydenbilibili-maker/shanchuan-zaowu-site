@@ -18,6 +18,7 @@ const {
   normalizeWishText,
   TEXT_MAX
 } = require('../../utils/wishWall')
+const { exhibitFor } = require('../../config/wallExhibit')
 
 /** 跑马灯：最多展示几条 / 至少几条才开（只 1 条会在循环里露空档） */
 const MQ_MAX = 8
@@ -28,15 +29,28 @@ const MQ_MIN = 2
  *
  * 默认墙（`mashangyou`）才配得上「马上有」这个署名；别的墙用别人的商品名是错的，
  * 所以非默认墙不显示品牌署名，说明文案也不点名。
+ * 登记了展品的墙（config/wallExhibit）说**展品那一句** —— 与墙头展签、墙的分享卡同一句，
+ * 首页 / 详情 / 墙内三处不再各说各话。未登记展品的墙才走下面的通用说明：
+ * `hasProduct`：详情等带商品上下文的入口强调「写愿后再回看本品」；首页默认墙没有商品，不提「这件」。
  * 纯函数，便于断言（组件内联判断在测试台里跑不起来）。
  */
-function resolveCopy(productKey, brand, desc) {
+function resolveCopy(productKey, brand, desc, hasProduct) {
   const key = String(productKey || '')
   const isDefault = !key || key === PRODUCT_KEY
   const brandText = String(brand == null ? '' : brand).trim() || (isDefault ? '马上有' : '')
-  const descText =
-    String(desc == null ? '' : desc).trim() ||
-    (isDefault ? '把心愿挂上墙，让「马上有」替你记着' : '把心愿挂上墙，替自己记着')
+  const explicit = String(desc == null ? '' : desc).trim()
+  let descText = explicit
+  const exhibit = exhibitFor(isDefault ? PRODUCT_KEY : key)
+  if (!descText && exhibit && exhibit.line) descText = exhibit.line
+  if (!descText) {
+    if (hasProduct) {
+      descText = '写一句心愿，再回来看这件藏品'
+    } else {
+      descText = isDefault
+        ? '把心愿挂上墙，让「马上有」替你记着'
+        : '把心愿挂上墙，替自己记着'
+    }
+  }
   return { brandText, descText, isDefault }
 }
 
@@ -100,6 +114,8 @@ Component({
     productKey: '',
     brandText: '',
     descText: '',
+    /** 紧凑态下的回看暗示（有商品上下文才出） */
+    productHint: '',
     /** 跑马灯条目：文案各两份 + 唯一 key → 平移 -50% 即无缝循环 */
     mqItems: [],
     mqDurationMs: 26000
@@ -109,14 +125,24 @@ Component({
     'enabled, defaultWall, product, brand, desc'(enabled, defaultWall, product, brand, desc) {
       const visible = enabled === true && (defaultWall === true || isWishWallProduct(product))
       const productKey = visible ? resolveWishWallKey(product) : ''
-      const copy = resolveCopy(productKey, brand, desc)
+      const hasProduct = !!(product && (product._id || product.id))
+      const copy = resolveCopy(productKey, brand, desc, hasProduct)
+      const exhibit = visible ? exhibitFor(productKey) : null
+      const productHint = exhibit && exhibit.line ? exhibit.line : (hasProduct ? '写愿后可回看本品' : '')
       if (
         visible !== this.data.visible ||
         productKey !== this.data.productKey ||
         copy.brandText !== this.data.brandText ||
-        copy.descText !== this.data.descText
+        copy.descText !== this.data.descText ||
+        productHint !== this.data.productHint
       ) {
-        this.setData({ visible, productKey, brandText: copy.brandText, descText: copy.descText })
+        this.setData({
+          visible,
+          productKey,
+          brandText: copy.brandText,
+          descText: copy.descText,
+          productHint
+        })
       }
     },
     /**

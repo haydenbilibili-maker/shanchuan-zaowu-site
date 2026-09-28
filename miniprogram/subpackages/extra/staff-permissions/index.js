@@ -14,6 +14,13 @@ const {
 Page({
   data: {
     ready: false,
+    loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    disablePendingId: '',
+    enablePendingId: '',
     storeOptions: [],
 
     staffList: [],
@@ -42,9 +49,9 @@ Page({
     staffMatchHint: '',
     staffMatched: null,
     staffCandidates: [],
-    staffRoleLabels: ['店员', '店长', '标本师', '直播主播', '投资人', '股东', '超管'],
-    staffRoleValues: ['staff', 'manager', 'specimen_artisan', 'live_host', 'investor', 'shareholder', 'super_admin'],
-    staffRoleSelected: { staff: true, manager: false, specimen_artisan: false, live_host: false, investor: false, shareholder: false, super_admin: false },
+    staffRoleLabels: ['店员', '店长', '标本师', '直播主播', '投资人', '股东', '采购商', '加盟商', '渠道商', '供货方', '超管'],
+    staffRoleValues: ['staff', 'manager', 'specimen_artisan', 'live_host', 'investor', 'shareholder', 'buyer', 'franchisee', 'channel', 'supplier', 'super_admin'],
+    staffRoleSelected: { staff: true, manager: false, specimen_artisan: false, live_host: false, investor: false, shareholder: false, buyer: false, franchisee: false, channel: false, supplier: false, super_admin: false },
     staffSaving: false,
     featureGroups: [],
     showStoreScope: true,
@@ -77,12 +84,23 @@ Page({
   },
 
   async loadStaff() {
+    this.setData({
+      loading: true,
+      listError: false,
+      tipText: this.data.staffList && this.data.staffList.length ? this.data.tipText : '',
+      disablePendingId: '',
+      enablePendingId: ''
+    });
     try {
       const res = await wx.cloud.callFunction({ name: 'manageStaff', data: { action: 'list' } });
       const result = (res && res.result) || {};
       if (!result.success) {
-        this.setData({ staffList: [] });
-        if (result.msg) wx.showToast({ title: formatCloudFnError(result, result.msg), icon: 'none' });
+        this.setData({
+          loading: false,
+          listError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '店员列表加载失败')
+        });
         return;
       }
       const staffList = (result.list || []).map((row) => ({
@@ -91,10 +109,19 @@ Page({
           Array.isArray(row.roles) && row.roles.length ? row.roles : [row.role]
         )
       }));
-      this.setData({ staffList });
+      this.setData({ staffList, loading: false, listError: false });
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '店员列表加载失败'), icon: 'none' });
+      this.setData({
+        loading: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '店员列表加载失败')
+      });
     }
+  },
+
+  onRetryList() {
+    this.loadStaff();
   },
 
   buildStaffRoleSelected(values, selectedRoles) {
@@ -166,6 +193,7 @@ Page({
         : before;
     this.setData({
       showStaffModal: true,
+      formTip: '',
       staffRoleSelected: this.buildStaffRoleSelected(this.data.staffRoleValues, roles),
       staffLookingUp: false,
       staffMatchHint: '',
@@ -267,14 +295,15 @@ Page({
     if (this.data.staffLookingUp) return;
     const phone = String(this.data.staffForm.phone || '').replace(/\D/g, '');
     if (!/^1\d{10}$/.test(phone)) {
-      wx.showToast({ title: '请输入 11 位手机号', icon: 'none' });
+      this.setData({ formTip: '请输入 11 位手机号' });
       return;
     }
     this.setData({
       staffLookingUp: true,
       staffMatchHint: '',
       staffMatched: null,
-      staffCandidates: []
+      staffCandidates: [],
+      formTip: ''
     });
     try {
       const res = await wx.cloud.callFunction({
@@ -284,7 +313,7 @@ Page({
       const result = (res && res.result) || {};
       this.setData({ staffLookingUp: false });
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '查找失败'), icon: 'none' });
+        this.setData({ formTip: formatCloudFnError(result, result.msg || '查找失败') });
         return;
       }
       const candidates = result.candidates || [];
@@ -309,8 +338,10 @@ Page({
         staffMatchHint: `找到 ${candidates.length} 个账号，请选择`
       });
     } catch (e) {
-      this.setData({ staffLookingUp: false });
-      wx.showToast({ title: formatCloudFnError(e, '查找失败'), icon: 'none' });
+      this.setData({
+        staffLookingUp: false,
+        formTip: formatCloudFnError(e, '查找失败')
+      });
     }
   },
 
@@ -392,12 +423,12 @@ Page({
     if (this.data.staffSaving) return;
     const form = this.data.staffForm;
     if (!form.openid || form.openid.trim().length < 20) {
-      wx.showToast({ title: '请先用手机号查找并确认 openid', icon: 'none' });
+      this.setData({ formTip: '请先用手机号查找并确认 openid' });
       return;
     }
     const roles = Array.isArray(form.roles) ? form.roles.filter(Boolean) : [];
     if (!roles.length) {
-      wx.showToast({ title: '请至少选择一个角色', icon: 'none' });
+      this.setData({ formTip: '请至少选择一个角色' });
       return;
     }
     const showStoreScope = this.rolesNeedStoreScope(roles);
@@ -407,11 +438,10 @@ Page({
       : [];
     const dailyGrantCap = showStoreScope ? form.dailyGrantCap : 0;
     if (showShareholderConfig && !String(form.shareholderStoreId || '').trim()) {
-      wx.showToast({ title: '请绑定股东门店', icon: 'none' });
+      this.setData({ formTip: '请绑定股东门店' });
       return;
     }
-    this.setData({ staffSaving: true });
-    wx.showLoading({ title: '保存中…' });
+    this.setData({ staffSaving: true, formTip: '保存中…' });
     try {
       const payload = {
         action: 'upsert',
@@ -450,116 +480,120 @@ Page({
         name: 'manageStaff',
         data: payload
       });
-      wx.hideLoading();
       this.setData({ staffSaving: false });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showModal({ title: '保存失败', content: formatCloudFnError(result, result.msg || '请稍后重试'), showCancel: false, confirmColor: '#C4A76C' });
+        this.setData({ formTip: formatCloudFnError(result, result.msg || '请稍后重试') });
         return;
       }
-      wx.showToast({ title: result.msg || '已保存', icon: 'none' });
       clearStaffRoleCache();
       this.closeStaffModal();
+      this.setData({ tipTone: 'info', tipText: result.msg || '已保存' });
       this.loadStaff();
     } catch (e) {
-      wx.hideLoading();
-      this.setData({ staffSaving: false });
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' });
+      this.setData({
+        staffSaving: false,
+        formTip: formatCloudFnError(e, '保存失败')
+      });
     }
   },
 
-  disableStaff(e) {
+  async disableStaff(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) return;
-    wx.showModal({
-      title: '停用权限',
-      content: '停用后该账号将无法进入门店后台，可再次开通。',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return;
-        try {
-          const call = await wx.cloud.callFunction({ name: 'manageStaff', data: { action: 'remove', staffId: id } });
-          const result = (call && call.result) || {};
-          wx.showToast({
-            title: result.success
-              ? (result.msg || '已停用')
-              : formatCloudFnError(result, result.msg || '停用失败'),
-            icon: 'none'
-          });
-          clearStaffRoleCache();
-          this.loadStaff();
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '停用失败'), icon: 'none' });
-        }
+    if (this.data.disablePendingId !== id) {
+      this.setData({
+        disablePendingId: id,
+        enablePendingId: '',
+        tipTone: 'warn',
+        tipText: '再点一次「停用」：该账号将无法进入门店后台（可再次启用）'
+      });
+      return;
+    }
+    this.setData({ disablePendingId: '', tipTone: 'info', tipText: '正在停用…' });
+    try {
+      const call = await wx.cloud.callFunction({ name: 'manageStaff', data: { action: 'remove', staffId: id } });
+      const result = (call && call.result) || {};
+      if (!result.success) {
+        this.setData({
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '停用失败')
+        });
+        return;
       }
-    });
+      clearStaffRoleCache();
+      this.setData({ tipTone: 'info', tipText: result.msg || '已停用' });
+      this.loadStaff();
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '停用失败') });
+    }
   },
 
-  enableStaff(e) {
+  async enableStaff(e) {
     const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '').trim();
     if (!id) return;
     const item = (this.data.staffList || []).find((row) => row._id === id);
     if (!item || !item.openid) {
-      wx.showToast({ title: '账号信息缺失', icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: '账号信息缺失' });
       return;
     }
-    wx.showModal({
-      title: '恢复生效',
-      content: `确认恢复「${item.name || '未命名'} · ${item.roleText || ''}」的后台权限？`,
-      confirmColor: '#52B788',
-      success: async (res) => {
-        if (!res.confirm) return;
-        try {
-          const roles = Array.isArray(item.roles) && item.roles.length
-            ? item.roles
-            : [item.role || 'staff'];
-          const showStoreScope = this.rolesNeedStoreScope(roles);
-          const enablePayload = {
-            action: 'upsert',
-            openid: item.openid,
-            name: item.name || '',
-            staffNo: item.staffNo || '',
-            roles,
-            role: item.role || 'staff',
-            permissions: Array.isArray(item.permissions) ? item.permissions : undefined,
-            permissionsExplicit: !!item.permissionsExplicit,
-            status: 'active'
-          };
-          if (showStoreScope) {
-            enablePayload.storeIds = Array.isArray(item.storeIds) ? item.storeIds : [];
-            enablePayload.dailyGrantCap = item.dailyGrantCap || 0;
-          } else {
-            enablePayload.storeIds = [];
-            enablePayload.dailyGrantCap = 0;
-          }
-          const call = await wx.cloud.callFunction({
-            name: 'manageStaff',
-            data: enablePayload
-          });
-          const result = (call && call.result) || {};
-          wx.showToast({
-            title: result.success
-              ? (result.msg || '已恢复生效')
-              : formatCloudFnError(result, result.msg || '启用失败'),
-            icon: 'none'
-          });
-          if (result.success) {
-            clearStaffRoleCache();
-            this.loadStaff();
-          }
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '启用失败'), icon: 'none' });
-        }
+    if (this.data.enablePendingId !== id) {
+      this.setData({
+        enablePendingId: id,
+        disablePendingId: '',
+        tipTone: 'warn',
+        tipText: `再点一次「启用」即将恢复「${item.name || '未命名'} · ${item.roleText || ''}」`
+      });
+      return;
+    }
+    this.setData({ enablePendingId: '', tipTone: 'info', tipText: '正在启用…' });
+    try {
+      const roles = Array.isArray(item.roles) && item.roles.length
+        ? item.roles
+        : [item.role || 'staff'];
+      const showStoreScope = this.rolesNeedStoreScope(roles);
+      const enablePayload = {
+        action: 'upsert',
+        openid: item.openid,
+        name: item.name || '',
+        staffNo: item.staffNo || '',
+        roles,
+        role: item.role || 'staff',
+        permissions: Array.isArray(item.permissions) ? item.permissions : undefined,
+        permissionsExplicit: !!item.permissionsExplicit,
+        status: 'active'
+      };
+      if (showStoreScope) {
+        enablePayload.storeIds = Array.isArray(item.storeIds) ? item.storeIds : [];
+        enablePayload.dailyGrantCap = item.dailyGrantCap || 0;
+      } else {
+        enablePayload.storeIds = [];
+        enablePayload.dailyGrantCap = 0;
       }
-    });
+      const call = await wx.cloud.callFunction({
+        name: 'manageStaff',
+        data: enablePayload
+      });
+      const result = (call && call.result) || {};
+      if (!result.success) {
+        this.setData({
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '启用失败')
+        });
+        return;
+      }
+      clearStaffRoleCache();
+      this.setData({ tipTone: 'info', tipText: result.msg || '已恢复生效' });
+      this.loadStaff();
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '启用失败') });
+    }
   },
 
   copyOpenidHint() {
-    wx.showModal({
-      title: '如何拿到店员 openid',
-      content: '让店员先在小程序登录一次，然后在云开发控制台 users 集合中按昵称找到该条记录，复制 _openid 字段填入即可。',
-      showCancel: false,
-      confirmColor: '#C4A76C'
+    this.setData({
+      tipTone: 'info',
+      tipText: 'openid：让对方先登录小程序并授权手机号，再用上方「手机号查找」匹配；或在云开发 users 按昵称复制 _openid。'
     });
   },
 

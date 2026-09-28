@@ -10,6 +10,10 @@ Page({
   data: {
     ready: false,
     loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
     saving: false,
     mode: 'list',
     list: [],
@@ -56,17 +60,27 @@ Page({
 
   async loadList() {
     if (this.data.loading) return
-    this.setData({ loading: true, mode: 'list' })
+    this.setData({ loading: true, mode: 'list', listError: false, tipText: '', formTip: '' })
     try {
       const result = await this.callFn({ action: 'list' })
       this.setData({
         loading: false,
+        listError: false,
         list: result.list || []
       })
     } catch (e) {
-      this.setData({ loading: false, list: [] })
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
+      // 失败保留上次列表，勿伪装空
+      this.setData({
+        loading: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '列表未能取回')
+      })
     }
+  },
+
+  onRetryList() {
+    this.loadList()
   },
 
   openEdit(e) {
@@ -104,8 +118,11 @@ Page({
         }
       })
     } catch (e) {
-      this.setData({ loading: false })
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
+      this.setData({
+        loading: false,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '详情未能取回')
+      })
     }
   },
 
@@ -180,20 +197,20 @@ Page({
     const next = status === 'active' ? 'inactive' : 'active'
     try {
       await this.callFn({ action: 'toggle', docId: id, status: next })
-      wx.showToast({ title: next === 'active' ? '已启用' : '已停用', icon: 'success' })
+      this.setData({ tipTone: 'info', tipText: next === 'active' ? '已启用' : '已停用' })
       this.loadList()
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '更新失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '更新失败') })
     }
   },
 
   async seedDefault() {
     try {
       await this.callFn({ action: 'seed' })
-      wx.showToast({ title: '已写入默认', icon: 'success' })
+      this.setData({ tipTone: 'info', tipText: '已写入默认' })
       this.loadList()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '写入失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '写入失败') })
     }
   },
 
@@ -201,10 +218,10 @@ Page({
     if (this.data.saving) return
     const f = this.data.form
     if (!String(f.phone || '').trim()) {
-      wx.showToast({ title: '客服电话必填', icon: 'none' })
+      this.setData({ formTip: '客服电话必填' })
       return
     }
-    this.setData({ saving: true })
+    this.setData({ saving: true, formTip: '保存中…', tipText: '' })
     try {
       const result = await this.callFn({
         action: 'save',
@@ -224,11 +241,10 @@ Page({
           faqs: f.faqs
         }
       })
-      this.setData({ docId: result.docId || this.data.docId })
-      wx.showToast({ title: '已保存', icon: 'success' })
+      this.setData({ docId: result.docId || this.data.docId, formTip: '', tipTone: 'info', tipText: '已保存' })
       setTimeout(() => this.loadList(), 400)
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
+      this.setData({ formTip: formatCloudFnError(e, '保存失败') })
     } finally {
       this.setData({ saving: false })
     }

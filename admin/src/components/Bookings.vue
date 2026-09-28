@@ -59,7 +59,7 @@
       </el-alert>
 
       <div class="filter-bar">
-        <el-radio-group v-model="statusFilter" fill="#d4af37" @change="refresh">
+        <el-radio-group v-model="statusFilter" @change="refresh">
           <el-radio-button label="all">全部</el-radio-button>
           <el-radio-button label="confirmed">已确认</el-radio-button>
           <el-radio-button label="pending">待确认</el-radio-button>
@@ -168,7 +168,7 @@
 
     <template v-else>
       <div class="filter-bar">
-        <el-radio-group v-model="waitStatusFilter" fill="#d4af37" @change="refresh">
+        <el-radio-group v-model="waitStatusFilter" @change="refresh">
           <el-radio-button label="waiting">候补中</el-radio-button>
           <el-radio-button label="notified">已通知</el-radio-button>
           <el-radio-button label="converted">已转预约</el-radio-button>

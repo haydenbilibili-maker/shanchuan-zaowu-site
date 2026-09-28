@@ -2,7 +2,7 @@
 
 .sb-page {
   min-height: 100vh;
-  padding: 24rpx 24rpx 60rpx;
+  padding: 24rpx 24rpx calc(60rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #1a1814;
 }
@@ -37,7 +37,22 @@
 
 .sb-loading, .sb-empty { padding: 60rpx 0; display: flex; flex-direction: column; align-items: center; gap: 10rpx; }
 .sb-loading text, .sb-empty text { font-size: 26rpx; color: #a09a90; }
-.sb-empty-hint { font-size: 22rpx; color: #7d786f; }
+.sb-empty-hint { font-size: 22rpx; color: #7d786f; text-align: center; padding: 0 24rpx; line-height: 1.5; }
+.sb-empty.is-error {
+  margin: 8rpx 0 16rpx;
+  padding: 40rpx 24rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(196, 92, 74, 0.4);
+  background: rgba(196, 92, 74, 0.08);
+}
+.sb-empty.is-error > text:first-child { color: #f0c9c0; }
+.sb-retry {
+  margin-top: 16rpx;
+  padding: 14rpx 36rpx;
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+}
+.sb-retry text { font-size: 26rpx; color: #e8dcc0; }
 
 .sb-list { display: flex; flex-direction: column; gap: 16rpx; }
 .sb-card { background: #262320; border: 1rpx solid rgba(77, 64, 26, 0.5); border-radius: 16rpx; padding: 22rpx 24rpx; }
@@ -84,7 +99,7 @@
 .sb-ship-qty { font-size: 22rpx; color: #a09a90; }
 .sb-ship-amount { font-size: 24rpx; color: #c4a76c; }
 
-.sb-actions { display: flex; flex-direction: column; gap: 12rpx; padding: 16rpx 28rpx 30rpx; border-top: 1rpx solid rgba(77, 64, 26, 0.4); }
+.sb-actions { display: flex; flex-direction: column; gap: 12rpx; padding: 16rpx 28rpx calc(30rpx + env(safe-area-inset-bottom)); border-top: 1rpx solid rgba(77, 64, 26, 0.4); }
 .sb-btn { font-size: 27rpx; border-radius: 12rpx; line-height: 2.6; }
 .sb-btn-main { background: linear-gradient(135deg, #c4a76c, #a8874c); color: #221e17; border: none; }
 .sb-btn-ghost { background: transparent; border: 1rpx solid rgba(196, 167, 108, 0.5); color: #e8dcc0; }

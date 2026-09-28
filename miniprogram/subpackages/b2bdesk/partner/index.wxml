@@ -1,0 +1,58 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="state">
+    <text class="state-title">正在读取…</text>
+  </view>
+  <view wx:elif="{{error}}" class="state err">
+    <text class="state-title">加载失败</text>
+    <text class="state-body">{{error}}</text>
+    <view class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
+  </view>
+  <block wx:elif="{{partner}}">
+    <view class="head">
+      <text class="head-en">PARTNER ACCESS</text>
+      <text class="head-cn">{{partner.name}}</text>
+      <text class="head-note">{{partner.sideText}} · 微信尾号 {{partner.openidTail}} · {{partner.orders.count}} 单 {{partner.orders.amountText}}</text>
+    </view>
+
+    <view wx:if="{{flash}}" class="flash {{flashErr ? 'err' : ''}}"><text class="flash-text">{{flash}}</text></view>
+
+    <view class="section">
+      <text class="section-title">账号状态</text>
+      <view class="toggle-row" bindtap="toggleStatus">
+        <view class="toggle-copy">
+          <text class="toggle-title">{{partner.status === 'active' ? '启用中' : '已停用'}}</text>
+          <text class="toggle-desc">{{!partner.b2bOnly ? '兼有门店角色：请到店员花名册启停' : statusArmed ? (partner.status === 'active' ? '再点一次确认停用：该账号的全部 B2B 接口将立即拒绝' : '再点一次确认启用') : '停用后该账号无法进入工作台、下单或查看对账'}}</text>
+        </view>
+        <view class="toggle {{partner.status === 'active' ? 'on' : ''}}"><view class="toggle-knob"></view></view>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="section-title">功能项</text>
+      <text class="section-sub">关掉后伙伴工作台隐藏对应入口；「对账与物流」同时由服务端拒绝。价目 / 下单 / 需求的服务端拦截在 B2B 支付修复流的函数里，待其接入（蓝图 CR-1）。</text>
+      <view wx:for="{{featureRows}}" wx:key="key" class="toggle-row" data-key="{{item.key}}" bindtap="toggleFeature">
+        <view class="toggle-copy">
+          <text class="toggle-title">{{item.label}}</text>
+          <text class="toggle-desc">{{item.hint}}</text>
+        </view>
+        <view class="toggle {{item.on ? 'on' : ''}}"><view class="toggle-knob"></view></view>
+      </view>
+    </view>
+
+    <view wx:if="{{partner.sides.supplier}}" class="field">
+      <text class="field-label">供货方 ID（采购需求按它归属；留空 = 用微信 openid）</text>
+      <input class="field-input" value="{{supplierId}}" placeholder="字母 / 数字 / - / _" maxlength="80" bindinput="onSupplierId" />
+    </view>
+    <view class="field">
+      <text class="field-label">内部备注（伙伴看不到）</text>
+      <input class="field-input" value="{{note}}" maxlength="120" placeholder="如 合同到期 2027-03" bindinput="onNote" />
+    </view>
+
+    <view class="btn {{saving ? 'busy' : ''}} {{dirty ? '' : 'ghost'}}" hover-class="btn-press" bindtap="save">
+      <text class="btn-text">{{saving ? '保存中…' : dirty ? '保存权限配置' : '已是最新配置'}}</text>
+    </view>
+    <view class="btn ghost" hover-class="btn-press" bindtap="previewStatement"><text class="btn-text">预览 TA 的对账与物流</text></view>
+    <view wx:if="{{partner.orders.count}}" class="btn ghost" hover-class="btn-press" bindtap="openOrders"><text class="btn-text">查看 TA 的订单</text></view>
+    <text class="foot">每次保存与启停都会写入操作日志。开通新账号、改角色请到「店员花名册」。</text>
+  </block>
+</view>

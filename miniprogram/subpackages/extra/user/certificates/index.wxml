@@ -6,7 +6,7 @@
     <view class="header-text">
       <text class="page-overline">证书收藏夹｜MY CERTIFICATES</text>
       <text class="h1">荣誉档案</text>
-      <text class="h2">共收藏 {{certificates.length}} 件珍品</text>
+      <text class="h2">共收藏 {{holderCount}} 件珍品<block wx:if="{{givenCount > 0}}"> · 赠出 {{givenCount}} 件</block></text>
     </view>
 
     <view class="cert-grid" wx:if="{{certificates.length}}">
@@ -17,7 +17,8 @@
              <view class="c-overlay">
                <text class="c-no">{{item.orderNo}}</text>
              </view>
-             <view class="c-seal">CERTIFIED</view>
+             <view class="c-seal">{{item.kind === 'gift_voucher' ? 'GIFTED' : 'CERTIFIED'}}</view>
+             <text class="c-kind c-kind--{{item.kind}}" wx:if="{{item.kindLabel}}">{{item.kindLabel}}</text>
           </view>
           <text class="c-name">{{item.displayTitle}}</text>
           <text class="c-date" wx:if="{{item.dateStr}}">{{item.dateStr}}</text>

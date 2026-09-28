@@ -83,8 +83,8 @@ const INJECTIONS = {
   // 换段位不收回折叠区 → 保留上一次的展开态与计数
   'segment-keeps-fold': {
     file: PAGE,
-    from: '      ...this.foldedResetPatch(),\n      page: 1,\n      hasMore: false,\n      errorMsg: \'\',\n      ...copy',
-    to: '      page: 1,\n      hasMore: false,\n      errorMsg: \'\',\n      ...copy'
+    from: '      ...this.foldedResetPatch(),\n      page: 1,\n      hasMore: false,\n      errorMsg: \'\',\n      todoFocus: null,\n      ...copy',
+    to: '      page: 1,\n      hasMore: false,\n      errorMsg: \'\',\n      todoFocus: null,\n      ...copy'
   },
   // 券包退回 v1 的券背（与券夹语言漂移）
   'pouch-v1-layer': {
@@ -293,6 +293,9 @@ const requireStub = (id) => {
   if (key.includes('trackBehavior')) return { trackBehavior: noop }
   if (key.includes('userSession')) return { ensureSession: async () => ({}) }
   if (key.includes('giftSubscribe')) return { requestGiftSubscribe: async () => {} }
+  if (key.includes('receiverVerify')) {
+    return { loadReceiverVerify: async () => ({}), saveReceiverPhone: async () => ({ success: true }), sheetCopy: () => ({}) }
+  }
   if (key.includes('giftSignalLamp')) {
     return {
       giftFlowSignal: () => 'lamp-idle',
@@ -517,6 +520,7 @@ function serverRow(id, over) {
 
 const wxml = readSrc(WXML)
 const wxss = readFileSync(resolve(ROOT, WXSS), 'utf8')
+const js = readSrc(PAGE)
 const tplBlock = (wxml.match(/<template name="gift-card">[\s\S]*?<\/template>/) || [''])[0]
 
 check('★ 卡片模板用 item.flowTab（不再引用页面 data）', /class="role-chip \{\{item\.flowTab\}\}"/.test(tplBlock))
@@ -584,6 +588,19 @@ eq('★ v1 券背语言已清零（WXSS）', (wxss.match(/pouch-layer/g) || []).
 eq('旧 .folded-pouch 类已清零', (wxss.match(/folded-pouch/g) || []).length, 0)
 check('折叠区动画已定义', /@keyframes pouch-in/.test(wxss))
 check('失效卡在折叠区内仍整体降调', /\.card-hit\.is-folded\s*\{[^}]*opacity/.test(wxss))
+
+/* ─────────── 1b) 主路径清晰度：待办焦点 + 对象跳往来复位（2026-09-26 体验升） ─────────── */
+check('★ 待办焦点：pickTodoFocus 只读段位计数（不改云端契约）',
+  /function pickTodoFocus\(/.test(js) && /awaiting_open/.test(js) && /awaiting_address/.test(js))
+check('★ 页头有待办焦点条（全部段位 + 有待办时）',
+  /class="todo-focus"/.test(wxml) && /bindtap="onTodoFocusTap"/.test(wxml) && /todoFocus\.title/.test(wxml))
+check('★ 点焦点条落到对应段位并收回折叠区',
+  /onTodoFocusTap\s*\(/.test(js)
+  && /activeSegment:\s*key/.test(js)
+  && /foldedResetPatch\(\)/.test(js.slice(js.indexOf('onTodoFocusTap'))))
+check('★ 对象「往来」入口也收回折叠区（与换段位同口径）',
+  /viewContactGifts\s*\([\s\S]*?foldedResetPatch\(\)/.test(js))
+check('待办主按钮有 glow 提示', /act primary \{\{item\.todo \|\| item\.attention \? 'glow' : ''\}\}/.test(wxml))
 
 /* ─────────── 2) 礼赠链路闭环：订单详情 → 礼赠信封 / 礼赠详情 → 回订单 ───────────
  * 产品负责人 2026-09-21：「礼赠的订单详情页**缺少**跳转到礼赠信封页面以及后续礼赠详情的入口」。

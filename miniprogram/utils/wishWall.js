@@ -66,8 +66,10 @@ function dailyQuota(rows, nowMs, limit) {
   return { used, left, cap, exhausted: used >= cap }
 }
 
-/** 视觉速度：rpx/秒。时长 = (屏宽 + 文案宽) / 速度 */
-const SPEED_RPX_PER_SEC = 90
+/** 视觉速度：rpx/秒。时长 = (屏宽 + 文案宽) / 速度
+ * 2026-09-24：90 → 78 → 72（出图复核偏慢）。
+ * 2026-09-26 B 站式：72 → 96 —— 流速更接近滚动弹幕观感；时长仍落在 6–26s 守卫窗内。 */
+const SPEED_RPX_PER_SEC = 96
 const SCREEN_RPX = 750
 /**
  * 单字占宽 ≈ 33rpx。
@@ -78,6 +80,13 @@ const SCREEN_RPX = 750
  * 这里同步 28 → 33。守卫按"字号 ×1.03 ≈ CHAR_RPX"实算断言，两边不会再各自漂移。
  */
 const CHAR_RPX = 33
+/**
+ * 挂签条左右垫 + 钉头的固定占宽（rpx）。
+ * 2026-09-26「活墙」：弹幕从裸字升级为纸签条，几何变宽；若不计入 clearMs，同轨会叠签。
+ * 2026-09-26 B 站式：纸签改薄皮（更像弹幕皮肤），垫宽 40 → 28。
+ * 只进宽度估算，不改 CHAR_RPX / 字号守卫口径。
+ */
+const SLIP_PAD_RPX = 28
 
 /**
  * 同一轨道内两条弹幕之间的**视觉间隙**（毫秒）。
@@ -87,14 +96,21 @@ const CHAR_RPX = 33
  * 4 条轨道各叠 4 条，整面墙糊成一坨（业务方原话：灾难现场）。
  * 正确口径：下一条必须等**上一条的尾部离开右边缘**才可进场（见 danmakuClearMs），
  * 这个常量只负责「尾部离开后再留一点空白」。
+ * 2026-09-26 B 站式：520 → 300 —— 同轨更密，仍靠 clearMs 防撞。
  */
-const LANE_GAP_MS = 520
+const LANE_GAP_MS = 300
+
+/**
+ * 非预填条目的「进场错峰台阶」（毫秒）。
+ * 旧值 260 在密墙时偏疏；B 站式压到 120，让后段更快灌满空轨。
+ */
+const LANE_STAGGER_MS = 120
 
 /**
  * 一轮弹幕里，最后一条结束后到重开一轮之间的停顿。
  * 弹幕墙不能一轮播完就死；由页面用定时器重开（纯逻辑只提供这个时刻）。
  */
-const CYCLE_PAUSE_MS = 1400
+const CYCLE_PAUSE_MS = 1100
 
 /**
  * 归一化祈福文案（与云函数同口径）。
@@ -274,7 +290,7 @@ function lampStreak(litDays, todayKey) {
  * 为什么要有层级：只有"点亮/没点亮"两种状态时，连续多天来的人得到的反馈和第一天一模一样，
  * 仪式就没有累积感。层级把"坚持"变成看得见的东西（1 盏 → 3 盏 → 5 盏长明）。
  *
- * 阈值刻意低（1/3/7 天）：祈福墙不是养成游戏，第 7 天就该给到顶格反馈。
+ * 阈值刻意低（1/3/7 天）：祈福墙不是养成玩法，第 7 天就该给到顶格反馈。
  */
 const LAMP_TIERS = [
   { min: 7, tier: 3, lamps: 5, label: '长明' },
@@ -466,16 +482,16 @@ function isWishWallProduct(product) {
  * @returns {number} ms
  */
 function danmakuDurationMs(text) {
-  const len = normalizeWishText(text).length
-  const width = SCREEN_RPX + len * CHAR_RPX
+  const w = textWidthRpx(text)
+  const width = SCREEN_RPX + w
   const ms = Math.round((width / SPEED_RPX_PER_SEC) * 1000)
   // 上下限兜底：过短一闪而过，过长霸屏
   return Math.max(6000, Math.min(26000, ms))
 }
 
-/** 文案估算宽度（rpx）：26rpx 字号 + 字距 ≈ 每字 28rpx */
+/** 文案估算宽度（rpx）：字宽 × 字数 + 挂签条固定垫宽 */
 function textWidthRpx(text) {
-  return normalizeWishText(text).length * CHAR_RPX
+  return normalizeWishText(text).length * CHAR_RPX + SLIP_PAD_RPX
 }
 
 /**
@@ -503,8 +519,9 @@ function danmakuClearMs(text) {
  * 也才能在测试里断言。
  *
  * @param {Array<{_id?:string,text?:string}>} items
- * @param {{lanes?:number, gapMs?:number, cycle?:number}} [opts]
+ * @param {{lanes?:number, gapMs?:number, cycle?:number, boostId?:string}} [opts]
  *        cycle：重开轮次。会进 key，从而让 DOM 重建、动画重播（同 key 不会重播）。
+ *        boostId：刚落愿的那条（B 站「发弹幕即时上墙」）—— 给负 delay 中段曝光 + boost 标记。
  * @returns {Array<object>} 每项含 key/text/lane/topPercent/durationMs/delayMs/clearMs/endAt/isCycleEnd
  */
 // 弹幕配色档位与 emoji（2026-09-19）：**必须确定性** —— 用 FNV-1a(rotateIndex) 按 id 取，
@@ -528,40 +545,53 @@ function danmakuEmoji(seedId) {
   return DANMAKU_EMOJIS[rotateIndex('e:' + id, DANMAKU_EMOJIS.length)] || ''
 }
 
+/** 在仍空的轨道里取「最早可进场」的那一条（B 站式错峰；确定性，不用随机） */
+function pickEarliestLane(laneNextAt, lanes) {
+  let best = 0
+  for (let L = 1; L < lanes; L += 1) {
+    if (laneNextAt[L] < laneNextAt[best]) best = L
+  }
+  return best
+}
+
 function buildDanmakuRows(items, opts) {
   const list = Array.isArray(items) ? items : []
   const o = opts || {}
   const lanes = Math.max(1, Math.min(LANES, o.lanes || LANES))
   const gapMs = o.gapMs == null ? LANE_GAP_MS : Math.max(0, Number(o.gapMs) || 0)
   const cycle = Math.max(0, Math.round(Number(o.cycle) || 0))
+  const boostId = String(o.boostId || '')
   const laneNextAt = new Array(lanes).fill(0)
   const rows = []
   list.forEach((item, i) => {
     const raw = item && typeof item === 'object' ? item : {}
     const text = normalizeWishText(raw.text)
     if (!text) return
-    const lane = i % lanes
+    const seedId = String(raw._id || `w${i}`)
+    const isBoost = !!(boostId && seedId === boostId)
+    // ── 首屏预填（2026-09-19）────────────────────────────────────────────
+    // 真机问题：弹幕是 `left:100%` + 全屏横穿 + **正 delay**，所以 t=0 时墙面**必然是空的**。
+    // 修法：前 `lanes` 条各占一轨、负 delay 预填。
+    // 预填之后改「最早空轨」分配（B 站式错峰灌轨），仍确定性、同轨不重叠公式不变。
+    const prefill = i < lanes
+    const lane = prefill ? (i % lanes) : pickEarliestLane(laneNextAt, lanes)
     const durationMs = danmakuDurationMs(text)
     const clearMs = danmakuClearMs(text)
-    // ── 首屏预填（2026-09-19）────────────────────────────────────────────
-    // 真机问题：弹幕是 `left:100%` + 全屏横穿 + **正 delay**，所以 t=0 时墙面**必然是空的**，
-    // 之后按 `i*260ms` 逐条从右侧入场 —— 首屏前 2–3 秒只有 6 条刻度线，看着像一个空框
-    // （产品截图里正是这个）。整轮飞完重建时也会再现同样的空窗。
-    //
-    // 修法：让**前 `lanes` 条**（每条轨道恰好一条）用**负 delay** 预填 ——
-    // 它们在页面加载的瞬间就已经处于屏内不同位置，墙面立刻是"满"的，再自然续播。
-    // 负 delay 在 CSS 动画里就是"从中间开始播"，无需改 keyframes、不改速度、不改轨道规则。
-    //
-    // 为什么不破坏「同轨不重叠」：同一轨道只有**第一条**被预填，`laneNextAt` 从它的
-    // （负）delay 起算，后续条目仍满足 `delay >= prev.delay + prev.clearMs` ——
-    // 这个不变量由下面同一行公式保证，守卫在跑（`test:wish-wall`「同轨相邻两条不重叠」）。
-    const prefill = i < lanes
-    // 0.85 → 0.15：把首屏这批从左到右铺开，不叠成一坨
-    const delayMs = prefill
-      ? -Math.round(durationMs * (0.85 - 0.14 * i))
-      : Math.max(laneNextAt[lane], Math.round(i * 260))
+    // 2026-09-24：0.85→0.15 改成 0.62→0.22。
+    // 2026-09-26：刚落愿 boost 用 0.28 —— 落在屏中偏右，像「高级弹幕」刚发出。
+    let delayMs
+    if (isBoost) {
+      delayMs = -Math.round(durationMs * 0.28)
+    } else if (prefill) {
+      delayMs = -Math.round(durationMs * (0.62 - 0.08 * i))
+    } else {
+      delayMs = Math.max(laneNextAt[lane], Math.round(i * LANE_STAGGER_MS))
+    }
+    // 非预填必须尊重同轨占用；预填（含刚落愿 boost）用负 delay，不与 laneNextAt 取 max
+    if (!prefill) {
+      delayMs = Math.max(delayMs, laneNextAt[lane])
+    }
     laneNextAt[lane] = delayMs + clearMs + gapMs
-    const seedId = String(raw._id || `w${i}`)
     rows.push({
       key: `${String(raw._id || `w${i}`)}#${cycle}`,
       // 配色与 emoji：按 id 稳定取（emoji 用不同盐，避免与颜色绑定成固定搭配）
@@ -575,6 +605,7 @@ function buildDanmakuRows(items, opts) {
       official: !!raw.official,
       isMine: !!raw.isMine,
       hidden: !!raw.hidden,
+      boost: isBoost,
       text,
       lane,
       // 轨道垂直分布：顶部 8% 起，末轨落在 84%（26rpx 字高约再占 6%，仍留安全区）

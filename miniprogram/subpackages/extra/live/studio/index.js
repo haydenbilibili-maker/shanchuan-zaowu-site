@@ -83,6 +83,10 @@ Page({
   data: {
     ready: false,
     roleText: '主播',
+    modeLabel: '主播',
+    isPreview: false,
+    greeting: '欢迎回来',
+    roleHint: '场次、挂品与开播；全店开关与推流配置仍在超管侧。',
     staffName: '',
     canPayslip: false,
     canAttendance: false,
@@ -90,6 +94,8 @@ Page({
     canForceOther: false,
     liveDashLoading: false,
     loadError: '',
+    tipTone: 'info',
+    tipText: '',
     mineSessionId: '',
     showOnAir: false,
     configured: false,
@@ -105,6 +111,14 @@ Page({
     configAction: '',
     configLightClass: '',
     enabledLightClass: '',
+    flowStep: 1,
+    flowHot1: true,
+    flowHot2: false,
+    flowHot3: false,
+    nextStepTitle: '先建一场',
+    nextStepBody: '点底栏「快捷开播」填写标题，创建本人场次后再挂品。',
+    nextStepAction: 'create',
+    nextStepCta: '快捷开播',
     statusCard: {
       title: '',
       viewerCount: 0,
@@ -151,23 +165,45 @@ Page({
       const role = await guardLiveHostWorkspace()
       if (!role) return
 
+      const isSuper = !!roleHasStored(role, 'super_admin')
+      const isHost = !!roleHasStored(role, 'live_host')
+      const isManager = !!roleHasStored(role, 'manager')
       let roleText = '主播'
-      if (roleHasStored(role, 'super_admin')) roleText = '超管'
-      else if (roleHasStored(role, 'manager')) roleText = '店长'
+      let modeLabel = '主播'
+      let isPreview = false
+      let roleHint = '场次、挂品与开播；全店开关与推流配置仍在超管侧。不含工作室账本。'
+      if (isSuper) {
+        roleText = '超管'
+        modeLabel = '超管预览'
+        isPreview = true
+        roleHint = '预览主播主路径。内容开关与 LIVE_* 仍在超管配置；勿把未配置当成已出画。'
+      } else if (isManager && !isHost) {
+        roleText = '店长'
+        modeLabel = '店长代播'
+        roleHint = '以 manageLive 代播。挂品与推流与主播相同；人员与内容开关仍归超管。'
+      } else if (isHost) {
+        roleText = '主播'
+        modeLabel = '主播'
+      }
 
+      const staffName = role.name || ''
       this.setData({
         ready: true,
         roleText,
-        staffName: role.name || '',
+        modeLabel,
+        isPreview,
+        roleHint,
+        greeting: staffName ? `${staffName}，欢迎回来` : '欢迎回来',
+        staffName,
         canPayslip: hasPermission(role, 'viewPayslip'),
         canAttendance: hasPermission(role, 'staffAttendance'),
-        canYouxin: !!(roleHasStored(role, 'super_admin') || roleHasStored(role, 'manager')),
-        canForceOther: !!roleHasStored(role, 'super_admin')
+        canYouxin: !!(isSuper || isManager),
+        canForceOther: isSuper
       })
       await this.loadLiveDash()
     } catch (e) {
       console.warn('live studio bootstrap', e)
-      wx.showToast({ title: '工作台加载失败', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '工作台加载失败', loadError: '工作台加载失败' })
       setTimeout(() => {
         wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) })
       }, 400)
@@ -222,9 +258,125 @@ Page({
     this.goBroadcast()
   },
 
+  onNextStepCta() {
+    const action = this.data.nextStepAction
+    if (action === 'create') {
+      this.createSession(true)
+      return
+    }
+    if (action === 'shelf') {
+      this.goShelf()
+      return
+    }
+    if (action === 'endOther') {
+      this.forceEndOther()
+      return
+    }
+    this.goBroadcast()
+  },
+
+  onFlowTap(e) {
+    const step = Number((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.step) || 0)
+    wx.vibrateShort({ type: 'light' })
+    if (step === 1) {
+      if (!this.data.mineSessionId) this.createSession(false)
+      else this.setData({ tipTone: 'info', tipText: '场次已备好，可挂品或开播' })
+      return
+    }
+    if (step === 2) {
+      this.goShelf()
+      return
+    }
+    if (step === 3) {
+      if (!this.data.mineSessionId) {
+        this.createSession(true)
+        return
+      }
+      this.goBroadcast()
+    }
+  },
+
+  buildFlowAndNext(built) {
+    const mineId = built.mineSessionId
+    const shelfCount = (built.statusCard && built.statusCard.shelfCount) || 0
+    const tone = (built.statusCard && built.statusCard.statusTone) || ''
+    const statusLabel = (built.statusCard && built.statusCard.statusLabel) || ''
+    const showOnAir = !!built.showOnAir
+    const otherBusy = !!built.otherLiveHint
+    const configured = !!built.configured
+
+    let flowStep = 1
+    if (mineId && tone !== 'ended' && statusLabel !== '已结束' && statusLabel !== '暂无场次') {
+      if (shelfCount > 0 || showOnAir || tone === 'live') flowStep = 3
+      else flowStep = 2
+    }
+
+    let nextStepTitle = '先建一场'
+    let nextStepBody = '点「快捷开播」或流程条第 1 步，填写场次标题。'
+    let nextStepAction = 'create'
+    let nextStepCta = '快捷开播'
+
+    if (!configured) {
+      nextStepTitle = '推流尚未配置'
+      nextStepBody = '无法出画。请超管在云函数 manageLiveSession 填写 LIVE_* 后，再进开播页确认。'
+      nextStepAction = 'broadcast'
+      nextStepCta = '去开播页看说明'
+    } else if (otherBusy && !showOnAir) {
+      nextStepTitle = '同事正在直播'
+      nextStepBody = built.otherLiveHint || '同时仅 1 场。可去控制台查看，或等对方结束后再建场。'
+      nextStepAction = built.canForceOther && built.otherSessionId ? 'endOther' : 'broadcast'
+      nextStepCta = built.canForceOther && built.otherSessionId ? '结束对方场次' : '去控制台查看'
+    } else if (!mineId || tone === 'ended' || statusLabel === '已结束' || statusLabel === '暂无场次') {
+      if (tone === 'ended' || statusLabel === '已结束') {
+        nextStepTitle = '上一场已结束'
+        nextStepBody = '可新建场次再开播；历史场次保留赞/留言/峰值供复盘。'
+        nextStepAction = 'create'
+        nextStepCta = '新建场次'
+        flowStep = 1
+      } else {
+        nextStepTitle = '先建一场'
+        nextStepBody = '创建本人场次后，再挂藏品、写开场公告，最后真机开播。'
+        nextStepAction = 'create'
+        nextStepCta = '快捷开播'
+        flowStep = 1
+      }
+    } else if (showOnAir || tone === 'live') {
+      nextStepTitle = '直播进行中'
+      nextStepBody = '保持推流稳定；可随时改挂品讲解顺序，或回控制台结束本场。'
+      nextStepAction = 'broadcast'
+      nextStepCta = '进入开播'
+      flowStep = 3
+    } else if (shelfCount === 0) {
+      nextStepTitle = '挂上本场藏品'
+      nextStepBody = '观众进房需要挂车。从藏品库选品上架，并可设「讲解中」。'
+      nextStepAction = 'shelf'
+      nextStepCta = '去挂品'
+      flowStep = 2
+    } else {
+      nextStepTitle = '可以开播了'
+      nextStepBody = built.enabled
+        ? '挂品已就绪。真机进入开播控制台开始推流；模拟器无法出画。'
+        : '挂品已就绪，但 C 端馆内直播开关未开——观众看不到入口。可先推流自测，或请超管打开开关。'
+      nextStepAction = 'broadcast'
+      nextStepCta = '开始直播'
+      flowStep = 3
+    }
+
+    return {
+      flowStep,
+      flowHot1: flowStep === 1,
+      flowHot2: flowStep === 2,
+      flowHot3: flowStep === 3 || showOnAir,
+      nextStepTitle,
+      nextStepBody,
+      nextStepAction,
+      nextStepCta
+    }
+  },
+
   goBroadcast() {
     if (!this.data.mineSessionId) {
-      wx.showToast({ title: '请先新建场次', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '请先新建场次' })
       return
     }
     wx.vibrateShort({ type: 'light' })
@@ -233,7 +385,7 @@ Page({
 
   goShelf() {
     if (!this.data.mineSessionId) {
-      wx.showToast({ title: '请先新建场次再挂品', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '请先新建场次再挂品' })
       return
     }
     wx.vibrateShort({ type: 'light' })
@@ -262,7 +414,7 @@ Page({
 
   goYouxin() {
     if (!this.data.canYouxin) {
-      wx.showToast({ title: '有信由超管/店长发送，可先备好本场话术', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: '有信由超管/店长发送，可先备好本场话术' })
       return
     }
     wx.vibrateShort({ type: 'light' })
@@ -271,39 +423,39 @@ Page({
 
   goPayslip() {
     if (!this.data.canPayslip) {
-      wx.showToast({ title: '暂无工资条权限', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '暂无工资条权限' })
       return
     }
     wx.vibrateShort({ type: 'light' })
     wx.navigateTo({
       url: '/subpackages/manager/payslip/index?workspace=live',
-      fail: () => wx.showToast({ title: '工资条暂不可用', icon: 'none' })
+      fail: () => this.setData({ tipTone: 'warn', tipText: '工资条暂不可用' })
     })
   },
 
   goAttendance() {
     if (!this.data.canAttendance) {
-      wx.showToast({ title: '暂无考勤权限', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '暂无考勤权限' })
       return
     }
     wx.vibrateShort({ type: 'light' })
     wx.navigateTo({
       url: '/subpackages/extra/staff/attendance/index',
-      fail: () => wx.showToast({ title: '考勤页暂不可用', icon: 'none' })
+      fail: () => this.setData({ tipTone: 'warn', tipText: '考勤页暂不可用' })
     })
   },
 
   copyTalkingPoints() {
     const text = this.data.talkText
     if (!text) {
-      wx.showToast({ title: '先挂品或写公告，再复制提纲', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '先挂品或写公告，再复制提纲' })
       return
     }
     wx.setClipboardData({
       data: text,
       success: () => {
         this.setData({ copyHint: '已复制到剪贴板，可贴到备忘或有信' })
-        wx.showToast({ title: '提纲已复制', icon: 'success' })
+        this.setData({ tipTone: 'info', tipText: '提纲已复制' })
         clearTimeout(this._copyHintTimer)
         this._copyHintTimer = setTimeout(() => this.setData({ copyHint: '' }), 2400)
       }
@@ -318,7 +470,7 @@ Page({
       data: `【${seg.heading}】\n${seg.body}`,
       success: () => {
         this.setData({ copyHint: `已复制「${seg.heading}」` })
-        wx.showToast({ title: '本段已复制', icon: 'success' })
+        this.setData({ tipTone: 'info', tipText: '本段已复制' })
         clearTimeout(this._copyHintTimer)
         this._copyHintTimer = setTimeout(() => this.setData({ copyHint: '' }), 2400)
       }
@@ -329,10 +481,10 @@ Page({
     wx.vibrateShort({ type: 'light' })
     await this.loadLiveDash({ preferFresh: true })
     if (!this.data.talkText) {
-      wx.showToast({ title: '先挂品或写公告再生成', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '先挂品或写公告再生成' })
       return
     }
-    wx.showToast({ title: '提纲已按挂品重排', icon: 'none' })
+    this.setData({ tipTone: 'info', tipText: '提纲已按挂品重排' })
   },
 
   onConfigAction() {
@@ -348,7 +500,7 @@ Page({
 
   async forceEndOther() {
     if (!this.data.canForceOther || !this.data.otherSessionId) {
-      wx.showToast({ title: '仅超管可结束对方场次', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '仅超管可结束对方场次' })
       return
     }
     const ok = await new Promise((resolve) => {
@@ -368,13 +520,13 @@ Page({
       })
       const result = (res && res.result) || {}
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '结束失败'), icon: 'none' })
+        this.setData({ tipTone: 'warn', tipText: formatCloudFnError(result, result.msg || '结束失败') })
         return
       }
-      wx.showToast({ title: '对方场次已结束', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: '对方场次已结束' })
       await this.loadLiveDash({ preferFresh: true })
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '结束失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '结束失败') })
     } finally {
       this.setData({ ending: false })
     }
@@ -383,7 +535,7 @@ Page({
   async updateShelfAction(payload) {
     const sessionId = this.data.mineSessionId
     if (!sessionId) {
-      wx.showToast({ title: '请先新建场次', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '请先新建场次' })
       return
     }
     if (this.data.shelfBusy) return
@@ -395,7 +547,7 @@ Page({
       })
       const result = (res && res.result) || {}
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '挂车更新失败'), icon: 'none' })
+        this.setData({ tipTone: 'warn', tipText: formatCloudFnError(result, result.msg || '挂车更新失败') })
         return
       }
       writeLiveSnapshot(result.session, {
@@ -404,7 +556,7 @@ Page({
       })
       await this.loadLiveDash({ preferFresh: true })
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '挂车更新失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '挂车更新失败') })
     } finally {
       this.setData({ shelfBusy: false })
     }
@@ -476,7 +628,7 @@ Page({
 
     let primaryCtaLabel = '快捷开播'
     let primaryCtaAction = 'create'
-    if (!mineSessionId) {
+    if (!mineSessionId || (mine && mine.status === 'ended')) {
       primaryCtaLabel = '快捷开播'
       primaryCtaAction = 'create'
     } else if (mine && mine.status === 'idle') {
@@ -486,8 +638,8 @@ Page({
       primaryCtaLabel = '进入开播'
       primaryCtaAction = 'broadcast'
     } else {
-      primaryCtaLabel = '进入开播'
-      primaryCtaAction = 'broadcast'
+      primaryCtaLabel = '新建场次'
+      primaryCtaAction = 'create'
     }
 
     const adminHints = []
@@ -592,6 +744,7 @@ Page({
       })
 
       const built = this.buildStatusFromDashboard(result)
+      const flowNext = this.buildFlowAndNext({ ...built, canForceOther: this.data.canForceOther })
       if (token !== this._dashToken) return
       const focus = result.mine || result.lastEnded || null
       if (focus) {
@@ -605,6 +758,7 @@ Page({
         loadError: '',
         recentSessions: recent,
         ...built,
+        ...flowNext,
         adminHint: built.adminHint || (result.msg && (!result.configured || result.enabled !== true) ? result.msg : '')
       })
     } catch (e) {
@@ -635,7 +789,7 @@ Page({
   async saveNotice() {
     const sessionId = this.data.noticeSessionId
     if (!sessionId) {
-      wx.showToast({ title: '请先新建场次', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '请先新建场次' })
       return
     }
     const notice = String(this.data.noticeDraft || '').trim().slice(0, 80)
@@ -646,13 +800,13 @@ Page({
       })
       const result = (res && res.result) || {}
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '保存失败'), icon: 'none' })
+        this.setData({ tipTone: 'warn', tipText: formatCloudFnError(result, result.msg || '保存失败') })
         return
       }
-      wx.showToast({ title: '公告已更新', icon: 'success' })
+      this.setData({ tipTone: 'info', tipText: '公告已更新' })
       this.loadLiveDash()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '保存失败') })
     }
   },
 
@@ -678,15 +832,15 @@ Page({
       const result = (res && res.result) || {}
       this.setData({ creating: false })
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '创建失败'), icon: 'none' })
+        this.setData({ tipTone: 'warn', tipText: formatCloudFnError(result, result.msg || '创建失败') })
         return
       }
-      wx.showToast({ title: goBroadcastAfter ? '场次已建，进入控制台' : '场次已创建', icon: 'success' })
+      this.setData({ tipTone: 'info', tipText: goBroadcastAfter ? '场次已建，进入控制台' : '场次已创建' })
       await this.loadLiveDash()
       if (goBroadcastAfter) goLiveBroadcast()
     } catch (e) {
       this.setData({ creating: false })
-      wx.showToast({ title: formatCloudFnError(e, '创建失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '创建失败') })
     }
   },
 
@@ -707,10 +861,10 @@ Page({
         noticeSessionId: item._id,
         noticeDraft: item.notice || ''
       })
-      wx.showToast({ title: '已选中该场公告', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: '已选中该场公告' })
       return
     }
-    wx.showToast({ title: '仅可操作本人场次', icon: 'none' })
+    this.setData({ tipTone: 'warn', tipText: '仅可操作本人场次' })
   },
 
   onSessionEditNotice(e) {
@@ -723,7 +877,7 @@ Page({
   async forceEndLive() {
     const id = this.data.mineSessionId
     if (!id || !this.data.canEndSession) {
-      wx.showToast({ title: '没有可结束场次', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '没有可结束场次' })
       return
     }
     const ok = await new Promise((resolve) => {
@@ -743,14 +897,14 @@ Page({
       })
       const result = (res && res.result) || {}
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '结束失败'), icon: 'none' })
+        this.setData({ tipTone: 'warn', tipText: formatCloudFnError(result, result.msg || '结束失败') })
         return
       }
-      wx.showToast({ title: '已结束', icon: 'success' })
+      this.setData({ tipTone: 'info', tipText: '已结束' })
       writeLiveSnapshot(result.session, { status: 'ended', configured: this.data.configured, enabled: this.data.enabled })
       await this.loadLiveDash({ preferFresh: true })
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '结束失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '结束失败') })
     } finally {
       this.setData({ ending: false })
     }

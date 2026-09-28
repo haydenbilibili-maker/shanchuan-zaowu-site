@@ -1,0 +1,2 @@
+@import "../../../play-solar/index.wxss";
+@import "../body.wxss";

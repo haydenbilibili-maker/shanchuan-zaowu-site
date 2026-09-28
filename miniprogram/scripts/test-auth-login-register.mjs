@@ -30,8 +30,8 @@ const ONBOARD_JS = 'miniprogram/subpackages/extra/user/onboarding/index.js'
 const ONBOARD_WXML = 'miniprogram/subpackages/extra/user/onboarding/index.wxml'
 const DONE_JS = 'miniprogram/subpackages/extra/user/onboarding/done.js'
 const DONE_WXML = 'miniprogram/subpackages/extra/user/onboarding/done.wxml'
-const DIALOG_JS = 'miniprogram/components/RegisterAuthDialog/index.js'
-const DIALOG_WXML = 'miniprogram/components/RegisterAuthDialog/index.wxml'
+const DIALOG_JS = 'miniprogram/subpackages/feature/components/RegisterAuthDialog/index.js'
+const DIALOG_WXML = 'miniprogram/subpackages/feature/components/RegisterAuthDialog/index.wxml'
 const IDENTIFY_WXML = 'miniprogram/subpackages/feature/identify/result/index.wxml'
 
 let passed = 0

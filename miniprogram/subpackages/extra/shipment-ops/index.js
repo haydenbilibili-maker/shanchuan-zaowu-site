@@ -1,29 +1,42 @@
 /**
- * 门店出货单 — 主录入 + 出货观测台
- * manageStoreShipment → ops_shipments
+ * 出货中心：开单 · 单据 · 总览 · 资料（店长只读）。蓝图 admin/docs/出货中心_融合_2026-09-28.md
+ * 账本 ops_shipments（manageStoreShipment）；旧 shipment-sku 为重定向壳。开单 / 资料见 ./parts。
  */
 const { guardStaffPage } = require('../utils/staffAuth')
 const { formatCloudFnError } = require('../utils/memberScan')
+const { SHIPMENT_FN, callCloud, money, sheetBodyPx, materialLine } = require('./parts/shared')
+const createPart = require('./parts/create')
+const libraryPart = require('./parts/library')
 
-const FN = 'manageStoreShipment'
+const TAB_STORAGE_KEY = 'shipment_center_tab_v1'
+const TAB_ALIAS = { sku: 'create', create: 'create', entry: 'create', list: 'list', overview: 'overview', library: 'library', master: 'library' }
 
 const STATUS_TONE = {
   draft: 'muted',
   confirmed: 'brass',
+  pending: 'brass',
   shipped: 'ok',
+  received: 'ok',
+  completed: 'ok',
   cancelled: 'muted'
+}
+
+const SETTLE_TONE = {
+  unsettled: 'warn',
+  paid_pending: 'brass',
+  settled: 'ok'
+}
+
+const ENTRY_PATH_LABEL = {
+  sku: 'SKU开单',
+  paste: '粘贴解析',
+  single: '单条录入'
 }
 
 const SOURCE_TONE = {
   feishu: 'feishu',
   erp: 'erp',
   manual: 'muted'
-}
-
-function money(n) {
-  const v = Number(n)
-  if (!Number.isFinite(v)) return '0'
-  return v.toLocaleString('zh-CN', { maximumFractionDigits: 2 })
 }
 
 function moneySigned(n) {
@@ -70,132 +83,100 @@ function deltaText(pct) {
   return `${sign}${v}%`
 }
 
-Page({
-  data: {
-    ready: false,
-    loading: false,
-    dashLoading: false,
-    saving: false,
-    parsing: false,
-    canWrite: true,
-    isSuper: false,
-    activeTab: 'overview',
+function toneOf(v) {
+  if (v == null) return 'flat'
+  const n = Number(v)
+  return n < 0 ? 'down' : n > 0 ? 'up' : 'flat'
+}
 
-    keyword: '',
-    storeFilter: '',
-    storeFilterIndex: 0,
-    storeFilterNames: ['全部门店'],
-    storeFilterIds: [''],
-    statusFilter: 'all',
-    statusFilterIndex: 0,
-    statusFilterNames: ['全部状态'],
-    statusFilterValues: ['all'],
-    sourceFilter: 'all',
-    sourceFilterIndex: 0,
-    sourceFilterNames: ['全部来源'],
-    sourceFilterValues: ['all'],
-    dateFrom: '',
-    dateTo: '',
-    statuses: [],
-    sources: [],
-    stores: [],
-    list: [],
-    summary: {
-      count: 0,
-      totalQty: 0,
-      itemCount: 0,
-      byStore: []
-    },
-    showPaste: false,
-    entryMode: 'single',
-    pasteText: '',
-    parsePreview: null,
-    parseErrors: [],
-    parseWarnings: [],
-    failedLines: [],
-    writebackMsg: '',
-    showDetail: false,
-    detail: null,
+const baseData = {
+  ready: false,
+  isSuper: false,
+  canWrite: true,
+  activeTab: 'list',
+  tabs: [],
+  tipTone: 'info',
+  tipText: '',
+  sheetBodyPx: 420,
 
-    // 单条录入
-    form: {
-      storeId: '',
-      shipmentDate: '',
-      itemName: '',
-      spec: '',
-      category: '',
-      qty: '1',
-      unitPrice: '',
-      buyerName: '',
-      customerName: '',
-      status: 'confirmed',
-      expressCompany: '',
-      trackingNo: '',
-      note: '',
-      productId: '',
-      skuId: '',
-      inventoryRecordId: '',
-      linkedLabel: ''
-    },
-    formStoreIndex: 0,
-    formStoreNames: [],
-    formStoreIds: [],
-    formCategoryIndex: 0,
-    formCategoryNames: ['不选', '工具', '藏品'],
-    formCategoryValues: ['', '工具', '藏品'],
-    formStatusIndex: 0,
-    formStatusNames: ['已确认'],
-    formStatusValues: ['confirmed'],
-    formAmountPreview: '',
-    skuKeyword: '',
-    skuHits: [],
-    skuSearching: false,
+  loading: false,
+  dashLoading: false,
+  dashError: false,
+  listError: false,
+  removePendingId: '',
 
-    // dashboard
-    sourceOpen: false,
-    legendOpen: false,
-    detailOpen: false,
-    sectionOpen: {
-      customers: true,
-      stores: false,
-      status: false
-    },
-    listMore: {
-      customers: false
-    },
-    sourceNote: '',
-    verdict: null,
-    signalBoard: {
-      items: [],
-      summary: { ok: 0, warn: 0, danger: 0 },
-      rulesNote: ''
-    },
-    kpis: null,
-    completeness: null,
-    structure: [],
-    trend: [],
-    trendCount: [],
-    trendMode: 'empty',
-    trendSingle: null,
-    trendNote: '',
-    charts: {
-      byCustomer: [],
-      byCustomerView: [],
-      byCustomerMore: 0,
-      byStore: [],
-      byStatus: []
-    },
-    dashLoaded: false
-  },
+  stores: [],
+  storeNames: [],
+  keyword: '',
+  filterOpen: false,
+  storeFilter: '',
+  storeFilterIndex: 0,
+  storeFilterNames: ['全部门店'],
+  storeFilterIds: [''],
+  statusFilter: 'all',
+  statusFilterIndex: 0,
+  statusFilterNames: ['全部状态'],
+  statusFilterValues: ['all'],
+  sourceFilter: 'all',
+  sourceFilterIndex: 0,
+  sourceFilterNames: ['全部来源'],
+  sourceFilterValues: ['all'],
+  dateFrom: '',
+  dateTo: '',
+  statuses: [],
+  sources: [],
+  list: [],
+  summary: { count: 0, totalQty: 0, itemCount: 0, byStore: [] },
+  statusQuick: '',
+  listTip: '',
+  listTipTone: 'info',
+  /** 写入后高亮的新单 id（金边 + 「新」角标，置顶） */
+  highlightIds: {},
+  showAgain: false,
 
+  showDetail: false,
+  detail: null,
+  detailBusy: false,
+  detailTip: '',
+  detailTipTone: 'info',
+  shipForm: { expressCompany: '', trackingNo: '' },
+  nextActions: [],
+
+  sourceOpen: false,
+  legendOpen: false,
+  detailOpen: false,
+  sectionOpen: { customers: true, stores: false, status: false },
+  listMore: { customers: false },
+  sourceNote: '',
+  verdict: null,
+  signalBoard: { items: [], summary: { ok: 0, warn: 0, danger: 0 }, rulesNote: '' },
+  kpis: null,
+  completeness: null,
+  structure: [],
+  trend: [],
+  trendCount: [],
+  trendMode: 'empty',
+  trendSingle: null,
+  trendNote: '',
+  charts: { byCustomer: [], byCustomerView: [], byCustomerMore: 0, byStore: [], byStatus: [] },
+  dashLoaded: false
+}
+
+const coreMethods = {
   _keywordTimer: null,
 
-  async onLoad() {
+  async onLoad(options) {
+    const opts = options || {}
     const role = await guardStaffPage('manager')
     if (!role) return
-    this.setData({ ready: true, isSuper: !!(role.superAdmin || role.isSuperAdmin) })
+    this.setData({ ready: true, isSuper: !!(role.superAdmin || role.isSuperAdmin), sheetBodyPx: sheetBodyPx() })
     await this.loadMeta()
-    await Promise.all([this.loadDashboard(), this.loadList()])
+    this.applyTab(this.pickInitialTab(opts), { mode: opts.mode, persist: false })
+    if (this.data.activeTab !== 'list') this.loadList()
+  },
+
+  onShow() {
+    if (this.consumeEditReturn) this.consumeEditReturn()
   },
 
   onUnload() {
@@ -203,31 +184,59 @@ Page({
   },
 
   onPullDownRefresh() {
-    const tasks =
-      this.data.activeTab === 'overview'
-        ? [this.loadDashboard(), this.loadList()]
-        : [this.loadList()]
+    const tab = this.data.activeTab
+    const tasks = []
+    if (tab === 'overview') tasks.push(this.loadDashboard(), this.loadList())
+    else if (tab === 'library') tasks.push(this.loadLibrary())
+    else tasks.push(this.loadList())
     Promise.all(tasks).finally(() => wx.stopPullDownRefresh())
+  },
+
+  /** 页签可见性：开单需可写 */
+  visibleTabs() {
+    const tabs = []
+    if (this.data.canWrite) tabs.push({ key: 'create', label: '开单' })
+    tabs.push({ key: 'list', label: '单据' }, { key: 'overview', label: '总览' }, { key: 'library', label: '资料' })
+    return tabs
+  },
+
+  /** ?tab= 优先 → 上次停留 → 超管默认开单 / 店长默认单据；无权的页签回落到单据 */
+  pickInitialTab(opts) {
+    let tab = TAB_ALIAS[String((opts && opts.tab) || '').trim()] || ''
+    if (!tab) {
+      try {
+        tab = TAB_ALIAS[String(wx.getStorageSync(TAB_STORAGE_KEY) || '')] || ''
+      } catch (e) {
+        tab = ''
+      }
+    }
+    if (!tab) tab = this.data.isSuper && this.data.canWrite ? 'create' : 'list'
+    const keys = this.visibleTabs().map((t) => t.key)
+    return keys.indexOf(tab) !== -1 ? tab : 'list'
+  },
+
+  applyTab(want, opts) {
+    const o = opts || {}
+    const tab = this.visibleTabs().some((t) => t.key === want) ? want : 'list'
+    this.setData({ activeTab: tab })
+    if (o.persist !== false) {
+      try {
+        wx.setStorageSync(TAB_STORAGE_KEY, tab)
+      } catch (e) {
+        /* 记不住上次页签不影响使用 */
+      }
+    }
+    if (tab === 'list') this.loadList()
+    else if (tab === 'overview' && !this.data.dashLoaded) this.loadDashboard()
+    else if (tab === 'create') this.enterCreate(o.mode)
+    else if (tab === 'library') this.enterLibrary()
   },
 
   switchTab(e) {
     const tab = String((e.currentTarget.dataset || {}).tab || '')
     if (!tab || tab === this.data.activeTab) return
-    this.setData({ activeTab: tab })
-    if (tab === 'overview' && !this.data.dashLoaded) {
-      this.loadDashboard()
-    }
-  },
-
-  async callFn(data) {
-    const res = await wx.cloud.callFunction({ name: FN, data: data || {} })
-    const result = (res && res.result) || {}
-    if (!result.success) {
-      const err = new Error(result.msg || '操作失败')
-      err.code = result.code
-      throw err
-    }
-    return result
+    const mode = String((e.currentTarget.dataset || {}).mode || '')
+    this.applyTab(tab, { mode })
   },
 
   formatTime(ts) {
@@ -238,51 +247,9 @@ Page({
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
   },
 
-  decorateParsed(parsed) {
-    if (!parsed) return null
-    const shipments = (parsed.shipments || []).map((b) => ({
-      ...b,
-      collapsed: !!b.collapsed
-    }))
-    return {
-      ...parsed,
-      canWrite: !!(parsed.canWrite || (parsed.ok && shipments.length && parsed.shipmentDate)),
-      shipments,
-      summary: parsed.summary || {
-        storeCount: shipments.length,
-        itemCount: shipments.reduce((n, b) => n + (b.items || []).length, 0),
-        totalQty: shipments.reduce((n, b) => n + (Number(b.totalQty) || 0), 0)
-      }
-    }
-  },
-
-  recomputePreviewTotals(parsePreview) {
-    if (!parsePreview || !parsePreview.shipments) return parsePreview
-    const shipments = parsePreview.shipments.map((b) => {
-      const items = b.items || []
-      const totalQty = items.reduce((n, it) => n + (Number(it.qty) || 0), 0)
-      return {
-        ...b,
-        itemCount: items.length,
-        totalQty
-      }
-    })
-    return {
-      ...parsePreview,
-      shipments,
-      canWrite: shipments.length > 0 && !!parsePreview.shipmentDate,
-      summary: {
-        shipmentDate: parsePreview.shipmentDate || '',
-        storeCount: shipments.length,
-        itemCount: shipments.reduce((n, b) => n + b.itemCount, 0),
-        totalQty: shipments.reduce((n, b) => n + b.totalQty, 0)
-      }
-    }
-  },
-
   async loadMeta() {
     try {
-      const result = await this.callFn({ action: 'meta' })
+      const result = await callCloud(SHIPMENT_FN, { action: 'meta' })
       const stores = result.stores || []
       const statuses = result.statuses || []
       const sources = result.sources || []
@@ -290,39 +257,36 @@ Page({
         { value: '工具', label: '工具' },
         { value: '藏品', label: '藏品' }
       ]
-      const isSuper = !!result.isSuper || this.data.isSuper
-      const entryStatuses = (statuses.length
-        ? statuses
-        : [{ value: 'confirmed', label: '已确认' }]
-      ).filter((s) => s.value !== 'cancelled')
-      const confirmedIdx = Math.max(
-        0,
-        entryStatuses.findIndex((s) => s.value === 'confirmed')
+      const entryStatuses = (statuses.length ? statuses : [{ value: 'confirmed', label: '已确认' }]).filter(
+        (s) => s.value !== 'cancelled'
       )
+      const confirmedIdx = Math.max(0, entryStatuses.findIndex((s) => s.value === 'confirmed'))
       this.setData({
         stores,
+        storeNames: stores.map((s) => s.name),
         statuses,
         sources,
         canWrite: result.canWrite !== false,
-        isSuper,
+        isSuper: !!result.isSuper || this.data.isSuper,
         storeFilterNames: ['全部门店'].concat(stores.map((s) => s.name)),
         storeFilterIds: [''].concat(stores.map((s) => s.id)),
         statusFilterNames: ['全部状态'].concat(statuses.map((s) => s.label)),
         statusFilterValues: ['all'].concat(statuses.map((s) => s.value)),
         sourceFilterNames: ['全部来源'].concat(sources.map((s) => s.label)),
         sourceFilterValues: ['all'].concat(sources.map((s) => s.value)),
-        formStoreNames: stores.map((s) => s.name),
-        formStoreIds: stores.map((s) => s.id),
         formCategoryNames: ['不选'].concat(categories.map((c) => c.label || c.value)),
         formCategoryValues: [''].concat(categories.map((c) => c.value)),
         formStatusNames: entryStatuses.map((s) => s.label),
         formStatusValues: entryStatuses.map((s) => s.value),
-        formStatusIndex: confirmedIdx >= 0 ? confirmedIdx : 0
+        formStatusIndex: confirmedIdx
       })
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '元数据未能取回'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '元数据未能取回') })
     }
+    this.setData({ tabs: this.visibleTabs() })
   },
+
+  // 总览（观测台，原样保留）
 
   toggleSource() {
     this.setData({ sourceOpen: !this.data.sourceOpen })
@@ -365,25 +329,16 @@ Page({
     const listMore = this.data.listMore || {}
     const list = Array.isArray(charts.byCustomer) ? charts.byCustomer : []
     if (listMore.customers || list.length <= 5) {
-      this.setData({
-        'charts.byCustomerView': list,
-        'charts.byCustomerMore': 0
-      })
+      this.setData({ 'charts.byCustomerView': list, 'charts.byCustomerMore': 0 })
     } else {
-      this.setData({
-        'charts.byCustomerView': list.slice(0, 5),
-        'charts.byCustomerMore': list.length - 5
-      })
+      this.setData({ 'charts.byCustomerView': list.slice(0, 5), 'charts.byCustomerMore': list.length - 5 })
     }
   },
 
   async loadDashboard() {
-    this.setData({ dashLoading: true })
+    this.setData({ dashLoading: true, dashError: false })
     try {
-      const result = await this.callFn({
-        action: 'dashboard',
-        storeId: this.data.storeFilter || undefined
-      })
+      const result = await callCloud(SHIPMENT_FN, { action: 'dashboard', storeId: this.data.storeFilter || undefined })
       const k = result.kpis || {}
       const charts = result.charts || {}
       const signalsPack = result.signals || {}
@@ -392,16 +347,12 @@ Page({
       const completeness = charts.completeness || {}
       const okPct = Number(completeness.okPct)
       const okBar = Number.isFinite(okPct) ? Math.max(0, Math.min(100, Math.round(okPct))) : 0
-
       const trendRows = charts.shipmentTrend || []
-      const trendAmount = withPct(trendRows)
-      const trendCount = withPct(trendRows, 'count')
 
       this.setData({
         dashLoaded: true,
+        dashError: false,
         sourceNote: result.sourceNote || '',
-        canWrite: result.canWrite !== false,
-        isSuper: result.isSuper != null ? !!result.isSuper : this.data.isSuper,
         verdict: {
           title: verdictRaw.title || '出货总览',
           label: verdictRaw.label || '—',
@@ -422,41 +373,20 @@ Page({
           monthCount: k.monthCount || 0,
           monthAmountText: money(k.monthAmount),
           monthDeltaText: deltaText(k.monthDeltaPct),
-          monthDeltaTone:
-            k.monthDeltaPct == null ? 'flat' : Number(k.monthDeltaPct) < 0 ? 'down' : Number(k.monthDeltaPct) > 0 ? 'up' : 'flat',
-          amountDeltaText: deltaText(k.amountDeltaPct),
-          amountDeltaTone:
-            k.amountDeltaPct == null
-              ? 'flat'
-              : Number(k.amountDeltaPct) < 0
-                ? 'down'
-                : Number(k.amountDeltaPct) > 0
-                  ? 'up'
-                  : 'flat',
+          monthDeltaTone: toneOf(k.monthDeltaPct),
           netProfitText: moneySigned(k.netProfit),
           netProfitTone: Number(k.netProfit) < 0 ? 'down' : Number(k.netProfit) > 0 ? 'up' : 'flat',
           purchaseTotalText: money(k.purchaseTotal),
           hasPurchaseSample: !!k.hasPurchaseSample,
-          topCustomerName: k.topCustomerName || '',
           topShareText: k.topSharePct != null ? `${k.topSharePct}%` : '—'
         },
         completeness: {
           okPctText: Number.isFinite(okPct) ? `${okPct}%` : '—',
           okBar,
-          tone:
-            okPct == null
-              ? 'flat'
-              : okPct < 60
-                ? 'down'
-                : okPct < 85
-                  ? 'warn'
-                  : 'up',
+          tone: !Number.isFinite(okPct) ? 'flat' : okPct < 60 ? 'down' : okPct < 85 ? 'warn' : 'up',
           incompleteText:
-            completeness.incompleteCount != null
-              ? `${completeness.incompleteCount}/${completeness.total || 0}`
-              : '—',
-          zeroAmountPctText:
-            completeness.zeroAmountPct != null ? `${completeness.zeroAmountPct}%` : '—'
+            completeness.incompleteCount != null ? `${completeness.incompleteCount}/${completeness.total || 0}` : '—',
+          zeroAmountPctText: completeness.zeroAmountPct != null ? `${completeness.zeroAmountPct}%` : '—'
         },
         structure: (charts.categoryStructure || []).map((s) => ({
           key: s.key,
@@ -466,19 +396,18 @@ Page({
           widthPct: s.widthPct || Math.max(2, Math.round(s.pct || 0)),
           tone: s.tone || 'used'
         })),
-        trend: trendAmount,
-        trendCount,
+        trend: withPct(trendRows),
+        trendCount: withPct(trendRows, 'count'),
         trendMode: !trendRows.length ? 'empty' : trendRows.length === 1 ? 'single' : 'multi',
         trendNote: charts.trendNote || '',
-        trendSingle: (() => {
-          if (trendRows.length !== 1) return null
-          const r = trendRows[0]
-          return {
-            label: r.label || r.key || '',
-            amountText: money(r.amount),
-            count: Number(r.count) || 0
-          }
-        })(),
+        trendSingle:
+          trendRows.length === 1
+            ? {
+                label: trendRows[0].label || trendRows[0].key || '',
+                amountText: money(trendRows[0].amount),
+                count: Number(trendRows[0].count) || 0
+              }
+            : null,
         charts: {
           byCustomer: withPct(charts.byCustomer),
           byCustomerView: [],
@@ -489,16 +418,61 @@ Page({
       })
       this.refreshListViews()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '观测台未能展开'), icon: 'none' })
+      // 失败保留上次 KPI，勿伪装空盘
+      this.setData({ dashError: true, tipTone: 'warn', tipText: formatCloudFnError(e, '观测台未能展开') })
     } finally {
       this.setData({ dashLoading: false })
     }
   },
 
+  onRetryDash() {
+    this.loadDashboard()
+  },
+
+  // 单据
+
+  decorateRow(row) {
+    const next = ((this.data.statuses || []).find((s) => s.value === row.status) || {}).next || []
+    const nextActions = next.map((v) => {
+      const s = (this.data.statuses || []).find((x) => x.value === v)
+      return { value: v, label: s ? s.label : v }
+    })
+    return Object.assign({}, row, {
+      statusTone: STATUS_TONE[row.status] || 'muted',
+      sourceTone: SOURCE_TONE[row.source] || 'muted',
+      settleTone: SETTLE_TONE[row.settleStatus] || 'muted',
+      settleLabel: row.settleLabel || '',
+      pricingIncomplete: row.pricingStatus === 'incomplete',
+      amountText: row.totalAmount ? money(row.totalAmount) : '',
+      customerLine: row.customerName || row.storeName || '',
+      items: (row.items || []).map((it) => Object.assign({}, it, { matLine: materialLine(it) })),
+      itemsPreview: (row.items || [])
+        .slice(0, 3)
+        .map((it) => `${it.itemName}-${it.qty}`)
+        .join('、'),
+      moreItems: Math.max(0, (row.items || []).length - 3),
+      updatedAtText: this.formatTime(row.updatedAt),
+      canTransit: next.length > 0,
+      nextActions,
+      entryPathLabel: ENTRY_PATH_LABEL[row.entryPath] || '',
+      logisticsText:
+        row.expressCompany || row.trackingNo ? `${row.expressCompany || '快递'} ${row.trackingNo || ''}`.trim() : ''
+    })
+  },
+
+  /** 新单置顶（稳定分区，其余顺序不变） */
+  pinHighlighted(list) {
+    const hl = this.data.highlightIds || {}
+    if (!Object.keys(hl).length) return list
+    return list.filter((r) => hl[r._id]).concat(list.filter((r) => !hl[r._id]))
+  },
+
   async loadList() {
-    this.setData({ loading: true })
+    // 不清空 ok 成功条：写入后要靠它告诉用户「已进单据列表」
+    const keepOkTip = this.data.listTipTone === 'ok' && this.data.listTip
+    this.setData({ loading: true, listError: false, removePendingId: '' })
     try {
-      const result = await this.callFn({
+      const result = await callCloud(SHIPMENT_FN, {
         action: 'list',
         storeId: this.data.storeFilter || undefined,
         status: this.data.statusFilter,
@@ -508,64 +482,139 @@ Page({
         dateTo: this.data.dateTo || undefined,
         limit: 80
       })
-      const list = (result.list || []).map((row) => {
-        const next = ((this.data.statuses || []).find((s) => s.value === row.status) || {}).next || []
-        return {
-          ...row,
-          statusTone: STATUS_TONE[row.status] || 'muted',
-          sourceTone: SOURCE_TONE[row.source] || 'muted',
-          amountText: row.totalAmount ? money(row.totalAmount) : '',
-          customerLine: row.customerName || row.storeName || '',
-          itemsPreview: (row.items || [])
-            .slice(0, 3)
-            .map((it) => `${it.itemName}-${it.qty}`)
-            .join('、'),
-          moreItems: Math.max(0, (row.items || []).length - 3),
-          updatedAtText: this.formatTime(row.updatedAt),
-          canTransit: next.length > 0
-        }
-      })
-      this.setData({
+      const list = this.pinHighlighted((result.list || []).map((row) => this.decorateRow(row)))
+      const patch = {
         list,
+        listError: false,
         summary: result.summary || { count: 0, totalQty: 0, itemCount: 0, byStore: [] },
         canWrite: result.canWrite !== false
-      })
+      }
+      if (!keepOkTip) {
+        patch.listTip = ''
+        patch.listTipTone = 'info'
+      }
+      this.setData(patch)
+      return { ok: true, list, summary: patch.summary }
     } catch (e) {
-      this.setData({
-        list: [],
-        summary: { count: 0, totalQty: 0, itemCount: 0, byStore: [] }
-      })
-      wx.showToast({ title: formatCloudFnError(e, '出货单未能展开'), icon: 'none' })
+      // 失败保留上次列表，勿伪装空柜
+      const msg = formatCloudFnError(e, '出货单未能展开')
+      this.setData({ listError: true, listTip: msg, listTipTone: 'warn' })
+      return { ok: false, msg, list: this.data.list || [] }
     } finally {
       this.setData({ loading: false })
     }
   },
 
+  onRetryList() {
+    this.loadList()
+  },
+
+  summarizeRows(rows) {
+    const list = Array.isArray(rows) ? rows : []
+    const byStoreMap = {}
+    let totalQty = 0
+    let itemCount = 0
+    for (const row of list) {
+      totalQty += Number(row.totalQty) || 0
+      itemCount += (row.items || []).length || Number(row.itemCount) || 0
+      const sid = row.storeId || row.storeName || ''
+      if (!byStoreMap[sid]) {
+        byStoreMap[sid] = { storeId: sid, storeName: row.storeName || row.customerName || sid, totalQty: 0 }
+      }
+      byStoreMap[sid].totalQty += Number(row.totalQty) || 0
+    }
+    return { count: list.length, totalQty, itemCount, byStore: Object.keys(byStoreMap).map((k) => byStoreMap[k]) }
+  },
+
+  /**
+   * 写入成功统一收口：切单据 → 放开筛选 → 刷新 → 新单高亮置顶 + 成功条。
+   * 不回退（2026-09-24）：先 limit 再滤日期会藏新单；空态勿把成功 tip 显示成加载失败。
+   */
+  async revealAfterWrite(opts) {
+    const o = opts || {}
+    const tip = String(o.msg || '已写入出货单').trim() || '已写入出货单'
+    const shipmentDate = String(o.shipmentDate || '').trim()
+    const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(shipmentDate)
+    const created = Array.isArray(o.created) ? o.created : []
+    const highlightIds = {}
+    created.forEach((row) => {
+      if (row && row._id) highlightIds[row._id] = true
+    })
+    this.setData({
+      activeTab: 'list',
+      highlightIds,
+      showAgain: this.data.canWrite,
+      filterOpen: false,
+      statusQuick: '',
+      statusFilter: 'all',
+      statusFilterIndex: 0,
+      sourceFilter: 'all',
+      sourceFilterIndex: 0,
+      keyword: '',
+      dateFrom: dateOk ? shipmentDate : '',
+      dateTo: dateOk ? shipmentDate : '',
+      listTip: tip,
+      listTipTone: 'ok'
+    })
+    let loaded = await this.loadList()
+    // 若按出货日筛仍空：放开日期再刷（兼容旧云函数「limit 后滤日期」）
+    if (loaded && loaded.ok && !(loaded.list || []).length && created.length && dateOk) {
+      this.setData({ dateFrom: '', dateTo: '' })
+      loaded = await this.loadList()
+    }
+    if (loaded && !loaded.ok) {
+      // 真失败：保留 warn；有刚写入的单则乐观展示
+      if (created.length) {
+        const seeded = created.map((row) => this.decorateRow(row))
+        this.setData({
+          list: seeded,
+          summary: this.summarizeRows(seeded),
+          listTip: `${tip}（列表刷新失败：${loaded.msg || '未知错误'}；已展示刚写入单据）`,
+          listTipTone: 'warn'
+        })
+      }
+    } else if (!(this.data.list || []).length && created.length) {
+      const seeded = created.map((row) => this.decorateRow(row))
+      this.setData({ list: seeded, summary: this.summarizeRows(seeded), listTip: `${tip}（已展示刚写入单据）`, listTipTone: 'ok' })
+    } else {
+      this.setData({ listTip: tip, listTipTone: 'ok' })
+    }
+    this.setData({ dashLoaded: false })
+    try {
+      wx.pageScrollTo({ scrollTop: 0, duration: 180 })
+    } catch (e) {
+      /* ignore */
+    }
+  },
+
+  /** 成功条上的「再开一单」：回开单页签（保持原模式） */
+  onCreateAgain() {
+    this.setData({ showAgain: false, listTip: '', highlightIds: {} })
+    this.applyTab('create')
+  },
+
+  toggleFilter() {
+    this.setData({ filterOpen: !this.data.filterOpen })
+  },
+
   onStoreFilter(e) {
     const idx = parseInt(e.detail.value, 10) || 0
-    this.setData({
-      storeFilterIndex: idx,
-      storeFilter: this.data.storeFilterIds[idx] || ''
-    })
+    this.setData({ storeFilterIndex: idx, storeFilter: this.data.storeFilterIds[idx] || '' })
     this.loadList()
     if (this.data.activeTab === 'overview') this.loadDashboard()
+    else this.setData({ dashLoaded: false })
   },
 
   onStatusFilter(e) {
     const idx = parseInt(e.detail.value, 10) || 0
-    this.setData({
-      statusFilterIndex: idx,
-      statusFilter: this.data.statusFilterValues[idx] || 'all'
-    })
+    const value = this.data.statusFilterValues[idx] || 'all'
+    this.setData({ statusFilterIndex: idx, statusFilter: value, statusQuick: value === 'all' ? '' : value })
     this.loadList()
   },
 
   onSourceFilter(e) {
     const idx = parseInt(e.detail.value, 10) || 0
-    this.setData({
-      sourceFilterIndex: idx,
-      sourceFilter: this.data.sourceFilterValues[idx] || 'all'
-    })
+    this.setData({ sourceFilterIndex: idx, sourceFilter: this.data.sourceFilterValues[idx] || 'all' })
     this.loadList()
   },
 
@@ -596,515 +645,144 @@ Page({
     this.loadList()
   },
 
-  openPaste() {
-    if (!this.data.canWrite) {
-      wx.showToast({ title: '当前账号仅可查看', icon: 'none' })
-      return
-    }
+  onStatusQuick(e) {
+    const status = String((e.currentTarget.dataset || {}).status || '')
+    const values = this.data.statusFilterValues || []
+    const idx = values.indexOf(status || 'all')
     this.setData({
-      showPaste: true,
-      entryMode: 'single',
-      pasteText: '',
-      parsePreview: null,
-      parseErrors: [],
-      parseWarnings: [],
-      failedLines: [],
-      writebackMsg: '',
-      skuKeyword: '',
-      skuHits: [],
-      formAmountPreview: ''
+      statusQuick: status === 'all' ? '' : status,
+      statusFilter: status || 'all',
+      statusFilterIndex: idx >= 0 ? idx : 0
     })
-    this.resetSingleForm()
+    this.loadList()
   },
 
-  closePaste() {
-    if (this.data.saving) return
-    this.setData({ showPaste: false })
-  },
-
-  switchEntryMode(e) {
-    const mode = String((e.currentTarget.dataset || {}).mode || '')
-    if (!mode || mode === this.data.entryMode) return
-    this.setData({ entryMode: mode })
-  },
-
-  todayStr() {
-    const d = new Date()
-    const pad = (x) => String(x).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-  },
-
-  blankSingleForm() {
-    const storeIds = this.data.formStoreIds || []
-    const storeNames = this.data.formStoreNames || []
-    const statusValues = this.data.formStatusValues || ['confirmed']
-    const statusIdx = Math.max(0, statusValues.indexOf('confirmed'))
-    const storeId = storeIds[0] || ''
-    return {
-      form: {
-        storeId,
-        shipmentDate: this.todayStr(),
-        itemName: '',
-        spec: '',
-        category: '',
-        qty: '1',
-        unitPrice: '',
-        buyerName: '',
-        customerName: storeNames[0] || '',
-        status: statusValues[statusIdx] || 'confirmed',
-        expressCompany: '',
-        trackingNo: '',
-        note: '',
-        productId: '',
-        skuId: '',
-        inventoryRecordId: '',
-        linkedLabel: ''
-      },
-      formStoreIndex: 0,
-      formCategoryIndex: 0,
-      formStatusIndex: statusIdx >= 0 ? statusIdx : 0,
-      formAmountPreview: '',
-      skuKeyword: '',
-      skuHits: []
-    }
-  },
-
-  resetSingleForm() {
-    this.setData(this.blankSingleForm())
-  },
-
-  refreshFormAmountPreview() {
-    const form = this.data.form || {}
-    const qty = Number(form.qty)
-    const price = Number(form.unitPrice)
-    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(price) || price < 0) {
-      this.setData({ formAmountPreview: '' })
-      return
-    }
-    const total = Math.round(qty * price * 100) / 100
-    this.setData({ formAmountPreview: money(total) })
-  },
-
-  onFormInput(e) {
-    const field = String((e.currentTarget.dataset || {}).field || '')
-    if (!field) return
-    this.setData({ [`form.${field}`]: e.detail.value || '' }, () => {
-      if (field === 'qty' || field === 'unitPrice') this.refreshFormAmountPreview()
-    })
-  },
-
-  onFormStore(e) {
-    const idx = parseInt(e.detail.value, 10) || 0
-    const storeId = (this.data.formStoreIds || [])[idx] || ''
-    const storeName = (this.data.formStoreNames || [])[idx] || ''
-    const patch = {
-      formStoreIndex: idx,
-      'form.storeId': storeId
-    }
-    const curCustomer = String((this.data.form && this.data.form.customerName) || '').trim()
-    const prevName = (this.data.formStoreNames || [])[this.data.formStoreIndex] || ''
-    if (!curCustomer || curCustomer === prevName) {
-      patch['form.customerName'] = storeName
-    }
-    this.setData(patch)
-  },
-
-  onFormDate(e) {
-    this.setData({ 'form.shipmentDate': e.detail.value || '' })
-  },
-
-  onFormCategory(e) {
-    const idx = parseInt(e.detail.value, 10) || 0
-    this.setData({
-      formCategoryIndex: idx,
-      'form.category': (this.data.formCategoryValues || [])[idx] || ''
-    })
-  },
-
-  onFormStatus(e) {
-    const idx = parseInt(e.detail.value, 10) || 0
-    this.setData({
-      formStatusIndex: idx,
-      'form.status': (this.data.formStatusValues || [])[idx] || 'confirmed'
-    })
-  },
-
-  onSkuKeyword(e) {
-    this.setData({ skuKeyword: String((e.detail && e.detail.value) || '') })
-  },
-
-  async searchSku() {
-    const keyword = String(this.data.skuKeyword || '').trim()
-    if (!keyword) {
-      wx.showToast({ title: '请输入品名关键词', icon: 'none' })
-      return
-    }
-    if (this.data.skuSearching) return
-    this.setData({ skuSearching: true })
-    try {
-      const result = await this.callFn({
-        action: 'searchSku',
-        keyword,
-        limit: 16
-      })
-      const list = result.list || []
-      this.setData({ skuHits: list, skuSearching: false })
-      if (!list.length) {
-        wx.showToast({ title: '未找到匹配藏品', icon: 'none' })
-      }
-    } catch (e) {
-      this.setData({ skuSearching: false })
-      wx.showToast({ title: formatCloudFnError(e, '搜索失败'), icon: 'none' })
-    }
-  },
-
-  selectSkuHit(e) {
-    const idx = Number((e.currentTarget.dataset || {}).idx)
-    const hit = (this.data.skuHits || [])[idx]
-    if (!hit) return
-    const price =
-      hit.unitPrice != null && Number(hit.unitPrice) > 0 ? String(hit.unitPrice) : ''
-    const linkedBits = [hit.sourceLabel, hit.spec, hit.skuId].filter(Boolean)
-    this.setData(
-      {
-        'form.itemName': hit.itemName || '',
-        'form.spec': hit.spec || '',
-        'form.unitPrice': price || this.data.form.unitPrice || '',
-        'form.productId': hit.productId || '',
-        'form.skuId': hit.skuId || '',
-        'form.inventoryRecordId': hit.inventoryRecordId || '',
-        'form.linkedLabel': linkedBits.join(' · ') || hit.itemName || ''
-      },
-      () => this.refreshFormAmountPreview()
-    )
-    wx.showToast({ title: '已带入品名', icon: 'none' })
-  },
-
-  async confirmSingle() {
-    if (this.data.saving) return
-    const form = this.data.form || {}
-    const storeId = String(form.storeId || '').trim()
-    if (!storeId) {
-      wx.showToast({ title: '请选择门店', icon: 'none' })
-      return
-    }
-    const shipmentDate = String(form.shipmentDate || '').trim()
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(shipmentDate)) {
-      wx.showToast({ title: '请选择出货日期', icon: 'none' })
-      return
-    }
-    const itemName = String(form.itemName || '').trim()
-    if (!itemName) {
-      wx.showToast({ title: '请填写或选择品名', icon: 'none' })
-      return
-    }
-    const qty = Number(form.qty)
-    if (!Number.isFinite(qty) || qty <= 0) {
-      wx.showToast({ title: '数量须大于 0', icon: 'none' })
-      return
-    }
-    const unitPrice = Number(form.unitPrice)
-    const price = Number.isFinite(unitPrice) && unitPrice >= 0 ? unitPrice : 0
-    const totalPrice = Math.round(qty * price * 100) / 100
-    const storeName =
-      (this.data.formStoreNames || [])[this.data.formStoreIndex] || ''
-
-    this.setData({ saving: true })
-    try {
-      await this.callFn({
-        action: 'create',
-        item: {
-          storeId,
-          shipmentDate,
-          customerName: String(form.customerName || '').trim() || storeName,
-          buyerName: String(form.buyerName || '').trim(),
-          category: String(form.category || '').trim(),
-          items: [
-            {
-              itemName,
-              spec: String(form.spec || '').trim(),
-              category: String(form.category || '').trim(),
-              qty,
-              unitPrice: price,
-              totalPrice,
-              productId: String(form.productId || '').trim(),
-              skuId: String(form.skuId || '').trim(),
-              inventoryRecordId: String(form.inventoryRecordId || '').trim()
-            }
-          ],
-          unitPrice: price,
-          inventoryRecordId: String(form.inventoryRecordId || '').trim(),
-          productId: String(form.productId || '').trim(),
-          skuId: String(form.skuId || '').trim(),
-          expressCompany: String(form.expressCompany || '').trim(),
-          trackingNo: String(form.trackingNo || '').trim(),
-          note: String(form.note || '').trim(),
-          status: String(form.status || 'confirmed').trim() || 'confirmed',
-          source: 'manual'
-        }
-      })
-      wx.showToast({ title: '已写入出货单', icon: 'success' })
-      this.setData({ showPaste: false })
-      await Promise.all([this.loadList(), this.loadDashboard()])
-    } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '写入失败'), icon: 'none' })
-    } finally {
-      this.setData({ saving: false })
-    }
-  },
-
-  onPasteInput(e) {
-    this.setData({ pasteText: e.detail.value || '', writebackMsg: '' })
-  },
-
-  async runParse() {
-    const text = String(this.data.pasteText || '').trim()
-    if (!text) {
-      wx.showToast({ title: '请先粘贴出货文本', icon: 'none' })
-      return
-    }
-    this.setData({ parsing: true, writebackMsg: '' })
-    try {
-      const result = await this.callFn({ action: 'parseText', text })
-      const parsed = this.decorateParsed(result.parsed || null)
-      const failedLines = (parsed && parsed.failedLines) || []
-      this.setData({
-        parsePreview: parsed,
-        parseErrors: (parsed && parsed.errors) || [],
-        parseWarnings: (parsed && parsed.warnings) || [],
-        failedLines
-      })
-      if (!parsed || !parsed.canWrite) {
-        wx.showToast({
-          title:
-            (failedLines[0] && failedLines[0].msg) ||
-            (parsed && parsed.errors && parsed.errors[0] && parsed.errors[0].msg) ||
-            '解析失败',
-          icon: 'none'
-        })
-      } else if (failedLines.length) {
-        wx.showToast({ title: `可写，仍有 ${failedLines.length} 处问题行`, icon: 'none' })
-      }
-    } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '解析失败'), icon: 'none' })
-    } finally {
-      this.setData({ parsing: false })
-    }
-  },
-
-  onIssueLineInput(e) {
-    const idx = Number(e.currentTarget.dataset.idx)
-    const failedLines = (this.data.failedLines || []).slice()
-    if (!failedLines[idx]) return
-    failedLines[idx] = Object.assign({}, failedLines[idx], { text: e.detail.value || '' })
-    this.setData({ failedLines })
-  },
-
-  applyIssueLine(e) {
-    const idx = Number(e.currentTarget.dataset.idx)
-    const issue = (this.data.failedLines || [])[idx]
-    if (!issue || !issue.line) {
-      wx.showToast({ title: '无法定位原行', icon: 'none' })
-      return
-    }
-    const lines = String(this.data.pasteText || '').replace(/\r\n/g, '\n').split('\n')
-    const lineIdx = Number(issue.line) - 1
-    if (lineIdx < 0 || lineIdx >= lines.length) {
-      wx.showToast({ title: '行号已失效，请整段重贴', icon: 'none' })
-      return
-    }
-    lines[lineIdx] = String(issue.text || '').trim()
-    this.setData({ pasteText: lines.join('\n') })
-    this.runParse()
-  },
-
-  onPreviewDate(e) {
-    const parsePreview = this.recomputePreviewTotals(
-      Object.assign({}, this.data.parsePreview || {}, {
-        shipmentDate: e.detail.value || ''
-      })
-    )
-    this.setData({ parsePreview })
-  },
-
-  toggleStoreCollapse(e) {
-    const idx = Number(e.currentTarget.dataset.idx)
-    const parsePreview = JSON.parse(JSON.stringify(this.data.parsePreview || {}))
-    if (!parsePreview.shipments || !parsePreview.shipments[idx]) return
-    parsePreview.shipments[idx].collapsed = !parsePreview.shipments[idx].collapsed
-    this.setData({ parsePreview })
-  },
-
-  onPreviewItemName(e) {
-    const storeIdx = Number(e.currentTarget.dataset.storeIdx)
-    const itemIdx = Number(e.currentTarget.dataset.itemIdx)
-    const parsePreview = JSON.parse(JSON.stringify(this.data.parsePreview || {}))
-    if (!parsePreview.shipments || !parsePreview.shipments[storeIdx]) return
-    if (!parsePreview.shipments[storeIdx].items[itemIdx]) return
-    parsePreview.shipments[storeIdx].items[itemIdx].itemName = e.detail.value || ''
-    this.setData({ parsePreview: this.recomputePreviewTotals(parsePreview) })
-  },
-
-  onPreviewItemQty(e) {
-    const storeIdx = Number(e.currentTarget.dataset.storeIdx)
-    const itemIdx = Number(e.currentTarget.dataset.itemIdx)
-    const parsePreview = JSON.parse(JSON.stringify(this.data.parsePreview || {}))
-    if (!parsePreview.shipments || !parsePreview.shipments[storeIdx]) return
-    if (!parsePreview.shipments[storeIdx].items[itemIdx]) return
-    const qty = parseInt(e.detail.value, 10)
-    parsePreview.shipments[storeIdx].items[itemIdx].qty =
-      Number.isFinite(qty) && qty > 0 ? qty : 1
-    this.setData({ parsePreview: this.recomputePreviewTotals(parsePreview) })
-  },
-
-  /**
-   * 跳到「逐行核对与算价」页（蓝图裁决 24）。
-   *
-   * 草稿走 Storage 而不是 URL：真实样本 21 行，JSON 放进 `navigateTo` 的 query
-   * 会被长度限制截断（截断后是静默的半个 JSON，比直接失败更难查）。
-   *
-   * 这里**不改动** `confirmPaste` 这条老路：不想算价的门店仍然可以一键写入。
-   */
-  openEditPage() {
-    const preview = this.data.parsePreview
-    if (!preview || !preview.canWrite) return
-    const shipments = Array.isArray(preview.shipments) ? preview.shipments : []
-    const lines = []
-    for (const block of shipments) {
-      for (const it of block.items || []) {
-        lines.push({
-          itemName: it.itemName,
-          qty: Number(it.qty) || 1,
-          // 预览阶段还没有定价线索，进来后由编辑页 quotePrice 自动带出能认出来的
-          pricingHint: {},
-          storeId: block.storeId,
-          storeName: block.storeName
-        })
-      }
-    }
-    if (!lines.length) return
-    try {
-      wx.setStorageSync('shipment_edit_draft_v1', {
-        shipmentDate: preview.shipmentDate || '',
-        storeId: shipments[0].storeId || '',
-        storeName: shipments[0].storeName || '',
-        laborRatePct: 30,
-        rawText: preview.rawText || '',
-        batchId: '',
-        lines
-      })
-    } catch (e) {
-      this.setData({ pasteError: '草稿写入失败，请重试' })
-      return
-    }
-    wx.navigateTo({ url: '/subpackages/extra/shipment-edit/index' })
-  },
-
-  async confirmPaste() {
-    const parsePreview = this.data.parsePreview
-    if (!parsePreview || !parsePreview.canWrite) {
-      wx.showToast({ title: '请先成功解析可写明细', icon: 'none' })
-      return
-    }
-    this.setData({ saving: true, writebackMsg: '' })
-    try {
-      const result = await this.callFn({
-        action: 'createFromParsed',
-        parsed: {
-          ok: true,
-          canWrite: true,
-          shipmentDate: parsePreview.shipmentDate,
-          shipments: parsePreview.shipments,
-          rawText: this.data.pasteText
-        },
-        shipmentDate: parsePreview.shipmentDate,
-        rawText: this.data.pasteText,
-        status: 'confirmed',
-        source: 'manual'
-      })
-      const created = (result.list || []).length
-      const failed = (result.stats && result.stats.failed) || 0
-      const writebackMsg =
-        result.msg ||
-        `已写入 ${created} 单（状态：已确认 · 来源：手工录入）` +
-          (failed ? `，失败 ${failed}` : '')
-      wx.showToast({ title: result.msg || '已录入', icon: 'success' })
-      this.setData({
-        writebackMsg,
-        showPaste: false,
-        pasteText: '',
-        parsePreview: null,
-        failedLines: []
-      })
-      await Promise.all([this.loadList(), this.loadDashboard()])
-    } catch (e) {
-      this.setData({
-        writebackMsg: formatCloudFnError(e, '写入失败')
-      })
-      wx.showToast({ title: formatCloudFnError(e, '写入失败'), icon: 'none' })
-    } finally {
-      this.setData({ saving: false })
-    }
-  },
+  // 详情：物流 + 状态流转（契约：setStatus / update；结算只读）
 
   openDetail(e) {
     const id = e.currentTarget.dataset.id
     const row = (this.data.list || []).find((x) => x._id === id)
     if (!row) return
-    this.setData({ showDetail: true, detail: row })
+    const decorated = this.decorateRow(row)
+    this.setData({
+      showDetail: true,
+      detail: decorated,
+      nextActions: decorated.nextActions || [],
+      shipForm: { expressCompany: row.expressCompany || '', trackingNo: row.trackingNo || '' },
+      detailTip: '',
+      detailTipTone: 'info',
+      detailBusy: false
+    })
   },
 
   closeDetail() {
-    this.setData({ showDetail: false, detail: null })
+    if (this.data.detailBusy) return
+    this.setData({ showDetail: false, detail: null, nextActions: [], detailTip: '' })
   },
 
-  async onTransit(e) {
-    const id = e.currentTarget.dataset.id
-    const row = (this.data.list || []).find((x) => x._id === id)
-    if (!row) return
-    const next = ((this.data.statuses || []).find((s) => s.value === row.status) || {}).next || []
-    if (!next.length) return
-    const labels = next.map((v) => {
-      const s = (this.data.statuses || []).find((x) => x.value === v)
-      return s ? s.label : v
-    })
+  onShipFormInput(e) {
+    const field = String((e.currentTarget.dataset || {}).field || '')
+    if (!field) return
+    this.setData({ [`shipForm.${field}`]: e.detail.value || '' })
+  },
+
+  async applyStatus(e) {
+    if (!this.data.canWrite || this.data.detailBusy) return
+    const status = String((e.currentTarget.dataset || {}).status || '')
+    const id = this.data.detail && this.data.detail._id
+    if (!id || !status) return
+    this.setData({ detailBusy: true, detailTip: '正在流转…', detailTipTone: 'info' })
     try {
-      const pick = await new Promise((resolve, reject) => {
-        wx.showActionSheet({
-          itemList: labels,
-          success: (res) => resolve(next[res.tapIndex]),
-          fail: reject
-        })
+      // 发货前若填了运单，先写入物流字段（既有 update 契约）
+      if (status === 'shipped') {
+        const expressCompany = String(this.data.shipForm.expressCompany || '').trim()
+        const trackingNo = String(this.data.shipForm.trackingNo || '').trim()
+        if (expressCompany || trackingNo) {
+          await callCloud(SHIPMENT_FN, {
+            action: 'update',
+            id,
+            item: {
+              expressCompany,
+              trackingNo,
+              storeId: this.data.detail.storeId,
+              shipmentDate: this.data.detail.shipmentDate,
+              status: this.data.detail.status
+            }
+          })
+        }
+      }
+      const res = await callCloud(SHIPMENT_FN, { action: 'setStatus', id, status })
+      const item = this.decorateRow(res.item || Object.assign({}, this.data.detail, { status }))
+      this.setData({
+        detail: item,
+        nextActions: item.nextActions || [],
+        shipForm: { expressCompany: item.expressCompany || '', trackingNo: item.trackingNo || '' },
+        detailTip: `已流转为「${item.statusLabel}」`,
+        detailTipTone: 'info',
+        detailBusy: false,
+        dashLoaded: false
       })
-      await this.callFn({ action: 'setStatus', id, status: pick })
-      wx.showToast({ title: '已流转', icon: 'success' })
-      await Promise.all([this.loadList(), this.loadDashboard()])
+      await this.loadList()
     } catch (err) {
-      if (err && err.errMsg && /cancel/i.test(err.errMsg)) return
-      wx.showToast({ title: formatCloudFnError(err, '流转失败'), icon: 'none' })
+      this.setData({ detailBusy: false, detailTip: formatCloudFnError(err, '流转失败'), detailTipTone: 'warn' })
+    }
+  },
+
+  async saveLogistics() {
+    if (!this.data.canWrite || this.data.detailBusy || !this.data.detail) return
+    const id = this.data.detail._id
+    const expressCompany = String(this.data.shipForm.expressCompany || '').trim()
+    const trackingNo = String(this.data.shipForm.trackingNo || '').trim()
+    this.setData({ detailBusy: true, detailTip: '保存物流…', detailTipTone: 'info' })
+    try {
+      const res = await callCloud(SHIPMENT_FN, {
+        action: 'update',
+        id,
+        item: {
+          expressCompany,
+          trackingNo,
+          storeId: this.data.detail.storeId,
+          shipmentDate: this.data.detail.shipmentDate,
+          status: this.data.detail.status,
+          note: this.data.detail.note || ''
+        }
+      })
+      const item = this.decorateRow(res.item || this.data.detail)
+      this.setData({ detail: item, nextActions: item.nextActions || [], detailTip: '物流信息已保存', detailTipTone: 'info', detailBusy: false })
+      await this.loadList()
+    } catch (err) {
+      this.setData({ detailBusy: false, detailTip: formatCloudFnError(err, '保存物流失败'), detailTipTone: 'warn' })
     }
   },
 
   async onRemove(e) {
     const id = e.currentTarget.dataset.id
     if (!id) return
-    const ok = await new Promise((resolve) => {
-      wx.showModal({
-        title: '删除出货单',
-        content: '确认删除？删除后列表不再展示（软删）。',
-        success: (res) => resolve(!!res.confirm)
-      })
-    })
-    if (!ok) return
+    const confirmTip = '再点一次「删除」：删除后列表不再展示（软删）'
+    if (this.data.removePendingId !== id) {
+      this.setData({ removePendingId: id, listTip: confirmTip, listTipTone: 'warn', detailTip: confirmTip, detailTipTone: 'warn' })
+      return
+    }
+    this.setData({ removePendingId: '' })
     try {
-      await this.callFn({ action: 'remove', id })
-      wx.showToast({ title: '已删除', icon: 'success' })
+      await callCloud(SHIPMENT_FN, { action: 'remove', id })
+      this.setData({ listTip: '已删除', listTipTone: 'ok', detailTip: '', dashLoaded: false })
       this.closeDetail()
-      await Promise.all([this.loadList(), this.loadDashboard()])
+      await this.loadList()
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '删除失败'), icon: 'none' })
+      const msg = formatCloudFnError(err, '删除失败')
+      this.setData({ listTip: msg, listTipTone: 'warn', detailTip: msg, detailTipTone: 'warn' })
     }
   },
 
   noop() {}
-})
+}
+
+Page(
+  Object.assign(
+    { data: Object.assign({}, baseData, createPart.data, libraryPart.data) },
+    coreMethods,
+    createPart.methods,
+    libraryPart.methods
+  )
+)

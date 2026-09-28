@@ -1,5 +1,6 @@
 // subpackages/extra/user/messages/index.js
 const { enrichMessage, dedupeInboxMessages } = require('../../../../utils/messageHelper');
+const { buildDigestListCard } = require('../../utils/digestView');
 const { getPageNavInsets } = require('../../utils/pageNav');
 const { trackBehavior } = require('../../../../utils/trackBehavior');
 const {
@@ -40,14 +41,96 @@ const EMPTY_COPY = {
     system: { title: '暂无馆务来信', desc: '留言回执与开票进度会放在这一类' }
   },
   workflow: {
-    all: { title: '工作台暂无来信', desc: '新单、候补补货、审批与开票待办会出现在这里' },
-    digest: { title: '暂无日报', desc: '每日日报由云端在次日凌晨生成，生成后会归档在这里，可随时回看历史' },
+    all: { title: '工作台暂无来信', desc: '日报、待办与审批会按分类出现在上方分档；有未读时角标会亮起' },
+    digest: {
+      title: '暂无日报',
+      desc: '每日经营快照由云端定时生成（非整点即时算）。生成后会归档在此，可回看约 90 天；若长期为空，请确认 dailyDigest 已部署并配好定时器'
+    },
     ops: { title: '暂无运营待办', desc: '新单启程与藏家候补会放在这一类' },
     system: { title: '暂无审批来信', desc: '审批提交与结果会放在这里' }
   }
 };
 
+const WORKFLOW_CONTEXT = {
+  all: '工作信息 · 仅员工可见',
+  digest: '日报 · 定时快照 · 可回看历史',
+  ops: '待办 · 需跟进的运营事项',
+  system: '审批 · 提交与结果通知'
+};
+
 const DETAIL_URL = '/subpackages/extra/user/messages/detail/index';
+
+function withDigestCard(message) {
+  const enriched = enrichMessage(message);
+  if (!enriched || !enriched.isDigest) return enriched;
+  const digestCard = buildDigestListCard(enriched);
+  // getUserMessages 未放行 payload / 线上旧函数 → 只有纯文本：必须诚实标出，不能装成「没生意」
+  if (!digestCard) {
+    return {
+      ...enriched,
+      digestCard: null,
+      digestPayloadMissing: true,
+      preview: enriched.preview || '本期仅有文字摘要，结构化口径未下发'
+    };
+  }
+  return {
+    ...enriched,
+    digestCard,
+    digestPayloadMissing: false,
+    // 有结构化卡时，列表预览让位给关键数，避免纯文本与数字抢视线
+    preview: digestCard.hasHighlights ? '' : (enriched.preview || digestCard.statusHint)
+  };
+}
+
+/** 日报档顶栏提示：基于列表首条（通常最新）的健康态，不另打云端 */
+function buildDigestRailTip(messages, unreadCount) {
+  const list = Array.isArray(messages) ? messages : [];
+  const digests = list.filter((m) => m && m.isDigest);
+  if (!digests.length) {
+    return {
+      show: true,
+      tone: 'muted',
+      text: '定时快照归档在此。每小时整点后约 20 分尝试生成；同一天同一人不会重复投递。'
+    };
+  }
+  const top = digests[0];
+  const unread = Math.max(0, Number(unreadCount) || 0);
+  if (top.digestPayloadMissing) {
+    return {
+      show: true,
+      tone: 'warn',
+      text: '最新一期只有文字摘要。若长期如此，请确认 getUserMessages 已部署并放行 payload。'
+    };
+  }
+  const card = top.digestCard || {};
+  const dayBit = card.dayLabel || card.dayKey || '最新一期';
+  if (card.healthTone === 'failed') {
+    return {
+      show: true,
+      tone: 'warn',
+      text: `${dayBit} · ${card.statusHint || '取数异常'}。点开可对账失败项。`
+    };
+  }
+  const unreadBit = unread > 0 ? `${unread} 封未读 · ` : '';
+  return {
+    show: true,
+    tone: card.healthTone === 'partial' ? 'partial' : 'ok',
+    text: `${unreadBit}${dayBit} · ${card.statusHint || '快照可回看'}`
+  };
+}
+
+function tabsWithBadges(baseTabs, badgeMap) {
+  const map = badgeMap || {};
+  return (baseTabs || []).map((t) => {
+    const n = t.id === 'all' ? 0 : Math.max(0, Number(map[t.id]) || 0);
+    return {
+      ...t,
+      badge: n,
+      badgeText: n > 99 ? '99+' : String(n),
+      hasBadge: n > 0
+    };
+  });
+}
 
 Page({
   data: {
@@ -61,6 +144,7 @@ Page({
     unreadCount: 0,
     customerUnread: 0,
     workflowUnread: 0,
+    categoryBadges: { digest: 0, ops: 0, system: 0 },
     isStaff: false,
     showQueueTabs: false,
     workflowMode: false,
@@ -68,6 +152,8 @@ Page({
     filterTabs: CUSTOMER_FILTER_TABS,
     activeCategory: 'all',
     emptyCopy: EMPTY_COPY.customer.all,
+    workflowContextText: WORKFLOW_CONTEXT.all,
+    digestRailTip: { show: false, tone: 'muted', text: '' },
     hasMore: true,
     page: 0
   },
@@ -94,8 +180,9 @@ Page({
         activeQueue: 'workflow',
         workflowMode: true,
         showQueueTabs: false,
-        filterTabs: WORKFLOW_FILTER_TABS,
-        emptyCopy: EMPTY_COPY.workflow.all
+        filterTabs: tabsWithBadges(WORKFLOW_FILTER_TABS, {}),
+        emptyCopy: EMPTY_COPY.workflow.all,
+        workflowContextText: WORKFLOW_CONTEXT.all
       });
     } else {
       wx.setNavigationBarTitle({ title: '山海有信' });
@@ -115,7 +202,10 @@ Page({
           emptyCopy: this.resolveEmptyCopy(
             workflowMode ? 'workflow' : 'customer',
             categoryOpt
-          )
+          ),
+          workflowContextText: workflowMode
+            ? (WORKFLOW_CONTEXT[categoryOpt] || WORKFLOW_CONTEXT.all)
+            : WORKFLOW_CONTEXT.all
         });
       }
     }
@@ -125,6 +215,7 @@ Page({
     const letterId = String(options.messageId || options.id || options.msgId || '').trim();
     this.resolveStaffRole().then(() => {
       if (workflowMode) {
+        this.loadCategoryBadges();
         this.loadMessages(true);
       } else {
         this.loadUnreadBreakdown();
@@ -200,6 +291,7 @@ Page({
         patch.activeQueue = 'customer';
         patch.filterTabs = CUSTOMER_FILTER_TABS;
         patch.emptyCopy = EMPTY_COPY.customer.all;
+        patch.workflowContextText = WORKFLOW_CONTEXT.all;
         wx.setNavigationBarTitle({ title: '山海有信' });
         wx.showToast({ title: '工作信息仅员工可见', icon: 'none' });
       }
@@ -214,26 +306,28 @@ Page({
   onShow() {
     if (this._hasLoaded) {
       this.loadUnreadBreakdown();
+      if (this.data.workflowMode) this.loadCategoryBadges();
       this.loadMessages(true, { silent: true });
     }
   },
 
   onPullDownRefresh() {
-    Promise.all([this.loadUnreadBreakdown(), this.loadMessages(true)]).then(() =>
-      wx.stopPullDownRefresh()
-    );
+    const tasks = [this.loadUnreadBreakdown(), this.loadMessages(true)];
+    if (this.data.workflowMode) tasks.push(this.loadCategoryBadges());
+    Promise.all(tasks).then(() => wx.stopPullDownRefresh());
   },
 
   onRefresh() {
     this.setData({ refreshing: true });
-    Promise.all([this.loadUnreadBreakdown(), this.loadMessages(true)]).then(() =>
-      this.setData({ refreshing: false })
-    );
+    const tasks = [this.loadUnreadBreakdown(), this.loadMessages(true)];
+    if (this.data.workflowMode) tasks.push(this.loadCategoryBadges());
+    Promise.all(tasks).then(() => this.setData({ refreshing: false }));
   },
 
   retryLoad() {
     this.setData({ loadError: false });
     this.loadMessages(true);
+    if (this.data.workflowMode) this.loadCategoryBadges();
   },
 
   onReachBottom() {
@@ -249,16 +343,20 @@ Page({
       wx.showToast({ title: '工作流仅员工可见', icon: 'none' });
       return;
     }
-    const filterTabs = queue === 'workflow' ? WORKFLOW_FILTER_TABS : CUSTOMER_FILTER_TABS;
+    const filterTabs = queue === 'workflow'
+      ? tabsWithBadges(WORKFLOW_FILTER_TABS, this.data.categoryBadges)
+      : CUSTOMER_FILTER_TABS;
     this.setData({
       activeQueue: queue,
       filterTabs,
       activeCategory: 'all',
       page: 0,
       hasMore: true,
-      emptyCopy: this.resolveEmptyCopy(queue, 'all')
+      emptyCopy: this.resolveEmptyCopy(queue, 'all'),
+      workflowContextText: WORKFLOW_CONTEXT.all
     });
     this.loadMessages(true);
+    if (queue === 'workflow') this.loadCategoryBadges();
     this.measureHeader();
     trackBehavior('message_queue', 'queue', queue);
   },
@@ -270,7 +368,13 @@ Page({
       activeCategory: category,
       page: 0,
       hasMore: true,
-      emptyCopy: this.resolveEmptyCopy(this.data.activeQueue, category)
+      emptyCopy: this.resolveEmptyCopy(this.data.activeQueue, category),
+      workflowContextText: this.data.workflowMode
+        ? (WORKFLOW_CONTEXT[category] || WORKFLOW_CONTEXT.all)
+        : WORKFLOW_CONTEXT.all,
+      digestRailTip: category === 'digest'
+        ? { show: true, tone: 'muted', text: '正在取日报…' }
+        : { show: false, tone: 'muted', text: '' }
     });
     this.loadMessages(true);
     this.measureHeader();
@@ -291,6 +395,43 @@ Page({
         customerUnread: Number(result.customer) || 0,
         workflowUnread: isStaff ? (Number(result.workflow) || 0) : 0
       });
+    } catch (e) {
+      // ignore
+    }
+  },
+
+  /**
+   * 工作信息三分档未读角标（复用既有 getUnreadCount + category，不改云函数契约）。
+   */
+  async loadCategoryBadges() {
+    if (!this.data.workflowMode && this.data.activeQueue !== 'workflow') return;
+    const cats = ['digest', 'ops', 'system'];
+    try {
+      const results = await Promise.all(
+        cats.map((category) =>
+          wx.cloud
+            .callFunction({
+              name: 'getUserMessages',
+              data: { action: 'getUnreadCount', queue: 'workflow', category }
+            })
+            .catch(() => null)
+        )
+      );
+      const categoryBadges = { digest: 0, ops: 0, system: 0 };
+      cats.forEach((category, i) => {
+        const result = results[i] && results[i].result;
+        if (result && result.success) {
+          categoryBadges[category] = Math.max(
+            0,
+            Number(result.count != null ? result.count : result.unreadCount) || 0
+          );
+        }
+      });
+      this.setData({
+        categoryBadges,
+        filterTabs: tabsWithBadges(WORKFLOW_FILTER_TABS, categoryBadges)
+      });
+      this.measureHeader();
     } catch (e) {
       // ignore
     }
@@ -324,7 +465,7 @@ Page({
 
       if (res && res.result && res.result.success) {
         const raw = Array.isArray(res.result.messages) ? res.result.messages : [];
-        const batch = dedupeInboxMessages(raw).map(enrichMessage);
+        const batch = dedupeInboxMessages(raw).map(withDigestCard);
         const merged = reset ? batch : [...this.data.messages, ...batch];
         const messages = dedupeInboxMessages(merged);
         const isStaff = res.result.isStaff === true || this.data.isStaff;
@@ -344,6 +485,11 @@ Page({
         } else if (this.data.activeQueue === 'workflow') {
           patch.workflowUnread = patch.unreadCount;
         }
+        if (this.data.activeCategory === 'digest' || this.data.workflowMode) {
+          patch.digestRailTip = this.data.activeCategory === 'digest'
+            ? buildDigestRailTip(messages, patch.unreadCount)
+            : { show: false, tone: 'muted', text: '' };
+        }
         this.setData(patch);
         this._hasLoaded = true;
         this.measureHeader();
@@ -356,7 +502,10 @@ Page({
             hasMore: false,
             loading: false,
             loadingMore: false,
-            loadError: true
+            loadError: true,
+            digestRailTip: this.data.activeCategory === 'digest'
+              ? { show: true, tone: 'warn', text: '日报列表加载失败，请下拉或点「再试一次」。' }
+              : { show: false, tone: 'muted', text: '' }
           });
         } else {
           this.setData({ loadingMore: false });
@@ -414,7 +563,7 @@ Page({
     const current = this.data.messages[index];
     if (!current.isUnread) return;
     const messages = [...this.data.messages];
-    messages[index] = enrichMessage({ ...current, read: true });
+    messages[index] = withDigestCard({ ...current, read: true });
     const unreadCount = Math.max(0, this.data.unreadCount - 1);
     const patch = {
       messages,
@@ -424,8 +573,22 @@ Page({
       patch.customerUnread = Math.max(0, this.data.customerUnread - 1);
     } else {
       patch.workflowUnread = Math.max(0, this.data.workflowUnread - 1);
+      const cat = current.category;
+      if (cat && this.data.categoryBadges[cat] != null) {
+        const categoryBadges = {
+          ...this.data.categoryBadges,
+          [cat]: Math.max(0, (Number(this.data.categoryBadges[cat]) || 0) - 1)
+        };
+        patch.categoryBadges = categoryBadges;
+        patch.filterTabs = tabsWithBadges(WORKFLOW_FILTER_TABS, categoryBadges);
+      }
     }
     this.setData(patch);
+    if (this.data.activeCategory === 'digest') {
+      this.setData({
+        digestRailTip: buildDigestRailTip(patch.messages || this.data.messages, patch.unreadCount)
+      });
+    }
     this.syncParentUnreadCount();
   },
 
@@ -442,9 +605,23 @@ Page({
         patch.customerUnread = Math.max(0, this.data.customerUnread - 1);
       } else {
         patch.workflowUnread = Math.max(0, this.data.workflowUnread - 1);
+        const cat = removed.category;
+        if (cat && this.data.categoryBadges[cat] != null) {
+          const categoryBadges = {
+            ...this.data.categoryBadges,
+            [cat]: Math.max(0, (Number(this.data.categoryBadges[cat]) || 0) - 1)
+          };
+          patch.categoryBadges = categoryBadges;
+          patch.filterTabs = tabsWithBadges(WORKFLOW_FILTER_TABS, categoryBadges);
+        }
       }
     }
     this.setData(patch);
+    if (this.data.activeCategory === 'digest') {
+      this.setData({
+        digestRailTip: buildDigestRailTip(messages, unreadCount)
+      });
+    }
     this.syncParentUnreadCount();
   },
 
@@ -453,6 +630,30 @@ Page({
     const message = this.data.messages[index];
     if (!message || !message._id) return;
 
+    if (message.isDigest) {
+      const itemList = ['复制关键摘要', '删除本期日报'];
+      wx.showActionSheet({
+        itemList,
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            this.copyDigestSummary(message);
+            return;
+          }
+          if (res.tapIndex === 1) {
+            wx.showModal({
+              title: '删除日报',
+              content: '确定从工作信息里拿掉这一期日报吗？历史快照删除后不可从本机恢复。',
+              confirmColor: '#C4A76C',
+              success: (modalRes) => {
+                if (modalRes.confirm) this.deleteMessageById(message._id);
+              }
+            });
+          }
+        }
+      });
+      return;
+    }
+
     wx.showModal({
       title: '删除来信',
       content: '确定从信箱里拿掉这一封吗？',
@@ -460,6 +661,20 @@ Page({
       success: (res) => {
         if (res.confirm) this.deleteMessageById(message._id);
       }
+    });
+  },
+
+  copyDigestSummary(message) {
+    const text = (message && message.digestCard && message.digestCard.copyText)
+      || [message && message.title, message && message.preview].filter(Boolean).join('\n');
+    if (!text) {
+      wx.showToast({ title: '暂无可复制摘要', icon: 'none' });
+      return;
+    }
+    wx.setClipboardData({
+      data: text,
+      success: () => wx.showToast({ title: '已复制摘要', icon: 'none' }),
+      fail: () => wx.showToast({ title: '复制失败', icon: 'none' })
     });
   },
 
@@ -487,7 +702,10 @@ Page({
 
   async markAllRead() {
     if (this.data.unreadCount === 0) {
-      wx.showToast({ title: '没有未读来信', icon: 'none' });
+      wx.showToast({
+        title: this.data.activeCategory === 'digest' ? '没有未读日报' : '没有未读来信',
+        icon: 'none'
+      });
       return;
     }
 
@@ -503,7 +721,7 @@ Page({
       });
 
       if (res && res.result && res.result.success) {
-        const messages = this.data.messages.map((msg) => enrichMessage({
+        const messages = this.data.messages.map((msg) => withDigestCard({
           ...msg,
           read: true
         }));
@@ -513,6 +731,17 @@ Page({
           patch.customerUnread = 0;
         } else {
           patch.workflowUnread = 0;
+          const cat = this.data.activeCategory;
+          const categoryBadges = { ...this.data.categoryBadges };
+          if (cat === 'all') {
+            categoryBadges.digest = 0;
+            categoryBadges.ops = 0;
+            categoryBadges.system = 0;
+          } else if (categoryBadges[cat] != null) {
+            categoryBadges[cat] = 0;
+          }
+          patch.categoryBadges = categoryBadges;
+          patch.filterTabs = tabsWithBadges(WORKFLOW_FILTER_TABS, categoryBadges);
         }
         this.setData(patch);
         this.syncParentUnreadCount();

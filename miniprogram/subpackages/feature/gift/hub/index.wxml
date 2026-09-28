@@ -1,10 +1,31 @@
-<!-- 礼赠主入口 · 场景选礼 + 馆藏挑礼 -->
-<view class="page" wx:if="{{allowed}}">
+<!-- 礼赠主入口 · 场景选礼 + 馆藏挑礼 · Museum 纸面 -->
+<view class="page {{paneReady ? 'pane-ready' : ''}}" wx:if="{{allowed}}">
   <scroll-view scroll-y class="scroll" enhanced show-scrollbar="{{false}}">
     <view class="hero-plate">
-      <text class="overline">GIFT</text>
-      <text class="title">礼赠</text>
-      <text class="desc">先选人生节点，柜中会按场景备妥藏品；也可直接去馆藏慢慢挑。</text>
+      <view class="paper-fiber" aria-hidden="true"></view>
+      <view class="paper-fiber fine" aria-hidden="true"></view>
+      <view class="paper-emboss" aria-hidden="true"></view>
+      <view class="specimen-wm" aria-hidden="true"></view>
+      <view class="hero-content">
+        <view class="hero-over-row">
+          <text class="overline">NATURE'S CREATIONS · GIFT</text>
+          <view class="hero-seal metal" aria-hidden="true">
+            <view class="hero-seal-inner"></view>
+          </view>
+        </view>
+        <text class="hero-brand">山海造物</text>
+        <text class="title">礼赠</text>
+        <text class="desc">先选人生节点，柜中会按场景备妥藏品；也可直接去馆藏慢慢挑。</text>
+      </view>
+    </view>
+
+    <!-- 从人情账本带入：为谁选礼 -->
+    <view class="for-whom" wx:if="{{forWhom}}">
+      <view class="signal-light lamp-brass"></view>
+      <view class="for-whom-copy">
+        <text class="for-whom-over">FOR</text>
+        <text class="for-whom-name">正在为 {{forWhom}} 选礼</text>
+      </view>
     </view>
 
     <!-- 场景选择 -->
@@ -17,6 +38,8 @@
           wx:for="{{scenes}}"
           wx:key="key"
           data-key="{{item.key}}"
+          hover-class="scene-chip-press"
+          hover-stay-time="70"
           bindtap="onSceneTap"
         >
           <text>{{item.label}}</text>
@@ -35,6 +58,8 @@
             <text
               class="match-link"
               bindtap="onRefreshBatch"
+              hover-class="match-link-press"
+              hover-stay-time="70"
               wx:if="{{products.length && !loadingProducts}}"
             >换一批</text>
           </view>
@@ -43,10 +68,23 @@
       <text class="match-hint" wx:if="{{usedFallback && products.length}}">场景标签尚少，已混入可礼赠藏品作补充</text>
 
       <view class="match-loading" wx:if="{{loadingProducts}}">
-        <text class="muted">正在从柜中取出…</text>
+        <view class="skel-grid">
+          <view class="skel-card" wx:for="{{skelRows}}" wx:key="*this">
+            <view class="skel-cover"></view>
+            <view class="skel-line"></view>
+            <view class="skel-line mid"></view>
+          </view>
+        </view>
+        <text class="muted skel-hint">正在从柜中取出…</text>
       </view>
 
-      <view class="match-empty" wx:elif="{{productsError}}">
+      <view class="match-empty paper-state" wx:elif="{{productsError}}">
+        <view class="empty-mark paper-empty" aria-hidden="true">
+          <view class="paper-fiber"></view>
+          <view class="empty-ring"></view>
+          <view class="signal-light lamp-warn"></view>
+        </view>
+        <text class="empty-title">柜门片刻未开</text>
         <text class="muted">{{productsError}}</text>
         <text class="match-link" bindtap="onRefreshBatch">再试一次</text>
       </view>
@@ -57,6 +95,8 @@
           wx:for="{{products}}"
           wx:key="_id"
           data-id="{{item._id}}"
+          hover-class="product-card-press"
+          hover-stay-time="80"
           bindtap="onProductTap"
         >
           <view class="product-card-inner">
@@ -97,8 +137,14 @@
         </view>
       </view>
 
-      <view class="match-empty" wx:else>
-        <text class="muted">暂无匹配，可换一批或去馆藏挑选</text>
+      <view class="match-empty paper-state" wx:else>
+        <view class="empty-mark paper-empty" aria-hidden="true">
+          <view class="paper-fiber"></view>
+          <view class="empty-ring"></view>
+          <view class="specimen-wm sm"></view>
+        </view>
+        <text class="empty-title">这一格暂无匹配</text>
+        <text class="muted">可换一批，或去馆藏慢慢挑</text>
         <view class="match-empty-actions">
           <text class="match-link" bindtap="onRefreshBatch">换一批</text>
           <text class="match-link" bindtap="goBrowse">去馆藏</text>
@@ -107,6 +153,10 @@
     </view>
 
     <view class="steps" wx:if="{{!activeScene}}">
+      <view class="steps-head">
+        <text class="section-overline">PATH</text>
+        <text class="section-title tight">三步送出</text>
+      </view>
       <view class="step">
         <text class="step-num">01</text>
         <view class="step-body">
@@ -131,8 +181,8 @@
     </view>
 
     <view class="cta-block">
-      <view class="btn-primary" bindtap="goBrowse">去馆藏挑选</view>
-      <view class="btn-secondary" bindtap="goBack">返回工坊</view>
+      <view class="btn-primary" hover-class="btn-primary-press" hover-stay-time="80" bindtap="goBrowse">去馆藏挑选</view>
+      <view class="btn-secondary" hover-class="btn-secondary-press" hover-stay-time="80" bindtap="goBack">返回工坊</view>
     </view>
     <view class="scroll-pad"></view>
   </scroll-view>
@@ -140,7 +190,13 @@
 
 <view class="page checking" wx:else>
   <view class="state-block">
-    <view class="state-seal" aria-hidden="true"></view>
+    <view class="state-mark paper-empty" aria-hidden="true">
+      <view class="paper-fiber"></view>
+      <view class="empty-ring"></view>
+      <view class="state-seal" aria-hidden="true"></view>
+    </view>
+    <text class="state-over">GIFT</text>
     <text class="muted">{{checking ? '柜门轻启…' : '礼赠暂未开放'}}</text>
+    <text class="state-hint" wx:if="{{!checking}}">可稍后再来，或先回工坊逛逛</text>
   </view>
 </view>

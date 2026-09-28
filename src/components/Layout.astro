@@ -3,10 +3,24 @@ import '../styles/global.css';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
 
+/** 全站默认分享图：真实存在于 public/（审计 E5；勿再指占位目录） */
+const DEFAULT_OG_IMAGE = '/specimens/hero-specimen.jpg';
+const DEFAULT_OG_WIDTH = 1920;
+const DEFAULT_OG_HEIGHT = 1081;
+const DEFAULT_OG_ALT = '山海造物 · 展陈空间暖光下的标本柜与装框蝴蝶';
+
 interface Props {
   title: string;
   description?: string;
   image?: string;
+  /** og:image 像素宽（须与真实文件一致；默认标本主图 1920） */
+  imageWidth?: number;
+  /** og:image 像素高（须与真实文件一致；默认标本主图 1081） */
+  imageHeight?: number;
+  /** og:image:alt / twitter:image:alt */
+  imageAlt?: string;
+  /** Open Graph 类型，默认 website */
+  ogType?: string;
   /** LCP 图片（如首页 Hero 背景）· 注入 <link rel="preload"> */
   preloadImage?: string;
 }
@@ -15,9 +29,13 @@ const {
   title,
   description = '把山海带回家——让自然博物美学进入日常生活',
   // 2026-09-17 审计 E5：原默认值 `/images/hero/home-hero.jpg` 是**占位目录里并不存在**的文件，
-  // 导致 14 个构建页面（未覆写 image 的全部页面）的 og:image / twitter:image 指向 404。
-  // 改指向真实存在、且本来就被首页当分享图的标本主图（207KB，站点里已随构建发布）。
-  image = '/specimens/hero-specimen.jpg',
+  // 导致构建页面的 og:image / twitter:image 指向 404。
+  // 改指向真实存在、且本来就被首页当分享图的标本主图（207KB，随构建发布）。
+  image = DEFAULT_OG_IMAGE,
+  imageWidth = DEFAULT_OG_WIDTH,
+  imageHeight = DEFAULT_OG_HEIGHT,
+  imageAlt = DEFAULT_OG_ALT,
+  ogType = 'website',
   preloadImage,
 } = Astro.props;
 
@@ -29,6 +47,11 @@ const canonicalURL = Astro.site
   ? new URL(Astro.url.pathname, Astro.site)
   : new URL(Astro.url.pathname, Astro.url);
 const ogImageURL = Astro.site ? new URL(image, Astro.site) : new URL(image, Astro.url);
+const ogImageType = image.toLowerCase().endsWith('.png')
+  ? 'image/png'
+  : image.toLowerCase().endsWith('.webp')
+    ? 'image/webp'
+    : 'image/jpeg';
 
 const siteHref = Astro.site?.href.replace(/\/$/, '') ?? '';
 const jsonLd =
@@ -109,11 +132,16 @@ const jsonLd =
     <link rel="canonical" href={canonicalURL.href} />
     <link rel="alternate" hreflang="zh-CN" href={canonicalURL.href} />
 
-    {/* OpenGraph（分享时使用生产域名绝对地址） */}
+    {/* OpenGraph（分享时使用生产域名绝对地址；宽高/alt 让预览卡片稳定出图） */}
+    <meta property="og:type" content={ogType} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL.href} />
     <meta property="og:image" content={ogImageURL.href} />
+    <meta property="og:image:type" content={ogImageType} />
+    <meta property="og:image:width" content={String(imageWidth)} />
+    <meta property="og:image:height" content={String(imageHeight)} />
+    <meta property="og:image:alt" content={imageAlt} />
     <meta property="og:site_name" content="山海造物" />
     <meta property="og:locale" content="zh_CN" />
 
@@ -121,12 +149,18 @@ const jsonLd =
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageURL.href} />
+    <meta name="twitter:image:alt" content={imageAlt} />
     {jsonLd ? <script is:inline type="application/ld+json" set:html={jsonLd} /> : null}
-    {/* 2026-09-17 审计 E6：`.fade-in` 默认 opacity:0，只靠 JS 揭示 —— JS 失败/被禁用时
-        整块内容永久不可见。这里给无 JS 场景一个强制可见的兜底（用 !important 压过
-        Tailwind 的 @apply opacity-0，且不依赖样式表顺序）。 */}
+    {/* 2026-09-17 审计 E6 + 体验债：CSS 已改为「默认可见、js-fade 武装后才隐藏」；
+        noscript 仍保留作双保险，并满足 verify:site-dist S4。
+        注意：`<style>{`...`}</style>` 在 Astro 里会把花括号/反引号原样吐进产物 → 无效 CSS。 */}
     <noscript>
-      <style>{`.fade-in{opacity:1 !important;transform:none !important}`}</style>
+      <style is:inline>
+        .fade-in {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style>
     </noscript>
   </head>
 
@@ -138,76 +172,80 @@ const jsonLd =
     </main>
     <Footer />
 
-    <script>
-      // 极克制的进入动效（IntersectionObserver）
-      // threshold:0 + rootMargin:"0px 0px -10% 0px" → 元素任意像素进视口即触发，
-      // 不依赖元素高度（避免超长正文区因 ratio < 0.15 而永久隐形的陷阱）。
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('is-visible');
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0, rootMargin: '0px 0px -10% 0px' }
-      );
+    {/* is:inline：尽早武装，避免 deferred module 晚到时首屏先隐藏再弹出 */}
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        var els = Array.prototype.slice.call(document.querySelectorAll('.fade-in'));
+        if (!els.length) return;
 
-      const els = document.querySelectorAll('.fade-in');
-
-      /**
-       * 带 hash 进入（如 /how/senses#sense-touch）时，浏览器直接滚到锚点，
-       * 上方区块从未经过视口 → IO 不会触发 → 会长期保持 opacity:0。
-       * 对「目标元素之前」的 .fade-in 以及「包住目标 id」的容器一次性标为已展示。
-       */
-      function revealFadeInsForHash() {
-        const raw = location.hash?.slice(1);
-        if (!raw) return;
-        let id;
-        try {
-          id = decodeURIComponent(raw);
-        } catch {
-          id = raw;
+        function markVisible(el) {
+          el.classList.add('is-visible');
         }
-        const target = document.getElementById(id);
-        if (!target) return;
 
-        const FOLLOWING = Node.DOCUMENT_POSITION_FOLLOWING;
+        function inViewport(el) {
+          var rect = el.getBoundingClientRect();
+          return rect.top < window.innerHeight * 0.92 && rect.bottom > 0;
+        }
 
-        els.forEach((el) => {
-          const same = el === target;
-          const wraps = el.contains(target);
-          const strictlyBefore = !same && !wraps && (el.compareDocumentPosition(target) & FOLLOWING);
-          if (same || wraps || strictlyBefore) {
-            el.classList.add('is-visible');
-            observer.unobserve(el);
+        /**
+         * 带 hash 进入时，浏览器直接滚到锚点，上方区块从未过视口。
+         * 对「目标之前 / 包住目标」的 .fade-in 一次性标为已展示。
+         */
+        function revealFadeInsForHash() {
+          var raw = location.hash && location.hash.slice(1);
+          if (!raw) return;
+          var id;
+          try {
+            id = decodeURIComponent(raw);
+          } catch (e) {
+            id = raw;
           }
-        });
-      }
-
-      els.forEach((el) => observer.observe(el));
-
-      // 锚点滚动往往在布局之后；双 rAF 尽量排在浏览器完成 hash scroll 之后
-      requestAnimationFrame(() => {
-        requestAnimationFrame(revealFadeInsForHash);
-      });
-
-      window.addEventListener('hashchange', revealFadeInsForHash);
-
-      // 兜底：如果 JS 在视口已滚到位之后才执行，或 IO 异常，
-      // 100ms 后强制把已经在视口内的 fade-in 标为 visible，
-      // 永远不要让用户看到长时间的空白页。
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          els.forEach((el) => {
-            const rect = (el as HTMLElement).getBoundingClientRect();
-            const inView = rect.top < window.innerHeight && rect.bottom > 0;
-            if (inView) el.classList.add('is-visible');
+          var target = document.getElementById(id);
+          if (!target) return;
+          var FOLLOWING = Node.DOCUMENT_POSITION_FOLLOWING;
+          els.forEach(function (el) {
+            var same = el === target;
+            var wraps = el.contains(target);
+            var strictlyBefore =
+              !same && !wraps && !!(el.compareDocumentPosition(target) & FOLLOWING);
+            if (same || wraps || strictlyBefore) markVisible(el);
           });
-          revealFadeInsForHash();
-        }, 100);
-      });
+        }
+
+        // 减少动效：全部可见，不武装隐藏
+        if (root.classList.contains('reduce-motion')) {
+          els.forEach(markVisible);
+          return;
+        }
+
+        // 先标首屏可见块，再加 js-fade —— 避免「默认 opacity:0」造成的空白闪现
+        els.forEach(function (el) {
+          if (inViewport(el)) markVisible(el);
+        });
+        revealFadeInsForHash();
+        root.classList.add('js-fade');
+
+        var observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                markVisible(entry.target);
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0, rootMargin: '0px 0px -10% 0px' }
+        );
+        els.forEach(function (el) {
+          if (!el.classList.contains('is-visible')) observer.observe(el);
+        });
+
+        requestAnimationFrame(function () {
+          requestAnimationFrame(revealFadeInsForHash);
+        });
+        window.addEventListener('hashchange', revealFadeInsForHash);
+      })();
     </script>
   </body>
 </html>

@@ -7,8 +7,9 @@
         <span class="subtitle">MINI-PROGRAM EVENT INTELLIGENCE</span>
       </div>
       <div class="header-actions">
-        <el-radio-group v-model="rangePreset" size="small" @change="onPresetChange" fill="#d4af37">
+        <el-radio-group v-model="rangePreset" size="small" @change="onPresetChange">
           <el-radio-button label="today">今日</el-radio-button>
+          <el-radio-button label="yesterday">昨日</el-radio-button>
           <el-radio-button label="7d">近 7 天</el-radio-button>
           <el-radio-button label="30d">近 30 天</el-radio-button>
           <el-radio-button label="custom">自定义</el-radio-button>
@@ -498,8 +499,13 @@ const dateKeyAt = (offsetDays = 0) => {
   return d.toISOString().split('T')[0]
 }
 
+// 北京时间（UTC+8）营业日，与埋点 dateKey 同口径；不受浏览器时区影响
+const bjDateKeyAt = (offsetDays = 0) =>
+  new Date(Date.now() + 8 * 3600 * 1000 + offsetDays * 86400000).toISOString().slice(0, 10)
+
 const currentRange = computed(() => {
   if (rangePreset.value === 'today') return [todayStr(), todayStr()]
+  if (rangePreset.value === 'yesterday') return [bjDateKeyAt(-1), bjDateKeyAt(-1)]
   if (rangePreset.value === '7d') return [dateKeyAt(-6), todayStr()]
   if (rangePreset.value === '30d') return [dateKeyAt(-29), todayStr()]
   if (rangePreset.value === 'custom' && dateRange.value?.length === 2) return dateRange.value
@@ -551,13 +557,13 @@ const refresh = async () => {
     }
 
     // 页面 / 会话级明细：从 user_behaviors 聚合（analytics_daily 无 page/sessionId）
+    // ⚠️ 必须按 dateKey 查：2026-09-15 后一度不写 timestamp，按 timestamp 查恒空
+    // （与 getAnalyticsDashboard.loadBehaviors 同一坑；漏斗/门禁监测依赖明细）
     let behaviorRows = []
     try {
-      const ms = new Date(start + 'T00:00:00').getTime()
-      const me = new Date(end + 'T23:59:59').getTime()
       behaviorRows = await fetchCollectionWhere(
         'user_behaviors',
-        { timestamp: _.gte(ms).and(_.lte(me)) },
+        { dateKey: _.gte(start).and(_.lte(end)) },
         BEHAVIOR_SAMPLE_LIMIT
       )
       applyBehaviorExtras(behaviorRows)

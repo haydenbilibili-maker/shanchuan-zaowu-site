@@ -43,7 +43,8 @@ Page({
       return
     }
     if (!canAccessManagerTab(this.data.workspaceRole, idx)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' })
+      if (typeof this.showHubTip === 'function') this.showHubTip('无此功能权限', 'warn')
+      else wx.showToast({ title: '无此功能权限', icon: 'none' })
       return
     }
     goManagerModule(idx, title)

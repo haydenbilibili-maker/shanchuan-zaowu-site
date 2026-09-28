@@ -392,5 +392,6 @@
   closable="{{false}}"
   from="identify_result"
   bind:success="onRegisterSuccess"
+  bind:cta="onRegisterCta"
   bind:close="onRegisterDialogClose"
 />

@@ -21,6 +21,7 @@ const STAFF_ORDER_MSG_TYPE = 'staff_order_paid';
 const WORKBENCH_TILE_ICONS = {
   super_admin: '/assets/icons/lock.png',
   manager: '/assets/icons/store.png',
+  supplier: '/assets/icons/cart.png',
   staff: '/assets/icons/checkin.png',
   specimen_artisan: '/assets/icons/care.png',
   live_host: '/assets/icons/video-tab.png',
@@ -1398,16 +1399,18 @@ Page(withAppModal({
       const openid = app.globalData.openid;
       if (!openid) return;
 
-      const [bookRes, certRes, couponPack, colRes] = await Promise.all([
+      const [bookRes, certRes, couponPack, colRes, giftCertRes] = await Promise.all([
         db.collection('bookings').where({ _openid: openid, status: 'confirmed' }).count(),
         db.collection('orders').where({ _openid: openid, status: 'received' }).count(),
         fetchMyCoupons({ usableOnly: true }),
-        db.collection('collections').where({ _openid: openid }).count()
+        db.collection('collections').where({ _openid: openid }).count(),
+        // 受赠的收藏证书（礼赠持有人）
+        db.collection('orders').where({ 'giftMeta.receiverOpenid': openid, status: 'received' }).count().catch(() => ({ total: 0 }))
       ]);
 
       this.setData({
         bookingCount: bookRes.total || 0,
-        certificateCount: certRes.total || 0,
+        certificateCount: (certRes.total || 0) + (giftCertRes.total || 0),
         couponCount: (couponPack.list || []).length,
         ...this._couponBadgeFields((couponPack.list || []).length),
         collectionCount: colRes.total || 0
@@ -2340,16 +2343,6 @@ Page(withAppModal({
     }
   },
 
-  onUpdateNickName(e) {
-    const nickName = e.detail.value;
-    if (!nickName) return;
-    this.setData({ 'userInfo.nickName': nickName });
-    this.persistMemberCardSnapshot();
-    this.updateUserProfile({ nickName }).catch(() => {
-      wx.showToast({ title: '昵称保存失败', icon: 'none' });
-    });
-  },
-
   goToProfile() {
     wx.vibrateShort({ type: 'light' });
     if (isLocalLoggedOut()) {
@@ -2372,7 +2365,7 @@ Page(withAppModal({
   goToLegal(e) {
     const type = (e.currentTarget.dataset.type === 'privacy') ? 'privacy' : 'terms';
     wx.navigateTo({
-      url: `/subpackages/extra/user/legal/index?type=${type}`,
+      url: `/subpackages/content/user/legal/index?type=${type}`,
       fail: () => wx.showToast({ title: '无法打开协议', icon: 'none' })
     });
   },
@@ -2465,7 +2458,7 @@ Page(withAppModal({
         workbenchApprovalPending: counts.approval,
         ...buildWorkbenchMarqueeFields(counts),
         isStaffOnly: resolved === WORKSPACE_STORE_STAFF && entries.length === 1,
-        showManagerEntry: entries.some((e) => e.kind === 'super_admin' || e.kind === 'manager' || e.kind === 'artisan' || e.kind === 'live_host' || e.kind === 'investor' || e.kind === 'shareholder'),
+        showManagerEntry: entries.some((e) => e.kind === 'super_admin' || e.kind === 'manager' || e.kind === 'artisan' || e.kind === 'supplier' || e.kind === 'live_host' || e.kind === 'investor' || e.kind === 'shareholder'),
         showStaffEntry: entries.some((e) => e.kind === 'staff'),
         managerEntryTitle: '店长工作台',
         managerEntryEn: 'MANAGER',
@@ -2580,14 +2573,6 @@ Page(withAppModal({
       achievementBadgeText: '',
       achievementBadgeWide: false
     });
-  },
-
-  onWorkbenchTap(e) {
-    const ds = e.currentTarget.dataset || {};
-    const kind = String(ds.kind || '').trim();
-    if (!kind) return;
-    wx.vibrateShort({ type: 'light' });
-    requestWorkspaceAccess(kind, ds.workspace || '');
   },
 
   onWorkbenchTileTap(e) {
@@ -3150,24 +3135,6 @@ Page(withAppModal({
     wx.vibrateShort({ type: 'medium' })
     trackBehavior('community_entry_click', 'user', app.globalData.openid || 'guest', { source: 'user_services' })
     wx.navigateTo({ url: '/subpackages/feature/community/index?from=user' })
-  },
-
-  goToPetOrders() {
-    wx.vibrateShort({ type: 'medium' })
-    try {
-      const { fetchContentDisplayFlags, toastPetMemorialClosed } = require('../../utils/contentDisplayFlags')
-      fetchContentDisplayFlags().then(({ flags }) => {
-        if (flags.showPetMemorial === false) {
-          toastPetMemorialClosed()
-          return
-        }
-        wx.navigateTo({ url: '/subpackages/feature/custom/pet/list/index?from=user' })
-      }).catch(() => {
-        wx.navigateTo({ url: '/subpackages/feature/custom/pet/list/index?from=user' })
-      })
-    } catch (e) {
-      wx.navigateTo({ url: '/subpackages/feature/custom/pet/list/index?from=user' })
-    }
   },
 
   // 🟢 跳转到联系专员

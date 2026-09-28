@@ -210,7 +210,6 @@ input {
 .text-cut-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* 安全区适配 */
-.safe-bottom { padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
 
 /* ==================== 3. 详情页富文本增强 (mp-html) ==================== */
 /* 引用块 */
@@ -404,12 +403,6 @@ button.btn-small,
   border-radius: 24rpx;
 }
 
-button.btn-large,
-.btn-large {
-  padding: 24rpx 48rpx;
-  font-size: 32rpx;
-  border-radius: 48rpx;
-}
 
 /* 按钮禁用 — Dark-700 底 + Dark-400 字 */
 button[disabled],
@@ -484,17 +477,8 @@ button[disabled]:active,
 }
 
 /* 通用动画类 */
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
 
-.animate-slide-up {
-  animation: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-.animate-scale-in {
-  animation: scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 /* ==================== 信号灯系统（全平台统一） ====================
  * 语义文档：docs/signal-lamp.md · 工具：utils/signalLamp.js
@@ -887,23 +871,10 @@ image[error] {
 
 /* ==================== 11. 性能优化 ==================== */
 /* 硬件加速 */
-.optimize-gpu {
-  transform: translateZ(0);
-  will-change: transform;
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
 
 /* 减少重绘 */
-.no-repaint {
-  contain: layout style paint;
-}
 
 /* 平滑滚动 */
-.smooth-scroll {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-}
 
 /* ==================== 12. 品类标签（VI 品类色） ==================== */
 .tag-category {
@@ -915,285 +886,29 @@ image[error] {
   font-weight: 500;
   letter-spacing: 0.03em;
 }
-.tag-insecta { background: rgba(82, 183, 136, 0.12); color: var(--color-insecta); }
-.tag-minerals { background: rgba(123, 104, 174, 0.12); color: var(--color-minerals); }
-.tag-plantae { background: rgba(109, 163, 77, 0.12); color: var(--color-plantae); }
-.tag-marine { background: rgba(91, 143, 185, 0.12); color: var(--color-marine); }
 
 /* ==================== 12b. CSS图标兜底方案 ==================== */
 /* 当assets中没有对应图标文件时，使用CSS绘制 */
 
 /* 折扣图标 - 百分比符号 */
-.icon-discount {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.icon-discount::before {
-  content: '%';
-  font-size: 24rpx;
-  font-weight: 900;
-  color: var(--primary);
-  line-height: 1;
-}
 
 /* 饮品图标 - 杯子 */
-.icon-drink {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-drink::before {
-  content: '';
-  position: absolute;
-  top: 20%;
-  left: 20%;
-  width: 60%;
-  height: 50%;
-  border: 2px solid var(--primary);
-  border-bottom: none;
-  border-radius: 4rpx 4rpx 0 0;
-}
-.icon-drink::after {
-  content: '';
-  position: absolute;
-  bottom: 10%;
-  left: 30%;
-  width: 40%;
-  height: 8%;
-  background: var(--primary);
-  border-radius: 0 0 2rpx 2rpx;
-}
 
 /* 礼物图标 - 盒子+蝴蝶结 */
-.icon-gift {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-gift::before {
-  content: '';
-  position: absolute;
-  top: 30%;
-  left: 20%;
-  width: 60%;
-  height: 40%;
-  border: 2px solid var(--primary);
-  border-radius: 2rpx;
-}
-.icon-gift::after {
-  content: '';
-  position: absolute;
-  top: 30%;
-  left: 50%;
-  width: 2px;
-  height: 40%;
-  background: var(--primary);
-  transform: translateX(-50%);
-}
 
 /* 手机图标 - 矩形+圆角 */
-.icon-phone {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-phone::before {
-  content: '';
-  position: absolute;
-  top: 10%;
-  left: 25%;
-  width: 50%;
-  height: 70%;
-  border: 2px solid var(--primary);
-  border-radius: 6rpx;
-}
-.icon-phone::after {
-  content: '';
-  position: absolute;
-  bottom: 5%;
-  left: 50%;
-  width: 30%;
-  height: 4%;
-  background: var(--primary);
-  border-radius: 2rpx;
-  transform: translateX(-50%);
-}
 
 /* 眼睛图标 - 椭圆+圆点 */
-.icon-eye {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-eye::before {
-  content: '';
-  position: absolute;
-  top: 20%;
-  left: 15%;
-  width: 70%;
-  height: 50%;
-  border: 2px solid var(--primary);
-  border-radius: 50%;
-}
-.icon-eye::after {
-  content: '';
-  position: absolute;
-  top: 35%;
-  left: 50%;
-  width: 20%;
-  height: 20%;
-  background: var(--primary);
-  border-radius: 50%;
-  transform: translateX(-50%);
-}
 
 /* 搜索图标 - 圆形+放大镜 */
-.icon-search {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-search::before {
-  content: '';
-  position: absolute;
-  top: 15%;
-  left: 15%;
-  width: 50%;
-  height: 50%;
-  border: 2px solid var(--primary);
-  border-radius: 50%;
-}
-.icon-search::after {
-  content: '';
-  position: absolute;
-  bottom: 15%;
-  right: 15%;
-  width: 30%;
-  height: 2px;
-  background: var(--primary);
-  transform: rotate(45deg);
-  transform-origin: left center;
-}
 
 /* 编辑图标 - 铅笔 */
-.icon-edit {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-edit::before {
-  content: '';
-  position: absolute;
-  top: 20%;
-  left: 30%;
-  width: 40%;
-  height: 2px;
-  background: var(--primary);
-  transform: rotate(45deg);
-  transform-origin: left center;
-}
-.icon-edit::after {
-  content: '';
-  position: absolute;
-  bottom: 20%;
-  right: 20%;
-  width: 30%;
-  height: 2px;
-  background: var(--primary);
-  transform: rotate(-45deg);
-  transform-origin: right center;
-}
 
 /* 时钟图标 - 圆形+指针 */
-.icon-clock {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-clock::before {
-  content: '';
-  position: absolute;
-  top: 10%;
-  left: 10%;
-  width: 80%;
-  height: 80%;
-  border: 2px solid var(--primary);
-  border-radius: 50%;
-}
-.icon-clock::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 2px;
-  height: 30%;
-  background: var(--primary);
-  transform: translate(-50%, -100%) rotate(45deg);
-  transform-origin: bottom center;
-}
 
 /* 相机图标 - 矩形+镜头 */
-.icon-camera {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-camera::before {
-  content: '';
-  position: absolute;
-  top: 20%;
-  left: 20%;
-  width: 60%;
-  height: 50%;
-  border: 2px solid var(--primary);
-  border-radius: 4rpx;
-}
-.icon-camera::after {
-  content: '';
-  position: absolute;
-  top: 30%;
-  left: 50%;
-  width: 30%;
-  height: 30%;
-  border: 2px solid var(--primary);
-  border-radius: 50%;
-  transform: translateX(-50%);
-}
 
 /* 皇冠图标 - 三角形+装饰 */
-.icon-crown {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.icon-crown::before {
-  content: '';
-  position: absolute;
-  top: 30%;
-  left: 20%;
-  width: 60%;
-  height: 40%;
-  border-left: 2px solid var(--primary);
-  border-right: 2px solid var(--primary);
-  border-top: 2px solid var(--primary);
-  border-bottom: none;
-  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-}
-.icon-crown::after {
-  content: '';
-  position: absolute;
-  top: 25%;
-  left: 50%;
-  width: 20%;
-  height: 20%;
-  background: var(--primary);
-  border-radius: 50%;
-  transform: translateX(-50%);
-}
 
 /* ==================== 13. 图标颜色统一 ==================== */
 /* 单色图标统一为黄铜金 #C4A76C（近似） */
@@ -1243,9 +958,3 @@ image[error] {
 }
 
 /* 关闭弹层专用：圆环内 X，勿与回退混用 */
-.page-nav-close-icon {
-  width: 48rpx;
-  height: 48rpx;
-  display: block;
-  flex-shrink: 0;
-}

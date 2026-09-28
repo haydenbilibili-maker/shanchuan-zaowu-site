@@ -11,7 +11,9 @@
  * - 营业日：Asia/Shanghai（云函数默认 UTC，统一换算）
  * - 新增用户：users.createTime|registerTime|createdAt（库内多为 Date/serverDate）
  *   按东八区营业日 count；查询必须用 Date，勿用纯 number（否则恒为 0）
- * - DAU：优先 analytics_daily.uv[] 合并；否则 user_behaviors 采样去重
+ * - DAU：优先 analytics_daily.uv[] 合并；否则 user_behaviors 按 dateKey 采样去重
+ * - 行为漏斗：user_behaviors 明细按 dateKey 区间采样后 buildFunnel（勿按 timestamp：
+ *   2026-09-15 后一度不写该字段，按 timestamp 查恒空 → 漏斗全 0）
  * - 留存：日活用户次日 / 7 日回访率（非注册 cohort）
  * - 线上 GMV（毛）：paid|paid_awaiting_address|shipped|received|ready_pickup
  *   按 paidTime（无则 createTime）归入营业日；金额 = totalPrice 实付（含运费）
@@ -509,8 +511,24 @@ function aggregateRows(rows) {
   }
 }
 
-function buildFunnel(rows) {
-  const count = (action) => rows.filter((r) => r.action === action).length
+function buildFunnel(rows, dailyRows = []) {
+  /**
+   * 动作级计数：优先 `analytics_daily`（权威日汇总，已验证每天在涨），
+   * 明细采样仅作兜底。
+   *
+   * 为什么（2026-09-26 第二层）：即使用 dateKey 能读到 user_behaviors，
+   * `orderBy+limit(4000)` 也会被 page_view 等淹没，鉴定类稀有 action 整段漏出采样
+   * → 漏斗全 0；而同区间 analytics_daily 里 identify_* 的 count 仍在。
+   * step 分桶仍只能走明细（daily 无 step）。
+   */
+  const dailyLen = (dailyRows || []).length
+  const dailyCount = (action) =>
+    (dailyRows || [])
+      .filter((d) => d.action === action)
+      .reduce((s, d) => s + (Number(d.count) || 0), 0)
+  const sampleCount = (action) => rows.filter((r) => r.action === action).length
+  const count = (action) => (dailyLen > 0 ? dailyCount(action) : sampleCount(action))
+
   const countStep = (step) =>
     rows.filter((r) => r.action === 'identify_save_atlas_gate' && r.step === step).length
   const pct = (part, total) => (total > 0 ? Math.round((part / total) * 1000) / 10 : 0)
@@ -544,7 +562,11 @@ function buildFunnel(rows) {
   const wallPlay = rows.filter(
     (r) => r.action === 'wish_wall_play' && String(r.targetType || '') !== 'product'
   ).length
-  const wallEngage = count('wish_wall_lamp') + wallPlay + count('wish_wall_sound')
+  // engage：玩法类优先明细（需排除 product chip）；明细空时回落 daily 粗算（含 chip，略偏高）
+  const wallEngage =
+    rows.length > 0
+      ? count('wish_wall_lamp') + wallPlay + count('wish_wall_sound')
+      : dailyCount('wish_wall_lamp') + dailyCount('wish_wall_play') + dailyCount('wish_wall_sound')
 
   // AI 识别「保存图鉴」注册钩子漏斗：show（弹窗）→ go_register（去注册）/ dismiss（暂不保存）
   // → resume_success（注册完成后自动续写成功）
@@ -632,6 +654,15 @@ function buildFunnel(rows) {
       productView: count('product_view') + count('view'),
       addCart: count('product_add_cart'),
       orderSubmit: count('order_submit')
+    },
+    // 诊断：方便区分「未部署 / 明细空 / 真无鉴定流量」
+    _diag: {
+      source: dailyLen > 0 ? 'analytics_daily+behaviors' : 'user_behaviors_sample',
+      behaviorsCount: rows.length,
+      dailyRows: dailyLen,
+      dailyIdentifyStart: dailyCount('identify_start'),
+      sampleIdentifyStart: sampleCount('identify_start'),
+      gateShowSample: gateShow
     }
   }
 }
@@ -661,28 +692,131 @@ function buildShareList(map, { valueKey = 'value', limit = 8 } = {}) {
   })
 }
 
+/**
+ * 规范化明细行：2026-09-15 之后一段时间写入的行只有 `_openid`/`dateKey`/`serverTime`，
+ * 没有 `userId`/`timestamp`（白名单漏写）。读侧统一补齐，避免 UV/漏斗恒 0。
+ */
+function normalizeBehaviorRow(r) {
+  if (!r) return r
+  const userId = r.userId || r._openid || ''
+  let timestamp = Number(r.timestamp) || 0
+  if (!timestamp) {
+    const st = r.serverTime
+    if (st instanceof Date) timestamp = st.getTime()
+    else if (st && typeof st === 'object' && st.$date) timestamp = new Date(st.$date).getTime() || 0
+    else if (st) timestamp = toMs(st)
+  }
+  return { ...r, userId, timestamp }
+}
+
+/** 部署指纹：报表 notes / behaviorDiag 带出，便于确认线上是否已是本版 */
+const BEHAVIOR_QUERY_BUILD = 'funnel-daily-v2'
+
+const BEHAVIOR_FIELD_PROJ = {
+  action: true,
+  module: true,
+  page: true,
+  userId: true,
+  _openid: true,
+  dateKey: true,
+  timestamp: true,
+  serverTime: true,
+  step: true,
+  targetId: true,
+  targetType: true
+}
+
+/** CloudBase `_.in` 单次上限保守取 20（与常见文档一致） */
+const DATEKEY_IN_CHUNK = 20
+
+/**
+ * 拉取行为明细（漏斗 step / topEvents / 采样 UV）。
+ *
+ * 查询策略（2026-09-26）：
+ *   1. 主路径：`dateKey ∈ keys` 分块 `_.in`（与 loadDailyRollup / 蓝图实测同构，不依赖 range 索引）
+ *   2. 回退：`dateKey` gte/lte（旧写法）
+ *   3. 不再按 timestamp 查（写侧一度不落该字段 → 恒空）
+ *
+ * 返回 `{ rows, meta }`；`loadBehaviors` 薄封装只回 rows，兼容本文件其它调用。
+ */
+async function loadBehaviorsWithMeta(startTs, endTs, limit = BEHAVIOR_SAMPLE) {
+  const dateKeys = dateKeysInRange(startTs, endTs)
+  const meta = {
+    build: BEHAVIOR_QUERY_BUILD,
+    queryMode: 'none',
+    count: 0,
+    error: '',
+    dateKeyCount: dateKeys.length,
+    startDate: dateKeys[0] || '',
+    endDate: dateKeys[dateKeys.length - 1] || ''
+  }
+  if (!dateKeys.length) return { rows: [], meta }
+
+  const mapRows = (rows) => (rows || []).map(normalizeBehaviorRow)
+
+  // ① dateKey ∈ chunk（推荐）
+  try {
+    const merged = []
+    for (let i = 0; i < dateKeys.length && merged.length < limit; i += DATEKEY_IN_CHUNK) {
+      const chunk = dateKeys.slice(i, i + DATEKEY_IN_CHUNK)
+      const res = await db
+        .collection('user_behaviors')
+        .where({ dateKey: _.in(chunk) })
+        .field(BEHAVIOR_FIELD_PROJ)
+        .limit(Math.max(1, limit - merged.length))
+        .get()
+      merged.push(...(res.data || []))
+    }
+    meta.queryMode = 'dateKey_in'
+    meta.count = merged.length
+    return { rows: mapRows(merged.slice(0, limit)), meta }
+  } catch (eIn) {
+    meta.error = String((eIn && eIn.message) || eIn || 'dateKey_in failed')
+  }
+
+  // ② dateKey 范围 + 可选 orderBy
+  const startDate = dateKeys[0]
+  const endDate = dateKeys[dateKeys.length - 1]
+  try {
+    const res = await db
+      .collection('user_behaviors')
+      .where({
+        dateKey: _.gte(startDate).and(_.lte(endDate))
+      })
+      .field(BEHAVIOR_FIELD_PROJ)
+      .orderBy('dateKey', 'desc')
+      .limit(limit)
+      .get()
+    meta.queryMode = 'dateKey_range_ordered'
+    meta.count = (res.data || []).length
+    meta.error = ''
+    return { rows: mapRows(res.data), meta }
+  } catch (eOrd) {
+    try {
+      const res = await db
+        .collection('user_behaviors')
+        .where({
+          dateKey: _.gte(startDate).and(_.lte(endDate))
+        })
+        .field(BEHAVIOR_FIELD_PROJ)
+        .limit(limit)
+        .get()
+      meta.queryMode = 'dateKey_range'
+      meta.count = (res.data || []).length
+      meta.error = String((eOrd && eOrd.message) || '')
+      return { rows: mapRows(res.data), meta }
+    } catch (e2) {
+      meta.queryMode = 'failed'
+      meta.error = [meta.error, e2 && e2.message].filter(Boolean).join(' | ')
+      console.warn('loadBehaviors dateKey query failed', meta.error)
+      return { rows: [], meta }
+    }
+  }
+}
+
 async function loadBehaviors(startTs, endTs, limit = BEHAVIOR_SAMPLE) {
-  const res = await db
-    .collection('user_behaviors')
-    .where({
-      timestamp: _.gte(startTs).and(_.lte(endTs))
-    })
-    .field({
-      action: true,
-      module: true,
-      page: true,
-      userId: true,
-      dateKey: true,
-      timestamp: true,
-      // 注册钩子漏斗按 step 分桶（identify_save_atlas_gate / wish_wall_register_gate）
-      step: true,
-      // 落愿成功要按 targetId==='ok' 过滤（wish_wall_post 的同名事件也用于失败分支）
-      targetId: true
-    })
-    .orderBy('timestamp', 'desc')
-    .limit(limit)
-    .get()
-  return res.data || []
+  const { rows } = await loadBehaviorsWithMeta(startTs, endTs, limit)
+  return rows
 }
 
 /**
@@ -939,11 +1073,12 @@ async function usersMetrics(event) {
   const { startTs, endTs, days, startDate, endDate, rangeType, yearMonth } = range
   const dateKeys = dateKeysInRange(startTs, endTs)
 
-  const [newUsersPack, dailyRollup, behaviorRows] = await Promise.all([
+  const [newUsersPack, dailyRollup, behaviorPack] = await Promise.all([
     loadNewUsersByDay(dateKeys, startTs, endTs),
     loadDailyRollup(dateKeys),
-    loadBehaviors(startTs, endTs)
+    loadBehaviorsWithMeta(startTs, endTs)
   ])
+  const behaviorRows = behaviorPack.rows || []
   const newUserCounts = newUsersPack.series || []
 
   const dailyUv = mergeDailyUv(dailyRollup, dateKeys)
@@ -974,6 +1109,24 @@ async function usersMetrics(event) {
       : 0
   const agg = aggregateRows(behaviorRows)
 
+  // 明细空时，浏览量改用 analytics_daily（与漏斗动作级同口径），避免「DAU 有数、浏览=0」的假象
+  let behaviorSummary = {
+    totalEvents: agg.totalEvents,
+    pageViews: agg.pageViews,
+    uniqueUsers: agg.uniqueUsers
+  }
+  if (!behaviorRows.length && dailyRollup.length) {
+    const pageViews = dailyRollup
+      .filter((d) => d.action === 'page_view')
+      .reduce((s, d) => s + (Number(d.count) || 0), 0)
+    const totalEvents = dailyRollup.reduce((s, d) => s + (Number(d.count) || 0), 0)
+    let uniqueUsers = 0
+    dateKeys.forEach((k) => {
+      uniqueUsers += (dailyUv[k] && dailyUv[k].size) || 0
+    })
+    behaviorSummary = { totalEvents, pageViews, uniqueUsers }
+  }
+
   const notes = []
   if (dauSource === 'user_behaviors_sample') {
     notes.push('DAU 来自行为表最近采样，非全量 UV')
@@ -985,6 +1138,12 @@ async function usersMetrics(event) {
   }
   if (behaviorSampled) {
     notes.push(`行为事件已采样最近 ${BEHAVIOR_SAMPLE} 条`)
+  }
+  if (!behaviorRows.length && dailyRollup.length) {
+    notes.push('行为明细为空，浏览量已改用 analytics_daily')
+  }
+  if (behaviorPack.meta && behaviorPack.meta.error) {
+    notes.push(`行为明细查询告警：${behaviorPack.meta.error}`)
   }
   if (newUsersPack.truncated) {
     notes.push(`新增用户扫描上限 ${USER_SCAN_MAX}，日趋势可能略低估`)
@@ -1004,11 +1163,7 @@ async function usersMetrics(event) {
     dauSource,
     retention,
     topEvents: agg.byAction.slice(0, 12),
-    behaviorSummary: {
-      totalEvents: agg.totalEvents,
-      pageViews: agg.pageViews,
-      uniqueUsers: agg.uniqueUsers
-    },
+    behaviorSummary,
     sampled: behaviorSampled,
     notes
   }
@@ -1822,13 +1977,19 @@ async function overview(event) {
   const range = parseRange(event)
   const { startTs, endTs, days, startDate, endDate, rangeType, yearMonth } = range
   const dateKeys = dateKeysInRange(startTs, endTs)
-  const [rows, daily] = await Promise.all([
-    loadBehaviors(startTs, endTs),
+  const [behaviorPack, daily] = await Promise.all([
+    loadBehaviorsWithMeta(startTs, endTs),
     loadDailyRollup(dateKeys)
   ])
+  const rows = behaviorPack.rows || []
+  const loadMeta = behaviorPack.meta || {}
 
   const agg = aggregateRows(rows)
-  const funnel = buildFunnel(rows)
+  const funnel = buildFunnel(rows, daily)
+  const funnelDiag = (funnel && funnel._diag) || {}
+  // _diag 仅供服务端/notes，不把内部字段直接塞进前端漏斗结构的顶层业务键
+  const funnelOut = { ...funnel }
+  delete funnelOut._diag
 
   let dailyTrend = dateKeys.map((dk) => {
     const dayRows = daily.filter((d) => d.dateKey === dk)
@@ -1845,16 +2006,44 @@ async function overview(event) {
     }))
   }
 
+  const noteParts = [
+    rows.length >= BEHAVIOR_SAMPLE ? `行为数据已采样最近 ${BEHAVIOR_SAMPLE} 条，UV 为采样内估算` : '',
+    daily.length >= DAILY_ROLLUP_LIMIT ? `日汇总读取上限 ${DAILY_ROLLUP_LIMIT} 行，日趋势可能略低估` : '',
+    `行为查询=${loadMeta.queryMode || 'n/a'}·明细${rows.length}条·build=${BEHAVIOR_QUERY_BUILD}`
+  ]
+  if (loadMeta.error) noteParts.push(`明细查询告警：${loadMeta.error}`)
+  if (!rows.length && funnelDiag.dailyIdentifyStart > 0) {
+    noteParts.push(
+      `漏斗动作级已改走 analytics_daily（鉴定开始=${funnelDiag.dailyIdentifyStart}）；注册钩子需明细 step，当前明细为空`
+    )
+  }
+  if (!rows.length && !funnelDiag.dailyIdentifyStart && daily.length > 0) {
+    noteParts.push('区间内日汇总有行但无 identify_start：更像真无鉴定流量，而非取数全空')
+  }
+  if (!rows.length && !daily.length) {
+    noteParts.push('明细与日汇总皆空：请确认云函数已部署，或区间内确无埋点')
+  }
+
   return {
     range: { startTs, endTs, days, startDate, endDate, rangeType, yearMonth },
     summary: agg,
-    funnel,
+    funnel: funnelOut,
     dailyTrend,
     sampled: rows.length >= BEHAVIOR_SAMPLE || daily.length >= DAILY_ROLLUP_LIMIT,
-    note: [
-      rows.length >= BEHAVIOR_SAMPLE ? `行为数据已采样最近 ${BEHAVIOR_SAMPLE} 条，UV 为采样内估算` : '',
-      daily.length >= DAILY_ROLLUP_LIMIT ? `日汇总读取上限 ${DAILY_ROLLUP_LIMIT} 行，日趋势可能略低估` : ''
-    ].filter(Boolean).join('；')
+    behaviorDiag: {
+      build: BEHAVIOR_QUERY_BUILD,
+      queryMode: loadMeta.queryMode || 'none',
+      behaviorsCount: rows.length,
+      dailyRows: daily.length,
+      dailyIdentifyStart: funnelDiag.dailyIdentifyStart || 0,
+      sampleIdentifyStart: funnelDiag.sampleIdentifyStart || 0,
+      gateShowSample: funnelDiag.gateShowSample || 0,
+      funnelSource: funnelDiag.source || '',
+      error: loadMeta.error || '',
+      startDate: loadMeta.startDate || startDate,
+      endDate: loadMeta.endDate || endDate
+    },
+    note: noteParts.filter(Boolean).join('；')
   }
 }
 
@@ -2219,6 +2408,13 @@ async function report(event, actor) {
     .concat(deposit.notes || [])
     .concat(commission.notes || [])
   if (behavior.note) notes.push(behavior.note)
+  if (behavior.behaviorDiag && behavior.behaviorDiag.build) {
+    notes.push(
+      `漏斗诊断 build=${behavior.behaviorDiag.build} query=${behavior.behaviorDiag.queryMode}` +
+        ` 明细=${behavior.behaviorDiag.behaviorsCount} 日汇总鉴定开始=${behavior.behaviorDiag.dailyIdentifyStart}` +
+        (behavior.behaviorDiag.error ? ` err=${behavior.behaviorDiag.error}` : '')
+    )
+  }
 
   const totals = orders.totals || {}
   const ledgerByStore = orders.ledgerByStore || []
@@ -2269,7 +2465,8 @@ async function report(event, actor) {
       topEvents: (users.topEvents && users.topEvents.length
         ? users.topEvents
         : (behavior.summary && behavior.summary.byAction) || []
-      ).slice(0, 12)
+      ).slice(0, 12),
+      diag: behavior.behaviorDiag || null
     }
   }
 }

@@ -719,7 +719,7 @@ Page({
   openLegal(e) {
     const type = e.currentTarget.dataset.type === 'privacy' ? 'privacy' : 'terms'
     wx.navigateTo({
-      url: `/subpackages/extra/user/legal/index?type=${type}`,
+      url: `/subpackages/content/user/legal/index?type=${type}`,
       fail: () => wx.showToast({ title: '无法打开协议', icon: 'none' })
     })
   },

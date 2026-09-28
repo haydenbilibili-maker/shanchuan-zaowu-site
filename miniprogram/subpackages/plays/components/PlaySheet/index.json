@@ -1,0 +1,11 @@
+{
+  "component": true,
+  "usingComponents": {
+    "play-body-qian": "../PlayBody/qian/index",
+    "play-body-cookie": "../PlayBody/cookie/index",
+    "play-body-zodiac": "../PlayBody/zodiac/index",
+    "play-body-mbti": "../PlayBody/mbti/index",
+    "play-body-solar": "../PlayBody/solar/index",
+    "play-body-coin": "../PlayBody/coin/index"
+  }
+}

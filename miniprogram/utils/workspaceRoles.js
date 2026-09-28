@@ -59,6 +59,8 @@ const MENU_KEYS = {
   RAW_INVENTORY_OPS: 'rawInventoryOps',
   STUDIO_DASHBOARD: 'studioDashboard',
   STUDIO_BILLS: 'studioBills',
+  /** TO B 供应商工作台 Hub（小程序旁路；主入口不在 Admin） */
+  SUPPLIER_WORKBENCH: 'supplierWorkbench',
   SHIPMENT_SKU: 'shipmentSku',
   FEISHU_SYNC: 'feishuSync',
   PROPERTY_COST: 'propertyCost',
@@ -194,6 +196,7 @@ const HUB_MENU_SECTIONS = {
   ],
   STUDIO: [
     MENU_KEYS.STUDIO_DASHBOARD,
+    MENU_KEYS.SUPPLIER_WORKBENCH,
     MENU_KEYS.SHIPMENT_SKU,
     MENU_KEYS.FEISHU_SYNC,
     MENU_KEYS.STUDIO_BILLS,
@@ -242,6 +245,7 @@ const HUB_MENU_SECTIONS = {
 const WORKBENCH_ORDER = [
   'super_admin',
   'manager',
+  'supplier',
   'staff',
   'specimen_artisan',
   'live_host',
@@ -263,6 +267,17 @@ const WORKBENCH_META = {
     title: '店长工作台',
     en: 'MANAGER',
     workspace: WORKSPACE_STORE_MANAGER
+  },
+  /**
+   * 采购商 / 供应商 B2B 工作台。过渡期：仅超管预览瓷砖；正式方认 roles 含 `supplier`。
+   * 普通店长不可见（禁止把工作室机密页伪装成本台）。
+   */
+  supplier: {
+    key: 'supplier',
+    kind: 'supplier',
+    title: '采购商工作台',
+    en: 'B2B DESK',
+    workspace: ''
   },
   staff: {
     key: 'staff',
@@ -327,6 +342,16 @@ function hasStoredRoleInList(roles, key) {
   if (key === 'super_admin') return list.indexOf('super_admin') !== -1
   if (key === 'manager') return list.indexOf('manager') !== -1
   if (key === 'staff') return list.indexOf('staff') !== -1
+  // 采购商工作台：超管预览、supplier、或采购商旁路角色 buyer/franchisee/channel
+  if (key === 'supplier') {
+    return (
+      list.indexOf('super_admin') !== -1 ||
+      list.indexOf('supplier') !== -1 ||
+      list.indexOf('buyer') !== -1 ||
+      list.indexOf('franchisee') !== -1 ||
+      list.indexOf('channel') !== -1
+    )
+  }
   return list.indexOf(key) !== -1
 }
 

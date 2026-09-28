@@ -9,6 +9,7 @@ const { sanitizeLatinName } = require('../../../utils/latinDisplay');
 let easterEgg = { tryKeyword() {}, shouldIgnoreTap() { return false; } };
 try { easterEgg = require('../../../utils/easterEgg'); } catch (e) { /* optional */ }
 const { collectRootAliases } = require('../../../utils/categorySeed');
+const { isActivityExpired } = require('../../../utils/activityExpiry');
 const {
   tokenizeKeyword,
   suggestRelatedTerms,
@@ -462,7 +463,7 @@ Page({
       const merged = [
         ...(wikiRes.data || []).map((item) => ({ ...item, _searchType: 'wiki' })),
         ...(prodRes.data || []).map((item) => ({ ...item, _searchType: 'product' })),
-        ...(actRes.data || []).map((item) => ({ ...item, _searchType: 'activity' })),
+        ...(actRes.data || []).filter((a) => !isActivityExpired(a)).map((item) => ({ ...item, _searchType: 'activity' })),
         ...((framerRes.data || []).filter((f) => f && f.active !== false)
           .map((item) => ({ ...item, _searchType: 'framer' })))
       ];

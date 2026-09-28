@@ -1,8 +1,9 @@
 const { enrichMessage, openMiniProgramUrl } = require('../../../../../utils/messageHelper');
 const { trackBehavior } = require('../../../../../utils/trackBehavior');
-const { buildDigestView } = require('../../../../../utils/digestView');
+const { buildDigestView } = require('../../../utils/digestView');
 
 const LIST_URL = '/subpackages/extra/user/messages/index';
+const WORKFLOW_DIGEST_LIST_URL = '/subpackages/extra/user/messages/index?queue=workflow&category=digest';
 
 function isInboxListRoute(route) {
   const r = String(route || '');
@@ -16,10 +17,11 @@ function hasInboxListInStack() {
   return !!(prev && isInboxListRoute(prev.route));
 }
 
-function goInboxListReplace() {
+function goInboxListReplace(isDigest) {
+  const url = isDigest ? WORKFLOW_DIGEST_LIST_URL : LIST_URL;
   wx.redirectTo({
-    url: LIST_URL,
-    fail: () => wx.reLaunch({ url: LIST_URL })
+    url,
+    fail: () => wx.reLaunch({ url })
   });
 }
 
@@ -40,15 +42,38 @@ function getWindowHeight() {
   }
 }
 
+function getSafeBottom () {
+  try {
+    if (typeof wx.getWindowInfo === 'function') {
+      const info = wx.getWindowInfo();
+      if (info && info.safeArea && info.screenHeight) {
+        return Math.max(0, info.screenHeight - info.safeArea.bottom);
+      }
+    }
+  } catch (e) { /* ignore */ }
+  try {
+    const info = wx.getSystemInfoSync();
+    if (info && info.safeArea && info.screenHeight) {
+      return Math.max(0, info.screenHeight - info.safeArea.bottom);
+    }
+  } catch (e) { /* ignore */ }
+  return 0;
+}
+
 Page({
   data: {
     selectedMessage: {},
     // 每日日报的结构化视图模型（非日报消息恒为 null → WXML 整块不出现）
     digestView: null,
+    digestPayloadMissing: false,
+    showSources: false,
+    sectionCollapsed: {},
+    letterLoading: false,
     loadError: false,
     entered: false,
     scrollHeightPx: 0,
-    scrollStyle: ''
+    scrollStyle: '',
+    actionPadStyle: ''
   },
 
   onReady() {
@@ -61,21 +86,26 @@ Page({
 
   guessScrollPane() {
     const winH = getWindowHeight();
-    const next = Math.max(240, (winH || 600) - 180);
+    const safeBottom = getSafeBottom();
+    const dockGuess = 168 + safeBottom;
+    const next = Math.max(240, (winH || 600) - dockGuess);
     this.setData({
       scrollHeightPx: next,
-      scrollStyle: 'height: ' + next + 'px;'
+      scrollStyle: 'height: ' + next + 'px;',
+      actionPadStyle: 'padding-bottom: ' + (24 + safeBottom) + 'px;'
     });
   },
 
   syncScrollPane() {
     const winH = getWindowHeight();
+    const safeBottom = getSafeBottom();
     const apply = (pageH, dockH) => {
-      const next = Math.max(240, Math.floor((pageH || winH || 600) - (dockH || 180)));
+      const next = Math.max(240, Math.floor((pageH || winH || 600) - (dockH || (168 + safeBottom))));
       if (!next || next === this.data.scrollHeightPx) return;
       this.setData({
         scrollHeightPx: next,
-        scrollStyle: 'height: ' + next + 'px;'
+        scrollStyle: 'height: ' + next + 'px;',
+        actionPadStyle: 'padding-bottom: ' + (24 + safeBottom) + 'px;'
       });
     };
     wx.nextTick(() => {
@@ -86,7 +116,7 @@ Page({
         .boundingClientRect()
         .exec((res) => {
           const pageH = (res && res[0] && res[0].height) || winH;
-          const dockH = (res && res[1] && res[1].height) || 180;
+          const dockH = (res && res[1] && res[1].height) || (168 + safeBottom);
           apply(pageH, dockH);
         });
     });
@@ -133,7 +163,7 @@ Page({
 
   onBackPress() {
     if (!hasInboxListInStack()) {
-      goInboxListReplace();
+      goInboxListReplace(!!(this.data.digestView || (this.data.selectedMessage && this.data.selectedMessage.isDigest)));
       return true;
     }
     return false;
@@ -142,10 +172,22 @@ Page({
   displayLetter(message) {
     const wasUnread = message.read !== true;
     const enriched = enrichMessage({ ...message, read: true });
+    const digestView = buildDigestView(message);
+    const isDigest = !!(enriched.isDigest || String(message.type || '') === 'daily_digest');
+    const sectionCollapsed = {};
+    if (digestView && Array.isArray(digestView.sections)) {
+      digestView.sections.forEach((sec) => {
+        if (sec && sec.key) sectionCollapsed[sec.key] = !!sec.startCollapsed;
+      });
+    }
     this.setData({
       selectedMessage: { ...enriched, isUnread: false, read: true },
       // 从 payload 生成渲染模型：每个数字带口径与来源，且「未取到」与「0」分开显示
-      digestView: buildDigestView(message),
+      digestView,
+      digestPayloadMissing: isDigest && !digestView,
+      showSources: false,
+      sectionCollapsed,
+      letterLoading: false,
       loadError: false,
       entered: false
     });
@@ -172,6 +214,9 @@ Page({
   },
 
   async fetchLetter(messageId) {
+    if (!this.data.selectedMessage._id) {
+      this.setData({ letterLoading: true, loadError: false });
+    }
     try {
       const res = await wx.cloud.callFunction({
         name: 'getUserMessages',
@@ -182,14 +227,107 @@ Page({
         return;
       }
       if (!this.data.selectedMessage._id) {
-        this.setData({ loadError: true });
+        this.setData({ loadError: true, letterLoading: false });
+      } else {
+        this.setData({ letterLoading: false });
       }
     } catch (e) {
       console.warn('打开来信失败:', e);
       if (!this.data.selectedMessage._id) {
-        this.setData({ loadError: true });
+        this.setData({ loadError: true, letterLoading: false });
+      } else {
+        this.setData({ letterLoading: false });
       }
     }
+  },
+
+  toggleDigestSources() {
+    this.setData({ showSources: !this.data.showSources });
+    wx.nextTick(() => this.syncScrollPane());
+  },
+
+  toggleDigestSection(e) {
+    const key = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.key) || '');
+    if (!key) return;
+    const sectionCollapsed = { ...(this.data.sectionCollapsed || {}) };
+    sectionCollapsed[key] = !sectionCollapsed[key];
+    this.setData({ sectionCollapsed });
+    wx.nextTick(() => this.syncScrollPane());
+  },
+
+  expandAllDigestSections() {
+    const sectionCollapsed = {};
+    const sections = (this.data.digestView && this.data.digestView.sections) || [];
+    sections.forEach((sec) => {
+      if (sec && sec.key) sectionCollapsed[sec.key] = false;
+    });
+    this.setData({ sectionCollapsed });
+    wx.nextTick(() => this.syncScrollPane());
+  },
+
+  collapseOkDigestSections() {
+    const sectionCollapsed = {};
+    const sections = (this.data.digestView && this.data.digestView.sections) || [];
+    sections.forEach((sec) => {
+      if (sec && sec.key) sectionCollapsed[sec.key] = sec.healthTone === 'ok';
+    });
+    this.setData({ sectionCollapsed });
+    wx.nextTick(() => this.syncScrollPane());
+  },
+
+  copyDigestSummary() {
+    this._clipboardWrite(
+      (this.data.digestView && this.data.digestView.copyText)
+        || (this.data.selectedMessage && this.data.selectedMessage.title)
+        || '',
+      'digest_copy'
+    );
+  },
+
+  shareDigestSheet() {
+    const view = this.data.digestView;
+    if (!view) {
+      wx.showToast({ title: '暂无结构化摘要', icon: 'none' });
+      return;
+    }
+    const items = ['复制完整摘要'];
+    if (view.hasFailedRows) items.push('仅复制失败项');
+    items.push('复制关键三数');
+    wx.showActionSheet({
+      itemList: items,
+      success: (res) => {
+        const idx = res.tapIndex;
+        if (idx === 0) {
+          this._clipboardWrite(view.copyText, 'digest_copy_full');
+          return;
+        }
+        if (view.hasFailedRows && idx === 1) {
+          this._clipboardWrite(view.copyFailedText, 'digest_copy_failed');
+          return;
+        }
+        const hiLines = (view.highlights || []).map((h) => `${h.label} ${h.valueText}`);
+        const brief = [`${view.dayKey || '日报'}${view.roleLabel ? ` · ${view.roleLabel}` : ''}`, view.healthSummary || view.countNote]
+          .concat(hiLines)
+          .filter(Boolean)
+          .join('\n');
+        this._clipboardWrite(brief, 'digest_copy_brief');
+      }
+    });
+  },
+
+  _clipboardWrite(text, trackName) {
+    if (!text) {
+      wx.showToast({ title: '暂无可复制摘要', icon: 'none' });
+      return;
+    }
+    wx.setClipboardData({
+      data: text,
+      success: () => {
+        wx.showToast({ title: '已复制', icon: 'none' });
+        trackBehavior(trackName || 'digest_copy', 'message', this.data.selectedMessage._id || '');
+      },
+      fail: () => wx.showToast({ title: '复制失败', icon: 'none' })
+    });
   },
 
   notifyListRead(messageId) {
@@ -208,17 +346,18 @@ Page({
   leaveLetter() {
     if (this._leaving) return;
     this._leaving = true;
+    const isDigest = !!(this.data.digestView || (this.data.selectedMessage && this.data.selectedMessage.isDigest));
     if (hasInboxListInStack()) {
       wx.navigateBack({
         delta: 1,
         fail: () => {
           this._leaving = false;
-          goInboxListReplace();
+          goInboxListReplace(isDigest);
         }
       });
       return;
     }
-    goInboxListReplace();
+    goInboxListReplace(isDigest);
   },
 
   handleAction() {

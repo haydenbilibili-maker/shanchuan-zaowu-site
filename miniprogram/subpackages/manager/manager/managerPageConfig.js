@@ -16,8 +16,9 @@ const { guardManagerPage } = require('../../../utils/managerAuth');
 // （把「标题含马上有」的过渡兜底也算进去），否则运营一打开就保存会把在墙上的藏品摘下来。
 const { isWishWallProduct, normalizeProductKey } = require('../../../utils/wishWall');
 // 工作通知声音（#29）：语料清单 + 播放引擎；只播「相比上次新增」的待办
-const workNoticeCatalog = require('../../../utils/workNoticeCatalog');
-const workNoticeVoice = require('../../../utils/workNoticeVoice');
+const workNoticeCatalog = require('../utils/workNoticeCatalog');
+const workNoticeVoice = require('../utils/workNoticeVoice');
+const reportDay = require('../utils/reportDay');
 // 运费规则 v2（蓝图 §19）：收费清单的可选项与中文名都取自唯一事实源，避免界面另抄一份
 const {
   DEFAULT_CHARGED_CRAFT_TYPES,
@@ -112,6 +113,7 @@ const {
   goRawInventoryOps,
   goStudioDashboard,
   goStudioBills,
+  goSupplierWorkbench,
   goShipmentSku,
   goFeishuSync,
   goPropertyCost,
@@ -1171,6 +1173,8 @@ const managerPageConfig = {
     timer: null,
     loading: true,
     workspaceReady: false,
+    hubTipTone: 'info',
+    hubTipText: '',
     workspaceRole: '',
     artisanEmbed: false,
     /** 标本师关联 framer 文档 _id（mineOnly 列表 / 保存归属） */
@@ -1415,6 +1419,7 @@ const managerPageConfig = {
     productTotal: 0,
     productHasMore: false,
     productListLoading: false,
+    productListError: false,
     productLoadingMore: false,
     productStats: null,
     productStatsLoading: false,
@@ -1576,6 +1581,12 @@ const managerPageConfig = {
     analyticsMonthCurrent: '',
     analyticsMonthPrev: '',
     analyticsMonthMax: '',
+    // 单日视图（昨日 / 选某一天）：analyticsRangeType === 'day'，营业日 = 北京时间自然日
+    analyticsDayKey: '',
+    analyticsDayLabel: '',
+    analyticsDayMax: '',
+    analyticsDayIsYesterday: false,
+    analyticsDayCompare: { loading: false, error: '', rows: [], prevLabel: '', weekLabel: '', hasAny: false, chart: [] },
     analyticsLoading: false,
     analyticsError: '',
     analyticsNotesOpen: false,
@@ -1669,7 +1680,7 @@ const managerPageConfig = {
         truncated: false,
         lowStockThreshold: 3
       },
-      behavior: { funnel: { identify: {}, store: {}, commerce: {} }, topEvents: [] },
+      behavior: { funnel: { identify: {}, store: {}, commerce: {} }, topEvents: [], diag: null },
       charts: { newUsers: [], dau: [], orderCount: [], gmv: [], revenue: [] }
     },
     
@@ -1920,7 +1931,7 @@ const managerPageConfig = {
     if (!code) return;
     wx.setClipboardData({
       data: code,
-      success: () => wx.showToast({ title: '已复制印记码', icon: 'none' })
+      success: () => this.showHubTip('已复制印记码', 'info')
     });
   },
 
@@ -2055,6 +2066,10 @@ const managerPageConfig = {
       this.loadAnalyticsDashboard().finally(() => wx.stopPullDownRefresh());
       return;
     }
+    if (this.data.curTab === 7) {
+      this.loadActivities().finally(() => wx.stopPullDownRefresh());
+      return;
+    }
     this.refreshData().then(() => wx.stopPullDownRefresh());
   },
 
@@ -2108,6 +2123,20 @@ const managerPageConfig = {
     });
   },
 
+  /** Hub 页内提示（分批收敛 toast，勿在子模块深链里滥用） */
+  showHubTip(msg, tone) {
+    const text = String(msg || '').trim();
+    if (!text) return;
+    this.setData({
+      hubTipTone: tone === 'warn' ? 'warn' : 'info',
+      hubTipText: text
+    });
+  },
+
+  clearHubTip() {
+    if (this.data.hubTipText) this.setData({ hubTipText: '' });
+  },
+
   switchTab(e) { 
     wx.vibrateShort({ type: 'light' });
     const idx = parseInt(e.currentTarget.dataset.idx);
@@ -2118,7 +2147,7 @@ const managerPageConfig = {
       return;
     }
     if (!canAccessManagerTab(this.data.workspaceRole, idx)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     // 二级开启自绘左缘回看板；根视图左缘才 leave（见 onWorkspaceBack）
@@ -2371,7 +2400,7 @@ const managerPageConfig = {
       if (item) {
         this.openProductModal({ currentTarget: { dataset: { item } } });
       } else {
-        wx.showToast({ title: '藏品未加载，请稍后在列表中打开', icon: 'none' });
+        this.showHubTip('藏品未加载，请稍后在列表中打开', 'warn');
       }
     }, 400);
   },
@@ -2403,7 +2432,7 @@ const managerPageConfig = {
   /** 带权限校验的外链入口 */
   goStorePointsGuarded(e) {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.POINTS)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     goStorePoints(e);
@@ -2411,7 +2440,7 @@ const managerPageConfig = {
 
   goStaffDirectoryGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.STAFF_DIRECTORY)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     goStaffDirectory();
@@ -2419,7 +2448,7 @@ const managerPageConfig = {
 
   goStoreStaffPermissionsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.STAFF_PERMISSIONS)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     goStoreStaffPermissions();
@@ -2427,7 +2456,7 @@ const managerPageConfig = {
 
   goShareholderConfigGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.SHAREHOLDER_CONFIG)) {
-      wx.showToast({ title: '仅超管可配置股东', icon: 'none' });
+      this.showHubTip('仅超管可配置股东', 'warn');
       return;
     }
     goShareholderConfig();
@@ -2435,7 +2464,7 @@ const managerPageConfig = {
 
   goInvoiceRequestsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.INVOICE)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     goInvoiceRequests();
@@ -2443,7 +2472,7 @@ const managerPageConfig = {
 
   goGiftOpsGuarded() {
     if (!this.data.menu || !this.data.menu.giftOps) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     goGiftOps();
@@ -2451,7 +2480,7 @@ const managerPageConfig = {
 
   goGiftManageGuarded() {
     if (!this.data.menu || !this.data.menu.giftManage) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     goGiftManage();
@@ -2459,7 +2488,7 @@ const managerPageConfig = {
 
   goApprovalsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.APPROVALS)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     goApprovals();
@@ -2467,7 +2496,7 @@ const managerPageConfig = {
 
   goHonoraryCuratorsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.HONORARY_CURATORS)) {
-      wx.showToast({ title: '仅超管可维护荣誉馆长', icon: 'none' });
+      this.showHubTip('仅超管可维护荣誉馆长', 'warn');
       return;
     }
     goHonoraryCurators();
@@ -2475,7 +2504,7 @@ const managerPageConfig = {
 
   goMemberCrmGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.MEMBER_CRM)) {
-      wx.showToast({ title: '仅超管可进入会员 CRM', icon: 'none' });
+      this.showHubTip('仅超管可进入会员 CRM', 'warn');
       return;
     }
     goMemberCrm();
@@ -2483,7 +2512,7 @@ const managerPageConfig = {
 
   goMemberLevelAdjustGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.MEMBER_LEVEL_ADJUST)) {
-      wx.showToast({ title: '仅超管可调整会员等级', icon: 'none' });
+      this.showHubTip('仅超管可调整会员等级', 'warn');
       return;
     }
     goMemberLevelAdjust();
@@ -2491,7 +2520,7 @@ const managerPageConfig = {
 
   goWalletConfigGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.WALLET_CONFIG)) {
-      wx.showToast({ title: '仅超管可配置钱包', icon: 'none' });
+      this.showHubTip('仅超管可配置钱包', 'warn');
       return;
     }
     goWalletConfig();
@@ -2499,7 +2528,7 @@ const managerPageConfig = {
 
   goWelcomeGiftGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.WELCOME_GIFT)) {
-      wx.showToast({ title: '仅超管可配置新会员礼包', icon: 'none' });
+      this.showHubTip('仅超管可配置新会员礼包', 'warn');
       return;
     }
     goWelcomeGift();
@@ -2507,14 +2536,14 @@ const managerPageConfig = {
 
   goBirthdayGiftGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.WELCOME_GIFT)) {
-      wx.showToast({ title: '仅超管可配置生日礼包', icon: 'none' });
+      this.showHubTip('仅超管可配置生日礼包', 'warn');
       return;
     }
     goBirthdayGift();
   },
   goDepositOpsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.DEPOSIT_OPS)) {
-      wx.showToast({ title: '仅超管可管理定金', icon: 'none' });
+      this.showHubTip('仅超管可管理定金', 'warn');
       return;
     }
     goDepositOps();
@@ -2522,7 +2551,7 @@ const managerPageConfig = {
 
   goPurchaseOpsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.PURCHASE_OPS)) {
-      wx.showToast({ title: '仅超管可管理采购', icon: 'none' });
+      this.showHubTip('仅超管可管理采购', 'warn');
       return;
     }
     goPurchaseOps();
@@ -2530,7 +2559,7 @@ const managerPageConfig = {
 
   goShipmentOpsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.SHIPMENT_OPS)) {
-      wx.showToast({ title: '暂无出货单权限', icon: 'none' });
+      this.showHubTip('暂无出货单权限', 'warn');
       return;
     }
     goShipmentOps();
@@ -2541,7 +2570,7 @@ const managerPageConfig = {
       canSeeMenu(this.data.workspaceRole, MENU_KEYS.INVENTORY_OPS) ||
       canSeeMenu(this.data.workspaceRole, MENU_KEYS.RAW_INVENTORY_OPS);
     if (!can) {
-      wx.showToast({ title: '无库存管理权限', icon: 'none' });
+      this.showHubTip('无库存管理权限', 'warn');
       return;
     }
     goInventoryOps(opts);
@@ -2554,7 +2583,7 @@ const managerPageConfig = {
 
   goStudioDashboardGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.STUDIO_DASHBOARD)) {
-      wx.showToast({ title: '仅超管可查看工作室仪表盘', icon: 'none' });
+      this.showHubTip('仅超管可查看仪表盘', 'warn');
       return;
     }
     goStudioDashboard();
@@ -2584,9 +2613,15 @@ const managerPageConfig = {
     goStudioBills();
   },
 
+  goSupplierWorkbenchGuarded() {
+    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.SUPPLIER_WORKBENCH)) return;
+    // 超管进「供应商管理中心」；伙伴视角预览在中心页底部（旧 Hub 仍经 goSupplierWorkbench 可达）
+    wx.navigateTo({ url: '/subpackages/b2bdesk/center/index', fail: () => goSupplierWorkbench() });
+  },
+
   goPropertyCostGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.PROPERTY_COST)) {
-      wx.showToast({ title: '仅超管可管理物业成本', icon: 'none' });
+      this.showHubTip('仅超管可管理物业成本', 'warn');
       return;
     }
     goPropertyCost();
@@ -2594,7 +2629,7 @@ const managerPageConfig = {
 
   goArtisanCommissionGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.ARTISAN_COMMISSION)) {
-      wx.showToast({ title: '仅超管可配置销售提成', icon: 'none' });
+      this.showHubTip('仅超管可配置销售提成', 'warn');
       return;
     }
     goArtisanCommission();
@@ -2602,7 +2637,7 @@ const managerPageConfig = {
 
   goBookingRulesGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.BOOKING_RULES)) {
-      wx.showToast({ title: '仅超管可配置预约规则', icon: 'none' });
+      this.showHubTip('仅超管可配置预约规则', 'warn');
       return;
     }
     goBookingRules();
@@ -2610,7 +2645,7 @@ const managerPageConfig = {
 
   goSupportConfigGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.SUPPORT_CONFIG)) {
-      wx.showToast({ title: '仅超管可配置客服入口', icon: 'none' });
+      this.showHubTip('仅超管可配置客服入口', 'warn');
       return;
     }
     goSupportConfig();
@@ -2618,7 +2653,7 @@ const managerPageConfig = {
 
   goMyPayslipGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.MY_PAYSLIP)) {
-      wx.showToast({ title: '无工资条权限', icon: 'none' });
+      this.showHubTip('无工资条权限', 'warn');
       return;
     }
     goMyPayslip();
@@ -2626,7 +2661,7 @@ const managerPageConfig = {
 
   goPayslipAdminGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.PAYSLIP_ADMIN)) {
-      wx.showToast({ title: '仅超管可维护工资', icon: 'none' });
+      this.showHubTip('仅超管可维护工资', 'warn');
       return;
     }
     goPayslipAdmin();
@@ -2634,23 +2669,23 @@ const managerPageConfig = {
 
   goLiveStudio() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.LIVE)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     wx.navigateTo({
       url: '/subpackages/extra/live/studio/index',
-      fail: () => wx.showToast({ title: '主播工作台暂不可用', icon: 'none' })
+      fail: () => this.showHubTip('主播工作台暂不可用', 'warn')
     });
   },
 
   goLiveBroadcast() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.LIVE)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     wx.navigateTo({
       url: '/subpackages/extra/live/broadcast/index',
-      fail: () => wx.showToast({ title: '开播页暂不可用', icon: 'none' })
+      fail: () => this.showHubTip('开播页暂不可用', 'warn')
     });
   },
 
@@ -2786,6 +2821,7 @@ const managerPageConfig = {
   goInventoryOps: function () { this.goInventoryOpsGuarded(); },
   goRawInventoryOps: function () { this.goRawInventoryOpsGuarded(); },
   goStudioDashboard: function () { this.goStudioDashboardGuarded(); },
+  goSupplierWorkbench: function () { this.goSupplierWorkbenchGuarded(); },
   goPropertyCost: function () { this.goPropertyCostGuarded(); },
   goArtisanCommission: function () { this.goArtisanCommissionGuarded(); },
   goBookingRules: function () { this.goBookingRulesGuarded(); },
@@ -2798,7 +2834,7 @@ const managerPageConfig = {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.VERIFY) &&
         !canSeeMenu(this.data.workspaceRole, MENU_KEYS.GRANT_POINTS) &&
         !canSeeMenu(this.data.workspaceRole, MENU_KEYS.STAFF_CONSOLE)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
@@ -2817,7 +2853,7 @@ const managerPageConfig = {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.VERIFY) &&
         !canSeeMenu(this.data.workspaceRole, MENU_KEYS.GRANT_POINTS) &&
         !canSeeMenu(this.data.workspaceRole, MENU_KEYS.STAFF_CONSOLE)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     const tab = canSeeMenu(this.data.workspaceRole, MENU_KEYS.VERIFY) ? 'verify' : 'grant';
@@ -3007,6 +3043,20 @@ const managerPageConfig = {
     }
   },
 
+  /**
+   * 已付订单（paid / paid_awaiting_address / shipped / received，按 createTime 区间）的金额与时间投影。
+   * orders 读规则将收紧为「本人或受礼人」，店长端不再客户端直读全表，统一经 secureDataRead。
+   */
+  async _fetchPaidOrderAmounts(startMs, endMs) {
+    const res = await wx.cloud.callFunction({
+      name: 'secureDataRead',
+      data: { action: 'mpPaidOrderAmounts', start: startMs, end: endMs },
+    });
+    const result = (res && res.result) || {};
+    if (!result.success) throw new Error(result.msg || '读取订单失败');
+    return result.list || [];
+  },
+
   parseOrderAmount(order) {
     if (!order) return 0;
     const raw = order.totalPrice ?? order.payAmount ?? order.amount ?? 0;
@@ -3029,17 +3079,9 @@ const managerPageConfig = {
     };
     const start = new Date(String(startDate).replace(/-/g, '/') + ' 00:00:00');
     const end = new Date(String(endDate).replace(/-/g, '/') + ' 23:59:59');
-    const paidStatus = _.in(['paid', 'paid_awaiting_address', 'shipped', 'received']);
-    const res = await db
-      .collection('orders')
-      .where({
-        status: paidStatus,
-        createTime: _.and(_.gte(start), _.lte(end)),
-      })
-      .limit(1000)
-      .get();
+    const rows = await this._fetchPaidOrderAmounts(start.getTime(), end.getTime());
     const map = {};
-    (res.data || []).forEach((o) => {
+    rows.forEach((o) => {
       const key = toKey(o.paidTime || o.createTime);
       if (!key || key < startDate || key > endDate) return;
       map[key] = (map[key] || 0) + this.parseOrderAmount(o);
@@ -3081,29 +3123,21 @@ const managerPageConfig = {
       const prevMonthEnd = new Date(startOfMonth.getTime() - 1);
       const prevYm = `${prevMonthStart.getFullYear()}-${String(prevMonthStart.getMonth() + 1).padStart(2, '0')}`;
 
-      const paidStatus = _.in(['paid', 'paid_awaiting_address', 'shipped', 'received']);
-      const [orderRes, prevOrderRes, visitRes, prevOfflineRes] = await Promise.all([
-        db.collection('orders').where({
-          status: paidStatus,
-          createTime: _.gte(startOfMonth),
-        }).limit(1000).get(),
-        db.collection('orders').where({
-          status: paidStatus,
-          createTime: _.and(_.gte(prevMonthStart), _.lte(prevMonthEnd)),
-        }).limit(1000).get(),
+      const [orderRows, prevOrderRows, visitRes, prevOfflineRes] = await Promise.all([
+        this._fetchPaidOrderAmounts(startOfMonth.getTime()),
+        this._fetchPaidOrderAmounts(prevMonthStart.getTime(), prevMonthEnd.getTime()),
         db.collection('bookings').where({ type: 'museum_visit', status: 'used' }).count(),
         storeLedger.sumMonthOffline(storeLedger.FINANCE_STORE_ID, prevYm).catch(() => ({ total: 0 })),
       ]);
 
       let onlineSales = 0;
-      const orders = orderRes.data || [];
-      orders.forEach((o) => {
+      orderRows.forEach((o) => {
         onlineSales += this.parseOrderAmount(o);
       });
-      const orderCount = orders.length;
+      const orderCount = orderRows.length;
 
       let prevOnlineSales = 0;
-      (prevOrderRes.data || []).forEach((o) => {
+      prevOrderRows.forEach((o) => {
         prevOnlineSales += this.parseOrderAmount(o);
       });
       const prevOffline = Number(prevOfflineRes && prevOfflineRes.total) || 0;
@@ -3166,7 +3200,7 @@ const managerPageConfig = {
           success: async (res) => {
               if (!res.confirm) return;
               if (!date) {
-                  wx.showToast({ title: '缺少营业日，无法删除', icon: 'none' });
+                  this.showHubTip('缺少营业日，无法删除', 'warn');
                   return;
               }
               wx.showLoading({ title: '删除中…', mask: true });
@@ -3177,16 +3211,13 @@ const managerPageConfig = {
                         this.data.ledgerStoreId || storeLedger.FINANCE_STORE_ID,
                   });
                   wx.hideLoading();
-                  wx.showToast({ title: '已删除', icon: 'success' });
+                  this.showHubTip('已删除', 'info');
                   await this.loadRevenues();
                   const offlineTotal = await this.loadOfflineStats();
                   await this.loadStats(offlineTotal);
               } catch (err) {
                   wx.hideLoading();
-                  wx.showToast({
-                      title: formatCloudFnError(err, '删除失败'),
-                      icon: 'none',
-                  });
+                  this.showHubTip(formatCloudFnError(err, '删除失败'), 'warn');
               }
           },
       });
@@ -3777,7 +3808,7 @@ const managerPageConfig = {
     this.setData({ newOrderUnreadCount: 0 });
     this.refreshOpsSignals();
     if (!canAccessManagerTab(this.data.workspaceRole, 2)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     wx.vibrateShort({ type: 'light' });
@@ -3819,7 +3850,7 @@ const managerPageConfig = {
     const idx = parseInt(e.currentTarget.dataset.idx, 10);
     const title = e.currentTarget.dataset.title || '订单管理';
     if (!canAccessManagerTab(this.data.workspaceRole, idx)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     goManagerModule(idx, title);
@@ -3879,18 +3910,19 @@ const managerPageConfig = {
       return;
     }
     try {
-      const [shippedRes, receivedRes, aftersaleRes, refundedRes] = await Promise.all([
-        db.collection('orders').where({ status: 'shipped' }).count(),
-        db.collection('orders').where({ status: 'received' }).count(),
-        db.collection('orders').where({ status: _.in(['refunding', 'aftersales', 'expired_refunding']) }).count(),
-        db.collection('orders').where({ status: 'refunded' }).count()
-      ]);
+      const res = await wx.cloud.callFunction({
+        name: 'secureDataRead',
+        data: { action: 'mpOrderStatusCounts' }
+      });
+      const result = (res && res.result) || {};
+      if (!result.success) throw new Error(result.msg || '订单计数失败');
+      const counts = result.counts || {};
       this.setData({
         opsOrderCounts: {
-          shipped: (shippedRes && shippedRes.total) || 0,
-          received: (receivedRes && receivedRes.total) || 0,
-          aftersale: (aftersaleRes && aftersaleRes.total) || 0,
-          refunded: (refundedRes && refundedRes.total) || 0
+          shipped: counts.shipped || 0,
+          received: counts.received || 0,
+          aftersale: counts.aftersale || 0,
+          refunded: counts.refunded || 0
         }
       });
     } catch (err) {
@@ -3907,7 +3939,7 @@ const managerPageConfig = {
 
     if (target === 'support') {
       if (!menu.support || !canAccessManagerTab(this.data.workspaceRole, 11)) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       wx.vibrateShort({ type: 'light' });
@@ -3916,7 +3948,7 @@ const managerPageConfig = {
     }
     if (target === 'workOrders') {
       if (!menu.workOrders || !canAccessManagerTab(this.data.workspaceRole, 10)) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       wx.vibrateShort({ type: 'light' });
@@ -3928,7 +3960,7 @@ const managerPageConfig = {
     }
     if (target === 'recruit') {
       if (!menu.framerRecruit || !canAccessManagerTab(this.data.workspaceRole, 14)) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       wx.vibrateShort({ type: 'light' });
@@ -3937,7 +3969,7 @@ const managerPageConfig = {
     }
     if (target === 'gift') {
       if (!(menu.giftOps || menu.giftManage)) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       wx.vibrateShort({ type: 'light' });
@@ -3948,7 +3980,7 @@ const managerPageConfig = {
     }
     if (target === 'approvals') {
       if (!menu.approvals) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       wx.vibrateShort({ type: 'light' });
@@ -3957,7 +3989,7 @@ const managerPageConfig = {
     }
     if (target === 'invoice') {
       if (!menu.invoice) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       wx.vibrateShort({ type: 'light' });
@@ -3966,7 +3998,7 @@ const managerPageConfig = {
     }
     if (target === 'live') {
       if (!menu.live) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       wx.vibrateShort({ type: 'light' });
@@ -3984,12 +4016,12 @@ const managerPageConfig = {
         goManagerModule(8, '营收账本');
         return;
       }
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     if (target === 'stock') {
       if (!menu.products || !canAccessManagerTab(this.data.workspaceRole, 1)) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       wx.vibrateShort({ type: 'light' });
@@ -4004,7 +4036,7 @@ const managerPageConfig = {
     }
     if (target === 'wishlist') {
       if (!menu.products || !canAccessManagerTab(this.data.workspaceRole, 1)) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       if (this.data.wishlistUnreadCount > 0) {
@@ -4020,7 +4052,7 @@ const managerPageConfig = {
 
     if (!menu.orders) return;
     if (!canAccessManagerTab(this.data.workspaceRole, 2)) {
-      wx.showToast({ title: '无此功能权限', icon: 'none' });
+      this.showHubTip('无此功能权限', 'warn');
       return;
     }
     // 0 待发 / 1 已发 / 2 已完成(签收) / 3 售后
@@ -4092,7 +4124,7 @@ const managerPageConfig = {
         dashStock: {
           ready: false,
           loading: false,
-          empty: true,
+          empty: false,
           error: true,
           onShelf: 0,
           offShelf: 0,
@@ -4111,7 +4143,7 @@ const managerPageConfig = {
     } catch (e) {
       console.error('loadBanners', e);
       this.setData({ banners: [] });
-      wx.showToast({ title: '轮播加载失败', icon: 'none' });
+      this.showHubTip('轮播加载失败', 'warn');
     }
   },
   openBannerModal(e) {
@@ -4162,7 +4194,7 @@ const managerPageConfig = {
       fail: (err) => {
         const msg = (err && err.errMsg) || '';
         if (msg.indexOf('cancel') === -1) {
-          wx.showToast({ title: '选图失败', icon: 'none' });
+          this.showHubTip('选图失败', 'warn');
         }
       }
     });
@@ -4200,15 +4232,15 @@ const managerPageConfig = {
   async submitBanner() {
     const b = this.data.tempBanner || {};
     if (!b.image || !String(b.title || '').trim()) {
-      return wx.showToast({ title: '请填写图片和标题', icon: 'none' });
+      return this.showHubTip('请填写图片和标题', 'warn');
     }
     const type = b.type || 'product';
     if ((type === 'product' || type === 'category') && !String(b.target || '').trim()) {
-      return wx.showToast({ title: type === 'product' ? '请填写藏品ID' : '请填写分类关键词', icon: 'none' });
+      return this.showHubTip(type === 'product' ? '请填写藏品ID' : '请填写分类关键词', 'warn');
     }
     if (type === 'scheme') {
       const v = validateSchemePath(b.target);
-      if (!v.ok) return wx.showToast({ title: v.message, icon: 'none' });
+      if (!v.ok) return this.showHubTip(v.message, 'warn');
     }
     wx.showLoading({ title: '发布中…', mask: true });
     try {
@@ -4248,18 +4280,18 @@ const managerPageConfig = {
         await callStoreContent({ action: 'upsert', collection: 'banners', data });
       }
       wx.hideLoading();
-      wx.showToast({ title: '已发布', icon: 'success' });
+      this.showHubTip('已发布', 'info');
       this.setData({ showBannerModal: false });
       this.loadBanners();
     } catch (e) {
       console.error('submitBanner', e);
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(e, '发布失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(e, '发布失败'), 'warn');
     }
   },
   deleteBanner(e) {
     const id = e.currentTarget.dataset.id;
-    if (!id) return wx.showToast({ title: '缺少海报 ID', icon: 'none' });
+    if (!id) return this.showHubTip('缺少海报 ID', 'warn');
     wx.showModal({
       title: '删除',
       content: '确定删除该轮播海报？',
@@ -4270,12 +4302,12 @@ const managerPageConfig = {
         try {
           await callStoreContent({ action: 'remove', collection: 'banners', id });
           wx.hideLoading();
-          wx.showToast({ title: '已删除', icon: 'success' });
+          this.showHubTip('已删除', 'info');
           this.loadBanners();
         } catch (err) {
           console.error('deleteBanner', err);
           wx.hideLoading();
-          wx.showToast({ title: formatCloudFnError(err, '删除失败'), icon: 'none' });
+          this.showHubTip(formatCloudFnError(err, '删除失败'), 'warn');
         }
       }
     });
@@ -4291,7 +4323,7 @@ const managerPageConfig = {
     const id = String(bookingId || '').trim();
     const code = String(ticketCode || '').trim();
     if (!id && !code) {
-      wx.showToast({ title: '未识别到票号', icon: 'none' });
+      this.showHubTip('未识别到票号', 'warn');
       return;
     }
     wx.vibrateShort({ type: 'heavy' });
@@ -4323,7 +4355,7 @@ const managerPageConfig = {
           this.loadBookings();
         } catch (err) {
           wx.hideLoading();
-          wx.showToast({ title: formatCloudFnError(err, '核销失败'), icon: 'none' });
+          this.showHubTip(formatCloudFnError(err, '核销失败'), 'warn');
         }
       }
     });
@@ -4340,7 +4372,7 @@ const managerPageConfig = {
           return;
         }
         if (!raw) {
-          wx.showToast({ title: '未识别到内容', icon: 'none' });
+          this.showHubTip('未识别到内容', 'warn');
           return;
         }
         const bookingUri = String(raw).match(/^BOOKING:([^:]+)(?::|$)/i);
@@ -4353,7 +4385,7 @@ const managerPageConfig = {
       fail: (err) => {
         const msg = (err && err.errMsg) || '';
         if (msg.indexOf('cancel') === -1) {
-          wx.showToast({ title: '扫码失败', icon: 'none' });
+          this.showHubTip('扫码失败', 'warn');
         }
       }
     });
@@ -4368,7 +4400,7 @@ const managerPageConfig = {
       wx.hideLoading();
       const result = res.result || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '核验失败', icon: 'none' });
+        this.showHubTip(result.msg || '核验失败', 'warn');
         return;
       }
       const perks = result.valid
@@ -4389,7 +4421,7 @@ const managerPageConfig = {
       });
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(e, '核验失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(e, '核验失败'), 'warn');
     }
   },
   closeMemberPassResult() {
@@ -4427,7 +4459,7 @@ const managerPageConfig = {
       this._applyDashStockFromStats(result);
     } catch (err) {
       console.warn('loadProductStats', err);
-      wx.showToast({ title: formatCloudFnError(err, '统计加载失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '统计加载失败'), 'warn');
     } finally {
       this.setData({ productStatsLoading: false });
     }
@@ -4445,7 +4477,7 @@ const managerPageConfig = {
     const pageSize = Number(this.data.productPageSize) || 50;
     this.setData(append
       ? { productLoadingMore: true }
-      : { productListLoading: true, productPage: 1, productHasMore: false });
+      : { productListLoading: true, productListError: false, productPage: 1, productHasMore: false });
     if (!append) wx.showLoading({ title: '加载藏品…' });
 
     try {
@@ -4507,7 +4539,8 @@ const managerPageConfig = {
         } : it)),
         productPage: page,
         productTotal: total,
-        productHasMore: hasMore
+        productHasMore: hasMore,
+        productListError: false
       };
       if (!append && !this.data.artisanEmbed) {
         // 过期秒杀数走全量筛选 total，不依赖当前页
@@ -4525,8 +4558,9 @@ const managerPageConfig = {
       this.setData(patch);
     } catch (err) {
       console.warn('loadProducts', err);
-      wx.showToast({ title: formatCloudFnError(err, '加载藏品失败'), icon: 'none' });
-      if (!append) this.setData({ products: [], productTotal: 0, productHasMore: false });
+      this.showHubTip(formatCloudFnError(err, '加载藏品失败'), 'warn');
+      // 失败保留上次列表，勿伪装空柜
+      if (!append) this.setData({ productListError: true });
     } finally {
       if (!append) wx.hideLoading();
       this.setData({ productListLoading: false, productLoadingMore: false });
@@ -4603,7 +4637,7 @@ const managerPageConfig = {
         page += 1;
       }
       wx.hideLoading();
-      if (!ids.length) return wx.showToast({ title: '无过期秒杀', icon: 'none' });
+      if (!ids.length) return this.showHubTip('无过期秒杀', 'info');
 
       const ok = await new Promise((resolve) => {
         wx.showModal({
@@ -4626,17 +4660,17 @@ const managerPageConfig = {
         if (!result.success) throw new Error(result.msg || '清理失败');
         cleared += Number(result.ok) || chunk.length;
       }
-      wx.showToast({ title: `已清理 ${cleared} 件`, icon: 'none' });
+      this.showHubTip(`已清理 ${cleared} 件`, 'info');
       this.loadProducts();
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '清理失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '清理失败'), 'warn');
     } finally {
       wx.hideLoading();
     }
   },
   async toggleShelf(e) {
     const id = e.currentTarget.dataset.id;
-    if (!id) return wx.showToast({ title: '藏品信息缺失', icon: 'none' });
+    if (!id) return this.showHubTip('藏品信息缺失', 'warn');
     const onShelf = !!e.detail.value;
     wx.showLoading({ title: onShelf ? '提交上架…' : '下架中…' });
     try {
@@ -4646,19 +4680,19 @@ const managerPageConfig = {
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '操作失败', icon: 'none' });
+        this.showHubTip(result.msg || '操作失败', 'warn');
         this.loadProducts();
         return;
       }
       if (result.pendingApproval) {
-        wx.showToast({ title: result.msg || '已提交超管审核', icon: 'none' });
+        this.showHubTip(result.msg || '已提交超管审核', 'info');
       } else {
-        wx.showToast({ title: result.msg || (onShelf ? '已上架' : '已下架'), icon: 'success' });
+        this.showHubTip(result.msg || (onShelf ? '已上架' : '已下架'), 'info');
       }
       this.loadProducts();
     } catch (err) {
       console.error('toggleShelf', err);
-      wx.showToast({ title: formatCloudFnError(err, '上下架失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '上下架失败'), 'warn');
       this.loadProducts();
     } finally {
       wx.hideLoading();
@@ -4675,7 +4709,7 @@ const managerPageConfig = {
     const item = this.data.tempProduct || {};
     const productId = String(this.data.editId || item._id || '').trim();
     if (!productId) {
-      wx.showToast({ title: '缺少藏品 ID，无法删除', icon: 'none' });
+      this.showHubTip('缺少藏品 ID，无法删除', 'warn');
       return;
     }
     const title = String(item.title || '').trim() || '该藏品';
@@ -4700,7 +4734,7 @@ const managerPageConfig = {
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '删除失败', icon: 'none' });
+        this.showHubTip(result.msg || '删除失败', 'warn');
         return;
       }
       const next = (this.data.products || []).filter((p) => p && p._id !== productId);
@@ -4711,11 +4745,11 @@ const managerPageConfig = {
         isEditing: false,
         editId: ''
       });
-      wx.showToast({ title: '档案已销毁', icon: 'success' });
+      this.showHubTip('档案已销毁', 'info');
       this.loadProductStats && this.loadProductStats();
     } catch (err) {
       console.error('deleteProduct', err);
-      wx.showToast({ title: formatCloudFnError(err, '删除失败，请确认已部署 manageProducts'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '删除失败，请确认已部署 manageProducts'), 'warn');
     } finally {
       wx.hideLoading();
     }
@@ -4724,7 +4758,7 @@ const managerPageConfig = {
   async openProductModal(e) { 
       await this.loadCategoriesTree();
       if (!(this.data.rootNames || []).length) {
-        wx.showToast({ title: '暂无分类，请先在分类管理同步', icon: 'none' });
+        this.showHubTip('暂无分类，请先在分类管理同步', 'warn');
       }
       const item = e.currentTarget.dataset.item;
       const sizeFields = getSkuSizeFields(item || {});
@@ -4756,6 +4790,8 @@ const managerPageConfig = {
           ...item, 
           images,
           tempImg: images[0] || '', 
+          media: require('../utils/productMedia').toEditorMedia(item.media),
+          mediaOrigCount: Array.isArray(item.media) ? item.media.length : 0,
           detailImages: item.detailImages || [],
           detailHtml: item.detailHtml || '',
           sizeL, sizeW, sizeH,
@@ -4801,6 +4837,8 @@ const managerPageConfig = {
           groupBuyingSize: groupBuying ? (groupBuying.groupSize || 2) : 2
         } : { 
           images: [],
+          media: [],
+          mediaOrigCount: 0,
           tempImg: '', title: '', price: '', costPrice: '', stock: 1, category: '', categoryId: '', rootCategoryName: '', rootCategoryId: '', categoryType: '', framerName: '', framerId: '', description: '', origin: '', latinName: '', sizeL:'', sizeW:'', sizeH:'', collectDate: '', isTreasure: false, isOneOfAKind: true, depositEligible: true, inArchive: true, memberDiscountEnabled: true, supportsCustom: false, giftEligible: true, sensitiveBlur: false, sensitiveBlurSetByUser: false, productRarity: 'common', productRaritySetByUser: false, hasSku: false, skus: [], skuDimensionsStr: '', detailImages: [], detailHtml: '',
           channel: '', craftType: '', craftProcess: '',
           protectionType: 'none',
@@ -4870,7 +4908,7 @@ const managerPageConfig = {
     const tip = missing.length
       ? `已填入概念草案（请补全：${missing.join('、')}）`
       : '已填入概念草案，请核对后保存';
-    wx.showToast({ title: tip.length > 20 ? tip.slice(0, 18) + '…' : tip, icon: 'none', duration: 2400 });
+    this.showHubTip(tip.length > 20 ? tip.slice(0, 18) + '…' : tip, 'info');
   },
   syncGiftSceneOptionFlags() {
     const selected = new Set(sanitizeGiftScenes((this.data.tempProduct || {}).giftScenes));
@@ -4940,11 +4978,26 @@ const managerPageConfig = {
   chooseProductImages() {
     const current = this.data.tempProduct.images || [];
     const remain = Math.max(0, 12 - current.length);
-    if (remain <= 0) return wx.showToast({ title: '最多 12 张轮播图', icon: 'none' });
-    wx.chooseImage({
-      count: remain,
+    const { MAX_MEDIA } = require('../utils/productMedia');
+    const mediaRemain = Math.max(0, MAX_MEDIA - (this.data.tempProduct.media || []).length);
+    if (remain <= 0 && mediaRemain <= 0) return this.showHubTip('轮播图与视频都已达上限', 'warn');
+    // 图片 + 视频混选：视频/实况只进 tempProduct.media，**绝不**混进 images（images[0] 是全站封面）
+    wx.chooseMedia({
+      count: Math.min(20, remain + mediaRemain),
+      mediaType: remain <= 0 ? ['video'] : (mediaRemain <= 0 ? ['image'] : ['image', 'video']),
+      sourceType: ['album', 'camera'],
+      maxDuration: 60,
+      // sizeType 保持默认 ['original','compressed']：与原 chooseImage 一致（「原图」开关仍由店长选），视频超限再 compressVideo
       success: async (res) => {
-        const picked = res.tempFilePaths || [];
+        const files = res.tempFiles || [];
+        const isVideo = (f) => !!f && (f.fileType === 'video' || (!f.fileType && res.type === 'video'));
+        const videoFiles = files.filter(isVideo);
+        if (videoFiles.length) await this.appendProductVideos(videoFiles);
+        const picked = files
+          .filter((f) => f && !isVideo(f))
+          .map((f) => f.tempFilePath)
+          .filter(Boolean)
+          .slice(0, remain);
         if (!picked.length) return;
         // 需求 17：上传前做尺寸/体积核验（原实现把手机原图直接入队，4000px 级原图直传云存储）
         wx.showLoading({ title: '校验中…', mask: true });
@@ -4981,6 +5034,99 @@ const managerPageConfig = {
         }
       }
     });
+  },
+  /** 视频校验：超 60s 拒；超 50MB 先 compressVideo 再判；通过的追加进 tempProduct.media */
+  async appendProductVideos(videoFiles) {
+    const pm = require('../utils/productMedia');
+    const rejected = [];
+    const accepted = [];
+    for (const f of videoFiles) {
+      let item = pm.fromChosenVideo(f);
+      let check = pm.checkVideoLimits(item);
+      if (!check.ok && check.tooLarge && wx.compressVideo) {
+        wx.showLoading({ title: '压缩视频中…', mask: true });
+        try {
+          const out = await new Promise((resolve, reject) => {
+            wx.compressVideo({ src: item.url, quality: 'medium', success: resolve, fail: reject });
+          });
+          item = { ...item, url: out.tempFilePath, size: Math.floor((Number(out.size) || 0) * 1024) };
+          check = pm.checkVideoLimits(item);
+        } catch (err) {
+          console.warn('compressVideo', err);
+        }
+        wx.hideLoading();
+      }
+      if (check.ok) accepted.push(item);
+      else rejected.push(check.reason);
+    }
+    const media = (this.data.tempProduct.media || []).concat(accepted);
+    if (media.length > pm.MAX_MEDIA) rejected.push(`视频最多 ${pm.MAX_MEDIA} 段，多出的已忽略`);
+    this.setData({ 'tempProduct.media': media.slice(0, pm.MAX_MEDIA) });
+    if (rejected.length) {
+      this.showHubTip(rejected.length > 1 ? `${rejected[0]}（共 ${rejected.length} 条未添加）` : rejected[0], 'warn');
+    }
+  },
+  removeProductMedia(e) {
+    const idx = Number(e.currentTarget.dataset.index);
+    const list = [...(this.data.tempProduct.media || [])];
+    if (idx < 0 || idx >= list.length) return;
+    list.splice(idx, 1);
+    this.setData({ 'tempProduct.media': list });
+  },
+  moveProductMedia(e) {
+    const idx = Number(e.currentTarget.dataset.index);
+    const j = idx + (Number(e.currentTarget.dataset.delta) || 0);
+    const list = [...(this.data.tempProduct.media || [])];
+    if (j < 0 || j >= list.length) return;
+    [list[idx], list[j]] = [list[j], list[idx]];
+    this.setData({ 'tempProduct.media': list });
+  },
+  /** 视频 ↔ 实况：实况 = 短视频按 Live 方式展示（静音循环、点按播放）；微信拿不到原生 Live Photo */
+  toggleProductMediaLive(e) {
+    const idx = Number(e.currentTarget.dataset.index);
+    const list = [...(this.data.tempProduct.media || [])];
+    const m = list[idx];
+    if (!m) return;
+    const { LIVE_HINT_SECONDS } = require('../utils/productMedia');
+    const next = m.type === 'live' ? 'video' : 'live';
+    list[idx] = { ...m, type: next };
+    this.setData({ 'tempProduct.media': list });
+    if (next === 'live' && m.duration > LIVE_HINT_SECONDS) {
+      this.showHubTip(`实况建议 ${LIVE_HINT_SECONDS} 秒内，这段更像普通视频`, 'warn');
+    }
+  },
+  /** 保存时上传一段视频：带进度、失败自动重试 3 次；仍失败则抛错中止保存（不静默丢视频，已传的不重传） */
+  async uploadProductVideo(item, i) {
+    const pm = require('../utils/productMedia');
+    const MAX_TRY = 3;
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        const fileID = await new Promise((resolve, reject) => {
+          const task = wx.cloud.uploadFile({
+            cloudPath: pm.videoCloudPath(`video_${i}`, item.url),
+            filePath: item.url,
+            success: (r) => resolve(r.fileID),
+            fail: reject
+          });
+          if (task && task.onProgressUpdate) {
+            task.onProgressUpdate((p) => {
+              wx.showLoading({ title: `上传视频 ${i + 1} · ${p.progress || 0}%`, mask: true });
+            });
+          }
+        });
+        let poster = item.poster || '';
+        if (poster && !isRemoteMediaUrl(poster)) poster = await uploadProductMedia(poster, `poster_${i}`);
+        return { ...item, url: fileID, poster };
+      } catch (err) {
+        console.warn('uploadProductVideo', attempt, err);
+        if (attempt >= MAX_TRY) {
+          const msg = `视频 ${i + 1} 上传失败（已重试 ${MAX_TRY} 次），请检查网络后再点保存；已上传的不会重复传`;
+          throw Object.assign(new Error(msg), { msg });
+        }
+        wx.showLoading({ title: `网络不稳，重试 ${attempt}/${MAX_TRY - 1}…`, mask: true });
+        await new Promise((r) => setTimeout(r, 800 * attempt));
+      }
+    }
   },
   removeProductImage(e) {
     const idx = Number(e.currentTarget.dataset.index);
@@ -5019,7 +5165,7 @@ const managerPageConfig = {
   chooseDetailImages() {
     const current = this.data.tempProduct.detailImages || []
     const remain = 9 - current.length
-    if (remain <= 0) return wx.showToast({ title: '最多 9 张详情图', icon: 'none' })
+    if (remain <= 0) return this.showHubTip('最多 9 张详情图', 'warn')
     wx.chooseImage({
       count: remain,
       success: (res) => {
@@ -5055,7 +5201,7 @@ const managerPageConfig = {
     const p = this.data.tempProduct || {};
     const next = sanitizeProductTags([...(p.tags || []), p.tagDraft]);
     if (next.length === (p.tags || []).length && String(p.tagDraft || '').trim()) {
-      wx.showToast({ title: '标签无效或已满 10 个', icon: 'none' });
+      this.showHubTip('标签无效或已满 10 个', 'warn');
     }
     this.setData({ 'tempProduct.tags': next, 'tempProduct.tagDraft': '' });
   },
@@ -5247,7 +5393,7 @@ const managerPageConfig = {
           'tempProduct.themeName': picked.themeName,
           'tempProduct.themeNote': picked.note || ''
         })
-        wx.showToast({ title: `主题名：${picked.themeName}`, icon: 'none' })
+        this.showHubTip(`主题名：${picked.themeName}`, 'info')
       },
       fail: () => { /* 取消：保持原值 */ }
     })
@@ -5256,7 +5402,7 @@ const managerPageConfig = {
   /** 一键补齐：仅需名称；补分类/描述/保护物种/taxonomy/学名（与 Admin 同源） */
   async assistProductFillAll() {
     const p = this.data.tempProduct || {};
-    if (!String(p.title || '').trim()) return wx.showToast({ title: '请先填写名称', icon: 'none' });
+    if (!String(p.title || '').trim()) return this.showHubTip('请先填写名称', 'warn');
     if (this.data.aiAssisting) return;
     this.setData({ aiAssisting: true });
     wx.showLoading({ title: '一键补齐中…' });
@@ -5297,7 +5443,7 @@ const managerPageConfig = {
           protectionPatch['tempProduct.protectionType'] = pt;
           protectionPatch.protectionTypeIndex = Math.max(0, this.data.protectionTypeValues.indexOf(pt));
         } else if (pt !== (afterCat.protectionType || 'none')) {
-          wx.showToast({ title: `AI 建议保护等级，请手动确认并上传证书`, icon: 'none' });
+          this.showHubTip('AI 建议保护等级，请手动确认并上传证书', 'warn');
         }
       }
       this.setData({
@@ -5321,9 +5467,9 @@ const managerPageConfig = {
       this.applySensitiveBlurSuggestionFromForm(this.data.tempProduct);
       // 主题名候选：只给候选、由录入者挑选（title 仍是标准名，AI 不直接改写）
       this.pickThemeNameCandidate(Array.isArray(d.nameCandidates) ? d.nameCandidates : []);
-      wx.showToast({ title: latinName ? '一键补齐完成' : '描述/分类已补齐', icon: 'none' });
+      this.showHubTip(latinName ? '一键补齐完成' : '描述/分类已补齐', 'info');
     } catch (e) {
-      wx.showToast({ title: e.message || '一键补齐失败', icon: 'none' });
+      this.showHubTip(e.message || '一键补齐失败', 'warn');
     } finally {
       wx.hideLoading();
       this.setData({ aiAssisting: false });
@@ -5331,9 +5477,9 @@ const managerPageConfig = {
   },
   async assistProductWithAi() {
     const p = this.data.tempProduct || {};
-    if (!p.title) return wx.showToast({ title: '请先填写名称', icon: 'none' });
+    if (!p.title) return this.showHubTip('请先填写名称', 'warn');
     if (!isMerchandiseProduct(p) && !p.category && !p.rootCategoryName) {
-      return wx.showToast({ title: '请先选择分类，或点「一键补齐」', icon: 'none' });
+      return this.showHubTip('请先选择分类，或点「一键补齐」', 'warn');
     }
     if (this.data.aiAssisting) return;
     this.setData({ aiAssisting: true });
@@ -5369,9 +5515,9 @@ const managerPageConfig = {
         'tempProduct.tags': this.mergeProductTagsFromAi(p.tags, d.tags)
       });
       this.applySensitiveBlurSuggestionFromForm(this.data.tempProduct);
-      wx.showToast({ title: latinName ? '识别成功' : '描述已补全', icon: 'none' });
+      this.showHubTip(latinName ? '识别成功' : '描述已补全', 'info');
     } catch (e) {
-      wx.showToast({ title: e.message || 'AI 识别失败', icon: 'none' });
+      this.showHubTip(e.message || 'AI 识别失败', 'warn');
     } finally {
       wx.hideLoading();
       this.setData({ aiAssisting: false });
@@ -5380,7 +5526,7 @@ const managerPageConfig = {
   async assistExhibitionWithAi() {
     const c = this.data.tempContent || {};
     if (!c.title || !String(c.title).trim()) {
-      return wx.showToast({ title: '请先填写专题标题', icon: 'none' });
+      return this.showHubTip('请先填写专题标题', 'warn');
     }
     if (this.data.aiAssisting) return;
     this.setData({ aiAssisting: true });
@@ -5403,9 +5549,9 @@ const managerPageConfig = {
         'tempContent.tagsStr': d.tagsStr || c.tagsStr || '专题',
         'tempContent.content': d.content || c.content || ''
       });
-      wx.showToast({ title: '专题文案已生成', icon: 'none' });
+      this.showHubTip('专题文案已生成', 'info');
     } catch (e) {
-      wx.showToast({ title: e.message || 'AI 创作失败', icon: 'none' });
+      this.showHubTip(e.message || 'AI 创作失败', 'warn');
     } finally {
       wx.hideLoading();
       this.setData({ aiAssisting: false });
@@ -5450,10 +5596,10 @@ const managerPageConfig = {
   },
   applySkuBulkFields() {
     const skus = [...(this.data.tempProduct.skus || [])]
-    if (!skus.length) return wx.showToast({ title: '暂无规格', icon: 'none' })
+    if (!skus.length) return this.showHubTip('暂无规格', 'warn')
     const price = String(this.data.skuBulkPrice || '').trim()
     const stock = String(this.data.skuBulkStock || '').trim()
-    if (!price && !stock) return wx.showToast({ title: '请填写统一价或库存', icon: 'none' })
+    if (!price && !stock) return this.showHubTip('请填写统一价或库存', 'warn')
     const next = skus.map((s) => ({
       ...s,
       price: price !== '' ? price : s.price,
@@ -5461,11 +5607,11 @@ const managerPageConfig = {
     }))
     this.setData({ 'tempProduct.skus': next })
     this.refreshSkuStockTotal()
-    wx.showToast({ title: '已应用到全部规格', icon: 'none' })
+    this.showHubTip('已应用到全部规格', 'info')
   },
   applyCoverToEmptySkus() {
     const cover = (this.data.tempProduct.images || [])[0] || this.data.tempProduct.tempImg || ''
-    if (!cover) return wx.showToast({ title: '请先在基础页上传封面', icon: 'none' })
+    if (!cover) return this.showHubTip('请先在基础页上传封面', 'warn')
     const skus = [...(this.data.tempProduct.skus || [])]
     let filled = 0
     const next = skus.map((s) => {
@@ -5475,7 +5621,7 @@ const managerPageConfig = {
       return { ...s, images: [cover], image: cover }
     })
     this.setData({ 'tempProduct.skus': next })
-    wx.showToast({ title: filled ? `已补 ${filled} 条规格图` : '无需补图', icon: 'none' })
+    this.showHubTip(filled ? `已补 ${filled} 条规格图` : '无需补图', 'info')
   },
   autoFillSkuCodes() {
     const title = String(this.data.tempProduct.title || 'SKU').replace(/\s+/g, '').slice(0, 8)
@@ -5486,7 +5632,7 @@ const managerPageConfig = {
       return { ...s, sku: `${title}-${slug}-${i + 1}` }
     })
     this.setData({ 'tempProduct.skus': next })
-    wx.showToast({ title: '已补全空编码', icon: 'none' })
+    this.showHubTip('已补全空编码', 'info')
   },
   addSkuRowsBatch() {
     const skus = [...(this.data.tempProduct.skus || [])]
@@ -5513,7 +5659,7 @@ const managerPageConfig = {
   },
   addSkuDimRow() {
     const rows = [...(this.data.skuDimBuilder || [])]
-    if (rows.length >= 4) return wx.showToast({ title: '最多 4 个维度', icon: 'none' })
+    if (rows.length >= 4) return this.showHubTip('最多 4 个维度', 'warn')
     rows.push({ name: '', valuesStr: '' })
     this.setData({ skuDimBuilder: rows })
   },
@@ -5534,7 +5680,7 @@ const managerPageConfig = {
           .filter(Boolean)
       }))
       .filter((d) => d.name && d.values.length)
-    if (!dims.length) return wx.showToast({ title: '请填写维度名与取值', icon: 'none' })
+    if (!dims.length) return this.showHubTip('请填写维度名与取值', 'warn')
 
     let combos = [[]]
     dims.forEach((dim) => {
@@ -5547,7 +5693,7 @@ const managerPageConfig = {
       combos = next
     })
     if (combos.length > 50) {
-      return wx.showToast({ title: `组合过多（${combos.length}），请精简取值`, icon: 'none' })
+      return this.showHubTip(`组合过多（${combos.length}），请精简取值`, 'warn')
     }
 
     const basePrice = this.data.tempProduct.price || ''
@@ -5586,7 +5732,7 @@ const managerPageConfig = {
     })
     this.refreshSkuStockTotal()
     syncProductSizeForm(this)
-    wx.showToast({ title: `已生成 ${skus.length} 个规格`, icon: 'none' })
+    this.showHubTip(`已生成 ${skus.length} 个规格`, 'info')
   },
   addSkuRow() {
     const skus = [...(this.data.tempProduct.skus || [])]
@@ -5641,7 +5787,7 @@ const managerPageConfig = {
     if (!sku) return;
     const current = Array.isArray(sku.images) ? sku.images.filter(Boolean) : (sku.image ? [sku.image] : []);
     const remain = Math.max(0, 9 - current.length);
-    if (remain <= 0) return wx.showToast({ title: '每规格最多 9 张图', icon: 'none' });
+    if (remain <= 0) return this.showHubTip('每规格最多 9 张图', 'warn');
     wx.chooseImage({
       count: remain,
       success: (res) => {
@@ -5678,14 +5824,14 @@ const managerPageConfig = {
     this.setData({ 'tempProduct.skus': skus });
   },
   async submitProduct() { 
-      const p = this.data.tempProduct; if (!p.title) return wx.showToast({title:'信息不全',icon:'none'});
+      const p = this.data.tempProduct; if (!p.title) return this.showHubTip('信息不全','warn');
       if (!isMerchandiseProduct(p) && !String(p.latinName || '').trim()) {
-        return wx.showToast({ title: '非文创类藏品须填写拉丁学名', icon: 'none' });
+        return this.showHubTip('非文创类藏品须填写拉丁学名', 'warn');
       }
       const needsCert = p.protectionType && p.protectionType !== 'none';
       const hasCert = !!(p.tempCertificate || p.collectionCertificate);
       if (needsCert && !hasCert) {
-        return wx.showToast({ title: '请上传收藏证书', icon: 'none' });
+        return this.showHubTip('请上传收藏证书', 'warn');
       }
 
       // 保存前把「批量工具」里填了却没点『应用到全部』的统一价/统一库存**落地**。
@@ -5752,11 +5898,11 @@ const managerPageConfig = {
             }
           })
         if (!skusDraft.length) {
-          return wx.showToast({ title: '请至少添加一条有效规格（需填写规格名）', icon: 'none' });
+          return this.showHubTip('请至少添加一条有效规格（需填写规格名）', 'warn');
         }
         const missingImg = skusDraft.find((s) => !s.images || !s.images.length);
         if (missingImg) {
-          return wx.showToast({ title: `规格「${missingImg.specLabel}」请至少上传 1 张图`, icon: 'none' });
+          return this.showHubTip(`规格「${missingImg.specLabel}」请至少上传 1 张图`, 'warn');
         }
         hasSku = true
       }
@@ -5825,6 +5971,18 @@ const managerPageConfig = {
       if (!images.length && hasSku && skus[0] && skus[0].images && skus[0].images[0]) {
         images = [skus[0].images[0]]
       }
+
+      // 视频 / 实况：单独进 media，不碰 images（images[0] 仍是全站封面）
+      const media = []
+      const rawMedia = Array.isArray(p.media) ? p.media.filter((m) => m && m.url) : []
+      for (let i = 0; i < rawMedia.length; i++) {
+        const m = rawMedia[i]
+        if (isRemoteMediaUrl(m.url)) { media.push(m); continue }
+        media.push(await this.uploadProductVideo(m, i))
+        // 每传完一段就回写表单：后面某段失败、再点保存时已传的不重复上传
+        this.setData({ [`tempProduct.media[${i}]`]: media[i] })
+      }
+      if (rawMedia.length) wx.showLoading({ title: '保存…', mask: true })
 
       let seckill = null;
       if (p.seckillEnabled) {
@@ -5924,6 +6082,8 @@ const managerPageConfig = {
         // 需求 28 · item 6：祈运标签（受控枚举；云函数白名单里有它，漏在这里=保存成功但字段被丢）
         blessTags: sanitizeBlessTags(p.blessTags),
         images,
+        // 只在"有视频"或"原本有、被删光"时才送 media：没载入过 media 的入口保存时不会把库里的视频清掉
+        ...(media.length || p.mediaOrigCount ? { media: require('../utils/productMedia').toPayloadMedia(media) } : {}),
         // 上下架仅走 manageApprovals，保存时不改 isOffShelf（云函数也会剥离）
         // 写库必须走 manageProducts；禁止客户端直写 products
         seckill,
@@ -5957,12 +6117,7 @@ const managerPageConfig = {
         }
       }
       wx.hideLoading();
-      wx.showToast({
-        title: bulkApplied
-          ? `已保存 · 库存合计 ${totalStock}`
-          : (hasSku ? `已保存 · 库存合计 ${totalStock}` : '已保存'),
-        icon: 'success'
-      });
+      this.showHubTip(bulkApplied ? `已保存 · 库存合计 ${totalStock}` : (hasSku ? `已保存 · 库存合计 ${totalStock}` : '已保存'), 'info');
       this.setData({ showProductModal: false });
       if (this.data.artisanEmbed) {
         const worksUrl = '/subpackages/extra/artisan/works/index'
@@ -5980,7 +6135,7 @@ const managerPageConfig = {
       if (this.data.productStats || this.data.productLibTab === 'stats') this.loadProductStats();
       } catch (err) {
         wx.hideLoading();
-        wx.showToast({ title: formatCloudFnError(err, '保存失败'), icon: 'none' });
+        this.showHubTip(formatCloudFnError(err, '保存失败'), 'warn');
       }
   },
 
@@ -6047,7 +6202,7 @@ const managerPageConfig = {
   fulfillPaidOrder(e) {
     const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
     if (!id) {
-      wx.showToast({ title: '订单信息缺失', icon: 'none' })
+      this.showHubTip('订单信息缺失', 'warn')
       return
     }
     const row = (this.data.pendingPayOrders || []).find((o) => o && o._id === id) || {}
@@ -6073,20 +6228,17 @@ const managerPageConfig = {
       const result = (res && res.result) || {}
       wx.hideLoading()
       if (!result.success) {
-        wx.showToast({ title: result.msg || '补履约失败', icon: 'none' })
+        this.showHubTip(result.msg || '补履约失败', 'warn')
         return
       }
-      wx.showToast({
-        title: result.alreadyPaid ? '该单已支付' : '补履约已执行',
-        icon: 'success'
-      })
+      this.showHubTip(result.alreadyPaid ? '该单已支付' : '补履约已执行', 'info')
       this.loadOmTab('pendingPay', { append: false })
       this.loadOmTab('pending', { append: false })
       this.loadOpsOrderCounts()
     } catch (err) {
       wx.hideLoading()
       console.error('fulfillPaidOrder', err)
-      wx.showToast({ title: (err && err.message) || '补履约失败', icon: 'none' })
+      this.showHubTip((err && err.message) || '补履约失败', 'warn')
     }
   },
 
@@ -6114,8 +6266,8 @@ const managerPageConfig = {
       })
       const result = (res && res.result) || {}
       if (!result.success) {
-        if (!append) await this.loadOmTabFallback(tab)
-        else wx.showToast({ title: result.msg || '加载失败', icon: 'none' })
+        if (!append) await this.loadOmTabFallback(tab, result.msg)
+        else this.showHubTip(result.msg || '加载失败', 'warn')
         return
       }
 
@@ -6149,59 +6301,28 @@ const managerPageConfig = {
     } catch (err) {
       console.error('loadOmTab', tab, err)
       if (!append) await this.loadOmTabFallback(tab)
-      else wx.showToast({ title: '加载更多失败', icon: 'none' })
+      else this.showHubTip('加载更多失败', 'warn')
     } finally {
       this.setData({ [loadingKey]: false })
       if (tab === 'pending') this.refreshOpsSignals()
     }
   },
 
-  async loadOmTabFallback(tab) {
+  /**
+   * listManagerOrders 失败时的兜底：只报错，不再客户端直读 orders 全表
+   * （orders 读规则将收紧为「本人或受礼人」，直读既越权也终将被拒）。
+   */
+  async loadOmTabFallback(tab, msg) {
     const meta = OM_TAB_META[tab]
     if (!meta) return
-    const statusMap = {
-      pending: ['paid', 'paid_awaiting_address', 'ready_pickup'],
-      shipped: ['shipped'],
-      completed: ['received'],
-      refund: ['refunding', 'aftersales', 'expired_refunding'],
-      pendingPay: ['pending_pay', 'fulfilling']
-    }
-    try {
-      const res = await db
-        .collection('orders')
-        .where({ status: _.in(statusMap[tab] || statusMap.pending) })
-        .orderBy('createTime', 'desc')
-        .limit(50)
-        .get()
-      let raw = res.data || []
-      if (tab === 'refund') {
-        try {
-          const pendingWallet = await db
-            .collection('orders')
-            .where({ status: 'refunded', walletRefundPendingReconcile: true })
-            .limit(20)
-            .get()
-          const extra = pendingWallet.data || []
-          if (extra.length) {
-            const seen = new Set(raw.map((o) => o._id))
-            raw = extra.filter((o) => !seen.has(o._id)).concat(raw)
-          }
-        } catch (e) { /* ignore */ }
-      }
-      const mapped = raw.map((row) => mapOmOrderRaw(row, tab))
-      const finalList = tab === 'refund' ? await this.resolveRefundEvidenceMedia(mapped) : mapped
-      this.setData(
-        {
-          [meta.dataKey]: finalList,
-          [meta.moreKey]: false,
-          omSearchHint: '本地直读（请部署 managerShipOrder 以启用云端搜索）'
-        },
-        () => this.syncOmViews()
-      )
-    } catch (err) {
-      console.error('loadOmTabFallback', tab, err)
-      this.setData({ [meta.dataKey]: [], [meta.viewKey]: [], [meta.moreKey]: false })
-    }
+    const reason = msg || '网络异常'
+    this.setData({
+      [meta.dataKey]: [],
+      [meta.viewKey]: [],
+      [meta.moreKey]: false,
+      omSearchHint: `订单加载失败：${reason}，请稍后重试`
+    })
+    this.showHubTip(`订单加载失败：${reason}`, 'warn')
   },
 
   async loadOrders() {
@@ -6243,12 +6364,12 @@ const managerPageConfig = {
     const order = (this.data[scope] || []).find((o) => o && o._id === id)
     const text = String((order && order.addressCopyText) || '').trim()
     if (!text) {
-      wx.showToast({ title: '暂无收货信息', icon: 'none' })
+      this.showHubTip('暂无收货信息', 'warn')
       return
     }
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '已复制收货信息', icon: 'none' })
+      success: () => this.showHubTip('已复制收货信息', 'info')
     })
   },
 
@@ -6261,12 +6382,12 @@ const managerPageConfig = {
       (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.nick) || ''
     ).trim()
     if (!openid) {
-      wx.showToast({ title: '缺少会员标识', icon: 'none' })
+      this.showHubTip('缺少会员标识', 'warn')
       return
     }
     const menu = this.data.menu || {}
     if (!menu.support || !canAccessManagerTab(this.data.workspaceRole, 11)) {
-      wx.showToast({ title: '无有信权限', icon: 'none' })
+      this.showHubTip('无有信权限', 'warn')
       return
     }
     try {
@@ -6309,7 +6430,7 @@ const managerPageConfig = {
     if (row.noteSaving) return
     const note = String(row.managerNote || '').trim().slice(0, ORDER_NOTE_MAX)
     if (note === String(row.savedNote || '')) {
-      wx.showToast({ title: '备注未改动', icon: 'none' })
+      this.showHubTip('备注未改动', 'info')
       return
     }
     this.setData({ [`orders[${idx}].noteSaving`]: true })
@@ -6326,13 +6447,10 @@ const managerPageConfig = {
         [`orders[${idx}].savedNote`]: saved,
         [`orders[${idx}].noteSaving`]: false
       })
-      wx.showToast({ title: saved ? '备注已保存' : '备注已清空', icon: 'success' })
+      this.showHubTip(saved ? '备注已保存' : '备注已清空', 'info')
     } catch (err) {
       this.setData({ [`orders[${idx}].noteSaving`]: false })
-      wx.showToast({
-        title: (err && err.message) || '保存失败，请确认已部署 managerShipOrder',
-        icon: 'none'
-      })
+      this.showHubTip((err && err.message) || '保存失败，请确认已部署 managerShipOrder', 'warn')
     }
   },
 
@@ -6344,19 +6462,19 @@ const managerPageConfig = {
       (order && (order.shipLabelText || buildManagerShipLabelText(order))) || ''
     ).trim()
     if (!text) {
-      wx.showToast({ title: '暂无可复制面单', icon: 'none' })
+      this.showHubTip('暂无可复制面单', 'warn')
       return
     }
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '已复制面单文案', icon: 'none' })
+      success: () => this.showHubTip('已复制面单文案', 'info')
     })
   },
 
   copyAllPendingAddresses() {
     const rows = (this.data.orders || []).filter((o) => o && o.canShip && o.addressCopyText)
     if (!rows.length) {
-      wx.showToast({ title: '暂无可复制地址', icon: 'none' })
+      this.showHubTip('暂无可复制地址', 'warn')
       return
     }
     const text = rows
@@ -6364,7 +6482,7 @@ const managerPageConfig = {
       .join('\n\n')
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: `已复制 ${rows.length} 条地址`, icon: 'none' })
+      success: () => this.showHubTip(`已复制 ${rows.length} 条地址`, 'info')
     })
   },
 
@@ -6374,12 +6492,12 @@ const managerPageConfig = {
     const order = (this.data[scope] || []).find((o) => o && o._id === id)
     const no = String((order && order.trackingNumber) || '').trim()
     if (!no) {
-      wx.showToast({ title: '暂无运单号', icon: 'none' })
+      this.showHubTip('暂无运单号', 'warn')
       return
     }
     wx.setClipboardData({
       data: no,
-      success: () => wx.showToast({ title: '已复制运单号', icon: 'none' })
+      success: () => this.showHubTip('已复制运单号', 'info')
     })
   },
 
@@ -6439,7 +6557,7 @@ const managerPageConfig = {
         const no = String(order.trackingNumber || '').trim()
         const carrier = String(order.carrier || '快递').trim()
         if (!no) {
-          wx.showToast({ title: '暂无运单号', icon: 'none' })
+          this.showHubTip('暂无运单号', 'warn')
           return
         }
         const content = buildManagerTrackFallbackContent({
@@ -6467,7 +6585,7 @@ const managerPageConfig = {
     const no = String(order.trackingNumber || '').trim()
     const carrier = String(order.carrier || '快递').trim()
     if (!no) {
-      wx.showToast({ title: '暂无运单号', icon: 'none' })
+      this.showHubTip('暂无运单号', 'warn')
       return
     }
     const content = buildManagerTrackFallbackContent({
@@ -6491,12 +6609,13 @@ const managerPageConfig = {
 
   async loadCustomOrders() {
     try {
-      const res = await db.collection('orders')
-        .where({ source: 'custom', status: _.in(['paid', 'shipped']) })
-        .orderBy('createTime', 'desc')
-        .limit(50)
-        .get();
-      const list = (res.data || []).map((item) => ({
+      const res = await wx.cloud.callFunction({
+        name: 'secureDataRead',
+        data: { action: 'mpCustomOrders' }
+      });
+      const result = (res && res.result) || {};
+      if (!result.success) throw new Error(result.msg || '读取定制订单失败');
+      const list = (result.list || []).map((item) => ({
         ...item,
         formatTime: new Date(item.createTime).toLocaleString(),
         productionLabel: PRODUCTION_STATUS_LABELS[item.productionStatus] || '待制作',
@@ -6577,7 +6696,7 @@ const managerPageConfig = {
     const id = e.currentTarget.dataset.id;
     const status = e.currentTarget.dataset.status;
     if (!id || !status) {
-      return wx.showToast({ title: '参数缺失', icon: 'none' });
+      return this.showHubTip('参数缺失', 'warn');
     }
     try {
       await callStoreContent({
@@ -6590,10 +6709,10 @@ const managerPageConfig = {
           reviewedAt: Date.now()
         }
       });
-      wx.showToast({ title: '已更新' });
+      this.showHubTip('已更新', 'info');
       this.loadFramerRecruitApps();
     } catch (err) {
-      wx.showToast({ title: '更新失败', icon: 'none' });
+      this.showHubTip('更新失败', 'warn');
     }
   },
 
@@ -6615,7 +6734,7 @@ const managerPageConfig = {
     ].filter(Boolean);
     wx.setClipboardData({
       data: lines.join('\n'),
-      success: () => wx.showToast({ title: '已复制' })
+      success: () => this.showHubTip('已复制', 'info')
     });
   },
 
@@ -6623,7 +6742,7 @@ const managerPageConfig = {
     const id = e.currentTarget.dataset.id;
     const status = e.currentTarget.dataset.status;
     if (!id || !status) {
-      return wx.showToast({ title: '参数缺失', icon: 'none' });
+      return this.showHubTip('参数缺失', 'warn');
     }
     const inquiry = this.data.customInquiries.find((i) => i._id === id);
     try {
@@ -6636,10 +6755,10 @@ const managerPageConfig = {
       if (status === 'contacted' && inquiry && inquiry._openid) {
         dispatchUserMessage('custom_inquiry_contacted', inquiry._openid, id);
       }
-      wx.showToast({ title: '已更新' });
+      this.showHubTip('已更新', 'info');
       this.loadCustomInquiries();
     } catch (err) {
-      wx.showToast({ title: '更新失败', icon: 'none' });
+      this.showHubTip('更新失败', 'warn');
     }
   },
   copyInquiryText(e) {
@@ -6647,7 +6766,7 @@ const managerPageConfig = {
     if (!item) return;
     wx.setClipboardData({
       data: buildInquiryText(item),
-      success: () => wx.showToast({ title: '已复制' })
+      success: () => this.showHubTip('已复制', 'info')
     });
   },
   async loadPetMemorialOrders() {
@@ -6671,7 +6790,7 @@ const managerPageConfig = {
     const id = e.currentTarget.dataset.id;
     const status = e.currentTarget.dataset.status;
     if (!id || !status) {
-      return wx.showToast({ title: '参数缺失', icon: 'none' });
+      return this.showHubTip('参数缺失', 'warn');
     }
     const order = this.data.petMemorialOrders.find((o) => o._id === id);
     try {
@@ -6689,10 +6808,10 @@ const managerPageConfig = {
           petName: order.pet ? order.pet.name : '伴宠'
         });
       }
-      wx.showToast({ title: '已更新' });
+      this.showHubTip('已更新', 'info');
       this.loadPetMemorialOrders();
     } catch (err) {
-      wx.showToast({ title: '更新失败', icon: 'none' });
+      this.showHubTip('更新失败', 'warn');
     }
   },
   copyPetMemorialText(e) {
@@ -6700,7 +6819,7 @@ const managerPageConfig = {
     if (!item) return;
     wx.setClipboardData({
       data: buildStaffCopyText(item),
-      success: () => wx.showToast({ title: '已复制' })
+      success: () => this.showHubTip('已复制', 'info')
     });
   },
   openPetQuoteModal(e) {
@@ -6724,12 +6843,12 @@ const managerPageConfig = {
   async submitPetQuote() {
     const { orderId, amount, note, validUntil } = this.data.tempPetQuote;
     if (!orderId || !amount) {
-      wx.showToast({ title: '请填写报价金额', icon: 'none' });
+      this.showHubTip('请填写报价金额', 'warn');
       return;
     }
     const num = parseFloat(amount);
     if (Number.isNaN(num) || num <= 0) {
-      wx.showToast({ title: '金额无效', icon: 'none' });
+      this.showHubTip('金额无效', 'warn');
       return;
     }
     try {
@@ -6762,18 +6881,18 @@ const managerPageConfig = {
           quoteAmount: formatQuoteAmount(num)
         });
       }
-      wx.showToast({ title: '报价已发送' });
+      this.showHubTip('报价已发送', 'info');
       this.setData({ showPetQuoteModal: false });
       this.loadPetMemorialOrders();
     } catch (err) {
-      wx.showToast({ title: '保存失败', icon: 'none' });
+      this.showHubTip('保存失败', 'warn');
     }
   },
   async advanceProduction(e) {
     const id = e.currentTarget.dataset.id;
     const next = e.currentTarget.dataset.next;
     if (!id || !next) {
-      return wx.showToast({ title: '参数缺失', icon: 'none' });
+      return this.showHubTip('参数缺失', 'warn');
     }
     wx.showLoading({ title: '更新中…', mask: true });
     try {
@@ -6783,10 +6902,10 @@ const managerPageConfig = {
       });
       const result = (call && call.result) || {};
       if (!result.success) throw new Error(result.msg || '更新失败');
-      wx.showToast({ title: result.msg || '已更新' });
+      this.showHubTip(result.msg || '已更新', 'info');
       this.loadCustomOrders();
     } catch (err) {
-      wx.showToast({ title: (err && err.message) || '更新失败', icon: 'none' });
+      this.showHubTip((err && err.message) || '更新失败', 'warn');
     } finally {
       wx.hideLoading();
     }
@@ -6797,7 +6916,7 @@ const managerPageConfig = {
     const text = buildWorkOrderText(item);
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '工单已复制' })
+      success: () => this.showHubTip('工单已复制', 'info')
     });
   },
   openCustomConfigModal(e) {
@@ -6836,7 +6955,7 @@ const managerPageConfig = {
   async submitCustomConfig() {
     const c = this.data.tempCustomConfig || {};
     if (!c.name || !c.type) {
-      wx.showToast({ title: '请填写名称与类型', icon: 'none' });
+      this.showHubTip('请填写名称与类型', 'warn');
       return;
     }
     wx.showLoading({ title: '保存…', mask: true });
@@ -6856,17 +6975,17 @@ const managerPageConfig = {
         await callStoreContent({ action: 'upsert', collection: 'custom_configs', data });
       }
       wx.hideLoading();
-      wx.showToast({ title: '已保存', icon: 'success' });
+      this.showHubTip('已保存', 'info');
       this.setData({ showCustomConfigModal: false });
       this.loadCustomConfigs();
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(e, '保存失败'), 'warn');
     }
   },
   deleteCustomConfig(e) {
     const id = e.currentTarget.dataset.id;
-    if (!id) return wx.showToast({ title: '缺少配置 ID', icon: 'none' });
+    if (!id) return this.showHubTip('缺少配置 ID', 'warn');
     wx.showModal({
       title: '删除配置',
       confirmColor: '#D64045',
@@ -6876,11 +6995,11 @@ const managerPageConfig = {
         try {
           await callStoreContent({ action: 'remove', collection: 'custom_configs', id });
           wx.hideLoading();
-          wx.showToast({ title: '已删除', icon: 'success' });
+          this.showHubTip('已删除', 'info');
           this.loadCustomConfigs();
         } catch (err) {
           wx.hideLoading();
-          wx.showToast({ title: formatCloudFnError(err, '删除失败'), icon: 'none' });
+          this.showHubTip(formatCloudFnError(err, '删除失败'), 'warn');
         }
       }
     });
@@ -6892,7 +7011,7 @@ const managerPageConfig = {
   handleRefund(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) {
-      wx.showToast({ title: '订单信息缺失', icon: 'none' });
+      this.showHubTip('订单信息缺失', 'warn');
       return;
     }
     const order = (this.data.refunds || []).find((item) => item._id === id) || { _id: id };
@@ -6912,19 +7031,19 @@ const managerPageConfig = {
           success: (res) => {
             const result = (res && res.result) || {};
             if (result.success) {
-              wx.showToast({
-                title: result.pendingApproval
+              this.showHubTip(
+                result.pendingApproval
                   ? (result.msg || '已提交超管审核')
                   : (result.msg || '已退款'),
-                icon: result.pendingApproval ? 'none' : 'success'
-              });
+                'info'
+              );
               this.loadRefunds();
               this.loadOpsOrderCounts();
             } else {
-              wx.showToast({ title: result.msg || '退款失败', icon: 'none' });
+              this.showHubTip(result.msg || '退款失败', 'warn');
             }
           },
-          fail: () => wx.showToast({ title: '退款请求失败', icon: 'none' })
+          fail: () => this.showHubTip('退款请求失败', 'warn')
         });
       }
     });
@@ -6936,7 +7055,7 @@ const managerPageConfig = {
   confirmPickupReturn(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) {
-      wx.showToast({ title: '订单信息缺失', icon: 'none' });
+      this.showHubTip('订单信息缺失', 'warn');
       return;
     }
     wx.showModal({
@@ -6953,10 +7072,7 @@ const managerPageConfig = {
           success: (res) => {
             wx.hideLoading();
             const result = (res && res.result) || {};
-            wx.showToast({
-              title: result.msg || (result.success ? '已确认收回' : '确认失败'),
-              icon: result.success ? 'success' : 'none'
-            });
+            this.showHubTip(result.msg || (result.success ? '已确认收回' : '确认失败'), result.success ? 'info' : 'warn');
             if (result.success) {
               this.loadRefunds();
               this.loadOpsOrderCounts();
@@ -6964,7 +7080,7 @@ const managerPageConfig = {
           },
           fail: () => {
             wx.hideLoading();
-            wx.showToast({ title: '确认请求失败', icon: 'none' });
+            this.showHubTip('确认请求失败', 'warn');
           }
         });
       }
@@ -7090,7 +7206,7 @@ const managerPageConfig = {
       const revenues = await storeLedger.listByMonth(sid, yearMonth);
       await applyRows(revenues, { cloudError: true });
       if (!revenues.length && e && e.message) {
-        wx.showToast({ title: String(e.message).slice(0, 40), icon: 'none' });
+        this.showHubTip(String(e.message).slice(0, 40), 'warn');
       }
     }
   },
@@ -7177,7 +7293,7 @@ const managerPageConfig = {
 
   onLedgerSyncLampTap() {
     const tip = this.data.ledgerSyncTip || '账本同步状态';
-    wx.showToast({ title: tip.slice(0, 40), icon: 'none', duration: 2800 });
+    this.showHubTip(tip.slice(0, 40), 'info');
   },
 
   openRevenueModal() {
@@ -7209,7 +7325,7 @@ parseRevenueText(e) {
   if (!parsed.ok) {
     this.setData({ 'tempRevenue.rawText': text });
     if (text && text.trim().length > 12) {
-      wx.showToast({ title: parsed.error || '无法识别日报', icon: 'none', duration: 2800 });
+      this.showHubTip(parsed.error || '无法识别日报', 'warn');
     }
     return;
   }
@@ -7237,15 +7353,7 @@ parseRevenueText(e) {
   }
 
   this.setData(patch);
-  wx.showToast({
-    title: parsed.legacyOnlineWarning
-      ? `已识别（日报「线上」仅记入账本）${toastExtra}`
-      : parsed.cashBalance != null
-        ? `已识别 · 在手现金 ¥${parsed.cashBalance}${toastExtra}`
-        : `已智能识别${toastExtra}`,
-    icon: 'none',
-    duration: parsed.legacyOnlineWarning || toastExtra ? 3200 : 2000,
-  });
+  this.showHubTip(parsed.legacyOnlineWarning ? `已识别（日报「线上」仅记入账本）${toastExtra}` : parsed.cashBalance != null ? `已识别 · 在手现金 ¥${parsed.cashBalance}${toastExtra}` : `已智能识别${toastExtra}`, 'info');
 },
 
   // 🟢 提交营收 → store_ledger + 镜像 finance_records + 兼容 daily_revenues
@@ -7253,7 +7361,7 @@ parseRevenueText(e) {
     const r = this.data.tempRevenue;
     
     if(!r.date) {
-        return wx.showToast({ title: '日期必填', icon: 'none' });
+        return this.showHubTip('日期必填', 'warn');
     }
     
     wx.showLoading({ title: '入账中…', mask: true });
@@ -7278,21 +7386,18 @@ parseRevenueText(e) {
         await this.loadStats(offlineTotal);
         const storeOpt = (this.data.ledgerStoreOptions || []).find((s) => s.storeId === sid);
         const storeLabel = (storeOpt && storeOpt.name) || '';
-        wx.showToast({
-          title: storeLabel ? `已入账 · ${storeLabel}` : '入账成功',
-          icon: 'success',
-        });
+        this.showHubTip(storeLabel ? `已入账 · ${storeLabel}` : '入账成功', 'info');
     } catch(e) {
         console.error(e);
         wx.hideLoading();
-        wx.showToast({ title: '保存失败', icon: 'none' });
+        this.showHubTip('保存失败', 'warn');
     }
 },
 
   /** 店长手动触发：小程序商城订单写入 mp* 对账字段（仅超管） */
   async reconcileMpOrders() {
     if (!this.data.isSuperAdmin) {
-      wx.showToast({ title: '仅超管可对账同步', icon: 'none' });
+      this.showHubTip('仅超管可对账同步', 'warn');
       return;
     }
     wx.showLoading({ title: '对账中…', mask: true });
@@ -7305,14 +7410,14 @@ parseRevenueText(e) {
       const result = (res && res.result) || {};
       wx.hideLoading();
       if (result.success) {
-        wx.showToast({ title: result.message || '对账完成', icon: 'none', duration: 3000 });
+        this.showHubTip(result.message || '对账完成', 'info');
         this.loadRevenues();
       } else {
-        wx.showToast({ title: result.message || '对账失败', icon: 'none' });
+        this.showHubTip(result.message || '对账失败', 'warn');
       }
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '对账请求失败', icon: 'none' });
+      this.showHubTip('对账请求失败', 'warn');
     }
   },
 
@@ -7380,7 +7485,7 @@ parseRevenueText(e) {
           framerNames: [],
           framerLoading: false
         });
-        wx.showToast({ title: '标本师加载失败', icon: 'none' });
+        this.showHubTip('标本师加载失败', 'warn');
       }
     }
   },
@@ -7457,12 +7562,12 @@ parseRevenueText(e) {
   openFramerPublic(e) {
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '').trim();
     if (!id) {
-      wx.showToast({ title: '该标本师暂无主页', icon: 'none' });
+      this.showHubTip('该标本师暂无主页', 'warn');
       return;
     }
     wx.navigateTo({
       url: `/subpackages/business/framer/index?id=${id}`,
-      fail: () => wx.showToast({ title: '主页暂不可用', icon: 'none' })
+      fail: () => this.showHubTip('主页暂不可用', 'warn')
     });
   },
 
@@ -7534,7 +7639,7 @@ parseRevenueText(e) {
   async submitFramer() {
     const f = this.data.tempFramer || {};
     if (!String(f.name || '').trim()) {
-      return wx.showToast({ title: '请填写姓名', icon: 'none' });
+      return this.showHubTip('请填写姓名', 'warn');
     }
     wx.showLoading({ title: '保存中…', mask: true });
     try {
@@ -7558,13 +7663,13 @@ parseRevenueText(e) {
         await callStoreContent({ action: 'upsert', collection: 'framers', data });
       }
       wx.hideLoading();
-      wx.showToast({ title: '已保存', icon: 'success' });
+      this.showHubTip('已保存', 'info');
       this.setData({ showFramerModal: false });
       this.loadFramers();
     } catch (e) {
       console.error('submitFramer', e);
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(e, '保存失败'), 'warn');
     }
   },
 
@@ -7579,18 +7684,18 @@ parseRevenueText(e) {
         active: nextActive
       });
       wx.hideLoading();
-      wx.showToast({ title: result.msg || (nextActive ? '已上架' : '已下架'), icon: 'success' });
+      this.showHubTip(result.msg || (nextActive ? '已上架' : '已下架'), 'info');
       this.loadFramers();
     } catch (err) {
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(err, '操作失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '操作失败'), 'warn');
     }
   },
 
   openFramerBindSheet(e) {
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || this.data.editId || '').trim();
     if (!id) {
-      wx.showToast({ title: '请先保存档案', icon: 'none' });
+      this.showHubTip('请先保存档案', 'warn');
       return;
     }
     const candidates = Array.isArray(this.data.framerStaffCandidates) ? this.data.framerStaffCandidates : [];
@@ -7630,12 +7735,12 @@ parseRevenueText(e) {
         pin: true
       });
       wx.hideLoading();
-      wx.showToast({ title: result.msg || '已绑定', icon: 'success' });
+      this.showHubTip(result.msg || '已绑定', 'info');
       this.setData({ showFramerBindSheet: false, showFramerModal: false });
       this.loadFramers();
     } catch (err) {
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(err, '绑定失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '绑定失败'), 'warn');
     }
   },
 
@@ -7657,12 +7762,12 @@ parseRevenueText(e) {
         unbind: true
       });
       wx.hideLoading();
-      wx.showToast({ title: result.msg || '已解绑', icon: 'success' });
+      this.showHubTip(result.msg || '已解绑', 'info');
       this.setData({ showFramerModal: false, showFramerBindSheet: false });
       this.loadFramers();
     } catch (err) {
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(err, '解绑失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '解绑失败'), 'warn');
     }
   },
 
@@ -7671,7 +7776,7 @@ parseRevenueText(e) {
     const item = (this.data.framers || []).find((row) => row && row._id === id);
     if (!id) return;
     if (!item || !item.staffBound) {
-      wx.showToast({ title: '请先绑定员工', icon: 'none' });
+      this.showHubTip('请先绑定员工', 'warn');
       return;
     }
     const hasDup = !!(item && item.isDuplicate);
@@ -7693,12 +7798,12 @@ parseRevenueText(e) {
         deactivateOthers
       });
       wx.hideLoading();
-      wx.showToast({ title: result.msg || '已设为权威', icon: 'success' });
+      this.showHubTip(result.msg || '已设为权威', 'info');
       this.setData({ showFramerModal: false });
       this.loadFramers();
     } catch (err) {
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(err, '设置失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '设置失败'), 'warn');
     }
   },
 
@@ -7707,7 +7812,7 @@ parseRevenueText(e) {
     const item = (this.data.framers || []).find((row) => row && row._id === id);
     if (!id || !item) return;
     if (!item.staffBound) {
-      wx.showToast({ title: '请先绑定员工，再处理重复', icon: 'none' });
+      this.showHubTip('请先绑定员工，再处理重复', 'warn');
       return;
     }
     const conf = await new Promise((resolve) => {
@@ -7726,11 +7831,11 @@ parseRevenueText(e) {
         deactivateOthers: true
       });
       wx.hideLoading();
-      wx.showToast({ title: result.msg || '已处理', icon: 'success' });
+      this.showHubTip(result.msg || '已处理', 'info');
       this.loadFramers();
     } catch (err) {
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(err, '处理失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(err, '处理失败'), 'warn');
     }
   },
 
@@ -7741,7 +7846,7 @@ parseRevenueText(e) {
     } catch (e) {
       console.error('loadRewards', e);
       this.setData({ rewards: [] });
-      wx.showToast({ title: '积分藏品加载失败', icon: 'none' });
+      this.showHubTip('积分藏品加载失败', 'warn');
     }
   },
   async loadVipLevels() {
@@ -7763,7 +7868,7 @@ parseRevenueText(e) {
     } catch (e) {
       console.error('loadVipLevels', e);
       this.setData({ vipLevels: [], vipLevelsSource: '', vipLevelsLoading: false });
-      wx.showToast({ title: formatCloudFnError(e, '会员等级加载失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(e, '会员等级加载失败'), 'warn');
     }
   },
   openRewardModal(e) {
@@ -7840,10 +7945,10 @@ parseRevenueText(e) {
   async submitReward() {
     const r = this.data.tempReward || {};
     if (!String(r.title || '').trim()) {
-      return wx.showToast({ title: '请填写标题', icon: 'none' });
+      return this.showHubTip('请填写标题', 'warn');
     }
     if (!r.image) {
-      return wx.showToast({ title: '请上传图片', icon: 'none' });
+      return this.showHubTip('请上传图片', 'warn');
     }
     wx.showLoading({ title: '保存中…', mask: true });
     try {
@@ -7879,22 +7984,22 @@ parseRevenueText(e) {
         await callStoreContent({ action: 'upsert', collection: 'rewards', data });
       }
       wx.hideLoading();
-      wx.showToast({ title: '已保存', icon: 'success' });
+      this.showHubTip('已保存', 'info');
       this.setData({ showRewardModal: false });
       this.loadRewards();
     } catch (e) {
       console.error('submitReward', e);
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(e, '保存失败'), 'warn');
     }
   },
   async submitVipLevel() {
     const v = this.data.tempVip || {};
     if (v.level === '' || v.level == null) {
-      return wx.showToast({ title: '请填写等级', icon: 'none' });
+      return this.showHubTip('请填写等级', 'warn');
     }
     if (!String(v.name || '').trim()) {
-      return wx.showToast({ title: '请填写名称', icon: 'none' });
+      return this.showHubTip('请填写名称', 'warn');
     }
     wx.showLoading({ title: '保存中…', mask: true });
     try {
@@ -7918,18 +8023,18 @@ parseRevenueText(e) {
         throw new Error(result.msg || '保存失败');
       }
       wx.hideLoading();
-      wx.showToast({ title: '已保存', icon: 'success' });
+      this.showHubTip('已保存', 'info');
       this.setData({ showVipModal: false });
       this.loadVipLevels();
     } catch (e) {
       console.error('submitVipLevel', e);
       wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' });
+      this.showHubTip(formatCloudFnError(e, '保存失败'), 'warn');
     }
   },
   deleteReward(e) {
     const id = e.currentTarget.dataset.id;
-    if (!id) return wx.showToast({ title: '缺少藏品 ID', icon: 'none' });
+    if (!id) return this.showHubTip('缺少藏品 ID', 'warn');
     wx.showModal({
       title: '删除',
       content: '确定删除该积分藏品？',
@@ -7940,119 +8045,210 @@ parseRevenueText(e) {
         try {
           await callStoreContent({ action: 'remove', collection: 'rewards', id });
           wx.hideLoading();
-          wx.showToast({ title: '已删除', icon: 'success' });
+          this.showHubTip('已删除', 'info');
           this.loadRewards();
         } catch (err) {
           wx.hideLoading();
-          wx.showToast({ title: formatCloudFnError(err, '删除失败'), icon: 'none' });
+          this.showHubTip(formatCloudFnError(err, '删除失败'), 'warn');
         }
       }
     });
   },
 
+  /* 活动课程看板：纯函数在 ../utils/activityBoard.js，说明见 miniprogram/docs/超管工作台_活动课程_升级_2026-09-28.md */
   async loadActivities() {
+    const AB = require('../utils/activityBoard');
+    this.setData({ actError: '', actStoreNames: AB.STORES.map((s) => s.name) });
     try {
-      const res = await db.collection('activities').get();
-      this.setData({ activities: res.data || [] });
+      const rows = [];
+      for (let skip = 0; skip < 100; skip += 20) {
+        const page = (await db.collection('activities').orderBy('date', 'desc').skip(skip).limit(20).get()).data || [];
+        rows.push(...page);
+        if (page.length < 20) break;
+      }
+      this.setData({ activities: rows, actReady: true });
+      this.renderActBoard();
+      this.loadActivityStats(rows);
     } catch (e) {
       console.error('loadActivities', e);
-      this.setData({ activities: [] });
-      wx.showToast({ title: '活动加载失败', icon: 'none' });
+      this.setData({ actReady: true, actError: formatCloudFnError(e, '网络异常，请稍后重试') });
     }
   },
+  /** 按 activityId 计数，历史无 activityId 的预约回退 title + date（AB.bookingMatch）；读不到就留空（显示「—」） */
+  async loadActivityStats(rows) {
+    const AB = require('../utils/activityBoard');
+    const token = (this._actStatToken = Date.now());
+    const stats = {};
+    await Promise.all(AB.statTargets(rows).map(async (a) => {
+      try {
+        const base = AB.bookingMatch(_, a);
+        const [all, used] = await Promise.all([
+          db.collection('bookings').where(_.and([base, { status: _.in(AB.BOOKED_STATUSES) }])).count(),
+          db.collection('bookings').where(_.and([base, { status: 'used' }])).count()
+        ]);
+        stats[a._id] = { booked: all.total || 0, verified: used.total || 0 };
+      } catch (e) {
+        console.warn('loadActivityStats', a._id, e);
+      }
+    }));
+    if (token !== this._actStatToken) return;
+    this.setData({ actStats: stats });
+    this.renderActBoard();
+  },
+  renderActBoard() {
+    const AB = require('../utils/activityBoard');
+    const opt = { stats: this.data.actStats || {}, filter: this.data.actFilter || 'live' };
+    let board = AB.buildBoard(this.data.activities, opt);
+    const first = board.filters.find((f) => f.count && f.key !== 'all');
+    if (!this._actFilterTouched && !board.counts.live && first) board = AB.buildBoard(this.data.activities, { ...opt, filter: first.key });
+    this.setData({ actBoard: board, actFilter: board.filter });
+  },
+  switchActFilter(e) {
+    this._actFilterTouched = true;
+    this.setData({ actFilter: e.currentTarget.dataset.key, actConfirmDelId: '', actStaleConfirm: false });
+    this.renderActBoard();
+  },
   openActivityModal(e) {
-    const item = resolveListItem(this.data.activities, e);
+    const AB = require('../utils/activityBoard');
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    const item = ds.id ? resolveListItem(this.data.activities, e) : null;
+    const copy = ds.mode === 'copy';
+    const editing = !!(item && item._id) && !copy;
     this.setData({
       showActivityModal: true,
-      isEditing: !!(item && item._id),
-      editId: item && item._id ? item._id : '',
-      tempActivity: item
-        ? {
-            title: item.title || '',
-            type: item.type || 'course',
-            date: item.date || '',
-            time: item.time || '',
-            price: item.price != null ? item.price : '',
-            maxPeople: item.maxPeople != null ? item.maxPeople : '',
-            location: item.location || '本店',
-            image: item.image || ''
-          }
-        : { title: '', type: 'course', date: '', time: '', price: '', maxPeople: '', location: '本店', image: '' }
+      isEditing: editing,
+      editId: editing ? item._id : '',
+      tempActivity: AB.formFromItem(item, { copy }),
+      actFormErr: {},
+      actSaving: false,
+      actConfirmDelId: ''
     });
   },
   chooseActivityImage() {
     wx.chooseImage({
       count: 1,
+      sizeType: ['compressed'],
       success: (res) => {
         const path = res.tempFilePaths && res.tempFilePaths[0];
         if (path) this.setData({ 'tempActivity.image': path });
       }
     });
   },
-  bindAInput(e) { this.setData({ [`tempActivity.${e.currentTarget.dataset.field}`]: e.detail.value }); },
-  bindADateChange(e) { this.setData({ 'tempActivity.date': e.detail.value }); },
-  bindATypeChange(e) { this.setData({ 'tempActivity.type': e.detail.value }); },
+  bindAInput(e) {
+    const field = e.currentTarget.dataset.field;
+    const patch = { [`tempActivity.${field}`]: e.detail.value };
+    if ((this.data.actFormErr || {}).field === field) patch.actFormErr = {};
+    this.setData(patch);
+  },
+  bindADateChange(e) {
+    const AB = require('../utils/activityBoard');
+    this.setData({ 'tempActivity.date': e.detail.value, 'tempActivity.dateText': AB.dateText(e.detail.value), actFormErr: {} });
+  },
+  bindATimeChange(e) { this.setData({ [`tempActivity.${e.currentTarget.dataset.field}`]: e.detail.value }); },
+  bindATypeChange(e) { this.setData({ 'tempActivity.type': e.currentTarget.dataset.type }); },
+  /** 换门店：地点还是上一家店的默认值就跟着换，手填过的不动 */
+  bindAStoreChange(e) {
+    const { STORES } = require('../utils/activityBoard');
+    const idx = Number(e.currentTarget.dataset.idx);
+    const cur = this.data.tempActivity || {};
+    const patch = { 'tempActivity.storeIndex': idx };
+    if (!cur.location || cur.location === (STORES[cur.storeIndex] || {}).location) patch['tempActivity.location'] = STORES[idx].location;
+    this.setData(patch);
+  },
   async submitActivity() {
-    const a = this.data.tempActivity || {};
-    if (!String(a.title || '').trim() || !a.date) {
-      return wx.showToast({ title: '请填写标题和日期', icon: 'none' });
+    if (this._actSaving) return;
+    const AB = require('../utils/activityBoard');
+    const editing = !!(this.data.isEditing && this.data.editId);
+    let original = editing ? (this.data.activities || []).find((r) => r._id === this.data.editId) || {} : null;
+    // 报名会在服务端扣 remain：改名额前取最新一份再平移，别用列表里的旧 remain 覆盖
+    if (editing) original = await db.collection('activities').doc(this.data.editId).get().then((r) => r.data || original, () => original);
+    const built = AB.buildPayload(this.data.tempActivity, { original, today: AB.todayKey(Date.now()) });
+    if (!built.ok) {
+      this.setData({ actFormErr: { field: built.field, msg: built.msg } });
+      return;
     }
-    wx.showLoading({ title: '发布中…', mask: true });
+    this._actSaving = true;
+    this.setData({ actSaving: true, actFormErr: {} });
     try {
-      let img = a.image || '';
+      let img = (this.data.tempActivity || {}).image || '';
       if (img && !isRemoteMediaUrl(img)) {
-        const up = await wx.cloud.uploadFile({ cloudPath: `activities/${Date.now()}.png`, filePath: img });
-        img = up.fileID;
+        img = (await wx.cloud.uploadFile({ cloudPath: `activities/${Date.now()}.png`, filePath: img })).fileID;
       }
-      const maxPeople = parseInt(a.maxPeople, 10) || 0;
-      const data = {
-        title: String(a.title).trim(),
-        type: a.type || 'course',
-        date: a.date,
-        time: a.time || '',
-        price: parseFloat(a.price || 0),
-        maxPeople,
-        location: a.location || '本店',
-        image: img,
-        status: 'open',
-        remain: maxPeople
-      };
-      if (this.data.isEditing && this.data.editId) {
-        await callStoreContent({ action: 'upsert', collection: 'activities', id: this.data.editId, data });
-      } else {
-        await callStoreContent({ action: 'upsert', collection: 'activities', data });
-      }
-      wx.hideLoading();
-      wx.showToast({ title: '已发布', icon: 'success' });
-      this.setData({ showActivityModal: false });
-      this.loadActivities();
+      const data = { ...built.data, image: img };
+      await callStoreContent(editing
+        ? { action: 'upsert', collection: 'activities', id: this.data.editId, data }
+        : { action: 'upsert', collection: 'activities', data });
+      if (!editing) this._actFilterTouched = false;
+      this.setData({ showActivityModal: false, actSaving: false, actFilter: editing ? this.data.actFilter : 'live' });
+      this.showAppToast({ overline: 'ACTIVITY', title: editing ? '已保存修改' : '已发布', desc: editing ? '' : '顾客可在预约页和门店页报名' });
+      await this.loadActivities();
     } catch (e) {
       console.error('submitActivity', e);
-      wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(e, '发布失败'), icon: 'none' });
+      this.setData({ actSaving: false, actFormErr: { field: 'submit', msg: formatCloudFnError(e, '保存失败，请重试') } });
+    } finally {
+      this._actSaving = false;
     }
   },
-  deleteActivity(e) {
-    const id = e.currentTarget.dataset.id;
-    if (!id) return wx.showToast({ title: '缺少活动 ID', icon: 'none' });
-    wx.showModal({
-      title: '删除',
-      content: '确定删除该活动？',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '删除中…', mask: true });
-        try {
-          await callStoreContent({ action: 'remove', collection: 'activities', id });
-          wx.hideLoading();
-          wx.showToast({ title: '已删除', icon: 'success' });
-          this.loadActivities();
-        } catch (err) {
-          wx.hideLoading();
-          wx.showToast({ title: formatCloudFnError(err, '删除失败'), icon: 'none' });
-        }
+  /** 截止报名 / 重新开放 / 下架过期：只改既有 status（open ↔ closed），与 ERP「截止」同口径 */
+  async toggleActivityStatus(e) {
+    const { id, to, label } = e.currentTarget.dataset;
+    if (!id || this.data.actBusyId) return;
+    this.setData({ actBusyId: id, actConfirmDelId: '' });
+    try {
+      await callStoreContent({ action: 'update', collection: 'activities', id, data: { status: to } });
+      this.setData({ activities: (this.data.activities || []).map((r) => (r._id === id ? { ...r, status: to } : r)) });
+      this.renderActBoard();
+      this.showAppToast({ overline: 'ACTIVITY', title: `已${label}`, desc: to === 'open' ? '顾客可以继续报名' : '顾客端不再展示该活动' });
+    } catch (err) {
+      this.showAppToast({ overline: 'ACTIVITY', title: '操作没有成功', desc: formatCloudFnError(err, '请稍后重试') });
+    }
+    this.setData({ actBusyId: '' });
+  },
+  /** 过期仍 open 的一键下架：第一下亮「确认下架」，第二下才写库（不弹原生框） */
+  async closeStaleActivities() {
+    if (this.data.actBusyId) return;
+    if (!this.data.actStaleConfirm) {
+      this.setData({ actStaleConfirm: true });
+      return;
+    }
+    const AB = require('../utils/activityBoard');
+    const today = AB.todayKey(Date.now());
+    const ids = (this.data.activities || []).filter((r) => AB.phaseOf(r, today) === 'ended' && r.status === 'open').map((r) => r._id);
+    this.setData({ actStaleConfirm: false, actBusyId: 'stale' });
+    const done = new Set();
+    for (const id of ids) {
+      try {
+        await callStoreContent({ action: 'update', collection: 'activities', id, data: { status: 'closed' } });
+        done.add(id);
+      } catch (err) {
+        console.warn('closeStaleActivities', id, err);
       }
-    });
+    }
+    this.setData({ activities: (this.data.activities || []).map((r) => (done.has(r._id) ? { ...r, status: 'closed' } : r)), actBusyId: '' });
+    this.renderActBoard();
+    const failed = ids.length - done.size;
+    this.showAppToast({ overline: 'ACTIVITY', title: `已下架 ${done.size} 场`, desc: failed ? `${failed} 场没有成功，可再点一次` : '顾客端不再展示' });
+  },
+  /** 删除：第一下变「确认删除」（有报名时写明人数），4 秒内再点才删 */
+  async deleteActivity(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id || this.data.actBusyId) return;
+    clearTimeout(this._actDelTimer);
+    if (this.data.actConfirmDelId !== id) {
+      this.setData({ actConfirmDelId: id });
+      this._actDelTimer = setTimeout(() => this.data.actConfirmDelId === id && this.setData({ actConfirmDelId: '' }), 4000);
+      return;
+    }
+    this.setData({ actConfirmDelId: '', actBusyId: id });
+    try {
+      await callStoreContent({ action: 'remove', collection: 'activities', id });
+      this.setData({ activities: (this.data.activities || []).filter((r) => r._id !== id) });
+      this.renderActBoard();
+      this.showAppToast({ overline: 'ACTIVITY', title: '已删除' });
+    } catch (err) {
+      this.showAppToast({ overline: 'ACTIVITY', title: '删除没有成功', desc: formatCloudFnError(err, '请稍后重试') });
+    }
+    this.setData({ actBusyId: '' });
   },
 
  // 加载分类树（与 Admin 同源：categories 全量有效一二级，不套白名单）
@@ -8072,7 +8268,7 @@ parseRevenueText(e) {
     return tree;
   } catch (e) {
     console.error('loadCategoriesTree', e);
-    wx.showToast({ title: '分类加载失败', icon: 'none' });
+    this.showHubTip('分类加载失败', 'warn');
     return { categoryRoots: [], categorySubMap: {}, rootNames: [] };
   }
 },
@@ -8168,7 +8364,7 @@ async loadCategoriesManage() {
     });
   } catch (e) {
     console.error('loadCategoriesManage', e);
-    wx.showToast({ title: '加载分类失败', icon: 'none' });
+    this.showHubTip('加载分类失败', 'warn');
   }
 },
 
@@ -8230,7 +8426,7 @@ bindSubCatChange(e) {
     const orderNo = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.orderno) || '')
     const code = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.code) || '')
     if (!id) {
-      wx.showToast({ title: '订单信息缺失', icon: 'none' })
+      this.showHubTip('订单信息缺失', 'warn')
       return
     }
     wx.showModal({
@@ -8249,7 +8445,7 @@ bindSubCatChange(e) {
   copyPickupCode(e) {
     const code = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.code) || '').trim()
     if (!code) {
-      wx.showToast({ title: '该订单暂无自取码', icon: 'none' })
+      this.showHubTip('该订单暂无自取码', 'warn')
       return
     }
     wx.setClipboardData({ data: code, success: () => wx.vibrateShort({ type: 'light' }) })
@@ -8265,17 +8461,14 @@ bindSubCatChange(e) {
       const result = (res && res.result) || {}
       wx.hideLoading()
       if (!result.success) {
-        wx.showToast({ title: result.msg || '确认失败', icon: 'none' })
+        this.showHubTip(result.msg || '确认失败', 'warn')
         return
       }
       const omPoints = Number(result.pointsGranted) || 0
       if (!result.already && omPoints > 0) {
-        wx.showToast({ title: `已确认自取，顾客获赠 ${omPoints} 积分`, icon: 'none' })
+        this.showHubTip(`已确认自取，顾客获赠 ${omPoints} 积分`, 'info')
       } else {
-        wx.showToast({
-          title: result.already ? '此前已自取' : '已确认自取',
-          icon: 'success'
-        })
+        this.showHubTip(result.already ? '此前已自取' : '已确认自取', 'info')
       }
       this.loadOmTab('pending', { append: false })
       this.loadOmTab('completed', { append: false })
@@ -8283,7 +8476,7 @@ bindSubCatChange(e) {
     } catch (err) {
       wx.hideLoading()
       console.error('completeStorePickup', err)
-      wx.showToast({ title: (err && err.message) || '确认失败', icon: 'none' })
+      this.showHubTip((err && err.message) || '确认失败', 'warn')
     }
   },
 
@@ -8294,7 +8487,7 @@ bindSubCatChange(e) {
     const orderId = ds.id || item._id;
     const orderNo = ds.orderno || item.orderNo || '';
     if (!orderId) {
-      wx.showToast({ title: '订单信息异常', icon: 'none' });
+      this.showHubTip('订单信息异常', 'warn');
       return;
     }
     const listed = (this.data.orders || []).find((o) => o._id === orderId);
@@ -8307,7 +8500,7 @@ bindSubCatChange(e) {
       listed.giftAwaitingAddress &&
       !addrSubmitted
     ) {
-      wx.showToast({ title: '礼赠待填址，暂不可发货', icon: 'none' });
+      this.showHubTip('礼赠待填址，暂不可发货', 'warn');
       return;
     }
     if (
@@ -8315,11 +8508,11 @@ bindSubCatChange(e) {
       listed.status === 'paid_awaiting_address' &&
       !addrSubmitted
     ) {
-      wx.showToast({ title: '礼赠待填址，暂不可发货', icon: 'none' });
+      this.showHubTip('礼赠待填址，暂不可发货', 'warn');
       return;
     }
     if (listed && (listed.isStorePickup || listed.canCompletePickup || listed.status === 'ready_pickup')) {
-      wx.showToast({ title: '门店自取请点「确认自取」', icon: 'none' });
+      this.showHubTip('门店自取请点「确认自取」', 'warn');
       return;
     }
     const defaultCarrier =
@@ -8358,13 +8551,13 @@ bindSubCatChange(e) {
       success: (res) => {
         const parsed = normalizeTrackingInput(res && res.data);
         if (!parsed || parsed.length < 6) {
-          wx.showToast({ title: '剪贴板无有效单号', icon: 'none' });
+          this.showHubTip('剪贴板无有效单号', 'warn');
           return;
         }
         this.setData({ 'tempShip.trackingNumber': parsed });
-        wx.showToast({ title: '已粘贴单号', icon: 'none' });
+        this.showHubTip('已粘贴单号', 'info');
       },
-      fail: () => wx.showToast({ title: '读取剪贴板失败', icon: 'none' })
+      fail: () => this.showHubTip('读取剪贴板失败', 'warn')
     });
   },
 
@@ -8375,17 +8568,17 @@ bindSubCatChange(e) {
       success: (res) => {
         const parsed = parseTrackingFromScan(res.result);
         if (!parsed || parsed.length < 6) {
-          wx.showToast({ title: '未识别到有效单号', icon: 'none' });
+          this.showHubTip('未识别到有效单号', 'warn');
           return;
         }
         wx.vibrateShort({ type: 'light' });
         this.setData({ 'tempShip.trackingNumber': parsed });
-        wx.showToast({ title: `已填入 ${parsed}`, icon: 'none' });
+        this.showHubTip(`已填入 ${parsed}`, 'info');
       },
       fail: (err) => {
         const msg = (err && err.errMsg) || '';
         if (msg.indexOf('cancel') === -1) {
-          wx.showToast({ title: '扫码失败，请手动输入', icon: 'none' });
+          this.showHubTip('扫码失败，请手动输入', 'warn');
         }
       }
     });
@@ -8396,10 +8589,10 @@ bindSubCatChange(e) {
     const trackingNumber = normalizeTrackingInput(this.data.tempShip.trackingNumber);
 
     if (!trackingNumber || trackingNumber.length < 6) {
-      return wx.showToast({ title: '请填写有效快递单号', icon: 'none' });
+      return this.showHubTip('请填写有效快递单号', 'warn');
     }
     if (!orderId) {
-      return wx.showToast({ title: '订单信息丢失，请重新打开发货', icon: 'none' });
+      return this.showHubTip('订单信息丢失，请重新打开发货', 'warn');
     }
 
     wx.showLoading({ title: '发货中…', mask: true });
@@ -8439,7 +8632,7 @@ bindSubCatChange(e) {
       wx.hideLoading();
 
       if (!result.success) {
-        wx.showToast({ title: result.msg || '发货失败', icon: 'none' });
+        this.showHubTip(result.msg || '发货失败', 'warn');
         return;
       }
 
@@ -8463,7 +8656,7 @@ bindSubCatChange(e) {
       this.loadOpsOrderCounts();
 
       if (expressOk) {
-        wx.showToast({ title: '发货成功，已切到已发货', icon: 'none' });
+        this.showHubTip('发货成功，已切到已发货', 'info');
       } else if (express.skipReason || express.error) {
         const reason = String(express.error || express.skipReason || '');
         const tokenHint =
@@ -8480,14 +8673,14 @@ bindSubCatChange(e) {
           confirmText: '知道了'
         });
       } else if (!result.messageSent) {
-        wx.showToast({ title: '已发货，已切到已发货', icon: 'none' });
+        this.showHubTip('已发货，已切到已发货', 'info');
       } else {
-        wx.showToast({ title: '发货成功，已切到已发货', icon: 'none' });
+        this.showHubTip('发货成功，已切到已发货', 'info');
       }
     } catch (err) {
       console.error(err);
       wx.hideLoading();
-      wx.showToast({ title: '发货失败，请部署 managerShipOrder', icon: 'none' });
+      this.showHubTip('发货失败，请部署 managerShipOrder', 'warn');
     }
   },
 
@@ -8603,7 +8796,7 @@ bindSubCatChange(e) {
     // 兼容旧入口：落到藏品库「分类管理」子 Tab
     if (this.data.curTab !== 1) {
       if (!canAccessManagerTab(this.data.workspaceRole, 1)) {
-        wx.showToast({ title: '无此功能权限', icon: 'none' });
+        this.showHubTip('无此功能权限', 'warn');
         return;
       }
       goManagerModule(1, '藏品库', 'productTab=category');
@@ -8641,20 +8834,20 @@ bindSubCatChange(e) {
       wx.hideLoading();
       const result = res.result || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '同步失败', icon: 'none' });
+        this.showHubTip(result.msg || '同步失败', 'warn');
         return;
       }
-      wx.showToast({ title: '分类已同步', icon: 'success' });
+      this.showHubTip('分类已同步', 'info');
       await this.loadCategoriesManage();
       await this.loadCategoriesTree();
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '同步失败', icon: 'none' });
+      this.showHubTip('同步失败', 'warn');
     }
   },
   async submitCategory() {
     const name = (this.data.newCatName || '').trim();
-    if (!name) return wx.showToast({ title: '请填写分类名称', icon: 'none' });
+    if (!name) return this.showHubTip('请填写分类名称', 'warn');
 
     const enName = (this.data.newCatEn || 'CATEGORY').trim().toUpperCase();
     const level = this.data.newCatLevel;
@@ -8666,13 +8859,13 @@ bindSubCatChange(e) {
         const parent = tree[this.data.newCatParentIndex];
         if (!parent) {
           wx.hideLoading();
-          return wx.showToast({ title: '请选择所属一级分类', icon: 'none' });
+          return this.showHubTip('请选择所属一级分类', 'warn');
         }
         const siblings = parent.children || [];
         const dup = siblings.some((c) => c.name === name);
         if (dup) {
           wx.hideLoading();
-          return wx.showToast({ title: '该二级分类已存在', icon: 'none' });
+          return this.showHubTip('该二级分类已存在', 'warn');
         }
         const sortOrder = siblings.reduce((max, c) => Math.max(max, c.sortOrder || 0), 0) + 1;
         const isMerch = parent.categoryType === 'merch' || parent.name === '衍生品';
@@ -8691,7 +8884,7 @@ bindSubCatChange(e) {
         const dup = tree.some((c) => c.name === name);
         if (dup) {
           wx.hideLoading();
-          return wx.showToast({ title: '该一级分类已存在', icon: 'none' });
+          return this.showHubTip('该一级分类已存在', 'warn');
         }
         const sortOrder = tree.reduce((max, c) => Math.max(max, c.sortOrder || 0), 0) + 1;
         await callStoreContent({
@@ -8707,13 +8900,13 @@ bindSubCatChange(e) {
         });
       }
       wx.hideLoading();
-      wx.showToast({ title: '已添加', icon: 'success' });
+      this.showHubTip('已添加', 'info');
       this.setData({ newCatName: '', newCatEn: '' });
       await this.loadCategoriesManage();
       await this.loadCategoriesTree();
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '添加失败', icon: 'none' });
+      this.showHubTip('添加失败', 'warn');
     }
   },
   async deleteCategory(e) {
@@ -8744,12 +8937,12 @@ bindSubCatChange(e) {
           }
           await callStoreContent({ action: 'remove', collection: 'categories', id });
           wx.hideLoading();
-          wx.showToast({ title: '已删除', icon: 'success' });
+          this.showHubTip('已删除', 'info');
           await this.loadCategoriesManage();
           await this.loadCategoriesTree();
         } catch (err) {
           wx.hideLoading();
-          wx.showToast({ title: '删除失败', icon: 'none' });
+          this.showHubTip('删除失败', 'warn');
         }
       }
     });
@@ -8765,15 +8958,15 @@ bindSubCatChange(e) {
       wx.hideLoading();
       const result = res.result || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '补齐失败', icon: 'none' });
+        this.showHubTip(result.msg || '补齐失败', 'warn');
         return;
       }
-      wx.showToast({ title: result.msg || '已补齐', icon: 'success' });
+      this.showHubTip(result.msg || '已补齐', 'info');
       await this.loadCategoriesManage();
       await this.loadCategoriesTree();
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '请先部署 seedCategories', icon: 'none' });
+      this.showHubTip('请先部署 seedCategories', 'warn');
     }
   },
 
@@ -8793,7 +8986,7 @@ bindSubCatChange(e) {
           wx.hideLoading();
           const result = r.result || {};
           if (!result.success) {
-            wx.showToast({ title: result.msg || '修复失败', icon: 'none' });
+            this.showHubTip(result.msg || '修复失败', 'warn');
             return;
           }
           wx.showModal({
@@ -8804,7 +8997,7 @@ bindSubCatChange(e) {
           await this.loadCategoriesManage();
         } catch (e) {
           wx.hideLoading();
-          wx.showToast({ title: '请先部署 seedCategories', icon: 'none' });
+          this.showHubTip('请先部署 seedCategories', 'warn');
         }
       }
     });
@@ -8856,7 +9049,7 @@ bindSubCatChange(e) {
           catLinkLoading: false,
           catLinkEmptyHint: result.msg || '预览失败'
         });
-        wx.showToast({ title: result.msg || '预览失败', icon: 'none' });
+        this.showHubTip(result.msg || '预览失败', 'warn');
         return;
       }
       const preview = (result.preview || []).map((p) => ({
@@ -8886,7 +9079,7 @@ bindSubCatChange(e) {
         catLinkLoading: false,
         catLinkEmptyHint: '请先部署 seedCategories'
       });
-      wx.showToast({ title: '请先部署 seedCategories', icon: 'none' });
+      this.showHubTip('请先部署 seedCategories', 'warn');
     }
   },
 
@@ -8897,7 +9090,7 @@ bindSubCatChange(e) {
     await this.previewCatLink(mode);
     const count = this.data.catLinkMatchCount || 0;
     if (!count) {
-      wx.showToast({ title: this.data.catLinkEmptyHint || '无匹配藏品', icon: 'none' });
+      this.showHubTip(this.data.catLinkEmptyHint || '无匹配藏品', 'warn');
       return;
     }
     wx.showModal({
@@ -8919,7 +9112,7 @@ bindSubCatChange(e) {
           wx.hideLoading();
           const result = r.result || {};
           if (!result.success) {
-            wx.showToast({ title: result.msg || '关联失败', icon: 'none' });
+            this.showHubTip(result.msg || '关联失败', 'warn');
             return;
           }
           this.setData({
@@ -8941,7 +9134,7 @@ bindSubCatChange(e) {
           });
         } catch (err) {
           wx.hideLoading();
-          wx.showToast({ title: '关联失败', icon: 'none' });
+          this.showHubTip('关联失败', 'warn');
         }
       }
     });
@@ -8950,7 +9143,7 @@ bindSubCatChange(e) {
   async undoCatLink() {
     const last = this.data.catLinkLastResult;
     if (!last || !last.linked || !last.linked.length) {
-      wx.showToast({ title: '没有可撤销的记录', icon: 'none' });
+      this.showHubTip('没有可撤销的记录', 'warn');
       return;
     }
     wx.showModal({
@@ -8972,15 +9165,15 @@ bindSubCatChange(e) {
           wx.hideLoading();
           const result = r.result || {};
           if (!result.success) {
-            wx.showToast({ title: result.msg || '撤销失败', icon: 'none' });
+            this.showHubTip(result.msg || '撤销失败', 'warn');
             return;
           }
           this.setData({ catLinkLastResult: null, catLinkPreview: [], catLinkMatchCount: 0 });
           await this.previewCatLink(this.data.catLinkMode || 'auto');
-          wx.showToast({ title: result.msg || '已撤销', icon: 'success' });
+          this.showHubTip(result.msg || '已撤销', 'info');
         } catch (e) {
           wx.hideLoading();
-          wx.showToast({ title: '撤销失败', icon: 'none' });
+          this.showHubTip('撤销失败', 'warn');
         }
       }
     });
@@ -9010,7 +9203,7 @@ bindSubCatChange(e) {
         return
       }
       console.error('加载文章失败:', e); 
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.showHubTip('加载失败', 'warn');
     } 
   },
   async loadExhibitions() { 
@@ -9028,7 +9221,7 @@ bindSubCatChange(e) {
         return
       }
       console.error('加载专题失败:', e); 
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.showHubTip('加载失败', 'warn');
     } 
   },
   async seedCommunityTestData() {
@@ -9037,26 +9230,18 @@ bindSubCatChange(e) {
       const result = await callCommunitySeedAction('seed')
       wx.hideLoading()
       if (!result.success) {
-        wx.showToast({ title: result.msg || '导入失败', icon: 'none', duration: 3000 })
+        this.showHubTip(result.msg || '导入失败', 'warn')
         return
       }
       markCommunityContentStale()
       const st = result.stats || {}
       const artN = Number(st.articles) || 0
       const exhN = Number(st.exhibitions) || 0
-      wx.showToast({
-        title: artN || exhN ? `已导入 ${artN} 篇 / ${exhN} 专题` : '内容已导入',
-        icon: 'none',
-        duration: 2500
-      })
+      this.showHubTip(artN || exhN ? `已导入 ${artN} 篇 / ${exhN} 专题` : '内容已导入', 'info')
       this.loadContent()
     } catch (e) {
       wx.hideLoading()
-      wx.showToast({
-        title: formatCloudFnError(e, '导入失败，请部署 seedCategories'),
-        icon: 'none',
-        duration: 3000
-      })
+      this.showHubTip(formatCloudFnError(e, '导入失败，请部署 seedCategories'), 'warn')
       console.error('seedCommunityTestData', e)
     }
   },
@@ -9072,15 +9257,15 @@ bindSubCatChange(e) {
           const result = await callCommunitySeedAction('clear')
           wx.hideLoading()
           if (!result.success) {
-            wx.showToast({ title: result.msg || '清除失败', icon: 'none' })
+            this.showHubTip(result.msg || '清除失败', 'warn')
             return
           }
           markCommunityContentStale()
-          wx.showToast({ title: '已清除', icon: 'success' })
+          this.showHubTip('已清除', 'info')
           this.loadContent()
         } catch (e) {
           wx.hideLoading()
-          wx.showToast({ title: formatCloudFnError(e, '清除失败'), icon: 'none' })
+          this.showHubTip(formatCloudFnError(e, '清除失败'), 'warn')
         }
       }
     })
@@ -9101,7 +9286,7 @@ bindSubCatChange(e) {
         return;
       }
       console.error('loadCareGuides', e);
-      wx.showToast({ title: '加载养护指南失败', icon: 'none' });
+      this.showHubTip('加载养护指南失败', 'warn');
     }
   },
   async seedCareGuidesFromDefaults() {
@@ -9135,12 +9320,12 @@ bindSubCatChange(e) {
         items
       });
       wx.hideLoading();
-      wx.showToast({ title: `已同步 ${result.count || items.length} 篇`, icon: 'success' });
+      this.showHubTip(`已同步 ${result.count || items.length} 篇`, 'info');
       this.loadCareGuides();
     } catch (e) {
       wx.hideLoading();
       console.error('seedCareGuidesFromDefaults', e);
-      wx.showToast({ title: '同步失败', icon: 'none' });
+      this.showHubTip('同步失败', 'warn');
     }
   },
   openCareGuideModal(e) {
@@ -9205,14 +9390,14 @@ bindSubCatChange(e) {
   async submitCareGuide() {
     const g = this.data.tempCareGuide || {};
     if (!g.title || !g.summary) {
-      return wx.showToast({ title: '标题与摘要必填', icon: 'none' });
+      return this.showHubTip('标题与摘要必填', 'warn');
     }
     let sections = [];
     try {
       sections = JSON.parse(g.sectionsJson || '[]');
       if (!Array.isArray(sections)) throw new Error('sections must be array');
     } catch (e) {
-      return wx.showToast({ title: '板块 JSON 格式有误', icon: 'none' });
+      return this.showHubTip('板块 JSON 格式有误', 'warn');
     }
     const guideId = g.guideId || `care_${String(g.category || 'general').toLowerCase()}_v${Date.now()}`;
     const data = {
@@ -9243,13 +9428,13 @@ bindSubCatChange(e) {
         });
       }
       wx.hideLoading();
-      wx.showToast({ title: '已保存', icon: 'success' });
+      this.showHubTip('已保存', 'info');
       this.setData({ showCareGuideModal: false });
       this.loadCareGuides();
     } catch (e) {
       wx.hideLoading();
       console.error('submitCareGuide', e);
-      wx.showToast({ title: '保存失败', icon: 'none' });
+      this.showHubTip('保存失败', 'warn');
     }
   },
   deleteCareGuide(e) {
@@ -9264,11 +9449,11 @@ bindSubCatChange(e) {
         try {
           await callStoreContent({ action: 'remove', collection: 'care_guides', id });
           wx.hideLoading();
-          wx.showToast({ title: '已删除', icon: 'success' });
+          this.showHubTip('已删除', 'info');
           this.loadCareGuides();
         } catch (err) {
           wx.hideLoading();
-          wx.showToast({ title: '删除失败', icon: 'none' });
+          this.showHubTip('删除失败', 'warn');
         }
       }
     });
@@ -9289,16 +9474,13 @@ bindSubCatChange(e) {
       wx.hideLoading();
       const result = res.result || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '处理失败', icon: 'none' });
+        this.showHubTip(result.msg || '处理失败', 'warn');
         return;
       }
-      wx.showToast({
-        title: `已处理 ${result.sent || 0} 条`,
-        icon: 'none'
-      });
+      this.showHubTip(`已处理 ${result.sent || 0} 条`, 'info');
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '云函数未部署', icon: 'none' });
+      this.showHubTip('云函数未部署', 'warn');
     }
   },
   switchCommentFilter(e) {
@@ -9323,7 +9505,7 @@ bindSubCatChange(e) {
       });
     } catch (e) {
       console.error('loadComments', e);
-      wx.showToast({ title: '加载评价失败', icon: 'none' });
+      this.showHubTip('加载评价失败', 'warn');
     } finally {
       wx.hideNavigationBarLoading();
     }
@@ -9351,10 +9533,10 @@ bindSubCatChange(e) {
         data: { action, commentId: id }
       });
       if (!res.result || !res.result.success) throw new Error((res.result && res.result.msg) || '操作失败');
-      wx.showToast({ title: res.result.msg || '完成', icon: 'none' });
+      this.showHubTip(res.result.msg || '完成', 'info');
       this.loadComments();
     } catch (err) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+      this.showHubTip(err.message || '操作失败', 'warn');
     } finally {
       wx.hideLoading();
     }
@@ -9370,7 +9552,7 @@ bindSubCatChange(e) {
   },
   async submitCommentReply() {
     const { commentId, content } = this.data.tempCommentReply || {};
-    if (!content || !String(content).trim()) return wx.showToast({ title: '请输入回复', icon: 'none' });
+    if (!content || !String(content).trim()) return this.showHubTip('请输入回复', 'warn');
     wx.showLoading({ title: '提交中…', mask: true });
     try {
       const res = await wx.cloud.callFunction({
@@ -9379,10 +9561,10 @@ bindSubCatChange(e) {
       });
       if (!res.result || !res.result.success) throw new Error((res.result && res.result.msg) || '回复失败');
       this.closeCommentReplyModal();
-      wx.showToast({ title: '回复成功', icon: 'none' });
+      this.showHubTip('回复成功', 'info');
       this.loadComments();
     } catch (e) {
-      wx.showToast({ title: e.message || '回复失败', icon: 'none' });
+      this.showHubTip(e.message || '回复失败', 'warn');
     } finally {
       wx.hideLoading();
     }
@@ -9642,7 +9824,7 @@ bindSubCatChange(e) {
 
   async submitContent() {
     const c = this.data.tempContent;
-    if(!c.title) return wx.showToast({title:'标题必填',icon:'none'});
+    if(!c.title) return this.showHubTip('标题必填','warn');
     wx.showLoading({title:'保存…', mask:true});
     let img = c.coverImage;
     if(img && !img.startsWith('cloud') && !img.startsWith('http')) {
@@ -9675,13 +9857,13 @@ bindSubCatChange(e) {
         await callStoreContent({ action: 'upsert', collection, data });
       }
       wx.hideLoading();
-      wx.showToast({ title: this.data.isEditing ? '更新成功' : '创建成功', icon: 'success' });
+      this.showHubTip(this.data.isEditing ? '更新成功' : '创建成功', 'info');
       this.setData({showContentModal: false});
       // 重新加载内容
       this.loadContent();
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '保存失败', icon: 'none' });
+      this.showHubTip('保存失败', 'warn');
       console.error('保存内容失败:', e);
     }
   },
@@ -9700,12 +9882,12 @@ bindSubCatChange(e) {
             const collection = type === 'exhibition' ? 'cms_wikis' : 'articles';
             await callStoreContent({ action: 'remove', collection, id });
             wx.hideLoading();
-            wx.showToast({ title: '已删除', icon: 'success' });
+            this.showHubTip('已删除', 'info');
             // 重新加载内容
             this.loadContent();
           } catch (e) {
             wx.hideLoading();
-            wx.showToast({ title: '删除失败', icon: 'none' });
+            this.showHubTip('删除失败', 'warn');
             console.error('删除失败:', e);
           }
         }
@@ -9734,10 +9916,10 @@ bindSubCatChange(e) {
             data: { image: up.fileID, updateTime: Date.now() }
           });
           this.setData({ bookingHero: up.fileID });
-          wx.showToast({ title: '已更新', icon: 'success' });
+          this.showHubTip('已更新', 'info');
         } catch (e) {
           console.error('更新预约头图失败', e);
-          wx.showToast({ title: '更新失败', icon: 'none' });
+          this.showHubTip('更新失败', 'warn');
         } finally {
           wx.hideLoading();
         }
@@ -9919,7 +10101,7 @@ bindSubCatChange(e) {
   async generateYouxinCopy() {
     const form = this.data.pushForm;
     if (!form.segment && form.scope === 'segment') {
-      return wx.showToast({ title: '请先选择分群', icon: 'none' });
+      return this.showHubTip('请先选择分群', 'warn');
     }
     this.setData({ pushAiLoading: true });
     wx.showLoading({ title: '撰写中…' });
@@ -9935,17 +10117,17 @@ bindSubCatChange(e) {
       wx.hideLoading();
       const r = res.result || {};
       if (!r.success) {
-        wx.showToast({ title: r.msg || '撰写失败', icon: 'none' });
+        this.showHubTip(r.msg || '撰写失败', 'warn');
         return;
       }
       this.setData({
         'pushForm.title': r.title || '',
         'pushForm.content': r.content || ''
       });
-      wx.showToast({ title: '已生成，可编辑', icon: 'none' });
+      this.showHubTip('已生成，可编辑', 'info');
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: 'AI 不可用', icon: 'none' });
+      this.showHubTip('AI 不可用', 'warn');
     } finally {
       this.setData({ pushAiLoading: false });
     }
@@ -10007,26 +10189,26 @@ bindSubCatChange(e) {
       });
       wx.hideLoading();
       const r = res.result || {};
-      wx.showToast({ title: `已导入 ${r.inserted || 0} 条`, icon: 'none' });
+      this.showHubTip(`已导入 ${r.inserted || 0} 条`, 'info');
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '初始化失败', icon: 'none' });
+      this.showHubTip('初始化失败', 'warn');
     }
   },
 
   openPushConfirm() {
     const { title, content, scope, targetOpenid, segment, campaignType } = this.data.pushForm;
     if (!title.trim() || !content.trim()) {
-      return wx.showToast({ title: '请填写标题和正文', icon: 'none' });
+      return this.showHubTip('请填写标题和正文', 'warn');
     }
     if (scope === 'single' && !targetOpenid.trim()) {
-      return wx.showToast({ title: '请填写用户 openid', icon: 'none' });
+      return this.showHubTip('请填写用户 openid', 'warn');
     }
     if (scope === 'segment' && !segment && campaignType === 'general') {
-      return wx.showToast({ title: '请选择 RFM 分群', icon: 'none' });
+      return this.showHubTip('请选择 RFM 分群', 'warn');
     }
     if (scope === 'segment' && !segment && campaignType !== 'general') {
-      return wx.showToast({ title: '请选择目标分群', icon: 'none' });
+      return this.showHubTip('请选择目标分群', 'warn');
     }
     this.estimatePushRecipients().then(() => {
       this.setData({ showPushConfirm: true });
@@ -10083,14 +10265,11 @@ bindSubCatChange(e) {
       const result = lastResult || {};
       if (!result.success) {
         this.setData({ pushSending: false });
-        wx.showToast({ title: result.msg || '发送失败', icon: 'none' });
+        this.showHubTip(result.msg || '发送失败', 'warn');
         return;
       }
       const stats = result.stats || {};
-      wx.showToast({
-        title: stats.sent != null ? `送达 ${stats.sent}/${stats.target}` : '发送完成',
-        icon: 'none'
-      });
+      this.showHubTip(stats.sent != null ? `送达 ${stats.sent}/${stats.target}` : '发送完成', 'info');
       this.setData({
         pushSending: false,
         pushForm: { ...form, title: '', content: '', targetOpenid: '' }
@@ -10100,7 +10279,7 @@ bindSubCatChange(e) {
     } catch (e) {
       wx.hideLoading();
       this.setData({ pushSending: false });
-      wx.showToast({ title: '发送失败', icon: 'none' });
+      this.showHubTip('发送失败', 'warn');
     }
   },
 
@@ -10128,7 +10307,7 @@ bindSubCatChange(e) {
   async submitTicketReply() {
     const { ticketId, content } = this.data.tempTicketReply;
     if (!content.trim()) {
-      return wx.showToast({ title: '请填写回复', icon: 'none' });
+      return this.showHubTip('请填写回复', 'warn');
     }
     wx.showLoading({ title: '发送中…', mask: true });
     try {
@@ -10138,15 +10317,15 @@ bindSubCatChange(e) {
       });
       wx.hideLoading();
       if (!(res.result && res.result.success)) {
-        wx.showToast({ title: (res.result && res.result.msg) || '失败', icon: 'none' });
+        this.showHubTip((res.result && res.result.msg) || '失败', 'warn');
         return;
       }
-      wx.showToast({ title: '已回复', icon: 'success' });
+      this.showHubTip('已回复', 'info');
       this.setData({ showTicketReplyModal: false });
       this.loadSupportTickets();
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '发送失败', icon: 'none' });
+      this.showHubTip('发送失败', 'warn');
     }
   },
 
@@ -10170,7 +10349,7 @@ bindSubCatChange(e) {
       });
       this.applyStoreSelection(selectedStoreId, stores);
       if (!cloudOk) {
-        wx.showToast({ title: '已用本地门店兜底', icon: 'none' });
+        this.showHubTip('已用本地门店兜底', 'warn');
       }
     } catch (e) {
       console.error('loadAdminStores', e);
@@ -10184,10 +10363,10 @@ bindSubCatChange(e) {
           selectedStoreId
         });
         this.applyStoreSelection(selectedStoreId, stores);
-        wx.showToast({ title: '云端失败，已用本地兜底', icon: 'none' });
+        this.showHubTip('云端失败，已用本地兜底', 'warn');
       } catch (err) {
         this.setData({ storeTabLoading: false });
-        wx.showToast({ title: '加载门店失败', icon: 'none' });
+        this.showHubTip('加载门店失败', 'warn');
       }
     }
   },
@@ -10311,10 +10490,10 @@ bindSubCatChange(e) {
   async saveStoreEdit() {
     const s = this.data.tempStoreEdit;
     if (!s || !s.storeId) {
-      return wx.showToast({ title: '门店信息缺失', icon: 'none' });
+      return this.showHubTip('门店信息缺失', 'warn');
     }
     if (!(s.name || '').trim()) {
-      return wx.showToast({ title: '请填写门店名称', icon: 'none' });
+      return this.showHubTip('请填写门店名称', 'warn');
     }
     wx.showLoading({ title: '保存中…' });
     try {
@@ -10342,15 +10521,15 @@ bindSubCatChange(e) {
       });
       wx.hideLoading();
       if (!(res.result && res.result.success)) {
-        wx.showToast({ title: (res.result && res.result.msg) || '保存失败', icon: 'none' });
+        this.showHubTip((res.result && res.result.msg) || '保存失败', 'warn');
         return;
       }
-      wx.showToast({ title: '已保存', icon: 'success' });
+      this.showHubTip('已保存', 'info');
       this.setData({ showStoreEditModal: false });
       this.loadAdminStores();
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: '保存失败', icon: 'none' });
+      this.showHubTip('保存失败', 'warn');
     }
   },
 
@@ -10365,7 +10544,7 @@ bindSubCatChange(e) {
       if (!(res.result && res.result.success && res.result.data)) {
         const msg = (res.result && res.result.msg) || '加载失败'
         this.setData({ analyticsLoading: false, analyticsError: msg })
-        wx.showToast({ title: msg, icon: 'none' })
+        this.showHubTip(msg, 'warn')
         return
       }
       const d = res.result.data
@@ -10392,8 +10571,10 @@ bindSubCatChange(e) {
         (orders.daily || []).length > maxBars
           ? `趋势已按约 ${maxBars} 段聚合展示，合计仍为全日明细`
           : ''
-      const rangeLabel =
-        range.startDate && range.endDate
+      const isDayView = this.data.analyticsRangeType === 'day'
+      const rangeLabel = isDayView
+        ? `${this.data.analyticsDayIsYesterday ? '昨日 · ' : ''}${this.data.analyticsDayLabel}`
+        : range.startDate && range.endDate
           ? `${String(range.startDate).slice(5)} → ${String(range.endDate).slice(5)}`
           : this.data.analyticsRangeType === 'month'
             ? this.data.analyticsMonthLabel || '自然月'
@@ -10537,7 +10718,8 @@ bindSubCatChange(e) {
           },
           behavior: {
             funnel: behavior.funnel || {},
-            topEvents: behavior.topEvents || []
+            topEvents: behavior.topEvents || [],
+            diag: behavior.diag || null
           },
           charts: {
             newUsers: buildCountChartEntries(
@@ -10582,15 +10764,19 @@ bindSubCatChange(e) {
         analyticsLoading: false,
         analyticsError: ''
       }, () => this.scheduleChartLayout())
+      if (isDayView) this.loadAnalyticsDayCompare(this.data.analyticsDayKey)
     } catch (e) {
       console.error('loadAnalyticsDashboard', e)
       const msg = formatCloudFnError(e, '加载失败')
       this.setData({ analyticsLoading: false, analyticsError: msg })
-      wx.showToast({ title: msg, icon: 'none' })
+      this.showHubTip(msg, 'warn')
     }
   },
 
   _buildAnalyticsRangePayload() {
+    if (this.data.analyticsRangeType === 'day' && this.data.analyticsDayKey) {
+      return reportDay.buildDayPayload(this.data.analyticsDayKey)
+    }
     if (this.data.analyticsRangeType === 'month') {
       const current = storeLedger.getCurrentYearMonth()
       const yearMonth = this.data.analyticsMonth || current
@@ -10701,8 +10887,105 @@ bindSubCatChange(e) {
     this.loadAnalyticsDashboard()
   },
 
+  /** 自然月次级导航的左右箭头：只换算年月，取数仍走 onAnalyticsMonthPick */
+  shiftAnalyticsMonth(e) {
+    const delta = parseInt(e.currentTarget.dataset.delta, 10) || 0
+    const cur = String(this.data.analyticsMonth || storeLedger.getCurrentYearMonth()).slice(0, 7)
+    const [y, m] = cur.split('-').map((x) => parseInt(x, 10))
+    if (!y || !m || !delta) return
+    const idx = y * 12 + (m - 1) + delta
+    const ym = `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`
+    if (ym > (this.data.analyticsMonthMax || storeLedger.getCurrentYearMonth())) return
+    this.onAnalyticsMonthPick({ detail: { value: ym } })
+  },
+
   toggleAnalyticsNotes() {
     this.setData({ analyticsNotesOpen: !this.data.analyticsNotesOpen })
+  },
+
+  /** 切到单日视图（dayKey 缺省 = 昨日，北京时间自然日） */
+  _setAnalyticsDay(dayKey) {
+    const today = reportDay.todayKey()
+    const yesterday = reportDay.yesterdayKey()
+    let key = /^\d{4}-\d{2}-\d{2}$/.test(String(dayKey || '')) ? dayKey : yesterday
+    if (key > today) key = today
+    this.setData({
+      analyticsRangeType: 'day',
+      analyticsDayKey: key,
+      analyticsDayLabel: reportDay.formatDayLabel(key),
+      analyticsDayMax: today,
+      analyticsDayIsYesterday: key === yesterday,
+      analyticsNotesOpen: false,
+      analyticsDayCompare: { loading: true, error: '', rows: [], prevLabel: '', weekLabel: '', hasAny: false, chart: [] }
+    })
+    this.loadAnalyticsDashboard()
+  },
+
+  setAnalyticsYesterday() {
+    this._setAnalyticsDay(reportDay.yesterdayKey())
+  },
+
+  onAnalyticsDayPick(e) {
+    const raw = String((e.detail && e.detail.value) || '').slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return
+    this._setAnalyticsDay(raw)
+  },
+
+  shiftAnalyticsDay(e) {
+    const delta = parseInt(e.currentTarget.dataset.delta, 10) || 0
+    const base = this.data.analyticsDayKey || reportDay.yesterdayKey()
+    const next = reportDay.addDays(base, delta)
+    if (!next || next > reportDay.todayKey()) return
+    this._setAnalyticsDay(next)
+  },
+
+  /**
+   * 单日详情：较前一日 / 较上周同日 + 近 8 日走势。
+   * 只读既有 action（orders / users）+ 既有 startDate/endDate，不改云函数契约；
+   * 失败只影响本卡片（写明原因），不影响上方单日数据。
+   */
+  async loadAnalyticsDayCompare(dayKey) {
+    if (!dayKey) return
+    const win = reportDay.buildCompareWindow(dayKey)
+    this.setData({ 'analyticsDayCompare.loading': true, 'analyticsDayCompare.error': '' })
+    const call = (action) =>
+      wx.cloud
+        .callFunction({ name: 'getAnalyticsDashboard', data: { action, startDate: win.startDate, endDate: win.endDate } })
+        .then((res) => (res.result && res.result.success && res.result.data) || null)
+        .catch(() => null)
+    const [orders, users] = await Promise.all([call('orders'), call('users')])
+    if (this.data.analyticsRangeType !== 'day' || this.data.analyticsDayKey !== dayKey) return
+    if (!orders && !users) {
+      this.setData({ 'analyticsDayCompare.loading': false, 'analyticsDayCompare.error': '对比数据加载失败，下拉可重试' })
+      return
+    }
+    const cmp = reportDay.buildDayCompare(
+      dayKey,
+      {
+        ordersDaily: (orders && orders.daily) || [],
+        newUsersByDay: (users && users.newUsersByDay) || [],
+        dauByDay: (users && users.dauByDay) || []
+      },
+      (n) => storeLedger.formatMoney(n)
+    )
+    const layout =
+      this._dashChartLayout || this.data.chartLayout || computeDashChartLayout(0, 0, dashWindowWidth())
+    const series = reportDay.buildWindowSeries(dayKey, (orders && orders.daily) || [])
+    const chart = buildTrendChartEntries(series, (n, c) => this._shortMoney(n, c), layout).map((row, i) => ({
+      ...row,
+      isFocus: !!(series[i] && series[i].isFocus)
+    }))
+    this.setData({
+      analyticsDayCompare: {
+        loading: false,
+        error: orders && users ? '' : `${orders ? '用户' : '订单'}对比数据未取到，对应行标「无数据」`,
+        rows: cmp.rows,
+        prevLabel: cmp.prevLabel,
+        weekLabel: cmp.weekLabel,
+        hasAny: cmp.hasAny,
+        chart
+      }
+    })
   },
 
   /* ══════════ 字段维护（curTab 17）· 装裱方式 craftType / 制作工艺 craftProcess ══════════
@@ -11022,7 +11305,7 @@ bindSubCatChange(e) {
     } catch (e) {
       console.error('loadShippingRules', e)
       this.setData({ shippingLoading: false })
-      wx.showToast({ title: formatCloudFnError(e, '运费规则加载失败'), icon: 'none' })
+      this.showHubTip(formatCloudFnError(e, '运费规则加载失败'), 'warn')
     }
   },
 
@@ -11131,7 +11414,7 @@ bindSubCatChange(e) {
 
   async saveShippingRules() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.SHIPPING)) {
-      wx.showToast({ title: '仅超管可改运费', icon: 'none' })
+      this.showHubTip('仅超管可改运费', 'warn')
       return
     }
     if (this.data.shippingSaving) return
@@ -11180,10 +11463,10 @@ bindSubCatChange(e) {
       const result = (res && res.result) || {}
       this.setData({ shippingSaving: false })
       if (!result.success) {
-        wx.showToast({ title: result.msg || '保存失败', icon: 'none' })
+        this.showHubTip(result.msg || '保存失败', 'warn')
         return
       }
-      wx.showToast({ title: '运费规则已保存', icon: 'none' })
+      this.showHubTip('运费规则已保存', 'info')
       const nextForm = {
         ...form,
         chargedCraftTypes: charged.slice(),
@@ -11200,7 +11483,7 @@ bindSubCatChange(e) {
     } catch (e) {
       wx.hideLoading()
       this.setData({ shippingSaving: false })
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
+      this.showHubTip(formatCloudFnError(e, '保存失败'), 'warn')
     }
   },
 
@@ -11244,7 +11527,7 @@ bindSubCatChange(e) {
     } catch (e) {
       console.error('loadContentDisplayFlags', e)
       this.setData({ contentFlagsLoading: false })
-      wx.showToast({ title: formatCloudFnError(e, '内容开关加载失败'), icon: 'none' })
+      this.showHubTip(formatCloudFnError(e, '内容开关加载失败'), 'warn')
     }
   },
 
@@ -11264,13 +11547,13 @@ bindSubCatChange(e) {
     wx.vibrateShort({ type: 'light' })
     wx.navigateTo({
       url: '/subpackages/manager/wish-wall/index',
-      fail: () => wx.showToast({ title: '页面暂不可用', icon: 'none' })
+      fail: () => this.showHubTip('页面暂不可用', 'warn')
     })
   },
 
   async saveContentDisplayFlags() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.CONTENT_FLAGS)) {
-      wx.showToast({ title: '仅超管可改内容开关', icon: 'none' })
+      this.showHubTip('仅超管可改内容开关', 'warn')
       return
     }
     if (this.data.contentFlagsSaving) return
@@ -11289,10 +11572,10 @@ bindSubCatChange(e) {
       const result = (res && res.result) || {}
       this.setData({ contentFlagsSaving: false })
       if (!result.success) {
-        wx.showToast({ title: result.msg || '保存失败', icon: 'none' })
+        this.showHubTip(result.msg || '保存失败', 'warn')
         return
       }
-      wx.showToast({ title: '内容开关已保存', icon: 'none' })
+      this.showHubTip('内容开关已保存', 'info')
       this.setData({
         contentFlagsDocId: result.docId || this.data.contentFlagsDocId,
         contentFlagsFromDefault: false,
@@ -11312,7 +11595,7 @@ bindSubCatChange(e) {
     } catch (e) {
       wx.hideLoading()
       this.setData({ contentFlagsSaving: false })
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
+      this.showHubTip(formatCloudFnError(e, '保存失败'), 'warn')
     }
   }
 };

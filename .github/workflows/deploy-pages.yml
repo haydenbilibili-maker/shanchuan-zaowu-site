@@ -2,7 +2,7 @@ name: Verify & Deploy to Cloudflare Pages
 
 # 2026-09-17 全面审计 D1：此前本工作流**只在 push: main 上跑 npm ci + build，零守卫、无 PR 触发**
 # —— 全部 check:*/report:*/test:* 在合并路径上形同虚设。现改为：
-#   · verify（阻断，push/PR/dispatch）→ 51 条静态守卫 + 完整构建
+#   · verify（阻断，push/PR/dispatch）→ 全套静态守卫（2026-09-28 起 check:fast 并行）+ 完整构建
 #   · guards-can-fail（阻断，仅 PR/dispatch）→ 逐条跑守卫自检，证明「守卫自己会失败」
 #   · deploy（仅 main）→ 复用 verify 的产物部署，不重复构建
 #
@@ -52,8 +52,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --include=dev
 
-      - name: 静态守卫（check:admin）
-        run: npm run check:admin
+      # 2026-09-28 产品负责人拍板改用 check:fast：与 check:admin **同一份全套清单、同判据**，并行执行。
+      #   · serialGuards（起 Chrome/vite 的守卫）走互斥通道；未登记者由 check:guards-coverage 静态拦截；
+      #   · --retry-serial：并行失败的逐条串行复跑，串行仍失败才判红；串行通过的打 ::warning（并行冲突嫌疑）。
+      #   · check:astro 的通过缓存在 CI 不生效（GitHub 注入 CI=true，且全新安装没有 node_modules/.cache）；
+      #     下面再显式设 CHECK_ASTRO_NO_CACHE=1，双保险。
+      - name: 静态守卫（check:fast = 全套并行）
+        run: npm run check:fast
+        env:
+          CHECK_ASTRO_NO_CACHE: '1'
 
       - name: Build site (admin + astro)
         run: npm run build

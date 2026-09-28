@@ -144,16 +144,6 @@ page { background: var(--color-bg); color: #fff; }
   margin-bottom: 18rpx;
 }
 
-.tile-no {
-  flex-shrink: 0;
-  width: 44rpx; height: 44rpx;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22rpx; font-weight: 600; color: var(--gold);
-  background: rgba(196, 167, 108, 0.12);
-  border: 1px solid rgba(196, 167, 108, 0.25);
-  border-radius: 10rpx;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
-}
 
 .tile-overline {
   flex: 1;

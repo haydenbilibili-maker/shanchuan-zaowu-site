@@ -18,7 +18,7 @@
 
     <template v-if="activeTab === 'orders'">
       <div class="filter-bar">
-        <el-radio-group v-model="statusFilter" fill="#d4af37" @change="refresh">
+        <el-radio-group v-model="statusFilter" @change="refresh">
           <el-radio-button label="all">全部</el-radio-button>
           <el-radio-button label="pending_review">待审核</el-radio-button>
           <el-radio-button label="accepted">已接单</el-radio-button>

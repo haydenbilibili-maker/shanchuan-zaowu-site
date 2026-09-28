@@ -17,8 +17,10 @@
  *     —— 超管/店长「标本师管理」运维（列表增强、钉权威档案、绑定员工、上下架）
  *
  * upsert 角色：staff | manager | super_admin | specimen_artisan | live_host | investor | shareholder
+ *            | buyer | franchisee | channel | supplier
  *   super_admin → staff_members.role=super_admin + 并入 workspace_acl.openids
  *   改回店长/店员或停用 → 从 ACL 移除（硬编码 openid 不删）
+ *   buyer/franchisee/channel/supplier → B2B 旁路（无门店经营权限；可进采购商工作台）
  *
  * UI 门帘口令：MANAGER_UI_PASSWORD / MANAGER_UI_PASSWORD_HASH（本函数环境变量）。
  * 真正的写操作闸门仍是 staffGuard.js，服务端一律自行校验。
@@ -48,10 +50,16 @@ const {
   STORED_ROLE_LIVE_HOST,
   STORED_ROLE_INVESTOR,
   STORED_ROLE_SHAREHOLDER,
+  STORED_ROLE_BUYER,
+  STORED_ROLE_FRANCHISEE,
+  STORED_ROLE_CHANNEL,
+  STORED_ROLE_SUPPLIER,
   isSpecimenArtisanRole,
   isLiveHostRole,
   isInvestorRole,
   isShareholderRole,
+  isBuyerRole,
+  isSupplierRole,
   SUPER_ADMIN_OPENIDS,
   ACL_COLLECTION,
   ACL_SUPER_DOC,
@@ -113,6 +121,10 @@ const ROLE_LABELS = {
   [STORED_ROLE_LIVE_HOST]: '直播主播',
   [STORED_ROLE_INVESTOR]: '投资人',
   [STORED_ROLE_SHAREHOLDER]: '股东',
+  [STORED_ROLE_BUYER]: '采购商',
+  [STORED_ROLE_FRANCHISEE]: '加盟商',
+  [STORED_ROLE_CHANNEL]: '渠道商',
+  [STORED_ROLE_SUPPLIER]: '供货方',
   [STORED_ROLE_SUPER]: '超管'
 }
 
@@ -132,6 +144,18 @@ function parseRequestedRole(raw) {
   }
   if (isShareholderRole(value)) {
     return { storedRole: STORED_ROLE_SHAREHOLDER, isSuper: false, syncRole: STORED_ROLE_SHAREHOLDER }
+  }
+  if (value === STORED_ROLE_BUYER || value === 'buyer') {
+    return { storedRole: STORED_ROLE_BUYER, isSuper: false, syncRole: STORED_ROLE_BUYER }
+  }
+  if (value === STORED_ROLE_FRANCHISEE || value === 'franchisee') {
+    return { storedRole: STORED_ROLE_FRANCHISEE, isSuper: false, syncRole: STORED_ROLE_FRANCHISEE }
+  }
+  if (value === STORED_ROLE_CHANNEL || value === 'channel') {
+    return { storedRole: STORED_ROLE_CHANNEL, isSuper: false, syncRole: STORED_ROLE_CHANNEL }
+  }
+  if (isSupplierRole(value)) {
+    return { storedRole: STORED_ROLE_SUPPLIER, isSuper: false, syncRole: STORED_ROLE_SUPPLIER }
   }
   const role = normalizeRole(value) || ROLE_STAFF
   return { storedRole: role, isSuper: false, syncRole: role }
@@ -159,7 +183,19 @@ function roleLabelForStored(storedRole) {
 function rolesDisplayText(roles, inAcl) {
   const list = (roles || []).slice()
   if (inAcl && list.indexOf(STORED_ROLE_SUPER) === -1) list.unshift(STORED_ROLE_SUPER)
-  const order = [STORED_ROLE_SUPER, ROLE_MANAGER, STORED_ROLE_INVESTOR, STORED_ROLE_SHAREHOLDER, ROLE_STAFF, STORED_ROLE_SPECIMEN_ARTISAN, STORED_ROLE_LIVE_HOST]
+  const order = [
+    STORED_ROLE_SUPER,
+    ROLE_MANAGER,
+    STORED_ROLE_INVESTOR,
+    STORED_ROLE_SHAREHOLDER,
+    ROLE_STAFF,
+    STORED_ROLE_SPECIMEN_ARTISAN,
+    STORED_ROLE_LIVE_HOST,
+    STORED_ROLE_BUYER,
+    STORED_ROLE_FRANCHISEE,
+    STORED_ROLE_CHANNEL,
+    STORED_ROLE_SUPPLIER
+  ]
   const sorted = order.filter((k) => list.indexOf(k) !== -1)
   return sorted.map(roleLabelForStored).join(' / ') || '店员'
 }
@@ -184,6 +220,10 @@ function syncRoleForUsers(roles) {
   if (highest === STORED_ROLE_LIVE_HOST) return STORED_ROLE_LIVE_HOST
   if (highest === STORED_ROLE_INVESTOR) return STORED_ROLE_INVESTOR
   if (highest === STORED_ROLE_SHAREHOLDER) return STORED_ROLE_SHAREHOLDER
+  if (highest === STORED_ROLE_BUYER) return STORED_ROLE_BUYER
+  if (highest === STORED_ROLE_FRANCHISEE) return STORED_ROLE_FRANCHISEE
+  if (highest === STORED_ROLE_CHANNEL) return STORED_ROLE_CHANNEL
+  if (highest === STORED_ROLE_SUPPLIER) return STORED_ROLE_SUPPLIER
   return ROLE_STAFF
 }
 
@@ -445,6 +485,8 @@ async function whoami(openid, adminOpsKey) {
       isLiveHost: false,
       isInvestor: false,
       isShareholder: false,
+      isBuyer: false,
+      isSupplier: false,
       code: actor.code,
       hint: actor.code === 'ADMIN_UNCONFIGURED' ? actor.msg : ''
     }
@@ -465,6 +507,9 @@ async function whoami(openid, adminOpsKey) {
     isLiveHost: hasStored('live_host'),
     isInvestor: hasStored('investor'),
     isShareholder: hasStored('shareholder'),
+    isBuyer:
+      hasStored('buyer') || hasStored('franchisee') || hasStored('channel'),
+    isSupplier: hasStored('supplier'),
     name: actor.name || '',
     artisanFramerId: (staffRow && staffRow.artisanFramerId) || '',
     staffNo: actor.staffNo || '',

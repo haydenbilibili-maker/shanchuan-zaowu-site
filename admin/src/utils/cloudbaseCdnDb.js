@@ -175,6 +175,10 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   // 2026-09-19：工作室结算（价目表维护 + 全局手工费率配置）。写权限仅超管，
   // 由 staffGuard 的 SUPER_ADMIN_ONLY_PERMISSIONS 强制；ERP 经代理注入 adminOpsKey。
   'manageStudioSettlement',
+  // 2026-09-28：B2B 采购单微信支付 查单补记 / 退款 / 确认对公到账（仅超管 action，adminOpsKey 鉴权）
+  'payB2bPurchase',
+  // 2026-09-28：敏感集合只读网关（见下方 PROXY_READ_COLLECTIONS）
+  'secureDataRead',
 ])
 
 /**
@@ -200,6 +204,9 @@ const STORE_CONTENT_WRITE_COLLECTIONS = new Set([
   'vip_cards',
   'equity_goods',
   'feishu_shipments',
+  // 2026-09-28：B2B 订货单与供货价目收紧为客户端不可写（防改价 / 改支付态），ERP 写入改经代理（仅超管）
+  'purchase_orders',
+  'price_list_items',
 ])
 
 /** manageStoreContent.setDoc 白名单（须与云函数 allowSetDocIds 一致；未列入的 configs id 降级为 update） */
@@ -225,6 +232,137 @@ async function callStoreContentWrite(payload) {
 
 function shouldProxyStoreContent(collectionName) {
   return STORE_CONTENT_WRITE_COLLECTIONS.has(String(collectionName || '').trim())
+}
+
+/**
+ * 敏感集合（订单 / 预约 / 工单 / 财务 / 账号 / 供应链）：安全规则 read 收紧为「非匿名」后，
+ * ERP 匿名 CDN 读不到，读取统一改走 secureDataRead（超管鉴权 + C 端个人信息默认脱敏）。
+ * 与 cloudfunctions/secureDataRead/policy.js 的 COLLECTION_POLICY 必须逐项一致。
+ */
+export const PROXY_READ_COLLECTIONS = new Set([
+  'orders',
+  'bookings',
+  'refunds',
+  'support_tickets',
+  'custom_inquiries',
+  'custom_drafts',
+  'pet_memorial_orders',
+  'waitlist',
+  'pickup_verify_logs',
+  'notification_logs',
+  'framer_recruit_applications',
+  'purchase_intents',
+  'admin_users',
+  'admin_roles',
+  'admin_login_logs',
+  'admin_operation_logs',
+  'finance_records',
+  'finance_settings',
+  'store_ledger',
+  'daily_revenues',
+  'feishu_inventory',
+  'feishu_purchases',
+  'feishu_shipments',
+  'feishu_sync_logs',
+  'fulfillment_shipments',
+  'stock_movements',
+])
+
+const SECURE_READ_PAGE = 200
+
+function shouldProxyRead(collectionName) {
+  return PROXY_READ_COLLECTIONS.has(String(collectionName || '').trim())
+}
+
+/**
+ * SDK 查询条件 → secureDataRead 线格式。
+ * QueryCommand / LogicCommand 暴露 operator + operands（in/nin 的 operands 即值数组），
+ * db.RegExp 暴露 $regex / $options；Date 走 {$date}。
+ */
+export function whereToWire(value, depth = 0) {
+  if (depth > 8 || value == null || typeof value !== 'object') return value
+  if (value instanceof Date) return { $date: value.getTime() }
+  if (Array.isArray(value)) return value.map((v) => whereToWire(v, depth + 1))
+  if (typeof value.$regex === 'string') return { $regex: value.$regex, $options: value.$options || '' }
+  if (typeof value.operator === 'string' && Array.isArray(value.operands)) {
+    return { $op: value.operator, $args: value.operands.map((v) => whereToWire(v, depth + 1)) }
+  }
+  const out = {}
+  for (const key of Object.keys(value)) out[key] = whereToWire(value[key], depth + 1)
+  return out
+}
+
+/** 云函数把 Date 编码为 {$date: ms}（HTTP 代理 JSON 化会把 Date 变字符串），这里还原 */
+export function wireToValue(value, depth = 0) {
+  if (depth > 12 || value == null || typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.map((v) => wireToValue(v, depth + 1))
+  const keys = Object.keys(value)
+  if (keys.length === 1 && keys[0] === '$date' && Number.isFinite(value.$date)) return new Date(value.$date)
+  const out = {}
+  for (const key of keys) out[key] = wireToValue(value[key], depth + 1)
+  return out
+}
+
+/** secureDataRead 脱敏值均含 `**`；把它写回库会污染原值，写入前须剔除 */
+export function isMaskedPii(value) {
+  return typeof value === 'string' && value.includes('**')
+}
+
+async function callSecureRead(payload) {
+  const res = await callCdnFunction('secureDataRead', payload)
+  if (!res || res.success === false) {
+    const err = new Error(res?.msg || 'secureDataRead 读取失败')
+    err.code = res?.code || ''
+    err.result = res
+    throw err
+  }
+  return res
+}
+
+async function secureQueryPage(collection, { where = null, orderBy = [], skip = 0, limit = SECURE_READ_PAGE } = {}) {
+  const res = await callSecureRead({
+    action: 'query',
+    collection,
+    where: where ? whereToWire(where) : null,
+    orderBy,
+    skip,
+    limit,
+  })
+  return wireToValue(res.list || [])
+}
+
+async function secureQueryAll(collection, { where = null, orderBy = [], maxRows = 500 } = {}) {
+  const all = []
+  let skip = 0
+  while (all.length < maxRows) {
+    const take = Math.min(SECURE_READ_PAGE, maxRows - all.length)
+    const batch = await secureQueryPage(collection, { where, orderBy, skip, limit: take })
+    if (!batch.length) break
+    all.push(...batch)
+    skip += batch.length
+    if (batch.length < take) break
+  }
+  return all
+}
+
+/**
+ * 读取原值（不脱敏）：仅用于导出等确需完整联系方式的场景；云函数会先写 admin_operation_logs 再返回。
+ * @returns {Promise<object[]>}
+ */
+export async function cdnRevealDocs(collectionName, ids, reason = '') {
+  const list = [...new Set((ids || []).map((id) => String(id || '').trim()).filter(Boolean))]
+  const out = []
+  for (let i = 0; i < list.length; i += 100) {
+    const res = await callSecureRead({
+      action: 'get',
+      collection: collectionName,
+      ids: list.slice(i, i + 100),
+      reveal: true,
+      reason,
+    })
+    out.push(...wireToValue(res.list || []))
+  }
+  return out
 }
 
 function cloudFnProxyUrls() {
@@ -427,10 +565,11 @@ export async function callCdnFunction(name, data = {}) {
  */
 export async function fetchCollectionLimit(collectionName, options = {}) {
   const { limit = 500, where = null, batchSize = 20 } = options
-  const db = await getCdnDatabase()
-  const pageSize = Math.min(Math.max(parseInt(batchSize, 10) || 20, 1), 100)
   const maxRows = Math.max(0, parseInt(limit, 10) || 0)
   if (!maxRows) return []
+  if (shouldProxyRead(collectionName)) return secureQueryAll(collectionName, { where, maxRows })
+  const db = await getCdnDatabase()
+  const pageSize = Math.min(Math.max(parseInt(batchSize, 10) || 20, 1), 100)
 
   const all = []
   let skip = 0
@@ -562,6 +701,10 @@ export async function cdnRemove(collectionName, docId) {
 }
 
 export async function cdnDocGet(collectionName, docId) {
+  if (shouldProxyRead(collectionName)) {
+    const res = await callSecureRead({ action: 'get', collection: collectionName, id: docId })
+    return wireToValue(res.list || [])[0] ?? null
+  }
   const db = await getCdnDatabase()
   const res = await db.collection(collectionName).doc(docId).get()
   const data = res?.data
@@ -607,12 +750,23 @@ export async function cdnSet(collectionName, docId, data) {
 }
 
 export async function fetchCollectionWhere(collectionName, where, limit = 500) {
+  if (shouldProxyRead(collectionName)) {
+    return secureQueryAll(collectionName, { where, maxRows: Math.max(0, parseInt(limit, 10) || 0) })
+  }
   const db = await getCdnDatabase()
   const res = await db.collection(collectionName).where(where).limit(limit).get()
   return res.data || []
 }
 
 export async function cdnCount(collectionName, where = null) {
+  if (shouldProxyRead(collectionName)) {
+    const res = await callSecureRead({
+      action: 'count',
+      collection: collectionName,
+      where: where ? whereToWire(where) : null,
+    })
+    return res.total || 0
+  }
   const db = await getCdnDatabase()
   let query = db.collection(collectionName)
   if (where) query = query.where(where)
@@ -623,6 +777,14 @@ export async function cdnCount(collectionName, where = null) {
 /** 分页查询（单 where；排序字段可选） */
 export async function cdnQueryPage(collectionName, options = {}) {
   const { where = null, orderField = null, direction = 'desc', skip = 0, limit = 20 } = options
+  if (shouldProxyRead(collectionName)) {
+    return secureQueryPage(collectionName, {
+      where: where && Object.keys(where).length ? where : null,
+      orderBy: orderField ? [{ field: orderField, direction }] : [],
+      skip,
+      limit,
+    })
+  }
   const db = await getCdnDatabase()
   let query = db.collection(collectionName)
   if (where && Object.keys(where).length) query = query.where(where)
@@ -705,6 +867,13 @@ export async function fetchAllFromCollection(collectionName, options = {}) {
     maxRows = 5000,
     where = null,
   } = options
+  if (shouldProxyRead(collectionName)) {
+    return secureQueryAll(collectionName, {
+      where,
+      orderBy: orderField ? [{ field: orderField, direction }] : [],
+      maxRows,
+    })
+  }
   const db = await getCdnDatabase()
   const all = []
   let skip = 0

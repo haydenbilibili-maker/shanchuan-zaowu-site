@@ -1,0 +1,96 @@
+<view class="ops-boot" wx:if="{{!ready}}">柜门缓缓开启…</view>
+
+<view class="ops-page" wx:if="{{ready}}">
+  <view class="ops-container">
+    <view class="ops-header compact">
+      <text class="ops-eyebrow">FEISHU · SYNC</text>
+      <view class="ops-title-row">
+        <text class="ops-title">飞书同步</text>
+        <text class="ops-meta-chip" wx:if="{{loading || busy}}">{{busy ? '同步中' : '刷新中'}}</text>
+      </view>
+      <text class="ops-note">把飞书多维表写入云库。仪表盘读的就是这些表——不拉就会一直是老数据。</text>
+    </view>
+
+    <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}">
+      <text>{{tipText}}</text>
+    </view>
+
+    <view class="ops-skeleton" wx:if="{{loading && !targets.length && !loadError}}">
+      <view class="ops-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="ops-sk-line wide"></view>
+        <view class="ops-sk-line"></view>
+      </view>
+    </view>
+
+    <view class="ops-empty is-error" wx:elif="{{loadError}}">
+      <text class="ops-empty-title">同步状态未能取回</text>
+      <text class="ops-empty-sub">{{loadError}}</text>
+      <view class="ops-btn-secondary fs-retry" bindtap="refresh">重试</view>
+    </view>
+
+    <block wx:else>
+      <view class="ops-card fs-alert" wx:if="{{!creds.configured}}">
+        <text class="ops-card-title">飞书凭据还没配到云函数</text>
+        <text class="ops-note">服务端需要 FEISHU_APP_ID / FEISHU_APP_SECRET。没配的话下面所有同步都会失败——这是配置问题，不是数据问题。</text>
+      </view>
+
+      <view class="ops-card">
+        <view class="fs-row">
+          <view class="fs-row-copy">
+            <text class="fs-label">自动同步（每天一次）</text>
+            <text class="ops-note flat">默认关。开启后云函数每天 03:30 拉一次；关闭则只靠下方手动。</text>
+          </view>
+          <switch
+            class="fs-switch"
+            checked="{{autoSync}}"
+            disabled="{{busy !== '' || !creds.configured}}"
+            color="#C4A76C"
+            bindchange="onToggleAutoSync"
+          />
+        </view>
+      </view>
+
+      <view class="ops-card" wx:if="{{lastRunText}}">
+        <text class="ops-card-title">上次同步</text>
+        <text class="ops-note flat">{{lastRunText}}</text>
+      </view>
+
+      <view class="ops-card" wx:if="{{targets.length}}">
+        <view class="ops-card-top">
+          <text class="ops-card-title">各表状态</text>
+          <text class="ops-card-meta">{{targets.length}} 张</text>
+        </view>
+        <view class="fs-item" wx:for="{{targets}}" wx:key="role">
+          <view class="fs-item-main">
+            <view class="fs-item-name-row">
+              <view class="signal-light {{item.sumTone === 'ok' ? 'blink' : (item.sumTone === 'danger' ? 'danger' : (item.sumTone === 'warn' ? 'warn' : 'lamp-muted'))}}"></view>
+              <text class="fs-item-name">{{item.label}}</text>
+            </view>
+            <text class="fs-item-note">{{item.feishuTable}} · 表 {{item.tableId}}{{item.fromSavedConfig ? '' : '（内置默认）'}}</text>
+            <text class="fs-item-sum tone-{{item.sumTone}}">{{item.summary}}</text>
+          </view>
+          <view
+            class="ops-chip-btn brass {{busy === item.label || !creds.configured ? 'disabled' : ''}}"
+            data-role="{{item.role}}"
+            bindtap="onSyncOne"
+          >{{busy === item.label ? '同步中' : '同步'}}</view>
+        </view>
+      </view>
+
+      <view class="ops-empty" wx:elif="{{!loading}}">
+        <text class="ops-empty-title">暂无同步目标</text>
+        <text class="ops-empty-sub">云端未返回可同步的表。下拉刷新，或到 ERP 飞书配置确认表映射。</text>
+      </view>
+
+      <view class="fs-actions">
+        <view
+          class="ops-btn-primary {{busy || !creds.configured ? 'disabled' : ''}}"
+          bindtap="onSyncAll"
+        >{{busy === '全部' ? '正在同步全部…' : '一键同步全部'}}</view>
+        <view class="ops-btn-secondary {{busy ? 'disabled' : ''}}" bindtap="refresh">刷新状态</view>
+      </view>
+
+      <text class="fs-foot">同步只做「飞书 → 云库」单向：飞书是作业台，云库是小程序数据源。写入与 ERP 同步中心同一套服务端映射。</text>
+    </block>
+  </view>
+</view>

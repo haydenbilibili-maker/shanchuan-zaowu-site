@@ -10,6 +10,9 @@
       <text class="header-note">电话 / FAQ / 主题 · 对齐 getSupportConfig · 仅超管</text>
     </view>
 
+    <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+    <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+
     <block wx:if="{{mode === 'list'}}">
       <view class="hint-card info">
         <text class="hint-text">C 端读取 status=active 且 priority 最高的一条；未配置时回退云函数默认。</text>
@@ -29,8 +32,13 @@
         <view class="workbench-btn-outline sm list-edit" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
       </view>
 
-      <view class="workbench-state" wx:if="{{loading && !list.length}}">列表加载中…</view>
-      <view class="form-hint" wx:elif="{{!loading && !list.length}}">暂无配置，可写入默认或新建。</view>
+      <view class="workbench-state" wx:if="{{loading && !list.length && !listError}}">列表加载中…</view>
+      <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
+        <text class="empty-title">列表未能取回</text>
+        <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+        <view class="btn-retry" bindtap="onRetryList">重试</view>
+      </view>
+      <view class="form-hint" wx:elif="{{!loading && !listError && !list.length}}">暂无配置，可写入默认或新建。</view>
 
       <view class="workbench-page-foot-spacer"></view>
     </block>

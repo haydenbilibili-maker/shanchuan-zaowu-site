@@ -1,0 +1,72 @@
+/* 弹层里的玩法本体：独立页的样式原样沿用，只改「整页」才成立的几处 ——
+   最小高度 = 弹层面板可滚区（面板顶距 4vh、把手条 88rpx，见 PlaySheet），底色才铺满不露接缝；
+   底部安全区（弹层贴底）；整页淡入关掉 —— 面板自己有上滑进场，两段进场叠在一起内容会晚半拍才显出来。 */
+.rp-page {
+  min-height: calc(96vh - 88rpx);
+  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+  animation: none;
+}
+
+/* ── 挂签条（play-shared/post.wxml，只在弹层里渲染） ─────────────── */
+.rp-post {
+  margin-top: 22rpx;
+  padding: 16rpx 18rpx 18rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(165deg, rgba(212, 188, 133, 0.16) 0%, rgba(196, 167, 108, 0.04) 100%);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.08);
+}
+
+.rp-post-head {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.rp-post-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-24);
+  letter-spacing: 0.06em;
+  color: rgba(224, 207, 163, 0.9);
+}
+
+.rp-post-count {
+  flex-shrink: 0;
+  font-size: var(--fs-22);
+  font-variant-numeric: tabular-nums;
+  color: rgba(224, 207, 163, 0.62);
+}
+
+.rp-post-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 88rpx;
+  margin-top: 14rpx;
+  padding: 0 20rpx;
+  font-size: var(--fs-30);
+  color: #2A220E;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #F6EEDB 0%, #EFE3C6 100%);
+  border: 1rpx solid rgba(107, 90, 36, 0.35);
+}
+
+.rp-post-ph {
+  color: rgba(58, 50, 38, 0.45);
+}
+
+.rp-post-acts {
+  align-items: center;
+}
+
+.rp-act.is-primary.is-off {
+  opacity: 0.5;
+}
+
+.rp-post-alt {
+  padding: 12rpx 24rpx;
+  font-size: var(--fs-24);
+  letter-spacing: 0.04em;
+  color: rgba(224, 207, 163, 0.78);
+}

@@ -1,7 +1,7 @@
 /**
  * Admin 端 B2B 履约工具：出货扣库、流水、门店/商品加载、导出
  */
-import { cdnAdd, cdnUpdate, cdnDocGet, fetchCollectionSorted } from '../cloud'
+import { cdnAdd, cdnUpdate, cdnDocGet, fetchCollectionSorted, callCloudFunction } from '../cloud'
 import { B2B_CATALOG } from './b2bCatalog'
 
 export const PO_COL = 'purchase_orders'
@@ -22,6 +22,18 @@ export const PO_STATUS = {
   cancelled: { text: '已取消', type: 'danger' },
 }
 
+/** 采购商支付旁路（与 C 端 orders 无关） */
+export const PAYMENT_STATUS = {
+  unpaid: { text: '未支付', type: 'info' },
+  pending: { text: '支付中', type: 'warning' },
+  offline_pending: { text: '待对公', type: 'warning' },
+  paid: { text: '已支付', type: 'success' },
+  marked_paid: { text: '已标记已付', type: 'success' },
+  awaiting_config: { text: '待开通支付', type: 'info' },
+  pay_review: { text: '金额待核对', type: 'danger' },
+  refunded: { text: '已退款', type: 'info' },
+}
+
 export const SHIP_STATUS = {
   pending: { text: '待发', type: 'warning' },
   shipped: { text: '已发货', type: 'success' },
@@ -33,7 +45,12 @@ export const statusLabel = (map, s) => map[s]?.text || s || '—'
 export const statusType = (map, s) => map[s]?.type || 'info'
 export const buyerLabel = (t) => (t === 'channel' ? '渠道' : '自营店')
 export const sourceLabel = (s) =>
-  ({ store_manager: '店长', price_list_convert: '意向转单', admin: 'Admin' })[s] || s || '—'
+  ({
+    store_manager: '店长',
+    price_list_convert: '意向转单',
+    admin: 'Admin',
+    buyer_workbench: '采购商台',
+  })[s] || s || '—'
 
 export function fmtTime(ts) {
   if (!ts) return ''
@@ -314,6 +331,65 @@ export async function markOrderReceived(orderId) {
   }
 }
 
+/** 采购单支付字段只能经 payB2bPurchase 的超管 action 改（集合 write:false，内容代理也禁写支付字段） */
+async function callB2bPayAdmin(action, purchaseOrderId, extra = {}) {
+  if (!purchaseOrderId) throw new Error('缺少订货单')
+  const res = await callCloudFunction('payB2bPurchase', { action, purchaseOrderId, ...extra })
+  if (!res || res.success === false) {
+    const err = new Error(res?.msg || `${action} 失败`)
+    err.code = res?.code || ''
+    err.result = res
+    throw err
+  }
+  return res
+}
+
+/**
+ * Admin 确认对公到账：仅 offline_pending → paid，不碰 C 端 orders / payCallback。
+ * @param {string} orderId
+ * @param {{ note?: string }} [opts]
+ */
+export async function confirmOfflinePaid(orderId, opts = {}) {
+  const res = await callB2bPayAdmin('adminConfirmOffline', orderId, {
+    note: String(opts.note || 'Admin 确认对公到账').slice(0, 120),
+  })
+  return { alreadyPaid: !!res.alreadyPaid, paymentStatus: res.paymentStatus || 'paid' }
+}
+
+/** 采购单列表（仅超管）：集合规则不放行 Web 匿名读，经 payB2bPurchase.adminList */
+export async function listPurchaseOrdersAdmin(limit = 300) {
+  const res = await callCloudFunction('payB2bPurchase', { action: 'adminList', limit })
+  if (!res || res.success === false) {
+    const err = new Error(res?.msg || '采购单列表读取失败')
+    err.code = res?.code || ''
+    throw err
+  }
+  return Array.isArray(res.list) ? res.list : []
+}
+
+/** 微信查单补记：回调缺失时按历次商户单号 queryOrder，成功且金额一致才标记已付 */
+export async function reconcileWechatPay(orderId) {
+  return callB2bPayAdmin('adminReconcile', orderId)
+}
+
+/**
+ * 微信原路全额退款（仅超管）。confirmOrderNo 须与订货单号完全一致（二次确认），reason 必填。
+ */
+export async function refundWechatPay(orderId, { confirmOrderNo, reason }) {
+  return callB2bPayAdmin('adminRefund', orderId, { confirmOrderNo, reason })
+}
+
+/** 详情抽屉按钮可见性 */
+export function canReconcileWechat(row) {
+  const p = String(row?.paymentStatus || '')
+  const hasTrade = !!(row?.payOutTradeNo || (Array.isArray(row?.payOutTradeNos) && row.payOutTradeNos.length))
+  return hasTrade && ['pending', 'unpaid', 'pay_review'].includes(p)
+}
+
+export function canRefundWechat(row) {
+  return String(row?.paymentStatus || '') === 'paid' && String(row?.paymentChannel || '') === 'wechat_jsapi'
+}
+
 export async function listStockMovements({ limit = 150 } = {}) {
   return fetchCollectionSorted(MOVE_COL, {
     limit,
@@ -325,6 +401,7 @@ export async function listStockMovements({ limit = 150 } = {}) {
 export function summarizeOrders(orders = []) {
   const n = (st) => orders.filter((o) => o.status === st).length
   const toShip = n('confirmed') + n('shipping')
+  const offlinePending = orders.filter((o) => o.paymentStatus === 'offline_pending').length
   const monthStart = new Date()
   monthStart.setDate(1)
   monthStart.setHours(0, 0, 0, 0)
@@ -339,6 +416,7 @@ export function summarizeOrders(orders = []) {
     shipped: n('shipped'),
     closed: n('closed'),
     cancelled: n('cancelled'),
+    offlinePending,
     monthAmount: Math.round(monthAmount * 100) / 100,
   }
 }

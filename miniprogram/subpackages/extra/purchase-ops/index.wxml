@@ -16,6 +16,8 @@
       <view class="ops-tab {{activeTab === 'list' ? 'on' : ''}}" data-tab="list" bindtap="switchTab">单据</view>
     </view>
 
+    <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
     <!-- ========== 总览 ========== -->
     <block wx:if="{{activeTab === 'overview'}}">
       <view class="ops-source-toggle" bindtap="toggleSource">
@@ -34,11 +36,21 @@
         <view class="ops-filter-chip dash-store">{{entityFilterNames[entityFilterIndex]}}</view>
       </picker>
 
-      <view class="ops-skeleton" wx:if="{{dashLoading && !kpis}}">
+      <view class="ops-skeleton" wx:if="{{dashLoading && !kpis && !dashError}}">
         <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
           <view class="ops-sk-line wide"></view>
           <view class="ops-sk-line"></view>
         </view>
+      </view>
+
+      <view class="ops-empty is-error" wx:elif="{{dashError && !kpis}}">
+        <text class="ops-empty-title">观测台未能展开</text>
+        <text class="ops-empty-sub">{{dashError}}</text>
+        <view class="ops-btn-secondary po-retry" bindtap="loadDashboard">重试</view>
+      </view>
+
+      <view class="ops-tip is-warn" wx:elif="{{dashError && kpis}}">
+        <text>刷新失败：{{dashError}}（仍显示上次数据）</text>
       </view>
 
       <block wx:if="{{kpis}}">
@@ -370,7 +382,7 @@
         <view class="chip-btn brass" bindtap="onBatchTransit">批量流转</view>
       </view>
 
-      <view class="ops-skeleton" wx:if="{{loading && !list.length}}">
+      <view class="ops-skeleton" wx:if="{{loading && !list.length && !listError}}">
         <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
           <view class="ops-sk-line wide"></view>
           <view class="ops-sk-line"></view>
@@ -378,13 +390,19 @@
         </view>
       </view>
 
+      <view class="ops-empty is-error" wx:elif="{{listError && !list.length}}">
+        <text class="ops-empty-title">清单未能展开</text>
+        <text class="ops-empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+        <view class="ops-btn-secondary po-retry" bindtap="loadList">重试</view>
+      </view>
+
       <view class="ops-empty" wx:elif="{{!loading && !list.length}}">
         <text class="ops-empty-title">柜中暂无采购记录</text>
-        <text class="ops-empty-sub">点「新增」登记，或经 ERP 同步飞书表</text>
+        <text class="ops-empty-sub">{{canWrite ? '点「新增」登记，或经 ERP 同步飞书表' : '当前只读；可下拉刷新或调整筛选'}}</text>
       </view>
 
       <block wx:for="{{list}}" wx:key="_id">
-        <view class="ops-card {{item.selected ? 'selected' : ''}}" data-id="{{item._id}}" bindtap="toggleSelect">
+        <view class="ops-card {{item.selected ? 'selected' : ''}} {{pendingRemoveId === item._id ? 'pending-remove' : ''}}" data-id="{{item._id}}" bindtap="toggleSelect">
           <view class="ops-card-top">
             <text class="ops-card-title">{{item.itemName}}</text>
             <text class="ops-status {{item.statusTone}}">{{item.statusLabel}}</text>
@@ -401,7 +419,7 @@
           <view class="ops-card-actions" catchtap="noop" wx:if="{{canWrite}}">
             <view class="ops-chip-btn" data-id="{{item._id}}" catchtap="openEdit">编辑</view>
             <view class="ops-chip-btn brass" wx:if="{{item.canTransit}}" data-id="{{item._id}}" catchtap="onTransit">流转</view>
-            <view class="ops-chip-btn danger" data-id="{{item._id}}" catchtap="onRemove">删除</view>
+            <view class="ops-chip-btn danger" data-id="{{item._id}}" catchtap="onRemove">{{pendingRemoveId === item._id ? '确认删除' : '删除'}}</view>
           </view>
         </view>
       </block>
@@ -435,6 +453,7 @@
     <text class="ops-sheet-close" bindtap="closeForm">关闭</text>
   </view>
   <scroll-view scroll-y class="ops-sheet-body">
+    <view class="ops-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
     <view class="ops-field">
       <text class="ops-field-label">归属主体</text>
       <picker mode="selector" range="{{formEntityNames}}" value="{{formEntityIndex}}" bindchange="onFormEntity">

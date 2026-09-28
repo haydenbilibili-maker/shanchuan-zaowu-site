@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "飞书同步",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "enablePullDownRefresh": true,
+  "usingComponents": {}
+}

@@ -114,6 +114,17 @@
       bindtap="goOrder"
       wx:else
     >查看礼赠进度</view>
+    <view
+      class="btn-secondary btn-secondary-solo"
+      hover-class="btn-secondary-press"
+      hover-stay-time="80"
+      bindtap="goVoucher"
+      wx:if="{{voucherReady}}"
+    >查看赠予凭证</view>
+    <view class="verify-line {{verify.receiverVerify ? '' : 'warn'}}" wx:if="{{verify && (verify.receiverVerify || verify.editable)}}" bindtap="openVerifySheet">
+      <text class="verify-line-label">{{verify.receiverVerify ? '领取核验' : '建议补填受礼人手机号'}}</text>
+      <text class="verify-line-val">{{verify.receiverVerify ? '尾号 ' + verify.phoneTail : '防礼笺被他人领走'}}{{verify.editable ? (verify.receiverVerify ? ' · 修改' : ' · 去填写') : ''}}</text>
+    </view>
     <text class="subscribe-hint" wx:if="{{subscribeHint}}">{{subscribeHint}}</text>
   </view>
 </view>
@@ -126,3 +137,18 @@
     <view class="btn-secondary" wx:if="{{errorMsg}}" bindtap="bootstrap">再试一次</view>
   </view>
 </view>
+
+<phone-sheet
+  show="{{verifySheet}}"
+  title="{{verifyCopy.title}}"
+  desc="{{verifyCopy.desc}}"
+  quickText="{{verifyCopy.quickText}}"
+  clearText="{{verifyCopy.clearText}}"
+  confirmText="保存"
+  busy="{{verifyBusy}}"
+  error="{{verifyError}}"
+  bindconfirm="onVerifyPhone"
+  bindquick="onVerifyUseAddress"
+  bindclear="onVerifyClear"
+  bindclose="closeVerifySheet"
+/>

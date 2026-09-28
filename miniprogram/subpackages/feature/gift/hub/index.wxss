@@ -1,4 +1,4 @@
-/* 礼赠 Hub · Museum Mode · 场景双列扫选 */
+/* 礼赠 Hub · Museum Mode · 场景双列扫选 · 与「我的礼赠」纸面语言对齐 */
 page {
   background: #1A1814;
   color: #FFFFFF;
@@ -7,12 +7,19 @@ page {
 .page {
   min-height: 100vh;
   box-sizing: border-box;
+  opacity: 0;
+  transform: translateY(8rpx);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.page.pane-ready {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .scroll {
   height: 100vh;
   /* 底留白用 .scroll-pad spacer，勿把 safe-area 写在 scroll-view padding-bottom */
-  padding: 40rpx 32rpx 0;
+  padding: 24rpx 32rpx 0;
   box-sizing: border-box;
 }
 
@@ -22,21 +29,50 @@ page {
   justify-content: center;
   padding: 48rpx 40rpx;
   min-height: 100vh;
+  opacity: 1;
+  transform: none;
 }
 
 .state-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16rpx;
+  gap: 14rpx;
   text-align: center;
+  max-width: 480rpx;
+}
+
+.state-mark {
+  width: 112rpx;
+  height: 112rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16rpx;
+  margin-bottom: 4rpx;
 }
 
 .state-seal {
-  width: 48rpx;
-  height: 48rpx;
-  border: 2px solid rgba(196, 167, 108, 0.45);
+  width: 36rpx;
+  height: 36rpx;
+  border: 2px solid rgba(196, 167, 108, 0.55);
   border-radius: 50%;
+  position: relative;
+  z-index: 2;
+}
+
+.state-over {
+  font-size: 18rpx;
+  color: #8A7530;
+  letter-spacing: 0.16em;
+}
+
+.state-hint {
+  font-size: 22rpx;
+  color: #6B6560;
+  line-height: 1.45;
 }
 
 .muted {
@@ -44,36 +80,151 @@ page {
   font-size: 26rpx;
 }
 
+/* 纸面纤维 / 压花 / 标本水印 */
+.paper-fiber {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.12;
+  z-index: 0;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.35' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+.paper-fiber.fine {
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.1' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+.paper-emboss {
+  position: absolute;
+  inset: 12rpx;
+  pointer-events: none;
+  z-index: 0;
+  border: 1px solid rgba(196, 167, 108, 0.22);
+  border-radius: 10rpx;
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.55);
+}
+.specimen-wm {
+  position: absolute;
+  right: -28rpx;
+  bottom: -36rpx;
+  width: 180rpx;
+  height: 180rpx;
+  border: 14rpx solid rgba(26, 24, 20, 0.045);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.specimen-wm::after {
+  content: '';
+  position: absolute;
+  inset: 28rpx;
+  border: 2px solid rgba(26, 24, 20, 0.05);
+  border-radius: 50%;
+}
+.specimen-wm.sm {
+  width: 100rpx;
+  height: 100rpx;
+  right: -12rpx;
+  bottom: -16rpx;
+  border-width: 8rpx;
+}
+
 .hero-plate {
-  padding: 36rpx 28rpx;
-  background: #F2EDE4;
+  position: relative;
+  overflow: hidden;
+  padding: 28rpx 26rpx 24rpx;
+  background: linear-gradient(165deg, #FAF6ED 0%, #F2EDE4 48%, #EDE6DA 100%);
   border: 1px solid #E0CFA3;
   border-radius: 16rpx;
-  margin-bottom: 36rpx;
+  margin-bottom: 28rpx;
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.85);
 }
-
+.hero-content { position: relative; z-index: 2; }
+.hero-over-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 8rpx;
+  min-height: 32rpx;
+}
 .overline {
+  flex: 1;
+  min-width: 0;
+  font-size: 18rpx;
+  color: #8A7530;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+}
+.hero-brand {
   display: block;
   font-size: 20rpx;
-  color: #8A7530;
-  letter-spacing: 0.14em;
-  margin-bottom: 12rpx;
+  color: #A8903C;
+  letter-spacing: 0.16em;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  margin-bottom: 4rpx;
 }
-
 .title {
   display: block;
   font-size: 44rpx;
   font-weight: 600;
-  color: #8A7530;
+  color: #6B5A24;
   font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
-  margin-bottom: 12rpx;
+  margin-bottom: 10rpx;
+  letter-spacing: 0.04em;
 }
-
 .desc {
   display: block;
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #6B6560;
-  line-height: 1.65;
+  line-height: 1.6;
+}
+.hero-seal.metal {
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid #C4A76C;
+  background: linear-gradient(145deg, #E0CFA3 0%, #C4A76C 48%, #8A7530 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.hero-seal-inner {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: rgba(250, 246, 237, 0.55);
+}
+
+/* 为谁选礼 */
+.for-whom {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-bottom: 24rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 14rpx;
+  border: 1px solid rgba(196, 167, 108, 0.35);
+  background: linear-gradient(135deg, rgba(196, 167, 108, 0.12) 0%, rgba(38, 35, 32, 0.4) 100%);
+}
+.for-whom .signal-light { box-shadow: none; flex-shrink: 0; }
+.for-whom-copy { flex: 1; min-width: 0; }
+.for-whom-over {
+  display: block;
+  font-size: 16rpx;
+  color: #8A7530;
+  letter-spacing: 0.14em;
+  margin-bottom: 4rpx;
+}
+.for-whom-name {
+  display: block;
+  font-size: 28rpx;
+  color: #E0CFA3;
+  font-family: 'Source Han Serif SC', Georgia, serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .section-overline {
@@ -90,6 +241,7 @@ page {
   font-weight: 500;
   color: #FFFFFF;
   margin-bottom: 20rpx;
+  font-family: 'Source Han Serif SC', Georgia, serif;
 }
 
 .section-title.tight {
@@ -108,10 +260,14 @@ page {
 }
 
 .scene-chip {
-  padding: 10rpx 20rpx;
+  padding: 14rpx 22rpx;
   border: 1px solid rgba(196, 167, 108, 0.4);
-  border-radius: 8rpx;
+  border-radius: 999rpx;
   background: transparent;
+  min-height: 64rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
 }
 
 .scene-chip text {
@@ -122,18 +278,24 @@ page {
 
 .scene-chip.on {
   border-color: #C4A76C;
-  background: rgba(196, 167, 108, 0.12);
+  background: rgba(196, 167, 108, 0.14);
 }
 
 .scene-chip.on text {
   color: #C4A76C;
 }
 
+.scene-chip-press { opacity: 0.82; }
+
 .scene-guide {
   display: block;
   font-size: 24rpx;
   color: #D5D1C8;
   line-height: 1.55;
+  padding: 12rpx 16rpx;
+  border-radius: 12rpx;
+  background: rgba(38, 35, 32, 0.55);
+  border: 1px solid rgba(77, 64, 26, 0.35);
 }
 
 .match-block {
@@ -162,6 +324,7 @@ page {
   padding: 4rpx 0;
   border-bottom: 1px solid rgba(196, 167, 108, 0.4);
 }
+.match-link-press { opacity: 0.75; }
 
 .match-hint {
   display: block;
@@ -176,11 +339,94 @@ page {
   padding: 28rpx 0;
 }
 
+.match-empty.paper-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12rpx;
+  padding: 40rpx 16rpx;
+}
+
+.empty-mark {
+  width: 96rpx;
+  height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 14rpx;
+  margin-bottom: 4rpx;
+}
+.empty-mark.paper-empty {
+  background: linear-gradient(160deg, #FAF6ED 0%, #F2EDE4 100%);
+  border: 1px solid #E0CFA3;
+}
+.empty-ring {
+  width: 56rpx;
+  height: 56rpx;
+  border: 2px solid rgba(196, 167, 108, 0.4);
+  border-radius: 50%;
+  position: relative;
+  z-index: 1;
+}
+.paper-empty .signal-light {
+  position: absolute;
+  z-index: 2;
+  box-shadow: none;
+}
+.empty-title {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-family: 'Source Han Serif SC', Georgia, serif;
+}
+
 .match-empty-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 28rpx;
-  margin-top: 20rpx;
+  margin-top: 12rpx;
+  justify-content: center;
+}
+
+/* 骨架 */
+.skel-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -8rpx;
+}
+.skel-card {
+  width: 50%;
+  box-sizing: border-box;
+  padding: 0 8rpx 16rpx;
+}
+.skel-cover {
+  width: 100%;
+  padding-top: 100%;
+  border-radius: 12rpx 12rpx 0 0;
+  background: linear-gradient(90deg, #262320 0%, #2e2a26 50%, #262320 100%);
+  background-size: 200% 100%;
+  animation: skelShine 1.2s ease infinite;
+}
+.skel-line {
+  height: 20rpx;
+  margin: 14rpx 12rpx 0;
+  border-radius: 6rpx;
+  background: linear-gradient(90deg, #262320 0%, #2e2a26 50%, #262320 100%);
+  background-size: 200% 100%;
+  animation: skelShine 1.2s ease infinite;
+}
+.skel-line.mid { width: 55%; margin-bottom: 16rpx; }
+.skel-hint {
+  display: block;
+  text-align: center;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+}
+@keyframes skelShine {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
 
 /* 双列：用 padding 分栏，避免 flex+gap 把 50% 撑成单列 */
@@ -195,12 +441,14 @@ page {
   box-sizing: border-box;
   padding: 0 8rpx 16rpx;
 }
+.product-card-press { opacity: 0.88; }
 
 .product-card-inner {
   background: #1F1D1A;
-  border: 1px solid rgba(77, 64, 26, 0.45);
-  border-radius: 12rpx;
+  border: 1px solid rgba(77, 64, 26, 0.55);
+  border-radius: 14rpx;
   overflow: hidden;
+  box-shadow: inset 0 1rpx 0 rgba(224, 207, 163, 0.06);
 }
 
 .product-cover-wrap {
@@ -243,7 +491,7 @@ page {
 }
 
 .product-body {
-  padding: 12rpx 14rpx 14rpx;
+  padding: 14rpx 14rpx 16rpx;
 }
 
 /* 主题名（双层命名）：礼赠卡主视觉，标准名降为副行 —— 送礼时「这句话」比物种名更打动人 */
@@ -288,13 +536,21 @@ page {
 }
 
 .steps {
-  margin-bottom: 40rpx;
+  margin-bottom: 36rpx;
+  padding: 22rpx 20rpx 8rpx;
+  border-radius: 16rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  background: linear-gradient(165deg, #241f18 0%, #1F1D1A 100%);
+}
+.steps-head {
+  margin-bottom: 8rpx;
+  padding: 0 4rpx;
 }
 
 .step {
   display: flex;
   gap: 24rpx;
-  padding: 24rpx 0;
+  padding: 22rpx 4rpx;
   border-bottom: 1px solid rgba(38, 35, 32, 0.85);
 }
 
@@ -315,6 +571,7 @@ page {
   border: 1px solid rgba(196, 167, 108, 0.35);
   border-radius: 12rpx;
   font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  background: rgba(196, 167, 108, 0.06);
 }
 
 .step-body {
@@ -324,7 +581,7 @@ page {
 
 .step-title {
   display: block;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 500;
   color: #FFFFFF;
   margin-bottom: 8rpx;
@@ -349,15 +606,17 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #C4A76C;
+  background: linear-gradient(160deg, #D4BC85 0%, #C4A76C 48%, #A8903C 100%);
   color: #1A1814;
   font-size: 30rpx;
   font-weight: 500;
   letter-spacing: 0.04em;
   border-radius: 16rpx;
+  border: 1px solid rgba(224, 207, 163, 0.4);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.35);
 }
 
-.btn-primary:active {
+.btn-primary-press {
   background: #A8903C;
 }
 
@@ -373,8 +632,9 @@ page {
   border-radius: 16rpx;
 }
 
-.btn-secondary:active {
+.btn-secondary-press {
   opacity: 0.85;
+  background: rgba(196, 167, 108, 0.06);
 }
 
 .scroll-pad {

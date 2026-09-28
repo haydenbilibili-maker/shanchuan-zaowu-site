@@ -11,7 +11,8 @@
  * action:
  *   meta | config.get | config.save
  *   priceBook.list | priceBook.get | priceBook.create | priceBook.update | priceBook.remove | priceBook.validate
- *   searchPriceBook
+ *   priceBook.removeIfUnused（仅超管；有引用拒删，见 priceBookRefs.js）
+ *   searchPriceBook（可选 orderBy:'sort' 按资料排序；不传与原来一致）
  *
  * 权限（蓝图 §8.1 + 裁决 9）：
  *   · **读**：超管 / 店长（店长录出货单时要能搜价目）
@@ -45,6 +46,7 @@ const {
   mapSku
 } = require('./settlementDefaults')
 const { normalizeName, buildContext, quoteLines, PRICING_STATUS } = require('./pricingCore')
+const { REF_FIELDS, rawNamesOf, countRefs, orderGroupsBySort } = require('./priceBookRefs')
 const {
   BILL_STATUS,
   BILL_STATUS_LABEL,
@@ -377,6 +379,7 @@ async function handleSearchPriceBook(event) {
   /** 按分类过滤（空 = 不限）。SKU 新增时用它把长列表收窄 */
   const category = String(event.category || '').trim()
   const limit = Math.min(50, Math.max(1, parseInt(event.limit, 10) || 20))
+  const bySort = String(event.orderBy || '') === 'sort'
 
   const groups = []
   for (const k of kinds) {
@@ -406,14 +409,16 @@ async function handleSearchPriceBook(event) {
           options: []
         }
       }
-      byName[nk].options.push({
+      const opt = {
         _id: r._id,
         option: r[book.optionField] || book.defaultOption,
         unitPrice: Number(r.unitPrice) || 0,
         qtyPerUnit: Number(r.qtyPerUnit) > 0 ? Number(r.qtyPerUnit) : 1,
         isDefault: r[book.defaultFlagKey] === true,
         unit: r.unit || ''
-      })
+      }
+      if (bySort) opt.sort = Number(r.sort) || 0
+      byName[nk].options.push(opt)
     }
     for (const nk of Object.keys(byName)) {
       const g = byName[nk]
@@ -422,6 +427,8 @@ async function handleSearchPriceBook(event) {
     }
   }
 
+  // 可选 orderBy:'sort'（2026-09-28 出货中心）：按资料排序；不传时保持原有顺序
+  if (bySort) orderGroupsBySort(groups)
   groups.sort((a, b) => {
     const ka = normalizeName(a.name)
     const kb = normalizeName(b.name)
@@ -705,6 +712,43 @@ async function handleRemove(event, actor) {
   return ok({ _id: id, msg: '已删除（历史出货单的定价快照不受影响）' })
 }
 
+/**
+ * 「未被引用才删」（2026-09-28 出货中心 · 仅超管）：引用点与判定见 priceBookRefs.js。
+ * 有引用 → success:false + code IN_USE + refs 计数（含已软删出货单），提示改用停用；
+ * 无引用 → 走 handleRemove 的同一软删（不物理删，理由同上）。原 priceBook.remove（ERP 用）不变。
+ * 只读取候选文档（id 或原样名称命中）再在内存里判等级/尺寸，不整表扫描出货单。
+ */
+async function handleRemoveIfUnused(event, actor) {
+  const book = bookOf(event.kind)
+  if (!book) return fail(`未知价目本：${event.kind}`, 'BAD_KIND')
+  const id = String(event.id || '').trim()
+  if (!id) return fail('缺少 id', 'BAD_PARAM')
+  const got = await db.collection(book.collection).doc(id).get().catch(() => null)
+  const row = got && got.data
+  if (!row || row.deleted === true) return fail('条目不存在', 'NOT_FOUND')
+
+  const f = REF_FIELDS[book.kind]
+  const names = rawNamesOf(row)
+  const itemOr = [{ [`items.${f.id}`]: id }]
+  const topOr = [{ [f.id]: id }]
+  if (names.length) {
+    itemOr.push({ [`items.${f.name}`]: _.in(names) })
+    topOr.push({ [f.name]: _.in(names) })
+  }
+  const shipments = await readMaybe(SHIPMENT_COLLECTION, _.or(itemOr))
+  const skus = await readMaybe(SKU_COLLECTION, _.or(topOr))
+  const refs = countRefs(book, Object.assign({ _id: id }, row), shipments, skus)
+  if (refs.total > 0) {
+    const parts = []
+    if (refs.shipments) parts.push(`${refs.shipments} 张出货单`)
+    if (refs.deletedShipments) parts.push(`${refs.deletedShipments} 张已删除出货单`)
+    if (refs.skus) parts.push(`${refs.skus} 个 SKU`)
+    return Object.assign(fail(`被 ${parts.join('、')} 引用，不能删除；请改为停用`, 'IN_USE'), { refs })
+  }
+  const res = await handleRemove(event, actor)
+  return res.success ? Object.assign(res, { refs, msg: '无引用，已删除' }) : res
+}
+
 // ─────────────────────── 出货 SKU 目录（材料×等级×包装×尺寸 + 默认费率） ───────────────────────
 
 /**
@@ -731,6 +775,8 @@ async function quoteSkus(skus, config) {
       packagingId: k.packagingId,
       packagingName: k.packagingName,
       packagingSize: k.packagingSize,
+      // 造景第四桶：列表现算价必须与开单行一致，否则「造景 SKU」在目录里会少一块成本
+      sceneCost: k.hasScene === true ? (Number(k.sceneCost) || 0) : 0,
       // SKU 的默认费率：null = 用全局（**0 是合法值，必须原样传**）
       laborRatePct: k.laborRatePct === null || k.laborRatePct === undefined ? undefined : k.laborRatePct
     })),
@@ -1199,6 +1245,7 @@ const SUPER_ONLY_ACTIONS = {
   'priceBook.create': 1,
   'priceBook.update': 1,
   'priceBook.remove': 1,
+  'priceBook.removeIfUnused': 1,
   'priceBook.bulkUpsert': 1,
   'sku.create': 1,
   'sku.update': 1,
@@ -1237,6 +1284,8 @@ exports.main = async (event) => {
         return await handleUpdate(event, auth.actor)
       case 'priceBook.remove':
         return await handleRemove(event, auth.actor)
+      case 'priceBook.removeIfUnused':
+        return await handleRemoveIfUnused(event, auth.actor)
       case 'priceBook.validate':
         return await handleValidate()
       case 'priceBook.bulkUpsert':

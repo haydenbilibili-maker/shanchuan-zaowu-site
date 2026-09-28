@@ -10,6 +10,8 @@
  *   live_host         直播主播 — 直播场次（manageLiveSession / manageLive）
  *   investor          投资人 — 只读观测台（财务汇总 + 小程序数据大盘，无写操作）
  *   shareholder       股东 — 只读股东观测台（权益/分红/占股口径，无写操作）
+ *   buyer / franchisee / channel  采购商旁路 — 仅采购商工作台（无门店经营写权限）
+ *   supplier          第三方供货方 — 仅采购商工作台供货方区（无门店经营写权限）
  *
  * staff_members：roles[] 为 canonical 多角色；role 为最高权限角色（兼容旧读法）
  * UI 与能力裁剪看 workspaceRole（最高）+ permissions（多角色并集 + 自定义）
@@ -27,6 +29,10 @@ const ROLE_MANAGER = 'manager'
 const ROLE_STAFF = 'staff'
 const ROLE_INVESTOR = 'investor'
 const ROLE_SHAREHOLDER = 'shareholder'
+const ROLE_BUYER = 'buyer'
+const ROLE_FRANCHISEE = 'franchisee'
+const ROLE_CHANNEL = 'channel'
+const ROLE_SUPPLIER = 'supplier'
 const ROLE_RANK = { [ROLE_STAFF]: 1, [ROLE_MANAGER]: 2 }
 
 const WORKSPACE_SUPER_ADMIN = 'super_admin'
@@ -36,12 +42,18 @@ const WORKSPACE_SPECIMEN_ARTISAN = 'specimen_artisan'
 const WORKSPACE_LIVE_HOST = 'live_host'
 const WORKSPACE_INVESTOR = 'investor'
 const WORKSPACE_SHAREHOLDER = 'shareholder'
+const WORKSPACE_BUYER = 'buyer'
+const WORKSPACE_SUPPLIER = 'supplier'
 
 const STORED_ROLE_SUPER = 'super_admin'
 const STORED_ROLE_SPECIMEN_ARTISAN = 'specimen_artisan'
 const STORED_ROLE_LIVE_HOST = 'live_host'
 const STORED_ROLE_INVESTOR = 'investor'
 const STORED_ROLE_SHAREHOLDER = 'shareholder'
+const STORED_ROLE_BUYER = 'buyer'
+const STORED_ROLE_FRANCHISEE = 'franchisee'
+const STORED_ROLE_CHANNEL = 'channel'
+const STORED_ROLE_SUPPLIER = 'supplier'
 
 /** 库内 stored role 优先级（高 → 低），用于 role / workspaceRole 兼容字段 */
 const STORED_ROLE_PRIORITY = {
@@ -51,8 +63,14 @@ const STORED_ROLE_PRIORITY = {
   [STORED_ROLE_SHAREHOLDER]: 68,
   [STORED_ROLE_SPECIMEN_ARTISAN]: 60,
   [STORED_ROLE_LIVE_HOST]: 50,
-  [ROLE_STAFF]: 10
+  [ROLE_STAFF]: 10,
+  [STORED_ROLE_BUYER]: 8,
+  [STORED_ROLE_FRANCHISEE]: 7,
+  [STORED_ROLE_CHANNEL]: 6,
+  [STORED_ROLE_SUPPLIER]: 5
 }
+
+/** B2B 旁路角色（采购商 / 供货方）：可 whoami / 进采购商工作台，不可 assertStaff 门店经营 */
 
 const SUPER_ADMIN_OPENIDS = [
   'oa22s5ZcMY7xkQDlNW8X8jaYy46M',
@@ -211,6 +229,11 @@ const SHAREHOLDER_PERMISSIONS = [
 
 const SHAREHOLDER_READ_PERMISSIONS = SHAREHOLDER_PERMISSIONS.slice()
 
+/**
+ * B2B 旁路：无门店经营权限点（采购/供货写操作走集合旁路或专用云函数，不经 assertStaff 门店闸）
+ */
+const B2B_DESK_PERMISSIONS = []
+
 /** 超管 / 历史全量 manager 权限名（含超管专属） */
 const MANAGER_PERMISSIONS = STORE_MANAGER_PERMISSIONS.concat(SUPER_ADMIN_ONLY_PERMISSIONS)
 
@@ -246,6 +269,34 @@ function isShareholderRole(value) {
   return v === STORED_ROLE_SHAREHOLDER || v === WORKSPACE_SHAREHOLDER || v === ROLE_SHAREHOLDER
 }
 
+function isBuyerRole(value) {
+  const v = String(value || '').trim()
+  return (
+    v === STORED_ROLE_BUYER ||
+    v === ROLE_BUYER ||
+    v === WORKSPACE_BUYER ||
+    v === STORED_ROLE_FRANCHISEE ||
+    v === ROLE_FRANCHISEE ||
+    v === STORED_ROLE_CHANNEL ||
+    v === ROLE_CHANNEL
+  )
+}
+
+function isSupplierRole(value) {
+  const v = String(value || '').trim()
+  return v === STORED_ROLE_SUPPLIER || v === ROLE_SUPPLIER || v === WORKSPACE_SUPPLIER
+}
+
+function isB2bDeskStoredRole(value) {
+  const v = String(value || '').trim()
+  return (
+    v === STORED_ROLE_BUYER ||
+    v === STORED_ROLE_FRANCHISEE ||
+    v === STORED_ROLE_CHANNEL ||
+    v === STORED_ROLE_SUPPLIER
+  )
+}
+
 function normalizeStoredRoleKey(raw) {
   const value = String(raw || '').trim()
   if (!value) return ''
@@ -260,6 +311,10 @@ function normalizeStoredRoleKey(raw) {
   if (isLiveHostRole(value)) return STORED_ROLE_LIVE_HOST
   if (isInvestorRole(value)) return STORED_ROLE_INVESTOR
   if (isShareholderRole(value)) return STORED_ROLE_SHAREHOLDER
+  if (value === STORED_ROLE_BUYER || value === ROLE_BUYER || value === WORKSPACE_BUYER) return STORED_ROLE_BUYER
+  if (value === STORED_ROLE_FRANCHISEE || value === ROLE_FRANCHISEE) return STORED_ROLE_FRANCHISEE
+  if (value === STORED_ROLE_CHANNEL || value === ROLE_CHANNEL) return STORED_ROLE_CHANNEL
+  if (isSupplierRole(value)) return STORED_ROLE_SUPPLIER
   return ''
 }
 
@@ -299,6 +354,14 @@ function workspaceRoleFromStoredRoles(roles) {
   if (highest === STORED_ROLE_SPECIMEN_ARTISAN) return WORKSPACE_SPECIMEN_ARTISAN
   if (highest === STORED_ROLE_LIVE_HOST) return WORKSPACE_LIVE_HOST
   if (highest === ROLE_STAFF) return WORKSPACE_STORE_STAFF
+  if (
+    highest === STORED_ROLE_BUYER ||
+    highest === STORED_ROLE_FRANCHISEE ||
+    highest === STORED_ROLE_CHANNEL
+  ) {
+    return WORKSPACE_BUYER
+  }
+  if (highest === STORED_ROLE_SUPPLIER) return WORKSPACE_SUPPLIER
   return ''
 }
 
@@ -346,6 +409,17 @@ function hasRole(rolesOrActor, target) {
   if (isShareholderRole(t)) {
     return has(STORED_ROLE_SHAREHOLDER) || has(STORED_ROLE_SUPER)
   }
+  if (isBuyerRole(t)) {
+    return (
+      has(STORED_ROLE_BUYER) ||
+      has(STORED_ROLE_FRANCHISEE) ||
+      has(STORED_ROLE_CHANNEL) ||
+      has(STORED_ROLE_SUPER)
+    )
+  }
+  if (isSupplierRole(t)) {
+    return has(STORED_ROLE_SUPPLIER) || has(STORED_ROLE_SUPER)
+  }
   return has(t)
 }
 
@@ -357,6 +431,7 @@ function defaultPermissionsForStoredRole(storedRole) {
   if (storedRole === STORED_ROLE_SHAREHOLDER) return SHAREHOLDER_PERMISSIONS.slice()
   if (storedRole === ROLE_MANAGER) return STORE_MANAGER_PERMISSIONS.slice()
   if (storedRole === ROLE_STAFF) return STAFF_PERMISSIONS.slice()
+  if (isB2bDeskStoredRole(storedRole)) return B2B_DESK_PERMISSIONS.slice()
   return []
 }
 
@@ -388,7 +463,9 @@ function normalizeRole(role) {
     isSpecimenArtisanRole(value) ||
     isLiveHostRole(value) ||
     isInvestorRole(value) ||
-    isShareholderRole(value)
+    isShareholderRole(value) ||
+    isBuyerRole(value) ||
+    isSupplierRole(value)
   ) {
     return ROLE_STAFF
   }
@@ -764,6 +841,17 @@ function isObservatoryOnlyActor(actor) {
   return hasRole(actor, STORED_ROLE_INVESTOR) || hasRole(actor, STORED_ROLE_SHAREHOLDER)
 }
 
+/** 仅持有 B2B 旁路角色（采购商 / 供货方），无门店经营 / 观测台角色 */
+function isB2bDeskOnlyActor(actor) {
+  if (!actor || actorHasOperationalMembership(actor) || isObservatoryOnlyActor(actor)) return false
+  return (
+    hasRole(actor, STORED_ROLE_BUYER) ||
+    hasRole(actor, STORED_ROLE_FRANCHISEE) ||
+    hasRole(actor, STORED_ROLE_CHANNEL) ||
+    hasRole(actor, STORED_ROLE_SUPPLIER)
+  )
+}
+
 /**
  * @param {object} options.role             最低角色 'staff' | 'manager'
  * @param {string} options.permission       权限点
@@ -776,6 +864,15 @@ async function assertStaff(db, openid, options = {}) {
 
   if (options.requireSuperAdmin && !hasRole(actor, STORED_ROLE_SUPER)) {
     return { ok: false, code: 'FORBIDDEN', msg: MSG_SUPER_ADMIN_ONLY }
+  }
+
+  // B2B 旁路角色：一律拒绝门店经营 / 观测台接口（采购商工作台不经 assertStaff）
+  if (isB2bDeskOnlyActor(actor)) {
+    return {
+      ok: false,
+      code: 'FORBIDDEN',
+      msg: '采购商/供货方仅可使用采购商工作台，不可操作门店后台'
+    }
   }
 
   // 纯观测台角色：一律拒绝写操作 / 经营接口；仅允许观测台只读权限点
@@ -843,6 +940,10 @@ module.exports = {
   ROLE_STAFF,
   ROLE_INVESTOR,
   ROLE_SHAREHOLDER,
+  ROLE_BUYER,
+  ROLE_FRANCHISEE,
+  ROLE_CHANNEL,
+  ROLE_SUPPLIER,
   WORKSPACE_SUPER_ADMIN,
   WORKSPACE_STORE_MANAGER,
   WORKSPACE_STORE_STAFF,
@@ -850,11 +951,17 @@ module.exports = {
   WORKSPACE_LIVE_HOST,
   WORKSPACE_INVESTOR,
   WORKSPACE_SHAREHOLDER,
+  WORKSPACE_BUYER,
+  WORKSPACE_SUPPLIER,
   STORED_ROLE_SUPER,
   STORED_ROLE_SPECIMEN_ARTISAN,
   STORED_ROLE_LIVE_HOST,
   STORED_ROLE_INVESTOR,
   STORED_ROLE_SHAREHOLDER,
+  STORED_ROLE_BUYER,
+  STORED_ROLE_FRANCHISEE,
+  STORED_ROLE_CHANNEL,
+  STORED_ROLE_SUPPLIER,
   SUPER_ADMIN_OPENIDS,
   SUPER_ADMIN_ONLY_PERMISSIONS,
   STAFF_PERMISSIONS,
@@ -865,17 +972,22 @@ module.exports = {
   INVESTOR_READ_PERMISSIONS,
   SHAREHOLDER_PERMISSIONS,
   SHAREHOLDER_READ_PERMISSIONS,
+  B2B_DESK_PERMISSIONS,
   MANAGER_PERMISSIONS,
   isSpecimenArtisanRole,
   isLiveHostRole,
   isInvestorRole,
   isShareholderRole,
+  isBuyerRole,
+  isSupplierRole,
+  isB2bDeskStoredRole,
   isInvestorReadPermission,
   isShareholderReadPermission,
   isObservatoryReadPermission,
   isInvestorOnlyActor,
   isShareholderOnlyActor,
   isObservatoryOnlyActor,
+  isB2bDeskOnlyActor,
   ACL_COLLECTION,
   ACL_SUPER_DOC,
   MSG_ADMIN_UNCONFIGURED,

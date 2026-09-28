@@ -6,6 +6,7 @@ const { batchTempFileURLs } = require('../../../../utils/util')
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const { ensureSession } = require('../../../../utils/userSession')
 const { requestGiftSubscribe } = require('../../utils/giftSubscribe')
+const { loadReceiverVerify, saveReceiverPhone, sheetCopy } = require('../receiverVerify')
 const {
   giftFlowSignal,
   giftDateSignal,
@@ -220,6 +221,36 @@ function buildHeroSummary({ flowBadge, upcomingHotCount, contactsCount }) {
   return `${parts.join(' · ')}。`
 }
 
+/**
+ * 往来待办焦点：从段位计数里挑「最该先处理」的一格（只读现有 segmentCounts，不改契约）。
+ * 优先级：待启封 → 待填址 → 履约/待收货。
+ */
+function pickTodoFocus(flowTab, segments) {
+  const list = Array.isArray(segments) ? segments : []
+  const byKey = {}
+  list.forEach((s) => {
+    if (s && s.key) byKey[s.key] = Number(s.count) || 0
+  })
+  const order =
+    flowTab === 'received'
+      ? ['awaiting_open', 'awaiting_address', 'shipping']
+      : ['awaiting_open', 'awaiting_address', 'fulfillment']
+  for (let i = 0; i < order.length; i += 1) {
+    const key = order[i]
+    const count = byKey[key] || 0
+    if (count <= 0) continue
+    const hit = list.find((s) => s.key === key)
+    return {
+      segment: key,
+      count,
+      label: (hit && hit.label) || key,
+      title: `${count} 笔「${(hit && hit.label) || key}」待处理`,
+      hint: flowTab === 'received' ? '打开往来，继续启封或填址' : '点此筛选，先把该办的办完'
+    }
+  }
+  return null
+}
+
 /** 云函数未部署 progressSteps 时的前端兜底 */
 function fallbackProgressSteps(item) {
   if (item && item.progressSteps && item.progressSteps.mode) return item.progressSteps
@@ -279,6 +310,15 @@ function decorateFlowItem(item, flowTab) {
   const fallback = inactive && !actions.length && item.deepLink
     ? [{ key: 'order', label: '订单详情', type: 'nav', path: item.deepLink }]
     : []
+  // 已完成：收到侧 = 持有人的「收藏证书」，送出侧 = 「赠予凭证」（证书页按查看者身份签发不同版式）
+  const certAction = progressKey === 'done' && item.orderId
+    ? {
+      key: 'cert',
+      label: flowTab === 'received' ? '收藏证书' : '赠予凭证',
+      type: 'nav',
+      path: `/subpackages/business/certificate/index?id=${item.orderId}`
+    }
+    : null
   return {
     ...item,
     // flowTab 必须随 item 一起传给模板：WXML 模板作用域是隔离的（见文件头注释）
@@ -290,7 +330,7 @@ function decorateFlowItem(item, flowTab) {
     inactive,
     actions: actions.length ? actions : fallback,
     primaryAction: item.primaryAction || fallback[0] || null,
-    secondaryAction: item.secondaryAction || null
+    secondaryAction: item.secondaryAction || certAction
   }
 }
 
@@ -336,6 +376,7 @@ Page({
     counts: { sent: 0, received: 0 },
     contactsCount: 0,
     flowBadge: 0,
+    todoFocus: null,
     emptyTitle: '',
     emptyDesc: '',
     showEmptyGuide: true,
@@ -367,6 +408,10 @@ Page({
     profileBirthdayDisplay: '',
 
     sheetOpen: false,
+    verifySheet: false,
+    verifyBusy: false,
+    verifyError: '',
+    verifyCopy: {},
     /** 主滚动区高度（iOS 显式 px） */
     scrollHeightPx: 0,
     scrollStyle: ''
@@ -562,7 +607,7 @@ Page({
     if (recipientFilter) {
       return {
         emptyTitle: `还没有与「${recipientFilter}」的往来`,
-        emptyDesc: '可为 TA 选一份山海，或清除筛选查看全部。',
+        emptyDesc: '可为 TA 选一份山海，或清除筛选查看全部往来。',
         showEmptyGuide: true
       }
     }
@@ -570,28 +615,52 @@ Page({
       if (isFilter) {
         return {
           emptyTitle: '这一格暂时空着',
-          emptyDesc: '换一段筛选，或稍后再来翻阅。',
+          emptyDesc: '换一段筛选看看，或回到「全部」翻阅。',
           showEmptyGuide: false
         }
       }
       return {
         emptyTitle: '还没有收到的礼赠',
-        emptyDesc: '友人交来的礼笺，会出现在这里。',
+        emptyDesc: '友人交来的礼笺，会出现在这里。也可先记下对象与日子，人情账本会慢慢丰满。',
         showEmptyGuide: true
       }
     }
     if (isFilter) {
       return {
         emptyTitle: '这一格暂时空着',
-        emptyDesc: '换一段筛选，或去选一份新的山海。',
+        emptyDesc: '换一段筛选，或去柜中选一份新的山海。',
         showEmptyGuide: true
       }
     }
     return {
       emptyTitle: '还没有送出的礼赠',
-      emptyDesc: '选一份藏品，写上礼笺，交给想送的人。',
+      emptyDesc: '选一份藏品，写上礼笺，交给想送的人——往来会记在这里。',
       showEmptyGuide: true
     }
+  },
+
+  /** 点击待办焦点条 → 落到对应段位（不改云端筛选契约） */
+  onTodoFocusTap() {
+    const focus = this.data.todoFocus
+    if (!focus || !focus.segment) return
+    if (this.data.hubTab !== 'flow') {
+      this.setData({ hubTab: 'flow' })
+    }
+    const key = focus.segment
+    if (key === this.data.activeSegment) return
+    wx.vibrateShort({ type: 'light' })
+    trackBehavior('gift_mine_todo_focus', 'segment', key)
+    const copy = this.emptyCopy(this.data.flowTab, key)
+    this.setData({
+      activeSegment: key,
+      list: [],
+      ...this.foldedResetPatch(),
+      page: 1,
+      hasMore: false,
+      errorMsg: '',
+      ...copy
+    })
+    this.loadList(true)
   },
 
   /** 需求 31：展开/收起「已退款 · 已取消」 */
@@ -650,6 +719,7 @@ Page({
       page: 1,
       hasMore: false,
       errorMsg: '',
+      todoFocus: null,
       ...(clearFilter ? { recipientFilter: '', filterLabel: '' } : {}),
       ...copy
     })
@@ -669,6 +739,7 @@ Page({
       page: 1,
       hasMore: false,
       errorMsg: '',
+      todoFocus: null,
       ...copy
     })
     this.loadList(true)
@@ -680,6 +751,7 @@ Page({
       filterLabel: '',
       // 需求 31：清筛选同样换了一批数据 → 折叠区收回
       ...this.foldedResetPatch(),
+      todoFocus: null,
       ...this.emptyCopy(this.data.flowTab, this.data.activeSegment, '')
     })
     this.loadList(true)
@@ -777,6 +849,11 @@ Page({
         result.upcomingDateCount != null
           ? Number(result.upcomingDateCount) || 0
           : this.data.upcomingHotCount
+      const segments = this.buildSegments(tab, result.segmentCounts || {})
+      const todoFocus =
+        flowBadge > 0 && this.data.activeSegment === 'all' && !recipientName
+          ? pickTodoFocus(tab, segments)
+          : null
       this.setData({
         list,
         activeList,
@@ -790,11 +867,12 @@ Page({
         softRefreshing: false,
         errorMsg: '',
         flowBadge,
+        todoFocus,
         counts: {
           sent: (result.counts && result.counts.sent) || 0,
           received: (result.counts && result.counts.received) || 0
         },
-        segments: this.buildSegments(tab, result.segmentCounts || {}),
+        segments,
         upcomingHotCount,
         ...copy
       })
@@ -840,6 +918,39 @@ Page({
       })
     }
   },
+
+  async onVerifyTap(e) {
+    const orderId = String((e.currentTarget.dataset && e.currentTarget.dataset.orderId) || '')
+    const item = (this.data.list || []).find((x) => x.orderId === orderId)
+    if (!orderId || this.data.verifyBusy || (item && !item.verifyEditable)) return
+    this._verifyOrderId = orderId
+    this.setData({ verifyBusy: true, verifyError: '' })
+    const state = await loadReceiverVerify(orderId)
+    if (!state.success || !state.editable) {
+      this.setData({ verifyBusy: false })
+      return
+    }
+    this.setData({ verifyBusy: false, verifySheet: true, sheetOpen: true, verifyCopy: sheetCopy(state) })
+  },
+
+  closeVerifySheet() {
+    this.setData({ verifySheet: false, sheetOpen: false })
+  },
+
+  async _saveVerify(payload) {
+    this.setData({ verifyBusy: true, verifyError: '' })
+    const res = await saveReceiverPhone(this._verifyOrderId, payload)
+    if (!res.success) {
+      this.setData({ verifyBusy: false, verifyError: res.msg || '此刻未能保存，请稍后再试' })
+      return
+    }
+    this.setData({ verifyBusy: false, verifySheet: false, sheetOpen: false })
+    this.loadList(true)
+  },
+
+  onVerifyPhone(e) { this._saveVerify({ phone: e.detail.phone }) },
+  onVerifyUseAddress() { this._saveVerify({ useAddressPhone: true }) },
+  onVerifyClear() { this._saveVerify({ phone: '' }) },
 
   async nudgeOrder(orderId) {
     if (!orderId || this._nudging) return
@@ -1053,13 +1164,17 @@ Page({
       recipientFilter: name,
       filterLabel: `致 ${name}`,
       list: [],
+      // 需求 31：从对象跳往来等于换了一批数据 → 折叠区收回
+      ...this.foldedResetPatch(),
       page: 1,
       hasMore: false,
       errorMsg: '',
+      todoFocus: null,
       segments: this.buildSegments('sent', {}),
       ...copy
     })
     this.loadList(true)
+    this.syncScrollPane()
   },
 
   async loadDates(opts) {

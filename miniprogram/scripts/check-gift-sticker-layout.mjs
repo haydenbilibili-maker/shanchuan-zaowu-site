@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../..')
 
-const CARD = 'miniprogram/utils/giftShareCard.js'
+const CARD = 'miniprogram/subpackages/feature/gift/giftShareCard.js'
 const OPS_JS = 'miniprogram/subpackages/manager/gift-ops/index.js'
 const OPS_WXML = 'miniprogram/subpackages/manager/gift-ops/index.wxml'
 
@@ -603,7 +603,7 @@ check('★ 上传路径可按规格区分且可追溯（orderId + 规格 + 时�
     handStacks.length === 2 && handStacks.every((f) => /^"ShanhaiHand"/.test(f)),
     `共 ${handStacks.length} 处：${handStacks.map((f) => f.slice(0, 30)).join(' || ')}`)
   check('★ 画之前必须**等手写体加载完**（异步注册，不等就会把兜底字体缓存进画布）',
-    /await ensureHandFont\(\)/.test(cardSrc) && /require\('\.\/handFont'\)/.test(cardSrc))
+    /await ensureHandFont\(\)/.test(cardSrc) && /require\(['"][^'"]*handFont['"]\)/.test(cardSrc))
 }
 
 /* ── ④.6 P0-2 容量用例：141 / 160 / 200 字正文**必须仍有落墨**───────────────────
@@ -754,8 +754,8 @@ function selftest() {
     {
       name: '画之前不再等手写体（异步注册没完成就出图）',
       file: CARD,
-      from: '            const { ensureHandFont } = require(\'./handFont\')\n            await ensureHandFont()',
-      to: '            const { ensureHandFont } = require(\'./handFont\'); void ensureHandFont'
+      from: '            const { ensureHandFont } = require(\'../../../utils/handFont\')\n            await ensureHandFont()',
+      to: '            const { ensureHandFont } = require(\'../../../utils/handFont\'); void ensureHandFont'
     },
     {
       name: '默认规格被改成 sticker —— 老调用方（A6 入口不传 spec）会印错规格',

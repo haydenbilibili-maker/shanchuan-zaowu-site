@@ -49,6 +49,7 @@
     </view>
     <text class="rule-hint">{{ruleText}}</text>
     <text class="rule-hint muted">金额仅作凭据，不自动入财务账本</text>
+    <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
     <view class="header-tools">
       <view class="signal-legend header-legend">
         <view class="signal-legend-item"><view class="signal-light blink"></view><text class="signal-legend-text">绿成功</text></view>
@@ -308,7 +309,11 @@
           <text class="rec-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
         </view>
       </view>
-      <view class="empty" wx:if="{{records.length === 0 && !recordsLoading}}">暂无流水</view>
+      <view class="empty is-error" wx:if="{{recordsError && !records.length}}">
+        <text>流水未能取回</text>
+        <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
+      </view>
+      <view class="empty" wx:elif="{{records.length === 0 && !recordsLoading}}">暂无流水</view>
     </view>
   </block>
 

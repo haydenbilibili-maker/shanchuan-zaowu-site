@@ -28,6 +28,9 @@ C 端下单、支付、履约、退款的主订单集合。
 | `couponId` / `couponValue` | string/number | 用券 |
 | `createTime` / `payExpireTime` | date | 创建与支付超时 |
 | `refundPolicy` | object | 退款策略快照 |
+| `giftMeta.receiverVerify` | boolean | **选填**（2026-09-28 N3）。送礼人设了礼笺领取核验（受礼人手机号）。**只存布尔**：号码的加盐哈希与尾号在仅云函数可读写的 `gift_receiver_verify`（本集合 `read: auth != null`，不得落手机号）。写入方 `manageGift.setReceiverPhone`；无此键 = 未设核验（含全部历史单，保持现行领取行为）。 |
+| `giftMeta.receiverBoundSource` | string | 受礼人绑定来源：`receive_page` / `share_link`（`bindReceiver`）、`phone_verify_account` / `phone_verify_manual`（`verifyReceiver` 核验通过即绑定） |
+| `certMeta` | object | **选填**（2026-09-28 N5）。证书首次签发后固化：`issuedAt`（签发时间，首次写入后不变）+ 按版式 `holder` / `gift_holder` / `gift_voucher` 各一项 `{ fileID, sig, openid, savedAt }`（本人那一版证书图）。写入方 `getCareSpecimens.saveCertificate`。存量单无此键 → 签发时间读时推导为最接近的真实签收时间（`receiveTime` → `giftMeta.claimedAt` → `pickupClaimedAt` → `autoReceivedAt`，见 `giftHolder.certIssuedAt`），不迁移。 |
 | `packagePhotos` | array\<string\> | **选填**（2026-09-21 新增）。发货时店长上传的包装实拍，元素是云存储 fileID（`cloud://…`）。由 `managerShipOrder` 在发货动作里归一化（`orderSummary.pickPackagePhotos`）后写入，并**同时**写入该笔发货私信 `user_messages.photos` —— 顾客在「山海有信」里直接看到。 |
 
 > `packagePhotos` 的三条不变量（守卫 `npm run check:package-photos`）：

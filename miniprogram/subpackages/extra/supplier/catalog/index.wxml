@@ -1,0 +1,117 @@
+<view class="page page-with-bar">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">CATALOG</text>
+    <text class="boot-cn">供货价目选购</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">CATALOG</text>
+        <text class="cn">供货价目选购</text>
+      </view>
+      <view class="header-row">
+        <text class="greeting">向总部按供货价下单</text>
+        <view class="preview-chip" wx:if="{{isPreview}}"><text>预览</text></view>
+      </view>
+      <text class="header-note">调数量 → 加入采购车 → 底栏去下单。区间价标「议价」不可加购。</text>
+    </view>
+
+    <view class="flash-bar {{flashKind}}" wx:if="{{flash}}">
+      <text>{{flash}}</text>
+    </view>
+
+    <view class="empty-panel" wx:if="{{loading && !items.length && !loadError}}">
+      <text class="empty-panel-title">加载中</text>
+      <text class="empty-panel-body">正在拉取可订购商品…</text>
+      <view class="skeleton-row" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="skeleton-thumb"></view>
+        <view class="skeleton-body">
+          <view class="skeleton-line w70"></view>
+          <view class="skeleton-line w40"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="error-panel" wx:elif="{{loadError}}">
+      <text class="error-panel-title">加载失败</text>
+      <text class="error-panel-body">网络或权限异常，暂时无法读取价目。请稍后重试。</text>
+      <view class="retry-btn" bindtap="onRetry">重试</view>
+    </view>
+
+    <view class="empty-panel" wx:elif="{{!loading && !items.length}}">
+      <text class="empty-panel-title">暂无商品</text>
+      <text class="empty-panel-body">{{emptyHint}}</text>
+    </view>
+
+    <view class="cat-list" wx:else>
+      <view
+        class="cat-card {{item.justAdded ? 'just-added' : ''}} {{item.orderable ? '' : 'locked'}}"
+        wx:for="{{items}}"
+        wx:key="key"
+        wx:for-index="idx"
+      >
+        <view
+          class="cat-thumb-wrap"
+          data-idx="{{idx}}"
+          bindtap="onPreview"
+          hover-class="cat-thumb-press"
+        >
+          <image
+            wx:if="{{item.thumbUrl && !item.imgBroken}}"
+            class="cat-thumb"
+            src="{{item.thumbUrl}}"
+            mode="aspectFill"
+            lazy-load
+            data-idx="{{idx}}"
+            binderror="onThumbError"
+          />
+          <view class="cat-thumb-ph" wx:else>
+            <text class="cat-thumb-ph-text">无图</text>
+          </view>
+          <view class="in-cart-dot" wx:if="{{item.inCart}}"><text>{{item.inCart}}</text></view>
+        </view>
+        <view class="cat-body">
+          <view class="cat-title-row">
+            <text class="cat-name">{{item.name}}</text>
+            <text class="cat-price">{{item.priceText}}</text>
+          </view>
+          <text class="cat-pack">{{item.packText}}</text>
+          <text class="cat-meta" wx:if="{{item.meta}}">{{item.meta}}</text>
+          <text class="cat-lock-hint" wx:if="{{!item.orderable}}">区间/议价 · 需总部确认单价</text>
+          <view class="cat-ops" wx:if="{{item.orderable}}">
+            <view class="qty-stepper">
+              <view class="qty-btn {{item.qty<=1?'dim':''}}" data-idx="{{idx}}" bindtap="onQtyMinus" hover-class="qty-press">−</view>
+              <text class="qty-num">{{item.qty}}</text>
+              <view class="qty-btn" data-idx="{{idx}}" bindtap="onQtyPlus" hover-class="qty-press">+</view>
+            </view>
+            <view
+              class="add-btn {{item.inCart ? 'in' : ''}} {{item.adding ? 'busy' : ''}}"
+              data-idx="{{idx}}"
+              bindtap="onAdd"
+              hover-class="add-press"
+            >{{item.addLabel}}</view>
+          </view>
+          <view class="cat-ops locked-ops" wx:else>
+            <view class="add-btn muted" data-idx="{{idx}}" bindtap="onAdd">议价不可购</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="cart-bar {{cartCount > 0 ? 'ready' : 'idle'}}" bindtap="goCart" hover-class="cart-bar-press">
+      <view class="cart-bar-badge" wx:if="{{cartCount > 0}}">
+        <text>{{cartCount}}</text>
+      </view>
+      <view class="cart-bar-copy">
+        <text class="cart-bar-label">{{cartCount > 0 ? '采购车' : '采购车为空'}}</text>
+        <text class="cart-bar-count" wx:if="{{cartCount > 0}}">已选 {{cartCount}} 件 · 去确认下单</text>
+        <text class="cart-bar-count muted" wx:else>{{cartEmptyHint}}</text>
+      </view>
+      <text class="cart-bar-cta" wx:if="{{cartCount > 0}}">去下单</text>
+    </view>
+  </block>
+
+</view>

@@ -127,6 +127,14 @@
       {
         "type": "folder",
         "value": "/minitest"
+      },
+      {
+        "value": ".tmp",
+        "type": "folder"
+      },
+      {
+        "value": "assets/icons/src",
+        "type": "folder"
       }
     ],
     "include": []

@@ -1,0 +1,126 @@
+<view class="page">
+  <view class="head">
+    <text class="head-en">PRICE LIST</text>
+    <text class="head-cn">{{id ? '编辑价目' : '新建价目'}}</text>
+    <text class="head-note">采购商只看得到「上架中」的条目；下单金额由服务端按这里的供货价重算。</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="state">
+    <text class="state-title">正在读取…</text>
+  </view>
+  <view wx:elif="{{error}}" class="state err">
+    <text class="state-title">加载失败</text>
+    <text class="state-body">{{error}}</text>
+    <view class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
+  </view>
+  <block wx:else>
+    <view wx:if="{{flash}}" class="flash {{flashErr ? 'err' : ''}}"><text class="flash-text">{{flash}}</text></view>
+    <view wx:if="{{refCount}}" class="flash">
+      <text class="flash-text">已被 {{refCount}} 张采购 / 出货单引用：skuId 不可修改，删除会改为停用。{{retired ? '当前为停用状态。' : ''}}</text>
+    </view>
+
+    <view class="field">
+      <text class="field-label">skuId（唯一）</text>
+      <input class="field-input {{errors.skuId ? 'bad' : ''}}" value="{{form.skuId}}" placeholder="如 BF-001" maxlength="64" data-field="skuId" bindinput="onInput" />
+      <text wx:if="{{errors.skuId}}" class="field-err">{{errors.skuId}}</text>
+    </view>
+    <view class="field">
+      <text class="field-label">品名</text>
+      <input class="field-input {{errors.name ? 'bad' : ''}}" value="{{form.name}}" placeholder="采购商看到的名称" maxlength="60" data-field="name" bindinput="onInput" />
+      <text wx:if="{{errors.name}}" class="field-err">{{errors.name}}</text>
+    </view>
+    <view class="pair">
+      <view class="field">
+        <text class="field-label">物种</text>
+        <input class="field-input {{errors.species ? 'bad' : ''}}" value="{{form.species}}" placeholder="如 光明女神闪蝶" maxlength="60" data-field="species" bindinput="onInput" />
+        <text wx:if="{{errors.species}}" class="field-err">{{errors.species}}</text>
+      </view>
+      <view class="field">
+        <text class="field-label">包装文案</text>
+        <input class="field-input {{errors.packaging ? 'bad' : ''}}" value="{{form.packaging}}" placeholder="如 12cm 玻璃罩" maxlength="60" data-field="packaging" bindinput="onInput" />
+        <text wx:if="{{errors.packaging}}" class="field-err">{{errors.packaging}}</text>
+      </view>
+    </view>
+
+    <text class="row-label">计价方式</text>
+    <view class="chips">
+      <view wx:for="{{priceModes}}" wx:key="key" class="chip {{form.priceMode === item.key ? 'on' : ''}}" data-field="priceMode" data-value="{{item.key}}" bindtap="onPick">
+        <text class="chip-text">{{item.label}}</text>
+      </view>
+    </view>
+    <view wx:if="{{form.priceMode === 'fixed'}}" class="field">
+      <text class="field-label">供货价（元）</text>
+      <input class="field-input {{errors.price ? 'bad' : ''}}" type="digit" value="{{form.price}}" placeholder="如 128" data-field="price" bindinput="onInput" />
+      <text wx:if="{{errors.price}}" class="field-err">{{errors.price}}</text>
+    </view>
+    <view wx:elif="{{form.priceMode === 'range'}}">
+      <view class="pair">
+        <view class="field">
+          <text class="field-label">最低（元）</text>
+          <input class="field-input {{errors.price ? 'bad' : ''}}" type="digit" value="{{form.priceMin}}" data-field="priceMin" bindinput="onInput" />
+        </view>
+        <view class="field">
+          <text class="field-label">最高（元）</text>
+          <input class="field-input {{errors.price ? 'bad' : ''}}" type="digit" value="{{form.priceMax}}" data-field="priceMax" bindinput="onInput" />
+        </view>
+      </view>
+      <text wx:if="{{errors.price}}" class="field-err">{{errors.price}}</text>
+      <text class="field-hint">区间价下单后需总部报价，不能直接微信支付。</text>
+    </view>
+    <text wx:else class="field-hint">议价条目下单后由总部报价，不能直接微信支付。</text>
+
+    <view class="field">
+      <text class="field-label">零售指导价（元，可空）</text>
+      <input class="field-input {{errors.guidePrice ? 'bad' : ''}}" type="digit" value="{{form.guidePrice}}" data-field="guidePrice" bindinput="onInput" />
+      <text wx:if="{{errors.guidePrice}}" class="field-err">{{errors.guidePrice}}</text>
+    </view>
+
+    <text class="row-label">生物类别</text>
+    <view class="chips">
+      <view wx:for="{{options.bio}}" wx:key="*this" class="chip {{form.bioFilter === item ? 'on' : ''}}" data-field="bioFilter" data-value="{{item}}" bindtap="onPick">
+        <text class="chip-text">{{item}}</text>
+      </view>
+    </view>
+    <text class="row-label">包装类别</text>
+    <view class="chips">
+      <view wx:for="{{options.packaging}}" wx:key="*this" class="chip {{form.packagingFilter === item ? 'on' : ''}}" data-field="packagingFilter" data-value="{{item}}" bindtap="onPick">
+        <text class="chip-text">{{item}}</text>
+      </view>
+    </view>
+    <text class="row-label">制作工艺</text>
+    <view class="chips">
+      <view wx:for="{{options.prep}}" wx:key="*this" class="chip {{form.prepMethod === item ? 'on' : ''}}" data-field="prepMethod" data-value="{{item}}" bindtap="onPick">
+        <text class="chip-text">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="field">
+      <text class="field-label">规格（可空）</text>
+      <input class="field-input" value="{{form.specs}}" maxlength="200" data-field="specs" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <text class="field-label">备注（可空）</text>
+      <input class="field-input" value="{{form.note}}" maxlength="300" data-field="note" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <text class="field-label">图片地址（可空，cloud:// 或 https）</text>
+      <input class="field-input" value="{{form.image}}" maxlength="500" data-field="image" bindinput="onInput" />
+    </view>
+
+    <view class="toggle-row" bindtap="toggleStatus">
+      <view class="toggle-copy">
+        <text class="toggle-title">{{form.status === 'active' ? '上架中' : '已下架'}}</text>
+        <text class="toggle-desc">{{id ? '点按立即切换并保存' : '新建后的初始状态'}}</text>
+      </view>
+      <view class="toggle {{form.status === 'active' ? 'on' : ''}}"><view class="toggle-knob"></view></view>
+    </view>
+
+    <view class="btn {{saving ? 'busy' : ''}}" hover-class="btn-press" bindtap="save">
+      <text class="btn-text">{{saving ? '保存中…' : id ? '保存修改' : '新建价目'}}</text>
+    </view>
+    <view wx:if="{{id}}" class="btn danger {{removeArmed ? 'armed' : ''}} {{removing ? 'busy' : ''}}" hover-class="btn-press" bindtap="remove">
+      <text class="btn-text">{{removing ? '处理中…' : removeArmed ? (refCount ? '再点一次：改为停用' : '再点一次：确认删除') : (refCount ? '删除（将改为停用）' : '删除')}}</text>
+    </view>
+    <text class="foot">价目单只有超管可改；每次保存、上下架、删除都会写入操作日志。</text>
+  </block>
+</view>

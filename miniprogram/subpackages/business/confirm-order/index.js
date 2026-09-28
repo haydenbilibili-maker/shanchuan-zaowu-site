@@ -1518,8 +1518,37 @@ Page(withAppModal({
     this.submitOrder()
   },
 
+  /** 送礼页暂存的受礼人手机号（2h 内有效）；礼赠单强制携带（2026-09-28 产品负责人拍板） */
+  pendingGiftReceiverPhone() {
+    const g = getApp().globalData.giftReceiverPhone
+    if (!g || !/^1\d{10}$/.test(String(g.phone || '')) || Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return ''
+    return g.phone
+  },
+
+  /** 缺受礼人手机号：退回送礼页并定位到该字段（送礼页 onShow 读 giftPhoneRefill） */
+  backToGiftPhone() {
+    getApp().globalData.giftPhoneRefill = true
+    const pages = getCurrentPages()
+    const prev = pages[pages.length - 2]
+    if (prev && /gift\/compose\/index$/.test(prev.route || '')) {
+      wx.navigateBack()
+      return
+    }
+    this.modal({
+      title: '请填写受礼人手机号',
+      overline: 'RECIPIENT PHONE',
+      content: '用于受礼人领取时核验身份，防止礼笺被他人领走。请回到送礼页填写后再下单。',
+      showCancel: false
+    })
+  },
+
   async doSubmitOrder() {
     if (this.data.submitting) return
+    const giftReceiverPhone = this.data.isGiftOrder ? this.pendingGiftReceiverPhone() : ''
+    if (this.data.isGiftOrder && !giftReceiverPhone) {
+      this.backToGiftPhone()
+      return
+    }
 
     const address = this.data.address
     wx.vibrateShort({ type: 'heavy' })
@@ -1565,6 +1594,8 @@ Page(withAppModal({
           customExtraPrice: this._customExtraPrice,
           giftMeta: this._giftMeta || null,
           source: this.data.isGiftOrder ? 'gift' : undefined,
+          giftReceiverPhone: giftReceiverPhone || undefined,
+          clientCaps: this.data.isGiftOrder ? ['gift_receiver_phone_v1'] : undefined,
           useWalletPay: !!this.data.useWalletPay,
           depositIntentId: this._depositIntentId || null,
           storePickup: !!this.data.storePickup && !this.data.isGiftOrder,
@@ -1576,6 +1607,12 @@ Page(withAppModal({
       })
 
       const result = res.result
+      if (result && result.code === 'GIFT_RECEIVER_PHONE_REQUIRED') {
+        this.setData({ submitting: false })
+        this.backToGiftPhone()
+        return
+      }
+      if (result && result.receiverVerify) getApp().globalData.giftReceiverPhone = null
       if (!result || !result.success) {
         this.modal({
           title: '下单失败',

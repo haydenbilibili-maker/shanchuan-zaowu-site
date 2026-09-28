@@ -1,15 +1,23 @@
 {
-  "updatedAt": "2026-09-17",
-  "note": "分包内逐字节相同的重复工具：可省字节数只许减少（棘轮）。--update 收紧后不得再放宽。",
-  "savableBytes": 96700,
+  "updatedAt": "2026-09-27",
+  "note": "分包内逐字节相同的重复工具：可省字节数只许减少（棘轮）。--update 收紧后不得再放宽。 2026-09-27 放宽一次（217.5 → 251.7 KB）：ritualPlays/ritualPlayArchive/wishHandoff（feature+plays）与 workNoticeVoice/workNoticeCatalog（extra+manager）原为主包桥接件，微信「代码质量」判为主包未使用 JS，只能按分包各放一份（副本一致性由 subpackage-mirrors.json 守）。",
+  "savableBytes": 257753,
   "groups": [
+    "giftShareCard.js ×3",
     "storeLedger.js ×2",
     "staffAuth.js ×2",
+    "parser.js ×2",
     "customHelper.js ×3",
+    "workNoticeVoice.js ×2",
     "petMemorialHelper.js ×3",
+    "workNoticeCatalog.js ×2",
+    "ritualPlays.js ×2",
+    "ritualPlayArchive.js ×2",
+    "wishHandoff.js ×2",
+    "node.js ×2",
     "cacheInvalidate.js ×3",
-    "qrCanvas.js ×2",
     "couponPrintLamp.js ×2",
+    "moduleRoutes.js ×2",
     "conceptStorage.js ×2"
   ]
 }

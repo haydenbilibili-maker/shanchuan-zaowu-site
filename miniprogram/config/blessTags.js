@@ -67,6 +67,29 @@ const BLESS_TAGS = [
 const BLESS_TAG_KEYS = BLESS_TAGS.map((t) => t.key)
 
 /**
+ * 墙级默认祈运标签（P2-6 选项 B · 2026-09-24 产品点名会默认）
+ *
+ * 门店码 scene 只有 `k=mashangyou`、不带 bless 参数时，推荐行原先整块不渲染。
+ * 不重印门店码（否决 A）、不接受「推荐只在商品页生效」（否决 C）—— 按 productKey
+ * 在客户端推导墙级标签；**永不写库**，与 SCENE_BLESS 同形态。
+ *
+ * 假设：「马上有」默认墙语义偏「求财」（品牌名）；其它墙未登记则不兜底。
+ */
+const WALL_DEFAULT_BLESS = {
+  mashangyou: ['fortune']
+}
+
+/**
+ * @param {string} productKey
+ * @returns {string[]} 受控标签；未知墙返回 []
+ */
+function wallDefaultBlessTags(productKey) {
+  const key = String(productKey || '').trim() || 'mashangyou'
+  const raw = WALL_DEFAULT_BLESS[key]
+  return sanitizeBlessTags(raw || [])
+}
+
+/**
  * 礼赠场景 → 祈运标签（**写死的映射**，不是推断）。
  *
  * 为什么可以这样做：`giftScenes` 本身就是**人工策展**的字段（8 个场景，见 utils/giftScenes.js），
@@ -171,6 +194,8 @@ module.exports = {
   BLESS_TAG_KEYS,
   SCENE_BLESS,
   BLESS_SCENES,
+  WALL_DEFAULT_BLESS,
+  wallDefaultBlessTags,
   blessTagsFromScenes,
   resolveBlessTags,
   scenesForBless,

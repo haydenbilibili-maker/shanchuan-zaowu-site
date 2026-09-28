@@ -265,11 +265,10 @@ Page(withAppModal({
       )
     } catch (e) {
       console.warn('gift board', e)
+      // 失败保留上次列表，勿伪装空柜
       this.setData({
         loading: false,
-        loadError: formatCloudFnError(e, '礼赠看板暂不可用'),
-        list: reset ? [] : this.data.list,
-        displayList: reset ? [] : this.data.displayList
+        loadError: formatCloudFnError(e, '礼赠看板暂不可用')
       })
     }
   },
@@ -347,7 +346,7 @@ Page(withAppModal({
           specimenFileID = (row.images && row.images[0]) || row.image || ''
         } catch (err) { /* 回查失败不阻断出卡 */ }
       }
-      const { renderGiftPrintImage } = require('../../../utils/giftShareCard')
+      const { renderGiftPrintImage } = require('../utils/giftShareCard')
       const isSticker = spec === 'sticker'
       // P0-2：存量 141–200 字礼笺打印路径会**截断**（不回写数据库）—— 截断信息由渲染器回调带出来，
       //        预览态生成后给运营一条可见提示（否则"字少了"会被当成导出 bug）。

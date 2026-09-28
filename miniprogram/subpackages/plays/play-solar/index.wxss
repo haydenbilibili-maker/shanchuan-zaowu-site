@@ -1,0 +1,171 @@
+@import "../play-shared/ritual-play.wxss";
+
+/* ── 节气签：一片时令叶 ───────────────────────────────────────────
+   入口是"一件会落定的东西"：叶脉清晰，落下才有一句。 */
+.rp-leaf {
+  position: relative;
+  width: 176rpx;
+  height: 220rpx;
+  filter: drop-shadow(0 14rpx 22rpx rgba(0, 0, 0, 0.36));
+}
+
+.rp-leaf-blade {
+  position: absolute;
+  left: 28rpx;
+  top: 18rpx;
+  width: 120rpx;
+  height: 168rpx;
+  border-radius: 8% 72% 18% 72%;
+  background:
+    radial-gradient(120% 80% at 32% 28%, rgba(250, 246, 237, 0.35) 0%, transparent 55%),
+    linear-gradient(155deg, #C8B478 0%, #8A9A52 42%, #5A6E38 78%, #3E4A28 100%);
+  box-shadow:
+    inset 0 3rpx 0 rgba(250, 246, 237, 0.28),
+    inset -10rpx 0 20rpx rgba(0, 0, 0, 0.18);
+  transform: rotate(-18deg);
+}
+
+.rp-leaf-vein {
+  position: absolute;
+  left: 86rpx;
+  top: 36rpx;
+  width: 3rpx;
+  height: 132rpx;
+  border-radius: 2rpx;
+  background: rgba(42, 36, 24, 0.35);
+  transform: rotate(-18deg);
+  z-index: 2;
+}
+
+.rp-leaf-vein::before,
+.rp-leaf-vein::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 36rpx;
+  height: 2rpx;
+  background: rgba(42, 36, 24, 0.28);
+  transform-origin: left center;
+}
+
+.rp-leaf-vein::before {
+  top: 36rpx;
+  transform: rotate(-28deg);
+}
+
+.rp-leaf-vein::after {
+  top: 72rpx;
+  transform: rotate(32deg);
+  width: 40rpx;
+}
+
+.rp-leaf-stem {
+  position: absolute;
+  left: 118rpx;
+  bottom: 8rpx;
+  width: 10rpx;
+  height: 48rpx;
+  border-radius: 6rpx;
+  background: linear-gradient(180deg, #6A5838 0%, #3A3020 100%);
+  transform: rotate(22deg);
+}
+
+/* 进行态：叶从上方缓落、微旋后落定 */
+.rp-stage.is-pending .rp-leaf {
+  animation: rp-leaf-fall 1000ms cubic-bezier(0.22, 0.7, 0.28, 1) forwards;
+}
+
+@keyframes rp-leaf-fall {
+  0% { opacity: 0.55; transform: translateY(-72rpx) rotate(-28deg); }
+  55% { opacity: 1; transform: translateY(8rpx) rotate(6deg); }
+  100% { opacity: 1; transform: translateY(0) rotate(-4deg); }
+}
+
+/* ── 结果纸面：时令笺（橄榄浅纸 + 叶脉水印）· 一眼不同于签/饼/座/我 ── */
+.rp-paper {
+  background:
+    radial-gradient(90% 70% at 88% 12%, rgba(90, 110, 56, 0.12) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(250, 246, 237, 0.55) 0%, transparent 28%),
+    linear-gradient(165deg, #F3EED8 0%, #DDE4C4 48%, #D0D8B4 100%);
+  border: 2rpx solid rgba(74, 90, 48, 0.42);
+  border-radius: 14rpx 22rpx 14rpx 22rpx;
+  box-shadow:
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.55),
+    inset 0 0 0 8rpx rgba(90, 110, 56, 0.05),
+    0 18rpx 40rpx rgba(0, 0, 0, 0.34);
+  padding: 40rpx 34rpx 36rpx;
+}
+
+.rp-paper-mark {
+  transform: rotate(-6deg);
+  color: #3E4A28;
+  background: rgba(90, 110, 56, 0.1);
+  border: 2rpx solid rgba(74, 90, 48, 0.62);
+  box-shadow: inset 0 0 0 1rpx rgba(74, 90, 48, 0.28);
+  font-family: var(--font-brand);
+  letter-spacing: 0.06em;
+}
+
+.rp-solar-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14rpx;
+  margin-top: 8rpx;
+  padding-bottom: 14rpx;
+  border-bottom: 2rpx solid rgba(74, 90, 48, 0.22);
+}
+
+.rp-paper-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-44);
+  letter-spacing: 0.1em;
+  color: #2A3220;
+  margin-top: 0;
+}
+
+.rp-paper-sub {
+  margin-top: 0;
+  padding: 4rpx 14rpx 6rpx;
+  font-size: var(--fs-20);
+  letter-spacing: 0.12em;
+  color: #3E4A28;
+  background: rgba(90, 110, 56, 0.12);
+  border: 1rpx solid rgba(74, 90, 48, 0.28);
+  border-radius: 999rpx;
+}
+
+.rp-solar-line {
+  display: block;
+  margin-top: 22rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-32);
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+  color: #2A3220;
+  text-align: center;
+}
+
+.rp-solar-advice {
+  display: block;
+  margin-top: 20rpx;
+  padding: 16rpx 18rpx;
+  font-size: var(--fs-22);
+  line-height: 1.55;
+  color: rgba(42, 50, 32, 0.82);
+  background: rgba(90, 110, 56, 0.1);
+  border-radius: 10rpx;
+  border-left: 6rpx solid rgba(74, 90, 48, 0.55);
+}
+
+.rp-paper-grip-bar {
+  background: rgba(74, 90, 48, 0.35);
+}
+
+.rp-paper-grip::after {
+  color: rgba(74, 90, 48, 0.45);
+}
+
+.rp-note {
+  border-top-color: rgba(74, 90, 48, 0.22);
+  color: rgba(42, 50, 32, 0.58);
+}

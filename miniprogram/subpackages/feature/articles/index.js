@@ -176,7 +176,7 @@ Page({
   // 跳转到视频列表
   goToVideos() {
     wx.navigateTo({
-      url: '/subpackages/feature/videos/index',
+      url: '/subpackages/content/videos/index',
       fail: () => wx.showToast({ title: '无法打开影像', icon: 'none' })
     })
   },

@@ -11,6 +11,7 @@ const {
   isVoucherLikeProduct,
   buildGuideUrl
 } = require('./careDefaults')
+const { resolveCertRole } = require('./giftHolder')
 
 async function resolveProductCategory(productId) {
   if (!productId) return 'GENERAL'
@@ -89,35 +90,33 @@ async function resolveCareContext(order) {
 function buildCommentUrl(orderId, careContext) {
   const ctx = careContext || {}
   const productId = ctx.productId || ''
-  let url = `/subpackages/feature/comment/index?targetType=product&orderId=${encodeURIComponent(orderId || '')}`
+  let url = `/subpackages/content/comment/index?targetType=product&orderId=${encodeURIComponent(orderId || '')}`
   if (productId) url += `&targetId=${encodeURIComponent(productId)}`
   return url
 }
 
-function showPostReceiptCareSheet(orderId, careContext) {
+/** giverView：礼赠送礼人代点签收 —— 只给「赠予凭证」，养护与收藏证书归受礼人 */
+function showPostReceiptCareSheet(orderId, careContext, giverView) {
   const ctx = careContext || {}
   const url = ctx.guideUrl || buildGuideUrl({ orderId, category: ctx.category || 'GENERAL', from: 'receipt' })
-  const commentUrl = buildCommentUrl(orderId, ctx)
+  const certUrl = `/subpackages/business/certificate/index?id=${orderId}`
+  const entries = [{ label: '写一条评价', url: buildCommentUrl(orderId, ctx), failTitle: '无法打开评价页' }]
+  if (giverView) {
+    entries.push({ label: '查看赠予凭证', url: certUrl, failTitle: '证书暂不可用' })
+  } else {
+    entries.push({ label: '查看养护指南', url, failTitle: '无法打开养护指南' })
+    entries.push({ label: '查看收藏证书', url: certUrl, failTitle: '证书暂不可用' })
+  }
 
   wx.showActionSheet({
-    itemList: ['写一条评价', '查看养护指南', '查看收藏证书', '稍后再说'],
+    itemList: entries.map((e) => e.label).concat('稍后再说'),
     success: (res) => {
-      if (res.tapIndex === 0) {
-        wx.navigateTo({
-          url: commentUrl,
-          fail: () => wx.showToast({ title: '无法打开评价页', icon: 'none' })
-        })
-      } else if (res.tapIndex === 1) {
-        wx.navigateTo({
-          url,
-          fail: () => wx.showToast({ title: '无法打开养护指南', icon: 'none' })
-        })
-      } else if (res.tapIndex === 2) {
-        wx.navigateTo({
-          url: `/subpackages/business/certificate/index?id=${orderId}`,
-          fail: () => wx.showToast({ title: '证书暂不可用', icon: 'none' })
-        })
-      }
+      const entry = entries[res.tapIndex]
+      if (!entry) return
+      wx.navigateTo({
+        url: entry.url,
+        fail: () => wx.showToast({ title: entry.failTitle, icon: 'none' })
+      })
     },
     fail: (err) => {
       if (err && err.errMsg && err.errMsg.indexOf('cancel') >= 0) return
@@ -176,8 +175,11 @@ async function confirmReceiptOnOrder(orderId, orderSnapshot, options = {}) {
   if (prompt) {
     try { wx.hideLoading() } catch (e) { /* ignore */ }
     setTimeout(() => {
-      if (careContext.showCare) {
-        showPostReceiptCareSheet(orderId, careContext)
+      const app = getApp()
+      const viewer = (app && app.globalData && app.globalData.openid) || ''
+      const giverView = resolveCertRole({ ...order, status: 'received' }, viewer) === 'giver'
+      if (careContext.showCare || giverView) {
+        showPostReceiptCareSheet(orderId, careContext, giverView)
       } else {
         // 无养护上下文时，仍引导评价
         wx.showActionSheet({

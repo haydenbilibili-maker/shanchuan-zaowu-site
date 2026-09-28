@@ -4,7 +4,7 @@
 
 山海造物小程序直播能力：店长/超管推流（`live-pusher`）+ C 端拉流（`live-player`），入口受内容开关 `showLive` 控制。
 
-**主播日常操作**：授予 `live_host` 角色的同事请在小程序「我的 → 主播工作台」（路径 `subpackages/business/live/studio/index`）进入场次与开播控制台；超管仍在「超管工作台」保留馆内直播看板与全量配置能力。
+**主播日常操作**：授予 `live_host` 角色的同事请在小程序「我的 → 主播工作台」（路径 `subpackages/extra/live/studio/index`）进入场次与开播控制台；超管仍在「超管工作台」保留馆内直播看板与全量配置能力。完成度说明见 [`主播工作台_Phase2.md`](./主播工作台_Phase2.md)。
 
 > 控制台文案、类目清单会随腾讯云 / 微信更新。文中路径以 2026 年常见界面为准；若按钮名称略有差异，以官方最新文档为准。
 
@@ -411,11 +411,12 @@ tcb fn deploy getContentDisplayFlags --force
 - `cloudfunctions/getContentDisplayFlags/`（`showLive`）
 - `utils/contentDisplayFlags.js`
 - `subpackages/feature/live/watch/`（C 端 `live-player` + 留言墙 / 分享）
-- `subpackages/business/live/broadcast/`（主播 `live-pusher` + 封面/预约）
+- `subpackages/extra/live/broadcast/`（主播 `live-pusher` + 封面/预约）
 - `pages/index/`（有直播时 Banner 第一帧抢插）
-- `subpackages/business/manager/`（开播入口 + 内容开关）
+- `subpackages/manager/manager/`（开播入口角标 + 内容开关；主播主入口已迁至 extra/live/studio）
 - `scripts/provision-live-sessions.cjs`（集合创建）
 - 集合：`live_sessions`、`live_messages`（留言墙）、`live_reminders`（开播提醒登记）
+- Phase2 完成度：`miniprogram/docs/主播工作台_Phase2.md`、`admin/docs/主播工作台_Phase2_完成度升级_2026-09-24.md`
 
 ---
 

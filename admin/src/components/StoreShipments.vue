@@ -3,8 +3,8 @@
     <div class="header-section">
       <h2>出货单</h2>
       <p class="subtitle">
-        SSOT 集合 <code>ops_shipments</code>。小程序超管/店长为主录入；本页用于核对、筛选与报表查看。
-        飞书双向同步请到「飞书同步中心 · 出货」。
+        SSOT 集合 <code>ops_shipments</code>。小程序超管/店长为主录入与物流流转；本页用于核对、筛选与报表查看。
+        飞书双向同步请到「飞书同步中心 · 出货」。结算状态只读（权威在工作室账单）。
       </p>
     </div>
 
@@ -46,7 +46,7 @@
         :closable="false"
         show-icon
         style="margin-bottom: 12px"
-        title="主录入在小程序「出货单」：粘贴文本 → 正则解析 → 确认写入。ERP 不另建账本。"
+        title="主录入在小程序：超管「出货开单」(SKU) 或店长「出货单」粘贴/单条。ERP 不另建账本；物流状态流转也在小程序详情。"
       />
 
       <div class="summary" v-if="summary">
@@ -57,19 +57,46 @@
         <span>共 {{ summary.totalQty || 0 }} 件</span>
       </div>
 
-      <el-table :data="list" stripe size="small" empty-text="暂无出货单">
+      <el-empty v-if="!loading && !list.length" description="暂无出货单（检查筛选或先在小程序开单）" />
+
+      <el-table
+        v-else
+        :data="list"
+        stripe
+        size="small"
+        empty-text="暂无出货单"
+        highlight-current-row
+        @row-click="openDetail"
+      >
         <el-table-column prop="shipmentDate" label="出货日" width="110" />
         <el-table-column prop="storeName" label="门店" width="110" />
         <el-table-column prop="shipmentNo" label="单号" width="150" />
-        <el-table-column label="明细" min-width="220">
+        <el-table-column label="明细" min-width="200">
           <template #default="{ row }">
             {{ (row.items || []).map((i) => `${i.itemName}-${i.qty}`).join('；') }}
           </template>
         </el-table-column>
         <el-table-column prop="totalQty" label="件数" width="70" />
-        <el-table-column prop="statusLabel" label="状态" width="90" />
+        <el-table-column label="金额" width="100" align="right">
+          <template #default="{ row }">
+            {{ row.totalAmount != null ? `¥${Number(row.totalAmount).toFixed(2)}` : '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="statusLabel" label="物流状态" width="90" />
+        <el-table-column prop="settleLabel" label="结算" width="100" />
+        <el-table-column label="核价" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="row.pricingStatus === 'incomplete'" size="small" type="warning">待核价</el-tag>
+            <el-tag v-else size="small" type="success">已核价</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="sourceLabel" label="来源" width="90" />
-        <el-table-column label="飞书" width="100">
+        <el-table-column label="录单" width="90">
+          <template #default="{ row }">
+            {{ entryPathLabel(row.entryPath) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="飞书" width="80">
           <template #default="{ row }">
             <el-tag v-if="row.feishuRecordId" size="small" type="success">已绑</el-tag>
             <el-tag v-else size="small" type="info">未绑</el-tag>
@@ -78,7 +105,48 @@
       </el-table>
     </el-card>
 
-    <!-- 重算历史单：**先试算**再确认。已结清/已入账单的单会被拒并给出原因。 -->
+    <el-drawer v-model="detailOpen" title="出货单详情" size="480px" destroy-on-close>
+      <template v-if="detail">
+        <el-descriptions :column="1" border size="small">
+          <el-descriptions-item label="单号">{{ detail.shipmentNo || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="门店">{{ detail.storeName || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="出货日">{{ detail.shipmentDate || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="物流状态">{{ detail.statusLabel || detail.status }}</el-descriptions-item>
+          <el-descriptions-item label="结算">{{ detail.settleLabel || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="金额">
+            {{ detail.totalAmount != null ? `¥${Number(detail.totalAmount).toFixed(2)}` : '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="物流">
+            {{ [detail.expressCompany, detail.trackingNo].filter(Boolean).join(' ') || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="录单路径">{{ entryPathLabel(detail.entryPath) }}</el-descriptions-item>
+          <el-descriptions-item label="账单">{{ detail.billNo || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="备注">{{ detail.note || '—' }}</el-descriptions-item>
+        </el-descriptions>
+        <h4 style="margin: 16px 0 8px">明细</h4>
+        <el-table :data="detail.items || []" size="small" stripe>
+          <el-table-column prop="itemName" label="品名" min-width="160" />
+          <el-table-column label="原材料" min-width="120">
+            <template #default="{ row }">
+              {{ row.materialName ? row.materialName + (row.materialGrade && row.materialGrade !== '默认' ? `（${row.materialGrade}）` : '') : '—' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="包装方式" min-width="110">
+            <template #default="{ row }">
+              {{ row.packagingName ? row.packagingName + (row.packagingSize && row.packagingSize !== '默认' ? ` ${row.packagingSize}` : '') : '—' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="qty" label="数量" width="70" />
+          <el-table-column label="单价" width="90" align="right">
+            <template #default="{ row }">
+              {{ row.unitPrice != null ? `¥${Number(row.unitPrice).toFixed(2)}` : '—' }}
+            </template>
+          </el-table-column>
+        </el-table>
+        <p class="drawer-hint">状态流转与运单编辑请在小程序「出货中心」单据详情完成；原材料 / 包装方式资料在「出货中心 · 资料」维护；本页只读核对。</p>
+      </template>
+    </el-drawer>
+
     <el-dialog v-model="reprice.visible" title="重算历史单（按当前价目表）" width="820px">
       <el-alert
         type="warning"
@@ -162,8 +230,17 @@ const statusFilter = ref('all')
 const sourceFilter = ref('all')
 const dateRange = ref([])
 const summary = ref(null)
+const detailOpen = ref(false)
+const detail = ref(null)
 /** 重算历史单（裁决 16）：先试算再确认。默认 dry-run，只有点「确认重算」才真写。 */
 const reprice = ref({ visible: false, loading: false, result: null })
+
+function entryPathLabel(path) {
+  if (path === 'sku') return 'SKU开单'
+  if (path === 'paste') return '粘贴'
+  if (path === 'single') return '单条'
+  return path || '—'
+}
 
 async function callFn(data) {
   const res = await callCloudFunction(FN, data)
@@ -198,6 +275,11 @@ async function loadList() {
   } finally {
     loading.value = false
   }
+}
+
+function openDetail(row) {
+  detail.value = row || null
+  detailOpen.value = !!row
 }
 
 function openReprice() {
@@ -244,5 +326,6 @@ onMounted(async () => {
 .summary { margin-bottom: 12px; color: var(--light-text-secondary); font-size: 13px; display: flex; gap: 8px; }
 .reprice-summary { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 8px; color: var(--light-text-secondary); font-size: 13px; }
 .delta-changed { color: var(--el-color-danger); font-weight: 600; }
+.drawer-hint { margin-top: 16px; font-size: 12px; color: var(--light-text-secondary); line-height: 1.5; }
 code { background: var(--light-bg-elevated); border: 1px solid var(--light-border-subtle); padding: 0 4px; border-radius: 3px; }
 </style>

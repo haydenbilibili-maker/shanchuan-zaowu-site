@@ -24,6 +24,10 @@
 | `verifyCode` | string | 核销码 |
 | `createTime` | date | 创建时间 |
 | `usedAt` | date | 核销时间 |
+| `title` / `time` / `people` / `price` | string/number | 预约标题、时间、人数、价格（活动报名时由 `createBooking` 按活动文档回填） |
+| `activityId` | string | **可选（2026-09-28 起）**：活动/课程报名关联的 `activities._id`；历史预约没有此字段，统计时回退「`title` + `date`」匹配（读时兼容，不迁移） |
+| `seatHeld` | number | **可选**：报名时从 `activities.remain` 原子扣减的名额数（不限名额的活动为 0） |
+| `seatReleased` | boolean | **可选**：`cancelBooking` 已把 `seatHeld` 归还给活动（`confirmed → cancelled` 条件更新只生效一次，重复取消不重复归还） |
 
 ## 维护
 

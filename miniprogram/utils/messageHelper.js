@@ -220,17 +220,26 @@ function isInboxSelfUrl(url) {
 }
 
 const FEATURE_LEGACY_PREFIXES = [
-  '/pages/collection-detail',
   '/pages/community',
   '/pages/custom',
   '/pages/care',
   '/pages/detail',
-  '/pages/comment',
   '/pages/search',
   '/pages/identify',
   '/pages/collection',
-  '/pages/articles',
-  '/pages/videos'
+  '/pages/articles'
+].sort((a, b) => b.length - a.length);
+
+/**
+ * 2026-09-27 包体治理：videos / comment / collection-detail 从 feature 迁到 content。
+ * 旧 `/pages/*` 与已发出的 `/subpackages/feature/{videos,comment,collection-detail}/*`
+ * 都靠本表 + MOVED_SUBPACKAGE_ALIASES 落到 content。
+ */
+const CONTENT_LEGACY_PREFIXES = [
+  '/pages/collection-detail',
+  '/pages/comment',
+  '/pages/videos',
+  '/pages/user/legal'
 ].sort((a, b) => b.length - a.length);
 
 /**
@@ -249,7 +258,6 @@ const EXTRA_LEGACY_PREFIXES = [
   '/pages/user/achievements',
   '/pages/user/messages',
   '/pages/user/support',
-  '/pages/user/legal',
   '/pages/user/feedback',
   '/pages/user/certificates',
   '/pages/user/invoice-request',
@@ -335,7 +343,20 @@ const MOVED_SUBPACKAGE_ALIASES = [
   { from: '/subpackages/manager/shareholder-config', to: '/subpackages/extra/shareholder-config' },
   { from: '/subpackages/manager/shipment-ops', to: '/subpackages/extra/shipment-ops' },
   { from: '/subpackages/manager/staff', to: '/subpackages/extra/staff' },
-  { from: '/subpackages/manager/staff-permissions', to: '/subpackages/extra/staff-permissions' }
+  { from: '/subpackages/manager/staff-permissions', to: '/subpackages/extra/staff-permissions' },
+  // ④ 2026-09-27 主包体积治理：玩法页 → plays；影像/评价/馆藏详情 → content
+  { from: '/subpackages/feature/play-qian', to: '/subpackages/plays/play-qian' },
+  { from: '/subpackages/feature/play-cookie', to: '/subpackages/plays/play-cookie' },
+  { from: '/subpackages/feature/play-zodiac', to: '/subpackages/plays/play-zodiac' },
+  { from: '/subpackages/feature/play-mbti', to: '/subpackages/plays/play-mbti' },
+  { from: '/subpackages/feature/play-solar', to: '/subpackages/plays/play-solar' },
+  { from: '/subpackages/feature/play-coin', to: '/subpackages/plays/play-coin' },
+  { from: '/subpackages/feature/videos', to: '/subpackages/content/videos' },
+  { from: '/subpackages/feature/comment', to: '/subpackages/content/comment' },
+  { from: '/subpackages/feature/collection-detail', to: '/subpackages/content/collection-detail' },
+  { from: '/subpackages/extra/feishu-sync', to: '/subpackages/manager/feishu-sync' },
+  { from: '/subpackages/extra/user/legal', to: '/subpackages/content/user/legal' },
+  { from: '/subpackages/feature/live', to: '/subpackages/content/live' }
 ].sort((a, b) => b.from.length - a.from.length);
 
 /**
@@ -422,6 +443,16 @@ function remapLegacyPageUrl(raw) {
         const prefix = FEATURE_LEGACY_PREFIXES[i];
         if (url === prefix || url.indexOf(`${prefix}/`) === 0 || url.indexOf(`${prefix}?`) === 0) {
           mapped = `/subpackages/feature${url.slice('/pages'.length)}`;
+          remapped = true;
+          break;
+        }
+      }
+    }
+    if (!remapped) {
+      for (let i = 0; i < CONTENT_LEGACY_PREFIXES.length; i++) {
+        const prefix = CONTENT_LEGACY_PREFIXES[i];
+        if (url === prefix || url.indexOf(`${prefix}/`) === 0 || url.indexOf(`${prefix}?`) === 0) {
+          mapped = `/subpackages/content${url.slice('/pages'.length)}`;
           remapped = true;
           break;
         }
@@ -772,8 +803,8 @@ function resolveKind(msg, isCampaign) {
   const queue = String(msg.queue || '');
   const category = msg.category || '';
   // 日报是工作信息里的独立一档（与「待办」「审批」并列），标签不能沿用队列名「工作流」
-  if (category === 'digest') {
-    return { kind: 'workflow', kindLabel: '日报', kindLampClass: 'lamp-info' };
+  if (category === 'digest' || String(msg.type || '') === 'daily_digest') {
+    return { kind: 'digest', kindLabel: '日报', kindLampClass: 'lamp-info' };
   }
   if (queue === 'workflow' || category === 'ops') {
     return { kind: 'workflow', kindLabel: '工作流', kindLampClass: 'lamp-forest' };
@@ -834,6 +865,10 @@ const STATUS_SUCCESS_TYPES = {
 
 function resolveStatus(type, hasAction, isCampaign) {
   const t = String(type || '');
+  // 日报是定时快照，不是待办：状态必须说「快照」，避免员工以为还要去「处理」
+  if (t === 'daily_digest') {
+    return { statusTone: 'info', statusLabel: '快照', statusLampClass: 'lamp-info' };
+  }
   if (STATUS_WARNING_TYPES[t] || /_rejected$|_cancelled$|_revoked$|need_info/.test(t)) {
     return { statusTone: 'warning', statusLabel: '需处理', statusLampClass: 'lamp-warning' };
   }
@@ -944,13 +979,21 @@ function enrichMessage(msg) {
   const isCampaign = isCampaignMessage(msg);
   const isPaper = true;
   const { kind, kindLabel, kindLampClass } = resolveKind({ ...msg, category }, isCampaign);
-  const stampEn = kind === 'campaign'
-    ? 'YOU XIN'
-    : (kind === 'workflow' ? 'WORKFLOW' : (kind === 'notice' ? 'NOTICE' : 'RECEIPT'));
-  const stampCn = kind === 'campaign'
-    ? '馆方'
-    : (kind === 'workflow' ? '工作流' : (kind === 'notice' ? '通知' : '回执'));
-  const signOff = kind === 'receipt' ? '此据' : (kind === 'workflow' ? '请处理' : '谨启');
+  const isDigest = kind === 'digest' || String(msg.type || '') === 'daily_digest';
+  const stampEn = isDigest
+    ? 'DIGEST'
+    : (kind === 'campaign'
+      ? 'YOU XIN'
+      : (kind === 'workflow' ? 'WORKFLOW' : (kind === 'notice' ? 'NOTICE' : 'RECEIPT')));
+  const stampCn = isDigest
+    ? '日报'
+    : (kind === 'campaign'
+      ? '馆方'
+      : (kind === 'workflow' ? '工作流' : (kind === 'notice' ? '通知' : '回执')));
+  // 日报是备阅快照，落款不能写「请处理」（那是待办语义）
+  const signOff = isDigest
+    ? '备阅'
+    : (kind === 'receipt' ? '此据' : (kind === 'workflow' ? '请处理' : '谨启'));
   const needsExpand = paragraphs.length > 8 || String(content).length > 280;
   const isUnread = msg.read !== true;
   const { statusTone, statusLabel, statusLampClass } = resolveStatus(msg.type, !!actionUrl, isCampaign);
@@ -1009,10 +1052,13 @@ function enrichMessage(msg) {
     categoryIcon: msg.icon || categoryMeta.icon,
     typeName,
     formattedTime: formatMessageTime(date),
-    actionLabel: isCampaign
-      ? (actionUrl ? (TYPE_ACTION_LABELS[msg.type] || '前往相关页') : '')
-      : resolveActionLabel({ ...msg, actionUrl, category }),
-    isUnread
+    actionLabel: isDigest
+      ? '查看口径'
+      : (isCampaign
+        ? (actionUrl ? (TYPE_ACTION_LABELS[msg.type] || '前往相关页') : '')
+        : resolveActionLabel({ ...msg, actionUrl, category })),
+    isUnread,
+    isDigest
   };
 }
 

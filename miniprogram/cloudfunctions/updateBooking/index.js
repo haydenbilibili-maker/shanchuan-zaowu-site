@@ -69,22 +69,17 @@ exports.main = async (event, context) => {
       }
     });
 
-    // 7. 发送改期提醒
+    // 7. 发送改期提醒（云端互调用 cloud.callFunction；云函数里没有 wx 全局）。按 bookingId 读库里已改好的日期时间；失败只记日志
     try {
-      await wx.cloud.callFunction({
+      const r = await cloud.callFunction({
         name: 'sendBookingReminder',
-        data: {
-          type: 'changed',
-          bookingId: bookingId,
-          bookingData: {
-            ...booking,
-            date: newDate,
-            time: newTime
-          }
-        }
+        data: { type: 'changed', bookingId }
       });
+      if (!r || !r.result || r.result.success !== true) {
+        console.error('发送改期提醒失败:', bookingId, r && r.result);
+      }
     } catch (err) {
-      console.error('发送改期提醒失败:', err);
+      console.error('发送改期提醒失败:', bookingId, err);
     }
 
     return {

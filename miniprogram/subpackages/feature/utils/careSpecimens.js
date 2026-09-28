@@ -56,10 +56,20 @@ function buildSpecimenItem(order, product, index) {
   }
 }
 
+function giftReceiverOf(order) {
+  return (order && order.giftMeta && order.giftMeta.receiverOpenid) || ''
+}
+
+function isHeldGiftElsewhere(order, openid) {
+  const gift = !!(order && (order.source === 'gift' || order.giftMeta))
+  return gift && giftReceiverOf(order) !== openid
+}
+
 async function loadUserSpecimensClient(app, options = {}) {
   const limit = options.limit || 50
   const openid = await ensureOpenId(app)
-  const baseWhere = openid ? { _openid: openid, status: 'received' } : { status: 'received' }
+  if (!openid) return []
+  const baseWhere = { _openid: openid, status: 'received' }
 
   let orders = []
   try {
@@ -89,6 +99,8 @@ async function loadUserSpecimensClient(app, options = {}) {
 
   const list = []
   for (const order of orders) {
+    // 送出的礼赠归受礼人持有（与 getCareSpecimens 同口径）
+    if (isHeldGiftElsewhere(order, openid)) continue
     const products = (order.products || []).filter((p) => !isVoucherLikeProduct(p))
     products.forEach((p, i) => {
       if (list.length >= limit) return
@@ -135,7 +147,7 @@ async function loadCareOrderContext(app, orderId, productId) {
   try {
     const res = await wx.cloud.database().collection('orders').doc(orderId).get()
     const order = res.data
-    if (!order || order._openid !== openid) return { success: false, msg: '无权查看' }
+    if (!order || (order._openid !== openid && giftReceiverOf(order) !== openid)) return { success: false, msg: '无权查看' }
 
     let contextTitle = ''
     const framingName = (order.customMeta && order.customMeta.frame && order.customMeta.frame.name) || ''

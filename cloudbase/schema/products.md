@@ -20,7 +20,8 @@
 | `stock` | number | 库存 |
 | `categoryId` | string | 分类 |
 | `isOffShelf` | boolean | 下架 |
-| `images` / `cover` | array/string | 主图 |
+| `images` / `cover` | array/string | 主图（**只放图片**；`images[0]` = 全站封面） |
+| `media` | array（可选） | 视频 / 实况：`[{ type: 'video'\|'live', url, poster, duration, width, height, size }]`，≤3 段、≤60s、≤50MB；只有详情页主图轮播读它，缺省 = 无视频。2026-09-28 新增，见 `miniprogram/docs/藏品视频与实况_2026-09-28.md` |
 | `species` / `latin` | string | 物种信息 |
 | `framerId` | string | 装裱师（可选） |
 | `protectionType` | string | 防护/裱装类型 |

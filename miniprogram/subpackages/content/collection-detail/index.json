@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "图鉴详情",
+  "usingComponents": {
+    "mp-html": "/subpackages/content/components/mp-html/index",
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+  },
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814"
+}

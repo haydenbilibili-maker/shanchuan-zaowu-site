@@ -20,7 +20,7 @@ const {
   pickPresetBody
 } = require('../giftNotePresets')
 // 正文字数上限**从打印模块取**（印得出来才算数；推导见 giftShareCard.js 常量处注释）
-const { GIFT_NOTE_MAX_CHARS } = require('../../../../utils/giftShareCard')
+const { GIFT_NOTE_MAX_CHARS } = require('../giftShareCard')
 const {
   GIFT_PACKAGING_LABEL,
   GIFT_PACKAGING_NOTE
@@ -48,7 +48,7 @@ const {
 const textFx = require('../giftTextEffect')
 /** 会员应付（2026-09-19 裁决 46-a）：**主包**件 —— 分包之间不能互 require，
  *  故编排页不能直接引 subpackages/business/utils/memberPricing.js */
-const memberPayable = require('../../../../utils/memberPayable')
+const memberPayable = require('../../utils/memberPayable')
 
 const VOICE_CANCEL_SLIDE_PX = 56
 
@@ -128,6 +128,11 @@ Page({
     cardSignature: '',
     recipientName: '',
     recipientEditing: false,
+    // 受礼人手机号（必填）：经确认页交 makeOrder 存哈希，不进 giftMeta
+    receiverPhone: '',
+    receiverPhoneError: '',
+    receiverPhoneFocus: false,
+    phoneScrollId: '',
     /** 需求 9：必填项要在界面上看得出来；选「犒劳自己」时改成「你的昵称」 */
     recipientPlaceholder: 'TA 的名字（必填）',
     notePresets: GIFT_NOTE_PRESETS,
@@ -203,6 +208,13 @@ Page({
       this._sigHydrateTimer = setTimeout(() => this._hydrateSenderSignature(), 800)
     }
     this.syncScrollPane()
+    // 确认页退回：定位到受礼人手机号
+    const app = getApp()
+    if (app.globalData.giftPhoneRefill) {
+      app.globalData.giftPhoneRefill = false
+      this.setData({ paying: false })
+      this.flagReceiverPhone('请填写受礼人手机号，用于 TA 领取时核验身份')
+    }
   },
 
   guessScrollPane() {
@@ -948,6 +960,16 @@ Page({
     this.setData({ recipientEditing: false })
   },
 
+  onReceiverPhoneInput(e) {
+    this.setData({ receiverPhone: String((e.detail && e.detail.value) || '').replace(/\D/g, '').slice(0, 11), receiverPhoneError: '' })
+  },
+
+  flagReceiverPhone(msg) {
+    this.setData({ receiverPhoneError: msg, phoneScrollId: '', receiverPhoneFocus: false }, () => {
+      this.setData({ phoneScrollId: 'receiverPhoneField', receiverPhoneFocus: true })
+    })
+  },
+
   onRecipientInput(e) {
     this.setData({
       recipientName: String((e.detail && e.detail.value) || '').slice(0, 20)
@@ -1243,6 +1265,14 @@ Page({
       wx.showToast({ title: '请先选定自提门店', icon: 'none' })
       return
     }
+
+    const receiverPhone = String(this.data.receiverPhone || '')
+    if (!/^1\d{10}$/.test(receiverPhone)) {
+      this.flagReceiverPhone(receiverPhone ? '受礼人手机号需为 11 位' : '请填写受礼人手机号')
+      return
+    }
+    // 确认页随下单交 makeOrder 存哈希；送礼成功页兜底补存
+    getApp().globalData.giftReceiverPhone = { phone: receiverPhone, productId: p._id, at: Date.now() }
 
     const sku = this.data.selectedSku
     const count = this.data.count || 1

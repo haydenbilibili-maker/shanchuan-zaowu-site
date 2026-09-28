@@ -77,7 +77,11 @@ export function collectRefs(rel, src) {
     }
   } else if (rel.endsWith('.json')) {
     try {
-      for (const [name, v] of Object.entries(JSON.parse(text).usingComponents || {})) {
+      const j = JSON.parse(text)
+      // 分包异步化：同名登记了 componentPlaceholder 的组件允许跨包（微信官方唯一的跨包组件通道）
+      const placeholder = j.componentPlaceholder || {}
+      for (const [name, v] of Object.entries(j.usingComponents || {})) {
+        if (typeof placeholder[name] === 'string' && placeholder[name]) continue
         if (typeof v === 'string' && (v.startsWith('.') || v.startsWith('/'))) out.push({ kind: `usingComponents:${name}`, spec: v })
       }
     } catch { /* 带注释的 json 跳过 */ }
@@ -169,6 +173,10 @@ function selftest() {
   t('收集 wxml import', collectRefs('a/x.wxml', '<import src="../t.wxml"/>').length === 1)
   t('收集 usingComponents', collectRefs('a/x.json', '{"usingComponents":{"c":"/subpackages/feature/c/index"}}').length === 1)
   t('不使用 usingComponents 的 json 不误报', collectRefs('a/x.json', '{"navigationBarTitleText":"x"}').length === 0)
+  t('分包异步化：登记了 componentPlaceholder 的跨包组件不收集',
+    collectRefs('a/x.json', '{"usingComponents":{"c":"/subpackages/plays/c/index"},"componentPlaceholder":{"c":"view"}}').length === 0)
+  t('★ 占位登记在别的名字上 → 仍收集（不能靠任意一条 placeholder 放行全部）',
+    collectRefs('a/x.json', '{"usingComponents":{"c":"/subpackages/plays/c/index"},"componentPlaceholder":{"d":"view"}}').length === 1)
 
   // resolveRef：真实文件
   const probe = 'subpackages/extra/artisan/index.js'

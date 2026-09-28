@@ -1,0 +1,110 @@
+<view class="page">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">BUYER CART</text>
+    <text class="boot-cn">确认采购单</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header compact">
+      <view class="brand-group">
+        <text class="en">BUYER CART</text>
+        <text class="cn">确认采购单</text>
+      </view>
+      <view class="header-row">
+        <text class="greeting">核对明细与收货信息</text>
+        <view class="preview-chip" wx:if="{{isPreview}}"><text>预览</text></view>
+      </view>
+    </view>
+
+    <view class="banner {{bannerKind}}" wx:if="{{banner}}">
+      <text>{{banner}}</text>
+    </view>
+
+    <view class="empty-panel" wx:if="{{!items.length}}">
+      <text class="empty-panel-title">采购车为空</text>
+      <text class="empty-panel-body">请先在「供货价目选购」中加入商品。</text>
+      <view class="retry-btn" bindtap="goCatalog">去选品</view>
+    </view>
+
+    <block wx:else>
+      <view class="sec">
+        <view class="sec-head">
+          <text class="sec-en">ITEMS</text>
+          <text class="sec-cn">商品明细 · {{itemCount}} 件</text>
+        </view>
+        <view class="cart-list">
+          <view class="cart-row" wx:for="{{items}}" wx:key="skuId">
+            <view class="cart-thumb" wx:if="{{item.thumbUrl}}">
+              <image src="{{item.thumbUrl}}" mode="aspectFill" />
+            </view>
+            <view class="cart-thumb ph" wx:else>
+              <text>无图</text>
+            </view>
+            <view class="cart-main">
+              <text class="cart-name">{{item.name}}</text>
+              <text class="cart-pack" wx:if="{{item.packText}}">{{item.packText}}</text>
+              <text class="cart-unit">{{item.unitText}}</text>
+              <view class="cart-row-ops">
+                <view class="qty-stepper sm">
+                  <view class="qty-btn" data-sku="{{item.skuId}}" bindtap="onQtyMinus" hover-class="qty-press">−</view>
+                  <text class="qty-num">{{item.quantity}}</text>
+                  <view class="qty-btn" data-sku="{{item.skuId}}" bindtap="onQtyPlus" hover-class="qty-press">+</view>
+                </view>
+                <text class="cart-line-total">{{item.lineTotalText}}</text>
+              </view>
+            </view>
+            <text class="cart-remove" data-sku="{{item.skuId}}" bindtap="onRemove">移除</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="sec">
+        <view class="sec-head">
+          <text class="sec-en">SHIP TO</text>
+          <text class="sec-cn">收货与联系</text>
+        </view>
+        <view class="form-card">
+          <view class="form-row">
+            <text class="form-label">联系人（必填）</text>
+            <input class="form-input" value="{{contactName}}" data-key="contactName" bindinput="onField" placeholder="姓名" />
+          </view>
+          <view class="form-row">
+            <text class="form-label">手机（建议填写）</text>
+            <input class="form-input" type="number" value="{{contactPhone}}" data-key="contactPhone" bindinput="onField" placeholder="便于总部联系" />
+          </view>
+          <view class="form-row">
+            <text class="form-label">公司 / 门店</text>
+            <input class="form-input" value="{{company}}" data-key="company" bindinput="onField" placeholder="可选" />
+          </view>
+          <view class="form-row">
+            <text class="form-label">收货地址</text>
+            <input class="form-input" value="{{shipToAddress}}" data-key="shipToAddress" bindinput="onField" placeholder="可选" />
+          </view>
+          <view class="form-row last">
+            <text class="form-label">备注</text>
+            <input class="form-input" value="{{note}}" data-key="note" bindinput="onField" placeholder="交期 / 包装要求等" />
+          </view>
+        </view>
+      </view>
+
+      <view class="checkout-spacer"></view>
+
+      <view class="checkout-bar">
+        <view class="checkout-total-row">
+          <view class="checkout-total">
+            <text class="checkout-total-label">合计</text>
+            <text class="checkout-total-val">{{totalText}}</text>
+          </view>
+          <text class="checkout-hint">{{submitting ? '提交中…' : '可先下单后支付'}}</text>
+        </view>
+        <view class="checkout-actions">
+          <view class="btn-ghost {{submitting ? 'disabled' : ''}}" bindtap="onSubmitOnly" hover-class="btn-press">仅下单</view>
+          <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="onSubmit" hover-class="btn-press">下单并支付</view>
+        </view>
+      </view>
+    </block>
+  </block>
+
+</view>

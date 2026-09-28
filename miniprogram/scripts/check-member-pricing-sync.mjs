@@ -5,7 +5,7 @@
  * 背景（真事故形态，不是假想）：
  *   礼赠编排页底部「备妥应付」此前直接渲染 `displayPrice`（**原价**），
  *   会员看到的价格与结算页不一致。修法只能是「同一个等级、同一个费率、同一种乘法」，
- *   而微信分包硬约束决定了主包件 `utils/memberPayable.js` 只能是
+ *   而微信分包硬约束决定了主包件 `subpackages/feature/utils/memberPayable.js` 只能是
  *   `subpackages/business/utils/memberPricing.js` 三个纯函数的**副本**
  *   （分包之间不能互 require；主包不能引分包）。
  *
@@ -14,7 +14,7 @@
  *
  * 断言（任一条不成立即失败）：
  *   ① 副本同源：`resolveFromLadder` / `normalizeDiscountRate` / `levelRate`
- *      在 `utils/memberPayable.js` 与 `subpackages/business/utils/memberPricing.js`
+ *      在 `subpackages/feature/utils/memberPayable.js` 与 `subpackages/business/utils/memberPricing.js`
  *      里**逐字一致**（副本可以存在，但不许各自演化）。
  *   ② 引用合法：编排页只引主包件，绝不出现 `memberPricing`（跨包会整包起不来）。
  *   ③ 界面真展示会员价：底栏「备妥应付」渲染的是 `payablePrice`，
@@ -45,7 +45,7 @@ const MP_DEFAULT = join(HERE, '..')
 
 /** 相对 miniprogram/ 的落点（自检时整体搬到临时根，绝不改共享工作区的真文件） */
 const REL = {
-  helper: 'utils/memberPayable.js',
+  helper: 'subpackages/feature/utils/memberPayable.js',
   pricing: 'subpackages/business/utils/memberPricing.js',
   orderPricing: 'subpackages/business/utils/orderPricing.js',
   compose: 'subpackages/feature/gift/compose/index.js',
@@ -126,7 +126,7 @@ function check(mp) {
 
   // ② 引用合法 + 真引了主包件
   if (!/require\((['"])[^'"]*utils\/memberPayable\1\)/.test(texts.compose)) {
-    problems.push(`${REL.compose} 没有 require 主包件 utils/memberPayable`)
+    problems.push(`${REL.compose} 没有 require feature 分包件 utils/memberPayable`)
   }
   if (/require\((['"])[^'"]*memberPricing\1\)/.test(texts.compose)) {
     problems.push(`${REL.compose} require 了 memberPricing —— 分包之间不能互 require，会让整包起不来`)
@@ -321,7 +321,7 @@ function selftest() {
       {
         name: '编排页改回引分包件 memberPricing（跨包引用）',
         file: REL.compose,
-        mutate: (s) => s.replace("require('../../../../utils/memberPayable')", "require('../../utils/memberPricing')"),
+        mutate: (s) => s.replace("require('../../utils/memberPayable')", "require('../../utils/memberPricing')"),
         expect: /memberPricing/
       },
       {

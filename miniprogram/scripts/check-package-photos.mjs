@@ -377,7 +377,9 @@ function assertCustomerCanSeePhotos() {
     scrollStyle: '',
     entered: true,
     loadError: false,
-    digestView: null
+    digestView: null,
+    digestPayloadMissing: false,
+    actionPadStyle: ''
   })
   const renderWith = renderWxml(wxml, detailData(withPhotos))
   const renderWithout = renderWxml(wxml, detailData(withoutPhotos))

@@ -10,6 +10,15 @@
       <text class="header-note">时段 / 日上限 / 闭店日 · 与预约可用性同源 · 仅超管</text>
     </view>
 
+    <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+    <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+
+    <view class="empty-tip is-error" wx:if="{{loadError && !loading}}">
+      <text class="empty-title">规则未能取回</text>
+      <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryRules">重试</view>
+    </view>
+
     <view class="store-tabs">
       <view
         class="store-tab {{storeId === item.storeId ? 'on' : ''}}"

@@ -83,7 +83,10 @@ Page({
       },
       note: ''
     },
-    loadError: ''
+    loadError: '',
+    tipTone: 'info',
+    tipText: '',
+    refreshPending: false
   },
 
   async onLoad() {
@@ -93,7 +96,12 @@ Page({
       !!(role.isSuperAdmin || role.superAdmin) ||
       (role.permissions || []).indexOf('manageGift') !== -1
     if (!canManage) {
-      wx.showToast({ title: '暂无礼赠管理权限', icon: 'none' })
+      this.setData({
+        ready: true,
+        tipTone: 'warn',
+        tipText: '暂无礼赠管理权限',
+        loadError: '暂无礼赠管理权限'
+      })
       setTimeout(() => {
         wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) })
       }, 1200)
@@ -203,16 +211,15 @@ Page({
   onRefreshTap() {
     if (this.data.loading) return
     if (this.data.dirty) {
-      wx.showModal({
-        title: '有未保存更改',
-        content: '刷新将丢弃当前修改，是否继续？',
-        confirmText: '刷新',
-        cancelText: '留下',
-        success: (res) => {
-          if (res.confirm) this.loadHub({ force: true })
-        }
-      })
-      return
+      if (!this.data.refreshPending) {
+        this.setData({
+          refreshPending: true,
+          tipTone: 'warn',
+          tipText: '有未保存更改：再点一次「刷新」将丢弃修改'
+        })
+        return
+      }
+      this.setData({ refreshPending: false, tipText: '' })
     }
     this.loadHub({ force: true })
   },
@@ -259,21 +266,21 @@ Page({
   goContentFlags() {
     wx.navigateTo({
       url: '/subpackages/manager/manager/workspace/index?tab=16&title=' + encodeURIComponent('内容开关'),
-      fail: () => wx.showToast({ title: '请从超管工作台打开内容开关', icon: 'none' })
+      fail: () => this.setData({ tipTone: 'warn', tipText: '请从超管工作台打开内容开关' })
     })
   },
 
   async saveSettings() {
     if (!this.data.canEdit) {
-      wx.showToast({ title: '当前账号仅可查看', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '当前账号仅可查看' })
       return
     }
     if (!this.data.dirty) {
-      wx.showToast({ title: '没有需要保存的更改', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: '没有需要保存的更改' })
       return
     }
     if (this.data.saving) return
-    this.setData({ saving: true })
+    this.setData({ saving: true, tipTone: 'info', tipText: '保存中…' })
     try {
       const result = await this.callFn({
         action: 'saveSettings',
@@ -288,12 +295,13 @@ Page({
         nudgeRuleSummary: result.nudgeRuleSummary || this.data.nudgeRuleSummary,
         settings: nextSettings,
         savedSnapshot: this.snapshotSettings(nextSettings),
-        dirty: false
+        dirty: false,
+        tipTone: 'info',
+        tipText: '已保存'
       })
-      wx.showToast({ title: '已保存', icon: 'success' })
       await this.loadHub({ force: true })
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '保存失败') })
     } finally {
       this.setData({ saving: false })
     }

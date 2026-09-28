@@ -28,6 +28,11 @@ Page({
   data: {
     ready: false,
     loading: false,
+    loadError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    reconcilePending: false,
     saving: false,
     enabled: false,
     fromDefault: true,
@@ -63,7 +68,7 @@ Page({
 
   async loadConfig() {
     if (this.data.loading) return
-    this.setData({ loading: true })
+    this.setData({ loading: true, loadError: false })
     try {
       const result = await this.callFn({ action: 'getConfig' })
       const cfg = result.config || {}
@@ -79,6 +84,7 @@ Page({
       const desc = (cfg.benefit && cfg.benefit.description) || result.benefitText || ''
       this.setData({
         loading: false,
+        loadError: false,
         enabled: result.enabled === true,
         fromDefault: !!result.fromDefault,
         description: desc && !/选用钱包支付时可享|更优一档/.test(desc) ? desc : DEFAULT_DESCRIPTION,
@@ -91,13 +97,18 @@ Page({
         }))
       })
     } catch (e) {
+      // 失败保留已展示档位，勿用默认档伪装「已加载」
       this.setData({
         loading: false,
-        packages: DEFAULT_PACKAGES.map((p) => ({ ...p })),
-        description: DEFAULT_DESCRIPTION
+        loadError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '加载失败')
       })
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
     }
+  },
+
+  onRetryConfig() {
+    this.loadConfig()
   },
 
   onDescInput(e) {
@@ -129,25 +140,23 @@ Page({
     const orderId = String(form.orderId || '').trim()
     const outTradeNo = String(form.outTradeNo || '').trim()
     if (!orderId && !outTradeNo) {
-      wx.showToast({ title: '请填写充值单 ID 或商户单号', icon: 'none' })
+      this.setData({ formTip: '请填写充值单 ID 或商户单号' })
       return
     }
-    wx.showModal({
-      title: '补单入账',
-      content: `仅在微信商户平台确认${outTradeNo ? `「${outTradeNo}」` : '该充值单'}已收款后使用。入账幂等，重复执行不会重复加钱。`,
-      confirmText: '确认入账',
-      confirmColor: '#C4A76C',
-      success: (res) => {
-        if (!res.confirm) return
-        this.submitReconcile()
-      }
-    })
+    if (!this.data.reconcilePending) {
+      this.setData({
+        reconcilePending: true,
+        formTip: `再点一次确认补单：仅在微信商户平台确认${outTradeNo ? `「${outTradeNo}」` : '该充值单'}已收款后使用（幂等）`
+      })
+      return
+    }
+    this.setData({ reconcilePending: false })
+    this.submitReconcile()
   },
 
   async submitReconcile() {
     if (this.data.reconciling) return
-    this.setData({ reconciling: true })
-    wx.showLoading({ title: '补单入账中…', mask: true })
+    this.setData({ reconciling: true, formTip: '补单入账中…' })
     try {
       const form = this.data.reconcileForm || {}
       const result = await this.callFn({
@@ -157,19 +166,18 @@ Page({
         transactionId: String(form.transactionId || '').trim(),
         note: String(form.note || '').trim()
       })
-      wx.hideLoading()
       this.setData({
         reconciling: false,
-        reconcileForm: { orderId: '', outTradeNo: '', transactionId: '', note: '' }
-      })
-      wx.showToast({
-        title: result.alreadyCredited ? '该充值单此前已入账' : '补单入账完成',
-        icon: result.alreadyCredited ? 'none' : 'success'
+        reconcileForm: { orderId: '', outTradeNo: '', transactionId: '', note: '' },
+        formTip: '',
+        tipTone: 'info',
+        tipText: result.alreadyCredited ? '该充值单此前已入账' : '补单入账完成'
       })
     } catch (err) {
-      wx.hideLoading()
-      this.setData({ reconciling: false })
-      wx.showToast({ title: formatCloudFnError(err, '补单失败'), icon: 'none' })
+      this.setData({
+        reconciling: false,
+        formTip: formatCloudFnError(err, '补单失败')
+      })
     }
   },
 
@@ -195,7 +203,7 @@ Page({
   removePackage(e) {
     const index = Number(e.currentTarget.dataset.index)
     if (this.data.packages.length <= 1) {
-      wx.showToast({ title: '至少保留一个档位', icon: 'none' })
+      this.setData({ formTip: '至少保留一个档位' })
       return
     }
     const packages = this.data.packages.slice()
@@ -209,7 +217,7 @@ Page({
       packages: DEFAULT_PACKAGES.map((p) => ({ ...p })),
       description: DEFAULT_DESCRIPTION
     })
-    wx.showToast({ title: '已恢复默认，请保存', icon: 'none' })
+    this.setData({ tipTone: 'info', tipText: '已恢复默认，请保存', formTip: '' })
   },
 
   async saveConfig() {
@@ -224,10 +232,10 @@ Page({
       enabled: p.enabled !== false
     }))
     if (!packages.some((p) => p.enabled && p.payFen > 0)) {
-      wx.showToast({ title: '请至少启用一个有效档位', icon: 'none' })
+      this.setData({ formTip: '请至少启用一个有效档位' })
       return
     }
-    this.setData({ saving: true })
+    this.setData({ saving: true, formTip: '保存中…' })
     try {
       await this.callFn({
         action: 'saveConfig',
@@ -241,10 +249,10 @@ Page({
           }
         }
       })
-      wx.showToast({ title: '已保存', icon: 'success' })
+      this.setData({ formTip: '', tipTone: 'info', tipText: '已保存' })
       await this.loadConfig()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
+      this.setData({ formTip: formatCloudFnError(e, '保存失败') })
     } finally {
       this.setData({ saving: false })
     }

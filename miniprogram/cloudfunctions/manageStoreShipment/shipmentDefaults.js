@@ -234,15 +234,28 @@ function genShipmentNo(dateStr) {
 }
 
 /**
- * 解析日期行：2026，9.14出货 / 2026,9.14出货 / 2026-09-14出货 / 2026.9.14 出货
+ * 解析日期行：
+ *   2026，9.14出货 / 2026.9.14出货 / 2026-09-14出货
+ *   2026年9月22日出货（中文年月日）
  * @returns {string|null} YYYY-MM-DD
  */
 function parseShipmentDateLine(line) {
   const s = String(line || '').trim()
   if (!s || !/出货/.test(s)) return null
 
+  // YYYY年M月D日
+  let m = s.match(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/)
+  if (m) {
+    const y = Number(m[1])
+    const mo = Number(m[2])
+    const d = Number(m[3])
+    if (y >= 2000 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+      return `${y}-${pad2(mo)}-${pad2(d)}`
+    }
+  }
+
   // YYYY ，/ , / - / .  M . D
-  let m = s.match(
+  m = s.match(
     /(\d{4})\s*[，,.\-\/]\s*(\d{1,2})\s*[.．\-／\/]\s*(\d{1,2})/
   )
   if (m) {
@@ -280,17 +293,36 @@ function parseShipmentDateLine(line) {
 }
 
 /**
- * 明细行：品名-数量（最后一个 -数字 为数量）
+ * 明细行：品名 + 数量
+ *
+ * 兼容真实粘贴：
+ *   杂蝶冰箱贴-20 / 杂蝶冰箱贴-20个 / 杂蝶冰箱贴-20 个 / 雅灰蝶冰箱贴-4只
+ *   杂蝶冰箱贴20个 / 雅灰蝶冰箱贴4 个（无横杠，数量紧贴品名，须带量词）
+ * 数量后可选量词（个/只/件/盒/套/箱）；带 `-` 时品名内可含 `-`（取最后一段数字）。
  */
 function parseItemLine(line) {
   const s = String(line || '').trim()
   if (!s) return null
-  const m = s.match(/^(.+)-(\d+)\s*$/)
-  if (!m) return null
-  const itemName = String(m[1] || '').trim()
-  const qty = Number(m[2])
-  if (!itemName || !Number.isFinite(qty) || qty <= 0) return null
-  return { itemName, qty }
+
+  // 1) 品名-数量[量词]（旧格式，优先）
+  let m = s.match(/^(.+)-(\d+)\s*(?:个|只|件|盒|套|箱)?\s*$/u)
+  if (m) {
+    const itemName = String(m[1] || '').trim()
+    const qty = Number(m[2])
+    if (itemName && Number.isFinite(qty) && qty > 0) return { itemName, qty }
+  }
+
+  // 2) 品名+数量+量词（无横杠；仅当行内没有「-数字」，避免与旧格式互相抢匹配）
+  if (!/-(\d+)/.test(s)) {
+    m = s.match(/^(.+?)(\d+)\s*(?:个|只|件|盒|套|箱)\s*$/u)
+    if (m) {
+      const itemName = String(m[1] || '').trim()
+      const qty = Number(m[2])
+      if (itemName && Number.isFinite(qty) && qty > 0) return { itemName, qty }
+    }
+  }
+
+  return null
 }
 
 /**
@@ -325,7 +357,7 @@ function parseShipmentText(rawText) {
   }
 
   if (!shipmentDate) {
-    const msg = '未识别出货日期行（需含「出货」，如 2026，9.14出货）'
+    const msg = '未识别出货日期行（需含「出货」，如 2026.9.22出货 / 2026，9.14出货）'
     errors.push({ line: 1, msg })
     pushIssue(failedLines, 1, lines[0] || '', msg, 'error')
   }
@@ -380,7 +412,7 @@ function parseShipmentText(rawText) {
       errors.push({ line: i + 1, msg })
       pushIssue(failedLines, i + 1, line, msg, 'error')
     } else {
-      const msg = `未识别为门店或「品名-数量」：${line}`
+      const msg = `未识别为门店或「品名-数量 / 品名-数量个」：${line}`
       warnings.push({ line: i + 1, msg })
       pushIssue(failedLines, i + 1, line, msg, 'warn')
     }

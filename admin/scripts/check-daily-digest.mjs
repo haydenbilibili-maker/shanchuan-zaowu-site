@@ -74,7 +74,7 @@ const F = {
   config: join(CF, 'config.json'),
   getMessages: join(ROOT, 'miniprogram/cloudfunctions/getUserMessages/index.js'),
   helper: join(ROOT, 'miniprogram/utils/messageHelper.js'),
-  digestView: join(ROOT, 'miniprogram/utils/digestView.js'),
+  digestView: join(ROOT, 'miniprogram/subpackages/extra/utils/digestView.js'),
   msgIndex: join(ROOT, 'miniprogram/subpackages/extra/user/messages/index.js'),
   userPage: join(ROOT, 'miniprogram/pages/user/index.js'),
   userWxml: join(ROOT, 'miniprogram/pages/user/index.wxml'),

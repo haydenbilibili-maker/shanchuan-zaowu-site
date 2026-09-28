@@ -92,7 +92,7 @@ check('★ 关系角色已拓展到 ≥20 个（不许回退）', LIST.length >=
  * 155 字 ✓ / 158 字 ✗（0 行 = 整段消失），而**改动前 UI 上限是 200 字** ⇒ 写满的顾客贴纸上没有正文。
  * 判据三件：① 常量存在且 ≤ 实测断点（留余量）；② UI 不许再写死 200；③ 提示要说清原因。 */
 {
-  const cardMod = loadCjs('miniprogram/utils/giftShareCard.js')
+  const cardMod = loadCjs('miniprogram/subpackages/feature/gift/giftShareCard.js')
   const LIMIT = cardMod && cardMod.GIFT_NOTE_MAX_CHARS
   check('★ 打印模块导出正文字数上限 GIFT_NOTE_MAX_CHARS', typeof LIMIT === 'number' && LIMIT > 0, String(LIMIT))
   check('★ 上限 ≤ 实测断点 155（贴纸 158 字就整段不画）', LIMIT <= 155, `实际 ${LIMIT}`)
@@ -167,8 +167,8 @@ const flat = LIST.flatMap((p) => (p.bodies || []).map((b) => String(b)))
 check('候选总句数 ≥ 关系数×3', flat.length >= LIST.length * 3, `${flat.length} 句`)
 // ⚠️ 2026-09-21：这条原来查的是"≤200（textarea 旧上限）" —— 比**打印上限**还宽。
 //    预设句是官方文案，必须**印得出来**，所以改查 GIFT_NOTE_MAX_CHARS。
-check(`★ 每句都在打印上限内（≤${loadCjs('miniprogram/utils/giftShareCard.js').GIFT_NOTE_MAX_CHARS} 字）`,
-  flat.every((b) => b.length <= loadCjs('miniprogram/utils/giftShareCard.js').GIFT_NOTE_MAX_CHARS),
+check(`★ 每句都在打印上限内（≤${loadCjs('miniprogram/subpackages/feature/gift/giftShareCard.js').GIFT_NOTE_MAX_CHARS} 字）`,
+  flat.every((b) => b.length <= loadCjs('miniprogram/subpackages/feature/gift/giftShareCard.js').GIFT_NOTE_MAX_CHARS),
   `最长 ${Math.max(...flat.map((b) => b.length))} 字`)
 check('★ 每句都不再过短（≥40 字，回应「文案较短」）', flat.every((b) => b.length >= 40),
   `最短 ${Math.min(...flat.map((b) => b.length))} 字`)
@@ -232,7 +232,7 @@ check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
 
 /* ── 印刷版礼笺卡（A6@300dpi，礼赠履约导出用；2026-09-17）─────────────────── */
 {
-  const card = readFileSync(resolve(ROOT, 'miniprogram/utils/giftShareCard.js'), 'utf8')
+  const card = readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/gift/giftShareCard.js'), 'utf8')
   check('★ 印刷版渲染器存在且导出', /function paintGiftPrintCard\(/.test(card) && /renderGiftPrintImage,/.test(card))
   check('★ 规格为 **A6** 竖版 @300dpi（1240 × 1748 = 105 × 148 mm）',
     /const PRINT_W = 1240/.test(card) && /const PRINT_H = 1748/.test(card))
@@ -314,7 +314,7 @@ check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
   const OPS_JS = 'miniprogram/subpackages/manager/gift-ops/index.js'
   const OPS_WXML = 'miniprogram/subpackages/manager/gift-ops/index.wxml'
   const opsJs = stripComments(readFileSync(resolve(ROOT, OPS_JS), 'utf8'))
-  const card = readFileSync(resolve(ROOT, 'miniprogram/utils/giftShareCard.js'), 'utf8')  // 本块也用到（块级作用域）
+  const card = readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/gift/giftShareCard.js'), 'utf8')  // 本块也用到（块级作用域）
   const opsWxml = readFileSync(resolve(ROOT, OPS_WXML), 'utf8')
   check('★ 履约页有「导出礼笺图」入口', /导出礼笺图/.test(opsWxml) && /onExportGiftCard/.test(opsWxml))
   check('★ 用共享印刷渲染器（不另造画布逻辑）', /renderGiftPrintImage\('#giftPrintCanvas', this, \{/.test(opsJs))
@@ -351,7 +351,7 @@ check('★ 手写体令牌是**系统字体栈**（无 webfont、零体积）',
     printOnly.length > 0 && !/#B23A2E/.test(printOnly) && !/fillText\('山'/.test(printOnly),
     '印章已按定稿移除；若加回需同步这条断言并说明原因')
   check('★ 引主包实现（分包之间不得互相 require）',
-    opsJs.indexOf("require('../../../utils/giftShareCard')") !== -1 && opsJs.indexOf("require('../../feature/") === -1,
+    opsJs.indexOf("require('../utils/giftShareCard')") !== -1 && opsJs.indexOf("require('../../feature/") === -1,
     '跨分包 require 微信会拦')
   check('★ 离屏画布挂在页面上（canvas 2d 取 node 要求已渲染）', /id="giftPrintCanvas"/.test(opsWxml))
   check('★ 礼笺正文/署名取自 getBoardDetail', /action: 'getBoardDetail'/.test(opsJs) && /d\.cardBody/.test(opsJs))
@@ -474,7 +474,7 @@ function selftest() {
     },
     {
       name: '正文字数上限被放宽到 200（贴纸会整段不画）',
-      file: 'miniprogram/utils/giftShareCard.js',
+      file: 'miniprogram/subpackages/feature/gift/giftShareCard.js',
       from: 'const GIFT_NOTE_MAX_CHARS = 140',
       to: 'const GIFT_NOTE_MAX_CHARS = 200'
     },
@@ -510,7 +510,7 @@ function selftest() {
     },
     {
       name: '印刷卡丢掉题记带（印出来少主题名）',
-      file: 'miniprogram/utils/giftShareCard.js',
+      file: 'miniprogram/subpackages/feature/gift/giftShareCard.js',
       from: "  const themeName = String(o.themeName || '').trim()",
       to: "  const themeName = ''"
     },

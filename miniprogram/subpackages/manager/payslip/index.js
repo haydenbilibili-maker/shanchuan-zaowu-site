@@ -101,6 +101,9 @@ Page({
     detail: null,
     showDetail: false,
     loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
     salesShare: emptySalesShare(),
     showSalesShare: false
   },
@@ -122,7 +125,12 @@ Page({
       }
     } catch (e) {
       console.warn('payslip onLoad', e)
-      wx.showToast({ title: '工资条加载失败', icon: 'none' })
+      this.setData({
+        ready: true,
+        tipTone: 'warn',
+        tipText: '工资条加载失败',
+        listError: true
+      })
     }
   },
 
@@ -133,7 +141,7 @@ Page({
   },
 
   async loadList() {
-    this.setData({ loading: true })
+    this.setData({ loading: true, listError: false })
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageStaffWorkspace',
@@ -142,12 +150,21 @@ Page({
       const result = (res && res.result) || {}
       this.setData({
         loading: false,
+        listError: false,
         list: result.list || []
       })
     } catch (e) {
-      this.setData({ loading: false, list: [] })
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
+      this.setData({
+        loading: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '加载失败')
+      })
     }
+  },
+
+  onRetryList() {
+    this.loadList()
   },
 
   async loadSalesShare() {
@@ -210,13 +227,13 @@ Page({
       wx.hideLoading()
       const result = (res && res.result) || {}
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '无法查看'), icon: 'none' })
+        this.setData({ tipTone: 'warn', tipText: formatCloudFnError(result, result.msg || '无法查看') })
         return
       }
       this.setData({ showDetail: true, detail: enrichDetail(result.detail) })
     }).catch((err) => {
       wx.hideLoading()
-      wx.showToast({ title: formatCloudFnError(err, '无法查看'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '无法查看') })
     })
   },
 

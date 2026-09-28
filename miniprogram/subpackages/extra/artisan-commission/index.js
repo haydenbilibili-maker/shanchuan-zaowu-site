@@ -63,6 +63,16 @@ Page({
   data: {
     ready: false,
     loading: false,
+    listError: false,
+    ledgerError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    savePending: false,
+    togglePendingId: '',
+    archivePendingId: '',
+    resetPending: false,
+    disableSwitchPending: false,
     saving: false,
     tab: 'rule',
     matchPriorityNote: '藏品级 > 类目/工艺/标本师级 > 默认规则',
@@ -238,11 +248,12 @@ Page({
 
   async loadRules() {
     if (this.data.loading) return
-    this.setData({ loading: true })
+    this.setData({ loading: true, listError: false, tipText: '' })
     try {
       const result = await this.callFn({ action: 'listRules' })
       this.setData({
         loading: false,
+        listError: false,
         rules: this.decorateRules(result.list || []),
         enabledCount: result.enabledCount || 0,
         matchPriorityNote: result.matchPriorityNote || this.data.matchPriorityNote,
@@ -253,9 +264,18 @@ Page({
         }))
       })
     } catch (e) {
-      this.setData({ loading: false })
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
+      // 失败保留上次规则列表
+      this.setData({
+        loading: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '规则列表未能取回')
+      })
     }
+  },
+
+  onRetryRules() {
+    this.loadRules()
   },
 
   async reloadEditingRule() {
@@ -267,7 +287,7 @@ Page({
       })
       this.refreshCategoryHits()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '刷新失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '刷新失败') })
     }
   },
 
@@ -424,16 +444,17 @@ Page({
     const field = e.currentTarget.dataset.field
     const next = !!(e.detail && e.detail.value)
     if (field === 'enabled' && !next && this.data.form.enabled) {
-      wx.showModal({
-        title: '停用本条规则',
-        content: '停用后新订单不再命中本规则，已入账流水不受影响。确定停用？',
-        confirmText: '停用',
-        confirmColor: '#D64045',
-        success: (res) => {
-          if (res.confirm) this.setData({ 'form.enabled': false })
-          else this.setData({ 'form.enabled': true })
-        }
-      })
+      if (!this.data.disableSwitchPending) {
+        this.setData({
+          disableSwitchPending: true,
+          tipTone: 'warn',
+          tipText: '再关一次确认停用：新订单不再命中本规则，已入账流水不受影响'
+        })
+        // 恢复开关视觉（微信 switch 已切到关）
+        this.setData({ 'form.enabled': true })
+        return
+      }
+      this.setData({ disableSwitchPending: false, 'form.enabled': false, tipText: '' })
       return
     }
     if (field === 'isDefault') {
@@ -513,11 +534,11 @@ Page({
       const list = this.markProductHits(result.list || [])
       this.setData({ productHits: list, productSearching: false })
       if (!list.length) {
-        wx.showToast({ title: '未找到藏品', icon: 'none' })
+        this.setData({ tipTone: 'warn', tipText: '未找到藏品' })
       }
     } catch (e) {
       this.setData({ productSearching: false })
-      wx.showToast({ title: formatCloudFnError(e, '搜索失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(e, '搜索失败') })
     }
   },
 
@@ -528,7 +549,7 @@ Page({
     if (!id) return
     const ids = (this.data.form.productIds || []).slice()
     if (ids.indexOf(id) !== -1) {
-      wx.showToast({ title: '已添加', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: '已添加' })
       return
     }
     ids.push(id)
@@ -572,7 +593,7 @@ Page({
     if (!id) return
     const ids = (this.data.form.categoryIds || []).slice()
     if (ids.indexOf(id) !== -1) {
-      wx.showToast({ title: '已添加', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: '已添加' })
       return
     }
     ids.push(id)
@@ -685,45 +706,46 @@ Page({
     const prodCount = (this.data.form.productIds || []).length
     const artCount = (this.data.form.artisanIds || []).length
     if (!craftCount && !catCount && !prodCount && !artCount) {
-      wx.showToast({ title: '请至少选择工艺、类目、藏品或标本师', icon: 'none' })
+      this.setData({ formTip: '请至少选择工艺、类目、藏品或标本师' })
       return
     }
     if (!String(this.data.form.name || '').trim()) {
-      wx.showToast({ title: '请填写规则名称', icon: 'none' })
+      this.setData({ formTip: '请填写规则名称' })
       return
     }
     const enabled = !!this.data.form.enabled
     const rate = this.clampRate(this.data.form.ratePercent)
-    const doSave = async () => {
-      this.setData({ saving: true, 'form.ratePercent': rate })
-      try {
-        const result = await this.callFn({
-          action: 'saveRule',
-          docId: this.data.editDocId,
-          config: this.buildConfigPayload()
-        })
-        this.applyForm(result.config, {
-          saving: false,
-          editDocId: result.docId || this.data.editDocId,
-          editing: false
-        })
-        wx.showToast({ title: result.msg || '规则已保存', icon: 'success' })
-        await this.loadRules()
-      } catch (e) {
-        this.setData({ saving: false })
-        wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' })
-      }
+    if (!this.data.savePending) {
+      this.setData({
+        savePending: true,
+        formTip: '',
+        tipTone: 'warn',
+        tipText: enabled
+          ? `再点一次保存：将按 ${rate}% 保存本条规则`
+          : `再点一次保存：规则将保存为停用（${rate}%）`
+      })
+      return
     }
-    wx.showModal({
-      title: this.data.editDocId ? '保存规则' : '新建规则',
-      content: enabled
-        ? `将按 ${rate}% 保存本条规则。确认？`
-        : `规则将保存为停用（${rate}%）。确认？`,
-      confirmText: '保存',
-      success: (res) => {
-        if (res.confirm) doSave()
-      }
-    })
+    this.setData({ savePending: false, tipText: '' })
+    this.setData({ saving: true, 'form.ratePercent': rate, formTip: '保存中…' })
+    try {
+      const result = await this.callFn({
+        action: 'saveRule',
+        docId: this.data.editDocId,
+        config: this.buildConfigPayload()
+      })
+      this.applyForm(result.config, {
+        saving: false,
+        editDocId: result.docId || this.data.editDocId,
+        editing: false,
+        formTip: '',
+        tipTone: 'info',
+        tipText: result.msg || '规则已保存'
+      })
+      await this.loadRules()
+    } catch (e) {
+      this.setData({ saving: false, formTip: formatCloudFnError(e, '保存失败') })
+    }
   },
 
   async toggleRuleFromList(e) {
@@ -731,28 +753,24 @@ Page({
     const enabled = String(e.currentTarget.dataset.enabled) === 'true'
     if (!id) return
     const next = !enabled
-    const run = async () => {
-      try {
-        await this.callFn({ action: 'toggleRule', docId: id, enabled: next })
-        wx.showToast({ title: next ? '已启用' : '已停用', icon: 'success' })
-        await this.loadRules()
-      } catch (err) {
-        wx.showToast({ title: formatCloudFnError(err, '操作失败'), icon: 'none' })
-      }
-    }
     if (!next) {
-      wx.showModal({
-        title: '停用规则',
-        content: '停用后新订单不再命中本规则。确定？',
-        confirmText: '停用',
-        confirmColor: '#D64045',
-        success: (res) => {
-          if (res.confirm) run()
-        }
-      })
-      return
+      if (this.data.togglePendingId !== id) {
+        this.setData({
+          togglePendingId: id,
+          tipTone: 'warn',
+          tipText: '再点一次停用：新订单不再命中本规则'
+        })
+        return
+      }
+      this.setData({ togglePendingId: '' })
     }
-    run()
+    try {
+      await this.callFn({ action: 'toggleRule', docId: id, enabled: next })
+      this.setData({ tipTone: 'info', tipText: next ? '已启用' : '已停用' })
+      await this.loadRules()
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '操作失败') })
+    }
   },
 
   async archiveRule(e) {
@@ -760,49 +778,46 @@ Page({
     const isDefault = String(e.currentTarget.dataset.default) === 'true'
     if (!id) return
     if (isDefault) {
-      wx.showToast({ title: '默认规则不可删除', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '默认规则不可删除' })
       return
     }
-    wx.showModal({
-      title: '归档规则',
-      content: '归档后不再参与匹配，可视为删除。已入账流水保留。确定归档？',
-      confirmText: '归档',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          await this.callFn({ action: 'deleteRule', docId: id })
-          wx.showToast({ title: '已归档', icon: 'success' })
-          if (this.data.editDocId === id) this.closeEditor()
-          else await this.loadRules()
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '归档失败'), icon: 'none' })
-        }
-      }
-    })
+    if (this.data.archivePendingId !== id) {
+      this.setData({
+        archivePendingId: id,
+        tipTone: 'warn',
+        tipText: '再点一次归档：不再参与匹配；已入账流水保留'
+      })
+      return
+    }
+    this.setData({ archivePendingId: '' })
+    try {
+      await this.callFn({ action: 'deleteRule', docId: id })
+      this.setData({ tipTone: 'info', tipText: '已归档' })
+      if (this.data.editDocId === id) this.closeEditor()
+      else await this.loadRules()
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '归档失败') })
+    }
   },
 
   async resetDefaults() {
     if (this.data.saving) return
-    wx.showModal({
-      title: '恢复默认规则',
-      content: '将默认规则重置为：启用 · 蝶翅画 · 10%。其它自定义规则不受影响。',
-      confirmText: '恢复',
-      confirmColor: '#C4A76C',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          this.setData({ saving: true })
-          await this.callFn({ action: 'resetDefaults' })
-          this.setData({ saving: false, editing: false })
-          await this.loadRules()
-          wx.showToast({ title: '默认已恢复', icon: 'success' })
-        } catch (e) {
-          this.setData({ saving: false })
-          wx.showToast({ title: formatCloudFnError(e, '操作失败'), icon: 'none' })
-        }
-      }
-    })
+    if (!this.data.resetPending) {
+      this.setData({
+        resetPending: true,
+        tipTone: 'warn',
+        tipText: '再点一次恢复默认：启用 · 蝶翅画 · 10%（其它自定义规则不受影响）'
+      })
+      return
+    }
+    this.setData({ resetPending: false, saving: true, tipText: '' })
+    try {
+      await this.callFn({ action: 'resetDefaults' })
+      this.setData({ saving: false, tipTone: 'info', tipText: '默认已恢复' })
+      await this.loadRules()
+    } catch (e) {
+      this.setData({ saving: false, tipTone: 'warn', tipText: formatCloudFnError(e, '操作失败') })
+    }
   },
 
   openArtisanSheet() {
@@ -883,7 +898,7 @@ Page({
 
   async loadLedger() {
     if (this.data.ledgerLoading) return
-    this.setData({ ledgerLoading: true, showArtisanSheet: false })
+    this.setData({ ledgerLoading: true, ledgerError: false, showArtisanSheet: false, tipText: '' })
     try {
       const result = await this.callFn({
         action: 'listLedger',
@@ -896,6 +911,7 @@ Page({
       })
       this.setData({
         ledgerLoading: false,
+        ledgerError: false,
         ledger: result.list || [],
         ledgerSummary: result.summary || {
           netAmount: 0,
@@ -905,8 +921,17 @@ Page({
         }
       })
     } catch (e) {
-      this.setData({ ledgerLoading: false })
-      wx.showToast({ title: formatCloudFnError(e, '账目加载失败'), icon: 'none' })
+      // 失败保留上次账目
+      this.setData({
+        ledgerLoading: false,
+        ledgerError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '账目未能取回')
+      })
     }
+  },
+
+  onRetryLedger() {
+    this.loadLedger()
   }
 })

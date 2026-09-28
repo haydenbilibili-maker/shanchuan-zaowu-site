@@ -9,8 +9,12 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "easter-egg-note": "/components/EasterEggNote/index",
-    "register-auth-dialog": "/components/RegisterAuthDialog/index",
+    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index",
     "app-toast": "/components/AppToast/index",
-    "wall-feed": "/components/WallFeed/index"
+    "wall-feed": "/subpackages/feature/components/WallFeed/index",
+    "play-sheet": "/subpackages/plays/components/PlaySheet/index"
+  },
+  "componentPlaceholder": {
+    "play-sheet": "view"
   }
 }

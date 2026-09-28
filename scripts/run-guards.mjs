@@ -30,9 +30,18 @@
  *   node scripts/run-guards.mjs --only color         # 只跑名字含 color 的（调试用）
  *   node scripts/run-guards.mjs --selftest-runner    # 执行器自检
  *   node scripts/run-guards.mjs --guards <file>      # 用外部清单（JSON 数组，供自检注入）
+ *   node scripts/run-guards.mjs --jobs auto          # 并行跑全套（= npm run check:fast，2026-09-28 开发提速）
+ *   node scripts/run-guards.mjs --quick --domain pay --jobs auto
+ *
+ * `--jobs N|auto`（2026-09-28）：同一份清单、同样逐条独立不短路，只是 N 路并发 + 绕过每条 `npm run`
+ *   的 ~0.15s 启动开销（直接执行 package.json 里该脚本的命令，PATH 前置 node_modules/.bin）+ 按上次耗时
+ *   最长优先排程。`_meta.json` 的 `serialGuards` 里的守卫（起 Chrome / vite / 写固定临时文件）走一条
+ *   **互斥通道**依次执行，彼此不并发。输出按条缓冲、完成一条打印一条，汇总与串行模式同格式。
+ *   不带 `--jobs` 时行为与旧版完全一致（CI 仍用它）。`--selftest` 不支持并行（自检会改源文件再还原）。
  */
-import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { cpus } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -53,6 +62,11 @@ const wantSelftest = argv.includes('--selftest');
 const only = argVal('--only');
 const guardsFile = argVal('--guards');
 const domain = argVal('--domain');
+const jobsArg = argVal('--jobs');
+const jobs = !jobsArg ? 1
+  : jobsArg === 'auto' ? Math.max(2, Math.floor(cpus().length * 0.75))
+  : Math.max(1, parseInt(jobsArg, 10) || 1);
+const TIMINGS_FILE = join(ROOT, 'node_modules', '.cache', 'run-guards-timings.json');
 
 function loadMeta() {
   if (!existsSync(META_FILE)) {
@@ -155,7 +169,7 @@ function buildPlan(guards) {
     }
     if (only && !g.cmd.includes(only)) continue;
     if (!wantSelftest) {
-      plan.push({ label: g.name || g.cmd, cmd: g.cmd, domain: g.domain });
+      plan.push({ label: g.name || g.cmd, cmd: g.cmd, domain: g.domain, name: g.name });
       continue;
     }
     if (!g.name) {
@@ -172,32 +186,142 @@ function buildPlan(guards) {
   return { plan, problems };
 }
 
+function readTimings() {
+  try { return JSON.parse(readFileSync(TIMINGS_FILE, 'utf8')); } catch { return {}; }
+}
+
+/** 记录每条耗时，供 `--jobs` 最长优先排程；写临时文件再 rename，多条流同时写也不会读到半截 JSON */
+function saveTimings(results) {
+  if (guardsFile) return;
+  try {
+    const t = readTimings();
+    for (const r of results) t[r.label] = r.ms;
+    mkdirSync(dirname(TIMINGS_FILE), { recursive: true });
+    const tmp = `${TIMINGS_FILE}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify(t, null, 1));
+    renameSync(tmp, TIMINGS_FILE);
+  } catch { /* 缓存写不进去只影响排程顺序 */ }
+}
+
+/** `npm run X` → 直接执行 X 的命令（省掉 npm 启动）；非 npm 形式原样返回 */
+function directCmd(item) {
+  const name = item.name || scriptNameOf(item.cmd);
+  return name && scripts[name] ? scripts[name] : item.cmd;
+}
+
+function runOneAsync(item) {
+  return new Promise((resolveRun) => {
+    const t0 = Date.now();
+    const name = item.name || scriptNameOf(item.cmd) || '';
+    const env = {
+      ...process.env,
+      PATH: `${join(ROOT, 'node_modules', '.bin')}:${process.env.PATH || ''}`,
+      npm_lifecycle_event: name,
+    };
+    const child = spawn(directCmd(item), { cwd: ROOT, shell: true, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    child.stdout.on('data', (b) => { out += b; });
+    child.stderr.on('data', (b) => { out += b; });
+    child.on('error', (e) => { out += `\n${e.stack || e}`; });
+    child.on('close', (status) => resolveRun({ code: status === null ? 1 : status, ms: Date.now() - t0, out }));
+  });
+}
+
+/** N 路并发 + 互斥通道；完成一条打印一条（输出不交错） */
+async function runParallel(plan) {
+  const meta = guardsFile ? {} : loadMeta();
+  const serialSet = new Set(meta.serialGuards || []);
+  const timings = readTimings();
+  const indexed = plan.map((item, i) => ({ item, i }));
+  const byCost = (a, b) => (timings[b.item.label] || 0) - (timings[a.item.label] || 0);
+  const serialQ = indexed.filter((x) => serialSet.has(x.item.label.replace(/:selftest$/, ''))).sort(byCost);
+  const poolQ = indexed.filter((x) => !serialQ.includes(x)).sort(byCost);
+  const results = new Array(plan.length);
+  let done = 0;
+  const report = (x, r) => {
+    done += 1;
+    const tag = `[${x.i + 1}/${plan.length}] ${x.item.label}  ‹${x.item.domain}›`;
+    process.stdout.write(`\n──── ${tag} ${'─'.repeat(Math.max(0, 60 - tag.length))}\n${r.out}`);
+    console.log(`${r.code === 0 ? '✓' : '✗'} ${x.item.label}（exit ${r.code}，${(r.ms / 1000).toFixed(1)}s）  〔完成 ${done}/${plan.length}〕`);
+    results[x.i] = { label: x.item.label, code: r.code, ms: r.ms };
+  };
+  const worker = async (queue) => {
+    for (let x = queue.shift(); x; x = queue.shift()) report(x, await runOneAsync(x.item));
+  };
+  const lanes = [];
+  if (serialQ.length) lanes.push(worker(serialQ));
+  const poolLanes = Math.max(1, jobs - (serialQ.length ? 1 : 0));
+  for (let k = 0; k < poolLanes; k++) lanes.push(worker(poolQ));
+  await Promise.all(lanes);
+  return results;
+}
+
+function printRanking(results, wallMs) {
+  const top = results.slice().sort((a, b) => b.ms - a.ms).slice(0, 10);
+  const sum = results.reduce((s, r) => s + r.ms, 0);
+  console.log(`\n──── 耗时排行 Top ${top.length}（逐条合计 ${(sum / 1000).toFixed(1)}s / 墙钟 ${(wallMs / 1000).toFixed(1)}s${jobs > 1 ? ` / ${jobs} 路并发` : ''}）`);
+  for (const r of top) console.log(`  ${(r.ms / 1000).toFixed(1).padStart(6)}s  ${r.label}`);
+}
+
 /** 逐条运行，全部跑完再汇总。返回 { failed, problems, total } */
-function runAll(plan, problems) {
+async function runAll(plan, problems) {
   const mode = wantSelftest ? '自检' : '守卫';
   const scope = domain
     ? (argv.includes('--quick') ? `域 ${domain} + 点名跨域（内循环）` : `域 ${domain}${argv.includes('--no-cross') ? '' : ' + cross'}`)
     : '全部域';
-  console.log(`\n════ ${mode}批量执行：共 ${plan.length} 条（${scope}，逐条独立、不短路）════\n`);
+  const parallel = jobs > 1 && !wantSelftest;
+  console.log(`\n════ ${mode}批量执行：共 ${plan.length} 条（${scope}，逐条独立、不短路${parallel ? `，${jobs} 路并发` : ''}）════\n`);
 
-  const results = [];
-  for (const [i, item] of plan.entries()) {
-    const tag = `[${i + 1}/${plan.length}] ${item.label}  ‹${item.domain}›`;
-    console.log(`\n──── ${tag} ${'─'.repeat(Math.max(0, 60 - tag.length))}`);
-    const t0 = Date.now();
-    const r = spawnSync(item.cmd, { cwd: ROOT, shell: true, stdio: 'inherit' });
-    const ms = Date.now() - t0;
-    const code = r.status === null ? 1 : r.status;
-    results.push({ label: item.label, code, ms });
-    console.log(`${code === 0 ? '✓' : '✗'} ${item.label}（exit ${code}，${(ms / 1000).toFixed(1)}s）`);
+  const wall0 = Date.now();
+  let results = [];
+  if (parallel) {
+    results = await runParallel(plan);
+  } else {
+    for (const [i, item] of plan.entries()) {
+      const tag = `[${i + 1}/${plan.length}] ${item.label}  ‹${item.domain}›`;
+      console.log(`\n──── ${tag} ${'─'.repeat(Math.max(0, 60 - tag.length))}`);
+      const t0 = Date.now();
+      const r = spawnSync(item.cmd, { cwd: ROOT, shell: true, stdio: 'inherit' });
+      const ms = Date.now() - t0;
+      const code = r.status === null ? 1 : r.status;
+      results.push({ label: item.label, code, ms });
+      console.log(`${code === 0 ? '✓' : '✗'} ${item.label}（exit ${code}，${(ms / 1000).toFixed(1)}s）`);
+    }
+  }
+  if (!wantSelftest) saveTimings(results);
+
+  // --retry-serial：并行失败的逐条**串行**复跑。串行仍失败 = 真失败；串行通过 = 并行冲突嫌疑
+  // （守卫共享了临时文件/端口却没登记 serialGuards）—— 串行语义就是 check:admin 的判定，故不判红，但必须显式报告。
+  const suspects = [];
+  if (parallel && argv.includes('--retry-serial')) {
+    const firstFails = plan.map((item, i) => ({ item, i })).filter(({ i }) => results[i].code !== 0);
+    if (firstFails.length) console.log(`\n════ 串行复跑并行失败的 ${firstFails.length} 条 ════`);
+    for (const { item, i } of firstFails) {
+      const r = await runOneAsync(item);
+      process.stdout.write(`\n──── [复跑] ${item.label}\n${r.out}`);
+      console.log(`${r.code === 0 ? '⚠' : '✗'} [复跑] ${item.label}（exit ${r.code}）`);
+      if (r.code === 0) {
+        suspects.push(item.label);
+        results[i] = { ...results[i], code: 0, parallelOnly: results[i].code };
+      }
+    }
   }
 
   console.log(`\n════ ${mode}汇总（${scope}）════`);
   const pad = Math.max(...results.map((r) => r.label.length), 8);
   for (const r of results) {
-    console.log(`  ${r.code === 0 ? '✓' : '✗'} ${r.label.padEnd(pad)}  exit ${r.code}  ${(r.ms / 1000).toFixed(1)}s`);
+    const note = r.parallelOnly ? `  ⚠ 并行 exit ${r.parallelOnly} / 串行通过` : '';
+    console.log(`  ${r.code === 0 ? '✓' : '✗'} ${r.label.padEnd(pad)}  exit ${r.code}  ${(r.ms / 1000).toFixed(1)}s${note}`);
   }
   for (const p of problems) console.log(`  ⚠ ${p}`);
+  if (results.length > 1) printRanking(results, Date.now() - wall0);
+  if (suspects.length) {
+    console.log(`\n⚠ 并行冲突嫌疑 ${suspects.length} 条（并行失败、串行通过）：${suspects.join(' / ')}`);
+    console.log('  → 它们与别的守卫共享了临时文件/端口/浏览器：登记进 guards/_meta.json 的 serialGuards，或改用 mkdtemp/带 pid 的路径。');
+    if (process.env.GITHUB_ACTIONS) {
+      for (const s of suspects) console.log(`::warning title=并行冲突嫌疑::${s} 并行失败、串行通过 —— 请登记 guards/_meta.json 的 serialGuards 或消除共享临时文件`);
+    }
+  }
 
   const failed = results.filter((r) => r.code !== 0);
   const total = results.length + problems.length;
@@ -258,6 +382,51 @@ function selftestRunner() {
       console.error(`  ✗ 死脚本名未被点名（status=${r3.status}）`);
       bad += 1;
     }
+
+    // 场景 4：并行模式（--jobs）同样不短路 —— 失败夹在中间、最慢的最后完成，4 条都必须跑到并汇总
+    writeFileSync(tmp, JSON.stringify([
+      'node -e "process.exit(0)"',
+      'node -e "process.exit(7)"',
+      'node -e "setTimeout(()=>process.exit(0),300)"',
+      'node -e "process.exit(3)"',
+    ]));
+    const r4 = spawnSync(process.execPath, [SELF, '--guards', tmp, '--jobs', '3'], { cwd: ROOT, encoding: 'utf8' });
+    const out4 = `${r4.stdout || ''}${r4.stderr || ''}`;
+    const ranAll4 = (out4.match(/\[[1234]\/4\]/g) || []).length === 4;
+    const summary4 = out4.split('守卫汇总')[1] || '';
+    const fails4 = (summary4.match(/✗ node/g) || []).length;
+    if (r4.status === 1 && ranAll4 && fails4 === 2 && /3 路并发/.test(out4)) {
+      console.log('  ✓ 并行模式（--jobs 3）：4 条全部执行、2 条失败都进汇总、退出码 1');
+    } else {
+      console.error(`  ✗ 并行模式未正确汇总（status=${r4.status} ranAll=${ranAll4} fails=${fails4}）`);
+      bad += 1;
+    }
+
+    // 场景 5：--retry-serial 必须区分「并行冲突」与「真失败」
+    //   A 持有锁文件 500ms；B 在 150ms 时看到锁就失败（只在与 A 并发时失败）；C 恒失败。
+    const lock = join(ROOT, `.run-guards-selftest-lock-${process.pid}`);
+    const A = 'node -e "const f=process.env.RG_LOCK,fs=require(\'fs\');fs.writeFileSync(f,\'1\');setTimeout(()=>fs.rmSync(f,{force:true}),500)"';
+    const B = 'node -e "setTimeout(()=>process.exit(require(\'fs\').existsSync(process.env.RG_LOCK)?5:0),150)"';
+    const C = 'node -e "process.exit(7)"';
+    const env5 = { ...process.env, RG_LOCK: lock, GITHUB_ACTIONS: '' };
+    writeFileSync(tmp, JSON.stringify([A, B, C]));
+    const r5 = spawnSync(process.execPath, [SELF, '--guards', tmp, '--jobs', '3', '--retry-serial'], { cwd: ROOT, encoding: 'utf8', env: env5 });
+    const out5 = `${r5.stdout || ''}${r5.stderr || ''}`;
+    const sum5 = out5.split('守卫汇总')[1] || '';
+    const ok5 = r5.status === 1
+      && /并行冲突嫌疑 1 条/.test(out5) && /exit\(5\)|并行 exit 5 \/ 串行通过/.test(sum5)
+      && /✗ node -e "process\.exit\(7\)"/.test(sum5) && /1 条失败/.test(out5);
+    writeFileSync(tmp, JSON.stringify([A, B]));
+    const r5b = spawnSync(process.execPath, [SELF, '--guards', tmp, '--jobs', '2', '--retry-serial'], { cwd: ROOT, encoding: 'utf8', env: env5 });
+    const out5b = `${r5b.stdout || ''}${r5b.stderr || ''}`;
+    const ok5b = r5b.status === 0 && /并行冲突嫌疑 1 条/.test(out5b);
+    if (existsSync(lock)) rmSync(lock, { force: true });
+    if (ok5 && ok5b) {
+      console.log('  ✓ --retry-serial：并行才失败的被标「并行冲突嫌疑」且不判红；真失败串行复跑仍失败、退出码 1');
+    } else {
+      console.error(`  ✗ --retry-serial 未正确区分（真失败场景 status=${r5.status} ok=${ok5}；仅冲突场景 status=${r5b.status} ok=${ok5b}）`);
+      bad += 1;
+    }
   } finally {
     for (const f of [tmp, tmpSelftest]) if (existsSync(f)) rmSync(f, { force: true });
   }
@@ -303,5 +472,8 @@ if (!plan.length && !problems.length) {
   process.exit(1);
 }
 
-const { failed, problems: probs } = runAll(plan, problems);
+if (jobs > 1 && wantSelftest) {
+  console.error('⚠ --selftest 会改源文件再还原，必须串行 —— 已忽略 --jobs');
+}
+const { failed, problems: probs } = await runAll(plan, problems);
 process.exit(failed.length || probs.length ? 1 : 0);

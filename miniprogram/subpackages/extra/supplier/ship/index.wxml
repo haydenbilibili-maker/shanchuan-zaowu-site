@@ -1,0 +1,62 @@
+<view class="page">
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">SHIPMENT</text>
+    <text class="boot-cn">发货回传</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">SHIPMENT</text>
+        <text class="cn">发货回传</text>
+      </view>
+      <view class="header-row">
+        <text class="greeting">填写物流信息</text>
+        <view class="preview-chip" wx:if="{{isPreview}}"><text>预览</text></view>
+        <view class="demo-chip" wx:if="{{demoOn}}"><text>演示</text></view>
+      </view>
+      <text class="header-note">{{demoOn ? '演示：填写快递与运单后点回传，状态会进入已发货并影响结算摘要。' : '确认接单后，在此回传快递公司与运单号。提交能力待正式开通。'}}</text>
+    </view>
+
+    <view class="flash-bar" wx:if="{{flash}}">
+      <text>{{flash}}</text>
+    </view>
+
+    <view class="ship-form" wx:if="{{demoOn}}">
+      <text class="form-label">快递公司（演示共用）</text>
+      <input class="form-input" value="{{draftCarrier}}" bindinput="onCarrier" placeholder="如 顺丰速运" />
+      <text class="form-label">运单号</text>
+      <input class="form-input" value="{{draftTracking}}" bindinput="onTracking" placeholder="演示单号可随意填" />
+    </view>
+
+    <block wx:if="{{list.length}}">
+      <view class="list-card" wx:for="{{list}}" wx:key="key">
+        <view class="list-main">
+          <text class="list-title">{{item.title}}</text>
+          <text class="list-meta">{{item.meta}}</text>
+          <text class="list-hint">{{item.needShip ? '待回传运单' : '已回传'}}{{demoOn ? '（演示）' : ''}}</text>
+          <view
+            class="list-action"
+            wx:if="{{demoOn && item.needShip}}"
+            data-key="{{item.key}}"
+            bindtap="onShip"
+          >回传运单（演示）</view>
+        </view>
+        <view class="list-side">
+          <text class="list-status">{{item.needShip ? '待发货' : '已发货'}}</text>
+        </view>
+      </view>
+      <view class="link-row" wx:if="{{demoOn}}" bindtap="goSettlement">
+        <text class="link-copy">发货后看结算摘要</text>
+        <text class="link-go">我的结算 ›</text>
+      </view>
+    </block>
+
+    <view class="empty-panel" wx:else>
+      <text class="empty-panel-title">{{emptyTitle}}</text>
+      <text class="empty-panel-body">{{emptyBody}}</text>
+      <view class="retry-btn" wx:if="{{demoOn}}" bindtap="goOrders">去采购需求确认</view>
+    </view>
+  </block>
+</view>

@@ -8,6 +8,8 @@
     <text class="header-note">以手机号维护 Lv99 · 授予/移出均需授权密码 · 仅超管</text>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
   <view class="overview-panel">
     <view class="overview-head">
       <view class="overview-title-wrap">
@@ -238,7 +240,12 @@
       <view class="btn-outline load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
     </view>
 
-    <view class="empty" wx:if="{{!loading && list.length === 0}}">名单中暂无匹配记录（不等于会员库搜不到人）</view>
+    <view class="empty is-error" wx:if="{{listError && !list.length}}">
+      <text class="empty-title">名单未能取回</text>
+      <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-outline" bindtap="onRetryList" style="margin-top:24rpx;">重试</view>
+    </view>
+    <view class="empty" wx:elif="{{!loading && list.length === 0}}">名单中暂无匹配记录（不等于会员库搜不到人）</view>
     <view class="loading-hint" wx:if="{{loading}}">加载名单中…</view>
   </block>
 

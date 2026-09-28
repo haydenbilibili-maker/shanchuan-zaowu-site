@@ -51,6 +51,7 @@ Page({
   data: {
     ready: false,
     loading: false,
+    loadError: '',
     sourceOpen: false,
     legendOpen: false,
     detailOpen: false,
@@ -186,7 +187,7 @@ Page({
   },
 
   async load() {
-    this.setData({ loading: true })
+    this.setData({ loading: true, loadError: '' })
     try {
       const res = await wx.cloud.callFunction({ name: FN, data: {} })
       const result = (res && res.result) || {}
@@ -389,13 +390,21 @@ Page({
           remainingTone: Number(p.remainingAmount) < 0 ? 'down' : 'flat'
         })),
         poolsView: [],
-        poolsMore: 0
+        poolsMore: 0,
+        loadError: ''
       })
       this.refreshListViews()
     } catch (e) {
-      wx.showToast({ title: (e && e.message) || '加载失败', icon: 'none' })
+      // 失败时保留上一份成功数据；无历史数据则走页内错误态，不假装「暂无 KPI」
+      this.setData({
+        loadError: (e && e.message) || formatCloudFnError(e, '仪表盘加载失败')
+      })
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  goFeishuSync() {
+    wx.navigateTo({ url: '/subpackages/manager/feishu-sync/index' })
   }
 })

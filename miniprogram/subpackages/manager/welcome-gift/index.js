@@ -18,6 +18,9 @@ Page({
   data: {
     ready: false,
     loading: false,
+    loadError: false,
+    tipTone: 'info',
+    tipText: '',
     saving: false,
     /** 「维护 · 券对齐」区块状态（2026-09-20）：两个超管动作的进行中标记与结果文案 */
     maintBusy: false,
@@ -138,19 +141,30 @@ Page({
 
   async loadConfig() {
     if (this.data.loading) return
-    this.setData({ loading: true })
+    this.setData({ loading: true, loadError: false, tipText: '' })
     try {
       const result = await this.callFn({ action: 'get' })
       this.applyForm(result.config, {
         loading: false,
+        loadError: false,
+        tipText: '',
         docId: result.docId || '',
         fromDefault: !!result.fromDefault,
         ruleText: result.ruleText || ''
       })
     } catch (e) {
-      this.setData({ loading: false })
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
+      // 失败保留已展示表单，勿用默认档伪装「已加载」
+      this.setData({
+        loading: false,
+        loadError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '配置未能取回')
+      })
     }
+  },
+
+  onRetryConfig() {
+    this.loadConfig()
   },
 
   onSwitch(e) {

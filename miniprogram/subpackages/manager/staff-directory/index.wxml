@@ -8,6 +8,8 @@
     <text class="header-note">数据源：权限中心 · staff_members</text>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
   <view class="section summary">
     <view class="summary-row">
       <view class="summary-item">
@@ -78,16 +80,21 @@
           wx:if="{{item.status === 'active'}}"
           catchtap="disableStaff"
           data-id="{{item._id}}"
-        >停用</view>
+        >{{statusPendingId === item._id && statusPendingAction === 'disable' ? '确认停用' : '停用'}}</view>
         <view
           class="staff-btn success"
           wx:else
           catchtap="enableStaff"
           data-id="{{item._id}}"
-        >启用</view>
+        >{{statusPendingId === item._id && statusPendingAction === 'enable' ? '确认启用' : '启用'}}</view>
       </view>
     </view>
 
-    <view class="empty" wx:if="{{!loading && staffList.length === 0}}">{{emptyHint}}</view>
+    <view class="empty-tip is-error" wx:if="{{listError && !staffList.length && !loading}}">
+      <text class="empty-title">员工列表未能取回</text>
+      <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryList">重试</view>
+    </view>
+    <view class="empty" wx:elif="{{!loading && !listError && staffList.length === 0}}">{{emptyHint}}</view>
   </view>
 </view>

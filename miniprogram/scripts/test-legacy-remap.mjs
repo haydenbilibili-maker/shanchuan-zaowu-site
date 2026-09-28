@@ -584,5 +584,9 @@ async function main() {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  main().catch((e) => { console.error(e); process.exit(1) })
+  // 被测页面代码留下的定时器会让进程白挂约 6s；判定已全部完成，冲刷输出后退出（保留 exitCode）
+  main().then(
+    () => process.stdout.write('', () => process.exit()),
+    (e) => { console.error(e); process.exit(1) },
+  )
 }

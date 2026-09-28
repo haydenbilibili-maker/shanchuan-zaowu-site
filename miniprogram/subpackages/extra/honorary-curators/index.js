@@ -133,6 +133,9 @@ Page({
 
     // roster mode
     list: [],
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
     loading: false,
     page: 1,
     hasMore: false,
@@ -226,8 +229,11 @@ Page({
         overviewHint: overviewHintFor(overview, this.data.overviewTab)
       });
     } catch (e) {
-      this.setData({ overviewLoading: false });
-      wx.showToast({ title: formatCloudFnError(e, e.msg || '概览加载失败'), icon: 'none' });
+      this.setData({
+        overviewLoading: false,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, e.msg || '概览加载失败')
+      });
     }
   },
 
@@ -278,10 +284,10 @@ Page({
     if (this.data.findLoading) return;
     const phone = String(this.data.findPhone || '').replace(/\D/g, '');
     if (phone.length < 3) {
-      wx.showToast({ title: '请输入至少 3 位手机号', icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: '请输入至少 3 位手机号' });
       return;
     }
-    this.setData({ findLoading: true });
+    this.setData({ findLoading: true, tipText: '' });
     try {
       const result = await this.callFn({ action: 'lookupByPhone', phone });
       this.setData({
@@ -300,9 +306,10 @@ Page({
         findSearched: true,
         findMsg: e.msg || e.message || '查找失败',
         candidates: [],
-        findCanGrantWithoutUser: false
+        findCanGrantWithoutUser: false,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, e.msg || '查找失败')
       });
-      wx.showToast({ title: formatCloudFnError(e, e.msg || '查找失败'), icon: 'none' });
     }
   },
 
@@ -311,7 +318,7 @@ Page({
     const item = (this.data.candidates || []).find((c) => c.phone === phone);
     if (!item) return;
     if (item.onRoster || !item.canGrant) {
-      wx.showToast({ title: '该号码已是荣誉馆长', icon: 'none' });
+      this.setData({ tipTone: 'info', tipText: '该号码已是荣誉馆长' });
       return;
     }
     this.openAdd(phone, item.nickName ? `会员：${item.nickName}` : '');
@@ -320,11 +327,11 @@ Page({
   openGrantWithoutUser() {
     const phone = String(this.data.findPhone || '').replace(/\D/g, '');
     if (!/^1\d{10}$/.test(phone)) {
-      wx.showToast({ title: '请输入完整 11 位手机号', icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: '请输入完整 11 位手机号' });
       return;
     }
     if (this.data.findOnRoster) {
-      wx.showToast({ title: '该号码已在名单中', icon: 'none' });
+      this.setData({ tipTone: 'info', tipText: '该号码已在名单中' });
       return;
     }
     this.openAdd(phone, '暂无绑定用户，对方授权手机号后自动生效');
@@ -356,7 +363,7 @@ Page({
   async loadList(reset) {
     if (this.data.loading) return;
     const page = reset ? 1 : this.data.page + 1;
-    this.setData({ loading: true });
+    this.setData({ loading: true, listError: false, tipText: reset ? '' : this.data.tipText });
     try {
       const result = await this.callFn({
         action: 'list',
@@ -369,20 +376,29 @@ Page({
       const total = result.total || 0;
       this.setData({
         loading: false,
+        listError: false,
         page,
         total,
         hasMore: page * PAGE_SIZE < total,
         list: reset ? list : this.data.list.concat(list)
       });
     } catch (e) {
-      this.setData({ loading: false });
-      if (reset) this.setData({ list: [], total: 0, hasMore: false });
-      wx.showToast({ title: formatCloudFnError(e, e.msg || '加载失败'), icon: 'none' });
+      // 失败不清空名单、不伪装「暂无匹配」
+      this.setData({
+        loading: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, e.msg || '名单加载失败')
+      });
     }
   },
 
   loadMore() {
     if (this.data.hasMore && !this.data.loading) this.loadList(false);
+  },
+
+  onRetryList() {
+    this.loadList(true);
   },
 
   async loadOps() {
@@ -452,14 +468,14 @@ Page({
     if (this.data.submitting) return;
     const phone = String(this.data.addForm.phone || '').replace(/\D/g, '');
     if (!/^1\d{10}$/.test(phone)) {
-      wx.showToast({ title: '请输入有效的 11 位手机号', icon: 'none' });
+      this.setData({ addHint: '请输入有效的 11 位手机号' });
       return;
     }
     if (!String(this.data.addForm.password || '').trim()) {
-      wx.showToast({ title: '请输入授权密码', icon: 'none' });
+      this.setData({ addHint: '请输入授权密码' });
       return;
     }
-    this.setData({ submitting: true });
+    this.setData({ submitting: true, addHint: '正在授予…' });
     try {
       const result = await this.callFn({
         action: 'add',
@@ -467,26 +483,29 @@ Page({
         note: this.data.addForm.note,
         confirmPassword: this.data.addForm.password
       });
-      wx.showToast({ title: result.msg || '已授予', icon: 'none' });
       this.closeModals();
       this.setData({
         findPhone: phone,
         mode: MODE_FIND,
         modeFind: true,
-        modeRoster: false
+        modeRoster: false,
+        tipTone: 'info',
+        tipText: result.msg || '已授予'
       });
       await Promise.all([this.searchMembers(), this.loadList(true), this.loadOps()]);
       if (this.data.overviewReady) await this.loadOverview(true);
     } catch (e) {
-      this.setData({ submitting: false });
-      wx.showToast({ title: formatCloudFnError(e, e.msg || '授予失败'), icon: 'none' });
+      this.setData({
+        submitting: false,
+        addHint: formatCloudFnError(e, e.msg || '授予失败')
+      });
     }
   },
 
   async confirmRemove() {
     if (this.data.submitting || !this.data.removeTarget) return;
     if (!String(this.data.removePassword || '').trim()) {
-      wx.showToast({ title: '请输入授权密码', icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: '请输入授权密码' });
       return;
     }
     this.setData({ submitting: true });
@@ -497,14 +516,17 @@ Page({
         phone: this.data.removeTarget.phone,
         confirmPassword: this.data.removePassword
       });
-      wx.showToast({ title: result.msg || '已移出', icon: 'none' });
       this.closeModals();
+      this.setData({ tipTone: 'info', tipText: result.msg || '已移出' });
       await Promise.all([this.loadList(true), this.loadOps()]);
       if (this.data.overviewReady) await this.loadOverview(true);
       if (this.data.findSearched) this.searchMembers();
     } catch (e) {
-      this.setData({ submitting: false });
-      wx.showToast({ title: formatCloudFnError(e, e.msg || '移出失败'), icon: 'none' });
+      this.setData({
+        submitting: false,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, e.msg || '移出失败')
+      });
     }
   },
 

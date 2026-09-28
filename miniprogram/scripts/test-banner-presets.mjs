@@ -65,10 +65,11 @@ const INJECTIONS = {
     to: "  { id: 'search', label: '搜索', path: '/subpackages/feature/search/index' },\n  { id: 'search', label: '搜索（重复）', path: '/subpackages/feature/search/index' },"
   },
   // 祈福墙预设带参数后页面就不再回落默认墙 → 海报跳过去是空白
+  // 与当前实现对齐：局部变量写法（历史内联 productKey: normalize… 已弃用）
   'wishwall-requires-key': {
     file: WISH + '.js',
-    from: '      productKey: normalizeProductKey(opts.productKey || fromScene.productKey),',
-    to: '      productKey: normalizeProductKey(opts.productKey),'
+    from: '    const productKey = normalizeProductKey(opts.productKey || fromScene.productKey)',
+    to: '    const productKey = normalizeProductKey(opts.productKey)'
   }
 }
 
@@ -137,8 +138,8 @@ const REQUIRED_TARGETS = [
   ['山海图鉴', '/subpackages/feature/collection/index'],
   ['线下门店', '/subpackages/business/store/index'],
   ['预约到店', '/subpackages/business/booking/index'],
-  ['馆内直播', '/subpackages/feature/live/watch/index'],
-  ['山海影像', '/subpackages/feature/videos/index'],
+  ['馆内直播', '/subpackages/content/live/watch/index'],
+  ['山海影像', '/subpackages/content/videos/index'],
   ['博物文章', '/subpackages/feature/articles/index'],
   ['我的证书', '/subpackages/extra/user/certificates/index'],
   ['收藏与候补', '/subpackages/extra/user/wishlist/index']
@@ -191,10 +192,10 @@ const REQUIRED_TARGETS = [
   eq('type=product → 藏品详情（带 id）', ssot.buildBannerLinkForSave('product', 'p1'), '/subpackages/feature/detail/index?id=p1')
   eq('type=booking → 预约到店', ssot.buildBannerLinkForSave('booking', ''), '/subpackages/business/booking/index')
   eq('type=category → 不给直链（走馆藏 Tab + globalData）', ssot.buildBannerLinkForSave('category', 'x'), '')
-  eq('type=scheme → 原样返回路径（保留 query）', ssot.buildBannerLinkForSave('scheme', '/subpackages/extra/user/legal/index?type=privacy'), '/subpackages/extra/user/legal/index?type=privacy')
+  eq('type=scheme → 原样返回路径（保留 query）', ssot.buildBannerLinkForSave('scheme', '/subpackages/content/user/legal/index?type=privacy'), '/subpackages/content/user/legal/index?type=privacy')
   eq('★ ERP 副本的分支行为与小程序一致（product）', erp.buildBannerLinkForSave('product', 'p1'), ssot.buildBannerLinkForSave('product', 'p1'))
   eq('★ ERP 副本的分支行为与小程序一致（booking）', erp.buildBannerLinkForSave('booking', ''), ssot.buildBannerLinkForSave('booking', ''))
-  eq('★ ERP 副本的分支行为与小程序一致（scheme 带 query）', erp.buildBannerLinkForSave('scheme', '/subpackages/extra/user/legal/index?type=terms'), ssot.buildBannerLinkForSave('scheme', '/subpackages/extra/user/legal/index?type=terms'))
+  eq('★ ERP 副本的分支行为与小程序一致（scheme 带 query）', erp.buildBannerLinkForSave('scheme', '/subpackages/content/user/legal/index?type=terms'), ssot.buildBannerLinkForSave('scheme', '/subpackages/content/user/legal/index?type=terms'))
   check('★ 祈福墙在候选里，且 path 就是那个页面',
     presets.some((p) => p.id === 'wish-wall' && p.path === '/subpackages/feature/wish-wall/index'))
   check('祈福墙的说明写清了多面墙怎么指（productKey）',
@@ -251,9 +252,14 @@ const REQUIRED_TARGETS = [
   check('★ C 端入口组件生成的 URL 与候选 path 同源（前缀一致）',
     built.indexOf('/subpackages/feature/wish-wall/index?') === 0, built)
   const pageSrc = readSrc(WISH + '.js')
+  // 允许两种等价写法：
+  //   A) setData 内联 productKey: normalizeProductKey(...)
+  //   B) 局部变量 const productKey = normalizeProductKey(...); setData({ productKey })
+  // 判据钉「opts || fromScene 回落」+「结果写入 productKey」，勿要求过时的内联字面。
   check('★ 缺失/非法 productKey 一律回落默认墙（海报不带参数也能打开）',
     /normalizeProductKey\(opts\.productKey \|\| fromScene\.productKey\)/.test(pageSrc) &&
-      /productKey: normalizeProductKey/.test(pageSrc))
+      (/productKey:\s*normalizeProductKey/.test(pageSrc) ||
+        /const\s+productKey\s*=\s*normalizeProductKey/.test(pageSrc)))
   check('页面同时接受 scene（门店小程序码）与 productKey 两种作用域来源',
     /parseWishWallScene/.test(pageSrc))
   const preset = presets.find((p) => p.id === 'wish-wall')

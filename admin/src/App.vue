@@ -1428,6 +1428,7 @@ import HomeOpsHub from './components/HomeOpsHub.vue'
 import BehaviorOpsHub from './components/BehaviorOpsHub.vue'
 import BookingOpsHub from './components/BookingOpsHub.vue'
 import MonitorOpsHub from './components/MonitorOpsHub.vue'
+import SupplierWorkbenchHub from './components/SupplierWorkbenchHub.vue'
 import AdminNavHub from './components/AdminNavHub.vue'
 import { hubSections, resolveModuleOpen } from './utils/moduleAliases'
 import { getNavDomain, MODULE_TO_NAV_DOMAIN, NAV_DOMAIN_IDS, NAV_SIDEBAR_ITEMS } from './config/adminNavDomains.js'
@@ -1511,6 +1512,7 @@ const TAB_COMPONENT_MAP = {
   '37': () => ({ comp: BookingOpsHub, props: { initialSection: hubSections['37'] || 'ops' } }),
   '38': () => ({ comp: CustomOrders }),
   '52': () => ({ comp: FulfillmentCenter }),
+  '84': () => ({ comp: SupplierWorkbenchHub, props: { initialSection: hubSections['84'] || 'catalog' } }),
   '53': () => ({ comp: BrandVIS }),
   '39': () => ({ comp: PetMemorial }),
   '54': () => ({ comp: CareGuides }),

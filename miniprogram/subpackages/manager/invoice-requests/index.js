@@ -90,6 +90,10 @@ Page({
     ready: false,
     list: [],
     loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
     page: 1,
     hasMore: false,
     total: 0,
@@ -170,8 +174,11 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        this.setData({ overviewLoading: false });
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '概览加载失败'), icon: 'none' });
+        this.setData({
+          overviewLoading: false,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '概览加载失败')
+        });
         return;
       }
       const overview = mapOverview(result);
@@ -182,8 +189,11 @@ Page({
         overviewHint: overviewHintFor(overview, this.data.overviewTab)
       });
     } catch (e) {
-      this.setData({ overviewLoading: false });
-      wx.showToast({ title: formatCloudFnError(e, '概览加载失败'), icon: 'none' });
+      this.setData({
+        overviewLoading: false,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '概览加载失败')
+      });
     }
   },
 
@@ -199,7 +209,11 @@ Page({
   async loadList(reset) {
     if (this.data.loading) return;
     const page = reset ? 1 : this.data.page + 1;
-    this.setData({ loading: true });
+    this.setData({
+      loading: true,
+      listError: false,
+      tipText: reset ? '' : this.data.tipText
+    });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageInvoiceRequests',
@@ -212,22 +226,35 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        this.setData({ loading: false });
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '加载失败'), icon: 'none' });
+        this.setData({
+          loading: false,
+          listError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '加载失败')
+        });
         return;
       }
       const list = (result.list || []).map(mapItem);
       this.setData({
         loading: false,
+        listError: false,
         page,
         hasMore: !!result.hasMore,
         total: result.total || 0,
         list: reset ? list : this.data.list.concat(list)
       });
     } catch (e) {
-      this.setData({ loading: false });
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' });
+      this.setData({
+        loading: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '加载失败')
+      });
     }
+  },
+
+  onRetryList() {
+    this.loadList(true);
   },
 
   loadMore() {
@@ -251,7 +278,8 @@ Page({
       showIssueModal: true,
       actionTarget: item,
       invoiceNo: '',
-      staffNote: ''
+      staffNote: '',
+      formTip: ''
     });
   },
 
@@ -262,7 +290,8 @@ Page({
     this.setData({
       showRejectModal: true,
       actionTarget: item,
-      rejectReason: ''
+      rejectReason: '',
+      formTip: ''
     });
   },
 
@@ -302,20 +331,24 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '操作失败'), icon: 'none' });
-        this.setData({ submitting: false });
+        this.setData({
+          submitting: false,
+          formTip: formatCloudFnError(result, result.msg || '操作失败')
+        });
         return;
       }
-      wx.showToast({
-        title: result.pendingApproval ? (result.msg || '已提交超管审核') : '已标记开具',
-        icon: result.pendingApproval ? 'none' : 'success'
-      });
       this.closeModals();
+      this.setData({
+        tipTone: 'info',
+        tipText: result.pendingApproval ? (result.msg || '已提交超管审核') : '已标记开具'
+      });
       this.loadList(true);
       if (this.data.overviewReady) this.loadOverview(true);
     } catch (e) {
-      this.setData({ submitting: false });
-      wx.showToast({ title: formatCloudFnError(e, '操作失败'), icon: 'none' });
+      this.setData({
+        submitting: false,
+        formTip: formatCloudFnError(e, '操作失败')
+      });
     }
   },
 
@@ -323,10 +356,10 @@ Page({
     if (this.data.submitting || !this.data.actionTarget) return;
     const reason = String(this.data.rejectReason || '').trim();
     if (!reason) {
-      wx.showToast({ title: '请填写驳回原因', icon: 'none' });
+      this.setData({ formTip: '请填写驳回原因' });
       return;
     }
-    this.setData({ submitting: true });
+    this.setData({ submitting: true, formTip: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageInvoiceRequests',
@@ -338,17 +371,21 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '操作失败'), icon: 'none' });
-        this.setData({ submitting: false });
+        this.setData({
+          submitting: false,
+          formTip: formatCloudFnError(result, result.msg || '操作失败')
+        });
         return;
       }
-      wx.showToast({ title: '已驳回', icon: 'success' });
       this.closeModals();
+      this.setData({ tipTone: 'info', tipText: '已驳回' });
       this.loadList(true);
       if (this.data.overviewReady) this.loadOverview(true);
     } catch (e) {
-      this.setData({ submitting: false });
-      wx.showToast({ title: formatCloudFnError(e, '操作失败'), icon: 'none' });
+      this.setData({
+        submitting: false,
+        formTip: formatCloudFnError(e, '操作失败')
+      });
     }
   },
 
@@ -357,7 +394,7 @@ Page({
     if (!text) return;
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '已复制', icon: 'none' })
+      success: () => this.setData({ tipTone: 'info', tipText: '已复制' })
     });
   },
 

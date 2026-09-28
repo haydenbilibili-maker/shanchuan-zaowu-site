@@ -7,6 +7,14 @@
 - 官网：`/price-list/` 运行时匿名登录后读取 `status=active` 条目，覆盖静态种子渲染
 - Admin ERP：「业务运营 → 报价单配置」（`PriceListManager.vue`，菜单 `57`）
 - 订货履约：发布时可同步精简价目到 `configs/b2b_catalog`（店长 `listCatalog`）
+- 采购商工作台：**B2B 采购单服务端定价的唯一价格来源**（云函数 `payB2bPurchase/b2bPricing.js`：
+  仅 `status=active` 且 `price` 为单一数字（或 `min===max`）的条目可在线支付；区间价 / 空价 → `quote_required`）
+
+## 权限（2026-09-28 收紧）
+
+- `read: auth != null`（官网匿名、ERP 匿名、小程序均可读）；**`write: false`**
+- ERP 写入经 `manageStoreContent` 代理（`superAdminOnly`，禁 `removeWhere`/`setDoc`）；此前 `write: auth != null`
+  意味着任何登录用户可改价，会让服务端定价失效
 
 ## 控制台步骤
 

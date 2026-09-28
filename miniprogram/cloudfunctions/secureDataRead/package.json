@@ -1,0 +1,9 @@
+{
+  "name": "secureDataRead",
+  "version": "1.0.0",
+  "description": "敏感集合只读网关（ERP 超管代理读 + 店长工作台订单统计）：集合白名单 + 默认脱敏",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

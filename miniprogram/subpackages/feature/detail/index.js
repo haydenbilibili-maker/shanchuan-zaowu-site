@@ -44,6 +44,7 @@ const { craftTypeLabel, craftProcessLabel, buildCraftDisplayTags } = require('..
 const { trackBehavior } = require('../../../utils/trackBehavior');
 const { ensureOpenId, markCartDirty, fetchCartCount, updateCartTabBadge } = require('../../../utils/cartHelper');
 const { getCustomNavLayout } = require('../utils/customNav');
+const { buildHeroSlides } = require('../utils/heroMedia');
 const {
   ANIMAL_ETHICS_LABEL,
   ANIMAL_ETHICS_SUMMARY,
@@ -471,6 +472,8 @@ Page(withAppModal({
 
     imageIndex: 0,
     imageTotal: 0,
+    heroSlides: [],
+    heroPlaying: '',
     buyCount: 1,
     cartCount: 0,
     inWishlist: false,
@@ -1001,6 +1004,7 @@ Page(withAppModal({
     data.latinName = sanitizeLatinName(data.latinName || data.latin || data.scientificName);
 
     const images = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
+    const heroSlides = buildHeroSlides(images, data.media);
     const stockForCta = displayStock != null ? displayStock : 0;
 
     const patch = {
@@ -1025,8 +1029,9 @@ Page(withAppModal({
       selectedSkuId: firstSku ? firstSku.id : '',
       selectedSkuSizeText,
       selectedSpecs,
-      imageTotal: images.length,
+      imageTotal: heroSlides.length || images.length,
       imageIndex: 0,
+      heroSlides,
       buyCount: 1,
       commerceReady,
       // 预填无图时继续骨架；完整档案到位后关闭（避免黑主图）
@@ -1484,6 +1489,37 @@ Page(withAppModal({
 
   onSwiperChange(e) {
     this.setData({ imageIndex: e.detail.current || 0 });
+  },
+
+  onHeroMediaChange(e) {
+    this.pauseHeroVideos();
+    this.setData({ imageIndex: e.detail.current || 0 });
+  },
+
+  pauseHeroVideos() {
+    (this.data.heroSlides || []).forEach((s) => {
+      if (s.vid) wx.createVideoContext(s.vid, this).pause();
+    });
+  },
+
+  onHeroLiveTap(e) {
+    const { vid, kind } = e.currentTarget.dataset;
+    if (kind !== 'live' || !vid) return;
+    const ctx = wx.createVideoContext(vid, this);
+    if (this.data.heroPlaying === vid) ctx.pause();
+    else ctx.play();
+  },
+
+  onHeroVideoPlay(e) {
+    this.setData({ heroPlaying: e.currentTarget.id || '' });
+  },
+
+  onHeroVideoPause() {
+    if (this.data.heroPlaying) this.setData({ heroPlaying: '' });
+  },
+
+  onHide() {
+    if ((this.data.heroSlides || []).length) this.pauseHeroVideos();
   },
 
   skuConfirmLabel(action) {

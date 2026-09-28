@@ -132,6 +132,7 @@ const EVENTS = {
   gift_pay_click: { module: MODULE.GIFT, desc: '礼赠下单支付点击', targetType: 'order' },
   gift_mine_enter: { module: MODULE.GIFT, desc: '进入我的礼赠', targetType: 'gift' },
   gift_mine_hub: { module: MODULE.GIFT, desc: '我的礼赠分栏切换', targetType: 'tab' },
+  gift_mine_todo_focus: { module: MODULE.GIFT, desc: '我的礼赠待办焦点切换', targetType: 'segment' },
   gift_mine_select: { module: MODULE.GIFT, desc: '我的礼赠筛选', targetType: 'segment' },
   gift_mine_open: { module: MODULE.GIFT, desc: '我的礼赠打开详情', targetType: 'gift' },
   gift_mine_action: { module: MODULE.GIFT, desc: '我的礼赠主操作', targetType: 'gift' },

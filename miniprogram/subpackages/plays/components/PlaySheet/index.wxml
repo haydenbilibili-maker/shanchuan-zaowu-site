@@ -1,0 +1,24 @@
+<!-- 祈福墙玩法弹层：遮罩 + 近全屏面板。面板里只挂当前这一个玩法的本体（wx:if，切换即卸载，状态不串）。 -->
+<view class="ps-root {{closing ? 'is-closing' : ''}}">
+  <view class="ps-mask" bindtap="onClose" catchtouchmove="noop" aria-role="button" aria-label="收起{{name}}"></view>
+  <view class="ps-panel" style="{{dragY ? 'transform: translateY(' + dragY + 'px);' : ''}}" aria-role="dialog" aria-label="{{name}}">
+    <view
+      class="ps-head"
+      bindtouchstart="onGripStart"
+      catchtouchmove="onGripMove"
+      bindtouchend="onGripEnd"
+      bindtouchcancel="onGripEnd"
+    >
+      <view class="ps-grip" aria-hidden="true"></view>
+      <view class="ps-close" bindtap="onClose" hover-class="ps-press" hover-stay-time="70" aria-role="button" aria-label="收起{{name}}，回到祈福墙">收起</view>
+    </view>
+    <scroll-view class="ps-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+      <play-body-qian wx:if="{{playId === 'qian'}}" ctx="{{ctx}}" bind:wish="onBodyWish" bind:post="onBodyPost" bind:share="onBodyShare" />
+      <play-body-cookie wx:elif="{{playId === 'cookie'}}" ctx="{{ctx}}" bind:wish="onBodyWish" bind:post="onBodyPost" bind:share="onBodyShare" />
+      <play-body-zodiac wx:elif="{{playId === 'zodiac'}}" ctx="{{ctx}}" bind:wish="onBodyWish" bind:post="onBodyPost" bind:share="onBodyShare" />
+      <play-body-mbti wx:elif="{{playId === 'mbti'}}" ctx="{{ctx}}" bind:wish="onBodyWish" bind:post="onBodyPost" bind:share="onBodyShare" />
+      <play-body-solar wx:elif="{{playId === 'solar'}}" ctx="{{ctx}}" bind:wish="onBodyWish" bind:post="onBodyPost" bind:share="onBodyShare" />
+      <play-body-coin wx:elif="{{playId === 'coin'}}" ctx="{{ctx}}" bind:wish="onBodyWish" bind:post="onBodyPost" bind:share="onBodyShare" />
+    </scroll-view>
+  </view>
+</view>

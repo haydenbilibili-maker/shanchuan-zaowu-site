@@ -4,6 +4,36 @@ const db = wx.cloud.database();
 const { ensureOpenId, canAccessOrder, denyOrderAccess } = require('../../../utils/orderScope');
 const { buildGuideUrl, resolveCareCategory } = require('../utils/careDefaults');
 const { resolveCareContext } = require('../utils/careHelper');
+const { isGiftOrder, resolveCertRole, giftCertInfo, certSerial, receiverOf, certIssuedAt } = require('../utils/giftHolder');
+const { drawCertificate } = require('./certDraw');
+
+function formatCertDay(ms) {
+  const d = ms ? new Date(ms) : new Date();
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * 已固化证书图的版本签名：签名一致即直接展示已生成的证书，不再重绘。
+ * 收藏证书只认签发日（持有人信息以首次签发为准，像实体证书一样不随改名变）；
+ * 赠予凭证另含对方状态与称呼（TA 签收 / 领取后凭证文字会变，需重新签发一次）。
+ */
+function certSig(kind, data) {
+  const parts = [kind, data.date, 'v2'];
+  if (kind === 'gift_voucher' && data.gift) parts.push(data.gift.statusLabel || '', data.gift.recipientName || '');
+  return parts.join('|');
+}
+
+/** 礼赠证书未签发时的说明（持有人未定 / 礼赠已结束） */
+const CERT_STATE_COPY = {
+  pending: {
+    giver: ['赠予凭证待签发', 'TA 签收或到店领取后，这里会签发你的赠予凭证。'],
+    holder: ['收藏证书待签发', '藏品到你手中后，将以你为持有人签发收藏证书。']
+  },
+  void: {
+    giver: ['这份礼赠已结束', '礼赠已退款或取消，不签发证书。'],
+    holder: ['这份礼赠已结束', '礼赠已退款或取消，不签发证书。']
+  }
+};
 
 Page({
   data: {
@@ -12,9 +42,14 @@ Page({
     showCert: false,
     missingId: false,
     tempFilePath: '',
+    certImageUrl: '',
     order: null,
     orderId: '',
-    careGuideUrl: ''
+    careGuideUrl: '',
+    certKind: 'holder',
+    certState: '',
+    certStateTitle: '',
+    certStateDesc: ''
   },
 
   onLoad(options) {
@@ -49,11 +84,21 @@ Page({
         return;
       }
 
-      this.setData({ order })
-      const careContext = await resolveCareContext(order)
-      if (careContext.showCare && careContext.guideUrl) {
+      const gift = isGiftOrder(order);
+      const role = resolveCertRole(order, openid);
+      if (gift && (role === 'pending' || role === 'void')) {
+        const viewer = receiverOf(order) === openid ? 'holder' : 'giver';
+        const copy = CERT_STATE_COPY[role][viewer];
+        this.setData({ order, isMinting: false, certState: role, certStateTitle: copy[0], certStateDesc: copy[1] });
+        return;
+      }
+      const certKind = !gift ? 'holder' : (role === 'giver' ? 'gift_voucher' : 'gift_holder');
+      this.setData({ order, certKind })
+      // 赠予凭证：送礼人不是持有人，不承接养护入口
+      const careContext = certKind === 'gift_voucher' ? null : await resolveCareContext(order)
+      if (careContext && careContext.showCare && careContext.guideUrl) {
         this.setData({ careGuideUrl: careContext.guideUrl })
-      } else if (order.products && order.products[0]) {
+      } else if (careContext && order.products && order.products[0]) {
         const cat = resolveCareCategory(order.products[0])
         this.setData({
           careGuideUrl: buildGuideUrl({
@@ -65,63 +110,118 @@ Page({
         })
       }
       
-      let userName = 'COLLECTOR';
-      let levelName = 'MEMBER';
-      if (app.globalData.openid) {
-         try {
-           const userRes = await db.collection('users').where({ _openid: app.globalData.openid }).get();
-           if (userRes.data && userRes.data.length > 0) {
-             userName = userRes.data[0].nickName || 'COLLECTOR';
-             const lvMap = {
-               1: '原木·见习者',
-               2: '秘银·采集家',
-               3: '流金·研究员',
-               4: '曜石·策展人',
-               5: '星陨·守护者',
-               6: '星耀·博物官',
-               99: '荣誉馆长'
-             };
-             const lv = userRes.data[0].level;
-             levelName = lvMap[lv] || userRes.data[0].levelName || '原木·见习者';
-           }
-         } catch(e) {}
-      }
-
       const certData = {
+          kind: certKind,
           orderNo: order.orderNo,
-          date: new Date().toLocaleDateString().replace(/\//g, '.'), 
+          date: formatCertDay(certIssuedAt(order)),
           product: order.products && order.products.length > 0 ? order.products[0] : { title: '未知藏品', latin: '' },
-          user: userName,
-          level: levelName
+          user: 'COLLECTOR',
+          level: 'MEMBER'
       };
+      if (gift) {
+        const info = giftCertInfo(order);
+        const meta = order.giftMeta || {};
+        certData.serial = certSerial(order, role);
+        certData.gift = {
+          ...info,
+          statusLabel: !receiverOf(order) ? '已送达' : (meta.deliveryType === 'store_pickup' ? 'TA 已到店领取' : 'TA 已签收')
+        };
+      }
+      const sig = certSig(certKind, certData);
+      this._mint = { orderId, certKind, certData, sig };
 
-      const query = wx.createSelectorQuery();
-      query.select('#certCanvas').fields({ node: true, size: true }).exec(async (res) => {
-          if (!res || !res[0] || !res[0].node) {
-            this.setData({ isMinting: false });
-            wx.showToast({ title: '证书画布加载失败', icon: 'none' });
-            return;
-          }
-          const canvas = res[0].node;
-          const ctx = canvas.getContext('2d');
-          const dpr = wx.getSystemInfoSync().pixelRatio;
-          canvas.width = res[0].width * dpr;
-          canvas.height = res[0].height * dpr;
-          ctx.scale(dpr, dpr);
-
-          await this.drawPerfectCert(ctx, res[0].width, res[0].height, certData, canvas);
-          
-          setTimeout(() => {
-             this.setData({ isMinting: false, showCert: true });
-             wx.vibrateLong(); 
-          }, 1500);
-      });
-
+      // 已签发过：直接展示当时生成的证书
+      const saved = (order.certMeta || {})[certKind];
+      if (saved && saved.fileID && saved.openid === openid && saved.sig === sig) {
+        const url = await this.getImagePath(saved.fileID).catch(() => '');
+        if (url && url !== saved.fileID) {
+          this.setData({ certImageUrl: url, isMinting: false, showCert: true });
+          return;
+        }
+      }
+      await this.mintFresh();
     } catch (err) {
       console.error(err);
       wx.showToast({ title: '铸造中断', icon: 'none' });
       this.setData({ isMinting: false });
     }
+  },
+
+  /** 首次签发：画证书 → 展示 → 上传固化（失败只影响下次是否重绘，不影响本次展示） */
+  async mintFresh() {
+    const { certData } = this._mint;
+    if (app.globalData.openid) {
+      try {
+        const userRes = await db.collection('users').where({ _openid: app.globalData.openid }).get();
+        if (userRes.data && userRes.data.length > 0) {
+          certData.user = userRes.data[0].nickName || 'COLLECTOR';
+          const lvMap = {
+            1: '原木·见习者',
+            2: '秘银·采集家',
+            3: '流金·研究员',
+            4: '曜石·策展人',
+            5: '星陨·守护者',
+            6: '星耀·博物官',
+            99: '荣誉馆长'
+          };
+          const lv = userRes.data[0].level;
+          certData.level = lvMap[lv] || userRes.data[0].levelName || '原木·见习者';
+        }
+      } catch(e) {}
+    }
+
+    const query = wx.createSelectorQuery();
+    query.select('#certCanvas').fields({ node: true, size: true }).exec(async (res) => {
+        if (!res || !res[0] || !res[0].node) {
+          this.setData({ isMinting: false });
+          wx.showToast({ title: '证书画布加载失败', icon: 'none' });
+          return;
+        }
+        const canvas = res[0].node;
+        const ctx = canvas.getContext('2d');
+        const dpr = wx.getSystemInfoSync().pixelRatio;
+        canvas.width = res[0].width * dpr;
+        canvas.height = res[0].height * dpr;
+        ctx.scale(dpr, dpr);
+
+        const w = res[0].width;
+        const h = res[0].height;
+        await drawCertificate(ctx, w, h, certData, canvas, (src) => this.getImagePath(src));
+        wx.canvasToTempFilePath({
+          canvas: canvas,
+          width: w, height: h, destWidth: w * 3, destHeight: h * 3,
+          success: (r) => {
+            this.setData({ tempFilePath: r.tempFilePath });
+            this.persistCert(r.tempFilePath);
+          }
+        });
+
+        setTimeout(() => {
+           this.setData({ isMinting: false, showCert: true });
+           wx.vibrateLong();
+        }, 1500);
+    });
+  },
+
+  async persistCert(filePath) {
+    const { orderId, certKind, sig } = this._mint || {};
+    if (!orderId || !filePath) return;
+    try {
+      const up = await wx.cloud.uploadFile({ cloudPath: `certificates/${orderId}/${certKind}-${Date.now()}.png`, filePath });
+      await wx.cloud.callFunction({
+        name: 'getCareSpecimens',
+        data: { action: 'saveCertificate', orderId, kind: certKind, fileID: up.fileID, sig }
+      });
+    } catch (e) {
+      console.warn('persistCert failed', e);
+    }
+  },
+
+  /** 已固化的证书图加载失败 → 退回现场绘制 */
+  onCertImageError() {
+    if (!this._mint || !this.data.certImageUrl) return;
+    this.setData({ certImageUrl: '', isMinting: true, showCert: false });
+    this.mintFresh();
   },
 
   async getImagePath(src) {
@@ -134,146 +234,22 @@ Page({
     return src;
   },
 
-  // 🟢 黄金比例终极版绘制
-  async drawPerfectCert(ctx, w, h, data, canvas) {
-    // 1. 背景
-    ctx.fillStyle = '#1F1D1A';
-    ctx.fillRect(0, 0, w, h);
-    
-    // 2. 边框 (Art Deco)
-    const p = 20;
-    ctx.strokeStyle = '#C4A76C'; ctx.lineWidth = 1;
-    ctx.strokeRect(p, p, w - p*2, h - p*2);
-    ctx.strokeStyle = 'rgba(196, 167, 108, 0.3)'; 
-    ctx.strokeRect(p+4, p+4, w - (p+4)*2, h - (p+4)*2);
-    
-    // 3. 头部 (上移)
-    let y = 55;
-    ctx.textAlign = 'center';
-    
-    ctx.fillStyle = '#666'; ctx.font = '9px sans-serif'; ctx.letterSpacing = '2px';
-    ctx.fillText("BRING NATURE HOME", w / 2, y);
-    
-    y += 20;
-    ctx.fillStyle = '#C4A76C'; ctx.font = 'bold 15px serif'; 
-    ctx.fillText('山海造物 · 珍藏证书', w / 2, y);
-    
-    y += 35;
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 20px serif';
-    ctx.letterSpacing = '4px';
-    ctx.fillText('馆藏证书·仅此一件', w / 2, y);
-    
-    y += 25;
-    ctx.fillStyle = '#bfa15f'; ctx.font = '10px sans-serif'; ctx.letterSpacing = '1px';
-    ctx.fillText('CERTIFICATE OF HONOR', w / 2, y);
-
-    // 4. 图片 (进一步缩小，腾出黄金空间)
-    const imgUrl = await this.getImagePath(data.product.image);
-    
-    y += 25;
-    const imgSize = 150; // 🟢 缩小至 150 (原170)
-    
-    if (imgUrl) {
-        const img = canvas.createImage();
-        img.src = imgUrl;
-        await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-
-        if (img.width && img.height) {
-          const imgX = (w - imgSize) / 2;
-          ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'; ctx.lineWidth = 1;
-          ctx.strokeRect(imgX - 5, y - 5, imgSize + 10, imgSize + 10);
-
-          const sSize = Math.min(img.width, img.height);
-          ctx.drawImage(img, (img.width - sSize)/2, (img.height - sSize)/2, sSize, sSize, imgX, y, imgSize, imgSize);
-        }
-        
-        // 图片下小字
-        ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = 'italic 9px serif';
-        ctx.fillText('Exhibited Specimen', w/2, y + imgSize + 14);
-        
-        y += imgSize + 40; 
-    } else {
-        y += 200;
+  async saveImage() {
+    let filePath = this.data.tempFilePath;
+    if (!filePath && this.data.certImageUrl) {
+      filePath = await new Promise((resolve) => wx.downloadFile({
+        url: this.data.certImageUrl,
+        success: (r) => resolve(r.statusCode === 200 ? r.tempFilePath : ''),
+        fail: () => resolve('')
+      }));
+      if (filePath) this.setData({ tempFilePath: filePath });
     }
-
-    // 5. 授予文案区 (核心)
-    ctx.fillStyle = '#888'; ctx.font = '10px sans-serif'; ctx.letterSpacing = '2px';
-    ctx.fillText('兹授予 / Hereby Grants', w / 2, y);
-    
-    y += 30;
-    // 用户名 (金光闪闪)
-    ctx.fillStyle = '#C4A76C'; ctx.font = 'bold 30px serif'; 
-    ctx.fillText(data.user, w / 2, y);
-    
-    y += 20;
-    // 荣誉称号
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(`「 ${data.level} 」`, w / 2, y);
-
-    y += 30;
-    // 表彰内容
-    ctx.fillStyle = '#aaa'; ctx.font = '10px serif'; ctx.letterSpacing = '1px';
-    ctx.fillText('以表彰其对以下自然瑰宝的永久珍藏：', w / 2, y);
-    
-    y += 30;
-    // 藏品名称 (确保显示完整)
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 24px serif';
-    ctx.fillText(`《 ${data.product.title} 》`, w / 2, y);
-    
-    y += 16;
-    ctx.fillStyle = '#C4A76C'; ctx.font = 'italic 10px serif';
-    ctx.fillText(data.product.latin || '', w / 2, y);
-
-    // 6. 底部签名 & 编号 (确保在画布内)
-    const footerY = h - 40; // 绝对底部
-    
-    // 编号
-    ctx.fillStyle = '#444'; ctx.font = '9px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`NO.${data.orderNo}`, 30, footerY);
-    // 日期
-    ctx.textAlign = 'right';
-    ctx.fillText(data.date, w - 30, footerY);
-
-    // 签名
-    const signY = footerY - 30;
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(w/2 - 60, signY); ctx.lineTo(w/2 + 60, signY); ctx.stroke();
-    ctx.fillStyle = '#666'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('山海造物 · 签发', w / 2, signY + 14);
-
-    // 7. 印章 (右下角，位置精调)
-    this.drawSeal(ctx, w - 80, h - 100);
-
-    wx.canvasToTempFilePath({
-      canvas: canvas,
-      width: w, height: h, destWidth: w * 3, destHeight: h * 3,
-      success: (res) => this.setData({ tempFilePath: res.tempFilePath })
-    });
-  },
-
-  drawSeal(ctx, x, y) {
-    ctx.save(); ctx.translate(x, y); ctx.rotate(-15 * Math.PI / 180);
-    const color = 'rgba(180, 40, 40, 0.9)'; 
-    ctx.strokeStyle = color; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(0, 0, 30, 0, 2 * Math.PI); ctx.stroke(); 
-    ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, 26, 0, 2 * Math.PI); ctx.stroke(); 
-    
-    ctx.fillStyle = color;
-    ctx.font = 'bold 10px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('山海造物', 0, -8);
-    ctx.font = '8px sans-serif'; ctx.fillText('CERTIFIED', 0, 8);
-    ctx.font = '14px serif'; ctx.fillText('★', 0, 22);
-    ctx.restore();
-  },
-
-  saveImage() {
-    if (!this.data.tempFilePath) {
+    if (!filePath) {
       wx.showToast({ title: '证书尚未生成', icon: 'none' });
       return;
     }
     wx.saveImageToPhotosAlbum({
-      filePath: this.data.tempFilePath,
+      filePath,
       success: () => wx.showToast({ title: '已保存', icon: 'success' }),
       fail: () => wx.showModal({ title: '提示', content: '需相册权限', showCancel:false })
     });
@@ -294,5 +270,8 @@ Page({
       })
     });
   },
-  onShareAppMessage() { return { title: '我的博物收藏证书', imageUrl: this.data.tempFilePath } }
+  onShareAppMessage() {
+    const titles = { gift_voucher: '我赠出的一份山海 · 赠予凭证', gift_holder: '我收到的一份山海 · 收藏证书' };
+    return { title: titles[this.data.certKind] || '我的博物收藏证书', imageUrl: this.data.tempFilePath || this.data.certImageUrl }
+  }
 });

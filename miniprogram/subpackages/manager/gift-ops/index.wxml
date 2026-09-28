@@ -39,6 +39,11 @@
     <text class="filter-note" wx:if="{{keyword && !loading}}">本栏匹配 {{displayList.length}} / {{list.length}} 笔</text>
   </view>
 
+  <view class="hint-banner" wx:if="{{loadError && list.length}}">
+    <text class="muted">刷新失败：{{loadError}}</text>
+    <view class="btn-secondary sm" bindtap="retryLoad">重试</view>
+  </view>
+
   <view class="state-block" wx:if="{{loading && !list.length}}">
     <text class="muted">正在翻柜…</text>
   </view>

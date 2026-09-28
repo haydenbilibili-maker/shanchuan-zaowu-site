@@ -5,6 +5,7 @@
 </view>
 
 <view class="container" wx:elif="{{ready}}">
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
   <view class="section sales-share-section" wx:if="{{showSalesShare}}">
     <view class="section-head-row">
       <view class="signal-light {{salesShare.shareAmountFmt !== '—' && !salesShare.error ? 'lamp-forest' : 'lamp-muted'}}"></view>
@@ -70,7 +71,12 @@
         <text class="scene-tile-arrow">明细</text>
       </view>
     </view>
-    <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无工资条记录</view>
+    <view class="empty is-error" wx:if="{{listError && !list.length}}">
+      <text>工资条未能取回</text>
+      <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryList">重试</view>
+    </view>
+    <view class="empty" wx:elif="{{list.length === 0 && !loading}}">暂无工资条记录</view>
   </view>
 </view>
 

@@ -13,7 +13,7 @@
  *   node miniprogram/scripts/render-play-preview.mjs --page zodiac --stage need --check
  *   node miniprogram/scripts/render-play-preview.mjs --page mbti --selftest
  *
- * 页面：qian（签筒）/ cookie（签饼）/ zodiac（星盘）/ mbti（双极轴）
+ * 页面：qian（签筒）/ cookie（签饼）/ zodiac（星盘）/ mbti（双极轴）/ solar（时令叶）/ coin（方孔钱）
  * 阶段：entry（未开始）/ pending（进行中）/ need（缺资料）/ result（结果纸面）/ archive（留档展开）
  *
  * 判据（每一条都配 --selftest 注入，证明它会红）：
@@ -42,11 +42,13 @@ const argOf = (n, d) => {
 }
 
 const PAGES = {
-  // form = 入口形态（四种各一套）；paper = 结果纸面的**内容类**（四页各自的纸面语言，不是同一种）
+  // form = 入口形态；paper = 结果纸面的**内容类**（各页各自的纸面语言，不是同一种）
   qian: { id: 'qian', label: '今日一签', form: '.rp-tube', paper: '.rp-paper-title' },
   cookie: { id: 'cookie', label: '拆签饼', form: '.rp-shell', paper: '.rp-cookie-line' },
   zodiac: { id: 'zodiac', label: '星座签', form: '.rp-wheel', paper: '.rp-paper-title' },
-  mbti: { id: 'mbti', label: 'MBTI 贴士', form: '.rp-axis', paper: '.rp-paper-title' }
+  mbti: { id: 'mbti', label: 'MBTI 贴士', form: '.rp-axis', paper: '.rp-paper-title' },
+  solar: { id: 'solar', label: '节气签', form: '.rp-leaf', paper: '.rp-solar-line' },
+  coin: { id: 'coin', label: '铜钱签', form: '.rp-coin', paper: '.rp-coin-line' }
 }
 const STAGES = ['entry', 'pending', 'need', 'result', 'archive']
 const PAGE_KEY = argOf('--page', 'qian')
@@ -63,10 +65,10 @@ const PAGE = PAGES[PAGE_KEY]
 const OUT = argOf('--out', join(TMP_DIR, `play-preview-${PAGE_KEY}-${STAGE}.png`))
 
 /* ── 允许把源码指向 .tmp 副本（自检注入用；真源码全程只读） ───────────────── */
-const pageDir = resolve(MP, `subpackages/feature/play-${PAGE_KEY}`)
+const pageDir = resolve(MP, `subpackages/plays/play-${PAGE_KEY}`)
 const pageWxmlPath = process.env.PLAY_PREVIEW_WXML ? resolve(process.env.PLAY_PREVIEW_WXML) : join(pageDir, 'index.wxml')
 const pageWxssPath = process.env.PLAY_PREVIEW_WXSS ? resolve(process.env.PLAY_PREVIEW_WXSS) : join(pageDir, 'index.wxss')
-const sharedWxssPath = process.env.PLAY_PREVIEW_SHARED ? resolve(process.env.PLAY_PREVIEW_SHARED) : resolve(MP, 'subpackages/feature/play-shared/ritual-play.wxss')
+const sharedWxssPath = process.env.PLAY_PREVIEW_SHARED ? resolve(process.env.PLAY_PREVIEW_SHARED) : resolve(MP, 'subpackages/plays/play-shared/ritual-play.wxss')
 
 /* ── 真源码的样式：先剥注释，再做 rpx→px（与另外两个渲染台同口径） ─────────── */
 const toCss = (src) => src
@@ -104,15 +106,17 @@ function loadCjs (absPath, cache = new Map()) {
   return mod.exports
 }
 
-const factory = loadCjs(resolve(MP, 'utils/ritualPlayPage.js'))
+const factory = loadCjs(resolve(MP, 'subpackages/plays/utils/ritualPlayPage.js'))
 const baseData = factory.createRitualPlayPage(PAGE.id).data
 
-/** 结果纸面样本：四个玩法各用**自己的纸面语言**（签是宜/忌分列，饼是两行，星盘有星座，MBTI 有两极） */
+/** 结果纸面样本：各玩法各用**自己的纸面语言** */
 const RESULT = {
   qian: { mark: '签', name: '今日一签', overline: '今日一签', title: '宜 开口', sub: '忌 憋着', lines: ['想要什么就说出来，说出口才有回音。'], note: '今天只做一件小事也算数。', wish: '马上有回应' },
   cookie: { mark: '饼', name: '拆签饼', overline: '拆签饼', title: '馅是「先开口」', sub: '', lines: ['先开口的人先拿到答案。', '今天别把话憋成心里的疙瘩。'], note: '', wish: '马上有回音' },
   zodiac: { mark: '座', name: '星座签', overline: '天蝎座 · 今日', title: '放下一 点', sub: '', lines: ['握住的东西少一点，走起来轻一点。', '走到户外十分钟，比再想十分钟有用。'], note: '', wish: '马上有风' },
-  mbti: { mark: '我', name: 'MBTI 贴士', overline: 'INFP · 今日', title: '先照顾自己的电量', sub: '', lines: ['把今天最难的一件事排在精力最好的那两小时。', '不必向谁解释你的节奏。'], note: '', wish: '马上有劲' }
+  mbti: { mark: '我', name: 'MBTI 贴士', overline: 'INFP · 今日', title: '先照顾自己的电量', sub: '', lines: ['把今天最难的一件事排在精力最好的那两小时。', '不必向谁解释你的节奏。'], note: '', wish: '马上有劲' },
+  solar: { mark: '节', name: '节气签', overline: '距秋分 5 天', title: '秋分', sub: '秋季', lines: ['昼夜再平，适合把两边都照顾到。', '工作之余，联系一位老朋友。'], note: '二十四节气是农历里按太阳位置划分的时令。', wish: '马上有缘' },
+  coin: { mark: '钱', name: '铜钱签', overline: '铜钱签', title: '余', sub: '今日一枚', lines: ['留一点空，事才装得下。', '今天少排一件可推迟的事。'], note: '方孔铜钱是古代流通货币。', wish: '马上有余地' }
 }
 
 function stagePatch (stage) {
@@ -140,7 +144,12 @@ function stagePatch (stage) {
 }
 
 const data = Object.assign({}, baseData, stagePatch(STAGE))
-const wxmlSrc = readFileSync(pageWxmlPath, 'utf8')
+// `<include src>` 按**真页面目录**解析（自检注入的副本可能不在页面目录里）；被 include 的片段自身的 wx:if 照常生效
+const expandIncludes = (src, baseDir, depth = 0) => (depth > 3 ? src : src.replace(/<include\s+src="([^"]+)"\s*\/>/g, (_, spec) => {
+  const p = resolve(baseDir, spec)
+  return existsSync(p) ? expandIncludes(readFileSync(p, 'utf8'), dirname(p), depth + 1) : ''
+}))
+const wxmlSrc = expandIncludes(readFileSync(pageWxmlPath, 'utf8'), pageDir)
 
 /* 可点区选择器**从 WXML 的 bindtap 元素自动派生**（2026-09-22）。
  * ⚠️ 原来是手工清单（5 个），于是 `.rp-variant`（星座/MBTI 的「换一个」选项，12/16 个格子）

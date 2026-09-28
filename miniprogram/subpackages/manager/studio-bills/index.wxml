@@ -36,10 +36,15 @@
     <text>＋ 新建账单（勾选未结出货单）</text>
   </view>
 
-  <view class="sb-loading" wx:if="{{busy && !list.length}}"><text>加载中…</text></view>
-  <view class="sb-empty" wx:elif="{{!list.length}}">
+  <view class="sb-loading" wx:if="{{busy && !list.length && !listError}}"><text>加载中…</text></view>
+  <view class="sb-empty is-error" wx:elif="{{listError && !list.length}}">
+    <text>账单未能取回</text>
+    <text class="sb-empty-hint">{{tipText || '请下拉刷新重试'}}</text>
+    <view class="sb-retry" bindtap="loadList"><text>重试</text></view>
+  </view>
+  <view class="sb-empty" wx:elif="{{!busy && !list.length}}">
     <text>没有账单</text>
-    <text class="sb-empty-hint">超管可在出货单页勾选未结单据生成账单</text>
+    <text class="sb-empty-hint">{{isSuper ? '可点上方「新建账单」勾选未结出货单' : '超管生成账单后，本店应付会出现在这里'}}</text>
   </view>
 
   <view class="sb-list" wx:else>

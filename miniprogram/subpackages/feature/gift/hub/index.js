@@ -15,6 +15,9 @@ Page({
   data: {
     checking: true,
     allowed: false,
+    paneReady: false,
+    skelRows: [1, 2, 3, 4],
+    forWhom: '',
     scenes: GIFT_SCENES.map((s) => ({ key: s.key, label: s.label })),
     activeScene: '',
     sceneGuide: '',
@@ -52,6 +55,9 @@ Page({
         }
       } catch (e) { /* ignore */ }
     }
+    if (this._toName) {
+      this.setData({ forWhom: this._toName })
+    }
     this.guardAndEnter(preset)
   },
 
@@ -69,6 +75,7 @@ Page({
         return
       }
       this.setData({ checking: false, allowed: true })
+      setTimeout(() => this.setData({ paneReady: true }), 30)
       if (this._enterScene) this.selectScene(this._enterScene, true)
       trackBehavior('gift_hub_enter', 'from', this._from)
       if (presetScene && getSceneByKey(presetScene)) {

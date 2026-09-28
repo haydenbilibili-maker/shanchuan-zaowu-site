@@ -6,7 +6,7 @@
  * 而"排版不合理"从来不是"样式规则写错了"，是"画出来挤/断/溢出"—— 静态检查证明不了。
  * 本仓为此吃过多次亏（AGENTS.md：静态分析 ≠ 事实）。
  *
- * ⚠️ 结构**不手抄**：直接解析真 `components/WallFeed/index.wxml`，
+ * ⚠️ 结构**不手抄**：直接解析真 `subpackages/feature/components/WallFeed/index.wxml`，
  * 并**调用组件自己的** `index.js` / `logic.js` 推导出渲染数据（跑真 `_recompute`）。
  * 手抄件会静默漂移：`render-wall-preview.mjs` 的前身就画过一个真源码里根本不存在的元素，
  * 于是"看着没问题"而真机是另一回事（错题本 E3）。这里连"筛选/排序/分页"的推导都走真实现，
@@ -32,8 +32,8 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
 const APP_WXSS = resolve(ROOT, 'miniprogram/app.wxss')
 /** 真源码路径（自检**只读**它们；注入一律写 .tmp 副本 —— 见 --selftest 段） */
-const REAL_WXSS = resolve(ROOT, 'miniprogram/components/WallFeed/index.wxss')
-const REAL_WXML = resolve(ROOT, 'miniprogram/components/WallFeed/index.wxml')
+const REAL_WXSS = resolve(ROOT, 'miniprogram/subpackages/feature/components/WallFeed/index.wxss')
+const REAL_WXML = resolve(ROOT, 'miniprogram/subpackages/feature/components/WallFeed/index.wxml')
 /**
  * 实际读取的路径 —— 允许用环境变量指向**副本**。
  * 为什么（与 render-wall-preview 同因）：上一代工具的自检是"写进真源码再 finally 还原"，
@@ -42,8 +42,8 @@ const REAL_WXML = resolve(ROOT, 'miniprogram/components/WallFeed/index.wxml')
  */
 const PAGE_WXSS = process.env.WALLFEED_PREVIEW_WXSS || REAL_WXSS
 const PAGE_WXML = process.env.WALLFEED_PREVIEW_WXML || REAL_WXML
-const COMPONENT_JS = resolve(ROOT, 'miniprogram/components/WallFeed/index.js')
-const LOGIC_JS = resolve(ROOT, 'miniprogram/components/WallFeed/logic.js')
+const COMPONENT_JS = resolve(ROOT, 'miniprogram/subpackages/feature/components/WallFeed/index.js')
+const LOGIC_JS = resolve(ROOT, 'miniprogram/subpackages/feature/components/WallFeed/logic.js')
 /** 产物目录（.tmp 被 .gitignore；**必须自建**，否则新 clone / 新 worktree 里直接 ENOENT） */
 const TMP_DIR = resolve(ROOT, 'miniprogram/scripts/.tmp')
 mkdirSync(TMP_DIR, { recursive: true })
@@ -244,7 +244,7 @@ const logic = loadCjs(LOGIC_JS)
 const compMod = loadCjs(COMPONENT_JS)
 const compCfg = compMod.__componentConfig
 if (!compCfg || !compCfg.methods || typeof compCfg.methods._recompute !== 'function') {
-  console.error('✗ 没能从 components/WallFeed/index.js 里拿到 Component 配置（_recompute 缺失）')
+  console.error('✗ 没能从 subpackages/feature/components/WallFeed/index.js 里拿到 Component 配置（_recompute 缺失）')
   process.exit(1)
 }
 const wish = loadCjs(resolve(ROOT, 'miniprogram/utils/wishWall.js'))
@@ -400,7 +400,8 @@ const METRICS = [
   ['筛选行 .wf-chips', '.wf-chips', 1, 'same-row'],
   ['筛选 chip 1', '.wf-chip:nth-child(1)', 1],
   ['排序行 .wf-sorts', '.wf-sorts', 1, 'same-row'],
-  ['排序 chip 1', '.wf-sort:nth-child(1)', 1],
+  // ⚠️ 不可用 `.wf-sort:nth-child(1)`：第一子节点是 `.wf-sort-lead`，该选择器恒空（假缺失）。
+  ['排序 chip 1', '.wf-sorts .wf-sort', 1],
   ['两列瀑布 .wf-cols', '.wf-cols'],
   ['列1 .wf-col', '.wf-col:nth-child(1)'],
   ['列2 .wf-col', '.wf-col:nth-child(2)'],

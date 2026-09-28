@@ -29,11 +29,11 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MP = resolve(HERE, '..')
 
 const F = {
-  chain: 'utils/registerPhone.js',
-  dialogJs: 'components/RegisterAuthDialog/index.js',
-  dialogWxml: 'components/RegisterAuthDialog/index.wxml',
-  dialogWxss: 'components/RegisterAuthDialog/index.wxss',
-  dialogJson: 'components/RegisterAuthDialog/index.json',
+  chain: 'subpackages/feature/utils/registerPhone.js',
+  dialogJs: 'subpackages/feature/components/RegisterAuthDialog/index.js',
+  dialogWxml: 'subpackages/feature/components/RegisterAuthDialog/index.wxml',
+  dialogWxss: 'subpackages/feature/components/RegisterAuthDialog/index.wxss',
+  dialogJson: 'subpackages/feature/components/RegisterAuthDialog/index.json',
   wikiJs: 'subpackages/feature/detail/wiki-detail/index.js',
   wikiWxml: 'subpackages/feature/detail/wiki-detail/index.wxml',
   wikiWxss: 'subpackages/feature/detail/wiki-detail/index.wxss',

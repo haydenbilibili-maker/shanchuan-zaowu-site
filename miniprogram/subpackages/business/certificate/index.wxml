@@ -16,16 +16,24 @@
     <view class="empty-cert-btn" hover-class="back-btn-press" bindtap="goBack">返回</view>
   </view>
 
+  <!-- 礼赠证书未签发：待签收 / 礼赠已结束 -->
+  <view class="empty-cert" wx:if="{{certState && !isMinting}}">
+    <text class="empty-cert-title">{{certStateTitle}}</text>
+    <text class="empty-cert-desc">{{certStateDesc}}</text>
+    <view class="empty-cert-btn" hover-class="back-btn-press" bindtap="goBack">返回</view>
+  </view>
+
   <!-- 2. 证书展示 -->
   <view class="cert-layer {{showCert ? 'active' : ''}}">
     
     <view class="cert-shadow-box">
-       <canvas type="2d" id="certCanvas" class="cert-canvas"></canvas>
+       <image wx:if="{{certImageUrl}}" class="cert-canvas" src="{{certImageUrl}}" mode="aspectFit" binderror="onCertImageError"></image>
+       <canvas type="2d" id="certCanvas" class="cert-canvas {{certImageUrl ? 'cert-canvas-off' : ''}}"></canvas>
     </view>
     
     <!-- 底部操作 -->
     <view class="action-bar safe-area">
-      <view class="care-link" bindtap="goToCare" wx:if="{{careGuideUrl || orderId}}">
+      <view class="care-link" bindtap="goToCare" wx:if="{{(careGuideUrl || orderId) && certKind !== 'gift_voucher'}}">
         <image class="care-link-icon" src="/assets/icons/care.png" mode="aspectFit"></image>
         <text>如何养护这件藏品 →</text>
       </view>

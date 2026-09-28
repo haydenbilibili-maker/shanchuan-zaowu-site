@@ -3,7 +3,7 @@
   "usingComponents": {
     "mp-html": "/subpackages/feature/components/mp-html/index",
     "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
-    "register-auth-dialog": "/components/RegisterAuthDialog/index"
+    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index"
   },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",

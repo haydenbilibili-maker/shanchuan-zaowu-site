@@ -33,6 +33,13 @@ Page({
     role: '',
     superAdmin: false,
     curTab: 0,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    summaryError: false,
+    ruleError: false,
+    summaryLoading: false,
+    ruleLoading: false,
 
     storeNames: [],
     storeOptions: [],
@@ -84,12 +91,13 @@ Page({
     }
 
     let curTab = 0;
+    let tipText = '';
     if (Number.isFinite(tabRaw) && tabRaw === 2) {
       if (canManageRules) curTab = 1;
-      else wx.showToast({ title: '仅超管可配置积分规则', icon: 'none' });
+      else tipText = '仅超管可配置积分规则';
     } else if (query && String(query.tab || '').toLowerCase() === 'rules') {
       if (canManageRules) curTab = 1;
-      else wx.showToast({ title: '仅超管可配置积分规则', icon: 'none' });
+      else tipText = '仅超管可配置积分规则';
     }
 
     this.setData({
@@ -103,7 +111,9 @@ Page({
       storeIndex: index,
       storeId: (options[index] && options[index].storeId) || '',
       storeName: displayStoreName(options[index]),
-      curTab
+      curTab,
+      tipTone: tipText ? 'warn' : 'info',
+      tipText
     });
 
     if (curTab === 1) this.loadRule();
@@ -118,7 +128,7 @@ Page({
   switchTab(e) {
     const idx = parseInt(e.currentTarget.dataset.idx, 10) || 0;
     if (idx === 1 && !this.data.canManageRules) {
-      wx.showToast({ title: '仅超管可配置积分规则', icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: '仅超管可配置积分规则' });
       return;
     }
     wx.vibrateShort({ type: 'light' });
@@ -143,6 +153,7 @@ Page({
   // ------------------------------------------------------------ 汇总
 
   async loadSummary() {
+    this.setData({ summaryLoading: true, summaryError: false });
     try {
       const res = await wx.cloud.callFunction({
         name: 'grantStorePoints',
@@ -150,22 +161,43 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        if (result.msg) wx.showToast({ title: formatCloudFnError(result, result.msg), icon: 'none' });
+        this.setData({
+          summaryLoading: false,
+          summaryError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '今日汇总加载失败')
+        });
         return;
       }
-      this.setData({ summary: result.today || this.data.summary, ruleText: result.ruleText || RULE_TEXT_FALLBACK });
+      this.setData({
+        summaryLoading: false,
+        summaryError: false,
+        summary: result.today || this.data.summary,
+        ruleText: result.ruleText || RULE_TEXT_FALLBACK
+      });
     } catch (e) {
       console.warn('loadSummary', e);
+      this.setData({
+        summaryLoading: false,
+        summaryError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '今日汇总加载失败')
+      });
     }
+  },
+
+  onRetrySummary() {
+    this.loadSummary();
   },
 
   // ------------------------------------------------------------ 规则
 
   async loadRule() {
     if (!this.data.canManageRules) {
-      wx.showToast({ title: '仅超管可配置积分规则', icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: '仅超管可配置积分规则' });
       return;
     }
+    this.setData({ ruleLoading: true, ruleError: false, formTip: '' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'getStorePointRules',
@@ -173,12 +205,19 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: formatCloudFnError(result, result.msg || '规则加载失败'), icon: 'none' });
+        this.setData({
+          ruleLoading: false,
+          ruleError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '规则加载失败')
+        });
         return;
       }
       const config = result.config || {};
       const modeIndex = Math.max(0, MODE_OPTIONS.findIndex((m) => m.value === config.mode));
       this.setData({
+        ruleLoading: false,
+        ruleError: false,
         ruleForm: {
           ...config,
           modules: {
@@ -197,8 +236,17 @@ Page({
         modeIndex
       });
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '规则加载失败'), icon: 'none' });
+      this.setData({
+        ruleLoading: false,
+        ruleError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '规则加载失败')
+      });
     }
+  },
+
+  onRetryRule() {
+    this.loadRule();
   },
 
   onModeChange(e) {
@@ -222,12 +270,11 @@ Page({
 
   async saveRule() {
     if (!this.data.canManageRules) {
-      wx.showToast({ title: '仅超管可配置积分规则', icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: '仅超管可配置积分规则' });
       return;
     }
     if (this.data.ruleSaving) return;
-    this.setData({ ruleSaving: true });
-    wx.showLoading({ title: '保存中…' });
+    this.setData({ ruleSaving: true, formTip: '保存中…' });
     try {
       const config = { ...(this.data.ruleForm || {}) };
       if (!this.data.ruleDocId && this.data.storeId) {
@@ -238,25 +285,23 @@ Page({
         name: 'getStorePointRules',
         data: { action: 'save', ruleDocId: this.data.ruleDocId, config }
       });
-      wx.hideLoading();
       this.setData({ ruleSaving: false });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showModal({ title: '保存失败', content: formatCloudFnError(result, result.msg || '请稍后重试'), showCancel: false, confirmColor: '#C4A76C' });
+        this.setData({ formTip: formatCloudFnError(result, result.msg || '请稍后重试') });
         return;
       }
-      wx.showToast({
-        title: result.pendingApproval ? (result.msg || '已提交超管审核') : '规则已保存',
-        icon: result.pendingApproval ? 'none' : 'success'
-      });
+      const okMsg = result.pendingApproval ? (result.msg || '已提交超管审核') : '规则已保存';
+      this.setData({ tipTone: 'info', tipText: okMsg, formTip: '' });
       if (!result.pendingApproval) {
         this.setData({ ruleDocId: result.ruleDocId || this.data.ruleDocId, ruleText: result.ruleText || this.data.ruleText });
         this.loadRule();
       }
     } catch (e) {
-      wx.hideLoading();
-      this.setData({ ruleSaving: false });
-      wx.showToast({ title: formatCloudFnError(e, '保存失败'), icon: 'none' });
+      this.setData({
+        ruleSaving: false,
+        formTip: formatCloudFnError(e, '保存失败')
+      });
     }
   }
 });

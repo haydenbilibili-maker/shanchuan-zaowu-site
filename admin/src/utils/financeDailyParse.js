@@ -4,7 +4,39 @@
  * 现金语义（2026-09）：
  *   「现金：xxx元」= 门店在手现金余额（cashBalance），不是当日现金收入。
  *   当日营收 NET = POS + 线上 − 退款（不含 cashBalance）。
+ *   「N月合计」是门店自报的月累计，只用于核对，不是当日营收。
+ *
+ * 金额/订单只从**表头**取：分隔线（——— / --- / ===）或首个编号明细行（1.蓝闪蝶 / 🦋…）
+ * 以下是商品明细（件数），不得参与任何金额/订单识别。
  */
+
+const SEPARATOR_LINE = /^\s*[—–\-－=＝_＿─━~～·•.。]{3,}\s*$/
+const DETAIL_START_LINE = /^\s*(?:\d{1,2}\s*[.．、]\s*[^\d\s]|🦋)/
+
+/** 全角数字/小数点/冒号/空格折半角，便于统一匹配 */
+export function normalizeDailyReportText(text) {
+  return String(text || '')
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/．/g, '.')
+    .replace(/，(?=\d{3}(?!\d))/g, ',')
+    .replace(/\u3000/g, ' ')
+}
+
+/** 切出日报表头（分隔线 / 首个明细行之前）；返回 { header, detail } */
+export function splitDailyReportHeader(text) {
+  const lines = String(text || '').split(/\r?\n/)
+  let cut = lines.length
+  for (let i = 0; i < lines.length; i++) {
+    if (SEPARATOR_LINE.test(lines[i]) || DETAIL_START_LINE.test(lines[i])) {
+      cut = i
+      break
+    }
+  }
+  return {
+    header: lines.slice(0, cut).join('\n'),
+    detail: lines.slice(cut).join('\n'),
+  }
+}
 
 /**
  * @param {string} text
@@ -28,27 +60,29 @@ export function parseDailyFinanceText(text) {
     return { ok: false, error: '请粘贴日报内容（含日期与银联 POS 收款）' }
   }
 
+  const head = splitDailyReportHeader(normalizeDailyReportText(raw)).header
+
   const amountAfter = (labels) => {
     const key = labels.join('|')
     // 先匹配完整数字（含千分位），避免 1743.3 被 [0-9]{1,3} 截成 174
     const re = new RegExp(
-      `(?:${key})\\s*[:：]?\\s*([0-9]+(?:,[0-9]{3})*(?:\\.[0-9]+)?)\\s*元?`,
+      `(?:${key})\\s*[:：]?\\s*[¥￥]?\\s*([0-9]+(?:,[0-9]{3})*(?:\\.[0-9]+)?)\\s*元?`,
       'i',
     )
-    const m = raw.match(re)
+    const m = head.match(re)
     if (!m) return null
     const n = parseFloat(String(m[1]).replace(/,/g, ''))
     return Number.isFinite(n) ? n : null
   }
 
-  const dateMatch = raw.match(
+  const dateMatch = head.match(
     /(\d{4})\s*[年\-/.]\s*(\d{1,2})\s*[月\-/.]\s*(\d{1,2})\s*日?/,
   )
   let date = null
   if (dateMatch) {
     date = `${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}`
   } else {
-    const short = raw.match(/(\d{1,2})\s*[月\-/.]\s*(\d{1,2})\s*日?/)
+    const short = head.match(/(\d{1,2})\s*[月\-/.]\s*(\d{1,2})\s*日?/)
     if (short) {
       const y = new Date().getFullYear()
       date = `${y}-${short[1].padStart(2, '0')}-${short[2].padStart(2, '0')}`
@@ -62,18 +96,18 @@ export function parseDailyFinanceText(text) {
   const refund = amountAfter(['退款', 'REFUND'])
   // 在手现金余额（非当日现金流水）
   const cashBalance = amountAfter(['现金余额', '在手现金', '现存现金', '现金', 'CASH'])
-  const monthTotal = amountAfter(['(?:本月|当月|\\d{1,2}月)\\s*合计', '月合计'])
+  const monthTotal = amountAfter(['(?:本月|当月|\\d{1,2}\\s*月)\\s*合计', '月合计'])
 
   let orderCount = null
   const oc =
-    raw.match(/订单数\s*[:：]?\s*(\d+)/i) ||
-    raw.match(/订单\s*[:：]?\s*(\d+)\s*(?:单|笔)?/i)
+    head.match(/订单数\s*[:：]?\s*(\d+)/i) ||
+    head.match(/订单\s*[:：]?\s*(\d+)\s*(?:单|笔)?/i)
   if (oc) {
     const n = parseInt(oc[1], 10)
     if (Number.isFinite(n) && n >= 0) orderCount = n
   }
 
-  const headLines = raw
+  const headLines = head
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)

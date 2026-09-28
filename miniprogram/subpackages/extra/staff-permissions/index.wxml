@@ -11,6 +11,8 @@
     </view>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
   <view class="section">
     <text class="section-title">后台角色</text>
     <text class="section-note">工作台能力仅在此由超管配置；店员报销、清单等现场审批由店长处理（超管可代审）。支持手机号查找或粘贴 openid。</text>
@@ -19,34 +21,42 @@
   </view>
 
   <view class="section">
-    <view class="row staff-row" wx:for="{{staffList}}" wx:key="_id">
-      <view class="row-main">
-        <view class="staff-title-line">
-          <view class="signal-light {{item.status === 'active' ? 'lamp-forest' : 'lamp-muted hollow'}}"></view>
-          <text class="row-title">{{item.name || '未命名'}} · {{item.roleText}}</text>
-          <text class="tag {{item.status}}">{{item.status === 'active' ? '生效' : '已停用'}}</text>
-        </view>
-        <text class="row-sub">…{{item.openidTail}}{{item.staffNo ? ' · ' + item.staffNo : ''}}</text>
-        <text class="row-sub" wx:if="{{item.showStoreScope}}">{{item.storeIds.length ? '限门店 ' + item.storeIds.length + ' 家' : '全部门店'}}{{item.dailyGrantCap > 0 ? ' · 日限 ' + item.dailyGrantCap + ' 分' : ''}}</text>
-        <text class="row-sub" wx:if="{{item.shareholderProfile && item.shareholderProfile.storeId}}">股东 · {{item.shareholderProfile.storeName || item.shareholderProfile.storeId}} · 占股 {{item.shareholderProfile.ownershipRatio || 0}}% · 回本前 {{item.shareholderProfile.dividendRatioBeforePayback != null ? item.shareholderProfile.dividendRatioBeforePayback : (item.shareholderProfile.dividendRatio || 0)}}% · 回本后 {{item.shareholderProfile.dividendRatioAfterPayback != null ? item.shareholderProfile.dividendRatioAfterPayback : (item.shareholderProfile.dividendRatio || 0)}}%</text>
-      </view>
-      <view class="staff-actions">
-        <view class="staff-btn edit" catchtap="openStaffModal" data-id="{{item._id}}">编辑</view>
-        <view
-          class="staff-btn danger"
-          wx:if="{{item.status === 'active'}}"
-          catchtap="disableStaff"
-          data-id="{{item._id}}"
-        >停用</view>
-        <view
-          class="staff-btn success"
-          wx:else
-          catchtap="enableStaff"
-          data-id="{{item._id}}"
-        >启用</view>
-      </view>
+    <view class="loading-hint" wx:if="{{loading && !staffList.length && !listError}}">加载权限名单…</view>
+    <view class="empty is-error" wx:if="{{listError && !staffList.length}}">
+      <text class="empty-title">权限名单未能取回</text>
+      <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryList">重试</view>
     </view>
-    <view class="empty" wx:if="{{staffList.length === 0}}">还没有登记权限账号，可用手机号或 openid 开通角色</view>
+    <block wx:elif="{{staffList.length}}">
+      <view class="row staff-row" wx:for="{{staffList}}" wx:key="_id">
+        <view class="row-main">
+          <view class="staff-title-line">
+            <view class="signal-light {{item.status === 'active' ? 'lamp-forest' : 'lamp-muted hollow'}}"></view>
+            <text class="row-title">{{item.name || '未命名'}} · {{item.roleText}}</text>
+            <text class="tag {{item.status}}">{{item.status === 'active' ? '生效' : '已停用'}}</text>
+          </view>
+          <text class="row-sub">…{{item.openidTail}}{{item.staffNo ? ' · ' + item.staffNo : ''}}</text>
+          <text class="row-sub" wx:if="{{item.showStoreScope}}">{{item.storeIds.length ? '限门店 ' + item.storeIds.length + ' 家' : '全部门店'}}{{item.dailyGrantCap > 0 ? ' · 日限 ' + item.dailyGrantCap + ' 分' : ''}}</text>
+          <text class="row-sub" wx:if="{{item.shareholderProfile && item.shareholderProfile.storeId}}">股东 · {{item.shareholderProfile.storeName || item.shareholderProfile.storeId}} · 占股 {{item.shareholderProfile.ownershipRatio || 0}}% · 回本前 {{item.shareholderProfile.dividendRatioBeforePayback != null ? item.shareholderProfile.dividendRatioBeforePayback : (item.shareholderProfile.dividendRatio || 0)}}% · 回本后 {{item.shareholderProfile.dividendRatioAfterPayback != null ? item.shareholderProfile.dividendRatioAfterPayback : (item.shareholderProfile.dividendRatio || 0)}}%</text>
+        </view>
+        <view class="staff-actions">
+          <view class="staff-btn edit" catchtap="openStaffModal" data-id="{{item._id}}">编辑</view>
+          <view
+            class="staff-btn danger"
+            wx:if="{{item.status === 'active'}}"
+            catchtap="disableStaff"
+            data-id="{{item._id}}"
+          >{{disablePendingId === item._id ? '确认停用' : '停用'}}</view>
+          <view
+            class="staff-btn success"
+            wx:else
+            catchtap="enableStaff"
+            data-id="{{item._id}}"
+          >{{enablePendingId === item._id ? '确认启用' : '启用'}}</view>
+        </view>
+      </view>
+    </block>
+    <view class="empty" wx:elif="{{!loading && !listError}}">还没有登记权限账号，可用手机号或 openid 开通角色</view>
   </view>
 
   <view class="section">
@@ -206,9 +216,10 @@
       </view>
     </view>
 
+    <view class="page-tip is-warn" wx:if="{{formTip}}" style="margin:0 24rpx 16rpx;"><text>{{formTip}}</text></view>
     <view class="workbench-modal-foot">
       <view class="workbench-btn-outline" bindtap="closeStaffModal">取消</view>
-      <view class="workbench-btn-primary {{staffSaving ? 'is-disabled' : ''}}" bindtap="saveStaff">保存</view>
+      <view class="workbench-btn-primary {{staffSaving ? 'is-disabled' : ''}}" bindtap="saveStaff">{{staffSaving ? '保存中…' : '保存'}}</view>
     </view>
   </view>
 </view>

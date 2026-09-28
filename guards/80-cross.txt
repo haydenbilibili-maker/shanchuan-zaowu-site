@@ -25,6 +25,7 @@ npm run test:gift-mygifts
 npm run check:miniprogram-sync
 npm run check:audit-matrix
 npm run test:gift-note-variants
+npm run check:gift-holder
 npm run test:product-copy-species
 npm run check:size-canonical-sync
 npm run test:list-cover-images
@@ -40,6 +41,7 @@ npm run check:page-paths
 npm run check:asset-refs
 npm run test:legacy-remap
 npm run check:shell-vars
+npm run check:deploy-drifted-scope
 npm run check:subpackage-refs
 npm run check:wxml-conditions
 npm run check:publish-dir
@@ -64,3 +66,7 @@ npm run check:docs-index
 npm run check:product-save-fields
 npm run check:hook-registration
 npm run check:collection-docs
+npm run check:main-package-size
+npm run check:sensitive-rules
+npm run check:sensitive-direct-read
+npm run test:secure-data-read

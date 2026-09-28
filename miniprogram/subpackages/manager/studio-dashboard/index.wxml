@@ -5,7 +5,7 @@
     <view class="ops-header compact">
       <text class="ops-eyebrow">STUDIO · DASHBOARD</text>
       <view class="ops-title-row">
-        <text class="ops-title">工作室仪表盘</text>
+        <text class="ops-title">仪表盘</text>
         <text class="ops-meta-chip" wx:if="{{loading}}">刷新中</text>
       </view>
       <view class="ops-source-toggle" bindtap="toggleSource">
@@ -20,11 +20,25 @@
       </view>
     </view>
 
-    <view class="ops-skeleton" wx:if="{{loading && !kpis}}">
+    <view class="ops-skeleton" wx:if="{{loading && !kpis && !loadError}}">
       <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
         <view class="ops-sk-line wide"></view>
         <view class="ops-sk-line"></view>
       </view>
+    </view>
+
+    <view class="ops-empty is-error" wx:elif="{{loadError && !kpis}}">
+      <text class="ops-empty-title">仪表盘未能展开</text>
+      <text class="ops-empty-sub">{{loadError}}</text>
+      <text class="ops-empty-sub">若长期是旧数据，可先到「飞书同步」拉一次云库。</text>
+      <view class="dash-error-actions">
+        <view class="ops-btn-secondary" bindtap="load">重试</view>
+        <view class="ops-btn-primary" bindtap="goFeishuSync">去飞书同步</view>
+      </view>
+    </view>
+
+    <view class="ops-tip is-warn" wx:elif="{{loadError && kpis}}">
+      <text>刷新失败：{{loadError}}（仍显示上次成功数据，可下拉重试）</text>
     </view>
 
     <block wx:if="{{kpis}}">

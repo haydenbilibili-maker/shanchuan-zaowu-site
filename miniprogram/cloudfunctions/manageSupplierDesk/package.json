@@ -1,0 +1,9 @@
+{
+  "name": "manageSupplierDesk",
+  "version": "1.0.0",
+  "description": "供应商管理中心（超管：大盘/订单追踪/价目/伙伴权限）+ 伙伴对账",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -554,6 +554,7 @@ export const COLLECTIONS = {
   ATLAS_LOGS: 'atlas_logs',                                     // 山海图鉴行为日志（manageAtlas）
   GIFT_CONTACTS: 'gift_contacts',                               // 礼赠联系人（manageGift）
   GIFT_DATES: 'gift_dates',                                     // 礼赠关键日期（manageGift）
+  GIFT_RECEIVER_VERIFY: 'gift_receiver_verify',                 // 礼笺领取核验：受礼人手机号加盐哈希 + 限次（manageGift，2026-09-28 N3；仅云函数可读写）
   STORE_LEDGER_DELETIONS: 'store_ledger_deletions',             // 店长账本删除审计（syncFinanceData）
   STORED_VALUE_ACCOUNTS: 'stored_value_accounts',               // 储值账户（makeOrder）
   STORED_VALUE_LEDGERS: 'stored_value_ledgers',                 // 储值流水台账（manageStoredValue）

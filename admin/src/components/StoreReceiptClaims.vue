@@ -9,7 +9,7 @@
     </div>
 
     <div class="filter-bar">
-      <el-radio-group v-model="statusFilter" fill="#d4af37" @change="onFilterChange">
+      <el-radio-group v-model="statusFilter" @change="onFilterChange">
         <el-radio-button label="pending">待审核</el-radio-button>
         <el-radio-button label="approved">已入账</el-radio-button>
         <el-radio-button label="rejected">已驳回</el-radio-button>
@@ -24,7 +24,10 @@
     <el-card shadow="never">
       <el-table :data="list" v-loading="loading" stripe height="calc(100vh - 320px)">
         <template #empty>
-          <el-empty description="暂无小票申请" :image-size="88" />
+          <ErpEmpty
+            description="暂无小票申请"
+            hint="顾客在门店小票兑积分流程提交后会出现在此；通常 3 个工作日内审核，也可切换上方状态再看。"
+          />
         </template>
         <el-table-column label="提交时间" width="150">
           <template #default="{ row }">
@@ -211,6 +214,7 @@ import { ref, onMounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { callCloudFunction } from '../cloud'
+import ErpEmpty from './ErpEmpty.vue'
 
 const FN = 'claimStoreReceipt'
 

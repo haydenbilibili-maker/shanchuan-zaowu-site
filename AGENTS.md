@@ -39,6 +39,16 @@
   - **内循环用 `npm run check:quick -- <域>`**（该域 + `guards/_meta.json` 的 `quickWith` 里**点名**的跨域守卫；
     实测 ~2.5s，而 `check:admin` 全套 124.5s）。**全套只在收口/提交前跑一次** ——
     把收口动作塞进内循环是 2026-09-20 那几轮"一轮做很久"的主因，见 `docs/工作节奏_快速通道_2026-09-20.md`；
+  - **收口用 `npm run check:fast`**（= `run-guards.mjs --jobs auto --retry-serial`：**同一份全套清单、同判据**，并行 + 绕过 npm 启动，
+    实测 **7.4s**，串行 `check:admin` 48.5s；**CI 的 verify job 也跑它**，2026-09-28 产品负责人拍板）。起 Chrome/vite/写固定临时文件的守卫登记在
+    `guards/_meta.json` 的 `serialGuards`（并行时走互斥通道）—— 起 Chrome/vite 却没登记的，`check:guards-coverage` 静态拦截；
+    静态难判的共享临时文件由 `--retry-serial` 兜底：并行失败的逐条串行复跑，串行仍失败才判红，串行通过的报「并行冲突嫌疑」（CI 上打 `::warning`），
+    **看到这条警告就去登记 `serialGuards` 或改用 `mkdtemp`**。两种模式汇总后都打印**耗时排行**，新守卫超过 2s 先看排行找原因；
+  - **每轮必做 / 收尾才做 / 禁止**（2026-09-28 产品负责人「开发速度也非常重要」，完整证据见 `docs/开发提速_2026-09-28.md`）：
+    每轮只跑 `check:quick`（或点名单条）；**出图 / Chrome 探针每轮最多 2 次**（改前看问题 1 次 + 交付 1 次，一次出齐；2026-09-28 产品负责人拍板）；云函数只比对/部署**本流**函数；
+    体积用 `check:main-package-size`（0.2s）不手写 `find/du`；开发仓同步每轮结束一次不复查；
+    **禁止** `pkill -f` 宽匹配（`--headless`/`chrome`/`check-cloud-functions-sync`…），只杀自己启动且记了 PID 的进程；
+    禁止 `sleep N; tail` 轮询秒级命令、禁止反复整读同一份大文档（读一次，之后 `rg`）；
   - `npm run check:guards-coverage`（**守清单本身**：不丢条目 / 不重复 / 脚本与自检齐全 / 总数棘轮只许多不许少）；
   - `npm run check:admin:selftest`（逐条跑守卫自检，证明每条都能失败）；`npm run check:admin:runner-selftest`
     （证明执行器不短路、缺自检与死脚本名会被点名）；
@@ -94,9 +104,10 @@
 - 沙箱/容器里 `astro build` 可能因 telemetry 写 `$HOME` 失败（`EACCES ... .config/astro`）→ 设 `ASTRO_TELEMETRY_DISABLED=1`；
   npm 缓存目录不可写时加 `--cache <可写目录>`。
 - **CI 已跑守卫（2026-09-17 修 D1）**：`.github/workflows/deploy-pages.yml` 有三个 job ——
-  `verify`（push/PR/dispatch：`npm ci --include=dev` + `check:admin` + `build`，并上传 dist artifact）、
-  `guards-can-fail`（PR/dispatch：`check:admin:selftest`）、`deploy`（仅 main，复用 artifact 部署）。
-  合并前仍建议本地跑一遍 `check:admin`，但**不再依赖人工把关**。
+  `verify`（push/PR/dispatch：`npm ci --include=dev` + **`check:fast`**（2026-09-28 起：全套清单并行 + 失败串行复跑；
+  `check:astro` 在 CI 强制真跑，缓存不生效）+ `build`，并上传 dist artifact）、
+  `guards-can-fail`（PR/dispatch：`check:admin:selftest`，串行）、`deploy`（仅 main，复用 artifact 部署）。
+  合并前仍建议本地跑一遍 `check:fast`，但**不再依赖人工把关**。
 
 ## 工作时段（成本约束，2026-09-17 起）
 

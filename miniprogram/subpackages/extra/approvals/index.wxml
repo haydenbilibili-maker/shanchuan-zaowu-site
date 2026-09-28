@@ -12,6 +12,8 @@
     <text class="sla-warn" wx:if="{{!hubFlow && viewMode==='inbox' && overdueCount > 0}}">超时 {{overdueCount}} 条 · SLA {{slaHours}}h</text>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
   <!-- 数据概览：紧挨标题下方；默认收起，点标题行展开 -->
   <view class="overview-panel {{overviewExpanded ? 'is-open' : 'is-collapsed'}}" wx:if="{{canDecideTabs}}">
     <view
@@ -181,7 +183,12 @@
         </view>
       </view>
 
-      <view class="empty flow-empty" wx:if="{{flowRecords.length === 0 && !flowLoading}}">
+      <view class="empty flow-empty is-error" wx:if="{{flowError && !flowRecords.length}}">
+        <text class="empty-title">流水未能取回</text>
+        <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
+        <view class="btn-retry" bindtap="onRetryFlow">重试</view>
+      </view>
+      <view class="empty flow-empty" wx:elif="{{flowRecords.length === 0 && !flowLoading}}">
         <text class="empty-title">暂无流水</text>
         <text class="empty-hint">本店赠分记录会出现在这里</text>
       </view>
@@ -296,8 +303,8 @@
           wx:if="{{item.canIgnore}}"
           catchtap="ignoreItem"
           data-id="{{item._id}}"
-        >忽略</view>
-        <view class="btn-approve" catchtap="approveItem" data-id="{{item._id}}">通过</view>
+        >{{ignorePendingId === item._id ? '确认忽略' : '忽略'}}</view>
+        <view class="btn-approve" catchtap="approveItem" data-id="{{item._id}}">{{approvePendingId === item._id ? '确认通过' : '通过'}}</view>
       </view>
 
       <view class="card-actions mine" wx:elif="{{viewMode==='mine' && item.canNudge}}" catchtap="noop">
@@ -306,7 +313,13 @@
     </view>
   </view>
 
-  <view class="empty" wx:elif="{{!loading}}">
+  <view class="empty is-error" wx:elif="{{listError && !list.length}}">
+    <text class="empty-title">审批列表未能取回</text>
+    <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
+    <view class="btn-retry" bindtap="onRetryList">重试</view>
+  </view>
+
+  <view class="empty" wx:elif="{{!loading && !listError}}">
     <text class="empty-title">{{emptyTitle}}</text>
     <text class="empty-hint">{{emptyHint}}</text>
   </view>
@@ -344,6 +357,7 @@
       </view>
 
       <text class="field-hint">按比例向上取整扣回。积分不足时记欠账，后续赠分自动抵扣。</text>
+      <view class="page-tip is-warn" wx:if="{{formTip}}" style="margin-top:16rpx;"><text>{{formTip}}</text></view>
     </view>
     <view class="workbench-modal-foot">
       <view class="workbench-btn-outline" bindtap="closeRevoke">取消</view>

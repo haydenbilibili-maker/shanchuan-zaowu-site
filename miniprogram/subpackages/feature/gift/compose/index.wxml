@@ -33,6 +33,8 @@
     style="{{scrollStyle}}"
     enhanced
     show-scrollbar="{{false}}"
+    scroll-into-view="{{phoneScrollId}}"
+    scroll-with-animation
     bindscroll="onComposeScroll"
   >
     <view class="rite-intro">
@@ -323,6 +325,23 @@
           <text>{{item.name}}</text>
         </view>
         <text class="store-empty" wx:if="{{!stores.length}}">这有店暂未就绪，稍后再选或换其他交付</text>
+      </view>
+
+      <!-- 受礼人手机号（必填） -->
+      <view id="receiverPhoneField" class="verify-set {{receiverPhoneError ? 'is-error' : ''}}">
+        <text class="verify-set-label">受礼人手机号 <text class="verify-set-req">* 必填</text></text>
+        <input
+          class="verify-set-input"
+          type="number"
+          maxlength="11"
+          placeholder="TA 的 11 位手机号"
+          placeholder-class="verify-set-ph"
+          value="{{receiverPhone}}"
+          focus="{{receiverPhoneFocus}}"
+          bindinput="onReceiverPhoneInput"
+        />
+        <text class="verify-set-err" wx:if="{{receiverPhoneError}}">{{receiverPhoneError}}</text>
+        <text class="verify-set-hint">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
       </view>
 
       <view class="pack-note">

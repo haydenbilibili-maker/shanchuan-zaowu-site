@@ -977,6 +977,7 @@ import {
   DEFAULT_FINANCE_STORE_NAME,
 } from '../utils/storeStorage'
 import { parseDailyFinanceText } from '../utils/financeDailyParse'
+import { groupFinanceRecordsByDate, financeRecordStoreLabel } from '../utils/financeDayAggregate'
 import {
   DEFAULT_MALL_THRESHOLD,
   DEFAULT_MALL_RATE,
@@ -3082,8 +3083,10 @@ const app = reactive({
         const daysInMonth = new Date(y, m, 0).getDate();
         const firstDay = new Date(y, m-1, 1).getDay();
 
+        const byDate = groupFinanceRecordsByDate(records);
+
         // 计算热力等级阈值（基于当月数据动态调整）
-        const revenues = records.map(r => r.revenue).filter(r => r > 0);
+        const revenues = [...byDate.values()].map(g => g.revenue).filter(r => r > 0);
         let thresholds = [2000, 5000, 8000]; // 默认阈值
         if(revenues.length > 0) {
             const sorted = [...revenues].sort((a, b) => a - b);
@@ -3109,16 +3112,17 @@ const app = reactive({
         // 渲染日期
         for(let d=1; d<=daysInMonth; d++) {
             const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            const rec = records.find(r => r.date === dateStr);
+            const day = byDate.get(dateStr);
+            const rec = day ? day.records[0] : null;
             let html = '', cls = 'cal-day';
             let revenue = 0;
             let profit = 0;
             let orderCount = null;
 
-            if(rec) {
-                revenue = rec.revenue || 0;
-                profit = rec.profit || 0;
-                orderCount = rec.orderCount || null;
+            if(day) {
+                revenue = day.revenue;
+                profit = day.profit;
+                orderCount = day.orderCount;
                 
                 // 动态热力等级
                 if(revenue > thresholds[2]) cls += ' heat-4';
@@ -3148,8 +3152,11 @@ const app = reactive({
             div.innerHTML = `<div class="cal-num">${d}</div>${html}`;
             
             // 添加悬停提示
-            if(rec) {
-                div.setAttribute('title', `${dateStr}\n营收: ¥${Math.round(revenue)}\n${profit !== 0 ? `利润: ¥${Math.round(profit)}\n` : ''}${orderCount ? `订单: ${orderCount}单` : ''}`);
+            if(day) {
+                const storeLines = day.storeCount > 1
+                    ? '\n' + day.records.map(r => `· ${financeRecordStoreLabel(r)} ¥${Math.round(Number(r.revenue) || 0)}${Number(r.orderCount) > 0 ? ` / ${r.orderCount}单` : ''}`).join('\n')
+                    : '';
+                div.setAttribute('title', `${dateStr}${day.storeCount > 1 ? `（${day.storeCount} 家门店合计）` : ''}\n营收: ¥${Math.round(revenue)}\n${profit !== 0 ? `利润: ¥${Math.round(profit)}\n` : ''}${orderCount ? `订单: ${orderCount}单` : ''}${storeLines}`);
             }
             
             div.onclick = () => {
@@ -3157,6 +3164,9 @@ const app = reactive({
                 if(inputEl) {
                     inputEl.value = rec ? rec.raw : `${dateStr}，银联POS收款：0`;
                     inputEl.focus();
+                }
+                if (day && day.storeCount > 1) {
+                    ElMessage.info(`该日有 ${day.storeCount} 家门店日账，已载入「${financeRecordStoreLabel(rec)}」；编辑其他门店请先切换门店筛选`);
                 }
                 window.scrollTo({top:0, behavior:'smooth'});
             };
@@ -3982,7 +3992,7 @@ const app = reactive({
         const weekStartStr = weekStart.toISOString().split('T')[0];
         const monthStartStr = todayStr.substring(0, 7) + '-01';
 
-        const todayData = processed.find(r => r.date === todayStr);
+        const todayData = groupFinanceRecordsByDate(processed.filter(r => r.date === todayStr)).get(todayStr) || null;
         const weekData = processed.filter(r => r.date >= weekStartStr && r.date <= todayStr);
         const monthData = processed.filter(r => r.date >= monthStartStr && r.date <= todayStr);
 

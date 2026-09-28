@@ -286,6 +286,10 @@
           {{productLoadingMore ? '加载中…' : '加载更多'}}
         </view>
         <text class="product-list-end" wx:elif="{{products.length && !productListLoading}}">已显示全部</text>
+        <view class="product-list-end is-error" wx:elif="{{productListError && !productListLoading && !products.length}}">
+          <text>藏品列表未能取回</text>
+          <text class="product-list-retry" catchtap="loadProducts">重试</text>
+        </view>
         <text class="product-list-end" wx:elif="{{!productListLoading && !products.length}}">暂无藏品</text>
       </view>
       <view class="fab-add" bindtap="openProductModal">+</view>
@@ -1384,10 +1388,10 @@
       <view class="cfg-shortcut" wx:if="{{menu.welcomeGift}}" bindtap="goWelcomeGift">新会员礼包 ›</view>
       <view class="cfg-shortcut" wx:if="{{menu.welcomeGift}}" bindtap="goBirthdayGift">生日礼包 ›</view>
       <view class="cfg-shortcut" wx:if="{{menu.depositOps}}" bindtap="goDepositOps">售罄孤品定金 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">工作室仪表盘 ›</view>
+      <view class="cfg-shortcut" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">仪表盘 ›</view>
       <view class="cfg-shortcut" wx:if="{{menu.propertyCost}}" bindtap="goPropertyCost">物业成本 ›</view>
       <view class="cfg-shortcut" wx:if="{{menu.purchaseOps}}" bindtap="goPurchaseOps">采购管理 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">出货单 ›</view>
+      <view class="cfg-shortcut" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">出货中心 ›</view>
       <view class="cfg-shortcut" wx:if="{{menu.inventoryOps || menu.rawInventoryOps}}" bindtap="goInventoryOps">库存管理 ›</view>
     </view>
     <block wx:if="{{subTabReward===0}}">
@@ -1429,20 +1433,77 @@
     </block>
   </block>
 
-  <!-- [Tab 7] 活动课程 -->
+  <!-- [Tab 7] 活动课程（见 miniprogram/docs/超管工作台_活动课程_升级_2026-09-28.md） -->
   <block wx:if="{{curTab===7}}">
-    <view class="section-header">活动排期</view>
-    <block wx:for="{{activities}}" wx:key="_id">
-      <view class="manage-card">
-        <image class="m-img" src="{{item.image}}" mode="aspectFill"></image>
-        <view class="m-info">
-          <view class="m-row top"><text class="m-title">{{item.title}}</text><view class="icon-btn" bindtap="openActivityModal" data-id="{{item._id}}">✎</view></view>
-          <view class="m-row middle"><text class="tag-f">{{item.type==='course'?'手作':'活动'}}</text><text class="tag-f">{{item.date}} {{item.time}}</text></view>
-          <view class="m-row bottom"><text class="m-price">¥ {{item.price}}</text><view class="del-btn" bindtap="deleteActivity" data-id="{{item._id}}">删除</view></view>
+    <view class="act-head">
+      <view class="act-head-l"><text class="act-en">EVENTS · WORKSHOPS</text><text class="act-cn">活动课程</text></view>
+      <view class="act-new" bindtap="openActivityModal">＋ 发布活动</view>
+    </view>
+    <view class="act-loading" wx:if="{{!actReady}}">
+      <view class="act-skel"></view><view class="act-skel"></view><view class="act-skel"></view>
+    </view>
+    <view class="act-state" wx:elif="{{actError}}">
+      <text class="act-state-t">活动没有读出来</text>
+      <text class="act-state-d">{{actError}}</text>
+      <view class="act-state-btn" bindtap="loadActivities">重新加载</view>
+    </view>
+    <block wx:else>
+      <view class="act-kpis">
+        <view class="act-kpi"><text class="act-kpi-n">{{actBoard.counts.live}}</text><text class="act-kpi-l">报名中</text></view>
+        <view class="act-kpi"><text class="act-kpi-n">{{actBoard.upcomingBooked}}</text><text class="act-kpi-l">未开场报名</text></view>
+        <view class="act-kpi"><text class="act-kpi-n">{{actBoard.counts.paused}}</text><text class="act-kpi-l">已截止</text></view>
+      </view>
+      <view class="act-stale" wx:if="{{actBoard.stale}}">
+        <view class="act-stale-txt">
+          <text class="act-stale-t">{{actBoard.stale}} 场已结束的活动仍在对顾客展示</text>
+          <text class="act-stale-d">首页活动位只看「报名中」，不看日期</text>
+        </view>
+        <view class="act-stale-btn {{actStaleConfirm?'is-confirm':''}}" bindtap="closeStaleActivities">{{actBusyId==='stale'?'下架中…':(actStaleConfirm?'确认下架':'一键下架')}}</view>
+      </view>
+      <view class="act-tabs">
+        <view wx:for="{{actBoard.filters}}" wx:key="key" class="act-tab {{actBoard.filter===item.key?'on':''}}" bindtap="switchActFilter" data-key="{{item.key}}">{{item.label}} {{item.count}}</view>
+      </view>
+      <view class="act-state" wx:if="{{!actBoard.items.length}}">
+        <text class="act-state-t">{{actBoard.counts.all?'这一组暂时没有活动':'还没有发布过活动'}}</text>
+        <text class="act-state-d">{{actBoard.counts.all?'切换上方分组查看其它活动':'发布后顾客可在预约页报名，报名与核销数会显示在这里'}}</text>
+        <view class="act-state-btn" bindtap="openActivityModal">发布活动</view>
+      </view>
+      <view wx:for="{{actBoard.items}}" wx:key="_id" class="act-card is-{{item.phase}}">
+        <view class="act-card-top">
+          <view class="act-date {{item.isToday?'is-today':''}}">
+            <text class="act-md">{{item.monthDay}}</text>
+            <text class="act-wk">{{item.year||item.week}}</text>
+          </view>
+          <view class="act-main">
+            <text class="act-title">{{item.title}}</text>
+            <view class="act-meta">
+              <text class="act-status is-{{item.phase}}">{{item.statusLabel}}</text>
+              <text class="act-chip">{{item.typeLabel}}</text>
+              <text class="act-when">{{item.when}}</text>
+            </view>
+            <text class="act-line">{{item.time?item.time+' · ':''}}{{item.place}}</text>
+          </view>
+          <image wx:if="{{item.cover}}" class="act-cover" src="{{item.cover}}" mode="aspectFill" lazy-load="{{true}}" />
+        </view>
+        <view class="act-stats">
+          <view class="act-stat"><text class="act-stat-n">{{item.statKnown?item.capText:'—'}}</text><text class="act-stat-l">报名</text></view>
+          <view class="act-stat"><text class="act-stat-n">{{item.statKnown?item.verified:'—'}}</text><text class="act-stat-l">已核销</text></view>
+          <view class="act-stat"><text class="act-stat-n">{{item.remainText}}</text><text class="act-stat-l">余位</text></view>
+          <view class="act-stat"><text class="act-stat-n is-gold">{{item.priceText}}</text><text class="act-stat-l">价格</text></view>
+        </view>
+        <view class="act-bar" wx:if="{{item.fillPct}}"><view class="act-bar-in" style="width: {{item.fillPct}}%;"></view></view>
+        <text class="act-warn" wx:if="{{item.noStore}}">未绑定门店：预约页和门店页看不到它，点「编辑」选好门店保存即可</text>
+        <text class="act-warn" wx:if="{{item.stillVisible}}">活动日期已过，但仍在首页活动位展示</text>
+        <view class="act-ops">
+          <view class="act-op" bindtap="openActivityModal" data-id="{{item._id}}">编辑</view>
+          <view class="act-op" bindtap="openActivityModal" data-id="{{item._id}}" data-mode="copy">再办一场</view>
+          <view class="act-op" wx:if="{{item.isToday && item.booked}}" bindtap="goStaffConsole">去核销</view>
+          <view class="act-op" wx:if="{{item.toggle}}" bindtap="toggleActivityStatus" data-id="{{item._id}}" data-to="{{item.toggle.to}}" data-label="{{item.toggle.label}}">{{actBusyId===item._id?'处理中…':item.toggle.label}}</view>
+          <view class="act-op is-danger {{actConfirmDelId===item._id?'is-confirm':''}}" bindtap="deleteActivity" data-id="{{item._id}}">{{actConfirmDelId===item._id?(item.booked?item.booked+' 人已报名 · 确认删除':'确认删除'):'删除'}}</view>
         </view>
       </view>
+      <text class="act-note" wx:if="{{actBoard.items.length}}">报名 / 核销按「活动标题 + 日期」统计；改标题或日期后，旧报名不再计入</text>
     </block>
-    <view class="fab-add" bindtap="openActivityModal">＋</view>
   </block>
 
   <!-- [Tab 9] 内容管理 -->
@@ -2034,23 +2095,37 @@
       <view class="card cfg-card report-filter-card">
         <view class="card-top">
           <text class="no">统计周期</text>
-          <text class="status gold" wx:if="{{analyticsReport.rangeLabel}}">{{analyticsReport.rangeLabel}}</text>
+          <text class="report-period-tz">北京时间自然日</text>
         </view>
-        <view class="btn-row report-day-row">
-          <view class="btn ship {{analyticsRangeType==='days' && analyticsDays===7?'active':''}}" bindtap="setAnalyticsDays" data-days="7">近7日</view>
-          <view class="btn ship {{analyticsRangeType==='days' && analyticsDays===30?'active':''}}" bindtap="setAnalyticsDays" data-days="30">近30日</view>
-          <view class="btn ship {{analyticsRangeType==='days' && analyticsDays===90?'active':''}}" bindtap="setAnalyticsDays" data-days="90">近90日</view>
-          <view class="btn ship {{analyticsRangeType==='month'?'active':''}}" bindtap="setAnalyticsMonthMode">自然月</view>
+        <view class="report-seg">
+          <view class="report-seg-item {{analyticsRangeType==='day'?'active':''}}" bindtap="setAnalyticsYesterday">昨日</view>
+          <view class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===7?'active':''}}" bindtap="setAnalyticsDays" data-days="7">7日</view>
+          <view class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===30?'active':''}}" bindtap="setAnalyticsDays" data-days="30">30日</view>
+          <view class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===90?'active':''}}" bindtap="setAnalyticsDays" data-days="90">90日</view>
+          <view class="report-seg-item {{analyticsRangeType==='month'?'active':''}}" bindtap="setAnalyticsMonthMode">自然月</view>
         </view>
-        <view class="btn-row report-month-row" wx:if="{{analyticsRangeType==='month'}}">
-          <view class="btn ship {{analyticsMonth===analyticsMonthCurrent?'active':''}}" bindtap="setAnalyticsMonthPreset" data-preset="current">本月</view>
-          <view class="btn ship {{analyticsMonth===analyticsMonthPrev?'active':''}}" bindtap="setAnalyticsMonthPreset" data-preset="prev">上月</view>
-          <picker mode="date" fields="month" value="{{analyticsMonth}}" end="{{analyticsMonthMax}}" bindchange="onAnalyticsMonthPick">
-            <view class="btn ship report-month-pick {{analyticsMonth!==analyticsMonthCurrent && analyticsMonth!==analyticsMonthPrev?'active':''}}">{{analyticsMonthLabel}} ▾</view>
+        <!-- 单日 / 自然月共用一套次级导航：箭头 + 中间可点开选择器的日期文字 -->
+        <view class="report-subnav" wx:if="{{analyticsRangeType==='day'}}">
+          <view class="report-subnav-arrow" bindtap="shiftAnalyticsDay" data-delta="-1">‹</view>
+          <picker class="report-subnav-pick" mode="date" value="{{analyticsDayKey}}" start="2024-01-01" end="{{analyticsDayMax}}" bindchange="onAnalyticsDayPick">
+            <view class="report-subnav-label">{{analyticsDayLabel}}<text class="report-subnav-caret">▾</text></view>
           </picker>
+          <view class="report-subnav-arrow {{analyticsDayKey>=analyticsDayMax?'disabled':''}}" bindtap="shiftAnalyticsDay" data-delta="1">›</view>
         </view>
+        <view class="report-subnav" wx:elif="{{analyticsRangeType==='month'}}">
+          <view class="report-subnav-arrow" bindtap="shiftAnalyticsMonth" data-delta="-1">‹</view>
+          <picker class="report-subnav-pick" mode="date" fields="month" value="{{analyticsMonth}}" end="{{analyticsMonthMax}}" bindchange="onAnalyticsMonthPick">
+            <view class="report-subnav-label">{{analyticsMonthLabel}}<text class="report-subnav-caret">▾</text></view>
+          </picker>
+          <view class="report-subnav-arrow {{analyticsMonth>=analyticsMonthMax?'disabled':''}}" bindtap="shiftAnalyticsMonth" data-delta="1">›</view>
+        </view>
+        <view class="report-subnav report-subnav--static" wx:elif="{{analyticsReport.rangeLabel}}">
+          <text class="report-subnav-label">{{analyticsReport.rangeLabel}}</text>
+        </view>
+        <text class="report-day-hint" wx:if="{{analyticsRangeType==='day' && analyticsDayKey===analyticsDayMax}}">今日未结束，数据仍在累计</text>
         <view class="report-notes-toggle" wx:if="{{analyticsReport.notes.length}}" bindtap="toggleAnalyticsNotes">
-          <text class="report-notes-label">{{analyticsNotesOpen ? '收起口径说明' : '查看口径说明'}} · {{analyticsReport.notes.length}}</text>
+          <text class="report-notes-label">{{analyticsNotesOpen ? '收起口径说明' : '口径说明（' + analyticsReport.notes.length + ' 条）'}}</text>
+          <text class="report-notes-caret">{{analyticsNotesOpen ? '▴' : '▾'}}</text>
         </view>
         <block wx:if="{{analyticsNotesOpen && analyticsReport.notes.length}}">
           <text class="addr-detail report-note" wx:for="{{analyticsReport.notes}}" wx:key="*this">{{item}}</text>
@@ -2099,7 +2174,7 @@
         <view class="card cfg-card report-hero">
           <view class="report-hero-top">
             <text class="report-hero-en">COMBINED REVENUE</text>
-            <text class="report-hero-label">综合营收</text>
+            <text class="report-hero-label">综合营收{{analyticsRangeType==='day'?' · ' + analyticsDayLabel:''}}</text>
           </view>
           <text class="report-hero-value">¥{{analyticsReport.headline.grandTotalFmt || '0.00'}}</text>
           <view class="stock-mini-row report-hero-row">
@@ -2113,7 +2188,7 @@
             </view>
             <view class="stock-mini-cell">
               <text class="stock-mini-v">¥{{analyticsReport.headline.refundAmountFmt || '0.00'}}</text>
-              <text class="stock-mini-l">周期退款</text>
+              <text class="stock-mini-l">{{analyticsRangeType==='day'?'当日退款':'周期退款'}}</text>
             </view>
           </view>
           <view class="report-ledger-split" wx:if="{{analyticsReport.ledgerByStore.length}}">
@@ -2140,7 +2215,7 @@
             </view>
             <view class="stock-mini-cell">
               <text class="stock-mini-v">{{analyticsReport.headline.avgDau || 0}}</text>
-              <text class="stock-mini-l">日均 DAU</text>
+              <text class="stock-mini-l">{{analyticsRangeType==='day'?'DAU':'日均 DAU'}}</text>
             </view>
             <view class="stock-mini-cell">
               <text class="stock-mini-v accent">{{analyticsReport.headline.newUsers || 0}}</text>
@@ -2162,9 +2237,57 @@
           <text class="week-split-hint" wx:if="{{analyticsReport.empty}}">该周期暂无已付订单与门店入账</text>
         </view>
 
+        <!-- 单日详情：较前一日 / 较上周同日 + 近 8 日走势（仅单日视图） -->
+        <block wx:if="{{analyticsRangeType==='day'}}">
+          <view class="section-title">单日对比 · {{analyticsDayLabel}}</view>
+          <view class="card report-day-compare">
+            <view class="card-top">
+              <text class="no">较前一日 / 较上周同日</text>
+            </view>
+            <text class="chart-empty-hint" wx:if="{{analyticsDayCompare.loading}}">正在取对比数据…</text>
+            <block wx:else>
+              <view class="report-cmp-row report-cmp-head" wx:if="{{analyticsDayCompare.rows.length}}">
+                <text class="report-cmp-l">指标</text>
+                <text class="report-cmp-v">当日</text>
+                <text class="report-cmp-d">较 {{analyticsDayCompare.prevLabel}}</text>
+                <text class="report-cmp-d">较 {{analyticsDayCompare.weekLabel}}</text>
+              </view>
+              <view class="report-cmp-row" wx:for="{{analyticsDayCompare.rows}}" wx:key="key">
+                <text class="report-cmp-l">{{item.label}}</text>
+                <text class="report-cmp-v">{{item.valueText}}</text>
+                <text class="report-cmp-d report-cmp-d--{{item.prev.tone}}">{{item.prev.text}}</text>
+                <text class="report-cmp-d report-cmp-d--{{item.week.tone}}">{{item.week.text}}</text>
+              </view>
+              <text class="week-split-hint" wx:if="{{analyticsDayCompare.error}}">{{analyticsDayCompare.error}}</text>
+            </block>
+          </view>
+          <view class="card" wx:if="{{analyticsDayCompare.chart.length}}">
+            <view class="card-top">
+              <text class="no">综合营收 · 近 8 日（含当日）</text>
+              <view class="legend-row report-legend">
+                <view class="dot gold"></view><text>线上净额</text>
+                <view class="dot forest"></view><text>门店</text>
+              </view>
+            </view>
+            <view class="trend-bars report-bars" style="{{chartLayout.trendBarsStyle}}">
+              <block wx:for="{{analyticsDayCompare.chart}}" wx:key="dateKey">
+                <view class="bar-col {{item.isFocus?'report-bar-focus':''}}">
+                  <view class="bar-val-slot"><text class="bar-val" style="{{chartLayout.valFontStyle}}" wx:if="{{item.showVal}}">{{item.valShort}}</text></view>
+                  <view class="bar-track" style="{{chartLayout.barTrackStyle}}">
+                    <view class="bar-fill gold" style="{{item.styleOnline}}"></view>
+                    <view class="bar-fill forest" style="{{item.styleOffline}}"></view>
+                  </view>
+                  <text class="bar-lbl" style="{{chartLayout.lblFontStyle}}">{{item.day}}</text>
+                </view>
+              </block>
+            </view>
+            <text class="week-split-hint">分时段分布暂无数据源（云函数只按营业日聚合），未展示</text>
+          </view>
+        </block>
+
         <!-- 营收趋势：线上净额 + 门店 -->
-        <view class="section-title">营收趋势</view>
-        <view class="card">
+        <view class="section-title" wx:if="{{analyticsRangeType!=='day'}}">营收趋势</view>
+        <view class="card" wx:if="{{analyticsRangeType!=='day'}}">
           <view class="card-top">
             <text class="no">综合 / 日</text>
             <view class="legend-row report-legend">
@@ -2191,7 +2314,7 @@
         <!-- 订单结构 -->
         <view class="section-title">订单与结构</view>
         <view class="card visit-stats-card">
-          <view class="card-top"><text class="no">周期合计</text></view>
+          <view class="card-top"><text class="no">{{analyticsRangeType==='day'?'当日合计 · ' + analyticsDayLabel:'周期合计'}}</text></view>
           <view class="stock-mini-row">
             <view class="stock-mini-cell">
               <text class="stock-mini-v accent">{{analyticsReport.orders.totals.orders || 0}}</text>
@@ -2241,7 +2364,7 @@
           </view>
         </view>
 
-        <view class="card">
+        <view class="card" wx:if="{{analyticsRangeType!=='day'}}">
           <view class="card-top"><text class="no">订单数 / 日</text></view>
           <view class="trend-bars report-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{analyticsReport.charts.orderCount.length}}">
             <block wx:for="{{analyticsReport.charts.orderCount}}" wx:key="dateKey">
@@ -2283,7 +2406,7 @@
           <text class="week-split-hint">DAU：{{analyticsReport.users.dauSource === 'analytics_daily' ? '日汇总 UV 合并' : '行为表采样'}}</text>
         </view>
 
-        <view class="card">
+        <view class="card" wx:if="{{analyticsRangeType!=='day'}}">
           <view class="card-top"><text class="no">新增用户 / 日</text></view>
           <view class="trend-bars report-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{analyticsReport.charts.newUsers.length}}">
             <block wx:for="{{analyticsReport.charts.newUsers}}" wx:key="dateKey">
@@ -2297,7 +2420,7 @@
           <text class="chart-empty-hint" wx:else>该周期暂无注册用户</text>
         </view>
 
-        <view class="card">
+        <view class="card" wx:if="{{analyticsRangeType!=='day'}}">
           <view class="card-top"><text class="no">DAU / 日</text></view>
           <view class="trend-bars report-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{analyticsReport.charts.dau.length}}">
             <block wx:for="{{analyticsReport.charts.dau}}" wx:key="dateKey">
@@ -2466,6 +2589,15 @@
 
         <!-- 行为漏斗 -->
         <view class="section-title">行为漏斗（采样）</view>
+        <view class="card" wx:if="{{analyticsReport.behavior.diag}}">
+          <view class="visit-stats-row"><text class="visit-stats-name">查询模式</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.queryMode}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">明细条数</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.behaviorsCount}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">日汇总·鉴定开始</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.dailyIdentifyStart}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">构建指纹</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.build}}</text></view>
+          <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.error}}">告警：{{analyticsReport.behavior.diag.error}}</text>
+          <text class="addr-detail" wx:if="{{!analyticsReport.behavior.diag.behaviorsCount && analyticsReport.behavior.diag.dailyIdentifyStart}}">动作级来自 analytics_daily；注册钩子依赖明细 step，当前明细为空。</text>
+          <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.build != 'funnel-daily-v2'}}">指纹不是 funnel-daily-v2 → 线上云函数很可能未部署本版。</text>
+        </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.identify}}">
           <view class="card-top"><text class="no">AI 鉴定</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">入口点击</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.entry || 0}}</text></view>
@@ -2943,10 +3075,23 @@
               <text class="g-act danger" catchtap="removeProductImage" data-index="{{index}}">×</text>
             </view>
           </view>
-          <view class="detail-img-add" bindtap="chooseProductImages" wx:if="{{!tempProduct.images || tempProduct.images.length < 12}}">
-            <text>+ 添加</text>
+          <!-- 视频 / 实况：单独存 tempProduct.media，不进 images，所以没有「封面」按钮（列表封面永远是图片） -->
+          <view class="detail-img-item product-gallery-item product-media-item" wx:for="{{tempProduct.media}}" wx:key="url">
+            <image wx:if="{{item.poster}}" src="{{item.poster}}" mode="aspectFill"></image>
+            <view class="pm-play">▶</view>
+            <text class="pm-badge">{{item.type==='live'?'实况':'视频'}} {{item.durationText}}</text>
+            <view class="gallery-actions">
+              <text class="g-act" catchtap="toggleProductMediaLive" data-index="{{index}}">{{item.type==='live'?'转视频':'转实况'}}</text>
+              <text class="g-act" wx:if="{{index>0}}" catchtap="moveProductMedia" data-index="{{index}}" data-delta="-1">←</text>
+              <text class="g-act" wx:if="{{index < tempProduct.media.length - 1}}" catchtap="moveProductMedia" data-index="{{index}}" data-delta="1">→</text>
+              <text class="g-act danger" catchtap="removeProductMedia" data-index="{{index}}">×</text>
+            </view>
+          </view>
+          <view class="detail-img-add" bindtap="chooseProductImages" wx:if="{{!tempProduct.images || tempProduct.images.length < 12 || tempProduct.media.length < 3}}">
+            <text>+ 图片/视频</text>
           </view>
         </view>
+        <text class="pm-hint">视频/实况最多 3 段，≤60 秒、≤50MB；详情页排在封面之后，列表封面始终用图片</text>
 
         <view class="form-group">
           <view class="form-row ai-row">
@@ -3446,30 +3591,76 @@
     </view>
   </view>
 
-  <!-- 🟢 活动弹窗 (UI统一优化) -->
+  <!-- 活动编辑面板 -->
   <view class="modal-mask" wx:if="{{showActivityModal}}">
     <view class="modal-panel">
-      <view class="modal-head"><text>活动发布</text><view class="close-btn" bindtap="closeModal">✕</view></view>
-      <scroll-view scroll-y class="modal-body">
-        <view class="upload-area" bindtap="chooseActivityImage">
-           <image wx:if="{{tempActivity.image}}" src="{{tempActivity.image}}" mode="aspectFill"></image>
-           <view wx:else class="placeholder">上传封面</view>
+      <view class="modal-head"><text>{{isEditing?'编辑活动':'发布活动'}}</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <scroll-view scroll-y class="modal-body" scroll-into-view="{{actFormErr.field?'actf-'+actFormErr.field:''}}">
+        <text class="act-err" wx:if="{{actFormErr.field==='submit'}}">{{actFormErr.msg}}</text>
+        <view class="act-f" id="actf-title">
+          <text class="act-f-l">标题 *</text>
+          <input class="act-in {{actFormErr.field==='title'?'is-err':''}}" value="{{tempActivity.title}}" maxlength="30" placeholder="如：海洋标本制作体验课" bindinput="bindAInput" data-field="title" />
+          <text class="act-f-err" wx:if="{{actFormErr.field==='title'}}">{{actFormErr.msg}}</text>
         </view>
-        <view class="form-group">
-           <view class="form-row"><text>标题</text><input value="{{tempActivity.title}}" bindinput="bindAInput" data-field="title"/></view>
-           <view class="form-label">类型</view>
-           <radio-group class="radio-row" bindchange="bindATypeChange">
-              <radio color="#C4A76C" value="course" checked="{{tempActivity.type==='course'}}"/>手作 
-              <radio color="#C4A76C" value="special_activity" checked="{{tempActivity.type==='special_activity'}}"/>活动
-           </radio-group>
-           <view class="form-row"><text>日期</text><picker mode="date" bindchange="bindADateChange"><view class="picker">{{tempActivity.date||'选择'}}</view></picker></view>
-           <view class="form-row"><text>时间</text><input value="{{tempActivity.time}}" bindinput="bindAInput" data-field="time" placeholder="14:00"/></view>
-           <view class="form-row"><text>价格</text><input type="digit" value="{{tempActivity.price}}" bindinput="bindAInput" data-field="price"/></view>
-           <view class="form-row"><text>名额</text><input type="number" value="{{tempActivity.maxPeople}}" bindinput="bindAInput" data-field="maxPeople"/></view>
-           <view class="form-row"><text>地点</text><input value="{{tempActivity.location}}" bindinput="bindAInput" data-field="location" placeholder="如：本店"/></view>
+        <view class="act-f">
+          <text class="act-f-l">类型</text>
+          <view class="act-seg">
+            <view class="act-seg-i {{tempActivity.type==='course'?'on':''}}" bindtap="bindATypeChange" data-type="course">手作课程</view>
+            <view class="act-seg-i {{tempActivity.type==='special_activity'?'on':''}}" bindtap="bindATypeChange" data-type="special_activity">特别活动</view>
+          </view>
+        </view>
+        <view class="act-f">
+          <text class="act-f-l">门店（决定出现在哪家店的预约页）</text>
+          <view class="act-seg">
+            <view wx:for="{{actStoreNames}}" wx:key="*this" class="act-seg-i {{tempActivity.storeIndex===index?'on':''}}" bindtap="bindAStoreChange" data-idx="{{index}}">{{item}}</view>
+          </view>
+        </view>
+        <view class="act-f" id="actf-date">
+          <text class="act-f-l">日期 *</text>
+          <picker mode="date" value="{{tempActivity.date}}" start="{{isEditing?'2020-01-01':actBoard.today}}" bindchange="bindADateChange">
+            <view class="act-in {{actFormErr.field==='date'?'is-err':''}} {{tempActivity.date?'':'is-ph'}}">{{tempActivity.dateText||'选择日期'}}</view>
+          </picker>
+          <text class="act-f-err" wx:if="{{actFormErr.field==='date'}}">{{actFormErr.msg}}</text>
+        </view>
+        <view class="act-f2">
+          <view class="act-f">
+            <text class="act-f-l">开始时间</text>
+            <picker mode="time" value="{{tempActivity.timeStart||'14:00'}}" bindchange="bindATimeChange" data-field="timeStart">
+              <view class="act-in {{tempActivity.timeStart?'':'is-ph'}}">{{tempActivity.timeStart||'可不填'}}</view>
+            </picker>
+          </view>
+          <view class="act-f">
+            <text class="act-f-l">结束时间</text>
+            <picker mode="time" value="{{tempActivity.timeEnd||tempActivity.timeStart||'16:00'}}" bindchange="bindATimeChange" data-field="timeEnd">
+              <view class="act-in {{tempActivity.timeEnd?'':'is-ph'}}">{{tempActivity.timeEnd||'可不填'}}</view>
+            </picker>
+          </view>
+        </view>
+        <view class="act-f2">
+          <view class="act-f" id="actf-price">
+            <text class="act-f-l">价格（元）</text>
+            <input class="act-in {{actFormErr.field==='price'?'is-err':''}}" type="digit" value="{{tempActivity.price}}" placeholder="0 = 免费" bindinput="bindAInput" data-field="price" />
+            <text class="act-f-err" wx:if="{{actFormErr.field==='price'}}">{{actFormErr.msg}}</text>
+          </view>
+          <view class="act-f" id="actf-maxPeople">
+            <text class="act-f-l">名额</text>
+            <input class="act-in {{actFormErr.field==='maxPeople'?'is-err':''}}" type="number" value="{{tempActivity.maxPeople}}" placeholder="0 = 不限" bindinput="bindAInput" data-field="maxPeople" />
+            <text class="act-f-err" wx:if="{{actFormErr.field==='maxPeople'}}">{{actFormErr.msg}}</text>
+          </view>
+        </view>
+        <view class="act-f">
+          <text class="act-f-l">地点</text>
+          <input class="act-in" value="{{tempActivity.location}}" placeholder="如：本店 / 这有山 3F 博物志" bindinput="bindAInput" data-field="location" />
+        </view>
+        <view class="act-f">
+          <text class="act-f-l">封面（可选，首页活动位展示）</text>
+          <view class="act-cover-pick" bindtap="chooseActivityImage">
+            <image wx:if="{{tempActivity.image}}" src="{{tempActivity.image}}" mode="aspectFill" />
+            <text wx:else class="act-cover-ph">＋ 上传封面</text>
+          </view>
         </view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="submitActivity">发布</view></view>
+      <view class="modal-foot"><view class="btn-full {{actSaving?'is-busy':''}}" bindtap="submitActivity">{{actSaving?'保存中…':(isEditing?'保存修改':'发布活动')}}</view></view>
     </view>
   </view>
 

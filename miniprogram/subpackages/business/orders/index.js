@@ -517,7 +517,7 @@ Page(withAppModal({
     const products = (item && item.products) || [];
     const first = products.find((p) => p && (p.id || p._id || p.productId)) || products[0];
     const productId = first ? (first.id || first._id || first.productId || '') : '';
-    let url = `/subpackages/feature/comment/index?targetType=product&orderId=${encodeURIComponent(id)}`;
+    let url = `/subpackages/content/comment/index?targetType=product&orderId=${encodeURIComponent(id)}`;
     if (productId) url += `&targetId=${encodeURIComponent(productId)}`;
     wx.vibrateShort({ type: 'light' });
     wx.navigateTo({

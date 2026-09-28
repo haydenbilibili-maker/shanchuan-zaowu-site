@@ -4,8 +4,16 @@
       <h2>直播管理</h2>
       <p class="subtitle">
         场次存 <code>live_sessions</code>，互动存 <code>live_messages</code> / <code>live_reminders</code>。
-        与小程序主播工作台同源、同云函数 <code>manageLiveSession</code>：开播与挂车在主播端完成，本页做总部监控与兜底（查看、强制结束）。
+        与小程序<strong>主播工作台</strong>同源（云函数 <code>manageLiveSession</code>）：
+        <strong>开播与挂车只在小程序完成</strong>；本页做总部监控与强制结束兜底。
       </p>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        class="boundary-alert"
+        title="边界：勿在 ERP 再做一套开播入口。主播入口：小程序「我的 → 主播工作台」。"
+      />
     </div>
 
     <el-card v-loading="loading">
@@ -19,7 +27,26 @@
         </div>
       </template>
 
-      <el-table :data="sessions" size="small" border empty-text="暂无直播场次">
+      <el-alert
+        v-if="loadError"
+        type="error"
+        :closable="false"
+        show-icon
+        class="load-alert"
+        :title="loadError"
+      >
+        <template #default>
+          <el-button size="small" @click="load">重试</el-button>
+        </template>
+      </el-alert>
+
+      <el-empty
+        v-if="!loading && !loadError && !sessions.length"
+        description="暂无直播场次。请主播在小程序工作台新建并开播后，再回本页监控。"
+        :image-size="72"
+      />
+
+      <el-table v-else-if="sessions.length || loadError" :data="sessions" size="small" border empty-text="暂无直播场次">
         <el-table-column label="场次" min-width="200">
           <template #default="scope">
             <div class="cell-title">{{ scope.row.title || '未命名场次' }}</div>
@@ -81,6 +108,7 @@ import { callCloudFunction } from '../cloud'
 
 const FN = 'manageLiveSession'
 const loading = ref(false)
+const loadError = ref('')
 const sessions = ref([])
 const detail = ref(null)
 const detailVisible = ref(false)
@@ -109,13 +137,15 @@ function fmtTime(ts) {
 
 async function load() {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await callCloudFunction(FN, { action: 'listRecent' })
     if (!res || res.success === false) throw new Error((res && res.msg) || '加载失败')
     sessions.value = res.list || []
   } catch (e) {
     sessions.value = []
-    ElMessage.warning(e?.message || '直播场次加载失败，请刷新重试；持续失败请联系技术' /* 技术排查：请确认已部署 manageLiveSession */)
+    loadError.value = e?.message || '直播场次加载失败，请刷新重试'
+    ElMessage.warning(loadError.value)
   } finally {
     loading.value = false
   }
@@ -157,7 +187,9 @@ onMounted(load)
 <style scoped>
 .live-sessions { padding: 4px; }
 .header-section h2 { margin: 0 0 6px; }
-.subtitle { color: #8a8279; font-size: 13px; line-height: 1.6; margin: 0 0 16px; }
+.subtitle { color: #8a8279; font-size: 13px; line-height: 1.6; margin: 0 0 12px; }
+.boundary-alert { margin-bottom: 16px; }
+.load-alert { margin-bottom: 12px; }
 .card-head { display: flex; align-items: center; justify-content: space-between; }
 .head-actions { display: flex; gap: 8px; align-items: center; }
 .cell-title { font-size: 13px; }

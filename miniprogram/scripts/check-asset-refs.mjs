@@ -88,7 +88,7 @@ function walk(dir, out = []) {
 }
 
 /** 子包列表（与 app.json 的 root 段一致；主包视为 'main'） */
-const SUBPACKAGES = ['business', 'manager', 'feature', 'extra']
+const SUBPACKAGES = ['business', 'manager', 'feature', 'extra', 'plays', 'content']
 
 /**
  * 纯函数：一个文件属于哪个包（主包返回 'main'）。
@@ -117,11 +117,14 @@ export function packageOf(rel) {
  *
  * @returns {string[]} 问题描述
  */
-export function crossPackageProblems(rel, usingComponents) {
+export function crossPackageProblems(rel, usingComponents, componentPlaceholder) {
   const problems = []
   const self = packageOf(rel)
+  const placeholder = componentPlaceholder || {}
   for (const [name, val] of Object.entries(usingComponents || {})) {
     if (typeof val !== 'string' || !val.startsWith('/subpackages/')) continue
+    // 分包异步化（2026-09-27 祈福墙玩法弹层首用）：同名登记了占位组件才放行
+    if (typeof placeholder[name] === 'string' && placeholder[name]) continue
     const owner = packageOf(val.replace(/^\//, ''))
     if (owner !== self && owner !== 'main') {
       problems.push(`[跨分包组件] ${rel} 的「${name}」→ ${val}（${self} 引用 ${owner} 的组件，整个 ${self} 分包会加载失败）`)
@@ -136,16 +139,8 @@ export function crossPackageProblems(rel, usingComponents) {
  * 这里只登记因分包限制而不得不多份的**组件**。
  */
 export const DUPLICATED_COMPONENTS = [
-  {
-    // 2026-09-17 实测踩到：给 WalletHubBar 加第三个 tab 时只改了 business 那份，
-    // extra 那份仍是旧的两 tab → 同一个组件在两个页面渲染出不同结果。
-    // 分包之间不能互相引用组件，所以副本必须存在；既然存在就必须**逐字节锁死**。
-    name: 'WalletHubBar',
-    copies: [
-      'subpackages/business/components/WalletHubBar',
-      'subpackages/extra/components/WalletHubBar'
-    ]
-  },
+  // WalletHubBar 曾有 business / extra 两份（2026-09-17 漂移过一次）；extra/user/stored-value 不再挂它，
+  // 2026-09-27 删掉 extra 副本，现只剩 business 一份。
   {
     name: 'WorkNoticeVoice',
     copies: [
@@ -222,7 +217,7 @@ export function scan(files = walk(MP)) {
     if (rel.endsWith('.json')) {
       try {
         const j = JSON.parse(src)
-        problems.push(...crossPackageProblems(rel, j.usingComponents))
+        problems.push(...crossPackageProblems(rel, j.usingComponents, j.componentPlaceholder))
       } catch { /* 带注释的 json 跳过 */ }
     }
     if (globalTags.length && rel.endsWith('.wxml')) {
@@ -317,6 +312,15 @@ function selftest() {
   t('  └ 对照：引用主包组件没问题（主包对所有分包可见）',
     crossPackageProblems('subpackages/extra/artisan/index.json',
       { c: '/components/x/index' }).length === 0)
+  t('★ 分包异步化：同名登记 componentPlaceholder 才放行（feature 用 plays 的组件）',
+    crossPackageProblems('subpackages/feature/wish-wall/index.json',
+      { s: '/subpackages/plays/components/PlaySheet/index' }, { s: 'view' }).length === 0)
+  t('  └ 对照：没登记占位 → 判为问题（plays 已进子包清单，不再被当成主包）',
+    crossPackageProblems('subpackages/feature/wish-wall/index.json',
+      { s: '/subpackages/plays/components/PlaySheet/index' }).length === 1)
+  t('  └ 对照：占位登记在别的名字上 → 仍判为问题',
+    crossPackageProblems('subpackages/feature/wish-wall/index.json',
+      { s: '/subpackages/plays/components/PlaySheet/index' }, { t: 'view' }).length === 1)
   t('packageOf 归属判定正确',
     packageOf('subpackages/extra/user/stored-value/index.json') === 'extra'
     && packageOf('pages/index/index.json') === 'main')

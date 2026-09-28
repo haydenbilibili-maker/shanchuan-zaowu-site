@@ -31,7 +31,7 @@ import { statSync } from 'node:fs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
-const CARD = resolve(ROOT, 'miniprogram/utils/giftShareCard.js')
+const CARD = resolve(ROOT, 'miniprogram/subpackages/feature/gift/giftShareCard.js')
 // 与 gift-ops/index.js 里传给导出器的是**同一对素材**（改路径必须一起改）
 const QR_MINI = process.env.GIFT_PREVIEW_MINI
   ? resolve(process.env.GIFT_PREVIEW_MINI)

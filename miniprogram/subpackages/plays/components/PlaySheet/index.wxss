@@ -1,0 +1,106 @@
+/* 玩法弹层外壳。层级 9970：高于墙面全部内容，低于心愿笺/展品卡（9980，不会与本层同时打开）与彩蛋（9990）。
+   面板进场动画**不留 fill**：动画结束后面板上不再有 transform —— 否则本体里 fixed 的轻提示会以面板为包含块。 */
+.ps-root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 9970;
+}
+
+.ps-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(6, 5, 4, 0.72);
+  animation: ps-fade-in 240ms ease-out;
+}
+
+.ps-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4vh;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 32rpx 32rpx 0 0;
+  overflow: hidden;
+  background: #0C0B09;
+  box-shadow: 0 -12rpx 40rpx rgba(0, 0, 0, 0.5);
+  animation: ps-rise 280ms cubic-bezier(0.22, 0.82, 0.28, 1);
+}
+
+.ps-root.is-closing .ps-mask {
+  animation: ps-fade-out 220ms ease-in forwards;
+}
+
+.ps-root.is-closing .ps-panel {
+  animation: ps-sink 220ms ease-in forwards;
+}
+
+.ps-head {
+  position: relative;
+  flex-shrink: 0;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #12100E;
+  border-bottom: 1rpx solid rgba(212, 188, 133, 0.16);
+}
+
+.ps-grip {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 8rpx;
+  background: rgba(212, 188, 133, 0.42);
+}
+
+.ps-close {
+  position: absolute;
+  right: 12rpx;
+  top: 0;
+  height: 88rpx;
+  min-width: 112rpx;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  letter-spacing: 0.08em;
+  color: #D4BC85;
+}
+
+.ps-press {
+  opacity: 0.6;
+}
+
+.ps-scroll {
+  flex: 1;
+  height: 0;
+}
+
+@keyframes ps-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ps-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes ps-rise {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes ps-sink {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}

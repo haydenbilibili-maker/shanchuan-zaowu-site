@@ -12,7 +12,7 @@ const DELIVERY_TYPES = {
 
 const DEFAULT_ADDRESS_TIMEOUT_DAYS = 7
 
-/** 礼笺正文字数上限 —— 必须与小程序 `utils/giftShareCard.js` 的 `GIFT_NOTE_MAX_CHARS` **同源**。
+/** 礼笺正文字数上限 —— 必须与小程序 `subpackages/feature/gift/giftShareCard.js` 的 `GIFT_NOTE_MAX_CHARS` **同源**。
  *  云函数与小程序是两个部署单元（不能 require 同一份），故用**同值 + 守卫断言**钉住
  *  （check:gift-sticker-layout：5 份副本的该值必须 === 该常量）。
  *  为什么是 140（P0-2，2026-09-21 产品负责人点名放行）：贴纸版式在 >~158 字时**一行都不画**

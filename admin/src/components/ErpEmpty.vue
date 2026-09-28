@@ -45,7 +45,8 @@ defineEmits(['action'])
   margin: 0 0 12px;
   font-size: var(--text-sm);
   line-height: 1.7;
-  color: var(--light-text-tertiary);
+  /* tertiary 白底仅 ~3:1，空态说明是信息文本 → secondary（~5.7:1 AA） */
+  color: var(--light-text-secondary);
   max-width: 420px;
 }
 </style>

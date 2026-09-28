@@ -121,6 +121,8 @@ view, text, image, button { box-sizing: border-box; }
 }
 
 .cert-canvas { width: 100%; height: 100%; }
+/* 已固化证书直接展示时，画布留在 DOM（加载失败可退回现场绘制）但移出视野 */
+.cert-canvas-off { position: absolute; left: -9999rpx; top: 0; }
 
 /* 底部按钮 */
 .action-bar {

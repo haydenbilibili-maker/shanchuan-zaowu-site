@@ -7,6 +7,8 @@ const { findStore, getPreferredStoreId, getWorkshopStore, enrichStore } = requir
 const { trackBehavior } = require('../../../utils/trackBehavior');
 const { withAppModal } = require('../../../utils/appModal');
 const { drawMemberQr } = require('../utils/qrCanvas');
+const { todayKey, isActivityExpired } = require('../../../utils/activityExpiry');
+const { requestBookingSubscribe } = require('../utils/bookingSubscribe');
 
 const BOOKING_TYPE_CN = {
   museum_visit: '到店参观',
@@ -336,14 +338,21 @@ Page(withAppModal({
       try {
         const res = await db
           .collection('activities')
-          .where({ status: 'open', storeId })
+          .where({ status: 'open', storeId, date: db.command.gte(todayKey()) })
           .orderBy('date', 'asc')
           .get()
         all = res.data || []
       } catch (err) {
-        const res = await db.collection('activities').where({ status: 'open' }).orderBy('date', 'asc').get()
+        const res = await db.collection('activities').where({ status: 'open', date: db.command.gte(todayKey()) }).orderBy('date', 'asc').get()
         all = (res.data || []).filter((item) => !item.storeId || item.storeId === storeId)
       }
+      // 名额以 createBooking 原子扣减后的 remain 为准；maxPeople 为 0 = 不限
+      all = all.filter((a) => !isActivityExpired(a)).map((a) => {
+        const max = parseInt(a.maxPeople, 10) || 0
+        const left = Number(a.remain)
+        const full = max > 0 && Number.isFinite(left) && left <= 0
+        return { ...a, _full: full, _seat: full ? '已满' : max > 0 && Number.isFinite(left) ? `余 ${left} 位` : '' }
+      })
       const courses = all.filter(item => item.type === 'handcraft_course' || item.type === 'course');
       const events = all.filter(item => item.type === 'special_activity');
       
@@ -509,7 +518,7 @@ Page(withAppModal({
   selectActivity(e) {
     const { id, status, type } = e.currentTarget.dataset;
     if (status !== 'open') {
-      wx.showToast({ title: '该活动已关闭', icon: 'none' });
+      wx.showToast({ title: status === 'full' ? '名额已满' : '该活动已关闭', icon: 'none' });
       return;
     }
     
@@ -546,15 +555,15 @@ Page(withAppModal({
       return;
     }
 
-    if (item.status !== 'open') {
-      wx.showToast({ title: '该活动已关闭', icon: 'none' });
+    if (item.status !== 'open' || item._full) {
+      wx.showToast({ title: item._full ? '名额已满' : '该活动已关闭', icon: 'none' });
       return;
     }
 
     wx.vibrateShort({ type: 'heavy' });
     
-    // 弹出支付确认
-    this.modal({
+    // 先在点击同步栈里请求「预约取消通知」订阅（拒绝也继续），再弹支付确认
+    requestBookingSubscribe(() => this.modal({
       title: '确认报名',
       overline: 'CONFIRM BOOKING',
       content: `项目：${item.title}\n时间：${item.date} ${item.time || item.location}\n价格：¥${item.price}`,
@@ -563,7 +572,7 @@ Page(withAppModal({
       if (res.confirm) {
         this.doBookActivity(item);
       }
-    });
+    }));
   },
 
   // 🟢 4. 执行活动报名
@@ -582,7 +591,8 @@ Page(withAppModal({
         name: this.data.contactName,
         phone: this.data.contactPhone,
         storeId: this.data.storeId,
-        storeName: this.data.storeName
+        storeName: this.data.storeName,
+        activityId: item._id
       };
 
       const res = await wx.cloud.callFunction({
@@ -592,6 +602,7 @@ Page(withAppModal({
 
       wx.hideLoading();
       const result = (res && res.result) || {};
+      this.loadActivities();
       if (result.success) {
           // 🟢 发送预约成功提醒
           this.sendBookingReminder('success', result.bookingId, bookingData);

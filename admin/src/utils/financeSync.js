@@ -3,7 +3,7 @@
  * Web 管理后台 ↔ 云数据库 ↔ 店长小程序账本（store_ledger）
  */
 import { COLLECTIONS } from '../cloud'
-import { getCdnDatabase, fetchAllFromCollection, cdnAdd, cdnUpdate, cdnRemove, assertWriteApplied } from './cloudbaseCdnDb.js'
+import { getCdnDatabase, fetchAllFromCollection, fetchCollectionLimit, cdnAdd, cdnUpdate, cdnRemove, assertWriteApplied } from './cloudbaseCdnDb.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
 import {
   ledgerKey,
@@ -74,9 +74,7 @@ export async function fetchFinanceRecordsFromCloud() {
 
 export async function fetchFinanceSettingsFromCloud() {
   try {
-    const db = await getCdnDatabase()
-    const res = await db.collection(COLLECTIONS.FINANCE_SETTINGS).limit(20).get()
-    const rows = res.data || []
+    const rows = await fetchCollectionLimit(COLLECTIONS.FINANCE_SETTINGS, { limit: 20 })
     if (!rows.length) return null
     rows.sort(
       (a, b) => (b._updateTime || b.syncedAt || 0) - (a._updateTime || a.syncedAt || 0),
@@ -171,8 +169,6 @@ export async function saveFinanceRecordsToCloud(records) {
 
 export async function saveFinanceSettingsToCloud(settings) {
   try {
-    const db = await getCdnDatabase()
-
     if (!settings) {
       return { success: true, message: '无设置需要同步' }
     }
@@ -189,8 +185,7 @@ export async function saveFinanceSettingsToCloud(settings) {
       normalized.mallRate = rate / 100
     }
 
-    const res = await db.collection(COLLECTIONS.FINANCE_SETTINGS).limit(20).get()
-    const rows = (res.data || []).sort(
+    const rows = (await fetchCollectionLimit(COLLECTIONS.FINANCE_SETTINGS, { limit: 20 })).sort(
       (a, b) => (b._updateTime || 0) - (a._updateTime || 0),
     )
 

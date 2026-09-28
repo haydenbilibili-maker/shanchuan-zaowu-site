@@ -318,7 +318,7 @@
     </view>
 
     <!-- 已签收：养护 + 证书 + 评价 -->
-    <view class="received-actions" wx:if="{{order.status === 'received' && showCare}}">
+    <view class="received-actions" wx:if="{{order.status === 'received' && showCare && certRole !== 'giver'}}">
       <view class="btn-main flex-grow" catchtap="goToCare">
         <image class="btn-care-icon" src="/subpackages/business/assets/icons/care-on-brass.png" mode="aspectFit"></image>
         <text>标本养护</text>
@@ -326,7 +326,7 @@
       <view class="hologram-btn flex-grow" catchtap="viewCertificate">收藏证书</view>
     </view>
     <view class="hologram-btn" catchtap="viewCertificate" wx:elif="{{order.status === 'received'}}">
-      <text>查看收藏证书</text>
+      <text>{{certRole === 'giver' ? '查看赠予凭证' : '查看收藏证书'}}</text>
     </view>
     <view
       class="btn-text comment-after {{reviewCanAny ? '' : 'comment-done'}}"

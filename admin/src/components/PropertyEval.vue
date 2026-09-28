@@ -129,7 +129,7 @@
                 </div>
                 <div class="scenario-switcher">
                   <span class="ss-label">情景开关：</span>
-                  <el-radio-group v-model="current.scenario" fill="#d4af37">
+                  <el-radio-group v-model="current.scenario">
                     <el-radio-button :label="1">1 · 下行(保守)</el-radio-button>
                     <el-radio-button :label="2">2 · 中性(基准)</el-radio-button>
                     <el-radio-button :label="3">3 · 上行(乐观)</el-radio-button>

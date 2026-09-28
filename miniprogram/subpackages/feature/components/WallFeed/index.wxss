@@ -1,0 +1,818 @@
+/* components/WallFeed/index.wxss
+ * 「祈福内容流」组件样式 —— **自包含**：不引用页面 .ww-* 的任何规则，只用设计令牌。
+ *
+ * 四条纪律（都来自产品负责人 2026-09-21「排版不合理」这条主诉；2026-09-24 补第⑤条）：
+ *   ① 对齐：分段控件 / 筛选行 / 两列瀑布共用同一条左基线（组件不带左右内边距，
+ *      沿用页面 `.ww-page` 的 --space-4，与改造前的愿签列表同一条线）；
+ *   ② 间距节奏：只用 --space-* 令牌；同类元素同距（卡间距 14rpx、组间距 --space-3）；
+ *   ③ 字阶：一律 var(--fs-*)，不写裸字号（新代码不得引入非令牌字号）；
+ *   ④ 可点区 ≥88rpx：分段 / 筛选 / 排序 / 加载更多 / 详情关闭 / 卡片 / 管理动作逐条钉住；
+ *   ⑤ 控制条层级：主分段（视图）与次级工具（筛选/排序）**不许同级抢视线** ——
+ *      真机截图里三段圆钮叠成"三个金高亮"（分段灰底 + 筛选实心金 + 排序实心金），
+ *      读起来像三排互不相关的按钮。主分段走胶囊选中；筛选/排序并成一行、用下划线选中。
+ */
+
+.wf {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  border: 2rpx solid rgba(196, 167, 108, 0.32);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(90% 40% at 50% 0%, rgba(212, 188, 133, 0.14), transparent 55%),
+    linear-gradient(180deg, rgba(26, 23, 18, 0.92) 0%, rgba(14, 12, 10, 0.55) 100%);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(250, 246, 237, 0.04),
+    0 14rpx 32rpx rgba(0, 0, 0, 0.22);
+}
+
+/* 签廊门楣 */
+.wf-gallery-head {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-bottom: 18rpx;
+  padding-bottom: 14rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.28);
+}
+
+.wf-gallery-seal {
+  flex-shrink: 0;
+  width: 52rpx;
+  height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #F0E2B8 0%, var(--brass-400) 55%, var(--brass-600) 100%);
+  border: 1rpx solid rgba(107, 90, 36, 0.45);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.5), 0 4rpx 12rpx rgba(0, 0, 0, 0.28);
+}
+
+.wf-gallery-seal-t {
+  font-family: var(--font-brand, 'Source Han Serif SC', serif);
+  font-size: var(--fs-26);
+  font-weight: 700;
+  color: #2A220E;
+}
+
+.wf-gallery-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.wf-gallery-title {
+  display: block;
+  font-family: var(--font-brand, 'Source Han Serif SC', serif);
+  font-size: var(--fs-30);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--brass-50);
+}
+
+.wf-gallery-sub {
+  display: block;
+  margin-top: 4rpx;
+  font-size: var(--fs-18);
+  letter-spacing: 0.06em;
+  color: rgba(224, 207, 163, 0.55);
+}
+
+/* ── 两栏分段（主视图：全宽等分，一眼就是这一区的标题栏） ── */
+.wf-seg {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 6rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.48);
+  border-radius: var(--radius-lg);
+  /* v2：匾下双签 —— 方角匾感，不再是细胶囊 */
+  background:
+    linear-gradient(180deg, rgba(212, 188, 133, 0.16) 0%, rgba(196, 167, 108, 0.04) 100%);
+  box-sizing: border-box;
+  box-shadow:
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.12),
+    0 8rpx 20rpx rgba(0, 0, 0, 0.18);
+}
+
+.wf-seg-item {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 88rpx;
+  min-width: 88rpx;
+  padding: 0 20rpx;
+  border-radius: calc(var(--radius-lg) - 4rpx);
+}
+
+.wf-seg-item.is-on {
+  background: linear-gradient(155deg, rgba(196, 167, 108, 0.48) 0%, rgba(168, 144, 60, 0.34) 100%);
+  box-shadow:
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.28),
+    inset 0 0 0 1rpx rgba(196, 167, 108, 0.55);
+}
+
+.wf-seg-label {
+  font-size: var(--fs-24);
+  letter-spacing: 0.06em;
+  color: rgba(224, 207, 163, 0.62);
+}
+
+.wf-seg-item.is-on .wf-seg-label {
+  color: var(--brass-50);
+  font-weight: 700;
+}
+
+.wf-seg-n {
+  font-size: var(--fs-18);
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.wf-seg-item.is-on .wf-seg-n {
+  color: var(--brass-200);
+}
+
+/* ── 筛选 + 排序（次级工具条：并成一行，用字色/下划线选中，不与主分段抢实心金） ── */
+.wf-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+  /* 2026-09-26：分段→工具条略贴，工具条仍次级 */
+  margin-top: 12rpx;
+  padding: 0 2rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.18);
+}
+
+.wf-chips,
+.wf-sorts {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.wf-sorts {
+  flex-shrink: 0;
+}
+
+/* 筛选 | 排序 的竖线分隔：让两簇读成两个功能，而不是一长串词 */
+.wf-controls-rule {
+  flex-shrink: 0;
+  align-self: center;
+  width: 1rpx;
+  height: 22rpx;
+  background: rgba(196, 167, 108, 0.32);
+}
+
+.wf-sort-lead {
+  flex-shrink: 0;
+  margin-right: 4rpx;
+  font-size: var(--fs-16);
+  letter-spacing: 0.1em;
+  color: rgba(224, 207, 163, 0.42);
+}
+
+.wf-chip,
+.wf-sort {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  min-width: 88rpx;
+  padding: 0 10rpx;
+  /* 次级：无描边、无底色 —— 可点面积仍 ≥88，但看上去是一行字，不是又一排圆钮 */
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.wf-chip-t,
+.wf-sort-t {
+  font-size: var(--fs-20);
+  letter-spacing: 0.04em;
+  color: rgba(224, 207, 163, 0.5);
+  line-height: 1.2;
+  padding-bottom: 6rpx;
+  border-bottom: 2rpx solid transparent;
+}
+
+.wf-chip.is-on .wf-chip-t,
+.wf-sort.is-on .wf-sort-t {
+  color: var(--brass-100);
+  /* 下划线跟字宽走（不是跟 88rpx 可点盒走），避免短词底下拖一条宽金条 */
+  border-bottom-color: var(--brass-400);
+  border-bottom-width: 3rpx;
+}
+
+.wf-chip.is-on,
+.wf-sort.is-on {
+  border: none;
+  background: transparent;
+}
+
+/* ── 两列瀑布（列间等宽、列内纵向堆叠；与改造前的分列口径同一套） ── */
+.wf-cols {
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+  margin-top: 20rpx;
+}
+
+.wf-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+/* ── 愿签卡：浅纸挂签（签廊叙事 —— 深厅里的浅纸，与弹幕挂签同族） ── */
+.wf-card {
+  position: relative;
+  display: block;
+  min-height: 88rpx;
+  padding: var(--space-6) var(--space-3) var(--space-3) 26rpx;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(250, 246, 237, 0.72) 0%, transparent 38%),
+    linear-gradient(165deg, #F8F3E8 0%, #EFE7D6 52%, #E5DCC8 100%);
+  border: 2rpx solid rgba(196, 167, 108, 0.48);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(250, 246, 237, 0.55),
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.75),
+    0 12rpx 26rpx rgba(0, 0, 0, 0.28);
+}
+
+/* 左侧铜线是"签绳"（同时也是「我的」的标记位，见 .is-mine） */
+.wf-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12rpx;
+  bottom: 12rpx;
+  width: 4rpx;
+  border-radius: 2rpx;
+  background: linear-gradient(180deg, rgba(168, 144, 60, 0.95) 0%, rgba(196, 167, 108, 0.35) 100%);
+}
+
+.wf-card.is-mine::before {
+  width: 6rpx;
+  background: linear-gradient(180deg, var(--brass-300) 0%, rgba(196, 167, 108, 0.55) 100%);
+}
+
+.wf-card.is-fresh {
+  border-color: rgba(168, 144, 60, 0.75);
+  box-shadow:
+    0 0 0 2rpx rgba(233, 190, 110, 0.35),
+    inset 0 0 0 1rpx rgba(250, 246, 237, 0.6),
+    0 12rpx 28rpx rgba(0, 0, 0, 0.28);
+  animation: wf-fresh-in 0.5s ease-out both;
+}
+
+@keyframes wf-fresh-in {
+  from { opacity: 0; transform: translateY(-12rpx) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wf-card-press {
+  opacity: 0.86;
+}
+
+.wf-card-pin {
+  position: absolute;
+  left: 4rpx;
+  top: 16rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 34%, var(--brass-100) 0%, var(--brass-500) 70%);
+  box-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.35), 0 0 0 2rpx rgba(196, 167, 108, 0.25);
+}
+
+.wf-card-seal {
+  position: absolute;
+  right: 12rpx;
+  top: 12rpx;
+  padding: 1rpx var(--space-1);
+  font-size: var(--fs-16);
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  color: #5A4A28;
+  border: 1rpx solid rgba(138, 117, 48, 0.45);
+  border-radius: 4rpx;
+  background: rgba(250, 246, 237, 0.65);
+}
+
+.wf-card-seal.is-hidden {
+  color: var(--color-warning);
+  border-color: rgba(233, 162, 59, 0.5);
+  background: rgba(233, 162, 59, 0.12);
+}
+
+.wf-card-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  max-height: calc(var(--fs-30) * 6);
+  overflow: hidden;
+  font-family: var(--font-hand);
+  font-size: var(--fs-30);
+  line-height: 1.55;
+  color: #3A2E12;
+  word-break: break-all;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1rpx 0 rgba(250, 246, 237, 0.55);
+}
+
+.wf-card-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 18rpx;
+  min-width: 0;
+  padding-top: 14rpx;
+  border-top: 1rpx solid rgba(138, 117, 48, 0.22);
+}
+
+.wf-card-avatar {
+  flex-shrink: 0;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: #E8DFCC;
+  border: 1rpx solid rgba(138, 117, 48, 0.35);
+}
+
+.wf-card-avatar.is-empty {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(196, 167, 108, 0.35) 0%, rgba(196, 167, 108, 0.1) 55%, transparent 70%),
+    #EFE7D6;
+  border-color: rgba(138, 117, 48, 0.28);
+}
+
+.wf-card-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10rpx;
+  overflow: hidden;
+}
+
+.wf-card-nick {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-20);
+  color: rgba(74, 58, 20, 0.78);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wf-card-time {
+  flex-shrink: 0;
+  font-size: var(--fs-18);
+  font-family: var(--font-mono);
+  color: rgba(90, 74, 36, 0.55);
+}
+
+/* ── 我的心愿：状态 + 管理动作 ── */
+.wf-card-state {
+  margin-top: var(--space-1);
+}
+
+.wf-card-state-text {
+  font-size: var(--fs-18);
+  letter-spacing: 0.04em;
+}
+
+.wf-card-state-text.is-live {
+  color: #6B5A24;
+}
+
+.wf-card-state-text.is-hidden {
+  color: var(--color-warning);
+}
+
+.wf-card-acts,
+.wf-sheet-manage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.wf-act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 88rpx;
+  min-width: 88rpx;
+  padding: 0 var(--space-1);
+  font-size: var(--fs-22);
+  letter-spacing: 0.04em;
+  color: #5A4A28;
+  border: 1rpx solid rgba(138, 117, 48, 0.4);
+  border-radius: var(--radius-sm);
+  background: rgba(250, 246, 237, 0.55);
+}
+
+.wf-act.is-danger {
+  color: var(--color-warning);
+  border-color: rgba(214, 64, 69, 0.5);
+  background: rgba(233, 162, 59, 0.12);
+}
+
+/* ── 三态：骨架 / 错误 / 空 ── */
+.wf-skel {
+  position: relative;
+  padding: var(--space-6) var(--space-3) var(--space-3) 26rpx;
+  min-height: 196rpx;
+  overflow: hidden;
+  border: 2rpx solid rgba(196, 167, 108, 0.48);
+  border-radius: var(--radius-md);
+  /* 必须与 .wf-card 同底同渐变（守卫钉住：骨架→真卡不许跳色） */
+  background:
+    linear-gradient(180deg, rgba(250, 246, 237, 0.72) 0%, transparent 38%),
+    linear-gradient(165deg, #F8F3E8 0%, #EFE7D6 52%, #E5DCC8 100%);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(250, 246, 237, 0.55),
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.75),
+    0 12rpx 26rpx rgba(0, 0, 0, 0.28);
+}
+
+.wf-skel-pin {
+  position: absolute;
+  left: 5rpx;
+  top: 17rpx;
+  width: 11rpx;
+  height: 11rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 34%, var(--brass-100) 0%, var(--brass-500) 70%);
+}
+
+.wf-skel-line {
+  height: 24rpx;
+  border-radius: 6rpx;
+  background: linear-gradient(90deg, rgba(168, 144, 60, 0.1) 0%, rgba(212, 188, 133, 0.32) 50%, rgba(168, 144, 60, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: wf-shimmer 1.5s ease-in-out infinite;
+}
+
+.wf-skel-line.is-w1 { width: 78%; }
+
+.wf-skel-line.is-w2 {
+  width: 52%;
+  margin-top: var(--space-2);
+}
+
+@keyframes wf-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.wf-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-2);
+  margin-top: var(--space-3);
+  border: 1rpx dashed rgba(233, 162, 59, 0.35);
+  border-radius: var(--radius-md);
+  background: rgba(233, 162, 59, 0.05);
+}
+
+.wf-error-text {
+  font-size: var(--fs-24);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-text-body);
+}
+
+.wf-error-retry,
+.wf-more-retry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  min-width: 200rpx;
+  padding: 0 var(--space-4);
+  font-size: var(--fs-24);
+  color: var(--color-bg);
+  border-radius: 999rpx;
+  background: var(--brass-400);
+}
+
+.wf-empty {
+  position: relative;
+  padding: var(--space-6) var(--space-4);
+  margin-top: var(--space-3);
+  text-align: center;
+  font-size: var(--fs-24);
+  letter-spacing: 0.08em;
+  color: rgba(224, 207, 163, 0.72);
+  /* v2：厅内空龛 —— 虚线框升级为嵌墙浅铜框 */
+  border: 2rpx solid rgba(196, 167, 108, 0.38);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(180deg, rgba(250, 246, 237, 0.04) 0%, transparent 42%),
+    linear-gradient(165deg, rgba(196, 167, 108, 0.1) 0%, rgba(26, 23, 18, 0.55) 100%);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(250, 246, 237, 0.05),
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.08);
+}
+
+.wf-empty::before {
+  content: '';
+  display: block;
+  width: 56rpx;
+  height: 4rpx;
+  margin: 0 auto 18rpx;
+  border-radius: 2rpx;
+  background: linear-gradient(90deg, transparent, rgba(196, 167, 108, 0.75), transparent);
+}
+
+/* ── 加载更多状态机（可加载 / 加载中 / 没有更多 / 失败可重试） ── */
+.wf-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 88rpx;
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.wf-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  min-width: 280rpx;
+  padding: 0 var(--space-5);
+  font-size: var(--fs-24);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #2A220E;
+  border: 1rpx solid rgba(107, 90, 36, 0.45);
+  border-radius: 999rpx;
+  /* v2：与墙脚「看全部」同族铜铸 */
+  background: linear-gradient(150deg, #F0E2B8 0%, var(--brass-400) 55%, var(--brass-600) 100%);
+  box-shadow:
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.5),
+    0 8rpx 18rpx rgba(0, 0, 0, 0.28);
+}
+
+.wf-more-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 88rpx;
+}
+
+.wf-more-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: var(--brass-400);
+  animation: wf-breathe 1.1s ease-in-out infinite;
+}
+
+@keyframes wf-breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.wf-more-text {
+  font-size: var(--fs-22);
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.wf-more-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 88rpx;
+}
+
+.wf-end-rule {
+  flex: 1;
+  height: 1px;
+  background: rgba(196, 167, 108, 0.16);
+}
+
+.wf-end-text {
+  flex-shrink: 0;
+  font-size: var(--fs-20);
+  letter-spacing: 0.1em;
+  color: rgba(224, 207, 163, 0.5);
+}
+
+.wf-more-error {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-22);
+  color: var(--color-text-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 愿签详情：签廊展陈笺（浅纸挂签放大） ── */
+.wf-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 60;
+  background: rgba(12, 11, 9, 0.78);
+}
+
+.wf-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  max-height: 82vh;
+  padding: var(--space-2) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background:
+    linear-gradient(180deg, rgba(250, 246, 237, 0.55) 0%, transparent 28%),
+    linear-gradient(180deg, #F8F3E8 0%, #EFE7D6 48%, #E5DCC8 100%);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-top: 2rpx solid rgba(196, 167, 108, 0.55);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(250, 246, 237, 0.5),
+    0 -16rpx 40rpx rgba(0, 0, 0, 0.45);
+  animation: wf-sheet-up 420ms cubic-bezier(0.22, 0.82, 0.28, 1) both;
+}
+
+@keyframes wf-sheet-up {
+  from { transform: translateY(48rpx); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.wf-sheet-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40rpx;
+}
+
+.wf-sheet-grip-bar {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: rgba(138, 117, 48, 0.45);
+}
+
+.wf-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 88rpx;
+}
+
+.wf-sheet-over {
+  font-family: var(--font-brand, 'Source Han Serif SC', serif);
+  font-size: var(--fs-22);
+  letter-spacing: 0.28em;
+  color: #5A4A28;
+  font-weight: 700;
+}
+
+.wf-sheet-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  min-width: 88rpx;
+  padding: 0 var(--space-2);
+  font-size: var(--fs-24);
+  color: #2A220E;
+  border: 1rpx solid rgba(107, 90, 36, 0.45);
+  border-radius: 999rpx;
+  background: linear-gradient(150deg, #F0E2B8 0%, var(--brass-400) 55%, var(--brass-600) 100%);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.45);
+}
+
+.wf-sheet-seals {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.wf-sheet-seal {
+  padding: 2rpx var(--space-1);
+  font-size: var(--fs-18);
+  letter-spacing: 0.04em;
+  color: #5A4A28;
+  border: 1rpx solid rgba(138, 117, 48, 0.45);
+  border-radius: 6rpx;
+  background: rgba(250, 246, 237, 0.65);
+}
+
+.wf-sheet-seal.is-warn {
+  color: var(--color-warning);
+  border-color: rgba(233, 162, 59, 0.5);
+  background: rgba(233, 162, 59, 0.12);
+}
+
+.wf-sheet-text {
+  display: block;
+  font-family: var(--font-hand);
+  font-size: var(--fs-34);
+  line-height: 1.6;
+  color: #3A2E12;
+  word-break: break-all;
+  text-shadow: 0 1rpx 0 rgba(250, 246, 237, 0.55);
+}
+
+.wf-sheet-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  min-width: 0;
+  padding-top: var(--space-2);
+  border-top: 1rpx solid rgba(138, 117, 48, 0.22);
+}
+
+.wf-sheet-avatar {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: #E8DFCC;
+  border: 1rpx solid rgba(138, 117, 48, 0.35);
+}
+
+.wf-sheet-who {
+  font-size: var(--fs-22);
+  color: rgba(74, 58, 20, 0.82);
+}
+
+.wf-sheet-time {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-20);
+  color: rgba(90, 74, 36, 0.55);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wf-sheet-count {
+  flex-shrink: 0;
+  font-size: var(--fs-18);
+  font-family: var(--font-mono);
+  color: rgba(90, 74, 36, 0.5);
+}
+
+.wf-sheet-acts {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.wf-sheet-act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 88rpx;
+  min-width: 88rpx;
+  font-size: var(--fs-24);
+  letter-spacing: 0.04em;
+  color: #2A220E;
+  font-weight: 700;
+  border: 1rpx solid rgba(107, 90, 36, 0.45);
+  border-radius: 999rpx;
+  background: linear-gradient(150deg, #F0E2B8 0%, var(--brass-400) 55%, var(--brass-600) 100%);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.45);
+}
+
+/* 统一的按压反馈：本组件所有可点元素共用同一条 hover-class（同族同值） */
+.wf-press {
+  opacity: 0.75;
+}

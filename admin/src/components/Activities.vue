@@ -35,7 +35,7 @@
                     <el-progress 
                         :percentage="calcPercent(scope.row)" 
                         :color="customColors" 
-                        :format="() => `${(scope.row.maxPeople || 0) - (scope.row.remain || 0)}/${scope.row.maxPeople || 0}人`"
+                        :format="() => `${joinedOf(scope.row)}/${scope.row.maxPeople || 0}人`"
                     />
                 </template>
             </el-table-column>
@@ -104,12 +104,13 @@
 <script setup>
 import ErpEmpty from './ErpEmpty.vue'
 import { ref, reactive, onMounted } from 'vue'
-import { fetchCollectionSorted, cdnAdd, cdnUpdate } from '../cloud'
+import { fetchCollectionSorted, fetchCollectionLimit, cdnAdd, cdnUpdate } from '../cloud'
 import { ElMessage } from 'element-plus'
 import ImageUploadField from './ImageUploadField.vue'
 
 const loading = ref(false)
 const list = ref([])
+const bookings = ref([])
 const dialogVisible = ref(false)
 const customColors = [{color: '#f56c6c', percentage: 100}, {color: '#5cb87a', percentage: 60}]
 
@@ -124,6 +125,13 @@ const fetchList = async () => {
             limit: 200,
             sortFn: (a, b) => (b.createTime || 0) - (a.createTime || 0)
         })
+        try {
+            bookings.value = (await fetchCollectionLimit('bookings', { limit: 500 }))
+                .filter((b) => ['confirmed', 'pending', 'used'].includes(b.status))
+        } catch (e) {
+            console.warn('读取预约失败，报名进度显示「—」', e)
+            bookings.value = null
+        }
     } catch(e) {
         console.error('加载活动失败', e)
         list.value = []
@@ -166,9 +174,15 @@ const stopActivity = async (row) => {
     fetchList()
 }
 
+// 报名数按 bookings 计：优先 activityId，历史预约没有 activityId 时回退「标题 + 日期」（与小程序工作台同口径）
+const joinedOf = (row) => bookings.value ? bookings.value.filter((b) =>
+    b.activityId ? b.activityId === row._id : b.title === row.title && b.date === row.date
+).length : '—'
+
 const calcPercent = (row) => {
     if(!row.maxPeople) return 0
-    const joined = (row.maxPeople || 0) - (row.remain || 0)
+    const joined = joinedOf(row)
+    if (typeof joined !== 'number') return 0
     return Math.min(100, Math.round((joined / row.maxPeople) * 100))
 }
 

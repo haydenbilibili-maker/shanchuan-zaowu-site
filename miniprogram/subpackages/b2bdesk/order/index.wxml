@@ -1,0 +1,92 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="state">
+    <text class="state-title">正在读取订单…</text>
+  </view>
+  <view wx:elif="{{error}}" class="state err">
+    <text class="state-title">订单加载失败</text>
+    <text class="state-body">{{error}}</text>
+    <view class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
+  </view>
+  <block wx:elif="{{order}}">
+    <view class="head">
+      <text class="head-en">{{order.directionLabel}}</text>
+      <text class="head-cn">{{order.partnerName}}</text>
+      <text class="head-note" bindtap="copyOrderNo">{{order.dateText}} · {{order.orderNo || order._id}}（点按复制）</text>
+    </view>
+
+    <view wx:if="{{flash}}" class="flash"><text class="flash-text">{{flash}}</text></view>
+
+    <view class="kpi-grid">
+      <view class="kpi hot">
+        <text class="kpi-label">金额</text>
+        <text class="kpi-value">{{order.amountText}}</text>
+        <text class="kpi-sub">{{order.qty}} 件 · {{items.length}} 款</text>
+      </view>
+      <view class="kpi {{order.overdue ? 'warn' : ''}}">
+        <text class="kpi-label">进度</text>
+        <text class="kpi-value">{{order.stageLabel}}</text>
+        <text class="kpi-sub">{{order.payBucket === 'na' ? order.statusLabel : order.payLabel}}</text>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="section-title">时间线</text>
+      <view class="tl">
+        <view wx:for="{{timeline}}" wx:key="key" class="tl-node {{item.state}}">
+          <view class="tl-rail">
+            <view class="tl-dot"></view>
+            <view wx:if="{{index < timeline.length - 1}}" class="tl-line"></view>
+          </view>
+          <view class="tl-body">
+            <text class="tl-title">{{item.title}}</text>
+            <text wx:if="{{item.timeText}}" class="tl-time">{{item.timeText}}</text>
+            <text wx:if="{{item.note}}" class="tl-note">{{item.note}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="section-title">物流</text>
+      <view wx:if="{{!logistics.length}}" class="state">
+        <text class="state-body">还没有运单号。总部在 ERP「出货中心」发货、或供货方回传后会显示在这里。</text>
+      </view>
+      <view wx:for="{{logistics}}" wx:key="trackingNo" class="card">
+        <view class="card-row">
+          <view class="card-main">
+            <text class="card-title" user-select="true">{{item.trackingNo}}</text>
+            <text class="card-meta">{{item.carrier}}{{item.shipTimeText ? ' · ' + item.shipTimeText : ''}}{{item.shipmentNo ? ' · 出货单 ' + item.shipmentNo : ''}}</text>
+          </view>
+          <view class="search-go" data-no="{{item.trackingNo}}" bindtap="copyTracking"><text class="search-go-text">复制</text></view>
+        </view>
+      </view>
+      <text wx:if="{{logistics.length}}" class="foot">轨迹暂不在小程序内展示：复制运单号后到对应快递公司查询。</text>
+    </view>
+
+    <view wx:if="{{payRows.length}}" class="section">
+      <text class="section-title">货款</text>
+      <view wx:for="{{payRows}}" wx:key="k" class="kv">
+        <text class="kv-k">{{item.k}}</text>
+        <text class="kv-v">{{item.v}}</text>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="section-title">明细</text>
+      <view wx:for="{{items}}" wx:key="index" class="kv">
+        <text class="kv-k">{{item.name}} × {{item.qty}}</text>
+        <text class="kv-v">{{item.unitText}} · {{item.lineText}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{contactRows.length}}" class="section">
+      <text class="section-title">联系与收货</text>
+      <view wx:for="{{contactRows}}" wx:key="k" class="kv">
+        <text class="kv-k">{{item.k}}</text>
+        <text class="kv-v">{{item.v}}</text>
+      </view>
+    </view>
+
+    <text class="foot">本页只读。确认、发货、对公到账、退款等操作在 ERP「出货中心」与财务模块处理。</text>
+  </block>
+</view>

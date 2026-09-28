@@ -10,6 +10,13 @@
       <text class="header-note">生日当天发放 · 与 claimBirthdayGift 同源 · 仅超管</text>
     </view>
 
+    <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+    <view class="empty-tip is-error" wx:if="{{loadError && !loading}}">
+      <text class="empty-title">配置未能取回</text>
+      <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryConfig">重试</view>
+    </view>
+
     <view class="workbench-state" wx:if="{{loading && !ruleText && fromDefault}}">同步配置中…</view>
 
     <view class="preview" wx:if="{{ruleText}}">当前：{{ruleText}}</view>

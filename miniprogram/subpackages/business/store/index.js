@@ -18,6 +18,7 @@ const { normalizeStoreImageUrl, normalizeStoreImageList, hydrateStoresMedia, hyd
 const { BRAND_WEBSITE } = require('../utils/brand')
 const { withAppModal } = require('../../../utils/appModal')
 const { findNearestStore, formatDistance } = require('../../../utils/storeGeo')
+const { todayKey, isActivityExpired } = require('../../../utils/activityExpiry')
 const { getFirstImage, formatPrice } = require('../../../utils/util')
 const { getAuthorizedLocation } = require('../../../utils/locationAuth')
 
@@ -505,16 +506,16 @@ Page(withAppModal({
       try {
         const res = await db
           .collection('activities')
-          .where({ status: 'open', storeId })
+          .where({ status: 'open', storeId, date: db.command.gte(todayKey()) })
           .orderBy('date', 'asc')
           .limit(10)
           .get()
         all = res.data || []
       } catch (e) {
-        const res = await db.collection('activities').where({ status: 'open' }).orderBy('date', 'asc').limit(30).get()
+        const res = await db.collection('activities').where({ status: 'open', date: db.command.gte(todayKey()) }).orderBy('date', 'asc').limit(30).get()
         all = (res.data || []).filter((item) => !item.storeId || item.storeId === storeId)
       }
-      const storeActivities = all.slice(0, 4)
+      const storeActivities = all.filter((a) => !isActivityExpired(a)).slice(0, 4)
       this.setData({
         storeActivities,
         hasActivities: storeActivities.length > 0

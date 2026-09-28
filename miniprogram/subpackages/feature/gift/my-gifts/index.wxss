@@ -35,13 +35,46 @@ page {
   align-items: center;
   gap: 16rpx;
   text-align: center;
+  max-width: 520rpx;
+}
+
+.state-mark {
+  width: 112rpx;
+  height: 112rpx;
+  margin-bottom: 4rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16rpx;
 }
 
 .state-seal {
-  width: 48rpx;
-  height: 48rpx;
-  border: 2px solid rgba(196, 167, 108, 0.45);
+  width: 36rpx;
+  height: 36rpx;
+  border: 2px solid rgba(196, 167, 108, 0.55);
   border-radius: 50%;
+  position: relative;
+  z-index: 2;
+  box-shadow: inset 0 0 0 6rpx rgba(250, 246, 237, 0.35);
+}
+
+.state-over {
+  font-size: 18rpx;
+  color: #8A7530;
+  letter-spacing: 0.16em;
+}
+
+.state-hint {
+  font-size: 22rpx;
+  color: #6B6560;
+  line-height: 1.45;
+}
+
+.state-back {
+  margin-top: 12rpx;
+  min-width: 240rpx;
 }
 
 .muted { color: #A09A90; font-size: 26rpx; }
@@ -232,6 +265,53 @@ page {
   height: 32rpx;
   background: rgba(196, 167, 108, 0.22);
   flex-shrink: 0;
+}
+
+/* 页头待办焦点：主路径一眼可点 */
+.todo-focus {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 14rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 12rpx;
+  border: 1px solid rgba(233, 162, 59, 0.42);
+  background: linear-gradient(135deg, rgba(233, 162, 59, 0.12) 0%, rgba(196, 167, 108, 0.08) 100%);
+}
+.todo-focus-press { opacity: 0.88; }
+.todo-focus-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+}
+.todo-focus-left .signal-light {
+  margin-top: 8rpx;
+  box-shadow: none;
+}
+.todo-focus-copy { flex: 1; min-width: 0; }
+.todo-focus-title {
+  display: block;
+  font-size: 24rpx;
+  color: #6B5A24;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.todo-focus-hint {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #8B6F47;
+  line-height: 1.4;
+}
+.todo-focus-cta {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: #8A7530;
+  letter-spacing: 0.04em;
+  padding: 10rpx 4rpx 10rpx 12rpx;
+  font-weight: 500;
 }
 
 /* —— 主分区 Tab —— */
@@ -525,6 +605,12 @@ page {
   font-weight: 500;
   font-family: 'Source Han Serif SC', Georgia, serif;
 }
+.empty-over {
+  font-size: 18rpx;
+  color: #8A7530;
+  letter-spacing: 0.16em;
+  margin-bottom: -4rpx;
+}
 .empty-desc {
   font-size: 24rpx;
   color: #A09A90;
@@ -603,6 +689,14 @@ page {
 .card-attention {
   border-color: rgba(196, 167, 108, 0.45);
   background: linear-gradient(180deg, #241f18 0%, #1F1D1A 100%);
+}
+.card-attention .metal-edge {
+  opacity: 0.85;
+  animation: edgePulse 2.4s ease-in-out infinite;
+}
+@keyframes edgePulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.95; }
 }
 .card-urgent {
   border-color: rgba(233, 162, 59, 0.55);
@@ -800,6 +894,11 @@ page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.meta.recipient {
+  color: #C4A76C;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
 
 /* 履约微轨 */
 .prog-rail {
@@ -920,6 +1019,11 @@ page {
   box-sizing: border-box;
 }
 .act.primary { background: #C4A76C; color: #1A1814; font-weight: 500; }
+.act.primary.glow {
+  box-shadow:
+    inset 0 1rpx 0 rgba(250, 246, 237, 0.35),
+    0 0 0 1rpx rgba(224, 207, 163, 0.35);
+}
 .act-primary-press { background: #A8903C; }
 .act.ghost {
   background: transparent;
@@ -1830,3 +1934,16 @@ page {
 .card-hit.is-folded {
   opacity: 0.62;
 }
+
+/* 领取核验芯片（送出侧，只显示尾号） */
+.verify-chip {
+  align-self: flex-start;
+  margin-top: 8rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  border: 1px dashed rgba(196, 167, 108, 0.5);
+  font-size: 22rpx;
+  color: #B8AD98;
+}
+.verify-chip.on { border-style: solid; color: #C4A76C; }
+.verify-chip.warn { border: 1px solid #E8927C; color: #E8927C; }

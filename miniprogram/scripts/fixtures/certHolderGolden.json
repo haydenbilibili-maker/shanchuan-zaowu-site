@@ -1,0 +1,429 @@
+{
+ "_doc": "非礼赠收藏证书的绘制指令金样：由改动前（2026-09-28）certificate/index.js 的 drawPerfectCert 原样录制；check:gift-holder 断言重构后的 certDraw.drawHolderCert 对非礼赠数据产出逐条相同的指令",
+ "fixture": {
+  "w": 315,
+  "h": 560,
+  "data": {
+   "orderNo": "SH20260928001",
+   "date": "2026.9.28",
+   "product": {
+    "title": "光明女神闪蝶",
+    "latin": "Morpho helena",
+    "image": "https://example.com/a.jpg"
+   },
+   "user": "山海收藏家",
+   "level": "秘银·采集家"
+  }
+ },
+ "ops": [
+  [
+   "=fillStyle",
+   "#1F1D1A"
+  ],
+  [
+   "fillRect",
+   0,
+   0,
+   315,
+   560
+  ],
+  [
+   "=strokeStyle",
+   "#C4A76C"
+  ],
+  [
+   "=lineWidth",
+   1
+  ],
+  [
+   "strokeRect",
+   20,
+   20,
+   275,
+   520
+  ],
+  [
+   "=strokeStyle",
+   "rgba(196, 167, 108, 0.3)"
+  ],
+  [
+   "strokeRect",
+   24,
+   24,
+   267,
+   512
+  ],
+  [
+   "=textAlign",
+   "center"
+  ],
+  [
+   "=fillStyle",
+   "#666"
+  ],
+  [
+   "=font",
+   "9px sans-serif"
+  ],
+  [
+   "=letterSpacing",
+   "2px"
+  ],
+  [
+   "fillText",
+   "BRING NATURE HOME",
+   157.5,
+   55
+  ],
+  [
+   "=fillStyle",
+   "#C4A76C"
+  ],
+  [
+   "=font",
+   "bold 15px serif"
+  ],
+  [
+   "fillText",
+   "山海造物 · 珍藏证书",
+   157.5,
+   75
+  ],
+  [
+   "=fillStyle",
+   "#fff"
+  ],
+  [
+   "=font",
+   "bold 20px serif"
+  ],
+  [
+   "=letterSpacing",
+   "4px"
+  ],
+  [
+   "fillText",
+   "馆藏证书·仅此一件",
+   157.5,
+   110
+  ],
+  [
+   "=fillStyle",
+   "#bfa15f"
+  ],
+  [
+   "=font",
+   "10px sans-serif"
+  ],
+  [
+   "=letterSpacing",
+   "1px"
+  ],
+  [
+   "fillText",
+   "CERTIFICATE OF HONOR",
+   157.5,
+   135
+  ],
+  [
+   "=strokeStyle",
+   "rgba(196, 167, 108, 0.6)"
+  ],
+  [
+   "=lineWidth",
+   1
+  ],
+  [
+   "strokeRect",
+   77.5,
+   155,
+   160,
+   160
+  ],
+  [
+   "drawImage",
+   "img:https://example.com/a.jpg",
+   100,
+   0,
+   400,
+   400,
+   82.5,
+   160,
+   150,
+   150
+  ],
+  [
+   "=fillStyle",
+   "rgba(255,255,255,0.5)"
+  ],
+  [
+   "=font",
+   "italic 9px serif"
+  ],
+  [
+   "fillText",
+   "Exhibited Specimen",
+   157.5,
+   324
+  ],
+  [
+   "=fillStyle",
+   "#888"
+  ],
+  [
+   "=font",
+   "10px sans-serif"
+  ],
+  [
+   "=letterSpacing",
+   "2px"
+  ],
+  [
+   "fillText",
+   "兹授予 / Hereby Grants",
+   157.5,
+   350
+  ],
+  [
+   "=fillStyle",
+   "#C4A76C"
+  ],
+  [
+   "=font",
+   "bold 30px serif"
+  ],
+  [
+   "fillText",
+   "山海收藏家",
+   157.5,
+   380
+  ],
+  [
+   "=fillStyle",
+   "#fff"
+  ],
+  [
+   "=font",
+   "bold 12px sans-serif"
+  ],
+  [
+   "fillText",
+   "「 秘银·采集家 」",
+   157.5,
+   400
+  ],
+  [
+   "=fillStyle",
+   "#aaa"
+  ],
+  [
+   "=font",
+   "10px serif"
+  ],
+  [
+   "=letterSpacing",
+   "1px"
+  ],
+  [
+   "fillText",
+   "以表彰其对以下自然瑰宝的永久珍藏：",
+   157.5,
+   430
+  ],
+  [
+   "=fillStyle",
+   "#fff"
+  ],
+  [
+   "=font",
+   "bold 24px serif"
+  ],
+  [
+   "fillText",
+   "《 光明女神闪蝶 》",
+   157.5,
+   460
+  ],
+  [
+   "=fillStyle",
+   "#C4A76C"
+  ],
+  [
+   "=font",
+   "italic 10px serif"
+  ],
+  [
+   "fillText",
+   "Morpho helena",
+   157.5,
+   476
+  ],
+  [
+   "=fillStyle",
+   "#444"
+  ],
+  [
+   "=font",
+   "9px monospace"
+  ],
+  [
+   "=textAlign",
+   "left"
+  ],
+  [
+   "fillText",
+   "NO.SH20260928001",
+   30,
+   520
+  ],
+  [
+   "=textAlign",
+   "right"
+  ],
+  [
+   "fillText",
+   "2026.9.28",
+   285,
+   520
+  ],
+  [
+   "=strokeStyle",
+   "#333"
+  ],
+  [
+   "=lineWidth",
+   1
+  ],
+  [
+   "beginPath"
+  ],
+  [
+   "moveTo",
+   97.5,
+   490
+  ],
+  [
+   "lineTo",
+   217.5,
+   490
+  ],
+  [
+   "stroke"
+  ],
+  [
+   "=fillStyle",
+   "#666"
+  ],
+  [
+   "=font",
+   "9px sans-serif"
+  ],
+  [
+   "=textAlign",
+   "center"
+  ],
+  [
+   "fillText",
+   "山海造物 · 签发",
+   157.5,
+   504
+  ],
+  [
+   "save"
+  ],
+  [
+   "translate",
+   235,
+   460
+  ],
+  [
+   "rotate",
+   -0.262
+  ],
+  [
+   "=strokeStyle",
+   "rgba(180, 40, 40, 0.9)"
+  ],
+  [
+   "=lineWidth",
+   2
+  ],
+  [
+   "beginPath"
+  ],
+  [
+   "arc",
+   0,
+   0,
+   30,
+   0,
+   6.283
+  ],
+  [
+   "stroke"
+  ],
+  [
+   "=lineWidth",
+   1
+  ],
+  [
+   "beginPath"
+  ],
+  [
+   "arc",
+   0,
+   0,
+   26,
+   0,
+   6.283
+  ],
+  [
+   "stroke"
+  ],
+  [
+   "=fillStyle",
+   "rgba(180, 40, 40, 0.9)"
+  ],
+  [
+   "=font",
+   "bold 10px serif"
+  ],
+  [
+   "=textAlign",
+   "center"
+  ],
+  [
+   "=textBaseline",
+   "middle"
+  ],
+  [
+   "fillText",
+   "山海造物",
+   0,
+   -8
+  ],
+  [
+   "=font",
+   "8px sans-serif"
+  ],
+  [
+   "fillText",
+   "CERTIFIED",
+   0,
+   8
+  ],
+  [
+   "=font",
+   "14px serif"
+  ],
+  [
+   "fillText",
+   "★",
+   0,
+   22
+  ],
+  [
+   "restore"
+  ]
+ ]
+}

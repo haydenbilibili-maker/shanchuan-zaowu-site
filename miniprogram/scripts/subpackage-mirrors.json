@@ -5,6 +5,11 @@
     "identical": true
   },
   {
+    "source": "subpackages/feature/gift/giftShareCard.js",
+    "mirror": "subpackages/manager/utils/giftShareCard.js",
+    "identical": true
+  },
+  {
     "source": "subpackages/business/utils/cacheInvalidate.js",
     "mirror": "subpackages/extra/utils/cacheInvalidate.js",
     "identical": true
@@ -92,11 +97,6 @@
   {
     "source": "subpackages/manager/utils/financeDailyParse.js",
     "mirror": "subpackages/extra/utils/financeDailyParse.js",
-    "identical": true
-  },
-  {
-    "source": "subpackages/feature/utils/legalContent.js",
-    "mirror": "subpackages/extra/utils/legalContent.js",
     "identical": true
   },
   {
@@ -215,11 +215,6 @@
     "identical": true
   },
   {
-    "source": "subpackages/extra/utils/legalContent.js",
-    "mirror": "subpackages/feature/utils/legalContent.js",
-    "identical": true
-  },
-  {
     "source": "subpackages/business/utils/onePercentPledge.js",
     "mirror": "subpackages/feature/utils/onePercentPledge.js",
     "identical": true
@@ -257,6 +252,31 @@
   {
     "source": "subpackages/business/utils/refundPolicy.js",
     "mirror": "subpackages/feature/utils/refundPolicy.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/plays/config/ritualPlays.js",
+    "mirror": "subpackages/feature/config/ritualPlays.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/plays/utils/ritualPlayArchive.js",
+    "mirror": "subpackages/feature/utils/ritualPlayArchive.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/plays/utils/wishHandoff.js",
+    "mirror": "subpackages/feature/utils/wishHandoff.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/workNoticeVoice.js",
+    "mirror": "subpackages/extra/utils/workNoticeVoice.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/manager/utils/workNoticeCatalog.js",
+    "mirror": "subpackages/extra/utils/workNoticeCatalog.js",
     "identical": true
   }
 ]

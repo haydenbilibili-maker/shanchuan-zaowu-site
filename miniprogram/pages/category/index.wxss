@@ -517,27 +517,8 @@ view, text, image, scroll-view { box-sizing: border-box; }
 }
 
 /* ===== 内容列表行（左图右文，保留供其它页复用） ===== */
-.content-row {
-  display: flex;
-  gap: 24rpx;
-  padding: 24rpx;
-  margin-bottom: 16rpx;
-  background: var(--color-bg-card);
-  border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: 16rpx;
-}
 
-.content-row-active {
-  background: var(--color-bg-elevated);
-}
 
-.content-thumb {
-  width: 200rpx;
-  height: 200rpx;
-  border-radius: 12rpx;
-  background: var(--color-bg-elevated);
-  flex-shrink: 0;
-}
 
 .content-body {
   flex: 1;
@@ -546,13 +527,6 @@ view, text, image, scroll-view { box-sizing: border-box; }
   flex-direction: column;
 }
 
-.content-tags {
-  margin-bottom: 8rpx;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 8rpx;
-}
 
 .tag-type {
   display: inline-flex;
@@ -569,16 +543,6 @@ view, text, image, scroll-view { box-sizing: border-box; }
   line-height: 1.3;
 }
 
-.content-title {
-  font-size: 30rpx;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
 
 .content-latin {
   font-size: 22rpx;
@@ -591,34 +555,8 @@ view, text, image, scroll-view { box-sizing: border-box; }
   white-space: nowrap;
 }
 
-.content-brief {
-  font-size: 24rpx;
-  color: var(--color-text-muted);
-  margin-top: 8rpx;
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
 
-.content-cta {
-  margin-top: auto;
-  padding-top: 12rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8rpx;
-}
 
-.content-cta text:first-child {
-  font-size: 22rpx;
-  color: var(--gold);
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .cta-arrow {
   color: var(--color-text-muted);
@@ -705,22 +643,6 @@ view, text, image, scroll-view { box-sizing: border-box; }
 }
 
 /* 孤品角标：与首页 components/ProductCard 的 .tag-unique 同款式（右上，铜牌描边） */
-.product-tag-unique {
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 4rpx 14rpx;
-  font-size: 18rpx;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  color: var(--gold);
-  background: rgba(26, 24, 20, 0.88);
-  border: 1px solid rgba(196, 167, 108, 0.55);
-  border-top: none;
-  border-right: none;
-  border-bottom-left-radius: 12rpx;
-  z-index: 1;
-}
 
 .product-info {
   padding: 16rpx;

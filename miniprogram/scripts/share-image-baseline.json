@@ -1,11 +1,12 @@
 {
-  "updatedAt": "2026-09-17",
+  "updatedAt": "2026-09-27",
   "note": "待复核的分享封面表达式。静态检查无法确认这些字段是否已在别处 getTempFileURL 解析；新增即失败，确认安全后再 --update 收编。硬失败（cdnPath/裸 cloud://）不进基线。",
   "reviewed": [
+    "subpackages/content/live/watch/index.js (session && session.coverUrl) || (upcoming && upcoming.coverUrl) || ''",
+    "subpackages/content/live/watch/index.js imageUrl",
     "subpackages/feature/collection/detail/index.js this.data.shareImage",
     "subpackages/feature/detail/index.js getFirstImage(product.images) || ''",
     "subpackages/feature/identify/result/index.js this.data.displayImage || ''",
-    "subpackages/feature/live/watch/index.js (session && session.coverUrl) || (upcoming && upcoming.coverUrl) || ''",
-    "subpackages/feature/live/watch/index.js imageUrl"
+    "subpackages/feature/wish-wall/index.js ex.cover"
   ]
 }

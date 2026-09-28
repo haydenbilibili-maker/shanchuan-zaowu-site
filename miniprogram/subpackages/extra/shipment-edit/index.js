@@ -360,7 +360,7 @@ Page({
     return wx.cloud
       .callFunction({
         name: SETTLEMENT_FN,
-        data: { action: 'searchPriceBook', kind, keyword: keyword || '', limit: 30 }
+        data: { action: 'searchPriceBook', kind, keyword: keyword || '', limit: 30, orderBy: 'sort' }
       })
       .then((res) => {
         const r = (res && res.result) || {}

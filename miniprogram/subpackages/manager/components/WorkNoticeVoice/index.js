@@ -10,8 +10,8 @@
  *      否则头部右侧会把两个字挤成竖排、把日期徽标顶下去（2026-09-16 实测）。
  *
  * 页面 js 里：
- *   const workNotice = require('../../../../utils/workNoticeVoice')
- *   const catalog = require('../../../../utils/workNoticeCatalog')
+ *   const workNotice = require('../../utils/workNoticeVoice')
+ *   const catalog = require('../../utils/workNoticeCatalog')
  *   // 待办计数刷新完成后：
  *   workNotice.announce(catalog.buildSnapshot(this.data, this.data.workspaceRole), this.data.workspaceRole)
  *
@@ -21,8 +21,8 @@
  *  - 生命周期：页面隐藏 / 组件卸载时停声（避免离开工作台后还在响）
  *  - 对外暴露 announce / preview / setEnabled，便于别的页面用 selectComponent 直接驱动
  */
-const voice = require('../../../../utils/workNoticeVoice')
-const catalog = require('../../../../utils/workNoticeCatalog')
+const voice = require('../../utils/workNoticeVoice')
+const catalog = require('../../utils/workNoticeCatalog')
 
 Component({
   options: {

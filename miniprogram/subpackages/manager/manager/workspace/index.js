@@ -84,6 +84,23 @@ Page({
     }
   },
 
+  // Hub 的 page-tip 只画在 manager/index.wxml，子页没有宿主：这里把全部 showHubTip 转到本页已挂的 <app-toast>
+  showHubTip(msg, tone) {
+    const text = String(msg || '').trim()
+    if (!text) return
+    const m = text.length > 12 ? /^(.{2,14}?)[，。；：,;:！!？?]\s*(.+)$/.exec(text) : null
+    const title = text.length <= 12 ? text : m ? m[1] : tone === 'warn' ? '请留意' : '已完成'
+    const desc = text.length <= 12 ? '' : m ? m[2] : text
+    this.showAppToast({
+      overline: tone === 'warn' ? 'NOTICE' : 'DONE',
+      title,
+      desc,
+      duration: Math.min(5000, 2200 + desc.length * 60)
+    })
+  },
+
+  clearHubTip() {},
+
   onPullDownRefresh() {
     const tab = this.data.curTab
     if (tab) {

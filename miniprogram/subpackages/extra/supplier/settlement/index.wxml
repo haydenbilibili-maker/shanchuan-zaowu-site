@@ -1,0 +1,42 @@
+<view class="page">
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">SETTLEMENT</text>
+    <text class="boot-cn">我的结算</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header">
+      <view class="brand-group">
+        <text class="en">SETTLEMENT</text>
+        <text class="cn">我的结算</text>
+      </view>
+      <view class="header-row">
+        <text class="greeting">应付与已付摘要</text>
+        <view class="preview-chip" wx:if="{{isPreview}}"><text>预览</text></view>
+        <view class="demo-chip" wx:if="{{demoOn}}"><text>演示</text></view>
+      </view>
+      <text class="header-note">{{demoOn ? '演示摘要随「已发货」笔数变化；与采购商真实支付无关。' : '只显示与您相关的结算进度，不含其他供应商或内部对账。'}}</text>
+    </view>
+
+    <block wx:if="{{list.length}}">
+      <view class="list-card" wx:for="{{list}}" wx:key="key">
+        <view class="list-main">
+          <text class="list-title">{{item.title}}</text>
+          <text class="list-meta">{{item.meta}}</text>
+          <text class="list-hint">{{item.statusLabel}}{{demoOn ? '（演示）' : ''}}</text>
+        </view>
+        <view class="list-side">
+          <text class="list-amount">{{item.amount}}</text>
+          <text class="list-status">{{item.statusLabel}}</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="empty-panel" wx:else>
+      <text class="empty-panel-title">{{emptyTitle}}</text>
+      <text class="empty-panel-body">{{emptyBody}}</text>
+      <view class="retry-btn" wx:if="{{demoOn}}" bindtap="goShip">去发货回传</view>
+    </view>
+  </block>
+</view>

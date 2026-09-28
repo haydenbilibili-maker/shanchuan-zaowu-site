@@ -28,6 +28,7 @@ const CACHE_TTL_MS = 10 * 60 * 1000
 const MANAGER_PATH = '/subpackages/manager/manager/index'
 const MANAGER_WORKSPACE_PATH = '/subpackages/manager/manager/workspace/index'
 const ARTISAN_PATH = '/subpackages/extra/artisan/index'
+const SUPPLIER_PATH = '/subpackages/extra/supplier/index'
 const LIVE_STUDIO_PATH = '/subpackages/extra/live/studio/index'
 const LIVE_BROADCAST_PATH = '/subpackages/extra/live/broadcast/index'
 const INVESTOR_PATH = '/subpackages/extra/investor/index'
@@ -56,7 +57,7 @@ const RAW_INVENTORY_OPS_PATH = '/subpackages/manager/raw-inventory-ops/index'
 const STUDIO_DASHBOARD_PATH = '/subpackages/manager/studio-dashboard/index'
 const STUDIO_BILLS_PATH = '/subpackages/manager/studio-bills/index'
 const SHIPMENT_SKU_PATH = '/subpackages/extra/shipment-sku/index'
-const FEISHU_SYNC_PATH = '/subpackages/extra/feishu-sync/index'
+const FEISHU_SYNC_PATH = '/subpackages/manager/feishu-sync/index'
 const PROPERTY_COST_PATH = '/subpackages/extra/property-cost/index'
 const ARTISAN_COMMISSION_PATH = '/subpackages/extra/artisan-commission/index'
 const ARTISAN_COMMISSION_MINE_PATH = '/subpackages/extra/artisan/commission/index'
@@ -361,7 +362,7 @@ function goPurchaseOps() {
   })
 }
 
-/** 超管/店长：门店出货单主录入（ops_shipments SSOT） */
+/** 超管/店长：出货中心（ops_shipments SSOT） */
 function goShipmentOps() {
   wx.navigateTo({
     url: SHIPMENT_OPS_PATH,
@@ -388,22 +389,19 @@ function goRawInventoryOps() {
 function goStudioDashboard() {
   wx.navigateTo({
     url: STUDIO_DASHBOARD_PATH,
-    fail: () => wx.showToast({ title: '工作室仪表盘暂不可用', icon: 'none' })
+    fail: () => wx.showToast({ title: '仪表盘暂不可用', icon: 'none' })
   })
 }
 
-/**
- * **仅超管**：出货开单（SKU 化）—— 产品负责人要求的**独立新入口**，不与老「出货单」合并。
- * 同样刻意不写 `fail` 回调（理由同下）。
- */
+/** **仅超管**：出货中心·开单·选 SKU（旧 SHIPMENT_SKU_PATH 为重定向壳）。刻意不写 `fail`（理由同下） */
 function goShipmentSku() {
-  wx.navigateTo({ url: SHIPMENT_SKU_PATH })
+  wx.navigateTo({ url: `${SHIPMENT_OPS_PATH}?tab=create&mode=sku` })
 }
 
 /**
  * **仅超管**：飞书同步（服务端读飞书 → 映射 → 写库）。
- * 与出货开单同形：磁贴由 `menu.feishuSync` 控制，页面内 `guardStaffPage('manager')` 独立再判一次
- * （客户端判定不是执法，真正的执法在云函数 `syncFeishuData` 的 requireSuper）。
+ * 磁贴仅超管可见（`menu.feishuSync`）；页内 `guardStaffPage('super_admin')`；
+ * 真正执法在云函数 `syncFeishuData` 的 requireSuper。
  */
 function goFeishuSync () {
   wx.navigateTo({ url: FEISHU_SYNC_PATH })
@@ -418,6 +416,14 @@ function goFeishuSync () {
  */
 function goStudioBills() {
   wx.navigateTo({ url: STUDIO_BILLS_PATH })
+}
+
+/**
+ * 供应商工作台 Hub（Phase 1 旁路）
+ * 与 goStudioBills 同形：刻意不写 fail toast（dialog-ratchet）。
+ */
+function goSupplierWorkbench() {
+  wx.navigateTo({ url: SUPPLIER_PATH })
 }
 
 /** 仅超管：物业成本（水电 / 房租） */
@@ -721,6 +727,7 @@ module.exports = {
   goRawInventoryOps,
   goStudioDashboard,
   goStudioBills,
+  goSupplierWorkbench,
   goShipmentSku,
   goPropertyCost,
   goArtisanCommission,

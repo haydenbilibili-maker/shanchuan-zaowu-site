@@ -156,12 +156,12 @@
       <block wx:if="{{currentTab == 1}}">
         <view class="activity-list">
           <block wx:for="{{courses}}" wx:key="_id">
-            <view class="act-card {{selectedActivityId === item._id ? 'selected' : ''}}" bindtap="selectActivity" data-id="{{item._id}}" data-status="{{item.status}}" data-type="course">
+            <view class="act-card {{selectedActivityId === item._id ? 'selected' : ''}} {{item._full ? 'is-full' : ''}}" bindtap="selectActivity" data-id="{{item._id}}" data-status="{{item._full ? 'full' : item.status}}" data-type="course">
               <image class="act-img" src="{{item.image}}" mode="aspectFill"></image>
               <view class="act-info">
                 <text class="act-t">{{item.title}}</text>
                 <text class="act-d">{{item.date}} | {{item.time}}</text>
-                <view class="act-b"><text class="act-p">¥{{item.price}}</text></view>
+                <view class="act-b"><text class="act-p">¥{{item.price}}</text><text class="act-seat {{item._full ? 'is-full' : ''}}" wx:if="{{item._seat}}">{{item._seat}}</text></view>
               </view>
             </view>
           </block>
@@ -173,12 +173,12 @@
       <block wx:if="{{currentTab == 2}}">
         <view class="activity-list">
           <block wx:for="{{activities}}" wx:key="_id">
-            <view class="act-card {{selectedActivityId === item._id ? 'selected' : ''}}" bindtap="selectActivity" data-id="{{item._id}}" data-status="{{item.status}}" data-type="activity">
+            <view class="act-card {{selectedActivityId === item._id ? 'selected' : ''}} {{item._full ? 'is-full' : ''}}" bindtap="selectActivity" data-id="{{item._id}}" data-status="{{item._full ? 'full' : item.status}}" data-type="activity">
               <image class="act-img" src="{{item.image}}" mode="aspectFill"></image>
               <view class="act-info">
                 <text class="act-t">{{item.title}}</text>
                 <text class="act-d">{{item.date}} | {{item.location}}</text>
-                <view class="act-b"><text class="act-p">¥{{item.price}}</text></view>
+                <view class="act-b"><text class="act-p">¥{{item.price}}</text><text class="act-seat {{item._full ? 'is-full' : ''}}" wx:if="{{item._seat}}">{{item._seat}}</text></view>
               </view>
             </view>
           </block>

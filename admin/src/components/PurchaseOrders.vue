@@ -13,7 +13,11 @@
         <div class="stat-num ok">{{ stats.shipped }}</div>
         <div class="stat-label">运输中</div>
       </button>
-      <button class="stat-card" :class="{ on: statusFilter === 'all' }" @click="quickFilter('all')">
+      <button class="stat-card" :class="{ on: paymentFilter === 'offline_pending' }" @click="quickPayFilter('offline_pending')">
+        <div class="stat-num warn">{{ stats.offlinePending || 0 }}</div>
+        <div class="stat-label">待对公</div>
+      </button>
+      <button class="stat-card" :class="{ on: statusFilter === 'all' && paymentFilter === 'all' }" @click="quickFilter('all')">
         <div class="stat-num">{{ stats.total }}</div>
         <div class="stat-label">全部订货单</div>
       </button>
@@ -56,7 +60,14 @@
           <el-option label="全部来源" value="all" />
           <el-option label="店长" value="store_manager" />
           <el-option label="意向转单" value="price_list_convert" />
+          <el-option label="采购商台" value="buyer_workbench" />
           <el-option label="Admin" value="admin" />
+        </el-select>
+        <el-select v-model="paymentFilter" size="small" style="width: 120px">
+          <el-option label="全部支付" value="all" />
+          <el-option label="待对公" value="offline_pending" />
+          <el-option label="已支付" value="paid" />
+          <el-option label="未支付" value="unpaid" />
         </el-select>
         <el-button size="small" :disabled="!selectedSubmitted.length" @click="batchConfirm">
           批量确认 ({{ selectedSubmitted.length }})
@@ -88,7 +99,10 @@
         @selection-change="onSelect"
       >
         <template #empty>
-          <el-empty :description="emptyDesc" :image-size="88" />
+          <ErpEmpty
+            :description="emptyDesc"
+            :hint="emptyHint"
+          />
         </template>
         <el-table-column type="selection" width="42" :selectable="(row) => row.status === 'submitted'" />
         <el-table-column label="单号" width="150">
@@ -121,12 +135,25 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="支付" width="100">
+          <template #default="{ row }">
+            <el-tag
+              v-if="row.paymentStatus"
+              :type="statusType(PAYMENT_STATUS, row.paymentStatus)"
+              size="small"
+              effect="plain"
+            >
+              {{ statusLabel(PAYMENT_STATUS, row.paymentStatus) }}
+            </el-tag>
+            <span v-else class="t-sub">—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="来源" width="96">
           <template #default="{ row }">
             <span class="t-sub">{{ sourceLabel(row.source) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="268" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <el-button size="small" link @click.stop="viewDetail(row)">详情</el-button>
             <el-button
@@ -135,6 +162,12 @@
               type="primary"
               @click.stop="confirmRow(row)"
             >确认</el-button>
+            <el-button
+              v-if="row.paymentStatus === 'offline_pending'"
+              size="small"
+              type="warning"
+              @click.stop="confirmPayRow(row)"
+            >确认到账</el-button>
             <el-button
               v-if="row.status === 'confirmed' || row.status === 'shipping'"
               size="small"
@@ -176,11 +209,21 @@
           <el-descriptions-item label="客户备注">{{ current.note || '—' }}</el-descriptions-item>
           <el-descriptions-item label="内部备注">{{ current.adminNote || '—' }}</el-descriptions-item>
           <el-descriptions-item label="来源">{{ sourceLabel(current.source) }}</el-descriptions-item>
+          <el-descriptions-item label="支付">
+            <el-tag
+              v-if="current.paymentStatus"
+              :type="statusType(PAYMENT_STATUS, current.paymentStatus)"
+              size="small"
+            >{{ statusLabel(PAYMENT_STATUS, current.paymentStatus) }}</el-tag>
+            <span v-else>—</span>
+            <span v-if="current.paymentChannel" class="t-sub"> · {{ current.paymentChannel }}</span>
+          </el-descriptions-item>
           <el-descriptions-item label="节点">
             提交 {{ fmtTime(current.submittedAt) || '—' }}
             · 确认 {{ fmtTime(current.confirmedAt) || '—' }}
             · 发货 {{ fmtTime(current.shippedAt) || '—' }}
             · 收货 {{ fmtTime(current.receivedAt) || '—' }}
+            · 支付 {{ fmtTime(current.paidAt) || '—' }}
           </el-descriptions-item>
         </el-descriptions>
 
@@ -208,6 +251,13 @@
           <el-button @click="copyOrder(current)">复制明细</el-button>
           <el-button v-if="canEditMeta(current)" @click="openEditMeta(current)">改地址/备注</el-button>
           <el-button v-if="current.status === 'submitted'" type="primary" @click="confirmRow(current)">确认订货</el-button>
+          <el-button
+            v-if="current.paymentStatus === 'offline_pending'"
+            type="warning"
+            @click="confirmPayRow(current)"
+          >确认对公到账</el-button>
+          <el-button v-if="canReconcileWechat(current)" @click="reconcileRow(current)">微信查单补记</el-button>
+          <el-button v-if="canRefundWechat(current)" type="danger" plain @click="refundRow(current)">微信退款</el-button>
           <el-button v-if="current.status === 'confirmed' || current.status === 'shipping'" type="success" @click="openShip(current)">出货</el-button>
           <el-button v-if="current.status === 'shipped'" @click="receiveRow(current)">代收货</el-button>
           <el-button v-if="current.status === 'draft' || current.status === 'submitted'" @click="cancelRow(current)">取消</el-button>
@@ -383,11 +433,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { Refresh, Search, Download } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchCollectionSorted, cdnUpdate, cdnAdd } from '../cloud'
+import { cdnUpdate, cdnAdd } from '../cloud'
 import {
   shipPurchaseOrder,
   markOrderReceived,
+  confirmOfflinePaid,
+  reconcileWechatPay,
+  refundWechatPay,
+  canReconcileWechat,
+  canRefundWechat,
   PO_STATUS,
+  PAYMENT_STATUS,
   CARRIERS,
   B2B_CATALOG,
   statusLabel,
@@ -405,8 +461,10 @@ import {
   guessProduct,
   summarizeOrders,
   buildOrderCopyText,
+  listPurchaseOrdersAdmin,
 } from '../utils/b2bFulfillment'
 import { loadB2bCatalog, publishB2bCatalog } from '../utils/b2bCatalogSync'
+import ErpEmpty from './ErpEmpty.vue'
 
 const emit = defineEmits(['shipped', 'changed'])
 
@@ -416,6 +474,7 @@ const loading = ref(false)
 const saving = ref(false)
 const shipping = ref(false)
 const statusFilter = ref('submitted')
+const paymentFilter = ref('all')
 const buyerFilter = ref('all')
 const sourceFilter = ref('all')
 const keyword = ref('')
@@ -461,6 +520,13 @@ const filteredList = computed(() => {
     } else if (statusFilter.value !== 'all' && r.status !== statusFilter.value) {
       return false
     }
+    if (paymentFilter.value !== 'all') {
+      if (paymentFilter.value === 'paid') {
+        if (!['paid', 'marked_paid'].includes(r.paymentStatus)) return false
+      } else if ((r.paymentStatus || 'unpaid') !== paymentFilter.value) {
+        return false
+      }
+    }
     if (buyerFilter.value !== 'all' && (r.buyerType || 'own_store') !== buyerFilter.value) return false
     if (sourceFilter.value !== 'all' && r.source !== sourceFilter.value) return false
     const q = keyword.value.trim().toLowerCase()
@@ -474,12 +540,30 @@ const filteredList = computed(() => {
 
 const emptyDesc = computed(() => {
   if (keyword.value.trim()) return '无匹配订货单'
+  if (paymentFilter.value === 'offline_pending') return '暂无待对公订货单'
   if (statusFilter.value === 'submitted') return '暂无待确认订货单'
   return '暂无订货单'
 })
 
+const emptyHint = computed(() => {
+  if (keyword.value.trim()) return '试试清空搜索，或放宽状态 / 支付 / 来源筛选。'
+  if (paymentFilter.value === 'offline_pending') {
+    return '采购商提交对公付款后会出现在此；确认到账后支付状态会变为已支付。'
+  }
+  if (statusFilter.value === 'submitted') {
+    return '店长端或采购商台提交订货单后会出现；也可点右上角「新建订货单」。'
+  }
+  return '店长端、采购商台或本页新建提交后会出现在此。'
+})
+
 const quickFilter = (v) => {
   statusFilter.value = v
+  if (v !== 'all') paymentFilter.value = 'all'
+}
+
+const quickPayFilter = (v) => {
+  paymentFilter.value = v
+  statusFilter.value = 'all'
 }
 
 const onSelect = (rows) => {
@@ -507,17 +591,12 @@ const refresh = async () => {
   loading.value = true
   sourceHint.value = ''
   try {
-    list.value = await fetchCollectionSorted(COLLECTION, {
-      limit: 300,
-      throwOnError: true,
-      sortFn: (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
-    })
+    list.value = await listPurchaseOrdersAdmin(300)
     emit('changed', summarizeOrders(list.value))
   } catch (e) {
     console.warn('purchase_orders load failed', e)
     list.value = []
-    sourceHint.value =
-      'CloudBase 集合 purchase_orders 暂不可用。请运行：cd admin && node scripts/provision-purchase-orders.mjs'
+    sourceHint.value = `采购单列表读取失败（${e?.message || e}）。列表经云函数 payB2bPurchase 读取，仅超管可用；请确认该函数已配置 ADMIN_OPS_KEY。`
   } finally {
     loading.value = false
   }
@@ -538,6 +617,68 @@ const confirmRow = async (row) => {
     await refresh()
   } catch (e) {
     if (e !== 'cancel') ElMessage.error(e.message || '确认失败')
+  }
+}
+
+/** 对公到账确认（仅 paymentStatus：offline_pending → paid） */
+const confirmPayRow = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确认订货单 ${row.orderNo} 对公款项已到账？将标记为已支付（不改履约状态）。`,
+      '确认对公到账',
+      { type: 'warning' }
+    )
+    const res = await confirmOfflinePaid(row._id)
+    ElMessage.success(res.alreadyPaid ? '该单已是已付状态' : '已确认对公到账')
+    if (current.value && current.value._id === row._id) {
+      current.value = {
+        ...current.value,
+        paymentStatus: 'paid',
+        paymentChannel: 'offline',
+        paidAt: Date.now(),
+      }
+    }
+    await refresh()
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error(e.message || '确认到账失败')
+  }
+}
+
+/** 回调缺失时按微信侧真实交易补记（金额不一致会转「金额待核对」，不会标已付） */
+const reconcileRow = async (row) => {
+  try {
+    const res = await reconcileWechatPay(row._id)
+    if (res.paid || res.alreadyPaid) ElMessage.success(res.msg || '已确认支付')
+    else ElMessage.info(res.msg || '微信侧未查到成功支付')
+    detailOpen.value = false
+    await refresh()
+  } catch (e) {
+    ElMessage.error(e.message || '查单失败')
+  }
+}
+
+/** 微信原路全额退款：须输入完整订货单号 + 退款原因（资金操作，仅超管；云函数记录操作人） */
+const refundRow = async (row) => {
+  try {
+    const { value: typed } = await ElMessageBox.prompt(
+      `将把订货单 ${row.orderNo} 的微信支付（¥${row.totalAmount ?? '—'}）原路全额退回，不可撤销。请输入完整订货单号确认：`,
+      '微信退款 · 二次确认',
+      { type: 'warning', confirmButtonText: '下一步', inputPlaceholder: row.orderNo }
+    )
+    if (String(typed || '').trim() !== String(row.orderNo || '')) {
+      ElMessage.warning('订货单号不一致，已取消')
+      return
+    }
+    const { value: reason } = await ElMessageBox.prompt('退款原因（必填，会写入微信退款单与操作记录）', '微信退款 · 原因', {
+      confirmButtonText: '确认退款',
+      inputValidator: (v) => (String(v || '').trim() ? true : '请填写退款原因'),
+    })
+    const res = await refundWechatPay(row._id, { confirmOrderNo: String(typed).trim(), reason: String(reason).trim() })
+    ElMessage.success(res.msg || '微信已受理退款')
+    detailOpen.value = false
+    await refresh()
+  } catch (e) {
+    if (e !== 'cancel' && e !== 'close') ElMessage.error(e.message || '退款失败')
   }
 }
 

@@ -423,7 +423,9 @@ function makePage(data) {
 const wxml = readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/detail/index.wxml'), 'utf8')
 eq('WXML 使用 imgView 的槽位数', (wxml.match(/\{\{imgView\[item\] \|\| item\}\}/g) || []).length, 3)
 eq('WXML 使用 imgThumbView 的槽位数', (wxml.match(/imgThumbView\[/g) || []).length, 2)
-eq('★ WXML binderror 回落处理挂载数', (wxml.match(/binderror="onImageDegrade"/g) || []).length, 5)
+// 2026-09-28 +1：主图视频旁路（有 products.media 时才渲染）里的图片位，同样接映射 + error 回落（check:product-media）
+eq('WXML 视频旁路图片位使用 imgView 映射', (wxml.match(/\{\{imgView\[item\.src\] \|\| item\.src\}\}/g) || []).length, 1)
+eq('★ WXML binderror 回落处理挂载数', (wxml.match(/binderror="onImageDegrade"/g) || []).length, 6)
 check('全屏查看器仍用原图（previewImage 未被改造）', /wx\.previewImage/.test(pageSrc))
 
 /* ------------------------------------------------------------------ *

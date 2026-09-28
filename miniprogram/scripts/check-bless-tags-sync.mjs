@@ -48,10 +48,10 @@ const WALL_VIEW = 'miniprogram/subpackages/feature/wish-wall/index.wxml'
  * 玩法页（PRD v1.4 §11.4「玩法各开一页」）——推荐行与"写成心愿"从那之后都在这里。
  * 本守卫只关心"用户真的看得见祈运依据与推荐出口"，所以判据目标跟着代码搬。
  */
-const PLAY_VIEWS = ['play-qian', 'play-cookie', 'play-zodiac', 'play-mbti']
-  .map((n) => `miniprogram/subpackages/feature/${n}/index.wxml`)
+const PLAY_VIEWS = ['play-qian', 'play-cookie', 'play-zodiac', 'play-mbti', 'play-solar', 'play-coin']
+  .map((n) => `miniprogram/subpackages/plays/${n}/index.wxml`)
 // 玩法注册表：`plays` 的合法 id 集合**唯一事实源**（本文件不写死任何一个 id）
-const PLAYS = 'miniprogram/config/ritualPlays.js'
+const PLAYS = 'miniprogram/subpackages/plays/config/ritualPlays.js'
 
 let passed = 0
 let failed = 0
@@ -248,7 +248,7 @@ check('选品排序是确定性的（没有随机打乱 → 同一天同一标�
 check('★ 推荐依据逐行判定（显式标签=t\|场景兜底=scene）——不许一律标 tag 冒充"同好也在看"',
   /explicitIds\.has\(String\(r\._id\)\) \? 'tag' : 'scene'/.test(recoFn) &&
     !/leanProduct\(r, 'tag'\)\)/.test(recoFn))
-const recoUtilSrc = stripComments(read('miniprogram/utils/blessProducts.js'))
+const recoUtilSrc = stripComments(read('miniprogram/subpackages/plays/utils/blessProducts.js'))
 // 口径再升级（2026-09-18 细节雕刻）：推荐区标题统一成"这面墙的祈运标签 + 为你配一件"，
 // 并且**任何"同好也在看"式的社会证明都不许出现**（系统没有共同浏览数据）。
 check('★ 推荐区文案只说真知道的事（这面墙的祈运标签），且页面不写死、不编社会证明',
@@ -283,7 +283,9 @@ const wallView = stripComments(read(WALL_VIEW))
 check('入口 URL 带祈运标签（bless 参数）', /bless=\$\{encodeURIComponent\(bless\)\}/.test(urlBuilder))
 check('入口用 resolveBlessTags（显式优先 + 场景兜底）——存量商品不必先回填',
   /resolveBlessTags\(p\)\.join/.test(urlBuilder) && /require\('\.\.\/config\/blessTags'\)/.test(urlBuilder))
-check('页面读 bless 并重排玩法（applyBlessScope）', /applyBlessScope\(opts\.bless\)/.test(wallPage) && /blessPlayIds\(tags\)/.test(wallPage))
+// 2026-09-24 P2-6：第二参 productKey 供 wallDefaultBlessTags 兜底；判据允许单参/双参
+check('页面读 bless 并重排玩法（applyBlessScope）',
+  /applyBlessScope\(opts\.bless(?:,\s*productKey)?\)/.test(wallPage) && /blessPlayIds\(tags\)/.test(wallPage))
 // 口径更新（2026-09-18 产品确认）：祈运提示从玩法区**挪进页头**那颗 chip（`blessLabelText`），
 // 玩法区不再有 .ww-plays-guide —— 判据跟着口径走，仍然要求"用户真的看得见"
 check('页面显示祈运 chip + 商品入口',

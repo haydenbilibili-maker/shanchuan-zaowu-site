@@ -9,7 +9,7 @@
     </div>
 
     <div class="filter-bar">
-      <el-radio-group v-model="statusFilter" fill="#d4af37" @change="refresh">
+      <el-radio-group v-model="statusFilter" @change="refresh">
         <el-radio-button label="pending">
           待审核
           <el-badge v-if="pendingCount > 0" :value="pendingCount" class="b" type="danger" />
@@ -30,7 +30,10 @@
     <el-card shadow="never">
       <el-table :data="filteredList" v-loading="loading" stripe height="calc(100vh - 280px)">
         <template #empty>
-          <el-empty description="暂无评论" :image-size="88" />
+          <ErpEmpty
+            description="暂无评论"
+            hint="当前筛选下没有评论。用户在商品/内容页发表后会出现；也可换状态或清空关键字。"
+          />
         </template>
         <el-table-column label="评论内容" min-width="320">
           <template #default="{ row }">
@@ -107,6 +110,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { callCloudFunction } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import ErpEmpty from './ErpEmpty.vue'
 
 const FN = 'moderateComment'
 

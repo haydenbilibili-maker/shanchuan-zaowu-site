@@ -56,6 +56,10 @@ Page({
   data: {
     ready: false,
     loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    removePendingId: '',
     busyId: '',
     statusTabs: STATUS_TABS,
     activeStatus: '',
@@ -137,7 +141,7 @@ Page({
 
   async refresh() {
     if (this.data.loading) return
-    this.setData({ loading: true })
+    this.setData({ loading: true, listError: false, tipText: '', removePendingId: '' })
     try {
       const payload = { action: 'staffList', productKey: this.data.productKey, status: this.data.activeStatus }
       const keyword = String(this.data.keyword || '').trim()
@@ -147,15 +151,25 @@ Page({
         this.callFn({ action: 'staffStats', productKey: this.data.productKey }).catch(() => ({ counts: {} }))
       ])
       this.setData({
+        listError: false,
         list: (listRes.list || []).map(decorate),
         counts: (statsRes && statsRes.counts) || { visible: 0, hidden: 0 }
       })
     } catch (e) {
+      // 失败保留上次列表，勿伪装空墙
       console.warn('wish wall staffList', e)
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
+      this.setData({
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '弹幕列表未能取回')
+      })
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  onRetryList() {
+    this.refresh()
   },
 
   switchStatus(e) {
@@ -180,10 +194,10 @@ Page({
     this.setData({ busyId: id })
     try {
       const result = await this.callFn({ action: 'staffSetStatus', id, status: next })
-      wx.showToast({ title: result.msg || '已更新', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: result.msg || '已更新' })
       await this.refresh()
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '更新失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '更新失败') })
     } finally {
       this.setData({ busyId: '' })
     }
@@ -196,10 +210,10 @@ Page({
     this.setData({ busyId: id })
     try {
       const result = await this.callFn({ action: 'staffSetStatus', id, status: 'visible', pinned: !pinned })
-      wx.showToast({ title: !pinned ? '已置顶' : '已取消置顶', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: !pinned ? '已置顶' : '已取消置顶' })
       await this.refresh()
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '操作失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '操作失败') })
     } finally {
       this.setData({ busyId: '' })
     }
@@ -207,27 +221,27 @@ Page({
 
   removeWish(e) {
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
-    if (!id) return
-    wx.showModal({
-      title: '删除心愿',
-      content: '删除后不可恢复。若只是不希望公开，建议先「隐藏」。',
-      confirmText: '删除',
-      confirmColor: '#D64045',
-      success: (res) => {
-        if (!res.confirm) return
-        this.doRemove(id)
-      }
-    })
+    if (!id || this.data.busyId) return
+    if (this.data.removePendingId !== id) {
+      this.setData({
+        removePendingId: id,
+        tipTone: 'warn',
+        tipText: '再点一次「删除」：删除后不可恢复；若不希望公开可先隐藏'
+      })
+      return
+    }
+    this.setData({ removePendingId: '' })
+    this.doRemove(id)
   },
 
   async doRemove(id) {
     this.setData({ busyId: id })
     try {
       const result = await this.callFn({ action: 'staffRemove', id })
-      wx.showToast({ title: result.msg || '已删除', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: result.msg || '已删除' })
       await this.refresh()
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '删除失败'), icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '删除失败') })
     } finally {
       this.setData({ busyId: '' })
     }
@@ -271,7 +285,7 @@ Page({
       },
       fail: (err) => {
         console.warn('wish wall seedAi showModal fail', err)
-        wx.showToast({ title: '弹窗打开失败，请重试', icon: 'none' })
+        this.setData({ tipTone: 'warn', tipText: '弹窗打开失败，请重试' })
       }
     })
   },
@@ -287,10 +301,10 @@ Page({
         count: 8
       })
       this.setData({ seedResult: result })
-      wx.showToast({ title: result.msg || '已上墙', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: result.msg || '已上墙' })
       await this.refresh()
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '生成失败'), icon: 'none', duration: 2500 })
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '生成失败') })
     } finally {
       this.setData({ seeding: false })
     }
@@ -299,6 +313,6 @@ Page({
   copyText(e) {
     const text = String((e.currentTarget.dataset && e.currentTarget.dataset.text) || '')
     if (!text) return
-    wx.setClipboardData({ data: text, success: () => wx.showToast({ title: '已复制', icon: 'none' }) })
+    wx.setClipboardData({ data: text, success: () => this.setData({ tipTone: 'info', tipText: '已复制' }) })
   }
 })

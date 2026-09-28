@@ -77,6 +77,32 @@ async function markOrderPointsGranted(orderId, points) {
   }
 }
 
+/** 送礼人代点签收：复用 order_received 类型 + 覆盖标题正文（dispatchMessage 既有能力，去重键不变） */
+async function sendGiverVoucherNotice(order, orderId, openid, productTitle) {
+  const bound = !!(order.giftMeta && order.giftMeta.receiverOpenid)
+  try {
+    const res = await cloud.callFunction({
+      name: 'dispatchMessage',
+      data: {
+        action: 'dispatch',
+        eventType: 'order_received',
+        openid,
+        relatedId: orderId,
+        vars: { orderNo: order.orderNo || '', products: order.products },
+        title: '赠予凭证已签发',
+        content: `你赠出的「${productTitle}」已确认签收。\n赠予凭证已签发；收藏证书与养护提醒归受礼人所有` +
+          (bound ? '。' : '，TA 打开礼笺即可领取。'),
+        actionUrl: `subpackages/business/certificate/index?id=${orderId}`,
+        category: 'order'
+      }
+    })
+    return !!(res && res.result && res.result.success)
+  } catch (e) {
+    console.warn('giver voucher notice failed:', e && e.message)
+    return false
+  }
+}
+
 exports.main = async (event) => {
   const openid = cloud.getWXContext().OPENID || ''
   const orderId = String((event && event.orderId) || '').trim()
@@ -130,12 +156,19 @@ exports.main = async (event) => {
     const careNote = `藏品「${productTitle}」已妥投。可在订单详情写下真实感受，也可查看养护指南。`
 
     // 签收人本人：山海有信「藏品已签收」（可能是受礼人）
-    await dispatchInAppMessage(db, {
-      eventType: 'order_received',
-      openid,
-      relatedId: orderId,
-      vars: { orderNo, products: order.products, careNote }
-    }).catch((err) => console.warn('order_received message failed:', err))
+    // 礼赠由送礼人代点签收：送礼人不是持有人 → 改发「赠予凭证已签发」（收藏证书与养护归受礼人，
+    // 见 miniprogram/docs/礼赠_证书与养护闭环_2026-09-28.md）；覆盖文案失败时回退原消息
+    const giverSigned = isGiftOrder(order) && openid === giverOpenid(order) &&
+      String((order.giftMeta && order.giftMeta.receiverOpenid) || '') !== openid
+    const voucherSent = giverSigned && await sendGiverVoucherNotice(order, orderId, openid, productTitle)
+    if (!voucherSent) {
+      await dispatchInAppMessage(db, {
+        eventType: 'order_received',
+        openid,
+        relatedId: orderId,
+        vars: { orderNo, products: order.products, careNote }
+      }).catch((err) => console.warn('order_received message failed:', err))
+    }
 
     // 礼赠兜底：物流未通知过时，手动签收仍告知送礼人（dedupe: gift_delivered:orderId:giver）
     if (isGiftOrder(order)) {

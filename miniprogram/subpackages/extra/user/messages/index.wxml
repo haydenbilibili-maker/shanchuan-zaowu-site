@@ -1,5 +1,5 @@
 <!--subpackages/extra/user/messages/index.wxml-->
-<view class="page-msg {{activeQueue === 'workflow' ? 'queue-workflow' : 'queue-customer'}}">
+<view class="page-msg {{activeQueue === 'workflow' ? 'queue-workflow' : 'queue-customer'}} {{activeCategory === 'digest' ? 'cat-digest' : ''}}">
   <view class="grain-overlay"></view>
 
   <view class="sticky-header">
@@ -14,10 +14,16 @@
       </view>
     </view>
 
-    <!-- 工作信息情境条（由工作台进入） -->
-    <view class="workflow-context" wx:if="{{workflowMode}}">
-      <view class="lamp lamp-forest"></view>
-      <text class="workflow-context-text">工作流 · 仅员工可见</text>
+    <!-- 工作信息情境条：随分档切换文案，与待办/审批同级 -->
+    <view class="workflow-context cat-{{activeCategory}}" wx:if="{{workflowMode}}">
+      <view class="lamp {{activeCategory === 'digest' ? 'lamp-info' : (activeCategory === 'ops' ? 'lamp-forest' : (activeCategory === 'system' ? 'lamp-brass' : 'lamp-forest'))}}"></view>
+      <text class="workflow-context-text">{{workflowContextText}}</text>
+    </view>
+
+    <!-- 日报档顶栏：最新一期健康态 / 无 payload 诚实提示（不另打云端） -->
+    <view class="digest-rail tip-{{digestRailTip.tone}}" wx:if="{{workflowMode && activeCategory === 'digest' && digestRailTip.show}}">
+      <view class="digest-rail-lamp tip-{{digestRailTip.tone}}"></view>
+      <text class="digest-rail-text">{{digestRailTip.text}}</text>
     </view>
 
     <!-- 双队列 Tab 已弱化：主入口为工作台「工作信息」；保留 showQueueTabs 开关以备兼容 -->
@@ -51,7 +57,7 @@
     <scroll-view scroll-x class="filter-scroll" show-scrollbar="{{false}}">
       <view class="filter-row">
         <view
-          class="filter-pill {{activeCategory === item.id ? 'active' : ''}} {{activeQueue === 'workflow' ? 'workflow' : ''}}"
+          class="filter-pill {{activeCategory === item.id ? 'active' : ''}} {{activeQueue === 'workflow' ? 'workflow' : ''}} tab-{{item.id}}"
           wx:for="{{filterTabs}}"
           wx:key="id"
           hover-class="filter-pill-press"
@@ -60,6 +66,9 @@
           data-id="{{item.id}}"
         >
           <text>{{item.label}}</text>
+          <view class="filter-pill-badge" wx:if="{{item.hasBadge}}">
+            <text>{{item.badgeText}}</text>
+          </view>
         </view>
         <view class="filter-pad"></view>
       </view>
@@ -80,10 +89,15 @@
     <view class="scroll-top-pad"></view>
 
     <view class="skeleton-wrap" wx:if="{{loading}}">
-      <view class="sk-card sk-shine" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+      <view class="sk-card sk-shine {{activeCategory === 'digest' ? 'sk-digest' : ''}}" wx:for="{{[1,2,3,4]}}" wx:key="*this">
         <view class="sk-lamps">
           <view class="lamp lamp-brass dim"></view>
           <view class="lamp lamp-info dim"></view>
+        </view>
+        <view class="sk-digest-chips" wx:if="{{activeCategory === 'digest'}}">
+          <view class="sk-chip"></view>
+          <view class="sk-chip"></view>
+          <view class="sk-chip"></view>
         </view>
       </view>
     </view>
@@ -92,7 +106,7 @@
       <view class="empty-lamps">
         <view class="lamp lamp-warning"></view>
       </view>
-      <text class="empty-text">来信暂时读不到</text>
+      <text class="empty-text">{{activeCategory === 'digest' ? '日报暂时读不到' : '来信暂时读不到'}}</text>
       <text class="empty-desc">线路不稳，请稍后再试。</text>
       <view class="retry-btn" hover-class="retry-btn-press" hover-stay-time="80" bindtap="retryLoad">再试一次</view>
     </view>
@@ -100,7 +114,7 @@
     <view class="empty-state" wx:elif="{{messages.length === 0}}">
       <view class="empty-lamps">
         <view class="lamp-legend">
-          <view class="lamp {{activeQueue === 'workflow' ? 'lamp-forest' : 'lamp-brass'}}"></view>
+          <view class="lamp {{activeQueue === 'workflow' ? (activeCategory === 'digest' ? 'lamp-info' : 'lamp-forest') : 'lamp-brass'}}"></view>
           <text>未读</text>
         </view>
         <view class="lamp-legend">
@@ -114,7 +128,7 @@
 
     <view class="message-list" wx:else>
       <view
-        class="message-item {{item.isUnread ? 'unread' : 'read'}} {{item.isPaper ? 'paper' : item.kind}} {{activeQueue === 'workflow' || item.kind === 'workflow' ? 'workflow-card' : ''}}"
+        class="message-item {{item.isUnread ? 'unread' : 'read'}} {{item.isPaper ? 'paper' : item.kind}} {{activeQueue === 'workflow' || item.kind === 'workflow' || item.isDigest ? 'workflow-card' : ''}} {{item.isDigest ? 'digest-card' : ''}} {{item.digestCard ? 'health-' + item.digestCard.healthTone : ''}}"
         wx:for="{{messages}}"
         wx:key="_id"
         hover-class="message-item-press"
@@ -124,7 +138,7 @@
         data-id="{{item._id}}"
         data-index="{{index}}"
       >
-        <view class="item-accent {{item.isUnread ? 'on' : ''}} {{activeQueue === 'workflow' ? 'forest' : ''}}"></view>
+        <view class="item-accent {{item.isUnread ? 'on' : ''}} {{activeQueue === 'workflow' ? 'forest' : ''}} {{item.isDigest ? 'digest' : ''}}"></view>
         <view class="lamp-col">
           <view class="lamp {{item.readLampClass}}"></view>
           <view class="lamp {{item.kindLampClass}}"></view>
@@ -135,9 +149,31 @@
             <text class="type-tag">{{item.typeName}}</text>
             <text class="message-time">{{item.formattedTime}}</text>
           </view>
-          <text class="message-title">{{item.title}}</text>
-          <text class="message-sender" wx:if="{{item.isPaper}}">寄件 · {{item.senderName}}</text>
-          <text class="message-preview" wx:if="{{item.preview}}">{{item.preview}}</text>
+          <text class="message-title">{{item.digestCard.headline || item.title}}</text>
+          <text class="message-sender" wx:if="{{item.isPaper && !item.isDigest}}">寄件 · {{item.senderName}}</text>
+
+          <!-- 日报关键数条：有 payload 时优先于纯文本 preview -->
+          <view class="digest-list-card tone-{{item.digestCard.healthTone}}" wx:if="{{item.digestCard}}">
+            <view class="dlc-health tone-{{item.digestCard.healthTone}}" wx:if="{{item.digestCard.healthLabel}}">
+              <view class="dlc-lamp tone-{{item.digestCard.healthTone}}"></view>
+              <text>{{item.digestCard.healthLabel}}</text>
+            </view>
+            <view class="dlc-chips" wx:if="{{item.digestCard.hasHighlights}}">
+              <view class="dlc-chip {{m.primary ? 'is-primary' : ''}} {{m.failed ? 'is-failed' : ''}} {{m.missing ? 'is-missing' : ''}}" wx:for="{{item.digestCard.highlights}}" wx:for-item="m" wx:key="id">
+                <text class="dlc-chip-kicker" wx:if="{{m.primary}}">关键</text>
+                <text class="dlc-chip-label">{{m.label}}</text>
+                <text class="dlc-chip-value">{{m.valueText}}</text>
+              </view>
+            </view>
+            <text class="dlc-hint {{item.digestCard.healthTone === 'failed' ? 'warn' : ''}}">{{item.digestCard.statusHint}}</text>
+          </view>
+
+          <view class="digest-payload-missing" wx:elif="{{item.isDigest && item.digestPayloadMissing}}">
+            <text class="dpm-text">仅有文字摘要 · 结构化口径未下发</text>
+            <text class="message-preview" wx:if="{{item.preview}}">{{item.preview}}</text>
+          </view>
+
+          <text class="message-preview" wx:elif="{{item.preview}}">{{item.preview}}</text>
           <!-- 需求 10：列表也给出商品线索（缩略图 + 首件名称），不再只有订单号 -->
           <view class="message-goods" wx:if="{{item.hasProductCards}}">
             <image
@@ -162,7 +198,8 @@
               <view class="lamp {{item.statusLampClass}}"></view>
               <text>{{item.statusLabel}}</text>
             </view>
-            <text class="action-hint" wx:if="{{item.actionUrl}}">{{item.actionLabel || '打开相关页'}}</text>
+            <text class="action-hint" wx:if="{{item.isDigest}}">{{item.digestPayloadMissing ? '查看原文' : '查看口径'}}</text>
+            <text class="action-hint" wx:elif="{{item.actionUrl}}">{{item.actionLabel || '打开相关页'}}</text>
           </view>
         </view>
       </view>
@@ -172,7 +209,7 @@
         <text>继续取信</text>
       </view>
       <view class="load-more muted" wx:elif="{{!hasMore && messages.length > 0}}">
-        <text>以上是全部来信</text>
+        <text>{{activeCategory === 'digest' ? '以上是可回看的日报' : '以上是全部来信'}}</text>
       </view>
     </view>
   </scroll-view>

@@ -9,7 +9,7 @@
     </div>
 
     <div class="filter-bar">
-      <el-radio-group v-model="statusFilter" fill="#d4af37" @change="onFilterChange">
+      <el-radio-group v-model="statusFilter" @change="onFilterChange">
         <el-radio-button label="">全部</el-radio-button>
         <el-radio-button label="pending">待开具</el-radio-button>
         <el-radio-button label="issued">已开具</el-radio-button>
@@ -24,7 +24,10 @@
     <el-card shadow="never">
       <el-table :data="list" v-loading="loading" stripe height="calc(100vh - 320px)">
         <template #empty>
-          <el-empty description="暂无开票申请" :image-size="88" />
+          <ErpEmpty
+            description="暂无开票申请"
+            hint="顾客在小程序订单详情提交开票后会出现在此；也可切换上方状态再看。"
+          />
         </template>
         <el-table-column label="申请时间" width="160">
           <template #default="{ row }">
@@ -188,6 +191,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { callCloudFunction } from '../cloud'
+import ErpEmpty from './ErpEmpty.vue'
 
 const FN = 'manageInvoiceRequests'
 

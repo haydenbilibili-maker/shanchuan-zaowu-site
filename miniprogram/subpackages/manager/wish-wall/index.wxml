@@ -10,6 +10,8 @@
     <text class="header-note">弹幕不接内容审核，治理由本页承载：全部弹幕（含已隐藏）都可在这里查看、隐藏、恢复、置顶或删除。C 端展示由「内容开关 → 马上有祈福」统一控制。</text>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
   <!-- 需求 28：多面墙。祈福墙按作用域隔离，可能不止一面 —— 治理必须覆盖全部，
        否则第二面墙的弹幕无人可治，「不接审核」就只对第一面墙成立。 -->
   <view class="wall-bar" wx:if="{{walls.length > 1}}">
@@ -84,8 +86,13 @@
     <view class="search-btn" bindtap="onKeywordConfirm">搜索</view>
   </view>
 
-  <view class="empty" wx:if="{{loading}}">同步中…</view>
-  <view class="empty" wx:if="{{!loading && !list.length}}">没有符合条件的弹幕</view>
+  <view class="empty" wx:if="{{loading && !listError}}">同步中…</view>
+  <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
+    <text class="empty-title">弹幕列表未能取回</text>
+    <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+    <view class="btn-retry" bindtap="onRetryList">重试</view>
+  </view>
+  <view class="empty" wx:elif="{{!loading && !listError && !list.length}}">没有符合条件的弹幕</view>
 
   <view class="wish-card" wx:for="{{list}}" wx:key="_id">
     <view class="wish-top">
@@ -116,7 +123,7 @@
         data-id="{{item._id}}"
         data-pinned="{{item.pinned}}"
       >{{item.pinned ? '取消置顶' : '置顶'}}</view>
-      <view class="btn-danger" bindtap="removeWish" data-id="{{item._id}}">删除</view>
+      <view class="btn-danger" bindtap="removeWish" data-id="{{item._id}}">{{removePendingId === item._id ? '确认删除' : '删除'}}</view>
     </view>
   </view>
 </view>

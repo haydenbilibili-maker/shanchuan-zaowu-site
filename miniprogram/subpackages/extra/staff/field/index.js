@@ -125,6 +125,11 @@ function resolveStaffTab(tabQuery) {
 Page({
   data: {
     ready: false,
+    tipTone: 'info',
+    tipText: '',
+    bootError: '',
+    summaryError: false,
+    recordsError: false,
     role: '',
     roleText: '',
     staffName: '',
@@ -274,7 +279,12 @@ Page({
       }
     } catch (e) {
       console.warn('staff field onLoad', e);
-      wx.showToast({ title: '现场服务加载失败', icon: 'none' });
+      this.setData({
+        ready: true,
+        bootError: '现场服务加载失败，请下拉刷新重试',
+        tipTone: 'warn',
+        tipText: '现场服务加载失败，请下拉刷新重试'
+      });
     }
   },
 
@@ -323,16 +333,26 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        if (result.msg) wx.showToast({ title: formatCloudFnError(result, result.msg), icon: 'none' });
+        this.setData({
+          summaryError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '今日汇总加载失败')
+        });
         return;
       }
       this.setData({
+        summaryError: false,
         summary: result.today || this.data.summary,
         mineSummary: result.mine || this.data.mineSummary,
         ruleText: result.ruleText || RULE_TEXT_FALLBACK
       });
     } catch (e) {
       console.warn('loadSummary', e);
+      this.setData({
+        summaryError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '今日汇总加载失败')
+      });
     }
   },
 
@@ -1948,7 +1968,7 @@ Page({
   // ------------------------------------------------------------ 流水
 
   async loadRecords() {
-    this.setData({ recordsLoading: true });
+    this.setData({ recordsLoading: true, recordsError: false });
     try {
       const res = await wx.cloud.callFunction({
         name: 'grantStorePoints',
@@ -1956,12 +1976,17 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        this.setData({ recordsLoading: false, records: [] });
-        if (result.msg) wx.showToast({ title: result.msg, icon: 'none' });
+        this.setData({
+          recordsLoading: false,
+          recordsError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '流水加载失败')
+        });
         return;
       }
       this.setData({
         recordsLoading: false,
+        recordsError: false,
         records: (result.list || []).map((row) => ({
           ...row,
           timeText: formatTime(row.createTime),
@@ -1970,8 +1995,12 @@ Page({
         }))
       });
     } catch (e) {
-      this.setData({ recordsLoading: false, records: [] });
-      wx.showToast({ title: formatCloudFnError(e, '流水加载失败'), icon: 'none' });
+      this.setData({
+        recordsLoading: false,
+        recordsError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '流水加载失败')
+      });
     }
   },
 

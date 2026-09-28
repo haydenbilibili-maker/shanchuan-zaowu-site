@@ -1,0 +1,134 @@
+<!-- 星座签 · 独立页（PRD v1.4 §11.4）
+     入口形态：**一轮星盘**（12 个格位 + 一根指针）—— 指针转一圈才落位。
+     进行态：星盘旋转、指针扫过 12 格（纯 CSS keyframes，不用 canvas）。
+     结果纸面：**一格星签**（哪一座 · 今日一句），并允许**同一天换一个**（PRD §11.2-4）。
+     页面不写死玩法名与星座名：名称来自注册表，12 座来自 `utils/profileConstants`（经工厂 variantOptions）。 -->
+<view class="rp-page">
+  <view class="rp-hero {{playedToday ? 'is-done' : ''}}">
+    <view class="rp-hero-mark" aria-hidden="true">{{mark}}</view>
+    <view class="rp-hero-copy">
+      <text class="rp-hero-name">{{name}}</text>
+      <text class="rp-hero-state">{{playedToday ? '今天已转过 · 可换一个' : play.entryNote}}</text>
+    </view>
+  </view>
+
+  <view class="rp-need" wx:if="{{stage === 'need'}}">
+    <text class="rp-need-text">这个玩法要用到你的「{{need.fieldLabel}}」，资料页填一下就好（{{need.gain}}）。</text>
+    <view class="rp-need-cta is-primary" bindtap="goProfileField" hover-class="rp-press" hover-stay-time="70" aria-role="button">去填{{need.fieldLabel}}</view>
+  </view>
+
+  <block wx:elif="{{stage === 'result'}}">
+    <view class="rp-paper" style="transform: translateY({{sheetDragY}}px);" aria-role="dialog" aria-label="{{result.name}}结果">
+      <view
+        class="rp-paper-grip"
+        bindtouchstart="onSheetGripStart"
+        bindtouchmove="onSheetGripMove"
+        bindtouchend="onSheetGripEnd"
+        bindtouchcancel="onSheetGripEnd"
+      ><view class="rp-paper-grip-bar" aria-hidden="true"></view></view>
+      <view class="rp-paper-mark" aria-hidden="true">{{result.mark}}</view>
+      <text class="rp-paper-overline" wx:if="{{result.overline}}">{{result.overline}}</text>
+      <text class="rp-paper-title">{{result.title}}</text>
+      <text class="rp-line" wx:for="{{result.lines}}" wx:key="*this">{{item}}</text>
+      <text class="rp-note" wx:if="{{result.note}}">{{result.note}}</text>
+    </view>
+
+    <!-- 墙页弹层里改一句就地挂上（embedded 只在 PlayBody 组件里为真；独立页照旧回墙预填） -->
+    <include src="../play-shared/post.wxml" />
+    <view class="rp-return" wx:if="{{!embedded}}" aria-hidden="true">
+      <view class="rp-return-seal"><text class="rp-return-seal-t">回</text></view>
+      <text class="rp-return-text">把这句带回墙上 · 挂成心愿</text>
+    </view>
+    <view class="rp-acts">
+      <view class="rp-act is-primary" wx:if="{{!embedded}}" bindtap="writeWish" hover-class="rp-press" hover-stay-time="70" aria-role="button">
+        {{result.wish ? '写成心愿' : '写下我的心愿'}}
+      </view>
+      <button
+        class="rp-act is-share"
+        style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;"
+        open-type="share"
+        bindtap="onShareTap"
+        hover-class="rp-press"
+        hover-stay-time="70"
+        aria-role="button"
+      >分享这份结果</button>
+    </view>
+
+    <view
+      class="rp-reco"
+      wx:if="{{reco || productId || recoLoading || recoFailed}}"
+      bindtap="{{reco ? 'goRecoProduct' : 'goProduct'}}"
+      hover-class="rp-press"
+      hover-stay-time="70"
+      aria-role="button"
+      aria-label="{{reco ? ('去看推荐藏品 ' + reco.title) : (productTitle ? ('去看这面墙的藏品 ' + productTitle) : '去看藏品')}}"
+    >
+      <view class="rp-reco-thumb {{reco ? 'is-live' : ''}}" aria-hidden="true">
+        <image wx:if="{{reco.cover}}" class="rp-reco-img" src="{{reco.cover}}" mode="aspectFill" lazy-load />
+        <view wx:else class="rp-reco-thumb-ph"></view>
+      </view>
+      <view class="rp-reco-copy">
+        <text class="rp-reco-label">{{reco ? reco.label : ('本墙挂签' + (productTitle ? ' · ' + productTitle : ' · 回看藏品'))}}</text>
+        <text class="rp-reco-why" wx:if="{{reco}}">顺着祈运 · 为你配一件</text>
+        <text class="rp-reco-why" wx:elif="{{recoFailed && productId}}">这次没配到 · 先回看墙上这件</text>
+        <text class="rp-reco-why" wx:elif="{{!recoLoading && productId}}">回看本墙挂签关联的藏品</text>
+        <text class="rp-reco-why" wx:elif="{{recoFailed}}">这次没配到 · 稍后再试</text>
+        <text class="rp-reco-title" wx:if="{{reco}}">{{reco.title}}</text>
+        <view class="rp-reco-skel wallet-skel" wx:elif="{{recoLoading && !recoFailed}}" aria-hidden="true"></view>
+        <text class="rp-reco-title" wx:elif="{{recoFailed}}">这次没配到</text>
+        <text class="rp-reco-meta" wx:if="{{reco && (reco.latinName || reco.priceText)}}">{{reco.latinName}}{{reco.latinName && reco.priceText ? ' · ' : ''}}{{reco.priceText}}</text>
+      </view>
+      <text class="rp-reco-go">去看 ›</text>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="rp-stage {{stage === 'pending' ? 'is-pending' : ''}}">
+      <view class="rp-wheel">
+        <view class="rp-wheel-ring" aria-hidden="true"></view>
+        <view class="rp-dot" wx:for="{{[0,1,2,3,4,5,6,7,8,9,10,11]}}" wx:key="*this" style="transform: rotate({{index * 30}}deg) translateY(-104rpx);" aria-hidden="true"></view>
+        <view class="rp-wheel-needle" aria-hidden="true"></view>
+        <view class="rp-wheel-hub" aria-hidden="true"></view>
+      </view>
+    </view>
+    <text class="rp-hint" wx:if="{{stage !== 'pending'}}">{{play.hint}}</text>
+    <text class="rp-spin-text" wx:if="{{stage === 'pending'}}">{{play.spinText}}</text>
+    <view class="rp-cta is-primary" wx:else bindtap="startPlay" hover-class="rp-press" hover-stay-time="70" aria-role="button">{{play.cta}}</view>
+  </block>
+
+  <!-- 「换一个」：12 座来自资料页那份常量（同一天可以逐座看） -->
+  <view class="rp-variants" wx:if="{{canVariant && stage !== 'need'}}">
+    <view
+      class="rp-variant {{variant === item.key ? 'is-on' : ''}}"
+      wx:for="{{variantOptions}}"
+      wx:key="key"
+      data-key="{{item.key}}"
+      bindtap="switchVariant"
+      hover-class="rp-press"
+      hover-stay-time="70"
+      aria-role="button"
+    >{{item.label}}</view>
+  </view>
+
+  <view class="rp-archive {{archiveOpen ? 'is-open' : ''}}">
+    <view class="rp-archive-toggle" bindtap="toggleArchive" aria-role="button">{{archiveOpen ? '收起留档' : '我的留档（' + archive.length + '）'}}</view>
+    <view class="rp-archive-list" wx:if="{{archiveOpen}}">
+      <view class="rp-archive-row" wx:for="{{archive}}" wx:key="at">
+        <text class="rp-archive-day">{{item.dayKey}}</text>
+        <text class="rp-archive-what">{{item.label}} · {{item.title}}</text>
+      </view>
+      <text class="rp-archive-empty" wx:if="{{!archive.length}}">还没有留档。</text>
+    </view>
+  </view>
+
+  <text class="rp-foot">星座是天文学上的分区；这里只给今天可以做的一件小事。</text>
+
+  <app-toast
+    show="{{toastShow}}"
+    overline="{{toastOverline}}"
+    title="{{toastTitle}}"
+    desc="{{toastDesc}}"
+    duration="{{toastDuration}}"
+    bind:close="onToastClose"
+  />
+</view>

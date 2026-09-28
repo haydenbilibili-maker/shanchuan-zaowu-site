@@ -26,13 +26,20 @@
           <text class="title">{{item.productTitle}}</text>
           <!-- 送出侧：受赠人是这张卡的身份，**不因为有礼笺摘句就不显示**（原来摘句把「致 XX」顶掉了） -->
           <text class="meta recipient" wx:if="{{item.flowTab === 'sent' && item.recipientName}}">致 {{item.recipientName}}</text>
+          <!-- 领取核验（送出侧，只显示尾号；TA 领取前可设置 / 修改） -->
+          <view
+            class="verify-chip {{item.receiverVerify ? 'on' : 'warn'}}"
+            wx:if="{{item.flowTab === 'sent' && (item.receiverVerify || item.verifyEditable)}}"
+            data-order-id="{{item.orderId}}"
+            catchtap="onVerifyTap"
+          >{{item.receiverVerify ? '领取核验 · 尾号 ' + item.verifyPhoneTail : '建议补填受礼人手机号，防礼笺被他人领走'}}{{item.verifyEditable ? ' ›' : ''}}</view>
           <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>
           <block wx:elif="{{item.flowTab !== 'sent'}}">
             <text class="meta" wx:if="{{item.storeName}}">{{item.storeName}}</text>
             <text class="meta" wx:else>{{item.deliveryLabel}}</text>
           </block>
 
-          <!-- 履约微轨 -->
+          <!-- 履约微轨：当前步加短注，减轻「只剩圆点」的恍惚感 -->
           <view class="prog-rail" wx:if="{{item.showRail}}" aria-hidden="true">
             <view
               class="prog-step {{step.state}}"
@@ -51,7 +58,7 @@
           </view>
           <view class="actions" wx:if="{{item.primaryAction}}" catchtap="noop">
             <view
-              class="act primary"
+              class="act primary {{item.todo || item.attention ? 'glow' : ''}}"
               hover-class="act-primary-press"
               hover-stay-time="80"
               data-order-id="{{item.orderId}}"
@@ -117,6 +124,25 @@
           <text class="hero-stat-n">{{upcomingHotCount || 0}}</text>
           <text class="hero-stat-l">临近</text>
         </view>
+      </view>
+      <!-- 主路径焦点：有待办且在「全部」时，一眼能点进最该处理的段位 -->
+      <view
+        class="todo-focus"
+        wx:if="{{todoFocus && hubTab === 'flow'}}"
+        hover-class="todo-focus-press"
+        hover-stay-time="80"
+        bindtap="onTodoFocusTap"
+        aria-role="button"
+        aria-label="{{todoFocus.title}}"
+      >
+        <view class="todo-focus-left">
+          <view class="signal-light lamp-warn blink"></view>
+          <view class="todo-focus-copy">
+            <text class="todo-focus-title">{{todoFocus.title}}</text>
+            <text class="todo-focus-hint">{{todoFocus.hint}}</text>
+          </view>
+        </view>
+        <text class="todo-focus-cta">去处理</text>
       </view>
     </view>
   </view>
@@ -248,6 +274,7 @@
           <view class="empty-ring emboss-ring"></view>
           <view class="specimen-wm sm"></view>
         </view>
+        <text class="empty-over">LEDGER</text>
         <text class="empty-title">{{emptyTitle}}</text>
         <text class="empty-desc">{{emptyDesc}}</text>
         <view class="empty-actions" wx:if="{{showEmptyGuide}}">
@@ -259,6 +286,14 @@
             wx:if="{{filterLabel}}"
             bindtap="clearRecipientFilter"
           >查看全部往来</view>
+          <view
+            class="btn-ghost"
+            hover-class="btn-ghost-press"
+            hover-stay-time="80"
+            wx:elif="{{flowTab === 'sent'}}"
+            bindtap="onHubTab"
+            data-tab="people"
+          >先记下对象</view>
           <view
             class="btn-ghost"
             hover-class="btn-ghost-press"
@@ -388,8 +423,9 @@
         <view class="empty-ring emboss-ring"></view>
         <view class="specimen-wm sm"></view>
       </view>
+      <text class="empty-over">CONTACTS</text>
       <text class="empty-title">还没有记下谁</text>
-      <text class="empty-desc">把常想送礼的人放进名单；也可先去柜中选一份山海。</text>
+      <text class="empty-desc">把常想送礼的人放进名单；也可先去柜中选一份山海，再在礼笺里写上称呼。</text>
       <view class="empty-actions">
         <view class="btn-brass" hover-class="btn-brass-press" hover-stay-time="80" bindtap="openContactForm">添加对象</view>
         <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="goHub">去选一份山海</view>
@@ -563,8 +599,9 @@
         <view class="specimen-wm sm"></view>
         <view class="signal-light lamp-muted hollow"></view>
       </view>
+      <text class="empty-over">DATES</text>
       <text class="empty-title">还没有记下日子</text>
-      <text class="empty-desc">生日、纪念日、乔迁与节日，都可放在这里。临近七日时，信号灯会轻轻亮起。</text>
+      <text class="empty-desc">生日、纪念日、乔迁与节日，都可放在这里。临近七日时，信号灯会轻轻亮起，提醒你选一份山海。</text>
       <view class="empty-actions">
         <view class="btn-brass" hover-class="btn-brass-press" hover-stay-time="80" bindtap="openDateForm">添加日子</view>
         <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="goEditProfile">完善个人生日</view>
@@ -752,7 +789,35 @@
 
 <view class="page checking" wx:else>
   <view class="state-block">
-    <view class="state-seal"></view>
+    <view class="state-mark paper-empty" aria-hidden="true">
+      <view class="paper-fiber"></view>
+      <view class="empty-ring emboss-ring"></view>
+      <view class="state-seal"></view>
+    </view>
+    <text class="state-over">GIFT</text>
     <text class="muted">{{checking ? '柜门轻启…' : '礼赠暂未开放'}}</text>
+    <text class="state-hint" wx:if="{{!checking}}">可稍后再来，或先回工坊逛逛</text>
+    <view
+      class="btn-ghost state-back"
+      wx:if="{{!checking}}"
+      hover-class="btn-ghost-press"
+      hover-stay-time="80"
+      bindtap="goAtelier"
+    >回工坊</view>
   </view>
 </view>
+
+<phone-sheet
+  show="{{verifySheet}}"
+  title="{{verifyCopy.title}}"
+  desc="{{verifyCopy.desc}}"
+  quickText="{{verifyCopy.quickText}}"
+  clearText="{{verifyCopy.clearText}}"
+  confirmText="保存"
+  busy="{{verifyBusy}}"
+  error="{{verifyError}}"
+  bindconfirm="onVerifyPhone"
+  bindquick="onVerifyUseAddress"
+  bindclear="onVerifyClear"
+  bindclose="closeVerifySheet"
+/>

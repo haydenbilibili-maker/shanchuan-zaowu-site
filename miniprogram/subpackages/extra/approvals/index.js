@@ -257,6 +257,11 @@ Page({
   data: {
     ready: false,
     loading: false,
+    listError: false,
+    flowError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
     list: [],
     page: 1,
     hasMore: false,
@@ -274,6 +279,8 @@ Page({
     scopeHint: '',
     workspaceRole: '',
     deciding: false,
+    approvePendingId: '',
+    ignorePendingId: '',
     slaHours: 48,
     overdueCount: 0,
     pendingBadge: 0,
@@ -319,7 +326,7 @@ Page({
   },
 
   async onLoad(options) {
-    const role = await guardStaffPage({ minRole: 'staff' });
+    const role = await guardStaffPage('staff');
     if (!role) return;
     if (!role.isManager && !role.isStaff) return;
 
@@ -478,7 +485,7 @@ Page({
   async loadFlowRecords(reset) {
     if (this.data.flowLoading) return;
     const page = reset ? 1 : this.data.flowPage + 1;
-    this.setData({ flowLoading: true });
+    this.setData({ flowLoading: true, flowError: false, tipText: reset ? '' : this.data.tipText });
     try {
       const res = await wx.cloud.callFunction({
         name: 'grantStorePoints',
@@ -492,8 +499,12 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        this.setData({ flowLoading: false });
-        if (result.msg) wx.showToast({ title: formatCloudFnError(result, result.msg), icon: 'none' });
+        this.setData({
+          flowLoading: false,
+          flowError: true,
+          tipTone: 'warn',
+          tipText: formatCloudFnError(result, result.msg || '流水加载失败')
+        });
         return;
       }
       const list = (result.list || []).map((row) => ({
@@ -511,13 +522,19 @@ Page({
       }));
       this.setData({
         flowLoading: false,
+        flowError: false,
+        tipText: reset ? '' : this.data.tipText,
         flowPage: page,
         flowHasMore: !!result.hasMore,
         flowRecords: reset ? list : this.data.flowRecords.concat(list)
       });
     } catch (e) {
-      this.setData({ flowLoading: false });
-      wx.showToast({ title: formatCloudFnError(e, '流水加载失败'), icon: 'none' });
+      this.setData({
+        flowLoading: false,
+        flowError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '流水加载失败')
+      });
     }
   },
 
@@ -542,7 +559,8 @@ Page({
       showRevokeModal: true,
       revokeTarget: { ...item, remainAmount: remain },
       revokeReasonIndex: 0,
-      revokeAmount: String(remain)
+      revokeAmount: String(remain),
+      formTip: ''
     });
   },
 
@@ -565,11 +583,11 @@ Page({
     if (!target) return;
     const amount = Number(this.data.revokeAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      wx.showToast({ title: '请输入撤销金额', icon: 'none' });
+      this.setData({ formTip: '请输入撤销金额' });
       return;
     }
     const reason = this.data.revokeReasons[this.data.revokeReasonIndex];
-    wx.showLoading({ title: '处理中…' });
+    this.setData({ formTip: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'grantStorePoints',
@@ -580,24 +598,19 @@ Page({
           revokeAmount: amount
         }
       });
-      wx.hideLoading();
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showModal({
-          title: '撤销失败',
-          content: formatCloudFnError(result, result.msg || '请稍后重试'),
-          showCancel: false,
-          confirmColor: '#C4A76C'
+        this.setData({
+          formTip: formatCloudFnError(result, result.msg || '请稍后重试')
         });
         return;
       }
-      wx.showToast({ title: result.msg || '已撤销', icon: 'none' });
       this.closeRevoke();
+      this.setData({ tipTone: 'info', tipText: result.msg || '已撤销' });
       this.loadFlowRecords(true);
       this.refreshPendingBadge();
     } catch (e) {
-      wx.hideLoading();
-      wx.showToast({ title: formatCloudFnError(e, '撤销失败'), icon: 'none' });
+      this.setData({ formTip: formatCloudFnError(e, '撤销失败') });
     }
   },
 
@@ -656,8 +669,11 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        this.setData({ overviewLoading: false });
-        wx.showToast({ title: result.msg || '概览加载失败', icon: 'none' });
+        this.setData({
+          overviewLoading: false,
+          tipTone: 'warn',
+          tipText: result.msg || '概览加载失败'
+        });
         return;
       }
       const overview = mapOverview(result);
@@ -670,8 +686,11 @@ Page({
         pendingBadge: overview.pending.count || this.data.pendingBadge
       });
     } catch (e) {
-      this.setData({ overviewLoading: false });
-      wx.showToast({ title: formatCloudFnError(e, '概览加载失败'), icon: 'none' });
+      this.setData({
+        overviewLoading: false,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '概览加载失败')
+      });
     }
   },
 
@@ -784,7 +803,13 @@ Page({
   async loadList(reset) {
     if (this.data.loading) return;
     const page = reset ? 1 : this.data.page;
-    this.setData({ loading: true });
+    this.setData({
+      loading: true,
+      listError: false,
+      tipText: reset ? '' : this.data.tipText,
+      approvePendingId: '',
+      ignorePendingId: ''
+    });
     const mode = this.data.viewMode;
     const action = mode === 'mine'
       ? 'listMine'
@@ -802,12 +827,17 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '加载失败', icon: 'none' });
+        this.setData({
+          listError: true,
+          tipTone: 'warn',
+          tipText: result.msg || '加载失败'
+        });
         return;
       }
       const rows = (result.list || []).map(mapItem);
       const empty = this.emptyCopy(mode, this.data.filterStatus);
       this.setData({
+        listError: false,
         list: reset ? rows : this.data.list.concat(rows),
         page: page + 1,
         hasMore: !!result.hasMore,
@@ -821,7 +851,11 @@ Page({
         this.setData({ pendingBadge: result.total || 0 });
       }
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '加载失败'), icon: 'none' });
+      this.setData({
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(err, '加载失败')
+      });
     } finally {
       this.setData({ loading: false });
     }
@@ -832,20 +866,28 @@ Page({
     this.loadList(false);
   },
 
+  onRetryList() {
+    this.loadList(true);
+  },
+
+  onRetryFlow() {
+    this.loadFlowRecords(true);
+  },
+
   async approveItem(e) {
     const id = e.currentTarget.dataset.id;
     if (!id || this.data.deciding) return;
-    const ok = await new Promise((resolve) => {
-      wx.showModal({
-        title: '确认通过',
-        content: '通过后将执行原业务写入（上架 / 退款 / 发积分等）',
-        success: (r) => resolve(!!r.confirm)
+    if (this.data.approvePendingId !== id) {
+      this.setData({
+        approvePendingId: id,
+        ignorePendingId: '',
+        tipTone: 'warn',
+        tipText: '再点一次「通过」将执行原业务写入（上架 / 退款 / 发积分等）'
       });
-    });
-    if (!ok) return;
+      return;
+    }
 
-    this.setData({ deciding: true });
-    wx.showLoading({ title: '处理中' });
+    this.setData({ deciding: true, approvePendingId: '', tipTone: 'info', tipText: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageApprovals',
@@ -853,18 +895,16 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '通过失败', icon: 'none' });
+        this.setData({ tipTone: 'warn', tipText: result.msg || '通过失败' });
         return;
       }
-      wx.showToast({ title: result.msg || '已通过', icon: 'success' });
-      this.setData({ expandedId: '' });
+      this.setData({ expandedId: '', tipTone: 'info', tipText: result.msg || '已通过' });
       this.loadList(true);
       this.refreshPendingBadge();
       if (this.data.overviewReady) this.loadOverview(true);
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '通过失败'), icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '通过失败') });
     } finally {
-      wx.hideLoading();
       this.setData({ deciding: false });
     }
   },
@@ -874,6 +914,7 @@ Page({
     const requireReason = !!(e.currentTarget.dataset.require === '1' || e.currentTarget.dataset.require === true);
     if (!id || this.data.deciding) return;
 
+    // 驳回需可填原因：保留系统 editable modal（无自定义表单时的最小输入面）
     const modal = await new Promise((resolve) => {
       wx.showModal({
         title: '驳回原因',
@@ -886,12 +927,11 @@ Page({
 
     const reason = String(modal.content || '').trim();
     if (requireReason && reason.length < 2) {
-      wx.showToast({ title: '请填写驳回原因', icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: '请填写驳回原因（至少 2 字）' });
       return;
     }
 
-    this.setData({ deciding: true });
-    wx.showLoading({ title: '处理中' });
+    this.setData({ deciding: true, tipTone: 'info', tipText: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageApprovals',
@@ -903,18 +943,16 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '驳回失败', icon: 'none' });
+        this.setData({ tipTone: 'warn', tipText: result.msg || '驳回失败' });
         return;
       }
-      wx.showToast({ title: '已驳回', icon: 'none' });
-      this.setData({ expandedId: '' });
+      this.setData({ expandedId: '', tipTone: 'info', tipText: '已驳回' });
       this.loadList(true);
       this.refreshPendingBadge();
       if (this.data.overviewReady) this.loadOverview(true);
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '驳回失败'), icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '驳回失败') });
     } finally {
-      wx.hideLoading();
       this.setData({ deciding: false });
     }
   },
@@ -922,19 +960,17 @@ Page({
   async ignoreItem(e) {
     const id = e.currentTarget.dataset.id;
     if (!id || this.data.deciding) return;
-    const ok = await new Promise((resolve) => {
-      wx.showModal({
-        title: '忽略小票申请',
-        content: '忽略后不入账，确定？',
-        confirmText: '忽略',
-        confirmColor: '#A09A90',
-        success: (r) => resolve(!!r.confirm)
+    if (this.data.ignorePendingId !== id) {
+      this.setData({
+        ignorePendingId: id,
+        approvePendingId: '',
+        tipTone: 'warn',
+        tipText: '再点一次「忽略」：不入账并关掉该小票申请'
       });
-    });
-    if (!ok) return;
+      return;
+    }
 
-    this.setData({ deciding: true });
-    wx.showLoading({ title: '处理中' });
+    this.setData({ deciding: true, ignorePendingId: '', tipTone: 'info', tipText: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageApprovals',
@@ -942,18 +978,16 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        wx.showToast({ title: result.msg || '忽略失败', icon: 'none' });
+        this.setData({ tipTone: 'warn', tipText: result.msg || '忽略失败' });
         return;
       }
-      wx.showToast({ title: result.msg || '已忽略', icon: 'none' });
-      this.setData({ expandedId: '' });
+      this.setData({ expandedId: '', tipTone: 'info', tipText: result.msg || '已忽略' });
       this.loadList(true);
       this.refreshPendingBadge();
       if (this.data.overviewReady) this.loadOverview(true);
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '忽略失败'), icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '忽略失败') });
     } finally {
-      wx.hideLoading();
       this.setData({ deciding: false });
     }
   },
@@ -961,17 +995,20 @@ Page({
   async nudgeItem(e) {
     const id = e.currentTarget.dataset.id;
     if (!id || this.data.deciding) return;
-    this.setData({ deciding: true });
+    this.setData({ deciding: true, tipTone: 'info', tipText: '催办中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageApprovals',
         data: { action: 'nudge', approvalId: id }
       });
       const result = (res && res.result) || {};
-      wx.showToast({ title: result.msg || (result.success ? '已催办' : '催办失败'), icon: 'none' });
+      this.setData({
+        tipTone: result.success ? 'info' : 'warn',
+        tipText: result.msg || (result.success ? '已催办' : '催办失败')
+      });
       if (result.success) this.loadList(true);
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '催办失败'), icon: 'none' });
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '催办失败') });
     } finally {
       this.setData({ deciding: false });
     }

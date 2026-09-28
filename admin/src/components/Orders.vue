@@ -300,6 +300,7 @@ import { getTempFileUrl, cdnUpdate, cdnCount, fetchCollectionLimit, callCloudFun
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { safeWarn } from '../utils/safeStorage.js'
 import { excludeExchangeOrders } from '../utils/orderFilters'
+import { cdnRevealDocs } from '../utils/cloudbaseCdnDb.js'
 import OrderAI from './ai/OrderAI.vue'
 
 // --- 状态 ---
@@ -453,13 +454,23 @@ const confirmBatchShip = async () => {
 }
 
 // 批量导出
-const handleBatchExport = () => {
+const handleBatchExport = async () => {
   if (selectedOrders.value.length === 0) {
     ElMessage.warning('请先选择要导出的订单')
     return
   }
 
-  const exportData = selectedOrders.value.map(order => ({
+  // 列表里的收货人/手机号/地址已脱敏；导出发货单需要原值 → 经只读网关按 id 取原值（云函数先记审计日志）
+  let revealed
+  try {
+    revealed = await cdnRevealDocs('orders', selectedOrders.value.map(o => o._id), 'orders_export')
+  } catch (e) {
+    ElMessage.error(`导出失败：取收货信息原值未成功（${e?.message || e}）`)
+    return
+  }
+  const addressById = new Map(revealed.map(o => [o._id, o.address]))
+
+  const exportData = selectedOrders.value.map(order => ({ ...order, address: addressById.get(order._id) || order.address })).map(order => ({
     订单号: order._id,
     订单状态: order.status,
     订单金额: `¥${order.totalPrice.toFixed(2)}`,

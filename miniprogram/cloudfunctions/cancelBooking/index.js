@@ -61,16 +61,25 @@ exports.main = async (event, context) => {
       refundAmount = (booking.price || 0) - cancelFee;
     }
 
-    // 5. 更新预约状态
-    await db.collection('bookings').doc(bookingId).update({
+    // 5. 更新预约状态：条件更新 confirmed → cancelled，并发/重复取消只有一次生效，名额也只归还这一次
+    const held = booking.activityId ? Math.max(0, parseInt(booking.seatHeld, 10) || 0) : 0;
+    const upd = await db.collection('bookings').where({ _id: bookingId, status: 'confirmed' }).update({
       data: {
         status: 'cancelled',
         cancelTime: db.serverDate(),
         cancelReason: reason || '用户主动取消',
         refundAmount: refundAmount,
-        cancelFee: cancelFee
+        cancelFee: cancelFee,
+        ...(held ? { seatReleased: true } : {})
       }
     });
+    if (!upd || !upd.stats || upd.stats.updated !== 1) {
+      return { success: false, msg: '该预约无法取消' };
+    }
+    if (held) {
+      await db.collection('activities').doc(booking.activityId).update({ data: { remain: db.command.inc(held) } })
+        .catch((e) => console.error('归还活动名额失败:', booking.activityId, e));
+    }
 
     // 6. 如果涉及退款，记录退款信息（需要对接支付系统）
     if (refundAmount > 0 && booking.price > 0) {
@@ -89,18 +98,17 @@ exports.main = async (event, context) => {
       });
     }
 
-    // 7. 发送取消提醒
+    // 7. 发送取消提醒（云端互调用 cloud.callFunction；云函数里没有 wx 全局）。失败只记日志，不影响取消结果
     try {
-      await wx.cloud.callFunction({
+      const r = await cloud.callFunction({
         name: 'sendBookingReminder',
-        data: {
-          type: 'cancelled',
-          bookingId: bookingId,
-          bookingData: booking
-        }
+        data: { type: 'cancelled', bookingId }
       });
+      if (!r || !r.result || r.result.success !== true) {
+        console.error('发送取消提醒失败:', bookingId, r && r.result);
+      }
     } catch (err) {
-      console.error('发送取消提醒失败:', err);
+      console.error('发送取消提醒失败:', bookingId, err);
     }
 
     return {

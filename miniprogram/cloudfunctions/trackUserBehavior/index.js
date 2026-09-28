@@ -91,9 +91,25 @@ async function writeBehavior(event) {
     const v = event && event[k]
     if (v !== undefined && v !== null && v !== '') doc[k] = v
   })
-  // 行为时间与日期由服务端生成，避免调用方伪造（客户端只读字段）
+  // 报表读侧依赖这些字段。白名单故意不含它们（防 mass-assignment），
+  // 由服务端从已 normalize 的事件写入（userId 在 main 里已强制为调用方 openid）。
+  // 2026-09-15 安全白名单落地后若漏写 → getAnalyticsDashboard.loadBehaviors
+  // 按 timestamp 查恒空 → 超管「行为漏斗」全 0（见每日日报蓝图 §2.1 实测）。
+  const ts = Number(event && event.timestamp) || Date.now()
+  doc.userId = String((event && event.userId) || doc._openid || '')
+  doc.module = String((event && event.module) || 'system')
+  doc.timestamp = ts
   doc.serverTime = db.serverDate()
-  doc.dateKey = String((event && event.dateKey) || '').slice(0, 10) || new Date().toISOString().slice(0, 10)
+  doc.dateKey =
+    String((event && event.dateKey) || '').slice(0, 10) || getDateKey(ts)
+  // 漏斗分桶必需：客户端常把 step 放在 extra/properties，顶层白名单不含
+  const step =
+    event && event.step != null && event.step !== ''
+      ? event.step
+      : properties && properties.step
+  if (step !== undefined && step !== null && step !== '') {
+    doc.step = String(step)
+  }
   await db.collection('user_behaviors').add({
     data: {
       ...doc,

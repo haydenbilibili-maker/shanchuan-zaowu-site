@@ -8,6 +8,8 @@
     <text class="header-note">一期半自动开票：核对后线下开具，再在此标记状态</text>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
   <view class="overview-panel">
     <view class="overview-head">
       <view class="overview-title-wrap">
@@ -181,7 +183,12 @@
     <view class="btn-outline load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
   </view>
 
-  <view class="empty" wx:if="{{!loading && list.length === 0}}">暂无开票申请</view>
+  <view class="empty is-error" wx:if="{{listError && !list.length}}">
+    <text class="empty-title">开票列表未能取回</text>
+    <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
+    <view class="btn-retry" bindtap="onRetryList">重试</view>
+  </view>
+  <view class="empty" wx:elif="{{!loading && !listError && list.length === 0}}">暂无开票申请</view>
   <view class="loading-hint" wx:if="{{loading}}">加载中…</view>
 
 </view>
@@ -191,6 +198,7 @@
   <view class="modal" catchtap="noop">
     <text class="modal-title">标记已开具</text>
     <text class="modal-sub" wx:if="{{actionTarget}}">订单 {{actionTarget.orderNo}} · {{actionTarget.title}}</text>
+    <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
     <view class="field">
       <text class="field-label">发票号（可选）</text>
       <input class="input" placeholder="电子发票号码 / 流水号" value="{{invoiceNo}}" bindinput="onInvoiceNoInput" />
@@ -201,7 +209,7 @@
     </view>
     <view class="modal-actions">
       <view class="btn-outline" bindtap="closeModals">取消</view>
-      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmIssue">确认开具</view>
+      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmIssue">{{submitting ? '处理中…' : '确认开具'}}</view>
     </view>
   </view>
 </view>
@@ -211,13 +219,14 @@
   <view class="modal" catchtap="noop">
     <text class="modal-title">驳回申请</text>
     <text class="modal-sub" wx:if="{{actionTarget}}">订单 {{actionTarget.orderNo}} · {{actionTarget.title}}</text>
+    <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
     <view class="field">
       <text class="field-label">驳回原因（必填）</text>
       <textarea class="textarea" placeholder="如：税号有误、订单未完成支付" value="{{rejectReason}}" bindinput="onRejectReasonInput" maxlength="500" />
     </view>
     <view class="modal-actions">
       <view class="btn-outline" bindtap="closeModals">取消</view>
-      <view class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmReject">确认驳回</view>
+      <view class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmReject">{{submitting ? '处理中…' : '确认驳回'}}</view>
     </view>
   </view>
 </view>

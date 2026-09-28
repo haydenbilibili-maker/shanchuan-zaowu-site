@@ -11,6 +11,7 @@ const TRUST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MANAGER_PATH = '/subpackages/manager/manager/index';
 const STAFF_PATH = '/subpackages/extra/staff/index';
 const ARTISAN_PATH = '/subpackages/extra/artisan/index';
+const SUPPLIER_PATH = '/subpackages/extra/supplier/index';
 const LIVE_BROADCAST_PATH = '/subpackages/extra/live/broadcast/index';
 const LIVE_STUDIO_PATH = '/subpackages/extra/live/studio/index';
 const INVESTOR_PATH = '/subpackages/extra/investor/index';
@@ -21,6 +22,7 @@ const WORKSPACE_KIND_MAP = {
   manager: { title: '店长验证', go: () => goManagerPage('store_manager') },
   staff: { title: '店员验证', go: goStaffPage },
   artisan: { title: '标本师验证', go: goArtisanPage },
+  supplier: { title: 'B2B工作台验证', go: goSupplierPage },
   live_host: { title: '主播验证', go: goLiveHostStudioPage },
   investor: { title: '投资人验证', go: goInvestorPage },
   shareholder: { title: '股东验证', go: goShareholderPage }
@@ -142,6 +144,14 @@ function goArtisanPage() {
   });
 }
 
+/**
+ * 供应商工作台（Phase 1 旁路 Hub）
+ * ⚠️ 刻意不写 fail toast：dialog-ratchet 只许降；页路径由 check:page-paths 保证。
+ */
+function goSupplierPage() {
+  wx.navigateTo({ url: SUPPLIER_PATH });
+}
+
 function goLiveBroadcastPage() {
   wx.navigateTo({
     url: LIVE_BROADCAST_PATH,
@@ -204,7 +214,7 @@ async function peekWhoami() {
 
 /**
  * 进入指定工作台：先角色、再口令（同一设备信任会话）
- * @param {'super_admin'|'manager'|'staff'|'artisan'|'live_host'|'investor'|'shareholder'} kind
+ * @param {'super_admin'|'manager'|'staff'|'artisan'|'supplier'|'live_host'|'investor'|'shareholder'} kind
  * @param {string} [workspaceHint] manager 页菜单视角（super_admin | store_manager）
  */
 function promptStaffOrderSubscribeSync() {
@@ -249,6 +259,13 @@ async function requestWorkspaceAccess(kind, workspaceHint) {
     (target === 'manager' && (roles.indexOf('manager') !== -1 || roles.indexOf('super_admin') !== -1)) ||
     (target === 'staff' && (roles.indexOf('staff') !== -1 || roles.indexOf('manager') !== -1 || roles.indexOf('super_admin') !== -1)) ||
     (target === 'artisan' && (roles.indexOf('specimen_artisan') !== -1 || roles.indexOf('super_admin') !== -1)) ||
+    (target === 'supplier' &&
+      (roles.indexOf('super_admin') !== -1 ||
+        whoami.isSuperAdmin ||
+        roles.indexOf('supplier') !== -1 ||
+        roles.indexOf('buyer') !== -1 ||
+        roles.indexOf('franchisee') !== -1 ||
+        roles.indexOf('channel') !== -1)) ||
     (target === 'live_host' && (roles.indexOf('live_host') !== -1 || roles.indexOf('super_admin') !== -1)) ||
     (target === 'investor' && (roles.indexOf('investor') !== -1 || roles.indexOf('super_admin') !== -1)) ||
     (target === 'shareholder' && (roles.indexOf('shareholder') !== -1 || roles.indexOf('super_admin') !== -1 || whoami.isShareholder));
@@ -401,6 +418,7 @@ function guardManagerPage() {
 module.exports = {
   MANAGER_PATH,
   ARTISAN_PATH,
+  SUPPLIER_PATH,
   LIVE_BROADCAST_PATH,
   LIVE_STUDIO_PATH,
   INVESTOR_PATH,
@@ -414,6 +432,7 @@ module.exports = {
   guardManagerPage,
   goManagerPage,
   goArtisanPage,
+  goSupplierPage,
   goLiveBroadcastPage,
   goLiveHostStudioPage,
   goInvestorPage,

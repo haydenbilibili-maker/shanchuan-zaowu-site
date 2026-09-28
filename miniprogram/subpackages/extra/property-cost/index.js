@@ -17,6 +17,11 @@ Page({
   data: {
     ready: false,
     loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    pendingRemoveId: '',
     saving: false,
     uploading: false,
     maxReceipts: MAX_RECEIPTS_FALLBACK,
@@ -103,7 +108,10 @@ Page({
         typeFilterValues: ['all'].concat(costTypes.map((t) => t.value))
       })
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '元数据未能取回'), icon: 'none' })
+      this.setData({
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '元数据未能取回')
+      })
     }
   },
 
@@ -143,7 +151,7 @@ Page({
   },
 
   async loadList() {
-    this.setData({ loading: true })
+    this.setData({ loading: true, listError: false, tipText: '', pendingRemoveId: '' })
     try {
       const entityId = this.data.entityFilterIds[this.data.entityFilterIndex] || ''
       const costType = this.data.typeFilterValues[this.data.typeFilterIndex] || 'all'
@@ -178,6 +186,7 @@ Page({
       }
       const summaryRaw = result.summary || { totalAmount: 0, count: 0, byEntity: [], byType: [] }
       this.setData({
+        listError: false,
         list,
         summary: {
           totalAmount: summaryRaw.totalAmount || 0,
@@ -194,11 +203,12 @@ Page({
         }
       })
     } catch (e) {
+      // 失败不清空列表、不把错误伪装成「柜中暂无」
       this.setData({
-        list: [],
-        summary: { totalAmount: 0, totalAmountText: '0', count: 0, byEntity: [], byType: [] }
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '清单未能展开')
       })
-      wx.showToast({ title: formatCloudFnError(e, '清单未能展开'), icon: 'none' })
     } finally {
       this.setData({ loading: false })
     }
@@ -232,6 +242,7 @@ Page({
     this.setData({
       showForm: true,
       editingId: '',
+      formTip: '',
       formEntityIndex: 0,
       formTypeIndex: 0,
       receiptPreviews: [],
@@ -264,6 +275,7 @@ Page({
     this.setData({
       showForm: true,
       editingId: id,
+      formTip: '',
       formEntityIndex,
       formTypeIndex,
       receiptPreviews,
@@ -340,7 +352,7 @@ Page({
     const current = (this.data.form && this.data.form.receiptFileIds) || []
     const remain = (this.data.maxReceipts || MAX_RECEIPTS_FALLBACK) - current.length
     if (remain <= 0) {
-      wx.showToast({ title: `最多 ${this.data.maxReceipts} 张票据`, icon: 'none' })
+      this.setData({ formTip: `最多 ${this.data.maxReceipts} 张票据` })
       return
     }
     wx.chooseMedia({
@@ -349,8 +361,7 @@ Page({
       success: async (res) => {
         const files = res.tempFiles || []
         if (!files.length) return
-        this.setData({ uploading: true })
-        wx.showLoading({ title: '上传中…', mask: true })
+        this.setData({ uploading: true, formTip: '正在上传票据…' })
         try {
           const nextIds = current.slice()
           const nextPreviews = (this.data.receiptPreviews || []).slice()
@@ -370,13 +381,12 @@ Page({
           }
           this.setData({
             'form.receiptFileIds': nextIds.slice(0, this.data.maxReceipts),
-            receiptPreviews: nextPreviews.slice(0, this.data.maxReceipts)
+            receiptPreviews: nextPreviews.slice(0, this.data.maxReceipts),
+            formTip: '票据已收入'
           })
-          wx.showToast({ title: '票据已收入', icon: 'success' })
         } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '上传未成'), icon: 'none' })
+          this.setData({ formTip: formatCloudFnError(err, '上传未成') })
         } finally {
-          wx.hideLoading()
           this.setData({ uploading: false })
         }
       }
@@ -428,23 +438,23 @@ Page({
     if (this.data.saving) return
     const form = this.data.form || {}
     if (!form.entityId) {
-      wx.showToast({ title: '请选择归属主体', icon: 'none' })
+      this.setData({ formTip: '请选择归属主体' })
       return
     }
     const amount = Number(form.amount)
     if (!Number.isFinite(amount) || amount <= 0) {
-      wx.showToast({ title: '请填写金额', icon: 'none' })
+      this.setData({ formTip: '请填写金额' })
       return
     }
     if (!form.periodMonth && !form.periodStart) {
-      wx.showToast({ title: '请填写所属月或周期', icon: 'none' })
+      this.setData({ formTip: '请填写所属月或周期' })
       return
     }
     if (form.periodStart && form.periodEnd && form.periodStart > form.periodEnd) {
-      wx.showToast({ title: '周期起止日期顺序有误', icon: 'none' })
+      this.setData({ formTip: '周期起止日期顺序有误' })
       return
     }
-    this.setData({ saving: true })
+    this.setData({ saving: true, formTip: '正在保存…' })
     try {
       const receiptFileIds = form.receiptFileIds || []
       await this.callFn({
@@ -463,11 +473,14 @@ Page({
           note: String(form.note || '').trim()
         }
       })
-      wx.showToast({ title: '已收入柜中', icon: 'success' })
-      this.setData({ showForm: false })
+      this.setData({
+        showForm: false,
+        tipTone: 'info',
+        tipText: '已收入柜中'
+      })
       await this.loadList()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '未能保存'), icon: 'none' })
+      this.setData({ formTip: formatCloudFnError(e, '未能保存') })
     } finally {
       this.setData({ saving: false })
     }
@@ -477,21 +490,26 @@ Page({
     const id = e.currentTarget.dataset.id
     const row = (this.data.list || []).find((x) => x._id === id)
     if (!row) return
-    wx.showModal({
-      title: '移出物业账目',
-      content: `确认删除「${row.entityName} · ${row.costTypeLabel} · ¥${row.amountText}」？`,
-      confirmText: '删除',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          await this.callFn({ action: 'remove', id })
-          wx.showToast({ title: '已移出', icon: 'success' })
-          this.loadList()
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '删除未成'), icon: 'none' })
-        }
-      }
+    // 二次确认不用原生弹窗（dialog-ratchet 只许降）
+    if (this.data.pendingRemoveId === id) {
+      this.setData({ pendingRemoveId: '', tipTone: 'info', tipText: '正在删除…' })
+      this.callFn({ action: 'remove', id })
+        .then(() => {
+          this.setData({ tipTone: 'info', tipText: '已移出' })
+          return this.loadList()
+        })
+        .catch((err) => {
+          this.setData({
+            tipTone: 'warn',
+            tipText: formatCloudFnError(err, '删除未成')
+          })
+        })
+      return
+    }
+    this.setData({
+      pendingRemoveId: id,
+      tipTone: 'warn',
+      tipText: `再点一次「删除」即移出「${row.entityName} · ${row.costTypeLabel} · ¥${row.amountText}」`
     })
   }
 })

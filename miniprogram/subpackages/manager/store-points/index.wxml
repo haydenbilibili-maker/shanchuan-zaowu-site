@@ -14,6 +14,8 @@
     </picker>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
   <view class="tab-bar">
     <view class="tab {{curTab===0?'active':''}}" bindtap="switchTab" data-idx="0">今日</view>
     <view class="tab {{curTab===1?'active':''}}" wx:if="{{canManageRules}}" bindtap="switchTab" data-idx="1">规则</view>
@@ -22,79 +24,96 @@
   <!-- Tab 0 今日汇总 -->
   <block wx:if="{{curTab===0}}">
     <view class="section">
-      <view class="kpi-grid">
-        <view class="kpi">
-          <text class="kpi-val">{{summary.count}}</text>
-          <text class="kpi-label">录入笔数</text>
-        </view>
-        <view class="kpi">
-          <text class="kpi-val">¥{{summary.amount}}</text>
-          <text class="kpi-label">消费金额</text>
-        </view>
-        <view class="kpi">
-          <text class="kpi-val gold">{{summary.points}}</text>
-          <text class="kpi-label">发放积分</text>
-        </view>
-        <view class="kpi">
-          <text class="kpi-val">¥{{summary.avgTicket}}</text>
-          <text class="kpi-label">客单价</text>
-        </view>
+      <view class="loading-hint" wx:if="{{summaryLoading && !summaryError}}">加载今日汇总…</view>
+      <view class="empty is-error" wx:elif="{{summaryError}}">
+        <text class="empty-title">今日汇总未能取回</text>
+        <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
+        <view class="btn-retry" bindtap="onRetrySummary">重试</view>
       </view>
-      <view class="quota-bar">
-        <text class="quota-text">今日剩余额度：{{summary.cap > 0 ? summary.remaining + ' / ' + summary.cap + ' 分' : '不限'}}</text>
-      </view>
-      <text class="section-note">{{ruleText}}</text>
-      <text class="section-note">对账口径：本页「消费金额」之和应不超过营收账本当日 total；差异较大需核查店员录入。</text>
-      <view class="btn-outline audit-jump" bindtap="goApprovalsHub">积分流水 · 小票 · 外部订单 › 审批中心</view>
+      <block wx:else>
+        <view class="kpi-grid">
+          <view class="kpi">
+            <text class="kpi-val">{{summary.count}}</text>
+            <text class="kpi-label">录入笔数</text>
+          </view>
+          <view class="kpi">
+            <text class="kpi-val">¥{{summary.amount}}</text>
+            <text class="kpi-label">消费金额</text>
+          </view>
+          <view class="kpi">
+            <text class="kpi-val gold">{{summary.points}}</text>
+            <text class="kpi-label">发放积分</text>
+          </view>
+          <view class="kpi">
+            <text class="kpi-val">¥{{summary.avgTicket}}</text>
+            <text class="kpi-label">客单价</text>
+          </view>
+        </view>
+        <view class="quota-bar">
+          <text class="quota-text">今日剩余额度：{{summary.cap > 0 ? summary.remaining + ' / ' + summary.cap + ' 分' : '不限'}}</text>
+        </view>
+        <text class="section-note">{{ruleText}}</text>
+        <text class="section-note">对账口径：本页「消费金额」之和应不超过营收账本当日 total；差异较大需核查店员录入。</text>
+        <view class="btn-outline audit-jump" bindtap="goApprovalsHub">积分流水 · 小票 · 外部订单 › 审批中心</view>
+      </block>
     </view>
   </block>
 
   <!-- Tab 1 规则（仅超管） -->
   <block wx:if="{{curTab===1 && canManageRules}}">
-    <view class="section">
-      <text class="rule-current">当前规则：{{ruleText}}</text>
-      <text class="section-note">{{ruleDefault ? '尚未在云端配置，正在使用云函数内的默认规则。保存后即写入 store_point_rules。' : '已使用云端配置。'}}</text>
+    <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+    <view class="loading-hint" wx:if="{{ruleLoading && !ruleError}}">加载规则…</view>
+    <view class="section empty is-error" wx:elif="{{ruleError}}">
+      <text class="empty-title">规则未能取回</text>
+      <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryRule">重试</view>
     </view>
-
-    <view class="section">
-      <view class="field">
-        <text class="field-label">赠送方式</text>
-        <picker mode="selector" range="{{modeLabels}}" value="{{modeIndex}}" bindchange="onModeChange">
-          <view class="picker-inner">
-            <text class="picker-value">{{modeOptions[modeIndex].label}}</text>
-            <text class="picker-arrow">切换</text>
-          </view>
-        </picker>
-        <text class="section-note mode-desc">{{modeOptions[modeIndex].desc}}</text>
+    <block wx:else>
+      <view class="section">
+        <text class="rule-current">当前规则：{{ruleText}}</text>
+        <text class="section-note">{{ruleDefault ? '尚未在云端配置，正在使用云函数内的默认规则。保存后即写入 store_point_rules。' : '已使用云端配置。'}}</text>
       </view>
 
-      <view
-        class="field"
-        wx:for="{{ruleFields}}"
-        wx:key="key"
-        wx:if="{{(!item.showWhenMode || item.showWhenMode === modeOptions[modeIndex].value) && (!item.hideWhenMode || item.hideWhenMode !== modeOptions[modeIndex].value)}}"
-      >
-        <text class="field-label">{{item.label}}</text>
-        <input class="input" type="{{item.type}}" value="{{ruleForm[item.key]}}"
-               bindinput="onRuleInput" data-key="{{item.key}}" />
-      </view>
-
-      <view class="field">
-        <text class="field-label">奖励模块开关</text>
-        <view class="module-list">
-          <view
-            class="module-chip {{ruleForm.modules[item.key] !== false ? 'on' : ''}}"
-            wx:for="{{moduleOptions}}"
-            wx:key="key"
-            bindtap="toggleModule"
-            data-key="{{item.key}}"
-          >{{item.label}}</view>
+      <view class="section">
+        <view class="field">
+          <text class="field-label">赠送方式</text>
+          <picker mode="selector" range="{{modeLabels}}" value="{{modeIndex}}" bindchange="onModeChange">
+            <view class="picker-inner">
+              <text class="picker-value">{{modeOptions[modeIndex].label}}</text>
+              <text class="picker-arrow">切换</text>
+            </view>
+          </picker>
+          <text class="section-note mode-desc">{{modeOptions[modeIndex].desc}}</text>
         </view>
-        <text class="section-note">关闭后对应入口不发分；分享/评价/签到/浏览/外部订单/小票兑分均受此控制。</text>
-      </view>
 
-      <view class="btn-primary rule-save {{ruleSaving ? 'disabled' : ''}}" bindtap="saveRule">保存规则</view>
-      <text class="section-note">{{ruleText}}；不足门槛部分不计入，且不叠加会员等级倍率。</text>
-    </view>
+        <view
+          class="field"
+          wx:for="{{ruleFields}}"
+          wx:key="key"
+          wx:if="{{(!item.showWhenMode || item.showWhenMode === modeOptions[modeIndex].value) && (!item.hideWhenMode || item.hideWhenMode !== modeOptions[modeIndex].value)}}"
+        >
+          <text class="field-label">{{item.label}}</text>
+          <input class="input" type="{{item.type}}" value="{{ruleForm[item.key]}}"
+                 bindinput="onRuleInput" data-key="{{item.key}}" />
+        </view>
+
+        <view class="field">
+          <text class="field-label">奖励模块开关</text>
+          <view class="module-list">
+            <view
+              class="module-chip {{ruleForm.modules[item.key] !== false ? 'on' : ''}}"
+              wx:for="{{moduleOptions}}"
+              wx:key="key"
+              bindtap="toggleModule"
+              data-key="{{item.key}}"
+            >{{item.label}}</view>
+          </view>
+          <text class="section-note">关闭后对应入口不发分；分享/评价/签到/浏览/外部订单/小票兑分均受此控制。</text>
+        </view>
+
+        <view class="btn-primary rule-save {{ruleSaving ? 'disabled' : ''}}" bindtap="saveRule">{{ruleSaving ? '保存中…' : '保存规则'}}</view>
+        <text class="section-note">{{ruleText}}；不足门槛部分不计入，且不叠加会员等级倍率。</text>
+      </view>
+    </block>
   </block>
 </view>

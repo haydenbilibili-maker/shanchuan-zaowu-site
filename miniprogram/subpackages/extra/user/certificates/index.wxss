@@ -112,6 +112,20 @@ page {
   text-shadow: 0 0 8rpx rgba(196, 167, 108,0.3);
 }
 
+/* 礼赠：受赠（持有人）/ 赠予凭证（送礼人）角标 */
+.c-kind {
+  position: absolute;
+  top: 24rpx;
+  left: 24rpx;
+  font-size: var(--fs-18);
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+  letter-spacing: 2rpx;
+  background: rgba(31, 29, 26, 0.72);
+}
+.c-kind--gift_holder { color: var(--brass-300); border: 2rpx solid var(--brass-400); }
+.c-kind--gift_voucher { color: var(--brass-50); border: 2rpx solid var(--color-wood); background: rgba(139, 111, 71, 0.72); }
+
 .c-seal {
   position: absolute; 
   top: 24rpx; 

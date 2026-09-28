@@ -43,7 +43,64 @@ const ALLOWED_COLLECTIONS = {
     publicRead: false,
     allowSetDocIds: ['booking_config', 'feishu_bitable', 'b2b_catalog', 'member_growth_rules'],
     allowGetDocIds: ['booking_config', 'feishu_bitable', 'b2b_catalog', 'member_growth_rules']
+  },
+  // B2B 订货履约（ERP 订货单 / 意向转单 / 出货回写）与供货价目：集合规则 write:false 后只能经此代理写。
+  // 仅超管（ERP 代理注入 adminOpsKey）；店长不可写，防止改价 / 改支付态。
+  // 支付字段（paymentStatus/payFen/payOutTradeNos…）的变更只走 payB2bPurchase / b2bPayCallback。
+  purchase_orders: {
+    publicRead: false,
+    superAdminOnly: true,
+    denyActions: ['remove', 'removeWhere', 'setDoc'],
+    denyFields: [
+      'paymentStatus', 'paymentChannel', 'payFen', 'payOutTradeNo', 'payOutTradeNos', 'payTrades',
+      'payAttempt', 'paidAt', 'paidFen', 'paidOutTradeNo', 'transactionId', 'refund', 'refundedAt',
+      'payAnomaly', 'payDuplicate', 'payMarkNote', 'pricingMode', 'buyerOpenid'
+    ]
+  },
+  price_list_items: {
+    publicRead: false,
+    superAdminOnly: true,
+    denyActions: ['removeWhere', 'setDoc']
   }
+}
+
+/** 一次请求涉及的全部集合（batchUpsertByField 可逐条指定 collection） */
+function collectionsOf(event) {
+  const names = [String(event.collection || '').trim()]
+  if (Array.isArray(event.items)) {
+    event.items.forEach((it) => names.push(String((it && it.collection) || event.collection || '').trim()))
+  }
+  return Array.from(new Set(names.filter(Boolean)))
+}
+
+/**
+ * 集合级门禁：超管专属集合 / 禁用动作 / 禁写字段（含点路径 'refund.status' 的根字段）。
+ * 采购单确认对公到账走 payB2bPurchase.adminConfirmOffline，不经本代理。
+ */
+function gateCollections(event, action, actor) {
+  for (const name of collectionsOf(event)) {
+    const meta = ALLOWED_COLLECTIONS[name]
+    if (!meta) continue
+    if (meta.superAdminOnly && !(actor && actor.superAdmin)) {
+      return { ok: false, msg: `集合 ${name} 仅超管可写`, code: 'SUPER_ADMIN_ONLY' }
+    }
+    if (Array.isArray(meta.denyActions) && meta.denyActions.indexOf(action) !== -1) {
+      return { ok: false, msg: `集合 ${name} 不允许 ${action}`, code: 'ACTION_DENIED' }
+    }
+    if (Array.isArray(meta.denyFields)) {
+      const payloads = [event.data, event.pushFields]
+      if (Array.isArray(event.items)) event.items.forEach((it) => payloads.push(it && it.data))
+      for (const p of payloads) {
+        if (!p || typeof p !== 'object') continue
+        for (const key of Object.keys(p)) {
+          const root = key.split('.')[0]
+          if (meta.denyFields.indexOf(root) === -1) continue
+          return { ok: false, msg: `集合 ${name} 的字段 ${root} 不可经内容代理修改`, code: 'FIELD_DENIED' }
+        }
+      }
+    }
+  }
+  return { ok: true }
 }
 
 const STRIP_KEYS = ['_id', '_openid', '_createTime']
@@ -228,6 +285,9 @@ exports.main = async (event = {}) => {
 
   const guard = await requireManager(openid, adminOpsKey)
   if (!guard.ok) return fail(guard.msg || '无权限', { code: guard.code })
+
+  const gate = gateCollections(event, action, guard.actor)
+  if (!gate.ok) return fail(gate.msg, { code: gate.code })
 
   try {
     let result

@@ -5,6 +5,7 @@ const { dispatchInAppMessage } = require('./inAppMessage')
 const { snapshotFromOrderContext } = require('./refundPolicy')
 const shipping = require('./shipping')
 const { normalizeGiftMeta, isInviteAddressGift } = require('./giftMeta')
+const { checkGiftReceiverPhone, buildVerifyDoc, GIFT_VERIFY_COL } = require('./giftReceiverPhone')
 const { holdOrderProducts, releaseOrderStockHold } = require('./stockUtils')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -185,6 +186,12 @@ exports.main = async (event, context) => {
     }
   }
 
+  // 礼赠受礼人手机号（领取核验）：新版客户端（clientCaps 标记）缺号即拒；旧版不带标记暂不拒（开关见 giftReceiverPhone.js）
+  const giftPhone = isGift ? checkGiftReceiverPhone(event) : { required: false, phone: '' }
+  if (giftPhone.required && !giftPhone.phone) {
+    return { success: false, code: 'GIFT_RECEIVER_PHONE_REQUIRED', msg: '请填写受礼人手机号（用于 TA 领取时核验身份）' }
+  }
+
   // 先付后填址：邀请 TA 填地址时下单不强制收货地址；门店自取/自提需选门店
   if (storePickup) {
     const needStoreId = giftStorePickup
@@ -321,7 +328,7 @@ exports.main = async (event, context) => {
       orderNo,
       source: orderSource,
       customMeta: isCustom ? customMeta : null,
-      giftMeta: isGift ? giftMeta : null,
+      giftMeta: isGift ? (giftPhone.phone ? { ...giftMeta, receiverVerify: true } : giftMeta) : null,
       customExtraPrice: pricing.customExtraPrice || 0,
       productionStatus: isCustom ? 'pending_make' : null,
       refundPolicy,
@@ -420,6 +427,20 @@ exports.main = async (event, context) => {
       }
     }
 
+    // 受礼人手机号只落仅云函数可读的核验集合；写失败则撤掉订单上的核验标记（送礼成功页会再补存一次）
+    let receiverVerify = false
+    if (isGift && giftPhone.phone) {
+      try {
+        await db.collection(GIFT_VERIFY_COL).doc(orderRes._id).set({
+          data: buildVerifyDoc(orderRes._id, openid, giftPhone.phone, db.serverDate())
+        })
+        receiverVerify = true
+      } catch (verifyErr) {
+        console.warn('makeOrder gift receiver verify save failed:', verifyErr && verifyErr.message)
+        await db.collection('orders').doc(orderRes._id).update({ data: { 'giftMeta.receiverVerify': false } }).catch(() => {})
+      }
+    }
+
     const productNames = pricing.products.map((p) => p.title || p.name).filter(Boolean).slice(0, 2).join('、')
     await dispatchInAppMessage(db, {
       eventType: 'order_created',
@@ -444,7 +465,8 @@ exports.main = async (event, context) => {
       provisionalTip: buildProvisionalTip(pricing.provisionalMemberLevel),
       useWalletPay: !!pricing.useWalletPay,
       paymentBreakdown: pricing.paymentBreakdown,
-      status: 'pending_pay'
+      status: 'pending_pay',
+      ...(isGift ? { receiverVerify } : {})
     }
   } catch (err) {
     console.error('makeOrder error:', err)

@@ -23,6 +23,7 @@ const { resolveCareContext, confirmReceiptOnOrder } = require('../utils/careHelp
 const { buildGuideUrl } = require('../utils/careDefaults');
 const { ensureOpenId, isOrderOwnedBy, isGiftReceiverOf, canAccessOrder, denyOrderAccess } = require('../../../utils/orderScope');
 const { formatPickupTime } = require('../utils/pickupPass');
+const { resolveCertRole } = require('../utils/giftHolder');
 const { fetchStoreCatalog, findCatalogStore } = require('../../../utils/storeCatalog');
 const shippingConfig = require('../../../config/shipping');
 const {
@@ -140,6 +141,7 @@ Page(withAppModal({
     hasEvidenceBlock: false,
     /** 当前用户是否为礼赠受赠人（非付款人） */
     isGiftReceiver: false,
+    certRole: 'holder',
     /** 受礼人待填址 */
     giftReceiverNeedsAddress: false,
     /** 是否展示金额（受赠人 + hidePrice 时隐藏） */
@@ -495,6 +497,8 @@ Page(withAppModal({
           : '',
         isGiftOrder: data.source === 'gift' || !!data.giftMeta,
         isGiftReceiver: isReceiver,
+        // 礼赠签收后：受礼人 holder（收藏证书 + 养护），送礼人 giver（赠予凭证）；非礼赠恒为 holder
+        certRole: resolveCertRole(data, openid),
         showOrderPrice: !hidePriceForViewer,
         giftAwaitingAddress: (() => {
           // 待填址分享/催填仅送礼人操作
@@ -1101,7 +1105,7 @@ Page(withAppModal({
     }
 
     wx.vibrateShort({ type: 'light' });
-    let url = `/subpackages/feature/comment/index?targetType=product&orderId=${encodeURIComponent(orderId)}&targetId=${encodeURIComponent(productId)}`;
+    let url = `/subpackages/content/comment/index?targetType=product&orderId=${encodeURIComponent(orderId)}&targetId=${encodeURIComponent(productId)}`;
     wx.navigateTo({
       url,
       fail: () => wx.showToast({ title: '无法打开评价页', icon: 'none' })

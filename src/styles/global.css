@@ -476,13 +476,21 @@
 
 /* ===== 组件级动效（极克制） ===== */
 @layer utilities {
-  /* 章节进入淡入（IntersectionObserver 触发） */
-  .fade-in {
-    @apply opacity-0 translate-y-2 transition-all duration-700 ease-out;
+  /*
+   * 章节进入淡入（渐进增强）
+   * 默认保持可见 → JS 加 html.js-fade 后才隐藏未揭示块。
+   * 避免旧写法「默认 opacity:0」在脚本晚到/失败时整页空白闪现（审计 E6 / 体验债 W4）。
+   */
+  html.js-fade .fade-in:not(.is-visible) {
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition: opacity 0.55s ease-out, transform 0.55s ease-out;
   }
 
-  .fade-in.is-visible {
-    @apply opacity-100 translate-y-0;
+  html.js-fade .fade-in.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.55s ease-out, transform 0.55s ease-out;
   }
 
   /* 略晚一点的错峰淡入，用于同屏第二层信息 */

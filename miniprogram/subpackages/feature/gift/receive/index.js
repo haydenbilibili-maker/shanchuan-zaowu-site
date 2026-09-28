@@ -17,6 +17,7 @@ const db = wx.cloud.database()
 const SFX_OPEN = '/subpackages/feature/gift/assets/gift-open.mp3'
 /** 礼笺打字机音效（与编排页/礼成页共用同一静音键与音源） */
 const textFx = require('../giftTextEffect')
+const { buildGuideUrl, resolveCareCategory } = require('../../utils/careDefaults')
 /** 开盒音量：适中，配合静默键 obeyMuteSwitch */
 const SFX_VOLUME = 0.58
 const MUTE_STORAGE_KEY = 'gift_receive_sfx_muted'
@@ -66,6 +67,12 @@ Page({
     isPickup: false,
     claimCode: '',
     claimClaimed: false,
+    holderCard: false,
+    holderReady: false,
+    verifyNeeded: false,
+    verifyBusy: false,
+    verifyError: '',
+    verifySheet: false,
     storeName: '',
     pickupHint: '',
     hidePrice: true,
@@ -454,6 +461,7 @@ Page({
           data: { action: 'bindReceiver', token: this._token, orderId: this._orderId, source: 'receive_page' }
         })
         const br = (bindRes && bindRes.result) || {}
+        this._verifyNeeded = !br.success && br.code === 'VERIFY_REQUIRED'
         if (!br.success && br.code === 'ALREADY_BOUND') {
           this.setData({ invalid: true, errorMsg: br.msg || '这份礼赠已由其他人领取' })
           return
@@ -587,7 +595,11 @@ Page({
         hidePrice,
         specimenHint,
         priceLabel,
-        needFriendShare
+        needFriendShare,
+        // 持有期服务：受礼人收下后即为持有人；签收后可看自己的收藏证书与养护指南
+        holderCard: isInvite ? accepted : true,
+        holderReady: gift.status === 'received',
+        verifyNeeded: !!(this._verifyNeeded || gift.verifyRequired)
       })
       if (gift.voiceTempUrl) this._voiceTempUrl = gift.voiceTempUrl
       this._hydrateProductCover(product)
@@ -790,6 +802,7 @@ Page({
       if (!result.success) {
         wx.showToast({ title: result.msg || '此刻未能收下', icon: 'none' })
         if (result.code === 'EXPIRED') this.setData({ expired: true })
+        if (result.code === 'VERIFY_REQUIRED') this.setData({ verifyNeeded: true })
         return
       }
       this.setData({ accepted: true })
@@ -799,6 +812,57 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '网络未通，请稍后再试', icon: 'none' })
     }
+  },
+
+  // 优先比对微信授权手机号（requirePhone 只调用）
+  async verifyByAccount() {
+    if (this.data.verifyBusy) return
+    const { requirePhone } = require('../../../../utils/userSession')
+    const phoneOk = await requirePhone(getApp(), {
+      content: '授权微信手机号即可核验领取；若尚未注册，将同步领取新客礼包。',
+      from: 'gift',
+      returnMode: 'back',
+      direct: true
+    }).catch(() => true)
+    if (phoneOk === false) return
+    this._runVerify({ method: 'account' })
+  },
+
+  openManualVerify() {
+    this.setData({ verifySheet: true, verifyError: '' })
+  },
+
+  closeVerifySheet() {
+    this.setData({ verifySheet: false })
+  },
+
+  onManualVerify(e) {
+    this._runVerify({ method: 'manual', phone: e.detail.phone })
+  },
+
+  async _runVerify(payload) {
+    this.setData({ verifyBusy: true, verifyError: '' })
+    let result = {}
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageGift',
+        data: { action: 'verifyReceiver', token: this.data.token || this._token, orderId: this.data.orderId || this._orderId, ...payload }
+      })
+      result = (res && res.result) || {}
+    } catch (e) {
+      result = { success: false, msg: '网络未通，请稍后再试' }
+    }
+    if (result.success) {
+      this._verifyNeeded = false
+      this.setData({ verifyBusy: false, verifySheet: false, verifyNeeded: false })
+      this.bootstrap()
+      return
+    }
+    if (result.code === 'NEED_PHONE') {
+      this.setData({ verifyBusy: false, verifySheet: true, verifyError: '未取得已授权的微信手机号，请输入手机号核验' })
+      return
+    }
+    this.setData({ verifyBusy: false, verifyError: result.msg || '核验未通过，请稍后再试' })
   },
 
   copyClaimCode() {
@@ -816,6 +880,22 @@ Page({
     const q = `orderId=${this.data.orderId}&token=${this.data.token}`
     wx.navigateTo({
       url: `/subpackages/feature/gift/address/index?${q}`
+    })
+  },
+
+  goHolderCert() {
+    wx.navigateTo({ url: `/subpackages/business/certificate/index?id=${this.data.orderId}` })
+  },
+
+  goHolderCare() {
+    const product = this.data.product || {}
+    wx.navigateTo({
+      url: buildGuideUrl({
+        category: resolveCareCategory(product),
+        orderId: this.data.orderId,
+        productId: product.productId || '',
+        from: 'order'
+      })
     })
   },
 

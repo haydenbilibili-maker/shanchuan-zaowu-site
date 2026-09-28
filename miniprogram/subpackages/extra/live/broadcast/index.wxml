@@ -10,9 +10,9 @@
     <view class="header">
       <view class="brand-group">
         <text class="en">LIVE BROADCAST</text>
-        <text class="cn">馆内开播</text>
+        <text class="cn">开播控制台</text>
       </view>
-      <text class="header-note">推流 · 货架 · 互动 · 从工作台进入后左滑可返回</text>
+      <text class="header-note">推流 · 挂车 · 互动。从主播工作台进入；左滑返回。模拟器无法真实出画。</text>
     </view>
 
     <view class="sim-banner" wx:if="{{isSimulator}}">

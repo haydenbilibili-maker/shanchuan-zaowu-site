@@ -1,1 +1,6 @@
-<view class="ops-boot">柜门缓缓开启…</view>
+<view class="ops-boot" wx:if="{{!tipText}}">柜门缓缓开启…</view>
+
+<view class="page" wx:if="{{tipText}}">
+  <view class="page-tip is-{{tipTone}}"><text>{{tipText}}</text></view>
+  <view class="btn-retry" bindtap="onRetry">重试跳转</view>
+</view>

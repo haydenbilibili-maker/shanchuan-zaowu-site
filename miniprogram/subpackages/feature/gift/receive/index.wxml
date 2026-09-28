@@ -201,8 +201,20 @@
     </view>
 
     <view class="actions">
+      <!-- 领取核验（N3） -->
+      <block wx:if="{{verifyNeeded}}">
+        <view class="verify-card">
+          <text class="verify-over">领取核验</text>
+          <text class="verify-title">送礼人为这份礼赠设了身份核验</text>
+          <text class="verify-desc">核验通过后，这份山海才会记在你名下。手机号只用于比对，不会展示给任何人。</text>
+          <view class="btn-primary {{verifyBusy ? 'is-busy' : ''}}" bindtap="verifyByAccount">{{verifyBusy ? '核验中…' : '用我的微信手机号核验'}}</view>
+          <view class="verify-alt" bindtap="openManualVerify">换一个号码 · 手动输入核验</view>
+          <text class="verify-error" wx:if="{{verifyError && !verifySheet}}">{{verifyError}}</text>
+        </view>
+        <view class="btn-ghost" bindtap="later">稍后再看</view>
+      </block>
       <!-- 先付后填址 -->
-      <block wx:if="{{isInvite}}">
+      <block wx:elif="{{isInvite}}">
         <view class="share-lock" wx:if="{{needFriendShare}}">
           <text class="share-lock-title">礼笺可先读</text>
           <text class="share-lock-desc">收下需通过好友分享的礼笺链接进入。朋友圈旧卡如无法收下，请对方再转发一次。</text>
@@ -257,6 +269,17 @@
         <view class="btn-ghost" bindtap="later">稍后再看</view>
       </block>
     </view>
+
+    <!-- 持有期服务：收下即持有人（证书与养护归受礼人，送礼人另有赠予凭证） -->
+    <view class="holder-card" wx:if="{{holderCard && !verifyNeeded}}">
+      <text class="holder-over">持有期服务</text>
+      <text class="holder-title">{{holderReady ? '这份山海已归你珍藏' : '藏品到你手中后，它就属于你'}}</text>
+      <text class="holder-desc">{{holderReady ? '收藏证书以你为持有人签发，养护要点也会寄给你。' : '签收后，收藏证书将以你为持有人签发，养护提醒也只寄给你。'}}</text>
+      <view class="holder-actions" wx:if="{{holderReady}}">
+        <view class="btn-secondary" hover-class="btn-secondary-press" hover-stay-time="80" bindtap="goHolderCert">查看我的收藏证书</view>
+        <view class="btn-ghost" bindtap="goHolderCare">养护指南</view>
+      </view>
+    </view>
   </block>
   </block>
 </view>
@@ -284,3 +307,14 @@
     <text class="muted">礼笺正从柜中取出…</text>
   </view>
 </view>
+
+<phone-sheet
+  show="{{verifySheet}}"
+  title="输入手机号核验"
+  desc="请输入送礼人为你预留的手机号。核验通过即记在你名下；多次不一致会暂时锁定 1 小时。"
+  confirmText="核验"
+  busy="{{verifyBusy}}"
+  error="{{verifyError}}"
+  bindconfirm="onManualVerify"
+  bindclose="closeVerifySheet"
+/>

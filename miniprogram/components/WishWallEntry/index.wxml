@@ -5,7 +5,7 @@
   wx:if="{{visible}}"
   bindtap="onTap"
   hover-class="wish-wall-entry--press"
-  hover-stay-time="60"
+  hover-stay-time="70"
   aria-role="button"
   aria-label="{{brandText}}{{title}}：{{descText}}"
 >
@@ -15,6 +15,8 @@
       <text class="wish-wall-entry-brand" wx:if="{{brandText}}">{{brandText}}</text>
       <text class="wish-wall-entry-title">{{title}}</text>
     </view>
+    <!-- 紧凑态：详情首屏不放整段 desc，改用一行「回看本品」暗示，进墙/出墙叙事不断 -->
+    <text class="wish-wall-entry-hint" wx:if="{{compact && productHint}}">{{productHint}}</text>
     <text class="wish-wall-entry-desc" wx:if="{{!compact}}">{{descText}}</text>
     <!-- 跑马灯（2026-09-20）：真实心愿横向流动 —— 把弹幕墙那一眼"别人也在写"搬到入口里。
          ⚠️ mqItems 为空就整行不渲染：**绝不编造**（宁可不放，也不摆几条假心愿充场面）。
@@ -23,9 +25,16 @@
          入口自身的 aria-label 已说清"这是去哪"，故这里隐藏、语义由 aria-label 承担。 -->
     <view class="wish-wall-entry-mq" wx:if="{{mqItems.length}}">
       <view class="wish-wall-entry-mq-track" style="animation-duration:{{mqDurationMs}}ms" aria-hidden="true">
-        <text class="wish-wall-entry-mq-item" wx:for="{{mqItems}}" wx:key="i">· <text class="wish-wall-entry-mq-emoji" wx:if="{{item.e}}">{{item.e}}</text>{{item.t}}</text>
+        <view class="wish-wall-entry-mq-item" wx:for="{{mqItems}}" wx:key="i">
+          <view class="wish-wall-entry-mq-pin" aria-hidden="true"></view>
+          <text class="wish-wall-entry-mq-emoji" wx:if="{{item.e}}">{{item.e}}</text>
+          <text class="wish-wall-entry-mq-text">{{item.t}}</text>
+        </view>
       </view>
     </view>
   </view>
-  <view class="wish-wall-entry-chevron" aria-hidden="true"></view>
+  <!-- 右侧「进」暗示：折角 + 触控热区放大，一眼可点；aria 由根节点承担 -->
+  <view class="wish-wall-entry-go" aria-hidden="true">
+    <view class="wish-wall-entry-chevron"></view>
+  </view>
 </view>

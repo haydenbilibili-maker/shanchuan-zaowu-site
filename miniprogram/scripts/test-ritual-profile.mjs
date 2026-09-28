@@ -28,7 +28,7 @@ const ROOT = resolve(HERE, '..', '..')
 const nodeRequire = createRequire(import.meta.url)
 
 const R = (p) => resolve(ROOT, p)
-const CORE_PATH = R('miniprogram/utils/ritualProfileCore.js')
+const CORE_PATH = R('miniprogram/subpackages/feature/utils/ritualProfileCore.js')
 const CORE_COPY_PATH = R('miniprogram/cloudfunctions/wishRitualProfile/ritualProfileCore.js')
 const CLOUD_INDEX = R('miniprogram/cloudfunctions/wishRitualProfile/index.js')
 
@@ -104,10 +104,10 @@ function record(list, prefix) {
  * 0) 契约面：文件同源 / 三处同步 / 云函数登记
  * ------------------------------------------------------------------ */
 
-const core = loadCjs('miniprogram/utils/ritualProfileCore.js', { require: markerRequire })
+const core = loadCjs('miniprogram/subpackages/feature/utils/ritualProfileCore.js', { require: markerRequire })
 const coreCopy = loadCjs('miniprogram/cloudfunctions/wishRitualProfile/ritualProfileCore.js', { require: markerRequire })
-const wishRitual = loadCjs('miniprogram/utils/wishRitual.js', { require: markerRequire })
-const ritualProfile = loadCjs('miniprogram/utils/ritualProfile.js', { require: markerRequire })
+const wishRitual = loadCjs('miniprogram/subpackages/feature/utils/wishRitual.js', { require: markerRequire })
+const ritualProfile = loadCjs('miniprogram/subpackages/feature/utils/ritualProfile.js', { require: markerRequire })
 
 function isIdenticalText(a, b) {
   return String(a) === String(b)

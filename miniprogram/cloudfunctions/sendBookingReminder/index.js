@@ -2,6 +2,7 @@
 const cloud = require('wx-server-sdk');
 // 来源判定统一真源（负向子串判定对互调合并串会判反，详见 sourceOrigin.js 顶部说明）
 const { isNonClientSource } = require('./sourceOrigin');
+const { buildSubscribe } = require('./subscribeTemplates');
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -100,24 +101,25 @@ exports.main = async (event, context) => {
         return { success: false, msg: '未知的提醒类型' };
     }
 
-    // 发送订阅消息（需要用户已授权）
+    // 发送订阅消息（需要用户已授权）：只发 subscribeTemplates 里登记了真实模板的类型，其余只走站内信
     let subscribeSent = false;
-    try {
-      await cloud.openapi.subscribeMessage.send({
-        touser: openid,
-        templateId: message.templateId,
-        page: `subpackages/business/ticket/index?id=${booking._id}`,
-        data: {
-          thing1: { value: booking.title || '预约' },
-          date2: { value: booking.date },
-          time3: { value: booking.time },
-          thing4: { value: booking.ticketCode || '' }
-        },
-        miniprogramState: 'formal'
-      });
-      subscribeSent = true;
-    } catch (err) {
-      console.error('发送订阅消息失败:', err);
+    const sub = buildSubscribe(type, booking);
+    if (sub.templateId) {
+      try {
+        await cloud.openapi.subscribeMessage.send({
+          touser: openid,
+          templateId: sub.templateId,
+          page: `subpackages/business/ticket/index?id=${booking._id || bookingId}`,
+          data: sub.data,
+          miniprogramState: 'formal'
+        });
+        subscribeSent = true;
+      } catch (err) {
+        // 43101 = 用户未订阅 / 次数已用完：正常情况，站内信照发
+        console.error('发送订阅消息失败:', type, booking._id || bookingId, err && (err.errCode || err.errMsg || err.message));
+      }
+    } else if (sub.skip === 'bad_fields') {
+      console.error('订阅消息字段不全，跳过:', type, booking._id || bookingId);
     }
 
     // 站内信始终发送，与订阅消息互补

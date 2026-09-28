@@ -625,6 +625,9 @@
 .act-d { font-size: 22rpx; color: #aaa; margin-bottom: 20rpx; display: block; font-family: var(--font-din); }
 .act-b { display: flex; justify-content: flex-start; align-items: center; }
 .act-p { font-size: 40rpx; color: var(--gold); font-family: var(--font-din); font-weight: bold; }
+.act-seat { margin-left: 20rpx; font-size: 24rpx; color: rgba(255, 255, 255, 0.72); }
+.act-seat.is-full { color: #E8A0A0; font-weight: 600; }
+.act-card.is-full { opacity: 0.55; }
 
 /* 4. 底部固定预约栏（贴底 + safe-area，不遮挡上方日期/时段/须知） */
 .fixed-footer {

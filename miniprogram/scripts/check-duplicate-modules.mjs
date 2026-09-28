@@ -227,7 +227,9 @@ if (existsSync(BASELINE)) {
 if (baseline && typeof baseline.savableBytes === 'number') {
   if (dup.savableBytes > baseline.savableBytes) {
     console.error(`\n✗ 分包内重复可省字节增长：基线 ${(baseline.savableBytes / 1024).toFixed(1)} KB → 本次 ${(dup.savableBytes / 1024).toFixed(1)} KB`)
-    console.error('  新增了重复工具模块。修法：把实现下沉到主包 utils/，分包内只留再导出 shim（见 E2 处置）。')
+    console.error('  新增了重复工具模块。修法：主包页面自己也用到的，下沉到主包 utils/、分包内只留再导出 shim（见 E2 处置）；')
+    console.error('  主包页面不用的**不要**下沉 —— 微信「代码质量」会报「主包未使用的 JS」（2026-09-27 实测），')
+    console.error('  这类只能按分包各放一份并登记 subpackage-mirrors.json，再 --update 基线并在交付说明里报备。')
     fail += 1
   } else {
     console.log(`\n✓ 棘轮未恶化（基线 ${(baseline.savableBytes / 1024).toFixed(1)} KB / 本次 ${(dup.savableBytes / 1024).toFixed(1)} KB）`)

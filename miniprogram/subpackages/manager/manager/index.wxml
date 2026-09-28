@@ -51,6 +51,8 @@
     </view>
   </view>
 
+  <view class="page-tip is-{{hubTipTone}}" wx:if="{{hubTipText}}"><text>{{hubTipText}}</text></view>
+
   <!-- 信息流跑马灯：标题下 / GMV 上；仅有待办/异常时展示，不挤标题行 -->
   <view class="ops-info-feed ops-info-feed--header" wx:if="{{opsInfoFeed.length}}">
     <view class="ops-info-feed-rail">
@@ -101,6 +103,10 @@
      <view class="card-row top">
        <text class="card-label">GMV 本月营收</text>
        <image class="card-icon-img" src="/assets/icons/medal_gold.png" mode="aspectFit" />
+     </view>
+     <view wx:if="{{analyticsError}}" class="kpi-error-row">
+       <text class="kpi-error-text">经营数据未能刷新：{{analyticsError}}</text>
+       <text class="kpi-error-retry" catchtap="loadAnalyticsDashboard">重试</text>
      </view>
      <text class="card-value-lg">¥{{stats.displayGrand || '0'}}</text>
      <view class="card-row bottom">
@@ -293,11 +299,11 @@
         <view class="menu-grid">
           <view class="menu-btn" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">
             <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/studio-dashboard.png" mode="aspectFit" /></view>
-            <text>工作室仪表盘</text>
+            <text>仪表盘</text>
           </view>
-          <view class="menu-btn" wx:if="{{menu.shipmentSku}}" bindtap="goShipmentSkuGuarded">
-            <view class="icon-box"><image class="menu-icon-img" src="/subpackages/manager/assets/icons/edit.png" mode="aspectFit" /></view>
-            <text>出货开单</text>
+          <view class="menu-btn" wx:if="{{menu.supplierWorkbench}}" bindtap="goSupplierWorkbench">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/cart.png" mode="aspectFit" /></view>
+            <text>供应商管理</text>
           </view>
           <view class="menu-btn" wx:if="{{menu.feishuSync}}" bindtap="goFeishuSyncGuarded">
             <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/deliver.png" mode="aspectFit" /></view>
@@ -315,9 +321,10 @@
             <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/cart.png" mode="aspectFit" /></view>
             <text>采购</text>
           </view>
+          <!-- 出货中心 = 原「出货单」+「出货开单」（2026-09-28 合并）；超管持全部菜单键，故仅判 shipmentOps 即覆盖原两枚磁贴的可见性 -->
           <view class="menu-btn" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">
             <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/ship.png" mode="aspectFit" /></view>
-            <text>出货单</text>
+            <text>出货中心</text>
           </view>
           <view class="menu-btn" wx:if="{{menu.inventoryOps || menu.rawInventoryOps}}" bindtap="goInventoryOps">
             <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/box.png" mode="aspectFit" /></view>
@@ -583,7 +590,8 @@
        </view>
        <view class="chart-empty" wx:elif="{{dashStock.error}}">
           <text>库存加载失败</text>
-          <text class="chart-empty-hint">下拉刷新重试</text>
+          <text class="chart-empty-hint">点此重试或下拉刷新</text>
+          <view class="dash-retry" catchtap="loadDashboardStock">重试</view>
        </view>
        <view class="chart-empty" wx:else>
           <text>{{dashStock.loading ? '统计中…' : '暂无库存数据'}}</text>

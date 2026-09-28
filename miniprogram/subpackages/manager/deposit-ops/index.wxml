@@ -10,6 +10,9 @@
       <text class="header-note">定金＝付费优先权；想要＝免费候补。规则仅超管可改。</text>
     </view>
 
+    <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+    <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+
     <view class="preview" wx:if="{{ruleText}}">
       <text class="preview-label">当前规则</text>
       <text class="preview-body">{{ruleText}}</text>
@@ -62,11 +65,16 @@
         </view>
       </scroll-view>
 
-      <view class="empty-tip" wx:if="{{loadingList}}">
+      <view class="empty-tip" wx:if="{{loadingList && !listError}}">
         <text class="empty-title">加载中</text>
         <text class="empty-sub">正在拉取定金意向…</text>
       </view>
-      <view class="empty-tip" wx:elif="{{!list.length}}">
+      <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
+        <text class="empty-title">定金意向未能取回</text>
+        <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+        <view class="btn-retry" bindtap="onRetryList">重试</view>
+      </view>
+      <view class="empty-tip" wx:elif="{{!loadingList && !listError && !list.length}}">
         <text class="empty-title">{{emptyHint}}</text>
         <text class="empty-sub">下拉可刷新；售罄且开启定金的藏品会出现在此</text>
       </view>
@@ -85,7 +93,7 @@
           </text>
           <text class="intent-meta">会员 {{item.openidShort}}</text>
           <view class="intent-actions">
-            <view class="chip-btn danger" wx:if="{{canEdit && item.canForfeit}}" data-id="{{item._id}}" bindtap="openExpired">逾期开放</view>
+            <view class="chip-btn danger" wx:if="{{canEdit && item.canForfeit}}" data-id="{{item._id}}" bindtap="openExpired">{{forfeitPendingId === item._id ? '确认开放' : '逾期开放'}}</view>
             <view class="chip-btn" wx:if="{{item.showProduct}}" data-pid="{{item.productId}}" bindtap="goProduct">看藏品</view>
           </view>
         </view>

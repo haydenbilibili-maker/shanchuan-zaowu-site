@@ -186,7 +186,7 @@ Component({
         return
       }
       wx.navigateTo({
-        url: `/subpackages/feature/comment/index?targetType=${targetType}&targetId=${targetId}`,
+        url: `/subpackages/content/comment/index?targetType=${targetType}&targetId=${targetId}`,
         fail: () => wx.showToast({ title: '无法打开评价页', icon: 'none' })
       })
     }

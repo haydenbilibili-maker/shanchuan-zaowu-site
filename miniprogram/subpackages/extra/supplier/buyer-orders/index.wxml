@@ -1,0 +1,118 @@
+<view class="page">
+
+  <view class="page-boot" wx:if="{{!ready}}">
+    <text class="boot-en">MY PURCHASES</text>
+    <text class="boot-cn">我的采购单</text>
+    <text class="boot-hint">校验权限中…</text>
+  </view>
+
+  <block wx:elif="{{ready}}">
+    <view class="header compact">
+      <view class="brand-group">
+        <text class="en">MY PURCHASES</text>
+        <text class="cn">我的采购单</text>
+      </view>
+      <view class="header-row">
+        <text class="greeting">支付与履约进度</text>
+        <view class="preview-chip" wx:if="{{isPreview}}"><text>预览</text></view>
+        <view class="stat-chip" wx:if="{{unpaidCount}}"><text>待付 {{unpaidCount}}</text></view>
+      </view>
+    </view>
+
+    <view class="banner {{bannerKind}}" wx:if="{{banner}}">
+      <text class="banner-text">{{banner}}</text>
+      <text class="banner-x" bindtap="dismissBanner">关闭</text>
+    </view>
+
+    <view class="link-row" wx:if="{{cartCount > 0}}" bindtap="goCart" hover-class="link-press">
+      <view class="link-main">
+        <text class="link-title">采购车未提交</text>
+        <text class="link-copy">还有 {{cartCount}} 件在车里</text>
+      </view>
+      <text class="link-go">去结算 ›</text>
+    </view>
+
+    <view class="status-tabs sticky-tabs">
+      <view
+        class="status-tab {{filter===item.key?'on':''}}"
+        wx:for="{{filters}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="setFilter"
+      >{{item.label}}</view>
+    </view>
+
+    <view class="empty-panel" wx:if="{{loading && !list.length && !loadError && !allRows.length}}">
+      <text class="empty-panel-title">加载中</text>
+      <text class="empty-panel-body">正在拉取采购单…</text>
+      <view class="po-skeleton" wx:for="{{[1,2]}}" wx:key="*this">
+        <view class="sk-line w50"></view>
+        <view class="sk-line w80"></view>
+        <view class="sk-line w30"></view>
+      </view>
+    </view>
+
+    <view class="error-panel" wx:elif="{{loadError}}">
+      <text class="error-panel-title">加载失败</text>
+      <text class="error-panel-body">无法读取采购单。请确认已登录、花名册已勾选「采购商」，且总部已部署 payB2bPurchase。</text>
+      <view class="retry-btn" bindtap="onRetry">重试</view>
+    </view>
+
+    <view class="empty-panel rich" wx:elif="{{!loading && !list.length}}">
+      <text class="empty-panel-title">{{emptyTitle}}</text>
+      <text class="empty-panel-body">{{emptyBody}}</text>
+      <view class="empty-steps" wx:if="{{filter==='all'}}">
+        <text class="empty-step">1 价目选购加车</text>
+        <text class="empty-step">2 确认采购单</text>
+        <text class="empty-step">3 支付或待对公</text>
+      </view>
+      <view class="retry-btn" bindtap="goCatalog">去选品</view>
+    </view>
+
+    <view class="po-list" wx:else>
+      <view
+        class="po-card {{item.highlight ? 'on' : ''}} {{item.paidLike ? 'paid' : ''}}"
+        wx:for="{{list}}"
+        wx:key="id"
+      >
+        <view class="po-top">
+          <text class="po-no">{{item.orderNo}}</text>
+          <view class="pay-chip {{item.payTone}}"><text>{{item.paymentText}}</text></view>
+        </view>
+        <text class="po-brief">{{item.itemsBrief}}</text>
+        <view class="po-fulfill-row">
+          <text class="po-fulfill-label">履约</text>
+          <text class="po-fulfill">{{item.fulfillText}}</text>
+        </view>
+        <text class="po-next">{{item.nextStep}}</text>
+        <view class="po-meta">
+          <text class="po-amount">{{item.amountText}}</text>
+          <text class="po-time">{{item.timeText}}</text>
+        </view>
+        <view class="po-actions" wx:if="{{item.canAct}}">
+          <view
+            class="po-btn primary {{item.paying ? 'disabled' : ''}}"
+            wx:if="{{item.canPay}}"
+            data-id="{{item.id}}"
+            bindtap="onPay"
+            hover-class="po-btn-press"
+          >{{item.paying ? '处理中…' : '微信支付'}}</view>
+          <view
+            class="po-btn {{item.paying ? 'disabled' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onOffline"
+            hover-class="po-btn-press"
+          >待对公</view>
+          <view
+            class="po-btn ghost {{item.paying ? 'disabled' : ''}}"
+            wx:if="{{isPreview}}"
+            data-id="{{item.id}}"
+            bindtap="onPreviewMark"
+            hover-class="po-btn-press"
+          >验收标记</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+</view>

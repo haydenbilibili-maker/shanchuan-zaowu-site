@@ -9,8 +9,8 @@ const {
 } = require('../utils/staffAuth')
 const { LAMP } = require('../utils/signalLamp')
 // 工作通知声音（#29）：标本师工作台的「新增待办」播报
-const workNoticeCatalog = require('../../../utils/workNoticeCatalog')
-const workNoticeVoice = require('../../../utils/workNoticeVoice')
+const workNoticeCatalog = require('../utils/workNoticeCatalog')
+const workNoticeVoice = require('../utils/workNoticeVoice')
 
 function jobPreviewRows(list, limit) {
   const rows = Array.isArray(list) ? list : []

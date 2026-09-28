@@ -125,7 +125,7 @@
 | `shipping_rules` | 商城运费/包邮规则（`getShippingRules` / `makeOrder`；Admin「运费与包邮规则」`61`） |
 | `custom_inquiries` | 定制咨询 |
 | `purchase_intents` | 官网报价单采购意向（`/price-list` 提交；ERP「采购意向」）；规则见 `cloudbase/rules/purchase_intents.json`，字段见 `cloudbase/schema/purchase_intents.md`；CLI：`cd admin && node scripts/provision-purchase-intents.mjs` |
-| `price_list_items` | 官网线下供货报价条目（`/price-list` 运行时读；Admin「报价单配置」`57`）；规则见 `cloudbase/rules/price_list_items.json`，字段见 `cloudbase/schema/price_list_items.md`；CLI：`cd admin && npm run provision:price-list` |
+| `price_list_items` | 官网线下供货报价条目（`/price-list` 运行时读；Admin「报价单配置」`57`）；B2B 采购单服务端定价来源；2026-09-28 起 `write:false`（ERP 写经 `manageStoreContent`，仅超管）；规则见 `cloudbase/rules/price_list_items.json`，字段见 `cloudbase/schema/price_list_items.md`；CLI：`cd admin && npm run provision:price-list` |
 | `custom_drafts` | 定制草稿 |
 | `pet_memorial_orders` | 伴宠记忆订单 |
 | `pet_craft_configs` | 伴宠工艺配置（`getPetMemorialConfig`；Admin 伴宠 → 工艺配置） |
@@ -157,7 +157,7 @@
 
 | 集合名 | 用途 | 状态 | 主写入口 |
 |--------|------|------|----------|
-| `purchase_orders` | 正式订货单（自营店 / 渠道履约） | **P0 已建**；CLI：`cd admin && node scripts/provision-purchase-orders.mjs` | 店长直连集合 / Admin 订货履约 |
+| `purchase_orders` | 正式订货单（自营店 / 渠道履约） | **P0 已建**；CLI：`cd admin && node scripts/provision-purchase-orders.mjs` | 小程序经云函数 `payB2bPurchase`（2026-09-28 规则收紧为客户端不可写）/ Admin 订货履约（写经 `manageStoreContent`，仅超管） |
 | `fulfillment_shipments` | 总部→门店/渠道出货单 | **P1 已建**；CLI：`cd admin && node scripts/provision-fulfillment-p1.mjs` | Admin 出货 / 云函数 `ship`；可回写飞书出货表 |
 | `stock_movements` | 总部成品库存流水（`warehouseId=hq`） | **P1 已建**（同上 CLI） | 出货扣库自动写入；飞书「应用库存」记 `feishu_pull` |
 | `feishu_purchases` | 飞书采购镜像（只读） | **对接已建**；CLI：`cd admin && node scripts/provision-feishu-bridge.mjs` | 云函数 `syncFeishuBitable` pull |

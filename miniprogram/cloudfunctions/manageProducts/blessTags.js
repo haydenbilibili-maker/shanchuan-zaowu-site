@@ -1,8 +1,9 @@
 /**
  * 商品「祈运标签」—— `miniprogram/config/blessTags.js` 的**副本**（云函数 manageProducts）。
- * ⚠️ 副本无法共享代码（云函数只能 require 自己目录内的文件；ERP 是独立构建），
- * 所以必须与唯一事实源逐字同源：由 `miniprogram/scripts/check-bless-tags-sync.mjs` 守卫对账。
+ * ⚠️ 副本无法共享代码，必须与唯一事实源逐字同源：由 `miniprogram/scripts/check-bless-tags-sync.mjs` 守卫对账。
  */
+
+
 /** 一个商品最多挂几个祈运标签（标签一多就等于没标签） */
 const MAX_BLESS_TAGS = 3
 
@@ -47,6 +48,29 @@ const BLESS_TAGS = [
 
 /** 受控 key（顺序即展示顺序） */
 const BLESS_TAG_KEYS = BLESS_TAGS.map((t) => t.key)
+
+/**
+ * 墙级默认祈运标签（P2-6 选项 B · 2026-09-24 产品点名会默认）
+ *
+ * 门店码 scene 只有 `k=mashangyou`、不带 bless 参数时，推荐行原先整块不渲染。
+ * 不重印门店码（否决 A）、不接受「推荐只在商品页生效」（否决 C）—— 按 productKey
+ * 在客户端推导墙级标签；**永不写库**，与 SCENE_BLESS 同形态。
+ *
+ * 假设：「马上有」默认墙语义偏「求财」（品牌名）；其它墙未登记则不兜底。
+ */
+const WALL_DEFAULT_BLESS = {
+  mashangyou: ['fortune']
+}
+
+/**
+ * @param {string} productKey
+ * @returns {string[]} 受控标签；未知墙返回 []
+ */
+function wallDefaultBlessTags(productKey) {
+  const key = String(productKey || '').trim() || 'mashangyou'
+  const raw = WALL_DEFAULT_BLESS[key]
+  return sanitizeBlessTags(raw || [])
+}
 
 /**
  * 礼赠场景 → 祈运标签（**写死的映射**，不是推断）。
@@ -153,6 +177,8 @@ module.exports = {
   BLESS_TAG_KEYS,
   SCENE_BLESS,
   BLESS_SCENES,
+  WALL_DEFAULT_BLESS,
+  wallDefaultBlessTags,
   blessTagsFromScenes,
   resolveBlessTags,
   scenesForBless,

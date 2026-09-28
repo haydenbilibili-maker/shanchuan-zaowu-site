@@ -23,7 +23,7 @@
  *   node miniprogram/scripts/render-wall-preview.mjs --check --selftest  # 证明判据真的会红（注入 → 检出 → 还原）
  *   node miniprogram/scripts/render-wall-preview.mjs --out /tmp/x.png
  *
- * 场景（--scene）：full（默认）整页原样 / lit 已点灯 / ember 点灯余烬 / loading 骨架 / error 加载失败 / closed 开关关
+ * 场景（--scene）：full（默认）整页原样 / lit 已点灯 / ember 点灯余烬 / loading 骨架 / error 加载失败 / closed 开关关 / exhibit 展品卡打开
  *   （2026-09-21 §11.4：玩法结果/推荐搬到玩法页后，`sheet` / `sheet-loading` 两个场景**已下线** ——
  *    本工具渲染的是祈福墙页，那两个场景要画的东西已经不在这一页上了。）
  */
@@ -45,9 +45,9 @@ const REAL_WXML = resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index
  * 预览必须**渲染组件的真 WXML/WXSS**，不能用页面残留的 `.ww-tag` 死样式去量
  * （那是"读的是镜像、不是真源"，错题本 E3）。结构展开见下面的 `FEED_*` 段。
  */
-const FEED_WXML = resolve(ROOT, 'miniprogram/components/WallFeed/index.wxml')
-const FEED_WXSS = resolve(ROOT, 'miniprogram/components/WallFeed/index.wxss')
-const FEED_LOGIC = resolve(ROOT, 'miniprogram/components/WallFeed/logic.js')
+const FEED_WXML = resolve(ROOT, 'miniprogram/subpackages/feature/components/WallFeed/index.wxml')
+const FEED_WXSS = resolve(ROOT, 'miniprogram/subpackages/feature/components/WallFeed/index.wxss')
+const FEED_LOGIC = resolve(ROOT, 'miniprogram/subpackages/feature/components/WallFeed/logic.js')
 /**
  * 实际读取的路径 —— 允许用环境变量指向**副本**。
  * 为什么需要这个开关（2026-09-20，子代理静态扫描时抓到的事故）：
@@ -70,7 +70,7 @@ const argOf = (n, d) => {
   const i = argv.indexOf(n)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
-const SCENES = ['full', 'lit', 'ember', 'loading', 'error', 'closed']
+const SCENES = ['full', 'lit', 'ember', 'loading', 'error', 'closed', 'exhibit']
 const SCENE = (() => {
   const s = argOf('--scene', 'full')
   const alias = s
@@ -249,7 +249,7 @@ const vars = [...toCssEarly(pageVarBlock).matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+)
 
 const pageCss = toCssEarly(readFileSync(PAGE_WXSS, 'utf8').replace(/^page\s*\{[\s\S]*?\}/m, ''))
 // ⚠️ 必须把组件的真 WXSS 一起拼进来（2026-09-22 接线）：愿签段的样式现在全在
-// components/WallFeed/index.wxss（`.wf-*`）里，只拼页面样式会让 `.wf-*` 全部量不到几何。
+// subpackages/feature/components/WallFeed/index.wxss（`.wf-*`）里，只拼页面样式会让 `.wf-*` 全部量不到几何。
 // 组件的 `styleIsolation: apply-shared` 也不影响这里：预览是把两份样式放进同一个文档，
 // 与真机上"页面样式可作用于组件"的语义一致（组件自带样式对自身生效则完全等价）。
 const feedCss = toCssEarly(readFileSync(FEED_WXSS, 'utf8'))
@@ -279,20 +279,15 @@ const WISHES = [
 const WALL_LOGIC = resolve(ROOT, 'miniprogram/utils/wishWall.js')
 const wallLogic = loadCjs(WALL_LOGIC)
 // 玩法注册表（唯一事实源）—— 见上面那段：预览的入口区必须跟它同源
-const RITUAL_PLAYS = loadCjs(resolve(ROOT, 'miniprogram/config/ritualPlays.js')).RITUAL_PLAYS || []
+const RITUAL_PLAYS = loadCjs(resolve(ROOT, 'miniprogram/subpackages/plays/config/ritualPlays.js')).RITUAL_PLAYS || []
 // 预览里"哪个玩法今天已经玩过"（只影响状态文案与徽章，属于场景态，不是注册表内容）
-const PREVIEW_PLAYED = { cookie: true }
-const DANMAKU = wallLogic.buildDanmakuRows(
-  [
-    { _id: 'd1', text: '马上有人念' },
-    { _id: 'd2', text: '马上有好事' },
-    { _id: 'd3', text: '马上有归处' },
-    { _id: 'd4', text: '马上有花看' },
-    { _id: 'd5', text: '马上有信' },
-    { _id: 'd6', text: '马上有下一程' }
-  ],
-  { cycle: 0 }
-)
+// 2026-09-27：铜钱签也标已玩 —— 专门压测「已摇 · 再看」状态句是否单行（此前长尾折行把底行撑参差）
+const PREVIEW_PLAYED = { cookie: true, coin: true }
+/* 弹幕样例必须与墙上愿签同源（同一批 WISHES）—— 再手写一份会漂
+ * （2026-09-24：曾与愿签文案不一致，出图审阅时还被误判成"弹幕串了愿签数据"）。 */
+const DANMAKU = wallLogic.buildDanmakuRows(WISHES, { cycle: 0 })
+/* 展签 / 展品卡：由真函数从 config/wallExhibit.js 生成（无商品 = 门店码首屏、主图未解析前的样子） */
+const EXHIBIT = loadCjs(resolve(ROOT, 'miniprogram/subpackages/feature/utils/wallExhibitProduct.js')).buildExhibitView('mashangyou', null, '')
 
 function baseData() {
   return {
@@ -313,6 +308,11 @@ function baseData() {
     mineRows: [],
     wallCapped: true,
     freshId: '',
+    // 09-26 弹幕升级（点按暂停 / 挂签台落愿态）新加的字段
+    heldDmId: '',
+    deskPosted: false,
+    exhibit: EXHIBIT,
+    exhibitOpen: false,
     viewMode: 'wall',
     mine: { total: 8 },
     productId: 'p-peacock',
@@ -341,6 +341,9 @@ function baseData() {
     ],
     playResult: null,
     playPending: '',
+    // 玩法弹层（2026-09-27）：墙页预览画的是「弹层未开」；弹层本身由 render-play-sheet-preview 渲染
+    playSheetId: '',
+    playSheetCtx: {},
     // 夜班（09-21 P1/P2）新加的字段：样例数据补齐，否则预览会少画内容（守卫会点名）
     draftCount: 0,
     mineLoading: false,
@@ -407,7 +410,8 @@ const SCENE_PATCH = {
     loading: false, loadError: '网络开小差了，墙面没能展开', rows: [], items: [], wallItems: [], tagColumns: [[], []],
     mine: { total: 0 }, relics: { total: 0, found: 0 }
   },
-  closed: { flagChecked: true, allowed: false }
+  closed: { flagChecked: true, allowed: false },
+  exhibit: { exhibitOpen: true }
 }
 
 /** 样例数据必须覆盖 WXML 里引用到的**每一个根标识符**，否则预览会静默少画一块 */
@@ -500,7 +504,16 @@ function expandWallFeed(pageWxml, data) {
     console.error('✗ 页面 WXML 里找不到 <wall-feed ... /> —— 预览无法展开组件（接线被回退了？）')
     process.exit(1)
   }
-  return { wxml: expanded, scope: Object.assign({}, data, feedData) }
+  // ⚠️ deriveView 也返回 `rows`（内容流当前页切片），会盖掉页面弹幕 `rows`。
+  // 组件 WXML 只用 `columns`，不读 `rows`；弹幕必须以页面为准，否则出图文案变成愿签切片、
+  // 而 spreadDanmaku 仍按 DANMAKU 填 delay/tone —— 文案与排期两套源（2026-09-24 实锤）。
+  return {
+    wxml: expanded,
+    scope: Object.assign({}, data, feedData, {
+      rows: data.rows,
+      echoRows: data.echoRows
+    })
+  }
 }
 
 const data = Object.assign(baseData(), SCENE_PATCH[SCENE])
@@ -514,16 +527,17 @@ assertSampleCovers(wxmlSrc, expanded.scope)
 //      百分比摆出来必然互相压住**，看着像"弹幕糊成一团"的排版事故；真机是错峰滚动的，不会这样。
 //   ② 页面里的 `wx:for` 展开后这些元素的 `{{item.*}}`（tone / top / duration / delay）在本渲染库里
 //      **解析为空**（`class="ww-danmaku ww-tone-"`、`top:%`），所以原 hack 只能靠"自己摆位置"遮住它。
-// 现在：**用真实行数据把值填回去**（top / 时长 / 延迟都来自 `buildDanmakuRows` 的返回值），
-//   位置仍按确定性的左右分布摆（量测要确定），而 `animation-delay` 用真值 ⇒ 出图（放行动画 +
-//   Chrome 虚拟时间）会像真机那样错峰散开，不再是一坨。
-const spreadDanmaku = (html) => {
+// 现在：**用真实行数据把值填回去**（top / 时长 / 延迟都来自 `buildDanmakuRows` 的返回值）。
+// ⚠️ 2026-09-24 再修：出图路径曾把「量测用的伪造 left%」一并带进放行动画的 HTML ——
+//   真机是 `left:100%` + 负 delay 预填；伪造 left（10–58%）+ 负 delay ⇒ 多数条在 t=2s
+//   已滚出左缘，出图看起来像"墙上只剩 1–2 条"的假稀疏（又差点据此去改速度/字号）。
+//   量测（动画冻结）仍需要伪造 left 把字摆进屏内可量；出图必须 left:100% 与真机一致。
+const spreadDanmaku = (html, { place = false } = {}) => {
   let i = -1
   return html.replace(/(class="ww-danmaku[^"]*"[^>]*style=")([^"]*)"/g, (_, headIn, style) => {
     let head = headIn
     i += 1
     const row = DANMAKU[i] || {}
-    const leftPct = 10 + ((i * 23) % 48)
     // 配色类同样是空值（`ww-tone-`）—— 补上真 tone，否则出图的弹幕全是同一个颜色，
     // 而"六种色调"正是这一页的视觉语言之一（预览看不到就等于没验）。
     const tone = row.tone == null ? '' : String(row.tone)
@@ -531,10 +545,14 @@ const spreadDanmaku = (html) => {
     const top = row.topPercent == null ? '' : `top:${row.topPercent}%; `
     const dur = row.durationMs == null ? '' : `animation-duration:${row.durationMs}ms; `
     const delay = row.delayMs == null ? '' : `animation-delay:${row.delayMs}ms; `
-    return `${head}${top}${dur}${delay}left:${leftPct}%;"`
+    const left = place
+      ? `left:${10 + ((i * 23) % 48)}%;`
+      : 'left:100%;'
+    return `${head}${top}${dur}${delay}${left}"`
   })
 }
-const markup = renderWxml(wxmlSrc, expanded.scope, { rewrite: spreadDanmaku })
+const markupMeasure = renderWxml(wxmlSrc, expanded.scope, { rewrite: (h) => spreadDanmaku(h, { place: true }) })
+const markupShot = renderWxml(wxmlSrc, expanded.scope, { rewrite: (h) => spreadDanmaku(h, { place: false }) })
 
 /* ── 3. 组装 HTML（WXSS 里只有类选择器，所以 <view> → <div> 就够了） ─────── */
 /* 量几何那一份要**冻结动画**（不然量到的是动画中间态）；
@@ -545,7 +563,7 @@ const markup = renderWxml(wxmlSrc, expanded.scope, { rewrite: spreadDanmaku })
 const FREEZE_CSS = `* { animation: none !important; transition: none !important; }
 .ww-sheet-line { opacity: 1 !important; }`
 
-const html = `<!doctype html>
+const buildHtml = (bodyMarkup, { freeze }) => `<!doctype html>
 <html><head><meta charset="utf-8"><style>
 :root {
 ${vars}
@@ -564,14 +582,16 @@ ${pageCss}
 ${feedCss}
 /* 真机 placeholder 走 placeholder-class，HTML 没有这个概念 —— 把那条规则搬到 ::placeholder 上 */
 ${(pageCss.match(/\.ww-input-ph\s*\{[^}]*\}/) || [''])[0].replace('.ww-input-ph', '.ww-input::placeholder')}
-/* 预览专用：截图与量测都不做动画（否则量到的是动画中间态）。
+/* 量测冻结动画（否则量到动画中间态）；出图放行。
    ⚠️ 副作用：靠 animation-fill-mode: forwards 从 opacity:0 入场的元素会**停在 0**（看不见）——
    弹层的签文就是这种（.ww-sheet-line）。这里补一句静态终态，让截图与真机「动画播完」一致。
    ⚠️ 这一段是**注入到页面里的字符串**：注释里不许出现反引号（会把外层模板字符串截断，实测报
    "Unexpected identifier"），一律用「」。 */
-${FREEZE_CSS}
+${freeze ? FREEZE_CSS : ''}
 </style></head>
-<body>${markup}</body></html>`
+<body>${bodyMarkup}</body></html>`
+const html = buildHtml(markupMeasure, { freeze: true })
+const shotHtml = buildHtml(markupShot, { freeze: false })
 
 /* ── 4. 无头 Chrome：一次 --dump-dom 量几何，一次 --screenshot 出图 ────────
    为什么不用仓库里的 CDP 驱动（admin/scripts/lib/cdp.mjs）：本沙箱里 CDP 的 WebSocket
@@ -615,6 +635,8 @@ const METRICS = [
   ['入口壳（签饼）', '.ww-play.is-shell'],
   ['入口盘（星盘）', '.ww-play.is-ring'],
   ['入口轴（双极）', '.ww-play.is-axis'],
+  ['入口叶（时令）', '.ww-play.is-leaf'],
+  ['入口钱（方孔）', '.ww-play.is-coin'],
   ['入口1', '.ww-play:nth-child(1)'],
   ['入口2', '.ww-play:nth-child(2)'],
   ['入口3', '.ww-play:nth-child(3)'],
@@ -622,7 +644,13 @@ const METRICS = [
   ['入口1 名字', '.ww-play:nth-child(1) .ww-play-name', 1],
   ['入口1 字标', '.ww-play:nth-child(1) .ww-play-mark', 1],
   ['入口1 状态句', '.ww-play:nth-child(1) .ww-play-state', 1],
+  ['入口2 名字', '.ww-play:nth-child(2) .ww-play-name', 1],
+  ['入口2 副文案', '.ww-play:nth-child(2) .ww-play-hint', 1],
+  ['入口2 状态句', '.ww-play:nth-child(2) .ww-play-state', 1],
   ['入口4 副文案', '.ww-play:nth-child(4) .ww-play-hint', 1],
+  ['入口6 名字', '.ww-play:nth-child(6) .ww-play-name', 1],
+  ['入口6 副文案', '.ww-play:nth-child(6) .ww-play-hint', 1],
+  ['入口6 状态句', '.ww-play:nth-child(6) .ww-play-state', 1],
   ['灵感行 .ww-inspo-row', '.ww-inspo-row'],
   ['灵感 chip1', '.ww-inspo-chip:nth-child(1)', 1],
   ['额度行 .ww-write-foot', '.ww-write-foot', 1, 'same-row'],
@@ -634,7 +662,7 @@ const METRICS = [
   ['愿签两列 .wf-cols', '.wf-cols'],
   ['愿签卡（首张）', '.wf-col:nth-child(1) .wf-card:nth-child(1)'],
   ['愿签正文', '.wf-card-text'],
-  ['愿签 meta', '.wf-card-meta', 1],
+  ['愿签 meta', '.wf-card-meta', 1, 'same-row'],
   ['加载更多 .wf-more', '.wf-more'],
   ['博物笔记 .ww-relics', '.ww-relics', 1, 'same-row']
 ]
@@ -784,10 +812,10 @@ window.addEventListener('load', () => {
   const resultLayer = document.querySelector('.ww-play-need, .ww-sheet-product, .ww-play-reco')
   out.push({ label: '入口区不再承载结果层', sel: ':absent', mode: 'absent', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
     absent: !resultLayer, text: resultLayer ? '玩法结果层又出现在入口区（应搬到玩法页）' : '未出现（对）' })
-  // ── 四种入口形态各有各的盒子（"入口不是四枚同质瓦片"的几何证据）──
-  const formCount = ['card', 'shell', 'ring', 'axis'].filter((f) => document.querySelector('.ww-play.is-' + f + ' .ww-play-form')).length
+  // ── 四种入口形态各有各的盒子（"入口不是四枚同质瓦片"的几何证据；现含 leaf/coin）──
+  const formCount = ['card', 'shell', 'ring', 'axis', 'leaf', 'coin'].filter((f) => document.querySelector('.ww-play.is-' + f + ' .ww-play-form')).length
   out.push({ label: '四种入口形态', sel: ':forms', mode: 'forms', lines: 0, maxLines: 0, x: 0, y: 0, w: 0, h: 0,
-    forms: formCount, text: formCount + ' 种形态（card/shell/ring/axis）' })
+    forms: formCount, text: formCount + ' 种形态（card/shell/ring/axis/leaf/coin）' })
   const pre = document.createElement('pre')
   pre.id = 'wall-metrics'
   pre.textContent = JSON.stringify(out)
@@ -797,9 +825,9 @@ window.addEventListener('load', () => {
 
 const htmlPath = join(ROOT, 'miniprogram/scripts/.tmp', `wall-preview-${SCENE}.html`)
 writeFileSync(htmlPath, html.replace('</body>', `${MEASURE_JS}</body>`))
-// 出图用：同一页但**不冻结动画**（FREEZE_CSS 置空）
+// 出图：不冻结 + left:100%（与真机一致；勿复用量测的伪造 left%）
 const shotHtmlPath = join(ROOT, 'miniprogram/scripts/.tmp', `wall-preview-shot-${SCENE}.html`)
-writeFileSync(shotHtmlPath, html.replace(FREEZE_CSS, ''))
+writeFileSync(shotHtmlPath, shotHtml)
 
 function runChrome(args, timeoutMs = 30000) {
   return new Promise((resolvePromise) => {
@@ -907,6 +935,17 @@ metrics.forEach((row) => {
       const msg = `首屏内看得到的玩法入口 ${seen.length} 个 < ${FOLD_MIN_TILES} 个（视口高 ${vp.h}px，四个入口 top ${tiles.map((t) => t.y).join('/')}）`
       if (SCENE === 'full') problems.push(msg)
       else advisories.push(`${msg}〔参考项：点亮态页面合法地更高，是否要压灯卡由产品定〕`)
+    }
+    // 2026-09-27：六格同高（此前 lead 行 176、次行 140，铜钱签状态折行更参差）
+    const six = ['入口卡（签筒）', '入口壳（签饼）', '入口盘（星盘）', '入口轴（双极）', '入口叶（时令）', '入口钱（方孔）']
+      .map((l) => byLabel(l)).filter((t) => t && !t.missing)
+    if (six.length === 6) {
+      const heights = six.map((t) => t.h)
+      const lo = Math.min(...heights)
+      const hi = Math.max(...heights)
+      if (hi - lo > 2) {
+        problems.push(`玩法入口六格高度参差：${heights.join('/')}px（差 ${hi - lo}px > 2）—— 标题折行或状态长尾又把格子撑开了`)
+      }
     }
   }
 }

@@ -762,25 +762,6 @@
     1.2rpx 1.4rpx 0 rgba(45, 90, 63, 0.32),
     0 0 4rpx rgba(58, 46, 28, 0.34);
 }
-.level-item.level-skin-1 .li-specimen-bg {
-  mix-blend-mode: multiply;
-  text-shadow:
-    -1rpx -0.8rpx 0 rgba(122, 95, 60, 0.5),
-    0.8rpx 1rpx 0 rgba(45, 90, 63, 0.3),
-    0 0 3rpx rgba(58, 46, 28, 0.32);
-}
-.current-level-card.level-skin-1 .cl-glyph {
-  text-shadow:
-    -0.8rpx -0.6rpx 0 rgba(122, 95, 60, 0.52),
-    0.6rpx 0.8rpx 0 rgba(45, 90, 63, 0.3),
-    0 0 2.4rpx rgba(58, 46, 28, 0.3);
-}
-.level-item.level-skin-1 .li-specimen {
-  text-shadow:
-    -0.5rpx -0.5rpx 0 rgba(122, 95, 60, 0.5),
-    0.5rpx 0.5rpx 0 rgba(45, 90, 63, 0.28),
-    0 0 1.4rpx rgba(58, 46, 28, 0.28);
-}
 
 /* —— 纸 Lv2 🦀 · 照相凹版：冷中性单向偏移 + 紧墨晕 —— */
 .vip-card.level-skin-2 .card-specimen,
@@ -790,25 +771,6 @@
     1.4rpx -1rpx 0 rgba(72, 80, 86, 0.52),
     -1rpx 1.2rpx 0 rgba(38, 42, 46, 0.34),
     0 0 2.6rpx rgba(30, 34, 38, 0.4);
-}
-.level-item.level-skin-2 .li-specimen-bg {
-  mix-blend-mode: multiply;
-  text-shadow:
-    1rpx -0.8rpx 0 rgba(72, 80, 86, 0.52),
-    -0.8rpx 0.8rpx 0 rgba(38, 42, 46, 0.32),
-    0 0 2rpx rgba(30, 34, 38, 0.38);
-}
-.current-level-card.level-skin-2 .cl-glyph {
-  text-shadow:
-    0.8rpx -0.6rpx 0 rgba(72, 80, 86, 0.54),
-    -0.6rpx 0.6rpx 0 rgba(38, 42, 46, 0.32),
-    0 0 1.6rpx rgba(30, 34, 38, 0.36);
-}
-.level-item.level-skin-2 .li-specimen {
-  text-shadow:
-    0.5rpx -0.5rpx 0 rgba(72, 80, 86, 0.52),
-    -0.5rpx 0.5rpx 0 rgba(38, 42, 46, 0.3),
-    0 0 1rpx rgba(30, 34, 38, 0.34);
 }
 
 /* —— 木 Lv3 🐞 · 胡桃木烙印：焦痕 + 沿木纹散开的热晕（multiply 只可压暗） —— */
@@ -820,30 +782,9 @@
     1.2rpx 1.4rpx 2.2rpx rgba(38, 22, 8, 0.42),
     0 0 3rpx rgba(28, 16, 6, 0.48);
 }
-.level-item.level-skin-3 .li-specimen-bg {
-  mix-blend-mode: multiply;
-  text-shadow:
-    -0.8rpx -1rpx 1rpx rgba(20, 11, 4, 0.6),
-    0.8rpx 1rpx 1.6rpx rgba(38, 22, 8, 0.4),
-    0 0 2rpx rgba(28, 16, 6, 0.46);
-}
 /* 前景标识用常规混合 + 较高不透明度：暖白唇的亮度足以越过木底，能做真正的上暗下亮阴刻。
  * 第 4 条是溢到木面上的暖光（光从刻痕里漏出来），没有它 🐞 这种本身就很暗的
  * emoji 会塌成一块黑贴纸 —— 实测胡桃木上必须要这一层才立得起来。 */
-.current-level-card.level-skin-3 .cl-glyph {
-  text-shadow:
-    0 -1.2rpx 1rpx rgba(20, 11, 4, 0.85),
-    -0.8rpx -0.8rpx 0.8rpx rgba(20, 11, 4, 0.55),
-    0 2rpx 0 rgba(240, 208, 152, 0.68),
-    0 3rpx 2.4rpx rgba(196, 152, 90, 0.4);
-}
-.level-item.level-skin-3 .li-specimen {
-  text-shadow:
-    0 -0.8rpx 0.8rpx rgba(20, 11, 4, 0.85),
-    -0.5rpx -0.5rpx 0.6rpx rgba(20, 11, 4, 0.5),
-    0 1.2rpx 0 rgba(240, 208, 152, 0.66),
-    0 1.8rpx 1.6rpx rgba(196, 152, 90, 0.38);
-}
 
 /* —— 木 Lv4 🦋 · 紫檀阴刻露芯：screen 只可提亮，故主力是下缘受光唇 —— */
 .vip-card.level-skin-4 .card-specimen,
@@ -853,25 +794,6 @@
     0 1.6rpx 0.8rpx rgba(255, 248, 233, 0.55),
     0 0 3.2rpx rgba(226, 218, 204, 0.3),
     -1rpx -1.2rpx 1.6rpx rgba(6, 5, 4, 0.7);
-}
-.level-item.level-skin-4 .li-specimen-bg {
-  mix-blend-mode: screen;
-  text-shadow:
-    0 1.2rpx 0.6rpx rgba(255, 248, 233, 0.55),
-    0 0 2.4rpx rgba(226, 218, 204, 0.28),
-    -0.8rpx -1rpx 1.2rpx rgba(6, 5, 4, 0.68);
-}
-.current-level-card.level-skin-4 .cl-glyph {
-  text-shadow:
-    0 -1rpx 1rpx rgba(6, 5, 4, 0.85),
-    0 1.4rpx 0.6rpx rgba(255, 248, 233, 0.6),
-    0.6rpx 0.8rpx 1.2rpx rgba(232, 226, 214, 0.28);
-}
-.level-item.level-skin-4 .li-specimen {
-  text-shadow:
-    0 -0.6rpx 0.8rpx rgba(6, 5, 4, 0.82),
-    0 1rpx 0.5rpx rgba(255, 248, 233, 0.58),
-    0.4rpx 0.5rpx 0.8rpx rgba(232, 226, 214, 0.26);
 }
 
 /* —— 金属 Lv5 🦎 · 白银镭雕：0 blur 锐边，上暗下亮，冷白高光 —— */
@@ -884,26 +806,6 @@
     0 1.6rpx 0 rgba(244, 250, 253, 0.8),
     1rpx 1.2rpx 0.6rpx rgba(198, 214, 224, 0.4);
 }
-.level-item.level-skin-5 .li-specimen-bg {
-  mix-blend-mode: overlay;
-  text-shadow:
-    0 -1rpx 0 rgba(8, 11, 13, 0.85),
-    -0.8rpx -0.8rpx 0 rgba(8, 11, 13, 0.58),
-    0 1.2rpx 0 rgba(244, 250, 253, 0.8),
-    0.8rpx 1rpx 0.5rpx rgba(198, 214, 224, 0.38);
-}
-.current-level-card.level-skin-5 .cl-glyph {
-  text-shadow:
-    0 -0.8rpx 0 rgba(8, 11, 13, 0.88),
-    0 1rpx 0 rgba(244, 250, 253, 0.85),
-    0.6rpx 0.8rpx 0.6rpx rgba(160, 178, 190, 0.4);
-}
-.level-item.level-skin-5 .li-specimen {
-  text-shadow:
-    0 -0.5rpx 0 rgba(8, 11, 13, 0.85),
-    0 0.7rpx 0 rgba(244, 250, 253, 0.82),
-    0.4rpx 0.5rpx 0.4rpx rgba(160, 178, 190, 0.38);
-}
 
 /* —— 金属 Lv6 💎 · 黄金镭雕：同 Lv5 手法，高光换暖金 —— */
 .vip-card.level-skin-6 .card-specimen,
@@ -915,26 +817,6 @@
     0 1.6rpx 0 rgba(255, 248, 224, 0.82),
     1rpx 1.2rpx 0.6rpx rgba(224, 196, 132, 0.42);
 }
-.level-item.level-skin-6 .li-specimen-bg {
-  mix-blend-mode: overlay;
-  text-shadow:
-    0 -1rpx 0 rgba(26, 17, 4, 0.85),
-    -0.8rpx -0.8rpx 0 rgba(26, 17, 4, 0.58),
-    0 1.2rpx 0 rgba(255, 248, 224, 0.82),
-    0.8rpx 1rpx 0.5rpx rgba(224, 196, 132, 0.4);
-}
-.current-level-card.level-skin-6 .cl-glyph {
-  text-shadow:
-    0 -0.8rpx 0 rgba(26, 17, 4, 0.88),
-    0 1rpx 0 rgba(255, 248, 224, 0.85),
-    0.6rpx 0.8rpx 0.6rpx rgba(196, 167, 108, 0.42);
-}
-.level-item.level-skin-6 .li-specimen {
-  text-shadow:
-    0 -0.5rpx 0 rgba(26, 17, 4, 0.85),
-    0 0.7rpx 0 rgba(255, 248, 224, 0.82),
-    0.4rpx 0.5rpx 0.4rpx rgba(196, 167, 108, 0.4);
-}
 
 /* —— 黑蟒皮 99 🏵 · 鳞面压印：上暗下亮，克制黄铜唇 —— */
 .vip-card.level-skin-99 .card-specimen,
@@ -945,26 +827,6 @@
     -1rpx -1rpx 0 rgba(8, 6, 4, 0.65),
     0 1.6rpx 0 rgba(220, 200, 160, 0.35),
     1rpx 1.2rpx 0.5rpx rgba(196, 167, 108, 0.28);
-}
-.level-item.level-skin-99 .li-specimen-bg {
-  mix-blend-mode: overlay;
-  text-shadow:
-    0 -1rpx 0 rgba(0, 0, 0, 0.85),
-    -0.8rpx -0.8rpx 0 rgba(8, 6, 4, 0.6),
-    0 1.2rpx 0 rgba(220, 200, 160, 0.32),
-    0.8rpx 1rpx 0.4rpx rgba(196, 167, 108, 0.26);
-}
-.current-level-card.level-skin-99 .cl-glyph {
-  text-shadow:
-    0 -0.8rpx 0 rgba(0, 0, 0, 0.88),
-    0 1rpx 0 rgba(232, 210, 160, 0.4),
-    0.6rpx 0.8rpx 0.5rpx rgba(196, 167, 108, 0.32);
-}
-.level-item.level-skin-99 .li-specimen {
-  text-shadow:
-    0 -0.5rpx 0 rgba(0, 0, 0, 0.85),
-    0 0.7rpx 0 rgba(232, 210, 160, 0.38),
-    0.4rpx 0.5rpx 0.4rpx rgba(196, 167, 108, 0.28);
 }
 
 /* —— 纸档共用：浅色卡纸上的深色文字系统（Lv1 / Lv2） ——
@@ -2390,12 +2252,6 @@
 /* 各档拉丁学名色随材质走，见上方「六档会员牌材质」章节 —— 此处不要再覆写，
  * 否则浅色纸卡（Lv1–2）会被冷银色改回近似隐形的浅字。 */
 
-.member-no-inline {
-  display: flex;
-  align-items: baseline;
-  gap: 10rpx;
-  flex-shrink: 0;
-}
 
 .card-flip-hint {
   font-size: 18rpx;
@@ -2408,22 +2264,7 @@
   color: rgba(196, 167, 108, 0.55);
 }
 
-.member-no-label {
-  font-size: 18rpx;
-  color: rgba(196, 167, 108, 0.55);
-  letter-spacing: 0.14em;
-  font-weight: 500;
-  flex-shrink: 0;
-  font-family: var(--font-din);
-}
 
-.member-no-code {
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.72);
-  letter-spacing: 2rpx;
-  font-weight: 500;
-}
 
 /* === 会员卡背板 · 藏家铭牌 === */
 .cb-stripe {

@@ -47,7 +47,13 @@
             </template>
           </el-dropdown>
         </div>
-        <div v-if="!loading && !roots.length" class="empty-tip">还没有分类，先新增一级分类</div>
+        <ErpEmpty
+          v-if="!loading && !roots.length"
+          description="还没有一级分类"
+          hint="先新增一级分类，再挂二级；藏品录入时通过分类关联会出现在对应列表。"
+          action-text="新增一级分类"
+          @action="openRootDialog"
+        />
       </div>
 
       <!-- 右：二级分类 -->
@@ -56,8 +62,20 @@
           <span>二级分类 (LEVEL 2)</span>
           <el-button v-if="currentRoot" type="primary" :icon="Plus" size="small" @click="openSubDialog()">新增子分类</el-button>
         </div>
-        <div v-if="!currentRoot" class="empty-tip">请选择一级分类</div>
+        <ErpEmpty
+          v-if="!currentRoot"
+          description="请选择一级分类"
+          hint="左侧点选后，可在此管理其子分类。"
+        />
         <el-table v-else :data="subs" stripe>
+          <template #empty>
+            <ErpEmpty
+              description="该一级下暂无子分类"
+              hint="点击右上角「新增子分类」创建；也可稍后用「关联藏品」把已有商品挂上来。"
+              action-text="新增子分类"
+              @action="openSubDialog()"
+            />
+          </template>
           <el-table-column label="排序" width="80">
             <template #default="{ row, $index }">
               <el-button-group size="small">
@@ -222,9 +240,15 @@
         v-loading="linkLoading"
         max-height="300"
         size="small"
-        empty-text=" "
         @selection-change="onLinkSelectionChange"
       >
+        <template #empty>
+          <ErpEmpty
+            v-if="!linkLoading"
+            :description="linkEmptyHint || '暂无匹配藏品'"
+            hint="可点「刷新预览」重扫，或改用「一键全部」扩大匹配范围。"
+          />
+        </template>
         <el-table-column type="selection" width="42" />
         <el-table-column prop="title" label="名称" min-width="180" />
         <el-table-column prop="category" label="当前分类" width="120" />
@@ -232,9 +256,6 @@
           <template #default="{ row }">{{ Array.isArray(row.reasons) ? row.reasons.join('/') : row.reasons }}</template>
         </el-table-column>
       </el-table>
-      <div v-if="!linkLoading && !linkPreview.length" class="link-empty">
-        {{ linkEmptyHint }}
-      </div>
       <div v-if="linkLastResult" class="undo-box">
         上次关联 {{ linkLastResult.linkedCount }} 件
         <el-button size="small" link type="danger" @click="undoLink">撤销上次</el-button>
@@ -268,6 +289,7 @@ import {
 } from '../cloud'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ImageUploadField from './ImageUploadField.vue'
+import ErpEmpty from './ErpEmpty.vue'
 import { isActiveCategory, categorySwitchOn } from '../utils/categoryActive'
 
 const roots = ref([])
@@ -871,30 +893,25 @@ onMounted(refresh)
 .cat-container { padding: 10px; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
 .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
-.title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid #d4af37; padding-left: 12px; font-weight: 800; }
-.title-box .subtitle { color: #999; font-size: 12px; padding-left: 17px; letter-spacing: 2px; }
-.linked-hint { color: #6b6560; font-size: 13px; margin: 0 0 12px; }
+.title-box h2 { margin: 0; font-size: 22px; color: #333; border-left: 5px solid var(--gold-400); padding-left: 12px; font-weight: 800; }
+.title-box .subtitle { color: var(--light-text-secondary); font-size: 12px; padding-left: 17px; letter-spacing: 2px; }
+.linked-hint { color: var(--light-text-secondary); font-size: 13px; margin: 0 0 12px; }
 .dup-alert { margin-bottom: 16px; }
 .dup-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 13px; }
-.link-count { font-size: 13px; color: #c4a76c; margin-bottom: 8px; }
+.link-count { font-size: 13px; color: var(--gold-400); margin-bottom: 8px; }
 .link-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
-.link-empty { text-align: center; color: #a09a90; font-size: 13px; padding: 24px 12px; line-height: 1.5; }
-.undo-box { margin-top: 12px; font-size: 13px; color: #6b6560; }
+.undo-box { margin-top: 12px; font-size: 13px; color: var(--light-text-secondary); }
 .layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
-.root-pane, .sub-pane { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+.root-pane, .sub-pane { background: var(--light-bg-elevated); border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 .pane-title { font-size: 14px; color: #333; font-weight: bold; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center; }
 .root-row { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 6px; }
-.root-row:hover { background: #fafafa; }
-.root-row.active { background: #fdf6ec; border-left: 3px solid #d4af37; }
+.root-row:hover { background: var(--light-bg-primary); }
+.root-row.active { background: var(--el-color-primary-light-9); border-left: 3px solid var(--gold-400); }
 .root-icon { font-size: 22px; }
 .root-info { flex: 1; }
 .r-name { font-weight: bold; color: #333; }
-.r-sub { font-size: 11px; color: #999; }
-.more-icon { color: #999; cursor: pointer; }
+.r-sub { font-size: 11px; color: var(--light-text-secondary); }
+.more-icon { color: var(--light-text-secondary); cursor: pointer; }
 .sub-icon { font-size: 16px; margin-right: 6px; }
-/* 空态提示承载真实信息（如「还没有分类，先新增一级分类」），必须可读：
-   #ccc 在白底只有 1.61:1，实测几乎看不见；改次级文字色后 5.74:1 达 AA。
-   审计点名的 Categories.vue:899 1.5:1 就是这一处。 */
-.empty-tip { text-align: center; color: var(--light-text-secondary); padding: 40px; font-size: 13px; }
-.count-pending { color: #a09a90; }
+.count-pending { color: var(--light-text-secondary); }
 </style>

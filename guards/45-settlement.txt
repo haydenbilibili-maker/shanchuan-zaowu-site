@@ -12,3 +12,5 @@ npm run check:settlement-single-ledger
 npm run check:price-import-blocks
 npm run check:shipping-rules
 npm run test:feishu-sync
+npm run check:shipment-sku-page
+npm run test:shipment-parse

@@ -43,6 +43,13 @@ Page({
   data: {
     ready: false,
     loading: false,
+    listError: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    disablePendingId: '',
+    enablePendingId: '',
+    obsPending: false,
     storeOptions: [],
     list: [],
     filterStatus: 'all',
@@ -127,7 +134,13 @@ Page({
   },
 
   async loadList() {
-    this.setData({ loading: true })
+    this.setData({
+      loading: true,
+      listError: false,
+      tipText: this.data.list && this.data.list.length ? this.data.tipText : '',
+      disablePendingId: '',
+      enablePendingId: ''
+    })
     try {
       const result = await this.callFn({ action: 'list', status: 'all' })
       let list = (result.list || [])
@@ -137,11 +150,19 @@ Page({
       if (status === 'active' || status === 'disabled') {
         list = list.filter((row) => row.status === status)
       }
-      this.setData({ list, loading: false })
+      this.setData({ list, loading: false, listError: false })
     } catch (e) {
-      this.setData({ list: [], loading: false })
-      wx.showToast({ title: formatCloudFnError(e, '股东列表加载失败'), icon: 'none' })
+      this.setData({
+        loading: false,
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '股东列表加载失败')
+      })
     }
+  },
+
+  onRetryList() {
+    this.loadList()
   },
 
   onFilterChange(e) {
@@ -192,6 +213,7 @@ Page({
     this.setData({
       showForm: true,
       editingId: '',
+      formTip: '',
       lookingUp: false,
       matchHint: '',
       matched: null,
@@ -215,6 +237,7 @@ Page({
     this.setData({
       showForm: true,
       editingId: id,
+      formTip: '',
       lookingUp: false,
       matchHint: '',
       matched: {
@@ -301,10 +324,10 @@ Page({
     if (this.data.lookingUp) return
     const phone = String(this.data.form.phone || '').replace(/\D/g, '')
     if (!/^1\d{10}$/.test(phone)) {
-      wx.showToast({ title: '请输入 11 位手机号', icon: 'none' })
+      this.setData({ formTip: '请输入 11 位手机号' })
       return
     }
-    this.setData({ lookingUp: true, matchHint: '', matched: null, candidates: [] })
+    this.setData({ lookingUp: true, matchHint: '', matched: null, candidates: [], formTip: '' })
     try {
       const result = await this.callFn({ action: 'lookupByPhone', phone })
       this.setData({ lookingUp: false })
@@ -330,8 +353,10 @@ Page({
         matchHint: `找到 ${candidates.length} 个账号，请选择`
       })
     } catch (e) {
-      this.setData({ lookingUp: false })
-      wx.showToast({ title: formatCloudFnError(e, '查找失败'), icon: 'none' })
+      this.setData({
+        lookingUp: false,
+        formTip: formatCloudFnError(e, '查找失败')
+      })
     }
   },
 
@@ -365,7 +390,7 @@ Page({
     if (this.data.saving) return
     const errMsg = this.validateForm()
     if (errMsg) {
-      wx.showToast({ title: errMsg, icon: 'none' })
+      this.setData({ formTip: errMsg })
       return
     }
     const form = this.data.form
@@ -378,8 +403,7 @@ Page({
     const afterRaw = String(form.dividendRatioAfterPayback || '').trim()
     const after = afterRaw !== '' ? afterRaw : before
 
-    this.setData({ saving: true })
-    wx.showLoading({ title: '保存中…' })
+    this.setData({ saving: true, formTip: '保存中…' })
     try {
       const payload = {
         action: 'upsert',
@@ -405,111 +429,111 @@ Page({
         payload.permissionsExplicit = true
       }
       await this.callFn(payload)
-      wx.hideLoading()
       this.setData({ saving: false, showForm: false })
       clearStaffRoleCache()
-      wx.showToast({ title: '已保存', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: '已保存' })
       this.loadList()
     } catch (e) {
-      wx.hideLoading()
-      this.setData({ saving: false })
-      wx.showModal({
-        title: '保存失败',
-        content: formatCloudFnError(e, (e && e.message) || '请稍后重试'),
-        showCancel: false,
-        confirmColor: '#C4A76C'
+      this.setData({
+        saving: false,
+        formTip: formatCloudFnError(e, (e && e.message) || '请稍后重试')
       })
     }
   },
 
-  disableRow(e) {
+  async disableRow(e) {
     const id = String((e.currentTarget.dataset || {}).id || '').trim()
     if (!id) return
-    wx.showModal({
-      title: '停用股东',
-      content: '停用后该账号将无法进入股东观测台，可再次启用。',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          await this.callFn({ action: 'remove', staffId: id })
-          clearStaffRoleCache()
-          wx.showToast({ title: '已停用', icon: 'none' })
-          this.loadList()
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '停用失败'), icon: 'none' })
-        }
-      }
-    })
+    if (this.data.disablePendingId !== id) {
+      this.setData({
+        disablePendingId: id,
+        enablePendingId: '',
+        tipTone: 'warn',
+        tipText: '再点一次「停用」：该账号将无法进入股东观测台（可再次启用）'
+      })
+      return
+    }
+    this.setData({ disablePendingId: '', tipTone: 'info', tipText: '正在停用…' })
+    try {
+      await this.callFn({ action: 'remove', staffId: id })
+      clearStaffRoleCache()
+      this.setData({ tipTone: 'info', tipText: '已停用' })
+      this.loadList()
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '停用失败') })
+    }
   },
 
   async enableRow(e) {
     const id = String((e.currentTarget.dataset || {}).id || '').trim()
     const item = (this.data.list || []).find((row) => row._id === id)
     if (!item || !item.openid) {
-      wx.showToast({ title: '账号信息缺失', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '账号信息缺失' })
       return
     }
     const sp = item.shareholderProfile || {}
     if (!sp.storeId) {
-      wx.showToast({ title: '请先编辑并绑定门店', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '请先编辑并绑定门店' })
       return
     }
-    wx.showModal({
-      title: '恢复生效',
-      content: `确认恢复「${item.name || '未命名'}」的股东权限？`,
-      confirmColor: '#52B788',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          const roles =
-            Array.isArray(item.roles) && item.roles.length
-              ? item.roles
-              : [item.role || ROLE_SHAREHOLDER]
-          if (roles.indexOf(ROLE_SHAREHOLDER) === -1) roles.push(ROLE_SHAREHOLDER)
-          const ratios = profileRatios(sp)
-          const payload = {
-            action: 'upsert',
-            openid: item.openid,
-            name: item.name || '',
-            staffNo: item.staffNo || '',
-            roles,
-            role: item.role || ROLE_SHAREHOLDER,
-            status: 'active',
-            shareholderProfile: {
-              storeId: sp.storeId,
-              ownershipRatio: sp.ownershipRatio,
-              dividendRatio: ratios.before,
-              dividendRatioBeforePayback: ratios.before,
-              dividendRatioAfterPayback: ratios.after,
-              capitalContribution: sp.capitalContribution,
-              effectiveDate: sp.effectiveDate
-            }
-          }
-          if (item.permissionsExplicit && Array.isArray(item.permissions)) {
-            payload.permissions = item.permissions
-            payload.permissionsExplicit = true
-          }
-          await this.callFn(payload)
-          clearStaffRoleCache()
-          wx.showToast({ title: '已恢复生效', icon: 'none' })
-          this.loadList()
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '启用失败'), icon: 'none' })
+    if (this.data.enablePendingId !== id) {
+      this.setData({
+        enablePendingId: id,
+        disablePendingId: '',
+        tipTone: 'warn',
+        tipText: `再点一次「启用」即将恢复「${item.name || '未命名'}」的股东权限`
+      })
+      return
+    }
+    this.setData({ enablePendingId: '', tipTone: 'info', tipText: '正在启用…' })
+    try {
+      const roles =
+        Array.isArray(item.roles) && item.roles.length
+          ? item.roles
+          : [item.role || ROLE_SHAREHOLDER]
+      if (roles.indexOf(ROLE_SHAREHOLDER) === -1) roles.push(ROLE_SHAREHOLDER)
+      const ratios = profileRatios(sp)
+      const payload = {
+        action: 'upsert',
+        openid: item.openid,
+        name: item.name || '',
+        staffNo: item.staffNo || '',
+        roles,
+        role: item.role || ROLE_SHAREHOLDER,
+        status: 'active',
+        shareholderProfile: {
+          storeId: sp.storeId,
+          ownershipRatio: sp.ownershipRatio,
+          dividendRatio: ratios.before,
+          dividendRatioBeforePayback: ratios.before,
+          dividendRatioAfterPayback: ratios.after,
+          capitalContribution: sp.capitalContribution,
+          effectiveDate: sp.effectiveDate
         }
       }
-    })
+      if (item.permissionsExplicit && Array.isArray(item.permissions)) {
+        payload.permissions = item.permissions
+        payload.permissionsExplicit = true
+      }
+      await this.callFn(payload)
+      clearStaffRoleCache()
+      this.setData({ tipTone: 'info', tipText: '已恢复生效' })
+      this.loadList()
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '启用失败') })
+    }
   },
 
   goObservatoryPreview() {
-    wx.showModal({
-      title: '打开股东观测台',
-      content: '观测台为只读看板。超管可预览本人绑定门店口径；编辑保存后股东端即时按双阶段分成计算。',
-      confirmText: '打开',
-      confirmColor: '#C4A76C',
-      success: (res) => {
-        if (res.confirm) goShareholderObservatory()
-      }
+    if (this.data.obsPending) {
+      this.setData({ obsPending: false, tipTone: 'info', tipText: '' })
+      goShareholderObservatory()
+      return
+    }
+    this.setData({
+      obsPending: true,
+      tipTone: 'info',
+      tipText: '再点一次「股东观测台」打开只读看板（按绑定门店双阶段分成）'
     })
   },
 

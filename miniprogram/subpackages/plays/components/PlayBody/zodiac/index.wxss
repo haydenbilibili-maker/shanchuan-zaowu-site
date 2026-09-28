@@ -1,0 +1,2 @@
+@import "../../../play-zodiac/index.wxss";
+@import "../body.wxss";

@@ -641,3 +641,16 @@ page { background: #1A1814; color: #fff; }
   border-radius: 50%; background: var(--gold);
 }
 .icon-sound.off { opacity: 0.45; border-color: var(--color-text-muted); }
+
+/* 领取核验（送礼人侧，只显示尾号） */
+.verify-line {
+  margin-top: 28rpx;
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+  font-size: 24rpx;
+}
+.verify-line-label { color: #9A8F7C; }
+.verify-line-val { color: #C4A76C; }
+.verify-line.warn { padding: 16rpx 20rpx; border: 1px solid #E8927C; border-radius: 12rpx; }
+.verify-line.warn .verify-line-label, .verify-line.warn .verify-line-val { color: #E8927C; }

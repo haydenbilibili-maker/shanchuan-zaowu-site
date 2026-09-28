@@ -23,29 +23,9 @@ page {
   height: var(--space-4);
 }
 
-.step-dots {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-bottom: 12rpx;
-}
 
-.step-dot {
-  flex: 1;
-  height: 6rpx;
-  border-radius: 6rpx;
-  background: var(--color-bg-elevated);
-  transition: background 0.3s, transform 0.3s;
-}
 
-.step-dot.done {
-  background: rgba(196, 167, 108, 0.35);
-}
 
-.step-dot.current {
-  background: var(--brass-400);
-  transform: scaleY(1.2);
-}
 
 .progress-track {
   height: 2rpx;
@@ -267,22 +247,7 @@ page {
   flex-shrink: 0;
 }
 
-.reward-plate-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-  padding: var(--space-3);
-  background: rgba(196, 167, 108, 0.05);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(196, 167, 108, 0.16);
-}
 
-.reward-line {
-  font-size: 24rpx;
-  color: var(--color-text-body);
-  line-height: 1.4;
-  font-family: var(--font-mono);
-}
 
 .reward-plate-note {
   display: block;
@@ -349,13 +314,6 @@ page {
 }
 
 /* 完成奖励旧类保留兼容 */
-.reward-pack {
-  margin-top: var(--space-3);
-  padding: var(--space-4) var(--space-3);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--brass-800);
-  border-radius: var(--radius-md);
-}
 
 .avatar-plate {
   display: flex;
@@ -492,54 +450,12 @@ page {
   color: var(--color-text-muted);
 }
 
-.phone-section {
-  text-align: center;
-}
 
-.phone-icon-ring {
-  width: 96rpx;
-  height: 96rpx;
-  margin: 0 auto var(--space-4);
-  border-radius: 50%;
-  border: 1px solid var(--brass-800);
-  background: rgba(196, 167, 108, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.phone-icon-img {
-  width: 40rpx;
-  height: 40rpx;
-  filter: brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%);
-}
 
-.phone-card {
-  padding: var(--space-3);
-  background: rgba(82, 183, 136, 0.1);
-  border: 1px solid rgba(82, 183, 136, 0.35);
-  border-radius: var(--radius-md);
-}
 
-.phone-ok-label {
-  display: block;
-  font-size: 20rpx;
-  color: var(--color-success);
-  margin-bottom: 6rpx;
-}
 
-.phone-ok {
-  font-size: 30rpx;
-  font-family: var(--font-mono);
-  color: var(--color-text-body);
-}
 
-.phone-tip {
-  display: block;
-  font-size: 24rpx;
-  color: var(--color-text-muted);
-  line-height: 1.55;
-}
 
 /* 底栏 CTA：全宽居中，2/4·3/4·4/4 一致 */
 .ob-footer {
@@ -561,19 +477,6 @@ page {
   opacity: 0.55;
 }
 
-.ob-footer .ob-cta-ghost {
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 26rpx;
-  height: 72rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 /* 兴趣选中态与性别一致：黄铜描边 + 浅金底 */
 .page-onboard .account-chip.active {
@@ -583,90 +486,15 @@ page {
 }
 
 /* 完成奖励：Museum 礼包分区卡 */
-.reward-pack {
-  margin-top: var(--space-3);
-  padding: var(--space-4) var(--space-3);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--brass-800);
-  border-radius: var(--radius-md);
-}
 
-.reward-pack-head {
-  margin-bottom: var(--space-3);
-  text-align: center;
-}
 
-.reward-pack-overline {
-  display: block;
-  font-size: 18rpx;
-  color: var(--brass-600);
-  letter-spacing: 0.14em;
-  margin-bottom: 8rpx;
-}
 
-.reward-pack-title {
-  display: block;
-  font-size: 26rpx;
-  font-family: var(--font-brand);
-  color: var(--color-text-primary);
-}
 
-.reward-pack-grid {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-}
 
-.reward-pack-cell {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2) 4rpx;
-  min-width: 0;
-}
 
-.reward-pack-divider {
-  width: 1px;
-  align-self: stretch;
-  margin: 8rpx 0;
-  background: var(--brass-800);
-  opacity: 0.85;
-  flex-shrink: 0;
-}
 
-.reward-pack-value {
-  display: block;
-  font-size: 28rpx;
-  font-family: var(--font-mono);
-  font-weight: 600;
-  color: var(--brass-400);
-  line-height: 1.3;
-  margin-bottom: 6rpx;
-  text-align: center;
-  word-break: break-all;
-}
 
-.reward-pack-unit {
-  display: block;
-  font-size: 20rpx;
-  color: var(--color-text-muted);
-  letter-spacing: 0.04em;
-  text-align: center;
-  line-height: 1.3;
-}
 
-.reward-pack-note {
-  display: block;
-  margin-top: 20rpx;
-  padding-top: 18rpx;
-  border-top: 1px solid rgba(196, 167, 108, 0.18);
-  font-size: 22rpx;
-  line-height: 1.55;
-  color: var(--color-text-secondary);
-  text-align: left;
-}
 
 /* 敏感形态展示选项 */
 .sensitive-option {

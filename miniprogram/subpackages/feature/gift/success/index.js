@@ -7,6 +7,7 @@ const { requestGiftSubscribe, giftSubscribeSkipHint } = require('../../utils/gif
 const { formatDuration, createGiftPlayer, ensureInnerAudioOption } = require('../giftVoice')
 const { renderGiftShareImage } = require('../giftShareCard')
 const textFx = require('../giftTextEffect')
+const { loadReceiverVerify, saveReceiverPhone, flushPendingReceiverPhone, sheetCopy } = require('../receiverVerify')
 
 Page({
   data: {
@@ -36,6 +37,12 @@ Page({
     shareCta: '把这份心意交给 TA',
     canShare: true,
     canNudge: false,
+    voucherReady: false,
+    verify: null,
+    verifySheet: false,
+    verifyBusy: false,
+    verifyError: '',
+    verifyCopy: {},
     shareTitle: '请拆开这封山海礼笺',
     sharePath: '',
     shareImageUrl: '',
@@ -288,6 +295,8 @@ Page({
         shareCta,
         canShare,
         canNudge: awaiting && !gift.expired,
+        // TA 签收 / 到店领取后：送礼人的赠予凭证（持有证书归受礼人）
+        voucherReady: gift.status === 'received',
         shareTitle: result.shareTitle || '请拆开这封山海礼笺',
         sharePath: result.sharePath || `/subpackages/feature/gift/receive/index?orderId=${this._orderId}&token=${gift.shareToken || ''}`,
         showPickupClaim,
@@ -309,6 +318,8 @@ Page({
           specimenFileID
         })
       })
+
+      this._syncVerify(product0 && product0.productId)
 
       // 礼笺逐字显示（产品负责人：文字跳出时给打字机音效）。
       // 在 setData 之后启动，避免「先整段闪一下再从头打」。
@@ -357,6 +368,40 @@ Page({
     }
     if (this.data.shareImageUrl) payload.imageUrl = this.data.shareImageUrl
     return payload
+  },
+
+  async _syncVerify(productId) {
+    await flushPendingReceiverPhone(this._orderId, productId)
+    const verify = await loadReceiverVerify(this._orderId)
+    if (verify.success) this.setData({ verify, verifyCopy: sheetCopy(verify) })
+  },
+
+  openVerifySheet() {
+    if (!this.data.verify || !this.data.verify.editable) return
+    this.setData({ verifySheet: true, verifyError: '' })
+  },
+
+  closeVerifySheet() {
+    this.setData({ verifySheet: false })
+  },
+
+  async _saveVerify(payload) {
+    this.setData({ verifyBusy: true, verifyError: '' })
+    const res = await saveReceiverPhone(this._orderId, payload)
+    if (!res.success) {
+      this.setData({ verifyBusy: false, verifyError: res.msg || '此刻未能保存，请稍后再试' })
+      return
+    }
+    const verify = await loadReceiverVerify(this._orderId)
+    this.setData({ verifyBusy: false, verifySheet: false, verify, verifyCopy: sheetCopy(verify) })
+  },
+
+  onVerifyPhone(e) { this._saveVerify({ phone: e.detail.phone }) },
+  onVerifyUseAddress() { this._saveVerify({ useAddressPhone: true }) },
+  onVerifyClear() { this._saveVerify({ phone: '' }) },
+
+  goVoucher() {
+    wx.navigateTo({ url: `/subpackages/business/certificate/index?id=${this._orderId}` })
   },
 
   goOrder() {

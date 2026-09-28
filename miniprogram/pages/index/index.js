@@ -19,6 +19,7 @@ const { resolveBannerNav, openBannerItem } = require('../../utils/bannerNav');
 const { isSinglePageMode, blockIfSinglePage } = require('../../utils/singlePageMode');
 const { isSensitiveBlurProduct } = require('../../utils/sensitiveBlur');
 const { navigateToProductDetail } = require('../../utils/productDetailNav');
+const { todayKey, isActivityExpired } = require('../../utils/activityExpiry');
 const FRAMER_RECRUIT_PATH = '/subpackages/business/framer-recruit/index';
 /** 库为空时的视觉占位（无跳转），不写死业务 banner */
 const EMPTY_BANNER_FALLBACK = {
@@ -46,8 +47,8 @@ function buildLiveBannerSlide(session) {
     subtitle: sub,
     badge: '直播中',
     link: (s._id
-      ? `/subpackages/feature/live/watch/index?sessionId=${encodeURIComponent(s._id)}`
-      : '/subpackages/feature/live/watch/index'),
+      ? `/subpackages/content/live/watch/index?sessionId=${encodeURIComponent(s._id)}`
+      : '/subpackages/content/live/watch/index'),
     sort: 999999
   };
 }
@@ -393,7 +394,7 @@ Page({
       return;
     }
     wx.navigateTo({
-      url: '/subpackages/feature/live/watch/index',
+      url: '/subpackages/content/live/watch/index',
       fail: () => wx.showToast({ title: '直播页暂不可用', icon: 'none' })
     });
   },
@@ -1205,7 +1206,8 @@ Page({
     try {
       const limit = config.limit || 5;
       const status = config.status || 'open';
-      const res = await db.collection('activities').where({ status }).limit(limit).get();
+      const res = await db.collection('activities').where({ status, date: _.gte(todayKey()) }).orderBy('date', 'asc').limit(limit).get();
+      res.data = (res.data || []).filter((a) => !isActivityExpired(a));
       const formatData = (list) => list.map(item => {
            const dateStr = item.date ? String(item.date) : '';
            const d = dateStr ? new Date(dateStr) : null;
@@ -1455,7 +1457,7 @@ Page({
     }
     wx.vibrateShort({ type: 'light' });
     wx.navigateTo({ 
-      url: `/subpackages/feature/collection-detail/index?id=${id}`,
+      url: `/subpackages/content/collection-detail/index?id=${id}`,
       fail: (err) => {
         console.error('跳转失败', err);
         // 降级：尝试跳转到wiki-detail

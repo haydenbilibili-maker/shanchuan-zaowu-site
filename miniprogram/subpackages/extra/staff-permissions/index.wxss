@@ -424,12 +424,64 @@ page {
   color: var(--color-text-muted);
 }
 
+.page-tip {
+  margin: 0 0 16rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+.page-tip.is-info {
+  background: rgba(196, 167, 108, 0.14);
+  border: 1rpx solid rgba(196, 167, 108, 0.36);
+  color: #e8dcc0;
+}
+.page-tip.is-warn {
+  background: rgba(196, 92, 74, 0.16);
+  border: 1rpx solid rgba(196, 92, 74, 0.5);
+  color: #f0c9c0;
+}
+
+.loading-hint {
+  padding: var(--space-6) var(--space-2);
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-muted);
+}
+
 .empty {
   padding: var(--space-6) var(--space-2);
   text-align: center;
   font-size: 24rpx;
   line-height: 1.6;
   color: var(--color-text-muted);
+}
+.empty.is-error {
+  border: 1rpx solid rgba(196, 92, 74, 0.4);
+  background: rgba(196, 92, 74, 0.08);
+  border-radius: 16rpx;
+  padding: 32rpx 24rpx;
+}
+.empty-title {
+  display: block;
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+  margin-bottom: 8rpx;
+}
+.empty-desc {
+  display: block;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+.btn-retry {
+  display: inline-block;
+  margin-top: 24rpx;
+  padding: 12rpx 28rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: #e8dcc0;
 }
 
 .mask {

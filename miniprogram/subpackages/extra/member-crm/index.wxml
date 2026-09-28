@@ -8,6 +8,8 @@
     <text class="header-note">查会员 · RFM 分群 · 订单/积分摘要 · 仅超管</text>
   </view>
 
+  <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
   <!-- 数据概览：对齐藏品库多 Tab + 条形图风格 -->
   <view class="overview-panel">
     <view class="overview-head">
@@ -157,7 +159,13 @@
     </view>
   </scroll-view>
 
-  <view class="loading-hint" wx:if="{{loading}}">加载会员画像中…</view>
+  <view class="loading-hint" wx:if="{{loading && !listError}}">加载会员画像中…</view>
+
+  <view class="section empty-find is-error" wx:if="{{listError && !list.length}}">
+    <text class="empty-title">会员列表未能取回</text>
+    <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
+    <view class="btn-outline" bindtap="loadList" style="margin-top:24rpx;">重试</view>
+  </view>
 
   <view class="section" wx:if="{{!loading && list.length}}">
     <view class="section-head">
@@ -262,7 +270,7 @@
     </view>
   </view>
 
-  <view class="section empty-find" wx:if="{{!loading && !list.length}}">
+  <view class="section empty-find" wx:if="{{!loading && !listError && !list.length}}">
     <text class="empty-title">暂无匹配会员</text>
     <text class="empty-desc">试试清空筛选，或换关键词（昵称 / openid / 手机号）</text>
   </view>
@@ -415,7 +423,7 @@
       <view class="drawer-footer" wx:if="{{!detailLoading && detail}}">
         <view class="cancel-state-bar" wx:if="{{detail.status === 'cancelled'}}">
           <text class="cancel-state-txt">该会员已注销{{detail.cancelMode === 'anonymize' ? '（已匿名化）' : '（可恢复）'}}</text>
-          <view class="btn-outline danger-outline" wx:if="{{detail.cancelMode !== 'anonymize'}}" bindtap="restoreMember">恢复会员</view>
+          <view class="btn-outline danger-outline" wx:if="{{detail.cancelMode !== 'anonymize'}}" bindtap="restoreMember">{{restorePending ? '确认恢复' : '恢复会员'}}</view>
         </view>
         <view class="drawer-cta-row" wx:else>
           <view class="btn-primary drawer-cta" bindtap="openAdjust">调整积分</view>
@@ -458,6 +466,7 @@
         >{{youxinAiLoading ? '撰写中…' : '重新 AI 撰写'}}</view>
         <text class="youxin-campaign-hint">{{youxinCampaignType === 'recall' ? '召回' : youxinCampaignType === 'conversion' ? '转化' : '通用'}}</text>
       </view>
+      <view class="page-tip is-{{formTipTone}}" wx:if="{{formTip}}" style="margin:0 0 16rpx;"><text>{{formTip}}</text></view>
       <view class="modal-actions">
         <view class="btn-outline" bindtap="closeYouxin">取消</view>
         <view class="btn-primary {{youxinSending ? 'disabled' : ''}}" catchtap="submitYouxinPush">
@@ -501,10 +510,11 @@
       <input class="modal-input" placeholder="在此输入：注销"
              value="{{cancelTextInput}}" bindinput="onCancelTextInput" />
 
+      <view class="page-tip is-{{formTipTone}}" wx:if="{{formTip}}" style="margin:0 0 16rpx;"><text>{{formTip}}</text></view>
       <view class="modal-actions">
         <view class="btn-outline" bindtap="closeCancelMember">取消</view>
         <view class="btn-primary btn-danger {{cancelSubmitting ? 'disabled' : ''}}" bindtap="submitCancelMember">
-          {{cancelSubmitting ? '处理中…' : '确认注销'}}
+          {{cancelSubmitting ? '处理中…' : (cancelPending ? '再点一次确认注销' : '确认注销')}}
         </view>
       </view>
     </view>
@@ -522,6 +532,7 @@
         value="{{adjustAmount}}"
         bindinput="onAdjustInput"
       />
+      <view class="page-tip is-{{formTipTone}}" wx:if="{{formTip}}" style="margin:0 0 16rpx;"><text>{{formTip}}</text></view>
       <view class="modal-actions">
         <view class="btn-outline" bindtap="closeAdjust">取消</view>
         <view class="btn-primary {{adjustSubmitting ? 'disabled' : ''}}" bindtap="submitAdjust">

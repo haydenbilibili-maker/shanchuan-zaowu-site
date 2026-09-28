@@ -663,3 +663,20 @@ page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.hint-banner {
+  margin: 0 0 16rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: rgba(196, 92, 74, 0.12);
+  border: 1rpx solid rgba(196, 92, 74, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+.btn-secondary.sm {
+  flex-shrink: 0;
+  padding: 8rpx 20rpx;
+  font-size: 22rpx;
+}

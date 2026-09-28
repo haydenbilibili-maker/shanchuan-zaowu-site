@@ -4,3 +4,4 @@
 npm run check:sfc-dev
 npm run check:nav-sources
 npm run report:data-sources:strict
+npm run test:finance-daily-parse

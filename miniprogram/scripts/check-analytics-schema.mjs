@@ -37,6 +37,7 @@ const MP_SESSION = join(ROOT, 'miniprogram/utils/analytics/session.js')
 const MP_APP_JS = join(ROOT, 'miniprogram/app.js')
 const MP_APP_JSON = join(ROOT, 'miniprogram/app.json')
 const CLOUD_TRACK = join(ROOT, 'miniprogram/cloudfunctions/trackUserBehavior/index.js')
+const CLOUD_DASHBOARD = join(ROOT, 'miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')
 const ERP_BEHAVIOR_PAGE = join(ROOT, 'admin/src/components/BehaviorAnalytics.vue')
 
 /** 纯函数：解析形如 `action: { module: MODULE.X, desc: '...' }` 的注册表 */
@@ -259,6 +260,95 @@ export function checkGateExpansion(src) {
   return problems
 }
 
+/**
+ * G 段：user_behaviors 写入字段 ↔ 报表读侧查询对齐。
+ *
+ * 真缺陷（2026-09-21 蓝图实测 / 2026-09-26 超管漏斗全 0）：
+ *   安全白名单落地后 writeBehavior 不写 timestamp/userId，
+ *   而 getAnalyticsDashboard.loadBehaviors / ERP BehaviorAnalytics 按 timestamp 查
+ *   → 明细恒空 → 行为漏斗全 0。analytics_daily 仍在涨，容易误判「真无行为」。
+ * 判据：写侧必须显式落 timestamp+userId；读侧必须按 dateKey（兼容历史无 timestamp 行）。
+ */
+export function checkBehaviorFieldAlignment({ trackSrc, dashboardSrc, erpPageSrc } = {}) {
+  const problems = []
+  const track = String(trackSrc || '')
+    .replace(/(^|[^:\\])\/\/[^\n]*/g, '$1')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+  const dash = String(dashboardSrc || '')
+    .replace(/(^|[^:\\])\/\/[^\n]*/g, '$1')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+  const erp = String(erpPageSrc || '')
+    .replace(/(^|[^:\\])\/\/[^\n]*/g, '$1')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+
+  if (!/doc\.timestamp\s*=/.test(track)) {
+    problems.push(
+      'G: trackUserBehavior.writeBehavior 未写 `doc.timestamp` → 读侧按时间查恒空、漏斗全 0'
+    )
+  }
+  if (!/doc\.userId\s*=/.test(track)) {
+    problems.push(
+      'G: trackUserBehavior.writeBehavior 未写 `doc.userId` → UV/去重恒空（只剩 _openid）'
+    )
+  }
+
+  const loadFn =
+    /async function loadBehaviorsWithMeta[\s\S]*?(?=\nasync function |\nfunction [a-zA-Z]|$)/.exec(dash) ||
+    /async function loadBehaviors[\s\S]*?(?=\nasync function |\nfunction [a-zA-Z]|$)/.exec(dash)
+  if (!loadFn) {
+    problems.push('G: 找不到 getAnalyticsDashboard.loadBehaviors（行为漏斗取数入口）')
+  } else {
+    const body = loadFn[0]
+    // 只看 .where({...}) 条件，避免把 field({ dateKey: true }) 当成「按 dateKey 查」
+    const whereBodies = [...body.matchAll(/\.where\(\s*\{([\s\S]*?)\}\s*\)/g)].map((m) => m[1])
+    const hasDateKeyWhere = whereBodies.some((w) => /\bdateKey\s*:/.test(w))
+    const hasTimestampWhere = whereBodies.some((w) => /\btimestamp\s*:/.test(w))
+    const hasDateKeyIn = /dateKey\s*:\s*_\.in\(/.test(body)
+    if (!hasDateKeyWhere) {
+      problems.push(
+        'G: loadBehaviors 未按 `dateKey` 查询 → 历史无 timestamp 的行读不到（漏斗恒 0）'
+      )
+    }
+    if (!hasDateKeyIn) {
+      problems.push(
+        'G: loadBehaviors 缺少 `dateKey _.in` 主路径（range 索引缺失时会整段失败 → 明细恒空）'
+      )
+    }
+    if (hasTimestampWhere && !hasDateKeyWhere) {
+      problems.push(
+        'G: loadBehaviors 仍以 `timestamp` 作为唯一 where 条件（2026-09-15 后写入无该字段 → 恒空）'
+      )
+    }
+  }
+  if (!/funnel-daily-v2/.test(dash) && !/analytics_daily\+behaviors/.test(dash)) {
+    problems.push(
+      'G: buildFunnel 未接入 analytics_daily 动作级兜底（仅靠明细采样时鉴定漏斗易被 page_view 淹没成全 0）'
+    )
+  }
+
+  if (erp) {
+    // ERP 明细拉取：必须出现 dateKey 条件；禁止「只有 timestamp 范围」的旧写法
+    const hasDateKeyFetch =
+      /user_behaviors[\s\S]{0,220}dateKey\s*:/.test(erp) ||
+      /dateKey\s*:\s*_\.gte\(start\)[\s\S]{0,120}user_behaviors/.test(erp)
+    const hasTimestampOnly =
+      /user_behaviors[\s\S]{0,220}timestamp\s*:\s*_\.gte/.test(erp) &&
+      !/user_behaviors[\s\S]{0,220}dateKey\s*:/.test(erp)
+    if (!hasDateKeyFetch) {
+      problems.push(
+        'G: BehaviorAnalytics 拉 user_behaviors 未按 `dateKey` → 门禁/物料监测明细恒空'
+      )
+    }
+    if (hasTimestampOnly) {
+      problems.push(
+        'G: BehaviorAnalytics 仍按 `timestamp` 拉 user_behaviors（与写侧错配 → 明细恒空）'
+      )
+    }
+  }
+
+  return problems
+}
+
 /** 加载真实 qrMaterial.js（纯函数模块，无依赖） */function loadQrMaterial() {
   const src = readFileSync(MP_QR_MATERIAL, 'utf8')
   const mod = { exports: {} }
@@ -356,9 +446,64 @@ function selftest() {
     console.log(`${ok ? '✓' : '✗'} ${name}（期望${want === 0 ? '通过' : '报错'}，实际 ${got} 处）`)
   }
 
+  // ── G 段：写字段 ↔ 读查询对齐（合成输入）──
+  const goodAlign = {
+    trackSrc: 'async function writeBehavior(event) {\n  doc.timestamp = ts\n  doc.userId = openid\n}\n',
+    dashboardSrc:
+      "const BEHAVIOR_QUERY_BUILD = 'funnel-daily-v2'\n"
+      + "const funnelSource = 'analytics_daily+behaviors'\n"
+      + 'async function loadBehaviorsWithMeta(startTs, endTs, limit) {\n'
+      + '  const res = await db.collection("user_behaviors").where({ dateKey: _.in(chunk) }).get()\n'
+      + "  meta.queryMode = 'dateKey_in'\n"
+      + '}\n'
+      + 'async function overview() { buildFunnel(rows, daily) }\n',
+    erpPageSrc:
+      "behaviorRows = await fetchCollectionWhere(\n  'user_behaviors',\n  { dateKey: _.gte(start).and(_.lte(end)) },\n  1000\n)",
+  }
+  const alignCases = [
+    ['G 段：读写对齐时不报错', goodAlign, 0],
+    [
+      'G 段：写侧缺 timestamp 必须报错',
+      { ...goodAlign, trackSrc: 'async function writeBehavior() { doc.userId = x }\n' },
+      1,
+    ],
+    [
+      'G 段：写侧缺 userId 必须报错',
+      { ...goodAlign, trackSrc: 'async function writeBehavior() { doc.timestamp = 1 }\n' },
+      1,
+    ],
+    [
+      'G 段：loadBehaviors 只按 timestamp 必须报错',
+      {
+        ...goodAlign,
+        dashboardSrc:
+          'async function loadBehaviorsWithMeta(startTs, endTs, limit) {\n'
+          + '  await db.collection("user_behaviors").where({ timestamp: _.gte(a).and(_.lte(b)) }).get()\n'
+          + '}\n'
+          + 'async function overview() {}\n',
+      },
+      1,
+    ],
+    [
+      'G 段：ERP 仍按 timestamp 拉明细必须报错',
+      {
+        ...goodAlign,
+        erpPageSrc:
+          "behaviorRows = await fetchCollectionWhere(\n  'user_behaviors',\n  { timestamp: _.gte(ms).and(_.lte(me)) },\n  1000\n)",
+      },
+      1,
+    ],
+  ]
+  for (const [name, input, want] of alignCases) {
+    const got = checkBehaviorFieldAlignment(input).length
+    const ok = want === 0 ? got === 0 : got > 0
+    if (!ok) failed++
+    console.log(`${ok ? '✓' : '✗'} ${name}（期望${want === 0 ? '通过' : '报错'}，实际 ${got} 处）`)
+  }
+
   // ── 真实注入：证明 E 段判据在真实文件上也真的会红（写完立即还原）──
   // ⚠️ 会写源码 → 必须在**隔离 worktree** 里跑 `--selftest`。
-  const inject = (file, from, to, why) => {
+  const inject = (file, from, to, why, { all = false } = {}) => {
     const backup = readFileSync(file, 'utf8')
     if (backup.indexOf(from) < 0) {
       console.error(`✗ selftest 注入点找不到（源码已变，注入失效）：${why}`)
@@ -367,7 +512,7 @@ function selftest() {
     let ran = false
     let caught = false
     try {
-      writeFileSync(file, backup.replace(from, to))
+      writeFileSync(file, all ? backup.split(from).join(to) : backup.replace(from, to))
       ran = true
       caught = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' }).status !== 0
     } finally {
@@ -384,12 +529,25 @@ function selftest() {
   inject(MP_APP_JS, 'this.maybeTrackQrMaterial(options);', '', '拆掉 onShow 里的物料码打点接线')
   inject(ERP_BEHAVIOR_PAGE, '`${ev.action}:${step}`', '`${GATE_ACTION}:${step}`',
     '把门禁漏斗合成 action 改回未定义的 GATE_ACTION（该类漏斗恒 0）')
+  inject(
+    CLOUD_TRACK,
+    '  doc.timestamp = ts\n',
+    '',
+    '拆掉 writeBehavior 的 timestamp 写入（读侧按时间查恒空 → 漏斗全 0）'
+  )
+  inject(
+    CLOUD_DASHBOARD,
+    'dateKey: _.in(chunk)',
+    'timestamp: _.in(chunk)',
+    '把 loadBehaviors 主路径改回不按 dateKey（明细恒空 → 漏斗全 0）',
+    { all: true }
+  )
 
   if (failed) {
     console.error(`\n自检失败 ${failed} 项——守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：守卫能抓到「ERP 缺事件 / 未登记触发点 / 缺前缀 / 模块不同构」')
+  console.log('\n自检通过：守卫能抓到「ERP 缺事件 / 未登记触发点 / 缺前缀 / 模块不同构 / 读写字段错配」')
 }
 /** 物料码契约（E 段）—— 单独一段，便于 selftest 注入时精确定位 */
 function checkMaterials() {
@@ -420,6 +578,18 @@ function checkMaterials() {
     problems.push(...checkGateExpansion(readFileSync(ERP_BEHAVIOR_PAGE, 'utf8')))
   } else {
     problems.push('F: 找不到 admin/src/components/BehaviorAnalytics.vue（行为看板/物料码监测所在页）')
+  }
+  // G 段：写入字段 ↔ 报表读查询（漏斗全 0 的根因棘轮）
+  if (!existsSync(CLOUD_DASHBOARD)) {
+    problems.push('G: 找不到 getAnalyticsDashboard/index.js')
+  } else {
+    problems.push(
+      ...checkBehaviorFieldAlignment({
+        trackSrc: readFileSync(CLOUD_TRACK, 'utf8'),
+        dashboardSrc: readFileSync(CLOUD_DASHBOARD, 'utf8'),
+        erpPageSrc: existsSync(ERP_BEHAVIOR_PAGE) ? readFileSync(ERP_BEHAVIOR_PAGE, 'utf8') : '',
+      })
+    )
   }
   return { problems, materials: mpMaterials || [] }
 }

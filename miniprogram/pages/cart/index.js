@@ -820,26 +820,6 @@ Page(withAppModal({
     });
   },
 
-  async removeBoughtItemsFromCloud(collectionIds) {
-    if (!collectionIds || !collectionIds.length) return;
-    try {
-      await Promise.all(
-        collectionIds.map(id => wx.cloud.callFunction({
-          name: 'toggleCollection',
-          data: { engage: 'cartItem', action: 'removeCart', id }
-        }).catch(() => null))
-      );
-    } catch (e) {
-      console.warn('清理购物车失败', e);
-    }
-  },
-
-  removeBoughtItems() {
-    const leftItems = this.data.cartList.filter(item => !item.selected);
-    this.setData({ cartList: leftItems });
-    this.calculateTotal();
-    this.updateTabBarBadge(leftItems.length);
-  },
   goToDetail(e) {
     const id = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id;
     if (!id) {

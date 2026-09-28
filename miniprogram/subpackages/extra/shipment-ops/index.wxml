@@ -1,22 +1,410 @@
+<!-- 出货中心（2026-09-28 合并）。单价只来自云函数，取不到显示「待核价」 -->
 <view class="ops-boot" wx:if="{{!ready}}">柜门缓缓开启…</view>
 
-<view class="ops-page" wx:if="{{ready}}">
+<view class="ops-page sc-page {{activeTab === 'create' ? 'has-dock' : ''}}" wx:if="{{ready}}">
   <view class="ops-container">
     <view class="ops-header compact">
-      <text class="ops-eyebrow">SHIPMENT · OPS</text>
+      <text class="ops-eyebrow">SHIPMENT · CENTER</text>
       <view class="ops-title-row">
-        <text class="ops-title">出货单</text>
-        <text class="ops-meta-chip" wx:if="{{dashLoading || loading}}">刷新中</text>
+        <text class="ops-title">出货中心</text>
+        <text class="sc-role-chip">{{isSuper ? '超管' : '店长 · 本店'}}</text>
+        <text class="ops-meta-chip" wx:if="{{dashLoading || loading || libLoading}}">刷新中</text>
       </view>
-      <text class="ops-note">观测台看盘 · 单据录入。云库 ops_shipments 为唯一账本。{{isSuper ? '' : '当前为店长视角，仅本店。'}}</text>
+      <text class="ops-note">开单、单据、物流流转与原材料 / 包装资料一处完成。账本 ops_shipments；结算状态只读，改结算走「工作室账单」。</text>
     </view>
 
-    <view class="ops-tabs">
-      <view class="ops-tab {{activeTab === 'overview' ? 'on' : ''}}" data-tab="overview" bindtap="switchTab">总览</view>
-      <view class="ops-tab {{activeTab === 'list' ? 'on' : ''}}" data-tab="list" bindtap="switchTab">单据</view>
+    <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
+    <view class="sc-tabs">
+      <view
+        class="sc-tab {{activeTab === item.key ? 'on' : ''}}"
+        wx:for="{{tabs}}"
+        wx:key="key"
+        data-tab="{{item.key}}"
+        bindtap="switchTab"
+      >{{item.label}}</view>
     </view>
 
-    <!-- ========== 总览 ========== -->
+    <!-- 开单 -->
+    <block wx:if="{{activeTab === 'create'}}">
+      <view class="sc-modes">
+        <view class="sc-mode {{createMode === 'sku' ? 'on' : ''}}" wx:if="{{isSuper}}" data-mode="sku" bindtap="switchCreateMode">
+          <text class="sc-mode-title">选 SKU</text>
+          <text class="sc-mode-sub">目录组合 · 自动算价</text>
+        </view>
+        <view class="sc-mode {{createMode === 'paste' ? 'on' : ''}}" data-mode="paste" bindtap="switchCreateMode">
+          <text class="sc-mode-title">粘贴识别</text>
+          <text class="sc-mode-sub">整段文本 · 多店</text>
+        </view>
+        <view class="sc-mode {{createMode === 'single' ? 'on' : ''}}" data-mode="single" bindtap="switchCreateMode">
+          <text class="sc-mode-title">单条补录</text>
+          <text class="sc-mode-sub">一门店 · 一行明细</text>
+        </view>
+      </view>
+
+      <view class="ops-tip is-{{createTipTone}}" wx:if="{{createTip}}"><text>{{createTip}}</text></view>
+
+      <!-- 客户 + 出货日：SKU 与单条共用 -->
+      <view class="ss-card" wx:if="{{createMode === 'sku' || createMode === 'single'}}">
+        <text class="ss-card-en">ORDER</text>
+        <view class="ss-row">
+          <text class="ss-label">客户 / 门店</text>
+          <picker class="ss-pick" mode="selector" range="{{storeNames}}" value="{{draft.storeIndex}}" bindchange="onDraftStore" disabled="{{!storeNames.length}}">
+            <view class="ss-pick-inner">
+              <text class="ss-pick-val {{storeNames[draft.storeIndex] ? '' : 'is-empty'}}">{{storeNames[draft.storeIndex] || (storeNames.length ? '请选择' : '暂无可选门店')}}</text>
+              <text class="ss-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+        <view class="ss-row">
+          <text class="ss-label">出货日</text>
+          <picker class="ss-pick" mode="date" value="{{draft.shipmentDate}}" bindchange="onDraftDate">
+            <view class="ss-pick-inner">
+              <text class="ss-pick-val">{{draft.shipmentDate || '请选择日期'}}</text>
+              <text class="ss-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+        <view class="ss-row is-last">
+          <text class="ss-label">备注</text>
+          <input class="ss-input" value="{{draft.note}}" placeholder="可留空" placeholder-class="ss-ph" bindinput="onDraftNote" />
+        </view>
+      </view>
+
+      <!-- 选 SKU（仅超管） -->
+      <block wx:if="{{createMode === 'sku'}}">
+        <view class="ss-add-row">
+          <view class="ss-add-btn is-primary {{pricingEnabled ? '' : 'is-disabled'}}" hover-class="ss-press" bindtap="openSkuPicker">
+            <text class="ss-add-title">选已有 SKU</text>
+            <text class="ss-add-sub">常用 · 直接开单</text>
+          </view>
+          <view class="ss-add-btn is-secondary {{pricingEnabled ? '' : 'is-disabled'}}" hover-class="ss-press" bindtap="openSkuForm">
+            <text class="ss-add-title">新建 SKU</text>
+            <text class="ss-add-sub">原材料 × 包装方式</text>
+          </view>
+        </view>
+
+        <view class="ss-lines">
+          <view class="ss-line {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}" wx:for="{{lines}}" wx:key="skuId">
+            <view class="ss-line-head">
+              <view class="ss-line-title">
+                <text class="ss-line-name">{{item.skuName}}</text>
+                <text class="ss-line-tag" wx:if="{{item.hasScene}}">造景</text>
+              </view>
+              <view class="ss-del" data-index="{{index}}" catchtap="onRemoveLine"><text>删除</text></view>
+            </view>
+            <view class="ss-line-calc">
+              <text class="ss-unit">{{item.unitPriceText}}/件</text>
+              <view class="ss-qty">
+                <view class="ss-qty-btn" data-index="{{index}}" data-delta="-1" bindtap="onQtyStep"><text>−</text></view>
+                <input class="ss-qty-input" type="number" value="{{item.qty}}" data-index="{{index}}" bindinput="onQtyInput" />
+                <view class="ss-qty-btn" data-index="{{index}}" data-delta="1" bindtap="onQtyStep"><text>＋</text></view>
+              </view>
+              <text class="ss-line-total {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{item.lineTotalText || '—'}}</text>
+            </view>
+            <view class="ss-rate-row">
+              <switch class="ss-switch" checked="{{item.useLineRate}}" color="#C4A76C" data-index="{{index}}" bindchange="onToggleLineRate" />
+              <text class="ss-rate-hint" wx:if="{{!item.useLineRate}}">手工费{{item.rateSource === 'sku' ? '（SKU 默认 ' + item.effectiveRatePct + '%）' : '（全局 ' + globalRatePct + '%）'}}</text>
+              <block wx:else>
+                <input class="ss-rate-input" type="digit" value="{{item.laborRatePct}}" data-index="{{index}}" bindinput="onLineRateInput" />
+                <text class="ss-rate-hint">%（本行单独设）</text>
+              </block>
+            </view>
+            <view class="ss-rate-row" wx:if="{{item.hasScene}}">
+              <text class="ss-rate-hint">造景成本</text>
+              <input class="ss-rate-input" type="digit" value="{{item.sceneCost}}" data-index="{{index}}" bindinput="onLineSceneCost" />
+              <text class="ss-rate-hint">元 / 件</text>
+            </view>
+            <view class="ss-note" wx:if="{{item.pricingStatus !== 'priced'}}">
+              <text>{{item.pricingNote || '这一行取不到价，未计入合计'}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="ss-empty-box {{pricingEnabled ? '' : 'is-disabled'}}" wx:if="{{!lines.length && !createBusy}}" hover-class="ss-press" bindtap="openSkuPicker">
+          <view class="ss-empty-mark"><text>+</text></view>
+          <text class="ss-empty-title">还没有明细</text>
+          <text class="ss-empty-hint">点此选已有 SKU，或上方「新建 SKU」</text>
+        </view>
+      </block>
+
+      <!-- 粘贴识别：页内展开，不再套弹层 -->
+      <block wx:if="{{createMode === 'paste'}}">
+        <view class="ops-paste-card">
+          <text class="ops-paste-hint">首行日期+出货（如 2026.9.22出货 / 2026年9月22日出货）；门店名单独成行；明细「品名-20个」或「品名20个」；空行分隔门店。</text>
+          <textarea
+            class="ops-paste-area"
+            value="{{pasteText}}"
+            bindinput="onPasteInput"
+            placeholder="粘贴微信/飞书出货文本…"
+            placeholder-class="ops-ph"
+            maxlength="-1"
+            auto-height
+          />
+          <view class="sc-paste-tools" wx:if="{{pasteText}}">
+            <text class="sc-link" bindtap="clearPaste">清空重贴</text>
+          </view>
+        </view>
+
+        <block wx:if="{{failedLines.length}}">
+          <text class="ops-section-label">识别问题行 · 改后点「应用并重识别」</text>
+          <view class="ops-issue-block {{item.severity === 'warn' ? 'warn' : ''}}" wx:for="{{failedLines}}" wx:key="line" wx:for-index="issueIdx">
+            <view class="ops-issue-head">
+              <text class="ops-issue-label">L{{item.line}} · {{item.severity === 'warn' ? '警告' : '失败'}}</text>
+              <text class="ops-issue-apply" data-idx="{{issueIdx}}" bindtap="applyIssueLine">应用并重识别</text>
+            </view>
+            <input class="ops-issue-input" value="{{item.text}}" data-idx="{{issueIdx}}" bindinput="onIssueLineInput" />
+            <text class="ops-issue-msg">{{item.msg}}</text>
+          </view>
+        </block>
+
+        <view wx:if="{{parsePreview && parsePreview.canWrite}}" id="entryPreview">
+          <view class="ops-preview-bar">
+            <text class="ops-preview-label">出货日</text>
+            <picker mode="date" value="{{parsePreview.shipmentDate}}" bindchange="onPreviewDate">
+              <view class="ops-filter-chip brass">{{parsePreview.shipmentDate || '选日期'}}</view>
+            </picker>
+            <text class="ops-meta-inline" wx:if="{{parsePreview.summary}}">{{parsePreview.summary.storeCount}}店 · {{parsePreview.summary.totalQty}}件</text>
+          </view>
+          <block wx:for="{{parsePreview.shipments}}" wx:key="storeId" wx:for-item="block" wx:for-index="storeIdx">
+            <view class="ops-group">
+              <view class="ops-group-head" data-idx="{{storeIdx}}" bindtap="toggleStoreCollapse">
+                <text class="ops-group-title">{{block.storeName}} · {{block.totalQty}}件</text>
+                <view class="ops-group-side">
+                  <text class="ops-qty-badge">{{block.itemCount}}</text>
+                  <text class="ops-group-chevron">{{block.collapsed ? '▸' : '▾'}}</text>
+                </view>
+              </view>
+              <view class="ops-group-body" wx:if="{{!block.collapsed}}">
+                <view class="ops-line-row" wx:for="{{block.items}}" wx:key="itemName" wx:for-item="it" wx:for-index="itemIdx">
+                  <input class="ops-preview-input" value="{{it.itemName}}" data-store-idx="{{storeIdx}}" data-item-idx="{{itemIdx}}" bindinput="onPreviewItemName" />
+                  <input class="ops-preview-qty-input" type="number" value="{{it.qty}}" data-store-idx="{{storeIdx}}" data-item-idx="{{itemIdx}}" bindinput="onPreviewItemQty" />
+                </view>
+              </view>
+            </view>
+          </block>
+          <view class="sc-edit-link" bindtap="openEditPage">
+            <text class="sc-edit-link-main">逐行核对并算价 ›</text>
+            <text class="sc-edit-link-sub">要逐行选原材料 / 包装方式、按价目表核价时用</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 单条补录 -->
+      <block wx:if="{{createMode === 'single'}}">
+        <view class="ss-card">
+          <text class="ss-card-en">ITEM</text>
+          <view class="ops-field-block">
+            <text class="ops-field-k">从成品库存 / 藏品带入（可选）</text>
+            <view class="ops-sku-search">
+              <input class="ops-field-box sku-kw" value="{{itemKeyword}}" bindinput="onItemKeyword" bindconfirm="searchItem" placeholder="搜成品库存或藏品名…" placeholder-class="ops-ph" confirm-type="search" />
+              <view class="ops-sku-btn {{itemSearching ? 'disabled' : ''}}" bindtap="searchItem">{{itemSearching ? '…' : '搜'}}</view>
+            </view>
+            <view class="ops-sku-hits" wx:if="{{itemHits.length}}">
+              <view class="ops-sku-hit" wx:for="{{itemHits}}" wx:key="key" data-idx="{{index}}" bindtap="selectItemHit">
+                <view class="ops-sku-hit-main">
+                  <text class="ops-sku-hit-name">{{item.itemName}}</text>
+                  <text class="ops-sku-hit-meta" wx:if="{{item.spec}}">{{item.spec}}</text>
+                </view>
+                <view class="ops-sku-hit-side">
+                  <text class="ops-sku-hit-src">{{item.sourceLabel}}</text>
+                  <text class="ops-sku-hit-price" wx:if="{{item.unitPrice}}">¥{{item.unitPrice}}</text>
+                </view>
+              </view>
+            </view>
+            <text class="ops-field-hint" wx:if="{{single.linkedLabel}}">已关联 · {{single.linkedLabel}}</text>
+          </view>
+
+          <view class="ops-field-line">
+            <text class="ops-field-k">品名</text>
+            <input class="ops-field-box ops-field-v" value="{{single.itemName}}" data-field="itemName" bindinput="onSingleInput" placeholder="必填" placeholder-class="ops-ph" />
+          </view>
+          <view class="ops-field-line twin">
+            <view class="ops-field-half">
+              <text class="ops-field-k">数量</text>
+              <input class="ops-field-box" type="digit" value="{{single.qty}}" data-field="qty" bindinput="onSingleInput" placeholder="1" placeholder-class="ops-ph" />
+            </view>
+            <view class="ops-field-half">
+              <text class="ops-field-k">出货单价（元）</text>
+              <input class="ops-field-box" type="digit" value="{{single.unitPrice}}" data-field="unitPrice" bindinput="onSingleInput" placeholder="可留空" placeholder-class="ops-ph" />
+            </view>
+          </view>
+          <text class="ops-field-hint" wx:if="{{formAmountPreview}}">合计约 ¥{{formAmountPreview}}</text>
+
+          <view class="ops-field-line">
+            <text class="ops-field-k">原材料</text>
+            <view class="ss-pick-inner ss-pick-click" data-kind="material" data-target="single" bindtap="openPicker">
+              <text class="{{single.materialName ? 'sc-pick-on' : 'sc-pick-off'}}">{{single.materialName ? single.materialName + (single.materialGrade ? '（' + single.materialGrade + '）' : '') : '可选 · 从资料选择'}}</text>
+              <text class="ss-arrow">▾</text>
+            </view>
+            <text class="sc-clear" wx:if="{{single.materialName}}" bindtap="clearSingleMaterial">清除</text>
+          </view>
+          <view class="ops-field-line">
+            <text class="ops-field-k">包装方式</text>
+            <view class="ss-pick-inner ss-pick-click" data-kind="packaging" data-target="single" bindtap="openPicker">
+              <text class="{{single.packagingName ? 'sc-pick-on' : 'sc-pick-off'}}">{{single.packagingName ? single.packagingName + (single.packagingSize ? ' ' + single.packagingSize : '') : '可选 · 从资料选择'}}</text>
+              <text class="ss-arrow">▾</text>
+            </view>
+            <text class="sc-clear" wx:if="{{single.packagingName}}" bindtap="clearSinglePackaging">清除</text>
+          </view>
+          <text class="ops-field-hint" wx:if="{{single.materialName || single.packagingName}}">已选原材料 / 包装：算价开启时服务端按价目表核价；未命中则保留手填单价。</text>
+
+          <view class="sc-more-toggle" bindtap="toggleSingleMore">
+            <text>{{singleMoreOpen ? '收起更多字段' : '更多字段（规格 / 分类 / 购买人 / 状态 / 物流）'}}</text>
+            <text class="ss-arrow">{{singleMoreOpen ? '▴' : '▾'}}</text>
+          </view>
+          <block wx:if="{{singleMoreOpen}}">
+            <view class="ops-field-line">
+              <text class="ops-field-k">规格型号</text>
+              <input class="ops-field-box ops-field-v" value="{{single.spec}}" data-field="spec" bindinput="onSingleInput" placeholder="可选" placeholder-class="ops-ph" />
+            </view>
+            <view class="ops-field-line">
+              <text class="ops-field-k">分类</text>
+              <picker class="ops-field-v" mode="selector" range="{{formCategoryNames}}" value="{{formCategoryIndex}}" bindchange="onSingleCategory">
+                <view class="ops-field-box">{{formCategoryNames[formCategoryIndex] || '可选'}}</view>
+              </picker>
+            </view>
+            <view class="ops-field-line">
+              <text class="ops-field-k">购买人</text>
+              <input class="ops-field-box ops-field-v" value="{{single.buyerName}}" data-field="buyerName" bindinput="onSingleInput" placeholder="实际购买人" placeholder-class="ops-ph" />
+            </view>
+            <view class="ops-field-line">
+              <text class="ops-field-k">客户名称</text>
+              <input class="ops-field-box ops-field-v" value="{{single.customerName}}" data-field="customerName" bindinput="onSingleInput" placeholder="默认门店名" placeholder-class="ops-ph" />
+            </view>
+            <view class="ops-field-line">
+              <text class="ops-field-k">状态</text>
+              <picker class="ops-field-v" mode="selector" range="{{formStatusNames}}" value="{{formStatusIndex}}" bindchange="onSingleStatus">
+                <view class="ops-field-box">{{formStatusNames[formStatusIndex] || '已确认'}}</view>
+              </picker>
+            </view>
+            <view class="ops-field-line twin">
+              <view class="ops-field-half">
+                <text class="ops-field-k">快递公司</text>
+                <input class="ops-field-box" value="{{single.expressCompany}}" data-field="expressCompany" bindinput="onSingleInput" placeholder="可选" placeholder-class="ops-ph" />
+              </view>
+              <view class="ops-field-half">
+                <text class="ops-field-k">运单号</text>
+                <input class="ops-field-box" value="{{single.trackingNo}}" data-field="trackingNo" bindinput="onSingleInput" placeholder="可选" placeholder-class="ops-ph" />
+              </view>
+            </view>
+          </block>
+        </view>
+      </block>
+    </block>
+
+    <!-- 单据 -->
+    <block wx:if="{{activeTab === 'list'}}">
+      <view class="ops-list-tip is-{{listTipTone}} sc-list-tip" wx:if="{{listTip}}">
+        <text class="sc-list-tip-text">{{listTip}}</text>
+        <text class="sc-again" wx:if="{{showAgain && listTipTone !== 'warn'}}" bindtap="onCreateAgain">再开一单 ›</text>
+      </view>
+
+      <view class="ops-summary" wx:if="{{!loading || list.length}}">
+        <view class="ops-summary-top">
+          <text class="ops-summary-label">本筛选件数</text>
+          <text class="ops-summary-value">{{summary.totalQty}}</text>
+        </view>
+        <text class="ops-summary-meta">{{summary.count}} 单 · {{summary.itemCount}} 行明细</text>
+        <view class="ops-chips" wx:if="{{summary.byStore.length}}">
+          <text class="ops-chip" wx:for="{{summary.byStore}}" wx:key="storeId">{{item.storeName}} {{item.totalQty}}件</text>
+        </view>
+      </view>
+
+      <view class="ops-search-row">
+        <input class="ops-search-input" value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜单号 / 品名 / 门店 / 客户" placeholder-class="ops-ph" confirm-type="search" />
+        <view class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
+      </view>
+
+      <view class="ops-quick-row">
+        <view class="ops-quick {{statusQuick === '' ? 'on' : ''}}" data-status="all" bindtap="onStatusQuick">全部</view>
+        <view class="ops-quick {{statusQuick === 'pending' ? 'on' : ''}}" data-status="pending" bindtap="onStatusQuick">待发货</view>
+        <view class="ops-quick {{statusQuick === 'shipped' ? 'on' : ''}}" data-status="shipped" bindtap="onStatusQuick">已发货</view>
+        <view class="ops-quick {{statusQuick === 'completed' ? 'on' : ''}}" data-status="completed" bindtap="onStatusQuick">已完成</view>
+        <view class="ops-quick sc-filter-toggle {{filterOpen || storeFilterIndex || sourceFilterIndex || dateFrom || dateTo ? 'is-active' : ''}}" bindtap="toggleFilter">筛选{{filterOpen ? ' ▴' : ' ▾'}}</view>
+      </view>
+
+      <view class="sc-filter-panel" wx:if="{{filterOpen}}">
+        <view class="ops-filter-row">
+          <picker mode="selector" range="{{storeFilterNames}}" value="{{storeFilterIndex}}" bindchange="onStoreFilter" wx:if="{{isSuper}}">
+            <view class="ops-filter-chip">{{storeFilterNames[storeFilterIndex]}}</view>
+          </picker>
+          <picker mode="selector" range="{{statusFilterNames}}" value="{{statusFilterIndex}}" bindchange="onStatusFilter">
+            <view class="ops-filter-chip">{{statusFilterNames[statusFilterIndex]}}</view>
+          </picker>
+          <picker mode="selector" range="{{sourceFilterNames}}" value="{{sourceFilterIndex}}" bindchange="onSourceFilter">
+            <view class="ops-filter-chip">{{sourceFilterNames[sourceFilterIndex]}}</view>
+          </picker>
+        </view>
+        <view class="ops-filter-row">
+          <picker mode="date" value="{{dateFrom}}" bindchange="onDateFrom">
+            <view class="ops-filter-chip">{{dateFrom || '起始日'}}</view>
+          </picker>
+          <picker mode="date" value="{{dateTo}}" bindchange="onDateTo">
+            <view class="ops-filter-chip">{{dateTo || '截止日'}}</view>
+          </picker>
+          <view class="ops-filter-chip clear" wx:if="{{dateFrom || dateTo}}" bindtap="clearDates">清日期</view>
+        </view>
+      </view>
+      <view class="sc-date-chip-row" wx:elif="{{dateFrom || dateTo}}">
+        <text class="sc-date-chip">{{dateFrom || '…'}} ~ {{dateTo || '…'}}</text>
+        <text class="sc-link" bindtap="clearDates">清日期</text>
+      </view>
+
+      <view class="ops-skeleton" wx:if="{{loading && !list.length && !listError}}">
+        <view class="ops-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+          <view class="ops-sk-line wide"></view>
+          <view class="ops-sk-line"></view>
+          <view class="ops-sk-line mid"></view>
+        </view>
+      </view>
+
+      <view class="ops-empty is-error" wx:elif="{{listError && !list.length}}">
+        <text class="ops-empty-title">出货单未能展开</text>
+        <text class="ops-empty-sub">{{listTip || '下拉或切筛选重试'}}</text>
+        <view class="ops-chip-btn" bindtap="onRetryList">重试</view>
+      </view>
+
+      <view class="ops-empty" wx:elif="{{!loading && !listError && !list.length}}">
+        <block wx:if="{{listTipTone === 'ok'}}">
+          <text class="ops-empty-title">写入成功，本筛选暂无单据</text>
+          <text class="ops-empty-sub">可点「清日期」或切「全部」再看；刚录的单可能不在当前日期范围内</text>
+        </block>
+        <block wx:else>
+          <text class="ops-empty-title">柜中暂无出货单</text>
+          <text class="ops-empty-sub">{{canWrite ? '到「开单」页签开第一张单' : '暂无可查看的单据'}}</text>
+        </block>
+      </view>
+
+      <block wx:for="{{list}}" wx:key="_id">
+        <view class="ops-card {{highlightIds[item._id] ? 'sc-card-new' : ''}}" data-id="{{item._id}}" bindtap="openDetail">
+          <view class="ops-card-top">
+            <text class="ops-card-title">{{item.customerLine || item.storeName}}</text>
+            <text class="sc-new-badge" wx:if="{{highlightIds[item._id]}}">新</text>
+            <text class="ops-status {{item.statusTone}}">{{item.statusLabel}}</text>
+          </view>
+          <view class="ops-card-tags">
+            <text class="ops-source {{item.sourceTone}}">{{item.sourceLabel || '手工录入'}}</text>
+            <text class="ops-settle {{item.settleTone}}" wx:if="{{item.settleLabel}}">{{item.settleLabel}}</text>
+            <text class="ops-meta-inline warn" wx:if="{{item.pricingIncomplete}}">待核价</text>
+            <text class="ops-meta-inline" wx:if="{{item.entryPathLabel}}">{{item.entryPathLabel}}</text>
+            <text class="ops-meta-inline">{{item.shipmentNo}}</text>
+            <text class="ops-meta-inline">{{item.shipmentDate}}</text>
+          </view>
+          <text class="ops-amount">{{item.totalQty}} 件 · {{item.itemCount}} 行{{item.amountText ? ' · ¥' + item.amountText : ''}}</text>
+          <text class="ops-meta" wx:if="{{item.buyerName}}">购买人 {{item.buyerName}}</text>
+          <text class="ops-meta" wx:if="{{item.itemsPreview}}">{{item.itemsPreview}}{{item.moreItems ? ' 等' : ''}}</text>
+          <text class="ops-meta" wx:if="{{item.logisticsText}}">物流 {{item.logisticsText}}</text>
+          <text class="ops-meta">更新 {{item.updatedAtText}}</text>
+          <view class="ops-card-actions" catchtap="noop">
+            <view class="ops-chip-btn brass" wx:if="{{item.canTransit && canWrite}}" data-id="{{item._id}}" catchtap="openDetail">详情 / 流转</view>
+            <view class="ops-chip-btn danger" wx:if="{{canWrite}}" data-id="{{item._id}}" catchtap="onRemove">{{removePendingId === item._id ? '确认删除' : '删除'}}</view>
+          </view>
+        </view>
+      </block>
+    </block>
+
+    <!-- 总览（观测台） -->
     <block wx:if="{{activeTab === 'overview'}}">
       <view class="ops-source-toggle" bindtap="toggleSource">
         <text class="ops-source-label">{{sourceOpen ? '收起数据说明' : '数据说明'}}</text>
@@ -30,11 +418,17 @@
         <view class="ops-filter-chip dash-store">{{storeFilterNames[storeFilterIndex]}}</view>
       </picker>
 
-      <view class="ops-skeleton" wx:if="{{dashLoading && !kpis}}">
+      <view class="ops-skeleton" wx:if="{{dashLoading && !kpis && !dashError}}">
         <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
           <view class="ops-sk-line wide"></view>
           <view class="ops-sk-line"></view>
         </view>
+      </view>
+
+      <view class="ops-empty is-error" wx:elif="{{dashError && !kpis}}">
+        <text class="ops-empty-title">观测台未能展开</text>
+        <text class="ops-empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+        <view class="ops-chip-btn" bindtap="onRetryDash">重试</view>
       </view>
 
       <block wx:if="{{kpis}}">
@@ -144,12 +538,7 @@
             <text class="card-meta">金额占比</text>
           </view>
           <view class="structure-track">
-            <view
-              class="structure-seg tone-{{item.tone}}"
-              wx:for="{{structure}}"
-              wx:key="key"
-              style="width: {{item.widthPct}}%;"
-            ></view>
+            <view class="structure-seg tone-{{item.tone}}" wx:for="{{structure}}" wx:key="key" style="width: {{item.widthPct}}%;"></view>
           </view>
           <view class="structure-legend">
             <view class="structure-row" wx:for="{{structure}}" wx:key="key">
@@ -218,12 +607,7 @@
               </view>
             </view>
           </view>
-          <view
-            class="list-more"
-            wx:if="{{charts.byCustomerMore > 0 || listMore.customers}}"
-            data-key="customers"
-            bindtap="toggleListMore"
-          >
+          <view class="list-more" wx:if="{{charts.byCustomerMore > 0 || listMore.customers}}" data-key="customers" bindtap="toggleListMore">
             <text>{{listMore.customers ? '收起客户列表' : '查看更多客户 · ' + charts.byCustomerMore}}</text>
           </view>
         </view>
@@ -255,7 +639,6 @@
               <text class="empty-hint" wx:if="{{!charts.byStore.length}}">暂无门店分布。</text>
             </view>
           </view>
-
           <view class="detail-block">
             <view class="detail-block-head" data-key="status" bindtap="toggleSection">
               <view class="detail-block-titles">
@@ -276,445 +659,383 @@
               </view>
             </view>
           </view>
-
           <view class="detail-toggle secondary" bindtap="toggleDetail">
             <text class="detail-toggle-main">收起全部明细</text>
           </view>
         </view>
 
         <view class="ops-goto-list" data-tab="list" bindtap="switchTab">
-          <text>前往单据列表 · 录入 / 流转</text>
+          <text>前往单据 · 流转 / 物流</text>
         </view>
       </block>
     </block>
 
-    <!-- ========== 单据 ========== -->
-    <block wx:if="{{activeTab === 'list'}}">
-      <view class="ops-summary" wx:if="{{!loading || list.length}}">
-        <view class="ops-summary-top">
-          <text class="ops-summary-label">本筛选件数</text>
-          <text class="ops-summary-value">{{summary.totalQty}}</text>
+    <!-- 资料：原材料 / 包装方式（店长只读；写入口仅超管） -->
+    <block wx:if="{{activeTab === 'library'}}">
+      <view class="sc-modes is-two">
+        <view class="sc-mode {{libKind === 'material' ? 'on' : ''}}" data-kind="material" bindtap="switchLibKind">
+          <text class="sc-mode-title">原材料</text>
+          <text class="sc-mode-sub">名称 × 等级 · 单价</text>
         </view>
-        <text class="ops-summary-meta">{{summary.count}} 单 · {{summary.itemCount}} 行明细</text>
-        <view class="ops-chips" wx:if="{{summary.byStore.length}}">
-          <text class="ops-chip" wx:for="{{summary.byStore}}" wx:key="storeId">
-            {{item.storeName}} {{item.totalQty}}件
-          </text>
+        <view class="sc-mode {{libKind === 'packaging' ? 'on' : ''}}" data-kind="packaging" bindtap="switchLibKind">
+          <text class="sc-mode-title">包装方式</text>
+          <text class="sc-mode-sub">名称 × 尺寸 · 单价</text>
         </view>
       </view>
 
-      <view class="ops-search-row">
-        <input
-          class="ops-search-input"
-          value="{{keyword}}"
-          bindinput="onKeywordInput"
-          placeholder="搜单号 / 品名 / 门店 / 客户"
-          placeholder-class="ops-ph"
-          confirm-type="search"
-        />
-        <view class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
-      </view>
+      <view class="ops-list-tip is-{{libTipTone}}" wx:if="{{libTip}}"><text>{{libTip}}</text></view>
 
-      <view class="ops-filter-row">
-        <picker mode="selector" range="{{storeFilterNames}}" value="{{storeFilterIndex}}" bindchange="onStoreFilter" wx:if="{{isSuper}}">
-          <view class="ops-filter-chip">{{storeFilterNames[storeFilterIndex]}}</view>
-        </picker>
-        <picker mode="selector" range="{{statusFilterNames}}" value="{{statusFilterIndex}}" bindchange="onStatusFilter">
-          <view class="ops-filter-chip">{{statusFilterNames[statusFilterIndex]}}</view>
-        </picker>
-        <picker mode="selector" range="{{sourceFilterNames}}" value="{{sourceFilterIndex}}" bindchange="onSourceFilter">
-          <view class="ops-filter-chip">{{sourceFilterNames[sourceFilterIndex]}}</view>
-        </picker>
+      <view class="sc-lib-bar">
+        <input class="ops-search-input sc-lib-search" value="{{libKeyword}}" bindinput="onLibKeyword" placeholder="搜名称 / 别名" placeholder-class="ops-ph" />
+        <view class="sc-lib-add" wx:if="{{isSuper}}" bindtap="openLibForm">＋ 新增</view>
       </view>
+      <text class="sc-lib-note">{{isSuper ? '按此顺序进开单选择器；停用后不进选择器、不参与算价，历史单保留快照；无引用才可删除。' : '只读：开单选择器按此顺序取用，停用项不出现；调整请联系超管。'}}</text>
+      <text class="sc-lib-note warn" wx:if="{{libTruncated}}">共 {{libTotal}} 条，仅显示前 200 条：请用搜索定位。</text>
 
-      <view class="ops-filter-row">
-        <picker mode="date" value="{{dateFrom}}" bindchange="onDateFrom">
-          <view class="ops-filter-chip">{{dateFrom || '起始日'}}</view>
-        </picker>
-        <picker mode="date" value="{{dateTo}}" bindchange="onDateTo">
-          <view class="ops-filter-chip">{{dateTo || '截止日'}}</view>
-        </picker>
-        <view class="ops-filter-chip clear" wx:if="{{dateFrom || dateTo}}" bindtap="clearDates">清日期</view>
-        <view class="ops-btn-add" wx:if="{{canWrite}}" bindtap="openPaste">录入</view>
-      </view>
-
-      <view class="ops-skeleton" wx:if="{{loading && !list.length}}">
+      <view class="ops-skeleton" wx:if="{{libLoading && !libList.length}}">
         <view class="ops-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
           <view class="ops-sk-line wide"></view>
           <view class="ops-sk-line"></view>
-          <view class="ops-sk-line mid"></view>
         </view>
       </view>
-
-      <view class="ops-empty" wx:elif="{{!loading && !list.length}}">
-        <text class="ops-empty-title">柜中暂无出货单</text>
-        <text class="ops-empty-sub">点「录入」可单条填写或粘贴文本解析</text>
+      <view class="ops-empty is-error" wx:elif="{{libError}}">
+        <text class="ops-empty-title">资料未能展开</text>
+        <text class="ops-empty-sub">{{libError}}</text>
+        <view class="ops-chip-btn" bindtap="loadLibrary">重试</view>
+      </view>
+      <view class="ops-empty" wx:elif="{{!libList.length}}">
+        <text class="ops-empty-title">{{libKeyword ? '没有匹配项' : '还没有条目'}}</text>
+        <text class="ops-empty-sub">{{isSuper ? '点「＋ 新增」补第一条' : '超管尚未维护'}}</text>
       </view>
 
-      <block wx:for="{{list}}" wx:key="_id">
-        <view class="ops-card" data-id="{{item._id}}" bindtap="openDetail">
-          <view class="ops-card-top">
-            <text class="ops-card-title">{{item.customerLine || item.storeName}}</text>
-            <text class="ops-status {{item.statusTone}}">{{item.statusLabel}}</text>
+      <block wx:for="{{libList}}" wx:key="_id">
+      <view class="sc-lib-row {{item.inactive ? 'is-off' : ''}}">
+        <view class="sc-lib-main">
+          <view class="sc-lib-title">
+            <text class="sc-lib-name">{{item.name}}</text>
+            <text class="sc-lib-opt" wx:if="{{item.option && item.option !== '默认'}}">{{item.option}}</text>
+            <text class="sc-lib-tag" wx:if="{{item.isDefaultOption}}">默认</text>
+            <text class="sc-lib-tag off" wx:if="{{item.inactive}}">已停用</text>
           </view>
-          <view class="ops-card-tags">
-            <text class="ops-source {{item.sourceTone}}">{{item.sourceLabel || '手工录入'}}</text>
-            <text class="ops-meta-inline">{{item.shipmentNo}}</text>
-            <text class="ops-meta-inline">{{item.shipmentDate}}</text>
+          <text class="sc-lib-meta">{{item.unitPriceText}}{{item.unit ? ' / ' + item.unit : ''}}{{item.category ? ' · ' + item.category : ''}}{{item.refText ? ' · ' + item.refText : ''}}</text>
+          <text class="sc-lib-meta" wx:if="{{item.aliasesText}}">别名 {{item.aliasesText}}</text>
+        </view>
+        <view class="sc-lib-actions" wx:if="{{isSuper}}">
+          <view class="sc-lib-sort">
+            <text class="sc-lib-arrow {{index === 0 || libKeyword ? 'is-dim' : ''}}" data-id="{{item._id}}" data-dir="-1" bindtap="moveLibRow">↑</text>
+            <text class="sc-lib-arrow {{index === libList.length - 1 || libKeyword ? 'is-dim' : ''}}" data-id="{{item._id}}" data-dir="1" bindtap="moveLibRow">↓</text>
           </view>
-          <text class="ops-amount">{{item.totalQty}} 件 · {{item.itemCount}} 行{{item.amountText ? ' · ¥' + item.amountText : ''}}</text>
-          <text class="ops-meta" wx:if="{{item.buyerName}}">购买人 {{item.buyerName}}</text>
-          <text class="ops-meta" wx:if="{{item.itemsPreview}}">{{item.itemsPreview}}{{item.moreItems ? ' 等' : ''}}</text>
-          <text class="ops-meta">更新 {{item.updatedAtText}}</text>
-          <view class="ops-card-actions" catchtap="noop">
-            <view class="ops-chip-btn brass" wx:if="{{item.canTransit && canWrite}}" data-id="{{item._id}}" catchtap="onTransit">流转</view>
-            <view class="ops-chip-btn danger" wx:if="{{canWrite}}" data-id="{{item._id}}" catchtap="onRemove">删除</view>
+          <view class="sc-lib-btns">
+            <text class="sc-lib-btn" data-id="{{item._id}}" bindtap="openLibForm">编辑</text>
+            <text class="sc-lib-btn {{item.inactive ? 'on' : 'warn'}}" data-id="{{item._id}}" bindtap="toggleLibStatus">{{item.inactive ? '启用' : '停用'}}</text>
+            <text class="sc-lib-btn warn" data-id="{{item._id}}" bindtap="askRemoveLib">删除</text>
           </view>
         </view>
+      </view>
+      <view class="sc-lib-inline" wx:if="{{isSuper && libConfirmId === item._id}}">
+        <text class="sc-lib-inline-text">删除「{{item.name}}{{item.option !== '默认' ? ' · ' + item.option : ''}}」？仅在没有任何出货单 / SKU 引用时才会成功。</text>
+        <view class="sc-lib-inline-btns">
+          <text class="sc-lib-btn" bindtap="cancelLibInline">取消</text>
+          <text class="sc-lib-btn danger" data-id="{{item._id}}" bindtap="confirmRemoveLib">{{libBusy ? '检查中…' : '确认删除'}}</text>
+        </view>
+      </view>
+      <view class="sc-lib-inline is-warn" wx:if="{{isSuper && libBlocked.id === item._id}}">
+        <text class="sc-lib-inline-text">{{libBlocked.text}}</text>
+        <view class="sc-lib-inline-btns">
+          <text class="sc-lib-btn" bindtap="cancelLibInline">知道了</text>
+          <text class="sc-lib-btn danger" wx:if="{{libBlocked.canDeactivate}}" data-id="{{item._id}}" bindtap="deactivateBlocked">改为停用</text>
+        </view>
+      </view>
       </block>
     </block>
   </view>
 </view>
 
-<!-- 录入：粘贴解析 | 单条录入 -->
-<view class="ops-mask" wx:if="{{showPaste}}" bindtap="closePaste"></view>
-<view class="ops-sheet" wx:if="{{showPaste}}">
-  <view class="ops-sheet-head">
-    <text class="ops-sheet-title">录入出货单</text>
-    <text class="ops-sheet-close" bindtap="closePaste">关闭</text>
-  </view>
-  <view class="ops-entry-tabs">
+<!-- 开单底栏：.ss-cta 满宽（WXSS !important + 内联 width） -->
+<view class="ss-dock" wx:if="{{ready && activeTab === 'create'}}">
+  <block wx:if="{{createMode === 'sku'}}">
+    <view class="ss-summary">
+      <view class="ss-sum-left">
+        <text class="ss-sum-meta">{{lines.length}} 行 · {{totalQty}} 件</text>
+        <text class="ss-sum-warn" wx:if="{{pendingCount}}">待核价 {{pendingCount}}</text>
+      </view>
+      <view class="ss-sum-right">
+        <text class="ss-sum-k">合计</text>
+        <text class="ss-sum-value">{{totalText}}</text>
+      </view>
+    </view>
+    <text class="ss-save-hint" wx:if="{{saveHint && !canSave}}">{{saveHint}}</text>
     <view
-      class="ops-entry-tab {{entryMode === 'paste' ? 'on' : ''}}"
-      data-mode="paste"
-      bindtap="switchEntryMode"
-    >粘贴解析</view>
-    <view
-      class="ops-entry-tab {{entryMode === 'single' ? 'on' : ''}}"
-      data-mode="single"
-      bindtap="switchEntryMode"
-    >单条录入</view>
+      class="ss-cta {{canSave && !createBusy ? '' : 'is-disabled'}}"
+      style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;"
+      hover-class="{{canSave && !createBusy ? 'ss-cta-press' : ''}}"
+      bindtap="onSaveSku"
+    >
+      <text>{{createBusy ? '处理中…' : '保存出货单'}}</text>
+    </view>
+  </block>
+  <view class="sc-dock-row" wx:elif="{{createMode === 'paste'}}" style="width:100%;box-sizing:border-box;">
+    <view class="sc-dock-btn is-ghost {{parsing ? 'is-disabled' : ''}}" bindtap="runParse"><text>{{parsing ? '识别中…' : '识别预览'}}</text></view>
+    <view class="sc-dock-btn {{(!parsePreview || !parsePreview.canWrite || saving) ? 'is-disabled' : ''}}" bindtap="confirmPaste"><text>{{saving ? '写入中…' : '确认写入'}}</text></view>
   </view>
-  <scroll-view scroll-y class="ops-sheet-body">
-    <!-- 粘贴解析 -->
-    <block wx:if="{{entryMode === 'paste'}}">
-      <view class="ops-paste-card">
-        <text class="ops-paste-hint">首行日期+出货；门店名单独成行；明细「品名-数量」；空行分隔门店。</text>
-        <textarea
-          class="ops-paste-area"
-          value="{{pasteText}}"
-          bindinput="onPasteInput"
-          placeholder="粘贴微信/飞书出货文本…"
-          placeholder-class="ops-ph"
-          maxlength="-1"
-        />
-        <view class="ops-actions">
-          <view class="ops-btn-secondary {{parsing ? 'disabled' : ''}}" bindtap="runParse">
-            {{parsing ? '解析中…' : '正则解析预览'}}
-          </view>
-          <view
-            class="ops-btn-primary {{(!parsePreview || !parsePreview.canWrite || saving) ? 'disabled' : ''}}"
-            bindtap="confirmPaste"
-          >
-            {{saving ? '写入中…' : '确认写入'}}
-          </view>
+  <view class="sc-dock-row" wx:else style="width:100%;box-sizing:border-box;">
+    <view class="sc-dock-btn is-ghost" bindtap="resetSingle"><text>清空</text></view>
+    <view class="sc-dock-btn {{saving ? 'is-disabled' : ''}}" bindtap="confirmSingle"><text>{{saving ? '写入中…' : '确认写入'}}</text></view>
+  </view>
+</view>
+
+<!-- 选已有 SKU -->
+<view class="ss-mask" wx:if="{{skuPicker.show}}" bindtap="closeSkuPicker" catchtouchmove="noop"></view>
+<view class="ss-sheet" wx:if="{{skuPicker.show}}">
+  <view class="ss-sheet-head">
+    <text class="ss-sheet-title">选择出货 SKU</text>
+    <view class="ss-sheet-close" bindtap="closeSkuPicker"><text>关闭</text></view>
+  </view>
+  <view class="ss-search">
+    <input class="ss-search-input" placeholder="搜 SKU 名（如 大蓝闪蝶）" value="{{skuPicker.keyword}}" bindinput="onSkuKeyword" />
+  </view>
+  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+    <view class="ss-loading" wx:if="{{skuPicker.loading}}"><text>加载中…</text></view>
+    <view class="ss-empty" wx:elif="{{!skuPicker.list.length}}">
+      <text>还没有 SKU</text>
+      <text class="ss-empty-hint">点「新建 SKU」建一个（同组合只需建一次，以后直接选）</text>
+    </view>
+    <block wx:else>
+      <view class="ss-sku" wx:for="{{skuPicker.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onPickSku">
+        <view class="ss-sku-main">
+          <text class="ss-sku-name">{{item.skuName}}</text>
+          <text class="ss-sku-meta">{{item.rateText}}{{item.pricingStatus !== 'priced' ? ' · ' + (item.pricingNote || '待核价') : ''}}</text>
         </view>
-        <!-- 逐行核对并算价（蓝图裁决 24）：在**独立页面**里选材料/等级/包装/尺寸并算价，
-             弹层里塞不下 21 行 × 5 个控件。点它会先把草稿写进 Storage 再跳转。 -->
-        <view
-          class="ops-btn-secondary {{(!parsePreview || !parsePreview.canWrite) ? 'disabled' : ''}}"
-          bindtap="openEditPage"
-        >
-          逐行核对并算价
-        </view>
-      </view>
-
-      <view class="ops-writeback" wx:if="{{writebackMsg}}">
-        <text class="ops-writeback-text">{{writebackMsg}}</text>
-      </view>
-
-      <block wx:if="{{failedLines.length}}">
-        <text class="ops-section-label">解析问题行 · 可改后重解析</text>
-        <view
-          class="ops-issue-block {{item.severity === 'warn' ? 'warn' : ''}}"
-          wx:for="{{failedLines}}"
-          wx:key="line"
-          wx:for-index="issueIdx"
-        >
-          <view class="ops-issue-head">
-            <text class="ops-issue-label">L{{item.line}} · {{item.severity === 'warn' ? '警告' : '失败'}}</text>
-            <text class="ops-issue-apply" data-idx="{{issueIdx}}" bindtap="applyIssueLine">应用并重解析</text>
-          </view>
-          <input
-            class="ops-issue-input"
-            value="{{item.text}}"
-            data-idx="{{issueIdx}}"
-            bindinput="onIssueLineInput"
-          />
-          <text class="ops-issue-msg">{{item.msg}}</text>
-        </view>
-      </block>
-
-      <view wx:if="{{parsePreview && parsePreview.canWrite}}">
-        <view class="ops-preview-bar">
-          <text class="ops-preview-label">出货日</text>
-          <picker mode="date" value="{{parsePreview.shipmentDate}}" bindchange="onPreviewDate">
-            <view class="ops-filter-chip brass">{{parsePreview.shipmentDate || '选日期'}}</view>
-          </picker>
-          <text class="ops-meta-inline" wx:if="{{parsePreview.summary}}">
-            {{parsePreview.summary.storeCount}}店 · {{parsePreview.summary.totalQty}}件
-          </text>
-        </view>
-
-        <block wx:for="{{parsePreview.shipments}}" wx:key="storeId" wx:for-item="block" wx:for-index="storeIdx">
-          <view class="ops-group">
-            <view class="ops-group-head" data-idx="{{storeIdx}}" bindtap="toggleStoreCollapse">
-              <text class="ops-group-title">{{block.storeName}} · {{block.totalQty}}件</text>
-              <view class="ops-group-side">
-                <text class="ops-qty-badge">{{block.itemCount}}</text>
-                <text class="ops-group-chevron">{{block.collapsed ? '▸' : '▾'}}</text>
-              </view>
-            </view>
-            <view class="ops-group-body" wx:if="{{!block.collapsed}}">
-              <view class="ops-line-row" wx:for="{{block.items}}" wx:key="itemName" wx:for-item="it" wx:for-index="itemIdx">
-                <input
-                  class="ops-preview-input"
-                  value="{{it.itemName}}"
-                  data-store-idx="{{storeIdx}}"
-                  data-item-idx="{{itemIdx}}"
-                  bindinput="onPreviewItemName"
-                />
-                <input
-                  class="ops-preview-qty-input"
-                  type="number"
-                  value="{{it.qty}}"
-                  data-store-idx="{{storeIdx}}"
-                  data-item-idx="{{itemIdx}}"
-                  bindinput="onPreviewItemQty"
-                />
-              </view>
-            </view>
-          </view>
-        </block>
-      </view>
-    </block>
-
-    <!-- 单条录入 -->
-    <block wx:if="{{entryMode === 'single'}}">
-      <view class="ops-field">
-        <text class="ops-field-label">门店</text>
-        <picker mode="selector" range="{{formStoreNames}}" value="{{formStoreIndex}}" bindchange="onFormStore">
-          <view class="ops-field-input">{{formStoreNames[formStoreIndex] || '请选择门店'}}</view>
-        </picker>
-      </view>
-
-      <view class="ops-field">
-        <text class="ops-field-label">出货日期</text>
-        <picker mode="date" value="{{form.shipmentDate}}" bindchange="onFormDate">
-          <view class="ops-field-input">{{form.shipmentDate || '选择日期'}}</view>
-        </picker>
-      </view>
-
-      <view class="ops-field">
-        <text class="ops-field-label">藏品 / SKU</text>
-        <view class="ops-sku-search">
-          <input
-            class="ops-field-input sku-kw"
-            value="{{skuKeyword}}"
-            bindinput="onSkuKeyword"
-            bindconfirm="searchSku"
-            placeholder="搜成品库存或藏品名…"
-            placeholder-class="ops-ph"
-            confirm-type="search"
-          />
-          <view class="ops-sku-btn {{skuSearching ? 'disabled' : ''}}" bindtap="searchSku">
-            {{skuSearching ? '…' : '搜'}}
-          </view>
-        </view>
-        <view class="ops-sku-hits" wx:if="{{skuHits.length}}">
-          <view
-            class="ops-sku-hit {{form.productId === item.productId && form.skuId === item.skuId && form.inventoryRecordId === item.inventoryRecordId ? 'on' : ''}}"
-            wx:for="{{skuHits}}"
-            wx:key="key"
-            data-idx="{{index}}"
-            bindtap="selectSkuHit"
-          >
-            <view class="ops-sku-hit-main">
-              <text class="ops-sku-hit-name">{{item.itemName}}</text>
-              <text class="ops-sku-hit-meta" wx:if="{{item.spec}}">{{item.spec}}</text>
-            </view>
-            <view class="ops-sku-hit-side">
-              <text class="ops-sku-hit-src">{{item.sourceLabel}}</text>
-              <text class="ops-sku-hit-price" wx:if="{{item.unitPrice}}">¥{{item.unitPrice}}</text>
-            </view>
-          </view>
-        </view>
-        <text class="ops-field-hint" wx:if="{{form.linkedLabel}}">已关联 · {{form.linkedLabel}}</text>
-      </view>
-
-      <view class="ops-field">
-        <text class="ops-field-label">品名</text>
-        <input
-          class="ops-field-input"
-          value="{{form.itemName}}"
-          data-field="itemName"
-          bindinput="onFormInput"
-          placeholder="必填，可手写或选 SKU 带入"
-          placeholder-class="ops-ph"
-        />
-      </view>
-
-      <view class="ops-field">
-        <text class="ops-field-label">规格型号</text>
-        <input
-          class="ops-field-input"
-          value="{{form.spec}}"
-          data-field="spec"
-          bindinput="onFormInput"
-          placeholder="可选"
-          placeholder-class="ops-ph"
-        />
-      </view>
-
-      <view class="ops-field">
-        <text class="ops-field-label">分类</text>
-        <picker mode="selector" range="{{formCategoryNames}}" value="{{formCategoryIndex}}" bindchange="onFormCategory">
-          <view class="ops-field-input">{{formCategoryNames[formCategoryIndex] || '可选'}}</view>
-        </picker>
-      </view>
-
-      <view class="ops-field-row">
-        <view class="ops-field half">
-          <text class="ops-field-label">数量</text>
-          <input
-            class="ops-field-input"
-            type="digit"
-            value="{{form.qty}}"
-            data-field="qty"
-            bindinput="onFormInput"
-            placeholder="1"
-            placeholder-class="ops-ph"
-          />
-        </view>
-        <view class="ops-field half">
-          <text class="ops-field-label">出货单价（元）</text>
-          <input
-            class="ops-field-input"
-            type="digit"
-            value="{{form.unitPrice}}"
-            data-field="unitPrice"
-            bindinput="onFormInput"
-            placeholder="可手改"
-            placeholder-class="ops-ph"
-          />
-        </view>
-      </view>
-      <text class="ops-field-hint" wx:if="{{formAmountPreview}}">合计约 ¥{{formAmountPreview}}</text>
-
-      <view class="ops-field">
-        <text class="ops-field-label">购买人</text>
-        <input
-          class="ops-field-input"
-          value="{{form.buyerName}}"
-          data-field="buyerName"
-          bindinput="onFormInput"
-          placeholder="实际购买人"
-          placeholder-class="ops-ph"
-        />
-      </view>
-
-      <view class="ops-field">
-        <text class="ops-field-label">客户名称</text>
-        <input
-          class="ops-field-input"
-          value="{{form.customerName}}"
-          data-field="customerName"
-          bindinput="onFormInput"
-          placeholder="默认门店名，可改"
-          placeholder-class="ops-ph"
-        />
-      </view>
-
-      <view class="ops-field">
-        <text class="ops-field-label">状态</text>
-        <picker mode="selector" range="{{formStatusNames}}" value="{{formStatusIndex}}" bindchange="onFormStatus">
-          <view class="ops-field-input">{{formStatusNames[formStatusIndex] || '已确认'}}</view>
-        </picker>
-      </view>
-
-      <view class="ops-field-row">
-        <view class="ops-field half">
-          <text class="ops-field-label">快递公司</text>
-          <input
-            class="ops-field-input"
-            value="{{form.expressCompany}}"
-            data-field="expressCompany"
-            bindinput="onFormInput"
-            placeholder="可选"
-            placeholder-class="ops-ph"
-          />
-        </view>
-        <view class="ops-field half">
-          <text class="ops-field-label">运单号</text>
-          <input
-            class="ops-field-input"
-            value="{{form.trackingNo}}"
-            data-field="trackingNo"
-            bindinput="onFormInput"
-            placeholder="可选"
-            placeholder-class="ops-ph"
-          />
-        </view>
-      </view>
-
-      <view class="ops-field">
-        <text class="ops-field-label">备注</text>
-        <input
-          class="ops-field-input"
-          value="{{form.note}}"
-          data-field="note"
-          bindinput="onFormInput"
-          placeholder="可选"
-          placeholder-class="ops-ph"
-        />
-      </view>
-
-      <view class="ops-actions" style="margin-top: 8rpx; margin-bottom: 32rpx;">
-        <view class="ops-btn-secondary" bindtap="resetSingleForm">清空</view>
-        <view class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="confirmSingle">
-          {{saving ? '写入中…' : '确认写入'}}
-        </view>
+        <text class="ss-sku-price {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{item.unitPriceText}}</text>
       </view>
     </block>
   </scroll-view>
 </view>
 
-<!-- 详情 -->
-<view class="ops-mask" wx:if="{{showDetail}}" bindtap="closeDetail"></view>
-<view class="ops-sheet" wx:if="{{showDetail && detail}}">
+<!-- 现场新建 SKU -->
+<view class="ss-mask" wx:if="{{skuForm.show}}" bindtap="closeSkuForm" catchtouchmove="noop"></view>
+<view class="ss-sheet" wx:if="{{skuForm.show}}">
+  <view class="ss-sheet-head">
+    <text class="ss-sheet-title">新建出货 SKU</text>
+    <view class="ss-sheet-close" bindtap="closeSkuForm"><text>关闭</text></view>
+  </view>
+  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+    <view class="ss-alert">
+      <text>SKU = 原材料 × 等级 × 包装方式 × 尺寸 + 是否造景 + 默认手工费率。同组合只需建一次；原材料 / 包装缺项先到「资料」页签补。</text>
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">原材料</text>
+      <view class="ss-pick-inner ss-pick-click" data-kind="material" data-target="skuForm" bindtap="openPicker">
+        <text class="{{skuForm.materialName ? 'sc-pick-on' : 'sc-pick-off'}}">{{skuForm.materialName ? (skuForm.materialName + (skuForm.materialGrade ? '（' + skuForm.materialGrade + '）' : '')) : '选择原材料'}}</text>
+        <text class="ss-arrow">▾</text>
+      </view>
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">包装方式</text>
+      <view class="ss-pick-inner ss-pick-click" data-kind="packaging" data-target="skuForm" bindtap="openPicker">
+        <text class="{{skuForm.packagingName ? 'sc-pick-on' : 'sc-pick-off'}}">{{skuForm.packagingName ? (skuForm.packagingName + (skuForm.packagingSize ? ' ' + skuForm.packagingSize : '')) : '选择包装方式'}}</text>
+        <text class="ss-arrow">▾</text>
+      </view>
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">手工费</text>
+      <view class="ss-rate-ctl">
+        <switch class="ss-switch" checked="{{skuForm.useGlobalRate}}" color="#C4A76C" bindchange="onFormRateToggle" />
+        <text class="ss-rate-hint" wx:if="{{skuForm.useGlobalRate}}">用全局 {{globalRatePct}}%</text>
+        <block wx:else>
+          <input class="ss-rate-input" type="digit" value="{{skuForm.laborRatePct}}" bindinput="onFormRate" />
+          <text class="ss-rate-hint">%</text>
+        </block>
+      </view>
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">造景</text>
+      <view class="ss-rate-ctl">
+        <switch class="ss-switch" checked="{{skuForm.hasScene}}" color="#C4A76C" bindchange="onFormSceneToggle" />
+        <text class="ss-rate-hint" wx:if="{{!skuForm.hasScene}}">不含造景</text>
+        <block wx:else>
+          <text class="ss-rate-hint">¥</text>
+          <input class="ss-rate-input" type="digit" value="{{skuForm.sceneCost}}" placeholder="元/件" bindinput="onFormSceneCost" />
+          <text class="ss-rate-hint">/ 件 · 计入金额与毛利扣减，不计手工费基数</text>
+        </block>
+      </view>
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">SKU 名</text>
+      <input class="ss-input" value="{{skuForm.name}}" placeholder="留空即自动生成" bindinput="onFormName" />
+    </view>
+    <view class="ss-preview">
+      <text class="ss-preview-label">这一组合的单价</text>
+      <text class="ss-preview-value {{skuForm.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{skuForm.unitPriceText}}</text>
+      <text class="ss-preview-note" wx:if="{{skuForm.pricingNote}}">{{skuForm.pricingNote}}</text>
+    </view>
+    <view class="ss-problems" wx:if="{{skuForm.problems.length}}">
+      <text wx:for="{{skuForm.problems}}" wx:key="*this">· {{item}}</text>
+    </view>
+  </scroll-view>
+  <view class="ss-actions is-in-sheet">
+    <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitSkuForm">
+      <text>{{skuForm.saving ? '创建中…' : '创建并加入明细'}}</text>
+    </view>
+  </view>
+</view>
+
+<!-- 原材料 / 包装方式选择器 -->
+<view class="ss-mask is-top" wx:if="{{picker.show}}" bindtap="closePicker" catchtouchmove="noop"></view>
+<view class="ss-sheet is-top" wx:if="{{picker.show}}">
+  <view class="ss-sheet-head">
+    <text class="ss-sheet-title">选择{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>
+    <view class="ss-sheet-close" bindtap="closePicker"><text>关闭</text></view>
+  </view>
+  <view class="ss-search">
+    <input class="ss-search-input" placeholder="输入名称或别名（如 大蓝闪）" value="{{picker.keyword}}" bindinput="onPickerKeyword" />
+  </view>
+  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+    <view class="ss-loading" wx:if="{{picker.loading}}"><text>加载中…</text></view>
+    <view class="ss-empty" wx:elif="{{!picker.list.length}}">
+      <text>没有匹配项</text>
+      <text class="ss-empty-hint">{{isSuper ? '可到「资料」页签新增' : '请联系超管在「资料」页签维护'}}</text>
+    </view>
+    <block wx:else>
+      <view class="ss-group" wx:for="{{picker.list}}" wx:key="key">
+        <view class="ss-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
+          <view class="ss-group-main">
+            <text class="ss-group-name">{{item.displayName}}</text>
+            <text class="ss-group-meta" wx:if="{{item.aliasesText}}">别名 {{item.aliasesText}}</text>
+          </view>
+          <text class="ss-group-count">{{item.optionField === 'size' ? '尺寸' : '等级'}} {{item.optionCount}}</text>
+        </view>
+        <view class="ss-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
+          <view class="ss-option" wx:for="{{item.options}}" wx:for-item="opt" wx:key="_id" data-key="{{item.key}}" data-option="{{opt.option}}" data-id="{{opt._id}}" bindtap="onPickOption">
+            <text class="ss-option-name">{{opt.option}}</text>
+            <text class="ss-option-price">{{opt.unitPriceText}}</text>
+            <text class="ss-option-tag" wx:if="{{opt.isDefault}}">默认</text>
+          </view>
+        </view>
+        <view class="ss-group-hint" wx:else><text>点一下展开 {{item.optionCount}} 个规格</text></view>
+      </view>
+    </block>
+  </scroll-view>
+</view>
+
+<!-- 资料表单：新增 / 编辑 -->
+<view class="ss-mask" wx:if="{{libForm.show}}" bindtap="closeLibForm" catchtouchmove="noop"></view>
+<view class="ss-sheet" wx:if="{{libForm.show}}">
+  <view class="ss-sheet-head">
+    <text class="ss-sheet-title">{{libForm.id ? '编辑' : '新增'}}{{libForm.kind === 'material' ? '原材料' : '包装方式'}}</text>
+    <view class="ss-sheet-close" bindtap="closeLibForm"><text>关闭</text></view>
+  </view>
+  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+    <view class="ss-row">
+      <text class="ss-label">名称</text>
+      <input class="ss-input" value="{{libForm.name}}" data-field="name" bindinput="onLibInput" placeholder="必填，如 大蓝闪蝶 / 框" placeholder-class="ss-ph" />
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">{{libForm.kind === 'material' ? '等级' : '尺寸'}}</text>
+      <input class="ss-input" value="{{libForm.option}}" data-field="option" bindinput="onLibInput" placeholder="{{libForm.kind === 'material' ? '如 A1；留空 = 默认' : '如 10x18；留空 = 默认'}}" placeholder-class="ss-ph" />
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">单价（元）</text>
+      <input class="ss-input" type="digit" value="{{libForm.unitPrice}}" data-field="unitPrice" bindinput="onLibInput" placeholder="≥ 0" placeholder-class="ss-ph" />
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">单位</text>
+      <input class="ss-input" value="{{libForm.unit}}" data-field="unit" bindinput="onLibInput" placeholder="只 / 个 / 份（可选）" placeholder-class="ss-ph" />
+    </view>
+    <view class="ss-row" wx:if="{{libForm.kind === 'material'}}">
+      <text class="ss-label">分类</text>
+      <picker class="ss-pick" mode="selector" range="{{libCategoryNames}}" value="{{libCategoryIndex}}" bindchange="onLibCategory">
+        <view class="ss-pick-inner">
+          <text class="ss-pick-val">{{libCategoryNames[libCategoryIndex]}}</text>
+          <text class="ss-arrow">▾</text>
+        </view>
+      </picker>
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">别名</text>
+      <input class="ss-input" value="{{libForm.aliases}}" data-field="aliases" bindinput="onLibInput" placeholder="逗号分隔（可选），如 大蓝闪" placeholder-class="ss-ph" />
+    </view>
+    <view class="ss-row">
+      <text class="ss-label">默认{{libForm.kind === 'material' ? '等级' : '尺寸'}}</text>
+      <view class="ss-rate-ctl">
+        <switch class="ss-switch" checked="{{libForm.isDefault}}" color="#C4A76C" bindchange="onLibDefault" />
+        <text class="ss-rate-hint">文本没写{{libForm.kind === 'material' ? '等级' : '尺寸'}}时用这一行取价（同名只能一个）</text>
+      </view>
+    </view>
+    <view class="ss-row is-last">
+      <text class="ss-label">备注</text>
+      <input class="ss-input" value="{{libForm.note}}" data-field="note" bindinput="onLibInput" placeholder="可选" placeholder-class="ss-ph" />
+    </view>
+    <view class="ss-problems" wx:if="{{libForm.problems}}"><text>· {{libForm.problems}}</text></view>
+  </scroll-view>
+  <view class="ss-actions is-in-sheet">
+    <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitLibForm">
+      <text>{{libForm.saving ? '保存中…' : '保存'}}</text>
+    </view>
+  </view>
+</view>
+
+<!-- 详情：物流 + 状态流转（契约：setStatus / update；结算只读） -->
+<view class="ops-mask" wx:if="{{showDetail}}" bindtap="closeDetail" catchtouchmove="noop"></view>
+<view class="ops-sheet sc-detail-sheet" wx:if="{{showDetail && detail}}">
   <view class="ops-sheet-head">
     <text class="ops-sheet-title">{{detail.customerLine || detail.storeName}}</text>
     <text class="ops-sheet-close" bindtap="closeDetail">关闭</text>
   </view>
-  <scroll-view scroll-y class="ops-sheet-body">
+  <scroll-view scroll-y class="ops-sheet-body sc-detail-body" style="height: {{sheetBodyPx}}px;">
     <view class="ops-card-tags" style="margin-bottom: 16rpx;">
       <text class="ops-status {{detail.statusTone}}">{{detail.statusLabel}}</text>
+      <text class="ops-settle {{detail.settleTone}}" wx:if="{{detail.settleLabel}}">结算 {{detail.settleLabel}}</text>
       <text class="ops-source {{detail.sourceTone}}">{{detail.sourceLabel}}</text>
+      <text class="ops-meta-inline warn" wx:if="{{detail.pricingIncomplete}}">核价未完</text>
+      <text class="ops-meta-inline" wx:if="{{detail.entryPathLabel}}">{{detail.entryPathLabel}}</text>
     </view>
     <text class="ops-meta">{{detail.shipmentNo}} · {{detail.shipmentDate}}</text>
     <text class="ops-meta" wx:if="{{detail.buyerName}}">购买人 {{detail.buyerName}}</text>
     <text class="ops-amount">{{detail.totalQty}} 件 · {{detail.itemCount}} 行{{detail.amountText ? ' · ¥' + detail.amountText : ''}}</text>
+
     <view class="ops-group" style="margin-top: 20rpx;">
-      <view class="ops-line-row" wx:for="{{detail.items}}" wx:key="itemName">
-        <text class="ops-line-name">{{item.itemName}}{{item.spec ? ' · ' + item.spec : ''}}</text>
+      <view class="sc-detail-line" wx:for="{{detail.items}}" wx:key="itemName">
+        <view class="sc-detail-line-main">
+          <text class="ops-line-name">{{item.itemName}}{{item.spec ? ' · ' + item.spec : ''}}</text>
+          <text class="sc-detail-mat" wx:if="{{item.matLine}}">{{item.matLine}}</text>
+        </view>
         <text class="ops-qty-badge">{{item.qty}}</text>
       </view>
     </view>
-    <text class="ops-meta" wx:if="{{detail.expressCompany || detail.trackingNo}}">
-      物流 {{detail.expressCompany || '—'}} {{detail.trackingNo || ''}}
-    </text>
+
+    <view class="ops-detail-section" wx:if="{{canWrite}}">
+      <text class="ops-section-label">物流（快递公司 / 运单号）</text>
+      <view class="ops-field-row">
+        <view class="ops-field half">
+          <input class="ops-field-input" value="{{shipForm.expressCompany}}" data-field="expressCompany" bindinput="onShipFormInput" placeholder="快递公司" placeholder-class="ops-ph" />
+        </view>
+        <view class="ops-field half">
+          <input class="ops-field-input" value="{{shipForm.trackingNo}}" data-field="trackingNo" bindinput="onShipFormInput" placeholder="运单号" placeholder-class="ops-ph" />
+        </view>
+      </view>
+      <view class="ops-chip-btn brass" bindtap="saveLogistics">{{detailBusy ? '保存中…' : '保存物流'}}</view>
+    </view>
+    <text class="ops-meta" wx:elif="{{detail.expressCompany || detail.trackingNo}}">物流 {{detail.expressCompany || '—'}} {{detail.trackingNo || ''}}</text>
+
+    <view class="ops-detail-section" wx:if="{{canWrite && nextActions.length}}">
+      <text class="ops-section-label">下一状态</text>
+      <view class="ops-next-row">
+        <view class="ops-chip-btn brass" wx:for="{{nextActions}}" wx:key="value" data-status="{{item.value}}" bindtap="applyStatus">{{item.label}}</view>
+      </view>
+      <text class="ops-field-hint">发货前可先填运单；点「已发货」时会一并写入。取消 / 完成等不可逆路径请谨慎。</text>
+    </view>
+    <view class="ops-detail-section" wx:elif="{{!nextActions.length}}">
+      <text class="ops-field-hint">当前状态无后续流转（已完成或已取消）。</text>
+    </view>
+
+    <view class="ops-list-tip is-{{detailTipTone}}" wx:if="{{detailTip}}"><text>{{detailTip}}</text></view>
+
     <text class="ops-meta" wx:if="{{detail.note}}">备注 {{detail.note}}</text>
+    <text class="ops-meta" wx:if="{{detail.billNo}}">关联账单 {{detail.billNo}}</text>
     <text class="ops-meta" wx:if="{{detail.feishuRecordId}}">飞书记录 {{detail.feishuRecordId}}</text>
     <text class="ops-meta" wx:if="{{detail.batchId}}">批次 {{detail.batchId}}</text>
+    <view class="ops-chip-btn danger sc-detail-remove" wx:if="{{canWrite}}" data-id="{{detail._id}}" bindtap="onRemove">{{removePendingId === detail._id ? '确认删除（软删）' : '删除此单'}}</view>
+    <text class="ops-settle-note">结算状态由工作室账单流程派生，本页不可改 settleStatus。</text>
   </scroll-view>
 </view>

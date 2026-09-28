@@ -10,6 +10,9 @@ Page({
   data: {
     ready: false,
     loading: false,
+    loadError: false,
+    tipTone: 'info',
+    tipText: '',
     saving: false,
     fromDefault: true,
     docId: '',
@@ -85,19 +88,29 @@ Page({
 
   async loadConfig() {
     if (this.data.loading) return
-    this.setData({ loading: true })
+    this.setData({ loading: true, loadError: false, tipText: '' })
     try {
       const result = await this.callFn({ action: 'get' })
       this.applyForm(result.config, {
         loading: false,
+        loadError: false,
+        tipText: '',
         docId: result.docId || '',
         fromDefault: !!result.fromDefault,
         ruleText: result.ruleText || ''
       })
     } catch (e) {
-      this.setData({ loading: false })
-      wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
+      this.setData({
+        loading: false,
+        loadError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '配置未能取回')
+      })
     }
+  },
+
+  onRetryConfig() {
+    this.loadConfig()
   },
 
   onSwitch(e) {

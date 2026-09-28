@@ -10,6 +10,15 @@
       <text class="header-note">充值档位与说明文案 · 折扣走会员等级 · 仅超管</text>
     </view>
 
+    <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+    <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+
+    <view class="empty-tip is-error" wx:if="{{loadError && !loading}}">
+      <text class="empty-title">钱包配置未能取回</text>
+      <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
+      <view class="btn-retry" bindtap="onRetryConfig">重试</view>
+    </view>
+
     <view class="hint-card info">
       <text class="hint-text">{{benefitRule}}</text>
     </view>
@@ -88,7 +97,7 @@
         <input class="input flex" placeholder="备注（选填）" value="{{reconcileForm.note}}" data-field="note" bindinput="onReconcileInput" />
       </view>
       <view class="workbench-btn-outline {{reconciling ? 'is-disabled' : ''}}" bindtap="reconcileRecharge">
-        {{reconciling ? '入账中…' : '确认补单入账'}}
+        {{reconciling ? '入账中…' : (reconcilePending ? '再点确认补单入账' : '确认补单入账')}}
       </view>
     </view>
 

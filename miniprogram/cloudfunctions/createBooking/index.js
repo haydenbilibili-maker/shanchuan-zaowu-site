@@ -7,6 +7,7 @@ const {
   slotCapacity,
   validateWorkshopStoreLock
 } = require('./bookingRules')
+const { holdActivitySeat, releaseActivitySeat } = require('./activitySeat')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
@@ -94,14 +95,13 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID
   
-  // 接收前端传来的完整预约信息
-  // 注意：这里为了简化流程，暂未做严格的 activityId 库存校验 (因为前端目前是纯表单提交)
-  // 如果未来有具体的 activities 集合，这里需要先查 activities 表扣库存
-  const {
+  // 可选 activityId（活动/课程报名）：服务端校验可报并原子扣名额，标题/日期/时间/价格以活动为准
+  let {
     type, title, date, week, time, people, price, name, phone,
     customDraftId = '', customMeta = null, petMemorialOrderId = '',
-    storeId = '', storeName = ''
+    storeId = '', storeName = '', activityId = ''
   } = event
+  activityId = typeof activityId === 'string' ? activityId.trim() : ''
 
   // 参数校验
   if (!openid) {
@@ -146,6 +146,24 @@ exports.main = async (event, context) => {
     }
   }
 
+  let seatHeld = 0
+  let bookingSaved = false
+  if (activityId) {
+    let hold
+    try {
+      hold = await holdActivitySeat(db, _, { activityId, people, now: Date.now() })
+    } catch (e) {
+      console.error('holdActivitySeat error:', e)
+      return { success: false, msg: '报名系统繁忙，请稍后重试' }
+    }
+    if (!hold.ok) return { success: false, msg: hold.msg }
+    seatHeld = hold.held
+    title = hold.act.title || title
+    date = hold.act.date || date
+    time = hold.act.time || ''
+    price = Number(hold.act.price) || 0
+  }
+
   try {
     // 1. 生成票号
     const ticketCode = generateTicketCode(type)
@@ -178,8 +196,13 @@ exports.main = async (event, context) => {
       bookingData.storeId = storeId
       bookingData.storeName = storeName || ''
     }
+    if (activityId) {
+      bookingData.activityId = activityId
+      bookingData.seatHeld = seatHeld
+    }
 
     const res = await db.collection('bookings').add({ data: bookingData })
+    bookingSaved = true
 
     if (customDraftId) {
       db.collection('custom_drafts').doc(customDraftId).update({
@@ -256,6 +279,9 @@ exports.main = async (event, context) => {
 
   } catch (e) {
     console.error('createBooking error:', e)
+    if (seatHeld && !bookingSaved) {
+      await releaseActivitySeat(db, _, activityId, seatHeld).catch((err) => console.error('release seat failed:', err))
+    }
     const errMsg = (e && e.message) || ''
     if (/permission|权限/.test(errMsg)) {
       return { success: false, msg: '预约服务暂不可用，请联系店员协助' }

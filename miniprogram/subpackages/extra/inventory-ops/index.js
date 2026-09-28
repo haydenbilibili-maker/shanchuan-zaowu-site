@@ -99,6 +99,14 @@ Page({
     ready: false,
     loading: false,
     dashLoading: false,
+    tipTone: 'info',
+    tipText: '',
+    dashError: '',
+    finishedListError: false,
+    rawListError: false,
+    formTip: '',
+    commitPending: false,
+    snapTip: '',
     committing: false,
     saving: false,
     viewMode: 'overview',
@@ -316,7 +324,7 @@ Page({
   },
 
   async loadDashboard() {
-    this.setData({ dashLoading: true })
+    this.setData({ dashLoading: true, dashError: '' })
     try {
       const result = await this.callFinished({ action: 'dashboard' })
       const k = result.kpis || {}
@@ -375,7 +383,11 @@ Page({
       })
       this.refreshListViews()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '观测台未能展开'), icon: 'none' })
+      this.setData({
+        dashError: formatCloudFnError(e, '观测台未能展开'),
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '观测台未能展开')
+      })
     } finally {
       this.setData({ dashLoading: false })
     }
@@ -455,7 +467,7 @@ Page({
   },
 
   async loadFinishedList() {
-    this.setData({ loading: true })
+    this.setData({ loading: true, finishedListError: false, tipText: '' })
     try {
       const result = await this.callFinished({
         action: 'list',
@@ -468,6 +480,7 @@ Page({
       const groups = this.applyCollapseState(buildLocalGroups(list))
       const summary = result.summary || {}
       this.setData({
+        finishedListError: false,
         list,
         groups,
         summary: {
@@ -481,8 +494,11 @@ Page({
         sourceLabel: summary.sourceLabel || this.data.sourceLabel || ''
       })
     } catch (e) {
-      this.setData({ list: [], groups: [] })
-      wx.showToast({ title: formatCloudFnError(e, '列表加载失败'), icon: 'none' })
+      this.setData({
+        finishedListError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '成品列表加载失败')
+      })
     } finally {
       this.setData({ loading: false })
     }
@@ -504,7 +520,7 @@ Page({
   // ——— 原材料 ———
 
   async loadRawList() {
-    this.setData({ loading: true })
+    this.setData({ loading: true, rawListError: false, tipText: '' })
     try {
       const category = this.data.rawCategoryValues[this.data.rawCategoryIndex] || ''
       const result = await this.callRaw({
@@ -514,6 +530,7 @@ Page({
       })
       const summary = result.summary || {}
       this.setData({
+        rawListError: false,
         rawList: result.list || [],
         rawSummary: {
           count: summary.count || 0,
@@ -524,8 +541,11 @@ Page({
         }
       })
     } catch (e) {
-      this.setData({ rawList: [] })
-      wx.showToast({ title: (e && e.message) || '加载失败', icon: 'none' })
+      this.setData({
+        rawListError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '原材料列表加载失败')
+      })
     } finally {
       this.setData({ loading: false })
     }
@@ -581,13 +601,14 @@ Page({
       showPaste: true,
       pasteText: '',
       preview: null,
-      previewError: ''
+      previewError: '',
+      commitPending: false
     })
   },
 
   closePaste() {
     if (this.data.committing) return
-    this.setData({ showPaste: false })
+    this.setData({ showPaste: false, commitPending: false })
   },
 
   onPasteInput(e) {
@@ -654,41 +675,40 @@ Page({
     if (this.data.committing) return
     const parsed = parseStudioInventoryText(this.data.pasteText)
     if (!parsed.ok) {
-      this.setData({ previewError: parsed.error || '解析失败' })
+      this.setData({ previewError: parsed.error || '解析失败', commitPending: false })
       return
     }
     if (!parsed.inventoryDate) {
-      wx.showToast({ title: '文本需含盘点日期', icon: 'none' })
+      this.setData({ previewError: '文本需含盘点日期', commitPending: false })
       return
     }
 
-    const confirm = await new Promise((resolve) => {
-      wx.showModal({
-        title: '确认写入成品盘点',
-        content: `将以 ${parsed.inventoryDate} 全量覆盖当前成品台账（${parsed.stats.lineCount} SKU / 共 ${parsed.stats.totalQty} 件），并保留历史快照。`,
-        confirmText: '确认覆盖',
-        confirmColor: '#C4A76C',
-        success: (res) => resolve(!!res.confirm),
-        fail: () => resolve(false)
+    if (!this.data.commitPending) {
+      this.setData({
+        commitPending: true,
+        previewError: `再点一次即覆盖：${parsed.inventoryDate} · ${parsed.stats.lineCount} SKU / ${parsed.stats.totalQty} 件`
       })
-    })
-    if (!confirm) return
+      return
+    }
 
-    this.setData({ committing: true })
-    wx.showLoading({ title: '写入中…', mask: true })
+    this.setData({ committing: true, commitPending: false, previewError: '正在写入…' })
     try {
       const result = await this.callFinished({
         action: 'commitSnapshot',
         text: this.data.pasteText
       })
-      wx.hideLoading()
-      wx.showToast({ title: result.msg || '已写入', icon: 'none', duration: 2400 })
-      this.setData({ showPaste: false, pasteText: '', preview: null })
+      this.setData({
+        showPaste: false,
+        pasteText: '',
+        preview: null,
+        previewError: '',
+        tipTone: 'info',
+        tipText: result.msg || '已写入成品盘点'
+      })
       this._collapseMap = {}
       await Promise.all([this.loadFinishedMeta(), this.loadFinishedList(), this.loadSnapshots()])
     } catch (e) {
-      wx.hideLoading()
-      wx.showToast({ title: formatCloudFnError(e, '写入失败'), icon: 'none' })
+      this.setData({ previewError: formatCloudFnError(e, '写入失败') })
     } finally {
       this.setData({ committing: false })
     }
@@ -712,19 +732,18 @@ Page({
       const result = await this.callFinished({ action: 'getSnapshot', snapshotId: id })
       const snap = result.snapshot || {}
       const lines = (snap.lines || [])
-        .slice(0, 8)
+        .slice(0, 6)
         .map((l) => `${l.groupName ? l.groupName + '·' : ''}${l.skuName} ${l.qty}个`)
-        .join('\n')
-      wx.showModal({
-        title: `快照 ${snap.inventoryDate || ''}`,
-        content: `${snap.sourceLabel || ''}\n${snap.lineCount || 0} SKU · 共 ${snap.totalQty || 0} 件\n录入 ${this.formatTime(snap.createdAt)}\n\n${lines}${(snap.lines || []).length > 8 ? '\n…' : ''}`,
-        showCancel: true,
-        cancelText: '关闭',
-        confirmText: '保持筛选',
-        success: () => {}
+        .join('；')
+      this.setData({
+        tipTone: 'info',
+        tipText: `快照 ${snap.inventoryDate || ''} · ${snap.lineCount || 0} SKU / ${snap.totalQty || 0} 件 · ${lines}${(snap.lines || []).length > 6 ? '…' : ''}`
       })
     } catch (err) {
-      wx.showToast({ title: formatCloudFnError(err, '快照读取失败'), icon: 'none' })
+      this.setData({
+        tipTone: 'warn',
+        tipText: formatCloudFnError(err, '快照读取失败')
+      })
     }
   },
 
@@ -732,6 +751,7 @@ Page({
     this.setData({
       showRawForm: true,
       rawEditingId: '',
+      formTip: '',
       formCategoryIndex: 0,
       rawForm: {
         itemName: '',
@@ -753,6 +773,7 @@ Page({
     this.setData({
       showRawForm: true,
       rawEditingId: id,
+      formTip: '',
       formCategoryIndex: catIdx,
       rawForm: {
         itemName: item.itemName || '',
@@ -789,10 +810,10 @@ Page({
     if (this.data.saving) return
     const form = this.data.rawForm
     if (!String(form.itemName || '').trim()) {
-      wx.showToast({ title: '请填写物品名称', icon: 'none' })
+      this.setData({ formTip: '请填写物品名称' })
       return
     }
-    this.setData({ saving: true })
+    this.setData({ saving: true, formTip: '正在保存…' })
     try {
       const payload = {
         itemName: form.itemName,
@@ -808,11 +829,14 @@ Page({
       } else {
         await this.callRaw({ action: 'create', item: payload })
       }
-      this.setData({ showRawForm: false })
-      wx.showToast({ title: '已保存', icon: 'success' })
+      this.setData({
+        showRawForm: false,
+        tipTone: 'info',
+        tipText: '原材料已保存'
+      })
       await this.loadRawList()
     } catch (e) {
-      wx.showToast({ title: (e && e.message) || '保存失败', icon: 'none' })
+      this.setData({ formTip: formatCloudFnError(e, '保存失败') })
     } finally {
       this.setData({ saving: false })
     }

@@ -82,6 +82,12 @@ Page({
     ready: false,
     loading: false,
     dashLoading: false,
+    tipTone: 'info',
+    tipText: '',
+    formTip: '',
+    dashError: '',
+    listError: false,
+    pendingRemoveId: '',
     saving: false,
     syncing: false,
     selecting: false,
@@ -286,7 +292,7 @@ Page({
   },
 
   async loadDashboard() {
-    this.setData({ dashLoading: true })
+    this.setData({ dashLoading: true, dashError: '' })
     try {
       const result = await this.callFn({
         action: 'dashboard',
@@ -388,7 +394,11 @@ Page({
       })
       this.refreshListViews()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '观测台未能展开'), icon: 'none' })
+      this.setData({
+        dashError: formatCloudFnError(e, '观测台未能展开'),
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '观测台未能展开')
+      })
     } finally {
       this.setData({ dashLoading: false })
     }
@@ -416,7 +426,10 @@ Page({
       })
       this.refreshEntityFilter()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '元数据未能取回'), icon: 'none' })
+      this.setData({
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '元数据未能取回')
+      })
     }
   },
 
@@ -436,7 +449,7 @@ Page({
   },
 
   async loadList() {
-    this.setData({ loading: true })
+    this.setData({ loading: true, listError: false, tipText: '', pendingRemoveId: '' })
     try {
       const result = await this.callFn({
         action: 'list',
@@ -478,6 +491,7 @@ Page({
         }))
       }
       this.setData({
+        listError: false,
         list,
         summary,
         readOnly: !!result.readOnly,
@@ -485,10 +499,10 @@ Page({
       })
     } catch (e) {
       this.setData({
-        list: [],
-        summary: { totalAmount: 0, totalAmountText: '0', count: 0, byEntity: [] }
+        listError: true,
+        tipTone: 'warn',
+        tipText: formatCloudFnError(e, '清单未能展开')
       })
-      wx.showToast({ title: formatCloudFnError(e, '清单未能展开'), icon: 'none' })
     } finally {
       this.setData({ loading: false })
     }
@@ -507,7 +521,10 @@ Page({
       })
     } catch (e) {
       if (!silent) {
-        wx.showToast({ title: formatCloudFnError(e, '同步状态未能取回'), icon: 'none' })
+        this.setData({
+          tipTone: 'warn',
+          tipText: formatCloudFnError(e, '同步状态未能取回')
+        })
       }
     }
   },
@@ -606,7 +623,7 @@ Page({
 
   openCreate() {
     if (!this.data.canWrite) {
-      wx.showToast({ title: '当前为只读', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '当前为只读，无法新增' })
       return
     }
     const scoped = (this.data.entities || []).filter((e) => e.scope === this.data.scope)
@@ -614,6 +631,7 @@ Page({
     this.setData({
       showForm: true,
       editingId: '',
+      formTip: '',
       formEntityIndex: 0,
       formEntityNames: scoped.map((e) => e.name),
       formStatusIndex: 0,
@@ -645,6 +663,7 @@ Page({
     this.setData({
       showForm: true,
       editingId: id,
+      formTip: '',
       formEntityIndex,
       formEntityNames: scoped.map((x) => x.name),
       formStatusIndex,
@@ -710,19 +729,19 @@ Page({
     if (this.data.saving) return
     const form = this.data.form || {}
     if (!String(form.itemName || '').trim()) {
-      wx.showToast({ title: '请填写品名', icon: 'none' })
+      this.setData({ formTip: '请填写品名' })
       return
     }
     if (!form.entityId) {
-      wx.showToast({ title: '请选择归属主体', icon: 'none' })
+      this.setData({ formTip: '请选择归属主体' })
       return
     }
     const qty = Number(form.qty)
     if (!Number.isFinite(qty) || qty <= 0) {
-      wx.showToast({ title: '数量须大于 0', icon: 'none' })
+      this.setData({ formTip: '数量须大于 0' })
       return
     }
-    this.setData({ saving: true })
+    this.setData({ saving: true, formTip: '正在保存…' })
     try {
       await this.callFn({
         action: this.data.editingId ? 'update' : 'create',
@@ -741,11 +760,14 @@ Page({
           source: 'erp'
         }
       })
-      wx.showToast({ title: '已收入柜中', icon: 'success' })
-      this.setData({ showForm: false })
+      this.setData({
+        showForm: false,
+        tipTone: 'info',
+        tipText: '已收入柜中'
+      })
       await this.loadList()
     } catch (e) {
-      wx.showToast({ title: formatCloudFnError(e, '未能保存'), icon: 'none' })
+      this.setData({ formTip: formatCloudFnError(e, '未能保存') })
     } finally {
       this.setData({ saving: false })
     }
@@ -762,7 +784,7 @@ Page({
     if (!row) return
     const next = this.nextStatuses(row)
     if (!next.length) {
-      wx.showToast({ title: '此件已至终点', icon: 'none' })
+      this.setData({ tipTone: 'info', tipText: '此件已至终点，无可流转状态' })
       return
     }
     const labels = next.map((v) => {
@@ -775,10 +797,13 @@ Page({
         const status = next[res.tapIndex]
         try {
           await this.callFn({ action: 'setStatus', id, status })
-          wx.showToast({ title: '状态已更迭', icon: 'success' })
+          this.setData({ tipTone: 'info', tipText: '状态已更迭' })
           this.loadList()
         } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '流转未成'), icon: 'none' })
+          this.setData({
+            tipTone: 'warn',
+            tipText: formatCloudFnError(err, '流转未成')
+          })
         }
       }
     })
@@ -787,7 +812,7 @@ Page({
   onBatchTransit() {
     const ids = this.data.selectedIds || []
     if (!ids.length) {
-      wx.showToast({ title: '请先勾选采购单', icon: 'none' })
+      this.setData({ tipTone: 'warn', tipText: '请先勾选采购单' })
       return
     }
     const statuses = (this.data.statuses || []).filter((s) => s.value !== 'draft')
@@ -799,11 +824,19 @@ Page({
         if (!status) return
         try {
           const result = await this.callFn({ action: 'batchSetStatus', ids, status })
-          wx.showToast({ title: result.msg || '已批量流转', icon: 'none' })
-          this.setData({ selecting: false, selectedIds: [], selectedMap: {} })
+          this.setData({
+            selecting: false,
+            selectedIds: [],
+            selectedMap: {},
+            tipTone: 'info',
+            tipText: result.msg || '已批量流转'
+          })
           this.loadList()
         } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '批量流转未成'), icon: 'none' })
+          this.setData({
+            tipTone: 'warn',
+            tipText: formatCloudFnError(err, '批量流转未成')
+          })
         }
       }
     })
@@ -813,21 +846,25 @@ Page({
     const id = e.currentTarget.dataset.id
     const row = (this.data.list || []).find((x) => x._id === id)
     if (!row) return
-    wx.showModal({
-      title: '移出采购柜',
-      content: `确认删除「${row.orderNo} / ${row.itemName}」？删除后仍可从同步日志追溯来源。`,
-      confirmText: '删除',
-      confirmColor: '#D64045',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          await this.callFn({ action: 'remove', id })
-          wx.showToast({ title: '已移出', icon: 'success' })
-          this.loadList()
-        } catch (err) {
-          wx.showToast({ title: formatCloudFnError(err, '删除未成'), icon: 'none' })
-        }
-      }
+    if (this.data.pendingRemoveId === id) {
+      this.setData({ pendingRemoveId: '', tipTone: 'info', tipText: '正在删除…' })
+      this.callFn({ action: 'remove', id })
+        .then(() => {
+          this.setData({ tipTone: 'info', tipText: '已移出' })
+          return this.loadList()
+        })
+        .catch((err) => {
+          this.setData({
+            tipTone: 'warn',
+            tipText: formatCloudFnError(err, '删除未成')
+          })
+        })
+      return
+    }
+    this.setData({
+      pendingRemoveId: id,
+      tipTone: 'warn',
+      tipText: `再点一次「删除」即移出「${row.orderNo} / ${row.itemName}」`
     })
   },
 
@@ -842,14 +879,13 @@ Page({
 
   async refreshSyncAndList() {
     if (this.data.syncing) return
-    this.setData({ syncing: true })
+    this.setData({ syncing: true, tipTone: 'info', tipText: '正在刷新同步状态…' })
     try {
       await this.loadSyncStatus(false)
       await this.loadList()
-      wx.showToast({
-        title: '已刷新同步状态。飞书拉取请在 ERP「同步管理」执行。',
-        icon: 'none',
-        duration: 2800
+      this.setData({
+        tipTone: 'info',
+        tipText: '已刷新同步状态。飞书拉取请在 ERP「同步管理」执行。'
       })
     } finally {
       this.setData({ syncing: false })

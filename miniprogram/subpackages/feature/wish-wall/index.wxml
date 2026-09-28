@@ -43,7 +43,7 @@
       <view class="ww-wm" aria-hidden="true"></view>
       <view class="ww-hero-body">
         <view class="ww-hero-top">
-          <text class="ww-over">WISH WALL · 马上有愿</text>
+          <text class="ww-over">马上有 · WISH WALL</text>
           <!-- 灯的状态直接写进页头：今日已点 = 铜灯亮，未点 = 空心 -->
           <view class="signal-light {{lamp.lit ? 'lamp-brass on' : 'lamp-muted hollow'}}" aria-hidden="true"></view>
           <view class="ww-seal" aria-hidden="true"><view class="ww-seal-inner"></view></view>
@@ -67,22 +67,46 @@
         <!-- 这一行右侧原本空着（印泥/水印之外没有任何内容）。祈运标签挪上来：
              ① 第一屏就能看到"这面墙求什么"（不必滚到玩法区）② 玩法区因此省下一条提示的高度 -->
         <view class="ww-scope-row">
-          <!-- 产品 chip 本身就是**产品链路的常驻入口**（第一屏就能到详情页）。
-               以前只有抽完玩法才在结果卡里出现「看这件藏品」，链路藏得太深。
-               ⚠️ 2026-09-21（P2-7）：handler 从 `goProduct` 改为 `goWallProduct` ——
-               这里**没有任何玩法发生**，复用玩法转化事件会把「参与玩法」比率推到 >100%。
-               两个入口的上报口径见 index.js 的 goWallProduct / goProduct。 -->
-          <text
-            class="ww-scope {{productId ? 'is-link' : ''}}"
-            wx:if="{{productTitle}}"
+          <!-- 2026-09-27「马上有 = 门店核心 IP」：页头原来的「本墙/本品 chip + 一行通用导语」
+               合并成一条**展签**（博物馆展品铭牌）：实物图 / 名称 · 物种 / 在哪家店可见。
+               点开是展品卡（寓意、人设、线下现场、去藏品页）。文案出处见 config/wallExhibit.js。
+               没登记展品的墙（exhibit 为 null）退回原来的产品 chip。 -->
+          <view
+            class="ww-exhibit"
+            wx:if="{{exhibit}}"
+            bindtap="openExhibit"
+            hover-class="ww-exhibit-press"
+            hover-stay-time="70"
+            aria-role="button"
+            aria-label="认识展品 {{exhibit.name}}，{{exhibit.species}}，{{exhibit.storeLabel}}可见实物"
+          >
+            <view class="ww-exhibit-thumb {{exhibit.cover ? 'has-img' : ''}}" aria-hidden="true">
+              <image wx:if="{{exhibit.cover}}" class="ww-exhibit-img" src="{{exhibit.cover}}" mode="aspectFill" />
+              <text wx:else class="ww-exhibit-glyph">马</text>
+            </view>
+            <view class="ww-exhibit-copy">
+              <view class="ww-exhibit-name-row">
+                <text class="ww-exhibit-name">{{exhibit.name}}</text>
+                <text class="ww-exhibit-species">{{exhibit.species}}</text>
+              </view>
+              <text class="ww-exhibit-where">{{exhibit.storeLabel}} · 可见实物</text>
+            </view>
+            <text class="ww-exhibit-go">认识它 ›</text>
+          </view>
+          <!-- 产品 chip：**没登记展品的墙**才在页头出现（有展品时它挪进展品卡当「去藏品页」）。
+               ⚠️ 2026-09-21（P2-7）：handler 是 `goWallProduct` —— 这里**没有任何玩法发生**，
+               复用玩法转化事件会把「参与玩法」比率推到 >100%。上报口径见 index.js。 -->
+          <view
+            class="ww-scope {{productId ? 'is-link' : 'is-wall'}}"
+            wx:elif="{{productTitle}}"
             bindtap="goWallProduct"
             hover-class="ww-scope-press"
             hover-stay-time="70"
             aria-role="{{productId ? 'link' : 'text'}}"
-          >{{productTitle}}{{productId ? ' ›' : ''}}</text>
-          <text class="ww-bless" wx:if="{{blessLabelText}}">偏「{{blessLabelText}}」</text>
+            aria-label="{{productId ? ('回看本品 ' + productTitle) : ('本墙 ' + productTitle)}}"
+          >{{productTitle}}{{productId ? ' · 去看' : ''}}</view>
+          <view class="ww-bless" wx:if="{{blessLabelText}}">偏「{{blessLabelText}}」</view>
         </view>
-        <text class="ww-hint">把想成真的心愿挂上墙。轻一点写，短一点说。</text>
       </view>
     </view>
       <view class="ww-wall-fiber" aria-hidden="true"></view>
@@ -103,31 +127,35 @@
         </block>
         <block wx:else>
           <view
-            class="ww-danmaku ww-tone-{{item.tone}}"
+            class="ww-danmaku ww-tone-{{item.tone}} {{item.isMine ? 'is-mine' : ''}} {{item.pinned ? 'is-pinned-dm' : ''}} {{item.boost || item.id === freshId ? 'is-boost' : ''}} {{item.id === heldDmId ? 'is-held' : ''}}"
             wx:for="{{rows}}"
             wx:key="key"
             style="top:{{item.topPercent}}%; animation-duration:{{item.durationMs}}ms; animation-delay:{{item.delayMs}}ms;"
             bindtap="openWishCard"
-          data-id="{{item.id}}"
-          hover-class="ww-danmaku-press"
-          hover-stay-time="70"
-          aria-role="button"
-          aria-label="{{item.text}}"
-        >
+            data-id="{{item.id}}"
+            hover-class="ww-danmaku-press"
+            hover-stay-time="70"
+            aria-role="button"
+            aria-label="{{item.text}}"
+          >
+            <!-- 弹幕皮肤：薄纸签（可读滚动优先；钉头/绳保留厅墙气质） -->
+            <view class="ww-dm-slip {{item.id === freshId || item.boost ? 'is-landing' : ''}} {{item.isMine ? 'is-mine-slip' : ''}} {{item.pinned ? 'is-pinned-slip' : ''}}">
+              <view class="ww-dm-cord" aria-hidden="true"></view>
               <text class="ww-emoji" wx:if="{{item.emoji}}">{{item.emoji}}</text>
-          <!-- 墙面只保留**置顶**标记（铜钉）；「馆方」与愿签卡一起下线（2026-09-18 产品决定） -->
-          <view
-            class="ww-dm-mark {{item.pinned ? 'is-pinned' : ''}}"
-            wx:if="{{item.pinned}}"
-            aria-hidden="true"
-          ></view>
-          <text class="ww-dm-text {{item.id === freshId ? 'is-fresh' : ''}}">{{item.text}}</text>
-        </view>
+              <view
+                class="ww-dm-mark {{item.pinned ? 'is-pinned' : ''}}"
+                wx:if="{{item.pinned}}"
+                aria-hidden="true"
+              ></view>
+              <text class="ww-dm-text {{item.id === freshId || item.boost ? 'is-fresh' : ''}} {{item.isMine ? 'is-mine-text' : ''}}">{{item.text}}</text>
+              <view class="ww-dm-spark" wx:if="{{item.id === heldDmId}}" aria-hidden="true"></view>
+            </view>
+          </view>
           <!-- ⚠️ 失败时不得说「墙面还是空的」——那是把加载失败谎报成没人许愿 -->
           <view class="ww-wall-empty" wx:if="{{!rows.length}}">
             <view class="ww-wall-empty-mark" aria-hidden="true"></view>
-            <text class="ww-wall-empty-title">{{loadError ? '墙面未展开' : '墙面还是空的'}}</text>
-            <text class="ww-wall-empty-desc">{{loadError ? '网络或权限异常，可在下方重试' : '做第一个许愿的人'}}</text>
+            <text class="ww-wall-empty-title">{{loadError ? '墙面未展开' : '马上有还没听到心愿'}}</text>
+            <text class="ww-wall-empty-desc">{{loadError ? '网络或权限异常，可在下方重试' : '对着它，写下第一句'}}</text>
           </view>
         </block>
       </view>
@@ -167,11 +195,16 @@
         <text class="ww-echo-sub" wx:if="{{item.sub}}">{{item.sub}}</text>
       </view>
     </view>
-    <!-- 发送条（顺流）：**紧贴弹幕墙正下方**（2026-09-20 产品负责人：「把这个弹幕发送放在弹幕墙下方」）。
-         历史：2026-09-19 之前是 `position: fixed; bottom: 0` 吸底（§35），当天改为顺流；
-         今天再把它从「灯/木鱼 + 提示行之后」上移到墙面正下方 —— 写愿是这一页的主交互，
-         应该紧挨着墙，而不是滚过两块内容才看到（产品口径同 test:wish-wall 的位置判据）。
+    <!-- 厅内挂签台：发送条 + 灵感/额度合成一座仪式台（composer 自身仍 transparent/static，守卫钉死）。
          位置不变量：wall < composer < plays，且全页只有一个（守卫已钉）。 -->
+    <view class="ww-desk {{deskPosted ? 'is-posted' : ''}}">
+      <view class="ww-desk-lintel" aria-hidden="true">
+        <view class="ww-desk-seal"><text class="ww-desk-seal-t">{{deskPosted ? '成' : '挂'}}</text></view>
+        <view class="ww-desk-copy">
+          <text class="ww-desk-title">{{deskPosted ? '已挂上墙' : '挂签台'}}</text>
+          <text class="ww-desk-sub">{{deskPosted ? '这句正在墙上亮着' : '对着马上有，写下想要的'}}</text>
+        </view>
+      </view>
     <view class="ww-composer">
       <!-- 为什么要摘掉原生 maxlength（P0 修复的另一半）：它按 **UTF-16 码元** 算，
            绑成 textMax=30 时一个 emoji 吃掉 2 个额度、一个家庭 emoji 吃掉 8 个；
@@ -186,6 +219,9 @@
         value="{{draft}}"
         maxlength="-1"
         confirm-type="send"
+        adjust-position="{{true}}"
+        cursor-spacing="24"
+        hold-keyboard="{{false}}"
         placeholder="例如：马上有闲，马上有缘"
         placeholder-class="ww-input-ph"
         focus="{{inputFocus}}"
@@ -235,6 +271,7 @@
         <text class="ww-count">{{draftCount}}/{{textMax}}</text>
       </view>
     </view>
+    </view>
 
     <view class="ww-notice" wx:if="{{myHidden > 0}}">
       <view class="signal-light lamp-warn" aria-hidden="true"></view>
@@ -253,15 +290,14 @@
       </view>
     </view>
 
-    <!-- 区头（2026-09-20 改造）：仪式区此前**没有标题**，两块卡直接落在页面上；
-         而下一区却有「今天的玩法」标题 —— 一页里一半有区头、一半没有，读起来就是散的。
-         现在两区各有区头，形成「今天的仪式 / 今天的玩法」的节奏；音效开关也归位到这里
-         （它是**仪式**音效，此前挂在一条与它无关的说明行尾巴上，是全页最抢镜的次要元素）。
-         为什么删掉那条说明「点一盏灯、敲一下木鱼，心愿挂上墙就会一直流动。」：
-         两件事它都没在说新东西 —— 卡片自己写着「点一下，替今天留个记号 / 敲一下，静一分」，
-         而「心愿在墙上流动」正是紧邻上方的墙页脚原文。 -->
-    <view class="ww-sec-head">
-      <text class="ww-sec-title">今天的仪式</text>
+    <!-- 仪式厅：与挂签台 / 签廊同族厅盒（门楣 + 器物龛） -->
+    <view class="ww-hall is-ritual">
+    <view class="ww-hall-lintel">
+      <view class="ww-hall-seal" aria-hidden="true"><text class="ww-hall-seal-t">仪</text></view>
+      <view class="ww-hall-copy">
+        <text class="ww-hall-title">今天的仪式</text>
+        <text class="ww-hall-sub">给马上有点一盏灯 · 敲一下木鱼</text>
+      </view>
       <view
         class="ww-sound {{soundOn ? 'is-on' : 'is-off'}}"
         bindtap="onToggleSound"
@@ -359,23 +395,27 @@
       <text class="ww-cert-entry-tag">{{certEntry.tag}}</text>
       <text class="ww-cert-entry-go">{{certEntry.action}}</text>
     </view>
+    </view>
     <!-- 「说明行 + 音效」整块已下线（2026-09-20 改造）：音效上移到仪式区区头，
          说明文案与墙页脚重复。原结构见 git 历史（.ww-foot-row）。 -->
 
-    <!-- 游戏分区 · 玩法**入口区**（PRD v1.4 §11.3 六分区的「游戏」；§11.4 玩法各开一页）。
+    <!-- 玩法分区 · 玩法**入口区**（PRD v1.4 §11.3 六分区的「玩法」；§11.4 玩法各开一页）。
          2026-09-21 口径变更：这里**只做入口** —— 进行态 / 结果 / 推荐 / 分享全部搬到各自玩法页
          （每个玩法一个完整闭环：入口 → 进行态 → 结果 → 留档 → 下一步）。
          ⚠️ 三条不许破：
            · `wx:for="{{plays}}"` 注册表驱动，页面不写死玩法名（加玩法只改 config/ritualPlays.js）；
            · 前两枚由祈运标签决定（applyBlessScope 的排序不变，同一天同一标签结果仍确定）；
-           · 入口形态按注册表 `form` 分支（card / shell / ring / axis）—— 四种入口长得不一样，
+           · 入口形态按注册表 `form` 分支（card / shell / ring / axis / leaf / coin）—— 各玩法入口长得不一样，
              不再靠"前两枚更大"这一种表达（§11.1 R1）。
          每个入口还带**"今天玩过没有"**（`item.played / entryNote / doneNote`）——
          这是把用户再引进玩法页的理由（状态由本地留档按日期键现算，见 index.js refreshPlayStates）。 -->
     <view class="ww-plays">
       <view class="ww-plays-head">
-        <text class="ww-plays-title">游戏</text>
-        <text class="ww-plays-sub">{{blessLabelText ? '偏「' + blessLabelText + '」先推这两支' : '四个玩法，各进各的门'}}</text>
+        <view class="ww-hall-seal is-play" aria-hidden="true"><text class="ww-hall-seal-t">玩</text></view>
+        <view class="ww-plays-head-copy">
+          <text class="ww-plays-title">今天的玩法</text>
+          <text class="ww-plays-sub">{{blessLabelText ? '偏「' + blessLabelText + '」先推这两支' : '领一句，回来说给马上有听'}}</text>
+        </view>
       </view>
       <view class="ww-play-grid">
         <view
@@ -389,7 +429,7 @@
           aria-role="button"
           aria-label="{{item.name}}：{{item.played ? item.doneNote : item.hint}}"
         >
-          <!-- 入口形态：四种各一套（纯 CSS 盒子，不用图片/图标资产、不用 canvas） -->
+          <!-- 入口形态：各玩法一套（纯 CSS 盒子，不用图片/图标资产、不用 canvas） -->
           <view class="ww-play-form" wx:if="{{item.form === 'card'}}" aria-hidden="true">
             <view class="ww-play-tube">
               <!-- 2026-09-22：入口尺寸下「筒」读成一块铜方块 —— 补一支露在筒口的签条，
@@ -416,13 +456,25 @@
               <view class="ww-play-axis-knob"></view>
             </view>
           </view>
+          <view class="ww-play-form" wx:elif="{{item.form === 'leaf'}}" aria-hidden="true">
+            <view class="ww-play-leaf">
+              <view class="ww-play-leaf-vein"></view>
+            </view>
+          </view>
+          <view class="ww-play-form" wx:elif="{{item.form === 'coin'}}" aria-hidden="true">
+            <view class="ww-play-coin">
+              <view class="ww-play-coin-hole"></view>
+            </view>
+          </view>
 
+          <!-- 「先推」绝对定位到格角，不进标题 flex 行 —— 否则挤「今日一签」折成两行（2026-09-27） -->
+          <text class="ww-play-lead-tag" wx:if="{{index < 2}}">先推</text>
           <view class="ww-play-copy">
             <view class="ww-play-title-row">
               <view class="ww-play-mark" aria-hidden="true">{{item.mark}}</view>
               <text class="ww-play-name">{{item.name}}</text>
-              <text class="ww-play-lead-tag" wx:if="{{index < 2}}">先推</text>
             </view>
+            <!-- 副标（hint）恒显：与状态句分工（做什么 / 今天做没做），六格同为「标题+副标+状态」三行，行高齐平 -->
             <text class="ww-play-hint">{{item.hint}}</text>
             <text class="ww-play-state {{item.played ? 'is-done' : ''}}">{{item.played ? item.doneNote : item.entryNote}}</text>
           </view>
@@ -482,6 +534,67 @@
       <text class="ww-relics-chevron" aria-hidden="true">›</text>
     </view>
   </block>
+
+  <!-- 展品卡：从墙头展签点开。认识「马上有」这件展品 → 对着它写一句 / 去它的藏品页。
+       只画有出处的字段（config/wallExhibit）与商品记录里读得到的字段；读不到的格子不画。
+       纪律（PRD §2.2）：不引导触摸标本。 -->
+  <view
+    class="ww-exhibit-mask"
+    wx:if="{{exhibitOpen && exhibit}}"
+    bindtap="closeExhibit"
+    catchtouchmove="noop"
+    aria-role="button"
+    aria-label="关闭展品卡"
+  >
+    <view class="ww-exhibit-sheet" catchtap="noop" aria-role="dialog" aria-label="展品 {{exhibit.name}}">
+      <view class="ww-exhibit-sheet-fiber" aria-hidden="true"></view>
+      <view class="ww-exhibit-stage">
+        <image wx:if="{{exhibit.cover}}" class="ww-exhibit-stage-img" src="{{exhibit.cover}}" mode="aspectFill" />
+        <view wx:else class="ww-exhibit-stage-ph" aria-hidden="true">
+          <view class="ww-exhibit-stage-beam"></view>
+          <text class="ww-exhibit-stage-glyph">马</text>
+        </view>
+        <view class="ww-exhibit-stage-plate" aria-hidden="true"><text class="ww-exhibit-stage-plate-t">{{exhibit.name}}</text></view>
+      </view>
+      <view class="ww-exhibit-body">
+        <text class="ww-exhibit-over">展品 · {{exhibit.nameEn}}</text>
+        <view class="ww-exhibit-title-row">
+          <text class="ww-exhibit-title">{{exhibit.name}}</text>
+          <text class="ww-exhibit-sub">{{exhibit.species}}</text>
+        </view>
+        <text class="ww-exhibit-latin" wx:if="{{exhibit.latinName}}">{{exhibit.latinName}}</text>
+        <text class="ww-exhibit-meaning">{{exhibit.meaning}}</text>
+        <text class="ww-exhibit-persona">「{{exhibit.persona}}」</text>
+        <view class="ww-exhibit-facts">
+          <view class="ww-exhibit-fact">
+            <text class="ww-exhibit-fact-k">在哪</text>
+            <text class="ww-exhibit-fact-v">{{exhibit.storeLabel}} · {{exhibit.visitNote}}</text>
+          </view>
+          <view class="ww-exhibit-fact">
+            <text class="ww-exhibit-fact-k">现场</text>
+            <text class="ww-exhibit-fact-v">{{exhibit.scene}}</text>
+          </view>
+          <view class="ww-exhibit-fact" wx:if="{{exhibit.themeNote}}">
+            <text class="ww-exhibit-fact-k">主题</text>
+            <text class="ww-exhibit-fact-v">{{exhibit.themeNote}}</text>
+          </view>
+        </view>
+        <view class="ww-exhibit-acts">
+          <view class="ww-exhibit-act is-primary" bindtap="exhibitToWish" hover-class="ww-exhibit-act-press" hover-stay-time="70" aria-role="button">对着它写一句</view>
+          <view
+            class="ww-exhibit-act is-link"
+            wx:if="{{productId}}"
+            bindtap="goWallProduct"
+            hover-class="ww-exhibit-act-press"
+            hover-stay-time="70"
+            aria-role="link"
+            aria-label="去藏品页 {{productTitle}}"
+          >去藏品页 ›</view>
+        </view>
+        <text class="ww-exhibit-idea">{{exhibit.idea}} · {{exhibit.slogan}}</text>
+      </view>
+    </view>
+  </view>
 
   <!-- 心愿笺：点愿签展开的那张纸。弹幕看得快、愿签看得清、笺看得住 -->
   <view
@@ -593,6 +706,19 @@
   <!-- 原「纸签弹层（玩法结果）」整块已下线（2026-09-21 PRD v1.4 §11.4：玩法各开一页）。
        结果 / 写成心愿 / 分享 / 推荐行**原样搬到玩法页**（`.rp-*`，见 subpackages/feature/play-*），
        本页只剩入口区。层叠纪律不变：本页仍是 fixed 覆盖层（H2 功德证）必须是 `.ww-page` 直接子节点。 -->
+
+  <!-- 玩法弹层（2026-09-27 产品口径：六个玩法都在墙上完成，入口不再跳页）。
+       组件在 plays 分包（分包异步化，json 里 componentPlaceholder 占位），本体与独立页同一份皮与行为。
+       wx:if 挂载：关掉即卸载，墙面挂签台 / 弹幕 / 签廊的状态一概不动。 -->
+  <play-sheet
+    wx:if="{{playSheetId}}"
+    play-id="{{playSheetId}}"
+    ctx="{{playSheetCtx}}"
+    bind:close="onPlaySheetClose"
+    bind:wish="onPlaySheetWish"
+    bind:post="onPlaySheetPost"
+    bind:share="onPlaySheetShare"
+  />
 
   <!-- 创新钩子 H2「功德证」本体（可保管、可回看）：与纸签弹层同一套纸张语言与层叠纪律 ——
        同样是 .ww-page 的直接子节点（fixed 覆盖层不许待在带 z-index 的祖先里，见上面那段注释）。

@@ -38,6 +38,27 @@
       "installDependency": true
     },
     {
+      "name": "b2bPayCallback",
+      "timeout": 15,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "payB2bPurchase",
+      "timeout": 15,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "manageSupplierDesk",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "claimStoreReceipt",
       "timeout": 20,
       "runtime": "Nodejs16.13",
@@ -347,6 +368,13 @@
     },
     {
       "name": "getAnalyticsDashboard",
+      "timeout": 30,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "secureDataRead",
       "timeout": 30,
       "runtime": "Nodejs16.13",
       "handler": "index.main",

@@ -301,6 +301,11 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 .hero-swiper { width: 100%; height: 100%; }
 .slide-image { width: 100%; height: 100%; }
+.hero-video { background: #111; }
+.hero-live-badge {
+  position: absolute; left: 24rpx; bottom: 24rpx; z-index: 4; padding: 4rpx 14rpx; border-radius: 20rpx;
+  font-size: 20rpx; letter-spacing: 2rpx; color: #fff; background: rgba(26, 24, 20, 0.6); pointer-events: none;
+}
 .img-counter {
   position: absolute;
   right: 24rpx;
