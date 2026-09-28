@@ -1,0 +1,5 @@
+# 域 home —— 守卫清单（一行一条 npm 脚本）。本文件是**该域的单写者面**：
+# 只有该域的 owner 改它（见 docs/并发工作流注册表.json）；跨流加守卫请提变更请求。
+# 校验：npm run check:guards-coverage
+# 2026-09-27：首页「为你推荐」全面升级（miniprogram/docs/首页为你推荐_全面升级_2026-09-27.md）
+npm run check:home-reco

@@ -1,4 +1,6 @@
 {
   "read": "auth != null && auth.openid != null && auth.openid != ''",
-  "write": "auth != null"
+  "create": "auth != null",
+  "update": false,
+  "delete": false
 }

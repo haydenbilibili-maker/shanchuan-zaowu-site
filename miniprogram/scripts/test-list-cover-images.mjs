@@ -31,6 +31,8 @@ const HUB_WXML = 'miniprogram/subpackages/feature/gift/hub/index.wxml'
 const FRAMER_JS = 'miniprogram/subpackages/business/framer/index.js'
 const STAFF_FN = 'miniprogram/cloudfunctions/manageStaff/index.js'
 const PAGE_INDEX = 'miniprogram/pages/index/index.js'
+const HOMERECO_JS = 'miniprogram/components/HomeReco/index.js'
+const HOMERECO_WXML = 'miniprogram/components/HomeReco/index.wxml'
 const WIKI_JS = 'miniprogram/subpackages/feature/detail/wiki-detail/index.js'
 const CUSTOM_JS = 'miniprogram/subpackages/feature/custom/index.js'
 const MANAGER_JS = 'miniprogram/subpackages/manager/manager/managerPageConfig.js'
@@ -107,14 +109,17 @@ eq('firstImageOf + thumbUrl 串起来就是可渲染地址',
 // ⚠️ 判据盯"意图"而不是函数名：封面必须走 imageUrl 的**尺寸化派生**（不得直出 cloud://）。
 // 2026-09-18 首页推荐位按实测卡宽（280rpx=140pt）从 thumbUrl 改成了 midUrl ——
 // 写死函数名会把"合法换档"误报成回归（错题本 E7：判据语义错 → 假失败）。
+// 2026-09-27 首页推荐位整体搬进 components/HomeReco（原值存 rawImage，<image> 只绑派生后的 image）。
 check(
   '★ 首页推荐位封面走尺寸化派生（rail/mid/thumb 任一档，且带只缩不放的 `>`）',
-  /(railUrl|midUrl|thumbUrl)\(getFirstImage\(item\.images\)/.test(stripComments(read(PAGE_INDEX))),
-  '首页又把原始 cloud:// 塞给 <image>'
+  /image:\s*(railUrl|midUrl|thumbUrl)\(c\.rawImage\)/.test(stripComments(read(HOMERECO_JS))),
+  '首页推荐位又把原始 cloud:// 塞给 <image>'
 )
 check(
   '★ 首页推荐位没有绕过派生直出原值',
-  !/image:\s*getFirstImage\(item\.images\)/.test(stripComments(read(PAGE_INDEX))),
+  !/image:\s*(c\.rawImage|getFirstImage\()/.test(stripComments(read(HOMERECO_JS))) &&
+    !/src="\{\{[^}]*rawImage/.test(read(HOMERECO_WXML)) &&
+    !/image:\s*getFirstImage\(item\.images\)/.test(stripComments(read(PAGE_INDEX))),
   '发现未经尺寸化的直出赋值'
 )
 check('★ 物种百科缩略走 thumbUrl', /thumbUrl\(getFirstImage\(p\.images\)\)/.test(stripComments(read(WIKI_JS))))
@@ -414,9 +419,9 @@ function selftest() {
     },
     {
       name: '首页推荐位又直绑原始值',
-      file: PAGE_INDEX,
-      from: 'image: require(\'../../utils/imageUrl\').midUrl(getFirstImage(item.images) || item.httpImage || \'\'),',
-      to: "image: getFirstImage(item.images) || item.httpImage || '',"
+      file: HOMERECO_JS,
+      from: 'image: midUrl(c.rawImage)',
+      to: 'image: c.rawImage'
     },
     {
       name: 'hub 去掉封面错误回落',

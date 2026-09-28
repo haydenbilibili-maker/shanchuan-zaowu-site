@@ -70,3 +70,4 @@ npm run check:main-package-size
 npm run check:sensitive-rules
 npm run check:sensitive-direct-read
 npm run test:secure-data-read
+npm run test:secure-data-write

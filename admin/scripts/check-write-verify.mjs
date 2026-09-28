@@ -72,11 +72,23 @@ export function readCollectionsMap(cloudSrc) {
   return map
 }
 
-/** 走代理的集合（与 utils/cloudbaseCdnDb.js 的 STORE_CONTENT_WRITE_COLLECTIONS 对齐） */
+/** utils/cloudbaseCdnDb.js 里 `const|export const NAME = new Set([...])` 的集合名 */
+export function readProxySet(gatewaySrc, name) {
+  const m = gatewaySrc.match(new RegExp(`${name} = new Set\\(\\[([\\s\\S]*?)\\]\\)`))
+  return m ? [...m[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1]) : []
+}
+
+const GATEWAY_JS = join(SRC, 'utils', 'cloudbaseCdnDb.js')
+
+/**
+ * 走代理的集合：manageStoreContent（手写，与 STORE_CONTENT_WRITE_COLLECTIONS 对齐）
+ * + secureDataWrite（运行时从 PROXY_WRITE_COLLECTIONS 读取；网关 success:false 即抛错，不会假成功）
+ */
 export const PROXIED_COLLECTIONS = [
   'banners', 'categories', 'activities', 'rewards', 'framers', 'care_guides',
   'custom_configs', 'custom_inquiries', 'pet_memorial_orders',
   'framer_recruit_applications', 'articles', 'cms_wikis', 'configs',
+  ...readProxySet(existsSync(GATEWAY_JS) ? readFileSync(GATEWAY_JS, 'utf8') : '', 'PROXY_WRITE_COLLECTIONS'),
 ]
 
 export const WRITE_HELPERS = [
@@ -201,9 +213,12 @@ export function evaluateRatchet(findings, baseline, opts = {}) {
 const CASES = [
   ['直写且不校验 → 命中', (c) => c.findUnverifiedWrites(`
     const save = async () => {
-      await cdnUpdate('home_configs', id, { a: 1 })
+      await cdnUpdate('products', id, { a: 1 })
       ElMessage.success('已保存')
     }`).length === 1],
+  ['secureDataWrite 网关集合（PROXY_WRITE_COLLECTIONS 运行时读取）→ 不要求校验', (c) =>
+    c.PROXIED_COLLECTIONS.has('home_configs') && c.findUnverifiedWrites(`
+      await cdnUpdate('home_configs', id, { a: 1 })`, '', c.PROXIED_COLLECTIONS).length === 0],
   ['直写 + assertWriteApplied → 不命中', (c) => c.findUnverifiedWrites(`
     const save = async () => {
       const res = await cdnUpdate('home_configs', id, { a: 1 })
@@ -217,8 +232,8 @@ const CASES = [
   ['代理 + 非代理混用 → 只报非代理那个', (c) => {
     const r = c.findUnverifiedWrites(`
       await cdnUpdate('categories', id, { a: 1 })
-      await cdnUpdate('stores', id, { a: 1 })`)
-    return r.length === 1 && r[0].collection === 'stores'
+      await cdnUpdate('bookings', id, { a: 1 })`)
+    return r.length === 1 && r[0].collection === 'bookings'
   }],
   ['变量集合名 → 静态不可判，不误报', (c) => c.findUnverifiedWrites(`
     await cdnUpdate(colName, id, { a: 1 })`).length === 0],

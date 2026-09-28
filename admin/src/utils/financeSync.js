@@ -3,7 +3,7 @@
  * Web 管理后台 ↔ 云数据库 ↔ 店长小程序账本（store_ledger）
  */
 import { COLLECTIONS } from '../cloud'
-import { getCdnDatabase, fetchAllFromCollection, fetchCollectionLimit, cdnAdd, cdnUpdate, cdnRemove, assertWriteApplied } from './cloudbaseCdnDb.js'
+import { fetchAllFromCollection, fetchCollectionLimit, cdnRemove, callCdnFunction } from './cloudbaseCdnDb.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
 import {
   ledgerKey,
@@ -88,8 +88,6 @@ export async function fetchFinanceSettingsFromCloud() {
 
 export async function saveFinanceRecordsToCloud(records) {
   try {
-    const db = await getCdnDatabase()
-
     const deduped = dedupeFinanceRecords(records)
     if (!deduped.length) {
       return { success: true, message: '无数据需要同步' }
@@ -121,46 +119,14 @@ export async function saveFinanceRecordsToCloud(records) {
     }
     if (pruneOps.length) await Promise.all(pruneOps)
 
-    const freshRows = pruneOps.length
-      ? await fetchAllFromCollection(COLLECTIONS.FINANCE_RECORDS, { orderField: 'date', direction: 'desc' })
-      : existingRows
-    const byKey = new Map(freshRows.map((doc) => [ledgerKey(doc, doc.date), doc]))
+    // finance_records 与 store_ledger 客户端均不可写：经 syncFinanceData.upload_records 一次写入门店账本并镜像
+    const pushed = await pushStoreLedger(deduped)
+    saveSyncMetadata({ ...getSyncMetadata(), lastStoreLedgerSyncTime: Date.now() })
 
-    const ops = []
-    for (const record of deduped) {
-      const { _id, ...payload } = record
-      const key = ledgerKey(record, record.date)
-      const prev = byKey.get(key)
-      if (prev?._id) {
-        ops.push(
-          cdnUpdate(COLLECTIONS.FINANCE_RECORDS, prev._id, {
-            ...payload,
-            _updateTime: Date.now(),
-            syncedAt: Date.now(),
-          }).then((r) => assertWriteApplied(COLLECTIONS.FINANCE_RECORDS, r, 'update')),
-        )
-      } else {
-        ops.push(
-          cdnAdd(COLLECTIONS.FINANCE_RECORDS, {
-            ...payload,
-            _createTime: Date.now(),
-            _updateTime: Date.now(),
-            syncedAt: Date.now(),
-          }).then((r) => assertWriteApplied(COLLECTIONS.FINANCE_RECORDS, r, 'add')),
-        )
-      }
+    return {
+      success: true,
+      message: `成功同步 ${deduped.length} 条记录（门店账本新增 ${pushed.added || 0}、更新 ${pushed.updated || 0}）`,
     }
-
-    await Promise.all(ops)
-
-    try {
-      await pushStoreLedger(deduped)
-      saveSyncMetadata({ ...getSyncMetadata(), lastStoreLedgerSyncTime: Date.now() })
-    } catch (error) {
-      console.warn('店长账本 store_ledger 推送失败', error)
-    }
-
-    return { success: true, message: `成功同步 ${deduped.length} 条记录` }
   } catch (error) {
     console.error('保存财务记录到云端失败:', error)
     throw error
@@ -185,26 +151,17 @@ export async function saveFinanceSettingsToCloud(settings) {
       normalized.mallRate = rate / 100
     }
 
-    const rows = (await fetchCollectionLimit(COLLECTIONS.FINANCE_SETTINGS, { limit: 20 })).sort(
-      (a, b) => (b._updateTime || 0) - (a._updateTime || 0),
-    )
-
-    const payload = {
+    // finance_settings 客户端不可写：经 syncFinanceData.upload_settings（仅超管）
+    const res = await callCdnFunction('syncFinanceData', {
+      action: 'upload_settings',
       settings: normalized,
-      _updateTime: Date.now(),
-      syncedAt: Date.now(),
+      updateTime: Date.now(),
+    })
+    if (!res || res.success === false) {
+      throw new Error(res?.message || res?.msg || '财务设置同步失败')
     }
 
-    if (rows.length > 0) {
-      assertWriteApplied(COLLECTIONS.FINANCE_SETTINGS, await cdnUpdate(COLLECTIONS.FINANCE_SETTINGS, rows[0]._id, payload), 'update')
-    } else {
-      assertWriteApplied(COLLECTIONS.FINANCE_SETTINGS, await cdnAdd(COLLECTIONS.FINANCE_SETTINGS, {
-        ...payload,
-        _createTime: Date.now(),
-      }), 'add')
-    }
-
-    return { success: true, message: '财务设置同步成功' }
+    return { success: true, message: res.message || '财务设置同步成功' }
   } catch (error) {
     console.error('保存财务设置到云端失败:', error)
     throw error
@@ -272,6 +229,9 @@ export async function syncFinanceRecords(options = {}) {
     localStorage.setItem(FINANCE_RECORDS_KEY, JSON.stringify(mergedRecords))
     metadata.lastLocalUpdateTime = Date.now()
 
+    // 上传失败不影响本机合并结果（success 仍为 true），但必须带 uploadError 让页面提示 ——
+    // 2026-09-14 起 finance_records 规则禁写，这里曾只打 console.warn，两周内 ERP 账本改动全部未上云
+    let uploadError = ''
     if (
       !readOnly &&
       !forceDownload &&
@@ -282,6 +242,7 @@ export async function syncFinanceRecords(options = {}) {
         metadata.lastCloudUpdateTime = Date.now()
       } catch (error) {
         console.warn('上传到云端失败:', error)
+        uploadError = error?.message || String(error)
       }
     }
 
@@ -292,7 +253,8 @@ export async function syncFinanceRecords(options = {}) {
       localCount: localRecords.length,
       cloudCount: cloudRecords.length,
       mergedCount: mergedRecords.length,
-      synced: true,
+      synced: !uploadError,
+      ...(uploadError ? { uploadError } : {}),
     }
   } catch (error) {
     console.error('同步财务记录失败:', error)
@@ -341,17 +303,19 @@ export async function syncFinanceSettings(options = {}) {
       metadata.lastLocalUpdateTime = Date.now()
     }
 
+    let uploadError = ''
     if (!readOnly && (forceUpload || (localSettings && localUpdateTime > cloudUpdateTime))) {
       try {
         await saveFinanceSettingsToCloud(mergedSettings || localSettings)
         metadata.lastCloudUpdateTime = Date.now()
       } catch (error) {
         console.warn('上传设置到云端失败:', error)
+        uploadError = error?.message || String(error)
       }
     }
 
     saveSyncMetadata(metadata)
-    return { success: true, synced: true }
+    return { success: true, synced: !uploadError, ...(uploadError ? { uploadError } : {}) }
   } catch (error) {
     console.error('同步财务设置失败:', error)
     return { success: false, error: error.message }

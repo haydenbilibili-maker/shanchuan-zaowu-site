@@ -1,7 +1,7 @@
 /**
  * 店长小程序账本 ↔ Web 财务桥接（store_ledger 集合）
  */
-import { getCdnDatabase, fetchAllFromCollection, cdnAdd, cdnUpdate, cdnRemove, assertWriteApplied } from './cloudbaseCdnDb.js'
+import { fetchAllFromCollection, callCdnFunction } from './cloudbaseCdnDb.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
 
 export const STORE_LEDGER = 'store_ledger'
@@ -213,65 +213,35 @@ export async function fetchStoreLedger() {
   return dedupeFinanceRecords(rows.map(toFinanceRecord))
 }
 
+const LEDGER_UPLOAD_CHUNK = 100
+
+/**
+ * 推送到门店账本：store_ledger / finance_records 客户端不可写，经 syncFinanceData.upload_records（仅超管）。
+ * 服务端按记录自带的 _updateTime 与云端比新旧、字段级合并后写 store_ledger，再镜像 finance_records。
+ * 传原始记录而非 toStoreLedgerDoc 的结果：后者把 _updateTime 设为当前时间，会让旧数据冒充最新。
+ */
 export async function pushStoreLedger(records) {
   if (!records?.length) return { success: true, pushed: 0 }
 
-  const db = await getCdnDatabase()
   const deduped = dedupeFinanceRecords(records)
-  const existingRows = await fetchAllFromCollection(STORE_LEDGER, {
-    orderField: 'date',
-    direction: 'desc',
-  })
-
-  const groups = new Map()
-  for (const doc of existingRows) {
-    const key = ledgerKey(doc, doc.date || doc.bizDate)
-    const list = groups.get(key) || []
-    list.push(doc)
-    groups.set(key, list)
-  }
-  const pruneOps = []
-  for (const [, docs] of groups) {
-    if (docs.length <= 1) continue
-    docs.sort((a, b) => (b._updateTime || b.syncedAt || 0) - (a._updateTime || a.syncedAt || 0))
-    for (const stale of docs.slice(1)) {
-      // 幂等删除：并发下 deleted:0 属良性无操作，刻意不断言（否则制造假失败）
-      if (stale._id) pruneOps.push(cdnRemove(STORE_LEDGER, stale._id))
+    .filter((r) => r.date || r.bizDate)
+    .sort((a, b) => String(a.date || a.bizDate).localeCompare(String(b.date || b.bizDate)))
+  let added = 0
+  let updated = 0
+  let mirrored = 0
+  for (let i = 0; i < deduped.length; i += LEDGER_UPLOAD_CHUNK) {
+    const res = await callCdnFunction('syncFinanceData', {
+      action: 'upload_records',
+      records: deduped.slice(i, i + LEDGER_UPLOAD_CHUNK),
+    })
+    if (!res || res.success === false) {
+      throw new Error(res?.message || res?.msg || '门店账本推送失败')
     }
+    added += res.added || 0
+    updated += res.updated || 0
+    mirrored += res.mirrored || 0
   }
-  if (pruneOps.length) await Promise.all(pruneOps)
-
-  const freshRows = pruneOps.length
-    ? await fetchAllFromCollection(STORE_LEDGER, { orderField: 'date', direction: 'desc' })
-    : existingRows
-  const byKey = new Map(
-    freshRows.map((doc) => [ledgerKey(doc, doc.date || doc.bizDate), doc]),
-  )
-
-  const ops = []
-  for (const row of deduped) {
-    const doc = toStoreLedgerDoc(row)
-    const key = ledgerKey(doc, doc.date)
-    const prev = byKey.get(key)
-    if (prev?._id) {
-      ops.push(
-        cdnUpdate(STORE_LEDGER, prev._id, {
-          ...doc,
-          _updateTime: Date.now(),
-        }).then((r) => assertWriteApplied(STORE_LEDGER, r, 'update')),
-      )
-    } else {
-      ops.push(
-        cdnAdd(STORE_LEDGER, {
-          ...doc,
-          _createTime: Date.now(),
-        }).then((r) => assertWriteApplied(STORE_LEDGER, r, 'add')),
-      )
-    }
-  }
-
-  await Promise.all(ops)
-  return { success: true, pushed: deduped.length }
+  return { success: true, pushed: deduped.length, added, updated, mirrored }
 }
 
 /** 拉取 store_ledger 合并进 shanhai_v12 与门店 bundle */

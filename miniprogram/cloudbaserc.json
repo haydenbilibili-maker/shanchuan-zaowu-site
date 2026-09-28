@@ -381,6 +381,13 @@
       "installDependency": true
     },
     {
+      "name": "secureDataWrite",
+      "timeout": 30,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "getShareholderObservatory",
       "timeout": 30,
       "runtime": "Nodejs16.13",

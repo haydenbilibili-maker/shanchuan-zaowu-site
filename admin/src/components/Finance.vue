@@ -1510,7 +1510,9 @@ const app = reactive({
     async loadData() {
         // 先尝试从云端同步数据
         try {
-            await autoSyncFinanceData()
+            const syncRes = await autoSyncFinanceData()
+            const uploadError = syncRes?.records?.uploadError || syncRes?.settings?.uploadError
+            if (uploadError) ElMessage.warning(`本机账本改动未能上传到云端：${uploadError}`)
         } catch (error) {
             console.warn('自动同步失败，使用本地数据:', error)
         }

@@ -30,7 +30,7 @@
     "fulfillment_shipments",
     "stock_movements"
   ],
-  "_pendingDoc": "pendingR1 = 仍允许匿名可读的集合（ERP 读取须等新版 ERP 经 CI 上线后才能收紧）。**只许变小**：应用 R1 后从这里删掉该项、把 pendingR1Max 同步调小；已收紧的规则文件仍列在这里会被守卫拦下。待应用规则在 cloudbase/rules-staged/r1-after-erp-release/。",
+  "_pendingDoc": "pendingR1 = 仍允许匿名可读的集合（ERP 读取须等新版 ERP 经 CI 上线后才能收紧）。**只许变小**：应用 R1 后从这里删掉该项、把 pendingR1Max 同步调小；已收紧的规则文件仍列在这里会被守卫拦下。待应用规则在 cloudbase/rules-staged/after-erp-release/（每表一份 = 上线后的**目标规则**，读写一并收紧）。",
   "pendingR1Max": 22,
   "pendingR1": [
     "orders",
@@ -56,11 +56,39 @@
     "fulfillment_shipments",
     "stock_movements"
   ],
-  "_stagedWriteKeepsLiveDoc": "这两张表线上 write 与仓库规则文件不一致（线上 auth != null、仓库 false），而 ERP 退款/候补页正依赖线上值匿名直写。待应用规则保留线上写值，只收紧读 —— 否则 ERP 上线后一应用就把退款/候补写入打断。写权限收紧另案（ERP 写改走云函数后）。",
-  "stagedWriteKeepsLive": {
-    "refunds": "auth != null",
-    "waitlist": "auth != null"
+  "_writeDoc": "写权限收紧（2026-09-28 第二轮）。写保护集合 = collections ∪ writeProtectedExtra：写字段（write/create/update/delete）不得对 Web 匿名放行，pendingWrite 内与 writeExceptions 点名的字段除外。ERP 写入已改走 secureDataWrite / syncFinanceData 云函数，新版 ERP 经 CI 上线后应用 staged 规则、再从 pendingWrite / liveWriteDrift 删掉对应项并调小 pendingWriteMax。",
+  "writeProtectedExtra": ["stores", "store_zones", "home_configs", "pet_craft_configs"],
+  "_writeExceptionsDoc": "允许对匿名放行的写字段（精确值）。purchase_intents.create = 官网询价表单匿名提交（src/lib/purchaseIntent.ts），必须保留。",
+  "writeExceptions": {
+    "purchase_intents": { "create": "auth != null" }
   },
+  "pendingWriteMax": 13,
+  "pendingWrite": [
+    "finance_settings",
+    "purchase_intents",
+    "feishu_inventory",
+    "feishu_purchases",
+    "feishu_sync_logs",
+    "fulfillment_shipments",
+    "stock_movements",
+    "refunds",
+    "waitlist",
+    "stores",
+    "store_zones",
+    "home_configs",
+    "pet_craft_configs"
+  ],
+  "_liveWriteDriftDoc": "线上写规则 ≠ 仓库文件（仓库已是 write:false、线上仍 auth != null，旧版 ERP 依赖线上值匿名直写）。这些表的仓库规则看似已收紧，守卫据此不逼它们离开 pendingWrite；值 = 线上现值 = 回滚值。apply-database-rules --dry-run 可复核。",
+  "liveWriteDrift": {
+    "refunds": "auth != null",
+    "waitlist": "auth != null",
+    "stores": "auth != null",
+    "store_zones": "auth != null",
+    "home_configs": "auth != null",
+    "pet_craft_configs": "auth != null"
+  },
+  "_writeGatewayForbiddenDoc": "secureDataWrite 永不开放的集合（提权 / 审计链路）。admin_users/admin_roles 无任何写入方，已 write:false；员工与权限只经 manageStaff。",
+  "writeGatewayForbidden": ["admin_users", "admin_roles", "staff_members", "admin_login_logs", "admin_operation_logs", "store_ledger", "orders"],
   "_clientReadBaselineDoc": "check:sensitive-direct-read 的小程序直读基线（文件|集合 → 处数），只许变少。orders 17 处均为 C 端本人/受礼人读取（R2 前须改写为 where 带 _openid 或走云函数，见方案文档 §R2）；店长/超管端 orders 为 0。其余为小程序身份读取（R1 不影响）。生成：node miniprogram/scripts/check-sensitive-direct-read.mjs --print-baseline",
   "clientReadBaseline": {
     "miniprogram/pages/user/index.js|bookings": 1,
@@ -88,9 +116,21 @@
     "miniprogram/subpackages/manager/manager/managerPageConfig.js|pet_memorial_orders": 1,
     "miniprogram/subpackages/manager/utils/storeLedger.js|store_ledger": 5
   },
+  "_clientWriteBaselineDoc": "官网 / 小程序直写写保护集合（文件|集合 → 处数），只许变少。唯一一处 = 官网询价表单匿名 add（writeExceptions.purchase_intents.create）。小程序对写保护集合直写为 0。",
+  "clientWriteBaseline": {
+    "src/lib/purchaseIntent.ts|purchase_intents": 1
+  },
+  "_erpDeniedWriteBaselineDoc": "ERP 对 write:false 集合的直写（未走 secureDataWrite / manageStoreContent），线上必被拒 —— 存量缺陷冻结，只许变少。Orders/Refunds 的 orders 与 Bookings 的 bookings 属稳定期订单/预约链路，待产品负责人点名再改走云函数；SupportTickets 页已有「写通道未接入」提示。",
+  "erpDeniedWriteBaseline": {
+    "admin/src/components/Bookings.vue|bookings": 1,
+    "admin/src/components/Orders.vue|orders": 1,
+    "admin/src/components/Refunds.vue|orders": 3,
+    "admin/src/components/SupportTickets.vue|support_tickets": 1
+  },
   "probeControls": {
-    "_doc": "audit:anon-exposure 的对照组：readable 必须匿名可读、denied 必须匿名被拒，否则探针本身失效（不出结论）。",
+    "_doc": "audit:anon-exposure 的对照组：readable 必须匿名可读、writable 必须匿名可写（仅打不存在的 _id）、denied 读写均须匿名被拒，否则探针本身失效（不出结论）。writable 选内容工厂表：ERP 直写、不在本轮收紧范围；日后收紧它时须换对照。",
     "readable": "products",
+    "writable": "content_topics",
     "denied": "staff_members"
   }
 }

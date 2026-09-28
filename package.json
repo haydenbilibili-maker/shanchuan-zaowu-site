@@ -305,6 +305,8 @@
     "check:package-photos:selftest": "node miniprogram/scripts/check-package-photos.mjs --selftest",
     "check:main-package-size": "node miniprogram/scripts/check-main-package-size.mjs",
     "check:main-package-size:selftest": "node miniprogram/scripts/check-main-package-size.mjs --selftest",
+    "check:home-reco": "node miniprogram/scripts/test-home-reco.mjs",
+    "check:home-reco:selftest": "node miniprogram/scripts/test-home-reco.mjs --selftest",
     "check:report-day": "node miniprogram/scripts/test-report-day.mjs",
     "check:report-day:selftest": "node miniprogram/scripts/test-report-day.mjs --selftest",
     "check:activity-board": "node miniprogram/scripts/test-activity-board.mjs",
@@ -321,6 +323,8 @@
     "check:sensitive-direct-read:selftest": "node miniprogram/scripts/check-sensitive-direct-read.mjs --selftest",
     "test:secure-data-read": "node miniprogram/scripts/test-secure-data-read.mjs",
     "test:secure-data-read:selftest": "node miniprogram/scripts/test-secure-data-read.mjs --selftest",
+    "test:secure-data-write": "node miniprogram/scripts/test-secure-data-write.mjs",
+    "test:secure-data-write:selftest": "node miniprogram/scripts/test-secure-data-write.mjs --selftest",
     "audit:anon-exposure": "node miniprogram/scripts/audit-anon-exposure.mjs",
     "audit:anon-exposure:selftest": "node miniprogram/scripts/audit-anon-exposure.mjs --selftest"
   },

@@ -52,6 +52,9 @@ export const EVENTS = {
   app_launch: { module: MODULE.SYSTEM, desc: '小程序启动', targetType: 'app' },
   // 探索
   explore_store_card_click: { module: MODULE.EXPLORE, desc: '探索页门店卡片点击', targetType: 'store' },
+  // 首页「为你推荐」（2026-09-27）：targetId=依据 interest/personal/wall/cold；点击另经 product_view 上报带标签的浏览
+  home_reco_expose: { module: MODULE.EXPLORE, desc: '首页为你推荐曝光（每页一次；properties.ids/page）', targetType: 'reco' },
+  home_reco_click: { module: MODULE.EXPLORE, desc: '首页为你推荐点击（properties.pos/mode/chip）', targetType: 'product' },
   // 馆藏
   encyclopedia_content_click: { module: MODULE.ENCYCLOPEDIA, desc: '百科内容点击', targetType: 'wiki' },
   encyclopedia_product_click: { module: MODULE.ENCYCLOPEDIA, desc: '百科关联商品点击', targetType: 'product' },

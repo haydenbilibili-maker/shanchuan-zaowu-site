@@ -139,7 +139,8 @@ page {
    两段相加 ≈ 24rpx，才是"紧挨 banner"该有的间距。 */
 .wish-wall-slot-home {
   display: block;
-  margin: 4rpx 32rpx 48rpx;
+  /* 入口槽：横向与 section 对齐；底距略拉开，让铜系入口在黑底上有独立落点 */
+  margin: 6rpx 32rpx 52rpx;
 }
 
 /* 直播 Banner：扫描线 / 信号条（克制、真机友好） */
@@ -356,7 +357,6 @@ page {
   color: var(--color-text-body);
   border-color: rgba(196, 167, 108, 0.28);
 }
-.section-box.recommend-top { margin-top: 0; margin-bottom: 56rpx; }
 
 .orbs-section.orbs-first {
   margin-top: 0;
@@ -803,7 +803,6 @@ page {
   opacity: 1;
 }
 
-.ec-shine { display: none; }
 
 .ec-info { 
   position: absolute; 
@@ -1050,38 +1049,6 @@ page {
 .artist-card-v3::before { display: none; }
 
 /* 旧样式保留（向后兼容，如果还有使用 artist-card-v2 的地方） */
-.artist-card-v2 { 
-  display: inline-block; 
-  width: 300rpx; 
-  height: 360rpx; 
-  margin-right: 32rpx; 
-  position: relative; 
-  border-radius: 24rpx; 
-  overflow: hidden; 
-  box-shadow: 
-    0 16rpx 48rpx rgba(0,0,0,0.7),
-    0 6rpx 20rpx rgba(0,0,0,0.5),
-    0 0 24rpx rgba(196, 167, 108,0.2),
-    inset 0 1rpx 3rpx rgba(255,255,255,0.12),
-    inset 0 -1rpx 2rpx rgba(0,0,0,0.4);
-  border: 2px solid rgba(196, 167, 108,0.25);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  background: var(--color-bg);
-  cursor: pointer;
-  /* 确保图片和文字分层清晰 */
-  isolation: isolate;
-}
-.artist-card-v2:active {
-  transform: scale(0.96) translateY(-4rpx);
-  box-shadow: 
-    0 12rpx 40rpx rgba(0,0,0,0.8),
-    0 4rpx 16rpx rgba(0,0,0,0.6),
-    0 0 36rpx rgba(196, 167, 108,0.35),
-    inset 0 2rpx 4rpx rgba(255,255,255,0.18),
-    inset 0 -1rpx 3rpx rgba(0,0,0,0.5);
-  border-color: rgba(196, 167, 108,0.5);
-}
 
 .ac-bg { 
   width: 100%; 
@@ -1092,172 +1059,16 @@ page {
   object-position: center top;
   transform-origin: center top;
 }
-.artist-card-v2:active .ac-bg { 
-  filter: brightness(0.85) contrast(1.3) saturate(1.2) grayscale(0) sepia(0.15); 
-  transform: scale(1.1); 
-}
 
 /* 杂志风格的装饰性边框 */
-.artist-card-v2::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(196, 167, 108,0.15);
-  border-radius: 20rpx;
-  pointer-events: none;
-  z-index: 3;
-  opacity: 0;
-  transition: opacity 0.5s;
-}
-.artist-card-v2:active::before {
-  opacity: 1;
-}
 
 /* 金色光泽扫过效果 */
-.artist-card-v2::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(196, 167, 108,0.15),
-    rgba(255,255,255,0.1),
-    rgba(196, 167, 108,0.15),
-    transparent
-  );
-  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 2;
-  pointer-events: none;
-}
-.artist-card-v2:active::after {
-  left: 100%;
-}
 
 /* 顶部渐变遮罩（用于保护顶部区域，如果需要） */
-.artist-card-v2 .ac-top-gradient {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80rpx;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.3) 0%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
 
 /* 悬停遮罩 */
-.artist-card-v2 .ac-hover-mask {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent 60%,
-    rgba(0,0,0,0.1) 80%,
-    rgba(0,0,0,0.2) 100%
-  );
-  transition: background 0.5s;
-  pointer-events: none;
-  z-index: 1;
-}
-.artist-card-v2:active .ac-hover-mask {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent 60%,
-    rgba(0,0,0,0.15) 80%,
-    rgba(0,0,0,0.3) 100%
-  );
-}
 
-.ac-glass-panel { 
-  position: absolute; 
-  bottom: 0; 
-  left: 0; 
-  right: 0; 
-  background: linear-gradient(
-    to top,
-    rgba(0,0,0,0.96) 0%,
-    rgba(0,0,0,0.88) 35%,
-    rgba(0,0,0,0.6) 65%,
-    rgba(0,0,0,0.3) 85%,
-    transparent 100%
-  );
-  backdrop-filter: blur(20px) saturate(180%);
-  border-top: 2px solid rgba(196, 167, 108,0.35);
-  padding: 20rpx 24rpx 18rpx 24rpx;
-  text-align: center;
-  box-shadow: 
-    0 -8rpx 24rpx rgba(0,0,0,0.85),
-    0 -4rpx 12rpx rgba(0,0,0,0.7),
-    0 0 24rpx rgba(196, 167, 108,0.15),
-    inset 0 1rpx 3rpx rgba(255,255,255,0.12);
-  z-index: 2;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  /* 限制高度，确保图片主体不被遮挡 */
-  height: 38%;
-  max-height: 140rpx;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-}
-.artist-card-v2:active .ac-glass-panel {
-  background: linear-gradient(
-    to top,
-    rgba(0,0,0,0.98) 0%,
-    rgba(0,0,0,0.94) 25%,
-    rgba(0,0,0,0.8) 50%,
-    rgba(0,0,0,0.6) 75%,
-    rgba(0,0,0,0.3) 90%,
-    transparent 100%
-  );
-  border-top-color: rgba(196, 167, 108,0.5);
-  box-shadow: 
-    0 -8rpx 24rpx rgba(0,0,0,0.9),
-    0 0 32rpx rgba(196, 167, 108,0.25),
-    inset 0 1rpx 3rpx rgba(255,255,255,0.15);
-  padding-bottom: 22rpx;
-}
 
-.artist-card-v2 .ac-name { 
-  font-size: 34rpx; 
-  color: var(--color-text-primary); 
-  font-weight: 700; 
-  display: block; 
-  margin-bottom: 8rpx;
-  font-family: 'Source Han Serif SC', Georgia, serif;
-  letter-spacing: 2rpx;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.artist-card-v2 .ac-title { 
-  font-size: 20rpx; 
-  color: var(--gold); 
-  margin-top: 6rpx; 
-  display: block;
-  font-family: 'DIN', sans-serif;
-  font-weight: 600;
-  letter-spacing: 2rpx;
-  position: relative;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.4;
-  opacity: 0.95;
-}
 .ac-title::after {
   content: '';
   position: absolute;
@@ -1271,203 +1082,7 @@ page {
   box-shadow: none;
   transition: all 0.4s;
 }
-.artist-card-v2:active .ac-title::after {
-  width: 80rpx;
-  opacity: 1;
-  box-shadow: none;
-}
 
-/* ==================== 智能推荐模块 ==================== */
-.recommend-scroll {
-  display: flex;
-  align-items: stretch;
-  padding: 0;
-  width: 100%;
-  box-sizing: border-box;
-}
-.recommend-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.recommend-badge {
-  display: inline-flex;
-  align-items: center;
-  background: linear-gradient(135deg, rgba(196, 167, 108,0.15), rgba(196, 167, 108,0.08));
-  border: 1px solid rgba(196, 167, 108,0.3);
-  border-radius: 20rpx;
-  padding: 8rpx 20rpx;
-  backdrop-filter: blur(8px);
-}
-.badge-text {
-  font-size: 20rpx;
-  color: var(--gold);
-  font-family: 'DIN', sans-serif;
-  letter-spacing: 2rpx;
-  text-shadow: none;
-}
-
-.recommend-card {
-  position: relative;
-  width: 280rpx;
-  margin-right: 24rpx;
-  border-radius: 24rpx;
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-bg-elevated);
-  transition: transform 0.22s ease, border-color 0.22s ease;
-  isolation: isolate;
-}
-.recommend-card:active {
-  transform: scale(0.98);
-  border-color: rgba(196, 167, 108, 0.4);
-}
-.recommend-card-press {
-  transform: scale(0.98);
-  border-color: rgba(196, 167, 108, 0.4);
-}
-
-.rec-image-wrapper {
-  position: relative;
-  width: 100%;
-  height: 280rpx;
-  flex-shrink: 0;
-  background: var(--color-bg-elevated, #262320);
-  border-radius: 24rpx 24rpx 0 0;
-  overflow: hidden;
-}
-.rec-image-wrapper .sb-wrap {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-}
-.rec-image {
-  width: 100%;
-  height: 100%;
-  display: block;
-  filter: brightness(0.8) contrast(1.1) saturate(1.05);
-  transition: transform 0.25s ease;
-  transform-origin: center;
-}
-.recommend-card:active .rec-image {
-  transform: scale(1.02);
-}
-
-.rec-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(26,24,20,0.78) 0%,
-    rgba(26,24,20,0.35) 42%,
-    transparent 72%
-  );
-  z-index: 1;
-}
-
-.rec-reason {
-  position: absolute;
-  top: 20rpx;
-  left: 20rpx;
-  /* 博物黑半透明底 + 黄铜字：白底/浅底/深底商品图均可读，避免浅底+浅字 */
-  background: rgba(26, 24, 20, 0.82);
-  border: 1px solid rgba(196, 167, 108, 0.4);
-  border-radius: 20rpx;
-  padding: 8rpx 16rpx;
-  font-size: 20rpx;
-  color: var(--brass-400, #C4A76C);
-  font-family: 'DIN', sans-serif;
-  letter-spacing: 1rpx;
-  z-index: 2;
-  text-shadow: none;
-}
-
-.rec-info {
-  flex: 1;
-  box-sizing: border-box;
-  min-height: 120rpx;
-  padding: 20rpx 20rpx 24rpx;
-  background: var(--color-bg-card);
-  border-radius: 0 0 24rpx 24rpx;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-.rec-title {
-  font-size: 28rpx;
-  color: var(--color-text-primary);
-  font-weight: 600;
-  display: block;
-  height: 36rpx;
-  line-height: 36rpx;
-  margin-bottom: 8rpx;
-  font-family: 'Source Han Serif SC', Georgia, serif;
-  letter-spacing: 1rpx;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.rec-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 36rpx;
-  min-height: 36rpx;
-}
-
-.rec-latin {
-  font-size: 20rpx;
-  line-height: 36rpx;
-  color: var(--color-text-secondary);
-  font-style: italic;
-  flex: 1;
-  min-width: 0;
-  margin-right: 12rpx;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.rec-price {
-  font-size: 28rpx;
-  line-height: 36rpx;
-  color: var(--gold);
-  font-family: 'DIN', sans-serif;
-  font-weight: 700;
-  letter-spacing: 1rpx;
-  flex-shrink: 0;
-}
-
-.rec-shine { display: none; }
-
-/* 推荐模块骨架屏 */
-.skeleton-recommendations {
-  display: flex;
-  padding: 0;
-  gap: 24rpx;
-  width: 100%;
-  box-sizing: border-box;
-  overflow-x: auto;
-}
-.sk-rec-card {
-  width: 280rpx;
-  height: 400rpx;
-  border-radius: 24rpx;
-  background: linear-gradient(90deg, var(--color-bg-card) 25%, var(--color-bg-elevated) 50%, var(--color-bg-card) 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-.waterfall-box { display: flex; padding: 0 20rpx; align-items: flex-start; }
-.wf-col { width: 50%; display: flex; flex-direction: column; padding: 0 10rpx; }
 /* ==================== 页脚标语优化 ==================== */
 .footer-slogan { 
   display: flex; 
@@ -1714,131 +1329,23 @@ page {
 }
 
 /* 走进这有店 — 探索页门店卡片（入口已迁至「我的」，区块默认关闭） */
-.explore-store-section {
-  padding-top: 8rpx;
-  margin-bottom: 70rpx;
-}
 
-.skeleton-explore-store {
-  width: 100%;
-  height: 320rpx;
-  border-radius: 24rpx;
-  background: linear-gradient(90deg, var(--color-bg-card) 25%, var(--color-bg-elevated) 50%, var(--color-bg-card) 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s ease-in-out infinite;
-}
 
-.explore-store-card {
-  position: relative;
-  width: 100%;
-  height: 320rpx;
-  border-radius: 24rpx;
-  overflow: hidden;
-  background: var(--color-bg-card);
-  border: 1px solid rgba(77, 64, 26, 0.45);
-  transition: transform 0.25s ease, border-color 0.25s ease;
-}
 
-.explore-store-card-hover {
-  transform: scale(0.985);
-  border-color: rgba(196, 167, 108, 0.55);
-}
 
-.explore-store-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  filter: brightness(0.58) contrast(1.1) saturate(1.05);
-}
 
-.explore-store-mask {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    115deg,
-    rgba(26, 24, 20, 0.92) 0%,
-    rgba(26, 24, 20, 0.72) 45%,
-    rgba(26, 24, 20, 0.28) 100%
-  );
-}
 
-.explore-store-frame {
-  position: absolute;
-  inset: 16rpx;
-  border: 1px solid rgba(196, 167, 108, 0.22);
-  border-radius: 16rpx;
-  pointer-events: none;
-}
 
-.explore-store-content {
-  position: relative;
-  z-index: 2;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 32rpx 36rpx 36rpx;
-  box-sizing: border-box;
-}
 
-.explore-store-overline {
-  font-size: 20rpx;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.12em;
-  margin-bottom: 10rpx;
-}
 
-.explore-store-name {
-  font-size: 40rpx;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  margin-bottom: 12rpx;
-}
 
-.explore-store-meta {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-  margin-bottom: 20rpx;
-}
 
-.explore-store-status {
-  font-size: 22rpx;
-  color: #52B788;
-}
 
-.explore-store-status.closed {
-  color: var(--color-text-secondary);
-}
 
-.explore-store-dot,
-.explore-store-distance {
-  font-size: 22rpx;
-  color: var(--gold);
-}
 
-.explore-store-cta-row {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
 
-.explore-store-cta {
-  font-size: 26rpx;
-  color: var(--gold);
-  letter-spacing: 0.04em;
-}
 
-.explore-store-arrow {
-  font-size: 28rpx;
-  color: var(--gold);
-  transition: transform 0.3s ease;
-}
 
-.explore-store-card-hover .explore-store-arrow {
-  transform: translateX(6rpx);
-}
 
 /* 标本工坊入口 — 探索页专题卡片 */
 .atelier-section {

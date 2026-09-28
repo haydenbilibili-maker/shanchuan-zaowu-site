@@ -433,6 +433,8 @@ export const SOURCE_REGISTRY = {
   'function:managerShipOrder': { concept: 'orders', role: 'channel', confidence: 'high' },
   'function:refundOrder': { concept: 'refunds', role: 'channel', confidence: 'high' },
   'function:secureDataRead': { concept: 'orders', role: 'channel', confidence: 'high', note: '敏感集合只读网关：订单/预约/财务/账号等 26 表的 ERP 读取通道（超管 + 默认脱敏），不是新的权威源' },
+  'function:syncFinanceData': { concept: 'finance_records', role: 'channel', confidence: 'high', note: 'ERP 财务写入通道（upload_records → store_ledger 按时间戳合并 + 镜像 finance_records；upload_settings → finance_settings）；三表客户端不可写' },
+  'function:secureDataWrite': { concept: 'orders', role: 'channel', confidence: 'high', note: '敏感集合写网关：退款/候补/门店/首页配置/飞书镜像/出货与库存流水等 13 表的 ERP 写入通道（超管 + 集合/动作/字段白名单 + 先审计后写），不是新的权威源' },
   'function:confirmPayment': { concept: 'orders', role: 'channel', confidence: 'medium', note: '支付补履约' },
   'function:payB2bPurchase': { concept: 'fulfillment', role: 'channel', confidence: 'high', note: 'B2B 采购单（purchase_orders）支付字段的唯一写通道：ERP 用超管 action 确认对公 / 查单补记 / 退款' },
   'function:getShippingRules': { concept: 'orders', role: 'derived', confidence: 'medium' },

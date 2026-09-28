@@ -68,6 +68,12 @@ export const ALLOWED_FUNCTIONS = Object.freeze([
   // 2026-09-28：敏感集合只读网关（orders 等 read 收紧为非匿名后，ERP 匿名 CDN 读不到 → 经此函数；
   // 超管鉴权 + 集合白名单 + 默认脱敏，见 docs/订单隐私收紧方案_2026-09-28.md）
   'secureDataRead',
+  // 2026-09-29：敏感集合写网关（写规则收紧为 false 后 ERP 匿名 CDN 写不进 → 经此函数；
+  // 超管鉴权 + 集合 / 动作 / 字段白名单 + 先审计后写）
+  'secureDataWrite',
+  // 2026-09-29：财务账本 / 设置写入（finance_records、store_ledger、finance_settings 客户端不可写；
+  // upload_records / upload_settings 仅超管，按时间戳合并写门店账本 SSOT）
+  'syncFinanceData',
 ])
 
 const ALLOWED = new Set(ALLOWED_FUNCTIONS)

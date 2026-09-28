@@ -13,6 +13,12 @@
  * 读写（赋值给变量后另用）→ 记为读；只 add / doc().update|set|remove / where().update|remove → 记为写。
  * ARG 支持字面量、同文件 const 常量、ERP 的 COLLECTIONS.KEY；动态集合名不判。
  *
+ * 写（2026-09-28 第二轮，写保护集合 = collections ∪ writeProtectedExtra）：
+ *   · ERP 禁止裸 .collection(<写保护>).add/update/remove；cdnAdd/cdnUpdate/cdnRemove/cdnSet/cdnUpsert* 写写保护集合
+ *     须能落到 secureDataWrite（PROXY_WRITE_COLLECTIONS 且 WRITE_POLICY 允许该动作）或 manageStoreContent 通道，
+ *     否则 = 直写被 write:false 拒绝，按 erpDeniedWriteBaseline 只许变少
+ *   · 官网 / 小程序直写写保护集合按 clientWriteBaseline 只许变少（官网询价表单 add 1 处；小程序 0）
+ *
  * 用法：node miniprogram/scripts/check-sensitive-direct-read.mjs [--print-baseline | --selftest]
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -22,6 +28,7 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const LIST_PATH = 'cloudbase/sensitive-collections.json'
 const GATEWAY = 'admin/src/utils/cloudbaseCdnDb.js'
+const WRITE_POLICY_PATH = 'miniprogram/cloudfunctions/secureDataWrite/policy.js'
 
 function walk(dir, exts, skip, out = []) {
   let names = []
@@ -113,18 +120,84 @@ export function scanFile(path, text, sensitive, keyMap) {
   return hits
 }
 
+const CDN_WRITE_OPS = {
+  cdnAdd: ['add'],
+  cdnUpdate: ['update'],
+  cdnRemove: ['remove'],
+  cdnSet: ['set'],
+  cdnUpsertDoc: ['add', 'update'],
+  cdnUpsertSingleton: ['add', 'update'],
+  cdnUpsertByWhere: ['add', 'update'],
+}
+
+function parseWriteRoutes(gatewaySrc, policySrc) {
+  const setOf = (name) => {
+    const m = gatewaySrc.match(new RegExp(`${name} = new Set\\(\\[([\\s\\S]*?)\\]\\)`))
+    return new Set(m ? [...m[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1]) : [])
+  }
+  const policy = {}
+  const body = (policySrc.match(/const WRITE_POLICY = \{([\s\S]*?)\n\}/) || [])[1] || ''
+  for (const m of body.matchAll(/^ {2}([a-z_]+):\s*\{[\s\S]*?ops:\s*\[([^\]]*)\]/gm)) {
+    policy[m[1]] = [...m[2].matchAll(/'(\w+)'/g)].map((x) => x[1])
+  }
+  const proxy = setOf('PROXY_WRITE_COLLECTIONS')
+  return { proxy, storeContent: setOf('STORE_CONTENT_WRITE_COLLECTIONS'), policy }
+}
+
+/** ERP cdn* 写助手调用：首参解析为集合名（字面量 / COLLECTIONS.KEY / 本文件或 ERP 导出的字符串常量） */
+export function scanCdnWrites(path, text, keyMap, exportedConsts) {
+  const consts = { ...exportedConsts }
+  for (const m of text.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*['"]([a-z_]+)['"]/g)) consts[m[1]] = m[2]
+  const hits = []
+  const re = new RegExp(`(?<![\\w.$])(${Object.keys(CDN_WRITE_OPS).join('|')})\\(\\s*([^,()]+?)\\s*[,)]`, 'g')
+  let m
+  while ((m = re.exec(text))) {
+    const arg = m[2]
+    const lit = /^['"]([a-z_]+)['"]$/.exec(arg)
+    const key = /^COLLECTIONS\.([A-Z_]+)(?:\s*\|\|\s*['"]([a-z_]+)['"])?$/.exec(arg)
+    const ident = /^([A-Za-z_$][\w$]*)$/.exec(arg)
+    let name = null
+    if (lit) name = lit[1]
+    else if (key) name = keyMap[key[1]] || key[2] || null
+    else if (ident && consts[ident[1]]) name = consts[ident[1]]
+    if (!name) continue
+    hits.push({ path, line: text.slice(0, m.index).split('\n').length, collection: name, helper: m[1] })
+  }
+  return hits
+}
+
 export function evaluate(files, list) {
   const sensitive = new Set(list.collections)
+  const writeProtected = new Set([...list.collections, ...(list.writeProtectedExtra || [])])
   const keyMap = collectionKeyMap(files['admin/src/cloud.js'] || '')
+  const routes = parseWriteRoutes(files[GATEWAY] || '', files[WRITE_POLICY_PATH] || '')
+  const exportedConsts = {}
+  for (const [path, text] of Object.entries(files)) {
+    if (!path.startsWith('admin/src/')) continue
+    for (const m of text.matchAll(/\bexport\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*['"]([a-z_]+)['"]/g)) exportedConsts[m[1]] = m[2]
+  }
   const errors = []
   const notes = []
   const mpCounts = {}
+  const writeCounts = {}
+  const erpDenied = {}
   for (const [path, text] of Object.entries(files)) {
     if (!/\.(js|mjs|ts|vue|astro)$/.test(path)) continue
-    const hits = scanFile(path, text, sensitive, keyMap).filter((h) => h.kind === 'read')
+    const all = scanFile(path, text, writeProtected, keyMap)
+    const hits = all.filter((h) => h.kind === 'read' && sensitive.has(h.collection))
+    const writes = all.filter((h) => h.kind === 'write')
     if (path.startsWith('admin/src/')) {
       if (path === GATEWAY) continue
       hits.forEach((h) => errors.push(`ERP 直读敏感集合 ${h.collection}：${h.path}:${h.line}（改用 fetchCollection*/cdnCount/cdnQueryPage/cdnDocGet，经 secureDataRead）`))
+      writes.forEach((h) => errors.push(`ERP 裸写写保护集合 ${h.collection}：${h.path}:${h.line}（改用 cdnAdd/cdnUpdate/cdnRemove，经 secureDataWrite）`))
+      for (const h of scanCdnWrites(path, text, keyMap, exportedConsts)) {
+        if (!writeProtected.has(h.collection)) continue
+        const need = CDN_WRITE_OPS[h.helper]
+        const viaGateway = routes.proxy.has(h.collection) && need.every((op) => (routes.policy[h.collection] || []).includes(op))
+        if (viaGateway || routes.storeContent.has(h.collection)) continue
+        const k = `${h.path}|${h.collection}`
+        erpDenied[k] = (erpDenied[k] || 0) + 1
+      }
     } else if (path.startsWith('src/')) {
       hits.forEach((h) => errors.push(`官网读取敏感集合 ${h.collection}：${h.path}:${h.line}（官网只许 add）`))
     } else if (path.startsWith('miniprogram/')) {
@@ -133,7 +206,28 @@ export function evaluate(files, list) {
         mpCounts[k] = (mpCounts[k] || 0) + 1
       })
     }
+    if (path.startsWith('src/') || path.startsWith('miniprogram/')) {
+      writes.forEach((h) => {
+        const k = `${h.path}|${h.collection}`
+        writeCounts[k] = (writeCounts[k] || 0) + 1
+      })
+    }
   }
+  const ratchet = (counts, base, label, hint) => {
+    for (const [k, n] of Object.entries(counts)) {
+      const allowed = base[k] || 0
+      if (n > allowed) {
+        const [p, c] = k.split('|')
+        errors.push(`${label} ${c}：${p}（${n} 处 > 基线 ${allowed}）—— ${hint}`)
+      }
+    }
+    for (const [k, allowed] of Object.entries(base)) {
+      const n = counts[k] || 0
+      if (n < allowed) notes.push(`${k} 已降到 ${n}（基线 ${allowed}），可下调基线`)
+    }
+  }
+  ratchet(writeCounts, list.clientWriteBaseline || {}, '客户端新增写保护集合直写', '改走云函数（官网只许既有询价表单 add；小程序为 0）')
+  ratchet(erpDenied, list.erpDeniedWriteBaseline || {}, 'ERP 新增被规则拒绝的直写', '该表 write:false，直写必失败：加进 secureDataWrite WRITE_POLICY 或走专用云函数')
   const baseline = list.clientReadBaseline || {}
   for (const [k, n] of Object.entries(mpCounts)) {
     const allowed = baseline[k] || 0
@@ -146,7 +240,7 @@ export function evaluate(files, list) {
     const n = mpCounts[k] || 0
     if (n < allowed) notes.push(`${k} 已降到 ${n}（基线 ${allowed}），可下调 clientReadBaseline`)
   }
-  return { errors, notes, mpCounts }
+  return { errors, notes, mpCounts, writeCounts, erpDenied }
 }
 
 function loadFiles() {
@@ -157,6 +251,7 @@ function loadFiles() {
     ...walk(resolve(ROOT, 'miniprogram'), ['.js'], ['miniprogram/cloudfunctions', 'miniprogram/scripts']),
   ]
   for (const p of paths) files[p] = readFileSync(resolve(ROOT, p), 'utf8')
+  files[WRITE_POLICY_PATH] = readFileSync(resolve(ROOT, WRITE_POLICY_PATH), 'utf8')
   return files
 }
 
@@ -164,9 +259,9 @@ function main() {
   const list = JSON.parse(readFileSync(resolve(ROOT, LIST_PATH), 'utf8'))
   const files = loadFiles()
   if (process.argv.includes('--print-baseline')) {
-    const { mpCounts } = evaluate(files, { ...list, clientReadBaseline: {} })
-    const sorted = Object.fromEntries(Object.entries(mpCounts).sort(([a], [b]) => a.localeCompare(b)))
-    console.log(JSON.stringify(sorted, null, 2))
+    const r = evaluate(files, { ...list, clientReadBaseline: {}, clientWriteBaseline: {}, erpDeniedWriteBaseline: {} })
+    const sorted = (o) => Object.fromEntries(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)))
+    console.log(JSON.stringify({ clientReadBaseline: sorted(r.mpCounts), clientWriteBaseline: sorted(r.writeCounts), erpDeniedWriteBaseline: sorted(r.erpDenied) }, null, 2))
     return
   }
   if (process.argv.includes('--selftest')) {
@@ -184,10 +279,18 @@ function main() {
       ['ERP 用同文件常量直读', { 'admin/src/utils/__probe.js': "const COL = 'admin_users'\nexport const f = (db) => db.collection(COL).count()\n" }],
       ['官网读 orders', { 'src/lib/__probe.ts': "export const f = (db) => db.collection('orders').where({}).get()\n" }],
       ['C 端新文件直读 orders', { 'miniprogram/subpackages/extra/__probe/index.js': "db.collection('orders').doc(id).get()\n" }],
+      ['ERP 裸写 admin_users', { 'admin/src/utils/__probe.js': "export const f = (db) => db.collection('admin_users').doc('a').update({ data: { role: 'super_admin' } })\n" }],
+      ['ERP cdnUpdate 写网关不允许的动作', { 'admin/src/utils/__probe.js': "export const f = () => cdnUpdate(COLLECTIONS.FINANCE_RECORDS, 'a', { x: 1 })\n" }],
+      ['ERP cdnAdd 写 admin_roles', { 'admin/src/utils/__probe.js': "export const f = () => cdnAdd('admin_roles', { x: 1 })\n" }],
+      ['ERP 经跨文件导出常量写', { 'admin/src/utils/__probe.js': "export const f = () => cdnRemove(MOVE_COL, 'a')\n" }],
+      ['ERP 新增 orders 直写', { 'admin/src/components/__probe.vue': "<script setup>\nawait cdnUpdate('orders', id, { status: 'x' })\n</script>" }],
+      ['小程序直写 stores', { 'miniprogram/subpackages/extra/__probe/index.js': "db.collection('stores').doc(id).update({ data: { a: 1 } })\n" }],
+      ['官网新增直写 refunds', { 'src/lib/__probe.ts': "export const f = (db) => db.collection('refunds').add({ data: 1 })\n" }],
     ]
     const negatives = [
-      ['官网只 add 不误报', { 'src/lib/__probe.ts': "const C = 'purchase_intents'\nexport const f = (db) => db.collection(C).add({ data: 1 })\n" }],
-      ['ERP 直写（doc().update）不误报', { 'admin/src/utils/__probe.js': "export const f = (db) => db.collection('refunds').doc('a').update({ x: 1 })\n" }],
+      ['ERP cdnUpdate 经写网关（refunds）不误报', { 'admin/src/utils/__probe.js': "export const f = () => cdnUpdate(COLLECTIONS.REFUNDS, 'a', { x: 1 })\n" }],
+      ['ERP cdnAdd 经跨文件常量（stock_movements）不误报', { 'admin/src/utils/__probe.js': "export const f = () => cdnAdd(MOVE_COL, { x: 1 })\n" }],
+      ['ERP 经 manageStoreContent 通道（feishu_shipments）不误报', { 'admin/src/utils/__probe.js': "export const f = () => cdnUpdate('feishu_shipments', 'a', { x: 1 })\n" }],
       ['非敏感集合不误报', { 'admin/src/utils/__probe.js': "export const f = (db) => db.collection('products').limit(1).get()\n" }],
     ]
     let ok = true
@@ -203,7 +306,7 @@ function main() {
     }
     process.exit(ok ? 0 : 1)
   }
-  const { errors, notes, mpCounts } = evaluate(files, list)
+  const { errors, notes, mpCounts, writeCounts, erpDenied } = evaluate(files, list)
   notes.forEach((n) => console.log('  · ' + n))
   if (errors.length) {
     console.error(`✗ check:sensitive-direct-read：${errors.length} 项`)
@@ -211,7 +314,7 @@ function main() {
     process.exit(1)
   }
   const mpTotal = Object.values(mpCounts).reduce((a, b) => a + b, 0)
-  console.log(`✓ check:sensitive-direct-read：ERP/官网 0 处敏感集合直读；小程序 ${mpTotal} 处（${Object.keys(mpCounts).length} 个文件×集合，均在基线内，只许变少）`)
+  console.log(`✓ check:sensitive-direct-read：ERP/官网 0 处敏感集合直读；小程序 ${mpTotal} 处（${Object.keys(mpCounts).length} 个文件×集合，均在基线内，只许变少）；写保护集合直写：客户端 ${Object.values(writeCounts).reduce((a, b) => a + b, 0)} 处、ERP 被拒存量 ${Object.values(erpDenied).reduce((a, b) => a + b, 0)} 处（只许变少）`)
 }
 
 main()

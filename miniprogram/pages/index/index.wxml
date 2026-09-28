@@ -197,53 +197,10 @@
       </view>
     </view>
 
-    <!-- 为你推荐 -->
-    <view class="section-box" wx:if="{{showRecommendations && (recommendations.length > 0 || loadingRecommendations)}}">
-      <view class="section-header-row section-header-compact">
-        <view class="title-group">
-          <text class="t-cn">为你推荐</text>
-          <text class="t-en">FOR YOU</text>
-        </view>
-        <view class="recommend-badge">
-          <text class="badge-text">智能推荐</text>
-        </view>
-      </view>
-      
-      <view class="skeleton-recommendations" wx:if="{{loadingRecommendations}}">
-        <view class="sk-rec-card" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
-      </view>
-      
-      <scroll-view wx:elif="{{recommendations.length > 0}}" scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
-        <block wx:for="{{recommendations}}" wx:key="_id">
-          <view class="recommend-card" bindtap="goToDetail" data-id="{{item._id}}" hover-class="recommend-card-press" hover-stay-time="80">
-            <view class="rec-image-wrapper">
-              <sensitive-blur-gate
-                enabled="{{item.sensitiveBlur}}"
-                product-id="{{item._id}}"
-                size="card"
-              >
-                <image
-                  class="rec-image"
-                  src="{{item.image || item.httpImage}}"
-                  mode="aspectFill"
-                  lazy-load
-                ></image>
-              </sensitive-blur-gate>
-              <view class="rec-overlay"></view>
-              <protected-badge product="{{item}}" size="xs" corner="bl" />
-              <view class="rec-reason">{{item.reason}}</view>
-            </view>
-            <view class="rec-info">
-              <text class="rec-title text-cut">{{item.title}}</text>
-              <view class="rec-meta">
-                <text class="rec-latin text-cut" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
-                <text class="rec-price" wx:if="{{item.price}}">¥{{item.price}}</text>
-              </view>
-            </view>
-          </view>
-        </block>
-        <view style="width: 30rpx; flex-shrink: 0;"></view>
-      </scroll-view>
+    <!-- 为你推荐（2026-09-27 全面升级）：展签大卡 + 三件一组；取数/三态/换一批/埋点都在组件里。
+         口径见 docs/首页为你推荐_全面升级_2026-09-27.md -->
+    <view class="section-box" wx:if="{{showRecommendations}}">
+      <home-reco id="homeReco" wall-on="{{showMaShangYou}}" bind:itemtap="goToDetail" bind:more="onRecoMore" />
     </view>
 
     <!-- 最新入库 -->

@@ -17,7 +17,6 @@ const { getAuthorizedLocation } = require('../../utils/locationAuth');
 const { HOME_ORB_ROOT, collectRootAliases } = require('../../utils/categorySeed');
 const { resolveBannerNav, openBannerItem } = require('../../utils/bannerNav');
 const { isSinglePageMode, blockIfSinglePage } = require('../../utils/singlePageMode');
-const { isSensitiveBlurProduct } = require('../../utils/sensitiveBlur');
 const { navigateToProductDetail } = require('../../utils/productDetailNav');
 const { todayKey, isActivityExpired } = require('../../utils/activityExpiry');
 const FRAMER_RECRUIT_PATH = '/subpackages/business/framer-recruit/index';
@@ -144,7 +143,6 @@ Page({
     loadingActivities: true,
     loadingCollections: true,
     loadingNewArrivals: true,
-    loadingRecommendations: true,
     loadingConfig: true,
     
     // 灵动球交互
@@ -161,7 +159,6 @@ Page({
     activities: [],
     collections: [],
     newArrivals: [],
-    recommendations: [], // 推荐内容
     currentBannerIndex: 0,
     heroAutoplay: true,
     
@@ -1316,52 +1313,16 @@ Page({
 
   updateNewArrivalsCache() {},
 
-  // 加载推荐内容
-  async loadRecommendations(config = {}) {
-    try {
-      this.setData({ loadingRecommendations: true });
+  // 为你推荐：<home-reco> 自己取数与处理三态（失败不向上抛 —— 与改前一样不参与整页错误态判定）。
+  // 这里只把后台「显示数量」交给它，并在下拉刷新 / 重试时让它重取。
+  loadRecommendations(config = {}) {
+    const reco = this.selectComponent('#homeReco');
+    if (reco) reco.load({ limit: config.limit });
+  },
 
-      const userId = app.globalData.openid || '';
-      const limit = config.limit || 6;
-      const algorithm = config.algorithm || 'mixed';
-      
-      // 使用重试机制
-      const res = await this.loadWithRetry(async () => {
-        return await wx.cloud.callFunction({
-          name: 'getRecommendations',
-          data: {
-            userId,
-            type: algorithm,
-            limit
-          }
-        });
-      });
-
-      if (res.result && res.result.success) {
-        const recommendations = (res.result.data || []).map(item => ({
-          ...item,
-          // 云文件 ID 必须换 https（内部换算），否则 <image> 渲染不出。
-          // 2026-09-18 分档：为你推荐卡实测 280rpx=140pt → 3 倍屏需 420px，用 mid 档
-          image: require('../../utils/imageUrl').midUrl(getFirstImage(item.images) || item.httpImage || ''),
-          reason: item.reason || '为你推荐',
-          sensitiveBlur: isSensitiveBlurProduct(item)
-        }));
-        
-        this.setData({ 
-          recommendations, 
-          loadingRecommendations: false 
-        });
-      } else {
-        this.setData({ loadingRecommendations: false });
-      }
-    } catch(e) {
-      console.error('加载推荐失败', e);
-      // 失败时隐藏推荐模块
-      this.setData({ 
-        recommendations: [], 
-        loadingRecommendations: false 
-      });
-    }
+  onRecoMore() {
+    if (blockIfSinglePage()) return;
+    wx.switchTab({ url: '/pages/category/index' });
   },
 
   handleSearch() {
@@ -1409,20 +1370,6 @@ Page({
     finish(formatDistance(km));
   },
 
-  goToExploreStore() {
-    if (blockIfSinglePage()) return;
-    if (!this.data.showStore) {
-      const { toastStoreClosed } = require('../../utils/contentDisplayFlags');
-      toastStoreClosed();
-      return;
-    }
-    const s = this.data.exploreStore;
-    if (!s) return;
-    setPreferredStoreId(s.storeId);
-    trackBehavior('explore_store_card_click', 'store', s.storeId);
-    wx.navigateTo({ url: '/subpackages/business/store/index' });
-  },
-
   switchTab(e) {
     if (blockIfSinglePage()) return;
     wx.switchTab({ url: e.currentTarget.dataset.url });
@@ -1435,18 +1382,6 @@ Page({
       return;
     }
     wx.navigateTo({ url: '/subpackages/business/store/index' });
-  },
-  goToCollection(e) {
-    if (blockIfSinglePage()) return;
-    const id = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id;
-    if (!id) {
-      wx.showToast({ title: '档案不存在', icon: 'none' });
-      return;
-    }
-    wx.navigateTo({
-      url: `/subpackages/feature/detail/wiki-detail/index?id=${id}`,
-      fail: () => wx.showToast({ title: '无法打开档案', icon: 'none' })
-    });
   },
   goToCollectionDetail(e) {
     if (blockIfSinglePage()) return;

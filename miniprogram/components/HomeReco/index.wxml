@@ -1,0 +1,113 @@
+<view class="hr-body">
+  <view class="section-header-row section-header-compact hr-head">
+    <view class="title-group">
+      <text class="t-cn">为你推荐</text>
+      <text class="t-en">FOR YOU</text>
+    </view>
+    <view
+      class="hr-swap {{refreshing ? 'is-busy' : ''}}"
+      wx:if="{{phase === 'ready' && canSwap}}"
+      aria-role="button"
+      bindtap="onSwap"
+      hover-class="hr-press"
+      hover-stay-time="80"
+    >换一批 ›</view>
+  </view>
+
+  <view class="hr-sk" wx:if="{{phase === 'loading'}}">
+    <view class="hr-sk-why"></view>
+    <view class="hr-sk-cover"></view>
+    <view class="hr-row">
+      <view class="hr-sk-card"></view>
+      <view class="hr-sk-card"></view>
+    </view>
+  </view>
+
+  <view class="hr-error" wx:elif="{{phase === 'error'}}">
+    <text class="hr-error-title">推荐没能送到</text>
+    <text class="hr-error-desc">{{errorMsg || '网络开小差了'}}</text>
+    <view class="hr-retry" bindtap="onRetry" hover-class="hr-press" hover-stay-time="80">轻点重试</view>
+  </view>
+
+  <view class="hr-empty" wx:elif="{{phase === 'empty'}}" bindtap="onMore" hover-class="hr-press" hover-stay-time="80">
+    <text>馆里正在上新 · 先去逛逛全部藏品 →</text>
+  </view>
+
+  <block wx:else>
+    <view class="hr-why-row">
+      <view class="hr-why-rule"></view>
+      <text class="hr-why">{{whyText}}</text>
+    </view>
+
+    <swiper class="hr-swiper hr-swiper--{{layout}}" current="{{pageIndex}}" duration="360" bindchange="onPageChange">
+      <swiper-item wx:for="{{pages}}" wx:for-item="pg" wx:for-index="pi" wx:key="pi">
+        <view class="hr-cover hr-cover--{{pg.lead.tier || 'wide'}} {{pg.lead.tier ? '' : 'is-pending'}}" wx:if="{{pg.lead}}" aria-role="button" aria-label="{{pg.lead.title}}" bindtap="onCardTap" data-pos="{{pg.lead.pos}}" hover-class="hr-tap" hover-stay-time="60">
+          <view class="hr-cv-media" style="{{pg.lead.tier === 'side' ? 'width:' + pg.lead.bw + 'rpx' : ''}}">
+            <sensitive-blur-gate enabled="{{pg.lead.sensitiveBlur}}" product-id="{{pg.lead._id}}" size="card">
+              <image class="hr-img hr-{{pg.lead.cm}}" wx:if="{{pi < shownUpTo + 1 && pg.lead.image}}" src="{{pg.lead.image}}" mode="{{pg.lead.cm}}" style="margin-top:{{pg.lead.mt}}rpx" data-key="{{pg.lead.rawImage}}" bindload="onImgLoad" binderror="onImgError" />
+              <view class="hr-img-ph" wx:else></view>
+            </sensitive-blur-gate>
+            <protected-badge product="{{pg.lead}}" size="xs" corner="tl" />
+          </view>
+          <view class="hr-label">
+            <view class="hr-kicker">
+              <text class="hr-no">{{pg.lead.no}}</text>
+              <text class="hr-mark hr-mark--{{pg.lead.mark.kind}}" wx:if="{{pg.lead.mark}}">{{pg.lead.mark.text}}</text>
+            </view>
+            <text class="hr-cover-title">{{pg.lead.title}}</text>
+            <view class="hr-cv-foot">
+              <text class="hr-price" wx:if="{{pg.lead.priceText}}">{{pg.lead.priceText}}<text class="hr-from" wx:if="{{pg.lead.priceFrom}}">起</text></text>
+              <text class="hr-soldout" wx:if="{{pg.lead.soldOut}}">已售罄</text>
+              <text class="hr-go">去看看 →</text>
+            </view>
+            <view class="hr-br"></view>
+            <text class="hr-theme" wx:if="{{pg.lead.theme}}">{{pg.lead.theme}}</text>
+            <text class="hr-note" wx:if="{{pg.lead.note}}">{{pg.lead.note}}</text>
+            <text class="hr-latin" wx:if="{{pg.lead.latin && (pg.lead.tier === 'side' || !pg.lead.note)}}">{{pg.lead.latin}}</text>
+          </view>
+        </view>
+
+        <view class="hr-row" wx:if="{{pg.row.length}}">
+          <view
+            class="hr-card"
+            wx:for="{{pg.row}}"
+            wx:key="_id"
+            aria-role="button"
+            aria-label="{{item.title}}"
+            bindtap="onCardTap"
+            data-pos="{{item.pos}}"
+            hover-class="hr-tap"
+            hover-stay-time="60"
+          >
+            <view class="hr-img-box">
+              <sensitive-blur-gate enabled="{{item.sensitiveBlur}}" product-id="{{item._id}}" size="card">
+                <image class="hr-img hr-{{item.cm}}" wx:if="{{pi < shownUpTo + 1 && item.image}}" src="{{item.image}}" mode="{{item.cm}}" style="margin-top:{{item.mt}}rpx" data-key="{{item.rawImage}}" bindload="onImgLoad" />
+                <view class="hr-img-ph" wx:else></view>
+              </sensitive-blur-gate>
+              <protected-badge product="{{item}}" size="xs" corner="bl" />
+            </view>
+            <view class="hr-card-body">
+              <text class="hr-card-title">{{item.title}}</text>
+              <view class="hr-card-meta">
+                <text class="hr-mark hr-mark--{{item.mark.kind}}" wx:if="{{item.mark}}">{{item.mark.text}}</text>
+                <text class="hr-card-sub {{item.theme ? '' : 'is-latin'}}">{{item.theme || item.latin}}</text>
+              </view>
+              <view class="hr-card-foot">
+                <text class="hr-price hr-price--sm" wx:if="{{item.priceText}}">{{item.priceText}}<text class="hr-from" wx:if="{{item.priceFrom}}">起</text></text>
+                <text class="hr-soldout" wx:if="{{item.soldOut}}">售罄</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <view class="hr-foot">
+      <view class="hr-dots" wx:if="{{canSwap}}">
+        <view class="hr-dot {{pi === pageIndex ? 'is-on' : ''}}" wx:for="{{pages}}" wx:for-index="pi" wx:key="pi"></view>
+        <text class="hr-count">{{pageIndex + 1}} / {{pageTotal}}</text>
+      </view>
+      <view class="hr-more" bindtap="onMore" hover-class="hr-press" hover-stay-time="80">逛全部藏品 →</view>
+    </view>
+  </block>
+</view>

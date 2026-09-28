@@ -179,6 +179,10 @@ const ADMIN_PROXY_FUNCTIONS = new Set([
   'payB2bPurchase',
   // 2026-09-28：敏感集合只读网关（见下方 PROXY_READ_COLLECTIONS）
   'secureDataRead',
+  // 2026-09-29：敏感集合写网关（见下方 PROXY_WRITE_COLLECTIONS）
+  'secureDataWrite',
+  // 2026-09-29：财务账本 / 设置写入（upload_records / upload_settings，仅超管）
+  'syncFinanceData',
 ])
 
 /**
@@ -363,6 +367,61 @@ export async function cdnRevealDocs(collectionName, ids, reason = '') {
     out.push(...wireToValue(res.list || []))
   }
   return out
+}
+
+/**
+ * 公网匿名可写的集合：写规则收紧为 false 后 ERP 匿名 CDN 写不进，
+ * cdnAdd / cdnUpdate / cdnRemove 对它们改走 secureDataWrite（超管 + 集合/动作/字段白名单 + 先审计后写）。
+ * 与 cloudfunctions/secureDataWrite/policy.js 的 WRITE_POLICY 必须逐项一致。
+ * finance_settings / store_ledger 不在此列：ERP 改走 syncFinanceData（见 financeSync.js）。
+ */
+export const PROXY_WRITE_COLLECTIONS = new Set([
+  'refunds',
+  'waitlist',
+  'purchase_intents',
+  'stores',
+  'store_zones',
+  'home_configs',
+  'pet_craft_configs',
+  'feishu_inventory',
+  'feishu_purchases',
+  'feishu_sync_logs',
+  'fulfillment_shipments',
+  'stock_movements',
+  'finance_records',
+])
+
+function shouldProxyWrite(collectionName) {
+  return PROXY_WRITE_COLLECTIONS.has(String(collectionName || '').trim())
+}
+
+/** 写入数据 → 线格式：Date 走 {$date}；SDK 操作符（db.command / serverDate / RegExp）无法经 HTTP 传递，直接报错 */
+export function dataToWire(value, depth = 0) {
+  if (depth > 12) throw new Error('写入数据嵌套过深')
+  if (value == null || typeof value !== 'object') return value
+  if (value instanceof Date) return { $date: value.getTime() }
+  if (Array.isArray(value)) return value.map((v) => dataToWire(v, depth + 1))
+  const proto = Object.getPrototypeOf(value)
+  if (proto !== Object.prototype && proto !== null) {
+    throw new Error('写网关不支持数据库操作符（db.command / serverDate 等），请改为普通值')
+  }
+  const out = {}
+  for (const key of Object.keys(value)) {
+    if (value[key] !== undefined) out[key] = dataToWire(value[key], depth + 1)
+  }
+  return out
+}
+
+async function callSecureWrite(payload) {
+  const res = await callCdnFunction('secureDataWrite', payload)
+  if (!res || res.success === false) {
+    const err = new Error(res?.msg || 'secureDataWrite 写入失败')
+    err.code = res?.code || ''
+    err.result = res
+    throw err
+  }
+  if (res.id && res._id == null) res._id = res.id
+  return res
 }
 
 function cloudFnProxyUrls() {
@@ -664,6 +723,9 @@ export function assertNoWriteError(collectionName, res, op = 'write') {
 }
 
 export async function cdnAdd(collectionName, data) {
+  if (shouldProxyWrite(collectionName)) {
+    return callSecureWrite({ action: 'add', collection: collectionName, data: dataToWire(data) })
+  }
   if (shouldProxyStoreContent(collectionName)) {
     return callStoreContentWrite({
       action: 'upsert',
@@ -676,6 +738,9 @@ export async function cdnAdd(collectionName, data) {
 }
 
 export async function cdnUpdate(collectionName, docId, data) {
+  if (shouldProxyWrite(collectionName)) {
+    return callSecureWrite({ action: 'update', collection: collectionName, id: docId, data: dataToWire(data) })
+  }
   if (shouldProxyStoreContent(collectionName)) {
     return callStoreContentWrite({
       action: 'update',
@@ -689,6 +754,9 @@ export async function cdnUpdate(collectionName, docId, data) {
 }
 
 export async function cdnRemove(collectionName, docId) {
+  if (shouldProxyWrite(collectionName)) {
+    return callSecureWrite({ action: 'remove', collection: collectionName, id: docId })
+  }
   if (shouldProxyStoreContent(collectionName)) {
     return callStoreContentWrite({
       action: 'remove',
@@ -713,6 +781,9 @@ export async function cdnDocGet(collectionName, docId) {
 }
 
 export async function cdnSet(collectionName, docId, data) {
+  if (shouldProxyWrite(collectionName)) {
+    throw new Error(`${collectionName} 经写网关写入，不支持整文档 set（请用 cdnUpdate / cdnAdd）`)
+  }
   if (shouldProxyStoreContent(collectionName)) {
     const id = String(docId || '').trim()
     // configs 等集合 setDoc 有 id 白名单；未授权时降级为 update（文档须已存在）
